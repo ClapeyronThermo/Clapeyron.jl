@@ -133,6 +133,7 @@ end
 
 
 function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
+    multi_component_check(x0_dew_temperature,model)
     sat = extended_saturation_temperature.(pure,p,crit,condensables)
     if crit === nothing
         _crit = __crit_pure.(sat,pure,condensables)
@@ -147,7 +148,12 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
         prob = antoine_dew_problem(dPdTsat,p,y,condensables)
         T0 = Roots.solve(prob)
     end
-    _,vl0,vv0,x = __x0_dew_pressure(model,T0,y,nothing,condensables,pure,crit)
+    K0 = 
+    K = suggest_K(model,p,T0,y,pure,FillArrays.fill(true,length(model)),_crit)
+    x = rr_flash_liquid(K,y,one(eltype(K)))
+    vl0 = volume(model,p,T0,x,phase = :l)
+    vv0 = volume(model,p,T0,y,phase = :v)
+    #_,vl0,vv0,x = __x0_dew_pressure(model,T0,y,nothing,condensables,pure,crit)
     return T0,vl0,vv0,x
 end
 
@@ -170,9 +176,9 @@ end
 
 function x0_dew_temperature(model::EoSModel,p,y)
     T0,V0_l,V0_v,x = __x0_dew_temperature(model,p,y)
-    prepend!(x,log10.([V0_l,V0_v]))
-    prepend!(x,T0)
-    return x
+    v0 = similar(x)
+    v0 .= x
+    return vcat(T0,log10(V0_l),log10(V0_v),v0)
 end
 
 function dew_temperature_init(model,p,y,vol0,T0,x0,condensables)
@@ -274,4 +280,3 @@ end
 function init_preferred_method(method::typeof(dew_temperature),model::EoSModel,kwargs)
     return ChemPotDewTemperature(;kwargs...)
 end
-

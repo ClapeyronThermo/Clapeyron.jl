@@ -17,6 +17,19 @@ function single_component_error(method,model)
     throw(DimensionMismatch(msg))
 end
 
+function multi_component_check(method,model)
+    l = length(model)
+    l > 1 && return nothing
+    single_component_error(method,model)
+end
+
+function multi_component_error(method,model)
+    l = length(model)
+    msg = string(method," only supports multiple component models, ",model," has ",l," components.")
+    throw(DimensionMismatch(msg))
+end
+
+
 """
     binary_component_check(method,model)
 

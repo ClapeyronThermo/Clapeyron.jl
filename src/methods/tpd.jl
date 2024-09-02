@@ -608,12 +608,15 @@ function __z_test(z)
     z_test = z_test ./ sum(z_test;dims=2)
 end
 
-function suggest_K(model,p,T,z,pure = split_model(model))
+function suggest_K(model,p,T,z,pure = split_model(model),volatiles = FillArrays.fill(true,length(model)),crit = FillArrays.fill(nothing,length(model)))
     lnϕz,v = lnϕ(model,p,T,z,threaded = false)
     K = similar(lnϕz)
     di = similar(lnϕz)
     di .= lnϕz .+ log.(z)
     for i in 1:length(z)
+        if !volatiles[i]
+            K[i] = 0
+        end
         vl = volume(pure[i],p,T,phase = :l)
         vv = volume(pure[i],p,T,phase = :v)
         lnϕv = VT_lnϕ_pure(pure[i],vv,T,p)
@@ -626,8 +629,10 @@ function suggest_K(model,p,T,z,pure = split_model(model))
             K[i] = exp(lnϕl[1])/exp(lnϕz[i])
         elseif tpd_l >= 0 && tpd_v < 0
             K[i] = exp(lnϕz[i])/exp(lnϕv[1])
+        elseif K0 != nothing
+            K[i] = K0[i]
         else
-            sat_x = extended_saturation_pressure(pure[i],T)
+            sat_x = extended_saturation_pressure(pure[i],T,crit[i])
             psat = first(sat_x)
             K[i] = psat / p
         end

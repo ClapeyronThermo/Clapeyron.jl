@@ -16,7 +16,7 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
     lnϕx, volx0 = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
     lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
     if isnan(volx0)
-        lnϕx, volx = lnϕ(model, p, T, x)
+        lnϕx, volx = lnϕ(model, p, T, x,phase = :liquid)
     else
         volx = volx0
     end
@@ -54,7 +54,6 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
                 w .= _y ./ K
                 w_calc .= w
             end
-
             w ./= sum(w)
             error = dnorm(w,w_old,Inf) #||x-x_old||∞
 
@@ -62,8 +61,8 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
                 break
             end
 
-            lnϕx, volx = lnϕ!(lnϕx, model, p, T, _x, vol0=volx)
-            lnϕy, voly = lnϕ!(lnϕy, model, p, T, _y, vol0=voly)
+            lnϕx, volx = lnϕ!(lnϕx, model, p, T, _x, vol0=volx, phase = :liquid)
+            lnϕy, voly = lnϕ!(lnϕy, model, p, T, _y, vol0=voly, phase = :vapor)
             if isnan(volx)
                 lnϕx, volx = lnϕ!(lnϕx, model, p, T, _x, phase = :liquid)
             end

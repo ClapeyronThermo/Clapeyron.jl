@@ -240,10 +240,12 @@ function gradient_type(V,T,z::FractionVector{TT,UU}) where {TT,UU<:AbstractVecto
     μ = Base.promote_eltype(V,T,z)
     return Vector{μ}
 end
+
+#= todo: fix this
 function gradient_type(V,T,z::FractionVector{TT,TT}) where {TT}
     μ = Base.promote_eltype(V,T,z)
     return SVector{2, μ}
-end
+end =#
 
 
 

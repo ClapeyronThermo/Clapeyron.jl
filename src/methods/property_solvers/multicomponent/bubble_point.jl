@@ -308,8 +308,14 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
         prob = antoine_bubble_problem(dPdTsat,p,x,volatiles)
         T0 = Roots.solve(prob)
     end
+
+
+    K = suggest_K(model,p,T0,x,pure,volatiles,_crit)
+    y = rr_flash_liquid(K,x,zero(eltype(K)))
+    vl0 = volume(model,p,T0,x,phase = :l)
+    vv0 = volume(model,p,T0,y,phase = :v)
     #this is exactly like __x0_bubble_pressure, but we use T0, instead of an input T
-    _,vl0,vv0,y = __x0_bubble_pressure(model,T0,x,nothing,volatiles,pure,crit)
+    #_,vl0,vv0,y = __x0_bubble_pressure(model,T0,x,nothing,volatiles,pure,crit)
     return T0,vl0,vv0,y
 end
 
@@ -332,9 +338,11 @@ end
 
 function x0_bubble_temperature(model::EoSModel,p,x)
     T0,V0_l,V0_v,y = __x0_bubble_temperature(model,p,x)
-    prepend!(y,log10.([V0_l,V0_v]))
-    prepend!(y,T0)
-    return y
+    T0,V0_l,V0_v,x = __x0_dew_temperature(model,p,y)
+    v0 = similar(x)
+    v0 .= x
+    return vcat(T0,log10(V0_l),log10(V0_v),v0)
+    return v0
 end
 
 function bubble_temperature_init(model,p,x,vol0,T0,y0,volatiles)
