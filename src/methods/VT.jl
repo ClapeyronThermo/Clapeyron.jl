@@ -301,7 +301,7 @@ end
 function VT_partial_property(model::EoSModel,V,T,z,property::ℜ) where {ℜ}
     fun(x) = property(model,V,T,x)
     TT = gradient_type(model,T+V,z)
-    return Solvers.gradient(fun,dz)::TT
+    return Solvers.gradient(fun,z)::TT
 end
 
 function VT_partial_property!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F,ℜ}
