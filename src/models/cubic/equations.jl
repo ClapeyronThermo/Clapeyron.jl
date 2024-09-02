@@ -333,29 +333,16 @@ function x0_sat_pure_cubic_ab(model::ABCubicModel, T)
         _Δ = (pl0)/(vl_p0*dpdV)
         vl = vl_p0*exp(_Δ)
         vv = volume_virial(B,pl0,T) - c
-        return (vl, vv)
-    elseif T > 0.99*Tc
-        psat = critical_psat_extrapolation(model,T,crit)
-        vl = volume(model,psat,T,phase = :l)
-        vv = volume(model,psat,T,phase = :v)
-        return (vl, vv)
     else
-        vc = zc*R̄*Tc/pc - c
-        pv0 = -0.25*R̄*T/B
-        vl = vl_max
-        pc = model.params.Pc.values[1]
-        p_vl = cubic_p(model, vl, T, z, data)
-        p_low = min(p_vl, pc)
-        pl0 = max(zero(b), p_low)
-        p0 = 0.5 * (pl0 + pv0)
-        vv = volume_virial(B, p0, T) - c
-        if p_vl > pc #improves predictions around critical point
-            psat = critical_psat_extrapolation(model,T,crit)
-            vl = volume(model,psat,T,phase = :l)
-            vv = volume(model,psat,T,phase = :v)
-            return (vl, vv)
+        psat = critical_psat_extrapolation(model,T,crit)
+        #normally, the extrapolation gives a higher pressure than the final saturation pressure
+        #use virial approx for lower pressures
+        vl = volume(model,psat,T,phase = :l)
+        if psat < 0.95*pc
+            vv = volume_virial(B,psat,T) - c
+        else
+            vv = volume(model,0.99psat,T,phase = :v)
         end
-        return (vl, vv)
     end
     return (vl, vv)
 end
