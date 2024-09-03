@@ -23,7 +23,7 @@ end
 abstract type SAFTVRMieGVModel <: SAFTVRMieModel end
 @newmodel SAFTVRMieGV SAFTVRMieGVModel SAFTVRMieGVParam
 default_references(::Type{SAFTVRMieGV}) = ["10.1016/j.fluid.2017.09.027","10.1021/acs.jced.0c00705"]
-default_locations(::Type{SAFTVRMieGV}) = ["SAFT/SAFTVRMie/SAFTVRMieGV/","properties/molarmass.csv"] # SS: Need to add data for SAFTVRMieGV
+default_locations(::Type{SAFTVRMieGV}) = ["SAFT/SAFTVRMie/SAFTVRMieGV/","properties/molarmass.csv"] 
 
 function transform_params(::Type{SAFTVRMieGV},params,components)
     sigma = params["sigma"]
@@ -46,7 +46,7 @@ function transform_params(::Type{SAFTVRMieGV},params,components)
     nQ = get!(params,"nQ") do
         SingleParam("nQ",components)
     end
-    # μ,Q,np,nQ = params["dipole"],params["quadrupole"],params["np"],params["nQ"]
+    
     params["sigma"] = sigma
     params["epsilon"] = epsilon
     params["lambda_a"] = lambda_a
@@ -141,8 +141,8 @@ function recombine_impl!(model ::SAFTVRMieGVModel)
 end
 
 function a_res(model ::SAFTVRMieGVModel, V, T, z)
-    _data = @f(data) # SS: comes from SAFTVRMie.jl. TO DO: check that this is compatible with polar terms. Think I need to define η=ζ3 somehow
-    return @f(a_hs,_data)+@f(a_disp,_data) + @f(a_chain,_data) + @f(a_assoc,_data) + @f(a_mp,_data)
+    _data = @f(data) 
+    return @f(a_hs,_data) +@f(a_dispchain,_data) + @f(a_assoc,_data) + @f(a_mp,_data)
 end
 
 function a_mp(model ::SAFTVRMieGVModel, V, T, z, _data=@f(data))
@@ -414,7 +414,6 @@ function polar_comp(model, V, T, z)
     return dipole_comps, quadrupole_comps
 end
 
-# SS TO DO: add if-statement for DD term.
 function J2(model::SAFTVRMieGVModel, V, T, z, type::Symbol, i, j, η = @f(ζ0123,4), m = model.params.segment.values,ϵT⁻¹ = model.params.epsilon.values[i,j]/T)
     m̄ = sqrt(m[i]*m[j])
     m̄1 = one(m̄)
