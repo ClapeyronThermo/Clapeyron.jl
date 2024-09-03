@@ -61,6 +61,9 @@ function extended_saturation_pressure(pure, T, _crit = nothing, volatile = true,
     if T < Tc
         sat = saturation_pressure(pure,T,crit = crit) #calculate sat_p with crit info
         !isnan(first(sat)) && return sat
+    else
+        nan = _0/_0
+        sat = (nan,nan,nan)
     end
     #create initial point from critical values
     #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
@@ -106,6 +109,9 @@ function extended_saturation_temperature(pure, p, _crit = nothing, volatile = tr
     if p < Pc
         sat = saturation_temperature(pure,p,crit = crit) #calculate sat_p with crit info
         !isnan(first(sat)) && return sat
+    else
+        nan = _0/_0
+        sat = (nan,nan,nan)
     end
 
     #create initial point from critical values
@@ -116,7 +122,6 @@ function extended_saturation_temperature(pure, p, _crit = nothing, volatile = tr
     vl0 = x0_volume(pure,p0,T,phase = :l)
     vv0 = max(1.2*Vc,3*Rgas(pure)*T/Pc)
     return p0,vl0,vv0
-
 end
 
 
