@@ -404,7 +404,7 @@ end
     @test Clapeyron.saturation_temperature(model,p0,ClapeyronSaturation())[1] ≈ 374.2401401001685 rtol = 1e-6
 
     #Issue #290
-    @test Clapeyron.saturation_temperature(cPR("R1233zde"),101325*20,crit_retry = false) ≈ 405.98925205830335 rtol = 1e-6
+    @test Clapeyron.saturation_temperature(cPR("R1233zde"),101325*20,crit_retry = false)[1] ≈ 405.98925205830335 rtol = 1e-6
 end
 
 @testset "Tproperty" begin
