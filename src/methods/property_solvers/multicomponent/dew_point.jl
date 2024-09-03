@@ -151,6 +151,7 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
     K0 = 
     K = suggest_K(model,p,T0,y,pure,FillArrays.fill(true,length(model)),_crit)
     x = rr_flash_liquid(K,y,one(eltype(K)))
+    x ./= sum(x)
     vl0 = volume(model,p,T0,x,phase = :l)
     vv0 = volume(model,p,T0,y,phase = :v)
     #_,vl0,vv0,x = __x0_dew_pressure(model,T0,y,nothing,condensables,pure,crit)
@@ -174,8 +175,8 @@ function antoine_dew_problem(dpdt,p_dew,y,condensables)
     return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
 end
 
-function x0_dew_temperature(model::EoSModel,p,y)
-    T0,V0_l,V0_v,x = __x0_dew_temperature(model,p,y)
+function x0_dew_temperature(model::EoSModel,p,y,T0 = nothing)
+    T0,V0_l,V0_v,x = __x0_dew_temperature(model,p,y,T0)
     v0 = similar(x)
     v0 .= x
     return vcat(T0,log10(V0_l),log10(V0_v),v0)

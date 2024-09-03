@@ -317,7 +317,11 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
 
 
     K = suggest_K(model,p,T0,x,pure,volatiles,_crit)
-    y = rr_flash_liquid(K,x,zero(eltype(K)))
+    y = rr_flash_vapor(K,x,zero(eltype(K)))
+    for i in 1:length(y)
+        !volatiles[i] && (y[i] = 0)
+    end
+    y ./= sum(y)
     vl0 = volume(model,p,T0,x,phase = :l)
     vv0 = volume(model,p,T0,y,phase = :v)
     #this is exactly like __x0_bubble_pressure, but we use T0, instead of an input T
