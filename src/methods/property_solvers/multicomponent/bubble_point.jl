@@ -38,7 +38,8 @@ function extended_saturation_pressure(pure, T, _crit = nothing, volatile = true,
         end
         return p,vl,vv
     end
-    if _crit === nothing #no crit point available, try calculating sat_p without it
+    #no crit point available, try calculating sat_p without it
+    if _crit === nothing
         sat = saturation_pressure(pure,T,crit_retry = false)
         if isnan(first(sat))
             if !crit_retry
@@ -49,7 +50,7 @@ function extended_saturation_pressure(pure, T, _crit = nothing, volatile = true,
         end
     end
     #calculate critical point, try again
-    if _crit !== nothing
+    if _crit !== nothing && !isnan(first(_crit))
         crit = _crit
     elseif crit_retry
         crit = crit_pure(pure)
@@ -113,9 +114,9 @@ function extended_saturation_temperature(pure, p, _crit = nothing, volatile = tr
         nan = _0/_0
         sat = (nan,nan,nan)
     end
-
     #create initial point from critical values
     #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
+    
     dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,T,volatile,false)
     lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
     p0 = exp(lnp)
