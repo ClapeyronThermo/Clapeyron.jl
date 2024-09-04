@@ -161,6 +161,7 @@ function near_candidate_fractions(n,k = 0.5*minimum(n))
     return x
 end
 
+#include("general_eq")
 include("fugacity.jl")
 include("rachford_rice.jl")
 include("bubble_point.jl")

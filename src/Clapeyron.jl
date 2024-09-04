@@ -13,8 +13,7 @@ import LogExpFunctions
 using FillArrays: FillArrays
 import BlackBoxOptim
 using StaticArrays
-using NLSolvers
-using NLSolvers: NEqOptions
+
 using DiffResults, ForwardDiff
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
@@ -27,8 +26,9 @@ include("utils/misc.jl")
 
 include("modules/solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt, log1p, ^, dnorm, primalval
-
+using .Solvers: log, sqrt, log1p, ^, dnorm, primalval, Newton
+using NLSolvers
+using NLSolvers: NEqOptions
 #misc functions, useful for EoS, don't depend on models
 include("modules/eosfunctions/EoSFunctions.jl")
 using .EoSFunctions

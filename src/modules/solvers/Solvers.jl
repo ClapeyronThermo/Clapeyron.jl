@@ -99,11 +99,30 @@ end
 Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
 CholeskyNewton() = NLSolvers.Newton(linsolve=cholesky_linsolve)
 
+const LUPivot = @static if VERSION < v"1.7beta"
+    Val(true)
+else
+    RowMaximum()
+end
+
+function lup_linsolve(d,B,∇f;check = true)
+    F = lu!(B,LUPivot,check = check)
+    ldiv!(d,F,∇f)
+end
+
+function lup_linsolve(B,∇f;check = true)
+    d,success = try_st_linsolve(d,B,∇f)
+    success && return d
+    F = lu!(B,LUPivot;check = check)
+    F\∇f
+end
+
 function static_linsolve(d,B,∇f)
     d,success = try_st_linsolve(d,B,∇f)
     success && return d
     lup_linsolve(d,B,∇f)
 end
+
 
 function static_linsolve(B,∇f)
     if length(∇f) <= 3
@@ -114,31 +133,75 @@ function static_linsolve(B,∇f)
     end
 end
 
-Base.summary(::NLSolvers.Newton{<:Direct, typeof(static_linsolve)}) = "Newton's method with optional static linsolve"
+#Base.summary(::NLSolvers.Newton{<:Direct, typeof(static_linsolve)}) = "Newton's method with optional static linsolve"
 
-
-const LUPivot = @static if VERSION < v"1.7beta"
-    Val(true)
-else
-    RowMaximum()
+struct Clapeyronlinsolve{M,V,LB,UB}
+    m::M
+    v::V
+    piv::Vector{Int}
+    lb::LB
+    ub::UB
+    check::Bool
 end
 
-function lup_linsolve(d,B,∇f)
+Base.summary(::NLSolvers.Newton{<:Direct, <:Clapeyronlinsolve}) = "Newton's method with modified linsolve"
+
+_to_matrix(::Nothing) = nothing,nothing,Int[]
+function _to_matrix(x::AbstractVector) 
+    l = length(x)
+    return similar(x,(l,l)),similar(x),Vector{Int}(undef,l)
+end
+
+function Newton(y = nothing; check_linsolve = true, lb = nothing, ub = nothing)
+    m, v, piv = _to_matrix(y)
+    linsolve = Clapeyronlinsolve(m,v,piv,lb,ub,check_linsolve)
+    return NLSolvers.Newton(linsolve=linsolve)
+end
+
+function (linsolve::Clapeyronlinsolve{Nothing})(d,B,∇f)
     d,success = try_st_linsolve(d,B,∇f)
     success && return d
-    F = lu!(B,LUPivot)
-    ldiv!(d,F,∇f)
-    d
+    lup_linsolve(d,B,∇f,linsolve.check)
+    return d
 end
 
-function lup_linsolve(B,∇f)
-    F = lu!(B,LUPivot)
-    F\∇f
+function (linsolve::Clapeyronlinsolve{T})(d,B,∇f) where T <: AbstractMatrix
+    d,success = try_st_linsolve(d,B,∇f)
+    success && return d
+    m = linsolve.m
+    m .= B
+    F = unsafe_LU!(m,linsolve.piv)
+    ∇f̄ = linsolve.v
+    ∇f̄ .= ∇f
+    ldiv!(F,∇f̄)
+    d .= ∇f̄
+    return d
 end
 
-Base.summary(::NLSolvers.Newton{<:Direct, typeof(lup_linsolve)}) = "Newton's method with pivoted LU linsolve"
-LUPNewton() = NLSolvers.Newton(linsolve=lup_linsolve)
 
+struct BoxManifold{LB,UB} <: NLSolvers.Manifold
+    lb::LB
+    ub::UB
+end
+
+const InfiniteBoxManifold = BoxManifold{Nothing,Nothing}
+
+function _retract(::NLSolvers.InPlace, manifold::InfiniteBoxManifold, z, x, p, α)
+    @. z = x + α * p
+    return z
+end
+function _retract(::NLSolvers.OutOfPlace, manifold::InfiniteBoxManifold, z, x, p, α)
+    z = @. x + α * p
+    return z
+end
+function _retract(::NLSolvers.InPlace, manifold::InfiniteBoxManifold, z, x, p)
+    @. z = x + p
+    return z
+end
+function _retract(::NLSolvers.OutOfPlace, manifold::InfiniteBoxManifold, z, x, p)
+    z = @. x + p
+    return z
+end
 
 """
     x_sol(res::NLSolvers.ConvergenceInfo)
@@ -223,7 +286,7 @@ function unsafe_LU!(F::LU)
     return unsafe_LU!(F.factors,F.ipiv)
 end
 
-export CholeskyNewton,LUPNewton,static_linsolve
+export CholeskyNewton,static_linsolve,Newton
 export RestrictedLineSearch
 
 #=

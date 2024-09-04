@@ -103,7 +103,7 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     v0 = vcat(log10(vl),log10(vv),y0[1:end-1])
     pmix = p_scale(model,x)
     f!(F,z) = Obj_bubble_pressure(model,model_y, F, T, exp10(z[1]),exp10(z[2]),x,z[3:end],pmix,volatiles)
-    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
+    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton(v0)),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
     v_v = exp10(sol[2])
@@ -226,7 +226,7 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     v0 = vcat(T0,log10(vl),log10(vv),y0[1:end-1])
     pmix = p_scale(model,x)
     f!(F,z) = Obj_bubble_temperature(model,model_y, F, p, z[1], exp10(z[2]), exp10(z[3]), x, z[4:end],pmix,volatiles)
-    r  = Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
+    r  = Solvers.nlsolve(f!,v0,LineSearch(Solvers.Newton(v0)),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
     T   = sol[1]
     v_l = exp10(sol[2])
