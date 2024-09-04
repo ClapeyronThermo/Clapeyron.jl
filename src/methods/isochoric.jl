@@ -74,9 +74,12 @@ function Ψ_hessian_res(model,T,ρᵢ)
 end
 
 function Ψ_hessian(model,T,ρᵢ)
-    Ψ(ρ) = Psi(model,T,ρ)
-    HΨ = ForwardDiff.hessian(Ψ,ρᵢ)
-    return HΨ
+    HΨr = Ψ_hessian_res(model,T,ρᵢ)
+    RT = Rgas(model)*T
+    for i in 1:length(ρᵢ)
+        HΨr[i,i] += RT/ρᵢ[i]
+    end
+    return HΨr
 end
 
 function Ψ_grad(model,T,ρᵢ)
