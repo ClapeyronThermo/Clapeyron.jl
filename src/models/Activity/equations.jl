@@ -23,12 +23,12 @@ function volume_impl(model::ActivityModel, p, T, z, phase, threaded, vol0)
 end
 #for use in models that have gibbs free energy defined.
 function activity_coefficient(model::ActivityModel,p,T,z)
-    X = gradient_type(p,T,z)
+    X = gradient_type(model,T+p,z)
     return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 
 function test_activity_coefficient(model::ActivityModel,p,T,z)
-    X = gradient_type(p,T,z)
+    X = gradient_type(model,T+p,z)
     return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 

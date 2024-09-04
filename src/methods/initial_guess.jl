@@ -460,12 +460,10 @@ function x0_sat_pure_crit(model,T,crit::Tuple)
 end
 
 function x0_sat_pure_crit(model,T,Tc,Pc,Vc)
-    h = Vc*5000
-    T0 = 369.89*T/Tc
-    Vl0 = (1.0/_propaneref_rholsat(T0))*h
-    Vv0 = (1.0/_propaneref_rhovsat(T0))*h
-    _1 = SA[1.0]
-    return Vl0,Vv0
+    p = critical_psat_extrapolation(model,T,Tc,Pc,Vc)
+    vl = volume(model,p,T,phase = :l)
+    vv = volume(model,p,T,phase = :v)
+    return vl,vv
 end
 
 function x0_sat_pure_crit(model,T)
@@ -713,3 +711,79 @@ function solve_2ph_taylor(model1::EoSModel,model2::EoSModel,T,v1,v2,p_scale = 1.
     a2,da2,d2a2 = Solvers.f∂f∂2f(f2,v2)
     return solve_2ph_taylor(v1,v2,a1,da1,d2a1,a2,da2,d2a2,p_scale,μ_scale)
 end
+
+"""
+    critical_vsat_extrapolation(model,T,Tc,Vc)
+    critical_vsat_extrapolation(model,T,crit = crit_pure(model))
+
+Given critical information and a temperature, extrapolate the liquid and vapor saturation volumes.
+"""
+function critical_vsat_extrapolation(model,T,Tc,Vc)
+    if T > Tc
+        _0 = zero(Base.promote_eltype(model,T))
+        nan = _0/_0
+        return nan,nan
+    end
+    ρc = 1/Vc
+    dp(ρ,T) = Solvers.derivative(dρ -> pressure(model, 1/dρ, T), ρ)
+    _,d2p,d3p = Solvers.∂J2(dp,ρc,Tc)
+    ∂²p∂ρ∂T = d2p[2]
+    ∂³p∂ρ³ = d3p[1,1]
+    Bp = sqrt(6 * Tc * ∂²p∂ρ∂T / ∂³p∂ρ³)
+    ΔT = (Tc - T)/T
+    Δρ = Bp*sqrt(ΔT)
+    ρl = ρc + Δρ
+    ρv = ρc - Δρ
+    return 1/ρl,1/ρv
+end
+
+critical_vsat_extrapolation(model,T) = critical_vsat_extrapolation(model,T,crit_pure(model))
+critical_vsat_extrapolation(model,T,crit) = critical_vsat_extrapolation(model,T,crit[1],crit[3])
+
+"""
+    critical_psat_extrapolation(model,T,Tc,Pc,Vc)
+    critical_psat_extrapolation(model,T,Tc,Vc)
+    critical_psat_extrapolation(model,T,crit = crit_pure(model))
+
+Given critical information and a temperature, extrapolate the saturation pressure.
+"""
+function critical_psat_extrapolation(model,T,Tc,Pc,Vc)
+    if T > Tc
+        _0 = zero(Base.promote_eltype(model,T))
+        return _0/_0
+    end
+    _p(_T) = pressure(model,Vc,_T)
+    dpdT = Solvers.derivative(_p,Tc)
+    dTinvdlnp = -Pc/(dpdT*Tc*Tc)
+    Δlnp = (1/T - 1/Tc)/dTinvdlnp
+    p = exp(Δlnp)*Pc
+end
+
+critical_psat_extrapolation(model,T) = critical_psat_extrapolation(model,T,crit_pure(model))
+critical_psat_extrapolation(model,T,crit) = critical_psat_extrapolation(model,T,crit[1],crit[2],crit[3])
+critical_psat_extrapolation(model,T,Tc,Vc) = critical_psat_extrapolation(model,T,Tc,pressure(model,Vc,Tc),Vc)
+
+
+"""
+    critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
+    critical_tsat_extrapolation(model,p,Tc,Vc)
+    critical_tsat_extrapolation(model,p,crit = crit_pure(model))
+
+Given critical information and a pressure, extrapolate the saturation temperature.
+"""
+function critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
+    if p > Pc
+        _0 = zero(Base.promote_eltype(model,p))
+        return _0/_0
+    end
+    _p(_T) = pressure(pure,Vc,_T)
+    dpdT = Solvers.derivative(_p,Tc)
+    dTinvdlnp = -Pc/(dpdT*Tc*Tc)
+    Δlnp = log(p/Pc)
+    Tinv = 1/Tc + dTinvdlnp*Δlnp
+    T = 1/Tinv
+end
+
+critical_tsat_extrapolation(model,T) = critical_tsat_extrapolation(model,p,crit_pure(model))
+critical_tsat_extrapolation(model,T,crit) = critical_tsat_extrapolation(model,p,crit[1],crit[2],crit[3])
+critical_tsat_extrapolation(model,T,Tc,Vc) = critical_tsat_extrapolation(model,p,Tc,pressure(model,Vc,Tc),Vc)

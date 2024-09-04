@@ -43,6 +43,19 @@ function C.x0_sat_pure(model::SuperancPCSAFT,T)
     θ,status = ES.pcsaft_theta(T̃,m)
     if status == :over_Tmax
         return θ,θ
+    elseif status == :below_Tmin
+        #WARNING: this is really wrong in Float64 arithmetic, but helps in extended precision
+        T0 = ES.pcsaft_tc(m,ϵ)*exp(-2.20078778)*m^0.37627892
+        ρ̃l,ρ̃v = ES.pcsaft_rhosat_reduced(zero(T),m)
+        N_Aσ3 = C.N_A*σ*σ*σ
+        vli,vvi = N_Aσ3/ρ̃l,N_Aσ3/ρ̃v
+        pii = C.pressure(model,vvi,T0)
+        dpdT = (C.VT_entropy(model,vvi,T0) - C.VT_entropy(model,vli,T0))/(vvi - vli)
+        dTinvdlnp = -pii/(dpdT*T*T)
+        Δlnp = (1/T - 1/T0)/dTinvdlnp
+        p = exp(Δlnp)*pii
+        return vli, C.Rgas(model)*T/p
+
     elseif status != :inrange
         return x0_sat_pure_default(model,T)
     else
@@ -79,6 +92,17 @@ function C.crit_pure(model::SuperancPCSAFT)
         return Tc,pc,vc
     else
         return C.crit_pure(model,x0_crit_pure_default(model))
+    end
+end
+
+function C.x0_psat(model::SuperancPCSAFT,T)
+    can_superanc(model) || return C.x0_psat(model, T, nothing)
+    m,ϵ,σ = get_pcsaft_consts(model)
+    if 1.0 <= m <= 64.0
+        vl = ES.pcsaft_vlsat(T,m,ϵ,σ)
+        return C.pressure(model,vl,T)
+    else
+        return C.x0_psat(model, T, nothing)
     end
 end
 
