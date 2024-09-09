@@ -8,6 +8,7 @@ struct AlyLeeIdealParam <: EoSParam
     G::SingleParam{Float64}
     H::SingleParam{Float64}
     I::SingleParam{Float64}
+    reference_state::ReferenceState
 end
 
 abstract type AlyLeeIdealModel <: IdealModel end
