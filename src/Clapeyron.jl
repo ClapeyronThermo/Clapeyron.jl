@@ -205,6 +205,7 @@ include("models/Activity/UNIFAC/variants/PSRK.jl")
 include("models/Activity/UNIFAC/variants/VTPR.jl")
 include("models/Activity/equations.jl")
 # include("models/Activity/NRTL/eCPANRTL.jl")
+include("models/Activity/HANNA/HANNA.jl")
 
 include("models/Activity/COSMOSAC/utils.jl")
 include("models/Activity/COSMOSAC/COSMOSAC02.jl")
