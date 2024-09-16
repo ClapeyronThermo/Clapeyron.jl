@@ -27,9 +27,8 @@ function EoSPhase(model::EoSModel,V,T,z;phase = :unknown,phase_type = :defined)
     return EoSPhase(v,t,a,p,s,∑x,x,phase,phase_type)
 end
 
-EosPhase() = EoSPhase(nothing,nothing,nothing,nothing,nothing,nothing,nothing,:unknown,:unknown)
+EoSPhase() = EoSPhase{Nothing,Nothing}(nothing,nothing,nothing,nothing,nothing,nothing,nothing,:unknown,:ignore)
 
-temperature(phase::EoSPhase) = phase.T
 
 function _amount_modifier(phase,val)
     if phase.phase_type == :defined
@@ -40,6 +39,7 @@ function _amount_modifier(phase,val)
 end
 
 #accessors
+temperature(phase::EoSPhase) = phase.t
 pressure(phase::EoSPhase) = phase.p
 entropy(phase::EoSPhase) = _amount_modifier(phase,phase.s)
 volume(phase::EoSPhase) = _amount_modifier(phase,phase.v)
@@ -51,35 +51,70 @@ function enthalpy(phase::EoSPhase)
 end
 
 function gibbs_free_energy(phase::EoSPhase)
-    a,v,t,s,p = phase.a,phase.v,phase.p
+    a,v,p = phase.a,phase.v,phase.p
     return _amount_modifier(phase,a + p*v)
 end
 
 function internal_energy(phase::EoSPhase)
-    a,v,t,s,p = phase.a,phase.v,phase.t,phase.s,phase.p
+    a,t,s = phase.a,phase.t,phase.s
     return _amount_modifier(phase,a + t*s)
 end
 
 function Base.show(io::IO, phase::EoSPhase)
     t,p,x = phase.t,phase.p,phase.x
     _phase = phase.phase
-    print(io,"EoSPhase(p = $p, t = $t, x = $x, phase = $_phase)")
+    if phase.phase_type != :ignore
+        print(io,"EoSPhase(p = $p, t = $t, x = $x, phase = $_phase)")
+    else
+        print(io,"EoSPhase()")
+    end
 end
 
 function Base.show(io::IO, ::MIME"text/plain", phase::EoSPhase)
     t,p,x = phase.t,phase.p,phase.x
     _phase = phase.phase
-    println(io(typeof(phase)),"with properties:")
-    
-    print(io,"EoSPhase(p = $p, t = $t, x = $x, phase = $_phase)")
+    print(io,(typeof(phase)))
+    if phase.phase_type == :ignore
+        print(io,"()")
+        return nothing
+    end
+    println(io," with properties:")
+    separator = " => "
+    keys = (:p,:t,:x,:phase)
+    vals = getfield.(Ref(phase),keys)
+    #vals = [ifelse(m,missing,v) for (m,v) in zip(param.ismissingvalues, param.values)]
+    show_pairs(io,keys,vals,separator,quote_string = false)
+    #print(io,"EoSPhase(p = $p, t = $t, x = $x, phase = $_phase)")
 end
 
-function EoSPhases{𝕋b,𝕍b,𝕋,𝕍}
+struct EoSPhases{𝕋b,𝕍b,𝕋,𝕍,𝕍𝕍 <: AbstractVector{EoSPhase{𝕋,𝕍}}}
     bulk::EoSPhase{𝕋b,𝕍b} #bulk phase, if specified
-    phases::Vector{EoSPhase{𝕋,𝕍}} #vector of phases
+    phases::𝕍𝕍 #vector of phases
 end
 
-function EoSPhases(phases::Vector{EoSPhase{𝕋,𝕍}})
+Base.getindex(phases::EoSPhases,i) = phases.phases[i]
+Base.length(phases::EoSPhases) = length(phases.phases)
+Base.size(phases::EoSPhases) = size(phases.phases)
+
+function EoSPhases(phases::VV) where VV <: AbstractVector{T} where T <: EoSPhase
     return EoSPhases(EoSPhase(),phases)
 end
 
+function Base.showarg(io::IO, arr::EoSPhases, toplevel)
+    print(io,"EoSPhases(")
+    Base.showarg(io, arr.phases, false)
+    print(io, ')')
+    toplevel && print(io, " with $(length(arr)) phases:")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", phases::EoSPhases)
+    Base.showarg(io::IO, phases, true)
+    println(io)
+    Base.print_matrix(IOContext(io, :compact => true),phases.phases)
+end
+
+export EoSPhase, EoSPhases
+#=
+
+z^(x/y) = z^(x)^(1/y) 
+=#

@@ -14,6 +14,11 @@ function pressure(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂V(model,V,T,z)
 end
 
+function pressure_res(model::EoSModel, V, T, z=SA[1.])
+    fun(x) = eos_res(model,x,T,z)
+    return -Solvers.derivative(fun,V)
+end
+
 function VT_entropy(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂T(model,V,T,z)
 end
@@ -316,6 +321,7 @@ end
 VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos)
 VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos_res)
 VT_chemical_potential_res!(r,model::EoSModel, V, T, z=SA[1.]) = VT_partial_property!(r,model,V,T,z,eos_res)
+VT_chemical_potential!(result,model,V,T,z) = VT_partial_property!(result,model,V,T,z,eos)
 
 function VT_fugacity_coefficient(model::EoSModel,V,T,z=SA[1.])
     return _VT_fugacity_coefficient(model,V,T,z)
