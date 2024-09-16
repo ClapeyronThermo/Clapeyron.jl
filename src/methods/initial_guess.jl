@@ -111,7 +111,7 @@ p_scale(model) = p_scale(model,SA[1.0])
 
 function p_scale(model,z)
     Ts = T_scale(model,z)
-    Rgas(model)*Ts/lb_volume(model,Ts,z)
+    sum(z)*Rgas(model)*Ts/lb_volume(model,Ts,z)
 end
 """
     antoine_coef(model)

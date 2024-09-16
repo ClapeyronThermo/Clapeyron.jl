@@ -158,7 +158,7 @@ function T_scale(model::BerthelotModel,z = SA[1.0])
     return sum(sqrt(Tc[i]*Tc[j])*z[i]*z[j] for i in comps for j in comps)/(sum(z)^2)
 end
 
-function p_scale(model::BerthelotModel,z = SA[1.0])
+function p_scale(model::BerthelotModel,z)
     dot(model.params.Pc.values,z)/sum(z)
 end
 
