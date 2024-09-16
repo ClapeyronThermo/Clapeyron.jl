@@ -63,7 +63,7 @@ function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPre
     end
     fluid = fluid_model(model)
     solid = solid_model(model)
-    ps,μs = scale_sat_pure(fluid)
+    ps,μs = equilibria_scale(fluid)
     result,converged = try_2ph_pure_pressure(solid,fluid,T,vs0,vl0,ps,μs,method)
     if converged
         return result
@@ -84,7 +84,7 @@ function x0_melting_pressure(model::CompositeModel,T)
     quadratic taylor expansion for helmholtz energy
     isothermal compressibility aproximation for pressure
    =#
-    ps,μs = scale_sat_pure(liquid)
+    ps,μs = equilibria_scale(liquid)
     return solve_2ph_taylor(solid,liquid,T,vs00,vl00,ps,μs)
 end
 

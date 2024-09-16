@@ -173,9 +173,7 @@ function __dlnPdTinvsat(pure,sat,crit,xx,in_media = true,is_sat_temperature = tr
         nan_check = isnan(p)
     end
     if in_media && !nan_check
-        Sl = VT_entropy(pure,vl,T)
-        Sv = VT_entropy(pure,vv,T)
-        dpdT = (Sv - Sl)/(vv - vl)
+        dpdT = dpdT_pure(pure,vl,vv,T)
         return -dpdT*T*T/p,log(p),1/T
     elseif !in_media
         return zero(vl),zero(vl),zero(vl)

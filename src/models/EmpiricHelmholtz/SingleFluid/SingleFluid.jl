@@ -275,7 +275,8 @@ function x0_sat_pure(model::SingleFluid,T)
         vvtp = volume(gas_ancillary,0.0,Ttp,z)
         vltp = volume(liquid_ancillary,0.0,Ttp,z)
         ptp = pressure(model,vvtp,Ttp)
-        dpdT = (VT_entropy(model,vvtp,Ttp) - VT_entropy(model,vltp,Ttp))/(vvtp - vltp)
+        R = Rgas(model)
+        dpdT = dpdT_pure(model,vvtp,vltp,Ttp)
         dTinvdlnp = -ptp/(dpdT*T*T)
         ΔTinv = 1/T - 1/Ttp
         psat = exp(ΔTinv/dTinvdlnp)*ptp

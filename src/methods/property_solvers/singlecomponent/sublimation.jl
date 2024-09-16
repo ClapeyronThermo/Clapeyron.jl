@@ -65,7 +65,7 @@ function sublimation_pressure_impl(model::CompositeModel,T,method::ChemPotSublim
     end
     fluid = fluid_model(model)
     solid = solid_model(model)
-    ps,μs = scale_sat_pure(fluid)
+    ps,μs = equilibria_scale(fluid)
     result,converged = try_2ph_pure_pressure(solid,fluid,T,vs0,vv0,ps,μs,method)
     if converged
         return result

@@ -50,7 +50,7 @@ function C.x0_sat_pure(model::SuperancPCSAFT,T)
         N_Aσ3 = C.N_A*σ*σ*σ
         vli,vvi = N_Aσ3/ρ̃l,N_Aσ3/ρ̃v
         pii = C.pressure(model,vvi,T0)
-        dpdT = (C.VT_entropy(model,vvi,T0) - C.VT_entropy(model,vli,T0))/(vvi - vli)
+        dpdT = C.dpdT_pure(model,vvi,vli,T0)
         dTinvdlnp = -pii/(dpdT*T*T)
         Δlnp = (1/T - 1/T0)/dTinvdlnp
         p = exp(Δlnp)*pii
