@@ -10,7 +10,7 @@ Inputs:
 - `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
-- `max_iters = 10000`: optional, maximum number of iterations
+- `max_iters = 1000`: optional, maximum number of iterations
 - `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
 """
 struct ChemPotDewPressure{T} <: DewPointMethod
@@ -32,7 +32,7 @@ function ChemPotDewPressure(;vol0 = nothing,
                                 f_limit = 0.0,
                                 atol = 1e-8,
                                 rtol = 1e-12,
-                                max_iters = 10^4,
+                                max_iters = 10^3,
                                 ss = false)
 
     if p0 == x0 == vol0 == nothing
@@ -97,24 +97,30 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
         else
             x0 = x
             vl,vv = vol
+            T0 = T
         end
     end
-
-    v0 = vcat(log10(vl),log10(vv),x0[1:end-1])
-    pmix = p_scale(model,y)
-    f!(F,z) = Obj_dew_pressure(model,model_x, F, T, exp10(z[1]), exp10(z[2]), z[3:end],y,pmix,condensables)
-    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton(v0)),NLSolvers.NEqOptions(method))
+    ηl0 = η_from_v(model,model_x,vl,T,x0)
+    ηv0 = η_from_v(model,vv,T,y)
+    v0 = vcat(ηl0,ηv0,x0[1:end-1])
+    f!(F,z) = Obj_dew_pressure(model,model_x, F, T, z[1], z[2], z[3:end], y, condensables)
+    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
-    v_l = exp10(sol[1])
-    v_v = exp10(sol[2])
     x_r = FractionVector(sol[3:end])
+    v_l = v_from_η(model,model_x,sol[1],T,x_r)
+    v_v = v_from_η(model,sol[2],T,y)
     P_sat = pressure(model,v_v,T,y)
-    x = index_expansion(collect(x_r),condensables)
+    x = index_expansion(x_r,condensables)
     return (P_sat, v_l, v_v, x)
 end
 
-function Obj_dew_pressure(model::EoSModel,model_x, F, T, v_l, v_v, x, y,ps,_view)
-    return μp_equality(model,model_x, F, T, v_v, v_l, y,FractionVector(x),ps,_view)
+function Obj_dew_pressure(model::EoSModel,model_x, F, T, ηl, ηv, x, y, _view)
+    xx = FractionVector(x)
+    vl = v_from_η(model,model_x,ηl,T,xx)
+    vv = v_from_η(model,ηv,T,y)
+    v = (vv,vl)
+    w = (y,xx)
+    return μp_equality2(model,model_x, F, Tspec(T), v, w, _view)
 end
 
 """
@@ -129,7 +135,7 @@ Inputs:
 - `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
-- `max_iters = 10000`: optional, maximum number of iterations
+- `max_iters = 1000`: optional, maximum number of iterations
 - `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
 """
 struct ChemPotDewTemperature{T} <: DewPointMethod
@@ -151,7 +157,7 @@ function ChemPotDewTemperature(;vol0 = nothing,
     f_limit = 0.0,
     atol = 1e-8,
     rtol = 1e-12,
-    max_iters = 10^4,
+    max_iters = 10^3,
     ss = false)
 
     if T0 == x0 == vol0 == nothing
@@ -214,24 +220,28 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
             vl,vv = vol
         end
     end
-
-    v0 = vcat(T0,log10(vl),log10(vv),x0[1:end-1])
-    pmix = p_scale(model,y)
-    f!(F,z) = Obj_dew_temperature(model,model_x, F, p, z[1], exp10(z[2]), exp10(z[3]), z[4:end],y, pmix, condensables)
-    r  =Solvers.nlsolve(f!,v0,LineSearch(Solvers.Newton(v0)),NLSolvers.NEqOptions(method))
+    ηl = η_from_v(model,model_x,vl,T0,x0)
+    ηv = η_from_v(model,vv,T0,y)
+    v0 = vcat(T0,ηl,ηv,x0[1:end-1])
+    f!(F,z) = Obj_dew_temperature(model,model_x, F, p, z[1], z[2], z[3], z[4:end], y, condensables)
+    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
     T   = sol[1]
-    v_l = exp10(sol[2])
-    v_v = exp10(sol[3])
+    x_r = FractionVector(sol[4:end])
+    v_l = v_from_η(model,model_x,sol[2],T,x_r)
+    v_v = v_from_η(model,sol[3],T,y)
     x_r = FractionVector(sol[4:end])
     x = index_expansion(x_r,condensables)
     return T, v_l, v_v, x
 end
 
-function Obj_dew_temperature(model::EoSModel,model_x, F, p, T, v_l, v_v, x, y, ps, _view)
-    Ts = T_scale(model,y)
-    F = μp_equality(model, model_x, F, T, v_v, v_l, y, FractionVector(x), ps, _view, Ts)
-    F[end] = (pressure(model,v_v,T,y) - p)/ps
+function Obj_dew_temperature(model::EoSModel,model_x, F, p, T, ηl, ηv, x, y, _view)
+    vv = v_from_η(model,ηv,T,y)
+    xx = FractionVector(x)
+    w = (y,xx)
+    vl = v_from_η(model,model_x,ηl,T,xx)
+    v = (vv,vl)
+    F = μp_equality2(model, model_x, F, Pspec(p,T), v, w, _view)
     return F
 end
 
