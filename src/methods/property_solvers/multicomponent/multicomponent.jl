@@ -139,7 +139,7 @@ end
 #non-condensable/non-volatile version
 function μp_equality2(models::NTuple{2,M}, F, PT::TPspec, v, w, short_view) where M <: EoSModel
     p,T = PT.p,PT.T
-    model_long, model_short = model
+    model_long, model_short = models
     v_long, v_short = v
     x_long, x_short = w
     n_short = length(x_short)
@@ -175,6 +175,10 @@ function μp_equality2(model::EoSModel,::Nothing, F, T, v, w, _view)
     return μp_equality(model,F,T,v,w)
 end
 
+function μp_equality2(model::EoSModel,model2::EoSModel, F, T, v, w, _view)
+    return μp_equality2((model,model2),F,T,v,w,_view)
+end
+
 function wilson_k_values(model::EoSModel,p,T,crit = nothing)
     K = zeros(typeof(p+T+one(eltype(model))),length(model))
     return wilson_k_values!(K,model,p,T,crit)
@@ -200,8 +204,8 @@ function bubbledew_check(vl,vv,zin,zout)
     (isapprox(vl,vv) && isapprox(zin,zout)) && return false
     !all(isfinite,zout) && return false
     !isfinite(vv) && return false
-    !all(>(0),zin) && return false
-    !all(>(0),zout) && return false
+    !all(>=(0),zin) && return false
+    !all(>=(0),zout) && return false
     return true
 end
 

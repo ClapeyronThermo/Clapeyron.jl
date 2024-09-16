@@ -30,9 +30,9 @@ end
 
 function Obj_UCEP_mix(model::EoSModel,F,x,y,V_l,V_v,T)
     x̄ = FractionVector(x)
-    Vi = (V_l,V_v)
+    v = (V_l,V_v)
     w = (x̄,FractionVector(y))
-    F = μp_equality(model,F,T,Vi,x̄,w) #equality of chemical potentials and pressures
+    F = μp_equality(model,F,Tspec(T),v,w) #equality of chemical potentials and pressures
     L,detM = mixture_critical_constraint(model,V_l,T,x̄)
     F[end-1] = L
     F[end] = detM
