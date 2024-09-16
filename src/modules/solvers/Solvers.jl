@@ -152,7 +152,7 @@ function _to_matrix(x::AbstractVector)
     return similar(x,(l,l)),similar(x),Vector{Int}(undef,l)
 end
 
-function Newton(y = nothing; check_linsolve = true, lb = nothing, ub = nothing)
+function Newton2(y = nothing; check_linsolve = true, lb = nothing, ub = nothing)
     m, v, piv = _to_matrix(y)
     linsolve = Clapeyronlinsolve(m,v,piv,lb,ub,check_linsolve)
     return NLSolvers.Newton(linsolve=linsolve)
@@ -286,7 +286,7 @@ function unsafe_LU!(F::LU)
     return unsafe_LU!(F.factors,F.ipiv)
 end
 
-export CholeskyNewton,static_linsolve,Newton
+export CholeskyNewton,static_linsolve,Newton2
 export RestrictedLineSearch
 
 #=
