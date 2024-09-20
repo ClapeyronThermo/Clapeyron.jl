@@ -176,17 +176,12 @@ function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMelting
 end
 
 function x0_melting_temperature(model::CompositeModel,p)
-    trp = triple_point(model)
-
-    pt = trp[2]
-    vs0 = trp[3]
-    vl0 = trp[4]
-    Δv = vl0-vs0
-    Tt = trp[1]
-    hs0 = VT_enthalpy(model.solid,vs0,Tt)
-    hl0 = VT_enthalpy(model.fluid,vl0,Tt)
-    Δh = hl0-hs0
-    T0 = Tt*exp(Δv*(p-pt)/Δh)
-
+    Tt,pt,vs0,vl0,_ = triple_point(model)
+    solid,fluid = solid_model(model),fluid_model(model)
+    K0 = -dpdT_pure(solid,fluid,vs0,vl0,Tt)*Tt*Tt/pt  
+    #Clausius Clapeyron
+    #log(P/Ptriple) = K0 * (1/T - 1/Ttriple)
+    Tinv = log(p/pt)/K0 + 1/Tt
+    T0 =  1/Tinv
     return T0,vs0,vl0
 end

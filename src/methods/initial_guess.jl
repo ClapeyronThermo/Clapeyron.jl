@@ -801,8 +801,19 @@ critical_tsat_extrapolation(model,T,crit) = critical_tsat_extrapolation(model,p,
 critical_tsat_extrapolation(model,T,Tc,Vc) = critical_tsat_extrapolation(model,p,Tc,pressure(model,Vc,Tc),Vc)
 
 function dpdT_pure(model,v1,v2,T)
+    #log(p/p0) = [-dpdT*T*T/p](p = p0,T = T0) * (1/T - 1/T0)
+
     dS_res = VT_entropy_res(model,v1,T) - VT_entropy_res(model,v2,T)
     dS_ideal = Rgas(model)*(log(v1/v2))
+    dS = dS_res + dS_ideal
+    dv = (v1 - v2)
+    return dS/dv
+end
+
+function dpdT_pure(model1::EoSModel,model2::EoSModel,v1,v2,T)
+    #log(p/p0) = [-dpdT*T*T/p](p = p0,T = T0) * (1/T - 1/T0)
+    dS_res = VT_entropy_res(model1,v1,T) - VT_entropy_res(model2,v2,T)
+    dS_ideal = Rgas(model1)*(log(v1/v2))
     dS = dS_res + dS_ideal
     dv = (v1 - v2)
     return dS/dv
