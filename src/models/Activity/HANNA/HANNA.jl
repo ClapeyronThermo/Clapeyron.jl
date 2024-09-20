@@ -1,11 +1,13 @@
 include("HANNA_utils.jl")
 
 struct HANNAParam <: EoSParam
+    smiles::SingleParam{String}
     emb_scaled::Vector{Vector{Float64}}
     T_scaler::Function
     theta::Dense
     alpha::Chain
     phi::Chain
+    Mw::SingleParam{Float64}
 end
 
 abstract type HANNAModel <: ActivityModel end
@@ -22,7 +24,7 @@ export HANNA
 """
     HANNA <: ActivityModel
     HANNA(components;
-    puremodel = BasicIdeal(),
+    puremodel = nothing,
     userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
@@ -56,7 +58,7 @@ HANNA
 default_locations(::Type{HANNA}) = ["properties/identifiers.csv", "properties/molarmass.csv"]
 
 function HANNA(components;
-        puremodel = BasicIdeal(),
+        puremodel = nothing,
         userlocations = String[],
         pure_userlocations = String[],
         verbose = false)
@@ -108,17 +110,20 @@ function HANNA(components;
     phi[1].bias .+= b1_ϕ
     phi[2].bias .+= b2_ϕ
     
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    if isnothing(puremodel)
+        _puremodel = init_puremodel(BasicIdeal(),components,pure_userlocations,false)
+    else
+        _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    end
 
-    params = HANNAParam(emb_scaled,T_scaler,theta,alpha,phi)
+    params = HANNAParam(params["smiles"],emb_scaled,T_scaler,theta,alpha,phi,params["Mw"])
     references = String["10.48550/arXiv.2407.18011"]
     
     return HANNA(components,params,_puremodel,references)
 end
 
-function excess_gibbs_free_energy(model::HANNAModel,p,T,x)
-    # x = z./sum(z)
-    x ./ sum(x)
+function excess_gibbs_free_energy(model::HANNAModel,p,T,z)
+    x = z ./ sum(z)
 
     # Scale input (T and embs)
     T_s = model.params.T_scaler(T)
@@ -137,14 +142,5 @@ function excess_gibbs_free_energy(model::HANNAModel,p,T,x)
     gE_NN = model.params.phi(c_mix)[1]
 
     # Apply cosine similarity adjustment
-    return gE_NN * prod(x) * cosine_dist * Rgas(model) * T
-end
-
-
-function activity_coefficient(model::HANNAModel,p,T,z)
-    gE = excess_gibbs_free_energy(model,p,T,z) / Rgas(model) / T
-    dgEdx1 = ForwardDiff.derivative(x -> excess_gibbs_free_energy(model,p,T,[x, 1-x]) / Rgas(model) / T, z[1])
-    lnγ1x = gE .+ z[2].*dgEdx1
-    lnγ2x = gE .- z[1].*dgEdx1
-    return exp.([lnγ1x, lnγ2x])
+    return gE_NN * prod(x) * cosine_dist * Rgas(model) * T * sum(z)
 end
