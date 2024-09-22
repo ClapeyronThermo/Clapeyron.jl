@@ -2,7 +2,7 @@ using Test
 using Clapeyron, ClapeyronHANNA
 
 @testset "HANNA" begin
-    model = HANNA(["isobutanol","water"];userlocations=(Mw = [74.1216, 18.01528], smiles = ["CC(C)CO", "O"]))
+    model = HANNA(["isobutanol","water"];userlocations=(Mw = [74.1216, 18.01528], SMILES = ["CC(C)CO", "O"]))
 
     T = 300.
     x1 = 0.5
