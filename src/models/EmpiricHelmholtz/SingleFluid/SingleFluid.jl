@@ -218,7 +218,7 @@ function eos_impl(model::SingleFluid, V, T, z)
     logδ = log(δ)
     ref_a = model.ideal.ref_a
     a0,a1 = ref_a[1],ref_a[2] #reference state evaluation
-    return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ)) + N*(a0 + a1*T)
+    return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ,logδ)) + N*(a0 + a1*T)
 end
 
 function eos_res(model::SingleFluid,V,T,z=SA[1.0])
@@ -267,9 +267,9 @@ function x0_sat_pure(model::SingleFluid,T)
         _0 = zero(Base.promote_eltype(model,T))
         _nan = _0/_0
         return _nan,_nan
-    elseif T >= Ttp 
+    elseif T >= Ttp
         vv = volume(gas_ancillary,0.0,T,z)
-        vl = volume(liquid_ancillary,0.0,Ttp,z)
+        vl = volume(liquid_ancillary,0.0,T,z)
         return vl,vv
     else #we know that T < Ttp
         vvtp = volume(gas_ancillary,0.0,Ttp,z)
