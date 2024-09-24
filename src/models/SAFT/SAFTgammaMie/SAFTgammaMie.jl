@@ -16,7 +16,7 @@ end
 
 struct SAFTgammaMie{I} <: SAFTgammaMieModel
     components::Vector{String}
-    groups::GroupParameter
+    groups::GroupParam
     sites::SiteParam
     params::SAFTgammaMieParam
     idealmodel::I
