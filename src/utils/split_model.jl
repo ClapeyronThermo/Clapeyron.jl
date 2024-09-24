@@ -290,7 +290,7 @@ end
 
 function group_splitter(group::GroupParam,splitter)
     n = length(splitter)
-    group_split = Vector{T}(undef,n)
+    group_split = Vector{GroupParam}(undef,n)
     idx_split = Vector{Vector{Bool}}(undef,n)
     flattenedgroups = group.flattenedgroups
     gc_splitter = Vector{Vector{Int}}(undef,n)
