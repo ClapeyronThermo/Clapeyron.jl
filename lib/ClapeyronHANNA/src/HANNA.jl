@@ -29,7 +29,7 @@ export HANNA
     verbose = false)
 
 ## Input parameters
-- `smiles`: SMILES representation of the components
+- `canonicalsmiles`: canonical SMILES representation of the components
 - `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
 
 ## Input models
@@ -71,7 +71,7 @@ function HANNA(components;
     chembert_model, chembert_tokenizer = load_chembert()
     embs = [Vector{Float64}(undef,N_emb_chembert) for _ in eachindex(components)]
     for i in eachindex(components)
-        embs[i] = chembert_model(encode(chembert_tokenizer, params["SMILES"][i])).hidden_state[:,1,1]
+        embs[i] = chembert_model(encode(chembert_tokenizer, params["canonicalsmiles"][i])).hidden_state[:,1,1]
     end
 
     # Load scalers and scale embeddings
@@ -114,7 +114,7 @@ function HANNA(components;
         _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     end
 
-    params = HANNAParam(params["SMILES"],emb_scaled,T_scaler,theta,alpha,phi,params["Mw"])
+    params = HANNAParam(params["canonicalsmiles"],emb_scaled,T_scaler,theta,alpha,phi,params["Mw"])
     references = String["10.48550/arXiv.2407.18011"]
     
     return HANNA(components,params,_puremodel,references)
