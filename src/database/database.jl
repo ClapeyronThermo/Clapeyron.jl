@@ -418,7 +418,6 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
     normalised_columnreference = normalisestring(columnreference)
 
     idx_species = 0
-    idx_groups = 0
     idx_species1 = 0
     idx_species2 = 0
     idx_sites1 = 0
@@ -428,15 +427,19 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
         lookupcolumnindex = findfirst(isequal(normalised_columnreference), headernames)
         isnothing(lookupcolumnindex) && _col_indices_error(normalised_columnreference)
         idx_species = lookupcolumnindex
+        #=
         if csvtype == groupdata
             groupcolumnreference = options.group_columnreference
             normalised_groupcolumnreference = normalisestring(groupcolumnreference)
-            lookupgroupcolumnindex = findfirst(isequal(normalised_groupcolumnreference), headernames)
-            isnothing(lookupgroupcolumnindex) && _col_indices_error(normalised_groupcolumnreference)
+            lookup_group_columnindex = findfirst(isequal(normalised_groupcolumnreference), headernames)
+            lookup_intragroup_columnindex = findfirst(isequal("intragroups"), headernames)
+            if isnothing(lookup_group_columnindex)
+                _col_indices_error(normalised_groupcolumnreference)
+            end
             idx_groups = lookupgroupcolumnindex
         else
             idx_groups = 0
-        end
+        end =#
 
     elseif csvtype === pairdata || csvtype == assocdata
         normalised_columnreference1 = normalised_columnreference * '1'
@@ -461,12 +464,11 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
         end
     end
 
-    _single = (idx_species,idx_groups)
+    _single = idx_species
     _pair = (idx_species1,idx_species2)
     _assoc = (idx_sites1,idx_sites2)
     return (_single,_pair,_assoc)
 end
-
 
 function read_csv(filepath,options::ParamOptions,sep = :auto)::CSV.File
     #actual reading
@@ -545,7 +547,7 @@ function findparamsincsv(components,filepath,
     end
 
     single_idx,pair_idx,assoc_idx = col_indices(csvtype,normalised_csvheaders,options)
-    lookupcolumnindex,groupindex = single_idx
+    lookupcolumnindex = single_idx
     lookupcolumnindex1,lookupcolumnindex2 = pair_idx
     lookupsitecolumnindex1,lookupsitecolumnindex2 = assoc_idx
     headerparams_indices = zeros(Int,length(normalised_headerparams))
