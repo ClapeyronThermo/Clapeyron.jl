@@ -179,7 +179,7 @@ function __GroupParam(components,found_gcpairs,found_intragcpairs,grouplocations
         else
             #if the value is missing, try looking up if its connectivity is trivial
             trivial_intragroup = build_trivial_intragroup(group1,i,to_lookup_intragroups[i])
-            if !isnothing(trivial_intragroup) && value_set
+            if !isnothing(trivial_intragroup)
                 structgc_components_parsed[i] = trivial_intragroup
                 to_lookup_intragroups[i] = false
             end
