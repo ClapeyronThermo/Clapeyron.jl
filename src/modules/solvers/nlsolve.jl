@@ -151,5 +151,3 @@ function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions(
     end
     return x
 end
-
-include("inm.jl")
