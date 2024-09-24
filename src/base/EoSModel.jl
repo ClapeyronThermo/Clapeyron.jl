@@ -155,7 +155,7 @@ has_groups(::Type{T}) where T <: EoSModel = _has_groups(T)
 @pure function _has_groups(::Type{T}) where T <: EoSModel
     s1 = hasfield(T,:groups)
     if s1
-       return fieldtype(T,:groups) <: GroupParameter
+       return fieldtype(T,:groups) == GroupParam
     end
     return false
 end

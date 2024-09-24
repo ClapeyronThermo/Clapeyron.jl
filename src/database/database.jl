@@ -1,4 +1,4 @@
-@enum CSVType invaliddata namedtupledata singledata pairdata assocdata groupdata structgroupdata
+@enum CSVType invaliddata namedtupledata singledata pairdata assocdata groupdata
 const NO_KIJ = """@REPLACE Clapeyron Database File
 no Parameters [csvtype = unlike]
 species1,species2,k
@@ -346,10 +346,6 @@ function createparams(components::Vector{String},
             continue
         end
 
-        if csvtype == structgroupdata && parsegroups != :intragroup
-            continue
-        end
-
         if csvtype == invaliddata
             if options.verbose
                 __verbose_findparams_invaliddata(filepath)
@@ -428,7 +424,7 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
     idx_sites1 = 0
     idx_sites2 = 0
 
-    if csvtype === singledata || csvtype ∈ (groupdata,structgroupdata)
+    if csvtype === singledata || csvtype == groupdata
         lookupcolumnindex = findfirst(isequal(normalised_columnreference), headernames)
         isnothing(lookupcolumnindex) && _col_indices_error(normalised_columnreference)
         idx_species = lookupcolumnindex
@@ -516,7 +512,7 @@ function findparamsincsv(components,filepath,
     component_delimiter = options.component_delimiter
     csvtype = csv_file_options.csvtype
     no_parsegroups = parsegroups == :off
-    correct_group = (parsegroups == :group && csvtype == groupdata) || (parsegroups == :intragroup && csvtype == structgroupdata)
+    correct_group = (parsegroups == :group && csvtype == groupdata)
     grouptype = csv_file_options.grouptype
 
     sep = get(csv_file_options,:sep,:comma)
@@ -610,7 +606,7 @@ function findparamsincsv(components,filepath,
         _sources = fill(EMPTY_STR,l)
         _csv = fill(filepath,l)
 
-    elseif csvtype ∈ (groupdata,structgroupdata) && no_parsegroups
+    elseif csvtype == groupdata && no_parsegroups
         return foundvalues, notfoundvalues
     else
         error("Filepath $filepath is of type ", string(csvtype), " and cannot be read with this function.")
@@ -657,8 +653,6 @@ function findparamsinnt(components,
         if k == :groups && parsegroups == :groups
             param = RawParam(ks,nothing,copy(v),nothing,nothing,groupdata,:unknown)
             push!(foundvalues,param)
-        elseif k == :intragroups && parsegroups == :structgroups
-            param = RawParam(ks,nothing,copy(v),nothing,nothing,structgroupdata,:unknown)
         elseif (k == :epsilon_assoc || k == :bondvol) && parsegroups == :off && v === nothing
             notfoundvalues[ks] = assocdata
         elseif v isa Vector && parsegroups == :off
@@ -728,7 +722,7 @@ function __verbose_findparams_start(filepath,components,headerparams,parsegroups
     csv_string = Symbol(csvtype)
     no_parsegroups = parsegroups == :off
     if no_parsegroups
-        if csvtype ∈ (groupdata,structgroupdata)
+        if csvtype == groupdata
             @info("Skipping $csv_string csv $filepath")
         else
             @info("Searching for $csv_string headers $headerparams for query $components at $filepath ...")
@@ -736,8 +730,6 @@ function __verbose_findparams_start(filepath,components,headerparams,parsegroups
     else
         if csvtype == groupdata
             @info("Searching for groups for components $components at $filepath ...")
-        elseif csvtype == structgroupdata
-            @info("Searching for intragroup interactions for components $components at $filepath ...")
         else
             @info("Skipping $csv_string csv $filepath")
         end
@@ -785,8 +777,7 @@ function __verbose_findparams_found(foundvalues)
             @info("""Found group data:
             $vals
             """)
-        elseif v.type == structgroupdata
-            @info("TODO: parse intragroup data for debug")
+            #@info("TODO: parse intragroup data for debug")
         end
     end
 end
@@ -832,8 +823,8 @@ function _readcsvtype(key::AbstractString)
     key == "assoc" && return assocdata
     key == "group" && return groupdata
     key == "groups" && return groupdata
-    key == "intragroup" && return structgroupdata
-    key == "intragroups" && return structgroupdata
+    key == "intragroup" && return groupdata
+    key == "intragroups" && return groupdata
     key == "invalid" && return invaliddata
     return invaliddata
 end

@@ -1,7 +1,6 @@
 Clapeyron Database File,
 homosegmented GC-PPCSAFT Groups [csvtype = groups,grouptype = gcPCPSAFT]
 species,groups
-species,groups
 methanol,"[""CH3"" => 1, ""OH"" => 1]"
 ethanol,"[""CH3"" => 1, ""CH2"" => 1, ""OH"" => 1]"
 propanol~|~1-propanol~|~propan-1-ol,"[""CH3"" => 1, ""CH2"" => 2, ""OH"" => 1]"

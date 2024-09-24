@@ -2,7 +2,7 @@ abstract type structSAFTgammaMieModel <: SAFTgammaMieModel end
 
 struct structSAFTgammaMie{I} <: structSAFTgammaMieModel
     components::Vector{String}
-    groups::StructGroupParam
+    groups::GroupParam
     sites::SiteParam
     params::SAFTgammaMieParam
     idealmodel::I
@@ -69,7 +69,7 @@ function structSAFTgammaMie(components;
     epsilon_mixing = :default,
     assoc_options = AssocOptions())
 
-    groups = StructGroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv","SAFT/SAFTgammaMie/structSAFTgammaMie/structSAFTgammaMie_intragroups.csv"])
+    groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv","SAFT/SAFTgammaMie/structSAFTgammaMie/structSAFTgammaMie_intragroups.csv"])
     params = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
     sites = params["sites"]
     components = groups.components
