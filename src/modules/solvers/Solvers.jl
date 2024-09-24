@@ -178,31 +178,6 @@ function (linsolve::Clapeyronlinsolve{T})(d,B,∇f) where T <: AbstractMatrix
     return d
 end
 
-
-struct BoxManifold{LB,UB} <: NLSolvers.Manifold
-    lb::LB
-    ub::UB
-end
-
-const InfiniteBoxManifold = BoxManifold{Nothing,Nothing}
-
-function _retract(::NLSolvers.InPlace, manifold::InfiniteBoxManifold, z, x, p, α)
-    @. z = x + α * p
-    return z
-end
-function _retract(::NLSolvers.OutOfPlace, manifold::InfiniteBoxManifold, z, x, p, α)
-    z = @. x + α * p
-    return z
-end
-function _retract(::NLSolvers.InPlace, manifold::InfiniteBoxManifold, z, x, p)
-    @. z = x + p
-    return z
-end
-function _retract(::NLSolvers.OutOfPlace, manifold::InfiniteBoxManifold, z, x, p)
-    z = @. x + p
-    return z
-end
-
 """
     x_sol(res::NLSolvers.ConvergenceInfo)
     

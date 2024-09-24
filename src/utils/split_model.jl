@@ -126,13 +126,13 @@ function gc_each_split_model(param::GroupParam,I)
             _idx[j] = true
         end
     end
-  
+
     len_groups = length(_idx)
 
     flattenedgroups = param.flattenedgroups[_idx]
     i_groups = [[findfirst(isequal(group), flattenedgroups)::Int for group ∈ componentgroups] for componentgroups ∈ groups]
     n_flattenedgroups = Vector{Vector{Int64}}(undef,length(I))
-    
+
     #handling for intergroups
     n_intergroups = Vector{Matrix{Int64}}(undef,length(I))
     empty_intergroup = fill(0,(0,0))
