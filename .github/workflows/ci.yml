@@ -27,7 +27,6 @@ jobs:
     timeout-minutes: 100
     strategy:
       fail-fast: false
-      continue-on-error: true
       matrix:
         version:
           - 'lts'
