@@ -45,6 +45,5 @@ const basepow = Base.:^
 @inline function ^(x::Real, y::Int)
     return basepow(x,y)
     end
-    
+
 ^(x,y) = basepow(x,y)
-    

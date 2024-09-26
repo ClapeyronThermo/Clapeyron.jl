@@ -1,20 +1,16 @@
 function obj_triple_point(model::CompositeModel,F,T,vs,vl,vv,p_scale,T_scale)
-    z = SA[1.0]
     fluid = fluid_model(model)
     solid = solid_model(model)
-    eos_solid(V) = eos(model.solid,V,T,z)
-    eos_fluid(V) = eos(model.fluid,V,T,z)
-    A_v,Av_v = Solvers.f∂f(eos_fluid,vv)
-    A_l,Av_l = Solvers.f∂f(eos_fluid,vl)
-    A_s,Av_s =Solvers.f∂f(eos_solid,vs)
-    μv = muladd(-vv,Av_v,A_v)
-    μl = muladd(-vl,Av_l,A_l)
-    μs = muladd(-vs,Av_s,A_s)
-    pv = - Av_v
-    pl = - Av_l
-    ps = - Av_s
-    F[1] = (μs - μv)/R̄/T_scale
-    F[2] = (μl - μv)/R̄/T_scale
+    z = SA[1.0]
+    RT = Rgas(fluid)*T
+    f_solid(V) = a_res(solid,V,T,z)
+    f_fluid(V) = a_res(fluid,V,T,z)
+    As,Avs = Solvers.f∂f(f_solid,vs)
+    Al,Avl = Solvers.f∂f(f_fluid,vl)
+    Av,Avv = Solvers.f∂f(f_fluid,vv)
+    ps,pl,pv = RT*(-Avs + 1/vs),RT*(-Avl + 1/vl),RT*(-Avv + 1/vv)
+    F[1] = As - vs*Avs - Av + vv*Avv + log(vv/vs)
+    F[2] = Al - vl*Avl - Av + vv*Avv + log(vv/vl)
     F[3] = (ps - pv)/p_scale
     F[4] = (pl - pv)/p_scale
     return F
@@ -23,47 +19,36 @@ end
 function x0_triple_point(model::CompositeModel,T0 = 0.65*T_scale(fluid_model(model)))
     fluid = fluid_model(model)
     solid = solid_model(model)
-    
+
     #saturation
     p_sat,vl_sat,vv_sat = saturation_pressure(fluid,T0,crit_retry = false)
-    H_v = VT_enthalpy(fluid,vv_sat,T0)
-    H_l = VT_enthalpy(fluid,vl_sat,T0)
-    H_sat = H_v - H_l
-    R = Rgas()
-    #sublimation:
+    Ksat = -dpdT_pure(fluid,vl_sat,vv_sat,T0)*T0*T0/p_sat
     vs_sub,vv_sub = x0_sublimation_pressure(model,T0)
     p_sub = pressure(fluid,vv_sub,T0)
-    Hs_v = VT_enthalpy(fluid,vv_sub,T0)
-    Hs_s = VT_enthalpy(solid,vs_sub,T0)
-    H_sub = Hs_v - Hs_s
-
-    #Clausius Clapeyron:
+    Ksub = -dpdT_pure(solid,fluid,vs_sub,vv_sub,T0)*T0*T0/p_sub
     #=
-    log(Ptriple/P0) = - H0/R * (1/Ttriple - 1/T0)
-    log(Ptriple) - ln(P0) = -H0/R /Ttriple  + H0/(R*T0)
-    log(Ptriple) = H0/(R*T0) - ln(P0) - H0/R /Ttriple 
-    ℙ = log(Ptriple), 𝕋 = 1/Ttriple 
-    
-    ℙ = H0/(R*T0) - ln(P0) - 𝕋*H0/R
-    ℙ = A0 - 𝕋*B0
 
-    for sublimation and saturation, we have different definitions of A0,B0. we then solve
-    the linear system:
-    ℙ = A0_sub - 𝕋*B0_sub
-    ℙ = A0_sat - 𝕋*B0_sat
-    0 = (A0_sat - A0_sub) - 𝕋*(B0_sat - B0_sub)
-    𝕋 = (A0_sat - A0_sub)/(B0_sat - B0_sub)
+    Clausius Clapeyron
+    log(Ptriple/P_sat) = K_sat * (1/Ttriple - 1/Tsat)
+    log(Ptriple/P_sub) = K_sub * (1/Ttriple - 1/Tsub)
+    Ksat = [dpdT*T*T/p](p = p0,T = T0)
+    Tsat = Tsub = T0
+    log(Ptriple/P_sat) = K_sat * (1/Ttriple - 1/T0)
+    log(Ptriple/P_sub) = K_sub * (1/Ttriple - 1/T0)
+
+    p̃ = log(P), T̃ = 1/T
+    we solve the following system of equations:
+    p̃(triple) - K_sat*T̃(triple) = -K_sat*T̃0 + p̃(sat)
+    p̃(triple) - K_sub*T̃(triple) = -K_sub*T̃0 + p̃(sub)
     =#
-    B0_sat = H_sat/R
-    B0_sub = H_sub/R
-    A0_sat = B0_sat/T0 + log(p_sat)
-    A0_sub = B0_sub/T0 + log(p_sub)
-
-    𝕋 = (A0_sat - A0_sub)/(B0_sat - B0_sub)
-    ℙ = A0_sat - B0_sat*𝕋
-    T = 1/𝕋
-    p = exp(ℙ)
-    #@show p,T
+    _1 = one(Ksub)
+    T̃0 = 1/T0
+    p̃sat,p̃sub = log(p_sat),log(p_sub)
+    M = @SMatrix [_1 -Ksat
+                  _1 -Ksub]
+    b = SVector(-Ksat*T̃0 + p̃sat,-Ksub*T̃0 + p̃sub)
+    p̃,T̃ = M\b
+    p,T = exp(p̃),1/T̃
     vs0 = volume(model,p,T,phase = :s) |> log
     vl0 = volume(model,p,T,phase = :l) |> log
     vv0 = volume(model,p,T,phase = :v) |> log
@@ -89,10 +74,9 @@ function triple_point(model::CompositeModel;v0 = x0_triple_point(model))
 
     T̄  = T_scale(model.fluid)
     p̄  = p_scale(model.fluid)
-
     Ts = T_scale(model.solid)
-    f!(F,x) = obj_triple_point(model,F,x[1]*Ts,exp(x[2]),exp(x[3]),exp(x[4]),p̄,T̄)
 
+    f!(F,x) = obj_triple_point(model,F,x[1]*Ts,exp(x[2]),exp(x[3]),exp(x[4]),p̄,T̄)
     results = Solvers.nlsolve(f!,v0,TrustRegion(Newton(),Dogleg()))
 
     x = Solvers.x_sol(results)

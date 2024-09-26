@@ -395,6 +395,12 @@ function by_cas2(caslist)
     return d,species.values
 end
 
+function normalize_components_sym(components)
+    caslist = cas(components)
+    _,sp = by_cas2(caslist)
+    return sp
+end
+
 function to_groups(x)
     s = unique(x)
     vals = [count(isequal(si),x) for si in s]

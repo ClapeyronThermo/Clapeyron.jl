@@ -120,6 +120,7 @@ Both SAFT and cubic-type equations of state rely upon an ideal model. By default
 - Joback's ideal correlation ([`JobackIdeal`](@ref))
 - Reid's polynomial correlation ([`ReidIdeal`](@ref))
 - Aly-Lee's correlation ([`AlyLeeIdeal`](@ref))
+- PPDS correlation ([`PPDSIdeal`](@ref))
 - MultiParameter Empiric Ideal correlations ([`EmpiricIdeal`](@ref))
 
 These can be specified for any of the SAFT or cubic-type equations of state using:

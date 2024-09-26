@@ -227,19 +227,26 @@ macro nan(Base.@nospecialize(fcall),default = nothing)
 end
 
 function gradient_type(V,T,z::StaticArray)
-    μ = typeof(V+T+first(z))
+    μ = Base.promote_eltype(V,T,z)
     return StaticArrays.similar_type(z,μ)
 end
 
 function gradient_type(V,T,z::AbstractVector)
-    μ = typeof(V+T+first(z))
+    μ = Base.promote_eltype(V,T,z)
     return Vector{μ}
 end
 
-function gradient_type(V,T,z::FractionVector)
-    μ = typeof(V+T+first(z))
+function gradient_type(V,T,z::FractionVector{TT,UU}) where {TT,UU<:AbstractVector}
+    μ = Base.promote_eltype(V,T,z)
     return Vector{μ}
 end
+
+#= todo: fix this
+function gradient_type(V,T,z::FractionVector{TT,TT}) where {TT}
+    μ = Base.promote_eltype(V,T,z)
+    return SVector{2, μ}
+end =#
+
 
 
 """
@@ -293,10 +300,12 @@ export get_l,set_l!
 include("initial_guess.jl")
 include("differentials.jl")
 include("VT.jl")
+include("isochoric.jl")
+include("phase.jl")
 include("fugacity_coefficient.jl")
 include("property_solvers/property_solvers.jl")
 include("tpd.jl")
 include("stability.jl")
 include("pT.jl")
 include("property_solvers/Tproperty.jl")
-
+include("property_solvers/spinodal.jl")

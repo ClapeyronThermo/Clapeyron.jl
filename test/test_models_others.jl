@@ -159,6 +159,15 @@ end
         #test at 324.33 K, paper says Cp = 44.232, but the calculations in the paper seem off
         @test Clapeyron.VT_isobaric_heat_capacity(system,0.03,324.33) ≈ 44.231 rtol = 5e-4
     end
+
+    @testset "PPDS" begin
+        m1 = PPDSIdeal("krypton")
+        @test isobaric_heat_capacity(m1,1,303.15)/Rgas(m1) ≈ 2.5
+        mw2 = 32.042 #MonomerIdeal("methanol").params.Mw.values[1]
+        m2 = PPDSIdeal("methanol")
+        #verification point in ref 1, table A.6
+        @test isobaric_heat_capacity(m2,1,303.15)/mw2 ≈ 1.3840 rtol = 1e-4
+    end
 end
     @printline
 end

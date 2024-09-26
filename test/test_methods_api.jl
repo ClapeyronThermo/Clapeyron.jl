@@ -402,6 +402,9 @@ end
 
     #ClapeyronSat
     @test Clapeyron.saturation_temperature(model,p0,ClapeyronSaturation())[1] ≈ 374.2401401001685 rtol = 1e-6
+
+    #Issue #290
+    @test Clapeyron.saturation_temperature(cPR("R1233zde"),101325*20,crit_retry = false)[1] ≈ 405.98925205830335 rtol = 1e-6
 end
 
 @testset "Tproperty" begin
@@ -655,3 +658,18 @@ GC.gc()
     GC.gc()
 end
 
+@testset "spinodals" begin
+    # Example from Ref. https://doi.org/10.1016/j.fluid.2017.04.009
+    model = PCSAFT(["methane","ethane"])
+    T_spin = 223.
+    x_spin = [0.2,0.8]
+    (pl_spin, vl_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:liquid)
+    (pv_spin, vv_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:vapor)
+    @test vl_spin ≈ 7.218532167482202e-5 rtol = 1e-6
+    @test vv_spin ≈ 0.0004261109817247137 rtol = 1e-6
+
+    (Tl_spin_impl, xl_spin_impl) = spinodal_temperature(model,pl_spin,x_spin;T0=220.,v0=vl_spin)
+    (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model,pv_spin,x_spin;T0=225.,v0=vv_spin)
+    @test Tl_spin_impl ≈ T_spin rtol = 1e-6
+    @test Tv_spin_impl ≈ T_spin rtol = 1e-6
+end
