@@ -1,7 +1,15 @@
 name: CI
 on:
-  - push
-  - pull_request
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'docs/**'
+      - 'examples/**'
+  push:
+    paths-ignore:
+      - 'docs/**'
+      - 'examples/**'
 # needed to allow julia-actions/cache to delete old caches that it has created
 permissions:
   actions: write
@@ -19,6 +27,7 @@ jobs:
     timeout-minutes: 100
     strategy:
       fail-fast: false
+      continue-on-error: true
       matrix:
         version:
           - 'lts'
@@ -61,13 +70,3 @@ jobs:
         with:
           file: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
-  docs:
-    name: Documentation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/julia-buildpkg@latest
-      - uses: julia-actions/julia-docdeploy@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

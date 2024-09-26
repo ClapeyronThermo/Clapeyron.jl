@@ -1,0 +1,24 @@
+name: Documentation
+on:
+  - push
+  - pull_request
+# needed to allow julia-actions/cache to delete old caches that it has created
+permissions:
+  actions: write
+  contents: read
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: always.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/julia-buildpkg@latest
+      - uses: julia-actions/julia-docdeploy@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
