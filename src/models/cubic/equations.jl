@@ -177,7 +177,7 @@ end
 
 function second_virial_coefficient_impl(model::ABCubicModel,T,z = SA[1.0])
     a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T,z)
-    return b-a/(R̄*T)
+    return b - c - a/(Rgas(model)*T)
 end
 
 function lb_volume(model::CubicModel, z)
@@ -279,6 +279,8 @@ function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
         return ifelse(gg < gl, vg - c̄, vl - c̄)
     end
 end
+
+
 
 function zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
     #0 = R̄*T/(v-b) - a/((v-Δ1*b)*(v-Δ2*b))

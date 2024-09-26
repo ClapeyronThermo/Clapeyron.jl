@@ -13,8 +13,7 @@ import LogExpFunctions
 using FillArrays: FillArrays
 import BlackBoxOptim
 using StaticArrays
-using NLSolvers
-using NLSolvers: NEqOptions
+
 using DiffResults, ForwardDiff
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
@@ -27,8 +26,9 @@ include("utils/misc.jl")
 
 include("modules/solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt, log1p, ^, dnorm, primalval
-
+using .Solvers: log, sqrt, log1p, ^, dnorm, primalval, Newton2
+using NLSolvers
+using NLSolvers: NEqOptions
 #misc functions, useful for EoS, don't depend on models
 include("modules/eosfunctions/EoSFunctions.jl")
 using .EoSFunctions
@@ -113,6 +113,7 @@ include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 include("models/ideal/CPLNGEstIdeal.jl")
 include("models/ideal/ShomateIdeal.jl")
+include("models/ideal/PPDSIdeal.jl")
 
 #AlyLee Ideal uses gerg 2008 terms
 include("models/EmpiricHelmholtz/term_functions.jl")

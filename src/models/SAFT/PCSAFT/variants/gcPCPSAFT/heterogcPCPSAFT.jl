@@ -15,7 +15,7 @@ struct HeterogcPCPSAFTParam <: EoSParam
     bondvol::AssocParam{Float64}
 end
 
-@newmodelgc HeterogcPCPSAFT gcPCPSAFTModel HeterogcPCPSAFTParam true true
+@newmodelgc HeterogcPCPSAFT gcPCPSAFTModel HeterogcPCPSAFTParam true
 default_references(::Type{HeterogcPCPSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/","properties/molarmass_groups.csv"]
 default_gclocations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_groups.csv","SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_intragroups.csv"]

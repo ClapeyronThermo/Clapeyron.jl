@@ -43,6 +43,16 @@ function test_volume(model,p,T,z = Clapeyron.SA[1.0],rtol = 1e-8)
     v = volume(model,p,T,z)
     @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
 end
+
+function test_scales(model,z)
+    z3 = 3 .* z
+    z7 = 7 .* z
+    T0 = 300.0
+    @test lb_volume(model,T0,z3) ≈ 3*lb_volume(model,z)
+    @test lb_volume(model,T0,z7) ≈ 7*lb_volume(model,z)
+    @test T_scale(model,z3) ≈ T_scale(model,z)
+    @test p_scale(model,z3) ≈ p_scale(model,z)
+end
 #=
 include_distributed distributes the test load among all workers
 =#

@@ -63,7 +63,7 @@ function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPre
     end
     fluid = fluid_model(model)
     solid = solid_model(model)
-    ps,μs = scale_sat_pure(fluid)
+    ps,μs = equilibria_scale(fluid)
     result,converged = try_2ph_pure_pressure(solid,fluid,T,vs0,vl0,ps,μs,method)
     if converged
         return result
@@ -84,7 +84,7 @@ function x0_melting_pressure(model::CompositeModel,T)
     quadratic taylor expansion for helmholtz energy
     isothermal compressibility aproximation for pressure
    =#
-    ps,μs = scale_sat_pure(liquid)
+    ps,μs = equilibria_scale(liquid)
     return solve_2ph_taylor(solid,liquid,T,vs00,vl00,ps,μs)
 end
 
@@ -176,17 +176,12 @@ function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMelting
 end
 
 function x0_melting_temperature(model::CompositeModel,p)
-    trp = triple_point(model)
-
-    pt = trp[2]
-    vs0 = trp[3]
-    vl0 = trp[4]
-    Δv = vl0-vs0
-    Tt = trp[1]
-    hs0 = VT_enthalpy(model.solid,vs0,Tt)
-    hl0 = VT_enthalpy(model.fluid,vl0,Tt)
-    Δh = hl0-hs0
-    T0 = Tt*exp(Δv*(p-pt)/Δh)
-
+    Tt,pt,vs0,vl0,_ = triple_point(model)
+    solid,fluid = solid_model(model),fluid_model(model)
+    K0 = -dpdT_pure(solid,fluid,vs0,vl0,Tt)*Tt*Tt/pt  
+    #Clausius Clapeyron
+    #log(P/Ptriple) = K0 * (1/T - 1/Ttriple)
+    Tinv = log(p/pt)/K0 + 1/Tt
+    T0 =  1/Tinv
     return T0,vs0,vl0
 end

@@ -73,7 +73,7 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
     if !valid_input
         return fail
     end
-    ps,μs = scale_sat_pure(model)
+    ps,μs = equilibria_scale(model)
     result,converged = try_2ph_pure_pressure(model,T,vl0,vv0,ps,μs,method)
 
     if converged

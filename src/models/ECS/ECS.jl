@@ -11,12 +11,12 @@ end
         refmodel=PropaneRef(),
         shapemodel=SRK(components),
         shaperef = SRK(refmodel.components))
-    
+
 ## Input Models
 
 - `shape_model`: shape model
 - `shape_ref`:  shape reference. is the same type of EoS that `shape_model`
-- `model_ref`: Reference model 
+- `model_ref`: Reference model
 
 ## Description
 
@@ -26,7 +26,7 @@ The idea is to use a "shape model" that provides a corresponding states paramete
 and a "reference model" that implements a helmholtz energy function, so that:
 
 ```
-eos(shape_model,v,T,x)/RT = eos(model_ref,v₀,T₀)/RT₀    
+eos(shape_model,v,T,x)/RT = eos(model_ref,v₀,T₀)/RT₀
 ```
 
 where:
@@ -45,6 +45,7 @@ const ECS = ExtendedCorrespondingStates
 
 Base.length(model::ECS) = length(model.shape_model)
 
+
 function eos_impl(model::ECS,V,T,z)
     f,h = shape_factors(model,V,T,z)
     n = sum(z)
@@ -55,12 +56,20 @@ function eos_impl(model::ECS,V,T,z)
     return n*eos(model.model_ref,V0,T0)*f
 end
 
+#=
 function eos_res(model::ECS,V,T,z=SA[1.0])
     f,h = shape_factors(model,V,T,z)
     n = sum(z)
     T0 = T/f
     V0 = V/h/n
     return n*eos_res(model.model_ref,V0,T0)*f
+end =#
+
+function a_res(model::ECS,V,T,z=SA[1.0])
+    f,h = shape_factors(model,V,T,z)
+    T0 = T/f
+    V0 = V/h
+    return a_res(model.model_ref,V0,T0,z)
 end
 
 """
@@ -70,7 +79,7 @@ end
 
 Returns `f` and `h` scaling factors, used by the [`ECS`](@ref) Equation of state.
 ```
-eos(shape_model,v,T,x)/RT = eos(model_ref,v₀,T₀)/RT₀    
+eos(shape_model,v,T,x)/RT = eos(model_ref,v₀,T₀)/RT₀
 ```
 
 where:
@@ -94,12 +103,12 @@ fh = a(T)/a₀(T₀)
     a ≈ RT*(b - B)
     B = second_virial_coefficient(model,T)
     ```
-    This is not tested extensively and it is considered an Experimental feature, subject to future changes.  
+    This is not tested extensively and it is considered an Experimental feature, subject to future changes.
 
 ## References
 
 1. Mollerup, J. (1998). Unification of the two-parameter equation of state and the principle of corresponding states. Fluid Phase Equilibria, 148(1–2), 1–19. [doi:10.1016/s0378-3812(98)00230-1](https://doi.org/10.1016/s0378-3812(98)00230-1)
-    
+
 """
 function shape_factors end
 shape_factors(model::ECS,V,T,z=SA[1.0]) = shape_factors(model,model.shape_ref,V,T,z)
@@ -112,7 +121,7 @@ function shape_factors(model::ECS,shape_ref::ABCubicModel,V,T,z=SA[1.0])
     amix = dot(z,model.shape_model.params.a.values,z)/(n*n)
     a00 = shape_ref.params.a.values[1,1]
     b00 = shape_ref.params.b.values[1,1]
-    
+
     fT0 = one(T)*b00*amix/a00/b
     function f_0(f)
         a0f,b0f = cubic_ab(shape_ref,v,T/f)
@@ -179,10 +188,10 @@ function p_scale(model::ECS,z)
 end
 
 function x0_sat_pure(model::ECS,T)
-    f,h = shape_factors(model,zero(T),T) 
+    f,h = shape_factors(model,zero(T),T)
     T0 = T/f
     v0l,v0v = x0_sat_pure(model.model_ref,T0)
-    return (v0l*h,v0v*h) 
+    return (v0l*h,v0v*h)
 end
 
 function split_model(model::ECS,splitter)
