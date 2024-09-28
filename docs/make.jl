@@ -1,6 +1,5 @@
 push!(LOAD_PATH,"../src/")
-using Documenter,Clapeyron
-
+using Documenter,Clapeyron,ClapeyronHANNA
 makedocs(sitename = "Clapeyron.jl",
 format = Documenter.HTML(
     # Use clean URLs, unless built as a "local" build
