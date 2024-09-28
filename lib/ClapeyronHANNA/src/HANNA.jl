@@ -2,12 +2,23 @@
 struct HANNAParam <: EoSParam
     smiles::SingleParam{String}
     emb_scaled::Vector{Vector{Float64}}
-    T_scaler::Function
+    T_scaler::Function #TODO:maybe parametrize this?
     theta::Dense
     alpha::Chain
     phi::Chain
     Mw::SingleParam{Float64}
 end
+
+function Clapeyron.split_model(param::HANNAParam,splitter)
+    return [Clapeyron.each_split_model(param,i) for i ∈ splitter]
+end 
+
+function Clapeyron.each_split_model(param::HANNAParam,i)
+    Mw = Clapeyron.each_split_model(param.Mw,i)
+    smiles = Clapeyron.each_split_model(param.smiles,i)
+    emb_scaled = Clapeyron.each_split_model(param.emb_scaled,i)
+    return HANNAParam(smiles,emb_scaled,param.T_scaler,param.theta,param.alpha,param.phi,Mw)
+end 
 
 abstract type HANNAModel <: ActivityModel end
 
@@ -59,7 +70,7 @@ HANNA
 default_locations(::Type{HANNA}) = ["properties/identifiers.csv", "properties/molarmass.csv"]
 
 function HANNA(components;
-        puremodel = nothing,
+        puremodel = BasicIdeal,
         userlocations = String[],
         pure_userlocations = String[],
         verbose = false)
@@ -107,13 +118,7 @@ function HANNA(components;
     )
     phi[1].bias .+= b1_ϕ
     phi[2].bias .+= b2_ϕ
-    
-    if isnothing(puremodel)
-        _puremodel = init_puremodel(BasicIdeal(),components,pure_userlocations,false)
-    else
-        _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    end
-
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     params = HANNAParam(params["canonicalsmiles"],emb_scaled,T_scaler,theta,alpha,phi,params["Mw"])
     references = String["10.48550/arXiv.2407.18011"]
     
@@ -125,20 +130,25 @@ function C.excess_gibbs_free_energy(model::HANNAModel,p,T,z)
 
     # Scale input (T and embs)
     T_s = model.params.T_scaler(T)
-    
     # Fine tuning of the component embeddings
     θ_i = model.params.theta.(model.params.emb_scaled)
+    gE = zero(Base.promote_eltype(T_s,x))
+    n = length(model)
+    for i in 1:n 
+        for j in (i+1):n
+            # Calculate cosine similarity and distance between the two components
+            cosine_sim_ij = cosine_similarity(θ_i[i],θ_i[j])
+            cosine_dist_ij = 1.0 - cosine_sim_ij
 
-    # Calculate cosine similarity and distance between the two components
-    cosine_sim = cosine_similarity(θ_i[1],θ_i[2])
-    cosine_dist = 1.0-cosine_sim
+            # Concatenate embeddings with T and x
+            c_i = vcat.(T_s,[x[i],x[j]],[θ_i[i],θ_i[j]])
+            α_i = model.params.alpha.(c_i)
+            c_mix = sum(α_i)
+            gE_NN = model.params.phi(c_mix)[1]
 
-    # Concatenate embeddings with T and x
-    c_i = vcat.(T_s,x,θ_i)
-    α_i = model.params.alpha.(c_i)
-    c_mix = sum(α_i)
-    gE_NN = model.params.phi(c_mix)[1]
-
-    # Apply cosine similarity adjustment
-    return gE_NN * prod(x) * cosine_dist * Rgas(model) * T * sum(z)
+            # Apply cosine similarity adjustment
+            gE += x[i]*x[j]*gE_NN*cosine_dist_ij
+        end
+    end
+    return gE * Rgas(model) * T * sum(z)
 end
