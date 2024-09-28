@@ -27,6 +27,24 @@ function activity_coefficient(model::ActivityModel,p,T,z)
     return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 
+function activity_coefficient_impl(model::ActivityModel,p,T,z,μ_ref,reference,phase,threaded,vol0)
+    #TODO: what to do if the reference is not pure?
+    return activity_coefficient(model,p,T,z)
+end
+
+reference_chemical_potential_type(model::ActivityModel) = :zero
+
+function activity(model::ActivityModel,p,T,z)
+    γ = activity_coefficient(model,p,T,z)
+    ∑z = sum(z)
+    return γ .* z ./ ∑z
+end
+
+function activity_impl(model::ActivityModel,p,T,z,μ_ref,reference,phase,threaded,vol0)
+    #TODO: what to do if the reference is not pure?
+    return activity(model,p,T,z)
+end
+
 function test_activity_coefficient(model::ActivityModel,p,T,z)
     X = gradient_type(model,T+p,z)
     return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X

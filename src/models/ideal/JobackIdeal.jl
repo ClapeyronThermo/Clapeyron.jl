@@ -166,71 +166,227 @@ end
 
 ReidIdeal(model::JobackIdeal) = ReidIdeal(model.components,ReidIdealParam(model.params.coeffs,model.params.reference_state),model.references)
 
+"""
+    JobackGC
+
+Module containing group contribution calculations using the joback method. the available functions are:
+
+- `JobackGC.T_c(model::JobackModel)`: critical temperature (in K)
+- `JobackGC.P_c(model::JobackModel)`: critical pressure (in Pa)
+- `JobackGC.V_c(model::JobackModel)`: critical volume (in m3/mol)
+- `JobackGC.T_b(model::JobackModel)`: normal boiling point (in K)
+- `JobackGC.H_form(model::JobackModel)`: enthalpy of formation at 298K, ideal gas (in J/mol)
+- `JobackGC.G_form(model::JobackModel)`: gibbs energy of formation at 298K, ideal gas (in J/mol)
+- `JobackGC.S_form(model::JobackModel)`: entropy of formation at 298K, ideal gas (in J/mol/K)
+- `JobackGC.H_fusion(model::JobackModel)`: enthalpy of fusion (in J/mol, at 1 atm)
+- `JobackGC.H_vap(model::JobackModel)`: molar enthalpy of vaporization (in J/mol, at normal boiling point)
+- `JobackGC.C_p(model::JobackModel, T)`: ideal gas isobaric heat capacity (in J/mol/K)
+- `JobackGC.Visc(model::JobackModel, T)`: liquid dynamic viscocity (in Pa*s)
+"""
+module JobackGC
+    using Clapeyron: JobackIdeal
+    using LinearAlgebra: dot
+"""
+    JobackGC.T_b(model::JobackIdeal)::Vector{Float64}
+
+Given a `JobackIdeal` model, returns a vector containing normal boiling points (in K), for each component.
+"""
 function T_b(model::JobackIdeal)
+    result = zeros(Float64,length(model))
     n = model.groups.n_flattenedgroups
     T_b = model.params.T_b.values
-    res = 0.0
-    @inbounds begin
-        ni = n[1]
-        res += ∑(T_b[j]*ni[j] for j in @groups(1))
+    for i in 1:length(model)
+        result[i] = dot(n[i],T_b) + 198.2
     end
-    res = res + 198.2
+    return result
 end
 
+"""
+    JobackGC.T_c(model::JobackIdeal)::Vector{Float64}
+
+Given a `JobackIdeal` model, returns a vector containing critical temperatures (in K), for each component.
+"""
 function T_c(model::JobackIdeal,Tb=T_b(model))
     n = model.groups.n_flattenedgroups
     T_c = model.params.T_c.values
-    res = 0.0
-    @inbounds begin
-        ni = n[1]
-        ΣT_ci = ∑(T_c[j]*ni[j] for j in @groups(1))
-        res += Tb * (0.584+0.965*ΣT_ci - ΣT_ci^2)^-1
+    result = zeros(Float64,length(model))
+    for i in 1:length(model)
+        ΣT_ci = dot(n[i],T_c)
+        result[i] = Tb[i] / (0.584+0.965*ΣT_ci - ΣT_ci^2)
     end
-    return res
+    return result
 end
 
-#this style of writing is uglier but faster,
-#ideally they should be of the same speed
+"""
+    JobackGC.V_c(model::JobackIdeal)::Vector{Float64}
+
+Given a `JobackIdeal` model, returns a vector containing critical volumes (in m3/mol), for each component.
+"""
 function V_c(model::JobackIdeal)
     n = model.groups.n_flattenedgroups
     V_c = model.params.V_c.values
-    res = 0.0
-    groups = @groups(1)
-    ni = n[1]
-    @inbounds begin
-        ΣV_ci = zero(res)
-        for idx in 1:length(groups)
-            j = groups[idx]
-            ΣV_ci +=V_c[j]*ni[j]
-        end
-        res += 17.5 + ΣV_ci
+    result = zeros(Float64,length(model))
+    for i in 1:length(model)
+        result[i] = dot(n[i],V_c) + 17.5
     end
-    #result in mL/mol, converting to m3/mol
-    return res*1e-6
+    result .*= 1e-6
+    return result
 end
 
+"""
+    JobackGC.P_c(model::JobackIdeal)::Vector{Float64}
+
+Given a `JobackIdeal` model, returns a vector containing critical pressures (in Pa), for each component.
+"""
 function P_c(model::JobackIdeal)
     n = model.groups.n_flattenedgroups
     P_c = model.params.P_c.values
     N_a = model.params.N_a.values
-    groups = @groups(1)
-    ni = n[1]
-    @inbounds begin
-        ΣP_ci  = 0.0
-        ΣN_a = 0
-        for idx in 1:length(groups)
-            j = groups[idx]
-            ΣP_ci += P_c[j]*ni[j]
-            ΣN_a += N_a[j]*ni[j]
-        end
-        res = (0.113 + 0.0032*ΣN_a - ΣP_ci)^-2
+    result = zeros(Float64,length(model))
+    for i in 1:length(model)
+        ΣP_ci  = dot(n[i],P_c)
+        ΣN_a = dot(n[i],N_a)
+        result[i] = (0.113 + 0.0032*ΣN_a - ΣP_ci)^-2
     end
     #result in bar, converting to Pa
-    return res*100000.0
+    result .*= 1e5
+    return result
 end
+
+"""
+    G_form(model::JobackIdeal)::Vector{Float64}
+
+Given a `JobackIdeal` model, returns a vector containing gibbs energies of formation (J/mol, at ideal gas, 298K), for each component.
+"""
+function G_form(model::JobackIdeal)
+    n = model.groups.n_flattenedgroups
+    G_form = model.params.G_form.values
+    result = zeros(Float64,length(model))
+    for i in 1:length(model)
+        result[i] = dot(n[i],G_form) + 53.88
+    end
+    #result in kJ, converting to J
+    result .*= 1000
+    return result
+end
+
+"""
+    H_form(model::JobackIdeal)::Vector{Float64}
+
+Given a `JobackIdeal` model, returns a vector containing entalpies of formation (J/mol, at ideal gas, 298K), for each component.
+"""
+function H_form(model::JobackIdeal)
+    n = model.groups.n_flattenedgroups
+    H_form = model.params.H_form.values
+    result = zeros(Float64,length(model))
+    for i in 1:length(model)
+        result[i] = dot(n[i],H_form) + 68.29
+    end
+    #result in kJ, converting to J
+    result .*= 1000
+    return result
+end
+
+"""
+    S_form(model::JobackIdeal)::Vector{Float64}
+
+Given a `JobackIdeal` model, returns a vector containing entropies of formation (J/mol/K, at ideal gas, 298K), for each component.
+"""
+function S_form(model::JobackIdeal)
+    n = model.groups.n_flattenedgroups
+    H_form = model.params.H_form.values
+    G_form = model.params.G_form.values
+    result = zeros(Float64,length(model))
+    for i in 1:length(model)
+        H_formᵢ = dot(n[i],H_form) + 68.29
+        G_formᵢ = dot(n[i],G_form) + 53.88
+        result[i] = (H_formᵢ - G_formᵢ)/298
+    end
+    #result in kJ, converting to J
+    result .*= 1000
+    return result
+end
+
+"""
+    H_fusion(model::JobackIdeal)::Vector{Float64}
+
+Given a `JobackIdeal` model, returns a vector containing enthalpies of fusion (J/mol, at 1 atm), for each component.
+"""
+function H_fusion(model::JobackIdeal)
+    n = model.groups.n_flattenedgroups
+    H_fusion = model.params.H_fusion.values
+    result = zeros(Float64,length(model))
+    for i in 1:length(model)
+        result[i] = dot(n[i],H_fusion) - 0.88
+    end
+    #result in kJ, converting to J
+    result .*= 1000
+    return result
+end
+
+"""
+    H_vap(model::JobackIdeal)::Vector{Float64}
+
+Given a `JobackIdeal` model, returns a vector containing enthalpies of vaporization (J/mol, at normal boiling point), for each component.
+"""
+function H_vap(model::JobackIdeal)
+    n = model.groups.n_flattenedgroups
+    H_vap = model.params.H_vap.values
+    result = zeros(Float64,length(model))
+    for i in 1:length(model)
+        result[i] = dot(n[i],H_vap) + 15.3
+    end
+    #result in kJ, converting to J
+    result .*= 1000
+    return result
+end
+
+"""
+    C_p(model::JobackIdeal,T)::Vector
+
+Given a `JobackIdeal` model, returns a vector containing ideal gas isobaric heat capacities (J/mol/K), for each component.
+"""
+function C_p(model::JobackIdeal,T)
+    n = model.groups.n_flattenedgroups
+    a = model.params.a.values
+    b = model.params.b.values
+    c = model.params.c.values
+    d = model.params.d.values
+    result = zeros(Base.promote_eltype(T,Float64),length(model))
+    for i in 1:length(model)
+        ai = dot(n[i],a) - 37.93
+        bi = dot(n[i],b) + 0.210
+        ci = dot(n[i],c) - 3.91e-4
+        di = dot(n[i],d) + 2.06e-7
+        result[i] = evalpoly(T, (ai,bi,ci,di))
+    end
+    return result
+end
+
+"""
+    Visc(model::JobackIdeal,T)::Vector
+
+Given a `JobackIdeal` model, returns a vector containing liquid dynamic viscocities (Pa*s), for each component.
+"""
+function Visc(model::JobackIdeal,T)
+    n = model.groups.n_flattenedgroups
+    ηa = model.params.eta_a.values
+    ηb = model.params.eta_b.values
+    Mw = model.params.Mw.values
+    result = zeros(Base.promote_eltype(T,Float64),length(model))
+    for i in 1:length(model)
+        ηai = dot(n[i],ηa)
+        ηbi = dot(n[i],ηb)
+        Mwi = dot(n[i],Mw)
+        result[i] = Mwi*exp((ηai - 597.82)/T + ηbi - 11.202)
+    end
+    return result
+end
+
+end #JobackGC module
 
 function crit_pure(model::JobackIdeal)
-    return (T_c(model),P_c(model),V_c(model))
+    return (JobackGC.T_c(model),JobackGC.P_c(model),JobackGC.V_c(model))
 end
 
-export JobackIdeal
+export JobackIdeal, JobackGC

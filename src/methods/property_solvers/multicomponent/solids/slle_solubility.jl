@@ -17,10 +17,10 @@ function slle_solubility(model::CompositeModel,p,T)
 
     solid_r,idx_sol_r = index_reduction(model.solid,idx_sol)
     μsol = chemical_potential(solid_r,p,T,[1.])
-    
+    μ_ref = reference_chemical_potential(model.fluid,p,T,:pure)
     x0 = x0_slle_solubility(model,p,T,μsol)
-    
-    f!(F,x) = obj_slle_solubility(F,model.fluid,p,T,[exp10(x[1]),1-exp10(x[1])-exp10(x[2]),exp10(x[2])],[exp10(x[3]),1-exp10(x[3])-exp10(x[4]),exp10(x[4])],μsol)
+
+    f!(F,x) = obj_slle_solubility(F,model.fluid,p,T,[exp10(x[1]),1-exp10(x[1])-exp10(x[2]),exp10(x[2])],[exp10(x[3]),1-exp10(x[3])-exp10(x[4]),exp10(x[4])],μsol,μ_ref)
     results = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
     sol = exp10.(Solvers.x_sol(results))
     x1 = [sol[1],1-sol[1]-sol[2],sol[2]]
@@ -28,11 +28,11 @@ function slle_solubility(model::CompositeModel,p,T)
     return (x1,x2)
 end
 
-function obj_slle_solubility(F,liquid,p,T,x1,x2,μsol)
+function obj_slle_solubility(F,liquid,p,T,x1,x2,μsol,μ_ref)
     nc = length(liquid)
-    γliq1 = activity_coefficient(liquid,p,T,x1)
+    γliq1 = activity_coefficient(liquid,p,T,x1,μ_ref = μ_ref)
     μliq1 = @. Rgas()*T*log(γliq1*x1)
-    γliq2 = activity_coefficient(liquid,p,T,x2)
+    γliq2 = activity_coefficient(liquid,p,T,x2,μ_ref = μ_ref)
     μliq2 = @. Rgas()*T*log(γliq2*x2)
 
     F[1] = (μliq1[end] - μsol[1])/Rgas()/T
@@ -60,7 +60,7 @@ function x0_slle_solubility(model,p,T,μsol)
 
         x0[:,i] = x
     end
-    
+
     x0 = [x0[1,1],x0[3,1],x0[1,2],x0[3,2]]
 
     return log10.(x0)

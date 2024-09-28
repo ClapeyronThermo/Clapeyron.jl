@@ -62,7 +62,7 @@ julia> bubble_pressure(model,300.15,[0.9,0.1])
 (2694.150594740186, 0.00016898441224336215, 0.9239727973658585, [0.7407077952279438, 0.2592922047720562])
 
 #using a correlation-based fluid
-julia> fluidmodel = CompositeModel(["octane","heptane"],liquid = RackettLiquid,saturation = DIPPR101Sat,gas = BasicIdeal); 
+julia> fluidmodel = CompositeModel(["octane","heptane"],liquid = RackettLiquid,saturation = DIPPR101Sat,gas = BasicIdeal);
 model2 = CompositeModel(["octane","heptane"],liquid = UNIFAC, fluid = fluidmodel)
 Composite Model (γ-ϕ) with 2 components:
  Activity Model: UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}("octane", "heptane")
@@ -286,9 +286,16 @@ function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
     end
 end
 
-function activity_coefficient(model::CompositeModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
-    return activity_coefficient(model.fluid,p,T,z;phase,threaded)
+function activity_coefficient(model::CompositeModel,p,T,z=SA[1.];
+                            μ_ref = nothing,
+                            reference = :pure,
+                            phase=:unknown,
+                            threaded=true,
+                            vol0=nothing)
+    return activity_coefficient(model.fluid,p,T,z;μ_ref,reference,phase,threaded,vol0)
 end
+
+reference_chemical_potential_type(model::CompositeModel) = reference_chemical_potential_type(model.fluid)
 
 function init_preferred_method(method::typeof(saturation_pressure),model::CompositeModel,kwargs)
     return init_preferred_method(saturation_pressure,model.fluid,kwargs)
