@@ -14,9 +14,9 @@ function Clapeyron.split_model(param::HANNAParam,splitter)
 end 
 
 function Clapeyron.each_split_model(param::HANNAParam,i)
-    Mw = each_split_model(param.Mw,i)
-    smiles = each_split_model(param.smiles,i)
-    emb_scaled = each_split_model(param.emb_scaled,i)
+    Mw = Clapeyron.each_split_model(param.Mw,i)
+    smiles = Clapeyron.each_split_model(param.smiles,i)
+    emb_scaled = Clapeyron.each_split_model(param.emb_scaled,i)
     return HANNAParam(smiles,emb_scaled,param.T_scaler,param.theta,param.alpha,param.phi,Mw)
 end 
 
