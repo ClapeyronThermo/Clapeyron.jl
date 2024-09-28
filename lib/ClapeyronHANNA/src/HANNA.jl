@@ -1,11 +1,11 @@
 
-struct HANNAParam{T,θ,α,ϕ} <: EoSParam
+struct HANNAParam <: EoSParam
     smiles::SingleParam{String}
     emb_scaled::Vector{Vector{Float64}}
-    T_scaler::T
-    theta::θ
-    alpha::α
-    phi::ϕ
+    T_scaler::Function #TODO:maybe parametrize this?
+    theta::Dense
+    alpha::Chain
+    phi::Chain
     Mw::SingleParam{Float64}
 end
 
