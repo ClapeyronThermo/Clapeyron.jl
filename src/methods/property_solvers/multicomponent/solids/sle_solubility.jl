@@ -61,7 +61,7 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         # println(idx_sol_l)
 
 
-        
+
         if isnothing(x0)
             x0 = x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
         end

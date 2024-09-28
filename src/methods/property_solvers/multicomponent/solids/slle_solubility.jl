@@ -19,7 +19,6 @@ function slle_solubility(model::CompositeModel,p,T)
     μsol = chemical_potential(solid_r,p,T,[1.])
     μ_ref = reference_chemical_potential(model.fluid,p,T,:pure)
     x0 = x0_slle_solubility(model,p,T,μsol)
-    
     f!(F,x) = obj_slle_solubility(F,model.fluid,p,T,[exp10(x[1]),1-exp10(x[1])-exp10(x[2]),exp10(x[2])],[exp10(x[3]),1-exp10(x[3])-exp10(x[4]),exp10(x[4])],μsol,μ_ref)
     results = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
     sol = exp10.(Solvers.x_sol(results))
@@ -60,7 +59,7 @@ function x0_slle_solubility(model,p,T,μsol)
 
         x0[:,i] = x
     end
-    
+
     x0 = [x0[1,1],x0[3,1],x0[1,2],x0[3,2]]
 
     return log10.(x0)
