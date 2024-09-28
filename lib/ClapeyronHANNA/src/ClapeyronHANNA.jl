@@ -8,6 +8,7 @@ using Clapeyron: getparams, init_puremodel, Rgas
 import Clapeyron: default_locations
 using Flux, Transformers.HuggingFace, Transformers.TextEncoders
 using CSV, JLD2
+using LinearAlgebra
 
 include("HANNA.jl")
 
@@ -47,7 +48,9 @@ silu(x) = @. x/(1+exp(-x))
 
 # Cosine similarity
 function cosine_similarity(x1,x2;eps=1e-8)
-    res = sum(x1.*x2)./(max.(sqrt.(sum(x1.^2)),eps).*max.(sqrt.(sum(x2.^2)),eps))
+    ∑x1 = sqrt(dot(x1,x1))
+    ∑x2 = sqrt(dot(x2,x2))
+    res = dot(x1,x2)/(max(∑x1,eps*one(∑x1))*max(∑x2,eps*one(∑x2)))
 end
 
-end
+end #module
