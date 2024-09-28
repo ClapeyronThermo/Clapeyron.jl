@@ -421,6 +421,21 @@ function RR_β_ai!(a,F,i,nc,np)
     return a
 end
 
+function ls_restricted(φ::P,λ) where P
+    _d = φ.d
+    _x = φ.z
+    λmax = λ
+    #=
+    x -  λ*d = 0
+    λ = x/d
+    λmax = minimum(xi/di for i in eachindex(x))
+    =#
+    for i in 1:length(_x)
+        λmax = min(λmax,_x[i]/_d[i])
+    end
+    return λmax
+end
+
 #constant K, calculate β
 function multiphase_RR_β!(F, x, z, _result, ss_cache)
     _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
@@ -446,21 +461,6 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
     β0 = copy(βi)
     resize!(β0,np - 1)
 
-    function ls_restricted(φ::P,λ) where P
-        _d = φ.d
-        _x = φ.z
-        λmax = λ
-        #=
-        x -  λ*d = 0
-        λ = x/d
-        λmax = minimum(xi/di for i in eachindex(x))
-        =#
-        for i in 1:length(_x)
-            λmax = min(λmax,_x[i]/_d[i])
-        end
-        return λmax
-    end
-    #ls_restricted(x1,x2) = x2
     ls = RestrictedLineSearch(ls_restricted,Backtracking())
     βsol = similar(β0)
     βresult = Solvers.optimize(f,β0,LineSearch(Newton(linsolve = static_linsolve),ls))
