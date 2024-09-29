@@ -386,7 +386,7 @@ end
 end #JobackGC module
 
 function crit_pure(model::JobackIdeal)
-    return (JobackGC.T_c(model),JobackGC.P_c(model),JobackGC.V_c(model))
+    return (JobackGC.T_c(model)[1],JobackGC.P_c(model)[1],JobackGC.V_c(model)[1])
 end
 
 export JobackIdeal, JobackGC

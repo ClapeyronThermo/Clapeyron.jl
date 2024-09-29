@@ -214,12 +214,6 @@ This is useful in the case of models without any parameters, as those models are
 The Default is `is_splittable(model) = true`.
 """
 is_splittable(model) = true
-is_splittable(null::Union{Nothing,Missing}) = false
-is_splittable(::Number) = false
-is_splittable(::AbstractString) = false
-is_splittable(::Symbol) = false
-is_splittable(::Tuple) = false
-
 
 function split_model(param)
     if is_splittable(param)
@@ -246,7 +240,7 @@ function split_model(param::AbstractArray,splitter)
 end
 
 for T in (:Symbol,:Tuple,:AbstractString,:Number,:Missing,:Nothing)
-    @eval split_model(param::$T,splitter) = [fill(param,length(i)) for i ∈ splitter]
+    @eval is_splittable(param::$T) = false
 end
 
 function _n_splitter(n)
