@@ -224,8 +224,8 @@ function split_model(param)
     end
 end
 
-
-function split_model(param::ClapeyronParam,splitter)
+#general method
+function split_model(param,splitter)
     if is_splittable(param)
         return [each_split_model(param,i) for i ∈ splitter]
     else
