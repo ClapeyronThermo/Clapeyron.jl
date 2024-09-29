@@ -13,8 +13,7 @@ function eutectic_point(model::CompositeModel,p=1e5)
     end
     solid = solid_model(model)
     fluid = fluid_model(model)
-    μ_ref = reference_chemical_potential(fluid,p,T,reference_chemical_potential_type(fluid))
-    f!(F,x) = obj_eutectic_point(F,solid,fluid,p,x[1]*200.,FractionVector(x[2]),μ_ref)
+    f!(F,x) = obj_eutectic_point(F,solid,fluid,p,x[1]*200.,FractionVector(x[2]))
     x0 = x0_eutectic_point(model,p)
     # println(x0)
     results = Solvers.nlsolve(f!,x0)
@@ -23,9 +22,9 @@ function eutectic_point(model::CompositeModel,p=1e5)
     return T,x
 end
 
-function obj_eutectic_point(F,solid,liquid,p,T,x,μ_ref)
+function obj_eutectic_point(F,solid,liquid,p,T,x)
     μsol = chemical_potential(solid,p,T,x)
-    γliq = activity_coefficient(liquid,p,T,x,μ_ref = μ_ref)
+    γliq = activity_coefficient(liquid,p,T,x)
     μliq = @. Rgas()*T*log(γliq*x)
     F[1:2] = μliq .- μsol
     return F
