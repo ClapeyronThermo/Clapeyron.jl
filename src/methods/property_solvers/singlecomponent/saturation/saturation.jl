@@ -129,9 +129,10 @@ Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies 
 function enthalpy_vap(model::EoSModel, T,satmethod = ChemPotVSaturation())
     single_component_check(enthalpy_vap,model)
     (P_sat,V_l,V_v) = saturation_pressure(model,T,satmethod)
-    H_v = VT_enthalpy(model,V_v,T)
-    H_l = VT_enthalpy(model,V_l,T)
-    H_vap=H_v -H_l
+    H_v = VT_enthalpy_res(model,V_v,T)
+    H_l = VT_enthalpy_res(model,V_l,T)
+    #H_v(res) - H_l(res) = H_l - H_v
+    H_vap = H_v - H_l
     return H_vap
 end
 
