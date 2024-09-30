@@ -463,7 +463,7 @@ cs2~|~carbon disulfide,75-15-0,76.14
 2-thiapentane~|~methylpropyl sulfide~|~1-(methylthio)-propane~|~methyl-n-propyl sulfide~|~methyl n-propyl sulfide,3877-15-4,90.19
 "2,3-dithiabutane~|~dimethyldisulfide",624-92-0,94.2
 2-thiahexane~|~methylbutyl sulfide~|~1-(methylthio)butane~|~methyl n-butyl sulfide~|~methyl-n-butyl sulfide,628-29-5,104.21
-methyl-t-butyl sulfide,900503-70-0,104.21
+"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane~|~methyl-t-butyl sulfide",900503-70-0,104.21
 "4-thiaheptane~|~dipropyl sulfide~|~di-n-propyl sulfide~|~1,1'-thiobispropane",111-47-7,118.24
 "ethyl-t-butyl sulfide~|~ethyl t-butyl sulfide~|~ethyl-tert-butyl sulfide~|~2,2-dimethyl-3-thiapentane~|~2-(ethylthio)-2-methylpropane",14290-92-7,118.24
 methyl-t-pentyl sulfide~|~methyl t-pentyl sulfide~|~2-methyl-2-(methylthio)-butane,13286-92-5,118.24
@@ -965,7 +965,7 @@ guaiacol~|~2-methoxyphenol,90-05-1,124.13722
 isobutylamine~|~2-methylpropylamine~|~2-methyl-1-propanamine,78-81-9,73.13684
 2-methyl-1-tridecanol,32480-16-3,214.387
 2-methyl-1-undecanol,10522-26-6,186.334
-"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane",6163-64-0,104.214
+"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane~|~methyl-t-butyl sulfide",6163-64-0,104.214
 "2-methyl-2,4-pentanediol",107-41-5,118.17416
 2-methyl-2-propenamide,79-39-0,85.10448
 allyl methacrylate~|~2-methyl-2-propenoicacid2-propenylester,96-05-9,126.1531
@@ -1515,7 +1515,7 @@ azelaic acid~|~nonanedioic acid,123-99-9,188.22094
 nonanoic acid~|~n-nonanoic acid,112-05-0,158.238
 norbornane~|~bicyclo[2.2.1]heptane,279-23-2,96.1702
 diamylamine~|~dipentylamine~|~pentyl-1-pentanamine~|~n-pentyl-1-pentanamine,2050-92-2,157.29632
-pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane,110-58-7,87.16342
+pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane~|~1-pentylamine,110-58-7,87.16342
 propylbenzenehydroperoxide~|~n-propylbenzenehydroperoxide,60956-33-4,152.19
 triacontane~|~n-triacontane,638-68-6,422.81328
 undecylamin~|~undecylamine~|~n-undecylamin~|~1-aminoundecane,7307-55-3,171.3229
@@ -1676,7 +1676,7 @@ tributylamine~|~tri-n-butylamine,102-82-9,185.34948
 trioctyltrimellitate,3319-31-1,546.778
 triolein,122-32-7,885.43206
 triphenylmethane,519-73-3,244.33034
-tripropyleneglycol-methylether~|~tripropylene glycol monoethyl ether,25498-49-1,206.27928
+tripropyleneglycol-methylether~|~tripropylene glycol monomethyl ether,25498-49-1,206.27928
 tripropylene-glycol-monoethyl-ether,75899-69-3,220.30586
 undecanal~|~undecanaldehyde,112-44-7,170.29178
 undecanoic acid~|~n-undecanoic acid,112-37-8,186.291
@@ -1867,7 +1867,6 @@ diethylaluminum chloride,96-10-6,120.556739
 diethylsulfite,623-81-4,138.03506535541
 dimethyl glutarate~|~dimethyl pentanedioate,1119-40-0,160.16778
 dimethyl peroxide,690-02-8,62.06784
-"dimethyl-1,4-cyclohexanedicarboxylate",3399-22-2,200.23
 dimethylaluminum chloride,1184-58-3,92.503579
 dimethyldimethoxysilane,1112-39-6,120.22238
 dimethylketene,598-26-5,70.08984
@@ -2034,7 +2033,6 @@ trimethylgallium,1445-79-0,114.82656
 "tri-n-butyl borate~|~boric acid,tri-n-butylester",688-74-4,230.15198
 tri-n-butyl phosphate,126-73-8,266.314142
 triphenylene,217-59-4,228.28788
-tripropylene glycol monomethyl ether,10213-77-1,206.27928
 tris(methoxyethoxy)vinylsilane~|~tris(2-methoxyethoxy)vinylsilane,1067-53-4,280.39016
 trisilane,7783-26-8,84.2565
 vanadium oxytrichloride,7727-18-6,176.32372
@@ -2075,7 +2073,6 @@ phthalic anhydride,85-44-9,148.12
 r1123~|~trifluoroethene~|~trifluoroethylene,359-11-5,82.0245
 r1216~|~perfluoropropene~|~hexafluoropropene~|~perfluoropropylene~|~hexafluoropropylene,116-15-4,150.0225192
 c44~|~tetratetracontane,7098-22-8,619.1854
-1-pentylamine~|~1-pentanamine,110-58-7 ,87.166
 1-chlorohexane,544-10-5,120.62
 pentylcyclopentane,3741-00-2,140.2658
 lovastatin,75330-75-5,404.54

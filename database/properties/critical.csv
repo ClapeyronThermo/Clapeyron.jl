@@ -770,7 +770,7 @@ isobutylamine~|~2-methylpropylamine~|~2-methyl-1-propanamine,78-81-9,513.73,4.21
 2-methyl-1-tridecanol,32480-16-3,707.7,1.713e6,,1.11536
 2-methyl-1-undecanol,10522-26-6,665.9,1.956e6,,1.03454
 methyl-t-pentyl sulfide~|~methyl t-pentyl sulfide~|~2-methyl-2-(methylthio)-butane,13286-92-5,632.0,3.13e6,0.000435,0.283554
-"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane",6163-64-0,570.0,3.54e6,0.00036,0.233365
+"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane~|~methyl-t-butyl sulfide",6163-64-0,570.0,3.54e6,0.00036,0.233365
 "2-methyl-2,4-pentanediol",107-41-5,621.0,4.01e6,,1.15798
 tert-pentanol~|~2-methyl-2-butanol~|~2-methylbutan-2-ol,75-85-4,543.7,3.71e6,0.000324,0.481975
 2-methyl-2-pentene,625-27-4,514.0,3.16e6,0.000363,0.244478
@@ -1444,7 +1444,6 @@ nonylbenzene~|~n-nonylbenzene,1081-77-2,741.0,1.895e6,,0.633063
 norbornane~|~bicyclo[2.2.1]heptane,279-23-2,594.0,3.696e6,0.000352,0.163604
 diamylamine~|~dipentylamine~|~pentyl-1-pentanamine~|~n-pentyl-1-pentanamine,2050-92-2,639.0,2.12e6,0.000629,0.676684
 amyl acetate~|~pentylacetate~|~n-pentylacetate~|~pentyl ethanoate,628-63-7,599.9,2.77e6,0.000442,0.447773
-pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane,110-58-7,555.0,3.58e6,0.000365,0.407003
 propylbenzenehydroperoxide~|~n-propylbenzenehydroperoxide,60956-33-4,746.8,3.29e6,,0.90583
 propylbutyrate~|~n-propylbutyrate~|~propyl butanoate~|~n-propylbutanoate~|~n-propyl n-butyrate~|~butanoic acid propyl ester,105-66-8,593.7,2.72e6,0.000442,0.433464
 propylcyclohexane~|~n-propylcyclohexane~|~1-cyclohexylpropane,1678-92-8,639.15,2.807e6,0.000477,0.259535
@@ -1631,7 +1630,7 @@ tributylamine~|~tri-n-butylamine,102-82-9,644.0,1.8e6,0.000735,0.6943
 trioctyltrimellitate,3319-31-1,777.9,850500.0,,2.02449
 triolein,122-32-7,935.3,200200.0,,2.08832
 triphenylmethane,519-73-3,865.0,2.2e6,0.000753,0.573483
-tripropyleneglycol-methylether~|~tripropylene glycol monoethyl ether,25498-49-1,657.0,2.18e6,0.000704,1.12541
+tripropyleneglycol-methylether~|~tripropylene glycol monomethyl ether,25498-49-1,657.0,2.18e6,0.000704,1.12541
 tripropylene-glycol-monoethyl-ether,75899-69-3,664.0,2.02e6,,1.161
 undecanal~|~undecanaldehyde,112-44-7,690.0,2.393e6,0.000636,0.635198
 undecanoic acid~|~n-undecanoic acid,112-37-8,732.0,2.09e6,0.000705,0.85309
@@ -1670,7 +1669,7 @@ tetranitromethane,509-14-8,540.0,2.68e6,0.000439,0.7052
 "glutaric anhydride~|~tetrahydropyran-2,6-dione",108-55-4,838.0,5.8e6,0.000275,0.5372
 propionic anhydride~|~propanoic anhydride,123-62-6,623.0,3.27e6,0.000396,0.5599
 isobutyric anhydride~|~2-methyl-propionic anhydride,97-72-3,631.5,2.719e6,0.000486,0.5926
-methyl-t-butyl sulfide,900503-70-0,570.0,3.54e6,,0.2334
+"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane~|~methyl-t-butyl sulfide",900503-70-0,570.0,3.54e6,,0.2334
 silane,7440-21-3,269.7,4.84e6,0.0001327,0.0938
 methyl chlorosilane~|~chloro(methyl)silane,993-00-0,442.0,4.17e6,0.000246,0.304
 dimethylchlorosilane,1066-35-9,472.0,3.62e6,0.000299,0.2526
@@ -1851,7 +1850,6 @@ diethylaluminum chloride,96-10-6,723.15,3.0e6,0.000493,0.3177
 diethylsulfite,623-81-4,624.0,3.77e6,0.000373,0.5065
 dimethyl glutarate~|~dimethyl pentanedioate,1119-40-0,682.0,2.77e6,0.000494,0.5191
 dimethyl peroxide,690-02-8,448.3,5.268e6,0.000193,0.293
-"dimethyl-1,4-cyclohexanedicarboxylate",3399-22-2,748.4,2.513e6,0.000609,0.5479
 dimethylaluminum chloride,1184-58-3,619.0,3.62e6,0.00032,0.1834
 dimethyldimethoxysilane,1112-39-6,524.0,2.66e6,0.000441,0.2629
 dimethylketene,598-26-5,470.2,4.235e6,0.000258,0.3112
@@ -2019,7 +2017,6 @@ trimethylgallium,1445-79-0,510.0,4.04e6,0.000211,0.2077
 "tri-n-butyl borate~|~boric acid,tri-n-butylester",688-74-4,743.15,1.989e6,0.0008633,0.1887
 tri-n-butyl phosphate,126-73-8,716.7,1.523e6,0.000927,0.8665
 triphenylene,217-59-4,990.8,2.87e6,0.000689,0.6733
-tripropylene glycol monomethyl ether,10213-77-1,657.0,2.18e6,0.000652,1.1254
 tris(methoxyethoxy)vinylsilane~|~tris(2-methoxyethoxy)vinylsilane,1067-53-4,723.9,1.779e6,0.00087,0.715
 trisilane,7783-26-8,495.9,3.667e6,0.00033,0.2808
 vanadium oxytrichloride,7727-18-6,636.0,3.74e6,0.00029,0.1305
@@ -2056,7 +2053,7 @@ vanadium,7440-62-2,11325.0,1.0314e9,,-0.1868
 tetrafluorosilane~|~silicon tetrafluoride,7783-61-1,259.0,3.71457e6,,0.42539
 r1123~|~trifluoroethene~|~trifluoroethylene,359-11-5,331.73,4.5488e6,6.147e-6,0.2429
 r1216~|~perfluoropropene~|~hexafluoropropene~|~perfluoropropylene~|~hexafluoropropylene,116-15-4,358.9,3.1495e6,0.00025714872278,0.333
-1-pentylamine~|~1-pentanamine,110-58-7 ,557.1,3.887113811e6,,0.3983
+pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane~|~1-pentylamine,110-58-7 ,557.1,3.887113811e6,,0.3983
 1-chlorohexane,544-10-5,599.0,3.289359893e6,,0.3746
 sodium,,3300.0,1.1e7,,-0.204
 chloride,,3000.0,1.1e7,,-0.204
