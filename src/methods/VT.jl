@@ -364,5 +364,7 @@ function VT_fugacity_coefficient!(φ,model::EoSModel,V,T,z=SA[1.],p = pressure(m
     return φ
 end
 
-export second_virial_coefficient,pressure,cross_second_virial,equivol_cross_second_virial
+export pressure
+export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
+
 
