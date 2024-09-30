@@ -86,6 +86,7 @@ function obj_sle_solubility(F,model,p,T,zsolv,solu,data,ν_l)
     z = zeros(typeof(solu),length(model.fluid))
     z[.!(idx_solv)] .= solu
     z[idx_solv] .= zsolv
+    z ./= sum(z)
     R = Rgas(model.fluid)
     ∑z = sum(z)
     γliq = activity_coefficient(model.fluid,p,T,z/∑z,μ_ref = μ_ref)
