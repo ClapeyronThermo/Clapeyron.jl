@@ -62,6 +62,7 @@ Clapeyron.internal_energy_res
 ```@docs
 Clapeyron.isochoric_heat_capacity
 Clapeyron.isobaric_heat_capacity
+Clapeyron.adiabatic_index
 Clapeyron.isothermal_compressibility
 Clapeyron.isentropic_compressibility
 Clapeyron.speed_of_sound
