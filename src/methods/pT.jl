@@ -481,7 +481,7 @@ end
 function activity_coefficient_impl(model,p,T,z,μ_ref,reference,phase,threaded,vol0)
     R̄ = Rgas(model)
     μ_mixt = chemical_potential(model, p, T, z; phase, threaded, vol0)
-    return exp.((μ_mixt .- μ_ref) ./ R̄ ./ T) ./z
+    return sum(z) .* exp.((μ_mixt .- μ_ref) ./ R̄ ./ T) ./z
 end
 
 """
