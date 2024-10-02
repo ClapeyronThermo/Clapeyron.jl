@@ -414,6 +414,13 @@ end
     s_ = entropy(model,p,T,z)
     @test Tproperty(model,p,h_,z,enthalpy) ≈ T
     @test Tproperty(model,p,s_,z,entropy) ≈ T
+
+    model = PCSAFT(["propane"])
+    p = 101325.0; T = 300.0;z = [1.]
+    h_ = enthalpy(model,p,T,z)
+    s_ = entropy(model,p,T,z)
+    @test Tproperty(model,p,h_,z,enthalpy) ≈ T
+    @test Tproperty(model,p,s_,z,entropy) ≈ T
 end
 
 @testset "bubble/dew point algorithms" begin
