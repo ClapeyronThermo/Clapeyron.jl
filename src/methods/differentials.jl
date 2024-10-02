@@ -10,7 +10,7 @@
 returns `f` and `∂f/∂T` at constant total volume and composition, where f is the total helmholtz energy, given by `eos(model,V,T,z)`
 
 """
-function ∂f∂T(model,V,T,z=SA[1.0])
+function ∂f∂T(model,V,T,z)
     f(∂T) = eos(model,V,∂T,z)
     return Solvers.derivative(f,T)
 end
@@ -21,9 +21,8 @@ end
 returns `f` and `∂f/∂V` at constant temperature and composition, where f is the total helmholtz energy, given by `eos(model,V,T,z)`, and V is the total volume
 """
 function ∂f∂V(model,V,T,z)
-    f(∂V) = a_res(model,∂V,T,z)
-    dadv = Solvers.derivative(f,V)
-    return Rgas(model)*T*(dadv - sum(z)/V)
+    f(∂V) = eos(model,∂V,T,z)
+    return Solvers.derivative(f,V)
 end
 
 #returns a tuple of the form ([∂f∂V,∂f∂T],f),using the least amount of computation
