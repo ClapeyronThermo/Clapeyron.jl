@@ -153,10 +153,10 @@ end
 
 Requires `p` and any other bulk property `prop` to compute the necessary temperature.
 """
-function Tproperty_pure(model::EoSModel,p,prop,property::Function;rootsolver = FastShortcutNonlinearPolyalg(),phase =:unknown,abstol = 1e-15,reltol = 1e-15)
+function Tproperty_pure(model::EoSModel,p,prop,property::Function;rootsolver = Roots.Order0(),phase =:unknown,abstol = 1e-15,reltol = 1e-15,verbose=false)
   crit = crit_pure(model)
   Tc,Pc,Vc = crit
-  Tsat,vlsat,vvpat = Clapeyron.x0_saturation_temperature(model,p,crit = crit)
+  Tsat,vlsat,vvpat = Clapeyron.x0_saturation_temperature(model,p,crit)
   if isnan(Tsat)
     if p < Pc
       verbose && @error "Saturation temperature not found"
