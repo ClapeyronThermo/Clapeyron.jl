@@ -133,27 +133,33 @@ end
 
 Solvers.∂2(f,V::Num,T::Num) = ∂2_sym(f,V,T)
 
-SymbolicUtils.promote_symtype(::typeof(Clapeyron.volume), args...) = Real
-SymbolicUtils.promote_symtype(::typeof(Clapeyron.eos), args...) = Real 
-#SymbolicUtils.promote_symtype(::typeof(Clapeyron.dfdv), args...) = Real 
-
 const SymReal = Union{Num,SymbolicUtils.Symbolic{<:Real}}
 const SymZ = Union{AbstractVector{Num},Symbolics.SymArray,Num,SymbolicUtils.Symbolic{<:Real},Symbolics.Arr{Num, 1}}
 const RealZ = Union{AbstractVector{<:Real},Real}
 
+for f in (:eos,:VT_enthalpy,:VT_entropy,:VT_gibbs_free_energy,:VT_helmholtz_free_energy)
+    @eval begin
+        SymbolicUtils.promote_symtype(::typeof(Clapeyron.$f), args...) = Real
+        @register_symbolic Clapeyron.$f(model::EoSModel,p,T,z::AbstractVector) false
+        @register_symbolic Clapeyron.$f(model::EoSModel,p,T,z::Symbolics.Arr{Num,1}) false
+        @register_symbolic Clapeyron.$f(model::Clapeyron.IdealModel,p,T,z::AbstractVector) false
+        @register_symbolic Clapeyron.$f(model::Clapeyron.IdealModel,p,T,z::Symbolics.Arr{Num,1}) false
+    end
+end
+
+SymbolicUtils.promote_symtype(::typeof(Clapeyron._volume), args...) = Real
+
+#SymbolicUtils.promote_symtype(::typeof(Clapeyron.dfdv), args...) = Real
+
+
 @register_symbolic Clapeyron._volume(model::EoSModel,p,T,arr::AbstractVector,
-                                     sym::Union{String,Symbol},bool::Bool,x::Union{Real,Nothing})
+                                     sym::Union{String,Symbol},bool::Bool,x::Union{Real,Nothing}) false
 @register_symbolic Clapeyron._volume(model::EoSModel,p,T,arr::Symbolics.Arr{Num,1},
-                                     sym::Union{String,Symbol},bool::Bool,x::Union{Real,Nothing})
-#@register_symbolic Clapeyron._volume(model::EoSModel,p,T,z::Symbolics.Arr{Num,1},phase::Symbol,threaded::Bool,vol0::Union{Real,Nothing}) false
-#@register_symbolic Clapeyron._volume(model::EoSModel,p,T,z::AbstractVector,phase::Symbol,threaded::Bool,vol0::Union{Real,Nothing}) false
-@register_symbolic Clapeyron.eos(model::EoSModel,p,T,z::AbstractVector) false
-@register_symbolic Clapeyron.eos(model::EoSModel,p,T,z::Symbolics.Arr{Num,1}) false
-@register_symbolic Clapeyron.eos(model::EoSModel,p,T) false
+                                     sym::Union{String,Symbol},bool::Bool,x::Union{Real,Nothing}) false
+
 Symbolics.@register_array_symbolic Clapeyron.∂f_vec(model::EoSModel,p,T,z::AbstractVector) begin
 size=(3,)
 end
-
 Symbolics.@register_array_symbolic Clapeyron.∂f_vec(model::EoSModel,p,T,z::Symbolics.Arr{Num,1}) begin
 size=(3,)
 end
@@ -169,6 +175,13 @@ Symbolics.@register_array_symbolic Clapeyron.f∂fdV(model::EoSModel,p,T,z::Abst
     size=(2,)
 end
 Symbolics.@register_array_symbolic Clapeyron.f∂fdV(model::EoSModel,p,T,z::Symbolics.Arr{Num,1}) begin
+    size=(2,)
+end
+
+Symbolics.@register_array_symbolic Clapeyron.f∂fdT(model::EoSModel,p,T,z::AbstractVector) begin
+    size=(2,)
+end
+Symbolics.@register_array_symbolic Clapeyron.f∂fdT(model::EoSModel,p,T,z::Symbolics.Arr{Num,1}) begin
     size=(2,)
 end
 

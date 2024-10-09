@@ -13,6 +13,7 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.pip(system, 5.907908736304141e-5, T, [1.]) ≈ 6.857076349623449 rtol = 1e-6
         @test Clapeyron.compressibility_factor(system, p, T) ≈ 0.002383223535444557 rtol = 1e-6
         @test Clapeyron.pressure(system, 5.907908736304141e-5, T) ≈ p rtol = 1e-6
+        @test Clapeyron.pressure(system, 2*5.907908736304141e-5, T, Clapeyron.SA[2.0]) ≈ p rtol = 1e-6
         @test Clapeyron.entropy(system, p, T) ≈ -58.87118569239617 rtol = 1E-6
         @test Clapeyron.chemical_potential(system, p, T)[1] ≈ -18323.877542682934 rtol = 1E-6
         @test Clapeyron.internal_energy(system, p, T) ≈ -35882.22946560716 rtol = 1E-6
