@@ -150,24 +150,8 @@ function a_nf(model ::COFFEEModel, V, T, z, _data=@f(data))
     _Iμμ = Iμμ(ρ̄,T̄,μ)
 
     Q = ∫∫∫Odξ₁dξ₂dγ12(ρ̄,T̄,μ²,d,_Iμμ)
-
-    t1 = log(4π/Q)
-    t2 = ∫∫∫OlnOdξ₁dξ₂dγ12(ρ̄,T̄,μ²,d,_Iμμ,Q)
-    t3 = ∫∫∫Oodξ₁dξ₂dγ12(ρ̄,T̄,μ²,d,_Iμμ,Q)
-
-    t1 = Solvers.primalval(t1)
-    t2 = Solvers.primalval(t2)
-    t3 = Solvers.primalval(t3)
-
-    # println("T̄ = $T̄")
-    # println("ρ̄ = $ρ̄")
-    # println("μ = $μ")
-    # println("Q = $Q")
-    # println("t1 = $t1")
-    # println("t2 = $t2")
-    # println("t3 = $t3")
         
-    return g_hs*ρ̄*π*2*(19/24*(t1+t2) + μ²/T̄*_Iμμ*t3)
+    return 19π/12*ρ̄*g_hs*log(4π/Q)
 end
 
 function Iμμ(ρ̄,T̄,μ)
