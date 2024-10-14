@@ -23,7 +23,7 @@ returns `∂f/∂V` at constant temperature and composition, where f is the tota
 function ∂f∂V(model,V,T,z)
     f(∂V) = a_res(model,∂V,T,z)
     ∂aᵣ∂V = Solvers.derivative(f,V)
-    -sum(z)*Rgas(model)*T*(∂aᵣ∂V - 1/V)
+    sum(z)*Rgas(model)*T*(∂aᵣ∂V - 1/V)
 end
 
 #returns a tuple of the form ([∂f∂V,∂f∂T],f),using the least amount of computation
