@@ -167,14 +167,17 @@ end
 
 function a_hc(model::gcPCPSAFTModel, V, T, z,_data=@f(data))
     ngroups = length(model.groups.flattenedgroups)
-
     _d,ζ0,ζ1,ζ2,ζ3,m̄ = _data
     m = model.params.segment.values
     Σz = sum(z)
     c1 = 1/(1-ζ3)
     c2 = 3ζ2/(1-ζ3)^2
     c3 = 2ζ2^2/(1-ζ3)^3
-    a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    if !iszero(ζ3)
+        a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    else
+        a_hs = @f(bmcs_hs_zero_v,_d)
+    end
     g_hs = zero(V+T+first(z))*zeros(ngroups,ngroups)
     for k ∈ @groups
         dₖ = _d[k]
