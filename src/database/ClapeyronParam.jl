@@ -30,9 +30,9 @@ custom_show(param::EoSParam) = _custom_show_param(typeof(param))
 function build_parametric_param(param::Type{T}, args...) where T <: ParametricEoSParam
     TT = mapreduce(eltype, promote_type, args)
     paramtype = parameterless_type(param)
-    
+
     converted_params = map(x -> _convert_param(TT,x), args)
-    
+
     paramtype{TT}(converted_params...)
 end
 
@@ -53,7 +53,7 @@ function Base.show(io::IO, mime::MIME"text/plain", params::EoSParam)
         param = getfield(params, name)
         print(io, "\n ", name, "::", typeof(param))
     end
-end 
+end
 
 function Base.show(io::IO, params::EoSParam)
     print(io, typeof(params))
@@ -160,7 +160,7 @@ end
     return nothing
 end
 
-Base.iterate(param::SingleOrPair) = iterate(param.values) 
+Base.iterate(param::SingleOrPair) = iterate(param.values)
 Base.iterate(param::SingleOrPair,state) = iterate(param.values,state)
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam

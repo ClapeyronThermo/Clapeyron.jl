@@ -402,11 +402,21 @@ end
 
     #ClapeyronSat
     @test Clapeyron.saturation_temperature(model,p0,ClapeyronSaturation())[1] ≈ 374.2401401001685 rtol = 1e-6
+
+    #Issue #290
+    @test Clapeyron.saturation_temperature(cPR("R1233zde"),101325*20,crit_retry = false)[1] ≈ 405.98925205830335 rtol = 1e-6
 end
 
 @testset "Tproperty" begin
     model = PCSAFT(["propane","dodecane"])
     p = 101325.0; T = 300.0;z = [0.5,0.5]
+    h_ = enthalpy(model,p,T,z)
+    s_ = entropy(model,p,T,z)
+    @test Tproperty(model,p,h_,z,enthalpy) ≈ T
+    @test Tproperty(model,p,s_,z,entropy) ≈ T
+
+    model = PCSAFT(["propane"])
+    p = 101325.0; T = 300.0;z = [1.]
     h_ = enthalpy(model,p,T,z)
     s_ = entropy(model,p,T,z)
     @test Tproperty(model,p,h_,z,enthalpy) ≈ T

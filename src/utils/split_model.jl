@@ -132,9 +132,19 @@ function gc_each_split_model(param::GroupParam,I)
     flattenedgroups = param.flattenedgroups[_idx]
     i_groups = [[findfirst(isequal(group), flattenedgroups)::Int for group ∈ componentgroups] for componentgroups ∈ groups]
     n_flattenedgroups = Vector{Vector{Int64}}(undef,length(I))
+
+    #handling for intergroups
+    n_intergroups = Vector{Matrix{Int64}}(undef,length(I))
+    empty_intergroup = fill(0,(0,0))
     for (k,i) in pairs(I)
         pii = param.n_flattenedgroups[i]
         n_flattenedgroups[k] = pii[_idx]
+        pij = param.n_intergroups[i]
+        if !isempty(pij)
+            n_intergroups[k] = pij[_idx,_idx]
+        else
+            n_intergroups[k] = empty_intergroup
+        end
     end
     n_groups_cache  = PackedVectorsOfVectors.packed_fill(0.0,(length(ni) for ni in n_flattenedgroups))
 
@@ -149,56 +159,6 @@ function gc_each_split_model(param::GroupParam,I)
         groups,
         grouptype,
         n_groups,
-        i_groups,
-        flattenedgroups,
-        n_flattenedgroups,
-        n_groups_cache,
-        sourcecsvs)
-end
-
-function gc_each_split_model(param::StructGroupParam,I)
-    grouptype = param.grouptype
-    components = param.components[I]
-    groups = param.groups[I]
-    n_groups = param.n_groups[I]
-    sourcecsvs = param.sourcecsvs
-
-    #unique, but without allocating sets.
-    _idx = zeros(Bool,length(param.flattenedgroups))
-    for i in I
-        group_i = param.groups[i]
-        for k in 1:length(group_i)
-            j::Int = findfirst(==(group_i[k]),param.flattenedgroups)::Int
-            _idx[j] = true
-        end
-    end
-
-    len_groups = length(_idx)
-
-    flattenedgroups = param.flattenedgroups[_idx]
-    n_intergroups = Vector{Matrix{Int64}}(undef,length(I))
-    i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
-    n_flattenedgroups = Vector{Vector{Int64}}(undef,length(I))
-    for (k,i) in pairs(I)
-        pii = param.n_flattenedgroups[i]
-        n_flattenedgroups[k] = pii[_idx]
-
-        pii = param.n_intergroups[i]
-        n_intergroups[k] = pii[_idx,_idx]
-    end
-    n_groups_cache = PackedVectorsOfVectors.packed_fill(0.0,(length(ni) for ni in n_flattenedgroups))
-
-    for (k,i) in pairs(I)
-        pii = param.n_groups_cache[i]
-        true_n = @view(pii[_idx])
-        n_groups_cache[k] .= true_n
-    end
-
-    return _idx,StructGroupParam(
-        components,
-        groups,
-        grouptype,
-        n_groups,
         n_intergroups,
         i_groups,
         flattenedgroups,
@@ -207,7 +167,8 @@ function gc_each_split_model(param::StructGroupParam,I)
         sourcecsvs)
 end
 
-function each_split_model(group::GroupParameter,I)
+
+function each_split_model(group::GroupParam,I)
     _,gi = gc_each_split_model(group,I)
     return gi
 end
@@ -253,12 +214,6 @@ This is useful in the case of models without any parameters, as those models are
 The Default is `is_splittable(model) = true`.
 """
 is_splittable(model) = true
-is_splittable(null::Union{Nothing,Missing}) = false
-is_splittable(::Number) = false
-is_splittable(::AbstractString) = false
-is_splittable(::Symbol) = false
-is_splittable(::Tuple) = false
-
 
 function split_model(param)
     if is_splittable(param)
@@ -269,8 +224,8 @@ function split_model(param)
     end
 end
 
-
-function split_model(param::ClapeyronParam,splitter)
+#general method
+function split_model(param,splitter)
     if is_splittable(param)
         return [each_split_model(param,i) for i ∈ splitter]
     else
@@ -285,7 +240,7 @@ function split_model(param::AbstractArray,splitter)
 end
 
 for T in (:Symbol,:Tuple,:AbstractString,:Number,:Missing,:Nothing)
-    @eval split_model(param::$T,splitter) = [fill(param,length(i)) for i ∈ splitter]
+    @eval is_splittable(param::$T) = false
 end
 
 function _n_splitter(n)
@@ -327,9 +282,9 @@ function gc_eosparam_split_model(Base.@nospecialize(params::EoSParam),groups::Gr
     return T.(split_paramsvals...)
 end
 
-function group_splitter(group::T,splitter) where T <: GroupParameter
+function group_splitter(group::GroupParam,splitter)
     n = length(splitter)
-    group_split = Vector{T}(undef,n)
+    group_split = Vector{GroupParam}(undef,n)
     idx_split = Vector{Vector{Bool}}(undef,n)
     flattenedgroups = group.flattenedgroups
     gc_splitter = Vector{Vector{Int}}(undef,n)

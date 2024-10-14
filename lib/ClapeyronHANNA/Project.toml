@@ -1,0 +1,28 @@
+name = "ClapeyronHANNA"
+uuid = "3f3167c7-7596-4199-a8f8-b0e6cfdc2746"
+authors = ["Sebastian Schmitt <se.s.schmitt@gmail.com>"]
+version = "0.1.1"
+
+[deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+Clapeyron = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Transformers = "21ca0261-441d-5938-ace7-c90938fde4d4"
+
+[compat]
+CSV = "0.10"
+Clapeyron = "0.6"
+Flux = "0.14"
+JLD2 = "0.5"
+LinearAlgebra = "1"
+Transformers = "0.3"
+julia = "1.6"
+
+[extras]
+Clapeyron = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Clapeyron", "Test"]

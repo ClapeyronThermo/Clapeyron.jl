@@ -86,8 +86,9 @@ function lb_volume end
 lb_volume(model,T,z) = lb_volume(model,z)
 lb_volume(model) = lb_volume(model,SA[1.0])
 """
-    T_scale(model::EoS,z)
+    T_scale(model::EoSModel,z)
 Represents a temperature scaling factor.
+
 On any EoS based on Critical parameters (Cubic or Empiric EoS), the temperature scaling factor is chosen to be the critical temperature.
 On SAFT or other molecular EoS, the temperature scaling factor is chosen to be a function of the potential depth ϵ.
 Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
@@ -95,17 +96,23 @@ Used as scaling factors in [`saturation_pressure`](@ref) and as input for solvin
 function T_scale end
 T_scale(model) = T_scale(model,SA[1.0])
 """
-    p_scale(model::SAFTModel,z)
-Represents a pressure scaling factor
-On any EoS based on Critical parameters (Cubic or
-Empiric EoS), the pressure scaling factor is
-chosen to be a function of the critical pressure.
-On SAFT or other molecular EoS, the temperature
-scaling factor is chosen to a function of ∑(zᵢ*ϵᵢ*(σᵢᵢ)³)
-Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
+    p_scale(model::EoSModel,z)
+Represents a pressure scaling factor.
+
+On any EoS based on Critical parameters (Cubic or Empiric EoS), the pressure scaling factor is
+chosen to be a function of the critical pressure. On SAFT or other molecular EoS, the pressure scaling factor is chosen to a function of ∑(zᵢ*ϵᵢ*(σᵢᵢ)³)
+Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref).
+
+By default, it can be defined as a function of `Clapeyron.lb_volume` and `Clapeyron.T_scale`
 """
 function p_scale end
+
 p_scale(model) = p_scale(model,SA[1.0])
+
+function p_scale(model,z)
+    Ts = T_scale(model,z)
+    sum(z)*Rgas(model)*Ts/lb_volume(model,Ts,z)
+end
 """
     antoine_coef(model)
 should return a 3-Tuple containing reduced Antoine Coefficients. The Coefficients follow the correlation:
@@ -460,12 +467,10 @@ function x0_sat_pure_crit(model,T,crit::Tuple)
 end
 
 function x0_sat_pure_crit(model,T,Tc,Pc,Vc)
-    h = Vc*5000
-    T0 = 369.89*T/Tc
-    Vl0 = (1.0/_propaneref_rholsat(T0))*h
-    Vv0 = (1.0/_propaneref_rhovsat(T0))*h
-    _1 = SA[1.0]
-    return Vl0,Vv0
+    p = critical_psat_extrapolation(model,T,Tc,Pc,Vc)
+    vl = volume(model,p,T,phase = :l)
+    vv = volume(model,p,T,phase = :v)
+    return vl,vv
 end
 
 function x0_sat_pure_crit(model,T)
@@ -473,9 +478,14 @@ function x0_sat_pure_crit(model,T)
     return x0_sat_pure_crit(model,T,Tc,Pc,Vc)
 end
 
-function scale_sat_pure(model)
-    p    = 1/p_scale(model,SA[1.0])
-    μ    = 1/Rgas(model)/T_scale(model,SA[1.0])
+function equilibria_scale(model,z = SA[1.0])
+    Ts = T_scale(model,z)
+    lb_v = lb_volume(model,Ts,z)
+    R = Rgas(model)
+    μ = 1/(R*Ts)
+    p = lb_v*μ
+    #p    = 1/p_scale(model,SA[1.0])
+    #μ    = 1/Rgas(model)/T_scale(model,SA[1.0])
     return p,μ
 end
 
@@ -619,7 +629,7 @@ function dpdTsat_step(model,p,T0,satmethod,multiple::Bool = true)
         k = -p0/(dpdT*T*T) 
         dpdT(saturation) = Δs/Δv (Clapeyron equation)
         =#
-        dpdT = (VT_entropy(model,vvi,T) - VT_entropy(model,vli,T))/(vvi - vli)
+        dpdT = dpdT_pure(model,vli,vvi,T)
         dTinvdlnp = -pii/(dpdT*T*T)
         Δlnp = log(p/pii)
         #dT = clamp(dTdp*Δp,-0.5*T,0.5*T)
@@ -712,4 +722,99 @@ function solve_2ph_taylor(model1::EoSModel,model2::EoSModel,T,v1,v2,p_scale = 1.
     a1,da1,d2a1 = Solvers.f∂f∂2f(f1,v1)
     a2,da2,d2a2 = Solvers.f∂f∂2f(f2,v2)
     return solve_2ph_taylor(v1,v2,a1,da1,d2a1,a2,da2,d2a2,p_scale,μ_scale)
+end
+
+"""
+    critical_vsat_extrapolation(model,T,Tc,Vc)
+    critical_vsat_extrapolation(model,T,crit = crit_pure(model))
+
+Given critical information and a temperature, extrapolate the liquid and vapor saturation volumes.
+"""
+function critical_vsat_extrapolation(model,T,Tc,Vc)
+    if T > Tc
+        _0 = zero(Base.promote_eltype(model,T))
+        nan = _0/_0
+        return nan,nan
+    end
+    ρc = 1/Vc
+    dp(ρ,T) = Solvers.derivative(dρ -> pressure(model, 1/dρ, T), ρ)
+    _,d2p,d3p = Solvers.∂J2(dp,ρc,Tc)
+    ∂²p∂ρ∂T = d2p[2]
+    ∂³p∂ρ³ = d3p[1,1]
+    Bp = sqrt(6 * Tc * ∂²p∂ρ∂T / ∂³p∂ρ³)
+    ΔT = (Tc - T)/T
+    Δρ = Bp*sqrt(ΔT)
+    ρl = ρc + Δρ
+    ρv = ρc - Δρ
+    return 1/ρl,1/ρv
+end
+
+critical_vsat_extrapolation(model,T) = critical_vsat_extrapolation(model,T,crit_pure(model))
+critical_vsat_extrapolation(model,T,crit) = critical_vsat_extrapolation(model,T,crit[1],crit[3])
+
+"""
+    critical_psat_extrapolation(model,T,Tc,Pc,Vc)
+    critical_psat_extrapolation(model,T,Tc,Vc)
+    critical_psat_extrapolation(model,T,crit = crit_pure(model))
+
+Given critical information and a temperature, extrapolate the saturation pressure.
+"""
+function critical_psat_extrapolation(model,T,Tc,Pc,Vc)
+    if T > Tc
+        _0 = zero(Base.promote_eltype(model,T))
+        return _0/_0
+    end
+    _p(_T) = pressure(model,Vc,_T)
+    dpdT = Solvers.derivative(_p,Tc)
+    dTinvdlnp = -Pc/(dpdT*Tc*Tc)
+    Δlnp = (1/T - 1/Tc)/dTinvdlnp
+    p = exp(Δlnp)*Pc
+end
+
+critical_psat_extrapolation(model,T) = critical_psat_extrapolation(model,T,crit_pure(model))
+critical_psat_extrapolation(model,T,crit) = critical_psat_extrapolation(model,T,crit[1],crit[2],crit[3])
+critical_psat_extrapolation(model,T,Tc,Vc) = critical_psat_extrapolation(model,T,Tc,pressure(model,Vc,Tc),Vc)
+
+
+"""
+    critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
+    critical_tsat_extrapolation(model,p,Tc,Vc)
+    critical_tsat_extrapolation(model,p,crit = crit_pure(model))
+
+Given critical information and a pressure, extrapolate the saturation temperature.
+"""
+function critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
+    if p > Pc
+        _0 = zero(Base.promote_eltype(model,p))
+        return _0/_0
+    end
+    _p(_T) = pressure(pure,Vc,_T)
+    dpdT = Solvers.derivative(_p,Tc)
+    dTinvdlnp = -Pc/(dpdT*Tc*Tc)
+    Δlnp = log(p/Pc)
+    Tinv = 1/Tc + dTinvdlnp*Δlnp
+    T = 1/Tinv
+end
+
+critical_tsat_extrapolation(model,T) = critical_tsat_extrapolation(model,p,crit_pure(model))
+critical_tsat_extrapolation(model,T,crit) = critical_tsat_extrapolation(model,p,crit[1],crit[2],crit[3])
+critical_tsat_extrapolation(model,T,Tc,Vc) = critical_tsat_extrapolation(model,p,Tc,pressure(model,Vc,Tc),Vc)
+
+function dpdT_pure(model,v1,v2,T)
+    #log(p/p0) = [-dpdT*T*T/p](p = p0,T = T0) * (1/T - 1/T0)
+
+    dS_res = VT_entropy_res(model,v1,T) - VT_entropy_res(model,v2,T)
+    dS_ideal = Rgas(model)*(log(v1/v2))
+    dS = dS_res + dS_ideal
+    dv = (v1 - v2)
+    return dS/dv
+end
+
+function dpdT_pure(model1::EoSModel,model2::EoSModel,v1,v2,T)
+    #log(p/p0) = [-dpdT*T*T/p](p = p0,T = T0) * (1/T - 1/T0)
+    dS_res = VT_entropy_res(model1,v1,T) - VT_entropy_res(model2,v2,T)
+    dS_ideal = Rgas(model1)*(log(v1/v2))
+    dS = dS_res + dS_ideal
+    dv = (v1 - v2)
+    return dS/dv
 end

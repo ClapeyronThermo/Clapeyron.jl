@@ -786,7 +786,7 @@ r12b1~|~bromochlorodifluoromethane,163.884,2.20487,3.63702,229.87484,0.0,0,0,,NO
 octacosane~|~n-octacosane,394.454,11.85246,3.88288,248.46039,0.0,0,0,,NONPOLAR,OK
 isobutyronitrile~|~2-methylpropanenitrile,69.058,2.86622,3.4857,233.12537,4.29,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "dimethyl adipate~|~dimethyl 1,6-hexanedioate",174.089,6.13667,3.32456,247.1628,0.0,4,0,,NONPOLAR,OK
-pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane,87.105,3.24364,3.64534,237.87493,0.0,1,1,,ASSOCIATIVE,OK
+pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane~|~1-pentylamine,87.105,3.24364,3.64534,237.87493,0.0,1,1,,ASSOCIATIVE,OK
 perdeuteroacetic acid,60.021,3.99328,2.59306,182.30859,0.0,2,1,,ASSOCIATIVE,kappa_ab: higher
 "4-thiaheptane~|~dipropyl sulfide~|~di-n-propyl sulfide~|~1,1'-thiobispropane",118.082,4.10318,3.57885,247.17224,1.6,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 5-thianonane~|~dibutylsulfide~|~di-n-butylsulfide,146.113,3.53849,4.08612,293.65259,1.6,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
@@ -1402,7 +1402,7 @@ n-aminoethyl ethanolamine~|~n-(2-aminoethyl)ethanolamine~|~2-(2-aminoethyl)amino
 "n,n-dimethyl(2-pentylnonyl)amine~|~n,n-dimethyl-2-pentyl-1-nonanamine",241.277,6.85322,3.93834,246.47036,0.0,1,0,,NONPOLAR,OK
 2-hexyl mercaptan,118.082,2.81312,4.12304,293.20744,0.0,1,1,,ASSOCIATIVE,OK
 1-heptanethiol~|~heptyl mercaptan~|~n-heptyl mercaptan,132.097,2.47315,4.5,309.40705,0.0,1,1,,ASSOCIATIVE,sigma: higher
-"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane",104.066,2.77365,3.92011,273.84587,1.56,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
+"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane~|~methyl-t-butyl sulfide",104.066,2.77365,3.92011,273.84587,1.56,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 1-pentanethiol~|~pentyl mercaptan~|~n-pentyl mercaptan,104.066,2.92309,3.87121,284.25802,0.0,1,1,,ASSOCIATIVE,OK
 "2,4-dimethylpyrrole",95.073,4.57531,3.13061,255.59742,0.0,0,1,,NONPOLAR,OK
 n-methylpiperazine~|~1-methylpiperazine,100.1,1.78424,4.5,365.11248,0.0,2,1,,ASSOCIATIVE,sigma: higher

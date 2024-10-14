@@ -504,7 +504,7 @@ ethanol,2-thiapropane~|~dimethylsulfide,0.003982213046323
 ethanol,r32~|~difluoromethane,-0.0288766122159697
 ethanol,2-pyrrolidon~|~2-pyrrolidone~|~2-pyrrolidinone,-0.0308279644823888
 ethanol,r125~|~pentafluoroethane,-0.0343958579235214
-ethanol,1-pentylamine~|~1-pentanamine,-0.0289621476727065
+ethanol,pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane~|~1-pentylamine,-0.0289621476727065
 ethanol,"2,3-dithiabutane~|~dimethyldisulfide",0.0241746936880781
 ethanol,"linalool~|~3,7-dimethyl-1,6-octadien-3-ol",0.0239397330904578
 ethanol,butyl tert-butyl ether,3.168948772441488e-5
@@ -3816,7 +3816,7 @@ methanol,r32~|~difluoromethane,-0.0542296670052079
 methanol,2-pyrrolidon~|~2-pyrrolidone~|~2-pyrrolidinone,-0.0376296879553831
 methanol,r11~|~cfcl3~|~trichlorofluoromethane,0.0442320124532228
 methanol,r125~|~pentafluoroethane,-0.0424426011760487
-methanol,1-pentylamine~|~1-pentanamine,-0.0462318058496729
+methanol,pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane~|~1-pentylamine,-0.0462318058496729
 methanol,"2,3-dithiabutane~|~dimethyldisulfide",0.0315266574562397
 methanol,sulfur dioxide,-0.1190070519966434
 methanol,3-amino-1-propanol,-0.1808808125037716
@@ -4445,7 +4445,7 @@ propanol~|~1-propanol~|~propan-1-ol,ethane,-0.0393210488046103
 propanol~|~1-propanol~|~propan-1-ol,propene~|~propylene,0.0029536468488317
 propanol~|~1-propanol~|~propan-1-ol,"2,2,2-trifluoroethanol",-0.0292996146467932
 propanol~|~1-propanol~|~propan-1-ol,r30b1~|~ch2clbr~|~bromochloromethane,0.0132340223140088
-propanol~|~1-propanol~|~propan-1-ol,1-pentylamine~|~1-pentanamine,-0.0294263277449605
+propanol~|~1-propanol~|~propan-1-ol,pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane~|~1-pentylamine,-0.0294263277449605
 propanol~|~1-propanol~|~propan-1-ol,"2,3-dithiabutane~|~dimethyldisulfide",0.0291442021750415
 propanol~|~1-propanol~|~propan-1-ol,3-amino-1-propanol,-0.2111277204199051
 propanol~|~1-propanol~|~propan-1-ol,pyrrole,-0.0284172994569522
@@ -6813,7 +6813,7 @@ r125~|~pentafluoroethane,"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafl
 r125~|~pentafluoroethane,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene",-0.0044819616965835
 "dimethyl adipate~|~dimethyl 1,6-hexanedioate","dimethylsuccinate~|~dimethyl 1,4-butanedioate",0.0049311899639259
 "dimethyl adipate~|~dimethyl 1,6-hexanedioate","1,6-diisocyanatohexane~|~hexamethylene diisocyanate",0.0102624023523814
-1-pentylamine~|~1-pentanamine,1-methoxy2-propanol~|~1-methoxy-2-propanol~|~propylene glycol monomethyl ether,-0.0508224833261626
+pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane~|~1-pentylamine,1-methoxy2-propanol~|~1-methoxy-2-propanol~|~propylene glycol monomethyl ether,-0.0508224833261626
 "2,3-dithiabutane~|~dimethyldisulfide",etbe~|~tert-butyl ethyl ether~|~ethyl tert-butyl ether~|~2-ethoxy-2-methylpropane~|~2-ethoxy-2-methyl-propane,-0.003017833234589
 p-chloronitrobenzene~|~4-chloronitrobenzene~|~1-chloro-4-nitrobenzene,o-chloronitrobenzene~|~2-chloronitrobenzene~|~1-chloro-2-nitrobenzene,-0.0100918930624779
 sulfur dioxide,gamma-valerolactone~|~tetrahydro-5-methyl-2-furanone~|~dihydro-5-methyl-2(3h)-furanone,-0.0387208577102325

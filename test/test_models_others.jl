@@ -77,10 +77,21 @@ end
     @testset "Joback" begin
         system = JobackIdeal(["hexane"])
         @test Clapeyron.VT_isobaric_heat_capacity(system,V,298.15) ≈ 143.22076150138616 rtol = 1e-6
-        @test Clapeyron.T_b(system) ≈ 336.88 rtol = 1e-6
         @test Clapeyron.crit_pure(system)[1] ≈ 500.2728274871347 rtol = 1e-6
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 9.210841420941021 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+   
+        s0 = JobackIdeal("acetone")
+        @test Clapeyron.JobackGC.T_c(s0)[1] ≈ 500.5590 rtol = 1e-6
+        @test Clapeyron.JobackGC.P_c(s0)[1] ≈ 48.025e5 rtol = 1e-6
+        @test Clapeyron.JobackGC.V_c(s0)[1] ≈ 209.5e-6 rtol = 1e-6
+        @test Clapeyron.JobackGC.T_b(s0)[1] ≈ 322.1100 rtol = 1e-6
+        @test Clapeyron.JobackGC.H_form(s0)[1] ≈ -217830.0 rtol = 1e-6
+        @test Clapeyron.JobackGC.G_form(s0)[1] ≈ -154540.0 rtol = 1e-6
+        @test Clapeyron.JobackGC.C_p(s0,300)[1] ≈ 75.3264 rtol = 1e-6
+        @test Clapeyron.JobackGC.H_fusion(s0)[1] ≈ 5.1250e3 rtol = 1e-6
+        @test Clapeyron.JobackGC.H_vap(s0)[1] ≈ 29.0180e3 rtol = 1e-6
+        @test Clapeyron.JobackGC.Visc(s0,300)[1] ≈ 0.0002942 rtol = 9e-4
     end
 
     @testset "Reid" begin
@@ -146,6 +157,15 @@ end
         system = CPLNGEstIdeal(["a1"],userlocations = (;Mw = [20.5200706797]))
         #test at 324.33 K, paper says Cp = 44.232, but the calculations in the paper seem off
         @test Clapeyron.VT_isobaric_heat_capacity(system,0.03,324.33) ≈ 44.231 rtol = 5e-4
+    end
+
+    @testset "PPDS" begin
+        m1 = PPDSIdeal("krypton")
+        @test isobaric_heat_capacity(m1,1,303.15)/Rgas(m1) ≈ 2.5
+        mw2 = 32.042 #MonomerIdeal("methanol").params.Mw.values[1]
+        m2 = PPDSIdeal("methanol")
+        #verification point in ref 1, table A.6
+        @test isobaric_heat_capacity(m2,1,303.15)/mw2 ≈ 1.3840 rtol = 1e-4
     end
 end
     @printline

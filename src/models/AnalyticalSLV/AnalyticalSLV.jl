@@ -133,7 +133,7 @@ function x0_crit_pure(model::AnalyticalSLVModel)
     return (1.01,log10(2*vc))
 end
 
-function p_scale(model::AnalyticalSLVModel, z=SA[1.0])
+function p_scale(model::AnalyticalSLVModel, z)
     n = sum(z)
     invn2 = one(n) / (n * n)
     _pc = model.params.Pc.values

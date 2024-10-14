@@ -203,7 +203,7 @@ dicyclohexylamine~|~cyclohexylcyclohexaneamine~|~n-cyclohexylcyclohexanamine~|~n
 "3,4-xylenol~|~3,4-dimethylphenol",a,"3,4-xylenol~|~3,4-dimethylphenol",b,0.01661,3308.57958,10.1021/acs.iecr.3c02255
 o-tert-butylphenol~|~2-tert-butylphenol~|~2-tert-butyl-1-hydroxybenzene,a,o-tert-butylphenol~|~2-tert-butylphenol~|~2-tert-butyl-1-hydroxybenzene,b,0.00452,1424.40389,10.1021/acs.iecr.3c02255
 acetol~|~1-hydroxy-2-propanone,a,acetol~|~1-hydroxy-2-propanone,b,0.00653,4215.04913,10.1021/acs.iecr.3c02255
-pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane,a,pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane,b,0.15168,1005.52848,10.1021/acs.iecr.3c02255
+pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane~|~1-pentylamine,a,pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane~|~1-pentylamine,b,0.15168,1005.52848,10.1021/acs.iecr.3c02255
 perdeuteroacetic acid,a,perdeuteroacetic acid,b,0.9,1365.80862,10.1021/acs.iecr.3c02255
 ethylaniline~|~n-ethylaniline~|~n-ethylaminobenzene,a,ethylaniline~|~n-ethylaniline~|~n-ethylaminobenzene,b,0.0001,2703.6272,10.1021/acs.iecr.3c02255
 benzylamine~|~alpha-aminotoluene,a,benzylamine~|~alpha-aminotoluene,b,0.00625,2088.27465,10.1021/acs.iecr.3c02255

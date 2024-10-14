@@ -5,6 +5,7 @@ using Clapeyron, Test, Unitful
     system = PCSAFT(["ethanol"])
     p = 1e5
     T = 298.15
+    T2 = 373.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 5.907908736304141e-5 rtol = 1e-6
         @test Clapeyron.volume(system, p, T;phase=:v) ≈ 0.020427920501436134 rtol = 1e-6
@@ -20,6 +21,9 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.helmholtz_free_energy(system, p, T) ≈ -18329.785451419295 rtol = 1E-6
         @test Clapeyron.isochoric_heat_capacity(system, p, T) ≈ 48.37961296309505 rtol = 1E-6
         @test Clapeyron.isobaric_heat_capacity(system, p, T) ≈ 66.45719988319257 rtol = 1E-6
+        Cp = Clapeyron.isobaric_heat_capacity(system, p, T2)
+        Cv = Clapeyron.isochoric_heat_capacity(system, p, T2)
+        @test Clapeyron.adiabatic_index(system, p, T2) ≈ Cp/Cv rtol = 1E-12
         @test Clapeyron.isothermal_compressibility(system, p, T) ≈ 1.1521981407243432e-9 rtol = 1E-6
         @test Clapeyron.isentropic_compressibility(system, p, T) ≈ 8.387789464951438e-10 rtol = 1E-6
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1236.4846683094133 rtol = 1E-6 #requires that the model has Mr

@@ -14,6 +14,11 @@ function pressure(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂V(model,V,T,z)
 end
 
+function pressure_res(model::EoSModel, V, T, z=SA[1.])
+    fun(x) = eos_res(model,x,T,z)
+    return -Solvers.derivative(fun,V)
+end
+
 function VT_entropy(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂T(model,V,T,z)
 end
@@ -77,6 +82,14 @@ function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     ∂²A∂V² = d²A[1,1]
     ∂²A∂T² = d²A[2,2]
     return -T*(∂²A∂T² - ∂²A∂V∂T^2/∂²A∂V²)
+end
+
+function VT_adiabatic_index(model::EoSModel, V, T, z=SA[1.])
+    d²A = f_hess(model,V,T,z)
+    ∂²A∂V∂T = d²A[1,2]
+    ∂²A∂V² = d²A[1,1]
+    ∂²A∂T² = d²A[2,2]
+    return 1 - ∂²A∂V∂T*∂²A∂V∂T/(∂²A∂V²*∂²A∂T²)
 end
 
 function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
@@ -300,7 +313,7 @@ end
 
 function VT_partial_property(model::EoSModel,V,T,z,property::ℜ) where {ℜ}
     fun(x) = property(model,V,T,x)
-    TT = gradient_type(V,T,z)
+    TT = gradient_type(model,T+V,z)
     return Solvers.gradient(fun,z)::TT
 end
 
@@ -316,6 +329,7 @@ end
 VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos)
 VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos_res)
 VT_chemical_potential_res!(r,model::EoSModel, V, T, z=SA[1.]) = VT_partial_property!(r,model,V,T,z,eos_res)
+VT_chemical_potential!(result,model,V,T,z) = VT_partial_property!(result,model,V,T,z,eos)
 
 function VT_fugacity_coefficient(model::EoSModel,V,T,z=SA[1.])
     return _VT_fugacity_coefficient(model,V,T,z)
@@ -358,5 +372,7 @@ function VT_fugacity_coefficient!(φ,model::EoSModel,V,T,z=SA[1.],p = pressure(m
     return φ
 end
 
-export second_virial_coefficient,pressure,cross_second_virial,equivol_cross_second_virial
+export pressure
+export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
+
 

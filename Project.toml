@@ -1,7 +1,7 @@
 name = "Clapeyron"
 uuid = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
 authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pjwalker@caltech.edu>", "Andrés Riedemann <andres.riedemann@gmail.com>"]
-version = "0.6.2"
+version = "0.6.3"
 
 [deps]
 BlackBoxOptim = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
@@ -72,7 +72,7 @@ Scratch = "^1.1"
 SparseArrays = "1"
 StableTasks = "0.1"
 StaticArrays = "^1.5.9"
-Symbolics = "5, 6"
+Symbolics = "^6.2"
 Tables = "^1.8"
 UUIDs = "1"
 Unitful = "^1.12"

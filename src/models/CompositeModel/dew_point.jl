@@ -101,7 +101,6 @@ function dew_temperature_impl(model::RestrictedEquilibriaModel,p,y,method::Activ
         pure = split_model(pmodel,1:length(model))
     end
 
-    f(z) = Obj_bubble_temperature(model,z,p,y,pure)
     sat = saturation_temperature.(pure,p)
     Ti   = first.(sat)
     T0 = dot(Ti,y)

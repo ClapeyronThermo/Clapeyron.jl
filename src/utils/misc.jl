@@ -153,5 +153,11 @@ function viewn(x,chunk,i)
     @view x[((i - 1)*chunk+1):(i*chunk)]
 end
 
+viewlast(x,i) = @view(x[(end - i + 1):end])
+viewfirst(x,i) = @view(x[begin:i])
+
+
 linearidx(x::AbstractVector) = 1:length(x)
 linearidx(x::AbstractMatrix) = diagind(x)
+
+mid(a,b,c) =  max(min(a,b),min(max(a,b),c))

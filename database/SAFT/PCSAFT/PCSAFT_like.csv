@@ -467,7 +467,7 @@ cs2~|~carbon disulfide,1938,76.14,1.7072,3.6171,333.44,0,0,10.1016/j.fluid.2006.
 2-thiapentane~|~methylpropyl sulfide~|~1-(methylthio)-propane~|~methyl-n-propyl sulfide~|~methyl n-propyl sulfide,1814,90.19,2.9283,3.6524,267.83,0,0,10.1016/j.fluid.2006.07.006
 "2,3-dithiabutane~|~dimethyldisulfide",1828,94.2,2.643,3.5836,300.67,0,0,10.1016/j.fluid.2006.07.006
 2-thiahexane~|~methylbutyl sulfide~|~1-(methylthio)butane~|~methyl-n-butyl sulfide~|~methyl n-butyl sulfide,2815,104.21,3.2429,3.7186,270.11,0,0,10.1016/j.fluid.2006.07.006
-methyl-t-butyl sulfide,1815,104.21,2.8002,3.909,273.18,0,0,10.1016/j.fluid.2006.07.006
+"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane~|~methyl-t-butyl sulfide",1815,104.21,2.8002,3.909,273.18,0,0,10.1016/j.fluid.2006.07.006
 "4-thiaheptane~|~dipropyl sulfide~|~1,1'-thiobispropane~|~di-n-propyl sulfide",1817,118.24,3.5494,3.7766,267.42,0,0,10.1016/j.fluid.2006.07.006
 "ethyl-t-butyl sulfide~|~ethyl t-butyl sulfide~|~2,2-dimethyl-3-thiapentane~|~2-(ethylthio)-2-methylpropane",2816,118.24,3.1483,3.9335,268.45,0,0,10.1016/j.fluid.2006.07.006
 methyl-t-pentyl sulfide~|~methyl t-pentyl sulfide~|~2-methyl-2-(methylthio)-butane,1816,118.24,2.965,4.0306,299.81,0,0,10.1016/j.fluid.2006.07.006
