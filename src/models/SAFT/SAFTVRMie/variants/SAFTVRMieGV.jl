@@ -29,7 +29,7 @@ function transform_params(::Type{SAFTVRMieGV},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
     sigma = sigma_LorentzBerthelot(sigma)
-    epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
+    epsilon = epsilon_HudsenMcCoubreysqrt(params["epsilon"], sigma)
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
     m = params["segment"]
@@ -134,15 +134,15 @@ function recombine_impl!(model ::SAFTVRMieGVModel)
     model.params.bondvol.values.values[:] = bondvol.values.values
 
     sigma = sigma_LorentzBerthelot!(sigma)
-    epsilon = epsilon_HudsenMcCoubrey!(epsilon,sigma)
+    epsilon = epsilon_HudsenMcCoubreysqrt!(epsilon,sigma)
     lambda_a = lambda_LorentzBerthelot!(lambda_a)
     lambda_r = lambda_LorentzBerthelot!(lambda_r)
     return model
 end
 
-function a_res(model ::SAFTVRMieGVModel, V, T, z)
+function a_res(model ::SAFTVRMieGVModel, V, T, z) 
     _data = @f(data) 
-    return @f(a_hs,_data) +@f(a_dispchain,_data) + @f(a_assoc,_data) + @f(a_mp,_data)
+    return @f(a_hs,_data) + @f(a_dispchain,_data) + @f(a_assoc,_data) + @f(a_mp,_data)
 end
 
 function a_mp(model ::SAFTVRMieGVModel, V, T, z, _data=@f(data))
