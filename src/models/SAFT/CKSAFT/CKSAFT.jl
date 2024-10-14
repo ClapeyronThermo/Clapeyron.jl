@@ -111,7 +111,12 @@ end
 function a_hs(model::CKSAFTModel, V, T, z,_data = @f(data))
     _d, m̄, ζi, Σz = _data
     ζ0,ζ1,ζ2,ζ3 = ζi
-    return bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    if !iszero(ζ3)
+        _a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    else
+        _a_hs = @f(bmcs_hs_zero_v,_d)
+    end
+    return _a_hs
 end
 
 function a_disp(model::CKSAFTModel, V, T, z,_data = @f(data))

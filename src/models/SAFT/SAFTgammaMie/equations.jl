@@ -2,6 +2,7 @@ function x0_volume_liquid(model::SAFTgammaMieModel,T,z)
     v_lb = lb_volume(model,z)
     return v_lb*2.0
 end
+
 function lb_volume(model::SAFTgammaMieModel, z)
     vk  = model.groups.n_flattenedgroups
     seg = model.params.segment.values
@@ -66,6 +67,11 @@ function data(model::SAFTgammaMieModel, V, T, z)
     _ζst = _ζst = σ3x*_ρ_S*π/6
     vrdata = (_d_gc_av,_ρ_S,ζi,_ζ_X,_ζst,σ3x,m̄)
     return (_d_gc,X,vrdata)
+end
+
+function packing_fraction(model::SAFTgammaMieModel,_data::Tuple)
+    _,_,vrdata = _data
+    return packing_fraction(model.vrmodel,vrdata)
 end
 
 function X_gc(model::SAFTgammaMieModel,V,T,z)

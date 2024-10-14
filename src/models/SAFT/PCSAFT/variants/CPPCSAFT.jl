@@ -110,7 +110,11 @@ end
 function a_hs(model::CPPCSAFTModel,V,T,z,_data = @f(data))
     _d,ζ0,ζ1,ζ2,ζ3,m̄,ϵmix,σmix = _data
     θ = CPPCSAFT_theta(T,ϵmix)
-    _a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    if !iszero(ζ3)
+        _a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    else
+        _a_hs = @f(bmcs_hs_zero_v,_d)
+    end
     return _a_hs*sqrt((1 - ζ3) / (1 - ζ3 / θ^3))
 end
 
