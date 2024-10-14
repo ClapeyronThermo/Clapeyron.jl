@@ -24,19 +24,24 @@ function VT_entropy(model::IdealModel, V, T, z=SA[1.])
 end
 
 function VT_internal_energy(model::IdealModel, V, T, z=SA[1.])
-    A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
+    V₀ = oneunit(V)
+    A, ∂A∂T = f∂fdT(model,V₀,T,z)
     return A - T*∂A∂T
 end
 
 function VT_enthalpy(model::IdealModel, V, T, z=SA[1.])
-    A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
-    return A - V*∂A∂V - T*∂A∂T
+    #idealmodels don't have a volume dependence for enthalpy
+    V₀ = oneunit(V)
+    A, ∂A∂T = f∂fdT(model,V₀,T,z)
+    return A + sum(z)*Rgas(model)*T - T*∂A∂T
 end
 
 function VT_gibbs_free_energy(model::IdealModel, V, T, z=SA[1.])
-    A = eos(model,V,T,z)
-    ∂A∂V = -sum(z)*R̄*T/V
-    return A - V*∂A∂V
+    return eos(model,V,T,z) + sum(z)*Rgas(model)*T
+end
+
+function VT_helmholtz_free_energy(model::IdealModel, V, T, z=SA[1.])
+    return eos(model,V,T,z)
 end
 
 lb_volume(model::IdealModel,z) = zero(eltype(z))

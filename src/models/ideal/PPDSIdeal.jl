@@ -85,8 +85,7 @@ function a_ideal(model::PPDSIdealModel,V,T,z=SA[1.0])
 
     Σz = sum(z)
     res = zero(V+T+first(z))
-    ρ = Σz/V
-    lnΣz = log(Σz)
+    ρ = 1/V
     τi = one(T)/T
     Tr = one(T)
     logτi = log(τi)
@@ -115,8 +114,8 @@ function a_ideal(model::PPDSIdealModel,V,T,z=SA[1.0])
             y = Tr/Ā
             coeffs = (zero(λ), 0.5*λ, (λ - D)/6, (G + F)/12, G/20)
             ai += η*evalpoly(y,coeffs)
-            res += xlogx(zi)
-            res += zi*(ai + log(δi) - lnΣz)
+            res += xlogx(zi,δi)
+            res += zi*ai
     end
-    return res/Σz - 1
+    return res/Σz
 end

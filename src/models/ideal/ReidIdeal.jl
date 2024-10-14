@@ -140,13 +140,14 @@ function a_ideal(model::PolynomialIdealModel, V, T, z)
     return res/Σz
 end
 
-function VT_isobaric_heat_capacity(model::PolynomialIdealModel,V,T,z=SA[1.])
+function ∂²f∂T²(model::PolynomialIdealModel,V,T,z)
     coeff = model.params.coeffs.values
-    res = zero(T+first(z))
+    Cp = zero(T+first(z))
     Σz = sum(z)
     for i in @comps
         pol = coeff[i]
-        res +=z[i]*evalcoeff(model,pol,T)
+        Cp +=z[i]*evalcoeff(model,pol,T)
     end
-    return res/Σz
+    Cv = Cp - Σz*Rgas(model)
+    return -Cv/T
 end

@@ -91,7 +91,7 @@ function a_ideal(model::AlyLeeIdealModel,V,T,z=SA[1.0])
     
     Σz = sum(z)
     res = zero(V+T+first(z))
-    ρ = Σz/V
+    ρ = 1/V
     lnΣz = log(Σz)
     τi = one(T)/T
     logτi = log(τi)
@@ -110,8 +110,8 @@ function a_ideal(model::AlyLeeIdealModel,V,T,z=SA[1.0])
         ni = (Bi,Di,Fi,Hi)
         vi = (Ci,Ei,Gi,Ii)
         ai += term_a0_gerg2008(τi,logτi,zero(τi),ni,vi)
-        res += xlogx(zi)
-        res += zi*(ai + log(δi) - lnΣz)
+        res += xlogx(zi,δi)
+        res += zi*ai
     end
     return res/Σz - 1
 end
