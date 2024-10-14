@@ -92,7 +92,7 @@ end
 function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     if V == Inf  || model isa IdealModel
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
-        return -T*∂²A∂T² - Rgas(model)*sum(z)
+        return -T*∂²A∂T² + Rgas(model)*sum(z)
     else
         d²A = f_hess(model,V,T,z)
         ∂²A∂V∂T = d²A[1,2]
@@ -166,8 +166,10 @@ function VT_isobaric_expansivity(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
-    if false#V == Inf || model isa IdealModel
-        #TODO: the ideal gas results in μⱼₜ = 0, but residual terms do matter here.
+    if V == Inf || model isa IdealModel
+        B,∂B∂T = B∂B∂T(model,T,z)
+        Cp = VT_isobaric_heat_capacity(model,V,T,z)
+        return (T*∂B∂T - B)/Cp
     else
         d²A = f_hess(model,V,T,z)
         ∂²A∂V∂T = d²A[1,2]
@@ -175,11 +177,6 @@ function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
         ∂²A∂T² = d²A[2,2]
         return -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))^-1
     end
-end
-
-function virial2(model,V,T,z)
-    f(∂ρ) = a_res(model,1/∂ρ,T,z)
-    return Solvers.derivative(f,1/V)
 end
 
 """
@@ -205,7 +202,10 @@ function second_virial_coefficient_impl(model::EoSModel, T, z = SA[1.0])
     return Solvers.derivative(f,1/V)
 end
 
-
+function B∂B∂T(model,T,z = SA[1.0])
+    b(T) = second_virial_coefficient(model,T,z)
+    return Solvers.f∂f(b,T)
+end
 """
     cross_second_virial(model,T,z)
 
@@ -425,5 +425,3 @@ end
 
 export pressure
 export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
-
-
