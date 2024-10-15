@@ -137,29 +137,38 @@ end
 function a_nf(model ::COFFEEModel, V, T, z, _data=@f(data))
     (_,_,(_,_,_,η),_,_,_,_)= _data
     
-    ϵ = model.params.epsilon[1]
-    σ = model.params.sigma[1]
-    d = model.params.shift[1] / σ
-    μ² = model.params.dipole2[1]./ϵ/σ^3
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    d = model.params.shift.values / diagvalues(σ)
+    μ² = model.params.dipole2.values
     μ = sqrt(μ²)
 
-    g_hs = (1-η/2)/(1-η)^3
     ρ̄ = 6/π*η
-    T̄ = T/ϵ
 
-    _Iμμ = Iμμ(ρ̄,T̄,μ)
+    _I = zero(eltype(V+T+first(z)))
+    y = 4π*N_A/(9*T*V)*sum(z.*μ²)
+    Iμμ = 1.5691*exp(-0.4769*y+0.0478*y^2)
+    _Q = @f(Q,Iμμ)
+    _χ = @f(χ,_Q)
 
-    Q = ∫∫∫Odξ₁dξ₂dγ12(ρ̄,T̄,μ²,d,_Iμμ)
+    for i in @comps
+        χii = _χ[i,i]
+        gii = (1.708-20.8569*exp(-ϵ[i,i]/T))*exp(0.8196*ρ̄)
+        Qii = _Q[i,i]
+        _I += z[i]^2*μ²[i]^2/σ[i,i]^3*χii*gii*log(8π/(Qii*χii))
+        for j in 1:i-1
+            χij = _χ[i,j]
+            χji = _χ[j,i]
+            gij = (1.708-20.8569*exp(-ϵ[i,j]/T))*exp(0.8196*ρ̄)
+            Qij = _Q[i,j]
+
+            _I += z[i]*z[j]*μ[i]*μ[j]/σ[i,j]^3*(χij*gij*log(8π/(Qij*χij)) + χji*gij*log(8π/(Qij*χji)))
+        end
+    end
+
+    _I *= 19π/12*ρ̄
         
-    return 19π/12*ρ̄*g_hs*log(8π/Q)
-end
-
-function Iμμ(ρ̄,T̄,μ)
-    a = COFFEEconsts.corr_I
-
-    return a[1] + a[2]/T̄ + a[3]/T̄^2 + ρ̄ * (
-           a[4] + a[5]*μ + a[6]/T̄ + a[7]/T̄^2 + a[8]*ρ̄ + a[9]*ρ̄^2 + a[10]*ρ̄*μ/T̄
-    )
+    return _I
 end
 
 function ∫odr(d,ξ1,ξ2,γ12)
