@@ -258,7 +258,7 @@ function _tpd_and_v!(fxy,model::GammaPhi,p,T,w,di,phase = :l)
 end
 
 function tpd_obj(model::GammaPhi, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,di), break_first = false)
-    vcache[] = one(eltype(di))
+    # vcache[] = one(eltype(di))
     function f(α)
         w = α .* α .* 0.25
         w ./= sum(w)
