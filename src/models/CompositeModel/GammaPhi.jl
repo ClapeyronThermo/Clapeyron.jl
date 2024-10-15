@@ -263,7 +263,7 @@ function tpd_obj(model::GammaPhi, p, T, di, isliquid, cache = tpd_neq_cache(mode
         w = α .* α .* 0.25
         w ./= sum(w)
         γ = activity_coefficient(model.activity,p,T,w)
-        γ .= log(γ)
+        γ .= log.(γ)
         lnγw = γ
         fx = @sum(w[i]*(lnγw[i] + log(w[i]) - di[i])) - sum(w) + 1
     end
