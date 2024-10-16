@@ -15,6 +15,14 @@ GC.gc()
         GC.gc()
     end
 
+    @testset "SAFTVRMieGV" begin
+        system = SAFTVRMieGV(["benzene","acetone"])
+        V_GV = 8e-5
+        @test Clapeyron.a_mp(system, V_GV, T, z) ≈ -0.7521858819355216 rtol = 1e-6
+        test_gibbs_duhem(system,V_GV,T,z)
+        GC.gc()
+    end
+
     @testset "SAFTVRQMie" begin
         system = SAFTVRQMie(["helium"])
         @test Clapeyron.a_mono(system, V, T, z1) ≈ 0.12286776703976324 rtol = 1e-6
