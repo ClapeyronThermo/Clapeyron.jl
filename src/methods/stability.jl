@@ -44,7 +44,7 @@ Checks if all eigenvalues of `∂²A/∂n²` are positive.
 """
 function VT_diffusive_stability(model,V,T,z = SA[1.0])
     isone(length(model)) && return true
-    ρᵢ = x ./ V
+    ρᵢ = z ./ V
     HΨ = Ψ_hessian(model,T,ρᵢ)
     λ = eigmin(Hermitian(HΨ)) # calculating just minimum eigenvalue more efficient than calculating all & finding min
     return λ > 0
