@@ -25,10 +25,10 @@ Clapeyron.idealmodel
 Clapeyron.a_res
 ```
 
-## Automatic Differenciation functions
+## Automatic Differentiation functions
 
-All bulk properties in `Clapeyron` are calculated via a combination of these Automatic Differenciation Primitives over [`eos`](@ref) or [`eos_res`](@ref)
- 
+All bulk properties in `Clapeyron` are calculated via a combination of these Automatic Differentiation Primitives over [`eos`](@ref) or [`eos_res`](@ref)
+
 ```@docs
 Clapeyron.∂f∂T
 Clapeyron.∂f∂V
