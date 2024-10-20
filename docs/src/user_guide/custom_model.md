@@ -134,7 +134,7 @@ struct PCSAFT{T<:IdealModel} <: PCSAFTModel
     sites::SiteParam                        # Parameter struct containing the sites and their amounts
     params::PCSAFTParam                     # Struct specified in the macro
     idealmodel::T                           # Model for the ideal part
-    assoc_options::Clapeyron.AssocOptions   # Options for the calculation of the association helmholtz contribution
+    assoc_options::Clapeyron.AssocOptions   # Options for the calculation of the association Helmholtz contribution
     references::Array{String,1}             # DOI references
 end
 
@@ -185,7 +185,7 @@ You can, of course, not use the macro, if your model depends itself on other mod
 
    If we obey that convention, we may use the `@f` macro, which automatically substitutes the first four parameters for compactness. For example, `@f(func,i,j)` is equivalent to calling `func(model,V,T,z,i,j)`.
 
-    Clapeyron obtains all the properties of a model by differentiating the total helmoltz energy ([`eos`](@ref)) or the residual helmoltz energy ([`eos_res`](@ref)).  `eos` and `eos_res` themselves are defined in terms of the reduced ideal helmholtz energy ([`a_res`](@ref)). In this case, we are going to define `a_res` for our own model:
+    Clapeyron obtains all the properties of a model by differentiating the total Helmholtz energy ([`eos`](@ref)) or the residual Helmholtz energy ([`eos_res`](@ref)).  `eos` and `eos_res` themselves are defined in terms of the reduced ideal Helmholtz energy ([`a_res`](@ref)). In this case, we are going to define `a_res` for our own model:
 
    ```julia
    function Clapeyron.a_res(model::PCSAFTModel, V, T, z)
