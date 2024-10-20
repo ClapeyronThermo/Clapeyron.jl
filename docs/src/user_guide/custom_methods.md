@@ -19,13 +19,13 @@ One of the most common reasons for our methods to fail (that we've seen) is due 
 function Clapeyron.x0_sat_pure(model::PCSAFTModel,T,z=SA[1.0])
   # Obtain the volume lower bound for that particular system
   Vlb = lb_volume(model,z)*one(T)
-  
+
   # Relative to the lower bound, define your initial guesses. We log10 the results as our solvers solve for the log10 of the volume.
   return Vlb*1.5,Vlb*100
 end
 ```
 
-Note that we do need prefix [`x0_sat_pure`] with `Clapeyron.` as we do not export this function normally; including this function in our script with force Clapeyron to use it instead of the default. These modifications can also be done for `x0_crit_pure` although `crit_pure` has proven to be quite reliable.
+Note that we do need prefix [`x0_sat_pure`](@ref) with `Clapeyron.` as we do not export this function normally; including this function in our script with force Clapeyron to use it instead of the default. These modifications can also be done for `x0_crit_pure` although `crit_pure` has proven to be quite reliable.
 
 ## Custom volume solver
 
@@ -33,18 +33,18 @@ For something a bit more substantial, you can also modify the volume function it
 
 ```julia
 function Clapeyron.volume_impl(model::MyEoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0=nothing)
-  
+
   # INSERT YOUR ALGORITHM HERE
-  
+
   return vol
 end
 ```
 
-Clapeyron will automatically call your implementation when your model is evaluated. 
+Clapeyron will automatically call your implementation when your model is evaluated.
 
 ## Custom saturation solver
 
-For saturation solvers ([`saturation_pressure`](@ref),[`saturation_temperature`](@ref)), You can dispatch on a different saturation method. let's create one, that just evaluates antoine coefficients:
+For saturation solvers ([`saturation_pressure`](@ref),[`saturation_temperature`](@ref)), You can dispatch on a different saturation method. let's create one, that just evaluates Antoine coefficients:
 
 ```julia
 struct DirectAntoine{C} <: Clapeyron.SaturationMethod
@@ -84,12 +84,12 @@ end
 #defining interface, check Clapeyron.TPFlashMethod for more information
 numphases(::MyRachfordRice) = 2
 #we perform index reduction, to create smaller models in case one component has zero composition.
-function Clapeyron.index_reduction(method::MyRachfordRice,non_zero_indices) 
+function Clapeyron.index_reduction(method::MyRachfordRice,non_zero_indices)
   return MyRachfordRice(index_reduction(method.K0,non_zero_indices))
 end
 
 function Clapeyron.tp_flash_impl(model::EoSModel,p,T,z,method::MyRachfordRice)
-  #perform rachford rice,returns x, y, α₀
+  #perform Rachford Rice,returns x, y, α₀
   #...
   X = vcat(x',y')
   n = X.*[1-α₀
