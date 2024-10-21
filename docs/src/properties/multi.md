@@ -39,6 +39,7 @@ Clapeyron.eutectic_point
 ```
 
 ### Bubble/Dew methods
+
 ```@docs
 Clapeyron.ChemPotBubblePressure
 Clapeyron.FugBubblePressure

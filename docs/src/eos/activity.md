@@ -11,6 +11,7 @@ Pages = ["activity.md"]
 # Activity Models
 
 There are two alternatives on the definition of an activity model:
+
 - Defining an excess Gibbs energy function
 - Defining an activity coefficient function
 

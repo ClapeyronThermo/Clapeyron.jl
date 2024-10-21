@@ -1,6 +1,7 @@
 ```@meta
 CurrentModule = Clapeyron
 ```
+
 ## Definitions
 
 Within `Clapeyron`, we provide a few methods which we use to obtain thermodynamic properties (you can find out more details on how we implement these methods in our background information):
@@ -97,8 +98,8 @@ function Clapeyron.tp_flash_impl(model::EoSModel,p,T,z,method::MyRachfordRice)
   g = (gibbs_free_energy(model,p,T,x)*(1-α₀)+gibbs_free_energy(model,p,T,y)*α₀)/R̄/T
   return X,n,g
 end
-
 ```
+
 ## I have a better method...
 
 If your custom methods end up being more-efficient than ours or you develop one that we do not currently support, please do start a pull request and we will gladly add it to the package!

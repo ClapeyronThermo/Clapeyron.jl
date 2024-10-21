@@ -1,17 +1,24 @@
 # User-Defined Parameters
+
 While Clapeyron has an extensive database for most equations of state, users may need to define their own parameters. This is possible in Clapeyron whenever constructing your models using the `userlocations` optional argument:
+
 ```julia
 julia> model = PCSAFT(["your_species"]; userlocations=["your_parameters.csv"])
 ```
+
 Note that, in cases like cubics where one model can be constructed from multiple other models, you may need to specify the parameters for the submodels separately:
+
 ```julia
 julia> model = PR(["your_species"]; userlocations=["your_parameters.csv"],
                                     alpha_userlocations=["your_alpha_parameters.csv"])
 ```
+
 There are two ways which users can specify their own parameters. The preferred way is to use CSVs. However, we also allow users to define parameters straight in the REPL.
 
 ## Defining parameters using CSVs
+
 By default, parameters in Clapeyron are stored in CSV files. This was to make them easily readable and modifiable. You find our [database online](https://github.com/ClapeyronThermo/Clapeyron.jl/tree/master/database) for examples. Nevertheless, recalling that we allow for three types of parameters (`SingleParam`, `PairParam` and `AssocParam`), we have three types of CSV files:
+
 - Like parameters: These files contain parameters only referring to a single species:
 
   | Clapeyron Database File      |        |        |
@@ -41,7 +48,8 @@ By default, parameters in Clapeyron are stored in CSV files. This was to make th
   | water                         | H     | water    | e     | 1.234 |
   | water                         | H     | methanol | e     | 5.678 |
   | methanol                      | H     | water    | e     | 9.101 |
-  For association parameters, users must specify the species ($ij$) _and_ sites ($ab$) involved. However, to avoid having to specify a large number of parameters, it is generally assumed that $ij,ab=ji,ba$ which should always be true. To allow for a greater degree of flexibility, we do not assume that $ij,ab=ij,ba$ as shown above. In Clapeyron, if a set of association parameters isn't specified, it is assumed that those association interactions do not occur. The exception to this is if a combining rule is specified within `AssocOptions` (see [relevant docs](./basics_model_construction.md)).
+
+  For association parameters, users must specify the species ($ij$) *and* sites ($ab$) involved. However, to avoid having to specify a large number of parameters, it is generally assumed that $ij,ab=ji,ba$ which should always be true. To allow for a greater degree of flexibility, we do not assume that $ij,ab=ij,ba$ as shown above. In Clapeyron, if a set of association parameters isn't specified, it is assumed that those association interactions do not occur. The exception to this is if a combining rule is specified within `AssocOptions` (see [relevant docs](./basics_model_construction.md)).
 
 !!! note "Specifying group parameters"
     In group-contribution based approaches, rather than giving the name of the species under the `species` headers, give the group names. The rest will work the same way.
@@ -49,13 +57,17 @@ By default, parameters in Clapeyron are stored in CSV files. This was to make th
 If ever you are unsure, please check our database online to see if the structure of your files make sense.
 
 We offer two options to creating CSVs in the REPL:
+
 1. Using `ParamTable`: you can specify `:single`, `:pair` and `:assoc` tables which just need to match the column layout in the original tables:
+
 ```julia
 data = (species = ["water"], Mw = [18.0])
 file = ParamTable(:single,data,name="water_mw")
 model = PR(["water"],user_locations = [file])
 ```
-2. Using raw CSVs: you can literally write-out the CSV as a string within the REPL and just substitute this in:
+
+1. Using raw CSVs: you can literally write-out the CSV as a string within the REPL and just substitute this in:
+
 ```julia
 csv_data = """Clapeyron Database File,
        my water like parameters
@@ -64,10 +76,13 @@ csv_data = """Clapeyron Database File,
        """
 model = PR(["water"],user_locations = [csv_data])
 ```
+
 We prefer that users use the CSV approach as they are much easier to visualise and modify. However, it is a more-tedious approach. As such, we provide a more-direct way described below.
 
 ## Defining parameters within the REPL
+
 Still using the `userlocations` argument, we can specify the parameters used directly within the REPL. For example, in the case of a cubic:
+
 ```julia
 julia> model = PR(["water","methanol"]; userlocations = (;
                     Tc = [647.13,512.64],
@@ -82,9 +97,11 @@ PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule} with 2 components:
  "methanol"
 Contains parameters: a, b, Tc, Pc, Mw
 ```
+
 Single-component parametes are specified as vectors and pair parameters are specified as matrices. Note that you do still need to specify the submodel parameters separately (in the case of the alpha function above).
 
 As an additional example, let us now consider a similar case in a SAFT-type equation of state:
+
 ```julia
 model = SAFTVRMie(["water","methanol"]; userlocations=(;
        Mw            = [18.01,32.04],
@@ -105,4 +122,5 @@ model = SAFTVRMie(["water","methanol"]; userlocations=(;
                             (("methanol","e"),("water","H")) => 1.0411e-28,
                             (("water","e"),("methanol","H")) => 1.0411e-28)))
 ```
+
 As we can see, with certain equations of state, this method of specifying parameters can become unwieldy. This is why we recommend using CSVs instead. Also note that, if you only specify pure-component parameters for a parameter that should include pair parameters (such as `sigma` above), combining rules will be used to obtain the remaining parameters. If you specify all of the pair parameters, they will be used instead (in the case of `epsilon`). For the cubic equation of state earlier, we specified `k`, which will be used to obtain the unlike `a` parameters. Further, if we had not specified the cross-association parameters between methanol and water, unless we specified otherwise in `AssocOptions`, these interactions would not be included.

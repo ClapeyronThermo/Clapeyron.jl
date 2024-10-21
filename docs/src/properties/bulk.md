@@ -25,23 +25,28 @@ Clapeyron.pip
 ## Pressure-Temperature Based Bulk Properties
 
 In general almost all bulk properties follow the pattern:
+
 ```julia
 function property(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     V = volume(model, p, T, z; phase, threaded, vol0)
     return VT_property(model,V,T,z)
 end
 ```
+
 So, you can calculate the property with Volume-Temperature variables by calling `VT_property(model,V,T,z)`.
 Another way to do this is by using units, provided by `Unitful.jl`:
+
 ```julia
 using Unitful
 r = 18u"kg/m^3"
 T = 373.15"K"
 prop = helmholtz_free_energy(model,r,T,z,output = u"kJ")
 ```
+
 Where `r` could be any molar or mass density, molar or mass volume, total volume or pressure. It also supports mass and mol amounts defined as units for the composition (`z`). If no units are provided for the composition, they will be considered moles.
 
 ### Methods that require first order VT derivatives
+
 ```@docs
 Clapeyron.volume
 Clapeyron.helmholtz_free_energy
@@ -56,6 +61,7 @@ Clapeyron.internal_energy
 ```
 
 ### Methods that require second order VT derivatives
+
 ```@docs
 Clapeyron.isochoric_heat_capacity
 Clapeyron.isobaric_heat_capacity
@@ -67,6 +73,7 @@ Clapeyron.joule_thomson_coefficient
 ```
 
 ### Methods that require first order composition derivatives
+
 ```@docs
 Clapeyron.chemical_potential
 Clapeyron.chemical_potential_res
@@ -74,6 +81,7 @@ Clapeyron.fugacity_coefficient
 ```
 
 ### Mixing
+
 ```@docs
 Clapeyron.mixing
 ```

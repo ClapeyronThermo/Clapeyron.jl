@@ -7,6 +7,7 @@ CurrentModule = Clapeyron
 ```@index
 Pages = ["ideal.md"]
 ```
+
 # Correlation Models
 
 Correlation models are, as their name says, fitted equations that express one property of a compound. They meant to be used in conjunction with other models (like Activity models that require a saturated liquid volume), or via a `CompositeModel`. Because they only overload one property, the way to define a correlation is different than normal `EoSModel`s
@@ -28,6 +29,7 @@ end
 ```
 
 ## Saturation Models and Types
+
 ```@docs
 Clapeyron.SaturationModel
 Clapeyron.SaturationCorrelation
@@ -36,6 +38,7 @@ Clapeyron.DIPPR101Sat
 ```
 
 # Liquid Volume Correlations
+
 Liquid Volume Correlations are any `EoSModel` that are subtypes of `LiquidVolumeModel`.
 They return `volume(model,p,T,z, phase = :liquid)`.
 

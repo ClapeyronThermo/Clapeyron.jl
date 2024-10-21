@@ -17,7 +17,8 @@ Empiric (or MultiParameter) models in Clapeyron are composed of three different,
 - Departure model
 
 Pure Fluids are instantiated from CoolProp JSON files, via the [`SingleFluid`](@ref) struct. In theory, any pure fluid should be supported. Furthermore, there is support for using directly the fluids defined in the CoolProp library:
-```
+
+```julia
 julia> SingleFluid("Ethanol")
 ERROR: cannot found component file R113. Try loading the CoolProp library by loading it.
 Stacktrace:
@@ -32,7 +33,7 @@ MultiParameter Equation of state for Ethanol:
 
 Multicomponent models are a collection of `SingleFluid` models + a mixing model + a departure model:
 
-```
+```julia
 julia> model = GERG2008(["water","carbon dioxide"])
 MultiFluid{EmpiricAncillary, AsymmetricMixing, EmpiricDeparture} with 2 components:
  "water"
@@ -58,6 +59,7 @@ Contains parameters: F, parameters
 ```
 
 ## Generic Models
+
 ```@docs
 Clapeyron.SingleFluid
 Clapeyron.SingleFluidIdeal
@@ -65,7 +67,8 @@ Clapeyron.MultiFluid
 Clapeyron.EmpiricIdeal
 ```
 
-## SingleFluid Models:
+## SingleFluid Models
+
 ```@docs
 Clapeyron.XiangDeiters
 Clapeyron.IAPWS95
@@ -75,6 +78,7 @@ Clapeyron.Ammonia2023
 ```
 
 ## MultiComponent models
+
 ```@docs
 Clapeyron.LJRef
 Clapeyron.GERG2008
@@ -83,6 +87,7 @@ Clapeyron.HelmAct
 ```
 
 ## Mixing models
+
 ```@docs
 Clapeyron.LinearMixing
 Clapeyron.AsymmetricMixing
@@ -90,6 +95,7 @@ Clapeyron.LorentzBerthelotMixing
 ```
 
 ## Departure models
+
 ```@docs
 Clapeyron.EmpiricDeparture
 Clapeyron.departure_functions

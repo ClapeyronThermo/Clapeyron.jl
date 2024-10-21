@@ -1,6 +1,7 @@
 ```@meta
 CurrentModule = Clapeyron
 ```
+
 Once Clapeyron is installed, it can be loaded using:
 
 ```julia
@@ -28,6 +29,7 @@ model4 = SAFTgammaMie([
 ```
 
 In some group-contribution approaches, one may need to specify some structural information (such as gc-PC-SAFT), such as the number of bonds between groups. This can be done as follows:
+
 ```julia
 model5 = gcPCSAFT([
         ("ethanol", ["CH3" => 1, "CH2OH" => 1], [("CH3", "CH2OH") => 1])
@@ -59,6 +61,7 @@ One can find out more about the information stored within these model objects in
   - Patel-Teja-Valderrama ([`PTV`](@ref))
 - Kumar-Upadhyay ([`KU`](@ref))
 - Redlich-Kwong-Peng-Robinson ([`RKPR`](@ref))
+
 **SAFT**:
 
 - SAFT ([`ogSAFT`](@ref))
@@ -96,6 +99,7 @@ One can find out more about the information stored within these model objects in
   - COSMO-SAC with dispersive interactions ([`COSMOSACdsp`](@ref))
 
 **Empirical**:
+
 - General MultiParameter Empiric model ([`MultiFluid`](@ref))
   - GERG-2008 EoS for Natural Gas ([`GERG2008`](@ref))
   - EOS-LNG for Liquefied Natural Gas ([`EOS_LNG`](@ref))
@@ -104,7 +108,9 @@ One can find out more about the information stored within these model objects in
   - Lennard Jones Reference from Thol et al. (2016) ([`LJRef`](@ref))
   - Ammonia Reference (2023) ([`Ammonia2023`](@ref))
   - Multiparameter EoS + Activity ([`HelmAct`](@ref))
+
 **Extended Corresponding States ([`ECS`](@ref))**:
+
 - SPUNG ([`SPUNG`](@ref))
 
 One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods available in our package.
@@ -113,7 +119,7 @@ There a few optional arguments available for these equations which will be expla
 
 ## Specifying an ideal term
 
-Both SAFT and cubic-type equations of state rely upon an ideal model. By default, Clapeyron uses what we refer to as the [`BasicIdeal`](@ref) model to account for the ideal contribution which does not require any parameters. For properties which only have derivatives with respect to volume or composition (_e.g._ volume, isothermal compressibility, critical points, saturation points), or monoatomic species (_e.g._ noble gases), this is perfectly fine. However, for any other properties or species, the results obtained will most likely be quite poor. This is because this model does not account for the rotational and vibrational modes of the species. To amend this, we provide three additional ideal models to be used instead:
+Both SAFT and cubic-type equations of state rely upon an ideal model. By default, Clapeyron uses what we refer to as the [`BasicIdeal`](@ref) model to account for the ideal contribution which does not require any parameters. For properties which only have derivatives with respect to volume or composition (*e.g.* volume, isothermal compressibility, critical points, saturation points), or monoatomic species (*e.g.* noble gases), this is perfectly fine. However, for any other properties or species, the results obtained will most likely be quite poor. This is because this model does not account for the rotational and vibrational modes of the species. To amend this, we provide three additional ideal models to be used instead:
 
 - Monomer ideal correlation ([`MonomerIdeal`](@ref))
 - Walker and Haslam's ideal correlation ([`WalkerIdeal`](@ref))
@@ -147,7 +153,7 @@ The above model would be equivalent to a model built by SRK directly. We support
 - [`KUAlpha`](@ref): This is the default alpha function for KU
 - [`RKPRAlpha`](@ref): This is the default alpha function for RKPR
 - [`BMAlpha`](@ref): This is the modified alpha function proposed by Boston and Mathias designed to improve estimates above the critical point. This works for both PR and RK.
-- [`TwuAlpha`](@ref): Proposed by Twu _et al._, this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions. It was intended to be used with PR and is used in VTPR, tcPR, cPR and tcRK.
+- [`TwuAlpha`](@ref): Proposed by Twu *et al.*, this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions. It was intended to be used with PR and is used in VTPR, tcPR, cPR and tcRK.
 - [`Twu88Alpha`](@ref): An earlier version of `TwuAlpha`, that uses 2 parameters instead of 3.
 - [`MTAlpha`](@ref): Proposed by Magoulas and Tassios, this alpha function is essentially like the regular PR alpha function only to a higher order. It is used within UMRPR.
 - [`Soave2019Alpha`](@ref): Updated soave correlations for `PR` and (s)`RK` models.
@@ -169,6 +175,7 @@ We currently support:
   ```julia
   model7 = RK(["methanol","benzene"];mixing=HVRule,activity=Wilson)
   ```
+
 - [`MHV1Rule`](@ref): The modified Huron-Vidal mixing rule proposed by Michelsen to first order. This has rather significant improvements over the regular mixing rule. Also needs an activity model to be specified.
 
 - [`MHV2Rule`](@ref): The modified Huron-Vidal mixing rule proposed by Michelsen to second order. This is meant to be an improvement over the first order rule. Also needs an activity model to be specified.
@@ -198,7 +205,7 @@ Note that not all these methods will be compatible with all species as they requ
 
 ## Using an Activity coefficient model
 
-Activity coefficient models are primarily designed to obtain accurate estimate of mixture VLE properties _below_ the critical point of all species. Whilst not as flexible as other equations of state, they are computationally cheaper and, generally, more accurate. The activity coefficients are obtained as only a function of temperature and composition ($\gamma (T,\mathbf{x})$), meaning we can simply use modified Raoult's law to obtain the bubble (and dew) point:
+Activity coefficient models are primarily designed to obtain accurate estimate of mixture VLE properties *below* the critical point of all species. Whilst not as flexible as other equations of state, they are computationally cheaper and, generally, more accurate. The activity coefficients are obtained as only a function of temperature and composition ($\gamma (T,\mathbf{x})$), meaning we can simply use modified Raoult's law to obtain the bubble (and dew) point:
 
 ``y_ip= x_i\gamma_ip_{\mathrm{sat},i}``
 
@@ -262,7 +269,7 @@ The functions for the physical properties that we currently support are as follo
 
   Most of the above functions also accept the `vol0` optional keyword argument, which specifies an initial guess for the [Clapeyron.volume](@ref) solver.
 
-  Note that all of the above functions can be broadcast _i.e._ if `T` is an array, instead of a for loop, we can simply:
+  Note that all of the above functions can be broadcast *i.e.* if `T` is an array, instead of a for loop, we can simply:
 
   ```julia
   Cp = isobaric_heat_capacity.(model, p, T, z)

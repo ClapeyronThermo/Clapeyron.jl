@@ -1,4 +1,4 @@
-# Binary _pxy_ phase diagrams
+# Binary *pxy* phase diagrams
 
 ## Methanol and water
 

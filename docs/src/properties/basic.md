@@ -41,6 +41,7 @@ Clapeyron.∂²³f
 ```
 
 ## Thermodynamic Method Dispatch types
+
 ```@docs
 Clapeyron.ThermodynamicMethod
 Clapeyron.SaturationMethod
