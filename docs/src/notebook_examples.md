@@ -16,7 +16,7 @@ This is a list of currently available example notebooks for `Clapeyron.jl`:
 
 - [Mixing functions](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/mixing_functions.ipynb): Examples of calculation of mixing and excess properties
 
-- [Multi-component equilibrium and critical points](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/multi-component_vle_vlle_lle_crit.ipynb): Examples of the various equilibrium and critical properties. focused on the uncommon, more-complex types of diagrams.
+- [Multi-component equilibrium and critical points](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/multi-component_vle_vlle_lle_crit.ipynb): Examples of the various equilibrium and critical properties. Focused on the uncommon, more-complex types of diagrams.
 
 - [Differential Evolution Flash Algorithm in `Clapeyron.jl`](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/PTFlashDifferentialEvolution.ipynb): demonstration of a multicomponent flash algorithm for use with `Clapeyron.jl`, which utilizes the excellent differential evolution black box optimization algorithms in `BlackBoxOptim.jl`.
 

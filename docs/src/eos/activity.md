@@ -26,7 +26,7 @@ Those functions can also be derived from any arbitrary equation of state:
 
 ``\frac{\partial{G^E}}{\partial{n_i}}= \mu_i - \mu^{0}_i``
 
-Where ``\mu_i`` and ``\mu^{0}_i`` are the mixture and pure chemical potentials of component ``i``. in this case, those potentials are dependent of the pressure. whereas activity models are usually only temperature and composition dependent.
+Where ``\mu_i`` and ``\mu^{0}_i`` are the mixture and pure chemical potentials of component ``i``. In this case, those potentials are dependent of the pressure, whereas activity models are usually only temperature and composition dependent.
 
 ```@docs
 Clapeyron.Wilson

@@ -174,7 +174,7 @@ We currently support:
 - [`MHV2Rule`](@ref): The modified Huron-Vidal mixing rule proposed by Michelsen to second order. This is meant to be an improvement over the first order rule. Also needs an activity model to be specified.
 
 - [`WSRule`](@ref): The Wong-Sandler mixing rule which also relies on an activity model. The equations are slightly more complicated but it is meant to be an improvement compared to `HVRule`. Also needs an activity model to be specified.
-- [`modWSRule`](@ref): a a modified Wong-Sandler mixing rule, that reduces to vdW1f when there is no nonideal mixtures.
+- [`modWSRule`](@ref): A modified Wong-Sandler mixing rule, that reduces to vdW1f when there is no nonideal mixtures.
 - [`LCVMRule`](@ref): The Linear Combination of Vidal and Michelsen mixing rules is designed for asymmetric mixtures. Also needs an activity model to be specified.
 
 If one goes looking within the source code, they will also find [`VTPRRule`](@ref), [`PSRKRule`](@ref),[`PPR78Rule`](@ref), [`QCPRRule`](@ref) and [`UMRRule`](@ref); these are only intended for use in their respective models and shouldn't be used otherwise. However, it is still possible to toggle between them.

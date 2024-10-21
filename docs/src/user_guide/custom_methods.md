@@ -44,7 +44,7 @@ Clapeyron will automatically call your implementation when your model is evaluat
 
 ## Custom saturation solver
 
-For saturation solvers ([`saturation_pressure`](@ref),[`saturation_temperature`](@ref)), You can dispatch on a different saturation method. let's create one, that just evaluates Antoine coefficients:
+For saturation solvers ([`saturation_pressure`](@ref),[`saturation_temperature`](@ref)) you can dispatch on a different saturation method. Let's create one, that just evaluates Antoine coefficients:
 
 ```julia
 struct DirectAntoine{C} <: Clapeyron.SaturationMethod
@@ -70,7 +70,7 @@ function Clapeyron.saturation_temperature_impl(model::EoSModel,T,method::DirectA
 end
 ```
 
-you can now call `saturation_pressure(model,T,method)` where `method = DirectAntoine(A,B,C)`. At the moment, the default algorithm iterates directly over volumes ([`ChemPotVSaturation`](@ref)), but we also have saturation via isofugacity ([`IsofugacitySaturation`](@ref)) and superancillaries for cubics ([`SuperAncSaturation`](@ref)). the same thing can be done with `saturation_temperature`.
+You can now call `saturation_pressure(model,T,method)` where `method = DirectAntoine(A,B,C)`. At the moment, the default algorithm iterates directly over volumes ([`ChemPotVSaturation`](@ref)), but we also have saturation via isofugacity ([`IsofugacitySaturation`](@ref)) and superancillaries for cubics ([`SuperAncSaturation`](@ref)). The same thing can be done with `saturation_temperature`.
 
 ## Custom TP-Flash solver
 

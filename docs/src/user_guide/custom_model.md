@@ -130,7 +130,7 @@ The `@newmodel` macro, in conjunction with the functions defined above, gets low
 
 ```julia
 struct PCSAFT{T<:IdealModel} <: PCSAFTModel
-    components::Array{String,1}             # Components vector. the model gets it's length from here
+    components::Array{String,1}             # Components vector. The model gets it's length from here
     sites::SiteParam                        # Parameter struct containing the sites and their amounts
     params::PCSAFTParam                     # Struct specified in the macro
     idealmodel::T                           # Model for the ideal part
@@ -159,7 +159,7 @@ function PCSAFT(components;                     # Vector{String} containing a li
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-    # Combining rules for association. if you want to perform cross-association mixing, check the AssocOptions docs
+    # Combining rules for association. If you want to perform cross-association mixing, check the AssocOptions docs
     bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
 
     # Now we can create the parameter struct that we have defined.
