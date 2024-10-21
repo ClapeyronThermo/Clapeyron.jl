@@ -103,7 +103,7 @@ julia> model.params.a
  1.02049  1.4453
  1.4453   2.04695
 ```
-Note that, as we are dealing with a mixture, we need to include binary parameters (parameters that depend on two species). This is stored as shown in the case of `a`. 
+Note that, as we are dealing with a mixture, we need to include binary parameters (parameters that depend on two species). This is stored as shown in the case of `a`.
 
 Cubics are unique due to their modular nature (we can swap out pieces of the equation to hopefully make a more-accurate model). This includes:
 * **Alpha functions**, which improve the prediction the pure-component saturation curves:
@@ -246,7 +246,7 @@ AssocParam{Float64}["water", "1-propanol"]) with 2 values:
 ("water", "e") >=< ("water", "H"): 2500.7
 ("1-propanol", "e") >=< ("1-propanol", "H"): 2276.8
 ```
-When adding association, we allow for interactions between sites on species, hence why the `sites` field has been added. The association parameters are also stored in a slightly different way as well. 
+When adding association, we allow for interactions between sites on species, hence why the `sites` field has been added. The association parameters are also stored in a slightly different way as well.
 
 One thing to note is that, unless cross-associating parameters are provided within the database, Clapeyron will not assume any other association interactions. To include these, one can use the `AssocOptions` struct where, as well as other numerical settings, users can specify to use a combining rule:
 ```julia

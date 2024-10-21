@@ -21,4 +21,3 @@ This is a list of currently available example notebooks for `Clapeyron.jl`:
 - [Differential Evolution Flash Algorithm in `Clapeyron.jl`](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/PTFlashDifferentialEvolution.ipynb): demonstration of a multicomponent flash algorithm for use with `Clapeyron.jl`, which utilizes the excellent differential evolution black box optimization algorithms in `BlackBoxOptim.jl`.
 
 - [Parameter Estimation Framework](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/parameter_estimation.ipynb): demonstration of how the parameter estimation framework works, using `BlackBoxOptim.jl` as optimizer.
-

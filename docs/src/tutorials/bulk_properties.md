@@ -18,9 +18,9 @@ And that's it! However, technically, water has two volume roots at these conditi
 julia> volume(model,1e5,298.15;phase=:vapour)
 0.022334042473509567
 ```
-This may be of use when trying to study metastable regions or, if the users is certain of the phase type, speed up calculations. The results are visualised below. Note that this feature is available for all bulk property methods. 
+This may be of use when trying to study metastable regions or, if the users is certain of the phase type, speed up calculations. The results are visualised below. Note that this feature is available for all bulk property methods.
 
-![water_vol](../assets/volume_water.svg) 
+![water_vol](../assets/volume_water.svg)
 
 Let us now calculate the isobaric heat capacity of water using the same process:
 ```julia
@@ -38,7 +38,7 @@ julia> isobaric_heat_capacity(model,1e5,298.15)
 55.44925782004192
 ```
 This is now a bit closer to the true value. The inclusion of a more-accurate ideal model is required when trying to estimate temperature-derivative properties (entropy, heat capacities, speed of sound, isentropic compressibility and Joule-Thomson coefficient). This is visualised below:
-![water_cp](../assets/cp_water.svg) 
+![water_cp](../assets/cp_water.svg)
 
 ## Bulk properties of water and hexane
 One can obtain bulk properties of mixtures by simply specifying the molar amount of each component. Here, let us consider a mixture of water and carbon dioxide:

@@ -14,7 +14,7 @@ Contains parameters: a, b, Tc, Pc, Mw
 julia> (Tsat, vl, vv) = saturation_temperature(model, 1e5)
 (374.24014010712983, 2.26976016480195e-5, 0.03084938795573781)
 ```
-Note that the outputs of this function are the saturation temperature, saturated liquid volume and saturated vapour volume. The predicted saturation temperature is pretty spot-on for a cubic although the liquid volume is a bit off (see documentation related to [model construction](./basics_model_construction.md) to see how cubics can be improved to better model complex systems). 
+Note that the outputs of this function are the saturation temperature, saturated liquid volume and saturated vapour volume. The predicted saturation temperature is pretty spot-on for a cubic although the liquid volume is a bit off (see documentation related to [model construction](./basics_model_construction.md) to see how cubics can be improved to better model complex systems).
 
 If we wished to do the reverse operation, obtain the saturation pressure at a given temperature, this can be done using the `saturation_pressure(model, T)` function:
 ```julia
@@ -47,10 +47,10 @@ for i in 1:N
 end
 ```
 The resulting $pT$ curve is shown below:
-![pT_water](../assets/pT_water.svg) 
+![pT_water](../assets/pT_water.svg)
 
 As well as the $\rho T$ envelope:
-![rhoT_water](../assets/rhoT_water.svg) 
+![rhoT_water](../assets/rhoT_water.svg)
 
 ### Using alternative methods
 The default methods in `Clapeyron.jl` are generally intended for speed, with sacrifices to robustness. As such there will probably be a few cases where our default methods fail. While this could be remedied by the user providing their own initial guesses, an alternative would be to use a different method. In the case of the saturation solvers, we have a few alternatives listed [elsewhere](../properties/pure.md). This switch can be done as follows:

@@ -73,8 +73,3 @@ Clapeyron.doi
 Clapeyron.cite
 Clapeyron.doi2bib
 ```
-
-
-
-
-

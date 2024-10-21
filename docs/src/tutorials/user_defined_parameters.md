@@ -5,7 +5,7 @@ julia> model = PCSAFT(["your_species"]; userlocations=["your_parameters.csv"])
 ```
 Note that, in cases like cubics where one model can be constructed from multiple other models, you may need to specify the parameters for the submodels separately:
 ```julia
-julia> model = PR(["your_species"]; userlocations=["your_parameters.csv"], 
+julia> model = PR(["your_species"]; userlocations=["your_parameters.csv"],
                                     alpha_userlocations=["your_alpha_parameters.csv"])
 ```
 There are two ways which users can specify their own parameters. The preferred way is to use CSVs. However, we also allow users to define parameters straight in the REPL.
@@ -89,9 +89,9 @@ As an additional example, let us now consider a similar case in a SAFT-type equa
 model = SAFTVRMie(["water","methanol"]; userlocations=(;
        Mw            = [18.01,32.04],
        segment       = [1.0,1.67034],
-       epsilon       = [266.68 278.45; 
+       epsilon       = [266.68 278.45;
                         278.45 307.69],
-       sigma         = [3.0063,3.2462], 
+       sigma         = [3.0063,3.2462],
        lambda_a      = [6.,6.],
        lambda_r      = [17.02,7.6134],
        n_H           = [2,1],
@@ -104,5 +104,5 @@ model = SAFTVRMie(["water","methanol"]; userlocations=(;
                             (("methanol","e"),("methanol","H")) => 1.0657e-28,
                             (("methanol","e"),("water","H")) => 1.0411e-28,
                             (("water","e"),("methanol","H")) => 1.0411e-28)))
-``` 
+```
 As we can see, with certain equations of state, this method of specifying parameters can become unwieldy. This is why we recommend using CSVs instead. Also note that, if you only specify pure-component parameters for a parameter that should include pair parameters (such as `sigma` above), combining rules will be used to obtain the remaining parameters. If you specify all of the pair parameters, they will be used instead (in the case of `epsilon`). For the cubic equation of state earlier, we specified `k`, which will be used to obtain the unlike `a` parameters. Further, if we had not specified the cross-association parameters between methanol and water, unless we specified otherwise in `AssocOptions`, these interactions would not be included.

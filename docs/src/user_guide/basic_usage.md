@@ -68,7 +68,7 @@ One can find out more about the information stored within these model objects in
 - Lennard-Jones SAFT ([`LJSAFT`](@ref))
 - SAFT, Variable Range (VR), Square Well (SW) ([`SAFTVRSW`](@ref))
 - Cubic plus Association ([`CPA`](@ref))
-  - Simplified CPA ([`sCPA`](@ref)) 
+  - Simplified CPA ([`sCPA`](@ref))
 - Soft SAFT, with Lennard-Jones function from Johnson et al. (1993) ([`softSAFT`](@ref))
 - Soft SAFT, with Lennard-Jones function from Thol et al. (2016) ([`softSAFT2016`](@ref))
 - Perturbed-Chain SAFT ([`PCSAFT`](@ref))
@@ -146,7 +146,7 @@ The above model would be equivalent to a model built by SRK directly. We support
 - [`PR78Alpha`](@ref): This is the default alpha function for PR78.
 - [`KUAlpha`](@ref): This is the default alpha function for KU
 - [`RKPRAlpha`](@ref): This is the default alpha function for RKPR
-- [`BMAlpha`](@ref): This is the modified alpha function proposed by Boston and Mathias designed to improve estimates above the critical point. This works for both PR and RK. 
+- [`BMAlpha`](@ref): This is the modified alpha function proposed by Boston and Mathias designed to improve estimates above the critical point. This works for both PR and RK.
 - [`TwuAlpha`](@ref): Proposed by Twu _et al._, this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions. It was intended to be used with PR and is used in VTPR, tcPR, cPR and tcRK.
 - [`Twu88Alpha`](@ref): An earlier version of `TwuAlpha`, that uses 2 parameters instead of 3.
 - [`MTAlpha`](@ref): Proposed by Magoulas and Tassios, this alpha function is essentially like the regular PR alpha function only to a higher order. It is used within UMRPR.
@@ -327,7 +327,7 @@ The functions for the physical properties that we currently support are as follo
     (T_UCEP, p_UCEP, V_l_UCEP, V_v_UCEP, x, y) = UCEP_mix(model)
     ```
 
-  Like the above functions, for `crit_mix`, you can also specify initial guesses to produce smooth critical curves. 
+  Like the above functions, for `crit_mix`, you can also specify initial guesses to produce smooth critical curves.
 
 - Miscellaneous:
 
