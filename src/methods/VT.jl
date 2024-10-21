@@ -306,9 +306,16 @@ Calculated as:
 
 """
 function pip(model::EoSModel, V, T, z=SA[1.0])
+    Π,∂p∂V = _pip(model,V,T,z)
+    return Π
+end
+
+function _pip(model::EoSModel, V, T, z=SA[1.0])
     _∂2p = ∂2p(model,V,T,z)
     hess_p, grad_p, _ = _∂2p
+    ∂p∂V = grad_p[1]
     Π = V*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1])
+    return Π,∂p∂V
 end
 
 function VT_fundamental_derivative_of_gas_dynamics(model::EoSModel, V, T, z=SA[1.0])
@@ -338,13 +345,14 @@ end
 Returns the phase of a fluid at the conditions specified by `V`, `T` and `z`.
 Uses the phase identification parameter criteria from `Clapeyron.pip`
 
-returns `liquid` if the phase is liquid (or liquid-like), `vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed.
+returns `liquid` if the phase is liquid (or liquid-like), `vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed (the V-T-z point was mechanically unstable).
 """
 function VT_identify_phase(model::EoSModel, V, T, z=SA[1.0])
-    Π = pip(model, V, T, z)
-    if Π > 1
+    Π,∂p∂V = _pip(model, V, T, z)
+    βT = -1/V/∂p∂V
+    if Π > 1 && βT >= 0
         return :vapour
-    elseif Π <= 1
+    elseif Π <= 1 && βT >= 0
         return :liquid
     else #the calculation failed
         return :unknown
