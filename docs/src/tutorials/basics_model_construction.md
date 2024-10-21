@@ -1,13 +1,17 @@
 # Getting Started - Model Construction
 
-All functions in Clapeyron revolve around an object we refer to as the `model`. These models are intended to hold all of the information required to model a given system within a specific equation of state. The absolute simplest of these is the `BasicIdeal` model, which models species as an ideal gas with only translational modes of motion. It can be constructed simply using:
+All functions in Clapeyron revolve around an object we refer to as the `model`.
+These models are intended to hold all of the information required to model a given system within a specific equation of state.
+The absolute simplest of these is the `BasicIdeal` model, which models species as an ideal gas with only translational modes of motion.
+It can be constructed simply using:
 
 ```julia
 julia> model = BasicIdeal(["water"])
 BasicIdeal()
 ```
 
-This `model` is unique as it is the only model object that does not hold any information as the ideal gas is a universal model that does not depend on the chemical identity of the species. Nevertheless, one can use this model to obtain properties such as the volume and isobaric heat capacity at a given temperature and pressure:
+This `model` is unique as it is the only model object that does not hold any information as the ideal gas is a universal model that does not depend on the chemical identity of the species.
+Nevertheless, one can use this model to obtain properties such as the volume and isobaric heat capacity at a given temperature and pressure:
 
 ```julia
 julia> volume(model,1e5,298.15)
@@ -26,7 +30,10 @@ From here, we will now consider how `model`s are constructed in different equati
 
 ## Generic Models
 
-Although `BasicIdeal` does provide the universal definition for the ideal gas model, it does fall short in one aspect: accounting for modes of motion beyond translation, such as rotations and vibrations. Accounting for these contributions does involve providing chemical-specific parameters. Thankfully, Clapeyron has a built-in databank of parameters for all supported equations of state. As an example, we consider carbon-dioxide modelled by the `ReidIdeal` model, as opposed to the basic ideal model:
+Although `BasicIdeal` does provide the universal definition for the ideal gas model, it does fall short in one aspect: accounting for modes of motion beyond translation, such as rotations and vibrations.
+Accounting for these contributions does involve providing chemical-specific parameters.
+Thankfully, Clapeyron has a built-in databank of parameters for all supported equations of state.
+As an example, we consider carbon-dioxide modelled by the `ReidIdeal` model, as opposed to the basic ideal model:
 
 ```julia
 julia> model1 = BasicIdeal(["carbon dioxide"])
@@ -48,7 +55,8 @@ julia> isobaric_heat_capacity(model2,1e5,298.15)
 37.16203981139605
 ```
 
-The difference in values can be attributed to the missing rotational and vibration contributions. This difference is important to bear in mind when considering similar properties in other equations of state.
+The difference in values can be attributed to the missing rotational and vibration contributions.
+This difference is important to bear in mind when considering similar properties in other equations of state.
 
 Nevertheless, due to the need for species-specific parameters, this `model2` contains much more information than for the `BasicIdeal` model:
 
@@ -94,14 +102,17 @@ SingleParam{NTuple{4, Float64}}("Reid Coefficients") with 2 components:
  "methane" => (19.25, 0.0521, 1.2e-5, -1.13e-8)
 ```
 
-Ideal gas models are by far the simplest case to consider when building models. Other equations of state have additional features which will be discussed next. Of interest to general users may be the [group-contribution models](#group-contribution-models).
+Ideal gas models are by far the simplest case to consider when building models.
+Other equations of state have additional features which will be discussed next.
+Of interest to general users may be the [group-contribution models](#group-contribution-models).
 
 ## Cubic Models
 
 !!! tip "List of Models"
     A full list of cubic equations of state is available (see [Cubics](../eos/cubic.md)).
 
-At the surface, cubic models are quite simple as well. As an example, consider a mixture of methanol and benzene in Peng-Robinson (`PR`):
+At the surface, cubic models are quite simple as well.
+As an example, consider a mixture of methanol and benzene in Peng-Robinson (`PR`):
 
 ```julia
 julia> model = PR(["methanol","benzene"])
@@ -125,9 +136,11 @@ julia> model.params.a
  1.4453   2.04695
 ```
 
-Note that, as we are dealing with a mixture, we need to include binary parameters (parameters that depend on two species). This is stored as shown in the case of `a`.
+Note that, as we are dealing with a mixture, we need to include binary parameters (parameters that depend on two species).
+This is stored as shown in the case of `a`.
 
-Cubics are unique due to their modular nature (we can swap out pieces of the equation to hopefully make a more-accurate model). This includes:
+Cubics are unique due to their modular nature (we can swap out pieces of the equation to hopefully make a more-accurate model).
+This includes:
 
 * **Alpha functions**, which improve the prediction the pure-component saturation curves:
 
@@ -161,7 +174,8 @@ PenelouxTranslation with 2 components:
 Contains parameters: Vc, v_shift
 ```
 
-* **Mixing rules**, which can improve the predicted phase behaviour. These come in two flavours:
+* **Mixing rules**, which can improve the predicted phase behaviour.
+    These come in two flavours:
 
 Generic one-fluid mixing rules such as the van-der Waals one-fluid mixing rule (the default in all cubics):
 
@@ -198,14 +212,16 @@ Group Type: UNIFACDortmund
 Contains parameters: A, B, C, R, Q
 ```
 
-Whilst one could combine all the parts listed above in endless ways, there are some default combinations which we provide. These are typically referred to as predictive cubics: Predictive SRK (`PSRK`) and Volume-Translated PR (`VTPR`).
+Whilst one could combine all the parts listed above in endless ways, there are some default combinations which we provide.
+These are typically referred to as predictive cubics: Predictive SRK (`PSRK`) and Volume-Translated PR (`VTPR`).
 
 ## Activity Coefficient Models
 
 !!! tip "List of Models"
     A full list of activity coefficient models is available (see [Activity Models](../eos/activity.md)).
 
-As hinted at above, Clapeyron also supports activity coefficient models. These can be assembled in a similar fashion to our previous models:
+As hinted at above, Clapeyron also supports activity coefficient models.
+These can be assembled in a similar fashion to our previous models:
 
 ```julia
 julia> model = Wilson(["water","ethanol"])
@@ -225,7 +241,12 @@ Clapeyron.EoSVectorParam{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}} with
  "ethanol"
 ```
 
-The first noteworthy change is that, where most binary parameters we considered were previously symmetric, activity coefficient models have asymmetric parameters ($g_{ij}\neq g_{ji}$). More importantly, while activity coefficient models are intended to model the liquid phase, through Raoult's law, they can be used to model vapour–liquid equilibrium. For this to work, they need a model which can predict the saturation pressure of the pure components. This is why you'll field the `puremodel` field within the `model` for activity coefficient models (as shown above). By default, this is set to Peng–Robinson. However, one can change this using the `puremodel` optional argument:
+The first noteworthy change is that, where most binary parameters we considered were previously symmetric, activity coefficient models have asymmetric parameters ($g_{ij}\neq g_{ji}$).
+More importantly, while activity coefficient models are intended to model the liquid phase, through Raoult's law, they can be used to model vapour–liquid equilibrium.
+For this to work, they need a model which can predict the saturation pressure of the pure components.
+This is why you'll field the `puremodel` field within the `model` for activity coefficient models (as shown above).
+By default, this is set to Peng–Robinson.
+However, one can change this using the `puremodel` optional argument:
 
 ```julia
 julia> model = Wilson(["water","ethanol"]; puremodel=PCSAFT)
@@ -237,14 +258,18 @@ Contains parameters: g, Tc, Pc, ZRA, Mw
 
 This pure model plays an important role in modelling the bulk properties of activity coefficient models as these approaches only predict excess properties:
 $$X^E = X^\text{mix.}-\sum_ix_i X^\text{pure}$$
-To obtain $X^\text{mix.}$, $X^\text{pure}$ is obtained using the `puremodel`. Note that this means that, for all activity coefficient models, as they are pressure/volume independent, all assume ideal volume of mixing.
+To obtain $X^\text{mix.}$, $X^\text{pure}$ is obtained using the `puremodel`.
+Note that this means that, for all activity coefficient models, as they are pressure/volume independent, all assume ideal volume of mixing.
 
 !!! warning "Coming changes"
-    In a future update, Activity Coefficient Models will only be able to model the liquid phase by default. To model both the vapour and liquid phase, users will need to construct the model using [Composite Models](../eos/correlations.md).
+    In a future update, Activity Coefficient Models will only be able to model the liquid phase by default.
+    To model both the vapour and liquid phase, users will need to construct the model using [Composite Models](../eos/correlations.md).
 
 ### COSMO-SAC Models
 
-Clapeyron.jl also supports COSMO-SAC-based models. However, we only provide the activity coefficient model and not the quantum chemistry-level calculations required to obtain the sigma profiles. As such, the required parameters for COSMO-SAC are not the sigma profiles, which are stored as vectors:
+Clapeyron.jl also supports COSMO-SAC-based models.
+However, we only provide the activity coefficient model and not the quantum chemistry-level calculations required to obtain the sigma profiles.
+As such, the required parameters for COSMO-SAC are not the sigma profiles, which are stored as vectors:
 
 ```julia
 julia> model = COSMOSAC02(["water","ethanol"])
@@ -259,14 +284,18 @@ SingleParam{Vector{Float64}}("Pi") with 2 components:
  "ethanol" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.294716  …  0.755815, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 ```
 
-Note that, in comparison to other activity coefficient models, COSMO-SAC models will be quite a bit slower. Furthermore, due to the size of the sigma profiles, we do not store a full database of parameters locally. The parameters are usually obtained from the [NIST database](https://github.com/usnistgov/COSMOSAC) by specifying the `use_nist_database=true` optional argument. Please verify the NIST database's license before usage.
+Note that, in comparison to other activity coefficient models, COSMO-SAC models will be quite a bit slower.
+Furthermore, due to the size of the sigma profiles, we do not store a full database of parameters locally.
+The parameters are usually obtained from the [NIST database](https://github.com/usnistgov/COSMOSAC) by specifying the `use_nist_database=true` optional argument.
+Please verify the NIST database's license before usage.
 
 ## SAFT Models
 
 !!! tip "List of Models"
     A full list of SAFT equations of state is available (see [SAFT and CPA Models](../eos/saft.md)).
 
-Where most models use either single or binary parameters, SAFT models introduce a third type of parameter: association parameters. These can be best seen when building the model:
+Where most models use either single or binary parameters, SAFT models introduce a third type of parameter: association parameters.
+These can be best seen when building the model:
 
 ```julia
 julia> model = PCSAFT(["water","1-propanol"])
@@ -286,9 +315,11 @@ AssocParam{Float64}["water", "1-propanol"]) with 2 values:
 ("1-propanol", "e") >=< ("1-propanol", "H"): 2276.8
 ```
 
-When adding association, we allow for interactions between sites on species, hence why the `sites` field has been added. The association parameters are also stored in a slightly different way as well.
+When adding association, we allow for interactions between sites on species, hence why the `sites` field has been added.
+The association parameters are also stored in a slightly different way as well.
 
-One thing to note is that, unless cross-associating parameters are provided within the database, Clapeyron will not assume any other association interactions. To include these, one can use the `AssocOptions` struct where, as well as other numerical settings, users can specify to use a combining rule:
+One thing to note is that, unless cross-associating parameters are provided within the database, Clapeyron will not assume any other association interactions.
+To include these, one can use the `AssocOptions` struct where, as well as other numerical settings, users can specify to use a combining rule:
 
 ```julia
 julia> model = PCSAFT(["water","1-propanol"];assoc_options=AssocOptions(combining=:esd))
@@ -309,7 +340,8 @@ This may be important when trying to obtain accurate predictions for mixtures.
 
 ### Cubic Plus Association
 
-Another class of equation of state that doesn't really fit in either cubics or SAFT equations is CPA, where the two approaches are combined. As a result, the features available in both approaches are extended to CPA:
+Another class of equation of state that doesn't really fit in either cubics or SAFT equations is CPA, where the two approaches are combined.
+As a result, the features available in both approaches are extended to CPA:
 
 ```julia
 julia> model = CPA(["methanol","ethane"])
@@ -329,7 +361,9 @@ Making our CPA implementation one of the most-extensible available.
 
 ## Empirical Equations of State
 
-Clapeyron also supports high-accuracy, empirical equations of state. These differ from the previous equations of state primarily because of large number of parameters needed to model a single species. An example of this would be IAPWS-95 (for water):
+Clapeyron also supports high-accuracy, empirical equations of state.
+These differ from the previous equations of state primarily because of large number of parameters needed to model a single species.
+An example of this would be IAPWS-95 (for water):
 
 ```julia
 julia> model = IAPWS95()
@@ -343,11 +377,15 @@ MultiParameter Equation of state for water:
 As these equations of state typically have common terms, rather than specifying the parameters, we highlight what terms the equation of state is made up of, as shown above.
 
 !!! tip "List of Models"
-    A full list of Empirical equations of state is available (see [Empirical Helmholtz Models](../eos/empiric.md)). The list of available systems can be expanded by including the CoolProp.jl extension (see [Extension - CoolProp](./extensions_coolprop.md)).
+    A full list of Empirical equations of state is available (see [Empirical Helmholtz Models](../eos/empiric.md)).
+    The list of available systems can be expanded by including the CoolProp.jl extension (see [Extension - CoolProp](./extensions_coolprop.md)).
 
 ## Composite Models
 
-Not every equation of state provides a global representation of the phase space of a system (for example, activity coefficient models only consider the liquid phase). In these cases, we need to combine various models together to obtain the 'full' representation. `CompositeModels` allows users to mix-and-match all of our available models. In the most general case, five models must be specified:
+Not every equation of state provides a global representation of the phase space of a system (for example, activity coefficient models only consider the liquid phase).
+In these cases, we need to combine various models together to obtain the 'full' representation.
+`CompositeModels` allows users to mix-and-match all of our available models.
+In the most general case, five models must be specified:
 
 ```julia
 struct CompositeModel{𝕍,𝕃,𝕊,𝕃𝕍,𝕃𝕊} <: EoSModel
@@ -370,11 +408,15 @@ Composite Model:
  Saturation Model: LeeKeslerSat("water")
 ```
 
-The possibilities with this methodology are truly limitless. A useful example is in the case of [Solid-liquid equilibrium](./sle_phase_diagrams.md) calculations.
+The possibilities with this methodology are truly limitless.
+A useful example is in the case of [Solid-liquid equilibrium](./sle_phase_diagrams.md) calculations.
 
 ## Group-Contribution Models
 
-Many of the classes of equations of state discussed above also have group-contribution variants. These methods allow us to assemble species from groups in the cases where pure-component parameters are not available. Examples include `UNIFAC` and `SAFTgammaMie`. Let us consider `SAFTgammaMie` first:
+Many of the classes of equations of state discussed above also have group-contribution variants.
+These methods allow us to assemble species from groups in the cases where pure-component parameters are not available.
+Examples include `UNIFAC` and `SAFTgammaMie`.
+Let us consider `SAFTgammaMie` first:
 
 ```julia
 julia> model = SAFTgammaMie([("butane",["CH3"=>2,"CH2"=>2])])
@@ -393,14 +435,17 @@ GroupParam(:SAFTgammaMie) with 1 component:
  "butane": "CH3" => 2, "CH2" => 2
 ```
 
-As we can see, we have assembled butane from two methyl and methylene groups. As such, the parameters within SAFT-$\gamma$ Mie now pertain to the groups, rather than the species. We also have a new field, `groups`, which provides all the details on the multiplicity of each group.
+As we can see, we have assembled butane from two methyl and methylene groups.
+As such, the parameters within SAFT-$\gamma$ Mie now pertain to the groups, rather than the species.
+We also have a new field, `groups`, which provides all the details on the multiplicity of each group.
 
 !!! tip "Available Groups"
     A full list of groups available for each equation of state is available in their respective docs.
 
 ### Structured groups
 
-There is an additional class of group contribution model where not only does the group multiplicity have to be specified, but the number of bonds between groups must also be specified. An example of this is `structSAFTgammaMie`:
+There is an additional class of group contribution model where not only does the group multiplicity have to be specified, but the number of bonds between groups must also be specified.
+An example of this is `structSAFTgammaMie`:
 
 ```julia
 julia> model = sSAFTgammaMie([("butane",["CH3"=>2,"CH2"=>1],[("CH3","CH2")=>2,("CH2","CH2")=>1])])
@@ -410,7 +455,10 @@ Group Type: SAFTgammaMie
 Contains parameters: segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol
 ```
 
-Note how we must now provide the number of times each group is bonded with one another. The only other equation of state which requires this is `gcPCSAFT`.
+Note how we must now provide the number of times each group is bonded with one another.
+The only other equation of state which requires this is `gcPCSAFT`.
 
 !!! note "External Packages"
-    This process can get quite tedious when dealing with larger species. As such, we are currently developping a new package to automate this process. We hope to register [GCIdentifier.jl](https://github.com/ClapeyronThermo/GCIdentifier.jl) soon.
+    This process can get quite tedious when dealing with larger species.
+    As such, we are currently developping a new package to automate this process.
+    We hope to register [GCIdentifier.jl](https://github.com/ClapeyronThermo/GCIdentifier.jl) soon.

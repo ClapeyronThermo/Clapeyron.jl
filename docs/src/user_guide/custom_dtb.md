@@ -1,6 +1,7 @@
 ## Definitions
 
-Within Clapeyron, we use CSV files to store our parameters. There are four types of database files for different types of parameters:
+Within Clapeyron, we use CSV files to store our parameters.
+There are four types of database files for different types of parameters:
 
 - Like parameters: These CSV files have the structure:
 
@@ -10,7 +11,8 @@ Within Clapeyron, we use CSV files to store our parameters. There are four types
   | species                      | param1 | param2 |
   | water                        | 1234   | 5.678  |
 
-  These are used for parameters which only refer to a single species (such as the critical temperature, molar mass, like segment size, number of segments). These types of files are also used for the ideal model databases (since all of these are just for like species).
+  These are used for parameters which only refer to a single species (such as the critical temperature, molar mass, like segment size, number of segments).
+  These types of files are also used for the ideal model databases (since all of these are just for like species).
 
 - Unlike parameters: These CSV files have the structure:
 
@@ -32,7 +34,8 @@ Within Clapeyron, we use CSV files to store our parameters. There are four types
   | water                         | H     | methanol | e     | 5.678 |
   | methanol                      | H     | water    | e     | 5.678 |
 
-  These are used for parameters which refer to a pair of species and sites (such as the association potential depth, `epsilon_assoc`, and bonding volume, `bondvol`). Note that this can be for associations between the same species and different sites, or different species and different sites (as shown above).
+  These are used for parameters which refer to a pair of species and sites (such as the association potential depth, `epsilon_assoc`, and bonding volume, `bondvol`).
+  Note that this can be for associations between the same species and different sites, or different species and different sites (as shown above).
 
 Note that it is extremely important that the cell A2 has the word 'Like', 'Unlike' or 'Assoc' in it so that Clapeyron can identify the type of parameters in it.
 
@@ -52,7 +55,8 @@ model2 = PCSAFT(["your_species_1","your_species_2"];userlocations=["dtb_like","d
 
 The rest works exactly as it normally would! We recommend reading the background documentation for the various models, as well as the [`getparams`](@ref) docs, to ensure the units of the parameters you provide are correct and how those parameters are parsed into each model.
 
-You can create those parameters without leaving the Julia REPL, by using [`Clapeyron.ParamTable`](@ref). This function will create a temporary location on where a CSV containing the table is created:
+You can create those parameters without leaving the Julia REPL, by using [`Clapeyron.ParamTable`](@ref).
+This function will create a temporary location on where a CSV containing the table is created:
 
 ```julia
 data = (species = ["water"],Mw = [18.0])

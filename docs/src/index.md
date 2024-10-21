@@ -4,7 +4,8 @@ CurrentModule = Clapeyron
 
 # Clapeyron.jl
 
-An extensible [Julia](http://julialang.org) package for the modelling of fluids using thermodynamic equations of state. These include the standard cubics (van der Waals, Redlich-Kwong, Peng-Robinson, *etc.*), SAFT-type equations (PC-SAFT, SAFT-VR Mie, SAFT-$\gamma$ Mie, *etc.*), empirical equations (GERG2008, IAPWS95), Activity coefficient models (NRTL, UNIFAC, COSMO-SAC, *etc.*) and many more.
+An extensible [Julia](http://julialang.org) package for the modelling of fluids using thermodynamic equations of state.
+These include the standard cubics (van der Waals, Redlich-Kwong, Peng-Robinson, *etc.*), SAFT-type equations (PC-SAFT, SAFT-VR Mie, SAFT-$\gamma$ Mie, *etc.*), empirical equations (GERG2008, IAPWS95), Activity coefficient models (NRTL, UNIFAC, COSMO-SAC, *etc.*) and many more.
 
 The documentation is laid out as follows:
 
@@ -71,4 +72,5 @@ If you are using Clapeyron for your research work, please cite the following:
 
 ## Citing a particular equation of state model
 
-In addition to citing this work, it is encouraged to cite the references to the underlying models used. For that, you can use [`Clapeyron.cite`](@ref) to obtain the references used in a particular model.
+In addition to citing this work, it is encouraged to cite the references to the underlying models used.
+For that, you can use [`Clapeyron.cite`](@ref) to obtain the references used in a particular model.
