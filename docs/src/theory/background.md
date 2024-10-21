@@ -26,7 +26,7 @@ where $p$ is the pressure, $N$ is the total number of particles and $k_\mathrm{B
 
 Unfortunately, if we wish to determine other thermodynamic properties this equation is a little inconvenient. It would be much easier if it was expressed in the form of the free energy, from which other properties can then be evaluated using standard thermodynamic relationships. Accordingly, we could first integrate the above equation with respect to volume to determine the Helmholtz free energy:
 
-``A_\mathrm{ideal} =- \int p\,\mathrm{d}V =- Nk_\mathrm{B}T\ln{V}+c(T,N)``
+``A_\mathrm{ideal} =- \int p\,dV =- Nk_\mathrm{B}T\ln{V}+c(T,N)``
 
 This is still a little inconvenient, however, since we have to deal with a tricky constant of integration. Fortunately, we can instead derive ``A_\mathrm{ideal}`` from statistical mechanics (using just a few well-known results from quantum mechanics). Following this route, we obtain (for a pure component (_i.e._, a single species))
 
