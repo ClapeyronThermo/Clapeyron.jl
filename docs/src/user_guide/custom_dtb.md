@@ -39,7 +39,6 @@ Note that it is extremely important that the cell A2 has the word 'Like', 'Unlik
 Feel free to check these out in the package to see some better examples!
 
 !!! note "Association Values are asymmetric!"
-
     There are cases where the association values are asymmetric (for example, water and acetonitrile), so if you are adding cross-association values for a component-site pair, remember to add the corresponding swapped value, like in the water - methanol example above.
 
 ## Using your own parameters

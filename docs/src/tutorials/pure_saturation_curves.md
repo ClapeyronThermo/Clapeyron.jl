@@ -25,7 +25,7 @@ In fact, if one wishes to trace the full saturation curve of a component, it is 
 ```julia
 N    = 100
 
-T    = LinRange(298.15, Tc,  N)
+T    = LinRange(298.15, Tc, N)
 psat = zeros(N)
 vl   = zeros(N)
 vv   = zeros(N)
@@ -82,7 +82,7 @@ Properties such as the enthalpy of vaporisation or saturated heat capacities can
 ```julia
 N    = 100
 
-T    = LinRange(298.15, Tc,  N)
+T    = LinRange(298.15, Tc, N)
 psat = zeros(N)
 vl   = zeros(N)
 vv   = zeros(N)

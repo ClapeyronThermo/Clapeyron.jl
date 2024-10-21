@@ -54,8 +54,8 @@ struct DirectAntoine{C} <: Clapeyron.SaturationMethod
   crit::C
 end
 
-#defining interface, check Clapeyron.SaturationMethod for more information
-#All saturation methods require passing crit as a keyword
+#defining interface, check Clapeyron.SaturationMethod for more information.
+#All saturation methods require passing crit as a keyword.
 
 DirectAntoine(A,B,C;crit = nothing) = DirectAntoine(A,B,C,crit)
 

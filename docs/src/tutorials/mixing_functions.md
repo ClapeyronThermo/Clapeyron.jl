@@ -1,7 +1,7 @@
 # Mixing and excess functions
 The notebooks associated with this tutorial can be found [here](../../../examples/mixing_functions.ipynb).
 
-While we showed how one can obtain [bulk properties](./bulk_properties.md) for both pure and multi-component systems, in the case of mixtures specifically, it is often the case that we wish to obtain the mixing function of a property. For a given property, $Z$, This is defined as:
+While we showed how one can obtain [bulk properties](./bulk_properties.md) for both pure and multi-component systems, in the case of mixtures specifically, it is often the case that we wish to obtain the mixing function of a property. For a given property, $Z$. This is defined as:
 $$
 \Delta Z_\text{mixing} = Z_\text{mix}-\sum_i x_iZ_i
 $$

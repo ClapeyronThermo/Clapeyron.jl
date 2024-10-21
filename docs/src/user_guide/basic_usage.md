@@ -66,11 +66,11 @@ One can find out more about the information stored within these model objects in
   - Simplified CK-SAFT ([`sCKSAFT`](@ref))
 - [`BACKSAFT`](@ref)
 - Lennard-Jones SAFT ([`LJSAFT`](@ref))
-- SAFT, Variable Range (VR) ,Square Well (SW) ([`SAFTVRSW`](@ref))
+- SAFT, Variable Range (VR), Square Well (SW) ([`SAFTVRSW`](@ref))
 - Cubic plus Association ([`CPA`](@ref))
   - Simplified CPA ([`sCPA`](@ref)) 
 - Soft SAFT, with Lennard-Jones function from Johnson et al. (1993) ([`softSAFT`](@ref))
-- Soft SAFT, with Lennard-Jones function from Thol et al. (2016)  ([`softSAFT2016`](@ref))
+- Soft SAFT, with Lennard-Jones function from Thol et al. (2016) ([`softSAFT2016`](@ref))
 - Perturbed-Chain SAFT ([`PCSAFT`](@ref))
   - Simplified PC-SAFT ([`sPCSAFT`](@ref))
   - PC-SAFT with T-dependent kᵢⱼ and special correlation for water ([`pharmaPCSAFT`](@ref))
@@ -96,7 +96,7 @@ One can find out more about the information stored within these model objects in
   - COSMO-SAC with dispersive interactions ([`COSMOSACdsp`](@ref))
 
 **Empirical**:
-- General MultiParameter Empiric model  ([`MultiFluid`](@ref))
+- General MultiParameter Empiric model ([`MultiFluid`](@ref))
   - GERG-2008 EoS for Natural Gas ([`GERG2008`](@ref))
   - EOS-LNG for Liquefied Natural Gas ([`EOS_LNG`](@ref))
   - IAPWS-95 Water reference ([`IAPWS95`](@ref))
@@ -140,7 +140,7 @@ model6 = RK(["ethane","propane"];alpha=SoaveAlpha)
 
 The above model would be equivalent to a model built by SRK directly. We support the following alpha functions:
 
-- [`RKAlpha`](@ref): This is the default alpha function for regular RK .
+- [`RKAlpha`](@ref): This is the default alpha function for regular RK.
 - [`SoaveAlpha`](@ref): This is the default alpha function for SRK.
 - [`PRAlpha`](@ref): This is the default alpha function for regular PR.
 - [`PR78Alpha`](@ref): This is the default alpha function for PR78.
@@ -342,7 +342,7 @@ The functions for the physical properties that we currently support are as follo
 using Unitful
 import Unitful: bar, °C, mol, kg, l
 model_unit = PCSAFT(["methanol","water"])
-Cp2 = isobaric_heat_capacity(model_unit, 5bar, 25°C, [0.5kg, 0.5kg]) # isobaric heat capacity of 1 mol of mixture, at a pressure of 5 bar
+Cp2 = isobaric_heat_capacity(model_unit, 5bar, 25°C, [0.5kg, 0.5kg])  # isobaric heat capacity of 1 mol of mixture, at a pressure of 5 bar
 Cp2 = isobaric_heat_capacity(model_unit, 1.0l/kg, 25°C, [0.4kg, 0.6kg])  # isobaric heat capacity of 1 kg of mixture, at a volume of 1 L/kg
 ```
 

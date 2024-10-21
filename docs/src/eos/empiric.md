@@ -16,7 +16,7 @@ Empiric (or MultiParameter) models in Clapeyron are composed of three different,
 - Mixing volume and temperature
 - Departure model
 
-Pure Fluids are instantiated from CoolProp JSON files, via the [`SingleFluid`](@ref) struct. In theory, any pure fluid should be supported. Furthermore,there is support for using directly the fluids defined in the CoolProp library:
+Pure Fluids are instantiated from CoolProp JSON files, via the [`SingleFluid`](@ref) struct. In theory, any pure fluid should be supported. Furthermore, there is support for using directly the fluids defined in the CoolProp library:
 ```
 julia> SingleFluid("Ethanol")
 ERROR: cannot found component file R113. Try loading the CoolProp library by loading it.

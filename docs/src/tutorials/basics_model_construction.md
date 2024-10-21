@@ -42,26 +42,26 @@ The difference in values can be attributed to the missing rotational and vibrati
 
 Nevertheless, due to the need for species-specific parameters, this `model2` contains much more information than for the `BasicIdeal` model:
 * Component names:
-```julia
-julia> model2.components
-1-element Vector{String}:
- "carbon dioxide"
-```
+    ```julia
+    julia> model2.components
+    1-element Vector{String}:
+    "carbon dioxide"
+    ```
 * References for the equation of state:
-```julia
-julia> model2.references
-"10.1063/1.3060771"
-```
+    ```julia
+    julia> model2.references
+    "10.1063/1.3060771"
+    ```
 * The species-specific parameters:
-```julia
-julia> model2.params
-Clapeyron.ReidIdealParam for ["carbon dioxide"] with 1 param:
- coeffs::SingleParam{NTuple{4, Float64}}
+    ```julia
+    julia> model2.params
+    Clapeyron.ReidIdealParam for ["carbon dioxide"] with 1 param:
+    coeffs::SingleParam{NTuple{4, Float64}}
 
-julia> model2.params.coeffs
-SingleParam{NTuple{4, Float64}}("Reid Coefficients") with 1 component:
- "carbon dioxide" => (19.8, 0.0734, -5.6e-5, 1.72e-8)
-```
+    julia> model2.params.coeffs
+    SingleParam{NTuple{4, Float64}}("Reid Coefficients") with 1 component:
+    "carbon dioxide" => (19.8, 0.0734, -5.6e-5, 1.72e-8)
+    ```
 One can also create a model for mixtures in a similar fashion:
 ```julia
 julia> model3 = ReidIdeal(["carbon dioxide","methane"])

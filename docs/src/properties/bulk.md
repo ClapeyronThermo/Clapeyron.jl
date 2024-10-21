@@ -39,7 +39,7 @@ r = 18u"kg/m^3"
 T = 373.15"K"
 prop = helmholtz_free_energy(model,r,T,z,output = u"kJ")
 ```
-Where `r` could be any molar or mass density, molar or mass volume, total volume or pressure. It also supports mass and mol amounts defined as units for the composition (`z`) If no units are provided for the composition, they will be considered moles.
+Where `r` could be any molar or mass density, molar or mass volume, total volume or pressure. It also supports mass and mol amounts defined as units for the composition (`z`). If no units are provided for the composition, they will be considered moles.
 
 ### Methods that require first order VT derivatives
 ```@docs

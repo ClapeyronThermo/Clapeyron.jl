@@ -10,9 +10,9 @@ An equation of state is a functional form, $f$ (say), that allows us to obtain a
 
 There are many ways one can develop an equation of state, however, these must respect the constraints on the number of properties we can specify, as required by the Gibbs Phase Rule:
 
-`` \mathrm{DoF} = N_\mathrm{species} - N_\mathrm{phase} + 2 ``
+``\mathrm{DoF} = N_\mathrm{species} - N_\mathrm{phase} + 2``
 
-Here, `` \mathrm{DoF}`` means "Degrees of Freedom"; this is the number of so-called intensive state properties (or, in other words, those that are independent of system size) that we can specify. As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; system size itself is not included so, in practice, this represents one more variable that we can specify, giving $N_\mathrm{species}+2$. Thus, taking the simple case of a single species, we can specify at most three conditions in our system. For a traditional equation of state, we specify volume, $V$, temperature, $T$, and the size of the system – for example the number of particles, $N$, or moles, $n$; the equation of state then returns the pressure, $p$. Many modern equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks) and, accordingly, the three variable chosen are again usually $T$, $V$ and  $N$; the output of these equations is usually the Helmholtz free energy, $A$.
+Here, ``\mathrm{DoF}`` means "Degrees of Freedom"; this is the number of so-called intensive state properties (or, in other words, those that are independent of system size) that we can specify. As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; system size itself is not included so, in practice, this represents one more variable that we can specify, giving $N_\mathrm{species}+2$. Thus, taking the simple case of a single species, we can specify at most three conditions in our system. For a traditional equation of state, we specify volume, $V$, temperature, $T$, and the size of the system – for example the number of particles, $N$, or moles, $n$; the equation of state then returns the pressure, $p$. Many modern equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks) and, accordingly, the three variable chosen are again usually $T$, $V$ and $N$; the output of these equations is usually the Helmholtz free energy, $A$.
 
 Many equations of state are based on an underlying molecular model. Consequently, it is also typical for an equation of state to require parameters, $\boldsymbol{\Xi}$, to model certain species. The nature of these parameters depends on the equation of state.
 
@@ -64,7 +64,7 @@ As a result, many other engineering cubic equations have been developed, retaini
 
 There is no physical justification for the change in the second term; its origin is entirely empirical. The authors made the modification so that the equation would provide better gas-phase fugacities. This equation was subsequently improved upon by Soave, resulting in the `SRK` equation of state:
 
- ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2\alpha(T;\omega)}{V(V+Nb)}``
+``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2\alpha(T;\omega)}{V(V+Nb)}``
 
 The $\alpha$ function requires an additional parameter, the acentric factor (or acentricity), which is effectively a measure of the location of the saturation pressure when $T/T_\mathrm{c}=0.7$, where $T_\mathrm{c}$ is the critical temperature. The idea behind this is, if you can capture both the critical point and another point along the vapour-pressure curve, you will improve the accuracy of your equation of state. This is indeed what happened. Although Soave described his equation as a "modified Redlich–Kwong equation", in truth it is more than this. The introduction of the $\alpha$ function represents a giant step forwards; the inclusion of a similar $\alpha$ function is probably the key feature in the equation of Peng and Robinson, who introduced their equation of state (`PR`) to provide improved liquid-phase volumetric properties. In addition to the inclusion of an $\alpha$ function, Peng and Robinson further revised the attractive term:
 
@@ -106,13 +106,13 @@ Whilst, as already noted, this is clearly a step up from the ideal gas, most spe
 
 Using Wertheim's TPT1 theory of association, it is possible to model molecules as chains of spheres; the shape of the model molecule can thereby be tailored to represent that of the real molecule far better than a single sphere. Wertheim's TPT1 theory can also be used to account for intermolecular association interactions (such as dipole–dipole interactions, or hydrogen bonding), which are strongly directional. These are described using associations sites that are located on one or more of the spherical segments comprising the chain molecule. This results in the addition of two extra contributions to the Helmholtz free energy (note that the HS and dispersive terms have been merged into a monomer term):
 
-`` \frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{chain}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{assoc.}}{Nk_\mathrm{B}T}``
+``\frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{chain}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{assoc.}}{Nk_\mathrm{B}T}``
 
 The chain term accounts for the formation of chains of spherical segments and is generally expressed as
 
 ``\frac{A_\mathrm{chain}}{Nk_\mathrm{B}T}=-\sum_ix_i(m_i-1)\ln{g_{ii}(d_{ii})}``,
 
-where $g_{ii}(r_{ii})$ is the pair distribution function for species $i$ (which carries information about the structure of the fluid; it expresses how likely it is that a segment of species $i$ is present at a distance $r_{ii}$ from another segment of species $i$) . Many SAFT equations differ in how this pair distribution function is expressed. We note here the introduction of the Barker-Henderson hard-sphere diameter, $d_{ii}$ which is given (dropping the subscripts for clarity) by
+where $g_{ii}(r_{ii})$ is the pair distribution function for species $i$ (which carries information about the structure of the fluid; it expresses how likely it is that a segment of species $i$ is present at a distance $r_{ii}$ from another segment of species $i$). Many SAFT equations differ in how this pair distribution function is expressed. We note here the introduction of the Barker-Henderson hard-sphere diameter, $d_{ii}$ which is given (dropping the subscripts for clarity) by
 
 ``d = \int_0^\sigma (1-\exp{-\beta\phi(r)})dr``;
 
@@ -122,7 +122,7 @@ The association term accounts for the highly-directional associative interaction
 
 ``\frac{A_\mathrm{assoc.}}{Nk_\mathrm{B}T}=\sum_ix_i\left(\sum_a\left(\ln{X_{i,a}}-\frac{X_{i,a}}{2}\right)+\frac{M_i}{2}\right)``
 
-where $X_{i,a}$ is the fraction of association sites $a$ on species $i$ _not_ bonded to another and $M_i$ is the number of association sites on species $i$.  $X_{i,a}$ can be obtained by solving the following system of equations:
+where $X_{i,a}$ is the fraction of association sites $a$ on species $i$ _not_ bonded to another and $M_i$ is the number of association sites on species $i$. $X_{i,a}$ can be obtained by solving the following system of equations:
 
 ``X_{i,a} = (1+\rho\sum_jx_j\sum_bX_{j,b}\Delta_{ij,ab})^{-1}``
 
@@ -138,7 +138,7 @@ where $\epsilon^\mathrm{assoc.}$ is the potential depth of the association inter
 
 Surprisingly, the monomer term is one of the aspects that most distinguishes the different SAFT equations; no two variants use the same equation. However, in general, the monomer term is composed of more than one term:
 
-`` \frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}=\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}+\frac{A_\mathrm{2}}{(Nk_\mathrm{B}T)^3}+\frac{A_\mathrm{3}}{(Nk_\mathrm{B}T)^4}+...``
+``\frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}=\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}+\frac{A_\mathrm{2}}{(Nk_\mathrm{B}T)^3}+\frac{A_\mathrm{3}}{(Nk_\mathrm{B}T)^4}+...``
 
 This expression is known as a Barker–Henderson perturbative expansion. These terms generally account for the dispersive interactions between segments; the $n^\mathrm{th}$ order term account for interactions between $n$ segments. In most SAFT equations, this expansion is truncated at just the second-order term.
 
@@ -186,7 +186,7 @@ Developed by Blas and Vega (2001), whereas the SAFT equations discussed up until
 
 Possibly the most-popular variant of the SAFT equation, Perturbed-Chain (not polymer-chain) SAFT was developed by Gross and Sadowski (2001) and, like soft-SAFT, a different reference state is chosen, as compared with previous SAFT equations. This time, we start from the hard-chain (HC), not the hard-sphere, expressing the SAFT equation as:
 
-`` \frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{HC}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{disp.}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{assoc.}}{Nk_\mathrm{B}T}``
+``\frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{HC}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{disp.}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{assoc.}}{Nk_\mathrm{B}T}``
 
 This isn't as significant a change as one might initially think as, effectively, the hard-sphere and chain terms (which uses a hard-sphere pair distribution function like CK-SAFT) are combined into the hard-chain term. The dispersion term is then simply another correlation, only this time depending on the number of segments as well. It carries many similarities with CK-SAFT, using the same expression for the hard-sphere diameter, pair distribution function and association term.
 
@@ -214,7 +214,7 @@ Similar to PC-SAFT, variants of the sPC-SAFT equation also exist, although nowhe
 
 One of the most-novel SAFT equations of state, derived by Lafitte _et al._ (2013), this equation is effectively an extension of the SAFT-VR framework developed by Gil-Villegas _et al._ (1997), with further improvements. First of these is extending the Barker–Henderson perturbative expansion to third order instead of second order:
 
-`` \frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}=\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}+\frac{A_\mathrm{2}}{(Nk_\mathrm{B}T)^3}+\frac{A_\mathrm{3}}{(Nk_\mathrm{B}T)^4}``
+``\frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}=\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}+\frac{A_\mathrm{2}}{(Nk_\mathrm{B}T)^3}+\frac{A_\mathrm{3}}{(Nk_\mathrm{B}T)^4}``
 
 We do point out that, whilst the first two terms are developed following the SAFT-VR framework, the third-order term is more akin to a correlation regressed using molecular-dynamics simulation data for Mie fluids. This third-order term resulted in significant improvements in the modelling of properties near the critical point (without using cross-over theory). The chain term also received further improvements as a result. This is also the only SAFT equation in which the hard-sphere diameter is evaluated analytically, although numerical approximations are needed (we note that the original SAFT-VR Mie equation used 10-point Gauss-Legendre quadrature, whilst the newer version uses 5-point Gauss-Laguerre quadrature).
 
@@ -256,7 +256,7 @@ The aim of this document is to outline all of the various tools used to obtain t
 
 ``A=A(\mathbf{z},V,T)``
 
- Taking derivatives of this function (within the `Clapeyron` module, this is done using automatic differentiation) can give us a wide range of properties which are given in the appendix. However, it is more common that we are interested in the state of a system at certain conditions ($\mathbf{z}_0$, $p_0$ , $T_0$). The answer to this can be determined from the following, deceptively simple, minimisation of the Gibbs free energy:
+Taking derivatives of this function (within the `Clapeyron` module, this is done using automatic differentiation) can give us a wide range of properties which are given in the appendix. However, it is more common that we are interested in the state of a system at certain conditions ($\mathbf{z}_0$, $p_0$ , $T_0$). The answer to this can be determined from the following, deceptively simple, minimisation of the Gibbs free energy:
 
 ``\min G(\mathbf{z}_0,p_0,T_0)``
 
@@ -294,7 +294,7 @@ Thus, it is very easy to solve for all the roots in a cubic using analytical exp
 
 1. Vapour: Since we can use automatic differentiation to obtain the virial coefficient for any model, we can actually obtain an initial guess extremely close to the final solution using
 
-   ``\frac{p_0}{RT_0} = \frac{n_0}{V}+\frac{n_0}{V^2}B(T)\rightarrow V_0=\frac{RT_0}{p_0}\frac{-1+\sqrt{1+4p_0B(T_0)/(RT_0)}}{2}`` .
+   ``\frac{p_0}{RT_0} = \frac{n_0}{V}+\frac{n_0}{V^2}B(T)\rightarrow V_0=\frac{RT_0}{p_0}\frac{-1+\sqrt{1+4p_0B(T_0)/(RT_0)}}{2}``.
 
 2. Liquid: The best we can do here is to obtain the volume corresponding to a large packing fraction (we typically pick 0.6-0.8):
    ``V_0 = \frac{N_\mathrm{A}\pi}{6\times 0.8}m\sigma^3``.

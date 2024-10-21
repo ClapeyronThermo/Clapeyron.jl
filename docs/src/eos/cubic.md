@@ -25,22 +25,22 @@ function cubic_ab(model::CubicModel,V,T,z=SA[1.0])
     α = α_function(model,V,T,z,model.alpha)
     c = translation(model,V,T,z,model.translation)
     ā,b̄,c̄ = mixing_rule(model,V,T,z,model.mixing,α,a,b,c)
-    return ā ,b̄, c̄
+    return ā, b̄, c̄
 end
 
 function a_res(model::CubicModel,V,T,z,data = (sum(z),cubic_ab(model,V,T,z)))
-    n, ā ,b̄, c̄ = data
+    n, ā, b̄, c̄ = data
     #depends on the specific EoS
     return result
 end
 ```
 - A *Mixing Rule Model* creates `aᵢⱼ` and `bᵢⱼ` from the critical temperature, critical pressure and a matrix of pair coefficients.
 
-- An *Alpha Model* creates a vector of `αᵢ(T)` values
+- An *Alpha Model* creates a vector of `αᵢ(T)` values.
 
-- A *Translation Model* creates a vector of `cᵢ` values
+- A *Translation Model* creates a vector of `cᵢ` values.
 
-- The same Mixing rule, given `aᵢⱼ`, `bᵢⱼ`, `αᵢ(T)` and `cᵢ` returns the the mixture values of `ā`, `b̄` and `c̄` that are then used by the corresponding cubic model. a Mixing Rule can contain activity models to participate in the mixing (for example, Huron-Vidal rules)
+- The same Mixing rule, given `aᵢⱼ`, `bᵢⱼ`, `αᵢ(T)` and `cᵢ` returns the the mixture values of `ā`, `b̄` and `c̄` that are then used by the corresponding cubic model. a Mixing Rule can contain activity models to participate in the mixing (for example, Huron-Vidal rules).
 
 ## Common Definitions
 ```@docs

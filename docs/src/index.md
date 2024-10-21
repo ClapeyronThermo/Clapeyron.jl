@@ -68,7 +68,7 @@ If you are using Clapeyron for your research work, please cite the following:
 ```
 ## Citing a particular equation of state model
 
-In addition to citing this work, it is encouraged to cite the references to the underlying models used. for that, you can use [`Clapeyron.cite`](@ref) to obtain the references used in a particular model
+In addition to citing this work, it is encouraged to cite the references to the underlying models used. for that, you can use [`Clapeyron.cite`](@ref) to obtain the references used in a particular model.
 
 
 
