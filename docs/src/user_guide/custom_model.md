@@ -199,7 +199,7 @@ Let us imagine we are trying to implement `PCSAFT`.
 
        references = default_references(PCSAFT)
 
-       #we initialize the ideal model provided.
+       # We initialize the ideal model provided.
        init_idealmodel = Clapeyron.init_model(idealmodel,components,ideal_userlocations,verbose)
 
        # Build the model.

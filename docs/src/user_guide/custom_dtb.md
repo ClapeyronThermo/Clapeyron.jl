@@ -62,13 +62,13 @@ This function will create a temporary location on where a CSV containing the tab
 data = (species = ["water"],Mw = [18.0])
 file = ParamTable(:single,data,name="water_mw")
 model = PR(["water"],user_locations = [file])
-model.params.Mw[1] #18.0
+model.params.Mw[1]  # 18.0
 ```
 
 You can also write a CSV as a string an pass that directly:
 
 ```julia
-#Any string that starts with `Clapeyron Database File` will be parsed as a CSV file directly.
+# Any string that starts with `Clapeyron Database File` will be parsed as a CSV file directly.
 csv_data = """Clapeyron Database File,
        my water like parameters
        species,Mw
@@ -76,5 +76,5 @@ csv_data = """Clapeyron Database File,
        """
 
 model = PR(["water"],user_locations = [csv_data])
-model.params.Mw[1] #19.0
+model.params.Mw[1]  # 19.0
 ```

@@ -25,7 +25,7 @@ julia> SingleFluid("Ethanol")
 ERROR: cannot found component file R113. Try loading the CoolProp library by loading it.
 Stacktrace:
  ....
-julia> using CoolProp #loads the CoolProp library and allows access to their JSON.
+julia> using CoolProp  # loads the CoolProp library and allows access to their JSON.
 julia> SingleFluid("Ethanol")
 MultiParameter Equation of state for Ethanol:
  Polynomial power terms: 6

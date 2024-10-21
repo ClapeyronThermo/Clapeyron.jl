@@ -64,8 +64,8 @@ struct DirectAntoine{C} <: Clapeyron.SaturationMethod
   crit::C
 end
 
-#defining interface, check Clapeyron.SaturationMethod for more information.
-#All saturation methods require passing crit as a keyword.
+# Defining interface, check Clapeyron.SaturationMethod for more information.
+# All saturation methods require passing crit as a keyword.
 
 DirectAntoine(A,B,C;crit = nothing) = DirectAntoine(A,B,C,crit)
 
@@ -93,16 +93,16 @@ struct MyRachfordRice{K} <: Clapeyron.TPFlashMethod
   K0::K
 end
 
-#defining interface, check Clapeyron.TPFlashMethod for more information
+# defining interface, check Clapeyron.TPFlashMethod for more information
 numphases(::MyRachfordRice) = 2
-#we perform index reduction, to create smaller models in case one component has zero composition.
+# we perform index reduction, to create smaller models in case one component has zero composition.
 function Clapeyron.index_reduction(method::MyRachfordRice,non_zero_indices)
   return MyRachfordRice(index_reduction(method.K0,non_zero_indices))
 end
 
 function Clapeyron.tp_flash_impl(model::EoSModel,p,T,z,method::MyRachfordRice)
-  #perform Rachford-Rice,returns x, y, α₀
-  #...
+  # perform Rachford-Rice,returns x, y, α₀
+  # ...
   X = vcat(x',y')
   n = X.*[1-α₀
                 α₀]  .* sum(z)

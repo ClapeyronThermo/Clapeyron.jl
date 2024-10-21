@@ -14,8 +14,8 @@ All cubic models in `Clapeyron.jl` follow a common evaluation order:
 
 ```julia
 function CubicModel(args...)
-    #get params for database, initialize other models, etc
-    recombine!(model) #we calculate the mixing rules, caches for the translation models if necessary, etc.
+    # get params for database, initialize other models, etc
+    recombine!(model)  # we calculate the mixing rules, caches for the translation models if necessary, etc.
 end
 
 function cubic_ab(model::CubicModel,V,T,z=SA[1.0])
@@ -30,7 +30,7 @@ end
 
 function a_res(model::CubicModel,V,T,z,data = (sum(z),cubic_ab(model,V,T,z)))
     n, ā, b̄, c̄ = data
-    #depends on the specific EoS
+    # depends on the specific EoS
     return result
 end
 ```
