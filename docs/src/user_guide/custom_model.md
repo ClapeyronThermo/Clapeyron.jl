@@ -86,10 +86,10 @@ end
 The parameters are wrapped in one of the following structs:
 
 - `SingleParam{T}`: These are the parameters associated with a pure species or indexed by a single index ($i$).
-For example, the molecular weight, number of segments, critical temperature and pressure.
+  For example, the molecular weight, number of segments, critical temperature and pressure.
 - `PairParam{T}`: These are the parameters associated with a pair of species or indexed by two indices ($i$ and $j$).
-If the two indices are the same ($i=j$), they refer to the like species, otherwise ($i\neq j$), they refer to the unlike species.
-For example, the cubic `a` and `b` parameters, the SAFT segment size (`sigma`) and potential depth (`epsilon`) parameters.
+  If the two indices are the same ($i=j$), they refer to the like species, otherwise ($i\neq j$), they refer to the unlike species.
+  For example, the cubic `a` and `b` parameters, the SAFT segment size (`sigma`) and potential depth (`epsilon`) parameters.
 - `AssocParam{T}`: There are the parameters associated with both a pair of species and association sites (see background documentation for what these are).
   They are indexed by four indices (the species $i$ and $j$, and the sites $a$ and $b$).
   For example, potential depth of the association interaction (`epsilon_assoc`) and the bonding volume (`bondvol`).
@@ -103,189 +103,189 @@ Let us imagine we are trying to implement `PCSAFT`.
 
 1. We first define the Model name, type and parameters:
 
-    ```julia
-    # Defining an abstract type for this model type
-    abstract type PCSAFTModel <: SAFTModel end
+   ```julia
+   # Defining an abstract type for this model type
+   abstract type PCSAFTModel <: SAFTModel end
 
-    # Defining the parameters used by the model
-    struct PCSAFTParam <: EoSParam
-        Mw::SingleParam{Float64}
-        segment::SingleParam{Float64}
-        sigma::PairParam{Float64}
-        epsilon::PairParam{Float64}
-        epsilon_assoc::AssocParam{Float64}
-        bondvol::AssocParam{Float64}
-    end
+   # Defining the parameters used by the model
+   struct PCSAFTParam <: EoSParam
+       Mw::SingleParam{Float64}
+       segment::SingleParam{Float64}
+       sigma::PairParam{Float64}
+       epsilon::PairParam{Float64}
+       epsilon_assoc::AssocParam{Float64}
+       bondvol::AssocParam{Float64}
+   end
 
-    # Creating a model struct called PCSAFT, which is a sub-type of PCSAFTModel, and uses parameters defined in PCSAFTParam
-    @newmodel PCSAFT PCSAFTModel PCSAFTParam
-    ```
+   # Creating a model struct called PCSAFT, which is a sub-type of PCSAFTModel, and uses parameters defined in PCSAFTParam
+   @newmodel PCSAFT PCSAFTModel PCSAFTParam
+   ```
 
 1. We define some functions to inform how the model obtains their parameters, what are their references, and if we need to perform any rescaling, combining or renaming of input parameters:
 
-    ```julia
-    # Use this function if you want to provide default parameters for your new model.
-    # Those locations are relative to the default database location.
-    Clapeyron.default_locations(::Type{PCSAFT}) = ["PCSAFT_parameters/PCSAFT_like.csv","PCSAFT_parameters/PCSAFT_unlike.csv","PCSAFT_parameters/PCSAFT_assoc.csv"]
+   ```julia
+   # Use this function if you want to provide default parameters for your new model.
+   # Those locations are relative to the default database location.
+   Clapeyron.default_locations(::Type{PCSAFT}) = ["PCSAFT_parameters/PCSAFT_like.csv","PCSAFT_parameters/PCSAFT_unlike.csv","PCSAFT_parameters/PCSAFT_assoc.csv"]
 
-    # Although optional, it's generally good practise to cite your models!
-    # We use DOI references in general.
-    Clapeyron.default_references(::Type{PCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
+   # Although optional, it's generally good practise to cite your models!
+   # We use DOI references in general.
+   Clapeyron.default_references(::Type{PCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
-    # Use this function if you need to perform any transformations, from the input parameters, to the final ones:
-    function Clapeyron.transform_params(::Type{PCSAFT},params)
-        # params is a Dict{String,ClapeyronParam}
-        sigma = params["sigma"]
-        # We rescale the sigma values
-        sigma.values .*= 1e-10
+   # Use this function if you need to perform any transformations, from the input parameters, to the final ones:
+   function Clapeyron.transform_params(::Type{PCSAFT},params)
+       # params is a Dict{String,ClapeyronParam}
+       sigma = params["sigma"]
+       # We rescale the sigma values
+       sigma.values .*= 1e-10
 
-        # If k is not provided, it will be not be considered
-        k = get(params,"k",nothing)
+       # If k is not provided, it will be not be considered
+       k = get(params,"k",nothing)
 
-        # In some cases, we may not have the unlike parameters and will need to use combining rules.
-        # You can also define your own combining rules for this.
-        sigma = sigma_LorentzBerthelot(sigma)
-        epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
+       # In some cases, we may not have the unlike parameters and will need to use combining rules.
+       # You can also define your own combining rules for this.
+       sigma = sigma_LorentzBerthelot(sigma)
+       epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
 
-        # Now, we put the parameters in the params dict
-        params["sigma"] = sigma
-        params["epsilon"] = epsilon
+       # Now, we put the parameters in the params dict
+       params["sigma"] = sigma
+       params["epsilon"] = epsilon
 
-        # And, finally, we return the dictionary with the final values
-        return params
-    end
-    ```
+       # And, finally, we return the dictionary with the final values
+       return params
+   end
+   ```
 
-    The `@newmodel` macro, in conjunction with the functions defined above, gets lowered to the following Julia code:
+   The `@newmodel` macro, in conjunction with the functions defined above, gets lowered to the following Julia code:
 
-    ```julia
-    struct PCSAFT{T<:IdealModel} <: PCSAFTModel
-        components::Array{String,1}             # Components vector. The model gets it's length from here
-        sites::SiteParam                        # Parameter struct containing the sites and their amounts
-        params::PCSAFTParam                     # Struct specified in the macro
-        idealmodel::T                           # Model for the ideal part
-        assoc_options::Clapeyron.AssocOptions   # Options for the calculation of the association Helmholtz contribution
-        references::Array{String,1}             # DOI references
-    end
+   ```julia
+   struct PCSAFT{T<:IdealModel} <: PCSAFTModel
+       components::Array{String,1}             # Components vector. The model gets it's length from here
+       sites::SiteParam                        # Parameter struct containing the sites and their amounts
+       params::PCSAFTParam                     # Struct specified in the macro
+       idealmodel::T                           # Model for the ideal part
+       assoc_options::Clapeyron.AssocOptions   # Options for the calculation of the association Helmholtz contribution
+       references::Array{String,1}             # DOI references
+   end
 
-    # Constructor generated by the macro:
+   # Constructor generated by the macro:
 
-    function PCSAFT(components;                     # Vector{String} containing a list of components
-                    idealmodel=BasicIdeal,          # Default ideal model
-                    userlocations=String[],         # User locations for the main model
-                    ideal_userlocations=String[],   # User locations for the ideal model
-                    verbose=false,                  # Verbosity
-                    assoc_options = AssocOptions()) # Options for the calculation of the association contribution
+   function PCSAFT(components;                     # Vector{String} containing a list of components
+                   idealmodel=BasicIdeal,          # Default ideal model
+                   userlocations=String[],         # User locations for the main model
+                   ideal_userlocations=String[],   # User locations for the ideal model
+                   verbose=false,                  # Verbosity
+                   assoc_options = AssocOptions()) # Options for the calculation of the association contribution
 
-        # Obtain a Dict of parameters.
-        # We pass in custom locations through the optional parameter userlocations.
-        params = getparams(components,default_locations(model); userlocations=userlocations, verbose=verbose)
+       # Obtain a Dict of parameters.
+       # We pass in custom locations through the optional parameter userlocations.
+       params = getparams(components,default_locations(model); userlocations=userlocations, verbose=verbose)
 
-        # We perform the specified transformation of parameters.
-        transform_params(PCSAFT,params)
+       # We perform the specified transformation of parameters.
+       transform_params(PCSAFT,params)
 
-        # We perform mixing of the association parameters
-        # depending on the options contained in assoc_options
-        sigma = params["sigma"]
-        epsilon_assoc = params["epsilon_assoc"]
-        bondvol = params["bondvol"]
+       # We perform mixing of the association parameters
+       # depending on the options contained in assoc_options
+       sigma = params["sigma"]
+       epsilon_assoc = params["epsilon_assoc"]
+       bondvol = params["bondvol"]
 
-        # Combining rules for association.
-        # If you want to perform cross-association mixing, check the AssocOptions docs.
-        bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
+       # Combining rules for association.
+       # If you want to perform cross-association mixing, check the AssocOptions docs.
+       bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
 
-        # Now we can create the parameter struct that we have defined.
-        packagedparams = PCSAFTParam(params["Mw"], params["segment"], sigma, params["epsilon"], epsilon_assoc, bondvol)
+       # Now we can create the parameter struct that we have defined.
+       packagedparams = PCSAFTParam(params["Mw"], params["segment"], sigma, params["epsilon"], epsilon_assoc, bondvol)
 
-        references = default_references(PCSAFT)
+       references = default_references(PCSAFT)
 
-        #we initialize the ideal model provided.
-        init_idealmodel = Clapeyron.init_model(idealmodel,components,ideal_userlocations,verbose)
+       #we initialize the ideal model provided.
+       init_idealmodel = Clapeyron.init_model(idealmodel,components,ideal_userlocations,verbose)
 
-        # Build the model.
-        model = PCSAFT(components,sites,packagedparams,init_idealmodel,assoc_options,references)
+       # Build the model.
+       model = PCSAFT(components,sites,packagedparams,init_idealmodel,assoc_options,references)
 
-        # Return the PCSAFT object that you have just created.
-        return model
-    end
-    ```
+       # Return the PCSAFT object that you have just created.
+       return model
+   end
+   ```
 
-    You can, of course, not use the macro, if your model depends itself on other models (like `CPA` depending on a cubic model),or requires more arguments than the ones generated by the macro (like mixing rules for cubics that require an activity model).
+   You can, of course, not use the macro, if your model depends itself on other models (like `CPA` depending on a cubic model),or requires more arguments than the ones generated by the macro (like mixing rules for cubics that require an activity model).
 
 1. Define all of the model equations.
-    We encourage you to use the full range of Unicode characters where it makes your code clearer to read!
+   We encourage you to use the full range of Unicode characters where it makes your code clearer to read!
 
-    As convention, the first four arguments should be `model`, `V`, `T` and `z`; any other variables should come after.
+   As convention, the first four arguments should be `model`, `V`, `T` and `z`; any other variables should come after.
 
-    If we obey that convention, we may use the `@f` macro, which automatically substitutes the first four parameters for compactness.
-    For example, `@f(func,i,j)` is equivalent to calling `func(model,V,T,z,i,j)`.
+   If we obey that convention, we may use the `@f` macro, which automatically substitutes the first four parameters for compactness.
+   For example, `@f(func,i,j)` is equivalent to calling `func(model,V,T,z,i,j)`.
 
-    Clapeyron obtains all the properties of a model by differentiating the total Helmholtz energy ([`eos`](@ref)) or the residual Helmholtz energy (`eos_res`).
-    `eos` and `eos_res` themselves are defined in terms of the reduced ideal Helmholtz energy (`a_res`).
-    In this case, we are going to define `a_res` for our own model:
+   Clapeyron obtains all the properties of a model by differentiating the total Helmholtz energy ([`eos`](@ref)) or the residual Helmholtz energy (`eos_res`).
+   `eos` and `eos_res` themselves are defined in terms of the reduced ideal Helmholtz energy (`a_res`).
+   In this case, we are going to define `a_res` for our own model:
 
-    ```julia
-    function Clapeyron.a_res(model::PCSAFTModel, V, T, z)
-        return @f(a_hc) + @f(a_disp) + @f(a_assoc)
-    end
+   ```julia
+   function Clapeyron.a_res(model::PCSAFTModel, V, T, z)
+       return @f(a_hc) + @f(a_disp) + @f(a_assoc)
+   end
 
-    function a_hc(model::PCSAFTModel, V, T, z)
-        x = z/∑(z)
-        m = model.params.segment.values
-        m̄ = ∑(x .* m)
-        return m̄*@f(a_hs) - ∑(x[i]*(m[i]-1)*log(@f(g_hs,i,i)) for i ∈ @comps)
-    end
+   function a_hc(model::PCSAFTModel, V, T, z)
+       x = z/∑(z)
+       m = model.params.segment.values
+       m̄ = ∑(x .* m)
+       return m̄*@f(a_hs) - ∑(x[i]*(m[i]-1)*log(@f(g_hs,i,i)) for i ∈ @comps)
+   end
 
-    function d(model::PCSAFTModel, V, T, z, i)
-        ϵii = model.params.epsilon.values[i,i]
-        σii = model.params.sigma.values[i,i]
-        return σii * (1 - 0.12exp(-3ϵii/T))
-    end
+   function d(model::PCSAFTModel, V, T, z, i)
+       ϵii = model.params.epsilon.values[i,i]
+       σii = model.params.sigma.values[i,i]
+       return σii * (1 - 0.12exp(-3ϵii/T))
+   end
 
-    function ζ(model::PCSAFTModel, V, T, z, n)
-        ∑z = ∑(z)
-        x = z * (one(∑z)/∑z)
-        m = model.params.segment.values
-        res = N_A*∑z*π/6/V * ∑((x[i]*m[i]*@f(d,i)^n for i ∈ @comps))
-    end
+   function ζ(model::PCSAFTModel, V, T, z, n)
+       ∑z = ∑(z)
+       x = z * (one(∑z)/∑z)
+       m = model.params.segment.values
+       res = N_A*∑z*π/6/V * ∑((x[i]*m[i]*@f(d,i)^n for i ∈ @comps))
+   end
 
-    function g_hs(model::PCSAFTModel, V, T, z, i, j)
-        di = @f(d,i)
-        dj = @f(d,j)
-        ζ2 = @f(ζ,2)
-        ζ3 = @f(ζ,3)
-        return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
-    end
+   function g_hs(model::PCSAFTModel, V, T, z, i, j)
+       di = @f(d,i)
+       dj = @f(d,j)
+       ζ2 = @f(ζ,2)
+       ζ3 = @f(ζ,3)
+       return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
+   end
 
-    function a_hs(model::PCSAFTModel, V, T, z)
-        ζ0 = @f(ζ,0)
-        ζ1 = @f(ζ,1)
-        ζ2 = @f(ζ,2)
-        ζ3 = @f(ζ,3)
-        return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
-    end
+   function a_hs(model::PCSAFTModel, V, T, z)
+       ζ0 = @f(ζ,0)
+       ζ1 = @f(ζ,1)
+       ζ2 = @f(ζ,2)
+       ζ3 = @f(ζ,3)
+       return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+   end
 
-    # INSERT REST OF CODE
-    ```
+   # INSERT REST OF CODE
+   ```
 
 1. With all the above defined in a single script, we can save the file as `PCSAFT.jl` and then include it in our Jupyter notebooks (for example) and use the model with all of our existing method:
 
-    ```julia
-    include("PCSAFT.jl")
+   ```julia
+   include("PCSAFT.jl")
 
-    model = PCSAFT(["carbon dioxide"])
+   model = PCSAFT(["carbon dioxide"])
 
-    p = 20e6
-    T = range(290,460,length=200)
+   p = 20e6
+   T = range(290,460,length=200)
 
-    Cp = isobaric_heat_capacity.(model, p, T)
+   Cp = isobaric_heat_capacity.(model, p, T)
 
-    (T_c, p_c, V_c) = crit_pure(model)
+   (T_c, p_c, V_c) = crit_pure(model)
 
-    T_sat = range(220,T_c,length=200)
+   T_sat = range(220,T_c,length=200)
 
-    (p_sat, V_l_sat, V_v_sat) = saturation_pressure(model,T_sat)
-    ```
+   (p_sat, V_l_sat, V_v_sat) = saturation_pressure(model,T_sat)
+   ```
 
 ## sPC-SAFT Example
 
@@ -295,37 +295,37 @@ We can do this in a very succinct way making this new model a sub-type of the ab
 
 - When we define the model type, `sPCSAFT` is a sub-type of `PCSAFT`:
 
-    ```julia
-    abstract type sPCSAFTModel <: PCSAFTModel end
-    ```
+  ```julia
+  abstract type sPCSAFTModel <: PCSAFTModel end
+  ```
 
 - Since the parameters are the same, we can just use the same model params when creating the model:
 
-    ```julia
-    @newmodel sPCSAFT sPCSAFTModel PCSAFTParam
-    ```
+  ```julia
+  @newmodel sPCSAFT sPCSAFTModel PCSAFTParam
+  ```
 
-    This may not be the case if we're extending a model (*e.g.* if we're adding polar or ionic terms, we may need to define a new parameter struct to include the new parameters).
+  This may not be the case if we're extending a model (*e.g.* if we're adding polar or ionic terms, we may need to define a new parameter struct to include the new parameters).
 
 - When defining the model equations, we only need to write those that have been changed in `sPCSAFT`:
 
-    ```julia
-    function a_hc(model::sPCSAFTModel, V, T, z)
-        x = z/sum(z)
-        m = model.params.segment.values
-        m̄ = ∑(x .* m)
-        return m̄*@f(a_hs) - (m̄-1)*log(@f(g_hs))
-    end
+  ```julia
+  function a_hc(model::sPCSAFTModel, V, T, z)
+      x = z/sum(z)
+      m = model.params.segment.values
+      m̄ = ∑(x .* m)
+      return m̄*@f(a_hs) - (m̄-1)*log(@f(g_hs))
+  end
 
-    function g_hs(model::sPCSAFTModel, V, T, z)
-        η = @f(ζ,3)
-        return (1-η/2)/(1-η)^3
-    end
+  function g_hs(model::sPCSAFTModel, V, T, z)
+      η = @f(ζ,3)
+      return (1-η/2)/(1-η)^3
+  end
 
-    function a_hs(model::sPCSAFTModel, V, T, z)
-        η = @f(ζ,3)
-        return (4η-3η^2)/(1-η)^2
-    end
-    ```
+  function a_hs(model::sPCSAFTModel, V, T, z)
+      η = @f(ζ,3)
+      return (4η-3η^2)/(1-η)^2
+  end
+  ```
 
 The rest works exactly as it would with the `PCSAFT` example.

@@ -62,30 +62,30 @@ Nevertheless, due to the need for species-specific parameters, this `model2` con
 
 * Component names:
 
-    ```julia
-    julia> model2.components
-    1-element Vector{String}:
-    "carbon dioxide"
-    ```
+  ```julia
+  julia> model2.components
+  1-element Vector{String}:
+  "carbon dioxide"
+  ```
 
 * References for the equation of state:
 
-    ```julia
-    julia> model2.references
-    "10.1063/1.3060771"
-    ```
+  ```julia
+  julia> model2.references
+  "10.1063/1.3060771"
+  ```
 
 * The species-specific parameters:
 
-    ```julia
-    julia> model2.params
-    Clapeyron.ReidIdealParam for ["carbon dioxide"] with 1 param:
-    coeffs::SingleParam{NTuple{4, Float64}}
+  ```julia
+  julia> model2.params
+  Clapeyron.ReidIdealParam for ["carbon dioxide"] with 1 param:
+  coeffs::SingleParam{NTuple{4, Float64}}
 
-    julia> model2.params.coeffs
-    SingleParam{NTuple{4, Float64}}("Reid Coefficients") with 1 component:
-    "carbon dioxide" => (19.8, 0.0734, -5.6e-5, 1.72e-8)
-    ```
+  julia> model2.params.coeffs
+  SingleParam{NTuple{4, Float64}}("Reid Coefficients") with 1 component:
+  "carbon dioxide" => (19.8, 0.0734, -5.6e-5, 1.72e-8)
+  ```
 
 One can also create a model for mixtures in a similar fashion:
 
@@ -144,73 +144,73 @@ This includes:
 
 * **Alpha functions**, which improve the prediction the pure-component saturation curves:
 
-```julia
-julia> model = PR(["methanol","benzene"];alpha=TwuAlpha)
-PR{BasicIdeal, TwuAlpha, NoTranslation, vdW1fRule} with 2 components:
- "methanol"
- "benzene"
-Contains parameters: a, b, Tc, Pc, Mw
+  ```julia
+  julia> model = PR(["methanol","benzene"];alpha=TwuAlpha)
+  PR{BasicIdeal, TwuAlpha, NoTranslation, vdW1fRule} with 2 components:
+  "methanol"
+  "benzene"
+  Contains parameters: a, b, Tc, Pc, Mw
 
-julia> model.alpha
-TwuAlpha with 2 components:
- "methanol"
- "benzene"
-Contains parameters: M, N, L
-```
+  julia> model.alpha
+  TwuAlpha with 2 components:
+  "methanol"
+  "benzene"
+  Contains parameters: M, N, L
+  ```
 
 * **Volume translation methods**, which improve the prediction of the liquid volume:
 
-```julia
-julia> model = PR(["methanol","benzene"];translation=PenelouxTranslation)
-PR{BasicIdeal, PRAlpha, PenelouxTranslation, vdW1fRule} with 2 components:
- "methanol"
- "benzene"
-Contains parameters: a, b, Tc, Pc, Mw
+  ```julia
+  julia> model = PR(["methanol","benzene"];translation=PenelouxTranslation)
+  PR{BasicIdeal, PRAlpha, PenelouxTranslation, vdW1fRule} with 2 components:
+  "methanol"
+  "benzene"
+  Contains parameters: a, b, Tc, Pc, Mw
 
-julia> model.translation
-PenelouxTranslation with 2 components:
- "methanol"
- "benzene"
-Contains parameters: Vc, v_shift
-```
+  julia> model.translation
+  PenelouxTranslation with 2 components:
+  "methanol"
+  "benzene"
+  Contains parameters: Vc, v_shift
+  ```
 
 * **Mixing rules**, which can improve the predicted phase behaviour.
-    These come in two flavours:
+  These come in two flavours:
 
-Generic one-fluid mixing rules such as the van-der Waals one-fluid mixing rule (the default in all cubics):
+  * Generic one-fluid mixing rules such as the van der Waals one-fluid mixing rule (the default in all cubics):
 
-```julia
-julia> model = PR(["methanol","benzene"])
-PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule} with 2 components:
-"methanol"
-"benzene"
-Contains parameters: a, b, Tc, Pc, Mw
+    ```julia
+    julia> model = PR(["methanol","benzene"])
+    PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule} with 2 components:
+    "methanol"
+    "benzene"
+    Contains parameters: a, b, Tc, Pc, Mw
 
-julia> model.mixing
-vdW1fRule()
-```
+    julia> model.mixing
+    vdW1fRule()
+    ```
 
-``G_E``-mixing rules where an activity coefficient model is used in conjunction with the cubic equation of state:
+  * ``G_E``-mixing rules where an activity coefficient model is used in conjunction with the cubic equation of state:
 
-```julia
-julia> model = PR(["methanol","benzene"];mixing=HVRule,activity=UNIFAC)
-PR{BasicIdeal, PRAlpha, NoTranslation, HVRule{UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}}} with 2 components:
-"methanol"
-"benzene"
-Contains parameters: a, b, Tc, Pc, Mw
+    ```julia
+    julia> model = PR(["methanol","benzene"];mixing=HVRule,activity=UNIFAC)
+    PR{BasicIdeal, PRAlpha, NoTranslation, HVRule{UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}}} with 2 components:
+    "methanol"
+    "benzene"
+    Contains parameters: a, b, Tc, Pc, Mw
 
-julia> model.mixing
-HVRule{UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}} with 2 components:
-"methanol"
-"benzene"
+    julia> model.mixing
+    HVRule{UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}} with 2 components:
+    "methanol"
+    "benzene"
 
-julia> model.mixing.activity
-UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}} with 2 components:
-"methanol": "CH3OH" => 1
-"benzene": "ACH" => 6
-Group Type: UNIFACDortmund
-Contains parameters: A, B, C, R, Q
-```
+    julia> model.mixing.activity
+    UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}} with 2 components:
+    "methanol": "CH3OH" => 1
+    "benzene": "ACH" => 6
+    Group Type: UNIFACDortmund
+    Contains parameters: A, B, C, R, Q
+    ```
 
 Whilst one could combine all the parts listed above in endless ways, there are some default combinations which we provide.
 These are typically referred to as predictive cubics: Predictive SRK (`PSRK`) and Volume-Translated PR (`VTPR`).
