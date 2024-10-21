@@ -31,7 +31,7 @@ function property(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true
     return VT_property(model,V,T,z)
 end
 ```
-So, you can calculate the property with Volume-Temperature variables by calling `VT_property(model,V,T,z).`
+So, you can calculate the property with Volume-Temperature variables by calling `VT_property(model,V,T,z)`.
 Another way to do this is by using units, provided by `Unitful.jl`:
 ```julia
 using Unitful

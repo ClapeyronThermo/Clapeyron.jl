@@ -67,7 +67,7 @@ One can find out more about the information stored within these model objects in
 - [`BACKSAFT`](@ref)
 - Lennard-Jones SAFT ([`LJSAFT`](@ref))
 - SAFT, Variable Range (VR) ,Square Well (SW) ([`SAFTVRSW`](@ref))
-- Cubic plus Associacion ([`CPA`](@ref))
+- Cubic plus Association ([`CPA`](@ref))
   - Simplified CPA ([`sCPA`](@ref)) 
 - Soft SAFT, with Lennard-Jones function from Johnson et al. (1993) ([`softSAFT`](@ref))
 - Soft SAFT, with Lennard-Jones function from Thol et al. (2016)  ([`softSAFT2016`](@ref))
@@ -98,7 +98,7 @@ One can find out more about the information stored within these model objects in
 **Empirical**:
 - General MultiParameter Empiric model  ([`MultiFluid`](@ref))
   - GERG-2008 EoS for Natural Gas ([`GERG2008`](@ref))
-  - EOS-LNG for Liquified Natural Gas ([`EOS_LNG`](@ref))
+  - EOS-LNG for Liquefied Natural Gas ([`EOS_LNG`](@ref))
   - IAPWS-95 Water reference ([`IAPWS95`](@ref))
   - Propane Reference ([`PropaneRef`](@ref))
   - Lennard Jones Reference from Thol et al. (2016) ([`LJRef`](@ref))
@@ -107,7 +107,7 @@ One can find out more about the information stored within these model objects in
 **Extended Corresponding States ([`ECS`](@ref))**:
 - SPUNG ([`SPUNG`](@ref))
 
-One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods availble in our package.
+One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods available in our package.
 
 There a few optional arguments available for these equations which will be explained below. One of these is specifying the location of the parameter databases, the details of which can be found in our Custom databases documentation.
 
@@ -175,7 +175,7 @@ We currently support:
 
 - [`WSRule`](@ref): The Wong-Sandler mixing rule which also relies on an activity model. The equations are slightly more complicated but it is meant to be an improvement compared to `HVRule`. Also needs an activity model to be specified.
 - [`modWSRule`](@ref): a a modified Wong-Sandler mixing rule, that reduces to vdW1f when there is no nonideal mixtures.
-- [`LCVMRule`](@ref): The Linear Combiniation of Vidal and Michelsen mixing rules is designed for asymmetric mixtures. Also needs an activity model to be specified.
+- [`LCVMRule`](@ref): The Linear Combination of Vidal and Michelsen mixing rules is designed for asymmetric mixtures. Also needs an activity model to be specified.
 
 If one goes looking within the source code, they will also find [`VTPRRule`, [`PSRKRule`](@ref),[`PPR78Rule`](@ref), [`QCPRRule`](@ref) and [`UMRRule`](@ref); these are only intended for use in their respective models and shouldn't be used otherwise. However, it is still possible to toggle between them.
 
@@ -236,7 +236,7 @@ The functions for the physical properties that we currently support are as follo
   betaT = thermal_compressibility(model, p, T, z)
   betaS = isentropic_compressibility(model, p, T, z)
   u = speed_of_sound(model, p, T, z)
-  alphaV = isobaric_expansitivity(model, p, T, z)
+  alphaV = isobaric_expansivity(model, p, T, z)
   muJT = joule_thomson_coefficient(model, p, T, z)
   Z = compressibility_factor(model, p, T, z)
   gamma = activity_coefficients(model, p, T, z)
@@ -299,7 +299,7 @@ The functions for the physical properties that we currently support are as follo
   (p_sat, V_l_sat, V_v_sat) = saturation_pressure(model, T;v0=log10.([V_l0,V_v0]))
   ```
 
-  Although our calculations tend to be quite robust, this argument is generally useful for when one wants to obtain smooth VLE envelopes quicly when making figures. Here, you'd use a for loop where each iteration uses the previous' iteration value as an initial guess (except the first iteration). For example:
+  Although our calculations tend to be quite robust, this argument is generally useful for when one wants to obtain smooth VLE envelopes quickly when making figures. Here, you'd use a for loop where each iteration uses the previous' iteration value as an initial guess (except the first iteration). For example:
 
   ```julia
   (p_sat, V_l_sat, V_v_sat) = saturation_pressure(model, T[1])

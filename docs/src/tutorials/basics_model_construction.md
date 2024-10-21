@@ -266,7 +266,7 @@ AssocParam{Float64}["water", "1-propanol"]) with 4 values:
 This may be important when trying to obtain accurate predictions for mixtures.
 
 ### Cubic Plus Association
-Another class of equation of state that doesn't really fit in either cubics or SAFT equations is CPA, where the two approaches are combined. As a result, the features available in both appraoches are extended to CPA:
+Another class of equation of state that doesn't really fit in either cubics or SAFT equations is CPA, where the two approaches are combined. As a result, the features available in both approaches are extended to CPA:
 ```julia
 julia> model = CPA(["methanol","ethane"])
 CPA{BasicIdeal, RK{BasicIdeal, CPAAlpha, NoTranslation, vdW1fRule}} with 2 components:
@@ -295,7 +295,7 @@ MultiParameter Equation of state for water:
 As these equations of state typically have common terms, rather than specifying the parameters, we highlight what terms the equation of state is made up of, as shown above.
 
 !!! tip "List of Models"
-    A full list of Empirical equations of state is available (see [Empirical Helmholtz Models](../eos/empiric.md)). The list of available systems can be expanded by includeing the CoolProp.jl extension (see [Extension - CoolProp](./extensions_coolprop.md)).
+    A full list of Empirical equations of state is available (see [Empirical Helmholtz Models](../eos/empiric.md)). The list of available systems can be expanded by including the CoolProp.jl extension (see [Extension - CoolProp](./extensions_coolprop.md)).
 
 ## Composite Models
 Not every equation of state provides a global representation of the phase space of a system (for example, activity coefficient models only consider the liquid phase). In these cases, we need to combine various models together to obtain the 'full' representation. `CompositeModels` allows users to mix-and-match all of our available models. In the most general case, five models must be specified:

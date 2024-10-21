@@ -94,7 +94,7 @@ end
 @newmodel PCSAFT PCSAFTModel PCSAFTParam
 ```
 
-2. We define some functions to inform how the model obtains their parameters, what are their references, and if we need to perform any reescaling, combining or renaming of input parameters:
+2. We define some functions to inform how the model obtains their parameters, what are their references, and if we need to perform any rescaling, combining or renaming of input parameters:
 ```julia
 # Use this function if you want to provide default parameters for your new model.
 # Those locations are relative to the default database location.
@@ -108,7 +108,7 @@ Clapeyron.default_references(::Type{PCSAFT}) = ["10.1021/ie0003887", "10.1021/ie
 function Clapeyron.transform_params(::Type{PCSAFT},params)
     # params is a Dict{String,ClapeyronParam}
     sigma = params["sigma"]
-    # We reescale the sigma values
+    # We rescale the sigma values
     sigma.values .*= 1e-10
 
     # If k is not provided, it will be not be considered
@@ -126,15 +126,15 @@ function Clapeyron.transform_params(::Type{PCSAFT},params)
     return params
 end
 ```
-The `@newmodel` macro, in conjunction with the functions defined above, gets lowered to the following julia code:
+The `@newmodel` macro, in conjunction with the functions defined above, gets lowered to the following Julia code:
 
-```Julia
+```julia
 struct PCSAFT{T<:IdealModel} <: PCSAFTModel
     components::Array{String,1}             # Components vector. the model gets it's length from here
     sites::SiteParam                        # Parameter struct containing the sites and their amounts
     params::PCSAFTParam                     # Struct specified in the macro
     idealmodel::T                           # Model for the ideal part
-    assoc_options::Clapeyron.AssocOptions   # Options for the calculation of the association helmholtz contribution
+    assoc_options::Clapeyron.AssocOptions   # Options for the calculation of the association Helmholtz contribution
     references::Array{String,1}             # DOI references
 end
 
@@ -185,7 +185,7 @@ You can, of course, not use the macro, if your model depends itself on other mod
 
    If we obey that convention, we may use the `@f` macro, which automatically substitutes the first four parameters for compactness. For example, `@f(func,i,j)` is equivalent to calling `func(model,V,T,z,i,j)`.
 
-    Clapeyron obtains all the properties of a model by differenciating the total helmoltz energy ([`eos`](@ref)) or the residual helmoltz energy (`eos_res`).  `eos` and `eos_res` themselves are defined in terms of the reduced ideal helmholtz energy (`a_res`). In this case, we are going to define `a_res` for our own model:
+    Clapeyron obtains all the properties of a model by differentiating the total Helmholtz energy ([`eos`](@ref)) or the residual Helmholtz energy (`eos_res`).  `eos` and `eos_res` themselves are defined in terms of the reduced ideal Helmholtz energy (`a_res`). In this case, we are going to define `a_res` for our own model:
 
    ```julia
    function Clapeyron.a_res(model::PCSAFTModel, V, T, z)
@@ -231,7 +231,7 @@ You can, of course, not use the macro, if your model depends itself on other mod
    # INSERT REST OF CODE
    ```
 
-4. With all the above defined in a single script, we can save the file as `PCSAFT.jl` and then include it in our jupyter notebooks (for example) and use the model with all of our existing method:
+4. With all the above defined in a single script, we can save the file as `PCSAFT.jl` and then include it in our Jupyter notebooks (for example) and use the model with all of our existing method:
 
    ```julia
    include("PCSAFT.jl")

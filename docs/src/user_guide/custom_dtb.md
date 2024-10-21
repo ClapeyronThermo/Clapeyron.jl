@@ -40,7 +40,7 @@ Feel free to check these out in the package to see some better examples!
 
 !!! note "Association Values are asymmetric!"
 
-    There are cases where the association values are asymmetric (for example, Water and acetonitrile), so if you are adding cross-association values for a component-site pair, remember to add the corresponding swapped value, like in the water - methanol example above.
+    There are cases where the association values are asymmetric (for example, water and acetonitrile), so if you are adding cross-association values for a component-site pair, remember to add the corresponding swapped value, like in the water - methanol example above.
 
 ## Using your own parameters
 
@@ -53,7 +53,7 @@ model2 = PCSAFT(["your_species_1","your_species_2"];userlocations=["dtb_like","d
 
 The rest works exactly as it normally would! We recommend reading the background documentation for the various models, as well as the [`getparams`](@ref) docs, to ensure the units of the parameters you provide are correct and how those parameters are parsed into each model.
 
-You can create those parameters without leaving the julia REPL, by using [`Clapeyron.ParamTable`](@ref). this function will create a temporary location on where a CSV containing the table is created:
+You can create those parameters without leaving the Julia REPL, by using [`Clapeyron.ParamTable`](@ref). this function will create a temporary location on where a CSV containing the table is created:
 
 ```julia
 data = (species = ["water"],Mw = [18.0])

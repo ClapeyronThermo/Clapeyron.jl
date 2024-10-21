@@ -12,7 +12,7 @@ There are many ways one can develop an equation of state, however, these must re
 
 `` \mathrm{DoF} = N_\mathrm{species} - N_\mathrm{phase} + 2 ``
 
-Here, `` \mathrm{DoF}`` means "Degrees of Freedom"; this is the number of so-called intensive state properties (or, in other words, those that are independent of system size) that we can specify. As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; system size itself is not included so, in practise, this represents one more variable that we can specify, giving $N_\mathrm{species}+2$. Thus, taking the simple case of a single species, we can specify at most three conditions in our system. For a traditional equation of state, we specify volume, $V$, temperature, $T$, and the size of the system – for example the number of particles, $N$, or moles, $n$; the equation of state then returns the pressure, $p$. Many modern equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks) and, accordingly, the three variable chosen are again usually $T$, $V$ and  $N$; the output of these equations is usually the Helmholtz free energy, $A$. 
+Here, `` \mathrm{DoF}`` means "Degrees of Freedom"; this is the number of so-called intensive state properties (or, in other words, those that are independent of system size) that we can specify. As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; system size itself is not included so, in practice, this represents one more variable that we can specify, giving $N_\mathrm{species}+2$. Thus, taking the simple case of a single species, we can specify at most three conditions in our system. For a traditional equation of state, we specify volume, $V$, temperature, $T$, and the size of the system – for example the number of particles, $N$, or moles, $n$; the equation of state then returns the pressure, $p$. Many modern equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks) and, accordingly, the three variable chosen are again usually $T$, $V$ and  $N$; the output of these equations is usually the Helmholtz free energy, $A$.
 
 Many equations of state are based on an underlying molecular model. Consequently, it is also typical for an equation of state to require parameters, $\boldsymbol{\Xi}$, to model certain species. The nature of these parameters depends on the equation of state.
 
@@ -36,7 +36,7 @@ where $\rho = N/V$ is the number density, and $\Lambda$ is the thermal de Brogli
 
 ``\frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T} = \left(\sum_ix_i\ln{(\rho_i\Lambda_i^3)}\right)-1``,
 
-where $x_i$ is the molar composition, and the subscript denote that the variable so decorated relates to species $i$. This equation represnts the `MonomerIdeal` form in `Clapeyron`. For the purposes of vapour–liquid-equilibrium properties, one can even ignore $\Lambda_i$ (since it cancels out in solving the phase equilibrium); we therefore use this as the default `BasicIdeal` model. 
+where $x_i$ is the molar composition, and the subscript denote that the variable so decorated relates to species $i$. This equation represents the `MonomerIdeal` form in `Clapeyron`. For the purposes of vapour–liquid-equilibrium properties, one can even ignore $\Lambda_i$ (since it cancels out in solving the phase equilibrium); we therefore use this as the default `BasicIdeal` model.
 
 The kinetic energy of polyatomic species includes contributions from vibrational and rotational modes of motion, as well as translational; we must also account for these in the ideal free energy. The statistical-mechanical derivation of the ideal free energy becomes a little more complicated but can still be done, resulting in the following expression:
 
@@ -70,11 +70,11 @@ The $\alpha$ function requires an additional parameter, the acentric factor (or 
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2\alpha(T;\omega)}{V^2+2NbV+b^2N^2}``
 
-The SRK and PR equations of state are comparable in performance, although the latter generally provides liquid densities with a greater degree of accuracy, while the former usually provides better fugacities. However, when it comes to modelling complex species such as polymers (macromolecules), or associating species, both equations struggle to perform well. This is unsurprising, since the underlying molecular model remains, in essence, a "van der Waalsian sphere" – in other words,a hard spherical core surrounded by a region of attraction. A more-sophisticated molecular model is required to account well for the increased molecular complexitiies of these species.
+The SRK and PR equations of state are comparable in performance, although the latter generally provides liquid densities with a greater degree of accuracy, while the former usually provides better fugacities. However, when it comes to modelling complex species such as polymers (macromolecules), or associating species, both equations struggle to perform well. This is unsurprising, since the underlying molecular model remains, in essence, a "van der Waalsian sphere" – in other words,a hard spherical core surrounded by a region of attraction. A more-sophisticated molecular model is required to account well for the increased molecular complexities of these species.
 
 Before moving on from cubic equations of state we note that, within `Clapeyron`, the cubic plus association (`CPA`) equation of state is supported. A CPA equation is the amalgamation of a cubic equation (usually SRK, as in `Clapeyron`, or PR) with the association term from the SAFT equation, which we will meet later. Strictly speaking, it is neither a cubic nor a SAFT equation of state but, rather, occupies a middle ground between these two classes of equation. 
 
-Something that may be apparent in all these equations is the fact that these are all functions that return the pressure and, thus, must be integrated to obtain the Helmholtz free energy. Like the ideal-gas equation, there will be missing temperature and compositional dependences which need to be included.
+Something that may be apparent in all these equations is the fact that these are all functions that return the pressure and, thus, must be integrated to obtain the Helmholtz free energy. Like the ideal-gas equation, there will be missing temperature and compositional dependencies which need to be included.
 
 #### Mixtures with cubic equations of state
 
@@ -96,13 +96,13 @@ More-complicated mixing rules (such as the Wong-Sandler mixing rule) are availab
 
 ### SAFT equations of state
 
-In comparison to the cubic equations of state, equations based on the Statistical Associating Fluid Theory (SAFT) are based on a more-theoretical approach, although still can be considered as descendents of van der Waals' equation. As mentioned earlier, the van der Waals equation can be derived from statistical mechanics, whereby the Helmholtz free energy of the van der Waals fluid is obtained as
+In comparison to the cubic equations of state, equations based on the Statistical Associating Fluid Theory (SAFT) are based on a more-theoretical approach, although still can be considered as descendants of van der Waals' equation. As mentioned earlier, the van der Waals equation can be derived from statistical mechanics, whereby the Helmholtz free energy of the van der Waals fluid is obtained as
 
 ``\frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}``;
 
 here the ideal and hard-sphere (HS) terms combine to give the repulsive term (of the pressure form of the equation) whilst the $A_1$ term results in the attractive term. We can see from this that, using the van der Waals equation, species are effectively modelled as hard spheres with dispersive interactions (we sometimes call these London dispersion interactions). The latter two terms can be merged into what is referred to as the monomer or segment term. 
 
-Whilst, as already noted, this is clearly a step up from the ideal gas, most species can't be modelled effectively as single spheres; they may be highly non-speherical in shape (as is usually the case with large molecules), or they may experience interactions that are more complex than simple dispersion. A classic example of the latter is water; although the water molecule is small and (at first glance) may appear simple, the behaviour of water is very strongly influenced by hydrogen-bonding interactions.  
+Whilst, as already noted, this is clearly a step up from the ideal gas, most species can't be modelled effectively as single spheres; they may be highly non-spherical in shape (as is usually the case with large molecules), or they may experience interactions that are more complex than simple dispersion. A classic example of the latter is water; although the water molecule is small and (at first glance) may appear simple, the behaviour of water is very strongly influenced by hydrogen-bonding interactions.  
 
 Using Wertheim's TPT1 theory of association, it is possible to model molecules as chains of spheres; the shape of the model molecule can thereby be tailored to represent that of the real molecule far better than a single sphere. Wertheim's TPT1 theory can also be used to account for intermolecular association interactions (such as dipole–dipole interactions, or hydrogen bonding), which are strongly directional. These are described using associations sites that are located on one or more of the spherical segments comprising the chain molecule. This results in the addition of two extra contributions to the Helmholtz free energy (note that the HS and dispersive terms have been merged into a monomer term):
 
@@ -140,7 +140,7 @@ Surprisingly, the monomer term is one of the aspects that most distinguishes the
 
 `` \frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}=\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}+\frac{A_\mathrm{2}}{(Nk_\mathrm{B}T)^3}+\frac{A_\mathrm{3}}{(Nk_\mathrm{B}T)^4}+...``
 
-This exprerssion is known as a Barker–Henderson perturbative expansion. These terms generally account for the dispersive interactions between segments; the $n^\mathrm{th}$ order term account for interactions between $n$ segments. In most SAFT equations, this expansion is truncated at just the second-order term.
+This expression is known as a Barker–Henderson perturbative expansion. These terms generally account for the dispersive interactions between segments; the $n^\mathrm{th}$ order term account for interactions between $n$ segments. In most SAFT equations, this expansion is truncated at just the second-order term.
 
 #### Parameters
 
@@ -244,7 +244,7 @@ A very recent extension of the SAFT-VR Mie equation is the SAFT-VRQ Mie equation
 
 #### SAFT-$\gamma$ Mie
 
-The group-contribution version of SAFT-VR Mie, developed by Papaioannou _et al._ (2014), the SAFT-$\gamma$ Mie equation rests on the same general framework as SAFT-VR Mie, although, as it is a group-contribution method, we are able to model heterogenous chains (in SAFT equations discussed previously, all segments in a chain were the same size). The group-contribution methodology is based on that developed by Lymperiadis _et al._ (2008). An interesting aesthetic change is with the number of segments where this is now separated into the shape factor, $S$, and the number of segments $v^*$. The latter must now be an integer and the former is a direct measure of how 'fused' the segments are. Approximately 60 groups are currently available for this equation. A noteworthy advantage of using groups is that unlike parameters between groups can be estimated from pure-component data; these can then be readily extended to mixtures without further regression. 
+The group-contribution version of SAFT-VR Mie, developed by Papaioannou _et al._ (2014), the SAFT-$\gamma$ Mie equation rests on the same general framework as SAFT-VR Mie, although, as it is a group-contribution method, we are able to model heterogeneous chains (in SAFT equations discussed previously, all segments in a chain were the same size). The group-contribution methodology is based on that developed by Lymperiadis _et al._ (2008). An interesting aesthetic change is with the number of segments where this is now separated into the shape factor, $S$, and the number of segments $v^*$. The latter must now be an integer and the former is a direct measure of how 'fused' the segments are. Approximately 60 groups are currently available for this equation. A noteworthy advantage of using groups is that unlike parameters between groups can be estimated from pure-component data; these can then be readily extended to mixtures without further regression.
 
 This equation has also been extended to electrolytes through SAFT-$\gamma$E Mie.
 

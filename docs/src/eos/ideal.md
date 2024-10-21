@@ -15,7 +15,7 @@ All `Clapeyron.jl` models can be separated between an ideal and a residual contr
     + \frac{1}{Nk_\mathrm{B}T} \int_{T_0}^T \!\!C_{p,i}^0 dT + \frac{H_{0,i}}{Nk_\mathrm{B}T}- \frac{1}{Nk_{B}}\!\!\int_{T_0}^T \frac{C_{p,i}^0}{T} dT -\ln{\frac{T}{T_0}}-\frac{S_{0,i}}{Nk_\mathrm{B}} - 1\right]``
 
 
-Normally, EoS models contain an ideal model. this model can be accessed by using `Clapeyron.idealmodel`.
+Normally, EoS models contain an ideal model. This model can be accessed by using `Clapeyron.idealmodel`.
 
 ```@docs
 Clapeyron.BasicIdeal

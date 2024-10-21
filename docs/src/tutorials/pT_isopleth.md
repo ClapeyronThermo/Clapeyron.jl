@@ -2,4 +2,4 @@
 
 ## Carbon dioxide and _n_-decane
 
-## Liquified natural gas mixture
+## Liquefied natural gas mixture

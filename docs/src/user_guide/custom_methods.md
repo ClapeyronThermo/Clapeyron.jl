@@ -44,7 +44,7 @@ Clapeyron will automatically call your implementation when your model is evaluat
 
 ## Custom saturation solver
 
-For saturation solvers ([`saturation_pressure`](@ref),[`saturation_temperature`](@ref)), You can dispatch on a different saturation method. let's create one, that just evaluates antoine coefficients:
+For saturation solvers ([`saturation_pressure`](@ref),[`saturation_temperature`](@ref)), You can dispatch on a different saturation method. let's create one, that just evaluates Antoine coefficients:
 
 ```julia
 struct DirectAntoine{C} <: Clapeyron.SaturationMethod
@@ -89,7 +89,7 @@ function Clapeyron.index_reduction(method::MyRachfordRice,non_zero_indices)
 end
 
 function Clapeyron.tp_flash_impl(model::EoSModel,p,T,z,method::MyRachfordRice)
-  #perform rachford rice,returns x, y, α₀
+  #perform Rachford-Rice,returns x, y, α₀
   #...
   X = vcat(x',y')
   n = X.*[1-α₀

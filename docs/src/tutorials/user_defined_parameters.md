@@ -20,7 +20,7 @@ By default, parameters in Clapeyron are stored in CSV files. This was to make th
   | species                      | param1 | param2 |
   | water                        | 1234   | 5.678  |
 
-  To ensure that you contain all the appropriate parameters, please check the docs for the respective equation of state. The only equation of state that requires additional parameters is SAFT equations where users must also specify the occurence of each site type (`n_X`) present.
+  To ensure that you contain all the appropriate parameters, please check the docs for the respective equation of state. The only equation of state that requires additional parameters is SAFT equations where users must also specify the occurrence of each site type (`n_X`) present.
 
 - Unlike parameters: These files contain parameters relating to a pair of species:
 
@@ -82,7 +82,7 @@ PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule} with 2 components:
  "methanol"
 Contains parameters: a, b, Tc, Pc, Mw
 ```
-Single-component parametes are specified as vectors and pair parameters are specified as matrices. Note that you do still need to specify the submodel parameters seperately (in the case of the alpha function above). 
+Single-component parametes are specified as vectors and pair parameters are specified as matrices. Note that you do still need to specify the submodel parameters separately (in the case of the alpha function above).
 
 As an additional example, let us now consider a similar case in a SAFT-type equation of state:
 ```julia

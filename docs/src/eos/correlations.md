@@ -36,7 +36,7 @@ Clapeyron.DIPPR101Sat
 ```
 
 # Liquid Volume Correlations
-Liquid Volume Correlations are any `EoSModel` that are subtypes of `LiquidVolumeModel`. 
+Liquid Volume Correlations are any `EoSModel` that are subtypes of `LiquidVolumeModel`.
 They return `volume(model,p,T,z, phase = :liquid)`.
 
 ```@docs
@@ -47,7 +47,7 @@ COSTALD
 
 # Virial Models
 
-Virial models are defined in terms of the second virial coefficient, `B(T,z)`. the reduced residual helmholtz energy is defined as:
+Virial models are defined in terms of the second virial coefficient, `B(T,z)`. the reduced residual Helmholtz energy is defined as:
 
 ``\frac{A_\mathrm{res}}{Nk_\mathrm{B}T} = \frac{B}{V}``,
 
@@ -61,7 +61,7 @@ EoSVirial2
 
 # Solid Models
 
-Solid models provide simple approximations to the excess chemical potential in the solid phase. Intended to be used in conjuction with a liquid model within a CompositeModel
+Solid models provide simple approximations to the excess chemical potential in the solid phase. Intended to be used in conjunction with a liquid model within a CompositeModel
 
 ```@docs
 SolidHfus
