@@ -177,7 +177,7 @@ We currently support:
 - [`modWSRule`](@ref): a a modified Wong-Sandler mixing rule, that reduces to vdW1f when there is no nonideal mixtures.
 - [`LCVMRule`](@ref): The Linear Combination of Vidal and Michelsen mixing rules is designed for asymmetric mixtures. Also needs an activity model to be specified.
 
-If one goes looking within the source code, they will also find [`VTPRRule`, [`PSRKRule`](@ref),[`PPR78Rule`](@ref), [`QCPRRule`](@ref) and [`UMRRule`](@ref); these are only intended for use in their respective models and shouldn't be used otherwise. However, it is still possible to toggle between them.
+If one goes looking within the source code, they will also find [`VTPRRule`](@ref), [`PSRKRule`](@ref),[`PPR78Rule`](@ref), [`QCPRRule`](@ref) and [`UMRRule`](@ref); these are only intended for use in their respective models and shouldn't be used otherwise. However, it is still possible to toggle between them.
 
 ## Specifying a volume translation method
 

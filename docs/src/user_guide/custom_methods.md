@@ -25,7 +25,7 @@ function Clapeyron.x0_sat_pure(model::PCSAFTModel,T,z=SA[1.0])
 end
 ```
 
-Note that we do need prefix [`x0_sat_pure`] with `Clapeyron.` as we do not export this function normally; including this function in our script with force Clapeyron to use it instead of the default. These modifications can also be done for `x0_crit_pure` although `crit_pure` has proven to be quite reliable.
+Note that we do need prefix [`x0_sat_pure`](@ref) with `Clapeyron.` as we do not export this function normally; including this function in our script with force Clapeyron to use it instead of the default. These modifications can also be done for `x0_crit_pure` although `crit_pure` has proven to be quite reliable.
 
 ## Custom volume solver
 
@@ -70,7 +70,7 @@ function Clapeyron.saturation_temperature_impl(model::EoSModel,T,method::DirectA
 end
 ```
 
-you can now call `saturation_pressure(model,T,method)` where `method = DirectAntoine(A,B,C)`. At the moment, the default algorithm iterates directly over volumes (`[ChemPotVSaturation](@ref)`), but we also have saturation via isofugacity (`[IsofugacitySaturation](@ref)`) and superancillaries for cubics (`[SuperAncSaturation](@ref)`). the same thing can be done with `saturation_temperature`.
+you can now call `saturation_pressure(model,T,method)` where `method = DirectAntoine(A,B,C)`. At the moment, the default algorithm iterates directly over volumes ([`ChemPotVSaturation`](@ref)), but we also have saturation via isofugacity ([`IsofugacitySaturation`](@ref)) and superancillaries for cubics ([`SuperAncSaturation`](@ref)). the same thing can be done with `saturation_temperature`.
 
 ## Custom TP-Flash solver
 
