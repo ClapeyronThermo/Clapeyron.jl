@@ -170,7 +170,7 @@ We support the following alpha functions:
 - [`RKPRAlpha`](@ref): This is the default alpha function for RKPR
 - [`BMAlpha`](@ref): This is the modified alpha function proposed by Boston and Mathias designed to improve estimates above the critical point.
   This works for both PR and RK.
-- [`TwuAlpha`](@ref): Proposed by Twu *et al.*, this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions.
+- [`TwuAlpha`](@ref): Proposed by Twu et al., this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions.
   It was intended to be used with PR and is used in VTPR, tcPR, cPR and tcRK.
 - [`Twu88Alpha`](@ref): An earlier version of `TwuAlpha`, that uses 2 parameters instead of 3.
 - [`MTAlpha`](@ref): Proposed by Magoulas and Tassios, this alpha function is essentially like the regular PR alpha function only to a higher order.

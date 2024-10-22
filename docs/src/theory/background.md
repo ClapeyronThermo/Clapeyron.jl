@@ -224,7 +224,7 @@ We will next go through each of the variants of the SAFT equation available in `
 
 #### Original SAFT
 
-Derived by Chapman *et al.* (1990), this is the first variant of the SAFT equation of state.
+Derived by Chapman et al. (1990), this is the first variant of the SAFT equation of state.
 This equation can be seen as a `proof of concept' as not many parameters are available (none for mixtures).
 Nevertheless, a noteworthy feature of this equation is the use of a semi-empirical equation to obtain the hard-sphere diameter that depends on the number of segments of a species (in no other SAFT variant is this done).
 The hard-sphere pair distribution is used in the chain term; this has a much simpler analytical form than what is chosen for use in some other SAFT equations.
@@ -235,11 +235,11 @@ The association strength, $\Delta$ is evaluated in a unique way as well:
 where $\kappa_{ij,ab}$ is dimensionless.
 Unfortunately, the implementation of `ogSAFT` in `Clapeyron` cannot yet replicate the figures from the original paper.
 The reason for this is that the monomer / segment term presented in the paper is not the one used to generate the results.
-The actual term used is developed by Twu *et al.* (1980) and we are currently attempting to implement this within `Clapeyron` but it is not clear, as of yet, how it was implemented within the original equation.
+The actual term used is developed by Twu et al. (1980) and we are currently attempting to implement this within `Clapeyron` but it is not clear, as of yet, how it was implemented within the original equation.
 
 #### CK‑SAFT
 
-If the SAFT equation derived by Chapman *et al.* was the prototype, the variant developed by Huang and Radosz (1990) was the first usable SAFT equation, with over 100 pure component parameters and many unlike parameters available.
+If the SAFT equation derived by Chapman et al. was the prototype, the variant developed by Huang and Radosz (1990) was the first usable SAFT equation, with over 100 pure component parameters and many unlike parameters available.
 Many of the computationally intensive parts of `ogSAFT` are simplified in `CKSAFT`; a simpler equation is used to obtain the hard-sphere diameter, and the monomer term provided within the paper is the correct one.
 The chain term is identical in the two equations.
 Similarly, the association strength only has a minor change:
@@ -255,7 +255,7 @@ We also point out that Huang and Radosz introduced the concept of association sc
 
 #### SAFT‑VR SW
 
-Gil-Villegas *et al.* (1997) developed a new class of SAFT equations known as SAFT variable range.
+Gil-Villegas et al. (1997) developed a new class of SAFT equations known as SAFT variable range.
 Here, more emphasis was placed on the potentials used to characterise dispersion interactions, and a new parameter was introduced through the potential shape.
 Whilst many versions of SAFT‑VR are proposed, each using different underlying potentials, the one that was chosen as the default was SAFT‑VR square-well (SW) with the additional "potential shape parameter" $\lambda$ (characterising the width of the potential well).
 Within this framework, novel expressions for the monomer and chain terms were proposed, both being based on the SW potential.
@@ -304,7 +304,7 @@ We will aim to provide some of these variants at a later date.
 
 #### sPC‑SAFT
 
-We do already provide one of the PC‑SAFT variants, namely the simplified PC‑SAFT equation (developed by Von Solms *et al.* (2003)).
+We do already provide one of the PC‑SAFT variants, namely the simplified PC‑SAFT equation (developed by Von Solms et al. (2003)).
 Here, the only modifications are to the hard-chain and association terms where, instead of using the generalised expressions for the hard-sphere term and hard-sphere pair distribution function, by averaging the hard-sphere diameter (effectively treating mixtures as being made up of identically sized segments), the pure component versions of these properties are used instead.
 The benefit of this is that pure component parameters determined for PC‑SAFT can still be used here, and only the unlike parameters need to be modified.
 
@@ -313,7 +313,7 @@ Most notably, a significant group-contribution method is available.
 
 #### SAFT‑VR Mie
 
-One of the most novel SAFT equations of state, derived by Lafitte *et al.* (2013), this equation is effectively an extension of the SAFT‑VR framework developed by Gil-Villegas *et al.* (1997), with further improvements.
+One of the most novel SAFT equations of state, derived by Lafitte et al. (2013), this equation is effectively an extension of the SAFT‑VR framework developed by Gil-Villegas et al. (1997), with further improvements.
 First of these is extending the Barker–Henderson perturbative expansion to third order instead of second order:
 
 ``\frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}=\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}+\frac{A_\mathrm{2}}{(Nk_\mathrm{B}T)^3}+\frac{A_\mathrm{3}}{(Nk_\mathrm{B}T)^4}``
@@ -349,15 +349,15 @@ The SAFT‑VR Mie does not have a significantly large repository of parameters (
 
 #### SAFT‑VRQ Mie
 
-A very recent extension of the SAFT‑VR Mie equation is the SAFT‑VRQ Mie equation developed by Aasen *et al.* (2019) in which the underlying Mie potential is modified using a Feynman–Hibbs potential, which means that a single species is represented by a sum of three Mie potentials.
+A very recent extension of the SAFT‑VR Mie equation is the SAFT‑VRQ Mie equation developed by Aasen et al. (2019) in which the underlying Mie potential is modified using a Feynman–Hibbs potential, which means that a single species is represented by a sum of three Mie potentials.
 This method attempts to classically account for quantum effects present in small species such as helium, hydrogen and neon.
 Unfortunately, this equation is limited to just the monomer term and, even then, it is very computationally intensive.
 We do note that the current implementation in `Clapeyron` can only model pure component properties, but we will extend this to mixtures in future versions.
 
 #### SAFT‑$\gamma$ Mie
 
-The group-contribution version of SAFT‑VR Mie, developed by Papaioannou *et al.* (2014), the SAFT‑$\gamma$ Mie equation rests on the same general framework as SAFT‑VR Mie, although, as it is a group-contribution method, we are able to model heterogeneous chains (in SAFT equations discussed previously, all segments in a chain were the same size).
-The group‑contribution methodology is based on that developed by Lymperiadis *et al.* (2008).
+The group-contribution version of SAFT‑VR Mie, developed by Papaioannou et al. (2014), the SAFT‑$\gamma$ Mie equation rests on the same general framework as SAFT‑VR Mie, although, as it is a group-contribution method, we are able to model heterogeneous chains (in SAFT equations discussed previously, all segments in a chain were the same size).
+The group‑contribution methodology is based on that developed by Lymperiadis et al. (2008).
 An interesting aesthetic change is with the number of segments where this is now separated into the shape factor, $S$, and the number of segments $v^*$.
 The latter must now be an integer and the former is a direct measure of how 'fused' the segments are.
 Approximately 60 groups are currently available for this equation.
