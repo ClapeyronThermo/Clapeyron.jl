@@ -173,25 +173,28 @@ function reduced_a_res_lkp(model::LKPModel,δ,τ,δr,params)
     c4τ*(β + 1)
 end
 
-function x0_sat_pure(model::LKPModel,T)
-    nan = zero(T)/zero(T)
+function crit_pure(model::LKPModel)
     ω = only(model.params.acentricfactor.values)
     tc = only(model.params.Tc.values)
     vc = only(model.params.Vc.values)
     pc = (0.2905 - 0.085*ω)*Rgas(model)*tc/vc
-    T > tc && (return nan,nan)
-    tr = T/tc
-    trinv = inv(tr)
-    lntr = log(tr)
-    tr6 = tr^6
-    
-    f0 = 5.92714 - 6.09648*trinv - 1.28862*lntr + 0.169347*tr6
-    f1 = 15.2518 - 15.6875*trinv - 13.4721*lntr + 0.43577*tr6
-    lnpr = f0 + ω*f1
-    psat = exp(lnpr)*pc
-    vl = volume(model,psat,T,phase = :l)
-    vv = volume(model,psat,T,phase = :v)
+    return tc,pc,vc
+end
+
+has_fast_crit_pure(::LKPModel) = true
+
+function x0_sat_pure(model::LKPModel,T)
+    ω = only(model.params.acentricfactor.values)
+    crit = crit_pure(model)
+    _,vl,vv = x0_sat_pure_lk(model,T,crit,ω)
     return vl,vv
+end
+
+function x0_psat(model::LKPModel,T)
+    ω = only(model.params.acentricfactor.values)
+    crit = crit_pure(model)
+    p,_,_ = x0_sat_pure_lk(model,T,crit,ω)
+    return p
 end
 
 function lb_volume(model::LKPModel,z)

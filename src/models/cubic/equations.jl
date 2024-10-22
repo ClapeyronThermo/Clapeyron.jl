@@ -238,8 +238,12 @@ function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
     end
     nRTp = sum(z)*R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
-    num_isreal, zl, zg = Solvers.real_roots3(_poly)
-    vvl,vvg = nRTp*zl,nRTp*zg
+    num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
+    if num_isreal == 2
+        vvl,vvg = nRTp*z1,nRTp*z2
+    else
+        vvl,vvg = nRTp*z1,nRTp*z3
+    end
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if !isfinite(vvl) && !isfinite(vvg) && phase != :unknown
         V0 = x0_volume(model, p, T, z; phase)
@@ -308,7 +312,9 @@ end
 function ab_consts(model::CubicModel)
     return ab_consts(typeof(model))
 end
-x0_sat_pure(model::ABCubicModel,T) = x0_sat_pure_cubic_ab(model,T)
+
+x0_sat_pure(model::ABCubicModel,T,crit = nothing) = x0_sat_pure_cubic_ab(model,T)
+has_fast_crit_pure(model::ABCCubicModel) = true
 
 function x0_sat_pure_cubic_ab(model::ABCubicModel, T)
     z = SA[1.0]

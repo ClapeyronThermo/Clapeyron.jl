@@ -251,14 +251,12 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
 end
 
 """
-    __gas_model(model::EoSModel)
+    gas_model(model::EoSModel)
 
-internal function.
 provides the model used to calculate gas properties.
-normally, this is the identity, but `CompositeModel` has a gas model by itself.
+By default, returns `fluid_model(model)`
 """
-__gas_model(model::EoSModel) = model
-__gas_model(model::CompositeModel) = model.fluid
+gas_model(model::EoSModel) = fluid_model(model)
 fluid_model(model::CompositeModel) = model.fluid
 solid_model(model::CompositeModel) = model.solid
 
@@ -309,11 +307,7 @@ function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
     return saturation_pressure(model.fluid,T,method)
 end
 
-crit_pure(model::CompositeModel) = crit_pure(model.fluid)
-
-x0_sat_pure(model::CompositeModel,T) = x0_sat_pure(model.fluid)
-
-x0_psat(model::CompositeModel,T) = x0_psat(model.fluid,T)
+saturation_model(model::CompositeModel) = model.fluid
 
 function saturation_temperature(model::CompositeModel,p,method::SaturationMethod)
     return saturation_temperature(model.fluid,p,method)

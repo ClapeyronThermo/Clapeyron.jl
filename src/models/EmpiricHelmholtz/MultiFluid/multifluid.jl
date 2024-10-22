@@ -195,24 +195,9 @@ p_scale(model::MultiFluid,z) = dot(z,model.params.Pc.values)/sum(z)
 T_scales(model::MultiFluid,z=SA[1.]) = model.params.Tc.values
 
 #single functions, dispatch to pure
-function x0_sat_pure(model::MultiFluid,T)
-    single_component_check(x0_sat_pure,model)
-    x0_sat_pure(only(model.pures),T)
-end
 
-function x0_psat(model::MultiFluid,T,crit = nothing)
-    single_component_check(x0_psat,model)
-    x0_psat(only(model.pures),T,crit)
-end
-
-function x0_saturation_temperature(model::MultiFluid,p)
-    single_component_check(x0_saturation_temperature,model)
-    x0_saturation_temperature(only(model.pures),p)
-end
-
-function crit_pure(model::MultiFluid)
-    single_component_check(crit_pure,model)
-    crit_pure(only(model.pures))
+function saturation_model(model::MultiFluid)
+    return only(model.pures)
 end
 
 function lb_volume(model::MultiFluid,z)

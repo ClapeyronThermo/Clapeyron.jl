@@ -187,10 +187,18 @@ function p_scale(model::ECS,z)
      return ps
 end
 
-function x0_sat_pure(model::ECS,T)
+function x0_sat_pure(model::ECS,T,crit = nothing)
     f,h = shape_factors(model,zero(T),T)
     T0 = T/f
-    v0l,v0v = x0_sat_pure(model.model_ref,T0)
+    if crit == nothing
+        v0l,v0v = x0_sat_pure(model.model_ref,T0)
+    else
+        Tc,Vc,Pc = crit
+        Tc0,Vc0 = Tc/f,Vc/h
+        Pc0 = pressure(model.model_ref,Vc0,Pc0)
+        crit0 = (Tc0,Pc0,Vc0)
+        v0l,v0v = x0_sat_pure(model.model_ref,T0,crit0)
+    end
     return (v0l*h,v0v*h)
 end
 

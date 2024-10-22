@@ -10,7 +10,7 @@ struct FluidCorrelation{V,L,Sat} <: RestrictedEquilibriaModel
     saturation::Sat
 end
 
-__gas_model(model::FluidCorrelation) = model.gas
+gas_model(model::FluidCorrelation) = model.gas
 
 function activity_coefficient(model::FluidCorrelation,p,T,z=SA[1.];
     μ_ref = nothing,
@@ -85,19 +85,16 @@ function saturation_pressure(model::FluidCorrelation,T,method::SaturationMethod)
     end
 end
 
-function crit_pure(model::FluidCorrelation)
-    single_component_check(crit_pure,model)
-    return crit_pure(model.saturation)
-end
+saturation_model(model::FluidCorrelation) = model.saturation
 
-function x0_sat_pure(model::FluidCorrelation,T)
-    p = x0_psat(model,T)
+function x0_sat_pure(model::FluidCorrelation,T,crit = nothing)
+    p = x0_psat(model,T,crit)
     vl = volume(model.liquid,p,T,phase=:l)
     vv = volume(model.gas,p,T,phase=:v)
     return vl,vv
 end
 
-function x0_psat(model::FluidCorrelation,T)
+function x0_psat(model::FluidCorrelation,T,crit = nothing)
     ps,_,_ = saturation_pressure(model.saturation,T)
     return ps
 end
@@ -143,7 +140,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,
     fug = wrapper.fug
     RT = R̄*T
     volx = volume(model.liquid, p, T, x, phase = phasex, vol0 = volx)
-    lnϕy, voly = lnϕ(__gas_model(model), p, T, y; phase=phasey, vol0=voly)
+    lnϕy, voly = lnϕ(gas_model(model), p, T, y; phase=phasey, vol0=voly)
     if is_vapour(phasey)
         for i in eachindex(lnK)
             if iny[i]

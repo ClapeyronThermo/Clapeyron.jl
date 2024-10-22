@@ -252,6 +252,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::SingleFluidIdeal)
     println(io,"Ideal MultiParameter Equation of state for $(model.components[1]):")
     show_multiparameter_coeffs(io,model.ideal)
 end
+has_fast_crit_pure(model::SingleFluid) = true
 
 function x0_sat_pure(model::SingleFluid,T)
     z=SA[1.0]

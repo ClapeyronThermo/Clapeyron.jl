@@ -50,23 +50,7 @@ function test_activity_coefficient(model::ActivityModel,p,T,z)
     return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 
-x0_sat_pure(model::ActivityModel,T) = x0_sat_pure(__act_to_gammaphi(model,x0_sat_pure),T)
-
-function saturation_pressure(model::ActivityModel,T::Real,method::SaturationMethod)
-    return saturation_pressure(__act_to_gammaphi(model,saturation_pressure),T,method)
-end
-
-function saturation_temperature(model::ActivityModel,T::Real,method::SaturationMethod)
-    return saturation_temperature(__act_to_gammaphi(model,saturation_temperature),T,method)
-end
-
-function init_preferred_method(method::typeof(saturation_pressure),model::ActivityModel,kwargs)
-    return init_preferred_method(method,__act_to_gammaphi(model,method),kwargs)
-end
-
-function init_preferred_method(method::typeof(saturation_temperature),model::ActivityModel,kwargs)
-    return init_preferred_method(method,__act_to_gammaphi(model,method),kwargs)
-end
+saturation_model(model::ActivityModel) = __act_to_gammaphi(model,saturation_model)
 
 function idealmodel(model::T) where T <: ActivityModel
     if hasfield(T,:puremodel)
