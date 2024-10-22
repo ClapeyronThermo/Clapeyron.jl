@@ -18,7 +18,7 @@ We will now give a brief overview of each of these aspects.
 ### Model struct name
 
 This is the concrete type, which is simply the name of the equation of state which will be used to generate the model.
-Within `Clapeyron`, we've tried to keep these names as obvious as possible (*e.g.* `vdW`, `PR`, `PCSAFT`, `SAFTVRMie`, `GERG2008`, *etc.*).
+Within `Clapeyron`, we've tried to keep these names as obvious as possible (*e.g.* `vdW`, `PR`, `PCSAFT`, `SAFTVRMie`, `GERG2008`, etc.).
 For your own model, this can be whatever you want as long is the identification makes sense to you.
 
 ### Model abstract type
@@ -30,7 +30,7 @@ The abstract type that is at the top of the hierarchy is `EoSModel`.
 From this parent, we branch into more specific EoS sub-types:
 
 - `SAFTModel`: These are the models which have three parameters in common: segment size, $\sigma$, potential depth, $\epsilon$, and number of segments, $m$.
-  All other SAFT-type models branch from this parent (`PCSAFTModel`, `SAFTVRMieModel`, `softSAFTModel`, *etc.*).
+  All other SAFT-type models branch from this parent (`PCSAFTModel`, `SAFTVRMieModel`, `softSAFTModel`, etc.).
 - `CubicModel`: These are the models whose parameters can be obtained from the critical temperature and pressure.
   With the exception of `CPAModel`, all cubics have a common structure where one can rearrange the equation for the pressure as a third-order polynomial.
   As such, we define a subtype of `CubicModel`, `ABCubicModel` (*e.g.* `vdWModel`, `RKModel`, `SRKModel`, `PRModel`).
@@ -59,7 +59,7 @@ If your model is not of either of these types, it will be necessary to define a 
 
 The parameters for a particular system are all stored within a struct that is a subtype of `EoSParam`.
 By convention, we suffix these with `Param`.
-These structs should contain the model parameters, which comprise objects of types `SingleParam{T}`, `PairParam{T}`, and `AssocParam{T}`, where `T` is usually a base type (`Float64`, `Integer`, `String`, etc).
+These structs should contain the model parameters, which comprise objects of types `SingleParam{T}`, `PairParam{T}`, and `AssocParam{T}`, where `T` is usually a base type (`Float64`, `Integer`, `String`, etc.).
 Below is an example of a generic param struct for a SAFT and cubic model.
 
 ```julia

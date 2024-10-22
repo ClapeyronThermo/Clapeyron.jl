@@ -14,7 +14,7 @@ All cubic models in `Clapeyron.jl` follow a common evaluation order:
 
 ```julia
 function CubicModel(args...)
-    # get params for database, initialize other models, etc
+    # get params for database, initialize other models, etc.
     recombine!(model)  # we calculate the mixing rules, caches for the translation models if necessary, etc.
 end
 
