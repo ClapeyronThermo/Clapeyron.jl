@@ -7,7 +7,7 @@ The notebooks associated with this tutorial can be found [here](../../../example
 
 ## Saturation curve of water
 
-Let us take the case of obtaining the boiling point of water at atmospheric pressure using Peng-Robinson.
+Let us take the case of obtaining the boiling point of water at atmospheric pressure using Peng–Robinson.
 This can be obtained using the `saturation_temperature(model,p)` function as shown below:
 
 ```julia
@@ -32,7 +32,7 @@ julia> (psat, vl, vv) = saturation_pressure(model,298.15)
 
 In fact, if one wishes to trace the full saturation curve of a component, it is recommended to use this function instead.
 The primary reason for this is because, as one approaches the critical point, our solvers will become more unstable (just the nature of the critical region).
-As such, to obtain a smooth curve, it is often best to solve for the saturation conditions far from the critical point first, and then slowly approach the critical point, re-using values from lower temperatures as initial guesses for the next step.
+As such, to obtain a smooth curve, it is often best to solve for the saturation conditions far from the critical point first, and then slowly approach the critical point, reusing values from lower temperatures as initial guesses for the next step.
 Consider an example for-loop below:
 
 ```julia
@@ -90,7 +90,7 @@ julia> @time saturation_pressure(model, 298.15, SuperAncSaturation())
 (2686.604947149002, 2.13910261051781e-5, 0.922329361719024)
 ```
 
-In the case of cubics specifically, we provide the `SuperAncSaturation()` method which simply calls a highly-regressed Chebyshev polynomial which will be by far the fastest method.
+In the case of cubics specifically, we provide the `SuperAncSaturation()` method which simply calls a highly regressed Chebyshev polynomial which will be by far the fastest method.
 
 ## Critical points
 

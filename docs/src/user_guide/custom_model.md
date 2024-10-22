@@ -27,12 +27,12 @@ In Julia, objects can only be sub-types of abstract types (and not concrete type
 In order to maintain a hierarchy of models, we highly encourage you to create an abstract type for your model that is a subtype one of these families of EoS, and dispatch on this newly created abstract type instead of on your model's concrete type.
 This is not enforced, but we suffix all abstract types in this category with `Model` as a convention.
 The abstract type that is at the top of the hierarchy is `EoSModel`.
-From this parent, we branch into more-specific EoS sub-types:
+From this parent, we branch into more specific EoS sub-types:
 
 - `SAFTModel`: These are the models which have three parameters in common: segment size, $\sigma$, potential depth, $\epsilon$, and number of segments, $m$.
   All other SAFT-type models branch from this parent (`PCSAFTModel`, `SAFTVRMieModel`, `softSAFTModel`, *etc.*).
 - `CubicModel`: These are the models whose parameters can be obtained from the critical temperature and pressure.
-  With the exception of `CPAModel`, all cubics have a common structure where one can re-arrange the equation for the pressure as a third-order polynomial.
+  With the exception of `CPAModel`, all cubics have a common structure where one can rearrange the equation for the pressure as a third-order polynomial.
   As such, we define a subtype of `CubicModel`, `ABCubicModel` (*e.g.* `vdWModel`, `RKModel`, `SRKModel`, `PRModel`).
 - `EmpiricHelmholtzModel`: These are the high-accuracy, multi-parameter models for specific species or systems (*e.g.* `GERG2008Model`, `IAPWS95Model`).
   There is no general structure to the models and they are treated as self-contained.
@@ -96,7 +96,7 @@ The parameters are wrapped in one of the following structs:
 
 If there exists a model parameter struct that contains exactly the same parameters as the one that you are about to create, you can also directly use that existing struct.
 
-## PC-SAFT Example
+## PC‑SAFT Example
 
 Once all the above has been defined, we are ready to build our own model.
 Let us imagine we are trying to implement `PCSAFT`.
@@ -287,7 +287,7 @@ Let us imagine we are trying to implement `PCSAFT`.
    (p_sat, V_l_sat, V_v_sat) = saturation_pressure(model,T_sat)
    ```
 
-## sPC-SAFT Example
+## sPC‑SAFT Example
 
 Instead of developing an entirely new model, some of us may want to modify or extend an existing one.
 `sPCSAFT` is an example where we want to modify parts of regular `PCSAFT` but keep the rest the same.

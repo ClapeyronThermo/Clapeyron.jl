@@ -5,9 +5,9 @@ We will continue developing Clapeyron in our free time but we welcome any contri
 
 The current plans of Clapeyron are:
 
-* Support more group contribution (GC) models like SAFT-γ SW and GC versions of PC-SAFT and CK-SAFT.
+* Support more group-contribution (GC) models like SAFT‑γ SW and GC versions of PC‑SAFT and CK‑SAFT.
 * Support for more ideal terms (NASA, Wilhoit, etc).
-* Support for flash calculations, first using Rachford-Rice, and eventually HELD and RAND.
+* Support for flash calculations, first using Rachford–Rice, and eventually HELD and RAND.
 * Support extensions of the SAFT model (*e.g.* electrolyte methods and dipole terms).
 * Make our code the fastest available.
   Julia makes this easy.

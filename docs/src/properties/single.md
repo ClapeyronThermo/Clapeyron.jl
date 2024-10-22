@@ -24,7 +24,7 @@ Clapeyron.crit_pure
 Clapeyron.acentric_factor
 ```
 
-# Solid-Fluid Single component properties
+# Solid–Fluid Single component properties
 
 ```@docs
 Clapeyron.melting_pressure

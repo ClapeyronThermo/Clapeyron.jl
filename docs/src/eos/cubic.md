@@ -39,7 +39,7 @@ end
 - An *Alpha Model* creates a vector of `αᵢ(T)` values.
 - A *Translation Model* creates a vector of `cᵢ` values.
 - The same Mixing rule, given `aᵢⱼ`, `bᵢⱼ`, `αᵢ(T)` and `cᵢ` returns the the mixture values of `ā`, `b̄` and `c̄` that are then used by the corresponding cubic model.
-  A Mixing Rule can contain activity models to participate in the mixing (for example, Huron-Vidal rules).
+  A Mixing Rule can contain activity models to participate in the mixing (for example, Huron–Vidal rules).
 
 ## Common Definitions
 

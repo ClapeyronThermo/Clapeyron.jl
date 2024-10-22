@@ -14,7 +14,7 @@ Pages = ["bulk.md"]
 Pages = ["bulk.md"]
 ```
 
-## Volume-Temperature Based Properties
+## Volume–Temperature Based Properties
 
 ```@docs
 Clapeyron.pressure
@@ -22,7 +22,7 @@ Clapeyron.second_virial_coefficient
 Clapeyron.pip
 ```
 
-## Pressure-Temperature Based Bulk Properties
+## Pressure–Temperature Based Bulk Properties
 
 In general almost all bulk properties follow the pattern:
 
@@ -33,7 +33,7 @@ function property(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true
 end
 ```
 
-So, you can calculate the property with Volume-Temperature variables by calling `VT_property(model,V,T,z)`.
+So, you can calculate the property with Volume–Temperature variables by calling `VT_property(model,V,T,z)`.
 Another way to do this is by using units, provided by `Unitful.jl`:
 
 ```julia

@@ -83,7 +83,7 @@ file = ParamTable(:single,data,name="water_mw")
 model = PR(["water"],user_locations = [file])
 ```
 
-1. Using raw CSVs: you can literally write-out the CSV as a string within the REPL and just substitute this in:
+1. Using raw CSVs: you can literally write the CSV out as a string within the REPL and just substitute this in:
 
 ```julia
 csv_data = """Clapeyron Database File,
@@ -95,8 +95,8 @@ model = PR(["water"],user_locations = [csv_data])
 ```
 
 We prefer that users use the CSV approach as they are much easier to visualise and modify.
-However, it is a more-tedious approach.
-As such, we provide a more-direct way described below.
+However, it is a more tedious approach.
+As such, we provide a more direct way described below.
 
 ## Defining parameters within the REPL
 
@@ -146,7 +146,7 @@ model = SAFTVRMie(["water","methanol"]; userlocations=(;
 
 As we can see, with certain equations of state, this method of specifying parameters can become unwieldy.
 This is why we recommend using CSVs instead.
-Also note that, if you only specify pure-component parameters for a parameter that should include pair parameters (such as `sigma` above), combining rules will be used to obtain the remaining parameters.
+Also note that, if you only specify pure component parameters for a parameter that should include pair parameters (such as `sigma` above), combining rules will be used to obtain the remaining parameters.
 If you specify all of the pair parameters, they will be used instead (in the case of `epsilon`).
 For the cubic equation of state earlier, we specified `k`, which will be used to obtain the unlike `a` parameters.
 Further, if we had not specified the cross-association parameters between methanol and water, unless we specified otherwise in `AssocOptions`, these interactions would not be included.

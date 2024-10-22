@@ -7,7 +7,7 @@ The notebooks associated with this tutorial can be found [here](../../../example
 
 ## Bulk properties of water
 
-As a simple first step, let us just estimate the volume of water at 298.15 K and 1 bar using PC-SAFT:
+As a simple first step, let us just estimate the volume of water at 298.15 K and 1 bar using PC‑SAFT:
 
 ```julia
 julia> model = PCSAFT(["water"])
@@ -56,7 +56,7 @@ julia> isobaric_heat_capacity(model,1e5,298.15)
 ```
 
 This is now a bit closer to the true value.
-The inclusion of a more-accurate ideal model is required when trying to estimate temperature-derivative properties (entropy, heat capacities, speed of sound, isentropic compressibility and Joule-Thomson coefficient).
+The inclusion of a more accurate ideal model is required when trying to estimate temperature derivative properties (entropy, heat capacities, speed of sound, isentropic compressibility and Joule–Thomson coefficient).
 This is visualised below:
 ![water_cp](../assets/cp_water.svg)
 

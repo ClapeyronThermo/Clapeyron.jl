@@ -86,7 +86,7 @@ The same thing can be done with `saturation_temperature`.
 
 ## Custom TP-Flash solver
 
-We support the same procedure to define your custom Temperature-pressure flash methods:
+We support the same procedure to define your custom Temperature–pressure flash methods:
 
 ```julia
 struct MyRachfordRice{K} <: Clapeyron.TPFlashMethod
@@ -101,7 +101,7 @@ function Clapeyron.index_reduction(method::MyRachfordRice,non_zero_indices)
 end
 
 function Clapeyron.tp_flash_impl(model::EoSModel,p,T,z,method::MyRachfordRice)
-  # perform Rachford-Rice,returns x, y, α₀
+  # perform Rachford–Rice,returns x, y, α₀
   # ...
   X = vcat(x',y')
   n = X.*[1-α₀
@@ -113,4 +113,4 @@ end
 
 ## I have a better method...
 
-If your custom methods end up being more-efficient than ours or you develop one that we do not currently support, please do start a pull request and we will gladly add it to the package!
+If your custom methods end up being more efficient than ours or you develop one that we do not currently support, please do start a pull request and we will gladly add it to the package!

@@ -19,9 +19,9 @@ model2 = PR(["ethane", "water"])
 model3 = GERG2008(["propane","pentane"])
 ```
 
-## Group Contribution Models
+## Group-contribution Models
 
-We also support group-contribution models like SAFT-*ɣ* Mie.
+We also support group-contribution models like SAFT‑*ɣ* Mie.
 We have a database of species with the number of each group associated with it for easy lookup, but you may also use your own combinations.
 We use a tuple of the name of the molecule and an array of the group-multiplicity mappings.
 For example
@@ -32,7 +32,7 @@ model4 = SAFTgammaMie([
         ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])])
 ```
 
-In some group-contribution approaches, one may need to specify some structural information (such as gc-PC-SAFT), such as the number of bonds between groups.
+In some group-contribution approaches, one may need to specify some structural information (such as gc‑PC‑SAFT), such as the number of bonds between groups.
 This can be done as follows:
 
 ```julia
@@ -51,28 +51,28 @@ In terms of equations of state available, we have the following default models:
 - van der Waals ([`vdW`](@ref))
   - Clausius ([`Clausius`](@ref))
   - Berthelot ([`Berthelot`](@ref))
-- Redlich-Kwong ([`RK`](@ref))
-  - Soave-Redlich-Kwong ([`SRK`](@ref))
-  - Predictive Soave-Redlich-Kwong ([`PSRK`](@ref))
-  - Translated-and-Consistent Redlich-Kwong ([`tcRK`](@ref))
-- Peng-Robinson ([`PR`](@ref))
-  - Peng-Robinson (1978) ([`PR78`](@ref))
-  - "Universal Mixing Rule" Peng-Robinson ([`UMRPR`](@ref))
-  - Volume-Translated Peng-Robinson ([`VTPR`](@ref))
-  - Translated-and-Consistent Peng-Robinson ([`tcPR`](@ref))
-  - Consistent Peng-Robinson + Twu ([`cPR`](@ref))
-  - Quantum Corrected Peng-Robinson ([`QCPR`](@ref))
-  - Enhanced Predictive Peng-Robinson (1978) ([`EPPR78`](@ref))
-- Patel-Teja ([`PatelTeja`](@ref))
-  - Patel-Teja-Valderrama ([`PTV`](@ref))
-- Kumar-Upadhyay ([`KU`](@ref))
-- Redlich-Kwong-Peng-Robinson ([`RKPR`](@ref))
+- Redlich–Kwong ([`RK`](@ref))
+  - Soave–Redlich–Kwong ([`SRK`](@ref))
+  - Predictive Soave–Redlich–Kwong ([`PSRK`](@ref))
+  - Translated-and-Consistent Redlich–Kwong ([`tcRK`](@ref))
+- Peng–Robinson ([`PR`](@ref))
+  - Peng–Robinson (1978) ([`PR78`](@ref))
+  - "Universal Mixing Rule" Peng–Robinson ([`UMRPR`](@ref))
+  - Volume-Translated Peng–Robinson ([`VTPR`](@ref))
+  - Translated-and-Consistent Peng–Robinson ([`tcPR`](@ref))
+  - Consistent Peng–Robinson + Twu ([`cPR`](@ref))
+  - Quantum Corrected Peng–Robinson ([`QCPR`](@ref))
+  - Enhanced Predictive Peng–Robinson (1978) ([`EPPR78`](@ref))
+- Patel–Teja ([`PatelTeja`](@ref))
+  - Patel–Teja–Valderrama ([`PTV`](@ref))
+- Kumar–Upadhyay ([`KU`](@ref))
+- Redlich–Kwong–Peng–Robinson ([`RKPR`](@ref))
 
 **SAFT**:
 
 - SAFT ([`ogSAFT`](@ref))
 - CK (Chen and Kreglewski) SAFT ([`CKSAFT`](@ref))
-  - Simplified CK-SAFT ([`sCKSAFT`](@ref))
+  - Simplified CK‑SAFT ([`sCKSAFT`](@ref))
 - [`BACKSAFT`](@ref)
 - Lennard-Jones SAFT ([`LJSAFT`](@ref))
 - SAFT, Variable Range (VR), Square Well (SW) ([`SAFTVRSW`](@ref))
@@ -81,14 +81,14 @@ In terms of equations of state available, we have the following default models:
 - Soft SAFT, with Lennard-Jones function from Johnson et al. (1993) ([`softSAFT`](@ref))
 - Soft SAFT, with Lennard-Jones function from Thol et al. (2016) ([`softSAFT2016`](@ref))
 - Perturbed-Chain SAFT ([`PCSAFT`](@ref))
-  - Simplified PC-SAFT ([`sPCSAFT`](@ref))
-  - PC-SAFT with T-dependent kᵢⱼ and special correlation for water ([`pharmaPCSAFT`](@ref))
-  - Heterogeneous GC-PC-SAFT ([`gcPCSAFT`](@ref))
-  - PC-SAFT with Gᴱ mixing rule ([`GEPCSAFT`](@ref))
-- SAFT-VR with Mie potential ([`SAFTVRMie`](@ref))
-  - SAFT-VR with quantum corrected Mie potential ([`SAFTVRQMie`](@ref))
-- SAFT-γ Mie ([`SAFTgammaMie`](@ref))
-  - Structural SAFT-γ Mie ([`structSAFTgammaMie`](@ref))
+  - Simplified PC‑SAFT ([`sPCSAFT`](@ref))
+  - PC‑SAFT with T-dependent kᵢⱼ and special correlation for water ([`pharmaPCSAFT`](@ref))
+  - Heterogeneous GC‑PC‑SAFT ([`gcPCSAFT`](@ref))
+  - PC‑SAFT with Gᴱ mixing rule ([`GEPCSAFT`](@ref))
+- SAFT‑VR with Mie potential ([`SAFTVRMie`](@ref))
+  - SAFT‑VR with quantum corrected Mie potential ([`SAFTVRQMie`](@ref))
+- SAFT‑γ Mie ([`SAFTgammaMie`](@ref))
+  - Structural SAFT‑γ Mie ([`structSAFTgammaMie`](@ref))
 
 **Activity coefficient** (N.B. these models only provide VLE properties for mixtures):
 
@@ -97,21 +97,21 @@ In terms of equations of state available, we have the following default models:
   - NRTL, temperature-dependent interaction ([`aspenNRTL`](@ref))
 - *Universal quasichemical Activity Coefficients* (UNIQUAC): ([`UNIQUAC`](@ref))
 - *UNIQUAC Functional-group Activity Coefficients* (UNIFAC): ([`UNIFAC`](@ref))
-  - UNIFAC-FV ([`UNIFACFV`](@ref))
-  - UNIFAC-FV (polymer blends) ([`UNIFACFVPoly`](@ref))
-- Conductor-like Screening Model Segment Activity Model (COSMO-SAC)
-  - COSMO-SAC (2002 version) ([`COSMOSAC02`](@ref))
-  - COSMO-SAC (2010 version) ([`COSMOSAC10`](@ref))
-  - COSMO-SAC with dispersive interactions ([`COSMOSACdsp`](@ref))
+  - UNIFAC‑FV ([`UNIFACFV`](@ref))
+  - UNIFAC‑FV (polymer blends) ([`UNIFACFVPoly`](@ref))
+- Conductor-like Screening Model Segment Activity Model (COSMO‑SAC)
+  - COSMO‑SAC (2002 version) ([`COSMOSAC02`](@ref))
+  - COSMO‑SAC (2010 version) ([`COSMOSAC10`](@ref))
+  - COSMO‑SAC with dispersive interactions ([`COSMOSACdsp`](@ref))
 
 **Empirical**:
 
 - General MultiParameter Empiric model ([`MultiFluid`](@ref))
-  - GERG-2008 EoS for Natural Gas ([`GERG2008`](@ref))
-  - EOS-LNG for Liquefied Natural Gas ([`EOS_LNG`](@ref))
-  - IAPWS-95 Water reference ([`IAPWS95`](@ref))
+  - GERG‑2008 EoS for Natural Gas ([`GERG2008`](@ref))
+  - EOS‑LNG for Liquefied Natural Gas ([`EOS_LNG`](@ref))
+  - IAPWS‑95 Water reference ([`IAPWS95`](@ref))
   - Propane Reference ([`PropaneRef`](@ref))
-  - Lennard Jones Reference from Thol et al. (2016) ([`LJRef`](@ref))
+  - Lennard-Jones Reference from Thol et al. (2016) ([`LJRef`](@ref))
   - Ammonia Reference (2023) ([`Ammonia2023`](@ref))
   - Multiparameter EoS + Activity ([`HelmAct`](@ref))
 
@@ -138,7 +138,7 @@ To amend this, we provide three additional ideal models to be used instead:
 - Walker and Haslam's ideal correlation ([`WalkerIdeal`](@ref))
 - Joback's ideal correlation ([`JobackIdeal`](@ref))
 - Reid's polynomial correlation ([`ReidIdeal`](@ref))
-- Aly-Lee's correlation ([`AlyLeeIdeal`](@ref))
+- Aly–Lee's correlation ([`AlyLeeIdeal`](@ref))
 - MultiParameter Empiric Ideal correlations ([`EmpiricIdeal`](@ref))
 
 These can be specified for any of the SAFT or cubic-type equations of state using:
@@ -190,7 +190,7 @@ We currently support:
 
 - [`vdW1fRule`](@ref): The standard van der Waals one-fluid mixing rule which is the default in all cubics.
 - [`KayRule`](@ref): Takes an approach closer to the mixing rules used in SAFT.
-- [`HVRule`](@ref): The Huron-Vidal mixing rule with uses information from activity coefficient models to form the mixing rule.
+- [`HVRule`](@ref): The Huron–Vidal mixing rule with uses information from activity coefficient models to form the mixing rule.
   It is meant to be more accurate than regular mixing rules.
   As it requires an activity coefficient model, this must be specified:
 
@@ -198,16 +198,16 @@ We currently support:
   model7 = RK(["methanol","benzene"];mixing=HVRule,activity=Wilson)
   ```
 
-- [`MHV1Rule`](@ref): The modified Huron-Vidal mixing rule proposed by Michelsen to first order.
+- [`MHV1Rule`](@ref): The modified Huron–Vidal mixing rule proposed by Michelsen to first order.
   This has rather significant improvements over the regular mixing rule.
   Also needs an activity model to be specified.
-- [`MHV2Rule`](@ref): The modified Huron-Vidal mixing rule proposed by Michelsen to second order.
+- [`MHV2Rule`](@ref): The modified Huron–Vidal mixing rule proposed by Michelsen to second order.
   This is meant to be an improvement over the first order rule.
   Also needs an activity model to be specified.
-- [`WSRule`](@ref): The Wong-Sandler mixing rule which also relies on an activity model.
+- [`WSRule`](@ref): The Wong–Sandler mixing rule which also relies on an activity model.
   The equations are slightly more complicated but it is meant to be an improvement compared to `HVRule`.
   Also needs an activity model to be specified.
-- [`modWSRule`](@ref): A modified Wong-Sandler mixing rule, that reduces to vdW1f when there is no nonideal mixtures.
+- [`modWSRule`](@ref): A modified Wong–Sandler mixing rule, that reduces to vdW1f when there is no nonideal mixtures.
 - [`LCVMRule`](@ref): The Linear Combination of Vidal and Michelsen mixing rules is designed for asymmetric mixtures.
   Also needs an activity model to be specified.
 
@@ -252,7 +252,7 @@ Everything else will work as normal (so long as the species are also available w
 ## Available properties
 
 Once we have our model object, we will be able to call the respective thermodynamic methods to obtain the properties that we are looking for.
-For example, to find the isobaric heat capacity of a 0.5 mol methanol and 0.5 mol ethanol mixture using PC-SAFT at a pressure of 10 bar and a temperature of 300 K, we just call the `isobaric_heat_capacity(model, p, T, z)` function with the desired model and conditions as parameters.
+For example, to find the isobaric heat capacity of a 0.5 mol methanol and 0.5 mol ethanol mixture using PC‑SAFT at a pressure of 10 bar and a temperature of 300 K, we just call the `isobaric_heat_capacity(model, p, T, z)` function with the desired model and conditions as parameters.
 
 ```julia
 Cp = isobaric_heat_capacity(model1, 10e5, 300, [0.5, 0.5])
@@ -310,7 +310,7 @@ The functions for the physical properties that we currently support are as follo
   Cp = isobaric_heat_capacity.(model, p, T, z)
   ```
 
-- Vapour-liquid, liquid-liquid and vapour-liquid-liquid equilibrium properties:
+- Vapour–liquid, liquid–liquid and vapour–liquid–liquid equilibrium properties:
 
   - For pure species:
 
