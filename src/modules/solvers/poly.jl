@@ -86,20 +86,20 @@ function real_roots3(pol::NTuple{4,T}) where {T<:Real}
     between1 = evalpoly(mid12, pol)
     between2 = evalpoly(mid23, pol)
     if abs(between1) <  eps(typeof(between1))
-        (2, x3, mid12) # first the single root, then the double root
+        (2, x3, mid12, mid12) # first the single root, then the double root
     elseif abs(between2) < eps(typeof(between2))
-        (2, x1, mid23) # first the single root, then the double root
+        (2, x1, mid23, mid23) # first the single root, then the double root
     else
         sign1 = signbit(between1)
         sign2 = signbit(between2)
         if sign1 == sign2 # only one root
             if sign1 ⊻ (pol[4] > 0)
-                (1, x1, x1)
+                (1, x1, x1, x1)
             else
-                (1, x3, x3)
+                (1, x3, x3, x3)
             end
         else # three distinct roots
-            (3, x1, x3)
+            (3, x1, x2, x3)
         end
     end
 end
@@ -120,7 +120,7 @@ function hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
     p2 = (1//2)*d2f0
     p3 = (f1 - f0 - df0*Δx10 - (1//2)*d2f0*Δx102)*divx^3
 
-    z4 = (3*f0 - 3*f1 + 2*(df0 + (1//2)*df1)*Δx10 - (1//2)*d2f0*Δx102)*divx^4 # * Δx03 * Δx1
+    z4 = (3*f0 - 3*f1 + 2*(df0 + (1//2)*df1)*Δx10 + (1//2)*d2f0*Δx102)*divx^4 # * Δx03 * Δx1
     #x^3 * (x -Δx10) = x^4 - -Δx10*x^3
     p3 += -Δx10*z4
     p4 = z4
@@ -132,7 +132,7 @@ function hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
     p5 = z5
     return p0,p1,p2,p3,p4,p5
 end
-
+#0.00012669209195135698, 9.69556e-5 + 0.00012669209195135698
 """
     hermite5_poly(f,x0,x1)
 

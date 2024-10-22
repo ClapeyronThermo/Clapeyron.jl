@@ -43,11 +43,11 @@ end
         #@test [@inferred(SOL.roots3(SA[-6im, -(3 + 4im), 2im-2, 1.0]))...] ≈ [3, -2im, -1]
         @test @inferred(SOL.roots3(1.0, -3.0, 3.0, -1.0)) ≈ [1, 1, 1]
         @test @inferred(SOL.roots3([1.0, -3.0, 3.0, -1.0])) ≈ [1, 1, 1]
-        @test @inferred(SOL.real_roots3((0.4179831841886642, -16.86256511617483, 1.6508521434627874, 1.0))) == (3, -5.0238891763914015, 3.3481880327202824)
-        @test @inferred(SOL.real_roots3(0.7336510424849684, -17.464843881306653, 1.6925644348171853, 1.0)) == (3, -5.126952070514365, 3.392203575902995)
-        @test @inferred(SOL.real_roots3(-1, 3, -3, 1)) == (2, 1.0, 1.0) # triply degenerate root
-        @test collect(SOL.real_roots3(1, -1, -1, 1)) ≈ [2, -1.0, 1.0] # one doubly degenerate
-        @test SOL.real_roots3(1, 0, 1, 2) == (1, -1.0, -1.0) # only one real root
+        @test @inferred(SOL.real_roots3((0.4179831841886642, -16.86256511617483, 1.6508521434627874, 1.0))) ==(3, -5.0238891763914015, 0.02484900020833184, 3.3481880327202824)
+        @test @inferred(SOL.real_roots3(0.7336510424849684, -17.464843881306653, 1.6925644348171853, 1.0)) == (3, -5.126952070514365, 0.04218405979418567, 3.392203575902995)
+        @test @inferred(SOL.real_roots3(-1, 3, -3, 1)) == (2, 1.0, 1.0, 1.0) # triply degenerate root
+        @test collect(SOL.real_roots3(1, -1, -1, 1)) ≈ [2, -1.0, 1.0, 1.0] # one doubly degenerate
+        @test SOL.real_roots3(1, 0, 1, 2) == (1, -1.0, -1.0, -1.0) # only one real root
     end
 
     # A difficult MCP.
