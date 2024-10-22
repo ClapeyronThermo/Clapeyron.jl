@@ -21,7 +21,7 @@ model3 = GERG2008(["propane","pentane"])
 
 ## Group-contribution Models
 
-We also support group-contribution models like SAFT‑*ɣ* Mie.
+We also support group-contribution models like SAFT‑$\gamma$ Mie.
 We have a database of species with the number of each group associated with it for easy lookup, but you may also use your own combinations.
 We use a tuple of the name of the molecule and an array of the group-multiplicity mappings.
 For example
@@ -87,8 +87,8 @@ In terms of equations of state available, we have the following default models:
   - PC‑SAFT with Gᴱ mixing rule ([`GEPCSAFT`](@ref))
 - SAFT‑VR with Mie potential ([`SAFTVRMie`](@ref))
   - SAFT‑VR with quantum corrected Mie potential ([`SAFTVRQMie`](@ref))
-- SAFT‑γ Mie ([`SAFTgammaMie`](@ref))
-  - Structural SAFT‑γ Mie ([`structSAFTgammaMie`](@ref))
+- SAFT‑$\gamma$ Mie ([`SAFTgammaMie`](@ref))
+  - Structural SAFT‑$\gamma$ Mie ([`structSAFTgammaMie`](@ref))
 
 **Activity coefficient** (N.B. these models only provide VLE properties for mixtures):
 
