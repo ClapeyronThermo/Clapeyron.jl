@@ -18,7 +18,7 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
 end
 
 function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    _0 = zero(Base.promote_eltype(model,_p,_T,_z))
+    _0 = zero(Base.promote_eltype(model,_p,_T,_z,V0))
     _1 = one(_0)
     isnan(V0) && return _0/_0
     p₀ = primalval(_1*_p)
@@ -30,7 +30,7 @@ function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=
     z = primalval(_z)
     log_lb_v = log(primalval(lb_volume(model,T,z)))
     if iszero(p₀) & (V0 == Inf) #ideal gas
-        return V0
+        return _1/_0
     end
     function logstep(logVᵢ::TT) where TT
         logVᵢ < log_lb_v && return TT(zero(logVᵢ)/zero(logVᵢ))
