@@ -50,9 +50,13 @@ ChemPotVSaturation(x::Tuple) = ChemPotVSaturation(vl = first(x),vv = last(x))
 ChemPotVSaturation(x::Vector) = ChemPotVSaturation(vl = first(x),vv = last(x))
 
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing,C}) where C
-    TT = typeof(1.0*T*oneunit(eltype(model)))
-    vl::TT,vv::TT = x0_sat_pure(model,T)
+    TT = Base.promote_eltype(model,T)
     crit = method.crit
+    if crit !== nothing
+        vl,vv = x0_sat_pure(model,T,crit)
+    else
+        vl,vv = x0_sat_pure(model,T)
+    end
     crit_retry = method.crit_retry
     f_limit = method.f_limit
     atol = method.atol
@@ -76,14 +80,9 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
     ps,μs = equilibria_scale(model)
     result,converged = try_2ph_pure_pressure(model,T,vl0,vv0,ps,μs,method)
 
-    if converged
-        return result
-    end
-
-    if !method.crit_retry
-        return fail
-    end
-
+    converged && return result #converged result.
+    !converged && crit !== nothing && return fail #we already used critical information
+    !method.crit_retry && return fail #we dont want to try again
     crit = method.crit
     if isnothing(crit)
         crit = crit_pure(model)
@@ -93,8 +92,8 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
         return (p_c,V_c,V_c)
     end
         #@error "initial temperature $T greater than critical temperature $T_c. returning NaN"
-    if 0.7*T_c < T < T_c
-        x0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
+    if 0.8*T_c < T < T_c
+        x0 = x0_sat_pure(model,T,crit)
         vlc0,vvc0 = x0
         result,converged = try_2ph_pure_pressure(model,T,vlc0,vvc0,ps,μs,method)
         if converged
