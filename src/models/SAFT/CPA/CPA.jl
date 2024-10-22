@@ -208,10 +208,25 @@ function crit_pure(model::CPAModel)
     end
 end
 
-function x0_sat_pure(model::CPAModel,T)
+function x0_sat_pure(model::CPAModel,T,crit = nothing)
     #use the cubic initial guess if we don't have association.
     cpa_is_pure_cubic(model) && x0_sat_pure(model.cubicmodel,T)
-    return x0_sat_pure_virial(model,T)
+    if crit === nothing
+        _,vl,vv = x0_sat_pure_virial(model,T)
+    else
+        _,vl,vv = x0_sat_pure_crit(model,T,crit)
+    end
+    return vl,vv
+end
+
+function x0_psat(model::CPAModel,T,crit = nothing)
+    cpa_is_pure_cubic(model) && x0_sat_pure(model.cubicmodel,T)
+    if crit === nothing
+        p,_,_ = x0_sat_pure_virial(model,T)
+    else
+        p,_,_ = x0_sat_pure_crit(model,T,crit)
+    end
+    return p
 end
 
 #=
