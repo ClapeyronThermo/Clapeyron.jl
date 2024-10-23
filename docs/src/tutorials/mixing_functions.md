@@ -5,7 +5,7 @@ The notebooks associated with this tutorial can be found [here](../../../example
 While we showed how one can obtain [bulk properties](./bulk_properties.md) for both pure and multi-component systems, in the case of mixtures specifically, it is often the case that we wish to obtain the mixing function of a property.
 For a given property, $Z$. This is defined as:
 
-``\Delta Z_\text{mixing} = Z_\text{mix}-\sum_i x_iZ_i``
+``\Delta Z_\text{mixing} = Z_\text{mixing}-\sum_i x_iZ_i``
 
 where variables denoted by the index refer to properties relating to component $i$ (with $x_i$ being the molar composition of $i$ within the mixture).
 Due to this easily generalisable definition, rather than defining many `mixing_X(model, p, T, n)` functions, a single `mixing(model, p, T, n, property)` function is defined where the `property` input refers to the property which we wish to obtain the mixing function of.
