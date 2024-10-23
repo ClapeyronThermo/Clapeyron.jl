@@ -602,10 +602,10 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
     else
         vsv_ub = one(psv)*v_ub
     end
-    return x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv)
+    return _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv)
 end
 
-function x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv)
+function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv)
     p(x) = pressure(model,x,T)
     psl,_,d2psl = Solvers.f∂f∂2f(p,vsl)
     psv,_,d2psv = Solvers.f∂f∂2f(p,vsv)

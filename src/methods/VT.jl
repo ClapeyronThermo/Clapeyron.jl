@@ -33,7 +33,7 @@ function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
         return VT_internal_energy(idealmodel(model),V,T,z)
     else
         A, ∂A∂T = f∂fdT(model,V,T,z)
-        return A - T*∂A∂T    
+        return A - T*∂A∂T
     end
 end
 
@@ -47,14 +47,14 @@ function VT_enthalpy(model::EoSModel, V, T, z=SA[1.])
     if V == Inf
         return VT_internal_energy(idealmodel(model),V,T,z)
     else
-        A, ∂A∂T = f∂fdT(model,V,T,z)
-        return A - T*∂A∂T
+        A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
+        return A - V*∂A∂V - T*∂A∂T
     end
 end
 
 function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
     dA, A = ∂f_res(model,V,T,z)
-    ∂A∂V, ∂A∂T = dA
+    A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
     PrV = ifelse(V == Inf,zero(∂A∂V),- V*∂A∂V)
     return A + PrV - T*∂A∂T
 end
@@ -66,7 +66,6 @@ function VT_gibbs_free_energy(model::EoSModel, V, T, z=SA[1.])
         A,∂A∂V = f∂fdV(model,V,T,z)
         return A - V*∂A∂V
     end
-    return A + PV
 end
 
 function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
@@ -111,7 +110,7 @@ function VT_adiabatic_index(model::EoSModel, V, T, z=SA[1.])
         ∂²A∂V∂T = d²A[1,2]
         ∂²A∂V² = d²A[1,1]
         ∂²A∂T² = d²A[2,2]
-        return 1 - T*∂²A∂V∂T*∂²A∂V∂T/(∂²A∂V²*∂²A∂T²)
+        return 1 - ∂²A∂V∂T*∂²A∂V∂T/(∂²A∂V²*∂²A∂T²)
     end
 end
 
@@ -125,18 +124,18 @@ function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isentropic_compressibility(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf
-        d²A = f_hess(model,V,T,z)
-        ∂²A∂V∂T = d²A[1,2]
-        ∂²A∂V² = d²A[1,1]
-        ∂²A∂T² = d²A[2,2]
-        return 1/V/(∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)
-    else 
+    if V == Inf || model isa IdealModel
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
         R = Rgas(model)
         V_∂²A∂V∂T_2 = R*R/V
         V_∂²A∂V² = R*T*sum(z)/V
         return 1/(V_∂²A∂V² - V_∂²A∂V∂T_2/∂²A∂T²)
+    else
+        d²A = f_hess(model,V,T,z)
+        ∂²A∂V∂T = d²A[1,2]
+        ∂²A∂V² = d²A[1,1]
+        ∂²A∂T² = d²A[2,2]
+        return 1/V/(∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)
     end
 end
 
