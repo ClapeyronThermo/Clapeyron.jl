@@ -8,11 +8,22 @@ Calculates the spinodal pressure and volume for a given temperature and composit
     
 Calculates either the liquid or the vapor spinodal point depending on the given starting volume `v0` or the `phase`. The keyword `phase` is ignored if `v0` is given.
 """
-function spinodal_pressure(model::EoSModel,T,x=SA[1.];v0=nothing,phase=:unknown)
-    x = x/sum(x)
+function spinodal_pressure(model::EoSModel,T,z=SA[1.];v0=nothing,phase=:unknown)
+    TT = Base.promote_eltype(model,T,z)
+    V_spin::TT = zero(TT)
+    if isnothing(v0) && !is_unknown(phase) && length(model) == 1
+        V_spin = pure_spinodal(model,T;phase)
+        return pressure(model,V_spin,T),V_spin
+    end
+
+    x = z/sum(z)
     model, idx_r = index_reduction(model,x)
     x = x[idx_r]
     
+    if isnothing(v0) && !is_unknown(phase) && length(model) == 1
+        V_spin = pure_spinodal(model,T;phase)
+        return pressure(model,V_spin,T),V_spin
+    end
     # Determine initial guess (if not provided)
     if isnothing(v0)
         if is_liquid(phase)
@@ -32,7 +43,8 @@ function spinodal_pressure(model::EoSModel,T,x=SA[1.];v0=nothing,phase=:unknown)
     if r.info.best_residual[1] < r.options.f_abstol # converged
         return pressure(model,V_spin,T,x), V_spin
     else                                            # not converged
-        return NaN, NaN
+        nan = zero(TT),zero(TT)
+        return nan, nan
     end
 end
 

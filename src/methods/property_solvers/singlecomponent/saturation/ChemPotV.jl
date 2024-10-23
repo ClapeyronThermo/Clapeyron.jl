@@ -52,7 +52,7 @@ ChemPotVSaturation(x::Vector) = ChemPotVSaturation(vl = first(x),vv = last(x))
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing,C}) where C
     TT = Base.promote_eltype(model,T)
     crit = method.crit
-    if crit !== nothing
+    if crit !== nothing && !has_fast_crit_pure(model)
         vl,vv = x0_sat_pure(model,T,crit)
     else
         vl,vv = x0_sat_pure(model,T)
