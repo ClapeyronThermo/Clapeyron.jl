@@ -33,7 +33,7 @@ MultiParameter Equation of state for Ethanol:
  Gaussian bell-shaped terms: 9
 ```
 
-Multicomponent models are a collection of `SingleFluid` models + a mixing model + a departure model:
+MultiComponent models are a collection of `SingleFluid` models + a mixing model + a departure model:
 
 ```julia
 julia> model = GERG2008(["water","carbon dioxide"])

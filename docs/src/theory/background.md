@@ -46,7 +46,7 @@ Following this route, we obtain (for a pure component (i.e., a single species))
 ``\frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T} = ln{(\rho\Lambda^3)}-1``,
 
 where $\rho = N/V$ is the number density, and $\Lambda$ is the thermal de Broglie wavelength, which introduces the kinetic contributions to the free energy (strictly speaking, with this notation only translations are included).
-We can generalise this as a sum over species $i$ for a multicomponent mixture:
+We can generalise this as a sum over species $i$ for a multi-component mixture:
 
 ``\frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T} = \left(\sum_ix_i\ln{(\rho_i\Lambda_i^3)}\right)-1``,
 
