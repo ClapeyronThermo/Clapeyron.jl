@@ -1,5 +1,5 @@
-# _pT_ isopleths
+# *pT* isopleths
 
-## Carbon dioxide and _n_-decane
+## Carbon dioxide and *n*-decane
 
-## Liquified natural gas mixture
+## Liquefied natural gas mixture

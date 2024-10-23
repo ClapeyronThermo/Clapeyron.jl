@@ -1,1 +1,1 @@
-# Extensions - CoolProp
+# Extensions – CoolProp

@@ -1,7 +1,7 @@
-# _Tp_ Flash algorithms
+# *Tp* Flash algorithms
 
-## Vapour--liquid equilibrium
+## Vapour–liquid equilibrium
 
-## Liquid--liquid equilibrium
+## Liquid–liquid equilibrium
 
-## Vapour--liquid--liquid equilibrium
+## Vapour–liquid–liquid equilibrium
