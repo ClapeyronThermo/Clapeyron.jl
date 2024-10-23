@@ -376,9 +376,10 @@ function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B 
     ares = a_res(model, vl0, T, z)
     lnϕ_liq0 = ares - 1 + log(RT/vl0)
     p = exp(lnϕ_liq0)
-    vv = volume_virial(model,p,T)
-    if refine_vl
-        vl = volume(model,P,T,z,vol0 = vl0)
+    vv = volume_virial(B,p,T)
+    pB = -0.25*RT/B
+    if refine_vl && pB/p > 10
+        vl = volume(model,p,T,z,vol0 = vl0)
     else
         vl = vl0*oneunit(vv)
     end
@@ -564,12 +565,27 @@ function x0_sat_pure_spinodal(model,T,B = second_virial_coefficient(model,T))
     return x0_sat_pure_spinodal(model,T,v_lb,v_ub,B)
 end
 
-function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(model,T))
-    vsl = pure_spinodal(model,T,v_lb,v_ub,:l,true)
+function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(model,T),Vc = nothing)
+    if Vc === nothing
+        vc = zero(v_lb)/zero(v_ub)
+    else
+        vc,_,_ = promote(Vc,v_lb,v_ub)
+    end
+    
+    if isnan(vc)
+        vsl = pure_spinodal(model,T,v_lb,v_ub,:l,true)
+    else
+        vsl = pure_spinodal(model,T,v_lb,vc,:l,true)
+    end
+
     if isnan(vsl)
         return pressure(model,v_lb,T),v_lb,v_ub
     end
-    vsv = pure_spinodal(model,T,vsl,v_ub,:v,true)
+    if isnan(vc)
+        vsv = pure_spinodal(model,T,vsl,v_ub,:v,true)
+    else
+        vsv = pure_spinodal(model,T,vc,v_ub,:v,true)
+    end
     if isnan(vsv)
         return pressure(model,v_lb,T),v_lb,v_ub
     end
@@ -635,17 +651,17 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
         p = pressure(model,vl,T)
         return p,vl,vv
     elseif 0.8 <= Tr <= 0.99
-        low_vv = Vc
-        up_vv = -2*second_virial_coefficient(model,T)
-        vsv = pure_spinodal(model,T,low_vv,up_vv,:v,true)
-        psv = pressure(model,vsv,T) #gas spinodal pressure
-        #note: P_max is the pressure at the maximum volume, not the maximum pressure
-        low_vl = volume(model,psv,T,phase =:l)
-        up_vl = Vc
-        vsl = pure_spinodal(model,T,low_vl,up_vl,:l,true)
-        return x0_sat_pure_spinodal(model,T,low_vl,up_vv,vsl,vsv)
+        B = second_virial_coefficient(model,T)
+        v_ub = -2*B
+        pl0 = liquid_pressure_from_virial(model,T,B)
+        v_lb = volume(model,pl0,T,phase = :l)
+        return x0_sat_pure_spinodal(model,T,v_lb,v_ub,B,Vc)
     elseif 0 <= Tr < 0.8
-        return x0_sat_pure_near0(model,T,vl)
+        B = second_virial_coefficient(model,T)
+        v_ub = -2*B
+        pl0 = liquid_pressure_from_virial(model,T,B)
+        vl = volume(model,pl0,T,phase = :l)
+        return x0_sat_pure_near0(model,T,vl;B = B)
     else
         return nan,nan,nan
     end

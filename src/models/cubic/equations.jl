@@ -232,9 +232,13 @@ end
 
 function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
     lb_v = lb_volume(model,T,z)
-    if iszero(p)
+    if iszero(p) && is_liquid(phase) #liquid root at zero pressure if available
         vl,_ = zero_pressure_impl(model,T,z)
         return vl
+    elseif iszero(p) && is_vapour(phase) #zero pressure, ideal gas limit.
+        _0 = zero(Base.promote_eltype(model,p,T,z))
+        _1 = one(_0)
+        return _1/_0
     end
     nRTp = sum(z)*R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
@@ -256,7 +260,7 @@ function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
         _vl = vvl
         vl = ifelse(_vl > lb_v, _vl, vg) #catch case where solution is unphysical
     else # 1 real root (or 2 with the second one degenerate)
-        vg = vl = zl * nRTp
+        vg = vl = z1 * nRTp
     end
 
     function gibbs(v)
@@ -284,7 +288,45 @@ function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
     end
 end
 
-
+function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,retry) where K
+    #=
+    Segura, H., & Wisniak, J. (1997). Calculation of pure saturation properties using cubic equations of state. Computers & Chemical Engineering, 21(12), 1339–1347. doi:10.1016/s0098-1354(97)00016-1 
+    =#
+    z = SA[1.0]
+    a,b,c = cubic_ab(model,v_lb,T,z)
+    Δ1,Δ2 = cubic_Δ(model,z)
+    c1_c2 = - Δ1 - Δ2
+    c1c2 = Δ1*Δ2
+    RT = Rgas(model)*T
+    Tc = model.params.Tc.values[1]
+    pc = model.params.Pc.values[1]
+    zc = pure_cubic_zc(model)
+    vcc = zc*Rgas(model)*Tc/pc #untranslated Vc
+    bRT = b*RT
+    Q4 = -RT
+    Q3 = 2*(a - bRT*c1_c2)
+    Q2 = b*(a*(c1_c2 - 4) - bRT*(c1_c2*c1_c2 + 2*c1c2))
+    Q1 = 2*b*b*(a*(1 - c1_c2) - bRT*c1c2*c1_c2)
+    Q0 = b*b*b*(a*c1_c2 - bRT*c1c2*c1c2)
+    dpoly = (Q0,Q1,Q2,Q3,Q4)
+    dfl = evalpoly(v_lb,dpoly)
+    dfv = evalpoly(v_ub,dpoly)
+    v_lbc = v_lb + c
+    v_ubc = v_ub + c
+    vx = ifelse(is_liquid(phase),v_lbc,v_ubc)
+    if dfl*dfv < 0
+        bracket = (v_lbc,v_ubc)
+        prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),bracket)
+        vs = Roots.solve(prob)
+        return vs - c
+    end
+    vx = ifelse(is_liquid(phase),v_lbc,v_ubc)
+    vm = vcc #the critical volume is always between the two spinodals
+    v_bracket = minmax(vx,vm)
+    prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket)
+    vs = Roots.solve(prob)
+    return vs - c
+end
 
 function zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
     #0 = R̄*T/(v-b) - a/((v-Δ1*b)*(v-Δ2*b))
@@ -313,47 +355,7 @@ function ab_consts(model::CubicModel)
     return ab_consts(typeof(model))
 end
 
-x0_sat_pure(model::ABCubicModel,T,crit = nothing) = x0_sat_pure_cubic_ab(model,T)
 has_fast_crit_pure(model::ABCCubicModel) = true
-
-function x0_sat_pure_cubic_ab(model::ABCubicModel, T)
-    z = SA[1.0]
-    Tc = model.params.Tc.values[1]
-    if Tc < T
-        nan = zero(T) / zero(T)
-        return (nan, nan)
-    end
-    a, b, c = cubic_ab(model, 1 / sqrt(eps(float(T))), T)
-    data = (1.0, a, b, c)
-    pc = model.params.Pc.values[1]
-    zc = pure_cubic_zc(model)
-    vc = zc*Rgas(model)*Tc/pc - c
-    crit = (Tc, pc, vc)
-    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
-    vl_p0,vl_max = zero_pressure_impl(T,a,b,c,Δ1,Δ2,z) #exact solution to zero-pressure cubic
-    B = b-a/(R̄*T)
-    if !isnan(vl_p0)
-        ares = a_res(model, vl_p0, T, z,data)
-        lnϕ_liq0 = ares - 1. + log(R̄*T/vl_p0)
-        pl0 = exp(lnϕ_liq0)
-        dpdV = -R̄*T/((vl_p0-b)^2)  +a/(((vl_p0-Δ1*b)*(vl_p0-Δ2*b))^2) * (2*vl_p0  -b*(Δ1 + Δ2))
-        #_p,dpdV = p∂p∂V(model,vl_p0,T,z) #one refinement to the liquid volume
-        _Δ = (pl0)/(vl_p0*dpdV)
-        vl = vl_p0*exp(_Δ)
-        vv = volume_virial(B,pl0,T) - c
-    else
-        psat = critical_psat_extrapolation(model,T,crit)
-        #normally, the extrapolation gives a higher pressure than the final saturation pressure
-        #use virial approx for lower pressures
-        vl = volume(model,psat,T,phase = :l)
-        if psat < 0.95*pc
-            vv = volume_virial(B,psat,T) - c
-        else
-            vv = volume(model,0.99psat,T,phase = :v)
-        end
-    end
-    return (vl, vv)
-end
 
 function x0_saturation_temperature(model::ABCubicModel,p,::Nothing)
     crit = crit_pure(model)
