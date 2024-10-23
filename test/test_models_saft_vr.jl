@@ -1,18 +1,25 @@
 GC.gc()
 
-
 @testset "SAFT-VR-Mie Models" begin
     @printline
     let T = 298.15, V = 1e-4,z1 = Clapeyron.SA[1.0],z = [0.5,0.5],z3 = [0.333, 0.333,0.333];
     @testset "SAFTVRMie" begin
         system = SAFTVRMie(["methanol", "water"])
-        @test Clapeyron.a_mono(system, V, T, z) ≈ -0.9729134860869052 rtol = 1e-6
+        @test Clapeyron.a_mono(system, V, T, z) ≈ -0.9729139704318698 rtol = 1e-6
         _a_chain = Clapeyron.a_chain(system, V, T, z)
         _a_disp  = Clapeyron.a_disp(system, V, T, z)
-        @test _a_chain ≈ -0.02834738013535014 rtol = 1e-6
+        @test _a_chain ≈ -0.028347378889242814 rtol = 1e-6
         @test Clapeyron.a_dispchain(system,V,T,z) - _a_chain ≈ _a_disp rtol = 1e-6
-        @test Clapeyron.a_assoc(system, V, T, z) ≈ -4.180807072390184 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -4.18080707238976 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
+        GC.gc()
+    end
+
+    @testset "SAFTVRMieGV" begin
+        system = SAFTVRMieGV(["benzene","acetone"])
+        V_GV = 8e-5
+        @test Clapeyron.a_mp(system, V_GV, T, z) ≈ -0.7521858819355216 rtol = 1e-6
+        test_gibbs_duhem(system,V_GV,T,z)
         GC.gc()
     end
 
@@ -49,7 +56,7 @@ GC.gc()
         test_gibbs_duhem(system,V,T,z)
         GC.gc()
     end
-
+    
     @testset "structSAFTgammaMie" begin
         species = [("ethanol",["CH3"=>1,"CH2OH"=>1],[("CH3","CH2OH")=>1]),
                    ("octane",["CH3"=>2,"CH2"=>6],[("CH3","CH2")=>2,("CH2","CH2")=>5])]
