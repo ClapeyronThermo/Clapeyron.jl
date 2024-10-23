@@ -237,7 +237,7 @@ function a_chain(model::structSAFTgammaMieModel, V, T, z,_data = @f(data))
             θ = exp(ϵ/T)-1
             γc = 10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
             ∂a_2∂ρ_S = 0.5*_C^2 *
-                (ρS*_∂KHS*(x_0^(2*λa)*(aS_1_2a+B_2a)
+                (ρS_∂KHS*(x_0^(2*λa)*(aS_1_2a+B_2a)
                 - 2*x_0^(λa+λr)*(aS_1_ar+B_ar)
                 + x_0^(2*λr)*(aS_1_2r+B_2r))
                 + _KHS*(x_0^(2*λa)*(∂aS_1∂ρS_2a+∂B∂ρS_2a)

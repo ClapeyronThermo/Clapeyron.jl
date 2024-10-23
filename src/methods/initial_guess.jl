@@ -183,18 +183,15 @@ function x0_sat_pure(model,T,crit)
         #if the model has a custom method here, it will be dispatched to that one.
         return x0_sat_pure(model,T)
     end
-    _,vl,vv = x0_sat_pure_crit(model,T,crit)
+
+    if isnothing(crit)
+        _,vl,vv = x0_sat_pure_virial(model,T)
+    else
+        _,vl,vv = x0_sat_pure_crit(model,T,crit)
+    end
     return vl,vv
 end
 
-function x0_sat_pure(model,T,::Nothing)
-    satmodel = saturation_model(model)
-    if satmodel !== model
-        return x0_sat_pure(satmodel,T,nothing)
-    end
-    _,vl,vv = x0_sat_pure_virial(model,T)
-    return vl,vv
-end
 
 """
     p,vl,vv = x0_sat_pure_virial(model,T)
@@ -697,18 +694,15 @@ function x0_psat(model,T)
     return p
 end
 
-function x0_psat(model,T,crit::NTuple{3,Any})
+function x0_psat(model,T,crit)
     satmodel = saturation_model(model)
     satmodel !== model && return x0_psat(satmodel,T,crit)
     has_fast_crit_pure(model) && return x0_psat(model,T)
-    return first(x0_sat_pure_crit(model,T,crit))
-end
-
-function x0_psat(model,T,::Nothing)
-    satmodel = saturation_model(model)
-    satmodel !== model && return x0_psat(satmodel,T,nothing)
-    has_fast_crit_pure(model) && x0_psat(model,T)
-    return first(x0_sat_pure_virial(model,T))
+    if isnothing(crit)
+        return first(x0_sat_pure_virial(model,T))
+    else
+        return first(x0_sat_pure_crit(model,T,crit))
+    end
 end
 
 """
