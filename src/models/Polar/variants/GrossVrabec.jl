@@ -1,3 +1,4 @@
+#=
 abstract type GrossVrabecModel <: PolarModel end
 
 struct GrossVrabecParam{T} <: ParametricEoSParam{T}
@@ -158,5 +159,4 @@ const GrossVrabecConsts = (
     (0.6902849,-0.2701261,-3.4396744),
     (0.,0.,0.))
 )
-
-
+=#
