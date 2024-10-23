@@ -640,16 +640,15 @@ GC.gc()
     @testset "saturation points without critical point" begin
         model1 = PCSAFT("water")
         Tc1,_,_ = crit_pure(model1)
-        T1 = 0.995Tc1
-        @test Clapeyron.saturation_pressure(model1,T1,crit_retry = false)[1] ≈ 3.542008160105954e7 rtol = 1e-6
+        T1 = 0.999Tc1
+        @test Clapeyron.saturation_pressure(model1,T1,crit_retry = false)[1] ≈ 3.6377840330375336e7 rtol = 1e-6
 
         model2 = PCSAFT("eicosane")
         Tc2,_,_ = crit_pure(model2)
-        T2 = 0.99Tc2
+        T2 = 0.999Tc2
         
-        if !Base.Sys.isapple() #this test fails on mac, julia 1.6
-            @test Clapeyron.saturation_pressure(model2,T2,crit_retry = false)[1] ≈ 1.3225433281814915e6 rtol = 1e-6
-        end
+        #this test fails on mac, julia 1.6
+        @test Clapeyron.saturation_pressure(model2,T2,crit_retry = false)[1] ≈ 1.451917823392476e6 rtol = 1e-6
 
         #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/237
         #for some reason, it fails with mac sometimes
