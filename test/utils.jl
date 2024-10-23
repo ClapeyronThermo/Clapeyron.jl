@@ -1,7 +1,7 @@
 IS_GH = get(ENV,"GITHUB_ACTIONS",false) in ("true", "1", "yes",true,"TRUE")
 IS_LOCAL = !IS_GH
-IS_STABLE = v"1.6" <= Base.VERSION < v"1.7"
-IS_LATEST = v"1.10" <= Base.VERSION < v"1.10.9999"
+IS_STABLE = v"1.10" <= Base.VERSION < v"1.11"
+IS_LATEST = v"1.11" <= Base.VERSION < v"1.11.9999"
 IS_OTHER = !IS_STABLE && !IS_LATEST
 const W_STABLE = IS_STABLE && (Base.Sys.iswindows())
 const W_LATEST = IS_LATEST && (Base.Sys.iswindows())
