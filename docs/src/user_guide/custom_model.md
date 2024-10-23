@@ -18,7 +18,7 @@ We will now give a brief overview of each of these aspects.
 ### Model struct name
 
 This is the concrete type, which is simply the name of the equation of state which will be used to generate the model.
-Within `Clapeyron`, we've tried to keep these names as obvious as possible (*e.g.* `vdW`, `PR`, `PCSAFT`, `SAFTVRMie`, `GERG2008`, etc.).
+Within `Clapeyron`, we've tried to keep these names as obvious as possible (e.g. `vdW`, `PR`, `PCSAFT`, `SAFTVRMie`, `GERG2008`, etc.).
 For your own model, this can be whatever you want as long is the identification makes sense to you.
 
 ### Model abstract type
@@ -33,8 +33,8 @@ From this parent, we branch into more specific EoS sub-types:
   All other SAFT-type models branch from this parent (`PCSAFTModel`, `SAFTVRMieModel`, `softSAFTModel`, etc.).
 - `CubicModel`: These are the models whose parameters can be obtained from the critical temperature and pressure.
   With the exception of `CPAModel`, all cubics have a common structure where one can rearrange the equation for the pressure as a third-order polynomial.
-  As such, we define a subtype of `CubicModel`, `ABCubicModel` (*e.g.* `vdWModel`, `RKModel`, `SRKModel`, `PRModel`).
-- `EmpiricHelmholtzModel`: These are the high-accuracy, multi-parameter models for specific species or systems (*e.g.* `GERG2008Model`, `IAPWS95Model`).
+  As such, we define a subtype of `CubicModel`, `ABCubicModel` (e.g. `vdWModel`, `RKModel`, `SRKModel`, `PRModel`).
+- `EmpiricHelmholtzModel`: These are the high-accuracy, multi-parameter models for specific species or systems (e.g. `GERG2008Model`, `IAPWS95Model`).
   There is no general structure to the models and they are treated as self-contained.
 - `IdealModel`: Often overlooked, these models supplement the `SAFTModel` and `CubicModel` by providing the ideal contribution.
   Whilst the parameters and structure aren't usually the same between ideal models, this is unnecessary as the equation for the pressure is always $pV=Nk_\mathrm{B}T$.
@@ -305,7 +305,7 @@ We can do this in a very succinct way making this new model a sub-type of the ab
   @newmodel sPCSAFT sPCSAFTModel PCSAFTParam
   ```
 
-  This may not be the case if we're extending a model (*e.g.* if we're adding polar or ionic terms, we may need to define a new parameter struct to include the new parameters).
+  This may not be the case if we're extending a model (e.g. if we're adding polar or ionic terms, we may need to define a new parameter struct to include the new parameters).
 
 - When defining the model equations, we only need to write those that have been changed in `sPCSAFT`:
 

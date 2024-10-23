@@ -129,7 +129,7 @@ One of these is specifying the location of the parameter databases, the details 
 
 Both SAFT and cubic-type equations of state rely upon an ideal model.
 By default, Clapeyron uses what we refer to as the [`BasicIdeal`](@ref) model to account for the ideal contribution which does not require any parameters.
-For properties which only have derivatives with respect to volume or composition (*e.g.* volume, isothermal compressibility, critical points, saturation points), or monoatomic species (*e.g.* noble gases), this is perfectly fine.
+For properties which only have derivatives with respect to volume or composition (e.g. volume, isothermal compressibility, critical points, saturation points), or monoatomic species (e.g. noble gases), this is perfectly fine.
 However, for any other properties or species, the results obtained will most likely be quite poor.
 This is because this model does not account for the rotational and vibrational modes of the species.
 To amend this, we provide three additional ideal models to be used instead:
@@ -304,7 +304,7 @@ The functions for the physical properties that we currently support are as follo
 
   Most of the above functions also accept the `vol0` optional keyword argument, which specifies an initial guess for the [Clapeyron.volume](@ref) solver.
 
-  Note that all of the above functions can be broadcast *i.e.* if `T` is an array, instead of a for loop, we can simply:
+  Note that all of the above functions can be broadcast i.e. if `T` is an array, instead of a for loop, we can simply:
 
   ```julia
   Cp = isobaric_heat_capacity.(model, p, T, z)

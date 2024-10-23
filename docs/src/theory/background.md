@@ -41,7 +41,7 @@ Accordingly, we could first integrate the above equation with respect to volume 
 
 This is still a little inconvenient, however, since we have to deal with a tricky constant of integration.
 Fortunately, we can instead derive ``A_\mathrm{ideal}`` from statistical mechanics (using just a few well-known results from quantum mechanics).
-Following this route, we obtain (for a pure component (*i.e.*, a single species))
+Following this route, we obtain (for a pure component (i.e., a single species))
 
 ``\frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T} = ln{(\rho\Lambda^3)}-1``,
 
