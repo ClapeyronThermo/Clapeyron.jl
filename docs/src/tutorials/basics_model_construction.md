@@ -257,7 +257,9 @@ Contains parameters: g, Tc, Pc, ZRA, Mw
 ```
 
 This pure model plays an important role in modelling the bulk properties of activity coefficient models as these approaches only predict excess properties:
-$$X^E = X^\text{mix.}-\sum_ix_i X^\text{pure}$$
+
+``X^E = X^\text{mix.}-\sum_ix_i X^\text{pure}``
+
 To obtain $X^\text{mix.}$, $X^\text{pure}$ is obtained using the `puremodel`.
 Note that this means that, for all activity coefficient models, as they are pressure/volume independent, all assume ideal volume of mixing.
 
