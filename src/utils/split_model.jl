@@ -332,8 +332,14 @@ end
 #=
 Start of EoSModel split_model functions
 =#
-split_model(model::EoSModel,splitter) = auto_split_model(model,splitter)
-
+function split_model(model::EoSModel,splitter)
+    if is_splittable(model)
+        return auto_split_model(model,splitter)
+    else
+        return [fill(model,length(i)) for i ∈ splitter]
+    end
+end
+    
 function auto_split_model(Base.@nospecialize(model::EoSModel),subset)
     try
         allfields = Dict{Symbol,Any}()

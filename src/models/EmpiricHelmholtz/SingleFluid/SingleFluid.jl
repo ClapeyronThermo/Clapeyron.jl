@@ -61,6 +61,9 @@ struct SingleFluidIdeal <: IdealModel
     references::Vector{String}
 end
 
+is_splittable(model::SingleFluid) = false
+is_splittable(model::SingleFluidIdeal) = false
+
 function recombine_impl!(model::SingleFluid)
     _calc_iterators!(model.residual)
     return model
