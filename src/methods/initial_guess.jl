@@ -592,13 +592,13 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
     psl = p(vsl)
     psv = p(vsv)
     if plb < psv
-        vsl_lb = volume_virial(B,plb,T)
+        vsv_ub = volume(model,psv,T,phase = :l, vol0 = v_lb)
     else
         vsl_lb = one(psl)*v_lb
     end
 
     if pub > psl
-        vsv_ub = volume(model,psl,T,vol0 = v_ub)
+        vsv_ub = volume_virial(B,psl,T)
     else
         vsv_ub = one(psv)*v_ub
     end
@@ -613,17 +613,17 @@ function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv)
     psv_ub,dpsv_ub,d2psv_ub = Solvers.f∂f∂2f(p,vsv_ub)
     ps_mid = 0.5*(psv + max(psl,zero(psl)))
     dpsl = zero(psl)
-    dpsv = zero(psv)
+    dpsv = zero(psl)
     poly_l = Solvers.hermite5_poly(vsl_lb,vsl,psl_lb,psl,dpsl_lb,dpsl,d2psl_lb,d2psl)
     poly_v = Solvers.hermite5_poly(vsv,vsv_ub,psv,psv_ub,dpsv,dpsv_ub,d2psv,d2psv_ub)
     vl = volume_from_spinodal(ps_mid,poly_l,vsl_lb,0.5*(vsl_lb + vsl))
-    vv = volume_from_spinodal(ps_mid,poly_v,vsv,0.5*(vsv_ub + vsv))
+    vv = volume_from_spinodal(ps_mid,poly_v,vsv,(zero(vsv),vsv_ub - vsv))
     return ps_mid,vl,vv
 end
 
 function volume_from_spinodal(p,poly,vshift,v0)
     f(v) = p - evalpoly(v,poly)
-    prob = Roots.ZeroProblem(f,v0 - vshift)
+    prob = Roots.ZeroProblem(f,v0)
     return Roots.solve(prob) + vshift
 end
 
