@@ -336,7 +336,7 @@ function split_model(model::EoSModel,splitter)
     if is_splittable(model)
         return auto_split_model(model,splitter)
     else
-        return [fill(model,length(i)) for i ∈ splitter]
+        return fill(model,length(splitter))
     end
 end
     
