@@ -612,6 +612,9 @@ function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv)
     psl_lb,dpsl_lb,d2psl_lb = Solvers.f∂f∂2f(p,vsl_lb)
     psv_ub,dpsv_ub,d2psv_ub = Solvers.f∂f∂2f(p,vsv_ub)
     ps_mid = 0.5*(psv + max(psl,zero(psl)))
+    
+    poly_l = Solvers.hermite5_poly(vsl_lb,vsl,psl_lb,psl,dpsl_lb,dpsl,d2psl_lb,d2psl)
+    poly_v = Solvers.hermite5_poly(vsv,vsv_ub,psv,psv_ub,dpsv,dpsv_ub,d2psv,d2psv_ub)
     vl = volume_from_spinodal(ps_mid,poly_l,vsl_lb,0.5*(vsl_lb + vsl))
     vv = volume_from_spinodal(ps_mid,poly_v,vsv,0.5*(vsv_ub + vsv))
     return ps_mid,vl,vv
