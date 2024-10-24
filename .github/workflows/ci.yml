@@ -31,28 +31,11 @@ jobs:
         version:
           - 'lts'
           - '1'
-          - 'pre'
+          - 'nightly'
         os:
           - ubuntu-latest
           - windows-latest
-        arch:
-          - x64
-        include:
-          - os: macOS-latest
-            arch: x64
-            version : 'lts'
-          - os: macOS-latest
-            arch: x64
-            version : '1'
-          - os: macOS-14
-            arch: aarch64
-            version: '1'
-            experimental: true
-          - os: macOS-14
-            arch: aarch64
-            version: 'pre'
-          - experimental: true
-            version: 'pre'
+          - macOS-latest
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@latest
