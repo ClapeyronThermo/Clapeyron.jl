@@ -81,7 +81,10 @@ function C.x0_sat_pure(model::SuperancPCSAFT,T,crit = nothing)
 end
 
 function C.x0_crit_pure(model::SuperancPCSAFT)
-    can_superanc(model) || return x0_crit_pure_default(model)
+    if !can_superanc(model) 
+        lb_v = C.lb_volume(model)
+        return (2.0*oneunit(lb_v), log10(lb_v/0.3))
+    end
     m,ϵ,σ = get_pcsaft_consts(model)
     if 1.0 <= m <= 64.0
         Tc = ES.pcsaft_tc(m,ϵ)
