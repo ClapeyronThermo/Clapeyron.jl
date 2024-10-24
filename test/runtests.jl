@@ -35,8 +35,20 @@ function GERG2008(components;verbose = false,reference_state = nothing)
 end
 
 function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
-    _,G,∑μᵢzᵢ = Clapeyron.gibbs_duhem(model,V,T,z)
-    @test G ≈ ∑μᵢzᵢ rtol = rtol
+    for i in (2.0,3.0,5.0,7.0,11.0)
+        a_res₀ = Clapeyron.a_res(model,V,T,z)
+        @test a_res₀ ≈ Clapeyron.a_res(model,i*V,T,i*z) rtol = rtol
+    end
+    pures = split_model(model)
+    x_pure = zeros(length(model))
+    for n in 1:length(model)
+        
+        for i in (2.0,3.0,5.0,7.0,11.0)
+            x_pure[n] = i
+            @test Clapeyron.a_res(model,i*V,x_pure) ≈ Clapeyron.a_res(pure[n],i*V,Clapeyron.SVector(i)) rtol = rtol
+            x_pure .= 0
+        end
+    end
 end
 
 function test_volume(model,p,T,z = Clapeyron.SA[1.0],rtol = 1e-8)
