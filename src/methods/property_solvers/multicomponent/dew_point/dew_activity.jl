@@ -82,7 +82,7 @@ function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
     end
    
     if isnan(vv)
-        return vv,vv,vv,x
+        return vv,vv,vv,y
     end
 
     if isnothing(method.p0)
