@@ -345,12 +345,19 @@ end
 
 @testset "Cubic methods, multi-components" begin
     system = RK(["ethane","undecane"])
+    system2 = tcPR(["benzene","toluene","nitrogen"])
     p = 1e7
     T = 298.15
     z = [0.5,0.5]
+    p2 = 1.5*101325
+    T2 = 350
+    z2 = [0.001,0.001.0.001]
+
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T, z) ≈ 0.00017378014541520907 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 892.4941848133369 rtol = 1e-6
+        @test Clapeyron.volume(system2, p2, T2, z2, phase = :l) ≈ 2.851643999862116e-7 rtol = 1e-6
+        @test Clapeyron.volume(system2, p2, T2, z2 ./ sum(z2), phase = :l) ≈ 2.851643999862116e-7/sum(z2) rtol = 1e-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 1.5760730143760687e6 rtol = 1E-6

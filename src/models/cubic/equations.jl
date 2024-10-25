@@ -242,10 +242,12 @@ function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
     end
     nRTp = sum(z)*R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
+    c = c̄*sum(z)
     num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
     if num_isreal == 2
         vvl,vvg = nRTp*z1,nRTp*z2
-    else
+    elseif num_isreal == 3
+        
         vvl,vvg = nRTp*z1,nRTp*z3
     end
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
@@ -274,17 +276,17 @@ function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
     end
     #this catches the supercritical phase as well
     if vl ≈ vg
-        return vl - c̄
+        return vl - c
     end
 
     if is_liquid(phase)
-        return vl - c̄
+        return vl - c
     elseif is_vapour(phase)
-        return vg - c̄
+        return vg - c
     else
-        gg = gibbs(vg - c̄)
-        gl = gibbs(vl - c̄)
-        return ifelse(gg < gl, vg - c̄, vl - c̄)
+        gg = gibbs(vg - c)
+        gl = gibbs(vl - c)
+        return ifelse(gg < gl, vg - c, vl - c)
     end
 end
 
