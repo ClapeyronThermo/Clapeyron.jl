@@ -71,7 +71,7 @@ end
 function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
     Ar,∂A∂Vr = Solvers.f∂f(fun,V)
-    PrV = ifelse(V == Inf,zero(∂A∂V),- V*∂A∂V)
+    PrV = ifelse(V == Inf,zero(∂A∂Vr),- V*∂A∂Vr)
     return Ar + PrV
 end
 
