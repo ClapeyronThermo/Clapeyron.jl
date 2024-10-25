@@ -568,12 +568,16 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
     else
         vc,_,_ = promote(Vc,v_lb,v_ub)
     end
-    
+
+    p(x) = pressure(model,x,T)
+
     if isnan(vc)
         vsl = pure_spinodal(model,T,v_lb,v_ub,:l,true)
     else
         vsl = pure_spinodal(model,T,v_lb,vc,:l,true)
     end
+
+    psl = p(vsl)
 
     if isnan(vsl)
         return pressure(model,v_lb,T),v_lb,v_ub
@@ -583,10 +587,11 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
     else
         vsv = pure_spinodal(model,T,vc,v_ub,:v,true)
     end
+
     if isnan(vsv)
         return pressure(model,v_lb,T),v_lb,v_ub
     end
-    p(x) = pressure(model,x,T)
+    
     plb = p(v_lb)
     pub = p(v_ub)
     psl = p(vsl)
@@ -597,26 +602,33 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
         vsl_lb = one(psl)*v_lb
     end
 
-    if pub > psl
+    if pub > psl && psl > 0
         vsv_ub = volume_virial(B,psl,T)
     else
         vsv_ub = one(psv)*v_ub
     end
-    return _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv)
+
+    return _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B)
 end
 
-function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv)
+function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B)
     p(x) = pressure(model,x,T)
     psl,_,d2psl = Solvers.f∂f∂2f(p,vsl)
     psv,_,d2psv = Solvers.f∂f∂2f(p,vsv)
     psl_lb,dpsl_lb,d2psl_lb = Solvers.f∂f∂2f(p,vsl_lb)
-    psv_ub,dpsv_ub,d2psv_ub = Solvers.f∂f∂2f(p,vsv_ub)
-    ps_mid = 0.5*(psv + max(psl,zero(psl)))
     dpsl = zero(psl)
-    dpsv = zero(psl)
     poly_l = Solvers.hermite5_poly(vsl_lb,vsl,psl_lb,psl,dpsl_lb,dpsl,d2psl_lb,d2psl)
-    poly_v = Solvers.hermite5_poly(vsv,vsv_ub,psv,psv_ub,dpsv,dpsv_ub,d2psv,d2psv_ub)
-    vl = volume_from_spinodal(ps_mid,poly_l,vsl_lb,0.5*(vsl_lb + vsl))
+    
+    
+    ps_mid = 0.5*(psv + max(psl,zero(psl)))
+    vl = volume_from_spinodal(ps_mid,poly_l,vsl_lb,0.5*(vsl_lb + vsl) - vsl_lb)
+    if psl < 0
+        vv = volume_virial(B,ps_mid,T)
+        return ps_mid,vl,vv
+    end
+    psv_ub,dpsv_ub,d2psv_ub = Solvers.f∂f∂2f(p,vsv_ub)
+    dpsv = zero(psl)
+    poly_v = Solvers.hermite5_poly(vsv,vsv_ub,psv,psv_ub,dpsv,dpsv_ub,d2psv,d2psv_ub)    
     vv = volume_from_spinodal(ps_mid,poly_v,vsv,(zero(vsv),vsv_ub - vsv))
     return ps_mid,vl,vv
 end
@@ -637,7 +649,7 @@ The strategy selected depends on the value of `T/Tc`
 """
 function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     _Tc,_Pc,_Vc = crit
-    _1 = one(Base.promote_eltype(model,T,Tc,Pc,Vc))
+    _1 = one(Base.promote_eltype(model,_T,_Tc,_Pc,_Vc))
     _0 = zero(_1)
     _,T,Tc,Pc,Vc = promote(_1,_T,_Tc,_Pc,_Vc)
     Tr = T/Tc
