@@ -247,8 +247,9 @@ function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
     if num_isreal == 2
         vvl,vvg = nRTp*z1,nRTp*z2
     elseif num_isreal == 3
-        
         vvl,vvg = nRTp*z1,nRTp*z3
+    else
+        vvl,vvg = nRTp*z1,nRTp*z1
     end
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if !isfinite(vvl) && !isfinite(vvg) && phase != :unknown
