@@ -140,7 +140,7 @@ end
 
 function C.x0_sat_pure(model::SuperancCubic,T,crit = nothing)
     if !can_superanc(model) 
-        _,vl,vv = C.x0_sat_pure_crit(model,T,crit_pure(model))
+        _,vl,vv = C.x0_sat_pure_crit(model,T,C.crit_pure(model))
         return vl,vv
     end
     a,b,c = C.cubic_ab(model,1e-3,T,C.SA[1.0])
