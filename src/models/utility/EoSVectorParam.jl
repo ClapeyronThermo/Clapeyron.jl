@@ -9,6 +9,8 @@ function EoSVectorParam(model::EoSModel,components = model.components)
     return EoSVectorParam(components,model,pure)
 end
 
+saturation_model(model::EoSVectorParam) = saturation_model(model.model)
+
 Base.getindex(x::EoSVectorParam,I) = x.pure[I]
 Base.length(x::EoSVectorParam) = length(x.pure)
 Base.eltype(x::EoSVectorParam{T}) where T = T
@@ -36,18 +38,3 @@ function recombine_impl!(model::EoSVectorParam)
     return model
 end
 
-function saturation_pressure(model::EoSVectorParam,T::Real,method::SaturationMethod)
-    return saturation_pressure(model.model,T,method)
-end
-
-function saturation_temperature(model::EoSVectorParam,T::Real,method::SaturationMethod)
-    return saturation_temperature(model.model,T,method)
-end
-
-function init_preferred_method(method::typeof(saturation_pressure),model::EoSVectorParam,kwargs)
-    return init_preferred_method(method,model.model,kwargs)
-end
-
-function init_preferred_method(method::typeof(saturation_temperature),model::EoSVectorParam,kwargs)
-    return init_preferred_method(method,model.model,kwargs)
-end
