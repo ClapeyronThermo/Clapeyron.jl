@@ -351,7 +351,7 @@ end
     z = [0.5,0.5]
     p2 = 1.5*101325
     T2 = 350
-    z2 = [0.001,0.001.0.001]
+    z2 = [0.001,0.001,0.001]
 
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T, z) ≈ 0.00017378014541520907 rtol = 1e-6
