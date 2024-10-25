@@ -97,6 +97,11 @@ function x0_psat(model::FluidCorrelation,T,crit = nothing)
     return ps
 end
 
+function crit_pure(model::FluidCorrelation)
+    single_component_check(crit_pure,model)
+    return crit_pure(model.saturation)
+end
+
 function saturation_temperature(model::FluidCorrelation,p,method::SaturationMethod)
     nan = zero(p)/zero(p)
     Tsat,_,_ = saturation_temperature(model.saturation,p,method)
