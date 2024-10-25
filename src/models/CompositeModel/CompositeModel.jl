@@ -295,23 +295,7 @@ end
 
 reference_chemical_potential_type(model::CompositeModel) = reference_chemical_potential_type(model.fluid)
 
-function init_preferred_method(method::typeof(saturation_pressure),model::CompositeModel,kwargs)
-    return init_preferred_method(saturation_pressure,model.fluid,kwargs)
-end
-
-function init_preferred_method(method::typeof(saturation_temperature),model::CompositeModel,kwargs)
-    return init_preferred_method(saturation_temperature,model.fluid,kwargs)
-end
-
-function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
-    return saturation_pressure(model.fluid,T,method)
-end
-
 saturation_model(model::CompositeModel) = model.fluid
-
-function saturation_temperature(model::CompositeModel,p,method::SaturationMethod)
-    return saturation_temperature(model.fluid,p,method)
-end
 
 #defer bubbledew eq to the fluid field
 

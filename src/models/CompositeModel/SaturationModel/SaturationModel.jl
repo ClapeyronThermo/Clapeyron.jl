@@ -35,8 +35,6 @@ function saturation_temperature_impl(model::SaturationModel,p,method::Saturation
     return sol,nan,nan
 end
 
-eos(model,V,T,z=SA[1.0]) = not_eos_error(model)
-
 #this method allows to use a Saturation Model as a whole fluid model. it supposes ideal gas and no info about the liquid phase (NaNLiquid)
 function init_puremodel(model::SaturationModel,components,userlocations,verbose)
     _components = format_components(components)

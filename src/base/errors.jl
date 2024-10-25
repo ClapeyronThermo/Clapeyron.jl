@@ -1,5 +1,3 @@
-not_eos_error(model) = throw(ArgumentError("$model does not have eos defined "))
-
 """
     single_component_check(method,model)
 
