@@ -295,7 +295,7 @@ end
         act_y1 = activity_coefficient(system, 101325, 303.15, flash1[1][2,:]) .* flash1[1][2,:]
         @test Clapeyron.dnorm(act_x1,act_y1) < 1e-8
 
-        alg2 = MichelsenTPFlash(
+        alg2 = RRTPFlash(
             equilibrium = :lle,
             x0 = [0.99999, 0.00001],
             y0 = [0.00001, 0.00009]
@@ -306,7 +306,7 @@ end
         @test Clapeyron.dnorm(act_x2,act_y2) < 1e-8
 
         #test K0_lle_init initialization
-        alg3 = MichelsenTPFlash(
+        alg3 = RRTPFlash(
             equilibrium = :lle)
         flash3 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg3)
         act_x3 = activity_coefficient(system, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
