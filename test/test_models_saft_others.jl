@@ -99,3 +99,25 @@ end
     end
     end
 end
+
+@testset "COFFEE" begin
+    @printline
+    let T = 298.15, V = 1e-4,z = Clapeyron.SA[1.0];
+        @testset "COFFEE" begin
+            system = COFFEE(["a1"]; userlocations = (;
+                                        Mw = [1.],
+                                        segment = [1.],
+                                        sigma = [3.;;],
+                                        epsilon = [300.;;],
+                                        lambda_r = [12;;],
+                                        lambda_a = [6;;],
+                                        shift = [3*0.15],
+                                        dipole = [2.0*1.0575091914494172],))
+            @test Clapeyron.a_ff(system, V, T, z) ≈ -2.3889723633885107 rtol = 1e-6
+            @test Clapeyron.a_nf(system, V, T, z) ≈ -0.7418363729609996 rtol = 1e-6
+
+            test_gibbs_duhem(system, V, T, z)
+            GC.gc()
+        end
+    end
+end

@@ -151,7 +151,7 @@ function a_nf(model ::COFFEEModel, V, T, z, _data=@f(data))
 
     Q = ∫∫∫Odξ₁dξ₂dγ12(ρ̄,T̄,μ²,d,_Iμμ)
 
-    return 9*π/12*ρ̄*g_hs*log(4π/Q)
+    return 19*π/12*ρ̄*g_hs*log(4π/Q)
 end
 
 function Iμμ(ρ̄,T̄,μ)
