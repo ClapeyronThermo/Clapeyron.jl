@@ -224,16 +224,6 @@ function eos_impl(model::SingleFluid, V, T, z)
     return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ,logδ)) + N*(a0 + a1*T)
 end
 
-function eos_res(model::SingleFluid,V,T,z=SA[1.0])
-    R = R_gas(model)
-    Tc = model.properties.Tc
-    rhoc = model.properties.rhoc
-    N = sum(z)
-    δ = N/(rhoc*V)
-    τ = Tc/T
-    return N*R*T*reduced_a_res(model,δ,τ)
-end
-
 mw(model::SingleFluid) = SA[model.properties.Mw]
 
 molecular_weight(model::SingleFluid,z = @SVector [1.]) = model.properties.Mw*0.001

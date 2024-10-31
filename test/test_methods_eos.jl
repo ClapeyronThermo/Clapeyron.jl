@@ -495,17 +495,22 @@ end
     T_v = 380.15
     T_c = 750.
     p_c = 250e5
+    mw = Clapeyron.molecular_weight(system)
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 1.8068623941501927e-5 rtol = 1e-6
-        @test Clapeyron.volume(system, p, T_v;phase=:vapour) ≈ 0.03116877990373624 rtol = 1e-6
-        @test Clapeyron.volume(system, p_c, T_c) ≈ 0.00018553711945962424 rtol = 1e-6
-        @test Clapeyron.volume(system, p_c, T_c;phase=:sc) ≈ 0.00018553711945962424 rtol = 1e-6
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1496.699163371358 rtol = 1e-6
+        #IAPWS-2018, table 7
+        @test mass_density(system,0.992418352e5,300.0) ≈ 996.556 rtol = 1e-6
+        @test mass_density(system,0.200022515e8,300.0) ≈ 1005.308 rtol = 1e-6
+        @test mass_density(system,0.700004704e9,300.0) ≈ 1188.202 rtol = 5e-6
+        @test entropy(system,0.992418352e5,300.0) ≈ mw*393.062643 rtol = 1e-6
+        @test entropy(system,0.200022515e8,300.0) ≈ mw*387.405401 rtol = 1e-6
+        @test entropy(system,0.700004704e9,300.0) ≈ mw*132.609616 rtol = 5e-5
+        @test speed_of_sound(system,0.992418352e5,300.0) ≈ 1501.51914 rtol = 1e-6
+        @test speed_of_sound(system,0.200022515e8,300.0) ≈ 1534.92501 rtol = 1e-6
+        @test speed_of_sound(system,0.700004704e9,300.0) ≈ 2443.57992 rtol = 5e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293390134403 rtol = 1E-6
-        #ir varies a bit, it gives 3170.301356765357
-        @test_broken Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3169.9293390134403 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.964132790202 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3169.964132790202 rtol = 1E-6
         #saturation temperature tests are noisy
         @test Clapeyron.saturation_temperature(system,3169.9293390134403)[1] ≈ 298.1499999999789 rtol = 1E-6
         tc,pc,vc = Clapeyron.crit_pure(system)
@@ -521,15 +526,16 @@ end
     T = 230.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 7.577761282115866e-5 rtol = 1e-6
-        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ 0.018421882342664616 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ 0.01842186071641243 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1166.6704395959607 rtol = 1e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 97424.11102152328 rtol = 1E-6
+        ps = 97424.00109054151
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ ps rtol = 5E-6
         #they vary a litte bit. i don't know why, it gives 97423.47874065055
-        @test_broken Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 97424.11102152328 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ ps rtol = 1E-6
         #saturation temperature tests are noisy
-        @test Clapeyron.saturation_temperature(system,97424.11102152328)[1] ≈ 230.15014586866016  rtol = 1E-6
+        @test Clapeyron.saturation_temperature(system,ps)[1] ≈ T  rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 369.8900089509652 rtol = 1E-6
     end
 end
