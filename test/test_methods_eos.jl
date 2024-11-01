@@ -500,13 +500,13 @@ end
         #IAPWS-2018, table 7
         @test mass_density(system,0.992418352e5,300.0) ≈ 996.556 rtol = 1e-6
         @test mass_density(system,0.200022515e8,300.0) ≈ 1005.308 rtol = 1e-6
-        @test mass_density(system,0.700004704e9,300.0) ≈ 1188.202 rtol = 5e-6
+        @test mass_density(system,0.700004704e9,300.0) ≈ 1188.202 rtol = 1e-6
         @test entropy(system,0.992418352e5,300.0) ≈ mw*393.062643 rtol = 1e-6
         @test entropy(system,0.200022515e8,300.0) ≈ mw*387.405401 rtol = 1e-6
-        @test entropy(system,0.700004704e9,300.0) ≈ mw*132.609616 rtol = 5e-5
+        @test entropy(system,0.700004704e9,300.0) ≈ mw*132.609616 rtol = 1e-6
         @test speed_of_sound(system,0.992418352e5,300.0) ≈ 1501.51914 rtol = 1e-6
         @test speed_of_sound(system,0.200022515e8,300.0) ≈ 1534.92501 rtol = 1e-6
-        @test speed_of_sound(system,0.700004704e9,300.0) ≈ 2443.57992 rtol = 5e-6
+        @test speed_of_sound(system,0.700004704e9,300.0) ≈ 2443.57992 rtol = 1e-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.964132790202 rtol = 1E-6

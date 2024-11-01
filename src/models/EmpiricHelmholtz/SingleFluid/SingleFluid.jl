@@ -75,8 +75,8 @@ end
 
 idealmodel(model::SingleFluid) = SingleFluidIdeal(model)
 
-R_gas(model::SingleFluid) = model.properties.Rgas
-R_gas(model::SingleFluidIdeal) = model.properties.Rgas
+Rgas(model::SingleFluid) = model.properties.Rgas
+Rgas(model::SingleFluidIdeal) = model.properties.Rgas
 
 reduced_a_ideal(model::SingleFluid,τ) = reduced_a_ideal(model.ideal,τ)
 reduced_a_ideal(model::SingleFluidIdeal,τ) = reduced_a_ideal(model.ideal,τ)
@@ -211,7 +211,7 @@ function a_res(model::SingleFluid,V,T,z=SA[1.])
 end
 
 function eos_impl(model::SingleFluid, V, T, z)
-    R = R_gas(model)
+    R = Rgas(model)
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
     N = sum(z)
