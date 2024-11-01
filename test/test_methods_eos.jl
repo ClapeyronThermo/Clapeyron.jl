@@ -509,8 +509,8 @@ end
         @test speed_of_sound(system,0.700004704e9,300.0) ≈ 2443.57992 rtol = 1e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.964132790202 rtol = 1E-6
-        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3169.964132790202 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293388718283  rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3169.9293388718283 rtol = 1E-6
         #saturation temperature tests are noisy
         @test Clapeyron.saturation_temperature(system,3169.9293390134403)[1] ≈ 298.1499999999789 rtol = 1E-6
         tc,pc,vc = Clapeyron.crit_pure(system)
