@@ -26,19 +26,18 @@ end
 
 Convert molality (mol/kg) to composition for a given model, salts, molality, and solvent composition.
 """
-function molality_to_composition(model::ElectrolyteModel,salts,m,zsolv=[1.])
+function molality_to_composition(model::ElectrolyteModel,salts,m,zsolv=SA[1.],ν = salt_stoichiometry(model,salts))
     ν = salt_stoichiometry(model,salts)
-
     ions = model.components[model.charge.!=0]
     neutral = model.components[model.charge.==0]
     Mw = mw(model.neutralmodel).*1e-3
-
     isalts = 1:length(salts)
     iions = 1:length(ions)
     ineutral = 1:length(neutral)
-    x_solv = zsolv ./ (1+sum(zsolv[j]*Mw[j] for j in ineutral)*(sum(m[k]*sum(ν[k,i] for i ∈ iions) for k ∈ isalts)))
-    x_ions = [sum(m[k]*ν[k,l] for k ∈ isalts) / (1/sum(zsolv[j]*Mw[j] for j in ineutral)+(sum(m[k]*sum(ν[k,i] for i ∈ iions) for k ∈ isalts))) for l ∈ iions]
-    return append!(x_solv,x_ions)
+    ∑mν = sum(m[k]*sum(ν[k,i] for i ∈ iions) for k ∈ isalts)
+    x_solv = zsolv ./ (1+sum(zsolv[j]*Mw[j] for j in ineutral)*∑mν)
+    x_ions = [sum(m[k]*ν[k,l] for k ∈ isalts) / (1/sum(zsolv[j]*Mw[j] for j in ineutral)+∑mν) for l ∈ iions]
+    return vcat(x_solv,x_ions)
 end
 
 export molality_to_composition
