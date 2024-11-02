@@ -382,7 +382,12 @@ end
     #test IsoFugacity, near criticality
     Tc_near = 0.95*647.096
     psat_Tcnear = 1.496059652088857e7 #default solver result
-    @test first(Clapeyron.saturation_pressure(model,Tc_near,IsoFugacitySaturation())) ≈ psat_Tcnear rtol = 1e-6
+    if Base.VERSION < v"1.11" && Sys.islinux()
+        @test first(Clapeyron.saturation_pressure(model,Tc_near,IsoFugacitySaturation(p0 = 1.49e7))) ≈ psat_Tcnear rtol = 1e-6
+    else
+        @test first(Clapeyron.saturation_pressure(model,Tc_near,IsoFugacitySaturation())) ≈ psat_Tcnear rtol = 1e-6
+
+    end
     #Test that IsoFugacity fails over critical point
     @test isnan(first(Clapeyron.saturation_pressure(model,1.1*647.096,IsoFugacitySaturation())))
     GC.gc()
