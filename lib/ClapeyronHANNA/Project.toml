@@ -14,7 +14,7 @@ Transformers = "21ca0261-441d-5938-ace7-c90938fde4d4"
 [compat]
 CSV = "0.10"
 Clapeyron = "0.6"
-Flux = "0.14-0.14.22"
+Flux = "0.14 - 0.14.22"
 JLD2 = "0.5"
 LinearAlgebra = "1"
 Transformers = "0.3"
