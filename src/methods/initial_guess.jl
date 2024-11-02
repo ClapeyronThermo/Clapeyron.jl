@@ -341,7 +341,7 @@ end
 Calculates initial points for pure saturation pressure, using the Lee-Kesler correlation.
 """
 function x0_sat_pure_lk(model,T,crit,ω)
-    _0 = Base.promote_eltype(model,T,ω)
+    _0 = zero(Base.promote_eltype(model,T,ω))
     nan = _0/_0
     tc,pc,vc = crit
     T > tc && (return nan,nan,nan)
