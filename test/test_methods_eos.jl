@@ -526,15 +526,14 @@ end
     T = 230.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 7.577761282115866e-5 rtol = 1e-6
-        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ 0.01842186071641243 rtol = 1e-6
+        #PropsSI("D","P",1e4,"T",230.15,"propane") == 0.23126803007122876
+        @test Clapeyron.mass_density(system, 1e4, T) ≈ 0.23126803007122876 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1166.6704395959607 rtol = 1e-6
     end
     @testset "VLE properties" begin
         ps = 97424.11102296013 #PropsSI("P","T",T,"Q",1,"propane")
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ ps rtol = 5E-6
-        #they vary a litte bit. i don't know why, it gives 97423.47874065055
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ ps rtol = 1E-6
         @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ ps rtol = 1E-6
-        #saturation temperature tests are noisy
         @test Clapeyron.saturation_temperature(system,ps)[1] ≈ T  rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 369.8900089509652 rtol = 1E-6
     end
