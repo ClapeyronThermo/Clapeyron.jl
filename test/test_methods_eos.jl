@@ -530,7 +530,7 @@ end
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1166.6704395959607 rtol = 1e-6
     end
     @testset "VLE properties" begin
-        ps = 97424.00109054151
+        ps = 97424.11102296013 #PropsSI("P","T",T,"Q",1,"propane")
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ ps rtol = 5E-6
         #they vary a litte bit. i don't know why, it gives 97423.47874065055
         @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ ps rtol = 1E-6
