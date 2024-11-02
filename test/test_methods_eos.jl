@@ -622,7 +622,7 @@ end
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 105419.26772976149 rtol = 1E-6
         #saturation temperature tests are noisy
         @test Clapeyron.saturation_temperature(system,105419.26772976149)[1] ≈ T  rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 369.6977432770013 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 369.83 rtol = 1E-6
     end
 end
 
