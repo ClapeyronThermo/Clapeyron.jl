@@ -1,3 +1,4 @@
+ENV["JULIA_TEST_FAILFAST"] = "false"
 using Test
 t1 = @elapsed using Clapeyron
 using CoolProp #CoolProp ext
