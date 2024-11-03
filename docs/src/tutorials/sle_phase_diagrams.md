@@ -1,4 +1,4 @@
-# Solid-liquid equilibrium
+# Solid–liquid equilibrium
 
 ## Thymol and 1-decanol
 

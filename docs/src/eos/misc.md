@@ -16,7 +16,7 @@ Clapeyron.shape_factors
 Clapeyron.SPUNG
 ```
 
-## Sanchez-Lacombe Model
+## Sanchez–Lacombe Model
 
 ```@docs
 Clapeyron.SanchezLacombe

@@ -1,5 +1,5 @@
-# _pT_ projections
+# *pT* projections
 
-## Carbon dioxide and _n_-decane
+## Carbon dioxide and *n*-decane
 
 ## Methanol and cyclohexane
