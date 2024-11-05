@@ -20,9 +20,12 @@ when set, it calculates a set of `a0` and `a1` values such as the entropy and en
 
 the `type` argument accepts the following standalone options:
 - `:no_set`: it returns the current defaults stablished by the equation of state.
-- `:ashrae`: h = s = 0 at -40C saturated liquid
+- `:ashrae`: h = s = 0 at -40°C saturated liquid
 - `:iir`: h = 200.0 kJ/kg, s=1.0 kJ/kg/K at 0C saturated liquid
 - `:nbp`: h = s = 0 at 1 atm saturated liquid
+- `:stp`: h = s = 0 at 1 bar, 0°C fluid of the most stable phase
+- `:stp_old`: h = s = 0 at 1 atm, 0°C fluid of the most stable phase
+- `:ntp`: h = s = 0 at 1 atm, 20°C fluid of the most stable phase
 
 it also accepts the following options, that require additional specifications:
 - `:volume` h = H0, s = S0, at T = T0, v = `volume(model,P0,T0,z0,phase = phase)`
@@ -205,21 +208,16 @@ function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
     T0,P0,H0,S0 = ref.T0,ref.P0,ref.H0,ref.S0
     a0,a1 = ref.a0,ref.a1
     R = Rgas(model)
-    
     if type == :ashrae
         #ASHRAE: h = 0, s = 0 @ -40C saturated liquid
         single_component_check(set_reference_state!,model)
         T_ashrae = 273.15 - 40
         _a0,_a1 = calculate_reference_state_consts(model,:saturation_pressure,T_ashrae,NaN,0.,0.,SA[1.0],:liquid)
-        a0 .= _a0
-        a1 .= _a1
     elseif type == :nbp
         #NBP: h=0, s=0 for saturated liquid at 1 atmosphere
         single_component_check(set_reference_state!,model)
         p_nbp = 101325.0
         _a0,_a1 = calculate_reference_state_consts(model,:saturation_temperature,NaN,p_nbp,0.,0.,SA[1.0],:liquid)
-        a0 .= _a0
-        a1 .= _a1
     elseif type == :iir
         #IIR: h = 200 kJ/kg, s=1 kJ/kg/K at 0C saturated liquid
         single_component_check(set_reference_state!,model)
@@ -228,15 +226,21 @@ function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
         H_iir = 200*M*1000
         S_iir = 1*M*1000
         _a0,_a1 = calculate_reference_state_consts(model,:saturation_pressure,T_iir,NaN,H_iir,S_iir,SA[1.0],:liquid)
-        a0 .= _a0
-        a1 .= _a1
+    elseif type in (:stp,:stp_old)
+        T_stp = 273.15
+        p_stp = type == :stp ? 1.0e5 : 101325.0
+        _a0,_a1 = calculate_reference_state_consts(model,:volume,T_stp,p_stp,0.0,0.0,z0,ref.phase)
+    elseif type == :ntp
+        T_nist = 273.15 + 20.0
+        p_nist = 1.0e5
+        _a0,_a1 = calculate_reference_state_consts(model,:volume,T_nist,p_nist,0.0,0.0,z0,ref.phase)
     elseif type in (:volume,:saturation_pressure,:saturation_temperature)
         _a0,_a1 = calculate_reference_state_consts(model,type,T0,P0,first(H0),first(S0),z0,ref.phase)
-        a0 .= _a0
-        a1 .= _a1
     else
         throw(error("invalid specification for ReferenceState."))
     end
+    a0 .= _a0
+    a1 .= _a1
 end
 
 function initialize_reference_state!(model,ref = reference_state(model))
