@@ -59,12 +59,16 @@ function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
     return A + PrV - T*∂A∂T
 end
 
-function VT_gibbs_free_energy(model::EoSModel, V, T, z=SA[1.])
+function VT_gibbs_free_energy(model::EoSModel, V, T, z=SA[1.],p = nothing)
     if V == Inf
         return VT_gibbs_free_energy(idealmodel(model), V, T, z=SA[1.])
     else
-        A,∂A∂V = f∂fdV(model,V,T,z)
-        return A - V*∂A∂V
+        if isnothing(p)
+            A,∂A∂V = f∂fdV(model,V,T,z)
+            return A - V*∂A∂V
+        else
+            return eos(model,V,T,z) + p*V
+        end
     end
 end
 
@@ -82,6 +86,11 @@ end
 function VT_helmholtz_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     return eos_res(model,V,T,z)
 end
+
+const VT_helmholtz_energy = VT_helmholtz_free_energy
+const VT_helmholtz_energy_res = VT_helmholtz_free_energy_res 
+const VT_gibbs_energy = VT_gibbs_free_energy
+const VT_gibbs_energy_res = VT_gibbs_free_energy_res
 
 function VT_isochoric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     ∂²A∂T² = ∂²f∂T²(model,V,T,z)
@@ -175,6 +184,14 @@ function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
         ∂²A∂V² = d²A[1,1]
         ∂²A∂T² = d²A[2,2]
         return -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))^-1
+    end
+end
+
+function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.],p = nothing)
+    if p === nothing
+        return pressure(model,V,T,z)*V/(sum(z)*R̄*T)
+    else
+        return p*V/(sum(z)*R̄*T)
     end
 end
 
