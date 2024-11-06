@@ -72,7 +72,7 @@ PPDSIdeal
 default_locations(::Type{PPDSIdeal}) = ["ideal/PPDSIdeal.csv"]
 default_references(::Type{PPDSIdeal}) = ["978-3-527-34325-6"] #TODO: find original source of the equation.
 
-function a_ideal(model::PPDSIdealModel,V,T,z=SA[1.0])
+function a_ideal_T(model::PPDSIdealModel,T,z)
     #we transform from AlyLee terms to GERG2008 terms.
 
     _A = model.params.A.values
@@ -85,13 +85,11 @@ function a_ideal(model::PPDSIdealModel,V,T,z=SA[1.0])
 
     Σz = sum(z)
     res = zero(V+T+first(z))
-    ρ = 1/V
     τi = one(T)/T
     Tr = one(T)
     logτi = log(τi)
     @inbounds for i ∈ @comps
         #we suppose ρc = Vc = 1
-        δi = ρ
         zi = z[i]
         A,B,C,D,E,F,G = _A[i],_B[i],_C[i],_D[i],_E[i],_F[i],_G[i]
 
@@ -114,7 +112,6 @@ function a_ideal(model::PPDSIdealModel,V,T,z=SA[1.0])
             y = Tr/Ā
             coeffs = (zero(λ), 0.5*λ, (λ - D)/6, (G + F)/12, G/20)
             ai += η*evalpoly(y,coeffs)
-            res += xlogx(zi,δi)
             res += zi*ai
     end
     return res/Σz

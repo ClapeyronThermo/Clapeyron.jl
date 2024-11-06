@@ -97,45 +97,61 @@ end
 
 recombine_impl!(model::ReidIdealModel) = model
 
-evalcoeff(::ReidIdealModel,coeffs,T,lnT = log(T)) = evalpoly(T,coeffs)
+function evalcoeff(model,coeffs,T,lnT = log(T))
+    if length(coeffs) == 1
+        return only(coeffs)*oneunit(T)
+    else
+        return evalpoly(T,coeffs)
+    end
+end
 
-function eval∫coeff(::ReidIdealModel,coeffs,T,lnT = log(T))
+reid_coeffs(model::EoSModel) = model.params.coeffs.values
+const caloric_coefficients = reid_coeffs
+
+function eval∫coeff(model,coeffs,T,lnT = log(T))
     n = length(coeffs)
+    if isone(n)
+        C = only(coeffs)
+        return C*T
+    end
     div1 = NTuple{n,Int}(1:n)
     ∫poly = coeffs ./ div1
     return evalpoly(T,∫poly)*T
 end
 
-function eval∫coeffT(::ReidIdealModel,coeffs,T,lnT = log(T))
+function eval∫coeffT(model,coeffs,T,lnT = log(T))
     n = length(coeffs)
-    div1 = NTuple{n-1,Int}(1:(n-1))
     A = first(coeffs)
+    A0 = A*lnT
+    if isone(n) && return A0
+        C = only(coeffs)
+        return C*T
+    end
+    div1 = NTuple{n-1,Int}(1:(n-1))
     coeffs1 = coeffs[2:end]
     ∫polyT = coeffs1 ./ div1
-    return evalpoly(T,∫polyT)*T + A*lnT
+    return evalpoly(T,∫polyT)*T + A0
 end
 
-function a_ideal(model::PolynomialIdealModel, V, T, z)
+a_ideal_T(model::PolynomialIdealModel,T,z) = a_ideal_T_coeff(model,T,z)
+
+function a_ideal_T_coeff(model, T, z)
     #x = z/sum(z)
-    polycoeff = model.params.coeffs.values
+    polycoeff = caloric_coefficients(model)
     #return sum(x[i]*(log(z[i]/V) + 1/(R̄*T)*(sum(polycoeff[k][i]/k*(T^k-298^k) for k in 1:4)) -
-    #    1/R̄*((polycoeff[k][1]-R̄)*log(T/298)+sum(polycoeff[k][i]/(k-1)*(T^(k-1)-298^(k-1)) for k in 2:4))) for i in @comps)
-    V⁻¹ = 1/V
-    res = zero(V+T+first(z))
+    #1/R̄*((polycoeff[k][1]-R̄)*log(T/298)+sum(polycoeff[k][i]/(k-1)*(T^(k-1)-298^(k-1)) for k in 2:4))) for i in @comps)
+    res = zero(Base.promote_eltype(model,T,z))
     Σz = sum(z)
     RT = R̄*T
     R̄⁻¹ = 1/R̄
     RT⁻¹ = 1/RT
-    T0 = 298.
-    lnT0 = log(T0)
     lnT = log(T)
     @inbounds for i in @comps
         coeffs = polycoeff[i] 
-        H = (eval∫coeff(model,coeffs,T,lnT) - eval∫coeff(model,coeffs,T0,lnT0))*RT⁻¹
-        TS = (eval∫coeffT(model,coeffs,T,lnT) - eval∫coeffT(model,coeffs,T0,lnT0))*R̄⁻¹
-        α₀ᵢ = H - TS + lnT - lnT0
+        H = eval∫coeff(model,coeffs,T,lnT)*RT⁻¹
+        TS = eval∫coeffT(model,coeffs,T,lnT)*R̄⁻¹
+        α₀ᵢ = H - TS + lnT
         res += z[i]*α₀ᵢ
-        res += xlogx(z[i],V⁻¹)
     end
     return res/Σz
 end

@@ -52,13 +52,16 @@ default_locations(::Type{MonomerIdeal}) = mw_data()
 
 recombine_impl!(model::MonomerIdealModel) = model
 
-function a_ideal(model::MonomerIdealModel, V, T, z)
+function a_ideal_T(model::MonomerIdealModel, T, z)
     Mw = model.params.Mw.values
-    res = zero(V+T+first(z))
+    res = zero(Base.promote_eltype(model,T,z))
     for i in @comps
         Mwᵢ = Mw[i]*0.001
         Λᵢ = h/√(k_B*T*Mwᵢ/N_A)
-        res += xlogx(z[i],N_A/V*Λᵢ^3)
+        #res += z[i]*log(z[i]*NA/V*Λᵢ^3)
+        #res += z[i]*(log(zi/V) + log(NA*Λᵢ^3))
+        #res += xlogx(z[i],N_A/V*Λᵢ^3)
+        res += z[i]*(ln_N_A + 3*log(Λᵢ))
     end
     return res/sum(z) - 1
 end

@@ -55,7 +55,7 @@ WalkerIdeal
 
 export WalkerIdeal
 
-function a_ideal(model::WalkerIdealModel,V,T,z)
+function a_ideal_T(model::WalkerIdealModel,T,z)
     Mw = model.params.Mw.values
     Nrot = model.params.Nrot.values
     θ1 = model.params.theta1.values
@@ -69,14 +69,14 @@ function a_ideal(model::WalkerIdealModel,V,T,z)
     θ_vib = (θ1, θ2, θ3, θ4)
     g_vib = (g1, g2, g3, g4)
     n = model.groups.n_flattenedgroups
-    res = zero(V+T+first(z))
+    res = zero(Base.promote_eltype(model,T,z))
     Σz = sum(z)
     @inbounds for i in @comps
         ni = n[i]
         Mwi = sum(ni[k]*Mw[k] for k in @groups(i))
         Nroti = sum(ni[k]*Nrot[k] for k in @groups(i))/sum(ni[k] for k in @groups(i))
-        Λ = h/√(k_B*T*Mwi/N_A)
-        res += xlogx(z[i],N_A/V*Λ^3)
+        Λᵢ = h/√(k_B*T*Mwi/N_A)
+        res += z[i]*(ln_N_A + 3*log(Λᵢ))
         res += z[i]*(-Nroti/2*log(T)+sum(ni[k]*sum(g_vib[v][k]*(θ_vib[v][k]/2/T+log(1-exp(-θ_vib[v][k]/T))) for v in 1:4) for k in @groups(i)))
     end
     return res/Σz - 1.

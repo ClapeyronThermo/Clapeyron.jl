@@ -163,6 +163,29 @@ function a_ideal(model::MultiFluid,V,T,z,∑z = sum(z))
     return res
 end
 
+function a_ideal_T(model::MultiFluid,T,z)
+    res = zero(V+T+first(z))
+    m₀ = model.pures
+    Tinv = 1/T
+    Tc = model.params.Tc
+    vc = model.params.Vc
+    Rinv = 1/Rgas(model)
+    for i in 1:length(model)
+        m₀ᵢ = m₀[i]
+        a₀ᵢ = reduced_a_ideal(m₀ᵢ,Tc[i] * Tinv)
+        R₀ = m₀ᵢ.ideal.R0
+        if !iszero(R₀)
+            a₀ᵢ *=Rinv*R₀
+        end
+        zᵢ = z[i]
+        res += zᵢ*a₀ᵢ
+        res += zᵢ*log(vc[i])
+        res
+    end
+    res /= ∑z
+    return res
+end
+
 function a_res(model::MultiFluid,V,T,z)
     ∑z = sum(z)
     δ,τ = reduced_delta_tau(model,V,T,z,∑z)

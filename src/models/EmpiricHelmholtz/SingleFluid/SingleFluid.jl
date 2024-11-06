@@ -1,7 +1,7 @@
 
 include("structs.jl")
 
-const EmpiricAncillary = CompositeModel{FluidCorrelation{PolExpVapour, PolExpLiquid, PolExpSat}, Nothing}
+const EmpiricAncillary = CompositeModel{FluidCorrelation{PolExpVapour, PolExpLiquid, PolExpSat, Nothing}, Nothing}
 #term dispatch. function definitions are in term_functions.jl
 
 function a_term(term::NonAnalyticTerm,δ,τ,lnδ,lnτ,_0)
@@ -194,6 +194,17 @@ function a_ideal(model::SingleFluidIdeal,V,T,z=SA[1.],k = __get_k_alpha0(model))
     #this form separates the dependency of z from the dependency of V, allowing for precise derivatives of the ideal part.
     logδ = log(N/rhoc) - log(V)
     return k*α0 + logδ
+end
+
+function a_ideal_T(model::SingleFluidIdeal,T,z,k = __get_k_alpha0(model))
+    Tc = model.properties.Tc
+    rhoc = model.properties.rhoc
+    N = sum(z)
+    τ = Tc/T
+    α0 = reduced_a_ideal(model,τ)
+    #this form separates the dependency of z from the dependency of V, allowing for precise derivatives of the ideal part.
+    logδ = log(N/rhoc) - log(V)
+    return k*α0 - log(rhoc)
 end
 
 v_scale(model::SingleFluid,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhoc

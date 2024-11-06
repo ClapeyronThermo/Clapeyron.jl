@@ -39,9 +39,27 @@ function a_ideal(model::BasicIdeal, V, T, z)
     return res
 end
 
+function a_ideal_T(model::BasicIdeal,T,z)
+    return -1.5*log(T) - 1
+end
+
 check_arraysize(::BasicIdealModel,x::AbstractVector) = nothing
 check_arraysize(::BasicIdealModel,x::AbstractMatrix) = nothing
 
-function ∂²f∂T²(model::BasicIdealModel,V,T,z)
+function ∂²f∂T²(model::BasicIdeal,V,T,z)
     return -1.5*sum(z)*Rgas(model)/T
 end
+
+@newmodelsingleton ZeroIdeal BasicIdealModel
+
+function a_ideal(model::ZeroIdeal, V, T, z)
+    return zero(Base.promote_eltype(T,z))
+end
+#=
+function ∂²f∂T²(model::CpIdeal,V,T,z)
+    return -(75.34 - 8.314)*sum(z)/T
+end =#
+#=
+function ∂²f∂T²(model::CpIdeal,V,T,z)
+    return -75.34*sum(z)*Rgas(model)/T
+end =#
