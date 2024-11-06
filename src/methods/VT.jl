@@ -35,7 +35,7 @@ function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
     end
 
     if ideal
-        V₀ = oneunit(V)
+        V₀ = oneunit(V) #the volume term gets cancelled out
     else
         V₀ = V
     end
@@ -57,7 +57,7 @@ function VT_enthalpy(model::EoSModel, V, T, z=SA[1.])
     end
 
     if model isa IdealModel
-        V₀ = oneunit(V)
+        V₀ = oneunit(V) #the volume term gets cancelled out
     else
         V₀ = V
     end
