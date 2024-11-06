@@ -88,6 +88,7 @@ include("GammaPhi.jl")
 include("GenericAncEvaluator.jl")
 include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
+include("LiquidCpModel/LiquidCpModel.jl")
 include("PolExpVapour.jl")
 include("SolidModel/SolidHfus.jl")
 include("SolidModel/SolidKs.jl")
@@ -162,7 +163,7 @@ function CompositeModel(components ;
         init_gas = init_model(gas,components,gas_userlocations,verbose)
         init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
         init_sat = init_model(saturation,components,saturation_userlocations,verbose)
-        init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat)
+        init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat,nothing)
     elseif !isnothing(_fluid) && !isnothing(liquid) && (gas == saturation == nothing)
         #case 3: liquid activity and a model for the fluid.
         init_liquid = init_model_act(liquid,components,liquid_userlocations,verbose)
@@ -178,7 +179,7 @@ function CompositeModel(components ;
             #case 3.b, one alternative is to leave this as an error.
             init_gas = _fluid
             init_sat = _fluid
-            init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat)
+            init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat,nothing)
         end
     elseif !isnothing(liquid) && (fluid == gas == saturation == nothing)
     #legacy case, maybe we are constructing an activity that has a puremodel

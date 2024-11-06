@@ -3,11 +3,67 @@
 
 Wrapper struct to signal that a `CompositeModel` uses correlations for calculation of saturation points, vapour and liquid phase volumes.
 """
-struct FluidCorrelation{V,L,Sat} <: RestrictedEquilibriaModel
+struct FluidCorrelation{V,L,Sat,Cp} <: RestrictedEquilibriaModel
     components::Vector{String}
     gas::V
     liquid::L
     saturation::Sat
+    liquid_cp::Cp
+end
+
+function FluidCorrelation(_components;
+                            gas_volume = nothing,
+                            liquid_volume = nothing,
+                            saturation = nothing,
+                            liquid_cp = nothing
+                            ,gas_volume_userlocations = String[],
+                            liquid_volume_userlocations = String[],
+                            saturation_userlocations = String[],
+                            liquid_cp_userlocations = String[],
+                            verbose = false,
+                            liquid_reference_state = :ntp) #=Coolprop uses this reference=#
+
+    components = format_components(_components)
+    if gas_volume != nothing
+        init_gas = init_model(gas_volume,components,gas_volume_userlocations,verbose)
+    else
+        init_gas = nothing
+    end
+
+    if liquid_volume != nothing
+        init_liquid = init_model(liquid_volume,components,liquid_volume_userlocations,verbose)
+    else
+        init_liquid = nothing
+    end
+
+    if saturation != nothing
+        init_sat = init_model(saturation,components,saturation_userlocations,verbose)
+    else
+        init_sat = nothing
+    end
+
+    if liquid_cp != nothing
+        init_cp = init_model(liquid_cp,components,liquid_cp_userlocations,verbose)
+    else
+        init_cp = nothing
+    end
+
+
+    model = FluidCorrelation(components,init_gas,init_liquid,init_sat,init_cp)
+    if init_cp !== nothing
+        #TODO: use this
+    end
+    return model
+end
+
+function Base.show(io::IO,mime::MIME"text/plain",model::FluidCorrelation)
+    print(io,"Fluid Correlation Model")
+    length(model) == 1 && print(io, " with 1 component:")
+    length(model) > 1 && print(io, " with ", length(model), " components:")
+    model.gas !== nothing && print(io,'\n'," Gas Model: ",model.gas)
+    model.liquid !== nothing && print(io,'\n'," Liquid Model: ",model.liquid)
+    model.saturation !== nothing && print(io,'\n'," Saturation Model: ",model.saturation)
+    model.liquid_cp !== nothing && print(io,'\n'," Liquid Caloric Model: ",model.liquid_cp)
 end
 
 gas_model(model::FluidCorrelation) = model.gas
@@ -25,6 +81,14 @@ reference_chemical_potential_type(model::FluidCorrelation) = :zero
 
 function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
     _0 = zero(p+T+first(z))
+    _1 = one(_0)
+    if model.gas === nothing && model.liquid !== nothing
+        return _1*volume_impl(model.liquid,p,T,z,phase,threaded,vol0)
+    elseif model.liquid === nothing && model.gas !== nothing
+        return _1*volume_impl(model.gas,p,T,z,phase,threaded,vol0)
+    end
+
+
     nan = _0/_0
     if is_liquid(phase)
         return volume(model.liquid, p, T, z; phase, threaded, vol0)
