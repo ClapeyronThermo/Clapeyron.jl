@@ -1,5 +1,5 @@
 function PT_property(model,p,T,z,phase,threaded,vol0,f::F,::Val{UseP}) where {F,UseP}
-    V = volume(gas, p, T, z; phase, threaded, vol0)
+    V = volume(model, p, T, z; phase, threaded, vol0)
     if UseP
         return f(model,V,T,z,p)
     else
