@@ -6,8 +6,9 @@ function _rho_sat(model::PolExpLiquid,T)
     return _eval_generic_anc(model.data,T)
 end
 
-function volume_impl(model::PolExpLiquid,p,T,z::SingleComp,phase=:unknown,threaded=false,vol0 = 0.0)
-    return 1/_rho_sat(model,T)
+function volume_impl(model::PolExpLiquid,p,T,z,phase,threaded,vol0)
+    @assert length(z) == 1
+    return z[1]/_rho_sat(model,T)
 end
 
 Base.length(::PolExpLiquid) = 1

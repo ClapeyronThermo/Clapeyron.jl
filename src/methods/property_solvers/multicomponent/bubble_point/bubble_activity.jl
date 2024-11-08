@@ -104,6 +104,7 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
 
     μmix = VT_chemical_potential_res(model,vl,T,x)
     ϕ = copy(μmix)
+    logϕ = copy(μmix)
     y = copy(μmix)
     ϕpure = copy(μmix)
     ϕ .= 1
@@ -126,6 +127,7 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
     γ = zeros(typeof(pmix),length(pure))
     #pure part
     μpure = only.(VT_chemical_potential_res.(pure,vl_pure,T))
+    
     if method.gas_fug
         ϕpure .= exp.(μpure ./ RT .- log.(p_pure .* vl_pure ./ RT))
     end
@@ -140,7 +142,7 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
             pᵢ = p_pure[i]
             vpureᵢ = vl_pure[i]
             μᵢ = μpure[i]
-            ϕ̂ᵢ =  ϕpure[i]
+            ϕ̂ᵢ = ϕpure[i]
             γ[i] = exp(log(vpureᵢ/vl) + (μmix[i] - μᵢ)/RT -  vpureᵢ*(pmix -pᵢ)/RT)
             if method.poynting
                 ln𝒫 = vpureᵢ*expm1(κ[i]*(pmix-pᵢ))/(κ[i]*RT) #see end of file
@@ -160,7 +162,7 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
         end
         vl = volume(model,pmix,T,x,vol0 = vl)
         if method.gas_fug
-            logϕ, vv = lnϕ(model,pmix,T,y,phase = :vapor, vol0 = vv)
+            logϕ, vv = lnϕ!(logϕ,model,pmix,T,y,phase = :vapor, vol0 = vv)
             ϕ .= exp.(logϕ)
         else
             vv = volume(model,pmix,T,y,phase =:vapor,vol0 = vv)

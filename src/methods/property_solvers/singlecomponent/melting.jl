@@ -63,7 +63,7 @@ function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPre
     end
     fluid = fluid_model(model)
     solid = solid_model(model)
-    ps,μs = scale_sat_pure(fluid)
+    ps,μs = equilibria_scale(fluid)
     result,converged = try_2ph_pure_pressure(solid,fluid,T,vs0,vl0,ps,μs,method)
     if converged
         return result
@@ -76,15 +76,16 @@ function x0_melting_pressure(model::CompositeModel,T)
     solid = solid_model(model)
     liquid = fluid_model(model)
     z = SA[1.0]
-    vs00 = x0_volume_solid(solid,T,z)
-    vl00 = x0_volume_liquid(liquid,T,z)
+    p = p_scale(liquid,z)
+    vs00 = x0_volume(solid,p,T,z,phase = :s)
+    vl00 = x0_volume(liquid,p,T,z,phase = :l)
     #=
     strategy:
     quadratic taylor expansion for helmholtz energy
     isothermal compressibility aproximation for pressure
    =#
-    p_scale,μ_scale =  scale_sat_pure(liquid)
-    return solve_2ph_taylor(solid,liquid,T,vs00,vl00,p_scale,μ_scale)
+    ps,μs = equilibria_scale(liquid)
+    return solve_2ph_taylor(solid,liquid,T,vs00,vl00,ps,μs)
 end
 
 
@@ -96,10 +97,10 @@ function Obj_Mel_Temp(model::EoSModel, F, T, V_s, V_l,p,p̄,T̄)
     A_s,Av_s =Solvers.f∂f(eos_solid,V_s)
     g_l = muladd(-V_l,Av_l,A_l)
     g_s = muladd(-V_s,Av_s,A_s)
-    F[1] = -(Av_l+p)/p̄
-    F[2] = -(Av_s+p)/p̄
-    F[3] = (g_l-g_s)/(R̄*T̄)
-    return F
+    F1 = -(Av_l+p)/p̄
+    F2 = -(Av_s+p)/p̄
+    F3 = (g_l-g_s)/(R̄*T̄)
+    return SVector(F1,F2,F3)
 end
 
 struct ChemPotMeltingTemperature{V} <: ThermodynamicMethod
@@ -157,7 +158,8 @@ function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMelting
     else
         v0 = method.v0
     end
-    V0 = vec3(v0[1],log(v0[2]),log(v0[3]),p*1.0*one(eltype(solid))*one(eltype(fluid)))
+    _1 = 
+    V0 = SVector(v0[1],log(v0[2]),log(v0[3]))
     f!(F,x) = Obj_Mel_Temp(model,F,x[1],exp(x[2]),exp(x[3]),p,p̄,T̄)
     results = Solvers.nlsolve(f!,V0,TrustRegion(Newton(),Dogleg()),NEqOptions(method))
     x = Solvers.x_sol(results)
@@ -174,17 +176,12 @@ function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMelting
 end
 
 function x0_melting_temperature(model::CompositeModel,p)
-    trp = triple_point(model)
-
-    pt = trp[2]
-    vs0 = trp[3]
-    vl0 = trp[4]
-    Δv = vl0-vs0
-    Tt = trp[1]
-    hs0 = VT_enthalpy(model.solid,vs0,Tt)
-    hl0 = VT_enthalpy(model.fluid,vl0,Tt)
-    Δh = hl0-hs0
-    T0 = Tt*exp(Δv*(p-pt)/Δh)
-
+    Tt,pt,vs0,vl0,_ = triple_point(model)
+    solid,fluid = solid_model(model),fluid_model(model)
+    K0 = -dpdT_pure(solid,fluid,vs0,vl0,Tt)*Tt*Tt/pt  
+    #Clausius Clapeyron
+    #log(P/Ptriple) = K0 * (1/T - 1/Ttriple)
+    Tinv = log(p/pt)/K0 + 1/Tt
+    T0 =  1/Tinv
     return T0,vs0,vl0
 end

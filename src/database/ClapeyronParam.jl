@@ -1,13 +1,40 @@
 """
     ClapeyronParam
 Abstract type corresponding to a Clapeyron parameter.
-it has to be splittable (via [`split_model`](@ref)) and have a `components` field
+It requires to define `Base.eltype`, and specify how it is splitted (via defining the adecuate `each_split_model`  method or by defining `Clapeyron.is_splittable(param) = false` to mark as non-splittable)
 """
 abstract type ClapeyronParam end
+
+"""
+    EoSParam
+Abstract type corresponding to a container of `ClapeyronParam`s.
+it supposes that all fields are `ClapeyronParam`s.
+"""
 abstract type EoSParam end
-export EoSParam
+abstract type ParametricEoSParam{T} <: EoSParam end
+
+
+"""
+    OptionsParam <: ClapeyronParam
+Abstract type corresponding to a Clapeyron parameter that only contains options.
+It is assumed that this parameter is equal to all components.
+"""
+abstract type OptionsParam <: ClapeyronParam end
+Base.eltype(param::OptionsParam) = Bool
+is_splittable(::OptionsParam) = false
+
+export EoSParam, ParametricEoSParam
 
 custom_show(param::EoSParam) = _custom_show_param(typeof(param))
+
+function build_parametric_param(param::Type{T}, args...) where T <: ParametricEoSParam
+    TT = mapreduce(eltype, promote_type, args)
+    paramtype = parameterless_type(param)
+
+    converted_params = map(x -> _convert_param(TT,x), args)
+
+    paramtype{TT}(converted_params...)
+end
 
 function _custom_show_param(::Type{T}) where T <: EoSParam
     types = fieldtypes(T)
@@ -37,9 +64,14 @@ function build_eosparam(::Type{T},data) where T <: EoSParam
     return T((data[string(name)] for name in names)...)
 end
 
+function build_eosparam(::Type{T},data) where T <: ParametricEoSParam
+    names = fieldnames(T)
+    build_parametric_param(T, (data[string(name)] for name in names)...)
+end
+
 Base.eltype(p::EoSParam) = Float64
 
-const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
+const PARSED_GROUP_VECTOR_TYPE = Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
 function pack_vectors(x::AbstractVector{<:AbstractVector})
     return PackedVectorsOfVectors.pack(x)
@@ -83,6 +115,32 @@ include("params/GroupParam.jl")
 include("params/SiteParam.jl")
 include("params/AssocOptions.jl")
 include("params/SpecialComp.jl")
+include("params/ReferenceState.jl")
+
+
+function _convert_param(T::V,val) where V
+    return _convert_param(T,parameterless_type(val),val)
+end
+
+function _convert_param(T::V,val::SpecialComp) where V
+    return val
+end
+
+function _convert_param(T::V,val::ReferenceState) where V
+    return val
+end
+
+function _convert_param(T::V,::Type{SingleParameter},val) where V
+    return convert(SingleParam{T},val)
+end
+
+function _convert_param(T::V,::Type{PairParameter},val) where V
+    return convert(PairParam{T},val)
+end
+
+function _convert_param(T::V,::Type{AssocParam},val) where V
+    return convert(AssocParam{T},val)
+end
 
 const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
 function Base.show(io::IO,param::SingleOrPair)
@@ -102,7 +160,7 @@ end
     return nothing
 end
 
-Base.iterate(param::SingleOrPair) = iterate(param.values) 
+Base.iterate(param::SingleOrPair) = iterate(param.values)
 Base.iterate(param::SingleOrPair,state) = iterate(param.values,state)
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
@@ -115,11 +173,11 @@ A common function to retrieve the main diagonal values that work on both SingleP
 function diagvalues end
 
 function diagvalues(x::AbstractMatrix)
-    return view(x, diagind(x))
+    return view(x, linearidx(x))
 end
 
 function diagvalues(x::AbstractVector)
-    return x
+    return view(x, linearidx(x))
 end
 
 function diagvalues(x::SingleOrPair)

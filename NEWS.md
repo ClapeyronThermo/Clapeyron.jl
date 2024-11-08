@@ -1,11 +1,17 @@
-# v0.5.10
+# v0.6.4
 
 ## New Features
-- Association models don't allocate anymore in the case of a single association site pair.
-- `saturation_pressure(model,T)` (`ChemPotVSaturation,IsoFugacitySaturation`) does not allocate if the calculation does not require a critical point calculation. Note that the function can still allocate if the EoS model itself allocates. the same optimizations were applied to `saturation_temperature` (`AntoineSaturation`,`ClapeyronSaturation`), `sublimation_pressure` and `melting_pressure`.
-- Bulk properties now accept a `vol0` initial point for the volume solver.
-- SAFT-VR-Mie uses a divided approach for calculating `d`: if θ = ℂ*ϵᵢ/T > 1, then it uses a 10-point gauss-laguerre integrator. Otherwise, the Assen method of finding a cut point and integrating the rest is used. A description of the method is found here: https://teqp.readthedocs.io/en/latest/models/SAFT-VR-Mie.html. the cut allows for better accuracy at higher reduced temperatures.
 
+- New model: SAFT-VR-Mie with Gross-Vrabec quatrupolar contribution (`SAFTVRMieGV`)
+- New model: Co-Oriented Fluid Functional Equation for Electrostatic interactions (`COFFEE`)
+- Better support for evaluation of model properties at V == Inf (ideal gas limit)
+- New method: `adiabatic_index`, that calculates the ratio between the isobaric and isochoric heat capacities.
+- new API: `has_fast_crit_pure`, to indicate that models can calculate their pure critical point quickly. saturation initial guesses use the result of this function to decide if and when to call the `crit_pure` routine.
+- speed ups in some pressure routines
+-
 ## Bug fixes
-- Peng-Robinson now uses more accurate `Ωa` and `Ωb` values
-- CPA/sCPA now uses SI units as input.
+
+- `MultiFluid` and `SingleFluid` models did not use the correct gas constant.
+- Fix mixing rule in `SAFTVRMie`.
+- `VT_identify_phase` now returns `:unknown` for an unstable state input.
+- Typos in `TProperty` for pure models.

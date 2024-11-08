@@ -8,8 +8,8 @@ end
 """
     QuadraticDeparture <: MultiFluidDepartureModel
     QuadraticDeparture(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 - `k0`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)

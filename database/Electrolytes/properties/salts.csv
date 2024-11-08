@@ -1,0 +1,7 @@
+Clapeyron Database File,
+Electrolytes Groups,
+species,groups
+NaCl,"[""Na+"" => 1, ""Cl-"" => 1]"
+NaBr,"[""Na+"" => 1, ""Br-"" => 1]"
+LiCl,"[""Li+"" => 1, ""Cl-"" => 1]"
+CaCl2,"[""Ca2+"" => 1, ""Cl-"" => 2]"

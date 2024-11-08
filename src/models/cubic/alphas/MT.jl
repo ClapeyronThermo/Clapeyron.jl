@@ -6,7 +6,7 @@ export MTAlpha
     MTAlpha <: MTAlphaModel
     
     MTAlpha(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

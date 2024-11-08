@@ -106,7 +106,7 @@ function x0_volume_solid(model::AnalyticalSLVModel,T,z = SA[1.0])
     return 1.01*b̄
 end
 
-function lb_volume(model::AnalyticalSLVModel,z=SA[1.0])
+function lb_volume(model::AnalyticalSLVModel,z)
     return x0_volume_solid(model,0,z)/1.01
 end
 
@@ -118,7 +118,7 @@ function x0_volume_liquid(model::AnalyticalSLVModel,T,z = SA[1.0])
     return 1.01*dot(model.params.c.values,z)
 end
 
-function T_scale(model::AnalyticalSLVModel, z=SA[1.0])
+function T_scale(model::AnalyticalSLVModel, z)
     n = sum(z)
     invn2 = one(n) / (n * n)
     _Tc = model.params.Tc.values
@@ -133,7 +133,7 @@ function x0_crit_pure(model::AnalyticalSLVModel)
     return (1.01,log10(2*vc))
 end
 
-function p_scale(model::AnalyticalSLVModel, z=SA[1.0])
+function p_scale(model::AnalyticalSLVModel, z)
     n = sum(z)
     invn2 = one(n) / (n * n)
     _pc = model.params.Pc.values
@@ -161,13 +161,13 @@ function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
 
     bd = (b̄ - d̄)
     dc = (d̄ - c̄)
-    k1 =  bd*log(1-b̄*ρ)
-    k2 =  dc*log(abs(1-c̄*ρ))
+    k1 = bd*log(1-b̄*ρ)
+    k2 = dc*log(abs(1-c̄*ρ))
     b̄ρt = b̄*ρ
 
     #The integral of 1/x is log(abs(x))
     #On solid volumes, 1-c̄*ρ is negative, so the abs matters
-    a₁ =  -(k1 + k2)/(b̄ - c̄) - (d̄ - c̄)/(b̄ - c̄)
+    a₁ = -(k1 + k2)/(b̄ - c̄) - (d̄ - c̄)/(b̄ - c̄)
     if Δ1 == Δ2
         return a₁ - ā*ρt*RT⁻¹/(1-Δ1*b̄ρt)
     else

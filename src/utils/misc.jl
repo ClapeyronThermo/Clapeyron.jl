@@ -82,7 +82,7 @@ function doi2bib(doi::String)
         if r.status == 200
             res = strip(String(take!(out)))
         else
-            res =  ""
+            res = ""
         end
         DOI2BIB_CACHE[doi] = res
         return res
@@ -122,7 +122,7 @@ end
 format_components(str::String) = [str]
 format_components(str::Tuple) = format_components(first(str))
 format_components(str::Pair) = format_components(first(str))
-format_components(str::AbstractString) = String(str)
+format_components(str::AbstractString) = format_components(String(str))
 format_components(str::Vector{String}) = str
 format_components(str) = map(format_component_i,str)
 format_component_i(str::AbstractString) = String(str)
@@ -134,4 +134,30 @@ format_gccomponents(str::Tuple) = [str]
 format_gccomponents(str::Pair) = [str]
 format_gccomponents(str) = str
 
-#used by MultiComponentFlash extension
+function mole_to_mass(model, x)
+    w = x .* mw(model)
+    return w ./ sum(w)
+end
+
+function mass_to_mole(model, w)
+    x = w ./ mw(model)
+    return x ./ sum(x)
+end
+format_gccomponents(str::String) = [str]
+format_gccomponents(str::AbstractString) = format_components(String(str))
+format_gccomponents(str::Vector{String}) = str
+
+function viewn(x,chunk,i)
+    l = length(x)
+    l < chunk*i && throw(BoundsError(x,chunk*i))
+    @view x[((i - 1)*chunk+1):(i*chunk)]
+end
+
+viewlast(x,i) = @view(x[(end - i + 1):end])
+viewfirst(x,i) = @view(x[begin:i])
+
+
+linearidx(x::AbstractVector) = 1:length(x)
+linearidx(x::AbstractMatrix) = diagind(x)
+
+mid(a,b,c) =  max(min(a,b),min(max(a,b),c))

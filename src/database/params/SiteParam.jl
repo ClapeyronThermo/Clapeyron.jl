@@ -127,7 +127,7 @@ end
 
 function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=String[])
     components = [first(i) for i ∈ input]
-    raw_sites =  [last(i) for i ∈ input]
+    raw_sites = [last(i) for i ∈ input]
     sites = [first.(sitepairs) for sitepairs ∈ raw_sites]
     n_sites = [last.(sitepairs) for sitepairs ∈ raw_sites]
     return SiteParam(components,sites,n_sites,sourcecsvs)
@@ -300,6 +300,7 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
             end
         end
     end
+
     new_sites = SiteParam(comps,comp_sites,comp_n_sites,sites.sourcecsvs,site_translator)
 
     return new_sites
@@ -335,7 +336,7 @@ function gc_to_comp_sites(param::AssocParam,sites::SiteParam)
                     if idx != 0 #if the index is valid
                         ijab_val = param[i_gc,j_gc][a_gc,b_gc]
                         if !_iszero(ijab_val) #if the value is not zero
-                            ij_pair.vec.values[idx] =ijab_val
+                            ij_pair.values.values[idx] =ijab_val
                         end
                     end
                 end
@@ -353,7 +354,7 @@ end
 function get_group_idx(param::SiteParam,i,j,a,b)
     site_translator::Vector{Vector{NTuple{2,Int}}} = param.site_translator
     k,_ = site_translator[i][a]
-    l,_ =  site_translator[j][b]
+    l,_ = site_translator[j][b]
   return k,l
 end
 

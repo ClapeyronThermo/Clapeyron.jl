@@ -49,3 +49,11 @@ Clapeyron.BubblePointMethod
 Clapeyron.DewPointMethod
 Clapeyron.TPFlashMethod
 ```
+
+## Reference States
+
+```@docs
+Clapeyron.ReferenceState
+Clapeyron.reference_state
+Clapeyron.has_reference_state
+```

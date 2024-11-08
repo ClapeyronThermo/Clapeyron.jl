@@ -17,30 +17,78 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
     return _volume_compress(model,p,T,z,V0,max_iters)
 end
 
-function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    _0 = zero(p+T+first(z))
+function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+    _0 = zero(Base.promote_eltype(model,_p,_T,_z,V0))
     _1 = one(_0)
     isnan(V0) && return _0/_0
-    pset = _1*p
-    _nan = _0/_0
-    logV0 = log(V0)*_1
-    lb_v = lb_volume(model,z)
-    function logstep(_V)
-        _V < log(lb_v) && return zero(_V)/zero(_V)
-        _V = exp(_V)
-        _p,dpdV = p∂p∂V(model,_V,T,z)
-        dpdV > 0 && return _nan #inline mechanical stability.
-        abs(_p-pset) < 3eps(pset) && return zero(_V)
-        _Δ = (pset-_p)/(_V*dpdV) #(_p - pset)*κ
-        return _Δ
+    p₀ = primalval(_1*_p)
+    XX = typeof(p₀)
+    T = primalval(_T)
+    _nan = primalval(_0/_0)
+    nan = primalval(_nan)
+    logV0 = primalval(log(V0)*_1)
+    z = primalval(_z)
+    log_lb_v = log(primalval(lb_volume(model,T,z)))
+    if iszero(p₀) & (V0 == Inf) #ideal gas
+        return _1/_0
     end
-    function f_fixpoint(_V)
-        Δ = logstep(_V)
-        vv = _V + Δ
-        return vv
+    function logstep(logVᵢ::TT) where TT
+        logVᵢ < log_lb_v && return TT(zero(logVᵢ)/zero(logVᵢ))
+        Vᵢ = exp(logVᵢ)
+        _pᵢ,_dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
+        pᵢ,dpdVᵢ = primalval(_pᵢ),primalval(_dpdVᵢ) #ther could be rare cases where the model itself has derivative information.
+        dpdVᵢ > 0 && return TT(zero(logVᵢ)/zero(logVᵢ)) #inline mechanical stability.
+        abs(pᵢ-p₀) < 3eps(p₀) && return TT(zero(Vᵢ)) #this helps convergence near critical points.
+        Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
+        return TT(Δᵢ)
     end
-    res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
-    return exp(res)
+    function f_fixpoint(logVᵢ::TT) where TT
+        res = TT(logVᵢ + logstep(logVᵢ))
+        return res
+    end
+
+    logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters)::XX,nan)
+    #netwon step to recover derivative information:
+    #V = V - (p(V) - p)/(dpdV(V))
+    #dVdP = -1/dpdV
+    #dVdT = dpdT/dpdV
+    #dVdn = dpdn/dpdV
+    Vsol = exp(logV)
+    psol,dpdVsol = p∂p∂V(model,Vsol,_T,_z)
+    return Vsol - (psol - _p)/dpdVsol
+end
+
+#"chills" a state from T0,p to T,p, starting at v = v0
+function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
+    _1 = one(Base.promote_eltype(model,p,T,z))
+    vᵢ = _1*v0
+    Tᵢ = _1*T0
+    for i in 1:100
+        d²A,dA,_ = ∂2f(model,vᵢ,Tᵢ,z)
+        ∂²A∂V∂T = d²A[1,2]
+        ∂²A∂V² = d²A[1,1]
+        ∂²A∂T² = d²A[2,2]
+        pᵢ = -dA[1]
+        dvdt = -∂²A∂V∂T/∂²A∂V²
+        dvdp = -1/∂²A∂V²
+        dtdp = -1/∂²A∂V∂T
+        ΔT = dtdp*(p - pᵢ)
+        Tnew = Tᵢ + dtdp*(p - pᵢ)
+        if Tnew < T
+            Tᵢ = (Tᵢ + T)/2
+            vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        else
+            Tᵢ = Tᵢ + dtdp*(p - pᵢ)
+        end
+        Δv = dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        vnew = vᵢ + Δv
+        if vnew > 0
+            vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        end
+        abs(ΔT) < Ttol*T && vnew > 0 && break
+        !isfinite(vᵢ) && break
+    end
+    return vᵢ
 end
 
 """
@@ -125,26 +173,30 @@ An initial estimate of the volume `vol0` can be optionally be provided.
     ```
 """
 function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0=nothing)
-    return volume_impl(model,p,T,z,phase,threaded,vol0)
+    #this is used for dispatch on symbolic variables
+    return _volume(model,p,T,z,phase,threaded,vol0)
 end
 
-function _v_stable(model,V,T,z,phase)
-    if phase != :stable
-        return true
-    end
-    return isstable(model,V,T,z)
+function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
+    return volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
 fluid_model(model) = model
 solid_model(model) = model
 
-function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
-    return _volume_impl(model,p,T,z,phase,threaded,vol0)
+volume_impl(model,p,T) = volume_impl(model,p,T,SA[1.0],:unknown,true,nothing)
+volume_impl(model,p,T,z) = volume_impl(model,p,T,z,:unknown,true,nothing)
+volume_impl(model,p,T,z,phase) = volume_impl(model,p,T,z,phase,true,nothing)
+volume_impl(model,p,T,z,phase,threaded) = volume_impl(model,p,T,z,phase,threaded,nothing)
+
+function volume_impl(model::EoSModel,p,T,z,phase,threaded,vol0)
+    return default_volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
-function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
+function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
 #Threaded version
-    TYPE = typeof(p+T+first(z)+one(eltype(model)))
+    check_arraysize(model,z)
+    TYPE = Base.promote_eltype(model,p,T,z)
     nan = zero(TYPE)/zero(TYPE)
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     fluid = fluid_model(model)
@@ -164,16 +216,22 @@ function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=tru
         end
     end
 
-    if phase != :unknown
+    if !is_unknown(phase) && phase != :stable
         V0 = x0_volume(model,p,T,z,phase=phase)
         if is_solid(phase)
             V = _volume_compress(solid,p,T,z,V0)
         else
             V = _volume_compress(fluid,p,T,z,V0)
         end
-        #isstable(model,V,T,z,phase) the user just wants that phase
         return V
     end
+
+    #at this point we are sure that we don't know the phase and we weren't being asked by a particular phase or initial point
+    #return ideal gas (V = Inf)
+    if iszero(p)
+        return one(TYPE)/zero(TYPE)
+    end
+
     Vg0 = x0_volume(fluid,p,T,z,phase=:v)
     Vl0 = x0_volume(fluid,p,T,z,phase=:l)
     Vs0 = x0_volume_solid(solid,T,z) #Needs to be const-propagated.
@@ -190,58 +248,52 @@ function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=tru
         v3::TYPE = take!(ch) 
         volumes = (v1,v2,v3)
         =#
-        
-        _Vg = Threads.@spawn _volume_compress($fluid,$p,$T,$z,$Vg0)
-        _Vl = Threads.@spawn _volume_compress($fluid,$p,$T,$z,$Vl0)
+        _Vg = StableTasks.@spawn _volume_compress($fluid,$p,$T,$z,$Vg0)
+        _Vl = StableTasks.@spawn _volume_compress($fluid,$p,$T,$z,$Vl0)
         if !isnan(Vs0)
-            _Vs = Threads.@spawn _volume_compress($solid,$p,$T,$z,$Vs0)
+            _Vs = StableTasks.@spawn _volume_compress($solid,$p,$T,$z,$Vs0)
         else
             _Vs = nan
         end
-        Vg::TYPE = fetch(_Vg)
-        Vl::TYPE = fetch(_Vl)
-        Vs::TYPE = fetch(_Vs)
+        Vg = fetch(_Vg)::TYPE
+        Vl = fetch(_Vl)::TYPE
+        Vs = fetch(_Vs)::TYPE
         volumes = (Vg,Vl,Vs)
     else
-        Vg =  _volume_compress(fluid,p,T,z,Vg0)
-        Vl =  _volume_compress(fluid,p,T,z,Vl0)
-        Vs =  _volume_compress(solid,p,T,z,Vs0)
+        Vg = _volume_compress(fluid,p,T,z,Vg0)
+        Vl = _volume_compress(fluid,p,T,z,Vl0)
+        Vs = _volume_compress(solid,p,T,z,Vs0)
         volumes = (Vg,Vl,Vs)
     end
-    
-    function gibbs(m,fV)
-        isnan(fV) && return one(fV)/zero(fV)
-        _df,_f =  ∂f(m,fV,T,z)
-        dV,_ = _df
-        return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
+    idx,v,g = volume_label((fluid,fluid,solid),p,T,z,volumes)
+    if phase == :stable
+        !VT_isstable(model,v,T,z,false) && return nan
     end
-    
-    valid = 3 - sum(isnan.(volumes))
+    return v
+end
 
-    if valid == 0 #no possible volumes
-        return nan
-    elseif valid == 1 #only one possible volume
-        idx = findfirst(!isnan,volumes)::Int
-        v = volumes[idx]
-        if idx == 3
-            _v_stable(solid,v,T,z,phase)
-        else
-            _v_stable(fluid,v,T,z,phase)
-        end
-        return v        
-    else
-        v1,v2,v3 = volumes
-        g1,g2,g3 = gibbs(fluid,v1),gibbs(fluid,v2),gibbs(solid,v3)
-        g = (g1,g2,g3)
-        _,idx = findmin(g)
-        v = volumes[idx]
-        if idx == 3
-            _v_stable(solid,v,T,z,phase)
-        else
-            _v_stable(fluid,v,T,z,phase)
-        end
-        return v
+function volume_label(models::F,p,T,z,vols) where F
+    function gibbs(model,fV)
+        isnan(fV) && return one(fV)/zero(fV)
+        f(V) = eos(model,V,T,z)
+        _f,_dV = Solvers.f∂f(f,fV)
+        #for the ideal gas case, p*V == 0, so the result reduces to eos(model,V,T,z)
+        fV == Inf && iszero(_dV) && return _f
+        return ifelse(abs((p+_dV)/p) > 0.03,one(fV)/zero(fV),_f + p*fV)
     end
+    idx = 0
+    _0 = zero(Base.promote_eltype(models[1],p,T,z))
+    g = one(_0)/_0
+    v = _0/_0
+    for (i,vi) in pairs(vols)
+        gi = gibbs(models[i],vi)
+        if gi < g
+            g = gi
+            idx = i
+            v = vi
+        end
+    end
+    return idx,v,g
 end
 
 #=
@@ -254,8 +306,10 @@ function _label_and_volumes(model::EoSModel,cond)
     Vv = volume(model,p,T,z,phase =:v)
     function gibbs(fV)
         isnan(fV) && return one(fV)/zero(fV)
-        _df,_f =  ∂f(model,fV,T,z)
+        _df,_f = ∂f(model,fV,T,z)
         dV,_ = _df
+        #for the ideal gas case, p*V == 0, so the result reduces to eos(model,V,T,z)
+        fV == Inf && iszero(dV) && return _f
         return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
     end
     isnan(Vl) && return 1,Vv,Vv #could not converge on gas volume, assuming stable liquid phase

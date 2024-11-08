@@ -14,12 +14,15 @@ export CPPCSAFT
 
 """
     CPPCSAFTModel <: PCSAFTModel
+
     CPPCSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
+
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
@@ -81,7 +84,7 @@ function data(model::CPPCSAFTModel, V, T, z)
     m = model.params.segment.values
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    m̄ = sum(z[i]*m[i,i] for i in @comps) #TODO: check why dot(z,diagvalues(m)) allocates
+    m̄ = sum(z[i]*m[i,i] for i in @comps)
     ϵmix = zero(eltype(model))
     σmix = zero(eltype(model))
     for i in @comps
@@ -100,14 +103,18 @@ function data(model::CPPCSAFTModel, V, T, z)
     ϵmix = ϵmix/(σmix*σmix*σmix*m̄*m̄)
     m̄ = m̄/sum(z)
     _d = @f(d)
-    ζ0,ζ1,ζ2,ζ3 = @f(ζ0123,_d)
+    ζ0,ζ1,ζ2,ζ3 = @f(ζ0123,_d,diagvalues(m))
     (_d,ζ0,ζ1,ζ2,ζ3,m̄,ϵmix,σmix)
 end
 
 function a_hs(model::CPPCSAFTModel,V,T,z,_data = @f(data))
     _d,ζ0,ζ1,ζ2,ζ3,m̄,ϵmix,σmix = _data
     θ = CPPCSAFT_theta(T,ϵmix)
-    _a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    if !iszero(ζ3)
+        _a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    else
+        _a_hs = @f(bmcs_hs_zero_v,_d)
+    end
     return _a_hs*sqrt((1 - ζ3) / (1 - ζ3 / θ^3))
 end
 

@@ -29,70 +29,154 @@ function mixture_critical_constraint(model,V,T,z)
     return LL , det(MM)
 end
 
-function μp_equality(model,v_l,v_v,T,x,y)
-    F = zeros(length(model)+1)
-    ps = p_scale(model,x)
-    return μp_equality(model, F, T, v_l, v_v, x, y,ps)
+function μp_equality(model,v,T,w)
+    np = length(v)
+    nc = length(model)
+    F = zeros(nc*(np - 1) + np - 1)
+    return μp_equality(model, F, T, v, w)
 end
 
-function μp_equality(model::EoSModel, F, T, v_l, v_v, x, y,ps,Ts = T)
-    n_c = length(x)
-    p_l = pressure(model,v_l,T,x)
-    p_v = pressure(model,v_v,T,y)
-    μ_l = similar(F,n_c)
-    μ_l = VT_chemical_potential!(μ_l,model,v_l,T,x)
-    for i in 1:n_c
-        F[i] = μ_l[i]
+function v_from_η(model::EoSModel, η, T, z)
+    #we want a transformation such
+    #v = lb -> η = -Inf
+    #v = Inf, η = Inf
+    #η = log(v - lb)
+    #v = exp(η) + lb
+   lb = lb_volume(model,T,z)
+   V = exp(η) + lb/sum(z)
+end
+
+function v_from_η(model, model_r, η, T, z)
+    if model_r == nothing
+        return v_from_η(model, η, T, z)
+    else
+        return v_from_η(model_r, η, T, z)
     end
-    RT⁻¹ = 1/(Rgas(model)*Ts)
-    μ_v = VT_chemical_potential!(μ_l,model,v_v,T,y)
-    for i in 1:n_c
-        μli = F[i]
-        μvi = μ_v[i]
-        Δμ = μli - μvi
-        F[i] = Δμ*RT⁻¹
+end
+
+function η_from_v(model::EoSModel, V, T, z)
+    lb =lb_volume(model,T,z)
+    return log((V - lb)/sum(z))
+end
+
+function η_from_v(model::EoSModel,model_r, V, T, z)
+    if model_r == nothing
+        return η_from_v(model,V,T,z)
+    else
+        return η_from_v(model_r,V,T,z)
     end
-    F[n_c+1] = (p_l-p_v)/ps
+end
+
+struct TPspec{TT}
+    T::TT
+    p::TT
+    pressure_specified::Bool
+end
+
+Tspec(T) = TPspec(T,zero(T)/zero(T),false)
+
+function Pspec(p,T)
+    _p,_T = promote(p,T)
+    return TPspec(_T,_p,true)
+end
+
+function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.@specialize(w))
+    p,T = PT.p,PT.T
+    R = Rgas(model)
+    RTinv = 1/(R*T)
+    w1,v1 = w[1],v[1]
+    n_c = length(w1)
+    n_p = length(v)
+
+    μ1 = μj = similar(F,length(model))
+    p1 = pressure(model,v1,T,w1)
+    ∑w1 = sum(w1)
+    VT_chemical_potential_res!(μ1,model,v1,T,w1)
+    for j in 1:(n_p - 1)
+        Fj = @inbounds viewn(F,n_c,j)
+        for i in 1:n_c
+            Fj[i] = μ1[i]
+        end
+    end
+
+    p⁻¹ = 1/p_scale(model,w1)
+    idx_p_start = n_c*(n_p - 1) + 1
+    idx_p_end = n_c*(n_p - 1) + n_p - 1
+    Fp = view(F,idx_p_start:idx_p_end)
+    for j in 1:(n_p - 1)
+        vj = @inbounds v[j+1]
+        wj = @inbounds w[j+1]
+        pj = pressure(model,vj,T,wj)
+        #pᵣ_res_j = pressure_res(model,vj,T,wj)*RTinv
+        #Δp = pᵣ_res_1 - pᵣ_res_j
+        #Δp += pᵣ_ideal_1 - sum(wj)/vj
+        Fp[j] = (p1 - pj)*p⁻¹
+        VT_chemical_potential_res!(μ1,model,vj,T,wj)
+        Fj = viewn(F,n_c,j)
+
+        for i in 1:n_c
+            μ1i = Fj[i]
+            μji = μj[i]
+            Δuᵣ = μ1i - μji
+            Δu = Δuᵣ*RTinv + log(vj*w1[i]/(v1*wj[i]))
+            Fj[i] = Δu
+        end
+    end
+
+    if PT.pressure_specified
+        #=
+        p = -deos/dv = -deos_res/dt - d_eos_ideal/dv
+        p = RT*(a_res)/dv - sum(z)*RT/v
+        p/RT = -da_res/dv - 1/v
+         =#
+        #pᵣ_1 = pᵣ_res_1 + pᵣ_ideal_1
+        F[idx_p_end + 1] = (p1 - p)*p⁻¹
+    end
+
     return F
 end
 
 #non-condensable/non-volatile version
-function μp_equality(model_long::EoSModel,model_short::EoSModel, F, T, v_long, v_short, x_long, x_short,ps_long,short_view, Ts = T)
+function μp_equality2(models::NTuple{2,M}, F, PT::TPspec, v, w, short_view) where M <: EoSModel
+    p,T = PT.p,PT.T
+    model_long, model_short = models
+    v_long, v_short = v
+    x_long, x_short = w
     n_short = length(x_short)
     n_long = length(x_long)
     μ_long = similar(F,n_long)
-    μ_long = VT_chemical_potential!(μ_long,model_long,v_long,T,x_long)
+    μ_long = VT_chemical_potential_res!(μ_long,model_long,v_long,T,x_long)
     p_long = pressure(model_long,v_long,T,x_long)
     p_short = pressure(model_short,v_short,T,x_short)
-    RT⁻¹ = 1/(Rgas(model_long)*Ts)
+    p⁻¹,RT⁻¹ = equilibria_scale(model_long,x_long)
+    RTinv = 1/(Rgas(model_long)*T)
     μ_long_view = @view(μ_long[short_view])
+    x_long_view = @view(x_long[short_view])
     for i in 1:n_short
         F[i] = μ_long_view[i]
     end
     μ_short = resize!(μ_long,n_short)
-    μ_short = VT_chemical_potential!(μ_short,model_short,v_short,T,x_short)
+    μ_short = VT_chemical_potential_res!(μ_short,model_short,v_short,T,x_short)
     for i in 1:n_short
         μ_long_i = F[i]
         μ_short_i = μ_short[i]
-        Δμ = (μ_long_i - μ_short_i)*RT⁻¹
-        F[i] = Δμ
+        Δuᵣ = (μ_long_i - μ_short_i)
+        Δμ = Δuᵣ*RTinv + log(v_short*x_long_view[i]/(v_long*x_short[i]))
+        F[i] = Δμ*RT⁻¹
     end
-    F[n_short+1] = (p_long-p_short)/ps_long
+    F[n_short+1] = (p_long-p_short)*p⁻¹
+    if PT.pressure_specified
+        F[n_short+2] = (p_long-p)*p⁻¹
+    end
     return F
 end
 
-function μp_equality(model::EoSModel,::Nothing, F, T, v_l, v_v, x, y,ps,_view,Ts = T)
-    return μp_equality(model,F,T,v_l,v_v,x,y,ps,Ts)
+function μp_equality2(model::EoSModel,::Nothing, F, T, v, w, _view)
+    return μp_equality(model,F,T,v,w)
 end
 
-function VT_chemical_potential!(result,model,V,T,z)
-    fun(x) = eos(model,V,T,x)
-    return ForwardDiff.gradient!(result,fun,z)
-end
-
-function VT_chemical_potential_res!(result,model,V,T,z)
-    fun(x) = eos_res(model,V,T,x)
-    return ForwardDiff.gradient!(result,fun,z)
+function μp_equality2(model::EoSModel,model2::EoSModel, F, T, v, w, _view)
+    return μp_equality2((model,model2),F,T,v,w,_view)
 end
 
 function wilson_k_values(model::EoSModel,p,T,crit = nothing)
@@ -119,17 +203,19 @@ end
 function bubbledew_check(vl,vv,zin,zout)
     (isapprox(vl,vv) && isapprox(zin,zout)) && return false
     !all(isfinite,zout) && return false
-    !all(isfinite,(vl,vv)) && return false
+    !isfinite(vv) && return false
+    !all(>=(0),zin) && return false
+    !all(>=(0),zout) && return false
     return true
 end
 
 #generator for candidate fractions, given an initial composition, method by Pereira et al. (2010).
 function initial_candidate_fractions(n)
-    
+
     nc = length(n)
     x̂ = [zeros(nc) for i in 1:nc-1]
     x̄ = [zeros(nc) for i in 1:nc-1]
-    
+
     for i ∈ 1:nc-1
         x̂i = x̂[i]
         x̄i = x̄[i]

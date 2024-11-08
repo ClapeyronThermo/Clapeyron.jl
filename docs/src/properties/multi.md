@@ -64,6 +64,8 @@ Clapeyron.VT_mechanical_stability
 Clapeyron.VT_diffusive_stability
 Clapeyron.VT_chemical_stability
 Clapeyron.tpd
+Clapeyron.spinodal_pressure
+Clapeyron.spinodal_temperature
 ```
 
 ## TP Flash
@@ -73,6 +75,7 @@ Clapeyron.tp_flash
 Clapeyron.DETPFlash
 Clapeyron.RRTPFlash
 Clapeyron.MichelsenTPFlash
+Clapeyron.MultiPhaseTPFlash
 Clapeyron.MCFlashJL
 Clapeyron.numphases
 Clapeyron.supports_reduction

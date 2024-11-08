@@ -13,6 +13,7 @@ end
 """
 function α_function end
 
+α_function(model,V,T,z) = α_function(model,V,T,z,model.alpha)
 #all alphas at the moment don't have any need for recombine!
 recombine_impl!(model::AlphaModel) = model
 recombine_alpha!(model::CubicModel,alpha::AlphaModel) = recombine!(alpha)

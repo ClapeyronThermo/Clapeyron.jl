@@ -18,10 +18,11 @@ end
     PeTSModel <: EoSModel
 
     PeTS(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false)
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false)
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
@@ -112,7 +113,7 @@ const PeTS_B = (
     209.3942909,
     -353.2743581)
 
-function lb_volume(model::PeTSModel,z=SA[1.0])
+function lb_volume(model::PeTSModel,z)
     σ3,_,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
     return m̄*N_A*σ3*π/6
 end
@@ -122,13 +123,13 @@ function x0_volume_liquid(model::PeTSModel,T,z)
     return v_lb*1.8
 end
 
-function p_scale(model::PeTSModel,z = SA[1.0])
+function p_scale(model::PeTSModel,z)
     σ3,ϵ,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
     v = m̄*N_A*σ3
     return R̄*ϵ/v
 end
 
-function T_scale(model::PeTSModel,z=SA[1.0])
+function T_scale(model::PeTSModel,z)
     σ3,ϵ,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
     return ϵ
 end

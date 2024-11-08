@@ -1,5 +1,5 @@
-Clapeyron Database File,,,,,,,,
-PCSAFT Like Parameters,,,,,,,,
+Clapeyron Database File
+BACKSAFT Like Parameters
 species,DIPPR Number,Mw,segment,c,vol,epsilon,alpha,source
 argon,,16,1.0,1.0,12.08,149.2,1.0,
 nitrogen,,30,1.0,1.0,14.05,128.9,1.031,

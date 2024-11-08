@@ -10,10 +10,20 @@ struct FluidCorrelation{V,L,Sat} <: RestrictedEquilibriaModel
     saturation::Sat
 end
 
-__gas_model(model::FluidCorrelation) = model.gas
-activity_coefficient(model::FluidCorrelation, p, T,z=SA[1.]; phase = :unknown, threaded=true) = FillArrays.Ones(length(model)) 
+gas_model(model::FluidCorrelation) = model.gas
 
-function volume_impl(model::FluidCorrelation, p, T, z, phase=:unknown, threaded=false, vol0=nothing)
+function activity_coefficient(model::FluidCorrelation,p,T,z=SA[1.];
+    μ_ref = nothing,
+    reference = :pure,
+    phase=:unknown,
+    threaded=true,
+    vol0=nothing)
+    return FillArrays.Ones(length(model))
+end
+
+reference_chemical_potential_type(model::FluidCorrelation) = :zero
+
+function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
     _0 = zero(p+T+first(z))
     nan = _0/_0
     if is_liquid(phase)
@@ -75,21 +85,21 @@ function saturation_pressure(model::FluidCorrelation,T,method::SaturationMethod)
     end
 end
 
-function crit_pure(model::FluidCorrelation)
-    single_component_check(crit_pure,model)
-    return crit_pure(model.saturation)
-end
-
-function x0_sat_pure(model::FluidCorrelation,T)
-    p = x0_psat(model,T)
+function x0_sat_pure(model::FluidCorrelation,T,crit = nothing)
+    p = x0_psat(model,T,crit)
     vl = volume(model.liquid,p,T,phase=:l)
     vv = volume(model.gas,p,T,phase=:v)
     return vl,vv
 end
 
-function x0_psat(model::FluidCorrelation,T)
+function x0_psat(model::FluidCorrelation,T,crit = nothing)
     ps,_,_ = saturation_pressure(model.saturation,T)
     return ps
+end
+
+function crit_pure(model::FluidCorrelation)
+    single_component_check(crit_pure,model)
+    return crit_pure(model.saturation)
 end
 
 function saturation_temperature(model::FluidCorrelation,p,method::SaturationMethod)
@@ -123,7 +133,7 @@ function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
     μpure = only.(VT_chemical_potential_res.(gases,vv_pure,T))
     ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
     g_pure = [VT_gibbs_free_energy(gases[i],sats[i][2],T) for i in 1:length(model)]
-    return PTFlashWrapper(model.components,model,sats,ϕpure,μpure)
+    return PTFlashWrapper(model.components,model,sats,ϕpure,μpure,equilibrium)
 end
 
 function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
@@ -133,7 +143,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,
     fug = wrapper.fug
     RT = R̄*T
     volx = volume(model.liquid, p, T, x, phase = phasex, vol0 = volx)
-    lnϕy, voly = lnϕ(__gas_model(model), p, T, y; phase=phasey, vol0=voly)
+    lnϕy, voly = lnϕ(gas_model(model), p, T, y; phase=phasey, vol0=voly)
     if is_vapour(phasey)
         for i in eachindex(lnK)
             if iny[i]

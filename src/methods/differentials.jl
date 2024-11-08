@@ -7,23 +7,23 @@
 """
     ∂f∂T(model,V,T,z=SA[1.0])
 
-returns `f` and `∂f/∂T` at constant total volume and composition, where f is the total helmholtz energy, given by `eos(model,V,T,z)`
+returns `∂f/∂T` at constant total volume and composition, where f is the total helmholtz energy, given by `eos(model,V,T,z)`
 
 """
-function ∂f∂T(model,V,T,z=SA[1.0])
+function ∂f∂T(model,V,T,z)
     f(∂T) = eos(model,V,∂T,z)
     return Solvers.derivative(f,T)
 end
 
 """
-    ∂f∂V(model,V,T,z=SA[1.0])
+    ∂f∂V(model,V,T,z)
 
-returns `f` and `∂f/∂V` at constant temperature and composition, where f is the total helmholtz energy, given by `eos(model,V,T,z)`, and V is the total volume
-
+returns `∂f/∂V` at constant temperature and composition, where f is the total helmholtz energy, given by `eos(model,V,T,z)`, and V is the total volume
 """
 function ∂f∂V(model,V,T,z)
-    f(∂V) = eos(model,∂V,T,z)
-    return Solvers.derivative(f,V)
+    f(∂V) = a_res(model,∂V,T,z)
+    ∂aᵣ∂V = Solvers.derivative(f,V)
+    sum(z)*Rgas(model)*T*(∂aᵣ∂V - 1/V)
 end
 
 #returns a tuple of the form ([∂f∂V,∂f∂T],f),using the least amount of computation
@@ -54,6 +54,28 @@ function ∂f(model,V,T,z)
     return _df,_f
 end
 
+function ∂f_vec(model,V,T,z)
+    _df,_f = ∂f(model,V,T,z)
+    return SVector(_f,_df[1],_df[2])
+end
+
+function f∂fdV(model,V,T,z)
+    f(x) = eos(model,x,T,z)
+    A,∂A∂V = Solvers.f∂f(f,V)
+    return SVector(A,∂A∂V)
+end
+
+function f∂fdT(model,V,T,z)
+    f(x) = eos(model,V,x,z)
+    A,∂A∂T = Solvers.f∂f(f,T)
+    return SVector(A,∂A∂T)
+end
+
+function ∂f_res(model,V,T,z)
+    f(∂V,∂T) = eos_res(model,∂V,∂T,z)
+    _f,_df = Solvers.fgradf2(f,V,T)
+    return _df,_f
+end
 #returns p and ∂p∂V at constant T
 #it doesnt do a pass over temperature, so its
 #faster that d2f when only requiring d2fdV2
@@ -67,7 +89,7 @@ returns `p` and `∂p/∂V` at constant temperature, where p is the pressure = `
 function p∂p∂V(model,V,T,z=SA[1.0])
     f(∂V) = pressure(model,∂V,T,z)
     p,∂p∂V = Solvers.f∂f(f,V)
-    return p,∂p∂V
+    return SVector(p,∂p∂V)
 end
 
 """
@@ -94,7 +116,7 @@ Where `V` is the total volume, `T` is the temperature and `f` is the total helmh
 """
 function ∂2f(model,V,T,z)
     f(_V,_T) = eos(model,_V,_T,z)
-    _f,_∂f,_∂2f =  Solvers.∂2(f,V,T)
+    _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
 
@@ -122,7 +144,7 @@ Where `V` is the total volume, `T` is the temperature and `p` is the pressure.
 """
 function ∂2p(model,V,T,z)
     f(_V,_T) = pressure(model,_V,_T,z)
-    _f,_∂f,_∂2f =  Solvers.∂2(f,V,T)
+    _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
 
@@ -156,5 +178,26 @@ function ∂²³f(model,V,T,z=SA[1.0])
     _, ∂²A∂V², ∂³A∂V³ = Solvers.f∂f∂2f(f,V)
     return ∂²A∂V², ∂³A∂V³
 end
+
+"""
+    ∂²f∂T²(model,V,T,z=SA[1.0])
+
+returns `∂²A/∂T²` via Autodiff. Used mainly for ideal gas properties. It is recommended to overload this function for ideal models, as is equivalent to -Cv(T)/T
+
+"""
+function ∂²f∂T²(model,V,T,z)
+    A(x) = eos(model,V,x,z)
+    ∂A∂T(x) = Solvers.derivative(A,x)
+    ∂²A∂T²(x) = Solvers.derivative(∂A∂T,x)
+    return ∂²A∂T²(T)
+end
+
+function d2fdt2(model,V,T,z)
+    A(x) = eos(model,V,x,z)
+    ∂A∂T(x) = Solvers.derivative(A,x)
+    ∂²A∂T²(x) = Solvers.derivative(∂A∂T,x)
+    return ∂²A∂T²(T)
+end
+
 
 const _d23f = ∂²³f

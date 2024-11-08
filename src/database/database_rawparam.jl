@@ -64,7 +64,7 @@ function joindata!(old::RawParam,new::RawParam)
             error_different_grouptype(old,new,old.name)
         end
     end
-    
+
     if !type_sucess
         error_clashing_headers(old,new)
     end
@@ -93,8 +93,6 @@ error_different_grouptype(old::RawParam,new::RawParam) = error_different_groupty
     """))
 end
 
-
-
 @noinline function error_clashing_headers(old::RawParam,new::RawParam)
     told = Symbol(old.type)
     tnew = Symbol(new.type)
@@ -122,7 +120,7 @@ it also builds empty params, if you pass a CSVType instead of a RawParam
 Base.@nospecialize
 
 function compile_param(components,name,raw::RawParam,site_strings,options)
-    if raw.type == singledata || raw.type == groupdata || raw.type == structgroupdata
+    if raw.type == singledata || raw.type == groupdata
         return compile_single(name,components,raw,options)
     elseif raw.type == pairdata
         return compile_pair(name,components,raw,options)
@@ -144,7 +142,7 @@ function compile_param(components,name,raw::CSVType,site_strings,options)
 end
 
 function compile_single(name,components,raw::RawParam,options)
-    
+
     if isnothing(raw.component_info) #build from named tuple
         return SingleParam(raw.name,components,raw.data)
     end
@@ -175,20 +173,21 @@ function compile_single(name,components,raw::RawParam,options)
 end
 
 function compile_single(name,components,type::CSVType,options)
+    param = SingleParam(name,components)
     if name ∈ options.ignore_missing_singleparams
-        return SingleParam(name,components)
+        return param
     else
-        throw(MissingException("cannot found values of " * error_color(name) * " for all input components."))
+        SingleMissingError(param,all = true)
     end
 end
 
 function compile_pair(name,components,raw::RawParam,options)
-    
+
     if isnothing(raw.component_info) #build from named tuple
         l = length(components)
         return PairParam(raw.name,components,reshape(raw.data,(l,l)))
     end
-    
+
     EMPTY_STR = ""
     symmetric = name ∉ options.asymmetricparams
     l = length(components)
@@ -245,7 +244,7 @@ function compile_assoc(name,components,raw::RawParam,site_strings,options)
         sources[i] = raw.sources[j]
         sources_csv[i] = raw.csv[j]
     end
-    
+
     idxs = sortperm(ijab) #CompressedAssoc4DMatrix requires lexicographically sorted component-site idxs
     ijab = ijab[idxs]
     inner_values = inner_values[idxs]
@@ -315,11 +314,15 @@ function is_valid_param(param::PairParameter,options)
     return nothing
 end
 
-function SingleMissingError(param::SingleParameter)
-    missingvals = param.ismissingvalues
-    idx = findall(param.ismissingvalues)
-    comps = param.components[idx]
-    throw(MissingException(string("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")))
+function SingleMissingError(param::SingleParameter;all = false)
+    if all
+        throw(MissingException("cannot found values of " * error_color(param.name) * " for all input components."))
+    else
+        missingvals = param.ismissingvalues
+        idx = findall(param.ismissingvalues)
+        comps = param.components[idx]
+        throw(MissingException(string("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")))        
+    end
 end
 
 function PairMissingError(param::PairParameter)

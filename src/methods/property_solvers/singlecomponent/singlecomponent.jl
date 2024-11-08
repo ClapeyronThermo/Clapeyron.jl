@@ -28,32 +28,30 @@ end
 
 function μp_equality1_p(model1,model2,v1,v2,T,ps,μs)
     z = SA[1.0]
-    eos1(V) = eos(model1,V,T,z)
-    eos2(V) = eos(model2,V,T,z)
-    A1,Av1 = Solvers.f∂f(eos1,v1)
-    A2,Av2 =Solvers.f∂f(eos2,v2)
-    μ1 = muladd(-v1,Av1,A1)
-    μ2 = muladd(-v2,Av2,A2)
-    p1 = - Av1
-    p2 = - Av2
-    Fμ = (μ1 - μ2)*μs
+    RT = Rgas(model1)*T
+    f1(V) = a_res(model1,V,T,z)
+    f2(V) = a_res(model2,V,T,z)
+    A1,Av1 = Solvers.f∂f(f1,v1)
+    A2,Av2 =Solvers.f∂f(f2,v2)
+    p1,p2 = RT*(-Av1 + 1/v1),RT*(-Av2 + 1/v2)
+    Δμᵣ = A1 - v1*Av1 - A2 + v2*Av2 + log(v2/v1)
+    Fμ = Δμᵣ
     Fp = (p1 - p2)*ps
     return SVector(Fμ,Fp)
 end
 
 function μp_equality1_T(model1,model2,v1,v2,p,T,ps,μs)
     z = SA[1.0]
-    eos1(V) = eos(model1,V,T,z)
-    eos2(V) = eos(model2,V,T,z)
-    A1,Av1 = Solvers.f∂f(eos1,v1)
-    A2,Av2 =Solvers.f∂f(eos2,v2)
-    μ1 = muladd(-v1,Av1,A1)
-    μ2 = muladd(-v2,Av2,A2)
-    p1 = - Av1
-    p2 = - Av2
+    RT = Rgas(model1)*T
+    f1(V) = a_res(model1,V,T,z)
+    f2(V) = a_res(model2,V,T,z)
+    A1,Av1 = Solvers.f∂f(f1,v1)
+    A2,Av2 =Solvers.f∂f(f2,v2)
+    p1,p2 = RT*(-Av1 + 1/v1),RT*(-Av2 + 1/v2)
+    Δμᵣ = A1 - v1*Av1 - A2 + v2*Av2 + log(v2/v1)
+    Fμ = Δμᵣ
     Fp1 = (p1 - p)*ps
     Fp2 = (p2 - p)*ps
-    Fμ  = (μ1 - μ2)*μs
     return SVector(Fμ,Fp1,Fp2)
 end
 
@@ -62,7 +60,6 @@ function try_2ph_pure_pressure(model,T,v10,v20,ps,mus,method)
 end
 
 function try_2ph_pure_pressure(model1,model2,T,v10,v20,ps,mus,method)
-
     f(x) = μp_equality1_p(model1,model2,exp(x[1]),exp(x[2]),T,ps,mus)
     TT = T*oneunit(eltype(model1))*oneunit(eltype(model2))
     V0 = svec2(log(v10),log(v20),TT)

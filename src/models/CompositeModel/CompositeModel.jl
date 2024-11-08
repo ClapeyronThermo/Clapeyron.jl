@@ -3,6 +3,7 @@ struct CompositeModel{𝔽,𝕊} <: EoSModel
     components::Vector{String}
     fluid::𝔽
     solid::𝕊
+    mapping::Union{Vector{Pair{Vector{Tuple{String,Int64}},Tuple{String,Int64}}},Nothing}
 end
 =#
 
@@ -62,7 +63,7 @@ julia> bubble_pressure(model,300.15,[0.9,0.1])
 (2694.150594740186, 0.00016898441224336215, 0.9239727973658585, [0.7407077952279438, 0.2592922047720562])
 
 #using a correlation-based fluid
-julia> fluidmodel = CompositeModel(["octane","heptane"],liquid = RackettLiquid,saturation = DIPPR101Sat,gas = BasicIdeal); 
+julia> fluidmodel = CompositeModel(["octane","heptane"],liquid = RackettLiquid,saturation = DIPPR101Sat,gas = BasicIdeal);
 model2 = CompositeModel(["octane","heptane"],liquid = UNIFAC, fluid = fluidmodel)
 Composite Model (γ-ϕ) with 2 components:
  Activity Model: UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}("octane", "heptane")
@@ -89,10 +90,38 @@ include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
 include("PolExpVapour.jl")
 include("SolidModel/SolidHfus.jl")
+include("SolidModel/SolidKs.jl")
 include("bubble_point.jl")
 include("dew_point.jl")
 
-function CompositeModel(components;
+function init_model_act(model,components,userlocations,verbose)
+    init_model(model,components,userlocations,verbose)
+end
+
+function init_model_act(model::Union{Type{<:ActivityModel},Base.Function},components,userlocations,verbose)
+    if verbose
+        @info "Building an instance of $(info_color(string(model))) with components $components, without its inner puremodel"
+    end
+    try
+    model(components;userlocations,verbose,puremodel = BasicIdeal())
+    catch e
+        if e isa MethodError
+            #check for invalid keyword :puremodel. that means that the model does not support puremodel
+            #start as usual
+            if e.args isa NamedTuple && haskey(e.args,:puremodel) && length(e.args) == 1
+                init_model(model,components,userlocations,verbose)
+            else
+                rethrow(e)
+            end
+        else
+            rethrow(e)
+        end
+    end
+end
+
+
+function CompositeModel(components ;
+    mapping = nothing,
     liquid = nothing,
     gas = nothing,
     fluid = nothing,
@@ -134,15 +163,15 @@ function CompositeModel(components;
         init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
         init_sat = init_model(saturation,components,saturation_userlocations,verbose)
         init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat)
-    elseif _fluid !== nothing && !isnothing(liquid) && (gas == saturation == nothing)
+    elseif !isnothing(_fluid) && !isnothing(liquid) && (gas == saturation == nothing)
         #case 3: liquid activity and a model for the fluid.
-        init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+        init_liquid = init_model_act(liquid,components,liquid_userlocations,verbose)
         if init_liquid isa ActivityModel
             #case 3.a, the fluid itself is a composite model. unwrap the fluid field.
             if _fluid isa CompositeModel
-                _fluid = EoSVectorParam(_fluid.fluid,_components)
+                _fluid = init_puremodel(_fluid.fluid,_components,nothing,verbose)
             else
-                _fluid = EoSVectorParam(_fluid,_components)
+                _fluid = init_puremodel(_fluid,_components,nothing,verbose)
             end
             init_fluid = GammaPhi(_components,init_liquid,_fluid)
         else
@@ -167,7 +196,23 @@ function CompositeModel(components;
     else
         throw(ArgumentError("Invalid specification for CompositeModel"))
     end
-    return CompositeModel(_components,init_fluid,init_solid)
+
+    if isnothing(init_fluid) || isnothing(init_solid) && isnothing(mapping)
+        _mapping = nothing
+    else
+        if isnothing(mapping) && init_fluid.components!=init_solid.components
+            throw(ArgumentError("Invalid specification for CompositeModel. Please specify mapping between species in solid and liquid phase"))
+        elseif isnothing(mapping) && init_fluid.components==init_solid.components
+            _mapping = [[(i,1)]=>(i,1) for i in _components]
+        elseif !isnothing(mapping)
+            _mapping = Pair{Vector{Tuple{String,Int}},Tuple{String,Int}}[]
+            for mi in mapping
+                k,v = mi
+                push!(_mapping,collect(k)=>v)
+            end
+        end
+    end
+    return CompositeModel(_components,init_fluid,init_solid,_mapping)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
@@ -207,18 +252,16 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
 end
 
 """
-    __gas_model(model::EoSModel)
+    gas_model(model::EoSModel)
 
-internal function.
 provides the model used to calculate gas properties.
-normally, this is the identity, but `CompositeModel` has a gas model by itself.
+By default, returns `fluid_model(model)`
 """
-__gas_model(model::EoSModel) = model
-__gas_model(model::CompositeModel) = model.fluid
+gas_model(model::EoSModel) = fluid_model(model)
 fluid_model(model::CompositeModel) = model.fluid
 solid_model(model::CompositeModel) = model.solid
 
-function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,vol0 = nothing)
+function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
     if is_liquid(phase) || is_vapour(phase)
         return volume_impl(model.fluid,p,T,z,phase,threaded,vol0)
     elseif is_solid(phase)
@@ -234,7 +277,7 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
         #this requires checking evaluating all volumes and checking
         #what value is the correct one via gibbs energies.
         if !(model.fluid isa GammaPhi) && !(model.fluid isa FluidCorrelation) && !(model.solid isa SolidCorrelation)
-            return _volume_impl(model,p,T,z,phase,threaded,vol0)
+            return default_volume_impl(model,p,T,z,phase,threaded,vol0)
         else
             #TODO: implement these when we have an actual sublimation-melting empiric model.
             throw(error("automatic phase detection not implemented for $(typeof(model))"))
@@ -242,31 +285,18 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
     end
 end
 
-function activity_coefficient(model::CompositeModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
-    return activity_coefficient(model.fluid,p,T,z;phase,threaded)
+function activity_coefficient(model::CompositeModel,p,T,z=SA[1.];
+                            μ_ref = nothing,
+                            reference = :pure,
+                            phase=:unknown,
+                            threaded=true,
+                            vol0=nothing)
+    return activity_coefficient(model.fluid,p,T,z;μ_ref,reference,phase,threaded,vol0)
 end
 
-function init_preferred_method(method::typeof(saturation_pressure),model::CompositeModel,kwargs)
-    return init_preferred_method(saturation_pressure,model.fluid,kwargs)
-end
+reference_chemical_potential_type(model::CompositeModel) = reference_chemical_potential_type(model.fluid)
 
-function init_preferred_method(method::typeof(saturation_temperature),model::CompositeModel,kwargs)
-    return init_preferred_method(saturation_temperature,model.fluid,kwargs)
-end
-
-function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
-    return saturation_pressure(model.fluid,T,method)
-end
-
-crit_pure(model::CompositeModel) = crit_pure(model.fluid)
-
-x0_sat_pure(model::CompositeModel,T) = x0_sat_pure(model.fluid)
-
-x0_psat(model::CompositeModel,T) = x0_psat(model.fluid,T)
-
-function saturation_temperature(model::CompositeModel,p,method::SaturationMethod)
-    return saturation_temperature(model.fluid,p,method)
-end
+saturation_model(model::CompositeModel) = model.fluid
 
 #defer bubbledew eq to the fluid field
 

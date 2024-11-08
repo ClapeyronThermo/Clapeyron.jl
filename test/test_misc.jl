@@ -47,6 +47,10 @@ end
         @test length(noparam1_split) == 5
         @test noparam1_split[1] == noparam1
 
+        #splitting parameters
+        @test split_model(model2.params.segment)[1][1] == model2.params.segment[1]
+        @test split_model(model2.params.sigma)[1][1,1] == model2.params.sigma[1,1]
+
         #from notebooks, #173
         nb_test = SAFTgammaMie(["methane","nitrogen","carbon dioxide","ethane","propane","butane","isobutane",
         "pentane","isopentane","hexane","heptane","octane"])
@@ -118,9 +122,16 @@ end
         @test Clapeyron.@f(f_eos,pi) == 2+pi
         @test Clapeyron.@nan(Base.log(-1),3) == 3
         @test_throws MethodError Clapeyron.@nan(Base.log("s"),3)
+
+        #problems with registermodel
+        Clapeyron.@registermodel PCSAFT161
+        @test hasmethod(Base.length,Tuple{PCSAFT161})
+        @test hasmethod(Base.show,Tuple{IO,PCSAFT161})
+        @test hasmethod(Base.show,Tuple{IO,MIME"text/plain",PCSAFT161})
+        @test hasmethod(Clapeyron.molecular_weight,Tuple{PCSAFT161,Array{Float64}})
     end
 
-    using Clapeyron: has_sites,has_groups
+    
     @testset "has_sites-has_groups" begin
         @test has_sites(typeof(gc3)) == false
         @test has_sites(typeof(model2)) == has_sites(typeof(model4)) == has_sites(typeof(gc2)) == true
@@ -131,7 +142,7 @@ end
     @testset "eosshow" begin
         #@newmodelgc
         @test repr(ideal1) == "WalkerIdeal{BasicIdeal}(\"hexane\")"
-        @test repr("text/plain",ideal1) == "WalkerIdeal{BasicIdeal} with 1 component:\n \"hexane\": \"CH3\" => 2, \"CH2\" => 4\nGroup Type: Walker\nContains parameters: Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4"
+        @test repr("text/plain",ideal1) == "WalkerIdeal{BasicIdeal} with 1 component:\n \"hexane\": \"CH3\" => 2, \"CH2\" => 4\nGroup Type: Walker\nContains parameters: Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4, reference_state"
         #@newmodel
         @test repr(model2) == "PCSAFT{BasicIdeal, Float64}(\"water\", \"ethanol\")"
         @test repr("text/plain",model2) == "PCSAFT{BasicIdeal, Float64} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
@@ -177,6 +188,7 @@ end
         @test PCSAFT("water" => ["H2O"=>1],idealmodel = WalkerIdeal) isa EoSModel
         @test PCSAFT(["water" => ["H2O"=>1]],idealmodel = WalkerIdeal) isa EoSModel
         @test PCSAFT("water") isa EoSModel
+        @test JobackIdeal("hexane") isa EoSModel 
         @test PCSAFT(["water" => ["H2O"=>1]]) isa EoSModel
     end
 

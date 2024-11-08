@@ -14,7 +14,7 @@ To see available solvers and options, check `NLSolvers.jl`
 """
 function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
     vector_objective = autoVectorObjective(f!,x0,chunk)
-    nl_problem = NEqProblem(vector_objective)
+    nl_problem = NEqProblem(vector_objective; inplace = _inplace(x0))
     return nlsolve(nl_problem, x0,method, options)
 end
 
@@ -33,10 +33,31 @@ function autoVectorObjective(f!,x0,chunk)
         ForwardDiff.jacobian!(J,f!,F,x,jconfig)
         F,J
     end
-    function jv!(x)
-        return nothing
-    end
-    return NLSolvers.VectorObjective(f!,j!,fj!,jv!)
+    return NLSolvers.VectorObjective(f!,j!,fj!,nothing)
+end
+
+_inplace(x0) = true
+_inplace(x0::SVector) = false
+
+function autoVectorObjective(f!,x0::StaticArrays.SVector{2,T},chunk) where T
+    f(x) = f!(nothing,x) #we assume that the F argument is unused in static arrays
+    j(J,x) = ForwardDiff.jacobian(f,x)
+    fj(F,J,x) = FJ_ad(f,x)
+    return NLSolvers.VectorObjective(f!,j,fj,nothing)
+end
+
+function autoVectorObjective(f!,x0::StaticArrays.SVector{3,T},chunk) where T
+    f(x) = f!(nothing,x) #we assume that the F argument is unused in static arrays
+    j(J,x) = ForwardDiff.jacobian(f,x)
+    fj(F,J,x) = FJ_ad(f,x)
+    return NLSolvers.VectorObjective(f!,j,fj,nothing)
+end
+
+function autoVectorObjective(f!,x0::StaticArrays.SVector,chunk)
+    f(x) = f!(nothing,x) #we assume that the F argument is unused in static arrays
+    j(J,x) = ForwardDiff.jacobian(f,x)
+    fj(F,J,x) = FJ_ad(f,x)
+    return NLSolvers.VectorObjective(f,j,fj,nothing)
 end
 
 #= only_fj!: NLsolve.jl legacy form:
@@ -68,9 +89,7 @@ function only_fj!(fj!::T) where T
         fj!(nothing,J,x)
         J
     end
-
-    _jv!(x) = nothing
-    return NLSolvers.VectorObjective(_f!,_j!,_fj!,_jv!) |> NEqProblem
+    return NLSolvers.VectorObjective(_f!,_j!,_fj!,nothing) |> NEqProblem
     # return NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> NEqProblem
 end
 
@@ -80,7 +99,7 @@ end
 function NLSolvers.upto_gradient(meritobj::NLSolvers.MeritObjective, ∇f, x)
     neq = meritobj.prob
     G = neq.R.F(∇f, x)
-    F =  (norm(G)^2) / 2
+    F = (norm(G)^2) / 2
     return F,G
 end
 =#
@@ -93,7 +112,7 @@ struct Newton2Var end
 
 function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions()) where {FF,NN,TT}
     function FJ(_z)
-        return J23(f,_z)
+        return FJ_ad(f,_z)
     end
     Fx, Jx = FJ(x)
     z = x

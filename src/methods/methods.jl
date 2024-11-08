@@ -21,7 +21,7 @@ model = PCSAFT(["methanol","cyclohexane"])
 T = 313.15
 z = [0.5,0.5]
 bubble_pressure(model,T,z) #using default method (chemical potential equality)
-bubble_pressure(model,T,z,FugBubblePressure(y0 =  = [0.6,0.4], p0 = 5e4)) #using isofugacity criteria with starting points
+bubble_pressure(model,T,z,FugBubblePressure(y0 = = [0.6,0.4], p0 = 5e4)) #using isofugacity criteria with starting points
 ```
 """
 abstract type ThermodynamicMethod end
@@ -90,7 +90,19 @@ Returns `true` if the symbol is in `(:sc,:SC,:supercritical,:SUPERCRITICAL)`.
 If a string is passed, it is converted to symbol.
 """
 is_supercritical(sym::Symbol) = sym in SUPERCRITICAL_STR
-is_supercritical(str::String) = is_vapour(Symbol(str))
+is_supercritical(str::String) = is_supercritical(Symbol(str))
+
+const UNKOWN_STR = (:unknown,:UNKNOWN)
+
+"""
+    is_unknown(x::Union{Symbol,String})
+
+Returns `true` if the symbol is in `(:unknown,:UNKNOWN)`.
+
+If a string is passed, it is converted to symbol.
+"""
+is_unknown(sym::Symbol) = sym in UNKOWN_STR
+is_unknown(str::String) = is_unknown(Symbol(str))
 
 const SOLID_STR = (:solid,:SOLID,:s)
 """
@@ -104,6 +116,7 @@ If a string is passed, it is converted to symbol.
 is_solid(sym::Symbol) = sym in SOLID_STR
 is_solid(str::String) = is_vapour(Symbol(str))
 is_solid(model::EoSModel) = false
+
 
 const VLE_STR = (:vle,:lve,:vl,:lv)
 """
@@ -145,7 +158,7 @@ equivalent to `sum(iterator,init=0.0)`.
 """
 function ∑(iterator)
     len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
-    hastype =  (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
+    hastype = (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
     local _0
     if hastype
         _0 = zero(eltype(iterator))
@@ -172,6 +185,15 @@ function ∑(fn,iterator)
     len && iszero(length(iterator)) && return _0
     !len && return mapreduce(fn,Base.add_sum,iterator,init=_0)
     return sum(fn,iterator)
+end
+
+function is_ad_input(model,V,T,z)
+    #model_primal = Solvers.primal_eltype(model)
+    #TODO: do something if the model parameters themselves use ForwardDiff 
+    V_primal,T_primal,z_primal = Solvers.primalval(V),Solvers.primalval(T),Solvers.primalval(z)
+    type = Base.promote_eltype(V,T,z)
+    primal_type = Base.promote_eltype(V_primal,T_primal,z_primal)
+    return primal_type != type
 end
 
 @inline function nan_num(V,T,z)
@@ -205,19 +227,26 @@ macro nan(Base.@nospecialize(fcall),default = nothing)
 end
 
 function gradient_type(V,T,z::StaticArray)
-    μ = typeof(V+T+first(z))
+    μ = Base.promote_eltype(V,T,z)
     return StaticArrays.similar_type(z,μ)
 end
 
 function gradient_type(V,T,z::AbstractVector)
-    μ = typeof(V+T+first(z))
+    μ = Base.promote_eltype(V,T,z)
     return Vector{μ}
 end
 
-function gradient_type(V,T,z::FractionVector)
-    μ = typeof(V+T+first(z))
+function gradient_type(V,T,z::FractionVector{TT,UU}) where {TT,UU<:AbstractVector}
+    μ = Base.promote_eltype(V,T,z)
     return Vector{μ}
 end
+
+#= todo: fix this
+function gradient_type(V,T,z::FractionVector{TT,TT}) where {TT}
+    μ = Base.promote_eltype(V,T,z)
+    return SVector{2, μ}
+end =#
+
 
 
 """
@@ -270,8 +299,12 @@ export get_l,set_l!
 include("initial_guess.jl")
 include("differentials.jl")
 include("VT.jl")
+include("isochoric.jl")
+include("phase.jl")
 include("fugacity_coefficient.jl")
 include("property_solvers/property_solvers.jl")
 include("tpd.jl")
 include("stability.jl")
 include("pT.jl")
+include("property_solvers/Tproperty.jl")
+include("property_solvers/spinodal.jl")

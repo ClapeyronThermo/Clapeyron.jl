@@ -7,7 +7,7 @@ end
 
 abstract type solidsoftSAFTModel <: softSAFTModel end
 @newmodel solidsoftSAFT solidsoftSAFTModel solidsoftSAFTParam
-default_references(::Type{solidsoftSAFT}) = ["10.1080/002689797170707","10.1080/00268979300100411"]
+default_references(::Type{solidsoftSAFT}) = ["10.1080/002689797170707","10.1080/00268979300100411","10.1080/00268976.2023.2204150"]
 default_locations(::Type{solidsoftSAFT}) = ["SAFT/softSAFT/solidsoftSAFT","properties/molarmass.csv"]
 function transform_params(::Type{solidsoftSAFT},params)
     sigma = params["sigma"]
@@ -19,10 +19,11 @@ end
     solidsoftSAFTModel <: SAFTModel
 
     solidsoftSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
 
 ## Input parameters
@@ -51,6 +52,8 @@ Soft SAFT equation of state for the solid phase.
 
 ## References
 1. Johnson, J. K., Zollweg, J. A., & Gubbins, K. E. (1993). Modelling the solid–liquid–vapour phase behaviour ofn-alkanes in a TPT-1framework. Molecular physics, 78(3), 591–618. [doi:10.1080/00268979300100411](https://doi.org/10.1080/00268979300100411)
+1. FELIPE J. BLAS and LOURDES F. VEGA. (1997). Thermodynamic behaviour of homonuclear and heteronuclear Lennard-Jones chains with association sites from simulation and theory. Molecular physics, 92(1), 135–150. [doi:10.1080/002689797170707](https://doi.org/10.1080/002689797170707)
+3. Ramírez-Carpio, V., Galindo, A., & Gil-Villegas, A. (2023). Modelling the solid–liquid–vapour phase behaviour of n -alkanes in a TPT-1 framework. Molecular Physics, 121(19–20). [doi:10.1080/00268976.2023.2204150](https://doi.org/10.1080/00268976.2023.2204150)
 """
 solidsoftSAFT
 
@@ -114,7 +117,7 @@ function g_LJ(model::solidsoftSAFTModel, V, T, z ,_data = @f(data))
     σ3,ϵ̄,m̄,ρ̄  = _data
     T̄ = T/ϵ̄
     a = solidsoftSAFTconsts.a
-    gLJ =  1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
+    gLJ = 1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
     return gLJ
 end
 

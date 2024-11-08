@@ -36,15 +36,14 @@ function x0_eutectic_point(model::EoSModel,p)
     Tm = first.(fus)
     vs = getindex.(fus,2)
     vl = last.(fus)
-
-    _Hfus(modeli,_Vs,_Vl,_T,z =SA[1.0]) = VT_enthalpy(fluid_model(model),_Vl,_T,SA[1.0]) - VT_enthalpy(solid_model(model),_Vs,_T,SA[1.0])
-    Hfus = _Hfus.(pure,vs,vl,Tm)
-    #Hfus correlation
+    K(modeli,_Vs,_Vl,_T) = -dpdT_pure(fluid_model(modeli),solid_model(modeli),_Vl,_Vs,_T)*_T*_T/p
+    Ki = K.(pure,vs,vl,Tm)
+    #Clausius-Clapeyron correlation
     Tmax = 2/minimum(Tm)
-    f(tinv) = 1 - exp(-Hfus[1]/R*(tinv -1/Tm[1])) - exp(-Hfus[2]/R*(tinv -1/Tm[2]))
+    f(tinv) = 1 - exp(Ki[1]*(tinv -1/Tm[1])) - exp(Ki[2]*(tinv -1/Tm[2]))
     prob = Roots.ZeroProblem(f,(zero(Tmax),Tmax))
     T0inv = Roots.solve(prob)
     T0 = 1/T0inv
-    x0 = exp(-Hfus[1]/Rgas()*(1/T0-1/Tm[1]))
+    x0 = exp(Ki[1]*(1/T0-1/Tm[1]))
     return [T0/200.,x0]
 end

@@ -29,10 +29,11 @@ end
     softSAFTModel <: SAFTModel
 
     softSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
 
 ## Input parameters
@@ -69,7 +70,7 @@ export softSAFT
 
 recombine_impl!(model::softSAFTModel) = recombine_saft!(model)
 
-function lb_volume(model::softSAFTModel,z=SA[1.0])
+function lb_volume(model::softSAFTModel,z)
     σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
     return m̄*N_A*σ3*π/6
 end
@@ -99,38 +100,47 @@ function a_LJ(model::softSAFTModel, V, T, z,_data = @f(data))
     σ3,ϵ̄,m̄,ρ̄  = _data
     T̄ = T/ϵ̄
     γ = 3
-    F = exp(-γ*ρ̄^2)
+    F = exp(-γ*ρ̄*ρ̄)
     x = softSAFTconsts.x
     T2 = T̄*T̄
     T3 = T2*T̄
     T4 = T2*T2
-    a = (
-         x[1]*T̄+x[2]*√(T̄)+x[3]+x[4]/T̄+x[5]/T̄^2,
-         x[6]*T̄+x[7]+x[8]/T̄+x[9]/T̄^2,
-         x[11]+x[10]*T̄+x[12]/T̄,
-         x[13],
-         x[14]/T̄+x[15]/T̄^2,
-         x[16]/T̄,
-         x[17]/T̄+x[18]/T̄^2,
-         x[19]/T̄^2,
-        )
-    b = (
-         x[20]/T2+x[21]/T3,
-         x[22]/T2+x[23]/T4,
-         x[24]/T2+x[25]/T3,
-         x[26]/T2+x[27]/T4,
-         x[28]/T2+x[29]/T3,
-         x[30]/T2+x[31]/T3+x[32]/T4,
-        )
-    G1 =  (1-F)/(2γ)
-    G2 = -(F*ρ̄ ^2 - 2*G1) / 2γ
-    G3 = -(F*ρ̄ ^4 - 4*G2) / 2γ
-    G4 = -(F*ρ̄ ^6 - 6*G3) / 2γ
-    G5 = -(F*ρ̄ ^8 - 8*G4) / 2γ
-    G6 = -(F*ρ̄ ^10 - 10*G5) / 2γ
-    G = (G1,G2,G3,G4,G5,G6)
-    ā = a ./ (1,2,3,4,5,6,7,8)
-    return m̄*(evalpoly(ρ̄ ,ā)*ρ̄ +dot(b,G))/T̄
+    T_inv = ϵ̄/T
+    T_inv2 = 1/T2
+    T_inv3 = 1/T3
+    T_inv4 = 1/T4
+
+    a1 = x[1]*T̄ + x[2]*√(T̄) + x[3] + x[4]*T_inv + x[5]*T_inv2
+    a2 = x[6]*T̄ + x[7] + x[8]*T_inv + x[9]*T_inv2
+    a3 = x[11] + x[10]*T̄ + x[12]*T_inv
+    a4 = x[13]
+    a5 = x[14]*T_inv + x[15]*T_inv2
+    a6 = x[16]*T_inv
+    a7 = x[17]*T_inv + x[18]*T_inv2
+    a8 = x[19]*T_inv2
+    
+    b1 = x[20]*T_inv2 + x[21]*T_inv3
+    b2 = x[22]*T_inv2 + x[23]*T_inv4
+    b3 = x[24]*T_inv2 + x[25]*T_inv3
+    b4 = x[26]*T_inv2 + x[27]*T_inv4
+    b5 = x[28]*T_inv2 + x[29]*T_inv3
+    b6 = x[30]*T_inv2 + x[31]*T_inv3 + x[32]*T_inv4
+    G1 = (1-F)/(2γ)
+    ρ̄2 = ρ̄*ρ̄
+    ρ̄3 = ρ̄*ρ̄2
+    ρ̄4 = ρ̄2*ρ̄2
+    ρ̄5 = ρ̄3*ρ̄2
+    ρ̄6 = ρ̄3*ρ̄3
+    ρ̄8 = ρ̄4*ρ̄4
+    ρ̄10 = ρ̄5*ρ̄5
+    G2 = -(F*ρ̄2 - 2*G1) / 2γ
+    G3 = -(F*ρ̄4 - 4*G2) / 2γ
+    G4 = -(F*ρ̄6 - 6*G3) / 2γ
+    G5 = -(F*ρ̄8 - 8*G4) / 2γ
+    G6 = -(F*ρ̄10 - 10*G5) / 2γ
+    bG = b1*G1 + b2*G2 + b3*G3 + b4*G4 + b5*G5 + b6*G6
+    ā = (a1,a2/2,a3/3,a4/4,a5/5,a6/6,a7/7,a8/8)
+    return m̄*(evalpoly(ρ̄,ā)*ρ̄ + bG)*T_inv
 end
 
 function ϵ_m(model::softSAFTModel, V, T, z)
@@ -171,7 +181,7 @@ function g_LJ(model::softSAFTModel, V, T, z ,_data = @f(data))
     σ3,ϵ̄,m̄,ρ̄  = _data
     T̄ = T/ϵ̄
     a = softSAFTconsts.a
-    gLJ =  1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
+    gLJ = 1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
 end
 
 function Δ(model::softSAFTModel, V, T, z, i, j, a, b,_data = @f(data))

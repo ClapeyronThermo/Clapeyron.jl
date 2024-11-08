@@ -25,11 +25,13 @@ export gcsPCSAFT
 """
     gcsPCSAFT <: PCSAFTModel
     gcsPCSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
+
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
@@ -55,17 +57,18 @@ Group-contribution version of Simplified Perturbed-Chain SAFT (sPC-SAFT)
 gcsPCSAFT
 
 function gcsPCSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
+    idealmodel = BasicIdeal,
+    userlocations = String[],
     group_userlocations = String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
     
-    groups = GroupParam(components,["SAFT/PCSAFT/gcsPCSAFT/gcsPCSAFT_groups.csv"]; group_userlocations = group_userlocations,verbose=verbose)
-    gc_params = getparams(groups, ["SAFT/PCSAFT/gcsPCSAFT/","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    groups = GroupParam(components,["SAFT/PCSAFT/gcsPCSAFT/gcsPCSAFT_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
+    gc_params = getparams(groups, ["SAFT/PCSAFT/gcsPCSAFT/","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
     components = groups.components
-    params = getparams(components, ["SAFT/PCSAFT/sPCSAFT/sPCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/PCSAFT/sPCSAFT/sPCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
     
     sites = gc_params["sites"]
 
@@ -91,7 +94,7 @@ function gcsPCSAFT(components;
 
     gc_epsilon_assoc = gc_params["epsilon_assoc"]
     gc_bondvol = gc_params["bondvol"]
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,[],assoc_options) #combining rules for association
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,[],assoc_options,sites) #combining rules for association
 
     comp_sites = gc_to_comp_sites(sites,groups)
     bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
@@ -100,7 +103,7 @@ function gcsPCSAFT(components;
     gcparams = gcsPCSAFTParam(gc_mw, gc_segment, gc_msigma3, gc_mepsilon, gc_epsilon_assoc,gc_bondvol)
     params = PCSAFTParam(mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
     
-    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
 
     references = ["10.1021/ie020753p"]
     pc = sPCSAFT(components,sites,params,idmodel, assoc_options, references)
@@ -151,11 +154,14 @@ function a_res(model::gcsPCSAFTModel,V,T,z)
     return a_res(model.pcsaftmodel,V,T,z)
 end
 
-function lb_volume(model::gcsPCSAFTModel, z = SA[1.0])
+assoc_shape(model::gcsPCSAFTModel) = assoc_shape(model.pcsaftmodel)
+getsites(model::gcsPCSAFTModel) = getsites(model.pcsaftmodel)
+
+function lb_volume(model::gcsPCSAFTModel, z)
     return lb_volume(model.pcsaftmodel, z)
 end
 
-function T_scale(model::gcsPCSAFTModel,z=SA[1.0])
+function T_scale(model::gcsPCSAFTModel, z)
     return T_scale(model.pcsaftmodel,z)
 end
 
@@ -163,6 +169,6 @@ function T_scales(model::gcsPCSAFTModel)
     return T_scales(model.pcsaftmodel)
 end
 
-function p_scale(model::gcsPCSAFTModel,z=SA[1.0])
+function p_scale(model::gcsPCSAFTModel,z)
     return p_scale(model.pcsaftmodel,z)
 end

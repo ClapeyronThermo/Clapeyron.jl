@@ -48,7 +48,10 @@ default_locations(::Type{COSMOSACdsp}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv
 An activity coefficient model using molecular solvation based on the COSMO-RS method. Sigma profiles are now split by non-hydrogen bonding, hydrogen acceptor and hydrogen donor. A dispersive correction is included.
 
 ## References
-1. Hsieh, C-H., Lin, S-T. & Vrabec, J. (2014). Considering the dispersive interactions in the COSMO-SAC model for more accurate predictions of fluid phase behavior. Fluid Phase Equilibria, 367, 109-116. [doi:10.1016/j.fluid.2014.01.032](https://doi.org/10.1016/j.fluid.2014.01.032)
+1. Klamt, A. (1995). Conductor-like screening model for real solvents: A new approach to the quantitative calculation of solvation phenomena. Journal of Physical Chemistry, 99(7), 2224–2235. [doi:10.1021/j100007a062](https://doi.org/10.1021/j100007a062)
+2. Lin, S-T. & Sandler, S.I. (2002). A priori phase equilibrium prediction from a segment contribution solvation model. Industrial & Engineering Chemistry Research, 41(5), 899–913. [doi:10.1021/ie001047w](https://doi.org/10.1021/ie001047w)
+3. Hsieh, C-H., Sandler, S.I., & Lin, S-T. (2010). Improvements of COSMO-SAC for vapor–liquid and liquid–liquid equilibrium predictions. Fluid Phase Equilibria, 297(1), 90-97. [doi:10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011)
+4. Hsieh, C-H., Lin, S-T. & Vrabec, J. (2014). Considering the dispersive interactions in the COSMO-SAC model for more accurate predictions of fluid phase behavior. Fluid Phase Equilibria, 367, 109-116. [doi:10.1016/j.fluid.2014.01.032](https://doi.org/10.1016/j.fluid.2014.01.032)
 """
 COSMOSACdsp
 
@@ -57,7 +60,7 @@ function COSMOSACdsp(components;
     userlocations = String[],
     pure_userlocations = String[],
     use_nist_database = false,
-    verbose=false)
+    verbose = false)
 
     formatted_components = format_components(components)
 
@@ -66,9 +69,15 @@ function COSMOSACdsp(components;
         CAS, INCHIKEY = get_cosmo_comps()
         A = zeros(length(components))
         V = zeros(length(components))
+        epsilon = zeros(length(components))
+        COOH = zeros(length(components))
+        hb_acc = zeros(length(components))
+        hb_don = zeros(length(components))
+        water = zeros(length(components))
         Pnhb = [zeros(51) for i in 1:length(components)]
         POH = [zeros(51) for i in 1:length(components)]
         POT = [zeros(51) for i in 1:length(components)]
+        
         for i in 1:length(components)
             id = cas(formatted_components[i])
             ids = CAS.==uppercase(id[1])
@@ -126,7 +135,7 @@ function COSMOSACdsp(components;
         hb_don = SingleParam("hb_don",formatted_components,hb_don)
         water = SingleParam("water",formatted_components,water)
     else
-        params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V","epsilon","water","COOH","hb_acc","hb_don"], verbose=verbose)
+        params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations = userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V","epsilon","water","COOH","hb_acc","hb_don"], verbose = verbose)
         Pnhb  = COSMO_parse_Pi(params["Pnhb"])
         POH  = COSMO_parse_Pi(params["POH"])
         POT  = COSMO_parse_Pi(params["POT"])
@@ -141,7 +150,7 @@ function COSMOSACdsp(components;
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSACdspParam(Pnhb,POH,POT,epsilon,V,A,water,COOH,hb_acc,hb_don)
-    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360"]
+    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360","10.1021/j100007a062"]
     model = COSMOSACdsp(formatted_components,packagedparams,_puremodel,1e-12,references)
     return model
 end
@@ -151,7 +160,7 @@ function activity_coefficient(model::COSMOSACdspModel,V,T,z)
 end
 
 function excess_g_res(model::COSMOSACdspModel,V,T,z)
-    lnγ = @f(lnγ_res)
+    lnγ = @f(lnγ_res) .+ @f(lnγ_dsp)
     sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
 
@@ -176,3 +185,4 @@ function lnγ_dsp(model::COSMOSACdspModel,V,T,z)
     A = w*(0.5*(ϵ[1]+ϵ[2])-√(ϵ[1]*ϵ[2]))
     return A*(1 .-x).^2
 end
+#fcosmo(system::COSMOSACdsp) = Clapeyron.activity_coefficient(system,1e5, 333.15,[0.5,0.5])[1] - 1.4398951117248127

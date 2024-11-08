@@ -1,38 +1,17 @@
 ## VLLE Solver
-function Obj_VLLE_pressure(model::EoSModel, F, T, v_l, v_ll, v_v, x, xx, y,ts,ps)
-    x   = FractionVector(x)
-    y   = FractionVector(y)
-    xx  = FractionVector(xx)
-    n_c = length(model)
-    μ_v = VT_chemical_potential(model,v_v,T,y)
-    R̄ = Rgas(model)
-    @inbounds for i in 1:n_c
-        F[i] = -μ_v[i]/(R̄*ts[i])
-        F[i+n_c] = -μ_v[i]/(R̄*ts[i])
-    end
-
-    μ_l = VT_chemical_potential!(μ_v,model,v_l,T,x)
-    @inbounds for i in 1:n_c
-        F[i] += μ_l[i]/(R̄*ts[i])
-    end
-    μ_ll = VT_chemical_potential!(μ_l,model,v_ll,T,xx)
-    @inbounds for i in 1:n_c
-        F[i+n_c] += (μ_ll[i])/(R̄*ts[i])
-    end
-
-    p_l   = pressure(model,v_l,T,x)
-    p_ll  = pressure(model,v_ll,T,xx)
-    p_v   = pressure(model,v_v,T,y)
-    
-    #for i in 1:n_c
-    #    F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
-    #    F[i+n_c] = (μ_ll[i]-μ_v[i])/(R̄*ts[i])
-    #end
-
-    F[end-1] = (p_l-p_v)/ps
-    F[end]   = (p_ll-p_v)/ps
+function Obj_VLLE_pressure(model::EoSModel, F, T, η_l, η_ll, η_v, _x, _xx, _y)
+    x   = FractionVector(_x)
+    y   = FractionVector(_y)
+    xx  = FractionVector(_xx)
+    v_l = v_from_η(model,η_l,T,x)
+    v_ll = v_from_η(model,η_ll,T,xx)
+    v_v = v_from_η(model,η_v,T,y)
+    w = (x,xx,y)
+    v = (v_l,v_ll,v_v)
+    F = μp_equality(model, F, Tspec(T), v, w)
     return F
 end
+
 """
     VLLE_pressure(model::EoSModel, T; v0 = x0_LLE_pressure(model,T))
 
@@ -49,26 +28,30 @@ Returns a tuple, containing:
 """
 function VLLE_pressure(model::EoSModel, T; v0 =nothing)
     if v0 === nothing
-        v0 = x0_VLLE_pressure(model,T)
-    end
-    ts = T_scales(model)
-    pmix = p_scale(model,collect(FractionVector(v0[4])))
-    nx = length(model) -1 
-    x0 = vcat(v0...)
+        v00 = x0_VLLE_pressure(model,T)
+        w0 = vcat(v00...)
+    else
+        w0 = copy(v0)
+    end    
+    nx = length(model) - 1
     idx_x = 4:(nx+3)
     idx_xx = (nx+4):(2nx+3)
-    idx_y = (2nx+4):length(x0)
-    f! = (F,z) -> @inbounds Obj_VLLE_pressure(model, F, T, 
-    exp10(z[1]), exp10(z[2]), exp10(z[3]),
-    z[idx_x], z[idx_xx], z[idx_y],ts,pmix)
-    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
+    idx_y = (2nx+4):length(w0)
+    w0[1] = η_from_v(model,exp10(w0[1]),T,FractionVector(w0[idx_x]))
+    w0[2] = η_from_v(model,exp10(w0[2]),T,FractionVector(w0[idx_xx]))
+    w0[3] = η_from_v(model,exp10(w0[3]),T,FractionVector(w0[idx_y]))
+    f! = (F,z) -> @inbounds Obj_VLLE_pressure(model, F, T,
+    z[1], z[2], z[3],
+    z[idx_x], z[idx_xx], z[idx_y])
+
+    r  = Solvers.nlsolve(f!,w0,LineSearch(Newton2(w0)))
     sol = Solvers.x_sol(r)
-    v_l = exp10(sol[1])
-    v_ll = exp10(sol[2])
-    v_v = exp10(sol[3])
     x = FractionVector(sol[idx_x])
     xx = FractionVector(sol[idx_xx])
     y = FractionVector(sol[idx_y])
+    v_l = v_from_η(model,sol[1],T,x)
+    v_ll = v_from_η(model,sol[2],T,xx)
+    v_v = v_from_η(model,sol[3],T,y)
     P_sat = pressure(model,v_v,T,y)
     return (P_sat, v_l, v_ll, v_v, x, xx, y)
 end
@@ -103,25 +86,30 @@ Returns a tuple, containing:
 function VLLE_temperature(model::EoSModel,p;v0=nothing)
     if v0 === nothing
         v0 = x0_VLLE_temperature(model,p)
+        w0 = vcat(v0...)
+    else
+        w0 = copy(v0)
     end
-    ts = T_scales(model)
-    pmix = p_scale(model,collect(FractionVector(v0[4])))
-    nx = length(model) -1 
-    x0 = vcat(v0...)
+    nx = length(model) - 1
     idx_x = 5:(nx+4)
     idx_xx = (nx+5):(2nx+4)
-    idx_y = (2nx+5):length(x0)
-    f! = (F,z) -> @inbounds Obj_VLLE_temperature(model, F, p, z[1], 
-    exp10(z[2]), exp10(z[3]), exp10(z[4]), z[idx_x], z[idx_xx], z[idx_y],ts,pmix)
-    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
+    idx_y = (2nx+5):length(w0)
+    T0 = w0[1]
+    w0[2] = η_from_v(model,exp10(w0[2]),T0,FractionVector(w0[idx_x]))
+    w0[3] = η_from_v(model,exp10(w0[3]),T0,FractionVector(w0[idx_xx]))
+    w0[4] = η_from_v(model,exp10(w0[4]),T0,FractionVector(w0[idx_y]))
+    f! = (F,z) -> @inbounds Obj_VLLE_temperature(model, F, p, z[1],
+    z[2], z[3], z[4], z[idx_x], z[idx_xx], z[idx_y])
+    options = NLSolvers.NEqOptions(maxiter = 1000)
+    r  = Solvers.nlsolve(f!,w0,LineSearch(Newton2(w0)),options)
     sol = Solvers.x_sol(r)
-    T   = sol[1]
-    v_l = exp10(sol[2])
-    v_ll = exp10(sol[3])
-    v_v = exp10(sol[4])
+    T  = sol[1]
     x = FractionVector(sol[idx_x])
     xx = FractionVector(sol[idx_xx])
     y = FractionVector(sol[idx_y])
+    v_l = v_from_η(model,sol[2],T,x)
+    v_ll = v_from_η(model,sol[3],T,xx)
+    v_v = v_from_η(model,sol[4],T,y)
     return T, v_l, v_ll, v_v, x, xx, y
 end
 
@@ -140,39 +128,15 @@ function x0_VLLE_temperature(model::EoSModel,p)
     return (T0,log10(v_l0),log10(v_ll0),log10(v_v0),x0[1:end-1],xx0[1:end-1],y0[1:end-1])
 end
 
-function Obj_VLLE_temperature(model::EoSModel, F, p, T, v_l, v_ll, v_v, x, xx, y,ts,ps)
-    x   = FractionVector(x)
-    y   = FractionVector(y)
-    xx  = FractionVector(xx)
-    n_c = length(model)
-    μ_v = VT_chemical_potential(model,v_v,T,y)
-    R̄ = Rgas(model)
-    Ts = sum(ts)/3
-    @inbounds for i in 1:n_c
-        F[i] = -μ_v[i]/(R̄*Ts)
-        F[i+n_c] = -μ_v[i]/(R̄*Ts)
-    end
-
-    μ_l = VT_chemical_potential!(μ_v,model,v_l,T,x)
-    @inbounds for i in 1:n_c
-        F[i] += μ_l[i]/(R̄*Ts)
-    end
-    μ_ll = VT_chemical_potential!(μ_l,model,v_ll,T,xx)
-    @inbounds for i in 1:n_c
-        F[i+n_c] += (μ_ll[i])/(R̄*Ts)
-    end
-
-    p_l   = pressure(model,v_l,T,x)
-    p_ll  = pressure(model,v_ll,T,xx)
-    p_v   = pressure(model,v_v,T,y)
-    
-    #for i in 1:n_c
-    #    F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
-    #    F[i+n_c] = (μ_ll[i]-μ_v[i])/(R̄*ts[i])
-    #end
-
-    F[end-2] = (p_l-p_v)/ps
-    F[end-1] = (p_ll-p_v)/ps
-    F[end]   = (p_l-p)/ps
+function Obj_VLLE_temperature(model::EoSModel, F, p, T, ηl, ηll, ηv, _x, _xx, _y)
+    x   = FractionVector(_x)
+    y   = FractionVector(_y)
+    xx  = FractionVector(_xx)
+    v_l = v_from_η(model,ηl,T,x)
+    v_ll = v_from_η(model,ηll,T,xx)
+    v_v = v_from_η(model,ηv,T,y)
+    w = (x,xx,y)
+    v = (v_l,v_ll,v_v)
+    F = μp_equality(model, F, Pspec(p,T), v, w)
     return F
 end

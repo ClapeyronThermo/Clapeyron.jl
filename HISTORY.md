@@ -1,3 +1,104 @@
+# v0.6.3
+
+## New Features
+
+- New Activity model: Hard-constraint Neural Network for Consistent Activity Coefficient Prediction(`HANNA`). requires the loading of the auxiliary package `ClapeyronHANNA`.
+- New ideal model: PPDS correlations (`PPDSIdeal`)
+- New Function: `reference_chemical_potential`, to calculate the reference chemical potential used in activity coefficient calculations
+- New Functions: `activity` and `aqueous_activity`. both functions use the ability to change reference chemical potentials.
+- New Functions: `spinodal_pressure` and `spinodal_temperature`.
+- New function: `split_model_binaries`, that returns a list of all binary combinations of an n-component model.
+- New Saturation Method: `CritExtrapolation`, that calculates saturation volumes and pressures via extrapolation from the critical point.
+- `lb_volume` now has a three-arg version: `lb_volume(model,T,z)`.
+- `p_scale` is now defined in terms of `T_scale` and `lb_volume`.
+- Stability improvements for bubble/dew calculations.
+- Speed improvements for single and multicomponent equilibria.
+- Association solver is now faster for small association matrices.
+- New association mixing rule: Mie-15 (`:mie15`,`:dufal`)
+- Michelsen TP-Flash: in case of valid K values but single phase rachford-rice, the procedure will assume bubble or dew point as a first iteration.
+- Joback: new submodule: `JobackGC` that provides all available properties using the joback correlations.
+- SAFT-VR-Mie: speed improvements for calculation of association strengths.
+- Cubics: Better initial point for single component saturation calculations.
+- `split_model` now works for `ClapeyronParam`,`Symbol`,`Number`,`AbstractString`,`Tuple`,`Missing` and `Nothing`. before those could only be splitted if inside an `EoSModel`.
+- `StructGroupParam` is deprecated, `GroupParam` has all the functionality of `StructGroupParam`.
+
+## Bug fixes
+- `SAFTgammaMie` fixes.
+- `SingleFluid` has improved initial points for liquid volume evaluation.
+- miscelaneous database improvements.
+- `second_virial_coefficient` for cubics was ignoring the translation.
+- improvements to the initial point of `SingleFluid`.
+
+# v0.6.2
+
+## Bug fixes
+- `SAFTgammaMie` fixes.
+
+# v0.6.1
+
+## Bug fixes
+- `tpd` fixes.
+- `MultiPhaseTPFlash` fixes.
+- Association: all temporary storage is now initialized
+
+# v0.6.0
+
+## New Features
+- New models: Electrolyte models are now supported! We have introduced the `ESElectrolyte` framework which will let users combine any electrostatic model (`DH`, `MSA` and `Born`) and relative static permittivity model with any of our supported equations of state. Due to this flexibility, we now support four existing SAFT-type electrolyte equations (with planned support for more):
+  - `ePCSAFT`
+  - `SAFTVREMie`
+  - `eSAFTVRMie`
+  - `SAFTgammaEMie`
+- New method: Two new methods specific to electrolytes have been added: `mean_ionic_activity_coefficient` and `osmotic_coefficient`, along with their saturated variants.
+- New method: `MultiPhaseTPFlash`, that solves multiphase,multicomponent TP-flash with automatic phase detection. this method is now the default when calling `tp_flash` with more than two components and helmholtz-based models.
+- New method: `Tproperty(model,p,prob,z,property)` to calculate temperatures, given pressure and another property.
+- New model: To model solubility of salts, `SolidKs` has been added in order to obtain the solubility of salts using the infinite-dilution approach as opposed to the pure-fluid approach using `SolidHfus`.
+- additional method: `x0_volume_liquid(model,p,T,z)` and `x0_volume_solid(model,p,T,z)` can be overloaded to calculate liquid an solid volumes, using the pressure as information. They are defined as `x0_volume_liquid(model,p,T,z) = x0_volume_liquid(model,T,z)` and `x0_volume_solid(model,p,T,z) = x0_volume_solid(model,T,z)`
+- tangent plane distance (`tpd`) calculations are now faster.
+- `VT_diffusive_stability` now uses `eigmin` instead of the full eigen calculation.
+- `isstable` now works on (P,T,z) space, for the (V,T,z) space, use `VT_isstable`. there are now (P,T,z) versions of each stability function.
+- calculation of volumes,saturation pressures and critical points of CPA models now defaults to the inner cubic model when there is no association present.
+- The default association implementation now uses a combination of accelerated successive substitution and newton optimization. While increasing allocations, the method is faster.
+- the default `volume` implementation now uses implicit AD to support derivatives. instead of propagating derivative information through the iterative procedure. This allows workloads of the type: `ForwardDiff.derivative(_p -> property(model,_p,T,z,phase = :l,vol0 = v0),p)` to be efficiently calculated.
+- `Clapeyron.tpd` code has been optimized. `tpd` has new keywords: `break_first`, that tries to return a negative tpd as early as possible, `lle` for only calculating TPD in liquid phases, `strategy`, that changes the search strategy between a K-value search (`:wilson`), a pure component search (`:pure`) or both strategies (`default`).
+- `Clapeyron.tpd` now supports activity models (if the keyword `lle` is set to `true`)
+- `MichelsenTPFlash` will now try LLE if the initial equilibrium type is not set and VLE fails.
+- New EoS: modified Lee-Kesler-Plöcker with consistent parameters (`LKPmod`)
+- New EoS: Lee-Kesler-Plöker-equation of state, Sabozin-Jäger-Thol enhancement (`LKPSJT`, `enhancedLKP`)
+## Bug fixes
+- PCPSAFT: typo in unlike asssociation parameters
+
+# v0.5.11
+
+## New Features
+- Support for reference states. A reference state is a point in V-T space where H = H₀ and S = S₀. Setting those have uses in Reaction equilibria and when comparing between different models.In particular, Reference states are stored in a `ReferenceState <: ClapeyronParam` in the ideal model parameters. The `BasicIdeal` model is, intentionally, the only ideal model in Clapeyron that does not have this struct and, as a consequence, it is not able to set reference states.
+- Support for superancillaries via [`EoSSuperancillaries.jl`](https://github.com/ClapeyronThermo/EoSSuperancillaries.jl). When the package is loaded, initial saturation points for cubics and PCSAFT are overloaded to use superancillary evaluations instead of the general `x0_sat_pure` function. in the case of `PCSAFT` models, it also speeds up the evaluation of `crit_pure`.
+- New EoS: EOS-CG (2021) (`EOS_CG`), a reference model for humid gases and CCS mixtures.
+- New EoS: Lee-Kesler-Plöcker (`LKP`)
+- New EoS: Shomate ideal model (`ShomateIdeal`)
+- database: PCPSAFT,gcPCSAFT and gcPCPSAFT are updated to use the values of Rehner (2023).
+- new functions: `helmholtz_free_energy_res`,`gibbs_free_energy_res`,`internal_energy_res`, `enthalpy_res`
+- database: `ReidIdeal` now uses the poling coefficients by default.
+- database: `JobackIdeal` has support for more common group fragments used in gcPCSAFT.
+- `melting_temperature`, `sublimation_temperature` does not allocate anymore. Note that the function can still allocate if the EoS model itself allocates.
+
+## bug fixes
+- Incorrect value for CPA with water (#256)
+- Bug in SAFT-VR-SW (#165)
+- Bug in CP-PC-SAFT
+
+# v0.5.10
+
+## New Features
+- Association models don't allocate anymore in the case of a single association site pair.
+- `saturation_pressure(model,T)` (`ChemPotVSaturation,IsoFugacitySaturation`) does not allocate if the calculation does not require a critical point calculation. Note that the function can still allocate if the EoS model itself allocates. the same optimizations were applied to `saturation_temperature` (`AntoineSaturation`,`ClapeyronSaturation`), `sublimation_pressure` and `melting_pressure`.
+- Bulk properties now accept a `vol0` initial point for the volume solver.
+- SAFT-VR-Mie uses a divided approach for calculating `d`: if θ = ℂ*ϵᵢ/T > 1, then it uses a 10-point gauss-laguerre integrator. Otherwise, the Assen method of finding a cut point and integrating the rest is used. A description of the method is found here: https://teqp.readthedocs.io/en/latest/models/SAFT-VR-Mie.html. the cut allows for better accuracy at higher reduced temperatures.
+
+## Bug fixes
+- Peng-Robinson now uses more accurate `Ωa` and `Ωb` values
+- CPA/sCPA now uses SI units as input.
+
 # v0.5.9
 
 ## New Features

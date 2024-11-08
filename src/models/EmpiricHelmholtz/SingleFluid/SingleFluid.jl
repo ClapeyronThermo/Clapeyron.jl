@@ -61,6 +61,9 @@ struct SingleFluidIdeal <: IdealModel
     references::Vector{String}
 end
 
+is_splittable(model::SingleFluid) = false
+is_splittable(model::SingleFluidIdeal) = false
+
 function recombine_impl!(model::SingleFluid)
     _calc_iterators!(model.residual)
     return model
@@ -72,8 +75,8 @@ end
 
 idealmodel(model::SingleFluid) = SingleFluidIdeal(model)
 
-R_gas(model::SingleFluid) = model.properties.Rgas
-R_gas(model::SingleFluidIdeal) = model.properties.Rgas
+Rgas(model::SingleFluid) = model.properties.Rgas
+Rgas(model::SingleFluidIdeal) = model.properties.Rgas
 
 reduced_a_ideal(model::SingleFluid,τ) = reduced_a_ideal(model.ideal,τ)
 reduced_a_ideal(model::SingleFluidIdeal,τ) = reduced_a_ideal(model.ideal,τ)
@@ -193,6 +196,9 @@ function a_ideal(model::SingleFluidIdeal,V,T,z=SA[1.],k = __get_k_alpha0(model))
     return k*α0 + logδ
 end
 
+v_scale(model::SingleFluid,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhoc
+v_scale(model::SingleFluidIdeal,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhoc
+
 a_ideal(model::SingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
 
 function a_res(model::SingleFluid,V,T,z=SA[1.])
@@ -204,8 +210,8 @@ function a_res(model::SingleFluid,V,T,z=SA[1.])
     return reduced_a_res(model,δ,τ)
 end
 
-function eos(model::SingleFluid, V, T, z=SA[1.0])
-    R = R_gas(model)
+function eos_impl(model::SingleFluid, V, T, z)
+    R = Rgas(model)
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
     N = sum(z)
@@ -213,28 +219,20 @@ function eos(model::SingleFluid, V, T, z=SA[1.0])
     τ = Tc/T
     k = __get_k_alpha0(model)
     logδ = log(δ)
-    return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ))
-end
-
-function eos_res(model::SingleFluid,V,T,z=SA[1.0])
-    R = R_gas(model)
-    Tc = model.properties.Tc
-    rhoc = model.properties.rhoc
-    N = sum(z)
-    δ = N/(rhoc*V)
-    τ = Tc/T
-    return N*R*T*reduced_a_res(model,δ,τ)
+    ref_a = model.ideal.ref_a
+    a0,a1 = ref_a[1],ref_a[2] #reference state evaluation
+    return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ,logδ)) + N*(a0 + a1*T)
 end
 
 mw(model::SingleFluid) = SA[model.properties.Mw]
 
 molecular_weight(model::SingleFluid,z = @SVector [1.]) = model.properties.Mw*0.001
 
-T_scale(model::SingleFluid,z=SA[1.0]) = model.properties.Tc
+T_scale(model::SingleFluid,z) = model.properties.Tc
 
-p_scale(model::SingleFluid,z=SA[1.0]) = model.properties.Pc
+p_scale(model::SingleFluid,z) = model.properties.Pc
 
-lb_volume(model::SingleFluid,z=SA[1.0]) = model.properties.lb_volume #finally, an eos model that mentions it max density.
+lb_volume(model::SingleFluid,z) = model.properties.lb_volume #finally, an eos model that mentions it max density.
 
 Base.length(::SingleFluid) = 1
 
@@ -247,23 +245,95 @@ function Base.show(io::IO,mime::MIME"text/plain",model::SingleFluidIdeal)
     println(io,"Ideal MultiParameter Equation of state for $(model.components[1]):")
     show_multiparameter_coeffs(io,model.ideal)
 end
+has_fast_crit_pure(model::SingleFluid) = true
 
 function x0_sat_pure(model::SingleFluid,T)
     z=SA[1.0]
+    Ttp0 = model.properties.Ttp*one(T)
     gas_ancillary = model.ancillaries.fluid.gas
-    vv = volume(gas_ancillary,0.0,T,z)
-    vl = x0_volume_liquid(model,T,)
-    return (vl,vv)
+    liquid_ancillary = model.ancillaries.fluid.liquid
+    if isfinite(Ttp0) & (Ttp0 > 0) #we have triple point information:
+        Ttp = Ttp0
+    else #we suppose triple point = 0.4 Tc
+        Ttp = 0.4*model.properties.Tc*one(T)
+    end
+    if T > model.properties.Tc
+        _0 = zero(Base.promote_eltype(model,T))
+        _nan = _0/_0
+        return _nan,_nan
+    elseif T >= Ttp
+        vv = volume(gas_ancillary,0.0,T,z)
+        vl = volume(liquid_ancillary,0.0,T,z)
+        return vl,vv
+    else #we know that T < Ttp
+        vvtp = volume(gas_ancillary,0.0,Ttp,z)
+        vltp = volume(liquid_ancillary,0.0,Ttp,z)
+        ptp = pressure(model,vvtp,Ttp)
+        R = Rgas(model)
+        dpdT = dpdT_pure(model,vvtp,vltp,Ttp)
+        dTinvdlnp = -ptp/(dpdT*T*T)
+        ΔTinv = 1/T - 1/Ttp
+        psat = exp(ΔTinv/dTinvdlnp)*ptp
+        vv = Rgas(model)*T/psat
+        vl = x0_volume_liquid(model,psat,T)
+        return vl,vv
+    end
 end
 
-function x0_volume_liquid(model::SingleFluid,T,z = SA[1.0])
-    lb_v = lb_volume(model)
-    vl_tp = 1/model.properties.rhol_tp
-    liquid_ancillary = model.ancillaries.fluid.liquid
-    vl_anc = volume(liquid_ancillary,0.0,min(T,model.properties.Tc*one(T)),z)
-    isnan(vl_tp) && (vl_tp = 0.0)
-    isnan(vl_anc) && (vl_anc = 0.0)
-    return max(vl_tp,vl_anc,1.01*lb_v)
+function x0_volume_liquid(model::SingleFluid,p,T,z)
+    _1 = one(Base.promote_eltype(model,p,T,z))
+    lb_v = lb_volume(model,T,z)*_1
+    vl_lbv = 1.01*lb_v
+    ancillary = model.ancillaries
+    Tc = model.properties.Tc
+    Pc = model.properties.Pc
+    Ttp = model.properties.Ttp
+    ptp = model.properties.ptp
+    (!isfinite(Ttp) | (Ttp < 0)) && (Ttp = 0.4*Tc)
+    (!isfinite(ptp) | (ptp < 0)) && (ptp = zero(ptp))
+
+    if p > Pc
+        #supercritical conditions, liquid
+        #https://doi.org/10.1016/j.ces.2018.08.043 gives an aproximation of the pv curve at T = Tc
+        #=
+        abs(1 - P/Pc) = abs(1-Vc/V)^(1/Zc)
+        abs(1 - P/Pc)^Zc = abs(1-Vc/V)
+        if T > Tc then V > V(T = Tc) ≈ V_crit(P)
+        =#
+        vc = 1/model.properties.rhoc
+        pc = model.properties.Pc
+        Zc = pc*vc/(Rgas(model)*Tc)
+        ΔVrm1 = _1*(abs(1 - p/pc))^Zc
+        v_crit_aprox = vc/(ΔVrm1 + 1)
+        #we suppose that V < Vc (liquid state), then the volume solver converges really well with this initial guess
+        if T >= Tc
+            return max(vl_lbv,v_crit_aprox)
+        else
+            #we can't be sure that v_crit_approx converges, we do some P-T iterations to go from (P,Tc) to (P,T)
+            vᵢ = v_crit_aprox
+            Tᵢ = _1*Tc
+            return volume_chill(model,p,T,z,vᵢ,Tᵢ)
+        end
+    end
+
+    #use information about the triple point (or made up triple point)
+    #move from (Ttp,ptp) to (T,p)
+    if Ttp < T < Tc
+        vᵢ = volume(ancillary,p,T,z,phase = :l)
+        return vᵢ
+    elseif Ttp < T
+        vᵢ = volume(ancillary,p,Ttp,z,phase = :l)
+        pvi = pressure(model,vᵢ,T)
+        pp = max(_1*p,pvi)
+        Tᵢ = _1*Ttp
+        #chill from p,Ttp to p,T
+        return volume_chill(model,pp,T,z,vᵢ,Tᵢ)
+    else #T > Tc and p < pc, this is gas-like supercritical fluid
+        #this is always a gas volume, so starting from the lowest volume does not hurt
+        return vl_lbv
+    end
+    #this should never hit, but nvm
+    return zero(_1)/zero(_1)
 end
 
 x0_psat(model::SingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.fluid.saturation,T,SaturationCorrelation())[1]

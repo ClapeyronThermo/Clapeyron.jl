@@ -32,6 +32,8 @@ We support many equations of state and properties. Some examples of figures you 
 
 ![CH3OH_CyHx](docs/CH3OH_CyHex.svg)
 
+If you find any issues, feel free to contact us directly on the [Zulip Channel](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl), or open a Github issue. 
+
 # Installing Clapeyron
 
 The minimum supported version is Julia 1.6. To install Clapeyron, launch Julia with
@@ -62,7 +64,7 @@ To remove the package, hit the ```]``` key to enter Pkg mode, then type
 ```
 Pkg> rm Clapeyron
 ```
-## Citing Clapeyron
+# Citing Clapeyron
 
 If you are using Clapeyron for your research work, please cite the following:
 
@@ -81,10 +83,8 @@ If you are using Clapeyron for your research work, please cite the following:
 }
 ```
 
-## Package in active Development
+# Package in active Development
 
 Note that at its current stage, Clapeyron is still in the early stages of development, and things may be moving around or changing rapidly, but we are very excited to see where this project may go!
 
-We are open to contributions, new models, improved methods and more databases are always appreciated.
-
-If you find any issue, feel free to contact us directly on the Zulip Channel, or open a Github issue. 
+We are open to contributions. New models, improved methods and more databases are always appreciated!

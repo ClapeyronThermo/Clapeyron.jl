@@ -5,7 +5,7 @@ export Soave2019Alpha
     Soave2019Alpha <: SoaveAlphaModel
 
     Soave2019Alpha(components::Vector{String};
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -21,11 +21,11 @@ mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
 ```
 where, for Peng-robinson:
 ```
-mᵢ =  0.3919 + 1.4996ωᵢ - 0.2721ωᵢ^2 + 0.1063ωᵢ^3
+mᵢ = 0.3919 + 1.4996ωᵢ - 0.2721ωᵢ^2 + 0.1063ωᵢ^3
 ```
 and, for Redlich-Kwong:
 ```
-mᵢ =  0.4810 + 1.5963ωᵢ - 0.2963ωᵢ^2 + 0.1223ωᵢ^3
+mᵢ = 0.4810 + 1.5963ωᵢ - 0.2963ωᵢ^2 + 0.1223ωᵢ^3
 ```
 
 ## Model Construction Examples

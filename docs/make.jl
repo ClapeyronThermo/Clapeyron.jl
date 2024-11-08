@@ -1,6 +1,5 @@
 push!(LOAD_PATH,"../src/")
-using Documenter,Clapeyron
-
+using Documenter,Clapeyron,ClapeyronHANNA
 makedocs(sitename = "Clapeyron.jl",
 format = Documenter.HTML(
     # Use clean URLs, unless built as a "local" build
@@ -36,7 +35,8 @@ warnonly = Documenter.except(),
         "Available Properties" => ["Basic Properties" => "properties/basic.md",
                                    "Bulk Properties" => "properties/bulk.md",
                                    "Single phase Properties" => "properties/single.md",
-                                   "Multiphase Properties"  => "properties/multi.md"],
+                                   "Multiphase Properties"  => "properties/multi.md",
+                                   "Electrolyte Properties" => "properties/electrolytes.md"],
 
         "API" => ["Parameters" => "api/parameters.md",
                   "Macros" => "api/macros.md",

@@ -6,7 +6,7 @@ abstract type sCPAAlphaModel <: CPAAlphaModel end
     sCPAAlpha <: sCPAAlphaModel
     
     sCPAAlpha(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

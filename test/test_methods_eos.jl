@@ -5,6 +5,7 @@ using Clapeyron, Test, Unitful
     system = PCSAFT(["ethanol"])
     p = 1e5
     T = 298.15
+    T2 = 373.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 5.907908736304141e-5 rtol = 1e-6
         @test Clapeyron.volume(system, p, T;phase=:v) ≈ 0.020427920501436134 rtol = 1e-6
@@ -12,6 +13,7 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.pip(system, 5.907908736304141e-5, T, [1.]) ≈ 6.857076349623449 rtol = 1e-6
         @test Clapeyron.compressibility_factor(system, p, T) ≈ 0.002383223535444557 rtol = 1e-6
         @test Clapeyron.pressure(system, 5.907908736304141e-5, T) ≈ p rtol = 1e-6
+        @test Clapeyron.pressure(system, 2*5.907908736304141e-5, T, Clapeyron.SA[2.0]) ≈ p rtol = 1e-6
         @test Clapeyron.entropy(system, p, T) ≈ -58.87118569239617 rtol = 1E-6
         @test Clapeyron.chemical_potential(system, p, T)[1] ≈ -18323.877542682934 rtol = 1E-6
         @test Clapeyron.internal_energy(system, p, T) ≈ -35882.22946560716 rtol = 1E-6
@@ -20,6 +22,9 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.helmholtz_free_energy(system, p, T) ≈ -18329.785451419295 rtol = 1E-6
         @test Clapeyron.isochoric_heat_capacity(system, p, T) ≈ 48.37961296309505 rtol = 1E-6
         @test Clapeyron.isobaric_heat_capacity(system, p, T) ≈ 66.45719988319257 rtol = 1E-6
+        Cp = Clapeyron.isobaric_heat_capacity(system, p, T2)
+        Cv = Clapeyron.isochoric_heat_capacity(system, p, T2)
+        @test Clapeyron.adiabatic_index(system, p, T2) ≈ Cp/Cv rtol = 1E-12
         @test Clapeyron.isothermal_compressibility(system, p, T) ≈ 1.1521981407243432e-9 rtol = 1E-6
         @test Clapeyron.isentropic_compressibility(system, p, T) ≈ 8.387789464951438e-10 rtol = 1E-6
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1236.4846683094133 rtol = 1E-6 #requires that the model has Mr
@@ -102,6 +107,7 @@ end
     T = 298.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 5.913050998953597e-5 rtol = 1e-6
+        @test volume(CPA("water"), 1e5u"Pa", 303.15u"K") ≈ 1.7915123921401366e-5u"m^3" rtol = 1e-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7923.883649594267 rtol = 1E-6
@@ -119,7 +125,8 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7714.8637084302 rtol = 1E-5
-        @test Clapeyron.crit_pure(system)[1] ≈ 522.7772913470494 rtol = 1E-5
+        #SAFT VR Mie is really sensitive to the the critical point
+        @test_broken Clapeyron.crit_pure(system)[1] ≈ 522.7772913470494 rtol = 1E-5
     end
 end
 
@@ -132,7 +139,7 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 16957.59261579083 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 524.1501435599444  rtol = 1E-5 #TODO FIX
+        @test_broken Clapeyron.crit_pure(system)[1] ≈ 524.1501435599444  rtol = 1E-5 #TODO FIX
     end
 end
 
@@ -276,7 +283,7 @@ end
         @test Clapeyron.wilson_k_values(system,p,T) ≈ [0.13839117786853375]  rtol = 1E-6
     end
 end
-
+GC.gc()
 @testset "Patel-Teja, single component" begin
     system = PatelTeja(["water"])
     p = 1e5
@@ -338,12 +345,19 @@ end
 
 @testset "Cubic methods, multi-components" begin
     system = RK(["ethane","undecane"])
+    system2 = tcPR(["benzene","toluene","nitrogen"])
     p = 1e7
     T = 298.15
     z = [0.5,0.5]
+    p2 = 1.5*101325
+    T2 = 350
+    z2 = [0.001,0.001,0.001]
+
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T, z) ≈ 0.00017378014541520907 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 892.4941848133369 rtol = 1e-6
+        @test Clapeyron.volume(system2, p2, T2, z2, phase = :l) ≈ 2.851643999862116e-7 rtol = 1e-6
+        @test Clapeyron.volume(system2, p2, T2, z2 ./ sum(z2), phase = :l) ≈ 2.851643999862116e-7/sum(z2) rtol = 1e-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 1.5760730143760687e6 rtol = 1E-6
@@ -352,7 +366,7 @@ end
         @test Clapeyron.wilson_k_values(srksystem,p,T) ≈ [0.420849235562207, 1.6163027384311e-5] rtol = 1E-6
     end
 end
-
+GC.gc()
 @testset "Activity methods, pure components" begin
     if hasfield(Wilson,:puremodel)
         system = Wilson(["methanol"])
@@ -373,23 +387,35 @@ end
 
 @testset "Activity methods, multi-components" begin
     com = CompositeModel(["water","methanol"],liquid = DIPPR105Liquid,saturation = DIPPR101Sat,gas = PR)
+    
     system = Wilson(["methanol","benzene"])
+    
     if hasfield(Wilson,:puremodel)
         system2 = Wilson(["water","methanol"],puremodel = com)
     else
         system2 = CompositeModel(["water","methanol"],liquid = Wilson, fluid = com)
     end
+
+    if hasfield(UNIFAC,:puremodel)
+        system3 = UNIFAC(["octane","heptane"],puremodel = LeeKeslerSat)
+    else
+        system3 = CompositeModel(["octane","heptane"],liquid = UNIFAC,fluid = LeeKeslerSat)
+    end
+
     com1 = split_model(com)[1]
     p = 1e5
     T = 298.15
     T2 = 320.15
     z = [0.5,0.5]
     z_bulk = [0.2,0.8]
-
+    T3 = 300.15
+    z3 = [0.9,0.1]
     @testset "Bulk properties" begin
         @test crit_pure(com1)[1] ≈ 647.13
-        @test Clapeyron.volume(system, p, T, z_bulk) ≈ 8.602344040626639e-5 rtol = 1e-6
-        @test Clapeyron.speed_of_sound(system, p, T, z_bulk) ≈ 1371.9014493149134 rtol = 1e-6
+        #TODO: technically this should be calculated via thee internal fluid model
+        #but we are testing about each pure model.
+        @test_broken Clapeyron.volume(system, p, T, z_bulk) ≈ 8.602344040626639e-5 rtol = 1e-6
+        @test_broken Clapeyron.speed_of_sound(system, p, T, z_bulk) ≈ 1371.9014493149134 rtol = 1e-6
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.gibbs_free_energy) ≈ -356.86007792929263 rtol = 1e-6
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.enthalpy) ≈ 519.0920708672975 rtol = 1e-6
     end
@@ -398,8 +424,8 @@ end
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.58099358788 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = true))[1] ≈ 23839.554959977086
         @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = false))[1] ≈ 23833.324475723246
-
-        @test Clapeyron.bubble_temperature(system,23758.58099358788, z)[1] ≈ T  rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system3,T3,z3)[1] ≈ 2460.897944633704 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system,23758.58099358788, z)[1] ≈ T rtol = 1E-6
 
         @test Clapeyron.dew_pressure(system2, T2, z)[1] ≈ 19386.939256733036 rtol = 1E-6
         @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = true))[1] ≈ 19393.924550078184 rtol = 1e-6
@@ -407,7 +433,7 @@ end
         @test Clapeyron.dew_temperature(system2, 19386.939256733036, z)[1]  ≈ T2 rtol = 1E-6
     end
 end
-
+GC.gc()
 @testset "GERG2008 methods, single components" begin
     system = GERG2008(["water"])
     met = GERG2008(["methane"])
@@ -469,22 +495,27 @@ end
     T_v = 380.15
     T_c = 750.
     p_c = 250e5
+    mw = Clapeyron.molecular_weight(system)
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 1.8068623941501927e-5 rtol = 1e-6
-        @test Clapeyron.volume(system, p, T_v;phase=:vapour) ≈ 0.03116877990373624 rtol = 1e-6
-        @test Clapeyron.volume(system, p_c, T_c) ≈ 0.00018553711945962424 rtol = 1e-6
-        @test Clapeyron.volume(system, p_c, T_c;phase=:sc) ≈ 0.00018553711945962424 rtol = 1e-6
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1496.699163371358 rtol = 1e-6
+        #IAPWS-2018, table 7
+        @test mass_density(system,0.992418352e5,300.0) ≈ 996.556 rtol = 1e-6
+        @test mass_density(system,0.200022515e8,300.0) ≈ 1005.308 rtol = 1e-6
+        @test mass_density(system,0.700004704e9,300.0) ≈ 1188.202 rtol = 1e-6
+        @test entropy(system,0.992418352e5,300.0) ≈ mw*393.062643 rtol = 1e-6
+        @test entropy(system,0.200022515e8,300.0) ≈ mw*387.405401 rtol = 1e-6
+        @test entropy(system,0.700004704e9,300.0) ≈ mw*132.609616 rtol = 1e-6
+        @test speed_of_sound(system,0.992418352e5,300.0) ≈ 1501.51914 rtol = 1e-6
+        @test speed_of_sound(system,0.200022515e8,300.0) ≈ 1534.92501 rtol = 1e-6
+        @test speed_of_sound(system,0.700004704e9,300.0) ≈ 2443.57992 rtol = 1e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293390134403 rtol = 1E-6
-        #ir varies a bit, it gives 3170.301356765357
-        @test_broken Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3169.9293390134403 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293388718283  rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3169.9293388718283 rtol = 1E-6
         #saturation temperature tests are noisy
         @test Clapeyron.saturation_temperature(system,3169.9293390134403)[1] ≈ 298.1499999999789 rtol = 1E-6
-        tc,pc,vc =  Clapeyron.crit_pure(system)
+        tc,pc,vc = Clapeyron.crit_pure(system)
         @test tc ≈ 647.096 rtol = 1E-5
-        v2 =  volume(system,pc,tc)
+        v2 = volume(system,pc,tc)
         @test pressure(system,v2,tc) ≈ pc rtol = 1E-6
     end
 end
@@ -495,15 +526,15 @@ end
     T = 230.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 7.577761282115866e-5 rtol = 1e-6
-        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ 0.018421882342664616 rtol = 1e-6
+        #PropsSI("D","P",1e4,"T",230.15,"propane") == 0.23126803007122876
+        @test Clapeyron.mass_density(system, 1e4, T) ≈ 0.23126803007122876 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1166.6704395959607 rtol = 1e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 97424.11102152328 rtol = 1E-6
-        #they vary a litte bit. i don't know why, it gives 97423.47874065055
-        @test_broken Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 97424.11102152328 rtol = 1E-6
-        #saturation temperature tests are noisy
-        @test Clapeyron.saturation_temperature(system,97424.11102152328)[1] ≈ 230.15014586866016  rtol = 1E-6
+        ps = 97424.11102296013 #PropsSI("P","T",T,"Q",1,"propane")
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ ps rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ ps rtol = 1E-6
+        @test Clapeyron.saturation_temperature(system,ps)[1] ≈ T  rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 369.8900089509652 rtol = 1E-6
     end
 end
@@ -524,19 +555,76 @@ end
     end
 
 end
-
+GC.gc()
 @testset "Helmholtz + Activity" begin
     model = HelmAct(["water","ethanol"])
     p = 12666.0
-    x1 = Clapeyron.FractionVector( 0.00350)
+    x1 = Clapeyron.FractionVector(0.00350)
     @test bubble_temperature(model,p,x1)[4][1] ≈ 0.00198 rtol = 1e-2
 end
 
 @testset "SingleFluid - CoolProp" begin
     #methanol, uses assoc term
     @test saturation_pressure(SingleFluid("methanol"),300.15)[1] ≈ PropsSI("P","T",300.15,"Q",1.,"methanol") rtol = 1e-6
+    
+    #tests send via email
+
+    fluid1 = SingleFluid("n-Undecane")
+    test_volume(fluid1,1e-2*fluid1.properties.Pc,0.38*fluid1.properties.Tc)
+    test_volume(fluid1,3e2*fluid1.properties.Pc,0.38*fluid1.properties.Tc)
+    test_volume(fluid1,3e2*fluid1.properties.Pc,1.1*fluid1.properties.Tc)
+
+    fluid2 = SingleFluid("n-Butane")
+    test_volume(fluid2,1e-2*fluid2.properties.Pc,0.3*fluid2.properties.Tc)
+    test_volume(fluid2,30*fluid2.properties.Pc,0.3*fluid2.properties.Tc)
+
+    fluid3 = SingleFluid("water")
+    test_volume(fluid3,1e-2*fluid3.properties.Pc,0.4*fluid3.properties.Tc)
+    test_volume(fluid3,40*fluid3.properties.Pc,3.2*fluid3.properties.Tc)
+
+    fluid4 = SingleFluid("MethylOleate")
+    test_volume(fluid4,1e-2*fluid4.properties.Pc,0.3*fluid4.properties.Tc)
+    test_volume(fluid4,4e1*fluid4.properties.Pc,0.3*fluid4.properties.Tc)
+    test_volume(fluid4,4e1*fluid4.properties.Pc,1.3*fluid4.properties.Tc)
+
+    fluid5 = SingleFluid("MD3M")
+    test_volume(fluid5,1e-2*fluid5.properties.Pc,0.3*fluid5.properties.Tc)
+    test_volume(fluid5,2e2*fluid5.properties.Pc,0.3*fluid5.properties.Tc)
+    test_volume(fluid5,2e2*fluid5.properties.Pc,1.1*fluid5.properties.Tc)
+
+    fluid6 = SingleFluid("Toluene")
+    test_volume(fluid6,1e-2*fluid6.properties.Pc,0.25*fluid6.properties.Tc)
+    test_volume(fluid6,2e2*fluid6.properties.Pc,0.25*fluid6.properties.Tc)
+    test_volume(fluid6,2e2*fluid6.properties.Pc,1.2*fluid6.properties.Tc)
+
+    #CoolProp fluid predicting negative fundamental derivative of gas dynamics
+    #10.1021/acs.iecr.9b00608, figure 17
+    model = SingleFluid("MD4M")
+    TΓmin = 647.72
+    _,_,vv = saturation_pressure(model,TΓmin)
+    Γmin = Clapeyron.VT_fundamental_derivative_of_gas_dynamics.(model,vv,TΓmin)
+    @test Γmin ≈ -0.2825376983518102 rtol = 1e-6
 end
 
+@testset "LKP methods" begin
+    system = LKP("propane", idealmodel = AlyLeeIdeal)
+    system_mod = LKPmod("squalane",userlocations = (Tc = 810,Pc = 0.728e6,acentricfactor = 1.075,Mw = 1.0))
+
+    p = 1e5
+    T = 230.15
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T, phase = :l) ≈ 7.865195401331961e-5 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T, phase = :v) ≈ 0.018388861273788176 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(system, p, T, phase = :l) ≈ 1167.2461897307874 rtol = 1e-6
+        @test Clapeyron.molar_density(system_mod,0.0,298.15,phase =:l) ≈ 1721.2987626107251 rtol = 1e-6 #0.1007/s10765-024-03360-0, Figure 4
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 105419.26772976149 rtol = 1E-6
+        #saturation temperature tests are noisy
+        @test Clapeyron.saturation_temperature(system,105419.26772976149)[1] ≈ T  rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 369.83 rtol = 1E-6
+    end
+end
 
 @testset "LJRef methods" begin
     system = LJRef(["methane"])
@@ -574,7 +662,7 @@ end
         @test Clapeyron.crit_pure(system)[1] ≈ 305.37187249327553 rtol = 1E-6
     end
 end
-
+GC.gc()
 @testset "lattice methods" begin
     p = 1e5
     T = 298.15

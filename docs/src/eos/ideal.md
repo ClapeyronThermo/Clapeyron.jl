@@ -27,4 +27,5 @@ Clapeyron.MonomerIdeal
 Clapeyron.WalkerIdeal
 Clapeyron.LJRefIdeal
 Clapeyron.AlyLeeIdeal
+Clapeyron.PPDSIdeal
 ```

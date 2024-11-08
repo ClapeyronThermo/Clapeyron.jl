@@ -52,14 +52,17 @@ If no units are provided for the composition, they will be considered moles.
 ```@docs
 Clapeyron.volume
 Clapeyron.helmholtz_free_energy
+Clapeyron.helmholtz_free_energy_res
 Clapeyron.molar_density
 Clapeyron.mass_density
 Clapeyron.compressibility_factor
 Clapeyron.gibbs_free_energy
+Clapeyron.gibbs_free_energy_res
 Clapeyron.entropy
 Clapeyron.entropy_res
 Clapeyron.enthalpy
 Clapeyron.internal_energy
+Clapeyron.internal_energy_res
 ```
 
 ### Methods that require second order VT derivatives
@@ -67,6 +70,7 @@ Clapeyron.internal_energy
 ```@docs
 Clapeyron.isochoric_heat_capacity
 Clapeyron.isobaric_heat_capacity
+Clapeyron.adiabatic_index
 Clapeyron.isothermal_compressibility
 Clapeyron.isentropic_compressibility
 Clapeyron.speed_of_sound
@@ -82,6 +86,15 @@ Clapeyron.chemical_potential_res
 Clapeyron.fugacity_coefficient
 ```
 
+### Activity Coefficient
+```@docs
+Clapeyron.reference_chemical_potential
+Clapeyron.reference_chemical_potential_type
+Clapeyron.activity_coefficient
+Clapeyron.activity
+Clapeyron.aqueous_activity
+```
+
 ### Mixing
 
 ```@docs
@@ -89,6 +102,8 @@ Clapeyron.mixing
 ```
 
 ## Initial guess functions
+
+These methods are considered internal, they don't support `Symbolics.jl` or `Unitful.jl` overloads.
 
 ```@docs
 Clapeyron.lb_volume

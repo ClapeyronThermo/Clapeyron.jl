@@ -7,6 +7,7 @@ Struct holding group parameters.contains:
 * `grouptype`: used to differenciate between different group models.
 * `i_groups`: a list containing the number of groups for each component
 * `n_groups`: a list of the group multiplicity of each group corresponding to each group in `i_groups`
+* `n_intragroups`: a list containining the connectivity graph (as a matrix) between each group for each component.
 * `flattenedgroups`: a list of all unique groups--the parameters correspond to this list
 * `n_flattenedgroups`: the group multiplicities corresponding to each group in `flattenedgroups`
 You can create a group param by passing a `Vector{Tuple{String, Vector{Pair{String, Int64}}}}.
@@ -65,6 +66,7 @@ struct GroupParam <: GroupParameter
     groups::Array{Array{String,1},1}
     grouptype::Symbol
     n_groups::Array{Array{Int,1},1}
+    n_intergroups::Vector{Matrix{Int}}
     i_groups::Array{Array{Int,1},1}
     flattenedgroups::Array{String,1}
     n_flattenedgroups::Array{Array{Int,1},1}
@@ -146,40 +148,47 @@ function recombine!(param::GroupParameter)
 end
 
 function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs::Vector{String})
+    return GroupParam(input,grouptype,sourcecsvs,nothing)
+end
+
+function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs::Vector{String},gc_intragroups)
     components = [first(i) for i ∈ input]
-    raw_groups =  [last(i) for i ∈ input]
+    raw_groups = [last(i) for i ∈ input]
     groups = [first.(grouppairs) for grouppairs ∈ raw_groups]
     n_groups = [last.(grouppairs) for grouppairs ∈ raw_groups]
     flattenedgroups = String[]
     i_groups = Vector{Vector{Int}}(undef,0)
     n_flattenedgroups = Vector{Vector{Int}}(undef,0)
     n_groups_cache = PackedVofV(Int[],Float64[])
-
-    param =  GroupParam(components,
+    empty_intergroup = fill(0,(0,0)) #0x0 Matrix{Int}
+    n_intergroups = fill(empty_intergroup,length(components))
+    param = GroupParam(components,
     groups,
     grouptype,
     n_groups,
+    n_intergroups,
     i_groups,
     flattenedgroups,
     n_flattenedgroups,
     n_groups_cache,
     sourcecsvs)
+    n_intergroups
     #do the rest of the work here
+    if gc_intragroups != nothing
+        build_gc_intragroups!(param,gc_intragroups)
+    end
     recombine!(param)
     return param
 end
 
-
-
-function Base.show(io::IO, mime::MIME"text/plain", param::GroupParameter)
-    
+function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
     print(io,string(typeof(param)),"(:",param.grouptype,") ")
     len = length(param.components)
     println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
     show_groups(io,param)
 end
 
-function Base.show(io::IO, param::GroupParameter)
+function Base.show(io::IO, param::GroupParam)
     print(io,string(typeof(param)),"[")
     function wrap_print(io,val)
         print(io,'[')
@@ -190,31 +199,21 @@ function Base.show(io::IO, param::GroupParameter)
     print(io,"]")
 end
 
-#=
-
-Second order Group Param
-=#
-
-struct StructGroupParam <: GroupParameter
-    components::Vector{String}
-    groups::Vector{Vector{String}}
-    grouptype::Symbol
-    n_groups::Vector{Vector{Int}}
-    n_intergroups::Vector{Matrix{Int}}
-    i_groups::Vector{Vector{Int}}
-    flattenedgroups::Vector{String}
-    n_flattenedgroups::Vector{Vector{Int}}
-    n_groups_cache::PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{Float64}, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}}
-    sourcecsvs::Vector{String}
-end
-
-function StructGroupParam(group::GroupParam,gccomponents_parsed,filepaths::Vector{String})
+function build_gc_intragroups!(group::GroupParam,gc_intragroups)
     groupnames = group.flattenedgroups
     n_gc = length(groupnames)
     n_comps = length(group.components)
     n_intergroups = [zeros(n_gc,n_gc) for i in 1:n_comps]
-    for i in 1:length(gccomponents_parsed)
-        gc_pair_i = last(gccomponents_parsed[i])
+    n_intergroups = group.n_intergroups
+    for i in 1:n_comps
+        n_intergroups[i] = zeros(Int,n_gc,n_gc)
+    end
+
+    for i in 1:n_comps
+        gc_pair_i = gc_intragroups[i]
+        if isempty(gc_pair_i)
+            throw(MissingError("intragroup information was requested, but is missing from component $(group.components[i])."))
+        end
         n_mat = n_intergroups[i]
         for pair_ik in gc_pair_i
             k = first(pair_ik)
@@ -225,16 +224,7 @@ function StructGroupParam(group::GroupParam,gccomponents_parsed,filepaths::Vecto
             n_mat[n2,n1] = val
         end
     end
-    return StructGroupParam(
-        group.components,
-        group.groups,
-        group.grouptype,
-        group.n_groups,
-        n_intergroups,
-        group.i_groups,
-        group.flattenedgroups,
-        group.n_flattenedgroups,
-        group.n_groups_cache,
-        filepaths
-    )
+    return n_intergroups
 end
+
+@deprecate StructGroupParam(args...;kwargs...) GroupParam(args...;kwargs...)

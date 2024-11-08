@@ -1,4 +1,4 @@
-struct PCSAFTParam{T} <: EoSParam
+struct PCSAFTParam{T} <: ParametricEoSParam{T}
     Mw::SingleParam{T}
     segment::SingleParam{T}
     sigma::PairParam{T}
@@ -8,16 +8,7 @@ struct PCSAFTParam{T} <: EoSParam
 end
 
 function PCSAFTParam(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
-    el(x) = eltype(x.values)
-    el(x::AssocParam) = eltype(x.values.values)
-    T = mapreduce(el,promote_type,(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol))
-    Mw = convert(SingleParam{T},Mw)
-    segment = convert(SingleParam{T},segment)
-    sigma = convert(PairParam{T},sigma)
-    epsilon = convert(PairParam{T},epsilon)
-    epsilon_assoc = convert(AssocParam{T},epsilon_assoc)
-    bondvol = convert(AssocParam{T},bondvol)
-    return PCSAFTParam{T}(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol) 
+    return build_parametric_param(PCSAFTParam,Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
 end
 
 Base.eltype(p::PCSAFTParam{T}) where T = T
@@ -43,14 +34,28 @@ function get_l(model::PCSAFTModel)
     return get_k_mean(model.params.sigma)
 end
 
+function set_k!(model::PCSAFTModel,k)
+    has_groups(model) && return nothing
+    return recombine_saft!(model,k,nothing)
+end
+
+function set_l!(model::PCSAFTModel,l)
+    has_groups(model) && return nothing
+    return recombine_saft!(model,nothing,l)
+end
+
+
 """
     PCSAFTModel <: SAFTModel
+
     PCSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
+
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
@@ -92,6 +97,12 @@ function data(model::PCSAFTModel,V,T,z)
     return (_d,ζ0,ζ1,ζ2,ζ3,m̄)
 end
 
+#unpacks packing_fraction from data
+function packing_fraction(model::PCSAFTModel,_data::Tuple)
+    _,_,_,_,η,_ = _data
+    return η
+end
+
 function a_hc(model::PCSAFTModel, V, T, z,_data=@f(data))
     dii,ζ0,ζ1,ζ2,ζ3,m̄ = _data
     m = model.params.segment.values
@@ -99,7 +110,11 @@ function a_hc(model::PCSAFTModel, V, T, z,_data=@f(data))
     c1 = 1/(1-ζ3)
     c2 = 3ζ2/(1-ζ3)^2
     c3 = 2ζ2^2/(1-ζ3)^3
-    a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    if !iszero(ζ3)
+        a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    else
+        a_hs = @f(bmcs_hs_zero_v,dii)
+    end
     res = zero(a_hs)
     for i ∈ @comps
         dᵢ = dii[i]
@@ -119,16 +134,10 @@ function a_disp(model::PCSAFTModel, V, T, z,_data=@f(data))
     return -2*πNAρ*@f(I,1,_data)*m2ϵσ3₁ - m̄*πNAρ*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
 end
 
-function d(model::PCSAFTModel, V, T, z)
-    ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    di = zeros(eltype(T+one(eltype(model))),length(model))
-    for i in 1:length(model)
-        di[i] = σ[i,i]*(1 - 0.12*exp(-3ϵ[i,i]/ T))
-    end
-    return di
-end
+d(model::PCSAFTModel, V, T, z) = ck_diameter(model, T, z)
 
+#defined in SAFT/equations.jl
+#=
 function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     m = model.params.segment.values
     res = zero(V+T+first(z)+one(eltype(model)))
@@ -138,32 +147,7 @@ function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     end
     res *= N_A*π/6/V
     return res
-end
-
-function ζ0123(model::PCSAFTModel, V, T, z, _d = @f(d))
-    m = model.params.segment.values
-    ζ0 = zero(V+T+first(z)+one(eltype(model)))
-    ζ1 = ζ0
-    ζ2 = ζ0
-    ζ3 = ζ0
-    for i ∈ @comps
-        dᵢ = _d[i]
-        zᵢmᵢ = z[i]*m[i]
-        d1 = dᵢ
-        d2 = d1*d1
-        d3 = d2*d1
-        ζ0 += zᵢmᵢ
-        ζ1 += zᵢmᵢ*d1
-        ζ2 += zᵢmᵢ*d2
-        ζ3 += zᵢmᵢ*d3
-    end
-    NV = N_A*π/6/V
-    ζ0 *= NV
-    ζ1 *= NV
-    ζ2 *= NV
-    ζ3 *= NV
-    return ζ0,ζ1,ζ2,ζ3
-end
+end =# 
 
 function g_hs(model::PCSAFTModel, V, T, z, i, j, _data=@f(data))
     _d,ζ0,ζ1,ζ2,ζ3,_ = _data
@@ -259,7 +243,7 @@ const PCSAFTconsts = (
 )
 
 #= 
-Especific PCSAFT optimizations
+Specific PCSAFT optimizations
 This code is not generic, in the sense that is only used by PCSAFT and not any model <:PCSAFTModel
 but, because it is one of the more commonly used EoS,
 It can have some specific optimizations to make it faster.
@@ -274,17 +258,11 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
     Δout = assoc_similar(κ,typeof(V+T+first(z)+one(eltype(model))))
     Δout.values .= false  #fill with zeros, maybe it is not necessary?
     for (idx,(i,j),(a,b)) in indices(Δout)
-        gij = @f(g_hs,i,j,_data)
-        Δout[idx] = gij*σ[i,j]^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κ[i,j][a,b]
+        κijab = κ[idx]
+        if κijab != 0
+            gij = @f(g_hs,i,j,_data)
+            Δout[idx] = gij*σ[i,j]^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κ[idx]
+        end
     end
     return Δout
 end
-
-#Optimizations for Single Component PCSAFT
-
-function d(model::PCSAFT, V, T, z::SingleComp)
-    ϵ = only(model.params.epsilon.values)
-    σ = only(model.params.sigma.values)
-    return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
-end
-

@@ -92,7 +92,7 @@ function Wilson(components;
     verbose = false)
     
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(Wilson); userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g"], verbose=verbose)
+    params = getparams(formatted_components, default_locations(Wilson); userlocations = userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g"], verbose = verbose)
     g  = params["g"]
     Tc        = params["Tc"]
     pc        = params["Pc"]

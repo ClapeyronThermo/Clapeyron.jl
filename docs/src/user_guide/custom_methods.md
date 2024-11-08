@@ -26,7 +26,6 @@ function Clapeyron.x0_sat_pure(model::PCSAFTModel,T,z=SA[1.0])
   Vlb = lb_volume(model,z)*one(T)
 
   # Relative to the lower bound, define your initial guesses.
-  # We log10 the results as our solvers solve for the log10 of the volume.
   return Vlb*1.5,Vlb*100
 end
 ```

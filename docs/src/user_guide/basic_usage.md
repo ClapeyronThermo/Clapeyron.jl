@@ -138,7 +138,8 @@ To amend this, we provide three additional ideal models to be used instead:
 - Walker and Haslam's ideal correlation ([`WalkerIdeal`](@ref))
 - Joback's ideal correlation ([`JobackIdeal`](@ref))
 - Reid's polynomial correlation ([`ReidIdeal`](@ref))
-- Aly–Lee's correlation ([`AlyLeeIdeal`](@ref))
+- Aly-Lee's correlation ([`AlyLeeIdeal`](@ref))
+- PPDS correlation ([`PPDSIdeal`](@ref))
 - MultiParameter Empiric Ideal correlations ([`EmpiricIdeal`](@ref))
 
 These can be specified for any of the SAFT or cubic-type equations of state using:

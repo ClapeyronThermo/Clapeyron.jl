@@ -1,17 +1,3 @@
-function evalpoly_cheb(x::S, ch::AbstractVector{T}) where {T,S}
-    R = promote_type(T, S)
-    l = length(ch)
-    l == 0 && return zero(R)
-    l == 1 && return R(ch[1])
-    c0 = ch[l - 1]
-    c1 = ch[l]
-    for i in (l-2):-1:1
-        c0, c1 = ch[i] - c1, c0 + c1 * 2x
-    end
-    return R(c0 + c1 * x)
-end
-
-
 """
 det_22(a,b,c,d)
 
@@ -37,16 +23,16 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
 
 _1 = one(T)
 third = _1/3
-a1  =  complex(one(T) / poly[4])
+a1  = complex(one(T) / poly[4])
 E1  = -poly[3]*a1
-E2  =  poly[2]*a1
+E2  = poly[2]*a1
 E3  = -poly[1]*a1
-s0  =  E1
-E12 =  E1*E1
-A   =  det_22(2*E1,E12,9*E1,E2) + 27*E3
-#A   =  2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
+s0  = E1
+E12 = E1*E1
+A   = det_22(2*E1,E12,9*E1,E2) + 27*E3
+#A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
 B = det_22(E1,E1,3,E2)
-#B   =  E12 - 3*E2                 # = s1 s2
+#B   = E12 - 3*E2                 # = s1 s2
 # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
 Δ2 = det_22(A,A,4*B*B,B)
 Δ = Base.sqrt(Δ2)
@@ -100,20 +86,20 @@ function real_roots3(pol::NTuple{4,T}) where {T<:Real}
     between1 = evalpoly(mid12, pol)
     between2 = evalpoly(mid23, pol)
     if abs(between1) <  eps(typeof(between1))
-        (2, x3, mid12) # first the single root, then the double root
+        (2, x3, mid12, mid12) # first the single root, then the double root
     elseif abs(between2) < eps(typeof(between2))
-        (2, x1, mid23) # first the single root, then the double root
+        (2, x1, mid23, mid23) # first the single root, then the double root
     else
         sign1 = signbit(between1)
         sign2 = signbit(between2)
         if sign1 == sign2 # only one root
             if sign1 ⊻ (pol[4] > 0)
-                (1, x1, x1)
+                (1, x1, x1, x1)
             else
-                (1, x3, x3)
+                (1, x3, x3, x3)
             end
         else # three distinct roots
-            (3, x1, x3)
+            (3, x1, x2, x3)
         end
     end
 end
@@ -134,7 +120,7 @@ function hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
     p2 = (1//2)*d2f0
     p3 = (f1 - f0 - df0*Δx10 - (1//2)*d2f0*Δx102)*divx^3
 
-    z4 = (3*f0 - 3*f1 + 2*(df0 + (1//2)*df1)*Δx10 - (1//2)*d2f0*Δx102)*divx^4 # * Δx03 * Δx1
+    z4 = (3*f0 - 3*f1 + 2*(df0 + (1//2)*df1)*Δx10 + (1//2)*d2f0*Δx102)*divx^4 # * Δx03 * Δx1
     #x^3 * (x -Δx10) = x^4 - -Δx10*x^3
     p3 += -Δx10*z4
     p4 = z4
@@ -146,7 +132,7 @@ function hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
     p5 = z5
     return p0,p1,p2,p3,p4,p5
 end
-
+#0.00012669209195135698, 9.69556e-5 + 0.00012669209195135698
 """
     hermite5_poly(f,x0,x1)
 

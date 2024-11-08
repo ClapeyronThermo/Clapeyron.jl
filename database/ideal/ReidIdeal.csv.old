@@ -1,0 +1,13 @@
+Clapeyron Database File,,,,,
+Reid Ideal Like Parameters,,,,,
+species,a,b,c,d,source
+carbon dioxide,19.8,0.0734,-5.6e-5,1.72e-8,
+methane,19.25,0.0521,1.2e-5,-1.13e-8,
+water,32.24,0.00192,1.06e-5,-3.6e-9,
+ammonia,-1.21,0.0762,-4.86e-5,1.05e-8,
+acetone~|~propanone,6.3,0.261,-0.000125,2.04e-8,
+methanol,21.2,0.0709,2.59e-5,-2.85e-8,
+methylamine~|~methanamine,11.5,0.143,-5.33e-5,4.75e-9,
+butane~|~n-butane,9.487,0.3313,-0.0001108,-2.822e-9,
+propane~|~n-propane,-4.224,0.3063,-0.0001586,3.215e-8,
+pentane~|~n-pentane,-3.626,0.4873,-0.000258,5.305e-8,

@@ -11,7 +11,7 @@ export CPAAlpha
     CPAAlpha <: CPAAlphaModel
     
     CPAAlpha(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

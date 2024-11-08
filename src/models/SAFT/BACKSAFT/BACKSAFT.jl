@@ -38,10 +38,11 @@ export BACKSAFT
     BACKSAFTModel <: SAFTModel
 
     BACKSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
 
 ## Input parameters
@@ -96,10 +97,17 @@ function x0_crit_pure(model::BACKSAFTModel)
     (2.0, log10(lb_v/0.4))
 end
 
-function a_res(model::BACKSAFTModel ,V, T, z)
-    a_hcb_ = @f(a_hcb)
-    a_disp_ = @f(a_disp)
-    a_chain_ = @f(a_chain)
+function data(model::BACKSAFTModel,V, T, z)
+    _d = @f(d)
+    m̄ = dot(z,model.params.segment.values)
+    ζi = @f(ζ0123,_d)
+    return _d, m̄, ζi
+end
+
+function a_res(model::BACKSAFTModel ,V, T, z,_data = @f(data))
+    a_hcb_ = @f(a_hcb,_data)
+    a_disp_ = @f(a_disp,_data)
+    a_chain_ = @f(a_chain,_data)
     return  a_hcb_ + a_chain_ + (1.75*(a_chain_/a_hcb_)+1)*a_disp_
 end
 
@@ -108,18 +116,20 @@ end
 z = 1/(1-y) + 3ay/(1-y)2 + (3a2y2-a2y3)/(1-y)^3
 3a2y2(1-y)
 =#
-function a_hcb(model::BACKSAFTModel, V, T, z)
+function a_hcb(model::BACKSAFTModel, V, T, z,_data = @f(data))
+    _d, m̄, ζi = _data
+    _,_,_,η = ζi
     α = model.params.alpha.values[1]
     m = model.params.segment.values[1]
-    η = @f(ζ,3)
     return m*(α^2/(1-η)^2-(α^2-3α)/(1-η)-(1-α^2)*log(1-η)-3α)
 end
 
-function a_disp(model::BACKSAFTModel, V, T, z)
+function a_disp(model::BACKSAFTModel, V, T, z,_data = @f(data))
+    _d, m̄, ζi = _data
+    _,_,_,η = ζi
     m = model.params.segment.values[1]
     c = model.params.c.values[1]
     u = model.params.epsilon.values[1]*(1+c/T)
-    η = @f(ζ,3)
     τ = .740480
     D1 = BACKSAFT_consts.D1
     D2 = BACKSAFT_consts.D2
@@ -132,25 +142,19 @@ function a_disp(model::BACKSAFTModel, V, T, z)
     return m*(A1+A2+A3+A4)
 end
 
-function d(model::BACKSAFTModel, V, T, z, i)
-    ϵ = model.params.epsilon.values[i,i]
-    σ = model.params.sigma.values[i,i]
-    return σ * (1 - 0.12exp(-3ϵ/T))
-end
+d(model::BACKSAFTModel, V, T, z) = ck_diameter(model, T, z)
 
-function ζ(model::BACKSAFTModel, V, T, z, n)
-    m = model.params.segment.values
-    return N_A*π/6/V * sum(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
-end
-
-function a_chain(model::BACKSAFTModel, V, T, z)
+function a_chain(model::BACKSAFTModel, V, T, z,_data = @f(data))
+    _d, m̄, ζi = _data
+    _,_,_,η = ζi
     m = model.params.segment.values[1]
-    return (1-m)*log(@f(g_hcb))
+    return (1-m)*log(@f(g_hcb,_data))
 end
 #1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
-function g_hcb(model::BACKSAFTModel, V, T, z)
+function g_hcb(model::BACKSAFTModel, V, T, z,_data = @f(data))
+    _d, m̄, ζi = _data
+    _,_,_,η = ζi
     α = model.params.alpha.values[1]
-    η = @f(ζ,3)
     return 1/(1-η)+3*(1+α)*α*η/((1-η)^2*(1+3α))+2*η^2*α^2/((1-η)^3*(1+3α))
 end
 

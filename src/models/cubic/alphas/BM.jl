@@ -9,7 +9,7 @@ export BMAlpha
     BMAlpha <: BMAlphaModel
 
     BMAlpha(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

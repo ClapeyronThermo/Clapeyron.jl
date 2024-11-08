@@ -91,11 +91,11 @@ function UNIFACFV(components;
     pure_userlocations = String[],
     verbose = false)
 
-    params_species = getparams(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_like.csv"]; userlocations=userlocations, verbose=verbose, ignore_headers = ["dipprnumber","smiles","c"])
+    params_species = getparams(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_like.csv"]; userlocations = userlocations, verbose = verbose, ignore_headers = ["dipprnumber","smiles","c"])
 
-    groups = GroupParam(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_groups.csv"]; group_userlocations = group_userlocations, verbose=verbose)
+    groups = GroupParam(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
     components = groups.components
-    params = getparams(groups, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose=verbose)
+    params = getparams(groups, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC_unlike.csv"]; userlocations = userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose = verbose)
 
     A  = params["A"]
     R  = params["R"]
@@ -144,7 +144,7 @@ function lnγ_res(model::UNIFACFVModel,V,T,z,_data=@f(data))
     _Ψ = @f(Ψ)
     lnΓ_ = @f(lnΓ,_Ψ)
     lnΓi_ = @f(lnΓi,_Ψ)
-    lnγ_res_ =  [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
+    lnγ_res_ = [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
     return lnγ_res_
 end
 

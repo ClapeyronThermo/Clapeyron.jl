@@ -24,19 +24,20 @@ end
 
     function CPA(components;
         radial_dist::Symbol = :CS,
-        idealmodel=BasicIdeal,
-        cubicmodel=RK,
-        alpha=sCPAAlpha,
-        mixing=vdW1fRule,
-        activity=nothing,
-        translation=NoTranslation,
-        userlocations=String[],
-        ideal_userlocations=String[],
-        alpha_userlocations=String[],
-        activity_userlocations=String[],
-        mixing_userlocations=String[],
-        translation_userlocations=String[],
-        verbose=false,
+        idealmodel = BasicIdeal,
+        cubicmodel = RK,
+        alpha = sCPAAlpha,
+        mixing = vdW1fRule,
+        activity = nothing,
+        translation = NoTranslation,
+        userlocations = String[],
+        ideal_userlocations = String[],
+        alpha_userlocations = String[],
+        activity_userlocations = String[],
+        mixing_userlocations = String[],
+        translation_userlocations = String[],
+        reference_state = nothing,
+        verbose = false,
         assoc_options = AssocOptions())
 
 ## Input parameters
@@ -79,20 +80,21 @@ CPA
 
 export CPA
 function CPA(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     radial_dist::Symbol = :CS,
-    cubicmodel=RK,
-    alpha=CPAAlpha,
-    mixing=vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    alpha_userlocations=String[],
-    activity_userlocations=String[],
-    mixing_userlocations=String[],
-    translation_userlocations=String[],
-    verbose=false,
+    cubicmodel = RK,
+    alpha = CPAAlpha,
+    mixing = vdW1fRule,
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    alpha_userlocations = String[],
+    activity_userlocations = String[],
+    mixing_userlocations = String[],
+    translation_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
 
     locs = if radial_dist == :CS
@@ -103,14 +105,15 @@ function CPA(components;
         throw(error("CPA: incorrect specification of radial_dist, try using `:CS` (original CPA) or `:KG` (simplified CPA)"))
     end
 
-    params = getparams(components, locs; userlocations=userlocations, verbose=verbose)
+    _components = format_components(components)
+    params = getparams(_components, locs; userlocations = userlocations, verbose = verbose)
     
     sites = get!(params,"sites") do
-        SiteParam(components)
+        SiteParam(_components)
     end
 
     Pc = get!(params,"Pc") do
-        SingleParam("Pc",components)
+        SingleParam("Pc",_components)
     end
 
     Mw  = params["Mw"]
@@ -122,27 +125,27 @@ function CPA(components;
     b  = sigma_LorentzBerthelot(params["b"], l)
 
     epsilon_assoc = get!(params,"epsilon_assoc") do
-        AssocParam("epsilon_assoc",components)
+        AssocParam("epsilon_assoc",_components)
     end
 
     bondvol = get!(params,"bondvol") do
-        AssocParam("bondvol",components)
+        AssocParam("bondvol",_components)
     end
 
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options,sites)
     packagedparams = CPAParam(Mw, Tc, a, b, c1, epsilon_assoc, bondvol)
     
     #init cubic model
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     cubicparams = ABCubicParam(a, b, params["Tc"],Pc,Mw) #PR, RK, vdW
-    init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
-
+    init_cubicmodel = cubicmodel(_components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
+    
     references = ["10.1021/ie051305v"]
 
-    model = CPA(components, radial_dist, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
+    model = CPA(_components, radial_dist, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
     return model
 end
 
@@ -156,16 +159,17 @@ function recombine_impl!(model::CPAModel)
 
     epsilon_assoc = model.params.epsilon_assoc
     bondvol = model.params.bondvol
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options) #combining rules for association
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options,model.sites) #combining rules for association
 
     model.params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
     model.params.bondvol.values.values[:] = bondvol.values.values
     return model
 end
 
-lb_volume(model::CPAModel,z = SA[1.0]) = lb_volume(model.cubicmodel,z)
-T_scale(model::CPAModel,z=SA[1.0]) = T_scale(model.cubicmodel,z)
-function p_scale(model::CPAModel,z=SA[1.0])
+lb_volume(model::CPAModel,T,z) = lb_volume(model.cubicmodel,T,z)
+T_scale(model::CPAModel,z) = T_scale(model.cubicmodel,z)
+
+function p_scale(model::CPAModel,z)
     #does not depend on Pc, so it can be made optional on CPA input
     b = model.cubicmodel.params.b.values
     a = model.cubicmodel.params.a.values
@@ -173,6 +177,10 @@ function p_scale(model::CPAModel,z=SA[1.0])
     b̄r = dot(z,b,z)/(sum(z)*Ωb)
     ār = dot(z,a,z)/Ωa
     return ār/(b̄r*b̄r)
+end
+
+function cpa_is_pure_cubic(model::CPAModel)
+    assoc_pair_length(model) == 0
 end
 
 function show_info(io,model::CPAModel) 
@@ -186,8 +194,60 @@ function show_info(io,model::CPAModel)
 end
 
 function x0_crit_pure(model::CPAModel)
-    lb_v = lb_volume(model)
+    z = SA[1.0]
+    T = T_scale(model,z)
+    lb_v = lb_volume(model,T,z)
     return (1.0, log10(lb_v/0.3))
+end
+
+function crit_pure(model::CPAModel)
+    if cpa_is_pure_cubic(model) && !model.cubicmodel.params.Pc.ismissingvalues[1]
+        return crit_pure(model.cubicmodel)
+    else
+        return crit_pure(model,x0_crit_pure(model))
+    end
+end
+
+function x0_sat_pure(model::CPAModel,T,crit = nothing)
+    #use the cubic initial guess if we don't have association.
+    cpa_is_pure_cubic(model) && x0_sat_pure(model.cubicmodel,T)
+    if crit === nothing
+        _,vl,vv = x0_sat_pure_virial(model,T)
+    else
+        _,vl,vv = x0_sat_pure_crit(model,T,crit)
+    end
+    return vl,vv
+end
+
+function x0_psat(model::CPAModel,T,crit = nothing)
+    cpa_is_pure_cubic(model) && x0_sat_pure(model.cubicmodel,T)
+    if crit === nothing
+        p,_,_ = x0_sat_pure_virial(model,T)
+    else
+        p,_,_ = x0_sat_pure_crit(model,T,crit)
+    end
+    return p
+end
+
+#=
+if we don't have association, reduce to the inner cubic model.
+=#
+function volume_impl(model::CPAModel,p,T,z,phase,threaded,vol0)
+    if cpa_is_pure_cubic(model)
+        return volume_impl(model.cubicmodel,p,T,z,phase,threaded,vol0)
+    else
+        return default_volume_impl(model,p,T,z,phase,threaded,vol0)
+    end
+end
+
+#approximating the gas phase as the pure cubic.
+function x0_volume_gas(model::CPAModel, p, T, z)
+    return volume(model.cubicmodel,p,T,z,phase = :v)
+end
+
+function x0_volume_liquid(model::CPAModel,p, T, z)
+    cpa_is_pure_cubic(model) && return volume(model.cubicmodel,p,T,z,phase = :l)
+    return 1.1*lb_volume(model,T,z)
 end
 
 data(model::CPAModel, V, T, z) = data(model.cubicmodel,V,T,z)
@@ -215,4 +275,29 @@ function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
     end
 
     return g*expm1(ϵ_associjab/T)*βijab*b[i,j]/N_A
+end
+#optimized Δ function for CPA, we only calculate g once.
+function  Δ(model::CPA, V, T, z,_data=@f(data))
+    n,ā,b̄,c̄ = _data
+    β = model.params.bondvol.values
+    b_cubic = model.params.b.values
+    η = n*b̄/(4*V)
+    rdf = model.radial_dist
+    g = if rdf == :CS #CPA original
+        (1-0.5*η)/(1-η)^3
+    elseif rdf == :KG #sCPA
+        1/(1-1.9η)
+    else
+        zero(η)/zero(η)
+    end
+    Δout = assoc_similar(β,typeof(V+T+first(z)+one(eltype(model))))
+    ϵ_assoc = model.params.epsilon_assoc
+    Δout.values .= false  #fill with zeros, maybe it is not necessary?
+    for (idx,(i,j),(a,b)) in indices(Δout)
+        βijab = β[idx]
+        if βijab != 0
+            Δout[idx] = g*expm1(ϵ_assoc[i,j][a,b]/T)*βijab*b_cubic[i,j]/N_A
+        end
+    end
+    return Δout
 end
