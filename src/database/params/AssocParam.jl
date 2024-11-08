@@ -146,7 +146,8 @@ function AssocParam(
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", param::AssocParam{T}) where T
-    print(io, "AssocParam{", string(T), "}")
+    print(io, typeof(param))
+    print(io,"(")
     print(io, param.components)
     l = length(param.values.values)
     print(io, ") with ", l, " value",ifelse(l==1,"","s"),":")
