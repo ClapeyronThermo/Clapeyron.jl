@@ -137,7 +137,8 @@ function CompositeModel(components ;
     saturation_userlocations = String[],
     melting_userlocations = String[],
     sublimation_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     _components = format_components(components)
     #take care of the solid phase first
@@ -213,8 +214,12 @@ function CompositeModel(components ;
             end
         end
     end
-    return CompositeModel(_components,init_fluid,init_solid,_mapping)
+    model = CompositeModel(_components,init_fluid,init_solid,_mapping)
+    set_reference_state!(model,verbose = verbose)
+    return model
 end
+
+reference_state(model::CompositeModel) = reference_state(model.fluid)
 
 function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
     fluid = model.fluid
@@ -252,13 +257,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
     end
 end
 
-"""
-    gas_model(model::EoSModel)
 
-provides the model used to calculate gas properties.
-By default, returns `fluid_model(model)`
-"""
-gas_model(model::EoSModel) = fluid_model(model)
 fluid_model(model::CompositeModel) = model.fluid
 solid_model(model::CompositeModel) = model.solid
 
@@ -283,6 +282,30 @@ function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
             #TODO: implement these when we have an actual sublimation-melting empiric model.
             throw(error("automatic phase detection not implemented for $(typeof(model))"))
         end
+    end
+end
+
+#dispatcher for bulk properties
+function PT_property(model::CompositeModel,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+    
+    if !(model.fluid isa RestrictedEquilibriaModel) && model.solid === nothing
+        return PT_property(fluid_model(model),p,T,z,phase,threaded,vol0,f,USEP)
+    end
+    
+    if !(model.solid isa RestrictedEquilibriaModel) && model.fluid === nothing
+        return PT_property(solid,p,T,z,phase,threaded,vol0,f,USEP)
+    end
+
+    if is_unknown(phase) || phase == :stable
+        throw(error("automatic phase detection not implemented for $(typeof(model))"))
+    end
+
+    if is_liquid(phase) || is_vapour(phase)
+        return PT_property(fluid_model(model),p,T,z,phase,threaded,vol0,f,USEP)
+    elseif is_solid(phase)
+        return PT_property(solid_model(model),p,T,z,phase,threaded,vol0,f,USEP)
+    else
+        throw(error("invalid phase specifier: $phase"))
     end
 end
 
