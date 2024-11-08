@@ -67,7 +67,7 @@ SAFTgammaMie(components;
 
 SAFT-γ-Mie EoS
 
-!! info
+!!! info
     You can choose between the Hudsen-McCoubrey combining rule (`√(ϵᵢ*ϵⱼ)*(σᵢ^3 * σⱼ^3)/σᵢⱼ^6`) or the default rule (`√(ϵᵢ*ϵⱼ*(σᵢ^3 * σⱼ^3))/σᵢⱼ^3`) by passing the `epsilon_mixing` argument.
     with arguments `:default` or `:hudsen_mccoubrey`
 

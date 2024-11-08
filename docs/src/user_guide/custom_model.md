@@ -221,7 +221,7 @@ Let us imagine we are trying to implement `PCSAFT`.
    For example, `@f(func,i,j)` is equivalent to calling `func(model,V,T,z,i,j)`.
 
    Clapeyron obtains all the properties of a model by differentiating the total Helmholtz energy ([`eos`](@ref)) or the residual Helmholtz energy (`eos_res`).
-   `eos` and `eos_res` themselves are defined in terms of the reduced ideal Helmholtz energy (`a_res`).
+   `eos` and [`eos_res`](@ref) themselves are defined in terms of the reduced ideal Helmholtz energy (`a_res`).
    In this case, we are going to define `a_res` for our own model:
 
    ```julia

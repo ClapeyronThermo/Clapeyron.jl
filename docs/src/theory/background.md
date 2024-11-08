@@ -250,7 +250,7 @@ this slightly reduces the computational cost.
 However, the most noteworthy simplification came with the association term.
 As mentioned earlier, the association fraction needs to be solved for iteratively.
 However, Huang and Radosz proposed approximations of the association fraction that could be used to solve for the association term explicitly, greatly reducing the computational intensity of these calculations.
-These approximations have not been implemented within `Clapeyron` as of yet, but these only impact calculations for species other than alcohols and carboxylic acids.
+Our current association solver returns analytic solutions for some simple cases (two sites interacting with each other or one self-interacting site).
 We also point out that Huang and Radosz introduced the concept of association schemes, which helps classify species based on how they interaction through association.
 
 #### SAFT‑VR SW
@@ -304,7 +304,7 @@ We will aim to provide some of these variants at a later date.
 
 #### sPC‑SAFT
 
-We do already provide one of the PC‑SAFT variants, namely the simplified PC‑SAFT equation (developed by Von Solms et al. (2003)).
+Known as the simplified PC‑SAFT equation (developed by Von Solms et al. (2003)).
 Here, the only modifications are to the hard-chain and association terms where, instead of using the generalised expressions for the hard-sphere term and hard-sphere pair distribution function, by averaging the hard-sphere diameter (effectively treating mixtures as being made up of identically sized segments), the pure component versions of these properties are used instead.
 The benefit of this is that pure component parameters determined for PC‑SAFT can still be used here, and only the unlike parameters need to be modified.
 
@@ -322,6 +322,7 @@ We do point out that, whilst the first two terms are developed following the SAF
 This third-order term resulted in significant improvements in the modelling of properties near the critical point (without using cross-over theory).
 The chain term also received further improvements as a result.
 This is also the only SAFT equation in which the hard-sphere diameter is evaluated analytically, although numerical approximations are needed (we note that the original SAFT‑VR Mie equation used 10-point Gauss–Legendre quadrature, whilst the newer version uses 5-point Gauss–Laguerre quadrature).
+The `Clapeyron.jl` implementation of the hard-sphere diameter uses a mixed approach, using 10-point Gauss-Laguerre quadrature for low reduced temperatures (`T/ε`) and a 10-point Gauss-Legendre integration with a cutoff radius for high temperatures.
 
 However, three different versions of the association strength have been developed:
 
@@ -339,7 +340,7 @@ However, three different versions of the association strength have been develope
 
 Unfortunately, it seems that there have been inconsistencies between which of these kernels is used in different publications.
 In the current 'default' SAFT‑VR Mie equation the Lennard-Jones kernel is used; as such, this is the one used in `Clapeyron`.
-We do intend to provide the option to switch between these kernels.
+The Mie kernel is available with the [`SAFTVRMie15`](@ref) equation of state.
 
 As a Mie potential is characterised by two shape parameters, $\lambda_\mathrm{a}$ (characterising the attractive part) and $\lambda_\mathrm{r}$ (characterising the repulsive part), both of these have become parameters for each species (although $\lambda_\mathrm{a}$ is usually set to 6).
 As we have different association terms, we also have different sets of parameters where the only difference is the length scale.
@@ -352,7 +353,6 @@ The SAFT‑VR Mie does not have a significantly large repository of parameters (
 A very recent extension of the SAFT‑VR Mie equation is the SAFT‑VRQ Mie equation developed by Aasen et al. (2019) in which the underlying Mie potential is modified using a Feynman–Hibbs potential, which means that a single species is represented by a sum of three Mie potentials.
 This method attempts to classically account for quantum effects present in small species such as helium, hydrogen and neon.
 Unfortunately, this equation is limited to just the monomer term and, even then, it is very computationally intensive.
-We do note that the current implementation in `Clapeyron` can only model pure component properties, but we will extend this to mixtures in future versions.
 
 #### SAFT‑$\gamma$ Mie
 
@@ -426,7 +426,9 @@ In order to avoid the unstable phases, we try to use initial guesses close to wh
    ``\frac{p_0}{RT_0} = \frac{n_0}{V}+\frac{n_0}{V^2}B(T)\rightarrow V_0=\frac{RT_0}{p_0}\frac{-1+\sqrt{1+4p_0B(T_0)/(RT_0)}}{2}``.
 
 1. Liquid: The best we can do here is to obtain the volume corresponding to a large packing fraction (we typically pick 0.6 to 0.8):
+
    ``V_0 = \frac{N_\mathrm{A}\pi}{6\times 0.8}m\sigma^3``.
+
    We are still looking for ways to improve this but the volume function is quite reliable as of now.
 
 One other issue to consider when solving this problem is that, within the liquid phase, the gradients are very large; this can be difficult for algorithms to handle (even when providing the exact derivatives through automatic differentiation).

@@ -208,7 +208,7 @@ We currently support:
 - [`WSRule`](@ref): The Wong–Sandler mixing rule which also relies on an activity model.
   The equations are slightly more complicated but it is meant to be an improvement compared to `HVRule`.
   Also needs an activity model to be specified.
-- [`modWSRule`](@ref): A modified Wong–Sandler mixing rule, that reduces to vdW1f when there is no nonideal mixtures.
+- [`modWSRule`](@ref): A modified Wong–Sandler mixing rule, that reduces to `vdW1fRule` when there is no nonideal mixtures.
 - [`LCVMRule`](@ref): The Linear Combination of Vidal and Michelsen mixing rules is designed for asymmetric mixtures.
   Also needs an activity model to be specified.
 

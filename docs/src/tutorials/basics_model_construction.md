@@ -312,7 +312,7 @@ SiteParam with 2 components:
  "1-propanol": "e" => 1, "H" => 1
 
 julia> model.params.epsilon_assoc
-AssocParam{Float64}["water", "1-propanol"]) with 2 values:
+AssocParam{Float64}(["water", "1-propanol"]) with 2 values:
 ("water", "e") >=< ("water", "H"): 2500.7
 ("1-propanol", "e") >=< ("1-propanol", "H"): 2276.8
 ```
@@ -390,13 +390,10 @@ In these cases, we need to combine various models together to obtain the 'full' 
 In the most general case, five models must be specified:
 
 ```julia
-struct CompositeModel{𝕍,𝕃,𝕊,𝕃𝕍,𝕃𝕊} <: EoSModel
+struct CompositeModel{𝕃,𝕊} <: EoSModel
     components::Vector{String}
-    gas::𝕍
-    liquid::𝕃
+    fluid::𝕃
     solid::𝕊
-    saturation::𝕃𝕍
-    melting::𝕃𝕊
 end
 ```
 
