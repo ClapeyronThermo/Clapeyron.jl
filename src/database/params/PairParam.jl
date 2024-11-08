@@ -12,7 +12,7 @@ Struct designed to contain pair data. used a matrix as underlying data storage.
 ## Creation:
 ```julia-repl
 julia> kij = PairParam("interaction params",["water","ammonia"],[0.1 0.0;0.1 0.0])
-PairParam{Float64}["water", "ammonia"]) with values:
+PairParam{Float64}(["water", "ammonia"]) with values:
 2×2 Matrix{Float64}:
  0.1  0.0
  0.1  0.0
