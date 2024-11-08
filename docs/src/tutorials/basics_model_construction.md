@@ -212,8 +212,8 @@ This includes:
     Contains parameters: A, B, C, R, Q
     ```
 
-Whilst one could combine all the parts listed above in endless ways, there are some default combinations which we provide.
-These are typically referred to as predictive cubics: Predictive SRK (`PSRK`) and Volume-Translated PR (`VTPR`).
+  Whilst one could combine all the parts listed above in endless ways, there are some default combinations which we provide.
+  These are typically referred to as predictive cubics: Predictive SRK (`PSRK`) and Volume-Translated PR (`VTPR`).
 
 ## Activity Coefficient Models
 

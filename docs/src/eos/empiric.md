@@ -79,7 +79,7 @@ Clapeyron.TholLJ
 Clapeyron.Ammonia2023
 ```
 
-## MultiComponent models
+## MultiComponent Models
 
 ```@docs
 Clapeyron.LJRef
@@ -89,7 +89,7 @@ Clapeyron.EOS_CG
 Clapeyron.HelmAct
 ```
 
-## Mixing models
+## Mixing Models
 
 ```@docs
 Clapeyron.LinearMixing
@@ -97,7 +97,7 @@ Clapeyron.AsymmetricMixing
 Clapeyron.LorentzBerthelotMixing
 ```
 
-## Departure models
+## Departure Models
 
 ```@docs
 Clapeyron.EmpiricDeparture
