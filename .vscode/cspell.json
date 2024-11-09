@@ -1,0 +1,52 @@
+// cSpell Settings
+{
+    // Version of the setting file.  Always 0.2
+    "version": "0.2",
+    // language - current active spelling language
+    "language": "en-GB",
+    "dictionaryDefinitions": [
+        { "name": "models", "path": "./dictionaries/models.txt" },
+        { "name": "names", "path": "./dictionaries/names.txt" }
+    ],
+    "dictionaries": [
+        "models",
+        "names"
+    ],
+    // words - list of words to be always considered correct
+    "words": [
+        "acentricity",
+        "acetonitrile",
+        "assoc",
+        "cleartemp",
+        "coeffs",
+        "crit",
+        "equivol",
+        "expansivity",
+        "gclocations",
+        "getparams",
+        "isochoric",
+        "newmodel",
+        "newmodelgc",
+        "newmodelsimple",
+        "newmodelsingleton",
+        "numphases",
+        "packagedparams",
+        "pairmean",
+        "propanol",
+        "pures",
+        "psat",
+        "registermodel",
+        "SolidHfus",
+        "splittable",
+        "squarewell",
+        "struct",
+        "structs",
+        "Tsat",
+        "virial"
+    ],
+    // flagWords - list of words to be always considered incorrect
+    // This is useful for offensive words and common spelling errors.
+    // For example "hte" should be "the"
+    "flagWords": [
+    ]
+}
