@@ -1,7 +1,3 @@
-```@meta
-CurrentModule = Clapeyron
-```
-
 ## Index
 
 ```@index
