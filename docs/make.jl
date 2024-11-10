@@ -32,6 +32,7 @@ warnonly = Documenter.except(),
                             "Empiric Helmholtz Models" => "eos/empiric.md"
                             "Property Correlations" =>  "eos/correlations.md"
                             "Other Models" => "eos/misc.md"],
+        "Frequently Asked Questions" => "faq.md",
         "Available Properties" => ["Basic Properties" => "properties/basic.md",
                                    "Bulk Properties" => "properties/bulk.md",
                                    "Single phase Properties" => "properties/single.md",

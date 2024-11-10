@@ -567,6 +567,13 @@ end
     #methanol, uses assoc term
     @test saturation_pressure(SingleFluid("methanol"),300.15)[1] ≈ PropsSI("P","T",300.15,"Q",1.,"methanol") rtol = 1e-6
     
+    r134 = SingleFluid("r134a")
+    r1342 = MultiFluid("r134a")
+    @test Clapeyron.eos(r134,0.03,373.15,Clapeyron.SA[1.0]) ≈ PropsSI("HELMHOLTZMOLAR","Dmolar",1/0.03,"T",373.15,"R134a")
+    @test Clapeyron.eos(r1342,0.03,373.15,Clapeyron.SA[1.0]) ≈ PropsSI("HELMHOLTZMOLAR","Dmolar",1/0.03,"T",373.15,"R134a")
+    @test Clapeyron.a_res(r134,0.03,373.15,Clapeyron.SA[1.0]) ≈ PropsSI("ALPHAR","Dmolar",1/0.03,"T",373.15,"R134a")
+    @test Clapeyron.a_res(r1342,0.03,373.15,Clapeyron.SA[1.0]) ≈ PropsSI("ALPHAR","Dmolar",1/0.03,"T",373.15,"R134a")
+
     #tests send via email
 
     fluid1 = SingleFluid("n-Undecane")

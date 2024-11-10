@@ -387,7 +387,6 @@ As these equations of state typically have common terms, rather than specifying 
 Not every equation of state provides a global representation of the phase space of a system (for example, activity coefficient models only consider the liquid phase).
 In these cases, we need to combine various models together to obtain the 'full' representation.
 `CompositeModels` allows users to mix-and-match all of our available models.
-In the most general case, five models must be specified:
 
 ```julia
 struct CompositeModel{𝕃,𝕊} <: EoSModel
@@ -455,9 +454,19 @@ Contains parameters: segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, e
 ```
 
 Note how we must now provide the number of times each group is bonded with one another.
-The only other equation of state which requires this is `gcPCSAFT`.
+The only other equation of state which requires this is `gcPCPSAFT`.
 
-!!! note "External Packages"
-    This process can get quite tedious when dealing with larger species.
-    As such, we are currently developping a new package to automate this process.
-    We hope to register [GCIdentifier.jl](https://github.com/ClapeyronThermo/GCIdentifier.jl) soon.
+### Automatic Group Contribution Identification
+
+The process of group identification can get quite tedious, specially when dealing with larger species. One way to generate group contribution fragmentations is by using the `SMILES` specification to parse the chemical structure of a particular species, and subdivide said structure into a particular set of groups.
+
+We recommend using [GCIdentifier.jl](https://github.com/ClapeyronThermo/GCIdentifier.jl) as a tool to generate group contribution fragmentations from `SMILES` strings. for example we can generate an UNIFAC model of ibuprofen and water in the following way:
+```julia
+julia> _,groups_ibuprofen = get_groups_from_smiles("CC(Cc1ccc(cc1)C(C(=O)O)C)C", UNIFACGroups)
+("CC(Cc1ccc(cc1)C(C(=O)O)C)C", ["COOH" => 1, "CH3" => 3, "CH" => 1, "ACH" => 4, "ACCH2" => 1, "ACCH" => 1])
+
+julia> model = UNIFAC(["water" => ["H2O" => 1],"ibuprofen" => groups_ibuprofen])
+```
+
+For more information about
+
