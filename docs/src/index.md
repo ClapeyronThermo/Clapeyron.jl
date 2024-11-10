@@ -11,26 +11,26 @@ The documentation is laid out as follows:
 
 0. **Installation**
 1. **Model construction**
-1.1 Ideal gas models
-1.2 Cubic equations of state
-1.3 SAFT equations of state
-1.4 Empirical equations of state
-1.5 Activity coefficient models
-1.6 Composite Models
-1.A Available groups
+    - Ideal gas models
+    - Cubic equations of state
+    - SAFT equations of state
+    - Empirical equations of state
+    - Activity coefficient models
+    - Composite Models
+    - Group Contribution Models
 2. **Property Estimation**
-2.1 Bulk Properties
-2.2 Phase Equilibria
-2.3 Flash Calculations
+    -  Bulk Properties
+    - Phase Equilibria
+    - Flash Calculations
 3. **Parameter Estimation**
 4. **Extensions**
-4.1 CoolProp
-4.2 Symbolics
-4.3 Measurements
+    - CoolProp
+    - Symbolics
+    - Measurements
 5. **Package Development**
-5.1 Developing new methods
-5.2 Developing new models
-5.3 Contributing to the package
+    - Developing new methods
+    - Developing new models
+    - Contributing to the package
 6. **API**
 
 ## Authors
