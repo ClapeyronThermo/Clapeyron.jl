@@ -31,12 +31,12 @@ mixing = LinearMixing(["water","carbon dioxide"])
 LinearMixing
 
 function v_scale(model::MultiFluid,z,mixing::LinearMixing,∑z)
-    Vc = model.params.Vc.values
+    Vc = model.params.Vr.values
     dot(Vc,z)/∑z
 end
 
 function T_scale(model::MultiFluid,z,mixing::LinearMixing,∑z)
-    Tc = model.params.Tc.values
+    Tc = model.params.Tr.values
     return dot(Tc,z)/∑z
 end
 

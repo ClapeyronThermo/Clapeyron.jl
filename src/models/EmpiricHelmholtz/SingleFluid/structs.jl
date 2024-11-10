@@ -134,7 +134,13 @@ function show_multiparameter_coeffs(io,param::MultiParameterParam)
     res = String[]
 
     if hasfield(typeof(param),:a1) && hasfield(typeof(param),:a2) && hasfield(typeof(param),:c0)
-        def_terms = "Lead terms: $(param.a1) + $(param.a2)*τ + $(param.c0)*log(τ)"
+        def_terms1 = "Lead terms: $(param.a1) + $(param.a2)*τ"
+        def_terms2 = "$(abs(param.c0))*log(τ)"
+        if param.c0 > 0
+            def_terms = def_terms1 * " + " * def_terms2
+        else
+            def_terms = def_terms1 * " - " * def_terms2
+        end
         if hasfield(typeof(param),:c1)
             if param.c1 != 0
                 def_terms = def_terms * " + $(param.c1)*τ*log(τ)" 

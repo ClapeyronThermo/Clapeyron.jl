@@ -3,6 +3,8 @@ struct MultiFluidParam <: EoSParam
     Tc::SingleParam{Float64}
     Pc::SingleParam{Float64}
     Vc::SingleParam{Float64}
+    Tr::SingleParam{Float64}
+    Vr::SingleParam{Float64}
     acentricfactor::SingleParam{Float64}
     lb_volume::SingleParam{Float64}
     reference_state::ReferenceState
@@ -13,10 +15,12 @@ function MultiFluidParam(components,pures,reference_state = nothing)
     Tc = SingleParam("Tc",components,[pure.properties.Tc for pure in pures])
     Pc = SingleParam("Pc",components,[pure.properties.Pc for pure in pures])
     Vc = SingleParam("Vc",components,1 ./ [pure.properties.rhoc for pure in pures])
+    Tr = SingleParam("Pc",components,[pure.properties.Tr for pure in pures])
+    Vr = SingleParam("Vc",components,1 ./ [pure.properties.rhor for pure in pures])
     acentricfactor = SingleParam("acentric factor",components,[pure.properties.acentricfactor for pure in pures])
     lb_volume = SingleParam("lower bound volume",components,[pure.properties.lb_volume for pure in pures])
     ref = __init_reference_state_kw(reference_state)
-    return MultiFluidParam(Mw,Tc,Pc,Vc,acentricfactor,lb_volume,ref)
+    return MultiFluidParam(Mw,Tc,Pc,Vc,Tr,Vr,acentricfactor,lb_volume,ref)
 end
 
 struct MultiFluid{𝔸,𝕄,ℙ} <: EmpiricHelmholtzModel
@@ -143,8 +147,8 @@ function a_ideal(model::MultiFluid,V,T,z,∑z = sum(z))
     res = zero(V+T+first(z))
     m₀ = model.pures
     Tinv = 1/T
-    Tc = model.params.Tc
-    vc = model.params.Vc
+    Tc = model.params.Tr
+    vc = model.params.Vr
     Rinv = 1/Rgas(model)
     for i in 1:length(model)
         m₀ᵢ = m₀[i]

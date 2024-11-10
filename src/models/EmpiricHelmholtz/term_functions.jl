@@ -6,22 +6,21 @@
     return αᵣ
 end
 
+function term_ar_exp(δ,τ,lnδ,lnτ,_0,n,t,d,l,g)
+    αᵣ = zero(_0) 
+    for k in eachindex(n)
+        dpart = lnδ*d[k] - g[k]*δ^l[k]
+        αᵣ += n[k]*exp(dpart + lnτ*t[k])
+    end
+    return αᵣ
+end
+
 @inline function term_ar_gauss(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε)
     αᵣ = zero(_0)
     for k in eachindex(n)
         Δδ = δ-ε[k]
         Δτ = τ-γ[k]
         αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k] - η[k]*Δδ*Δδ  - β[k]*Δτ*Δτ)
-    end
-    return αᵣ
-end
-#TODO: transform to gauss form?
-#(described in EOS-LNG paper)
-@inline function term_ar_gerg2008(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε)
-    αᵣ = zero(_0)
-    for k in eachindex(n)
-        Δδ = δ-ε[k]
-        αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k] - η[k]*Δδ*Δδ  - β[k]*(δ-γ[k]))
     end
     return αᵣ
 end
@@ -58,14 +57,6 @@ function term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε,κ,a,m,v̄ₙ)
     Δ = g*(exp(ε*τ) - 1)*κ
     X = 2 / (sqrt(1 + 4 * Δ * δ) + 1)
     return m * a * ((log(X) - X / 2.0 + 0.5))
-end
-
-function term_ar_exp(δ,τ,lnδ,lnτ,_0,n,t,d,l,g)
-    αᵣ = zero(_0)
-    for k in eachindex(n)
-        αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k] - g[k]*δ^l[k])
-    end
-    return αᵣ
 end
 
 #ideal terms
