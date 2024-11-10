@@ -27,61 +27,64 @@ We reccommend to always try to provide an initial point for multicomponent prope
 ### Why is my equation of state so slow to evaluate?
 
 There are two main causes for a slow function in julia:
-- Performance Problems: For example, mutating a global variable, or changing the type of a variable mid-computation. Check [Julia's Performance Tips](https://docs.julialang.org/en/v1/manual/performance-tips/). In the `Clapeyron.jl` context, Type instability is the main cause of performance problems, due to how derivatives are calculated (via `ForwardDiff.jl` dual numbers). If the defined function is not stable for multiple number types, then it will be slower to evaluate:
+- Performance Problems: For example, mutating a global variable, or changing the type of a variable mid-computation. 
+  Check [Julia's Performance Tips](https://docs.julialang.org/en/v1/manual/performance-tips/). In the `Clapeyron.jl` context, type instability is the main cause of performance problems, due to how derivatives are calculated (via `ForwardDiff.jl` dual numbers). 
+  If the defined function is not stable for multiple number types, then it will be slower to evaluate:
 
-    ```julia
-    struct MyvdW <: EoSModel
-        a::Float64
-        b::Float64
-    end
+  ```julia
+  struct MyvdW <: EoSModel
+      a::Float64
+      b::Float64
+  end
 
-    #bad
-    function Clapeyron.a_res(model::MyvdW,V,T,z)
-        result = 0 # an integer type
-        n = sum(z)
-        a = model.a
-        b = model.b
-        rho  = n/V
-        result =  result - log1p(b*rho) #will change to a value depending of the value of rho
-        result = result - a*rho/8.314/T #will change to a value depending of the value of T
-        return result
-    end
+  #bad
+  function Clapeyron.a_res(model::MyvdW,V,T,z)
+      result = 0 # an integer type
+      n = sum(z)
+      a = model.a
+      b = model.b
+      rho  = n/V
+      result =  result - log1p(b*rho) #will change to a value depending of the value of rho
+      result = result - a*rho/8.314/T #will change to a value depending of the value of T
+      return result
+  end
 
-    #good 
-    function Clapeyron.a_res(model::MyvdW,V,T,z)
-        result = zero(Base.promote_eltype(model,V,T,z)) #the result value already considers the types of the model, V,T and the input amounts
-        n = sum(z)
-        a = model.a
-        b = model.b
-        rho  = n/V
-        result =  result - log1p(b*rho)
-        result = result - a*rho/8.314/T
-        return result
-    end
-    ```
-    While julia is really good at inferring types in arithmetic operations (in the example above, `return log1p(b*rho) - a*rho/8.314/T` would work just as well), writting an equation of state in a type-stable way allows faster compilation and evaluation.
+  #good 
+  function Clapeyron.a_res(model::MyvdW,V,T,z)
+      result = zero(Base.promote_eltype(model,V,T,z)) #the result value already considers the types of the model, V,T and the input amounts
+      n = sum(z)
+      a = model.a
+      b = model.b
+      rho  = n/V
+      result =  result - log1p(b*rho)
+      result = result - a*rho/8.314/T
+      return result
+  end
+  ```
+  While julia is really good at inferring types in arithmetic operations (in the example above, `return log1p(b*rho) - a*rho/8.314/T` would work just as well), writting an equation of state in a type-stable way allows faster compilation and evaluation.
 
-- Algorithm Problems: the most common of those problems is calculating a variable over an over again in a loop.We recommend calculating everything that could be needed beforehand and passing those calculated variables along:
+- Algorithm Problems: The most common of those problems is calculating a variable over an over again in a loop. 
+  We recommend calculating everything that could be needed beforehand and passing those calculated variables along:
 
-    ```julia
-    function data(model::MyModel,V,T,z)
-        d = Clapeyron.d(model,V,T,z)
-        n = sum(z)
-        m = LinearAlgebra.dot(model.params.segment.values,z)/n #∑mᵢzᵢ
-        return (m,d,n)
-    end
+  ```julia
+  function data(model::MyModel,V,T,z)
+      d = Clapeyron.d(model,V,T,z)
+      n = sum(z)
+      m = LinearAlgebra.dot(model.params.segment.values,z)/n #∑mᵢzᵢ
+      return (m,d,n)
+  end
 
-    function a_res(model::MyModel,V,T,z,mydata = data(model,V,T,z))
-        return a1(model,V,T,z,mydata) + a2(model,V,T,z,mydata)
-    end
+  function a_res(model::MyModel,V,T,z,mydata = data(model,V,T,z))
+      return a1(model,V,T,z,mydata) + a2(model,V,T,z,mydata)
+  end
 
-    function a1(model,V,T,Z,mydata = data(model,V,T,z))
-        m,d,n = mydata
-        #definition for a1
-    end
+  function a1(model,V,T,Z,mydata = data(model,V,T,z))
+      m,d,n = mydata
+      #definition for a1
+  end
 
-    function a2(model,V,T,Z,mydata = data(model,V,T,z))
-        __,d,_ = mydata #in this function, only d is used
-        #definition for a2
-    end
-    ```
+  function a2(model,V,T,Z,mydata = data(model,V,T,z))
+      _,d,_ = mydata #in this function, only d is used
+      #definition for a2
+  end
+  ```
