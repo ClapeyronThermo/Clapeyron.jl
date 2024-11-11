@@ -332,7 +332,7 @@ function gc_to_comp_sites(param::AssocParam,sites::SiteParam)
                 for b in 1:length(site_translator_j)
                     j_gc,b_gc = site_translator_j[b]
                     #absolute index, relative to the Compressed4DMatrix
-                    idx = validindex(ij_pair,a,b)
+                    idx = validindex(ij_pair,a,b,false)
                     if idx != 0
                         ijab1 = param[i_gc,j_gc]
                         idx_ijab = validindex(ijab1,a_gc,b_gc,false)
