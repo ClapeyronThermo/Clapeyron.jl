@@ -97,7 +97,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
   prop_bubble = property(model,p,bubble_temp,z,phase=phase)
   prop_dew = property(model,p,dew_temp,z,phase=phase)
-
+  F(T) = property(model,p,T,z,phase = phase)
   #case 1: Monotonically increasing
   if (prop_bubble < prop_dew)
     verbose && @info "$property at bubble < $property at dew point."

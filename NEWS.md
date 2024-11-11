@@ -14,3 +14,4 @@
 - fixes in calculation of spinodal with cubics.
 - `MultiFluid` and `SingleFluid` errors when T_reducing != Tc.
 - fix `VT_identify_phase`.
+- fix GC-to-component asssociation mix when there are non-symmetric values.
