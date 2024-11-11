@@ -20,15 +20,15 @@ function x0_Tproperty(model::EoSModel,p,z::AbstractVector,verbose = false)
 end
 
 """
-    `FindEdge(f::Function,a::Float64,b::Float64)`
+    `FindEdge(f::Function,a,b)`
 Finds approx singularity location in range `a`,`b` for function `f`. There should be only 1 singularity in [`a`,`b`].
 """
 function FindEdge(f::Function,a,b)
   @assert b>= a
   if isapprox(a,b,atol=1e-10)
-    return a;
+    return a
   end
-    c = (a+b)/2;
+    c = (a+b)/2
     f1,f2,f3 = f(a),f(c),f(b)
     ∇f1,∇f2 = (f2 - f1)/(c - a),(f3 - f2)/(b - a)
     if (∇f2 > ∇f1)
@@ -45,171 +45,201 @@ Given `p` and any other bulk property `prop` calculated via `property`, returns 
 
 Not all cases of pressure will work as `Clapeyron.bubble_temperature(model,p,z)` and `Clapeyron.dew_temperature(model,p,z)` does not always find a correct starting point.
 """
-function Tproperty(model::EoSModel,p,prop,z = SA[1.0],property::TT = enthalpy;rootsolver = Roots.Order0(),phase =:unknown,abstol = 1e-15,reltol = 1e-15, verbose = false) where TT
+function Tproperty(model::EoSModel,p,prop,z = SA[1.0],
+                  property::TT = enthalpy;
+                  rootsolver = Roots.Order0(),
+                  phase =:unknown,
+                  abstol = 1e-15,
+                  reltol = 1e-15,
+                  T0 = nothing,
+                  verbose = false,
+                  threaded = true) where TT
+
+
+
+  T,_ = _Tproperty(model,p,prop,z,property;rootsolver,phase,abstol,reltol,threaded,T0)
+  return T
+end
+
+function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
+                  property::TT = enthalpy;
+                  rootsolver = Roots.Order0(),
+                  phase =:unknown,
+                  abstol = 1e-15,
+                  reltol = 1e-15,
+                  T0 = nothing,
+                  verbose = false,
+                  threaded = true) where TT
+
+
   if length(model) == 1 && length(z) == 1
-    return Tproperty_pure(model::EoSModel,p,prop,property;rootsolver,phase,abstol,verbose)
+    return Tproperty_pure(model,p,prop,property,rootsolver,phase,abstol,reltol,verbose,threaded,T0)
   end
+
+  if T0 !== nothing
+      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T0)
+  end
+
   bubble_temp,dew_temp = x0_Tproperty(model,p,z,verbose)
-  if isnan(bubble_temp) || isnan(dew_temp)
-    #TODO handle this case
-    return bubble_temp
+
+  #if any bubble/dew pressure is NaN, try solving for the non-NaN value
+  #if both values are NaN, try solving using T_scale(model,z)
+  if isnan(bubble_temp) && !isnan(dew_temp)
+    verbose && @warn "non-finite bubble point, trying to solve using the dew point"
+    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
+  elseif !isnan(bubble_temp) && isnan(dew_temp)
+    verbose && @warn "non-finite dew point, trying to solve using the bubble point"
+    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
+  elseif isnan(bubble_temp) && isnan(dew_temp)
+    verbose && @warn "non-finite dew and bubble points, trying to solve using Clapeyron.T_scale(model,z)"
+    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
   end
+
   prop_bubble = property(model,p,bubble_temp,z,phase=phase)
   prop_dew = property(model,p,dew_temp,z,phase=phase)
-  f(t,prop) = property(model,p,t,z,phase = phase) - prop
-  F(T) = property(model,p,T,z,phase = phase)
+
   #case 1: Monotonically increasing
   if (prop_bubble < prop_dew)
     verbose && @info "$property at bubble < $property at dew point."
     if (prop < prop_bubble)
       verbose && @info "$property < $property at bubbble point"
-      prob = Roots.ZeroProblem(f,bubble_temp)
-      sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
-      return sol
+      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
     end
 
-    if (prop >= prop_bubble && prop <= prop_dew)
+    if prop_bubble <= prop <= prop_dew
       verbose && @info "$property at bubble <= $property <= $property at dew"
+
       T_edge = FindEdge(F,bubble_temp,dew_temp)
-      prop_edge1 = property(model,p,T_edge - 1e-10,z,phase = phase);
-      prop_edge2 = property(model,p,T_edge + 1e-10,z,phase = phase);
-      if (prop >= prop_edge1 && prop <= prop_edge2)
-        verbose && @warn "In the phase change region"
-        return T_edge
-      end
-
-      if (prop < prop_edge1)
-        verbose && @info "$property at bubble point < $property < $property at edge point"
-        prob = Roots.ZeroProblem(f,bubble_temp)
-        sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
-        return sol
-      end
-
-      if (prop>prop_edge2)
-        verbose && @info "$property at edge point < $property < $property at dew point"
-        prob = Roots.ZeroProblem(f,dew_temp)
-        sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
-        return sol
-      end
-    end
-
-    if (prop > prop_dew)
-      verbose && @info "$property at dew point < $property"
-      prob = Roots.ZeroProblem(f,dew_temp)
-      sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
-      return sol
-    end
-  end
-
-
-  #case 2: Monotonically decreasing
-  if (prop_bubble > prop_dew)
-    verbose && @info "$property at bubble > $property at dew point."
-    if (prop > prop_bubble)
-      verbose && @info "$property > $property at bubbble point"
-      prob = Roots.ZeroProblem(f,bubble_temp)
-      sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
-      return sol
-    end
-
-    if (prop<= prop_bubble && prop >= prop_dew)
-      verbose && @info "$property at bubble >= $property >= $property at dew"
-      T_edge = FindEdge(F,bubble_temp,dew_temp)
-
       prop_edge1 = property(model,p,T_edge - 1e-10,z,phase = phase)
       prop_edge2 = property(model,p,T_edge + 1e-10,z,phase = phase)
-      if (prop <= prop_edge1 && prop >= prop_edge2)
-        verbose && @warn "In the phase change region"
-        return T_edge
 
-      elseif (prop >= prop_edge1)
-        verbose && @info "$property at bubble point > $property > $property at edge point"
-        prob = Roots.ZeroProblem(f,bubble_temp)
-        sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
-        return sol
+      if prop_edge1 <= prop <= prop_edge2
+        verbose && @warn "In the phase change region"
+        return T_edge,:eq 
       end
 
-      if (prop <= prop_edge2)
+      if prop < prop_edge1
+        verbose && @info "$property at bubble point < $property < $property at edge point"
+        return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
+      end
+
+      if prop > prop_edge2
         verbose && @info "$property at edge point < $property < $property at dew point"
-        prob = Roots.ZeroProblem(f,dew_temp)
-        sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
-        return sol
+        return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
       end
     end
 
-    if (prop < prop_dew)
-      verbose && @info "$property at dew point > $property"
-      prob = Roots.ZeroProblem(f,dew_temp)
-      sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
-      return sol
+    if prop > prop_dew
+      verbose && @info "$property at dew point < $property"
+      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
     end
   end
+
+  #case 2: Monotonically decreasing
+  if prop_bubble > prop_dew
+    verbose && @info "$property at bubble > $property at dew point."
+    if prop > prop_bubble
+      verbose && @info "$property > $property at bubbble point"
+      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
+    end
+
+    if prop_dew <= prop <= prop_bubble
+      verbose && @info "$property at bubble >= $property >= $property at dew"
+
+      T_edge = FindEdge(F,bubble_temp,dew_temp)
+      prop_edge1 = property(model,p,T_edge - 1e-10,z,phase = phase)
+      prop_edge2 = property(model,p,T_edge + 1e-10,z,phase = phase)
+
+      if prop_edge2 <= prop <= prop_edge1
+        verbose && @warn "In the phase change region"
+        return T_edge,:eq
+
+      elseif prop >= prop_edge1
+        verbose && @info "$property at bubble point > $property > $property at edge point"
+        return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
+      end
+
+      if prop <= prop_edge2
+        verbose && @info "$property at edge point < $property < $property at dew point"
+        return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
+      end
+    end
+
+    if prop < prop_dew
+      verbose && @info "$property at dew point > $property"
+      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
+    end
+  end
+
+  _0 = Base.promote_eltype(model,p,prop,z)
+  return _0/_0,:failure
 end
 
+function Tproperty_pure(model,p,prop,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,T0) where F
 
+  if T0 !== nothing
+    sol = __Tproperty(model,p,prop,property,rootsolver,phase,abstol,reltol,threaded,T0)
+  end
 
-"""
-`Tproperty(model::EoSModel,p,prop,property::Function;rootsolver = FastShortcutNonlinearPolyalg(),phase =:unknown)` for single components `model`
-
-Requires `p` and any other bulk property `prop` to compute the necessary temperature.
-"""
-function Tproperty_pure(model::EoSModel,p,prop,property::Function;rootsolver = Roots.Order0(),phase =:unknown,abstol = 1e-15,reltol = 1e-15,verbose=false)
   crit = crit_pure(model)
   Tc,Pc,Vc = crit
   Tsat,vlsat,vvpat = Clapeyron.x0_saturation_temperature(model,p,crit)
   if isnan(Tsat)
-    if p < Pc
-      verbose && @error "Saturation temperature not found"
-      return Tsat
-    else
-      #use saturation extrapolation. we extrapolate the saturation curve based on the slope at the critical point and calculate a "pseudo" temperature.
-      _p(_T) = pressure(pure,Vc,_T)
-      dpdT = Solvers.derivative(_p,Tc)
-      dlnPdTinvsat = -dpdT*Tc*Tc/Pc
-      Δlnp = log(p/pii)
-      #dT = clamp(dTdp*Δp,-0.5*T,0.5*T)
-      Tinv0 = 1/T
-      Tinv = Tinv0 + dTinvdlnp*Δlnp
-      Tsat = 1/Tinv
-    end
+    Tsat = critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
   end
+
   Tmin = Tsat - 1
   Tmax = min(Tsat + 1,Tc)
   prop_edge1 = property(model,p,Tmin,phase = phase)
   prop_edge2 = property(model,p,Tmax,phase = phase)
-  f(t,prop) = property(model,p,t,phase = phase) - prop;
-  #case 1: Monotonically increasing property value i.e. prop_edge1 < prop_edge2
+
+  #case 1: property inside saturation dome
+  if (prop_edge1 <= prop <= prop_edge2) || (prop_edge2 <= prop <= prop_edge1)
+    verbose && @warn "$property value in phase change region. Will return temperature at saturation point"
+    return Tsat,:eq
+  end
+
+  #case 2: Monotonically increasing property value i.e. prop_edge1 < prop_edge2
   if (prop_edge1 < prop_edge2)
     if (prop < prop_edge1)
       verbose && @info "$property < $property at saturation point"
-      prob = Roots.ZeroProblem(f,Tmin)
-      sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
-    elseif (prop_edge1 <= prop && prop_edge2 >= prop)
-      verbose && @warn "$property value in phase change region. Will return temperature at saturation point"
-      sol = Tsat
-    elseif (prop_edge2< prop)
+      return __Tproperty(model,p,prop,property,rootsolver,phase,abstol,reltol,threaded,Tmin)
+    else# (prop_edge2 < prop)
       verbose && @info "$property > $property at saturation point"
-      prob = Roots.ZeroProblem(f,Tmax)
-      sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
-      return sol
+      return __Tproperty(model,p,prop,property,rootsolver,phase,abstol,reltol,threaded,Tmax)
     end
-  end
-  #case 2: Monotonically decreasing property value i.e. prop_edge1 > prop_edge2
-  if (prop_edge2 < prop_edge1)
+  else
+  #case 3: Monotonically decreasing property value i.e. prop_edge1 > prop_edge2
     if (prop < prop_edge2)
       verbose && @info "$property < $property at saturation point"
-      prob = Roots.ZeroProblem(f,Tmax)
-      sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
-    elseif (prop_edge1 >= prop && prop_edge2 <= prop)
-      verbose && @warn "$property value in phase change region. Will return temperature at saturation point"
-      sol = Tsat
-    elseif (prop_edge1 < prop)
+      return __Tproperty(model,p,prop,property,rootsolver,phase,abstol,reltol,threaded,Tmax)
+    else (prop_edge1 < prop)
       verbose && @info "$property > $property at saturation point"
-      prob = Roots.ZeroProblem(f,Tmin)
-      sol = Roots.solve(prob,rootsolver,prop,atol = abstol,rtol = reltol)
+      return __Tproperty(model,p,prop,property,rootsolver,phase,abstol,reltol,threaded,Tmin)
     end
   end
-  return sol
+  _0 = Base.promote_eltype(model,p,prop,1.0)
+  return _0/_0,:failure
+end
+
+function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
+  if is_unknown(phase)
+    new_phase = identify_phase(model,p,T0,z)
+    if is_unknown(new_phase) #something really bad happened
+      _0 = zero(Base.promote_eltype(model,p,prop,z))
+      nan = _0/_0
+      return nan,:unknown
+    end
+    return __Tproperty(model,p,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,T0)
+  end
+  f(t,prop) = property(model,p,t,z,phase = phase,threaded = threaded) - prop
+  prob = Roots.ZeroProblem(f,T0)
+  sol = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
+  return sol,phase
+end
+
+function __Tproperty(model,p,prop,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
+  __Tproperty(model,p,prop,SA[1.0],property,rootsolver,phase,abstol,reltol,threaded,T0)
 end
 
 # model = PCSAFT(["propane","dodecane"])
