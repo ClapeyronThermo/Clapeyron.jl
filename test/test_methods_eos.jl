@@ -6,14 +6,16 @@ using Clapeyron, Test, Unitful
     p = 1e5
     T = 298.15
     T2 = 373.15
+    v = 5.907908736304141e-5
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 5.907908736304141e-5 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T) ≈ v rtol = 1e-6
         @test Clapeyron.volume(system, p, T;phase=:v) ≈ 0.020427920501436134 rtol = 1e-6
-        @test Clapeyron.volume(system, p, T;threaded=:false) ≈ 5.907908736304141e-5 rtol = 1e-6
-        @test Clapeyron.pip(system, 5.907908736304141e-5, T, [1.]) ≈ 6.857076349623449 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T;threaded=:false) ≈ v rtol = 1e-6
+        @test Clapeyron.pip(system, v, T, [1.]) ≈ 6.857076349623449 rtol = 1e-6
+        @test Clapeyron.is_liquid(Clapeyron.VT_identify_phase(system, v, T, [1.]))
         @test Clapeyron.compressibility_factor(system, p, T) ≈ 0.002383223535444557 rtol = 1e-6
-        @test Clapeyron.pressure(system, 5.907908736304141e-5, T) ≈ p rtol = 1e-6
-        @test Clapeyron.pressure(system, 2*5.907908736304141e-5, T, Clapeyron.SA[2.0]) ≈ p rtol = 1e-6
+        @test Clapeyron.pressure(system, v, T) ≈ p rtol = 1e-6
+        @test Clapeyron.pressure(system, 2*v, T, Clapeyron.SA[2.0]) ≈ p rtol = 1e-6
         @test Clapeyron.entropy(system, p, T) ≈ -58.87118569239617 rtol = 1E-6
         @test Clapeyron.chemical_potential(system, p, T)[1] ≈ -18323.877542682934 rtol = 1E-6
         @test Clapeyron.internal_energy(system, p, T) ≈ -35882.22946560716 rtol = 1E-6

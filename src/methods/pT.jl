@@ -798,3 +798,22 @@ export mass_density,molar_density, compressibility_factor
 export chemical_potential, activity_coefficient, activity, aqueous_activity, fugacity_coefficient,reference_chemical_potential,reference_chemical_potential_type
 export chemical_potential_res
 export mixing, excess, gibbs_solvation
+export identify_phase
+
+module PT
+    #first derivative order properties
+    using Clapeyron: entropy, internal_energy, enthalpy, gibbs_free_energy, helmholtz_free_energy
+    using Clapeyron: entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
+    #second derivative order properties
+    using Clapeyron: isochoric_heat_capacity, isobaric_heat_capacity,adiabatic_index
+    using Clapeyron: isothermal_compressibility, isentropic_compressibility, speed_of_sound
+    using Clapeyron: isobaric_expansivity, joule_thomson_coefficient, inversion_temperature
+    #higher derivative order properties
+    using Clapeyron: fundamental_derivative_of_gas_dynamics
+    #volume properties
+    using Clapeyron: mass_density,molar_density, compressibility_factor
+    using Clapeyron: identify_phase
+    import Clapeyron
+    pressure(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = p
+    temperature(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = T
+end
