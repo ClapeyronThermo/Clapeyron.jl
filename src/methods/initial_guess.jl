@@ -578,7 +578,6 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
     end
 
     psl = p(vsl)
-
     if isnan(vsl)
         return pressure(model,v_lb,T),v_lb,v_ub
     end
@@ -731,19 +730,29 @@ function x0_saturation_temperature end
 function x0_saturation_temperature(model,p)
     single_component_check(x0_saturation_temperature,model)
     coeffs = antoine_coef(model)
-    if coeffs !== nothing
-        return x0_saturation_temperature_antoine_coeff(model,p,coeffs)
-    end
+    #@show coeffs
+    #if coeffs !== nothing
+    #    return x0_saturation_temperature_antoine_coeff(model,p,coeffs)
+    #end
     #if obtaining the critical point is cheap, models can opt in by defining:
     #=
     x0_saturation_temperature(model::MyModel,p) = x0_saturation_temperature(model,p,crit_pure(model))
     =#
-    return x0_saturation_temperature(model,p,nothing)
+    if has_fast_crit_pure(model)
+
+        return x0_saturation_temperature_refine(model,p)
+    else
+        return x0_saturation_temperature_crit(model,p,crit_pure(model))
+    end
 end
 
 function x0_saturation_temperature(model::EoSModel,p,::Nothing)
     single_component_check(x0_saturation_temperature,model)
-    return x0_saturation_temperature_refine(model,p)
+    if has_fast_crit_pure(model)
+        return x0_saturation_temperature_crit(model,p,crit_pure(model))
+    else
+        return x0_saturation_temperature_refine(model,p)
+    end
 end
 
 function x0_saturation_temperature(model::EoSModel,p,crit::Tuple)
@@ -760,14 +769,7 @@ function x0_saturation_temperature_antoine_coeff(model,p,coeffs)
 end
 
 function x0_saturation_temperature_crit(model::EoSModel,p,crit)
-    Tc,Pc,Vc = crit
-    A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941) #universal antoine constants (RK)
-    if Pc < p
-        nan = zero(p)/zero(p)
-        return (nan,nan,nan)
-    end
-    lnp̄ = log(p / Pc)
-    T0 = Tc*(B/(A-lnp̄)-C)
+    T0 = critical_tsat_extrapolation(model,p,crit)
     return x0_saturation_temperature_refine(model,p,T0)
 end
 
@@ -958,7 +960,7 @@ function critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
         _0 = zero(Base.promote_eltype(model,p))
         return _0/_0
     end
-    _p(_T) = pressure(pure,Vc,_T)
+    _p(_T) = pressure(model,Vc,_T)
     dpdT = Solvers.derivative(_p,Tc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = log(p/Pc)
@@ -966,9 +968,9 @@ function critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
     T = 1/Tinv
 end
 
-critical_tsat_extrapolation(model,T) = critical_tsat_extrapolation(model,p,crit_pure(model))
-critical_tsat_extrapolation(model,T,crit) = critical_tsat_extrapolation(model,p,crit[1],crit[2],crit[3])
-critical_tsat_extrapolation(model,T,Tc,Vc) = critical_tsat_extrapolation(model,p,Tc,pressure(model,Vc,Tc),Vc)
+critical_tsat_extrapolation(model,p) = critical_tsat_extrapolation(model,p,crit_pure(model))
+critical_tsat_extrapolation(model,p,crit) = critical_tsat_extrapolation(model,p,crit[1],crit[2],crit[3])
+critical_tsat_extrapolation(model,p,Tc,Vc) = critical_tsat_extrapolation(model,p,Tc,pressure(model,Vc,Tc),Vc)
 
 function dpdT_pure(model,v1,v2,T)
     #log(p/p0) = [-dpdT*T*T/p](p = p0,T = T0) * (1/T - 1/T0)

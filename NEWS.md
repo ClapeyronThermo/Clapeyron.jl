@@ -1,17 +1,16 @@
-# v0.6.4
+# v0.6.5
 
 ## New Features
 
-- New model: SAFT-VR-Mie with Gross-Vrabec quatrupolar contribution (`SAFTVRMieGV`)
-- New model: Co-Oriented Fluid Functional Equation for Electrostatic interactions (`COFFEE`)
-- Better support for evaluation of model properties at V == Inf (ideal gas limit)
-- New method: `adiabatic_index`, that calculates the ratio between the isobaric and isochoric heat capacities.
-- new API: `has_fast_crit_pure`, to indicate that models can calculate their pure critical point quickly. saturation initial guesses use the result of this function to decide if and when to call the `crit_pure` routine.
-- speed ups in some pressure routines
--
-## Bug fixes
+- Experimental: Bulk properties for Pressure-Enthalpy and Pressure-Entropy, the syntax is the following:
+  ```julia
+  using Clapeyron: PH
+  PH.entropy(model,p,h,z)
+  PH.adiabatic_index(model,p,h,z,T0 = T0) #suplying an initial point for the temperature
+  ```
+  The calculation is done via `Clapeyron.Tproperty`. there are also `PT` and `VT` functions for parity.
 
-- `MultiFluid` and `SingleFluid` models did not use the correct gas constant.
-- Fix mixing rule in `SAFTVRMie`.
-- `VT_identify_phase` now returns `:unknown` for an unstable state input.
-- Typos in `TProperty` for pure models.
+## Bug fixes
+- fixes in calculation of spinodal with cubics.
+- `MultiFluid` and `SingleFluid` errors when T_reducing != Tc.
+- fix `VT_identify_phase`.
