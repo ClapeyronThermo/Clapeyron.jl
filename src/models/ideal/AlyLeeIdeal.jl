@@ -96,7 +96,6 @@ function a_ideal_T(model::AlyLeeIdealModel,T,z)
     logτi = log(τi)
     @inbounds for i ∈ @comps
         #we suppose ρc = Tc = 1
-        δi = ρ
         Ai,Bi,Ci,Di,Ei,Fi,Gi,Hi,Ii = A[i],B[i],C[i],D[i],E[i],F[i],G[i],H[i],I[i]
         #integrate constant:
         #Tc,T0 = 1.0,298.15

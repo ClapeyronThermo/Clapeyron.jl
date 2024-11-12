@@ -84,7 +84,7 @@ function a_ideal_T(model::PPDSIdealModel,T,z)
     _G = model.params.G.values
 
     Σz = sum(z)
-    res = zero(V+T+first(z))
+    res = zero(T+first(z))
     τi = one(T)/T
     Tr = one(T)
     logτi = log(τi)

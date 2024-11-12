@@ -1,6 +1,6 @@
 abstract type EoSModel end
 
-function eos_impl(model,V,T,z)
+function eos_impl(model::EoSModel,V,T,z)
     return Rgas(model)*sum(z)*T*a_eos(model,V,T,z) + reference_state_eval(model,V,T,z)
 end
 
