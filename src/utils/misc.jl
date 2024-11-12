@@ -158,6 +158,6 @@ viewfirst(x,i) = @view(x[begin:i])
 
 
 linearidx(x::AbstractVector) = LinearIndices(x)
-linearidx(x::AbstractMatrix) = diagind(A, 0, IndexStyle(A))
+linearidx(x::AbstractMatrix) = diagind(x, 0, IndexStyle(x))
 
 mid(a,b,c) =  max(min(a,b),min(max(a,b),c))
