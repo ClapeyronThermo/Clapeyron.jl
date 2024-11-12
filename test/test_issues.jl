@@ -18,6 +18,34 @@
         assocparam = model.vrmodel.params.bondvol
         @test assocparam.sites[1] == ["H2O/H", "H2O/e1"]
         @test assocparam.sites[2] == ["COO/e1"]
+
+
+        #a symmetric matrix was generated from non-symmetric GC values, Clapeyron 0.6.4
+        model_mix = SAFTgammaMie([("MEA",["NH2"=>1]),("Carbon Dioxide",["CO2"=>1])];
+            userlocations = (Mw = [16.02285, 44.01],
+            epsilon = [284.78 134.58;
+                        134.58 207.89],
+            sigma = [3.2477, 3.05],
+            lambda_a = [6, 5.055],
+            lambda_r = [10.354 50.06;
+                        50.06  26.408],
+            vst = [1, 2],
+            S = [0.79675, 0.84680],
+            n_H=[2, 0],
+            n_e=[1, 0],
+            n_a1=[0, 1],
+            n_a2=[0, 1],
+            epsilon_assoc = Dict([(("NH2","H"),("NH2","e")) => 1070.80,
+                                    (("CO2","a1"),("NH2","e")) => 3313,
+                                    (("CO2","a2"),("NH2","e")) => 4943.6]),
+            bondvol = Dict([(("NH2","H"),("NH2","e")) => 95.225e-30,
+                            (("CO2","a1"),("NH2","e")) => 3280.3e-30,
+                            (("CO2","a2"),("NH2","e")) => 142.64e-30])))
+        
+        
+        bondvol_mixed = model_mix.vrmodel.params.bondvol[1,2]
+        @test length(bondvol_mixed) == 2
+        @test vec(bondvol_mixed) ≈ [1.4264e-28, 3.2803e-27]
     end
 
     @testset "#140" begin

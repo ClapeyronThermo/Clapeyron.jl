@@ -186,8 +186,8 @@ function __set_Rgas(pure,Rgas)
 end
 
 function a_ideal(model::SingleFluidIdeal,V,T,z=SA[1.],k = __get_k_alpha0(model))
-    Tc = model.properties.Tc
-    rhoc = model.properties.rhoc
+    Tc = model.properties.Tr
+    rhoc = model.properties.rhor
     N = sum(z)
     τ = Tc/T
     α0 = reduced_a_ideal(model,τ)
@@ -207,14 +207,14 @@ function a_ideal_T(model::SingleFluidIdeal,T,z,k = __get_k_alpha0(model))
     return k*α0 - log(rhoc)
 end
 
-v_scale(model::SingleFluid,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhoc
-v_scale(model::SingleFluidIdeal,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhoc
+v_scale(model::SingleFluid,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhor
+v_scale(model::SingleFluidIdeal,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhor
 
 a_ideal(model::SingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
 
 function a_res(model::SingleFluid,V,T,z=SA[1.])
-    Tc = model.properties.Tc
-    rhoc = model.properties.rhoc
+    Tc = model.properties.Tr
+    rhoc = model.properties.rhor
     N = sum(z)
     δ = N/(rhoc*V)
     τ = Tc/T
@@ -223,8 +223,8 @@ end
 
 function eos_impl(model::SingleFluid, V, T, z)
     R = Rgas(model)
-    Tc = model.properties.Tc
-    rhoc = model.properties.rhoc
+    Tc = model.properties.Tr
+    rhoc = model.properties.rhor
     N = sum(z)
     δ = N/(rhoc*V)
     τ = Tc/T

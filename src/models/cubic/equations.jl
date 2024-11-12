@@ -312,17 +312,10 @@ function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,re
     Q1 = 2*b*b*(a*(1 - c1_c2) - bRT*c1c2*c1_c2)
     Q0 = b*b*b*(a*c1_c2 - bRT*c1c2*c1c2)
     dpoly = (Q0,Q1,Q2,Q3,Q4)
-    dfl = evalpoly(v_lb,dpoly)
-    dfv = evalpoly(v_ub,dpoly)
-    v_lbc = v_lb + c
-    v_ubc = v_ub + c
-    vx = ifelse(is_liquid(phase),v_lbc,v_ubc)
-    if dfl*dfv < 0
-        bracket = (v_lbc,v_ubc)
-        prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),bracket)
-        vs = Roots.solve(prob)
-        return vs - c
-    end
+    v_lbc = v_lb + c #untranslated lb
+    v_ubc = v_ub + c #untranslated ub
+    dfl = evalpoly(v_lbc,dpoly)
+    dfv = evalpoly(v_ubc,dpoly)
     vx = ifelse(is_liquid(phase),v_lbc,v_ubc)
     vm = vcc #the critical volume is always between the two spinodals
     v_bracket = minmax(vx,vm)
@@ -358,7 +351,7 @@ function ab_consts(model::CubicModel)
     return ab_consts(typeof(model))
 end
 
-has_fast_crit_pure(model::ABCCubicModel) = true
+has_fast_crit_pure(model::ABCubicModel) = true
 
 function x0_saturation_temperature(model::ABCubicModel,p,::Nothing)
     crit = crit_pure(model)

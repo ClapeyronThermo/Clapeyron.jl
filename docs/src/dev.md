@@ -1,19 +1,17 @@
-```@meta
-CurrentModule = Clapeyron
-```
+# Developer's Guide
 
-## Index
+## a deep dive on `Clapeyron.jl` property evaluation
 
-```@index
-Pages = ["dev.md"]
-```
+### Bulk properties
+### Volume
+### Equilibria properties
 
-# Developer guide
+## `Clapeyron.jl` database search and instantiation
 
-## Deactivating precompilation
+### Single Parameters
+### Pair Parameters
+### Association Parameters
+### Group Parameters
 
-From Julia 1.9 onwards, the precompilation possibilities of Julia are vastly improved, so we opt to precompile some frequently used methods. this can be disabled by calling `precompile_clapeyron!(false)`
+## `split_model` and `index_reduction`
 
-```@docs
-Clapeyron.precompile_clapeyron!
-```

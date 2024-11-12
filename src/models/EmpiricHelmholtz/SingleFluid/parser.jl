@@ -448,7 +448,7 @@ function _parse_ideal(id_data,verbose = false)
         elseif id_data_i[:type] == "IdealGasHelmholtzPower"
             t_pj = id_data_i[:t]
             n_pj = id_data_i[:n]
-            for i in 1:length(t)
+            for i in 1:length(t_pj)
                 #workaround 1: it seems that sometinmes, people store lead as power
                 #it is more efficient if we transform from power to lead term, if possible
                 if t_pj[i] == 0
@@ -493,7 +493,6 @@ function _parse_ideal(id_data,verbose = false)
         end
     end
     verbose && __verbose_found_json_terms(id_data)
-
     verbose && @info "Creating SingleFluidIdealParam from JSON."
     return SingleFluidIdealParam(a1,a2,c0,n,t,c,d,np,tp,n_gerg,v_gerg,R0)
 

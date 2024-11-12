@@ -85,8 +85,7 @@ using Clapeyron, Test, LinearAlgebra
         @test repr("text/plain",params["overwriteparam"]) == "5×5 PairParam{Float64}([\"sp1\", \"sp2\", \"sp3\", \"sp4\", \"sp5\"]) with values:\n 1.6  4.0  0.0  0.0  0.0\n 4.0  1.2  0.0  3.0  0.0\n 0.0  0.0  1.3  2.0  0.0\n 0.0  3.0  2.0  1.4  0.0\n 0.0  0.0  0.0  0.0  1.5"
         #Printing: AssocParam
         @test repr(params["overwriteassocparam"]) == "AssocParam{String}(\"overwriteassocparam\")[\"val1\", \"val8\", \"val5\", \"val4\", \"val7\", \"val6\", \"val3\", \"42\"]"
-
-        @test repr("text/plain",params["overwriteassocparam"]) == "AssocParam{String}[\"sp1\", \"sp2\", \"sp3\", \"sp4\", \"sp5\"]) with 8 values:\n(\"sp3\", \"e\") >=< (\"sp3\", \"H\"): val1\n(\"sp3\", \"e2\") >=< (\"sp3\", \"H\"): val8\n(\"sp3\", \"H\") >=< (\"sp4\", \"e\"): val5\n(\"sp3\", \"H\") >=< (\"sp4\", \"H\"): val4\n(\"sp4\", \"e\") >=< (\"sp5\", \"H\"): val7\n(\"sp4\", \"H\") >=< (\"sp5\", \"e2\"): val6\n(\"sp5\", \"e\") >=< (\"sp5\", \"e\"): val3\n(\"sp5\", \"e\") >=< (\"sp5\", \"H\"): 42"
+        @test repr("text/plain",params["overwriteassocparam"]) == "AssocParam{String}([\"sp1\", \"sp2\", \"sp3\", \"sp4\", \"sp5\"]) with 8 values:\n(\"sp3\", \"e\") >=< (\"sp3\", \"H\"): val1\n(\"sp3\", \"e2\") >=< (\"sp3\", \"H\"): val8\n(\"sp3\", \"H\") >=< (\"sp4\", \"e\"): val5\n(\"sp3\", \"H\") >=< (\"sp4\", \"H\"): val4\n(\"sp4\", \"e\") >=< (\"sp5\", \"H\"): val7\n(\"sp4\", \"H\") >=< (\"sp5\", \"e2\"): val6\n(\"sp5\", \"e\") >=< (\"sp5\", \"e\"): val3\n(\"sp5\", \"e\") >=< (\"sp5\", \"H\"): 42"
         #Printing: SiteParam
         @test repr(sites) == "SiteParam[\"sp1\" => [], \"sp2\" => [], \"sp3\" => [], \"sp4\" => [], \"sp5\" => []]"
         @test repr("text/plain",sites) == "SiteParam with 5 components:\n \"sp1\": (no sites)\n \"sp2\": (no sites)\n \"sp3\": (no sites)\n \"sp4\": (no sites)\n \"sp5\": (no sites)"

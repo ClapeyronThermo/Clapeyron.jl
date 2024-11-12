@@ -7,13 +7,17 @@ CurrentModule = Clapeyron
 ```@index
 Pages = ["ideal.md"]
 ```
+
 # Correlation Models
 
-Correlation models are, as their name says, fitted equations that express one property of a compound. they meant to be used in conjunction with other models (like Activity models that require a saturated liquid volume), or via a `CompositeModel`. because they only overload one property, the way to define a correlation is different than normal `EoSModel`s
+Correlation models are, as their name says, fitted equations that express one property of a compound.
+They meant to be used in conjunction with other models (like Activity models that require a saturated liquid volume), or via a `CompositeModel`.
+Because they only overload one property, the way to define a correlation is different than normal `EoSModel`s.
 
 # Saturation Correlations
 
-Saturation Correlations are any `EoSModel` that are subtypes of [`SaturationModel`](@ref). return `psat(T)` and the upper limit `(Tc,Pc)` pair. To define saturation correlations, you need to overload:
+Saturation Correlations are any `EoSModel` that are subtypes of [`SaturationModel`](@ref) return `psat(T)` and the upper limit `(Tc,Pc)` pair.
+To define saturation correlations, you need to overload:
 
 ```julia
 function crit_pure(model::MySaturationModel <: SaturationModel)
@@ -28,6 +32,7 @@ end
 ```
 
 ## Saturation Models and Types
+
 ```@docs
 Clapeyron.SaturationModel
 Clapeyron.SaturationCorrelation
@@ -47,7 +52,8 @@ COSTALD
 
 # Virial Models
 
-Virial models are defined in terms of the second virial coefficient, `B(T,z)`. the reduced residual Helmholtz energy is defined as:
+Virial models are defined in terms of the second virial coefficient, `B(T,z)`.
+The reduced residual Helmholtz energy is defined as:
 
 ``\frac{A_\mathrm{res}}{Nk_\mathrm{B}T} = \frac{B}{V}``,
 
@@ -61,7 +67,8 @@ EoSVirial2
 
 # Solid Models
 
-Solid models provide simple approximations to the excess chemical potential in the solid phase. Intended to be used in conjunction with a liquid model within a CompositeModel
+Solid models provide simple approximations to the excess chemical potential in the solid phase.
+Intended to be used in conjunction with a liquid model within a CompositeModel.
 
 ```@docs
 SolidHfus

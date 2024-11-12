@@ -261,7 +261,7 @@ B₁₂ = (B̄ - x₁^2*B₁₁ - x₂^2*B₂₂)/2x₁x₂
 ```
 
 
-!!! info composition-dependent
+!!! info "Composition-dependent property"
     The second cross virial coefficient calculated from a equation of state can present a dependency on composition [1], but normally, experiments for obtaining the second virial coefficient are made by mixing the same volume of two gases. you can calculate B12 in this way by using (Clapeyron.equivol_cross_second_virial)[@ref]
 
 ## References
@@ -387,9 +387,9 @@ function VT_identify_phase(model::EoSModel, V, T, z=SA[1.0])
     Π,∂p∂V = _pip(model, V, T, z)
     βT = -1/V/∂p∂V
     if Π > 1 && βT >= 0
-        return :vapour
-    elseif Π <= 1 && βT >= 0
         return :liquid
+    elseif Π <= 1 && βT >= 0
+        return :vapour
     else #the calculation failed
         return :unknown
     end
@@ -469,3 +469,66 @@ end
 
 export pressure
 export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
+
+module VT
+    #using Clapeyron: Clapeyron
+    import Clapeyron
+    const C = Clapeyron
+    using Clapeyron.StaticArrays
+    using Clapeyron: pressure
+    using Clapeyron: second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
+
+    volume(model,V,T,z) = V
+    #first derivative order properties
+    entropy(model,V,T,z = SA[1.0]) = Clapeyron.VT_entropy(model,V,T,z)
+    internal_energy(model,V,T,z = SA[1.0]) = Clapeyron.VT_internal_energy(model,V,T,z)
+    gibbs_free_energy(model,V,T,z = SA[1.0]) = Clapeyron.VT_gibbs_free_energy(model,V,T,z)
+    const gibbs_energy = gibbs_free_energy
+    helmholtz_free_energy(model,V,T,z = SA[1.0]) = Clapeyron.VT_helmholtz_free_energy(model,V,T,z)
+    const helmholtz_energy = helmholtz_free_energy
+    
+    #residual first order properties
+    entropy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_entropy_res(model,V,T,z)
+    internal_energy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_internal_energy_res(model,V,T,z)
+    gibbs_free_energy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_gibbs_free_energy_res(model,V,T,z)
+    const gibbs_energy_res = gibbs_free_energy_res
+    helmholtz_free_energy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_helmholtz_free_energy_res(model,V,T,z)
+    const helmholtz_energy_res = helmholtz_free_energy
+    
+    #second derivative order properties
+    isochoric_heat_capacity(model,V,T,z = SA[1.0]) = Clapeyron.VT_isochoric_heat_capacity(model,V,T,z)
+    isobaric_heat_capacity(model,V,T,z = SA[1.0]) = Clapeyron.VT_isobaric_heat_capacity(model,V,T,z)
+    adiabatic_index(model,V,T,z = SA[1.0]) = Clapeyron.VT_adiabatic_index(model,V,T,z)
+    isothermal_compressibility(model,V,T,z = SA[1.0]) = Clapeyron.VT_isothermal_compressibility(model,V,T,z)
+    isentropic_compressibility(model,V,T,z = SA[1.0]) = Clapeyron.VT_isentropic_compressibility(model,V,T,z)
+    speed_of_sound(model,V,T,z = SA[1.0]) = Clapeyron.VT_speed_of_sound(model,V,T,z)
+    isobaric_expansivity(model,V,T,z = SA[1.0]) = Clapeyron.VT_isobaric_expansivity(model,V,T,z)
+    joule_thomson_coefficient(model,V,T,z = SA[1.0]) = Clapeyron.VT_joule_thomson_coefficient(model,V,T,z)
+    identify_phase(model,V,T,z = SA[1.0]) = Clapeyron.VT_identify_phase(model,V,T,z)
+    
+    #high order derivatives
+    fundamental_derivative_of_gas_dynamics(model,V,T,z = SA[1.0]) = Clapeyron.VT_fundamental_derivative_of_gas_dynamics(model,V,T,z)
+    
+    #volume properties
+    mass_density(model,V,T,z = SA[1.0]) = Clapeyron.VT_mass_density(model,V,T,z)
+    molar_density(model,V,T,z = SA[1.0]) = Clapeyron.VT_molar_density(model,V,T,z)
+    compressibility_factor(model,V,T,z = SA[1.0]) = Clapeyron.VT_compressibility_factor(model,V,T,z)
+
+    #=
+    using Clapeyron: entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
+    #second derivative order properties
+    using Clapeyron: isochoric_heat_capacity, isobaric_heat_capacity,adiabatic_index
+    using Clapeyron: isothermal_compressibility, isentropic_compressibility, speed_of_sound
+    using Clapeyron: isobaric_expansivity, joule_thomson_coefficient, inversion_temperature
+    #higher derivative order properties
+    using Clapeyron: fundamental_derivative_of_gas_dynamics
+    #volume properties
+    using Clapeyron: mass_density,molar_density, compressibility_factor
+    #molar gradient properties
+    using Clapeyron: chemical_potential, activity_coefficient, activity, aqueous_activity, fugacity_coefficient,reference_chemical_potential,reference_chemical_potential_type
+    using Clapeyron: chemical_potential_res
+    using Clapeyron: mixing, excess, gibbs_solvation
+
+    pressure(model, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = p 
+    using Clapeyron: second_virial_coefficient,cross_second_virial,equivol_cross_second_virial =#
+end
