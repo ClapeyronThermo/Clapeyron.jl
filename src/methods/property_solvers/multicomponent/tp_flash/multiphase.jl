@@ -725,12 +725,26 @@ function _add_phases!(model,p,T,z,result,cache,options)
     for i in 1:iter
         w = comps[i]
         vw = volumes[i]
+
+        if idx_vapour[] == 0
+            phase_wi = VT_identify_phase(model,vw,T,w)
+            if is_vapour(phase_wi)
+                idx_vapour[] == i
+            end
+        else
+            if idx_vapour[] == i
+                phase_wi = :vapour
+            else
+                phase_wi = :liquid
+            end 
+        end
+        
         is_lle = idx_vapour[] != 0 #if we have a vapour phase, we only search for liquid-liquid splits
         tpd_i = tpd(model,p,T,w,tpd_cache,reduced = true,break_first = true, strategy = :pure,lle = is_lle)
         length(tpd_i[1]) == 0 && continue
         already_found = false
         tpd_comps,_ttpd,phases_z,phases_w = tpd_i
-        if is_vapour(phases_z[1]) && idx_vapour[] == 0
+        if is_vapour(phase_wi) && idx_vapour[] == 0
             idx_vapour[] = i
             fill!(phases_comps,:liquid)
             phases_comps[idx_vapour[]] = :vapour
@@ -795,19 +809,36 @@ function _add_phases!(model,p,T,z,result,cache,options)
             #vy = volume(model,p,T,y,phase = phase_y)
             #phase not stable: generate a new one from tpd result
             β1,x1,v1,β2,x2,v2,dgi = split_phase_tpd(model,p,T,w,y,phase_w,phase_y,vw,vy)
+            
+            #check that the new generated phase is not equal to one existing composition
+            knew = 0
+            for i in 1:length(comps)
+                if z_norm(comps[i],x1) < 1e-5 && abs(1/v1 - 1/volumes[i]) <= 1e-4
+                    knew = i #the split resulted in a new phase equal to one already existing
+                end
+            end
+            
             if !isnan(dgi) && dgi < 0
                 β0 = β[jj]
                 β[jj] = β0*β2
                 comps[jj] = x2
                 volumes[jj] = v2
-                push!(comps,x1)
-                push!(volumes,v1)
-                push!(β,β0*β1)
-                is_vapour(VT_identify_phase(model,v1,T,x1))
-                if is_vapour(VT_identify_phase(model,v1,T,x1))
-                    idx_vapour[] = length(comps)
+                if iszero(knew)
+                    push!(comps,x1)
+                    push!(volumes,v1)
+                    push!(β,β0*β1)
+                    if is_vapour(VT_identify_phase(model,v1,T,x1))
+                        idx_vapour[] = length(comps)
+                    end
+                    return true
+                else
+                    wi,wj = x1,comps[jj]
+                    vi,vj = v1,volumes[jj]
+                    βi,βj = β0*β1,β[jj]
+                    volumes[jj] = (βi*vi + βj*vj)/(βi + βj)
+                    β[jj] = (βi + βj)
+                    wj .= (βi .* wi .+ βj .* wj) ./ (βi .+ βj)  
                 end
-                return true
             end
         end
     end
@@ -861,6 +892,9 @@ function _remove_phases!(model,p,T,z,result,cache,options)
             if is_vapour(VT_identify_phase(model,volumes[end],T,comps[end]))
                 idx_vapour[] == length(comps)
             end
+            @show "das"
+            @show volumes
+            @show idx_vapour[]
         end
         return true
     end
