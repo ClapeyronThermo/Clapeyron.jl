@@ -260,9 +260,9 @@ end
 Base.eltype(m::AssocView{T}) where T = T
 
 #returns the absolute index. that is. it is directly indexable by the parent array
-function validindex(m::AssocView{T},i::Int,j::Int,symmetric = true) where T
-    if m.at[1] > m.at[2] && symmetric
-        i,j = j,i
+function validindex(m::AssocView{T},i::Int,j::Int,symmetric = false) where T
+    if m.at[1] == m.at[2] || symmetric
+        i,j = minmax(i,j)
     end
     indices = view(m.values.inner_indices,m.indices)
     @inbounds begin
@@ -282,7 +282,7 @@ function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
     return m.values.values[idx]
 end
 
-function Base.setindex!(m::AssocView{T},value,a::Int,b::Int,symmetric = true) where T
+function Base.setindex!(m::AssocView{T},value,a::Int,b::Int,symmetric = false) where T
     idx = validindex(m,a,b)
     iszero(idx) && throw(BoundsError())
     vals = m.values.values
