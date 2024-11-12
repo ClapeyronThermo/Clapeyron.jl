@@ -322,7 +322,7 @@ function gc_to_comp_sites(param::AssocParam,sites::SiteParam)
     new_val = assoc_similar(sites,eltype(param))
     for i in 1:length(sites.components)
         site_translator_i = site_translator[i]
-        for j in 1:i
+        for j in 1:length(sites.components)
             ij_pair = new_val[i,j]
             #display(TextDisplay(stdout),MIME"text/plain"(),ij_pair)
             site_translator_j = site_translator[j]

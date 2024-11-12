@@ -43,7 +43,7 @@
                             (("CO2","a2"),("NH2","e")) => 142.64e-30])))
         
         
-        bondvol_mixed = model.vrmodel.params.bondvol[1,2]
+        bondvol_mixed = model_mix.vrmodel.params.bondvol[1,2]
         @test length(bondvol_mixed) == 2
         @test vec(bondvol_mixed) ≈ [1.4264e-28, 3.2803e-27]
     end
