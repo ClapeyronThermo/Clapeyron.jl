@@ -98,8 +98,8 @@ If the model is not an `IdealModel`, then `Clapeyron.idealmodel(model)` will be 
 
 function ideal_consistency(model,V,T,z =SA[1.0])
     id = idealmodel(model)
-    if id === nothing
-        f(∂V) = a_ideal(model,∂V,T,z) || id === model
+    if id === nothing || id === model
+        f(∂V) = a_ideal(model,∂V,T,z)
         ∂f0∂V = Solvers.derivative(f,V)
         n = sum(z)
         return abs(∂f0∂V + 1/V)
