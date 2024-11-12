@@ -6,12 +6,12 @@ end
 
 function excess_gibbs_free_energy(model::ActivityModel,p,T,z)
     γ = activity_coefficient(model,p,T,z)
-    return sum(z[i]*R̄*T*log(γ[i]) for i ∈ @comps)
+    return Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ @comps)
 end
 
 function test_excess_gibbs_free_energy(model::ActivityModel,p,T,z)
     γ = activity_coefficient(model,p,T,z)
-    return sum(z[i]*R̄*T*log(γ[i]) for i ∈ @comps)
+    return Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ @comps)
 end
 
 function volume_impl(model::ActivityModel, p, T, z, phase, threaded, vol0)
@@ -24,7 +24,7 @@ end
 #for use in models that have gibbs free energy defined.
 function activity_coefficient(model::ActivityModel,p,T,z)
     X = gradient_type(model,T+p,z)
-    return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
+    return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(Rgas(model)*T))::X
 end
 
 function activity_coefficient_impl(model::ActivityModel,p,T,z,μ_ref,reference,phase,threaded,vol0)
@@ -62,15 +62,38 @@ function idealmodel(model::T) where T <: ActivityModel
 end
 
 function a_res(model::ActivityModel,V,T,z)
-    Σz = sum(z)
-    pures = model.puremodel
-    g_pure_res = sum(z[i]*VT_gibbs_free_energy_res(pures[i],V/Σz,T) for i ∈ @comps)
-    p = sum(z[i]*pressure(pures[i],V,T) for i ∈ @comps)/Σz
-    g_E = excess_gibbs_free_energy(model,p,T,z)
-    p_res = p - Σz*R̄*T/V
-    return (g_E+g_pure_res-p_res*V)/(Σz*Rgas(model)*T)
+    return a_res_activity(model,V,T,z,model.puremodel)
 end
 
+function a_res_activity(model,V,T,z,pures::EoSVectorParam{M}) where M
+    Σz = sum(z)
+    R = Rgas(model)
+    v = V/Σz
+    Σa_resᵢ = sum(z[i]*a_res(pures[i],v,T,SA[1.0]) for i ∈ @comps)
+    nRT = Σz*R*T
+    if model isa ActivityModel
+        p = nRT/V
+    else
+        p = pressure(pures.model,V,T,z)
+    end
+    g_E = excess_gibbs_free_energy(model,p,T,z)
+    return g_E/(Σz*Rgas(model)*T) + Σa_resᵢ
+end
+
+function a_res_activity(model,V,T,z,puremodel::EoSVectorParam{M}) where M <: IdealModel
+    return a_res_activity(model,V,T,z,puremodel.model)
+end
+
+function a_res_activity(model,V,T,z,puremodel::IdealModel)
+    Σz = sum(z)
+    R = Rgas(model)
+    nRT = Σz*R*T
+    p = nRT/V
+    g_E = excess_gibbs_free_energy(model,p,T,z)
+    return g_E/nRT
+end
+
+ 
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
     dfT = Solvers.derivative(f,T)
