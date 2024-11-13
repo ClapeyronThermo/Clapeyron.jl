@@ -29,12 +29,19 @@ function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf
+    ideal = model isa IdealModel
+    if V == Inf && !ideal
         return VT_internal_energy(idealmodel(model),V,T,z)
-    else
-        A, ∂A∂T = f∂fdT(model,V,T,z)
-        return A - T*∂A∂T
     end
+
+    if ideal
+        V₀ = oneunit(V) #the volume term gets cancelled out
+    else
+        V₀ = V
+    end
+
+    A, ∂A∂T = f∂fdT(model,V₀,T,z)
+    return A - T*∂A∂T
 end
 
 function VT_internal_energy_res(model::EoSModel, V, T, z=SA[1.])
@@ -44,10 +51,22 @@ function VT_internal_energy_res(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_enthalpy(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf
+    ideal = model isa IdealModel
+    if V == Inf && !ideal
         return VT_internal_energy(idealmodel(model),V,T,z)
+    end
+
+    if model isa IdealModel
+        V₀ = oneunit(V) #the volume term gets cancelled out
     else
-        A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
+        V₀ = V
+    end
+
+    A, ∂A∂V, ∂A∂T = ∂f_vec(model,V₀,T,z)
+
+    if ideal
+        return A + sum(z)*Rgas(model)*T - T*∂A∂T
+    else
         return A - V*∂A∂V - T*∂A∂T
     end
 end
@@ -59,11 +78,22 @@ function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
     return A + PrV - T*∂A∂T
 end
 
-function VT_gibbs_free_energy(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf
+function VT_gibbs_free_energy(model::EoSModel, V, T, z=SA[1.],p = nothing)
+    ideal = model isa IdealModel
+    if V == Inf && !ideal
         return VT_gibbs_free_energy(idealmodel(model), V, T, z=SA[1.])
-    else
+    end
+
+    if p == nothing
         A,∂A∂V = f∂fdV(model,V,T,z)
+    else
+        A = eos(model,V,T,z)
+        ∂A∂V = -p
+    end
+
+    if ideal
+        return A + sum(z)*Rgas(model)*T
+    else
         return A - V*∂A∂V
     end
 end
@@ -82,6 +112,11 @@ end
 function VT_helmholtz_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     return eos_res(model,V,T,z)
 end
+
+const VT_helmholtz_energy = VT_helmholtz_free_energy
+const VT_helmholtz_energy_res = VT_helmholtz_free_energy_res
+const VT_gibbs_energy = VT_gibbs_free_energy
+const VT_gibbs_energy_res = VT_gibbs_free_energy_res
 
 function VT_isochoric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     ∂²A∂T² = ∂²f∂T²(model,V,T,z)
@@ -175,6 +210,14 @@ function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
         ∂²A∂V² = d²A[1,1]
         ∂²A∂T² = d²A[2,2]
         return -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))^-1
+    end
+end
+
+function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.],p = nothing)
+    if p === nothing
+        return pressure(model,V,T,z)*V/(sum(z)*R̄*T)
+    else
+        return p*V/(sum(z)*R̄*T)
     end
 end
 
@@ -279,12 +322,6 @@ function equivol_cross_second_virial(model,T,p_exp = 200000.0)
 
     B12 = (B̄ - x[1]*x[1]*B11 - x[2]*x[2]*B22)/(2*x[1]*x[2])
     return B12
-end
-
-
-function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.])
-    p = pressure(model,V,T,z)
-    return p*V/(sum(z)*Rgas(model)*T)
 end
 
 """

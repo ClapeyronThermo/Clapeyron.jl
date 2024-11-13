@@ -9,6 +9,14 @@ struct GammaPhi{γ,Φ} <: RestrictedEquilibriaModel
     fluid::EoSVectorParam{Φ}
 end
 
+function Base.show(io::IO,mime::MIME"text/plain",model::GammaPhi)
+    print(io,"γ-ϕ Model")
+    length(model) == 1 && print(io, " with 1 component:")
+    length(model) > 1 && print(io, " with ", length(model), " components:")
+    print(io,'\n'," Activity Model: ",model.activity)
+    print(io,'\n'," Fluid Model: ",model.fluid.model)
+end
+
 fluid_model(model::GammaPhi) = model.fluid
 
 function activity_coefficient(model::GammaPhi,p,T,z=SA[1.];
@@ -19,6 +27,10 @@ function activity_coefficient(model::GammaPhi,p,T,z=SA[1.];
                             vol0=nothing)
 
     return activity_coefficient(model.activity,p,T,z;μ_ref,reference,phase,threaded,vol0)
+end
+
+function excess_gibbs_free_energy(model::GammaPhi,p,T,z)
+    return excess_gibbs_free_energy(model.activity,p,T,z)
 end
 
 reference_chemical_potential_type(model::GammaPhi) = reference_chemical_potential_type(model.activity)
@@ -45,6 +57,30 @@ function gibbs_solvation(model::GammaPhi,T)
     γ = activity_coefficient(model,p,T,z)
     K = v_v/v_l*γ[2]*p2/p
     return -R̄*T*log(K)
+end
+idealmodel(model::GammaPhi) = idealmodel(model.fluid.model)
+reference_state(model::GammaPhi) = reference_state(model.fluid.model)
+a_res(model::GammaPhi,V,T,z) = a_res_activity(model.activity,V,T,z,model.fluid)
+
+function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+    if is_unknown(phase) || phase == :stable
+        throw(error("automatic phase detection not implemented for $(typeof(model))"))
+    end
+
+    if is_vapour(phase)
+        #on gas phases, the activity is not present.
+        return PT_property(gas_model(model),p,T,z,phase,threaded,vol0,f,USEP)
+    elseif is_liquid(phase)
+        #for bulk properties that arent volume, the liquid_cp model contains a valid helmholtz model
+        V = volume(model.fluid.model, p, T, z; phase, threaded, vol0)
+        if UseP
+            return f(model,V,T,z,p)
+        else
+            return f(model,V,T,z)
+        end
+    else
+        throw(error("invalid phase specifier: $phase"))
+    end
 end
 
 function PTFlashWrapper(model::GammaPhi,p,T::Number,equilibrium::Symbol)
