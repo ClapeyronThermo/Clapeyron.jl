@@ -3,7 +3,6 @@
 Peforms some initial checks to see if a possible solution exists in `Clapeyron.jl`.
 """
 function x0_Tproperty(model::EoSModel,p,z::AbstractVector,verbose = false)
-    @assert isapprox(sum(z),1,atol = 1e-8)
     bubble_prop = Clapeyron.bubble_temperature(model,p,z)
     dew_prop = Clapeyron.dew_temperature(model,p,z)
     bubble_temp = bubble_prop[1]
@@ -57,7 +56,7 @@ function Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
 
 
-  T,_ = _Tproperty(model,p,prop,z,property;rootsolver,phase,abstol,reltol,threaded,T0)
+  T,_ = _Tproperty(model,p,prop,z,property;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
   return T
 end
 
@@ -73,7 +72,8 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
 
   if length(model) == 1 && length(z) == 1
-    return Tproperty_pure(model,p,prop,property,rootsolver,phase,abstol,reltol,verbose,threaded,T0)
+    zz = SA[z[1]]
+    return Tproperty_pure(model,p,prop,zz,property,rootsolver,phase,abstol,reltol,verbose,threaded,T0)
   end
 
   if T0 !== nothing
@@ -175,10 +175,10 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
   return _0/_0,:failure
 end
 
-function Tproperty_pure(model,p,prop,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,T0) where F
-
+function Tproperty_pure(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,T0) where F
+  ∑z = sum(z)
   if T0 !== nothing
-    sol = __Tproperty(model,p,prop,property,rootsolver,phase,abstol,reltol,threaded,T0)
+    sol = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T0)
   end
 
   crit = crit_pure(model)
@@ -190,8 +190,8 @@ function Tproperty_pure(model,p,prop,property::F,rootsolver,phase,abstol,reltol,
 
   Tmin = Tsat - 1
   Tmax = min(Tsat + 1,Tc)
-  prop_edge1 = property(model,p,Tmin,phase = phase)
-  prop_edge2 = property(model,p,Tmax,phase = phase)
+  prop_edge1 = property(model,p,Tmin,z,phase = phase)
+  prop_edge2 = property(model,p,Tmax,z,phase = phase)
 
   #case 1: property inside saturation dome
   if (prop_edge1 <= prop <= prop_edge2) || (prop_edge2 <= prop <= prop_edge1)
@@ -203,22 +203,22 @@ function Tproperty_pure(model,p,prop,property::F,rootsolver,phase,abstol,reltol,
   if (prop_edge1 < prop_edge2)
     if (prop < prop_edge1)
       verbose && @info "$property < $property at saturation point"
-      return __Tproperty(model,p,prop,property,rootsolver,phase,abstol,reltol,threaded,Tmin)
+      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tmin)
     else# (prop_edge2 < prop)
       verbose && @info "$property > $property at saturation point"
-      return __Tproperty(model,p,prop,property,rootsolver,phase,abstol,reltol,threaded,Tmax)
+      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tmax)
     end
   else
   #case 3: Monotonically decreasing property value i.e. prop_edge1 > prop_edge2
     if (prop < prop_edge2)
       verbose && @info "$property < $property at saturation point"
-      return __Tproperty(model,p,prop,property,rootsolver,phase,abstol,reltol,threaded,Tmax)
+      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tmax)
     else (prop_edge1 < prop)
       verbose && @info "$property > $property at saturation point"
-      return __Tproperty(model,p,prop,property,rootsolver,phase,abstol,reltol,threaded,Tmin)
+      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tmin)
     end
   end
-  _0 = Base.promote_eltype(model,p,prop,1.0)
+  _0 = Base.promote_eltype(model,p,prop,z)
   return _0/_0,:failure
 end
 

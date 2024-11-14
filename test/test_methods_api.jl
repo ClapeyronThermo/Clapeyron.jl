@@ -416,19 +416,29 @@ end
 end
 
 @testset "Tproperty" begin
-    model = PCSAFT(["propane","dodecane"])
+    model1 = PCSAFT(["propane","dodecane"])
     p = 101325.0; T = 300.0;z = [0.5,0.5]
-    h_ = enthalpy(model,p,T,z)
-    s_ = entropy(model,p,T,z)
-    @test Tproperty(model,p,h_,z,enthalpy) ≈ T
-    @test Tproperty(model,p,s_,z,entropy) ≈ T
+    h_ = enthalpy(model1,p,T,z)
+    s_ = entropy(model1,p,T,z)
+    @test Tproperty(model1,p,h_,z,enthalpy) ≈ T
+    @test Tproperty(model1,p,s_,z,entropy) ≈ T
 
-    model = PCSAFT(["propane"])
-    p = 101325.0; T = 300.0;z = [1.]
-    h_ = enthalpy(model,p,T,z)
-    s_ = entropy(model,p,T,z)
-    @test Tproperty(model,p,h_,z,enthalpy) ≈ T
-    @test Tproperty(model,p,s_,z,entropy) ≈ T
+    model2 = PCSAFT(["propane"])
+    z2 = [1.]
+    h2_ = enthalpy(model2,p,T,z2)
+    s2_ = entropy(model2,p,T,z2)
+    @test Tproperty(model2,p,h2_,z2,enthalpy) ≈ T
+    @test Tproperty(model2,p,s2_,z2,entropy) ≈ T
+
+    #issue 309
+    model3 = cPR(["ethane"],idealmodel=ReidIdeal)
+    T3 = 300
+    z3 = [5]
+    s30 = entropy(model3,p,T0,z3)
+    p3 = 2*p
+    T3_calc = Tproperty(model3,p3,s30,z3,entropy)
+    s3 = entropy(model3,p3,T3_calc,z3)
+    @test s3 ≈ s30
 end
 
 @testset "bubble/dew point algorithms" begin
