@@ -9,6 +9,7 @@ Pages = ["electrolytes.md"]
 ```
 
 ## Main model
+
 ```@docs
 Clapeyron.ESElectrolyte
 ```

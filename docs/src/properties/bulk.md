@@ -87,6 +87,7 @@ Clapeyron.fugacity_coefficient
 ```
 
 ### Activity Coefficient
+
 ```@docs
 Clapeyron.reference_chemical_potential
 Clapeyron.reference_chemical_potential_type
