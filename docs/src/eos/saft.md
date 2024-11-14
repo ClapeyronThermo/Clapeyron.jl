@@ -48,6 +48,7 @@ Clapeyron.sCPA
 ```
 
 ## Miscellaneous Models
+
 ```@docs
 Clapeyron.COFFEE
 ```

@@ -91,19 +91,24 @@ julia> @time saturation_pressure(model, 298.15, SuperAncSaturation())
 ```
 
 The list of available saturation methods are the following:
- - [`ChemPotVSaturation`](@ref): Default method, solves simultaneusly both liquid and vapour volumes as a non linear system of equations. Fastest, but could have some problems too close to the critical point.
 
- - [`IsoFugacitySaturation`](@ref): Solves a univariate Root-finding problem with pressure as main variable. for each iteration calculates a liquid and vapour volume, It is more stable in some cases.
+- [`ChemPotVSaturation`](@ref): Default method, solves simultaneously both liquid and vapour volumes as a non linear system of equations.
+  Fastest, but could have some problems too close to the critical point.
 
- - [`CritExtrapolationSaturation`](@ref): Returns a critical extrapolation approximation of the saturation conditions. Really accurate for T/Tc > 0.999. It is used as initial point for the other saturation methods when a critical point is available.
+- [`IsoFugacitySaturation`](@ref): Solves a univariate Root-finding problem with pressure as main variable.
+  For each iteration calculates a liquid and vapour volume, It is more stable in some cases.
 
- - [`SuperAncSaturation`](@ref): The method just evaluates a highly regressed Chebyshev polynomial for pressure and saturation volumes, by far the fastest method, but it's only available for `vdW`, `RK` and `PR` equations of state.
+- [`CritExtrapolationSaturation`](@ref): Returns a critical extrapolation approximation of the saturation conditions.
+  Really accurate for $T/T_\mathrm{c} > 0.999$.
+  It is used as initial point for the other saturation methods when a critical point is available.
+
+- [`SuperAncSaturation`](@ref): The method just evaluates a highly regressed Chebyshev polynomial for pressure and saturation volumes, by far the fastest method, but it's only available for `vdW`, `RK` and `PR` equations of state.
 
 !!! note "External Packages: EoSSuperancillaries.jl"
-    By default, `Clapeyron.jl` only provides superancillaries for the aforementioned cubics. [`EoSSuperancillaries.jl`](https://github.com/ClapeyronThermo/EoSSuperancillaries.jl) provides an additional superancillary for the PCSAFT equation of state (without association).
-    In addition to the PCSAFT superancillary, loading the package switches the initial points for the saturation methods to use the superancillaries themselves, resulting in additional speedups. ´
+    By default, `Clapeyron.jl` only provides superancillaries for the aforementioned cubics.
+    [`EoSSuperancillaries.jl`](https://github.com/ClapeyronThermo/EoSSuperancillaries.jl) provides an additional superancillary for the PCSAFT equation of state (without association).
+    In addition to the PCSAFT superancillary, loading the package switches the initial points for the saturation methods to use the superancillaries themselves, resulting in additional speedups.
     This behaviour can be switched off by setting `Clapeyron.SUPERANC_ENABLED[] = false`, after loading `EoSSuperancillaries`.
-
 
 ## Critical points
 

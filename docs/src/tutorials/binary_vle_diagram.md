@@ -1,5 +1,5 @@
 # Binary vapour-liquid equilibrium
 
-## _n_-butane and _n_-hexane
+## *n*-butane and *n*-hexane
 
 ## Methanol and ethane
