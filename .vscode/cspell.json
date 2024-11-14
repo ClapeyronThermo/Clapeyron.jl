@@ -37,10 +37,12 @@
         "psat",
         "registermodel",
         "SolidHfus",
+        "spinodal",
         "splittable",
         "squarewell",
         "struct",
         "structs",
+        "SUPERANC",
         "Tsat",
         "virial"
     ],
