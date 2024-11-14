@@ -331,7 +331,7 @@ PCSAFT{BasicIdeal, Float64} with 2 components:
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
 
 julia> model.params.epsilon_assoc
-AssocParam{Float64}["water", "1-propanol"]) with 4 values:
+AssocParam{Float64}(["water", "1-propanol"]) with 4 values:
 ("water", "e") >=< ("water", "H"): 2500.7
 ("1-propanol", "e") >=< ("water", "H"): 2388.75
 ("1-propanol", "H") >=< ("water", "e"): 2388.75
@@ -458,9 +458,12 @@ The only other equation of state which requires this is `gcPCPSAFT`.
 
 ### Automatic Group Contribution Identification
 
-The process of group identification can get quite tedious, specially when dealing with larger species. One way to generate group contribution fragmentations is by using the `SMILES` specification to parse the chemical structure of a particular species, and subdivide said structure into a particular set of groups.
+The process of group identification can get quite tedious, specially when dealing with larger species.
+One way to generate group contribution fragmentations is by using the `SMILES` specification to parse the chemical structure of a particular species, and subdivide said structure into a particular set of groups.
 
-We recommend using [GCIdentifier.jl](https://github.com/ClapeyronThermo/GCIdentifier.jl) as a tool to generate group contribution fragmentations from `SMILES` strings. for example we can generate an UNIFAC model of ibuprofen and water in the following way:
+We recommend using [GCIdentifier.jl](https://github.com/ClapeyronThermo/GCIdentifier.jl) as a tool to generate group contribution fragmentations from `SMILES` strings.
+For example we can generate an UNIFAC model of ibuprofen and water in the following way:
+
 ```julia
 julia> _,groups_ibuprofen = get_groups_from_smiles("CC(Cc1ccc(cc1)C(C(=O)O)C)C", UNIFACGroups)
 ("CC(Cc1ccc(cc1)C(C(=O)O)C)C", ["COOH" => 1, "CH3" => 3, "CH" => 1, "ACH" => 4, "ACCH2" => 1, "ACCH" => 1])
@@ -469,4 +472,3 @@ julia> model = UNIFAC(["water" => ["H2O" => 1],"ibuprofen" => groups_ibuprofen])
 ```
 
 For more information about
-

@@ -322,7 +322,7 @@ We do point out that, whilst the first two terms are developed following the SAF
 This third-order term resulted in significant improvements in the modelling of properties near the critical point (without using cross-over theory).
 The chain term also received further improvements as a result.
 This is also the only SAFT equation in which the hard-sphere diameter is evaluated analytically, although numerical approximations are needed (we note that the original SAFT‑VR Mie equation used 10-point Gauss–Legendre quadrature, whilst the newer version uses 5-point Gauss–Laguerre quadrature).
-The `Clapeyron.jl` implementation of the hard-sphere diameter uses a mixed approach, using 10-point Gauss-Laguerre quadrature for low reduced temperatures (`T/ε`) and a 10-point Gauss-Legendre integration with a cutoff radius for high temperatures.
+The `Clapeyron.jl` implementation of the hard-sphere diameter uses a mixed approach, using 10-point Gauss–Laguerre quadrature for low reduced temperatures (`T/ε`) and a 10-point Gauss–Legendre integration with a cutoff radius for high temperatures.
 
 However, three different versions of the association strength have been developed:
 

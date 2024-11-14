@@ -9,29 +9,29 @@ These include the standard cubics (van der Waals, Redlich–Kwong, Peng–Robins
 
 The documentation is laid out as follows:
 
-0. **Installation**
+1. **Installation**
 1. **Model construction**
-    - Ideal gas models
-    - Cubic equations of state
-    - SAFT equations of state
-    - Empirical equations of state
-    - Activity coefficient models
-    - Composite Models
-    - Group Contribution Models
-2. **Property Estimation**
-    -  Bulk Properties
-    - Phase Equilibria
-    - Flash Calculations
-3. **Parameter Estimation**
-4. **Extensions**
-    - CoolProp
-    - Symbolics
-    - Measurements
-5. **Package Development**
-    - Developing new methods
-    - Developing new models
-    - Contributing to the package
-6. **API**
+   - Ideal gas models
+   - Cubic equations of state
+   - SAFT equations of state
+   - Empirical equations of state
+   - Activity coefficient models
+   - Composite Models
+   - Group Contribution Models
+1. **Property Estimation**
+   - Bulk Properties
+   - Phase Equilibria
+   - Flash Calculations
+1. **Parameter Estimation**
+1. **Extensions**
+   - CoolProp
+   - Symbolics
+   - Measurements
+1. **Package Development**
+   - Developing new methods
+   - Developing new models
+   - Contributing to the package
+1. **API**
 
 ## Authors
 

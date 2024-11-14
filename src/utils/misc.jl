@@ -157,7 +157,12 @@ viewlast(x,i) = @view(x[(end - i + 1):end])
 viewfirst(x,i) = @view(x[begin:i])
 
 
-linearidx(x::AbstractVector) = 1:length(x)
-linearidx(x::AbstractMatrix) = diagind(x)
+linearidx(x::AbstractVector) = LinearIndices(x)
+
+if Base.VERSION < v"1.11"
+    linearidx(x::AbstractMatrix) = diagind(x,0)
+else
+    linearidx(x::AbstractMatrix) = diagind(x,0,IndexStyle(x))
+end
 
 mid(a,b,c) =  max(min(a,b),min(max(a,b),c))

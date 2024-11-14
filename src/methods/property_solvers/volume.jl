@@ -181,8 +181,13 @@ function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol
     return volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
+#comprises solid and liquid phases.
+#the separation is done because we normally we use a combined liquid-gas model for most calculations.
 fluid_model(model) = model
+#just solid models.
 solid_model(model) = model
+liquid_model(model) = fluid_model(model)
+gas_model(model) = fluid_model(model)
 
 volume_impl(model,p,T) = volume_impl(model,p,T,SA[1.0],:unknown,true,nothing)
 volume_impl(model,p,T,z) = volume_impl(model,p,T,z,:unknown,true,nothing)
