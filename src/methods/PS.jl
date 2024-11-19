@@ -10,6 +10,11 @@ function PS_property(model,p,s,z,f::F,phase,T0,threaded) where F
         #TODO: handle equilibria conditions
     if calc_phase != :eq || calc_phase != :failure
         return f(model,p,T,z;phase = calc_phase)
+    elseif calc_phase == :eq && !supports_lever_rule(f)
+        thow(invalid_property_multiphase_error(f))
+    elseif calc_phase == :eq && supports_lever_rule(f) && length(model) == 1 #TODO: lift single component condition
+        result = ps_flash(model,p,s,z,T0)
+        return f(model,result)
     else
         return f(model,p,T,z;phase = phase)
     end

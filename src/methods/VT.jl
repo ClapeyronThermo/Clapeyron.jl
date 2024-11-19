@@ -481,6 +481,7 @@ module VT
     volume(model,V,T,z) = V
     #first derivative order properties
     entropy(model,V,T,z = SA[1.0]) = Clapeyron.VT_entropy(model,V,T,z)
+    enthalpy(model,V,T,z = SA[1.0]) = Clapeyron.VT_enthalpy(model,V,T,z)
     internal_energy(model,V,T,z = SA[1.0]) = Clapeyron.VT_internal_energy(model,V,T,z)
     gibbs_free_energy(model,V,T,z = SA[1.0]) = Clapeyron.VT_gibbs_free_energy(model,V,T,z)
     const gibbs_energy = gibbs_free_energy

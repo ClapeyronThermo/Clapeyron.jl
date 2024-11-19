@@ -120,7 +120,7 @@ function tp_flash2(model::EoSModel, p, T, n,method::TPFlashMethod)
         z = zeros(eltype(β),length(n))
         z .= n
         z ./= sum(z)
-        return [z], β, vols,zero(vols)
+        return [z], β, vols, PTFlashData(p,T,zero(vols[1]))
     end
     z_r = n_r ./ sum(n_r)
     comps,β,vols,g = tp_flash_impl(model_r,p,T,z_r,method_r)
@@ -138,10 +138,10 @@ function tp_flash2(model::EoSModel, p, T, n,method::TPFlashMethod)
 end
 
 function tp_flash2_to_tpflash(model,p,T,z,result)
-    comps, β, volumes, g = result
+    comps, β, volumes, data = result
     nc = length(z)
     np = length(comps)
-
+    g = data.dG
     x = similar(comps[1],(np,nc))
     n = similar(x)
     for i in 1:np
@@ -154,4 +154,3 @@ function tp_flash2_to_tpflash(model,p,T,z,result)
     end
     return x,n,g
 end
-

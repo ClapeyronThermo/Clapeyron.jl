@@ -815,3 +815,22 @@ module PT
     pressure(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = p
     temperature(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = T
 end
+
+"""
+    supports_lever_rule(::f)::Bool
+
+returns `true` if the input property function can be used to describe multiphase mixtures using the lever rule:
+```
+f(a)/f(b) = (f - f(b))/f(a) - f(b))
+```
+"""
+supports_lever_rule(f) = false
+
+for prop in [:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
+    :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
+   #volume :properties
+    :mass_density,:molar_density]
+    @eval begin
+        supports_lever_rule(::typeof($prop)) = true
+    end
+end

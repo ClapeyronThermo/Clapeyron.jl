@@ -247,7 +247,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
     if !δn_add && length(comps) == 1
         v0 = volumes[1]
         g0 = (eos(model,v0,T,z) + p*v0)/(Rgas(model)*T)
-        return comps, βi, volumes,g0
+        return comps, βi, volumes,PTFlashData(p,T,g0)
     end
     gmix = NaN*one(eltype(volumes))
     #step 2: main loop,iterate flashes until all phases are stable
@@ -285,7 +285,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
     if isnan(gmix)
         gmix = _multiphase_gibbs(model,p,T,result)/(Rgas(model)*T)
     end
-    return comps, βi, volumes, gmix
+    return comps, βi, volumes, PTFlashData(p,T,gmix)
 end
 
 function neq_converged(model,p,T,z,result)

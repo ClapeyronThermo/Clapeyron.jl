@@ -247,6 +247,36 @@ function near_candidate_fractions(n,k = 0.5*minimum(n))
     return x
 end
 
+struct PTFlashData{R}
+    p::R
+    T::R
+    dG::R
+end
+
+const FlashResult = Tuple{<:Any,<:Any,<:Any,<:PTFlashData}
+
+temperature(model::EoSModel,state::FlashResult) = state.T
+pressure(model::EoSModel,state::FlashResult) = state.p
+function volume(model::EoSModel,state::FlashResult)
+    comps, β, volumes, data = state
+    return dot(βi,volumes)
+end
+
+for prop in [:enthalpy,:entropy,:internal_energy,:gibbs_energy,:helmholtz_energy]
+@eval begin
+        function $prop(model::EoSModel,state::FlashResult)
+            comps, β, volumes, data = state
+            T = data.T
+            res = zero(Base.promote_eltype(comps[1],volumes[1],T,model))
+            for i in 1:length(comps)
+                xi,βi,vi = comps[i],β[i],volumes[i]
+                res += βi*VT.$prop(model,vi,T,xi)
+            end
+            return res
+        end
+    end
+end
+
 include("fugacity.jl")
 include("rachford_rice.jl")
 include("bubble_point.jl")
