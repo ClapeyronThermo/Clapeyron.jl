@@ -8,7 +8,7 @@ function PH_property(model,p,h,z,f::F,phase,T0,threaded) where F
     end
     T,calc_phase = _Tproperty(model,p,h,z,T0 = T0,phase = phase,threaded = threaded)
     #TODO: handle equilibria conditions
-    if calc_phase != :eq || calc_phase != :failure
+    if calc_phase != :eq && calc_phase != :failure
         return f(model,p,T,z;phase = calc_phase)
     elseif calc_phase == :eq && !supports_lever_rule(f)
         thow(invalid_property_multiphase_error(f))

@@ -62,5 +62,5 @@ function build_flash_result_pure(model,p,T,z,vl,vv,βv)
     volumes = [vl,vv]
     #in a single component, the gibbs energy of the (most stable) bulk phase is equal to the gibbs
     #phases of each component (only one, and equal to the bulk)
-    return comps,β,volumes,PTFlashData(p,T,zero(vl))
+    return comps,β,volumes,PTFlashData(promote(p,T,zero(vl))...)
 end
