@@ -84,6 +84,6 @@ function reference_state_checkempty(model,ref)
     end
 end
 
-function function invalid_property_multiphase_error(f)
+function invalid_property_multiphase_error(f)
     throw(DomainError(f,"$f cannot be used with multiphase conditions."))
 end

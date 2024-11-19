@@ -434,7 +434,7 @@ end
     model3 = cPR(["ethane"],idealmodel=ReidIdeal)
     T3 = 300
     z3 = [5]
-    s30 = entropy(model3,p,T0,z3)
+    s30 = entropy(model3,p,T3,z3)
     p3 = 2*p
     T3_calc = Tproperty(model3,p3,s30,z3,entropy)
     s3 = entropy(model3,p3,T3_calc,z3)
