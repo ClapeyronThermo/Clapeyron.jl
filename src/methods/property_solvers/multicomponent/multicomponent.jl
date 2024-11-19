@@ -262,7 +262,7 @@ function volume(model::EoSModel,state::FlashResult)
     return dot(βi,volumes)
 end
 
-for prop in [:enthalpy,:entropy,:internal_energy,:gibbs_energy,:helmholtz_energy]
+for prop in [:enthalpy,:entropy,:internal_energy,:gibbs_free_energy,:helmholtz_free_energy]
 @eval begin
         function $prop(model::EoSModel,state::FlashResult)
             comps, β, volumes, data = state
