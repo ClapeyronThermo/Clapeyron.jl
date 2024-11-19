@@ -82,7 +82,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
   bubble_temp,dew_temp = x0_Tproperty(model,p,z,verbose)
 
-  #if any bubble/dew pressure is NaN, try solving for the non-NaN value
+  #if any bubble/dew temp is NaN, try solving for the non-NaN value
   #if both values are NaN, try solving using T_scale(model,z)
   if isnan(bubble_temp) && !isnan(dew_temp)
     verbose && @warn "non-finite bubble point, trying to solve using the dew point"
@@ -115,7 +115,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
       if prop_edge1 <= prop <= prop_edge2
         verbose && @warn "In the phase change region"
-        return T_edge,:eq 
+        return T_edge,:eq
       end
 
       if prop < prop_edge1
@@ -183,7 +183,7 @@ function Tproperty_pure(model,p,prop,z,property::F,rootsolver,phase,abstol,relto
 
   crit = crit_pure(model)
   Tc,Pc,Vc = crit
-  Tsat,vlsat,vvpat = Clapeyron.x0_saturation_temperature(model,p,crit)
+  Tsat,vlsat,vvpat = saturation_temperature(model,p,crit = crit)
   if isnan(Tsat)
     Tsat = critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
   end
@@ -194,7 +194,7 @@ function Tproperty_pure(model,p,prop,z,property::F,rootsolver,phase,abstol,relto
   prop_edge2 = property(model,p,Tmax,z,phase = phase)
 
   #case 1: property inside saturation dome
-  if (prop_edge1 <= prop <= prop_edge2) || (prop_edge2 <= prop <= prop_edge1)
+  if p < Pc && (prop_edge1 <= prop <= prop_edge2) || (prop_edge2 <= prop <= prop_edge1)
     verbose && @warn "$property value in phase change region. Will return temperature at saturation point"
     return Tsat,:eq
   end
