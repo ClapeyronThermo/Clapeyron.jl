@@ -209,14 +209,14 @@ requires_st(::typeof(entropy)) = true
 requires_a(::typeof(entropy)) = false
 
 #a = a
-requires_pv(::typeof(helmholtz_energy)) = false
-requires_st(::typeof(helmholtz_energy)) = false
-requires_a(::typeof(helmholtz_energy)) = true
+requires_pv(::typeof(helmholtz_free_energy)) = false
+requires_st(::typeof(helmholtz_free_energy)) = false
+requires_a(::typeof(helmholtz_free_energy)) = true
 
 #g = a + pv
-requires_pv(::typeof(gibbs_energy)) = true
-requires_st(::typeof(gibbs_energy)) = false
-requires_a(::typeof(gibbs_energy)) = true
+requires_pv(::typeof(gibbs_free_energy)) = true
+requires_st(::typeof(gibbs_free_energy)) = false
+requires_a(::typeof(gibbs_free_energy)) = true
 
 #u = a + st
 requires_pv(::typeof(internal_energy)) = false
