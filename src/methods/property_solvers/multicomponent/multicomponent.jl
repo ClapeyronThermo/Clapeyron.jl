@@ -282,7 +282,8 @@ function PT_dG(model,p,T,z,comps,β,volumes)
     g_bulk = gibbs_free_energy(model,p,T,z)
     flash = (comps,β,volumes,data)
     g_mix = gibbs_free_energy(model,flash)
-    newdata = PTFlashData(promote(p,T,g_mix - g_bulk)...)
+    dg = (g_mix - g_bulk)/(Rgas(model)*T)
+    newdata = PTFlashData(promote(p,T,dg)...)
     return comps,β,volumes,newdata
 end
 

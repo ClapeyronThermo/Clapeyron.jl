@@ -23,7 +23,7 @@ function ph_flash(model,p,h,z,T0 = nothing,K0 = nothing)
         _phase = :eq #we suppose this
     end
 
-    TT = Base.promote_eltype(model,p,h,z,T0)
+    TT = Base.promote_eltype(model,p,h,z,T)
     if _phase != :eq 
         xx = Vector{TT}(undef,length(z))
         xx .= z
@@ -130,8 +130,8 @@ struct FlashSpecifications{S1,V1,S2,V2}
     val2::V2
 
     function FlashSpecifications(spec1::S1,val1::V1,spec2::S2,val2::V2) where {S1,V1,S2,V2}
-        @assert spec1 == volume || spec == temperature || spec == entropy || spec == enthalpy || spec == internal_energy || spec == pressure
-        @assert spec2 == volume || spec == temperature || spec == entropy || spec == enthalpy || spec == internal_energy || spec == pressure
+        @assert spec1 == volume || spec1 == temperature || spec1 == entropy || spec1 == enthalpy || spec1 == internal_energy || spec1 == pressure
+        @assert spec2 == volume || spec2 == temperature || spec2 == entropy || spec2 == enthalpy || spec2 == internal_energy || spec2 == pressure
         @assert spec1 !== spec2
         return new{S1,V1,S2,V2}(spec1,val1,spec2,val2)
     end
@@ -141,53 +141,54 @@ function normalize_spec(spec::FlashSpecifications,k)
     return FlashSpecifications(spec.spec1,spec.val1*k,spec.spec2,spec.val2*k)
 end
 
-function xy_input_to_flash_vars(input,np,nc)
+function xy_input_to_flash_vars(input,np,nc,z)
     idx_comps_end = (nc - 1)*(np - 1)
     idx_comps = 1:idx_comps_end
-    idx_volumes = 1:np .+ idx_comps_end
-    idx_β = 1:(np-1) .+ idx_volumes[end]
+    idx_volumes = (1:np) .+ idx_comps_end
+    idx_β = (1:(np-1)) .+ idx_volumes[end]
     comps0 = @view input[idx_comps]
     volumes = @view input[idx_volumes]
     β = @view input[idx_β]
-
     #fill last component vector
     comps0_end = similar(input,nc-1)
     comps0_end .= @view z[1:end-1]
     β_end = 1 - sum(β)
     for i in 1:(nc - 1)
         _xi = z[i]
-        βj = β[j]
+        
         res = zero(eltype(input))
         res += z[i]
         for j in 1:(np - 1)
             compsj = viewn(comps0,nc-1,j)
-            comps0_end[i] -= βj*compsj[i]
+            res -= β[j]*compsj[i]
         end
+        comps0_end[i] = res
     end
 
+    #=
     for j in 1:(np - 1)
         compsj = viewn(comps0,nc-1,j)
         ∑xj_end = 1 - sum(compsj)
         for i in 1:(nc - 1)
             comps0_end[i] -= β_end*∑xj_end
         end
-    end
+    end =#
 
     #clamp negative values
     for i in 1:nc-1
-        if x[i] < 0
-            x[i] = 0
+        if comps0_end[i] < 0
+            comps0_end[i] = 0
         end
     end
 
-    return comps0,β,volumes,_xi,β_end
+    return comps0,β,volumes,comps0_end,β_end
 end
 
-function xy_input_to_result(input,np,nc)
-    compsx,βx,volumes,_xi,β_end = xy_input_to_flash_vars(input,np,nc)
+function xy_input_to_result(input,np,nc,z)
+    compsx,βx,volumes,_xi,β_end = xy_input_to_flash_vars(input,np,nc,z)
     TT = eltype(input)
 
-    comps = Vector{TT}(undef,np)
+    comps = Vector{Vector{TT}}(undef,np)
     β = Vector{TT}(undef,np)
     for j in 1:np-1
         compsi = viewn(compsx,nc-1,j)
@@ -293,33 +294,33 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F) where F
     T = input[end]
     nc = length(model)
 
-    flash_vars = xy_input_to_flash_vars(input,np,nc)
+    flash_vars = xy_input_to_flash_vars(input,np,nc,zbulk)
     comps0,β,volumes,comps0_end,β_end = flash_vars
     w_end = FractionVector(comps0_end)
-
+    v_end = volumes[end]
     needs_a = requires_a(state)
     needs_st = requires_st(state)
     needs_pv = requires_pv(state)
 
     if needs_st
-        a_end,dadv_end,dadT_end = ∂f_vec(model,volumes[end],T,w_end)
+        a_end,dadv_end,dadT_end = ∂f_vec(model,v_end,T,w_end)
         p_end,s_end = -dadv_end,-dadT_end
     elseif needs_a && !needs_st
-        a_end,dadv_end = f∂fdV(model,volumes[end],T,w_end)
+        a_end,dadv_end = f∂fdV(model,v_end,T,w_end)
         p_end,s_end = -dadv_end,zero(a_end)
     else
-        p_end = pressure(model,volumes[end],T,w_end)
+        p_end = pressure(model,v_end,T,w_end)
         s_end,a_end = zero(p_end),zero(p_end)
     end
 
     ∑a = β_end*a_end
     if needs_pv
-        ∑v = β_end*v[end]
+        ∑v = β_end*v_end
     else
         ∑v = zero(∑a)
     end
     ∑s = β_end*s_end
-    ps = p_scale(model,z)
+    ps = p_scale(model,zbulk)
     R = Rgas(model)
     RT = R*T
     RTinv = 1/RT
@@ -352,9 +353,10 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F) where F
 
     #fill chemical potential equalities:
 
-    idx_μ_constraints = idx_p_constraints .+ (np-1)*nc
+    idx_μ_constraints = (1:((np-1)*nc)) .+ (np - 1)
     μ_constraints = @view output[idx_μ_constraints]
     μ_end = similar(output,nc)
+
     VT_chemical_potential_res!(μ_end,model,v_end,T,FractionVector(comps0_end))
 
     for j in 1:(np - 1)
@@ -365,13 +367,12 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F) where F
     end
 
     for j in 1:(np - 1)
-        vj = @inbounds v[j]
+        vj = @inbounds volumes[j]
         comps0j = viewn(comps0,nc-1,j)
         wj = FractionVector(comps0j)
         VT_chemical_potential_res!(μ_end,model,vj,T,wj)
-        Fj = viewn(F,n_c,j)
-
-        for i in 1:n_c
+        Fj = viewn(μ_constraints,nc,j)
+        for i in 1:nc
             μ1i = Fj[i]
             μji = μ_end[i]
             Δuᵣ = μ1i - μji
@@ -387,7 +388,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F) where F
     if spec1 == temperature
         output[end-1] = (T - val1)/val1
     elseif spec1 == pressure
-        output[end-1] = (p - val1)/ps
+        output[end-1] = (p_end - val1)/ps
     elseif spec1 == volume
         output[end-1] = (∑v - val1)/vs
     else #general caloric term, valid for enthalpy , entropy, internal energy, gibbs, helmholtz
@@ -426,11 +427,11 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
     input_0_1[idx_comps] .= true
     #we want to select the anchor phase with biggest fraction
     idx = sortperm(β0)
-    flash_vars = xy_input_to_flash_vars(input,np,nc)
+    flash_vars = xy_input_to_flash_vars(input,np,nc,z)
     compsx,βx,volumesx,_,_ = flash_vars
     for j in 1:(np-1)
         k = idx[j]
-        volumesx[j] = volumes0[j]
+        volumesx[j] = volumes0[k]
         βx[j] = β0[k]/∑z
         wxj = viewn(compsx,nc-1,j)
         wj0 = comps0[k]
@@ -438,6 +439,7 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
             wxj[i] = wj0[i]
         end
     end
+    volumesx[end] = volumes0[idx[end]]
     input[end] = T0
     _1 = one(eltype(input))
     is_caloric = requires_st(spec) || requires_a(spec)
@@ -457,7 +459,7 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
     s = copy(input)
     f!(F,x)
     converged = false
-    nan_converged = isfinite(x)
+    nan_converged = !all(isfinite,x)
     if norm(F,Inf) < reltol
         converged = true
     end
@@ -467,11 +469,14 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
         converged && break
         nan_converged && break
         ForwardDiff.jacobian!(J,f!,F,x,config)
-        lu = Solvers.unsafe_LU!(J,piv)
-        s .= F
-        ldiv!(lu,s) #J*F
+        #lu = Solvers.unsafe_LU!(J,piv)
+        s .= -J\F
+        #ldiv!(lu,s) #J*F
         x_old .= x
-        x .= x_old .- s
+        T_old = x_old[end]
+        T_new = clamp(T_old + s[end],0.97*T_old,1.03*T_old)
+        x .= x_old .+ s
+        x[end] = T_new
         #bound 0-1 variables.
         for j in 1:l
             check_bounds = input_0_1[j]
@@ -486,10 +491,10 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
         xnorm = Solvers.dnorm(x,x_old,Inf)
         Fnorm < reltol && (converged = true)
         xnorm < abstol && (converged = true)
-        !isfinite(x) && (nan_converged = true)
+        nan_converged = !all(isfinite,x)
     end
 
-    comps_result,β_result,volumes_result,T_result = xy_input_to_result(x,np,nc)
+    comps_result,β_result,volumes_result,T_result = xy_input_to_result(x,np,nc,z)
     sp1,sp2 = spec.spec1,spec.spec2
     if sp1 == pressure
         p_result = spec.val1
@@ -500,7 +505,5 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
     end
     β_result .*= ∑z
     data = PTFlashData(promote(p_result,T_result,zero(T_result))...)
-    gbulk = gibbs_free_energy(model,p_result,T_result)
-    gmix = gibbs_free_energy((comps_result,β_result,volumes_result,data))
     return PT_dG(model,p_result,T_result,z,comps_result,β_result,volumes_result)
 end
