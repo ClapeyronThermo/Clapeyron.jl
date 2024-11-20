@@ -277,6 +277,15 @@ for prop in [:enthalpy,:entropy,:internal_energy,:gibbs_free_energy,:helmholtz_f
     end
 end
 
+function PT_dG(model,p,T,z,comps,β,volumes)
+    data = PTFlashData(promote(p,T,zero(T))...)
+    g_bulk = gibbs_free_energy(model,p,T,z)
+    flash = (comps,β,volumes,data)
+    g_mix = gibbs_free_energy(model,flash)
+    newdata = PTFlashData(promote(p,T,g_mix - g_bulk)...)
+    return comps,β,volumes,newdata
+end
+
 include("fugacity.jl")
 include("rachford_rice.jl")
 include("bubble_point.jl")
