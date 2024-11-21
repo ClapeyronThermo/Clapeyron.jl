@@ -108,6 +108,24 @@ end
 show_default(io::IO,arg) = Base.show_default(io,arg)
 show_default(io::IO,mime::MIME"text/plain",arg) = Base.show_default(io,arg)
 
+function show_as_namedtuple(io::IO,x)
+    compact_io = IOContext(io, :compact => true)
+    print(io,typeof(x).name.name,"(")
+    names = fieldnames(typeof(x))
+    l = length(names)
+    equal = " = "
+    comma = ", "
+    for i in 1:l
+        print(io,names[i])
+        print(io,equal)
+        print(compact_io,getfield(x,i))
+        if i != l
+            print(io,comma) 
+        end
+    end
+    println(io,")")
+end
+
 #=
 """
     concrete(x)
