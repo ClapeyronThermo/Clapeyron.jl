@@ -1,28 +1,7 @@
-function _multiphase_gibbs(model,p,T,result)
-    comps = result[1]
-    β = result[2]
-    volumes = result[3]
-    if model isa PTFlashWrapper && length(β) == 2 #TODO: in the future, PTFlashWrappers could be multiphase
-        if model.model isa RestrictedEquilibriaModel
-            return zero(eltype(β))
-        end
-    end
-
-    res = zero(Base.promote_eltype(model,p,T,comps[1]))
-    np = length(comps)
-    for i in 1:np
-        vi = volumes[i]
-        res += β[i] * (eos(model,vi,T,comps[i]) + p*vi)
-    end
-    return res
-end
-
 """
     TPFlashMethod <: ThermodynamicMethod
 
-Abstract type for `tp_flash` routines. it requires defining `numphases(method)` and `tp_flash_impl(model,p,T,n,method)`.
-If the method accept component-dependent inputs, it also should define `index_reduction(method,nonzero_indices)`
-
+Abstract type for `tp_flash` routines.
 """
 abstract type TPFlashMethod <: ThermodynamicMethod end
 
@@ -58,16 +37,7 @@ end
 Return the number of phases supported by the TP flash method. by default its set to 2.
 it the method allows it, you can set the number of phases by doing `method(;numphases = n)`.
 """
-numphases(method::TPFlashMethod) = 2
 
-
-"""
-    supports_reduction(method::TPFlashMethod)::Bool
-
-Checks if a TP Flash method supports index reduction (the ability to prune model components with compositions lower than a threshold). 
-All current Clapeyron methods support index reduction, but some methods that alllow passing a cache could have problems
-"""
-supports_reduction(method::TPFlashMethod) = true
 #default
 include("tp_flash/DifferentialEvolutiontp_flash.jl")
 include("tp_flash/michelsen_base.jl")

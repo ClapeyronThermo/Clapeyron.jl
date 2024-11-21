@@ -247,46 +247,6 @@ function near_candidate_fractions(n,k = 0.5*minimum(n))
     return x
 end
 
-struct PTFlashData{R}
-    p::R
-    T::R
-    dG::R
-end
-
-const FlashResult = Tuple{<:Any,<:Any,<:Any,<:PTFlashData}
-
-temperature(model::EoSModel,state::FlashResult) = state.T
-pressure(model::EoSModel,state::FlashResult) = state.p
-function volume(model::EoSModel,state::FlashResult)
-    comps, β, volumes, data = state
-    return dot(βi,volumes)
-end
-
-for prop in [:enthalpy,:entropy,:internal_energy,:gibbs_free_energy,:helmholtz_free_energy]
-@eval begin
-        function $prop(model::EoSModel,state::FlashResult)
-            comps, β, volumes, data = state
-            T = data.T
-            res = zero(Base.promote_eltype(comps[1],volumes[1],T,model))
-            for i in 1:length(comps)
-                xi,βi,vi = comps[i],β[i],volumes[i]
-                res += βi*VT.$prop(model,vi,T,xi)
-            end
-            return res
-        end
-    end
-end
-
-function PT_dG(model,p,T,z,comps,β,volumes)
-    data = PTFlashData(promote(p,T,zero(T))...)
-    g_bulk = gibbs_free_energy(model,p,T,z)
-    flash = (comps,β,volumes,data)
-    g_mix = gibbs_free_energy(model,flash)
-    dg = (g_mix - g_bulk)/(Rgas(model)*T)
-    newdata = PTFlashData(promote(p,T,dg)...)
-    return comps,β,volumes,newdata
-end
-
 include("fugacity.jl")
 include("rachford_rice.jl")
 include("bubble_point.jl")
@@ -297,12 +257,13 @@ include("VLLE.jl")
 include("crit_mix.jl")
 include("UCEP.jl")
 include("UCST_mix.jl")
+include("flash.jl")
 include("tp_flash.jl")
 include("krichevskii_parameter.jl")
 include("solids/sle_solubility.jl")
 include("solids/slle_solubility.jl")
 include("solids/eutectic_point.jl")
-include("flash.jl")
+
 export bubble_pressure_fug, bubble_temperature_fug, dew_temperature_fug, dew_pressure_fug
 export bubble_pressure,    dew_pressure,    LLE_pressure,    azeotrope_pressure, VLLE_pressure
 export bubble_temperature, dew_temperature, LLE_temperature, azeotrope_temperature, VLLE_temperature
