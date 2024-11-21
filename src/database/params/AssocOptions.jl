@@ -38,4 +38,7 @@ end
 default_assoc_options(m::EoSModel) = default_assoc_options(parameterless_type(m))
 default_assoc_options(m) = AssocOptions()
 
+Base.show(io::IO,::MIME"text/plain",options::AssocOptions) = show_as_namedtuple(io,options)
+Base.show(io::IO,options::AssocOptions) = show_as_namedtuple(io,options)
+
 is_splittable(::AssocOptions) = false
