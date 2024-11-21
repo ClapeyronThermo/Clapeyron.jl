@@ -25,6 +25,8 @@ bubble_pressure(model,T,z,FugBubblePressure(y0 = = [0.6,0.4], p0 = 5e4)) #using 
 ```
 """
 abstract type ThermodynamicMethod end
+Base.show(io::IO,::MIME"text/plain",x::ThermodynamicMethod) = show_as_namedtuple(io,x)
+Base.show(io::IO,x::ThermodynamicMethod) = show_as_namedtuple(io,x)
 
 function NLSolvers.NEqOptions(method::ThermodynamicMethod)
     return NEqOptions(f_limit = method.f_limit,
@@ -46,8 +48,8 @@ function group_molecular_weight(groups::GroupParameter,mw,z = @SVector [1.])
 end
 
 comp_molecular_weight(mw,z = @SVector [1.]) = 0.001*dot(mw,z)
-
-function molecular_weight(model::EoSModel,z=SA[1.0])
+molecular_weight(model::EoSModel,z) = _molecular_weight(model,z)
+function _molecular_weight(model::EoSModel,z=SA[1.0])
     MW = mw(model)
     if has_groups(model)
         return group_molecular_weight(model.groups,MW,z)
