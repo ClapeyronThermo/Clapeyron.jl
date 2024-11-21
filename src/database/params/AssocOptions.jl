@@ -1,5 +1,5 @@
 """
-    AssocOptions(;rtol = 1e-12,atol = 1e-12,max_iters = 1000,dampingfactor = 0.5,combining =:nocombining,dense = true)
+    AssocOptions(;rtol = 1e-12,atol = 1e-12,max_iters = 1000,dampingfactor = 0.5,combining =:nocombining)
 Struct containing iteration parameters for the solver of association sites.
 the combining option controls the type of combining rule applied to the association strength:
 - `nocombining` (default). Does not perform any combination rules.
@@ -32,7 +32,6 @@ the combining option controls the type of combining rule applied to the associat
     max_iters::Int = 1000
     dampingfactor::Float64 = 0.5
     combining::Symbol = :nocombining
-    dense::Bool = true
 end
 
 #allows overloading default assoc_options

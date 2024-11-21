@@ -217,9 +217,6 @@ end
 
 function assoc_site_matrix(model,V,T,z,data = nothing,delta = @f(__delta_assoc,data))
     options = assoc_options(model)
-    if !options.dense
-        @warn "using sparse matrices for association is deprecated."
-    end
     return dense_assoc_site_matrix(model,V,T,z,data,delta)
 end
 
