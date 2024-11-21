@@ -136,7 +136,6 @@ function shape_factors(model::ECS,shape_ref::ABCubicModel,V,T,z=SA[1.0])
 end
 Rgas(model::ECS) = Rgas(model.model_ref) #is this ok?
 mw(model::ECS) = mw(model.shape_model)
-molecular_weight(model::ECS,z=SA[1.0]) = molecular_weight(model.shape_model,z)
 
 function Base.show(io::IO,mime::MIME"text/plain",model::ECS)
     println(io,"Extended Corresponding States model")

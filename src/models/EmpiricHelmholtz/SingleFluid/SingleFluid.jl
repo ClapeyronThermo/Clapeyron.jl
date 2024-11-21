@@ -226,8 +226,6 @@ end
 
 mw(model::SingleFluid) = SA[model.properties.Mw]
 
-molecular_weight(model::SingleFluid,z = @SVector [1.]) = model.properties.Mw*0.001
-
 T_scale(model::SingleFluid,z) = model.properties.Tc
 
 p_scale(model::SingleFluid,z) = model.properties.Pc
