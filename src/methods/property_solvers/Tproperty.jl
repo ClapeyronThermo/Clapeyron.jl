@@ -82,6 +82,17 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
   bubble_temp,dew_temp = x0_Tproperty(model,p,z,verbose)
 
+  #trivial
+  if property === temperature
+    Temp = prop*one(bubble_temp)
+    if (bubble_temp < Temp < dew_temp) || (dew_temp < Temp < bubble_temp)
+      verbose && @warn "In the phase change region"
+      return Temp,:eq
+    else
+      _phase = identify_phase(model,p,Temp,z)
+      return Temp,_phase
+    end
+  end
   #if any bubble/dew temp is NaN, try solving for the non-NaN value
   #if both values are NaN, try solving using T_scale(model,z)
   if isnan(bubble_temp) && !isnan(dew_temp)
