@@ -45,7 +45,10 @@ end
 
 function index_expansion(x::AbstractMatrix,idr::AbstractVector)
     numspecies = length(idr)
-    l1,_ = size(x)
+    l1,l2 = size(x)
+    if l2 == numspecies
+        return x
+    end
     res = similar(x,(l1, numspecies))
     res .= 0
     for i in 1:l1
@@ -56,11 +59,17 @@ end
 
 """
     index_expansion(x::Vector,idx::Vector{Bool})
+    index_expansion(x::Matrix,idx::Vector{Bool})
 
-Given an input vector generated from a reduced model and the non zero indices, returns a resized Vector corresponding to the original model.
+
+Given an input vector generated from a reduced model and the non zero indices, returns a Vector corresponding to the original model.
+If the sizes of `x` and `idx` are the same, return the original input.
 """
 function index_expansion(x::AbstractVector,idr::AbstractVector)
     numspecies = length(idr)
+    if length(x) == numspecies
+        return x
+    end
     res = similar(x, numspecies)
     res .= false
     res[idr] .= x
