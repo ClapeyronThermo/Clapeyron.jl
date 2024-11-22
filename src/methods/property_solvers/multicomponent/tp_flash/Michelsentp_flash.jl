@@ -55,7 +55,7 @@ function MichelsenTPFlash(;equilibrium = :unknown,
                         nacc = 5,
                         second_order = false,
                         noncondensables = nothing,
-                        nonvolatiles = nothing
+                        nonvolatiles = nothing,
                         flash_result = nothing)
     !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
     

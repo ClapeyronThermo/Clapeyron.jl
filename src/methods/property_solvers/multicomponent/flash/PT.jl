@@ -26,17 +26,10 @@ function tp_flash(model::EoSModel, p, T, n; kwargs...)
     return tp_flash(model, p, T, n, method)
 end
 
-function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod)
+function tp_flash(model::EoSModel, p, T, n,method::FlashMethod)
     result = tp_flash2(model, p, T, n,method)
     return tp_flash2_to_tpflash(model,p,T,n,result)
 end
-
-"""
-    numphases(method::TPFlashMethod)
-
-Return the number of phases supported by the TP flash method. by default its set to 2.
-it the method allows it, you can set the number of phases by doing `method(;numphases = n)`.
-"""
 
 #default
 include("../tp_flash/DifferentialEvolutiontp_flash.jl")
@@ -73,7 +66,7 @@ function tp_flash2(model::EoSModel, p, T, n; kwargs...)
     return tp_flash2(model,p,T,n,method)
 end
 
-function tp_flash2(model::EoSModel, p, T, n,method::TPFlashMethod)
+function tp_flash2(model::EoSModel, p, T, n,method::FlashMethod)
     check_arraysize(model,n)
     if supports_reduction(method)
         model_r,idx_r = index_reduction(model,n)

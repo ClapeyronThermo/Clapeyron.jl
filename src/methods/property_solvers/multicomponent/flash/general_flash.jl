@@ -364,7 +364,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     f!(F,x)
     converged = false
     nan_converged = !all(isfinite,x)
-    if norm(F,Inf) < reltol
+    if norm(F,Inf) < rtol
         converged = true
     end
     config = ForwardDiff.JacobianConfig(f!,F,x)
@@ -377,6 +377,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         s .= F
         ldiv!(lu,s) #s .= J\F
         x_old .= x
+        #TODO: backtracking? trust region?, reformulate in SS form if the step is too far?
         x .= x_old .- s
         #bound 0-1 variables.
         for j in 1:l
@@ -390,7 +391,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         Fnorm = norm(F,Inf)
         xmax = maximum(x)
         xnorm = Solvers.dnorm(x,x_old,Inf)
-        Fnorm < rtol| && (converged = true)
+        Fnorm < rtol && (converged = true)
         xnorm < atol && (converged = true)
         nan_converged = !all(isfinite,x)
     end
@@ -432,15 +433,15 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via f
 - `rtol` = relative tolerance to stop the calculation
 - `max_iters` = maximum number of iterations
 """
-struct GeneralizedPXFlash{S,T} <: TPFlashMethod
+struct GeneralizedPXFlash{S,T} <: FlashMethod
     equilibrium::Symbol
     T0::Union{S,Nothing}
     K0::Union{Vector{T},Nothing}
     x0::Union{Vector{T},Nothing}
     y0::Union{Vector{T},Nothing}
     v0::Union{Tuple{T,T},Nothing}
-    atol::Int
-    rtol::Int
+    atol::Float64
+    rtol::Float64
     max_iters::Int
 end
 

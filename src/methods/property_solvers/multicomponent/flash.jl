@@ -35,7 +35,7 @@ end
 Base.show(io::IO,::MIME"text/plain",options::FlashData) = show_as_namedtuple(io,options)
 Base.show(io::IO,options::FlashData) = show_as_namedtuple(io,options)
 
-function FlashData(p::R1,T::R2,dG::R3) where{R1,R2,R3}
+function FlashData(p::R1,T::R2,g::R3) where{R1,R2,R3}
     if g === nothing
         FlashData(p,T)
     else
@@ -46,7 +46,7 @@ end
 FlashData(p,T) = FlashData(p,T,1.0*zero(p))
 
 #mol checker, with gibbs
-function FlashResult(model::EoSModel,p,T,z,comps,β,volumes,g = nothing;sort = true)
+function FlashResult(model::EoSModel,p,T,z::Union{Number,AbstractVector{<:Number}},comps,β,volumes,g = nothing;sort = true)
     ∑β = sum(β)
     ∑z = sum(z)
     if !isapprox(∑z,∑β)
@@ -62,7 +62,7 @@ function FlashResult(model::EoSModel,p,T,comps,β,volumes,g = nothing;sort = tru
     if g == nothing
         flash = FlashResult(p,T,comps,β,volumes,sort = false)
         Gmix = gibbs_free_energy(model,flash)
-        _g = Gmix/(∑z*Rgas(model)*T)
+        _g = Gmix/(sum(β)*Rgas(model)*T)
     else
         _g = g
     end
@@ -70,7 +70,7 @@ function FlashResult(model::EoSModel,p,T,comps,β,volumes,g = nothing;sort = tru
 end
 
 #mol checker, without gibbs
-function FlashResult(p::Number,T::Number,z,comps,β,volumes,g = nothing;sort = true)
+function FlashResult(p::Number,T::Number,z::Union{Number,AbstractVector{<:Number}},comps,β,volumes,g = nothing;sort = true)
     ∑β = sum(β)
     ∑z = sum(z)
     if !isapprox(∑z,∑β)
@@ -93,7 +93,7 @@ function FlashResult(p::Number,T::Number,comps,β,volumes,g = nothing;sort = tru
 end
 
 #flash remaker
-function FlashResult(x::FlashResult,g == nothing;sort = true)
+function FlashResult(x::FlashResult,g = nothing;sort = true)
     comps,β,volumes,data = x.compositions,x.fractions,x.volumes,x.data
     if g !== nothing
         _g = g
@@ -141,7 +141,7 @@ function Base.show(io::IO,mime::MIME"text/plain",obj::FlashResult)
     Base.print_matrix(IOContext(io, :compact => true),nt)
 end
 
-Base.getindex(x::Flash,i::Int) = getfield(x,i)
+Base.getindex(x::FlashResult,i::Int) = getfield(x,i)
 function Base.iterate(x::FlashResult)
     return (x[1],2)
 end
@@ -155,7 +155,7 @@ function Base.iterate(x::FlashResult,state)
 end
 
 function index_expansion(x::FlashResult,idr::AbstractVector)
-    if length(idr) == length(x.comps[1])
+    if length(idr) == length(x.compositions[1])
         return x
     end
     newcomps = map(Base.Fix2(index_expansion,idr),x.comps)
@@ -250,7 +250,7 @@ to add a new method, it is necessary to define the following functions, dependin
 If the flash method supports more than 2 phases, then it requires defining `numphases(method)` 
 If the method accept component-dependent inputs, it should also define `index_reduction(method,nonzero_indices)`
 """
-abstract type FlashMethod <: ThermodynamicMethod
+abstract type FlashMethod <: ThermodynamicMethod end
 
 
 """
@@ -259,6 +259,8 @@ abstract type FlashMethod <: ThermodynamicMethod
 Return the number of phases supported by a flash method. By default it is set to 2.
 If the method allows it, you can set the number of phases by doing `method(;numphases = n)`.
 """
+function numphases end
+
 numphases(method::FlashMethod) = 2
 numphases(result::FlashResult) = length(result.compositions)
 """
@@ -269,7 +271,7 @@ All current Clapeyron.jl methods support index reduction, but some methods that 
 """
 supports_reduction(method::FlashMethod) = true
 
-include("flash/flash_base.jl")
+include("flash/general_flash.jl")
 include("flash/PT.jl")
 include("flash/PH.jl")
 include("flash/PS.jl")
