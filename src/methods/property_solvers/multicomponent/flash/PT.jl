@@ -80,29 +80,28 @@ function tp_flash2(model::EoSModel, p, T, n,method::TPFlashMethod)
         n_r = n[idx_r]
         method_r = index_reduction(method,idx_r)
     else
-        model_r,idx_r = model,1:length(model)
+        model_r,idx_r = model,trues(length(model))
         method_r,n_r = method,n
     end
     
     if length(model_r) == 1 || numphases(method) == 1
-        return FlashResult(model_r,p,T,sum(n_r))
+        return FlashResult(model_r,p,T,n_r)
     end
-    z_r = n_r ./ sum(n_r)
-    comps,β,vols,g = tp_flash_impl(model_r,p,T,z_r,method_r)
+    ∑n = sum(n_r)
+    z_r = n_r ./ ∑n
+    result = tp_flash_impl(model_r,p,T,z_r,method_r)
     if !issorted(result.volumes)
-        
+        #this is in case we catch a bad result.
+        result = FlashResult(result)
     end
-    β ./= sum(β)
-    β .*= sum(n)
-    if supports_reduction(method)
-        for i in 1:length(comps)
-            xi_r = comps[i]
-            xi = index_expansion(xi_r,idx_r)
-            comps[i] = xi
-        end
+    ∑β = sum(result.fractions)
+    result.fractions ./= ∑β
+    result.fractions .*= ∑n
+    if supports_reduction(method) && length(model) !== length(model_r)
+        return index_expansion(result,idx_r)
+    else
+        return result
     end
-    idx_sort = sortperm(vols)
-    return comps[idx_sort],β[idx_sort],vols[idx_sort],g
 end
 
 function tp_flash2_to_tpflash(model,p,T,z,result)

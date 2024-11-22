@@ -424,7 +424,7 @@ function tpd(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_fi
         zr = z[idx_reduced]
     else
         model_reduced = model
-        idx_reduced = z .== z
+        idx_reduced = trues(length(model))
         zr = z
     end
     result = _tpd(model_reduced,p,T,zr,cache,break_first,lle,tol_trivial,strategy,di)
