@@ -1,15 +1,18 @@
 """
     FlashResult(compositions,fractions,volumes,data::FlashData)
     FlashResult(model,p,T,z,compositions,fractions,volumes,g = nothing;sort = true)
-    FlashResult(model,p,T,z,phase = :unknown)
+    FlashResult(model,p,T,compositions,fractions,volumes,g = nothing;sort = true)
+    FlashResult(model,p,T,z;phase = :unknown)
     FlashResult(p,T,z,compositions,fractions,volumes,g = nothing;sort = true)
+    FlashResult(p,T,compositions,fractions,volumes,g = nothing;sort = true)
+    FlashResult(flash::FlashResult,g = nothing;sort = true)
 
 Structure used to contain the result of a flash.
 Contains a list of molar compositions, a list of molar amounts per phase, a list of molar volumes and an auxiliary struct, `FlashData`, containing the pressure, temperature and reduced gibbs energy.
 when an `EoSModel` is used as an input for a `FlashResult`, the reduced molar gibbs energy (g = g/NRT) is calculated, if not provided.
 By default, the phases are sorted by volume, this can be changed by passing the keyword argument `sort = false`
 `FlashResult(model,p,T,z;phase)` constructs a single phase `FlashResult`.
-
+If the bulk composition `z` is provided, it will be used to scale the fractions, forcing `sum(fractions) == sum(z)`
 """
 struct FlashResult{C,B,D}
     compositions::C
@@ -42,16 +45,40 @@ end
 
 FlashData(p,T) = FlashData(p,T,1.0*zero(p))
 
+#mol checker, with gibbs
+function FlashResult(model::EoSModel,p,T,z,comps,β,volumes,g = nothing;sort = true)
+    ∑β = sum(β)
+    ∑z = sum(z)
+    if !isapprox(∑z,∑β)
+        _β = β * (∑z/∑β)
+    else
+        _β = β * one(∑z/∑β)
+    end
+    return FlashResult(model,p,T,comps,_β,volumes,g;sort)
+end
+
 #constructor that fills the gibbs energy automatically
 function FlashResult(model::EoSModel,p,T,comps,β,volumes,g = nothing;sort = true)
     if g == nothing
         flash = FlashResult(p,T,comps,β,volumes,sort = false)
         Gmix = gibbs_free_energy(model,flash)
-        _g = Gmix/(sum(β)*Rgas(model)*T)
+        _g = Gmix/(∑z*Rgas(model)*T)
     else
         _g = g
     end
     return FlashResult(p,T,comps,β,volumes,_g;sort)
+end
+
+#mol checker, without gibbs
+function FlashResult(p::Number,T::Number,z,comps,β,volumes,g = nothing;sort = true)
+    ∑β = sum(β)
+    ∑z = sum(z)
+    if !isapprox(∑z,∑β)
+        _β = β * (∑z/∑β)
+    else
+        _β = β * one(∑z/∑β)
+    end
+    return FlashResult(p,T,comps,_β,volumes,g;sort)
 end
 
 #constructor that does not fill the gibbs field
@@ -63,6 +90,17 @@ function FlashResult(p::Number,T::Number,comps,β,volumes,g = nothing;sort = tru
         idx = sortperm(volumes)
         return FlashResult(comps[idx],β[idx],volumes[idx],data)
     end
+end
+
+#flash remaker
+function FlashResult(x::FlashResult,g == nothing;sort = true)
+    comps,β,volumes,data = x.compositions,x.fractions,x.volumes,x.data
+    if g !== nothing
+        _g = g
+    else
+        _g = data.g
+    end
+    return FlashResult(data.p,data.T,comps,β,volumes,_g;sort)
 end
 
 #constructor for single phase
@@ -114,6 +152,11 @@ function Base.iterate(x::FlashResult,state)
     else
         return (x[state],state + 1)
     end
+end
+
+function index_expansion(x::FlashResult,idr::AbstractVector)
+    newcomps = map(Base.Fix2(index_expansion,idr),x.comps)
+    return FlashResult(newcomps,x.fractions,x.volumes,x.data)
 end
 
 temperature(model::EoSModel,state::FlashResult) = state.T
