@@ -177,12 +177,11 @@ function molar_density(model::EoSModel,state::FlashResult)
     return n/v
 end
 
-function molecular_weight(model::EoSModel,state::FlashResult)
+function __molecular_weight(model,state::FlashResult)
     comps, β, volumes, data = state
-    ∑mi = zero(eltype(comps))
-    mw = mw(model)
+    ∑mi = zero(eltype(comps[1]))
     for i in 1:length(comps)
-        mwi = comp_molecular_weight(mw,comps[i])
+        mwi = molecular_weight(model,comps[i])
         ∑mi = β[i]*mwi
     end
     return ∑mi
