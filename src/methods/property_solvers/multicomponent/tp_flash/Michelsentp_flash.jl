@@ -55,8 +55,18 @@ function MichelsenTPFlash(;equilibrium = :unknown,
                         nacc = 5,
                         second_order = false,
                         noncondensables = nothing,
-                        nonvolatiles = nothing)
+                        nonvolatiles = nothing
+                        flash_result = nothing)
     !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
+    
+    if flash_result isa FlashResult
+        comps,β,volumes = flash_result.compositions,flash_result.fractions,flash_result.volumes
+        @assert length(comps) == 2
+        w1,w2 = comps[1],comps[2]
+        v = (volumes[1],volumes[2])
+        return Michelsentp_flash(;equilibrium,x0 = w1,y0 = w2,vol0 = v,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
+    end
+    
     if K0 == x0 == y0 === v0 == nothing #nothing specified
         #is_lle(equilibrium)
         T = Nothing
