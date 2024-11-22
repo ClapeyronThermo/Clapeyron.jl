@@ -12,11 +12,7 @@ function ph_flash(model,p,h,z,T0 = nothing,K0 = nothing)
 
     TT = Base.promote_eltype(model,p,h,z,T)
     if _phase != :eq 
-        xx = Vector{TT}(undef,length(z))
-        xx .= z
-        ∑z = sum(z)
-        xx ./= ∑z
-        return [xx],[∑z],[volume(model,p,T,z)],PTFlashData(promote(p,T,zero(∑z))...)
+        return FlashResult(model,p,T,only(z),phase = _phase)
     end
 
     if K0 == nothing
@@ -67,12 +63,11 @@ function ph_flash_pure(model,p,h,z,T0 = nothing)
     elseif βv > 1
         return build_flash_result_pure(model,p,Ts,z,vl,vv,βv)
     elseif !isfinite(βv)
-        [[βv]],[sum(βv)],[βv],PTFlashData(p,T,zero(v))
+        return FlashResultInvalid(1,βv)
     elseif βv < 0 || βv > 1
         phase0 = βv < 0 ? :liquid : :vapour
         T,_phase = _Tproperty(model,p,h/∑z,SA[1.0],enthalpy,T0 = T0,phase = phase0)
-        v = volume(model,p,T,phase = _phase)
-        return [[1.0]],[sum(z)],[v],PTFlashData(p,T,zero(v))
+        return FlashResult(model,p,T,∑z,phase = _phase)
     else
         build_flash_result_pure(model,p,Ts,z,vl,vv,βv)
     end

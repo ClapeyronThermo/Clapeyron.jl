@@ -346,7 +346,7 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
         ForwardDiff.jacobian!(J,f!,F,x,config)
         lu = Solvers.unsafe_LU!(J,piv)
         s .= F
-        ldiv!(lu,s) #J*F
+        ldiv!(lu,s) #s .= J\F
         x_old .= x
         x .= x_old .- s
         #bound 0-1 variables.
@@ -376,6 +376,5 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
         p_result = pressure(model,volumes_result[end],T,comps_result[end])
     end
     β_result .*= ∑z
-    data = PTFlashData(promote(p_result,T_result,zero(T_result))...)
-    return PT_dG(model,p_result,T_result,z,comps_result,β_result,volumes_result)
+    return FlashResult(model,p_result,T_result,comps_result,β_result,volumes_result)
 end

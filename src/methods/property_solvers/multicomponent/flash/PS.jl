@@ -15,8 +15,7 @@ function ps_flash_pure(model,p,s,z,T0 = nothing)
 
     if !(0 <= βv <= 1)
         T,_phase = _Tproperty(model,p,s/∑z,SA[1.0],entropy,T0 = T0)
-        v = volume(model,p,T,phase = _phase)
-        return [[1.0]],[sum(z)],[v],PTFlashData(p,T,zero(v))
+        return FlashResult(model,p,T,only(z),phase = _phase)
     end
     return build_flash_result_pure(model,p,T,z,vl,vv,βv)
 end

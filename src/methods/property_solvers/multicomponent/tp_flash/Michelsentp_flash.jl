@@ -113,7 +113,7 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
     comps = [x,y]
     volumes = [v[1],v[2]]
     βi = [1-β ,β]
-    return comps,βi,volumes,PTFlashData(p,T,g)
+    return FlashResult(comps,βi,volumes,FlashData(p,T,g))
 end
 
 function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothing,

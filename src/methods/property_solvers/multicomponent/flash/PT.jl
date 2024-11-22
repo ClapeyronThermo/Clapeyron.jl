@@ -39,12 +39,12 @@ it the method allows it, you can set the number of phases by doing `method(;nump
 """
 
 #default
-include("tp_flash/DifferentialEvolutiontp_flash.jl")
-include("tp_flash/michelsen_base.jl")
-include("tp_flash/Michelsentp_flash.jl")
-include("tp_flash/RachfordRicetp_flash.jl")
-include("tp_flash/MCFlashJL.jl")
-include("tp_flash/multiphase.jl")
+include("../tp_flash/DifferentialEvolutiontp_flash.jl")
+include("../tp_flash/michelsen_base.jl")
+include("../tp_flash/Michelsentp_flash.jl")
+include("../tp_flash/RachfordRicetp_flash.jl")
+include("../tp_flash/MCFlashJL.jl")
+include("../tp_flash/multiphase.jl")
 
 function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs) 
     if length(kwargs) == 0
@@ -85,15 +85,13 @@ function tp_flash2(model::EoSModel, p, T, n,method::TPFlashMethod)
     end
     
     if length(model_r) == 1 || numphases(method) == 1
-        vols = [volume(model_r,p,T,n_r)]
-        β = [sum(z)*one(vols[1])]
-        z = zeros(eltype(β),length(n))
-        z .= n
-        z ./= sum(z)
-        return [z], β, vols, PTFlashData(p,T,zero(vols[1]))
+        return FlashResult(model_r,p,T,sum(n_r))
     end
     z_r = n_r ./ sum(n_r)
     comps,β,vols,g = tp_flash_impl(model_r,p,T,z_r,method_r)
+    if !issorted(result.volumes)
+        
+    end
     β ./= sum(β)
     β .*= sum(n)
     if supports_reduction(method)

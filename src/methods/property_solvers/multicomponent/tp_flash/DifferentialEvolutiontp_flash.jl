@@ -104,7 +104,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
 
     comps = [vec(x[i,:]) for i in 1:numphases]
     βi = [sum(@view(nvals[i,:])) for i in 1:numphases]
-    return comps, βi, volumes, PTFlashData(p,T,g)
+    return FlashResult(comps, βi, volumes, FlashData(p,T,g))
 end
 """
     Obj_de_tp_flash(model,p,T,z,dividers,numphases,vcache,logspace = false)

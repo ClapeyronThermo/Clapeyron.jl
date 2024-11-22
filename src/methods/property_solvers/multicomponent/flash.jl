@@ -1,27 +1,88 @@
 """
-    Clapeyron.FlashResult
+    FlashResult(compositions,fractions,volumes,data::FlashData)
+    FlashResult(model,p,T,z,compositions,fractions,volumes,g = nothing;sort = true)
+    FlashResult(model,p,T,z,phase = :unknown)
+    FlashResult(p,T,z,compositions,fractions,volumes,g = nothing;sort = true)
 
 Structure used to contain the result of a flash.
+Contains a list of molar compositions, a list of molar amounts per phase, a list of molar volumes and an auxiliary struct, `FlashData`, containing the pressure, temperature and reduced gibbs energy.
+when an `EoSModel` is used as an input for a `FlashResult`, the reduced molar gibbs energy (g = g/NRT) is calculated, if not provided.
+By default, the phases are sorted by volume, this can be changed by passing the keyword argument `sort = false`
+`FlashResult(model,p,T,z;phase)` constructs a single phase `FlashResult`.
 
 """
 struct FlashResult{C,B,D}
-    components::C
+    compositions::C
     fractions::B
     volumes::B
     data::D
 end
 
+"""
+    FlashData
+
+Auxiliary struct that contains information about the current `FlashResult` object. It stores the pressure, temperature and reduced gibbs energy (`g = G/nRT`)
+"""
 struct FlashData{R}
     p::R
     T::R
-    dG::R
+    g::R
 end
 
-function FlashData(p::R1,T::R2,dG::R2) where{R1,R2,R3}
-    return FlashData(promote(p,T,dG)...)
+Base.show(io::IO,::MIME"text/plain",options::FlashData) = show_as_namedtuple(io,options)
+Base.show(io::IO,options::FlashData) = show_as_namedtuple(io,options)
+
+function FlashData(p::R1,T::R2,dG::R3) where{R1,R2,R3}
+    if g === nothing
+        FlashData(p,T)
+    else
+        return FlashData(promote(p,T,g)...)
+    end
 end
 
 FlashData(p,T) = FlashData(p,T,1.0*zero(p))
+
+#constructor that fills the gibbs energy automatically
+function FlashResult(model::EoSModel,p,T,comps,β,volumes,g = nothing;sort = true)
+    if g == nothing
+        flash = FlashResult(p,T,comps,β,volumes,sort = false)
+        Gmix = gibbs_free_energy(model,flash)
+        _g = Gmix/(sum(β)*Rgas(model)*T)
+    else
+        _g = g
+    end
+    return FlashResult(p,T,comps,β,volumes,_g;sort)
+end
+
+#constructor that does not fill the gibbs field
+function FlashResult(p::Number,T::Number,comps,β,volumes,g = nothing;sort = true)
+    data = FlashData(p,T,g)
+    if !sort || issorted(volumes)
+        return FlashResult(comps,β,volumes,data)
+    else
+        idx = sortperm(volumes)
+        return FlashResult(comps[idx],β[idx],volumes[idx],data)
+    end
+end
+
+#constructor for single phase
+function FlashResult(model::EoSModel,p::Number,T::Number,z;phase = :unknown)
+    ∑z = sum(z)
+    β = [∑z]
+    comps = [z ./ ∑z]
+    volumes = [volume(model,p,T,z;phase = phase)]
+    return FlashResult(model,p,T,comps,β,volumes;sort = false)
+end
+
+#nan constructor
+function FlashResultInvalid(nc::Int,val::Number)
+    nan = zero(val)/zero(val)
+    β = [nan]
+    comps = [fill(nan,nc)]
+    volumes = [nan]
+    data = FlashData(nan,nan,nan)
+    return FlashResult(comps,β,volumes,data)
+end
 
 function Base.show(io::IO,mime::MIME"text/plain",obj::FlashResult)
     comps,β,volumes,data = obj
@@ -57,6 +118,7 @@ end
 
 temperature(model::EoSModel,state::FlashResult) = state.T
 pressure(model::EoSModel,state::FlashResult) = state.p
+
 function volume(model::EoSModel,state::FlashResult)
     comps, β, volumes, data = state
     return dot(β,volumes)
@@ -128,16 +190,6 @@ function _multiphase_gibbs(model,p,T,result)
     return Rgas(model)*T*data.data.dG
 end
 
-function FlashResult(model::EoSModel,p,T,comps,β,volumes)
-    data = FlashData(p,T)
-    flash = FlashResult(comps,β,volumes,data)
-    g_mix = gibbs_free_energy(model,flash)
-    dg = g_mix/(Rgas(model)*T)
-    newdata = PTFlashData(p,T,dg)
-    return FlashResult(comps,β,volumes,newdata)
-end
-
-
 """
     FlashMethod <: ThermodynamicMethod
 
@@ -170,3 +222,8 @@ Checks if a Flash method supports index reduction (the ability to prune model co
 All current Clapeyron.jl methods support index reduction, but some methods that alllow passing a cache could have problems.
 """
 supports_reduction(method::FlashMethod) = true
+
+include("flash/flash_base.jl")
+include("flash/PT.jl")
+include("flash/PH.jl")
+include("flash/PS.jl")

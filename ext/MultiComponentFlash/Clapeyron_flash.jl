@@ -33,5 +33,5 @@ function C.tp_flash_impl(model,p,T,z,method::C.MCFlashJL)
     comps = [x,y]
     βi = [1-β,β]
     volumes = [C.volume(model,p,T,x,phase = :l),C.volume(model,p,T,y,phase = :v)]
-    return comps,βi,volumes,g
+    return C.FlashResult(p,T,comps,βi,volumes,g,sort = false)
 end
