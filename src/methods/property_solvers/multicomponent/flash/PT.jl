@@ -68,7 +68,7 @@ end
 export tp_flash
 
 #we use tp_flash2 and transform to tp_flash
-function tp_flash2(model::EoSModel, p, T, n;kwargs...)
+function tp_flash2(model::EoSModel, p, T, n; kwargs...)
     method = init_preferred_method(tp_flash,model,kwargs)
     return tp_flash2(model,p,T,n,method)
 end
@@ -97,11 +97,7 @@ function tp_flash2(model::EoSModel, p, T, n,method::TPFlashMethod)
     ∑β = sum(result.fractions)
     result.fractions ./= ∑β
     result.fractions .*= ∑n
-    if supports_reduction(method) && length(model) !== length(model_r)
-        return index_expansion(result,idx_r)
-    else
-        return result
-    end
+    return index_expansion(result,idx_r)
 end
 
 function tp_flash2_to_tpflash(model,p,T,z,result)
@@ -120,4 +116,11 @@ function tp_flash2_to_tpflash(model,p,T,z,result)
         end
     end
     return x,n,g
+end
+
+function tp_flash_impl(model,p,T,z,method::GeneralizedPXFlash)
+    flash0 = px_flash_x0(model,p,T,z,temperature,method)
+    isone(numphases(flash0)) && return flash0
+    spec = FlashSpecifications(pressure,p,temperature,T)
+    return xy_flash(model,spec,z,flash0,method)
 end
