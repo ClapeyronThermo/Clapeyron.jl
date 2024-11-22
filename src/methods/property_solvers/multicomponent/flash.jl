@@ -155,6 +155,9 @@ function Base.iterate(x::FlashResult,state)
 end
 
 function index_expansion(x::FlashResult,idr::AbstractVector)
+    if length(idr) == length(x.comps[1])
+        return x
+    end
     newcomps = map(Base.Fix2(index_expansion,idr),x.comps)
     return FlashResult(newcomps,x.fractions,x.volumes,x.data)
 end
@@ -257,7 +260,7 @@ Return the number of phases supported by a flash method. By default it is set to
 If the method allows it, you can set the number of phases by doing `method(;numphases = n)`.
 """
 numphases(method::FlashMethod) = 2
-
+numphases(result::FlashResult) = length(result.compositions)
 """
     supports_reduction(method::FlashMethod)::Bool
 

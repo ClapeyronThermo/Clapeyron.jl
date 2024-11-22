@@ -78,6 +78,16 @@ function xy_input_to_result(input,np,nc,z)
     return comps[idx],β[idx],volumes[idx],T
 end
 
+function spec_to_vt end
+
+for prop in [:entropy,:enthalpy,:temperature,:pressure,:internal_energy,:gibbs_free_energy,:helmholtz_free_energy]
+    @eval begin
+        function spec_to_vt(model,V,T,z,spec::typeof($prop))
+            VT.$prop(model,V,T,z)
+        end
+    end
+end
+
 #s = dadt
 requires_pv(::typeof(entropy)) = false
 requires_st(::typeof(entropy)) = true
@@ -283,9 +293,20 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F) where F
     return output
 end
 
-function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes0,T0;reltol = 1e-12,abstol = 1e-10)
-    ∑z = sum(z)
+function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult,method::FlashMethod)
+    comps0 = flash.compositions
+    β0 = flash.fractions
+    volumes0 = flash.volumes
+    data0 = flash.data
+    T0 = data0.T
+    rtol = method.rtol
+    atol = method.atol
+    max_iters = method.max_iters
+    return xy_flash(model,spec,z,comps0,β0,volumes0,T0;rtol,atol,max_iters)
+end
 
+function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes0,T0;rtol = 1e-12,atol = 1e-10,max_iters = 50)
+    ∑z = sum(z)
     val1,val2 = spec.val1,spec.val2
     np = length(volumes0)
     nc = length(model)
@@ -315,7 +336,15 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
         end
     end
     volumesx[end] = volumes0[idx[end]]
-    input[end] = T0
+
+    if spec.spec1 == temperature 
+        input[end] = spec.val1
+    elseif spec.spec2 == temperature
+        input[end] = spec.val2
+    else
+        input[end] = T0
+    end
+    
     _1 = one(eltype(input))
     is_caloric = requires_st(spec) || requires_a(spec)
     if is_caloric
@@ -340,7 +369,7 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
     end
     config = ForwardDiff.JacobianConfig(f!,F,x)
 
-    for i in 1:50
+    for i in 1:max_iters
         converged && break
         nan_converged && break
         ForwardDiff.jacobian!(J,f!,F,x,config)
@@ -361,8 +390,8 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
         Fnorm = norm(F,Inf)
         xmax = maximum(x)
         xnorm = Solvers.dnorm(x,x_old,Inf)
-        Fnorm < reltol && (converged = true)
-        xnorm < abstol && (converged = true)
+        Fnorm < rtol| && (converged = true)
+        xnorm < atol && (converged = true)
         nan_converged = !all(isfinite,x)
     end
 
@@ -377,4 +406,159 @@ function __xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volum
     end
     β_result .*= ∑z
     return FlashResult(model,p_result,T_result,comps_result,β_result,volumes_result)
+end
+
+#==
+
+high level interface
+
+==#
+
+"""
+    GeneralizedPXFlash{T}(;kwargs...)
+
+Method to solve non-reactive multicomponent flash problem, using a generalized formulation.
+
+Only two phases are supported. if `K0` is `nothing`, it will be calculated via fugacity coefficients at p,T conditions.
+
+### Keyword Arguments:
+- equilibrium = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria
+- `T0` (optional), initial guess temperature
+- `K0` (optional), initial guess for the constants K
+- `x0` (optional), initial guess for the composition of phase x
+- `y0` = optional, initial guess for the composition of phase y
+- `vol0` = optional, initial guesses for phase x and phase y volumes
+- `atol` = absolute tolerance to stop the calculation
+- `rtol` = relative tolerance to stop the calculation
+- `max_iters` = maximum number of iterations
+"""
+struct GeneralizedPXFlash{S,T} <: TPFlashMethod
+    equilibrium::Symbol
+    T0::Union{S,Nothing}
+    K0::Union{Vector{T},Nothing}
+    x0::Union{Vector{T},Nothing}
+    y0::Union{Vector{T},Nothing}
+    v0::Union{Tuple{T,T},Nothing}
+    atol::Int
+    rtol::Int
+    max_iters::Int
+end
+
+Base.eltype(method::GeneralizedPXFlash{T}) where T = T
+
+function index_reduction(m::GeneralizedPXFlash,idx::AbstractVector)
+    equilibrium,T0,K0,x0,y0,v0,atol,rtol,max_iters = m.equilibrium,m.T0,m.K0,m.x0,m.y0,m.v0,m.atol,m.rtol,m.max_iters
+    K0 !== nothing && (K0 = K0[idx])
+    x0 !== nothing && (x0 = x0[idx])
+    y0 !== nothing && (y0 = y0[idx])
+    return GeneralizedPXFlash(;equilibrium,T0,K0,x0,y0,v0,atol,rtol,max_iters)
+end
+
+numphases(::GeneralizedPXFlash) = 2
+
+function GeneralizedPXFlash(;equilibrium = :unknown,
+                        T0 = nothing,
+                        K0 = nothing,
+                        x0 = nothing,
+                        y0 = nothing,
+                        v0 = nothing,
+                        rtol = 1e-12,
+                        atol = 1e-10,
+                        max_iters = 100)
+    !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for GeneralizedPXFlash"))
+    if K0 == x0 == y0 === v0 == T0 == nothing #nothing specified
+        #is_lle(equilibrium)
+        T = Nothing
+    else
+        if !isnothing(K0) & isnothing(x0) & isnothing(y0) #K0 specified
+            T = eltype(K0)
+        elseif isnothing(K0) & !isnothing(x0) & !isnothing(y0)  #x0, y0 specified
+            T = eltype(x0)
+        else
+            throw(error("invalid specification of initial points"))
+        end
+    end
+    S = typeof(T0)
+    return GeneralizedPXFlash{S,T}(equilibrium,T0,K0,x0,y0,v0,atol,rtol,max_iters)
+end
+
+is_vle(method::GeneralizedPXFlash) = is_vle(method.equilibrium)
+is_lle(method::GeneralizedPXFlash) = is_lle(method.equilibrium)
+
+function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedPXFlash) where F
+    if method.T0 == nothing
+        T,_phase = _Tproperty(model,p,x,z,spec)
+    else
+        T = T0
+        _phase = :eq #we suppose this
+    end
+
+    TT = Base.promote_eltype(model,p,x,z,T)
+    if _phase != :eq
+        return FlashResult(model,p,T,z,phase = _phase)
+    end
+
+    if method.K0 == nothing
+        K = suggest_K(model,p,T,z)
+    else
+        K = K0
+    end
+
+    #spec = FlashSpecifications(pressure,p,spec,x)
+    βv,singlephase,_ = rachfordrice_β0(K,z)
+    βv = βv*one(TT)
+    #if singlephase == true, maybe initial K values overshoot the actual phase split.
+    if singlephase
+        Kmin,Kmax = extrema(K)
+        if !(Kmin >= 1 || Kmax <= 1)
+            #valid K, still single phase.
+            g0 = dot(z, K) - 1. #rachford rice, supposing β = 0
+            g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K)) #rachford rice, supposing β = 1
+            if g0 <= 0 && g1 < 0 #bubble point.
+                βv = eps(typeof(βv))
+                singlephase = false
+            elseif g0 > 0 && g1 >= 0 #dew point
+                βv = one(βv) - eps(typeof(βv))
+                singlephase = false
+            end
+        end
+    else
+        βv = rachfordrice(K, z; β0=βv)
+    end
+    y = rr_flash_vapor(K,z,βv)
+    y ./= sum(y)
+    x = rr_flash_liquid(K,z,βv)
+    x ./= sum(x)
+    βl = 1 - βv
+    β0 = [βl,βv]
+    comps0 = [x,y]
+
+    if method.v0 == nothing
+        volumes0 = [volume(model,p,T,x,phase = :l),volume(model,p,T,y,phase = :v)]
+    else
+        volumes0 = [method.v0[1],method.v0[2]]
+    end
+    return FlashResult(p,T,comps0,β0,volumes0)
+end
+
+function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
+    Ts,vl,vv = saturation_temperature(model,p)
+    ∑z = sum(z)
+    x1 = SA[1.0]
+    spec_to_vt(model,vl,T,x1,spec)
+    xl = ∑z*spec_to_vt(model,vl,T,x1,spec)
+    xv = ∑z*spec_to_vt(model,vv,T,x1,spec)
+    βv = (x - xl)/(xv - xl)
+    if (0 <= βv <= 1)
+    elseif βv > 1
+        return build_flash_result_pure(model,p,Ts,z,vl,vv,βv)
+    elseif !isfinite(βv)
+        return FlashResultInvalid(1,βv)
+    elseif βv < 0 || βv > 1
+        phase0 = βv < 0 ? :liquid : :vapour
+        T,_phase = _Tproperty(model,p,h/∑z,SA[1.0],spec,T0 = T0,phase = phase0)
+        return FlashResult(model,p,T,∑z,phase = _phase)
+    else
+        build_flash_result_pure(model,p,Ts,z,vl,vv,βv)
+    end
 end

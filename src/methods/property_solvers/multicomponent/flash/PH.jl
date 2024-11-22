@@ -1,74 +1,51 @@
-function ph_flash(model,p,h,z,T0 = nothing,K0 = nothing)
-    if length(model) == 1
-        return ph_flash_pure(model,p,h,z,T0)
-    end
 
-    if T0 == nothing
-        T,_phase = _Tproperty(model,p,h,z,enthalpy)
+function ph_flash(model::EoSModel,p,h,z;kwargs...)
+    method = init_preferred_method(ph_flash,model,kwargs)
+    return ph_flash(model,p,h,z,method)
+end
+
+function init_preferred_method(method::typeof(ph_flash),model::EoSModel,kwargs) 
+    GeneralizedPXFlash(;kwargs...)
+end
+
+function ph_flash(model,p,h,z,method::FlashMethod)
+    check_arraysize(model,n)
+    if supports_reduction(method)
+        model_r,idx_r = index_reduction(model,z)
+        z_r = z[idx_r]
+        method_r = index_reduction(method,idx_r)
     else
-        T = T0
-        _phase = :eq #we suppose this
+        model_r,idx_r = model,trues(length(model))
+        method_r,z_r = method,z
     end
-
-    TT = Base.promote_eltype(model,p,h,z,T)
-    if _phase != :eq 
-        return FlashResult(model,p,T,only(z),phase = _phase)
-    end
-
-    if K0 == nothing
-        K = suggest_K(model,p,T,z)
-    else
-        K = K0
-    end
-
-    spec = FlashSpecifications(pressure,p,enthalpy,h)
-    βv,singlephase,_ = rachfordrice_β0(K,z)
-    βv = βv*one(TT)
-    #if singlephase == true, maybe initial K values overshoot the actual phase split.
-    if singlephase
-        Kmin,Kmax = extrema(K)
-        if !(Kmin >= 1 || Kmax <= 1)
-            #valid K, still single phase.
-            g0 = dot(z, K) - 1. #rachford rice, supposing β = 0
-            g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K)) #rachford rice, supposing β = 1
-            if g0 <= 0 && g1 < 0 #bubble point.
-                βv = eps(typeof(βv))
-                singlephase = false
-            elseif g0 > 0 && g1 >= 0 #dew point
-                βv = one(βv) - eps(typeof(βv))
-                singlephase = false
-            end
+    if length(model_r) == 1
+        if hasfield(typeof(method),:T0)
+            T0 == method.T0
+        else
+            T0 = nothing
         end
-    else
-        βv = rachfordrice(K, z; β0=βv)
+        result1 = ph_flash_pure(model_r,p,h,z_r,T0)
+        return index_expansion(result1,idx_r)
     end
-    y = rr_flash_vapor(K,z,βv)
-    y ./= sum(y)
-    x = rr_flash_liquid(K,z,βv)
-    x ./= sum(x)
-    βl = 1 - βv
-    comps0 = [x,y]
-    volumes0 = [volume(model,p,T,x,phase = :l),volume(model,p,T,y,phase = :v)]
-    β0 = [βl,βv]
-    return __xy_flash(model,spec,z,comps0,β0,volumes0,T)
+    
+    result = ph_flash_impl(model_r,p,h,z_r,method_r)
+    if !issorted(result.volumes)
+        #this is in case we catch a bad result.
+        result = FlashResult(result)
+    end
+    ∑β = sum(result.fractions)
+    result.fractions ./= ∑β
+    result.fractions .*= sum(z)
+    return index_expansion(result,idx_r)
+end
+
+function ph_flash_impl(model,p,h,z,method::GeneralizedPXFlash)
+    flash0 = px_flash_x0(model,p,h,z,enthalpy,method)
+    isone(numphases(flash0)) && return flash0
+    spec = FlashSpecifications(pressure,p,enthalpy,h)
+    return xy_flash(model,spec,z,flash0,method)
 end
 
 function ph_flash_pure(model,p,h,z,T0 = nothing)
-    Ts,vl,vv = saturation_temperature(model,p)
-    ∑z = sum(z)
-    hl = ∑z*VT_enthalpy(model,vl,T,SA[1.0])
-    hv = ∑z*VT_enthalpy(model,vv,T,SA[1.0])
-    βv = (h - hl)/(hv - hl)
-    if (0 <= βv <= 1)
-    elseif βv > 1
-        return build_flash_result_pure(model,p,Ts,z,vl,vv,βv)
-    elseif !isfinite(βv)
-        return FlashResultInvalid(1,βv)
-    elseif βv < 0 || βv > 1
-        phase0 = βv < 0 ? :liquid : :vapour
-        T,_phase = _Tproperty(model,p,h/∑z,SA[1.0],enthalpy,T0 = T0,phase = phase0)
-        return FlashResult(model,p,T,∑z,phase = _phase)
-    else
-        build_flash_result_pure(model,p,Ts,z,vl,vv,βv)
-    end
+    px_flash_pure(model,p,h,z,enthalpy,T0)
 end
