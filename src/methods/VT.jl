@@ -14,6 +14,8 @@ function pressure(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂V(model,V,T,z)
 end
 
+function temperature end
+
 function pressure_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
     return -Solvers.derivative(fun,V)

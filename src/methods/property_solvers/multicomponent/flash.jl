@@ -161,9 +161,8 @@ function index_expansion(x::FlashResult,idr::AbstractVector)
     newcomps = map(Base.Fix2(index_expansion,idr),x.comps)
     return FlashResult(newcomps,x.fractions,x.volumes,x.data)
 end
-
-temperature(model::EoSModel,state::FlashResult) = state.T
-pressure(model::EoSModel,state::FlashResult) = state.p
+temperature(state::FlashResult) = state.data.T
+pressure(state::FlashResult) = state.data.p
 
 function volume(model::EoSModel,state::FlashResult)
     comps, β, volumes, data = state
@@ -269,6 +268,10 @@ Checks if a Flash method supports index reduction (the ability to prune model co
 All current Clapeyron.jl methods support index reduction, but some methods that alllow passing a cache could have problems.
 """
 supports_reduction(method::FlashMethod) = true
+
+is_vle(method::FlashMethod) = is_vle(method.equilibrium)
+is_lle(method::FlashMethod) = is_lle(method.equilibrium)
+is_unknown(method::FlashMethod) = is_unknown(method.equilibrium)
 
 include("flash/general_flash.jl")
 include("flash/PT.jl")

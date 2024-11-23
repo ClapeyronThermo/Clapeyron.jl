@@ -30,7 +30,7 @@ function FindEdge(f::Function,a,b)
     c = (a+b)/2
     f1,f2,f3 = f(a),f(c),f(b)
     ∇f1,∇f2 = (f2 - f1)/(c - a),(f3 - f2)/(b - a)
-    if (∇f2 > ∇f1)
+    if abs(∇f2) > abs(∇f1)
       FindEdge(f,c,b)
     else
       FindEdge(f,a,c)

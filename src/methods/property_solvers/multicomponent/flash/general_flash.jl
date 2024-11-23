@@ -368,7 +368,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         converged = true
     end
     config = ForwardDiff.JacobianConfig(f!,F,x)
-
     for i in 1:max_iters
         converged && break
         nan_converged && break
@@ -377,7 +376,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         s .= F
         ldiv!(lu,s) #s .= J\F
         x_old .= x
-        #TODO: backtracking? trust region?, reformulate in SS form if the step is too far?
+        #TODO: backtracking? trust region?, reformulate in SS form if the step is too far?  
         x .= x_old .- s
         #bound 0-1 variables.
         for j in 1:l
@@ -467,7 +466,7 @@ function GeneralizedPXFlash(;equilibrium = :unknown,
                         atol = 1e-10,
                         max_iters = 100)
     !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for GeneralizedPXFlash"))
-    if K0 == x0 == y0 === v0 == T0 == nothing #nothing specified
+    if K0 == x0 == y0 === v0 == nothing #nothing specified
         #is_lle(equilibrium)
         T = Nothing
     else
@@ -490,7 +489,7 @@ function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedPXFlash) where F
     if method.T0 == nothing
         T,_phase = _Tproperty(model,p,x,z,spec)
     else
-        T = T0
+        T = method.T0
         _phase = :eq #we suppose this
     end
 
@@ -499,47 +498,7 @@ function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedPXFlash) where F
         return FlashResult(model,p,T,z,phase = _phase)
     end
 
-    if method.K0 == nothing
-        K = suggest_K(model,p,T,z)
-    else
-        K = K0
-    end
-
-    #spec = FlashSpecifications(pressure,p,spec,x)
-    βv,singlephase,_ = rachfordrice_β0(K,z)
-    βv = βv*one(TT)
-    #if singlephase == true, maybe initial K values overshoot the actual phase split.
-    if singlephase
-        Kmin,Kmax = extrema(K)
-        if !(Kmin >= 1 || Kmax <= 1)
-            #valid K, still single phase.
-            g0 = dot(z, K) - 1. #rachford rice, supposing β = 0
-            g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K)) #rachford rice, supposing β = 1
-            if g0 <= 0 && g1 < 0 #bubble point.
-                βv = eps(typeof(βv))
-                singlephase = false
-            elseif g0 > 0 && g1 >= 0 #dew point
-                βv = one(βv) - eps(typeof(βv))
-                singlephase = false
-            end
-        end
-    else
-        βv = rachfordrice(K, z; β0=βv)
-    end
-    y = rr_flash_vapor(K,z,βv)
-    y ./= sum(y)
-    x = rr_flash_liquid(K,z,βv)
-    x ./= sum(x)
-    βl = 1 - βv
-    β0 = [βl,βv]
-    comps0 = [x,y]
-
-    if method.v0 == nothing
-        volumes0 = [volume(model,p,T,x,phase = :l),volume(model,p,T,y,phase = :v)]
-    else
-        volumes0 = [method.v0[1],method.v0[2]]
-    end
-    return FlashResult(p,T,comps0,β0,volumes0)
+    return pt_flash_x0(model,p,T,z,method;k0 = :suggest) 
 end
 
 function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
