@@ -97,7 +97,7 @@ function tp_flash2_to_tpflash(model,p,T,z,result)
     comps, β, volumes, data = result
     nc = length(z)
     np = length(comps)
-    g = data.dG
+    g = data.g
     x = similar(comps[1],(np,nc))
     n = similar(x)
     for i in 1:np
