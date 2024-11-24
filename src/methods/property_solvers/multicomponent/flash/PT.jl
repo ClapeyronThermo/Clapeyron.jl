@@ -3,7 +3,7 @@
 
 Abstract type for `tp_flash` routines.
 """
-abstract type TPFlashMethod <: ThermodynamicMethod end
+abstract type TPFlashMethod <: FlashMethod end
 
 """
     tp_flash(model, p, T, n, method::TPFlashMethod = DETPFlash())

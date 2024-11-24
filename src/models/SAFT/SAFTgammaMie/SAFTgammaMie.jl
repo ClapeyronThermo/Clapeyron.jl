@@ -181,7 +181,7 @@ function SAFTgammaMie(components;
 end
 
 mw(model::SAFTgammaMieModel) = mw(model.vrmodel)
-molecular_weight(model::SAFTgammaMieModel,z) = _molecular_weight(model.vrmodel,z)
+molecular_weight(model::SAFTgammaMieModel,z) = molecular_weight(model.vrmodel,z)
 
 const SAFTγMie = SAFTgammaMie
 export SAFTgammaMie,SAFTγMie
