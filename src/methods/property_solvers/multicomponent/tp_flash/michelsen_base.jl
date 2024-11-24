@@ -150,7 +150,10 @@ function tp_flash_K0(model,p,T)
     end
 end
 
-function pt_flash_x0(model,p,T,z,method::FlashMethod,inx = FillArrays.Fill(true,length(z)),iny = inx,non_inx = FillArrays.Fill(false,length(z)),non_iny = non_inx;k0 = :wilson)
+function pt_flash_x0(model,p,T,n,method::FlashMethod,inx = FillArrays.Fill(true,length(model)),iny = inx,non_inx = FillArrays.Fill(false,length(model)),non_iny = non_inx;k0 = :wilson)
+    ∑n = sum(n)
+    z = n/∑n
+    
     if is_vle(method)
         phasex = :liquid
         phasey = :vapor
@@ -236,8 +239,8 @@ function pt_flash_x0(model,p,T,z,method::FlashMethod,inx = FillArrays.Fill(true,
     y ./= sum(y)
     x = rr_flash_liquid!(x,K,z,β)
     x ./= sum(x)
-    βv = β
-    βl = 1 - βv
+    βv = ∑n*β
+    βl = ∑n - βv
     comps0 = [x,y]
     if !isnothing(method.v0) && iszero(volx) && iszero(voly)
         vl0,vv0 = method.v0
