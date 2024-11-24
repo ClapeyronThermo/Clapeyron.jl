@@ -231,7 +231,7 @@ function _multiphase_gibbs(model,p,T,result)
     β = result[2]
     volumes = result[3]
     data = FlashResult(model,p,T,comps,β,volumes)
-    return Rgas(model)*T*data.data.dG
+    return Rgas(model)*T*data.data.G
 end
 
 """
