@@ -158,7 +158,7 @@ function index_expansion(x::FlashResult,idr::AbstractVector)
     if length(idr) == length(x.compositions[1])
         return x
     end
-    newcomps = map(Base.Fix2(index_expansion,idr),x.comps)
+    newcomps = map(Base.Fix2(index_expansion,idr),x.compositions)
     return FlashResult(newcomps,x.fractions,x.volumes,x.data)
 end
 temperature(state::FlashResult) = state.data.T
