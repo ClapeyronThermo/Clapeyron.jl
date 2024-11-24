@@ -154,6 +154,8 @@ function Base.iterate(x::FlashResult,state)
     end
 end
 
+Base.eltype(result::FlashResult) = Base.promote_eltype(result.compositions[1],result.volumes,result.fractions,result.data.T)
+
 function index_expansion(x::FlashResult,idr::AbstractVector)
     if length(idr) == length(x.compositions[1])
         return x
@@ -161,6 +163,16 @@ function index_expansion(x::FlashResult,idr::AbstractVector)
     newcomps = map(Base.Fix2(index_expansion,idr),x.compositions)
     return FlashResult(newcomps,x.fractions,x.volumes,x.data)
 end
+
+"""
+    eachphase(result::FlashResult)
+
+Iterates over the values of (V,T,z,β) for each phase. 
+"""
+function eachphase(x::FlashResult)
+    return Iterators.zip(x.volumes,FillArrays.fill(x.data.T,numphases(x)),x.compositions,x.fractions)
+end
+
 temperature(state::FlashResult) = state.data.T
 pressure(state::FlashResult) = state.data.p
 
@@ -193,12 +205,9 @@ function mass_density(model::EoSModel,state::FlashResult)
 end
 
 function gibbs_free_energy(model::EoSModel,state::FlashResult)
-    comps, β, volumes, data = state
-    T = data.T
-    p = data.p
-    res = zero(Base.promote_eltype(comps[1],volumes[1],T,model))
-    for i in 1:length(comps)
-        xi,βi,vi = comps[i],β[i],volumes[i]
+    p = pressure(state)
+    res = zero(Base.promote_eltype(model,state))
+    for (vi,T,xi,βi) in eachphase(state)
         res += βi*VT_gibbs_energy(model,vi,T,xi,p)
     end
     return res
@@ -208,11 +217,8 @@ end
 for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
     @eval begin
             function $prop(model::EoSModel,state::FlashResult)
-                comps, β, volumes, data = state
-                T = data.T
-                res = zero(Base.promote_eltype(comps[1],volumes[1],T,model))
-                for i in 1:length(comps)
-                    xi,βi,vi = comps[i],β[i],volumes[i]
+                res = zero(Base.promote_eltype(model,state))
+                for (vi,T,xi,βi) in eachphase(state)
                     res += βi*VT.$prop(model,vi,T,xi)
                 end
                 return res
