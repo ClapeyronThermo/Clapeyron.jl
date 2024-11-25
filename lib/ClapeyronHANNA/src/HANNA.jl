@@ -40,7 +40,7 @@ export HANNA
     verbose = false)
 
 ## Input parameters
-- `canonicalsmiles`: canonical SMILES representation of the components
+- `canonicalsmiles`: canonical SMILES (using RDKit) representation of the components
 - `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
 
 ## Input models
@@ -48,22 +48,25 @@ export HANNA
 
 ## Description
 Hard-Constraint Neural Network for Consistent Activity Coefficient Prediction (HANNA).
-The implementation is based on 
+The implementation is based on [this](https://github.com/tspecht93/HANNA) Github repository.
+HANNA was trained on all available binary VLE data (up to 10 bar) and limiting activity coefficients from the Dortmund Data Bank. HANNA was only tested for binary mixtures so far. The extension to multicomponent mixtures is experimental.
 
 To use the model, the package `ClapeyronHANNA` must be installed and loaded (see example below).
 
-Recommended usage to ensure canonical smiles:
+## Example
 ```julia
-using Clapeyron, ClapeyronHANNA, ChemicalIdentifier
+using Clapeyron, ClapeyronHANNA
 
 components = ["water","isobutanol"]
-chemids = [search_chemical(c) for c in components]
+Mw = [18.01528, 74.1216]
+smiles = ["O", "CC(C)CO"]
 
-model = HANNA(components,userlocations=(;Mw=[chemids[i].MW for i in 1:2],smiles=[chemids[i].smiles for i in 1:2]))
+model = HANNA(components,userlocations=(;Mw=Mw, canonicalsmiles=smiles))
 ```
 
 ## References
-1. Specht, T., Nagda, M., Fellenz, S., Mandt, S., Hasse, H., Jirasek, F., HANNA: Hard-Constraint Neural Network for Consistent Activity Coefficient Prediction. arXiv July 25, 2024. [10.48550/arXiv.2407.18011](https://doi.org/10.48550/arXiv.2407.18011).
+1. Specht, T., Nagda, M., Fellenz, S., Mandt, S., Hasse, H., Jirasek, F., HANNA: Hard-Constraint Neural Network for Consistent Activity Coefficient Prediction. Chemical Science 2024. [10.1039/D4SC05115G](https://doi.org/10.1039/D4SC05115G).
+
 """
 HANNA
 
