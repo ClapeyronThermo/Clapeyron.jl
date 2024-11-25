@@ -3,19 +3,19 @@
 Peforms some initial checks to see if a possible solution exists in `Clapeyron.jl`.
 """
 function x0_Tproperty(model::EoSModel,p,z::AbstractVector,verbose = false)
-    bubble_prop = Clapeyron.bubble_temperature(model,p,z)
-    dew_prop = Clapeyron.dew_temperature(model,p,z)
-    bubble_temp = bubble_prop[1]
-    dew_temp = dew_prop[1]
-    if isnan(bubble_temp)
-      verbose && @error "bubble_temp is NaN"
-      return bubble_temp
+    bubble = Clapeyron.bubble_temperature(model,p,z)
+    dew = Clapeyron.dew_temperature(model,p,z)
+    bubble_T = bubble[1]
+    v_dew_vapour = dew[3]
+    v_bubble_liquid = bubble[2]
+    dew_T = dew[1]
+    if isnan(bubble_T)
+      verbose && @error "bubble_temperature calculation failed."
     end
-    if isnan(dew_temp)
-      verbose && @error "dew_temp is NaN"
-      return dew_temp
+    if isnan(dew_T)
+      verbose && @error "dew_temperature calculation failed."
     end
-    return bubble_temp,dew_temp
+    return (bubble_T,v_bubble_liquid),(dew_T,v_dew_vapour)
 end
 
 """
@@ -54,8 +54,6 @@ function Tproperty(model::EoSModel,p,prop,z = SA[1.0],
                   verbose = false,
                   threaded = true) where TT
 
-
-
   T,_ = _Tproperty(model,p,prop,z,property;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
   return T
 end
@@ -80,8 +78,10 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
       return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T0)
   end
 
-  bubble_temp,dew_temp = x0_Tproperty(model,p,z,verbose)
+  bubble_prop,dew_prop = x0_Tproperty(model,p,z,verbose)
 
+  bubble_temp,bubble_vol = bubble_prop
+  dew_temp,dew_vol = dew_prop
   #trivial
   if property === temperature
     Temp = prop*one(bubble_temp)
