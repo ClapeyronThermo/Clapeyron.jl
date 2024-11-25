@@ -41,6 +41,5 @@ alpha = PRAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0
 
 """
 PRAlpha
-default_locations(::Type{PRAlpha}) = critical_data()
 
-@inline α_m(model,::PRAlpha) = (0.37464,1.54226,-0.26992)
+default_locations(::Type{PRAlpha}) = critical_data()

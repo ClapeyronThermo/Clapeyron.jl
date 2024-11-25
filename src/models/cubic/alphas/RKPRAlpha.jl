@@ -44,13 +44,12 @@ alpha = RKPRAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,
 RKPRAlpha
 default_locations(::Type{RKPRAlpha}) = critical_data()
 
-function α_function(model::CubicModel,V,T,z,alpha_model::RKPRAlphaModel)
+function α_function!(α,model::CubicModel,alpha_model::RKPRAlphaModel,T)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = model.params.Vc.values
     c = model.params.c.values
     ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         δ = c[i]
         d = (1 + δ*δ)/(1+δ)
@@ -64,11 +63,11 @@ function α_function(model::CubicModel,V,T,z,alpha_model::RKPRAlphaModel)
     return α
 end
 
-function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::RKPRAlphaModel)
-    Tc = model.params.Tc.values[1]
-    Pc = model.params.Pc.values[1]
-    ω  = alpha_model.params.acentricfactor.values[1]
-    δ = model.params.c.values[1]
+function α_function(model::CubicModel,alpha_model::RKPRAlphaModel,T,i::Int)
+    Tc = model.params.Tc.values[i]
+    Pc = model.params.Pc.values[i]
+    ω  = alpha_model.params.acentricfactor.values[i]
+    δ = model.params.c.values[i]
     d = (1 + δ*δ)/(1+δ)
     y = 1 + cbrt(2*(1+δ)) + cbrt(4/(1+δ))
     Zc = y/(3y + d - 1)

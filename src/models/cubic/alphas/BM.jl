@@ -56,31 +56,27 @@ alpha = BMAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0
 """
 BMAlpha
 default_locations(::Type{BMAlpha}) = critical_data()
+@inline α_m(model::RKModel,::SoaveAlpha) = (0.480,1.547,-0.176)
 
-function α_function(model::RKModel,V,T,z,alpha_model::BMAlphaModel)
+function α_function!(α,model,alpha_model::BMAlphaModel,T)
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         ωi = ω[i]
-        m = evalpoly(ωi,(0.480,1.547,-0.176))
+        m = evalpoly(ωi,α_m(model,alpha_model))
         Tr = T/Tc[i]
         α[i] = ifelse(Tr>1,(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2,(1+m*(1-√(Tr)))^2)
     end
     return α
 end
 
-function α_function(model::PRModel,V,T,z,alpha_model::BMAlphaModel)
-    Tc = model.params.Tc.values
-    ω  = alpha_model.params.acentricfactor.values
+function α_function(model,alpha_model::BMAlphaModel,T,i)
+    Tc = model.params.Tc.values[i]
+    ω  = alpha_model.params.acentricfactor.values[i]
     #m  = @. 0.37464+1.54226*ω-0.26992*ω^2
     #α  = @. (Tr>1)*(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2+(Tr<=1)*(1+m*(1-√(Tr)))^2
-    α = zeros(typeof(T),length(Tc))
-    for i in @comps
-        ωi = ω[i]
-        m = evalpoly(ωi,(0.37464,1.54226,-0.26992))
-        Tr = T/Tc[i]
-        α[i] = ifelse(Tr>1,(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2,(1+m*(1-√(Tr)))^2)
-    end
-    return α
+    ωi = ω[i]
+    m = evalpoly(ωi,α_m(model,alpha_model))
+    Tr = T/Tc[i]
+    α = ifelse(Tr>1,(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2,(1+m*(1-√(Tr)))^2)
 end

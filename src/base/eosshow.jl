@@ -13,6 +13,24 @@ end
 #function used to customize the first line to your liking
 show_info(io,model) = nothing
 
+function show_as_namedtuple(io::IO,x)
+    compact_io = IOContext(io, :compact => true)
+    print(io,typeof(x).name.name,"(")
+    names = fieldnames(typeof(x))
+    l = length(names)
+    equal = " = "
+    comma = ", "
+    for i in 1:l
+        print(io,names[i])
+        print(io,equal)
+        print(compact_io,getfield(x,i))
+        if i != l
+            print(io,comma) 
+        end
+    end
+    print(io,")")
+end
+
 function show_params(io,model)
     hasfield(typeof(model),:params) || return nothing
     iszero(fieldcount(typeof(model.params))) && return nothing
@@ -21,6 +39,32 @@ function show_params(io,model)
     len_params = length(paramnames)
     !iszero(len_params) && print(io,"Contains parameters: ")
     show_pairs(io,paramnames,pair_separator = ", ",quote_string = false)
+end
+
+show_default(io::IO,arg) = Base.show_default(io,arg)
+show_default(io::IO,mime::MIME"text/plain",arg) = Base.show_default(io,arg)
+
+function show_pairs(io,keys,vals=nothing,separator="",f_print = print;quote_string = true,pair_separator = '\n',prekey = ifelse(pair_separator === '\n'," ",""))
+    if length(keys) == 0
+        return nothing
+    end
+    if vals === nothing #useful for printing only keys
+        vals = Iterators.repeated("")
+    end
+    i = 0
+    for (k,v) in zip(keys,vals)
+        i += 1
+        if i > 1
+            print(io,pair_separator)
+        end
+        if quote_string
+            quot = '\"'
+            print(io,prekey,quot,k,quot,separator)
+        else
+            print(io,prekey,k,separator)
+        end
+        f_print(io,v)
+    end
 end
 
 function may_show_references(io::IO,model)

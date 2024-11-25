@@ -45,16 +45,15 @@ alpha = PTVAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-
 PTVAlpha
 default_locations(::Type{PTVAlpha}) = critical_data()
 
-function α_function(model::CubicModel,V,T,z,alpha_model::PTVAlphaModel)
+function α_function!(α,model::CubicModel,alpha_model::PTVAlphaModel,T)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = model.params.Vc.values
     Zc = @. Vc*Pc/(R̄*Tc)
     ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         Zci = Vc[i]*Pc[i]/(R̄*Tc[i])
-        coeff = (0.46283,3.58230*Zci,8.19417*Zci^2)
+        coeff = (0.46283,3.58230*Zci,8.19417*Zci*Zci)
         ωi = ω[i]
         Tr = T/Tc[i]
         m = evalpoly(ωi,coeff)
@@ -63,12 +62,12 @@ function α_function(model::CubicModel,V,T,z,alpha_model::PTVAlphaModel)
     return α
 end
 
-function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::PTVAlphaModel)
-    Tc = model.params.Tc.values[1]
-    Pc = model.params.Pc.values[1]
-    Vc = model.params.Vc.values[1]
+function α_function(model::CubicModel,alpha_model::PTVAlphaModel,T,i::Int)
+    Tc = model.params.Tc.values[i]
+    Pc = model.params.Pc.values[i]
+    Vc = model.params.Vc.values[i]
     Zc = Vc*Pc/(R̄*Tc)
-    ω  = alpha_model.params.acentricfactor.values[1]
+    ω  = alpha_model.params.acentricfactor.values[i]
     coeff = (0.46283,3.58230*Zc,8.19417*Zc^2)
     Tr = T/Tc
     m = evalpoly(ω,coeff)

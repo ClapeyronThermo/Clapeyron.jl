@@ -46,14 +46,13 @@ alpha = SoaveAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03
 SoaveAlpha
 default_locations(::Type{SoaveAlpha}) = critical_data()
 
-@inline α_m(model::RKModel,::SoaveAlpha) = (0.480,1.547,-0.176)
-@inline α_m(model::PRModel,::SoaveAlpha) = (0.37464,1.54226,-0.26992) #equal to PRAlpha
-@inline α_m(model::vdWModel,::SoaveAlpha) = (0.4998,1.5928,0.19563,0.025)
+@inline α_m(model::RKModel,::SoaveAlphaModel) = (0.480,1.547,-0.176)
+@inline α_m(model::PRModel,::SoaveAlphaModel) = (0.37464,1.54226,-0.26992) #equal to PRAlpha
+@inline α_m(model::vdWModel,::SoaveAlphaModel) = (0.4998,1.5928,0.19563,0.025)
 
-function α_function(model::CubicModel,V,T,z,alpha_model::SoaveAlphaModel)
+function α_function!(model::CubicModel,alpha_model::SoaveAlphaModel,T,i)
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(T*1.0),length(Tc))
     coeff = α_m(model,alpha_model)
     for i in @comps
         ωi = ω[i]
@@ -64,9 +63,9 @@ function α_function(model::CubicModel,V,T,z,alpha_model::SoaveAlphaModel)
     return α
 end
 
-function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::SoaveAlphaModel)
-    Tc = model.params.Tc.values[1]
-    ω  = alpha_model.params.acentricfactor.values[1]
+function α_function(model::CubicModel,alpha_model::SoaveAlphaModel,T,i)
+    Tc = model.params.Tc.values[i]
+    ω  = alpha_model.params.acentricfactor.values[i]
     coeff = α_m(model,alpha_model)
     Tr = T/Tc
     m = evalpoly(ω,coeff)

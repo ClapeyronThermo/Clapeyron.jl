@@ -40,6 +40,8 @@ export ConstantTranslation
 
 recombine_translation!(model::CubicModel,translation_model::ConstantTranslation) = translation_model
 
+translation(model,V,T,z) = translation(model,V,T,z,model.translation)
+
 function translation(model::CubicModel,V,T,z,translation_model::ConstantTranslationModel)
     return translation_model.params.v_shift.values
 end

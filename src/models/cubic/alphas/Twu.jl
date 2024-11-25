@@ -122,12 +122,11 @@ function Twu88Alpha(components::Vector{String}; userlocations = String[], verbos
     return model
 end
 
-function α_function(model::CubicModel,V,T,z,alpha_model::TwuAlphaModel)
+function α_function!(α,model::CubicModel,alpha_model::TwuAlphaModel,T)
     Tc = model.params.Tc.values
     _M  = alpha_model.params.M.values
     _N  = alpha_model.params.N.values
     _L  = alpha_model.params.L.values
-    α = zeros(typeof(T*1.0),length(Tc))
     for i in @comps
         M = _M[i]
         N = _N[i]
@@ -138,11 +137,11 @@ function α_function(model::CubicModel,V,T,z,alpha_model::TwuAlphaModel)
     return α
 end
 
-function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::TwuAlphaModel)
-    Tc = model.params.Tc.values[1]
-    M  = alpha_model.params.M.values[1]
-    N  = alpha_model.params.N.values[1]
-    L  = alpha_model.params.L.values[1]
+function α_function(model::CubicModel,alpha_model::TwuAlphaModel,T,i::Int)
+    Tc = model.params.Tc.values[i]
+    M  = alpha_model.params.M.values[i]
+    N  = alpha_model.params.N.values[i]
+    L  = alpha_model.params.L.values[i]
     Tr = T/Tc
     α = Tr^(N*(M-1))*exp(L*(1-Tr^(N*M)))
 end

@@ -83,11 +83,12 @@ function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
     a = model.params.a.values
     b = model.params.b.values
     T = T * float(one(T))
-    α = @f(α_function, model.alpha)
-    c = @f(translation, model.translation)
+    
+    c = @f(translation)
     if length(z) > 1
-        ā, b̄, c̄ = @f(mixing_rule, model.mixing, α, a, b, c)
+        ā, b̄, c̄ = @f(mixing_rule, model.mixing, @f(α_function), a, b, c)
     else
+        α = α_function(model,V,T)
         ā = a[1, 1] * α[1]
         b̄ = b[1, 1]
         c̄ = c[1]

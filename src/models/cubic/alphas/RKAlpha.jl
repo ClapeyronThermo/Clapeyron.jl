@@ -31,18 +31,17 @@ alpha = RKAlpha(["water","carbon dioxide"])
 """
 RKAlpha
 
-function α_function(model::CubicModel,V,T,z,alpha_model::RKAlphaModel)
+function α_function!(α,model::CubicModel,alpha_model::RKAlphaModel,T)
     Tc = model.params.Tc.values
-    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         Tr = T/Tc[i]
-        α[i] = 1 /√(Tr)
+        α[i] = 1/√(Tr)
     end
     return α
 end
 
-function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::RKAlphaModel)
-    Tc = model.params.Tc.values[1]
+function α_function(model::CubicModel,alpha_model::RKAlphaModel,T,i::Int)
+    Tc = model.params.Tc.values[i]
     Tr = T/Tc
-    α = 1 /√(Tr)
+    α = 1/√(Tr)
 end

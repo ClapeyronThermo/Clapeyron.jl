@@ -58,12 +58,13 @@ function cubic_ab(model::QCPRModel,V,T,z=SA[1.0],n=sum(z))
     a = model.params.a.values
     b = model.params.b.values
     T = T*float(one(T))
-    α = @f(α_function,model.alpha)
+    
     c = @f(translation,model.translation)
     if length(z)>1
-    ā,b̄,c̄ = @f(mixing_rule,model.mixing,α,a,b,c)
+    ā,b̄,c̄ = @f(mixing_rule,model.mixing,α_function(model,V,T,z),a,b,c)
     else
-        ā = a[1,1]*α[1]
+        α1 = α_function(model,V,T)
+        ā = a[1,1]*α1[1]
         A = model.mixing.params.A.values[1,1]
         B = model.mixing.params.B.values[1,1]
         Tc = model.params.Tc.values[1]

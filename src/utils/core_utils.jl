@@ -2,7 +2,6 @@
 This file contains functionalities present in newer versions of julia, but not on LTS,
 that are used by this package.
 =#
-
 @static if isdefined(Base,Symbol("@assume_effects"))
     macro pure(ex)
         esc(:(Base.@assume_effects :foldable $ex))
@@ -10,6 +9,14 @@ that are used by this package.
 else
     macro pure(ex)
         esc(:(Base.@pure $ex))
+    end
+end
+
+@eval macro $(Symbol("const"))(field)
+    if VERSION >= v"1.8.0-DEV.1148"
+        Expr(:const, esc(field))
+    else
+        return esc(field)
     end
 end
 
@@ -49,28 +56,7 @@ split_2(str) = NTuple{2}(eachsplit(str, limit=2))
 split_2(str,dlm) = NTuple{2}(eachsplit(str,dlm, limit=2))
 
 
-function show_pairs(io,keys,vals=nothing,separator="",f_print = print;quote_string = true,pair_separator = '\n',prekey = ifelse(pair_separator === '\n'," ",""))
-    if length(keys) == 0
-        return nothing
-    end
-    if vals === nothing #useful for printing only keys
-        vals = Iterators.repeated("")
-    end
-    i = 0
-    for (k,v) in zip(keys,vals)
-        i += 1
-        if i > 1
-            print(io,pair_separator)
-        end
-        if quote_string
-            quot = '\"'
-            print(io,prekey,quot,k,quot,separator)
-        else
-            print(io,prekey,k,separator)
-        end
-        f_print(io,v)
-    end
-end
+
 
 function _vecparser_eltype(vals)
     for val in eachsplit(vals,' ')
@@ -104,36 +90,3 @@ function _vecparser(vals::String,dlm = ' ')
     T = _vecparser_eltype(strip_vals)
     return _vecparser(T,vals,dlm)
 end
-
-show_default(io::IO,arg) = Base.show_default(io,arg)
-show_default(io::IO,mime::MIME"text/plain",arg) = Base.show_default(io,arg)
-
-function show_as_namedtuple(io::IO,x)
-    compact_io = IOContext(io, :compact => true)
-    print(io,typeof(x).name.name,"(")
-    names = fieldnames(typeof(x))
-    l = length(names)
-    equal = " = "
-    comma = ", "
-    for i in 1:l
-        print(io,names[i])
-        print(io,equal)
-        print(compact_io,getfield(x,i))
-        if i != l
-            print(io,comma) 
-        end
-    end
-    println(io,")")
-end
-
-#=
-"""
-    concrete(x)
-
-Given an array of heterogeneous values, return an array of concrete values.
-"""
-concrete(x::Vector{Float64}) = x
-concrete(x::Vector{Int64}) = x
-concrete(x::Vector{String}) = x
-concrete(x::Vector{Bool}) = x
-concrete(x) = convert(AbstractArray{mapreduce(typeof, promote_type, x)}, x)=#

@@ -45,20 +45,26 @@ alpha = PR78Alpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,
 PR78Alpha
 default_locations(::Type{PR78Alpha}) = critical_data()
 
-
-function α_function(model::CubicModel,V,T,z,alpha_model::PR78AlphaModel)
+function α_function!(α,model::CubicModel,alpha_model::PR78AlphaModel,T)
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         ωi = ω[i]
         m = ifelse(ωi<=0.491,
-            evalpoly(ωi,(0.37464,1.54226,-0.26992)),
+            evalpoly(ωi,α_m(model,alpha_model)),
             evalpoly(ωi,(0.379642,1.487503,-0.164423,-0.016666)))
         Tr = T/Tc[i]
         α[i] = (1+m*(1-√(Tr)))^2
     end
-    
     return α
+end
 
+function α_function(α,model::CubicModel,alpha_model::PR78AlphaModel,T,i::Int)
+    Tc = model.params.Tc.values[i]
+    ωi  = alpha_model.params.acentricfactor.values[i]
+    m = ifelse(ωi<=0.491,
+        evalpoly(ωi,α_m(model,alpha_model)),
+        evalpoly(ωi,(0.379642,1.487503,-0.164423,-0.016666)))
+    Tr = T/Tc
+    α = (1+m*(1-√(Tr)))^2
 end

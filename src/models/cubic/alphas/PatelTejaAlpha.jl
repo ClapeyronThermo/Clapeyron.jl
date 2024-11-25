@@ -42,5 +42,4 @@ alpha = PatelTejaAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-
 PatelTejaAlpha
 default_locations(::Type{PatelTejaAlpha}) = critical_data()
 
-
 @inline α_m(model,::PatelTejaAlpha) = (0.452413,1.30982,-0.295937)

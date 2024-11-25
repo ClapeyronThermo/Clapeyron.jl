@@ -66,10 +66,9 @@ function taylor_alpha_kumar(Tr,m,n)
     return evalpoly(ΔT,αpol)
 end
 
-function α_function(model::CubicModel,V,T,z,alpha_model::KUAlphaModel)
+function α_function!(α,model::CubicModel,alpha_model::KUAlphaModel,T)
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(1.0*T),length(Tc))
     coeff_m = (0.37790, 1.51959, -0.46904, 0.015679)
     coeff_n = (0.97016, 0.05495, -0.1293, 0.0172028)
     for i in @comps
@@ -87,9 +86,9 @@ function α_function(model::CubicModel,V,T,z,alpha_model::KUAlphaModel)
     return α
 end
 
-function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::KUAlphaModel)
-    Tc = model.params.Tc.values[1]
-    ω  = alpha_model.params.acentricfactor.values[1]
+function α_function(model::CubicModel,alpha_model::KUAlphaModel,T,i::Int)
+    Tc = model.params.Tc.values[i]
+    ω  = alpha_model.params.acentricfactor.values[i]
     coeff_m = (0.37790, 1.51959, -0.46904, 0.015679)
     coeff_n = (0.97016, 0.05495, -0.1293, 0.0172028)
     Tr = T/Tc
