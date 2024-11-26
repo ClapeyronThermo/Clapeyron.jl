@@ -47,7 +47,7 @@ export HANNA
 - `puremodel`: model to calculate pure pressure-dependent properties
 
 ## Description
-Hard-Constraint Neural Network for Consistent Activity Coefficient Prediction (HANNA).
+Hard-Constraint Neural Network for Consistent Activity Coefficient Prediction (HANNA v1.0.0).
 The implementation is based on [this](https://github.com/tspecht93/HANNA) Github repository.
 HANNA was trained on all available binary VLE data (up to 10 bar) and limiting activity coefficients from the Dortmund Data Bank. HANNA was only tested for binary mixtures so far. The extension to multicomponent mixtures is experimental.
 
