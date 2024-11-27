@@ -1,6 +1,7 @@
 struct Vfrac
     k::Int
 end
+
 struct FlashSpecifications{S1,V1,S2,V2}
     spec1::S1
     val1::V1
@@ -67,6 +68,16 @@ function normalize_spec(s::FlashSpecifications,k)
     end
 
     return FlashSpecifications(spec1,newval1,spec2,newval2)
+end
+
+function set_vfrac(s::FlashSpecifications,i)
+    if s.spec1 isa Vfrac
+        return FlashSpecifications(Vfrac(i[s.spec1.k]),s.val1,s.spec2,s.val2)
+    elseif s.spec2 isa Vfrac
+        return FlashSpecifications(s.spec1,s.val1,Vfrac(s.spec2.k),s.val2)
+    else
+        return s
+    end
 end
 
 function xy_input_to_flash_vars(input,np,nc,z)
@@ -355,7 +366,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     elseif spec2 == volume
         output[end] = (∑v - val2)/vs
     elseif spec2 isa Vfrac
-        i_spec = spec1.k
+        i_spec = spec2.k
         output[end-1] = β[i_spec] - val2
     else
         output[end] = (val2 - ∑a - p_end*∑v - T*∑s)*RTinv
@@ -436,6 +447,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     input_0_1[idx_comps] .= true
     #we want to select the anchor phase with biggest fraction
     idx = sortperm(β0)
+    
     flash_vars = xy_input_to_flash_vars(input,np,nc,z)
     compsx,βx,volumesx = flash_vars
     for j in 1:np
@@ -458,7 +470,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         input[end] = T0
     end
     _1 = one(eltype(input))
-    new_spec = normalize_spec(spec,∑z*_1)
+    new_spec = normalize_spec(set_vfrac(spec,idx),∑z*_1)
     zz = z * (1/∑z*_1)
     J = similar(input,(l,l))
     J .= 0
@@ -497,6 +509,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
                 x[j] = 0.5*(1 + x_old[j])
             end
         end
+        
         Fnorm = norm(F,Inf)
         xmax = maximum(x)
         xnorm = Solvers.dnorm(x,x_old,Inf)

@@ -29,7 +29,8 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
     else
         T = method.T0
     end
-    return pt_flash_x0(model,p,T,z,method;k0 = :suggest)
+    r = pt_flash_x0(model,p,T,z,method;k0 = :suggest)
+    return r
 end
 
 function qp_flash(model::EoSModel,β,p,z;kwargs...)
