@@ -174,6 +174,9 @@ end
     return (fx,df,d2f)
 end
 
+chunksize(::ForwardDiff.Chunk{C}) where {C} = C
+chunksize(x::AbstractArray) = chunksize(ForwardDiff.Chunk(x))
+
 function autochunk(x)
     k = ForwardDiff.pickchunksize(length(x))
     return ForwardDiff.Chunk{k}()
