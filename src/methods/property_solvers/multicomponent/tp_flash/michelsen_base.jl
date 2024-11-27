@@ -3,8 +3,7 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
     β,singlephase,limits = rachfordrice_β0(K,z,β0)
     if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && !singlephase
         return rr_vle_vapor_fraction_exact(K,z)
-    end
-
+    end  
     #halley refinement
     if !singlephase
         return rr_flash_refine(K,z,β,non_inx,non_iny,limits)

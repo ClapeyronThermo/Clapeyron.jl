@@ -35,9 +35,6 @@ end
 
 Base.eltype(method::RRTPFlash{T}) where T = T
 
-is_vle(method::RRTPFlash) = is_vle(method.equilibrium)
-is_lle(method::RRTPFlash) = is_lle(method.equilibrium)
-
 function index_reduction(m::RRTPFlash,idx::AbstractVector)
     equilibrium,K0,x0,y0,v0,K_tol,max_iters,nacc,noncondensables,nonvolatiles = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.max_iters,m.nacc,m.noncondensables,m.nonvolatiles
     K0 !== nothing && (K0 = K0[idx])

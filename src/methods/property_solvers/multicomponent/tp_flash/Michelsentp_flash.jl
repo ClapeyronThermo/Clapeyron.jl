@@ -98,9 +98,6 @@ function MichelsenTPFlash(;equilibrium = :unknown,
     return MichelsenTPFlash{T}(equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
 end
 
-is_vle(method::MichelsenTPFlash) = is_vle(method.equilibrium)
-is_lle(method::MichelsenTPFlash) = is_lle(method.equilibrium)
-
 #hook to precalculate things with the activity model.
 __tpflash_cache_model(model::EoSModel,p,T,z,equilibrium) = model
 
