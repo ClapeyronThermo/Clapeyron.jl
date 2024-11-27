@@ -182,6 +182,8 @@ function __dlnPdTinvsat(pure,sat,crit,xx,in_media = true,is_sat_temperature = tr
         _p(_T) = pressure(pure,Vc,_T)
         dpdT = Solvers.derivative(_p,Tc)
         return -dpdT*Tc*Tc/Pc,log(Pc),1/Tc
+    elseif all(isnan,sat)# && all(isnan,crit)
+        return sat
     else
         throw(error("dPdTsat: unreachable state with $pure"))
     end
