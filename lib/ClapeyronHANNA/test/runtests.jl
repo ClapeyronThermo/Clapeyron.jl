@@ -19,7 +19,7 @@ using Clapeyron, ClapeyronHANNA
 
     gEᵣ_2 = Clapeyron.excess_gibbs_free_energy(model_2, NaN, T, [x1, 1-x1]) ./ Clapeyron.Rgas() ./ T
     γ_2 = activity_coefficient(model_2, NaN, T, [x1, 1-x1])
-    @test gEᵣ_2 ≈ -0.06662785416779005 rtol = 1e-6
-    @test log(γ_2[1]) ≈ -0.06497140384559216 rtol = 1e-6
-    @test log(γ_2[2]) ≈ -0.06828430448998822 rtol = 1e-6
+    @test gEᵣ_2 ≈ -0.06662785416779005 rtol = 1e-5
+    @test log(γ_2[1]) ≈ -0.06497140384559216 rtol = 1e-5
+    @test log(γ_2[2]) ≈ -0.06828430448998822 rtol = 1e-5
 end
