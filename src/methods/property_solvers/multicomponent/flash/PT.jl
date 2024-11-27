@@ -111,7 +111,7 @@ function tp_flash2_to_tpflash(model,p,T,z,result)
     return x,n,g
 end
 
-function tp_flash_impl(model,p,T,z,method::GeneralizedPXFlash)
+function tp_flash_impl(model,p,T,z,method::GeneralizedXYFlash)
     flash0 = px_flash_x0(model,p,T,z,temperature,method)
     isone(numphases(flash0)) && return flash0
     spec = FlashSpecifications(pressure,p,temperature,T)

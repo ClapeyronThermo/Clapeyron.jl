@@ -1,11 +1,10 @@
-
 function ph_flash(model::EoSModel,p,h,z;kwargs...)
     method = init_preferred_method(ph_flash,model,kwargs)
     return ph_flash(model,p,h,z,method)
 end
 
 function init_preferred_method(method::typeof(ph_flash),model::EoSModel,kwargs) 
-    GeneralizedPXFlash(;kwargs...)
+    GeneralizedXYFlash(;kwargs...)
 end
 
 function ph_flash(model,p,h,z,method::FlashMethod)
@@ -39,7 +38,7 @@ function ph_flash(model,p,h,z,method::FlashMethod)
     return index_expansion(result,idx_r)
 end
 
-function ph_flash_impl(model,p,h,z,method::GeneralizedPXFlash)
+function ph_flash_impl(model,p,h,z,method::GeneralizedXYFlash)
     flash0 = px_flash_x0(model,p,h,z,enthalpy,method)
     isone(numphases(flash0)) && return flash0
     spec = FlashSpecifications(pressure,p,enthalpy,h)

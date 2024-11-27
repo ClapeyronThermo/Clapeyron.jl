@@ -4,7 +4,7 @@ function ps_flash(model::EoSModel,p,s,z;kwargs...)
 end
 
 function init_preferred_method(method::typeof(ps_flash),model::EoSModel,kwargs) 
-    GeneralizedPXFlash(;kwargs...)
+    GeneralizedXYFlash(;kwargs...)
 end
 
 function ps_flash(model,p,s,z,method::FlashMethod)
@@ -38,7 +38,7 @@ function ps_flash(model,p,s,z,method::FlashMethod)
     return index_expansion(result,idx_r)
 end
 
-function ps_flash_impl(model,p,s,z,method::GeneralizedPXFlash)
+function ps_flash_impl(model,p,s,z,method::GeneralizedXYFlash)
     flash0 = px_flash_x0(model,p,s,z,entropy,method)
     isone(numphases(flash0)) && return flash0
     spec = FlashSpecifications(pressure,p,entropy,s)
