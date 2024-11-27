@@ -389,6 +389,9 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
 
         return res,res/∂res,∂res/∂2res
     end
+    if isnan(β)
+        return β
+    end
     prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
     return Roots.solve(prob,Roots.BracketedHalley())
 end
