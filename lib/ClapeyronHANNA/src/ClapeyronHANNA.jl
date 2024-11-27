@@ -40,11 +40,11 @@ function load_custom_tokenizer(;max_length)
     endsym = "[SEP]"
     unksym = "[UNK]"
     padsym = "[PAD]"
-    tokenizer = TransformerTextEncoder(split_smiles, String.(keys(vocab)); startsym, endsym, unksym, padsym=padsym, trunc=max_length)
+    return TransformerTextEncoder(split_smiles, String.(keys(vocab)); startsym, endsym, unksym, padsym=padsym, trunc=max_length)
 end
 
 function split_smiles(smiles::String)
-    [match.match for match in eachmatch(r"\[(.*?)\]|Br|Cl|.", smiles)]
+    return [match.match for match in eachmatch(r"\[(.*?)\]|Br|Cl|.", smiles)]
 end
 
 function load_scalers()
@@ -63,7 +63,7 @@ silu(x) = @. x/(1+exp(-x))
 function cosine_similarity(x1,x2;eps=1e-8)
     ∑x1 = sqrt(dot(x1,x1))
     ∑x2 = sqrt(dot(x2,x2))
-    res = dot(x1,x2)/(max(∑x1,eps*one(∑x1))*max(∑x2,eps*one(∑x2)))
+    return dot(x1,x2)/(max(∑x1,eps*one(∑x1))*max(∑x2,eps*one(∑x2)))
 end
 
 end #module

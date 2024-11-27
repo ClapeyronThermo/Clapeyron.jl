@@ -62,6 +62,7 @@ Mw = [18.01528, 74.1216]
 smiles = ["O", "CC(C)CO"]
 
 model = HANNA(components,userlocations=(;Mw=Mw, canonicalsmiles=smiles))
+# model = HANNA(components) # also works if components are in the database 
 ```
 
 ## References
