@@ -26,8 +26,8 @@ const FLASH_SPECS_FN = (
     Vfrac(2),
 )
 
-function FlashSpecifications(;v = nothing,T = nothing,p = nothing,h = nothing,s = nothing,u = nothing,beta = nothing)
-    values = (v,p,T,h,s,u,beta)
+function FlashSpecifications(;v = nothing,T = nothing,p = nothing,h = nothing,s = nothing,u = nothing,q = nothing)
+    values = (v,p,T,h,s,u,q)
     nothing_values = isnothing.(values) .|> !
     if count(nothing_values) != 2
         throw(ArgumentError("invalid FlashSpecifications input argument, you need to specify exactly two specifications"))
