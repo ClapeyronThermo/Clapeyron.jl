@@ -18,12 +18,8 @@ function ph_flash(model,p,h,z,method::FlashMethod)
         method_r,z_r = method,z
     end
     if length(model_r) == 1
-        if hasfield(typeof(method),:T0)
-            T0 == method.T0
-        else
-            T0 = nothing
-        end
-        result1 = ph_flash_pure(model_r,p,h,z_r,T0)
+        T0 = hasfield(typeof(method),:T0) ? method.T0 : nothing
+        result1 = px_flash_pure(model,p,h,z,enthalpy,T0)
         return index_expansion(result1,idx_r)
     end
     
@@ -46,5 +42,5 @@ function ph_flash_impl(model,p,h,z,method::GeneralizedXYFlash)
 end
 
 function ph_flash_pure(model,p,h,z,T0 = nothing)
-    px_flash_pure(model,p,h,z,enthalpy,T0)
+    
 end
