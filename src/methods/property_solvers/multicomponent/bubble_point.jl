@@ -117,12 +117,13 @@ function extended_saturation_temperature(pure, p, _crit = nothing, volatile = tr
     #create initial point from critical values
     #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
     
-    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,T,volatile,false)
-    lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
-    p0 = exp(lnp)
-    vl0 = x0_volume(pure,p0,T,phase = :l)
-    vv0 = max(1.2*Vc,3*Rgas(pure)*T/Pc)
-    return p0,vl0,vv0
+    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,p,volatile,false)
+    #lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
+    Tinv = (log(p) - logp0)/dlnpdTinv + Tcinv
+    T0  = 1/Tinv
+    vl0 = x0_volume(pure,p,T0,phase = :l)
+    vv0 = max(1.2*Vc,3*Rgas(pure)*T0/Pc)
+    return T0,vl0,vv0
 end
 
 
@@ -182,6 +183,8 @@ function __dlnPdTinvsat(pure,sat,crit,xx,in_media = true,is_sat_temperature = tr
         _p(_T) = pressure(pure,Vc,_T)
         dpdT = Solvers.derivative(_p,Tc)
         return -dpdT*Tc*Tc/Pc,log(Pc),1/Tc
+    elseif all(isnan,sat)# && all(isnan,crit)
+        return sat
     else
         throw(error("dPdTsat: unreachable state with $pure"))
     end

@@ -313,6 +313,7 @@ end
 
 function rachfordrice_β0(K,z,β0 = nothing)
     g0 = dot(z, K) - 1.
+    !isfinite(g0) && return g0,false,(g0,g0)
     g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K))
     singlephase = false
     _1 = one(g1)
@@ -388,6 +389,9 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
 
 
         return res,res/∂res,∂res/∂2res
+    end
+    if !isfinite(β)
+        return β
     end
     prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
     return Roots.solve(prob,Roots.BracketedHalley())

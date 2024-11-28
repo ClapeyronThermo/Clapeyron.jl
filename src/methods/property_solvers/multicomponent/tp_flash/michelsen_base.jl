@@ -3,8 +3,7 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
     β,singlephase,limits = rachfordrice_β0(K,z,β0)
     if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && !singlephase
         return rr_vle_vapor_fraction_exact(K,z)
-    end
-
+    end  
     #halley refinement
     if !singlephase
         return rr_flash_refine(K,z,β,non_inx,non_iny,limits)
@@ -98,8 +97,16 @@ end
 
 #updates lnK, returns lnK,volx,voly, gibbs if β != nothing
 function update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
-    lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
+    lnϕx, volx = lnϕ(model, p, T, x; phase=:liquid, vol0=volx)
     lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
+    if isnan(volx)
+        lnϕx, volx = lnϕ(model, p, T, x, phase = phasex)
+    end
+
+    if isnan(voly)
+        lnϕy, voly = lnϕ(model, p, T, y, phase = phasey)
+    end
+
     lnK .= lnϕx - lnϕy
     gibbs = zero(eltype(lnK))
     if β !== nothing
@@ -181,7 +188,7 @@ function pt_flash_x0(model,p,T,n,method::FlashMethod,inx = FillArrays.Fill(true,
         lnK = log.(x ./ y)
         volx = zero(_1)
         voly = zero(_1)
-        if method.vol0 == nothing
+        if method.v0 == nothing
             lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,nothing,phasex,phasey,nothing,inx,iny)
         else
             vl0,vv0 = method.v0
@@ -214,7 +221,6 @@ function pt_flash_x0(model,p,T,n,method::FlashMethod,inx = FillArrays.Fill(true,
         volx = zero(_1)
         voly = zero(_1)
     end
-
     β,singlephase,_ = rachfordrice_β0(K,z)
 
     #if singlephase == true, maybe initial K values overshoot the actual phase split.
@@ -235,6 +241,11 @@ function pt_flash_x0(model,p,T,n,method::FlashMethod,inx = FillArrays.Fill(true,
     else
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
     end
+    if β > 1
+        β = one(β)
+    elseif β < 0
+        β = zero(β)
+    end
     y = rr_flash_vapor!(y,K,z,β)
     y ./= sum(y)
     x = rr_flash_liquid!(x,K,z,β)
@@ -248,7 +259,8 @@ function pt_flash_x0(model,p,T,n,method::FlashMethod,inx = FillArrays.Fill(true,
     end
     iszero(volx) && (volx = volume(model,p,T,x,phase = phasex))
     iszero(voly) && (voly = volume(model,p,T,y,phase = phasey))
-    return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[volx,voly],sort = false)
+    r = FlashResult(p,T,SA[x,y],SA[βl,βv],SA[volx,voly],sort = false)
+    return r
 end
 
 tp_flash_K0!(K,model,p,T) = wilson_k_values!(K,model,p,T)

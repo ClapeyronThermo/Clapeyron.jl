@@ -1,13 +1,13 @@
-function ph_flash(model::EoSModel,p,h,z;kwargs...)
-    method = init_preferred_method(ph_flash,model,kwargs)
-    return ph_flash(model,p,h,z,method)
+function vt_flash(model::EoSModel,V,T,z;kwargs...)
+    method = init_preferred_method(vt_flash,model,kwargs)
+    return vt_flash(model,V,T,z,method)
 end
 
-function init_preferred_method(method::typeof(ph_flash),model::EoSModel,kwargs) 
+function init_preferred_method(method::typeof(vt_flash),model::EoSModel,kwargs) 
     GeneralizedXYFlash(;kwargs...)
 end
 
-function ph_flash(model,p,h,z,method::FlashMethod)
+function vt_flash(model,V,T,z,method::FlashMethod)
     check_arraysize(model,z)
     if supports_reduction(method)
         model_r,idx_r = index_reduction(model,z)
@@ -23,11 +23,11 @@ function ph_flash(model,p,h,z,method::FlashMethod)
         else
             T0 = nothing
         end
-        result1 = ph_flash_pure(model_r,p,h,z_r,T0)
+        result1 = vt_flash_pure(model_r,V,T,z_r,T0)
         return index_expansion(result1,idx_r)
     end
     
-    result = ph_flash_impl(model_r,p,h,z_r,method_r)
+    result = vt_flash_impl(model_r,V,T,z_r,method_r)
     if !issorted(result.volumes)
         #this is in case we catch a bad result.
         result = FlashResult(result)
@@ -38,13 +38,13 @@ function ph_flash(model,p,h,z,method::FlashMethod)
     return index_expansion(result,idx_r)
 end
 
-function ph_flash_impl(model,p,h,z,method::GeneralizedXYFlash)
-    flash0 = px_flash_x0(model,p,h,z,enthalpy,method)
+function vt_flash_impl(model,V,T,z,method::GeneralizedXYFlash)
+    flash0 = tx_flash_x0(model,V,T,z,volume,method)
     isone(numphases(flash0)) && return flash0
-    spec = FlashSpecifications(pressure,p,enthalpy,h)
+    spec = FlashSpecifications(volume,V,temperature,T)
     return xy_flash(model,spec,z,flash0,method)
 end
 
-function ph_flash_pure(model,p,h,z,T0 = nothing)
-    px_flash_pure(model,p,h,z,enthalpy,T0)
+function vt_flash_pure(model,V,T,z,T0 = nothing)
+    tx_flash_pure(model,V,T,z,volume,T0)
 end
