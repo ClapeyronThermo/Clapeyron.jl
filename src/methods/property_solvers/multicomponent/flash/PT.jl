@@ -47,7 +47,7 @@ function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs)
             return MultiPhaseTPFlash(;kwargs...)
         end
     end
-    if length(model) == 2 && any(x->haskey(kwargs,x),(:v0,:noncondensables,:nonvolatiles,:x0,:y0,:K0))
+    if any(x->haskey(kwargs,x),(:v0,:noncondensables,:nonvolatiles,:x0,:y0,:K0,:equilibrium))
         return MichelsenTPFlash(;kwargs...)
     elseif any(x->haskey(kwargs,x),(:numphases,:max_steps,:population_size,:time_limit,:verbose,:logspace))
         return DETPFlash(;kwargs...)
