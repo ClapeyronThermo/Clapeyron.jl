@@ -416,6 +416,47 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult
     return xy_flash(model,spec,z,comps0,β0,volumes0,T0;rtol,atol,max_iters)
 end
 
+function positive_linesearch(v, δ; τ = 1.0, decay = 0.5, tol = 1e-10)
+    α = 1.0
+    done = false
+    while !done
+        done = true
+        for i in 1:length(v)
+            vi,δi = v[i],δ[i]
+            if vi + α * δi < (1 - τ) * vi
+                if α < tol
+                    return NaN
+                end
+                α *= decay
+                done = false
+            end
+        end
+    end
+    return α
+end
+
+function minimize_df_linesearch(f!,F,v,vcache,Fnorm,α,decay = 0.5)
+    done = false
+    vcache .= α .* v
+    while !done
+        f!(F,vcache)
+        Fnorm_i = norm(F,2)
+        if Fnorm_i > Fnorm
+            if α < 1e-4
+                return NaN
+            end
+            α *= decay
+            vcache .= α .* v
+            done = false
+        else
+            done = true
+        end
+    end
+    return α
+end
+
+
+
 function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult)
     if numphases(flash) == 1
         throw(ArgumentError("xy_flash cannot use single phase initial points as starting points."))
@@ -447,7 +488,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     input_0_1[idx_comps] .= true
     #we want to select the anchor phase with biggest fraction
     idx = sortperm(β0)
-    
+    snorm = Inf*one(eltype(input))
     flash_vars = xy_input_to_flash_vars(input,np,nc,z)
     compsx,βx,volumesx = flash_vars
     for j in 1:np
@@ -477,6 +518,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     piv = zeros(Int,l)
     x = input
     x_old = copy(input)
+    x_cache = copy(input)
     F = copy(input)
     s = copy(input)
     #config,μconfig = xy_flash_config(model,input)
@@ -486,31 +528,32 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     f!(F,x)
     converged = false
     nan_converged = !all(isfinite,x)
-    if norm(F,Inf) < rtol
-        converged = true
-    end
+    Fnorm = norm(F,Inf)
+    Fnorm < rtol && (converged = true)
+
     for i in 1:max_iters
         converged && break
         nan_converged && break
         ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
         lu = Solvers.unsafe_LU!(J,piv)
-        s .= F
+        s .= -F
         ldiv!(lu,s) #s .= J\F
         x_old .= x
-        #TODO: backtracking? trust region?, reformulate in SS form if the step is too far?  
-        x .= x_old .- s
-        
         #bound 0-1 variables.
-        for j in 1:l
-            check_bounds = input_0_1[j]
-            if check_bounds && x[j] < 0
-                x[j] = 0.5*x_old[j]
-            elseif check_bounds && x[j] > 1
-                x[j] = 0.5*(1 + x_old[j])
-            end
-        end
         
+        α = positive_linesearch(@view(x[input_0_1]),@view(s[input_0_1]))
+        #@show α
+        #@show s
+        #α = minimize_df_linesearch(f!,F,x,x_cache,norm(F,2),α)
+        
+        x .= x_old .+ α .* s
+        snorm_old = snorm
+        snorm = α*norm(s,2)
+        if abs(snorm-snorm_old) < 1e-8
+            converged = true
+        end
         Fnorm = norm(F,Inf)
+        
         xmax = maximum(x)
         xnorm = Solvers.dnorm(x,x_old,Inf)
         Fnorm < rtol && (converged = true)
@@ -599,7 +642,7 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
         v = (volumes[1],volumes[2])
         P00 = flash_result.data.p
         T00 = flash_result.data.T
-        return GeneralizedXYFlash(;equilibrium = equilibrium,T0 = T00,P0 = P00,x0 = w1,y0 = w2,vol0 = v,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
+        return GeneralizedXYFlash(;equilibrium = equilibrium,T0 = T00,p0 = P00,x0 = w1,y0 = w2,v0 = v,rtol = rtol,atol = atol,max_iters = max_iters)
     end
     
     if K0 == x0 == y0 === v0 == nothing #nothing specified
@@ -618,7 +661,7 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
     if T0 == nothing && p0 == nothing
         S = Nothing
     elseif T0 != nothing && p0 != nothing
-        S = promote_type(T0,p0)
+        S = typeof(T0*p0)
     else
         S = typeof(something(T0,p0))
     end
