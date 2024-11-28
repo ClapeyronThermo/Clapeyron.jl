@@ -68,6 +68,14 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
                   verbose = false,
                   threaded = true) where TT
 
+  #handle volume variations
+  if property == molar_density
+    return _Tproperty(model,p,sum(z)/prop,z,volume;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
+  end
+
+  if property == mass_density
+    return _Tproperty(model,p,molecular_weight(model,z)/prop,z,volume;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
+  end
 
   if length(model) == 1 && length(z) == 1
     zz = SA[z[1]]
@@ -105,9 +113,23 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     verbose && @warn "non-finite dew and bubble points, trying to solve using Clapeyron.T_scale(model,z)"
     return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
   end
+  if property == volume
+    prop_bubble = bubble_vol
+    prop_dew = dew_vol
+  else
+    prop_bubble = property(model,p,bubble_temp,z,phase=phase)
+    prop_dew = property(model,p,dew_temp,z,phase=phase)
+  end
 
-  prop_bubble = property(model,p,bubble_temp,z,phase=phase)
-  prop_dew = property(model,p,dew_temp,z,phase=phase)
+  #special case with volume: the volumes in the saturation volumes don't have a definition of bulk:
+  if property == volume
+    β = (prop - prop_dew)/(prop_bubble - prop_dew)
+    if 0 <= β <= 1
+      verbose && @warn "volume in the phase change region, returning a linear interpolation of the bubble and dew temperatures"
+      return β*bubble_temp + (1 - β)*dew_temp,:eq
+    end
+  end
+
   F(T) = property(model,p,T,z,phase = phase)
   #case 1: Monotonically increasing
   if (prop_bubble < prop_dew)

@@ -1,17 +1,17 @@
 function x0_Pproperty(model::EoSModel,T,z::AbstractVector,verbose = false)
-    bubble_prop = Clapeyron.bubble_pressure(model,T,z)
-    dew_prop = Clapeyron.dew_pressure(model,T,z)
-    bubble_pressure = bubble_prop[1]
-    dew_pressure = dew_prop[1]
-    if isnan(bubble_pressure)
-      verbose && @error "bubble_pressure is NaN"
-      return bubble_pressure
-    end
-    if isnan(dew_pressure)
-      verbose && @error "dew_pressure is NaN"
-      return dew_pressure
-    end
-    return bubble_pressure,dew_pressure
+  bubble = Clapeyron.bubble_pressure(model,T,z)
+  dew = Clapeyron.dew_pressure(model,T,z)
+  bubble_T = bubble[1]
+  v_dew_vapour = dew[3]
+  v_bubble_liquid = bubble[2]
+  dew_T = dew[1]
+  if isnan(bubble_T)
+    verbose && @error "bubble_pressure calculation failed."
+  end
+  if isnan(dew_T)
+    verbose && @error "dew_pressure calculation failed."
+  end
+  return (bubble_T,v_bubble_liquid),(dew_T,v_dew_vapour)
 end
 
 
@@ -46,42 +46,73 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
           verbose = false,
           threaded = true) where TT
 
-#   if length(model) == 1 && length(z) == 1
-#     return Pproperty_pure(model::EoSModel,T,prop,property;rootsolver,phase,abstol,verbose)
-#   end
+
+
+  #handle volume variations
+  if property == molar_density
+    return _Pproperty(model,T,sum(z)/prop,z,volume;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
+  end
+
+  if property == mass_density
+    return _Pproperty(model,T,molecular_weight(model,z)/prop,z,volume;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
+  end
+
+  if length(model) == 1 && length(z) == 1
+    return Pproperty_pure(model,T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
+  end
 
   if p0 !== nothing
     return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p0)
   end
 
-  bubble_pressure,dew_pressure = x0_Pproperty(model,T,z,verbose)
+
+  bubble_prop,dew_prop = x0_Pproperty(model,T,z,verbose)
+
+  bubble_p,bubble_vol = bubble_prop
+  dew_p,dew_vol = dew_prop
+
   #if any bubble/dew pressure is NaN, try solving for the non-NaN value
   #if both values are NaN, try solving using p_scale(model,z)
-  if isnan(bubble_pressure) && !isnan(dew_pressure)
+  if isnan(bubble_p) && !isnan(dew_p)
     verbose && @warn "non-finite bubble point, trying to solve using the dew point"
-    return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_pressure)
-  elseif !isnan(bubble_pressure) && isnan(dew_pressure)
+    return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
+  elseif !isnan(bubble_p) && isnan(dew_p)
     verbose && @warn "non-finite dew point, trying to solve using the bubble point"
-    return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_pressure)
-  elseif isnan(bubble_pressure) && isnan(dew_pressure)
+    return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
+  elseif isnan(bubble_p) && isnan(dew_p)
     verbose && @warn "non-finite dew and bubble points, trying to solve using Clapeyron.p_scale(model,z)"
     return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p_scale(model,z))
   end
+  if property == volume
+    prop_bubble = bubble_vol
+    prop_dew = dew_vol
+  else
+    prop_bubble = property(model,bubble_p,T,z,phase=phase)
+    prop_dew = property(model,dew_p,T,z,phase=phase)
+  end
 
-  prop_bubble = property(model,bubble_pressure,T,z,phase=phase)
-  prop_dew = property(model,dew_pressure,T,z,phase=phase)
   F(P) = property(model,P,T,z,phase = phase)
+
+  #special case with volume: the volumes in the saturation volumes don't have a definition of bulk:
+  if property == volume
+    β = (prop - prop_dew)/(prop_bubble - prop_dew)
+    if 0 <= β <= 1
+      verbose && @warn "volume in the phase change region, returning a linear interpolation of the bubble and dew pressures"
+      return β*bubble_p + (1 - β)*dew_p,:eq
+    end
+  end
+
   #case 1: Monotonically increasing
   if (prop_dew < prop_bubble)
     verbose && @info "$property at bubble > $property at dew point."
     if (prop < prop_dew)
       verbose && @info "$property < $property at dew point"
-      return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_pressure)
+      return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
     end
 
     if (prop >= prop_dew && prop <= prop_bubble)
       verbose && @info "$property at dew <= $property <= $property at bubble"
-      P_edge = FindEdge(F,dew_pressure,bubble_pressure) # dew_pressure < bubbble_pressure --> condition for FindEdge
+      P_edge = FindEdge(F,dew_p,bubble_p) # dew_p < bubble_pressure --> condition for FindEdge
       prop_edge1 = property(model,P_edge - 1e-10,T,z,phase = phase);
       prop_edge2 = property(model,P_edge + 1e-10,T,z,phase = phase);
       if (prop >= prop_edge1 && prop <= prop_edge2)
@@ -91,18 +122,18 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
 
       if (prop < prop_edge1)
         verbose && @info "$property at dew point < $property < $property at edge point"
-        return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_pressure)
+        return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
       end
 
       if (prop > prop_edge2)
         verbose && @info "$property at edge point < $property < $property at bubble point"
-        return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_pressure)
+        return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
       end
     end
 
     if (prop > prop_bubble)
       verbose && @info "$property at bubble point < $property"
-      __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_pressure)
+      __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
     end
   end
 
@@ -112,33 +143,34 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     verbose && @info "$property at bubble < $property at dew point."
     if (prop > prop_dew)
       verbose && @info "$property > $property at dew point"
-      __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_pressure)
+      __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
     end
 
     if (prop<= prop_dew && prop >= prop_bubble)
       verbose && @info "$property at bubble <= $property <= $property at dew"
-      P_edge = FindEdge(F,dew_pressure,bubble_pressure)
+      P_edge = FindEdge(F,dew_p,bubble_p)
 
       prop_edge1 = property(model,P_edge - 1e-10,T,z,phase = phase)
       prop_edge2 = property(model,P_edge + 1e-10,T,z,phase = phase)
+      @show prop_edge1,prop_edge2
       if (prop <= prop_edge1 && prop >= prop_edge2)
         verbose && @warn "In the phase change region"
         return P_edge,:eq
 
       elseif (prop >= prop_edge1)
         verbose && @info "$property at dew point > $property >= $property at edge point"
-        return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_pressure)
+        return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
       end
 
       if (prop <= prop_edge2)
-        verbose && @info "$property at edge point >= $property > $property at bubbble point"
-        return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_pressure)
+        verbose && @info "$property at edge point >= $property > $property at bubble point"
+        return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
       end
     end
 
     if (prop < prop_bubble)
       verbose && @info "$property at bubble point > $property"
-      return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_pressure)
+      return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
     end
   end
   _0 = Base.promote_eltype(model,T,prop,z)
