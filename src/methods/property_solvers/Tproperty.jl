@@ -54,7 +54,10 @@ function Tproperty(model::EoSModel,p,prop,z = SA[1.0],
                   verbose = false,
                   threaded = true) where TT
 
-  T,_ = _Tproperty(model,p,prop,z,property;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
+  T,st = _Tproperty(model,p,prop,z,property;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
+  if st == :failure
+    @error "Tproperty calculation failed."
+  end
   return T
 end
 
@@ -86,21 +89,37 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
       return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T0)
   end
 
-  bubble_prop,dew_prop = x0_Tproperty(model,p,z,verbose)
+  if is_liquid(phase)
+    T00 = bubble_temperature(model,p,z)[1]
+    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T00)
+  end
 
+  if is_vapour(phase)
+    T00 = dew_temperature(model,p,z)[1]
+    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T00)
+  end
+
+  bubble_prop,dew_prop = x0_Tproperty(model,p,z,verbose)
   bubble_temp,bubble_vol = bubble_prop
   dew_temp,dew_vol = dew_prop
+
   #trivial
   if property === temperature
-    Temp = prop*one(bubble_temp)
-    if (bubble_temp < Temp < dew_temp) || (dew_temp < Temp < bubble_temp)
+    T = prop*one(bubble_temp)
+    β = (T - dew_temp)/(bubble_temp - dew_temp)
+    if 0 <= β <= 1
       verbose && @warn "In the phase change region"
-      return Temp,:eq
+      _new_phase = :eq
+    elseif β > 1
+      _new_phase = :vapour
+    elseif β < 0
+      _new_phase = :liquid
     else
-      _phase = identify_phase(model,p,Temp,z)
-      return Temp,_phase
+      _new_phase = :failure
     end
+    return T,_new_phase
   end
+
   #if any bubble/dew temp is NaN, try solving for the non-NaN value
   #if both values are NaN, try solving using T_scale(model,z)
   if isnan(bubble_temp) && !isnan(dew_temp)
@@ -113,6 +132,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     verbose && @warn "non-finite dew and bubble points, trying to solve using Clapeyron.T_scale(model,z)"
     return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
   end
+
   if property == volume
     prop_bubble = bubble_vol
     prop_dew = dew_vol
@@ -121,91 +141,64 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     prop_dew = property(model,p,dew_temp,z,phase=phase)
   end
 
-  #special case with volume: the volumes in the saturation volumes don't have a definition of bulk:
-  if property == volume
-    β = (prop - prop_dew)/(prop_bubble - prop_dew)
-    if 0 <= β <= 1
-      verbose && @warn "volume in the phase change region, returning a linear interpolation of the bubble and dew temperatures"
-      return β*bubble_temp + (1 - β)*dew_temp,:eq
-    end
-  end
-
   F(T) = property(model,p,T,z,phase = phase)
-  #case 1: Monotonically increasing
-  if (prop_bubble < prop_dew)
-    verbose && @info "$property at bubble < $property at dew point."
-    if (prop < prop_bubble)
-      verbose && @info "$property < $property at bubbble point"
-      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
-    end
 
-    if prop_bubble <= prop <= prop_dew
-      verbose && @info "$property at bubble <= $property <= $property at dew"
+  if verbose
+    @info "input property:              $prop"
+    @info "property at dew point:       $prop_dew"
+    @info "property at bubble point:    $prop_bubble"
+    @info "temperature at dew point:    $dew_temp"
+    @info "temperature at bubble point: $bubble_temp"
+  end
 
-      T_edge = FindEdge(F,bubble_temp,dew_temp)
-      prop_edge1 = property(model,p,T_edge - 1e-10,z,phase = phase)
-      prop_edge2 = property(model,p,T_edge + 1e-10,z,phase = phase)
-
-      if prop_edge1 <= prop <= prop_edge2
-        verbose && @warn "In the phase change region"
-        return T_edge,:eq
+  β = (prop - prop_dew)/(prop_bubble - prop_dew)
+  if 0 <= β <= 1
+      #special case with volume: the volumes in the saturation volumes don't have a definition of bulk:
+      if property == volume
+        verbose && @warn "volume in the phase change region, returning a linear interpolation of the bubble and dew temperatures"
+        return β*bubble_temp + (1 - β)*dew_temp,:eq
       end
 
-      if prop < prop_edge1
-        verbose && @info "$property at bubble point < $property < $property at edge point"
+      T_edge = FindEdge(F,bubble_temp,dew_temp)
+      if !isfinite(T_edge)
+        verbose && @error "failure to calculate edge point"
+        verbose && @warn "$property in the phase change region, returning a linear interpolation of the bubble and dew temperatures"
+        return β*bubble_temp + (1 - β)*dew_temp,:eq
+      end
+      verbose && @info "temperature at edge point:   $P_edge"
+      prop_edge1 = property(model,p,T_edge - 1e-10,z,phase = phase)
+      prop_edge2 = property(model,p,T_edge + 1e-10,z,phase = phase)
+      #=
+      the order is the following:
+      bubble -> edge1 -> edge2 -> dew
+      or:
+      dew -> edge2 -> edge1 -> bubble
+      =#
+
+      βedge = (prop - prop_edge1)/(prop_edge2 - prop_edge1)
+
+      if 0 <= βedge <= 1
+        verbose && @warn "In the phase change region"
+        return P_edge,:eq
+      elseif βedge > 1 #prop <= prop_edge2
+        verbose && @info "temperature($property) ∈ (temperature(dew point),temperature(edge point))"
+        return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
+      elseif βedge < 0
+        verbose && @info "temperature($property) ∈ (temperature(edge point),temperature(bubble point))"
         return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
       end
 
-      if prop > prop_edge2
-        verbose && @info "$property at edge point < $property < $property at dew point"
-        return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
-      end
+    elseif β > 1
+      verbose && @info "temperature($property) < temperature(bubble point)"
+      __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
+    elseif β < 0
+      verbose && @info "temperature($property) > temperature(dew point)"
+      __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
+    else
+      verbose && @error "TProperty calculation failed"
+      _0 = Base.promote_eltype(model,p,prop,z)
+      return _0/_0,:failure
     end
-
-    if prop > prop_dew
-      verbose && @info "$property at dew point < $property"
-      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
-    end
-  end
-
-  #case 2: Monotonically decreasing
-  if prop_bubble > prop_dew
-    verbose && @info "$property at bubble > $property at dew point."
-    if prop > prop_bubble
-      verbose && @info "$property > $property at bubbble point"
-      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
-    end
-
-    if prop_dew <= prop <= prop_bubble
-      verbose && @info "$property at bubble >= $property >= $property at dew"
-
-      T_edge = FindEdge(F,bubble_temp,dew_temp)
-      prop_edge1 = property(model,p,T_edge - 1e-10,z,phase = phase)
-      prop_edge2 = property(model,p,T_edge + 1e-10,z,phase = phase)
-
-      if prop_edge2 <= prop <= prop_edge1
-        verbose && @warn "In the phase change region"
-        return T_edge,:eq
-
-      elseif prop >= prop_edge1
-        verbose && @info "$property at bubble point > $property > $property at edge point"
-        return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
-      end
-
-      if prop <= prop_edge2
-        verbose && @info "$property at edge point < $property < $property at dew point"
-        return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
-      end
-    end
-
-    if prop < prop_dew
-      verbose && @info "$property at dew point > $property"
-      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
-    end
-  end
-
-  _0 = Base.promote_eltype(model,p,prop,z)
-  return _0/_0,:failure
 end
 
 function Tproperty_pure(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,T0) where F
@@ -216,43 +209,42 @@ function Tproperty_pure(model,p,prop,z,property::F,rootsolver,phase,abstol,relto
 
   crit = crit_pure(model)
   Tc,Pc,Vc = crit
+
+  if p >= Pc
+    verbose && @info "pressure is above critical pressure"
+    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tc)
+  end
+
   Tsat,vlsat,vvpat = saturation_temperature(model,p,crit = crit)
-  if isnan(Tsat)
-    Tsat = critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
+
+  if !is_unknown(phase)
+    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tsat)
   end
 
-  Tmin = Tsat - 1
-  Tmax = min(Tsat + 1,Tc)
-  prop_edge1 = property(model,p,Tmin,z,phase = phase)
-  prop_edge2 = property(model,p,Tmax,z,phase = phase)
-
-  #case 1: property inside saturation dome
-  if p < Pc && (prop_edge1 <= prop <= prop_edge2) || (prop_edge2 <= prop <= prop_edge1)
-    verbose && @warn "$property value in phase change region. Will return temperature at saturation point"
-    return Tsat,:eq
-  end
-
-  #case 2: Monotonically increasing property value i.e. prop_edge1 < prop_edge2
-  if (prop_edge1 < prop_edge2)
-    if (prop < prop_edge1)
-      verbose && @info "$property < $property at saturation point"
-      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tmin)
-    else# (prop_edge2 < prop)
-      verbose && @info "$property > $property at saturation point"
-      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tmax)
-    end
+  if property == volume
+    prop_v = vvsat
+    prop_l = vlsat
   else
-  #case 3: Monotonically decreasing property value i.e. prop_edge1 > prop_edge2
-    if (prop < prop_edge2)
-      verbose && @info "$property < $property at saturation point"
-      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tmax)
-    else (prop_edge1 < prop)
-      verbose && @info "$property > $property at saturation point"
-      return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tmin)
-    end
+    prop_v = property(model,P,Tsat,z,phase = :v)
+    prop_l = property(model,P,Tsat,z,phase = :l)
   end
-  _0 = Base.promote_eltype(model,p,prop,z)
-  return _0/_0,:failure
+
+  β = (prop - prop_l)/(prop_v - prop_l)
+  if 0 <= β <= 1
+    verbose && @warn "$property value in phase change region. Will return temperature at saturation point"
+    return Psat,:eq
+  elseif β < 0
+    verbose && @info "temperature($property) < saturation temperature"
+    return __Tproperty(model,p,prop,z,property,rootsolver,:liquid,abstol,reltol,threaded,Tsat)
+
+  elseif β > 1
+    verbose && @info "temperature($property) > saturation temperature"
+    return __Tproperty(model,p,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,Tsat)
+  else
+    verbose && @error "TProperty calculation failed"
+    _0 = Base.promote_eltype(model,p,prop,z)
+    return _0/_0,:failure
+  end
 end
 
 function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
@@ -268,6 +260,9 @@ function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,t
   f(t,prop) = property(model,p,t,z,phase = phase,threaded = threaded) - prop
   prob = Roots.ZeroProblem(f,T0)
   sol = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
+  if !isfinite(sol) || sol < 0
+    return sol,:failure
+  end
   return sol,phase
 end
 
