@@ -53,7 +53,19 @@ function MultiPhaseTPFlash(;
     second_order = true,
     full_tpd = false,
     max_phases = typemax(Int),
+    flash_result = nothing,
     phase_iters = 20) #TODO: find a better value for this
+    
+    if flash_result !== nothing
+        comps = flash_result.compositions
+        ∑n = sum(flash_result.fractions)
+        n00 = Vector{eltype(comps)}[]
+        for i in 1:numphases(flash_result)
+            push!(n00,collect(comps[i]))
+        end
+        return MultiPhaseTPFlash(;K0 = nothing,x0 = nothing, y0 = nothing,n0 = n00,K_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
+    end
+    
     if K0 == x0 == y0 == n0 == nothing #nothing specified
     #is_lle(equilibrium)
         T = Nothing
