@@ -175,18 +175,13 @@ end
 
 temperature(state::FlashResult) = state.data.T
 pressure(state::FlashResult) = state.data.p
+volume(state::FlashResult) = dot(state.fractions,state.volumes)
+molar_density(state::FlashResult) = sum(state.fractions)/volume(state)
 
-function volume(model::EoSModel,state::FlashResult)
-    comps, β, volumes, data = state
-    return dot(β,volumes)
-end
-
-function molar_density(model::EoSModel,state::FlashResult)
-    comps, β, volumes, data = state
-    v = volume(model,state)
-    n = sum(β)
-    return n/v
-end
+pressure(model::EoSModel,state::FlashResult) = pressure(state)
+temperature(model::EoSModel,state::FlashResult) = temperature(state) 
+volume(model::EoSModel,state::FlashResult) = volume(state)
+molar_density(model::EoSModel,state::FlashResult) = molar_density(state)
 
 function __molecular_weight(model,state::FlashResult)
     comps, β, volumes, data = state

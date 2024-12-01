@@ -47,24 +47,24 @@ function Base.show(io::IO,x::FlashSpecifications)
     print(io,spec2," => ",val2,")")
 end
 
-spec_intensive(::typeof(pressure)) = false
-spec_intensive(::typeof(temperature)) = false
-spec_intensive(x) = true
+spec_intensive(::typeof(pressure)) = true
+spec_intensive(::typeof(temperature)) = true
+spec_intensive(x) = false
 
 
 function normalize_spec(s::FlashSpecifications,k)
     _1 = oneunit(1/k)
     spec1,spec2,val1,val2 = s.spec1,s.spec2,s.val1,s.val2
-    if !spec_intensive(spec1)
-        newval1 = val1/k
-    else
+    if spec_intensive(spec1)
         newval1 = val1*_1
+    else
+        newval1 = val1/k
     end
 
-    if !spec_intensive(spec2)
-        newval2 = val2/k
-    else
+    if spec_intensive(spec2)
         newval2 = val2*_1
+    else
+        newval2 = val2/k
     end
 
     return FlashSpecifications(spec1,newval1,spec2,newval2)
@@ -705,13 +705,13 @@ end
 
 function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
     if method.p0 == nothing
-        p,_phase = _Pproperty(model,p,x,z,spec)
+        p,_phase = _Pproperty(model,T,x,z,spec)
     else
         p = method.p0
         _phase = :eq #we suppose this
     end
-
-    TT = Base.promote_eltype(model,p,x,z,T)
+    
+    TT = Base.promote_eltype(model,T,x,z,T)
     if _phase != :eq
         return FlashResult(model,p,T,z,phase = _phase)
     end

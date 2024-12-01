@@ -440,6 +440,19 @@ end
     T3_calc = Tproperty(model3,p3,s30,z3,entropy)
     s3 = entropy(model3,p3,T3_calc,z3)
     @test s3 ≈ s30
+
+    #issue 309 (https://github.com/ClapeyronThermo/Clapeyron.jl/issues/309#issuecomment-2508038968)
+    model4 = cPR("R134A",idealmodel= ReidIdeal)
+    T_crit,p_crit,_ = crit_pure(model4)
+    T1 = 300.0
+    p1 = saturation_pressure(model4,T1)[1] + 101325
+    s1 = entropy(model4,p1,T1)
+    h1 = enthalpy(model4,p1,T1)
+    p2 = p_crit + 2*101325
+    T2 =  Tproperty(model4,p2,s1,Clapeyron.SA[1.0],entropy)
+    s2 = entropy(model4,p2,T2)
+    h2 = enthalpy(model4,p2,T2)
+    @test s2 ≈ s1 
 end
 
 @testset "bubble/dew point algorithms" begin

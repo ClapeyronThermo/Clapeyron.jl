@@ -225,8 +225,8 @@ function Tproperty_pure(model,p,prop,z,property::F,rootsolver,phase,abstol,relto
     prop_v = vvsat
     prop_l = vlsat
   else
-    prop_v = property(model,P,Tsat,z,phase = :v)
-    prop_l = property(model,P,Tsat,z,phase = :l)
+    prop_v = property(model,p,Tsat,z,phase = :v)
+    prop_l = property(model,p,Tsat,z,phase = :l)
   end
 
   β = (prop - prop_l)/(prop_v - prop_l)
