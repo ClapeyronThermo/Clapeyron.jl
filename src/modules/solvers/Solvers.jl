@@ -280,6 +280,6 @@ include("fixpoint/anderson.jl")
 include("optimize.jl")
 include("integral.jl")
 include("chebyshev.jl")
-
+include("npipm.jl")
 
 end # module

@@ -371,34 +371,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     else
         output[end] = (val2 - ∑a - p_end*∑v - T*∑s)*RTinv
     end
-    #@show primalval(p_constraints)
-    #@show primalval(μ_constraints)
-    #@show primalval(β_constraints)
-    #@show primalval(ξ_constraints)
     return output
-end
-
-function VT_chemical_potential_res_dual(model,V,T,z)
-    TT = Base.promote_eltype(model,V,T,z)
-    tag = ForwardDiff.Tag{ZVar{typeof(eos_res), typeof(model), TT, TT},eltype(z)}()
-    N = Solvers.chunksize(z)
-    return ForwardDiff.Dual{typeof(tag),TT,N}
-end
-
-function xy_flash_config(model::F1,input::F2) where {F1,F2}
-    nc = length(model)
-    chunk = ForwardDiff.Chunk(length(model))
-    jconfig = ForwardDiff.JacobianConfig(XYFlashTag(),input,input,chunk)
-    Solvers.chunksize(viewn(input,nc,1))
-    ∂type = VT_chemical_potential_res_dual(model,input[1],input[1],viewn(jconfig.duals[1],nc,1))
-    ∂x = similar(viewn(input,nc,1),∂type)
-    gconfig = _gradient_config(∂x)
-    return jconfig,gconfig
-end
-
-function _gradient_config(duals::AbstractVector{<:ForwardDiff.Dual{T,V,N}}) where {T,V,N}
-    seeds = ForwardDiff.construct_seeds(ForwardDiff.Partials{N,V})
-    ForwardDiff.GradientConfig{T,V,N,typeof(duals)}(seeds, duals)
 end
 
 function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult,method::FlashMethod)
@@ -415,47 +388,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult
     max_iters = method.max_iters
     return xy_flash(model,spec,z,comps0,β0,volumes0,T0;rtol,atol,max_iters)
 end
-
-function positive_linesearch(v, δ; τ = 1.0, decay = 0.5, tol = 1e-10)
-    α = 1.0
-    done = false
-    while !done
-        done = true
-        for i in 1:length(v)
-            vi,δi = v[i],δ[i]
-            if vi + α * δi < (1 - τ) * vi
-                if α < tol
-                    return NaN
-                end
-                α *= decay
-                done = false
-            end
-        end
-    end
-    return α
-end
-
-function minimize_df_linesearch(f!,F,v,vcache,Fnorm,α,decay = 0.5)
-    done = false
-    vcache .= α .* v
-    while !done
-        f!(F,vcache)
-        Fnorm_i = norm(F,2)
-        if Fnorm_i > Fnorm
-            if α < 1e-4
-                return NaN
-            end
-            α *= decay
-            vcache .= α .* v
-            done = false
-        else
-            done = true
-        end
-    end
-    return α
-end
-
-
 
 function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult)
     if numphases(flash) == 1
@@ -523,14 +455,17 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     s = copy(input)
     #config,μconfig = xy_flash_config(model,input)
     f!(output,input) = xy_flash_neq(output,model,zz,np,input,new_spec,nothing)
+
+    Θ(_f) = 0.5*dot(_f,_f)
+    Θ(_f,_z) = Θ(f!(_f,_z))
+
     config = ForwardDiff.JacobianConfig(f!,F,x)
     #ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
     f!(F,x)
-    converged = false
+    Θx = Θ(F,x)
+    Fnorm = sqrt(2*Θx)
+    converged = Fnorm < rtol
     nan_converged = !all(isfinite,x)
-    Fnorm = norm(F,Inf)
-    Fnorm < rtol && (converged = true)
-
     for i in 1:max_iters
         converged && break
         nan_converged && break
@@ -539,22 +474,18 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         s .= -F
         ldiv!(lu,s) #s .= J\F
         x_old .= x
-        #bound 0-1 variables.
-        
-        α = positive_linesearch(@view(x[input_0_1]),@view(s[input_0_1]))
-        #@show α
-        #@show s
-        #α = minimize_df_linesearch(f!,F,x,x_cache,norm(F,2),α)
-        
-        x .= x_old .+ α .* s
+    
+        #bound positivity
+        α = Solvers.positive_linesearch(x,s)
+
+        #backtrack linesearch, so the next result is strictly better than the last
+        _,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α)
+        Fnorm = sqrt(2*Θx)
         snorm_old = snorm
         snorm = α*norm(s,2)
-        if abs(snorm-snorm_old) < 1e-8
-            converged = true
-        end
+        δs = abs(snorm-snorm_old)
         Fnorm = norm(F,Inf)
-        
-        xmax = maximum(x)
+        δs < rtol && (converged = true)
         xnorm = Solvers.dnorm(x,x_old,Inf)
         Fnorm < rtol && (converged = true)
         xnorm < atol && (converged = true)

@@ -93,7 +93,7 @@ function only_fj!(fj!::T) where T
     # return NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> NEqProblem
 end
 
-#= 
+#=
 #trying to make nlsolve(f,x0,LineSearch(Newton(),HZAW())) work
 
 function NLSolvers.upto_gradient(meritobj::NLSolvers.MeritObjective, ∇f, x)
