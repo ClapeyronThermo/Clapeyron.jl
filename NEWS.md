@@ -1,17 +1,21 @@
-# v0.6.5
+# v0.6.6
 
 ## New Features
 
-- Experimental: Bulk properties for Pressure-Enthalpy and Pressure-Entropy, the syntax is the following:
-  ```julia
-  using Clapeyron: PH
-  PH.entropy(model,p,h,z)
-  PH.adiabatic_index(model,p,h,z,T0 = T0) #suplying an initial point for the temperature
-  ```
-  The calculation is done via `Clapeyron.Tproperty`. there are also `PT` and `VT` functions for parity.
+- New general formulation for flashes. the formulation supports any combination of P,T,H,U,S,V,vapour fraction (q),given that initial values are provided. the formulation can be accessed via calling the function `Clapeyron.xy_flash(model,spec::FlashSpecifications,z,components0,fractions0,volumes0,T0)`
+- New methods: flashes based on the general formulation, with automatic initialization:
+  - p-H flash: (`ph_flash`)
+  - p-S flash: (`ps_flash`)
+  - V-T flash: (`vt_flash`)
+  - T-S flash: (`ts_flash`)
+  - vapour fraction - T flash: (`qt_flash`)
+  - vapour fraction - P flash: (`qp_flash`)
+- New Flash method: `GeneralizedXYFlash`, the only available method for other flashes that are not P-T formulations.
+- flashes (with the exception of `tp_flash`) now return a `FlashResult` object. `Clapeyron.tp_flash2` returns a `FlashResult` that is converted to the old format internally.
+- New function: `PProperty(model,T,prop,z,property)`, that calculates the pressure in T-X coordinates.
+- Better `Base.show` methods for some Clapeyron.jl structs
 
-## Bug fixes
-- fixes in calculation of spinodal with cubics.
-- `MultiFluid` and `SingleFluid` errors when T_reducing != Tc.
-- fix `VT_identify_phase`.
-- fix GC-to-component asssociation mix when there are non-symmetric values.
+## Bug Fixes
+- `TProperty` fixes and stability improvements.
+- stability improvements in calculation of bubble/dew initial points
+- stability improvements when calculating Rachford-Rice iterations.

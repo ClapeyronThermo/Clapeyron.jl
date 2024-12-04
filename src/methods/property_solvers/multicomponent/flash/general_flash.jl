@@ -2,6 +2,26 @@ struct Vfrac
     k::Int
 end
 
+"""
+    FlashSpecifications(;v,T,p,h,s,u,q)
+
+Struct that holds two specifications for a general flash.
+The keyword arguments have the following meaning:
+
+- `T`: temperature
+- `v`: total volume
+- `p`: pressure
+- `h`: enthalpy
+- `s`: entropy
+- `u`: internal energy
+- `q`: vapour fraction
+
+## Examples:
+```
+specs = FlashSpecifications(p = 101325,T = 298.15) #PT flash
+specs = FlashSpecifications(Clapeyron.pressure,101325,Clapeyron.temperature,298.15) #equivalent
+```
+"""
 struct FlashSpecifications{S1,V1,S2,V2}
     spec1::S1
     val1::V1
@@ -374,6 +394,17 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     return output
 end
 
+"""
+    xy_flash(model,spec::FlashSpecifications,z,w0::FlashResult,method::GeneralizedXYFlash)
+    xy_flash(model,spec::FlashSpecifications,z,w0::FlashResult;rtol = 1e-12,atol = 1e-10,max_iters = 50)
+    
+Routine to solve a non-reactive multiphase, multicomponent flash problem with arbitrary specifications.
+Based on the unified formulation proposed by Ben Gharbia (2021).
+The two necessary specifications are taken from `specs`, the initial point is obtained from `w0`.
+Returns a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
+"""
+function xy_flash end
+
 function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult,method::FlashMethod)
     if numphases(flash) == 1
         throw(ArgumentError("xy_flash cannot use single phase initial points as starting points."))
@@ -389,7 +420,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult
     return xy_flash(model,spec,z,comps0,β0,volumes0,T0;rtol,atol,max_iters)
 end
 
-function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult)
+function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult;rtol = 1e-12,atol = 1e-10,max_iters = 50)
     if numphases(flash) == 1
         throw(ArgumentError("xy_flash cannot use single phase initial points as starting points."))
     end
@@ -397,7 +428,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult
     β0 = flash.fractions
     volumes0 = flash.volumes
     T0 = flash.data.T
-    return xy_flash(model,spec,z,comps0,β0,volumes0,T0)
+    return xy_flash(model,spec,z,comps0,β0,volumes0,T0;rtol,atol,max_iters)
 end
 
 function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes0,T0;rtol = 1e-12,atol = 1e-10,max_iters = 50)
@@ -479,10 +510,11 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         α = Solvers.positive_linesearch(x,s)
 
         #backtrack linesearch, so the next result is strictly better than the last
-        _,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α)
+        α2,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α)
+        
         Fnorm = sqrt(2*Θx)
         snorm_old = snorm
-        snorm = α*norm(s,2)
+        snorm = α2*norm(s,2)
         δs = abs(snorm-snorm_old)
         Fnorm = norm(F,Inf)
         δs < rtol && (converged = true)

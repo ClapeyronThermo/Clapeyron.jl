@@ -161,7 +161,7 @@ end
 
 viewlast(x,i) = @view(x[(end - i + 1):end])
 viewfirst(x,i) = @view(x[begin:i])
-
+viewlast(x,i,n) = viewfirst(viewlast(x,i),n)
 
 linearidx(x::AbstractVector) = LinearIndices(x)
 
