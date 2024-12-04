@@ -18,7 +18,8 @@ export tcPRWilsonRes
     puremodel = BasicIdeal,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `g`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
@@ -68,7 +69,8 @@ function tcPRWilsonRes(components;
     puremodel = BasicIdeal,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     formatted_components = format_components(components)
     params = getparams(components, default_locations(tcPRWilsonRes); userlocations = userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g","V"], verbose = verbose)
@@ -82,6 +84,7 @@ function tcPRWilsonRes(components;
     packagedparams = tcPRWilsonResParam(g,V)
     references = String["10.1021/ja01056a002","10.1021/acs.iecr.1c03003"]
     model = tcPRWilsonRes(formatted_components,packagedparams,_puremodel,references)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 

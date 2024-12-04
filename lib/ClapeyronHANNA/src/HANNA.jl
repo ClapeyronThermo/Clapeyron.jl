@@ -37,7 +37,8 @@ export HANNA
     puremodel = nothing,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `canonicalsmiles`: canonical SMILES (using RDKit) representation of the components
@@ -77,7 +78,8 @@ function HANNA(components;
         puremodel = BasicIdeal,
         userlocations = String[],
         pure_userlocations = String[],
-        verbose = false)
+        verbose = false,
+        reference_state = nothing)
 
     # Get parameters (Mw and smiles)
     params = getparams(components,default_locations(HANNA);userlocations=userlocations,ignore_headers=["dipprnumber","inchikey","cas"])
@@ -125,8 +127,9 @@ function HANNA(components;
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     params = HANNAParam(params["canonicalsmiles"],emb_scaled,T_scaler,theta,alpha,phi,params["Mw"])
     references = String["10.48550/arXiv.2407.18011"]
-    
-    return HANNA(components,params,_puremodel,references)
+    model = HANNA(components,params,_puremodel,references)
+    Clapeyron.set_reference_state!(model,reference_state,verbose = verbose)
+    return model
 end
 
 function C.excess_gibbs_free_energy(model::HANNAModel,p,T,z)

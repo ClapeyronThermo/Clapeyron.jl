@@ -38,7 +38,10 @@ end
     LKPSJT <: LKPModel
     LKPSJT(components;
         idealmodel=BasicIdeal,
-        verbose=false)
+        userlocations = String[],
+        ideal_userlocations = String[],
+        verbose=false,
+        reference_state = nothing)
     
     enhancedLKP(components;
     idealmodel=BasicIdeal,
@@ -110,7 +113,7 @@ const enhancedLKP = LKPSJT
 function LKPSJT(components;
     idealmodel = BasicIdeal,
     userlocations = String[], 
-    pure_userlocations = String[],
+    ideal_userlocations = String[],
     reference_state = nothing,
     verbose = false)
 
@@ -121,8 +124,9 @@ function LKPSJT(components;
     references = default_references(LKPSJT)
     methane = SingleFluid("methane",verbose = verbose).residual
     octane = SingleFluid("octane",verbose = verbose).residual
-    init_idealmodel = init_model(idealmodel,formatted_components,references,verbose,reference_state)
+    init_idealmodel = init_model(idealmodel,formatted_components,references,verbose)
     model = LKPSJT(formatted_components,packagedparams,methane,octane,init_idealmodel,references)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

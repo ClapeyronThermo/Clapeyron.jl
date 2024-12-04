@@ -103,11 +103,12 @@ function gcsPCSAFT(components;
     gcparams = gcsPCSAFTParam(gc_mw, gc_segment, gc_msigma3, gc_mepsilon, gc_epsilon_assoc,gc_bondvol)
     params = PCSAFTParam(mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
     
-    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
 
     references = ["10.1021/ie020753p"]
     pc = sPCSAFT(components,sites,params,idmodel, assoc_options, references)
     model = gcsPCSAFT(components, groups, sites, gcparams,idmodel,pc, assoc_options, references)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

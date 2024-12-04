@@ -30,7 +30,8 @@ default_locations(::Type{COSMOSACdsp}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters:
 - `Pnhb` :Single Parameter{String} 
@@ -60,7 +61,8 @@ function COSMOSACdsp(components;
     userlocations = String[],
     pure_userlocations = String[],
     use_nist_database = false,
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     formatted_components = format_components(components)
 
@@ -152,6 +154,7 @@ function COSMOSACdsp(components;
     packagedparams = COSMOSACdspParam(Pnhb,POH,POT,epsilon,V,A,water,COOH,hb_acc,hb_don)
     references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360","10.1021/j100007a062"]
     model = COSMOSACdsp(formatted_components,packagedparams,_puremodel,1e-12,references)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 

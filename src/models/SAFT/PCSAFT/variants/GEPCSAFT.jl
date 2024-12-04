@@ -78,10 +78,11 @@ function GEPCSAFT(components;
 
     packagedparams = GEPCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
 
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     references = String["10.1021/acs.iecr.2c03464"]
     model = GEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

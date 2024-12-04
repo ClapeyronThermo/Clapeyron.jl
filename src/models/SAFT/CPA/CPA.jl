@@ -136,7 +136,7 @@ function CPA(components;
     packagedparams = CPAParam(Mw, Tc, a, b, c1, epsilon_assoc, bondvol)
     
     #init cubic model
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
@@ -146,6 +146,7 @@ function CPA(components;
     references = ["10.1021/ie051305v"]
 
     model = CPA(_components, radial_dist, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

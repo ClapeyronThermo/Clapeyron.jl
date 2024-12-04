@@ -17,10 +17,11 @@ end
         neutralmodel::EoSModel = SAFTVRMie15,
         ionmodel::IonModel = DHBorn,
         RSPmodel::RSPModel = ZuoFurst,
-        userlocations::Vector{String}=[],
-        ideal_userlocations::Vector{String}=[],
+        userlocations::Vector{String} = [],
+        ideal_userlocations::Vector{String} = [],
         assoc_options::AssocOptions = AssocOptions(),
-        verbose::Bool=false)
+        verbose::Bool = false,
+        reference_state = nothing)
 
 ## Description
 This function is used to create an eSAFTVRMie model which is a combination of the SAFTVR-Mie, Debye-Hückel and Born models.
@@ -56,10 +57,11 @@ function eSAFTVRMie(solvents,ions;
     neutralmodel = SAFTVRMie15,
     ionmodel = DHBorn,
     RSPmodel = ZuoFurst,
-    userlocations=String[], 
+    userlocations = String[], 
     ideal_userlocations=String[],
     assoc_options = AssocOptions(),
-     verbose=false)
+    reference_state = nothing,
+    verbose = false)
     components = deepcopy(ions)
     prepend!(components,solvents)
 
@@ -78,6 +80,7 @@ function eSAFTVRMie(solvents,ions;
     references = String[]
     components = format_components(components)
     model = eSAFTVRMie(components,icomponents,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    set_reference_state!(gmie,reference_state;verbose)
     return model
 end
 

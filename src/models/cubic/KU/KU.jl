@@ -145,13 +145,14 @@ function KU(components;
     b = PairParam("b",formatted_components,zeros(n))
     omega_a = SingleParam("Ωa",formatted_components,zeros(n))
     omega_b = SingleParam("Ωb",formatted_components,zeros(n))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = KUParam(a,b,omega_a,omega_b,Tc,pc,Vc,Mw)
     references = String["10.1016/j.ces.2020.116045"]
     model = KU(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

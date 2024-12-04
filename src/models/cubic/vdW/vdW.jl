@@ -135,6 +135,7 @@ function vdW(components;
     references = String[]
     model = vdW(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

@@ -173,10 +173,11 @@ function SAFTgammaMie(components;
     gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
     vrparams = SAFTVRMieParam(mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
 
-    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     vr = SAFTVRMie(components,comp_sites,vrparams,idmodel,assoc_options,default_references(SAFTVRMie))
     γmierefs = ["10.1063/1.4851455", "10.1021/je500248h"]
     gmie = SAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,epsilon_mixing,assoc_options,γmierefs)
+    set_reference_state!(gmie,reference_state;verbose)
     return gmie
 end
 

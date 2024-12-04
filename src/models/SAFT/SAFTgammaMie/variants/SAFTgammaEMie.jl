@@ -5,10 +5,10 @@
         neutralmodel::EoSModel = SAFTgammaMie,
         ionmodel::IonModel = GCMSABorn,
         RSPmodel::RSPModel = Schreckenberg,
-        userlocations::Vector{String}=[],
-        ideal_userlocations::Vector{String}=[],
+        userlocations::Vector{String} = [],
+        ideal_userlocations::Vector{String} = [],
         assoc_options::AssocOptions = AssocOptions(),
-        verbose::Bool=false)
+        verbose::Bool = false)
 
 ## Description
 This function is used to create an SAFT-gammaE Mie model which is a combination of the SAFT-gamma Mie, MSA and Born models.
@@ -44,9 +44,10 @@ function SAFTgammaEMie(solvents,ions;
     neutralmodel = SAFTgammaMie,
     ionmodel = GCMSABorn,
     RSPmodel = Schreckenberg,
-    userlocations=String[], 
-    ideal_userlocations=String[],
-     verbose=false)
+    userlocations = String[], 
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false)
     components = deepcopy(ions)
     prepend!(components,solvents)
 
@@ -64,6 +65,7 @@ function SAFTgammaEMie(solvents,ions;
     references = String[]
     components = format_components(components)
     model = ESElectrolyte(components,icomponents,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

@@ -40,7 +40,8 @@ function ESElectrolyte(solvents,ions;
     RSPmodel = ConstRSP,
     userlocations=String[], 
     ideal_userlocations=String[],
-     verbose=false)
+    verbose=false,
+    reference_state = nothing)
     components = deepcopy(ions)
     prepend!(components,solvents)
 
@@ -57,6 +58,7 @@ function ESElectrolyte(solvents,ions;
 
     references = String[]
     model = ESElectrolyte(components,icomponents,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

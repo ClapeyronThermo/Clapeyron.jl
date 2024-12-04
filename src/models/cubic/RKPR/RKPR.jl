@@ -144,13 +144,14 @@ function RKPR(components;
     a = PairParam("a",formatted_components,zeros(n))
     b = PairParam("b",formatted_components,zeros(n))
     c = PairParam("c",formatted_components,zeros(n))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = ABCCubicParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1016/j.fluid.2005.03.020","10.1016/j.fluid.2018.10.005"]
     model = RKPR(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

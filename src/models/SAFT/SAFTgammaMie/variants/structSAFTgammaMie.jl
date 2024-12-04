@@ -123,6 +123,7 @@ function structSAFTgammaMie(components;
     vr = SAFTVRMie(components,comp_sites,vrparams,idmodel,assoc_options,default_references(SAFTVRMie))
     γmierefs = ["10.1063/1.4851455", "10.1021/je500248h"]
     gmie = structSAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,epsilon_mixing,assoc_options,γmierefs)
+    set_reference_state!(gmie,reference_state;verbose)
     return gmie
 end
 

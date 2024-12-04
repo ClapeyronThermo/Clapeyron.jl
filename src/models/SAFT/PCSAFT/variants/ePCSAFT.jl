@@ -17,10 +17,11 @@ end
         neutralmodel::EoSModel = pharmaPCSAFT,
         ionmodel::IonModel = DH,
         RSPmodel::RSPModel = ConstRSP,
-        userlocations::Vector{String}=[],
-        ideal_userlocations::Vector{String}=[],
+        userlocations::Vector{String} = [],
+        ideal_userlocations::Vector{String} = [],
         assoc_options::AssocOptions = AssocOptions(),
-        verbose::Bool=false)
+        verbose::Bool = false,
+        reference_state = nothing)
 
 ## Description
 This function is used to create an ePCSAFT model which is a combination of the PC-SAFT and Debye-Hückel model. It is based on the ePC-SAFT Revised variant.
@@ -85,6 +86,7 @@ function ePCSAFT(solvents,ions;
     references = ["10.1016/j.cherd.2014.05.017"]
     components = format_components(components)
     model = ePCSAFT(components,icomponents,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

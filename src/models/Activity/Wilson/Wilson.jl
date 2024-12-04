@@ -23,7 +23,8 @@ export Wilson
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -89,7 +90,8 @@ function Wilson(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
     
     formatted_components = format_components(components)
     params = getparams(formatted_components, default_locations(Wilson); userlocations = userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g"], verbose = verbose)
@@ -105,6 +107,7 @@ function Wilson(components;
     packagedparams = WilsonParam(g,Tc,pc,ZRA,Mw)
     references = String["10.1021/ja01056a002"]
     model = Wilson(formatted_components,packagedparams,_puremodel,references)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 

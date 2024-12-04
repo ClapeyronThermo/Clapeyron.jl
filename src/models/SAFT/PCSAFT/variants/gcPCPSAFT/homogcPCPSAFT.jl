@@ -113,11 +113,12 @@ function HomogcPCPSAFT(components;
     gcparams = PCPSAFTParam(gc_mw, gc_segment, gc_sigma, gc_epsilon, gc_dipole, gc_dipole2, gc_epsilon_assoc,gc_bondvol)
     params = PCPSAFTParam(mw, segment, sigma, epsilon, dipole, dipole2, epsilon_assoc, bondvol)
     
-    idmodel = init_model(idealmodel,gc_components,ideal_userlocations,verbose,reference_state)
+    idmodel = init_model(idealmodel,gc_components,ideal_userlocations,verbose)
 
     references = ["10.1021/ie020753p"]
     pc = PCPSAFT(components,comp_sites,params,idmodel, assoc_options, references)
     model = HomogcPCPSAFT(components, groups, sites, gcparams,idmodel,pc, assoc_options, references)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

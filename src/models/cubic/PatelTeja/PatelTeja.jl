@@ -135,13 +135,14 @@ function PatelTeja(components;
     a = PairParam("a",formatted_components,zeros(n))
     b = PairParam("b",formatted_components,zeros(n))
     c = PairParam("c",formatted_components,zeros(n))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1016/0009-2509(82)80099-7"]
     model = PatelTeja(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

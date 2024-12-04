@@ -94,13 +94,14 @@ function Clausius(components;
     a = PairParam("a",formatted_components,zeros(length(Tc)))
     b = PairParam("b",formatted_components,zeros(length(Tc)))
     c = PairParam("c",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = ClausiusParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1002/andp.18802450302"]
     model = Clausius(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

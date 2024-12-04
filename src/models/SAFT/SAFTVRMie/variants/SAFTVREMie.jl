@@ -5,10 +5,11 @@
         neutralmodel::EoSModel = SAFTVRMie,
         ionmodel::IonModel = MSABorn,
         RSPmodel::RSPModel = Schreckenberg,
-        userlocations::Vector{String}=[],
-        ideal_userlocations::Vector{String}=[],
+        userlocations::Vector{String} = [],
+        ideal_userlocations::Vector{String} = [],
         assoc_options::AssocOptions = AssocOptions(),
-        verbose::Bool=false)
+        verbose::Bool = false,
+        reference_state = nothing)
 
 ## Description
 This function is used to create an SAFT-VRE Mie model which is a combination of the SAFT-VR Mie, MSA and Born models.
@@ -44,9 +45,10 @@ function SAFTVREMie(solvents,ions;
     neutralmodel = SAFTVRMie,
     ionmodel = MSABorn,
     RSPmodel = Schreckenberg,
-    userlocations=String[], 
+    userlocations = String[], 
     ideal_userlocations=String[],
-     verbose=false)
+    verbose = false,
+    reference_state = nothing)
     components = deepcopy(ions)
     prepend!(components,solvents)
 
@@ -63,6 +65,7 @@ function SAFTVREMie(solvents,ions;
 
     references = String[]
     model = ESElectrolyte(components,icomponents,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 
