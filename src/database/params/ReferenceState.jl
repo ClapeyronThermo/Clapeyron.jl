@@ -177,15 +177,43 @@ function has_reference_state_type(::Type{model}) where model
 end
 
 function set_reference_state!(model::EoSModel;verbose = false)
+    ref = reference_state(model)
+    return set_reference_state!(model,ref;verbose = false)
+end
+
+function set_reference_state!(model,new_ref;verbose = false)
+    ref = __init_reference_state_kw(new_ref)
+    return set_reference_state!(model,ref;verbose = false)
+end
+
+function clean_reference_state!(dest_ref,src_ref)
+    dest_ref.T0 = src_ref.T0
+    dest_ref.P0 = src_ref.P0
+    dest_ref.phase = src_ref.phase
+    dest_ref.std_type = src_ref.std_type
+    old = dest_ref.a0,dest_ref.a1,dest_ref.H0,dest_ref.S0,dest_ref.z0
+    new = src_ref.a0,src_ref.a1,src_ref.H0,src_ref.S0,src_ref.z0
+    for i in 1:5
+        old_i = old[i]
+        new_i = new[i]
+        resize!(old_i,length(new_i))
+        old_i .= new_i
+    end
+end
+
+function set_reference_state!(model::EoSModel,new_ref::ReferenceState;verbose = false)
     #handle cases where we don't need to do anything
     ref = reference_state(model)
-    ref === nothing && return nothing
-    ref.std_type == :no_set && return nothing
+    
+    new_ref === nothing && return nothing
+    new_ref.std_type == :no_set && return nothing
     if verbose
         @info "Calculating reference states for $model..."
-        @info "Reference state type: $(info_color(ref.std_type))"
+        @info "Reference state type: $(info_color(new_ref.std_type))"
     end
-
+    if ref !== new_ref
+        clean_reference_state!(ref,new_ref)
+    end
     #allocate the appropiate caches.
     initialize_reference_state!(model,ref)
     if all(iszero,ref.z0) #pure case
