@@ -40,3 +40,5 @@ function ts_flash_impl(model,T,S,z,method::GeneralizedXYFlash)
     spec = FlashSpecifications(entropy,S,temperature,T)
     return xy_flash(model,spec,z,flash0,method)
 end
+
+export ts_flash

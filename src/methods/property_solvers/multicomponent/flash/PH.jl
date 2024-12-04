@@ -1,3 +1,20 @@
+
+"""
+    result = ph_flash(model, p, T, n, method::FlashMethod = GeneralizedXYFlash())
+    result = ph_flash(model, p, T, n; T0, rtol, atol, max_iters)
+
+Routine to solve non-reactive two-phase multicomponent flash problem. with P-H specifications.
+Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
+Inputs:
+ - `p`, pressure
+ - `h`, enthalpy
+ - `z`, vector of number of moles of each species
+- `T0` (optional), initial temperature guess, if not provided, is calculated via `Tproperty.`
+Outputs:
+ - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
+"""
+function ph_flash end
+
 function ph_flash(model::EoSModel,p,h,z;kwargs...)
     method = init_preferred_method(ph_flash,model,kwargs)
     return ph_flash(model,p,h,z,method)
@@ -41,6 +58,4 @@ function ph_flash_impl(model,p,h,z,method::GeneralizedXYFlash)
     return xy_flash(model,spec,z,flash0,method)
 end
 
-function ph_flash_pure(model,p,h,z,T0 = nothing)
-    
-end
+export ph_flash

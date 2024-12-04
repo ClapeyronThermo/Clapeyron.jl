@@ -89,3 +89,5 @@ function qp_flash_impl(model,β,p,z,method::GeneralizedXYFlash)
     spec = FlashSpecifications(Vfrac(2),β,pressure,p)
     return xy_flash(model,spec,z,flash0,method)
 end
+
+export qp_flash

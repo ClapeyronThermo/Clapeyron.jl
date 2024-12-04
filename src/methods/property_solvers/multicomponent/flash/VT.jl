@@ -40,3 +40,5 @@ function vt_flash_impl(model,V,T,z,method::GeneralizedXYFlash)
     spec = FlashSpecifications(volume,V,temperature,T)
     return xy_flash(model,spec,z,flash0,method)
 end
+
+export vt_flash

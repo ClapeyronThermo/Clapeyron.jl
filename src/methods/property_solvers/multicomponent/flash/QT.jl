@@ -63,3 +63,5 @@ function qt_flash_impl(model,β,T,z,method::GeneralizedXYFlash)
     spec = FlashSpecifications(Vfrac(2),β,temperature,T)
     return xy_flash(model,spec,z,flash0,method)
 end
+
+export qt_flash

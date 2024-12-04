@@ -40,3 +40,5 @@ function ps_flash_impl(model,p,s,z,method::GeneralizedXYFlash)
     spec = FlashSpecifications(pressure,p,entropy,s)
     return xy_flash(model,spec,z,flash0,method)
 end
+
+export ps_flash
