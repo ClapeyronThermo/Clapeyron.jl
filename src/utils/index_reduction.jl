@@ -43,6 +43,9 @@ function index_reduction(model::EoSModel,bools::T) where T<:AbstractVector{Bool}
     return model_r,idx
 end
 
+index_reduction(::Nothing,idr::AbstractVector) = nothing
+index_reduction(x::AbstractVector,idr::AbstractVector) = x[idr]
+
 function index_expansion(x::AbstractMatrix,idr::AbstractVector)
     numspecies = length(idr)
     l1,l2 = size(x)

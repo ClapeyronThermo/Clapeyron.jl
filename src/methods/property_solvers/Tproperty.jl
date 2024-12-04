@@ -165,7 +165,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
         verbose && @warn "$property in the phase change region, returning a linear interpolation of the bubble and dew temperatures"
         return β*bubble_temp + (1 - β)*dew_temp,:eq
       end
-      verbose && @info "temperature at edge point:   $P_edge"
+      verbose && @info "temperature at edge point:   $T_edge"
       prop_edge1 = property(model,p,T_edge - 1e-10,z,phase = phase)
       prop_edge2 = property(model,p,T_edge + 1e-10,z,phase = phase)
       #=
@@ -179,7 +179,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
       if 0 <= βedge <= 1
         verbose && @warn "In the phase change region"
-        return P_edge,:eq
+        return T_edge,:eq
       elseif βedge > 1 #prop <= prop_edge2
         verbose && @info "temperature($property) ∈ (temperature(dew point),temperature(edge point))"
         return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
