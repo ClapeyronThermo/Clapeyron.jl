@@ -182,6 +182,13 @@ function set_reference_state!(model::EoSModel;verbose = false)
 end
 
 function set_reference_state!(model,new_ref;verbose = false)
+    existing_ref = reference_state(model)
+    reference_state(model) === nothing && return nothing
+    if new_ref == nothing || new_ref == :no_set
+        if existing_ref != nothing
+            existing_ref.std_type == :no_set && return nothing
+        end
+    end
     ref = __init_reference_state_kw(new_ref)
     return set_reference_state!(model,ref;verbose = false)
 end
@@ -309,7 +316,8 @@ function initialize_reference_state!(model,ref = reference_state(model))
     end
     resize!(ref.a0,len)
     resize!(ref.a1,len)
-
+    ref.a0 .= 0
+    ref.a1 .= 0
     if !pure_check
         h0 = H0[1]
         if !all(isequal(h0),H0)
