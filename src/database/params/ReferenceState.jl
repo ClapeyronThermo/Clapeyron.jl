@@ -80,8 +80,45 @@ __init_reference_state_kw(::Nothing) = ReferenceState()
 __init_reference_state_kw(s::Symbol) = ReferenceState(s)
 __init_reference_state_kw(ref::ReferenceState) = deepcopy(ref)
 
+function Base.show(io::IO,::MIME"text/plain",ref::ReferenceState)
+    comps = ref.components
+    a0 = ref.a0
+    a1 = ref.a1
+    type = ref.std_type
+    n = length(ref.components)
+    print(io, "ReferenceState(:")
+    print(io,type,") ")
+    type == :no_set && return nothing
+    if type != :no_set && n == 0
+        print(io,"(not set)")
+        return nothing
+    end
+    print(io,"with ",n," component")
+    n != 1 && print(io,'s')
+    println(io,":")
+    quot = "\""
+    sp = " "
+    arrow = "=>"
+    T = "*T"
+    compact_io = IOContext(io, :compact => true)
+    for i in 1:n
+        print(io,sp,quot,comps[i])
+        print(io,quot,sp,arrow)
+        pm = sign(a1[i]) >= 0 ? '+' : '-'  
+        print(compact_io,sp,a0[i])
+        print(io,sp,pm,sp)
+        print(compact_io,abs(a1[i]))
+        print(io,T)
+        if i < n
+            println(io)
+        end
+    end
+    return nothing
+end
+
 #for compatibility in parametric params.
 Base.eltype(ref::ReferenceState) = Float64
+
 #by default, the reference state is stored in the idealmodel params. unwrap until
 #reaching that
 """
@@ -193,7 +230,7 @@ function set_reference_state!(model,new_ref;verbose = false)
     return set_reference_state!(model,ref;verbose = false)
 end
 
-function clean_reference_state!(dest_ref,src_ref)
+function Base.copyto!(dest_ref::ReferenceState,src_ref::ReferenceState)
     dest_ref.T0 = src_ref.T0
     dest_ref.P0 = src_ref.P0
     dest_ref.phase = src_ref.phase
@@ -219,7 +256,7 @@ function set_reference_state!(model::EoSModel,new_ref::ReferenceState;verbose = 
         @info "Reference state type: $(info_color(new_ref.std_type))"
     end
     if ref !== new_ref
-        clean_reference_state!(ref,new_ref)
+        copyto!(ref,new_ref)
     end
     #allocate the appropiate caches.
     initialize_reference_state!(model,ref)
