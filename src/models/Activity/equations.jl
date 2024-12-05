@@ -149,6 +149,7 @@ function γdγdn(model::ActivityModel,p,T,z)
     return γz,dyz
 end
 
+__act_to_gammaphi(model::ActivityModel) = __act_to_gammaphi(model,nothing,true)
 #convert ActivityModel into a RestrictedEquilibriaModel
 function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
     components = model.components
@@ -263,4 +264,9 @@ function tpd(model::ActivityModel,p,T,z,cache = tpd_cache(model,p,T,z);reduced =
     end
     γϕmodel = __act_to_gammaphi(model,tpd,true)
     return tpd(γϕmodel,p,T,z,cache;reduced,break_first,lle,tol_trivial,strategy,di)
+end
+
+function PT_property(model::ActivityModel,p,T,z,phase,threaded,vol0,f::F,v::Val{UseP}) where {F,UseP}
+    γϕ = __act_to_gammaphi(model)
+    PT_property(γϕ,p,T,z,phase,threaded,vol0,f,v)
 end

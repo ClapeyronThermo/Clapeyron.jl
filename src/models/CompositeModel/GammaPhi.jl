@@ -3,11 +3,16 @@
 
 wrapper struct to signal that a `CompositeModel` uses an activity model in conjunction with a fluid.
 """
-struct GammaPhi{γ,Φ} <: RestrictedEquilibriaModel
+struct GammaPhi{γ,Φ,R <:Union{Nothing,ReferenceState}} <: RestrictedEquilibriaModel
     components::Vector{String}
     activity::γ
     fluid::EoSVectorParam{Φ}
+    reference_state::R
 end
+
+GammaPhi(components,activity,fluid) = GammaPhi(components,activity,fluid,nothing)
+
+reference_state(model::GammaPhi) = model.reference_state
 
 function Base.show(io::IO,mime::MIME"text/plain",model::GammaPhi)
     print(io,"γ-ϕ Model")
@@ -15,9 +20,10 @@ function Base.show(io::IO,mime::MIME"text/plain",model::GammaPhi)
     length(model) > 1 && print(io, " with ", length(model), " components:")
     print(io,'\n'," Activity Model: ",model.activity)
     print(io,'\n'," Fluid Model: ",model.fluid.model)
+    show_reference_state(io,model;space = true)
 end
 
-fluid_model(model::GammaPhi) = model.fluid
+fluid_model(model::GammaPhi) = model.fluid.model
 
 function activity_coefficient(model::GammaPhi,p,T,z=SA[1.];
                             μ_ref = nothing,
@@ -39,6 +45,8 @@ function volume_impl(model::GammaPhi,p,T,z,phase,threaded,vol0)
     return volume_impl(model.fluid.model,p,T,z,phase,threaded,vol0)
 end
 
+molecular_weight(model::GammaPhi,z) = molecular_weight(model.fluid.model,z)
+
 saturation_model(model::GammaPhi) = saturation_model(model.fluid)
 
 function init_preferred_method(method::typeof(tp_flash),model::GammaPhi,kwargs)
@@ -50,6 +58,13 @@ function ActivitySaturationError(model,method)
     throw(ArgumentError("$method requires $model to be used in conjuction with another EoS model that supports saturation properties. If you are using an Activity Model as a raw input, use `CompositeModel(components, liquid = activity_model, fluid = fluid_model)` instead."))
 end
 
+struct ActivityEval{γ} <: IdealModel
+    gammaphi::γ
+end
+
+a_ideal(model::ActivityEval,V,T,z) = excess_gibbs_free_energy(model.gammaphi.activity,V,T,z)/(Rgas(model.gammaphi.activity)*T*sum(z))
+reference_state(model::ActivityEval) = reference_state(model.gammaphi)
+
 function gibbs_solvation(model::GammaPhi,T)
     z = [1.0,1e-30]
     p,v_l,v_v = saturation_pressure(model.fluid[1],T)
@@ -58,26 +73,56 @@ function gibbs_solvation(model::GammaPhi,T)
     K = v_v/v_l*γ[2]*p2/p
     return -R̄*T*log(K)
 end
+
 idealmodel(model::GammaPhi) = idealmodel(model.fluid.model)
-reference_state(model::GammaPhi) = reference_state(model.fluid.model)
 a_res(model::GammaPhi,V,T,z) = a_res_activity(model.activity,V,T,z,model.fluid)
 
 function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
-    if is_unknown(phase) || phase == :stable
+    if phase == :stable
+        #we dont support this in GammaPhi.
         throw(error("automatic phase detection not implemented for $(typeof(model))"))
     end
 
+    if f in (enthalpy,entropy,gibbs_free_energy,helmholtz_free_energy,internal_energy)
+        reference = f(ReferenceStateEoS(model.reference_state),0.0,T,z)
+    else
+        reference = zero(Base.promote_eltype(1.0,T,z))
+    end
+    #=
+    Calculate PT properties as the following:
+    prop = ∑xi*prop(pure[i],p,T) + excess_prop(activity,T,x) + prop(reference_state,T)
+    
+    Vapour properties are calculated with the fluid model
+    =#
     if is_vapour(phase)
-        #on gas phases, the activity is not present.
-        return PT_property(gas_model(model),p,T,z,phase,threaded,vol0,f,USEP)
-    elseif is_liquid(phase)
-        #for bulk properties that arent volume, the liquid_cp model contains a valid helmholtz model
-        V = volume(model.fluid.model, p, T, z; phase, threaded, vol0)
-        if UseP
-            return f(model,V,T,z,p)
-        else
-            return f(model,V,T,z)
+        gas_model = model.fluid.model
+        res = PT_property(gas_model,p,T,z,phase,threaded,vol0,f,USEP)
+        return res
+    elseif is_liquid(phase) || is_unknown(phase)
+        ∑z = sum(z)
+        z1 = SA[∑z]
+        res = zero(Base.promote_eltype(model,p,T,z))
+        Vl = zero(res)
+        for i in 1:length(model)
+            zi = z[i]
+            modeli = model.fluid.pure[i]
+            #we suppose this is liquid phase
+            Vi = volume(modeli, p, T, z1; phase = :liquid,threaded = false)
+            Vl += Vi*zi/∑z
+            if UseP
+                res += f(modeli,Vi,T,z1,p)*zi/∑z
+            else
+                res += f(modeli,Vi,T,z1)*zi/∑z
+            end
         end
+        if !iszero(p)
+            if UseP
+                res += f(ActivityEval(model),0.0,T,z,p)
+            else
+                res += f(ActivityEval(model),0.0,T,z)
+            end
+        end
+        return res + reference
     else
         throw(error("invalid phase specifier: $phase"))
     end

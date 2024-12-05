@@ -641,7 +641,9 @@ Z = p*V(p)/R*T
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_compressibility_factor,Val{true}())
+    #this property only depends on the implementation of volume_impl.
+    V = volume(model,p,T,z;phase,threaded,vol0)
+    return p*V/(sum(z)*Rgas(model)*T)
 end
 
 function inversion_temperature(model::EoSModel, p, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)

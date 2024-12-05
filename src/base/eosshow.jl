@@ -99,16 +99,17 @@ function Base.show(io::IO,model::EoSModel)
     end
 end
 
-function show_reference_state(io::IO,model::EoSModel)
-    return show_reference_state(io,reference_state(model),model)
+function show_reference_state(io::IO,model::EoSModel;space = false)
+    return show_reference_state(io,reference_state(model),model,space)
 end
 
-show_reference_state(io::IO,ref::Nothing,model::EoSModel) = nothing
+show_reference_state(io::IO,ref::Nothing,model::EoSModel,space) = nothing
 
-function show_reference_state(io::IO,ref,model::EoSModel)
+function show_reference_state(io::IO,ref,model::EoSModel,space)
     type = ref.std_type
     if type != :no_set
         println(io)
+        space && print(io," ")
         print(io,"Reference state: ")
         print(io,type)
     end

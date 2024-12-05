@@ -14,7 +14,10 @@ end
     saturation = LeeKeslerSat,
     gas_userlocations = String[],
     liquid_userlocations = String[],
-    saturation_userlocations = String[]
+    saturation_userlocations = String[],
+    mapping = nothing,
+    reference_state = nothing,
+    verbose = false)
 
 Model that holds representations of fluid (and/or solid) that aren't evaluated using the helmholtz energy-based approach used in the rest of the library.
 
@@ -72,9 +75,9 @@ Composite Model (γ-ϕ) with 2 components:
 julia> bubble_pressure(model2,300.15,[0.9,0.1])
 (2551.6008524130893, 0.00015684158726046333, 0.9780471551726359, [0.7378273929683233, 0.2621726070316766])
 ```
-
 """
 CompositeModel
+
 """
     RestrictedEquilibriaModel <: EoSModel
 
@@ -175,7 +178,7 @@ function CompositeModel(components ;
             else
                 _fluid = init_puremodel(_fluid,_components,nothing,verbose)
             end
-            init_fluid = GammaPhi(_components,init_liquid,_fluid)
+            init_fluid = GammaPhi(_components,init_liquid,_fluid,ReferenceState())
         else
             #case 3.b, one alternative is to leave this as an error.
             init_gas = _fluid
@@ -191,7 +194,7 @@ function CompositeModel(components ;
             else
                 pure = init_puremodel(BasicIdeal(),components,userlocations,verbose)
             end
-            init_fluid = GammaPhi(_components,init_liquid,pure)
+            init_fluid = GammaPhi(_components,init_liquid,pure,ReferenceState())
         else
             throw(ArgumentError("Invalid specification for CompositeModel"))
         end
@@ -215,11 +218,20 @@ function CompositeModel(components ;
         end
     end
     model = CompositeModel(_components,init_fluid,init_solid,_mapping)
-    #set_reference_state!(model,verbose = verbose)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 
-#reference_state(model::CompositeModel) = reference_state(model.fluid)
+reference_state(model::CompositeModel) = reference_state(model.fluid)
+
+function __calculate_reference_state_consts(model::CompositeModel,v,T,p,z,H0,S0,phase)
+    ∑z = sum(z)
+    S00 = entropy(model,p,T,z,phase = phase)
+    a1 = (S00 - S0)#/∑z
+    H00 = enthalpy(model,p,T,z,phase = phase)
+    a0 = (-H00 + H0)#/∑z
+    return a0,a1
+end
 
 function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
     fluid = model.fluid
@@ -255,6 +267,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
             fluid !== nothing && print(io,'\n'," Fluid Model: ",fluid)
         end
     end
+    show_reference_state(io,model;space = true)
 end
 
 
@@ -262,6 +275,12 @@ fluid_model(model::CompositeModel) = model.fluid
 solid_model(model::CompositeModel) = model.solid
 
 function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
+    if model.solid == nothing
+        return volume_impl(model.fluid,p,T,z,phase,threaded,vol0)
+    elseif model.fluid == nothing
+        return volume_impl(model.solid,p,T,z,phase,threaded,vol0)
+    end
+    
     if is_liquid(phase) || is_vapour(phase)
         return volume_impl(model.fluid,p,T,z,phase,threaded,vol0)
     elseif is_solid(phase)
@@ -288,12 +307,12 @@ end
 #dispatcher for bulk properties
 function PT_property(model::CompositeModel,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
     
-    if !(model.fluid isa RestrictedEquilibriaModel) && model.solid === nothing
-        return PT_property(fluid_model(model),p,T,z,phase,threaded,vol0,f,USEP)
+    if model.solid === nothing
+        return PT_property(model.fluid,p,T,z,phase,threaded,vol0,f,USEP)
     end
-    
-    if !(model.solid isa RestrictedEquilibriaModel) && model.fluid === nothing
-        return PT_property(solid,p,T,z,phase,threaded,vol0,f,USEP)
+
+    if model.fluid === nothing
+        return PT_property(model.solid,p,T,z,phase,threaded,vol0,f,USEP)
     end
 
     if is_unknown(phase) || phase == :stable

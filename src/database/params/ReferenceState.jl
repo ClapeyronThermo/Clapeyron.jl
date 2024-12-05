@@ -226,6 +226,7 @@ function set_reference_state!(model,new_ref;verbose = false)
             existing_ref.std_type == :no_set && return nothing
         end
     end
+    
     ref = __init_reference_state_kw(new_ref)
     return set_reference_state!(model,ref;verbose = false)
 end
@@ -376,16 +377,18 @@ function calculate_reference_state_consts(model,type,T0,P0,H0,S0,z0,phase)
         T = T0
     elseif type == :saturation_temperature
         T,vl,vv = saturation_temperature(model,P0)
+        p = P0
         v = is_liquid(phase) ? vl : vv
     elseif type == :volume
         v = volume(model,P0,T0,z0,phase = phase)
         T = T0
+        p = P0
     else
     end
-    return __calculate_reference_state_consts(model,v,T,z0,H0,S0)
+    return __calculate_reference_state_consts(model,v,T,p,z0,H0,S0,phase)
 end
 
-function __calculate_reference_state_consts(model,v,T,z,H0,S0)
+function __calculate_reference_state_consts(model,v,T,p,z,H0,S0,phase)
     ∑z = sum(z)
     S00 = VT_entropy(model,v,T,z)
     a1 = (S00 - S0)#/∑z
@@ -393,5 +396,15 @@ function __calculate_reference_state_consts(model,v,T,z,H0,S0)
     a0 = (-H00 + H0)#/∑z
     return a0,a1
 end
+
+#used to only evaluate reference states
+#it is a hacky way to do it: TODO: feos has a better api for this.
+struct ReferenceStateEoS <: EoSModel
+    reference_state::ReferenceState
+end
+
+a_res(::ReferenceStateEoS,V,T,z) = zero(Base.promote_eltype(V,T,z))
+idealmodel(::ReferenceStateEoS) = ZeroIdeal()
+reference_state(m::ReferenceStateEoS) = m.reference_state
 
 export ReferenceState,reference_state,has_reference_state,set_reference_state!
