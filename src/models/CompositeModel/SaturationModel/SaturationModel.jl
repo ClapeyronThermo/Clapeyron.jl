@@ -39,8 +39,7 @@ end
 function init_puremodel(model::SaturationModel,components,userlocations,verbose)
     _components = format_components(components)
     fluid = CompositeModel(_components,gas=BasicIdeal(),liquid=NaNLiquid(),saturation = model)
-    pure = split_model(fluid,1:length(_components))
-    return EoSVectorParam(_components,fluid,pure)
+    return EoSVectorParam(fluid,_components)
 end 
 
 include("LeeKeslerSat/LeeKeslerSat.jl")

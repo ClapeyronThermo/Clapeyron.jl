@@ -83,7 +83,7 @@ function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,USEP::Val{Us
         throw(error("automatic phase detection not implemented for $(typeof(model))"))
     end
 
-    if f in (enthalpy,entropy,gibbs_free_energy,helmholtz_free_energy,internal_energy)
+    if f in (VT_enthalpy,VT_entropy,VT_gibbs_free_energy,VT_helmholtz_free_energy,VT_internal_energy)
         reference = f(ReferenceStateEoS(model.reference_state),0.0,T,z)
     else
         reference = zero(Base.promote_eltype(1.0,T,z))

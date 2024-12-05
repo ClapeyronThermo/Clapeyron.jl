@@ -169,7 +169,7 @@ function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
             ActivitySaturationError(model,method)
         end
     end
-    γϕmodel = GammaPhi(components,model,pure)
+    γϕmodel = GammaPhi(components,model,pure,reference_state(pure))
 end
 
 function bubble_pressure(model::ActivityModel,T,x,method::BubblePointMethod)
@@ -270,3 +270,10 @@ function PT_property(model::ActivityModel,p,T,z,phase,threaded,vol0,f::F,v::Val{
     γϕ = __act_to_gammaphi(model)
     PT_property(γϕ,p,T,z,phase,threaded,vol0,f,v)
 end
+
+function set_reference_state!(model::ActivityModel,reference_state;verbose = verbose)
+    γϕ = __act_to_gammaphi(model)
+    set_reference_state!(γϕ,reference_state;verbose)
+end
+
+reference_state(model::ActivityModel) = reference_state(model.puremodel)

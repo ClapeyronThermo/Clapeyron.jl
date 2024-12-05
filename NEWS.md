@@ -13,9 +13,12 @@
 - New Flash method: `GeneralizedXYFlash`, the only available method for other flashes that are not P-T formulations.
 - flashes (with the exception of `tp_flash`) now return a `FlashResult` object. `Clapeyron.tp_flash2` returns a `FlashResult` that is converted to the old format internally.
 - New function: `PProperty(model,T,prop,z,property)`, that calculates the pressure in T-X coordinates.
+- Activity models and Composite-γ-ϕ Models can now be used to calculate caloric properties.
+- Activity models and Composite-γ-ϕ Models have support for setting reference states.
 - Better `Base.show` methods for some Clapeyron.jl structs
 
 ## Bug Fixes
 - `TProperty` fixes and stability improvements.
 - stability improvements in calculation of bubble/dew initial points
 - stability improvements when calculating Rachford-Rice iterations.
+- fixes for setting reference states with cubic EoS, SAFT-γ-Mie and other custom EoS not created via `@newmodel` macros.

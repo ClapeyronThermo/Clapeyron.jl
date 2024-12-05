@@ -220,6 +220,15 @@ end
 
 function set_reference_state!(model,new_ref;verbose = false)
     existing_ref = reference_state(model)
+    if existing_ref == nothing && verbose && new_ref !== existing_ref
+        if new_ref != nothing || new_ref != :no_set
+            @warn "cannot set reference state $new_ref for $model"
+        elseif new_ref isa ReferenceState
+            if new_ref.std_type != :no_set
+                @warn "cannot set reference state $(new_ref.std_type) for $model"
+            end
+        end
+    end
     reference_state(model) === nothing && return nothing
     if new_ref == nothing || new_ref == :no_set
         if existing_ref != nothing
