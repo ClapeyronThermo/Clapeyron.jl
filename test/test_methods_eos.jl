@@ -348,6 +348,7 @@ end
 @testset "Cubic methods, multi-components" begin
     system = RK(["ethane","undecane"])
     system2 = tcPR(["benzene","toluene","nitrogen"])
+    system3 = cPR(["butane","toluene"],idealmodel = ReidIdeal)
     p = 1e7
     T = 298.15
     z = [0.5,0.5]
@@ -366,6 +367,11 @@ end
         @test Clapeyron.crit_mix(system, z)[1] ≈ 575.622237585033 rtol = 1E-6
         srksystem  = SRK(["ethane","undecane"])
         @test Clapeyron.wilson_k_values(srksystem,p,T) ≈ [0.420849235562207, 1.6163027384311e-5] rtol = 1E-6
+        #test scaling of crit_mix
+        cm1 = crit_mix(system3,[0.5,0.5])
+        cm2 = crit_mix(system3,[1.0,1.0])
+        @test cm1[1] ≈ cm2[1]
+        @test 2*cm1[1] ≈ cm2[2]
     end
 end
 GC.gc()
