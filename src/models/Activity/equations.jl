@@ -271,7 +271,7 @@ function PT_property(model::ActivityModel,p,T,z,phase,threaded,vol0,f::F,v::Val{
     PT_property(γϕ,p,T,z,phase,threaded,vol0,f,v)
 end
 
-function set_reference_state!(model::ActivityModel,reference_state;verbose = verbose)
+function set_reference_state!(model::ActivityModel,reference_state::ReferenceState;verbose = verbose)
     γϕ = __act_to_gammaphi(model)
     set_reference_state!(γϕ,reference_state;verbose)
 end
