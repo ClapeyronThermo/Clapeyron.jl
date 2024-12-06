@@ -50,12 +50,30 @@ end
 function load_scalers()
     data = CSV.File("$DB_PATH/scaler/scaler.csv";header=1,types=Float64,delim=',') |> CSV.Tables.matrix
     (u,s,k) = [data[:,i][:] for i in 1:3]
-
-    T_scaler(x::Float64) = (x - u[1]) / s[1] *k[1]
-    emb_scaler(x) = (x .- u[2:end]) ./ s[2:end] .* k[2:end]
-
+    T_scaler = TScaler(u[1],s[1]*k[1])
+    emb_scaler = EmbeddedScaler(u,s,k)
     return T_scaler, emb_scaler
 end
+
+struct TScaler <: Function
+    u::Float64
+    sk::Float64
+end
+
+function (t::TScaler)(x)
+    (x - t.u) / t.sk
+end
+ 
+struct EmbeddedScaler{D} <: Function
+    u::D
+    s::D
+    k::D
+end
+
+function (t::EmbeddedScaler)(x)
+    (x .- @view(t.u[2:end])) ./  @view(t.s[2:end]) .*  @view(t.k[2:end])
+end
+
 
 silu(x) = @. x/(1+exp(-x))
 
