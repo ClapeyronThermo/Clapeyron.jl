@@ -371,7 +371,7 @@ end
         cm1 = crit_mix(system3,[0.5,0.5])
         cm2 = crit_mix(system3,[1.0,1.0])
         @test cm1[1] ≈ cm2[1]
-        @test 2*cm1[1] ≈ cm2[2]
+        @test 2*cm1[3] ≈ cm2[3]
     end
 end
 GC.gc()
