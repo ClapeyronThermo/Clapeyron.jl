@@ -116,10 +116,10 @@ Performs a chemical stability check using the tangent plane distance criterion, 
 """
 function VT_chemical_stability(model::EoSModel,V,T,z,check_vol = true)
     if isone(length(z))
-        return pure_chemical_instability(model,V/sum(z),T) 
+        return pure_chemical_instability(model,V/sum(z),T)
     end
     p = pressure(model,V,T,z)
-    if check_vol  
+    if check_vol
         Vx = volume(model,p,T,z)
         #we check first if the phase itself is stable, maybe there is another phase
         #with the same composition, but with a different volume, that is more stable.
