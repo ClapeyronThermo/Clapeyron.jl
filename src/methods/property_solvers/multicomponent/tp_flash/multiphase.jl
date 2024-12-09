@@ -821,7 +821,6 @@ function _add_phases!(model,p,T,z,result,cache,options)
             #vy = volume(model,p,T,y,phase = phase_y)
             #phase not stable: generate a new one from tpd result
             β1,x1,v1,β2,x2,v2,dgi = split_phase_tpd(model,p,T,w,y,phase_w,phase_y,vw,vy)
-            
             #check that the new generated phase is not equal to one existing composition
             knew = 0
             for i in 1:length(comps)
@@ -830,7 +829,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
                 end
             end
             
-            if !isnan(dgi) && dgi < 0
+            if !isnan(dgi) && (dgi < 0 || length(np) == 1)
                 β0 = β[jj]
                 β[jj] = β0*β2
                 comps[jj] = x2
@@ -996,7 +995,6 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
     =#
     β1 = zero(eltype(w))
     β2 = one(eltype(w))
-
     for i in 1:length(z)
         β2 = min(β2,z[i]/w[i])
     end
@@ -1006,6 +1004,9 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
     x2 .= (z .-  β2 .* w) ./ (1 .- β2)
     x3 = x2
     phase = phase_w == phase_z ? phase_z : :unknown
+    if is_vapour(phase_w) && is_unknown(phase)
+        phase = :liquid
+    end
     v2 = volume(model,p,T,x2,threaded = false,phase = phase)
     v3 = volume(model,p,T,x3,threaded = false,phase = phase)
     g2 = eos(model,v2,T,x2) + p*v2
