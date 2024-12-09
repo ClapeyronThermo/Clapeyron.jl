@@ -239,6 +239,8 @@ end
 
     @testset "Multiphase algorithm" begin
         @test Clapeyron.tp_flash(system, p, T, z, MultiPhaseTPFlash())[3] ≈ -6.759674475175065 rtol = 1e-6
+        system2 = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
+        @test Clapeyron.tp_flash(system2, 1e5, 284.4, [1,1,1,1]*0.25, MultiPhaseTPFlash())[3] ≈ -6.618441125949686 rtol = 1e-6
     end
 
     GC.gc()
