@@ -16,6 +16,13 @@ function EoSVectorParam(model::EoSModel,components = model.components)
 end
 
 saturation_model(model::EoSVectorParam) = saturation_model(model.model)
+a_res(model::EoSVectorParam,V,T,z) = a_res(model.model,V,T,z)
+a_res(model::EoSVectorParam,V,T,z,data) = a_res(model.model,V,T,z,data)
+Rgas(model::EoSVectorParam) = Rgas(model.model)
+molecular_weight(model::EoSVectorParam,z) = molecular_weight(model.model,z)
+function eos_impl(model::EoSVectorParam,V,T,z)
+    return Rgas(model)*sum(z)*T*a_eos(model.model,V,T,z) + reference_state_eval(model,V,T,z)
+end
 
 Base.getindex(x::EoSVectorParam,I) = x.pure[I]
 Base.length(x::EoSVectorParam) = length(x.pure)
@@ -49,8 +56,13 @@ function recombine_impl!(model::EoSVectorParam)
     return model
 end
 
-function PT_property(model::EoSVectorParam,p,T,z,phase,threaded,vol0,f::F,v::Val{UseP}) where {F,UseP}
-    return PT_property(model.model,p,T,z,phase,threaded,vol0,f,v)
+function PT_property(model::EoSVectorParam,p,T,z,phase,threaded,vol0,f::F,::Val{UseP}) where {F,UseP}
+    v = volume(model.model,p,T,z;phase,threaded,vol0)
+    if UseP
+        return f(model,v,T,z,p)
+    else
+        return f(model,v,T,z)
+    end
 end
 
 function reference_state(model::EoSVectorParam)

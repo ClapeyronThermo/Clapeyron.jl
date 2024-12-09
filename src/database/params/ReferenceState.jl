@@ -406,14 +406,4 @@ function __calculate_reference_state_consts(model,v,T,p,z,H0,S0,phase)
     return a0,a1
 end
 
-#used to only evaluate reference states
-#it is a hacky way to do it: TODO: feos has a better api for this.
-struct ReferenceStateEoS <: EoSModel
-    reference_state::ReferenceState
-end
-
-a_res(::ReferenceStateEoS,V,T,z) = zero(Base.promote_eltype(V,T,z))
-idealmodel(::ReferenceStateEoS) = ZeroIdeal()
-reference_state(m::ReferenceStateEoS) = m.reference_state
-
 export ReferenceState,reference_state,has_reference_state,set_reference_state!

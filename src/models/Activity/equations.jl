@@ -61,38 +61,19 @@ function idealmodel(model::T) where T <: ActivityModel
     end
 end
 
-function a_res(model::ActivityModel,V,T,z)
-    return a_res_activity(model,V,T,z,model.puremodel)
-end
+#=
 
-function a_res_activity(model,V,T,z,pures::EoSVectorParam{M}) where M
-    Σz = sum(z)
-    R = Rgas(model)
-    v = V/Σz
-    Σa_resᵢ = sum(z[i]*a_res(pures[i],v,T,SA[1.0]) for i ∈ @comps)
-    nRT = Σz*R*T
-    if model isa ActivityModel
-        p = nRT/V
-    else
-        p = pressure(pures.model,V,T,z)
-    end
-    g_E = excess_gibbs_free_energy(model,p,T,z)
-    return g_E/(Σz*Rgas(model)*T) + Σa_resᵢ
-end
+this is technically wrong on the strict sense of helmholtz residual energy,
+but allows us to evaluate the excess terms of an activity model with ease.
 
-function a_res_activity(model,V,T,z,puremodel::EoSVectorParam{M}) where M <: IdealModel
-    return a_res_activity(model,V,T,z,puremodel.model)
-end
+The main problem is that activity models are defined in a P-T basis, while the helmholtz energy framework used by Clapeyron requires a V-T basis.
+we circunvent this by using the dispatches on PT_property.
+Activity models are transformed into a GammaPhi wrapper that evaluates the pure and excess parts in a correct way.
 
-function a_res_activity(model,V,T,z,puremodel::IdealModel)
-    Σz = sum(z)
-    R = Rgas(model)
-    nRT = Σz*R*T
-    p = nRT/V
-    g_E = excess_gibbs_free_energy(model,p,T,z)
-    return g_E/nRT
+=#
+function eos_impl(model::ActivityModel,V,T,z)
+    return excess_gibbs_free_energy(model,V,T,z) + reference_state_eval(model,V,T,z)
 end
-
  
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
@@ -169,7 +150,7 @@ function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
             ActivitySaturationError(model,method)
         end
     end
-    γϕmodel = GammaPhi(components,model,pure,reference_state(pure))
+    γϕmodel = GammaPhi(components,model,pure)
 end
 
 function bubble_pressure(model::ActivityModel,T,x,method::BubblePointMethod)

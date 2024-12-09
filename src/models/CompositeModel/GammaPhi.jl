@@ -3,16 +3,13 @@
 
 wrapper struct to signal that a `CompositeModel` uses an activity model in conjunction with a fluid.
 """
-struct GammaPhi{γ,Φ,R <:Union{Nothing,ReferenceState}} <: RestrictedEquilibriaModel
+struct GammaPhi{γ,Φ} <: RestrictedEquilibriaModel
     components::Vector{String}
     activity::γ
     fluid::EoSVectorParam{Φ}
-    reference_state::R
 end
 
-GammaPhi(components,activity,fluid) = GammaPhi(components,activity,fluid,nothing)
-
-reference_state(model::GammaPhi) = model.reference_state
+reference_state(model::GammaPhi) = reference_state(model.fluid)
 
 function Base.show(io::IO,mime::MIME"text/plain",model::GammaPhi)
     print(io,"γ-ϕ Model")
@@ -46,8 +43,8 @@ function volume_impl(model::GammaPhi,p,T,z,phase,threaded,vol0)
 end
 
 molecular_weight(model::GammaPhi,z) = molecular_weight(model.fluid.model,z)
-
 saturation_model(model::GammaPhi) = saturation_model(model.fluid)
+idealmodel(model::GammaPhi) = idealmodel(model.fluid.model)
 
 function init_preferred_method(method::typeof(tp_flash),model::GammaPhi,kwargs)
     RRTPFlash(;kwargs...)
@@ -62,9 +59,6 @@ struct ActivityEval{γ} <: IdealModel
     gammaphi::γ
 end
 
-a_ideal(model::ActivityEval,V,T,z) = excess_gibbs_free_energy(model.gammaphi.activity,V,T,z)/(Rgas(model.gammaphi.activity)*T*sum(z))
-reference_state(model::ActivityEval) = reference_state(model.gammaphi)
-
 function gibbs_solvation(model::GammaPhi,T)
     z = [1.0,1e-30]
     p,v_l,v_v = saturation_pressure(model.fluid[1],T)
@@ -74,19 +68,15 @@ function gibbs_solvation(model::GammaPhi,T)
     return -R̄*T*log(K)
 end
 
-idealmodel(model::GammaPhi) = idealmodel(model.fluid.model)
-a_res(model::GammaPhi,V,T,z) = a_res_activity(model.activity,V,T,z,model.fluid)
-
 function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
     if phase == :stable
         #we dont support this in GammaPhi.
         throw(error("automatic phase detection not implemented for $(typeof(model))"))
     end
 
-    if f in (VT_enthalpy,VT_entropy,VT_gibbs_free_energy,VT_helmholtz_free_energy,VT_internal_energy)
-        reference = f(ReferenceStateEoS(model.reference_state),0.0,T,z)
-    else
-        reference = zero(Base.promote_eltype(1.0,T,z))
+    #shortcut for one-component models:
+    if length(model) == 1
+        res_v = PT_property(model.fluid,p,T,z,phase,threaded,vol0,f,USEP)
     end
     #=
     Calculate PT properties as the following:
@@ -95,8 +85,7 @@ function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,USEP::Val{Us
     Vapour properties are calculated with the fluid model
     =#
     if is_vapour(phase)
-        gas_model = model.fluid.model
-        res = PT_property(gas_model,p,T,z,phase,threaded,vol0,f,USEP)
+        res = PT_property(model.fluid,p,T,z,phase,threaded,vol0,f,USEP)
         return res
     elseif is_liquid(phase) || is_unknown(phase)
         ∑z = sum(z)
@@ -117,15 +106,24 @@ function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,USEP::Val{Us
         end
         if !iszero(p)
             if UseP
-                res += f(ActivityEval(model),0.0,T,z,p)
+                res += f(model.activity,0.0,T,z,p)
             else
-                res += f(ActivityEval(model),0.0,T,z)
+                res += f(model.activity,0.0,T,z)
             end
+            return res
         end
-        return res + reference
     else
         throw(error("invalid phase specifier: $phase"))
     end
+end
+
+function __calculate_reference_state_consts(model::GammaPhi,v,T,p,z,H0,S0,phase)
+    ∑z = sum(z)
+    S00 = entropy(model,p,T,z,phase = phase)
+    a1 = (S00 - S0)#/∑z
+    H00 = enthalpy(model,p,T,z,phase = phase)
+    a0 = (-H00 + H0)#/∑z
+    return a0,a1
 end
 
 function PTFlashWrapper(model::GammaPhi,p,T::Number,equilibrium::Symbol)

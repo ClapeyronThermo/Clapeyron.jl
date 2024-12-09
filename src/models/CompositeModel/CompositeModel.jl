@@ -178,7 +178,7 @@ function CompositeModel(components ;
             else
                 _fluid = init_puremodel(_fluid,_components,nothing,verbose)
             end
-            init_fluid = GammaPhi(_components,init_liquid,_fluid,ReferenceState())
+            init_fluid = GammaPhi(_components,init_liquid,_fluid)
         else
             #case 3.b, one alternative is to leave this as an error.
             init_gas = _fluid
@@ -194,7 +194,7 @@ function CompositeModel(components ;
             else
                 pure = init_puremodel(BasicIdeal(),components,userlocations,verbose)
             end
-            init_fluid = GammaPhi(_components,init_liquid,pure,ReferenceState())
+            init_fluid = GammaPhi(_components,init_liquid,pure)
         else
             throw(ArgumentError("Invalid specification for CompositeModel"))
         end
@@ -273,6 +273,7 @@ end
 
 fluid_model(model::CompositeModel) = model.fluid
 solid_model(model::CompositeModel) = model.solid
+molecular_weight(model::CompositeModel,z) = molecular_weight(model.fluid,z)
 
 function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
     if model.solid == nothing
