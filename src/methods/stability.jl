@@ -1,12 +1,14 @@
 """
-    isstable(model,V,T,z)::Bool
+    isstable(model,p,T,z)::Bool
 
-Performs stability tests for a (V,T,z) pair, and warn if any tests fail. returns `true/false`.
+Performs stability tests for a (p,T,z) pair, and warn if any tests fail. returns `true/false`.
 
-Checks:
+Checks, in order of complexity:
  - mechanical stability: isothermal compressibility is not negative.
  - diffusive stability: all eigenvalues of `∂²A/∂n²` are positive.
  - chemical stability: there isn't any other combinations of compositions at p(V,T),T that are more stable than the input composition.
+
+For checking (V,T,z) pairs, use `Clapeyron.VT_isstable(model,V,T,z)` instead.
 """
 function isstable(model,p,T,z = SA[1.0])
     V = volume(model,p,T,z)
@@ -34,7 +36,6 @@ Checks if isothermal compressibility is not negative.
 function VT_mechanical_stability(model,V,T,z = SA[1.0])
     return VT_isothermal_compressibility(model,V,T,z) >= 0
 end
-
 
 """
     VT_diffusive_stability(model,V,T,z)::Bool
@@ -117,9 +118,8 @@ function VT_chemical_stability(model::EoSModel,V,T,z,check_vol = true)
     if isone(length(z))
         return pure_chemical_instability(model,V/sum(z),T) 
     end
-    
-    if check_vol
-        p = pressure(model,V,T,z)
+    p = pressure(model,V,T,z)
+    if check_vol  
         Vx = volume(model,p,T,z)
         #we check first if the phase itself is stable, maybe there is another phase
         #with the same composition, but with a different volume, that is more stable.

@@ -111,6 +111,14 @@ end
     phases2,tpds2,symz2,symw2 = Clapeyron.tpd(act_system,p,T,[0.5,0.5],lle = true)
     @test tpds2[1] ≈ -0.9412151812640561 rtol = 1e-6
     GC.gc()
+
+    model = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"]);
+    z = [0.25, 0.25, 0.25, 0.25]
+    p = 1e5
+    v1 = volume(model,p,297.23,z)
+    @test !isstable(model,p,297.23,z)
+    @test !Clapeyron.VT_isstable(model,v1,297.23,z)
+    GC.gc()
 end
 
 @testset "reference states" begin
