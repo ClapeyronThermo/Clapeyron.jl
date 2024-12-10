@@ -120,6 +120,7 @@ function xy_input_to_result(input,np,nc,z)
     for j in 1:np
         compsi = viewn(compsx,nc,j)
         comps[j] = collect(compsi)
+        comps[j] ./= sum(compsi)
         β[j] = βx[j]
     end
     T = input[end]
@@ -357,7 +358,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         ξj = viewn(ξ,nc,j)
         βj = β[j]
         ∑ξj = sum(ξj)
-        β_constraints[j] = min(βj,1 - ∑ξj)
+        β_constraints[j] = mid(zero(βj),βj,1 - ∑ξj)
         for i in 1:nc
             ξ_constraints[i] -= βj*ξj[i]
         end
@@ -478,6 +479,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     zz = z * (1/∑z*_1)
     J = similar(input,(l,l))
     J .= 0
+    Jcache = similar(J)
     piv = zeros(Int,l)
     x = input
     x_old = copy(input)
@@ -501,29 +503,50 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         converged && break
         nan_converged && break
         ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
+        Jcache .= J
+        finite_F = all(isfinite,F)
+        finite_J = all(isfinite,J)
         lu = Solvers.unsafe_LU!(J,piv)
         s .= -F
-        ldiv!(lu,s) #s .= J\F
+        ldiv!(lu,s)
+        finite_s = all(isfinite,s)
+        if !finite_s
+            JJ = svd(Jcache)
+            S = JJ.S
+            for i in eachindex(S)
+                if S[i] == 0
+                    S[i] = 1
+                end
+            end
+            s .= -F
+            ldiv!(JJ,s)
+            s .= JJ\-F
+        end
+        for i in 1:length(s)
+            if s[i] < 0 && abs(s[i]) < rtol
+                s[i] = 0
+            end
+        end
         x_old .= x
-    
         #bound positivity
-        α = Solvers.positive_linesearch(x,s)
-
+        α0 = Solvers.positive_linesearch(x,s)
+ 
         #backtrack linesearch, so the next result is strictly better than the last
-        α2,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α)
-        
+        α,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α0)
         Fnorm = sqrt(2*Θx)
         snorm_old = snorm
-        snorm = α2*norm(s,2)
-        δs = abs(snorm-snorm_old)
+        snorm = α*norm(s,2)
+        δs = max(abs(snorm-snorm_old),norm((F[end-1],F[end]),Inf))
+        
         Fnorm = norm(F,Inf)
         δs < rtol && (converged = true)
         xnorm = Solvers.dnorm(x,x_old,Inf)
         Fnorm < rtol && (converged = true)
         xnorm < atol && (converged = true)
         nan_converged = !all(isfinite,x)
+        nan_converged = nan_converged || !all(isfinite,s)
+        isnan(δs) && (nan_converged = true)
     end
-
     comps_result,β_result,volumes_result,T_result = xy_input_to_result(x,np,nc,z)
     sp1,sp2 = spec.spec1,spec.spec2
     if sp1 == pressure

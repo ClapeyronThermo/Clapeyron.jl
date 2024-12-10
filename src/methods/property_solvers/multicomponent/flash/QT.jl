@@ -6,15 +6,28 @@ end
 
 function qt_flash_x0(model,β,T,z,method::FlashMethod)
     if method.p0 == nothing
-        pures = split_model(model)
-        sat = extended_saturation_pressure.(pures,T)
-        ps = first.(sat)
-        K = similar(ps)
-        pmin,pmax = extrema(ps)
-        p0 = β*pmin + (1-β)*pmax
-        fp(p) = qt_f0_p!(K,z,p,ps,β)
-        prob = Roots.ZeroProblem(fp,p0)
-        p = Roots.solve(prob)
+        if 0 <= β <= 0.01
+            x = z ./ sum(z)
+            p,vl,vv,y = __x0_bubble_pressure(model,T,x)
+            y ./= sum(y)
+            
+            return FlashResult(p,T,SA[x,y],SA[1.0-β,1.0*β],SA[vl,vv],sort = false)
+        elseif 0.99 <= β <= 1.0
+            y = z ./ sum(z)
+            p,vl,vv,x = __x0_dew_pressure(model,T,y)
+            x ./= sum(x)
+            return FlashResult(p,T,SA[x,y],SA[1.0-β,1.0*β],SA[vl,vv],sort = false)
+        else
+            pures = split_model(model)
+            sat = extended_saturation_pressure.(pures,T)
+            ps = first.(sat)    
+            K = similar(ps)
+            pmin,pmax = extrema(ps)
+            p0 = β*pmin + (1-β)*pmax
+            fp(p) = qt_f0_p!(K,z,p,ps,β)
+            prob = Roots.ZeroProblem(fp,p0)
+            p = Roots.solve(prob)
+        end
     else
         p = method.p0
     end

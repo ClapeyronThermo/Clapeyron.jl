@@ -157,7 +157,7 @@ function tp_flash_K0(model,p,T)
     end
 end
 
-function pt_flash_x0(model,p,T,n,method::FlashMethod,inx = FillArrays.Fill(true,length(model)),iny = inx,non_inx = FillArrays.Fill(false,length(model)),non_iny = non_inx;k0 = :wilson)
+function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.Fill(true,length(model)),iny = inx,non_inx = FillArrays.Fill(false,length(model)),non_iny = non_inx;k0 = :wilson)
     ∑n = sum(n)
     z = n/∑n
     

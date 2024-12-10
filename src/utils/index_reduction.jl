@@ -15,7 +15,7 @@ you can pass an arbitrary boolean vector (`bools`) to perform the reduction.
 ```
 
 """
-function index_reduction(model::EoSModel,z::AbstractVector,zmin = sum(z)*4*eps(eltype(z)))
+function index_reduction(model::EoSModel,z::AbstractVector,zmin = sum(z)*4*eps(float(oneunit(eltype(z)))))
     #skip splitting if possible
     if all(>(zmin),z)
         return model,trues(length(model))
