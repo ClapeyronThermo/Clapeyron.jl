@@ -96,4 +96,32 @@ function qp_flash_impl(model,β,p,z,method::GeneralizedXYFlash)
     return xy_flash(model,spec,z,flash0,method)
 end
 
+function bubble_temperature_impl(model::EoSModel,p,z,method::GeneralizedXYFlash)
+    result = Clapeyron.qp_flash(model,0,p,z,method)
+    x1,x2 = result.compositions
+    v1,v2 = result.volumes
+    if x1 ≈ z
+        y = x2
+        vl,vv = v1,v2
+    else
+        y = x1
+        vl,vv = v2,v1
+    end
+    return temperature(result),vl,vv,y
+end
+
+function dew_temperature_impl(model::EoSModel,p,z,method::GeneralizedXYFlash)
+    result = Clapeyron.qp_flash(model,1,p,z,method)
+    x1,x2 = result.compositions
+    v1,v2 = result.volumes
+    if x1 ≈ z
+        x = x2
+        vl,vv = v2,v1
+    else
+        x = x1
+        vl,vv = v1,v2
+    end
+    return temperature(result),vl,vv,x
+end
+
 export qp_flash

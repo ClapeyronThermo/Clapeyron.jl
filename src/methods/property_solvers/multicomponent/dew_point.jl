@@ -109,7 +109,7 @@ function dew_pressure(model::EoSModel,T,x;kwargs...)
     return dew_pressure(model, T, x, method)
 end
 
-function dew_pressure(model::EoSModel, T, y,method::DewPointMethod)
+function dew_pressure(model::EoSModel, T, y,method::ThermodynamicMethod)
     y = y/sum(y)
     T = float(T)
     model_r,idx_r = index_reduction(model,y)
@@ -249,7 +249,7 @@ function dew_temperature(model::EoSModel, p , x, T0::Number)
     return dew_temperature(model,p,x,method)
 end
 
-function dew_temperature(model::EoSModel,p,y,method::DewPointMethod)
+function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     y = y/sum(y)
     p = float(p)
     model_r,idx_r = index_reduction(model,y)

@@ -77,4 +77,32 @@ function qt_flash_impl(model,β,T,z,method::GeneralizedXYFlash)
     return xy_flash(model,spec,z,flash0,method)
 end
 
+function bubble_pressure_impl(model::EoSModel,T,z,method::GeneralizedXYFlash)
+    result = Clapeyron.qt_flash(model,0,T,z,method)
+    x1,x2 = result.compositions
+    v1,v2 = result.volumes
+    if x1 ≈ z
+        y = x2
+        vl,vv = v1,v2
+    else
+        y = x1
+        vl,vv = v2,v1
+    end
+    return pressure(result),vl,vv,y
+end
+
+function dew_pressure_impl(model::EoSModel,T,z,method::GeneralizedXYFlash)
+    result = Clapeyron.qt_flash(model,1,T,z,method)
+    x1,x2 = result.compositions
+    v1,v2 = result.volumes
+    if x1 ≈ z
+        x = x2
+        vl,vv = v2,v1
+    else
+        x = x1
+        vl,vv = v1,v2
+    end
+    return pressure(result),vl,vv,x
+end
+
 export qt_flash

@@ -277,7 +277,7 @@ function bubble_pressure(model::EoSModel,T,x;kwargs...)
     return bubble_pressure(model, T, x, method)
 end
 
-function bubble_pressure(model::EoSModel, T, x, method::BubblePointMethod)
+function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     x = x/sum(x)
     T = float(T)
     model_r,idx_r = index_reduction(model,x)
@@ -423,7 +423,7 @@ function bubble_temperature(model::EoSModel, p , x, T0::Number)
     return bubble_temperature(model,p,x,method)
 end
 
-function bubble_temperature(model::EoSModel, p , x, method::BubblePointMethod)
+function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
     x = x/sum(x)
     p = float(p)
     model_r,idx_r = index_reduction(model,x)
