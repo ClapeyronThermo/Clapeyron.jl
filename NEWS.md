@@ -11,14 +11,19 @@
   - vapour fraction - T flash: (`qt_flash`)
   - vapour fraction - P flash: (`qp_flash`)
 - New Flash method: `GeneralizedXYFlash`, the only available method for other flashes that are not P-T formulations.
+- New method: `Clapeyron.set_reference_state!(model::EoSModel,state::ReferenceState;verbose = false)`, that allows setting reference states for any model that supports it.
 - flashes (with the exception of `tp_flash`) now return a `FlashResult` object. `Clapeyron.tp_flash2` returns a `FlashResult` that is converted to the old format internally.
 - New function: `PProperty(model,T,prop,z,property)`, that calculates the pressure in T-X coordinates.
 - Activity models and Composite-γ-ϕ Models can now be used to calculate caloric properties.
 - Activity models and Composite-γ-ϕ Models have support for setting reference states.
 - Better `Base.show` methods for some Clapeyron.jl structs
+- Reference states are now shown for models.
+- the default method for `tp_flash` was changed to `MichelsenTPFlash`
 
 ## Bug Fixes
 - `TProperty` fixes and stability improvements.
 - stability improvements in calculation of bubble/dew initial points
 - stability improvements when calculating Rachford-Rice iterations.
 - fixes for setting reference states with cubic EoS, SAFT-γ-Mie and other custom EoS not created via `@newmodel` macros.
+- fixes for some component names not being used in empiric EoS
+- fixes for `crit_mix`
