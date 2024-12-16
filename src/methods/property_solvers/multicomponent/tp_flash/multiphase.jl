@@ -723,6 +723,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
     np = length(comps)
     nc = length(z)
     δn_add = false
+    np == nc && return false
     max_phases = min(options.max_phases,nc)
     #np >= max_phases && return 0 #we cannot add new phases here
     iter = np
@@ -829,7 +830,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
                 end
             end
             
-            if !isnan(dgi) && (dgi < 0 || length(np) == 1)
+            if (!isnan(dgi) && (dgi < 0)) || isone(length(np))
                 β0 = β[jj]
                 β[jj] = β0*β2
                 comps[jj] = x2
@@ -904,9 +905,6 @@ function _remove_phases!(model,p,T,z,result,cache,options)
             if is_vapour(VT_identify_phase(model,volumes[end],T,comps[end]))
                 idx_vapour[] == length(comps)
             end
-            @show "das"
-            @show volumes
-            @show idx_vapour[]
         end
         return true
     end
