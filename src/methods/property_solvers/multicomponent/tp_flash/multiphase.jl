@@ -849,6 +849,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
                     volumes[jj] = (βi*vi + βj*vj)/(βi + βj)
                     β[jj] = (βi + βj)
                     wj .= (βi .* wi .+ βj .* wj) ./ (βi .+ βj)  
+                    return true
                 end
             end
         end
