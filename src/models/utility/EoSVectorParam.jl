@@ -73,3 +73,7 @@ function reference_state(model::EoSVectorParam)
         return original_ref
     end
 end
+
+function volume_impl(model::EoSVectorParam,p,T,z,phase,threaded,vol0)
+    return volume_impl(model.model,p,T,z,phase,threaded,vol0)
+end
