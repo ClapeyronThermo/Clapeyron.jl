@@ -112,18 +112,28 @@ function xy_input_to_flash_vars(input,np,nc,z)
     return comps,β,volumes
 end
 
-function xy_input_to_result(input,np,nc,z)
+function xy_input_to_result(spec,input,np,nc,z)
     compsx,βx,volumes = xy_input_to_flash_vars(input,np,nc,z)
     TT = eltype(input)
     comps = Vector{Vector{TT}}(undef,np)
     β = Vector{TT}(undef,np)
     for j in 1:np
         compsi = viewn(compsx,nc,j)
+        ∑ξ = sum(compsi)
         comps[j] = collect(compsi)
-        comps[j] ./= sum(compsi)
+        comps[j] ./= ∑ξ
+        volumes[j] = volumes[j]/∑ξ
         β[j] = βx[j]
     end
-    T = input[end]
+    Tres = input[end]
+
+    if spec.spec1 == temperature
+        T = spec.val1
+    elseif spec.spec2 == temperature
+        T = spec.val2
+    else
+        T = Tres
+    end
     #we return in order of increasing molar volumes
     idx = sortperm(volumes)
     return comps[idx],β[idx],volumes[idx],T
@@ -495,10 +505,12 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     config = ForwardDiff.JacobianConfig(f!,F,x)
     #ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
     f!(F,x)
-    Θx = Θ(F,x)
+    Θx = Θ(F)
     Fnorm = sqrt(2*Θx)
+    spec_norm = norm(viewlast(F,2),Inf)
     converged = Fnorm < rtol
     nan_converged = !all(isfinite,x)
+    max_iters_reached = false
     for i in 1:max_iters
         converged && break
         nan_converged && break
@@ -534,6 +546,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         #backtrack linesearch, so the next result is strictly better than the last
         α,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α0)
         Fnorm = sqrt(2*Θx)
+        spec_norm = norm(viewlast(F,2),Inf)
         snorm_old = snorm
         snorm = α*norm(s,2)
         δs = max(abs(snorm-snorm_old),norm((F[end-1],F[end]),Inf))
@@ -546,8 +559,18 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         nan_converged = !all(isfinite,x)
         nan_converged = nan_converged || !all(isfinite,s)
         isnan(δs) && (nan_converged = true)
+        i == max_iters && (max_iters_reached = true)
     end
-    comps_result,β_result,volumes_result,T_result = xy_input_to_result(x,np,nc,z)
+    
+    if !converged || nan_converged || max_iters_reached
+        x .= NaN
+    end
+
+    if spec_norm > sqrt(rtol)
+        x .= NaN
+    end
+
+    comps_result,β_result,volumes_result,T_result = xy_input_to_result(spec,x,np,nc,z)
     sp1,sp2 = spec.spec1,spec.spec2
     if sp1 == pressure
         p_result = spec.val1
@@ -748,3 +771,5 @@ function βflash_pure(model,spec::F,x,βv,z) where F
         build_flash_result_pure(model,p,T,z,vl,vv,∑z*βv)
     end
 end
+
+export GeneralizedXYFlash
