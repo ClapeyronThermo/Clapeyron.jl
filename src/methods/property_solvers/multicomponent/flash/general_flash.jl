@@ -574,7 +574,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     #config,μconfig = xy_flash_config(model,input)
     f!(output,input) = xy_flash_neq(output,model,zz,np,input,new_spec,nothing)
     Θ(_f) = 0.5*dot(_f,_f)
-   
+    srtol = abs2(cbrt(rtol))
     function Θ(_f,_z) 
         f!(_f,_z)
         _f[slacks] .= 0
@@ -627,11 +627,10 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         spec_norm = norm(viewlast(F,2),Inf)
         snorm_old = snorm
         snorm = α*norm(s,2)
-        δs = max(abs(snorm-snorm_old),norm((F[end-1],F[end]),Inf))
+        δs = max(abs(snorm-snorm_old),spec_norm)
         Fnorm = norm(F,Inf)
         xnorm = Solvers.dnorm(x,x_old,Inf)
-        
-        converged = (Fnorm < rtol || xnorm < atol || δs < rtol) && (spec_norm < sqrt(rtol))
+        converged = (Fnorm < rtol || xnorm < atol || δs < rtol)
         nan_converged = !all(isfinite,x) || !all(isfinite,s)
         isnan(δs) && (nan_converged = true)
         i == max_iters && (max_iters_reached = true)

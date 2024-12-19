@@ -37,7 +37,7 @@
     model31 = IAPWS95()
     v31 = volume(model31,1u"bar",50u"°C")
     #experimental value is 44.18e-6. close enough.
- 
+
     @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1e-4
     @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1e-4
     #enthalpy of vaporization of water at 100 °C
@@ -95,7 +95,7 @@ if isdefined(Base,:get_extension)
         @test crit_pc[1] ≈ crit_sa_pc[1] rtol = 1e-6
         @test crit_pc[3] ≈ crit_sa_pc[3] rtol = 1e-6
         @test sat_cubic[1] ≈ sat_sa_cubic[1] rtol = 1e-6
-        @test sat_cubic[2] ≈ sat_sa_cubic[2] rtol = 1e-6 
+        @test sat_cubic[2] ≈ sat_sa_cubic[2] rtol = 1e-6
         @test sat_cubic[3] ≈ sat_sa_cubic[3] rtol = 1e-6
     end
 end
@@ -122,7 +122,7 @@ end
 end
 
 @testset "reference states" begin
-    
+
     @test !has_reference_state(PCSAFT("water"))
     @test has_reference_state(PCSAFT("water",idealmodel = ReidIdeal))
 
@@ -141,7 +141,7 @@ end
         T12,v12,_ = saturation_temperature(pure1[2],101325.0)
         @test Clapeyron.VT_enthalpy(pure1[2],v12,T12) ≈ 0.0 atol = 1e-6
         @test Clapeyron.VT_entropy(pure1[2],v12,T12) ≈ 0.0 atol = 1e-6
-        
+
         #test that multifluids work.
         model1b = GERG2008("water",reference_state = :nbp)
         T1b,v1b,_ = saturation_temperature(model1b,101325.0)
@@ -210,7 +210,7 @@ end
     @testset "RR Algorithm" begin
         method = RRTPFlash()
         @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.539976318817461 rtol = 1e-6
-    
+
         #test for initialization when K suggests single phase but it could be solved supposing bubble or dew conditions.
         substances = ["water", "methanol", "propyleneglycol","methyloxirane"]
         pcp_system = PCPSAFT(substances)
@@ -395,7 +395,9 @@ end
     r = Clapeyron.ph_flash(model, p, h, z)
     @test_throws ArgumentError qt_flash(model,0.5,308,z,flash_result = r)
     res4 = qp_flash(model,0.7,60000.0,z)
-    @test Clapeyron.temperature(res4)  ≈ 290.0020161701228 rtol = 1e-6
+    T4 = Clapeyron.temperature(res4)
+    @test pressure(model,res4.volumes[1],T4,res4.compositions[1]) ≈ 60000.0 rtol = 1e-6
+    @test pressure(model,res4.volumes[2],T4,res4.compositions[2]) ≈ 60000.0 rtol = 1e-6
 
     #example in documentation for xy_flash
     spec = FlashSpecifications(p = 101325.0, T = 200.15) #p-T flash
@@ -513,7 +515,7 @@ end
     T2 =  Tproperty(model4,p2,s1,Clapeyron.SA[1.0],entropy)
     s2 = entropy(model4,p2,T2)
     h2 = enthalpy(model4,p2,T2)
-    @test s2 ≈ s1 
+    @test s2 ≈ s1
 end
 
 @testset "bubble/dew point algorithms" begin
@@ -653,7 +655,7 @@ end
         @test Tb  ≈ Tres2 rtol = 1E-6
         @test xa[3] == 0.0
     end
-    GC.gc() 
+    GC.gc()
 end
 
 @testset "Solid Phase Equilibria" begin
@@ -739,7 +741,7 @@ GC.gc()
         model2 = PCSAFT("eicosane")
         Tc2,_,_ = crit_pure(model2)
         T2 = 0.999Tc2
-        
+
         #this test fails on mac, julia 1.6
         @test Clapeyron.saturation_pressure(model2,T2,crit_retry = false)[1] ≈ 1.451917823392476e6 rtol = 1e-6
 
