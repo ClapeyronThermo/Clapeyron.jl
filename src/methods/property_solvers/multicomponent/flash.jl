@@ -274,6 +274,12 @@ is_vle(method::FlashMethod) = is_vle(method.equilibrium)
 is_lle(method::FlashMethod) = is_lle(method.equilibrium)
 is_unknown(method::FlashMethod) = is_unknown(method.equilibrium)
 
+@noinline function incorrect_np_flash_error(method,result)
+    np = numphases(result)
+    s = np == 1 ? "" : "s"
+    throw(ArgumentError("$method does not support an input with $np phase$s as an initial point. Got the following input: \n\n $result"))
+end
+
 include("flash/general_flash.jl")
 include("flash/PT.jl")
 include("flash/PH.jl")

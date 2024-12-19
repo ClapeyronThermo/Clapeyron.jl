@@ -61,7 +61,8 @@ function MichelsenTPFlash(;equilibrium = :unknown,
     
     if flash_result isa FlashResult
         comps,β,volumes = flash_result.compositions,flash_result.fractions,flash_result.volumes
-        @assert length(comps) == 2
+        np = numphases(flash_result)
+        np != 2 && incorrect_np_flash_error(MichelsenTPFlash,flash_result)
         w1,w2 = comps[1],comps[2]
         v = (volumes[1],volumes[2])
         return Michelsentp_flash(;equilibrium,x0 = w1,y0 = w2,vol0 = v,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)

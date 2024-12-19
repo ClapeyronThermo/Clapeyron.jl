@@ -363,6 +363,41 @@ end
     end
 end
 
+@testset "XY flash" begin
+    #1 phase (#320)
+    model = cPR(["ethane","methane"],idealmodel = ReidIdeal)
+    p = 101325.0
+    z = [1.2,1.2]
+    T = 350.0
+    h = enthalpy(model,p,T,z)
+    res0 = ph_flash(model,p,h,z)
+    @test Clapeyron.temperature(res0) ≈ T rtol = 1e-6
+    @test enthalpy(model,res1) ≈ h rtol = 1e-6
+
+    #2 phases
+    h = -13831.0
+    res1 = ph_flash(model,p,h,z)
+    @test enthalpy(model,res1) ≈ h rtol = 1e-6
+
+
+    #examples for qt, qp flash (#314)
+    model = cPR(["ethane","propane"],idealmodel=ReidIdeal)
+    res2 = qt_flash(model,0.5,208.0,[0.5,0.5])
+    @test Clapeyron.pressure(res2) ≈ 101634.82435966855 rtol = 1e-6
+    res3 = qp_flash(model,0.5,120000.0,[0.5,0.5])
+    @test Clapeyron.temperature(res3) ≈ 211.4972567716822 rtol = 1e-6
+
+    #1 phase input should error
+    model = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
+    z = [0.25, 0.25, 0.25, 0.25]
+    p = 1e5
+    h = enthalpy(model, 1e5, 303.15, z)
+    r = Clapeyron.ph_flash(model, p, h, z)
+    @test_throws ArgumentError qt_flash(model,0.5,308,z,flash_result = r)
+    res4 = qp_flash(model,0.7,60000.0,z)
+    @test Clapeyron.temperature(res4)  ≈ 289.6991395244328 rtol = 1e-6
+end
+
 @testset "Saturation Methods" begin
     model = PR(["water"])
     vdw = vdW(["water"])

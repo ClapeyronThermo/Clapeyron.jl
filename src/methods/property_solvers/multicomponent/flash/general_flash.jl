@@ -387,7 +387,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         i_spec = spec1.k
         output[end-1] = β[i_spec] - val1
     else #general caloric term, valid for enthalpy , entropy, internal energy, gibbs, helmholtz
-        output[end-1] = (val1 - ∑a - p_end*∑v - T*∑s)*RTinv
+        output[end-1] = (val1 - ∑a - p_end*∑v - T*∑s)/val1
     end
 
     if spec2 == temperature
@@ -400,7 +400,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         i_spec = spec2.k
         output[end-1] = β[i_spec] - val2
     else
-        output[end] = (val2 - ∑a - p_end*∑v - T*∑s)*RTinv
+        output[end] = (val2 - ∑a - p_end*∑v - T*∑s)/val1
     end
     return output
 end
@@ -431,7 +431,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult
     return xy_flash(model,spec,z,comps0,β0,volumes0,T0;rtol,atol,max_iters)
 end
 
-function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult;rtol = 1e-12,atol = 1e-10,max_iters = 50)
+function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult;rtol = 1e-14,atol = 1e-12,max_iters = 50)
     if numphases(flash) == 1
         throw(ArgumentError("xy_flash cannot use single phase initial points as starting points."))
     end
@@ -542,7 +542,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         x_old .= x
         #bound positivity
         α0 = Solvers.positive_linesearch(x,s)
- 
         #backtrack linesearch, so the next result is strictly better than the last
         α,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α0)
         Fnorm = sqrt(2*Θx)
@@ -550,7 +549,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         snorm_old = snorm
         snorm = α*norm(s,2)
         δs = max(abs(snorm-snorm_old),norm((F[end-1],F[end]),Inf))
-        
         Fnorm = norm(F,Inf)
         δs < rtol && (converged = true)
         xnorm = Solvers.dnorm(x,x_old,Inf)
@@ -561,11 +559,10 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         isnan(δs) && (nan_converged = true)
         i == max_iters && (max_iters_reached = true)
     end
-    
+    max_iters_reached,converged,nan_converged
     if !converged || nan_converged || max_iters_reached
         x .= NaN
     end
-
     if spec_norm > sqrt(rtol)
         x .= NaN
     end
@@ -639,14 +636,15 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
                         x0 = nothing,
                         y0 = nothing,
                         v0 = nothing,
-                        rtol = 1e-12,
-                        atol = 1e-10,
+                        rtol = 1e-14,
+                        atol = 1e-12,
                         max_iters = 100,
                         flash_result = nothing)
     !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for GeneralizedXYFlash"))
     if flash_result isa FlashResult
         comps,β,volumes = flash_result.compositions,flash_result.fractions,flash_result.volumes
-        @assert length(comps) == 2
+        np = numphases(flash_result)
+        np != 2 && incorrect_np_flash_error(GeneralizedXYFlash,flash_result)
         w1,w2 = comps[1],comps[2]
         v = (volumes[1],volumes[2])
         P00 = flash_result.data.p

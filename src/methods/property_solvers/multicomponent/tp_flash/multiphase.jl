@@ -58,9 +58,11 @@ function MultiPhaseTPFlash(;
     
     if flash_result !== nothing
         comps = flash_result.compositions
+        np = numphases(flash_result)
+        np < 2 && incorrect_np_flash_error(MultiPhaseTPFlash,flash_result)
         ∑n = sum(flash_result.fractions)
         n00 = Vector{eltype(comps)}[]
-        for i in 1:numphases(flash_result)
+        for i in 1:np
             push!(n00,collect(comps[i]))
         end
         return MultiPhaseTPFlash(;K0 = nothing,x0 = nothing, y0 = nothing,n0 = n00,K_tol,ss_iters,nacc,second_order,max_phases,phase_iters)

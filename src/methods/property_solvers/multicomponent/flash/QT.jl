@@ -10,7 +10,7 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
             x = z ./ sum(z)
             p,vl,vv,y = __x0_bubble_pressure(model,T,x)
             y ./= sum(y)
-            
+
             return FlashResult(p,T,SA[x,y],SA[1.0-β,1.0*β],SA[vl,vv],sort = false)
         elseif 0.99 <= β <= 1.0
             y = z ./ sum(z)
@@ -20,12 +20,23 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
         else
             pures = split_model(model)
             sat = extended_saturation_pressure.(pures,T)
-            ps = first.(sat)    
+            ps = first.(sat)
             K = similar(ps)
             pmin,pmax = extrema(ps)
-            p0 = β*pmin + (1-β)*pmax
             fp(p) = qt_f0_p!(K,z,p,ps,β)
-            prob = Roots.ZeroProblem(fp,p0)
+            pm = β*pmin + (1-β)*pmax
+            pr1 = range(pmin,pm,5*length(model))
+            pr2 = range(pm,pmax,5*length(model))
+            δβ1 = abs.(fp.(pr1))
+            δβ2 = abs.(fp.(pr2))
+            δβ1_min,i1 = findmin(δβ1)
+            δβ2_min,i2 = findmin(δβ2)
+            if δβ1_min < δβ2_min
+                p00 = pr1[i1]
+            else
+                p00 = pr2[i2]
+            end
+            prob = Roots.ZeroProblem(fp,p00)
             p = Roots.solve(prob)
         end
     else
@@ -40,7 +51,7 @@ function qt_flash(model::EoSModel,β,T,z;kwargs...)
     return qt_flash(model,β,T,z,method)
 end
 
-function init_preferred_method(method::typeof(qt_flash),model::EoSModel,kwargs) 
+function init_preferred_method(method::typeof(qt_flash),model::EoSModel,kwargs)
     GeneralizedXYFlash(;kwargs...)
 end
 
@@ -58,7 +69,7 @@ function qt_flash(model,β,T,z,method::FlashMethod)
         result1 = βflash_pure(model,temperature,T,βv,z)
         return index_expansion(result1,idx_r)
     end
-    
+
     result = qt_flash_impl(model_r,β,T,z_r,method_r)
     if !issorted(result.volumes)
         #this is in case we catch a bad result.
