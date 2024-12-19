@@ -288,3 +288,5 @@ include("flash/VT.jl")
 include("flash/TS.jl")
 include("flash/QT.jl")
 include("flash/QP.jl")
+
+export FlashResult, FlashData
