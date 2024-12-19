@@ -819,7 +819,7 @@ function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing) where F
     end
 end
 
-function βflash_pure(model,spec::F,x,βv,z) where F
+function qflash_pure(model,spec::F,x,βv,z) where F
     if spec == pressure
         T,vl,vv = saturation_temperature(model,x)
         p = x
@@ -827,7 +827,7 @@ function βflash_pure(model,spec::F,x,βv,z) where F
         p,vl,vv = saturation_pressure(model,T)
         T = x
     else
-        throw(ArgumentError("invalid specification for βflash_pure: $spec"))
+        throw(ArgumentError("invalid specification for qflash_pure: $spec"))
     end
     ∑z = sum(z)
     x1 = SA[1.0]
