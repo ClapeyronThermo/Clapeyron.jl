@@ -19,11 +19,19 @@ function positive_linesearch(v, δ, α = 1.0 ; τ = 1.0, decay = 0.5, tol = 1e-1
     return α
 end
 
-function backtracking_linesearch!(Θ,F,X,d,Θ0,Xnew,α = 1.0;tol = 1e-10, decay = 0.5)
+function backtracking_linesearch!(Θ,F,X,d,Θ0,Xnew,α = 1.0;tol = 1e-10, decay = 0.5, ignore = nothing)
     done = false
     Θx = Θ0
     while !done
-        Xnew .= X .+ α .* d
+        if ignore === nothing
+            Xnew .= X .+ α .* d
+        else
+            for i in 1:length(X)
+                if !ignore[i]
+                    Xnew[i] = X[i] + α * d[i]
+                end
+            end
+        end
         Θx = Θ(F,Xnew)
         if Θx <= Θ0
             done = true

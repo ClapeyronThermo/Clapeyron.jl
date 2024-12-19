@@ -372,7 +372,7 @@ end
     h = enthalpy(model,p,T,z)
     res0 = ph_flash(model,p,h,z)
     @test Clapeyron.temperature(res0) ≈ T rtol = 1e-6
-    @test enthalpy(model,res1) ≈ h rtol = 1e-6
+    @test enthalpy(model,res0) ≈ h rtol = 1e-6
 
     #2 phases
     h = -13831.0
@@ -395,7 +395,7 @@ end
     r = Clapeyron.ph_flash(model, p, h, z)
     @test_throws ArgumentError qt_flash(model,0.5,308,z,flash_result = r)
     res4 = qp_flash(model,0.7,60000.0,z)
-    @test Clapeyron.temperature(res4)  ≈ 289.6991395244328 rtol = 1e-6
+    @test Clapeyron.temperature(res4)  ≈ 290.0020161701228 rtol = 1e-6
 
     #example in documentation for xy_flash
     spec = FlashSpecifications(p = 101325.0, T = 200.15) #p-T flash
