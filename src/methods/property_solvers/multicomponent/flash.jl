@@ -108,7 +108,7 @@ function FlashResult(model::EoSModel,p::Number,T::Number,z;phase = :unknown)
     ∑z = sum(z)
     β = [∑z]
     comps = [z ./ ∑z]
-    volumes = [volume(model,p,T,z;phase = phase)]
+    volumes = [volume(model,p,T,z;phase = phase)/∑z]
     return FlashResult(model,p,T,comps,β,volumes;sort = false)
 end
 
