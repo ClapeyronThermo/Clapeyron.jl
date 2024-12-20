@@ -386,7 +386,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         i_spec = spec1.k
         output[end-1] = β[i_spec] - val1
     else #general caloric term, valid for enthalpy , entropy, internal energy, gibbs, helmholtz
-        output[end-1] = (val1 - ∑a - p_end*∑v - T*∑s)/val1
+        output[end-1] = (val1 - ∑a - p_end*∑v - T*∑s)/RTinv
     end
 
     if spec2 == temperature
@@ -399,7 +399,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         i_spec = spec2.k
         output[end-1] = β[i_spec] - val2
     else
-        output[end] = (val2 - ∑a - p_end*∑v - T*∑s)/val1
+        output[end] = (val2 - ∑a - p_end*∑v - T*∑s)/RTinv
     end
     return output
 end
@@ -768,16 +768,16 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
     Ts,vl,vv = saturation_temperature(model,p)
     ∑z = sum(z)
     x1 = SA[1.0]
-    spec_to_vt(model,vl,T,x1,spec)
-    xl = ∑z*spec_to_vt(model,vl,T,x1,spec)
-    xv = ∑z*spec_to_vt(model,vv,T,x1,spec)
+    spec_to_vt(model,vl,Ts,x1,spec)
+    xl = ∑z*spec_to_vt(model,vl,Ts,x1,spec)
+    xv = ∑z*spec_to_vt(model,vv,Ts,x1,spec)
     βv = (x - xl)/(xv - xl)
     if !isfinite(βv)
         return FlashResultInvalid(1,βv)
     elseif βv < 0 || βv > 1
         phase0 = βv < 0 ? :liquid : :vapour
-        T,_phase = _Tproperty(model,p,h/∑z,SA[1.0],spec,T0 = T0,phase = phase0)
-        return FlashResult(model,p,T,∑z,phase = _phase)
+        T,_phase = _Tproperty(model,p,x/∑z,SA[1.0],spec,T0 = T0,phase = phase0)
+        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)],phase = _phase)
     else
         build_flash_result_pure(model,p,Ts,z,vl,vv,βv)
     end
@@ -811,10 +811,10 @@ function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing) where F
         return FlashResultInvalid(1,βv)
     elseif βv < 0 || βv > 1
         phase0 = βv < 0 ? :liquid : :vapour
-        p,_phase = _Pproperty(model,T,x/∑z,SA[1.0],spec,p0 = P0,phase = phase0)
-        return FlashResult(model,p,T,∑z,phase = _phase)
+        p,_phase = _Pproperty(model,T,x/∑z,SA[1.0],spec,p0 = P0)
+        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)],phase = _phase)
     else
-        build_flash_result_pure(model,p,Ts,z,vl,vv,βv)
+        build_flash_result_pure(model,p,T,z,vl,vv,βv)
     end
 end
 

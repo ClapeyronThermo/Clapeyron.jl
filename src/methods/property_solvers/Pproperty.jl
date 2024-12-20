@@ -196,6 +196,7 @@ function Pproperty_pure(model,T,prop,z,property::F,rootsolver,phase,abstol,relto
   Psat,vlsat,vvpat = saturation_pressure(model,T,crit = crit)
 
   if !is_unknown(phase)
+
     return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Psat)
   end
 
@@ -235,13 +236,13 @@ function __Pproperty(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,t
     end
     return __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,p0)
   end
-  f(p,prop) = property(model,p,T,z,phase = phase,threaded = threaded) - prop
-  prob = Roots.ZeroProblem(f,p0)
+  f(lnp,prop) = property(model,exp(lnp),T,z,phase = phase,threaded = threaded) - prop
+  prob = Roots.ZeroProblem(f,log(p0))
   sol = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
-  if !isfinite(sol) || sol < 0
+  if isnan(sol)
     return sol,:failure
   end
-  return sol,phase
+  return exp(sol),phase
 end
 #=
 model = PCSAFT(["propane","dodecane"])

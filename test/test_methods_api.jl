@@ -414,6 +414,13 @@ end
     result = xy_flash(model,spec,z,result0) #perform the flash
     @test Clapeyron.temperature(result) == 200.15
     @test pressure(result) == 101325.0
+
+    #px_flash_pure/tx_flash_pure, 1 phase (#320)
+    model = cPR(["ethane"],idealmodel = ReidIdeal);
+    p = 101325;h = 100; z = Clapeyron.SA[1]; T = Clapeyron.PH.temperature(model,p,h,z)
+    @test enthalpy(model,p,T,z) ≈ h rtol = 1e-6
+    res5 = Clapeyron.tx_flash_pure(model,T,h,z,enthalpy)
+    @test pressure(res5)  ≈ p rtol = 1e-6
 end
 
 @testset "Saturation Methods" begin
