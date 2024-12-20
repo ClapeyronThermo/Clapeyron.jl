@@ -4,7 +4,7 @@ using Clapeyron, Test
 
 struct TestModel <: EoSModel end
 Clapeyron.idealmodel(::TestModel) = BasicIdeal()
-function Clapeyron.eos(model::TestModel,V,T,z)
+function Clapeyron.eos_impl(model::TestModel,V,T,z)
     z_part = 1*z[1] + 2*z[2]+3*z[3]
     v_part = log(V)
     T_part = T^6
@@ -12,7 +12,7 @@ function Clapeyron.eos(model::TestModel,V,T,z)
     return vt_part+T_part+v_part+z_part
 end
 
-function Clapeyron.∂f∂V(model::TestModel,V,T,z)
+function Clapeyron.∂f∂V(model::TestModel,V,T,z::AbstractVector)
     f(v) = eos(model,v,T,z)
     return Clapeyron.Solvers.derivative(f,V)
 end
