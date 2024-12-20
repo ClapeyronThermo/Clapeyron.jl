@@ -10,7 +10,7 @@
 returns `∂f/∂T` at constant total volume and composition, where f is the total helmholtz energy, given by `eos(model,V,T,z)`
 
 """
-function ∂f∂T(model,V,T,z)
+function ∂f∂T(model,V,T,z::AbstractVector)
     f(∂T) = eos(model,V,∂T,z)
     return Solvers.derivative(f,T)
 end
@@ -20,7 +20,7 @@ end
 
 returns `∂f/∂V` at constant temperature and composition, where f is the total helmholtz energy, given by `eos(model,V,T,z)`, and V is the total volume
 """
-function ∂f∂V(model,V,T,z)
+function ∂f∂V(model,V,T,z::AbstractVector)
     f(∂V) = a_res(model,∂V,T,z)
     ∂aᵣ∂V = Solvers.derivative(f,V)
     sum(z)*Rgas(model)*T*(∂aᵣ∂V - 1/V)
@@ -54,18 +54,18 @@ function ∂f(model,V,T,z)
     return _df,_f
 end
 
-function ∂f_vec(model,V,T,z)
+function ∂f_vec(model,V,T,z::AbstractVector)
     _df,_f = ∂f(model,V,T,z)
     return SVector(_f,_df[1],_df[2])
 end
 
-function f∂fdV(model,V,T,z)
+function f∂fdV(model,V,T,z::AbstractVector)
     f(x) = eos(model,x,T,z)
     A,∂A∂V = Solvers.f∂f(f,V)
     return SVector(A,∂A∂V)
 end
 
-function f∂fdT(model,V,T,z)
+function f∂fdT(model,V,T,z::AbstractVector)
     f(x) = eos(model,V,x,z)
     A,∂A∂T = Solvers.f∂f(f,T)
     return SVector(A,∂A∂T)
@@ -86,7 +86,7 @@ end
 returns `p` and `∂p/∂V` at constant temperature, where p is the pressure = `pressure(model,V,T,z)` and `V` is the total Volume.
 
 """
-function p∂p∂V(model,V,T,z=SA[1.0])
+function p∂p∂V(model,V,T,z::AbstractVector=SA[1.0])
     f(∂V) = pressure(model,∂V,T,z)
     p,∂p∂V = Solvers.f∂f(f,V)
     return SVector(p,∂p∂V)

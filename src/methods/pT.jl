@@ -1,4 +1,7 @@
 function PT_property(model,p,T,z,phase,threaded,vol0,f::F,::Val{UseP}) where {F,UseP}
+    if z isa Number
+        return PT_property(model,p,T,SA[z],phase,threaded,vol0,f,Val{UseP}())
+    end
     V = volume(model, p, T, z; phase, threaded, vol0)
     if UseP
         return f(model,V,T,z,p)
