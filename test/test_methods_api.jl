@@ -379,7 +379,12 @@ end
     res1 = ph_flash(model,p,h,z)
     @test enthalpy(model,res1) ≈ h rtol = 1e-6
 
-
+    #test for ps_flash:
+    model = cPR(["ethane"],idealmodel = ReidIdeal);
+    s = 100;p=101325;z = [1.0];
+    h = Clapeyron.PS.enthalpy(model,p,s,z)
+    s2 = Clapeyron.PH.entropy(model,p,h,z)
+    @test s ≈ s2 rtol = 1e-6
     #examples for qt, qp flash (#314)
     model = cPR(["ethane","propane"],idealmodel=ReidIdeal)
     res2 = qt_flash(model,0.5,208.0,[0.5,0.5])

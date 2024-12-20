@@ -24,7 +24,7 @@ function init_preferred_method(method::typeof(ps_flash),model::EoSModel,kwargs)
 end
 
 function ps_flash(model,p,s,z,method::FlashMethod)
-    check_arraysize(model,n)
+    check_arraysize(model,z)
     if supports_reduction(method)
         model_r,idx_r = index_reduction(model,z)
         z_r = z[idx_r]
