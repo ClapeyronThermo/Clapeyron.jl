@@ -87,15 +87,19 @@
         test_gibbs_duhem(system,V,T,z1)
         GC.gc()
     end
-    @printline
-    @testset "DAPT" begin
-        system = DAPT(["water"])
-        @test Clapeyron.a_hs(system, V, T, z1) ≈ 0.35240995905438116 rtol = 1e-6
-        @test Clapeyron.a_disp(system, V, T, z1) ≈ -1.7007754776344663 rtol = 1e-6
-        @test Clapeyron.a_assoc(system, V, T, z1) ≈ -1.815041612389342 rtol = 1e-6
-        test_gibbs_duhem(system,V,T,z1)
-        GC.gc()
     end
+    @printline
+    
+    @testset "DAPT" begin
+        #try to run dapt in it's own scope
+        let T = 298.15, V = 1e-4,z1 = Clapeyron.SA[1.0];
+            system = DAPT(["water"])
+            @test Clapeyron.a_hs(system, V, T, z1) ≈ 0.35240995905438116 rtol = 1e-6
+            @test Clapeyron.a_disp(system, V, T, z1) ≈ -1.7007754776344663 rtol = 1e-6
+            @test Clapeyron.a_assoc(system, V, T, z1) ≈ -1.815041612389342 rtol = 1e-6
+            test_gibbs_duhem(system,V,T,z1)
+            GC.gc()
+        end
     end
 end
 @printline
