@@ -778,7 +778,7 @@ function partial_property(model::EoSModel, p, T, z, property::ℜ; phase=:unknow
 end
 
 #special dispatch for volume here
-function VT_partial_property(model::EoSModel, V, T, z, ::typeof(volume))
+function VT_partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(volume))
     _,dpdv = p∂p∂V(model,V,T,z)
     dpdni = VT_partial_property(model, V, T, z, pressure)
     return -dpdni ./ dpdv
