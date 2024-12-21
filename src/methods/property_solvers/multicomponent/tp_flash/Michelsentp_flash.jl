@@ -68,7 +68,7 @@ function MichelsenTPFlash(;equilibrium = :unknown,
         return Michelsentp_flash(;equilibrium,x0 = w1,y0 = w2,vol0 = v,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
     end
     
-    if K0 == x0 == y0 === v0 == nothing #nothing specified
+    if K0 == x0 == y0 == nothing #nothing specified
         #is_lle(equilibrium)
         T = Nothing
     else
@@ -96,7 +96,18 @@ function MichelsenTPFlash(;equilibrium = :unknown,
         throw(error("incorrect specification for nacc"))
     end
 
-    return MichelsenTPFlash{T}(equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
+    if T == Nothing && v0 != nothing
+        TT = Base.promote_eltype(v0[1],v0[2])
+        _v0 = (v0[1],v0[2])
+    elseif T != nothing && v0 != nothing
+        TT = Base.promote_eltype(one(T),v0[1],v0[2])
+        _v0 = (v0[1],v0[2])
+    else
+        TT = T
+        _v0 = v0
+    end
+
+    return MichelsenTPFlash{TT}(equilibrium,K0,x0,y0,_v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
 end
 
 #hook to precalculate things with the activity model.

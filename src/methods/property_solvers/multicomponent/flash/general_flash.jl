@@ -725,7 +725,7 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
         return GeneralizedXYFlash(;equilibrium = equilibrium,T0 = T00,p0 = P00,x0 = w1,y0 = w2,v0 = v,rtol = rtol,atol = atol,max_iters = max_iters)
     end
 
-    if K0 == x0 == y0 === v0 == nothing #nothing specified
+    if K0 == x0 == y0 === nothing #nothing specified
         #is_lle(equilibrium)
         T = Nothing
     else
@@ -738,6 +738,17 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
         end
     end
 
+    if T == Nothing && v0 != nothing
+        TT = Base.promote_eltype(v0[1],v0[2])
+        _v0 = (v0[1],v0[2])
+    elseif T != nothing && v0 != nothing
+        TT = Base.promote_eltype(one(T),v0[1],v0[2])
+        _v0 = (v0[1],v0[2])
+    else
+        TT = T
+        _v0 = v0
+    end
+
     if T0 == nothing && p0 == nothing
         S = Nothing
     elseif T0 != nothing && p0 != nothing
@@ -745,7 +756,7 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
     else
         S = typeof(something(T0,p0))
     end
-    return GeneralizedXYFlash{S,T}(equilibrium,T0,p0,K0,x0,y0,v0,atol,rtol,max_iters)
+    return GeneralizedXYFlash{S,TT}(equilibrium,T0,p0,K0,x0,y0,_v0,atol,rtol,max_iters)
 end
 
 function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
