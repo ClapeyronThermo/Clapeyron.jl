@@ -88,6 +88,7 @@
         GC.gc()
     end
     end
+    GC.gc()
     @printline
     #=
     #on julia 1.11.2 this test hangs? no idea why
