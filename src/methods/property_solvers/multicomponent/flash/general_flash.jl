@@ -788,7 +788,7 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
     elseif βv < 0 || βv > 1
         phase0 = βv < 0 ? :liquid : :vapour
         T,_phase = _Tproperty(model,p,x/∑z,x1,spec,T0 = T0,phase = phase0)
-        return FlashResult(model,p,T,[SA[∑z*one(p)*one(T)]],phase = _phase)
+        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)],phase = _phase)
     else
         return FlashResult(model,p,Ts,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false)
     end
@@ -823,7 +823,7 @@ function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing) where F
     elseif βv < 0 || βv > 1
         phase0 = βv < 0 ? :liquid : :vapour
         p,_phase = _Pproperty(model,T,x/∑z,SA[1.0],spec,p0 = P0)
-        return FlashResult(model,p,T,[SA[∑z*one(p)*one(T)]],phase = _phase)
+        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)],phase = _phase)
     else
         return FlashResult(model,ps,T,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false)
     end
