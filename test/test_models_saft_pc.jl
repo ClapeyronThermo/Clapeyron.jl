@@ -50,6 +50,25 @@
         GC.gc()
     end
     @printline
+    @testset "gcPCSAFT" begin
+        species = [("ethanol",["CH3"=>1,"CH2"=>1,"OH"=>1],[("CH3","CH2")=>1,("OH","CH2")=>1]),
+                   ("hexane",["CH3"=>2,"CH2"=>4],[("CH3","CH2")=>2,("CH2","CH2")=>3])]
+
+        system = gcPCSAFT(species)
+        @test Clapeyron.a_hc(system, V, T, z) ≈ 5.485662509904188 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z) ≈ -10.594659479487497 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -0.9528180944200482 rtol = 1e-6
+        test_gibbs_duhem(system,V,T,z)
+        GC.gc()
+    end
+    @printline
+    end
+end
+
+@testset "PCSAFT Models" begin
+    @printline
+    let T = 298.15, V = 1e-4,z1 = Clapeyron.SA[1.0],z = [0.5,0.5],z3 = [0.333, 0.333,0.333];
+    @printline
     @testset "CP-PCSAFT" begin
         system = CPPCSAFT(["butane", "propane"])
         @test Clapeyron.a_hc(system, V, T, z) ≈ 3.856483933013827 rtol = 1e-6
@@ -67,18 +86,6 @@
         GC.gc()
     end
     @printline
-    @testset "gcPCSAFT" begin
-        species = [("ethanol",["CH3"=>1,"CH2"=>1,"OH"=>1],[("CH3","CH2")=>1,("OH","CH2")=>1]),
-                   ("hexane",["CH3"=>2,"CH2"=>4],[("CH3","CH2")=>2,("CH2","CH2")=>3])]
-
-        system = gcPCSAFT(species)
-        @test Clapeyron.a_hc(system, V, T, z) ≈ 5.485662509904188 rtol = 1e-6
-        @test Clapeyron.a_disp(system, V, T, z) ≈ -10.594659479487497 rtol = 1e-6
-        @test Clapeyron.a_assoc(system, V, T, z) ≈ -0.9528180944200482 rtol = 1e-6
-        test_gibbs_duhem(system,V,T,z)
-        GC.gc()
-    end
-    @printline
     @testset "ADPCSAFT" begin
         system = ADPCSAFT(["water"])
         @test Clapeyron.a_hs(system, V, T, z1) ≈ 0.3130578789492178 rtol = 1e-6
@@ -87,21 +94,16 @@
         test_gibbs_duhem(system,V,T,z1)
         GC.gc()
     end
-    end
     GC.gc()
-    @printline
-    #=
-    #on julia 1.11.2 this test hangs? no idea why
     @testset "DAPT" begin
-        #try to run dapt in it's own scope
-        let T = 298.15, V = 1e-4,z1 = Clapeyron.SA[1.0];
-            system = DAPT(["water"])
-            @test Clapeyron.a_hs(system, V, T, z1) ≈ 0.35240995905438116 rtol = 1e-6
-            @test Clapeyron.a_disp(system, V, T, z1) ≈ -1.7007754776344663 rtol = 1e-6
-            @test Clapeyron.a_assoc(system, V, T, z1) ≈ -1.815041612389342 rtol = 1e-6
-            test_gibbs_duhem(system,V,T,z1)
-            GC.gc()
-        end
-    end =#
+        system = DAPT(["water"])
+        @test Clapeyron.a_hs(system, V, T, z1) ≈ 0.35240995905438116 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z1) ≈ -1.7007754776344663 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z1) ≈ -1.815041612389342 rtol = 1e-6
+        test_gibbs_duhem(system,V,T,z1)
+        GC.gc()   
+    end
+    @printline
+    end
 end
 @printline
