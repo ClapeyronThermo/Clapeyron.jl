@@ -224,6 +224,15 @@ end
     @test enthalpy(model,p,T,z) ≈ h rtol = 1e-6
     res5 = Clapeyron.tx_flash_pure(model,T,h,z,enthalpy)
     @test pressure(res5)  ≈ p rtol = 1e-6
+
+    #px_flash_pure: two phase (#320)
+    model = cPR(["ethane"],idealmodel = ReidIdeal)
+    p = 101325; z = [5.0]; 
+    T = saturation_temperature(model,p)[1]
+    h_liq = enthalpy(model,p,T-0.1,z);h_gas = enthalpy(model,p,T+0.1,z)
+    h = (h_liq + h_gas)/2 
+    T2 = Clapeyron.PH.temperature(model,p,h,z)
+    @test T2 ≈ T rtol = 1e-6
 end
 
 @testset "Saturation Methods" begin
