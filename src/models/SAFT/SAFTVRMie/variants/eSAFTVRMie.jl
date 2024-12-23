@@ -80,7 +80,7 @@ function eSAFTVRMie(solvents,ions;
     references = String[]
     components = format_components(components)
     model = eSAFTVRMie(components,icomponents,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
-    set_reference_state!(gmie,reference_state;verbose)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 
