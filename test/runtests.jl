@@ -42,8 +42,7 @@ function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
     end
     pures = split_model(model)
     x_pure = zeros(length(model))
-    for n in 1:length(model)
-        
+    for n in 1:length(model) 
         for i in (2.0,3.0,5.0,7.0,11.0)
             x_pure[n] = i
             @test Clapeyron.a_res(model,i*V,T,x_pure) ≈ Clapeyron.a_res(pures[n],i*V,T,Clapeyron.SVector(i)) rtol = rtol
