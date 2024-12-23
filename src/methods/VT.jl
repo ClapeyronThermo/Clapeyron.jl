@@ -556,4 +556,8 @@ module VT
 
     pressure(model, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = p 
     using Clapeyron: second_virial_coefficient,cross_second_virial,equivol_cross_second_virial =#
+    function flash(model,v,T,z = Clapeyron.SA[1.0],args...;kwargs...)
+        return Clapeyron.vt_flash(model,v,T,z,args...;kwargs...)
+    end
+
 end
