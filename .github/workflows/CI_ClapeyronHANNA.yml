@@ -7,6 +7,14 @@ on:
     paths:
       - "lib/ClapeyronHANNA/**"
       - ".github/workflows/CI_ClapeyronHANNA.yml"
+    paths-ignore:
+      - 'docs/**'
+      - 'examples/**'
+      - 'src/models/SAFT/**'
+      - 'src/models/cubic/**'
+      - 'src/models/EmpiricHelmholtz/**'
+      - 'src/methods/**'
+      - 'examples/**'
   push:
     branches:
       - master
