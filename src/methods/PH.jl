@@ -48,6 +48,10 @@ for f in [:temperature,:volume, :pressure, :entropy, :internal_energy, :enthalpy
             Clapeyron.PH_property(model,p,h,z,Clapeyron.$f,phase,T0,threaded)
         end
     end
+
+    function flash(model,p,h,z = Clapeyron.SA[1.0],args...;kwargs...)
+        return Clapeyron.ph_flash(model,p,h,z,args...;kwargs...)
+    end
 end
 #export chemical_potential, activity_coefficient, activity, aqueous_activity, fugacity_coefficient,reference_chemical_potential,reference_chemical_potential_type
 #export chemical_potential_res

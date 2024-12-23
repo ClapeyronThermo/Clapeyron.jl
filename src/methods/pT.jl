@@ -819,6 +819,9 @@ module PT
     import Clapeyron
     pressure(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = p
     temperature(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = T
+    function flash(model,p,T,z = Clapeyron.SA[1.0],args...;kwargs...)
+        return Clapeyron.tp_flash2(model,p,T,z,args...;kwargs...)
+    end
 end
 
 """

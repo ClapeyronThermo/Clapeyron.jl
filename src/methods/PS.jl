@@ -48,6 +48,10 @@ for f in [:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free
             Clapeyron.PS_property(model,p,s,z,Clapeyron.$f,phase,T0,threaded)
         end
     end
+
+    function flash(model,p,s,z = Clapeyron.SA[1.0],args...;kwargs...)
+        return Clapeyron.ps_flash(model,p,s,z,args...;kwargs...)
+    end
 end
 function temperature(model,p,s,z = Clapeyron.SA[1.0];phase = :unknown,T0 = nothing, threaded = true)
     return Clapeyron.Tproperty(model,p,s,z,Clapeyron.entropy,T0 = T0,phase = phase,threaded = threaded)
