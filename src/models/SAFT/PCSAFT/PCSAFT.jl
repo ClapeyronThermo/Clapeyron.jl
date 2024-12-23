@@ -201,11 +201,12 @@ function I(model::PCSAFTModel, V, T, z, n, _data=@f(data))
     res = zero(η)
     m̄1 = (m̄-1)/m̄
     m̄2 = (m̄-1)/m̄*(m̄-2)/m̄
+    ηi = one(η)
     @inbounds for i ∈ 1:length(corr)
-        ii = i-1 
         corr1,corr2,corr3 = corr[i]
         ki = corr1 + m̄1*corr2 + m̄2*corr3
-        res +=ki*η^ii
+        res += ki*ηi
+        ηi *= η
     end
     return res
 end
