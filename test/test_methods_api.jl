@@ -119,6 +119,14 @@ end
     @test !isstable(model,p,297.23,z)
     @test !Clapeyron.VT_isstable(model,v1,297.23,z)
     GC.gc()
+
+    model = cPR(["ethane"],idealmodel = ReidIdeal)
+    p = 101325; z = [5.0]; 
+    T,vl,vv = saturation_temperature(model,p)
+    v_unstable = exp(0.5*(log(vl) + log(vv)))
+    V = volume(model,p,T,z) # lies in range of Vv
+    @test Clapeyron.VT_diffusive_stability(model,V,T,z)
+    @test !Clapeyron.VT_diffusive_stability(model,v_unstable,T,z)
 end
 
 @testset "reference states" begin
