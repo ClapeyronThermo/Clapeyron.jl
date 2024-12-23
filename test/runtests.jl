@@ -82,7 +82,7 @@ include_distributed("test_models_electrolytes.jl",1)
 include_distributed("test_methods_eos.jl",4)
 include_distributed("test_methods_api.jl",2)
 include_distributed("test_methods_api_flash.jl",3)
-include_distributed("test_methods_electrolytes.jl",2)
+include_distributed("test_methods_electrolytes.jl",1)
 include_distributed("test_estimation.jl",1)
 include_distributed("test_issues.jl",4)
 
