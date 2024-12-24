@@ -834,14 +834,16 @@ function qflash_pure(model,spec::F,x,βv,z) where F
         T,vl,vv = saturation_temperature(model,x)
         p = x
     elseif spec == temperature
-        p,vl,vv = saturation_pressure(model,T)
+        p,vl,vv = saturation_pressure(model,x)
         T = x
     else
         throw(ArgumentError("invalid specification for qflash_pure: $spec"))
     end
     ∑z = sum(z)
     x1 = SA[1.0]
-    if !isfinite(βv)
+
+    #over critical point, or bad input
+    if !isfinite(βv) || !isfinite(p) || !isfinite(T)
         return FlashResultInvalid(1,βv)
     elseif βv == 1
         return FlashResult([x1],[∑z],[vv],FlashData(p,T))
