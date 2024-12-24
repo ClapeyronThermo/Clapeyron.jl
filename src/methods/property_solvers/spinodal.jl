@@ -78,16 +78,20 @@ function spinodal_temperature(model::EoSModel,p,z=SA[1.];T0=nothing,v0=nothing,p
         end
         _T0 = isnothing(T0) ? T00 : T0*one(T00)
         _v0 = isnothing(v0) ? v00 : v0*one(v00)
+    else
+        _1 = one(Base.promote_eltype(model,p,z))
+        _v0 = _1*v0
+        _T0 = _1*T0
     end
 
     # Solve spinodal condition
     vcache = [_v0]
     function f(Tz)
         vol0 = vcache[]
-        v = volume(model,p,T,x; phase=phase, vol0=vol0)
+        v = volume(model, p, Tz, x; phase=phase, vol0=vol0)
         ϱ = x./v
         vcache[1] = Solvers.primalval(v)
-        det_∂²A∂ϱᵢ²(model, T, ϱ)
+        det_∂²A∂ϱᵢ²(model, Tz, ϱ)
     end
 
     function fdf(Tz)
@@ -104,7 +108,10 @@ end
 function det_∂²A∂ϱᵢ²(model,T,ϱ)
     # calculates det(∂²A∂xᵢ² ⋅ ϱ) at V,T constant (see www.doi.org/10.1016/j.fluid.2017.04.009)
     Av(ϱi) = Ψ_eos(model, T, ϱi)
-    return det(ForwardDiff.hessian(Av,ϱ))
+    H = ForwardDiff.hessian(Av,ϱ)
+    #we know that H is symmetric
+    F = lu!(Symmetric(H))
+    return det(F)
 end
 
 export spinodal_pressure, spinodal_temperature
