@@ -85,7 +85,7 @@ function qt_flash(model,β,T,z,method::FlashMethod)
         method_r,z_r = method,z
     end
     if length(model_r) == 1
-        result1 = qflash_pure(model,temperature,T,βv,z)
+        result1 = qflash_pure(model,temperature,T,β,z)
         return index_expansion(result1,idx_r)
     end
 

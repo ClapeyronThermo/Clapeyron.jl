@@ -844,9 +844,9 @@ function qflash_pure(model,spec::F,x,βv,z) where F
     if !isfinite(βv)
         return FlashResultInvalid(1,βv)
     elseif βv == 1
-        return FlashResult([[1.0]],[∑z],[vv],FlashData(p,T))
+        return FlashResult([x1],[∑z],[vv],FlashData(p,T))
     elseif βv == 0
-        return FlashResult([[1.0]],[∑z],[vl],FlashData(p,T))
+        return FlashResult([x1],[∑z],[vl],FlashData(p,T))
     elseif βv < 0 || βv > 1
         throw(error("invalid specification of vapour fraction, it must be between 0 and 1."))
     else

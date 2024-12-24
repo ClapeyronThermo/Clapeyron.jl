@@ -94,7 +94,7 @@ function qp_flash(model,β,p,z,method::FlashMethod)
         method_r,z_r = method,z
     end
     if length(model_r) == 1
-        result1 = qflash_pure(model_r,pressure,p,βv,z)
+        result1 = qflash_pure(model_r,pressure,p,β,z)
         return index_expansion(result1,idx_r)
     end
 
