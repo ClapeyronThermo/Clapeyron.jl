@@ -223,7 +223,7 @@ end
     p = 101325;h = 100; z = Clapeyron.SA[1]; T = Clapeyron.PH.temperature(model,p,h,z)
     @test enthalpy(model,p,T,z) ≈ h rtol = 1e-6
     res5 = Clapeyron.tx_flash_pure(model,T,h,z,enthalpy)
-    @test pressure(res5)  ≈ p rtol = 1e-6
+    @test pressure(res5) ≈ p rtol = 1e-6
 
     #px_flash_pure: two phase (#320)
     model = cPR(["ethane"],idealmodel = ReidIdeal)
@@ -233,6 +233,34 @@ end
     h = (h_liq + h_gas)/2 
     T2 = Clapeyron.PH.temperature(model,p,h,z)
     @test T2 ≈ T rtol = 1e-6
+
+    #QP flash pure (#325)
+    model = cPR(["methane"],idealmodel = ReidIdeal)
+    p = 101325.0; q = 1.0; z = [5.0]
+    res_qp1 = qp_flash(model,q,p,z)
+    @test Clapeyron.temperature(res_qp1) == saturation_temperature(model,p)[1]
+    res_qt1 = qt_flash(model,0.99,160.0,z)
+    @test pressure(res_qt1) == saturation_pressure(model,160.0)[1]
+
+    #QP: test a range of vapour fractions
+    q = range(0.001,0.999,100)
+    fluids = ["isobutane","pentane"]
+    model = cPR(fluids,idealmodel=ReidIdeal)
+    p = 101325.0
+    z = [5.0,5.0]
+    qp_flashes = qp_flash.(model,q,p,Ref(z))
+    T = Clapeyron.temperature.(qp_flashes)
+    @test maximum(diff(T)) < 0.25
+
+    #bubble/dew temperatures via qp_flash
+    Tbubble0 = bubble_temperature(model,p,z)[1]
+    Tbubble1 = Clapeyron.temperature(qp_flash(model,0,p,z))
+    @test Tbubble0 ≈ Tbubble1 rtol = 1e-6
+
+    Tdew0 = dew_temperature(model,p,z)[1]
+    Tdew1 = Clapeyron.temperature(qp_flash(model,1,p,z))
+    @test Tdew0 ≈ Tdew1 rtol = 1e-6
+
 end
 
 @testset "Saturation Methods" begin

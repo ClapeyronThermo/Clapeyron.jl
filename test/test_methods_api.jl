@@ -127,15 +127,6 @@ end
     V = volume(model,p,T,z) # lies in range of Vv
     @test Clapeyron.VT_diffusive_stability(model,V,T,z)
     @test !Clapeyron.VT_diffusive_stability(model,v_unstable,T,z)
-
-    #QP flash pure (#325)
-    model = cPR(["methane"],idealmodel = ReidIdeal)
-    p = 101325.0; q = 1.0; z = [5.0]
-    res_qp1 = qp_flash(model,q,p,z)
-    @test Clapeyron.temperature(res_qp1) == saturation_temperature(model,p)[1]
-    res_qt1 = qt_flash(model,0.99,160.0,z)
-    @test pressure(res_qt1) == saturation_pressure(model,160.0)[1]
-
 end
 
 @testset "reference states" begin
