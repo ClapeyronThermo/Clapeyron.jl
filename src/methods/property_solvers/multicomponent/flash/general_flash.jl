@@ -69,6 +69,8 @@ end
 
 spec_intensive(::typeof(pressure)) = true
 spec_intensive(::typeof(temperature)) = true
+spec_intensive(::Vfrac) = true
+
 spec_intensive(x) = false
 
 
@@ -416,6 +418,8 @@ function detect_and_set_slack_variables!(x,spec::FlashSpecifications,np,nc)
         x[end] = spec.val2
     end
 
+    #TODO: does fixing the vapour fractions work?
+    #=
     _,β,_ = xy_input_to_flash_vars(x,np,nc)
     _,βslack,_ = xy_input_to_flash_vars(slack,np,nc)
 
@@ -448,10 +452,24 @@ function detect_and_set_slack_variables!(x,spec::FlashSpecifications,np,nc)
             βslack .= true
         end
     end
-
+    =#
     return slack
 end
 
+
+#we set the value of F[slack] = 0, J[slack_i,slack_i] = 1,  J[:,slack_i] = 0, J[slack_i,:] = 0
+function remove_slacks!(F,J,slacks)
+    for i in 1:length(slacks)
+        if slacks[i]
+            F[i] = 0
+            J1 = @view(J[i,:])
+            J2 = @view(J[:,i])
+            J1 .= 0
+            J2 .= 0
+            J[i,i] = 1
+        end
+    end
+end
 #we set the value of F[slack] = 0, J[slack_i,slack_i] = 1,  J[:,slack_i] = 0, J[slack_i,:] = 0
 function remove_slacks!(F,J,slacks)
     for i in 1:length(slacks)
@@ -580,7 +598,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         _f[slacks] .= 0
         Θ(_f)
     end
-
     config = ForwardDiff.JacobianConfig(f!,F,x)
     #ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
     f!(F,x)
@@ -597,7 +614,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         #do not iterate on slack variables
         remove_slacks!(F,J,slacks)
         Jcache .= J
-
         #try to do LU, if it does not work, use modified SVD
         finite_F = all(isfinite,F)
         finite_J = all(isfinite,J)
@@ -616,6 +632,11 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
             s .= -F
             ldiv!(JJ,s)
             s .= JJ\-F
+        end
+                
+        for i in 1:length(s)
+            si = s[i]
+            abs(si) < eps(eltype(s)) && si < 0 &&  (s[i] = 0)
         end
 
         x_old .= x
