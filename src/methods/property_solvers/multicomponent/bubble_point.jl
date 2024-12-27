@@ -341,7 +341,7 @@ function antoine_bubble_problem(dpdt,p_bubble,x,volatiles = FillArrays.Fill(true
                 p += pᵢxᵢ
             end
         end
-        return p - p_bubble
+        return p/sum(x) - p_bubble
     end
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
     return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
