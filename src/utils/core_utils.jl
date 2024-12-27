@@ -123,7 +123,7 @@ function show_as_namedtuple(io::IO,x)
             print(io,comma) 
         end
     end
-    println(io,")")
+    print(io,")")
 end
 
 #=
