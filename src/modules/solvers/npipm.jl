@@ -43,7 +43,7 @@ end
 function remove_slacks!(F,J,slacks::AbstractVector{Bool})
     for i in 1:length(slacks)
         if slacks[i]
-            remove_slacks(F,J,i)
+            remove_slacks!(F,J,i)
         end
     end
 end
