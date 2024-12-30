@@ -106,9 +106,7 @@ function det_∂²A∂ϱᵢ²(model,T,ϱ)
     # calculates det(∂²A∂xᵢ² ⋅ ϱ) at V,T constant (see www.doi.org/10.1016/j.fluid.2017.04.009)
     Av(ϱi) = Ψ_eos(model, T, ϱi)
     H = ForwardDiff.hessian(Av,ϱ)
-    #we know that H is symmetric
-    F = lu!(Symmetric(H))
-    return det(F)
+    return det(H)
 end
 
 export spinodal_pressure, spinodal_temperature
