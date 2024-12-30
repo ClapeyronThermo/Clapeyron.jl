@@ -26,7 +26,7 @@ end
 
 Auxiliary struct that contains information about the current `FlashResult` object. It stores the pressure, temperature and reduced gibbs energy (`g = G/nRT`)
 """
-struct FlashData{R,P}
+struct FlashData{R}
     p::R
     T::R
     g::R
@@ -35,6 +35,15 @@ end
 Base.show(io::IO,::MIME"text/plain",options::FlashData) = show_as_namedtuple(io,options)
 Base.show(io::IO,options::FlashData) = show_as_namedtuple(io,options)
 
+function FlashData(p::R1,T::R2,g::R3) where{R1,R2,R3}
+    if g === nothing
+        FlashData(p,T)
+    else
+        return FlashData(promote(p,T,g)...)
+    end
+end
+
+FlashData(p,T) = FlashData(p,T,1.0*zero(p))
 
 #mol checker, with gibbs
 function FlashResult(model::EoSModel,p,T,z::Union{Number,AbstractVector{<:Number}},comps,β,volumes,g = nothing;sort = true)

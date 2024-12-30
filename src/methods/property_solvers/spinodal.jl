@@ -85,12 +85,9 @@ function spinodal_temperature(model::EoSModel,p,z=SA[1.];T0=nothing,v0=nothing,p
     end
 
     # Solve spinodal condition
-    vcache = [_v0]
     function f(Tz)
-        vol0 = vcache[]
-        v = volume(model, p, Tz, x; phase=phase, vol0=vol0)
+        v = volume(model, p, Tz, x; phase=phase,v0 = _v0)
         ϱ = x./v
-        vcache[1] = Solvers.primalval(v)
         det_∂²A∂ϱᵢ²(model, Tz, ϱ)
     end
 
@@ -101,7 +98,7 @@ function spinodal_temperature(model::EoSModel,p,z=SA[1.];T0=nothing,v0=nothing,p
 
     prob = Roots.ZeroProblem(fdf,_T0)
     T_spin = Roots.solve(prob,Roots.Newton(),atol = 1e-6)
-    return T_spin, vcache[1]*∑z
+    return T_spin, volume(model,p,T,z,v0 = _v0)
 end
 
 # Objective function for spinodal calculation -> det(∂²A/∂ϱᵢ) = 0
