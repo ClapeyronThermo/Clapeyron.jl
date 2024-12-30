@@ -194,7 +194,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         volumes = [vx,vy]
         comps = [wx,wy]
         βi = [βx,βy]
-        if is_vapour(volume_label(model,vy,T,wy))
+        if is_vapour(VT_identify_phase(model,vy,T,wy))
             idx_vapour[] = 2
         end
         δn_add = true
@@ -212,7 +212,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         for i in 1:length(comps)
             volumes[i] = volume(model,p,T,comps[i])
             if idx_vapour[] == 0
-                if is_vapour(volume_label(model,volumes[i],T,comps[i]))
+                if is_vapour(VT_identify_phase(model,volumes[i],T,comps[i]))
                     idx_vapour[] = i
                 end
             end
