@@ -46,7 +46,7 @@ function spinodal_pressure(model::EoSModel,T,z=SA[1.];v0=nothing,phase=:unknown)
     end
 
     prob = Roots.ZeroProblem(fdf,log(_v0))
-    log_V_spin = Roots.solve(prob,Roots.Newton(),atol = 1e-6)
+    log_V_spin = Roots.solve(prob,Roots.Newton())
     V_spin = exp(log_V_spin)
     p_spin = pressure(model,V_spin,T,x)
     return p_spin,V_spin*∑z
@@ -97,7 +97,7 @@ function spinodal_temperature(model::EoSModel,p,z=SA[1.];T0=nothing,v0=nothing,p
     end
 
     prob = Roots.ZeroProblem(fdf,_T0)
-    T_spin = Roots.solve(prob,Roots.Newton(),atol = 1e-6)
+    T_spin = Roots.solve(prob,Roots.Newton())
     return T_spin, volume(model,p,T_spin,z,vol0 = _v0)
 end
 
