@@ -1,9 +1,10 @@
 
 function qp_f0_T!(K,z,dpdT,T0,p,T,β0)
     for i in 1:length(K)
-        dTinvdlnp = -p/(dpdT[i]*T*T)
-        ΔTinv = 1/T - 1/T0[i]
-        K[i] = exp(ΔTinv/dTinvdlnp)
+        dlnpdTinv,logp0,T0inv = dpdT[i]
+        #dTinvdlnp = -p/(dpdT[i]*T*T)
+        ΔTinv = 1/T - T0inv
+        K[i] = exp(ΔTinv*dlnpdTinv)
     end
     return rachfordrice(K,z) - β0
 end
@@ -14,22 +15,33 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
             x = z ./ sum(z)
             T,vl,vv,y = __x0_bubble_temperature(model,p,x)
             y ./= sum(y)
-            return FlashResult(p,T,SA[x,y],SA[1.0-β,1.0*β],SA[vl,vv],sort = false)
+            βv = β*sum(z)
+            βl = sum(z) - βv
+            return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         elseif 0.99 <= β <= 1.0
             y = z ./ sum(z)
             T,vl,vv,x = __x0_dew_temperature(model,p,y)
             x ./= sum(x)
-            return FlashResult(p,T,SA[x,y],SA[1.0-β,1.0*β],SA[vl,vv],sort = false)
+            βv = β*sum(z)
+            βl = sum(z) - βv
+            return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         else
-        
+
         pures = split_model(model)
-        sat = extended_saturation_temperature.(pures,p) 
+        sat = extended_saturation_temperature.(pures,p)
+        _crit = __crit_pure.(sat,pures)
+        fix_sat_ti!(sat,pures,_crit,p)
+        dpdT = __dlnPdTinvsat.(pures,sat,_crit,p)
+        dew_prob = antoine_dew_problem(dpdT,p,z)
+        Tmax = Roots.solve(dew_prob)
+        bubble_prob = antoine_bubble_problem(dpdT,p,z)
+        Tmin = Roots.solve(bubble_prob)
+        #@show Td0,Tb0
         T0 = first.(sat)
-        Tmin,Tmax = extrema(T0)
+        #Tmin,Tmax = extrema(T0)
         #we approximate sat(T) ≈ exp(-dpdT*T*T(1/T - 1/T0)/p)*p
-        dpdT = map(i -> dpdT_pure(pures[i],sat[i][3],sat[i][2],sat[i][1]),1:length(model))
-        K = similar(dpdT)
-        ft(T) = qp_f0_T!(K,z,dpdT,T0,p,T,β)     
+        K = similar(T0)
+        ft(T) = qp_f0_T!(K,z,dpdT,T0,p,T,β)
         #we do a search over Tmin-Tmax domain, finding the minimum value of the objective function
         Tm = β*Tmax + (1 - β)*Tmin
         Tr1 = range(Tmin,Tm,5*length(model))
@@ -43,9 +55,10 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
             else
                 T00 = Tr2[i2]
             end
+            
             prob = Roots.ZeroProblem(ft,T00)
             T = Roots.solve(prob)
-            
+
         end
     else
         T = method.T0
@@ -54,7 +67,30 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
     return r
 end
 
+"""
+    result = qp_flash(model, q, p, n, method::FlashMethod = GeneralizedXYFlash())
+    result = qp_flash(model, q, p, n; kwargs...)
+
+Routine to solve non-reactive two-phase multicomponent flash problem. with vapour fraction - P specifications.
+Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
+Inputs:
+ - `q`, vapour fraction
+ - `p`, pressure
+ - `z`, vector of number of moles of each species
+
+All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
+
+ Outputs:
+ - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
+
+!!! note
+    Using `qp_flash` with q = 0 or q = 1 is equivalent to calculating bubble or dew temperatures.
+    Passing `GeneralizedXYFlash` as a method to [`bubble_temperature`](@ref) of [`dew_temperature`](@ref) will use `qp_flash` to calculate the bubble/dew point.
+"""
 function qp_flash(model::EoSModel,β,p,z;kwargs...)
+    if !(0 <= β <= 1)
+        throw(DomainError(β,"vapour fractions should be between 0 and 1"))
+    end
     method = init_preferred_method(qp_flash,model,kwargs)
     return qp_flash(model,β,p,z,method)
 end
@@ -74,7 +110,7 @@ function qp_flash(model,β,p,z,method::FlashMethod)
         method_r,z_r = method,z
     end
     if length(model_r) == 1
-        result1 = βflash_pure(model_r,pressure,p,βv,z)
+        result1 = qflash_pure(model_r,pressure,p,β,z)
         return index_expansion(result1,idx_r)
     end
 

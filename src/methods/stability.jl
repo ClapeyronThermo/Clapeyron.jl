@@ -42,11 +42,18 @@ end
 
 Performs a diffusive stability for a (V,T,z) pair, returns `true/false`.
 Checks if all eigenvalues of `∂²A/∂n²` are positive.
+Returns `false` if the eos calculation failed. this normally occurs when evaluating on densities lower than the maximum density (given by `Clapeyron.lb_volume(model,T,z)`)
 """
 function VT_diffusive_stability(model,V,T,z = SA[1.0])
-    isone(length(model)) && return true
-    ρᵢ = z ./ V
+    ρᵢ = similar(z,Base.promote_eltype(V,z))
+    ρᵢ .= z ./ V
     HΨ = Ψ_hessian(model,T,ρᵢ)
+    if any(!isfinite,HΨ)
+        return false
+    end
+    if length(model) == 1
+        return HΨ[1,1] > 0
+    end
     λ = eigmin(Hermitian(HΨ)) # calculating just minimum eigenvalue more efficient than calculating all & finding min
     return λ > 0
 end

@@ -1,3 +1,19 @@
+"""
+    result = ps_flash(model, p, s, n, method::FlashMethod = GeneralizedXYFlash())
+    result = ps_flash(model, p, s, n; kwargs...)
+
+Routine to solve non-reactive two-phase multicomponent flash problem. with P-S specifications.
+Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
+Inputs:
+ - `p`, pressure
+ - `s`, entropy
+ - `z`, vector of number of moles of each species
+
+All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
+
+ Outputs:
+ - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
+"""
 function ps_flash(model::EoSModel,p,s,z;kwargs...)
     method = init_preferred_method(ps_flash,model,kwargs)
     return ps_flash(model,p,s,z,method)
@@ -8,7 +24,7 @@ function init_preferred_method(method::typeof(ps_flash),model::EoSModel,kwargs)
 end
 
 function ps_flash(model,p,s,z,method::FlashMethod)
-    check_arraysize(model,n)
+    check_arraysize(model,z)
     if supports_reduction(method)
         model_r,idx_r = index_reduction(model,z)
         z_r = z[idx_r]

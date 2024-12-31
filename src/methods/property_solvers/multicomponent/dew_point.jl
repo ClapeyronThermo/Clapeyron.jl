@@ -144,11 +144,10 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
     if Tx0 !== nothing
         T0 = Tx0
     else
-        dPdTsat = __dlnPdTinvsat.(pure,sat,_crit,p,condensables)
-        prob = antoine_dew_problem(dPdTsat,p,y,condensables)
+        dPdTsat = __dlnPdTinvsat.(pure,sat,_crit,p)
+        prob = antoine_dew_problem(dPdTsat,p,y)
         T0 = Roots.solve(prob)
     end
-    K0 = 
     K = suggest_K(model,p,T0,y,pure,FillArrays.fill(true,length(model)),_crit)
     x = rr_flash_liquid(K,y,one(eltype(K)))
     x ./= sum(x)
@@ -158,7 +157,7 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
     return T0,vl0,vv0,x
 end
 
-function antoine_dew_problem(dpdt,p_dew,y,condensables)  
+function antoine_dew_problem(dpdt,p_dew,y,condensables = FillArrays.Fill(true,length(dpdt)))  
     function antoine_f0(T)
         pinv = zero(T+first(y)+first(dpdt)[1])
         for i in 1:length(dpdt)
@@ -169,7 +168,7 @@ function antoine_dew_problem(dpdt,p_dew,y,condensables)
                 pinv += pᵢyᵢ
             end
         end
-        return 1/pinv - p_dew
+        return sum(y)/pinv - p_dew
     end
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
     return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))

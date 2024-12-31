@@ -1,7 +1,7 @@
 name = "ClapeyronHANNA"
 uuid = "3f3167c7-7596-4199-a8f8-b0e6cfdc2746"
 authors = ["Sebastian Schmitt <se.s.schmitt@gmail.com>"]
-version = "1.1.0"
+version = "1.1.1"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"

@@ -42,8 +42,7 @@ function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
     end
     pures = split_model(model)
     x_pure = zeros(length(model))
-    for n in 1:length(model)
-        
+    for n in 1:length(model) 
         for i in (2.0,3.0,5.0,7.0,11.0)
             x_pure[n] = i
             @test Clapeyron.a_res(model,i*V,T,x_pure) ≈ Clapeyron.a_res(pures[n],i*V,T,Clapeyron.SVector(i)) rtol = rtol
@@ -82,7 +81,8 @@ include_distributed("test_models_saft_vr.jl",1)
 include_distributed("test_models_electrolytes.jl",1)
 include_distributed("test_methods_eos.jl",4)
 include_distributed("test_methods_api.jl",2)
-include_distributed("test_methods_electrolytes.jl",2)
+include_distributed("test_methods_api_flash.jl",3)
+include_distributed("test_methods_electrolytes.jl",1)
 include_distributed("test_estimation.jl",1)
 include_distributed("test_issues.jl",4)
 

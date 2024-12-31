@@ -37,9 +37,11 @@ You can mix and match ideal models if you provide:
 - `[idealmodel](@ref)(model)`: extracts the ideal model from your Thermodynamic model
 - `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz free energy
 """
-function eos(model::EoSModel, V, T, z = SA[1.0])
+function eos(model::EoSModel, V, T, z::AbstractVector = SA[1.0])
     return eos_impl(model,V,T,z)
 end
+
+eos(model::EoSModel, V, T, z::Number) = eos(model, V, T, SA[z])
 
 """
     idealmodel(model::EoSModel)

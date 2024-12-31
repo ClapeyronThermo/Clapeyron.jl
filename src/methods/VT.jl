@@ -21,7 +21,7 @@ function pressure_res(model::EoSModel, V, T, z=SA[1.])
     return -Solvers.derivative(fun,V)
 end
 
-function VT_entropy(model::EoSModel, V, T, z=SA[1.])
+function VT_entropy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return -∂f∂T(model,V,T,z)
 end
 
@@ -30,7 +30,7 @@ function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
     return -Solvers.derivative(fun,T)
 end
 
-function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
+function VT_internal_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     ideal = model isa IdealModel
     if V == Inf && !ideal
         return VT_internal_energy(idealmodel(model),V,T,z)
@@ -52,7 +52,7 @@ function VT_internal_energy_res(model::EoSModel, V, T, z=SA[1.])
     return A - T*∂A∂T
 end
 
-function VT_enthalpy(model::EoSModel, V, T, z=SA[1.])
+function VT_enthalpy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     ideal = model isa IdealModel
     if V == Inf && !ideal
         return VT_internal_energy(idealmodel(model),V,T,z)
@@ -80,7 +80,7 @@ function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
     return A + PrV - T*∂A∂T
 end
 
-function VT_gibbs_free_energy(model::EoSModel, V, T, z=SA[1.],p = nothing)
+function VT_gibbs_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p = nothing)
     ideal = model isa IdealModel
     if V == Inf && !ideal
         return VT_gibbs_free_energy(idealmodel(model), V, T, z=SA[1.])
@@ -107,7 +107,7 @@ function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     return Ar + PrV
 end
 
-function VT_helmholtz_free_energy(model::EoSModel, V, T, z=SA[1.])
+function VT_helmholtz_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return eos(model,V,T,z)
 end
 
@@ -417,7 +417,7 @@ end
 
 (fixed::ZVar{P,M,V,T})(z::Z) where {P,M,V,T,Z} = fixed.property(fixed.model,fixed.vol,fixed.temp,z)
 
-function VT_partial_property(model::EoSModel,V,T,z,property::ℜ) where {ℜ}
+function VT_partial_property(model::EoSModel,V,T,z::AbstractVector,property::ℜ) where {ℜ}
     fun = ZVar(property,model,V,T)
     TT = gradient_type(model,T+V,z)
     return Solvers.gradient(fun,z)::TT
@@ -556,4 +556,8 @@ module VT
 
     pressure(model, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = p 
     using Clapeyron: second_virial_coefficient,cross_second_virial,equivol_cross_second_virial =#
+    function flash(model,v,T,z = Clapeyron.SA[1.0],args...;kwargs...)
+        return Clapeyron.vt_flash(model,v,T,z,args...;kwargs...)
+    end
+
 end

@@ -12,7 +12,7 @@ function volume_impl(model::SecondVirialModel,p,T,z,phase,threaded,vol0)
     return volume_virial(B,p,T,z)
 end
 
-function ∂f∂V(model::SecondVirialModel,V,T,z=SA[1.0])
+function ∂f∂V(model::SecondVirialModel,V,T,z::AbstractVector=SA[1.0])
     B = second_virial_coefficient(model,T,z)
     return -R̄*T*(1 + B/V)/V
 end

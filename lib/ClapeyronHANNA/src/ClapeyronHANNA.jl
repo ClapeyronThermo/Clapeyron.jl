@@ -50,7 +50,7 @@ end
 function load_scalers()
     data = CSV.File("$DB_PATH/scaler/scaler.csv";header=1,types=Float64,delim=',') |> CSV.Tables.matrix
     (u,s,k) = [data[:,i][:] for i in 1:3]
-    T_scaler = TScaler(u[1],s[1]*k[1])
+    T_scaler = TScaler(u[1],s[1]/k[1])
     emb_scaler = EmbeddedScaler(u,s,k)
     return T_scaler, emb_scaler
 end

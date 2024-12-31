@@ -174,10 +174,14 @@ An initial estimate of the volume `vol0` can be optionally be provided.
 """
 function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0=nothing)
     #this is used for dispatch on symbolic variables
-    return _volume(model,p,T,z,phase,threaded,vol0)
+    if z isa Number
+        return _volume(model,p,T,SA[z],phase,threaded,vol0)
+    else
+        return _volume(model,p,T,z,phase,threaded,vol0)
+    end
 end
 
-function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
+function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
     return volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 

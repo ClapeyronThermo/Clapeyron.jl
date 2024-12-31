@@ -1,4 +1,7 @@
 function PT_property(model,p,T,z,phase,threaded,vol0,f::F,::Val{UseP}) where {F,UseP}
+    if z isa Number
+        return PT_property(model,p,T,SA[z],phase,threaded,vol0,f,Val{UseP}())
+    end
     V = volume(model, p, T, z; phase, threaded, vol0)
     if UseP
         return f(model,V,T,z,p)
@@ -775,7 +778,7 @@ function partial_property(model::EoSModel, p, T, z, property::ℜ; phase=:unknow
 end
 
 #special dispatch for volume here
-function VT_partial_property(model::EoSModel, V, T, z, ::typeof(volume))
+function VT_partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(volume))
     _,dpdv = p∂p∂V(model,V,T,z)
     dpdni = VT_partial_property(model, V, T, z, pressure)
     return -dpdni ./ dpdv
@@ -816,6 +819,9 @@ module PT
     import Clapeyron
     pressure(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = p
     temperature(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = T
+    function flash(model,p,T,z = Clapeyron.SA[1.0],args...;kwargs...)
+        return Clapeyron.tp_flash2(model,p,T,z,args...;kwargs...)
+    end
 end
 
 """

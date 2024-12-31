@@ -612,7 +612,8 @@ function suggest_K(model,p,T,z,pure = split_model(model),volatiles = FillArrays.
     lnϕz,v = lnϕ(model,p,T,z,threaded = false)
     K = similar(lnϕz)
     di = similar(lnϕz)
-    di .= lnϕz .+ log.(z)
+    log∑z = log(sum(z))
+    di .= lnϕz .+ log.(z) .- log∑z
     for i in 1:length(z)
         if !volatiles[i]
             K[i] = 0

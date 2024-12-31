@@ -117,7 +117,7 @@ function extended_saturation_temperature(pure, p, _crit = nothing, volatile = tr
     #create initial point from critical values
     #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
     
-    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,p,volatile,false)
+    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,p,volatile,true)
     #lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
     Tinv = (log(p) - logp0)/dlnpdTinv + Tcinv
     T0  = 1/Tinv
@@ -330,7 +330,7 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
     return T0,vl0,vv0,y
 end
 
-function antoine_bubble_problem(dpdt,p_bubble,x,volatiles)  
+function antoine_bubble_problem(dpdt,p_bubble,x,volatiles = FillArrays.Fill(true,length(dpdt)))  
     function antoine_f0(T)
         p = zero(T+first(x)+first(dpdt)[1])
         for i in 1:length(dpdt)
@@ -341,7 +341,7 @@ function antoine_bubble_problem(dpdt,p_bubble,x,volatiles)
                 p += pᵢxᵢ
             end
         end
-        return p - p_bubble
+        return p/sum(x) - p_bubble
     end
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
     return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))

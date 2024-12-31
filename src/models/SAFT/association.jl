@@ -789,15 +789,15 @@ function X(model::DAPTModel, V, T, z)
 end
 ```
 """
-macro assoc_loop(Xold,Xnew,expr)
+macro assoc_loop(Xold::Symbol,Xnew::Symbol,expr)
     return quote
-        __sites = getsites(model)
+        __sites = Clapeyron.getsites(model)
         idxs = __sites.n_sites.p
-        X0 = fill(one(V+T+first(z)),length(__sites.n_sites.v))
+        X0 = fill(one(Base.promote_eltype(model,V,T,z)),length(__sites.n_sites.v))
 
         function x_assoc_iter!(__X_new_i,__X_old_i)
-            $Xold = PackedVofV(idxs,__X_old_i)
-            $Xnew = PackedVofV(idxs,__X_old_i)
+            $Xold = Clapeyron.PackedVofV(idxs,__X_old_i)
+            $Xnew = Clapeyron.PackedVofV(idxs,__X_new_i)
             $expr
             return __X_new_i
         end

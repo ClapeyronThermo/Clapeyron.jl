@@ -9,7 +9,6 @@ function PH_property(model,p,h,z,f::F,phase,T0,threaded) where F
 
     if !is_unknown(phase)
         T,calc_phase = _Tproperty(model,p,h,z,T0 = T0,phase = phase,threaded = threaded)
-        #TODO: handle equilibria conditions
         if calc_phase != :eq && calc_phase != :failure
             return f(model,p,T,z;phase = calc_phase)
         elseif calc_phase == :eq && !supports_lever_rule(f)
@@ -22,14 +21,10 @@ function PH_property(model,p,h,z,f::F,phase,T0,threaded) where F
         end
     else
         res = ph_flash(model,p,h,z,T0 = T0)
-        np = numphases(res)
         if f == temperature
             return temperature(res)
-        end
-        if np > 1
-            return f(model,res)
         else
-            return f(model,p,T,z)
+            return f(model,res)
         end
     end
 end
@@ -52,6 +47,10 @@ for f in [:temperature,:volume, :pressure, :entropy, :internal_energy, :enthalpy
         function $f(model,p,h,z = Clapeyron.SA[1.0];phase = :unknown,T0 = nothing, threaded = true)
             Clapeyron.PH_property(model,p,h,z,Clapeyron.$f,phase,T0,threaded)
         end
+    end
+
+    function flash(model,p,h,z = Clapeyron.SA[1.0],args...;kwargs...)
+        return Clapeyron.ph_flash(model,p,h,z,args...;kwargs...)
     end
 end
 #export chemical_potential, activity_coefficient, activity, aqueous_activity, fugacity_coefficient,reference_chemical_potential,reference_chemical_potential_type
