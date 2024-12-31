@@ -13,7 +13,7 @@ import LogExpFunctions
 using FillArrays: FillArrays
 import BlackBoxOptim
 using StaticArrays
-
+using Polynomials
 using DiffResults, ForwardDiff
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
@@ -173,6 +173,7 @@ include("models/SAFT/PCSAFT/variants/gcPCPSAFT/homogcPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/heterogcPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/gcPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/CPPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/Michelsen_GEPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
 include("models/SAFT/CPA/variants/sCPA.jl")
