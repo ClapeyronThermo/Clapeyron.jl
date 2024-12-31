@@ -624,6 +624,14 @@ function suggest_K(model,p,T,z,pure = split_model(model),volatiles = FillArrays.
         lnϕl = VT_lnϕ_pure(pure[i],vl,T,p)
         tpd_v = lnϕv - di[i]
         tpd_l = lnϕl - di[i]
+        
+        if vl ≈ vv
+            if is_liquid(VT_identify_phase(pure[i],vv,T,SA[1.0])) || isnan(vv)
+                tpd_v = Inf*abs(tpd_v)
+            elseif is_vapour(VT_identify_phase(pure[i],vl,T,SA[1.0])) || isnan(vl)
+                tpd_l = Inf*abs(tpd_l)
+            end
+        end
         if tpd_l < 0 && tpd_v < 0
             K[i] = exp(lnϕl[1])/exp(lnϕv[1])
         elseif tpd_l < 0 && tpd_v >= 0

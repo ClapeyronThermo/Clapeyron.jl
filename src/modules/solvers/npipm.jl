@@ -1,21 +1,16 @@
 using Clapeyron: viewlast, viewn, viewfirst
-function positive_linesearch(v, δ, α = 1.0 ; τ = 1.0, decay = 0.5, tol = 1e-10)
+function positive_linesearch(v, δ, α0 = 1.0 ; τ = 1.0, decay = 0.5, tol = 1e-10, s = 1.0)
     done = false
     l = length(v)
+    α = α0*oneunit(Base.promote_eltype(v, δ, τ, s))
+
     iszero(l) && return α
-    while !done
-        done = true
         for i in 1:length(v)
             vi,δi = v[i],δ[i]
-            if vi + α * δi < (1 - τ) * vi
-                if α < tol
-                    return NaN
-                end
-                α *= decay
-                done = false
+            if vi + α * s * δi < (1 - τ) * vi
+                α = min(α*decay,(-τ*vi)/(s*δi))
             end
         end
-    end
     return α
 end
 
@@ -43,6 +38,28 @@ function backtracking_linesearch!(Θ,F,X,d,Θ0,Xnew,α = 1.0;tol = 1e-10, decay 
         end
     end
     return α,Θx
+end
+
+function remove_slacks!(F,J,slacks::AbstractVector{Bool})
+    for i in 1:length(slacks)
+        if slacks[i]
+            remove_slacks!(F,J,i)
+        end
+    end
+end
+
+function remove_slacks!(F,J,i::Int)
+    if F !== nothing
+        F[i] = 0
+    end
+
+    if J !== nothing
+        J1 = @view(J[i,:])
+        J2 = @view(J[:,i])
+        J1 .= 0
+        J2 .= 0
+        J[i,i] = 1
+    end
 end
 #=
 """

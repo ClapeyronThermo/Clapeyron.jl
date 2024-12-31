@@ -227,10 +227,10 @@ end
 
     #px_flash_pure: two phase (#320)
     model = cPR(["ethane"],idealmodel = ReidIdeal)
-    p = 101325; z = [5.0]; 
+    p = 101325; z = [5.0];
     T = saturation_temperature(model,p)[1]
     h_liq = enthalpy(model,p,T-0.1,z);h_gas = enthalpy(model,p,T+0.1,z)
-    h = (h_liq + h_gas)/2 
+    h = (h_liq + h_gas)/2
     T2 = Clapeyron.PH.temperature(model,p,h,z)
     @test T2 ≈ T rtol = 1e-6
 
@@ -260,6 +260,13 @@ end
     Tdew0 = dew_temperature(model,p,z)[1]
     Tdew1 = Clapeyron.temperature(qp_flash(model,1,p,z))
     @test Tdew0 ≈ Tdew1 rtol = 1e-6
+
+    #qp_flash unmasked an error in the calculation of the initial K-values (#325)
+    fluids = ["isobutane","toluene"]
+    model = cPR(fluids,idealmodel=ReidIdeal)
+    p = 8*101325.0; z = [5.0,5.0];
+    res_qp2 = qp_flash(model,0.4,p,z)
+    @test res_qp2.fractions ≈ [6.0,4.0]
 
 end
 
