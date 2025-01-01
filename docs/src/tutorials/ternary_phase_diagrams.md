@@ -1,5 +1,7 @@
 # Ternary phase diagrams
 
-## Benzene, *n*-hexane and methanol
+## Vapour–Liquid Equilibrium
 
-## Benzene, methanol and carbon dioxide
+## Liquid–Liquid Equilibrium
+
+## Vapour–Liquid–Liquid Equilibrium
