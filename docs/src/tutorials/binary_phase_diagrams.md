@@ -136,11 +136,8 @@ With the corresponding phase diagram being:
 ![etoh_hex_Txy](../assets/meoh_cyhex_Txy.png)
 
 !!! tip `azeotrope_X` function
-    Looking through our API docs, one can find the `azeotrope_pressure(model, T)` and `azeotrope_temperature(model, p)` functions. These can obtain the exact conditions at which the azeotrope occurs at a given temperature or pressure:
-    ```julia
-    julia> azeotrope_pressure(model, 298.15)
-    (23702.563542943473, 0.00011892930011302203, 0.10330076593890052, [0.8138729756633677, 0.1861270243366323])
-    ```
+    Looking through our API docs, one can find the `azeotrope_pressure(model, T)` and `azeotrope_temperature(model, p)` functions. These can obtain the exact conditions at which the azeotrope occurs at a given temperature or pressure.
+    
     They are perhaps more useful in the context of *pT*-projections rather than *pxy* and *Txy* diagrams.
 
 ## Binary phase diagrams with one supercritical component
@@ -382,3 +379,20 @@ And with that, we can trace the full *pT* isopleth:
 This approach is generalised for any number of components. Where it will begin to fail is more-complex phase diagrams beyond type-I, where LLE and VLLE regions begin to appear. These will typically be at low temperature and high pressures. It is possible to trace these types of diagrams using Clapeyron; however, it will involve a lot more manual specification of initial guesses and is very difficult to do so without knowing ahead of time where these regions occur.
 
 ## *pT* projections
+Thus far, all the phase diagrams we've considered have been slices of the global binary phase diagram. This is convenient when we want to obtain the exact conditions at which phase equilibrium will occur. However, if we want to get a better idea of the global phase behaviour of the mixture, it is possible to project the global phase diagram onto a pressure-temperature plot. Here, we are only concerned with tracing the region in which the mixture _could_ experience phase equilibrium.
+
+Initially, we will continue to consider the ethane+decane binary mixture. The first curves we need to draw are the saturation curves of the pure components (which we know how to obtain from an earlier tutorial):
+![eth_dec_pT_pure](../assets/eth_dec_pT_pure.png)
+
+To connect both curves of this mixture, we need to include the critical curve. To do this, as introduced earlier, we have the `crit_mix(model, z)` function:
+```julia
+x = LinRange(0., 1., N)
+T3, p3 = zeros(N), zeros(N)
+
+for i in 1:N
+    (T3[i], p3[i], vc) = crit_mix(model, [x[i], 1-x[i]])
+end
+```
+For simple mixtures, one doesn't need to update the initial guesses. And with that, we have now drawn the *pT* projection for this mixture:
+![eth_dec_pT_mix](../assets/eth_dec_pT_mix.png)
+Unfortunately, this is the simplest type of *pT* projection one can draw. 
