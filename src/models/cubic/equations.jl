@@ -313,7 +313,7 @@ function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,re
     f = Base.Fix2(evalpoly,dpoly)
     nr,v1,v2,v3 = Solvers.real_roots3(d2poly)
     vroots = (v1,v2,v3)
-    vm0 = findfirst(y -> (f(y) > 0 && y > 0),vroots)
+    vm0 = findfirst(y -> (f(y) > 0 && y > b),vroots)
     if isnothing(vm0)
        return zero(v1)/zero(v1) 
     end
