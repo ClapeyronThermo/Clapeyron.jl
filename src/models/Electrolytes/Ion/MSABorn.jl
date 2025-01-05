@@ -77,11 +77,15 @@ function a_born(model::MSABornModel, V, T, z,_data=@f(data))
     σ_born = model.params.sigma_born.values
     Z = model.params.charge.values
     ϵ_r = _data
-    iions = model.icomponents[Z.!=0]
 
-    if length(iions) == 0
-        return zero(T+first(z))
+    if all(iszero,Z)
+        return zero(Base.promote_eltype(model,T,z))
     end
-    
-    return -e_c^2/(4π*ϵ_0*k_B*T*sum(z))*(1-1/ϵ_r)*sum(z[i]*Z[i]^2/σ_born[i] for i ∈ iions)
+    res = zero(Base.promote_eltype(z,Z,σ_born))
+    for i in model.icomponents
+        if Z[i] != 0
+            res += z[i]*Z[i]^2/σ_born[i]
+        end
+    end
+    return -e_c^2/(4π*ϵ_0*k_B*T*sum(z))*(1-1/ϵ_r)*res
 end

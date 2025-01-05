@@ -116,15 +116,19 @@ function data(model::GCMSABornModel, V, T, z)
     v = model.groups.n_flattenedgroups
     Σz = sum(z)
     zg = zeros(eltype(sum(z)),ngroups)
-    for k in 1:ngroups
-        zg[k] = sum([z[i]*v[i][k] for i ∈ 1:length(model.groups.components)])
+    for i in 1:length(model.groups.components)
+        vi = v[i]
+        zi = z[i]
+        for k in 1:ngroups
+            zg[k] += zi*vi[k]
+        end
     end
     ng = sum(zg)
     return (zg, ng), dielectric_constant(model.RSPmodel, V, T, z)
 end
 
 function a_res(model::GCMSABornModel, V, T, z, _data=@f(data))
-    return a_ion(model,V,T,z,_data)+a_born(model,V,T,z,_data)
+    return a_ion(model,V,T,z,_data) + a_born(model,V,T,z,_data)
 end
 
 function a_ion(model::GCMSABornModel, V, T, z, _data=@f(data))
@@ -132,17 +136,30 @@ function a_ion(model::GCMSABornModel, V, T, z, _data=@f(data))
     σ = model.params.gc_sigma.values
     Z = model.params.charge.values
     igroups = 1:length(model.groups.flattenedgroups)
-    iions = igroups[Z.!=0]
-    if length(iions) == 0
-        return zero(T+first(z))
+    #iions = igroups[Z.!=0]
+    if all(iszero,Z)
+        return zero(Base.promote_eltype(model,V,T,z))
     end
-    ρg = N_A*sum(zg)/V
+    ρg = N_A*∑zg/V
     Γ = @f(screening_length, ϵ_r, (zg, ∑zg))
-    Δ = 1-π*ρg/6*sum(zg[i]*σ[i]^3 for i ∈ iions)/∑zg
-    Ω = 1+π*ρg/(2*Δ)*sum(zg[i]*σ[i]^3/(1+Γ*σ[i]) for i ∈ iions)/∑zg
-    Pn = ρg/Ω*sum(zg[i]*σ[i]*Z[i]/(1+Γ*σ[i]) for i ∈ iions)/∑zg
+    ∑1,∑2,∑3,∑4 = zero(Γ),zero(Γ),zero(Γ),zero(Γ)
+    for i in igroups
+        Zi = Z[i]
+        if !iszero(Zi)
+            σi,zgi = σ[i],zg[i]
+            Γσp1 = Γ*σi + 1
+            σi3 = σi*σi*σi
+            ∑1 += zgi*σi3 #sum(zg[i]*σ[i]^3 for i ∈ iions)
+            ∑2 += zgi*σi3/Γσp1 #sum(zg[i]*σ[i]^3/(1+Γ*σ[i]) for i ∈ iions)
+            ∑3 += zgi*σi*Zi/Γσp1 #sum(zg[i]*σ[i]*Z[i]/(1+Γ*σ[i]) for i ∈ iions)
+            ∑4 += zgi*Zi*Zi/Γσp1 #sum(zg[i]*Z[i]^2/(1+Γ*σ[i]) for i ∈ iions)
+        end
+    end
+    Δ = 1-π*ρg/6*∑1/∑zg
+    Ω = 1+π*ρg/(2*Δ)*∑2/∑zg
+    Pn = ρg/Ω*∑3/∑zg
 
-    U_GCMSA = -e_c^2*V/(4π*ϵ_0*ϵ_r)*(Γ*ρg*sum(zg[i]*Z[i]^2/(1+Γ*σ[i]) for i ∈ iions)/∑zg + π/(2Δ)*Ω*Pn^2)
+    U_GCMSA = -e_c^2*V/(4π*ϵ_0*ϵ_r)*(Γ*ρg*∑4/∑zg + π/(2Δ)*Ω*Pn^2)
     return (U_GCMSA+Γ^3*k_B*T*V/(3π))/(N_A*k_B*T*sum(z))
 end
 
@@ -153,27 +170,53 @@ function screening_length(model::GCMSABornModel,V,T,z, ϵ_r=@f(data),zgdata = @f
     σ = model.params.gc_sigma.values
     Z = model.params.charge.values
     igroups = 1:length(model.groups.flattenedgroups)
-    iions = igroups[Z.!=0]
+    #iions = igroups[Z.!=0]
 
     #x = z ./ sum(z)
     ρg = N_A*∑zg/V
-    Δ = 1-π*ρg/6*sum(zg[i]*σ[i]^3 for i ∈ iions)/∑zg
-
-    Γold = (4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρg*sum(zg[i]*Z[i]^2 for i ∈ iions)/∑zg)^(1/2)
-    _0 = zero(Γold)
+    _0 = Base.promote_eltype(model,V,T,z)
+    ∑1,∑2 = zero(_0),zero(_0)
+    for i in igroups
+        Zi = Z[i]
+        if !iszero(Zi)
+            σi,zgi = σ[i],zg[i]
+            σi3 = σi*σi*σi
+            ∑1 += zgi*σi3 #sum(zg[i]*σ[i]^3 for i ∈ iions)
+            ∑2 += zgi*Zi*Zi #sum(zg[i]*Z[i]^2 for i ∈ iions)
+        end
+    end
+    Δ = 1-π*ρg/6*∑1/∑zg
+    Γold = sqrt(4π*e_c*e_c/(4π*ϵ_0*ϵ_r*k_B*T)*ρg*∑2/∑zg)
     Γnew = _0
     tol  = one(_0)
     iter = 1
-    while tol>1e-12 && iter < 100
-        Ω = 1+π*ρg/(2*Δ)*sum(zg[i]*σ[i]^3/(1+Γold*σ[i]) for i ∈ iions)/∑zg
-        Pn = ρg/Ω*sum(zg[i]*σ[i]*Z[i]/(1+Γold*σ[i]) for i ∈ iions)/∑zg
+    while tol > 1e-12 && iter < 100
+        ∑3,∑4 = zero(_0),zero(_0)
+        for i in igroups
+            Zi = Z[i]
+            if !iszero(Zi)
+                σi,zgi = σ[i],zg[i]
+                σΓold_p1 = σ*Γold+1
+                σi3 = σi*σi*σi
+                ∑3 += zgi*σi3/σΓold_p1 #sum(zg[i]*σ[i]^3/(1+Γold*σ[i]) for i ∈ iions)
+                ∑4 += zgi*σi*Zi/σΓold_p1 #sum(zg[i]*σ[i]*Z[i]/(1+Γold*σ[i]) for i ∈ iions)
+            end
+        end
+
+
+        Ω = 1+π*ρg/(2*Δ)*∑3/∑zg
+        Pn = ρg/Ω*∑4/∑zg
         #Q = @. (Z-σ^2*Pn*(π/(2Δ)))./(1+Γold*σ)
         ∑Q2x = _0
-        for i ∈ iions
-            Qi = (Z[i]-σ[i]^2*Pn*(π/(2Δ)))/(1+Γold*σ[i])
-            ∑Q2x += zg[i]*Qi^2
+        for i ∈ igroups
+            Zi = Z[i]
+            if Zi != 0
+                σi = σ[i]
+                Qi = (Zi-σi*σi*Pn*(π/(2Δ)))/(1+Γold*σi)
+                ∑Q2x += zg[i]*Qi*Qi
+            end
         end
-        Γnew = sqrt(π*e_c^2*ρg/(4π*ϵ_0*ϵ_r*k_B*T)*∑Q2x/∑zg)
+        Γnew = sqrt(π*e_c*e_c*ρg/(4π*ϵ_0*ϵ_r*k_B*T)*∑Q2x/∑zg)
         tol = abs(1-Γnew/Γold)
         Γold = Γnew
         iter += 1
@@ -186,11 +229,9 @@ function a_born(model::GCMSABornModel, V, T, z,_data=@f(data))
     σ_born = model.params.sigma_born.values
     Z = model.params.charge.values
     igroups = 1:length(model.groups.flattenedgroups)
-    iions = igroups[Z.!=0]
-    if length(iions) == 0
-        return zero(T+first(z))
+    #iions = igroups[Z.!=0]
+    if all(iszero,Z)
+        return zero(T+∑zg)
     end
-    
-
-    return -e_c^2/(4π*ϵ_0*k_B*T*∑zg)*(1-1/ϵ_r)*sum(zg[i]*Z[i]^2/σ_born[i] for i ∈ iions)
+    return -e_c^2/(4π*ϵ_0*k_B*T*∑zg)*(1-1/ϵ_r)*sum(zg[i]*Z[i]^2/σ_born[i] for i ∈ igroups if Z[i] != 0)
 end
