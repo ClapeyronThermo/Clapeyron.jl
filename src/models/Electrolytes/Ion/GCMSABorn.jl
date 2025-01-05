@@ -174,7 +174,7 @@ function screening_length(model::GCMSABornModel,V,T,z, ϵ_r=@f(data),zgdata = @f
 
     #x = z ./ sum(z)
     ρg = N_A*∑zg/V
-    _0 = Base.promote_eltype(model,V,T,z)
+    _0 = zero(Base.promote_eltype(model,V,T,z))
     ∑1,∑2 = zero(_0),zero(_0)
     for i in igroups
         Zi = Z[i]
@@ -196,7 +196,7 @@ function screening_length(model::GCMSABornModel,V,T,z, ϵ_r=@f(data),zgdata = @f
             Zi = Z[i]
             if !iszero(Zi)
                 σi,zgi = σ[i],zg[i]
-                σΓold_p1 = σ*Γold+1
+                σΓold_p1 = σi*Γold+1
                 σi3 = σi*σi*σi
                 ∑3 += zgi*σi3/σΓold_p1 #sum(zg[i]*σ[i]^3/(1+Γold*σ[i]) for i ∈ iions)
                 ∑4 += zgi*σi*Zi/σΓold_p1 #sum(zg[i]*σ[i]*Z[i]/(1+Γold*σ[i]) for i ∈ iions)
