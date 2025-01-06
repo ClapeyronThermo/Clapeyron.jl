@@ -1,5 +1,5 @@
 # Binary phase diagrams
-The notebooks associated with this tutorial can be found [here](../../../examples/binary_phase_diagrams.ipynb).
+The notebook associated with this tutorial can be found [here](../../../examples/binary_phase_diagrams.ipynb).
 
 When handling two components, we introduce an additional variable to our parameter space: composition. Typically, when visualising the phase space, we would like to visualise it on the temperature, pressure and/or composition axes. However, to do so on a 2D figure will require us to fix one of these variables while varying the other two. In this tutorial, we'll go over how to obtain the varying types of binary phase diagrams using Clapeyron.
 
