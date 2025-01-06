@@ -324,3 +324,17 @@ end
     @test Tl_spin_impl ≈ T_spin rtol = 1e-6
     @test Tv_spin_impl ≈ T_spin rtol = 1e-6
 end
+
+@testset "supercritical lines" begin
+    model = PR("methane")
+    T_initial = 200.0
+    p_widom, v1 = widom_pressure(model, T_initial)
+    T_widom, v2 = widom_temperature(model, p_widom)
+    @test T_initial ≈ T_widom rtol = 1e-6
+    @test v1 ≈ v2 rtol = 1e-6
+
+    p_ciic, v3 = ciic_pressure(model, T_initial)
+    T_ciic, v4 = ciic_temperature(model, p_ciic)
+    @test T_initial ≈ T_ciic rtol = 1e-6
+    @test v3 ≈ v4 rtol = 1e-6
+end
