@@ -404,13 +404,14 @@ function liquid_pressure_from_virial(model,T,B = second_virial_coefficient(model
     return γc*pv_virial #pressure of which we are (almost) sure there exists a liquid root
 end
 
-function pure_spinodal(model,_T;phase = :l)
+function pure_spinodal(model,_T,z = SA[1.0];phase = :l)
     B = second_virial_coefficient(model,_T)
-    _v_ub = -2*second_virial_coefficient(model,_T)
-    pl = liquid_pressure_from_virial(model,_T,B)
-    _v_lb = volume(model,pl,_T,phase = :l)
+    _v_ub = -2*B
+    pv_eos = pressure(model,_v_ub,_T,z)
+    pl = liquid_pressure_from_virial(model,_T,B,pv_eos)
+    _v_lb = volume(model,pl,_T,z,phase = :l)
     T,v_lb,v_ub = promote(_T,_v_lb,_v_ub)
-    return pure_spinodal(model,T,v_lb,v_ub,phase,true)
+    return pure_spinodal(model,T,v_lb,v_ub,phase,true,z)
 end
 
 #given an hermite polynomial that interpolates the spinodals
@@ -433,10 +434,10 @@ function _find_vm(dpoly,v_lb::K,v_ub::K) where K
     end
 end
 
-function pure_spinodal_newton_bracket(model,T,v,f,dp_scale)
+function pure_spinodal_newton_bracket(model,T,v,f,dp_scale,z = SA[1.0])
     vlo,vhi = v
     flo,fhi = f
-    p(x) = pressure(model,x,T)
+    p(x) = pressure(model,x,T,z)
     vs = 0.5*(vlo + vhi)
     atol = 1e-8
     vs_old = vs*Inf
@@ -471,8 +472,8 @@ function pure_spinodal_newton_bracket(model,T,v,f,dp_scale)
     return zero(vs)/zero(vs)
 end
 
-function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry) where K
-    p(x) = pressure(model,x,T)
+function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
+    p(x) = pressure(model,x,T,z)
     fl,dfl,d2fl = Solvers.f∂f∂2f(p,v_lb)
     fv,dfv,d2fv = Solvers.f∂f∂2f(p,v_ub)
     dfx = ifelse(is_liquid(phase),dfl,dfv)
@@ -485,7 +486,7 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry) where K
     dp_scale = evalpoly(vx - v_lb,dpoly)
     #we already have a bracket.
     if dfl*dfv < 0
-        return pure_spinodal_newton_bracket(model,T,(v_lb,v_ub),(dfl,dfv),dp_scale)
+        return pure_spinodal_newton_bracket(model,T,(v_lb,v_ub),(dfl,dfv),dp_scale,z)
     end
 
     #find the middle point between the liquid and vapour spinodals.
@@ -546,7 +547,7 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry) where K
         end
     end
 
-    pure_spinodal_newton_bracket(model,T,v_bracket,dp_bracket,dp_scale)
+    pure_spinodal_newton_bracket(model,T,v_bracket,dp_bracket,dp_scale,z)
 end
 
 """
@@ -930,12 +931,11 @@ critical_vsat_extrapolation(model,T,crit) = critical_vsat_extrapolation(model,T,
     critical_psat_extrapolation(model,T,crit = crit_pure(model))
 
 Given critical information and a temperature, extrapolate the saturation pressure.
+
+!!! note
+    This function will not check if the input temperature is over the critical point.  
 """
 function critical_psat_extrapolation(model,T,Tc,Pc,Vc)
-    if T > Tc
-        _0 = zero(Base.promote_eltype(model,T))
-        return _0/_0
-    end
     _p(_T) = pressure(model,Vc,_T)
     dpdT = Solvers.derivative(_p,Tc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
@@ -954,12 +954,12 @@ critical_psat_extrapolation(model,T,Tc,Vc) = critical_psat_extrapolation(model,T
     critical_tsat_extrapolation(model,p,crit = crit_pure(model))
 
 Given critical information and a pressure, extrapolate the saturation temperature.
+
+!!! note
+    This function will not check if the input pressure is over the critical point.
+
 """
 function critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
-    if p > Pc
-        _0 = zero(Base.promote_eltype(model,p))
-        return _0/_0
-    end
     _p(_T) = pressure(model,Vc,_T)
     dpdT = Solvers.derivative(_p,Tc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)

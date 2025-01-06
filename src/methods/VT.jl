@@ -83,7 +83,7 @@ end
 function VT_gibbs_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p = nothing)
     ideal = model isa IdealModel
     if V == Inf && !ideal
-        return VT_gibbs_free_energy(idealmodel(model), V, T, z=SA[1.])
+        return VT_gibbs_free_energy(idealmodel(model), V, T, z)
     end
 
     if p == nothing

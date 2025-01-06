@@ -72,6 +72,7 @@ end
 ```
 With the final diagram being:
 ![but_hex_Txy](../assets/but_hex_Txy.png)
+
 Naturally, binary mixtures of linear alkanes are as simple as the diagrams can be (what would normally be referred to as a type-I mixture). In introducing non-idealities, the binary phase diagrams, and how they are drawn, becomes more complicated.
 
 ## Azeotropic binary phase diagrams
@@ -110,6 +111,7 @@ end
 ```
 The corresponding phase diagram is:
 ![etoh_hex_pxy](../assets/meoh_cyhex_pxy.png)
+
 Much like the simple case, very little needs to change to handle the corresponding constant pressure, *Txy* phase diagram:
 ```julia
 N    = 201
@@ -185,6 +187,7 @@ p = vcat(p[1:idxend],reverse(p[1:idxend]));
 ```
 Resulting in the following phase diagram:
 ![co2_hex_pxy](../assets/co2_hex_pxy.png)
+
 Note that, as you approach the critical point, our solvers will become less stable due to the nature of derivatives near the critical point. You may need a larger number of points than shown above.
 
 ### Water+light gases
@@ -198,6 +201,7 @@ Contains parameters: Mw, segment, sigma, lambda_a, lambda_r, epsilon, epsilon_as
 ```
 For this system, the only interesting composition range is up to 3\% mole fraction of carbon dioxide in the liquid phase:
 ![co2_h2o_pxy](../assets/co2_h2o_pxy.png)
+
 Going much beyond this composition range, particularly when one reaches pressures in GPa, will typically encounter numerical issues. As such, when modelling in these conditions, it is better to use methods that are more-numerically stable (such as the `FugBubblePressure` methods).
 
 ## Binary phase diagrams with LLE
@@ -246,6 +250,7 @@ end
 ```
 The resulting phase diagram then looks like:
 ![meoh_hex_Txy_lle](../assets/meoh_cyhex_Txy_lle.png)
+
 ## Binary phase diagrams with VLLE
 In some mixtures, it is also possible for the VLE and LLE mixtures to meet and form vapour–liquid–liquid equilibrium (VLLE). While this might sound more challenging to detect than LLE, there are actually ways to identify VLLE from a VLE curve. For this example, we'll consider 1-pentanol+water, using a combining rule to obtain the cross-association:
 ```julia
@@ -269,7 +274,7 @@ With this point identified, we can obtain the LLE region just using `tp_flash` f
 T    = 343.15
 
 # Obtain VLLE
-(p3, vl, vll, vv, x3, xx3, y3) = VLLE_pressure(model, 
+(p3, vl, vll, vv, x3, xx3, y3) = VLLE_pressure(model,
 T; v0 = [-4.6,-4.06,-0.1,0.01,0.8,0.15])
 
 # Obtain VLE
@@ -302,6 +307,7 @@ The resulting phase diagrams (both *pxy* and *Txy*) will look something like thi
 
 * Isothermal:
 ![water_pentoh_pxy](../assets/water_pentoh_pxy.png)
+
 * Isobaric:
 ![water_pentoh_Txy](../assets/water_pentoh_Txy.png)
 
@@ -332,7 +338,7 @@ for i in 1:N
         bub = bubble_pressure(model, T1[i], z)
         p1[i] = bub[1]
         v01   = vcat(log10.([bub[2],bub[3]]),bub[4])
-        
+
         bub = dew_pressure(model, T2[i], z)
         p2[i] = bub[1]
         v02   = vcat(log10.([bub[2],bub[3]]),bub[4])
@@ -340,7 +346,7 @@ for i in 1:N
         bub = bubble_pressure(model, T1[i], z; v0 = v01)
         p1[i] = bub[1]
         v01   = vcat(log10.([bub[2],bub[3]]),bub[4])
-        
+
         bub = dew_pressure(model, T2[i], z; v0 = v02)
         p2[i] = bub[1]
         v02   = vcat(log10.([bub[2],bub[3]]),bub[4])
@@ -349,6 +355,7 @@ end
 ```
 However, if we plot these two curves, we can see that the diagram isn't complete:
 ![eth_dec_pT_1](../assets/eth_dec_pT_1.png)
+
 In this case, the cricondentherm and cricondenbar are both above the critical point of the mixture. To close the *pT* isopleths, we need to add 1-2 more sections to the plot:
 * Tracing the dew point from the end of `p2` to `pc` (using `dew_temperature`):
 ```julia
@@ -378,6 +385,7 @@ end
 ```
 And with that, we can trace the full *pT* isopleth:
 ![eth_dec_pT](../assets/eth_dec_pT.png)
+
 This approach is generalised for any number of components. Where it will begin to fail is more-complex phase diagrams beyond type-I, where LLE and VLLE regions begin to appear. These will typically be at low temperature and high pressures. It is possible to trace these types of diagrams using Clapeyron; however, it will involve a lot more manual specification of initial guesses and is very difficult to do so without knowing ahead of time where these regions occur.
 
 ## *pT* projections

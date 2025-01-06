@@ -13,6 +13,9 @@ To obtain the underlying solution vector, use [`x_sol`](@ref)
 To see available solvers and options, check `NLSolvers.jl`
 """
 function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
+    if method isa Roots.AbstractUnivariateZeroMethod
+        return roots_nlsolve(f!,x0,method,options)
+    end
     vector_objective = autoVectorObjective(f!,x0,chunk)
     nl_problem = NEqProblem(vector_objective; inplace = _inplace(x0))
     return nlsolve(nl_problem, x0,method, options)
@@ -21,6 +24,41 @@ end
 function nlsolve(nl_problem::NEqProblem,x0,method =TrustRegion(Newton(), NWI()),options=NEqOptions())
     return NLSolvers.solve(nl_problem, x0,method, options)
 end
+
+#Roots.jl support
+function roots_nlsolve(f::F,x0,method::Roots.AbstractBracketingMethod,options) where F
+    prob = Roots.ZeroProblem(f,x0)
+    brk = f(x0[1])*f(x0[2])
+    if brk > 0
+        sol = zero(brk)/zero(brk)
+    else
+        sol = Roots.solve(prob,method)
+    end    
+end
+
+function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNonBracketingMethod ,options) where F
+    prob = Roots.ZeroProblem(f,x0)
+    sol = Roots.solve(prob,method)
+end
+
+function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNewtonLikeMethod ,options) where F
+    function fdf(vz)
+        fx,dfx = Solvers.f∂f(f,vz)
+        return fx,fx/dfx
+    end
+    prob = Roots.ZeroProblem(fdf,x0)
+    sol = Roots.solve(prob,method)
+end
+
+function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractHalleyLikeMethod,options) where F
+    function d2f(vz)
+        fx,dfx,d2fx = Solvers.f∂f∂2f(f,vz)
+        return fx,fx/dfx,dfx/d2fx
+    end
+    prob = Roots.ZeroProblem(d2f,x0)
+    sol = Roots.solve(prob,method)
+end
+
 
 function autoVectorObjective(f!,x0,chunk)
     Fcache = x0 .* false

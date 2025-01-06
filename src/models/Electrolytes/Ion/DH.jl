@@ -79,19 +79,29 @@ end
 function a_ion(model::DHModel, V, T, z,_data=@f(data))  
     ϵ_r, σ = _data
     Z = model.params.charge.values
-    iions = model.icomponents[Z.!=0]
 
-    if length(iions) == 0
+    if all(iszero,Z)
         return zero(V+T+first(z))
     end
    
     ∑z = sum(z)
-    #x = z ./ sum(z)
     ρ = N_A*sum(z)/V
-
     s = e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)
-    κ = (4π*s*ρ*sum(z[i]*Z[i]^2 for i ∈ iions)/∑z)^(1/2)
-    y = σ*κ
-    χ = @. 3/y^3*(3/2+log1p(y)-2*(1+y)+1/2*(1+y)^2)
-    return -1/3*s*κ*sum(z[i]*Z[i]^2*χ[i] for i ∈ iions)/∑z
+    κ = sqrt(4π*s*ρ*sum(z[i]*Z[i]*Z[i] for i ∈ model.icomponents)/∑z)
+    
+    res = zero(Base.promote_eltype(model,V,T,z))
+    for i in model.icomponents
+        Zi = Z[i]
+        if Z[i] != 0
+            yi = σ[i]*κ
+            yip1 = yi + 1
+            χi = 3/(yi*yi*yi)*(3/2+log1p(yi)-2*yip1+1/2*yip1*yip1)
+            res +=z[i]*Zi*Zi*χi
+        end
+    end
+   
+    return -1/3*s*κ*res/∑z
+    #y = σ*κ
+    #χ = @. 3/y^3*(3/2+log1p(y)-2*(1+y)+1/2*(1+y)^2)
+    # return -1/3*s*κ*sum(z[i]*Z[i]^2*χ[i] for i ∈ iions)/∑z
 end
