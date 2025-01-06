@@ -931,12 +931,11 @@ critical_vsat_extrapolation(model,T,crit) = critical_vsat_extrapolation(model,T,
     critical_psat_extrapolation(model,T,crit = crit_pure(model))
 
 Given critical information and a temperature, extrapolate the saturation pressure.
+
+!!! note
+    This function will not check if the input temperature is over the critical point.  
 """
 function critical_psat_extrapolation(model,T,Tc,Pc,Vc)
-    if T > Tc
-        _0 = zero(Base.promote_eltype(model,T))
-        return _0/_0
-    end
     _p(_T) = pressure(model,Vc,_T)
     dpdT = Solvers.derivative(_p,Tc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
@@ -955,12 +954,12 @@ critical_psat_extrapolation(model,T,Tc,Vc) = critical_psat_extrapolation(model,T
     critical_tsat_extrapolation(model,p,crit = crit_pure(model))
 
 Given critical information and a pressure, extrapolate the saturation temperature.
+
+!!! note
+    This function will not check if the input pressure is over the critical point.
+
 """
 function critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
-    if p > Pc
-        _0 = zero(Base.promote_eltype(model,p))
-        return _0/_0
-    end
     _p(_T) = pressure(model,Vc,_T)
     dpdT = Solvers.derivative(_p,Tc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
