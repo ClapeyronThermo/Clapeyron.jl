@@ -268,6 +268,15 @@ end
     res_qp2 = qp_flash(model,0.4,p,z)
     @test res_qp2.fractions ≈ [6.0,4.0]
 
+    #qp_flash scaling error (#325)
+    fluids= ["isopentane","isobutane"]
+    model = cPR(fluids,idealmodel=ReidIdeal)
+
+    p = 2*101325.0; z = [2.0,5.0]; 
+    q = 0.062744140625
+    res_qp3 = qp_flash(model,q,p,z)
+    res_qp4 = qp_flash(model,q,p,z./10)
+    @test Clapeyron.temperature(res_qp3) ≈ Clapeyron.temperature(res_qp4)
 end
 
 @testset "Saturation Methods" begin
