@@ -596,18 +596,18 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
     pub = p(v_ub)
     psl = p(vsl)
     psv = p(vsv)
-    if plb < psv
+    pmid = 0.5*max(zero(psl),psl) + 0.5*psv
+    
+    if plb <= pmid
         vsv_ub = volume(model,psv,T,phase = :l, vol0 = v_lb)
     else
         vsl_lb = one(psl)*v_lb
     end
-
-    if pub > psl && psl > 0
-        vsv_ub = volume_virial(B,psl,T)
+    if pub >= pmid
+        vsv_ub = Rgas(model)*T/pmid
     else
         vsv_ub = one(psv)*v_ub
     end
-
     return _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B)
 end
 
@@ -618,8 +618,6 @@ function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B)
     psl_lb,dpsl_lb,d2psl_lb = Solvers.f∂f∂2f(p,vsl_lb)
     dpsl = zero(psl)
     poly_l = Solvers.hermite5_poly(vsl_lb,vsl,psl_lb,psl,dpsl_lb,dpsl,d2psl_lb,d2psl)
-    
-    
     ps_mid = 0.5*(psv + max(psl,zero(psl)))
     vl = volume_from_spinodal(ps_mid,poly_l,vsl_lb,0.5*(vsl_lb + vsl) - vsl_lb)
     if psl < 0
@@ -628,13 +626,34 @@ function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B)
     end
     psv_ub,dpsv_ub,d2psv_ub = Solvers.f∂f∂2f(p,vsv_ub)
     dpsv = zero(psl)
-    poly_v = Solvers.hermite5_poly(vsv,vsv_ub,psv,psv_ub,dpsv,dpsv_ub,d2psv,d2psv_ub)    
+    poly_v = Solvers.hermite5_poly(vsv,vsv_ub,psv,psv_ub,dpsv,dpsv_ub,d2psv,d2psv_ub)  
     vv = volume_from_spinodal(ps_mid,poly_v,vsv,(zero(vsv),vsv_ub - vsv))
     return ps_mid,vl,vv
 end
 
 function volume_from_spinodal(p,poly,vshift,v0)
     f(v) = p - evalpoly(v,poly)
+
+
+    if length(v0) == 2
+        v1,v2 = v0
+        f1,f2 = f(v1),f(v2)
+        if f1*f2 < 0
+            prob = Roots.ZeroProblem(f,v0)
+            return Roots.solve(prob) + vshift
+        else
+            #something really wrong happened with the bracketing,
+            #hopefully the hermite polynomial should reproduce the EoS in a vicinity of the
+            #interpolated region.
+            if abs(f1) < abs(f2)
+                prob = Roots.ZeroProblem(f,v1)
+                return Roots.solve(prob) + vshift
+            else
+                prob = Roots.ZeroProblem(f,v2)
+                return Roots.solve(prob) + vshift
+            end
+        end
+    end
     prob = Roots.ZeroProblem(f,v0)
     return Roots.solve(prob) + vshift
 end

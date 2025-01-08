@@ -340,6 +340,9 @@ end
     @test Clapeyron.saturation_temperature(cPR("isobutane"),1.7855513185537157e6,crit_retry = false)[1] ≈ 366.52386488214876 rtol = 1e-6
     @test Clapeyron.saturation_temperature(cPR("propane"),2.1298218093361156e6,crit_retry = false)[1] ≈ 332.6046103831853 rtol = 1e-6
     @test Clapeyron.saturation_temperature(cPR("r134a"),2.201981727901889e6,crit_retry = false)[1] ≈ 344.6869001549851 rtol = 1e-6
+
+    #Issue 328
+    @test saturation_pressure(cPR("butane"),406.5487245045052)[1] ≈ 2.815259927796967e6 rtol = 1e-6
 end
 
 @testset "Tproperty" begin
