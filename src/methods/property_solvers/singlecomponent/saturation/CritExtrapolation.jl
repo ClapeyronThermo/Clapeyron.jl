@@ -48,7 +48,7 @@ function saturation_temperature_impl(model::EoSModel, p, method::CritExtrapolati
     crit = method.crit
     T_c, p_c, V_c = crit
     if T_c == p_c == V_c == 0.0
-        return saturation_temperature_impl(model,T,CritExtrapolationSaturation(crit_pure(model)))
+        return saturation_temperature_impl(model,p,CritExtrapolationSaturation(crit_pure(model)))
     end
     if p > p_c
        _0 = Base.promote_eltype(model,p,T_c)
