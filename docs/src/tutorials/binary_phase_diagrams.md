@@ -283,8 +283,8 @@ A few things to note:
     false
     ```
 
-1. Although we have a more-detailed tutorial going over flash algorithms, one way to quickly speed up the calculations is to specify an initial guess for the partition coefficient of each species.
-So long as the magnitude of each coefficient is large enough, the flash algorithm should work:
+2. Although we have a more-detailed tutorial going over flash algorithms, one way to quickly speed up the calculations is to specify an initial guess for the partition coefficient of each species.
+    So long as the magnitude of each coefficient is large enough, the flash algorithm should work:
 
     ```julia
     julia> tp_flash(model,1e5,288.15,[0.5,0.5],MichelsenTPFlash(equilibrium=:lle,K0=[1e5,1e-4]));
