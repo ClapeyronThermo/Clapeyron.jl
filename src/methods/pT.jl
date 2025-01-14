@@ -315,7 +315,7 @@ default units: `[Pa^-1]`
 Calculates the isothermal compressibility, defined as:
 
 ```julia
-κT = (V*∂p/∂V)^-1
+κT = -(V*∂p/∂V)^-1
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isothermal_compressibility(model,V,T,z)`.
