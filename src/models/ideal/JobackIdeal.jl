@@ -4,6 +4,7 @@
 # - add a database of group Mw
 
 struct JobackIdealParam <: EoSParam
+    Mw_gc::SingleParam{Float64}
     Mw::SingleParam{Float64}
     N_a::SingleParam{Int}
     T_c::SingleParam{Float64}
@@ -36,6 +37,9 @@ function transform_params(::Type{JobackIdeal},params,groups)
     l = length(components)
     i_groups = groups.i_groups
     a,b,c,d = params["a"],params["b"],params["c"],params["d"]
+    Mw_gc = params["Mw"]
+    params["Mw_gc"] = Mw_gc
+    params["Mw"] = SingleParam("Mw",components,group_Mw(Mw_gc,groups))
     _a,_b,_c,_d = zeros(l),zeros(l),zeros(l),zeros(l)
     for i in 1:l
         #res +=z[i]*(log(z[i]/V))/Σz
@@ -143,7 +147,8 @@ The estimated critical point of a single component can be obtained via `crit_pur
 |-S- (ring)|                    |
 """
 JobackIdeal
-
+mw(model::JobackIdeal) = model.params.Mw.values
+molecular_weight(model::JobackIdeal,z) = molecular_weight(ReidIdeal(model),z)
 function recombine_impl!(model::JobackIdeal)
     coeffs = model.params.coeffs
     i_groups = model.groups.i_groups
@@ -164,7 +169,7 @@ function recombine_impl!(model::JobackIdeal)
     return model
 end
 
-ReidIdeal(model::JobackIdeal) = ReidIdeal(model.components,ReidIdealParam(model.params.coeffs,model.params.reference_state),model.references)
+ReidIdeal(model::JobackIdeal) = ReidIdeal(model.components,ReidIdealParam(model.params.coeffs,model.params.reference_state,model.params.Mw),model.references)
 
 """
     JobackGC

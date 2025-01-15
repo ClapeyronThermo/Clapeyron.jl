@@ -37,6 +37,18 @@ end
 
 mw(model::EoSModel) = model.params.Mw.values
 
+group_Mw(model::EoSModel) = group_Mw(model.params.Mw.values,model.groups)
+function group_Mw(Mw_gc::SingleParam,groups::GroupParam)
+    n = length(groups.components)
+    mw_comp = zeros(eltype(Mw_gc.values),n)
+    v = groups.n_flattenedgroups
+    mw_gc = Mw_gc.values
+    for i in 1:n
+        mw_comp[i] = dot(mw_gc,v[i])
+    end
+    return mw_comp
+end
+
 function group_molecular_weight(groups::GroupParameter,mw,z = @SVector [1.])
     res = zero(first(z))
     for i in 1:length(groups.n_flattenedgroups)
@@ -47,7 +59,7 @@ function group_molecular_weight(groups::GroupParameter,mw,z = @SVector [1.])
     return 0.001*res/sum(z)
 end
 
-comp_molecular_weight(mw,z = @SVector [1.]) = 0.001*dot(mw,z)
+comp_molecular_weight(mw,z = SA[1.0]) = 0.001*dot(mw,z)
 molecular_weight(model) = molecular_weight(model,SA[1.0])
 molecular_weight(model::EoSModel,z) = __molecular_weight(model,z)
 function __molecular_weight(model,z)

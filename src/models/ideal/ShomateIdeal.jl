@@ -18,10 +18,12 @@ abstract type ShomateIdealModel <: ReidIdealModel end
 - `c`: Single Parameter (`Float64`) - polynomial coefficient
 - `d`: Single Parameter (`Float64`) - polynomial coefficient
 - `e`: Single Parameter (optional) (`Float64`)  - polynomial coefficient for 1/T^2
+- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
 
 ## Model parameters
 
 - `coeffs`: Single Parameter (`NTuple{5,Float64}`)
+- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
 
 ## Description
 
@@ -48,7 +50,8 @@ idealmodel = ShomateIdeal(["water","butane"];
             userlocations = (a = [32.24, 9.487], 
                         b = [0.00192, 0.3313], 
                         c = [1.06e-5, -0.0001108],
-                        d = [-3.6e-9, -2.822e-9])
+                        d = [-3.6e-9, -2.822e-9],
+                        Mw = [18.01, 58.12])
                         ) #e is not used
 ```
 
@@ -56,8 +59,8 @@ idealmodel = ShomateIdeal(["water","butane"];
 ShomateIdeal
 export ShomateIdeal
 
-default_locations(::Type{ShomateIdeal}) = ["ideal/ShomateIdeal.csv"]
-default_ignore_missing_singleparams(::Type{ShomateIdeal}) = ["e"]
+default_locations(::Type{ShomateIdeal}) = ["ideal/ShomateIdeal.csv","properties/molarmass.csv"]
+default_ignore_missing_singleparams(::Type{ShomateIdeal}) = ["e","Mw"]
 function transform_params(::Type{ShomateIdeal},params,components)
     a,b,c,d = params["a"],params["b"],params["c"],params["d"]
     e = get(params,"e") do
