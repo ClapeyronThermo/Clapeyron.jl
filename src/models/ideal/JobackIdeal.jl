@@ -377,7 +377,7 @@ function Visc(model::JobackIdeal,T)
     n = model.groups.n_flattenedgroups
     ηa = model.params.eta_a.values
     ηb = model.params.eta_b.values
-    Mw = model.params.Mw.values
+    Mw = model.params.Mw_gc.values
     result = zeros(Base.promote_eltype(T,Float64),length(model))
     for i in 1:length(model)
         ηai = dot(n[i],ηa)
