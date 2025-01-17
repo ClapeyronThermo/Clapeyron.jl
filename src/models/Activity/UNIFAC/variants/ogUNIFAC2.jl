@@ -1,12 +1,4 @@
-struct ogUNIFACParam <: EoSParam
-    A::PairParam{Float64}
-    R::SingleParam{Float64}
-    Q::SingleParam{Float64}
-end
-
-abstract type ogUNIFACModel <: UNIFACModel end
-
-struct ogUNIFAC{c<:EoSModel} <: ogUNIFACModel
+struct ogUNIFAC2{c<:EoSModel} <: ogUNIFACModel
     components::Array{String,1}
     groups::GroupParam
     params::ogUNIFACParam
@@ -15,12 +7,13 @@ struct ogUNIFAC{c<:EoSModel} <: ogUNIFACModel
     unifac_cache::UNIFACCache
 end
 
-export ogUNIFAC
+const ogUNIFAC2_0 = ogUNIFAC2
+export ogUNIFAC2
 
 """
     ogUNIFACModel <: UNIFACModel
 
-    ogUNIFAC(components;
+    ogUNIFAC2(components;
     puremodel = PR, 
     userlocations = String[],
     group_userlocations = String[],
@@ -36,42 +29,19 @@ export ogUNIFAC
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties
 
-UNIFAC (UNIQUAC Functional-group Activity Coefficients) activity model.
-
+UNIFAC 2.0 (UNIQUAC Functional-group Activity Coefficients) activity model.
 Original formulation.
-
-The Combinatorial part corresponds to an GC-averaged modified UNIQUAC model. The residual part iterates over groups instead of components.
-
-```
-Gᴱ = nRT(gᴱ(comb) + gᴱ(res))
-```
-
-Combinatorial part:
-```
-gᴱ(comb) = ∑[xᵢlog(Φᵢ/xᵢ) + 5qᵢxᵢlog(θᵢ/Φᵢ)]
-θᵢ = qᵢxᵢ/∑qᵢxᵢ
-Φᵢ = rᵢxᵢ/∑rᵢxᵢ
-rᵢ = ∑Rₖνᵢₖ for k ∈ groups
-qᵢ = ∑Qₖνᵢₖ for k ∈ groups
-```
-Residual Part:
-```
-gᴱ(residual) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
-v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
-Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components 
-Θₖ = QₖXₖ/∑QₖXₖ
-Ψₖₘ = exp(-(Aₖₘ/T)
-```
+The method is identical to [`ogUNIFAC`](@ref) but with a new parameters fitted by matrix completion methods.
 
 ## References
-1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. [doi:10.1021/i260064a004](https://doi.org/10.1021/i260064a004)
+1. Hayer, N., Wendel, T., Mandt, S., Hasse, H., Jirasek, F., Advancing Thermodynamic Group-Contribution Methods by Machine Learning: UNIFAC 2.0, Chemical Engineering Journal 504 (2025) 158667. [10.1016/j.cej.2024.158667](https://doi.org/10.1016/j.cej.2024.158667).
 
 """
-ogUNIFAC
+ogUNIFAC2
 
-default_locations(::Type{ogUNIFAC}) = ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC_unlike.csv"]
+default_locations(::Type{ogUNIFAC2}) = ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC2_unlike.csv"]
 
-function ogUNIFAC(components;
+function ogUNIFAC2(components;
     puremodel = PR,
     userlocations = String[],
     group_userlocations = String[],
@@ -79,25 +49,31 @@ function ogUNIFAC(components;
     verbose = false,
     reference_state = nothing)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"];group_userlocations = group_userlocations, verbose = verbose)
+    groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
-    params = getparams(groups, default_locations(ogUNIFAC); userlocations = userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose = verbose)
+    params = getparams(groups, default_locations(ogUNIFAC2); userlocations = userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose = verbose)
     A  = params["A"]
     R  = params["R"]
     Q  = params["Q"]
     
     _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
     packagedparams = ogUNIFACParam(A,R,Q)
-    references = String[]
+    references = String["10.1016/j.cej.2024.158667"]
     cache = UNIFACCache(groups,packagedparams)
-    model = ogUNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
+    model = ogUNIFAC2(groups.components,groups,packagedparams,_puremodel,references,cache)
     set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 
-excess_g_comb(model::ogUNIFACModel,p,T,z=SA[1.0]) = excess_g_comb_original(model,p,T,z)
+# function ogUNIFAC2(components;
+#     puremodel = PR,
+#     group_userlocations = String[],
+#     pure_userlocations = String[],
+#     verbose = false,
+#     reference_state = nothing)
 
-function Ψ(model::ogUNIFACModel,V,T,z)
-    A = model.params.A.values
-    return @. exp(-A/T)
-end
+#     _model = ogUNIFAC(components; puremodel, group_userlocations, pure_userlocations, 
+#         verbose, reference_state, userlocations=joinpath.(DB_PATH,default_locations(ogUNIFAC2)))
+#     model = ogUNIFAC2([getfield(_model,fn) for fn in fieldnames(ogUNIFAC2)]...)
+#     return model
+# end
