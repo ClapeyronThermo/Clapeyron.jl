@@ -2,8 +2,8 @@ function x0_Pproperty(model::EoSModel,T,z::AbstractVector,verbose = false)
   bubble = Clapeyron.bubble_pressure(model,T,z)
   dew = Clapeyron.dew_pressure(model,T,z)
   bubble_T = bubble[1]
-  v_dew_vapour = dew[3]
-  v_bubble_liquid = bubble[2]
+  v_dew_vapour = dew[3]*sum(z)
+  v_bubble_liquid = bubble[2]*sum(z)
   dew_T = dew[1]
   if isnan(bubble_T)
     verbose && @error "bubble_pressure calculation failed."
@@ -113,6 +113,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   if property == volume
     prop_bubble = bubble_vol
     prop_dew = dew_vol
+    @show prop_dew,prop_bubble
   else
     prop_bubble = property(model,bubble_p,T,z,phase=phase)
     prop_dew = property(model,dew_p,T,z,phase=phase)
