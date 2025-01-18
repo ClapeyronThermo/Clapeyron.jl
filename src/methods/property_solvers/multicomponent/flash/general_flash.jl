@@ -303,13 +303,13 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         end
         wj = viewn(ξ,nc,jj)
         if needs_st
-            aj,dadvj,dadTj = ∂f_vec(model,volumes[j],T,wj)
+            aj,dadvj,dadTj = ∂f_vec(model,vj,T,wj)
             pj,sj = -dadvj,-dadTj
         elseif needs_a && !needs_st
-            aj,dadvj = f∂fdV(model,volumes[j],T,wj)
+            aj,dadvj = f∂fdV(model,vj,T,wj)
             pj,sj = -dadvj,zero(aj)
         else
-            pj = pressure(model,volumes[j],T,wj)
+            pj = pressure(model,vj,T,wj)
             sj,aj = zero(pj),zero(pj)
         end
         #@show primalval(pj)
@@ -388,7 +388,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         i_spec = spec1.k
         output[end-1] = β[i_spec] - val1
     else #general caloric term, valid for enthalpy , entropy, internal energy, gibbs, helmholtz
-        output[end-1] = (val1 - ∑a - p_end*∑v - T*∑s)/RTinv
+        output[end-1] = (val1 - ∑a - p_end*∑v - T*∑s)*RTinv
     end
 
     if spec2 == temperature
@@ -401,7 +401,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         i_spec = spec2.k
         output[end-1] = β[i_spec] - val2
     else
-        output[end] = (val2 - ∑a - p_end*∑v - T*∑s)/RTinv
+        output[end] = (val2 - ∑a - p_end*∑v - T*∑s)*RTinv
     end
     return output
 end

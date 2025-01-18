@@ -178,7 +178,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.
     x .= z
     y .= z
     if !isnothing(method.K0)
-        K = _1 * K0
+        K = _1 * method.K0
         lnK = log.(K)
         volx = zero(_1)
         voly = zero(_1)
