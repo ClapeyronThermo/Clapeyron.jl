@@ -772,6 +772,14 @@ function gibbs_solvation(model::EoSModel, T; threaded=true, vol0=(nothing,nothin
     return -R̄*T*log(K)
 end
 
+"""
+    partial_property(model::EoSModel, p, T, z, property::X; phase=:unknown, threaded=true, vol0=nothing) where {X}
+
+Calculate the partial molar property of a mixture at specified temperature, pressure, mol amounts, and extensive property of interest.
+The equality `sum(z .* partial_property(model,p,T,z,property) - property(model,p,T,z))` should hold.
+    
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
 function partial_property(model::EoSModel, p, T, z, property::ℜ; phase=:unknown, threaded=true, vol0=nothing) where {ℜ}
     V = volume(model, p, T, z; phase, threaded, vol0)
     return _partial_property(model,V,T,z,PT_to_VT(property))
