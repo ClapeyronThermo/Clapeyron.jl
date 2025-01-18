@@ -331,7 +331,8 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         jj += 1
         Fj = @inbounds viewn(μ_constraints,nc,jj)
         for i in 1:nc
-            Fj[i] = exp(μ_end[i]*RTinv)*w_end[i]/v_end
+            #Fj[i] = exp(μ_end[i]*RTinv)*w_end[i]*vs/v_end
+            Fj[i] = μ_end[i]
         end
     end
     jj = 0
@@ -342,20 +343,12 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         wj = viewn(ξ,nc,j)
         VT_chemical_potential_res!(μ_end,model,vj,T,wj)
         Fj = viewn(μ_constraints,nc,jj)
-
         for i in 1:nc
+            μ1i = Fj[i]
             μji = μ_end[i]
-            #=
             Δuᵣ = μ1i - μji
-            Δu = Δuᵣ*RTinv + log(vj*w1[i]/(v1*wj[i]))
-            Fj[i] = Δu #exponentiating
-            expΔu = vj*w1[i]*/(v1*wj[i])exp(μ1i*RTinv)/exp(μji*RTInv)
-            1 = vj*w1[i]*/(v1*wj[i])exp(μ1i*RTinv)/exp(μji*RTInv)
-            exp(μji*RTInv)*wj[i]/vj = exp(μ1i*RTinv)/exp(μji*RTInv)*w1[i]/v1
-            =#
-
-            Fj[i] -= exp(μji*RTinv)*wj[i]/vj
-            Fj[i] *= vs
+            Δu = Δuᵣ*RTinv + log(vj) + log(w_end[i]) - log(v_end) - log(wj[i])
+            Fj[i] = Δu
         end
     end
 
@@ -550,7 +543,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     _1 = one(eltype(input))
     #normalize to 1 mol base
     new_spec = normalize_spec(set_vfrac(spec,idx),∑z*_1)
-
     #variables already set by the specifications
     slacks = detect_and_set_slack_variables!(input,spec,np,nc)
     !slacks[end] && (input[end] = T0)
@@ -582,9 +574,12 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     converged = Fnorm < rtol
     nan_converged = !all(isfinite,x)
     max_iters_reached = false
+    ii = 0
     for i in 1:max_iters
+        ii = i
         converged && break
         nan_converged && break
+        max_iters_reached && break
         ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
         #do not iterate on slack variables
         Solvers.remove_slacks!(F,J,slacks)
@@ -616,7 +611,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
 
         x_old .= x
         #bound positivity
-        α0 = Solvers.positive_linesearch(x,s,decay = 1.0)
+        α0 = Solvers.positive_linesearch(x,s,decay = 0.8)
         #backtrack linesearch, so the next result is strictly better than the last
         α,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α0,ignore = slacks)
         Fnorm = sqrt(2*Θx)
@@ -631,7 +626,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         isnan(δs) && (nan_converged = true)
         i == max_iters && (max_iters_reached = true)
     end
-
     if !converged || nan_converged || max_iters_reached
         x .= NaN
     end

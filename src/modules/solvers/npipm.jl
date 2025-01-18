@@ -11,7 +11,7 @@ function positive_linesearch(v, δ, α0 = 1.0 ; τ = 1.0, decay = 0.5, tol = 1e-
                 α = min(α*decay,(-τ*vi)/(s*δi))
             end
         end
-    return α
+    return α*decay
 end
 
 function backtracking_linesearch!(Θ,F,X,d,Θ0,Xnew,α = 1.0;tol = 1e-10, decay = 0.5, ignore = nothing)
