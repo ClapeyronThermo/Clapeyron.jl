@@ -802,7 +802,7 @@ end
 function _partial_property(model::EoSModel, V, T, z::AbstractVector, VT_prop::F) where F
     ∂x∂nᵢ = VT_molar_gradient(model,V,T,z,VT_prop)
     #triple product rule:
-    #∂x∂nᵢ|p = ∂x∂nᵢ|V - ∂x∂V * ∂p∂nᵢ|V * ∂p∂V^1
+    #∂x∂nᵢ|p = ∂x∂nᵢ|V - ∂x∂V * ∂p∂nᵢ|V * ∂p∂V^-1
     ∂p∂nᵢ = VT_molar_gradient(model,V,T,z,pressure)
     xv(∂V) = VT_prop(model,∂V,T,z)
     ∂x∂V = Solvers.derivative(xv,V)
@@ -819,6 +819,8 @@ for (PTprop,VTprop) in [
     (:internal_energy,:VT_internal_energy),
     (:gibbs_free_energy,:VT_gibbs_free_energy),
     (:helmholtz_free_energy,:VT_helmholtz_free_energy),
+    (:isochoric_heat_capacity,:VT_isochoric_heat_capacity),
+    (:isobaric_heat_capacity,:VT_isobaric_heat_capacity)
     ]
     @eval begin
         PT_to_VT(::typeof($PTprop)) = $VTprop
