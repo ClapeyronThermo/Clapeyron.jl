@@ -113,7 +113,6 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   if property == volume
     prop_bubble = bubble_vol
     prop_dew = dew_vol
-    @show prop_dew,prop_bubble
   else
     prop_bubble = property(model,bubble_p,T,z,phase=phase)
     prop_dew = property(model,dew_p,T,z,phase=phase)

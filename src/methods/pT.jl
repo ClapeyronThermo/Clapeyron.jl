@@ -778,24 +778,23 @@ function partial_property(model::EoSModel, p, T, z, property::ℜ; phase=:unknow
 end
 
 function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(volume))
-    return VT_molar_gradient(model,V,T,z,volume)
+    _,∂p∂V = p∂p∂V(model,V,T,z)
+    ∂p∂nᵢ = VT_molar_gradient(model, V, T, z, pressure)
+    return -∂p∂nᵢ ./ ∂p∂V
 end
 
 function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(pressure))
     return VT_molar_gradient(model,V,T,z,pressure)
 end
 
-function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(gibbs_free_energy))
+function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(VT_gibbs_free_energy))
     return VT_molar_gradient(model,V,T,z,eos)
 end
 
 function _partial_property(model::EoSModel, V, T, z::AbstractVector, VT_prop::F) where F
     ∂x∂nᵢ = VT_molar_gradient(model,V,T,z,VT_prop)
     #triple product rule:
-    #∂x∂nᵢ|p = ∂x∂nᵢ|v - ∂x∂V * ∂p∂nᵢ|V * ∂p∂V-1
-
-    #∂p∂nᵢ|p = ∂p∂nᵢ|v - ∂p∂ni|V
-
+    #∂x∂nᵢ|p = ∂x∂nᵢ|V - ∂x∂V * ∂p∂nᵢ|V * ∂p∂V^1
     ∂p∂nᵢ = VT_molar_gradient(model,V,T,z,pressure)
     xv(∂V) = VT_prop(model,∂V,T,z)
     ∂x∂V = Solvers.derivative(xv,V)

@@ -166,11 +166,6 @@ Symbolics.@register_array_symbolic Clapeyron.VT_molar_gradient(model::EoSModel,V
     eltype = Base.promote_eltype(model,V,T,z)
 end
 
-Symbolics.@register_array_symbolic Clapeyron.VT_molar_gradient(model::EoSModel,V,T,z::AbstractVector,property::typeof(Clapeyron.volume)) begin
-    size = size(z)
-    eltype = Base.promote_eltype(model,V,T,z)
-end false
-
 Symbolics.@register_array_symbolic Clapeyron.p∂p∂V(model::EoSModel,p,T,z::AbstractVector) begin
     size=(2,)
 end

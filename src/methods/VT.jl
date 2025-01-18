@@ -445,12 +445,6 @@ function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ,config) wh
     return ForwardDiff.gradient!(fx,fun,z,config)::F
 end
 
-#special dispatch for volume here
-function VT_molar_gradient(model::EoSModel, V, T, z::AbstractVector, ::typeof(volume))
-    _,dpdv = p∂p∂V(model,V,T,z)
-    dpdni = VT_molar_gradient(model, V, T, z, pressure)
-    return -dpdni ./ dpdv
-end
 
 VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_molar_gradient(model,V,T,z,eos)
 VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_molar_gradient(model,V,T,z,eos_res)
