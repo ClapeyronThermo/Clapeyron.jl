@@ -417,17 +417,17 @@ end
 
 (fixed::ZVar{P,M,V,T})(z::Z) where {P,M,V,T,Z} = fixed.property(fixed.model,fixed.vol,fixed.temp,z)
 
-function VT_partial_property(model::EoSModel,V,T,z::AbstractVector,property::ℜ) where {ℜ}
+function VT_molar_gradient(model::EoSModel,V,T,z::AbstractVector,property::ℜ) where {ℜ}
     fun = ZVar(property,model,V,T)
     TT = gradient_type(model,T+V,z)
     return Solvers.gradient(fun,z)::TT
 end
 
-function VT_partial_property!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F,ℜ}
-    return VT_partial_property!(fx,model,V,T,z,property,nothing)
+function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F,ℜ}
+    return VT_molar_gradient!(fx,model,V,T,z,property,nothing)
 end
 
-function VT_partial_property!(fx::F,model::EoSModel,V,T,z,property::ℜ,::Nothing) where {F,ℜ}
+function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ,::Nothing) where {F,ℜ}
     if isnan(V) || isnan(T) || any(isnan,z)
         fx .= NaN
         return fx
@@ -436,7 +436,7 @@ function VT_partial_property!(fx::F,model::EoSModel,V,T,z,property::ℜ,::Nothin
     return Solvers.gradient!(fx,fun,z)::F
 end
 
-function VT_partial_property!(fx::F,model::EoSModel,V,T,z,property::ℜ,config) where {F,ℜ}
+function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ,config) where {F,ℜ}
     if isnan(V) || isnan(T) || any(isnan,z)
         fx .= NaN
         return fx
@@ -445,10 +445,17 @@ function VT_partial_property!(fx::F,model::EoSModel,V,T,z,property::ℜ,config) 
     return ForwardDiff.gradient!(fx,fun,z,config)::F
 end
 
-VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos)
-VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos_res)
-VT_chemical_potential_res!(r,model::EoSModel, V, T, z=SA[1.],config = nothing) = VT_partial_property!(r,model,V,T,z,eos_res,config)
-VT_chemical_potential!(result,model,V,T,z) = VT_partial_property!(result,model,V,T,z,eos)
+#special dispatch for volume here
+function VT_molar_gradient(model::EoSModel, V, T, z::AbstractVector, ::typeof(volume))
+    _,dpdv = p∂p∂V(model,V,T,z)
+    dpdni = VT_molar_gradient(model, V, T, z, pressure)
+    return -dpdni ./ dpdv
+end
+
+VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_molar_gradient(model,V,T,z,eos)
+VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_molar_gradient(model,V,T,z,eos_res)
+VT_chemical_potential_res!(r,model::EoSModel, V, T, z=SA[1.],config = nothing) = VT_molar_gradient!(r,model,V,T,z,eos_res,config)
+VT_chemical_potential!(result,model,V,T,z) = VT_molar_gradient!(result,model,V,T,z,eos)
 
 function VT_fugacity_coefficient(model::EoSModel,V,T,z=SA[1.])
     return _VT_fugacity_coefficient(model,V,T,z)

@@ -774,14 +774,48 @@ end
 
 function partial_property(model::EoSModel, p, T, z, property::ℜ; phase=:unknown, threaded=true, vol0=nothing) where {ℜ}
     V = volume(model, p, T, z; phase, threaded, vol0)
-    return VT_partial_property(model,V,T,z,property)
+    return _partial_property(model,V,T,z,PT_to_VT(property))
 end
 
-#special dispatch for volume here
-function VT_partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(volume))
-    _,dpdv = p∂p∂V(model,V,T,z)
-    dpdni = VT_partial_property(model, V, T, z, pressure)
-    return -dpdni ./ dpdv
+function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(volume))
+    return VT_molar_gradient(model,V,T,z,volume)
+end
+
+function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(pressure))
+    return VT_molar_gradient(model,V,T,z,pressure)
+end
+
+function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(gibbs_free_energy))
+    return VT_molar_gradient(model,V,T,z,eos)
+end
+
+function _partial_property(model::EoSModel, V, T, z::AbstractVector, VT_prop::F) where F
+    ∂x∂nᵢ = VT_molar_gradient(model,V,T,z,VT_prop)
+    #triple product rule:
+    #∂x∂nᵢ|p = ∂x∂nᵢ|v - ∂x∂V * ∂p∂nᵢ|V * ∂p∂V-1
+
+    #∂p∂nᵢ|p = ∂p∂nᵢ|v - ∂p∂ni|V
+
+    ∂p∂nᵢ = VT_molar_gradient(model,V,T,z,pressure)
+    xv(∂V) = VT_prop(model,∂V,T,z)
+    ∂x∂V = Solvers.derivative(xv,V)
+    _,∂p∂V = p∂p∂V(model,V,T,z)
+    return ∂x∂nᵢ .- ∂x∂V .* ∂p∂nᵢ ./ ∂p∂V
+end
+
+#default
+PT_to_VT(x) = x
+
+for (PTprop,VTprop) in [
+    (:entropy,:VT_entropy),
+    (:enthalpy,:VT_enthalpy),
+    (:internal_energy,:VT_internal_energy),
+    (:gibbs_free_energy,:VT_gibbs_free_energy),
+    (:helmholtz_free_energy,:VT_helmholtz_free_energy),
+    ]
+    @eval begin
+        PT_to_VT(::typeof($PTprop)) = $VTprop
+    end
 end
 
 #first derivative order properties
@@ -800,7 +834,7 @@ export mass_density,molar_density, compressibility_factor
 #molar gradient properties
 export chemical_potential, activity_coefficient, activity, aqueous_activity, fugacity_coefficient,reference_chemical_potential,reference_chemical_potential_type
 export chemical_potential_res
-export mixing, excess, gibbs_solvation
+export mixing, excess, gibbs_solvation, partial_property
 export identify_phase
 
 module PT
