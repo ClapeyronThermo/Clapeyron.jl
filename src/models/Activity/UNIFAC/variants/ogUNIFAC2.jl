@@ -64,16 +64,3 @@ function ogUNIFAC2(components;
     set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
-
-# function ogUNIFAC2(components;
-#     puremodel = PR,
-#     group_userlocations = String[],
-#     pure_userlocations = String[],
-#     verbose = false,
-#     reference_state = nothing)
-
-#     _model = ogUNIFAC(components; puremodel, group_userlocations, pure_userlocations, 
-#         verbose, reference_state, userlocations=joinpath.(DB_PATH,default_locations(ogUNIFAC2)))
-#     model = ogUNIFAC2([getfield(_model,fn) for fn in fieldnames(ogUNIFAC2)]...)
-#     return model
-# end
