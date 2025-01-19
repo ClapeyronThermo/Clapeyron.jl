@@ -219,7 +219,7 @@ function getparams(components::Vector{String},locations::Vector{String},options:
 
     #generate sites, if any
     sites = buildsites(components,allparams,allnotfoundparams,options)# Union{SiteParam,Nothing}
-    
+
     #generate ClapeyronParams
     result = compile_params(components,allparams,allnotfoundparams,sites,options)
     #check values
@@ -263,48 +263,36 @@ function buildsites(components,allparams,allnotfoundparams,options)
     end
 
     #check for missing number of sites
-    if !any(haskey(allparams,get(n_sites_columns,vi,"")) for vi ∈ v)
-       return __warning_no_site_vals(allparams,components)
+    nc = length(components)
+    n_sites_dict = Dict{String,Vector{Int}}()
+    for vi ∈ v
+        ki = n_sites_columns[vi]
+        if haskey(allparams,ki)
+            n_sites_dict[vi] = compile_single_vec(components,allparams[ki])
+        else
+            options.verbose && @warn("no columns found containing number of sites of type $(error_color(vi)). supposing zero sites")
+            n_sites_dict[vi] = zeros(Int,nc)
+        end
     end
 
     #we compile directly the existing params into a vector. in this way, incomplete sites get assigned the value of zero.
-    n_sites_dict = Dict{String,Vector{Int}}(vi => compile_single_vec(components,allparams[n_sites_columns[vi]]) for vi ∈ v)
-    nc = length(components)
+    #n_sites_dict = Dict{String,Vector{Int}}(vi => compile_single_vec(components,allparams[n_sites_columns[vi]]) for vi ∈ v)
     n_sites = [[n_sites_dict[allcomponentsites[i][j]][i] for j ∈ 1:length(allcomponentsites[i])] for i ∈ 1:nc]  # or groupsites
     sourcecsvs = String[]
-
     for vi ∈ v
-        if haskey(allparams,n_sites_columns[vi])
-            csv_vi = allparams[n_sites_columns[vi]].csv
+        ki = n_sites_columns[vi]
+        if haskey(allparams,ki)
+            csv_vi = allparams[ki].csv
             csv_vi != nothing && append!(sourcecsvs,csv_vi)
+            
+            #remove single params used in sites, those were already consumed
+            delete!(allparams,ki)
         end
     end
     unique!(sourcecsvs)
 
-    return SiteParam(components,allcomponentsites,n_sites,sourcecsvs)
-end
-
-function __warning_no_site_vals(allparams,components)
-    @error """No columns containing number of sites were found. Supposing zero sites.
-    If your model doesn't use sites, but some input CSV folders contain Association params. consider using return_sites=false.
-    If there are columns containing number of sites, then those aren't recognized.
-    Consider passing a Dict with the mappings between the sites and the name of the column containing the number of said sites,
-    with the n_sites_columns keyword"
-    """
-    assoc_csv = Set(String[])
-    for x ∈ values(allparams)
-        if x.type isa assocdata && x.csv != nothing
-            for csvx ∈ x.csv
-                push!(assoc_csv,csvx)
-            end
-        end
-    end
-    assoc_csv = collect(assoc_csv)
-    @error "Parsed Association CSV were:"
-    for csv ∈ assoc_csv
-        println(csv)
-    end
-    return SiteParam(components)
+    res = SiteParam(components,allcomponentsites,n_sites,sourcecsvs)
+    return res
 end
 
 function getparams(groups::GroupParameter, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
@@ -371,6 +359,13 @@ function createparams(components::Vector{String},
             continue
         end
 
+        if csvtype == assocdata && !options.return_sites
+            if options.verbose
+                __verbose_findparams_skipassoc(filepath)
+            end
+            continue
+        end
+
         if csvtype == invaliddata
             if options.verbose
                 __verbose_findparams_invaliddata(filepath)
@@ -427,7 +422,12 @@ end
 function compile_params(components,allparams,allnotfoundparams,sites,options)
 
     #Compile Params
-    result = Dict{String,ClapeyronParam}(k => compile_param(components,k,v,sites,options) for (k,v) ∈ allparams)
+    result = Dict{String,ClapeyronParam}()
+    for (k,v) ∈ allparams
+        if !(v.type == assocdata && !options.return_sites)
+            result[k] = compile_param(components,k,v,sites,options)
+        end
+    end
     for (kk,vv) ∈ allnotfoundparams
         result[kk] = compile_param(components,kk,vv,sites,options)
     end
@@ -761,8 +761,13 @@ function __verbose_findparams_invaliddata(filepath)
     @warn "Skipping $filepath, cannot infer correct csv type. Check line 2 of the CSV to see if it has valid information."
 end
 
+function __verbose_findparams_skipassoc(filepath)
+    @warn "Skipping association file $filepath, the option return_sites was set to false."
+end
+
+
 function __assoc_string(pair)
-    "($(pair[1]),$(pair[3])) ⇋ ($(pair[2]), $(pair[4]))"
+    "($(pair[1]),$(pair[3])) >=< ($(pair[2]), $(pair[4]))"
 end
 
 function __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype,grouptype)

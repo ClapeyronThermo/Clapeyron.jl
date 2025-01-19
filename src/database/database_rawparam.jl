@@ -244,13 +244,16 @@ function compile_pair(name,components,type::CSVType,options)
     return PairParam(name,components)
 end
 
-@noinline __compile_assoc_error(name) = throw(ArgumentError("empty SiteParam, but nonempty assoc param $name"))
+@noinline function __compile_assoc_missing_site_error(name) 
+    color_name = error_color(name)
+    throw(MissingException("$color_name - empty site data, but nonempty association data"))
+end
 
 function compile_assoc(name,components,raw::RawParam,sites,options)
     EMPTY_STR = ""
 
     if isnothing(sites) && length(raw.component_info) > 0
-        __compile_assoc_error(name)
+        __compile_assoc_missing_site_error(name)
     end
     site_strings = sites.sites
     _ijab = standardize_comp_info(raw.component_info,components,site_strings)

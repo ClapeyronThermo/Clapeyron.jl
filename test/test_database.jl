@@ -64,14 +64,14 @@ using Clapeyron, Test, LinearAlgebra
     sites2 = Clapeyron.buildsites(testspecies,allparams,allnotfoundparams,opts2)
     result = Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,sites2,opts2) #generate ClapeyronParams
     @testset "params - sites" begin
-        @test sites0.sites == [[],
+        @test sites2.sites == [[],
                                     [],
                                     ["e", "e2", "H"],
                                     ["e", "H"],
                                     ["e", "e2", "H"]]
 
     end
-    params = Clapeyron.getparams(testspecies; userlocations=filepath_normal, ignore_missing_singleparams=["emptyparam","missingparam"],return_sites = false, verbose = true)
+    params = Clapeyron.getparams(testspecies; userlocations=filepath_normal, ignore_missing_singleparams=["emptyparam","missingparam"], verbose = true)
     sites = Clapeyron.SiteParam(params["intparam"].components)
     
     @testset "params - printing" begin
@@ -192,9 +192,9 @@ using Clapeyron, Test, LinearAlgebra
             end
         end
         
-        asymmetricparams = Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"], ignore_missing_singleparams=["asymmetricpair"],return_sites = false)
+        asymmetricparams = Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"], ignore_missing_singleparams=["asymmetricpair"])
 
-        asymmetricparams["asymmetricpair"].values == [0.06  0.04  0.0  0.0   0.0
+        @test asymmetricparams["asymmetricpair"].values == [0.06  0.04  0.0  0.0   0.0
                                                       0.05  0.0   0.0  0.0   0.0
                                                       0.0   0.0   0.0  0.02  0.0
                                                       0.0   0.03  0.0  0.0   0.0
@@ -207,7 +207,7 @@ using Clapeyron, Test, LinearAlgebra
          [Array{Int64}(undef,3,0)]  [Array{Int64}(undef,3,0)]  [[0 0 0; 0 0 0; 0 0 0]         ]  [[0 0; 0 0; 2600 0]      ]  [[2200 0 0; 0 0 0; 2100 0 0]]]
     
         # Testing for multiple identifiers
-        multiple_identifiers = Clapeyron.getparams(testspecies; userlocations=filepath_multiple_identifiers, return_sites=false)
+        multiple_identifiers = Clapeyron.getparams(testspecies; userlocations=filepath_multiple_identifiers)
         @test multiple_identifiers["param_single"].values == [100, 200, 200, 300, 300]
         @test multiple_identifiers["param_pair"].values   == [1000  4000     0     0     0
                                                              4000  2000     0  6000     0
