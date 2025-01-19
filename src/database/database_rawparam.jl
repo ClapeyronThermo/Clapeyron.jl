@@ -182,7 +182,10 @@ function compile_single_vec(components,raw::RawParam)
     else
         values = fill("",l)
     end
-
+    if raw.component_info == nothing #named tuple input
+        return raw.data
+    end
+    
     for (k,v) ∈ zip(raw.component_info,raw.data)
         i = findfirst(==(k[1]),components)::Int
         values[i] = v

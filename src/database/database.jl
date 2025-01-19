@@ -700,7 +700,7 @@ function findparamsinnt(components,
         if k == :groups && parsegroups == :groups
             param = RawParam(ks,nothing,copy(v),nothing,nothing,groupdata,:unknown)
             push!(foundvalues,param)
-        elseif (k == :epsilon_assoc || k == :bondvol) && parsegroups == :off && v === nothing
+        elseif (k == :epsilon_assoc || k == :bondvol) && parsegroups == :off && v === nothing #TODO: what to do here in case of other assoc names?
             notfoundvalues[ks] = assocdata
         elseif v isa Vector && parsegroups == :off
             param = RawParam(ks,nothing,copy(v),nothing,nothing,singledata,:unknown)
