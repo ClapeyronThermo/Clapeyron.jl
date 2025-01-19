@@ -236,10 +236,13 @@ function buildsites(components,allparams,allnotfoundparams,options)
     options.return_sites || return nothing
 
     #if there aren't any assoc data files, return empty SiteParam
-    any(x -> x.type == assocdata,values(allparams)) || return nothing
+    assoc_data_found = any(x -> x.type == assocdata,values(allparams)) 
+    assoc_data_notfound = any(x -> x == assocdata,values(allnotfoundparams)) 
+    (!assoc_data_found && !assoc_data_found) || return nothing
 
+    
     #Find if there is any sites in the assoc files, do nothing if data not found
-    anysites(allparams,components) || return nothing
+    anysites(allparams,components) || return SiteParam(components)
 
     #Find the names of all possible sites for each component.
     allcomponentsites = findsites(allparams,components)
