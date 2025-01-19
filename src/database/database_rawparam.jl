@@ -119,24 +119,25 @@ it also builds empty params, if you pass a CSVType instead of a RawParam
 
 Base.@nospecialize
 
-function compile_param(components,name,raw::RawParam,site_strings,options)
+function compile_param(components,name,raw::RawParam,sites,options)
+    
     if raw.type == singledata || raw.type == groupdata
         return compile_single(name,components,raw,options)
     elseif raw.type == pairdata
         return compile_pair(name,components,raw,options)
     elseif raw.type == assocdata
-        return compile_assoc(name,components,raw,site_strings,options)
+        return compile_assoc(name,components,raw,sites,options)
     end
     return nothing
 end
 
-function compile_param(components,name,raw::CSVType,site_strings,options)
+function compile_param(components,name,raw::CSVType,sites,options)
     if raw == singledata
         return compile_single(name,components,raw,options)
     elseif raw == pairdata
         return compile_pair(name,components,raw,options)
     elseif raw == assocdata
-        return compile_assoc(name,components,raw,site_strings,options)
+        return compile_assoc(name,components,raw,sites,options)
     end
     return nothing
 end
@@ -172,6 +173,23 @@ function compile_single(name,components,raw::RawParam,options)
     return SingleParameter(name,components,values,ismissingvals,sources_csv,sources)
 end
 
+#just build a single param from a vector, no metadata.
+function compile_single_vec(components,raw::RawParam)
+    L = eltype(raw)
+    l = length(components)
+    if L <: Number
+        values = zeros(L,l)
+    else
+        values = fill("",l)
+    end
+
+    for (k,v) ∈ zip(raw.component_info,raw.data)
+        i = findfirst(==(k[1]),components)::Int
+        values[i] = v
+    end
+    return values
+end
+
 function compile_single(name,components,type::CSVType,options)
     param = SingleParam(name,components)
     if name ∈ options.ignore_missing_singleparams
@@ -182,7 +200,6 @@ function compile_single(name,components,type::CSVType,options)
 end
 
 function compile_pair(name,components,raw::RawParam,options)
-
     if isnothing(raw.component_info) #build from named tuple
         l = length(components)
         return PairParam(raw.name,components,reshape(raw.data,(l,l)))
@@ -227,8 +244,15 @@ function compile_pair(name,components,type::CSVType,options)
     return PairParam(name,components)
 end
 
-function compile_assoc(name,components,raw::RawParam,site_strings,options)
+@noinline __compile_assoc_error(name) = throw(ArgumentError("empty SiteParam, but nonempty assoc param $name"))
+
+function compile_assoc(name,components,raw::RawParam,sites,options)
     EMPTY_STR = ""
+
+    if isnothing(sites) && length(raw.component_info) > 0
+        __compile_assoc_error(name)
+    end
+    site_strings = sites.sites
     _ijab = standardize_comp_info(raw.component_info,components,site_strings)
     unique_sitepairs = unique(raw.component_info)
     l = length(unique_sitepairs)
@@ -259,9 +283,13 @@ function compile_assoc(name,components,raw::RawParam,site_strings,options)
     return param
 end
 
-function compile_assoc(name,components,raw::CSVType,site_strings,options)
+function compile_assoc(name,components,raw::CSVType,sites,options)
     values = Compressed4DMatrix{Float64}()
-    return AssocParam(name,components,values,site_strings,String[],String[])
+    if sites === nothing
+        AssocParam(name,components,values,[String[] for _ in 1:length(components)],String[],String[])
+    else
+        AssocParam(name,components,values,sites.sites,String[],String[])
+    end
 end
 
 #Sort site tape, so that components are sorted by the input.
@@ -314,6 +342,8 @@ function is_valid_param(param::PairParameter,options)
     return nothing
 end
 
+is_valid_param(param::SiteParam,options) = nothing
+
 function SingleMissingError(param::SingleParameter;all = false)
     if all
         throw(MissingException("cannot found values of " * error_color(param.name) * " for all input components."))
@@ -321,7 +351,7 @@ function SingleMissingError(param::SingleParameter;all = false)
         missingvals = param.ismissingvalues
         idx = findall(param.ismissingvalues)
         comps = param.components[idx]
-        throw(MissingException(string("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")))        
+        throw(MissingException(string("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")))
     end
 end
 

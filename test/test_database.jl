@@ -40,7 +40,7 @@ using Clapeyron, Test, LinearAlgebra
         @test haskey(params1, "sigma")
         
         #this fails, because there are missing params
-        @test_throws MissingException Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts) #generate ClapeyronParams
+        @test_throws MissingException Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,nothing,opts) #generate ClapeyronParams
         
         # Check that it throws an error if ignore_missing_singleparams is not set to true.
         @test_throws MissingException Clapeyron.getparams(testspecies; userlocations=filepath_normal,return_sites = false)
@@ -61,9 +61,10 @@ using Clapeyron, Test, LinearAlgebra
     end
     
     @printline
-    result,allcomponentsites = Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts2) #generate ClapeyronParams
+    sites2 = buildsites(testspecies,allparams,allnotfoundparams,opts2)
+    result = Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,sites2,opts2) #generate ClapeyronParams
     @testset "params - sites" begin
-        @test allcomponentsites == [[],
+        @test sites0.sites == [[],
                                     [],
                                     ["e", "e2", "H"],
                                     ["e", "H"],

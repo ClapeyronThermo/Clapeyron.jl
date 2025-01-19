@@ -592,17 +592,6 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         params_in = getparams(_components, default_locations(M),options)
     end
 
-    #add missing single params, if not in the input databases.
-    for prop in options.ignore_missing_singleparams
-        get!(params_in,prop) do
-            if has_groups(M)
-                SingleParam(prop,groups.groups)
-            else
-                SingleParam(prop,_components)
-            end
-        end
-    end
-    
     #inject reference state if not built
     if has_reference_state(M)
             params_in["reference_state"] = __init_reference_state_kw(reference_state)
