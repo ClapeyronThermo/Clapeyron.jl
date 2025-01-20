@@ -62,6 +62,9 @@ end
 comp_molecular_weight(mw,z = SA[1.0]) = 0.001*dot(mw,z)
 molecular_weight(model) = molecular_weight(model,SA[1.0])
 molecular_weight(model::EoSModel,z) = __molecular_weight(model,z)
+molecular_weight(mw::AbstractVector,z) = comp_molecular_weight(mw,z)
+molecular_weight(mw::SingleParam,z) = comp_molecular_weight(mw.values,z)
+
 function __molecular_weight(model,z)
     MW = mw(model)
     if has_groups(model)

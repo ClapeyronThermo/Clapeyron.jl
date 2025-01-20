@@ -148,7 +148,7 @@ The estimated critical point of a single component can be obtained via `crit_pur
 """
 JobackIdeal
 mw(model::JobackIdeal) = model.params.Mw.values
-molecular_weight(model::JobackIdeal,z) = molecular_weight(ReidIdeal(model),z)
+molecular_weight(model::JobackIdeal,z) = molecular_weight(model.params.Mw,z)
 function recombine_impl!(model::JobackIdeal)
     coeffs = model.params.coeffs
     i_groups = model.groups.i_groups
@@ -172,7 +172,7 @@ end
 function ReidIdeal(model::JobackIdeal)
     comps = model.components
     coeffs = model.params.coeffs
-    Mw = model.params.Mw,model
+    Mw = model.params.Mw
     a = SingleParam("a",comps,getindex.(coeffs.values,1))
     b = SingleParam("b",comps,getindex.(coeffs.values,2))
     c = SingleParam("c",comps,getindex.(coeffs.values,3))
@@ -182,6 +182,7 @@ function ReidIdeal(model::JobackIdeal)
     param = ReidIdealParam(a,b,c,d,e,coeffs,reference_state,Mw)
     ReidIdeal(model.components,param,model.references)
 end
+
 
 """
     JobackGC
