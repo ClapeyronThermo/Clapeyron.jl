@@ -22,6 +22,11 @@ abstract type ShomateIdealModel <: ReidIdealModel end
 
 ## Model parameters
 
+- `a`: Single Parameter (`Float64`) - polynomial coefficient
+- `b`: Single Parameter (`Float64`) - polynomial coefficient
+- `c`: Single Parameter (`Float64`) - polynomial coefficient
+- `d`: Single Parameter (`Float64`) - polynomial coefficient
+- `e`: Single Parameter (optional) (`Float64`)  - polynomial coefficient for 1/T^2
 - `coeffs`: Single Parameter (`NTuple{5,Float64}`)
 - `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
 

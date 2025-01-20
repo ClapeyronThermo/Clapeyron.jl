@@ -169,7 +169,19 @@ function recombine_impl!(model::JobackIdeal)
     return model
 end
 
-ReidIdeal(model::JobackIdeal) = ReidIdeal(model.components,ReidIdealParam(model.params.coeffs,model.params.reference_state,model.params.Mw),model.references)
+function ReidIdeal(model::JobackIdeal)
+    comps = model.components
+    coeffs = model.params.coeffs
+    Mw = model.params.Mw,model
+    a = SingleParam("a",comps,getindex.(coeffs.values,1))
+    b = SingleParam("b",comps,getindex.(coeffs.values,2))
+    c = SingleParam("c",comps,getindex.(coeffs.values,3))
+    d = SingleParam("d",comps,getindex.(coeffs.values,4))
+    e = SingleParam("e",comps,getindex.(coeffs.values,5))
+    reference_state = model.params.reference_state
+    param = ReidIdealParam(a,b,c,d,e,coeffs,reference_state,Mw)
+    ReidIdeal(model.components,param,model.references)
+end
 
 """
     JobackGC
