@@ -179,7 +179,7 @@ function ū(model::CKSAFTModel, V, T, z,_data = @f(data))
             num += 2*zi*zj*mi*mj*uij*di3*dj3
         end
     end
-    return num/denom/denom/Σz
+    return num/denom/denom
 end
 
 function a_chain(model::CKSAFTModel, V, T, z, _data = @f(data))
