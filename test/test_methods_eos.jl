@@ -159,6 +159,8 @@ end
     @test tc ≈ tc_test rtol = 1E-3
     @test pc ≈ pc_test rtol = 1E-3
     @test vc ≈ vc_test rtol = 1E-3
+    system2 = CKSAFT("methanol")
+    @test crit_pure(system2)[1] ≈ 544.4777700204786
 end
 
 @testset "ideal model parsing to JSON" begin
