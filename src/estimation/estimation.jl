@@ -2,7 +2,7 @@ include("estimationdata.jl")
 
 struct ToEstimate
     params::Vector{Symbol}
-    indices::Vector{Union{Integer,Tuple{Integer,Integer},Nothing}}  # if nothing, use all
+    indices::Vector{Union{Integer,Tuple{Integer,Integer},Vector,Nothing}}  # if nothing, use all
     factor::Vector{Union{Float64,Nothing}}
     lower::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}
     upper::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}
@@ -32,7 +32,7 @@ Turns the input parameter dictionary into a `ToEstimate` struct to be used withi
 """
 function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
     params = Vector{Symbol}(undef,0)
-    indices = Vector{Union{Integer,Tuple{Integer,Integer},Nothing}}(nothing,0)
+    indices = Vector{Union{Integer,Tuple{Integer,Integer},Vector,Nothing}}(nothing,0)
     factor = Vector{Union{Float64,Nothing}}(nothing,0)
     lower = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
     upper = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
@@ -218,25 +218,52 @@ function return_model(
             f = factor[i]
             id = idx[i]
             recomb = recombine[i]
-            if isdefined(model.params,param)
-                current_param = getfield(model.params, param)
-                if typeof(current_param) <: SingleParameter
-                    current_param[id[1]] = values[i]*f
-                end
-                if typeof(current_param) <: PairParam
-                    current_param[id[1],id[2],sym[i]] = values[i]*f
-                    if (id[1]==id[2]) & recomb
-                        current_param.ismissingvalues[id[1],:] .= true
-                        current_param.ismissingvalues[:,id[1]] .= true
-                    elseif id[1]!=id[2]
-                        current_param.ismissingvalues[id[1],id[2]] = false
-                        current_param.ismissingvalues[id[2],id[1]] = false
+            if typeof(id) <: Tuple || typeof(id) <: Integer
+                if isdefined(model.params,param)
+                    current_param = getfield(model.params, param)
+                    if typeof(current_param) <: SingleParameter
+                        current_param[id[1]] = values[i]*f
+                    end
+                    if typeof(current_param) <: PairParam
+                        current_param[id[1],id[2],sym[i]] = values[i]*f
+                        if (id[1]==id[2]) & recomb
+                            current_param.ismissingvalues[id[1],:] .= true
+                            current_param.ismissingvalues[:,id[1]] .= true
+                        elseif id[1]!=id[2]
+                            current_param.ismissingvalues[id[1],id[2]] = false
+                            current_param.ismissingvalues[id[2],id[1]] = false
+                        end
+                    end
+                    if typeof(current_param) <: AssocParam
+                        current_param.values.values[id[1]] = values[i]*f
+                        if cross_assoc[i]
+                            current_param.values.values[id[1]+1] = values[i]*f                
+                        end
                     end
                 end
-                if typeof(current_param) <: AssocParam
-                    current_param.values.values[id[1]] = values[i]*f
-                    if cross_assoc[i]
-                        current_param.values.values[id[1]+1] = values[i]*f                
+            elseif typeof(id) <: Vector
+                for j in 1:length(id)
+                    if isdefined(model.params,param)
+                        current_param = getfield(model.params, param)
+                        if typeof(current_param) <: SingleParameter
+                            current_param[id[j][1]] = values[i]*f
+                        end
+                        if typeof(current_param) <: PairParam
+                            current_param[id[j][1],id[j][2],sym[i]] = values[i]*f
+                            if (id[j][1]==id[j][2]) & recomb
+                                current_param.ismissingvalues[id[j][1],:] .= true
+                                current_param.ismissingvalues[:,id[j][1]] .= true
+                            elseif id[j][1]!=id[j][2]
+                                current_param.ismissingvalues[id[j][1],id[j][2]] = false
+                                current_param.ismissingvalues[id[j][2],id[j][1]] = false
+                            end
+                        end
+                        if typeof(current_param) <: AssocParam
+                            current_param.values.values[id[j][1]] = values[i]*f
+                            if cross_assoc[i]
+                                current_param.values.values[id[j][1]+1] = values[i]*f                
+                            end
+                        end
                     end
                 end
             end
@@ -266,25 +293,52 @@ function return_model!(
             f = factor[i]
             id = idx[i]
             recomb = recombine[i]
-            if isdefined(model.params,param)
-                current_param = getfield(model.params, param)
-                if typeof(current_param) <: SingleParameter
-                    current_param[id[1]] = values[i]*f
-                end
-                if typeof(current_param) <: PairParam
-                    current_param[id[1],id[2],sym[i]] = values[i]*f
-                    if (id[1]==id[2]) & recomb
-                        current_param.ismissingvalues[id[1],:] .= true
-                        current_param.ismissingvalues[:,id[1]] .= true
-                    elseif id[1]!=id[2]
-                        current_param.ismissingvalues[id[1],id[2]] = false
-                        current_param.ismissingvalues[id[2],id[1]] = false
+            if typeof(id) <: Tuple
+                if isdefined(model.params,param)
+                    current_param = getfield(model.params, param)
+                    if typeof(current_param) <: SingleParameter
+                        current_param[id[1]] = values[i]*f
+                    end
+                    if typeof(current_param) <: PairParam
+                        current_param[id[1],id[2],sym[i]] = values[i]*f
+                        if (id[1]==id[2]) & recomb
+                            current_param.ismissingvalues[id[1],:] .= true
+                            current_param.ismissingvalues[:,id[1]] .= true
+                        elseif id[1]!=id[2]
+                            current_param.ismissingvalues[id[1],id[2]] = false
+                            current_param.ismissingvalues[id[2],id[1]] = false
+                        end
+                    end
+                    if typeof(current_param) <: AssocParam
+                        current_param.values.values[id[1]] = values[i]*f
+                        if cross_assoc[i]
+                            current_param.values.values[id[1]+1] = values[i]*f                
+                        end
                     end
                 end
-                if typeof(current_param) <: AssocParam
-                    current_param.values.values[id[1]] = values[i]*f
-                    if cross_assoc[i]
-                        current_param.values.values[id[1]+1] = values[i]*f                
+            elseif typeof(id) <: Vector
+                for j in 1:length(id)
+                    if isdefined(model.params,param)
+                        current_param = getfield(model.params, param)
+                        if typeof(current_param) <: SingleParameter
+                            current_param[id[j][1]] = values[i]*f
+                        end
+                        if typeof(current_param) <: PairParam
+                            current_param[id[j][1],id[j][2],sym[i]] = values[i]*f
+                            if (id[j][1]==id[j][2]) & recomb
+                                current_param.ismissingvalues[id[j][1],:] .= true
+                                current_param.ismissingvalues[:,id[j][1]] .= true
+                            elseif id[j][1]!=id[j][2]
+                                current_param.ismissingvalues[id[j][1],id[j][2]] = false
+                                current_param.ismissingvalues[id[j][2],id[j][1]] = false
+                            end
+                        end
+                        if typeof(current_param) <: AssocParam
+                            current_param.values.values[id[j][1]] = values[i]*f
+                            if cross_assoc[i]
+                                current_param.values.values[id[j][1]+1] = values[i]*f                
+                            end
+                        end
                     end
                 end
             end
