@@ -277,6 +277,16 @@ end
     res_qp3 = qp_flash(model,q,p,z)
     res_qp4 = qp_flash(model,q,p,z./10)
     @test Clapeyron.temperature(res_qp3) ≈ Clapeyron.temperature(res_qp4)
+
+    #VT flash (#331)
+    model_a_pr = PR(["water", "oxygen"])
+    V_a = 1 # m3
+    T = 273.15 + 60 # K
+    p_a = 1.2e5 # Pa, 1.2 bar
+    n_H2O_a = 1.85e4 # mol H2O
+    n_O2_a = 24.08 # mol O2
+    sol_fl = vt_flash(model_a_pr, V_a, T, [n_H2O_a, n_O2_a])
+    @test V_a ≈ volume(sol_fl)
 end
 
 @testset "Saturation Methods" begin

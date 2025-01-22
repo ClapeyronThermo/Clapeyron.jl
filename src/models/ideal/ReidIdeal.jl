@@ -1,32 +1,33 @@
 abstract type PolynomialIdealModel <: IdealModel end
 
 struct ReidIdealParam <: EoSParam
+    a::SingleParam{Float64}
+    b::SingleParam{Float64}
+    c::SingleParam{Float64}
+    d::SingleParam{Float64}
+    e::SingleParam{Float64}
     coeffs::SingleParam{NTuple{5,Float64}}
     reference_state::ReferenceState
+    Mw::SingleParam{Float64}
 end
 
-function reid_coeffs(a::SingleParameter,b::SingleParameter,c::SingleParameter,d::SingleParameter,e::SingleParameter,comps::Vector{String})
-    comps = a.components
-    a = a.values
-    b = b.values
-    c = c.values
-    d = d.values
-    _e = e == nothing ? FillArrays.Zeros(length(comps)) : e.values
-
-    return reid_coeffs(a,b,c,d,_e,comps)
+function reid_coeffs(a,b,c,d,e,comps)
+    _coeffs = fill((0.0,0.0,0.0,0.0,0.0),length(comps))
+    coeffs = SingleParam("Reid Coefficients",comps,_coeffs)
+    return reid_coeffs!(coeffs,a,b,c,d,e)
 end
 
-function reid_coeffs(a::AbstractVector,b::AbstractVector,c::AbstractVector,d::AbstractVector,comps::Vector{String})
-    n = length(a)
-    coeffs = [(a[i],b[i],c[i],d[i],zero(a[i])) for i in 1:n]
-    SingleParam("Reid Coefficients",comps,coeffs)
+reid_coeffs(a,b,c,d,comps) = reid_coeffs(a,b,c,d,FillArrays.Zeros(length(a)),comps)
+
+function reid_coeffs!(coeffs,a,b,c,d,e)
+    for i in 1:length(coeffs)
+        coeffs[i] = (a[i],b[i],c[i],d[i],e[i])
+    end
+    return coeffs
 end
 
-function reid_coeffs(a::AbstractVector,b::AbstractVector,c::AbstractVector,d::AbstractVector,e::AbstractVector,comps::Vector{String})
-    n = length(a)
-    coeffs = [(a[i],b[i],c[i],d[i],e[i]) for i in 1:n]
-    SingleParam("Reid Coefficients",comps,coeffs)
-end
+reid_coeffs!(coeffs,a,b,c,d,e::Nothing) = reid_coeffs(coeffs,a,b,c,d,FillArrays.Zeros(length(coeffs)))
+
 
 abstract type ReidIdealModel <: PolynomialIdealModel end
 @newmodelsimple ReidIdeal ReidIdealModel ReidIdealParam
@@ -46,10 +47,17 @@ abstract type ReidIdealModel <: PolynomialIdealModel end
 - `c`: Single Parameter (`Float64`) - polynomial coefficient
 - `d`: Single Parameter (`Float64`) - polynomial coefficient
 - `e`: Single Parameter (optional) (`Float64`)  - polynomial coefficient
+- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
 
 ## Model parameters
 
+- `a`: Single Parameter (`Float64`) - polynomial coefficient
+- `b`: Single Parameter (`Float64`) - polynomial coefficient
+- `c`: Single Parameter (`Float64`) - polynomial coefficient
+- `d`: Single Parameter (`Float64`) - polynomial coefficient
+- `e`: Single Parameter (optional) (`Float64`)  - polynomial coefficient for 1/T^2
 - `coeffs`: Single Parameter (`NTuple{5,Float64}`)
+- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
 
 ## Description
 
@@ -76,7 +84,8 @@ idealmodel = ReidIdeal(["water","butane"];
             userlocations = (a = [32.24, 9.487], 
                         b = [0.00192, 0.3313], 
                         c = [1.06e-5, -0.0001108],
-                        d = [-3.6e-9, -2.822e-9])
+                        d = [-3.6e-9, -2.822e-9],
+                        Mw = [18.01, 58.12])
                         ) #e is not used
 ```
 
@@ -84,8 +93,8 @@ idealmodel = ReidIdeal(["water","butane"];
 ReidIdeal
 
 export ReidIdeal
-default_locations(::Type{ReidIdeal}) = ["ideal/ReidIdeal.csv"]
-default_ignore_missing_singleparams(::Type{ReidIdeal}) = ["e"]
+default_locations(::Type{ReidIdeal}) = ["ideal/ReidIdeal.csv","properties/molarmass.csv"]
+default_ignore_missing_singleparams(::Type{ReidIdeal}) = ["e","Mw"]
 function transform_params(::Type{ReidIdeal},params,components)
     a,b,c,d = params["a"],params["b"],params["c"],params["d"]
     e = get(params,"e") do
@@ -95,7 +104,10 @@ function transform_params(::Type{ReidIdeal},params,components)
     return params
 end
 
-recombine_impl!(model::ReidIdealModel) = model
+function recombine_impl!(model::ReidIdealModel)
+    p = model.params
+    reid_coeffs!(p.coeffs,p.a,p.b,p.c,p.d,p.e)
+end
 
 evalcoeff(::ReidIdealModel,coeffs,T,lnT = log(T)) = evalpoly(T,coeffs)
 

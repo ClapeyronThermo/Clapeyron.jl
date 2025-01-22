@@ -80,7 +80,7 @@ end
         @test Clapeyron.crit_pure(system)[1] ≈ 500.2728274871347 rtol = 1e-6
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 9.210841420941021 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
-   
+        @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
         s0 = JobackIdeal("acetone")
         @test Clapeyron.JobackGC.T_c(s0)[1] ≈ 500.5590 rtol = 1e-6
         @test Clapeyron.JobackGC.P_c(s0)[1] ≈ 48.025e5 rtol = 1e-6
@@ -98,6 +98,7 @@ end
         system = ReidIdeal(["butane"])
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 9.210842104089576 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+        @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
     end
 
     @testset "Shomate" begin
@@ -106,6 +107,7 @@ end
         @test Clapeyron.evalcoeff(system,coeff,500) ≈ 35.21836175 rtol = 1e-6
         @test Clapeyron.eval∫coeff(system,coeff,500) ≈ 15979.2447 rtol = 1e-6
         @test Clapeyron.eval∫coeffT(system,coeff,500) ≈ 191.00554 rtol = 1e-6
+        @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
     end
 
     @testset "Walker" begin
@@ -113,12 +115,14 @@ end
         @test Clapeyron.molecular_weight(system)*1000 ≈ 86.21
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 179.51502015696653 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+        @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
     end
 
     @testset "Monomer" begin
         system = MonomerIdeal(["hexane"])
         @test Clapeyron.a_ideal(system,V,T,z) ≈ -10.00711774776317 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+        @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
     end
 
     @testset "Empiric" begin
@@ -127,6 +131,7 @@ end
         #
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 7.932205569922042 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+        @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
 
         #Empiric Ideal from already existing MultiFluid model
         system = Clapeyron.idealmodel(MultiFluid(["water"]))
@@ -143,6 +148,7 @@ end
         system = AlyLeeIdeal(["methane"])
         @test_broken Clapeyron.a_ideal(system,V,T,z) ≈ 9.239701647126086 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+        @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
 
         #we use the default GERG 2008 parameters for methane, test if the Cp is equal
         system_gerg = Clapeyron.idealmodel(GERG2008(["methane"]))
@@ -162,6 +168,7 @@ end
     @testset "PPDS" begin
         m1 = PPDSIdeal("krypton")
         @test isobaric_heat_capacity(m1,1,303.15)/Rgas(m1) ≈ 2.5
+        @test Clapeyron.mass_density(m1,p,T,z) ≈ Clapeyron.molecular_weight(m1,z)*p/(Rgas(m1)*T)
         mw2 = 32.042 #MonomerIdeal("methanol").params.Mw.values[1]
         m2 = PPDSIdeal("methanol")
         #verification point in ref 1, table A.6

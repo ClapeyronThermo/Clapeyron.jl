@@ -8,7 +8,6 @@ end
 
 
 default_locations(::Type{SLk0k1lMixingRule}) = ["LatticeFluid/SanchezLacombe/mixing/k0k1l_unlike.csv"]
-default_ignore_missing_singleparams(::Type{SLk0k1lMixingRule}) = ["k","k0","k1","l"]
 
 function transform_params(::Type{SLk0k1lMixingRule},params,components)
     if haskey(params,"k") && !haskey(params,"k0")

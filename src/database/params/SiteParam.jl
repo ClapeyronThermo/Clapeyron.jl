@@ -71,9 +71,6 @@ struct SiteParam <: ClapeyronParam
     site_translator::Union{Nothing,Vector{Vector{NTuple{2,Int}}}}
 end
 
-
-
-
 function SiteParam(components::Vector{String},sites::Array{Array{String,1},1},n_sites::Vector{Vector{Int}},sourcecsvs = String[],site_translator = nothing)
     n_sites = PackedVectorsOfVectors.pack(n_sites)
     param = SiteParam(components, 

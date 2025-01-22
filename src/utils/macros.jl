@@ -591,7 +591,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         groups = nothing
         params_in = getparams(_components, default_locations(M),options)
     end
-    
+
     #inject reference state if not built
     if has_reference_state(M)
             params_in["reference_state"] = __init_reference_state_kw(reference_state)

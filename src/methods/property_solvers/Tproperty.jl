@@ -6,8 +6,8 @@ function x0_Tproperty(model::EoSModel,p,z::AbstractVector,verbose = false)
     bubble = Clapeyron.bubble_temperature(model,p,z)
     dew = Clapeyron.dew_temperature(model,p,z)
     bubble_T = bubble[1]
-    v_dew_vapour = dew[3]
-    v_bubble_liquid = bubble[2]
+    v_dew_vapour = dew[3]*sum(z)
+    v_bubble_liquid = bubble[2]*sum(z)
     dew_T = dew[1]
     if isnan(bubble_T)
       verbose && @error "bubble_temperature calculation failed."
