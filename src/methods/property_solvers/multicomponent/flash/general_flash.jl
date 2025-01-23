@@ -358,7 +358,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
             μ1i = Fj[i]
             μji = μ_end[i]
             Δuᵣ = μ1i - μji
-            Δu = Δuᵣ*RTinv + log(vj) + log(w_end[i]) - log(v_end) - log(wj[i])
+            Δu = Δuᵣ*RTinv + log(vj) + log(x_end[i]) - log(v_end) - log(xj[i])
             Fj[i] = Δu
         end
     end
@@ -373,6 +373,10 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         ξj = viewn(ξ,nc,j)
         βj = β[j]
         ∑ξj = sum(ξj)
+        #TODO: using min(a,b) in conjunction with AD seems to be equivalent in the Newton-min method, a way to solve MCP.
+        #there are better ways to solve MCP.
+        #ben-gharbia uses a Non-Parametric-Interior-Point method (npipm)
+        #there is also MixedComplementarityProblems.jl
         β_constraints[j] = min(βj,1 - ∑ξj)
         for i in 1:nc
             ξ_constraints[i] -= βj*ξj[i]
