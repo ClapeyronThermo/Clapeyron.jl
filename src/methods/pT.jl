@@ -791,10 +791,6 @@ function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(vo
     return -∂p∂nᵢ ./ ∂p∂V
 end
 
-function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(pressure))
-    return VT_molar_gradient(model,V,T,z,pressure)
-end
-
 function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(VT_gibbs_free_energy))
     return VT_molar_gradient(model,V,T,z,eos)
 end
