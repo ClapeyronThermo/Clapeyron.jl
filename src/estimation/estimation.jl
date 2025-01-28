@@ -282,11 +282,11 @@ function return_model!(
     recombine!(model)
 end
 
-function __modify_param!(param::SingleParameter,id::Union{Tuple,Integer},val,f,recomb,sym,cross_assoc)
+function __modify_param!(current_param::SingleParameter,id::Union{Tuple,Integer},val,f,recomb,sym,cross_assoc)
     current_param[id[1]] = values*f
 end
 
-function __modify_param!(param::PairParameter,id::Union{Tuple,Integer},val,f,recomb,sym,cross_assoc)
+function __modify_param!(current_param::PairParameter,id::Union{Tuple,Integer},val,f,recomb,sym,cross_assoc)
     id1,id2 = id[1],id[2]
     current_param[id1,id2,sym] = val*f
     if (id1==id2) & recomb
@@ -298,17 +298,17 @@ function __modify_param!(param::PairParameter,id::Union{Tuple,Integer},val,f,rec
     end
 end
 
-function __modify_param!(param::AssocParam,id::Union{Tuple,Integer},val,f,recomb,sym,cross_assoc)
+function __modify_param!(current_param::AssocParam,id::Union{Tuple,Integer},val,f,recomb,sym,cross_assoc)
     id1 = id[1]
     current_param.values.values[id1] = val*f
-    if cross_assoc[i]
+    if cross_assoc
         current_param.values.values[id1+1] = val*f
     end
 end
 
-function __modify_param!(param::Union{SingleParameter,PairParameter,AssocParam},id::AbstractVector,val,f,recomb,sym,cross_assoc)
+function __modify_param!(current_param::Union{SingleParameter,PairParameter,AssocParam},id::AbstractVector,val,f,recomb,sym,cross_assoc)
     for id_j in id
-        modify_param!(param,id_j,val,f,recomb,sym,cross_assoc)
+        modify_param!(current_param,id_j,val,f,recomb,sym,cross_assoc)
     end
 end
 
