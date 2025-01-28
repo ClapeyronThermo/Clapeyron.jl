@@ -221,7 +221,7 @@ function return_model!(
             recomb = recombine[i]
             val_i,sym_i,cross_assoc_i = values[i],sym[i],cross_assoc[i]
             current_param = getfield(model.params, param)
-            __modify_param!(current_param,id,val,f,recomb,sym,cross_assoc)
+            __modify_param!(current_param,id,val_i,f,recomb,sym_i,cross_assoc_i)
             #=
             if typeof(id) <: Tuple || typeof(id) <: Integer
                 if isdefined(model.params,param)
