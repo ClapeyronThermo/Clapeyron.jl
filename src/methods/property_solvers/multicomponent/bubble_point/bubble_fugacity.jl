@@ -88,8 +88,9 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
         inc0 = vcat(lnK, log(p))
         vol_cache = [volx, voly]
         problem = OF_bubblepy!(model,model_y, x, T, vol_cache,volatiles)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton()))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
         inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && inc .= NaN
         lnp = inc[end]
         lnK = inc[1:(end-1)]
 
@@ -292,8 +293,9 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
         inc0 = vcat(lnK, log(T))
         vol_cache = [volx, voly]
         problem = OF_bubbleTy!(model,model_y, x, p, vol_cache,volatiles)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton()))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
         inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && inc .= NaN
         lnK = inc[1:(end-1)]
         lnT = inc[end]
 

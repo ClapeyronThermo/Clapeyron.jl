@@ -46,6 +46,7 @@ function VLLE_pressure(model::EoSModel, T; v0 =nothing)
 
     r  = Solvers.nlsolve(f!,w0,LineSearch(Newton2(w0)))
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && sol .= NaN
     x = FractionVector(sol[idx_x])
     xx = FractionVector(sol[idx_xx])
     y = FractionVector(sol[idx_y])
@@ -103,6 +104,7 @@ function VLLE_temperature(model::EoSModel,p;v0=nothing)
     options = NLSolvers.NEqOptions(maxiter = 1000)
     r  = Solvers.nlsolve(f!,w0,LineSearch(Newton2(w0)),options)
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && sol .= NaN
     T  = sol[1]
     x = FractionVector(sol[idx_x])
     xx = FractionVector(sol[idx_xx])

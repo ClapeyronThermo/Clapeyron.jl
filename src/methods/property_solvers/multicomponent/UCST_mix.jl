@@ -14,8 +14,9 @@ function UCST_mix(model::EoSModel,T;v0=nothing)
     end
     x0 = vcat(v0[1],v0[2][1:end-1])
     f! = (F,x) -> Obj_UCST_mix(model, F, x[2:end], exp10(x[1]), T)
-    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
+    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton2(x0)))
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && sol .= NaN
     z_c = FractionVector(sol[2:end])
     V_c = exp10(sol[1])
     p_c = pressure(model, V_c, T, z_c)

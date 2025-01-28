@@ -68,7 +68,7 @@ function ChemPotBubblePressure(;vol0 = nothing,
 end
 
 function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressure)
-    
+
     if !isnothing(method.nonvolatiles)
         volatiles = [!in(x,method.nonvolatiles) for x in model.components]
     else
@@ -83,7 +83,7 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     else
         model_y = nothing
     end
-    
+
     Ts = isnothing(model_y) ? T_scales(model) : T_scales(model_y)
 
     if T > 0.9minimum(Ts) && method.ss
@@ -103,8 +103,9 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     ηv = η_from_v(model, model_y, vv, T, y0)
     v0 = vcat(ηl,ηv,y0[1:end-1])
     f!(F,z) = Obj_bubble_pressure(model,model_y, F, T, z[1],z[2],x,z[3:end],volatiles)
-    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
+    r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && sol .= NaN  
     v_l = v_from_η(model,sol[1],T,x)
     y_r = FractionVector(sol[3:end])
     v_v = v_from_η(model,model_y,sol[2],T,y_r)
@@ -203,7 +204,7 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     else
         volatiles = fill(true,length(model))
     end
-    
+
     _vol0,_T0,_y0 = method.vol0,method.T0,method.y0
     T0,vl,vv,y0 = bubble_temperature_init(model,p,x,_vol0,_T0,_y0,volatiles)
 
@@ -234,7 +235,8 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     f!(F,z) = Obj_bubble_temperature(model,model_y, F, p, z[1], z[2], z[3], x, z[4:end],volatiles)
     r  = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
-    T   = sol[1]
+    !all(<(r.options.f_abstol),r.info.best_residual) && sol .= NaN  
+    T = sol[1]
     y_r = FractionVector(sol[4:end])
     v_l = v_from_η(model, sol[2], T, x)
     v_v = v_from_η(model, model_y, sol[3], T, y_r)
