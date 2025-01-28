@@ -37,9 +37,19 @@
         # @test Clapeyron.activity_coefficient(system2,1e-4,423.15,[0.,1.])  ≈ [2.0807335111878937,1.0] rtol = 1e-6
     end
 
+    @testset "UNIFAC2" begin
+        system = UNIFAC2([("acetaldehyde", ["CH3" => 1, "HCO" => 1]),("acetonitrile", ["CH3CN" => 1])]; puremodel=BasicIdeal())
+        @test log(Clapeyron.activity_coefficient(system, NaN, 323.15, [0.5,0.5])[1]) ≈ 0.029527741236233 rtol = 1e-6
+    end
+
     @testset "ogUNIFAC" begin
         system = ogUNIFAC(["methanol","benzene"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5133696314734384 rtol = 1e-6
+    end
+
+    @testset "ogUNIFAC2" begin
+        system = ogUNIFAC2([("R22",["HCCLF2" => 1]),("carbon disulfide",["CS2" => 1])], puremodel=BasicIdeal())
+        @test log(Clapeyron.activity_coefficient(system, NaN, 298.15, [0.3693,0.6307])[1]) ≈ 0.613323250984226 rtol = 1e-6
     end
 
     @testset "UNIFAC-FV" begin
