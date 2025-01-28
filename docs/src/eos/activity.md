@@ -32,7 +32,9 @@ Clapeyron.NRTL
 Clapeyron.aspenNRTL
 Clapeyron.UNIQUAC
 Clapeyron.ogUNIFAC
+Clapeyron.ogUNIFAC2
 Clapeyron.UNIFAC
+Clapeyron.UNIFAC2
 Clapeyron.PSRKUNIFAC
 Clapeyron.VTPRUNIFAC
 Clapeyron.UNIFACFV

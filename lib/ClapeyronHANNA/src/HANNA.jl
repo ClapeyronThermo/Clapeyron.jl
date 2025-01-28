@@ -126,7 +126,7 @@ function HANNA(components;
     phi[2].bias .+= b2_ϕ
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     params = HANNAParam(params["canonicalsmiles"],emb_scaled,T_scaler,theta,alpha,phi,params["Mw"])
-    references = String["10.48550/arXiv.2407.18011"]
+    references = String["10.1039/D4SC05115G"]
     model = HANNA(components,params,_puremodel,references)
     Clapeyron.set_reference_state!(model,reference_state,verbose = verbose)
     return model
