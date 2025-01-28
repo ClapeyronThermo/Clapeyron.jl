@@ -18,7 +18,7 @@ function eutectic_point(model::CompositeModel,p=1e5)
     # println(x0)
     r  = Solvers.nlsolve(f!,x0)
     sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && sol .= NaN  
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
     T = sol[1]*200
     x = FractionVector(sol[2])
     return T,x

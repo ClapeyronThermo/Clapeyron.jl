@@ -88,7 +88,7 @@ function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
         problem = OF_dewPx!(model_x,model, y, T, vol_cache,condensables)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && inc .= NaN
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
         lnK = inc[1:(end-1)]
         lnp = inc[end]
 
@@ -293,7 +293,7 @@ function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothin
         problem = OF_dewTx!(model_x,model, y, p, vol_cache,condensables)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && inc .= NaN
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
         lnK = inc[1:(end-1)]
         lnT = inc[end]
         x_r = y[condensables]./ exp.(lnK)

@@ -106,7 +106,7 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
     f!(F,z) = Obj_dew_pressure(model,model_x, F, T, z[1], z[2], z[3:end], y, condensables)
     r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && sol .= NaN  
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
     x_r = FractionVector(sol[3:end])
     v_l = v_from_η(model,model_x,sol[1],T,x_r)
     v_v = v_from_η(model,sol[2],T,y)
@@ -227,7 +227,7 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     f!(F,z) = Obj_dew_temperature(model,model_x, F, p, z[1], z[2], z[3], z[4:end], y, condensables)
     r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && sol .= NaN  
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
     T   = sol[1]
     x_r = FractionVector(sol[4:end])
     v_l = v_from_η(model,model_x,sol[2],T,x_r)
