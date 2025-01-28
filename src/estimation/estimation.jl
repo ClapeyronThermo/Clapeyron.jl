@@ -293,7 +293,7 @@ function return_model!(
             f = factor[i]
             id = idx[i]
             recomb = recombine[i]
-            if typeof(id) <: Tuple
+            if typeof(id) <: Tuple || typeof(id) <: Integer
                 if isdefined(model.params,param)
                     current_param = getfield(model.params, param)
                     if typeof(current_param) <: SingleParameter
