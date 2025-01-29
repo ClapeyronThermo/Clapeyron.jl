@@ -172,3 +172,4 @@ else
 end
 
 mid(a,b,c) =  max(min(a,b),min(max(a,b),c))
+deleteat(x,i) = deleteat!(copy(x),i)
