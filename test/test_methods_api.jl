@@ -309,6 +309,15 @@ GC.gc()
     GC.gc()
 end
 
+@testset "partial properties" begin
+    model_pem = PR(["hydrogen", "oxygen", "water"])
+    z = [0.1,0.1,0.8]
+    p,T = 0.95e5,380.15
+    for prop in [volume,gibbs_free_energy,helmholtz_free_energy,entropy,enthalpy,internal_energy]
+        @test sum(partial_property(model_pem,p,T,z,prop) .* z) ≈ prop(model_pem,p,T,z)
+    end
+end
+
 @testset "spinodals" begin
     # Example from Ref. https://doi.org/10.1016/j.fluid.2017.04.009
     model = PCSAFT(["methane","ethane"])
@@ -323,4 +332,28 @@ end
     (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model,pv_spin,x_spin;T0=225.,v0=vv_spin)
     @test Tl_spin_impl ≈ T_spin rtol = 1e-6
     @test Tv_spin_impl ≈ T_spin rtol = 1e-6
+end
+
+@testset "supercritical lines" begin
+    model = PR("methane")
+    T_initial = 200.0
+    p_widom, v1 = widom_pressure(model, T_initial)
+    T_widom, v2 = widom_temperature(model, p_widom)
+    @test T_initial ≈ T_widom rtol = 1e-6
+    @test v1 ≈ v2 rtol = 1e-6
+    @test_throws ArgumentError widom_pressure(model,T_initial,v0 = v1,p0 = p_widom)
+    @test T_initial ≈ widom_temperature(model,p_widom,T0 = 1.01*T_initial)[1] rtol = 1e-6
+    @test T_initial ≈ widom_temperature(model,p_widom,v0 = 1.01*v1)[1] rtol = 1e-6
+    @test p_widom ≈ widom_pressure(model,T_initial,p0 = 1.01*p_widom)[1] rtol = 1e-6
+    @test p_widom ≈ widom_pressure(model,T_initial,v0 = 1.01*v1)[1] rtol = 1e-6
+
+    p_ciic, v3 = ciic_pressure(model, T_initial)
+    T_ciic, v4 = ciic_temperature(model, p_ciic)
+    @test T_initial ≈ T_ciic rtol = 1e-6
+    @test v3 ≈ v4 rtol = 1e-6
+    @test_throws ArgumentError ciic_pressure(model,T_initial,v0 = v3,p0 = p_ciic)
+    @test T_initial ≈ ciic_temperature(model,p_ciic,T0 = 1.01*T_initial)[1] rtol = 1e-6
+    @test T_initial ≈ ciic_temperature(model,p_ciic,v0 = 1.01*v3)[1] rtol = 1e-6
+    @test p_ciic ≈ ciic_pressure(model,T_initial,p0 = 1.01*p_ciic)[1] rtol = 1e-6
+    @test p_ciic ≈ ciic_pressure(model,T_initial,v0 = 1.01*v3)[1] rtol = 1e-6
 end

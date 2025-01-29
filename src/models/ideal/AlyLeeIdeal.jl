@@ -8,6 +8,7 @@ struct AlyLeeIdealParam <: EoSParam
     G::SingleParam{Float64}
     H::SingleParam{Float64}
     I::SingleParam{Float64}
+    Mw::SingleParam{Float64}
     reference_state::ReferenceState
 end
 
@@ -33,7 +34,7 @@ abstract type AlyLeeIdealModel <: IdealModel end
 - `G`: Single Parameter (`Float64`) - Model Coefficient
 - `H`: Single Parameter (`Float64`) - Model Coefficient
 - `I`: Single Parameter (`Float64`) - Model Coefficient
-
+- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
 
 ## Description
 
@@ -73,8 +74,9 @@ idealmodel = AlyLeeIdeal(["water","carbon dioxide"];
 1. Aly, F. A., & Lee, L. L. (1981). Self-consistent equations for calculating the ideal gas heat capacity, enthalpy, and entropy. Fluid Phase Equilibria, 6(3–4), 169–179. [doi:10.1016/0378-3812(81)85002-9](https://doi.org/10.1016/0378-3812(81)85002-9)
 """
 AlyLeeIdeal
-default_locations(::Type{AlyLeeIdeal}) = ["ideal/AlyLeeIdeal.csv"]
+default_locations(::Type{AlyLeeIdeal}) = ["ideal/AlyLeeIdeal.csv","properties/molarmass.csv"]
 default_references(::Type{AlyLeeIdeal}) = ["10.1016/0378-3812(81)85002-9"]
+default_ignore_missing_singleparams(::Type{AlyLeeIdeal}) = ["Mw"]
 
 function a_ideal(model::AlyLeeIdealModel,V,T,z=SA[1.0])
     #we transform from AlyLee terms to GERG2008 terms.

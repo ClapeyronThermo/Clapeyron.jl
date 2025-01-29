@@ -55,27 +55,34 @@ function dielectric_constant(model::SchreckenbergModel,V,T,z,_data=nothing)
         d_T = model.params.d_T.values
         d_V = model.params.d_V.values
         Z = model.params.charge.values
+        icomponents = model.icomponents
         ineutral = model.icomponents[Z.==0]
 
-        if isempty(ineutral)
-            return 1.0
+        if all(!iszero,Z)
+            return zero(Base.promote_eltype(model,V,T,z))
+        end
+   
+        n_solv = zero(eltype(z))
+        for i in icomponents
+            Z[i] == 0 && (n_solv += z[i])
         end
         
-        n_solv = zero(first(z))
-        for i in ineutral
-            n_solv += z[i]
-        end
         ρ_solv = n_solv / V
-        d̄ = zero(T+first(z))
+        d̄ = zero(Base.promote_eltype(model,T,z))
 
-        for i in ineutral
-            di = d_V[i]*(d_T[i]/T-1)
-            dij,zi = di,z[i]
-            d̄ += dij*zi*zi
-            for j in ineutral[ineutral.!=i]
-                dj = d_V[j]*(d_T[j]/T-1)
-                dij,zj = 0.5*(di+dj),z[j]
-                d̄ += dij*zi*zj
+        for i in icomponents
+            Zi = Z[i]
+            if Z[i] == 0
+                di = d_V[i]*(d_T[i]/T-1)
+                dij,zi = di,z[i]
+                d̄ += dij*zi*zi
+                for j in icomponents#ineutral[ineutral.!=i]
+                    if Z[j] == 0 && j != i
+                        dj = d_V[j]*(d_T[j]/T-1)
+                        dij,zj = 0.5*(di+dj),z[j]
+                        d̄ += dij*zi*zj
+                    end
+                end
             end
         end
 

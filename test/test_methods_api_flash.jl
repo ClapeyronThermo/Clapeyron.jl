@@ -227,10 +227,10 @@ end
 
     #px_flash_pure: two phase (#320)
     model = cPR(["ethane"],idealmodel = ReidIdeal)
-    p = 101325; z = [5.0]; 
+    p = 101325; z = [5.0];
     T = saturation_temperature(model,p)[1]
     h_liq = enthalpy(model,p,T-0.1,z);h_gas = enthalpy(model,p,T+0.1,z)
-    h = (h_liq + h_gas)/2 
+    h = (h_liq + h_gas)/2
     T2 = Clapeyron.PH.temperature(model,p,h,z)
     @test T2 ≈ T rtol = 1e-6
 
@@ -261,6 +261,32 @@ end
     Tdew1 = Clapeyron.temperature(qp_flash(model,1,p,z))
     @test Tdew0 ≈ Tdew1 rtol = 1e-6
 
+    #qp_flash unmasked an error in the calculation of the initial K-values (#325)
+    fluids = ["isobutane","toluene"]
+    model = cPR(fluids,idealmodel=ReidIdeal)
+    p = 8*101325.0; z = [5.0,5.0];
+    res_qp2 = qp_flash(model,0.4,p,z)
+    @test res_qp2.fractions ≈ [6.0,4.0]
+
+    #qp_flash scaling error (#325)
+    fluids= ["isopentane","isobutane"]
+    model = cPR(fluids,idealmodel=ReidIdeal)
+
+    p = 2*101325.0; z = [2.0,5.0]; 
+    q = 0.062744140625
+    res_qp3 = qp_flash(model,q,p,z)
+    res_qp4 = qp_flash(model,q,p,z./10)
+    @test Clapeyron.temperature(res_qp3) ≈ Clapeyron.temperature(res_qp4)
+
+    #VT flash (#331)
+    model_a_pr = PR(["water", "oxygen"])
+    V_a = 1 # m3
+    T = 273.15 + 60 # K
+    p_a = 1.2e5 # Pa, 1.2 bar
+    n_H2O_a = 1.85e4 # mol H2O
+    n_O2_a = 24.08 # mol O2
+    sol_fl = vt_flash(model_a_pr, V_a, T, [n_H2O_a, n_O2_a])
+    @test V_a ≈ volume(sol_fl)
 end
 
 @testset "Saturation Methods" begin
@@ -324,6 +350,9 @@ end
     @test Clapeyron.saturation_temperature(cPR("isobutane"),1.7855513185537157e6,crit_retry = false)[1] ≈ 366.52386488214876 rtol = 1e-6
     @test Clapeyron.saturation_temperature(cPR("propane"),2.1298218093361156e6,crit_retry = false)[1] ≈ 332.6046103831853 rtol = 1e-6
     @test Clapeyron.saturation_temperature(cPR("r134a"),2.201981727901889e6,crit_retry = false)[1] ≈ 344.6869001549851 rtol = 1e-6
+
+    #Issue 328
+    @test saturation_pressure(cPR("butane"),406.5487245045052)[1] ≈ 2.815259927796967e6 rtol = 1e-6
 end
 
 @testset "Tproperty" begin

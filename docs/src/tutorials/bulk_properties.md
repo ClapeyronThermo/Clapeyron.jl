@@ -60,7 +60,7 @@ The inclusion of a more accurate ideal model is required when trying to estimate
 This is visualised below:
 ![water_cp](../assets/cp_water.svg)
 
-## Bulk properties of water and hexane
+## Bulk properties of water and carbon dioxide
 
 One can obtain bulk properties of mixtures by simply specifying the molar amount of each component.
 Here, let us consider a mixture of water and carbon dioxide:

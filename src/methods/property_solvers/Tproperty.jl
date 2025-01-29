@@ -6,8 +6,8 @@ function x0_Tproperty(model::EoSModel,p,z::AbstractVector,verbose = false)
     bubble = Clapeyron.bubble_temperature(model,p,z)
     dew = Clapeyron.dew_temperature(model,p,z)
     bubble_T = bubble[1]
-    v_dew_vapour = dew[3]
-    v_bubble_liquid = bubble[2]
+    v_dew_vapour = dew[3]*sum(z)
+    v_bubble_liquid = bubble[2]*sum(z)
     dew_T = dew[1]
     if isnan(bubble_T)
       verbose && @error "bubble_temperature calculation failed."
@@ -38,7 +38,7 @@ function FindEdge(f::Function,a,b)
 end
 
 """
-    `Tproperty(model::EoSModel,p,prop,z::AbstractVector,property = enthalpy;rootsolver = Roots.Order0(),phase =:unknown,abstol = 1e-15,reltol = 1e-15, verbose = false)`
+    Tproperty(model::EoSModel,p,prop,z::AbstractVector,property = enthalpy;rootsolver = Roots.Order0(),phase =:unknown,abstol = 1e-15,reltol = 1e-15, verbose = false)
 
 Given `p` and any other bulk property `prop` calculated via `property`, returns the required temperature `T` such that `property(model,p,T,z,phase) = prop`
 

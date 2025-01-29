@@ -271,7 +271,7 @@ Note that this means that, for all activity coefficient models, as they are pres
 
 Clapeyron.jl also supports COSMO‑SAC-based models.
 However, we only provide the activity coefficient model and not the quantum chemistry level calculations required to obtain the sigma profiles.
-As such, the required parameters for COSMO‑SAC are not the sigma profiles, which are stored as vectors:
+As such, the required parameters for COSMO‑SAC are now the sigma profiles, which are stored as vectors:
 
 ```julia
 julia> model = COSMOSAC02(["water","ethanol"])

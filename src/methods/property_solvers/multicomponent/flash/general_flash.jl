@@ -124,7 +124,7 @@ function xy_input_to_result(spec,input,np,nc,z)
         ∑ξ = sum(compsi)
         comps[j] = collect(compsi)
         comps[j] ./= ∑ξ
-        volumes[j] = volumes[j]/∑ξ
+        volumes[j] = volumes[j] #we already normalize inside xy_flash
         β[j] = βx[j]
     end
     Tres = input[end]
@@ -256,24 +256,32 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
 
     flash_vars = xy_input_to_flash_vars(input,np,nc)
     ξ,β,volumes = flash_vars
+    #create fractions
+    frac = similar(ξ)
+    for j in 1:np
+        xj,ξj = viewn(frac,nc,j),viewn(ξ,nc,j)
+        xj .= ξj
+        xj ./= sum(xj)
+    end
     #@show primalval(ξ)
     #@show primalval(β)
     #@show primalval(volumes)
     β_end,j_end = β[np],np
     w_end = viewn(ξ,nc,j_end)
+    x_end = viewn(frac,nc,j_end)
     v_end = volumes[j_end]
     needs_a = requires_a(state)
     needs_st = requires_st(state)
     needs_pv = requires_pv(state)
 
     if needs_st
-        a_end,dadv_end,dadT_end = ∂f_vec(model,v_end,T,w_end)
+        a_end,dadv_end,dadT_end = ∂f_vec(model,v_end,T,x_end)
         p_end,s_end = -dadv_end,-dadT_end
     elseif needs_a && !needs_st
-        a_end,dadv_end = f∂fdV(model,v_end,T,w_end)
+        a_end,dadv_end = f∂fdV(model,v_end,T,x_end)
         p_end,s_end = -dadv_end,zero(a_end)
     else
-        p_end = pressure(model,v_end,T,w_end)
+        p_end = pressure(model,v_end,T,x_end)
         s_end,a_end = zero(p_end),zero(p_end)
     end
     #@show primalval(p_end)
@@ -297,19 +305,21 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         j == j_end && continue
         jj += 1
         βj = β[j]
+        wj = viewn(ξ,nc,jj)
+        xj = viewn(frac,nc,jj)
         vj = volumes[j]
         if needs_pv
             ∑v += βj*vj
         end
-        wj = viewn(ξ,nc,jj)
+
         if needs_st
-            aj,dadvj,dadTj = ∂f_vec(model,volumes[j],T,wj)
+            aj,dadvj,dadTj = ∂f_vec(model,vj,T,xj)
             pj,sj = -dadvj,-dadTj
         elseif needs_a && !needs_st
-            aj,dadvj = f∂fdV(model,volumes[j],T,wj)
+            aj,dadvj = f∂fdV(model,vj,T,xj)
             pj,sj = -dadvj,zero(aj)
         else
-            pj = pressure(model,volumes[j],T,wj)
+            pj = pressure(model,vj,T,xj)
             sj,aj = zero(pj),zero(pj)
         end
         #@show primalval(pj)
@@ -323,7 +333,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     μ_constraints = @view output[idx_μ_constraints]
     μ_end = similar(output,nc)
 
-    VT_chemical_potential_res!(μ_end,model,v_end,T,w_end,μconfig)
+    VT_chemical_potential_res!(μ_end,model,v_end,T,x_end,μconfig)
 
     jj = 0
     for j in 1:np
@@ -331,7 +341,8 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         jj += 1
         Fj = @inbounds viewn(μ_constraints,nc,jj)
         for i in 1:nc
-            Fj[i] = exp(μ_end[i]*RTinv)*w_end[i]/v_end
+            #Fj[i] = exp(μ_end[i]*RTinv)*w_end[i]*vs/v_end
+            Fj[i] = μ_end[i]
         end
     end
     jj = 0
@@ -340,22 +351,15 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         jj += 1
         vj = @inbounds volumes[j]
         wj = viewn(ξ,nc,j)
-        VT_chemical_potential_res!(μ_end,model,vj,T,wj)
+        xj = viewn(frac,nc,j)
+        VT_chemical_potential_res!(μ_end,model,vj,T,xj)
         Fj = viewn(μ_constraints,nc,jj)
-
         for i in 1:nc
+            μ1i = Fj[i]
             μji = μ_end[i]
-            #=
             Δuᵣ = μ1i - μji
-            Δu = Δuᵣ*RTinv + log(vj*w1[i]/(v1*wj[i]))
-            Fj[i] = Δu #exponentiating
-            expΔu = vj*w1[i]*/(v1*wj[i])exp(μ1i*RTinv)/exp(μji*RTInv)
-            1 = vj*w1[i]*/(v1*wj[i])exp(μ1i*RTinv)/exp(μji*RTInv)
-            exp(μji*RTInv)*wj[i]/vj = exp(μ1i*RTinv)/exp(μji*RTInv)*w1[i]/v1
-            =#
-
-            Fj[i] -= exp(μji*RTinv)*wj[i]/vj
-            Fj[i] *= vs
+            Δu = Δuᵣ*RTinv + log(vj) + log(x_end[i]) - log(v_end) - log(xj[i])
+            Fj[i] = Δu
         end
     end
 
@@ -369,7 +373,11 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         ξj = viewn(ξ,nc,j)
         βj = β[j]
         ∑ξj = sum(ξj)
-        β_constraints[j] = mid(zero(βj),βj,1 - ∑ξj)
+        #TODO: using min(a,b) in conjunction with AD seems to be equivalent in the Newton-min method, a way to solve MCP.
+        #there are better ways to solve MCP.
+        #ben-gharbia uses a Non-Parametric-Interior-Point method (npipm)
+        #there is also MixedComplementarityProblems.jl
+        β_constraints[j] = min(βj,1 - ∑ξj)
         for i in 1:nc
             ξ_constraints[i] -= βj*ξj[i]
         end
@@ -383,25 +391,28 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     elseif spec1 == pressure
         output[end-1] = (p_end - val1)/ps
     elseif spec1 == volume
-        output[end-1] = (∑v - val1)/vs
+        #output[end-1] = (∑v - val1)/vs
+        output[end-1] = log(∑v/val1)  #this was the best residual for volume
+        #output[end-1] = vs/∑v - vs/val1
     elseif spec1 isa Vfrac
         i_spec = spec1.k
         output[end-1] = β[i_spec] - val1
     else #general caloric term, valid for enthalpy , entropy, internal energy, gibbs, helmholtz
-        output[end-1] = (val1 - ∑a - p_end*∑v - T*∑s)/RTinv
+        output[end-1] = (val1 - ∑a - p_end*∑v - T*∑s)*RTinv
     end
-
     if spec2 == temperature
         output[end] = (T - val2)/val2
     elseif spec2 == pressure
         output[end] = (p_end - val2)/ps
     elseif spec2 == volume
-        output[end] = (∑v - val2)/vs
+        #output[end] = (∑v - val2)/vs
+        output[end] = log(∑v/val2) #this was the best residual for volume
+        #output[end] = vs/∑v - vs/val2
     elseif spec2 isa Vfrac
         i_spec = spec2.k
         output[end-1] = β[i_spec] - val2
     else
-        output[end] = (val2 - ∑a - p_end*∑v - T*∑s)/RTinv
+        output[end] = (val2 - ∑a - p_end*∑v - T*∑s)*RTinv
     end
     return output
 end
@@ -456,20 +467,7 @@ function detect_and_set_slack_variables!(x,spec::FlashSpecifications,np,nc)
     return slack
 end
 
-
 #we set the value of F[slack] = 0, J[slack_i,slack_i] = 1,  J[:,slack_i] = 0, J[slack_i,:] = 0
-function remove_slacks!(F,J,slacks)
-    for i in 1:length(slacks)
-        if slacks[i]
-            F[i] = 0
-            J1 = @view(J[i,:])
-            J2 = @view(J[:,i])
-            J1 .= 0
-            J2 .= 0
-            J[i,i] = 1
-        end
-    end
-end
 
 
 """
@@ -563,7 +561,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     _1 = one(eltype(input))
     #normalize to 1 mol base
     new_spec = normalize_spec(set_vfrac(spec,idx),∑z*_1)
-
     #variables already set by the specifications
     slacks = detect_and_set_slack_variables!(input,spec,np,nc)
     !slacks[end] && (input[end] = T0)
@@ -581,7 +578,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     f!(output,input) = xy_flash_neq(output,model,zz,np,input,new_spec,nothing)
     Θ(_f) = 0.5*dot(_f,_f)
     srtol = abs2(cbrt(rtol))
-    function Θ(_f,_z) 
+    function Θ(_f,_z)
         f!(_f,_z)
         _f[slacks] .= 0
         Θ(_f)
@@ -595,12 +592,15 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     converged = Fnorm < rtol
     nan_converged = !all(isfinite,x)
     max_iters_reached = false
+    ii = 0
     for i in 1:max_iters
+        ii = i
         converged && break
         nan_converged && break
+        max_iters_reached && break
         ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
         #do not iterate on slack variables
-        remove_slacks!(F,J,slacks)
+        Solvers.remove_slacks!(F,J,slacks)
         Jcache .= J
         #try to do LU, if it does not work, use modified SVD
         finite_F = all(isfinite,F)
@@ -621,7 +621,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
             ldiv!(JJ,s)
             s .= JJ\-F
         end
-                
+
         for i in 1:length(s)
             si = s[i]
             abs(si) < eps(eltype(s)) && si < 0 &&  (s[i] = 0)
@@ -629,7 +629,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
 
         x_old .= x
         #bound positivity
-        α0 = Solvers.positive_linesearch(x,s)
+        α0 = Solvers.positive_linesearch(x,s,decay = 0.8)
         #backtrack linesearch, so the next result is strictly better than the last
         α,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α0,ignore = slacks)
         Fnorm = sqrt(2*Θx)
@@ -644,7 +644,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         isnan(δs) && (nan_converged = true)
         i == max_iters && (max_iters_reached = true)
     end
-
     if !converged || nan_converged || max_iters_reached
         x .= NaN
     end

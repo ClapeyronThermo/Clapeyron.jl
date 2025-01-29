@@ -142,17 +142,13 @@ function Base.show(io::IO,mime::MIME"text/plain",obj::FlashResult)
 end
 
 Base.getindex(x::FlashResult,i::Int) = getfield(x,i)
-function Base.iterate(x::FlashResult)
-    return (x[1],2)
-end
 
-function Base.iterate(x::FlashResult,state)
-    if state > 4
-        return nothing
-    else
-        return (x[state],state + 1)
-    end
-end
+
+Base.iterate(result::FlashResult) = (result.compositions, Val(:β))
+Base.iterate(result::FlashResult, ::Val{:β}) = (result.fractions, Val(:v))
+Base.iterate(result::FlashResult, ::Val{:v}) = (result.volumes, Val(:data))
+Base.iterate(result::FlashResult, ::Val{:data}) = (result.data, Val(:done))
+Base.iterate(result::FlashResult, ::Val{:done}) = nothing
 
 Base.eltype(result::FlashResult) = Base.promote_eltype(result.compositions[1],result.volumes,result.fractions,result.data.T)
 
@@ -223,6 +219,9 @@ for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
 
 
 function _multiphase_gibbs(model,p,T,result)
+    if result isa FlashResult
+        return _multiphase_gibbs(model,p,T,(result.compositions,result.fractions,result.volumes))
+    end
     if model isa PTFlashWrapper && length(β) == 2 #TODO: in the future, PTFlashWrappers could be multiphase
         if model.model isa RestrictedEquilibriaModel
             return zero(eltype(β))
@@ -234,6 +233,98 @@ function _multiphase_gibbs(model,p,T,result)
     data = FlashResult(model,p,T,comps,β,volumes)
     return Rgas(model)*T*data.data.g
 end
+
+
+#utilities to add/remove phases from an existing FlashResult
+
+function split_phase!(result::FlashResult,i::Integer,wj,βj,vj)
+    β = result.fractions
+    comps = result.compositions
+    volumes = result.volumes
+    data = result.data
+    p,T = data.p,data.T
+    n = sum(β)
+
+    wi0,vi0,βi0 = comps[i],volumes[i],β[i]
+    _wj = copy(wi0)
+    nj = sum(wj)
+    _wj .= wj ./ nj
+    βj = Solvers.positive_linesearch(wi0,_wj,βj,s = -1,decay = 0.95)
+    βi = (1 - βj/n) * βi0
+    β[i] = βi0 - βi0*βj
+    #add new phase
+
+    push!(β,βi0*βj)
+    push!(volumes,vj/nj)
+    push!(comps,_wj)
+    @show β
+    @show sum(β)
+    #remove moles from phase i
+    wi0 .= wi0 .-  βj .* _wj
+    @show wi0
+    wi0 ./= sum(wi0)
+    
+    return result
+end
+
+#merges phases i and j, leaving i and removing j
+function merge_phase!(result::FlashResult,i,j)
+    comps,β,volumes = result.compositions,result.fractions,result.volumes
+    wi,vi,βi = comps[i],volumes[i],β[i]
+    wj,vj,βj = comps[j],volumes[j],β[j]
+    βk = βi + βj
+    wk = wi
+    wk .= (wi .* βi .+ wj .* βj) ./ βk
+    vk = (vi * βi + vj * βj) / βk
+    β[i] = βk
+    volumes[i] = vk
+
+    #delete phase j
+    return delete_phase!(result,j)
+end
+
+function delete_phase!(result::FlashResult,i)
+    comps,β,volumes = result.compositions,result.fractions,result.volumes
+    Base.deleteat!(comps,i)
+    Base.deleteat!(volumes,i)
+    Base.deleteat!(β,i)
+    return result
+end
+
+function findfirst_duplicate_phases(comps,β,volumes)
+    equal_phases = (0,0)
+    for i in 1:length(comps)
+        xi,vi,βi = comps[i],volumes[i],β[i]
+        iszero(βi) && continue
+        for j in (i+1):length(comps)
+            xj,vj,βj = comps[j],volumes[j],β[j]
+            iszero(βj) && continue
+            #equality criteria used in the HELD algorithm
+            if dnorm(xi,xj,Inf) <= 1e-5 && abs(1/vi - 1/vj) <= 1e-5
+                return minmax(i,j)
+            end
+        end
+    end
+    return (0,0)
+end
+
+function findfirst_duplicate_phases(result::FlashResult)
+    comps,β,volumes = result.compositions,result.fractions,result.volumes
+    return findfirst_duplicate_phases(comps,β,volumes)
+end
+
+function merge_duplicate_phases!(result::FlashResult)
+    nc = numphases(result)
+    for i in 1:(nc*nc)
+        i,j = findfirst_duplicate_phases(result)
+        if i == j == 0
+            break
+        end
+        merge_phase!(result,i,j)
+    end
+    return result
+end
+
 
 """
     FlashMethod <: ThermodynamicMethod
