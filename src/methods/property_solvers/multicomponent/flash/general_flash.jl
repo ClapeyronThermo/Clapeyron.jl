@@ -470,19 +470,7 @@ function remove_slacks!(F,J,slacks)
         end
     end
 end
-#we set the value of F[slack] = 0, J[slack_i,slack_i] = 1,  J[:,slack_i] = 0, J[slack_i,:] = 0
-function remove_slacks!(F,J,slacks)
-    for i in 1:length(slacks)
-        if slacks[i]
-            F[i] = 0
-            J1 = @view(J[i,:])
-            J2 = @view(J[:,i])
-            J1 .= 0
-            J2 .= 0
-            J[i,i] = 1
-        end
-    end
-end
+
 
 """
     xy_flash(model,spec::FlashSpecifications,z,w0::FlashResult,method::GeneralizedXYFlash)

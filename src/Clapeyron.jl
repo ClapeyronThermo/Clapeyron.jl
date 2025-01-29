@@ -13,7 +13,6 @@ import LogExpFunctions
 using FillArrays: FillArrays
 import BlackBoxOptim
 using StaticArrays
-using Polynomials
 using DiffResults, ForwardDiff
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume

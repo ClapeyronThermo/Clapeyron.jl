@@ -1,4 +1,3 @@
-using Polynomials
 
 abstract type Michelsen_GEPCSAFTModel <: SAFTModel end
 
@@ -146,13 +145,26 @@ function C1(model::Michelsen_GEPCSAFTModel, V, T, z,_data=@f(data))
 end
 
 function m2ϵσ3(model::Michelsen_GEPCSAFTModel, V, T, z,_data=@f(data))
-    di,_,_,_,_,m̄ = _data
-    α = alpha_mix(model, V, T, z)
-    ϵij = α/(m̄)
-    σ = diagvalues(model.params.sigma)
-    σij = sum([σ[i]*z[i]/sum(z) for i ∈ eachindex(z)])
-    m2ϵσ3₁ = m̄^2 * ϵij * σij^2
-    m2ϵσ3₂ = m̄^2 * ϵij^2 * σij^2
+    z = [z[i]/sum(z) for i ∈ eachindex(z)]
+    d,_,_,_,_,m̄ = _data
+    m_i = model.params.segment.values
+    m_mix = sum([m_i[i] * z[i] for i ∈ eachindex(z)])
+    ϵ_ii = Clapeyron.diagvalues(model.params.epsilon.values)
+    σ_ii = Clapeyron.diagvalues(model.params.sigma.values)
+    σ_mix = sum([σ_ii[i] * z[i] for i ∈ eachindex(z)])
+    gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T)
+    bi = [Clapeyron.N_A*m_i[i]*d[i]^3 for i ∈ eachindex(z)]
+    b = sum([bi[i]*z[i] for i ∈ eachindex(z)])
+    C₂ = gₑ + sum([z[i]*log(b/bi[i]) for i ∈ eachindex(z)])
+    α_ii = [m_i[i] * ϵ_ii[i] for i ∈ eachindex(z)]
+    α_bar = sum([α_ii[i]*z[i] for i ∈ eachindex(z)])
+    a = [-162.1526266, -8.76E-04, -1.49E-10, -13.28867758, -4.46E-01, -1.19E-04, -556.4748244, -471.4372287, 67201.59286]
+    Q(α_guess) = a[1] + a[2]*α_guess + a[3]*α_guess^2 + a[4]*log(b) + a[5]*(log(b))^2 + a[6]*log(b)*α_guess + a[7]/α_guess + a[8]/(log(b)) + a[9]/(α_guess^2)
+    f(α_guess) = C₂/Q(α_guess) - (α_guess - α_bar)
+    α_mix = Clapeyron.Solvers.ad_newton(f, α_bar)
+    @show α_mix
+    m2ϵσ3₁ = α_mix * m_mix * σ_mix^3
+    m2ϵσ3₂ =  α_mix^2*σ_mix^3
     return m2ϵσ3₁,m2ϵσ3₂
 end
 
@@ -205,22 +217,6 @@ function Ii(model::Michelsen_GEPCSAFTModel, V, T, z, n , _data=@f(data))
     return res
 end
 
-function alpha_mix(model::Michelsen_GEPCSAFTModel, V, T, z, _data=@f(data))
-    di,_,_,_,_,_ = _data
-    xi = [z[i]/sum(z) for i ∈ eachindex(z)]
-    gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T)
-    mi = model.params.segment.values
-    ϵi = diagvalues(model.params.epsilon)
-    bi = [Clapeyron.N_A*mi[i]*di[i]^3 for i ∈ eachindex(z)]
-    b = sum([bi[i]*xi[i] for i ∈ eachindex(xi)])
-    αi = [mi[i]*ϵi[i] for i ∈ eachindex(mi)]
-    α_sum = sum([xi[i]*αi[i] for i ∈ eachindex(xi)])
-    U₁ = -gₑ + sum([xi[i]*log(b/bi[i]) for i ∈ eachindex(bi)])
-    corr_coefficients = [-18.23691216, -1.44E-07, -5.60E-12, 0.999768162, -1.47E-05, -1.86E-08]
-    S₁ = corr_coefficients[2] + corr_coefficients[6]*log(b)
-    S₂ = corr_coefficients[1] + corr_coefficients[4]*log(b) + corr_coefficients[5]*(log(b))^2
-    c = [-S₂*α_sum - U₁, S₂ - S₁*α_sum, S₁ - corr_coefficients[3]*α_sum, corr_coefficients[3]]
-    sols = roots(Polynomials.Polynomial([c[1], c[2], c[3], c[4]]))
-    real_roots = real.(sols[imag.(sols) .== 0])
-    return real_roots[1]
+function newtons_method(f, df, xn)
+    return xn - f/df 
 end
