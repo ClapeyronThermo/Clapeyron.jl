@@ -127,7 +127,7 @@ end
 
 #used by LLE_pressure
 function Obj_bubble_pressure(model::EoSModel, F, T, ηl, ηv, x, y)
-    return Obj_bubble_pressure(model, nothing, F, T, ηl, ηv, x, y,nothing, length(model) + 1)
+    return Obj_bubble_pressure(model, nothing, F, T, ηl, ηv, x, y,nothing, length(model))
 end
 
 
@@ -258,7 +258,7 @@ end
 
 #used by LLE_temperature
 function Obj_bubble_temperature(model::EoSModel, F, p, T, ηl, ηv, x, y)
-    return Obj_bubble_temperature(model,nothing, F, p, T, ηl, ηv, x, y,nothing,length(model) + 1)
+    return Obj_bubble_temperature(model,nothing, F, p, T, ηl, ηv, x, y,nothing,length(model))
 end
 
 export ChemPotBubblePressure, ChemPotBubbleTemperature
