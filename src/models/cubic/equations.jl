@@ -291,20 +291,15 @@ function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
     end
 end
 
-function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,retry) where K
+function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
     #=
     Segura, H., & Wisniak, J. (1997). Calculation of pure saturation properties using cubic equations of state. Computers & Chemical Engineering, 21(12), 1339–1347. doi:10.1016/s0098-1354(97)00016-1 
     =#
-    z = SA[1.0]
     a,b,c = cubic_ab(model,v_lb,T,z)
     Δ1,Δ2 = cubic_Δ(model,z)
     c1_c2 = - Δ1 - Δ2
     c1c2 = Δ1*Δ2
     RT = Rgas(model)*T
-    Tc = model.params.Tc.values[1]
-    pc = model.params.Pc.values[1]
-    zc = pure_cubic_zc(model)
-    vcc = zc*Rgas(model)*Tc/pc #untranslated Vc
     bRT = b*RT
     Q4 = -RT
     Q3 = 2*(a - bRT*c1_c2)
@@ -312,16 +307,40 @@ function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,re
     Q1 = 2*b*b*(a*(1 - c1_c2) - bRT*c1c2*c1_c2)
     Q0 = b*b*b*(a*c1_c2 - bRT*c1c2*c1c2)
     dpoly = (Q0,Q1,Q2,Q3,Q4)
-    v_lbc = v_lb + c #untranslated lb
-    v_ubc = v_ub + c #untranslated ub
-    dfl = evalpoly(v_lbc,dpoly)
-    dfv = evalpoly(v_ubc,dpoly)
-    vx = ifelse(is_liquid(phase),v_lbc,v_ubc)
-    vm = vcc #the critical volume is always between the two spinodals
+
+    #on single component, a good approximate for vm is the critical volume.
+    d2poly = (Q1,2*Q2,3*Q3,4*Q4)
+    f = Base.Fix2(evalpoly,dpoly)
+    nr,v1,v2,v3 = Solvers.real_roots3(d2poly)
+    vroots = (v1,v2,v3)
+    vm0 = findfirst(y -> (f(y) > 0 && y > b),vroots)
+    if isnothing(vm0)
+       return zero(v1)/zero(v1) 
+    end
+    vm = vroots[vm0]
+    B = b - a/RT
+    vx = ifelse(is_liquid(phase),b,-10B)
     v_bracket = minmax(vx,vm)
     prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket)
     vs = Roots.solve(prob)
     return vs - c
+end
+
+function liquid_spinodal_zero_limit(model::ABCubicModel,z)
+    R̄ = Rgas(model)
+    function F(Tx)
+        a,b,c = cubic_ab(model,0,Tx,z)
+        Δ1,Δ2 = cubic_Δ(model,z)
+        Ax = R̄*Tx
+        Bx = -(Ax*b*(Δ1+Δ2) + a)
+        Cx = b*(Ax*Δ1*Δ2*b + a)
+        return Bx^2 - 4*Ax*Cx
+    end
+    T0 = T_scale(model,z)
+    prob = Roots.ZeroProblem(F,T0)
+    T = Roots.solve(prob)
+    _,vl = zero_pressure_impl(model,T,z)
+    return T,vl
 end
 
 function zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)

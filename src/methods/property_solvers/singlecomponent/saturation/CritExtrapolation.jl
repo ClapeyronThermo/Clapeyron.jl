@@ -34,6 +34,11 @@ function saturation_pressure_impl(model::EoSModel, T, method::CritExtrapolationS
     if T_c == p_c == V_c == 0.0
         return saturation_pressure_impl(model,T,CritExtrapolationSaturation(crit_pure(model)))
     end
+    if T > T_c
+        _0 = Base.promote_eltype(model,T,T_c)
+        nan = _0/_0
+        return nan,nan,nan 
+     end
     vl,vv = critical_vsat_extrapolation(model,T,T_c,V_c)
     p = pressure(model,vl,T)
     return (p,vl,vv)
@@ -43,7 +48,12 @@ function saturation_temperature_impl(model::EoSModel, p, method::CritExtrapolati
     crit = method.crit
     T_c, p_c, V_c = crit
     if T_c == p_c == V_c == 0.0
-        return saturation_temperature_impl(model,T,CritExtrapolationSaturation(crit_pure(model)))
+        return saturation_temperature_impl(model,p,CritExtrapolationSaturation(crit_pure(model)))
+    end
+    if p > p_c
+       _0 = Base.promote_eltype(model,p,T_c)
+       nan = _0/_0
+       return nan,nan,nan 
     end
     T = critical_tsat_extrapolation(model,p,crit)
     vl,vv = critical_vsat_extrapolation(model,T,crit)

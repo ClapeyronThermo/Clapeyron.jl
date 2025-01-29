@@ -1,6 +1,6 @@
 @testset "Electrolyte models" begin
     @printline
-    
+
     let T = 298.15, V = 1e-3, m = 1;
     @testset "ePCSAFT" begin
         system = ePCSAFT(["water"],["sodium","chloride"])
@@ -19,11 +19,11 @@
     @testset "SAFTVREMie" begin
         system = SAFTVREMie(["water"],["sodium","chloride"])
         salts = [("sodium chloride",["sodium"=>1,"chloride"=>1])]
-        z = molality_to_composition(system,salts,m)        
+        z = molality_to_composition(system,salts,m)
         @test Clapeyron.a_res(system, V, T, z) ≈ -5.37837866742139 rtol = 1e-6
     end
 
-    @testset "SAFTgammaEMie" begin 
+    @testset "SAFTgammaEMie" begin
         system = SAFTgammaEMie(["water"],["sodium","acetate"])
         salts = [("sodium acetate",["sodium"=>1,"acetate"=>1])]
         z = molality_to_composition(system,salts,m)

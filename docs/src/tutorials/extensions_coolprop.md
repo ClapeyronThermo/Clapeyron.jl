@@ -5,7 +5,8 @@
 ```julia
 # let's try to load the R134a fluid model available in CoolProp
 julia> model = SingleFluid("r134a")
-ERROR: cannot found component file pentane. Try loading the CoolProp library (`using CoolProp`).
+ERROR: cannot found component file pentane.
+Try loading the CoolProp library (`using CoolProp`).
 
 julia> using CoolProp  # the CoolProp extension is loaded automatically when CoolProp is loaded
 

@@ -29,18 +29,12 @@ end
 
 function mw(model)
     if C.has_groups(model)
-        n = length(model)
-        mw_comp = zeros(n)
-        v = model.groups.n_flattenedgroups
-        mw_gc = C.mw(model)
-        for i in eachindex(mw_comp)
-            mw_comp[i] = dot(mw_gc[i],v[i])
-        end
-        return mw_comp
+        return C.group_Mw(model)
     else
-        return C.mw(model)
+        return model.params.Mw.values
     end
 end
+
 #handle pressure/volume/temp
 standardize(x::Number,st::Nothing) = x #default
 standardize(x::Unitful.Pressure,st::Nothing) = ustrip(u"Pa",x)

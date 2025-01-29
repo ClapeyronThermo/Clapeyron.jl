@@ -5,7 +5,6 @@ end
 @newmodelsimple SLKRule SLMixingRule SLKRuleParam
 
 default_locations(::Type{SLKRule}) = ["LatticeFluid/SanchezLacombe/mixing/k0k1l_unlike.csv"]
-default_ignore_missing_singleparams(::Type{SLKRule}) = ["k"]
 
 function transform_params(::Type{SLKRule},params,components)
     n = length(components)

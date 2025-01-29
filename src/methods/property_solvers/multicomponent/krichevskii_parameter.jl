@@ -18,6 +18,6 @@ function krichevskii_parameter(model,crit = nothing)
     end
     Tc,Pc,Vc = crit_solvent
     z = [1 - 1e-30, 1e-30]
-    ∂p = VT_partial_property(model,Vc,Tc,z,pressure)
+    ∂p = VT_molar_gradient(model,Vc,Tc,z,pressure)
     return ∂p[2]
 end

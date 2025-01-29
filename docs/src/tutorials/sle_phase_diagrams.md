@@ -1,5 +1,7 @@
-# Solid–liquid equilibrium
+# Solid–fluid equilibrium
 
-## Thymol and 1-decanol
+## Solubility of APIs
 
-## Ibuprofen in mixed solvents
+## Eutectic mixtures
+
+## Global phase diagrams

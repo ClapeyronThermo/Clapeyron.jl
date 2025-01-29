@@ -6,6 +6,7 @@ using NLSolvers,Roots
 using PositiveFactorizations
 using DiffResults, ForwardDiff
 using StaticArrays
+using Roots
 
 struct ΔVector{T,V1,V2} <: AbstractVector{T}
     v1::V1
