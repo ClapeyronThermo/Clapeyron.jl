@@ -13,5 +13,6 @@
 ## Bug Fixes
 
 - Stability improvements in `xy_flash`.
+- Stability improvements in bubble and dew points
 - Fix K-value initialization when components are over JT temperature.
 - Stability improvements for spinodal initialization, used for pure saturation pressure calculations.
