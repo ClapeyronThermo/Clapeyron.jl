@@ -26,7 +26,7 @@ Load ChemBERTa model from HuggingFace (`DeepChem/ChemBERTa-77M-MTR`).
 function load_chembert(;name="DeepChem/ChemBERTa-77M-MTR", max_length=512, download=false)
     if download
         config = load_config(name)
-        myconfig = HuggingFace.HGFConfig(config; max_length=max_length)
+        myconfig = HuggingFace.HGFConfig(config; max_length, hidden_act="gelu_noapprox")
         return load_model(name; config=myconfig), load_custom_tokenizer(max_length=max_length)
     else
         chembert = load("$DB_PATH/ChemBERTa/ChemBERTa-77M-MTR.jld2")
