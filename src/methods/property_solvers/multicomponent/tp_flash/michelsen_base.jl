@@ -1,9 +1,9 @@
-function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx)
+function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
     # Function to solve Rachdord-Rice mass balance
-    β,singlephase,limits = rachfordrice_β0(K,z,β0)
+    β,singlephase,limits,_ = rachfordrice_β0(K,z,β0,non_inx,non_iny)
     if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && !singlephase
         return rr_vle_vapor_fraction_exact(K,z)
-    end  
+    end
     #halley refinement
     if !singlephase
         return rr_flash_refine(K,z,β,non_inx,non_iny,limits)
@@ -160,7 +160,7 @@ end
 function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.Fill(true,length(model)),iny = inx,non_inx = FillArrays.Fill(false,length(model)),non_iny = non_inx;k0 = :wilson)
     ∑n = sum(n)
     z = n/∑n
-    
+
     if is_vle(method)
         phasex = :liquid
         phasey = :vapor
@@ -221,15 +221,19 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.
         volx = zero(_1)
         voly = zero(_1)
     end
-    β,singlephase,_ = rachfordrice_β0(K,z)
-
+    if any(inx) || any(iny)
+        non_inx = (!).(inx)
+        non_iny = (!).(iny)
+        β,singlephase,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
+    else
+        β,singlephase,_,g01 = rachfordrice_β0(K,z)
+    end
+    g0,g1 = g01
     #if singlephase == true, maybe initial K values overshoot the actual phase split.
     if singlephase
         Kmin,Kmax = extrema(K)
         if !(Kmin >= 1 || Kmax <= 1)
             #valid K, still single phase.
-            g0 = dot(z, K) - 1. #rachford rice, supposing β = 0
-            g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K)) #rachford rice, supposing β = 1
             if g0 <= 0 && g1 < 0 #bubble point.
                 β = eps(typeof(β))
                 singlephase = false

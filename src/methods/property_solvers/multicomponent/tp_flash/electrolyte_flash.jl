@@ -95,7 +95,8 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     _1 = one(p+T+first(z))
     # Initial guess for phase split
     ψ = 0.
-    β,singlephase,_ = rachfordrice_β0(K.*exp.(Z.*ψ),z)
+    K̄ = K.*exp.(Z.*ψ)
+    β,singlephase,_,_ = rachfordrice_β0(K̄,z,nothing,non_inx,non_iny)
     #=TODO:
     there is a method used in TREND that tries to obtain adequate values of K
     in the case of incorrect initialization.
@@ -122,7 +123,8 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         lnK_old = lnK .* _1
         β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
-        x,y = update_rr!(K.*exp.(Z.*ψ),β,z,x,y,non_inx,non_iny)
+        K̄ .= K.*exp.(Z.*ψ)
+        x,y = update_rr!(K̄,β,z,x,y,non_inx,non_iny)
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
         vcache[] = (volx,voly)
@@ -138,7 +140,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
             lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3,(ΔlnK1,ΔlnK2))
             K_dem .= exp.(lnK_dem)
             β_dem,ψ_dem = rachfordrice(K_dem, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
-            x_dem,y_dem = update_rr!(K_dem.*exp.(Z.*ψ_dem),β_dem,z,x_dem,y_dem,non_inx,non_iny)
+            K̄ .= K_dem.*exp.(Z.*ψ_dem)
+            K̄_dem = K̄
+            x_dem,y_dem = update_rr!(K̄_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
             lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,volx,voly,phasex,phasey,β,inx,iny)
             # only accelerate if the gibbs free energy is reduced
             if gibbs_dem < gibbs
@@ -154,7 +158,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
 
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
-        error_lnK = dnorm(lnK,lnK_old,1)
+        dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
     end
 
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
@@ -194,9 +198,10 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         β = sum(ny)
 
     end
-    K .= x ./ y
+    K .= y ./ x
+    K̄ .= K.*exp.(Z.*ψ)
     #convergence checks (TODO, seems to fail with activity models)
-    _,singlephase,_ = rachfordrice_β0(K.*exp.(Z.*ψ),z)
+    _,singlephase,_,_ = rachfordrice_β0(K̄,z,β,non_inx,non_iny)
     vx,vy = vcache[]
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
@@ -218,9 +223,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     return x, y, β, (vx,vy)
 end
 
-function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx)
+function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
     # Function to solve Rachdord-Rice mass balance
-    β,singlephase,limits = rachfordrice_β0(K.*exp.(Z.*ψ0),z,β0)
+    β,singlephase,limits,_ = rachfordrice_β0(K.*exp.(Z.*ψ0),z,β0,non_inx,non_iny)
     if !singlephase
         function rachford_rice_donnan(F,x,K,z,Z)
             β = x[1]

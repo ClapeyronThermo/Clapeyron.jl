@@ -150,7 +150,6 @@ function PTFlashWrapper(model::GammaPhi,p,T::Number,equilibrium::Symbol)
         g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
         return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
     end
-
 end
 
 __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)

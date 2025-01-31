@@ -247,16 +247,27 @@ end
 __tpflash_cache_model(model::FluidCorrelation,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
 function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
-    satmodels = split_model(model.saturation)
-    gases = split_model(model.gas,1:length(model))
-    sats = saturation_pressure.(satmodels,T)
-    vv_pure = last.(sats)
+    fluidmodel = model.gas
+    #check that we can actually solve the equilibria
+    pures = split_model(fluidmodel,default_splitter(model))
+    satpures = split_model(model.saturation,default_splitter(model))
     RT = R̄*T
-    p_pure = first.(sats)
-    μpure = only.(VT_chemical_potential_res.(gases,vv_pure,T))
-    ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
-    g_pure = [VT_gibbs_free_energy(gases[i],sats[i][2],T) for i in 1:length(model)]
-    return PTFlashWrapper(model.components,model,sats,ϕpure,μpure,equilibrium)
+    if fluidmodel isa IdealModel
+        vv = RT/p
+        nan = zero(vv)/zero(vv)
+        sats = saturation_pressure.(satpures,T)
+        ϕpure = fill(one(vv),length(model))
+        g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv,T) for i in 1:length(model)]
+        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
+    else
+        sats = saturation_pressure.(satpures,T)
+        vv_pure = last.(sats)
+        p_pure = first.(sats)
+        μpure = only.(VT_chemical_potential_res.(gas_model.(pures),vv_pure,T))
+        ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
+        g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
+        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
+    end
 end
 
 function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
@@ -272,7 +283,13 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,
             if iny[i]
                 ϕli = fug[i]
                 p_i = sats[i][1]
-                lnK[i] = log(p_i*ϕli/p) - lnϕy[i] + volx*(p - p_i)/RT
+                if !inx[i]
+                    lnK[i] = Inf
+                elseif !iny[i]
+                    lnK[i] = -Inf
+                else
+                    lnK[i] = log(p_i*ϕli/p) - lnϕy[i] + volx*(p - p_i)/RT
+                end
             end
         end
     else

@@ -228,16 +228,15 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         lnK = log.(K)
     end
     _1 = one(p+T+first(z))
-    # Initial guess for phase split
-    β,singlephase,_ = rachfordrice_β0(K,z)
 
+    # Initial guess for phase split
+    β,singlephase,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
+    g0,g1 = g01
     #if singlephase == true, maybe initial K values overshoot the actual phase split.
     if singlephase
         Kmin,Kmax = extrema(K)
         if !(Kmin >= 1 || Kmax <= 1)
             #valid K, still single phase.
-            g0 = dot(z, K) - 1. #rachford rice, supposing β = 0
-            g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K)) #rachford rice, supposing β = 1
             if g0 <= 0 && g1 < 0 #bubble point.
                 β = eps(typeof(β))
                 singlephase = false
@@ -249,7 +248,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     else
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
     end
-
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
@@ -302,7 +300,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
-        error_lnK = dnorm(lnK,lnK_old,1)
+        error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
     end
     # Stage 2: Minimization of Gibbs Free Energy
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
@@ -338,11 +336,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         x = nx ./ nxsum
         y = ny ./ nysum
         β = sum(ny)
-
     end
-    K .= x ./ y
+    K .= y ./ x
     #convergence checks (TODO, seems to fail with activity models)
-    _,singlephase,_ = rachfordrice_β0(K,z)
+    _,singlephase,_,_ = rachfordrice_β0(K,z,β,non_inx,non_iny)
     vx,vy = vcache[]
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
