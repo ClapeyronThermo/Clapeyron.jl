@@ -277,7 +277,9 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,
     fug = wrapper.fug
     RT = R̄*T
     volx = volume(model.liquid, p, T, x, phase = phasex, vol0 = volx)
+    gasmodel = gas_model(model)
     lnϕy, voly = lnϕ(gas_model(model), p, T, y; phase=phasey, vol0=voly)
+    is_ideal = gasmodel isa IdealModel
     if is_vapour(phasey)
         for i in eachindex(lnK)
             if iny[i]
@@ -288,7 +290,9 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,
                 elseif !iny[i]
                     lnK[i] = -Inf
                 else
-                    lnK[i] = log(p_i*ϕli/p) - lnϕy[i] + volx*(p - p_i)/RT
+                    lnKi = log(p_i*ϕli/p) - lnϕy[i]
+                    !is_ideal && (lnKi += volx*(p - p_i)/RT) #add poynting corrections only if the fluid model itself has non-ideal corrections
+                    lnK[i] = lnKi
                 end
             end
         end
