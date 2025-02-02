@@ -245,12 +245,19 @@ function rr_flash_eval(K,z,β,non_inx = FillArrays.Fill(false,length(z)),non_iny
     res_KD2 = _0
     for i in 1:length(z)
         Ki = K[i]
-        Kim1 = Ki - 1.0
         #we separate (K-1)/(1-βK) into K/(1-βK) and 1/(1-βK) for numerical reasons.
         #see;
-        #Ks_eps_0 = [1.2566703532018493e-21, 3.35062752053393, 1.0300675710905643e-23, 1.706258568414198e-39, 1.6382855298440747e-20]
-        #zs_eps_0 = [0.13754371891028325, 0.2984515568715462, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
-        detKi = 1/(1+β*Kim1)
+        #Ks_eps_0 = [1.2566703532018493e-21, 3.3506275205339295, 1.0300675710905643e-23, 1.706258568414198e-39, 1.6382855298440747e-20]
+        #zs_eps_0 = [0.13754371891028325, 0.29845155687154623, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
+        if Ki < eps(one(Ki))
+            detKi0 = 1 - β
+            detKi0 += β*Ki
+            detKi = 1/detKi0
+        else
+            Kim1 = Ki - 1
+            detKi0 = 1 + β*Kim1
+            detKi = 1/detKi0
+        end
         KD1 = Ki*detKi
         KD2 = -detKi
         KD = KD1 + KD2
@@ -342,7 +349,7 @@ function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillA
         end
         if Ki < 1
             # modification for non-in-y components Ki -> 0
-            βmax_i = non_iny[i] ? zero(βmax) : (1 - xi)/(1 - Ki)
+            βmax_i = non_iny[i] ? zero(βmax) : (xi - 1)/(Ki - 1)
             βmax = max(βmax,βmax_i)
         end
     end
@@ -390,13 +397,19 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
         res_KD2 = _0
         for i in 1:length(z)
             Ki = K[i]
-            Kim1 = Ki - 1
             #we separate (K-1)/(1-βK) into K/(1-βK) and 1/(1-βK) for numerical reasons.
             #see;
-            #Ks_eps_0 = [1.2566703532018493e-21, 3.35062752053393, 1.0300675710905643e-23, 1.706258568414198e-39, 1.6382855298440747e-20]
-            #zs_eps_0 = [0.13754371891028325, 0.2984515568715462, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
-
-            detKi = 1/(1+β̄ *Kim1)
+            #Ks_eps_0 = [1.2566703532018493e-21, 3.3506275205339295, 1.0300675710905643e-23, 1.706258568414198e-39, 1.6382855298440747e-20]
+            #zs_eps_0 = [0.13754371891028325, 0.29845155687154623, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
+            if Ki < eps(one(Ki))
+                detKi0 = 1 - β̄
+                detKi0 += β̄*Ki
+                detKi = 1/detKi0
+            else
+                Kim1 = Ki - 1
+                detKi0 = 1 + β̄*Kim1
+                detKi = 1/detKi0
+            end
             KD1 = Ki*detKi
             KD2 = -detKi
             KD = KD1 + KD2
