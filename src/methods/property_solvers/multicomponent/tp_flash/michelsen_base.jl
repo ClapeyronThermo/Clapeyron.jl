@@ -107,7 +107,7 @@ function update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = 
         lnϕy, voly = lnϕ(model, p, T, y, phase = phasey)
     end
 
-    lnK .= lnϕx - lnϕy
+    lnK .= lnϕy - lnϕx
     gibbs = zero(eltype(lnK))
     if β !== nothing
         for i in eachindex(y)

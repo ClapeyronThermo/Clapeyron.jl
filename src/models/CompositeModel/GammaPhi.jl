@@ -188,7 +188,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,volx,voly,pha
             if iny[i]
                 ϕli = fug[i]
                 p_i = sats[i][1]
-                lnKi = log(p_i*ϕli/p) - lnϕy[i]
+                lnKi = log(γx[i]*p_i*ϕli/p) - lnϕy[i]
                 !is_ideal && (lnKi += volx*(p - p_i)/RT) #add poynting corrections only if the fluid model itself has non-ideal corrections
                 lnK[i] = lnKi
                 gibbs += β*y[i]*(log(y[i]) + lnϕy[i])
@@ -196,7 +196,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,volx,voly,pha
         end
     else
         γy = activity_coefficient(model, p, T, y)
-        lnK .= log.(γx./γy)
+        lnK .= log.(γy ./ γx)
         voly = volume(fluidmodel, p, T, y, phase = phasey, vol0 = voly)
         if β !== nothing
             for i in eachindex(y)

@@ -93,8 +93,8 @@
         #water-oxygen system, non-condensables
         model_a_ideal = CompositeModel(["water","oxygen"],liquid = RackettLiquid,gas = BasicIdeal,saturation = DIPPR101Sat)
         @test Clapeyron.tp_flash(model_a_ideal,134094.74892634258,70 + 273.15,[18500.0, 24.08],noncondensables = ["oxygen"])[1] ≈
-        [1.0       0.0
-        0.232677  0.767323] rtol = 1e-6
+        [1.0 0.0; 
+        0.23252954843762222 0.7674704515623778] rtol = 1e-6
     end
 
     @testset "Michelsen Algorithm, activities" begin

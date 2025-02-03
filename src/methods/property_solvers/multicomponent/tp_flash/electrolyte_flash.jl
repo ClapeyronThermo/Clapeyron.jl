@@ -72,7 +72,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     elseif !isnothing(x0) && !isnothing(y0)
         x = x0 ./ sum(x0)
         y = y0 ./ sum(y0)
-        lnK = log.(x ./ y)
+        lnK = log.(y ./ x)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,nothing,inx,iny)
         K = exp.(lnK)
     elseif is_vle(equilibrium) || is_unknown(equilibrium)

@@ -207,7 +207,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     elseif !isnothing(x0) && !isnothing(y0)
         x = x0 ./ sum(x0)
         y = y0 ./ sum(y0)
-        lnK = log.(x ./ y)
+        lnK = log.(y ./ x)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,nothing,inx,iny)
         K = exp.(lnK)
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
@@ -265,6 +265,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
     while error_lnK > K_tol && it < itss && !singlephase
+        @show K
         it += 1
         itacc += 1
         lnK_old = lnK .* _1
