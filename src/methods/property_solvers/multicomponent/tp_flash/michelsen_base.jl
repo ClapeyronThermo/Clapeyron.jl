@@ -97,8 +97,8 @@ end
 
 #updates lnK, returns lnK,volx,voly, gibbs if β != nothing
 function update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
-    lnϕx, volx = lnϕ(model, p, T, x; phase=:liquid, vol0=volx)
-    lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
+    lnϕx, volx = lnϕ(model, p, T, x; phase = :liquid, vol0=volx)
+    lnϕy, voly = lnϕ(model, p, T, y; phase = phasey, vol0=voly)
     if isnan(volx)
         lnϕx, volx = lnϕ(model, p, T, x, phase = phasex)
     end
@@ -107,7 +107,7 @@ function update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = 
         lnϕy, voly = lnϕ(model, p, T, y, phase = phasey)
     end
 
-    lnK .= lnϕy - lnϕx
+    lnK .= lnϕx .- lnϕy
     gibbs = zero(eltype(lnK))
     if β !== nothing
         for i in eachindex(y)

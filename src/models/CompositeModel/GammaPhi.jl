@@ -196,7 +196,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,volx,voly,pha
         end
     else
         γy = activity_coefficient(model, p, T, y)
-        lnK .= log.(γy ./ γx)
+        lnK .= log.(γx ./ γy)
         voly = volume(fluidmodel, p, T, y, phase = phasey, vol0 = voly)
         if β !== nothing
             for i in eachindex(y)

@@ -265,7 +265,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
     while error_lnK > K_tol && it < itss && !singlephase
-        @show K
         it += 1
         itacc += 1
         lnK_old = lnK .* _1
