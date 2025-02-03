@@ -19,7 +19,7 @@ function transform_params(::Type{pharmaPCSAFT},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
     params["kT"] = get(params,"kT",PairParam("kT",components,zeros(length(components))))
-    water = SpecialComp(components,["water08"])
+    water = SpecialComp(components,["water08","water"])
     params["water"] = water
 
     if water[] != 0

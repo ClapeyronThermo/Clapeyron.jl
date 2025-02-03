@@ -19,11 +19,10 @@ function Δσ(model,T)
     if model isa C.pharmaPCSAFT
         k = C.water08_k(model)
         if k > 0 
-            σ += C.Δσh20(T)
+            return C.Δσh20(T)
         end
-    else
-        return zero(T)
     end
+    return zero(T)
 end
 
 function get_pcsaft_consts(model)

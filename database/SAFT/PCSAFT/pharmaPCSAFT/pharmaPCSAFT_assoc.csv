@@ -1,0 +1,5 @@
+Clapeyron Database File
+water T-dependent sigma PCSAFT Assoc Parameters
+species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
+water08~|~water,O,H,water08~|~water,O,e,2425.6714,0.04509,10.1016/j.cep.2007.02.034
+acetonitrile,,e,water08~|~water,,H,2264.61,0.0183,
