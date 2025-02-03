@@ -96,27 +96,34 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
 end
 
 #updates lnK, returns lnK,volx,voly, gibbs if β != nothing
-function update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
-    lnϕx, volx = lnϕ(model, p, T, x; phase = :liquid, vol0=volx)
-    lnϕy, voly = lnϕ(model, p, T, y; phase = phasey, vol0=voly)
+function update_K!(lnK,model,p,T,x,y,β,vols,phases,inw,dlnϕ_cache = nothing)
+    volx,voly = vols
+    phasex,phasey = phases
+    inx,iny = inw
+    lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache; phase = :liquid, vol0=volx)
     if isnan(volx)
-        lnϕx, volx = lnϕ(model, p, T, x, phase = phasex)
+        lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache, phase = phasex)
     end
 
-    if isnan(voly)
-        lnϕy, voly = lnϕ(model, p, T, y, phase = phasey)
-    end
-
-    lnK .= lnϕx .- lnϕy
+    lnK .= lnϕx
     gibbs = zero(eltype(lnK))
     if β !== nothing
         for i in eachindex(y)
-            if iny[i]
-                gibbs += β*y[i]*(log(y[i]) + lnϕy[i])
-            end
-            if inx[i]
-                gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i])
-            end
+            inx[i] && (gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i]))
+        end
+    else
+        gibbs = gibbs/gibbs
+    end
+
+    lnϕy, voly = lnϕ(model, p, T, y, dlnϕ_cache; phase = phasey, vol0=voly)
+    if isnan(voly)
+        lnϕy, voly = lnϕ(model, p, T, y, dlnϕ_cache, phase = phasey)
+    end
+
+    lnK .-= lnϕy
+    if β !== nothing
+        for i in eachindex(y)
+            iny[i] && (gibbs += β*y[i]*(log(y[i]) + lnϕy[i]))
         end
     else
         gibbs = gibbs/gibbs
@@ -171,7 +178,8 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.
         phasex = :unknown
         phasey = :unknown
     end
-
+    phases = (phasex,phasey)
+    inw = (inx,iny)
     nc = length(model)
     _1 = oneunit(Base.promote_eltype(model,p,T,z))
     x,y = fill(_1,nc),fill(_1,nc)
@@ -189,10 +197,10 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.
         volx = zero(_1)
         voly = zero(_1)
         if method.v0 == nothing
-            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,nothing,phasex,phasey,nothing,inx,iny)
+            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(nothing,nothing),phases,inw)
         else
             vl0,vv0 = method.v0
-            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,vl0,vv0,phasex,phasey,nothing,inx,iny)
+            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(vl0,vv0),phases,inw)
         end
         K = exp.(lnK)
     elseif is_vle(method) || is_unknown(method) && k0 == :wilson

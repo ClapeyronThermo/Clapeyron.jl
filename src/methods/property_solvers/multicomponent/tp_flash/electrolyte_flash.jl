@@ -61,6 +61,8 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
 
     active_inx = !all(inx)
     active_iny = !all(iny)
+    phases = (phasex,phasey)
+    inw = (inx,iny)
     # components that are allowed to be in two phases
     in_equilibria = inx .& iny
     # Computing the initial guess for the K vector
@@ -73,7 +75,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         x = x0 ./ sum(x0)
         y = y0 ./ sum(y0)
         lnK = log.(y ./ x)
-        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,nothing,inx,iny)
+        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(volx,voly),phases,inw)
         K = exp.(lnK)
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
@@ -117,6 +119,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
+    dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     while error_lnK > K_tol && it < itss && !singlephase
         it += 1
         itacc += 1
@@ -126,7 +129,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         K̄ .= K.*exp.(Z.*ψ)
         x,y = update_rr!(K̄,β,z,x,y,non_inx,non_iny)
         # Updating K's
-        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
+        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,β,(volx,voly),phases,inw,dlnϕ_cache)
         vcache[] = (volx,voly)
         # acceleration step
         if itacc == (nacc - 2)
@@ -143,7 +146,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
             K̄ .= K_dem.*exp.(Z.*ψ_dem)
             K̄_dem = K̄
             x_dem,y_dem = update_rr!(K̄_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
-            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,volx,voly,phasex,phasey,β,inx,iny)
+            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,β,(volx,voly),phases,inw,dlnϕ_cache)
             # only accelerate if the gibbs free energy is reduced
             if gibbs_dem < gibbs
                 lnK .= _1 * lnK_dem

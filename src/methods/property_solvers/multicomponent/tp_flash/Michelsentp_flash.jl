@@ -191,7 +191,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 
     inx = .!non_inx
     iny = .!non_iny
-
+    inw = (inx,iny)
+    phases = (phasex,phasey)
     active_inx = !all(inx)
     active_iny = !all(iny)
     # components that are allowed to be in two phases
@@ -201,6 +202,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     y = similar(z)
     x .= z
     y .= z
+    dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     if !isnothing(K0)
         K = 1. * K0
         lnK = log.(K)
@@ -208,7 +210,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         x = x0 ./ sum(x0)
         y = y0 ./ sum(y0)
         lnK = log.(y ./ x)
-        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,nothing,inx,iny)
+        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,β,(volx,voly),phases,inw,dlnϕ_cache)
         K = exp.(lnK)
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
@@ -270,7 +272,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         lnK_old = lnK .* _1
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
-        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
+        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,β,(volx,voly),phases,inw,dlnϕ_cache)
         vcache[] = (volx,voly)
         # acceleration step
         if itacc == (nacc - 2)
@@ -285,7 +287,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             K_dem .= exp.(lnK_dem)
             β_dem = rachfordrice(K_dem, z; β0=β, non_inx=non_inx, non_iny=non_iny)
             x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
-            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,volx,voly,phasex,phasey,β,inx,iny)
+            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,β,(volx,voly),phases,inw,dlnϕ_cache)
             # only accelerate if the gibbs free energy is reduced
             if gibbs_dem < gibbs
                 lnK .= _1 * lnK_dem
@@ -333,8 +335,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         nx[in_equilibria] = z[in_equilibria] .- ny[in_equilibria]
         nxsum = sum(nx)
         nysum = sum(ny)
-        x = nx ./ nxsum
-        y = ny ./ nysum
+        x .= nx ./ nxsum
+        y .= ny ./ nysum
         β = sum(ny)
     end
     K .= y ./ x

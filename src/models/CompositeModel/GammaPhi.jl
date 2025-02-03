@@ -154,7 +154,10 @@ end
 
 __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
-function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
+function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,vols,phases,inw,cache = nothing)
+    volx,voly = vols
+    phasex,phasey = phases
+    inx,iny = inw
     model = wrapper.model
     fluidmodel = model.fluid.model
     sats = wrapper.sat
@@ -183,7 +186,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,volx,voly,pha
     end
 
     if is_vapour(phasey)
-        lnϕy, voly = lnϕ(gas_model(fluidmodel), p, T, y; phase=phasey, vol0=voly)
+        lnϕy, voly = lnϕ(gas_model(fluidmodel), p, T, y, cache; phase=phasey, vol0=voly)
         for i in eachindex(lnK)
             if iny[i]
                 ϕli = fug[i]

@@ -270,7 +270,10 @@ function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
     end
 end
 
-function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
+function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,vols,phases,inw,cache = nothing)
+    volx,voly = vols
+    phasex,phasey = phases
+    inx,iny = inw
     model = wrapper.model
     sats = wrapper.sat
     #crits = wrapper.crit
@@ -278,7 +281,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,
     RT = R̄*T
     volx = volume(model.liquid, p, T, x, phase = phasex, vol0 = volx)
     gasmodel = gas_model(model)
-    lnϕy, voly = lnϕ(gas_model(model), p, T, y; phase=phasey, vol0=voly)
+    lnϕy, voly = lnϕ(gas_model(model), p, T, y, cache; phase=phasey, vol0=voly)
     is_ideal = gasmodel isa IdealModel
     if is_vapour(phasey)
         for i in eachindex(lnK)
