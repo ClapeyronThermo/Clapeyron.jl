@@ -270,7 +270,7 @@ function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
     end
 end
 
-function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,vols,phases,inw,cache = nothing)
+function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,vols,phases,inw,cache = nothing)
     volx,voly = vols
     phasex,phasey = phases
     inx,iny = inw

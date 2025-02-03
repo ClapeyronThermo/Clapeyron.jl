@@ -210,7 +210,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         x = x0 ./ sum(x0)
         y = y0 ./ sum(y0)
         lnK = log.(y ./ x)
-        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,β,(volx,voly),phases,inw,dlnϕ_cache)
+        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(volx,voly),phases,inw,dlnϕ_cache)
         K = exp.(lnK)
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
