@@ -6,7 +6,9 @@
         system = ePCSAFT(["water"],["sodium","chloride"])
         salts = [("sodium chloride",["sodium"=>1,"chloride"=>1])]
         z = molality_to_composition(system,salts,m)
-        @test Clapeyron.a_res(system, V, T, z) ≈ -1.1094732499161208 rtol = 1e-6
+        #this result is using normal water parameters. From Clapeyron 0.6.9 onwards, "water" will use T-dependend sigma on pharmaPCSAFT.
+        #@test Clapeyron.a_res(system, V, T, z) ≈ -1.1094732499161208 rtol = 1e-6
+        @test Clapeyron.a_res(system, V, T, z) ≈ -1.0037641675166717 rtol = 1e-6
     end
 
     @testset "eSAFTVRMie" begin
