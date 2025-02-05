@@ -67,9 +67,9 @@ jobs:
       #  with:
       #    test_args: 'optimize=1'
       - uses: julia-actions/julia-processcoverage@v1
-        if: matrix.version == 'pre' && matrix.os == 'ubuntu-latest'
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
       - uses: codecov/codecov-action@v4
-        if: matrix.version == 'pre' && matrix.os == 'ubuntu-latest'
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
         with:
           file: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
