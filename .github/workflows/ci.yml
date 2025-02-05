@@ -54,8 +54,8 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@latest
-            - name: "Install Dependencies and Run Tests"
+      - uses: julia-actions/julia-buildpkg@latest      
+      - name: "Install Dependencies and Run Tests"
         run: |
           import Pkg
           Pkg.Registry.update()
