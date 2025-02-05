@@ -54,10 +54,18 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@latest 
-      - uses: julia-actions/julia-runtest@latest
-        with:
-          test_args: 'optimize=1'
+      - uses: julia-actions/julia-buildpkg@latest
+            - name: "Install Dependencies and Run Tests"
+        run: |
+          import Pkg
+          Pkg.Registry.update()
+          # Install packages present in subdirectories
+          Pkg.instantiate()
+          Pkg.test(; coverage="user")
+        shell: julia --color=yes --optimize=1 --code-coverage=user --depwarn=yes --project=. {0}
+      #- uses: julia-actions/julia-runtest@latest
+      #  with:
+      #    test_args: 'optimize=1'
       - uses: julia-actions/julia-processcoverage@v1
         if: matrix.version == 'pre' && matrix.os == 'ubuntu-latest'
       - uses: codecov/codecov-action@v4
