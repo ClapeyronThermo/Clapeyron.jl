@@ -61,8 +61,8 @@ jobs:
           Pkg.Registry.update()
           # Install packages present in subdirectories
           Pkg.instantiate()
-          Pkg.test(; coverage="user", julia_args = ["--optimize=0"])
-        shell: julia --color=yes --optimize=0 --code-coverage=user --depwarn=yes --project=. {0}
+          Pkg.test(; coverage="user", julia_args = ["--optimize=2"])
+        shell: julia --color=yes --optimize=2 --code-coverage=user --depwarn=yes --project=. {0}
       #- uses: julia-actions/julia-runtest@latest
       #  with:
       #    test_args: 'optimize=1'
