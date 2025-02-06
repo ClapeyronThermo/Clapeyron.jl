@@ -5,7 +5,7 @@ function recombine!(model::EoSModel)
     end
     
     if has_sites(model)
-        recombine!(model.sites)
+        recombine!(getsites(model))
     end
     
     if has_groups(model)
