@@ -132,7 +132,7 @@ function export_unlike(model::EoSModel,params,name,location,species,ncomps)
     end
 end
 
-function export_unlike(model::ActivityModel),params,name,location,species,ncomps)
+function export_unlike(model::ActivityModel,params,name,location,species,ncomps)
     M = typeof(model)
     P = typeof(model.params)
     model_name = summary(model)
@@ -176,7 +176,7 @@ function export_unlike(model::ActivityModel),params,name,location,species,ncomps
     end
 end
 
-function export_unlike(model::ABCubicModel),params,name,location,species,ncomps)
+function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
     M = typeof(model)
     P = typeof(model.params)
     model_name = summary(model)

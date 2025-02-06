@@ -3,9 +3,10 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, v
     vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
     RT = Rgas(model)*T
     logZ = log(p*vol/RT/sum(z))
-    nc = length(model)
+
     if cache != nothing
-        result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache    
+        result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
+        nc = length(lnϕ)
         aux .= 0
         aux[1] = vol
         aux[2:nc+1] = z
@@ -28,6 +29,12 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, v
     return lnϕ, vol
 end
 
+function lnϕ(model::IdealModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, vol0=nothing,threaded = true)
+    vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
+    lnϕ = FillArrays.Ones(length(z))
+    return lnϕ, vol
+end
+
 function lnϕ!(lnϕ, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
     RT = Rgas(model)*T
     vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
@@ -44,7 +51,7 @@ function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
     lnϕ = μ_res - log(Z)
 end
 
-function ∂lnϕ_cache(model::EoSModel, p, T, z, dt::Val{B}) where B 
+function ∂lnϕ_cache(model::EoSModel, p, T, z, dt::Val{B}) where B
     V = p
     lnϕ = zeros(@f(Base.promote_eltype),length(model))
     aux = zeros(@f(Base.promote_eltype),length(model) + 1 + B)
@@ -55,7 +62,7 @@ function ∂lnϕ_cache(model::EoSModel, p, T, z, dt::Val{B}) where B
     ∂P∂n = similar(lnϕ)
     hconfig = ForwardDiff.HessianConfig(nothing,result,aux)
     if B
-        ∂lnϕ∂T = similar(lnϕ)  
+        ∂lnϕ∂T = similar(lnϕ)
     else
         ∂lnϕ∂T = lnϕ
     end
