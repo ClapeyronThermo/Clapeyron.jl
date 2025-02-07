@@ -231,13 +231,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         volx = zero(_1)
         voly = zero(_1)
     end
-    if any(inx) || any(iny)
-        non_inx = (!).(inx)
-        non_iny = (!).(iny)
-        β,singlephase,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
-    else
-        β,singlephase,_,g01 = rachfordrice_β0(K,z)
-    end
+    β,singlephase,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
     g0,g1 = g01
     #if singlephase == true, maybe initial K values overshoot the actual phase split.
     if singlephase
