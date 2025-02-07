@@ -125,10 +125,6 @@ function tpd_obj(model, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,d
     optprob = OptimizationProblem(obj = obj,inplace = true)
 end
 
-function tpd_K0(model,p,T)
-    return tp_flash_K0(model,p,T)
-end
-
 struct TPDKSolver end
 struct TPDPureSolver end
 
@@ -441,7 +437,7 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     #step 0: initialize values
 
     if strategy == :default || strategy == :wilson
-        K = tpd_K0(model,p,T) #normally wilson
+        K = tp_flash_K0(model,p,T) #normally wilson
     else
         K = zeros(Base.promote_eltype(model,p,T,z),length(z))
     end

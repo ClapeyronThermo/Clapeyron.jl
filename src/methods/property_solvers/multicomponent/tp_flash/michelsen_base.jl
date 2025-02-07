@@ -168,6 +168,7 @@ function tp_flash_K0!(K,model,p,T)
             K[i] = sat_x[3]/p
         end
     end
+    return K
 end
 
 function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArrays.Fill(false,length(model)),non_iny = FillArrays.Fill(false,length(model));k0 = :wilson)
