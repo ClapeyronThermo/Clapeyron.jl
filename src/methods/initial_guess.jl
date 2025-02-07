@@ -599,7 +599,7 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
     pmid = 0.5*max(zero(psl),psl) + 0.5*psv
     
     if plb <= pmid
-        vsv_ub = volume(model,psv,T,phase = :l, vol0 = v_lb)
+        vsl_lb = volume(model,psv,T,phase = :l, vol0 = v_lb)
     else
         vsl_lb = one(psl)*v_lb
     end
