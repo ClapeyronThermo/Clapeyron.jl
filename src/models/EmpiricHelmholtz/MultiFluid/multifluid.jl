@@ -233,7 +233,7 @@ function wilson_k_values!(K,model::MultiFluid,p,T,crit = nothing)
         Tc,pc = _Tc[i],_Pc[i]
         ps = first(saturation_pressure(pure_i,0.7*Tc))
         ω = -log10(ps/pc) - 1.0
-        K[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
+        K[i] = exp(log(pc/p)+ 5.37269855031944*(1+ω)*(1-Tc/T))
     end
     return K
 end

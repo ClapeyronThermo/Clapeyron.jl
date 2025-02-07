@@ -427,7 +427,7 @@ function wilson_k_values!(K,model::ABCubicModel, p, T, crit = nothing)
         end
     end
 
-    return @.K .= Pc / p * exp(5.373 * (1 + ω) * (1 - Tc / T))
+    return @.K .= Pc / p * exp(5.37269855031944 * (1 + ω) * (1 - Tc / T))
 
 end
 
