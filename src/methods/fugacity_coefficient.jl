@@ -31,7 +31,7 @@ end
 
 function lnϕ(model::IdealModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, vol0=nothing,threaded = true)
     vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
-    lnϕ = FillArrays.Ones(length(z))
+    lnϕ = FillArrays.Zeros(length(z))
     return lnϕ, vol
 end
 
