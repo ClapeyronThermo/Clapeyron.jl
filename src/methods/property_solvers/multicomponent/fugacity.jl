@@ -73,16 +73,19 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
             if isnan(volx) || isnan(voly)
                 break
             end
+            if dnorm(lnϕx,lnϕy,2) < tol_xy
+                break
+            end
         end
 
         if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, _x, Hϕx, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, _y, Hϕy, phase=:vapor, vol0=voly)
-            ∂OF =@sum(w[i]*(∂lnϕ∂Px[i] - ∂lnϕ∂Py[i]))
+            ∂OF =@sum(w_calc[i]*(∂lnϕ∂Px[i] - ∂lnϕ∂Py[i]))
         else
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, _x, Hϕx, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, _y, Hϕy, phase=:vapor, vol0=voly)
-            ∂OF = @sum(w[i]*(∂lnϕ∂Tx[i] - ∂lnϕ∂Ty[i]))
+            ∂OF = @sum(w_calc[i]*(∂lnϕ∂Tx[i] - ∂lnϕ∂Ty[i]))
         end
         if isnan(volx) || isnan(voly)
             break
@@ -109,10 +112,10 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
         end
 
         if _pressure
-            ∂step = min(∂step,0.4*p)
+            ∂step = clamp(∂step,-0.4*p,0.4*p)
             p -= ∂step
         else
-            ∂step = min(∂step,0.2*T)
+            ∂step = clamp(∂step,-0.05*T,0.05*T)
             T -= ∂step
         end
     end
