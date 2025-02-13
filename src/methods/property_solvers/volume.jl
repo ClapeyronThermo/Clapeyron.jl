@@ -17,17 +17,14 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
     return _volume_compress(model,p,T,z,V0,max_iters)
 end
 
-function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(Base.promote_eltype(model,_p,_T,_z,V0))
     _1 = one(_0)
     isnan(V0) && return _0/_0
-    p₀ = primalval(_1*_p)
+    p₀ = _1*_p
     XX = typeof(p₀)
-    T = primalval(_T)
-    _nan = primalval(_0/_0)
-    nan = primalval(_nan)
+    nan = _0/_0
     logV0 = primalval(log(V0)*_1)
-    z = primalval(_z)
     log_lb_v = log(primalval(lb_volume(model,T,z)))
     if iszero(p₀) & (V0 == Inf) #ideal gas
         return _1/_0
@@ -48,11 +45,7 @@ function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=
     end
 
     logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters)::XX,nan)
-    #netwon step to recover derivative information:
-    #V = V - (p(V) - p)/(dpdV(V))
-    #dVdP = -1/dpdV
-    #dVdT = dpdT/dpdV
-    #dVdn = dpdn/dpdV
+    
     Vsol = exp(logV)
     psol,dpdVsol = p∂p∂V(model,Vsol,_T,_z)
     return Vsol - (psol - _p)/dpdVsol
@@ -182,7 +175,22 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0
 end
 
 function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
-    return volume_impl(model,p,T,z,phase,threaded,vol0)
+    v = volume_impl(model,primalval(p),primalval(T),primalval(z),phase,threaded,primalval(vol0))
+    return volume_ad(model,v,T,z,p)
+end
+
+function volume_ad(model,v,T,z,p)
+    if eltype(model) <: ForwardDiff.Dual || T isa ForwardDiff.Dual || eltype(z) <: ForwardDiff.Dual || p isa ForwardDiff.Dual
+        #netwon step to recover derivative information:
+        #V = V - (p(V) - p)/(dpdV(V))
+        #dVdP = -1/dpdV
+        #dVdT = dpdT/dpdV
+        #dVdn = dpdn/dpdV
+        psol,dpdVsol = p∂p∂V(model,v,T,z)
+        return v - (psol - p)/dpdVsol
+    else
+        return v
+    end
 end
 
 #comprises solid and liquid phases.
