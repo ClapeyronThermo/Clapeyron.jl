@@ -353,6 +353,8 @@ function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillA
             βmax = max(βmax,βmax_i)
         end
     end
+    βmin = max(βmin,_0)
+    βmax = min(βmax,_1)
     return βmin,βmax
 end
 
@@ -363,7 +365,13 @@ function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length
     singlephase = false
     _1 = one(g1)
     _0 = zero(g1)
-    singlephase = g0 < 0 || g1 > 0
+    if g0 < 0
+        β = _0
+        singlephase = true
+    elseif g1 > 0
+        β = _1
+        singlephase = true
+    end
     βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
     if β0 !== nothing
         β = β0
