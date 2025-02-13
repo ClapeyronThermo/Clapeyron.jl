@@ -5,11 +5,11 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
     converged = false
     #caches for ∂lnϕ∂n∂P∂T/∂lnϕ∂n∂P
     if _pressure
-        Hϕx = ∂lnϕ_cache(model, p, T, x,Val{false}())
-        Hϕy = ∂lnϕ_cache(model, p, T, y,Val{false}())
+        Hϕx = ∂lnϕ_cache(model, p, T, x, Val{false}())
+        Hϕy = ∂lnϕ_cache(model, p, T, y, Val{false}())
     else
-        Hϕx = ∂lnϕ_cache(model, p, T, x,Val{true}())
-        Hϕy = ∂lnϕ_cache(model, p, T, y,Val{true}())
+        Hϕx = ∂lnϕ_cache(model, p, T, x, Val{true}())
+        Hϕy = ∂lnϕ_cache(model, p, T, y, Val{true}())
     end
 
     n = length(model)
@@ -149,19 +149,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
         zz = view(y,_view)
     end
 
-    lnK = similar(lnϕx,n)
-    K = similar(lnK)
-    w = similar(lnK)
-    w_old = similar(lnK)
-    w_calc = similar(lnK)
-    w_restart = similar(lnK)
-    if _bubble
-        w .= y
-        _x,_y = x,w
-    else
-        w .= x
-        _x,_y = w,y
-    end
+
     #caches for ∂lnϕ∂n∂P∂T/∂lnϕ∂n∂P
     if _pressure
         Hϕx = ∂lnϕ_cache(modelx, p, T, x, Val{false}())
@@ -169,6 +157,21 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
     else
         Hϕx = ∂lnϕ_cache(modelx, p, T, x, Val{true}())
         Hϕy = ∂lnϕ_cache(modely, p, T, y, Val{true}())
+    end
+
+    lnK = similar(Hϕx[3],n)
+    K = similar(lnK)
+    w = similar(lnK)
+    w_old = similar(lnK)
+    w_calc = similar(lnK)
+    w_restart = similar(lnK)
+    
+    if _bubble
+        w .= y
+        _x,_y = x,w
+    else
+        w .= x
+        _x,_y = w,y
     end
 
     for j in 1:itmax_newton
