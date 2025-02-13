@@ -31,7 +31,6 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
     
     for j in 1:itmax_newton
         w_restart .= w
-        @show volx,voly
         volx_restart,voly_restart = volx,voly
         if isnan(volx) || isnan(voly)
             break
@@ -165,7 +164,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
     w_old = similar(lnK)
     w_calc = similar(lnK)
     w_restart = similar(lnK)
-    
+
     if _bubble
         w .= y
         _x,_y = x,w
