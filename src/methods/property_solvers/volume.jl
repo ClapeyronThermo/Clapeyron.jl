@@ -18,10 +18,10 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
 end
 
 function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    _0 = zero(Base.promote_eltype(model,_p,_T,_z,V0))
+    _0 = zero(Base.promote_eltype(model,p,T,z,V0))
     _1 = one(_0)
     isnan(V0) && return _0/_0
-    p₀ = _1*_p
+    p₀ = _1*p
     XX = typeof(p₀)
     nan = _0/_0
     logV0 = primalval(log(V0)*_1)
@@ -45,10 +45,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
     end
 
     logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters)::XX,nan)
-    
-    Vsol = exp(logV)
-    psol,dpdVsol = p∂p∂V(model,Vsol,_T,_z)
-    return Vsol - (psol - _p)/dpdVsol
+    return exp(logV)
 end
 
 #"chills" a state from T0,p to T,p, starting at v = v0
