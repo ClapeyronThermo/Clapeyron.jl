@@ -31,6 +31,7 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
     
     for j in 1:itmax_newton
         w_restart .= w
+        @show volx,voly
         volx_restart,voly_restart = volx,voly
         if isnan(volx) || isnan(voly)
             break
@@ -69,9 +70,9 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
                 break
             end
             if _bubble
-                tpd = 1 + @sum(_y[i]*(lnϕy[i] + log(_y[i]) - log(_x[i]) - lnϕx[i]) - 1)
+                tpd = 1 + @sum(_y[i]*(lnϕy[i] + log(_y[i]) - log(_x[i]) - lnϕx[i] - 1))
             else
-                tpd = 1 + @sum(_x[i]*(lnϕx[i] + log(_x[i]) - log(_y[i]) - lnϕy[i]) - 1)
+                tpd = 1 + @sum(_x[i]*(lnϕx[i] + log(_x[i]) - log(_y[i]) - lnϕy[i] - 1))
             end
             if tpd > 0 #the interation procedure went wrong. perform a T/P movement first
                 w .= w_restart
@@ -223,11 +224,11 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
             if _bubble
                 tpd_lnϕx = view(lnϕx,_view)
                 tpd_x = view(_x,_view)
-                tpd = 1 + @sum(_y[i]*(lnϕy[i] + log(y[i]) - log(tpd_x[i]) - tpd_lnϕx[i]) - 1)
+                tpd = 1 + @sum(_y[i]*(lnϕy[i] + log(y[i]) - log(tpd_x[i]) - tpd_lnϕx[i] - 1))
             else
                 tpd_lnϕy = view(lnϕy,_view)
                 tpd_y = view(_y,_view)
-                tpd = 1 + @sum(_x[i]*(lnϕx[i] + log(x[i]) - log(tpd_y[i]) - tpd_lnϕy[i]) - 1)
+                tpd = 1 + @sum(_x[i]*(lnϕx[i] + log(x[i]) - log(tpd_y[i]) - tpd_lnϕy[i] - 1))
             end
             if tpd > 0 #the interation procedure went wrong. perform a T/P movement first
                 w .= w_restart
