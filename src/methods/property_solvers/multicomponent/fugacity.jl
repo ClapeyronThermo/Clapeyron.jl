@@ -36,11 +36,11 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
         valid_iter = true
         if isnan(volx) || isnan(voly)
             break
-        end        
+        end
         for i in 1:itmax_ss
             lnϕx, volx = lnϕ(model, p, T, _x, Hϕx, vol0=volx, phase = :liquid)
             lnϕy, voly = lnϕ(model, p, T, _y, Hϕy, vol0=voly, phase = :vapour)
-            
+
             if isnan(volx)
                 lnϕx, volx = lnϕ(model, p, T, _x, Hϕx, phase = :liquid)
             end
@@ -222,7 +222,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
                 _lnϕy = view(lnϕy,_view)
                 lnK .= lnϕx .- _lnϕy
             end
-            
+
             K .= exp.(lnK)
             w_old .=  w
 
@@ -241,7 +241,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
             if error < tol_xy
                 break
             end
-    
+
             if _bubble
                 #tpd_lnϕx = view(lnϕx,_view)
                 tpd_x = view(_x,_view)
@@ -253,13 +253,13 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
                 stability = dnorm(tpd_y,_x,Inf)
                 #tpd = 1 + @sum(_x[i]*(lnϕx[i] + log(x[i]) - log(tpd_y[i]) - tpd_lnϕy[i] - 1))
             end
-            if stability && tol_stability #the interation procedure went wrong. perform a T/P movement first
+            if stability < tol_stability #the interation procedure went wrong. perform a T/P movement first
                 w .= w_restart
                 volx,voly = volx_restart,voly_restart
                 break
             end
         end
-       
+
         if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(modelx, p, T, _x, Hϕx, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(modely, p, T, _y, Hϕy, phase=:vapour, vol0=voly)
@@ -313,7 +313,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
             converged = true
             break
         end
-        
+
         if !isfinite(∂step) #error, fail early, the NaN propagation is handled upstream
             converged = true
             break
@@ -511,7 +511,7 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel,_x, _y, _p, _T, vol
 
         lnϕx, volx = lnϕ(modelx, p, T, x, Hϕx, phase=_phase[1], vol0=volx)
         lnϕy, voly = lnϕ(modely, p, T, y, Hϕy, phase=_phase[2], vol0=voly)
-        
+
         if _bubble
             lnϕview = @view lnϕx[_view]
             F[1:end-1] .= lnK .+ lnϕy .- lnϕview
@@ -529,7 +529,7 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel,_x, _y, _p, _T, vol
         lnK = @view inc[1:end-1]
         K .= exp.(lnK)
         p,T = _select_pT(inc,_p,_T,_pressure)
-        x,y = _select_xy(w,K,_x,_y,_bubble,_view)  
+        x,y = _select_xy(w,K,_x,_y,_bubble,_view)
         J .= 0.0
         if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(modelx, p, T, x, Hϕx, phase=_phase[1], vol0=volx)
