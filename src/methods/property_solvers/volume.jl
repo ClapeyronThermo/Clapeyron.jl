@@ -172,8 +172,12 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0
 end
 
 function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
-    v = volume_impl(model,primalval(p),primalval(T),primalval(z),phase,threaded,primalval(vol0))
-    return volume_ad(model,v,T,z,p)
+    if hasmethod(a_res,Tuple{typeof(model),Float64,Float64,Vector{Float64}})
+        v = volume_impl(model,primalval(p),primalval(T),primalval(z),phase,threaded,primalval(vol0))
+        return volume_ad(model,v,T,z,p)
+    else
+        return volume_impl(model,p,T,z,phase,threaded,primalval(vol0))
+    end
 end
 
 function volume_ad(model,v,T,z,p)
