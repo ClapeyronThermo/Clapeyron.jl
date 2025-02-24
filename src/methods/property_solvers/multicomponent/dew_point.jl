@@ -134,6 +134,24 @@ end
 
 function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
     multi_component_check(x0_dew_temperature,model)
+        
+    if Tx0 !== nothing
+        _crit = isnothing(crit) ?  FillArrays.fill(nothing,length(model)) : crit
+        K = suggest_K(model,p,Tx0,x,pure,volatiles,_crit)
+        x = rr_flash_liquid(K,y,one(eltype(K)))
+        for i in 1:length(x)
+            !condensables[i] && (x[i] = 0)
+        end
+        x ./= sum(x)
+        vl0 = volume(model,p,Tx0,x,phase = :l)
+        vv0 = volume(model,p,Tx0,y,phase = :v)
+        #this is exactly like __x0_bubble_pressure, but we use T0, instead of an input T
+        #_,vl0,vv0,y = __x0_bubble_pressure(model,T0,x,nothing,volatiles,pure,crit)
+        return Tx0,vl0,vv0,x
+    end
+    
+    
+    
     sat = extended_saturation_temperature.(pure,p,crit,condensables)
     if crit === nothing
         _crit = __crit_pure.(sat,pure,condensables)
@@ -150,6 +168,9 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
     end
     K = suggest_K(model,p,T0,y,pure,FillArrays.fill(true,length(model)),_crit)
     x = rr_flash_liquid(K,y,one(eltype(K)))
+    for i in 1:length(x)
+        !condensables[i] && (x[i] = 0)
+    end
     x ./= sum(x)
     vl0 = volume(model,p,T0,x,phase = :l)
     vv0 = volume(model,p,T0,y,phase = :v)

@@ -301,6 +301,23 @@ end
 ###Bubble Temperature
 
 function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
+    
+    if Tx0 !== nothing
+        _crit = isnothing(crit) ?  FillArrays.fill(nothing,length(model)) : crit
+        K = suggest_K(model,p,Tx0,x,pure,volatiles,_crit)
+        y = rr_flash_vapor(K,x,zero(eltype(K)))
+        for i in 1:length(y)
+            !volatiles[i] && (y[i] = 0)
+        end
+        y ./= sum(y)
+        vl0 = volume(model,p,Tx0,x,phase = :l)
+        vv0 = volume(model,p,Tx0,y,phase = :v)
+        #this is exactly like __x0_bubble_pressure, but we use T0, instead of an input T
+        #_,vl0,vv0,y = __x0_bubble_pressure(model,T0,x,nothing,volatiles,pure,crit)
+        return Tx0,vl0,vv0,y
+    end
+    
+    
     sat = extended_saturation_temperature.(pure,p,crit,volatiles,crit_retry = false)
     if crit === nothing
         _crit = __crit_pure.(sat,pure,volatiles)
@@ -308,15 +325,9 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
         _crit = crit
     end
     fix_sat_ti!(sat,pure,_crit,p,volatiles)
-    if Tx0 !== nothing
-        T0 = Tx0
-    else
-        dPdTsat = __dlnPdTinvsat.(pure,sat,_crit,p,volatiles)
-        prob = antoine_bubble_problem(dPdTsat,p,x,volatiles)
-        T0 = Roots.solve(prob)
-    end
-
-
+    dPdTsat = __dlnPdTinvsat.(pure,sat,_crit,p,volatiles)
+    prob = antoine_bubble_problem(dPdTsat,p,x,volatiles)
+    T0 = Roots.solve(prob)
     K = suggest_K(model,p,T0,x,pure,volatiles,_crit)
     y = rr_flash_vapor(K,x,zero(eltype(K)))
     for i in 1:length(y)
@@ -330,21 +341,26 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
     return T0,vl0,vv0,y
 end
 
-function antoine_bubble_problem(dpdt,p_bubble,x,volatiles = FillArrays.Fill(true,length(dpdt)))  
+function antoine_bubble_problem(dpdt,p_bubble,x,volatiles = FillArrays.Fill(true,length(dpdt)),ϕl = FillArrays.fill(1.0,length(dpdt)),T0 = nothing)  
     function antoine_f0(T)
         p = zero(T+first(x)+first(dpdt)[1])
         for i in 1:length(dpdt)
             dlnpdTinv,logp0,T0inv = dpdt[i]
             if volatiles[i]
                 pᵢ = exp(logp0 + dlnpdTinv*(1/T - T0inv))
-                pᵢxᵢ = x[i]*pᵢ
+                pᵢxᵢ = x[i]*pᵢ*ϕl[i]
                 p += pᵢxᵢ
             end
         end
         return p/sum(x) - p_bubble
     end
+    if T0 === nothing
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
-    return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+        return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+    else
+        return Roots.ZeroProblem(antoine_f0,T0)
+    end
+
 end
 
 function x0_bubble_temperature(model::EoSModel,p,x)
