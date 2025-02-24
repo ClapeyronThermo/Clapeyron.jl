@@ -6,6 +6,15 @@ struct ∂Tag end
     return ForwardDiff.derivative(f,x)
 end
 
+@inline function derivative(f::F, x::R,check::Val{false}) where {F,R<:Real}
+    T = typeof(ForwardDiff.Tag(nothing,R))
+    return ForwardDiff.extract_derivative(T, f(ForwardDiff.Dual{T}(x, one(x))))
+end
+
+@inline function derivative(f::F, x::R,check::Val{true}) where {F,R<:Real}
+    return ForwardDiff.derivative(f,x)
+end
+
 @inline function gradient(f::F, x) where {F}
     return ForwardDiff.gradient(f,x)
 end
