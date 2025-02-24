@@ -174,11 +174,11 @@ function saturation_temperature_ad(model,p,result)
     if has_dual(model) || has_dual(p)
         T_primal,vl_primal,vv_primal = result
         vl = volume_ad(model,vl_primal,T_primal,SA[1.0],p)
-        
+
         #manual volume_ad for vapour volume, we reuse p_primal for the calculation of the T step.
         p_primal,∂p∂V = p∂p∂V(model,vv_primal,T_primal,SA[1.0])
         vv = vv_primal - (p_primal - p)/∂p∂V
-        
+
         #for T, we use a dlnpdTinv step, a dpdT step is fine too
         dpdT = dpdT_saturation(model,vv_primal,vl_primal,T_primal)
         dTinvdlnp = -p_primal/(dpdT*T_primal*T_primal)
@@ -193,7 +193,6 @@ function saturation_temperature_ad(model,p,result)
         return result
     end
 end
-
 
 include("ChemPotV.jl")
 include("IsoFugacity.jl")

@@ -247,7 +247,90 @@ function near_candidate_fractions(n,k = 0.5*minimum(n))
     return x
 end
 
-include("fugacity.jl")
+function bubbledew_pressure_ad(model,T,z,result,_bubble)
+    if has_dual(model) || has_dual(T) || has_dual(z)
+        p_primal,vl_primal,vv_primal,w_primal = result
+        if _bubble
+            _x,_y = z,w_primal
+        else
+            _x,_y = w_primal,z
+        end
+        Δa = eos(model, vv_primal, T, _y) - eos(model,vl_primal, T, _x)
+        Δv = vv_primal - vl_primal
+        p = p_primal - Δa/Δv
+        #=
+        for volume, we use a volume update
+        =#
+ 
+        vl = volume_ad(model,vl_primal,T,_x,p)
+        vv = volume_ad(model,vv_primal,T,_y,p)
+
+        RT = Rgas(model)*T
+
+        #for w, we do an ss update
+        lnϕl = VT_chemical_potential_res(model, vl, T, _x)
+        lnϕl .= lnϕl ./ RT .- log(p*vl/RT/sum(_x))
+        lnϕv = VT_chemical_potential_res(model, vv, T, _y)
+        lnϕv .= lnϕv ./ RT .- log(p*vv/RT/sum(_y))
+        K = exp.(lnϕl .- lnϕv)
+        if _bubble
+            K .= z .* K
+        else
+            K .= z ./ K
+            w_calc .= w
+        end
+        w = K
+        w ./= sum(w)
+        return p,vl,vv,w
+    else
+        return result
+    end
+end
+
+bubble_pressure_ad(model,T,z,result) = bubbledew_pressure_ad(model,T,z,result,true)
+dew_pressure_ad(model,T,z,result) = bubbledew_pressure_ad(model,T,z,result,false)
+
+function bubbledew_temperature_ad(model,p,z,result,_bubble)
+    if has_dual(model) || has_dual(T) || has_dual(z)
+        p_primal,vl_primal,vv_primal,w_primal = result
+        if _bubble
+            _x,_y = z,w_primal
+        else
+            _x,_y = w_primal,z
+        end
+        Δa = eos(model, vv_primal, T, _y) - eos(model,vl_primal, T, _x)
+        Δv = vv_primal - vl_primal
+        p = p_primal - Δa/Δv
+        #=
+        for volume, we use a volume update
+        =#
+ 
+        vl = volume_ad(model,vl_primal,T,_x,p)
+        vv = volume_ad(model,vv_primal,T,_y,p)
+
+        RT = Rgas(model)*T
+
+        #for w, we do an ss update
+        lnϕl = VT_chemical_potential_res(model, vl, T, _x)
+        lnϕl .= lnϕl ./ RT .- log(p*vl/RT/sum(_x))
+        lnϕv = VT_chemical_potential_res(model, vv, T, _y)
+        lnϕv .= lnϕl ./ RT .- log(p*vv/RT/sum(_y))
+        K = exp.(lnϕl .- lnϕv)
+        if _bubble
+            w = rr_flash_vapor(K,_x,0.0)
+        else
+            w = rr_flash_liquid(K,_y,1.0)
+        end
+        return p,vl,vv,w
+    else
+        return result
+    end
+end
+
+bubble_temperature_ad(model,T,z,result) = bubbledew_pressure_ad(model,T,z,result,true)
+dew_temperature_ad(model,T,z,result) = bubbledew_pressure_ad(model,T,z,result,false)
+
+include("fugacity.jl") 
 include("rachford_rice.jl")
 include("bubble_point.jl")
 include("dew_point.jl")
