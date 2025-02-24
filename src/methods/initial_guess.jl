@@ -821,7 +821,7 @@ function dpdTsat_step(model,p,T0,satmethod,multiple::Bool = true)
         k = -p0/(dpdT*T*T)
         dpdT(saturation) = Δs/Δv (Clapeyron equation)
         =#
-        dpdT = dpdT_pure(model,vli,vvi,T)
+        dpdT = dpdT_saturation(model,vli,vvi,T)
         dTinvdlnp = -pii/(dpdT*T*T)
         Δlnp = log(p/pii)
         #dT = clamp(dTdp*Δp,-0.5*T,0.5*T)
@@ -991,21 +991,20 @@ critical_tsat_extrapolation(model,p) = critical_tsat_extrapolation(model,p,crit_
 critical_tsat_extrapolation(model,p,crit) = critical_tsat_extrapolation(model,p,crit[1],crit[2],crit[3])
 critical_tsat_extrapolation(model,p,Tc,Vc) = critical_tsat_extrapolation(model,p,Tc,pressure(model,Vc,Tc),Vc)
 
-function dpdT_pure(model,v1,v2,T)
-    #log(p/p0) = [-dpdT*T*T/p](p = p0,T = T0) * (1/T - 1/T0)
 
-    dS_res = VT_entropy_res(model,v1,T) - VT_entropy_res(model,v2,T)
-    dS_ideal = Rgas(model)*(log(v1/v2))
-    dS = dS_res + dS_ideal
-    dv = (v1 - v2)
-    return dS/dv
-end
+dpdT_saturation(model,v1,v2,T) = dpdT_saturation(model,model,v1,v2,T,SA[1.0],SA[1.0])
+dpdT_saturation(model1,model2,v1,v2,T) = dpdT_saturation(model1,model2,v1,v2,T,SA[1.0],SA[1.0])
 
-function dpdT_pure(model1::EoSModel,model2::EoSModel,v1,v2,T)
-    #log(p/p0) = [-dpdT*T*T/p](p = p0,T = T0) * (1/T - 1/T0)
-    dS_res = VT_entropy_res(model1,v1,T) - VT_entropy_res(model2,v2,T)
-    dS_ideal = Rgas(model1)*(log(v1/v2))
+function dpdT_saturation(model1::EoSModel,model2::EoSModel,v1,v2,T,w1,w2)
+    ∑w1 = sum(w1)
+    ∑w2 = sum(w2)
+
+    dS_res = VT_entropy_res(model1,v1,T,w1)/∑w1 - VT_entropy_res(model2,v2,T,w2)/∑w2
+
+    dSideal1 = Rgas(model1)*(sum(xlogx,w1) - xlogx(∑w1,v1))/∑w1
+    dSideal2 = Rgas(model2)*(sum(xlogx,w2) - xlogx(∑w2,v1))/∑w2
+    dS_ideal = dSideal1 - dSideal2
     dS = dS_res + dS_ideal
-    dv = (v1 - v2)
+    dv = (v1/∑w1 - v2/∑w2)
     return dS/dv
 end

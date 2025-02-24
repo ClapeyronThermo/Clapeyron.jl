@@ -174,7 +174,7 @@ function __dlnPdTinvsat(pure,sat,crit,xx,in_media = true,is_sat_temperature = tr
         nan_check = isnan(p)
     end
     if in_media && !nan_check
-        dpdT = dpdT_pure(pure,vl,vv,T)
+        dpdT = dpdT_saturation(pure,vl,vv,T)
         return -dpdT*T*T/p,log(p),1/T
     elseif !in_media
         return zero(vl),zero(vl),zero(vl)
@@ -286,7 +286,13 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
         return (P_sat,v_l,v_v,x)
     end
     x_r = x[idx_r]
-    (P_sat, v_l, v_v, y_r) = bubble_pressure_impl(model_r,T,x_r,index_reduction(method,idx_r))
+    if has_a_res(model)
+        bubble_pressure_result_primal = bubble_pressure_impl(model_r,primalval(T),primalval(x_r),index_reduction(method,idx_r))
+        bubble_pressure_result = bubble_pressure_ad(model_r,T,x_r,bubble_pressure_result_primal)
+    else
+        bubble_pressure_result = bubble_pressure_impl(model_r,T,x_r,index_reduction(method,idx_r))
+    end
+    (P_sat, v_l, v_v, y_r) = bubble_pressure_res
     y = index_expansion(y_r,idx_r)
     converged = bubbledew_check(v_l,v_v,y,x)
     if converged
@@ -296,6 +302,12 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
         y = y*nan
         return (nan,nan,nan,y)
     end
+end
+
+function bubble_pressure_ad(model,T,x,result)
+    (P_sat, v_l, v_v, y) = result
+
+
 end
 
 ###Bubble Temperature

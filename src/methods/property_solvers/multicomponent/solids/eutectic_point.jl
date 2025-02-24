@@ -38,7 +38,7 @@ function x0_eutectic_point(model::EoSModel,p)
     Tm = first.(fus)
     vs = getindex.(fus,2)
     vl = last.(fus)
-    K(modeli,_Vs,_Vl,_T) = -dpdT_pure(fluid_model(modeli),solid_model(modeli),_Vl,_Vs,_T)*_T*_T/p
+    K(modeli,_Vs,_Vl,_T) = -dpdT_saturation(fluid_model(modeli),solid_model(modeli),_Vl,_Vs,_T)*_T*_T/p
     Ki = K.(pure,vs,vl,Tm)
     #Clausius-Clapeyron correlation
     Tmax = 2/minimum(Tm)

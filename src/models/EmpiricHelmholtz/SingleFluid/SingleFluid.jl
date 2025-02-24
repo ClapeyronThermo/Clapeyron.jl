@@ -268,7 +268,7 @@ function x0_sat_pure(model::SingleFluid,T)
         vltp = volume(liquid_ancillary,0.0,Ttp,z)
         ptp = pressure(model,vvtp,Ttp)
         R = Rgas(model)
-        dpdT = dpdT_pure(model,vvtp,vltp,Ttp)
+        dpdT = dpdT_saturation(model,vvtp,vltp,Ttp)
         dTinvdlnp = -ptp/(dpdT*T*T)
         ΔTinv = 1/T - 1/Ttp
         psat = exp(ΔTinv/dTinvdlnp)*ptp
