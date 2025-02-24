@@ -236,8 +236,9 @@ function __Pproperty(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,t
     end
     return __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,p0)
   end
-  f(lnp,prop) = property(model,exp(lnp),T,z,phase = phase,threaded = threaded) - prop
-  prob = Roots.ZeroProblem(f,log(p0))
+  _1 = oneunit(typeof(prop))
+  f(lnp,prop) = _1*property(model,exp(lnp),T,z,phase = phase,threaded = threaded) - prop
+  prob = Roots.ZeroProblem(f,_1*log(p0))
   sol = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
   if isnan(sol)
     return sol,:failure

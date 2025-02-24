@@ -257,8 +257,9 @@ function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,t
     end
     return __Tproperty(model,p,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,T0)
   end
-  f(t,prop) = property(model,p,t,z,phase = phase,threaded = threaded) - prop
-  prob = Roots.ZeroProblem(f,T0)
+  _1 = oneunit(typeof(prop))
+  f(t,prop) = _1*property(model,p,t,z,phase = phase,threaded = threaded) - prop
+  prob = Roots.ZeroProblem(f,_1*T0)
   sol = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
   if !isfinite(sol) || sol < 0
     return sol,:failure
