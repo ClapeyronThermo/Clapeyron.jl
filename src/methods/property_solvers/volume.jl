@@ -172,7 +172,7 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0
 end
 
 function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
-    if hasmethod(a_res,Tuple{typeof(model),Float64,Float64,Vector{Float64}})
+    if has_a_res(model)
         v = volume_impl(model,primalval(p),primalval(T),primalval(z),phase,threaded,primalval(vol0))
         return volume_ad(model,v,T,z,p)
     else
@@ -181,7 +181,7 @@ function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, t
 end
 
 function volume_ad(model,v,T,z,p)
-    if eltype(model) <: ForwardDiff.Dual || T isa ForwardDiff.Dual || eltype(z) <: ForwardDiff.Dual || p isa ForwardDiff.Dual
+    if has_dual(model) || has_dual(p) || has_dual(T) || has_dual(z)
         #netwon step to recover derivative information:
         #V = V - (p(V) - p)/(dpdV(V))
         #dVdP = -1/dpdV

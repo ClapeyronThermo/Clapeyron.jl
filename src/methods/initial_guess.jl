@@ -1001,9 +1001,12 @@ function dpdT_saturation(model1::EoSModel,model2::EoSModel,v1,v2,T,w1,w2)
 
     dS_res = VT_entropy_res(model1,v1,T,w1)/∑w1 - VT_entropy_res(model2,v2,T,w2)/∑w2
 
-    dSideal1 = Rgas(model1)*(sum(xlogx,w1) - xlogx(∑w1,v1))/∑w1
-    dSideal2 = Rgas(model2)*(sum(xlogx,w2) - xlogx(∑w2,v1))/∑w2
-    dS_ideal = dSideal1 - dSideal2
+    R1,R2 = Rgas(model1),Rgas(model2)
+    ∑fx1,∑fx2 = R1*sum(xlogx,w1)/∑w1,R2*sum(xlogx,w2)/∑w2
+    Δx = ∑fx1 - ∑fx2
+    ∑fv1,∑fv2 = R1*∑w1*log(∑w1*v1), R2*∑w2*log(∑w1*v2)
+    Δv = ∑fv1 - ∑fv2
+    dS_ideal = Δx + Δv #Rgas(model1)*(log(v1/v2)
     dS = dS_res + dS_ideal
     dv = (v1/∑w1 - v2/∑w2)
     return dS/dv
