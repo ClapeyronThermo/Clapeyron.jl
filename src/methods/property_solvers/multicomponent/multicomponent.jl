@@ -255,9 +255,9 @@ function bubbledew_pressure_ad(model,T,z,result,_bubble)
         else
             _x,_y = w_primal,z
         end
-        Δa = eos(model, vv_primal, T, _y) - eos(model,vl_primal, T, _x)
+        Δg = eos(model, vv_primal, T, _y) - eos(model,vl_primal, T, _x)  + p_primal*(vv_primal - vl_primal)
         Δv = vv_primal - vl_primal
-        p = p_primal - Δa/Δv
+        p = p_primal - Δg/Δv
         #=
         for volume, we use a volume update
         =#

@@ -84,12 +84,13 @@ end
 function saturation_pressure_ad(model,T,result)
     if has_dual(model) || has_dual(T)
         p_primal,vl_primal,vv_primal = result
+
         #=
         update step from https://github.com/lucpaoli/SAFT_ML/blob/f22648055bdf4cd244cf427a596fc7b1c03e6383/saftvrmienn.jl#L138-L157
         =#
-        Δa = eos(model, vv_primal, T) - eos(model,vl_primal, T)
+        Δg = eos(model, vv_primal, T) - eos(model,vl_primal, T) + p_primal*(vv_primal - vl_primal)
         Δv = vv_primal - vl_primal
-        p = p_primal - Δa/Δv
+        p = p_primal - Δg/Δv
         #=
         for volume, we use a volume update
         =#
