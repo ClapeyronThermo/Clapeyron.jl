@@ -261,7 +261,7 @@ function bubbledew_pressure_ad(model,T,z,result,_bubble)
         #=
         for volume, we use a volume update
         =#
- 
+
         vl = volume_ad(model,vl_primal,T,_x,p)
         vv = volume_ad(model,vv_primal,T,_y,p)
 
@@ -337,7 +337,7 @@ end
 bubble_temperature_ad(model,p,z,result) = bubbledew_temperature_ad(model,p,z,result,true)
 dew_temperature_ad(model,p,z,result) = bubbledew_temperature_ad(model,p,z,result,false)
 
-include("fugacity.jl") 
+include("fugacity.jl")
 include("rachford_rice.jl")
 include("bubble_point.jl")
 include("dew_point.jl")
