@@ -118,7 +118,15 @@ function dew_pressure(model::EoSModel, T, y,method::ThermodynamicMethod)
         return (P_sat,v_l,v_v,y)
     end
     y_r = y[idx_r]
-    (P_sat, v_l, v_v, x_r) = dew_pressure_impl(model_r,T,y_r,index_reduction(method,idx_r))
+
+    if has_a_res(model)
+        dew_pressure_result_primal = dew_pressure_impl(model_r,primalval(T),primalval(y_r),index_reduction(method,idx_r))
+        dew_pressure_result = dew_pressure_ad(model_r,T,y_r,dew_pressure_result_primal)
+    else
+        dew_pressure_result = dew_pressure_impl(model_r,T,y_r,index_reduction(method,idx_r))
+    end
+
+    (P_sat, v_l, v_v, x_r) = dew_pressure_result
     x = index_expansion(x_r,idx_r)
     converged = bubbledew_check(v_l,v_v,y,x)
     if converged
@@ -278,7 +286,15 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
         return (T_sat,v_l,v_v,y)
     end
     y_r = y[idx_r]
-    (T_sat, v_l, v_v, x_r) = dew_temperature_impl(model_r,p,y_r,index_reduction(method,idx_r))
+    
+    if has_a_res(model)
+        dew_temperature_result_primal =  dew_temperature_impl(model_r,primalval(p),primalval(y_r),index_reduction(method,idx_r))
+        dew_temperature_result =  dew_temperature_ad(model_r,p,y_r,dew_temperature_result_primal)
+    else
+        dew_temperature_result =  dew_temperature_impl(model_r,p,y_r,index_reduction(method,idx_r))
+    end
+
+    (T_sat, v_l, v_v, x_r) = dew_temperature_result
     x = index_expansion(x_r,idx_r)
     converged = bubbledew_check(v_l,v_v,y,x)
     if converged

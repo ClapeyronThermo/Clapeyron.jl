@@ -454,7 +454,16 @@ function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
         return (T_sat,v_l,v_v,x)
     end
     x_r = x[idx_r]
-    (T_sat, v_l, v_v, y_r) = bubble_temperature_impl(model_r,p,x_r,index_reduction(method,idx_r))
+
+
+    if has_a_res(model)
+        bubble_temperature_result_primal =  bubble_temperature_impl(model_r,primalval(p),primalval(x_r),index_reduction(method,idx_r))
+        bubble_temperature_result =  bubble_temperature_ad(model_r,p,x_r,bubble_temperature_result_primal)
+    else
+        bubble_temperature_result =  bubble_temperature_impl(model_r,p,x_r,index_reduction(method,idx_r))
+    end
+
+    (T_sat, v_l, v_v, y_r) = bubble_temperature_result
     y = index_expansion(y_r,idx_r)
     converged = bubbledew_check(v_l,v_v,y,x)
     if converged
