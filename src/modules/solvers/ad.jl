@@ -2,17 +2,27 @@
 
 struct ∂Tag end
 
+recursive_fd_value(x::Number) = ForwardDiff.value(x)
+recursive_fd_value(x::Tuple) = recursive_fd_value.(x)
+recursive_fd_value(x::AbstractArray) = recursive_fd_value.(x)
+
+recursive_fd_extract_derivative(T::TT,x::Number) where TT = ForwardDiff.extract_derivative(T,x)
+recursive_fd_extract_derivative(T::TT,x::Tuple) where TT = recursive_fd_extract_derivative.(T,x)
+recursive_fd_extract_derivative(T::TT,x::AbstractArray) where TT = recursive_fd_extract_derivative.(T,x)
+
+
 @inline function derivative(f::F, x::R) where {F,R<:Real}
-    return ForwardDiff.derivative(f,x)
+    T = typeof(ForwardDiff.Tag(f, R))
+    return recursive_fd_extract_derivative(T, f(ForwardDiff.Dual{T}(x, one(x))))
 end
 
 @inline function derivative(f::F, x::R,check::Val{false}) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(nothing,R))
-    return ForwardDiff.extract_derivative(T, f(ForwardDiff.Dual{T}(x, one(x))))
+    return recursive_fd_value(T, f(ForwardDiff.Dual{T}(x, one(x))))
 end
 
 @inline function derivative(f::F, x::R,check::Val{true}) where {F,R<:Real}
-    return ForwardDiff.derivative(f,x)
+    return derivative(f,x)
 end
 
 @inline function gradient(f::F, x) where {F}
@@ -51,8 +61,9 @@ returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.j
 @inline function f∂f(f::F, x::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
     out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),))))
-    return ForwardDiff.value(out),  ForwardDiff.extract_derivative(T, out)
+    return recursive_fd_value(out),  recursive_fd_extract_derivative(T, out)
 end
+
 
 f∂f(f::F) where F = Base.Fix1(f∂f,f)
 
