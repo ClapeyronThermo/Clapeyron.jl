@@ -251,8 +251,8 @@ function Pproperty_impl(model,T,prop,z,property::F,rootsolver,phase,abstol,relto
   f(lnp,prop) = _1*property(model,exp(lnp),T,z,phase = phase,threaded = threaded) - prop
   prob = Roots.ZeroProblem(f,_1*log(p0))
   logp = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
-  if isnan(sol)
-    return sol,:failure
+  if isnan(logp)
+    return logp,:failure
   end
   return exp(logp),phase
 end
