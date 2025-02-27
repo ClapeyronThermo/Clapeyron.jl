@@ -258,7 +258,7 @@ function Pproperty_impl(model,T,prop,z,property::F,rootsolver,phase,abstol,relto
 end
 
 function Pproperty_ad(model,T,prop,z,property::F,p_primal,phase) where F
-  if has_dual(model) || has_dual(p) || has_dual(prop)
+  if has_dual(model) || has_dual(T) || has_dual(prop) || has_dual(z)
     #=
     we know that p_primal is the solution to
     property(model,p_primal,t,z,phase = phase,threaded = threaded) - prop = 0

@@ -284,7 +284,7 @@ function __Tproperty(model,p,prop,property::F,rootsolver,phase,abstol,reltol,thr
 end
 
 function Tproperty_ad(model,p,prop,z,property::F,T_primal,phase) where F
-  if has_dual(model) || has_dual(p) || has_dual(prop)
+  if has_dual(model) || has_dual(p) || has_dual(prop) || has_dual(z)
     #=
     we know that T_primal is the solution to
     property(model,p,T_primal,z,phase = phase,threaded = threaded) - prop = 0
