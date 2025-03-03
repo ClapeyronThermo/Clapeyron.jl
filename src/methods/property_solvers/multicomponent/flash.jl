@@ -375,7 +375,24 @@ is_unknown(method::FlashMethod) = is_unknown(method.equilibrium)
 end
 
 function tp_flash_1phase(model,p,T,z,result_primal)
-    return result_primal
+    if has_dual(model) || has_dual(p) || has_dual(T) || has_dual(z)
+        n1 = similar(z,Base.promote_eltype(model,p,T,z))
+        β = similar(n1,1)
+        v1 = similar(β)
+        ∑z = sum(z)
+        β[1] = ∑z
+        n1 .= z
+        n1 ./= ∑z
+        v1[1] = volume_ad(model,result_primal.volumes[1],T,n1,p)
+        nx = [n1]
+        result = FlashResult(nx,β,v1,FlashData(p,T))
+        if data_primal.g isa Number && !isnan(data_primal.g)
+            return FlashResult(model,p,T,nx,β,vols,sort = false)
+        end
+        return FlashResult(nx,β,vols,FlashData(p,T))
+    else
+        return result_primal
+    end
 end
 
 function tp_flash_ad(model,p,T,z,result_primal)
@@ -408,7 +425,7 @@ function tp_flash_ad(model,p,T,z,result_primal)
         n1 = similar(w1,Base.promote_eltype(model,p,T,z))
         vols = similar(n1)
         β = similar(n1)
-        n1 .= z
+        n1 .= primalval.(z)
         nx = fill(n1,0)
         for j in 1:np
             wj = comps_primal[j]
@@ -447,7 +464,6 @@ function tp_flash_ad(model,p,T,z,result_primal)
                     dwjdT = H\(∂lnϕ∂Tj .- ∂lnϕ∂T1)
                     nj .-= (T - T_primal) .* s
                 end
-                β[j] = sum(nj)
                 n1 .-= nj
                 nj ./= sum(nj)
                 vols[j] = volume_ad(model,vj_primal,T,nj,p)
@@ -456,11 +472,8 @@ function tp_flash_ad(model,p,T,z,result_primal)
                 push!(nx,n1)
             end
         end
-    
-        β[jmax] = sum(n1) 
-        n1./= β[jmax]
-        
-        
+        n1./= sum(n1)
+
         vols[jmax] = volume_ad(model,v_primal[jmax],T,n1,p)
         for j in 1:np
             wj = comps_primal[j]
