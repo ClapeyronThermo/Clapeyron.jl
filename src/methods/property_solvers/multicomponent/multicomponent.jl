@@ -118,7 +118,7 @@ function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.
             μ1i = Fj[i]
             μji = μj[i]
             Δuᵣ = μ1i - μji
-            Δu = Δuᵣ*RTinv + log(vj) + log(w1[i]) -log(v1) - log(wj[i])
+            Δu = Δuᵣ*RTinv + log(vj) + log(w1[i]) - log(v1) - log(wj[i])
             Fj[i] = Δu
         end
     end

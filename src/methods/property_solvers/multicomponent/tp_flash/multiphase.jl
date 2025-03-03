@@ -418,7 +418,6 @@ function RR_t!(t,x,β,np,nc)
     for l in 1:(np - 1)
         Kl = viewn(x,nc,l)
         βl = β[l]
-        fi = zero(βl)
         for i in 1:nc
             #K at phase i
             t[i] += βl*expm1(Kl[i])
