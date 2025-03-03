@@ -176,36 +176,37 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     in_equilibria = @. !non_inx & !non_iny
 
     # Computing the initial guess for the K vector
-    x = similar(z)
-    y = similar(z)
+    x = similar(z,Base.promote_eltype(model,p,T,z))
+    y = similar(z,Base.promote_eltype(model,p,T,z))
     x .= z
     y .= z
+    K,lnK = similar(x),similar(x)
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     if !isnothing(K0)
-        K = 1. * K0
-        lnK = log.(K)
+        K .= 1. * K0
+        lnK .= log.(K)
     elseif !isnothing(x0) && !isnothing(y0)
         x = x0 ./ sum(x0)
         y = y0 ./ sum(y0)
-        lnK = log.(y ./ x)
+        lnK .= log.(y ./ x)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(volx,voly),phases,non_inw,dlnϕ_cache)
-        K = exp.(lnK)
+        K .= exp.(lnK)
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
-        K = tp_flash_K0(model,p,T)
+        tp_flash_K0!(K,model,p,T)
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
             Kmin,Kmax = extrema(K)
 
             if Kmin >= 1 || Kmax <= 1
-                K = K0_lle_init(model,p,T,z)
+                K .= K0_lle_init(model,p,T,z)
             end
         end
-        lnK = log.(K)
+        lnK .= log.(K)
        # volx,voly = NaN*_1,NaN*_1
     else
-        K = K0_lle_init(model,p,T,z)
-        lnK = log.(K)
+        K .= K0_lle_init(model,p,T,z)
+        lnK .= log.(K)
     end
     _1 = one(p+T+first(z))
     # Initial guess for phase split
@@ -332,6 +333,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         β = zero(β)/zero(β)
         x .= z
         y .= z
+        vx = volume(model,p,T,z)
+        vy = vx
     end
 
     if !reduced
