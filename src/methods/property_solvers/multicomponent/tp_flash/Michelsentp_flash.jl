@@ -128,7 +128,11 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
             non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
             reduced = true)
 
+    if isnan(β) && isapprox(x,z) && isapprox(y,z) && !isnan(v[1]) && !isnan(v[2])
+        return FlashResult([x],[one(β)],[v[1]],FlashData(p,T))
+    end
     g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
+
     comps = [x,y]
     volumes = [v[1],v[2]]
     βi = [1-β ,β]
@@ -328,7 +332,18 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         singlephase = false
     elseif any(isnan,view(K,in_equilibria))
         singlephase = true
+        vn = volume(model,p,T,z)
+        phase = VT_identify_phase(model,vn,T,z)
+        vx = vn
+        vy = vn
+    elseif abs(β) <= eps(one(β))
+        vy = vx
+        singlephase = true
+    elseif  abs(1 - β) <= eps(one(β))
+        vx = vy
+        singlephase = true
     end
+
     if singlephase
         β = zero(β)/zero(β)
         x .= z
