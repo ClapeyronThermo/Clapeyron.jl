@@ -129,8 +129,8 @@
         @test Clapeyron.dnorm(act_x3,act_y3) < 1e-8
 
         #test combinations of Activity + CompositeModel
-        system_fluid = CompositeModel(["water","ethanol"],gas = BasicIdeal, liquid = RackettLiquid, saturation = LeeKeslerSat)
-        system_cc  = CompositeModel(["water","ethanol"],liquid = UNIFAC,fluid = system_fluid)
+        system_fluid = CompositeModel(["water", "hexane"],gas = BasicIdeal, liquid = RackettLiquid, saturation = LeeKeslerSat)
+        system_cc  = CompositeModel(["water", "hexane"],liquid = UNIFAC,fluid = system_fluid)
         flash3 = tp_flash(system_cc, 101325, 303.15, [0.5, 0.5], alg2)
         act_x3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
         act_y3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]
