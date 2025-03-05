@@ -29,3 +29,7 @@ function PTFlashWrapper(model::EoSModel,p,T::Number,equilibrium::Symbol)
     g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
     return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
 end
+
+function volume_impl(model::PTFlashWrapper, p, T, z, phase, threaded, vol0)
+    volume_impl(model.model, p, T, z, phase, threaded, vol0)
+end
