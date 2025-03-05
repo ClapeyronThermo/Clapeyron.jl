@@ -132,7 +132,7 @@ function pressure_virial(model,V,T,z)
     return pressure_virial(B,V,T,z,Rgas(model))
 end
 
-function pressure_virial(model,V,T,z,R = R̄)
+function pressure_virial(B::Real,V,T,z,R = R̄)
     Z = 1 + B/V
     return Z*sum(z)*R*T/V
 end
