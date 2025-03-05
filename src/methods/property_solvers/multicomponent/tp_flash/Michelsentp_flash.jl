@@ -332,8 +332,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         singlephase = false
     elseif any(isnan,view(K,in_equilibria))
         singlephase = true
-        vn = volume(model,p,T,z)
-        phase = VT_identify_phase(model,vn,T,z)
+        vn = zero(vx)/zero(vy)
+        #phase = VT_identify_phase(model,vn,T,z)
         vx = vn
         vy = vn
     elseif abs(β) <= eps(one(β))
@@ -348,7 +348,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         β = zero(β)/zero(β)
         x .= z
         y .= z
-        vx = volume(model,p,T,z)
+        vx = NaN
         vy = vx
     end
 
