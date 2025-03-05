@@ -127,8 +127,16 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
     end
 end
 
-#(z = pV/RT)
-#(RT/p = V/z)
+function pressure_virial(model,V,T,z)
+    B = second_virial_coefficient(model,T,z)
+    return pressure_virial(B,V,T,z,Rgas(model))
+end
+
+function pressure_virial(model,V,T,z,R = R̄)
+    Z = 1 + B/V
+    return Z*sum(z)*R*T/V
+end
+
 """
     volume(model::EoSModel, p, T, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
 
