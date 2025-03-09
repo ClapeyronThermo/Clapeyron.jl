@@ -476,6 +476,17 @@ function pure_spinodal_newton_bracket(model,T,v,f,dp_scale,z = SA[1.0])
     return zero(vs)/zero(vs)
 end
 
+function pure_spinodal_newton(model,T,z,v0,dp_scale)
+    function dp(vs) #dpdrho = 0
+        p(rho) = pressure(model,1/rho,T,z)
+        pj,dpj,d2pj = Solvers.f∂f∂2f(p,1/vs)
+        return dpj/dp_scale,dpj/d2pj/dp_scale
+    end
+
+    prob = Roots.ZeroProblem(dp,1/v0)
+    v = Roots.solve(prob,Roots.Newton())
+end
+
 function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
     p(x) = pressure(model,x,T,z)
     fl,dfl,d2fl = Solvers.f∂f∂2f(p,v_lb)

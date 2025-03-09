@@ -337,6 +337,13 @@ end
 bubble_temperature_ad(model,p,z,result) = bubbledew_temperature_ad(model,p,z,result,true)
 dew_temperature_ad(model,p,z,result) = bubbledew_temperature_ad(model,p,z,result,false)
 
+function zero_non_equilibria!(w,in_equilibria)
+    for i in eachindex(w)
+        in_equilibria[i] || (w[i] = 0)
+    end
+    return w
+end
+
 include("fugacity.jl")
 include("rachford_rice.jl")
 include("bubble_point.jl")

@@ -77,20 +77,21 @@ function PT_property_gammaphi(model::GammaPhi,p,T,z,f::F,USEP) where F
     z1 = SA[∑z]
     res = zero(Base.promote_eltype(model,p,T,z))
     Vl = zero(res)
+    use_p = USEP === Val{true}()
     for i in 1:length(model)
         zi = z[i]
         modeli = model.fluid.pure[i]
         #we suppose this is liquid phase
         Vi = volume(modeli, p, T, z1; phase = :liquid,threaded = false)
         Vl += Vi*zi/∑z
-        if UseP
+        if use_p
             res += f(modeli,Vi,T,z1,p)*zi/∑z
         else
             res += f(modeli,Vi,T,z1)*zi/∑z
         end
     end
     if !iszero(p)
-        if USEP === Val{true}()
+        if use_p
             res += f(model.activity,0.0,T,z,p)
         else
             res += f(model.activity,0.0,T,z)
