@@ -197,6 +197,7 @@ function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillA
     vli = getindex.(pure_vals,2)
     vvi = getindex.(pure_vals,3)
     xipi = p0 .* x
+    zero_non_equilibria!(xipi,volatiles)
     p = sum(xipi)
     if isnothing(y0)
         y = xipi
@@ -312,9 +313,7 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
         _crit = isnothing(crit) ?  FillArrays.fill(nothing,length(model)) : crit
         K = suggest_K(model,p,Tx0,x,pure,volatiles,_crit)
         y = rr_flash_vapor(K,x,zero(eltype(K)))
-        for i in 1:length(y)
-            !volatiles[i] && (y[i] = 0)
-        end
+        zero_non_equilibria!(y,volatiles)
         y ./= sum(y)
         vl0 = volume(model,p,Tx0,x,phase = :l)
         vv0 = volume(model,p,Tx0,y,phase = :v)
@@ -336,9 +335,7 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
     T0 = Roots.solve(prob)
     K = suggest_K(model,p,T0,x,pure,volatiles,_crit)
     y = rr_flash_vapor(K,x,zero(eltype(K)))
-    for i in 1:length(y)
-        !volatiles[i] && (y[i] = 0)
-    end
+    zero_non_equilibria!(y,volatiles)
     y ./= sum(y)
     vl0 = volume(model,p,T0,x,phase = :l)
     vv0 = volume(model,p,T0,y,phase = :v)

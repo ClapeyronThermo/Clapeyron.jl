@@ -145,11 +145,9 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
         
     if Tx0 !== nothing
         _crit = isnothing(crit) ?  FillArrays.fill(nothing,length(model)) : crit
-        K = suggest_K(model,p,Tx0,y,pure,volatiles,_crit)
+        K = suggest_K(model,p,Tx0,y,pure,condensables,_crit)
         x = rr_flash_liquid(K,y,one(eltype(K)))
-        for i in 1:length(x)
-            !condensables[i] && (x[i] = 0)
-        end
+        zero_non_equilibria!(x,condensables)
         x ./= sum(x)
         vl0 = volume(model,p,Tx0,x,phase = :l)
         vv0 = volume(model,p,Tx0,y,phase = :v)
@@ -176,9 +174,7 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
     end
     K = suggest_K(model,p,T0,y,pure,FillArrays.fill(true,length(model)),_crit)
     x = rr_flash_liquid(K,y,one(eltype(K)))
-    for i in 1:length(x)
-        !condensables[i] && (x[i] = 0)
-    end
+    zero_non_equilibria!(x,condensables)
     x ./= sum(x)
     vl0 = volume(model,p,T0,x,phase = :l)
     vv0 = volume(model,p,T0,y,phase = :v)
