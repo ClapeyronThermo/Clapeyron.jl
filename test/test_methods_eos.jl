@@ -425,8 +425,8 @@ end
         @test crit_pure(com1)[1] ≈ 647.13
         @test Clapeyron.volume(system, p, T, z_bulk) ≈ 7.967897222918716e-5 rtol = 1e-6
         @test Clapeyron.volume(comp_system, p, T, z_bulk) ≈ 7.967897222918716e-5 rtol = 1e-6
-        @test Clapeyron.speed_of_sound(system, p, T, z_bulk) ≈ 1483.4508395757005 rtol = 1e-6
-        @test Clapeyron.speed_of_sound(comp_system, p, T, z_bulk) ≈ 1483.4508395757005 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(system, p, T, z_bulk) ≈ 1551.9683977722198 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(comp_system, p, T, z_bulk) ≈ 1551.9683977722198 rtol = 1e-6
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.gibbs_free_energy) ≈ -356.86007792929263 rtol = 1e-6
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.enthalpy) ≈ 519.0920708672975 rtol = 1e-6
         #test that we are actually considering the reference state, even in the vapour phase.
