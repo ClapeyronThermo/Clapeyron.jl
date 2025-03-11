@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Getting Started - Model Construction · Clapeyron.jl</title><meta name="title" content="Getting Started - Model Construction · Clapeyron.jl"/><meta property="og:title" content="Getting Started - Model Construction · Clapeyron.jl"/><meta property="twitter:title" content="Getting Started - Model Construction · Clapeyron.jl"/><meta name="description" content="Documentation for Clapeyron.jl."/><meta property="og:description" content="Documentation for Clapeyron.jl."/><meta property="twitter:description" content="Documentation for Clapeyron.jl."/><meta property="og:url" content="https://ClapeyronThermo.github.io/Clapeyron.jl/tutorials/basics_model_construction/"/><meta property="twitter:url" content="https://ClapeyronThermo.github.io/Clapeyron.jl/tutorials/basics_model_construction/"/><link rel="canonical" href="https://ClapeyronThermo.github.io/Clapeyron.jl/tutorials/basics_model_construction/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/logo.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="Clapeyron.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Clapeyron.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../installation/">Installation</a></li><li><span class="tocitem">Tutorials</span><ul><li class="is-active"><a class="tocitem" href>Getting Started - Model Construction</a><ul class="internal"><li><a class="tocitem" href="#Generic-Models"><span>Generic Models</span></a></li><li><a class="tocitem" href="#Cubic-Models"><span>Cubic Models</span></a></li><li><a class="tocitem" href="#Activity-Coefficient-Models"><span>Activity Coefficient Models</span></a></li><li><a class="tocitem" href="#SAFT-Models"><span>SAFT Models</span></a></li><li><a class="tocitem" href="#Empirical-Equations-of-State"><span>Empirical Equations of State</span></a></li><li><a class="tocitem" href="#Composite-Models"><span>Composite Models</span></a></li><li><a class="tocitem" href="#Group-Contribution-Models"><span>Group-Contribution Models</span></a></li></ul></li><li><a class="tocitem" href="../user_defined_parameters/">User-defined Parameters</a></li><li><a class="tocitem" href="../bulk_properties/">Bulk Properties</a></li><li><a class="tocitem" href="../mixing_functions/">Mixing and Excess Functions</a></li><li><a class="tocitem" href="../pure_saturation_curves/">Pure Saturation Properties</a></li><li><a class="tocitem" href="../binary_phase_diagrams/">Binary Phase Diagrams</a></li><li><a class="tocitem" href="../ternary_phase_diagrams/">Ternary Phase Diagrams</a></li><li><a class="tocitem" href="../sle_phase_diagrams/">SLE Phase Diagrams</a></li></ul></li><li><a class="tocitem" href="../../notebook_examples/">Notebook Examples</a></li><li><span class="tocitem">Available EoS</span><ul><li><a class="tocitem" href="../../eos/ideal/">Ideal Models</a></li><li><a class="tocitem" href="../../eos/cubic/">Cubic Models</a></li><li><a class="tocitem" href="../../eos/activity/">Activity Models</a></li><li><a class="tocitem" href="../../eos/saft/">SAFT and CPA Models</a></li><li><a class="tocitem" href="../../eos/empiric/">Empiric Helmholtz Models</a></li><li><a class="tocitem" href="../../eos/correlations/">Property Correlations</a></li><li><a class="tocitem" href="../../eos/misc/">Other Models</a></li></ul></li><li><a class="tocitem" href="../../faq/">Frequently Asked Questions</a></li><li><span class="tocitem">Available Properties</span><ul><li><a class="tocitem" href="../../properties/basic/">Basic Properties</a></li><li><a class="tocitem" href="../../properties/bulk/">Bulk Properties</a></li><li><a class="tocitem" href="../../properties/single/">Single phase Properties</a></li><li><a class="tocitem" href="../../properties/multi/">Multiphase Properties</a></li><li><a class="tocitem" href="../../properties/electrolytes/">Electrolyte Properties</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../api/parameters/">Parameters</a></li><li><a class="tocitem" href="../../api/macros/">Macros</a></li><li><a class="tocitem" href="../../api/association/">Association</a></li><li><a class="tocitem" href="../../api/estimation/">Parameter Estimation</a></li></ul></li><li><a class="tocitem" href="../../to-do_list/">To-do list</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Getting Started - Model Construction</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Getting Started - Model Construction</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/ClapeyronThermo/Clapeyron.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/ClapeyronThermo/Clapeyron.jl/blob/master/docs/src/tutorials/basics_model_construction.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Getting-Started-–-Model-Construction"><a class="docs-heading-anchor" href="#Getting-Started-–-Model-Construction">Getting Started – Model Construction</a><a id="Getting-Started-–-Model-Construction-1"></a><a class="docs-heading-anchor-permalink" href="#Getting-Started-–-Model-Construction" title="Permalink"></a></h1><p>All functions in Clapeyron revolve around an object we refer to as the <code>model</code>. These models are intended to hold all of the information required to model a given system within a specific equation of state. The absolute simplest of these is the <code>BasicIdeal</code> model, which models species as an ideal gas with only translational modes of motion. It can be constructed simply using:</p><pre><code class="language-julia hljs">julia&gt; model = BasicIdeal([&quot;water&quot;])
+BasicIdeal()</code></pre><p>This <code>model</code> is unique as it is the only model object that does not hold any information as the ideal gas is a universal model that does not depend on the chemical identity of the species. Nevertheless, one can use this model to obtain properties such as the volume and isobaric heat capacity at a given temperature and pressure:</p><pre><code class="language-julia hljs">julia&gt; volume(model,1e5,298.15)
+0.02478957029602388
+
+julia&gt; isobaric_heat_capacity(model,1e5,298.15)
+20.786156545383097</code></pre><p>At this stage, we point out that all values within Clapeyron are in SI units, unless otherwise specified.</p><p>From here, we will now consider how <code>model</code>s are constructed in different equations of state.</p><div class="admonition is-success"><header class="admonition-header">Defining your own parameters</header><div class="admonition-body"><p>For guidance on how to define your own parameters, please examine the <a href="../user_defined_parameters/">User-Defined Parameters</a> section of the docs.</p></div></div><h2 id="Generic-Models"><a class="docs-heading-anchor" href="#Generic-Models">Generic Models</a><a id="Generic-Models-1"></a><a class="docs-heading-anchor-permalink" href="#Generic-Models" title="Permalink"></a></h2><p>Although <code>BasicIdeal</code> does provide the universal definition for the ideal gas model, it does fall short in one aspect: accounting for modes of motion beyond translation, such as rotations and vibrations. Accounting for these contributions does involve providing chemical-specific parameters. Thankfully, Clapeyron has a built-in databank of parameters for all supported equations of state. As an example, we consider carbon dioxide modelled by the <code>ReidIdeal</code> model, as opposed to the basic ideal model:</p><pre><code class="language-julia hljs">julia&gt; model1 = BasicIdeal([&quot;carbon dioxide&quot;])
+BasicIdeal()
+
+julia&gt; model2 = ReidIdeal([&quot;carbon dioxide&quot;])
+ReidIdeal with 1 component:
+ &quot;carbon dioxide&quot;
+Contains parameters: coeffs</code></pre><p>The difference between these models is best observed when one considers the isobaric heat capacity:</p><pre><code class="language-julia hljs">julia&gt; isobaric_heat_capacity(model1,1e5,298.15)
+20.786156545383097
+
+julia&gt; isobaric_heat_capacity(model2,1e5,298.15)
+37.16203981139605</code></pre><p>The difference in values can be attributed to the missing rotational and vibration contributions. This difference is important to bear in mind when considering similar properties in other equations of state.</p><p>Nevertheless, due to the need for species-specific parameters, this <code>model2</code> contains much more information than for the <code>BasicIdeal</code> model:</p><ul><li><p>Component names:</p><pre><code class="language-julia hljs">julia&gt; model2.components
+1-element Vector{String}:
+&quot;carbon dioxide&quot;</code></pre></li><li><p>References for the equation of state:</p><pre><code class="language-julia hljs">julia&gt; model2.references
+&quot;10.1063/1.3060771&quot;</code></pre></li><li><p>The species-specific parameters:</p><pre><code class="language-julia hljs">julia&gt; model2.params
+Clapeyron.ReidIdealParam for [&quot;carbon dioxide&quot;] with 1 param:
+coeffs::SingleParam{NTuple{4, Float64}}
+
+julia&gt; model2.params.coeffs
+SingleParam{NTuple{4, Float64}}(&quot;Reid Coefficients&quot;) with 1 component:
+&quot;carbon dioxide&quot; =&gt; (19.8, 0.0734, -5.6e-5, 1.72e-8)</code></pre></li></ul><p>One can also create a model for mixtures in a similar fashion:</p><pre><code class="language-julia hljs">julia&gt; model3 = ReidIdeal([&quot;carbon dioxide&quot;,&quot;methane&quot;])
+ReidIdeal with 2 components:
+ &quot;carbon dioxide&quot;
+ &quot;methane&quot;
+Contains parameters: coeffs
+
+julia&gt; model3.params.coeffs
+SingleParam{NTuple{4, Float64}}(&quot;Reid Coefficients&quot;) with 2 components:
+ &quot;carbon dioxide&quot; =&gt; (19.8, 0.0734, -5.6e-5, 1.72e-8)
+ &quot;methane&quot; =&gt; (19.25, 0.0521, 1.2e-5, -1.13e-8)</code></pre><p>Ideal gas models are by far the simplest case to consider when building models. Other equations of state have additional features which will be discussed next. Of interest to general users may be the <a href="#group-contribution-models">group-contribution models</a>.</p><h2 id="Cubic-Models"><a class="docs-heading-anchor" href="#Cubic-Models">Cubic Models</a><a id="Cubic-Models-1"></a><a class="docs-heading-anchor-permalink" href="#Cubic-Models" title="Permalink"></a></h2><div class="admonition is-success"><header class="admonition-header">List of Models</header><div class="admonition-body"><p>A full list of cubic equations of state is available (see <a href="../../eos/cubic/">Cubics</a>).</p></div></div><p>At the surface, cubic models are quite simple as well. As an example, consider a mixture of methanol and benzene in Peng–Robinson (<code>PR</code>):</p><pre><code class="language-julia hljs">julia&gt; model = PR([&quot;methanol&quot;,&quot;benzene&quot;])
+PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule} with 2 components:
+ &quot;methanol&quot;
+ &quot;benzene&quot;
+Contains parameters: a, b, Tc, Pc, Mw
+
+julia&gt; model.components
+2-element Vector{String}:
+ &quot;methanol&quot;
+ &quot;benzene&quot;
+
+julia&gt; model.references
+1-element Vector{String}:
+ &quot;10.1021/I160057A011&quot;
+
+julia&gt; model.params.a
+2×2 PairParam{Float64}([&quot;methanol&quot;, &quot;benzene&quot;]) with values:
+ 1.02049  1.4453
+ 1.4453   2.04695</code></pre><p>Note that, as we are dealing with a mixture, we need to include binary parameters (parameters that depend on two species). This is stored as shown in the case of <code>a</code>.</p><p>Cubics are unique due to their modular nature (we can swap out pieces of the equation to hopefully make a more accurate model). This includes:</p><ul><li><p><strong>Alpha functions</strong>, which improve the prediction the pure component saturation curves:</p><pre><code class="language-julia hljs">julia&gt; model = PR([&quot;methanol&quot;,&quot;benzene&quot;];alpha=TwuAlpha)
+PR{BasicIdeal, TwuAlpha, NoTranslation, vdW1fRule} with 2 components:
+&quot;methanol&quot;
+&quot;benzene&quot;
+Contains parameters: a, b, Tc, Pc, Mw
+
+julia&gt; model.alpha
+TwuAlpha with 2 components:
+&quot;methanol&quot;
+&quot;benzene&quot;
+Contains parameters: M, N, L</code></pre></li><li><p><strong>Volume translation methods</strong>, which improve the prediction of the liquid volume:</p><pre><code class="language-julia hljs">julia&gt; model = PR([&quot;methanol&quot;,&quot;benzene&quot;];translation=PenelouxTranslation)
+PR{BasicIdeal, PRAlpha, PenelouxTranslation, vdW1fRule} with 2 components:
+&quot;methanol&quot;
+&quot;benzene&quot;
+Contains parameters: a, b, Tc, Pc, Mw
+
+julia&gt; model.translation
+PenelouxTranslation with 2 components:
+&quot;methanol&quot;
+&quot;benzene&quot;
+Contains parameters: Vc, v_shift</code></pre></li><li><p><strong>Mixing rules</strong>, which can improve the predicted phase behaviour. These come in two flavours:</p><ul><li><p>Generic one-fluid mixing rules such as the van der Waals one-fluid mixing rule (the default in all cubics):</p><pre><code class="language-julia hljs">julia&gt; model = PR([&quot;methanol&quot;,&quot;benzene&quot;])
+PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule} with 2 components:
+&quot;methanol&quot;
+&quot;benzene&quot;
+Contains parameters: a, b, Tc, Pc, Mw
+
+julia&gt; model.mixing
+vdW1fRule()</code></pre></li><li><p><span>$G_E$</span>-mixing rules where an activity coefficient model is used in conjunction with the cubic equation of state:</p><pre><code class="language-julia hljs">julia&gt; model = PR([&quot;methanol&quot;,&quot;benzene&quot;];mixing=HVRule,activity=UNIFAC)
+PR{BasicIdeal, PRAlpha, NoTranslation, HVRule{UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}}} with 2 components:
+&quot;methanol&quot;
+&quot;benzene&quot;
+Contains parameters: a, b, Tc, Pc, Mw
+
+julia&gt; model.mixing
+HVRule{UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}} with 2 components:
+&quot;methanol&quot;
+&quot;benzene&quot;
+
+julia&gt; model.mixing.activity
+UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}} with 2 components:
+&quot;methanol&quot;: &quot;CH3OH&quot; =&gt; 1
+&quot;benzene&quot;: &quot;ACH&quot; =&gt; 6
+Group Type: UNIFACDortmund
+Contains parameters: A, B, C, R, Q</code></pre></li></ul><p>Whilst one could combine all the parts listed above in endless ways, there are some default combinations which we provide. These are typically referred to as predictive cubics: Predictive SRK (<code>PSRK</code>) and Volume-Translated PR (<code>VTPR</code>).</p></li></ul><h2 id="Activity-Coefficient-Models"><a class="docs-heading-anchor" href="#Activity-Coefficient-Models">Activity Coefficient Models</a><a id="Activity-Coefficient-Models-1"></a><a class="docs-heading-anchor-permalink" href="#Activity-Coefficient-Models" title="Permalink"></a></h2><div class="admonition is-success"><header class="admonition-header">List of Models</header><div class="admonition-body"><p>A full list of activity coefficient models is available (see <a href="../../eos/activity/">Activity Models</a>).</p></div></div><p>As hinted at above, Clapeyron also supports activity coefficient models. These can be assembled in a similar fashion to our previous models:</p><pre><code class="language-julia hljs">julia&gt; model = Wilson([&quot;water&quot;,&quot;ethanol&quot;])
+Wilson{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}} with 2 components:
+ &quot;water&quot;
+ &quot;ethanol&quot;
+Contains parameters: g, Tc, Pc, ZRA, Mw
+
+julia&gt; model.params.g
+2×2 PairParam{Float64}([&quot;water&quot;, &quot;ethanol&quot;]) with values:
+    0.0   3988.52
+ 1360.12     0.0
+
+julia&gt; model.puremodel
+Clapeyron.EoSVectorParam{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}} with 2 components:
+ &quot;water&quot;
+ &quot;ethanol&quot;</code></pre><p>The first noteworthy change is that, where most binary parameters we considered were previously symmetric, activity coefficient models have asymmetric parameters (<span>$g_{ij}\neq g_{ji}$</span>). More importantly, while activity coefficient models are intended to model the liquid phase, through Raoult&#39;s law, they can be used to model vapour–liquid equilibrium. For this to work, they need a model which can predict the saturation pressure of the pure components. This is why you&#39;ll field the <code>puremodel</code> field within the <code>model</code> for activity coefficient models (as shown above). By default, this is set to Peng–Robinson. However, one can change this using the <code>puremodel</code> optional argument:</p><pre><code class="language-julia hljs">julia&gt; model = Wilson([&quot;water&quot;,&quot;ethanol&quot;]; puremodel=PCSAFT)
+Wilson{PCSAFT{BasicIdeal, Float64}} with 2 components:
+ &quot;water&quot;
+ &quot;ethanol&quot;
+Contains parameters: g, Tc, Pc, ZRA, Mw</code></pre><p>This pure model plays an important role in modelling the bulk properties of activity coefficient models as these approaches only predict excess properties:</p><p><span>$X^E = X^\text{mixing}-\sum_ix_i X^\text{pure}$</span></p><p>To obtain <span>$X^\text{mixing}$</span>, <span>$X^\text{pure}$</span> is obtained using the <code>puremodel</code>. Note that this means that, for all activity coefficient models, as they are pressure/volume independent, all assume ideal volume of mixing.</p><div class="admonition is-warning"><header class="admonition-header">Coming changes</header><div class="admonition-body"><p>In a future update, Activity Coefficient Models will only be able to model the liquid phase by default. To model both the vapour and liquid phase, users will need to construct the model using <a href="../../eos/correlations/">Composite Models</a>.</p></div></div><h3 id="COSMO‑SAC-Models"><a class="docs-heading-anchor" href="#COSMO‑SAC-Models">COSMO‑SAC Models</a><a id="COSMO‑SAC-Models-1"></a><a class="docs-heading-anchor-permalink" href="#COSMO‑SAC-Models" title="Permalink"></a></h3><p>Clapeyron.jl also supports COSMO‑SAC-based models. However, we only provide the activity coefficient model and not the quantum chemistry level calculations required to obtain the sigma profiles. As such, the required parameters for COSMO‑SAC are now the sigma profiles, which are stored as vectors:</p><pre><code class="language-julia hljs">julia&gt; model = COSMOSAC02([&quot;water&quot;,&quot;ethanol&quot;])
+COSMOSAC02{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}} with 2 components:
+ &quot;water&quot;
+ &quot;ethanol&quot;
+Contains parameters: Pi, V, A
+
+julia&gt; model.params.Pi
+SingleParam{Vector{Float64}}(&quot;Pi&quot;) with 2 components:
+ &quot;water&quot; =&gt; [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.104369  …  2.153543, 0.524173, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+ &quot;ethanol&quot; =&gt; [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.294716  …  0.755815, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]</code></pre><p>Note that, in comparison to other activity coefficient models, COSMO‑SAC models will be quite a bit slower. Furthermore, due to the size of the sigma profiles, we do not store a full database of parameters locally. The parameters are usually obtained from the <a href="https://github.com/usnistgov/COSMOSAC">NIST database</a> by specifying the <code>use_nist_database=true</code> optional argument. Please verify the NIST database&#39;s license before usage.</p><h2 id="SAFT-Models"><a class="docs-heading-anchor" href="#SAFT-Models">SAFT Models</a><a id="SAFT-Models-1"></a><a class="docs-heading-anchor-permalink" href="#SAFT-Models" title="Permalink"></a></h2><div class="admonition is-success"><header class="admonition-header">List of Models</header><div class="admonition-body"><p>A full list of SAFT equations of state is available (see <a href="../../eos/saft/">SAFT and CPA Models</a>).</p></div></div><p>Where most models use either single or binary parameters, SAFT models introduce a third type of parameter: association parameters. These can be best seen when building the model:</p><pre><code class="language-julia hljs">julia&gt; model = PCSAFT([&quot;water&quot;,&quot;1-propanol&quot;])
+PCSAFT{BasicIdeal, Float64} with 2 components:
+ &quot;water&quot;
+ &quot;1-propanol&quot;
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia&gt; model.sites
+SiteParam with 2 components:
+ &quot;water&quot;: &quot;e&quot; =&gt; 1, &quot;H&quot; =&gt; 1
+ &quot;1-propanol&quot;: &quot;e&quot; =&gt; 1, &quot;H&quot; =&gt; 1
+
+julia&gt; model.params.epsilon_assoc
+AssocParam{Float64}([&quot;water&quot;, &quot;1-propanol&quot;]) with 2 values:
+(&quot;water&quot;, &quot;e&quot;) &gt;=&lt; (&quot;water&quot;, &quot;H&quot;): 2500.7
+(&quot;1-propanol&quot;, &quot;e&quot;) &gt;=&lt; (&quot;1-propanol&quot;, &quot;H&quot;): 2276.8</code></pre><p>When adding association, we allow for interactions between sites on species, hence why the <code>sites</code> field has been added. The association parameters are also stored in a slightly different way as well.</p><p>One thing to note is that, unless cross-associating parameters are provided within the database, Clapeyron will not assume any other association interactions. To include these, one can use the <code>AssocOptions</code> struct where, as well as other numerical settings, users can specify to use a combining rule:</p><pre><code class="language-julia hljs">julia&gt; model = PCSAFT([&quot;water&quot;,&quot;1-propanol&quot;];assoc_options=AssocOptions(combining=:esd))
+PCSAFT{BasicIdeal, Float64} with 2 components:
+ &quot;water&quot;
+ &quot;1-propanol&quot;
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia&gt; model.params.epsilon_assoc
+AssocParam{Float64}([&quot;water&quot;, &quot;1-propanol&quot;]) with 4 values:
+(&quot;water&quot;, &quot;e&quot;) &gt;=&lt; (&quot;water&quot;, &quot;H&quot;): 2500.7
+(&quot;1-propanol&quot;, &quot;e&quot;) &gt;=&lt; (&quot;water&quot;, &quot;H&quot;): 2388.75
+(&quot;1-propanol&quot;, &quot;H&quot;) &gt;=&lt; (&quot;water&quot;, &quot;e&quot;): 2388.75
+(&quot;1-propanol&quot;, &quot;e&quot;) &gt;=&lt; (&quot;1-propanol&quot;, &quot;H&quot;): 2276.8</code></pre><p>This may be important when trying to obtain accurate predictions for mixtures.</p><h3 id="Cubic-Plus-Association"><a class="docs-heading-anchor" href="#Cubic-Plus-Association">Cubic Plus Association</a><a id="Cubic-Plus-Association-1"></a><a class="docs-heading-anchor-permalink" href="#Cubic-Plus-Association" title="Permalink"></a></h3><p>Another class of equation of state that doesn&#39;t really fit in either cubics or SAFT equations is CPA, where the two approaches are combined. As a result, the features available in both approaches are extended to CPA:</p><pre><code class="language-julia hljs">julia&gt; model = CPA([&quot;methanol&quot;,&quot;ethane&quot;])
+CPA{BasicIdeal, RK{BasicIdeal, CPAAlpha, NoTranslation, vdW1fRule}} with 2 components:
+ &quot;methanol&quot;
+ &quot;ethane&quot;
+Contains parameters: a, b, c1, Tc, epsilon_assoc, bondvol, Mw
+
+julia&gt; model = CPA([&quot;methanol&quot;,&quot;ethane&quot;];cubicmodel=PR,mixing=HVRule,activity=UNIFAC)
+CPA{BasicIdeal, PR{BasicIdeal, CPAAlpha, NoTranslation, HVRule{UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}}}} with 2 components:
+ &quot;methanol&quot;
+ &quot;ethane&quot;
+Contains parameters: a, b, c1, Tc, epsilon_assoc, bondvol, Mw</code></pre><p>Making our CPA implementation one of the most extensible available.</p><h2 id="Empirical-Equations-of-State"><a class="docs-heading-anchor" href="#Empirical-Equations-of-State">Empirical Equations of State</a><a id="Empirical-Equations-of-State-1"></a><a class="docs-heading-anchor-permalink" href="#Empirical-Equations-of-State" title="Permalink"></a></h2><p>Clapeyron also supports high accuracy, empirical equations of state. These differ from the previous equations of state primarily because of large number of parameters needed to model a single species. An example of this would be IAPWS‑95 (for water):</p><pre><code class="language-julia hljs">julia&gt; model = IAPWS95()
+MultiParameter Equation of state for water:
+ Polynomial power terms: 7
+ Exponential terms: 44
+ Gaussian bell-shaped terms: 3
+ Non Analytic terms: 2</code></pre><p>As these equations of state typically have common terms, rather than specifying the parameters, we highlight what terms the equation of state is made up of, as shown above.</p><div class="admonition is-success"><header class="admonition-header">List of Models</header><div class="admonition-body"><p>A full list of Empirical equations of state is available (see <a href="../../eos/empiric/">Empirical Helmholtz Models</a>). The list of available systems can be expanded by including the CoolProp.jl extension (see <a href="../extensions_coolprop/">Extension – CoolProp</a>).</p></div></div><h2 id="Composite-Models"><a class="docs-heading-anchor" href="#Composite-Models">Composite Models</a><a id="Composite-Models-1"></a><a class="docs-heading-anchor-permalink" href="#Composite-Models" title="Permalink"></a></h2><p>Not every equation of state provides a global representation of the phase space of a system (for example, activity coefficient models only consider the liquid phase). In these cases, we need to combine various models together to obtain the &#39;full&#39; representation. <code>CompositeModels</code> allows users to mix-and-match all of our available models.</p><pre><code class="language-julia hljs">struct CompositeModel{𝕃,𝕊} &lt;: EoSModel
+    components::Vector{String}
+    fluid::𝕃
+    solid::𝕊
+end</code></pre><p>The simplest case to consider is where we use the ideal gas model to represent the vapour phase, a correlation for the liquid (<code>RackettLiquid</code>) and saturation curve (<code>LeeKeslerSat</code>):</p><pre><code class="language-julia hljs">julia&gt; model = CompositeModel([&quot;water&quot;])
+Composite Model:
+ Gas Model: BasicIdeal()
+ Liquid Model: RackettLiquid(&quot;water&quot;)
+ Saturation Model: LeeKeslerSat(&quot;water&quot;)</code></pre><p>The possibilities with this methodology are truly limitless. A useful example is in the case of <a href="../sle_phase_diagrams/">Solid–liquid equilibrium</a> calculations.</p><h2 id="Group-Contribution-Models"><a class="docs-heading-anchor" href="#Group-Contribution-Models">Group-Contribution Models</a><a id="Group-Contribution-Models-1"></a><a class="docs-heading-anchor-permalink" href="#Group-Contribution-Models" title="Permalink"></a></h2><p>Many of the classes of equations of state discussed above also have group-contribution variants. These methods allow us to assemble species from groups in the cases where pure component parameters are not available. Examples include <code>UNIFAC</code> and <code>SAFTgammaMie</code>. Let us consider <code>SAFTgammaMie</code> first:</p><pre><code class="language-julia hljs">julia&gt; model = SAFTgammaMie([(&quot;butane&quot;,[&quot;CH3&quot;=&gt;2,&quot;CH2&quot;=&gt;2])])
+SAFTgammaMie{BasicIdeal, SAFTVRMie{BasicIdeal}} with 1 component:
+ &quot;butane&quot;: &quot;CH3&quot; =&gt; 2, &quot;CH2&quot; =&gt; 2
+Group Type: SAFTgammaMie
+Contains parameters: segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol
+
+julia&gt; model.params.epsilon
+2×2 PairParam{Float64}([&quot;CH3&quot;, &quot;CH2&quot;]) with values:
+ 256.77  350.77
+ 350.77  473.39
+
+julia&gt; model.groups
+GroupParam(:SAFTgammaMie) with 1 component:
+ &quot;butane&quot;: &quot;CH3&quot; =&gt; 2, &quot;CH2&quot; =&gt; 2</code></pre><p>As we can see, we have assembled butane from two methyl and methylene groups. As such, the parameters within SAFT‑<span>$\gamma$</span> Mie now pertain to the groups, rather than the species. We also have a new field, <code>groups</code>, which provides all the details on the multiplicity of each group.</p><div class="admonition is-success"><header class="admonition-header">Available Groups</header><div class="admonition-body"><p>A full list of groups available for each equation of state is available in their respective docs.</p></div></div><h3 id="Structured-groups"><a class="docs-heading-anchor" href="#Structured-groups">Structured groups</a><a id="Structured-groups-1"></a><a class="docs-heading-anchor-permalink" href="#Structured-groups" title="Permalink"></a></h3><p>There is an additional class of group-contribution model where not only does the group multiplicity have to be specified, but the number of bonds between groups must also be specified. An example of this is <code>structSAFTgammaMie</code>:</p><pre><code class="language-julia hljs">julia&gt; model = sSAFTgammaMie([(&quot;butane&quot;,[&quot;CH3&quot;=&gt;2,&quot;CH2&quot;=&gt;1],[(&quot;CH3&quot;,&quot;CH2&quot;)=&gt;2,(&quot;CH2&quot;,&quot;CH2&quot;)=&gt;1])])
+structSAFTgammaMie{BasicIdeal, SAFTVRMie{BasicIdeal}} with 1 component:
+ &quot;butane&quot;: &quot;CH3&quot; =&gt; 2, &quot;CH2&quot; =&gt; 1
+Group Type: SAFTgammaMie
+Contains parameters: segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol</code></pre><p>Note how we must now provide the number of times each group is bonded with one another. The only other equation of state which requires this is <code>gcPCPSAFT</code>.</p><h3 id="Automatic-Group-Contribution-Identification"><a class="docs-heading-anchor" href="#Automatic-Group-Contribution-Identification">Automatic Group Contribution Identification</a><a id="Automatic-Group-Contribution-Identification-1"></a><a class="docs-heading-anchor-permalink" href="#Automatic-Group-Contribution-Identification" title="Permalink"></a></h3><p>The process of group identification can get quite tedious, specially when dealing with larger species. One way to generate group contribution fragmentations is by using the <code>SMILES</code> specification to parse the chemical structure of a particular species, and subdivide said structure into a particular set of groups.</p><p>We recommend using <a href="https://github.com/ClapeyronThermo/GCIdentifier.jl">GCIdentifier.jl</a> as a tool to generate group contribution fragmentations from <code>SMILES</code> strings. For example we can generate an UNIFAC model of ibuprofen and water in the following way:</p><pre><code class="language-julia hljs">julia&gt; _,groups_ibuprofen = get_groups_from_smiles(&quot;CC(Cc1ccc(cc1)C(C(=O)O)C)C&quot;, UNIFACGroups)
+(&quot;CC(Cc1ccc(cc1)C(C(=O)O)C)C&quot;, [&quot;COOH&quot; =&gt; 1, &quot;CH3&quot; =&gt; 3, &quot;CH&quot; =&gt; 1, &quot;ACH&quot; =&gt; 4, &quot;ACCH2&quot; =&gt; 1, &quot;ACCH&quot; =&gt; 1])
+
+julia&gt; model = UNIFAC([&quot;water&quot; =&gt; [&quot;H2O&quot; =&gt; 1],&quot;ibuprofen&quot; =&gt; groups_ibuprofen])</code></pre><p>For more information about</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../installation/">« Installation</a><a class="docs-footer-nextpage" href="../user_defined_parameters/">User-defined Parameters »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.1 on <span class="colophon-date" title="Tuesday 11 March 2025 21:59">Tuesday 11 March 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
