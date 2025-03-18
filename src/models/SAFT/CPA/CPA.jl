@@ -78,6 +78,9 @@ The `radial_dist` argument can be used to choose between a Carnahan-Starling for
 """
 CPA
 
+default_references(::Type{CPA}) = ["10.1021/ie051305v"]
+default_locations(::Type{CPA}) = ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]
+
 export CPA
 function CPA(components;
     idealmodel = BasicIdeal,
