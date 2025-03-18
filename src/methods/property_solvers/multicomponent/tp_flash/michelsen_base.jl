@@ -96,10 +96,10 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
 end
 
 #updates lnK, returns lnK,volx,voly, gibbs if β != nothing
-function update_K!(lnK,model,p,T,x,y,β,vols,phases,inw,dlnϕ_cache = nothing)
+function update_K!(lnK,model,p,T,x,y,β,vols,phases,non_inw,dlnϕ_cache = nothing)
     volx,voly = vols
     phasex,phasey = phases
-    inx,iny = inw
+    non_inx,non_iny = non_inw
     lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache; phase = :liquid, vol0=volx)
     if isnan(volx)
         lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache, phase = phasex)
@@ -109,7 +109,7 @@ function update_K!(lnK,model,p,T,x,y,β,vols,phases,inw,dlnϕ_cache = nothing)
     gibbs = zero(eltype(lnK))
     if β !== nothing
         for i in eachindex(y)
-            inx[i] && (gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i]))
+            !non_inx[i] && (gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i]))
         end
     else
         gibbs = gibbs/gibbs
@@ -123,7 +123,7 @@ function update_K!(lnK,model,p,T,x,y,β,vols,phases,inw,dlnϕ_cache = nothing)
     lnK .-= lnϕy
     if β !== nothing
         for i in eachindex(y)
-            iny[i] && (gibbs += β*y[i]*(log(y[i]) + lnϕy[i]))
+            !non_iny[i] && (gibbs += β*y[i]*(log(y[i]) + lnϕy[i]))
         end
     else
         gibbs = gibbs/gibbs
@@ -154,32 +154,35 @@ function update_rr!(K,β,z,x,y,
 end
 
 function tp_flash_K0(model,p,T)
-    if getparam(model,:Tc) !== nothing
-        K = zeros(typeof(p+T+one(eltype(model))),length(model))
-        return tp_flash_K0!(K,model,p,T)
-    else
-        sat_x = extended_saturation_pressure.(split_model(model),T)
-        psat = first.(sat_x)
-        return psat ./ p
-    end
+    K = zeros(Base.promote_eltype(model,p,T),length(model))
+    return tp_flash_K0!(K,model,p,T)
 end
 
-function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.Fill(true,length(model)),iny = inx,non_inx = FillArrays.Fill(false,length(model)),non_iny = non_inx;k0 = :wilson)
+function tp_flash_K0!(K,model,p,T)
+    if has_fast_crit_pure(model)
+        wilson_k_values!(K,model,p,T)
+    else
+        pures = split_model(model)
+        for i in 1:length(model)
+            sat_x = extended_saturation_pressure(pures[i],T)
+            K[i] = sat_x[3]/p
+        end
+    end
+    return K
+end
+
+function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArrays.Fill(false,length(model)),non_iny = FillArrays.Fill(false,length(model));k0 = :wilson)
     ∑n = sum(n)
     z = n/∑n
-
     if is_vle(method)
-        phasex = :liquid
-        phasey = :vapor
+        phasex,phasey = :liquid,:vapour
     elseif is_lle(method)
-        phasex = :liquid
-        phasey = :liquid
+        phasex,phasey = :liquid,:liquid
     else
-        phasex = :unknown
-        phasey = :unknown
+        phasex,phasey = :unknown,:unknown
     end
     phases = (phasex,phasey)
-    inw = (inx,iny)
+    non_inw = (non_inx,non_iny)
     nc = length(model)
     _1 = oneunit(Base.promote_eltype(model,p,T,z))
     x,y = fill(_1,nc),fill(_1,nc)
@@ -197,10 +200,10 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.
         volx = zero(_1)
         voly = zero(_1)
         if method.v0 == nothing
-            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(nothing,nothing),phases,inw)
+            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(nothing,nothing),phases,non_inw)
         else
             vl0,vv0 = method.v0
-            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(vl0,vv0),phases,inw)
+            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(vl0,vv0),phases,non_inw)
         end
         K = exp.(lnK)
     elseif is_vle(method) || is_unknown(method) && k0 == :wilson
@@ -209,7 +212,6 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.
         #if we can't predict K, we use lle
         if is_unknown(method)
             Kmin,Kmax = extrema(K)
-
             if Kmin >= 1 || Kmax <= 1
                 K = K0_lle_init(model,p,T,z)
             end
@@ -229,13 +231,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.
         volx = zero(_1)
         voly = zero(_1)
     end
-    if any(inx) || any(iny)
-        non_inx = (!).(inx)
-        non_iny = (!).(iny)
-        β,singlephase,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
-    else
-        β,singlephase,_,g01 = rachfordrice_β0(K,z)
-    end
+    β,singlephase,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
     g0,g1 = g01
     #if singlephase == true, maybe initial K values overshoot the actual phase split.
     if singlephase
@@ -264,7 +260,6 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.
     x ./= sum(x)
     βv = ∑n*β
     βl = ∑n - βv
-    comps0 = [x,y]
     if !isnothing(method.v0) && iszero(volx) && iszero(voly)
         vl0,vv0 = method.v0
         volx,voly = _1*vl0,_1*vv0
@@ -274,5 +269,3 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),inx = FillArrays.
     r = FlashResult(p,T,SA[x,y],SA[βl,βv],SA[volx,voly],sort = false)
     return r
 end
-
-tp_flash_K0!(K,model,p,T) = wilson_k_values!(K,model,p,T)

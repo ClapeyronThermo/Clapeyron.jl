@@ -101,7 +101,7 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation{TT,VV,CC}
     #one (or two) saturation pressure calculations are normally faster than a crit pure calculation
     (p2,vl2,vv2) = saturation_pressure(model,T2,ChemPotVSaturation(crit_retry = false))
     if !isnan(p2) #nice, psat(T2) exists, we can now produce a really good estimate of the saturation temperature
-        dpdT = dpdT_pure(model,vl2,vv2,T2)
+        dpdT = dpdT_saturation(model,vl2,vv2,T2)
         dTinvdlnp = -p2/(dpdT*T2*T2)
         Δlnp = log(p/p2)
         Tinv0 = 1/T2

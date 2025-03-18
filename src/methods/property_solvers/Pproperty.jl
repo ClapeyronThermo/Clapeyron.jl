@@ -227,6 +227,17 @@ function Pproperty_pure(model,T,prop,z,property::F,rootsolver,phase,abstol,relto
 end
 
 function __Pproperty(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,p0) where F
+  p_primal,phase = Pproperty_impl(model,primalval(T),primalval(prop),primalval(z),property,rootsolver,phase,abstol,reltol,threaded,primalval(p0))
+  if has_a_res(model)
+    p = Pproperty_ad(model,T,prop,z,property,p_primal,phase)
+    return p,phase
+  else
+    p = p_primal
+  end
+  return p,phase
+end
+
+function Pproperty_impl(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,p0) where F
   if is_unknown(phase)
     new_phase = identify_phase(model,p0,T,z)
     if is_unknown(new_phase) #something really bad happened
@@ -236,13 +247,29 @@ function __Pproperty(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,t
     end
     return __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,p0)
   end
-  f(lnp,prop) = property(model,exp(lnp),T,z,phase = phase,threaded = threaded) - prop
-  prob = Roots.ZeroProblem(f,log(p0))
-  sol = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
-  if isnan(sol)
-    return sol,:failure
+  _1 = oneunit(typeof(prop))
+  f(lnp,prop) = _1*property(model,exp(lnp),T,z,phase = phase,threaded = threaded) - prop
+  prob = Roots.ZeroProblem(f,_1*log(p0))
+  logp = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
+  if isnan(logp)
+    return logp,:failure
   end
-  return exp(sol),phase
+  return exp(logp),phase
+end
+
+function Pproperty_ad(model,T,prop,z,property::F,p_primal,phase) where F
+  if has_dual(model) || has_dual(T) || has_dual(prop) || has_dual(z)
+    #=
+    we know that p_primal is the solution to
+    property(model,p_primal,t,z,phase = phase,threaded = threaded) - prop = 0
+    =#
+    _property(_p) = property(model,_p,T,z,phase = phase)
+    fprop,∂prop∂p = Solvers.f∂f(_property,p_primal)
+    p = p_primal + (prop - fprop)/∂prop∂p
+    return p
+  else
+    return p_primal
+  end
 end
 #=
 model = PCSAFT(["propane","dodecane"])

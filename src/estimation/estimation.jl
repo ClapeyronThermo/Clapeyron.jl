@@ -283,7 +283,7 @@ function return_model!(
 end
 
 function __modify_param!(current_param::SingleParameter,id::Union{Tuple,Integer},val,f,recomb,sym,cross_assoc)
-    current_param[id[1]] = values*f
+    current_param[id[1]] = val*f
 end
 
 function __modify_param!(current_param::PairParameter,id::Union{Tuple,Integer},val,f,recomb,sym,cross_assoc)

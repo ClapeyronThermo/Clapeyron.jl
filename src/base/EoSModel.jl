@@ -167,6 +167,18 @@ Base.length(model::T) where T <:EoSModel = _eos_length(model,Val(has_groups(mode
 _eos_length(model::EoSModel,::Val{true}) = length(model.groups.components)
 _eos_length(model::EoSModel,::Val{false}) = length(model.components)
 
+#used to distinguish between a_res based models and special models.
+
+function has_a_res(model::T) where T
+    return hasmethod(a_res,Tuple{T,Float64,Float64,Vector{Float64}})
+end
+
+has_dual(::Type{T}) where T <: ForwardDiff.Dual = true
+has_dual(p::ForwardDiff.Dual) = true
+has_dual(p::AbstractArray{T}) where T= has_dual(T)
+has_dual(model::EoSModel) = has_dual(eltype(model))
+has_dual(x) = false
+
 """
     doi(model)
 Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. if there isn't a `references` field, it defaults to `default_references(model)`

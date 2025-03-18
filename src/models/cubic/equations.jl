@@ -177,7 +177,7 @@ end
 
 function second_virial_coefficient_impl(model::ABCubicModel,T,z = SA[1.0])
     a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T,z)
-    return b - c - a/(Rgas(model)*T)
+    return sum(z)*(b - c - a/(Rgas(model)*T))
 end
 
 function lb_volume(model::CubicModel, z)
@@ -293,7 +293,7 @@ end
 
 function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
     #=
-    Segura, H., & Wisniak, J. (1997). Calculation of pure saturation properties using cubic equations of state. Computers & Chemical Engineering, 21(12), 1339–1347. doi:10.1016/s0098-1354(97)00016-1 
+    Segura, H., & Wisniak, J. (1997). Calculation of pure saturation properties using cubic equations of state. Computers & Chemical Engineering, 21(12), 1339–1347. doi:10.1016/s0098-1354(97)00016-1
     =#
     a,b,c = cubic_ab(model,v_lb,T,z)
     Δ1,Δ2 = cubic_Δ(model,z)
@@ -307,18 +307,20 @@ function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,re
     Q1 = 2*b*b*(a*(1 - c1_c2) - bRT*c1c2*c1_c2)
     Q0 = b*b*b*(a*c1_c2 - bRT*c1c2*c1c2)
     dpoly = (Q0,Q1,Q2,Q3,Q4)
-
     #on single component, a good approximate for vm is the critical volume.
     d2poly = (Q1,2*Q2,3*Q3,4*Q4)
     f = Base.Fix2(evalpoly,dpoly)
     nr,v1,v2,v3 = Solvers.real_roots3(d2poly)
     vroots = (v1,v2,v3)
-    vm0 = findfirst(y -> (f(y) > 0 && y > b),vroots)
+    vm0 = nr == 1 ? nr : findfirst(y -> (f(y) > 0 && y > b),vroots)
     if isnothing(vm0)
-       return zero(v1)/zero(v1) 
+       return zero(v1)/zero(v1)
     end
     vm = vroots[vm0]
     B = b - a/RT
+    if vm < b
+        return zero(v1)/zero(v1)
+    end
     vx = ifelse(is_liquid(phase),b,-10B)
     v_bracket = minmax(vx,vm)
     prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket)
@@ -427,7 +429,7 @@ function wilson_k_values!(K,model::ABCubicModel, p, T, crit = nothing)
         end
     end
 
-    return @.K .= Pc / p * exp(5.373 * (1 + ω) * (1 - Tc / T))
+    return @.K .= Pc / p * exp(5.3726985503194395 * (1 + ω) * (1 - Tc / T))  #5.37 = log(10)*7/3
 
 end
 

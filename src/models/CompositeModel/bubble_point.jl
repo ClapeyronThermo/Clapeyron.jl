@@ -87,7 +87,12 @@ end
 function bubble_temperature_impl(model::RestrictedEquilibriaModel,p,x,method::ActivityBubbleTemperature)
     if model isa GammaPhi
         pmodel = model.fluid.model
-        pure = model.fluid.pure
+        pure_all = model.fluid.pure
+        if model.fluid.model isa FluidCorrelation
+            pure = map(x -> x.saturation,pure_all)
+        else
+            pure = pure_all
+        end
     else
         pmodel = model
         pure = split_model(pmodel,1:length(model))

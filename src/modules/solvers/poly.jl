@@ -105,12 +105,22 @@ function real_roots3(pol::NTuple{4,T}) where {T<:Real}
 end
 real_roots3(a,b,c,d) = real_roots3((a,b,c,d))
 
+"""
+    polyder(poly)
+
+returns the coefficients of the derivative of the polynomial.
+
+"""
+function polyder(x::NTuple{N,T}) where {N,T}
+    return ntuple(i->x[i+1]*i,Val{N-1}())
+end
+
 #we suppose that there is a translation: xx = x + x0
 function hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
     #Δx0 = x - x0
     #Δx1 = x - x1
     Δx10 = (x1 - x0)
-   # Δx03 = Δx0^3
+    #Δx03 = Δx0^3
 
     Δx102 = Δx10^2
     divx = 1/Δx10
@@ -135,15 +145,18 @@ end
 #0.00012669209195135698, 9.69556e-5 + 0.00012669209195135698
 """
     hermite5_poly(f,x0,x1)
+    hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
 
 Returns a quintic hermite polynomial, that interpolates `f` between `x0` and `x1`, using first and second derivative information.
-the polynomial is translated, so that the zero is at `x0`.
+The polynomial is translated, so that the zero is at `x0`.
 
 ## Example
 ```
-poly = hermite5_poly(f,x0,x1)
-evalpoly(0.0,poly) == f(x0)
-evalpoly(x1 - x0,poly) == f(x1)
+f(x) = exp(0.2 + 3/x)
+x0,x1 = 0.2,0.3
+poly = hermite3_poly(f,x0,x1)
+evalpoly(0.0,poly) ≈ f(x0) #true
+evalpoly(x1 - x0,poly) ≈ f(x1) #true
 ```
 """
 function hermite5_poly(f,x0,x1)
@@ -152,12 +165,40 @@ function hermite5_poly(f,x0,x1)
     return hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
 end
 
-"""
-    polyder(poly)
-
-returns the coefficients of the derivative of the polynomial.
 
 """
-function polyder(x::NTuple{N,T}) where {N,T}
-    return ntuple(i->x[i+1]*i,Val{N-1}())
+    hermite3_poly(f,x0,x1)
+    hermite3_poly(x0,x1,f0,f1,df0,df1)
+
+Returns a cubic hermite polynomial, that interpolates `f` between `x0` and `x1`, using first derivative information.
+The polynomial is translated, so that the zero is at `x0`.
+
+## Example
+```
+f(x) = exp(0.2 + 3/x)
+x0,x1 = 0.2,0.3
+poly = hermite3_poly(f,x0,x1)
+evalpoly(0.0,poly) ≈ f(x0) #true
+evalpoly(x1 - x0,poly) ≈ f(x1) #true
+```
+"""
+function hermite3_poly(x0,x1,f0,f1,df0,df1)
+    #=
+    (2t3 - 3t2 + 0t + 1)f0 +
+    (1t3 - 2t2 + 1t + 0)df0 +
+    (-2t3 +3t2 + 0t + 0)f1 +
+    (1t3 - 1t2 + 0t +  0)df1
+    =#
+    Δx⁻¹ = 1/(x1 - x0)
+    p0 = f0
+    p1 = df0*Δx⁻¹
+    p2 = (-3*f0 -2*df0 + 3*f1 - 1*df1)*Δx⁻¹*Δx⁻¹
+    p3 = (2*f0 + df0 -2*f1 + df1)*Δx⁻¹*Δx⁻¹*Δx⁻¹
+    return (p0,p1,p2,p3)
+end
+
+function hermite3_poly(f,x0,x1)
+    f0,df0 = f∂f(f,x0)
+    f1,df1 = f∂f(f,x1)
+    return hermite3_poly(x0,x1,f0,f1,df0,df1)
 end

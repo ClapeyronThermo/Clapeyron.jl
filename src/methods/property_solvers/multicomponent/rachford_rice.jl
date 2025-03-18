@@ -339,7 +339,7 @@ function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillA
             Ki = Inf*one(Ki)
         end
 
-        if non_iny[i] 
+        if non_iny[i]
             Ki = zero(Ki)
         end
         if Ki > 1
@@ -353,8 +353,8 @@ function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillA
             βmax = max(βmax,βmax_i)
         end
     end
-    βmin = max(βmin,_0)
-    βmax = min(βmax,_1)
+    βmin = max(βmin,_0) #comment to enable negative flashes
+    βmax = min(βmax,_1) #comment to enable negative flashes
     return βmin,βmax
 end
 
@@ -365,14 +365,20 @@ function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length
     singlephase = false
     _1 = one(g1)
     _0 = zero(g1)
+
     if g0 < 0
-        β = _0
+        β = _0 #comment to enable negative flashes
         singlephase = true
     elseif g1 > 0
-        β = _1
+        β = _1 #comment to enable negative flashes
         singlephase = true
     end
     βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
+    if singlephase
+        βmax = max(zero(βmax),βmax)
+        βmin = min(βmin,oneunit(βmin))
+    end
+
     if β0 !== nothing
         β = β0
     else
@@ -385,6 +391,12 @@ end
 #refines a rachford-rice result via Halley iterations
 function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx,limits = rr_βminmax(K,z,non_inx,non_iny))
     βmin,βmax = limits
+
+    if βmin < 0 < 1 < βmax
+        βmin = zero(βmin)
+        βmax = oneunit(βmax)
+    end
+
     _0 = zero(first(z)+first(K)+first(β0))
     _1 = one(_0)
     sumz = sum(z)

@@ -114,7 +114,7 @@ function excess_g_res(model::NRTLModel,p,T,z)
     a = model.params.a.values
     b  = model.params.b.values
     c  = model.params.c.values
-    _0 = zero(T+first(z))
+    _0 = zero(Base.promote_eltype(model,p,T,z))
     n = sum(z)
     invn = 1/n
     invT = 1/(T)

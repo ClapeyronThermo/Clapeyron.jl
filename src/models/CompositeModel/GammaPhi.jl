@@ -68,6 +68,116 @@ function gibbs_solvation(model::GammaPhi,T)
     return -R̄*T*log(K)
 end
 
+
+#=
+some equations require more delicate handling. the general case only works for extensive properties.
+=#
+function PT_property_gammaphi(model::GammaPhi,p,T,z,f::F,USEP) where F
+    ∑z = sum(z)
+    z1 = SA[∑z]
+    res = zero(Base.promote_eltype(model,p,T,z))
+    Vl = zero(res)
+    use_p = USEP === Val{true}()
+    for i in 1:length(model)
+        zi = z[i]
+        modeli = model.fluid.pure[i]
+        #we suppose this is liquid phase
+        Vi = volume(modeli, p, T, z1; phase = :liquid,threaded = false)
+        Vl += Vi*zi/∑z
+        if use_p
+            res += f(modeli,Vi,T,z1,p)*zi/∑z
+        else
+            res += f(modeli,Vi,T,z1)*zi/∑z
+        end
+    end
+    if !iszero(p)
+        if use_p
+            res += f(model.activity,0.0,T,z,p)
+        else
+            res += f(model.activity,0.0,T,z)
+        end
+        return res
+    end
+end
+
+function gammaphi_f_hess(model,p,T,z)
+    ∑z = sum(z)
+    z1 = SA[∑z]
+    _0 = zero(Base.promote_eltype(model,p,T,z))
+    _1 = oneunit(_0)
+    Vl = zero(_0)
+    ∂²A∂T² = ∂²f∂T²(model.activity,_0,T,z)
+    ∂²A = SMatrix{2,2}((_0,_0,_0,_0 + ∂²A∂T²))
+    for i in 1:length(model)
+        zi = z[i]
+        modeli = model.fluid.pure[i]
+        #eos(model) = sum(xi*eos(model,Vi,T,1.0))
+
+        Vi = volume(modeli, p, T, z1; phase = :liquid, threaded = false)
+        Vl += Vi*zi/∑z
+        Vii = Vi*zi
+        ∂²Aᵢ = f_hess(modeli,Vi,T,z1) .* zi ./ ∑z
+        ∂²A = ∂²A .+ ∂²Aᵢ
+    end
+    return ∂²A,Vl
+end
+
+function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isobaric_heat_capacity),USEP)
+    d²A,V = gammaphi_f_hess(model,p,T,z)
+    ∂²A∂V∂T = d²A[1,2]
+    ∂²A∂V² = d²A[1,1]
+    ∂²A∂T² = d²A[2,2]
+    return -T*(∂²A∂T² - ∂²A∂V∂T^2/∂²A∂V²)
+end
+
+function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_adiabatic_index),USEP)
+    d²A,V = gammaphi_f_hess(model,p,T,z)
+    ∂²A∂V∂T = d²A[1,2]
+    ∂²A∂V² = d²A[1,1]
+    ∂²A∂T² = d²A[2,2]
+    return 1 - ∂²A∂V∂T*∂²A∂V∂T/(∂²A∂V²*∂²A∂T²)
+end
+
+function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isothermal_compressibility),USEP)
+    d²A,V = gammaphi_f_hess(model,p,T,z)
+    return -1/V/d²A[1,1]
+end
+
+function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isentropic_compressibility),USEP)
+    d²A,V = gammaphi_f_hess(model,p,T,z)
+    ∂²A∂V∂T = d²A[1,2]
+    ∂²A∂V² = d²A[1,1]
+    ∂²A∂T² = d²A[2,2]
+    return 1/V/(∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)
+end
+
+
+
+function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_speed_of_sound),USEP)
+    Mr = molecular_weight(model,z)
+    d²A,V = gammaphi_f_hess(model,p,T,z)
+    ∂²A∂V∂T = d²A[1,2]
+    ∂²A∂V² = d²A[1,1]
+    ∂²A∂T² = d²A[2,2]
+    return V*sqrt((∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)/Mr)
+end
+
+function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isobaric_expansivity),USEP)
+    d²A,V = gammaphi_f_hess(model,p,T,z)
+    ∂²A∂V∂T = d²A[1,2]
+    ∂²A∂V² = d²A[1,1]
+    return -∂²A∂V∂T/(V*∂²A∂V²)
+end
+
+
+function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_joule_thomson_coefficient),USEP)
+    d²A,V = gammaphi_f_hess(model,p,T,z)
+    ∂²A∂V∂T = d²A[1,2]
+    ∂²A∂V² = d²A[1,1]
+    ∂²A∂T² = d²A[2,2]
+    return -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))^-1
+end
+
 function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
     if phase == :stable
         #we dont support this in GammaPhi.
@@ -81,37 +191,14 @@ function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,USEP::Val{Us
     #=
     Calculate PT properties as the following:
     prop = ∑xi*prop(pure[i],p,T) + excess_prop(activity,T,x) + prop(reference_state,T)
-    
+
     Vapour properties are calculated with the fluid model
     =#
     if is_vapour(phase)
         res = PT_property(model.fluid,p,T,z,phase,threaded,vol0,f,USEP)
         return res
     elseif is_liquid(phase) || is_unknown(phase)
-        ∑z = sum(z)
-        z1 = SA[∑z]
-        res = zero(Base.promote_eltype(model,p,T,z))
-        Vl = zero(res)
-        for i in 1:length(model)
-            zi = z[i]
-            modeli = model.fluid.pure[i]
-            #we suppose this is liquid phase
-            Vi = volume(modeli, p, T, z1; phase = :liquid,threaded = false)
-            Vl += Vi*zi/∑z
-            if UseP
-                res += f(modeli,Vi,T,z1,p)*zi/∑z
-            else
-                res += f(modeli,Vi,T,z1)*zi/∑z
-            end
-        end
-        if !iszero(p)
-            if UseP
-                res += f(model.activity,0.0,T,z,p)
-            else
-                res += f(model.activity,0.0,T,z)
-            end
-            return res
-        end
+       return PT_property_gammaphi(model,p,T,z,f,USEP)
     else
         throw(error("invalid phase specifier: $phase"))
     end
@@ -154,10 +241,10 @@ end
 
 __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
-function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,vols,phases,inw,cache = nothing)
+function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,vols,phases,non_inw,cache = nothing)
     volx,voly = vols
     phasex,phasey = phases
-    inx,iny = inw
+    non_inx,non_iny = non_inw
     model = wrapper.model
     fluidmodel = model.fluid.model
     sats = wrapper.sat
@@ -176,7 +263,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,vols,phase
     else
         gibbs = _0
         for i in eachindex(x)
-            if inx[i]
+            if !non_inx[i]
                 g_E_x = x[i]*RT*log(γx[i])
                 g_ideal_x = x[i]*RT*log(x[i])
                 g_pure_x = x[i]*g_pures[i]
@@ -188,14 +275,18 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,vols,phase
     if is_vapour(phasey)
         lnϕy, voly = lnϕ(gas_model(fluidmodel), p, T, y, cache; phase=phasey, vol0=voly)
         for i in eachindex(lnK)
-            if iny[i]
+            if non_inx[i]
+                lnK[i] = Inf
+            elseif non_iny[i]
+                lnK[i] = -Inf
+            else
                 ϕli = fug[i]
                 p_i = sats[i][1]
                 lnKi = log(γx[i]*p_i*ϕli/p) - lnϕy[i]
                 !is_ideal && (lnKi += volx*(p - p_i)/RT) #add poynting corrections only if the fluid model itself has non-ideal corrections
                 lnK[i] = lnKi
-                gibbs += β*y[i]*(log(y[i]) + lnϕy[i])
             end
+            !non_iny[i] && β !== nothing && (gibbs += β*y[i]*(log(y[i]) + lnϕy[i]))
         end
     else
         γy = activity_coefficient(model, p, T, y)
@@ -203,7 +294,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,vols,phase
         voly = volume(fluidmodel, p, T, y, phase = phasey, vol0 = voly)
         if β !== nothing
             for i in eachindex(y)
-                if iny[i]
+                if !non_inx[i]
                     g_E_y = y[i]*RT*log(γy[i])
                     g_ideal_y = y[i]*RT*(log(y[i]))
                     g_pure_y = y[i]*g_pures[i]
@@ -214,6 +305,11 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,vols,phase
     end
 
     return lnK,volx,voly,gibbs
+end
+
+#do not cache fugacity coefficient calculations if the model is an ideal model
+function ∂lnϕ_cache(model::PTFlashWrapper{GammaPhi{<:Any,<:IdealModel}}, p, T, z, dt::Val{B}) where B
+    return nothing
 end
 
 function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,eq)

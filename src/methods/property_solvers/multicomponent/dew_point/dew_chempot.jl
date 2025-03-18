@@ -233,7 +233,6 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     x_r = FractionVector(sol[4:end],idx_max)
     v_l = v_from_η(model,model_x,sol[2],T,x_r)
     v_v = v_from_η(model,sol[3],T,y)
-    x_r = FractionVector(sol[4:end])
     x = index_expansion(x_r,condensables)
     return T, v_l, v_v, x
 end

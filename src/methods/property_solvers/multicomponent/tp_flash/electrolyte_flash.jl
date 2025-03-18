@@ -14,12 +14,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     end
 
     if is_vle(equilibrium) || is_unknown(equilibrium)
-        phasex = :liquid
-        phasey = :vapor
-        append!(non_iny_list,ions)
+        phasex,phasey = :liquid,:vapour
     elseif is_lle(equilibrium)
-        phasex = :liquid
-        phasey = :liquid
+        phasex,phasey = :liquid,:liquid
     end
 
     # Setting the initial guesses for volumes
@@ -28,46 +25,25 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
 
     nc = length(model)
     # constructing non-in-x list
-    if !isnothing(non_inx_list)
-        non_inx_names_list = [x for x in non_inx_list if x in model.components]
-    else
-        non_inx_names_list = String[]
-    end
-
-    if !isnothing(non_iny_list)
-        non_iny_names_list = [x for x in non_iny_list if x in model.components]
-    else
-        non_iny_names_list = String[]
-    end
-
-    # constructing non-in-x list
-    non_inx = Bool.(zeros(nc))
+    non_inx = fill(false,nc)
     # constructing non-in-y list
-    non_iny = Bool.(zeros(nc))
+    non_iny = fill(false,nc)
 
     for i in 1:nc
         component = model.components[i]
-        if component in non_inx_names_list
-            non_inx[i] = true
-        end
-
-        if component in non_iny_names_list
-            non_iny[i] = true
-        end
+        non_inx[i] = !isnothing(non_inx_list) && (component in non_inx_list) && true
+        non_iny[i] = !isnothing(non_iny_list) && (component in non_iny_list) && true
     end
 
-    inx = .!non_inx
-    iny = .!non_iny
-
-    active_inx = !all(inx)
-    active_iny = !all(iny)
+    non_inw = (non_inx,non_iny)
     phases = (phasex,phasey)
-    inw = (inx,iny)
+
     # components that are allowed to be in two phases
-    in_equilibria = inx .& iny
+    in_equilibria = @. !non_inx & !non_iny
     # Computing the initial guess for the K vector
     x = similar(z)
     y = similar(z)
+    dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     if !isnothing(K0)
         K = 1. * K0
         lnK = log.(K)
@@ -75,7 +51,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         x = x0 ./ sum(x0)
         y = y0 ./ sum(y0)
         lnK = log.(y ./ x)
-        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(volx,voly),phases,inw)
+        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(volx,voly),phases,non_inw)
         K = exp.(lnK)
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
@@ -99,6 +75,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     ψ = 0.
     K̄ = K.*exp.(Z.*ψ)
     β,singlephase,_,_ = rachfordrice_β0(K̄,z,nothing,non_inx,non_iny)
+    
     #=TODO:
     there is a method used in TREND that tries to obtain adequate values of K
     in the case of incorrect initialization.
@@ -106,50 +83,50 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
-    x_dem = similar(z)
-    y_dem = similar(z)
     itacc = 0
-    lnK3 = similar(lnK)
-    lnK4 = similar(lnK)
-    lnK5 = similar(lnK)
-    K_dem = similar(lnK)
-    lnK_dem = similar(lnK)
-    ΔlnK1 = similar(lnK)
-    ΔlnK2 = similar(lnK)
+    
+    if nacc != 0
+        lnK3,lnK4,lnK5,K_dem,lnK_dem,ΔlnK1,ΔlnK2,K̄_dem = similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK)
+        x_dem,y_dem = similar(x),similar(y)
+    else
+        lnK3,lnK4,lnK5,K_dem,lnK_dem,ΔlnK1,ΔlnK2,K̄_dem = lnK,lnK,lnK,lnK,lnK,lnK,lnK,lnK
+        x_dem,y_dem = x,y
+    end
+
+    lnK_old = similar(lnK)
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
-    dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     while error_lnK > K_tol && it < itss && !singlephase
         it += 1
         itacc += 1
-        lnK_old = lnK .* _1
+        lnK_old .= lnK .* _1
         β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         K̄ .= K.*exp.(Z.*ψ)
         x,y = update_rr!(K̄,β,z,x,y,non_inx,non_iny)
         # Updating K's
-        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,β,(volx,voly),phases,inw,dlnϕ_cache)
+        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,β,(volx,voly),phases,non_inw,dlnϕ_cache)
         vcache[] = (volx,voly)
         # acceleration step
         if itacc == (nacc - 2)
-            lnK3 = 1. * lnK
+            lnK3 .= lnK
         elseif itacc == (nacc - 1)
-            lnK4 = 1. * lnK
+            lnK4 .= lnK
         elseif itacc == nacc
             itacc = 0
-            lnK5 = 1. * lnK
+            lnK5 .= lnK
             # acceleration using DEM (1 eigenvalues)
             lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3,(ΔlnK1,ΔlnK2))
             K_dem .= exp.(lnK_dem)
             β_dem,ψ_dem = rachfordrice(K_dem, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
             K̄ .= K_dem.*exp.(Z.*ψ_dem)
-            K̄_dem = K̄
+            K̄_dem .= K̄
             x_dem,y_dem = update_rr!(K̄_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
-            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,β,(volx,voly),phases,inw,dlnϕ_cache)
+            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,β,(volx,voly),phases,non_inw,dlnϕ_cache)
             # only accelerate if the gibbs free energy is reduced
             if gibbs_dem < gibbs
-                lnK .= _1 * lnK_dem
+                lnK .= lnK_dem
                 volx = _1 * volx_dem
                 voly = _1 * voly_dem
                 vcache[] = (volx,voly)
@@ -168,11 +145,11 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         nx = zeros(nc)
         ny = zeros(nc)
 
-        if active_inx
+        if any(non_inx)
             ny[non_inx] = z[non_inx]
             nx[non_inx] .= 0.
         end
-        if active_iny
+        if any(non_iny)
             ny[non_iny] .= 0.
             nx[non_iny] = z[non_iny]
         end
@@ -193,11 +170,11 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         ny_var = Solvers.x_sol(sol)[1:end-1]
         ψ = Solvers.x_sol(sol)[end]
         ny[in_equilibria] = ny_var
-        nx[in_equilibria] = z[in_equilibria] .- ny[in_equilibria]
+        nx[in_equilibria] .= @view(z[in_equilibria]) .- @view(ny[in_equilibria])
         nxsum = sum(nx)
         nysum = sum(ny)
-        x = nx ./ nxsum
-        y = ny ./ nysum
+        x .= nx ./ nxsum
+        y .= ny ./ nysum
         β = sum(ny)
 
     end
