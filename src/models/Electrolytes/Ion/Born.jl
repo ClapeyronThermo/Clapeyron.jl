@@ -22,7 +22,7 @@ export Born
 """
     Born(solvents::Array{String,1},
         salts::Array{String,1};
-        RSPmodel = ConstW,
+        RSPmodel = ConstRSP,
         userlocations = String[],
         RSPmodel_userlocations = String[],
         verbose = false)
@@ -40,7 +40,7 @@ This function is used to create a Born model. The Born term gives the excess Hel
 ## References
 1. Born, M. (1920). Z. Phys. 1, 45.
 """
-function Born(solvents,salts; RSPmodel=ConstW, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
+function Born(solvents,salts; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
     _solvents = group_components(solvents)
     ions = ion_groups.flattenedgroups

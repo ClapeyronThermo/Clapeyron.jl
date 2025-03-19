@@ -18,7 +18,7 @@ end
 """
     DH(solvents::Array{String,1},
         ions::Array{String,1};
-        RSPmodel = ConstW,
+        RSPmodel = ConstRSP,
         userlocations = String[],
         RSPmodel_userlocations = String[],
         verbose = false)
@@ -39,7 +39,7 @@ This function is used to create a Debye-Hückel model. The Debye-Hückel term gi
 DH
 
 export DH
-function DH(solvents,ions; RSPmodel=ConstW, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
+function DH(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
 
     components = deepcopy(ions)
     prepend!(components,solvents)

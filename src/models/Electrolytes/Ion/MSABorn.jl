@@ -21,7 +21,7 @@ export MSABorn
 """
     MSABorn(solvents::Array{String,1},
         ions::Array{String,1};
-        RSPmodel = ConstW,
+        RSPmodel = ConstRSP,
         userlocations = String[],
         RSPmodel_userlocations = String[],
         verbose = false)
