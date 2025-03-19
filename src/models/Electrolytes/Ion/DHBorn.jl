@@ -18,12 +18,12 @@ end
 
 export DHBorn
 """
-    DHBorn(solvents::Array{String,1}, 
-         ions::Array{String,1}; 
-         RSPmodel=ConstW, 
-         SAFTlocations=String[], 
-         userlocations=String[], 
-         verbose=false)
+    DHBorn(solvents::Array{String,1},
+        ions::Array{String,1};
+        RSPmodel = ConstW,
+        userlocations = String[],
+        RSPmodel_userlocations = String[],
+        verbose = false)
 
 ## Input parameters
 - `sigma`: Single Parameter (`Float64`) - Diameter of closest approach `[m]`
@@ -40,7 +40,7 @@ This function is used to create a Debye-Hückel-Born model. The Debye-Hückel-Bo
 1. Debye, P., Huckel, E. (1923). Phys. Z. 24, 185.
 2. Born, M. (1920). Z. Phys. 1, 45.
 """
-function DHBorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSP_userlocations=String[], verbose=false)
+function DHBorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
     icomponents = 1:length(components)
@@ -53,14 +53,14 @@ function DHBorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSP_us
         params["sigma"].values .*= 1E-10
         sigma = params["sigma"]
     end
-    
+
     charge = params["charge"]
     sigma_born = params["sigma_born"]
     sigma_born.values .*= 1E-10
 
     packagedparams = DHBornParam(sigma,sigma_born,charge)
 
-    init_RSPmodel = RSPmodel(solvents,ions)
+    init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
     references = String[]
 
@@ -80,11 +80,11 @@ end
 function a_born(model::DHBornModel, V, T, z,_data=@f(data))
     Z = model.params.charge.values
     ϵ_r, σ, σ_born = _data
-    
+
     if all(iszero,Z)
         return zero(Base.promote_eltype(model,T,z,ϵ_r, σ, σ_born))
     end
-    
+
     res = zero(Base.promote_eltype(z,Z,σ_born))
     for i in model.icomponents
         if Z[i] != 0

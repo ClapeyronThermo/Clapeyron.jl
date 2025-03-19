@@ -20,12 +20,12 @@ end
 export Born
 
 """
-    Born(solvents::Array{String,1}, 
-         salts::Array{String,1}; 
-         RSPmodel=ConstW, 
-         SAFTlocations=String[], 
-         userlocations=String[], 
-         verbose=false)
+    Born(solvents::Array{String,1},
+        salts::Array{String,1};
+        RSPmodel = ConstW,
+        userlocations = String[],
+        RSPmodel_userlocations = String[],
+        verbose = false)
 
 ## Input parameters
 - `sigma_born`: Single Parameter (`Float64`) - Born Diameter `[m]`
@@ -40,7 +40,7 @@ This function is used to create a Born model. The Born term gives the excess Hel
 ## References
 1. Born, M. (1920). Z. Phys. 1, 45.
 """
-function Born(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocations=String[], ideal_userlocations=String[], verbose=false)
+function Born(solvents,salts; RSPmodel=ConstW, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
     _solvents = group_components(solvents)
     ions = ion_groups.flattenedgroups
@@ -48,8 +48,8 @@ function Born(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocat
     prepend!(components,_solvents)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
-    
-    params,sites = getparams(components, append!(["Electrolytes/Born/Born.csv","Electrolytes/properties/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
+
+    params = getparams(components, ["Electrolytes/Born/Born.csv","Electrolytes/properties/charges.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     params["sigma_born"].values .*= 1E-10
     sigma_born = params["sigma_born"]
     charge = params["charge"]
@@ -58,11 +58,7 @@ function Born(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocat
 
     references = String[]
 
-    if RSPmodel !== nothing
-        init_RSPmodel = RSPmodel(solvents,salts)
-    else
-        init_RSPmodel = nothing
-    end
+    init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
     model = Born(components, _solvents, ions, isolvents, iions, packagedparams, init_RSPmodel,references)
     return model

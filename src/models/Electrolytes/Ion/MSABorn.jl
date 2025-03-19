@@ -19,12 +19,12 @@ end
 export MSABorn
 
 """
-    MSABorn(solvents::Array{String,1}, 
-         ions::Array{String,1}; 
-         RSPmodel=ConstW, 
-         SAFTlocations=String[], 
-         userlocations=String[], 
-         verbose=false)
+    MSABorn(solvents::Array{String,1},
+        ions::Array{String,1};
+        RSPmodel = ConstW,
+        userlocations = String[],
+        RSPmodel_userlocations = String[],
+        verbose = false)
 
 ## Input parameters
 - `sigma`: Single Parameter (`Float64`) - Hard-sphere diameter `[m]`
@@ -41,7 +41,7 @@ This function is used to create a Mean Spherical Approximation-Born model. The M
 1. Blum, L. (1974). Solution of a model for the solvent‐electrolyte interactions in the mean spherical approximation, 61, 2129–2133.
 2. Born, M. (1920). Z. Phys. 1, 45.
 """
-function MSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSP_userlocations=String[], verbose=false)
+function MSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
     icomponents = 1:length(components)
@@ -54,14 +54,14 @@ function MSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSP_u
         params["sigma"].values .*= 1E-10
         sigma = params["sigma"]
     end
-    
+
     charge = params["charge"]
     sigma_born = params["sigma_born"]
     sigma_born.values .*= 1E-10
 
     packagedparams = MSABornParam(sigma,sigma_born,charge)
 
-    init_RSPmodel = RSPmodel(solvents,ions)
+    init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
     references = String[]
 

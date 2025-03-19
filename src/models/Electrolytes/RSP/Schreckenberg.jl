@@ -17,9 +17,9 @@ end
 export Schreckenberg
 
 """
-    Schreckenberg(solvents::Array{String,1}, 
-         ions::Array{String,1}; 
-         userlocations::Vector{String}=[], 
+    Schreckenberg(solvents::Array{String,1},
+         ions::Array{String,1};
+         userlocations::Vector{String}=[],
          verbose::Bool=false)
 
 ## Input parameters
@@ -46,7 +46,7 @@ function Schreckenberg(solvents,ions; userlocations::Vector{String}=String[], ve
     packagedparams = SchreckenbergParam(d_T,d_V,charge)
 
     references = String[]
-    
+
     model = Schreckenberg(components,icomponents,packagedparams,references)
     return model
 end
@@ -56,17 +56,16 @@ function dielectric_constant(model::SchreckenbergModel,V,T,z,_data=nothing)
         d_V = model.params.d_V.values
         Z = model.params.charge.values
         icomponents = model.icomponents
-        ineutral = model.icomponents[Z.==0]
 
         if all(!iszero,Z)
             return zero(Base.promote_eltype(model,V,T,z))
         end
-   
+
         n_solv = zero(eltype(z))
         for i in icomponents
             Z[i] == 0 && (n_solv += z[i])
         end
-        
+
         ρ_solv = n_solv / V
         d̄ = zero(Base.promote_eltype(model,T,z))
 
