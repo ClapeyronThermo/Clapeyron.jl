@@ -153,7 +153,7 @@ function saturation_temperature(model,p,method::SaturationMethod)
     p = p*p/p
 
     if has_a_res(model)
-        res = saturation_temperature_impl(model,primalval(p),method)
+        res = saturation_temperature_impl(primalval(model),primalval(p),method)
         return saturation_temperature_ad(model,p,res)
     else
         return saturation_temperature_impl(model,p,method)

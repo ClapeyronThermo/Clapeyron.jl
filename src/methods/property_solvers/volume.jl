@@ -181,7 +181,7 @@ end
 
 function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
     if has_a_res(model)
-        v = volume_impl(model,primalval(p),primalval(T),primalval(z),phase,threaded,primalval(vol0))
+        v = volume_impl(primalval(model),primalval(p),primalval(T),primalval(z),phase,threaded,primalval(vol0))
         return volume_ad(model,v,T,z,p)
     else
         return volume_impl(model,p,T,z,phase,threaded,primalval(vol0))

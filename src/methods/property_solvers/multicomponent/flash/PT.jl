@@ -78,7 +78,7 @@ function tp_flash2(model::EoSModel, p, T, n,method::FlashMethod)
     ∑n = sum(n_r)
     z_r = n_r ./ ∑n
     if has_a_res(model)
-        result_primal = tp_flash_impl(model_r,primalval(p),primalval(T),primalval(z_r),method_r)
+        result_primal = tp_flash_impl(primalval(model_r),primalval(p),primalval(T),primalval(z_r),method_r)
         result = tp_flash_ad(model_r,p,T,z_r,result_primal)
     else
         result = tp_flash_impl(model_r,p,T,z_r,method_r)

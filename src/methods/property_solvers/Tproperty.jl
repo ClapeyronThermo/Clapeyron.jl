@@ -248,7 +248,7 @@ function Tproperty_pure(model,p,prop,z,property::F,rootsolver,phase,abstol,relto
 end
 
 function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
-  T_primal,phase = Tproperty_impl(model,primalval(p),primalval(prop),primalval(z),property,rootsolver,phase,abstol,reltol,threaded,primalval(T0))
+  T_primal,phase = Tproperty_impl(primalval(model),primalval(p),primalval(prop),primalval(z),property,rootsolver,phase,abstol,reltol,threaded,primalval(T0))
   if has_a_res(model)
     T = Tproperty_ad(model,p,prop,z,property,T_primal,phase)
     return T,phase
