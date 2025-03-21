@@ -116,6 +116,11 @@ Base.size(param::PairParameter) = size(param.values)
 
 Base.eltype(param::PairParameter{T}) where T = T
 
+#primalval
+function Solvers.primalval(x::PairParameter)
+    return PairParameter(x.name,x.components,Solvers.primalval_eager(x.values),x.ismissingvalues,x.sourcecsvs,x.sources)
+end
+
 #unsafe constructor
 function PairParam(name,components,values)
     param_length_check(PairParam,name,length(components),LinearAlgebra.checksquare(values))

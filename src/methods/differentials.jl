@@ -201,3 +201,19 @@ end
 
 
 const _d23f = ∂²³f
+
+#derivarive logic: model Dual numbers:
+
+#as of Clapeyron 0.6.10, there is limited support for using models with dual numbers
+#PCSAFT, sPCSAFT, SAFTVRMie, SAFTVRMie15 support using dual numbers, (and any other number type)
+#for iterative methods, it is more efficient to reconstruct the model with the primal value instead of the full value
+
+function Solvers.primalval(model::EoSModel)
+    return _primalval(model,eltype(model))
+end
+
+function _primalval(model::EoSModel,::Type{T}) where T <: ForwardDiff.Dual
+    return Solvers.primalval_struct(model)
+end
+
+_primalval(model::EoSModel,::T) where T = model

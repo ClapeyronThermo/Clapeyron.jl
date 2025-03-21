@@ -41,6 +41,8 @@ function _custom_show_param(::Type{T}) where T <: EoSParam
     return all(x -> x <: ClapeyronParam,types)
 end
 
+Solvers.primalval(x::EoSParam) = Solvers.primalval_struct(x)
+
 function Base.show(io::IO, mime::MIME"text/plain", params::EoSParam)
     !custom_show(params) && return show_default(io,mime,params)
     names = fieldnames(typeof(params))

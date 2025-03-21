@@ -43,7 +43,7 @@ function saturation_pressure(model::EoSModel,T,method::SaturationMethod)
     satmodel = saturation_model(model)
     satmodel !== model && saturation_pressure(satmodel,T,method)
     if has_a_res(model)
-        res = saturation_pressure_impl(model,primalval(T),method)
+        res = saturation_pressure_impl(primalval(model),primalval(T),method)
         saturation_pressure_ad(model,T,res)
     else
         return saturation_pressure_impl(model,T,method)
@@ -254,4 +254,34 @@ end
 
 function init_preferred_method(method::typeof(saturation_temperature),model::EoSModel,kwargs)
     return AntoineSaturation(;kwargs...)
+end
+
+function fast_pcsaft1(eps::T,sigma::T,segment::T,mw::T = oneunit(T)) where T
+    name1 = ""
+    empty_str = String[]
+    namevec = [name1]
+    
+    missingval_vec = [false]
+    missingval_mat = [false;;]
+    empty_nested_int = [Int64[]]
+    empty_nested_string = [empty_str]
+    assoc_vec = Compressed4DMatrix{T}()
+    ϵ = PairParameter(name1,namevec,[eps;;],missingval_mat,empty_str,empty_str)
+    σ = PairParameter(name1,namevec,[sigma;;],missingval_mat,empty_str,empty_str)
+    m = SingleParameter(name1,namevec,[segment],missingval_vec,empty_str,empty_str)
+    Mw = SingleParameter(name1,namevec,[mw],missingval_vec,empty_str,empty_str)
+    bondvol = AssocParam(name1,namevec,assoc_vec,empty_nested_string,empty_str,empty_str)
+    ϵ_ab = AssocParam(name1,namevec,assoc_vec,empty_nested_string,empty_str,empty_str)
+
+    param = PCSAFTParam{T}(Mw,m,σ,ϵ,ϵ_ab,bondvol)
+    
+    sites = SiteParam(namevec,[empty_str],PackedVectorsOfVectors.pack(empty_nested_int),empty_nested_int,empty_str,empty_nested_int,empty_str,empty_str,nothing)
+    return PCSAFT{BasicIdeal,T}(namevec,sites,param,BasicIdeal(),AssocOptions(),empty_str)
+end
+
+function test_f(x)
+    eps,sigma,segment = x[1],x[2],x[3]
+    model = fast_pcsaft1(100*eps,sigma*1e-10,segment)
+    p,vl,vv = saturation_pressure(model,140.15)
+    return p
 end
