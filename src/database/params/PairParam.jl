@@ -3,9 +3,14 @@ struct PairParameter{T,V<:AbstractMatrix{T}} <: ClapeyronParam
     components::Array{String,1}
     values::V
     ismissingvalues::Array{Bool,2}
-    sourcecsvs::Array{String,1}
-    sources::Array{String,1}
+    sourcecsvs::Union{Vector{String},Nothing}
+    sources::Union{Vector{String},Nothing}
 end
+
+#methods to fill missing sources/sourcescsvs
+PairParameter(name,components,values,ismissingvalues) = PairParameter(name,components,values,ismissingvalues,nothing,nothing)
+PairParameter(name,components,values,ismissingvalues,src) = PairParameter(name,components,values,ismissingvalues,src,nothing)
+
 """
     PairParam{T}
 Struct designed to contain pair data. used a matrix as underlying data storage.
@@ -47,7 +52,6 @@ const PairParam{T} = PairParameter{T,Matrix{T}} where T
 PairParam(name,components,vals,missingvals,srccsv,src) = PairParameter(name,components,vals,missingvals,srccsv,src)
 
 #indexing
-
 Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int) where T = param.values[i,i]
 Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int,j::Int) where T = param.values[i,j]
 
@@ -121,80 +125,34 @@ function Solvers.primalval(x::PairParameter)
     return PairParameter(x.name,x.components,Solvers.primalval_eager(x.values),x.ismissingvalues,x.sourcecsvs,x.sources)
 end
 
-#unsafe constructor
-function PairParam(name,components,values)
-    param_length_check(PairParam,name,length(components),LinearAlgebra.checksquare(values))
-    missingvals = fill(false,size(values))
-    src = String[]
-    sourcecsv = String[]
-    return PairParameter(name,components,values,missingvals,src,sourcecsv)
+#barebones constructor, we provide vals and missing vals
+function PairParam(name,components,values::Matrix{T},missingvals,src,sourcecsv) where T 
+    val_length = LinearAlgebra.checksquare(values)
+    param_length_check(PairParam,name,length(components),val_length)
+    PairParameter{T,Matrix{T}}(name,components,values,missingvals,src,sourcecsv)
 end
 
-function PairParam(name::String,
-    components::Array{String,1},
-    values::Array{T,2},
-    ismissingvalues = fill(false,length(components),length(components)),
-    sourcecsvs::Array{String,1} = String[], 
-    sources::Array{String,1} = String[]) where T
-    
-    param_length_check(PairParam,name,length(components),LinearAlgebra.checksquare(values))
-    _values,_ismissingvalues = defaultmissing(values)
-    if !all(ismissingvalues)
-        _ismissingvalues = ismissingvalues
-    end
-    return PairParameter(name, components,_values, _ismissingvalues, sourcecsvs, sources)
+function PairParam(name,components,values::AbstractMatrix{T},missingvals,src,sourcecsv) where T 
+    return PairParam(name,components,convert(Matrix{T},values),missingvals,src,sourcecsv)
 end
 
-function PairParam(name::String,
-    components::Array{String,1},
-    values::Array{T,1},
-    ismissingvalues = map(!,diagm(fill(true,length(components)))),
-    sourcecsvs::Array{String,1} = String[], 
-    sources::Array{String,1} = String[]) where T
-    
-    param_length_check(PairParam,name,length(components),length(values))
+PairParam(name,components,values,missingvals,src) = PairParam(name,components,values,missingvals,src,nothing)
+PairParam(name,components,values,missingvals) = PairParam(name,components,values,missingvals,nothing,nothing)
 
-    _values,_ismissingvalues = defaultmissing(diagm(values))
-    if !all(ismissingvalues)
-        _ismissingvalues = ismissingvalues
-    end
-    return PairParameter(name, components,_values, _ismissingvalues, sourcecsvs, sources)
+#constructor in case we provide a Vector{Union{T,Missing}}
+function PairParam(name, components, values_or_missing::AbstractMatrix{U}) where U <: Union{Missing,T} where T
+    values,ismissingvalues = defaultmissing(values_or_missing)
+    return PairParam(name, components, values, missingvalues)
+end
+
+#constructor in case we provide a normal vector
+function PairParam(name, components, values::AbstractMatrix{T}) where T 
+    return PairParam(name, components, values, fill(0.0, size(values)))
 end
 
 # If no value is provided, just initialise empty param.
-function PairParam(
-        name::String,
-        components::Vector{String};
-        sources::Vector{String} = String[]
-    )
-    values = fill(0.0, length(components), length(components))
-    missingvals = fill(true, size(values))
-    return PairParameter(name, components, values, missingvals, String[], sources)
-end
+PairParam(name,components) = PairParam(name,components, fill(0.0, length(components),length(components)))
 
-function PairParam(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources)
-    if isdeepcopy
-        values = deepcopy(x.values)
-        return PairParam(
-            name,
-            x.components,
-            values,
-            deepcopy(x.ismissingvalues),
-            x.sourcecsvs,
-            sources
-        )
-    end
-    return PairParameter(
-        name,
-        x.components,
-        x.values,
-        x.ismissingvalues,
-        x.sourcecsvs,
-        sources
-    )
-end
-
-PairParameter(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources) = PairParam(x, name; isdeepcopy, sources)
 
 function PairParam(x::SingleParam,name::String=x.name)
     pairvalues = singletopair(x.values,missing)
@@ -204,7 +162,7 @@ function PairParam(x::SingleParam,name::String=x.name)
         end
     end
     _values,_ismissingvalues = defaultmissing(pairvalues)
-    return PairParam(name, x.components, _values,_ismissingvalues,x.sourcecsvs, x.sources)
+    return PairParam(name, x.components, _values, _ismissingvalues, x.sourcecsvs, x.sources)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter) 
