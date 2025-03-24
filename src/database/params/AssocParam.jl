@@ -154,23 +154,25 @@ function Base.show(io::IO, mime::MIME"text/plain", param::AssocParam{T}) where T
     print(io,"(")
     print(io, param.components)
     l = length(param.values.values)
-    print(io, ") with ", l, " value",ifelse(l==1,"","s"),":")
+    print(io, ") with ", l, " value", ifelse(l==1,"","s"),":")
     l != 0 && println(io)
     comps = param.components
     vals = param.values
     sitenames = param.sites
-    for (idx, (i,j), (a,b)) in indices(vals)
-        try
-        s1 = sitenames[i][a]
-        s2 = sitenames[j][b]
-        print(io, "(\"", comps[i], "\", \"", s1, "\")")
-        print(io, " >=< ")
-        print(io, "(\"", comps[j], "\", \"", s2, "\")")
-        print(io, ": ")
-        print(io, vals.values[idx])
-        l != idx && println(io)
-        catch
-        println("error at i = $i, j = $j a = $a, b = $b")
+    if l > 0
+        for (idx, (i,j), (a,b)) in indices(vals)
+            try
+                s1 = sitenames[i][a]
+                s2 = sitenames[j][b]
+                print(io, "(\"", comps[i], "\", \"", s1, "\")")
+                print(io, " >=< ")
+                print(io, "(\"", comps[j], "\", \"", s2, "\")")
+                print(io, ": ")
+                print(io, vals.values[idx])
+                l != idx && println(io)
+            catch
+                println(io,"error at i = $i, j = $j a = $a, b = $b")
+            end
         end
     end
 end
