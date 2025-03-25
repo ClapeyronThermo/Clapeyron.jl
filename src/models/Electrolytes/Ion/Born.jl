@@ -67,7 +67,7 @@ end
 a_res(::Nothing,V,T,z,_data=nothing) = 0.0
 
 function data(model::BornModel, V, T, z)
-    return dielectric_constant(model.RSPmodel, V, T, z)
+    return dielectric_constant(model, V, T, z)
 end
 
 function a_res(model::BornModel, V, T, z,_data=@f(data))

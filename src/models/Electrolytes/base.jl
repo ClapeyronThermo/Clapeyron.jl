@@ -75,8 +75,30 @@ end
 
 export ESElectrolyte
 
+
+"""
+    dielectric_constant(model::ElectrolyteModel, V, T, z)
+
+Calculates the dielectric constant (also known as relative static permittivity) for a given electrolyte model.
+
+## Examples
+```julia
+model = ConstRSP()
+εr = dielectric_constant(model, 1.8e-5, 298.15, [1.0]) 
+```
+"""
+function dielectric_constant end
+
+function dielectric_constant(model::ESElectrolyteModel,V, T, z)
+    return dielectric_constant(model.ionmodel, V, T, z)
+end
+
+function dielectric_constant(model::IonModel,V, T, z)
+    return dielectric_constant(model.RSPModel, V, T, z)
+end
+
 function a_res(model::ESElectrolyteModel, V, T, z)
-    return a_res(model.neutralmodel,V,T,z)+a_res(model.ionmodel,V,T,z)
+    return a_res(model.neutralmodel,V,T,z) + a_res(model.ionmodel,V,T,z)
 end
 
 function lb_volume(model::ESElectrolyteModel,z)

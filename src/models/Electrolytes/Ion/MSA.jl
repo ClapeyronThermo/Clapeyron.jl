@@ -62,7 +62,7 @@ function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_
 end
 
 function data(model::MSAModel, V, T, z)
-    return dielectric_constant(model.RSPmodel, V, T, z)
+    return dielectric_constant(model, V, T, z)
 end
 
 function a_res(model::MSAModel, V, T, z, _data=@f(data))

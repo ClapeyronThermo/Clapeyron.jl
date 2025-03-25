@@ -67,7 +67,7 @@ function DH(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_u
 end
 
 function data(model::DHModel, V, T, z)
-    return dielectric_constant(model.RSPmodel, V, T, z), model.params.sigma.values
+    return dielectric_constant(model, V, T, z), model.params.sigma.values
 end
 
 function a_res(model::DHModel, V, T, z, _data=@f(data))

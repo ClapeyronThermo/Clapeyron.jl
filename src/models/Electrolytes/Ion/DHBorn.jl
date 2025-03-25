@@ -72,7 +72,7 @@ function a_res(model::DHBornModel, V, T, z, _data=@f(data))
 end
 
 function data(model::DHBornModel, V, T, z)
-    return dielectric_constant(model.RSPmodel, V, T, z), model.params.sigma.values, model.params.sigma_born.values
+    return dielectric_constant(model, V, T, z), model.params.sigma.values, model.params.sigma_born.values
 end
 
 function a_born(model::DHBornModel, V, T, z,_data=@f(data))

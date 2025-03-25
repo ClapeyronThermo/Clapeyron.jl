@@ -21,7 +21,7 @@ This function is used to create a Zuo-First model. The Zuo-First expression esti
 ## References
 1. Zuo, Y-X., Fürst, W. (1997). Prediction of vapor pressure for nonaqueous electrolyte solutions using an electrolyte equation of state, Fluid Phase Equilibria, 138(1-2), 87-104.
 """
-function ZuoFurst(solvents,ions; userlocations::Vector{String}=String[], verbose::Bool=false)
+function ZuoFurst(solvents,ions; userlocations= nothing, verbose::Bool=false)
     components = deepcopy(solvents)
     append!(components,ions)
     icomponents = 1:length(components)

@@ -121,7 +121,7 @@ function data(model::GCMSABornModel, V, T, z)
         end
     end
     ng = sum(zg)
-    return (zg, ng), dielectric_constant(model.RSPmodel, V, T, z)
+    return (zg, ng), dielectric_constant(model, V, T, z)
 end
 
 function a_res(model::GCMSABornModel, V, T, z, _data=@f(data))
