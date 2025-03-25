@@ -298,7 +298,7 @@ function buildsites(components,allparams,allnotfoundparams,options)
 end
 
 function getparams(groups::GroupParameter, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
-    return getparams(groups.flattenedgroups, locations,options)
+    return getparams(groups.flattenedgroups, locations, options)
 end
 
 function anysites(data,components)
@@ -844,9 +844,13 @@ end
 
 const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "association", "group", "groups","intragroup","intragroups"]
 
-function read_csv_options(filepath)
+function read_csv_options(filepath::AbstractString)
     return _read_csv_options(getline(String(filepath), 2))
 end
+#=
+function read_csv_options(filepath)
+    return 2
+end=#
 
 function _read_csv_options(line::String)
     re = r"\[.*\]"
