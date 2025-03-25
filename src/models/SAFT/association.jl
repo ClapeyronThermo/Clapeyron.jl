@@ -656,7 +656,12 @@ end
 
 #helper function to get the sites. in almost all cases, this is model.sites
 #but SAFTgammaMie uses model.vrmodel.sites instead
+"""
+    getsites(model::EoSModel)
 
+returns the `SiteParam` used in association calculations for the input `model`, if any. Fails if not available. to check if a model has sites, use `has_sites`
+
+"""
 getsites(model) = model.sites
 
 function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)

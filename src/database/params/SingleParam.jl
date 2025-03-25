@@ -86,6 +86,11 @@ function Base.copyto!(dest::SingleParameter,src::SingleParameter) #used to set p
     return dest
 end
 
+#primalval
+function Solvers.primalval(x::SingleParameter)
+    return SingleParameter(x.name,x.components,Solvers.primalval_eager(x.values),x.ismissingvalues,x.sourcecsvs,x.sources)
+end
+
 Base.eltype(param::SingleParameter{T}) where T = T
 
 #linear algebra

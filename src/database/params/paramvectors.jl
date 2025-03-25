@@ -390,3 +390,9 @@ function Solvers.primalval(x::Compressed4DMatrix{T}) where T
     vals₀ = Solvers.primalval(vals)
     return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
 end
+
+function Solvers.primalval_eager(x::Compressed4DMatrix{T}) where T
+    vals = x.values
+    vals₀ = Solvers.primalval_eager(vals)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
+end

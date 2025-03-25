@@ -3,26 +3,35 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, v
     vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
     RT = Rgas(model)*T
     logZ = log(p*vol/RT/sum(z))
+
     if cache != nothing
-        result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache    
+        result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
+        nc = length(lnϕ)
+        aux .= 0
         aux[1] = vol
-        aux[2:end] = z
+        aux[2:nc+1] = z
         gconf,jconf = hconfig.gradient_config,hconfig.jacobian_config
         seeds = jconf.seeds
         duals = jconf.duals[1]
         gconfig = ForwardDiff.GradientConfig{Nothing,eltype(aux),length(seeds),typeof(duals)}(seeds,duals)
         gresult = ForwardDiff.MutableDiffResult(result.value,(result.derivs[1],))
         F_res(model, V, T, z) = eos_res(model, V, T, z)
-        fun(aux) = F_res(model, aux[1], T, @view(aux[2:end]))
+        fun(aux) = F_res(model, aux[1], T, @view(aux[2:nc+1]))
         _result = ForwardDiff.gradient!(gresult, fun, aux, gconfig, Val{false}())
         dresult = _result.derivs[1]
-        μ_res = @view dresult[2:end]
+        μ_res = @view dresult[2:nc+1]
         lnϕ .= μ_res ./ RT .- logZ
     else
         μ_res = VT_chemical_potential_res(model, vol, T, z)
         Z = p*vol/RT/sum(z)
         lnϕ = μ_res/RT .- log(Z)
     end
+    return lnϕ, vol
+end
+
+function lnϕ(model::IdealModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, vol0=nothing,threaded = true)
+    vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
+    lnϕ = FillArrays.Zeros(length(z))
     return lnϕ, vol
 end
 
@@ -42,7 +51,7 @@ function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
     lnϕ = μ_res - log(Z)
 end
 
-function ∂lnϕ_cache(model::EoSModel, p, T, z, dt::Val{B}) where B 
+function ∂lnϕ_cache(model::EoSModel, p, T, z, dt::Val{B}) where B
     V = p
     lnϕ = zeros(@f(Base.promote_eltype),length(model))
     aux = zeros(@f(Base.promote_eltype),length(model) + 1 + B)
@@ -53,7 +62,7 @@ function ∂lnϕ_cache(model::EoSModel, p, T, z, dt::Val{B}) where B
     ∂P∂n = similar(lnϕ)
     hconfig = ForwardDiff.HessianConfig(nothing,result,aux)
     if B
-        ∂lnϕ∂T = similar(lnϕ)  
+        ∂lnϕ∂T = similar(lnϕ)
     else
         ∂lnϕ∂T = lnϕ
     end

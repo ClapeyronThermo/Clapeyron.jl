@@ -1,5 +1,7 @@
 using OrderedCollections
 
+Base.@nospecialize
+
 """
     export_model(model::EoSModel,name="";location=".")
 Exports model parameters to CSVs. Unless the `name` kwarg is specified, the name of the files will follow the convention `singledata_EoS`, `pairdata_EoS` and `assocdata_EoS`. Files will be saved within the current directory unless the `location` argument is specified.
@@ -29,8 +31,9 @@ function export_model(model::EoSModel,name="";location=".")
 
     f = fieldnames(M)
     for i in f
-        if fieldtype(M,i) <: EoSModel && hasfield(fieldtype(M,i),:components) && i!=:vrmodel
-            export_model(getfield(model,i),name;location=location)
+        fi = getfield(model,i)
+        if getfield(model,i) isa EoSModel && hasfield(fieldtype(M,i),:components) && i != :vrmodel
+            export_model(fi,name;location=location)
         end
     end
 end
@@ -60,9 +63,10 @@ function export_like(model::EoSModel,params,name,location,species,ncomps)
         end
     end
 
-    if hasfield(M,:sites)
-        site_types = model.sites.flattenedsites
-        n_flatsites = model.sites.n_flattenedsites
+    if has_sites(model)
+        sites = getsites(model)
+        site_types = sites.flattenedsites
+        n_flatsites = sites.n_flattenedsites
         for i in 1:length(site_types)
             nsites = [n_flatsites[j][i] for j in 1:ncomps]
             like[Symbol("n_"*site_types[i])] = nsites
@@ -82,7 +86,7 @@ end
 
 function export_unlike(model::EoSModel,params,name,location,species,ncomps)
     M = typeof(model)
-    P = typeof(model.params)
+    P = typeof(params)
     model_name = summary(model)
 
     species1 = Vector{String}()
@@ -102,7 +106,7 @@ function export_unlike(model::EoSModel,params,name,location,species,ncomps)
         paramname = params[i]
         paramvalue = getfield(model.params,params[i])
 
-        if paramtype <: PairParam
+        if paramvalue isa PairParameter
             binary = Vector{Float64}()
             if params[i] == :sigma
                 for j in 1:ncomps-1
@@ -150,10 +154,9 @@ function export_unlike(model::ActivityModel,params,name,location,species,ncomps)
     unlike[:species2] = species2
 
     for i in 1:length(params)
-        paramtype = fieldtype(P,i)
         paramname = params[i]
         paramvalue = getfield(model.params,params[i])
-        if paramtype <: PairParam
+        if paramvalue isa PairParameter
             binary = Vector{Float64}()
             for j in 1:ncomps
                 append!(binary,paramvalue.values[j,1:end .!=j])
@@ -191,10 +194,9 @@ function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
     unlike[:species2] = species2
 
     for i in 1:length(params)
-        paramtype = fieldtype(P,i)
         paramname = params[i]
         paramvalue = getfield(model.params,params[i])
-        if paramtype <: PairParam
+        if paramvalue isa PairParameter
             if params[i] == :a
                 binary = Vector{Float64}()
                 for j in 1:ncomps-1
@@ -238,10 +240,9 @@ function export_assoc(model::EoSModel,params,name,location,species,ncomps)
     assoc = OrderedDict{Symbol,AbstractVector}()
 
     for i in 1:length(params)
-        paramtype = fieldtype(P,i)
         paramname = params[i]
         paramvalue = getfield(model.params,params[i])
-        if paramtype <: AssocParam
+        if paramvalue isa AssocParam
             site_types = model.sites.flattenedsites
             mat = paramvalue.values
             nassoc = length(mat.values)
@@ -281,3 +282,5 @@ function export_assoc(model::EoSModel,params,name,location,species,ncomps)
         ParamTable(:assoc, Tables.columntable(assoc); name=name, location=location)
     end
 end
+
+Base.@specialize

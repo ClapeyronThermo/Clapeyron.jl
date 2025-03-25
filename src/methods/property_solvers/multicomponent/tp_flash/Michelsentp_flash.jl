@@ -58,7 +58,7 @@ function MichelsenTPFlash(;equilibrium = :unknown,
                         nonvolatiles = nothing,
                         flash_result = nothing)
     !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
-    
+
     if flash_result isa FlashResult
         comps,β,volumes = flash_result.compositions,flash_result.fractions,flash_result.volumes
         np = numphases(flash_result)
@@ -67,7 +67,7 @@ function MichelsenTPFlash(;equilibrium = :unknown,
         v = (volumes[1],volumes[2])
         return Michelsentp_flash(;equilibrium,x0 = w1,y0 = w2,vol0 = v,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
     end
-    
+
     if K0 == x0 == y0 == nothing #nothing specified
         #is_lle(equilibrium)
         T = Nothing
@@ -128,7 +128,11 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
             non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
             reduced = true)
 
+    if isnan(β) && isapprox(x,z) && isapprox(y,z) && !isnan(v[1]) && !isnan(v[2])
+        return FlashResult([x],[one(β)],[v[1]],FlashData(p,T))
+    end
     g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
+
     comps = [x,y]
     volumes = [v[1],v[2]]
     βi = [1-β ,β]
@@ -148,11 +152,9 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     end
 
     if is_vle(equilibrium) || is_unknown(equilibrium)
-        phasex = :liquid
-        phasey = :vapor
+        phasex,phasey = :liquid,:vapour
     elseif is_lle(equilibrium)
-        phasex = :liquid
-        phasey = :liquid
+        phasex,phasey = :liquid,:liquid
     end
 
     # Setting the initial guesses for volumes
@@ -161,76 +163,56 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 
     nc = length(model)
     # constructing non-in-x list
-    if !isnothing(non_inx_list)
-        non_inx_names_list = [x for x in non_inx_list if x in model.components]
-    else
-        non_inx_names_list = String[]
-    end
-
-    if !isnothing(non_iny_list)
-        non_iny_names_list = [x for x in non_iny_list if x in model.components]
-    else
-        non_iny_names_list = String[]
-    end
-
-    # constructing non-in-x list
-    non_inx = Bool.(zeros(nc))
+    non_inx = fill(false,nc)
     # constructing non-in-y list
-    non_iny = Bool.(zeros(nc))
+    non_iny = fill(false,nc)
 
     for i in 1:nc
         component = model.components[i]
-        if component in non_inx_names_list
-            non_inx[i] = true
-        end
-
-        if component in non_iny_names_list
-            non_iny[i] = true
-        end
+        non_inx[i] = !isnothing(non_inx_list) && (component in non_inx_list) && true
+        non_iny[i] = !isnothing(non_iny_list) && (component in non_iny_list) && true
     end
 
-    inx = .!non_inx
-    iny = .!non_iny
-    inw = (inx,iny)
+    non_inw = (non_inx,non_iny)
     phases = (phasex,phasey)
-    active_inx = !all(inx)
-    active_iny = !all(iny)
+
     # components that are allowed to be in two phases
-    in_equilibria = inx .& iny
+    in_equilibria = @. !non_inx & !non_iny
+
     # Computing the initial guess for the K vector
-    x = similar(z)
-    y = similar(z)
+    x = similar(z,Base.promote_eltype(model,p,T,z))
+    y = similar(z,Base.promote_eltype(model,p,T,z))
     x .= z
     y .= z
+    K,lnK = similar(x),similar(x)
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     if !isnothing(K0)
-        K = 1. * K0
-        lnK = log.(K)
+        K .= 1. * K0
+        lnK .= log.(K)
     elseif !isnothing(x0) && !isnothing(y0)
         x = x0 ./ sum(x0)
         y = y0 ./ sum(y0)
-        lnK = log.(y ./ x)
-        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(volx,voly),phases,inw,dlnϕ_cache)
-        K = exp.(lnK)
+        lnK .= log.(y ./ x)
+        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(volx,voly),phases,non_inw,dlnϕ_cache)
+        K .= exp.(lnK)
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
-        K = tp_flash_K0(model,p,T)
+        tp_flash_K0!(K,model,p,T)
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
             Kmin,Kmax = extrema(K)
 
             if Kmin >= 1 || Kmax <= 1
-                K = K0_lle_init(model,p,T,z)
+                K .= K0_lle_init(model,p,T,z)
             end
         end
-        lnK = log.(K)
+        lnK .= log.(K)
        # volx,voly = NaN*_1,NaN*_1
     else
-        K = K0_lle_init(model,p,T,z)
-        lnK = log.(K)
+        K .= K0_lle_init(model,p,T,z)
+        lnK .= log.(K)
     end
     _1 = one(p+T+first(z))
-
     # Initial guess for phase split
     β,singlephase,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
     g0,g1 = g01
@@ -253,44 +235,45 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
-    x_dem = similar(z)
-    y_dem = similar(z)
     itacc = 0
-    lnK3 = similar(lnK)
-    lnK4 = similar(lnK)
-    lnK5 = similar(lnK)
-    K_dem = similar(lnK)
-    lnK_dem = similar(lnK)
-    ΔlnK1 = similar(lnK)
-    ΔlnK2 = similar(lnK)
+    
+    if nacc != 0
+        lnK3,lnK4,lnK5,K_dem,lnK_dem,ΔlnK1,ΔlnK2 = similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK)
+        x_dem,y_dem = similar(x),similar(y)
+    else
+        lnK3,lnK4,lnK5,K_dem,lnK_dem,ΔlnK1,ΔlnK2 = lnK,lnK,lnK,lnK,lnK,lnK,lnK
+        x_dem,y_dem = x,y
+    end
+
+    lnK_old = similar(lnK)
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
     while error_lnK > K_tol && it < itss && !singlephase
         it += 1
         itacc += 1
-        lnK_old = lnK .* _1
+        lnK_old .= lnK
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
-        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,β,(volx,voly),phases,inw,dlnϕ_cache)
+        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,β,(volx,voly),phases,non_inw,dlnϕ_cache)
         vcache[] = (volx,voly)
         # acceleration step
         if itacc == (nacc - 2)
-            lnK3 = 1. * lnK
+            lnK3 .= lnK
         elseif itacc == (nacc - 1)
-            lnK4 = 1. * lnK
+            lnK4 .= lnK
         elseif itacc == nacc
             itacc = 0
-            lnK5 = 1. * lnK
+            lnK5 .= lnK
             # acceleration using DEM (1 eigenvalues)
             lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3,(ΔlnK1,ΔlnK2))
             K_dem .= exp.(lnK_dem)
             β_dem = rachfordrice(K_dem, z; β0=β, non_inx=non_inx, non_iny=non_iny)
             x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
-            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,β,(volx,voly),phases,inw,dlnϕ_cache)
+            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,β,(volx,voly),phases,non_inw,dlnϕ_cache)
             # only accelerate if the gibbs free energy is reduced
             if gibbs_dem < gibbs
-                lnK .= _1 * lnK_dem
+                lnK .= lnK_dem
                 volx = _1 * volx_dem
                 voly = _1 * voly_dem
                 vcache[] = (volx,voly)
@@ -308,14 +291,14 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
         nx = zeros(nc)
         ny = zeros(nc)
-
-        if active_inx
-            ny[non_inx] = z[non_inx]
+        if any(non_inx)
+            ny[non_inx] = @view(z[non_inx])
             nx[non_inx] .= 0.
         end
-        if active_iny
+
+        if any(non_iny)
             ny[non_iny] .= 0.
-            nx[non_iny] = z[non_iny]
+            nx[non_iny] = @view(z[non_iny])
         end
 
         ny_var0 = y[in_equilibria] * β
@@ -331,8 +314,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.BFGS()))
         end
         ny_var = Solvers.x_sol(sol)
-        ny[in_equilibria] = ny_var
-        nx[in_equilibria] = z[in_equilibria] .- ny[in_equilibria]
+        ny[in_equilibria] .= ny_var
+        nx[in_equilibria] .= @view(z[in_equilibria]) .- @view(ny[in_equilibria])
         nxsum = sum(nx)
         nysum = sum(ny)
         x .= nx ./ nxsum
@@ -349,11 +332,24 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         singlephase = false
     elseif any(isnan,view(K,in_equilibria))
         singlephase = true
+        vn = zero(vx)/zero(vy)
+        #phase = VT_identify_phase(model,vn,T,z)
+        vx = vn
+        vy = vn
+    elseif abs(β) <= eps(one(β))
+        vy = vx
+        singlephase = true
+    elseif  abs(1 - β) <= eps(one(β))
+        vx = vy
+        singlephase = true
     end
+
     if singlephase
         β = zero(β)/zero(β)
         x .= z
         y .= z
+        vx = NaN
+        vy = vx
     end
 
     if !reduced

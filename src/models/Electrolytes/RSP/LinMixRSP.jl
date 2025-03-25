@@ -1,5 +1,5 @@
 abstract type LinMixRSPModel <: RSPModel end
-# 
+#
 struct LinMixRSPParam <: EoSParam
     dielectric_constant::SingleParam{Float64}
 end
@@ -15,9 +15,9 @@ end
 export LinMixRSP
 
 """
-    LinMixRSP(solvents::Array{String,1}, 
-         ions::Array{String,1}; 
-         userlocations::Vector{String}=[], 
+    LinMixRSP(solvents::Array{String,1},
+         ions::Array{String,1};
+         userlocations::Vector{String}=[],
          verbose::Bool=false)
 
 ## Input parameters
@@ -31,13 +31,13 @@ function LinMixRSP(solvents,ions; userlocations::Vector{String}=String[],assoc_u
     components = deepcopy(solvents)
     append!(components,ions)
     icomponents = 1:length(components)
-    
+
     params = getparams(components, ["Electrolytes/RSP/dielectric.csv","SAFT/PCSAFT/ePCSAFTAdv/dielectric.csv"]; userlocations=userlocations, verbose=verbose)
     e_r = params["dielectric"]
     packagedparams = LinMixRSPParam(e_r)
 
     references = String[]
-    
+
     model = LinMixRSP(components, icomponents, packagedparams,references)
     return model
 end

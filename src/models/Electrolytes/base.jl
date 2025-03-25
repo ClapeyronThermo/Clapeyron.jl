@@ -40,6 +40,8 @@ function ESElectrolyte(solvents,ions;
     RSPmodel = ConstRSP,
     userlocations=String[], 
     ideal_userlocations=String[],
+    RSPmodel_userlocations = String[],
+    assoc_options = AssocOptions(),
     verbose=false,
     reference_state = nothing)
     components = deepcopy(ions)
@@ -50,11 +52,20 @@ function ESElectrolyte(solvents,ions;
 
     icomponents = 1:length(components)
 
-    neutral_path = [DB_PATH*"/"*default_locations(neutralmodel)[1]]
-
+    path0 = default_locations(neutralmodel)
+    #remove unused datapaths
+    neutral_path = joinpath.(DB_PATH,filter(∉(("properties/molarmass.csv","properties/molarmass_groups.csv,properties/critical_csv")),path0))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_neutralmodel = neutralmodel(components;userlocations=userlocations,verbose=verbose)
-    init_ionmodel = ionmodel(solvents,ions;RSPmodel=RSPmodel,userlocations=append!(userlocations,neutral_path),verbose=verbose)
+    init_RSP = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations,verbose = verbose)
+    
+    if has_sites(neutralmodel)
+        init_neutralmodel = neutralmodel(components;userlocations,verbose,assoc_options)
+    else
+        init_neutralmodel = neutralmodel(components;userlocations,verbose)
+    end
+    
+    ionmodel_userlocations = can_nt(userlocations) ? userlocations : userlocation_merge(neutral_path,userlocations)
+    init_ionmodel = @initmodel ionmodel(solvents,ions;RSPmodel=init_RSP,userlocations =ionmodel_userlocations,verbose=verbose)
 
     references = String[]
     model = ESElectrolyte(components,icomponents,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)

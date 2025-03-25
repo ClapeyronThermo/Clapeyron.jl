@@ -174,7 +174,7 @@ function __dlnPdTinvsat(pure,sat,crit,xx,in_media = true,is_sat_temperature = tr
         nan_check = isnan(p)
     end
     if in_media && !nan_check
-        dpdT = dpdT_pure(pure,vl,vv,T)
+        dpdT = dpdT_saturation(pure,vl,vv,T)
         return -dpdT*T*T/p,log(p),1/T
     elseif !in_media
         return zero(vl),zero(vl),zero(vl)
@@ -197,6 +197,7 @@ function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillA
     vli = getindex.(pure_vals,2)
     vvi = getindex.(pure_vals,3)
     xipi = p0 .* x
+    zero_non_equilibria!(xipi,volatiles)
     p = sum(xipi)
     if isnothing(y0)
         y = xipi
@@ -286,7 +287,13 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
         return (P_sat,v_l,v_v,x)
     end
     x_r = x[idx_r]
-    (P_sat, v_l, v_v, y_r) = bubble_pressure_impl(model_r,T,x_r,index_reduction(method,idx_r))
+    if has_a_res(model)
+        bubble_pressure_result_primal = bubble_pressure_impl(primalval(model_r),primalval(T),primalval(x_r),index_reduction(method,idx_r))
+        bubble_pressure_result = bubble_pressure_ad(model_r,T,x_r,bubble_pressure_result_primal)
+    else
+        bubble_pressure_result = bubble_pressure_impl(model_r,T,x_r,index_reduction(method,idx_r))
+    end
+    (P_sat, v_l, v_v, y_r) = bubble_pressure_result
     y = index_expansion(y_r,idx_r)
     converged = bubbledew_check(v_l,v_v,y,x)
     if converged
@@ -301,6 +308,21 @@ end
 ###Bubble Temperature
 
 function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
+    
+    if Tx0 !== nothing
+        _crit = isnothing(crit) ?  FillArrays.fill(nothing,length(model)) : crit
+        K = suggest_K(model,p,Tx0,x,pure,volatiles,_crit)
+        y = rr_flash_vapor(K,x,zero(eltype(K)))
+        zero_non_equilibria!(y,volatiles)
+        y ./= sum(y)
+        vl0 = volume(model,p,Tx0,x,phase = :l)
+        vv0 = volume(model,p,Tx0,y,phase = :v)
+        #this is exactly like __x0_bubble_pressure, but we use T0, instead of an input T
+        #_,vl0,vv0,y = __x0_bubble_pressure(model,T0,x,nothing,volatiles,pure,crit)
+        return Tx0,vl0,vv0,y
+    end
+    
+    
     sat = extended_saturation_temperature.(pure,p,crit,volatiles,crit_retry = false)
     if crit === nothing
         _crit = __crit_pure.(sat,pure,volatiles)
@@ -308,20 +330,12 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
         _crit = crit
     end
     fix_sat_ti!(sat,pure,_crit,p,volatiles)
-    if Tx0 !== nothing
-        T0 = Tx0
-    else
-        dPdTsat = __dlnPdTinvsat.(pure,sat,_crit,p,volatiles)
-        prob = antoine_bubble_problem(dPdTsat,p,x,volatiles)
-        T0 = Roots.solve(prob)
-    end
-
-
+    dPdTsat = __dlnPdTinvsat.(pure,sat,_crit,p,volatiles)
+    prob = antoine_bubble_problem(dPdTsat,p,x,volatiles)
+    T0 = Roots.solve(prob)
     K = suggest_K(model,p,T0,x,pure,volatiles,_crit)
     y = rr_flash_vapor(K,x,zero(eltype(K)))
-    for i in 1:length(y)
-        !volatiles[i] && (y[i] = 0)
-    end
+    zero_non_equilibria!(y,volatiles)
     y ./= sum(y)
     vl0 = volume(model,p,T0,x,phase = :l)
     vv0 = volume(model,p,T0,y,phase = :v)
@@ -330,21 +344,26 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
     return T0,vl0,vv0,y
 end
 
-function antoine_bubble_problem(dpdt,p_bubble,x,volatiles = FillArrays.Fill(true,length(dpdt)))  
+function antoine_bubble_problem(dpdt,p_bubble,x,volatiles = FillArrays.Fill(true,length(dpdt)),ϕl = FillArrays.fill(1.0,length(dpdt)),T0 = nothing)  
     function antoine_f0(T)
         p = zero(T+first(x)+first(dpdt)[1])
         for i in 1:length(dpdt)
             dlnpdTinv,logp0,T0inv = dpdt[i]
             if volatiles[i]
                 pᵢ = exp(logp0 + dlnpdTinv*(1/T - T0inv))
-                pᵢxᵢ = x[i]*pᵢ
+                pᵢxᵢ = x[i]*pᵢ*ϕl[i]
                 p += pᵢxᵢ
             end
         end
         return p/sum(x) - p_bubble
     end
+    if T0 === nothing
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
-    return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+        return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+    else
+        return Roots.ZeroProblem(antoine_f0,T0)
+    end
+
 end
 
 function x0_bubble_temperature(model::EoSModel,p,x)
@@ -432,7 +451,16 @@ function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
         return (T_sat,v_l,v_v,x)
     end
     x_r = x[idx_r]
-    (T_sat, v_l, v_v, y_r) = bubble_temperature_impl(model_r,p,x_r,index_reduction(method,idx_r))
+
+
+    if has_a_res(model)
+        bubble_temperature_result_primal =  bubble_temperature_impl(primalval(model_r),primalval(p),primalval(x_r),index_reduction(method,idx_r))
+        bubble_temperature_result =  bubble_temperature_ad(model_r,p,x_r,bubble_temperature_result_primal)
+    else
+        bubble_temperature_result =  bubble_temperature_impl(model_r,p,x_r,index_reduction(method,idx_r))
+    end
+
+    (T_sat, v_l, v_v, y_r) = bubble_temperature_result
     y = index_expansion(y_r,idx_r)
     converged = bubbledew_check(v_l,v_v,y,x)
     if converged

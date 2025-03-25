@@ -2,8 +2,27 @@
 
 struct ∂Tag end
 
+recursive_fd_value(x::Number) = ForwardDiff.value(x)
+recursive_fd_value(x::Tuple) = recursive_fd_value.(x)
+recursive_fd_value(x::AbstractArray) = recursive_fd_value.(x)
+
+recursive_fd_extract_derivative(T::TT,x::Number) where TT = ForwardDiff.extract_derivative(T,x)
+recursive_fd_extract_derivative(T::TT,x::Tuple) where TT = recursive_fd_extract_derivative.(T,x)
+recursive_fd_extract_derivative(T::TT,x::AbstractArray) where TT = recursive_fd_extract_derivative.(T,x)
+
+
 @inline function derivative(f::F, x::R) where {F,R<:Real}
-    return ForwardDiff.derivative(f,x)
+    T = typeof(ForwardDiff.Tag(f, R))
+    return recursive_fd_extract_derivative(T, f(ForwardDiff.Dual{T}(x, one(x))))
+end
+
+@inline function derivative(f::F, x::R,check::Val{false}) where {F,R<:Real}
+    T = typeof(ForwardDiff.Tag(nothing,R))
+    return recursive_fd_value(T, f(ForwardDiff.Dual{T}(x, one(x))))
+end
+
+@inline function derivative(f::F, x::R,check::Val{true}) where {F,R<:Real}
+    return derivative(f,x)
 end
 
 @inline function gradient(f::F, x) where {F}
@@ -42,8 +61,9 @@ returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.j
 @inline function f∂f(f::F, x::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
     out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),))))
-    return ForwardDiff.value(out),  ForwardDiff.extract_derivative(T, out)
+    return recursive_fd_value(out),  recursive_fd_extract_derivative(T, out)
 end
+
 
 f∂f(f::F) where F = Base.Fix1(f∂f,f)
 
@@ -212,11 +232,24 @@ primalval(x) = x
 #scalar
 primalval(x::ForwardDiff.Dual) = primalval(ForwardDiff.value(x))
 
+@generated function primalval_struct(x::M) where M
+    names = fieldnames(M)
+    Base.typename(M).wrapper
+    primalvals = Expr(:call,Base.typename(M).wrapper,map(name -> :(primalval(x.$name)) ,names)...)
+    return primalvals
+end
 
 primal_eltype(x) = primal_eltype(eltype(x))
 primal_eltype(::Type{W}) where W <: ForwardDiff.Dual{T,V} where {T,V} = primal_eltype(V)
 primal_eltype(::Type{T}) where T = T
 
+#eager version:
+primalval_eager(x) = primalval(x)
+function primalval_eager(x::AbstractArray{T}) where T <: ForwardDiff.Dual 
+    res = similar(x,primal_eltype(T))
+    length(res) == 0 && return res
+    return map!(primalval,res,x)
+end
 
 #this struct is used to wrap a vector of ForwardDiff.Dual's and just return the primal values, without allocations
 struct PrimalValVector{T,V} <: AbstractVector{T}

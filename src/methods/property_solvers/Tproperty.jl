@@ -248,6 +248,18 @@ function Tproperty_pure(model,p,prop,z,property::F,rootsolver,phase,abstol,relto
 end
 
 function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
+  T_primal,phase = Tproperty_impl(primalval(model),primalval(p),primalval(prop),primalval(z),property,rootsolver,phase,abstol,reltol,threaded,primalval(T0))
+  if has_a_res(model)
+    T = Tproperty_ad(model,p,prop,z,property,T_primal,phase)
+    return T,phase
+  else
+    T = T_primal
+  end
+  return T,phase
+end
+
+
+function Tproperty_impl(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
   if is_unknown(phase)
     new_phase = identify_phase(model,p,T0,z)
     if is_unknown(new_phase) #something really bad happened
@@ -257,17 +269,33 @@ function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,t
     end
     return __Tproperty(model,p,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,T0)
   end
-  f(t,prop) = property(model,p,t,z,phase = phase,threaded = threaded) - prop
-  prob = Roots.ZeroProblem(f,T0)
-  sol = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
-  if !isfinite(sol) || sol < 0
-    return sol,:failure
+  _1 = oneunit(typeof(prop))
+  f(t,prop) = _1*property(model,p,t,z,phase = phase,threaded = threaded) - prop
+  prob = Roots.ZeroProblem(f,_1*T0)
+  T = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
+  if !isfinite(T) || T < 0
+    return T,:failure
   end
-  return sol,phase
+  return T,phase
 end
 
 function __Tproperty(model,p,prop,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
   __Tproperty(model,p,prop,SA[1.0],property,rootsolver,phase,abstol,reltol,threaded,T0)
+end
+
+function Tproperty_ad(model,p,prop,z,property::F,T_primal,phase) where F
+  if has_dual(model) || has_dual(p) || has_dual(prop) || has_dual(z)
+    #=
+    we know that T_primal is the solution to
+    property(model,p,T_primal,z,phase = phase,threaded = threaded) - prop = 0
+    =#
+    _property(_T) = property(model,p,_T,z,phase = phase)
+    fprop,∂prop∂T = Solvers.f∂f(_property,T_primal)
+    T = T_primal + (prop - fprop)/∂prop∂T
+    return T
+  else
+    return T_primal
+  end
 end
 
 # model = PCSAFT(["propane","dodecane"])

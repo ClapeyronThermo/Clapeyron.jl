@@ -181,7 +181,7 @@ end
 function x0_sublimation_temperature(model::CompositeModel,p)
     Tt,pt,vs0,vl0,vv0 = triple_point(model)
     solid,fluid = solid_model(model),fluid_model(model)
-    K0 = -dpdT_pure(solid,fluid,vs0,vv0,Tt)*Tt*Tt/pt
+    K0 = -dpdT_saturation(solid,fluid,vs0,vv0,Tt)*Tt*Tt/pt
     #Clausius Clapeyron
     #log(P/Ptriple) = K0 * (1/T - 1/Ttriple)
     Tinv = log(p/pt)/K0 + 1/Tt

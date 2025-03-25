@@ -29,7 +29,8 @@ Clapeyron.VLLE_pressure
 Clapeyron.VLLE_temperature
 Clapeyron.crit_mix
 Clapeyron.UCEP_mix
-Clapeyron.UCST_mix
+Clapeyron.UCST_pressure
+Clapeyron.UCST_temperature
 Clapeyron.gibbs_solvation
 Clapeyron.cross_second_virial
 Clapeyron.equivol_cross_second_virial

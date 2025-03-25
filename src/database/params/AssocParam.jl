@@ -74,6 +74,11 @@ Base.eltype(param::AssocParam{T}) where T = T
 
 Base.size(param::AssocParam) = size(param.values.values)
 
+#primalval
+function Solvers.primalval(x::AssocParam)
+    return AssocParam(x.name,x.components,Solvers.primalval_eager(x.values),x.sites,x.sourcecsvs,x.sources)
+end
+
 function Base.getindex(param::AssocParam,i::Int) 
     Base.checkbounds(param.components,i)
     getindex(param.values,i,i)

@@ -148,7 +148,7 @@ function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
     elseif model.liquid === nothing && model.gas !== nothing
         return _1*volume_impl(model.gas,p,T,z,phase,threaded,vol0)
     end
-    
+
     nan = _0/_0
     if is_liquid(phase)
         return volume(model.liquid, p, T, z; phase, threaded, vol0)
@@ -244,6 +244,10 @@ function init_preferred_method(method::typeof(tp_flash),model::FluidCorrelation,
     RRTPFlash(;kwargs...)
 end
 
+function init_preferred_method(method::typeof(tp_flash),model::FluidCorrelation{<:IdealModel},kwargs)
+    RRTPFlash(;nacc = 0,kwargs...)
+end
+
 __tpflash_cache_model(model::FluidCorrelation,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
 function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
@@ -270,10 +274,10 @@ function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
     end
 end
 
-function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,vols,phases,inw,cache = nothing)
+function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,vols,phases,non_inw,cache = nothing)
     volx,voly = vols
     phasex,phasey = phases
-    inx,iny = inw
+    non_inx,non_iny = non_inw
     model = wrapper.model
     sats = wrapper.sat
     #crits = wrapper.crit
@@ -285,18 +289,16 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,vo
     is_ideal = gasmodel isa IdealModel
     if is_vapour(phasey)
         for i in eachindex(lnK)
-            if iny[i]
+            if non_inx[i]
+                lnK[i] = Inf
+            elseif non_iny[i]
+                lnK[i] = -Inf
+            else
                 ϕli = fug[i]
                 p_i = sats[i][1]
-                if !inx[i]
-                    lnK[i] = Inf
-                elseif !iny[i]
-                    lnK[i] = -Inf
-                else
-                    lnKi = log(p_i*ϕli/p) - lnϕy[i]
-                    !is_ideal && (lnKi += volx*(p - p_i)/RT) #add poynting corrections only if the fluid model itself has non-ideal corrections
-                    lnK[i] = lnKi
-                end
+                lnKi = log(p_i*ϕli/p) - lnϕy[i]
+                !is_ideal && (lnKi += volx*(p - p_i)/RT) #add poynting corrections only if the fluid model itself has non-ideal corrections
+                lnK[i] = lnKi
             end
         end
     else
@@ -304,6 +306,11 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,vo
     end
     return lnK,volx,voly,NaN*one(T+p+first(x))
 end
+
+function ∂lnϕ_cache(model::PTFlashWrapper{FluidCorrelation{<:IdealModel}}, p, T, z, dt::Val{B}) where B
+    return nothing
+end
+
 
 function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,eq)
     return NaN*one(T+p+first(x))
