@@ -8,7 +8,6 @@ abstract type MSAIDModel <: IonModel end
 
 struct MSAID <: MSAIDModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::MSAIDParam
     references::Array{String,1}
 end
@@ -18,10 +17,11 @@ end
 export MSAID
 """
     MSAID(solvents::Array{String,1}, 
-         ions::Array{String,1}; 
-         SAFTlocations=String[], 
-         userlocations=String[], 
-         verbose=false)
+        ions::Array{String,1};
+        RSPmodel = nothing,
+        userlocations = String[],
+        RSPmodel_userlocations = nothing,
+        verbose = false)
 
 ## Input parameters
 - `sigma`: Single Parameter (`Float64`) - Hard-sphere diameter `[m]`
@@ -36,7 +36,6 @@ This function is used to create a Mean Spherical Approximation model. The MSAID 
 function MSAID(solvents,ions; userlocations, verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
-    icomponents = 1:length(components)
     params = getparams(components, ["Electrolytes/properties/charges.csv","properties/molarmass.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     if any(keys(params).=="b")
         params["b"].values .*= 3/2/N_A/π*1e-3
@@ -54,9 +53,11 @@ function MSAID(solvents,ions; userlocations, verbose=false)
 
     packagedparams = MSAIDParam(sigma,dipole,charge)
 
-    references = String[]
-        
-    model = MSAID(components, icomponents, packagedparams, references)
+    references = String["10.1063/1.1682224"]
+    if count(iszero,charge.values) != 1
+        throw(error("MSAID only supports one neutral solvent."))
+    end
+    model = MSAID(components, packagedparams, references)
     return model
 end
 
@@ -69,24 +70,21 @@ function data(model::MSAIDModel, V, T, z)
     σ = model.params.sigma.values
     Z = model.params.charge.values
 
-    isolv = model.icomponents[Z.==0]
-    iions = model.icomponents[Z.!=0]
-
-    μ = model.params.dipole.values[isolv][1]
-
-    ρ = N_A*sum(z)/V
-    x = z/sum(z)
-    
-    σₙ = σ[isolv][1]
-    xₙ = x[isolv][1]
+    nc = length(model)
+    icomponents = 1:nc
+    isolv = findfirst(iszero,Z)
+    μ = model.params.dipole.values[isolv]
+    ∑z = sum(z)
+    ρ = N_A*∑z/V
+    σₙ = σ[isolv]
+    x = z / ∑z
+    xₙ = x[isolv]
     ρₙ = ρ*xₙ
-
     α₀ = e_c*√(β/ϵ_0) # Checked
     α₂ = μ*√(β/3/ϵ_0) # Checked
-    Δ = 1-π*ρ/6*sum(x[i]*σ[i]^3 for i ∈ @comps)
+    Δ = 1 - π*ρ/6*sum(x[i]*σ[i]^3 for i ∈ @comps)
     ξ₂ = ρ*sum(x[i]*σ[i]^2 for i ∈ @comps)
-    χ = sum(x[i]*σ[i]*Z[i] for i in iions)
-
+    χ = sum(x[i]*σ[i]*Z[i] for i in 1:nc if Z[i] != 0)
     _data = (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,x)
     return _data
 end
@@ -98,9 +96,10 @@ function obj_MSAID(F,model::MSAIDModel,Γ,B,b₂,_data)
     nc = length(model)
     σ = model.params.sigma.values
     Z = model.params.charge.values
-
-    isolv = model.icomponents[Z.==0]
-    iions = model.icomponents[Z.!=0]
+    
+    icomponents = 1:length(model)
+    #isolv = findfirst(iszero,Z) #icomponents[Z.==0]
+    iions = icomponents[Z.!=0]
 
     (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,x) = _data
 
@@ -133,25 +132,22 @@ function obj_MSAID(F,model::MSAIDModel,Γ,B,b₂,_data)
     F[2] = (-ρ*sum(x[i]*a⁰[i]*K¹⁰[i] for i in iions) + a¹*(1-ρₙ*K¹¹))/(α₀*α₂) - 1 # Checked
     F[3] = ((1-ρₙ*K¹¹)^2+ρₙ*ρ*sum(x[i]*K¹⁰[i]^2 for i in iions) - y₁^2)/(ρₙ*α₂^2) - 1 # Checked
 
-    η = ρ*sum(Z.^2 .*x)
-    m = @. Vη*Dᶠ/(σₙ+λ*σ) * √(η*ρₙ)*σₙ*σ/Z
-    N = @. (2*Dᶠ/(β₆*σ)*(1+Vη*ρₙ*σₙ^3*B*σ/(24*(σₙ+λ*σ))) - Z/σ)*σ/Z
-    ϵr = 1+ρₙ*α₂^2*β₆^2*(1+λ)^4/16
-    return F, m, N, ϵr
+    η = ρ*@sum(Z[i]^2 * x[i])
+    #m = @. Vη*Dᶠ/(σₙ+λ*σ) * √(η*ρₙ)*σₙ*σ/Z
+    #N = @. (2*Dᶠ/(β₆*σ)*(1+Vη*ρₙ*σₙ^3*B*σ/(24*(σₙ+λ*σ))) - Z/σ)*σ/Z
+    #ϵr = 1+ρₙ*α₂^2*β₆^2*(1+λ)^4/16
+    return F#, m, N, ϵr
 end
 
 function a_ion(model::MSAIDModel, V, T, z, _data=@f(data))
     σ = model.params.sigma.values
     Z = model.params.charge.values
-
-    isolv = model.icomponents[Z.==0]
-    iions = model.icomponents[Z.!=0]
-
     nc = length(model)
-    
+    icomponents = 1:nc
 
-    isolv = model.icomponents[Z.==0]
-    iions = model.icomponents[Z.!=0]
+    iions = icomponents[Z.!=0]
+    isolv1 = findfirst(iszero,Z)
+    isolv = isolv1:isolv1
 
     (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,x) = _data
 
@@ -219,20 +215,15 @@ function a_ion(model::MSAIDModel, V, T, z, _data=@f(data))
     end
 
     Jp *= ρ/(3π)
-
     N = @. (2*Dᶠ/(β₆*σ)*(1+Vη*ρₙ*σₙ^3*B*σ/(24*(σₙ+λ*σ))) - Z/σ)
-
-    return (α₀^2*sum(x[i]*Z[i]*N[i] for i in iions)
-    - ρₙ/ρ*α₀*B*α₂)/(6π) - Jp
+    return (α₀^2*sum(x[i]*Z[i]*N[i] for i in iions) - ρₙ/ρ*α₀*B*α₂)/(6π) - Jp
 end
 
 function solve_MSAID(model::MSAIDModel,V,T,z,_data = @f(data))
-    F = zeros(typeof(one(eltype(model))+V+T+first(z)),(3))
-
-    x0 = ones(typeof(one(eltype(model))+V+T+first(z)),(3)).*[9., 1.,2.02]
-
-    f!(F,x) = obj_MSAID(F,model,x[1]*1e9,x[2]*1e17,x[3],_data)[1]
-
+    F = zeros(Base.promote_eltype(model,V,T,z),(3))
+    x0 = similar(F)
+    x0 .= (9.0,1.0,2.02) #TOOD: any better initial point?
+    f!(F,x) = obj_MSAID(F,model,x[1]*1e9,x[2]*1e17,x[3],_data)
     sol = Solvers.nlsolve(f!,x0, LineSearch(Newton()))
     _x = Solvers.x_sol(sol)
     return _x[1]*1e9, _x[2]*1e17, _x[3]
