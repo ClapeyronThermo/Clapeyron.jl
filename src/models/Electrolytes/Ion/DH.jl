@@ -7,7 +7,6 @@ abstract type DHModel <: IonModel end
 
 struct DH{ϵ} <: DHModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::DHParam
     RSPmodel::ϵ
     references::Array{String,1}
@@ -43,7 +42,6 @@ function DH(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_u
 
     components = deepcopy(ions)
     prepend!(components,solvents)
-    icomponents = 1:length(components)
 
     params = getparams(components, ["Electrolytes/properties/charges.csv","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
@@ -64,7 +62,7 @@ function DH(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_u
 
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
-    model = DH(components, icomponents, packagedparams, init_RSPmodel,references)
+    model = DH(components, packagedparams, init_RSPmodel,references)
     return model
 end
 
@@ -83,14 +81,14 @@ function a_ion(model::DHModel, V, T, z,_data=@f(data))
     if all(iszero,Z)
         return zero(V+T+first(z))
     end
-
+    nc = length(model)
     ∑z = sum(z)
     ρ = N_A*sum(z)/V
     s = e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)
-    κ = sqrt(4π*s*ρ*sum(z[i]*Z[i]*Z[i] for i ∈ model.icomponents)/∑z)
+    κ = sqrt(4π*s*ρ*sum(z[i]*Z[i]*Z[i] for i ∈ 1:nc)/∑z)
 
     res = zero(Base.promote_eltype(model,V,T,z))
-    for i in model.icomponents
+    for i in 1:nc
         Zi = Z[i]
         if Z[i] != 0
             yi = σ[i]*κ

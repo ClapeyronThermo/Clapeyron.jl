@@ -8,7 +8,6 @@ abstract type DHBornModel <: DHModel end
 
 struct DHBorn{ϵ} <: DHBornModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::DHBornParam
     RSPmodel::ϵ
     references::Array{String,1}
@@ -43,7 +42,6 @@ This function is used to create a Debye-Hückel-Born model. The Debye-Hückel-Bo
 function DHBorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
-    icomponents = 1:length(components)
     params = getparams(components, append!(["Electrolytes/properties/charges.csv","properties/molarmass.csv","Electrolytes/Born/born_like.csv"]); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     if any(keys(params).=="b")
         params["b"].values .*= 3/2/N_A/π*1e-3
@@ -64,7 +62,7 @@ function DHBorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmod
 
     references = String[]
 
-    model = DHBorn(components, icomponents, packagedparams, init_RSPmodel, references)
+    model = DHBorn(components, packagedparams, init_RSPmodel, references)
     return model
 end
 
@@ -86,7 +84,7 @@ function a_born(model::DHBornModel, V, T, z,_data=@f(data))
     end
 
     res = zero(Base.promote_eltype(z,Z,σ_born))
-    for i in model.icomponents
+    for i in 1:length(model)
         if Z[i] != 0
             res += z[i]*Z[i]^2/σ_born[i]
         end

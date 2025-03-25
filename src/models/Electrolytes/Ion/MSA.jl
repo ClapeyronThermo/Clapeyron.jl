@@ -7,7 +7,6 @@ abstract type MSAModel <: IonModel end
 
 struct MSA{ϵ} <: MSAModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::MSAParam
     RSPmodel::ϵ
     references::Array{String,1}
@@ -40,7 +39,6 @@ This function is used to create a Mean Spherical Approximation model. The MSA te
 function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
-    icomponents = 1:length(components)
     params = getparams(components, ["Electrolytes/properties/charges.csv","properties/molarmass.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     if any(keys(params).=="b")
         params["b"].values .*= 3/2/N_A/π*1e-3
@@ -59,7 +57,7 @@ function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_
 
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
-    model = MSA(components, icomponents, packagedparams, init_RSPmodel, references)
+    model = MSA(components, packagedparams, init_RSPmodel, references)
     return model
 end
 
@@ -75,7 +73,8 @@ function a_ion(model::MSAModel, V, T, z, _data=@f(data))
     ϵ_r = _data
     σ = model.params.sigma.values
     Z = model.params.charge.values
-    iions = model.icomponents[Z.!=0]
+    icomponents = 1:length(model)
+    iions = icomponents[Z.!=0]
 
     if length(iions) == 0
         return zero(V+T+first(z))
@@ -97,7 +96,8 @@ end
 function screening_length(model::MSAModel,V,T,z,ϵ_r = @f(data))
     σ = model.params.sigma.values
     Z = model.params.charge.values
-    iions = model.icomponents[Z.!=0]
+    icomponents = 1:length(model)
+    iions = icomponents[Z.!=0]
 
     ∑z = sum(z)
     ρ = N_A*sum(z)/V

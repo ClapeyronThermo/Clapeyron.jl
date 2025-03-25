@@ -13,7 +13,6 @@ end
 struct GCMSABorn{ϵ} <: GCMSABornModel
     components::Array{String,1}
     groups::GroupParam
-    icomponents::UnitRange{Int}
     params::GCMSABornParam
     RSPmodel::ϵ
     references::Array{String,1}
@@ -44,7 +43,6 @@ function GCMSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[],RSPm
     groups = GroupParam(cat(solvents,ions,dims=1), ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/"]; userlocations=userlocations,return_sites=false,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     components = groups.components
-    icomponents = 1:length(components)
 
     segment = params["vst"]
     shapefactor = params["S"]
@@ -78,7 +76,7 @@ function GCMSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[],RSPm
     references = String[]
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
-    model = GCMSABorn(components, groups, icomponents, packagedparams, init_RSPmodel,references)
+    model = GCMSABorn(components, groups, packagedparams, init_RSPmodel,references)
     return model
 end
 

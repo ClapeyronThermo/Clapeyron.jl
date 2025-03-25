@@ -8,7 +8,6 @@ abstract type MSABornModel <: MSAModel end
 
 struct MSABorn{ϵ} <: MSABornModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::MSABornParam
     RSPmodel::ϵ
     references::Array{String,1}
@@ -44,7 +43,6 @@ This function is used to create a Mean Spherical Approximation-Born model. The M
 function MSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
-    icomponents = 1:length(components)
     params = getparams(components, append!(["Electrolytes/properties/charges.csv","properties/molarmass.csv","Electrolytes/Born/born_like.csv"]); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     if any(keys(params).=="b")
         params["b"].values .*= 3/2/N_A/π*1e-3
@@ -65,7 +63,7 @@ function MSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmo
 
     references = String[]
 
-    model = MSABorn(components, icomponents, packagedparams, init_RSPmodel, references)
+    model = MSABorn(components, packagedparams, init_RSPmodel, references)
     return model
 end
 
@@ -82,7 +80,7 @@ function a_born(model::MSABornModel, V, T, z,_data=@f(data))
         return zero(Base.promote_eltype(model,T,z))
     end
     res = zero(Base.promote_eltype(z,Z,σ_born))
-    for i in model.icomponents
+    for i in 1:length(model)
         if Z[i] != 0
             res += z[i]*Z[i]^2/σ_born[i]
         end
