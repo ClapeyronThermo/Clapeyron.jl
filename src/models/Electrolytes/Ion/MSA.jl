@@ -12,8 +12,6 @@ struct MSA{ϵ} <: MSAModel
     references::Array{String,1}
 end
 
-@registermodel MSA
-
 export MSA
 """
     MSA(solvents::Array{String,1},
@@ -98,7 +96,7 @@ function screening_length(model::MSAModel,V,T,z,ϵ_r = @f(data))
     ρ = N_A*sum(z)/V
     Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ @comps)/∑z
 
-    Γold = (4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρ*sum(z[i]*Z[i]^2 for i ∈ iions)/∑z)^(1/2)
+    Γold = sqrt(4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρ*sum(z[i]*Z[i]^2 for i ∈ iions)/∑z)
     _0 = zero(Γold)
     Γnew = _0
     tol  = one(_0)

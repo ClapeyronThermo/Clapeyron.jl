@@ -2,7 +2,6 @@ abstract type ESElectrolyteModel <: ElectrolyteModel end
 
 struct ESElectrolyte{T<:IdealModel,c<:EoSModel,i<:IonModel} <: ESElectrolyteModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     charge::Vector{Int64}
     idealmodel::T
     neutralmodel::c
@@ -12,8 +11,8 @@ end
 
 
 """
-    ESElectrolyte(solvents::Array{String,1}, 
-        ions::Array{String,1}; 
+    ESElectrolyte(solvents::Array{String,1},
+        ions::Array{String,1};
         idealmodel::IdealModel = BasicIdeal,
         neutralmodel::EoSModel = pharmaPCSAFT,
         ionmodel::IonModel = DH,
@@ -29,46 +28,43 @@ model = ESElectrolyte(["water"],["sodium","chloride"];
             idealmodel = BasicIdeal,
             neutralmodel = pharmaPCSAFT,
             ionmodel = DH,
-            RSPmodel = ConstRSP)  
+            RSPmodel = ConstRSP)
 ```
-Any of the available models in Clapeyron can be combined in the above. Note that neutral (solvent) species and ions are defined separately. Within Clapeyron, we will only support ion-based electrolyte models; as such, any salt-based approach (i.e. where the salt is treated as a separate species) will not be supported. 
+Any of the available models in Clapeyron can be combined in the above. Note that neutral (solvent) species and ions are defined separately. Within Clapeyron, we will only support ion-based electrolyte models; as such, any salt-based approach (i.e. where the salt is treated as a separate species) will not be supported.
 """
-function ESElectrolyte(solvents,ions; 
+function ESElectrolyte(solvents,ions;
     idealmodel = BasicIdeal,
     neutralmodel = pharmaPCSAFT,
     ionmodel = DH,
     RSPmodel = ConstRSP,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     RSPmodel_userlocations = String[],
     assoc_options = AssocOptions(),
-    verbose=false,
+    verbose = false,
     reference_state = nothing)
     components = deepcopy(ions)
     prepend!(components,solvents)
 
     params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=userlocations, verbose=verbose)
     charge = params["charge"].values
-
-    icomponents = 1:length(components)
-
     path0 = default_locations(neutralmodel)
     #remove unused datapaths
     neutral_path = joinpath.(DB_PATH,filter(∉(("properties/molarmass.csv","properties/molarmass_groups.csv,properties/critical_csv")),path0))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_RSP = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations,verbose = verbose)
-    
+
     if has_sites(neutralmodel)
         init_neutralmodel = neutralmodel(components;userlocations,verbose,assoc_options)
     else
         init_neutralmodel = neutralmodel(components;userlocations,verbose)
     end
-    
+
     ionmodel_userlocations = can_nt(userlocations) ? userlocations : userlocation_merge(neutral_path,userlocations)
     init_ionmodel = @initmodel ionmodel(solvents,ions;RSPmodel=init_RSP,userlocations =ionmodel_userlocations,verbose=verbose)
 
     references = String[]
-    model = ESElectrolyte(components,icomponents,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    model = ESElectrolyte(components,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
@@ -84,7 +80,7 @@ Calculates the dielectric constant (also known as relative static permittivity) 
 ## Examples
 ```julia
 model = ConstRSP()
-εr = dielectric_constant(model, 1.8e-5, 298.15, [1.0]) 
+εr = dielectric_constant(model, 1.8e-5, 298.15, [1.0])
 ```
 """
 function dielectric_constant end
@@ -94,7 +90,7 @@ function dielectric_constant(model::ESElectrolyteModel,V, T, z)
 end
 
 function dielectric_constant(model::IonModel,V, T, z)
-    return dielectric_constant(model.RSPModel, V, T, z)
+    return dielectric_constant(model.RSPmodel, V, T, z)
 end
 
 function a_res(model::ESElectrolyteModel, V, T, z)

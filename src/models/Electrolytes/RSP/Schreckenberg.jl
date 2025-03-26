@@ -8,12 +8,10 @@ end
 
 struct Schreckenberg <: SchreckenbergModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::SchreckenbergParam
     references::Array{String,1}
 end
 
-@registermodel Schreckenberg
 export Schreckenberg
 
 """
@@ -37,7 +35,6 @@ function Schreckenberg(solvents,ions; userlocations::Vector{String}=String[], ve
     components = deepcopy(ions)
     prepend!(components,solvents)
     components = format_components(components)
-    icomponents = 1:length(components)
 
     params = getparams(components, ["Electrolytes/RSP/Schreckenberg.csv","Electrolytes/properties/charges.csv"]; userlocations=userlocations, verbose=verbose, ignore_missing_singleparams=["d_T","d_V"])
     d_T = params["d_T"]
@@ -47,7 +44,7 @@ function Schreckenberg(solvents,ions; userlocations::Vector{String}=String[], ve
 
     references = String[]
 
-    model = Schreckenberg(components,icomponents,packagedparams,references)
+    model = Schreckenberg(components,packagedparams,references)
     return model
 end
 
@@ -55,32 +52,24 @@ function dielectric_constant(model::SchreckenbergModel,V,T,z,_data=nothing)
         d_T = model.params.d_T.values
         d_V = model.params.d_V.values
         Z = model.params.charge.values
-        icomponents = model.icomponents
-
+        ineutrals = @ineutral()
         if all(!iszero,Z)
             return zero(Base.promote_eltype(model,V,T,z))
         end
 
-        n_solv = zero(eltype(z))
-        for i in icomponents
-            Z[i] == 0 && (n_solv += z[i])
-        end
-
+        n_solv = sum(z[i] for i ∈ ineutrals)
         ρ_solv = n_solv / V
         d̄ = zero(Base.promote_eltype(model,T,z))
 
-        for i in icomponents
-            Zi = Z[i]
-            if Z[i] == 0
-                di = d_V[i]*(d_T[i]/T-1)
-                dij,zi = di,z[i]
-                d̄ += dij*zi*zi
-                for j in icomponents#ineutral[ineutral.!=i]
-                    if Z[j] == 0 && j != i
-                        dj = d_V[j]*(d_T[j]/T-1)
-                        dij,zj = 0.5*(di+dj),z[j]
-                        d̄ += dij*zi*zj
-                    end
+        for i ∈ ineutrals
+            di = d_V[i]*(d_T[i]/T-1)
+            dij,zi = di,z[i]
+            d̄ += dij*zi*zi
+            for j in ineutrals
+                if j != i
+                    dj = d_V[j]*(d_T[j]/T-1)
+                    dij,zj = 0.5*(di+dj),z[j]
+                    d̄ += dij*zi*zj
                 end
             end
         end

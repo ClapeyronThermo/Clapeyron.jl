@@ -12,8 +12,6 @@ struct MSAID <: MSAIDModel
     references::Array{String,1}
 end
 
-@registermodel MSAID
-
 export MSAID
 """
     MSAID(solvents::Array{String,1},
@@ -129,9 +127,9 @@ function obj_MSAID(model::MSAIDModel,z,Γ,B,b₂,_data)
     #ΔΓ = @. Vη*ρₙ*σₙ^2*σ^2*B/(8*β₆*(σₙ+λ*σ)) # Checked
     #Dᶠ = @. Z*β₆/(2*(1+σ*Γ-ΔΓ)) # Checked
 
-    #D = 1 + Vη^2*ρₙ*ρ*σₙ^2*sum(x[i]*σ[i]^2*Dᶠ[i]^2/(2β₆*(σₙ+λ*σ[i]))^2 for i in 1:nc if Z[i] != 0) # Checked
-    #Dac = ρ*sum(x[i]*Dᶠ[i]^2 for i in 1:nc if Z[i] != 0) # Checked
-    #Ω   = Vη*ρ*sum(x[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i in 1:nc if Z[i] != 0) # Checked
+    #D = 1 + Vη^2*ρₙ*ρ*σₙ^2*sum(x[i]*σ[i]^2*Dᶠ[i]^2/(2β₆*(σₙ+λ*σ[i]))^2 for i in iions) # Checked
+    #Dac = ρ*sum(x[i]*Dᶠ[i]^2 for i in iions) # Checked
+    #Ω   = Vη*ρ*sum(x[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i in iions) # Checked
 
     ∑1,∑2,∑3 = zero(D),zero(D),zero(D)
     for i ∈ iions
@@ -156,9 +154,9 @@ function obj_MSAID(model::MSAIDModel,z,Γ,B,b₂,_data)
     #a⁰  = @. β₆*Γₛ*Dᶠ/Dac # Checked
     #K¹⁰ = @. -(σₙ^2*Dᶠ*(Vη/(σₙ+λ*σ)+Ω*Γₛ/Dac)/(2*D*β₆^2) + σₙ^3*B*a⁰/(12*β₆)) # Checked
 
-    #F[1] = (ρ*sum(x[i]*a⁰[i]^2 for i in 1:nc if Z[i] != 0) + ρₙ*a¹^2)/α₀^2 - 1 # Checked
-    #F[2] = (-ρ*sum(x[i]*a⁰[i]*K¹⁰[i] for i in 1:nc if Z[i] != 0) + a¹*(1-ρₙ*K¹¹))/(α₀*α₂) - 1 # Checked
-    #F[3] = ((1-ρₙ*K¹¹)^2+ρₙ*ρ*sum(x[i]*K¹⁰[i]^2 for i in 1:nc if Z[i] != 0) - y₁^2)/(ρₙ*α₂^2) - 1 # Checked
+    #F[1] = (ρ*sum(x[i]*a⁰[i]^2 for i in iions) + ρₙ*a¹^2)/α₀^2 - 1 # Checked
+    #F[2] = (-ρ*sum(x[i]*a⁰[i]*K¹⁰[i] for i in iions) + a¹*(1-ρₙ*K¹¹))/(α₀*α₂) - 1 # Checked
+    #F[3] = ((1-ρₙ*K¹¹)^2+ρₙ*ρ*sum(x[i]*K¹⁰[i]^2 for i in iions) - y₁^2)/(ρₙ*α₂^2) - 1 # Checked
 
     #η = ρ*@sum(Z[i]^2 * x[i])
     #m = @. Vη*Dᶠ/(σₙ+λ*σ) * √(η*ρₙ)*σₙ*σ/Z
@@ -177,7 +175,6 @@ function a_ion(model::MSAIDModel, V, T, z, _data=@f(data))
     (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,∑z) = _data
 
     Γ, B, b₂ = @f(solve_MSAID, _data)
-
     β₆ = 1-b₂/6 # Checked
     λ  = (1+b₂/3)/β₆ # Checked
     y₁ = 4/(β₆*(1+λ)^2) # Checked
@@ -251,7 +248,10 @@ end
 
 function solve_MSAID(model::MSAIDModel,V,T,z,_data = @f(data))
     _1 = oneunit(Base.promote_eltype(model,V,T,z))
-    x0 = SVector((_1*9,_1*1.0,_1*2.02)) #TOOD: any better initial point?
+    Z = model.params.charge.values
+    (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,∑z) = _data
+    Γ0 = sqrt(4π*e_c^2/(4π*ϵ_0*80*k_B*T)*ρ*sum(z[i]*Z[i]^2 for i ∈ @iions)/∑z)*1e-9
+    x0 = SVector((Γ0,_1*1.0,_1*2.02)) #TOOD: any better initial point?
     f(x) = obj_MSAID(model,z,x[1]*1e9,x[2]*1e17,x[3],_data)
     _x = Solvers.nlsolve2(f, x0, Solvers.Newton2Var())
     #_x = Solvers.x_sol(sol)

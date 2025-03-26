@@ -12,8 +12,6 @@ struct DH{ϵ} <: DHModel
     references::Array{String,1}
 end
 
-@registermodel DH
-
 """
     DH(solvents::Array{String,1},
         ions::Array{String,1};

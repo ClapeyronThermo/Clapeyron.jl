@@ -13,8 +13,6 @@ struct DHBorn{ϵ} <: DHBornModel
     references::Array{String,1}
 end
 
-@registermodel DHBorn
-
 export DHBorn
 """
     DHBorn(solvents::Array{String,1},

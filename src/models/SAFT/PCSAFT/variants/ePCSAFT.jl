@@ -2,7 +2,6 @@ abstract type ePCSAFTModel <: ESElectrolyteModel end
 
 struct ePCSAFT{T<:IdealModel,c<:EoSModel,i<:IonModel} <: ePCSAFTModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     charge::Vector{Int64}
     idealmodel::T
     neutralmodel::c
@@ -63,8 +62,6 @@ function ePCSAFT(solvents,ions;
     _charge = params["charge"]
     charge = _charge.values
 
-    icomponents = 1:length(components)
-
     neutral_path = DB_PATH.*["/SAFT/PCSAFT","/SAFT/PCSAFT/ePCSAFT","/SAFT/PCSAFT/pharmaPCSAFT"]
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
@@ -83,7 +80,7 @@ function ePCSAFT(solvents,ions;
 
     references = ["10.1016/j.cherd.2014.05.017"]
     components = format_components(components)
-    model = ePCSAFT(components,icomponents,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    model = ePCSAFT(components,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
@@ -93,7 +90,7 @@ function a_res(model::ePCSAFTModel, V, T, z)
     data_ion = data(model.ionmodel,V,T,z)
     data_ion = (data_ion[1],data_pcsaft[1])
 
-    return a_res(model.neutralmodel,V,T,z,data_pcsaft)+a_res(model.ionmodel,V,T,z,data_ion)
+    return a_res(model.neutralmodel,V,T,z,data_pcsaft) + a_res(model.ionmodel,V,T,z,data_ion)
 end
 
 export ePCSAFT

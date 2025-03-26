@@ -113,10 +113,10 @@ function data(model::GCMSABornModel, V, T, z)
     v = model.groups.n_flattenedgroups
     Σz = sum(z)
     zg = zeros(eltype(sum(z)),ngroups)
-    for i in 1:length(model.groups.components)
+    for i ∈ 1:length(model.groups.components)
         vi = v[i]
         zi = z[i]
-        for k in 1:ngroups
+        for k ∈ 1:ngroups
             zg[k] += zi*vi[k]
         end
     end
@@ -140,8 +140,8 @@ function a_ion(model::GCMSABornModel, V, T, z, _data=@f(data))
     ρ = N_A*∑z/V
     Γ = @f(screening_length, ϵ_r, (zg, ∑zg))
     ∑1,∑2,∑3,∑4 = zero(Γ),zero(Γ),zero(Γ),zero(Γ)
-    for i in @comps
-        for k in @groups(i)
+    for i ∈ @comps
+        for k ∈ @groups(i)
             Zk = Z[k]
             if !iszero(Zk)
                 σk,zi = σ[k],z[i]
@@ -171,8 +171,8 @@ function screening_length(model::GCMSABornModel,V,T,z, ϵ_r=@f(data),zgdata = @f
     ρ = N_A*∑z/V
     _0 = zero(Base.promote_eltype(model,V,T,z))
     ∑1,∑2 = zero(_0),zero(_0)
-    for i in @comps
-        for k in @groups(i)
+    for i ∈ @comps
+        for k ∈ @groups(i)
             Zk = Z[k]
             if !iszero(Zk)
                 σk,zi = σ[k],z[i]
@@ -189,8 +189,8 @@ function screening_length(model::GCMSABornModel,V,T,z, ϵ_r=@f(data),zgdata = @f
     iter = 1
     while tol > 1e-12 && iter < 100
         ∑3,∑4 = zero(_0),zero(_0)
-        for i in @comps
-            for k in @groups(i)
+        for i ∈ @comps
+            for k ∈ @groups(i)
                 Zk = Z[k]
                 if !iszero(Zk)
                     σk,zi = σ[k],z[i]
@@ -234,8 +234,8 @@ function a_born(model::GCMSABornModel, V, T, z,_data=@f(data))
     igroups = 1:length(model.groups.flattenedgroups)
     #iions = igroups[Z.!=0]
     _∑1 = zero(Base.promote_eltype(model,V,T,z))
-    for i in @comps
-        for k in @groups(i)
+    for i ∈ @comps
+        for k ∈ @groups(i)
         Zk = Z[k]
             if !iszero(Zk)
                 σk,zi = σ_born[k],z[i]

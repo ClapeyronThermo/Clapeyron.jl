@@ -13,8 +13,6 @@ struct MSABorn{ϵ} <: MSABornModel
     references::Array{String,1}
 end
 
-@registermodel MSABorn
-
 export MSABorn
 
 """

@@ -16,7 +16,6 @@ struct Born{ϵ} <: BornModel
     references::Array{String,1}
 end
 
-@registermodel Born
 export Born
 
 """
