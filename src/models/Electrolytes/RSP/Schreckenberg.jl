@@ -42,7 +42,7 @@ function Schreckenberg(solvents,ions; userlocations::Vector{String}=String[], ve
     charge = params["charge"]
     packagedparams = SchreckenbergParam(d_T,d_V,charge)
 
-    references = String[]
+    references = String["10.1080/00268976.2014.910316"]
 
     model = Schreckenberg(components,packagedparams,references)
     return model
@@ -62,7 +62,7 @@ function dielectric_constant(model::SchreckenbergModel,V,T,z,_data=nothing)
         d̄ = zero(Base.promote_eltype(model,T,z))
 
         for i ∈ ineutrals
-            di = d_V[i]*(d_T[i]/T-1)
+            di = d_V[i]*(d_T[i]/T - 1)
             dij,zi = di,z[i]
             d̄ += dij*zi*zi
             for j in ineutrals
@@ -73,7 +73,6 @@ function dielectric_constant(model::SchreckenbergModel,V,T,z,_data=nothing)
                 end
             end
         end
-
     d̄ = d̄/(n_solv*n_solv)
     return 1+ρ_solv*d̄
 end

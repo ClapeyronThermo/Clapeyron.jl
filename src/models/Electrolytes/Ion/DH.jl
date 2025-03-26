@@ -86,7 +86,7 @@ function a_ion(model::DHModel, V, T, z,_data=@f(data))
     κ = sqrt(4π*s*ρ*sum(z[i]*Z[i]*Z[i] for i ∈ 1:nc)/∑z)
     res = zero(Base.promote_eltype(model,V,T,z))
     for i ∈ @iions
-        yi = σ[i]*κ
+        yi,Zi = σ[i]*κ,Z[i]
         yip1 = yi + 1
         χi = 3/(yi*yi*yi)*(3/2+log1p(yi)-2*yip1+1/2*yip1*yip1)
         res +=z[i]*Zi*Zi*χi

@@ -21,9 +21,11 @@ export ConstRSP
 ## Description
 This function is used to create a constant Relative Static Permittivity model, given by `value`.
 """
-function ConstRSP(solvents,ions; userlocations=String[], value=78.38484961, verbose::Bool=false)
+function ConstRSP(solvents,ions; userlocations=nothing, value=78.38484961, verbose::Bool=false)
     return ConstRSP(value)
 end
+
+ConstRSP() = ConstRSP(78.38484961)
 
 function dielectric_constant(model::ConstRSPModel,V,T,z,_data=nothing)
     return model.value

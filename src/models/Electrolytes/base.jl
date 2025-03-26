@@ -69,9 +69,6 @@ function ESElectrolyte(solvents,ions;
     return model
 end
 
-export ESElectrolyte
-
-
 """
     dielectric_constant(model::ElectrolyteModel, V, T, z)
 
@@ -120,3 +117,5 @@ end
 function T_scale(model::ElectrolyteModel,z)
     return T_scale(model.neutralmodel,z)
 end
+
+export dielectric_constant, ESElectrolyte
