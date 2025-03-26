@@ -96,31 +96,25 @@ function obj_MSAID(F,model::MSAIDModel,Γ,B,b₂,_data)
     nc = length(model)
     σ = model.params.sigma.values
     Z = model.params.charge.values
-    
-    icomponents = 1:length(model)
-    #isolv = findfirst(iszero,Z) #icomponents[Z.==0]
-    iions = icomponents[Z.!=0]
-
     (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,x) = _data
 
     β₆ = 1-b₂/6 # Checked
     λ  = (1+b₂/3)/β₆ # Checked
     y₁ = 4/(β₆*(1+λ)^2) # Checked
 
-    σΓ = σ*Γ
-    W₁ = ρ*sum(x[i]*Z[i]^2/(β₆*(σₙ+σ[i]*λ)*(1+σΓ[i])) for i in iions) # Checked
-    W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(x[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σΓ[i]))^2 for i in iions) # Checked
+    W₁ = ρ*sum(x[i]*Z[i]^2/(β₆*(σₙ + σ[i]*λ)*(1+σ[i]*Γ)) for i in 1:nc if Z[i] != 0) # Checked
+    W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(x[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ))^2 for i in 1:nc if Z[i] != 0) # Checked
     Vη = (-W₁/2+√((W₁/2)^2+2B*W₂/β₆^2))/(W₂) # Checked
 
     ΔΓ = @. Vη*ρₙ*σₙ^2*σ^2*B/(8*β₆*(σₙ+λ*σ)) # Checked
-    Dᶠ = @. Z*β₆/(2*(1+σΓ-ΔΓ)) # Checked
+    Dᶠ = @. Z*β₆/(2*(1+σ*Γ-ΔΓ)) # Checked
 
-    D = 1 + Vη^2*ρₙ*ρ*σₙ^2*sum(x[i]*σ[i]^2*Dᶠ[i]^2/(2β₆*(σₙ+λ*σ[i]))^2 for i in iions) # Checked
+    D = 1 + Vη^2*ρₙ*ρ*σₙ^2*sum(x[i]*σ[i]^2*Dᶠ[i]^2/(2β₆*(σₙ+λ*σ[i]))^2 for i in 1:nc if Z[i] != 0) # Checked
 
-    Dac = ρ*sum(x[i]*Dᶠ[i]^2 for i in iions) # Checked
-    Ω   = Vη*ρ*sum(x[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i in iions) # Checked
+    Dac = ρ*sum(x[i]*Dᶠ[i]^2 for i in 1:nc if Z[i] != 0) # Checked
+    Ω   = Vη*ρ*sum(x[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i in 1:nc if Z[i] != 0) # Checked
 
-    Γₛ  = @.  ((1+σΓ-ΔΓ)*D-1)/σ # Checked
+    Γₛ  = @. ((1+σ*Γ-ΔΓ)*D-1)/σ # Checked
 
     a⁰  = @. β₆*Γₛ*Dᶠ/Dac # Checked
     a¹  = D*β₆*(σₙ*B/2 + Ω*λ/(D*β₆))/(2*Dac) # Checked
@@ -128,11 +122,11 @@ function obj_MSAID(F,model::MSAIDModel,Γ,B,b₂,_data)
     K¹⁰ = @. -(σₙ^2*Dᶠ*(Vη/(σₙ+λ*σ)+Ω*Γₛ/Dac)/(2*D*β₆^2) + σₙ^3*B*a⁰/(12*β₆)) # Checked
     K¹¹ = (1-(λ+ρₙ*σₙ^2*Ω*a¹/(2*β₆^2))/(D*β₆)-ρₙ*σₙ^3*B*a¹/(12*β₆))/ρₙ # Checked
     
-    F[1] = (ρ*sum(x[i]*a⁰[i]^2 for i in iions) + ρₙ*a¹^2)/α₀^2 - 1 # Checked
-    F[2] = (-ρ*sum(x[i]*a⁰[i]*K¹⁰[i] for i in iions) + a¹*(1-ρₙ*K¹¹))/(α₀*α₂) - 1 # Checked
-    F[3] = ((1-ρₙ*K¹¹)^2+ρₙ*ρ*sum(x[i]*K¹⁰[i]^2 for i in iions) - y₁^2)/(ρₙ*α₂^2) - 1 # Checked
+    F[1] = (ρ*sum(x[i]*a⁰[i]^2 for i in 1:nc if Z[i] != 0) + ρₙ*a¹^2)/α₀^2 - 1 # Checked
+    F[2] = (-ρ*sum(x[i]*a⁰[i]*K¹⁰[i] for i in 1:nc if Z[i] != 0) + a¹*(1-ρₙ*K¹¹))/(α₀*α₂) - 1 # Checked
+    F[3] = ((1-ρₙ*K¹¹)^2+ρₙ*ρ*sum(x[i]*K¹⁰[i]^2 for i in 1:nc if Z[i] != 0) - y₁^2)/(ρₙ*α₂^2) - 1 # Checked
 
-    η = ρ*@sum(Z[i]^2 * x[i])
+    #η = ρ*@sum(Z[i]^2 * x[i])
     #m = @. Vη*Dᶠ/(σₙ+λ*σ) * √(η*ρₙ)*σₙ*σ/Z
     #N = @. (2*Dᶠ/(β₆*σ)*(1+Vη*ρₙ*σₙ^3*B*σ/(24*(σₙ+λ*σ))) - Z/σ)*σ/Z
     #ϵr = 1+ρₙ*α₂^2*β₆^2*(1+λ)^4/16
@@ -152,29 +146,28 @@ function a_ion(model::MSAIDModel, V, T, z, _data=@f(data))
     (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,x) = _data
 
     Γ, B, b₂ = @f(solve_MSAID, _data)
-
+    
     β₆ = 1-b₂/6 # Checked
     λ  = (1+b₂/3)/β₆ # Checked
     y₁ = 4/(β₆*(1+λ)^2) # Checked
 
-    σΓ = σ*Γ
-    W₁ = ρ*sum(x[i]*Z[i]^2/(β₆*(σₙ+σ[i]*λ)*(1+σΓ[i])) for i in iions) # Checked
-    W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(x[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σΓ[i]))^2 for i in iions) # Checked
+    W₁ = ρ*sum(x[i]*Z[i]^2/(β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ)) for i in iions) # Checked
+    W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(x[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ))^2 for i in iions) # Checked
     Vη = (-W₁/2+√((W₁/2)^2+2B*W₂/β₆^2))/(W₂) # Checked
 
     ΔΓ = @. Vη*ρₙ*σₙ^2*σ^2*B/(8*β₆*(σₙ+λ*σ)) # Checked
-    Dᶠ = @. Z*β₆/(2*(1+σΓ-ΔΓ)) # Checked
+    Dᶠ = @. Z*β₆/(2*(1+σ*Γ-ΔΓ)) # Checked
 
     D = 1 + Vη^2*ρₙ*ρ*σₙ^2*sum(x[i]*σ[i]^2*Dᶠ[i]^2/(2β₆*(σₙ+λ*σ[i]))^2 for i in iions) # Checked
 
     Dac = ρ*sum(x[i]*Dᶠ[i]^2 for i in iions) # Checked
     Ω   = Vη*ρ*sum(x[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i in iions) # Checked
 
-    Γₛ  = @.  ((1+σΓ-ΔΓ)*D-1)/σ # Checked
+    Γₛ  = @.  ((1+σ*Γ-ΔΓ)*D-1)/σ # Checked
 
     a¹  = D*β₆*(σₙ*B/2 + Ω*λ/(D*β₆))/(2*Dac) # Checked
 
-    Jp = zero(one(eltype(model))+V+T+first(z))
+    Jp = zero(Base.promote_eltype(model,V,T,z))
 
     for i in iions
         σi = σ[i]
@@ -227,4 +220,12 @@ function solve_MSAID(model::MSAIDModel,V,T,z,_data = @f(data))
     sol = Solvers.nlsolve(f!,x0, LineSearch(Newton()))
     _x = Solvers.x_sol(sol)
     return _x[1]*1e9, _x[2]*1e17, _x[3]
+end
+
+function dielectric_constant(model::MSAIDModel, V, T, z, _data = @f(data))
+    (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,x) = _data
+    Γ, B, b₂ = @f(solve_MSAID, _data)
+    β₆ = 1-b₂/6 # Checked
+    λ  = (1+b₂/3)/β₆ # Checked
+    ϵr = 1 + ρₙ*α₂^2 * β₆^2*(1 + λ)^4 / 16
 end
