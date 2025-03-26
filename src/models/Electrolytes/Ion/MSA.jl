@@ -73,22 +73,18 @@ function a_ion(model::MSAModel, V, T, z, _data=@f(data))
     ϵ_r = _data
     σ = model.params.sigma.values
     Z = model.params.charge.values
-    icomponents = 1:length(model)
-    iions = icomponents[Z.!=0]
+    nc = length(model)
+    iions = @iions
 
-    if length(iions) == 0
+    if all(iszero,Z)
         return zero(V+T+first(z))
     end
-    σ = model.params.sigma.values
-    Z = model.params.charge.values
-    ϵ_r = _data
     ∑z = sum(z)
     ρ = N_A*sum(z)/V
     Γ = @f(screening_length,ϵ_r)
     Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ iions)/∑z
     Ω = 1+π*ρ/(2*Δ)*sum(z[i]*σ[i]^3/(1+Γ*σ[i]) for i ∈ iions)/∑z
     Pn = ρ/Ω*sum(z[i]*σ[i]*Z[i]/(1+Γ*σ[i]) for i ∈ iions)/∑z
-
     U_MSA = -e_c^2*V/(4π*ϵ_0*ϵ_r)*(Γ*ρ*sum(z[i]*Z[i]^2/(1+Γ*σ[i]) for i ∈ iions)/∑z + π/(2Δ)*Ω*Pn^2)
     return (U_MSA+Γ^3*k_B*T*V/(3π))/(N_A*k_B*T*sum(z))
 end
@@ -96,8 +92,7 @@ end
 function screening_length(model::MSAModel,V,T,z,ϵ_r = @f(data))
     σ = model.params.sigma.values
     Z = model.params.charge.values
-    icomponents = 1:length(model)
-    iions = icomponents[Z.!=0]
+    iions = @iions
 
     ∑z = sum(z)
     ρ = N_A*sum(z)/V

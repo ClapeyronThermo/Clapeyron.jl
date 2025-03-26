@@ -27,16 +27,35 @@ end
 Convert molality (mol/kg) to composition for a given model, salts, molality, and solvent composition.
 """
 function molality_to_composition(model::ElectrolyteModel,salts,m,zsolv=SA[1.],ν = salt_stoichiometry(model,salts))
-    ions = model.components[model.charge.!=0]
-    neutral = model.components[model.charge.==0]
+    nc = length(model)
+    Z = model.charge
+    nions = count(!iszero,Z)
+    nneutral = nc - nions
     Mw = mw(model.neutralmodel).*1e-3
     isalts = 1:length(salts)
-    iions = 1:length(ions)
-    ineutral = 1:length(neutral)
+    iions = 1:nions
+    ineutral = 1:nneutral
     ∑mν = sum(m[k]*sum(ν[k,i] for i ∈ iions) for k ∈ isalts)
     x_solv = zsolv ./ (1+sum(zsolv[j]*Mw[j] for j in ineutral)*∑mν)
     x_ions = [sum(m[k]*ν[k,l] for k ∈ isalts) / (1/sum(zsolv[j]*Mw[j] for j in ineutral)+∑mν) for l ∈ iions]
     return vcat(x_solv,x_ions)
+end
+
+"""
+    @iions()
+
+This macro is a non-allocating equivalent to the following code:
+
+```julia
+(1:length(model))[model.params.charges.values != 0]
+```
+
+`@iions` is an iterator that goes through all charged components in an electrolyte model.
+"""
+macro iions()
+    quote
+        Iterators.filter(!iszero ∘ Base.Fix1(Base.getindex,Z), 1:length(model))
+    end |> esc
 end
 
 export molality_to_composition

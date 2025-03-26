@@ -80,10 +80,8 @@ function a_born(model::MSABornModel, V, T, z,_data=@f(data))
         return zero(Base.promote_eltype(model,T,z))
     end
     res = zero(Base.promote_eltype(z,Z,σ_born))
-    for i in 1:length(model)
-        if Z[i] != 0
-            res += z[i]*Z[i]^2/σ_born[i]
-        end
+    for i ∈ @iions
+        res += z[i]*Z[i]^2/σ_born[i]
     end
     return -e_c^2/(4π*ϵ_0*k_B*T*sum(z))*(1-1/ϵ_r)*res
 end

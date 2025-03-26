@@ -16,7 +16,7 @@ end
 
 export MSAID
 """
-    MSAID(solvents::Array{String,1}, 
+    MSAID(solvents::Array{String,1},
         ions::Array{String,1};
         RSPmodel = nothing,
         userlocations = String[],
@@ -48,7 +48,7 @@ function MSAID(solvents,ions; userlocations, verbose=false)
 
     dipole = params["dipole"]
     dipole.values .*= 1/(299792458)*1e-21
-    
+
     charge = params["charge"]
 
     packagedparams = MSAIDParam(sigma,dipole,charge)
@@ -82,7 +82,7 @@ function data(model::MSAIDModel, V, T, z)
     α₂ = μ*√(β/3/ϵ_0) # Checked
     Δ = 1 - π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ @comps)/∑z
     ξ₂ = ρ*sum(z[i]*σ[i]^2 for i ∈ @comps)/∑z
-    χ = sum(z[i]*σ[i]*Z[i] for i in 1:nc if Z[i] != 0)/∑z
+    χ = sum(z[i]*σ[i]*Z[i] for i ∈ @iions)/∑z
     _data = (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,∑z)
     return _data
 end
@@ -94,13 +94,14 @@ function obj_MSAID(model::MSAIDModel,z,Γ,B,b₂,_data)
     nc = length(model)
     σ = model.params.sigma.values
     Z = model.params.charge.values
+    iions = @iions
     (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,∑z) = _data
     β₆ = 1-b₂/6 # Checked
     λ  = (1+b₂/3)/β₆ # Checked
     y₁ = 4/(β₆*(1+λ)^2) # Checked
 
-    W₁ = ρ*sum(z[i]*Z[i]^2/(β₆*(σₙ + σ[i]*λ)*(1+σ[i]*Γ)) for i in 1:nc if Z[i] != 0)/∑z # Checked
-    W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(z[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ))^2 for i in 1:nc if Z[i] != 0)/∑z # Checked
+    W₁ = ρ*sum(z[i]*Z[i]^2/(β₆*(σₙ + σ[i]*λ)*(1+σ[i]*Γ)) for i ∈ iions)/∑z # Checked
+    W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(z[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ))^2 for i ∈ iions)/∑z # Checked
     Vη = (-W₁/2+√((W₁/2)^2+2B*W₂/β₆^2))/(W₂) # Checked
 
 
@@ -109,16 +110,14 @@ function obj_MSAID(model::MSAIDModel,z,Γ,B,b₂,_data)
     D = oneunit(Γ + B + b₂)
     Dac,Ω = zero(D),zero(D)
     D_prefactor = Vη^2*ρₙ*ρ*σₙ^2
-    for i in 1:nc
+    for i ∈ iions
         σᵢ,Zᵢ,zᵢ = σ[i],Z[i],z[i]
-        if Zᵢ != 0
-            xᵢ = zᵢ/∑z
-            ΔΓᵢ = Vη*ρₙ*σₙ*σₙ*σᵢ*σᵢ*B/(8*β₆*(σₙ + λ*σᵢ))
-            Dᶠᵢ = Zᵢ*β₆/(2*(1 + σᵢ*Γ - ΔΓᵢ))
-            D += D_prefactor*xᵢ*σᵢ*σᵢ*Dᶠᵢ*Dᶠᵢ/(2β₆*(σₙ + λ*σᵢ))^2
-            Dac += xᵢ*Dᶠᵢ*Dᶠᵢ
-            Ω += xᵢ*σᵢ*Dᶠᵢ*Dᶠᵢ/(σₙ + λ*σᵢ)
-        end
+        xᵢ = zᵢ/∑z
+        ΔΓᵢ = Vη*ρₙ*σₙ*σₙ*σᵢ*σᵢ*B/(8*β₆*(σₙ + λ*σᵢ))
+        Dᶠᵢ = Zᵢ*β₆/(2*(1 + σᵢ*Γ - ΔΓᵢ))
+        D += D_prefactor*xᵢ*σᵢ*σᵢ*Dᶠᵢ*Dᶠᵢ/(2β₆*(σₙ + λ*σᵢ))^2
+        Dac += xᵢ*Dᶠᵢ*Dᶠᵢ
+        Ω += xᵢ*σᵢ*Dᶠᵢ*Dᶠᵢ/(σₙ + λ*σᵢ)
     end
 
 
@@ -135,32 +134,28 @@ function obj_MSAID(model::MSAIDModel,z,Γ,B,b₂,_data)
     #Ω   = Vη*ρ*sum(x[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i in 1:nc if Z[i] != 0) # Checked
 
     ∑1,∑2,∑3 = zero(D),zero(D),zero(D)
-    for i in 1:nc
+    for i ∈ iions
         σᵢ,Zᵢ,zᵢ = σ[i],Z[i],z[i]
-        if Zᵢ != 0
-            xᵢ = zᵢ/∑z
-            ΔΓᵢ = Vη*ρₙ*σₙ*σₙ*σᵢ*σᵢ*B/(8*β₆*(σₙ + λ*σᵢ))
-            Dᶠᵢ = Zᵢ*β₆/(2*(1 + σᵢ*Γ - ΔΓᵢ))
-            Γₛᵢ = ((1 + σᵢ*Γ - ΔΓᵢ)*D - 1)/σᵢ
-            a⁰ᵢ = β₆*Γₛᵢ*Dᶠᵢ/Dac
-            K¹⁰ᵢ = -(σₙ*σₙ*Dᶠᵢ*(Vη/(σₙ+λ*σᵢ)+Ω*Γₛᵢ/Dac)/(2*D*β₆^2) + σₙ^3*B*a⁰ᵢ/(12*β₆))
-            ∑1 += xᵢ*a⁰ᵢ*a⁰ᵢ
-            ∑2 += xᵢ*a⁰ᵢ*K¹⁰ᵢ
-            ∑3 += xᵢ*K¹⁰ᵢ*K¹⁰ᵢ
-        end
+        xᵢ = zᵢ/∑z
+        ΔΓᵢ = Vη*ρₙ*σₙ*σₙ*σᵢ*σᵢ*B/(8*β₆*(σₙ + λ*σᵢ))
+        Dᶠᵢ = Zᵢ*β₆/(2*(1 + σᵢ*Γ - ΔΓᵢ))
+        Γₛᵢ = ((1 + σᵢ*Γ - ΔΓᵢ)*D - 1)/σᵢ
+        a⁰ᵢ = β₆*Γₛᵢ*Dᶠᵢ/Dac
+        K¹⁰ᵢ = -(σₙ*σₙ*Dᶠᵢ*(Vη/(σₙ+λ*σᵢ)+Ω*Γₛᵢ/Dac)/(2*D*β₆^2) + σₙ^3*B*a⁰ᵢ/(12*β₆))
+        ∑1 += xᵢ*a⁰ᵢ*a⁰ᵢ
+        ∑2 += xᵢ*a⁰ᵢ*K¹⁰ᵢ
+        ∑3 += xᵢ*K¹⁰ᵢ*K¹⁰ᵢ
     end
 
     F1 = (ρ*∑1 + ρₙ*a¹^2)/α₀^2 - 1
     F2 = (-ρ*∑2 + a¹*(1-ρₙ*K¹¹))/(α₀*α₂) - 1
     F3 = ((1-ρₙ*K¹¹)^2+ρₙ*ρ*∑3 - y₁^2)/(ρₙ*α₂^2) - 1
-    #F[1] = F1
-    #F[2] = F2
-    #F[3] = F3
+
     return SVector((F1,F2,F3))
     #Γₛ  = @. ((1+σ*Γ-ΔΓ)*D-1)/σ # Checked
     #a⁰  = @. β₆*Γₛ*Dᶠ/Dac # Checked
     #K¹⁰ = @. -(σₙ^2*Dᶠ*(Vη/(σₙ+λ*σ)+Ω*Γₛ/Dac)/(2*D*β₆^2) + σₙ^3*B*a⁰/(12*β₆)) # Checked
-    
+
     #F[1] = (ρ*sum(x[i]*a⁰[i]^2 for i in 1:nc if Z[i] != 0) + ρₙ*a¹^2)/α₀^2 - 1 # Checked
     #F[2] = (-ρ*sum(x[i]*a⁰[i]*K¹⁰[i] for i in 1:nc if Z[i] != 0) + a¹*(1-ρₙ*K¹¹))/(α₀*α₂) - 1 # Checked
     #F[3] = ((1-ρₙ*K¹¹)^2+ρₙ*ρ*sum(x[i]*K¹⁰[i]^2 for i in 1:nc if Z[i] != 0) - y₁^2)/(ρₙ*α₂^2) - 1 # Checked
@@ -169,7 +164,7 @@ function obj_MSAID(model::MSAIDModel,z,Γ,B,b₂,_data)
     #m = @. Vη*Dᶠ/(σₙ+λ*σ) * √(η*ρₙ)*σₙ*σ/Z
     #N = @. (2*Dᶠ/(β₆*σ)*(1+Vη*ρₙ*σₙ^3*B*σ/(24*(σₙ+λ*σ))) - Z/σ)*σ/Z
     #ϵr = 1+ρₙ*α₂^2*β₆^2*(1+λ)^4/16
-    return F#, m, N, ϵr
+    #return F, m, N, ϵr
 end
 
 function a_ion(model::MSAIDModel, V, T, z, _data=@f(data))
@@ -178,68 +173,62 @@ function a_ion(model::MSAIDModel, V, T, z, _data=@f(data))
     nc = length(model)
     isolv1 = findfirst(iszero,Z)
     isolv = isolv1:isolv1
-
+    iions = @iions
     (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,∑z) = _data
 
     Γ, B, b₂ = @f(solve_MSAID, _data)
-    
+
     β₆ = 1-b₂/6 # Checked
     λ  = (1+b₂/3)/β₆ # Checked
     y₁ = 4/(β₆*(1+λ)^2) # Checked
 
-    W₁ = ρ*sum(z[i]*Z[i]^2/(β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ)) for i in 1:nc if Z[i] != 0)/∑z # Checked
-    W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(z[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ))^2 for i in 1:nc if Z[i] != 0)/∑z # Checked
+    W₁ = ρ*sum(z[i]*Z[i]^2/(β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ)) for i ∈ iions)/∑z # Checked
+    W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(z[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ))^2 for i ∈ iions)/∑z # Checked
     Vη = (-W₁/2+√((W₁/2)^2+2B*W₂/β₆^2))/(W₂) # Checked
 
     ΔΓ = @. Vη*ρₙ*σₙ^2*σ^2*B/(8*β₆*(σₙ+λ*σ)) # Checked
     Dᶠ = @. Z*β₆/(2*(1+σ*Γ-ΔΓ)) # Checked
 
-    D = 1 + Vη^2*ρₙ*ρ*σₙ^2*sum(z[i]*σ[i]^2*Dᶠ[i]^2/(2β₆*(σₙ+λ*σ[i]))^2 for i in 1:nc if Z[i] != 0)/∑z # Checked
+    D = 1 + Vη^2*ρₙ*ρ*σₙ^2*sum(z[i]*σ[i]^2*Dᶠ[i]^2/(2β₆*(σₙ+λ*σ[i]))^2 for i ∈ iions)/∑z # Checked
 
-    Dac = ρ*sum(z[i]*Dᶠ[i]^2 for i in 1:nc if Z[i] != 0)/∑z # Checked
-    Ω   = Vη*ρ*sum(z[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i in 1:nc if Z[i] != 0)/∑z # Checked
+    Dac = ρ*sum(z[i]*Dᶠ[i]^2 for i ∈ iions)/∑z # Checked
+    Ω   = Vη*ρ*sum(z[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i ∈ iions)/∑z # Checked
 
-    Γₛ = ΔΓ 
+    Γₛ = ΔΓ
     Γₛ  .= @. ((1+σ*Γ-ΔΓ)*D-1)/σ # Checked
     a¹  = D*β₆*(σₙ*B/2 + Ω*λ/(D*β₆))/(2*Dac) # Checked
 
     Jp = zero(Base.promote_eltype(model,V,T,z))
 
-    for i in 1:nc
+    for i ∈ iions
         σi,Zi = σ[i],Z[i]
-        if !iszero(Zi)
-            for j in 1:nc
-                if !iszero(Z[j])
-                    σij = (σi+σ[j])/2
-                    Q00 = 2π/Δ*(σij+π*σi*σ[j]*ξ₂/(4Δ)) 
-                        - 1/2*Dᶠ[i]*Dᶠ[j]*(ρₙ*σₙ^2*Vη^2/(D*β₆^2*(σₙ+λ*σi)*(σₙ+λ*σ[j]))
-                        + 4*Γₛ[i]*Γₛ[j]/(D*Dac))
-                    Jp += z[i]*z[j]*σij*Q00^2/(3π)^2
-                end
-            end
-        end
-    end
-
-    for i in 1:nc
-        σi,Zi = σ[i],Z[i]
-        if !iszero(Zi)
-            j = isolv1
+        for j ∈ iions
             σij = (σi+σ[j])/2
-            Q00 = 2π/Δ*(σij+π*σi*σ[j]*ξ₂/(4Δ)) 
-            Jp += 2*z[i]*z[j]*σij*Q00^2/(3π)^2
-
-            Q01 = Dᶠ[i]/(D*β₆)*(λ*Vη/(σₙ+λ*σi)+2*Γₛ[i]*a¹)
-            Jp += 2/9*z[i]*z[j]*σij*Q01^2/(3π)^2
+            Q00 = 2π/Δ*(σij+π*σi*σ[j]*ξ₂/(4Δ))
+                - 1/2*Dᶠ[i]*Dᶠ[j]*(ρₙ*σₙ^2*Vη^2/(D*β₆^2*(σₙ+λ*σi)*(σₙ+λ*σ[j]))
+                + 4*Γₛ[i]*Γₛ[j]/(D*Dac))
+            Jp += z[i]*z[j]*σij*Q00^2/(3π)^2
         end
     end
 
-    for i in isolv
+    for i ∈ iions
+        σi,Zi = σ[i],Z[i]
+        j = isolv1
+        σij = (σi+σ[j])/2
+        Q00 = 2π/Δ*(σij+π*σi*σ[j]*ξ₂/(4Δ))
+        Jp += 2*z[i]*z[j]*σij*Q00^2/(3π)^2
+
+        Q01 = Dᶠ[i]/(D*β₆)*(λ*Vη/(σₙ+λ*σi)+2*Γₛ[i]*a¹)
+        Jp += 2/9*z[i]*z[j]*σij*Q01^2/(3π)^2
+    end
+
+    for i ∈ isolv
         σi = σ[i]
-        for j in isolv
+        for j ∈ isolv
             σij = (σi+σ[j])/2
             Q11 = 2λ/(D*ρₙ*σₙ^2)*(λ+ρₙ*σₙ^2*Ω*a¹/(2*β₆))
                 + σₙ*B*a¹/(2*β₆) - 2/(ρₙ*σₙ^2)
-            
+
             qp = -b₂*(λ+3)/(1+λ)^2/(ρₙ*σₙ^2)
 
             h11 = (Q11+2qp)/(2*√(3)*π)
@@ -250,12 +239,10 @@ function a_ion(model::MSAIDModel, V, T, z, _data=@f(data))
 
     Jp *= ρ/(3π)/∑z/∑z
     ∑xZN = zero(Jp)
-    for i in 1:nc
+    for i ∈ iions
         σi,Zi,zi = σ[i],Z[i],z[i]
-        if Zi != 0
-            Ni = 2*Dᶠ[i]/(β₆*σi)*(1+Vη*ρₙ*σₙ^3*B*σi/(24*(σₙ+λ*σi))) - Zi/σi
-            ∑xZN += zi*Zi*Ni
-        end
+        Ni = 2*Dᶠ[i]/(β₆*σi)*(1+Vη*ρₙ*σₙ^3*B*σi/(24*(σₙ+λ*σi))) - Zi/σi
+        ∑xZN += zi*Zi*Ni
     end
     ∑xZN /= ∑z
     #N = @. (2*Dᶠ/(β₆*σ)*(1+Vη*ρₙ*σₙ^3*B*σ/(24*(σₙ+λ*σ))) - Z/σ)
@@ -265,11 +252,11 @@ end
 function solve_MSAID(model::MSAIDModel,V,T,z,_data = @f(data))
     _1 = oneunit(Base.promote_eltype(model,V,T,z))
     x0 = SVector((_1*9,_1*1.0,_1*2.02)) #TOOD: any better initial point?
-    #x0 .= (9.0,1.0,2.02) 
     f(x) = obj_MSAID(model,z,x[1]*1e9,x[2]*1e17,x[3],_data)
     _x = Solvers.nlsolve2(f, x0, Solvers.Newton2Var())
     #_x = Solvers.x_sol(sol)
-    return _x[1]*1e9, _x[2]*1e17, _x[3]
+    Γ, B, b₂ = _x[1]*1e9, _x[2]*1e17, _x[3]
+    return Γ, B, b₂
 end
 
 function dielectric_constant(model::MSAIDModel, V, T, z, _data = @f(data))
