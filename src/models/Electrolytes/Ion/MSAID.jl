@@ -89,7 +89,7 @@ function data(model::MSAIDModel, V, T, z)
     return _data
 end
 
-function obj_MSAID(F,model::MSAIDModel,Γ,B,b₂,_data)
+function obj_MSAID(model::MSAIDModel,z,Γ,B,b₂,_data)
     # println(Γ)
     # println(B)
     # println(b₂)
@@ -97,7 +97,7 @@ function obj_MSAID(F,model::MSAIDModel,Γ,B,b₂,_data)
     σ = model.params.sigma.values
     Z = model.params.charge.values
     (α₀,α₂,Δ,ξ₂,χ,σₙ,ρₙ,ρ,x) = _data
-
+    ∑z = sum(z)
     β₆ = 1-b₂/6 # Checked
     λ  = (1+b₂/3)/β₆ # Checked
     y₁ = 4/(β₆*(1+λ)^2) # Checked
@@ -106,25 +106,67 @@ function obj_MSAID(F,model::MSAIDModel,Γ,B,b₂,_data)
     W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(x[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ))^2 for i in 1:nc if Z[i] != 0) # Checked
     Vη = (-W₁/2+√((W₁/2)^2+2B*W₂/β₆^2))/(W₂) # Checked
 
-    ΔΓ = @. Vη*ρₙ*σₙ^2*σ^2*B/(8*β₆*(σₙ+λ*σ)) # Checked
-    Dᶠ = @. Z*β₆/(2*(1+σ*Γ-ΔΓ)) # Checked
 
-    D = 1 + Vη^2*ρₙ*ρ*σₙ^2*sum(x[i]*σ[i]^2*Dᶠ[i]^2/(2β₆*(σₙ+λ*σ[i]))^2 for i in 1:nc if Z[i] != 0) # Checked
+    #[ΔΓ] - > [Dᶠ] -> (D,Dac,Ω) ->  ([Γₛ],[a⁰],a¹)
 
-    Dac = ρ*sum(x[i]*Dᶠ[i]^2 for i in 1:nc if Z[i] != 0) # Checked
-    Ω   = Vη*ρ*sum(x[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i in 1:nc if Z[i] != 0) # Checked
+    D = oneunit(Γ + B + b₂)
+    Dac,Ω = zero(D),zero(D)
+    D_prefactor = Vη^2*ρₙ*ρ*σₙ^2
+    for i in 1:nc
+        σᵢ,Zᵢ,zᵢ = σ[i],Z[i],z[i]
+        xᵢ = zᵢ/∑z
+        ΔΓᵢ = Vη*ρₙ*σₙ*σₙ*σᵢ*σᵢ*B/(8*β₆*(σₙ + λ*σᵢ))
+        Dᶠᵢ = Zᵢ*β₆/(2*(1 + σᵢ*Γ - ΔΓᵢ))
+        if Zᵢ != 0
+            D += D_prefactor*xᵢ*σᵢ*σᵢ*Dᶠᵢ*Dᶠᵢ/(2β₆*(σₙ + λ*σᵢ))^2
+            Dac += xᵢ*Dᶠᵢ*Dᶠᵢ
+            Ω += xᵢ*σᵢ*Dᶠᵢ*Dᶠᵢ/(σₙ + λ*σᵢ)
+        end
+    end
 
-    Γₛ  = @. ((1+σ*Γ-ΔΓ)*D-1)/σ # Checked
 
-    a⁰  = @. β₆*Γₛ*Dᶠ/Dac # Checked
+    Ω *= Vη*ρ
+    Dac *= ρ
     a¹  = D*β₆*(σₙ*B/2 + Ω*λ/(D*β₆))/(2*Dac) # Checked
-    
-    K¹⁰ = @. -(σₙ^2*Dᶠ*(Vη/(σₙ+λ*σ)+Ω*Γₛ/Dac)/(2*D*β₆^2) + σₙ^3*B*a⁰/(12*β₆)) # Checked
     K¹¹ = (1-(λ+ρₙ*σₙ^2*Ω*a¹/(2*β₆^2))/(D*β₆)-ρₙ*σₙ^3*B*a¹/(12*β₆))/ρₙ # Checked
+
+    #ΔΓ = @. Vη*ρₙ*σₙ^2*σ^2*B/(8*β₆*(σₙ+λ*σ)) # Checked
+    #Dᶠ = @. Z*β₆/(2*(1+σ*Γ-ΔΓ)) # Checked
+
+    #D = 1 + Vη^2*ρₙ*ρ*σₙ^2*sum(x[i]*σ[i]^2*Dᶠ[i]^2/(2β₆*(σₙ+λ*σ[i]))^2 for i in 1:nc if Z[i] != 0) # Checked
+    #Dac = ρ*sum(x[i]*Dᶠ[i]^2 for i in 1:nc if Z[i] != 0) # Checked
+    #Ω   = Vη*ρ*sum(x[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i in 1:nc if Z[i] != 0) # Checked
+
+    ∑1,∑2,∑3 = zero(D),zero(D),zero(D)
+    for i in 1:nc
+        σᵢ,Zᵢ,zᵢ = σ[i],Z[i],z[i]
+        xᵢ = zᵢ/∑z
+        ΔΓᵢ = Vη*ρₙ*σₙ*σₙ*σᵢ*σᵢ*B/(8*β₆*(σₙ + λ*σᵢ))
+        Dᶠᵢ = Zᵢ*β₆/(2*(1 + σᵢ*Γ - ΔΓᵢ))
+        Γₛᵢ = ((1 + σᵢ*Γ - ΔΓᵢ)*D - 1)/σᵢ
+        a⁰ᵢ = β₆*Γₛᵢ*Dᶠᵢ/Dac
+        K¹⁰ᵢ = -(σₙ*σₙ*Dᶠᵢ*(Vη/(σₙ+λ*σᵢ)+Ω*Γₛᵢ/Dac)/(2*D*β₆^2) + σₙ^3*B*a⁰ᵢ/(12*β₆))
+        if Zᵢ != 0
+            ∑1 += xᵢ*a⁰ᵢ*a⁰ᵢ
+            ∑2 += xᵢ*a⁰ᵢ*K¹⁰ᵢ
+            ∑3 += xᵢ*K¹⁰ᵢ*K¹⁰ᵢ
+        end
+    end
+
+    F1 = (ρ*∑1 + ρₙ*a¹^2)/α₀^2 - 1
+    F2 = (-ρ*∑2 + a¹*(1-ρₙ*K¹¹))/(α₀*α₂) - 1
+    F3 = ((1-ρₙ*K¹¹)^2+ρₙ*ρ*∑3 - y₁^2)/(ρₙ*α₂^2) - 1
+    #F[1] = F1
+    #F[2] = F2
+    #F[3] = F3
+    return SVector((F1,F2,F3))
+    #Γₛ  = @. ((1+σ*Γ-ΔΓ)*D-1)/σ # Checked
+    #a⁰  = @. β₆*Γₛ*Dᶠ/Dac # Checked
+    #K¹⁰ = @. -(σₙ^2*Dᶠ*(Vη/(σₙ+λ*σ)+Ω*Γₛ/Dac)/(2*D*β₆^2) + σₙ^3*B*a⁰/(12*β₆)) # Checked
     
-    F[1] = (ρ*sum(x[i]*a⁰[i]^2 for i in 1:nc if Z[i] != 0) + ρₙ*a¹^2)/α₀^2 - 1 # Checked
-    F[2] = (-ρ*sum(x[i]*a⁰[i]*K¹⁰[i] for i in 1:nc if Z[i] != 0) + a¹*(1-ρₙ*K¹¹))/(α₀*α₂) - 1 # Checked
-    F[3] = ((1-ρₙ*K¹¹)^2+ρₙ*ρ*sum(x[i]*K¹⁰[i]^2 for i in 1:nc if Z[i] != 0) - y₁^2)/(ρₙ*α₂^2) - 1 # Checked
+    #F[1] = (ρ*sum(x[i]*a⁰[i]^2 for i in 1:nc if Z[i] != 0) + ρₙ*a¹^2)/α₀^2 - 1 # Checked
+    #F[2] = (-ρ*sum(x[i]*a⁰[i]*K¹⁰[i] for i in 1:nc if Z[i] != 0) + a¹*(1-ρₙ*K¹¹))/(α₀*α₂) - 1 # Checked
+    #F[3] = ((1-ρₙ*K¹¹)^2+ρₙ*ρ*sum(x[i]*K¹⁰[i]^2 for i in 1:nc if Z[i] != 0) - y₁^2)/(ρₙ*α₂^2) - 1 # Checked
 
     #η = ρ*@sum(Z[i]^2 * x[i])
     #m = @. Vη*Dᶠ/(σₙ+λ*σ) * √(η*ρₙ)*σₙ*σ/Z
@@ -213,12 +255,12 @@ function a_ion(model::MSAIDModel, V, T, z, _data=@f(data))
 end
 
 function solve_MSAID(model::MSAIDModel,V,T,z,_data = @f(data))
-    F = zeros(Base.promote_eltype(model,V,T,z),(3))
-    x0 = similar(F)
-    x0 .= (9.0,1.0,2.02) #TOOD: any better initial point?
-    f!(F,x) = obj_MSAID(F,model,x[1]*1e9,x[2]*1e17,x[3],_data)
-    sol = Solvers.nlsolve(f!,x0, LineSearch(Newton()))
-    _x = Solvers.x_sol(sol)
+    _1 = oneunit(Base.promote_eltype(model,V,T,z))
+    x0 = SVector((_1*9,_1*1.0,_1*2.02)) #TOOD: any better initial point?
+    #x0 .= (9.0,1.0,2.02) 
+    f(x) = obj_MSAID(model,z,x[1]*1e9,x[2]*1e17,x[3],_data)
+    _x = Solvers.nlsolve2(f, x0, Solvers.Newton2Var())
+    #_x = Solvers.x_sol(sol)
     return _x[1]*1e9, _x[2]*1e17, _x[3]
 end
 
