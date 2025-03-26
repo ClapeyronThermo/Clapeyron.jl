@@ -152,7 +152,7 @@ end
 
 #internal utility function
 #shortcut for model.params.val, but returns nothing if the val is not found.
-@pure function getparam(model::EoSModel,val::Symbol)
+Base.@assume_effects :foldable function getparam(model::EoSModel,val::Symbol)
     M = typeof(model)
     if hasfield(M,:params)
         if hasfield(typeof(model.params),val)
