@@ -121,13 +121,13 @@ function SingleParam(name, components, values_or_missing::AbstractVector{T}) whe
     if nonmissingtype(T) != T
         values,ismissingvalues = defaultmissing(values_or_missing)
     else
-        values,ismissingvalues = values_or_missing,fill(0.0, length(values))
+        values,ismissingvalues = values_or_missing,fill(false, length(values))
     end
     return SingleParam(name, components, values, ismissingvalues)
 end
 
 # If no value is provided, just initialise empty param.
-SingleParam(name,components) = SingleParam(name,components,fill(0.0, length(components)))
+SingleParam(name,components) = SingleParam(name,components,fill(false, length(components)))
 
 function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     len = length(param.values)

@@ -144,7 +144,7 @@ function PairParam(name, components, values_or_missing::AbstractMatrix{T}) where
     if nonmissingtype(T) != T
         values,ismissingvalues = defaultmissing(values_or_missing)
     else
-        values,ismissingvalues = values_or_missing,fill(0.0, size(values))
+        values,ismissingvalues = values_or_missing,fill(false, size(values_or_missing))
     end
     return PairParam(name, components, values, ismissingvalues)
 end
