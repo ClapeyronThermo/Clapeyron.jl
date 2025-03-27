@@ -15,11 +15,11 @@ end
 function AssocParam(name,components,values::Compressed4DMatrix{T},sites,src,sourcecsv) where T
     vals_length = maximum(maximum,vals.outer_indices)
     param_length_check(AssocParam,name,length(components),vals_length)
-    AssocParam{T}(name,components,values,missingvals,src,sourcecsv)
+    AssocParam{T}(name,components,values,sites,src,sourcecsv)
 end
 
 function AssocParam(name,components,values::MatrixofMatrices,sites,src,sourcecsv)
-    return AssocParam(name,components,Compressed4DMatrix(values),missingvals,src,sourcecsv)
+    return AssocParam(name,components,Compressed4DMatrix(values),sites,src,sourcecsv)
 end
 
 AssocParam(name,components,values,sites,src) = AssocParam(name,components,values,sites,src,nothing)

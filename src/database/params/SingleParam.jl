@@ -127,7 +127,12 @@ function SingleParam(name, components, values_or_missing::AbstractVector{T}) whe
 end
 
 # If no value is provided, just initialise empty param.
-SingleParam(name,components) = SingleParam(name,components,fill(false, length(components)))
+function SingleParam(name,components)
+    nc = length(components)
+    values = fill(0.0,nc)
+    ismissingvalues = fill(true,nc)
+    return SingleParam(name, components, values, ismissingvalues)
+end
 
 function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     len = length(param.values)

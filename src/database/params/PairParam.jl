@@ -140,7 +140,7 @@ PairParam(name,components,values,missingvals,src) = PairParam(name,components,va
 PairParam(name,components,values,missingvals) = PairParam(name,components,values,missingvals,nothing,nothing)
 
 #constructor in case we provide a normal vector
-function PairParam(name, components, values_or_missing::AbstractMatrix{T}) where T 
+function PairParam(name, components, values_or_missing::AbstractMatrix{T}) where T
     if nonmissingtype(T) != T
         values,ismissingvalues = defaultmissing(values_or_missing)
     else
@@ -171,8 +171,12 @@ function PairParam(name, components, values_or_missing::AbstractVector{T}) where
 end
 
 # If no value is provided, just initialise empty param.
-PairParam(name,components) = PairParam(name,components, fill(0.0, length(components),length(components)))
-
+function PairParam(name,components)
+    nc = length(components)
+    values = fill(0.0, (nc,nc))
+    ismissingvalues = fill(true,(nc,nc))
+    return PairParam(name, components, values, ismissingvalues)
+end
 
 function PairParam(x::SingleParam,name::String=x.name)
     pairvalues = singletopair(x.values,missing)
@@ -183,6 +187,10 @@ function PairParam(x::SingleParam,name::String=x.name)
     end
     _values,_ismissingvalues = defaultmissing(pairvalues)
     return PairParam(name, x.components, _values, _ismissingvalues, x.sourcecsvs, x.sources)
+end
+
+function PairParam(x::PairParam,name::String = x.name)
+    return PairParam(name, x.components, deepcopy(x.values), deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter) 
