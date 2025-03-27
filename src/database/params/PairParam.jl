@@ -141,13 +141,34 @@ PairParam(name,components,values,missingvals) = PairParam(name,components,values
 
 #constructor in case we provide a Vector{Union{T,Missing}}
 function PairParam(name, components, values_or_missing::AbstractMatrix{U}) where U <: Union{Missing,T} where T
-    values,ismissingvalues = defaultmissing(values_or_missing)
+    
     return PairParam(name, components, values, missingvalues)
 end
 
 #constructor in case we provide a normal vector
-function PairParam(name, components, values::AbstractMatrix{T}) where T 
-    return PairParam(name, components, values, fill(0.0, size(values)))
+function PairParam(name, components, values_or_missing::AbstractMatrix{T}) where T 
+    if nonmissingtype(T) != T
+        values,ismissingvalues = defaultmissing(values_or_missing)
+    else
+        values,ismissingvalues = values_or_missing,fill(0.0, size(values))
+    end
+    return PairParam(name, components, values, ismissingvalues)
+end
+
+function PairParam(name, components, values_or_missing::AbstractVector{T}) where T 
+    if nonmissingtype(T) != T
+        vec_values,ismissingvalues = defaultmissing(values_or_missing)
+    else
+        vec_values,vec_ismissingvalues = values_or_missing,fill(0.0, size(values))
+    end
+    pairvalues = singletopair(vec_values,missing)
+    for i in 1:length(vec_values)
+        if vec_ismissingvalues[i]
+            pairvalues[i,i] = missing
+        end
+    end
+    values,ismissingvalues = defaultmissing(pairvalues)
+    return PairParam(name, components, values, ismissingvalues)
 end
 
 # If no value is provided, just initialise empty param.
