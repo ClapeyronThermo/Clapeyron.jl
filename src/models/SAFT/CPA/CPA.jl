@@ -154,7 +154,7 @@ function CPA(components;
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     if alpha isa Type && alpha <: CPAAlphaModel && c1 != nothing
         alphaparams = CPAAlphaParam(c1)
-        init_alpha = alpha(components,alphaparams,references)
+        init_alpha = alpha(_components,alphaparams,references)
     else
         init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     end
