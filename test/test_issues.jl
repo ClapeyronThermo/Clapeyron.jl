@@ -315,4 +315,17 @@
         @test cp_mix ≈ cp_pure
         @test cp_mix ≈ 69.21259493306137
     end
+
+    @testset "CPA init" begin
+        model1 = CPA(["C3","C4"];
+        userlocations=(;
+        Mw = [44.097,58.124],
+        Tc = [369.83,425.18],
+        a = [9.11875,13.14274],
+        b = [0.057834,0.072081],
+        c1 = [0.6307,0.70771],
+        epsilon_assoc=nothing,
+        bondvol=nothing))
+        @test model1 isa CPA
+    end
 end
