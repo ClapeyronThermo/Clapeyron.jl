@@ -27,7 +27,7 @@ AssocParam(name,components,values,sites) = AssocParam(name,components,values,sit
 
 #constructor in case we provide just the compressed assoc matrix, we build the sites using only assoc info
 function AssocParam(name, components, values::MatrixofMatrices)
-    return AssocParam(name, components, values, Compressed4DMatrix(values))
+    return AssocParam(name, components, Compressed4DMatrix(values))
 end
 
 function AssocParam(name,components,vals::Compressed4DMatrix{T}) where T
