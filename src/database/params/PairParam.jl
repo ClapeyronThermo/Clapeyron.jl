@@ -139,12 +139,6 @@ end
 PairParam(name,components,values,missingvals,src) = PairParam(name,components,values,missingvals,src,nothing)
 PairParam(name,components,values,missingvals) = PairParam(name,components,values,missingvals,nothing,nothing)
 
-#constructor in case we provide a Vector{Union{T,Missing}}
-function PairParam(name, components, values_or_missing::AbstractMatrix{U}) where U <: Union{Missing,T} where T
-    
-    return PairParam(name, components, values, missingvalues)
-end
-
 #constructor in case we provide a normal vector
 function PairParam(name, components, values_or_missing::AbstractMatrix{T}) where T 
     if nonmissingtype(T) != T
@@ -158,16 +152,21 @@ end
 function PairParam(name, components, values_or_missing::AbstractVector{T}) where T 
     if nonmissingtype(T) != T
         vec_values,ismissingvalues = defaultmissing(values_or_missing)
+        pairvalues = singletopair(vec_values,missing)
+        for i in 1:length(vec_values)
+            if vec_ismissingvalues[i]
+                pairvalues[i,i] = missing
+            end
+        end
+        values,ismissingvalues = defaultmissing(pairvalues)
     else
-        vec_values,vec_ismissingvalues = values_or_missing,fill(0.0, size(values))
-    end
-    pairvalues = singletopair(vec_values,missing)
-    for i in 1:length(vec_values)
-        if vec_ismissingvalues[i]
-            pairvalues[i,i] = missing
+        values = singletopair(values_or_missing)
+        ismissingvalues = fill(true,size(values))
+        for i in 1:length(values_or_missing)
+            ismissingvalues[i,i] = false
         end
     end
-    values,ismissingvalues = defaultmissing(pairvalues)
+   
     return PairParam(name, components, values, ismissingvalues)
 end
 
