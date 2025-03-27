@@ -13,7 +13,7 @@ end
 
 #barebones constructor, we provide vals and sites
 function AssocParam(name,components,values::Compressed4DMatrix{T},sites,src,sourcecsv) where T
-    vals_length = maximum(maximum,vals.outer_indices)
+    vals_length = maximum(maximum,values.outer_indices)
     param_length_check(AssocParam,name,length(components),vals_length)
     AssocParam{T}(name,components,values,sites,src,sourcecsv)
 end
