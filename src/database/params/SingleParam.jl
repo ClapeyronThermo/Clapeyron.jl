@@ -121,7 +121,7 @@ function SingleParam(name, components, values_or_missing::AbstractVector{T}) whe
     if nonmissingtype(T) != T
         values,ismissingvalues = defaultmissing(values_or_missing)
     else
-        values,ismissingvalues = values_or_missing,fill(false, length(values))
+        values,ismissingvalues = values_or_missing,fill(false, length(values_or_missing))
     end
     return SingleParam(name, components, values, ismissingvalues)
 end
