@@ -202,10 +202,10 @@ function x0_sat_pure(model::ECS,T,crit = nothing)
     return (v0l*h,v0v*h)
 end
 
-function split_model(model::ECS,splitter)
-    shape_model_vec = split_model(model.shape_model,splitter)
+function each_split_model(model::ECS,I)
+    shape_model = each_split_model(model.shape_model,I)
     shape_ref,model_ref = model.shape_ref, model.model_ref
-    return [ECS(shape_modeli,shape_ref,model_ref) for shape_modeli in shape_model_vec]
+    ECS(shape_model,shape_ref,model_ref)
 end
 
 #==

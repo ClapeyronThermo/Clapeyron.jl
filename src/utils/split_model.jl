@@ -24,7 +24,7 @@ end
     r = Expr(:call,Base.typename(P).wrapper)
     for field in all_fields
             field_sym = QuoteNode(field)
-            push!(r.args,:(_each_split_model($param,param.$field,$field_sym,group,Ic,Ig)))
+            push!(r.args,:(_each_split_model(param,param.$field,$field_sym,group,Ic,Ig)))
     end
     return r
 end
@@ -337,7 +337,18 @@ function split_model(param)
 end
 
 #general method
-function split_model(param,splitter)
+split_model(param,splitter) = _split_model(param,splitter)
+
+function _split_model(param,splitter::AbstractVector{Int})
+    if is_splittable(param)
+        f(i) = each_split_model(param,i:i)
+        return map(f,splitter)
+    else
+        return [fill(param,length(i)) for i ∈ splitter]
+    end
+end
+
+function _split_model(param,splitter::AbstractVector)
     if is_splittable(param)
         return map(Base.Fix1(each_split_model,param),splitter)
     else
@@ -345,10 +356,12 @@ function split_model(param,splitter)
     end
 end
 
+_split_model(param,splitter::Nothing) = split_model(param)
+
 function split_model(param::AbstractArray,splitter)
     s = size(param)
     length(s) > 1 && (@assert reduce(isequal,s))
-    return map(Base.Fix1(each_split_model,param),splitter)
+    return _split_model(param,splitter)
 end
 
 for T in (:Symbol,:Tuple,:AbstractString,:Number,:Missing,:Nothing)

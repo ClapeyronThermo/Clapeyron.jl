@@ -38,7 +38,7 @@ function index_reduction(model::EoSModel,bools::T) where T<:AbstractVector{Bool}
     elseif all(idx)
         model_r = model
     else
-        model_r = split_model(model,[findall(idx)]) |> only
+        model_r = each_split_model(model,findall(idx))
     end
     return model_r,idx
 end
