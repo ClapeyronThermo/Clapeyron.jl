@@ -11,9 +11,7 @@ if the model does not have empty compositions, it will just return the input mod
 
 The function will error if the reduction results in an empty model.
 
-you can pass an arbitrary boolean vector (`bools`) to perform the reduction.
-```
-
+You can pass an arbitrary boolean vector (`bools`) to perform the reduction.
 """
 function index_reduction(model::EoSModel,z::AbstractVector,zmin = sum(z)*4*eps(float(oneunit(eltype(z)))))
     #skip splitting if possible
@@ -38,7 +36,7 @@ function index_reduction(model::EoSModel,bools::T) where T<:AbstractVector{Bool}
     elseif all(idx)
         model_r = model
     else
-        model_r = split_model(model,[findall(idx)]) |> only
+        model_r = each_split_model(model,findall(idx))
     end
     return model_r,idx
 end
