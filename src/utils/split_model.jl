@@ -292,6 +292,9 @@ end
 #EoSModel each_split_model code.
 
 function each_split_model(model::EoSModel,I)
+    if !is_splittable(model)
+        return model
+    end
     if has_groups(model)
         Ic = I
         groups = model.groups
@@ -339,8 +342,15 @@ end
 #general method
 split_model(param,splitter) = _split_model(param,splitter)
 
+function split_model(param::AbstractArray,splitter)
+    s = size(param)
+    length(s) > 1 && (@assert reduce(isequal,s))
+    return _split_model(param,splitter)
+end
+
+#inner method to dispatch on type of splitter
 function _split_model(param,splitter::AbstractVector{Int})
-    if is_splittable(param)
+    if is_splittable(param) || param isa EoSModel
         f(i) = each_split_model(param,i:i)
         return map(f,splitter)
     else
@@ -358,11 +368,7 @@ end
 
 _split_model(param,splitter::Nothing) = split_model(param)
 
-function split_model(param::AbstractArray,splitter)
-    s = size(param)
-    length(s) > 1 && (@assert reduce(isequal,s))
-    return _split_model(param,splitter)
-end
+
 
 for T in (:Symbol,:Tuple,:AbstractString,:Number,:Missing,:Nothing)
     @eval is_splittable(param::$T) = false
