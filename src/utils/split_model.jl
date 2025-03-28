@@ -358,6 +358,8 @@ function _split_model(param,splitter::AbstractVector{Int})
     end
 end
 
+_split_model(param,i::Int) = [each_split_model(param,i:i)]
+
 function _split_model(param,splitter::AbstractVector)
     if is_splittable(param)
         return map(Base.Fix1(each_split_model,param),splitter)

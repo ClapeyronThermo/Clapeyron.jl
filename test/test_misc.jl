@@ -23,7 +23,7 @@ end
         models2 = split_model(model2)
         @info "The following 2 error messages are expected:"
         @test_throws ArgumentError split_model(noparam1)
-        @test_throws ArgumentError split_model(model2,missing)
+        @test_throws MethodError split_model(model2,missing)
         @test models2[1].components[1] == model2.components[1]
         @test models2[2].components[1] == model2.components[2]
 
