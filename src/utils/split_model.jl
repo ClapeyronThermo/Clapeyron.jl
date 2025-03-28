@@ -362,6 +362,16 @@ function split_model(param::AbstractArray,splitter)
 end
 
 #inner method to dispatch on type of splitter
+
+#general splitter type is an iterator with eltype <: AbstractVector{Int}
+function _split_model(param,splitter)
+    if is_splittable(param) || param isa EoSModel
+        return map(Base.Fix1(each_split_model,param),splitter)
+    else
+        return [fill(param,length(i)) for i ∈ splitter]
+    end
+end
+
 function _split_model(param,splitter::AbstractVector{Int})
     if is_splittable(param) || param isa EoSModel
         f(i) = each_split_model(param,i:i)
@@ -371,17 +381,11 @@ function _split_model(param,splitter::AbstractVector{Int})
     end
 end
 
-_split_model(param,i::Int) = [each_split_model(param,i:i)]
 
-function _split_model(param,splitter::AbstractVector)
-    if is_splittable(param)
-        return map(Base.Fix1(each_split_model,param),splitter)
-    else
-        return [fill(param,length(i)) for i ∈ splitter]
-    end
-end
+
 
 _split_model(param,splitter::Nothing) = split_model(param)
+_split_model(param,i::Int) = [each_split_model(param,i:i)]
 
 for T in (:Symbol,:Tuple,:AbstractString,:Number,:Missing,:Nothing)
     @eval is_splittable(param::$T) = false
