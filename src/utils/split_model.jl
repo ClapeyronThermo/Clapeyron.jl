@@ -107,7 +107,7 @@ function each_split_model(assoc::Compressed4DMatrix{T},I) where T
     return Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
 end
 
-function each_split_model(param::Union{SingleParameter,PairParameter,AssocParam},group,I_component,I_group)
+function each_split_model(param::ClapeyronParam,group,I_component,I_group)
     components = param.components
     if group === nothing
         return each_split_model(param,I_component)
