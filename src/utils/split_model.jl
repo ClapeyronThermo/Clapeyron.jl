@@ -109,7 +109,9 @@ end
 
 function each_split_model(param::Union{SingleParameter,PairParameter,AssocParam},group,I_component,I_group)
     components = param.components
-    if components == group.components
+    if group === nothing
+        return each_split_model(param,I_component)
+    elseif components == group.components
         return each_split_model(param,I_component)
     elseif components == group.flattenedgroups
         return each_split_model(param,I_group)
@@ -236,22 +238,7 @@ function each_split_model(group::GroupParam,I)
 end
 
 function each_split_model(param::SiteParam,I)
-    return each_split_model(param,nothing,I,nothing)
-end
-
-function each_split_model(param::SiteParam,group,Ic,Ig)
-    
-    if group === nothing
-        I = Ic
-    elseif param.components == group.components
-        I = Ic
-    elseif param.components == group.flattenedgroups
-        I = Ig
-    else
-        __each_split_model_ambiguous_comps("sites",SiteParam)
-    end
-
-    site = SiteParam(
+    return SiteParam(
         param.components[I],
         param.sites[I],
         each_split_model(param.n_sites,I),
@@ -261,11 +248,26 @@ function each_split_model(param::SiteParam,group,Ic,Ig)
         param.i_flattenedsites[I],
         param.sourcecsvs,
         __split_site_translator(param.site_translator,I))
+end
+
+function each_split_model(param::SiteParam,group,Ic,Ig)
     
+    components = param.components
+    if group === nothing
+        site = each_split_model(param,Ic)
+    elseif components == group.components
+        site = each_split_model(param,Ic)
+    elseif components == group.flattenedgroups
+        site = each_split_model(param,Ig)
+    else
+        __each_split_model_ambiguous_comps("sites",SiteParam)
+    end
+
     if group != nothing && site.site_translator != nothing && I == Ic
         ng = length(group.flattenedgroups)
         recalculate_site_translator!(site,Ig,ng)
     end
+    
     return site
 end
 
