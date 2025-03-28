@@ -239,7 +239,18 @@ function each_split_model(param::SiteParam,I)
     return each_split_model(param,nothing,I,nothing)
 end
 
-function each_split_model(param::SiteParam,group,I,Ig)
+function each_split_model(param::SiteParam,group,Ic,Ig)
+    
+    if group === nothing
+        I = Ic
+    elseif param.components == group.components
+        I = Ic
+    elseif param.components == group.flattenedgroups
+        I = Ig
+    else
+        __each_split_model_ambiguous_comps("sites",SiteParam)
+    end
+
     site = SiteParam(
         param.components[I],
         param.sites[I],
@@ -251,7 +262,7 @@ function each_split_model(param::SiteParam,group,I,Ig)
         param.sourcecsvs,
         __split_site_translator(param.site_translator,I))
     
-    if group != nothing && site.site_translator != nothing
+    if group != nothing && site.site_translator != nothing && I == Ic
         ng = length(group.flattenedgroups)
         recalculate_site_translator!(site,Ig,ng)
     end
@@ -369,8 +380,6 @@ function _split_model(param,splitter::AbstractVector)
 end
 
 _split_model(param,splitter::Nothing) = split_model(param)
-
-
 
 for T in (:Symbol,:Tuple,:AbstractString,:Number,:Missing,:Nothing)
     @eval is_splittable(param::$T) = false
