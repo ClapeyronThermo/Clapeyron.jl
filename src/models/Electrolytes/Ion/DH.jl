@@ -41,7 +41,7 @@ function DH(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_u
     components = deepcopy(ions)
     prepend!(components,solvents)
 
-    params = getparams(components, ["Electrolytes/properties/charges.csv","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=userlocations, verbose=verbose)
 
     if any(keys(params).=="b")
         params["b"].values .*= 3/2/N_A/π*1e-3
@@ -81,9 +81,11 @@ function a_ion(model::DHModel, V, T, z,_data=@f(data))
     end
     nc = length(model)
     ∑z = sum(z)
-    ρ = N_A*sum(z)/V
+    
     s = e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)
-    κ = sqrt(4π*s*ρ*sum(z[i]*Z[i]*Z[i] for i ∈ 1:nc)/∑z)
+    κ = debye_length(model,V,T,z,ϵ_r,∑z)
+    #ρ = N_A*sum(z)/V
+    #κ = sqrt(4π*s*ρ*sum(z[i]*Z[i]*Z[i] for i ∈ 1:nc)/∑z)
     res = zero(Base.promote_eltype(model,V,T,z))
     for i ∈ @iions
         yi,Zi = σ[i]*κ,Z[i]

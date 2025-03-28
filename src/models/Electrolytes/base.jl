@@ -118,4 +118,13 @@ function T_scale(model::ElectrolyteModel,z)
     return T_scale(model.neutralmodel,z)
 end
 
+function a_born(model::ESElectrolyteModel,V,T,z)
+    return a_born(model.ionmodel,V,T,z)
+end
+
+function debye_length(model::ESElectrolyteModel,V,T,z,ϵ_r = @f(dielectric_constant),∑z = sum(z))
+    return debye_length(model.ionmodel,V,T,z,ϵ_r,∑z)
+end
+
+
 export dielectric_constant, ESElectrolyte

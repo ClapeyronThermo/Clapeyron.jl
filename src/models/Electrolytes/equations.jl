@@ -76,4 +76,12 @@ macro ineutral()
     end |> esc
 end
 
+function debye_length(model::IonModel,V,T,z,ϵ_r = @f(dielectric_constant),∑z = sum(z))
+    Z = model.params.charge.values
+    ρ = N_A*∑z/V
+    s = e_c*e_c/(4π*ϵ_0*ϵ_r*k_B*T)
+    κ = sqrt(4π*s*ρ*@sum(z[i]*Z[i]*Z[i])/∑z)
+end
+
+
 export molality_to_composition

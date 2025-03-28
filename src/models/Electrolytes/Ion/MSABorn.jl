@@ -41,7 +41,7 @@ This function is used to create a Mean Spherical Approximation-Born model. The M
 function MSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
-    params = getparams(components, append!(["Electrolytes/properties/charges.csv","properties/molarmass.csv","Electrolytes/Born/born_like.csv"]); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
+    params = getparams(components, append!(["Electrolytes/properties/charges.csv","Electrolytes/Born/born_like.csv"]); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     if any(keys(params).=="b")
         params["b"].values .*= 3/2/N_A/π*1e-3
         params["b"].values .^= 1/3
@@ -66,20 +66,6 @@ function MSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmo
 end
 
 function a_res(model::MSABornModel, V, T, z, _data=@f(data))
-    return a_ion(model, V, T, z, _data)+a_born(model, V, T, z, _data)
-end
-
-function a_born(model::MSABornModel, V, T, z,_data=@f(data))
-    σ_born = model.params.sigma_born.values
-    Z = model.params.charge.values
     ϵ_r = _data
-
-    if all(iszero,Z)
-        return zero(Base.promote_eltype(model,T,z))
-    end
-    res = zero(Base.promote_eltype(z,Z,σ_born))
-    for i ∈ @iions
-        res += z[i]*Z[i]^2/σ_born[i]
-    end
-    return -e_c^2/(4π*ϵ_0*k_B*T*sum(z))*(1-1/ϵ_r)*res
+    return a_ion(model, V, T, z, _data) + a_born(model, V, T, z, ϵ_r)
 end

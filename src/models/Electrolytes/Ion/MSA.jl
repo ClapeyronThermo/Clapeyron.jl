@@ -37,7 +37,7 @@ This function is used to create a Mean Spherical Approximation model. The MSA te
 function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
-    params = getparams(components, ["Electrolytes/properties/charges.csv","properties/molarmass.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
+    params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     if any(keys(params).=="b")
         params["b"].values .*= 3/2/N_A/π*1e-3
         params["b"].values .^= 1/3
@@ -93,10 +93,10 @@ function screening_length(model::MSAModel,V,T,z,ϵ_r = @f(data))
     iions = @iions
 
     ∑z = sum(z)
-    ρ = N_A*sum(z)/V
+    ρ = N_A*∑z/V
     Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ @comps)/∑z
 
-    Γold = sqrt(4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρ*sum(z[i]*Z[i]^2 for i ∈ iions)/∑z)
+    Γold = κ = debye_length(model,V,T,z,ϵ_r,∑z)
     _0 = zero(Γold)
     Γnew = _0
     tol  = one(_0)
@@ -112,7 +112,12 @@ function screening_length(model::MSAModel,V,T,z,ϵ_r = @f(data))
         end
         Γnew = sqrt(π*e_c^2*ρ/(4π*ϵ_0*ϵ_r*k_B*T)*∑Q2x/∑z)
         tol = abs(1-Γnew/Γold)
-        Γold = Γnew
+        if Γnew > κ
+            Γold = 0.5*(Γold + κ)
+        else
+            Γold = Γnew
+        end
+        
         iter += 1
     end
     return Γnew

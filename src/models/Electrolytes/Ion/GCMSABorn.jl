@@ -164,10 +164,8 @@ end
 
 function screening_length(model::GCMSABornModel,V,T,z, ϵ_r=@f(data),zgdata = @f(data_msa))
     ∑z = sum(z)
-
     σ = model.params.gc_sigma.values
     Z = model.params.charge.values
-
     ρ = N_A*∑z/V
     _0 = zero(Base.promote_eltype(model,V,T,z))
     ∑1,∑2 = zero(_0),zero(_0)
@@ -247,4 +245,21 @@ function a_born(model::GCMSABornModel, V, T, z,_data=@f(data))
         return zero(T+∑zg)
     end
     return -e_c^2/(4π*ϵ_0*k_B*T*∑z)*(1-1/ϵ_r)*_∑1
+end
+
+function debye_length(model::GCMSABornModel, V, T, z, ϵ_r = dielectric_constant(model,V,T,z))
+    ∑z = sum(z)
+    ρ = N_A*∑z/V
+    ∑1 = zero(Base.promote_eltype(model,V,T,z))
+    for i ∈ @comps
+        for k ∈ @groups(i)
+            Zk = Z[k]
+            if !iszero(Zk)
+                σk,zi = σ[k],z[i]
+                σk3 = σk*σk*σk
+                ∑1 += zi*Zk*Zk #sum(zg[i]*Z[i]^2 for i ∈ iions)
+            end
+        end
+    end
+    return sqrt(4π*e_c*e_c/(4π*ϵ_0*ϵ_r*k_B*T)*ρ*∑1/∑z)
 end
