@@ -27,7 +27,7 @@ end
 
 ConstRSP() = ConstRSP(78.38484961)
 
-function dielectric_constant(model::ConstRSPModel,V,T,z,_data=nothing)
+function dielectric_constant(model::ConstRSPModel,V,T,z)
     return model.value
 end
 

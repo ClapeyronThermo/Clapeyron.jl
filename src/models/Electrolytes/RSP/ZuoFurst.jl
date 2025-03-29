@@ -20,7 +20,7 @@ function ZuoFurst(solvents,ions; userlocations = nothing, verbose::Bool=false)
     return ZuoFurst()
 end
 
-function dielectric_constant(model::ZuoFurstModel,V,T,z,_data=nothing)
+function dielectric_constant(model::ZuoFurstModel,V,T,z)
     return -19.2905+29814.5/T-0.019678*T+1.318e-4*T^2-3.1144e-7*T^3
 end
 

@@ -59,6 +59,8 @@ function MSAID(solvents,ions; userlocations, verbose=false)
     return model
 end
 
+IonDependency(ionmodel::MSAIDModel) = IndependentIonModel()
+
 function a_res(model::MSAIDModel, V, T, z, _data=@f(data))
     return a_ion(model, V, T, z, _data)
 end

@@ -48,7 +48,7 @@ function Schreckenberg(solvents,ions; userlocations::Vector{String}=String[], ve
     return model
 end
 
-function dielectric_constant(model::SchreckenbergModel,V,T,z,_data=nothing)
+function dielectric_constant(model::SchreckenbergModel,V,T,z)
         d_T = model.params.d_T.values
         d_V = model.params.d_V.values
         Z = model.params.charge.values

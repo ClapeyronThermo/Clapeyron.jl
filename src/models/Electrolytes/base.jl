@@ -69,28 +69,34 @@ function ESElectrolyte(solvents,ions;
     return model
 end
 
-"""
-    dielectric_constant(model::ElectrolyteModel, V, T, z)
+#=
+Taking an inspiration from the broadcast dispatch
 
-Calculates the dielectric constant (also known as relative static permittivity) for a given electrolyte model.
+struct IndependentIonModel end
 
-## Examples
-```julia
-model = ConstRSP()
-εr = dielectric_constant(model, 1.8e-5, 298.15, [1.0])
-```
-"""
-function dielectric_constant end
+=#
 
-function dielectric_constant(model::ESElectrolyteModel,V, T, z)
-    return dielectric_constant(model.ionmodel, V, T, z)
+abstract type IonDependency end
+struct IndependentIonModel <: IonDependency end
+struct DependentIonModel{T} <: IonDependency
+    model::T
 end
 
-function dielectric_constant(model::IonModel,V, T, z)
-    return dielectric_constant(model.RSPmodel, V, T, z)
+function IonDependency(model::ESElectrolyteModel)
+    return IonDependency(model.ionmodel)
 end
+
+function IonDependency(model::IonModel)
+    return IonDependency(model.RSPmodel)
+end
+
+IonDependency(model::RSPModel) = IndependentIonModel()
 
 function a_res(model::ESElectrolyteModel, V, T, z)
+    return a_res(model,V,T,z,IonDependency(model))
+end
+
+function a_res(model::ESElectrolyteModel, V, T, z, ::IndependentIonModel)
     return a_res(model.neutralmodel,V,T,z) + a_res(model.ionmodel,V,T,z)
 end
 
@@ -126,5 +132,33 @@ function debye_length(model::ESElectrolyteModel,V,T,z,ϵ_r = @f(dielectric_const
     return debye_length(model.ionmodel,V,T,z,ϵ_r,∑z)
 end
 
+"""
+    dielectric_constant(model::ElectrolyteModel, V, T, z)
+
+Calculates the dielectric constant (also known as relative static permittivity) for a given electrolyte model.
+
+## Examples
+```julia
+model = ConstRSP()
+εr = dielectric_constant(model, 1.8e-5, 298.15, [1.0])
+```
+"""
+function dielectric_constant end
+
+function dielectric_constant(model::EoSModel,V, T, z)
+    return dielectric_constant(model, V, T, z, IonDependency(model))
+end
+
+function dielectric_constant(model::ESElectrolyteModel,V, T, z, ::IndependentIonModel)
+    return dielectric_constant(model.ionmodel, V, T, z, IonDependency(model.ionmodel))
+end
+
+function dielectric_constant(model::IonModel, V, T, z, ::IndependentIonModel)
+    return dielectric_constant(model.RSPmodel, V, T, z, IonDependency(model.RSPmodel))
+end
+
+function dielectric_constant(model::RSPModel, V, T, z, ::IndependentIonModel)
+    return dielectric_constant(model, V, T, z)
+end
 
 export dielectric_constant, ESElectrolyte

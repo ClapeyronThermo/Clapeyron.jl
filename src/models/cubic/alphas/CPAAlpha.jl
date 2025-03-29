@@ -131,5 +131,5 @@ alpha = eCPAAlpha(["water","carbon dioxide"];userlocations = (;c1 = [0.67,0.76])
 ```
 
 """
-sCPAAlpha
-default_locations(::Type{sCPAAlpha}) = ["SAFT/CPA/eCPA/eCPA_like.csv"]
+eCPAAlpha
+default_locations(::Type{eCPAAlpha}) = ["SAFT/CPA/eCPA/eCPA_like.csv"]
