@@ -127,7 +127,7 @@ end
 
 #fused chain and disp calculation
 function a_res(model::SAFTVRMieModel, V, T, z, _data = @f(data))
-    return @f(a_hs,_data)+@f(a_dispchain,_data) + @f(a_assoc,_data)
+    return @f(a_hs,_data) + @f(a_dispchain,_data) + @f(a_assoc,_data)
 end
 
 function a_mono(model::SAFTVRMieModel, V, T, z,_data = @f(data))
