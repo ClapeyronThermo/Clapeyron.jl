@@ -65,6 +65,6 @@ function DHBorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmod
 end
 
 function a_res(model::DHBornModel, V, T, z, _data=@f(data))
-    ϵ_r = first(_data)
+    ϵ_r = _data
     return a_ion(model, V, T, z, _data) + a_born(model, V, T, z, ϵ_r)
 end
