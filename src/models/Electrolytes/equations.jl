@@ -55,7 +55,7 @@ This macro is a non-allocating equivalent to the following code:
 """
 macro iions()
     quote
-        Iterators.filter(!iszero ∘ Base.Fix1(Base.getindex,Z), 1:length(model))
+        Iterators.filter(!iszero ∘ Base.Fix1(Base.getindex,Z), 1:length(Z))
     end |> esc
 end
 
@@ -72,16 +72,17 @@ This macro is a non-allocating equivalent to the following code:
 """
 macro ineutral()
     quote
-        Iterators.filter(iszero ∘ Base.Fix1(Base.getindex,Z), 1:length(model))
+        Iterators.filter(iszero ∘ Base.Fix1(Base.getindex,Z), 1:length(Z))
     end |> esc
 end
 
-function debye_length(model::IonModel,V,T,z,ϵ_r = @f(dielectric_constant),∑z = sum(z))
-    Z = model.params.charge.values
+function debye_length(V,T,z,ϵ_r,Z,∑z = sum(z))
     ρ = N_A*∑z/V
     s = e_c*e_c/(4π*ϵ_0*ϵ_r*k_B*T)
     κ = sqrt(4π*s*ρ*@sum(z[i]*Z[i]*Z[i])/∑z)
 end
 
-
+function a_ion(ionmodel, rsp, neutralmodel, V, T, z, neutral_data, ϵ_r)
+    return a_ion(ionmodel, V, T, z, ϵ_r)
+end
 export molality_to_composition

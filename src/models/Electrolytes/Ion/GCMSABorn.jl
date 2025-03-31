@@ -108,28 +108,12 @@ function recombine_impl!(model::GCMSABornModel)
     return model
 end
 
-function data(model::GCMSABornModel, V, T, z)
-    ngroups = length(model.groups.flattenedgroups)
-    v = model.groups.n_flattenedgroups
-    Σz = sum(z)
-    zg = zeros(eltype(sum(z)),ngroups)
-    for i ∈ 1:length(model.groups.components)
-        vi = v[i]
-        zi = z[i]
-        for k ∈ 1:ngroups
-            zg[k] += zi*vi[k]
-        end
-    end
-    ng = sum(zg)
-    return (zg, ng), dielectric_constant(model, V, T, z)
+function a_res(model::GCMSABornModel, V, T, z, iondata)
+    return a_dh(model,V,T,z,iondata) + a_born(model,V,T,z,iondata)
 end
 
-function a_res(model::GCMSABornModel, V, T, z, _data=@f(data))
-    return a_ion(model,V,T,z,_data) + a_born(model,V,T,z,_data)
-end
-
-function a_ion(model::GCMSABornModel, V, T, z, _data=@f(data))
-    (zg, ∑zg), ϵ_r = _data
+function a_dh(model::GCMSABornModel, V, T, z, iondata)
+    _,_, ϵ_r = iondata
     σ = model.params.gc_sigma.values
     Z = model.params.charge.values
     ∑z = sum(z)
@@ -138,8 +122,8 @@ function a_ion(model::GCMSABornModel, V, T, z, _data=@f(data))
         return zero(Base.promote_eltype(model,V,T,z))
     end
     ρ = N_A*∑z/V
-    Γ = @f(screening_length, ϵ_r, (zg, ∑zg))
-    ∑1,∑2,∑3,∑4 = zero(Γ),zero(Γ),zero(Γ),zero(Γ)
+    Γ = @f(screening_length, iondata)
+    ∑1,∑2,∑3,∑4 = zero(Γ),zero(Γ),zero(Γ),zero(Γ) 
     for i ∈ @comps
         for k ∈ @groups(i)
             Zk = Z[k]
@@ -162,10 +146,11 @@ function a_ion(model::GCMSABornModel, V, T, z, _data=@f(data))
     return (U_GCMSA+Γ^3*k_B*T*V/(3π))/(N_A*k_B*T*sum(z))
 end
 
-function screening_length(model::GCMSABornModel,V,T,z, ϵ_r=@f(data),zgdata = @f(data_msa))
+function screening_length(model::GCMSABornModel, V, T, z, iondata)
+    _, _, ϵ_r = iondata
     ∑z = sum(z)
-    σ = model.params.gc_sigma.values
     Z = model.params.charge.values
+    σ = model.params.gc_sigma.values
     ρ = N_A*∑z/V
     _0 = zero(Base.promote_eltype(model,V,T,z))
     ∑1,∑2 = zero(_0),zero(_0)
@@ -223,10 +208,10 @@ function screening_length(model::GCMSABornModel,V,T,z, ϵ_r=@f(data),zgdata = @f
     return Γnew
 end
 
-function a_born(model::GCMSABornModel, V, T, z,_data=@f(data)) 
+function a_born(model::GCMSABornModel, V, T, z, iondata) 
     v = model.groups.n_flattenedgroups
     ∑z = sum(z)
-    (zg, ∑zg), ϵ_r = _data  
+    _, σ, ϵ_r = iondata
     σ_born = model.params.gc_sigma_born.values
     Z = model.params.charge.values
     igroups = 1:length(model.groups.flattenedgroups)

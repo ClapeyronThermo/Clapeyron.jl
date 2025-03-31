@@ -1,6 +1,5 @@
 struct BornParam <: EoSParam
     sigma_born::SingleParam{Float64}
-    charge::SingleParam{Float64}
 end
 
 abstract type BornModel <: EoSModel end
@@ -39,12 +38,11 @@ function Born(solvents,ions; RSPmodel = ConstRSP, userlocations=String[], RSPmod
     
     components = deepcopy(ions)
     prepend!(components,solvents)    
-    params = getparams(components, ["Electrolytes/Born/Born.csv","Electrolytes/properties/charges.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
+    params = getparams(components, ["Electrolytes/Born/Born.csv"], verbose=verbose)
     params["sigma_born"].values .*= 1E-10
     sigma_born = params["sigma_born"]
-    charge = params["charge"]
 
-    packagedparams = BornParam(sigma_born,charge)
+    packagedparams = BornParam(sigma_born)
 
     references = String[]
 
@@ -59,16 +57,20 @@ function data(model::BornModel, V, T, z)
     return dielectric_constant(model, V, T, z)
 end
 
-function a_res(model::BornModel,V,T,z, _data = @f(data))
-    return a_born(model,V,T,z,_data)
+function a_res(ionmodel::BornModel, V, T, z, iondata)
+    return a_born(model, V, T, z, iondata)
 end
 
-function a_born(model::IonModel, V, T, z, ϵ_r = dielectric_constant(model,V,T,z),σ_born = model.params.sigma_born.values)
-    Z = model.params.charge.values
-    ϵ_r = _data
+function a_born(model::EoSModel, V, T, z, iondata)
+    σ_born = model.params.sigma_born.values
+    return a_born(V, T, z, iondata, σ_born)
+end
+
+function a_born(V::Number, T, z, iondata, σ_born)
+    Z, σ, ϵ_r = iondata
     s = -e_c^2/(4π*ϵ_0*k_B*T*sum(z))
     if all(iszero,Z)
-        return zero(Base.promote_eltype(s,σ_born))
+        return zero(Base.promote_eltype(V, T, z, Z, σ, ϵ_r))
     end
     return s*(1-1/ϵ_r)*sum(z[i]*Z[i]*Z[i]/σ_born[i] for i ∈ @iions)
 end

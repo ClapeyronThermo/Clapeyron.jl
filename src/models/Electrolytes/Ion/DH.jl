@@ -1,13 +1,7 @@
-struct DHParam <: EoSParam
-    sigma::SingleParam{Float64}
-    charge::SingleParam{Float64}
-end
-
 abstract type DHModel <: IonModel end
 
 struct DH{ϵ} <: DHModel
     components::Array{String,1}
-    params::DHParam
     RSPmodel::ϵ
     references::Array{String,1}
 end
@@ -41,52 +35,35 @@ function DH(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_u
     components = deepcopy(ions)
     prepend!(components,solvents)
 
-    params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=userlocations, verbose=verbose)
-
-    if any(keys(params).=="b")
-        params["b"].values .*= 3/2/N_A/π*1e-3
-        params["b"].values .^= 1/3
-        sigma = SingleParam("sigma",components,params["b"].values)
-    else
-        params["sigma"].values .*= 1E-10
-        sigma = params["sigma"]
-    end
-
-    charge = params["charge"]
-
-    packagedparams = DHParam(sigma,charge)
-
     references = String[]
-
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
-    model = DH(components, packagedparams, init_RSPmodel,references)
+    model = DH(components, init_RSPmodel,references)
     return model
 end
 
-function data(model::DHModel, V, T, z)
-    return dielectric_constant(model, V, T, z)
+function a_res(model::DHModel, V, T, z, iondata)
+    return @f(a_dh,iondata)
 end
 
-function a_res(model::DHModel, V, T, z, _data=@f(data))
-    return a_ion(model, V, T, z, _data)
+function a_dh(ionmodel::DHModel, V, T, z, iondata)
+    Z, σ, ϵ_r = iondata
+    return a_dh(V, T, z, Z, σ, ϵ_r)
 end
 
-function a_ion(model::DHModel, V, T, z,_data=@f(data))
-    ϵ_r, σ = _data
-    Z = model.params.charge.values
-    σ = model.params.sigma.values
+function a_dh(V, T, z, Z, σ, ϵ_r)
+    _0 = zero(Base.promote_eltype(V, T, z, Z, σ, ϵ_r))
     if all(iszero,Z)
-        return zero(V+T+first(z))
+        return  _0
     end
-    nc = length(model)
+    nc = length(Z)
     ∑z = sum(z)
     
     s = e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)
-    κ = debye_length(model,V,T,z,ϵ_r,∑z)
+    κ = debye_length(V,T,z,ϵ_r,Z,∑z)
     #ρ = N_A*sum(z)/V
     #κ = sqrt(4π*s*ρ*sum(z[i]*Z[i]*Z[i] for i ∈ 1:nc)/∑z)
-    res = zero(Base.promote_eltype(model,V,T,z))
+    res =  _0
     for i ∈ @iions
         yi,Zi = σ[i]*κ,Z[i]
         yip1 = yi + 1

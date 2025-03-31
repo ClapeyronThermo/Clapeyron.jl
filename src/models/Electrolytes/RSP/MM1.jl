@@ -77,35 +77,18 @@ function a_res_minus_assoc(model::CPAModel,V,T,z,_data)
 end
 
 function a_res(model::ESElectrolyteModel,V,T,z,dep::DependentIonModel{MM1}) 
-    mm1 = dep.model
+    rsp = dep.model
     neutralmodel = model.neutralmodel
+    ionmodel = model.ionmodel
     neutral_data = data(neutralmodel,V,T,z)
+    Z = model.charge
     X,Δ = X_and_Δ(neutralmodel,V,T,z,neutral_data)
     a_neutral = a_res_minus_assoc(neutralmodel,V,T,z,neutral_data) + a_assoc_impl(neutralmodel,V,T,z,X)
-    ϵ_r = __dielectric_constant(model, V, T, z, mm1, X, Δ)
-    a_ions = a_ion(model.ionmodel,V,T,z,mm1, ϵ_r)
-    return a_neutral + a_ions
-end
-
-function a_ion(model::IonModel,V,T,z,rsp::MM1,ϵ_r)
-    return a_res(model,V,T,z,ϵ_r)
-end
-
-function a_ion(model::GCMSABornModel,V,T,z,rsp::MM1,ϵ_r)
-    ngroups = length(model.groups.flattenedgroups)
-    v = model.groups.n_flattenedgroups
-    Σz = sum(z)
-    zg = zeros(eltype(sum(z)),ngroups)
-    for i ∈ 1:length(model.groups.components)
-        vi = v[i]
-        zi = z[i]
-        for k ∈ 1:ngroups
-            zg[k] += zi*vi[k]
-        end
-    end
-    ng = sum(zg)
-    _data = (zg, ng), ϵ_r
-    return a_res(model,V,T,z,_data)
+    ϵ_r = __dielectric_constant(model, V, T, z, rsp, X, Δ)
+    σ = get_sigma(ionmodel, V, T, z, neutralmodel, neutral_data)
+    iondata = (Z, σ, ϵ_r)
+    a_ion = a_res(ionmodel, V, T, z, iondata, neutralmodel, neutral_data)
+    return a_neutral + a_ion
 end
 
 function dielectric_constant(model::ESElectrolyteModel, V, T, z,dep::DependentIonModel{MM1})

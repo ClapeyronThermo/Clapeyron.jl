@@ -1,14 +1,10 @@
-struct DHBornParam <: EoSParam
-    sigma::SingleParam{Float64}
-    sigma_born::SingleParam{Float64}
-    charge::SingleParam{Float64}
-end
+
 
 abstract type DHBornModel <: DHModel end
 
 struct DHBorn{ϵ} <: DHBornModel
     components::Array{String,1}
-    params::DHBornParam
+    params::BornParam
     RSPmodel::ϵ
     references::Array{String,1}
 end
@@ -40,21 +36,11 @@ This function is used to create a Debye-Hückel-Born model. The Debye-Hückel-Bo
 function DHBorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
-    params = getparams(components, append!(["Electrolytes/properties/charges.csv","Electrolytes/Born/born_like.csv"]); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
-    if any(keys(params).=="b")
-        params["b"].values .*= 3/2/N_A/π*1e-3
-        params["b"].values .^= 1/3
-        sigma = SingleParam("sigma",components,params["b"].values)
-    else
-        params["sigma"].values .*= 1E-10
-        sigma = params["sigma"]
-    end
-
-    charge = params["charge"]
+    params = getparams(components, append!(["Electrolytes/Born/born_like.csv"]); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     sigma_born = params["sigma_born"]
     sigma_born.values .*= 1E-10
 
-    packagedparams = DHBornParam(sigma,sigma_born,charge)
+    packagedparams = BornParam(sigma_born)
 
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
@@ -64,7 +50,6 @@ function DHBorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmod
     return model
 end
 
-function a_res(model::DHBornModel, V, T, z, _data=@f(data))
-    ϵ_r = _data
-    return a_ion(model, V, T, z, _data) + a_born(model, V, T, z, ϵ_r)
+function a_res(model::DHBornModel, V, T, z, iondata)
+    return a_dh(model, V, T, z, iondata) + a_born(model, V, T, z, iondata)
 end

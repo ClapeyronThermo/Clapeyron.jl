@@ -39,7 +39,7 @@ function LinMixRSP(solvents,ions; userlocations=String[], verbose::Bool=false)
     return model
 end
 
-function dielectric_constant(model::LinMixRSPModel, V, T, z)
+function dielectric_constant(model::LinMixRSPModel, V, T, z, Z = nothing)
     ϵᵣᵢ = model.params.dielectric_constant.values
     ϵᵣ = dot(ϵᵣᵢ,z)/sum(z)
 end

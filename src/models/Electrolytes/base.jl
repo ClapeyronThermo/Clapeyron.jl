@@ -48,20 +48,19 @@ function ESElectrolyte(solvents,ions;
 
     params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=userlocations, verbose=verbose)
     charge = params["charge"].values
-    path0 = default_locations(neutralmodel)
+    #path0 = default_locations(neutralmodel)
     #remove unused datapaths
-    neutral_path = joinpath.(DB_PATH,filter(∉(("properties/molarmass.csv","properties/molarmass_groups.csv,properties/critical_csv")),path0))
+    #neutral_path = joinpath.(DB_PATH,filter(∉(("properties/molarmass.csv","properties/molarmass_groups.csv,properties/critical_csv")),path0))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_RSP = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations,verbose = verbose)
-
     if has_sites(neutralmodel)
         init_neutralmodel = neutralmodel(components;userlocations,verbose,assoc_options)
     else
         init_neutralmodel = neutralmodel(components;userlocations,verbose)
     end
 
-    ionmodel_userlocations = can_nt(userlocations) ? userlocations : userlocation_merge(neutral_path,userlocations)
-    init_ionmodel = @initmodel ionmodel(solvents,ions;RSPmodel=init_RSP,userlocations =ionmodel_userlocations,verbose=verbose)
+    ionmodel_userlocations = userlocations
+    init_ionmodel = @initmodel ionmodel(solvents,ions;RSPmodel=init_RSP,userlocations = userlocations,verbose=verbose)
 
     references = String[]
     model = ESElectrolyte(components,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
@@ -72,7 +71,17 @@ end
 #=
 Taking an inspiration from the broadcast dispatch
 
-struct IndependentIonModel end
+Electrolyte models are deeply interwined.
+We need to know the level at which they are interwined.
+
+1. the charge parameter is shared between all models -> we need to pass charge to all inner models
+2. some ion models use the EoS molecular size, some use their own -> we need to dispatch on that
+3. some ion models require rsp, some not -> we need to dispatch on that too
+
+I decided that there are three levels of interwining:
+
+level 1: Electrolyte model provides charges to ion model, the ion model then can call itself
+level 2: Electrolyte models provided  
 
 =#
 
@@ -92,12 +101,68 @@ end
 
 IonDependency(model::RSPModel) = IndependentIonModel()
 
+requires_rsp(::Type{T}) where T <: IonModel = _requires_rsp(T)
+requires_rsp(model::IonModel) = _requires_rsp(typeof(model))
+Base.@assume_effects :foldable function _requires_rsp(::Type{T}) where T
+    return hasfield(T,:RSPmodel)
+end
+
+has_sigma(::Type{T}) where T <: IonModel = _has_sigma(T)
+has_sigma(model::IonModel) = _has_sigma(typeof(model))
+Base.@assume_effects :foldable function _has_sigma(::Type{T}) where T
+    if hasfield(T,:params)
+        P = fieldtype(T,:params)
+        return hasfield(P,:sigma)
+    else
+        return false
+    end
+end
+
+function get_sigma(ionmodel::IonModel, V, T, z, model, neutral_data = @f(data))
+    if has_sigma(ionmodel)
+        return ionmodel.params.sigma.values
+    end
+    
+    if model isa CPAModel
+        b = model.cubicmodel.params.b.values
+        σ = similar(b,length(neutralmodel))
+        for i in 1:length(neutralmodel)
+            σ[i] = cbrt((3/2/N_A/π)*b[i,i])
+        end
+    else
+        σ = diagvalues(model.params.sigma.values)
+    end
+    return σ
+end
+
+function iondata(model::ESElectrolyteModel, V, T, z)
+    Z = model.charge
+    σ = get_sigma(model, V, T, z)
+    ϵ_r = dielectric_constant(model, V, T, z)
+    return (Z, σ, ϵ_r)
+end
+
 function a_res(model::ESElectrolyteModel, V, T, z)
     return a_res(model,V,T,z,IonDependency(model))
 end
 
-function a_res(model::ESElectrolyteModel, V, T, z, ::IndependentIonModel)
-    return a_res(model.neutralmodel,V,T,z) + a_res(model.ionmodel,V,T,z)
+function a_res(model::ESElectrolyteModel, V, T, z, m::IndependentIonModel)
+    neutralmodel = model.neutralmodel
+    ionmodel = model.ionmodel
+    neutral_data = data(neutralmodel,V,T,z)
+    Z = model.charge
+    σ = get_sigma(ionmodel, V, T, z, neutralmodel, neutral_data) #sigma is stored in the ionmodel
+    if requires_rsp(ionmodel)
+        ϵ_r = dielectric_constant(ionmodel, V, T, z, Z, m)
+    else
+        ϵ_r = one(Base.promote_eltype(ionmodel, V, T, z, Z))
+    end
+    iondata = (Z, σ, ϵ_r)
+    return a_res(neutralmodel, V, T, z, neutral_data) + a_res(ionmodel, V, T, z, iondata, neutralmodel, neutral_data)
+end
+
+function a_res(ionmodel::IonModel, V, T, z, iondata, neutralmodel, neutral_data)
+    return a_res(ionmodel, V, T, z, iondata)
 end
 
 function lb_volume(model::ESElectrolyteModel,z)
@@ -129,7 +194,8 @@ function a_born(model::ESElectrolyteModel,V,T,z)
 end
 
 function debye_length(model::ESElectrolyteModel,V,T,z,ϵ_r = @f(dielectric_constant),∑z = sum(z))
-    return debye_length(model.ionmodel,V,T,z,ϵ_r,∑z)
+    Z = model.charge
+    return debye_length(V,T,z,ϵ_r,Z)
 end
 
 """
@@ -146,19 +212,21 @@ model = ConstRSP()
 function dielectric_constant end
 
 function dielectric_constant(model::EoSModel,V, T, z)
-    return dielectric_constant(model, V, T, z, IonDependency(model))
+    Z = model.charge
+    return dielectric_constant(model, V, T, z, Z, IonDependency(model))
 end
 
-function dielectric_constant(model::ESElectrolyteModel,V, T, z, ::IndependentIonModel)
-    return dielectric_constant(model.ionmodel, V, T, z, IonDependency(model.ionmodel))
+function dielectric_constant(model::ESElectrolyteModel,V, T, z, Z, ::IndependentIonModel)
+    return dielectric_constant(model.ionmodel, V, T, z, Z, IonDependency(model.ionmodel))
 end
 
-function dielectric_constant(model::IonModel, V, T, z, ::IndependentIonModel)
-    return dielectric_constant(model.RSPmodel, V, T, z, IonDependency(model.RSPmodel))
+function dielectric_constant(model::IonModel, V, T, z, Z, ::IndependentIonModel)
+    return dielectric_constant(model.RSPmodel, V, T, z, Z, IonDependency(model.RSPmodel))
 end
 
-function dielectric_constant(model::RSPModel, V, T, z, ::IndependentIonModel)
-    return dielectric_constant(model, V, T, z)
+function dielectric_constant(model::RSPModel, V, T, z, Z, ::IndependentIonModel)
+    return dielectric_constant(model, V, T, z, Z)
 end
+
 
 export dielectric_constant, ESElectrolyte

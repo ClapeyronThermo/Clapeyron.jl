@@ -1,7 +1,7 @@
 struct MSAIDParam <: EoSParam
-    sigma::SingleParam{Float64}
-    dipole::SingleParam{Float64}
-    charge::SingleParam{Float64}
+    sigma::SingleParam{Float64} #TODO: remove those?
+    dipole::SingleParam{Float64} 
+    charge::SingleParam{Float64} #TODO: remove those?
 end
 
 abstract type MSAIDModel <: IonModel end
@@ -59,17 +59,11 @@ function MSAID(solvents,ions; userlocations, verbose=false)
     return model
 end
 
-IonDependency(ionmodel::MSAIDModel) = IndependentIonModel()
-
-function a_res(model::MSAIDModel, V, T, z, _data=@f(data))
-    return a_ion(model, V, T, z, _data)
-end
-
-function data(model::MSAIDModel, V, T, z)
+function data(model::MSAIDModel, V, T, z , iondata = (model.params.charge.values, model.params.sigma.values, 1.0))
     β = 1/(k_B*T)
     σ = model.params.sigma.values
     Z = model.params.charge.values
-
+    Z, σ, _ = iondata
     nc = length(model)
     isolv = findfirst(iszero,Z)
     μ = model.params.dipole.values[isolv]
@@ -167,9 +161,9 @@ function obj_MSAID(model::MSAIDModel,z,Γ,B,b₂,_data)
     #return F, m, N, ϵr
 end
 
-function a_ion(model::MSAIDModel, V, T, z, _data=@f(data))
-    σ = model.params.sigma.values
-    Z = model.params.charge.values
+
+function a_res(model::MSAIDModel, V, T, z, iondata = (model.params.charge.values, model.params.sigma.values) , _data = @f(data,iondata))
+    Z, σ, _ = iondata
     nc = length(model)
     isolv1 = findfirst(iszero,Z)
     isolv = isolv1:isolv1

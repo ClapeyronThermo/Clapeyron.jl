@@ -49,7 +49,7 @@ This function is used to create an ePCSAFT model which is a combination of the P
 function ePCSAFT(solvents,ions; 
     idealmodel = BasicIdeal,
     neutralmodel = pharmaPCSAFT,
-    ionmodel = DH,
+    ionmodel = hsdDH,
     RSPmodel = ConstRSP,
     userlocations=String[], 
     ideal_userlocations=String[],
@@ -83,14 +83,6 @@ function ePCSAFT(solvents,ions;
     model = ePCSAFT(components,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
     set_reference_state!(model,reference_state;verbose)
     return model
-end
-
-function a_res(model::ePCSAFTModel, V, T, z)
-    data_pcsaft = data(model.neutralmodel,V,T,z)
-    data_ion = data(model.ionmodel,V,T,z)
-    data_ion = (data_ion[1],data_pcsaft[1])
-
-    return a_res(model.neutralmodel,V,T,z,data_pcsaft) + a_res(model.ionmodel,V,T,z,data_ion)
 end
 
 export ePCSAFT

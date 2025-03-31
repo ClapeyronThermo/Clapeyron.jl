@@ -256,6 +256,7 @@ include("models/Electrolytes/RSP/LinMixRSP.jl")
 
 include("models/Electrolytes/Ion/Born.jl")
 include("models/Electrolytes/Ion/DH.jl")
+include("models/Electrolytes/Ion/hsdDH.jl")
 include("models/Electrolytes/Ion/DHBorn.jl")
 include("models/Electrolytes/Ion/MSA.jl")
 include("models/Electrolytes/Ion/MSABorn.jl")
