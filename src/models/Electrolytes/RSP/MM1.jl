@@ -76,14 +76,23 @@ function a_res_minus_assoc(model::CPAModel,V,T,z,_data)
     return a_res(model.cubicmodel,V,T,z,_data)
 end
 
+#special dispatch for CPA
+_X_and_Δ(model,V,T,z,neutral_data) = X_and_Δ(neutralmodel,V,T,z,neutral_data)
+
+function _X_and_Δ(model::CPAModel,V0,T,z,neutral_data)
+    n,ā,b̄,c̄ = _data
+    V = V0 + c̄*n #volume translation
+    return X_and_Δ(neutralmodel,V,T,z,neutral_data)
+end
+
 function a_res(model::ESElectrolyteModel,V,T,z,dep::DependentIonModel{MM1}) 
     rsp = dep.model
     neutralmodel = model.neutralmodel
     ionmodel = model.ionmodel
-    neutral_data = data(neutralmodel,V,T,z)
+    neutral_data = data(neutralmodel,V0,T,z)
     Z = model.charge
-    X,Δ = X_and_Δ(neutralmodel,V,T,z,neutral_data)
-    a_neutral = a_res_minus_assoc(neutralmodel,V,T,z,neutral_data) + a_assoc_impl(neutralmodel,V,T,z,X)
+    X,Δ = _X_and_Δ(neutralmodel,V,T,z,neutral_data)
+    a_neutral = a_res_minus_assoc(neutralmodel,V,T,z,neutral_data) + a_assoc_impl(model,V,T,z,X)
     ϵ_r = __dielectric_constant(model, V, T, z, rsp, X, Δ)
     σ = get_sigma(ionmodel, V, T, z, neutralmodel, neutral_data)
     iondata = (Z, σ, ϵ_r)

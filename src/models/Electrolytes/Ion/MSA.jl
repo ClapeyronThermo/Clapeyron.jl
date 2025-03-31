@@ -15,10 +15,6 @@ export MSA
         RSPmodel_userlocations = String[],
         verbose = false)
 
-## Input parameters
-- `sigma`: Single Parameter (`Float64`) - Hard-sphere diameter `[m]`
-- `charge`: Single Parameter (`Float64`) - Charge `[-]`
-
 ## Input models
 - `RSPmodel`: Relative Static Permittivity Model
 

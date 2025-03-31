@@ -14,10 +14,6 @@ end
         RSPmodel_userlocations = String[],
         verbose = false)
 
-## Input parameters
-- `sigma`: Single Parameter (`Float64`) - Diameter of closest approach `[m]`
-- `charge`: Single Parameter (`Float64`) - Charge `[-]`
-
 ## Input models
 - `RSPmodel`: Relative Static Permittivity Model
 

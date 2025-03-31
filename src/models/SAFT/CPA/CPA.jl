@@ -284,8 +284,8 @@ function a_assoc(model::CPAModel, V0, T, z,_data = @f(data))
     _0 = zero(V+T+first(z))
     nn = assoc_pair_length(model)
     iszero(nn) && return _0
-    isone(nn) && return a_assoc_exact_1(model,V,T,z,data)
-    _X = @f(X,data)
+    isone(nn) && return a_assoc_exact_1(model,V,T,z,_data)
+    _X = @f(X,_data)
     return @f(a_assoc_impl,_X)
 end
 
