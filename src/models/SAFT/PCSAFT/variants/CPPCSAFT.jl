@@ -1,5 +1,18 @@
+struct CPPCSAFTParam{T} <: ParametricEoSParam{T}
+    Mw::SingleParam{T}
+    segment::PairParam{T}
+    sigma::PairParam{T}
+    epsilon::PairParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
+end
+
+function CPPCSAFTParam(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
+    return build_parametric_param(CPPCSAFTParam,Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
+end
+
 abstract type CPPCSAFTModel <: PCSAFTModel end
-@newmodel CPPCSAFT CPPCSAFTModel PCSAFTParam{T}
+@newmodel CPPCSAFT CPPCSAFTModel CPPCSAFTParam{T}
 export CPPCSAFT
 
 """
