@@ -19,7 +19,7 @@ struct gcsPCSAFT{I,T} <: gcsPCSAFTModel
     sites::SiteParam
     params::gcsPCSAFTParam{T}
     idealmodel::I
-    pcsaftmodel::PCSAFT{I,T}
+    pcsaftmodel::sPCSAFT{I,T}
     assoc_options::AssocOptions
     references::Array{String,1}
 end
