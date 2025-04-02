@@ -164,24 +164,13 @@ end
 
 #convert utilities
 function Base.convert(::Type{SingleParam{T1}},param::SingleParam{T2}) where {T1<:Number,T2<:Number}
-    values = T1.(param.values)
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64,Bool}})
-    #@assert all(z->(isone(z) | iszero(z)),param.values)
-    values = Array(Bool.(param.values))
+    values = convert(Vector{T1},param.values)
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})
-    values = String.(param.values)
+    values = convert(Vector{String},param.values)
     return SingleParameter(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-#trying to break stack overflow on julia 1.6
-function Base.convert(::Type{SingleParam{String}},param::SingleParam{String})
-    return param
 end
 
 #pack vectors

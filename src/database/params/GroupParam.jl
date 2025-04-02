@@ -281,7 +281,7 @@ end
 
 function Base.convert(::Type{MixedGCSegmentParam{T1}},param::MixedGCSegmentParam{T2}) where {T1<:Number,T2<:Number}
     p,v1 = param.values.p,param.values.v
-    v = T1.(v1)
+    v = convert(Vector{T1},v1)
     values = PackedVofV(p,v)
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end

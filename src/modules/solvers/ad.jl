@@ -235,7 +235,10 @@ primalval(x::ForwardDiff.Dual) = primalval(ForwardDiff.value(x))
 @generated function primalval_struct(x::M) where M
     names = fieldnames(M)
     Base.typename(M).wrapper
-    primalvals = Expr(:call,Base.typename(M).wrapper,map(name -> :(primalval(x.$name)) ,names)...)
+    primalvals = Expr(:call,Base.typename(M).wrapper)
+    for name in names
+        push!(primalvals.args,:(primalval(x.$name)))
+    end
     return primalvals
 end
 
