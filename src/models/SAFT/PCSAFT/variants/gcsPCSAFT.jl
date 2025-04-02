@@ -1,6 +1,6 @@
 abstract type gcsPCSAFTModel <: sPCSAFTModel end
 
-struct gcsPCSAFTParam <: EoSParam
+struct gcsPCSAFTParam <: ParametricEoSParam{T}
     Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     msigma3::SingleParam{Float64}
@@ -9,13 +9,17 @@ struct gcsPCSAFTParam <: EoSParam
     bondvol::AssocParam{Float64}
 end
 
-struct gcsPCSAFT{I,PC} <: gcsPCSAFTModel
+function gcsPCSAFTParam(Mw,m,mσ3,mϵ,ϵijab,β)
+    return build_parametric_param(gcsPCSAFTParam,Mw,m,mσ3,mϵ,ϵijab,β)
+end
+
+struct gcsPCSAFT{I,T} <: gcsPCSAFTModel
     components::Vector{String}
     groups::GroupParam
     sites::SiteParam
-    params::gcsPCSAFTParam
+    params::gcsPCSAFTParam{T}
     idealmodel::I
-    pcsaftmodel::PC
+    pcsaftmodel::PCSAFT{I,T}
     assoc_options::AssocOptions
     references::Array{String,1}
 end

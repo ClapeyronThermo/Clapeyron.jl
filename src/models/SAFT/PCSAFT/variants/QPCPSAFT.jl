@@ -1,4 +1,4 @@
-struct QPCPSAFTParam <: EoSParam
+struct QPCPSAFTParam <: ParametricEoSParam{T}
     Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
@@ -12,7 +12,12 @@ struct QPCPSAFTParam <: EoSParam
 end
 
 abstract type QPCPSAFTModel <: PCPSAFTModel end
-@newmodel QPCPSAFT QPCPSAFTModel QPCPSAFTParam
+@newmodel QPCPSAFT QPCPSAFTModel QPCPSAFTParam{T}
+
+function QPCPSAFTParam(Mw,m,σ,ϵ,μ,μ2,Q,Q2,ϵijab,β)
+    return build_parametric_param(QPCPSAFTParam,Mw,m,σ,ϵ,μ,μ2,Q,Q2,ϵijab,β)
+end
+
 default_references(::Type{QPCPSAFT}) = ["10.1002/aic.10502","10.1021/jp072619u"]
 default_locations(::Type{QPCPSAFT}) = ["SAFT/PCSAFT/QPCPSAFT/","properties/molarmass.csv"] # Needs to add data for QPCPSAFT
 function transform_params(::Type{QPCPSAFT},params,components)

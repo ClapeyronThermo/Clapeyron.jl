@@ -1,17 +1,22 @@
-struct pharmaPCSAFTParam <: EoSParam
-    Mw::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    k::PairParam{Float64}
-    kT::PairParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
+struct pharmaPCSAFTParam{T} <: ParametricEoSParam{T}
+    Mw::SingleParam{T}
+    segment::SingleParam{T}
+    sigma::PairParam{T}
+    epsilon::PairParam{T}
+    k::PairParam{T}
+    kT::PairParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
     water::SpecialComp
 end
 
 abstract type pharmaPCSAFTModel <: PCSAFTModel end
-@newmodel pharmaPCSAFT pharmaPCSAFTModel pharmaPCSAFTParam
+@newmodel pharmaPCSAFT pharmaPCSAFTModel pharmaPCSAFTParam{T}
+
+function pharmaPCSAFTParam(Mw,m,σ,ϵ,k,kT,ϵijab,β,water)
+    return build_parametric_param(pharmaPCSAFTParam,Mw,m,σ,ϵ,k,kT,ϵijab,β,water)
+end
+
 default_references(::Type{pharmaPCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d","10.1016/j.cep.2007.02.034"]
 default_locations(::Type{pharmaPCSAFT}) = ["SAFT/PCSAFT","SAFT/PCSAFT/pharmaPCSAFT","properties/molarmass.csv"]
 default_assoc_options(::Type{pharmaPCSAFT}) = AssocOptions(combining = :elliott_runtime)
