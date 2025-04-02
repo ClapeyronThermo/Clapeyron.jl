@@ -1,12 +1,12 @@
 abstract type gcsPCSAFTModel <: sPCSAFTModel end
 
-struct gcsPCSAFTParam <: ParametricEoSParam{T}
-    Mw::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    msigma3::SingleParam{Float64}
-    mepsilon::SingleParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
+struct gcsPCSAFTParam{T} <: ParametricEoSParam{T}
+    Mw::SingleParam{T}
+    segment::SingleParam{T}
+    msigma3::SingleParam{T}
+    mepsilon::SingleParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
 end
 
 function gcsPCSAFTParam(Mw,m,mσ3,mϵ,ϵijab,β)

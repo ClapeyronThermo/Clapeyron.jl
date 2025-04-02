@@ -97,6 +97,7 @@ function Solvers.primalval(x::SingleParameter)
 end
 
 Base.eltype(param::SingleParameter{T}) where T = T
+Base.eltype(param::Type{<:SingleParameter{T}}) where T = T
 
 #linear algebra
 

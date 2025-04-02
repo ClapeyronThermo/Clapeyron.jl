@@ -119,6 +119,7 @@ end
 Base.size(param::PairParameter) = size(param.values)
 
 Base.eltype(param::PairParameter{T}) where T = T
+Base.eltype(param::Type{<:PairParameter{T}}) where T = T
 
 #primalval
 function Solvers.primalval(x::PairParameter)

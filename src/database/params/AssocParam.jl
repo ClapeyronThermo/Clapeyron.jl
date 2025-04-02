@@ -82,6 +82,7 @@ function Base.copyto!(dest::AssocParam,src::AssocParam) #used to set params
 end
 
 Base.eltype(param::AssocParam{T}) where T = T
+Base.eltype(param::Type{<:AssocParam{T}}) where T = T
 
 Base.size(param::AssocParam) = size(param.values.values)
 

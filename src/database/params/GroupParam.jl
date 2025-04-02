@@ -238,10 +238,31 @@ end
 
 MixedGCSegmentParam(name,components) = MixedGCSegmentParam{Float64}(name,components,PackedVofV(Int[],Float64[]))
 
-Base.eltype(::MixedGCSegmentParam{T}) where T = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}
+Base.length(param::MixedGCSegmentParam) = length(param.values)
+
+Base.eltype(param::MixedGCSegmentParam) = eltype(typeof(param))
+Base.eltype(param::Type{MixedGCSegmentParam{T}}) where T = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}
+
+paramtype(::MixedGCSegmentParam{T}) where T = T
+paramtype(::Type{MixedGCSegmentParam{T}}) where T = T
+
+Base.getindex(param::MixedGCSegmentParam,i) = param.values[i]
+
+function Base.show(io::IO,param::MixedGCSegmentParam)
+    print(io, typeof(param), "(\"", param.name, "\")")
+    show(io,param.components)
+end
+
+function Base.show(io::IO, ::MIME"text/plain", param::MixedGCSegmentParam)
+    len = length(param.values)
+    print(io, "MixedGCSegmentParam{",eltype(param.values.v), "}(\"", param.name)
+    println(io, "\") with ", len, " component", ifelse(len==1, ":", "s:"))
+    separator = " => "
+    show_pairs(io,param.components,param.values,separator)
+end
 
 function MixedGCSegmentParam(group::GroupParam,s = FillArrays.Fill(1.0,length(groups.flattenedgroups)),segment = FillArrays.Fill(1.0,length(groups.flattenedgroups)))
-    name = "group cache"
+    name = "mixed segment"
     components = group.components
     nc = length(components)
     ng = length(group.flattenedgroups)

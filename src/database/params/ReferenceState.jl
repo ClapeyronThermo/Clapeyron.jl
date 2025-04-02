@@ -117,7 +117,7 @@ function Base.show(io::IO,::MIME"text/plain",ref::ReferenceState)
 end
 
 #for compatibility in parametric params.
-Base.eltype(ref::ReferenceState) = Float64
+Base.eltype(::Type{ReferenceState}) = Float64
 
 #by default, the reference state is stored in the idealmodel params. unwrap until
 #reaching that

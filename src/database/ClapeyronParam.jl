@@ -25,15 +25,36 @@ is_splittable(::OptionsParam) = false
 
 export EoSParam, ParametricEoSParam
 
+paramtype(m::ClapeyronParam) = eltype(m)
+paramtype(::Type{M}) where M <: ClapeyronParam = eltype(m)
+
 custom_show(param::EoSParam) = _custom_show_param(typeof(param))
 
+
 function build_parametric_param(param::Type{T}, args...) where T <: ParametricEoSParam
-    TT = mapreduce(eltype, promote_type, args)
-    paramtype = parameterless_type(param)
+    return __build_parametric_param(param,args)
+end
 
-    converted_params = map(x -> _convert_param(TT,x), args)
+#dynamic version
+function dyn_build_parametric_param(param::Type{T}, args) where T <: ParametricEoSParam
+    TT = mapreduce(paramtype,promote_type,args)
+    Param = parameterless_type(T)
+    vals = map(Base.Fix1(_convert_param,TT),args)
+    return Param{TT}(vals...)
+end
 
-    paramtype{TT}(converted_params...)
+#static version
+@generated function __build_parametric_param(param::Type{P},args::A) where {P <: ParametricEoSParam,A}
+    argtypes = fieldtypes(A)
+    TT = mapreduce(paramtype,promote_type,argtypes)
+    paramname = Base.typename(P).name
+    paramlength = length(fieldnames(P))
+    expr = :($paramname{$TT}())
+    args = expr.args
+    for i in 1:paramlength
+        push!(args,:(_convert_param($TT,args[$i])))
+    end
+    return expr
 end
 
 function _custom_show_param(::Type{T}) where T <: EoSParam
@@ -63,12 +84,14 @@ end
 
 function build_eosparam(::Type{T},data) where T <: EoSParam
     names = fieldnames(T)
-    return T((data[string(name)] for name in names)...)
+    params = map(name -> data[string(name)],names)
+    return T(params...)
 end
 
 function build_eosparam(::Type{T},data) where T <: ParametricEoSParam
     names = fieldnames(T)
-    build_parametric_param(T, (data[string(name)] for name in names)...)
+    params = map(name -> data[string(name)],names)
+    dyn_build_parametric_param(T,params)
 end
 
 Base.eltype(p::EoSParam) = Float64
@@ -133,27 +156,27 @@ function _convert_param(T::V,val::ReferenceState) where V
     return val
 end
 
-function _convert_param(T::V,::Type{SingleParameter{V}},val) where V
+function _convert_param(T::V,::Type{SingleParameter},val::SingleParameter{V}) where V
     return val
 end
 
-function _convert_param(T::V,::Type{PairParameter{V}},val) where V
+function _convert_param(T::V,::Type{PairParameter},val::PairParameter{V}) where V
     return val
 end
 
-function _convert_param(T::V,::Type{AssocParam{V}},val) where V
+function _convert_param(T::V,::Type{AssocParam},val::AssocParam{V}) where V
     return val
 end
 
-function _convert_param(T::V,::Type{SingleParameter{V2}},val) where {V,V2}
+function _convert_param(T::V,::Type{SingleParameter},val) where {V}
     return convert(SingleParam{T},val)
 end
 
-function _convert_param(T::V,::Type{PairParameter{V2}},val) where {V,V2}
+function _convert_param(T::V,::Type{PairParameter},val) where {V}
     return convert(PairParam{T},val)
 end
 
-function _convert_param(T::V,::Type{AssocParam{V2}},val) where {V,V2}
+function _convert_param(T::V,::Type{AssocParam},val) where {V}
     return convert(AssocParam{T},val)
 end
 

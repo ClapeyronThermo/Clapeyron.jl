@@ -45,6 +45,7 @@ end
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
+- `mixed_segment`: Mixed Group Contribution Parameter: ∑nᵢₖνₖmₖ
 
 ## Input models
 - `idealmodel`: Ideal Model

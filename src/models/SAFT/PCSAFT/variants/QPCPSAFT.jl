@@ -1,14 +1,14 @@
-struct QPCPSAFTParam <: ParametricEoSParam{T}
-    Mw::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    dipole::SingleParam{Float64}
-    dipole2::SingleParam{Float64}
-    quadrupole::SingleParam{Float64}
-    quadrupole2::SingleParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
+struct QPCPSAFTParam{T} <: ParametricEoSParam{T}
+    Mw::SingleParam{T}
+    segment::SingleParam{T}
+    sigma::PairParam{T}
+    epsilon::PairParam{T}
+    dipole::SingleParam{T}
+    dipole2::SingleParam{T}
+    quadrupole::SingleParam{T}
+    quadrupole2::SingleParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
 end
 
 abstract type QPCPSAFTModel <: PCPSAFTModel end
