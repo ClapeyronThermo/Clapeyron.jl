@@ -82,7 +82,7 @@ function structSAFTgammaMie(components;
     
     mixed_segment = MixedGCSegmentParam(groups,shapefactor.values,gc_segment.values)
     
-    segment = SingleParam("segment",components,group_sum(groups,nothing))
+    segment = SingleParam("segment",components,group_sum(mixed_segment,nothing))
     
     gc_sigma = sigma_LorentzBerthelot(params["sigma"])  
     gc_sigma.values .*= 1E-10
