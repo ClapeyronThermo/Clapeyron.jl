@@ -148,36 +148,44 @@ function _convert_param(T::V,val) where V
     return _convert_param(T,parameterless_type(val),val)
 end
 
-function _convert_param(T::V,val::SpecialComp) where V
+function _convert_param(T::Type{V},val::SpecialComp) where V
     return val
 end
 
-function _convert_param(T::V,val::ReferenceState) where V
+function _convert_param(T::Type{V},val::ReferenceState) where V
     return val
 end
 
-function _convert_param(T::V,::Type{SingleParameter},val::SingleParameter{V}) where V
+function _convert_param(T::Type{V},::Type{SingleParameter},val::SingleParameter{V}) where V
     return val
 end
 
-function _convert_param(T::V,::Type{PairParameter},val::PairParameter{V}) where V
+function _convert_param(T::Type{V},::Type{PairParameter},val::PairParameter{V}) where V
     return val
 end
 
-function _convert_param(T::V,::Type{AssocParam},val::AssocParam{V}) where V
+function _convert_param(T::Type{V},::Type{AssocParam},val::AssocParam{V}) where V
     return val
 end
 
-function _convert_param(T::V,::Type{SingleParameter},val) where {V}
+function _convert_param(T::Type{V},::Type{MixedGCSegmentParam},val::MixedGCSegmentParam{V}) where V
+    return val
+end
+
+function _convert_param(T::Type{V},::Type{SingleParameter},val) where {V}
     return convert(SingleParam{T},val)
 end
 
-function _convert_param(T::V,::Type{PairParameter},val) where {V}
+function _convert_param(T::Type{V},::Type{PairParameter},val) where {V}
     return convert(PairParam{T},val)
 end
 
-function _convert_param(T::V,::Type{AssocParam},val) where {V}
+function _convert_param(T::Type{V},::Type{AssocParam},val) where {V}
     return convert(AssocParam{T},val)
+end
+
+function _convert_param(T::Type{V},::Type{MixedGCSegmentParam},val) where {V}
+    return convert(MixedGCSegmentParam{T},val)
 end
 
 const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
