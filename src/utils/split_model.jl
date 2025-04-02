@@ -187,9 +187,9 @@ end
 
 function each_split_model(param::GroupParam,__group,Ic,Ig)
     grouptype = param.grouptype
-    components = param.components[I]
-    groups = param.groups[I]
-    n_groups = param.n_groups[I]
+    components = param.components[Ic]
+    groups = param.groups[Ic]
+    n_groups = param.n_groups[Ic]
     sourcecsvs = param.sourcecsvs
     len_groups = length(param.flattenedgroups)
 
@@ -230,7 +230,20 @@ function each_split_model(param::MixedGCSegmentParam{T},group,Ic,Ig) where T
 
     src = param.values
     ng = length(group.flattenedgroups)
-    dest  = PackedVectorsOfVectors.packed_fill(0.0,FillArrays.fill(ng,length(Ic)))
+    
+    #count unique groups
+    ncount = zeros(T,ng)
+    for k in Ig
+        ncount[k] = 1
+    end
+    ngg = count(!iszero,ncount)
+    ncc = length(Ic)
+    
+    #reuse vector
+    resize!(ncount,ngg*ncc)
+    p = zeros(Int64,length(Ic)+1)
+    p .= 1:ngg:(ncc*ngg + 1)
+    dest = PackedVofV(p,ncount)
     
     for (k,i) in pairs(Ic)
         pii = src[i]
