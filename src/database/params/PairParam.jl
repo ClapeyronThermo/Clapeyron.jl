@@ -132,6 +132,17 @@ function PairParam(name,components,values::Matrix{T},missingvals,src,sourcecsv) 
     PairParameter{T,Matrix{T}}(name,components,values,missingvals,src,sourcecsv)
 end
 
+function PairParam(name,components,values::Vector{T},missingvals::Vector,src,sourcecsv) where T 
+    n = length(values)
+    mat_values = zeros(T,(n,n))
+    mat_missing = ones(Bool,(n,n))
+    for i in 1:n
+        mat_values[i,i] = values[i]
+        mat_missing[i,i] = false
+    end
+    PairParam(name,components,mat_values,mat_missing,src,sourcecsv)
+end
+
 function PairParam(name,components,values::AbstractMatrix{T},missingvals,src,sourcecsv) where T 
     return PairParam(name,components,convert(Matrix{T},values),missingvals,src,sourcecsv)
 end

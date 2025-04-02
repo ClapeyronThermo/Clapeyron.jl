@@ -2,25 +2,32 @@
 abstract type SAFTgammaMieModel <: SAFTVRMieModel end
 
 
-struct SAFTgammaMieParam <: EoSParam
+struct SAFTgammaMieParam{T} <: EoSParam
     segment::SingleParam{Int}
-    shapefactor::SingleParam{Float64}
-    lambda_a::PairParam{Float64}
-    lambda_r::PairParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
+    shapefactor::SingleParam{T}
+    lambda_a::PairParam{T}
+    lambda_r::PairParam{T}
+    sigma::PairParam{T}
+    epsilon::PairParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
+    mixed_segment::MixedGCSegmentParam{T}
 end
 
+function SAFTgammaMieParam(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
+    t = (segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
+    x = typeof.(t)
+    @show x
+    return build_parametric_param(SAFTgammaMieParam,segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
+end
 
-struct SAFTgammaMie{I} <: SAFTgammaMieModel
+struct SAFTgammaMie{I,T} <: SAFTgammaMieModel
     components::Vector{String}
     groups::GroupParam
     sites::SiteParam
-    params::SAFTgammaMieParam
+    params::SAFTgammaMieParam{T}
     idealmodel::I
-    vrmodel::SAFTVRMie{I,Float64}
+    vrmodel::SAFTVRMie{I,T}
     epsilon_mixing::Symbol
     assoc_options::AssocOptions
     references::Array{String,1}
@@ -133,32 +140,31 @@ function SAFTgammaMie(components;
 
     mw = group_sum(groups,params["Mw"])
 
-    mix_segment!(groups,shapefactor.values,gc_segment.values)
-
-    segment = SingleParam("segment",components,group_sum(groups,nothing))
+    mixed_segment = MixedGCSegmentParam(groups,shapefactor.values,gc_segment.values)
+    segment = SingleParam("segment",components,group_sum(mixed_segment,nothing))
 
     gc_sigma = sigma_LorentzBerthelot(params["sigma"])
     gc_sigma.values .*= 1E-10
     gc_sigma3 = PairParam(gc_sigma)
     gc_sigma3.values .^= 3
-    sigma3 = group_pairmean(groups,gc_sigma3)
+    sigma3 = group_pairmean(mixed_segment,gc_sigma3)
     sigma3.values .= cbrt.(sigma3.values)
     sigma = sigma_LorentzBerthelot(sigma3)
     
     if epsilon_mixing == :default
         gc_epsilon = epsilon_HudsenMcCoubreysqrt(params["epsilon"], gc_sigma)
-        epsilon = epsilon_HudsenMcCoubreysqrt(group_pairmean(groups,gc_epsilon),sigma)
+        epsilon = epsilon_HudsenMcCoubreysqrt(group_pairmean(mixed_segment,gc_epsilon),sigma)
     elseif epsilon_mixing == :hudsen_mccoubrey
         gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)
-        epsilon = epsilon_HudsenMcCoubrey(group_pairmean(groups,gc_epsilon),sigma)
+        epsilon = epsilon_HudsenMcCoubrey(group_pairmean(mixed_segment,gc_epsilon),sigma)
     else
         throw(error("invalid specification of ",error_color(epsilon_mixing),". available values are :default and :hudsen_mccoubrey"))
     end
     gc_lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     gc_lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
 
-    lambda_a = group_pairmean(groups,gc_lambda_a) |> lambda_LorentzBerthelot
-    lambda_r = group_pairmean(groups,gc_lambda_r) |> lambda_LorentzBerthelot
+    lambda_a = group_pairmean(mixed_segment,gc_lambda_a) |> lambda_LorentzBerthelot
+    lambda_r = group_pairmean(mixed_segment,gc_lambda_r) |> lambda_LorentzBerthelot
 
     #GC to component model in association
     gc_epsilon_assoc = params["epsilon_assoc"]
@@ -170,7 +176,7 @@ function SAFTgammaMie(components;
     comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
 
 
-    gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
+    gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol,mixed_segment)
     vrparams = SAFTVRMieParam(mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
 
     idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
@@ -205,14 +211,15 @@ function recombine_impl!(model::SAFTgammaMieModel)
     gc_lambda_a = model.params.lambda_a
     gc_epsilon_assoc = model.params.epsilon_assoc
     gc_bondvol = model.params.bondvol
+    mixed_segment = model.params.mixed_segment
 
-    mix_segment!(groups,shapefactor.values,gc_segment.values)
-    model.vrmodel.params.segment.values[:] = group_sum(groups,nothing)
+    mix_segment!(mixed_segment,shapefactor.values,gc_segment.values)
+    model.vrmodel.params.segment.values[:] = group_sum(mixed_segment,nothing)
 
     gc_sigma = sigma_LorentzBerthelot!(gc_sigma)
     gc_sigma3 = PairParam(gc_sigma)
     gc_sigma3.values .^= 3
-    sigma3 = group_pairmean(groups,gc_sigma3)
+    sigma3 = group_pairmean(mixed_segment,gc_sigma3)
     sigma3.values .= cbrt.(sigma3.values)
     comp_sigma = sigma_LorentzBerthelot(sigma3)
     model.vrmodel.params.sigma.values[:] = comp_sigma.values
@@ -220,19 +227,19 @@ function recombine_impl!(model::SAFTgammaMieModel)
     gc_epsilon = epsilon_HudsenMcCoubrey!(gc_epsilon, gc_sigma)
     if model.epsilon_mixing == :default
         gc_epsilon = epsilon_HudsenMcCoubreysqrt!(gc_epsilon, gc_sigma)
-        comp_epsilon = epsilon_HudsenMcCoubreysqrt(group_pairmean(groups,gc_epsilon),model.vrmodel.params.sigma)
+        comp_epsilon = epsilon_HudsenMcCoubreysqrt(group_pairmean(mixed_segment,gc_epsilon),model.vrmodel.params.sigma)
     else
         gc_epsilon = epsilon_HudsenMcCoubrey!(gc_epsilon, gc_sigma)
-        comp_epsilon = epsilon_HudsenMcCoubrey(group_pairmean(groups,gc_epsilon),model.vrmodel.params.sigma)
+        comp_epsilon = epsilon_HudsenMcCoubrey(group_pairmean(mixed_segment,gc_epsilon),model.vrmodel.params.sigma)
     end
     model.vrmodel.params.epsilon.values[:] = comp_epsilon.values
 
     gc_lambda_a = lambda_LorentzBerthelot!(gc_lambda_a)
     gc_lambda_r = lambda_LorentzBerthelot!(gc_lambda_r)
 
-    comp_lambda_a = group_pairmean(groups,gc_lambda_a) |> lambda_LorentzBerthelot
+    comp_lambda_a = group_pairmean(mixed_segment,gc_lambda_a) |> lambda_LorentzBerthelot
     model.vrmodel.params.lambda_a.values[:] = comp_lambda_a.values
-    comp_lambda_r = group_pairmean(groups,gc_lambda_r) |> lambda_LorentzBerthelot
+    comp_lambda_r = group_pairmean(mixed_segment,gc_lambda_r) |> lambda_LorentzBerthelot
     model.vrmodel.params.lambda_r.values[:] = comp_lambda_r.values
 
     gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options,sites)

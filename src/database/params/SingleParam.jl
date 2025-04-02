@@ -113,6 +113,18 @@ function SingleParam(name,components,values::AbstractVector{T},missingvals,src,s
     return SingleParam(name,components,convert(Vector{T},values),missingvals,src,sourcecsv)
 end
 
+function SingleParam(name,components,values::Matrix{T},missingvals::Matrix{Bool},src,sourcecsv) where T 
+    n = length(components)
+    vec_values = zeros(T,n)
+    vec_missing = zeros(Bool,n)
+    for i in 1:n
+        vec_values[i] = values[i,i]
+        vec_missing[i] = missingvals[i,i]
+    end
+
+    return SingleParam(name,components,vec_values,vec_missing,src,sourcecsv)
+end
+
 SingleParam(name,components,values,missingvals,src) = SingleParam(name,components,values,missingvals,src,nothing)
 SingleParam(name,components,values,missingvals) = SingleParam(name,components,values,missingvals,nothing,nothing)
 

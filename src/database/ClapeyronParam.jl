@@ -72,6 +72,7 @@ function build_eosparam(::Type{T},data) where T <: ParametricEoSParam
 end
 
 Base.eltype(p::EoSParam) = Float64
+Base.eltype(p::ParametricEoSParam{T}) where T = T
 
 const PARSED_GROUP_VECTOR_TYPE = Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
@@ -132,15 +133,27 @@ function _convert_param(T::V,val::ReferenceState) where V
     return val
 end
 
-function _convert_param(T::V,::Type{SingleParameter},val) where V
+function _convert_param(T::V,::Type{SingleParameter{V}},val) where V
+    return val
+end
+
+function _convert_param(T::V,::Type{PairParameter{V}},val) where V
+    return val
+end
+
+function _convert_param(T::V,::Type{AssocParam{V}},val) where V
+    return val
+end
+
+function _convert_param(T::V,::Type{SingleParameter{V2}},val) where {V,V2}
     return convert(SingleParam{T},val)
 end
 
-function _convert_param(T::V,::Type{PairParameter},val) where V
+function _convert_param(T::V,::Type{PairParameter{V2}},val) where {V,V2}
     return convert(PairParam{T},val)
 end
 
-function _convert_param(T::V,::Type{AssocParam},val) where V
+function _convert_param(T::V,::Type{AssocParam{V2}},val) where {V,V2}
     return convert(AssocParam{T},val)
 end
 

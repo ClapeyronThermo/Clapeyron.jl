@@ -281,7 +281,7 @@ function excess_g_res(model::UNIFACModel,p,T,z)
     Q = model.params.Q.values
     ∑vikQk = [dot(Q,vi) for vi in v]
     #calculate Θ with the least amount of allocs possible
-    X = group_matrix(model.groups)*z
+    X = group_fractions(model.groups,z)
     ∑XQ⁻¹ = 1/dot(X,Q)
     X .*= Q
     X .*= ∑XQ⁻¹
