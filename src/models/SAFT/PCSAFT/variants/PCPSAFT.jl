@@ -1,16 +1,20 @@
-struct PCPSAFTParam <: EoSParam
-    Mw::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    dipole::SingleParam{Float64}
-    dipole2::SingleParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
+struct PCPSAFTParam{T} <: ParametricEoSParam{T}
+    Mw::SingleParam{T}
+    segment::SingleParam{T}
+    sigma::PairParam{T}
+    epsilon::PairParam{T}
+    dipole::SingleParam{T}
+    dipole2::SingleParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
+end
+
+function PCPSAFTParam(Mw,segment,sigma,epsilon,dipole,dipole2,epsilon_assoc,bondvol)
+    return build_parametric_param(PCPSAFTParam,Mw,segment,sigma,epsilon,dipole,dipole2,epsilon_assoc,bondvol)
 end
 
 abstract type PCPSAFTModel <: PCSAFTModel end
-@newmodel PCPSAFT PCPSAFTModel PCPSAFTParam
+@newmodel PCPSAFT PCPSAFTModel PCPSAFTParam{T}
 
 #=
 at the moment, we use the Gross-Vrabec polar term

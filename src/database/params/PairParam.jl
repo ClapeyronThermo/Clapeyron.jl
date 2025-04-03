@@ -119,6 +119,7 @@ end
 Base.size(param::PairParameter) = size(param.values)
 
 Base.eltype(param::PairParameter{T}) where T = T
+Base.eltype(param::Type{<:PairParameter{T}}) where T = T
 
 #primalval
 function Solvers.primalval(x::PairParameter)
@@ -130,6 +131,17 @@ function PairParam(name,components,values::Matrix{T},missingvals,src,sourcecsv) 
     val_length = LinearAlgebra.checksquare(values)
     param_length_check(PairParam,name,length(components),val_length)
     PairParameter{T,Matrix{T}}(name,components,values,missingvals,src,sourcecsv)
+end
+
+function PairParam(name,components,values::Vector{T},missingvals::Vector,src,sourcecsv) where T 
+    n = length(values)
+    mat_values = zeros(T,(n,n))
+    mat_missing = ones(Bool,(n,n))
+    for i in 1:n
+        mat_values[i,i] = values[i]
+        mat_missing[i,i] = false
+    end
+    PairParam(name,components,mat_values,mat_missing,src,sourcecsv)
 end
 
 function PairParam(name,components,values::AbstractMatrix{T},missingvals,src,sourcecsv) where T 
@@ -206,13 +218,7 @@ end
 
 #convert utilities
 function Base.convert(::Type{PairParam{T1}},param::PairParam{T2}) where {T1<:Number,T2<:Number}
-    values = T1.(param.values)
-    return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function Base.convert(::Type{PairParam{Bool}},param::PairParam{<:Union{Int,Float64,Bool}})
-    #@assert all(z->(isone(z) | iszero(z)),param.values)
-    values = Array(Bool.(param.values))
+    values = convert(Matrix{T1},param.values)
     return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 

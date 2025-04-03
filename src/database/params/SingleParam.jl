@@ -97,6 +97,7 @@ function Solvers.primalval(x::SingleParameter)
 end
 
 Base.eltype(param::SingleParameter{T}) where T = T
+Base.eltype(param::Type{<:SingleParameter{T}}) where T = T
 
 #linear algebra
 
@@ -111,6 +112,18 @@ end
 
 function SingleParam(name,components,values::AbstractVector{T},missingvals,src,sourcecsv) where T 
     return SingleParam(name,components,convert(Vector{T},values),missingvals,src,sourcecsv)
+end
+
+function SingleParam(name,components,values::Matrix{T},missingvals::Matrix{Bool},src,sourcecsv) where T 
+    n = length(components)
+    vec_values = zeros(T,n)
+    vec_missing = zeros(Bool,n)
+    for i in 1:n
+        vec_values[i] = values[i,i]
+        vec_missing[i] = missingvals[i,i]
+    end
+
+    return SingleParam(name,components,vec_values,vec_missing,src,sourcecsv)
 end
 
 SingleParam(name,components,values,missingvals,src) = SingleParam(name,components,values,missingvals,src,nothing)
@@ -151,24 +164,13 @@ end
 
 #convert utilities
 function Base.convert(::Type{SingleParam{T1}},param::SingleParam{T2}) where {T1<:Number,T2<:Number}
-    values = T1.(param.values)
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64,Bool}})
-    #@assert all(z->(isone(z) | iszero(z)),param.values)
-    values = Array(Bool.(param.values))
+    values = convert(Vector{T1},param.values)
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})
-    values = String.(param.values)
+    values = convert(Vector{String},param.values)
     return SingleParameter(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-#trying to break stack overflow on julia 1.6
-function Base.convert(::Type{SingleParam{String}},param::SingleParam{String})
-    return param
 end
 
 #pack vectors

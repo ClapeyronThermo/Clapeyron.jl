@@ -1,12 +1,12 @@
 
 abstract type HomogcPCPSAFTModel <: PCPSAFTModel end
-struct HomogcPCPSAFT{I} <: HomogcPCPSAFTModel
+struct HomogcPCPSAFT{I,T} <: HomogcPCPSAFTModel
     components::Vector{String}
     groups::GroupParam
     sites::SiteParam
-    params::PCPSAFTParam
+    params::PCPSAFTParam{T}
     idealmodel::I
-    ppcmodel::PCPSAFT{I}
+    ppcmodel::PCPSAFT{I,T}
     assoc_options::AssocOptions
     references::Array{String,1}
 end
