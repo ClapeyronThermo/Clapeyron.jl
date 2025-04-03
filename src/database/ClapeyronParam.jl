@@ -52,7 +52,12 @@ end
     expr = :($paramname{$TT}())
     args = expr.args
     for i in 1:paramlength
-        push!(args,:(_convert_param($TT,args[$i])))
+        paramtype = fieldtype(P,i)
+        if isconcretetype(paramtype)
+            push!(args,:(convert($paramtype,args[$i])))
+        else
+            push!(args,:(_convert_param($TT,args[$i])))
+        end
     end
     return expr
 end

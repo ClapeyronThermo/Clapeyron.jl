@@ -202,7 +202,10 @@ export return_model
 ## Description
 Based on the parameters provided and the estimator, a new model is produced from the input.
 """
-return_model(estimation::Estimation,model::EoSModel,values) = return_model!(estimation,deepcopy(model),values)
+function return_model(estimation::Estimation,model::EoSModel,values)
+    T = Base.promote_eltype(model,values)
+    return_model!(estimation,promote_model(T,model),values)
+end
 
 function return_model!(
     estimation::Estimation,
@@ -324,8 +327,9 @@ end
 The objective function used within parameter estimation.
 """
 function objective_function(estimation::Estimation,guesses)
-    F = 0
+   
     model = return_model(estimation, estimation.model, guesses)
+    F = zero(Base.promote_eltype(model))
     objective_form = estimation.objective_form
     for i ∈ 1:length(estimation.data)
         if estimation.data[i].species == ["all"]
@@ -337,11 +341,11 @@ function objective_function(estimation::Estimation,guesses)
             end
             model_r = index_reduction(model,idx_r)[1]
         end
-
-        property = estimation.data[i].method
-        inputs = estimation.data[i].inputs
-        outputs = estimation.data[i].outputs
-        weights = estimation.data[i].weights
+        data = estimation.data[i]
+        property = data.method
+        inputs = data.inputs
+        outputs = data.outputs
+        weights = data.weights
         if isempty(inputs)
             prediction = property(model_r)
         elseif length(inputs)==1
@@ -361,7 +365,7 @@ function objective_function(estimation::Estimation,guesses)
         end
     end
     if isnan(F)
-        return 1e4
+        return 1e100*oneunit(F)
     else
         return F
     end
