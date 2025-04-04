@@ -216,12 +216,14 @@ function return_model!(
     recombine = estimation.toestimate.recombine
     if isdefined(model,:params)
         for (i, param) in enumerate(params)
-            f = factor[i]
-            id = idx[i]
-            recomb = recombine[i]
-            val_i,sym_i,cross_assoc_i = values[i],sym[i],cross_assoc[i]
-            current_param = getfield(model.params, param)
-            __modify_param!(current_param,id,val_i,f,recomb,sym_i,cross_assoc_i)
+            if isdefined(model.params,param)
+                f = factor[i]
+                id = idx[i]
+                recomb = recombine[i]
+                val_i,sym_i,cross_assoc_i = values[i],sym[i],cross_assoc[i]
+                current_param = getfield(model.params, param)
+                __modify_param!(current_param,id,val_i,f,recomb,sym_i,cross_assoc_i)
+            end
             #=
             if typeof(id) <: Tuple || typeof(id) <: Integer
                 if isdefined(model.params,param)
