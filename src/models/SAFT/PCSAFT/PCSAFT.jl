@@ -11,8 +11,6 @@ function PCSAFTParam(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
     return build_parametric_param(PCSAFTParam,Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
 end
 
-Base.eltype(p::PCSAFTParam{T}) where T = T
-
 abstract type PCSAFTModel <: SAFTModel end
 @newmodel PCSAFT PCSAFTModel PCSAFTParam{T}
 default_references(::Type{PCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]

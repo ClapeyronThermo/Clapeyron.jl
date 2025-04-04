@@ -17,12 +17,12 @@ end
 
 export MSA
 """
-    MSA(solvents::Array{String,1}, 
-         ions::Array{String,1}; 
-         RSPmodel=ConstW, 
-         SAFTlocations=String[], 
-         userlocations=String[], 
-         verbose=false)
+    MSA(solvents::Array{String,1},
+        ions::Array{String,1};
+        RSPmodel = ConstRSP,
+        userlocations = String[],
+        RSPmodel_userlocations = String[],
+        verbose = false)
 
 ## Input parameters
 - `sigma`: Single Parameter (`Float64`) - Hard-sphere diameter `[m]`
@@ -37,7 +37,7 @@ This function is used to create a Mean Spherical Approximation model. The MSA te
 ## References
 1. Blum, L. (1974). Solution of a model for the solvent‐electrolyte interactions in the mean spherical approximation, 61, 2129–2133.
 """
-function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSP_userlocations=String[], verbose=false)
+function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
     icomponents = 1:length(components)
@@ -50,14 +50,14 @@ function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSP_userl
         params["sigma"].values .*= 1E-10
         sigma = params["sigma"]
     end
-    
+
     charge = params["charge"]
 
     packagedparams = MSAParam(sigma,charge)
 
     references = String[]
-        
-    init_RSPmodel = RSPmodel(solvents,ions)
+
+    init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
     model = MSA(components, icomponents, packagedparams, init_RSPmodel, references)
     return model

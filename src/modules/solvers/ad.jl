@@ -232,11 +232,27 @@ primalval(x) = x
 #scalar
 primalval(x::ForwardDiff.Dual) = primalval(ForwardDiff.value(x))
 
+@generated function primalval_struct(x::M) where M
+    names = fieldnames(M)
+    Base.typename(M).wrapper
+    primalvals = Expr(:call,Base.typename(M).wrapper)
+    for name in names
+        push!(primalvals.args,:(primalval(x.$name)))
+    end
+    return primalvals
+end
 
 primal_eltype(x) = primal_eltype(eltype(x))
 primal_eltype(::Type{W}) where W <: ForwardDiff.Dual{T,V} where {T,V} = primal_eltype(V)
 primal_eltype(::Type{T}) where T = T
 
+#eager version:
+primalval_eager(x) = primalval(x)
+function primalval_eager(x::AbstractArray{T}) where T <: ForwardDiff.Dual 
+    res = similar(x,primal_eltype(T))
+    length(res) == 0 && return res
+    return map!(primalval,res,x)
+end
 
 #this struct is used to wrap a vector of ForwardDiff.Dual's and just return the primal values, without allocations
 struct PrimalValVector{T,V} <: AbstractVector{T}

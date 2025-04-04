@@ -1,15 +1,18 @@
-struct CPPCSAFTParam <: EoSParam
-    Mw::SingleParam{Float64}
-    segment::PairParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    delta::SingleParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
+struct CPPCSAFTParam{T} <: ParametricEoSParam{T}
+    Mw::SingleParam{T}
+    segment::PairParam{T}
+    sigma::PairParam{T}
+    epsilon::PairParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
+end
+
+function CPPCSAFTParam(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
+    return build_parametric_param(CPPCSAFTParam,Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
 end
 
 abstract type CPPCSAFTModel <: PCSAFTModel end
-@newmodel CPPCSAFT CPPCSAFTModel CPPCSAFTParam
+@newmodel CPPCSAFT CPPCSAFTModel CPPCSAFTParam{T}
 export CPPCSAFT
 
 """
@@ -28,7 +31,6 @@ export CPPCSAFT
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `delta`: Single Parameter (`Float64`) - Critical volume displacement (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
@@ -37,7 +39,6 @@ export CPPCSAFT
 - `segment`: Pair Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
-- `delta`: Single Parameter (`Float64`) - Critical volume displacement (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
 ## Input models

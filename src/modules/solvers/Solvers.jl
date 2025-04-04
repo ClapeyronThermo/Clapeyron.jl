@@ -100,21 +100,15 @@ end
 Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
 CholeskyNewton() = NLSolvers.Newton(linsolve=cholesky_linsolve)
 
-const LUPivot = @static if VERSION < v"1.7beta"
-    Val(true)
-else
-    RowMaximum()
-end
-
 function lup_linsolve(d,B,∇f;check = true)
-    F = lu!(B,LUPivot,check = check)
+    F = lu!(B,RowMaximum(),check = check)
     ldiv!(d,F,∇f)
 end
 
 function lup_linsolve(B,∇f;check = true)
     d,success = try_st_linsolve(d,B,∇f)
     success && return d
-    F = lu!(B,LUPivot;check = check)
+    F = lu!(B,RowMaximum();check = check)
     F\∇f
 end
 

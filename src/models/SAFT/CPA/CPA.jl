@@ -81,6 +81,16 @@ CPA
 default_references(::Type{CPA}) = ["10.1021/ie051305v"]
 default_locations(::Type{CPA}) = ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]
 
+function default_locations(model::CPA)
+    locs = if radial_dist == :CS
+        ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]
+    elseif radial_dist == :KG
+        ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]
+    else
+        throw(error("CPA: incorrect specification of radial_dist, try using `:CS` (original CPA) or `:KG` (simplified CPA)"))
+    end
+end
+
 export CPA
 function CPA(components;
     idealmodel = BasicIdeal,
@@ -123,7 +133,7 @@ function CPA(components;
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     Tc = params["Tc"]
-    c1 = params["c1"]
+    c1 = get(params,"c1",nothing)
     a  = epsilon_LorentzBerthelot(params["a"], k)
     b  = sigma_LorentzBerthelot(params["b"], l)
 
@@ -137,16 +147,23 @@ function CPA(components;
 
     bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options,sites)
     packagedparams = CPAParam(Mw, Tc, a, b, c1, epsilon_assoc, bondvol)
-    
+
+    references = ["10.1021/ie051305v"]
+
     #init cubic model
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    if alpha isa Type && alpha <: CPAAlphaModel && c1 != nothing
+        alphaparams = CPAAlphaParam(c1)
+        init_alpha = alpha(_components,alphaparams,references)
+    else
+        init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    end
+
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     cubicparams = ABCubicParam(a, b, params["Tc"],Pc,Mw) #PR, RK, vdW
     init_cubicmodel = cubicmodel(_components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
     
-    references = ["10.1021/ie051305v"]
 
     model = CPA(_components, radial_dist, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
     set_reference_state!(model,reference_state;verbose)

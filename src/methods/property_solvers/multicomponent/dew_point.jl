@@ -120,7 +120,7 @@ function dew_pressure(model::EoSModel, T, y,method::ThermodynamicMethod)
     y_r = y[idx_r]
 
     if has_a_res(model)
-        dew_pressure_result_primal = dew_pressure_impl(model_r,primalval(T),primalval(y_r),index_reduction(method,idx_r))
+        dew_pressure_result_primal = dew_pressure_impl(primalval(model_r),primalval(T),primalval(y_r),index_reduction(method,idx_r))
         dew_pressure_result = dew_pressure_ad(model_r,T,y_r,dew_pressure_result_primal)
     else
         dew_pressure_result = dew_pressure_impl(model_r,T,y_r,index_reduction(method,idx_r))
@@ -284,7 +284,7 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     y_r = y[idx_r]
     
     if has_a_res(model)
-        dew_temperature_result_primal =  dew_temperature_impl(model_r,primalval(p),primalval(y_r),index_reduction(method,idx_r))
+        dew_temperature_result_primal =  dew_temperature_impl(primalval(model_r),primalval(p),primalval(y_r),index_reduction(method,idx_r))
         dew_temperature_result =  dew_temperature_ad(model_r,p,y_r,dew_temperature_result_primal)
     else
         dew_temperature_result =  dew_temperature_impl(model_r,p,y_r,index_reduction(method,idx_r))

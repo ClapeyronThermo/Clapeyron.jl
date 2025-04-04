@@ -22,11 +22,11 @@ end
 export GCMSABorn
 
 """
-    GCMSABorn(solvents::Array{String,1}, 
-         ions::Array{String,1}; 
-         RSPmodel=ConstW, 
-         SAFTlocations=String[], 
-         userlocations=String[], 
+    GCMSABorn(solvents::Array{String,1},
+         ions::Array{String,1};
+         RSPmodel=ConstRSP,
+         SAFTlocations=String[],
+         userlocations=String[],
          verbose=false)
 
 ## Input parameters
@@ -40,23 +40,23 @@ export GCMSABorn
 ## Description
 This function is used to create a group-contribution Mean Spherical Approximation-Born model used in SAFT-gamma E Mie
 """
-function GCMSABorn(solvents,ions; RSPmodel=ConstW, userlocations=String[], verbose=false)
+function GCMSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[],RSPmodel_userlocations = String[], verbose=false)
     groups = GroupParam(cat(solvents,ions,dims=1), ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
-    params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/","properties/molarmass_groups.csv"]; userlocations=userlocations,return_sites=false,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
+    params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/"]; userlocations=userlocations,return_sites=false,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     components = groups.components
     icomponents = 1:length(components)
 
     segment = params["vst"]
     shapefactor = params["S"]
 
-    mix_segment!(groups,shapefactor.values,segment.values)
+    #mix_segment!(groups,shapefactor.values,segment.values)
 
     sigma = params["sigma"]
 
     if typeof(sigma) <: PairParam
         sigma = SingleParam("sigma",components,diagvalues(sigma.values)[:])
     end
-    
+
     sigma.values .*= 1E-10
     gc_sigma = deepcopy(sigma)
     gc_sigma.values .^= 3
@@ -72,12 +72,11 @@ function GCMSABorn(solvents,ions; RSPmodel=ConstW, userlocations=String[], verbo
     gc_sigma_born.values .= cbrt.(gc_sigma_born.values)
 
     charge = params["charge"]
-    
+
     packagedparams = GCMSABornParam(shapefactor,segment,sigma,gc_sigma,sigma_born,gc_sigma_born,charge)
 
     references = String[]
-    init_RSPmodel = RSPmodel(solvents,ions)
-
+    init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
     model = GCMSABorn(components, groups, icomponents, packagedparams, init_RSPmodel,references)
     return model
@@ -224,8 +223,8 @@ function screening_length(model::GCMSABornModel,V,T,z, ϵ_r=@f(data),zgdata = @f
     return Γnew
 end
 
-function a_born(model::GCMSABornModel, V, T, z,_data=@f(data)) 
-    (zg, ∑zg), ϵ_r = _data  
+function a_born(model::GCMSABornModel, V, T, z,_data=@f(data))
+    (zg, ∑zg), ϵ_r = _data
     σ_born = model.params.sigma_born.values
     Z = model.params.charge.values
     igroups = 1:length(model.groups.flattenedgroups)

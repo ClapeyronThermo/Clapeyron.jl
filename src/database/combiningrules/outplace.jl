@@ -19,8 +19,9 @@ Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `pᵢᵢ = pᵢ`.
 """
-function kij_mix(f::F,param::SingleOrPair,K = nothing) where F
-    return kij_mix!(f,PairParam(param),K)
+function kij_mix(f::F,P::SingleOrPair,K = nothing) where F
+    param = PairParam(P.name,P.components,float.(P.values),P.ismissingvalues,P.sourcecsvs,P.sources)
+    return kij_mix!(f,param,K)
 end
 
 
@@ -45,5 +46,6 @@ If you pass a `SingleParam` or a vector as input for `Q`, then `Qᵢⱼ` will be
 ```
 """
 function pair_mix(f::F,P::SingleOrPair,Q::SingleOrPair) where F
-    return pair_mix!(f,PairParam(P),Q)
+    param = PairParam(P.name,P.components,float.(P.values),P.ismissingvalues,P.sourcecsvs,P.sources)
+    return pair_mix!(f,param,Q)
 end

@@ -13,10 +13,10 @@ include("database_rawparam.jl")
 include("database_utils.jl")
 
 """
-    params, sites = getparams(components,locations;kwargs...)
+    params = getparams(components,locations;kwargs...)
 returns a `Dict{String,ClapeyronParam}` containing all the parameters found for the list of components
 in the available CSVs. `locations` are the locations relative to `Clapeyron` database. the available keywords are the ones used ∈ [`ParamOptions`](@ref)
-if `return_sites` is set to false, `getparams` will only return the found params.
+if `return_sites` is set to true, `getparams` will add a "sites" value in the params result, containing a `SiteParam` built with the input parameters.
 
 ## Single to Pair promotion
 
@@ -298,7 +298,7 @@ function buildsites(components,allparams,allnotfoundparams,options)
 end
 
 function getparams(groups::GroupParameter, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
-    return getparams(groups.flattenedgroups, locations,options)
+    return getparams(groups.flattenedgroups, locations, options)
 end
 
 function anysites(data,components)
@@ -844,9 +844,13 @@ end
 
 const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "association", "group", "groups","intragroup","intragroups"]
 
-function read_csv_options(filepath)
+function read_csv_options(filepath::AbstractString)
     return _read_csv_options(getline(String(filepath), 2))
 end
+#=
+function read_csv_options(filepath)
+    return 2
+end=#
 
 function _read_csv_options(line::String)
     re = r"\[.*\]"

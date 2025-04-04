@@ -609,7 +609,7 @@ The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume
 """
 function reference_chemical_potential(model::EoSModel,p,T,reference = reference_chemical_potential_type(model); phase=:unknown, threaded=true, vol0=nothing)
     if reference == :pure
-        pure = split_model.(model)
+        pure = split_model(model)
         return gibbs_free_energy.(pure, p, T; phase, threaded)
     elseif reference == :aqueous
         idx_w = find_water_indx(model)
@@ -621,7 +621,7 @@ function reference_chemical_potential(model::EoSModel,p,T,reference = reference_
         zref ./= sum(zref)
         return chemical_potential(model, p, T, zref; phase, threaded, vol0)
     elseif reference == :sat_pure_T
-        pure = split_model.(model)
+        pure = split_model(model)
         sat = saturation_pressure.(pure,T)
         vl_pure = getindex.(sat,2)
         return VT_gibbs_free_energy.(pure, vl_pure, T)
