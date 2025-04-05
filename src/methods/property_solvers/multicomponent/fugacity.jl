@@ -204,11 +204,11 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
             lnϕy, voly = lnϕ(modely, p, T, _y, Hϕy, phase=:vapour, vol0=voly)
 
             if isnan(volx)
-                lnϕx, volx = lnϕ(model, p, T, _x, Hϕx, phase = :liquid)
+                lnϕx, volx = lnϕ(modelx, p, T, _x, Hϕx, phase = :liquid)
             end
 
             if isnan(voly)
-                lnϕy, voly = lnϕ(model, 1.1p, T, _y, Hϕy, phase = :vapour)
+                lnϕy, voly = lnϕ(modely, 1.1p, T, _y, Hϕy, phase = :vapour)
             end
 
             if isnan(volx) || isnan(voly)

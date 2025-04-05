@@ -129,7 +129,8 @@ Ignores non-diagonal entries already set.
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `λᵢᵢ = λᵢ`.
 """
 function lambda_LorentzBerthelot(lambda::SingleOrPair,k = 3)
-    return return lambda_LorentzBerthelot!(PairParam(lambda),k)
+    param = PairParam(lambda.name,lambda.components,float.(lambda.values),lambda.ismissingvalues,lambda.sourcecsvs,lambda.sources)
+    return lambda_LorentzBerthelot!(param,k)
 end
 
 

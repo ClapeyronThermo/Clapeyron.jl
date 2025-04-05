@@ -185,37 +185,30 @@ function create_group_splitter(param::GroupParam,I)
     return Ig
 end
 
-function each_split_model(param::GroupParam,__group,I,_idx)
+function each_split_model(param::GroupParam,__group,Ic,Ig)
     grouptype = param.grouptype
-    components = param.components[I]
-    groups = param.groups[I]
-    n_groups = param.n_groups[I]
+    components = param.components[Ic]
+    groups = param.groups[Ic]
+    n_groups = param.n_groups[Ic]
     sourcecsvs = param.sourcecsvs
     len_groups = length(param.flattenedgroups)
 
-    flattenedgroups = param.flattenedgroups[_idx]
+    flattenedgroups = param.flattenedgroups[Ig]
     i_groups = [[findfirst(isequal(group), flattenedgroups)::Int for group ∈ componentgroups] for componentgroups ∈ groups]
-    n_flattenedgroups = Vector{Vector{Int64}}(undef,length(I))
+    n_flattenedgroups = Vector{Vector{Int64}}(undef,length(Ic))
 
     #handling for intergroups
-    n_intergroups = Vector{Matrix{Int64}}(undef,length(I))
+    n_intergroups = Vector{Matrix{Int64}}(undef,length(Ic))
     empty_intergroup = fill(0,(0,0))
-    for (k,i) in pairs(I)
+    for (k,i) in pairs(Ic)
         pii = param.n_flattenedgroups[i]
-        n_flattenedgroups[k] = pii[_idx]
+        n_flattenedgroups[k] = pii[Ig]
         pij = param.n_intergroups[i]
         if !isempty(pij)
-            n_intergroups[k] = pij[_idx,_idx]
+            n_intergroups[k] = pij[Ig,Ig]
         else
             n_intergroups[k] = empty_intergroup
         end
-    end
-    n_groups_cache  = PackedVectorsOfVectors.packed_fill(0.0,(length(ni) for ni in n_flattenedgroups))
-
-    for (k,i) in pairs(I)
-        pii = param.n_groups_cache[i]
-        true_n = pii[_idx]
-        n_groups_cache[k] .= true_n
     end
 
     return GroupParam(
@@ -227,10 +220,38 @@ function each_split_model(param::GroupParam,__group,I,_idx)
         i_groups,
         flattenedgroups,
         n_flattenedgroups,
-        n_groups_cache,
         sourcecsvs)
 end
 
+function each_split_model(param::MixedGCSegmentParam{T},group,Ic,Ig) where T
+    if length(param.values.v) == 0
+        return MixedGCSegmentParam(param.name,param.components[Ic],deepcopy(param.values))
+    end
+
+    src = param.values
+    ng = length(group.flattenedgroups)
+    
+    #count unique groups
+    ncount = zeros(T,ng)
+    for k in Ig
+        ncount[k] = 1
+    end
+    ngg = count(!iszero,ncount)
+    ncc = length(Ic)
+    
+    #reuse vector
+    resize!(ncount,ngg*ncc)
+    p = zeros(Int64,length(Ic)+1)
+    p .= 1:ngg:(ncc*ngg + 1)
+    dest = PackedVofV(p,ncount)
+    
+    for (k,i) in pairs(Ic)
+        pii = src[i]
+        true_n = @view(pii[Ig])
+        dest[k] .= true_n
+    end
+    return MixedGCSegmentParam{T}(param.name,param.components[Ic],dest)
+end
 
 function each_split_model(group::GroupParam,I)
     Ig = create_group_splitter(group,I)

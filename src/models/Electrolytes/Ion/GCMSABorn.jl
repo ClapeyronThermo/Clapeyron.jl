@@ -47,7 +47,7 @@ function GCMSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[],RSPm
     segment = params["vst"]
     shapefactor = params["S"]
 
-    mix_segment!(groups,shapefactor.values,segment.values)
+    #mix_segment!(groups,shapefactor.values,segment.values)
 
     sigma = params["sigma"]
 

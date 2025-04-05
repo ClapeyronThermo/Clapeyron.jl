@@ -13,8 +13,6 @@ function SAFTVRMieParam(Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc
     return build_parametric_param(SAFTVRMieParam,Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol) 
 end
 
-Base.eltype(p::SAFTVRMieParam{T}) where T = T
-
 abstract type SAFTVRMieModel <: SAFTModel end
 @newmodel SAFTVRMie SAFTVRMieModel SAFTVRMieParam{T}
 default_references(::Type{SAFTVRMie}) = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]

@@ -75,11 +75,9 @@ function packing_fraction(model::SAFTgammaMieModel,_data::Tuple)
 end
 
 function X_gc(model::SAFTgammaMieModel,V,T,z)
-    mi  = group_matrix(model.groups)::Matrix{Float64}
+    nms = model.params.mixed_segment
+    X  = group_fractions(nms,z)
     mm = model.params.segment.values
-    TT = Base.promote_eltype(mm,1.0,z)
-    X = Vector{TT}(undef,length(model.groups.flattenedgroups))
-    mul!(X,mi,z)
     X ./= mm
     return X
 end
@@ -87,7 +85,7 @@ end
 function d_gc_av(model::SAFTgammaMieModel,V,T,z,_d_gc = d(model,V,T,@f(X_gc)))
     _d = zeros(eltype(_d_gc),length(z))
     _0 = zero(eltype(_d))
-    _zz = model.groups.n_groups_cache
+    _zz = model.params.mixed_segment.values
     for i ∈ @comps
         _z = _zz[i]
         ∑zinv2 = 1/(sum(_z)^2)
@@ -188,8 +186,8 @@ Optimizations for single component SAFTgammaMieModel
 #######
 
 function d_gc_av(model::SAFTgammaMieModel,V,T,z::SingleComp,_d_gc = d(model,V,T,@f(X_gc)))
-    _0 = zero(eltype(_d_gc))
-    _z = only(model.groups.n_groups_cache)  
+    _0 = zero(Base.promote_eltype(_d_gc,z))
+    _z = only(model.params.mixed_segment.values)  
     ∑zinv2 = 1/(sum(_z)^2)
     di = _0
     for k ∈ @groups

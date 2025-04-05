@@ -13,10 +13,19 @@ function __electrolyte_fugacities(model,salts,p,T,m,zsolvent = SA[1.0];sat = fal
     else
         px = p
     end
-    φ = fugacity_coefficient(model,px,T,z;phase=:l)
-    φ0 = fugacity_coefficient(model,px,T,z0;phase=:l)
 
-    return (z,z0),(φ,φ0),(isolvent,iions),ν
+    R̄ = Rgas(model)
+
+    v = volume(model,px,T,z;phase=:l)
+    μ = VT_chemical_potential_res(model,v,T,z)./(R̄*T)
+    Z = px*v/R̄/T/sum(z)
+    v0 = volume(model,px,T,z0;phase=:l)
+    μ0 = VT_chemical_potential_res(model,v0,T,z0)./(R̄*T)
+    Z0 = px*v0/R̄/T/sum(z0)
+
+    γ = @. exp(μ-μ0)*Z0/Z
+
+    return (z,z0),γ,(isolvent,iions),ν
 end
 
 
@@ -64,10 +73,9 @@ m = [1.0]
 If multiple solvents are present, the composition of the solvent can be specified with the `zsolvent` keyword argument.
 """
 function mean_ionic_activity_coefficient(model::ESElectrolyteModel,salts,p,T,m,zsolvent=SA[1.],sat = false)
-    (z,z0),(_φ,_φ0),(isolvent,iions),ν = __electrolyte_fugacities(model,salts,p,T,m,zsolvent,sat = sat)
-    φ = _φ[iions]
-    φ0 = _φ0[iions]
-    γim = φ ./ φ0 .* sum(z[isolvent])/sum(z)
+    (z,z0),(_γ),(isolvent,iions),ν = __electrolyte_fugacities(model,salts,p,T,m,zsolvent,sat = sat)
+    γ = _γ[iions]
+    γim = γ .* sum(z[isolvent])/sum(z)
     γsm = (prod(γim'.^ν,dims=2)).^(1 ./sum(ν,dims=2))
     return γsm
 end
@@ -116,10 +124,9 @@ m = [1.0]
 If multiple solvents are present, the composition of the solvent can be specified with the `zsolvent` keyword argument.
 """
 function osmotic_coefficient(model::ESElectrolyteModel,salts,p,T,m,zsolvent=SA[1.0],sat = false)
-    (z,z0),(_φ,_φ0),(isolvent,iions),ν = __electrolyte_fugacities(model,salts,p,T,m,zsolvent,sat = sat)
-    φ0 = _φ0[isolvent]
-    φ = _φ[isolvent]
-    asolv = φ./φ0.*z[isolvent]/sum(z)
+    (z,z0),(_γ),(isolvent,iions),ν = __electrolyte_fugacities(model,salts,p,T,m,zsolvent,sat = sat)
+    γ = _γ[isolvent]
+    asolv = γ.*z[isolvent]/sum(z)
     Mw = mw(model.neutralmodel)[isolvent].*1e-3
     return -1 ./(sum(ν.*m).*Mw).*log.(asolv)
 end
