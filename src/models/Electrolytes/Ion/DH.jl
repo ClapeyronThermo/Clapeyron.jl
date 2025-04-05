@@ -48,18 +48,18 @@ function a_dh(ionmodel::DHModel, V, T, z, iondata)
 end
 
 function a_dh(V, T, z, Z, σ, ϵ_r)
-    _0 = zero(Base.promote_eltype(V, T, z, Z, σ, ϵ_r))
-    if all(iszero,Z)
-        return  _0
-    end
     nc = length(Z)
     ∑z = sum(z)
     
     s = e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)
     κ = debye_length(V,T,z,ϵ_r,Z,∑z)
+
+    if iszero(κ)
+        return zero(κ)
+    end
     #ρ = N_A*sum(z)/V
     #κ = sqrt(4π*s*ρ*sum(z[i]*Z[i]*Z[i] for i ∈ 1:nc)/∑z)
-    res =  _0
+    res = zero(κ)
     for i ∈ @iions
         yi,Zi = σ[i]*κ,Z[i]
         yip1 = yi + 1
