@@ -19,11 +19,11 @@ Returns: NLSolvers.NEqProblem
 function OF_bubblepy! end
 
 function OF_bubblepy!(model, x, T, vol_cache)
-    return _fug_OF_neqsystem(model,x, nothing, nothing, T, vol_cache,true,true,(:liquid,:vapor))
+    return _fug_OF_neqsystem(model,x, nothing, nothing, T, vol_cache,FugEnum.BUBBLE_PRESSURE,(:liquid,:vapor))
 end
 
 function OF_bubblepy!(model,modely, x, T, vol_cache,volatile)
-    return _fug_OF_neqsystem(model, modely, x, nothing, nothing, T, vol_cache, true, true, (:liquid,:vapor), volatile)
+    return _fug_OF_neqsystem(model, modely, x, nothing, nothing, T, vol_cache, FugEnum.BUBBLE_PRESSURE, (:liquid,:vapor), volatile)
 end
 
 """
@@ -77,7 +77,7 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
         model_y = nothing
     end
 
-    converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,vol0,true,true,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p,tol_xy = tol_y,tol_of=tol_of)
+    converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,vol0,FugEnum.BUBBLE_PRESSURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p,tol_xy = tol_y,tol_of=tol_of)
     p,T,x,y,vol,lnK = res
     volx,voly = vol
     if converged
@@ -226,11 +226,11 @@ Returns: NLSolvers.NEqProblem
 function OF_bubbleTy! end
 
 function OF_bubbleTy!(model, x, p, vol_cache)
-    return _fug_OF_neqsystem(model,x, nothing, p, nothing, vol_cache, true, false, (:liquid,:vapor))
+    return _fug_OF_neqsystem(model,x, nothing, p, nothing, vol_cache, FugEnum.BUBBLE_TEMPERATURE, (:liquid,:vapor))
 end
 
 function OF_bubbleTy!(model,modely, x, p, vol_cache,volatile)
-    return _fug_OF_neqsystem(model, modely, x, nothing, p, nothing, vol_cache, true, false, (:liquid,:vapor), volatile)
+    return _fug_OF_neqsystem(model, modely, x, nothing, p, nothing, vol_cache, FugEnum.BUBBLE_TEMPERATURE, (:liquid,:vapor), volatile)
 end
 
 """
@@ -284,7 +284,7 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
         model_y = nothing
     end
 
-    converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,vol0,true,false,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_y, tol_of = tol_of)
+    converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,vol0,FugEnum.BUBBLE_TEMPERATURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_y, tol_of = tol_of)
     p,T,x,y,vol,lnK = res
     volx,voly = vol
     if converged

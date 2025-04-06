@@ -20,11 +20,11 @@ Returns: NLSolvers.NEqProblem
 function OF_dewPx! end
 
 function OF_dewPx!(model, y, T, vol_cache)
-    return _fug_OF_neqsystem(model, nothing, y, nothing, T, vol_cache, false, true, (:liquid,:vapor))
+    return _fug_OF_neqsystem(model, nothing, y, nothing, T, vol_cache, FugEnum.DEW_PRESSURE, (:liquid,:vapor))
 end
 
 function OF_dewPx!(modelx,modely, y, T, vol_cache,condensable)
-    return _fug_OF_neqsystem(modelx, modely, nothing, y, nothing, T, vol_cache, false, true, (:liquid,:vapor), condensable)
+    return _fug_OF_neqsystem(modelx, modely, nothing, y, nothing, T, vol_cache, FugEnum.DEW_PRESSURE, (:liquid,:vapor), condensable)
 end
 
 """
@@ -77,7 +77,7 @@ function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
         model_x = nothing
     end
 
-    converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,vol0,false,true,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p, tol_xy = tol_x, tol_of = tol_of)
+    converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,vol0,FugEnum.DEW_PRESSURE,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p, tol_xy = tol_x, tol_of = tol_of)
     p,T,x,y,vol,lnK = res
     volx,voly = vol
     if converged
@@ -226,11 +226,11 @@ Returns: NLSolvers.NEqProblem
 function OF_dewTx! end
 
 function OF_dewTx!(model, y, p, vol_cache)
-    return _fug_OF_neqsystem(model, nothing, y, p, nothing, vol_cache, false, false, (:liquid,:vapor))
+    return _fug_OF_neqsystem(model, nothing, y, p, nothing, vol_cache, FugEnum.DEW_TEMPERATURE, (:liquid,:vapor))
 end
 
 function OF_dewTx!(model,modely, y, p, vol_cache,condensable)
-    return _fug_OF_neqsystem(model, modely, nothing, y, p, nothing, vol_cache, false, false, (:liquid,:vapor), condensable)
+    return _fug_OF_neqsystem(model, modely, nothing, y, p, nothing, vol_cache, FugEnum.DEW_TEMPERATURE, (:liquid,:vapor), condensable)
 end
 
 """
@@ -282,7 +282,7 @@ function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothin
         model_x = nothing
     end
 
-    converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,vol0,false,false,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_x, tol_of = tol_of)
+    converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,vol0,FugEnum.DEW_TEMPERATURE,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_x, tol_of = tol_of)
     p,T,x,y,vol,lnK = res
     volx,voly = vol
     if converged
