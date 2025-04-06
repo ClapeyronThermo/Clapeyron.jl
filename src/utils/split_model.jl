@@ -402,6 +402,11 @@ function _split_model(param,splitter::AbstractVector{Int})
     end
 end
 
+function _split_model(param,bool_splitter::AbstractVector{Bool})
+    int_splitter = findall(bool_splitter)
+    return _split_model(param,int_splitter)
+end
+
 
 
 
