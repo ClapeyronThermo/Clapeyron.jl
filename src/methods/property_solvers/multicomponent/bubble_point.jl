@@ -127,13 +127,25 @@ function __is_high_pressure_state(pure,sat,T)
     -2B > vv || p > -0.25*Rgas(pure)*T/B
 end
 
-
+function __is_high_pressure_state(pure::AbstractVector,sat,T)
+    for vi in 1:length(pure)
+        res = res || __is_high_pressure_state(pure[i],sat[i],T) && return true
+    end
+    return false
+end
 
 function __is_high_temperature_state(pure,dpdT,T)
     p = antoine_pressure(dpdT,T)
     vv = volume(pure,p,T,phase = :v)
     B = second_virial_coefficient(pure,T)
     -2B > vv || p > -0.25*Rgas(pure)*T/B
+end
+
+function __is_high_temperature_state(pure::AbstractVector,dpdT,T)
+    for vi in 1:length(pure)
+        __is_high_temperature_state(pure[i],dpdT[i],T) && return true
+    end
+    return false
 end
 
 function __crit_pure(sat0,pure)
@@ -182,7 +194,7 @@ function extended_dpdT_temperature(pure,p,crit = nothing)
 end
 
 
-function improve_bubbledew_suggestion(model,p,T,x,y,bubble,in_media,high_conditions = false)
+function improve_bubbledew_suggestion(model,p,T,x,y,method,in_media,high_conditions)
     vlx = volume(model,p,T,x,phase = :l)
     μl = VT_chemical_potential_res(model,vlx,T,x)
     RT = Rgas(model) * T
@@ -192,13 +204,13 @@ function improve_bubbledew_suggestion(model,p,T,x,y,bubble,in_media,high_conditi
     ϕv = virial_phi(model,p,T,y)
     K .= ϕl ./ ϕv
     K_r = @view K[in_media]
-    if bubble
+    if FugEnum.is_bubble(method)
         x_r = @view x[in_media]
         y_r = rr_flash_vapor(K_r,x_r,zero(eltype(K)))
         yy = index_expansion(y_r,in_media)
         yy ./= sum(yy)
         vv = volume(model,p,T,y,phase = :v)
-        return x,yy,vlx,vv
+        return p,T,x,yy,vlx,vv
     else
         y_r = @view y[in_media]
         x_r = rr_flash_liquid(K_r,y_r,one(eltype(K)))
@@ -206,7 +218,7 @@ function improve_bubbledew_suggestion(model,p,T,x,y,bubble,in_media,high_conditi
         xx ./= sum(xx)
         vl = volume(model,p,T,xx,phase = :l)
         vv = volume(model,p,T,y,phase = :v)
-        return xx,y,vl,vv
+        return p,T,xx,y,vl,vv
     end
 end
 
@@ -219,26 +231,20 @@ end
 
 function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_model(model,volatiles),crit = nothing)
     #check each T with T_scale, if treshold is over, replace Pi with inf
-    pure_vals = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
-    p0r = first.(pure_vals)
-    vvi_r = last.(pure_vals)
+    sat = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
+    p0r = first.(sat)
     p0 = index_expansion(p0r,volatiles)
     xipi = p0 .* x
     p = sum(xipi)
     if isnothing(y0)
-        y = xipi
-        y ./= p
+        yx = xipi
+        yx ./= p
     else
-        y = y0
+        yx = y0
     end
 
-    high_conditions = any(Base.splat(__is_high_pressure_state),zip(pure,pure_vals,FillArrays.Fill(T,length(pure))))
-    if high_conditions
-        
-    end
-    y_r = @view y[volatiles]
-    vl0 = volume(model,p,T,x,phase = :l)
-    vv0 = dot(vvi_r,y_r)/sum(y_r)
+    high_conditions = __is_high_pressure_state(pure,sat,T)
+    p,_,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x,yx,FugEnum.BUBBLE_PRESSURE,volatiles,high_conditions)    
     return p,vl0,vv0,y
 end
 
@@ -344,21 +350,21 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
     if Tx0 !== nothing
         T0 = Tx0
         sat = extended_saturation_pressure.(pure,T0,crit)
-        p_i_r = first.(pure_vals)
-        high_temp = any(Base.splat(__is_high_pressure_state),zip(pure,sat,FillArrays.Fill(T0,length(pure))))
+        p_i_r = first.(sat)
+        high_conditions = __is_high_pressure_state(pure,sat,T0)
     else
         dPdTsat = extended_dpdT_temperature.(pure,p,crit)
         prob = antoine_bubble_problem(dPdTsat,p,x_r)
         T0 = Roots.solve(prob)
         p_i_r = antoine_pressure.(dPdTsat,T0)
-        high_temp = any(Base.splat(__is_high_temperature_state),zip(pure,dPdTsat,FillArrays.Fill(T0,length(pure))))
+        high_conditions = __is_high_temperature_state(pure,dPdTsat,T0)
     end
     xipi_r = y_r = p_i_r .* x_r
     p = sum(xipi_r)
     y_r ./= p
     y0 = index_expansion(y_r,volatiles)
-    _,y,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x,y0,true,volatiles,high_temp)
-    return T0,vl0,vv0,y
+    _,T,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x,y0,FugEnum.BUBBLE_TEMPERATURE,volatiles,high_conditions)
+    return T,vl0,vv0,y
 end
 
 function antoine_pressure(dpdT,T)

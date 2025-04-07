@@ -24,21 +24,19 @@ function index_reduction(method::DewPointMethod,idx_r)
 end
 
 function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model,condensables), crit = nothing)
-    pure_vals = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
-    p0inv_r = 1. ./ first.(pure_vals)
-    vli_r = getindex.(pure_vals,2)
+    sat = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
+    p0inv_r = 1. ./ first.(sat)
     p0inv = index_expansion(p0inv_r,condensables)
     yipi = y .* p0inv
     p = 1/sum(yipi)
     if isnothing(x0)
-        x = yipi
-        x .*= p
+        xx = yipi
+        xx .*= p
     else
-        x = x0
+        xx = x0
     end
-    x_r = @view x[condensables]
-    vl0  = dot(vli_r,x_r)/sum(x_r)
-    vv0 = volume(model,p,T,y,phase = :v)
+    high_conditions = __is_high_pressure_state(pure,sat,T)
+    p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,xx,y,FugEnum.DEW_PRESSURE,condensables,high_conditions)
     return p,vl0,vv0,x
 end
 
@@ -147,19 +145,21 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
     if Tx0 !== nothing
         T0 = Tx0
         sat = extended_saturation_pressure.(pure,T0,crit)
-        p0inv_r = 1.0 ./ first.(pure_vals)
+        p0inv_r = 1.0 ./ first.(sat)
+        high_conditions = __is_high_pressure_state(pure,sat,T0)
     else
         dPdTsat = extended_dpdT_temperature.(pure,p,crit)
         prob = antoine_dew_problem(dPdTsat,p,y_r)
         T0 = Roots.solve(prob)
         p0inv_r = 1.0 ./ antoine_pressure.(dPdTsat,T0)
+        high_conditions = __is_high_temperature_state(pure,dPdTsat,T0)
     end
     yipi_r = x_r = y_r .* p0inv_r
     p = 1/sum(yipi_r)
     x_r .*= p
     x0 = index_expansion(x_r,condensables)
-    x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x0,y,false,condensables)
-    return T0,vl0,vv0,x
+    _,T,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x0,y,FugEnum.DEW_TEMPERATURE,condensables,high_conditions)
+    return T,vl0,vv0,x
 end
 
 function antoine_dew_problem(dpdt,p_dew,y)

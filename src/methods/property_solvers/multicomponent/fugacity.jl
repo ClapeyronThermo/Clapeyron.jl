@@ -1,6 +1,11 @@
 ##general successive substitution method to solve bubble/dew problems via fugacity coefficients
 module FugEnum
-    @enum BubbleDew BUBBLE_PRESSURE,BUBBLE_TEMPERATURE,DEW_PRESSURE,DEW_TEMPERATURE
+    @enum BubbleDew begin
+        BUBBLE_PRESSURE
+        BUBBLE_TEMPERATURE
+        DEW_PRESSURE
+        DEW_TEMPERATURE
+    end
     is_bubble(x::BubbleDew) = (x == BUBBLE_PRESSURE || x == BUBBLE_TEMPERATURE)
     is_dew(x::BubbleDew) = !is_bubble(x)
     is_temperature(x::BubbleDew) = (x == BUBBLE_TEMPERATURE  || x == DEW_TEMPERATURE)
