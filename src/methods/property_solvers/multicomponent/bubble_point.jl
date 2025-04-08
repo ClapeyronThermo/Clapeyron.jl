@@ -390,8 +390,7 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
         high_conditions = __is_high_pressure_state(pure,sat,T0)
     else
         dPdTsat = extended_dpdT_temperature.(pure,p,crit)
-        prob = antoine_bubble_problem(dPdTsat,p,x_r)
-        T0 = Roots.solve(prob)
+        T0 = antoine_bubble_solve(dPdTsat,p,x_r)
         p_i_r = antoine_pressure.(dPdTsat,T0)
         high_conditions = __is_high_temperature_state(pure,dPdTsat,T0)
     end
@@ -408,7 +407,15 @@ function antoine_pressure(dpdT,T)
     return exp(logp0 + dlnpdTinv*(1/T - T0inv))
 end
 
-function antoine_bubble_problem(dpdt,p_bubble,x,T0 = nothing)
+function antoine_bubble_solve(dpdt,p_bubble,x,T0 = nothing)
+    
+    if length(dpdt) == 1
+        #p(T) = p_bubble = exp(logp0 + dlnpdTinv*(1/T - T0inv))
+        dlnpdTinv,logp0,T0inv = dpdt[1]
+        Tinv = (log(p_bubble) - logp0)/dlnpdTinv + T0inv
+        return 1/Tinv
+    end
+    
     function antoine_f0(T)
         p = zero(T+first(x)+first(dpdt)[1])
         for i in 1:length(dpdt)
@@ -418,11 +425,15 @@ function antoine_bubble_problem(dpdt,p_bubble,x,T0 = nothing)
         end
         return p/sum(x) - p_bubble
     end
+
+
     if T0 === nothing
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
-        return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+        prob = Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+        return Roots.solve(prob)
     else
         return Roots.ZeroProblem(antoine_f0,T0)
+        return Roots.solve(prob)
     end
 end
 

@@ -328,4 +328,31 @@
         bondvol=nothing))
         @test model1 isa CPA
     end
+
+    @testset "#357 - electrolyte equilibria" begin
+
+        model1 = ePCSAFT(["water"], ["calcium", "chloride"])
+        salts1 = [("calcium chloride", ("calcium" => 1, "chloride" => 2))]
+        x1 = molality_to_composition(model1, salts1, 1.0)
+        bub_test = 374.7581484748338
+        bubP1_test = 2971.744917038001
+
+        bubT1 = bubble_temperature(model1, 101325, x1, FugBubbleTemperature(nonvolatiles = ["calcium", "chloride"]))[1]
+        @test bubT1 ≈ bub_test rtol = 1e-6
+
+        bubT1_chempot = bubble_temperature(model1, 101325, x, ChemPotBubbleTemperature(T0=373.0, nonvolatiles=["calcium","chloride"]))
+        @test_broken bubT1_chempot ≈ bub_test rtol = 1e-6
+        
+        bubT1_chempot2 = bubble_temperature(model1, 101325, x, ChemPotBubbleTemperature(nonvolatiles=["calcium","chloride"]))
+        @test_broken bubT1_chempot2 ≈ bub_test rtol = 1e-6
+
+        bubT1_2 = bubble_temperature(model1, 101325, x, FugBubbleTemperature(nonvolatiles = ["calcium", "chloride"],y0=[1.,0.,0.],vol0=(1.8e-5,1.),T0=373.15))[1]
+        @test bubT1_2 ≈ bub_test rtol = 1e-6
+        
+        bubP1 = bubble_pressure(model1,298.15,x1,FugBubblePressure(nonvolatiles=["calcium","chloride"],y0=[1.,0.,0.],vol0=(1e-5,1.)))
+        @test bubP1 ≈ bubP1_test rtol = 1e-6
+
+        bubP1_2 = bubble_pressure(model1,298.15,x1,FugBubblePressure(nonvolatiles=["calcium","chloride"]))
+        @test bubP1 ≈ bubP1_test rtol = 1e-6
+    end
 end

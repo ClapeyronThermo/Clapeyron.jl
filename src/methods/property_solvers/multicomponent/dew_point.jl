@@ -138,7 +138,7 @@ end
 
 
 
-function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
+function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model,condensables),crit = nothing)
     multi_component_check(x0_dew_temperature,model)
     y_r = @view y[condensables]
 
@@ -149,8 +149,7 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
         high_conditions = __is_high_pressure_state(pure,sat,T0)
     else
         dPdTsat = extended_dpdT_temperature.(pure,p,crit)
-        prob = antoine_dew_problem(dPdTsat,p,y_r)
-        T0 = Roots.solve(prob)
+        T0 = antoine_dew_solve(dPdTsat,p,y_r)
         p0inv_r = 1.0 ./ antoine_pressure.(dPdTsat,T0)
         high_conditions = __is_high_temperature_state(pure,dPdTsat,T0)
     end
@@ -162,7 +161,16 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
     return T,vl0,vv0,x
 end
 
-function antoine_dew_problem(dpdt,p_dew,y)
+function antoine_dew_solve(dpdt,p_dew,y)
+    if length(dpdt) == 1
+        #sum(y)/pinv - p_dew
+        #y = 1.0, pinv  = 1/p(T)
+        #p(T) = p_dew
+        dlnpdTinv,logp0,T0inv = dpdt[1]
+        Tinv = (log(p_dew) - logp0)/dlnpdTinv + T0inv
+        return 1/Tinv
+    end
+
     function antoine_f0(T)
         pinv = zero(T+first(y)+first(dpdt)[1])
         for i in 1:length(dpdt)
@@ -173,7 +181,8 @@ function antoine_dew_problem(dpdt,p_dew,y)
         return sum(y)/pinv - p_dew
     end
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
-    return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+    prob = Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+
 end
 
 function x0_dew_temperature(model::EoSModel,p,y,T0 = nothing)
