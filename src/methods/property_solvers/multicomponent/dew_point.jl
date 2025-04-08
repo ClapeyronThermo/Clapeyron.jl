@@ -28,15 +28,15 @@ function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArr
     p0inv_r = 1. ./ first.(sat)
     p0inv = index_expansion(p0inv_r,condensables)
     yipi = y .* p0inv
-    p = 1/sum(yipi)
+    p0 = 1/sum(yipi)
     if isnothing(x0)
         xx = yipi
-        xx .*= p
+        xx .*= p0
     else
         xx = x0
     end
     high_conditions = __is_high_pressure_state(pure,sat,T)
-    p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,xx,y,FugEnum.DEW_PRESSURE,condensables,high_conditions)
+    p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,xx,y,FugEnum.DEW_PRESSURE,condensables,high_conditions)
     return p,vl0,vv0,x
 end
 
