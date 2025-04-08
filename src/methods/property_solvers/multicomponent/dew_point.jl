@@ -182,7 +182,7 @@ function antoine_dew_solve(dpdt,p_dew,y)
     end
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
     prob = Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
-
+    return Roots.solve(prob)
 end
 
 function x0_dew_temperature(model::EoSModel,p,y,T0 = nothing)

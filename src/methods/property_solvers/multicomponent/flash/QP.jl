@@ -28,11 +28,11 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
         else
 
         pures = split_model(model)
-        dpdT = extended_dpdT_temperature.(pure,p)
+        dpdT = extended_dpdT_temperature.(pures,p)
         Tmax = antoine_dew_solve(dpdT,p,z)
         Tmin = antoine_bubble_solve(dpdT,p,z)
         #@show Td0,Tb0
-        T0 = 1 ./ last.(sat)
+        T0 = 1 ./ last.(dpdT)
         #Tmin,Tmax = extrema(T0)
         #we approximate sat(T) ≈ exp(-dpdT*T*T(1/T - 1/T0)/p)*p
         K = similar(T0)
