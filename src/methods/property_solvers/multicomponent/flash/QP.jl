@@ -28,16 +28,11 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
         else
 
         pures = split_model(model)
-        sat = extended_saturation_temperature.(pures,p)
-        _crit = __crit_pure.(sat,pures)
-        fix_sat_ti!(sat,pures,_crit,p)
-        dpdT = __dlnPdTinvsat.(pures,sat,_crit,p)
-        dew_prob = antoine_dew_problem(dpdT,p,z)
-        Tmax = Roots.solve(dew_prob)
-        bubble_prob = antoine_bubble_problem(dpdT,p,z)
-        Tmin = Roots.solve(bubble_prob)
+        dpdT = extended_dpdT_temperature.(pure,p)
+        Tmax = antoine_dew_solve(dpdT,p,z)
+        Tmin = antoine_bubble_solve(dpdT,p,z)
         #@show Td0,Tb0
-        T0 = first.(sat)
+        T0 = 1 ./ last.(sat)
         #Tmin,Tmax = extrema(T0)
         #we approximate sat(T) ≈ exp(-dpdT*T*T(1/T - 1/T0)/p)*p
         K = similar(T0)
