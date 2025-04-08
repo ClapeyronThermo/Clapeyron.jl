@@ -238,7 +238,9 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
     ϕl = K = similar(μl)
     ϕl .= exp.(μl ./ RT) ./ Zl
     ϕv = virial_phi(model,p,T,y) #virial fugacity coefficient, skips volume calculation
-    K .= ϕl ./ ϕv
+    if all(!isnan,@view(ϕv[in_media]))
+        K .= ϕl ./ ϕv
+    end
     K_r = @view K[in_media]
     if FugEnum.is_bubble(method)
         x_r = @view x[in_media]
@@ -258,10 +260,11 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
     end
 end
 
+_virial(model,V,T,z) = second_virial_coefficient(model,T,z)
+
 function virial_phi(model,p,T,z)
-    B(model,v,T,z) = second_virial_coefficient(model,T,z)
     pRT = p/(Rgas(model)*T)
-    dB = VT_molar_gradient(model,zero(p),T,z,B)
+    dB = VT_molar_gradient(model,zero(p),T,z,_virial)
     return exp.(dB .* pRT)
 end
 
