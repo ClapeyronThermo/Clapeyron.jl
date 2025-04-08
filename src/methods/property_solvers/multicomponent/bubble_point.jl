@@ -25,7 +25,7 @@ end
 
 
 function extended_saturation_pressure(pure,T,_crit = nothing; crit_retry = true)
-    sat,crit = _extended_saturation_pressure(pure,T,_crit;crit_retry)
+    sat,_,_ = _extended_saturation_pressure(pure,T,_crit;crit_retry)
     return sat
 end
 
@@ -38,10 +38,10 @@ function _extended_saturation_pressure(pure, T, _crit = nothing; crit_retry = tr
         sat = saturation_pressure(pure,T,crit_retry = false)
         if isnan(first(sat))
             if !crit_retry
-                return sat,(nan,nan,nan) #failed
+                return sat,(nan,nan,nan),:fail
             end
         else
-            return sat,(nan,nan,nan) #sucess
+            return sat,(nan,nan,nan),:success
         end
     end
     #calculate critical point, try again
@@ -56,23 +56,23 @@ function _extended_saturation_pressure(pure, T, _crit = nothing; crit_retry = tr
     Tc,Pc,Vc = crit
     if T < Tc
         sat = saturation_pressure(pure,T,crit = crit) #calculate sat_p with crit info
-        !isnan(first(sat)) && (return sat,crit)
+        !isnan(first(sat)) && (return sat,crit,:success)
     else
         nan = _0/_0
         sat = (nan,nan,nan)
     end
     #create initial point from critical values
     #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
-    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,T,false)
+    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,T,false,:supercritical)
     lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
     p0 = exp(lnp)
     vl0 = x0_volume(pure,p0,T,phase = :l)
     vv0 = max(1.2*Vc,3*Rgas(pure)*T/Pc)
-    return (p0,vl0,vv0),crit
+    return (p0,vl0,vv0),crit,:supercritical
 end
 
 function extended_saturation_temperature(pure,p,_crit = nothing; crit_retry = true)
-    sat,crit = _extended_saturation_temperature(pure,p,_crit;crit_retry)
+    sat,_,_ = _extended_saturation_temperature(pure,p,_crit;crit_retry)
     return sat
 end
 
@@ -84,10 +84,10 @@ function _extended_saturation_temperature(pure, p, _crit = nothing; crit_retry =
         sat = saturation_temperature(pure,p,crit_retry = false)
         if isnan(first(sat))
             if !crit_retry
-                return sat,(nan,nan,nan) #failed
+                return sat,(nan,nan,nan),:fail #failed
             end
         else
-            return sat,(nan,nan,nan) #sucess
+            return sat,(nan,nan,nan),:success #sucess
         end
     end
 
@@ -104,7 +104,7 @@ function _extended_saturation_temperature(pure, p, _crit = nothing; crit_retry =
     Tc,Pc,Vc = crit
     if p < Pc
         sat = saturation_temperature(pure,p,crit = crit) #calculate sat_p with crit info
-        !isnan(first(sat)) && (return sat,crit)
+        !isnan(first(sat)) && (return sat,crit,:success)
     else
         nan = _0/_0
         sat = (nan,nan,nan)
@@ -112,13 +112,13 @@ function _extended_saturation_temperature(pure, p, _crit = nothing; crit_retry =
     #create initial point from critical values
     #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
 
-    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,p,true)
+    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,p,true,:supercritical)
     #lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
     Tinv = (log(p) - logp0)/dlnpdTinv + Tcinv
     T0  = 1/Tinv
     vl0 = x0_volume(pure,p,T0,phase = :l)
     vv0 = max(1.2*Vc,3*Rgas(pure)*T0/Pc)
-    return (T0,vl0,vv0),crit
+    return (T0,vl0,vv0),crit,:supercritical
 end
 
 function __is_high_pressure_state(pure,sat,T)
@@ -158,39 +158,38 @@ function __crit_pure(sat0,pure)
     end
 end
 
-function __dlnPdTinvsat(pure,sat,crit,xx,is_sat_temperature)
+function __dlnPdTinvsat(pure,sat,crit,xx,is_sat_temperature,status)
+    successful_saturation = status == :success
+    yy,vl,vv = sat
     if is_sat_temperature
-        T,vl,vv = sat
-        p = xx
-        successful_saturation = !isnan(T)
+        p,T = xx,yy
     else
-        p,vl,vv = sat
-        T = xx
-        successful_saturation = !isnan(p)
+        p,T = yy,xx
     end
-    if successful_saturation
+
+    if status == :success
         dpdT = dpdT_saturation(pure,vl,vv,T)
         return -dpdT*T*T/p,log(p),1/T
-    elseif !isnan(crit[1]) && (crit[1] <= T || crit[2] < p)
+    elseif status === :supercritical
         Tc,Pc,Vc = crit
         _p(_T) = pressure(pure,Vc,_T)
         dpdT = Solvers.derivative(_p,Tc)
         return -dpdT*Tc*Tc/Pc,log(Pc),1/Tc
-    elseif all(isnan,sat)# && all(isnan,crit)
+    elseif status == :fail
         return sat
     else
-        throw(error("dPdTsat: unreachable state with $pure"))
+        throw(error("dPdTsat: invalid status: $status"))
     end
 end
 
 function extended_dpdT_pressure(pure,T,crit = nothing)
-    sat,_crit = _extended_saturation_pressure(pure,T,crit)
-    return __dlnPdTinvsat(pure,sat,_crit,T,false)
+    sat,_crit,status = _extended_saturation_pressure(pure,T,crit)
+    return __dlnPdTinvsat(pure,sat,_crit,T,false,status)
 end
 
 function extended_dpdT_temperature(pure,p,crit = nothing)
-    sat,_crit = _extended_saturation_temperature(pure,p,crit)
-    return __dlnPdTinvsat(pure,sat,_crit,p,true)
+    sat,_crit,status = _extended_saturation_temperature(pure,p,crit)
+    return __dlnPdTinvsat(pure,sat,_crit,p,true,status)
 end
 
 function improve_bubbledew_suggestion_spinodal(model,p0,T0,x,y,method,in_media)

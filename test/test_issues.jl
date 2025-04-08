@@ -340,10 +340,10 @@
         bubT1 = bubble_temperature(model1, 101325, x1, FugBubbleTemperature(nonvolatiles = ["calcium", "chloride"]))[1]
         @test bubT1 ≈ bub_test rtol = 1e-6
 
-        bubT1_chempot = bubble_temperature(model1, 101325, x, ChemPotBubbleTemperature(T0=373.0, nonvolatiles=["calcium","chloride"]))
+        bubT1_chempot = bubble_temperature(model1, 101325, x, ChemPotBubbleTemperature(T0=373.0, nonvolatiles=["calcium","chloride"]))[1]
         @test_broken bubT1_chempot ≈ bub_test rtol = 1e-6
         
-        bubT1_chempot2 = bubble_temperature(model1, 101325, x, ChemPotBubbleTemperature(nonvolatiles=["calcium","chloride"]))
+        bubT1_chempot2 = bubble_temperature(model1, 101325, x, ChemPotBubbleTemperature(nonvolatiles=["calcium","chloride"]))[1]
         @test_broken bubT1_chempot2 ≈ bub_test rtol = 1e-6
 
         bubT1_2 = bubble_temperature(model1, 101325, x, FugBubbleTemperature(nonvolatiles = ["calcium", "chloride"],y0=[1.,0.,0.],vol0=(1.8e-5,1.),T0=373.15))[1]
