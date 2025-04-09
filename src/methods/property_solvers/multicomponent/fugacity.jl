@@ -498,26 +498,26 @@ function _select_xy(w,K,x,y,_bubble,_view)
 end
 
 #main function
-function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel,_x, _y, _p, _T, vol_cache,method,_phase,_view)
+function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel, _x, _y, _p, _T, vol_cache,method,_phase,_view)
     _bubble,_pressure = FugEnum.is_bubble(method),FugEnum.is_pressure(method)
     if _bubble
-        w = similar(_y)
-        wx = x
+        w = similar(@view(_x[_view]))
+        wx = _x
         wy = w
     else
-        w = similar(_x)
+        w = similar(@view(_y[_view]))
         wx = w
-        wy = y
+        wy = _y
     end
 
     K = similar(w)
     XX = something(_p,_T)
     if _pressure
-        Hϕx = ∂lnϕ_cache(model, XX, XX, wx, Val{false}())
-        Hϕy = ∂lnϕ_cache(model, XX, XX, wy, Val{false}())
+        Hϕx = ∂lnϕ_cache(modelx, XX, XX, wx, Val{false}())
+        Hϕy = ∂lnϕ_cache(modely, XX, XX, wy, Val{false}())
     else
-        Hϕx = ∂lnϕ_cache(model, XX, XX, wx, Val{true}())
-        Hϕy = ∂lnϕ_cache(model, XX, XX, wy, Val{true}())
+        Hϕx = ∂lnϕ_cache(modelx, XX, XX, wx, Val{true}())
+        Hϕy = ∂lnϕ_cache(modely, XX, XX, wy, Val{true}())
     end
 
     function f!(F, inc)

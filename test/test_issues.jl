@@ -41,8 +41,8 @@
             bondvol = Dict([(("NH2","H"),("NH2","e")) => 95.225e-30,
                             (("CO2","a1"),("NH2","e")) => 3280.3e-30,
                             (("CO2","a2"),("NH2","e")) => 142.64e-30])))
-        
-        
+
+
         bondvol_mixed = model_mix.vrmodel.params.bondvol[1,2]
         @test length(bondvol_mixed) == 2
         @test vec(bondvol_mixed) ≈ [1.4264e-28, 3.2803e-27]
@@ -229,7 +229,7 @@
         #@test γ1[1] ≈ 55334.605821130834 rtol = 1e-4
 
         @test γ1[1] ≈ 51930.06908022231 rtol = 1e-4
-        
+
     end
 
     @testset "#262" begin
@@ -342,13 +342,13 @@
 
         bubT1_chempot = bubble_temperature(model1, 101325, x, ChemPotBubbleTemperature(T0=373.0, nonvolatiles=["calcium","chloride"]))[1]
         @test_broken bubT1_chempot ≈ bub_test rtol = 1e-6
-        
+
         bubT1_chempot2 = bubble_temperature(model1, 101325, x, ChemPotBubbleTemperature(nonvolatiles=["calcium","chloride"]))[1]
         @test_broken bubT1_chempot2 ≈ bub_test rtol = 1e-6
 
         bubT1_2 = bubble_temperature(model1, 101325, x, FugBubbleTemperature(nonvolatiles = ["calcium", "chloride"],y0=[1.,0.,0.],vol0=(1.8e-5,1.),T0=373.15))[1]
         @test bubT1_2 ≈ bub_test rtol = 1e-6
-        
+
         bubP1 = bubble_pressure(model1,298.15,x1,FugBubblePressure(nonvolatiles=["calcium","chloride"],y0=[1.,0.,0.],vol0=(1e-5,1.)))
         @test bubP1 ≈ bubP1_test rtol = 1e-6
 
