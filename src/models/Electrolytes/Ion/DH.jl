@@ -82,7 +82,7 @@ function a_ion(model::DHModel, V, T, z,_data=@f(data))
     ∑z = sum(z)
     ρ = N_A*sum(z)/V
     s = e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)
-    κ = sqrt(4π*s*ρ*sum(z[i]*Z[i]*Z[i] for i ∈ model.icomponents)/∑z)
+    κ = sqrt(4π*s*ρ/∑z)*sqrt(sum(z[i]*Z[i]*Z[i] for i ∈ model.icomponents))
     iszero(κ) && return zero(κ)
     res = zero(Base.promote_eltype(model,V,T,z))
     for i in model.icomponents
