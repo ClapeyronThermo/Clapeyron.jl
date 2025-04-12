@@ -349,10 +349,10 @@
         bubT1_2 = bubble_temperature(model1, 101325, x1, FugBubbleTemperature(nonvolatiles = ["calcium", "chloride"],y0=[1.,0.,0.],vol0=(1.8e-5,1.),T0=373.15))[1]
         @test bubT1_2 ≈ bub_test rtol = 1e-6
 
-        bubP1 = bubble_pressure(model1,298.15,x1,FugBubblePressure(nonvolatiles=["calcium","chloride"],y0=[1.,0.,0.],vol0=(1e-5,1.)))
+        bubP1 = bubble_pressure(model1,298.15,x1,FugBubblePressure(nonvolatiles=["calcium","chloride"],y0=[1.,0.,0.],vol0=(1e-5,1.)))[1]
         @test bubP1 ≈ bubP1_test rtol = 1e-6
 
-        bubP1_2 = bubble_pressure(model1,298.15,x1,FugBubblePressure(nonvolatiles=["calcium","chloride"]))
+        bubP1_2 = bubble_pressure(model1,298.15,x1,FugBubblePressure(nonvolatiles=["calcium","chloride"]))[1]
         @test bubP1 ≈ bubP1_test rtol = 1e-6
     end
 end
