@@ -305,3 +305,27 @@ function grad_at_i(f::F,x::X,i,TT = eltype(x)) where {F,X <: AbstractVector{R}} 
     fx = f(∂x)
     return ForwardDiff.extract_derivative(T, fx)
 end
+
+sqrt_strong_zero(x) = sqrt(x)
+iszeroprimal(x) = iszero(x)
+iszeroprimal(x::ForwardDiff.Dual) = iszero(primalval(x))
+
+strong_zero(y,x) = y
+
+function strong_zero(y::ForwardDiff.Dual{T,V,P},x::ForwardDiff.Dual{T,V,P}) where {T,V,P}
+    dx = ForwardDiff.partials(x)
+    dy = ForwardDiff.partials(y)
+    dy2 = strong_zero(dy,dx)
+    return ForwardDiff.Dual{T,V,P}(x.value,dy2)
+end
+
+function strong_zero(dy::ForwardDiff.Partials{N,V},dx::ForwardDiff.Partials{N,V}) where {N,V}
+    dx_tuple = dx.values
+    dy_tuple = dy.values
+    #is_zero_x = map(iszeroprimal,dx_tuple)
+    dy2_tuple = ntuple(i -> iszeroprimal(dx_tuple[i]) ? zero(dy_tuple[i]) : dy_tuple[i],Val(N))
+    return ForwardDiff.Partials{N,V}(dy2_tuple)
+end
+
+strong_zero(f::Base.Callable,x) = f(x)
+strong_zero(f::Base.Callable,x::ForwardDiff.Dual) = strong_zero(f(x),x)
