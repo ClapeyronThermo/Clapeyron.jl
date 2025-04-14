@@ -52,6 +52,21 @@ function kij_mix!(f::F,p::AbstractMatrix,K::AbstractMatrix,B::AbstractMatrix) wh
     return p
 end
 
+function kij_mix!(f::F,p::AbstractMatrix) where F
+    s = size(p)
+    B = Clapeyron.FillArrays.Fill(true,s)
+    K = Clapeyron.FillArrays.Zeros(s)
+    return kij_mix!(f,p,K,B)
+end
+
+function kij_mix!(f::F,p::AbstractMatrix,K::AbstractMatrix) where F
+    s = size(p)
+    B = Clapeyron.FillArrays.Fill(true,s)
+    return kij_mix!(f,p,K,B)
+end
+
+kij_mix!(f::F,p::AbstractMatrix,::Nothing) = kij_mix!(f,p)
+
 ## pair_mix!
 
 function pair_mix!(f::F,out::PairParameter,Q::SingleOrPair) where F
