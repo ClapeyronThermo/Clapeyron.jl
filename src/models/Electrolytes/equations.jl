@@ -76,10 +76,12 @@ macro ineutral()
     end |> esc
 end
 
-function debye_length(V,T,z,ϵ_r,Z,∑z = sum(z))
-    ρ = N_A*∑z/V
+function debye_length(V,T,z,ϵ_r,Z)
     s = e_c*e_c/(4π*ϵ_0*ϵ_r*k_B*T)
-    κ = sqrt(4π*s*ρ*@sum(z[i]*Z[i]*Z[i])/∑z)
+    I = @sum(z[i]*Z[i]*Z[i])
+    κ = Solvers.strong_zero(I) do ii
+        sqrt(4π*s*N_A/V)*sqrt(ii)
+    end
 end
 
 function a_ion(ionmodel, rsp, neutralmodel, V, T, z, neutral_data, ϵ_r)

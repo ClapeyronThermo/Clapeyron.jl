@@ -69,14 +69,10 @@ function screening_length(V, T, z, Z, σ, ϵ_r)
     ρ = N_A*∑z/V
     nc = length(Z)
     Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ 1:nc)/∑z
-    Γold = κ = debye_length(V,T,z,ϵ_r,Z,∑z)
-    ρ = N_A*sum(z)/V
-    Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ @comps)/∑z
+    Γold = κ = debye_length(V,T,z,ϵ_r,Z)
     yyy = 4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρ
-    
-    Γold = sqrt(4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρ) * sqrt(sum(z[i]*Z[i]^2 for i ∈ iions)/∑z)
     _0 = zero(Γold)
-    iszero(Γold) && return _0
+    iszero(primalval(Γold)) && return _0
     Γnew = _0
     tol  = one(_0)
     iter = 1
