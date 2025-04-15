@@ -52,7 +52,7 @@ function a_dh(V, T, z, Z, σ, ϵ_r)
     ∑z = sum(z)
     
     κ = debye_length(V,T,z,ϵ_r,Z)
-    res = zero(Base.promote_eltype(model,V,T,z))
+    res = zero(Base.promote_eltype(κ,σ))
     for i in model.icomponents
         Zi = Z[i]
         if Z[i] != 0 && !iszero(primalval(z[i]))
