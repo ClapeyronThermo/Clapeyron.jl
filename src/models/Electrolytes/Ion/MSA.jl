@@ -70,10 +70,17 @@ function screening_length(V, T, z, Z, σ, ϵ_r)
     nc = length(Z)
     Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ 1:nc)/∑z
     Γold = κ = debye_length(V,T,z,ϵ_r,Z,∑z)
+    ρ = N_A*sum(z)/V
+    Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ @comps)/∑z
+    yyy = 4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρ
+    
+    Γold = sqrt(4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρ) * sqrt(sum(z[i]*Z[i]^2 for i ∈ iions)/∑z)
     _0 = zero(Γold)
+    iszero(Γold) && return _0
     Γnew = _0
     tol  = one(_0)
     iter = 1
+    k1 = sqrt(π*e_c^2*ρ/(4π*ϵ_0*ϵ_r*k_B*T))
     while tol>1e-12 && iter < 100
         Ω = 1+π*ρ/(2*Δ)*sum(z[i]*σ[i]^3/(1+Γold*σ[i]) for i ∈ iions)/∑z
         Pn = ρ/Ω*sum(z[i]*σ[i]*Z[i]/(1+Γold*σ[i]) for i ∈ iions)/∑z
@@ -83,7 +90,7 @@ function screening_length(V, T, z, Z, σ, ϵ_r)
             Qi = (Z[i]-σ[i]^2*Pn*(π/(2Δ)))/(1+Γold*σ[i])
             ∑Q2x += z[i]*Qi^2
         end
-        Γnew = sqrt(π*e_c^2*ρ/(4π*ϵ_0*ϵ_r*k_B*T)*∑Q2x/∑z)
+        Γnew = k1*sqrt(∑Q2x/∑z)
         tol = abs(1-Γnew/Γold)
         if Γnew > κ
             Γold = 0.5*(Γold + κ)
@@ -93,5 +100,6 @@ function screening_length(V, T, z, Z, σ, ϵ_r)
         
         iter += 1
     end
+
     return Γnew
 end

@@ -65,8 +65,23 @@ function a_dh(V, T, z, Z, σ, ϵ_r)
         yip1 = yi + 1
         χi = 3/(yi*yi*yi)*(3/2+log1p(yi)-2*yip1+1/2*yip1*yip1)
         res +=z[i]*Zi*Zi*χi
+    s = e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)
+    I = sum(z[i]*Z[i]*Z[i] for i ∈ model.icomponents)
+    κ = Solvers.strong_zero(I) do ii
+        sqrt(4π*s*N_A/V)*sqrt(ii)
     end
-
+    #κ = sqrt(4π*s*N_A/V)*sqrt(sum(z[i]*Z[i]*Z[i] for i ∈ model.icomponents))
+    #iszero(primalval(κ)) && return zero(κ)
+    res = zero(Base.promote_eltype(model,V,T,z))
+    for i in model.icomponents
+        Zi = Z[i]
+        if Z[i] != 0 && !iszero(primalval(z[i]))
+            yi = σ[i]*κ
+            yip1 = yi + 1
+            χi = 3/(yi*yi*yi)*(1.5 + log1p(yi) - 2*yip1 + 0.5*yip1*yip1)
+            res +=z[i]*Zi*Zi*χi
+        end
+    end
     return -1/3*s*κ*res/∑z
     #y = σ*κ
     #χ = @. 3/y^3*(3/2+log1p(y)-2*(1+y)+1/2*(1+y)^2)

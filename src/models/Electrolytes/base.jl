@@ -177,6 +177,10 @@ function x0_volume_liquid(model::ESElectrolyteModel,p,T,z)
     return x0_volume_liquid(model.neutralmodel,p,T,z)*1.15
 end
 
+function x0_volume_gas(model::ESElectrolyteModel,p,T,z)
+    return x0_volume_gas(model.neutralmodel,p,T,z)
+end
+
 function mw(model::ElectrolyteModel)
     return mw(model.neutralmodel)
 end

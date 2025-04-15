@@ -57,6 +57,20 @@ function VT_diffusive_stability(model,V,T,z = SA[1.0])
     λ = eigmin(Hermitian(HΨ)) # calculating just minimum eigenvalue more efficient than calculating all & finding min
     return λ > 0
 end
+
+function VT_diffusive_eigvalue(model,V,T,z = SA[1.0])
+    ρᵢ = similar(z,Base.promote_eltype(V,z))
+    ρᵢ .= z ./ V
+    HΨ = Ψ_hessian(model,T,ρᵢ)
+    if any(!isfinite,HΨ)
+        return zero(eltype(HΨ))/zero(eltype(HΨ))
+    end
+    if length(model) == 1
+        return HΨ[1,1]
+    end
+    return eigmin(Hermitian(HΨ)) # calculating just minimum eigenvalue more efficient than calculating all & finding min
+end
+
 """
     diffusive_stability(model,p,T,z = SA[1.0],phase = :unknown,threaded = true,vol0 = nothing)
 

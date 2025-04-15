@@ -4,27 +4,30 @@ function qt_f0_p!(K,z,p,ps,β0)
 end
 
 function qt_flash_x0(model,β,T,z,method::FlashMethod)
+    ∑z = sum(z)
     if method.p0 == nothing
         if 0 <= β <= 0.01
-            x = z ./ sum(z)
+            x = z ./ ∑z
             p,vl,vv,y = __x0_bubble_pressure(model,T,x)
             y ./= sum(y)
-            βv = β*sum(z)
-            βl = sum(z) - βv
+            βv = β*∑z
+            βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         elseif 0.99 <= β <= 1.0
-            y = z ./ sum(z)
+            y = z ./ ∑z
             p,vl,vv,x = __x0_dew_pressure(model,T,y)
-            x ./= sum(x)
-            βv = β*sum(z)
-            βl = sum(z) - βv
+            x ./= ∑z
+            βv = β*∑z
+            βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         else
             pures = split_model(model)
             sat = extended_saturation_pressure.(pures,T)
             ps = first.(sat)
             K = similar(ps)
-            pmin,pmax = extrema(ps)
+            p_bubble = @sum(ps[i]*z[i])/∑z
+            p_dew = ∑z/@sum(z[i]/ps[i])
+            pmin,pmax = p_dew,p_bubble
             x = z ./ sum(z)
             fp(p) = qt_f0_p!(K,x,p,ps,β)
             pm = β*pmin + (1-β)*pmax
