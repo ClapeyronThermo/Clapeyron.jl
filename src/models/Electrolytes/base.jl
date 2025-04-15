@@ -232,5 +232,4 @@ function dielectric_constant(model::RSPModel, V, T, z, Z, ::IndependentIonModel)
     return dielectric_constant(model, V, T, z, Z)
 end
 
-
 export dielectric_constant, ESElectrolyte

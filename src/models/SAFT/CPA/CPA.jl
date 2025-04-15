@@ -278,7 +278,7 @@ function a_res(model::CPAModel, V, T, z, _data = @f(data))
     return a_res(model.cubicmodel,V,T,z,_data) + a_assoc(model,V,T,z,_data)
 end
 
-function a_assoc(model::CPAModel, V0, T, z,_data = @f(data))
+function a_assoc(model::CPAModel, V0, T, z,_data = data(model,V0,T,z))
     n,ā,b̄,c̄ = _data
     V = V0 + c̄*n #volume translation
     _0 = zero(V+T+first(z))
