@@ -53,7 +53,7 @@ function a_dh(V, T, z, Z, σ, ϵ_r)
     
     κ = debye_length(V,T,z,ϵ_r,Z)
     res = zero(Base.promote_eltype(κ,σ))
-    for i in model.icomponents
+    for i in 1:nc
         Zi = Z[i]
         if Z[i] != 0 && !iszero(primalval(z[i]))
             σi = σ[i]
