@@ -146,6 +146,24 @@ function a_res(model::ESElectrolyteModel, V, T, z)
     return a_res(model,V,T,z,IonDependency(model))
 end
 
+function iondata(model::ESElectrolyteModel,V,T,z)
+    iondata(model::ESElectrolyteModel,V,T,z,IonDependency(model))
+end
+
+function iondata(model::ESElectrolyteModel, V, T, z, m::IndependentIonModel)
+    neutralmodel = model.neutralmodel
+    ionmodel = model.ionmodel
+    neutral_data = data(neutralmodel,V,T,z)
+    Z = model.charge
+    σ = get_sigma(ionmodel, V, T, z, neutralmodel, neutral_data) #sigma is stored in the ionmodel
+    if requires_rsp(ionmodel)
+        ϵ_r = dielectric_constant(ionmodel, V, T, z, Z, m)
+    else
+        ϵ_r = one(Base.promote_eltype(ionmodel, V, T, z, Z))
+    end
+    return (Z, σ, ϵ_r)
+end
+
 function a_res(model::ESElectrolyteModel, V, T, z, m::IndependentIonModel)
     neutralmodel = model.neutralmodel
     ionmodel = model.ionmodel
@@ -232,4 +250,34 @@ function dielectric_constant(model::RSPModel, V, T, z, Z, ::IndependentIonModel)
     return dielectric_constant(model, V, T, z, Z)
 end
 
+function init_preferred_method(method::typeof(bubble_pressure),model::ESElectrolyteModel,kwargs)
+    Z = model.charge
+    nonvolatiles = [model.components[i] for i in @iions]
+    return FugBubblePressure(;nonvolatiles = nonvolatiles,kwargs...)
+end
+
+function init_preferred_method(method::typeof(bubble_temperature),model::ESElectrolyteModel,kwargs)
+    Z = model.charge
+    nonvolatiles = [model.components[i] for i in @iions]
+    return FugBubbleTemperature(;nonvolatiles = nonvolatiles,kwargs...)
+end
+
+#=
+abstract type ISElectrolyteModel <: ElectrolyteModel end
+
+struct ISElectrolyte{M,C,S} <: ISElectrolyteModel
+    components::Vector{String}
+    model::M
+    solvent_composition::C
+    salt_stoichiometry::S
+    salts::GroupParam
+end
+
+function ISElectrolyte(ismodel::ESElectrolyteModel,salts,xsolv = SA[1.0])
+    salts_groups = GroupParam(salts)
+    ν = salt_stoichiometry(ismodel,salts_groups)
+    components = salts_groups.components
+    return ISElectrolyte(components,ismodel,xsolv,ν,salts_groups)
+end
+=#
 export dielectric_constant, ESElectrolyte

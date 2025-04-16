@@ -3,14 +3,45 @@
 Obtain the stoichiometry matrix of `salts` made up of ions stored in the `model`. This will also check that the salt is electroneutral and that all ions are involved in the salts.
 """
 function salt_stoichiometry(model::ElectrolyteModel,salts)
-    ions = model.components[model.charge.!=0]
+    iions = model.charge.!=0
+    ions = model.components[iions]
     ν = zeros(length(salts),length(ions))
+    charges = model.charge[iions]
+
     for i ∈ 1:length(salts)
         v = salts[i][2]
         for j in 1:length(v)
-            ν[i,v[j][1].==ions] .= v[j][2]
+            name,vj = v[j]
+            for k in 1:length(v)
+                if name == ions[k]
+                    ν[i,k] = vj
+                end
+            end
         end
-        if sum(ν[i,:].*model.charge[model.charge.!=0])!==0.
+        if dot(@view(ν[i,:]),charges)!==0.
+            throw(ArgumentError("The salt $i is not electroneutral"))
+        end
+    end
+    for νi in eachcol(ν)
+        if iszero(sum(νi))
+            throw(ArgumentError("Not all ions are involved in the salts"))
+        end
+    end
+    return ν
+end
+
+function salt_stoichiometry(model::ElectrolyteModel,salts::GroupParam)
+    ions = model.components[model.charge.!=0]
+    nsalts = length(salts.components)
+    ν = zeros(nsalts,length(ions))
+    charges = model.charge[model.charge.!=0]
+    for i ∈ 1:nsalts
+        v = salts.n_groups[i]
+        salt_names = salts.groups[i]
+        for j in 1:length(v)
+            ν[i,salt_names[j].==ions] .= v[j]
+        end
+        if dot(@view(ν[i,:]),charges)!==0.
             throw(ArgumentError("The salt $i is not electroneutral"))
         end
     end
@@ -33,7 +64,11 @@ function molality_to_composition(model::ElectrolyteModel,salts,m,zsolv=SA[1.],ν
     nions = count(!iszero,Z)
     nneutral = nc - nions
     Mw = mw(model.neutralmodel).*1e-3
-    isalts = 1:length(salts)
+    if salts isa GroupParam
+        isalts = 1:length(salts.components)
+    else
+        isalts = 1:length(salts)
+    end
     iions = 1:nions
     ineutral = 1:nneutral
     ∑mν = sum(m[k]*sum(ν[k,i] for i ∈ iions) for k ∈ isalts)
@@ -77,14 +112,15 @@ macro ineutral()
 end
 
 function debye_length(V,T,z,ϵ_r,Z)
-    s = e_c*e_c/(4π*ϵ_0*ϵ_r*k_B*T)
+    s = e_c*e_c/(ϵ_0*ϵ_r*k_B*T)
     I = @sum(z[i]*Z[i]*Z[i])
     κ = Solvers.strong_zero(I) do ii
-        sqrt(4π*s*N_A/V)*sqrt(ii)
+        sqrt(s*N_A/V)*sqrt(ii)
     end
 end
 
 function a_ion(ionmodel, rsp, neutralmodel, V, T, z, neutral_data, ϵ_r)
     return a_ion(ionmodel, V, T, z, ϵ_r)
 end
+
 export molality_to_composition
