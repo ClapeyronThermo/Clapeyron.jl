@@ -53,9 +53,11 @@ function a_dh(V, T, z, Z, σ, ϵ_r)
     
     κ = debye_length(V,T,z,ϵ_r,Z)
     res = zero(Base.promote_eltype(κ,σ))
+    count = 0
     for i in 1:nc
         Zi = Z[i]
         if Z[i] != 0 && !iszero(primalval(z[i]))
+            count +=1
             σi = σ[i]
             yi = σ[i]*κ
             yip1 = yi + 1
@@ -64,8 +66,11 @@ function a_dh(V, T, z, Z, σ, ϵ_r)
             res +=z[i]*Zi*Zi*χi
         end
     end
-    s = e_c*e_c/(4π*ϵ_0*ϵ_r*k_B*T)
-    return -1*s*κ*res/∑z
+    s = e_c*e_c/(4π*ϵ_0*ϵ_r*k_B*T) 
+    if iszero(count)
+        return -1*s*res/∑z
+    end
+    return -1*s*res*κ/∑z
     #y = σ*κ
     #χ = @. 3/y^3*(3/2+log1p(y)-2*(1+y)+1/2*(1+y)^2)
     # return -1/3*s*κ*sum(z[i]*Z[i]^2*χ[i] for i ∈ iions)/∑z

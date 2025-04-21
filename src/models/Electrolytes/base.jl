@@ -135,13 +135,6 @@ function get_sigma(ionmodel::IonModel, V, T, z, model, neutral_data = @f(data))
     return σ
 end
 
-function iondata(model::ESElectrolyteModel, V, T, z)
-    Z = model.charge
-    σ = get_sigma(model, V, T, z)
-    ϵ_r = dielectric_constant(model, V, T, z)
-    return (Z, σ, ϵ_r)
-end
-
 function a_res(model::ESElectrolyteModel, V, T, z)
     return a_res(model,V,T,z,IonDependency(model))
 end
