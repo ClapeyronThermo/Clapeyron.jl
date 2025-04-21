@@ -100,11 +100,10 @@ function update_K!(lnK,model,p,T,x,y,β,vols,phases,non_inw,dlnϕ_cache = nothin
     volx,voly = vols
     phasex,phasey = phases
     non_inx,non_iny = non_inw
-    lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache; phase = :liquid, vol0=volx)
+    lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache; phase = phasex, vol0=volx)
     if isnan(volx)
         lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache, phase = phasex)
     end
-
     lnK .= lnϕx
     gibbs = zero(eltype(lnK))
     if β !== nothing
@@ -119,7 +118,6 @@ function update_K!(lnK,model,p,T,x,y,β,vols,phases,non_inw,dlnϕ_cache = nothin
     if isnan(voly)
         lnϕy, voly = lnϕ(model, p, T, y, dlnϕ_cache, phase = phasey)
     end
-
     lnK .-= lnϕy
     if β !== nothing
         for i in eachindex(y)
@@ -138,12 +136,12 @@ function update_rr!(K,β,z,x,y,
     y .= x .* K
     for i in eachindex(z)
         # modification for non-in-y components Ki -> 0
-        if non_iny[i]
+        if non_iny[i] || iszero(K[i])
             x[i] = z[i] / (1. - β)
             y[i] = 0.
         end
         # modification for non-in-x components Ki -> ∞
-        if non_inx[i]
+        if non_inx[i] || isinf(K[i])
             x[i] = 0.
             y[i] = z[i] / β
         end
