@@ -212,7 +212,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         K .= K0_lle_init(model,p,T,z)
         lnK .= log.(K)
     end
-    _1 = one(p+T+first(z))
+    _1 = one(eltype(K))
     # Initial guess for phase split
     β,singlephase,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
     g0,g1 = g01
@@ -270,7 +270,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             K_dem .= exp.(lnK_dem)
             β_dem = rachfordrice(K_dem, z; β0=β, non_inx=non_inx, non_iny=non_iny)
             x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
-            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,β,(volx,voly),phases,non_inw,dlnϕ_cache)
+            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
             # only accelerate if the gibbs free energy is reduced
             if gibbs_dem < gibbs
                 lnK .= lnK_dem
