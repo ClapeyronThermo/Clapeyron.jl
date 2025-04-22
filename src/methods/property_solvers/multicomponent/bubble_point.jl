@@ -27,6 +27,7 @@ end
 function extended_saturation_pressure(pure,T,_crit = nothing; crit_retry = true)
     sat,crit,status = _extended_saturation_pressure(pure,T,_crit;crit_retry)
     if status == :supercritical
+        Tc,Pc,Vc = crit
         #create initial point from critical values
         #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
         dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,T,false,:supercritical)
@@ -81,6 +82,7 @@ function extended_saturation_temperature(pure,p,_crit = nothing; crit_retry = tr
     if status == :supercritical
         #create initial point from critical values
         #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
+        Tc,Pc,Vc = crit
         dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,p,true,:supercritical)
         #lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
         Tinv = (log(p) - logp0)/dlnpdTinv + Tcinv
