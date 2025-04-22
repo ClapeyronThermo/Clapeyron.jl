@@ -241,7 +241,7 @@ end
 
 __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
-function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,vols,phases,non_inw,cache = nothing)
+function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,z,β,vols,phases,non_inw,cache = nothing)
     volx,voly = vols
     phasex,phasey = phases
     non_inx,non_iny = non_inw

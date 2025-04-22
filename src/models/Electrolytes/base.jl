@@ -255,22 +255,15 @@ function init_preferred_method(method::typeof(bubble_temperature),model::ESElect
     return FugBubbleTemperature(;nonvolatiles = nonvolatiles,kwargs...)
 end
 
-#=
-abstract type ISElectrolyteModel <: ElectrolyteModel end
-
-struct ISElectrolyte{M,C,S} <: ISElectrolyteModel
-    components::Vector{String}
-    model::M
-    solvent_composition::C
-    salt_stoichiometry::S
-    salts::GroupParam
+function tp_flash_K0!(K,model::ESElectrolyteModel,p,T)
+    Z = model.charge
+    neutral = iszero.(Z)
+    pures = split_model(model,neutral)
+    psat = first.(extended_saturation_pressure.(pures,T))
+    K .= 0
+    Kview = @view K[neutral]
+    Kview .= psat ./ p
+    return K
 end
 
-function ISElectrolyte(ismodel::ESElectrolyteModel,salts,xsolv = SA[1.0])
-    salts_groups = GroupParam(salts)
-    ν = salt_stoichiometry(ismodel,salts_groups)
-    components = salts_groups.components
-    return ISElectrolyte(components,ismodel,xsolv,ν,salts_groups)
-end
-=#
 export dielectric_constant, ESElectrolyte

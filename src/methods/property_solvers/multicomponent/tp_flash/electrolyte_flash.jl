@@ -105,7 +105,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         lnK_old .= lnK
         x,y = update_rr!(K̄,β,z,x,y,non_inx,non_iny)
         # Updating K's
-        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,β,(volx,voly),phases,non_inw,dlnϕ_cache)
+        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,z,β,(volx,voly),phases,non_inw,dlnϕ_cache)
         gibbs +=  β*ψ*dot(x,Z)
         vcache[] = (volx,voly)
         # acceleration step
@@ -122,7 +122,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
             β_dem,ψ_dem = rachfordrice(K_dem, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
             K̄_dem .= K_dem .* exp.(Z .* ψ_dem)
             x_dem,y_dem = update_rr!(K̄_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
-            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
+            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,z,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
             #add effect of electroneutrality condition on gibbs energy
             gibbs_dem += β_dem*ψ_dem*dot(x_dem,Z)
             # only accelerate if the gibbs free energy is reduced
