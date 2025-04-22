@@ -1,40 +1,28 @@
-# v0.6.10
+# v0.6.11
 
 ## New Features
 
-- Experimental: support for using ForwardDiff through some equilibria procedures in some restricted cases:
-  - `saturation_temperature`
-  - `saturation_pressure`
-  - `bubble_pressure` (only helmholtz EoS, without non-volatiles)
-  - `bubble_temperature` (only helmholtz EoS, without non-volatiles)
-  - `dew_pressure` (only helmholtz EoS, without non-condensables)
-  - `dew_temperature` (only helmholtz EoS, without non-condensables)
-  - `tp_flash` (only helmholtz EoS, without non-condensables nor non-volatiles)
-  - `Pproperty`
-  - `TProperty`
-  - `X-Y` flashes (single component helmholtz EoS)
+- The new minimum supported julia version is v1.10.
+- Support for `ForwardDiff` v1.0.
+- the following EoS now support parametric parameters:
+  - `SAFTgammaMie` (including `structSAFTgammaMie`)
+  - `PCPSAFT` (including `HeterogcPCPSAFT` and `HomogcPCPSAFT`)
+  - `CPPCSAFT`
+  - `sPCSAFT` (including `gcsPCSAFT`)
+  - `pharmaPCSAFT`
 
-  For example, this function now works without the need to propagate dual information through any iterative solvers:
+Given a model with parametric parameters, one can now build another model with a different number type using the function `Clapeyron.promote_model(::Type{T},model) where T <: Number`.
 
-  ```julia
-  function ad_function(model,Q)
-
-    z = Clapeyron.SA[1.0]
-    p = 1e5
-    T = 350.0
-    k = 10
-    h1 = 6200.0
-    T1 = PH.temperature(model,p,h1,z)
-    h2 = h1 + Q
-    T2 = PH.temperature(model,p,h2,z)
-    return -Q + (T - (T1+T2)/2) * k
-  end
-  model = PR("air")
-  ForwardDiff.derivative(Base.Fix1(ad_function,model),500.0)
-  ```
+- `SAFTgammaMie`: mixed segment paramters are now stored in the model parameters instead of inside the groups.
+- Faster `split_model`
+- Faster parameter instantiation, as now the `sources` and `sourcescsv` can be optionally `nothing`,and there is less copying of vectors.
+- New Function: `USCT_temperature`. `USCT_mix` was renamed to `USCT_pressure` (The alias is still available, but it could be removed in future Clapeyron versions.)
+- Estimation Framework: initial support for gradient optimization (using `ForwardDiff`) with parametric models.
 
 ## Bug Fixes
 
-- Fix typo in composition return `ChemPotDewTemperature`
-- incorrect scaling for second virial coefficient in the case of cubics
-- fixing support for second order properties in activity + puremodel EoS calculation
+- fixed `CPA` initialization with custom parameters.
+- fixed `CPA` default locations.
+- fixed `ePCSAFT` initialization with custom ideal models.
+- general flash: support for pure supercritical states.
+- fix bugs in noncondensable/nonvolatiles Fugacity solver.
