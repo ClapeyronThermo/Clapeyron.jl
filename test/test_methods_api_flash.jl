@@ -294,6 +294,14 @@ end
     n_O2_a = 24.08 # mol O2
     sol_fl = vt_flash(model_a_pr, V_a, T, [n_H2O_a, n_O2_a])
     @test V_a ≈ volume(sol_fl)
+
+    #PH flash with supercritical pure components (#361)
+    fluid_model = SingleFluid("Hydrogen")
+    T_in = 70               # K
+    p_in = 350e5           # Pa
+    h_in = enthalpy(fluid_model,p_in,T_in)
+    sol_sc = ph_flash(fluid_model,p_in,h_in)
+    @test Clapeyron.temperature(sol_sc) ≈ T_in
 end
 
 @testset "Saturation Methods" begin

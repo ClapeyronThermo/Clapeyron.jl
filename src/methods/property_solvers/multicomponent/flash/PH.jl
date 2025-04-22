@@ -17,7 +17,7 @@ All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
 """
 function ph_flash end
 
-function ph_flash(model::EoSModel,p,h,z;kwargs...)
+function ph_flash(model::EoSModel,p,h,z =SA[1.0];kwargs...)
     method = init_preferred_method(ph_flash,model,kwargs)
     return ph_flash(model,p,h,z,method)
 end

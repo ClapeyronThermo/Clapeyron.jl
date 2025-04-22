@@ -72,7 +72,7 @@ All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
     Using `qt_flash` with q = 0 or q = 1 is equivalent to calculating bubble or dew pressures.
     Passing `GeneralizedXYFlash` as a method to [`bubble_pressure`](@ref) of [`dew_pressure`](@ref) will use `qt_flash` to calculate the bubble/dew point.
 """
-function qt_flash(model::EoSModel,β,T,z;kwargs...)
+function qt_flash(model::EoSModel,β,T,z = SA[1.0];kwargs...)
     if !(0 <= β <= 1)
         throw(DomainError(β,"vapour fractions should be between 0 and 1"))
     end
