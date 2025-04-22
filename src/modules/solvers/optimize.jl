@@ -221,12 +221,12 @@ function _1var_optimize_quad(f,x0)
         end
         xmin,xmax = extrema((xa,xb,xc))
         fxx = minimum((fa,fb,fc))
-        @show abs(xmin - xmax),fxx
+        #@show abs(xmin - xmax),fxx
         if abs(xmin - xmax) < sqrt(eps(xmin))
             break
         end
     end
     xmin,xmax = extrema((xa,xb,xc))
-    @show xa0,xmin,xmax,xb0
+    #@show xa0,xmin,xmax,xb0
     return 0.5*(xmin + xmax)
 end
