@@ -65,7 +65,7 @@ function kij_mix!(f::F,p::AbstractMatrix,K::AbstractMatrix) where F
     return kij_mix!(f,p,K,B)
 end
 
-kij_mix!(f::F,p::AbstractMatrix,::Nothing) = kij_mix!(f,p)
+kij_mix!(f::F,p::AbstractMatrix,::Nothing) where F = kij_mix!(f,p)
 
 ## pair_mix!
 
