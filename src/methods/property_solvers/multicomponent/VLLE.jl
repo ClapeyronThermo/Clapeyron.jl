@@ -58,7 +58,7 @@ function VLLE_pressure(model::EoSModel, T; v0 =nothing)
 end
 
 function x0_VLLE_pressure(model::EoSModel, T)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     sat  = saturation_pressure.(pure,T)
     y0 = Fractions.zeros(length(model))
     x0    = [0.75,0.25] #if we change this, VLLE_pressure (and temperature) can be switched to more than two components.
@@ -116,7 +116,7 @@ function VLLE_temperature(model::EoSModel,p;v0=nothing)
 end
 
 function x0_VLLE_temperature(model::EoSModel,p)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     sat  = saturation_temperature.(pure,p)
     y0 = Fractions.zeros(length(model))
     T0 = 0.95*minimum(getindex.(sat,1))

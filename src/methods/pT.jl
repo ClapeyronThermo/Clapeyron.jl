@@ -609,7 +609,7 @@ The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume
 """
 function reference_chemical_potential(model::EoSModel,p,T,reference = reference_chemical_potential_type(model); phase=:unknown, threaded=true, vol0=nothing)
     if reference == :pure
-        pure = split_model(model)
+        pure = split_pure_model(model)
         return gibbs_free_energy.(pure, p, T; phase, threaded)
     elseif reference == :aqueous
         idx_w = find_water_indx(model)
@@ -621,7 +621,7 @@ function reference_chemical_potential(model::EoSModel,p,T,reference = reference_
         zref ./= sum(zref)
         return chemical_potential(model, p, T, zref; phase, threaded, vol0)
     elseif reference == :sat_pure_T
-        pure = split_model(model)
+        pure = split_pure_model(model)
         sat = saturation_pressure.(pure,T)
         vl_pure = getindex.(sat,2)
         return VT_gibbs_free_energy.(pure, vl_pure, T)
@@ -708,7 +708,7 @@ f_mix = f(p,T,z) - ∑zᵢ*f_pureᵢ(p,T)
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function mixing(model::EoSModel, p, T, z, property::ℜ; phase=:unknown, threaded=true, vol0=nothing) where {ℜ}
-    pure = split_model(model)
+    pure = split_pure_model(model)
     TT = typeof(p+T+first(z))
     mix_prop  = property(model, p, T, z; phase, threaded, vol0)
     for i in 1:length(z)
@@ -723,7 +723,7 @@ end
 
 function excess(model::EoSModel, p, T, z, ::typeof(entropy); phase=:unknown, threaded=true, vol0=nothing)
     TT = typeof(p+T+first(z))
-    pure = split_model(model)
+    pure = split_pure_model(model)
     s_mix = entropy_res(model, p, T, z; phase, threaded, vol0)
     for i in 1:length(z)
         s_mix -= z[i]*entropy_res(pure[i], p, T; phase, threaded, vol0)
@@ -734,7 +734,7 @@ end
 
 function excess(model::EoSModel, p, T, z, ::typeof(gibbs_free_energy); phase=:unknown, threaded=true, vol0=nothing)
     TT = typeof(p+T+first(z))
-    pure = split_model(model)
+    pure = split_pure_model(model)
     g_mix = gibbs_free_energy(model, p, T, z; phase, threaded, vol0)
     log∑z = log(sum(z))
     R̄ = Rgas(model)
@@ -759,7 +759,7 @@ where the first component is the solvent and second is the solute.
 """
 function gibbs_solvation(model::EoSModel, T; threaded=true, vol0=(nothing,nothing))
     binary_component_check(gibbs_solvation, model)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     z = [1.0,1e-30]
 
     p,v_l,v_v = saturation_pressure(pure[1],T)

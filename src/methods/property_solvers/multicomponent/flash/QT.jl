@@ -21,7 +21,7 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
             βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         else
-            pures = split_model(model)
+            pures = split_pure_model(model)
             sat = extended_saturation_pressure.(pures,T)
             ps = first.(sat)
             K = similar(ps)

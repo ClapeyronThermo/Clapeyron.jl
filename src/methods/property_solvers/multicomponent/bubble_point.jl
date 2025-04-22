@@ -25,8 +25,20 @@ end
 
 
 function extended_saturation_pressure(pure,T,_crit = nothing; crit_retry = true)
-    sat,_,_ = _extended_saturation_pressure(pure,T,_crit;crit_retry)
-    return sat
+    sat,crit,status = _extended_saturation_pressure(pure,T,_crit;crit_retry)
+    if status == :supercritical
+        #create initial point from critical values
+        #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
+        dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,T,false,:supercritical)
+        lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
+        p0 = exp(lnp)
+        vl0 = x0_volume(pure,p0,T,phase = :l)
+        vv0 = max(1.2*Vc,3*Rgas(pure)*T/Pc)
+        return (p0,vl0,vv0)
+    else
+        return sat
+    end
+
 end
 
 function _extended_saturation_pressure(pure, T, _crit = nothing; crit_retry = true)
@@ -60,20 +72,25 @@ function _extended_saturation_pressure(pure, T, _crit = nothing; crit_retry = tr
     else
         nan = _0/_0
         sat = (nan,nan,nan)
+        return sat, crit, :supercritical
     end
-    #create initial point from critical values
-    #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
-    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,T,false,:supercritical)
-    lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
-    p0 = exp(lnp)
-    vl0 = x0_volume(pure,p0,T,phase = :l)
-    vv0 = max(1.2*Vc,3*Rgas(pure)*T/Pc)
-    return (p0,vl0,vv0),crit,:supercritical
 end
 
 function extended_saturation_temperature(pure,p,_crit = nothing; crit_retry = true)
-    sat,_,_ = _extended_saturation_temperature(pure,p,_crit;crit_retry)
-    return sat
+    sat,crit,status = _extended_saturation_temperature(pure,p,_crit;crit_retry)
+    if status == :supercritical
+        #create initial point from critical values
+        #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
+        dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,p,true,:supercritical)
+        #lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
+        Tinv = (log(p) - logp0)/dlnpdTinv + Tcinv
+        T0  = 1/Tinv
+        vl0 = x0_volume(pure,p,T0,phase = :l)
+        vv0 = max(1.2*Vc,3*Rgas(pure)*T0/Pc)
+        return (T0,vl0,vv0)
+    else
+        return sat
+    end
 end
 
 #this function does not do the crit calculation.
@@ -108,6 +125,7 @@ function _extended_saturation_temperature(pure, p, _crit = nothing; crit_retry =
     else
         nan = _0/_0
         sat = (nan,nan,nan)
+        (return sat,crit,:supercritical)
     end
     #create initial point from critical values
     #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
@@ -189,7 +207,7 @@ end
 
 function extended_dpdT_temperature(pure,p,crit = nothing)
     sat,_crit,status = _extended_saturation_temperature(pure,p,crit)
-    return __dlnPdTinvsat(pure,sat,_crit,p,true,status)
+    return  (pure,sat,_crit,p,true,status)
 end
 
 function improve_bubbledew_suggestion_spinodal(model,p0,T0,x,y,method,in_media)
@@ -213,14 +231,14 @@ function improve_bubbledew_suggestion_spinodal(model,p0,T0,x,y,method,in_media)
     if FugEnum.is_pressure(method) && FugEnum.is_bubble(method)
         pmid,vmid,_ = eigmin_minimum_pressure(model,T0,x,volume(model,p0,T0,x,phase = :l))
         if p0 < 0
-            
+
         end
-        
+
     else
-        return p0,T0 
+        return p0,T0
     end
     =#
-    
+
 end
 
 function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_conditions)
@@ -267,7 +285,7 @@ function virial_phi(model,p,T,z)
     return exp.(dB .* pRT)
 end
 
-function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_model(model,volatiles),crit = nothing)
+function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,volatiles),crit = nothing)
     #check each T with T_scale, if treshold is over, replace Pi with inf
     sat = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
     p0r = first.(sat)
@@ -382,7 +400,7 @@ end
 
 ###Bubble Temperature
 
-function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_model(model,volatiles),crit = nothing)
+function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,volatiles),crit = nothing)
     x_r = @view x[volatiles]
 
     if Tx0 !== nothing
@@ -410,14 +428,14 @@ function antoine_pressure(dpdT,T)
 end
 
 function antoine_bubble_solve(dpdt,p_bubble,x,T0 = nothing)
-    
+
     if length(dpdt) == 1
         #p(T) = p_bubble = exp(logp0 + dlnpdTinv*(1/T - T0inv))
         dlnpdTinv,logp0,T0inv = dpdt[1]
         Tinv = (log(p_bubble) - logp0)/dlnpdTinv + T0inv
         return 1/Tinv
     end
-    
+
     function antoine_f0(T)
         p = zero(T+first(x)+first(dpdt)[1])
         for i in 1:length(dpdt)

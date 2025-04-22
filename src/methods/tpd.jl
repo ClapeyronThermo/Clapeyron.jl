@@ -604,7 +604,7 @@ function __z_test(z)
     z_test = z_test ./ sum(z_test;dims=2)
 end
 
-function suggest_K(model,p,T,z,pure = split_model(model),volatiles = FillArrays.fill(true,length(model)),crit = FillArrays.fill(nothing,length(model)))
+function suggest_K(model,p,T,z,pure = split_pure_model(model),volatiles = FillArrays.fill(true,length(model)),crit = FillArrays.fill(nothing,length(model)))
     lnϕz,v = lnϕ(model,p,T,z,threaded = false)
     K = similar(lnϕz)
     di = similar(lnϕz)

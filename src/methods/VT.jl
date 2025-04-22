@@ -277,7 +277,7 @@ function cross_second_virial(model,T,z)
         return zero(T + first(z))
     else
         binary_component_check(cross_second_virial,model)
-        model1,model2 = split_model(model)
+        model1,model2 = split_pure_model(model)
         B̄ = B(model,T,z)/∑z #1 mol
         B1,B2 = B(model1,T),B(model2,T) #1 mol by default
         #@show B1,B2,B̄
@@ -306,7 +306,7 @@ B12 = equivol_cross_second_virial(model,)
 function equivol_cross_second_virial(model,T,p_exp = 200000.0)
     binary_component_check(cross_second_virial,model)
     #they do experiments at constant volume and temperature, so we are gonna need to calculate the mole fractions for that
-    m1,m2 = split_model(model)
+    m1,m2 = split_pure_model(model)
     B = second_virial_coefficient
     B11,B22 = B(m1,T),B(m2,T)
     v01,v02 = volume_virial(B11,p_exp,T),volume_virial(B22,p_exp,T)

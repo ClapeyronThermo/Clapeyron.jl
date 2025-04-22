@@ -33,7 +33,7 @@ function obj_eutectic_point(F,solid,liquid,p,T,x)
 end
 
 function x0_eutectic_point(model::EoSModel,p)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     fus = melting_temperature.(pure,p)
     Tm = first.(fus)
     vs = getindex.(fus,2)

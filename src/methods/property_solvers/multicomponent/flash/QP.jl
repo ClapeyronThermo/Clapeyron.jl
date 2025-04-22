@@ -27,7 +27,7 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         else
 
-        pures = split_model(model)
+        pures = split_pure_model(model)
         dpdT = extended_dpdT_temperature.(pures,p)
         Tmax = antoine_dew_solve(dpdT,p,z)
         Tmin = antoine_bubble_solve(dpdT,p,z)

@@ -6,7 +6,7 @@ struct EoSVectorParam{T} <: EoSModel
 end
 
 function EoSVectorParam(model::EoSModel,components = model.components)
-    pure = split_model(model,1:length(components))
+    pure = split_pure_model(model,1:length(components))
     if has_reference_state(model)
         ref = nothing
     else
@@ -49,7 +49,7 @@ end
 function recombine_impl!(model::EoSVectorParam)
     recombine!(model.model)
     if is_splittable(model.model)
-        model.pure .= split_model(model.model)
+        model.pure .= split_pure_model(model.model)
     else
         model.pure .= model.model
     end
