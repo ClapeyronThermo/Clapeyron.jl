@@ -209,7 +209,7 @@ end
 
 function extended_dpdT_temperature(pure,p,crit = nothing)
     sat,_crit,status = _extended_saturation_temperature(pure,p,crit)
-    return  (pure,sat,_crit,p,true,status)
+    return  __dlnPdTinvsat(pure,sat,_crit,p,true,status)
 end
 
 function improve_bubbledew_suggestion_spinodal(model,p0,T0,x,y,method,in_media)
