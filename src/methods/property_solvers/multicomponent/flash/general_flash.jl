@@ -141,19 +141,6 @@ function xy_input_to_result(spec,input,np,nc,z)
     return comps[idx],β[idx],volumes[idx],T
 end
 
-function spec_to_vt end
-
-for prop in [:entropy,:enthalpy,:temperature,:pressure,:internal_energy,:gibbs_free_energy,:helmholtz_free_energy]
-    @eval begin
-        function spec_to_vt(model,V,T,z,spec::typeof($prop))
-            VT.$prop(model,V,T,z)
-        end
-    end
-end
-
-spec_to_vt(model,V,T,z,spec::typeof(volume)) = V
-
-
 #s = dadt
 requires_pv(::typeof(entropy)) = false
 requires_st(::typeof(entropy)) = true
