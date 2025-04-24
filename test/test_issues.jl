@@ -132,8 +132,9 @@
         @test model2 isa Clapeyron.EoSModel
     end
 
-    @testset "#171" begin
+    @testset "#171, #366" begin
         #=
+        #171
         This is a problem that occurs in an intersection between split_model and cross-association sites
         a single component model created from scratch don't have any cross association sites,
         but a single component model created from split_model does have those sites.
@@ -145,6 +146,14 @@
         res_pure = Clapeyron.eos(model_pure,1.013e6,298.15) #works
         res_split = Clapeyron.eos(model_split,1.013e6,298.15) #should work
         @test res_pure ≈ res_split
+
+        #=
+        #366
+        incorrect conversion of MixedGCSegmentParam.
+        =#
+        mix_segment_f64 = model.params.mixed_segment
+        mix_segment_bigfloat = convert(Clapeyron.MixedGCSegmentParam{BigFloat},mix_segment_f64)
+        @test mix_segment_f64 ≈ mix_segment_bigfloat
     end
 
     @testset "#188" begin

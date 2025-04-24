@@ -283,5 +283,7 @@ function Base.convert(::Type{MixedGCSegmentParam{T1}},param::MixedGCSegmentParam
     p,v1 = param.values.p,param.values.v
     v = convert(Vector{T1},v1)
     values = PackedVofV(p,v)
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+    return MixedGCSegmentParam{T1}(param.name,param.components,values)
 end
+
+export MixedGCSegmentParam
