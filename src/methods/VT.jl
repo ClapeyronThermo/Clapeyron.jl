@@ -53,8 +53,7 @@ function VT_internal_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
 end
 
 function VT_internal_energy_res(model::EoSModel, V, T, z=SA[1.])
-    dA, A = ∂f_res(model,V,T,z)
-    ∂A∂V, ∂A∂T = dA
+    A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,V,T,z)
     return A - T*∂A∂T
 end
 
@@ -80,9 +79,8 @@ function VT_enthalpy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
 end
 
 function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
-    dA, A = ∂f_res(model,V,T,z)
-    A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
-    PrV = ifelse(V == Inf,zero(∂A∂V),- V*∂A∂V)
+    A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,V,T,z)
+    PrV = ifelse(isinf(primalval(V)),zero(∂A∂V),- V*∂A∂V)
     return A + PrV - T*∂A∂T
 end
 
