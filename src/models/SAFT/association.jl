@@ -408,7 +408,7 @@ function assoc_matrix_x0!(K,X)
 
     X_exact2!(K11,@view(X[1:2]))
     X_exact2!(K22,@view(X[3:4]))
-    if (iszero(K12) & iszero(K21)) | iszero(K11) | iszero(K22)
+    if (iszero(K12) & iszero(K21))
         #solve each association separately, if one of the diagonal association
         #submatrices is zero, then cross-association does not have any sense.
         success = true
