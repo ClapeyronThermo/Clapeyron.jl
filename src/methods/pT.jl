@@ -1,4 +1,11 @@
 function PT_property(model,p,T,z,phase,threaded,vol0,f::F,::Val{UseP}) where {F,UseP}
+    
+    if f == pressure
+        return p
+    elseif f == temperature
+        return T
+    end
+
     if z isa Number
         return PT_property(model,p,T,SA[z],phase,threaded,vol0,f,Val{UseP}())
     end
@@ -467,7 +474,6 @@ function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, thre
     PT_property(model,p,T,z,phase,threaded,vol0,VT_fugacity_coefficient)
 end
 
-
 function fugacity_coefficient!(φ,model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     V = volume(model, p, T, z; phase, threaded, vol0)
     VT_fugacity_coefficient!(φ,model,V,T,z,p)
@@ -806,23 +812,6 @@ function _partial_property(model::EoSModel, V, T, z::AbstractVector, VT_prop::F)
     return ∂x∂nᵢ .- ∂x∂V .* ∂p∂nᵢ ./ ∂p∂V
 end
 
-#default
-PT_to_VT(x) = x
-
-for (PTprop,VTprop) in [
-    (:entropy,:VT_entropy),
-    (:enthalpy,:VT_enthalpy),
-    (:internal_energy,:VT_internal_energy),
-    (:gibbs_free_energy,:VT_gibbs_free_energy),
-    (:helmholtz_free_energy,:VT_helmholtz_free_energy),
-    (:isochoric_heat_capacity,:VT_isochoric_heat_capacity),
-    (:isobaric_heat_capacity,:VT_isobaric_heat_capacity)
-    ]
-    @eval begin
-        PT_to_VT(::typeof($PTprop)) = $VTprop
-    end
-end
-
 #first derivative order properties
 export entropy, internal_energy, enthalpy, gibbs_free_energy, helmholtz_free_energy
 export entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
@@ -843,25 +832,18 @@ export mixing, excess, gibbs_solvation, partial_property
 export identify_phase
 
 module PT
-    #first derivative order properties
-    using Clapeyron: entropy, internal_energy, enthalpy, gibbs_free_energy, helmholtz_free_energy
-    using Clapeyron: entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
-    #second derivative order properties
-    using Clapeyron: isochoric_heat_capacity, isobaric_heat_capacity,adiabatic_index
-    using Clapeyron: isothermal_compressibility, isentropic_compressibility, speed_of_sound
-    using Clapeyron: isobaric_expansivity, joule_thomson_coefficient, inversion_temperature
-    #higher derivative order properties
-    using Clapeyron: fundamental_derivative_of_gas_dynamics
-    #volume properties
-    using Clapeyron: mass_density,molar_density, compressibility_factor
-    using Clapeyron: identify_phase
-    import Clapeyron
-    pressure(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = p
-    temperature(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = T
+    for prop in CLAPEYRON_PROPS
+        @eval begin
+            function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+                return Clapeyron.$prop(model,p,T,z;phase,threaded,vol0)
+            end
+        end
+    end
+
     function flash(model,p,T,z = Clapeyron.SA[1.0],args...;kwargs...)
         return Clapeyron.tp_flash2(model,p,T,z,args...;kwargs...)
     end
-end
+end #module
 
 """
     supports_lever_rule(::f)::Bool
@@ -879,5 +861,18 @@ for prop in [:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_f
     :mass_density,:molar_density]
     @eval begin
         supports_lever_rule(::typeof($prop)) = true
+    end
+end
+
+function spec_to_vt end
+
+for prop in CLAPEYRON_PROPS
+    VT_prop = VT_symbol(prop)
+    @eval begin
+        function spec_to_vt(model,V,T,z,spec::typeof($prop))
+            VT0.$prop(model,V,T,z)
+        end
+
+        PT_to_VT(x::typeof($prop)) = $VT_prop
     end
 end

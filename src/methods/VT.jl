@@ -16,10 +16,16 @@ end
 
 function temperature end
 
+VT_pressure(model, V, T, z=SA[1.]) = pressure(model,V,T,z)
+VT_temperature(model, V, T, z=SA[1.]) = T
+VT_volume(model, V, T, z=SA[1.]) = V
+
 function pressure_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
     return -Solvers.derivative(fun,V)
 end
+
+VT_pressure_res(model, V, T, z=SA[1.]) = pressure_res(model,V,T,z)
 
 function VT_entropy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return -∂f∂T(model,V,T,z)
@@ -348,6 +354,8 @@ function pip(model::EoSModel, V, T, z=SA[1.0])
     return Π
 end
 
+VT_pip(model::EoSModel, V, T, z=SA[1.0]) = pip(model,V,T,z)
+
 function _pip(model::EoSModel, V, T, z=SA[1.0])
     _∂2p = ∂2p(model,V,T,z)
     hess_p, grad_p, _ = _∂2p
@@ -495,180 +503,35 @@ end
 export pressure
 export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
 
+const CLAPEYRON_PROPS = [:temperature,:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
+                    :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
+                    #second derivative order properties
+                    :isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
+                    :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
+                    :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
+                    #higher derivative order properties
+                    :fundamental_derivative_of_gas_dynamics,
+                    #volume properties
+                    :mass_density, :molar_density, :compressibility_factor,
+                    #other properties
+                    :identify_phase, :pip,
+]
+
+
+function VT_symbol(x::Symbol)
+    return Symbol(:VT_,x)
+end
+
+
 #module used to translate between the normal symbol and the VT_symbol.
 module VT0
-    #using Clapeyron: Clapeyron
-    import Clapeyron
-    const C = Clapeyron
-    using Clapeyron.StaticArrays
-    using Clapeyron: pressure
-    using Clapeyron: second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
-
-    volume(model,V,T,z) = V
-    #first derivative order properties
-    entropy(model,V,T,z = SA[1.0]) = Clapeyron.VT_entropy(model,V,T,z)
-    enthalpy(model,V,T,z = SA[1.0]) = Clapeyron.VT_enthalpy(model,V,T,z)
-    internal_energy(model,V,T,z = SA[1.0]) = Clapeyron.VT_internal_energy(model,V,T,z)
-    gibbs_free_energy(model,V,T,z = SA[1.0]) = Clapeyron.VT_gibbs_free_energy(model,V,T,z)
-    const gibbs_energy = gibbs_free_energy
-    helmholtz_free_energy(model,V,T,z = SA[1.0]) = Clapeyron.VT_helmholtz_free_energy(model,V,T,z)
-    const helmholtz_energy = helmholtz_free_energy
-    
-    #residual first order properties
-    entropy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_entropy_res(model,V,T,z)
-    internal_energy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_internal_energy_res(model,V,T,z)
-    gibbs_free_energy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_gibbs_free_energy_res(model,V,T,z)
-    const gibbs_energy_res = gibbs_free_energy_res
-    helmholtz_free_energy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_helmholtz_free_energy_res(model,V,T,z)
-    const helmholtz_energy_res = helmholtz_free_energy
-    
-    #second derivative order properties
-    isochoric_heat_capacity(model,V,T,z = SA[1.0]) = Clapeyron.VT_isochoric_heat_capacity(model,V,T,z)
-    isobaric_heat_capacity(model,V,T,z = SA[1.0]) = Clapeyron.VT_isobaric_heat_capacity(model,V,T,z)
-    adiabatic_index(model,V,T,z = SA[1.0]) = Clapeyron.VT_adiabatic_index(model,V,T,z)
-    isothermal_compressibility(model,V,T,z = SA[1.0]) = Clapeyron.VT_isothermal_compressibility(model,V,T,z)
-    isentropic_compressibility(model,V,T,z = SA[1.0]) = Clapeyron.VT_isentropic_compressibility(model,V,T,z)
-    speed_of_sound(model,V,T,z = SA[1.0]) = Clapeyron.VT_speed_of_sound(model,V,T,z)
-    isobaric_expansivity(model,V,T,z = SA[1.0]) = Clapeyron.VT_isobaric_expansivity(model,V,T,z)
-    joule_thomson_coefficient(model,V,T,z = SA[1.0]) = Clapeyron.VT_joule_thomson_coefficient(model,V,T,z)
-    identify_phase(model,V,T,z = SA[1.0]) = Clapeyron.VT_identify_phase(model,V,T,z)
-    
-    #high order derivatives
-    fundamental_derivative_of_gas_dynamics(model,V,T,z = SA[1.0]) = Clapeyron.VT_fundamental_derivative_of_gas_dynamics(model,V,T,z)
-    
-    #volume properties
-    mass_density(model,V,T,z = SA[1.0]) = Clapeyron.VT_mass_density(model,V,T,z)
-    molar_density(model,V,T,z = SA[1.0]) = Clapeyron.VT_molar_density(model,V,T,z)
-    compressibility_factor(model,V,T,z = SA[1.0]) = Clapeyron.VT_compressibility_factor(model,V,T,z)
-
-    #=
-    using Clapeyron: entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
-    #second derivative order properties
-    using Clapeyron: isochoric_heat_capacity, isobaric_heat_capacity,adiabatic_index
-    using Clapeyron: isothermal_compressibility, isentropic_compressibility, speed_of_sound
-    using Clapeyron: isobaric_expansivity, joule_thomson_coefficient, inversion_temperature
-    #higher derivative order properties
-    using Clapeyron: fundamental_derivative_of_gas_dynamics
-    #volume properties
-    using Clapeyron: mass_density,molar_density, compressibility_factor
-    #molar gradient properties
-    using Clapeyron: chemical_potential, activity_coefficient, activity, aqueous_activity, fugacity_coefficient,reference_chemical_potential,reference_chemical_potential_type
-    using Clapeyron: chemical_potential_res
-    using Clapeyron: mixing, excess, gibbs_solvation
-
-    pressure(model, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = p 
-    using Clapeyron: second_virial_coefficient,cross_second_virial,equivol_cross_second_virial =#
-    function flash(model,v,T,z = Clapeyron.SA[1.0],args...;kwargs...)
-        return Clapeyron.vt_flash(model,v,T,z,args...;kwargs...)
-    end
-end
-
-function spec_to_vt end
-
-for prop in for f in [:temperature, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
-    :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
-   #second derivative order properties
-    :isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
-    :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
-    :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
-   #higher :derivative :order :properties
-    :fundamental_derivative_of_gas_dynamics,
-   #volume :properties
-    :mass_density,:molar_density, :compressibility_factor,
-   #molar :gradient :properties
-    :identify_phase]
-
-    @eval begin
-        function spec_to_vt(model,V,T,z,spec::typeof($prop))
-            VT.$prop(model,V,T,z)
-        end
-    end
-end
-
-spec_to_vt(model,V,T,z,spec::typeof(volume)) = V
-spec_to_vt(model,V,T,z,spec::typeof(temperature)) = T
-
-function VT_property(model,V,T,z,f::F,phase,p0) where {F}
-    if z isa Number
-        return VT_property(model,V,T,SA[z],f,phase,p0)
-    end
-
-    if f == volume
-        return V
-    end
-
-    if f == temperature
-        return T
-    end
-
-    if !is_unknown(phase)
-        return spec_to_vt(model,V,T,z,f)
-    end
-
-    res = vt_flash(model,V,T,z,p0 = p0)
-    if f == temperature
-        return temperature(res)
-    elseif p == pressure
-        return pressure(res)
-    else
-        return f(model,res)
-    end
-end
-
-module VT
-import Clapeyron
-for f in [:temperature,:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
- :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
-#second derivative order properties
- :isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
- :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
- :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
-#higher :derivative :order :properties
- :fundamental_derivative_of_gas_dynamics,
-#volume :properties
- :mass_density, :molar_density, :compressibility_factor,
-#molar :gradient :properties
- :identify_phase]
-    @eval begin
-        function $f(model,V,T,z = Clapeyron.SA[1.0],p0 = nothing)
-            Clapeyron.QP_property(model,V,T,z,Clapeyron.$f,module QP
-            import Clapeyron
-            for f in [:temperature,:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
-             :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
-            #second derivative order properties
-             :isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
-             :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
-             :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
-            #higher :derivative :order :properties
-             :fundamental_derivative_of_gas_dynamics,
-            #volume :properties
-             :mass_density, :molar_density, :compressibility_factor,
-            #molar :gradient :properties
-             :identify_phase]
-                @eval begin
-                    function $f(model,V,T,z = Clapeyron.SA[1.0],p0 = nothing,phase = :unknown)
-                        Clapeyron.VT_property(model,V,T,z,Clapeyron.$f,p0,phase)
-                    end
-                end
-            
-                function flash(model,V,T,z = Clapeyron.SA[1.0],args...;kwargs...)
-                    return Clapeyron.vt_flash(model,V,T,z,args...;kwargs...)
-                end
+    using Clapeyron: Clapeyron, VT_prop, CLAPEYRON_PROPS
+    for prop in CLAPEYRON_PROPS
+        VT_prop = VT_symbol(prop)
+        @eval begin
+            function $prop(model::EoSModel,V,T,z=SA[1.])
+                return Clapeyron.$VT_prop(model,V,T,z)
             end
-            #export chemical_potential, activity_coefficient, activity, aqueous_activity, fugacity_coefficient,reference_chemical_potential,reference_chemical_potential_type
-            #export chemical_potential_res
-            #export mixing, excess, gibbs_solvation
-            
-            end #module)
         end
     end
-
-    function flash(model,V,T,z = Clapeyron.SA[1.0],args...;kwargs...)
-        return Clapeyron.qp_flash(model,V,T,z,args...;kwargs...)
-    end
 end
-#export chemical_potential, activity_coefficient, activity, aqueous_activity, fugacity_coefficient,reference_chemical_potential,reference_chemical_potential_type
-#export chemical_potential_res
-#export mixing, excess, gibbs_solvation
-
-end #module

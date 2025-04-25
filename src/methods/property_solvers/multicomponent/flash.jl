@@ -256,24 +256,24 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
     #volume :properties
     :compressibility_factor,:identify_phase]
     @eval begin
-            function $prop(model::EoSModel,state::FlashResult)
-                i = assert_only_phase_index(state::FlashResult)
-                T = temperature(state)
-                p = pressure(state)
-                if iszero(i)
-                    __multiphase_onephase_function_error($prop,np,p,T)
-                end
-                
-                x,v = state.compositions[i],state.volumes[i]
-                return VT0.$prop(model,v,T,x)
+        function $prop(model::EoSModel,state::FlashResult)
+            i = assert_only_phase_index(state::FlashResult)
+            T = temperature(state)
+            p = pressure(state)
+            if iszero(i)
+                __multiphase_onephase_function_error($prop,np,p,T)
             end
+            
+            x,v = state.compositions[i],state.volumes[i]
+            return VT0.$prop(model,v,T,x)
+        end
 
-            function $prop(model::EoSModel,state::FlashResult, i::Int)
-                x,v = state.compositions[i],state.volumes[i]
-                return VT0.$prop(model,v,T,x)
-            end
+        function $prop(model::EoSModel,state::FlashResult, i::Int)
+            x,v = state.compositions[i],state.volumes[i]
+            return VT0.$prop(model,v,T,x)
         end
     end
+end
 
 function _multiphase_gibbs(model,p,T,result)
     if result isa FlashResult
