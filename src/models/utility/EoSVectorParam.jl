@@ -77,3 +77,7 @@ end
 function volume_impl(model::EoSVectorParam,p,T,z,phase,threaded,vol0)
     return volume_impl(model.model,p,T,z,phase,threaded,vol0)
 end
+
+function promote_model(::Type{T},model::EoSVectorParam) where T <: Number
+    return EoSVectorParam(model.components,promote_model(T,model.model),promote_model(T,model.pure),model.reference_state)
+end

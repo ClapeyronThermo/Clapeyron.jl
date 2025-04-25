@@ -61,4 +61,8 @@ end
     estimator,objective,initial,upper,lower = Estimation(model,toestimate,[(2.,"../examples/data/bubble_point.csv"),(1.,"../examples/data/bubble_point.csv")],[:vrmodel])
 
     @test objective(initial) ≈ 7.255389483796751 rtol = 1e-6
- end
+
+    #error found during #365
+    modelvec = Clapeyron.EoSVectorParam(model)
+    @test Clapeyron.promote_model(BigFloat,modelvec) isa Clapeyron.EoSVectorParam
+end
