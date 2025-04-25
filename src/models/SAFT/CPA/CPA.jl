@@ -119,14 +119,10 @@ function CPA(components;
     end
 
     _components = format_components(components)
-    params = getparams(_components, locs; userlocations = userlocations, verbose = verbose)
+    params = getparams(_components, locs; userlocations = userlocations, verbose = verbose, ignore_missing_singleparams = ["Pc"])
     
     sites = get!(params,"sites") do
         SiteParam(_components)
-    end
-
-    Pc = get!(params,"Pc") do
-        SingleParam("Pc",_components)
     end
 
     Mw  = params["Mw"]
@@ -136,6 +132,22 @@ function CPA(components;
     c1 = get(params,"c1",nothing)
     a  = epsilon_LorentzBerthelot(params["a"], k)
     b  = sigma_LorentzBerthelot(params["b"], l)
+
+    Pc = get!(params,"Pc") do
+        SingleParam("Pc",_components)
+    end
+
+    for i in 1:length(_components)
+        if Pc.ismissingvalues[i]
+            Ωa,Ωb = ab_consts(cubicmodel)
+            b = model.cubicmodel.params.b.values
+            a = model.cubicmodel.params.a.values
+            Ωa,Ωb = ab_consts(model.cubicmodel,z)
+            b̄r = b[i,i]/Ωb
+            ār = a[i,i]/Ωa
+            Pc[i] = ār/(b̄r*b̄r)
+        end
+    end
 
     epsilon_assoc = get!(params,"epsilon_assoc") do
         AssocParam("epsilon_assoc",_components)
@@ -194,7 +206,7 @@ function p_scale(model::CPAModel,z)
     #does not depend on Pc, so it can be made optional on CPA input
     b = model.cubicmodel.params.b.values
     a = model.cubicmodel.params.a.values
-    Ωa,Ωb = ab_consts(model.cubicmodel)
+    Ωa,Ωb = ab_consts(model.cubicmodel,z)
     b̄r = dot(z,b,z)/(sum(z)*Ωb)
     ār = dot(z,a,z)/Ωa
     return ār/(b̄r*b̄r)
@@ -279,6 +291,7 @@ function a_res(model::CPAModel, V, T, z, _data = @f(data))
 end
 
 ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
+ab_consts(::Type{T}) where T <: CPAModel = ab_consts(fieldtype(T,:cubicmodel))
 
 function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
     n,ā,b̄,c̄ = _data
@@ -297,8 +310,9 @@ function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
 
     return g*expm1(ϵ_associjab/T)*βijab*b[i,j]/N_A
 end
+
 #optimized Δ function for CPA, we only calculate g once.
-function  Δ(model::CPA, V, T, z,_data=@f(data))
+function  Δ(model::CPAModel, V, T, z,_data=@f(data))
     n,ā,b̄,c̄ = _data
     β = model.params.bondvol.values
     b_cubic = model.params.b.values
