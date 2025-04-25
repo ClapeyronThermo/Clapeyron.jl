@@ -119,7 +119,7 @@ function CPA(components;
     end
 
     _components = format_components(components)
-    params = getparams(_components, locs; userlocations = userlocations, verbose = verbose, ignore_missing_singleparams = ["Pc"])
+    params = getparams(_components, locs; userlocations = userlocations, verbose = verbose, ignore_missing_singleparams = ["Pc","Vc","acentricfactor"])
     
     sites = get!(params,"sites") do
         SiteParam(_components)
