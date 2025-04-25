@@ -31,7 +31,7 @@ end
 
 module TS
 import Clapeyron
-for f in CLAPEYRON_PROPS
+for f in Clapeyron.CLAPEYRON_PROPS
     @eval begin
         function $f(model,T,s,z = Clapeyron.SA[1.0];phase = :unknown,p0 = nothing, threaded = true)
             Clapeyron.TS_property(model,T,s,z,Clapeyron.$f,phase,p0,threaded)

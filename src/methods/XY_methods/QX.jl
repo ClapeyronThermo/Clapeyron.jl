@@ -15,7 +15,7 @@ end
 
 module QT
 import Clapeyron
-for f in CLAPEYRON_PROPS
+for f in Clapeyron.CLAPEYRON_PROPS
     @eval begin
         function $f(model,q,T,z = Clapeyron.SA[1.0],p0 = nothing)
             Clapeyron.QT_property(model,q,T,z,Clapeyron.$f,p0)
@@ -46,7 +46,7 @@ end
 
 module QP
 import Clapeyron
-for f in CLAPEYRON_PROPS
+for f in Clapeyron.CLAPEYRON_PROPS
     @eval begin
         function $f(model,q,p,z = Clapeyron.SA[1.0],T0 = nothing)
             Clapeyron.QP_property(model,q,p,z,Clapeyron.$f,T0)

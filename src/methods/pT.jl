@@ -832,7 +832,8 @@ export mixing, excess, gibbs_solvation, partial_property
 export identify_phase
 
 module PT
-    for prop in CLAPEYRON_PROPS
+    import Clapeyron
+    for prop in Clapeyron.CLAPEYRON_PROPS
         @eval begin
             function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
                 return Clapeyron.$prop(model,p,T,z;phase,threaded,vol0)

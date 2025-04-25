@@ -30,15 +30,16 @@ end
 
 module VT
 import Clapeyron
-for f in CLAPEYRON_PROPS
+for f in Clapeyron.CLAPEYRON_PROPS
     @eval begin
         function $f(model,V,T,z = Clapeyron.SA[1.0],p0 = nothing,phase = :unknown)
             Clapeyron.VT_property(model,V,T,z,Clapeyron.$f,p0,phase)
         end
+    end
 
-        function flash(model,V,T,z = Clapeyron.SA[1.0],args...;kwargs...)
-            return Clapeyron.vt_flash(model,V,T,z,args...;kwargs...)
-        end
+    
+    function flash(model,V,T,z = Clapeyron.SA[1.0],args...;kwargs...)
+        return Clapeyron.vt_flash(model,V,T,z,args...;kwargs...)
     end
 end
 end #VT module

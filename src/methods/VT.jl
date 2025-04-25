@@ -525,11 +525,11 @@ end
 
 #module used to translate between the normal symbol and the VT_symbol.
 module VT0
-    using Clapeyron: Clapeyron, VT_prop, CLAPEYRON_PROPS
-    for prop in CLAPEYRON_PROPS
-        VT_prop = VT_symbol(prop)
+    using Clapeyron: Clapeyron, CLAPEYRON_PROPS
+    for prop in Clapeyron.CLAPEYRON_PROPS
+        VT_prop = Clapeyron.VT_symbol(prop)
         @eval begin
-            function $prop(model::EoSModel,V,T,z=SA[1.])
+            function $prop(model,V,T,z=SA[1.])
                 return Clapeyron.$VT_prop(model,V,T,z)
             end
         end
