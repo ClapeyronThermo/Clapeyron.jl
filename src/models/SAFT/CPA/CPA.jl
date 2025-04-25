@@ -140,9 +140,9 @@ function CPA(components;
     for i in 1:length(_components)
         if Pc.ismissingvalues[i]
             Ωa,Ωb = ab_consts(cubicmodel)
-            b = model.cubicmodel.params.b.values
-            a = model.cubicmodel.params.a.values
-            Ωa,Ωb = ab_consts(model.cubicmodel,z)
+            b = b
+            a = a
+            Ωa,Ωb = ab_consts(cubicmodel)
             b̄r = b[i,i]/Ωb
             ār = a[i,i]/Ωa
             Pc[i] = ār/(b̄r*b̄r)
