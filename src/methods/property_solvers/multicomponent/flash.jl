@@ -213,13 +213,68 @@ for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
             function $prop(model::EoSModel,state::FlashResult)
                 res = zero(Base.promote_eltype(model,state))
                 for (vi,T,xi,βi) in eachphase(state)
-                    res += βi*VT.$prop(model,vi,T,xi)
+                    res += βi*VT0.$prop(model,vi,T,xi)
                 end
+                return res
+            end
+
+            function $prop(model::EoSModel,state::FlashResult, i::Integer)
+                res = zero(Base.promote_eltype(model,state))
+                vi,T,xi,βi = state.volumes[i],state.data.T,state.compositions[i],state.fractions[i]
+                res += βi*VT0.$prop(model,vi,T,xi)
                 return res
             end
         end
     end
 
+function assert_only_phase_index(state::FlashResult)
+    np = numphases(state)
+    if isone(np)
+        return 1
+    elseif np > 1 #on some systems, there could be multiple phases, but only one fraction is nonzero
+        βmax,imax = findmax(state.fractions)
+        isfinite(βmax) || return imax #non finite value, return NaN, it will fail anyway.
+        ∑β = sum(state.fractions)
+        if βmax ≈ ∑β && all(>=(0),state.fractions)
+            return imax
+        else
+            return 0
+        end
+    end
+end
+
+@noinline function __multiphase_onephase_function_error(f,np,p,T)
+    throw(ArgumentError("The state at p = $p, T = $T has $np phases, it cannot be used to evaluate $f"))
+end
+
+
+
+for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
+    :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
+    :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
+    #higher :derivative :order :properties
+    :fundamental_derivative_of_gas_dynamics,
+    #volume :properties
+    :compressibility_factor,:identify_phase]
+    @eval begin
+        function $prop(model::EoSModel,state::FlashResult)
+            i = assert_only_phase_index(state::FlashResult)
+            T = temperature(state)
+            p = pressure(state)
+            if iszero(i)
+                __multiphase_onephase_function_error($prop,numphases(state),p,T)
+            end
+            
+            x,v = state.compositions[i],state.volumes[i]
+            return VT0.$prop(model,v,T,x)
+        end
+
+        function $prop(model::EoSModel,state::FlashResult, i::Int)
+            x,v = state.compositions[i],state.volumes[i]
+            return VT0.$prop(model,v,T,x)
+        end
+    end
+end
 
 function _multiphase_gibbs(model,p,T,result)
     if result isa FlashResult

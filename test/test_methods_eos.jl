@@ -11,17 +11,27 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.volume(system, p, T) ≈ v rtol = 1e-6
         @test Clapeyron.volume(system, p, T;phase=:v) ≈ 0.020427920501436134 rtol = 1e-6
         @test Clapeyron.volume(system, p, T;threaded=:false) ≈ v rtol = 1e-6
-        @test Clapeyron.pip(system, v, T, [1.]) ≈ 6.857076349623449 rtol = 1e-6
-        @test Clapeyron.is_liquid(Clapeyron.VT_identify_phase(system, v, T, [1.]))
+        @test Clapeyron.pip(system, v, T) ≈ 6.857076349623449 rtol = 1e-6
+        @test Clapeyron.is_liquid(Clapeyron.VT_identify_phase(system, v, T))
         @test Clapeyron.compressibility_factor(system, p, T) ≈ 0.002383223535444557 rtol = 1e-6
         @test Clapeyron.pressure(system, v, T) ≈ p rtol = 1e-6
         @test Clapeyron.pressure(system, 2*v, T, Clapeyron.SA[2.0]) ≈ p rtol = 1e-6
-        @test Clapeyron.entropy(system, p, T) ≈ -58.87118569239617 rtol = 1E-6
+        s = Clapeyron.entropy(system, p, T)
+        @test s ≈ -58.87118569239617 rtol = 1E-6
+        @test Clapeyron.VT_entropy_res(system,v,T) + Clapeyron.VT_entropy(Clapeyron.idealmodel(system),v,T) ≈ s
         @test Clapeyron.chemical_potential(system, p, T)[1] ≈ -18323.877542682934 rtol = 1E-6
-        @test Clapeyron.internal_energy(system, p, T) ≈ -35882.22946560716 rtol = 1E-6
-        @test Clapeyron.enthalpy(system, p, T) ≈ -35876.32155687084 rtol = 1E-6
-        @test Clapeyron.gibbs_free_energy(system, p, T) ≈ -18323.87754268292 rtol = 1E-6
-        @test Clapeyron.helmholtz_free_energy(system, p, T) ≈ -18329.785451419295 rtol = 1E-6
+        u = Clapeyron.internal_energy(system, p, T)
+        @test u ≈ -35882.22946560716 rtol = 1E-6
+        @test Clapeyron.VT_internal_energy_res(system,v,T) + Clapeyron.VT_internal_energy(Clapeyron.idealmodel(system),v,T) ≈ u
+        h = Clapeyron.enthalpy(system, p, T)
+        @test h ≈ -35876.32155687084 rtol = 1E-6
+        @test Clapeyron.VT_enthalpy_res(system,v,T) + Clapeyron.VT_enthalpy(Clapeyron.idealmodel(system),v,T) ≈ h
+        g = Clapeyron.gibbs_free_energy(system, p, T)
+        @test g ≈ -18323.87754268292 rtol = 1E-6
+        @test Clapeyron.VT_gibbs_free_energy_res(system,v,T) + Clapeyron.VT_gibbs_free_energy(Clapeyron.idealmodel(system),v,T) ≈ g
+        a = Clapeyron.helmholtz_free_energy(system, p, T)
+        @test a ≈ -18329.785451419295 rtol = 1E-6
+        @test Clapeyron.VT_helmholtz_free_energy_res(system,v,T) + Clapeyron.VT_helmholtz_free_energy(Clapeyron.idealmodel(system),v,T) ≈ a
         @test Clapeyron.isochoric_heat_capacity(system, p, T) ≈ 48.37961296309505 rtol = 1E-6
         @test Clapeyron.isobaric_heat_capacity(system, p, T) ≈ 66.45719988319257 rtol = 1E-6
         Cp = Clapeyron.isobaric_heat_capacity(system, p, T2)

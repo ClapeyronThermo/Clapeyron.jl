@@ -271,7 +271,7 @@ function set_reference_state!(model::EoSModel,new_ref::ReferenceState;verbose = 
     #allocate the appropiate caches.
     initialize_reference_state!(model,ref)
     if all(iszero,ref.z0) #pure case
-        pures = split_model(model)
+        pures = split_pure_model(model)
         _set_reference_state!.(pures)
         pure_refs = reference_state.(pures)
         ref.a0 .= only.(getfield.(pure_refs,:a0))

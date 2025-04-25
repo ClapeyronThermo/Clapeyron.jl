@@ -421,7 +421,7 @@ function wilson_k_values!(K,model::ABCubicModel, p, T, crit = nothing)
     elseif w2 !== nothing
         ω = w2.values
     else
-        pure = split_model(model)
+        pure = split_pure_model(model)
         ω = zero(Tc)
         for i in 1:length(Tc)
             ps = first(saturation_pressure(pure[i], 0.7 * Tc[i]))

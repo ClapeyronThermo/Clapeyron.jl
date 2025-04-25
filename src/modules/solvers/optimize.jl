@@ -172,3 +172,61 @@ function only_fgh!(fgh!::T) where T
     fgh=fgh,
     h=h)
 end
+
+struct BoundOptim1Var end
+
+function optimize(f,x0::NTuple{2,T},method::BoundOptim1Var,options=OptimizationOptions()) where T<:Real
+    return _1var_optimize_quad(f,x0)
+end
+
+quad_interp(x,f) = quad_interp(x[1],x[2],x[3],f[1],f[2],f[3])
+
+function quad_interp(xa,xb,xc,fa,fb,fc)
+        #f1 = ax12 + bx1 + c
+    #f2 = ax22 + bx2 + c
+    #f3 = ax32 + bx3 + c
+    A = @SMatrix [xa*xa xa oneunit(xa); xb*xb xb oneunit(xb); xc*xc xc oneunit(xc)]
+    B = SVector((fa,fb,fc))
+    z = A\B
+    a,b,c = z
+    return a,b,c
+end
+
+function _1var_optimize_quad(f,x0)
+    xa,xb = minmax(x0[1],x0[2])
+    xa0,xb0 = xa,xb
+    fa,fb = f(xa),f(xb)
+    xc = 0.5*(xa + xb)
+    fc = f(xc)
+    for i in 1:20
+        a,b,c = quad_interp(xa,xb,xc,fa,fb,fc)
+        xmin = -b/(2*a)
+        fmin = f(xmin)
+        _f = SVector((fa,fb,fc,fmin))
+        f_worst,idx = findmax(_f)
+        if fmin != f_worst && isfinite(fmin)
+            _x = SVector((xa,xb,xc,xmin))
+            xa,xb,xc = StaticArrays.deleteat(_x,idx)
+            fa,fb,fc = StaticArrays.deleteat(_f,idx)
+        elseif fmin == f_worst
+            _f2 = SVector((fa,fb,fc))
+            _x2 = SVector((xa,xb,xc))
+            _,idx2 = findmax(_f2)
+            xa,xb = StaticArrays.deleteat(_x2,idx2)
+            fa,fb = StaticArrays.deleteat(_f2,idx2)
+            xc = 0.5*(xa + xb)
+            fc = f(xc)
+        else
+            return zero(fmin)/zero(fmin)
+        end
+        xmin,xmax = extrema((xa,xb,xc))
+        fxx = minimum((fa,fb,fc))
+        #@show abs(xmin - xmax),fxx
+        if abs(xmin - xmax) < sqrt(eps(xmin))
+            break
+        end
+    end
+    xmin,xmax = extrema((xa,xb,xc))
+    #@show xa0,xmin,xmax,xb0
+    return 0.5*(xmin + xmax)
+end

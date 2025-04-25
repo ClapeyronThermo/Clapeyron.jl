@@ -10,7 +10,7 @@ where the first component is the solvent and second is the solute.
 """
 function krichevskii_parameter(model,crit = nothing)
     binary_component_check(krichevskii_parameter,model)
-    solvent,solute = split_model(model)
+    solvent,solute = split_pure_model(model)
     if crit === nothing
         crit_solvent = crit_pure(solvent)
     else

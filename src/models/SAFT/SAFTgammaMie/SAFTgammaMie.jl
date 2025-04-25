@@ -17,7 +17,6 @@ end
 function SAFTgammaMieParam(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
     t = (segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
     x = typeof.(t)
-    @show x
     return build_parametric_param(SAFTgammaMieParam,segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
 end
 

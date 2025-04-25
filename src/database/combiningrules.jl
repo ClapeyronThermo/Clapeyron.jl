@@ -26,6 +26,8 @@ sigma_LorentzBerthelot(sigma::SingleOrPair,zeta = nothing) = kij_mix(mix_mean,si
 
 sigma_LorentzBerthelot!(sigma::PairParameter,zeta = nothing) = kij_mix!(mix_mean,sigma,zeta)
 
+sigma_LorentzBerthelot!(sigma::AbstractMatrix,zeta = nothing) = kij_mix!(mix_mean,sigma,zeta)
+
 
 """
     epsilon_LorentzBerthelot(ϵ::SingleOrPair,k::PairParam)::PairParam
@@ -49,6 +51,7 @@ epsilon_LorentzBerthelot(epsilon::SingleOrPair, k = nothing) = kij_mix(mix_geome
 
 epsilon_LorentzBerthelot!(epsilon::PairParameter, k = nothing) = kij_mix!(mix_geomean,epsilon,k)
 
+epsilon_LorentzBerthelot!(epsilon::AbstractMatrix, k = nothing) = kij_mix!(mix_geomean,epsilon,k)
 
 """
     epsilon_HudsenMcCoubrey(ϵ::SingleOrPair,σ::PairParam)::PairParam
@@ -171,8 +174,8 @@ mirror_pair(param::PairParameter,f = identity) = mirror_pair!(deepcopy(param),f)
 
 
 export kij_mix, pair_mix
-export sigma_LorentzBerthelot
-export epsilon_LorentzBerthelot
+export sigma_LorentzBerthelot,sigma_LorentzBerthelot!
+export epsilon_LorentzBerthelot,epsilon_LorentzBerthelot!
 export epsilon_HudsenMcCoubrey
 export lambda_LorentzBerthelot
 export lambda_squarewell

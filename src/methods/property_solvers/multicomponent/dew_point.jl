@@ -23,22 +23,20 @@ function index_reduction(method::DewPointMethod,idx_r)
     return method
 end
 
-function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model), crit = nothing)
-    pure_vals = extended_saturation_pressure.(pure,T,crit,condensables,false) #saturation, or aproximation via critical point.
-    p0 = first.(pure_vals)
-    vli = getindex.(pure_vals,2)
-    vvi = getindex.(pure_vals,3)
-    yipi = y ./ p0
-    p = 1/sum(yipi)
+function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables), crit = nothing)
+    sat = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
+    p0inv_r = 1. ./ first.(sat)
+    p0inv = index_expansion(p0inv_r,condensables)
+    yipi = y .* p0inv
+    p0 = 1/sum(yipi)
     if isnothing(x0)
-        x = yipi
-        x .*= p
+        xx = yipi
+        xx .*= p0
     else
-        x = x0
+        xx = x0
     end
-    fix_vi!(pure,vvi,p,T,condensables,:v) #calculate volumes if not-condensables present
-    vl0  = dot(vli,x)
-    vv0 = dot(vvi,y)
+    high_conditions = __is_high_pressure_state(pure,sat,T)
+    p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,xx,y,FugEnum.DEW_PRESSURE,condensables,high_conditions)
     return p,vl0,vv0,x
 end
 
@@ -140,63 +138,51 @@ end
 
 
 
-function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
+function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
     multi_component_check(x0_dew_temperature,model)
-        
-    if Tx0 !== nothing
-        _crit = isnothing(crit) ?  FillArrays.fill(nothing,length(model)) : crit
-        K = suggest_K(model,p,Tx0,y,pure,condensables,_crit)
-        x = rr_flash_liquid(K,y,one(eltype(K)))
-        zero_non_equilibria!(x,condensables)
-        x ./= sum(x)
-        vl0 = volume(model,p,Tx0,x,phase = :l)
-        vv0 = volume(model,p,Tx0,y,phase = :v)
-        #this is exactly like __x0_bubble_pressure, but we use T0, instead of an input T
-        #_,vl0,vv0,y = __x0_bubble_pressure(model,T0,x,nothing,volatiles,pure,crit)
-        return Tx0,vl0,vv0,x
-    end
-    
-    
-    
-    sat = extended_saturation_temperature.(pure,p,crit,condensables)
-    if crit === nothing
-        _crit = __crit_pure.(sat,pure,condensables)
-    else
-        _crit = crit
-    end
-    fix_sat_ti!(sat,pure,_crit,p,condensables)
+    y_r = @view y[condensables]
+
     if Tx0 !== nothing
         T0 = Tx0
+        sat = extended_saturation_pressure.(pure,T0,crit)
+        p0inv_r = 1.0 ./ first.(sat)
+        high_conditions = __is_high_pressure_state(pure,sat,T0)
     else
-        dPdTsat = __dlnPdTinvsat.(pure,sat,_crit,p)
-        prob = antoine_dew_problem(dPdTsat,p,y)
-        T0 = Roots.solve(prob)
+        dPdTsat = extended_dpdT_temperature.(pure,p,crit)
+        T0 = antoine_dew_solve(dPdTsat,p,y_r)
+        p0inv_r = 1.0 ./ antoine_pressure.(dPdTsat,T0)
+        high_conditions = __is_high_temperature_state(pure,dPdTsat,T0)
     end
-    K = suggest_K(model,p,T0,y,pure,FillArrays.fill(true,length(model)),_crit)
-    x = rr_flash_liquid(K,y,one(eltype(K)))
-    zero_non_equilibria!(x,condensables)
-    x ./= sum(x)
-    vl0 = volume(model,p,T0,x,phase = :l)
-    vv0 = volume(model,p,T0,y,phase = :v)
-    #_,vl0,vv0,x = __x0_dew_pressure(model,T0,y,nothing,condensables,pure,crit)
-    return T0,vl0,vv0,x
+    yipi_r = x_r = y_r .* p0inv_r
+    p = 1/sum(yipi_r)
+    x_r .*= p
+    x0 = index_expansion(x_r,condensables)
+    _,T,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x0,y,FugEnum.DEW_TEMPERATURE,condensables,high_conditions)
+    return T,vl0,vv0,x
 end
 
-function antoine_dew_problem(dpdt,p_dew,y,condensables = FillArrays.Fill(true,length(dpdt)))  
+function antoine_dew_solve(dpdt,p_dew,y)
+    if length(dpdt) == 1
+        #sum(y)/pinv - p_dew
+        #y = 1.0, pinv  = 1/p(T)
+        #p(T) = p_dew
+        dlnpdTinv,logp0,T0inv = dpdt[1]
+        Tinv = (log(p_dew) - logp0)/dlnpdTinv + T0inv
+        return 1/Tinv
+    end
+
     function antoine_f0(T)
         pinv = zero(T+first(y)+first(dpdt)[1])
         for i in 1:length(dpdt)
-            dlnpdTinv,logp0,T0inv = dpdt[i]
-            if condensables[i]
-                pᵢ = exp(logp0 + dlnpdTinv*(1/T - T0inv))
-                pᵢyᵢ = y[i]/pᵢ
-                pinv += pᵢyᵢ
-            end
+            pᵢ = antoine_pressure(dpdt[i],T)
+            pᵢyᵢ = y[i]/pᵢ
+            pinv += pᵢyᵢ
         end
         return sum(y)/pinv - p_dew
     end
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
-    return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+    prob = Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+    return Roots.solve(prob)
 end
 
 function x0_dew_temperature(model::EoSModel,p,y,T0 = nothing)
@@ -282,7 +268,7 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
         return (T_sat,v_l,v_v,y)
     end
     y_r = y[idx_r]
-    
+
     if has_a_res(model)
         dew_temperature_result_primal =  dew_temperature_impl(primalval(model_r),primalval(p),primalval(y_r),index_reduction(method,idx_r))
         dew_temperature_result =  dew_temperature_ad(model_r,p,y_r,dew_temperature_result_primal)

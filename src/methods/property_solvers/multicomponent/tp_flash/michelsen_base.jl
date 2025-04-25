@@ -162,7 +162,7 @@ function tp_flash_K0!(K,model,p,T)
     if has_fast_crit_pure(model)
         wilson_k_values!(K,model,p,T)
     else
-        pures = split_model(model)
+        pures = split_pure_model(model)
         for i in 1:length(model)
             sat_x = extended_saturation_pressure(pures[i],T)
             K[i] = sat_x[3]/p

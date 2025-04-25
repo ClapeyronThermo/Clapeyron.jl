@@ -341,17 +341,46 @@ end
 
 """
     split_model(model::EoSModel)
-Takes in a model for a multi-component system and returns a vector of model for each pure system.
-## Example:
+    split_model(model::EoSModel, splitter)
+
+Takes in a model for a multi-component system and returns a vector of models. The result depends on the splitter used.
+
+A model can be splitted in a list of submodels, where each submodel is of the same type as the original model, but it has a different combination of components.
+
+Group-Contribution models are also splitted in a component basis, `split_model` takes care of converting between Group and Component basis automatically.
+
+A splitter is just a list of indices for each submodel, valid splitters are:
+
+- A list of integers: `split_model(model,[1,5,2])` will return three pure models.
+- An integer: `split_model(model,1)` will return a list with one model corresponding to the first component
+- A list of lists: `split_model(model,[[1,2],[3])` will return a list with two models, the first one will contain two components, the second one will be a pure model.
+
+The default splitter is `1:length(model)`, that will return a list with all pure models.
+
+## Examples
+
 ```julia-repl
-julia> gerg2 = GERG2008(["propane","pentane"])
-GERG008 model with 2 components:
-"propane"
-"pentane"
-julia> split_model(gerg2)
-2-element Vector{GERG2008}:
- GERG2008("propane")
- GERG2008("pentane")
+julia> model = MonomerIdeal(["methane","propane","butane"])
+MonomerIdeal with 3 components:
+ "methane"
+ "propane"
+ "butane"
+Contains parameters: Mw, reference_state
+
+julia> split_model(model)
+3-element Vector{MonomerIdeal}:
+ MonomerIdeal("methane")
+ MonomerIdeal("propane")
+ MonomerIdeal("butane")
+ 
+julia> split_model(model,[[1,2],[3,1]])
+2-element Vector{MonomerIdeal}:
+ MonomerIdeal("methane", "propane")
+ MonomerIdeal("butane", "methane")
+
+julia> split_model(model,2)
+1-element Vector{MonomerIdeal}:
+ MonomerIdeal("propane")
 ```
 """
 function split_model end
@@ -402,8 +431,10 @@ function _split_model(param,splitter::AbstractVector{Int})
     end
 end
 
-
-
+function _split_model(param,bool_splitter::AbstractVector{Bool})
+    int_splitter = findall(bool_splitter)
+    return _split_model(param,int_splitter)
+end
 
 _split_model(param,splitter::Nothing) = split_model(param)
 _split_model(param,i::Int) = [each_split_model(param,i:i)]
@@ -421,7 +452,7 @@ function _n_splitter(n)
 end
 
 default_splitter(param::ClapeyronParam) = _n_splitter(length(param.components))
-default_splitter(param::EoSModel) = _n_splitter(length(param.components))
+default_splitter(param::EoSModel) = 1:length(param)
 default_splitter(param::AbstractArray) = _n_splitter(size(param,1))
 
 """
@@ -460,4 +491,22 @@ function split_model_binaries(model)
     split_model(model,idx)
 end
 
+"""
+
+    split_pure_model(model,splitter)
+
+Similar to `split_model` but promises that the result only has pure models. 
+Some EoS models store a list of pure models and this function allows accessing that list.
+
+"""
+function split_pure_model(model)
+    if is_splittable(model)
+        splitter = default_splitter(model)
+        return split_pure_model(model,splitter)
+    else
+        throw(ArgumentError("$model is not splittable, try passing an explicit splitter argument (`split_pure_model(value,splitter)`)"))
+    end
+end
+
+split_pure_model(model,splitter) = split_model(model,splitter)
 export split_model, split_model_binaries

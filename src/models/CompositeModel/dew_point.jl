@@ -10,7 +10,7 @@ function dew_pressure_impl(model::RestrictedEquilibriaModel,T,y,method::Activity
         pure = model.fluid.pure
     else
         pmodel = model
-        pure = split_model(pmodel,1:length(model))
+        pure = split_pure_model(pmodel,1:length(model))
     end
     sat = saturation_pressure.(pure,T)
     p_pure = first.(sat)
@@ -103,7 +103,7 @@ function dew_temperature_impl(model::RestrictedEquilibriaModel,p,y,method::Activ
         end
     else
         pmodel = model
-        pure = split_model(pmodel,1:length(model))
+        pure = split_pure_model(pmodel,1:length(model))
     end
     sat = saturation_temperature.(pure,p)
     Ti   = first.(sat)

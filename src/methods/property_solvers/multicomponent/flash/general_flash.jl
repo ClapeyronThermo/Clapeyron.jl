@@ -141,19 +141,6 @@ function xy_input_to_result(spec,input,np,nc,z)
     return comps[idx],β[idx],volumes[idx],T
 end
 
-function spec_to_vt end
-
-for prop in [:entropy,:enthalpy,:temperature,:pressure,:internal_energy,:gibbs_free_energy,:helmholtz_free_energy]
-    @eval begin
-        function spec_to_vt(model,V,T,z,spec::typeof($prop))
-            VT.$prop(model,V,T,z)
-        end
-    end
-end
-
-spec_to_vt(model,V,T,z,spec::typeof(volume)) = V
-
-
 #s = dadt
 requires_pv(::typeof(entropy)) = false
 requires_st(::typeof(entropy)) = true
@@ -658,7 +645,8 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         p_result = pressure(model,volumes_result[end],T_result,comps_result[end])
     end
     β_result .*= ∑z
-    return FlashResult(model,p_result,T_result,comps_result,β_result,volumes_result)
+    flash_result = FlashResult(model,p_result,T_result,comps_result,β_result,volumes_result)
+    return merge_duplicate_phases!(flash_result)
 end
 
 #======================
@@ -784,13 +772,29 @@ function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
 end
 
 function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
-    Ts,vl,vv = saturation_temperature(model,p)
+
     ∑z = sum(z)
     x1 = SA[1.0*one(∑z)]
+
+    sat,crit,status = _extended_saturation_temperature(model,p)
+
+    if status == :fail
+        return FlashResultInvalid(1,sat[1])
+    end
+
+    if status == :supercritical
+        Tc,Pc,Vc = crit
+        T,_phase = _Tproperty(model,p,x/∑z,x1,spec,T0 = Tc)
+        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)],phase = _phase)
+    end
+
+    Ts,vl,vv = sat
+
     spec_to_vt(model,vl,Ts,x1,spec)
     xl = ∑z*spec_to_vt(model,vl,Ts,x1,spec)
     xv = ∑z*spec_to_vt(model,vv,Ts,x1,spec)
     βv = (x - xl)/(xv - xl)
+
     if !isfinite(βv)
         return FlashResultInvalid(1,βv)
     elseif βv < 0 || βv > 1
@@ -819,9 +823,23 @@ function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
 end
 
 function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing) where F
-    ps,vl,vv = saturation_pressure(model,T)
+
     ∑z = sum(z)
     x1 = SA[1.0*one(∑z)]
+
+    sat,crit,status = _extended_saturation_pressure(model,T)
+
+    if status == :fail
+        return FlashResultInvalid(1,sat[1])
+    end
+
+    if status == :supercritical
+        Tc,Pc,Vc = crit #TODO: maybe use sat[1] instead?
+        T,_phase = _Pproperty(model,T,x/∑z,x1,spec,p0 = Pc)
+        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)])
+    end
+
+    ps,vl,vv = sat
     spec_to_vt(model,vl,T,x1,spec)
     xl = ∑z*spec_to_vt(model,vl,T,x1,spec)
     xv = ∑z*spec_to_vt(model,vv,T,x1,spec)

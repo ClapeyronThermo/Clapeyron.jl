@@ -41,8 +41,8 @@
             bondvol = Dict([(("NH2","H"),("NH2","e")) => 95.225e-30,
                             (("CO2","a1"),("NH2","e")) => 3280.3e-30,
                             (("CO2","a2"),("NH2","e")) => 142.64e-30])))
-        
-        
+
+
         bondvol_mixed = model_mix.vrmodel.params.bondvol[1,2]
         @test length(bondvol_mixed) == 2
         @test vec(bondvol_mixed) ≈ [1.4264e-28, 3.2803e-27]
@@ -132,8 +132,9 @@
         @test model2 isa Clapeyron.EoSModel
     end
 
-    @testset "#171" begin
+    @testset "#171, #366" begin
         #=
+        #171
         This is a problem that occurs in an intersection between split_model and cross-association sites
         a single component model created from scratch don't have any cross association sites,
         but a single component model created from split_model does have those sites.
@@ -145,6 +146,14 @@
         res_pure = Clapeyron.eos(model_pure,1.013e6,298.15) #works
         res_split = Clapeyron.eos(model_split,1.013e6,298.15) #should work
         @test res_pure ≈ res_split
+
+        #=
+        #366
+        incorrect conversion of MixedGCSegmentParam.
+        =#
+        mix_segment_f64 = model.params.mixed_segment
+        mix_segment_bigfloat = convert(Clapeyron.MixedGCSegmentParam{BigFloat},mix_segment_f64)
+        @test mix_segment_f64.values.v ≈ mix_segment_bigfloat.values.v
     end
 
     @testset "#188" begin
@@ -229,7 +238,7 @@
         #@test γ1[1] ≈ 55334.605821130834 rtol = 1e-4
 
         @test γ1[1] ≈ 51930.06908022231 rtol = 1e-4
-        
+
     end
 
     @testset "#262" begin
@@ -327,5 +336,32 @@
         epsilon_assoc=nothing,
         bondvol=nothing))
         @test model1 isa CPA
+    end
+
+    @testset "#357 - electrolyte equilibria" begin
+
+        model1 = ePCSAFT(["water"], ["calcium", "chloride"])
+        salts1 = [("calcium chloride", ("calcium" => 1, "chloride" => 2))]
+        x1 = molality_to_composition(model1, salts1, 1.0)
+        bub_test = 374.7581484748338
+        bubP1_test = 2971.744917038001
+
+        bubT1 = bubble_temperature(model1, 101325, x1, FugBubbleTemperature(nonvolatiles = ["calcium", "chloride"]))[1]
+        @test bubT1 ≈ bub_test rtol = 1e-6
+
+        bubT1_chempot = bubble_temperature(model1, 101325, x1, ChemPotBubbleTemperature(T0=373.0, nonvolatiles=["calcium","chloride"]))[1]
+        @test_broken bubT1_chempot ≈ bub_test rtol = 1e-6
+
+        bubT1_chempot2 = bubble_temperature(model1, 101325, x1, ChemPotBubbleTemperature(nonvolatiles=["calcium","chloride"]))[1]
+        @test_broken bubT1_chempot2 ≈ bub_test rtol = 1e-6
+
+        bubT1_2 = bubble_temperature(model1, 101325, x1, FugBubbleTemperature(nonvolatiles = ["calcium", "chloride"],y0=[1.,0.,0.],vol0=(1.8e-5,1.),T0=373.15))[1]
+        @test bubT1_2 ≈ bub_test rtol = 1e-6
+
+        bubP1 = bubble_pressure(model1,298.15,x1,FugBubblePressure(nonvolatiles=["calcium","chloride"],y0=[1.,0.,0.],vol0=(1e-5,1.)))[1]
+        @test bubP1 ≈ bubP1_test rtol = 1e-6
+
+        bubP1_2 = bubble_pressure(model1,298.15,x1,FugBubblePressure(nonvolatiles=["calcium","chloride"]))[1]
+        @test bubP1 ≈ bubP1_test rtol = 1e-6
     end
 end

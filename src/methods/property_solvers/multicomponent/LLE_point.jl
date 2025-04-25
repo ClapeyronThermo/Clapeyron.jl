@@ -27,7 +27,7 @@ end
 ## LLE pressure solver
 
 function x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     sat = saturation_pressure.(pure,T)
     vi = getindex.(sat,2)
     vlx = dot(vi,x)
@@ -130,7 +130,7 @@ end
 
 function x0_LLE_temperature(model::EoSModel,p,x)
     #xx = Fractions.neg(x)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     sat = saturation_temperature.(pure,p)
     T0 = 0.92*minimum(getindex.(sat,1)) #TODO: LLE points cannot be determined by pure data alone
     v0 = x0_LLE_pressure(model,T0,x,p)
