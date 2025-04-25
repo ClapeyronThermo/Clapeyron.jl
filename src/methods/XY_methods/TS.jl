@@ -37,9 +37,8 @@ for f in Clapeyron.CLAPEYRON_PROPS
             Clapeyron.TS_property(model,T,s,z,Clapeyron.$f,phase,p0,threaded)
         end
     end
-
-    function flash(model,T,s,z = Clapeyron.SA[1.0],args...;kwargs...)
-        return Clapeyron.ts_flash(model,T,s,z,args...;kwargs...)
-    end
+end
+function flash(model,T,s,z = Clapeyron.SA[1.0],args...;kwargs...)
+    return Clapeyron.ts_flash(model,T,s,z,args...;kwargs...)
 end
 end #module

@@ -228,9 +228,10 @@ for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
     end
 
 function assert_only_phase_index(state::FlashResult)
-    if isone(numphases(prop))
+    np = numphases(state)
+    if isone(np)
         return 1
-    elseif numphases(prop) > 1 #on some systems, there could be multiple phases, but only one fraction is nonzero
+    elseif np > 1 #on some systems, there could be multiple phases, but only one fraction is nonzero
         βmax,imax = findmax(state.fractions)
         isfinite(βmax) || return imax #non finite value, return NaN, it will fail anyway.
         ∑β = sum(state.fractions)
@@ -261,7 +262,7 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
             T = temperature(state)
             p = pressure(state)
             if iszero(i)
-                __multiphase_onephase_function_error($prop,np,p,T)
+                __multiphase_onephase_function_error($prop,numphases(state),p,T)
             end
             
             x,v = state.compositions[i],state.volumes[i]

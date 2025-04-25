@@ -645,7 +645,8 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         p_result = pressure(model,volumes_result[end],T_result,comps_result[end])
     end
     β_result .*= ∑z
-    return FlashResult(model,p_result,T_result,comps_result,β_result,volumes_result)
+    flash_result = FlashResult(model,p_result,T_result,comps_result,β_result,volumes_result)
+    return merge_duplicate_phases!(flash_result)
 end
 
 #======================

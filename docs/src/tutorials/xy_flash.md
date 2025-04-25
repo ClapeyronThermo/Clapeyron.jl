@@ -1,17 +1,22 @@
+```@meta
+CurrentModule = Clapeyron
+```
+
 # Other Flash Computations
 
-As seen before, the default inputs to compute any bulk property using any `EoSModel` are pressure, temperature, and moles. However, there is also an option to use alternative inputs. The specific combinantions are as follows:
+As seen before, the default inputs to compute any bulk property using any `EoSModel` are pressure, temperature, and moles. However, there is also an option to use alternative inputs. The specific combinations are as follows:
 
-1. Pressure and enthalpy `ph_flash`
-2. Pressure and entropy `ps_flash`
-3. Vapour fraction and pressure `qp_flash`
-4. Vapour fraction and temperature `qt_flash`
-5. Temperature and entropy `ts_flash`
-6. Volume and temperature `vt_flash`
-
+1. Pressure and enthalpy [`ph_flash`](@ref) (`PH` module)
+1. Pressure and entropy [`ps_flash`](@ref) (`PS` module)
+1. Vapour fraction and pressure [`qp_flash`](@ref) (`QP` module)
+1. Vapour fraction and temperature [`qt_flash`](@ref) (`QT` module)
+1. Temperature and entropy [`ts_flash`](@ref) (`TS` module)
+1. Volume and temperature [`vt_flash`](@ref) (`VT` module)
 
 ## Using P-H flash
+
 The following example demonstrates the use of `ph_flash`, but the same procedure applies to all flash functions:
+
 ```julia
 julia> model = cPR(["ethane","methane"],idealmodel = ReidIdeal);
 julia> z = [1.0,1.0]; p = 101325; h = 100;
@@ -19,6 +24,7 @@ julia> flash_result = ph_flash(model,p,h,z)
 Flash result at T = 299.938, p = 101325.0 with 1 phase:
  (x = [0.5, 0.5], β = 2.0, v = 0.0244958)
 ```
+
 Once the flash_result is computed, other bulk properties can be determined as follows:
 
 ```julia
@@ -28,7 +34,8 @@ julia> s = entropy(model,flash_result)
 julia> mass_density(model,flash_result)
 0.941244521997331
 ```
-Additionally there are convinent modules which can be used to by-pass the manual computation of the flash result. Example: 
+
+Additionally, there are convenient modules that can be used to bypass the manual computation of the flash result. Example:
 
 ```julia
 julia> using Clapeyron
@@ -43,11 +50,8 @@ julia> PH.entropy(model,p,h,z)
 -66.39869200962218
 ```
 
-Currently, convenience modules exist for PH, PS and VT flashes.
 
-# Examples of using other flash computations
-
-Below is an example of each flash computation for a 1:1 molar mixture of isopentane and isobutane:
+An example of each remaining flash computation will be done with a a 1:1 molar mixture of isopentane and isobutane, using the Peng-Robinson equation of state with a constistent Twu alpha (`cPR`):
 
 ```julia
 julia> model = cPR(["isopentane","isobutane"],idealmodel = ReidIdeal)                                                    
@@ -57,8 +61,10 @@ PR{ReidIdeal, TwuAlpha, NoTranslation, vdW1fRule} with 2 components:
 Contains parameters: a, b, Tc, Pc, Mw
 ```
 
-## P-S flash
+### P-S flash
+
 Using the `PS` module:
+
 ```julia
 julia> z = [1.0,1.0]; p = 101325; s = 100;
 
@@ -71,8 +77,10 @@ julia> PS.enthalpy(model,p,s,z)
 69569.1104222583
 ```
 
-## Q-P flash
+### Q-P flash
+
 Compute the entropy at vapour fraction 0.5 and pressure 101 325 Pa:
+
 ```julia
 julia> z = [1.0,1.0]; p = 101325; q = 0.5;
 
@@ -85,7 +93,17 @@ julia> entropy(model,flash_result)
 -164.74025465755165
 ```
 
-## Q-T flash
+Using the `QP` module:
+
+```julia
+julia> import Clapeyron: QP
+
+julia> QT.entropy(model,q,p,z)
+-164.74025465755165
+```
+
+### Q-T flash
+
 Entropy at vapour fraction 0.5 and temperature 300 K:
 
 ```julia
@@ -103,8 +121,18 @@ julia> pressure(model,flash_result)
 194998.54983747654
 ```
 
-## T-S flash
-Enthalpy and pressure at entropy –215 J/K and temperature 310 K: 
+Using the `QT` module:
+
+```julia
+julia> import Clapeyron: QT
+
+julia> QT.entropy(model,q,T,z)
+-153.12015827330828
+```
+
+### T-S flash
+
+Enthalpy and pressure at entropy –215 J/K and temperature 310 K:
 
 ```julia
 julia> z = [1.0,1.0]; T = 310; s = -215;
@@ -119,7 +147,18 @@ Flash result at T = 310.0, p = 1.87265e6 with 1 phase:
 julia> pressure(model,flash_result)
 1.8726539417569228e6
 ```
-## V-T flash
+
+Using the `TS` module:
+
+```julia
+julia> import Clapeyron: TS
+
+julia> TS.enthalpy(model,T,s,z)
+-41092.06962844136
+```
+
+### V-T flash
+
 Enthalpy and pressure at volume 0.04 m³ and temperature 300 K:
 
 ```julia
@@ -135,13 +174,12 @@ julia> pressure(model,flash_result)
 julia> enthalpy(model,flash_result)
 -78.48634320658675
 ```
-You can also use the VT module directly:
- ```julia
+
+Using the `VT` module:
+
+```julia
 julia> import Clapeyron: VT
 
 julia> VT.enthalpy(model,v,T,z)
 -78.48634320658675
- ```
-
-
-
+```
