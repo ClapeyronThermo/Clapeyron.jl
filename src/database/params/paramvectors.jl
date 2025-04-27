@@ -200,7 +200,7 @@ function Compressed4DMatrix(vals::AbstractVector,idxs::AbstractVector)
 end
 
 function Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
-    if !unsafe
+    if !unsafe && !issorted(zip(ij,ab))
         ijab = [(ij...,ab...) for (ij,ab) in zip(ij,ab)]
         return Compressed4DMatrix(vals,ijab)
     end

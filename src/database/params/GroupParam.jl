@@ -261,12 +261,11 @@ function Base.show(io::IO, ::MIME"text/plain", param::MixedGCSegmentParam)
     show_pairs(io,param.components,param.values,separator)
 end
 
-function MixedGCSegmentParam(group::GroupParam,s = FillArrays.Fill(1.0,length(groups.flattenedgroups)),segment = FillArrays.Fill(1.0,length(groups.flattenedgroups)))
+function MixedGCSegmentParam{T}(group::GroupParam,s = FillArrays.Fill(oneunit(T),length(groups.flattenedgroups)),segment = FillArrays.Fill(oneunit(T),length(groups.flattenedgroups))) where T <: Number
     name = "mixed segment"
     components = group.components
     nc = length(components)
     ng = length(group.flattenedgroups)
-    T = Base.promote_eltype(1.0,s,segment)
     values = PackedVectorsOfVectors.packed_fill(zero(T),FillArrays.fill(ng,nc))
     n_flattenedgroups = group.n_flattenedgroups
     for i in 1:nc
@@ -278,6 +277,10 @@ function MixedGCSegmentParam(group::GroupParam,s = FillArrays.Fill(1.0,length(gr
     mix_segment!(group_cache,s,segment)
     return group_cache
 end
+
+MixedGCSegmentParam(group::GroupParam,s,segment) = MixedGCSegmentParam{Float64}(group,s,segment)
+MixedGCSegmentParam(group::GroupParam,s) = MixedGCSegmentParam{Float64}(group,s)
+MixedGCSegmentParam(group::GroupParam) = MixedGCSegmentParam{Float64}(group)
 
 function Base.convert(::Type{MixedGCSegmentParam{T1}},param::MixedGCSegmentParam{T2}) where {T1<:Number,T2<:Number}
     p,v1 = param.values.p,param.values.v

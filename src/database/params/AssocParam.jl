@@ -55,12 +55,6 @@ end
 # If no value is provided, just initialise empty param.
 AssocParam{T}(name,components::Vector{String}) where T <: Number = AssocParam(name,components,Compressed4DMatrix{T}(),nothing)
 
-#build dense assocparam from sites.
-function AssocParam{T}(name,sites::SiteParam) where T <: Number
-    values = assoc_similar(sites,T)
-    return AssocParam(name,sites.components,values,sites.sites)
-end
-
 AssocParam(name,components) = AssocParam{Float64}(name,components)
 
 function Base.copyto!(dest::AssocParam,src::Base.Broadcast.Broadcasted)
