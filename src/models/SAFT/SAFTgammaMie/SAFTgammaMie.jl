@@ -14,12 +14,26 @@ struct SAFTgammaMieParam{T} <: EoSParam
     mixed_segment::MixedGCSegmentParam{T}
 end
 
-function SAFTgammaMieParam{T}(group::GroupParam,sites) where T <: Number
+function SAFTgammaMieParam{T}(group::GroupParam,sites = nothing) where T <: Number
     gc = group.flattenedgroups
-    segment = SingleParam("segment",gc)
+    segment = SingleParam{Int}("segment",gc)
+    shapefactor = SingleParam{T}("shapefactor",gc)
+    lambda_a = PairParam{T}("lambda_a",gc)
+    lambda_r = PairParam{T}("lambda_r",gc)
+    sigma = PairParam{T}("sigma",gc)
+    epsilon = PairParam{T}("epsilon",gc)
+    if sites isa SiteParam
+        epsilon_assoc = AssocParam{T}("epsilon",sites)
+        bondvol = AssocParam{T}("epsilon",sites)
+    else
+        epsilon_assoc = AssocParam{T}("epsilon",gc)
+        bondvol = AssocParam{T}("epsilon",gc)
+    end
+    mixed_segment = MixedGCSegmentParam(group,shapefactor.values,segment.values)
+    return SAFTgammaMieParam{T}(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
 end
 
-
+SAFTgammaMieParam(group::GroupParam,sites = nothing) = SAFTgammaMieParam{Float64}(group,sites)
 
 function SAFTgammaMieParam(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
     t = (segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
