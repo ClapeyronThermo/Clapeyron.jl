@@ -206,7 +206,7 @@ function p_scale(model::CPAModel,z)
     #does not depend on Pc, so it can be made optional on CPA input
     b = model.cubicmodel.params.b.values
     a = model.cubicmodel.params.a.values
-    Ωa,Ωb = ab_consts(model.cubicmodel,z)
+    Ωa,Ωb = ab_consts(model.cubicmodel)
     b̄r = dot(z,b,z)/(sum(z)*Ωb)
     ār = dot(z,a,z)/Ωa
     return ār/(b̄r*b̄r)
