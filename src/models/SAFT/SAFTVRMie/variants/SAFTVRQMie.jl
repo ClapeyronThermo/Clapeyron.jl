@@ -10,7 +10,7 @@ end
 abstract type SAFTVRQMieModel <: SAFTVRMieModel end
 #SAFT-VRQ-Mie does not have sites.
 
-struct SAFTVRQMie{I,T} <: SAFTVRQMieModel
+struct SAFTVRQMie{I} <: SAFTVRQMieModel
     components::Vector{String}
     params::SAFTVRQMieParam
     idealmodel::I
@@ -33,8 +33,7 @@ function SAFTVRQMie(components;
     params_out = transform_params(MODEL,params_in)
     pkgparam = build_eosparam(PARAM,params_out)
     init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
-    references = default_references(MODEL)
-    model = SAFTVRQMie(_components,pkgparam,init_idealmodel,fh_order,locations)
+    model = SAFTVRQMie(_components,pkgparam,init_idealmodel,fh_order,default_references(MODEL))
     set_reference_state!(model,reference_state;verbose)
     return model
 end
