@@ -14,6 +14,13 @@ struct SAFTgammaMieParam{T} <: EoSParam
     mixed_segment::MixedGCSegmentParam{T}
 end
 
+function SAFTgammaMieParam{T}(group::GroupParam,sites) where T <: Number
+    gc = group.flattenedgroups
+    segment = SingleParam("segment",gc)
+end
+
+
+
 function SAFTgammaMieParam(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
     t = (segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
     x = typeof.(t)
@@ -245,7 +252,6 @@ function recombine_impl!(model::SAFTgammaMieModel)
     gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options,sites)
     model.params.bondvol.values.values[:] = gc_bondvol.values.values
     model.params.epsilon_assoc.values.values[:] = gc_epsilon_assoc.values.values
-
 
     comp_sites = gc_to_comp_sites(sites,groups)
     comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
