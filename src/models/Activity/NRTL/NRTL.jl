@@ -82,10 +82,25 @@ function NRTL(components; puremodel=PR,
     reference_state = nothing)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(NRTL); userlocations = userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b","Mw"], verbose = verbose)
-    a  = params["a"]
-    b  = params["b"]
-    c  = params["c"]
+    params = getparams(formatted_components, default_locations(NRTL); userlocations = userlocations, asymmetricparams=["a","b","tau","alpha"], ignore_missing_singleparams=["a","b","Mw","tau","alpha"], verbose = verbose)
+    if !__ismissing(params,"tau") && __ismissing(params,"a") && __ismissing(params,"b")
+        a = params["tau"]
+        b = PairParam("b",formatted_components)
+    elseif __ismissing(params,"tau") 
+        a = params["a"]
+        b = params["b"]
+    else
+        throw(ArgumentError("NRTL: tau and (a,b) are mutually exclusive parameters, please provide only one of them"))
+    end
+
+    if !__ismissing(params,"alpha") && __ismissing(params,"c")
+        c = params["alpha"]
+    elseif __ismissing(params,"alpha")
+        c = params["c"]
+    else
+        throw(ArgumentError("NRTL: `alpha` and `c` are mutually exclusive parameters, please provide only one of them"))
+    end
+
     Mw  = get(params,"Mw",SingleParam("Mw",formatted_components))
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
@@ -94,6 +109,15 @@ function NRTL(components; puremodel=PR,
     model = NRTL(formatted_components,packagedparams,_puremodel,references)
     set_reference_state!(model,reference_state,verbose = verbose)
     return model
+end
+
+__ismissing(param) = all(param.ismissingvalues)
+function __ismissing(params,key) 
+    if haskey(params,key)
+        return __ismissing(params[key])
+    else
+        return true
+    end
 end
 
 #=
