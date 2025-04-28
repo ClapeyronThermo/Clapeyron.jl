@@ -86,7 +86,14 @@ function structSAFTgammaMie(components;
     sigma3 .= sigma3 .^ 3
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
-    
+
+    if epsilon_mixing == :default
+        epsilon = epsilon_HudsenMcCoubreysqrt(params["epsilon"], sigma)
+    elseif epsilon_mixing == :hudsen_mccoubrey
+        epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
+    else
+        throw(error("invalid specification of ",error_color(epsilon_mixing),". available values are :default and :hudsen_mccoubrey"))
+    end
     #GC to component model in association
     bondvol0 = params["bondvol"]
     epsilon_assoc0 = params["epsilon_assoc"]
@@ -96,7 +103,7 @@ function structSAFTgammaMie(components;
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     vrmodel = SAFTVRMie(groups,gcparams,sites,idealmodel = init_idealmodel,assoc_options = assoc_options,epsilon_mixing = epsilon_mixing,verbose = verbose)
     group_sum!(vrmodel.params.Mw,groups,params["Mw"])
-    model = structSAFTgammaMie(components,groups,sites,gcparams,init_idealmodel,vrmodel,epsilon_mixing,assoc_options,γmierefs)
+    model = structSAFTgammaMie(components,groups,sites,gcparams,init_idealmodel,vrmodel,epsilon_mixing,assoc_options,default_references(structSAFTgammaMie))
     set_reference_state!(model,reference_state;verbose)
     return model
 end
