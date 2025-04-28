@@ -438,7 +438,11 @@ function compile_params(components,allparams,allnotfoundparams,sites,options)
     for prop in options.ignore_missing_singleparams
         get!(result,prop) do
             options.verbose && __verbose_missing_singleparams_added(prop)
-            SingleParam(prop,components)
+            if prop in options.asymmetricparams
+                PairParam(prop,components)
+            else
+                SingleParam(prop,components)
+            end
         end
     end
 
