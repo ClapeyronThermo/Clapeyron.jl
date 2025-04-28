@@ -43,7 +43,7 @@ function coolprop_csv(component::String,comp = "")
         method_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_fluid_param_string)
         err_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_global_param_string)
         val = 0
-        for i in 1:5
+        for i in 1:10
             val = ccall(method_handler, Clong, (Cstring, Cstring, Ptr{UInt8}, Int), component, "JSON", message_buffer::Array{UInt8, 1}, buffer_length)
             if val == 0
                 ccall(err_handler, Clong, (Cstring, Ptr{UInt8}, Int), "errstring", message_buffer::Array{UInt8, 1}, buffer_length)
