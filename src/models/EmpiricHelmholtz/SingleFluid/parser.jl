@@ -92,14 +92,41 @@ function compare_empiric_names(filename,input)
     return false
 end
 
+function get_json_data_coolprop(component,norm_comp1 = normalisestring(component))
+    norm_comp1 = normalisestring(component)
+    alternative_comp = get!(COOLPROP_IDENTIFIER_CACHE,norm_comp1) do
+        cas(norm_comp1)[1]
+    end
+
+    success,json_string = coolprop_csv(alternative_comp,component)
+    if success
+        data = JSON3.read(json_string)[1]
+        return data
+    else
+        if length(json_string) == 0
+            throw(error("cannot found component file $(component)."))
+        else
+            throw(error("Coolprop: $(json_string)."))
+        end
+    end
+
+end
+
 function get_json_data(components;
     userlocations = String[],
     coolprop_userlocations = true,
     verbose = false,
     )
 
+    coolprop_loaded = is_coolprop_loaded()
     component = get_only_comp(components)
-    if first(component) != '{' #not json
+
+    if coolprop_loaded && userlocations == String[] && coolprop_userlocations && component ∉ ("lj","LJ")
+        #try to get the json from coolprop first.
+        return get_json_data_coolprop(component)
+    end
+
+    if first(component) != '{' #not json &&
         _paths = flattenfilepaths(["Empiric","Empiric/EOS_CG/pures"],userlocations)
         norm_comp1 = normalisestring(component)
         f0 = x -> compare_empiric_names(x,norm_comp1)
@@ -109,25 +136,11 @@ function get_json_data(components;
             verbose && coolprop_userlocations && @info "trying to look JSON for $(info_color(component)) in CoolProp"
             #try to extract from coolprop.
             !coolprop_userlocations && throw(error("cannot found component file $(component)."))
-            alternative_comp = get!(COOLPROP_IDENTIFIER_CACHE,norm_comp1) do
-                cas(norm_comp1)[1]
-            end
-
             #check if CoolProp is loaded. if it is not, error and suggest loading CoolProp.
-            if !is_coolprop_loaded()
+            if !coolprop_loaded
                 throw(error("cannot found component file $(component). Try loading the CoolProp library (`using CoolProp`)."))
             end
-            success,json_string = coolprop_csv(alternative_comp,component)
-            if success
-                data = JSON3.read(json_string)[1]
-                return data
-            else
-                if length(json_string) == 0
-                    throw(error("cannot found component file $(component)."))
-                else
-                    throw(error("Coolprop: $(json_string)."))
-                end
-            end
+            return get_json_data_coolprop(component,norm_comp1)
         end
         _path = last(found_paths)
         verbose && @info "JSON found: $_path"
@@ -228,7 +241,11 @@ function SingleFluid(components;
     residual = _parse_residual(SingleFluidResidualParam,eos_data[:alphar];verbose = verbose)
     #ancillaries
     if ancillaries === nothing
-        init_ancillaries = _parse_ancillaries(_components,data[:ANCILLARIES],verbose,properties)
+        if haskey(eos_data,:SUPERANCILLARY)
+            init_ancillaries = _parse_ancillaries(_components,eos_data[:SUPERANCILLARY];verbose = verbose)
+        else
+            init_ancillaries = _parse_ancillaries(_components,data[:ANCILLARIES];verbose = verbose)
+        end
     else
         init_ancillaries = init_model(ancillaries,components,ancillaries_userlocations,verbose)
     end
@@ -284,7 +301,7 @@ function SingleFluidIdeal(components;
     ideal_userlocations = String[])
     _components = format_components(components)
     single_component_check(SingleFluidIdeal,_components)
-    data = get_json_data(_components;userlocations,coolprop_userlocations,verbose)    
+    data = get_json_data(_components;userlocations,coolprop_userlocations,verbose)
     eos_data = first(data[:EOS])
     #properties
     properties = _parse_properties(data,Rgas,verbose)
@@ -307,7 +324,7 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     verbose && @info "Starting parsing of properties from JSON."
     #info = data[:INFO]
     eos_data_vec  = data[:EOS]
-    eos_data = if eos_data_vec isa AbstractVector 
+    eos_data = if eos_data_vec isa AbstractVector
         #coolprop stores EOS field as a vector. the first one is the multiparameter #EoS
         #i did not see other examples in the CoolProp DB where they use more EoS
         first(eos_data_vec)
@@ -318,13 +335,24 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     st_data = data[:STATES]
     crit = st_data[:critical]
     eos_st_data = eos_data[:STATES]
+    superanc_data = if haskey(eos_data,:SUPERANCILLARY)
+        eos_data[:SUPERANCILLARY]
+    else
+        nothing
+    end
     reducing = get(eos_st_data,:reducing,nothing)
 
     Mw = 1000*tryparse_units(get(eos_data,:molar_mass,NaN),get(eos_data,:molar_mass_units,""))
-    
-    T_c = tryparse_units(get(crit,:T,NaN),get(crit,:T_units,""))
+    if superanc_data !== nothing
+        crit_anc_meta = superanc_data[:meta]
+        T_c = crit_anc_meta[Symbol("Tcrittrue / K")]
+        rho_c = crit_anc_meta[Symbol("rhocrittrue / mol/m^3")]
+    else
+        T_c = tryparse_units(get(crit,:T,NaN),get(crit,:T_units,""))
+        rho_c = tryparse_units(get(crit,:rhomolar,NaN),get(crit,:rhomolar_units,""))
+
+    end
     P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
-    rho_c = tryparse_units(get(crit,:rhomolar,NaN),get(crit,:rhomolar_units,""))
     if reducing !== nothing
         Tr = tryparse_units(get(reducing,:T,NaN),get(reducing,:T_units,""))
         rhor = tryparse_units(get(reducing,:rhomolar,NaN),get(reducing,:rhomolar_units,""))
@@ -333,7 +361,14 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
         rhor = rho_c
     end
     rhov_tp_data = get(st_data,:triple_vapor,nothing)
-    Ttp = tryparse_units(get(eos_data,:Ttriple,NaN),get(eos_data,:Ttriple_units,""))
+
+    if superanc_data !== nothing
+        crit_anc_meta = superanc_data[:meta]
+        Ttp = crit_anc_meta[Symbol("Ttriple / K")]
+    else
+        Ttp = tryparse_units(get(eos_data,:Ttriple,NaN),get(eos_data,:Ttriple_units,""))
+    end
+
     if rhov_tp_data !== nothing
         ptp = tryparse_units(get(rhov_tp_data,:p,NaN),get(rhov_tp_data,:p_units,""))
         rhov_tp = tryparse_units(get(rhov_tp_data,:rhomolar,NaN),get(rhov_tp_data,:rhomolar_units,""))
@@ -777,18 +812,30 @@ end
 
 function _parse_superancilliary_func end
 
-function _parse_ancillaries(component,anc_data,verbose = false,properties = nothing)
+function _parse_ancillaries(component,anc_data;verbose = false)
     #if SUPERANC_ENABLED[] && !isnothing(Base.get_extension(Clapeyron,:ClapeyronSuperancillaries))
     #    return _parse_superancilliary_func(component,properties,verbose)
     #end
     #saturation pressure
-    p_data = anc_data[:pS]
-    rhol_data = anc_data[:rhoL]
-    rhov_data = anc_data[:rhoV]
 
-    ps_anc = PolExpSat(_parse_ancilliary_func(p_data,:T_r,:reducing_value))
-    rhov_anc = PolExpVapour(_parse_ancilliary_func(rhov_data,:T_r,:reducing_value))
-    rhol_anc = PolExpLiquid(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
+    if haskey(anc_data,:jexpansions_p) && haskey(anc_data,:jexpansions_rhoL) && haskey(anc_data,:jexpansions_rhoV)
+        p_data = anc_data[:jexpansions_p]
+        rhol_data = anc_data[:jexpansions_rhoL]
+        rhov_data = anc_data[:jexpansions_rhoV]
+
+        ps_anc = PolExpSat(Solvers.ChebyshevRange(p_data))
+        rhov_anc = PolExpVapour(Solvers.ChebyshevRange(rhov_data))
+        rhol_anc = PolExpLiquid(Solvers.ChebyshevRange(rhol_data))
+    else
+        p_data = anc_data[:pS]
+        rhol_data = anc_data[:rhoL]
+        rhov_data = anc_data[:rhoV]
+
+        ps_anc = PolExpSat(_parse_ancilliary_func(p_data,:T_r,:reducing_value))
+        rhov_anc = PolExpVapour(_parse_ancilliary_func(rhov_data,:T_r,:reducing_value))
+        rhol_anc = PolExpLiquid(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
+    end
+
     return CompositeModel(component,gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
 end
 

@@ -10,6 +10,14 @@ struct GenericAncEvaluator
     superanc::Solvers.ChebyshevRangeV64 #used if EoSSuperancillaries.jl is loaded
 end
 
+Base.show(io::IO,anc::GenericAncEvaluator) = print(io,"GenericAncEvaluator(ancillary type = :$(anc.type))")
+
+function GenericAncEvaluator(superanc::Solvers.ChebyshevRangeV64)
+    d = Float64[]
+    return GenericAncEvaluator(d,d,0.0,0.0,:superanc,true,superanc)
+
+end
+
 function GenericAncEvaluator(n,T,input_r,output_r,type,using_input_r)
     return GenericAncEvaluator(n,T,input_r,output_r,type,using_input_r,Solvers.ChebyshevRange(Float64[],Vector{Float64}[]))
 end
@@ -20,7 +28,7 @@ function _eval_generic_anc(data::GenericAncEvaluator,input)
     output_r = data.output_r
     xr = input/input_r
     use_xr = data.using_input_r
-    xr > 1 && return zero(xr)/zero(xr)
+    xr > 1 && type !== :superanc && return zero(xr)/zero(xr)
     n = data.n
     v = data.t
     θ = (input_r-input)/input_r
@@ -38,7 +46,7 @@ function _eval_generic_anc(data::GenericAncEvaluator,input)
         ∑b = evalpoly(input,v)
         return ∑a/∑b
     elseif type == :superanc
-        return Solvers.cheb_eval(data.superanc,xr)
+        return Solvers.cheb_eval(data.superanc,input)
     else
         throw(error("unrecognized type: " * string(type)))
     end
