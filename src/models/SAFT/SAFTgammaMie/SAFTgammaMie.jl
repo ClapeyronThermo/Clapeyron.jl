@@ -167,14 +167,23 @@ function SAFTgammaMie(components;
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
     
+    if epsilon_mixing == :default
+        epsilon = epsilon_HudsenMcCoubreysqrt(params["epsilon"], sigma)
+    elseif epsilon_mixing == :hudsen_mccoubrey
+        epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
+    else
+        throw(error("invalid specification of ",error_color(epsilon_mixing),". available values are :default and :hudsen_mccoubrey"))
+    end
+
     #GC to component model in association
     bondvol0 = params["bondvol"]
     epsilon_assoc0 = params["epsilon_assoc"]
     bondvol,epsilon_assoc = assoc_mix(bondvol0,epsilon_assoc0,sigma,assoc_options,sites) #combining rules for association
 
-    gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol,mixed_segment)
+    gcparams = SAFTgammaMieParam(segment, shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     vrmodel = SAFTVRMie(groups,gcparams,sites,idealmodel = init_idealmodel,assoc_options = assoc_options,epsilon_mixing = epsilon_mixing,verbose = verbose)
+    group_sum!(vrmodel.params.Mw,groups,params["Mw"])
     model = SAFTgammaMie(components,groups,sites,gcparams,init_idealmodel,vrmodel,epsilon_mixing,assoc_options,default_references(SAFTgammaMie))
     set_reference_state!(model,reference_state;verbose)
     return model
@@ -188,13 +197,13 @@ export SAFTgammaMie,SAFTγMie
 
 SAFTVRMie(model::SAFTgammaMieModel) = model.vrmodel
 
-function SAFTVRMie(group::GroupParam,param::SAFTgammaMieParam,sites::SiteParam = SiteParam(group.flattenedgroups);
+function SAFTVRMie(groups::GroupParam,param::SAFTgammaMieParam,sites::SiteParam = SiteParam(group.flattenedgroups);
     idealmodel = BasicIdeal(),assoc_options = AssocOptions(),
     epsilon_mixing = :default,
     verbose = false)
 
     verbose && @info("SAFTγ-Mie: creating SAFTVRMie model from SAFTγ-Mie parameters.")
-
+    components = groups.components
     mixed_segment = param.mixed_segment
     gc_segment = param.segment
     shapefactor = param.shapefactor
@@ -230,10 +239,9 @@ function SAFTVRMie(group::GroupParam,param::SAFTgammaMieParam,sites::SiteParam =
     comp_sites = gc_to_comp_sites(sites,groups)
     comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
     comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-
-    mw = group_sum(groups,params.Mw)
-    vrparams = SAFTVRMieParam(mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
-    return SAFTVRMie(group.components,comp_sites,vrparams,idealmodel,assoc_options,default_references(SAFTVRMie))
+    Mw = SingleParam("Mw",components)
+    vrparams = SAFTVRMieParam(Mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
+    return SAFTVRMie(components,comp_sites,vrparams,idealmodel,assoc_options,default_references(SAFTVRMie))
 end
 
 include("equations.jl")
