@@ -94,7 +94,8 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
 function group_sum(groups,::Nothing)
-    out = zeros(Float64,length(groups.components))
+    v = __get_group_sum_values(groups)
+    out = zeros(eltype(v[1]),length(groups.components))
     return group_sum!(out,groups,true)
 end
 
@@ -159,7 +160,6 @@ group_pairmean(groups,param) = group_pairmean(mix_mean,groups,param)
 function group_pairmean(f::T,groups,param::SingleOrPair) where {T}
     return SingleParam(param.name,groups.components,group_pairmean(f,groups,param.values))
 end
-
 
 function group_pairmean(f::F,groups,p::AbstractArray) where {F}
     v = __get_group_sum_values(groups)

@@ -289,4 +289,11 @@ function Base.convert(::Type{MixedGCSegmentParam{T1}},param::MixedGCSegmentParam
     return MixedGCSegmentParam{T1}(param.name,param.components,values)
 end
 
+function Solvers.primalval(param::MixedGCSegmentParam)
+    p,v1 = param.values.p,param.values.v
+    v = Solvers.primalval_eager(v1)
+    values = PackedVofV(p,v)
+    return MixedGCSegmentParam(param.name,param.components,values)
+end
+
 export MixedGCSegmentParam

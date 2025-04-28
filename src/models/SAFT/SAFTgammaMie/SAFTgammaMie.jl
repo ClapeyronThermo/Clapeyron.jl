@@ -2,7 +2,7 @@
 abstract type SAFTgammaMieModel <: SAFTVRMieModel end
 
 
-struct SAFTgammaMieParam{T} <: EoSParam
+struct SAFTgammaMieParam{T} <: ParametricEoSParam{T}
     segment::SingleParam{Int}
     shapefactor::SingleParam{T}
     lambda_a::PairParam{T}
