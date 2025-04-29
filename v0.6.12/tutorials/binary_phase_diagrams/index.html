@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Binary Phase Diagrams · Clapeyron.jl</title><meta name="title" content="Binary Phase Diagrams · Clapeyron.jl"/><meta property="og:title" content="Binary Phase Diagrams · Clapeyron.jl"/><meta property="twitter:title" content="Binary Phase Diagrams · Clapeyron.jl"/><meta name="description" content="Documentation for Clapeyron.jl."/><meta property="og:description" content="Documentation for Clapeyron.jl."/><meta property="twitter:description" content="Documentation for Clapeyron.jl."/><meta property="og:url" content="https://ClapeyronThermo.github.io/Clapeyron.jl/tutorials/binary_phase_diagrams/"/><meta property="twitter:url" content="https://ClapeyronThermo.github.io/Clapeyron.jl/tutorials/binary_phase_diagrams/"/><link rel="canonical" href="https://ClapeyronThermo.github.io/Clapeyron.jl/tutorials/binary_phase_diagrams/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/logo.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="Clapeyron.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Clapeyron.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../installation/">Installation</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../basics_model_construction/">Getting Started - Model Construction</a></li><li><a class="tocitem" href="../user_defined_parameters/">User-defined Parameters</a></li><li><a class="tocitem" href="../bulk_properties/">Bulk Properties</a></li><li><a class="tocitem" href="../mixing_functions/">Mixing and Excess Functions</a></li><li><a class="tocitem" href="../pure_saturation_curves/">Pure Saturation Properties</a></li><li class="is-active"><a class="tocitem" href>Binary Phase Diagrams</a><ul class="internal"><li><a class="tocitem" href="#Simple-binary-phase-diagrams"><span>Simple binary phase diagrams</span></a></li><li><a class="tocitem" href="#Azeotropic-binary-phase-diagrams"><span>Azeotropic binary phase diagrams</span></a></li><li><a class="tocitem" href="#Binary-phase-diagrams-with-one-supercritical-component"><span>Binary phase diagrams with one supercritical component</span></a></li><li><a class="tocitem" href="#Binary-phase-diagrams-with-LLE"><span>Binary phase diagrams with LLE</span></a></li><li><a class="tocitem" href="#Binary-phase-diagrams-with-VLLE"><span>Binary phase diagrams with VLLE</span></a></li><li><a class="tocitem" href="#*pT*-isopleths"><span><em>pT</em> isopleths</span></a></li><li><a class="tocitem" href="#*pT*-projections"><span><em>pT</em> projections</span></a></li></ul></li><li><a class="tocitem" href="../ternary_phase_diagrams/">Ternary Phase Diagrams</a></li><li><a class="tocitem" href="../sle_phase_diagrams/">SLE Phase Diagrams</a></li><li><a class="tocitem" href="../xy_flash/">Other Flash Computations</a></li></ul></li><li><a class="tocitem" href="../../notebook_examples/">Notebook Examples</a></li><li><span class="tocitem">Available EoS</span><ul><li><a class="tocitem" href="../../eos/ideal/">Ideal Models</a></li><li><a class="tocitem" href="../../eos/cubic/">Cubic Models</a></li><li><a class="tocitem" href="../../eos/activity/">Activity Models</a></li><li><a class="tocitem" href="../../eos/saft/">SAFT and CPA Models</a></li><li><a class="tocitem" href="../../eos/empiric/">Empiric Helmholtz Models</a></li><li><a class="tocitem" href="../../eos/correlations/">Property Correlations</a></li><li><a class="tocitem" href="../../eos/misc/">Other Models</a></li></ul></li><li><a class="tocitem" href="../../faq/">Frequently Asked Questions</a></li><li><span class="tocitem">Available Properties</span><ul><li><a class="tocitem" href="../../properties/basic/">Basic Properties</a></li><li><a class="tocitem" href="../../properties/bulk/">Bulk Properties</a></li><li><a class="tocitem" href="../../properties/single/">Single phase Properties</a></li><li><a class="tocitem" href="../../properties/multi/">Multiphase Properties</a></li><li><a class="tocitem" href="../../properties/electrolytes/">Electrolyte Properties</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../api/parameters/">Parameters</a></li><li><a class="tocitem" href="../../api/macros/">Macros</a></li><li><a class="tocitem" href="../../api/association/">Association</a></li><li><a class="tocitem" href="../../api/estimation/">Parameter Estimation</a></li></ul></li><li><a class="tocitem" href="../../to-do_list/">To-do list</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Binary Phase Diagrams</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Binary Phase Diagrams</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/ClapeyronThermo/Clapeyron.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/ClapeyronThermo/Clapeyron.jl/blob/master/docs/src/tutorials/binary_phase_diagrams.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Binary-phase-diagrams"><a class="docs-heading-anchor" href="#Binary-phase-diagrams">Binary phase diagrams</a><a id="Binary-phase-diagrams-1"></a><a class="docs-heading-anchor-permalink" href="#Binary-phase-diagrams" title="Permalink"></a></h1><p>The notebook associated with this tutorial can be found <a href="../../../examples/binary_phase_diagrams.ipynb">here</a>.</p><p>When handling two components, we introduce an additional variable to our parameter space: composition. Typically, when visualising the phase space, we would like to visualise it on the temperature, pressure and/or composition axes. However, to do so on a 2D figure will require us to fix one of these variables while varying the other two. In this tutorial, we&#39;ll go over how to obtain the varying types of binary phase diagrams using Clapeyron.</p><p>Note that this tutorial will focus on &#39;conventional&#39; binary fluid-phase diagrams (i.e. mixtures of small molecules). Other tutorials will go over other types of systems (such as polymer mixtures, solid-fluid equilibrium and electrolytes).</p><h2 id="Simple-binary-phase-diagrams"><a class="docs-heading-anchor" href="#Simple-binary-phase-diagrams">Simple binary phase diagrams</a><a id="Simple-binary-phase-diagrams-1"></a><a class="docs-heading-anchor-permalink" href="#Simple-binary-phase-diagrams" title="Permalink"></a></h2><p>As a first step, we&#39;ll consider what we refer to as simple binary phase diagrams. Here, we&#39;ll vary the composition of the two components but fix either temperature or pressure, also known as <em>pxy</em> and <em>Txy</em> binary phase diagrams, respectively. Consider a binary mixture of <span>$n$</span>-butane and <span>$n$</span>-hexane:</p><pre><code class="language-julia hljs">julia&gt; model = PR([&quot;hexane&quot;,&quot;butane&quot;])
+PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule} with 2 components:
+ &quot;hexane&quot;
+ &quot;butane&quot;
+Contains parameters: a, b, Tc, Pc, Mw</code></pre><p>Let us imagine that we have a 50/50 mixture and we want to know its bubble point at <span>$T=$</span>298.15 K (the pressure at which it will just start to boil), as well as the corresponding composition in the gas phase. For this, we can use the <code>bubble_pressure(model, T, x)</code> function:</p><pre><code class="language-julia hljs">julia&gt; (p, vl, vv, y) = bubble_pressure(model, 298.15, [0.5,0.5])
+(128247.2211869368, 0.00011306249539081021, 0.018576689885080235, [0.08390499267853593, 0.9160950073214641])</code></pre><p>And it is as simple as that! There will also be the corresponding <code>dew_pressure(model, T, x)</code> function to obtain the dew point at a given temperature (the pressure at which the mixture just start to condense):</p><pre><code class="language-julia hljs">julia&gt; (p, vl, vv, x) = dew_pressure(model, 298.15, y)
+(128247.22118805244, 0.00011306249539065818, 0.018576689884889263, [0.4999999999953279, 0.500000000004672])</code></pre><p>As well as the equivalent <code>bubble_temperature(model, p, x)</code> and <code>dew_temperature(model, p, y)</code> to obtain the bubble/dew points at a given pressure:</p><pre><code class="language-julia hljs">julia&gt; (T, vl, vv, y) = bubble_temperature(model, p, x)
+(298.1500000000996, 0.00011306249539067619, 0.01857668988489819, [0.08390499267605682, 0.9160950073239432])
+
+julia&gt; (T, vl, vv, x) = dew_temperature(model, p, y)
+(298.1499999996214, 0.00011306249539036688, 0.01857668988486471, [0.4999999999884703, 0.5000000000115297])</code></pre><p>!!! tip Alternative methods     Much like our pure-component saturation functions, we provide alternative methods for the functions lists above.     A comprehensive list of these can be found in our <a href="../../properties/multi/">API docs</a>.     Note that not all of these methods are compatible with all equations of state as approaches like activity coefficient models require different algorithms.</p><p>With these four functions, it is now possible to trace the complete phase diagram of <span>$n$</span>-butane and <span>$n$</span>-hexane: First, we&#39;ll plot the constant temperature, <em>pxy</em> phase diagram:</p><pre><code class="language-julia hljs">N    = 201
+T    = 298.15
+
+x    = LinRange(0., 1.,  N)
+p    = zeros(N)
+y    = zeros(N)
+
+v0 = nothing
+for i in 1:N
+    bub = bubble_pressure(model, T, [x[i], 1-x[i]])
+    p[i] = bub[1]
+    y[i] = bub[4][1]
+end</code></pre><p>With the final diagram being: <img src="../../assets/but_hex_pxy.png" alt="but_hex_pxy"/></p><p>Very little needs to be changed to obtain the corresponding constant pressure, <em>Txy</em> diagram:</p><pre><code class="language-julia hljs">N    = 201
+p    = 1e5
+
+x    = LinRange(0., 1.,  N)
+T    = zeros(N)
+y    = zeros(N)
+
+v0 = nothing
+for i in 1:N
+    bub = bubble_temperature(model, p, [x[i], 1-x[i]])
+    T[i] = bub[1]
+    y[i] = bub[4][1]
+end</code></pre><p>With the final diagram being: <img src="../../assets/but_hex_Txy.png" alt="but_hex_Txy"/></p><p>Naturally, binary mixtures of linear alkanes are as simple as the diagrams can be (what would normally be referred to as a type-I mixture). In introducing non-idealities, the binary phase diagrams, and how they are drawn, becomes more complicated.</p><h2 id="Azeotropic-binary-phase-diagrams"><a class="docs-heading-anchor" href="#Azeotropic-binary-phase-diagrams">Azeotropic binary phase diagrams</a><a id="Azeotropic-binary-phase-diagrams-1"></a><a class="docs-heading-anchor-permalink" href="#Azeotropic-binary-phase-diagrams" title="Permalink"></a></h2><p>If we now consider a non-ideal mixture of cyclohexane and methanol:</p><pre><code class="language-julia hljs">julia&gt; model = PCSAFT([&quot;cyclohexane&quot;, &quot;methanol&quot;])
+PCSAFT{BasicIdeal, Float64} with 2 components:
+ &quot;cyclohexane&quot;
+ &quot;methanol&quot;
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol</code></pre><p>This mixture will exhibit an azeotrope (a set of conditions where the dew and bubble point occur at the same composition). In this case, one can&#39;t just blindly trace the phase diagram. This is primarily because our initial guesses assume that the mixture obeys Raoult&#39;s law. As such, these initial guesses won&#39;t be suitable for azeotropic mixtures. Much like the pure-component saturation properties, it is best to use the solution of the previous iteration as the initial guess for the next iteration. Consider the constant temperature, <em>pxy</em> phase diagram:</p><pre><code class="language-julia hljs">N    = 401
+T    = 343.15
+
+x    = LinRange(0., 1.,  N)
+p    = zeros(N)
+y    = zeros(N)
+
+v0 = nothing
+for i in 1:N
+    if i==1
+        bub = bubble_pressure(model, T, [x[i], 1-x[i]])
+        p[i] = bub[1]
+        y[i] = bub[4][1]
+        v0   = vcat(log10.([bub[2],bub[3]]),[x[i+1],1-x[i+1]])
+    else
+        bub = bubble_pressure(model, T, [x[i], 1-x[i]]; v0 = v0)
+        p[i] = bub[1]
+        y[i] = bub[4][1]
+        v0   = vcat(log10.([bub[2],bub[3]]),bub[4])
+    end
+end</code></pre><p>The corresponding phase diagram is: <img src="../../assets/meoh_cyhex_pxy.png" alt="etoh_hex_pxy"/></p><p>Much like the simple case, very little needs to change to handle the corresponding constant pressure, <em>Txy</em> phase diagram:</p><pre><code class="language-julia hljs">N    = 201
+p    = 1e5
+
+x    = LinRange(0., 1.,  N)
+T    = zeros(N)
+y    = zeros(N)
+
+v0 = nothing
+for i in 1:N
+    if i==1
+        bub = bubble_temperature(model, p, [x[i], 1-x[i]])
+        T[i] = bub[1]
+        y[i] = bub[4][1]
+        v0   = vcat(bub[1],log10.([bub[2],bub[3]]),[x[i+1],1-x[i+1]])
+    else
+        bub = bubble_temperature(model, p, [x[i], 1-x[i]]; v0 = v0)
+        T[i] = bub[1]
+        y[i] = bub[4][1]
+        v0   = vcat(bub[1],log10.([bub[2],bub[3]]),bub[4])
+    end
+end</code></pre><p>With the corresponding phase diagram being: <img src="../../assets/meoh_cyhex_Txy.png" alt="etoh_hex_Txy"/></p><p>!!! tip <code>azeotrope_X</code> function     Looking through our API docs, one can find the <code>azeotrope_pressure(model, T)</code> and <code>azeotrope_temperature(model, p)</code> functions.     These can obtain the exact conditions at which the azeotrope occurs at a given temperature or pressure.     They are perhaps more useful in the context of <em>pT</em>-projections rather than <em>pxy</em> and <em>Txy</em> diagrams.</p><h2 id="Binary-phase-diagrams-with-one-supercritical-component"><a class="docs-heading-anchor" href="#Binary-phase-diagrams-with-one-supercritical-component">Binary phase diagrams with one supercritical component</a><a id="Binary-phase-diagrams-with-one-supercritical-component-1"></a><a class="docs-heading-anchor-permalink" href="#Binary-phase-diagrams-with-one-supercritical-component" title="Permalink"></a></h2><p>Consider a mixture of carbon dioxide and <span>$n$</span>-hexane:</p><pre><code class="language-julia hljs">julia&gt; model = SRK([&quot;carbon dioxide&quot;,&quot;hexane&quot;])
+RK{BasicIdeal, SoaveAlpha, NoTranslation, vdW1fRule} with 2 components:
+ &quot;carbon dioxide&quot;
+ &quot;hexane&quot;
+Contains parameters: a, b, Tc, Pc, Mw</code></pre><p>Thus far, we have only considered conditions where both components are sub-critical (i.e. the phase diagram start and ends at compositions of 0 and 1, respectively). However, when we reach conditions above the critical point of one component, the diagram will end at a critical point rather than at a pure component. It is difficult to predict the exact composition of the critical point ahead of time. As such, one needs to gradually approach the critical point until the dew and bubble curves eventually match (to within a certain tolerance), noting the iteration at which the diagram closed (<code>idxend</code>):</p><pre><code class="language-julia hljs">N    = 401
+idxend = N
+T    = 353.15
+
+x    = LinRange(0., 1.,  N)
+p    = zeros(N)
+y    = zeros(N)
+
+v0 = nothing
+for i in 1:N
+    if i==1
+        bub = bubble_pressure(model, T, [x[i], 1-x[i]])
+        p[i] = bub[1]
+        y[i] = bub[4][1]
+        v0   = vcat(log10.([bub[2],bub[3]]),[x[i+1],1-x[i+1]])
+    else
+        bub = bubble_pressure(model, T, [x[i], 1-x[i]]; v0 = v0)
+        p[i] = bub[1]
+        y[i] = bub[4][1]
+        v0   = vcat(log10.([bub[2],bub[3]]),bub[4])
+        if abs(y[i] - x[i])/x[i] &lt; 1e-3 || isnan(p[i])
+            idxend = i-1
+            break
+        end
+    end
+end
+
+x = vcat(y[1:idxend],reverse(x[1:idxend]))
+p = vcat(p[1:idxend],reverse(p[1:idxend]));</code></pre><p>Resulting in the following phase diagram: <img src="../../assets/co2_hex_pxy.png" alt="co2_hex_pxy"/></p><p>Note that, as you approach the critical point, our solvers will become less stable due to the nature of derivatives near the critical point. You may need a larger number of points than shown above.</p><h3 id="Waterlight-gases"><a class="docs-heading-anchor" href="#Waterlight-gases">Water+light gases</a><a id="Waterlight-gases-1"></a><a class="docs-heading-anchor-permalink" href="#Waterlight-gases" title="Permalink"></a></h3><p>In some cases, the volatility of the two components is so different, it is not relevant / possible to plot the full phase diagram up to the critical point. This includes systems like water+light gases. In these cases, it is more relevant to plot up to compositions where the predicted pressures are still within a reasonable range. Consider an example of water+carbon dioxide:</p><pre><code class="language-julia hljs">julia&gt; model = SAFTVRMie([&quot;carbon dioxide&quot;,&quot;water&quot;])
+SAFTVRMie{BasicIdeal, Float64} with 2 components:
+ &quot;carbon dioxide&quot;
+ &quot;water&quot;
+Contains parameters: Mw, segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol</code></pre><p>For this system, the only interesting composition range is up to 3\% mole fraction of carbon dioxide in the liquid phase: <img src="../../assets/co2_h2o_pxy.png" alt="co2_h2o_pxy"/></p><p>Going much beyond this composition range, particularly when one reaches pressures in GPa, will typically encounter numerical issues. As such, when modelling in these conditions, it is better to use methods that are more-numerically stable (such as the <code>FugBubblePressure</code> methods).</p><h2 id="Binary-phase-diagrams-with-LLE"><a class="docs-heading-anchor" href="#Binary-phase-diagrams-with-LLE">Binary phase diagrams with LLE</a><a id="Binary-phase-diagrams-with-LLE-1"></a><a class="docs-heading-anchor-permalink" href="#Binary-phase-diagrams-with-LLE" title="Permalink"></a></h2><p>Thus far, we have only considered vapour–liquid equilibrium. However, in some mixtures, one can also obtain liquid–liquid equilibrium (LLE). As an example of this, the <em>Txy</em> diagram for the methanol+cyclohexane mixture considered earlier will exhibit LLE at slightly lower temperatures. To obtain the composition of each phase, one needs to perform a flash calculation at constant temperature and pressure, remembering to specify that we are search for LLE:</p><pre><code class="language-julia hljs">julia&gt; (n,ϕ,G) = tp_flash(model,1e5,288.15,[0.5,0.5],MichelsenTPFlash(equilibrium=:lle));
+
+julia&gt; n
+2×2 Matrix{Float64}:
+ 0.161483  0.838517
+ 0.93219   0.0678104</code></pre><p>A few things to note:</p><ol><li><p>In the above, we set the system composition to 50/50.  However, there is no guarantee the phase split will occur exactly there (especially in size asymmetric systems).  One easy way to check if a phase split occurs is to use the <code>Clapeyron.isstable(model, p, T, z)</code> function.  If this function returns <code>false</code>, then we know the system is unstable as a single phase and must phase split:</p><p><code>julia  julia&gt; Clapeyron.isstable(model, 1e5, 298.15, [0.5,0.5])  false</code></p></li><li><p>Although we have a more-detailed tutorial going over flash algorithms, one way to quickly speed up the calculations is to specify an initial guess for the partition coefficient of each species.  So long as the magnitude of each coefficient is large enough, the flash algorithm should work:</p><p><code>julia  julia&gt; tp_flash(model,1e5,288.15,[0.5,0.5],MichelsenTPFlash(equilibrium=:lle,K0=[1e5,1e-4]));</code></p></li></ol><p>To trace the full LLE region, we simply need to iterate in temperature (or pressure) until the LLE region closes at the UCST (or LCST). Much like the earlier system with one supercritical component, we don&#39;t necessarily know ahead of time where the region closes. As such, we need to verify the difference in composition between each phase. Further, unless the critical point is at exactly 50/50, we will typically need to modify the value of the system composition to ensure it lies perfectly in the middle of the phase diagram. Below we show a complete example to trace the LLE region:</p><pre><code class="language-julia hljs">N    = 200
+Tlle = LinRange(300.,minimum(T),N)
+x1   = zeros(N)
+x2   = zeros(N)
+
+K0 = [1e5, 1e-4]
+z  = [0.5,0.5]
+
+idxend = N
+for i in 1:N
+    (n,_,_) = tp_flash(model, p, Tlle[i], z, MichelsenTPFlash(equilibrium=:lle, K0=K0))
+    K0 = n[2,:]./n[1,:]
+    z = (n[1,:]+n[2,:])/2
+    x1[i] = n[1,1]
+    x2[i] = n[2,1]
+    if abs(x1[i]-x2[i])&lt;1e-3
+        idxend = i
+        break
+    end
+end</code></pre><p>The resulting phase diagram then looks like: <img src="../../assets/meoh_cyhex_Txy_lle.png" alt="meoh_hex_Txy_lle"/></p><h2 id="Binary-phase-diagrams-with-VLLE"><a class="docs-heading-anchor" href="#Binary-phase-diagrams-with-VLLE">Binary phase diagrams with VLLE</a><a id="Binary-phase-diagrams-with-VLLE-1"></a><a class="docs-heading-anchor-permalink" href="#Binary-phase-diagrams-with-VLLE" title="Permalink"></a></h2><p>In some mixtures, it is also possible for the VLE and LLE mixtures to meet and form vapour–liquid–liquid equilibrium (VLLE). While this might sound more challenging to detect than LLE, there are actually ways to identify VLLE from a VLE curve. For this example, we&#39;ll consider 1-pentanol+water, using a combining rule to obtain the cross-association:</p><pre><code class="language-julia hljs">julia&gt; model = PCSAFT([&quot;1-pentanol&quot;, &quot;water&quot;]; assoc_options=AssocOptions(combining=:elliott))
+PCSAFT{BasicIdeal, Float64} with 2 components:
+ &quot;1-pentanol&quot;
+ &quot;water&quot;
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol</code></pre><p>If we just blindly plot the <em>pxy</em> (or <em>Txy</em>) diagram, we will see some unphysical behaviour: <img src="../../assets/water_pentoh_pxy_wrong.png" alt="water_pentoh_pxy_wrong"/> One can see the presence of an unphysical crossover in the dew curve, as well as a maxima in the bubble curve. These are the tell-tale signs of the presence of VLLE at these conditions. Something similar also occurs in the <em>Txy</em> diagram: <img src="../../assets/water_pentoh_Txy_wrong.png" alt="water_pentoh_Txy_wrong"/> Once VLLE has been identified, to solve for its exact state, we can use the <code>VLLE_pressure(model, T)</code> / <code>VLLE_temperature(model, p)</code> functions. Unfortunately, generating good initial guesses automatically is very challenging. As such, users will need to provide decent initial guesses. With the diagram above, we can tell that VLLE will be located right where the dew curve crosses itself, allowing us to identify the composition of the three phases. The initial guesses for the volume can then be obtained just using the <code>volume</code> function at the pressure, temperature and composition identified. Remembering to provide the <code>log10</code> of the volume, we can obtain the VLLE point:</p><pre><code class="language-julia hljs">julia&gt; (p, vl, vll, vv, x, xx, y) = VLLE_pressure(model, 343.15; v0 = [-4.6,-4.06,-0.1,0.01,0.8,0.15])
+(35079.35262083988, 2.0290656644114528e-5, 7.440520356496663e-5, 0.08041940114970583, [0.0020208017777866936, 0.9979791982222133], [0.5829926745371229, 0.4170073254628771], [0.11016762215206487, 0.8898323778479351])</code></pre><p>With this point identified, we can obtain the LLE region just using <code>tp_flash</code> function as we did previously (one can imagine something very similar for the isobaric phase diagram):</p><pre><code class="language-julia hljs">T    = 343.15
+
+# Obtain VLLE
+(p3, vl, vll, vv, x3, xx3, y3) = VLLE_pressure(model,
+T; v0 = [-4.6,-4.06,-0.1,0.01,0.8,0.15])
+
+# Obtain VLE
+N    = 201
+
+x1    = LinRange(0., x3[1],  N)
+p1    = zeros(N)
+y1    = zeros(N)
+
+x2    = LinRange(1., xx3[1],  N)
+p2    = zeros(N)
+y2    = zeros(N)
+
+v01 = nothing
+v02 = nothing
+
+# Use code described earlier for each side of the VLE region
+
+# Obtain LLE
+N    = 200
+plle = LinRange(p3, 2*p3, N)
+xx1   = zeros(N)
+xx2   = zeros(N)
+
+K0 = x3 ./ xx3
+z  = (x3 .+ xx3)./2
+# Use code described earlier for the LLE region</code></pre><p>The resulting phase diagrams (both <em>pxy</em> and <em>Txy</em>) will look something like this:</p><ul><li>Isothermal:</li></ul><p><img src="../../assets/water_pentoh_pxy.png" alt="water_pentoh_pxy"/></p><ul><li>Isobaric:</li></ul><p><img src="../../assets/water_pentoh_Txy.png" alt="water_pentoh_Txy"/></p><p>This covers most binary phase diagrams one might be interested in when holding either temperature or pressure fixed.</p><h2 id="*pT*-isopleths"><a class="docs-heading-anchor" href="#*pT*-isopleths"><em>pT</em> isopleths</a><a id="*pT*-isopleths-1"></a><a class="docs-heading-anchor-permalink" href="#*pT*-isopleths" title="Permalink"></a></h2><p>The next class of phase diagram we&#39;ll consider is when we project the diagram onto the pressure and temperature axis, holding composition constant (known at <em>pT</em> isopleths). These diagrams can be applied to any number of components but, for the time being, we&#39;ll only consider a binary mixture. For these particular diagrams, it is recommended that users familiarise themselves with the concept of critical points of mixtures, cricondentherms and cricondenbars. These diagrams can become quite complex and, in this tutorial, we&#39;ll only go over how to obtain the simplest form for <em>pT</em> isopleths (for type-I mixtures) using an ethane+decane mixture:</p><pre><code class="language-julia hljs">julia&gt; model = PR([&quot;ethane&quot;,&quot;decane&quot;])
+
+julia&gt; z = [0.95,0.05];</code></pre><p>As a starting point, similar the saturation curve of a pure component, we&#39;ll obtain the critical point of the mixture using <code>crit_mix(model, z)</code>:</p><pre><code class="language-julia hljs">julia&gt; (Tc, pc, vc) = crit_mix(model,z)
+(352.7590586411515, 8.711875761029465e6, 0.00012655401697374196)</code></pre><p>To trace the <em>pT</em> isopleth, we need to obtain the bubble and dew curves up to this critical point. However, there will be a few caveats. We&#39;ll use almost the same code as we used in all other phase diagrams:</p><pre><code class="language-julia hljs">N = 300
+T1, T2 = LinRange(220., Tc, N), LinRange(220., Tc, N)
+p1, p2 = zeros(N), zeros(N)
+v01 = nothing
+v02 = nothing
+
+for i in 1:N
+    if i == 1
+        bub = bubble_pressure(model, T1[i], z)
+        p1[i] = bub[1]
+        v01   = vcat(log10.([bub[2],bub[3]]),bub[4])
+
+        bub = dew_pressure(model, T2[i], z)
+        p2[i] = bub[1]
+        v02   = vcat(log10.([bub[2],bub[3]]),bub[4])
+    else
+        bub = bubble_pressure(model, T1[i], z; v0 = v01)
+        p1[i] = bub[1]
+        v01   = vcat(log10.([bub[2],bub[3]]),bub[4])
+
+        bub = dew_pressure(model, T2[i], z; v0 = v02)
+        p2[i] = bub[1]
+        v02   = vcat(log10.([bub[2],bub[3]]),bub[4])
+    end
+end</code></pre><p>However, if we plot these two curves, we can see that the diagram isn&#39;t complete: <img src="../../assets/eth_dec_pT_1.png" alt="eth_dec_pT_1"/></p><p>In this case, the cricondentherm and cricondenbar are both above the critical point of the mixture. To close the <em>pT</em> isopleths, we need to add 1-2 more sections to the plot:</p><ul><li>Tracing the dew point from the end of <code>p2</code> to <code>pc</code> (using <code>dew_temperature</code>):</li></ul><pre><code class="language-julia hljs">p3 = LinRange(p2[end], pc, N)
+T3 = zeros(N)
+
+v03 = append!([Tc],v02)
+
+for i in 1:N
+    dew = dew_temperature(model, p3[i], z; v0 = v03)
+    T3[i] = dew[1]
+    v03   = vcat(dew[1],log10.([dew[2],dew[3]]),dew[4])
+end</code></pre><ul><li>Tracing the dew point from the end of <code>T2</code> to <code>Tc</code> (using <code>dew_pressure</code>).</li></ul><p>This part may not be needed for all <em>pT</em> isopleths if the cricondenbar is below <code>Tc</code>:</p><pre><code class="language-julia hljs">T4 = LinRange(T3[end], Tc, N)
+p4 = zeros(N)
+
+v04 = v03[2:end]
+
+for i in 1:N
+    dew = dew_pressure(model, T4[i], z; v0 = v04)
+    p4[i] = dew[1]
+    v04 = vcat(log10.([dew[2],dew[3]]),dew[4])
+end</code></pre><p>And with that, we can trace the full <em>pT</em> isopleth: <img src="../../assets/eth_dec_pT.png" alt="eth_dec_pT"/></p><p>This approach is generalised for any number of components. Where it will begin to fail is more-complex phase diagrams beyond type-I, where LLE and VLLE regions begin to appear. These will typically be at low temperature and high pressures. It is possible to trace these types of diagrams using Clapeyron; however, it will involve a lot more manual specification of initial guesses and is very difficult to do so without knowing ahead of time where these regions occur.</p><h2 id="*pT*-projections"><a class="docs-heading-anchor" href="#*pT*-projections"><em>pT</em> projections</a><a id="*pT*-projections-1"></a><a class="docs-heading-anchor-permalink" href="#*pT*-projections" title="Permalink"></a></h2><p>Thus far, all the phase diagrams we&#39;ve considered have been slices of the global binary phase diagram. This is convenient when we want to obtain the exact conditions at which phase equilibrium will occur. However, if we want to get a better idea of the global phase behaviour of the mixture, it is possible to project the global phase diagram onto a pressure-temperature plot. Here, we are only concerned with tracing the region in which the mixture <em>could</em> experience phase equilibrium.</p><p>Note that, at this stage, there is no automatic way to determine whether a mixture is a certain type ahead of time. Thus, to make these figures, you must know that the mixture is a particular type.</p><h3 id="Type-I-mixture"><a class="docs-heading-anchor" href="#Type-I-mixture">Type-I mixture</a><a id="Type-I-mixture-1"></a><a class="docs-heading-anchor-permalink" href="#Type-I-mixture" title="Permalink"></a></h3><p>Initially, we will continue to consider the ethane+decane binary mixture. The first curves we need to draw are the saturation curves of the pure components (which we know how to obtain from an earlier tutorial): <img src="../../assets/eth_dec_pT_pure.png" alt="eth_dec_pT_pure"/></p><p>To connect both curves of this mixture, we need to include the critical curve. To do this, as introduced earlier, we have the <code>crit_mix(model, z)</code> function:</p><pre><code class="language-julia hljs">x = LinRange(0., 1., N)
+T3, p3 = zeros(N), zeros(N)
+
+for i in 1:N
+    (T3[i], p3[i], vc) = crit_mix(model, [x[i], 1-x[i]])
+end</code></pre><p>For simple mixtures, one doesn&#39;t need to update the initial guesses. And with that, we have now drawn the <em>pT</em> projection for this mixture: <img src="../../assets/eth_dec_pT_mix.png" alt="eth_dec_pT_mix"/> Unfortunately, this is the simplest type of <em>pT</em> projection one can draw.</p><h3 id="Type-II-mixture"><a class="docs-heading-anchor" href="#Type-II-mixture">Type-II mixture</a><a id="Type-II-mixture-1"></a><a class="docs-heading-anchor-permalink" href="#Type-II-mixture" title="Permalink"></a></h3><p>For the type-II mixture, we&#39;ll consider cyclohexane and methanol using PC-SAFT:</p><pre><code class="language-julia hljs">julia&gt; model = PCSAFT([&quot;cyclohexane&quot;,&quot;methanol&quot;])
+PCSAFT{BasicIdeal, Float64} with 2 components:
+ &quot;cyclohexane&quot;
+ &quot;methanol&quot;
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol</code></pre><p>We can obtain the saturation and critical curves of this system using the same approach as the type-I system, although it may now be a good idea to re-use initial guesses:</p><pre><code class="language-julia hljs">x = LinRange(0., 1., N)
+T3, p3 = zeros(N), zeros(N)
+
+v0 = nothing
+for i in 1:N
+    if i == 1
+        (T3[i], p3[i], vc) = crit_mix(model, [x[i], 1-x[i]])
+    else
+        (T3[i], p3[i], vc) = crit_mix(model, [x[i], 1-x[i]]; v0 = v0)
+    end
+    v0 = [log10(vc), T3[i]]
+end</code></pre><p>With this, the plot looks like: <img src="../../assets/cyhex_meoh_pT_mix.png" alt="cyhex_meoh_pT_mix"/> The critical curve may look a bit odd but it is physical (as a challenge, try to draw the <em>pxy</em> phase diagram around 500K).</p><p>What makes type-II mixtures unique is the fact that these system exhibit VLLE behaviour, typically at low temperatures. Due to the Gibbs Phase Rule, there is only a single pressure at a given temperature that VLLE occurs. As such, we can trace the VLLE region using a curve. Similarly, an LLE region will also be present which terminates at an upper-critical solution temperature (UCST). The VLLE and UCST curve eventually meet at what is referred to as the upper-critical end point (UCEP) which is where a critical &#39;liquid&#39; phase is in equilibrium with a vapour phase. As it acts as the end point, it is convenient to obtain the UCEP first before tracing the VLLE and UCST curves. This can be done using the <code>UCEP_mix(model)</code> function. Note that this function is highly sensitive to initial guesses and is not very generalised:</p><pre><code class="language-julia hljs">julia&gt; (T_ucep, p_ucep, vl_ucep, vv_ucep, x_ucep, y_ucep) = UCEP_mix(model)
+(319.36877456440527, 70531.68542869389, 7.883409544452988e-5, 0.03532019955594743, [0.5054291106815579, 0.49457088931844206], [0.4121361614832596, 0.5878638385167404])</code></pre><p>With this point obtained, we can trace the VLLE curve:</p><pre><code class="language-julia hljs">T4 = LinRange(295., T_ucep, N)
+p4 = zeros(N)
+
+vl = volume(model,70531.,T4[1],[0.99,0.01]; phase=:l)
+vll = volume(model,70531.,T4[1],[0.01,0.99]; phase=:l)
+vv = volume(model,70531.,T4[1],[0.5,0.5]; phase = :v)
+
+v0 = [log10(vl), log10(vll), log10(vv), 0.99, 0.01, 0.5]
+
+for i in 1:N
+    p4[i], vl, vll, vv, x, xx, y = VLLE_pressure(model,T4[i]; v0 = v0)
+    v0 = [log10(vl), log10(vll), log10(vv), x[1], xx[1], y[1]]
+end</code></pre><p>And the UCST curve (using <code>UCST_mix(model, T)</code>):</p><pre><code class="language-julia hljs">T5 = LinRange(T_ucep, 330, N)
+p5 = zeros(N)
+
+v0 = [log10(vl_ucep), x_ucep]
+for i in 1:N
+    p5[i], vc, x_c = UCST_mix(model, T5[i]; v0 = v0)
+    v0 = [log10(vc), x_c]
+end</code></pre><p>While these represent all the characteristic curves of interest for this mixture, as this mixture exhibits azeotropic behaviour starting from the UCEP and meeting the critical curve, it is possible to also trace this curve using <code>azeotrope_pressure(model,T)</code>:</p><pre><code class="nohighlight hljs">T6 = LinRange(T_ucep, minimum(T3), N)
+p6 = zeros(N)
+
+v0 = y_ucep
+for i in 1:N
+    p6[i], vla, vva, x_a = azeotrope_pressure(model, T6[i]; v0 = v0)
+    v0 = x_a
+end</code></pre><p>And with this, we can complete the phase diagram: <img src="../../assets/cyhex_meoh_pT_full.png" alt="cyhex_meoh_pT_full"/> Note that there is no formal definition for where the azeotrope meets the critical curve. Thus the end point must be determined ahead of time.</p><h3 id="Type-III-mixture"><a class="docs-heading-anchor" href="#Type-III-mixture">Type-III mixture</a><a id="Type-III-mixture-1"></a><a class="docs-heading-anchor-permalink" href="#Type-III-mixture" title="Permalink"></a></h3><p>The type-III mixture we will be considering is methane+heptane using GERG-2008:</p><pre><code class="language-julia hljs">julia&gt; model = GERG2008([&quot;heptane&quot;,&quot;methane&quot;])</code></pre><p>Type-III mixtures are unique as the critical curve is broken into two. If one starts from the less volatile component, we find that the curve does not reconnect with the critical point of the more volatile component: <img src="../../assets/me_hept_pT_1.png" alt="me_hept_pT_1"/> Eventually, this curve becomes the UCST curve. However, there is a critical curve originating from the more volatile component However, this time, it terminates at the UCEP. We can repeat the same steps as above to obtain the UCEP: <img src="../../assets/me_hept_pT.png" alt="me_hept_pT"/> Especially in cases with very different volatilities, it will be very difficult to see the separation between the VLLE, critical and saturation curve as shown above. However, if one zooms in, we can see the three independent curves: <img src="../../assets/me_hept_pT_zoom.png" alt="me_hept_pT_zoom"/></p><h3 id="Type-IV/V-mixture"><a class="docs-heading-anchor" href="#Type-IV/V-mixture">Type-IV/V mixture</a><a id="Type-IV/V-mixture-1"></a><a class="docs-heading-anchor-permalink" href="#Type-IV/V-mixture" title="Permalink"></a></h3><p>The final class of binary mixture we&#39;ll consider is type-IV/V. In these mixtures, we have more than one UCEP. Once again, the critical curve is  broken up into two. However, this time, both of them reconnect on a UCEP. The only difference between type-IV and type-V is that the former has an additional UCEP due to the presence of a UCST curve. As we have already shown how to trace this curve in type-II mixtures, we&#39;ll focus on type-V mixtures. In this case, we&#39;ll be looking at a mixture of methane and hexane:</p><pre><code class="language-julia hljs">julia&gt; model = PR([&quot;hexane&quot;,&quot;methane&quot;])</code></pre><p>Examining the critical curve originating from the less-volatile component: <img src="../../assets/me_hex_pT_1.png" alt="me_hex_pT_1"/> As we can see, the critical curve overshoots the critical point of the more volatile component. This critical curve will terminate at the first UCEP. The critical curve originating from the more volatile component will terminate at a second UCEP. Connecting the two UCEPs will be the VLLE curve. We have described all the tools needed to trace these curves in earlier section. The result should look like: <img src="../../assets/me_hex_pT_full.png" alt="me_hex_pT_full"/> Zooming in to the UCEPs, we see that, much like the previous example, the VLLE curve is very close to the saturation curve of the less-volatile component: <img src="../../assets/me_hex_pT_zoom.png" alt="me_hex_pT_zoom"/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../pure_saturation_curves/">« Pure Saturation Properties</a><a class="docs-footer-nextpage" href="../ternary_phase_diagrams/">Ternary Phase Diagrams »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.10.2 on <span class="colophon-date" title="Tuesday 29 April 2025 02:54">Tuesday 29 April 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
