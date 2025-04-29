@@ -176,7 +176,7 @@ function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractS
 end
 
 #pack vectors
-const PackedVectorSingleParam{T} = Clapeyron.SingleParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}
+const PackedVectorSingleParam{T} = Clapeyron.SingleParameter{PackedSubVector{T}, PackedVector{T}}
 
 function pack_vectors(param::SingleParameter{<:AbstractVector})
     name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources

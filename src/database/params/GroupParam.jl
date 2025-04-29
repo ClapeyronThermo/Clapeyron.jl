@@ -233,7 +233,7 @@ end
 struct MixedGCSegmentParam{T} <: ClapeyronParam
     name::String
     components::Array{String,1}
-    values::PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}
+    values::PackedVector{T}
 end
 
 MixedGCSegmentParam(name,components) = MixedGCSegmentParam{Float64}(name,components,PackedVofV(Int[],Float64[]))
@@ -241,7 +241,7 @@ MixedGCSegmentParam(name,components) = MixedGCSegmentParam{Float64}(name,compone
 Base.length(param::MixedGCSegmentParam) = length(param.values)
 
 Base.eltype(param::MixedGCSegmentParam) = eltype(typeof(param))
-Base.eltype(param::Type{MixedGCSegmentParam{T}}) where T = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}
+Base.eltype(param::Type{MixedGCSegmentParam{T}}) where T = PackedSubVector{T}
 
 paramtype(::MixedGCSegmentParam{T}) where T = T
 paramtype(::Type{MixedGCSegmentParam{T}}) where T = T

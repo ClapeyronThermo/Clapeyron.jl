@@ -62,7 +62,7 @@ julia> model3.sites.n_sites
 struct SiteParam <: ClapeyronParam
     components::Array{String,1}
     sites::Array{Array{String,1},1}
-    n_sites::PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int}, Vector{Int}, SubArray{Int, 1, Vector{Int}, Tuple{UnitRange{Int64}}, true}}
+    n_sites::PackedVector{Int}
     i_sites::Array{Array{Int,1},1}
     flattenedsites::Array{String,1}
     n_flattenedsites::Array{Array{Int,1},1}

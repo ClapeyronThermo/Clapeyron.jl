@@ -4,7 +4,8 @@ using SparseArrays
 #for the assoc solver and the sparse packed VofV
 import PackedVectorsOfVectors
 const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
-
+const PackedVector{T} = PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}} where T
+const PackedSubVector{T} = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true} where T
 #for non allocating vectors of zeros and ones
 using Roots: Roots
 

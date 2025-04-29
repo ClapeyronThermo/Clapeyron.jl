@@ -230,5 +230,4 @@ function pack_vectors(param::PairParameter{<:AbstractVector})
     return PairParam(name,components,vals,missingvals,srccsv,src)
 end
 
-const PackedSparsePairParam{T} = Clapeyron.PairParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, SparsePackedMofV{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, 
-true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}} where T
+const PackedSparsePairParam{T} = Clapeyron.PairParameter{PackedSubVector{T}, SparsePackedMofV{PackedSubVector{T}, PackedVector{T}}} where T
