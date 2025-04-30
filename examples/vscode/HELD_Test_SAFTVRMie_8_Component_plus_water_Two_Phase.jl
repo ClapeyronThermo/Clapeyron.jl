@@ -10,9 +10,24 @@ zdry = [0.883,0.08,0.021,0.007,0.005,0.002,0.001,0.001]
 xwater = 0.1
 z = append!(zdry*(1.0-xwater),xwater)
 
-add_near_pure_guess = true
-add_pure_component = fill(true,length(z))
-add_random_guess = false
-add_all_guess = false
 verbose = true
-Clapeyron.HELD_derivatives(model,p,T,z,add_near_pure_guess,add_pure_component,add_random_guess,add_all_guess,verbose)
+
+# note before you run this it takes hours to find the answer. However, its does succeed.
+# speed is due to SAFT model and having associating components. Having nc = 9 is about as big as we can tolerate
+
+beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model,p,T,z, HELDTPFlash(verbose = verbose))
+
+if !verbose
+    for ip = 1:length(beta)
+        println("Phase beta($(ip)) = $(beta[ip])")
+    end
+    println("Phase mole fraction:")
+    for ip = 1:length(beta)
+        println("Phase x($(ip)) = $(xp[ip])")
+    end
+    println("Phase volumes:")
+    for ip = 1:length(beta)
+        println("Phase volume($(ip)) = $(vp[ip])")
+    end
+    println("Minimum Gibbs Energy = $(Gsol)")
+end
