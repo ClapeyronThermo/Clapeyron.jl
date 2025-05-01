@@ -1,20 +1,19 @@
 using Clapeyron
 
-components = ["methane","ethane","propane","butane","hexane","octane","methanol","water"]
+components = ["water","nitrogen","oxygen","argon","carbon dioxide"]
 model = SAFTVRMie(components; assoc_options=AssocOptions(combining=:elliott))
 
 p = 1.5e5
-T = 15+273.15
+T = 20+273.15
 
-zdry = [0.7,0.15,0.05,0.05,0.025,0.025]
-xmeoh = 0.15
-xwater = 0.05
-z = append!(zdry*(1.0-xmeoh-xwater),xmeoh)
-z = append!(z,xwater)
+#zdry=[0.7808,0.2095,0.0093,0.0004]
+zdry=[0.0004,0.0093,0.2095,0.7808]
+zwater=0.05
+z=prepend!(zdry*(1-zwater),zwater)
 
 verbose = true
-
-beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model,p,T,z, HELDTPFlash(verbose = verbose))
+add_all_guess = false
+beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model,p,T,z, HELDTPFlash(add_all_guess = add_all_guess,verbose = verbose))
 
 if !verbose
     for ip in eachindex(beta)
