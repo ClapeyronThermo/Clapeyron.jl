@@ -1,20 +1,16 @@
 using Clapeyron
 
-components = ["methane","ethane","propane","butane","pentane","hexane","heptane","octane","water"]
-model = SAFTVRMie(components; assoc_options=AssocOptions(combining=:elliott))
+components = ["nitrogen","oxygen","argon","carbon dioxide","water"]
+model = PCSAFT(components; assoc_options=AssocOptions(combining=:elliott))
 
-p = 5.0e5
-T = 15.0+273.15
+p = 1.5e5
+T = 20+273.15
 
-zdry = [0.7,0.15,0.025,0.025,0.025,0.025,0.025,0.025]
-xwater = 0.1
-z = append!(zdry*(1.0-xwater),xwater)
+zdry=[0.7808,0.2095,0.0093,0.0004]
+zwater=0.075
+z=append!(zdry*(1-zwater),zwater)
 
 verbose = true
-
-# note before you run this it takes hours to find the answer. However, its does succeed.
-# speed is due to SAFT model and having associating components. Having nc = 9 is about as big as we can tolerate
-
 beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model,p,T,z, HELDTPFlash(verbose = verbose))
 
 if !verbose

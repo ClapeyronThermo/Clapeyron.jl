@@ -15,15 +15,15 @@ verbose = true
 beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model,p,T,z, HELDTPFlash(verbose = verbose))
 
 if !verbose
-    for ip = 1:length(beta)
+    for ip in eachindex(beta)
         println("Phase beta($(ip)) = $(beta[ip])")
     end
     println("Phase mole fraction:")
-    for ip = 1:length(beta)
+    for ip in eachindex(beta)
         println("Phase x($(ip)) = $(xp[ip])")
     end
     println("Phase volumes:")
-    for ip = 1:length(beta)
+    for ip in eachindex(beta)
         println("Phase volume($(ip)) = $(vp[ip])")
     end
     println("Minimum Gibbs Energy = $(Gsol)")

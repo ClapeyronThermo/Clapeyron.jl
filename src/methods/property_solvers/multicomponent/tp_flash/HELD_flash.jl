@@ -5,7 +5,7 @@ using JuMP, HiGHS
     				max_trust_region_iters::Int = 0
     				tol::Float64 = 1.0e-10
     				HELD_tol::Float64 = 100.0*tol
-    				add_near_pure_guessl = true
+    				add_near_pure_guess = true
     				add_pure_component = [0]
     				add_random_guess = false
     				add_all_guess = false
@@ -17,6 +17,7 @@ Base.@kwdef struct HELDTPFlash <: TPFlashMethod
     max_trust_region_iters::Int = 0
     tol::Float64 = 1.0e-10
     HELD_tol::Float64 = 100.0*tol
+	add_pure_guess::Bool = true
     add_near_pure_guess::Bool = true
     add_pure_component::Vector{Bool} = Vector{Bool}(undef,0)
     add_random_guess::Bool = false
@@ -33,7 +34,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
 	else
 		max_HELD_iters = method.max_HELD_iters
 	end
-	if method.max_HELD_iters == 0
+	if method.max_trust_region_iters == 0
 		max_trust_region_iters = 2000*length(n)
 	else
 		max_trust_region_iters = method.max_trust_region_iters
@@ -45,11 +46,20 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
 	else
 		add_pure_component = method.add_pure_component
 	end
+	add_pure_guess = method.add_pure_guess
 	add_near_pure_guess = method.add_near_pure_guess
 	add_random_guess = method.add_random_guess
 	add_all_guess = method.add_all_guess
 	verbose = method.verbose
-	beta,xp,vp,Gsol = HELD_impl(model,p,T,z₀,max_HELD_iters,max_trust_region_iters,tol,HELD_tol,add_near_pure_guess,add_pure_component,add_random_guess,add_all_guess,verbose)
+	if verbose == true
+		println("HELD  - Setup:")
+		println("HELD  - add_pure_guess = $(add_pure_guess)")
+		println("HELD  - add_near_pure_guess = $(add_near_pure_guess)")
+		println("HELD  - add_pure_component = $(add_pure_component)")
+		println("HELD  - add_random_guess = $(add_random_guess)")
+		println("HELD  - add_all_guess = $(add_all_guess)")
+	end
+	beta,xp,vp,Gsol = HELD_impl(model,p,T,z₀,max_HELD_iters,max_trust_region_iters,tol,HELD_tol,add_pure_guess,add_near_pure_guess,add_pure_component,add_random_guess,add_all_guess,verbose)
 
     return beta,xp,vp,Gsol
     
@@ -58,9 +68,10 @@ end
 # new HELD
 function Gershgorin(A)
     n = size(A)[1]
-    e = Vector{Float64}(undef,n)
+#    e = Vector{eltype(A)}(undef,n)
+	e = Vector{Float64}(undef,n)
     for j = 1:n
-	sum = 0.0
+	sum = zero(eltype(A))
 	for i = 1:n
 	    sum += abs(A[i,j]);
 	end
@@ -73,7 +84,7 @@ function exactstep(g, h, delta, tol, verbose)
     n = size(g)[1]
     max_iter = 100*n
     hard_case = false
-    mu = 0.01*sqrt(tol)
+#    mu = 0.01*sqrt(tol)
     p = Vector{Float64}(undef,n)
     q = Vector{Float64}(undef,n)
 
@@ -98,10 +109,10 @@ function exactstep(g, h, delta, tol, verbose)
     hp = Matrix{Float64}(undef, n, n)
     hp = h
     
-    #make hp symmetric if required maybe numerical unsymmetric
+    # make hp symmetric if required maybe numerical unsymmetric
     symm = issymmetric(hp)
 
-    #make hp symmetric
+    # make hp symmetric
     if (!symm)
         for i = 2:n
             for j = 1:i-1
@@ -192,15 +203,15 @@ function exactstep(g, h, delta, tol, verbose)
     return p,h,iter,step_found,hard_case
 end
 
-function Constraints(xin,lb,ub,s)
-    n = size(xin)[1]
-    x = Vector{Float64}(undef,n)
-    xp = Vector{Float64}(undef,n)
+function Constraints(x,lb,ub,s)
+    n = size(x)[1]
+ #   xp = Vector{Float64}(undef,n)
+	xp = Vector{Base.promote_eltype(x,lb,ub,s)}(undef,n)
 	
     outside = false
 
     for i=1:n
-        xp[i] = xin[i] + s[i]
+        xp[i] = x[i] + s[i]
     end
     for i = 1:n
        if xp[i] > ub[i]
@@ -215,8 +226,10 @@ end
 
 function ProjectionHELD(x,lb,ub)
     n = size(x)[1]
-    p = Vector{Float64}(undef,n)
-    xp = Vector{Float64}(undef,n)
+    p = Vector{Base.promote_eltype(x,lb,ub)}(undef,n)
+    xp = Vector{Base.promote_eltype(x,lb,ub)}(undef,n)
+#	p = Vector{Float64}(undef,n)
+#	xp = Vector{Float64}(undef,n)
     for i = 1:n-1
 		p[i] = x[i]
 		if p[i] < lb[i]
@@ -252,7 +265,8 @@ end
 
 function Projection(x,lb,ub)
     n = size(x)[1]
-    p = Vector{Float64}(undef,n)
+    p = Vector{Base.promote_eltype(x,lb,ub)}(undef,n)
+#	p = Vector{Float64}(undef,n)
     for i = 1:n
 		p[i] = x[i]
 		if p[i] < lb[i]
@@ -286,13 +300,16 @@ function delta_Nocedal(func::Function, proj::Function,d, dmin, dmax, x, lb, ub, 
     # exactstep updates h to ensure its positive definition we use this updated hessian as our model
     s,h,iter,step_found,hard_case = exactstep(g, h, d, 0.001,verbose)
     
+	tau = 1.0
     outside = Constraints(x, lb, ub, s)
     while outside
-        d *= 0.5
+    #    d *= 0.5
         # exactstep updates h to ensure its positive definition we use this updated hessian as our model
-        s,h,iter,step_found,hard_case = exactstep(g, h, d, 0.001, verbose)
+    #    s,h,iter,step_found,hard_case = exactstep(g, h, d, 0.001, verbose)
+		tau *= 0.5
+		s .*= tau
         outside = Constraints(x, lb, ub, s)
-        if d < dmin
+        if tau < dmin
             step_found = false
             break
         end
@@ -300,19 +317,19 @@ function delta_Nocedal(func::Function, proj::Function,d, dmin, dmax, x, lb, ub, 
     
     step = norm(s,2)
     
-    xp = x + s
+    xp = x .+ s
     xp = proj(xp)
     fp = func(xp)
     m = trustregion_model(s, g, h)
     rho = (f - fp) / abs(m)
     
     if rho < c1
-        d = c3*d;
+        d = c3*d
     end
     
     # we use step >= d here as exactstep approaches d from above
     if rho > c2 && step >= d
-        d = c4*d;
+        d = c4*d
     end
     
     # seems we may land on a saddle point accepting the point allows as to move away and start again
@@ -347,7 +364,8 @@ function trustregion_Dennis_Schnabel(func::Function, grad::Function, hess::Funct
     iter = 0
     p = x
     s = -g
-    
+
+ #=
     outside = Constraints(x, lb, ub, s)
     while outside
         d *= 0.5
@@ -359,9 +377,10 @@ function trustregion_Dennis_Schnabel(func::Function, grad::Function, hess::Funct
             break
         end
     end
-    
-    p = p - g
-    p = p - x
+=#
+ 
+    p = p .- g
+    p = p .- x
     error = norm(p, Inf)
 
     while error > tol
@@ -374,15 +393,15 @@ function trustregion_Dennis_Schnabel(func::Function, grad::Function, hess::Funct
         g = grad(x)
         h = hess(x)
         p = x
-        p = p - g
-        p = p - x
+        p = p .- g
+        p = p .- x
         error = norm(p,Inf)
         if verbose
         	println("Iteration: $(iter) / $(max_iters) error = $(error)")
         end
         if iter >= max_iters
             check = true
-            return x,f,iter,error,check
+            break
         end  
     end
     return x,f,iter,error,check
@@ -436,7 +455,7 @@ function Gibbs_func(model,p,T,n₀,v₀, np, x)
     return f
 end
 
-function initial_compositions(model,p,T,z,add_near_pure_guess,add_pure_component,add_random_guess,add_all_guess)
+function initial_compositions(model,p,T,z,add_pure_guess,add_near_pure_guess,add_pure_component,add_random_guess,add_all_guess)
     n = length(z)
     lb = zeros(n)
     ub = ones(n)
@@ -446,30 +465,7 @@ function initial_compositions(model,p,T,z,add_near_pure_guess,add_pure_component
     end
 	
     xp = Vector{Vector{Float64}}(undef,0)
-    
-#=    #generation by the method in Pereira et al. (2010).
-    for i = 1:n-1
-        x̂ = fill(0.,n)
-        x̄ = fill(0.,n)
-		for j = 1:n
-	    	if (j == i)
-	        	x̂[j] = z[i]/2
-	        	x̄[j] = (1.0 + z[i])/2
-	    	else
-	        	x̂[j] = (1 - z[i]/2)/(n-1)
-	        	x̄[j] = (1 - (1 + z[i])/2)/(n-1)
-	    	end
-		end
-		x̂ = Projection(x̂,lb,ub)
-		sumx̂ = sum(x̂)
-		x̂ ./= sumx̂
-		push!(xp,x̂)
-		x̄ = Projection(x̄,lb,ub)
-		sumx̄ = sum(x̄)
-		x̄ ./= sumx̄
-		push!(xp,x̄)
-    end
- =#       
+           
     # Wilson k-values
     K = wilson_k_values(model,p,T)
     # vapour liquid like estimates
@@ -524,7 +520,7 @@ function initial_compositions(model,p,T,z,add_near_pure_guess,add_pure_component
     xliq ./= sumxliq
     push!(xp,xliq)
     
-    if add_near_pure_guess || add_all_guess
+    if add_pure_guess || add_all_guess
   		# pure generation
     	k = 1000 - (n-1)
     	for i in 1:n
@@ -604,15 +600,15 @@ function Pereira_compositions(model,p,T,z)
     
     #generation by the method in Pereira et al. (2010).
     for i = 1:n-1
-        x̂ = fill(0.,n)
-        x̄ = fill(0.,n)
+        x̂ = fill(0.0,n)
+        x̄ = fill(0.0,n)
 		for j = 1:n
 	    	if (j == i)
-	        	x̂[j] = z[i]/2
-	        	x̄[j] = (1.0 + z[i])/2
+	        	x̂[j] = z[i]/2.0
+	        	x̄[j] = (1.0 + z[i])/2.0
 	    	else
-	        	x̂[j] = (1 - z[i]/2)/(n-1)
-	        	x̄[j] = (1 - (1 + z[i])/2)/(n-1)
+	        	x̂[j] = (1.0 - z[i]/2.0)/(n-1)
+	        	x̄[j] = (1.0 - (1.0 + z[i])/2.0)/(n-1)
 	    	end
 		end
 		x̂ = Projection(x̂,lb,ub)
@@ -634,6 +630,7 @@ function HELD_impl(model,p,T,z₀,
 	max_trust_region_iters,
 	tol,
 	HELD_tol,
+	add_pure_guess,
 	add_near_pure_guess,
 	add_pure_component,
 	add_random_guess,
@@ -646,7 +643,7 @@ function HELD_impl(model,p,T,z₀,
     μ₀ = VT_chemical_potential(model,v₀,T,z₀)
     λ₀ = (μ₀[1:nc-1] .- μ₀[nc])/R̄/T
   # calculate reference volume based on Kays rule and vc[i] and scale to give water a vref/v ~ 1
-    pure = split_model.(model)
+    pure = split_pure_model(model)
     crit = crit_pure.(pure)
     vref = 0.0
     for i= 1:nc
@@ -664,8 +661,6 @@ function HELD_impl(model,p,T,z₀,
     end
     ub[nc] = 1.0e2
     projHELD(x) = ProjectionHELD(x,lb,ub)
-#    tol = 1.0e-10
-#    HELD_tol = 100*tol
     x₀ = append!(deepcopy(z₀[1:nc-1]),vref/v₀)
     G₀ = G(x₀)
     if verbose == true
@@ -673,7 +668,7 @@ function HELD_impl(model,p,T,z₀,
     		println("HELD Step 1 - UBDⱽ = $(G₀)")
     		println("HELD Step 1 - λ₀ = $(λ₀)")
     end
-    xi = initial_compositions(model,p,T,z₀,add_near_pure_guess,add_pure_component,add_random_guess,add_all_guess)
+    xi = initial_compositions(model,p,T,z₀,add_pure_guess,add_near_pure_guess,add_pure_component,add_random_guess,add_all_guess)
     fmins = Vector{Float64}(undef,0)
     xmins = Vector{Vector{Float64}}(undef,0)
     for ix = 1:length(xi)
@@ -681,9 +676,9 @@ function HELD_impl(model,p,T,z₀,
     	xvi = append!(deepcopy(xi[ix][1:nc-1]),vref/vi)
     	xmin,fmin,iter,error,check = trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD, xvi, lb, ub, max_trust_region_iters, tol, false)
     	
-#    	if verbose == true
-#        	println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
-#    	end 
+ #   	if verbose == true
+ #       	println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
+ #   	end 
     	
 		# we add fmin < G₀ as we are searching for instability
     	if fmin < G₀ && check == false
@@ -727,11 +722,11 @@ function HELD_impl(model,p,T,z₀,
         
         # set up inital ℳ used for OPₓᵥ
         # ℳi is [xi[1:nc-1], Vref/Vi, Gi]
-    		ℳ = Vector{Vector{Float64}}(undef,0)
+    	ℳ = Vector{Vector{Float64}}(undef,0)
 		xm = Pereira_compositions(model,p,T,z₀)
 		# set up initial ℳ set
 		# add initial guesses and the newly found minimums from first iteration stability check
-    	for im = 1:length(xm)
+		for im = 1:length(xm)
     		vm = volume(model,p,T,xm[im])
     		xvm = append!(deepcopy(xm[im][1:nc-1]),vref/vm)
     		xvGm = append!(deepcopy(xvm),Gi(xvm))
@@ -795,15 +790,19 @@ function HELD_impl(model,p,T,z₀,
     		@constraint(OPₓᵥ,[i ∈ 1:length(ℳ)],v <= ℳ[i][nc+1]+sum(λ.*(z₀[1:nc-1] .- ℳ[i][1:nc-1])))
     		
     		@objective(OPₓᵥ, Max, v)
-#    		ipm_tol = max(tol, 1.0e-10)
-#    		set_attribute(OPₓᵥ, "solver", "ipm")    		
-#    		set_attribute(OPₓᵥ, "ipm_optimality_tolerance", ipm_tol)
-			simplex_tol = max(tol, 1.0e-10)
-	   		set_attribute(OPₓᵥ, "solver", "simplex")
-			set_attribute(OPₓᵥ, "dual_feasibility_tolerance", simplex_tol)
-			set_attribute(OPₓᵥ, "primal_feasibility_tolerance", simplex_tol)
-			set_attribute(OPₓᵥ, "dual_residual_tolerance", simplex_tol)
-			set_attribute(OPₓᵥ, "primal_residual_tolerance", simplex_tol)
+			use_ipm = false
+			if use_ipm
+    			ipm_tol = max(tol, 1.0e-10)
+    			set_attribute(OPₓᵥ, "solver", "ipm")    		
+    			set_attribute(OPₓᵥ, "ipm_optimality_tolerance", ipm_tol)
+			else
+				simplex_tol = max(tol, 1.0e-10)
+	   			set_attribute(OPₓᵥ, "solver", "simplex")
+				set_attribute(OPₓᵥ, "dual_feasibility_tolerance", simplex_tol)
+				set_attribute(OPₓᵥ, "primal_feasibility_tolerance", simplex_tol)
+				set_attribute(OPₓᵥ, "dual_residual_tolerance", simplex_tol)
+				set_attribute(OPₓᵥ, "primal_residual_tolerance", simplex_tol)
+			end
     		optimize!(OPₓᵥ)
     		λˢ = JuMP.value.(λ)
     		UBDⱽ  = JuMP.value.(v)
@@ -836,11 +835,10 @@ function HELD_impl(model,p,T,z₀,
     		for ix = 1:length(ℳguess)
     			xmin,fmin,iter,error,check = trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD,  ℳguess[ix][1:nc], lb, ub, max_trust_region_iters, tol, false)
     			
-#    			if verbose == true
-#        			println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
-#    			end
+ #   			if verbose == true
+ #       			println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
+ #   			end
     		
-#    			if fmin - UBDⱽ  <= HELD_tol && check == false
 				if fmin <= UBDⱽ  && check == false
     				push!(fmins,fmin)
     				push!(xmins,xmin)
@@ -860,7 +858,7 @@ function HELD_impl(model,p,T,z₀,
 #        		println("HELD Step 3 - IPₓᵥ solve, xmins_unique = $(xmins_unique) unique solutions found")
     		end
     		
-    			ℒ = Vector{Vector{Float64}}(undef,0)
+    		ℒ = Vector{Vector{Float64}}(undef,0)
     		if length(fmins_unique) > 0
 				# find lowest minimum of returned set.
 				LBDⱽ = fmins_unique[1]
@@ -874,7 +872,7 @@ function HELD_impl(model,p,T,z₀,
 				
 				# sometimes the are more than one solution that can be added
 				for i = 1:length(fmins_unique)
-					if abs(fmins_unique[i] - fmins_unique[iLBDⱽ]) < HELD_tol
+					if abs(fmins_unique[i] - fmins_unique[iLBDⱽ]) < tol
 						push!(ℒ,xmins_unique[i])
 					end
 				end
@@ -910,7 +908,6 @@ function HELD_impl(model,p,T,z₀,
 #        				println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
 #    				end
 
-#    				if fmin - UBDⱽ  <= HELD_tol && check == false
 					if fmin <= UBDⱽ  && check == false
     					push!(fmins,fmin)
     					push!(xmins,xmin)
@@ -932,7 +929,7 @@ function HELD_impl(model,p,T,z₀,
 					
 					# sometimes the are more than one solution that can be added
 					for i = 1:length(fmins_unique)
-						if abs(fmins_unique[i] - fmins_unique[iLBDⱽ]) < HELD_tol
+						if abs(fmins_unique[i] - fmins_unique[iLBDⱽ]) < tol
 							push!(ℒ,xmins_unique[i])
 						end
 					end
@@ -969,7 +966,7 @@ function HELD_impl(model,p,T,z₀,
 			
 			if verbose == true
         		println("HELD Step 3 - Update LBDⱽ from IPₓᵥ: LBDⱽ = $(LBDⱽ)")
-        		println("HELD Step 3 - UBDⱽ - LBDⱽ = $(error) - tol = $(HELD_tol)")
+        		println("HELD Step 3 - UBDⱽ - LBDⱽ = $(error) and tol = $(HELD_tol)")
     		end
 			
 			bphase = Vector{Float64}(undef,length(xmins_unique[1]))
@@ -995,7 +992,7 @@ function HELD_impl(model,p,T,z₀,
 				end
 				betaerror = abs(1.0 - sumbeta)
 				if verbose == true
-        			println("HELD Step 3 - Test phase mole balance: error = $(betaerror) - tol =  $(sqrt(tol))")
+        			println("HELD Step 3 - Test phase mole balance: error = $(betaerror) and tol =  $(sqrt(tol))")
         			println("HELD Step 3 - Phases found: np = $(length(beta))")
     			end
 			end
@@ -1064,7 +1061,7 @@ function HELD_impl(model,p,T,z₀,
 			end
     		
     		if verbose == true
-				println("HELD Step 3 - Add new (x,V)s to ℳ and ℳguess sets")
+				println("HELD Step 3 - Add new (x,V)s: ℒs to the ℳ set and all current minimums to the ℳguess set")
     		end
 
 			# add lowest minimum to ℳ set
@@ -1072,6 +1069,7 @@ function HELD_impl(model,p,T,z₀,
 				ℒGi = append!(deepcopy(ℒ[i]),Gi(ℒ[i]))
 				push!(ℳ,ℒGi)
 			end
+
 			# add minimums to ℳguess set
 			# remove previous minimums from ℳguess only if number found is less than or equal to previous
 			# this keeps the maximum number found in the set
