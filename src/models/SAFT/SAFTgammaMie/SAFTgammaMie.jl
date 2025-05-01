@@ -154,6 +154,25 @@ function SAFTgammaMie(components;
 
     groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
+
+    return SAFTgammaMie(groups, params;
+                        idealmodel = idealmodel,
+                        ideal_userlocations = ideal_userlocations,
+                        reference_state = reference_state,
+                        verbose = verbose,
+                        epsilon_mixing = epsilon_mixing,
+                        assoc_options = assoc_options)
+end
+
+function SAFTgammaMie(groups::GroupParam, params::Dict{String,ClapeyronParam};
+    idealmodel = BasicIdeal,
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
+    epsilon_mixing = :default,
+    assoc_options = AssocOptions())
+
+    
     sites = params["sites"]
     components = groups.components
     
