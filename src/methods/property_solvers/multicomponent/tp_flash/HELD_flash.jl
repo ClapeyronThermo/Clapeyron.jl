@@ -5,7 +5,8 @@ using JuMP, HiGHS
     				max_trust_region_iters::Int = 0
     				tol::Float64 = 1.0e-10
     				HELD_tol::Float64 = 100.0*tol
-    				add_near_pure_guess = true
+					add_pure_guess = true
+    				add_anti_pure_guess = true
     				add_pure_component = [0]
     				add_random_guess = false
     				add_all_guess = false
@@ -18,7 +19,7 @@ Base.@kwdef struct HELDTPFlash <: TPFlashMethod
     tol::Float64 = 1.0e-10
     HELD_tol::Float64 = 100.0*tol
 	add_pure_guess::Bool = true
-    add_near_pure_guess::Bool = true
+    add_anti_pure_guess::Bool = true
     add_pure_component::Vector{Bool} = Vector{Bool}(undef,0)
     add_random_guess::Bool = false
     add_all_guess::Bool = false
@@ -47,19 +48,19 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
 		add_pure_component = method.add_pure_component
 	end
 	add_pure_guess = method.add_pure_guess
-	add_near_pure_guess = method.add_near_pure_guess
+	add_anti_pure_guess = method.add_anti_pure_guess
 	add_random_guess = method.add_random_guess
 	add_all_guess = method.add_all_guess
 	verbose = method.verbose
 	if verbose == true
 		println("HELD  - Setup:")
 		println("HELD  - add_pure_guess = $(add_pure_guess)")
-		println("HELD  - add_near_pure_guess = $(add_near_pure_guess)")
+		println("HELD  - add_anti_pure_guess = $(add_anti_pure_guess)")
 		println("HELD  - add_pure_component = $(add_pure_component)")
 		println("HELD  - add_random_guess = $(add_random_guess)")
 		println("HELD  - add_all_guess = $(add_all_guess)")
 	end
-	beta,xp,vp,Gsol = HELD_impl(model,p,T,z₀,max_HELD_iters,max_trust_region_iters,tol,HELD_tol,add_pure_guess,add_near_pure_guess,add_pure_component,add_random_guess,add_all_guess,verbose)
+	beta,xp,vp,Gsol = HELD_impl(model,p,T,z₀,max_HELD_iters,max_trust_region_iters,tol,HELD_tol,add_pure_guess,add_anti_pure_guess,add_pure_component,add_random_guess,add_all_guess,verbose)
 
     return beta,xp,vp,Gsol
     
@@ -455,7 +456,7 @@ function Gibbs_func(model,p,T,n₀,v₀, np, x)
     return f
 end
 
-function initial_compositions(model,p,T,z,add_pure_guess,add_near_pure_guess,add_pure_component,add_random_guess,add_all_guess)
+function initial_compositions(model,p,T,z,add_pure_guess,add_anti_pure_guess,add_pure_component,add_random_guess,add_all_guess)
     n = length(z)
     lb = zeros(n)
     ub = ones(n)
@@ -534,7 +535,7 @@ function initial_compositions(model,p,T,z,add_pure_guess,add_near_pure_guess,add
     	end
     end
     
-    if add_near_pure_guess || add_all_guess
+    if add_anti_pure_guess || add_all_guess
     	# anti pure generation
     	k = 1000
     	for i in 1:n
@@ -631,7 +632,7 @@ function HELD_impl(model,p,T,z₀,
 	tol,
 	HELD_tol,
 	add_pure_guess,
-	add_near_pure_guess,
+	add_anti_pure_guess,
 	add_pure_component,
 	add_random_guess,
 	add_all_guess,
@@ -668,7 +669,7 @@ function HELD_impl(model,p,T,z₀,
     		println("HELD Step 1 - UBDⱽ = $(G₀)")
     		println("HELD Step 1 - λ₀ = $(λ₀)")
     end
-    xi = initial_compositions(model,p,T,z₀,add_pure_guess,add_near_pure_guess,add_pure_component,add_random_guess,add_all_guess)
+    xi = initial_compositions(model,p,T,z₀,add_pure_guess,add_anti_pure_guess,add_pure_component,add_random_guess,add_all_guess)
     fmins = Vector{Float64}(undef,0)
     xmins = Vector{Vector{Float64}}(undef,0)
     for ix = 1:length(xi)
