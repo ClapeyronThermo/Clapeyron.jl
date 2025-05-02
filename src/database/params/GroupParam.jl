@@ -261,7 +261,7 @@ function Base.show(io::IO, ::MIME"text/plain", param::MixedGCSegmentParam)
     show_pairs(io,param.components,param.values,separator)
 end
 
-function MixedGCSegmentParam{T}(group::GroupParam,s = ones(T, length(groups.flattenedgroups)),segment = ones(T, length(groups.flattenedgroups))) where T <: Number
+function MixedGCSegmentParam{T}(group::GroupParam,s = ones(T, length(group.flattenedgroups)),segment = ones(T, length(group.flattenedgroups))) where T <: Number
     name = "mixed segment"
     components = group.components
     nc = length(components)
