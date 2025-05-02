@@ -65,4 +65,11 @@ end
     #error found during #365
     modelvec = Clapeyron.EoSVectorParam(model)
     @test Clapeyron.promote_model(BigFloat,modelvec) isa Clapeyron.EoSVectorParam
+
+
+    model2 = SAFTgammaMie(["octane"])
+    k1 = copy(model2.params.mixed_segment.values.v)
+    Clapeyron.recombine!(model2)
+    k2 = model2.params.mixed_segment.values.v
+    @test k1[1] == k2[1] # Test that the first value is unchanged
 end

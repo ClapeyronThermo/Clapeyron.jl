@@ -274,7 +274,7 @@ function MixedGCSegmentParam{T}(group::GroupParam,s = FillArrays.Fill(oneunit(T)
         val_i .= n_i
     end
     group_cache = MixedGCSegmentParam{T}(name,components,values)
-    mix_segment!(group_cache,s,segment)
+    mix_segment!(group_cache,group,s,segment)
     return group_cache
 end
 

@@ -230,14 +230,17 @@ modifies implace the field `n_groups_cache` (`μᵢₖ`) in the `GroupParam`:
 Where `S` is a shape factor parameter for each group and `vst` is the segment size for each group.
 used mainly for GC models (like `SAFTgammaMie`) in which the group fraction depends on segment size and shape factors.
 """
-function mix_segment!(groups,s = ones(length(groups.flattenedgroups)),segment = ones(length(groups.flattenedgroups)))
+function mix_segment!(groups,ngroups,s = ones(length(groups.flattenedgroups)),segment = ones(length(groups.flattenedgroups)))
     v = __get_group_sum_values(groups)
+    nv = __get_group_sum_values(ngroups)
+    @show v
     ng = length(v[1])
     nc = length(v)
     for i in 1:nc
         vi = v[i]
+        ni = nv[i]
         for k in 1:ng
-            vi[k] = vi[k]*s[k]*segment[k]
+            vi[k] = ni[k]*s[k]*segment[k]
         end
     end
     return groups
