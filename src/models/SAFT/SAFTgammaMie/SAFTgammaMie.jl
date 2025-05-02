@@ -258,9 +258,7 @@ function SAFTVRMie(groups::GroupParam,param::SAFTgammaMieParam,sites::SiteParam 
     comp_sites = gc_to_comp_sites(sites,groups)
     comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
     comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-    Mw = get(params,"Mw") do
-      SingleParam("Mw",components, zeros(eltype(shapefactor), length(groups.components)))
-    end
+    Mw = SingleParam("Mw",components, zeros(eltype(shapefactor), length(groups.components)))
     vrparams = SAFTVRMieParam(Mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
     return SAFTVRMie(components,comp_sites,vrparams,idealmodel,assoc_options,default_references(SAFTVRMie))
 end
