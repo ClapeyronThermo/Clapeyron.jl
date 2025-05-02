@@ -69,8 +69,8 @@ end
 # new HELD
 function Gershgorin(A)
     n = size(A)[1]
-#    e = Vector{eltype(A)}(undef,n)
-	e = Vector{Float64}(undef,n)
+    e = Vector{eltype(A)}(undef,n)
+#	e = Vector{Float64}(undef,n)
     for j = 1:n
 	sum = zero(eltype(A))
 	for i = 1:n
@@ -86,8 +86,10 @@ function exactstep(g, h, delta, tol, verbose)
     max_iter = 100*n
     hard_case = false
 #    mu = 0.01*sqrt(tol)
-    p = Vector{Float64}(undef,n)
-    q = Vector{Float64}(undef,n)
+	p = Vector{eltype(g)}(undef,n)
+	q = Vector{eltype(g)}(undef,n)
+ #   p = Vector{Float64}(undef,n)
+ #   q = Vector{Float64}(undef,n)
 
     eps = 2.2e-16
     numeric_eps = abs(h[1,1])*eps
@@ -301,20 +303,38 @@ function delta_Nocedal(func::Function, proj::Function,d, dmin, dmax, x, lb, ub, 
     # exactstep updates h to ensure its positive definition we use this updated hessian as our model
     s,h,iter,step_found,hard_case = exactstep(g, h, d, 0.001,verbose)
     
-	tau = 1.0
-    outside = Constraints(x, lb, ub, s)
-    while outside
-    #    d *= 0.5
-        # exactstep updates h to ensure its positive definition we use this updated hessian as our model
-    #    s,h,iter,step_found,hard_case = exactstep(g, h, d, 0.001, verbose)
-		tau *= 0.5
-		s .*= tau
-        outside = Constraints(x, lb, ub, s)
-        if tau < dmin
-            step_found = false
-            break
-        end
-    end
+	use_backtracking = true
+	if use_backtracking
+		tau = 1.0
+		outside = Constraints(x, lb, ub, s)
+		# our step is deemed to big to be feasible
+		# we try to back track but if the step is to big we may not even take one as for example we are close to a bound
+		# hence we try to tack a small step and the projection function will help us stay feasible
+		while outside
+			tau *= 0.5
+			s .*= tau
+			outside = Constraints(x, lb, ub, s)
+			if tau < sqrt(dmin)
+				step_found = false
+				break
+			end
+		end
+	else
+		outside = Constraints(x, lb, ub, s)
+		# our step is deemed to big to be feasible
+		# we try to reduce trust region but if the step is to big we may not even take one as for example we are close to a bound
+		# hence we try to tack a small step and the projection function will help us stay feasible
+		while outside
+		    d *= 0.5
+			# exactstep updates h to ensure its positive definition we use this updated hessian as our model
+		    s,h,iter,step_found,hard_case = exactstep(g, h, d, 0.001, verbose)
+			outside = Constraints(x, lb, ub, s)
+			if d < sqrt(dmin)
+				step_found = false
+				break
+			end
+		end
+	end
     
     step = norm(s,2)
     
@@ -365,20 +385,6 @@ function trustregion_Dennis_Schnabel(func::Function, grad::Function, hess::Funct
     iter = 0
     p = x
     s = -g
-
- #=
-    outside = Constraints(x, lb, ub, s)
-    while outside
-        d *= 0.5
-        # exactstep updates h to ensure its positive definition we use this updated hessian as our model
-        s,h,iter,step_found,hard_case = exactstep(g, h, d, 0.001,verbose)
-        outside = Constraints(x, lb, ub, s)
-        if d < dmin
-            step_found = false
-            break
-        end
-    end
-=#
  
     p = p .- g
     p = p .- x
@@ -730,14 +736,14 @@ function HELD_impl(model,p,T,z₀,
 		for im = 1:length(xm)
     		vm = volume(model,p,T,xm[im])
     		xvm = append!(deepcopy(xm[im][1:nc-1]),vref/vm)
-    		xvGm = append!(deepcopy(xvm),Gi(xvm))
-    		push!(ℳ,xvGm)
+    		xvGim = append!(deepcopy(xvm),Gi(xvm))
+    		push!(ℳ,xvGim)
     	end
 		for ii = 1:length(xi)
     		vi = volume(model,p,T,xi[ii])
     		xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
-    		xvGi = append!(deepcopy(xvi),Gi(xvi))
-    		push!(ℳ,xvGi)
+    		xvGii = append!(deepcopy(xvi),Gi(xvi))
+    		push!(ℳ,xvGii)
     	end
 		for i = 1:length(fmins_unique)
 			xminsGi_unique = append!(deepcopy(xmins_unique[i]),Gi(xmins_unique[i]))
