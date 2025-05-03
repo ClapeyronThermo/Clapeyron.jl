@@ -7,11 +7,24 @@ p = 1.5e5
 T = 20+273.15
 
 zdry=[0.7808,0.2095,0.0093,0.0004]
-zwater=0.05
+zwater=0.25
 z=append!(zdry*(1-zwater),zwater)
 
-isort = sortperm(z)
-#is = [5,4,3,2,1]
+iassoc = [5]
+
+# it aapears we need to have the association component in positions 1 followed by all others sort on z
+isort_assending = sortperm(z)
+isort = Vector{Int64}(undef,0)
+for ia in eachindex(iassoc)
+    push!(isort,iassoc[ia])
+end
+for ii in eachindex(isort_assending)
+    for ia in eachindex(iassoc)
+        if isort_assending[ii] != iassoc[ia]
+            push!(isort,isort_assending[ii])
+        end
+    end
+end
 println("Sorted model $(isort)")
 models = Clapeyron.each_split_model(model, isort)
 zs = Vector{Float64}(undef,length(z))

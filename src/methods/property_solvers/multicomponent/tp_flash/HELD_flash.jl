@@ -16,8 +16,8 @@ using JuMP, HiGHS
 Base.@kwdef struct HELDTPFlash <: TPFlashMethod
     max_HELD_iters::Int = 0
     max_trust_region_iters::Int = 0
-    tol::Float64 = 1.0e-10
-    HELD_tol::Float64 = 100.0*tol
+    tol::Float64 = 0.1*sqrt(eps(Float64))
+    HELD_tol::Float64 = sqrt(eps(Float64))
 	add_pure_guess::Bool = true
     add_anti_pure_guess::Bool = true
     add_pure_component::Vector{Bool} = Vector{Bool}(undef,0)
@@ -54,6 +54,8 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
 	verbose = method.verbose
 	if verbose == true
 		println("HELD  - Setup:")
+		println("HELD  - trust region tolerence = $(tol)")
+		println("HELD  - HELD tolerence = $(HELD_tol)")
 		println("HELD  - add_pure_guess = $(add_pure_guess)")
 		println("HELD  - add_anti_pure_guess = $(add_anti_pure_guess)")
 		println("HELD  - add_pure_component = $(add_pure_component)")
@@ -83,19 +85,16 @@ end
 
 function exactstep(g, h, delta, tol, verbose)
     n = size(g)[1]
-    max_iter = 100*n
+    max_iter = 10*n
     hard_case = false
-#    mu = 0.01*sqrt(tol)
 	p = Vector{eltype(g)}(undef,n)
 	q = Vector{eltype(g)}(undef,n)
- #   p = Vector{Float64}(undef,n)
- #   q = Vector{Float64}(undef,n)
 
-    eps = 2.2e-16
-    numeric_eps = abs(h[1,1])*eps
+    epsilon = eps(Float64)
+    numeric_eps = abs(h[1,1])*epsilon
     for i = 2:n
-    	if (abs(h[i,i])*eps > numeric_eps) 
-    	    numeric_eps = abs(h[i,i])*eps
+    	if (abs(h[i,i])*epsilon > numeric_eps) 
+    	    numeric_eps = abs(h[i,i])*epsilon
     	end
     end
     
@@ -187,9 +186,9 @@ function exactstep(g, h, delta, tol, verbose)
 	    lambda_min = lambda
 	end
 
-	if (normp <= delta*eps)
+	if (normp <= delta*epsilon)
 	    alpha = 0.01
-	    lambda = (1 - alpha)*lambda_min + alpha*lambda_max
+	    lambda = (1.0 - alpha)*lambda_min + alpha*lambda_max
 	    continue
 	end
 
@@ -208,7 +207,6 @@ end
 
 function Constraints(x,lb,ub,s)
     n = size(x)[1]
- #   xp = Vector{Float64}(undef,n)
 	xp = Vector{Base.promote_eltype(x,lb,ub,s)}(undef,n)
 	
     outside = false
@@ -224,15 +222,91 @@ function Constraints(x,lb,ub,s)
 	    	outside = true
 		end
     end
+
     return outside
+
 end
+
+#=
+function ConstraintsHELD(x,lb,ub,s)
+    n = size(x)[1]
+	xc = Vector{Base.promote_eltype(x,lb,ub,s)}(undef,n)
+	sx = Vector{Base.promote_eltype(x,lb,ub,s)}(undef,n)
+	xp = Vector{Base.promote_eltype(x,lb,ub,s)}(undef,n)
+	
+    outside = false
+	tau = 1.0
+
+    for i=1:n
+        xp[i] = x[i] + s[i]
+    end
+
+	sumxc = 0.0
+	sumsx = 0.0
+	for i = 1:n-1
+		xc[i] = xp[i]
+		sumxc += xc[i]
+		sx[i] = s[i]
+		sumsx += sx[i]
+	end
+	xc[n] =  1.0 - sumxc
+	sx[n] = -sumsx
+
+    for i = 1:n-1
+       if xc[i] > ub[i]
+	    	outside = true
+			test = 1.0 - (xc[i] - ub[i]) / sx[i]
+			if (test < tau)
+				tau = test
+			end
+	    end
+		if xc[i] < lb[i]
+	    	outside = true
+			test = 1.0 - (x[i] - lb[i]) / sx[i]
+			if (test < tau) 
+				tau = test
+			end
+		end
+    end
+	if xc[n] > ub[1]
+		outside = true
+		test = 1.0 - (xc[n] - ub[1]) / sx[n]
+		if (test < tau)
+			tau = test
+		end
+	end
+	if xc[n] < lb[1]
+		outside = true
+		test = 1.0 - (xc[n] - lb[1]) / sx[n]
+		if (test < tau) 
+			tau = test
+		end
+	end
+
+	if xp[n] > ub[n]
+		outside = true
+		test = 1.0 - (xp[n] - ub[n]) / s[n]
+		if (test < tau)
+			tau = test
+		end
+	end
+	if xp[n] < lb[n]
+		outside = true
+		test = 1.0 - (xp[n] - lb[n]) / s[n]
+		if (test < tau) 
+			tau = test
+		end
+	end
+
+    return outside,tau
+
+end
+=#
 
 function ProjectionHELD(x,lb,ub)
     n = size(x)[1]
     p = Vector{Base.promote_eltype(x,lb,ub)}(undef,n)
     xp = Vector{Base.promote_eltype(x,lb,ub)}(undef,n)
-#	p = Vector{Float64}(undef,n)
-#	xp = Vector{Float64}(undef,n)
     for i = 1:n-1
 		p[i] = x[i]
 		if p[i] < lb[i]
@@ -269,7 +343,6 @@ end
 function Projection(x,lb,ub)
     n = size(x)[1]
     p = Vector{Base.promote_eltype(x,lb,ub)}(undef,n)
-#	p = Vector{Float64}(undef,n)
     for i = 1:n
 		p[i] = x[i]
 		if p[i] < lb[i]
@@ -290,7 +363,7 @@ function trustregion_model(x, g, h)
     return -m
 end
 
-function delta_Nocedal(func::Function, proj::Function,d, dmin, dmax, x, lb, ub, f, g, h,verbose)
+function delta_Nocedal(func::Function, proj::Function, cnst::Function, d, dmin, dmax, x, lb, ub, f, g, h,verbose)
     c1 = 0.25
     c2 = 0.75
     c3 = 0.25
@@ -303,24 +376,24 @@ function delta_Nocedal(func::Function, proj::Function,d, dmin, dmax, x, lb, ub, 
     # exactstep updates h to ensure its positive definition we use this updated hessian as our model
     s,h,iter,step_found,hard_case = exactstep(g, h, d, 0.001,verbose)
     
-	use_backtracking = true
+	use_backtracking = false
 	if use_backtracking
 		tau = 1.0
-		outside = Constraints(x, lb, ub, s)
+		outside = cnst(x, s)
 		# our step is deemed to big to be feasible
 		# we try to back track but if the step is to big we may not even take one as for example we are close to a bound
 		# hence we try to tack a small step and the projection function will help us stay feasible
 		while outside
 			tau *= 0.5
 			s .*= tau
-			outside = Constraints(x, lb, ub, s)
+			outside = cnst(x, s)
 			if tau < sqrt(dmin)
 				step_found = false
 				break
 			end
 		end
 	else
-		outside = Constraints(x, lb, ub, s)
+		outside = cnst(x, s)
 		# our step is deemed to big to be feasible
 		# we try to reduce trust region but if the step is to big we may not even take one as for example we are close to a bound
 		# hence we try to tack a small step and the projection function will help us stay feasible
@@ -328,8 +401,8 @@ function delta_Nocedal(func::Function, proj::Function,d, dmin, dmax, x, lb, ub, 
 		    d *= 0.5
 			# exactstep updates h to ensure its positive definition we use this updated hessian as our model
 		    s,h,iter,step_found,hard_case = exactstep(g, h, d, 0.001, verbose)
-			outside = Constraints(x, lb, ub, s)
-			if d < sqrt(dmin)
+			outside = cnst(x, s)
+			if d < 4.0*dmin
 				step_found = false
 				break
 			end
@@ -366,7 +439,11 @@ function delta_Nocedal(func::Function, proj::Function,d, dmin, dmax, x, lb, ub, 
 
 end
 
-function trustregion_Dennis_Schnabel(func::Function, grad::Function, hess::Function, proj::Function,x,lb,ub,max_iters,tol,verbose)
+function trustregion_Dennis_Schnabel(	func::Function,
+										grad::Function,
+										hess::Function,
+										proj::Function,
+										cnst::Function,x,lb,ub,max_iters,tol,verbose)
     dmin = tol
     dmax = 0.5
     n = size(x)[1]
@@ -392,8 +469,12 @@ function trustregion_Dennis_Schnabel(func::Function, grad::Function, hess::Funct
 
     while error > tol
         iter += 1
-        d,x,f = delta_Nocedal(func::Function, proj::Function, d, dmin, dmax, x, lb, ub, f, g, h,verbose)
+        d,x,f = delta_Nocedal(func::Function, proj::Function, cnst::Function, d, dmin, dmax, x, lb, ub, f, g, h,verbose)
         if d == dmin
+			if error < sqrt(eps(Float64))
+				# maybe best we can do
+				break
+			end
 	    	check = true
 	    	break
         end
@@ -529,7 +610,7 @@ function initial_compositions(model,p,T,z,add_pure_guess,add_anti_pure_guess,add
     
     if add_pure_guess || add_all_guess
   		# pure generation
-    	k = 1000 - (n-1)
+    	k = 1000.0 - (n-1)
     	for i in 1:n
     		if add_pure_component[i] == true
         		xi = fill(1.,n)
@@ -543,7 +624,7 @@ function initial_compositions(model,p,T,z,add_pure_guess,add_anti_pure_guess,add
     
     if add_anti_pure_guess || add_all_guess
     	# anti pure generation
-    	k = 1000
+    	k = 1000.0
     	for i in 1:n
     		if add_pure_component[i] == true
         		xi = z
@@ -668,6 +749,7 @@ function HELD_impl(model,p,T,z₀,
     end
     ub[nc] = 1.0e2
     projHELD(x) = ProjectionHELD(x,lb,ub)
+	cnstHELD(x,s) = Constraints(x,lb,ub,s)
     x₀ = append!(deepcopy(z₀[1:nc-1]),vref/v₀)
     G₀ = G(x₀)
     if verbose == true
@@ -681,11 +763,11 @@ function HELD_impl(model,p,T,z₀,
     for ix = 1:length(xi)
     	vi = volume(model,p,T,xi[ix])
     	xvi = append!(deepcopy(xi[ix][1:nc-1]),vref/vi)
-    	xmin,fmin,iter,error,check = trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD, xvi, lb, ub, max_trust_region_iters, tol, false)
+    	xmin,fmin,iter,error,check = trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD,cnstHELD, xvi, lb, ub, max_trust_region_iters, tol, false)
     	
- #   	if verbose == true
- #       	println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
- #   	end 
+#    	if verbose == true
+#        	println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
+#    	end 
     	
 		# we add fmin < G₀ as we are searching for instability
     	if fmin < G₀ && check == false
@@ -756,8 +838,8 @@ function HELD_impl(model,p,T,z₀,
 		for ii = 1:length(xi)
     		vi = volume(model,p,T,xi[ii])
     		xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
-    		xvGi = append!(deepcopy(xvi),Gi(xvi))
-    		push!(ℳguess,xvGi)
+    		xvGii = append!(deepcopy(xvi),Gi(xvi))
+    		push!(ℳguess,xvGii)
     	end
 		for i = 1:length(fmins_unique)
 			xminsGi_unique = append!(deepcopy(xmins_unique[i]),Gi(xmins_unique[i]))
@@ -840,7 +922,7 @@ function HELD_impl(model,p,T,z₀,
     		xmins = Vector{Vector{Float64}}(undef,0)
     			
     		for ix = 1:length(ℳguess)
-    			xmin,fmin,iter,error,check = trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD,  ℳguess[ix][1:nc], lb, ub, max_trust_region_iters, tol, false)
+    			xmin,fmin,iter,error,check = trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD, ℳguess[ix][1:nc], lb, ub, max_trust_region_iters, tol, false)
     			
  #   			if verbose == true
  #       			println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
@@ -909,7 +991,7 @@ function HELD_impl(model,p,T,z₀,
     				vr = volume(model,p,T,xr)
     				xvr = append!(deepcopy(xr[1:nc-1]),vref/vr)
     				xvGr = append!(deepcopy(xvr),Gi(xvr))
-    				xmin,fmin,iter,error,check = trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD,  xvGr[1:nc], lb, ub, max_trust_region_iters, tol, false)
+    				xmin,fmin,iter,error,check = trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD,  xvGr[1:nc], lb, ub, max_trust_region_iters, tol, false)
     				
 #    				if verbose == true
 #        				println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
@@ -999,7 +1081,7 @@ function HELD_impl(model,p,T,z₀,
 				end
 				betaerror = abs(1.0 - sumbeta)
 				if verbose == true
-        			println("HELD Step 3 - Test phase mole balance: error = $(betaerror) and tol =  $(sqrt(tol))")
+        			println("HELD Step 3 - Test phase mole balance: error = $(betaerror) and tol =  $(sqrt(HELD_tol))")
         			println("HELD Step 3 - Phases found: np = $(length(beta))")
     			end
 			end
@@ -1009,12 +1091,11 @@ function HELD_impl(model,p,T,z₀,
     		end
 			
 			np = length(beta)
-			if error < HELD_tol && betaerror < sqrt(tol)
+			if error < HELD_tol && betaerror < sqrt(HELD_tol)
 				if verbose == true
 				    println("HELD Step 4 - Error within tolerences on UBDⱽ - LBDⱽ and phase mole balance")
         			println("HELD Step 4 - solution accepted")
     			end  			
-#	   			np = length(beta)
 	   			# normalise the solution before we do the Gibbs minimisation step.
 	   			# its essential that xHELD moles balances and is a feasible solution
 	   			phasemoles = Vector{Vector{Float64}}(undef,0)
@@ -1071,10 +1152,19 @@ function HELD_impl(model,p,T,z₀,
 				println("HELD Step 3 - Add new (x,V)s: ℒs to the ℳ set and all current minimums to the ℳguess set")
     		end
 
+			use_only_lowest_min = true
+			if error > 0.001 && use_only_lowest_min
+				# add latest minimums to ℳguess
+				for i = 1:length(fmins_unique)
+					xminsGi_unique = append!(deepcopy(xmins_unique[i]),Gi(xmins_unique[i]))
+					push!(ℳ,xminsGi_unique)
+				end
+			else
 			# add lowest minimum to ℳ set
-			for i = 1:length(ℒ)
-				ℒGi = append!(deepcopy(ℒ[i]),Gi(ℒ[i]))
-				push!(ℳ,ℒGi)
+				for i = 1:length(ℒ)
+					ℒGi = append!(deepcopy(ℒ[i]),Gi(ℒ[i]))
+					push!(ℳ,ℒGi)
+				end
 			end
 
 			# add minimums to ℳguess set
@@ -1146,8 +1236,9 @@ function HELD_impl(model,p,T,z₀,
 			push!(ub,100.0)
 			
 			projGibbs(x) = Projection(x,lb,ub)
+			cnstGibbs(x,s) = Constraints(x,lb,ub,s)
 			
-			xsol,Gsol,iter,error,check = trustregion_Dennis_Schnabel(Gibbs, Gibbs_g, Gibbs_h, projGibbs, xHELD, lb, ub, max_trust_region_iters, tol,false)
+			xsol,Gsol,iter,error,check = trustregion_Dennis_Schnabel(Gibbs, Gibbs_g, Gibbs_h, projGibbs, cnstGibbs, xHELD, lb, ub, max_trust_region_iters, tol,false)
 			
 			if verbose == true
 				println("HELD Step 5 - Gibbs Energy Minimisation: iterations taken = $(iter)")
