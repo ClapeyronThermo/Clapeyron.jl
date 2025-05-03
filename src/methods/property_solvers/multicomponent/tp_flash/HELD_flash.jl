@@ -3,8 +3,8 @@ using JuMP, HiGHS
 """
     HELDTPFlash(;   max_HELD_iters::Int = 0
     				max_trust_region_iters::Int = 0
-    				tol::Float64 = 1.0e-10
-    				HELD_tol::Float64 = 100.0*tol
+    				tol::Float64 = HELD_tol/10
+    				HELD_tol::Float64 = sqrt(eps)
 					add_pure_guess = true
     				add_anti_pure_guess = true
     				add_pure_component = [0]
@@ -150,7 +150,7 @@ function exactstep(g, h, delta, tol, verbose)
 	    lambda += alpha*(lambda_max - lambda_min)
 	    continue
 	end
-	
+
 	# C = LU
     C = cholesky(hp)
     L = C.L
@@ -687,16 +687,17 @@ function Pereira_compositions(model,p,T,z)
     xp = Vector{Vector{Float64}}(undef,0)
     
     #generation by the method in Pereira et al. (2010).
+	d = 0.5
     for i = 1:n-1
         x̂ = fill(0.0,n)
         x̄ = fill(0.0,n)
 		for j = 1:n
 	    	if (j == i)
-	        	x̂[j] = z[i]/2.0
-	        	x̄[j] = (1.0 + z[i])/2.0
+	        	x̂[j] = d*z[i]
+	        	x̄[j] = z[i] + d*(1.0 - z[i])
 	    	else
-	        	x̂[j] = (1.0 - z[i]/2.0)/(n-1)
-	        	x̄[j] = (1.0 - (1.0 + z[i])/2.0)/(n-1)
+	        	x̂[j] = (1.0 - d*z[i])/(n-1)
+	        	x̄[j] = (1.0 - (z[i] + d*(1.0 - z[i])))/(n-1)
 	    	end
 		end
 		x̂ = Projection(x̂,lb,ub)
@@ -708,6 +709,55 @@ function Pereira_compositions(model,p,T,z)
 		x̄ ./= sumx̄
 		push!(xp,x̄)
     end
+
+	use_extra_Msets = true
+	if use_extra_Msets
+		d = 0.25
+		for i = 1:n-1
+			x̂ = fill(0.0,n)
+			x̄ = fill(0.0,n)
+			for j = 1:n
+				if (j == i)
+					x̂[j] = d*z[i]
+					x̄[j] = z[i] + d*(1.0 - z[i])
+				else
+					x̂[j] = (1.0 - d*z[i])/(n-1)
+					x̄[j] = (1.0 - (z[i] + d*(1.0 - z[i])))/(n-1)
+				end
+			end
+			x̂ = Projection(x̂,lb,ub)
+			sumx̂ = sum(x̂)
+			x̂ ./= sumx̂
+			push!(xp,x̂)
+			x̄ = Projection(x̄,lb,ub)
+			sumx̄ = sum(x̄)
+			x̄ ./= sumx̄
+			push!(xp,x̄)
+		end
+
+		d = 0.75
+		for i = 1:n-1
+			x̂ = fill(0.0,n)
+			x̄ = fill(0.0,n)
+			for j = 1:n
+				if (j == i)
+					x̂[j] = d*z[i]
+					x̄[j] = z[i] + d*(1.0 - z[i])
+				else
+					x̂[j] = (1.0 - d*z[i])/(n-1)
+					x̄[j] = (1.0 - (z[i] + d*(1.0 - z[i])))/(n-1)
+				end
+			end
+			x̂ = Projection(x̂,lb,ub)
+			sumx̂ = sum(x̂)
+			x̂ ./= sumx̂
+			push!(xp,x̂)
+			x̄ = Projection(x̄,lb,ub)
+			sumx̄ = sum(x̄)
+			x̄ ./= sumx̄
+			push!(xp,x̄)
+		end
+	end
     
     return xp
     
@@ -900,14 +950,15 @@ function HELD_impl(model,p,T,z₀,
         		println("HELD Step 2 - λˢ = $(λˢ)")
     		end
     		
-    		Dλ = λˢ  - λ₀
+    		Dλ = λˢ  .- λ₀
+			λStalling = false
     		if norm(Dλ,Inf) < HELD_tol
     		    if verbose == true
         			println("HELD Step 2 - λˢ has stalled use random inital guesses to provide a chance to converge")
     			end
-				use_global_solution = true
+				λStalling = true
     		else
-    			use_global_solution = false
+    			λStalling = false
     			λ₀ = λˢ 
     		end
     	
@@ -936,7 +987,7 @@ function HELD_impl(model,p,T,z₀,
 		
 			fmins_unique, xmins_unique, stable = HELD_clean_local_solutions(UBDⱽ, x₀, fmins, xmins, tol, verbose)
 			
-			if length(fmins_unique) < 1
+			if length(fmins_unique) < 1 || λStalling
 				use_global_solution = true
 			else
 				use_global_solution = false
@@ -977,7 +1028,7 @@ function HELD_impl(model,p,T,z₀,
     			if verbose == true
         			println("HELD Step 3 - IPₓᵥ Global solution required")
   				end
-				iter_rand_max = 10*nc
+				iter_rand_max = 10*nc*nc
 				for iter_rand = 1:iter_rand_max
 					xr = fill(0.,nc)
     				for i = 1:nc
