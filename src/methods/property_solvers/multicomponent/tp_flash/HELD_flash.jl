@@ -904,7 +904,6 @@ function HELD_impl(model,p,T,z₀,
         # set up inital ℳ used for OPₓᵥ
         # ℳi is [xi[1:nc-1], Vref/Vi, Gi]
     	ℳ = Vector{Vector{Float64}}(undef,0)
-		λUL = Vector{Vector{Float64}}(undef,0)
 		xm = Pereira_compositions(model,p,T,z₀)
 		# set up initial ℳ set
 		# add initial guesses and the newly found minimums from first iteration stability check
@@ -913,17 +912,7 @@ function HELD_impl(model,p,T,z₀,
     		xvm = append!(deepcopy(xm[im][1:nc-1]),vref/vm)
     		xvGim = append!(deepcopy(xvm),Gi(xvm))
     		push!(ℳ,xvGim)
-			λm = fill(0.0,nc-1)
-			for ic = 1:nc-1
-				λm[ic] = (G₀ -xvGim[nc+1])/(z₀[ic] - xvGim[ic])
-			end
-			push!(λUL,λm)
     	end
-
-		if verbose == true
-			println("ℳ set - λUL = $(λUL)")
-		end
-
 		for ii = 1:length(xi)
     		vi = volume(model,p,T,xi[ii])
     		xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
@@ -938,12 +927,6 @@ function HELD_impl(model,p,T,z₀,
         # set up inital ℳguess used for local minimisations in IPₓᵥ
         # ℳguessi is [xi[1:nc-1], Vref/Vi, Gi]
 		ℳguess = Vector{Vector{Float64}}(undef,0)
-#		for im = 1:length(xm)
-#    		vm = volume(model,p,T,xm[im])
-#    		xvm = append!(deepcopy(xm[im][1:nc-1]),vref/vm)
-#    		xvGim = append!(deepcopy(xvm),Gi(xvm))
-#    		push!(ℳguess,xvGim)
-#    	end
 		for ii = 1:length(xi)
     		vi = volume(model,p,T,xi[ii])
     		xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
@@ -960,10 +943,10 @@ function HELD_impl(model,p,T,z₀,
 		# now we have our first ℳ we can solve the cutting plane problem to get new λ
 		# with new λ we can solve the local minimisation to get new unique minimums to add to ℳ
     	
-    	UBDⱽ = G₀
+    	UBDⱽ =  G₀
     	LBDⱽ = -Inf
 
-		# need some way of getting the lower and upper bounds on these
+		# need some way of getting the estimated lower and upper bounds on λ, 10 seems OK so far but may not be universal
 		λᴸ = fill(-10.0,nc-1)
 		λᵁ = fill( 10.0,nc-1)
     	
