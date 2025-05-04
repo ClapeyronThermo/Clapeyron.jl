@@ -233,7 +233,6 @@ used mainly for GC models (like `SAFTgammaMie`) in which the group fraction depe
 function mix_segment!(groups,ngroups,s = ones(length(groups.flattenedgroups)),segment = ones(length(groups.flattenedgroups)))
     v = __get_group_sum_values(groups)
     nv = __get_group_sum_values(ngroups)
-    @show v
     ng = length(v[1])
     nc = length(v)
     for i in 1:nc
