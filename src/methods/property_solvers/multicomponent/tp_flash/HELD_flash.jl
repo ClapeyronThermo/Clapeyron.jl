@@ -685,7 +685,48 @@ function Pereira_compositions(model,p,T,z)
     end
 	
     xp = Vector{Vector{Float64}}(undef,0)
+	d = Vector{Float64}(undef,0)
+
+	use_full_dset = false
+	if use_full_dset
+		nd = 2.0^(n-1)
+		Dd = 1.0/nd
+		dd = 0.0
+		for id = 1:nd-1
+			dd += Dd
+			push!(d,dd)
+		end
+	else
+		push!(d,0.5)
+	end
+
+#	println("Pereira - d = $(d)")
     
+	for id in eachindex(d)
+		for i = 1:n-1
+			x̂ = fill(0.0,n)
+			x̄ = fill(0.0,n)
+			for j = 1:n
+				if (j == i)
+					x̂[j] = d[id]*z[i]
+					x̄[j] = z[i] + d[id]*(1.0 - z[i])
+				else
+					x̂[j] = (1.0 - d[id]*z[i])/(n-1)
+					x̄[j] = (1.0 - (z[i] + d[id]*(1.0 - z[i])))/(n-1)
+				end
+			end
+			x̂ = Projection(x̂,lb,ub)
+			sumx̂ = sum(x̂)
+			x̂ ./= sumx̂
+			push!(xp,x̂)
+			x̄ = Projection(x̄,lb,ub)
+			sumx̄ = sum(x̄)
+			x̄ ./= sumx̄
+			push!(xp,x̄)
+		end
+	end
+
+	#=
     #generation by the method in Pereira et al. (2010).
 	d = 0.5
     for i = 1:n-1
@@ -710,7 +751,7 @@ function Pereira_compositions(model,p,T,z)
 		push!(xp,x̄)
     end
 
-	use_extra_Msets = true
+	use_extra_Msets = false
 	if use_extra_Msets
 		d = 0.25
 		for i = 1:n-1
@@ -758,7 +799,8 @@ function Pereira_compositions(model,p,T,z)
 			push!(xp,x̄)
 		end
 	end
-    
+	=#
+
     return xp
     
 end
@@ -862,6 +904,7 @@ function HELD_impl(model,p,T,z₀,
         # set up inital ℳ used for OPₓᵥ
         # ℳi is [xi[1:nc-1], Vref/Vi, Gi]
     	ℳ = Vector{Vector{Float64}}(undef,0)
+		λUL = Vector{Vector{Float64}}(undef,0)
 		xm = Pereira_compositions(model,p,T,z₀)
 		# set up initial ℳ set
 		# add initial guesses and the newly found minimums from first iteration stability check
@@ -870,7 +913,17 @@ function HELD_impl(model,p,T,z₀,
     		xvm = append!(deepcopy(xm[im][1:nc-1]),vref/vm)
     		xvGim = append!(deepcopy(xvm),Gi(xvm))
     		push!(ℳ,xvGim)
+			λm = fill(0.0,nc-1)
+			for ic = 1:nc-1
+				λm[ic] = (G₀ -xvGim[nc+1])/(z₀[ic] - xvGim[ic])
+			end
+			push!(λUL,λm)
     	end
+
+		if verbose == true
+			println("ℳ set - λUL = $(λUL)")
+		end
+
 		for ii = 1:length(xi)
     		vi = volume(model,p,T,xi[ii])
     		xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
@@ -885,6 +938,12 @@ function HELD_impl(model,p,T,z₀,
         # set up inital ℳguess used for local minimisations in IPₓᵥ
         # ℳguessi is [xi[1:nc-1], Vref/Vi, Gi]
 		ℳguess = Vector{Vector{Float64}}(undef,0)
+#		for im = 1:length(xm)
+#    		vm = volume(model,p,T,xm[im])
+#    		xvm = append!(deepcopy(xm[im][1:nc-1]),vref/vm)
+#    		xvGim = append!(deepcopy(xvm),Gi(xvm))
+#    		push!(ℳguess,xvGim)
+#    	end
 		for ii = 1:length(xi)
     		vi = volume(model,p,T,xi[ii])
     		xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
@@ -903,6 +962,10 @@ function HELD_impl(model,p,T,z₀,
     	
     	UBDⱽ = G₀
     	LBDⱽ = -Inf
+
+		# need some way of getting the lower and upper bounds on these
+		λᴸ = fill(-10.0,nc-1)
+		λᵁ = fill( 10.0,nc-1)
     	
     	use_global_solution = false
     	
@@ -927,7 +990,10 @@ function HELD_impl(model,p,T,z₀,
     		@constraint(OPₓᵥ,v <= UBDⱽ)
     		#v <= Gi + ∑(λi*(n-xi))
     		@constraint(OPₓᵥ,[i ∈ 1:length(ℳ)],v <= ℳ[i][nc+1]+sum(λ.*(z₀[1:nc-1] .- ℳ[i][1:nc-1])))
-    		
+
+    		#λᴸ <= λ <= λᵁ 
+    		@constraint(OPₓᵥ,[i ∈ 1:nc-1],λᴸ[i] <= λ[i] <= λᵁ[i])
+
     		@objective(OPₓᵥ, Max, v)
 			use_ipm = false
 			if use_ipm
