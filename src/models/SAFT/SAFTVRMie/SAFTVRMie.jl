@@ -92,7 +92,7 @@ function recombine_impl!(model::SAFTVRMieModel)
     model.params.bondvol.values.values[:] = bondvol.values.values
 
     sigma = sigma_LorentzBerthelot!(sigma)
-    epsilon = epsilon_HudsenMcCoubrey!(epsilon,sigma)
+    epsilon = epsilon_HudsenMcCoubreysqrt!(epsilon,sigma)
     lambda_a = lambda_LorentzBerthelot!(lambda_a)
     lambda_r = lambda_LorentzBerthelot!(lambda_r)
     return model
