@@ -69,6 +69,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
 end
 
 # new HELD
+#=
 function Gershgorin(A)
     n = size(A)[1]
     e = Vector{eltype(A)}(undef,n)
@@ -204,7 +205,7 @@ function exactstep(g, h, delta, tol, verbose)
     step_found = false
     return p,h,iter,step_found,hard_case
 end
-
+=#
 function Constraints(x,lb,ub,s)
     n = size(x)[1]
 	xp = Vector{Base.promote_eltype(x,lb,ub,s)}(undef,n)
@@ -354,7 +355,7 @@ function Projection(x,lb,ub)
     end
     return p
 end
-
+#=
 function trustregion_model(x, g, h)
     n = size(x)[1]
     hx = Vector{Float64}(undef,n)
@@ -362,7 +363,8 @@ function trustregion_model(x, g, h)
     m = dot(x,g) + 0.5*dot(x,hx)
     return -m
 end
-
+=#
+#=
 function delta_Nocedal(func::Function, proj::Function, cnst::Function, d, dmin, dmax, x, lb, ub, f, g, h,verbose)
     c1 = 0.25
     c2 = 0.75
@@ -438,7 +440,8 @@ function delta_Nocedal(func::Function, proj::Function, cnst::Function, d, dmin, 
     return d,x,f
 
 end
-
+=#
+#=
 function trustregion_Dennis_Schnabel(	func::Function,
 										grad::Function,
 										hess::Function,
@@ -494,7 +497,7 @@ function trustregion_Dennis_Schnabel(	func::Function,
     end
     return x,f,iter,error,check
 end
-
+=#
 function HELD_func(model,p,T,n₀,v₀,x,λ)
     nc = length(n₀)
     xₙ = append!(deepcopy(x[1:nc-1]),1.0 - sum(x[1:nc-1]))
@@ -855,7 +858,7 @@ function HELD_impl(model,p,T,z₀,
     for ix = 1:length(xi)
     	vi = volume(model,p,T,xi[ix])
     	xvi = append!(deepcopy(xi[ix][1:nc-1]),vref/vi)
-    	xmin,fmin,iter,error,check = trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD,cnstHELD, xvi, lb, ub, max_trust_region_iters, tol, false)
+    	xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD,cnstHELD, xvi, lb, ub, max_trust_region_iters, tol, false)
     	
 #    	if verbose == true
 #        	println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
@@ -1026,7 +1029,7 @@ function HELD_impl(model,p,T,z₀,
     		xmins = Vector{Vector{Float64}}(undef,0)
     			
     		for ix = 1:length(ℳguess)
-    			xmin,fmin,iter,error,check = trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD, ℳguess[ix][1:nc], lb, ub, max_trust_region_iters, tol, false)
+    			xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD, ℳguess[ix][1:nc], lb, ub, max_trust_region_iters, tol, false)
     			
  #   			if verbose == true
  #       			println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
@@ -1095,7 +1098,7 @@ function HELD_impl(model,p,T,z₀,
     				vr = volume(model,p,T,xr)
     				xvr = append!(deepcopy(xr[1:nc-1]),vref/vr)
     				xvGr = append!(deepcopy(xvr),Gi(xvr))
-    				xmin,fmin,iter,error,check = trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD,  xvGr[1:nc], lb, ub, max_trust_region_iters, tol, false)
+    				xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD,  xvGr[1:nc], lb, ub, max_trust_region_iters, tol, false)
     				
 #    				if verbose == true
 #        				println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
@@ -1351,7 +1354,7 @@ function HELD_impl(model,p,T,z₀,
 			projGibbs(x) = Projection(x,lb,ub)
 			cnstGibbs(x,s) = Constraints(x,lb,ub,s)
 			
-			xsol,Gsol,iter,error,check = trustregion_Dennis_Schnabel(Gibbs, Gibbs_g, Gibbs_h, projGibbs, cnstGibbs, xHELD, lb, ub, max_trust_region_iters, tol,false)
+			xsol,Gsol,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gibbs, Gibbs_g, Gibbs_h, projGibbs, cnstGibbs, xHELD, lb, ub, max_trust_region_iters, tol,false)
 			
 			if verbose == true
 				println("HELD Step 5 - Gibbs Energy Minimisation: iterations taken = $(iter)")
