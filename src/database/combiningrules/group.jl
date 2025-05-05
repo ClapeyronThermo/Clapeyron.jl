@@ -163,8 +163,8 @@ end
 
 function group_pairmean(f::F,groups,p::AbstractArray) where {F}
     v = __get_group_sum_values(groups)
-    _0 = zero(Base.promote_eltype(1.0,p,v[1])) #we want a float type
-    res = fill(_0,length(groups.components))
+    T = Base.promote_eltype(1.0,p,v[1])
+    res = zeros(T, length(groups.components))
     return group_pairmean!(res,f,groups,p)
 end
 

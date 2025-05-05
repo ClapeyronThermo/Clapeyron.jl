@@ -261,12 +261,12 @@ function Base.show(io::IO, ::MIME"text/plain", param::MixedGCSegmentParam)
     show_pairs(io,param.components,param.values,separator)
 end
 
-function MixedGCSegmentParam{T}(group::GroupParam,s = FillArrays.Fill(oneunit(T),length(groups.flattenedgroups)),segment = FillArrays.Fill(oneunit(T),length(groups.flattenedgroups))) where T <: Number
+function MixedGCSegmentParam{T}(group::GroupParam,s = ones(T, length(group.flattenedgroups)),segment = ones(T, length(group.flattenedgroups))) where T <: Number
     name = "mixed segment"
     components = group.components
     nc = length(components)
     ng = length(group.flattenedgroups)
-    values = PackedVectorsOfVectors.packed_fill(zero(T),FillArrays.fill(ng,nc))
+    values = Clapeyron.PackedVectorsOfVectors.pack([zeros(T, ng) for _ in 1:nc])
     n_flattenedgroups = group.n_flattenedgroups
     for i in 1:nc
         val_i = values[i]
