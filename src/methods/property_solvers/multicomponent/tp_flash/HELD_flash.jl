@@ -949,6 +949,8 @@ function HELD_impl(model,p,T,z₀,
 		# need some way of getting the estimated lower and upper bounds on λ, 10 seems OK so far but may not be universal
 		λᴸ = fill(-10.0,nc-1)
 		λᵁ = fill( 10.0,nc-1)
+
+		limit_λs_by_bounds = true
     	
     	use_global_solution = false
     	
@@ -974,8 +976,10 @@ function HELD_impl(model,p,T,z₀,
     		#v <= Gi + ∑(λi*(n-xi))
     		@constraint(OPₓᵥ,[i ∈ 1:length(ℳ)],v <= ℳ[i][nc+1]+sum(λ.*(z₀[1:nc-1] .- ℳ[i][1:nc-1])))
 
-    		#λᴸ <= λ <= λᵁ 
-    		@constraint(OPₓᵥ,[i ∈ 1:nc-1],λᴸ[i] <= λ[i] <= λᵁ[i])
+			if limit_λs_by_bounds
+    			#λᴸ <= λ <= λᵁ 
+    			@constraint(OPₓᵥ,[i ∈ 1:nc-1],λᴸ[i] <= λ[i] <= λᵁ[i])
+			end
 
     		@objective(OPₓᵥ, Max, v)
 			use_ipm = false
@@ -1252,15 +1256,24 @@ function HELD_impl(model,p,T,z₀,
 				println("HELD Step 3 - Add new (x,V)s: ℒs to the ℳ set and all current minimums to the ℳguess set")
     		end
 
-			use_only_lowest_min = true
-			if error > 0.001 && use_only_lowest_min
+			if error > 0.001
+				limit_λs_by_bounds = true
+			else
+				limit_λs_by_bounds = false
+				if verbose == true
+					println("HELD Step 3 - λ bounds removed from OPₓᵥ")
+				end
+			end
+
+			use_only_lowest_min = false
+			if error > 0.001 && !use_only_lowest_min
 				# add latest minimums to ℳguess
 				for i = 1:length(fmins_unique)
 					xminsGi_unique = append!(deepcopy(xmins_unique[i]),Gi(xmins_unique[i]))
 					push!(ℳ,xminsGi_unique)
 				end
 			else
-			# add lowest minimum to ℳ set
+				# add lowest minimum to ℳ set
 				for i = 1:length(ℒ)
 					ℒGi = append!(deepcopy(ℒ[i]),Gi(ℒ[i]))
 					push!(ℳ,ℒGi)
