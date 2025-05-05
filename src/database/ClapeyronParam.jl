@@ -26,7 +26,7 @@ is_splittable(::OptionsParam) = false
 export EoSParam, ParametricEoSParam
 
 paramtype(m::ClapeyronParam) = eltype(m)
-paramtype(::Type{M}) where M <: ClapeyronParam = eltype(m)
+paramtype(::Type{M}) where M <: ClapeyronParam = eltype(M)
 
 custom_show(param::EoSParam) = _custom_show_param(typeof(param))
 

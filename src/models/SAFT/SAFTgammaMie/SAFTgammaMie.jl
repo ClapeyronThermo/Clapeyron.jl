@@ -154,12 +154,31 @@ function SAFTgammaMie(components;
 
     groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
+
+    return SAFTgammaMie(groups, params;
+                        idealmodel = idealmodel,
+                        ideal_userlocations = ideal_userlocations,
+                        reference_state = reference_state,
+                        verbose = verbose,
+                        epsilon_mixing = epsilon_mixing,
+                        assoc_options = assoc_options)
+end
+
+function SAFTgammaMie(groups::GroupParam, params::Dict{String,ClapeyronParam};
+    idealmodel = BasicIdeal,
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
+    epsilon_mixing = :default,
+    assoc_options = AssocOptions())
+
+    
     sites = params["sites"]
     components = groups.components
     
     segment = params["vst"]
     shapefactor = params["S"]
-    mixed_segment = MixedGCSegmentParam(groups,shapefactor.values,segment.values)
+    mixed_segment = MixedGCSegmentParam{Base.eltype(shapefactor)}(groups,shapefactor.values,segment.values)
     sigma = sigma_LorentzBerthelot(params["sigma"])
     sigma.values .*= 1E-10
     sigma3 = PairParam(sigma)
@@ -239,7 +258,7 @@ function SAFTVRMie(groups::GroupParam,param::SAFTgammaMieParam,sites::SiteParam 
     comp_sites = gc_to_comp_sites(sites,groups)
     comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
     comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-    Mw = SingleParam("Mw",components)
+    Mw = SingleParam("Mw",components, zeros(eltype(shapefactor), length(groups.components)))
     vrparams = SAFTVRMieParam(Mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
     return SAFTVRMie(components,comp_sites,vrparams,idealmodel,assoc_options,default_references(SAFTVRMie))
 end
