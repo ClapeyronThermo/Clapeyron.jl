@@ -1,5 +1,5 @@
 include("tr_subproblem/TRS.jl")
-
+#=
 function Gershgorin(A)
     n = size(A)[1]
     e = Vector{eltype(A)}(undef,n)
@@ -134,7 +134,7 @@ function exactstep(g, h, delta, tol, verbose)
     step_found = false
     return p,h,iter,step_found,hard_case
 end
-
+=#
 function trustregion_model(x, g, h)
     n = size(x)[1]
     hx = Vector{Float64}(undef,n)
@@ -153,8 +153,6 @@ function delta_Nocedal(func::Function, proj::Function, cnst::Function, d, dmin, 
     n = size(x)[1]
     xp = Vector{Float64}(undef,n)
     
-    # exactstep updates h to ensure its positive definition we use this updated hessian as our model
-#    s,h,iter,step_found,hard_case = exactstep(g, h, d, 0.001,verbose)
     X,info = Solvers.TRS.trs_small(h, g, d, compute_local=true)
     s = X[1:n]
     
@@ -181,8 +179,6 @@ function delta_Nocedal(func::Function, proj::Function, cnst::Function, d, dmin, 
 		# hence we try to tack a small step and the projection function will help us stay feasible
 		while outside
 		    d *= 0.5
-			# exactstep updates h to ensure its positive definition we use this updated hessian as our model
-		#    s,h,iter,step_found,hard_case = exactstep(g, h, d, 0.001, verbose)
             X,info = Solvers.TRS.trs_small(h, g, d, compute_local=true)
             s = X[1:n]
 			outside = cnst(x, s)
