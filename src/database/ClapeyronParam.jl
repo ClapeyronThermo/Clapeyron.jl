@@ -30,7 +30,6 @@ paramtype(::Type{M}) where M <: ClapeyronParam = eltype(M)
 
 custom_show(param::EoSParam) = _custom_show_param(typeof(param))
 
-
 function build_parametric_param(param::Type{T}, args...) where T <: ParametricEoSParam
     return __build_parametric_param(param,args)
 end
