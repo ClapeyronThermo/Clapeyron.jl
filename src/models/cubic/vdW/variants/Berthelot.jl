@@ -114,7 +114,7 @@ function Berthelot(components;
     return model
 end
 
-function ab_premixing(model::BerthelotModel,mixing::MixingRule,k=nothing,l=nothing)
+function ab_premixing(model::BerthelotModel,mixing::MixingRule,k,l)
     #_Tc = model.params.Tc
     _pc = model.params.Pc
     _Vc = model.params.Vc

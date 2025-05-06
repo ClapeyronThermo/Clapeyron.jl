@@ -33,7 +33,7 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = nothing)
+function ab_premixing(model::EoSModel,mixing::MixingRule, k, l)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.Pc
@@ -46,25 +46,12 @@ function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = noth
     return a,b
 end
 
-function ab_premixing(model::CubicModel,kij::K,lij::L) where K <: Union{Nothing,PairParameter,AbstractMatrix} where L <: Union{Nothing,PairParameter,AbstractMatrix}
+ab_premixing(model::EoSModel,mixing::MixingRule,k) = ab_premixing(model,mixing,k,nothing)
+ab_premixing(model::EoSModel,mixing::MixingRule) = ab_premixing(model,mixing,nothing,nothing)
+
+function ab_premixing(model::EoSModel,kij::K,lij::L) where K <: Union{Nothing,PairParameter,AbstractMatrix} where L <: Union{Nothing,PairParameter,AbstractMatrix}
     return ab_premixing(model,model.mixing,kij,lij)
 end
-
-#legacy reasons
-function ab_premixing(model::CubicModel,mixing::MixingRule,Tc,Pc,kij,lij)
-    Ωa, Ωb = ab_consts(model)
-    comps = Tc.components
-    n = length(Tc)
-    a = PairParam("a",comps,zeros(n,n))
-    b = PairParam("b",comps,zeros(n,n))
-    diagvalues(a) .= @. Ωa*R̄^2*Tc^2/pc
-    diagvalues(b) .= @. Ωb*R̄*Tc/pc
-    epsilon_LorentzBerthelot!(a,kij)
-    sigma_LorentzBerthelot!(b,lij)
-    return a,b
-end
-
-ab_premixing(model::CubicModel,mixing::MixingRule,Tc,pc,vc,kij,lij) = ab_premixing(model,mixing,Tc,pc,kij,lij) #ignores the Vc unless dispatch
 
 function recombine_cubic!(model::CubicModel,k = nothing,l = nothing)
     recombine_mixing!(model,model.mixing,k,l)

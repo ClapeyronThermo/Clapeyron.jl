@@ -162,7 +162,7 @@ function __rkpr_f0_δ(δ,Zc)
     return Zc - y/(3*y + d1 - 1)
 end
 
-function ab_premixing(model::RKPRModel,mixing::MixingRule,k  = nothing, l = nothing)
+function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
     _Tc = model.params.Tc
     _pc = model.params.Pc
     _Vc = model.params.Vc

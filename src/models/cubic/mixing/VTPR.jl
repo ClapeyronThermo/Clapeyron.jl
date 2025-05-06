@@ -79,7 +79,7 @@ function VTPRRule(components; activity = UNIFAC, userlocations = String[],activi
     return model
 end
 
-function ab_premixing(model::PRModel,mixing::VTPRRule,k = nothing,l = nothing)
+function ab_premixing(model::PRModel,mixing::VTPRRule,k,l)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.Pc

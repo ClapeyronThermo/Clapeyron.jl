@@ -76,7 +76,7 @@ function gErRule(components; activity = NRTL, userlocations = String[],activity_
     return model
 end
 
-function ab_premixing(model::PRModel,mixing::gErRuleModel,k = nothing, l = nothing)
+function ab_premixing(model::PRModel,mixing::gErRuleModel,k, l)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.Pc

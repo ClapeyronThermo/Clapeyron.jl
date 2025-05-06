@@ -105,7 +105,7 @@ function Clausius(components;
     return model
 end
 
-function ab_premixing(model::ClausiusModel,mixing::MixingRule,k=nothing,l=nothing)
+function ab_premixing(model::ClausiusModel,mixing::MixingRule,k,l)
     _Tc = model.params.Tc
     _pc = model.params.Pc
     _Vc = model.params.Vc
