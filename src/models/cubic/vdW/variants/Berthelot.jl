@@ -94,7 +94,7 @@ function Berthelot(components;
     formatted_components = format_components(components)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
     model = CubicModel(Berthelot,params,formatted_components;
-                        alpha,mixing,activity, translation,
+                        idealmodel,alpha,mixing,activity,translation,
                         userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
                         reference_state, verbose)
     

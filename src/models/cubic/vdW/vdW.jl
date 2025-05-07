@@ -121,7 +121,7 @@ function vdW(components;
                         ignore_missing_singleparams = __ignored_crit_params(alpha))
 
     model = CubicModel(vdW,params,formatted_components;
-                        alpha,mixing,activity, translation,
+                        idealmodel,alpha,mixing,activity,translation,
                         userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
                         reference_state, verbose)
     

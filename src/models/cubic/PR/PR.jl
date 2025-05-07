@@ -112,9 +112,9 @@ function PR(components;
         ignore_missing_singleparams = __ignored_crit_params(alpha))
 
     model = CubicModel(PR,params,formatted_components;
-                            alpha,mixing,activity, translation,
-                            userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
-                            reference_state, verbose)
+                        idealmodel,alpha,mixing,activity,translation,
+                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                        reference_state, verbose)
 
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)

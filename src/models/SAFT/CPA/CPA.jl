@@ -160,7 +160,7 @@ function CPA(components;
     
     #init empty cubic model
     init_cubicmodel = CubicModel(cubicmodel,params,components;
-                                alpha,mixing,activity, translation,
+                                idealmodel,alpha,mixing,activity,translation,
                                 userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
                                 reference_state, verbose)
 
