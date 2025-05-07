@@ -491,7 +491,34 @@ function transform_params(::Type{ABCCubicParam},params,components)
 end
 
 
-#empty cubic model
+"""
+    CubicModel(cubicmodel::Type{T},params::Dict{String,ClapeyronParam},components;
+    idealmodel = BasicIdeal,
+    alpha = nothing,
+    mixing = nothing,
+    activity = nothing,
+    translation = nothing,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    alpha_userlocations = String[],
+    mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
+    reference_state = nothing,
+    verbose = false) where T <: CubicModel
+
+## Input models
+- `idealmodel`: Ideal Model
+- `alpha`: Alpha model
+- `mixing`: Mixing model
+- `activity`: Activity Model, used in the creation of the mixing model.
+- `translation`: Translation Model
+
+## Description
+
+Empty Cubic model constructor.
+It requires specifiying all model arguments.
+"""
 function CubicModel(cubicmodel::Type{T},params,components;
     idealmodel = BasicIdeal,
     alpha = nothing,
@@ -522,3 +549,5 @@ function CubicModel(cubicmodel::Type{T},params,components;
     references = default_references(cubicmodel)
     return cubicmodel(_components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,references)
 end
+
+export CubicModel

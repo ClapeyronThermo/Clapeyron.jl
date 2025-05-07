@@ -187,14 +187,6 @@ function ab_premixing(model::CPAModel,mixing::MixingRule, k, l)
     return a,b
 end
 
-function ab_premixing(model::CPAModel,mixing::gErRuleModel,k, l)
-    a = model.params.a
-    b = model.params.b
-    epsilon_LorentzBerthelot!(a)
-    gEr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
-    kij_mix!(gEr_mix,b,l)
-    return a,b
-end
 
 function recombine_cpa!(model::CPAModel,k = nothing, l = nothing)
     a = model.params.a
