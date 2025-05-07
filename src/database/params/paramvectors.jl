@@ -240,6 +240,24 @@ end
 
 Base.setindex!(m::Compressed4DMatrix,val,i::Int) = Base.setindex!(m.values,val,i)
 
+function Base.copyto!(dest::Compressed4DMatrix,src::Base.Broadcast.Broadcasted) #general, just copies the values, used in a .= f.(a)
+    Base.copyto!(dest.values,src)
+    return dest
+end
+
+function Base.copyto!(dest::Compressed4DMatrix,src::AbstractArray) #general, just copies the values, used in a .= f.(a)
+    Base.copyto!(dest.values,src)
+    return dest
+end
+
+function Base.copyto!(dest::Compressed4DMatrix,src::Compressed4DMatrix) #specific
+    n = length(src.values)
+    copyto!(resize!(dest.values,n),src.values)
+    copyto!(resize!(dest.inner_indices,n),src.inner_indices)
+    copyto!(resize!(dest.outer_indices,n),src.outer_indices)
+    return dest
+end
+
 struct AssocView{T,V<:Compressed4DMatrix{T},I} <: AbstractMatrix{T}
     values::V
     indices::I

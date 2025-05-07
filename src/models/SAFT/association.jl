@@ -837,13 +837,13 @@ end
 recombine_assoc!(model) = recombine_assoc!(model,model.params.sigma)
 
 function recombine_assoc!(model,sigma)
-    assoc_options = assoc_options(model)
+    _assoc_options = assoc_options(model)
     iszero(assoc_pair_length(model)) && return model
     epsilon_assoc = model.params.epsilon_assoc
     bondvol = model.params.bondvol
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options,model.sites) #combining rules for association
-    model.params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
-    model.params.bondvol.values.values[:] = bondvol.values.values
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,_assoc_options,model.sites) #combining rules for association
+    copyto!(model.params.epsilon_assoc,epsilon_assoc)
+    copyto!(model.params.bondvol,bondvol)
     return model
 end
 #=
