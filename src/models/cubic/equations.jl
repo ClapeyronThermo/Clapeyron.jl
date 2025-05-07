@@ -477,16 +477,17 @@ function transform_params(::Type{ABCubicParam},params,components)
 end
 
 function transform_params(::Type{ABCCubicParam},params,components)
+    n = length(components)
     transform_params(ABCubicParam,params,components)
-        b = get!(params,"b") do
-        PairParam("b",components,zeros(n))
-    end
+    
     c = get!(params,"c") do
         PairParam("c",components,zeros(n))
     end
+    
     Vc = get!(params,"Vc") do
         SingleParam("Vc",components)
     end
+    
     return params
 end
 
