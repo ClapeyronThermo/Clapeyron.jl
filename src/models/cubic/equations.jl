@@ -454,14 +454,6 @@ antoine_coef(model::ABCubicModel) = (6.668322465137264,6.098791871032391,-0.0831
 function transform_params(::Type{ABCubicParam},params,components)
     n = length(components)
 
-    a = get!(params,"a") do
-        PairParam("a",components,zeros(n))
-    end
-
-    b = get!(params,"b") do
-        PairParam("b",components,zeros(n))
-    end
-
     Tc = get!(params,"Tc") do
         SingleParam("Tc",components)
     end
@@ -469,6 +461,16 @@ function transform_params(::Type{ABCubicParam},params,components)
     Pc = get!(params,"Pc") do
         SingleParam("Pc",components)
     end
+
+    a = get!(params,"a") do
+        aa = PairParam("a",components,zeros(Base.promote_eltype(Pc,Tc),n))
+    end
+    a isa SingleParam && (params["a"] = PairParam(a))
+
+    b = get!(params,"b") do
+        PairParam("b",components,zeros(Base.promote_eltype(Pc,Tc),n))
+    end
+    b isa SingleParam && (params["b"] = PairParam(b))
 
     Mw = get!(params,"Mw") do
         SingleParam("Mw",components)
@@ -479,15 +481,15 @@ end
 function transform_params(::Type{ABCCubicParam},params,components)
     n = length(components)
     transform_params(ABCubicParam,params,components)
-    
-    c = get!(params,"c") do
-        PairParam("c",components,zeros(n))
-    end
-    
     Vc = get!(params,"Vc") do
         SingleParam("Vc",components)
     end
-    
+    Tc = params["Tc"]
+    Pc = params["Pc"]
+    c = get!(params,"c") do
+        PairParam("c",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n))
+    end
+    c isa SingleParam && (params["c"] = PairParam(c))
     return params
 end
 

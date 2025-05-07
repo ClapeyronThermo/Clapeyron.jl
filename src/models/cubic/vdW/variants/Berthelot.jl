@@ -9,6 +9,17 @@ struct BerthelotParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
+function transform_params(::Type{BerthelotParam},params,components)
+    n = length(components)
+    transform_params(ABCubicParam,params,components)
+    
+    Vc = get!(params,"Vc") do
+        SingleParam("Vc",components)
+    end
+    
+    return params
+end
+
 struct Berthelot{T <: IdealModel,α,c,M} <: BerthelotModel
     components::Array{String,1}
     alpha::α
@@ -93,6 +104,7 @@ function Berthelot(components;
     verbose = false)
     formatted_components = format_components(components)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
+    
     model = CubicModel(Berthelot,params,formatted_components;
                         idealmodel,alpha,mixing,activity,translation,
                         userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,

@@ -207,7 +207,7 @@ function recombine_cpa!(model::CPAModel,k = nothing, l = nothing)
     #recombine_mixing also calculates additional things for some ABC cubics
     recombine_mixing!(model,cubicmodel.mixing,k,l)
     cubicmodel.params.a.values .= a.values
-    cubicmodel.params.a.values .= b.values
+    cubicmodel.params.b.values .= b.values
     recombine_translation!(cubicmodel,cubicmodel.translation)
     
     if model.cubicmodel isa CPAAlphaModel
