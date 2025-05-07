@@ -449,3 +449,76 @@ function vdw_tv_mix(Tc,Vc,z)
 end
 
 antoine_coef(model::ABCubicModel) = (6.668322465137264,6.098791871032391,-0.08318016317721941)
+
+
+function transform_params(::Type{ABCubicParam},params,components)
+    n = length(components)
+
+    a = get!(params,"a") do
+        PairParam("a",components,zeros(n))
+    end
+
+    b = get!(params,"b") do
+        PairParam("b",components,zeros(n))
+    end
+
+    Tc = get!(params,"Tc") do
+        SingleParam("Tc",components)
+    end
+
+    Pc = get!(params,"Pc") do
+        SingleParam("Pc",components)
+    end
+
+    Mw = get!(params,"Mw") do
+        SingleParam("Mw",components)
+    end
+    return params
+end
+
+function transform_params(::Type{ABCCubicParam},params,components)
+    transform_params(ABCubicParam,params,components)
+        b = get!(params,"b") do
+        PairParam("b",components,zeros(n))
+    end
+    c = get!(params,"c") do
+        PairParam("c",components,zeros(n))
+    end
+    Vc = get!(params,"Vc") do
+        SingleParam("Vc",components)
+    end
+    return params
+end
+
+
+#empty cubic model
+function CubicModel(cubicmodel::Type{T},params,components;
+    idealmodel = BasicIdeal,
+    alpha = nothing,
+    mixing = nothing,
+    activity = nothing,
+    translation = nothing,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    alpha_userlocations = String[],
+    mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
+    reference_state = nothing,
+    verbose = false) where T <: CubicModel
+
+    if CubicModel isa EoSModel
+        return cubicmodel
+    end
+
+    _components = format_components(components)
+    PARAM = parameterless_type(fieldtype(cubicmodel,:params))
+    transform_params(PARAM,params,_components)
+    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,params,alpha_userlocations,verbose)
+    init_translation = init_model(translation,components,translation_userlocations,verbose)
+    cubicparams = build_eosparam(PARAM,params)
+    references = default_references(cubicmodel)
+    return cubicmodel(_components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,references)
+end
