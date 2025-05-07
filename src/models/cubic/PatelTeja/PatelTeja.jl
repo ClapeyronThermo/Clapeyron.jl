@@ -123,28 +123,19 @@ function PatelTeja(components;
 
     formatted_components = format_components(components)
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
-    k  = get(params,"k",nothing)
+    model = CubicModel(PatelTeja,params,formatted_components;
+                        alpha,mixing,activity, translation,
+                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                        reference_state, verbose)
+
+    k = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    pc = params["Pc"]
-    Vc = params["Vc"]
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    acentricfactor = get(params,"acentricfactor",nothing)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    n = length(Tc)
-    a = PairParam("a",formatted_components,zeros(n))
-    b = PairParam("b",formatted_components,zeros(n))
-    c = PairParam("c",formatted_components,zeros(n))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)
-    references = String["10.1016/0009-2509(82)80099-7"]
-    model = PatelTeja(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
+
+default_references(::Type{PatelTeja}) = ["10.1016/0009-2509(82)80099-7"]
 
 function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
     _Tc = model.params.Tc
