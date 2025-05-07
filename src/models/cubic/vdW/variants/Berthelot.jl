@@ -93,26 +93,19 @@ function Berthelot(components;
     verbose = false)
     formatted_components = format_components(components)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
-    k  = get(params,"k",nothing)
+    model = CubicModel(Berthelot,params,formatted_components;
+                        alpha,mixing,activity, translation,
+                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                        reference_state, verbose)
+    
+    k = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    pc = params["Pc"]
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    Vc = params["Vc"]
-    acentricfactor = get(params,"acentricfactor",nothing)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",formatted_components,zeros(length(Tc)))
-    b = PairParam("b",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
-    packagedparams = BerthelotParam(a,b,Tc,pc,Vc,Mw)
-    references = String["10.1051/jphystap:018990080026300"]
-    model = Berthelot(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
+
+default_references(::Type{Berthelot}) = ["10.1051/jphystap:018990080026300"]
 
 function ab_premixing(model::BerthelotModel,mixing::MixingRule,k,l)
     #_Tc = model.params.Tc

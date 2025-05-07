@@ -83,27 +83,19 @@ function Clausius(components;
 
     formatted_components = format_components(components)
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
-    k  = get(params,"k",nothing)
-    l  = get(params,"l",nothing)
-    pc = params["Pc"]
-    Vc = params["Vc"]
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    acentricfactor = get(params,"acentricfactor",nothing)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",formatted_components,zeros(length(Tc)))
-    b = PairParam("b",formatted_components,zeros(length(Tc)))
-    c = PairParam("c",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = ClausiusParam(a,b,c,Tc,pc,Vc,Mw)
-    references = String["10.1002/andp.18802450302"]
-    model = Clausius(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = CubicModel(Clausius,params,formatted_components;
+                        alpha,mixing,activity, translation,
+                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                        reference_state, verbose)
+    
+    k = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     recombine_cubic!(model,k,l)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
+
+default_references(::Type{Clausius}) = ["10.1002/andp.18802450302"]
 
 function ab_premixing(model::ClausiusModel,mixing::MixingRule,k,l)
     _Tc = model.params.Tc

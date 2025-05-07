@@ -132,7 +132,8 @@ function RKPR(components;
     
     formatted_components = format_components(components)
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
-    model = CubicModel(PatelTeja,params,formatted_components;
+    
+    model = CubicModel(RKPR,params,formatted_components;
                         alpha,mixing,activity, translation,
                         userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
                         reference_state, verbose)
