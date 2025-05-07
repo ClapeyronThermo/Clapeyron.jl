@@ -8,6 +8,17 @@ struct CPAParam <: EoSParam
     bondvol::AssocParam{Float64}
 end
 
+struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
+    components::Array{String,1}
+    radial_dist::Symbol
+    cubicmodel::c
+    params::CPAParam
+    sites::SiteParam
+    idealmodel::T
+    assoc_options::AssocOptions
+    references::Array{String,1}
+end
+
 function transform_params(::Type{CPA},params,_components)
     a = PairParam(params["a"])
     _components = a.components
@@ -36,17 +47,6 @@ function transform_params(::Type{CPA},params,_components)
     #assoc mixing is done later.
     #bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options,sites)
     params
-end
-
-struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
-    components::Array{String,1}
-    radial_dist::Symbol
-    cubicmodel::c
-    params::CPAParam
-    sites::SiteParam
-    idealmodel::T
-    assoc_options::AssocOptions
-    references::Array{String,1}
 end
 
 """
