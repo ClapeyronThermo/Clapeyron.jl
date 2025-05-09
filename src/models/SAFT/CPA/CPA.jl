@@ -210,7 +210,7 @@ function recombine_cpa!(model::CPAModel,k = nothing, l = nothing)
     cubicmodel.params.b.values .= b.values
     recombine_translation!(cubicmodel,cubicmodel.translation)
     
-    if model.cubicmodel isa CPAAlphaModel
+    if model.cubicmodel.alpha isa CPAAlphaModel
         cubicmodel.alpha.params.c1.values .= model.params.c1.values
     else
         recombine_alpha!(cubicmodel,cubicmodel.alpha)
