@@ -488,7 +488,6 @@ function HELD_impl(model,p,T,z₀,
     end
  	ρ₀ = HELD_density(model,p,T,z₀,vref)
 	v₀ = vref/ρ₀
-#   v₀ = volume(model,p,T,z₀)
     μ₀ = VT_chemical_potential(model,v₀,T,z₀)
     λ₀ = (μ₀[1:nc-1] .- μ₀[nc])/R̄/T
  
@@ -505,7 +504,6 @@ function HELD_impl(model,p,T,z₀,
     ub[nc] = 1.0e2
     projHELD(x) = ProjectionHELD(x,lb,ub)
 	cnstHELD(x,s) = Constraints(x,lb,ub,s)
- #   x₀ = append!(deepcopy(z₀[1:nc-1]),vref/v₀)
  	x₀ = append!(deepcopy(z₀[1:nc-1]),ρ₀)
     G₀ = G(x₀)
     if verbose == true
@@ -517,11 +515,8 @@ function HELD_impl(model,p,T,z₀,
     fmins = Vector{Float64}(undef,0)
     xmins = Vector{Vector{Float64}}(undef,0)
     for ix = 1:length(xi)
-    #	vi = volume(model,p,T,xi[ix])
 		ρi = HELD_density(model,p,T,xi[ix],vref)
-    #	xvi = append!(deepcopy(xi[ix][1:nc-1]),vref/vi)
 		xρi = append!(deepcopy(xi[ix][1:nc-1]),ρi)
-    #	xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD,cnstHELD, xvi, lb, ub, max_trust_region_iters, tol, false)
     	xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD,cnstHELD, xρi, lb, ub, max_trust_region_iters, tol, false)
 #    	if verbose == true
 #        	println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
@@ -574,17 +569,13 @@ function HELD_impl(model,p,T,z₀,
 		# set up initial ℳ set
 		# add initial guesses and the newly found minimums from first iteration stability check
 		for im = 1:length(xm)
-    	#	vm = volume(model,p,T,xm[im])
 			ρm = HELD_density(model,p,T,xm[im],vref)
-    	#	xvm = append!(deepcopy(xm[im][1:nc-1]),vref/vm)
 			xρm = append!(deepcopy(xm[im][1:nc-1]),ρm)
     		xρGim = append!(deepcopy(xρm),Gi(xρm))
     		push!(ℳ,xρGim)
     	end
 		for ii = 1:length(xi)
-    	#	vi = volume(model,p,T,xi[ii])
 			ρi = HELD_density(model,p,T,xi[ii],vref)
-    	#	xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
 			xρi = append!(deepcopy(xi[ii][1:nc-1]),ρi)
     		xρGii = append!(deepcopy(xρi),Gi(xρi))
     		push!(ℳ,xρGii)
@@ -598,11 +589,8 @@ function HELD_impl(model,p,T,z₀,
         # ℳguessi is [xi[1:nc-1], Vref/Vi, Gi]
 		ℳguess = Vector{Vector{Float64}}(undef,0)
 		for ii = 1:length(xi)
-    	#	vi = volume(model,p,T,xi[ii])
 			ρi = HELD_density(model,p,T,xi[ii],vref)
-    	#	xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
 			xρi = append!(deepcopy(xi[ii][1:nc-1]),ρi)
-    	#	xvGii = append!(deepcopy(xvi),Gi(xvi))
 			xρGii = append!(deepcopy(xρi),Gi(xρi))
     		push!(ℳguess,xρGii)
     	end
@@ -620,8 +608,9 @@ function HELD_impl(model,p,T,z₀,
     	LBDⱽ = -Inf
 
 		# need some way of getting the estimated lower and upper bounds on λ, 10 seems OK so far but may not be universal
-		λᴸ = fill(-10.0,nc-1)
-		λᵁ = fill( 10.0,nc-1)
+		λmax = 10.0
+		λᴸ = fill(-λmax,nc-1)
+		λᵁ = fill( λmax,nc-1)
 
 		limit_λs_by_bounds = true
     	
@@ -671,9 +660,18 @@ function HELD_impl(model,p,T,z₀,
     		optimize!(OPₓᵥ)
     		λˢ = JuMP.value.(λ)
     		UBDⱽ  = JuMP.value.(v)
-    		if verbose == true
+
+			λnorm = norm(λˢ,Inf)
+			if k>nc
+				λmax  = 0.2*1.05*λnorm + (1.0 - 0.2)*λmax
+			end
+			λᴸ = fill(-λmax,nc-1)
+			λᵁ = fill( λmax,nc-1)
+
+			if verbose == true
     			println("HELD Step 2 - Update UBDⱽ and λˢ from OPₓᵥ: UBDⱽ = $(UBDⱽ)")
         		println("HELD Step 2 - λˢ = $(λˢ)")
+				println("HELD Step 2 - λnorm = $(λnorm) λmax = $(λmax)")
     		end
     		
     		Dλ = λˢ  .- λ₀
@@ -765,11 +763,8 @@ function HELD_impl(model,p,T,z₀,
     				xr = Projection(xr,lb,ub)
     				sumxr = sum(xr)
     				xr ./= sumxr
-    			#	vr = volume(model,p,T,xr)
 					ρr = HELD_density(model,p,T,xr,vref)
-    			#	xvr = append!(deepcopy(xr[1:nc-1]),vref/vr)
 					xρr = append!(deepcopy(xr[1:nc-1]),ρr)
-    			#	xvGr = append!(deepcopy(xvr),Gi(xvr))
 					xρGr = append!(deepcopy(xρr),Gi(xρr))
     				xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD,  xρGr[1:nc], lb, ub, max_trust_region_iters, tol, false)
     				
@@ -1104,7 +1099,6 @@ function HELD_impl(model,p,T,z₀,
 				for ic = 1:nc-1
 					xp[ip][ic] = phasemoles[ic][ip] / beta[ip];
 				end
-			#	vp[ip] = volume(model,p,T,xp[ip])
 				ρp = HELD_density(model,p,T,xp[ip],vref)
 				vp[ip] = vref/ρp
 			end
