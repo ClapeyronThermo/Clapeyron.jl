@@ -144,6 +144,93 @@ function Projection(x,lb,ub)
     return p
 end
 
+function HELD_func_rho(model,p,T,x₀,vref,rho)
+    v = vref/rho
+    A = eos(model,v,T,x₀)
+    f = (A + p*v)/R̄/T
+    return f
+end
+
+function HELD_volume2(model,p,T,x₀,vref,rho)
+	G(x) = HELD_func_rho(model,p,T,x₀,vref,x)
+    dG(x) = Solvers.derivative(G,x)
+	ddG(x) = Solvers.derivative(dG,x)
+    return G(rho), dG(rho), ddG(rho)
+end
+
+function HELD_volume(model,p,T,x₀,rho)
+	pure = split_pure_model(model)
+	crit = crit_pure.(pure)
+	v₀ = 0.0
+	for i = 1:length(x₀)
+    	Tc,pc,vc = crit[i]
+    	v₀ += x₀[i]*vc
+	end
+	G(x) = HELD_func_rho(model,p,T,x₀,v₀,x)
+	return G(rho)
+end
+
+function HELD_density(model,p,T,x₀,vref)
+	G(x) = HELD_func_rho(model,p,T,x₀,vref,x)
+	dG(x) = Solvers.derivative(G,x)
+	ddG(x) = Solvers.derivative(dG,x)
+	
+	# calculate rho_ideal
+	rho_ideal = vref/(R̄*T/p)
+	drho = rho_ideal/2.0
+
+	rho_min = 1.0e-6
+	rho_max = 7.5
+
+	if drho < rho_min
+		rho_min = drho
+		drho = 2.0*rho_min
+	else
+		drho = (rho_min + rho_ideal)/2.0
+	end
+
+	rho1 = rho_min
+	rho2 = rho1+drho
+	if abs(dG(rho2)) < sqrt(eps(Float64))
+		rho2 += drho
+	end
+	rho_bracket = Vector{Vector{Float64}}(undef,0)
+	while rho2 <= rho_max
+		if dG(rho1)*dG(rho2) < 0.0
+			push!(rho_bracket,[rho1,rho2])
+		end
+		if rho1 >= 0.01
+			drho = 0.01
+		end
+		rho1=rho2
+		rho2=rho1+drho
+		if abs(dG(rho2)) < sqrt(eps(Float64))
+			rho2 += drho
+		end
+	end
+
+	rho_found = Vector{Float64}(undef,0)
+	for ib = eachindex(rho_bracket)
+		ans = Roots.find_zero(dG, rho_bracket[ib])
+		for ia = eachindex(ans)
+			stab = ddG(ans[ia])
+			if stab > 0.0
+				push!(rho_found,ans[ia])
+			end
+		end
+	end
+
+	rho_stable = rho_found[1]
+	if length(rho_found) > 1
+		if G(rho_found[end]) < G(rho_stable)
+			rho_stable = rho_found[end]
+		end
+	end
+
+	return rho_stable
+
+end
+
 function HELD_func(model,p,T,n₀,v₀,x,λ)
     nc = length(n₀)
     xₙ = append!(deepcopy(x[1:nc-1]),1.0 - sum(x[1:nc-1]))
@@ -391,9 +478,6 @@ function HELD_impl(model,p,T,z₀,
 	
 	# z₀ must sum to one, i.e. it is a mole fraction vector
     nc = length(z₀)
-    v₀ = volume(model,p,T,z₀)
-    μ₀ = VT_chemical_potential(model,v₀,T,z₀)
-    λ₀ = (μ₀[1:nc-1] .- μ₀[nc])/R̄/T
   # calculate reference volume based on Kays rule and vc[i] and scale to give water a vref/v ~ 1
     pure = split_pure_model(model)
     crit = crit_pure.(pure)
@@ -402,6 +486,13 @@ function HELD_impl(model,p,T,z₀,
     	Tc,pc,vc = crit[i]
     	vref += z₀[i]*vc
     end
+ 	ρ₀ = HELD_density(model,p,T,z₀,vref)
+	v₀ = vref/ρ₀
+#   v₀ = volume(model,p,T,z₀)
+    μ₀ = VT_chemical_potential(model,v₀,T,z₀)
+    λ₀ = (μ₀[1:nc-1] .- μ₀[nc])/R̄/T
+ 
+	ρ₀ = HELD_density(model,p,T,z₀,vref)
     G(x) = HELD_func(model,p,T,z₀,vref,x,λ₀)
     G_g(x) = Solvers.gradient(G,x)
     G_h(x) = Solvers.hessian(G,x)
@@ -414,7 +505,8 @@ function HELD_impl(model,p,T,z₀,
     ub[nc] = 1.0e2
     projHELD(x) = ProjectionHELD(x,lb,ub)
 	cnstHELD(x,s) = Constraints(x,lb,ub,s)
-    x₀ = append!(deepcopy(z₀[1:nc-1]),vref/v₀)
+ #   x₀ = append!(deepcopy(z₀[1:nc-1]),vref/v₀)
+ 	x₀ = append!(deepcopy(z₀[1:nc-1]),ρ₀)
     G₀ = G(x₀)
     if verbose == true
     		println("HELD Step 1 - Initialisation:")
@@ -425,10 +517,12 @@ function HELD_impl(model,p,T,z₀,
     fmins = Vector{Float64}(undef,0)
     xmins = Vector{Vector{Float64}}(undef,0)
     for ix = 1:length(xi)
-    	vi = volume(model,p,T,xi[ix])
-    	xvi = append!(deepcopy(xi[ix][1:nc-1]),vref/vi)
-    	xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD,cnstHELD, xvi, lb, ub, max_trust_region_iters, tol, false)
-    	
+    #	vi = volume(model,p,T,xi[ix])
+		ρi = HELD_density(model,p,T,xi[ix],vref)
+    #	xvi = append!(deepcopy(xi[ix][1:nc-1]),vref/vi)
+		xρi = append!(deepcopy(xi[ix][1:nc-1]),ρi)
+    #	xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD,cnstHELD, xvi, lb, ub, max_trust_region_iters, tol, false)
+    	xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD,cnstHELD, xρi, lb, ub, max_trust_region_iters, tol, false)
 #    	if verbose == true
 #        	println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
 #    	end 
@@ -480,16 +574,20 @@ function HELD_impl(model,p,T,z₀,
 		# set up initial ℳ set
 		# add initial guesses and the newly found minimums from first iteration stability check
 		for im = 1:length(xm)
-    		vm = volume(model,p,T,xm[im])
-    		xvm = append!(deepcopy(xm[im][1:nc-1]),vref/vm)
-    		xvGim = append!(deepcopy(xvm),Gi(xvm))
-    		push!(ℳ,xvGim)
+    	#	vm = volume(model,p,T,xm[im])
+			ρm = HELD_density(model,p,T,xm[im],vref)
+    	#	xvm = append!(deepcopy(xm[im][1:nc-1]),vref/vm)
+			xρm = append!(deepcopy(xm[im][1:nc-1]),ρm)
+    		xρGim = append!(deepcopy(xρm),Gi(xρm))
+    		push!(ℳ,xρGim)
     	end
 		for ii = 1:length(xi)
-    		vi = volume(model,p,T,xi[ii])
-    		xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
-    		xvGii = append!(deepcopy(xvi),Gi(xvi))
-    		push!(ℳ,xvGii)
+    	#	vi = volume(model,p,T,xi[ii])
+			ρi = HELD_density(model,p,T,xi[ii],vref)
+    	#	xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
+			xρi = append!(deepcopy(xi[ii][1:nc-1]),ρi)
+    		xρGii = append!(deepcopy(xρi),Gi(xρi))
+    		push!(ℳ,xρGii)
     	end
 		for i = 1:length(fmins_unique)
 			xminsGi_unique = append!(deepcopy(xmins_unique[i]),Gi(xmins_unique[i]))
@@ -500,10 +598,13 @@ function HELD_impl(model,p,T,z₀,
         # ℳguessi is [xi[1:nc-1], Vref/Vi, Gi]
 		ℳguess = Vector{Vector{Float64}}(undef,0)
 		for ii = 1:length(xi)
-    		vi = volume(model,p,T,xi[ii])
-    		xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
-    		xvGii = append!(deepcopy(xvi),Gi(xvi))
-    		push!(ℳguess,xvGii)
+    	#	vi = volume(model,p,T,xi[ii])
+			ρi = HELD_density(model,p,T,xi[ii],vref)
+    	#	xvi = append!(deepcopy(xi[ii][1:nc-1]),vref/vi)
+			xρi = append!(deepcopy(xi[ii][1:nc-1]),ρi)
+    	#	xvGii = append!(deepcopy(xvi),Gi(xvi))
+			xρGii = append!(deepcopy(xρi),Gi(xρi))
+    		push!(ℳguess,xρGii)
     	end
 		for i = 1:length(fmins_unique)
 			xminsGi_unique = append!(deepcopy(xmins_unique[i]),Gi(xmins_unique[i]))
@@ -664,10 +765,13 @@ function HELD_impl(model,p,T,z₀,
     				xr = Projection(xr,lb,ub)
     				sumxr = sum(xr)
     				xr ./= sumxr
-    				vr = volume(model,p,T,xr)
-    				xvr = append!(deepcopy(xr[1:nc-1]),vref/vr)
-    				xvGr = append!(deepcopy(xvr),Gi(xvr))
-    				xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD,  xvGr[1:nc], lb, ub, max_trust_region_iters, tol, false)
+    			#	vr = volume(model,p,T,xr)
+					ρr = HELD_density(model,p,T,xr,vref)
+    			#	xvr = append!(deepcopy(xr[1:nc-1]),vref/vr)
+					xρr = append!(deepcopy(xr[1:nc-1]),ρr)
+    			#	xvGr = append!(deepcopy(xvr),Gi(xvr))
+					xρGr = append!(deepcopy(xρr),Gi(xρr))
+    				xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD,  xρGr[1:nc], lb, ub, max_trust_region_iters, tol, false)
     				
 #    				if verbose == true
 #        				println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
@@ -1000,29 +1104,53 @@ function HELD_impl(model,p,T,z₀,
 				for ic = 1:nc-1
 					xp[ip][ic] = phasemoles[ic][ip] / beta[ip];
 				end
-				vp[ip] = volume(model,p,T,xp[ip])
+			#	vp[ip] = volume(model,p,T,xp[ip])
+				ρp = HELD_density(model,p,T,xp[ip],vref)
+				vp[ip] = vref/ρp
 			end
-			# end of normalisation
+			# end of 
+			
+			ivpsort = sortperm(vp, rev = true)
+
+			betas = Vector{Float64}(undef,0)
+			for ip in eachindex(beta)
+				push!(betas,beta[ivpsort[ip]])
+			end
+
+			xps = Vector{Vector{Float64}}(undef,0)
+			for ip in eachindex(xp)
+				# undo sort
+				xs = Vector{Float64}(undef,length(xp[ivpsort[ip]]))
+				for i in eachindex(xp[ivpsort[ip]])
+					xs[i] = xp[ivpsort[ip]][i]
+				end 
+				push!(xps,xs)
+			end
+
+			vps = Vector{Float64}(undef,0)
+			for ip in eachindex(vp)
+				push!(vps,vp[ivpsort[ip]])
+			end
 			
 			if verbose == true
 				println("HELD Step 5 - Complete")
-				println("HELD Step 6 - Phases found $(length(beta))")
+				println("HELD Step 6 - Phases found $(length(betas))")
 				println("HELD Step 6 - Phase moles:")
-				for ip = 1:length(beta)
-					println("HELD Step 6 - Phase beta($(ip)) = $(beta[ip])")
+				for ip = 1:length(betas)
+					println("HELD Step 6 - Phase beta[$(ip)] = $(betas[ip])")
 				end
 				println("HELD Step 6 - Phase mole fraction:")
-				for ip = 1:length(beta)
-					println("HELD Step 6 - Phase x($(ip)) = $(xp[ip])")
+				for ip = 1:length(betas)
+					println("HELD Step 6 - Phase x[$(ip)] = $(xps[ip])")
 				end
 				println("HELD Step 6 - Phase volumes:")
-				for ip = 1:length(beta)
-					println("HELD Step 6 - Phase volume($(ip)) = $(vp[ip])")
+				for ip = 1:length(betas)
+					println("HELD Step 6 - Phase volume[$(ip)] = $(vps[ip])")
 				end
 				println("HELD Step 6 - Minimum Gibbs Energy = $(Gsol)")
 			end
 			
-			return beta,xp,vp,Gsol
+			return betas,xps,vps,Gsol
 			
 		end # Gibss Minimisation
 		

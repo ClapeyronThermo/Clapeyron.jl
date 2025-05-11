@@ -182,7 +182,7 @@ function delta_Nocedal(func::Function, proj::Function, cnst::Function, d, dmin, 
             X,info = Solvers.TRS.trs_small(h, g, d, compute_local=true)
             s = X[1:n]
 			outside = cnst(x, s)
-			if d < 4.0*dmin
+			if d < sqrt(dmin)
 				step_found = false
 				break
 			end
@@ -276,3 +276,61 @@ function trustregion_Dennis_Schnabel(	func::Function,
     end
     return x,f,iter,error,check
 end
+#=
+function bracket_minimum(func::Function, grad::Function, xa, xc, xmin, xmax, stepmax)
+	trys = 50
+	factor = 1.6
+	dx = 0.5*abs(xc - xa)
+	fa = func(xa)
+	dfa = grad(xa)
+	if (dfa < 0.0)
+		dir = 1.0
+		xb = xa + dir*dx
+	else
+		dir = -1.0
+		xb = xa + dir*dx
+    end
+	fb = func(xb)
+	xc = xb + dir*dx
+	fc = func(xc)
+	if (fb < fc)
+		if (xa > xc)
+			swap = xa
+			xa = xc
+			xc = swap
+			swap = fa
+			fa = fc
+			fc = swap
+        end
+		return xa,xc,true
+	else
+		for j = 1:trys
+			xa = xb
+			fa = fb
+			xb = xc
+			fb = fc
+			delta = min(factor*abs(xb - xa), stepmax)
+			xc = xb + dir*delta
+			if (xc < xmin) 
+				xc = (xmin + xb) / 2.0
+			end
+			if (xc > xmax) 
+				xc = (xmax + xb) / 2.0
+			end
+			fc = func(xc)
+			if (fb < fc)
+				if (xa > xc)
+					swap = xa
+					xa = xc
+					xc = swap
+					swap = fa
+					fa = fc
+					fc = swap
+                end
+				return xa,xc,true
+			end
+		end
+	end
+	return xa,xc,false
+end
+=#
