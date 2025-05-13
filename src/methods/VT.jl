@@ -527,7 +527,7 @@ module VT0
     for prop in Clapeyron.CLAPEYRON_PROPS
         VT_prop = Clapeyron.VT_symbol(prop)
         @eval begin
-            function $prop(model,V,T,z=SA[1.])
+            function $prop(model,V,T,z=Clapeyron.SA[1.])
                 return Clapeyron.$VT_prop(model,V,T,z)
             end
         end
