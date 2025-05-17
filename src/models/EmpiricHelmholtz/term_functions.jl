@@ -59,10 +59,10 @@ end
     return αᵣ
 end
 
-function term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε,κ,a,m,v̄ₙ)
+function term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε̄,κ̄,a,m,v̄ₙ)
     η = v̄ₙ*δ
     g = 0.5*(2 - η)/(1 - η)^3
-    Δ = g*(exp(ε*τ) - 1)*κ
+    Δ = g*(exp(ε̄*τ) - 1)*κ̄
     X = 2 / (sqrt(1 + 4 * Δ * δ) + 1)
     return m * a * ((log(X) - X / 2.0 + 0.5))
 end

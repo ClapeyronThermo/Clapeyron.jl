@@ -56,6 +56,7 @@ function Ammonia2023()
     t = [1.0,0.382,1.0,1.0,0.677,2.915,3.51,1.063,0.655,1.3,3.1,1.4395,1.623,0.643,1.13,4.5,1.0,4.0]
     d = [4,1,1,2,3,3,2,3,1,1,1,2,2,1,3,3,1,1]
     l = [2,2,1]
+    g = [1,1,1]
     η = [0.42776,0.6424,0.8175,0.7995,0.91,0.3574,1.21,4.14,22.56,22.68]
     β = [1.708,1.4865,2.0915,2.43,0.488,1.1,0.85,1.14,945.64,993.85]
     γ = [1.036,1.2777,1.083,1.2906,0.928,0.934,0.919,1.852,1.05897,1.05277]
@@ -68,12 +69,11 @@ function Ammonia2023()
     gaob_beta = [0.3696,0.2962]
     gaob_gamma = [1.108,1.313]
     gaob_epsilon = [0.4478,0.44689]
-    gaob_b = [1.244,0.6826]
+    gao_b = [1.244,0.6826]
 
-    gao_b_term = GaoBTerm(gaob_n,gaob_t,gaob_d,gaob_eta,gaob_beta,gaob_gamma,gaob_epsilon,gaob_b)
-
-    residual = SingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε,gao_b = gao_b_term)
-
+    gao_b = GaoBTerm(gaob_n,gaob_t,gaob_d,gaob_eta,gaob_beta,gaob_gamma,gaob_epsilon,gaob_b)
+    polexpgauss = PolExpGaussTerm(n,t,d,l,g,η,β,γ,ε)
+    residual = SingleFluidResidualParam(;gaob_b,polexpgauss)
     ancillary_gas = GenericAncEvaluator([-0.089966,-3.8722,-8.1183,-25.293,-54.279,-400.83],[0.112,0.473,1.5,3.875,8.0,20.0],T_c,rho_c,:exp,false) |> PolExpVapour
     ancillary_liquid = GenericAncEvaluator([0.051236,3.7925,-3.5929,4.6409,-1.9893,1.5978],[0.07,0.46,0.77,1.05,1.25,8.0],T_c,rho_c,:noexp,false) |> PolExpLiquid
     ancillary_pressure = GenericAncEvaluator([-7.3128,3.8888,-2.9908,-2.8636],[1.0,1.5,1.6,3.7],T_c,P_c,:exp,true) |> PolExpSat

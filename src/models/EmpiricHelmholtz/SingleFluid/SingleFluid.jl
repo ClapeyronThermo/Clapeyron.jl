@@ -1,49 +1,16 @@
 
+abstract type MultiParameterTerm end
+
+include("terms/polexpgauss.jl")
+include("terms/exp2.jl")
+include("terms/gaob.jl")
+include("terms/nonanalytic.jl")
+include("terms/assoc2B.jl")
+
 include("structs.jl")
 
 const EmpiricAncillary = CompositeModel{FluidCorrelation{PolExpVapour, PolExpLiquid, PolExpSat, Nothing}, Nothing}
 #term dispatch. function definitions are in term_functions.jl
-
-function a_term(term::NonAnalyticTerm,δ,τ,lnδ,lnτ,_0)
-    if term.active
-        A,B,C,D,a,b,β,n = term.A,term.B,term.C,term.D,term.a,term.b,term.beta,term.n
-        αᵣ = term_ar_na(δ,τ,lnδ,lnτ,_0,A,B,C,D,a,b,β,n)
-    else
-        αᵣ = _0
-    end
-    return αᵣ
-end
-
-function a_term(term::GaoBTerm,δ,τ,lnδ,lnτ,_0)
-    if term.active
-        n = term.n
-        t = term.t
-        d = term.d
-        η = term.eta
-        β = term.beta
-        γ = term.gamma
-        ε = term.epsilon
-        b = term.b
-        αᵣ = term_ar_gaob(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε,b)
-    else
-        αᵣ = _0
-    end
-    return αᵣ
-end
-
-function a_term(term::Associating2BTerm,δ,τ,lnδ,lnτ,_0)
-    if term.active
-        ε = term.epsilonbar
-        κ = term.kappabar
-        a = term.a
-        m = term.m
-        v̄ₙ = term.vbarn
-        αᵣ = term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε,κ,a,m,v̄ₙ)
-    else
-        αᵣ = _0
-    end
-    return αᵣ
-end
 
 struct SingleFluid{𝔸} <: EmpiricHelmholtzModel
     components::Vector{String}
@@ -122,39 +89,9 @@ reduced_a_res(model::SingleFluid,δ,τ,lnδ = log(δ),lnτ = log(τ)) = reduced_
 function reduced_a_res(ℙ::MultiParameterParam,δ,τ,lnδ = log(δ),lnτ = log(τ))
     _0 = zero(δ+τ)
     αᵣ = _0
-    n,t,d = ℙ.n,ℙ.t,ℙ.d
-    k_pol,k_exp,k_gauss = ℙ.iterators
 
-    #strategy for storing.
-    #n, t, d, gauss values, always require views
-    #l, b does not require views. they are used just once.
-
-    #Polynomial terms
-    n_pol = view(n,k_pol)
-    t_pol = view(t,k_pol)
-    d_pol = view(d,k_pol)
-    αᵣ += term_ar_pol(δ,τ,lnδ,lnτ,αᵣ,n_pol,t_pol,d_pol)
-
-    #Exponential terms.
-    if length(k_exp) != 0
-        l,g = ℙ.l,ℙ.g
-        n_exp = view(n,k_exp)
-        t_exp = view(t,k_exp)
-        d_exp = view(d,k_exp)
-        αᵣ += term_ar_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l,g)
-    end
-
-    #Gaussian bell-shaped terms
-    η,β,γ,ε = ℙ.eta,ℙ.beta,ℙ.gamma,ℙ.epsilon
-    if length(k_gauss) != 0
-        n_gauss = view(n,k_gauss)
-        t_gauss = view(t,k_gauss)
-        d_gauss = view(d,k_gauss)
-        αᵣ += term_ar_gauss(δ,τ,lnδ,lnτ,αᵣ,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
-    end
-
-    #Especial terms are stored in structs.
-    __has_extra_params(ℙ) || return αᵣ
+    #pol+exp+gauss terms
+    αᵣ += a_term(ℙ.polexpgauss,δ,τ,lnδ,lnτ,_0)
 
     #gaoB terms
     αᵣ += a_term(ℙ.gao_b,δ,τ,lnδ,lnτ,_0)
