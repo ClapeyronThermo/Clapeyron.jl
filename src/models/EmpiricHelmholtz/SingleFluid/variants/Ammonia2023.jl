@@ -69,11 +69,11 @@ function Ammonia2023()
     gaob_beta = [0.3696,0.2962]
     gaob_gamma = [1.108,1.313]
     gaob_epsilon = [0.4478,0.44689]
-    gao_b = [1.244,0.6826]
+    gaob_b = [1.244,0.6826]
 
     gao_b = GaoBTerm(gaob_n,gaob_t,gaob_d,gaob_eta,gaob_beta,gaob_gamma,gaob_epsilon,gaob_b)
     polexpgauss = PolExpGaussTerm(n,t,d,l,g,η,β,γ,ε)
-    residual = SingleFluidResidualParam(;gaob_b,polexpgauss)
+    residual = SingleFluidResidualParam(;gao_b,polexpgauss)
     ancillary_gas = GenericAncEvaluator([-0.089966,-3.8722,-8.1183,-25.293,-54.279,-400.83],[0.112,0.473,1.5,3.875,8.0,20.0],T_c,rho_c,:exp,false) |> PolExpVapour
     ancillary_liquid = GenericAncEvaluator([0.051236,3.7925,-3.5929,4.6409,-1.9893,1.5978],[0.07,0.46,0.77,1.05,1.25,8.0],T_c,rho_c,:noexp,false) |> PolExpLiquid
     ancillary_pressure = GenericAncEvaluator([-7.3128,3.8888,-2.9908,-2.8636],[1.0,1.5,1.6,3.7],T_c,P_c,:exp,true) |> PolExpSat
