@@ -1,7 +1,7 @@
 using Clapeyron, NLsolve
 
 components = ["carbon dioxide","nitrogen","water"]
-model = GERG2008(components)
+model = PCSAFT(components; idealmodel=AlyLeeIdeal, assoc_options=AssocOptions(combining=:elliott))
 
 p = 1.4e5
 T = 25.0+273.15
@@ -126,11 +126,7 @@ tdis3 = nlsolve(Compressor3 , [td])
 
 println("Compressor3 discharge temperature = $(round(tdis3.zero[1]-273.15,sigdigits=5)) deg C")
 
-# add cooler to 25 deg C and dehydration zwater needs to be low enough so a liquid water phase does not form in the JT calc
-zdry=[z[1], z[2]]
-zdry= zdry./sum(zdry)
-zwater=0.0005
-zs=append!(zdry*(1-zwater),zwater)
+# add cooler to 30 deg C
 tcooler3 = 25.0 + 273.15
 beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model,pd,tcooler3,zs, HELDTPFlash(verbose = verbose))
 
@@ -148,36 +144,37 @@ for ip in eachindex(beta)
     println("Phase volume($(ip)) = $(vp[ip])")
 end
 
-#components2 = ["carbon dioxide","nitrogen"]
-#model2 = GERG2008(components2)
+components2 = ["carbon dioxide","nitrogen"]
+model2 = PCSAFT(components2; idealmodel=AlyLeeIdeal, assoc_options=AssocOptions(combining=:elliott))
 
 # remove water as temperature below freezing point of water
-#zs = [xp[1][1],xp[1][2]]
-#zs = zs./sum(zs)
+zs = [xp[1][1],xp[1][2]]
+zs = zs./sum(zs)
+#zs = xp[1]
 ps = pd
 pd = ps/3.145
 ts = tcooler3
-td = -7.3+273.15
-mw = Clapeyron.molecular_weight(model,zs)
-hs=Clapeyron.VT_enthalpy(model,vp[1],ts,zs)/mw
+td = -7.4+273.15
+mw = Clapeyron.molecular_weight(model2,zs)
+hs=enthalpy(model2,ps,ts,zs)/mw
 
 function Valve1(F,x)
-    beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model,pd,x[1],zs, HELDTPFlash(verbose = verbose))
-    hd = 0.0
+    beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model2,pd,x[1],zs, HELDTPFlash(verbose = verbose))
+    hdis = 0.0
     for ip in eachindex(beta)
-        hd += beta[ip]*Clapeyron.VT_enthalpy(model,vp[ip],x[1],xp[ip])
+    hdis += beta[ip]*enthalpy(model2,pd,x[1],xp[ip])
     end
-    hd /= mw
-    F[1] = hd - hs
+    hdis /= mw
+    F[1] = hdis - hs
 end
 
 tdis4 = nlsolve(Valve1 , [td])
 
 Valve1_Tout= tdis4.zero[1]
 
-println("Valve JT temperature = $(round(Valve1_Tout-273.15,sigdigits=5)) deg C")
+print("Valve JT temperature = ", round(Valve1_Tout-273.15,sigdigits=5)," deg C")
 
-beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model,pd,Valve1_Tout,zs, HELDTPFlash(verbose = verbose))
+beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model2,pd,Valve1_Tout,zs, HELDTPFlash(verbose = verbose))
 
 println("Number phases found $(length(beta))")
 for ip in eachindex(beta)
