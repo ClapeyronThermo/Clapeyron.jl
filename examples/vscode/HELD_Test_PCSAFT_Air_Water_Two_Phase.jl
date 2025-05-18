@@ -7,9 +7,10 @@ p = 1.5e5
 T = 20+273.15
 
 zdry=[0.7808,0.2095,0.0093,0.0004]
-zwater=0.25
+zwater=0.05
 z=append!(zdry*(1-zwater),zwater)
 
+#=
 iassoc = [5]
 
 # it aapears we need to have the association component in positions 1 followed by all others sort on z
@@ -32,11 +33,12 @@ for i in eachindex(isort)
     zs[i] = z[isort[i]]
 end
 println("Sorted composition $(zs)")
-
+=#
 
 verbose = true
-betas,xps,vps,Gsol = Clapeyron.tp_flash_impl(models,p,T,zs, HELDTPFlash(verbose = verbose))
+beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model,p,T,z, HELDTPFlash(verbose = verbose))
 
+#=
 ivpsort = sortperm(vps, rev = true)
 println("Sorted volumes $(ivpsort)")
 
@@ -60,6 +62,7 @@ vp = Vector{Float64}(undef,0)
 for ip in eachindex(vps)
     push!(vp,vps[ivpsort[ip]])
 end
+=#
 
 for ip in eachindex(beta)
     println("Phase beta($(ip)) = $(beta[ip])")

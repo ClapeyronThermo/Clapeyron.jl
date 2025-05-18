@@ -158,16 +158,16 @@ function HELD_volume2(model,p,T,x₀,vref,rho)
     return G(rho), dG(rho), ddG(rho)
 end
 
-function HELD_volume(model,p,T,x₀,rho)
+function HELD_volume(model,p,T,x₀)
 	pure = split_pure_model(model)
 	crit = crit_pure.(pure)
-	v₀ = 0.0
+	vref = 0.0
 	for i = 1:length(x₀)
     	Tc,pc,vc = crit[i]
-    	v₀ += x₀[i]*vc
+    	vref += x₀[i]*vc
 	end
-	G(x) = HELD_func_rho(model,p,T,x₀,v₀,x)
-	return G(rho)
+	v₀ = HELD_density(model,p,T,x₀,vref)
+	return vref/v₀
 end
 
 function HELD_density(model,p,T,x₀,vref)
@@ -177,11 +177,10 @@ function HELD_density(model,p,T,x₀,vref)
 	
 	# calculate rho_ideal
 	rho_ideal = vref/(R̄*T/p)
-	drho = rho_ideal/2.0
-
 	rho_min = 1.0e-6
-	rho_max = 7.5
+	rho_max = 100.0
 
+	drho = rho_ideal/2.0
 	if drho < rho_min
 		rho_min = drho
 		drho = 2.0*rho_min
@@ -194,6 +193,52 @@ function HELD_density(model,p,T,x₀,vref)
 	if abs(dG(rho2)) < sqrt(eps(Float64))
 		rho2 += drho
 	end
+
+	rho_bracket = Vector{Vector{Float64}}(undef,0)
+	while rho2 <= rho_max
+		if ddG(rho1)*ddG(rho2) < 0.0
+			push!(rho_bracket,[rho1,rho2])
+		end
+		if rho1 >= 0.01
+			drho = 0.01
+		end
+		rho1=rho2
+		rho2=rho1+drho
+		if abs(ddG(rho2)) < sqrt(eps(Float64))
+			rho2 += drho
+		end
+	end
+
+	rho_spinodial = Vector{Float64}(undef,0)
+	for ib = eachindex(rho_bracket)
+		ans = Roots.find_zero(ddG, rho_bracket[ib])
+		for ia = eachindex(ans)
+			push!(rho_spinodial,ans[ia])
+		end
+	end
+
+	rho_sp_low = rho_min
+	rho_sp_high = rho_max
+
+	if length(rho_spinodial) > 1
+		rho_sp_low = rho_spinodial[1]
+		rho_sp_high = rho_spinodial[end]
+	end
+
+	drho = rho_ideal/2.0
+	if drho < rho_min
+		rho_min = drho
+		drho = 2.0*rho_min
+	else
+		drho = (rho_min + rho_ideal)/2.0
+	end
+
+	rho1 = rho_min
+	rho2 = rho1+drho
+	if abs(dG(rho2)) < sqrt(eps(Float64))
+		rho2 += drho
+	end
+
 	rho_bracket = Vector{Vector{Float64}}(undef,0)
 	while rho2 <= rho_max
 		if dG(rho1)*dG(rho2) < 0.0
@@ -220,10 +265,24 @@ function HELD_density(model,p,T,x₀,vref)
 		end
 	end
 
-	rho_stable = rho_found[1]
-	if length(rho_found) > 1
-		if G(rho_found[end]) < G(rho_stable)
-			rho_stable = rho_found[end]
+	
+	rho_stable_set = Vector{Float64}(undef,0)
+	if length(rho_spinodial) > 1
+		if rho_found[1] < rho_sp_low
+			push!(rho_stable_set,rho_found[1])
+		end
+		if rho_found[end] > rho_sp_high
+			push!(rho_stable_set,rho_found[end])
+		end
+	else
+		push!(rho_stable_set,rho_found[1])
+		push!(rho_stable_set,rho_found[end])
+	end
+
+	rho_stable = rho_stable_set[1]
+	if length(rho_stable_set) > 1
+		if G(rho_stable_set[end]) < G(rho_stable)
+			rho_stable = rho_stable_set[end]
 		end
 	end
 
@@ -280,12 +339,14 @@ function Gibbs_func(model,p,T,n₀,v₀, np, x)
 end
 
 function initial_compositions(model,p,T,z,add_pure_guess,add_anti_pure_guess,add_pure_component,add_random_guess,add_all_guess)
-    n = length(z)
+    
+	n = length(z)
+
     lb = zeros(n)
     ub = ones(n)
     for i=1:n
-        lb[i] += 2.2e-16
-        ub[i] -= 2.2e-16
+        lb[i] += eps(Float64)*100.0
+        ub[i] -= eps(Float64)*100.0
     end
 	
     xp = Vector{Vector{Float64}}(undef,0)
@@ -412,12 +473,14 @@ function initial_compositions(model,p,T,z,add_pure_guess,add_anti_pure_guess,add
 end
 
 function Pereira_compositions(model,p,T,z)
-    n = length(z)
+    
+	n = length(z)
+
     lb = zeros(n)
     ub = ones(n)
     for i=1:n
-        lb[i] += 2.2e-16
-        ub[i] -= 2.2e-16
+        lb[i] += eps(Float64)*100.0
+        ub[i] -= eps(Float64)*100.0
     end
 	
     xp = Vector{Vector{Float64}}(undef,0)
@@ -498,10 +561,10 @@ function HELD_impl(model,p,T,z₀,
     lb = zeros(nc)
     ub = ones(nc)
     for i=1:nc
-        lb[i] += 2.2e-16
-        ub[i] -= 2.2e-16
+        lb[i] += eps(Float64)*100.0
+        ub[i] -= eps(Float64)*100.0
     end
-    ub[nc] = 1.0e2
+    ub[nc] = 100.0
     projHELD(x) = ProjectionHELD(x,lb,ub)
 	cnstHELD(x,s) = Constraints(x,lb,ub,s)
  	x₀ = append!(deepcopy(z₀[1:nc-1]),ρ₀)
@@ -518,9 +581,11 @@ function HELD_impl(model,p,T,z₀,
 		ρi = HELD_density(model,p,T,xi[ix],vref)
 		xρi = append!(deepcopy(xi[ix][1:nc-1]),ρi)
     	xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD,cnstHELD, xρi, lb, ub, max_trust_region_iters, tol, false)
-#    	if verbose == true
-#        	println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
-#    	end 
+    
+	#	if verbose == true
+    #    	println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
+	#		println("HELD Step 3 - IPₓᵥ solve, xmin = $(xmin) check = $(check)")
+    #	end 
     	
 		# we add fmin < G₀ as we are searching for instability
     	if fmin < G₀ && check == false
@@ -608,14 +673,17 @@ function HELD_impl(model,p,T,z₀,
     	LBDⱽ = -Inf
 
 		# need some way of getting the estimated lower and upper bounds on λ, 10 seems OK so far but may not be universal
-		λmax = 10.0
+		λnorm = norm(λ₀,Inf)
+		λmax = 1.2*λnorm
 		λᴸ = fill(-λmax,nc-1)
 		λᵁ = fill( λmax,nc-1)
 
 		limit_λs_by_bounds = true
     	
     	use_global_solution = false
-    	
+
+    	λStalling_count = 0
+
     	np = 1
     	HELD_complete = false
     	xHELD = Vector{Float64}(undef,0)
@@ -659,11 +727,13 @@ function HELD_impl(model,p,T,z₀,
 			end
     		optimize!(OPₓᵥ)
     		λˢ = JuMP.value.(λ)
+
     		UBDⱽ  = JuMP.value.(v)
 
 			λnorm = norm(λˢ,Inf)
 			if k>nc
-				λmax  = 0.2*1.05*λnorm + (1.0 - 0.2)*λmax
+				filter = 0.1
+				λmax  = filter*1.05*λnorm + (1.0 - filter)*λmax
 			end
 			λᴸ = fill(-λmax,nc-1)
 			λᵁ = fill( λmax,nc-1)
@@ -681,11 +751,12 @@ function HELD_impl(model,p,T,z₀,
         			println("HELD Step 2 - λˢ has stalled use random inital guesses to provide a chance to converge")
     			end
 				λStalling = true
+				λStalling_count += 1
     		else
     			λStalling = false
     			λ₀ = λˢ 
     		end
-    	
+
     	    if verbose == true
         		println("HELD Step 3 - IPₓᵥ solve, generate cutting plane with λˢ")
     		end
@@ -699,14 +770,16 @@ function HELD_impl(model,p,T,z₀,
     		for ix = 1:length(ℳguess)
     			xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD, ℳguess[ix][1:nc], lb, ub, max_trust_region_iters, tol, false)
     			
- #   			if verbose == true
- #       			println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
- #   			end
-    		
+   			#	if verbose == true
+        	#		println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
+			#		println("HELD Step 3 - IPₓᵥ solve, xmin = $(xmin)")
+ 	  		#	end
+				
 				if fmin <= UBDⱽ  && check == false
-    				push!(fmins,fmin)
-    				push!(xmins,xmin)
-    			end
+					push!(fmins,fmin)
+					push!(xmins,xmin)
+				end
+
     		end
 		
 			fmins_unique, xmins_unique, stable = HELD_clean_local_solutions(UBDⱽ, x₀, fmins, xmins, tol, verbose)
@@ -807,7 +880,7 @@ function HELD_impl(model,p,T,z₀,
 				end	
     		end
     		
-    		if !solution_found
+    		if !solution_found || λStalling_count > 3
     			# return starting solution as we have no phases to add to the solution so this is the best we can do
         		if verbose == true
         			println("HELD Step 1 - Global solution failed, its wise to check this solution")
