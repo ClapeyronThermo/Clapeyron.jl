@@ -178,7 +178,7 @@ function HELD_density(model,p,T,x₀,vref)
 	# calculate rho_ideal
 	rho_ideal = vref/(R̄*T/p)
 	rho_min = 1.0e-6
-	rho_max = 100.0
+	rho_max = 15.0
 
 	drho = rho_ideal/2.0
 	if drho < rho_min
@@ -265,7 +265,6 @@ function HELD_density(model,p,T,x₀,vref)
 		end
 	end
 
-	
 	rho_stable_set = Vector{Float64}(undef,0)
 	if length(rho_spinodial) > 1
 		if rho_found[1] < rho_sp_low
@@ -564,7 +563,7 @@ function HELD_impl(model,p,T,z₀,
         lb[i] += eps(Float64)*100.0
         ub[i] -= eps(Float64)*100.0
     end
-    ub[nc] = 100.0
+    ub[nc] = 15.0
     projHELD(x) = ProjectionHELD(x,lb,ub)
 	cnstHELD(x,s) = Constraints(x,lb,ub,s)
  	x₀ = append!(deepcopy(z₀[1:nc-1]),ρ₀)
