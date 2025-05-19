@@ -81,7 +81,7 @@ return `(n, zl, zg)` where `n` is the number of real roots and:
     to `(x+1)^3`, this will return `n == 2` and `zl == zg` equal to the root.
 """
 function real_roots3(pol::NTuple{4,T}) where {T<:Real}
-    z1, z2, z3 = sort(roots3(pol); by=real)
+    z1, z2, z3 = sort(SVector(roots3(pol)); by=real)
     x1, x2, x3 = real(z1), real(z2), real(z3)
     mid12 = (x1 + x2)/2
     mid23 = (x2 + x3)/2
