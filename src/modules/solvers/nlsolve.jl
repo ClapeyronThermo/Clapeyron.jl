@@ -1,3 +1,7 @@
+
+
+is_rootsjl_method(method) = false
+
 #nlsolve functionality
 """
     function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()), options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
@@ -8,59 +12,24 @@ Given a function `f!(result,x)` that returns a system of equations,
 
 Uses `NLSolvers.jl` as backend, the jacobian is calculated with `ForwardDiff.jl`, with the specified `chunk` size
 
-To obtain the underlying solution vector, use [`x_sol`](@ref)
+To obtain the underlying solution vector, use [`solution`](@ref)
 
 To see available solvers and options, check `NLSolvers.jl`
 """
-function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
-    if method isa Roots.AbstractUnivariateZeroMethod
+function nlsolve(f!,x0,method = TrustRegion(Newton(), Dogleg()),options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
+    if is_rootsjl_method(method)
         return roots_nlsolve(f!,x0,method,options)
     end
-    vector_objective = autoVectorObjective(f!,x0,chunk)
-    nl_problem = NEqProblem(vector_objective; inplace = _inplace(x0))
+    vector_objective = ADVectorObjective(f!,x0,chunk)
+    nl_problem = NEqProblem(vector_objective; inplace = __is_implace(x0))
     return nlsolve(nl_problem, x0,method, options)
 end
 
-function nlsolve(nl_problem::NEqProblem,x0,method =TrustRegion(Newton(), NWI()),options=NEqOptions())
+function nlsolve(nl_problem::NEqProblem,x0,method = TrustRegion(Newton(), Dogleg()),options=NEqOptions())
     return NLSolvers.solve(nl_problem, x0,method, options)
 end
 
-#Roots.jl support
-function roots_nlsolve(f::F,x0,method::Roots.AbstractBracketingMethod,options) where F
-    prob = Roots.ZeroProblem(f,x0)
-    brk = f(x0[1])*f(x0[2])
-    if brk > 0
-        sol = zero(brk)/zero(brk)
-    else
-        sol = Roots.solve(prob,method)
-    end    
-end
-
-function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNonBracketingMethod ,options) where F
-    prob = Roots.ZeroProblem(f,x0)
-    sol = Roots.solve(prob,method)
-end
-
-function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNewtonLikeMethod ,options) where F
-    function fdf(vz)
-        fx,dfx = Solvers.f∂f(f,vz)
-        return fx,fx/dfx
-    end
-    prob = Roots.ZeroProblem(fdf,x0)
-    sol = Roots.solve(prob,method)
-end
-
-function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractHalleyLikeMethod,options) where F
-    function d2f(vz)
-        fx,dfx,d2fx = Solvers.f∂f∂2f(f,vz)
-        return fx,fx/dfx,dfx/d2fx
-    end
-    prob = Roots.ZeroProblem(d2f,x0)
-    sol = Roots.solve(prob,method)
-end
-
-
-function autoVectorObjective(f!,x0,chunk)
+function ADVectorObjective(f!,x0,chunk)
     Fcache = x0 .* false
     jconfig = ForwardDiff.JacobianConfig(f!,x0,x0,chunk)
     function j!(J,x)
@@ -74,29 +43,15 @@ function autoVectorObjective(f!,x0,chunk)
     return NLSolvers.VectorObjective(f!,j!,fj!,nothing)
 end
 
-_inplace(x0) = true
-_inplace(x0::SVector) = false
-
-function autoVectorObjective(f!,x0::StaticArrays.SVector{2,T},chunk) where T
-    f(x) = f!(nothing,x) #we assume that the F argument is unused in static arrays
-    j(J,x) = ForwardDiff.jacobian(f,x)
-    fj(F,J,x) = FJ_ad(f,x)
-    return NLSolvers.VectorObjective(f!,j,fj,nothing)
-end
-
-function autoVectorObjective(f!,x0::StaticArrays.SVector{3,T},chunk) where T
-    f(x) = f!(nothing,x) #we assume that the F argument is unused in static arrays
-    j(J,x) = ForwardDiff.jacobian(f,x)
-    fj(F,J,x) = FJ_ad(f,x)
-    return NLSolvers.VectorObjective(f!,j,fj,nothing)
-end
-
-function autoVectorObjective(f!,x0::StaticArrays.SVector,chunk)
-    f(x) = f!(nothing,x) #we assume that the F argument is unused in static arrays
-    j(J,x) = ForwardDiff.jacobian(f,x)
-    fj(F,J,x) = FJ_ad(f,x)
+function ADVectorObjective(f!,x0::StaticArrays.SVector,chunk)
+    f̄ = Base.Fix1(f!,nothing)
+    f(F,x) = f!(nothing,x) #we assume that the F argument is unused in static arrays
+    j(J,x) = ForwardDiff.jacobian(f̄,x)
+    fj(F,J,x) = FJ_ad(f̄,x)
     return NLSolvers.VectorObjective(f,j,fj,nothing)
 end
+
+ADVectorObjective(f!,x0::StaticArrays.SVector) = ADVectorObjective(f!,x0,nothing)
 
 #= only_fj!: NLsolve.jl legacy form:
 
@@ -188,4 +143,43 @@ function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions(
         x  = nan .* x
     end
     return x
+end
+
+#=
+Roots.jl extension
+=#
+
+is_rootsjl_method(method::Roots.AbstractUnivariateZeroMethod) = true
+
+function roots_nlsolve(f::F,x0,method::Roots.AbstractBracketingMethod,options) where F
+    prob = Roots.ZeroProblem(f,x0)
+    brk = f(x0[1])*f(x0[2])
+    if brk > 0
+        sol = zero(brk)/zero(brk)
+    else
+        sol = Roots.solve(prob,method)
+    end    
+end
+
+function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNonBracketingMethod ,options) where F
+    prob = Roots.ZeroProblem(f,x0)
+    sol = Roots.solve(prob,method)
+end
+
+function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNewtonLikeMethod ,options) where F
+    function fdf(vz)
+        fx,dfx = Solvers.f∂f(f,vz)
+        return fx,fx/dfx
+    end
+    prob = Roots.ZeroProblem(fdf,x0)
+    sol = Roots.solve(prob,method)
+end
+
+function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractHalleyLikeMethod,options) where F
+    function d2f(vz)
+        fx,dfx,d2fx = Solvers.f∂f∂2f(f,vz)
+        return fx,fx/dfx,dfx/d2fx
+    end
+    prob = Roots.ZeroProblem(d2f,x0)
+    sol = Roots.solve(prob,method)
 end
