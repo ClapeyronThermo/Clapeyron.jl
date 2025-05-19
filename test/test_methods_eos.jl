@@ -634,6 +634,20 @@ end
     _,_,vv = saturation_pressure(model,TΓmin)
     Γmin = Clapeyron.VT_fundamental_derivative_of_gas_dynamics.(model,vv,TΓmin)
     @test Γmin ≈ -0.2825376983518102 rtol = 1e-6
+
+    #376
+    p1 = 1e5 .* (0.1:0.1:420)
+    T_376 = (310.95,477.95,644.15)
+    px = first.(saturation_pressure.(fluid3,T_376))
+    p1 = px[1]:1e4:420e5
+    p2 = px[2]:1e4:420e5
+    p3 = px[3]:1e4:420e5
+    v_T37 = volume.(fluid3,p1,T_376[1],phase = :l)
+    v_T202 = volume.(fluid3,p2,T_376[2],phase = :l)
+    v_T371 = volume.(fluid3,p3,T_376[3],phase = :l)
+    @test iszero(count(isnan,v_T37))
+    @test iszero(count(isnan,v_T202))
+    @test iszero(count(isnan,v_T371))
 end
 
 @testset "LKP methods" begin

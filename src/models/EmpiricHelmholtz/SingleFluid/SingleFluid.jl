@@ -215,6 +215,30 @@ function x0_sat_pure(model::SingleFluid,T)
     end
 end
 
+function x0_volume_liquid_lowT(model::SingleFluid,p,T,z)
+    _1 = one(Base.promote_eltype(model,p,T,z))
+    lb_v = lb_volume(model,T,z)*_1
+    vl_lbv = 1.01*lb_v
+    ancillary = model.ancillaries
+    Tc = model.properties.Tc
+    Ttp = model.properties.Ttp
+
+    if Ttp < T < Tc
+        vᵢ = volume(ancillary,p,T,z,phase = :l)
+        return vᵢ
+    elseif Ttp < T
+        vᵢ = volume(ancillary,p,Ttp,z,phase = :l)
+        pvi = pressure(model,vᵢ,T)
+        pp = max(_1*p,pvi)
+        Tᵢ = _1*Ttp
+        #chill from p,Ttp to p,T
+        return volume_chill(model,pp,T,z,vᵢ,Tᵢ)
+    else #T > Tc and p < pc, this is gas-like supercritical fluid
+        #this is always a gas volume, so starting from the lowest volume does not hurt
+        return vl_lbv
+    end
+end
+
 function x0_volume_liquid(model::SingleFluid,p,T,z)
     _1 = one(Base.promote_eltype(model,p,T,z))
     lb_v = lb_volume(model,T,z)*_1
@@ -240,33 +264,66 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
         Zc = pc*vc/(Rgas(model)*Tc)
         ΔVrm1 = _1*(abs(1 - p/pc))^Zc
         v_crit_aprox = vc/(ΔVrm1 + 1)
+        vhi =  max(vl_lbv,v_crit_aprox)
+        
         #we suppose that V < Vc (liquid state), then the volume solver converges really well with this initial guess
         if T >= Tc
-            return max(vl_lbv,v_crit_aprox)
+            phi = pressure(model,vhi,T,z)
+            
+            #extreme case
+            if phi < p
+                p_lb = pressure(model,vl_lbv,T,z)
+                if p_lb > 0.5*p
+                    return 1.0001*lb_v
+                end
+            end
+            
+            #we want to make sure that p(V) > p
+            for _ in 1:5
+                phi >= p && break
+                vhi = 0.9vhi + 0.1*lb_v
+                phi = pressure(model,vhi,T,z)
+            end
+
+            return vhi
         else
-            #we can't be sure that v_crit_approx converges, we do some P-T iterations to go from (P,Tc) to (P,T)
-            vᵢ = v_crit_aprox
-            Tᵢ = _1*Tc
-            return volume_chill(model,p,T,z,vᵢ,Tᵢ)
+            #we want two points: psat-vsat and phi-vhi
+            #we can interpolate those to calculate an initial volume
+            
+            vsat = x0_volume_liquid_lowT(model,p,T,z)
+            
+            if vhi > vsat #in some cases it happens
+                vhi = 0.9*vsat + 0.1*lb_v
+            end
+            
+            psat,dpdvsat = p∂p∂V(model,vsat,T,z)
+            phi,dpdvhi = p∂p∂V(model,vhi,T,z)
+            logvsat,logvhi = log(vsat),log(vhi)
+            bsat,bhi = 1/(vsat*dpdvsat),1/(vhi*dpdvhi)
+            
+            for _ in 1:5
+                #we want to make sure that phi > p
+                phi >= p && break
+                vhi = 0.9vhi + 0.1*lb_v
+                phi,dpdvhi = p∂p∂V(model,vhi,T,z)
+                bhi = 1/(vhi*dpdvhi)
+                logvhi = log(vhi)
+            end
+            #=
+            we use the same scheme as volume_compress
+            logv(p) = a + b*p
+            b = 1/v0dpdv0
+            a = logv0 - bp0
+            in volume_compress, we use successive substitution,here, we can use a better starting point
+            =#
+            poly_p = Solvers.hermite3_poly(phi,psat,logvhi,logvsat,bhi,bsat)
+            vx = exp(evalpoly(p - phi,poly_p))
+            return vx
         end
     end
 
-    #use information about the triple point (or made up triple point)
-    #move from (Ttp,ptp) to (T,p)
-    if Ttp < T < Tc
-        vᵢ = volume(ancillary,p,T,z,phase = :l)
-        return vᵢ
-    elseif Ttp < T
-        vᵢ = volume(ancillary,p,Ttp,z,phase = :l)
-        pvi = pressure(model,vᵢ,T)
-        pp = max(_1*p,pvi)
-        Tᵢ = _1*Ttp
-        #chill from p,Ttp to p,T
-        return volume_chill(model,pp,T,z,vᵢ,Tᵢ)
-    else #T > Tc and p < pc, this is gas-like supercritical fluid
-        #this is always a gas volume, so starting from the lowest volume does not hurt
-        return vl_lbv
-    end
+    return x0_volume_liquid_lowT(model,p,T,z)
+
     #this should never hit, but nvm
     return zero(_1)/zero(_1)
 end
