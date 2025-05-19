@@ -8,9 +8,8 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, v
         result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
         nc = length(lnϕ)
         if nc == 1
-            lnϕ = VT_lnϕ_pure(model,vol/sum(z),T,p)
-            result[1] = lnϕ
-        else   
+            lnϕ[1] = VT_lnϕ_pure(model,vol/sum(z),T,p)
+        else
             aux .= 0
             aux[1] = vol
             aux[2:nc+1] = z
