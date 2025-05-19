@@ -2,22 +2,27 @@
 
 function ADScalarObjective(f,x0::T) where T <: AbstractArray
     Hresult = DiffResults.HessianResult(x0)
-
-    function g(df,x)
-        result = ForwardDiff.gradient!(Hresult,f,x)
-        df .= DiffResults.gradient(result)
-        df
-    end
-    
-    function fg(df,x)
-        result = ForwardDiff.gradient!(Hresult,f,x)
-        df .= DiffResults.gradient(result)
+    Hconfig = ForwardDiff.HessianConfig(f,Hresult,x0)
+    function fg(_df,x)
+        Gconfig = _GradientConfig(Hconfig)
+        result = ForwardDiff.gradient!(Hresult,f,x,Gconfig)
+        if __is_implace(x)
+            _df .= DiffResults.gradient(result)
+            df = _df
+        else
+            df = DiffResults.gradient(result)
+        end
         fx = DiffResults.value(result)
         return fx,df
     end
 
+      function g(df,x)
+        _,df = fg(df,x)
+        return df
+    end
+
     function fgh(df,d2f,x)
-        result = ForwardDiff.gradient!(Hresult,f,x)
+        result = ForwardDiff.hessian!(Hresult,f,x,Hconfig)
         fx = DiffResults.value(result)
         if __is_implace(x)
             d2f .= DiffResults.hessian(result)

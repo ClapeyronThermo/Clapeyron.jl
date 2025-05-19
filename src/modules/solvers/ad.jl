@@ -231,6 +231,15 @@ function static_fgh(result::DiffResults.ImmutableDiffResult, f::F, x::SVector) w
     return result
 end
 
+#obtaining GradientConfig from HessianConfig
+
+function _GradientConfig(hconfig::ForwardDiff.HessianConfig{T,V,N}) where {T,V,N}
+    gconf,jconf = hconfig.gradient_config,hconfig.jacobian_config
+    seeds = jconf.seeds
+    duals = jconf.duals[1]
+    return ForwardDiff.GradientConfig{T,V,N,typeof(duals)}(seeds,duals)
+end
+
 chunksize(::ForwardDiff.Chunk{C}) where {C} = C
 chunksize(x::AbstractArray) = chunksize(ForwardDiff.Chunk(x))
 

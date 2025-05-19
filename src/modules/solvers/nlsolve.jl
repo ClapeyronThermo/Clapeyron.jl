@@ -30,10 +30,10 @@ function nlsolve(nl_problem::NEqProblem,x0,method = TrustRegion(Newton(), Dogleg
 end
 
 function ADVectorObjective(f!,x0,chunk)
-    Fcache = x0 .* false
-    jconfig = ForwardDiff.JacobianConfig(f!,x0,x0,chunk)
+    FF = similar(x0)
+    jconfig = ForwardDiff.JacobianConfig(f!,FF,x0,chunk)
     function j!(J,x)
-        ForwardDiff.jacobian!(J,f!,Fcache,x,jconfig)
+        ForwardDiff.jacobian!(J,f!,FF,x,jconfig)
         J
     end
     function fj!(F,J,x)

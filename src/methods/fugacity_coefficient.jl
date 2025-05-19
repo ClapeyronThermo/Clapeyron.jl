@@ -10,15 +10,12 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, v
         aux .= 0
         aux[1] = vol
         aux[2:nc+1] = z
-        gconf,jconf = hconfig.gradient_config,hconfig.jacobian_config
-        seeds = jconf.seeds
-        duals = jconf.duals[1]
-        gconfig = ForwardDiff.GradientConfig{Nothing,eltype(aux),length(seeds),typeof(duals)}(seeds,duals)
+        gconfig = Solvers._GradientConfig(hconfig)
         gresult = ForwardDiff.MutableDiffResult(result.value,(result.derivs[1],))
         F_res(model, V, T, z) = eos_res(model, V, T, z)
         fun(aux) = F_res(model, aux[1], T, @view(aux[2:nc+1]))
-        _result = ForwardDiff.gradient!(gresult, fun, aux, gconfig, Val{false}())
-        dresult = _result.derivs[1]
+        _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
+        dresult = DiffResults.gradient(_result)
         μ_res = @view dresult[2:nc+1]
         lnϕ .= μ_res ./ RT .- logZ
     else
