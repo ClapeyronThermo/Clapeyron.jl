@@ -487,6 +487,10 @@ end
         @test Clapeyron.mass_density(model,(380.5+101.3)*1000.0,-153.0+273.15,lng_composition_molar_fractions) ≈ 440.73 rtol = 1E-2
         @test Clapeyron.molar_density(model,(380.5+101.3)u"kPa",-153.0u"°C",lng_composition_molar_fractions;output=u"mol/L") ≈ 24.98*u"mol/L"  rtol=1E-2
         @test Clapeyron.mass_density(model,(380.5+101.3)u"kPa",-153.0u"°C",lng_composition_molar_fractions;output=u"kg/m^3")  ≈ 440.73*u"kg/m^3" rtol=1E-2
+    
+        #test found in #371
+        model2 = GERG2008(["carbon dioxide","nitrogen","water"])
+        @test mass_density(model2,64.0e5,30+273.15,[0.4975080785711593, 0.0049838428576813995, 0.4975080785711593],phase = :l) ≈ 835.3971524715569 rtol = 1e-6
     end
     @testset "VLE properties" begin
         system = GERG2008(["carbon dioxide","water"])

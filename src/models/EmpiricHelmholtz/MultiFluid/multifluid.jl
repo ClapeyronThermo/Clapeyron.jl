@@ -220,7 +220,12 @@ function x0_volume_liquid(model::MultiFluid,p,T,z)
     for (i,pure) in pairs(model.pures)
         v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
     end
-    return v0
+    p0 = pressure(model,v0,T,z)
+    if p0 >= p
+        return v0
+    else
+        return volume_bracket_refine(model,p,T,z,v0,lb_volume(model,T,z))
+    end
 end
 
 function wilson_k_values!(K,model::MultiFluid,p,T,crit = nothing)
