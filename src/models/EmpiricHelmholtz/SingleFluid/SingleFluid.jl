@@ -242,15 +242,14 @@ end
 function x0_volume_liquid(model::SingleFluid,p,T,z)
     _1 = one(Base.promote_eltype(model,p,T,z))
     lb_v = lb_volume(model,T,z)*_1
-    vl_lbv = 1.01*lb_v
-    ancillary = model.ancillaries
+    vl_lbv = 1.001*lb_v
     Tc = model.properties.Tc
     Pc = model.properties.Pc
     Ttp = model.properties.Ttp
     ptp = model.properties.ptp
     (!isfinite(Ttp) | (Ttp < 0)) && (Ttp = 0.4*Tc)
     (!isfinite(ptp) | (ptp < 0)) && (ptp = zero(ptp))
-
+    return lb_v
     if p > Pc
         #supercritical conditions, liquid
         #https://doi.org/10.1016/j.ces.2018.08.043 gives an aproximation of the pv curve at T = Tc
@@ -265,67 +264,39 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
         ΔVrm1 = _1*(abs(1 - p/pc))^Zc
         v_crit_aprox = vc/(ΔVrm1 + 1)
         vhi =  max(vl_lbv,v_crit_aprox)
-        
+        phi = pressure(model,vhi,T,z)
         #we suppose that V < Vc (liquid state), then the volume solver converges really well with this initial guess
         if T >= Tc
-            phi = pressure(model,vhi,T,z)
-            
-            #extreme case
-            if phi < p
-                p_lb = pressure(model,vl_lbv,T,z)
-                if p_lb > 0.5*p
-                    return 1.0001*lb_v
-                end
+            if phi > p
+                return vhi
+            elseif phi <= p <= pressure(model,lb_v,T,z)
+                return volume_bracket_refine(model,p,T,z,lb_v,vhi)
+            else
+                return vl_lbv
             end
-            
-            #we want to make sure that p(V) > p
-            for _ in 1:5
-                phi >= p && break
-                vhi = 0.9vhi + 0.1*lb_v
-                phi = pressure(model,vhi,T,z)
-            end
-
-            return vhi
         else
             #we want two points: psat-vsat and phi-vhi
             #we can interpolate those to calculate an initial volume
-            
+
             vsat = x0_volume_liquid_lowT(model,p,T,z)
-            
-            if vhi > vsat #in some cases it happens
+            psat = pressure(model,vsat,T,z)
+
+            if vhi > vsat
                 vhi = 0.9*vsat + 0.1*lb_v
+                phi = pressure(model,vhi,T,z)
             end
-            
-            psat,dpdvsat = p∂p∂V(model,vsat,T,z)
-            phi,dpdvhi = p∂p∂V(model,vhi,T,z)
-            logvsat,logvhi = log(vsat),log(vhi)
-            bsat,bhi = 1/(vsat*dpdvsat),1/(vhi*dpdvhi)
-            
-            for _ in 1:5
-                #we want to make sure that phi > p
-                phi >= p && break
-                vhi = 0.9vhi + 0.1*lb_v
-                phi,dpdvhi = p∂p∂V(model,vhi,T,z)
-                bhi = 1/(vhi*dpdvhi)
-                logvhi = log(vhi)
+
+            if phi <= p
+                return volume_bracket_refine(model,p,T,z,vhi,lb_v)
+            elseif psat < p < ph
+                return volume_bracket_refine(model,p,T,z,vhi,vsat)
+            else
+                return vsat
             end
-            #=
-            we use the same scheme as volume_compress
-            logv(p) = a + b*p
-            b = 1/v0dpdv0
-            a = logv0 - bp0
-            in volume_compress, we use successive substitution,here, we can use a better starting point
-            =#
-            poly_p = Solvers.hermite3_poly(phi,psat,logvhi,logvsat,bhi,bsat)
-            vx = exp(evalpoly(p - phi,poly_p))
-            return vx
         end
+    else
+        return x0_volume_liquid_lowT(model,p,T,z)
     end
-
-    return x0_volume_liquid_lowT(model,p,T,z)
-
-    #this should never hit, but nvm
-    return zero(_1)/zero(_1)
 end
 
 x0_psat(model::SingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.fluid.saturation,T,SaturationCorrelation())[1]

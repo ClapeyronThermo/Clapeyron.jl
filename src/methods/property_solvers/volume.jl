@@ -353,4 +353,32 @@ function _label_and_volumes(model::EoSModel,cond)
     return V,Vl,Vv
 end
 
+function volume_bracket_refine(model,p,T,z,v1,v2)
+    p1,dpdv1 = p∂p∂V(model,v1,T,z)
+    p2,dpdv2 = p∂p∂V(model,v2,T,z)
+    if p1 > p2
+        vhi,vlo = v1,v2
+        phi,dpdvhi = p1,dpdv1
+        plo,dpdvlo = p2,dpdv2
+    else
+        vlo,vhi = v1,v2
+        phi,dpdvhi = p2,dpdv2
+        plo,dpdvlo = p1,dpdv1
+    end
+    if plo <= p <= phi
+        logvhi,logvlo = log(vhi),log(vlo)
+        bhi = 1/(vhi*dpdvhi)
+        blo = 1/(vlo*dpdvlo)
+        poly_p = Solvers.hermite3_poly(plo,phi,logvlo,logvhi,blo,bhi)
+        Δp = p - plo
+        return exp(evalpoly(Δp,poly_p))
+    elseif p < plo
+        return vlo
+    elseif p > phi
+        return vhi
+    else
+        return zero(phi)/zero(plo)
+    end
+end
+
 export volume
