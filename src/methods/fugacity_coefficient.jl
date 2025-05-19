@@ -49,9 +49,10 @@ end
 
 function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
     RT = Rgas(model)*T
-    μ_res = a_res(model,V,T,SA[1.0])
+    p_res = p - RT/V
+    μ_res = eos_res(model,V,T) + p_res*V
     Z = p*V/RT
-    lnϕ = μ_res - log(Z)
+    return μ_res/RT - log(Z)
 end
 
 function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B

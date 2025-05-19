@@ -156,7 +156,14 @@ function μp_equality2(models::NTuple{2,M}, F, PT::TPspec, v, w, short_view) whe
         F[i] = μ_long_view[i]
     end
     μ_short = resize!(μ_long,n_short)
-    μ_short = VT_chemical_potential_res!(μ_short,model_short,v_short,T,x_short)
+    if n_short == 1
+        ∑n_short = sum(x_short)
+        p_res = p_short - sum(x_short)*Rgas(model)*T/v_short
+        μ_short[1] = (eos_res(model,v_short,T,x_short) + p_res*v_short)/∑n_short
+    else
+        VT_chemical_potential_res!(μ_short,model_short,v_short,T,x_short)
+    end
+
     for i in 1:n_short
         μ_long_i = F[i]
         μ_short_i = μ_short[i]
