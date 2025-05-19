@@ -132,10 +132,10 @@ end
 function optimize(optprob::OptimizationProblem,x0,method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
     return NLSolvers.solve(optprob,x0,method,options)
 end
+
 #build scalar objective -> Optimization Problem
 function optimize(scalarobj::ScalarObjective,x0,method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
     inplace = __is_implace(x0)
-    scalarobj = ADScalarObjective(f,x0)
     optprob = OptimizationProblem(obj = scalarobj,inplace = inplace,bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
