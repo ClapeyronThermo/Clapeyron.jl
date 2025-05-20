@@ -25,7 +25,7 @@ function a_term(term::Associating2BTerm,δ,τ,lnδ,lnτ,_0)
         κ̄ = term.kappabar
         a = term.a
         m = term.m
-        v̄ₙ = term.v̄ₙ
+        v̄ₙ = term.vbarn
         αᵣ = term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε̄,κ̄,a,m,v̄ₙ)
     else
         αᵣ = _0
