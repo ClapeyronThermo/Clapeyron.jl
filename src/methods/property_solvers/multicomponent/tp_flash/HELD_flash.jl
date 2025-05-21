@@ -151,6 +151,13 @@ function HELD_func_rho(model,p,T,x₀,vref,rho)
     return f
 end
 
+function HELD_volume1(model,p,T,x₀,vref,rho)
+	G(x) = HELD_func_rho(model,p,T,[x,1.0-x],vref,rho) + 5.474135924873183*(0.95 - x)
+    dG(x) = Solvers.derivative(G,x)
+	ddG(x) = Solvers.derivative(dG,x)
+    return G(x₀), dG(x₀), ddG(x₀)
+end
+
 function HELD_volume2(model,p,T,x₀,vref,rho)
 	G(x) = HELD_func_rho(model,p,T,x₀,vref,x)
     dG(x) = Solvers.derivative(G,x)
@@ -209,6 +216,8 @@ function HELD_density(model,p,T,x₀,vref)
 		end
 	end
 
+#	println("rho_bracket  = $(rho_bracket)")
+
 	rho_spinodial = Vector{Float64}(undef,0)
 	for ib = eachindex(rho_bracket)
 		ans = Roots.find_zero(ddG, rho_bracket[ib])
@@ -224,6 +233,10 @@ function HELD_density(model,p,T,x₀,vref)
 		rho_sp_low = rho_spinodial[1]
 		rho_sp_high = rho_spinodial[end]
 	end
+
+#	println("rho_spinodial  = $(rho_spinodial)")
+#	println("rho_sp_low  = $(rho_sp_low)")
+#	println("rho_sp_high  = $(rho_sp_high)")
 
 	drho = rho_ideal/2.0
 	if drho < rho_min
@@ -254,6 +267,8 @@ function HELD_density(model,p,T,x₀,vref)
 		end
 	end
 
+#	println("rho_bracket  = $(rho_bracket)")
+
 	rho_found = Vector{Float64}(undef,0)
 	for ib = eachindex(rho_bracket)
 		ans = Roots.find_zero(dG, rho_bracket[ib])
@@ -264,6 +279,8 @@ function HELD_density(model,p,T,x₀,vref)
 			end
 		end
 	end
+
+#	println("rho_found  = $(rho_found)")
 
 	rho_stable_set = Vector{Float64}(undef,0)
 	if length(rho_spinodial) > 1
@@ -277,6 +294,8 @@ function HELD_density(model,p,T,x₀,vref)
 		push!(rho_stable_set,rho_found[1])
 		push!(rho_stable_set,rho_found[end])
 	end
+
+#	println("rho_stable_set  = $(rho_stable_set)")
 
 	rho_stable = rho_stable_set[1]
 	if length(rho_stable_set) > 1
@@ -420,7 +439,7 @@ function initial_compositions(model,p,T,z,add_pure_guess,add_anti_pure_guess,add
     
     if add_anti_pure_guess || add_all_guess
     	# anti pure generation
-    	k = 1000.0
+    	k = 1000.0 - (n-1)
     	for i in 1:n
     		if add_pure_component[i] == true
         		xi = z

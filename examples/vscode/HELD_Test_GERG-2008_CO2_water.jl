@@ -1,7 +1,7 @@
 using Clapeyron, NLsolve
 
 components = ["carbon dioxide","nitrogen","water"]
-model = GERG2008(components)
+model = EOS_CG(components)
 
 p = 1.4e5
 T = 25.0+273.15
