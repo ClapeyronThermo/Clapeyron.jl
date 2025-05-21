@@ -186,4 +186,13 @@ function Obj_crit_pure_sp(xx,model,p,z,ps,lb_v)
     return SVector((pᵢ-p)/ps,dpdVᵢ/(ps*lb_v))
 end
 
+function eigmin_minimum_pressure(model,T,z,v0hi,v0lo = -second_virial_coefficient(model,T,z))
+    f0(v) = diffusive_eigvalue(model,exp(v),T,z)
+    ln_vhi = log(v0hi)
+    ln_vlo = log(v0lo)
+    ln_v = Solvers.optimize(f0,(ln_vhi,ln_vlo),Solvers.BoundOptim1Var())
+    v = exp(ln_v)
+    return pressure(model,v,T,z),v,f0(ln_v)
+end
+
 export spinodal_pressure, spinodal_temperature

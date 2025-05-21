@@ -109,30 +109,24 @@ function RK(components;
     reference_state = nothing,
     verbose = false)
     formatted_components = format_components(components)
+    
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
         userlocations = userlocations,
         verbose = verbose,
         ignore_missing_singleparams = __ignored_crit_params(alpha))
 
+    model = CubicModel(RK,params,formatted_components;
+                        idealmodel,alpha,mixing,activity,translation,
+                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                        reference_state, verbose)
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    pc = params["Pc"]
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    acentricfactor = get(params,"acentricfactor",nothing)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",formatted_components,zeros(length(Tc)))
-    b = PairParam("b",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = ABCubicParam(a,b,Tc,pc,Mw)
-    references = String["10.1021/cr60137a013"]
-    model = RK(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
+
+default_references(::Type{RK}) = ["10.1021/cr60137a013"]
 
 function ab_consts(::Type{<:RKModel})
     Ωa = 1/(9*(2^(1/3)-1))

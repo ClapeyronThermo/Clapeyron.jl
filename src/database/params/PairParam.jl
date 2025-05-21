@@ -3,9 +3,14 @@ struct PairParameter{T,V<:AbstractMatrix{T}} <: ClapeyronParam
     components::Array{String,1}
     values::V
     ismissingvalues::Array{Bool,2}
-    sourcecsvs::Array{String,1}
-    sources::Array{String,1}
+    sourcecsvs::Union{Vector{String},Nothing}
+    sources::Union{Vector{String},Nothing}
 end
+
+#methods to fill missing sources/sourcescsvs
+PairParameter(name,components,values,ismissingvalues) = PairParameter(name,components,values,ismissingvalues,nothing,nothing)
+PairParameter(name,components,values,ismissingvalues,src) = PairParameter(name,components,values,ismissingvalues,src,nothing)
+
 """
     PairParam{T}
 Struct designed to contain pair data. used a matrix as underlying data storage.
@@ -47,7 +52,6 @@ const PairParam{T} = PairParameter{T,Matrix{T}} where T
 PairParam(name,components,vals,missingvals,srccsv,src) = PairParameter(name,components,vals,missingvals,srccsv,src)
 
 #indexing
-
 Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int) where T = param.values[i,i]
 Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int,j::Int) where T = param.values[i,j]
 
@@ -115,81 +119,78 @@ end
 Base.size(param::PairParameter) = size(param.values)
 
 Base.eltype(param::PairParameter{T}) where T = T
+Base.eltype(param::Type{<:PairParameter{T}}) where T = T
 
-#unsafe constructor
-function PairParam(name,components,values)
-    param_length_check(PairParam,name,length(components),LinearAlgebra.checksquare(values))
-    missingvals = fill(false,size(values))
-    src = String[]
-    sourcecsv = String[]
-    return PairParameter(name,components,values,missingvals,src,sourcecsv)
+#primalval
+function Solvers.primalval(x::PairParameter)
+    return PairParameter(x.name,x.components,Solvers.primalval_eager(x.values),x.ismissingvalues,x.sourcecsvs,x.sources)
 end
 
-function PairParam(name::String,
-    components::Array{String,1},
-    values::Array{T,2},
-    ismissingvalues = fill(false,length(components),length(components)),
-    sourcecsvs::Array{String,1} = String[], 
-    sources::Array{String,1} = String[]) where T
-    
-    param_length_check(PairParam,name,length(components),LinearAlgebra.checksquare(values))
-    _values,_ismissingvalues = defaultmissing(values)
-    if !all(ismissingvalues)
-        _ismissingvalues = ismissingvalues
-    end
-    return PairParameter(name, components,_values, _ismissingvalues, sourcecsvs, sources)
+#barebones constructor, we provide vals and missing vals
+function PairParam(name,components,values::Matrix{T},missingvals,src,sourcecsv) where T 
+    val_length = LinearAlgebra.checksquare(values)
+    param_length_check(PairParam,name,length(components),val_length)
+    PairParameter{T,Matrix{T}}(name,components,values,missingvals,src,sourcecsv)
 end
 
-function PairParam(name::String,
-    components::Array{String,1},
-    values::Array{T,1},
-    ismissingvalues = map(!,diagm(fill(true,length(components)))),
-    sourcecsvs::Array{String,1} = String[], 
-    sources::Array{String,1} = String[]) where T
-    
-    param_length_check(PairParam,name,length(components),length(values))
-
-    _values,_ismissingvalues = defaultmissing(diagm(values))
-    if !all(ismissingvalues)
-        _ismissingvalues = ismissingvalues
+function PairParam(name,components,values::Vector{T},missingvals::Vector,src,sourcecsv) where T 
+    n = length(values)
+    mat_values = zeros(T,(n,n))
+    mat_missing = ones(Bool,(n,n))
+    for i in 1:n
+        mat_values[i,i] = values[i]
+        mat_missing[i,i] = false
     end
-    return PairParameter(name, components,_values, _ismissingvalues, sourcecsvs, sources)
+    PairParam(name,components,mat_values,mat_missing,src,sourcecsv)
+end
+
+function PairParam(name,components,values::AbstractMatrix{T},missingvals,src,sourcecsv) where T 
+    return PairParam(name,components,convert(Matrix{T},values),missingvals,src,sourcecsv)
+end
+
+PairParam(name,components,values,missingvals,src) = PairParam(name,components,values,missingvals,src,nothing)
+PairParam(name,components,values,missingvals) = PairParam(name,components,values,missingvals,nothing,nothing)
+
+#constructor in case we provide a normal vector
+function PairParam(name, components, values_or_missing::AbstractMatrix{T}) where T
+    if nonmissingtype(T) != T
+        values,ismissingvalues = defaultmissing(values_or_missing)
+    else
+        values,ismissingvalues = values_or_missing,fill(false, size(values_or_missing))
+    end
+    return PairParam(name, components, values, ismissingvalues)
+end
+
+function PairParam(name, components, values_or_missing::AbstractVector{T}) where T 
+    if nonmissingtype(T) != T
+        vec_values,ismissingvalues = defaultmissing(values_or_missing)
+        pairvalues = singletopair(vec_values,missing)
+        for i in 1:length(vec_values)
+            if vec_ismissingvalues[i]
+                pairvalues[i,i] = missing
+            end
+        end
+        values,ismissingvalues = defaultmissing(pairvalues)
+    else
+        values = singletopair(values_or_missing)
+        ismissingvalues = fill(true,size(values))
+        for i in 1:length(values_or_missing)
+            ismissingvalues[i,i] = false
+        end
+    end
+   
+    return PairParam(name, components, values, ismissingvalues)
 end
 
 # If no value is provided, just initialise empty param.
-function PairParam(
-        name::String,
-        components::Vector{String};
-        sources::Vector{String} = String[]
-    )
-    values = fill(0.0, length(components), length(components))
-    missingvals = fill(true, size(values))
-    return PairParameter(name, components, values, missingvals, String[], sources)
+function PairParam{T}(name,components) where T <: Number
+    nc = length(components)
+    values = fill(zero(T), (nc,nc))
+    ismissingvalues = fill(true,(nc,nc))
+    return PairParam(name, components, values, ismissingvalues)
 end
 
-function PairParam(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources)
-    if isdeepcopy
-        values = deepcopy(x.values)
-        return PairParam(
-            name,
-            x.components,
-            values,
-            deepcopy(x.ismissingvalues),
-            x.sourcecsvs,
-            sources
-        )
-    end
-    return PairParameter(
-        name,
-        x.components,
-        x.values,
-        x.ismissingvalues,
-        x.sourcecsvs,
-        sources
-    )
-end
-
-PairParameter(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources) = PairParam(x, name; isdeepcopy, sources)
+PairParam(name,components) = PairParam{Float64}(name,components)
 
 function PairParam(x::SingleParam,name::String=x.name)
     pairvalues = singletopair(x.values,missing)
@@ -199,7 +200,11 @@ function PairParam(x::SingleParam,name::String=x.name)
         end
     end
     _values,_ismissingvalues = defaultmissing(pairvalues)
-    return PairParam(name, x.components, _values,_ismissingvalues,x.sourcecsvs, x.sources)
+    return PairParam(name, x.components, _values, _ismissingvalues, x.sourcecsvs, x.sources)
+end
+
+function PairParam(x::PairParam,name::String = x.name)
+    return PairParam(name, x.components, deepcopy(x.values), deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter) 
@@ -215,13 +220,7 @@ end
 
 #convert utilities
 function Base.convert(::Type{PairParam{T1}},param::PairParam{T2}) where {T1<:Number,T2<:Number}
-    values = T1.(param.values)
-    return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function Base.convert(::Type{PairParam{Bool}},param::PairParam{<:Union{Int,Float64,Bool}})
-    #@assert all(z->(isone(z) | iszero(z)),param.values)
-    values = Array(Bool.(param.values))
+    values = convert(Matrix{T1},param.values)
     return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
@@ -231,5 +230,4 @@ function pack_vectors(param::PairParameter{<:AbstractVector})
     return PairParam(name,components,vals,missingvals,srccsv,src)
 end
 
-const PackedSparsePairParam{T} = Clapeyron.PairParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, SparsePackedMofV{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, 
-true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}} where T
+const PackedSparsePairParam{T} = Clapeyron.PairParameter{PackedSubVector{T}, SparsePackedMofV{PackedSubVector{T}, PackedVector{T}}} where T

@@ -39,7 +39,7 @@ Clapeyron.SiteParam
 Clapeyron.AssocOptions
 ```
 
-## Combining Rules
+## Combining Rules, out-of-place methods
 
 ```@docs
 Clapeyron.kij_mix
@@ -48,8 +48,23 @@ Clapeyron.mirror_pair
 Clapeyron.sigma_LorentzBerthelot
 Clapeyron.epsilon_LorentzBerthelot
 Clapeyron.epsilon_HudsenMcCoubrey
+Clapeyron.epsilon_HudsenMcCoubreysqrt
 Clapeyron.lambda_LorentzBerthelot
 Clapeyron.lambda_squarewell
+```
+
+## Combining Rules, in-place methods
+
+```@docs
+Clapeyron.kij_mix!
+Clapeyron.pair_mix!
+Clapeyron.mirror_pair!
+Clapeyron.sigma_LorentzBerthelot!
+Clapeyron.epsilon_LorentzBerthelot!
+Clapeyron.epsilon_HudsenMcCoubrey!
+Clapeyron.epsilon_HudsenMcCoubreysqrt!
+Clapeyron.lambda_LorentzBerthelot!
+Clapeyron.lambda_squarewell!
 ```
 
 ## Group Combining Rules

@@ -117,7 +117,7 @@ function Base.show(io::IO,::MIME"text/plain",ref::ReferenceState)
 end
 
 #for compatibility in parametric params.
-Base.eltype(ref::ReferenceState) = Float64
+Base.eltype(::Type{ReferenceState}) = Float64
 
 #by default, the reference state is stored in the idealmodel params. unwrap until
 #reaching that
@@ -271,7 +271,7 @@ function set_reference_state!(model::EoSModel,new_ref::ReferenceState;verbose = 
     #allocate the appropiate caches.
     initialize_reference_state!(model,ref)
     if all(iszero,ref.z0) #pure case
-        pures = split_model(model)
+        pures = split_pure_model(model)
         _set_reference_state!.(pures)
         pure_refs = reference_state.(pures)
         ref.a0 .= only.(getfield.(pure_refs,:a0))

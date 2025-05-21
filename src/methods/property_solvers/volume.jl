@@ -17,17 +17,14 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
     return _volume_compress(model,p,T,z,V0,max_iters)
 end
 
-function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    _0 = zero(Base.promote_eltype(model,_p,_T,_z,V0))
+function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+    _0 = zero(Base.promote_eltype(model,p,T,z,V0))
     _1 = one(_0)
     isnan(V0) && return _0/_0
-    p₀ = primalval(_1*_p)
+    p₀ = _1*p
     XX = typeof(p₀)
-    T = primalval(_T)
-    _nan = primalval(_0/_0)
-    nan = primalval(_nan)
+    nan = _0/_0
     logV0 = primalval(log(V0)*_1)
-    z = primalval(_z)
     log_lb_v = log(primalval(lb_volume(model,T,z)))
     if iszero(p₀) & (V0 == Inf) #ideal gas
         return _1/_0
@@ -48,14 +45,7 @@ function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=
     end
 
     logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters)::XX,nan)
-    #netwon step to recover derivative information:
-    #V = V - (p(V) - p)/(dpdV(V))
-    #dVdP = -1/dpdV
-    #dVdT = dpdT/dpdV
-    #dVdn = dpdn/dpdV
-    Vsol = exp(logV)
-    psol,dpdVsol = p∂p∂V(model,Vsol,_T,_z)
-    return Vsol - (psol - _p)/dpdVsol
+    return exp(logV)
 end
 
 #"chills" a state from T0,p to T,p, starting at v = v0
@@ -63,6 +53,7 @@ function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
     _1 = one(Base.promote_eltype(model,p,T,z))
     vᵢ = _1*v0
     Tᵢ = _1*T0
+    count_invalid_iters = 0
     for i in 1:100
         d²A,dA,_ = ∂2f(model,vᵢ,Tᵢ,z)
         ∂²A∂V∂T = d²A[1,2]
@@ -84,6 +75,13 @@ function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
         vnew = vᵢ + Δv
         if vnew > 0
             vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+            count_invalid_iters = 0
+        else
+            count_invalid_iters +=1
+        end
+        if count_invalid_iters >= 10
+            vᵢ = zero(vᵢ)/zero(vᵢ)
+            break
         end
         abs(ΔT) < Ttol*T && vnew > 0 && break
         !isfinite(vᵢ) && break
@@ -137,8 +135,16 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
     end
 end
 
-#(z = pV/RT)
-#(RT/p = V/z)
+function pressure_virial(model,V,T,z)
+    B = second_virial_coefficient(model,T,z)
+    return pressure_virial(B,V,T,z,Rgas(model))
+end
+
+function pressure_virial(B::Real,V,T,z,R = R̄)
+    Z = 1 + B/V
+    return Z*sum(z)*R*T/V
+end
+
 """
     volume(model::EoSModel, p, T, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
 
@@ -182,7 +188,26 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0
 end
 
 function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
-    return volume_impl(model,p,T,z,phase,threaded,vol0)
+    if has_a_res(model)
+        v = volume_impl(primalval(model),primalval(p),primalval(T),primalval(z),phase,threaded,primalval(vol0))
+        return volume_ad(model,v,T,z,p)
+    else
+        return volume_impl(model,p,T,z,phase,threaded,primalval(vol0))
+    end
+end
+
+function volume_ad(model,v,T,z,p)
+    if has_dual(model) || has_dual(p) || has_dual(T) || has_dual(z)
+        #netwon step to recover derivative information:
+        #V = V - (p(V) - p)/(dpdV(V))
+        #dVdP = -1/dpdV
+        #dVdT = dpdT/dpdV
+        #dVdn = dpdn/dpdV
+        psol,dpdVsol = p∂p∂V(model,v,T,z)
+        return v - (psol - p)/dpdVsol
+    else
+        return v
+    end
 end
 
 #comprises solid and liquid phases.
@@ -326,6 +351,34 @@ function _label_and_volumes(model::EoSModel,cond)
     gl,gv = gibbs(Vl),gibbs(Vv)
     V = gv < gl ? 1 : 0
     return V,Vl,Vv
+end
+
+function volume_bracket_refine(model,p,T,z,v1,v2)
+    p1,dpdv1 = p∂p∂V(model,v1,T,z)
+    p2,dpdv2 = p∂p∂V(model,v2,T,z)
+    if p1 > p2
+        vhi,vlo = v1,v2
+        phi,dpdvhi = p1,dpdv1
+        plo,dpdvlo = p2,dpdv2
+    else
+        vlo,vhi = v1,v2
+        phi,dpdvhi = p2,dpdv2
+        plo,dpdvlo = p1,dpdv1
+    end
+    if plo <= p <= phi
+        logvhi,logvlo = log(vhi),log(vlo)
+        bhi = 1/(vhi*dpdvhi)
+        blo = 1/(vlo*dpdvlo)
+        poly_p = Solvers.hermite3_poly(plo,phi,logvlo,logvhi,blo,bhi)
+        Δp = p - plo
+        return exp(evalpoly(Δp,poly_p))
+    elseif p < plo
+        return vlo
+    elseif p > phi
+        return vhi
+    else
+        return zero(phi)/zero(plo)
+    end
 end
 
 export volume

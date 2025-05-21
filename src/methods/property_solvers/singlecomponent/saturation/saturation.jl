@@ -42,7 +42,12 @@ function saturation_pressure(model::EoSModel,T,method::SaturationMethod)
     T = T*(T/T)*oneunit(eltype(model))
     satmodel = saturation_model(model)
     satmodel !== model && saturation_pressure(satmodel,T,method)
-    return saturation_pressure_impl(model,T,method)
+    if has_a_res(model)
+        res = saturation_pressure_impl(primalval(model),primalval(T),method)
+        saturation_pressure_ad(model,T,res)
+    else
+        return saturation_pressure_impl(model,T,method)
+    end
 end
 
 function saturation_pressure(model::EoSModel,T;kwargs...)
@@ -74,6 +79,32 @@ function saturation_pressure(model::EoSModel,T,V0::Union{Tuple,Vector})
     kwargs = (;vl,vv)
     method = init_preferred_method(saturation_pressure,model,kwargs)
     return saturation_pressure(model,T,method)
+end
+
+function saturation_pressure_ad(model,T,result)
+    if has_dual(model) || has_dual(T)
+        p_primal,vl_primal,vv_primal = result
+
+        #=
+        update step from https://github.com/lucpaoli/SAFT_ML/blob/f22648055bdf4cd244cf427a596fc7b1c03e6383/saftvrmienn.jl#L138-L157
+        =#
+        Δg = eos(model, vv_primal, T) - eos(model,vl_primal, T) + p_primal*(vv_primal - vl_primal)
+        Δv = vv_primal - vl_primal
+        p = p_primal - Δg/Δv
+        #=
+        for volume, we use a volume update
+        =#
+        vl = volume_ad(model,vl_primal,T,SA[1.0],p)
+        vv = volume_ad(model,vv_primal,T,SA[1.0],p)
+        return p,vl,vv
+    else
+        return result
+    end
+end
+
+function derivx(f,i)
+    h = sqrt(eps(i))
+    return (1*f(i-2h)-8*f(i-1h)+0*f(i)+8*f(i+1h)-1*f(i+2h))/(12*h)
 end
 
 """
@@ -120,7 +151,13 @@ function saturation_temperature(model,p,method::SaturationMethod)
     end
     single_component_check(crit_pure,model)
     p = p*p/p
-    return saturation_temperature_impl(model,p,method)
+
+    if has_a_res(model)
+        res = saturation_temperature_impl(primalval(model),primalval(p),method)
+        return saturation_temperature_ad(model,p,res)
+    else
+        return saturation_temperature_impl(model,p,method)
+    end
 end
 
 #if a number is provided as initial point, it will instead proceed to solve directly
@@ -132,6 +169,30 @@ function saturation_temperature(model::EoSModel, p, T0::Number)
     kwargs = (;T0)
     method = init_preferred_method(saturation_temperature,model,kwargs)
     saturation_temperature(model,p,method)
+end
+
+function saturation_temperature_ad(model,p,result)
+    if has_dual(model) || has_dual(p)
+        T_primal,vl_primal,vv_primal = result
+        vl = volume_ad(model,vl_primal,T_primal,SA[1.0],p)
+
+        #manual volume_ad for vapour volume, we reuse p_primal for the calculation of the T step.
+        p_primal,∂p∂V = p∂p∂V(model,vv_primal,T_primal,SA[1.0])
+        vv = vv_primal - (p_primal - p)/∂p∂V
+
+        #for T, we use a dlnpdTinv step, a dpdT step is fine too
+        dpdT = dpdT_saturation(model,vv_primal,vl_primal,T_primal)
+        dTinvdlnp = -p_primal/(dpdT*T_primal*T_primal)
+        Δlnp = log(p/p_primal)
+        Tinv0 = 1/T_primal
+        Tinv = Tinv0 + dTinvdlnp*Δlnp
+        dT = T_primal - 1/Tinv
+        T = 1/Tinv
+        T = T_primal - (p_primal - p)/dpdT
+        return T,vl,vv
+    else
+        return result
+    end
 end
 
 include("ChemPotV.jl")
@@ -193,4 +254,34 @@ end
 
 function init_preferred_method(method::typeof(saturation_temperature),model::EoSModel,kwargs)
     return AntoineSaturation(;kwargs...)
+end
+
+function fast_pcsaft1(eps::T,sigma::T,segment::T,mw::T = oneunit(T)) where T
+    name1 = ""
+    empty_str = String[]
+    namevec = [name1]
+    
+    missingval_vec = [false]
+    missingval_mat = [false;;]
+    empty_nested_int = [Int64[]]
+    empty_nested_string = [empty_str]
+    assoc_vec = Compressed4DMatrix{T}()
+    ϵ = PairParameter(name1,namevec,[eps;;],missingval_mat,empty_str,empty_str)
+    σ = PairParameter(name1,namevec,[sigma;;],missingval_mat,empty_str,empty_str)
+    m = SingleParameter(name1,namevec,[segment],missingval_vec,empty_str,empty_str)
+    Mw = SingleParameter(name1,namevec,[mw],missingval_vec,empty_str,empty_str)
+    bondvol = AssocParam(name1,namevec,assoc_vec,empty_nested_string,empty_str,empty_str)
+    ϵ_ab = AssocParam(name1,namevec,assoc_vec,empty_nested_string,empty_str,empty_str)
+
+    param = PCSAFTParam{T}(Mw,m,σ,ϵ,ϵ_ab,bondvol)
+    
+    sites = SiteParam(namevec,[empty_str],PackedVectorsOfVectors.pack(empty_nested_int),empty_nested_int,empty_str,empty_nested_int,empty_str,empty_str,nothing)
+    return PCSAFT{BasicIdeal,T}(namevec,sites,param,BasicIdeal(),AssocOptions(),empty_str)
+end
+
+function test_f(x)
+    eps,sigma,segment = x[1],x[2],x[3]
+    model = fast_pcsaft1(100*eps,sigma*1e-10,segment)
+    p,vl,vv = saturation_pressure(model,140.15)
+    return p
 end

@@ -90,4 +90,6 @@ function sCPA(components;
         assoc_options = assoc_options)
 end
 
+default_locations(::typeof(sCPA)) = ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]
+
 export sCPA

@@ -130,7 +130,7 @@ end
 function tpd_cache end
 
 function tp_flash_multi_cache(model,p,T,z)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     _tpd_cache = tpd_cache(model,p,T,z)
 
     F_cache = zeros(Base.promote_eltype(model,p,T,z),length(z))
@@ -418,7 +418,6 @@ function RR_t!(t,x,β,np,nc)
     for l in 1:(np - 1)
         Kl = viewn(x,nc,l)
         βl = β[l]
-        fi = zero(βl)
         for i in 1:nc
             #K at phase i
             t[i] += βl*expm1(Kl[i])
@@ -1057,7 +1056,7 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
     return (1-βi),x3,v3,βi,w,vw,dgi
 end
 
-function split_phase_k(model,p,T,z,K = nothing,vz = volume(model,p,T,z),pures = split_model(model))
+function split_phase_k(model,p,T,z,K = nothing,vz = volume(model,p,T,z),pures = split_pure_model(model))
     #split phase via K values.
     if isnothing(K)
         Ki = suggest_K(model,p,T,z,pures)

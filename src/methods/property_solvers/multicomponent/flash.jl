@@ -35,6 +35,9 @@ end
 Base.show(io::IO,::MIME"text/plain",options::FlashData) = show_as_namedtuple(io,options)
 Base.show(io::IO,options::FlashData) = show_as_namedtuple(io,options)
 
+Solvers.primalval(data::FlashData) = FlashData(primalval(data.p),primalval(data.T),primalval(data.g))
+Solvers.primalval(result::FlashResult) = FlashResult(primalval.(result.compositions),primalval(result.fractions),primalval(result.volumes),primalval(result.data))
+
 function FlashData(p::R1,T::R2,g::R3) where{R1,R2,R3}
     if g === nothing
         FlashData(p,T)
@@ -163,7 +166,7 @@ end
 """
     eachphase(result::FlashResult)
 
-Iterates over the values of (V,T,z,β) for each phase. 
+Iterates over the values of (V,T,z,β) for each phase.
 """
 function eachphase(x::FlashResult)
     return Iterators.zip(x.volumes,FillArrays.fill(x.data.T,numphases(x)),x.compositions,x.fractions)
@@ -175,7 +178,7 @@ volume(state::FlashResult) = dot(state.fractions,state.volumes)
 molar_density(state::FlashResult) = sum(state.fractions)/volume(state)
 
 pressure(model::EoSModel,state::FlashResult) = pressure(state)
-temperature(model::EoSModel,state::FlashResult) = temperature(state) 
+temperature(model::EoSModel,state::FlashResult) = temperature(state)
 volume(model::EoSModel,state::FlashResult) = volume(state)
 molar_density(model::EoSModel,state::FlashResult) = molar_density(state)
 
@@ -210,13 +213,68 @@ for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
             function $prop(model::EoSModel,state::FlashResult)
                 res = zero(Base.promote_eltype(model,state))
                 for (vi,T,xi,βi) in eachphase(state)
-                    res += βi*VT.$prop(model,vi,T,xi)
+                    res += βi*VT0.$prop(model,vi,T,xi)
                 end
+                return res
+            end
+
+            function $prop(model::EoSModel,state::FlashResult, i::Integer)
+                res = zero(Base.promote_eltype(model,state))
+                vi,T,xi,βi = state.volumes[i],state.data.T,state.compositions[i],state.fractions[i]
+                res += βi*VT0.$prop(model,vi,T,xi)
                 return res
             end
         end
     end
 
+function assert_only_phase_index(state::FlashResult)
+    np = numphases(state)
+    if isone(np)
+        return 1
+    elseif np > 1 #on some systems, there could be multiple phases, but only one fraction is nonzero
+        βmax,imax = findmax(state.fractions)
+        isfinite(βmax) || return imax #non finite value, return NaN, it will fail anyway.
+        ∑β = sum(state.fractions)
+        if βmax ≈ ∑β && all(>=(0),state.fractions)
+            return imax
+        else
+            return 0
+        end
+    end
+end
+
+@noinline function __multiphase_onephase_function_error(f,np,p,T)
+    throw(ArgumentError("The state at p = $p, T = $T has $np phases, it cannot be used to evaluate $f"))
+end
+
+
+
+for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
+    :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
+    :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
+    #higher :derivative :order :properties
+    :fundamental_derivative_of_gas_dynamics,
+    #volume :properties
+    :compressibility_factor,:identify_phase]
+    @eval begin
+        function $prop(model::EoSModel,state::FlashResult)
+            i = assert_only_phase_index(state::FlashResult)
+            T = temperature(state)
+            p = pressure(state)
+            if iszero(i)
+                __multiphase_onephase_function_error($prop,numphases(state),p,T)
+            end
+            
+            x,v = state.compositions[i],state.volumes[i]
+            return VT0.$prop(model,v,T,x)
+        end
+
+        function $prop(model::EoSModel,state::FlashResult, i::Int)
+            x,v = state.compositions[i],state.volumes[i]
+            return VT0.$prop(model,v,T,x)
+        end
+    end
+end
 
 function _multiphase_gibbs(model,p,T,result)
     if result isa FlashResult
@@ -263,7 +321,7 @@ function split_phase!(result::FlashResult,i::Integer,wj,βj,vj)
     wi0 .= wi0 .-  βj .* _wj
     @show wi0
     wi0 ./= sum(wi0)
-    
+
     return result
 end
 
@@ -329,7 +387,7 @@ end
 """
     FlashMethod <: ThermodynamicMethod
 
-Abstract type for flash routines. 
+Abstract type for flash routines.
 
 to add a new method, it is necessary to define the following functions, depending on the type of supported flash:
 
@@ -337,7 +395,7 @@ to add a new method, it is necessary to define the following functions, dependin
 - P-H Flash: `ph_flash_impl(model,p,h,n,method)`
 - P-S Flash: `ps_flash_impl(model,p,s,n,method)`
 
-If the flash method supports more than 2 phases, then it requires defining `numphases(method)` 
+If the flash method supports more than 2 phases, then it requires defining `numphases(method)`
 If the method accept component-dependent inputs, it should also define `index_reduction(method,nonzero_indices)`
 """
 abstract type FlashMethod <: ThermodynamicMethod end
@@ -356,7 +414,7 @@ numphases(result::FlashResult) = length(result.compositions)
 """
     supports_reduction(method::FlashMethod)::Bool
 
-Checks if a Flash method supports index reduction (the ability to prune model components with compositions lower than a threshold). 
+Checks if a Flash method supports index reduction (the ability to prune model components with compositions lower than a threshold).
 All current Clapeyron.jl methods support index reduction, but some methods that alllow passing a cache could have problems.
 """
 supports_reduction(method::FlashMethod) = true
@@ -369,6 +427,123 @@ is_unknown(method::FlashMethod) = is_unknown(method.equilibrium)
     np = numphases(result)
     s = np == 1 ? "" : "s"
     throw(ArgumentError("$method does not support an input with $np phase$s as an initial point. Got the following input: \n\n $result"))
+end
+
+function tp_flash_1phase(model,p,T,z,result_primal)
+    if has_dual(model) || has_dual(p) || has_dual(T) || has_dual(z)
+        n1 = similar(z,Base.promote_eltype(model,p,T,z))
+        β = similar(n1,1)
+        v1 = similar(β)
+        ∑z = sum(z)
+        β[1] = ∑z
+        n1 .= z
+        n1 ./= ∑z
+        v1[1] = volume_ad(model,result_primal.volumes[1],T,n1,p)
+        nx = [n1]
+        result = FlashResult(nx,β,v1,FlashData(p,T))
+        if data_primal.g isa Number && !isnan(data_primal.g)
+            return FlashResult(model,p,T,nx,β,vols,sort = false)
+        end
+        return FlashResult(nx,β,vols,FlashData(p,T))
+    else
+        return result_primal
+    end
+end
+
+function tp_flash_ad(model,p,T,z,result_primal)
+    if has_dual(model) || has_dual(p) || has_dual(T) || has_dual(z)
+        data_primal = result_primal.data
+        T_primal,p_primal = data_primal.T,data_primal.p
+        v_primal = result_primal.volumes
+        np,nc = numphases(result_primal),length(model)
+
+        if np == 1
+            return tp_flash_1phase(model,p,T,z,result_primal)
+        end
+
+        comps_primal = result_primal.compositions
+        β_primal = result_primal.fractions
+        βmax,jmax = findmax(β_primal) #find biggest fraction, use that as an anchor to update the rest of compositions
+        v1_primal = v_primal[jmax]
+        w1 = comps_primal[jmax]
+        ∂ϕ1 = ∂lnϕ_cache(model, p_primal, T_primal, w1, Val{true}())
+        ∂ϕj = ∂lnϕ_cache(model, p_primal, T_primal, w1, Val{true}())
+        lnϕ1, ∂lnϕ∂n1, ∂lnϕ∂P1, ∂lnϕ∂T1, _ = ∂lnϕ∂n∂P∂T(model,p_primal,T_primal,w1,∂ϕ1,vol0 = v1_primal)
+        ∂lnϕ∂n1 .-= 1/βmax
+        for i in 1:nc
+            ∂lnϕ∂n1[i,i] += 1/(w1[i]*βmax)
+        end
+        Hcache = similar(∂lnϕ∂n1)
+        piv = zeros(Int,nc)
+        s = similar(lnϕ1)
+       
+        n1 = similar(w1,Base.promote_eltype(model,p,T,z))
+        vols = similar(n1)
+        β = similar(n1)
+        n1 .= primalval.(z)
+        nx = fill(n1,0)
+        for j in 1:np
+            wj = comps_primal[j]
+            vj_primal = v_primal[j]
+            βj = β_primal[j]
+            if j != jmax
+                nj = similar(n1)
+                nj .= wj .* βj
+                lnϕj, ∂lnϕ∂nj, ∂lnϕ∂Pj, ∂lnϕ∂Tj, _ = ∂lnϕ∂n∂P∂T(model,p_primal,T_primal,wj,∂ϕj,vol0 = vj_primal)
+                ∂lnϕ∂nj .-= 1/βj
+                for i in 1:nc
+                    ∂lnϕ∂nj[i,i] += 1/(wj[i]*βj)
+                end
+
+                H = ∂lnϕ∂nj
+                H .+= ∂lnϕ∂n1
+                Hcache .= H
+                
+                #∂ϕxj = eye./nj .- 1/βj.+ ∂lnϕ∂nxj/βj
+                #∂ϕx1 = eye./n1 .- 1/β1 .+ ∂lnϕ∂ny/β1
+                #H .= ∂ϕxj .+ ∂ϕx1
+
+                if has_dual(p)
+                    Hcache .= H
+                    lu = Solvers.unsafe_LU!(Hcache,piv)
+                    s .= ∂lnϕ∂Pj .- ∂lnϕ∂P1
+                    ldiv!(lu,s)
+                    nj .-= (p - p_primal) .* s
+                end
+
+                if has_dual(T)
+                    Hcache .= H
+                    lu = Solvers.unsafe_LU!(Hcache,piv)
+                    s .= ∂lnϕ∂Tj .- ∂lnϕ∂T1
+                    ldiv!(lu,s)
+                    dwjdT = H\(∂lnϕ∂Tj .- ∂lnϕ∂T1)
+                    nj .-= (T - T_primal) .* s
+                end
+                n1 .-= nj
+                nj ./= sum(nj)
+                vols[j] = volume_ad(model,vj_primal,T,nj,p)
+                push!(nx,nj)
+            else
+                push!(nx,n1)
+            end
+        end
+        n1./= sum(n1)
+
+        vols[jmax] = volume_ad(model,v_primal[jmax],T,n1,p)
+        for j in 1:np
+            wj = comps_primal[j]
+            vj_primal = v_primal[j]
+        end
+
+        result = FlashResult(nx,β,vols,FlashData(p,T))
+        if data_primal.g isa Number && !isnan(data_primal.g)
+            return FlashResult(model,p,T,nx,β,vols,sort = false)
+        end
+        return FlashResult(nx,β,vols,FlashData(p,T))
+        
+    else
+        return result_primal
+    end
 end
 
 include("flash/general_flash.jl")

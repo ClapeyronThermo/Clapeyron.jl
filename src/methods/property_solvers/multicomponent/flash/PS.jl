@@ -14,7 +14,7 @@ All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
  Outputs:
  - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
 """
-function ps_flash(model::EoSModel,p,s,z;kwargs...)
+function ps_flash(model::EoSModel,p,s,z = SA[1.0];kwargs...)
     method = init_preferred_method(ps_flash,model,kwargs)
     return ps_flash(model,p,s,z,method)
 end

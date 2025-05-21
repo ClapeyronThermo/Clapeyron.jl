@@ -220,12 +220,17 @@ function x0_volume_liquid(model::MultiFluid,p,T,z)
     for (i,pure) in pairs(model.pures)
         v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
     end
-    return v0
+    p0 = pressure(model,v0,T,z)
+    if p0 >= p
+        return v0
+    else
+        return volume_bracket_refine(model,p,T,z,v0,lb_volume(model,T,z))
+    end
 end
 
 function wilson_k_values!(K,model::MultiFluid,p,T,crit = nothing)
     n = length(model)
-    pure = split_model.(model)
+    pure = model.pures
     _Tc = model.params.Tc.values
     _Pc = model.params.Pc.values
     for i ∈ 1:n
@@ -233,10 +238,19 @@ function wilson_k_values!(K,model::MultiFluid,p,T,crit = nothing)
         Tc,pc = _Tc[i],_Pc[i]
         ps = first(saturation_pressure(pure_i,0.7*Tc))
         ω = -log10(ps/pc) - 1.0
-        K[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
+        K[i] = exp(log(pc/p)+ 5.3726985503194395*(1+ω)*(1-Tc/T))  #5.37 = log(10)*7/3
     end
     return K
 end
+
+function split_pure_model(model::MultiFluid,splitter)
+    pure_splitter = only.(splitter)
+    model.pures[pure_splitter]
+end
+
+split_pure_model(model::MultiFluid,splitter::Int) = [model.pures[splitter]]
+split_pure_model(model::MultiFluid,splitter::AbstractVector{<:Integer}) = model.pures[splitter]
+
 
 #set reference states:
 reference_state(model::MultiFluid) = model.params.reference_state
@@ -256,17 +270,17 @@ function set_reference_state_empiric!(model;verbose = false)
     initialize_reference_state!(model,ref)
     pures = model.pures
     if all(iszero,ref.z0) #pure case
-        pure_refs = split_model(ref,(SA[i] for i ∈ 1:length(model)))
+        pure_refs = split_model(ref,1:length(model))
         _set_reference_state!.(pures,SA[1.0],pure_refs)
         ref.a0 .= only.(getfield.(pure_refs,:a0))
-        ref.a1 .= only.(getfield.(pure_refs,:a1))  
+        ref.a1 .= only.(getfield.(pure_refs,:a1))
     else
         _set_reference_state!(model,ref.z0)
     end
     for (i,pure) in pairs(pures)
         ref_a = pure.ideal.ref_a
         ref_a[1] = pure_refs[i].a0[1]
-        ref_a[2] = pure_refs[i].a1[1] 
+        ref_a[2] = pure_refs[i].a1[1]
     end
     return model
 end

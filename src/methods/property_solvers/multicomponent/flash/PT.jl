@@ -21,12 +21,12 @@ Outputs - Tuple containing:
  - nᵢⱼ, Array of mole numbers of species j in phase i, [mol]
  - G, Gibbs Free Energy of Equilibrium Mixture [J]
 """
-function tp_flash(model::EoSModel, p, T, n; kwargs...)
+function tp_flash(model::EoSModel, p, T, n = SA[1.0]; kwargs...)
     method = init_preferred_method(tp_flash,model,kwargs)
     return tp_flash(model, p, T, n, method)
 end
 
-function tp_flash(model::EoSModel, p, T, n,method::FlashMethod)
+function tp_flash(model::EoSModel, p, T, n, method::FlashMethod)
     result = tp_flash2(model, p, T, n,method)
     return tp_flash2_to_tpflash(model,p,T,n,result)
 end
@@ -77,7 +77,12 @@ function tp_flash2(model::EoSModel, p, T, n,method::FlashMethod)
     end
     ∑n = sum(n_r)
     z_r = n_r ./ ∑n
-    result = tp_flash_impl(model_r,p,T,z_r,method_r)
+    if has_a_res(model)
+        result_primal = tp_flash_impl(primalval(model_r),primalval(p),primalval(T),primalval(z_r),method_r)
+        result = tp_flash_ad(model_r,p,T,z_r,result_primal)
+    else
+        result = tp_flash_impl(model_r,p,T,z_r,method_r)
+    end
     if !issorted(result.volumes)
         #this is in case we catch a bad result.
         result = FlashResult(result)

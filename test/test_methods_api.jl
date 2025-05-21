@@ -77,6 +77,9 @@ end
     @test Clapeyron.X(fluid,v,160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
     #test with bigfloat, we check that all temporary association storage is correctly initialized
     @test Clapeyron.X(fluid,big(v),160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
+
+    K = [0.0 244.24071691762867 0.0 3.432863727098509; 244.24071691762867 0.0 3.432863727098509 0.0; 0.0 2.2885758180656732 0.0 0.0; 2.2885758180656732 0.0 0.0 0.0]
+    @test Clapeyron.assoc_matrix_solve(K) ≈ [0.0562461981664357, 0.0562461981664357, 0.8859564211875895, 0.8859564211875895]
 end
 
 using EoSSuperancillaries
@@ -85,18 +88,32 @@ Clapeyron.use_superancillaries!(false)
 
 if isdefined(Base,:get_extension)
     @testset "Superancillaries.jl" begin
+        
         pc = PCSAFT("eicosane")
+        pc2 = pharmaPCSAFT("oxygen")
         cubic = tcPR(["water"])
+        
         crit_pc = crit_pure(pc)
         sat_cubic = saturation_pressure(cubic,373.15)
+        sat_pc2 = saturation_pressure(pc2,150.0)
+        
         Clapeyron.use_superancillaries!(true)
+        
         crit_sa_pc = crit_pure(pc)
         sat_sa_cubic = saturation_pressure(cubic,373.15)
+        sat_sa_pc2 = saturation_pressure(pc2,150.0)
+
         @test crit_pc[1] ≈ crit_sa_pc[1] rtol = 1e-6
         @test crit_pc[3] ≈ crit_sa_pc[3] rtol = 1e-6
+        
         @test sat_cubic[1] ≈ sat_sa_cubic[1] rtol = 1e-6
         @test sat_cubic[2] ≈ sat_sa_cubic[2] rtol = 1e-6
         @test sat_cubic[3] ≈ sat_sa_cubic[3] rtol = 1e-6
+        
+        @test sat_pc2[1] ≈ sat_sa_pc2[1] rtol = 1e-6
+        @test sat_pc2[2] ≈ sat_sa_pc2[2] rtol = 1e-6
+        @test sat_pc2[3] ≈ sat_sa_pc2[3] rtol = 1e-6
+
     end
 end
 

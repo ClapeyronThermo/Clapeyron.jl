@@ -1,68 +1,70 @@
 """
-det_22(a,b,c,d)
+    det_22(a,b,c,d)
 
 Calculates `a*b - c*d` with less rounding error than doing it naively
 """
 function det_22(a,b,c,d)
-t = c*d
-e = muladd(c,d,-t) #cd - cd
-f = muladd(a,b,-t) #ab - cd
-return f-e  #ab - cd + cd - cd
+    t = c*d
+    e = muladd(c,d,-t) #cd - cd
+    f = muladd(a,b,-t) #ab - cd
+    return f-e  #ab - cd + cd - cd
 end
 
 function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
-tup = (poly[1],poly[2],poly[3],poly[4])
-return solve_cubic_eq(tup)
+    tup = (poly[1],poly[2],poly[3],poly[4])
+    return solve_cubic_eq(tup)
 end
 
 function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
-# copied from PolynomialRoots.jl, adapted to be AD friendly
-# Cubic equation solver for complex polynomial (degree=3)
-# http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
-# poly = (a,b,c,d) that represents a + bx + cx3 + dx4
+    # copied from PolynomialRoots.jl, adapted to be AD friendly
+    # Cubic equation solver for complex polynomial (degree=3)
+    # http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
+    # poly = (a,b,c,d) that represents a + bx + cx3 + dx4
 
-_1 = one(T)
-third = _1/3
-a1  = complex(one(T) / poly[4])
-E1  = -poly[3]*a1
-E2  = poly[2]*a1
-E3  = -poly[1]*a1
-s0  = E1
-E12 = E1*E1
-A   = det_22(2*E1,E12,9*E1,E2) + 27*E3
-#A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
-B = det_22(E1,E1,3,E2)
-#B   = E12 - 3*E2                 # = s1 s2
-# quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
-Δ2 = det_22(A,A,4*B*B,B)
-Δ = Base.sqrt(Δ2)
-#Δ = (A*A - 4*B*B*B)^0.5
-if real(conj(A)*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
-    s1 = exp(log(0.5 * (A + Δ)) * third)
-else
-    s1 = exp(log(0.5 * (A - Δ)) * third)
-end
-if s1 == 0
-    s2 = s1
-else
-    s2 = B / s1
-end
-zeta1 = complex(-0.5, sqrt(T(3.0))*0.5)
-zeta2 = conj(zeta1)
-return (third*(s0 + s1 + s2), third*(s0 + s1*zeta2 + s2*zeta1), third*(s0 + s1*zeta1 + s2*zeta2))
+    _1 = one(T)
+    third = _1/3
+    a1  = complex(one(T) / poly[4])
+    E1  = -poly[3]*a1
+    E2  = poly[2]*a1
+    E3  = -poly[1]*a1
+    s0  = E1
+    E12 = E1*E1
+    A   = det_22(2*E1,E12,9*E1,E2) + 27*E3
+    #A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
+    B = det_22(E1,E1,3,E2)
+    #B   = E12 - 3*E2                 # = s1 s2
+    # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
+    Δ2 = det_22(A,A,4*B*B,B)
+    Δ = Base.sqrt(Δ2)
+    #Δ = (A*A - 4*B*B*B)^0.5
+    if real(conj(A)*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
+        s1 = exp(log(0.5 * (A + Δ)) * third)
+    else
+        s1 = exp(log(0.5 * (A - Δ)) * third)
+    end
+    if s1 == 0
+        s2 = s1
+    else
+        s2 = B / s1
+    end
+    zeta1 = complex(-0.5, sqrt(T(3.0))*0.5)
+    zeta2 = conj(zeta1)
+    return (third*(s0 + s1 + s2), third*(s0 + s1*zeta2 + s2*zeta1), third*(s0 + s1*zeta1 + s2*zeta2))
 end
 
 """
-roots3(pol)
-solves a cubic equation of the form pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3
+    roots3(pol)
+
+Solves a cubic equation of the form pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3
 """
 function roots3(pol)
-return SVector(solve_cubic_eq(pol))
+    a,b,c,d = pol[1],pol[2],pol[3],pol[4]
+    return SVector(solve_cubic_eq((a,b,c,d)))
 end
 
 function roots3(a,b,c,d)
-x = (a,b,c,d)
-return roots3(x)
+    x = (a,b,c,d)
+    return roots3(x)
 end
 
 """
@@ -103,14 +105,25 @@ function real_roots3(pol::NTuple{4,T}) where {T<:Real}
         end
     end
 end
+
 real_roots3(a,b,c,d) = real_roots3((a,b,c,d))
+
+"""
+    polyder(poly)
+
+returns the coefficients of the derivative of the polynomial.
+
+"""
+function polyder(x::NTuple{N,T}) where {N,T}
+    return ntuple(i->x[i+1]*i,Val{N-1}())
+end
 
 #we suppose that there is a translation: xx = x + x0
 function hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
     #Δx0 = x - x0
     #Δx1 = x - x1
     Δx10 = (x1 - x0)
-   # Δx03 = Δx0^3
+    #Δx03 = Δx0^3
 
     Δx102 = Δx10^2
     divx = 1/Δx10
@@ -135,15 +148,18 @@ end
 #0.00012669209195135698, 9.69556e-5 + 0.00012669209195135698
 """
     hermite5_poly(f,x0,x1)
+    hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
 
 Returns a quintic hermite polynomial, that interpolates `f` between `x0` and `x1`, using first and second derivative information.
-the polynomial is translated, so that the zero is at `x0`.
+The polynomial is translated, so that the zero is at `x0`.
 
 ## Example
 ```
-poly = hermite5_poly(f,x0,x1)
-evalpoly(0.0,poly) == f(x0)
-evalpoly(x1 - x0,poly) == f(x1)
+f(x) = exp(0.2 + 3/x)
+x0,x1 = 0.2,0.3
+poly = hermite3_poly(f,x0,x1)
+evalpoly(0.0,poly) ≈ f(x0) #true
+evalpoly(x1 - x0,poly) ≈ f(x1) #true
 ```
 """
 function hermite5_poly(f,x0,x1)
@@ -152,12 +168,40 @@ function hermite5_poly(f,x0,x1)
     return hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
 end
 
-"""
-    polyder(poly)
-
-returns the coefficients of the derivative of the polynomial.
 
 """
-function polyder(x::NTuple{N,T}) where {N,T}
-    return ntuple(i->x[i+1]*i,Val{N-1}())
+    hermite3_poly(f,x0,x1)
+    hermite3_poly(x0,x1,f0,f1,df0,df1)
+
+Returns a cubic hermite polynomial, that interpolates `f` between `x0` and `x1`, using first derivative information.
+The polynomial is translated, so that the zero is at `x0`.
+
+## Example
+```
+f(x) = exp(0.2 + 3/x)
+x0,x1 = 0.2,0.3
+poly = hermite3_poly(f,x0,x1)
+evalpoly(0.0,poly) ≈ f(x0) #true
+evalpoly(x1 - x0,poly) ≈ f(x1) #true
+```
+"""
+function hermite3_poly(x0,x1,f0,f1,df0,df1)
+    #=
+    (2t3 - 3t2 + 0t + 1)f0 +
+    (1t3 - 2t2 + 1t + 0)df0 +
+    (-2t3 +3t2 + 0t + 0)f1 +
+    (1t3 - 1t2 + 0t +  0)df1
+    =#
+    Δx⁻¹ = 1/(x1 - x0)
+    p0 = f0
+    p1 = df0*Δx⁻¹
+    p2 = (-3*f0 -2*df0 + 3*f1 - 1*df1)*Δx⁻¹*Δx⁻¹
+    p3 = (2*f0 + df0 -2*f1 + df1)*Δx⁻¹*Δx⁻¹*Δx⁻¹
+    return (p0,p1,p2,p3)
+end
+
+function hermite3_poly(f,x0,x1)
+    f0,df0 = f∂f(f,x0)
+    f1,df1 = f∂f(f,x1)
+    return hermite3_poly(x0,x1,f0,f1,df0,df1)
 end

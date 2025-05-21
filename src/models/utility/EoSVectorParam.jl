@@ -6,7 +6,7 @@ struct EoSVectorParam{T} <: EoSModel
 end
 
 function EoSVectorParam(model::EoSModel,components = model.components)
-    pure = split_model(model,1:length(components))
+    pure = split_pure_model(model,1:length(components))
     if has_reference_state(model)
         ref = nothing
     else
@@ -49,7 +49,7 @@ end
 function recombine_impl!(model::EoSVectorParam)
     recombine!(model.model)
     if is_splittable(model.model)
-        model.pure .= split_model(model.model)
+        model.pure .= split_pure_model(model.model)
     else
         model.pure .= model.model
     end
@@ -76,4 +76,8 @@ end
 
 function volume_impl(model::EoSVectorParam,p,T,z,phase,threaded,vol0)
     return volume_impl(model.model,p,T,z,phase,threaded,vol0)
+end
+
+function promote_model(::Type{T},model::EoSVectorParam) where T <: Number
+    return EoSVectorParam(model.components,promote_model(T,model.model),promote_model(T,model.pure),model.reference_state)
 end

@@ -22,9 +22,22 @@ struct SimpleAlphaParam <: EoSParam
     acentricfactor::SingleParam{Float64}
 end
 
+struct CPAAlphaParam <: EoSParam
+    c1::SingleParam{Float64}
+end
+
 function can_build_alpha_w(::Type{T}) where T <: AlphaModel
     if hasfield(T,:params)
         if fieldtype(T,:params) == SimpleAlphaParam
+            return true
+        end
+    end
+    return false
+end
+
+function can_build_alpha_cpa(::Type{T}) where T <: AlphaModel
+    if hasfield(T,:params)
+        if fieldtype(T,:params) == CPAAlphaParam
             return true
         end
     end
@@ -41,11 +54,16 @@ end
 
 can_build_alpha_w(T) = false
 
-function init_alphamodel(alpha,components,w = nothing,userlocations = String[],verbose = [])
+function init_alphamodel(alpha,components,params,userlocations = String[],verbose = [])
     #Base.Callable = Union{Type,Function}
+    w = get(params,"acentricfactor",nothing)
+    c1 = get(params,"c1",nothing)
     if alpha isa Base.Callable && alpha <: AlphaModel
         if can_build_alpha_w(alpha) && w !== nothing && isempty(userlocations)
             param = SimpleAlphaParam(w)
+            return alpha(format_components(components),param,default_references(typeof(alpha)))
+        elseif can_build_alpha_cpa(alpha)  && w !== nothing && isempty(userlocations)
+            param = CPAAlphaParam(c1)
             return alpha(format_components(components),param,default_references(typeof(alpha)))
         end
     end

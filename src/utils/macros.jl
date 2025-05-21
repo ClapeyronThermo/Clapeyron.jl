@@ -518,39 +518,26 @@ function init_model(f::Function,components,userlocations = String[],verbose = fa
     end
     return f(components;userlocations,verbose,reference_state)
 end
-"""
-    init_electrolyte_model(model::EoSModel,components,userlocations=String[],verbose = false)
-    init_electrolyte_model(::Type{𝕄},components,userlocations=String[],verbose = false) where 𝕄 <: EoSModel
 
-Utility for building simple models. if a model instance is passed, it will return that instance.
-otherwise, it will build the model from the input components and user locations.
-
-It is normally used for models that don't have additional submodels (like ideal models)
-or when such submodels are not used at all (like the pure model part of an Activity model when used in an Advanced mixing rule Cubic model)
-
-
-"""
-function init_electrolyte_model(model::EoSModel,solvents,ions,userlocations=String[],verbose = false)
-    return model
+macro initmodel(modelexpr)
+    model = initmodel_macro(modelexpr)
+    return quote
+        if $model isa EoSModel || $model === nothing
+            $model
+        else
+            $modelexpr
+        end
+    end |> esc
 end
 
-function init_electrolyte_model(::Nothing,solvents,ions,userlocations=String[],verbose = false)
-    return nothing
-end
-
-function init_electrolyte_model(::Type{𝕄},solvents,ions,userlocations=String[],verbose = false) where  𝕄 <: EoSModel
-    if verbose
-        @info "Building an instance of $(info_color(string(𝕄))) with components $components"
+function initmodel_macro(expr::Expr)
+    if expr.head == :call
+        return expr.args[1]
+    else
+        throw(error("invalid argument to @initmodel macro"))
     end
-    return 𝕄(solvents, ions;userlocations,verbose)
 end
 
-function init_electrolyte_model(f::Function,solvents,ions,userlocations=String[],verbose = false)
-    if verbose
-        @info "building an EoS model, using function $(info_color(string(f))) with components $components"
-    end
-    return f(solvents,ions;userlocations,verbose)
-end
 """
     @registermodel(model)
 
@@ -582,9 +569,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     #parse params from database.
     options = default_getparams_arguments(M,userlocations,verbose)
     if has_groups(M)
-        G = fieldtype(M,:groups)
-
-        groups = G(format_gccomponents(components),default_gclocations(M);group_userlocations,verbose)
+        groups = GroupParam(format_gccomponents(components),default_gclocations(M);group_userlocations,verbose)
         params_in = getparams(groups, default_locations(M),options)
         result[:groups] = groups
     else

@@ -148,7 +148,7 @@ function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
     elseif model.liquid === nothing && model.gas !== nothing
         return _1*volume_impl(model.gas,p,T,z,phase,threaded,vol0)
     end
-    
+
     nan = _0/_0
     if is_liquid(phase)
         return volume(model.liquid, p, T, z; phase, threaded, vol0)
@@ -244,35 +244,61 @@ function init_preferred_method(method::typeof(tp_flash),model::FluidCorrelation,
     RRTPFlash(;kwargs...)
 end
 
+function init_preferred_method(method::typeof(tp_flash),model::FluidCorrelation{<:IdealModel},kwargs)
+    RRTPFlash(;nacc = 0,kwargs...)
+end
+
 __tpflash_cache_model(model::FluidCorrelation,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
 function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
-    satmodels = split_model(model.saturation)
-    gases = split_model(model.gas,1:length(model))
-    sats = saturation_pressure.(satmodels,T)
-    vv_pure = last.(sats)
+    fluidmodel = model.gas
+    #check that we can actually solve the equilibria
+    pures = split_pure_model(fluidmodel,default_splitter(model))
+    satpures = split_pure_model(model.saturation,default_splitter(model))
     RT = R̄*T
-    p_pure = first.(sats)
-    μpure = only.(VT_chemical_potential_res.(gases,vv_pure,T))
-    ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
-    g_pure = [VT_gibbs_free_energy(gases[i],sats[i][2],T) for i in 1:length(model)]
-    return PTFlashWrapper(model.components,model,sats,ϕpure,μpure,equilibrium)
+    if fluidmodel isa IdealModel
+        vv = RT/p
+        nan = zero(vv)/zero(vv)
+        sats = saturation_pressure.(satpures,T)
+        ϕpure = fill(one(vv),length(model))
+        g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv,T) for i in 1:length(model)]
+        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
+    else
+        sats = saturation_pressure.(satpures,T)
+        vv_pure = last.(sats)
+        p_pure = first.(sats)
+        μpure = only.(VT_chemical_potential_res.(gas_model.(pures),vv_pure,T))
+        ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
+        g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
+        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
+    end
 end
 
-function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
+function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,vols,phases,non_inw,cache = nothing)
+    volx,voly = vols
+    phasex,phasey = phases
+    non_inx,non_iny = non_inw
     model = wrapper.model
     sats = wrapper.sat
     #crits = wrapper.crit
     fug = wrapper.fug
     RT = R̄*T
     volx = volume(model.liquid, p, T, x, phase = phasex, vol0 = volx)
-    lnϕy, voly = lnϕ(gas_model(model), p, T, y; phase=phasey, vol0=voly)
+    gasmodel = gas_model(model)
+    lnϕy, voly = lnϕ(gas_model(model), p, T, y, cache; phase=phasey, vol0=voly)
+    is_ideal = gasmodel isa IdealModel
     if is_vapour(phasey)
         for i in eachindex(lnK)
-            if iny[i]
+            if non_inx[i]
+                lnK[i] = Inf
+            elseif non_iny[i]
+                lnK[i] = -Inf
+            else
                 ϕli = fug[i]
                 p_i = sats[i][1]
-                lnK[i] = log(p_i*ϕli/p) - lnϕy[i] + volx*(p - p_i)/RT
+                lnKi = log(p_i*ϕli/p) - lnϕy[i]
+                !is_ideal && (lnKi += volx*(p - p_i)/RT) #add poynting corrections only if the fluid model itself has non-ideal corrections
+                lnK[i] = lnKi
             end
         end
     else
@@ -280,6 +306,11 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,
     end
     return lnK,volx,voly,NaN*one(T+p+first(x))
 end
+
+function ∂lnϕ_cache(model::PTFlashWrapper{FluidCorrelation{<:IdealModel}}, p, T, z, dt::Val{B}) where B
+    return nothing
+end
+
 
 function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,eq)
     return NaN*one(T+p+first(x))

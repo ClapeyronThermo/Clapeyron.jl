@@ -83,22 +83,6 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     else
         model_y = nothing
     end
-
-    Ts = isnothing(model_y) ? T_scales(model) : T_scales(model_y)
-
-    if T > 0.9minimum(Ts) && method.ss
-        converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,(vl,vv),true,true,volatiles)
-        p,T,x,y,vol,lnK = res
-        volx,voly = vol
-        if converged
-            return p,volx,voly,index_expansion(y,volatiles)
-        elseif isnan(volx) || isnan(voly)
-            return p,volx,voly,index_expansion(y,volatiles)
-        else
-            y0 = y
-            vl,vv = vol
-        end
-    end
     ηl = η_from_v(model, vl, T, x)
     ηv = η_from_v(model, model_y, vv, T, y0)
     _,idx_max = findmax(y0)
@@ -214,21 +198,6 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
         y0 = y0[volatiles]
     else
         model_y = nothing
-    end
-    Ps = isnothing(model_y) ? p_scale(model,y0) : p_scale(model_y,y0)
-    if log(p) > 0.9log(Ps) && method.ss
-        converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,(vl,vv),true,false,volatiles)
-        p,T,x,y,vol,lnK = res
-        volx,voly = vol
-        if converged
-            return T,volx,voly,index_expansion(y,volatiles)
-        elseif isnan(volx) || isnan(voly)
-            return T,volx,voly,index_expansion(y,volatiles)
-        else
-            y0 = y
-            vl,vv = vol
-            T0 = T
-        end
     end
     ηl = η_from_v(model, vl, T0, x)
     ηv = η_from_v(model, model_y, vv, T0, y0)

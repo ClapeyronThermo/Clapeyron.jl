@@ -200,7 +200,7 @@ function Compressed4DMatrix(vals::AbstractVector,idxs::AbstractVector)
 end
 
 function Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
-    if !unsafe
+    if !unsafe && !issorted(zip(ij,ab))
         ijab = [(ij...,ab...) for (ij,ab) in zip(ij,ab)]
         return Compressed4DMatrix(vals,ijab)
     end
@@ -239,6 +239,24 @@ end
 #Base.eltype(m::Compressed4DMatrix{T}) where T = T
 
 Base.setindex!(m::Compressed4DMatrix,val,i::Int) = Base.setindex!(m.values,val,i)
+
+function Base.copyto!(dest::Compressed4DMatrix,src::Base.Broadcast.Broadcasted) #general, just copies the values, used in a .= f.(a)
+    Base.copyto!(dest.values,src)
+    return dest
+end
+
+function Base.copyto!(dest::Compressed4DMatrix,src::AbstractArray) #general, just copies the values, used in a .= f.(a)
+    Base.copyto!(dest.values,src)
+    return dest
+end
+
+function Base.copyto!(dest::Compressed4DMatrix,src::Compressed4DMatrix) #specific
+    n = length(src.values)
+    copyto!(resize!(dest.values,n),src.values)
+    copyto!(resize!(dest.inner_indices,n),src.inner_indices)
+    copyto!(resize!(dest.outer_indices,n),src.outer_indices)
+    return dest
+end
 
 struct AssocView{T,V<:Compressed4DMatrix{T},I} <: AbstractMatrix{T}
     values::V
@@ -388,5 +406,11 @@ end
 function Solvers.primalval(x::Compressed4DMatrix{T}) where T
     vals = x.values
     vals₀ = Solvers.primalval(vals)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
+end
+
+function Solvers.primalval_eager(x::Compressed4DMatrix{T}) where T
+    vals = x.values
+    vals₀ = Solvers.primalval_eager(vals)
     return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
 end

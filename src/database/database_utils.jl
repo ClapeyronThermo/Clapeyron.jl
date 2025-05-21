@@ -111,7 +111,7 @@ flattenfilepaths(locations,userlocations::AbstractString) = flattenfilepaths(loc
 
 getpath(location;relativetodatabase = true) = only(getpaths(location; relativetodatabase))
 
-Base.@nospecialize
+Base.@nospecialize #used when there are custom user locations
 function flattenfilepaths(locations,userlocations)
     return String[]
 end

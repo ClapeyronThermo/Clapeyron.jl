@@ -1,4 +1,11 @@
 function PT_property(model,p,T,z,phase,threaded,vol0,f::F,::Val{UseP}) where {F,UseP}
+    
+    if f == pressure
+        return p
+    elseif f == temperature
+        return T
+    end
+
     if z isa Number
         return PT_property(model,p,T,SA[z],phase,threaded,vol0,f,Val{UseP}())
     end
@@ -467,7 +474,6 @@ function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, thre
     PT_property(model,p,T,z,phase,threaded,vol0,VT_fugacity_coefficient)
 end
 
-
 function fugacity_coefficient!(φ,model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     V = volume(model, p, T, z; phase, threaded, vol0)
     VT_fugacity_coefficient!(φ,model,V,T,z,p)
@@ -609,7 +615,7 @@ The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume
 """
 function reference_chemical_potential(model::EoSModel,p,T,reference = reference_chemical_potential_type(model); phase=:unknown, threaded=true, vol0=nothing)
     if reference == :pure
-        pure = split_model.(model)
+        pure = split_pure_model(model)
         return gibbs_free_energy.(pure, p, T; phase, threaded)
     elseif reference == :aqueous
         idx_w = find_water_indx(model)
@@ -621,7 +627,7 @@ function reference_chemical_potential(model::EoSModel,p,T,reference = reference_
         zref ./= sum(zref)
         return chemical_potential(model, p, T, zref; phase, threaded, vol0)
     elseif reference == :sat_pure_T
-        pure = split_model.(model)
+        pure = split_pure_model(model)
         sat = saturation_pressure.(pure,T)
         vl_pure = getindex.(sat,2)
         return VT_gibbs_free_energy.(pure, vl_pure, T)
@@ -708,7 +714,7 @@ f_mix = f(p,T,z) - ∑zᵢ*f_pureᵢ(p,T)
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function mixing(model::EoSModel, p, T, z, property::ℜ; phase=:unknown, threaded=true, vol0=nothing) where {ℜ}
-    pure = split_model(model)
+    pure = split_pure_model(model)
     TT = typeof(p+T+first(z))
     mix_prop  = property(model, p, T, z; phase, threaded, vol0)
     for i in 1:length(z)
@@ -723,7 +729,7 @@ end
 
 function excess(model::EoSModel, p, T, z, ::typeof(entropy); phase=:unknown, threaded=true, vol0=nothing)
     TT = typeof(p+T+first(z))
-    pure = split_model(model)
+    pure = split_pure_model(model)
     s_mix = entropy_res(model, p, T, z; phase, threaded, vol0)
     for i in 1:length(z)
         s_mix -= z[i]*entropy_res(pure[i], p, T; phase, threaded, vol0)
@@ -734,7 +740,7 @@ end
 
 function excess(model::EoSModel, p, T, z, ::typeof(gibbs_free_energy); phase=:unknown, threaded=true, vol0=nothing)
     TT = typeof(p+T+first(z))
-    pure = split_model(model)
+    pure = split_pure_model(model)
     g_mix = gibbs_free_energy(model, p, T, z; phase, threaded, vol0)
     log∑z = log(sum(z))
     R̄ = Rgas(model)
@@ -759,7 +765,7 @@ where the first component is the solvent and second is the solute.
 """
 function gibbs_solvation(model::EoSModel, T; threaded=true, vol0=(nothing,nothing))
     binary_component_check(gibbs_solvation, model)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     z = [1.0,1e-30]
 
     p,v_l,v_v = saturation_pressure(pure[1],T)
@@ -806,23 +812,6 @@ function _partial_property(model::EoSModel, V, T, z::AbstractVector, VT_prop::F)
     return ∂x∂nᵢ .- ∂x∂V .* ∂p∂nᵢ ./ ∂p∂V
 end
 
-#default
-PT_to_VT(x) = x
-
-for (PTprop,VTprop) in [
-    (:entropy,:VT_entropy),
-    (:enthalpy,:VT_enthalpy),
-    (:internal_energy,:VT_internal_energy),
-    (:gibbs_free_energy,:VT_gibbs_free_energy),
-    (:helmholtz_free_energy,:VT_helmholtz_free_energy),
-    (:isochoric_heat_capacity,:VT_isochoric_heat_capacity),
-    (:isobaric_heat_capacity,:VT_isobaric_heat_capacity)
-    ]
-    @eval begin
-        PT_to_VT(::typeof($PTprop)) = $VTprop
-    end
-end
-
 #first derivative order properties
 export entropy, internal_energy, enthalpy, gibbs_free_energy, helmholtz_free_energy
 export entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
@@ -843,25 +832,19 @@ export mixing, excess, gibbs_solvation, partial_property
 export identify_phase
 
 module PT
-    #first derivative order properties
-    using Clapeyron: entropy, internal_energy, enthalpy, gibbs_free_energy, helmholtz_free_energy
-    using Clapeyron: entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
-    #second derivative order properties
-    using Clapeyron: isochoric_heat_capacity, isobaric_heat_capacity,adiabatic_index
-    using Clapeyron: isothermal_compressibility, isentropic_compressibility, speed_of_sound
-    using Clapeyron: isobaric_expansivity, joule_thomson_coefficient, inversion_temperature
-    #higher derivative order properties
-    using Clapeyron: fundamental_derivative_of_gas_dynamics
-    #volume properties
-    using Clapeyron: mass_density,molar_density, compressibility_factor
-    using Clapeyron: identify_phase
     import Clapeyron
-    pressure(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = p
-    temperature(model, p, T, z=Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = T
+    for prop in Clapeyron.CLAPEYRON_PROPS
+        @eval begin
+            function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+                return Clapeyron.$prop(model,p,T,z;phase,threaded,vol0)
+            end
+        end
+    end
+
     function flash(model,p,T,z = Clapeyron.SA[1.0],args...;kwargs...)
         return Clapeyron.tp_flash2(model,p,T,z,args...;kwargs...)
     end
-end
+end #module
 
 """
     supports_lever_rule(::f)::Bool
@@ -879,5 +862,18 @@ for prop in [:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_f
     :mass_density,:molar_density]
     @eval begin
         supports_lever_rule(::typeof($prop)) = true
+    end
+end
+
+function spec_to_vt end
+
+for prop in CLAPEYRON_PROPS
+    VT_prop = VT_symbol(prop)
+    @eval begin
+        function spec_to_vt(model,V,T,z,spec::typeof($prop))
+            VT0.$prop(model,V,T,z)
+        end
+
+        PT_to_VT(x::typeof($prop)) = $VT_prop
     end
 end

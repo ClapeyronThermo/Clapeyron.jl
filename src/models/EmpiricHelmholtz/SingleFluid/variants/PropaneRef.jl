@@ -86,7 +86,9 @@ function PropaneRef()
     γ = [0.684,0.829,1.419,0.817,1.500,1.426,1.093]
     ε = [1.283,0.6936,0.788,0.473,0.8577,0.271,0.948]
 
-    residual = SingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε)
+    polexpgauss = PolExpGaussTerm(n,t,d,l,ones(length(l)),η,β,γ,ε)
+
+    residual = SingleFluidResidualParam(;polexpgauss)
 
     anc_gas_fn = GenericAncEvaluator([-2.4887,-5.1069,-12.174,-30.495,-52.192,-134.89],[0.3785,1.07,2.7,5.5,10,20],T_c,rho_c,:exp,false)
     anc_liquid_fn = GenericAncEvaluator([1.82205,0.65802,0.21109,0.083973],[0.345,0.74,2.6,7.2],T_c,rho_c,:noexp,false)

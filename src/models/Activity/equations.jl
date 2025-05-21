@@ -131,6 +131,7 @@ function γdγdn(model::ActivityModel,p,T,z)
 end
 
 __act_to_gammaphi(model::ActivityModel) = __act_to_gammaphi(model,nothing,true)
+GammaPhi(model::ActivityModel) = __act_to_gammaphi(model)
 #convert ActivityModel into a RestrictedEquilibriaModel
 function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
     components = model.components

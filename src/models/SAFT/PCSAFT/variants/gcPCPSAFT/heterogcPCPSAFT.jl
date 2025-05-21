@@ -1,21 +1,25 @@
 
 abstract type gcPCPSAFTModel <: PCPSAFTModel end
 
-struct HeterogcPCPSAFTParam <: EoSParam
-    Mw::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    comp_segment::SingleParam{Float64}
-    comp_sigma::PairParam{Float64}
-    comp_epsilon::PairParam{Float64}
-    dipole::SingleParam{Float64}
-    dipole2::SingleParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
+struct HeterogcPCPSAFTParam{T} <: ParametricEoSParam{T}
+    Mw::SingleParam{T}
+    segment::SingleParam{T}
+    sigma::PairParam{T}
+    epsilon::PairParam{T}
+    comp_segment::SingleParam{T}
+    comp_sigma::PairParam{T}
+    comp_epsilon::PairParam{T}
+    dipole::SingleParam{T}
+    dipole2::SingleParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
 end
 
-@newmodelgc HeterogcPCPSAFT gcPCPSAFTModel HeterogcPCPSAFTParam true
+function HeterogcPCPSAFTParam(Mw,m,σ,ϵ,mc,σc,ϵc,μ,μ2,ϵijab,β)
+    return build_parametric_param(HeterogcPCPSAFTParam,Mw,m,σ,ϵ,mc,σc,ϵc,μ,μ2,ϵijab,β)
+end
+
+@newmodelgc HeterogcPCPSAFT gcPCPSAFTModel HeterogcPCPSAFTParam{T} true
 default_references(::Type{HeterogcPCPSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/","properties/molarmass_groups.csv"]
 default_gclocations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_groups.csv","SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_intragroups.csv"]

@@ -408,7 +408,7 @@ function assoc_matrix_x0!(K,X)
 
     X_exact2!(K11,@view(X[1:2]))
     X_exact2!(K22,@view(X[3:4]))
-    if (iszero(K12) & iszero(K21)) | iszero(K11) | iszero(K22)
+    if (iszero(K12) & iszero(K21))
         #solve each association separately, if one of the diagonal association
         #submatrices is zero, then cross-association does not have any sense.
         success = true
@@ -656,7 +656,12 @@ end
 
 #helper function to get the sites. in almost all cases, this is model.sites
 #but SAFTgammaMie uses model.vrmodel.sites instead
+"""
+    getsites(model::EoSModel)
 
+returns the `SiteParam` used in association calculations for the input `model`, if any. Fails if not available. to check if a model has sites, use `has_sites`
+
+"""
 getsites(model) = model.sites
 
 function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
@@ -829,6 +834,18 @@ function X_exact2!(K,X)
     return X
 end
 
+recombine_assoc!(model) = recombine_assoc!(model,model.params.sigma)
+
+function recombine_assoc!(model,sigma)
+    _assoc_options = assoc_options(model)
+    iszero(assoc_pair_length(model)) && return model
+    epsilon_assoc = model.params.epsilon_assoc
+    bondvol = model.params.bondvol
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,_assoc_options,model.sites) #combining rules for association
+    copyto!(model.params.epsilon_assoc,epsilon_assoc)
+    copyto!(model.params.bondvol,bondvol)
+    return model
+end
 #=
 
 =#

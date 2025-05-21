@@ -27,7 +27,6 @@ end
 Convert molality (mol/kg) to composition for a given model, salts, molality, and solvent composition.
 """
 function molality_to_composition(model::ElectrolyteModel,salts,m,zsolv=SA[1.],ν = salt_stoichiometry(model,salts))
-    ν = salt_stoichiometry(model,salts)
     ions = model.components[model.charge.!=0]
     neutral = model.components[model.charge.==0]
     Mw = mw(model.neutralmodel).*1e-3

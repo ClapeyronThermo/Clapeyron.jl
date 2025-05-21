@@ -319,6 +319,14 @@ using Clapeyron, Test, LinearAlgebra
         assoc_float_mat = [collect(assoc_float[i,j]) for (i,j) in Iterators.product(1:2,1:2)]
         assoc_float2 = AssocParam(assoc_float.name,assoc_float.components,assoc_float_mat)
         @test assoc_float.values.values == assoc_float2.values.values
+
+        #single param: mixing rules with Real and Int type (#372)
+        single_real = SingleParam("tes",["a","b","c"],Real[1,2,3])
+        single_int = SingleParam("tes",["a","b","c"],[1,2,3])
+        @test Clapeyron.sigma_LorentzBerthelot(single_real) isa PairParam
+        @test Clapeyron.sigma_LorentzBerthelot(single_int) isa PairParam
+        @test Clapeyron.lambda_LorentzBerthelot(single_real,0.5) isa PairParam
+        @test Clapeyron.lambda_LorentzBerthelot(single_int,0.5) isa PairParam
     end
 
     

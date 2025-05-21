@@ -17,12 +17,12 @@ end
 
 export MSA
 """
-    MSA(solvents::Array{String,1}, 
-         ions::Array{String,1}; 
-         RSPmodel=ConstW, 
-         SAFTlocations=String[], 
-         userlocations=String[], 
-         verbose=false)
+    MSA(solvents::Array{String,1},
+        ions::Array{String,1};
+        RSPmodel = ConstRSP,
+        userlocations = String[],
+        RSPmodel_userlocations = String[],
+        verbose = false)
 
 ## Input parameters
 - `sigma`: Single Parameter (`Float64`) - Hard-sphere diameter `[m]`
@@ -37,7 +37,7 @@ This function is used to create a Mean Spherical Approximation model. The MSA te
 ## References
 1. Blum, L. (1974). Solution of a model for the solvent‐electrolyte interactions in the mean spherical approximation, 61, 2129–2133.
 """
-function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSP_userlocations=String[], verbose=false)
+function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
     icomponents = 1:length(components)
@@ -50,14 +50,14 @@ function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSP_userl
         params["sigma"].values .*= 1E-10
         sigma = params["sigma"]
     end
-    
+
     charge = params["charge"]
 
     packagedparams = MSAParam(sigma,charge)
 
     references = String[]
-        
-    init_RSPmodel = RSPmodel(solvents,ions)
+
+    init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
     model = MSA(components, icomponents, packagedparams, init_RSPmodel, references)
     return model
@@ -102,12 +102,15 @@ function screening_length(model::MSAModel,V,T,z,ϵ_r = @f(data))
     ∑z = sum(z)
     ρ = N_A*sum(z)/V
     Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ @comps)/∑z
-
-    Γold = (4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρ*sum(z[i]*Z[i]^2 for i ∈ iions)/∑z)^(1/2)
+    yyy = 4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρ
+    
+    Γold = sqrt(4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρ) * sqrt(sum(z[i]*Z[i]^2 for i ∈ iions)/∑z)
     _0 = zero(Γold)
+    iszero(Γold) && return _0
     Γnew = _0
     tol  = one(_0)
     iter = 1
+    k1 = sqrt(π*e_c^2*ρ/(4π*ϵ_0*ϵ_r*k_B*T))
     while tol>1e-12 && iter < 100
         Ω = 1+π*ρ/(2*Δ)*sum(z[i]*σ[i]^3/(1+Γold*σ[i]) for i ∈ iions)/∑z
         Pn = ρ/Ω*sum(z[i]*σ[i]*Z[i]/(1+Γold*σ[i]) for i ∈ iions)/∑z
@@ -117,10 +120,11 @@ function screening_length(model::MSAModel,V,T,z,ϵ_r = @f(data))
             Qi = (Z[i]-σ[i]^2*Pn*(π/(2Δ)))/(1+Γold*σ[i])
             ∑Q2x += z[i]*Qi^2
         end
-        Γnew = sqrt(π*e_c^2*ρ/(4π*ϵ_0*ϵ_r*k_B*T)*∑Q2x/∑z)
+        Γnew = k1*sqrt(∑Q2x/∑z)
         tol = abs(1-Γnew/Γold)
         Γold = Γnew
         iter += 1
     end
+
     return Γnew
 end

@@ -18,6 +18,8 @@ struct RawParam{T}
     grouptype::Symbol #in the future, this could hold an "Options" type,generated per CSV
 end
 
+const EMPTY_STR = ""
+
 Base.eltype(raw::RawParam) = Base.eltype(raw.data)
 Base.length(raw::RawParam) = Base.length(raw.data)
 
@@ -145,10 +147,9 @@ end
 function compile_single(name,components,raw::RawParam,options)
 
     if isnothing(raw.component_info) #build from named tuple
-        return SingleParam(raw.name,components,raw.data)
+        return SingleParam(raw.name,components,deepcopy(raw.data))
     end
 
-    EMPTY_STR = ""
     l = length(components)
     L = eltype(raw)
     if L <: Number
@@ -170,10 +171,10 @@ function compile_single(name,components,raw::RawParam,options)
     sources_csv = unique!(sources_csv)
     filter!(!isequal(EMPTY_STR),sources)
     filter!(!isequal(EMPTY_STR),sources_csv)
-    return SingleParameter(name,components,values,ismissingvals,sources_csv,sources)
+    return SingleParam(name,components,values,ismissingvals,sources_csv,sources)
 end
 
-#just build a single param from a vector, no metadata.
+#just build single parameter vector values, no metadata.
 function compile_single_vec(components,raw::RawParam)
     L = eltype(raw)
     l = length(components)
@@ -205,10 +206,9 @@ end
 function compile_pair(name,components,raw::RawParam,options)
     if isnothing(raw.component_info) #build from named tuple
         l = length(components)
-        return PairParam(raw.name,components,reshape(raw.data,(l,l)))
+        return PairParam(raw.name,components,deepcopy(reshape(raw.data,(l,l))))
     end
 
-    EMPTY_STR = ""
     symmetric = name ∉ options.asymmetricparams
     l = length(components)
     L = eltype(raw)
@@ -253,8 +253,6 @@ end
 end
 
 function compile_assoc(name,components,raw::RawParam,sites,options)
-    EMPTY_STR = ""
-
     if isnothing(sites) && length(raw.component_info) > 0
         __compile_assoc_missing_site_error(name)
     end
@@ -290,11 +288,10 @@ function compile_assoc(name,components,raw::RawParam,sites,options)
 end
 
 function compile_assoc(name,components,raw::CSVType,sites,options)
-    values = Compressed4DMatrix{Float64}()
     if sites === nothing
-        AssocParam(name,components,values,[String[] for _ in 1:length(components)],String[],String[])
+        AssocParam(name,components)
     else
-        AssocParam(name,components,values,sites.sites,String[],String[])
+        AssocParam(name,components,Compressed4DMatrix{Float64}(),sites.sites)
     end
 end
 

@@ -76,6 +76,12 @@ function ∂f_res(model,V,T,z)
     _f,_df = Solvers.fgradf2(f,V,T)
     return _df,_f
 end
+
+function ∂f_res_vec(model,V,T,z::AbstractVector)
+    _df,_f = ∂f_res(model,V,T,z)
+    return SVector(_f,_df[1],_df[2])
+end
+
 #returns p and ∂p∂V at constant T
 #it doesnt do a pass over temperature, so its
 #faster that d2f when only requiring d2fdV2
@@ -201,3 +207,19 @@ end
 
 
 const _d23f = ∂²³f
+
+#derivarive logic: model Dual numbers:
+
+#as of Clapeyron 0.6.10, there is limited support for using models with dual numbers
+#PCSAFT, sPCSAFT, SAFTVRMie, SAFTVRMie15 support using dual numbers, (and any other number type)
+#for iterative methods, it is more efficient to reconstruct the model with the primal value instead of the full value
+
+function Solvers.primalval(model::EoSModel)
+    return _primalval(model,eltype(model))
+end
+
+function _primalval(model::EoSModel,::Type{T}) where T <: ForwardDiff.Dual
+    return Solvers.primalval_struct(model)
+end
+
+_primalval(model::EoSModel,::T) where T = model

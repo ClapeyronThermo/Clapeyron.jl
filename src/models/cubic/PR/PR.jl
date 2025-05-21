@@ -111,25 +111,20 @@ function PR(components;
         verbose = verbose,
         ignore_missing_singleparams = __ignored_crit_params(alpha))
 
+    model = CubicModel(PR,params,formatted_components;
+                        idealmodel,alpha,mixing,activity,translation,
+                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                        reference_state, verbose)
+
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    pc = params["Pc"]
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    acentricfactor = get(params,"acentricfactor",nothing)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",formatted_components,zeros(length(Tc)))
-    b = PairParam("b",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = ABCubicParam(a,b,Tc,pc,Mw)
-    references = String["10.1021/I160057A011"]
-    model = PR(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
-    set_reference_state!(model,reference_state,verbose = verbose)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
+
+default_references(::Type{PR}) = ["10.1021/I160057A011"]
+
 
 function ab_consts(::Type{<:PRModel})
     return 0.45723552892138218938,0.077796073903888455972

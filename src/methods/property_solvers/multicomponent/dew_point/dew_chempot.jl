@@ -82,23 +82,6 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
     else
         model_x = nothing
     end
-
-    Ts = isnothing(model_x) ? T_scales(model) : T_scales(model_x)
-
-    if T > 0.9minimum(Ts) && method.ss
-        converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,(vl,vv),false,true,condensables)
-        p,T,x,y,vol,lnK = res
-        volx,voly = vol
-        if converged
-            return p,volx,voly,index_expansion(x,condensables)
-        elseif isnan(volx) || isnan(voly)
-            return p,volx,voly,index_expansion(x,condensables)
-        else
-            x0 = x
-            vl,vv = vol
-            T0 = T
-        end
-    end
     ηl0 = η_from_v(model,model_x,vl,T,x0)
     ηv0 = η_from_v(model,vv,T,y)
     _,idx_max = findmax(x0)
@@ -207,20 +190,7 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     else
         model_x = nothing
     end
-    Ps = isnothing(model_x) ? p_scale(model,x0) : p_scale(model_x,x0)
-    if log(p) > 0.9log(Ps) && method.ss
-        converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,(vl,vv),false,false,condensables)
-        p,T,x,y,vol,lnK = res
-        volx,voly = vol
-        if converged
-            return T,volx,voly,index_expansion(x,condensables)
-        elseif isnan(volx) || isnan(voly)
-            return T,volx,voly,index_expansion(x,condensables)
-        else
-            x0 = x
-            vl,vv = vol
-        end
-    end
+
     ηl = η_from_v(model,model_x,vl,T0,x0)
     ηv = η_from_v(model,vv,T0,y)
     _,idx_max = findmax(x0)
@@ -233,7 +203,6 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     x_r = FractionVector(sol[4:end],idx_max)
     v_l = v_from_η(model,model_x,sol[2],T,x_r)
     v_v = v_from_η(model,sol[3],T,y)
-    x_r = FractionVector(sol[4:end])
     x = index_expansion(x_r,condensables)
     return T, v_l, v_v, x
 end

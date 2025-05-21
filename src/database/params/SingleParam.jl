@@ -3,9 +3,14 @@ struct SingleParameter{T,V<:AbstractVector{T}} <: ClapeyronParam
     components::Array{String,1}
     values::V
     ismissingvalues::Array{Bool,1}
-    sourcecsvs::Array{String,1}
-    sources::Array{String,1}
+    sourcecsvs::Union{Vector{String},Nothing}
+    sources::Union{Vector{String},Nothing}
 end
+
+#methods to fill missing sources/sourcescsvs
+SingleParameter(name,components,values,ismissingvalues) = SingleParameter(name,components,values,ismissingvalues,nothing,nothing)
+SingleParameter(name,components,values,ismissingvalues,src) = SingleParameter(name,components,values,ismissingvalues,src,nothing)
+
 
 """
     SingleParam{T}
@@ -86,17 +91,63 @@ function Base.copyto!(dest::SingleParameter,src::SingleParameter) #used to set p
     return dest
 end
 
+#primalval
+function Solvers.primalval(x::SingleParameter)
+    return SingleParameter(x.name,x.components,Solvers.primalval_eager(x.values),x.ismissingvalues,x.sourcecsvs,x.sources)
+end
+
 Base.eltype(param::SingleParameter{T}) where T = T
+Base.eltype(param::Type{<:SingleParameter{T}}) where T = T
 
 #linear algebra
 
 LinearAlgebra.dot(param::SingleParameter,x::Union{<:AbstractVector,<:Number}) = dot(param.values,x)
 LinearAlgebra.dot(x::Union{<:AbstractVector,<:Number},param::SingleParameter) = dot(x,param.values)
 
-function SingleParam(name,components,values,missingvals,src,sourcecsv) 
+#barebones constructor, we provide vals and missing vals
+function SingleParam(name,components,values::Vector{T},missingvals,src,sourcecsv) where T 
     param_length_check(SingleParam,name,length(components),length(values))
-    SingleParameter(name,components,values,missingvals,src,sourcecsv)
+    SingleParameter{T,Vector{T}}(name,components,values,missingvals,src,sourcecsv)
 end
+
+function SingleParam(name,components,values::AbstractVector{T},missingvals,src,sourcecsv) where T 
+    return SingleParam(name,components,convert(Vector{T},values),missingvals,src,sourcecsv)
+end
+
+function SingleParam(name,components,values::Matrix{T},missingvals::Matrix{Bool},src,sourcecsv) where T 
+    n = length(components)
+    vec_values = zeros(T,n)
+    vec_missing = zeros(Bool,n)
+    for i in 1:n
+        vec_values[i] = values[i,i]
+        vec_missing[i] = missingvals[i,i]
+    end
+
+    return SingleParam(name,components,vec_values,vec_missing,src,sourcecsv)
+end
+
+SingleParam(name,components,values,missingvals,src) = SingleParam(name,components,values,missingvals,src,nothing)
+SingleParam(name,components,values,missingvals) = SingleParam(name,components,values,missingvals,nothing,nothing)
+
+#constructor in case we provide a normal vector
+function SingleParam(name, components, values_or_missing::AbstractVector{T}) where T
+    if nonmissingtype(T) != T
+        values,ismissingvalues = defaultmissing(values_or_missing)
+    else
+        values,ismissingvalues = values_or_missing,fill(false, length(values_or_missing))
+    end
+    return SingleParam(name, components, values, ismissingvalues)
+end
+
+# If no value is provided, just initialise empty param.
+function SingleParam{T}(name,components) where T<: Number
+    nc = length(components)
+    values = fill(zero(T),nc)
+    ismissingvalues = fill(true,nc)
+    return SingleParam(name, components, values, ismissingvalues)
+end
+
+SingleParam(name,components) = SingleParam{Float64}(name,components) 
 
 function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     len = length(param.values)
@@ -107,92 +158,25 @@ function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     show_pairs(io,param.components,vals,separator)
 end
 
-function SingleParam(x::SingleParam, name::String = x.name; isdeepcopy::Bool = true, sources::Vector{String} = x.sources)
-    if isdeepcopy
-        return SingleParam(
-            name,
-            x.components,
-            deepcopy(x.values),
-            deepcopy(x.ismissingvalues),
-            x.sourcecsvs,
-            sources
-        )
-    end
-    return SingleParam(
-        name,
-        x.components,
-        x.values,
-        x.ismissingvalues,
-        x.sourcecsvs,
-        sources
-    )
-end
-
-SingleParameter(x::SingleParam, name::String = x.name; isdeepcopy::Bool = true, sources::Vector{String} = x.sources) = SingleParam(x, name; isdeepcopy, sources)
-
-#a barebones constructor, in case we dont build from csv
-function SingleParam(
-        name::String,
-        components::Vector{String},
-        values::Vector{T},
-        sourcecsvs = String[],
-        sources = String[]
-    ) where T
-    param_length_check(SingleParam,name,length(components),length(values))
-    if any(ismissing, values)
-        _values,_ismissingvalues = defaultmissing(values)
-        TT = eltype(_values)
-    else
-        _values = values
-        _ismissingvalues = fill(false, length(values))
-        TT = T
-    end
-    return  SingleParam{TT}(name, components, _values, _ismissingvalues, sourcecsvs, sources)
-end
-
-# If no value is provided, just initialise empty param.
-function SingleParam(
-        name::String,
-        components::Vector{String};
-        sources = String[]
-    )
-    values = fill(0.0, length(components))
-    missingvalues = fill(true,length(components))
-    return SingleParam(name, components, values,missingvalues, String[], sources)
-end
-
 function SingleParam(oldparam::SingleParameter, v::Vector)
     _values,_ismissingvalues = defaultmissing(v)
     param_length_check(SingleParam,name,length(oldparam.components),length(_values))
-    return SingleParam(oldparam.name, oldparam.components,_values, _ismissingvalues , oldparam.sourcecsvs, oldparam.sources)
+    return SingleParam(oldparam.name, oldparam.components, _values, _ismissingvalues , oldparam.sourcecsvs, oldparam.sources)
 end
 
 #convert utilities
 function Base.convert(::Type{SingleParam{T1}},param::SingleParam{T2}) where {T1<:Number,T2<:Number}
-    values = T1.(param.values)
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64,Bool}})
-    #@assert all(z->(isone(z) | iszero(z)),param.values)
-    values = Array(Bool.(param.values))
+    values = convert(Vector{T1},param.values)
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})
-    values = String.(param.values)
+    values = convert(Vector{String},param.values)
     return SingleParameter(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
-#trying to break stack overflow on julia 1.6
-function Base.convert(::Type{SingleParam{String}},param::SingleParam{String})
-    return param
-end
-
-
 #pack vectors
-
-const PackedVectorSingleParam{T} = Clapeyron.SingleParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}
+const PackedVectorSingleParam{T} = Clapeyron.SingleParameter{PackedSubVector{T}, PackedVector{T}}
 
 function pack_vectors(param::SingleParameter{<:AbstractVector})
     name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources

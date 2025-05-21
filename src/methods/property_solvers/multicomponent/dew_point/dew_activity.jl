@@ -69,7 +69,7 @@ end
 
 function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
     R̄ = Rgas(model)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     sat = saturation_pressure.(pure,T)
     vl_pure = getindex.(sat,2)
     p_pure = first.(sat)

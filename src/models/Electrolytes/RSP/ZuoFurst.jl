@@ -10,9 +10,9 @@ end
 export ZuoFurst
 
 """
-    ZuoFurst(solvents::Array{String,1}, 
-         ions::Array{String,1}; 
-         userlocations::Vector{String}=[], 
+    ZuoFurst(solvents::Array{String,1},
+         ions::Array{String,1};
+         userlocations::Vector{String}=[],
          verbose::Bool=false)
 
 ## Description
@@ -27,7 +27,7 @@ function ZuoFurst(solvents,ions; userlocations::Vector{String}=String[], verbose
     icomponents = 1:length(components)
 
     references = String[]
-    
+
     model = ZuoFurst(components, icomponents ,references)
     return model
 end

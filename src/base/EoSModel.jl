@@ -105,7 +105,7 @@ function a_res end
 Base.broadcastable(model::EoSModel) = Ref(model)
 Base.transpose(model::EoSModel) = model
 Base.eltype(model::EoSModel) = __eltype(model)
-@pure function __eltype(model::T) where T <:EoSModel
+Base.@assume_effects :foldable function __eltype(model::T) where T <:EoSModel
     if hasfield(T,:params)
         return eltype(model.params)
     else
@@ -143,7 +143,7 @@ end
 has_sites(::T) where T <: EoSModel = has_sites(T)
 has_sites(::Type{T}) where T <: EoSModel = _has_sites(T)
 
-@pure function _has_sites(::Type{T}) where T <: EoSModel
+Base.@assume_effects :foldable function _has_sites(::Type{T}) where T <: EoSModel
     s1 = hasfield(T,:sites)
     if s1
        return fieldtype(T,:sites) == SiteParam
@@ -154,7 +154,7 @@ end
 has_groups(::T) where T <: EoSModel = has_groups(T)
 has_groups(::Type{T}) where T <: EoSModel = _has_groups(T)
 
-@pure function _has_groups(::Type{T}) where T <: EoSModel
+Base.@assume_effects :foldable function _has_groups(::Type{T}) where T <: EoSModel
     s1 = hasfield(T,:groups)
     if s1
        return fieldtype(T,:groups) == GroupParam
@@ -166,6 +166,18 @@ Base.length(model::T) where T <:EoSModel = _eos_length(model,Val(has_groups(mode
 
 _eos_length(model::EoSModel,::Val{true}) = length(model.groups.components)
 _eos_length(model::EoSModel,::Val{false}) = length(model.components)
+
+#used to distinguish between a_res based models and special models.
+
+function has_a_res(model::T) where T
+    return hasmethod(a_res,Tuple{T,Float64,Float64,Vector{Float64}})
+end
+
+has_dual(::Type{T}) where T <: ForwardDiff.Dual = true
+has_dual(p::ForwardDiff.Dual) = true
+has_dual(p::AbstractArray{T}) where T= has_dual(T)
+has_dual(model::EoSModel) = has_dual(eltype(model))
+has_dual(x) = false
 
 """
     doi(model)

@@ -55,7 +55,8 @@ function ePCSAFT(solvents,ions;
     userlocations=String[], 
     ideal_userlocations=String[],
     assoc_options = AssocOptions(),
-     verbose=false)
+    verbose = false,
+    reference_state = nothing)
     components = deepcopy(ions)
     prepend!(components,solvents)
 
@@ -80,8 +81,6 @@ function ePCSAFT(solvents,ions;
             end
         end
     end
-
-
 
     references = ["10.1016/j.cherd.2014.05.017"]
     components = format_components(components)

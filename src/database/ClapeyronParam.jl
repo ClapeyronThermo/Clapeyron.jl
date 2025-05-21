@@ -25,21 +25,42 @@ is_splittable(::OptionsParam) = false
 
 export EoSParam, ParametricEoSParam
 
+paramtype(m::ClapeyronParam) = eltype(m)
+paramtype(::Type{M}) where M <: ClapeyronParam = eltype(M)
+
 custom_show(param::EoSParam) = _custom_show_param(typeof(param))
 
 function build_parametric_param(param::Type{T}, args...) where T <: ParametricEoSParam
-    TT = mapreduce(eltype, promote_type, args)
-    paramtype = parameterless_type(param)
+    return __build_parametric_param(param,args)
+end
 
-    converted_params = map(x -> _convert_param(TT,x), args)
+#dynamic version
+function dyn_build_parametric_param(param::Type{T}, args) where T <: ParametricEoSParam
+    TT = mapreduce(paramtype,promote_type,args)
+    Param = parameterless_type(T)
+    return Param{TT}(args...)
+end
 
-    paramtype{TT}(converted_params...)
+#static version
+@generated function __build_parametric_param(param::Type{P},args::A) where {P <: ParametricEoSParam,A}
+    argtypes = fieldtypes(A)
+    TT = mapreduce(paramtype,promote_type,argtypes)
+    paramname = Base.typename(P).name
+    paramlength = length(fieldnames(P))
+    expr = :($paramname{$TT}())
+    args = expr.args
+    for i in 1:paramlength
+        push!(args,:(args[$i]))
+    end
+    return expr
 end
 
 function _custom_show_param(::Type{T}) where T <: EoSParam
     types = fieldtypes(T)
     return all(x -> x <: ClapeyronParam,types)
 end
+
+Solvers.primalval(x::EoSParam) = Solvers.primalval_struct(x)
 
 function Base.show(io::IO, mime::MIME"text/plain", params::EoSParam)
     !custom_show(params) && return show_default(io,mime,params)
@@ -61,15 +82,18 @@ end
 
 function build_eosparam(::Type{T},data) where T <: EoSParam
     names = fieldnames(T)
-    return T((data[string(name)] for name in names)...)
+    params = map(name -> data[string(name)],names)
+    return T(params...)
 end
 
 function build_eosparam(::Type{T},data) where T <: ParametricEoSParam
     names = fieldnames(T)
-    build_parametric_param(T, (data[string(name)] for name in names)...)
+    params = map(name -> data[string(name)],names)
+    dyn_build_parametric_param(T,params)
 end
 
 Base.eltype(p::EoSParam) = Float64
+Base.eltype(p::ParametricEoSParam{T}) where T = T
 
 const PARSED_GROUP_VECTOR_TYPE = Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
@@ -118,30 +142,6 @@ include("params/SpecialComp.jl")
 include("params/ReferenceState.jl")
 
 
-function _convert_param(T::V,val) where V
-    return _convert_param(T,parameterless_type(val),val)
-end
-
-function _convert_param(T::V,val::SpecialComp) where V
-    return val
-end
-
-function _convert_param(T::V,val::ReferenceState) where V
-    return val
-end
-
-function _convert_param(T::V,::Type{SingleParameter},val) where V
-    return convert(SingleParam{T},val)
-end
-
-function _convert_param(T::V,::Type{PairParameter},val) where V
-    return convert(PairParam{T},val)
-end
-
-function _convert_param(T::V,::Type{AssocParam},val) where V
-    return convert(AssocParam{T},val)
-end
-
 const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
 function Base.show(io::IO,param::SingleOrPair)
     print(io, typeof(param), "(\"", param.name, "\")")
@@ -150,7 +150,7 @@ end
 
 #internal utility function
 #shortcut for model.params.val, but returns nothing if the val is not found.
-@pure function getparam(model::EoSModel,val::Symbol)
+Base.@assume_effects :foldable function getparam(model::EoSModel,val::Symbol)
     M = typeof(model)
     if hasfield(M,:params)
         if hasfield(typeof(model.params),val)

@@ -11,17 +11,27 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.volume(system, p, T) ≈ v rtol = 1e-6
         @test Clapeyron.volume(system, p, T;phase=:v) ≈ 0.020427920501436134 rtol = 1e-6
         @test Clapeyron.volume(system, p, T;threaded=:false) ≈ v rtol = 1e-6
-        @test Clapeyron.pip(system, v, T, [1.]) ≈ 6.857076349623449 rtol = 1e-6
-        @test Clapeyron.is_liquid(Clapeyron.VT_identify_phase(system, v, T, [1.]))
+        @test Clapeyron.pip(system, v, T) ≈ 6.857076349623449 rtol = 1e-6
+        @test Clapeyron.is_liquid(Clapeyron.VT_identify_phase(system, v, T))
         @test Clapeyron.compressibility_factor(system, p, T) ≈ 0.002383223535444557 rtol = 1e-6
         @test Clapeyron.pressure(system, v, T) ≈ p rtol = 1e-6
         @test Clapeyron.pressure(system, 2*v, T, Clapeyron.SA[2.0]) ≈ p rtol = 1e-6
-        @test Clapeyron.entropy(system, p, T) ≈ -58.87118569239617 rtol = 1E-6
+        s = Clapeyron.entropy(system, p, T)
+        @test s ≈ -58.87118569239617 rtol = 1E-6
+        @test Clapeyron.VT_entropy_res(system,v,T) + Clapeyron.VT_entropy(Clapeyron.idealmodel(system),v,T) ≈ s
         @test Clapeyron.chemical_potential(system, p, T)[1] ≈ -18323.877542682934 rtol = 1E-6
-        @test Clapeyron.internal_energy(system, p, T) ≈ -35882.22946560716 rtol = 1E-6
-        @test Clapeyron.enthalpy(system, p, T) ≈ -35876.32155687084 rtol = 1E-6
-        @test Clapeyron.gibbs_free_energy(system, p, T) ≈ -18323.87754268292 rtol = 1E-6
-        @test Clapeyron.helmholtz_free_energy(system, p, T) ≈ -18329.785451419295 rtol = 1E-6
+        u = Clapeyron.internal_energy(system, p, T)
+        @test u ≈ -35882.22946560716 rtol = 1E-6
+        @test Clapeyron.VT_internal_energy_res(system,v,T) + Clapeyron.VT_internal_energy(Clapeyron.idealmodel(system),v,T) ≈ u
+        h = Clapeyron.enthalpy(system, p, T)
+        @test h ≈ -35876.32155687084 rtol = 1E-6
+        @test Clapeyron.VT_enthalpy_res(system,v,T) + Clapeyron.VT_enthalpy(Clapeyron.idealmodel(system),v,T) ≈ h
+        g = Clapeyron.gibbs_free_energy(system, p, T)
+        @test g ≈ -18323.87754268292 rtol = 1E-6
+        @test Clapeyron.VT_gibbs_free_energy_res(system,v,T) + Clapeyron.VT_gibbs_free_energy(Clapeyron.idealmodel(system),v,T) ≈ g
+        a = Clapeyron.helmholtz_free_energy(system, p, T)
+        @test a ≈ -18329.785451419295 rtol = 1E-6
+        @test Clapeyron.VT_helmholtz_free_energy_res(system,v,T) + Clapeyron.VT_helmholtz_free_energy(Clapeyron.idealmodel(system),v,T) ≈ a
         @test Clapeyron.isochoric_heat_capacity(system, p, T) ≈ 48.37961296309505 rtol = 1E-6
         @test Clapeyron.isobaric_heat_capacity(system, p, T) ≈ 66.45719988319257 rtol = 1E-6
         Cp = Clapeyron.isobaric_heat_capacity(system, p, T2)
@@ -48,7 +58,7 @@ using Clapeyron, Test, Unitful
 end
 
 @testset "pharmaPCSAFT, single components" begin
-    system = pharmaPCSAFT(["water08"])
+    system = pharmaPCSAFT(["water"])
     v1 = Clapeyron.saturation_pressure(system, 280.15)[2]
     v2 = Clapeyron.saturation_pressure(system, 278.15)[2]
     v3 = Clapeyron.saturation_pressure(system, 275.15)[2]
@@ -283,7 +293,7 @@ end
         @test psat ≈ 1.409820798879772e6 rtol = 1E-6
         @test Clapeyron.saturation_pressure(system, T,SuperAncSaturation())[1]  ≈ psat rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 305.31999999999994 rtol = 1E-6
-        @test Clapeyron.wilson_k_values(system,p,T) ≈ [0.13839117786853375]  rtol = 1E-6
+        @test Clapeyron.wilson_k_values(system,p,T) ≈ [0.13840091523637849]  rtol = 1E-6
     end
 end
 GC.gc()
@@ -367,7 +377,7 @@ end
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 1.5760730143760687e6 rtol = 1E-6
         @test Clapeyron.crit_mix(system, z)[1] ≈ 575.622237585033 rtol = 1E-6
         srksystem  = SRK(["ethane","undecane"])
-        @test Clapeyron.wilson_k_values(srksystem,p,T) ≈ [0.420849235562207, 1.6163027384311e-5] rtol = 1E-6
+        @test Clapeyron.wilson_k_values(srksystem,p,T) ≈ [0.4208525854463047, 1.6171551943938252e-5] rtol = 1E-6
         #test scaling of crit_mix
         cm1 = crit_mix(system3,[0.5,0.5])
         cm2 = crit_mix(system3,[1.0,1.0])
@@ -386,7 +396,7 @@ GC.gc()
     T = 298.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 4.7367867309516085e-5 rtol = 1e-6
-        @test_broken Clapeyron.speed_of_sound(system, p, T) ≈ 2136.222735675237 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 2136.222735675237 rtol = 1e-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.crit_pure(system)[1] ≈ 512.6400000000001 rtol = 1E-6
@@ -425,8 +435,8 @@ end
         @test crit_pure(com1)[1] ≈ 647.13
         @test Clapeyron.volume(system, p, T, z_bulk) ≈ 7.967897222918716e-5 rtol = 1e-6
         @test Clapeyron.volume(comp_system, p, T, z_bulk) ≈ 7.967897222918716e-5 rtol = 1e-6
-        @test Clapeyron.speed_of_sound(system, p, T, z_bulk) ≈ 1483.4508395757005 rtol = 1e-6
-        @test Clapeyron.speed_of_sound(comp_system, p, T, z_bulk) ≈ 1483.4508395757005 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(system, p, T, z_bulk) ≈ 1551.9683977722198 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(comp_system, p, T, z_bulk) ≈ 1551.9683977722198 rtol = 1e-6
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.gibbs_free_energy) ≈ -356.86007792929263 rtol = 1e-6
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.enthalpy) ≈ 519.0920708672975 rtol = 1e-6
         #test that we are actually considering the reference state, even in the vapour phase.
@@ -477,6 +487,10 @@ end
         @test Clapeyron.mass_density(model,(380.5+101.3)*1000.0,-153.0+273.15,lng_composition_molar_fractions) ≈ 440.73 rtol = 1E-2
         @test Clapeyron.molar_density(model,(380.5+101.3)u"kPa",-153.0u"°C",lng_composition_molar_fractions;output=u"mol/L") ≈ 24.98*u"mol/L"  rtol=1E-2
         @test Clapeyron.mass_density(model,(380.5+101.3)u"kPa",-153.0u"°C",lng_composition_molar_fractions;output=u"kg/m^3")  ≈ 440.73*u"kg/m^3" rtol=1E-2
+    
+        #test found in #371
+        model2 = GERG2008(["carbon dioxide","nitrogen","water"])
+        @test mass_density(model2,64.0e5,30+273.15,[0.4975080785711593, 0.0049838428576813995, 0.4975080785711593],phase = :l) ≈ 835.3971524715569 rtol = 1e-6
     end
     @testset "VLE properties" begin
         system = GERG2008(["carbon dioxide","water"])
@@ -624,6 +638,20 @@ end
     _,_,vv = saturation_pressure(model,TΓmin)
     Γmin = Clapeyron.VT_fundamental_derivative_of_gas_dynamics.(model,vv,TΓmin)
     @test Γmin ≈ -0.2825376983518102 rtol = 1e-6
+
+    #376
+    p1 = 1e5 .* (0.1:0.1:420)
+    T_376 = (310.95,477.95,644.15)
+    px = first.(saturation_pressure.(fluid3,T_376))
+    p1 = px[1]:1e4:420e5
+    p2 = px[2]:1e4:420e5
+    p3 = px[3]:1e4:420e5
+    v_T37 = volume.(fluid3,p1,T_376[1],phase = :l)
+    v_T202 = volume.(fluid3,p2,T_376[2],phase = :l)
+    v_T371 = volume.(fluid3,p3,T_376[3],phase = :l)
+    @test iszero(count(isnan,v_T37))
+    @test iszero(count(isnan,v_T202))
+    @test iszero(count(isnan,v_T371))
 end
 
 @testset "LKP methods" begin

@@ -1,24 +1,11 @@
 const FIJ_TYPE = Clapeyron.PairParameter{Float64, SparseArrays.SparseMatrixCSC{Float64, Int64}}
 
+#= in structs.jl
 struct EmpiricDepartureValues <: MultiParameterParam
-    iterators::Vector{UnitRange{Int}}
+    polexpgauss::PolExpGaussTerm
     F::Float64
-    n::Vector{Float64}
-    t::Vector{Float64}
-    d::Vector{Float64}
-    l::Vector{Float64}
-    g::Vector{Float64}
-    eta::Vector{Float64}
-    beta::Vector{Float64}
-    gamma::Vector{Float64}
-    epsilon::Vector{Float64}
-    function EmpiricDepartureValues(F,n,t,d,l = Float64[],g = ones(length(l)),
-        eta = Float64[],beta = Float64[],gamma = Float64[], epsilon = Float64[])
-        param = new(Vector{UnitRange{Int}}(undef,0),F,n,t,d,l,g,eta,beta,gamma,epsilon)
-        _calc_iterators!(param)
-        return param
-    end
-end
+end =#
+
 __type_string(ℙ::Type{EmpiricDepartureValues}) = "Departure"
 
 #for showing in SparseMatrix context.
@@ -32,7 +19,8 @@ function Base.show(io::IO,x::EmpiricDepartureValues)
     print(io,"aij(")
     Fij = x.F
     Fij != 0 && print(io,"F=$Fij,")
-    k_pol,k_exp,k_gauss = x.iterators
+    term = x.polexpgauss
+    k_pol,k_exp,k_gauss = term.iterators
     l_pol,l_exp,l_gauss = length(k_pol),length(k_exp),length(k_gauss)
     text = String[]
     vals = Int[]
@@ -174,6 +162,10 @@ function multiparameter_a_res(model::MultiFluid,V,T,z,departure::EmpiricDepartur
         end
      end
     return aᵣ + Δa/(∑z*∑z)
+end
+
+function reduced_a_res(ℙ::EmpiricDepartureValues,δ,τ,lnδ = log(δ),lnτ = log(τ))
+    return a_term(ℙ.polexpgauss,δ,τ,lnδ,lnτ,zero(δ+τ))
 end
 
 

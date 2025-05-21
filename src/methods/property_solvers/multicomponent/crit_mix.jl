@@ -52,7 +52,7 @@ Returns a tuple, containing:
 - Initial guess for critical temperature `[K]`
 """
 function x0_crit_mix(model::EoSModel,z)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     crit = crit_pure.(pure)
     vci = getindex.(crit,3)
     tci = getindex.(crit,1)

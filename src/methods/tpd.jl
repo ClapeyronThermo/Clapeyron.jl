@@ -125,10 +125,6 @@ function tpd_obj(model, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,d
     optprob = OptimizationProblem(obj = obj,inplace = true)
 end
 
-function tpd_K0(model,p,T)
-    return tp_flash_K0(model,p,T)
-end
-
 struct TPDKSolver end
 struct TPDPureSolver end
 
@@ -441,7 +437,7 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     #step 0: initialize values
 
     if strategy == :default || strategy == :wilson
-        K = tpd_K0(model,p,T) #normally wilson
+        K = tp_flash_K0(model,p,T) #normally wilson
     else
         K = zeros(Base.promote_eltype(model,p,T,z),length(z))
     end
@@ -608,7 +604,7 @@ function __z_test(z)
     z_test = z_test ./ sum(z_test;dims=2)
 end
 
-function suggest_K(model,p,T,z,pure = split_model(model),volatiles = FillArrays.fill(true,length(model)),crit = FillArrays.fill(nothing,length(model)))
+function suggest_K(model,p,T,z,pure = split_pure_model(model),volatiles = FillArrays.fill(true,length(model)),crit = FillArrays.fill(nothing,length(model)))
     lnϕz,v = lnϕ(model,p,T,z,threaded = false)
     K = similar(lnϕz)
     di = similar(lnϕz)
