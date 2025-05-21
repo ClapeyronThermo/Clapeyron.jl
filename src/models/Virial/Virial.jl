@@ -14,7 +14,7 @@ end
 
 function ∂f∂V(model::SecondVirialModel,V,T,z::AbstractVector=SA[1.0])
     B = second_virial_coefficient(model,T,z)
-    return -R̄*T*(1 + B/V)/V
+    return -sum(z)*R̄*T*(1 + B/V)/V
 end
 
 include("EoSVirial/EoSVirial.jl")

@@ -36,7 +36,7 @@ function QP_property(model,q,p,z,f::F,T0) where F
     end
 
     res = qp_flash(model,q,p,z,T0 = T0)
-    if isone(numphases(res)) && !isone(q) !izero(q)
+    if isone(numphases(res)) && !isone(q) !iszero(q)
         #What to do here?
     end
     if f == temperature

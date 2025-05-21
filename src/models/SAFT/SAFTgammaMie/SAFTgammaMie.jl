@@ -152,7 +152,8 @@ function SAFTgammaMie(components;
     epsilon_mixing = :default,
     assoc_options = AssocOptions())
 
-    groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
+    _components = format_components(components)
+    groups = GroupParam(_components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
 
     return SAFTgammaMie(groups, params;
@@ -324,3 +325,13 @@ function recombine_impl!(model::SAFTgammaMieModel)
 end
 
 default_references(::Type{SAFTgammaMie}) = ["10.1063/1.4851455", "10.1021/je500248h"]
+
+function pval(model0, eps_vec)
+    T = typeof(eps_vec[1])
+    model = Clapeyron.promote_model(T, model0)
+    ε = reshape(eps_vec, size(model.params.epsilon.values))
+    model.params.epsilon.values .= ε
+    Clapeyron.recombine!(model)
+    @show model.params.epsilon.values
+    return saturation_pressure(model, 373.15)[1]
+end
