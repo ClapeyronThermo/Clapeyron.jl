@@ -13,6 +13,11 @@ vref = 5.594807453383915e-5
 
 z=[1.0]
 
+vol = Clapeyron.volume(model1,p,T,z)
+mw = Clapeyron.molecular_weight(model1,z)
+rhom = 1.0/vol*mw
+println("Density GERG2008 Clapeyron Volume method = $(round(rhom,sigdigits=6)) kg/m3")
+
 rho = Clapeyron.HELD_density(model2,p,T,z,vref)
 mw = Clapeyron.molecular_weight(model2,z)
 println("rho  = $(rho)")
