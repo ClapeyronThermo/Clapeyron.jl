@@ -144,18 +144,31 @@ function C1(model::Michelsen_GEPCSAFTModel, V, T, z,_data=@f(data))
     return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
 end
 
-function m2ϵσ3(model::Michelsen_GEPCSAFTModel, V, T, z,_data=@f(data))
-    c = [0.16825491455291727, 10.296455569712531, 1.2476994961006087, 79.52567954035581, -1.5554400906899912, -100.34856564780112]
-    z = [z[i]/sum(z) for i ∈ eachindex(z)]
+function m2ϵσ3(model::Michelsen_GEPCSAFTModel, V, T, z, _data=@f(data))
+    Tnum = promote_type(eltype(z), typeof(V), typeof(T))
+
+    N = length(z)
+    Nbin = div(N*(N-1),2)
+
+    m_ij = zeros(Tnum, N, N)
+    σ_ij = zeros(Tnum, N, N)
+    ϵ_ii = zeros(Tnum, N)
+    d_ij = zeros(Tnum, N, N)
+    b_ij = zeros(Tnum, N, N)
+    q_ij = zeros(Tnum, Nbin)
+    α_ij = zeros(Tnum, Nbin)
+    ϵ_ij = zeros(Tnum, Nbin)
+
+    c = map(Tnum, [0.16825491455291727, 10.296455569712531, 1.2476994961006087, 79.52567954035581, -1.5554400906899912, -100.34856564780112])
+    zsum = sum(z)
+    znorm = z ./ zsum
+
     pures = split_model(model)
     d_ii = @f(d)
-    m_ij = zeros(length(z),length(z))
-    σ_ij = zeros(length(z),length(z))
-    ϵ_ii = zeros(length(z))
-    d_ij = zeros(length(z),length(z))
-    b_ij = zeros(length(z),length(z))
-    for i ∈ 1:length(z)
-        for j in i:length(z) 
+
+    # Fill arrays
+    for i in 1:N
+        for j in i:N
             m_ii = pures[i].params.segment.values[1]
             m_jj = pures[j].params.segment.values[1]
             σ_ii = pures[i].params.sigma.values[1]
@@ -166,83 +179,83 @@ function m2ϵσ3(model::Michelsen_GEPCSAFTModel, V, T, z,_data=@f(data))
                 σ_ij[i,j] = σ_ii
                 d_ij[i,j] = d_ii[i]
             else
-                m_ij[i,j] = (m_ii+ m_jj)/2
-                m_ij[j,i] = (m_ii + m_jj)/2
-                σ_ij[i,j] = (σ_ii + σ_jj)/2
-                σ_ij[j,i] = (σ_ii + σ_jj)/2
-                d_ij[i,j] = d_ii[i]*z[i] + d_ii[j]*z[j]
-                d_ij[j,i] = d_ii[i]*z[i] + d_ii[j]*z[j]
+                avgm = (m_ii + m_jj) / Tnum(2)
+                avgs = (σ_ii + σ_jj) / Tnum(2)
+                di = d_ii[i] * znorm[i] + d_ii[j] * znorm[j]
+                m_ij[i,j] = avgm
+                m_ij[j,i] = avgm
+                σ_ij[i,j] = avgs
+                σ_ij[j,i] = avgs
+                d_ij[i,j] = di
+                d_ij[j,i] = di
             end
-            b_ij[i,j] = #=Clapeyron.N_A*=#m_ij[i,j]*d_ij[i,j]^3
-            b_ij[j,i] = #=Clapeyron.N_A*=#m_ij[i,j]*d_ij[i,j]^3
+            bval = m_ij[i,j] * d_ij[i,j]^3
+            b_ij[i,j] = bval
+            b_ij[j,i] = bval
         end
     end
-    b = sum(z[i]*b_ij[i,i] for i ∈ eachindex(z))
-    α_ii = [m_ij[i,i] * ϵ_ii[i] / T for i ∈ eachindex(z)]
-    @show α_ii
-    function Q_ii(α_ii, b_ii)
-        (c[1]*log(b_ii) + c[2])*α_ii^2 + (c[3]*log(b_ii) + c[4])*α_ii + c[5]*log(b_ii) + c[6]
+
+    b = sum(znorm[i] * b_ij[i,i] for i in 1:N)
+    α_ii = [m_ij[i,i] * ϵ_ii[i] / T for i in 1:N]
+
+    function Q_ii(α, b)
+        (c[1]*log(b) + c[2])*α^2 + (c[3]*log(b) + c[4])*α + c[5]*log(b) + c[6]
     end
-    q_ij = zeros(Int(length(z)*(length(z)-1)/2))
+
+    # Calculate q_ij
+    k = 1
     components = model.components
-    #Calculating the value of q(αᵢⱼ)
-    k = 1  # index for α_ij vector
-    for i in 1:length(z)
-        for j in i+1:length(z)
-            z_bin = [z[i]/(z[i]+z[j]), z[j]/(z[i]+z[j])]
+    for i in 1:N
+        for j in i+1:N
+            z_bin = [znorm[i]/(znorm[i]+znorm[j]), znorm[j]/(znorm[i]+znorm[j])]
             b_bin = z_bin[1]*b_ij[i,i] + z_bin[2]*b_ij[j,j]
             binary_model = Michelsen_GEPCSAFT([components[i], components[j]])
             gₑ = excess_gibbs_free_energy(binary_model.activity, V, T, z_bin) / (R̄ * T)
-
             b_sum = z_bin[1]*log(b_ij[i,i] / b_bin) + z_bin[2]*log(b_ij[j,j] / b_bin)
             α_sum = z_bin[1]*Q_ii(α_ii[i], b_ij[i,i]) + z_bin[2]*Q_ii(α_ii[j], b_ij[j,j])
-
             q_ij[k] = gₑ + b_sum + α_sum
             k += 1
         end
     end
-    #Calculating the value of α_ij
-    α_ij = zeros(Int(length(z)*(length(z)-1)/2))
-    ϵ_ij = zeros(Int(length(z)*(length(z)-1)/2))
+
+    # Calculate α_ij and ϵ_ij
     k = 1
-    for i in 1:length(z)
-        for j in i+1:length(z)
-            z_bin = [z[i]/(z[i]+z[j]), z[j]/(z[i]+z[j])]
+    for i in 1:N
+        for j in i+1:N
+            z_bin = [znorm[i]/(znorm[i]+znorm[j]), znorm[j]/(znorm[i]+znorm[j])]
             b_bin = z_bin[1]*b_ij[i,i] + z_bin[2]*b_ij[j,j]
             ϕ₁ = c[1]*log(b_bin) + c[2]
             ϕ₂ = c[3]*log(b_bin) + c[4]
             ϕ₃ = c[5]*log(b_bin) + c[6] - q_ij[k]
-            α_1 = (-ϕ₂ + sqrt(ϕ₂^2 - 4*ϕ₁*ϕ₃))/(2*ϕ₁)
-            α_2 = (-ϕ₂ - sqrt(ϕ₂^2 - 4*ϕ₁*ϕ₃))/(2*ϕ₁)
-            if α_1*α_2 > 0
-                α_1_loss = abs((z_bin[1]*α_ii[i] + z_bin[2]*α_ii[j]) - α_1)
-                α_2_loss = abs((z_bin[1]*α_ii[i] + z_bin[2]*α_ii[j]) - α_2)
-                if α_1_loss < α_2_loss
-                    α_ij[k] = α_1
-                else
-                    α_ij[k] = α_2
-                end
-            elseif α_1 > 0
+            Δ = ϕ₂^2 - 4*ϕ₁*ϕ₃
+            Δ = real(Δ) # in case of negative (shouldn't happen)
+            α_1 = (-ϕ₂ + sqrt(Δ)) / (2*ϕ₁)
+            α_2 = (-ϕ₂ - sqrt(Δ)) / (2*ϕ₁)
+            arithm = z_bin[1]*α_ii[i] + z_bin[2]*α_ii[j]
+            if α_1 > zero(Tnum) && α_2 > zero(Tnum)
+                α_ij[k] = abs(α_1 - arithm) < abs(α_2 - arithm) ? α_1 : α_2
+            elseif α_1 > zero(Tnum)
                 α_ij[k] = α_1
-            else 
+            else
                 α_ij[k] = α_2
             end
-            ϵ_ij[k] = T*α_ij[k]/m_ij[i,j]
-            #Need to add - take positive root (if both roots are positive, take the one closest to the arethmetic mean!)
+            ϵ_ij[k] = T * α_ij[k] / m_ij[i,j]
             k += 1
         end
     end
-    m2ϵσ3₁ = 0.0
-    m2ϵσ3₂ = 0.0
+
+    # Calculate m2ϵσ3₁, m2ϵσ3₂
+    m2ϵσ3₁ = zero(Tnum)
+    m2ϵσ3₂ = zero(Tnum)
     k = 1
-    for i ∈ 1:length(z)
-        for j ∈ i+1:length(z)
-            m2ϵσ3₁ += z[i]*z[j]*m_ij[i,i]*m_ij[j,j] * ϵ_ij[k] * σ_ij[i,j]^3
-            m2ϵσ3₂ += z[i]*z[j]*m_ij[i,j]*m_ij[j,j] * ϵ_ij[k]^2 * σ_ij[i,j]^3
+    for i in 1:N
+        for j in i+1:N
+            m2ϵσ3₁ += znorm[i]*znorm[j]*m_ij[i,i]*m_ij[j,j]*ϵ_ij[k]*σ_ij[i,j]^3
+            m2ϵσ3₂ += znorm[i]*znorm[j]*m_ij[i,j]*m_ij[j,j]*ϵ_ij[k]^2*σ_ij[i,j]^3
             k += 1
         end
     end
-    return m2ϵσ3₁,m2ϵσ3₂
+    return m2ϵσ3₁, m2ϵσ3₂
 end
 
 function I(model::Michelsen_GEPCSAFTModel, V, T, z, n , _data=@f(data))
