@@ -151,6 +151,18 @@ function HELD_func_rho(model,p,T,x₀,vref,rho)
     return f
 end
 
+function HELD_func_p(model,p₀,T,x₀,vref,rho)
+    v = vref/rho
+	p,dpdV = p∂p∂V(model,v,T,x₀)
+    return p₀ - p
+end
+
+function HELD_func_dpdV(model,T,x₀,vref,rho)
+    v = vref/rho
+	p,dpdV = p∂p∂V(model,v,T,x₀)
+    return dpdV
+end
+
 function HELD_volume1(model,p,T,x₀,vref,rho)
 	G(x) = HELD_func_rho(model,p,T,[x,1.0-x],vref,rho) + 5.474135924873183*(0.95 - x)
     dG(x) = Solvers.derivative(G,x)
@@ -178,9 +190,13 @@ function HELD_volume(model,p,T,x₀)
 end
 
 function HELD_density(model,p,T,x₀,vref)
+#	G(x) = HELD_func_rho(model,p,T,x₀,vref,x)
+#	dG(x) = Solvers.derivative(G,x)
+#	ddG(x) = Solvers.derivative(dG,x)
+
 	G(x) = HELD_func_rho(model,p,T,x₀,vref,x)
-	dG(x) = Solvers.derivative(G,x)
-	ddG(x) = Solvers.derivative(dG,x)
+	dG(x) = HELD_func_p(model,p,T,x₀,vref,x)
+	ddG(x) = HELD_func_dpdV(model,T,x₀,vref,x)
 	
 	# calculate rho_ideal
 	rho_ideal = vref/(R̄*T/p)
@@ -274,7 +290,8 @@ function HELD_density(model,p,T,x₀,vref)
 		ans = Roots.find_zero(dG, rho_bracket[ib])
 		for ia = eachindex(ans)
 			stab = ddG(ans[ia])
-			if stab > 0.0
+		#	if stab > 0.0
+			if stab < 0.0
 				push!(rho_found,ans[ia])
 			end
 		end
