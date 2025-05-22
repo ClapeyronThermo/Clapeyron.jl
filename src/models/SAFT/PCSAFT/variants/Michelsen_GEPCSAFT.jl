@@ -3,12 +3,12 @@ abstract type Michelsen_GEPCSAFTModel <: SAFTModel end
 
 const Michelsen_GEPCSAFTParam = PCSAFTParam
 
-struct Michelsen_GEPCSAFTi{T <: IdealModel,γ} <: Michelsen_GEPCSAFTModel
+struct Michelsen_GEPCSAFT{I <: IdealModel,T,γ} <: Michelsen_GEPCSAFTModel
     components::Array{String,1}
     sites::SiteParam
     activity::γ
-    params::Michelsen_GEPCSAFTParam
-    idealmodel::T
+    params::PCSAFTParam{T}
+    idealmodel::I
     assoc_options::AssocOptions
     references::Array{String,1}
 end
@@ -47,11 +47,10 @@ end
 
 ## Description
 
-Perturbed-Chain SAFT (PC-SAFT), with Gᴱ mixing rule (using the Michelsen limit).
+Perturbed-Chain SAFT (PC-SAFT), with Gᴱ mixing rule - using the Michelsen (0 pressure) limit.
 
-## References
 """
-Michelsen_GEPCSAFT
+GEPCSAFT
 
 export Michelsen_GEPCSAFT
 function Michelsen_GEPCSAFT(components;
@@ -64,9 +63,7 @@ function Michelsen_GEPCSAFT(components;
     reference_state = nothing,
     verbose = false)
 
-    
     params = getparams(components, ["SAFT/PCSAFT/PCSAFT_like.csv","SAFT/PCSAFT/PCSAFT_unlike.csv","SAFT/PCSAFT/PCSAFT_assoc.csv"]; userlocations = userlocations, verbose = verbose)
-
     sites = params["sites"]
     segment = params["segment"]
     k = get(params,"k",nothing)
@@ -76,18 +73,22 @@ function Michelsen_GEPCSAFT(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+
     packagedparams = Michelsen_GEPCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     references = String["10.1021/acs.iecr.2c03464"]
-    
-    model = Michelsen_GEPCSAFTi(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
+    model = Michelsen_GEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
     set_reference_state!(model,reference_state;verbose)
-    return model 
+    return model
 end
 
-function a_res(model::Michelsen_GEPCSAFTModel, V, T, z)
+function _pcsaft(model::Michelsen_GEPCSAFT{I,T}) where {I,T}
+    return PCSAFT{I,T}(model.components,model.sites,model.params,model.idealmodel,model.assoc_options,model.references)
+end
+
+function a_res(model::Michelsen_GEPCSAFTModel, V, T, z)    
     _data = @f(data)
     return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data)
 end
@@ -129,25 +130,33 @@ function a_disp(model::Michelsen_GEPCSAFTModel, V, T, z,_data=@f(data))
     di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
     Σz = sum(z)
     m2ϵσ3₁,m2ϵσ3₂ = @f(m2ϵσ3,_data)
-    return -2*π*N_A*Σz/V*@f(I,1,_data)*m2ϵσ3₁ - π*m̄*N_A*Σz/V*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
+    πNAρ = π*N_A*Σz/V
+    return -2*πNAρ*@f(I,1,_data)*m2ϵσ3₁ - m̄*πNAρ*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
 end
 
-function d(model::Michelsen_GEPCSAFTModel, V, T, z)
-    ϵᵢᵢ = diagvalues(model.params.epsilon)
-    σᵢᵢ = diagvalues(model.params.sigma)
-    return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
-end
+d(model::Michelsen_GEPCSAFTModel, V, T, z) = ck_diameter(model, T, z)
 
-
-function C1(model::Michelsen_GEPCSAFTModel, V, T, z,_data=@f(data))
-    _,_,_,_,η,m̄ = _data
-    return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
+function C1(model::Michelsen_GEPCSAFTModel, V, T, z, _data=@f(data))
+    return C1(_pcsaft(model),V,T,z,_data)
 end
 
 function m2ϵσ3(model::Michelsen_GEPCSAFTModel, V, T, z, _data=@f(data))
     Tnum = promote_type(eltype(z), typeof(V), typeof(T))
-
+    act_model = typeof(model.activity).name.wrapper
     N = length(z)
+
+    if N == 1 || sum(z .> 0.0) == 1
+        # For pure components, use direct calculation
+        m = model.params.segment.values[1]
+        ϵ = diagvalues(model.params.epsilon)[1] 
+        σ = diagvalues(model.params.sigma)[1]
+        
+        # Direct calculation for pure components
+        m2ϵσ3₁ = m^2 * ϵ * σ^3
+        m2ϵσ3₂ = m^2 * ϵ^2 * σ^3
+        
+        return m2ϵσ3₁, m2ϵσ3₂
+    end
     Nbin = div(N*(N-1),2)
 
     m_ij = zeros(Tnum, N, N)
@@ -209,8 +218,13 @@ function m2ϵσ3(model::Michelsen_GEPCSAFTModel, V, T, z, _data=@f(data))
         for j in i+1:N
             z_bin = [znorm[i]/(znorm[i]+znorm[j]), znorm[j]/(znorm[i]+znorm[j])]
             b_bin = z_bin[1]*b_ij[i,i] + z_bin[2]*b_ij[j,j]
-            binary_model = Michelsen_GEPCSAFT([components[i], components[j]])
-            gₑ = excess_gibbs_free_energy(binary_model.activity, V, T, z_bin) / (R̄ * T)
+            binary_model = init_model(act_model, [components[i], components[j]])
+            gₑ = try
+                    excess_gibbs_free_energy(binary_model, V, T, z_bin) / (R̄ * T)
+                catch e
+                    @warn "Error in excess Gibbs calculation" exception=e
+                    zero(Tnum)  # Provide a fallback value
+                end
             b_sum = z_bin[1]*log(b_ij[i,i] / b_bin) + z_bin[2]*log(b_ij[j,j] / b_bin)
             α_sum = z_bin[1]*Q_ii(α_ii[i], b_ij[i,i]) + z_bin[2]*Q_ii(α_ii[j], b_ij[j,j])
             q_ij[k] = gₑ + b_sum + α_sum
@@ -233,80 +247,48 @@ function m2ϵσ3(model::Michelsen_GEPCSAFTModel, V, T, z, _data=@f(data))
             α_2 = (-ϕ₂ - sqrt(Δ)) / (2*ϕ₁)
             arithm = z_bin[1]*α_ii[i] + z_bin[2]*α_ii[j]
             if α_1 > zero(Tnum) && α_2 > zero(Tnum)
-                α_ij[k] = abs(α_1 - arithm) < abs(α_2 - arithm) ? α_1 : α_2
+                α_ij[k] = convert(Tnum, abs(α_1 - arithm) < abs(α_2 - arithm) ? α_1 : α_2)
             elseif α_1 > zero(Tnum)
-                α_ij[k] = α_1
+                α_ij[k] = convert(Tnum, α_1)
             else
-                α_ij[k] = α_2
+                α_ij[k] = convert(Tnum, α_2)
             end
             ϵ_ij[k] = T * α_ij[k] / m_ij[i,j]
             k += 1
         end
     end
-
     # Calculate m2ϵσ3₁, m2ϵσ3₂
     m2ϵσ3₁ = zero(Tnum)
     m2ϵσ3₂ = zero(Tnum)
     k = 1
     for i in 1:N
+
         for j in i+1:N
             m2ϵσ3₁ += znorm[i]*znorm[j]*m_ij[i,i]*m_ij[j,j]*ϵ_ij[k]*σ_ij[i,j]^3
             m2ϵσ3₂ += znorm[i]*znorm[j]*m_ij[i,j]*m_ij[j,j]*ϵ_ij[k]^2*σ_ij[i,j]^3
             k += 1
         end
     end
+    @assert typeof(m2ϵσ3₁) <: Number "m2ϵσ3₁ is not a number: $(typeof(m2ϵσ3₁))"
+    @assert typeof(m2ϵσ3₂) <: Number "m2ϵσ3₂ is not a number: $(typeof(m2ϵσ3₂))"
     return m2ϵσ3₁, m2ϵσ3₂
 end
 
-function I(model::Michelsen_GEPCSAFTModel, V, T, z, n , _data=@f(data))
-    _,_,_,_,η,m̄ = _data
+function I(model::Michelsen_GEPCSAFTModel, V, T, z, n, _data=@f(data))
+    return I(_pcsaft(model),V,T,z,n,_data)
+end
+
+function Ī(model::Michelsen_GEPCSAFTModel, V, T, z, n, m)
     if n == 1
         corr = PCSAFTconsts.corr1
     elseif n == 2
         corr = PCSAFTconsts.corr2
     end
-    res = zero(η)
-    @inbounds for i ∈ 1:7
-        ii = i-1
-        corr1,corr2,corr3 = corr[i]
-        ki = corr1 + (m̄-1)/m̄*corr2 + (m̄-1)/m̄*(m̄-2)/m̄*corr3
-        res +=ki*η^ii
-    end
-    return res
-end
-
-function Ī(model::Michelsen_GEPCSAFTModel, V, T, z, n , _data=@f(data))
-    _,_,_,_,_,m̄ = _data
-    if n == 1
-        corr = PCSAFTconsts.corr1
-    elseif n == 2
-        corr = PCSAFTconsts.corr2
-    end
-    res = zero(m̄)
+    res = 0.0*m
     @inbounds for i ∈ 1:7
         corr1,corr2,corr3 = corr[i]
-        ki = corr1 + (m̄-1)/m̄*corr2 + (m̄-1)/m̄*(m̄-2)/m̄*corr3
-        res +=ki
+        ki =corr1 + (m-1)/m*corr2 + (m-1)/m*(m-2)/m*corr3
+        res += ki
     end
     return res
-end
-
-function Ii(model::Michelsen_GEPCSAFTModel, V, T, z, n , _data=@f(data))
-    m = model.params.segment.values
-    if n == 1
-        corr = PCSAFTconsts.corr1
-    elseif n == 2
-        corr = PCSAFTconsts.corr2
-    end
-    res = zero(m)
-    @inbounds for i ∈ 1:7
-        corr1,corr2,corr3 = corr[i]
-        ki = @. corr1 + (m-1)/m*corr2 + (m-1)/m*(m-2)/m*corr3
-        res +=ki
-    end
-    return res
-end
-
-function newtons_method(f, df, xn)
-    return xn - f/df 
 end
