@@ -13,7 +13,10 @@ vref = 5.594807453383915e-5
 
 z=[1.0]
 
-vol = Clapeyron.volume(model1,p,T,z)
+Vᵢ = Clapeyron.R̄*T/p
+pᵢ,dpdVᵢ = Clapeyron.p∂p∂V(model1,Vᵢ,T,z)
+println("pᵢ,dpdVᵢ GERG2008 Clapeyron Volume method = $(pᵢ) $(dpdVᵢ)")
+vol = Clapeyron.volume(model1,p,T,z;threaded=false)
 mw = Clapeyron.molecular_weight(model1,z)
 rhom = 1.0/vol*mw
 println("Density GERG2008 Clapeyron Volume method = $(round(rhom,sigdigits=6)) kg/m3")
@@ -39,9 +42,13 @@ println("Density GERG2008 = $(round(rhom,sigdigits=6)) kg/m3")
 npoint = 1000
 #comp = zeros(npoint)
 density = zeros(npoint)
+p1 = zeros(npoint)
+dp1 = zeros(npoint)
 G1 = zeros(npoint)
 dG1 = zeros(npoint)
 ddG1 = zeros(npoint)
+p2 = zeros(npoint)
+dp2 = zeros(npoint)
 G2 = zeros(npoint)
 dG2 = zeros(npoint)
 ddG2 = zeros(npoint)
@@ -51,6 +58,11 @@ let rho = 0.1
      #   z = [zCO2, 1.0 - zCO2]
      #   vol = Clapeyron.HELD_volume(model,p,T,z)
      #   rho = vref/vol
+        V = vref/rho
+        p1,dpdV1 = Clapeyron.p∂p∂V(model1,V,T,z)
+        global dp1[i] = dpdV1
+        p2,dpdV2 = Clapeyron.p∂p∂V(model2,V,T,z)
+        global dp2[i] = dpdV2
         Gi1, dGi1, ddGi1 = Clapeyron.HELD_volume2(model1,p,T,z,vref,rho)
         Gi2, dGi2, ddGi2 = Clapeyron.HELD_volume2(model2,p,T,z,vref,rho)
         global G1[i] = Gi1
@@ -64,10 +76,12 @@ let rho = 0.1
     end
 end
 
-l = @layout [a b c]
+l = @layout [a b c d]
 p1 = plot([density,density], [G1,G2], xlabel = "rho", ylabel = "G",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
 p2 = plot([density,density], [dG1,dG2], xlabel = "rho", ylabel = "dG",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
 p3 = plot([density,density], [ddG1,ddG2], xlabel = "rho", ylabel = "ddG",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
+p4 = plot([density,density], [dp1,dp2], xlabel = "rho", ylabel = "dpdV",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
 display(p1)
 display(p2)
 display(p3)
+display(p4)

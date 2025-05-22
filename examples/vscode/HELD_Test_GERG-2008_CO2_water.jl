@@ -127,7 +127,7 @@ tdis3 = nlsolve(Compressor3 , [td])
 println("Compressor3 discharge temperature = $(round(tdis3.zero[1]-273.15,sigdigits=5)) deg C")
 
 # add cooler to 25 deg C and dehydration zwater needs to be low enough so a liquid water phase does not form in the JT calc
-zdry=[z[1], z[2]]
+zdry=[zs[1], zs[2]]
 zdry= zdry./sum(zdry)
 zwater=0.0005
 zs=append!(zdry*(1-zwater),zwater)
@@ -148,12 +148,6 @@ for ip in eachindex(beta)
     println("Phase volume($(ip)) = $(vp[ip])")
 end
 
-#components2 = ["carbon dioxide","nitrogen"]
-#model2 = GERG2008(components2)
-
-# remove water as temperature below freezing point of water
-#zs = [xp[1][1],xp[1][2]]
-#zs = zs./sum(zs)
 ps = pd
 pd = ps/3.145
 ts = tcooler3
