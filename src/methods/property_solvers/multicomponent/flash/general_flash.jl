@@ -734,10 +734,10 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
         end
     end
 
-    if T == Nothing && v0 != nothing
+    if T == Nothing && v0 !== nothing
         TT = Base.promote_eltype(v0[1],v0[2])
         _v0 = (v0[1],v0[2])
-    elseif T != nothing && v0 != nothing
+    elseif T != nothing && v0 !== nothing
         TT = Base.promote_eltype(one(T),v0[1],v0[2])
         _v0 = (v0[1],v0[2])
     else
@@ -745,9 +745,9 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
         _v0 = v0
     end
 
-    if T0 == nothing && p0 == nothing
+    if T0 === nothing && p0 === nothing
         S = Nothing
-    elseif T0 != nothing && p0 != nothing
+    elseif T0 !== nothing && p0 !== nothing
         S = typeof(T0*p0)
     else
         S = typeof(something(T0,p0))
@@ -756,7 +756,7 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
 end
 
 function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
-    if method.T0 == nothing
+    if method.T0 === nothing
         T,_phase = _Tproperty(model,p,x,z,spec)
     else
         T = method.T0
@@ -807,7 +807,7 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
 end
 
 function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
-    if method.p0 == nothing
+    if method.p0 === nothing
         p,_phase = _Pproperty(model,T,x,z,spec)
     else
         p = method.p0

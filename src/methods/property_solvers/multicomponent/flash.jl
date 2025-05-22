@@ -554,5 +554,7 @@ include("flash/VT.jl")
 include("flash/TS.jl")
 include("flash/QT.jl")
 include("flash/QP.jl")
+include("flash/flash_HSU.jl")
+
 
 export FlashResult, FlashData
