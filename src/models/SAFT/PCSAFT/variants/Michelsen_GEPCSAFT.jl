@@ -145,26 +145,103 @@ function C1(model::Michelsen_GEPCSAFTModel, V, T, z,_data=@f(data))
 end
 
 function m2ϵσ3(model::Michelsen_GEPCSAFTModel, V, T, z,_data=@f(data))
+    c = [0.16825491455291727, 10.296455569712531, 1.2476994961006087, 79.52567954035581, -1.5554400906899912, -100.34856564780112]
     z = [z[i]/sum(z) for i ∈ eachindex(z)]
-    d,_,_,_,_,m̄ = _data
-    m_i = model.params.segment.values
-    m_mix = sum([m_i[i] * z[i] for i ∈ eachindex(z)])
-    ϵ_ii = Clapeyron.diagvalues(model.params.epsilon.values)
-    σ_ii = Clapeyron.diagvalues(model.params.sigma.values)
-    σ_mix = sum([σ_ii[i] * z[i] for i ∈ eachindex(z)])
-    gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T)
-    bi = [Clapeyron.N_A*m_i[i]*d[i]^3 for i ∈ eachindex(z)]
-    b = sum([bi[i]*z[i] for i ∈ eachindex(z)])
-    C₂ = gₑ + sum([z[i]*log(b/bi[i]) for i ∈ eachindex(z)])
-    α_ii = [m_i[i] * ϵ_ii[i] for i ∈ eachindex(z)]
-    α_bar = sum([α_ii[i]*z[i] for i ∈ eachindex(z)])
-    a = [-162.1526266, -8.76E-04, -1.49E-10, -13.28867758, -4.46E-01, -1.19E-04, -556.4748244, -471.4372287, 67201.59286]
-    Q(α_guess) = a[1] + a[2]*α_guess + a[3]*α_guess^2 + a[4]*log(b) + a[5]*(log(b))^2 + a[6]*log(b)*α_guess + a[7]/α_guess + a[8]/(log(b)) + a[9]/(α_guess^2)
-    f(α_guess) = C₂/Q(α_guess) - (α_guess - α_bar)
-    α_mix = Clapeyron.Solvers.ad_newton(f, α_bar)
-    @show α_mix
-    m2ϵσ3₁ = α_mix * m_mix * σ_mix^3
-    m2ϵσ3₂ =  α_mix^2*σ_mix^3
+    pures = split_model(model)
+    d_ii = @f(d)
+    m_ij = zeros(length(z),length(z))
+    σ_ij = zeros(length(z),length(z))
+    ϵ_ii = zeros(length(z))
+    d_ij = zeros(length(z),length(z))
+    b_ij = zeros(length(z),length(z))
+    for i ∈ 1:length(z)
+        for j in i:length(z) 
+            m_ii = pures[i].params.segment.values[1]
+            m_jj = pures[j].params.segment.values[1]
+            σ_ii = pures[i].params.sigma.values[1]
+            σ_jj = pures[j].params.sigma.values[1]
+            ϵ_ii[i] = pures[i].params.epsilon.values[1]
+            if i == j
+                m_ij[i,j] = m_ii
+                σ_ij[i,j] = σ_ii
+                d_ij[i,j] = d_ii[i]
+            else
+                m_ij[i,j] = (m_ii+ m_jj)/2
+                m_ij[j,i] = (m_ii + m_jj)/2
+                σ_ij[i,j] = (σ_ii + σ_jj)/2
+                σ_ij[j,i] = (σ_ii + σ_jj)/2
+                d_ij[i,j] = d_ii[i]*z[i] + d_ii[j]*z[j]
+                d_ij[j,i] = d_ii[i]*z[i] + d_ii[j]*z[j]
+            end
+            b_ij[i,j] = #=Clapeyron.N_A*=#m_ij[i,j]*d_ij[i,j]^3
+            b_ij[j,i] = #=Clapeyron.N_A*=#m_ij[i,j]*d_ij[i,j]^3
+        end
+    end
+    b = sum(z[i]*b_ij[i,i] for i ∈ eachindex(z))
+    α_ii = [m_ij[i,i] * ϵ_ii[i] / T for i ∈ eachindex(z)]
+    @show α_ii
+    function Q_ii(α_ii, b_ii)
+        (c[1]*log(b_ii) + c[2])*α_ii^2 + (c[3]*log(b_ii) + c[4])*α_ii + c[5]*log(b_ii) + c[6]
+    end
+    q_ij = zeros(Int(length(z)*(length(z)-1)/2))
+    components = model.components
+    #Calculating the value of q(αᵢⱼ)
+    k = 1  # index for α_ij vector
+    for i in 1:length(z)
+        for j in i+1:length(z)
+            z_bin = [z[i]/(z[i]+z[j]), z[j]/(z[i]+z[j])]
+            b_bin = z_bin[1]*b_ij[i,i] + z_bin[2]*b_ij[j,j]
+            binary_model = Michelsen_GEPCSAFT([components[i], components[j]])
+            gₑ = excess_gibbs_free_energy(binary_model.activity, V, T, z_bin) / (R̄ * T)
+
+            b_sum = z_bin[1]*log(b_ij[i,i] / b_bin) + z_bin[2]*log(b_ij[j,j] / b_bin)
+            α_sum = z_bin[1]*Q_ii(α_ii[i], b_ij[i,i]) + z_bin[2]*Q_ii(α_ii[j], b_ij[j,j])
+
+            q_ij[k] = gₑ + b_sum + α_sum
+            k += 1
+        end
+    end
+    #Calculating the value of α_ij
+    α_ij = zeros(Int(length(z)*(length(z)-1)/2))
+    ϵ_ij = zeros(Int(length(z)*(length(z)-1)/2))
+    k = 1
+    for i in 1:length(z)
+        for j in i+1:length(z)
+            z_bin = [z[i]/(z[i]+z[j]), z[j]/(z[i]+z[j])]
+            b_bin = z_bin[1]*b_ij[i,i] + z_bin[2]*b_ij[j,j]
+            ϕ₁ = c[1]*log(b_bin) + c[2]
+            ϕ₂ = c[3]*log(b_bin) + c[4]
+            ϕ₃ = c[5]*log(b_bin) + c[6] - q_ij[k]
+            α_1 = (-ϕ₂ + sqrt(ϕ₂^2 - 4*ϕ₁*ϕ₃))/(2*ϕ₁)
+            α_2 = (-ϕ₂ - sqrt(ϕ₂^2 - 4*ϕ₁*ϕ₃))/(2*ϕ₁)
+            if α_1*α_2 > 0
+                α_1_loss = abs((z_bin[1]*α_ii[i] + z_bin[2]*α_ii[j]) - α_1)
+                α_2_loss = abs((z_bin[1]*α_ii[i] + z_bin[2]*α_ii[j]) - α_2)
+                if α_1_loss < α_2_loss
+                    α_ij[k] = α_1
+                else
+                    α_ij[k] = α_2
+                end
+            elseif α_1 > 0
+                α_ij[k] = α_1
+            else 
+                α_ij[k] = α_2
+            end
+            ϵ_ij[k] = T*α_ij[k]/m_ij[i,j]
+            #Need to add - take positive root (if both roots are positive, take the one closest to the arethmetic mean!)
+            k += 1
+        end
+    end
+    m2ϵσ3₁ = 0.0
+    m2ϵσ3₂ = 0.0
+    k = 1
+    for i ∈ 1:length(z)
+        for j ∈ i+1:length(z)
+            m2ϵσ3₁ += z[i]*z[j]*m_ij[i,i]*m_ij[j,j] * ϵ_ij[k] * σ_ij[i,j]^3
+            m2ϵσ3₂ += z[i]*z[j]*m_ij[i,j]*m_ij[j,j] * ϵ_ij[k]^2 * σ_ij[i,j]^3
+            k += 1
+        end
+    end
     return m2ϵσ3₁,m2ϵσ3₂
 end
 
