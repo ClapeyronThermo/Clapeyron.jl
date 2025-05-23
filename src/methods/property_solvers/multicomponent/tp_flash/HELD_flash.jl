@@ -172,8 +172,8 @@ end
 
 function HELD_volume2(model,p,T,x₀,vref,rho)
 	G(x) = HELD_func_rho(model,p,T,x₀,vref,x)
-    dG(x) = Solvers.derivative(G,x)
-	ddG(x) = Solvers.derivative(dG,x)
+	dG(x) = HELD_func_p(model,p,T,x₀,vref,x)
+	ddG(x) = HELD_func_dpdV(model,T,x₀,vref,x)
     return G(rho), dG(rho), ddG(rho)
 end
 
@@ -193,6 +193,8 @@ function HELD_density(model,p,T,x₀,vref)
 #	G(x) = HELD_func_rho(model,p,T,x₀,vref,x)
 #	dG(x) = Solvers.derivative(G,x)
 #	ddG(x) = Solvers.derivative(dG,x)
+
+#    println("x₀  = $(x₀)")
 
 	G(x) = HELD_func_rho(model,p,T,x₀,vref,x)
 	dG(x) = HELD_func_p(model,p,T,x₀,vref,x)
@@ -300,16 +302,20 @@ function HELD_density(model,p,T,x₀,vref)
 #	println("rho_found  = $(rho_found)")
 
 	rho_stable_set = Vector{Float64}(undef,0)
-	if length(rho_spinodial) > 1
-		if rho_found[1] < rho_sp_low
+	if length(rho_found) > 1
+		if length(rho_spinodial) > 1
+			if rho_found[1] < rho_sp_low
+				push!(rho_stable_set,rho_found[1])
+			end
+			if rho_found[end] > rho_sp_high
+				push!(rho_stable_set,rho_found[end])
+			end
+		else
 			push!(rho_stable_set,rho_found[1])
-		end
-		if rho_found[end] > rho_sp_high
-			push!(rho_stable_set,rho_found[end])
+		#	push!(rho_stable_set,rho_found[end])
 		end
 	else
 		push!(rho_stable_set,rho_found[1])
-		push!(rho_stable_set,rho_found[end])
 	end
 
 #	println("rho_stable_set  = $(rho_stable_set)")
