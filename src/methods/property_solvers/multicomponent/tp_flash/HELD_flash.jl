@@ -887,8 +887,25 @@ function HELD_impl(model,p,T,z₀,
 				end
 				
 				fmins_unique, xmins_unique, stable = HELD_clean_local_solutions(UBDⱽ, x₀, fmins, xmins, tol, verbose)
+
+
 				
 				if length(fmins_unique) > 0
+
+					# with the unique solution ensure the rho solution is correct based on rho solver this needs a fmin update
+					xu = zeros(nc)
+					for iu = 1:length(xmins_unique)
+						sumx = 0.0
+						for ix = 1:nc-1
+							xu[ix] = xmins_unique[ix]
+							sumx += xu[ix]
+						end
+						xu[nc] = 1.0 - sumx
+						ρu = HELD_density(model,p,T,xu,vref)
+						xmins_unique[iu][nc] = ρu
+						fmins_unique[iu] = Gi(xmins_unique[iu])
+					end
+
 					# find lowest minimum of returned set.
 					LBDⱽ = fmins_unique[1]
 					iLBDⱽ = 1
@@ -1278,7 +1295,7 @@ function HELD_clean_local_solutions(G₀, x₀, fmins, xmins, tol, verbose)
 			iminfound[imin] = true
     		for imins = 1:length(fmins)
     			if !iremove[imins] && !iminfound[imins]
-    				distances = xmins[imins] - xmins[imin]
+    				distances = xmins[imins] .- xmins[imin]
     				distance = norm(distances, Inf)
     				if distance < sqrt(tol)
     					iremove[imins] = true
@@ -1290,7 +1307,7 @@ function HELD_clean_local_solutions(G₀, x₀, fmins, xmins, tol, verbose)
     # remove trival solutions
     for imins = 1:length(fmins)
     	if iminfound[imins]
-    		distances = xmins[imins] - x₀
+    		distances = xmins[imins] .- x₀
     		distance = norm(distances, Inf)
     		if distance < sqrt(tol)
     			iminfound[imins] = false
