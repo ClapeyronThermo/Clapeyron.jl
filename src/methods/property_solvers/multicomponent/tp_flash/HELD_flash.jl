@@ -636,7 +636,21 @@ function HELD_impl(model,p,T,z₀,
     end
     
     fmins_unique, xmins_unique, stable = HELD_clean_local_solutions(G₀, x₀, fmins, xmins, tol, verbose)
-    
+
+	# with the unique solution ensure the rho solution is correct based on rho solver this needs a fmin update
+	xu = zeros(nc)
+	for iu = 1:length(xmins_unique)
+		sumx = 0.0
+		for ix = 1:nc-1
+			xu[ix] = xmins_unique[iu][ix]
+			sumx += xu[ix]
+		end
+		xu[nc] = 1.0 - sumx
+		ρu = HELD_density(model,p,T,xu,vref)
+		xmins_unique[iu][nc] = ρu
+		fmins_unique[iu] = G(xmins_unique[iu])
+	end
+
     if verbose == true
     		println("HELD Step 1 - Phase stability check completed: $(length(fmins_unique)) unique solutions found")
     end
@@ -715,7 +729,7 @@ function HELD_impl(model,p,T,z₀,
 
 		# need some way of getting the estimated lower and upper bounds on λ, 10 seems OK so far but may not be universal
 		λnorm = norm(λ₀,Inf)
-		λmax = 1.2*λnorm
+		λmax = 2.2*λnorm
 		λᴸ = fill(-λmax,nc-1)
 		λᵁ = fill( λmax,nc-1)
 
@@ -772,7 +786,7 @@ function HELD_impl(model,p,T,z₀,
     		UBDⱽ  = JuMP.value.(v)
 
 			λnorm = norm(λˢ,Inf)
-			if k>nc
+			if k>2*nc
 				filter = 0.1
 				λmax  = filter*1.05*λnorm + (1.0 - filter)*λmax
 			end
@@ -785,7 +799,7 @@ function HELD_impl(model,p,T,z₀,
 				println("HELD Step 2 - λnorm = $(λnorm) λmax = $(λmax)")
     		end
     		
-    		Dλ = λˢ  .- λ₀
+    		Dλ = λˢ .- λ₀
 			λStalling = false
     		if norm(Dλ,Inf) < HELD_tol
     		    if verbose == true
@@ -838,6 +852,21 @@ function HELD_impl(model,p,T,z₀,
     		
     		ℒ = Vector{Vector{Float64}}(undef,0)
     		if length(fmins_unique) > 0
+	
+				# with the unique solution ensure the rho solution is correct based on rho solver this needs a fmin update
+				xu = zeros(nc)
+				for iu = 1:length(xmins_unique)
+					sumx = 0.0
+					for ix = 1:nc-1
+						xu[ix] = xmins_unique[iu][ix]
+						sumx += xu[ix]
+					end
+					xu[nc] = 1.0 - sumx
+					ρu = HELD_density(model,p,T,xu,vref)
+					xmins_unique[iu][nc] = ρu
+					fmins_unique[iu] = Gˢ(xmins_unique[iu])
+				end
+				
 				# find lowest minimum of returned set.
 				LBDⱽ = fmins_unique[1]
 				iLBDⱽ = 1
@@ -894,8 +923,6 @@ function HELD_impl(model,p,T,z₀,
 				
 				fmins_unique, xmins_unique, stable = HELD_clean_local_solutions(UBDⱽ, x₀, fmins, xmins, tol, verbose)
 
-
-				
 				if length(fmins_unique) > 0
 
 					# with the unique solution ensure the rho solution is correct based on rho solver this needs a fmin update
@@ -903,15 +930,15 @@ function HELD_impl(model,p,T,z₀,
 					for iu = 1:length(xmins_unique)
 						sumx = 0.0
 						for ix = 1:nc-1
-							xu[ix] = xmins_unique[ix]
+							xu[ix] = xmins_unique[iu][ix]
 							sumx += xu[ix]
 						end
 						xu[nc] = 1.0 - sumx
 						ρu = HELD_density(model,p,T,xu,vref)
 						xmins_unique[iu][nc] = ρu
-						fmins_unique[iu] = Gi(xmins_unique[iu])
+						fmins_unique[iu] = Gˢ(xmins_unique[iu])
 					end
-
+					
 					# find lowest minimum of returned set.
 					LBDⱽ = fmins_unique[1]
 					iLBDⱽ = 1
@@ -1058,6 +1085,15 @@ function HELD_impl(model,p,T,z₀,
 				println("HELD Step 3 - Add new (x,V)s: ℒs to the ℳ set and all current minimums to the ℳguess set")
     		end
 
+			if limit_λs_by_bounds && error > 0.001
+				limit_λs_by_bounds = true
+			else
+				limit_λs_by_bounds = false
+				if verbose == true
+					println("HELD Step 3 - λ bounds removed from OPₓᵥ")
+				end
+			end 
+			#=
 			if error > 0.001
 				limit_λs_by_bounds = true
 			else
@@ -1066,7 +1102,7 @@ function HELD_impl(model,p,T,z₀,
 					println("HELD Step 3 - λ bounds removed from OPₓᵥ")
 				end
 			end
-
+			=#
 			use_only_lowest_min = false
 			if error > 0.001 && !use_only_lowest_min
 				# add latest minimums to ℳguess
