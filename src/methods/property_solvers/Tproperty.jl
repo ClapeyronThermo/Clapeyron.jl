@@ -182,10 +182,12 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
         return T_edge,:eq
       elseif βedge > 1 #prop <= prop_edge2
         verbose && @info "temperature($property) ∈ (temperature(dew point),temperature(edge point))"
-        return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
+        T,_ = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_temp)
+        return T ,:eq
       elseif βedge < 0
         verbose && @info "temperature($property) ∈ (temperature(edge point),temperature(bubble point))"
-        return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
+        T,_ =  __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_temp)
+        return T ,:eq
       end
 
     elseif β > 1

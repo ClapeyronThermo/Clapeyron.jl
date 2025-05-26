@@ -160,11 +160,13 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
         return P_edge,:eq
       elseif βedge < 0 #prop <= prop_edge2
         verbose && @info "pressure($property) ∈ (pressure(dew point),pressure(edge point))"
-        return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
+        px,_ = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
+        return px,:eq
         #abs(prop) > abs(prob_edge1)
       elseif βedge > 1
         verbose && @info "pressure($property) ∈ (pressure(edge point),pressure(bubble point))"
-        return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
+        px,_ = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
+        return px,:eq
       end
 
     elseif β > 1
