@@ -1,16 +1,13 @@
 using Clapeyron
 
 components = ["nitrogen","oxygen","argon","carbon dioxide","water"]
-#components = ["water","carbon dioxide","argon","oxygen","nitrogen"]
 model = SAFTVRMie(components; assoc_options=AssocOptions(combining=:elliott))
 
 p = 1.5e5
 T = 20+273.15
 
 zdry=[0.7808,0.2095,0.0093,0.0004]
-#zdry=[0.0004,0.0093,0.2095,0.7808]
 zwater=0.05
-#z=prepend!(zdry*(1-zwater),zwater)
 z=append!(zdry*(1-zwater),zwater)
 
 verbose = true
