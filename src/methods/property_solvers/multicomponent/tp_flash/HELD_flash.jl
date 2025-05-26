@@ -727,13 +727,13 @@ function HELD_impl(model,p,T,z₀,
     	UBDⱽ =  G₀
     	LBDⱽ = -Inf
 
-		# need some way of getting the estimated lower and upper bounds on λ, 10 seems OK so far but may not be universal
-		λnorm = norm(λ₀,Inf)
-		λmax = 2.2*λnorm
+	#	λnorm = norm(λ₀,Inf)
+	#	λmax = 2.2*λnorm
+	    λmax = Inf
 		λᴸ = fill(-λmax,nc-1)
 		λᵁ = fill( λmax,nc-1)
 
-		limit_λs_by_bounds = true
+		limit_λs_by_bounds = false
     	
     	use_global_solution = false
 
@@ -762,7 +762,7 @@ function HELD_impl(model,p,T,z₀,
     		@constraint(OPₓᵥ,[i ∈ 1:length(ℳ)],v <= ℳ[i][nc+1]+sum(λ.*(z₀[1:nc-1] .- ℳ[i][1:nc-1])))
 
 			if limit_λs_by_bounds
-    			#λᴸ <= λ <= λᵁ 
+    			# λᴸ <= λ <= λᵁ 
     			@constraint(OPₓᵥ,[i ∈ 1:nc-1],λᴸ[i] <= λ[i] <= λᵁ[i])
 			end
 
@@ -786,10 +786,27 @@ function HELD_impl(model,p,T,z₀,
     		UBDⱽ  = JuMP.value.(v)
 
 			λnorm = norm(λˢ,Inf)
-			if k>2*nc
+		#	if k > 1 && !limit_λs_by_bounds
+			if k == 1
+				λmax = 1.3*λnorm
+				limit_λs_by_bounds = true
+				if verbose == true
+					println("HELD Step 3 - λ bounds added to OPₓᵥ")
+				end
+			end
+
+			if k > nc && limit_λs_by_bounds
 				filter = 0.1
 				λmax  = filter*1.05*λnorm + (1.0 - filter)*λmax
 			end
+
+			if k > 2*nc && limit_λs_by_bounds
+				limit_λs_by_bounds = false
+				if verbose == true
+					println("HELD Step 3 - λ bounds removed from OPₓᵥ")
+				end
+			end
+
 			λᴸ = fill(-λmax,nc-1)
 			λᵁ = fill( λmax,nc-1)
 
@@ -1085,24 +1102,6 @@ function HELD_impl(model,p,T,z₀,
 				println("HELD Step 3 - Add new (x,V)s: ℒs to the ℳ set and all current minimums to the ℳguess set")
     		end
 
-			if limit_λs_by_bounds && error > 0.001
-				limit_λs_by_bounds = true
-			else
-				limit_λs_by_bounds = false
-				if verbose == true
-					println("HELD Step 3 - λ bounds removed from OPₓᵥ")
-				end
-			end 
-			#=
-			if error > 0.001
-				limit_λs_by_bounds = true
-			else
-				limit_λs_by_bounds = false
-				if verbose == true
-					println("HELD Step 3 - λ bounds removed from OPₓᵥ")
-				end
-			end
-			=#
 			use_only_lowest_min = false
 			if error > 0.001 && !use_only_lowest_min
 				# add latest minimums to ℳguess
