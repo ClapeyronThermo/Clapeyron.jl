@@ -20,7 +20,7 @@ default_ignore_missing_singleparams(::Type{COFFEE}) = ["dipole"]
 """
     COFFEEModel <: SAFTVRMieModel
 
-    COFFEE(components; 
+    COFFEE(components;
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
@@ -170,7 +170,7 @@ end
 
 function a_nf(model ::COFFEEModel, V, T, z, _data=@f(data))
     (_,_,(_,_,_,η),_,_,_,_)= _data
-    
+
     ϵ = model.params.epsilon[1]
     σ = diagvalues(model.params.sigma.values)
     d = model.params.shift[1] / σ[1]
@@ -211,14 +211,14 @@ function ∫odr(d,ξ1,ξ2,γ12)
 
         g = -2d^2*(A12-1)
         g2 = g*g
-        
+
         _I = -(1/(3*(f2 - 4*g)^2))*((1/((1 + f + g)^(
-            3/2)))*(2*c*(2 + f)*(-8 - 8*f + f2 - 12*g) + 
-            2*b*(3*f3 + 8*g2 + 2*f2*(6 + g) + 4*f*(2 + 3*g)) - 
+            3/2)))*(2*c*(2 + f)*(-8 - 8*f + f2 - 12*g) +
+            2*b*(3*f3 + 8*g2 + 2*f2*(6 + g) + 4*f*(2 + 3*g)) -
             2*a*(3*f3 + 8*g + 4*f*g*(3 + 2*g) + 2*f2*(1 + 6*g))) + (
             1/((9 + 6*f + 4*g)^(3/2))) *
-            4*(-4*c*(3 + f)*(-12*f + f2 - 6*(3 + 2*g)) - 
-            2*b*(9*f3 + 16*g2 + 18*f*(3 + 2*g) + f2*(54 + 4*g)) + 
+            4*(-4*c*(3 + f)*(-12*f + f2 - 6*(3 + 2*g)) -
+            2*b*(9*f3 + 16*g2 + 18*f*(3 + 2*g) + f2*(54 + 4*g)) +
             a*(27*f3 + 108*g + 9*f2*(3 + 8*g) + 4*f*g*(27 + 8*g))))
     end
     return _I
@@ -273,6 +273,103 @@ function ∫∫∫dξ₁dξ₂dγ12(I::Function)
         end
     end
     return _I
+end
+
+function Xij(model::COFFEEModel, V, T, z, _data=@f(data))
+    nc = length(model)
+    Χᵢⱼ = similar(Base.promote_eltype(model,V,T,z),nc,nc)
+    ξᵢⱼ = similar(Χᵢⱼ)
+    K = similar(Χᵢⱼ)
+    ∑z = sum(z)
+    σ = pcp_sigma(model)
+    Χᵢⱼ .= 0
+    #filling initial values
+    for i in 1:nc
+        Χᵢⱼ[i,i] = z[i]*z[i]/(∑z*∑z)
+        ξᵢⱼ[i,i] = COFFEE_ξᵢⱼ(z,σ,i,i)
+        for j in i:nc
+            Χᵢⱼ[i,j] = z[i]*z[j]/(∑z*∑z)
+            ξᵢⱼ[i,j] = COFFEE_ξᵢⱼ(z,σ,i,j)
+            K[i,j] = (19/6)*σ[i,j]^3 * 1 #TODO: put gij *  ∫Oijdωidωj here
+        end
+    end
+    Χnew = copy(Χᵢⱼ)
+    tol = one(eltype(Χᵢⱼ))
+    while tol > 1e-10
+        Xij_fixpoint(model::COFFEEModel,V,T,z,data,Χnew,Χ,ξ,K)
+        tol = Solvers.dnorm(Χᵢⱼ,Χnew)
+        Χᵢⱼ .= Χnew
+    end
+    return Χᵢⱼ
+end
+
+function COFFEE_Δij(model::COFFEEModel,V,T,z,data,Χ,i,j)
+    return 1.0 #TODO: fill
+end
+
+function Xij_fixpoint(model::COFFEEModel,V,T,z,data,Χnew,Χ,ξ,K)
+    ∑z = sum(z)
+    for i in 1:nc
+        #=
+        local mass balance
+        =#
+        Χii = zero(eltype(Χnew))
+        σii = σ[i,i]
+        zᵢ = z[i]
+        for j in 1:nc
+            if i !== j
+                σjj = σ[j,j]
+                Χii += z[i]*σjj*σjj*σjj*(1 - Χ[i,j])
+            end
+        end
+        Χii = Χii/(zᵢ*σii*σii*σii)
+
+        if Χii < 0
+            Χii = Χ[i,i] / 2
+        elseif Χii > 1
+            Χii =  1 - 0.5*Χ[i,i]
+        end
+
+        Χnew[i,i] = Χii
+
+        #=
+        Energy minimization constraint
+        =#
+        for j in i+1:nc
+            Δᵢⱼ = @f(COFFEE_Δij,data,Χ,i,j)
+            Χᵢⱼ = Χ[i,j]
+            ξᵢⱼ = ξ[i,j]
+            zⱼ = z[j]
+            Χij = ∑z/(zᵢ*(1 + 1/ξᵢⱼ) + zⱼ*(1 + ξᵢⱼ)) * K[i,j] * log(ξᵢⱼ + Χᵢⱼ*(zᵢ - zⱼ*ξᵢⱼ)/∑z) / Δᵢⱼ
+
+            if Χij < 0
+                Χij = Χᵢⱼ / 2
+            elseif Χij > 1
+                Χij =  1 - 0.5*Χᵢⱼ
+            end
+
+            Χnew[i,j] = Χij
+
+        end
+    end
+    return Χnew
+end
+
+function COFFEE_ξᵢⱼ(z,σ,i,j)
+    k = length(z)
+    ∑1 = zero(Base.promote_eltype(z,σ))
+    ∑2 = zero(Base.promote_eltype(z,σ))
+    for k in 1:length(z)
+        σjk = σ[j,k]
+        σik = σ[i,k]
+        if k != i
+            ∑1 += z[k]*σjk^3
+        end
+        if k != j
+            ∑2 += z[k]*σik^3
+        end
+    end
+    return ∑1/∑2
 end
 
 const COFFEEconsts = (
