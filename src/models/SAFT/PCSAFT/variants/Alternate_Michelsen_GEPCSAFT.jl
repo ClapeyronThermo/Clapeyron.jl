@@ -1,5 +1,5 @@
 
-abstract type AltAdvGEPCSAFTModel <: GEPCSAFTModel end
+abstract type AltAdvGEPCSAFTModel <: PCSAFTModel end
 
 
 struct AltAdvGEPCSAFT{I <: IdealModel,T,γ} <: AltAdvGEPCSAFTModel
