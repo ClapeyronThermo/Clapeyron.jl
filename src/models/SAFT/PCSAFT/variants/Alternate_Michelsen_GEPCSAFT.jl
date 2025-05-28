@@ -1,10 +1,8 @@
 
-abstract type AdvGEPCSAFTModel <: PCSAFTModel end
-stripdual(x) = x
-stripdual(x::ForwardDiff.Dual) = stripdual(ForwardDiff.value(x))
-stripdual(xs::AbstractArray) = map(stripdual, xs)
+abstract type AltAdvGEPCSAFTModel <: GEPCSAFTModel end
 
-struct AdvGEPCSAFT{I <: IdealModel,T,γ} <: AdvGEPCSAFTModel
+
+struct AltAdvGEPCSAFT{I <: IdealModel,T,γ} <: AltAdvGEPCSAFTModel
     components::Array{String,1}
     sites::SiteParam
     activity::γ
@@ -15,9 +13,9 @@ struct AdvGEPCSAFT{I <: IdealModel,T,γ} <: AdvGEPCSAFTModel
 end
 
 """
-    AdvGEPCSAFT <: SAFTModel
+    AltAdvGEPCSAFT <: SAFTModel
 
-    AdvGEPCSAFT(components;
+    AltAdvGEPCSAFT(components;
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
@@ -51,10 +49,10 @@ end
 Perturbed-Chain SAFT (PC-SAFT), with Gᴱ mixing rule - using the Michelsen (0 pressure) limit.
 
 """
-AdvGEPCSAFT
+AltAdvGEPCSAFT
 
-export AdvGEPCSAFT
-function AdvGEPCSAFT(components;
+export AltAdvGEPCSAFT
+function AltAdvGEPCSAFT(components;
     idealmodel = BasicIdeal,
     activity = UNIFAC,
     userlocations = String[],
@@ -80,24 +78,24 @@ function AdvGEPCSAFT(components;
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     references = String["10.1021/acs.iecr.2c03464"]
-    model = AdvGEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
+    model = AltAdvGEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
 
-function _pcsaft(model::AdvGEPCSAFT{I,T}) where {I,T}
+function _pcsaft(model::AltAdvGEPCSAFT{I,T}) where {I,T}
     return PCSAFT{I,T}(model.components,model.sites,model.params,model.idealmodel,model.assoc_options,model.references)
 end
 
-function m2ϵσ3(model::AdvGEPCSAFTModel, V, T, z, _data=@f(data))
-    
+function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
+
     function q_i(α, b)
-        c = [0.1233, 7.4616, 1.3199, 84.1024, -1.7074, -110.3117]
+        c = [0.16825491455291727, 10.296455569712531, 1.2476994961006087, 79.52567954035581, -1.5554400906899912, -100.34856564780112]
         (c[1]*log(b) + c[2])*α^2 + (c[3]*log(b) + c[4])*α + c[5]*log(b) + c[6]
     end
 
     function α_mix(q̄,b̄)
-        c = [0.1233, 7.4616, 1.3199, 84.1024, -1.7074, -110.3117]
+        c = [0.16825491455291727, 10.296455569712531, 1.2476994961006087, 79.52567954035581, -1.5554400906899912, -100.34856564780112]
         A = (c[1]*log(b̄) + c[2])
         B = (c[3]*log(b̄) + c[4])
         C = c[5]*log(b̄) + c[6] - q̄
@@ -139,11 +137,7 @@ function m2ϵσ3(model::AdvGEPCSAFTModel, V, T, z, _data=@f(data))
     end
     m²σ³,b̄ = m²σ³/Σz,b̄/Σz
     A, B = A/Σz, B/Σz
-    zval = stripdual(z)
-    Tval = stripdual(T)
-    Σzval = sum(zval)
-    p_sat = bubble_pressure(model.activity, Tval, zval)[1]
-    gₑ = excess_gibbs_free_energy(model.activity,p_sat,Tval,zval)/(R̄*Tval*Σzval)
+    gₑ = excess_gibbs_free_energy(model.activity,1e-7,T,z)/(R̄*T*Σz)
     q̄ = gₑ + log(b̄)-B +  A
     ᾱ = α_mix(q̄, b̄)
 
