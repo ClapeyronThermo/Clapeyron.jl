@@ -167,19 +167,11 @@ function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNonBracketingMethod
 end
 
 function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNewtonLikeMethod ,options) where F
-    function fdf(vz)
-        fx,dfx = Solvers.f∂f(f,vz)
-        return fx,fx/dfx
-    end
-    prob = Roots.ZeroProblem(fdf,x0)
+    prob = Roots.ZeroProblem(to_newton(f),x0)
     sol = Roots.solve(prob,method)
 end
 
 function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractHalleyLikeMethod,options) where F
-    function d2f(vz)
-        fx,dfx,d2fx = Solvers.f∂f∂2f(f,vz)
-        return fx,fx/dfx,dfx/d2fx
-    end
-    prob = Roots.ZeroProblem(d2f,x0)
+    prob = Roots.ZeroProblem(to_halley(f),x0)
     sol = Roots.solve(prob,method)
 end
