@@ -14,8 +14,3 @@ c = -Float64[19, 13, 12, 17, 0, 0, 0]
 println("primal sol         = $(primal_sol)")
 println("dual sol           = $(dual_sol)")
 println("objective function = $(-obj)")
-
-
-#include("/home/cbranch/julia/dev/simplex.jl/simplex.jl")
-
-#simplex()
