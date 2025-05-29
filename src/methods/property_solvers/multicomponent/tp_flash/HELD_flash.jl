@@ -1,4 +1,4 @@
-using JuMP, HiGHS
+using HiGHS
 
 """
     HELDTPFlash(;   max_HELD_iters::Int = 0
@@ -730,8 +730,8 @@ function HELD_impl(model,p,T,z₀,
 	#	λnorm = norm(λ₀,Inf)
 	#	λmax = 2.2*λnorm
 	    λmax = Inf
-		λᴸ = fill(-λmax,nc-1)
-		λᵁ = fill( λmax,nc-1)
+	#	λᴸ = fill(-λmax,nc-1)
+	#	λᵁ = fill( λmax,nc-1)
 
 		limit_λs_by_bounds = false
     	
@@ -750,6 +750,8 @@ function HELD_impl(model,p,T,z₀,
             	println("HELD Step 2 - Solve OPₓᵥ for new λˢ")
     		end
     		
+			#=
+			# JuMP interface
     		OPₓᵥ = Model(HiGHS.Optimizer)
     		set_optimizer_attribute(OPₓᵥ, "log_to_console", false)
     		set_optimizer_attribute(OPₓᵥ, "output_flag", false)
@@ -784,9 +786,46 @@ function HELD_impl(model,p,T,z₀,
     		λˢ = JuMP.value.(λ)
 
     		UBDⱽ  = JuMP.value.(v)
+			=#
+
+			# C API interface to HiGHs - JuMP not required
+			OPₓᵥ = Highs_create()
+			Highs_setBoolOptionValue(OPₓᵥ, "log_to_console", false)
+			Highs_setBoolOptionValue(OPₓᵥ, "output_flag", false)
+			Highs_setStringOptionValue(OPₓᵥ, "solver", "simplex")
+			simplex_tol = max(tol, 1.0e-10)
+			Highs_setDoubleOptionValue(OPₓᵥ, "dual_feasibility_tolerance", simplex_tol)
+			Highs_setDoubleOptionValue(OPₓᵥ, "primal_feasibility_tolerance", simplex_tol)
+			Highs_setDoubleOptionValue(OPₓᵥ, "dual_residual_tolerance", simplex_tol)
+			Highs_setDoubleOptionValue(OPₓᵥ, "primal_residual_tolerance", simplex_tol)
+			Highs_addCol(OPₓᵥ, 1.0, -Inf, Inf, 0, C_NULL, C_NULL)
+			for iλ = 1:nc-1
+				if limit_λs_by_bounds
+					Highs_addCol(OPₓᵥ, 0.0, -λmax, λmax, 0, C_NULL, C_NULL)
+				else
+					Highs_addCol(OPₓᵥ, 0.0, -Inf, Inf, 0, C_NULL, C_NULL)
+				end
+			end
+			Highs_changeObjectiveSense(OPₓᵥ, kHighsObjSenseMaximize)
+			for iℳ = 1:length(ℳ)
+				row_index = Vector{Cint}(undef,0)
+				row_value = Vector{Cdouble}(undef,0)
+				push!(row_index,0)
+				push!(row_value, 1.0)
+				for irow = 1:nc-1
+					push!(row_index,irow)
+					push!(row_value, ℳ[iℳ][irow] - z₀[irow] )
+				end
+				Highs_addRow(OPₓᵥ, -Inf, ℳ[iℳ][nc+1], nc, row_index, row_value)
+			end
+			Highs_run(OPₓᵥ)
+			sol = zeros(Cdouble, nc)
+			Highs_getSolution(OPₓᵥ, sol, C_NULL, C_NULL, C_NULL)
+			UBDⱽ = sol[1]
+			λˢ = sol[2:nc]
+			Highs_destroy(OPₓᵥ)
 
 			λnorm = norm(λˢ,Inf)
-		#	if k > 1 && !limit_λs_by_bounds
 			if k == 1
 				λmax = 1.3*λnorm
 				limit_λs_by_bounds = true
@@ -807,8 +846,8 @@ function HELD_impl(model,p,T,z₀,
 				end
 			end
 
-			λᴸ = fill(-λmax,nc-1)
-			λᵁ = fill( λmax,nc-1)
+		#	λᴸ = fill(-λmax,nc-1)
+		#	λᵁ = fill( λmax,nc-1)
 
 			if verbose == true
     			println("HELD Step 2 - Update UBDⱽ and λˢ from OPₓᵥ: UBDⱽ = $(UBDⱽ)")
