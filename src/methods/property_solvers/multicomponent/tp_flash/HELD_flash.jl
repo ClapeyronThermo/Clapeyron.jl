@@ -803,15 +803,19 @@ function HELD_impl(model,p,T,z₀,
     nc = length(z₀)
   # calculate reference volume based on Kays rule and vc[i] and scale to give water a vref/v ~ 1
 	#=
+	# this is expensive for SAFT eos
     pure = split_pure_model(model)
     crit = crit_pure.(pure)
-    vref = 0.0
+    vref_crit = 0.0
     for i= 1:nc
     	Tc,pc,vc = crit[i]
-    	vref += z₀[i]*vc
+    	vref_crit += z₀[i]*vc
     end
 	=#
-	vref = 3.0*lb_volume(model,T,z₀)
+
+	vref = 3.35*lb_volume(model,T,z₀)
+#	println("HELD Step 1 - vref = $(vref) vref_crit = $(vref_crit)")
+
  	ρ₀ = HELD_density(model,p,T,z₀,vref)
 	v₀ = vref/ρ₀
     μ₀ = VT_chemical_potential(model,v₀,T,z₀)
