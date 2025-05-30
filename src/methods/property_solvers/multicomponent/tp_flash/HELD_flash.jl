@@ -63,14 +63,12 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
 		println("HELD  - add_all_guess = $(add_all_guess)")
 	end
 	beta,xp,vp,Gsol = HELD_impl(model,p,T,z₀,max_HELD_iters,max_trust_region_iters,tol,HELD_tol,add_pure_guess,add_anti_pure_guess,add_pure_component,add_random_guess,add_all_guess,verbose)
-
-    return beta,xp,vp,Gsol
-    
+    return FlashResult(xp,beta,vp,FlashData(p,T,Gsol))
 end
 
 # new HELD
 
-function Constraints(x,lb,ub,s)
+function ConstraintsHELD(x,lb,ub,lbrho,ubrho,s)
     n = size(x)[1]
 	xp = Vector{Base.promote_eltype(x,lb,ub,s)}(undef,n)
 	
@@ -79,40 +77,114 @@ function Constraints(x,lb,ub,s)
     for i=1:n
         xp[i] = x[i] + s[i]
     end
-    for i = 1:n
-       if xp[i] > ub[i]
+    for i = 1:n-1
+       if xp[i] > ub
 	    	outside = true
 	    end
-		if xp[i] < lb[i]
+		if xp[i] < lb
 	    	outside = true
 		end
     end
+	if xp[n] > ubrho
+	    outside = true
+	end
+	if xp[n] < lbrho
+	    outside = true
+	end
 
     return outside
 
 end
 
-function ProjectionHELD(x,lb,ub)
+function ConstraintsGibbs(x,np,n₀,lb,ub,lbrho,ubrho,s)
     n = size(x)[1]
-    p = Vector{Base.promote_eltype(x,lb,ub)}(undef,n)
-    xp = Vector{Base.promote_eltype(x,lb,ub)}(undef,n)
+	xs = Vector{Base.promote_eltype(x)}(undef,n)
+	
+    outside = false
+
+    for i=1:n
+        xs[i] = x[i] + s[i]
+    end
+
+	nc = length(n₀)
+	beta = Vector{eltype(x)}(undef,0)
+	xp = Vector{Vector{eltype(x)}}(undef,0)
+    rhop = Vector{eltype(x)}(undef,0)
+    ix = 0
+    for ip=1:np-1
+    	ix += 1
+    	push!(beta,xs[ix])
+    	xc = Vector{eltype(x)}(undef,0)
+    	for ic = 1:nc-1
+    		ix += 1
+    		push!(xc,xs[ix])
+    	end
+    	push!(xc,1.0 - sum(xc[1:nc-1]))
+    	push!(xp,xc)
+    	ix += 1
+    	push!(rhop,xs[ix])
+    end
+    ix += 1
+    push!(rhop,xs[ix])
+    push!(beta,1.0 - sum(beta[1:np-1]))
+    xc = Vector{eltype(x)}(undef,0)
+    for ic = 1:nc
+    	sum_moles = 0.0
+    	for ip = 1:np-1
+    		sum_moles += beta[ip]*xp[ip][ic]
+    	end
+    	push!(xc,(n₀[ic] - sum_moles)/beta[np])
+    end
+	push!(xp,xc)
+
+	for ip = 1:np
+		if beta[ip] < lb
+	    	outside = true
+		end
+		if beta[ip] > ub
+	    	outside = true
+		end
+		for ic = 1:length(xp[ip])
+			if xp[ip][ic] < lb
+	    		outside = true
+			end
+			if xp[ip][ic] > ub
+	    		outside = true
+			end
+		end
+		if rhop[ip] < lbrho
+	    	outside = true
+		end
+		if rhop[ip] > ubrho
+	    	outside = true
+		end
+	end
+
+    return outside
+
+end
+
+function ProjectionHELD(x,lb,ub,lbrho,ubrho)
+    n = size(x)[1]
+    p = Vector{Base.promote_eltype(x)}(undef,n)
+    xp = Vector{Base.promote_eltype(x)}(undef,n)
     for i = 1:n-1
 		p[i] = x[i]
-		if p[i] < lb[i]
-	    	p[i] = lb[i]
+		if p[i] < lb
+	    	p[i] = lb
 		end
-		if p[i] > ub[i]
-	    	p[i] = ub[i]
+		if p[i] > ub
+	    	p[i] = ub
 		end
 		xp[i] = p[i]
     end
     sumxp = sum(xp[1:n-1])
     xp[n] = 1.0-sumxp
-    if xp[n] < lb[1]
-    	xp[n] = lb[1]
+    if xp[n] < lb
+    	xp[n] = lb
     end
-    if xp[n] > ub[1]
-    	xp[n] = ub[1]
+    if xp[n] > ub
+    	xp[n] = ub
     end
     sumxp = sum(xp[1:n])
     xp ./= sumxp
@@ -120,28 +192,169 @@ function ProjectionHELD(x,lb,ub)
     	p[i] = xp[i]
     end
     p[n] = x[n]
-    if p[n] < lb[n]
-		p[n] = lb[n]
+    if p[n] < lbrho
+		p[n] = lbrho
 	end
-	if p[n] > ub[n]
-	    p[n] = ub[n]
+	if p[n] > ubrho
+	    p[n] = ubrho
 	end
     return p
 end
 
 function Projection(x,lb,ub)
     n = size(x)[1]
-    p = Vector{Base.promote_eltype(x,lb,ub)}(undef,n)
+    p = Vector{Base.promote_eltype(x)}(undef,n)
     for i = 1:n
 		p[i] = x[i]
-		if p[i] < lb[i]
-	    	p[i] = lb[i]
+		if p[i] < lb
+	    	p[i] = lb
 		end
-		if p[i] > ub[i]
-	    	p[i] = ub[i]
+		if p[i] > ub
+	    	p[i] = ub
 		end 
     end
     return p
+end
+
+function ProjectionGibbs(x,np,n₀,lb,ub,lbrho,ubrho)
+	n = size(x)[1]
+    p = Vector{Base.promote_eltype(x)}(undef,0)
+	nc = length(n₀)
+	beta = Vector{eltype(x)}(undef,0)
+	xp = Vector{Vector{eltype(x)}}(undef,0)
+    rhop = Vector{eltype(x)}(undef,0)
+
+#	println("ProjectionGibbs x  = $(x)")
+
+    ix = 0
+    for ip=1:np-1
+    	ix += 1
+    	push!(beta,x[ix])
+    	xc = Vector{eltype(x)}(undef,0)
+    	for ic = 1:nc-1
+    		ix += 1
+    		push!(xc,x[ix])
+    	end
+    	push!(xc,1.0 - sum(xc[1:nc-1]))
+    	push!(xp,xc)
+    	ix += 1
+    	push!(rhop,x[ix])
+    end
+    ix += 1
+    push!(rhop,x[ix])
+    push!(beta,1.0 - sum(beta[1:np-1]))
+    xc = Vector{eltype(x)}(undef,0)
+    for ic = 1:nc
+    	sum_moles = 0.0
+    	for ip = 1:np-1
+    		sum_moles += beta[ip]*xp[ip][ic]
+    	end
+    	push!(xc,(n₀[ic] - sum_moles)/beta[np])
+    end
+	push!(xp,xc)
+
+	outside = false
+	# check bounds
+	for ip = 1:np
+		if beta[ip] < lb
+	    	beta[ip] = lb
+			outside = true
+		end
+		if beta[ip] > ub
+	    	beta[ip] = ub
+			outside = true
+		end
+		for ic = 1:nc
+			if xp[ip][ic] < lb
+	    		xp[ip][ic] = lb
+				outside = true
+			end
+			if xp[ip][ic] > ub
+	    		xp[ip][ic] = ub
+				outside = true
+			end
+		end
+		if rhop[ip] < lbrho
+	    	rhop[ip] = lbrho
+			outside = true
+		end
+		if rhop[ip] > ubrho
+	    	rhop[ip] = ubrho
+			outside = true
+		end
+	end
+
+#	println("ProjectionGibbs outside  = $(outside)")
+#	println("ProjectionGibbs beta  = $(beta)")
+#	println("ProjectionGibbs xp  = $(xp)")
+#	println("ProjectionGibbs rhop  = $(rhop)")
+
+	if outside
+		# normalise after bounds check
+		sumbeta = sum(beta)
+		beta ./= sumbeta
+		for ip = 1:np
+			sumxp = sum(xp[ip])
+			xp[ip] ./= sumxp
+		end
+
+		# normalise overall for consisitent solution
+		phasemoles = Vector{Vector{Float64}}(undef,0)
+		for ic = 1:nc-1			
+			summoles = 0.0
+			for ip = 1:np
+				summoles += xp[ip][ic] * beta[ip]
+			end
+			mole = Vector{Float64}(undef,0)
+			for ip = 1:np
+				push!(mole, xp[ip][ic] * beta[ip] * n₀[ic] / summoles)
+			end
+			push!(phasemoles, mole)
+		end
+					
+		summoles = 0.0
+		for ip = 1:np
+			x_nc = 1.0 - sum(xp[ip][1:nc-1])
+			summoles += x_nc * beta[ip]
+		end
+		mole = Vector{Float64}(undef,0)
+		for ip = 1:np
+			x_nc = 1.0 - sum(xp[ip][1:nc-1])
+			push!(mole, x_nc * beta[ip] * n₀[nc] / summoles)
+		end
+		push!(phasemoles, mole)
+
+		for ip = 1:np
+			beta[ip] = 0.0
+			for ic = 1:nc
+				beta[ip] += phasemoles[ic][ip]
+			end
+		end
+
+		for ip = 1:np
+			for ic = 1:nc-1
+				xp[ip][ic] = phasemoles[ic][ip] / beta[ip]
+			end
+		end
+
+		for ip = 1:np
+			xp[ip][nc] = rhop[ip]
+		end
+
+		for ip = 1:length(xp)-1
+			push!(p,beta[ip])
+			for ic = 1:nc
+				push!(p,xp[ip][ic])
+			end
+		end
+		push!(p,xp[np][nc])
+
+#		println("ProjectionGibbs p  = $(p)")
+
+		return p
+	else
+		return x
+	end
 end
 
 function HELD_func_rho(model,p,T,x₀,vref,rho)
@@ -163,6 +376,7 @@ function HELD_func_dpdV(model,T,x₀,vref,rho)
     return dpdV
 end
 
+#=
 function HELD_volume1(model,p,T,x₀,vref,rho)
 	G(x) = HELD_func_rho(model,p,T,[x,1.0-x],vref,rho) + 5.474135924873183*(0.95 - x)
     dG(x) = Solvers.derivative(G,x)
@@ -188,13 +402,9 @@ function HELD_volume(model,p,T,x₀)
 	v₀ = HELD_density(model,p,T,x₀,vref)
 	return vref/v₀
 end
+=#
 
 function HELD_density(model,p,T,x₀,vref)
-#	G(x) = HELD_func_rho(model,p,T,x₀,vref,x)
-#	dG(x) = Solvers.derivative(G,x)
-#	ddG(x) = Solvers.derivative(dG,x)
-
-#    println("x₀  = $(x₀)")
 
 	G(x) = HELD_func_rho(model,p,T,x₀,vref,x)
 	dG(x) = HELD_func_p(model,p,T,x₀,vref,x)
@@ -340,7 +550,7 @@ function HELD_func(model,p,T,n₀,v₀,x,λ)
     return f
 end
 
-function Gibbs_func(model,p,T,n₀,v₀, np, x)
+function Gibbs_func(model,p,T,n₀,v₀,np,x)
 	nc = length(n₀)
 	beta = Vector{eltype(x)}(undef,0)
 	xp = Vector{Vector{eltype(x)}}(undef,0)
@@ -380,15 +590,19 @@ function Gibbs_func(model,p,T,n₀,v₀, np, x)
 end
 
 function initial_compositions(model,p,T,z,add_pure_guess,add_anti_pure_guess,add_pure_component,add_random_guess,add_all_guess)
-    
 	n = length(z)
-
-    lb = zeros(n)
+    
+	#=
+	lb = zeros(n)
     ub = ones(n)
     for i=1:n
         lb[i] += eps(Float64)*100.0
         ub[i] -= eps(Float64)*100.0
     end
+	=#
+
+	lb = eps(Float64)*1e2
+	ub = 1.0 - lb
 	
     xp = Vector{Vector{Float64}}(undef,0)
            
@@ -517,12 +731,17 @@ function Pereira_compositions(model,p,T,z)
     
 	n = length(z)
 
+	#=
     lb = zeros(n)
     ub = ones(n)
     for i=1:n
         lb[i] += eps(Float64)*100.0
         ub[i] -= eps(Float64)*100.0
     end
+	=#
+
+	lb = eps(Float64)*1e2
+	ub = 1.0 - lb
 	
     xp = Vector{Vector{Float64}}(undef,0)
 	d = Vector{Float64}(undef,0)
@@ -583,6 +802,7 @@ function HELD_impl(model,p,T,z₀,
 	# z₀ must sum to one, i.e. it is a mole fraction vector
     nc = length(z₀)
   # calculate reference volume based on Kays rule and vc[i] and scale to give water a vref/v ~ 1
+	#=
     pure = split_pure_model(model)
     crit = crit_pure.(pure)
     vref = 0.0
@@ -590,6 +810,8 @@ function HELD_impl(model,p,T,z₀,
     	Tc,pc,vc = crit[i]
     	vref += z₀[i]*vc
     end
+	=#
+	vref = 3.0*lb_volume(model,T,z₀)
  	ρ₀ = HELD_density(model,p,T,z₀,vref)
 	v₀ = vref/ρ₀
     μ₀ = VT_chemical_potential(model,v₀,T,z₀)
@@ -599,6 +821,8 @@ function HELD_impl(model,p,T,z₀,
     G(x) = HELD_func(model,p,T,z₀,vref,x,λ₀)
     G_g(x) = Solvers.gradient(G,x)
     G_h(x) = Solvers.hessian(G,x)
+
+	#=
     lb = zeros(nc)
     ub = ones(nc)
     for i=1:nc
@@ -606,8 +830,14 @@ function HELD_impl(model,p,T,z₀,
         ub[i] -= eps(Float64)*100.0
     end
     ub[nc] = 15.0
-    projHELD(x) = ProjectionHELD(x,lb,ub)
-	cnstHELD(x,s) = Constraints(x,lb,ub,s)
+	=#
+
+	lb = eps(Float64)*1e2
+	ub = 1.0 - lb
+	lbrho = 1.0e-6
+	ubrho = 15.0
+    projHELD(x) = ProjectionHELD(x,lb,ub,lbrho,ubrho)
+	cnstHELD(x,s) = ConstraintsHELD(x,lb,ub,lbrho,ubrho,s)
  	x₀ = append!(deepcopy(z₀[1:nc-1]),ρ₀)
     G₀ = G(x₀)
     if verbose == true
@@ -621,7 +851,7 @@ function HELD_impl(model,p,T,z₀,
     for ix = 1:length(xi)
 		ρi = HELD_density(model,p,T,xi[ix],vref)
 		xρi = append!(deepcopy(xi[ix][1:nc-1]),ρi)
-    	xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD,cnstHELD, xρi, lb, ub, max_trust_region_iters, tol, false)
+    	xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(G, G_g, G_h, projHELD,cnstHELD, xρi, max_trust_region_iters, tol, false)
     
 	#	if verbose == true
     #    	println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
@@ -792,12 +1022,19 @@ function HELD_impl(model,p,T,z₀,
 			OPₓᵥ = Highs_create()
 			Highs_setBoolOptionValue(OPₓᵥ, "log_to_console", false)
 			Highs_setBoolOptionValue(OPₓᵥ, "output_flag", false)
-			Highs_setStringOptionValue(OPₓᵥ, "solver", "simplex")
-			simplex_tol = max(tol, 1.0e-10)
-			Highs_setDoubleOptionValue(OPₓᵥ, "dual_feasibility_tolerance", simplex_tol)
-			Highs_setDoubleOptionValue(OPₓᵥ, "primal_feasibility_tolerance", simplex_tol)
-			Highs_setDoubleOptionValue(OPₓᵥ, "dual_residual_tolerance", simplex_tol)
-			Highs_setDoubleOptionValue(OPₓᵥ, "primal_residual_tolerance", simplex_tol)
+			use_ipm = false
+			if use_ipm
+				Highs_setStringOptionValue(OPₓᵥ, "solver", "ipm")
+				ipm_tol = max(tol, 1.0e-12)
+				Highs_setDoubleOptionValue(OPₓᵥ, "ipm_optimality_tolerance", ipm_tol)
+			else
+				Highs_setStringOptionValue(OPₓᵥ, "solver", "simplex")
+				simplex_tol = max(tol, 1.0e-10)
+				Highs_setDoubleOptionValue(OPₓᵥ, "dual_feasibility_tolerance", simplex_tol)
+				Highs_setDoubleOptionValue(OPₓᵥ, "primal_feasibility_tolerance", simplex_tol)
+				Highs_setDoubleOptionValue(OPₓᵥ, "dual_residual_tolerance", simplex_tol)
+				Highs_setDoubleOptionValue(OPₓᵥ, "primal_residual_tolerance", simplex_tol)
+			end
 			Highs_addCol(OPₓᵥ, 1.0, -Inf, Inf, 0, C_NULL, C_NULL)
 			for iλ = 1:nc-1
 				if limit_λs_by_bounds
@@ -879,7 +1116,7 @@ function HELD_impl(model,p,T,z₀,
     		xmins = Vector{Vector{Float64}}(undef,0)
     			
     		for ix = 1:length(ℳguess)
-    			xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD, ℳguess[ix][1:nc], lb, ub, max_trust_region_iters, tol, false)
+    			xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD, ℳguess[ix][1:nc], max_trust_region_iters, tol, false)
     			
    			#	if verbose == true
         	#		println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
@@ -903,7 +1140,7 @@ function HELD_impl(model,p,T,z₀,
 			
 			if verbose == true
         		println("HELD Step 3 - IPₓᵥ solve, $(length(fmins_unique)) unique solutions found")
-#        		println("HELD Step 3 - IPₓᵥ solve, xmins_unique = $(xmins_unique) unique solutions found")
+			#	println("HELD Step 3 - IPₓᵥ solve, xmin = $(xmins_unique)")
     		end
     		
     		ℒ = Vector{Vector{Float64}}(undef,0)
@@ -965,7 +1202,7 @@ function HELD_impl(model,p,T,z₀,
 					ρr = HELD_density(model,p,T,xr,vref)
 					xρr = append!(deepcopy(xr[1:nc-1]),ρr)
 					xρGr = append!(deepcopy(xρr),Gi(xρr))
-    				xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD,  xρGr[1:nc], lb, ub, max_trust_region_iters, tol, false)
+    				xmin,fmin,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gˢ, Gˢ_g, Gˢ_h, projHELD, cnstHELD,  xρGr[1:nc], max_trust_region_iters, tol, false)
     				
 #    				if verbose == true
 #        				println("HELD Step 3 - IPₓᵥ solve, fmin = $(fmin) error = $(error) iter = $(iter)")
@@ -1080,13 +1317,26 @@ function HELD_impl(model,p,T,z₀,
     		end
 			
 			np = length(beta)
+			sumbeta = sum(beta[1:np-1])
+			if sumbeta > ub
+				for ip = 1:np-1
+					beta[ip] /= sumbeta
+					beta[ip] *= ub
+				end
+			end
+			sumbeta = sum(beta[1:np-1])
+			beta[np] = 1.0 - sumbeta
 			if error < HELD_tol && betaerror < sqrt(HELD_tol)
+		#	if error < HELD_tol
+
 				if verbose == true
 				    println("HELD Step 4 - Error within tolerences on UBDⱽ - LBDⱽ and phase mole balance")
         			println("HELD Step 4 - solution accepted")
-    			end  			
+    			end
+
 	   			# normalise the solution before we do the Gibbs minimisation step.
 	   			# its essential that xHELD moles balances and is a feasible solution
+	
 	   			phasemoles = Vector{Vector{Float64}}(undef,0)
 	   			for ic = 1:nc-1			
 					summoles = 0.0
@@ -1121,10 +1371,23 @@ function HELD_impl(model,p,T,z₀,
 
 				for ip = 1:np
 					for ic = 1:nc-1
-						xmins_unique[ip][ic] = phasemoles[ic][ip] / beta[ip];
+						xmins_unique[ip][ic] = phasemoles[ic][ip] / beta[ip]
 					end
 				end
 				# end of normalisation
+
+				# with the unique solution ensure the rho solution is correct based on rho solver
+				xu = zeros(nc)
+				for iu = 1:np
+					sumx = 0.0
+					for ix = 1:nc-1
+						xu[ix] = xmins_unique[iu][ix]
+						sumx += xu[ix]
+					end
+					xu[nc] = 1.0 - sumx
+					ρu = HELD_density(model,p,T,xu,vref)
+					xmins_unique[iu][nc] = ρu
+				end
 				
 	   			for ip = 1:np-1
     				push!(xHELD,beta[ip])
@@ -1133,6 +1396,7 @@ function HELD_impl(model,p,T,z₀,
     				end
     			end
     			push!(xHELD,xmins_unique[np][nc])
+
     			HELD_complete = true
 				break
 			end
@@ -1204,30 +1468,39 @@ function HELD_impl(model,p,T,z₀,
 			Gibbs_g(x) = Solvers.gradient(Gibbs, x)
 			Gibbs_h(x) = Solvers.hessian(Gibbs, x)
 
+			#=
 			lb = Vector{Float64}(undef,0)
 		   	for ip = 1:np-1
-				push!(lb,2.2e-16)
+				push!(lb,eps(Float64)*100.0)
 				for ic = 1:nc-1
-					push!(lb,2.2e-16)
+					push!(lb,eps(Float64)*100.0)
 				end
-				push!(lb,2.2e-16)
+				push!(lb,eps(Float64)*100.0)
 			end
-			push!(lb,2.2e-16)
+			push!(lb,eps(Float64)*100.0)
 			
 			ub = Vector{Float64}(undef,0)
 		   	for ip = 1:np-1
-				push!(ub,1.0 - 2.2e-16)
+				push!(ub,1.0 - eps(Float64)*100.0)
 				for ic = 1:nc-1
-					push!(ub,1.0 - 2.2e-16)
+					push!(ub,1.0 - eps(Float64)*100.0)
 				end
-				push!(ub,100.0)
+				push!(ub,15.0)
 			end
-			push!(ub,100.0)
-			
+			push!(ub,15.0)
 			projGibbs(x) = Projection(x,lb,ub)
 			cnstGibbs(x,s) = Constraints(x,lb,ub,s)
+			=#
+
+			lb = eps(Float64)*1e2
+			ub = 1.0 - lb
+			lbrho = 1.0e-6
+			ubrho = 15.0
 			
-			xsol,Gsol,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gibbs, Gibbs_g, Gibbs_h, projGibbs, cnstGibbs, xHELD, lb, ub, max_trust_region_iters, tol,false)
+			projGibbs(x) = ProjectionGibbs(x,np,z₀,lb,ub,lbrho,ubrho)
+			cnstGibbs(x,s) = ConstraintsGibbs(x,np,z₀,lb,ub,lbrho,ubrho,s)
+			
+			xsol,Gsol,iter,error,check = Solvers.trustregion_Dennis_Schnabel(Gibbs, Gibbs_g, Gibbs_h, projGibbs, cnstGibbs, xHELD, max_trust_region_iters, tol, false)
 			
 			if verbose == true
 				println("HELD Step 5 - Gibbs Energy Minimisation: iterations taken = $(iter)")

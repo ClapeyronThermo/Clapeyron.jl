@@ -1,5 +1,7 @@
 using Clapeyron
 
+# a VLLLE mixture, HELD finds all phases
+
 components = ["hexane","aniline","1,1,2-trichloroethane","water","nitrogen"]
 model = SRK(components;mixing=MHV2Rule, activity=UNIFAC)
 

@@ -8,12 +8,11 @@ function trustregion_model(x, g, h)
     return -m
 end
 
-function delta_Nocedal(func::Function, proj::Function, cnst::Function, d, dmin, dmax, x, lb, ub, f, g, h, verbose)
+function delta_Nocedal(func::Function, proj::Function, cnst::Function, d, dmin, dmax, x, f, g, h, verbose)
     c1 = 0.25
     c2 = 0.75
     c3 = 0.25
     c4 = 2.00
-    eps = 2.2e-16
     
     n = size(x)[1]
     xp = Vector{Float64}(undef,n)
@@ -88,7 +87,7 @@ function trustregion_Dennis_Schnabel(	func::Function,
 										grad::Function,
 										hess::Function,
 										proj::Function,
-										cnst::Function,x,lb,ub,max_iters,tol,verbose)
+										cnst::Function,x,max_iters,tol,verbose)
     dmin = tol
     dmax = 0.5
     n = size(x)[1]
@@ -115,7 +114,10 @@ function trustregion_Dennis_Schnabel(	func::Function,
 
     while error > tol
         iter += 1
-        d,x,f = delta_Nocedal(func::Function, proj::Function, cnst::Function, d, dmin, dmax, x, lb, ub, f, g, h,verbose)
+        d,x,f = delta_Nocedal(func::Function, proj::Function, cnst::Function, d, dmin, dmax, x, f, g, h,verbose)
+        if verbose
+        	println("Iteration: $(iter) d = $(d), x = $(x), f = $(f)")
+        end
         if d == dmin
 			if error < sqrt(eps(Float64))
 				# maybe best we can do

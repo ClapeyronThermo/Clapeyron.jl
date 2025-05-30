@@ -1,13 +1,15 @@
 using Clapeyron
 
-components = ["methane","ethane","propane","butane","hexane","octane","water"]
+# a VLLE solution with a rich water phase
+
+components = ["methane","ethane","butane","hexane","octane","water"]
 model = SAFTVRMie(components; assoc_options=AssocOptions(combining=:elliott))
 
-p = 1.5e5
+p = 10.0e5
 T = 15+273.15
 
-zdry = [0.883,0.08,0.021,0.007,0.007,0.002]
-xwater = 0.1
+zdry = [0.7,0.15,0.1,0.025,0.025]
+xwater = 0.2
 z = append!(zdry*(1.0-xwater),xwater)
 
 verbose = true
