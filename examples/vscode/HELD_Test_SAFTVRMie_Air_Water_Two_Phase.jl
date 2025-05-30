@@ -1,5 +1,7 @@
 using Clapeyron
 
+# a VLE solution, challenging due to the pure nature of the water phase
+
 components = ["nitrogen","oxygen","argon","carbon dioxide","water"]
 model = SAFTVRMie(components; assoc_options=AssocOptions(combining=:elliott))
 

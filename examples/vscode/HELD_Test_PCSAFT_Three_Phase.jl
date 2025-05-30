@@ -1,5 +1,8 @@
 using Clapeyron
 
+# a VLLE solition that is near the mixture critical point
+# as such the vapour and liquid1 compositions are close
+
 components = ["methane","ethane","propane","butane","water"]
 model = PCSAFT(components; assoc_options=AssocOptions(combining=:elliott))
 

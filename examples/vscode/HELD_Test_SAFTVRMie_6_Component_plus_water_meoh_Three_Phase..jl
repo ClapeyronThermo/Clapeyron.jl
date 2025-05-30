@@ -1,5 +1,7 @@
 using Clapeyron
 
+# a VLLE solution with a rich water phase and methanol partitioning between all phases
+
 components = ["methane","ethane","propane","butane","hexane","octane","methanol","water"]
 model = SAFTVRMie(components; assoc_options=AssocOptions(combining=:elliott))
 
