@@ -200,7 +200,7 @@ end
     model = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
     z = [0.25, 0.25, 0.25, 0.25]
     p = 1e5
-    h = enthalpy(model, 1e5, 303.15, z)
+    h = 6300.0
     r = Clapeyron.ph_flash(model, p, h, z)
     @test_throws ArgumentError qt_flash(model,0.5,308,z,flash_result = r)
     res4 = qp_flash(model,0.7,60000.0,z)
