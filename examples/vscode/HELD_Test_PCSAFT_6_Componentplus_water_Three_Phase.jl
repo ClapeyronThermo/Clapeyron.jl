@@ -1,7 +1,6 @@
 using Clapeyron
 
 # a VLLE solution with a rich water phase
-# note no problem for PCSAFT to converge with small mole fractions, the pressure can be lowered without issue
 
 components = ["methane","ethane","butane","hexane","octane","water"]
 model = PCSAFT(components; assoc_options=AssocOptions(combining=:elliott))

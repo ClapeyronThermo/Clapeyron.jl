@@ -1,13 +1,11 @@
 using Clapeyron
 
 # a VLLE solution with a rich water phase
-# note if you lower the pressure eventually HELD fails to convergy as the sysytem becomes ill conditioned#
-# due to low mole fractions when these become the same order as the HELD tolerence we struggle to mole balance
 
 components = ["methane","ethane","butane","hexane","octane","water"]
 model = SAFTVRMie(components; assoc_options=AssocOptions(combining=:elliott))
 
-p = 5.0e5
+p = 1.5e5
 T = 15.0+273.15
 
 zdry = [0.7,0.15,0.1,0.025,0.025]

@@ -802,18 +802,18 @@ function HELD_impl(model,p,T,z₀,
 	# z₀ must sum to one, i.e. it is a mole fraction vector
     nc = length(z₀)
   # calculate reference volume based on Kays rule and vc[i] and scale to give water a vref/v ~ 1
-	#=
+	
 	# this is expensive for SAFT eos
     pure = split_pure_model(model)
     crit = crit_pure.(pure)
-    vref_crit = 0.0
+    vref = 0.0
     for i= 1:nc
     	Tc,pc,vc = crit[i]
-    	vref_crit += z₀[i]*vc
+    	vref += z₀[i]*vc
     end
-	=#
+	
 
-	vref = 3.35*lb_volume(model,T,z₀)
+#	vref = 3.35*lb_volume(model,T,z₀)
 #	println("HELD Step 1 - vref = $(vref) vref_crit = $(vref_crit)")
 
  	ρ₀ = HELD_density(model,p,T,z₀,vref)
@@ -871,6 +871,7 @@ function HELD_impl(model,p,T,z₀,
     
     fmins_unique, xmins_unique, stable = HELD_clean_local_solutions(G₀, x₀, fmins, xmins, tol, verbose)
 
+	#=
 	# with the unique solution ensure the rho solution is correct based on rho solver this needs a fmin update
 	xu = zeros(nc)
 	for iu = 1:length(xmins_unique)
@@ -884,6 +885,7 @@ function HELD_impl(model,p,T,z₀,
 		xmins_unique[iu][nc] = ρu
 		fmins_unique[iu] = G(xmins_unique[iu])
 	end
+	=#
 
     if verbose == true
     		println("HELD Step 1 - Phase stability check completed: $(length(fmins_unique)) unique solutions found")
@@ -1150,6 +1152,7 @@ function HELD_impl(model,p,T,z₀,
     		ℒ = Vector{Vector{Float64}}(undef,0)
     		if length(fmins_unique) > 0
 	
+				#=
 				# with the unique solution ensure the rho solution is correct based on rho solver this needs a fmin update
 				xu = zeros(nc)
 				for iu = 1:length(xmins_unique)
@@ -1163,6 +1166,7 @@ function HELD_impl(model,p,T,z₀,
 					xmins_unique[iu][nc] = ρu
 					fmins_unique[iu] = Gˢ(xmins_unique[iu])
 				end
+				=#
 				
 				# find lowest minimum of returned set.
 				LBDⱽ = fmins_unique[1]
@@ -1222,6 +1226,7 @@ function HELD_impl(model,p,T,z₀,
 
 				if length(fmins_unique) > 0
 
+					#=
 					# with the unique solution ensure the rho solution is correct based on rho solver this needs a fmin update
 					xu = zeros(nc)
 					for iu = 1:length(xmins_unique)
@@ -1235,6 +1240,7 @@ function HELD_impl(model,p,T,z₀,
 						xmins_unique[iu][nc] = ρu
 						fmins_unique[iu] = Gˢ(xmins_unique[iu])
 					end
+					=#
 					
 					# find lowest minimum of returned set.
 					LBDⱽ = fmins_unique[1]
@@ -1380,6 +1386,7 @@ function HELD_impl(model,p,T,z₀,
 				end
 				# end of normalisation
 
+				#=
 				# with the unique solution ensure the rho solution is correct based on rho solver
 				xu = zeros(nc)
 				for iu = 1:np
@@ -1392,6 +1399,7 @@ function HELD_impl(model,p,T,z₀,
 					ρu = HELD_density(model,p,T,xu,vref)
 					xmins_unique[iu][nc] = ρu
 				end
+				=#
 				
 	   			for ip = 1:np-1
     				push!(xHELD,beta[ip])
