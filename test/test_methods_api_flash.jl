@@ -310,7 +310,7 @@ end
     T = 286.43023797357927 #(0.5*bubble_temperature(model,p,z)[1] + 0.5*dew_temperature(model,p,z)[1])
     h = -50380.604181769755 #Clapeyron.enthalpy(model,p,T,z)
     flash_res_ph = ph_flash(model,p,h,z)
-    @test numphases(flash_res_ph) == 2
+    @test Clapeyron.numphases(flash_res_ph) == 2
 
     #Inconsistency in flash computations near bubble and dew points (#353)
     fluids =["isopentane","toluene"]
