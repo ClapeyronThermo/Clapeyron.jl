@@ -4,7 +4,6 @@ authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pjwalker@caltech.e
 version = "0.6.13"
 
 [deps]
-Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
 BlackBoxOptim = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
@@ -52,7 +51,6 @@ ClapeyronSymbolicsExt = "Symbolics"
 ClapeyronUnitfulExt = "Unitful"
 
 [compat]
-Arpack = "0.5.4"
 BlackBoxOptim = "^0.6.2"
 CSV = "0.10"
 CoolProp = "0.2"
