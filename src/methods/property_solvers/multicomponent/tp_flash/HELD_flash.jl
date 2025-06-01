@@ -926,18 +926,23 @@ function HELD_impl(model,p,T,z₀,
 		# add initial guesses and the newly found minimums from first iteration stability check
 		for im = 1:length(xm)
 			ρm = HELD_density(model,p,T,xm[im],vref)
-			xρm = append!(deepcopy(xm[im][1:nc-1]),ρm)
-    		xρGim = append!(deepcopy(xρm),Gi(xρm))
+		#	xρm = append!(deepcopy(xm[im][1:nc-1]),ρm)
+    	#	xρGim = append!(deepcopy(xρm),Gi(xρm))
+			xρm = append!(xm[im][1:nc-1],ρm)
+    		xρGim = append!(xρm,Gi(xρm))
     		push!(ℳ,xρGim)
     	end
 		for ii = 1:length(xi)
 			ρi = HELD_density(model,p,T,xi[ii],vref)
-			xρi = append!(deepcopy(xi[ii][1:nc-1]),ρi)
-    		xρGii = append!(deepcopy(xρi),Gi(xρi))
+		#	xρi = append!(deepcopy(xi[ii][1:nc-1]),ρi)
+    	#	xρGii = append!(deepcopy(xρi),Gi(xρi))
+			xρi = append!(xi[ii][1:nc-1],ρi)
+    		xρGii = append!(xρi,Gi(xρi))
     		push!(ℳ,xρGii)
     	end
 		for i = 1:length(fmins_unique)
-			xminsGi_unique = append!(deepcopy(xmins_unique[i]),Gi(xmins_unique[i]))
+		#	xminsGi_unique = append!(deepcopy(xmins_unique[i]),Gi(xmins_unique[i]))
+			xminsGi_unique = append!(xmins_unique[i],Gi(xmins_unique[i]))
 			push!(ℳ,xminsGi_unique)
 		end
 
@@ -946,12 +951,15 @@ function HELD_impl(model,p,T,z₀,
 		ℳguess = Vector{Vector{Float64}}(undef,0)
 		for ii = 1:length(xi)
 			ρi = HELD_density(model,p,T,xi[ii],vref)
-			xρi = append!(deepcopy(xi[ii][1:nc-1]),ρi)
-			xρGii = append!(deepcopy(xρi),Gi(xρi))
+		#	xρi = append!(deepcopy(xi[ii][1:nc-1]),ρi)
+		#	xρGii = append!(deepcopy(xρi),Gi(xρi))
+			xρi = append!(xi[ii][1:nc-1],ρi)
+			xρGii = append!(xρi,Gi(xρi))
     		push!(ℳguess,xρGii)
     	end
 		for i = 1:length(fmins_unique)
-			xminsGi_unique = append!(deepcopy(xmins_unique[i]),Gi(xmins_unique[i]))
+		#	xminsGi_unique = append!(deepcopy(xmins_unique[i]),Gi(xmins_unique[i]))
+			xminsGi_unique = append!(xmins_unique[i],Gi(xmins_unique[i]))
 			push!(ℳguess,xminsGi_unique)
 		end
 		
