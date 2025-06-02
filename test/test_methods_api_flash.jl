@@ -335,7 +335,7 @@ end
     n_H2O_c = 0.648e4
     V_c = 0.35
     n_H2_c = 251
-    model = cPR(["water","hydrogen"],idealmodel = ReidIdeal)
+    mod_pr = cPR(["water","hydrogen"],idealmodel = ReidIdeal)
     mult_H2 = reverse(0:0.1:5)
     p_tank = similar(mult_H2)
     for (i,mH2) in pairs(mult_H2)
