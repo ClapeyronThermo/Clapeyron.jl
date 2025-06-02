@@ -44,8 +44,20 @@
 
 
         bondvol_mixed = model_mix.vrmodel.params.bondvol[1,2]
-        @test length(bondvol_mixed) == 2
-        @test vec(bondvol_mixed) ≈ [1.4264e-28, 3.2803e-27]
+        co2 = "Carbon Dioxide"
+        mea = "MEA"
+        #normal
+        @test bondvol_mixed[(co2,"CO2/a1"),(mea,"NH2/e")] == 3280.3e-30
+        @test bondvol_mixed[(co2,"CO2/a2"),(mea,"NH2/e")] == 142.64e-30
+        #reverse
+        @test bondvol_mixed[(mea,"NH2/e"),(co2,"CO2/a1")] == 3280.3e-30
+        @test bondvol_mixed[(mea,"NH2/e"),(co2,"CO2/a2")] == 142.64e-30
+        
+        #swich sites: this should result in zeros:
+        @test bondvol_mixed[(co2,"CO2/e"),(mea,"NH2/a1")] == 0
+        @test bondvol_mixed[(mea,"CO2/e"),(co2,"NH2/a2")] == 0
+        @test bondvol_mixed[(mea,"NH2/a1"),(co2,"CO2/e")] == 0
+        @test bondvol_mixed[(co2,"NH2/a2"),(mea,"CO2/e")] == 0
     end
 
     @testset "#140" begin
