@@ -126,12 +126,7 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
         return -2*B
     end
     #only the left root has physical meaning
-
-    #stable way of calculating quadratics, seems to matter here
-    if b >= 0
-        return 2*c/(- b - sqrt(Δ))
-    else
-        return (-b + sqrt(Δ))/(2*a)
+    return (-b + sqrt(Δ))/(2*a)   
     end
 end
 
