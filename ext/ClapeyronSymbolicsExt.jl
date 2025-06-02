@@ -172,4 +172,8 @@ Symbolics.@register_array_symbolic Clapeyron.p∂p∂V(model::EoSModel,p,T,z::Ab
     size=(2,)
 end
 
+Symbolics.@register_array_symbolic Clapeyron.f_hess(model::EoSModel,p,T,z::AbstractVector) begin
+    size=(2,2)
+end
+
 end #module
