@@ -11,7 +11,7 @@ T = 5+273.15
 z=ones(length(model))/length(model)
 
 verbose = true
-beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model,p,T,z, HELDTPFlash(verbose = verbose))
+beta,xp,vp,Gsol = Clapeyron.tp_flash_impl(model,p,T,z, HELDTPFlash(add_random_guess = true, verbose = verbose))
 
 if !verbose
     for ip in eachindex(beta)
