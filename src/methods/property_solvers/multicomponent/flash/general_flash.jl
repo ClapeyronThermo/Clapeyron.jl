@@ -586,6 +586,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         nan_converged && break
         max_iters_reached && break
         ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
+        #TODO: fix volumes when they enter an unstable state. do it right here, were we have jacobian info.
         #do not iterate on slack variables
         Solvers.remove_slacks!(F,J,slacks)
         Jcache .= J
@@ -808,7 +809,7 @@ end
 
 function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
     if method.p0 === nothing
-        p,_phase = _Pproperty(model,T,x,z,spec,verbose = true)
+        p,_phase = _Pproperty(model,T,x,z,spec)
     else
         p = method.p0
         _phase = :eq #we suppose this

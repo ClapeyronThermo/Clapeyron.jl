@@ -329,6 +329,22 @@ end
             @test isfinite(Ti) #test that there are no NaNs
         end
     end
+
+    #VT flash: water + a tiny amount of hydrogen (#377)
+    # content of a cathode separation tank
+    n_H2O_c = 0.648e4
+    V_c = 0.35
+    n_H2_c = 251
+    model = cPR(["water","hydrogen"],idealmodel = ReidIdeal)
+    mult_H2 = reverse(0:0.1:5)
+    p_tank = similar(mult_H2)
+    for (i,mH2) in pairs(mult_H2)
+        res_i = vt_flash(mod_pr,V_c,T,[n_H2O_c, exp10(-mH2)*n_H2_c])
+        @test Clapeyron.numphases(res_i) == 2
+        @test pressure(res_i) > 0
+        p_tank[i] = pressure(res_i)
+    end
+    @test issorted(p_tank)
 end
 
 @testset "Saturation Methods" begin

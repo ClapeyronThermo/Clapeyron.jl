@@ -214,6 +214,8 @@ function x0_volume_gas(model::MultiFluid,p,T,z)
     return V
 end
 
+has_fast_crit_pure(model::MultiFluid) = true
+
 #use each available pure x0_volume_liquid
 function x0_volume_liquid(model::MultiFluid,p,T,z)
     v0 = zero(Base.promote_eltype(model,p,T,z))
