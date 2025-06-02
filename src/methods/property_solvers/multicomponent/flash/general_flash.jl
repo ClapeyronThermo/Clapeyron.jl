@@ -596,7 +596,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         s .= -F
         ldiv!(lu,s)
         finite_s = all(isfinite,s)
-        if !finite_s
+        if !finite_s && finite_J
             JJ = svd(Jcache)
             S = JJ.S
             for i in eachindex(S)
@@ -808,7 +808,7 @@ end
 
 function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
     if method.p0 === nothing
-        p,_phase = _Pproperty(model,T,x,z,spec)
+        p,_phase = _Pproperty(model,T,x,z,spec,verbose = true)
     else
         p = method.p0
         _phase = :eq #we suppose this

@@ -11,7 +11,7 @@ function x0_Pproperty(model::EoSModel,T,z::AbstractVector,verbose = false)
   if isnan(dew_T)
     verbose && @error "dew_pressure calculation failed."
   end
-  return (bubble_T,v_bubble_liquid),(dew_T,v_dew_vapour)
+  return (bubble_T,v_bubble_liquid),(dew_T,v_dew_vapour),(bubble,dew)
 end
 
 
@@ -76,7 +76,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p00)
   end
 
-  bubble_prop,dew_prop = x0_Pproperty(model,T,z,verbose)
+  bubble_prop,dew_prop,full_prop = x0_Pproperty(model,T,z,verbose)
   bubble_p,bubble_vol = bubble_prop
   dew_p,dew_vol = dew_prop
 
@@ -101,9 +101,35 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   #if both values are NaN, try solving using p_scale(model,z)
   if isnan(bubble_p) && !isnan(dew_p)
     verbose && @warn "non-finite bubble point, trying to solve using the dew point"
+    _,dew_point = full_prop
+    _,vl,vv,wdew = dew_point
+    if property == volume
+      prop_bubble = vl
+      prop_dew = vv
+    else
+      prop_bubble = spec_to_vt(model,vl,T,wdew,spec)
+      prop_dew = spec_to_vt(model,vv,T,z,spec)/sum(z)
+    end
+    β = (prop/sum(z) - prop_dew)/(prop_bubble - prop_dew)
+    0 <= β <= 1 && return (dew_p,:eq)
+    verbose && @info "pressure($property) < pressure(dew point)"
     return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
   elseif !isnan(bubble_p) && isnan(dew_p)
     verbose && @warn "non-finite dew point, trying to solve using the bubble point"
+        verbose && @warn "non-finite bubble point, trying to solve using the dew point"
+        bubble_point,_ = full_prop
+    _,vl,vv,wbubble = bubble_point
+    if property == volume
+      prop_bubble = vl
+      prop_dew = vv
+    else
+      prop_bubble = spec_to_vt(model,vl,T,z,spec)/sum(z)
+      prop_dew = spec_to_vt(model,vv,T,wbubble,spec)
+    end
+
+    β = (prop/sum(z) - prop_dew)/(prop_bubble - prop_dew)
+    0 <= β <= 1 && (return bubble_p,:eq)
+    verbose && @info "pressure($property) > pressure(bubble point)"
     return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
   elseif isnan(bubble_p) && isnan(dew_p)
     verbose && @warn "non-finite dew and bubble points, trying to solve using Clapeyron.p_scale(model,z)"
@@ -119,7 +145,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   end
 
   F(P) = property(model,P,T,z,phase = phase)
-  
+
   if verbose
     @info "input property:           $prop"
     @info "property at dew point:    $prop_dew"
@@ -130,13 +156,6 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
 
   β = (prop - prop_dew)/(prop_bubble - prop_dew)
   if 0 <= β <= 1
-
-      #special case with volume: the volumes in the saturation volumes don't have a definition of bulk:
-      if property == volume
-        verbose && @warn "volume in the phase change region, returning a linear interpolation of the bubble and dew pressures"
-        return β*bubble_p + (1 - β)*dew_p,:eq
-      end
-
       P_edge = FindEdge(F,dew_p,bubble_p) # dew_p < bubble_p --> condition for FindEdge
       if !isfinite(P_edge)
         verbose && @warn "failure to calculate edge point"
@@ -154,19 +173,29 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
       =#
 
       βedge = (prop - prop_edge1)/(prop_edge2 - prop_edge1)
-   
+
       if 0 <= βedge <= 1
         verbose && @warn "In the phase change region"
         return P_edge,:eq
       elseif βedge < 0 #prop <= prop_edge2
         verbose && @info "pressure($property) ∈ (pressure(dew point),pressure(edge point))"
-        px,_ = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
-        return px,:eq
+        px,st = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
+        if st == :failure
+          verbose && @warn "failure to calculate edge point solution, returning edge point"
+          return P_edge,:eq
+        else
+          return px,:eq
+        end
         #abs(prop) > abs(prob_edge1)
       elseif βedge > 1
         verbose && @info "pressure($property) ∈ (pressure(edge point),pressure(bubble point))"
-        px,_ = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
-        return px,:eq
+        px,st = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
+        if st == :failure
+          verbose && @warn "failure to calculate edge point solution, returning edge point"
+          return P_edge,:eq
+        else
+          return px,:eq
+        end
       end
 
     elseif β > 1
@@ -250,14 +279,27 @@ function Pproperty_impl(model,T,prop,z,property::F,rootsolver,phase,abstol,relto
     return __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,p0)
   end
   _1 = oneunit(typeof(prop))
+
+  if property == volume
+    p = pressure(model,prop,T,z)
+    phase = VT_identify_phase(model,prop,T,z)
+    if is_unknown(phase)
+      return p,:failure
+    else
+      return p,phase
+    end
+  end
   f(lnp,prop) = _1*property(model,exp(lnp),T,z,phase = phase,threaded = threaded) - prop
   prob = Roots.ZeroProblem(f,_1*log(p0))
+
   logp = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
+  @show logp,z
   if isnan(logp)
     return logp,:failure
   end
   return exp(logp),phase
 end
+
 
 function Pproperty_ad(model,T,prop,z,property::F,p_primal,phase) where F
   if has_dual(model) || has_dual(T) || has_dual(prop) || has_dual(z)
