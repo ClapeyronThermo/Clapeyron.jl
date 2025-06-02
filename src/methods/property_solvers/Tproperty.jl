@@ -211,7 +211,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
         end
       elseif βedge < 0
         verbose && @info "temperature($property) ∈ (temperature(edge point),temperature(bubble point))"
-        T,_ =  __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_T)
+        T,st =  __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_T)
         if st == :failure
           verbose && @warn "failure to calculate edge point solution, returning edge point"
           return T_edge,:eq

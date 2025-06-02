@@ -177,7 +177,7 @@ using Clapeyron, Test, LinearAlgebra
         @test assoc_param[("sp4","H"),("sp3","e")] == 0
         @test assoc_param[("sp3","e"),("sp4","e")] == 0
         @test assoc_param[("sp4","e"),("sp3","e")] == 0
-        @test size(assoc_param["sp3","sp4"]) == size(transpose(assoc_param["sp4","sp3"])
+        @test size(assoc_param["sp3","sp4"]) == size(transpose(assoc_param["sp4","sp3"]))
 
         #asym 4-5
         @test assoc_param[("sp4","H"),("sp5","e2")] == 2500
