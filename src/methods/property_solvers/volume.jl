@@ -127,7 +127,6 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
     end
     #only the left root has physical meaning
     return (-b + sqrt(Δ))/(2*a)   
-    end
 end
 
 function pressure_virial(model,V,T,z)
