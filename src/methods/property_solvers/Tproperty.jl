@@ -3,17 +3,17 @@
 Peforms some initial checks to see if a possible solution exists in `Clapeyron.jl`.
 """
 function x0_Tproperty(model::EoSModel,p,z::AbstractVector,verbose = false)
-    bubble = Clapeyron.bubble_Terature(model,p,z)
-    dew = Clapeyron.dew_Terature(model,p,z)
+    bubble = Clapeyron.bubble_temperature(model,p,z)
+    dew = Clapeyron.dew_temperature(model,p,z)
     bubble_T = bubble[1]
     v_dew_vapour = dew[3]*sum(z)
     v_bubble_liquid = bubble[2]*sum(z)
     dew_T = dew[1]
     if isnan(bubble_T)
-      verbose && @error "bubble_Terature calculation failed."
+      verbose && @error "bubble_temperature calculation failed."
     end
     if isnan(dew_T)
-      verbose && @error "dew_Terature calculation failed."
+      verbose && @error "dew_temperature calculation failed."
     end
     return (bubble_T,v_bubble_liquid),(dew_T,v_dew_vapour),(bubble,dew)
 end
@@ -42,7 +42,7 @@ end
 
 Given `p` and any other bulk property `prop` calculated via `property`, returns the required temperature `T` such that `property(model,p,T,z,phase) = prop`
 
-Not all cases of pressure will work as `Clapeyron.bubble_Terature(model,p,z)` and `Clapeyron.dew_Terature(model,p,z)` does not always find a correct starting point.
+Not all cases of pressure will work as `Clapeyron.bubble_temperature(model,p,z)` and `Clapeyron.dew_temperature(model,p,z)` does not always find a correct starting point.
 """
 function Tproperty(model::EoSModel,p,prop,z = SA[1.0],
                   property::TT = enthalpy;
@@ -90,12 +90,12 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
   end
 
   if is_liquid(phase)
-    T00 = bubble_Terature(model,p,z)[1]
+    T00 = bubble_temperature(model,p,z)[1]
     return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T00)
   end
 
   if is_vapour(phase)
-    T00 = dew_Terature(model,p,z)[1]
+    T00 = dew_temperature(model,p,z)[1]
     return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T00)
   end
 
