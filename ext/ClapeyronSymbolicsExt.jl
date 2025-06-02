@@ -8,6 +8,9 @@ using Symbolics
 
 using Clapeyron: log1p,log,sqrt,^
 using Clapeyron: SA
+using Symbolics.SymbolicIndexingInterface
+Clapeyron.__is_symbolic(x::Number) = symbolic_type(x) !== NotSymbolic()
+Clapeyron.__is_symbolic(x::Type{T}) where T = symbolic_type(T) !== NotSymbolic()
 
 Solvers.log(x::Num) = Base.log(x)
 Solvers.log1p(x::Num) = Base.log1p(x)
