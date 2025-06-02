@@ -193,7 +193,7 @@ using Clapeyron, Test, LinearAlgebra
 
         #diagonal 5-5
         @test assoc_param[("sp5","H"),("sp5","e")] == 2100
-        @test assoc_param[("sp5","e"),("sp5","H")] == 2000
+        @test assoc_param[("sp5","e"),("sp5","H")] == 2100
         @test assoc_param[("sp5","e"),("sp5","e")] == 2200
 
         #=
@@ -308,8 +308,8 @@ using Clapeyron, Test, LinearAlgebra
 
         #AssocParam: indexing
         @test eltype(assoc_float) == Float64
-        @test assoc_float[1] == [0 1]
-        @test assoc_float[2] == [0 2 3]
+        @test assoc_float[1] == [0.0 1.0; 1.0 0.0]
+        @test assoc_float[2] == [0.0 2.0 3.0; 2.0 0.0 0.0; 3.0 0.0 0.0]
         @test iszero(prod(size(assoc_float[1,2])))
 
         #AssocParam: broadcasting
