@@ -218,7 +218,6 @@ function bubbledew_check(model,p,T,vw,vz,w,z)
         gz = VT_gibbs_free_energy(model,vz,T,z)
         gz_p = gibbs_free_energy(model,p,T,z)
         gz_w = VT_gibbs_free_energy(model,vw,T,w)
-        @show gz,gz_p,p
         dg = (gz-gz_p)/gz
         if gz_p < gz && abs(dg) > 0.001
             return false

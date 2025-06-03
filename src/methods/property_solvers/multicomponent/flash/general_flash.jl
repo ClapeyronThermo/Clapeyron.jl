@@ -666,13 +666,14 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via f
 - `equilibrium` (optional) = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria, `:unknown` if not specified
 - `p0` (optional), initial guess pressure, ignored if pressure is one of the flash specifications.
 - `T0` (optional), initial guess temperature, ignored if temperature is one of the flash specifications.
-- `K0` (optional), initial guess for the constants K
-- `x0` (optional), initial guess for the composition of phase x
-- `y0` = optional, initial guess for the composition of phase y
-- `vol0` = optional, initial guesses for phase x and phase y volumes
-- `atol` = absolute tolerance to stop the calculation
-- `rtol` = relative tolerance to stop the calculation
+- `K0` (optional), initial guess for the K-values.
+- `x0` (optional), initial guess for the composition of phase x.
+- `y0` = optional, initial guess for the composition of phase y.
+- `vol0` = optional, initial guesses for phase x and phase y volumes.
+- `atol` = absolute tolerance to stop the calculation.
+- `rtol` = relative tolerance to stop the calculation.
 - `max_iters` = maximum number of iterations
+- `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
 """
 struct GeneralizedXYFlash{P,T} <: FlashMethod
     equilibrium::Symbol
