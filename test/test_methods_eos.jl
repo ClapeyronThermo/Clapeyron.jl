@@ -69,6 +69,13 @@ end
     #density maxima of water
     @test v2 < v1
     @test v2 < v3
+
+    #issue 377
+    mod_phsft = pharmaPCSAFT(["water", "hydrogen"])
+    p_c = 3e6
+    T = 343.15
+    y = [1.955278169111263e-5, 0.9999804472183089]
+    @test Clapeyron.volume(mod_phsft,p_c,T,y,phase = :v) ≈ 0.0009700986016167609 rtol = 1E-6
 end
 
 @testset "LJSAFT methods, single components" begin
