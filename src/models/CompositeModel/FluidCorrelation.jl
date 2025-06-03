@@ -253,8 +253,8 @@ __tpflash_cache_model(model::FluidCorrelation,p,T,z,equilibrium) = PTFlashWrappe
 function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
     fluidmodel = model.gas
     #check that we can actually solve the equilibria
-    pures = split_model(fluidmodel,default_splitter(model))
-    satpures = split_model(model.saturation,default_splitter(model))
+    pures = split_pure_model(fluidmodel,default_splitter(model))
+    satpures = split_pure_model(model.saturation,default_splitter(model))
     RT = R̄*T
     if fluidmodel isa IdealModel
         vv = RT/p

@@ -183,12 +183,14 @@ function PairParam(name, components, values_or_missing::AbstractVector{T}) where
 end
 
 # If no value is provided, just initialise empty param.
-function PairParam(name,components)
+function PairParam{T}(name,components) where T <: Number
     nc = length(components)
-    values = fill(0.0, (nc,nc))
+    values = fill(zero(T), (nc,nc))
     ismissingvalues = fill(true,(nc,nc))
     return PairParam(name, components, values, ismissingvalues)
 end
+
+PairParam(name,components) = PairParam{Float64}(name,components)
 
 function PairParam(x::SingleParam,name::String=x.name)
     pairvalues = singletopair(x.values,missing)
@@ -228,5 +230,4 @@ function pack_vectors(param::PairParameter{<:AbstractVector})
     return PairParam(name,components,vals,missingvals,srccsv,src)
 end
 
-const PackedSparsePairParam{T} = Clapeyron.PairParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, SparsePackedMofV{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, 
-true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}} where T
+const PackedSparsePairParam{T} = Clapeyron.PairParameter{PackedSubVector{T}, SparsePackedMofV{PackedSubVector{T}, PackedVector{T}}} where T

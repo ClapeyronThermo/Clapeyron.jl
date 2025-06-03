@@ -26,10 +26,9 @@ is_splittable(::OptionsParam) = false
 export EoSParam, ParametricEoSParam
 
 paramtype(m::ClapeyronParam) = eltype(m)
-paramtype(::Type{M}) where M <: ClapeyronParam = eltype(m)
+paramtype(::Type{M}) where M <: ClapeyronParam = eltype(M)
 
 custom_show(param::EoSParam) = _custom_show_param(typeof(param))
-
 
 function build_parametric_param(param::Type{T}, args...) where T <: ParametricEoSParam
     return __build_parametric_param(param,args)
@@ -39,8 +38,7 @@ end
 function dyn_build_parametric_param(param::Type{T}, args) where T <: ParametricEoSParam
     TT = mapreduce(paramtype,promote_type,args)
     Param = parameterless_type(T)
-    vals = map(Base.Fix1(_convert_param,TT),args)
-    return Param{TT}(vals...)
+    return Param{TT}(args...)
 end
 
 #static version
@@ -52,12 +50,7 @@ end
     expr = :($paramname{$TT}())
     args = expr.args
     for i in 1:paramlength
-        paramtype = fieldtype(P,i)
-        if isconcretetype(paramtype)
-            push!(args,:(convert($paramtype,args[$i])))
-        else
-            push!(args,:(_convert_param($TT,args[$i])))
-        end
+        push!(args,:(args[$i]))
     end
     return expr
 end
@@ -148,50 +141,6 @@ include("params/AssocOptions.jl")
 include("params/SpecialComp.jl")
 include("params/ReferenceState.jl")
 
-
-function _convert_param(T::V,val) where V
-    return _convert_param(T,parameterless_type(val),val)
-end
-
-function _convert_param(T::Type{V},val::SpecialComp) where V
-    return val
-end
-
-function _convert_param(T::Type{V},val::ReferenceState) where V
-    return val
-end
-
-function _convert_param(T::Type{V},::Type{SingleParameter},val::SingleParameter{V}) where V
-    return val
-end
-
-function _convert_param(T::Type{V},::Type{PairParameter},val::PairParameter{V}) where V
-    return val
-end
-
-function _convert_param(T::Type{V},::Type{AssocParam},val::AssocParam{V}) where V
-    return val
-end
-
-function _convert_param(T::Type{V},::Type{MixedGCSegmentParam},val::MixedGCSegmentParam{V}) where V
-    return val
-end
-
-function _convert_param(T::Type{V},::Type{SingleParameter},val) where {V}
-    return convert(SingleParam{T},val)
-end
-
-function _convert_param(T::Type{V},::Type{PairParameter},val) where {V}
-    return convert(PairParam{T},val)
-end
-
-function _convert_param(T::Type{V},::Type{AssocParam},val) where {V}
-    return convert(AssocParam{T},val)
-end
-
-function _convert_param(T::Type{V},::Type{MixedGCSegmentParam},val) where {V}
-    return convert(MixedGCSegmentParam{T},val)
-end
 
 const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
 function Base.show(io::IO,param::SingleOrPair)

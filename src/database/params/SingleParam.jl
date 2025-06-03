@@ -140,12 +140,14 @@ function SingleParam(name, components, values_or_missing::AbstractVector{T}) whe
 end
 
 # If no value is provided, just initialise empty param.
-function SingleParam(name,components)
+function SingleParam{T}(name,components) where T<: Number
     nc = length(components)
-    values = fill(0.0,nc)
+    values = fill(zero(T),nc)
     ismissingvalues = fill(true,nc)
     return SingleParam(name, components, values, ismissingvalues)
 end
+
+SingleParam(name,components) = SingleParam{Float64}(name,components) 
 
 function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     len = length(param.values)
@@ -174,7 +176,7 @@ function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractS
 end
 
 #pack vectors
-const PackedVectorSingleParam{T} = Clapeyron.SingleParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}
+const PackedVectorSingleParam{T} = Clapeyron.SingleParameter{PackedSubVector{T}, PackedVector{T}}
 
 function pack_vectors(param::SingleParameter{<:AbstractVector})
     name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources

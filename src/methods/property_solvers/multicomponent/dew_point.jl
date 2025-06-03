@@ -23,7 +23,7 @@ function index_reduction(method::DewPointMethod,idx_r)
     return method
 end
 
-function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model,condensables), crit = nothing)
+function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables), crit = nothing)
     sat = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
     p0inv_r = 1. ./ first.(sat)
     p0inv = index_expansion(p0inv_r,condensables)
@@ -126,7 +126,7 @@ function dew_pressure(model::EoSModel, T, y,method::ThermodynamicMethod)
 
     (P_sat, v_l, v_v, x_r) = dew_pressure_result
     x = index_expansion(x_r,idx_r)
-    converged = bubbledew_check(v_l,v_v,y,x)
+    converged = bubbledew_check(model,P_sat,T,v_l,v_v,x,y)
     if converged
         return (P_sat, v_l, v_v, x)
     else
@@ -138,7 +138,7 @@ end
 
 
 
-function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model,condensables),crit = nothing)
+function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
     multi_component_check(x0_dew_temperature,model)
     y_r = @view y[condensables]
 
@@ -278,7 +278,7 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
 
     (T_sat, v_l, v_v, x_r) = dew_temperature_result
     x = index_expansion(x_r,idx_r)
-    converged = bubbledew_check(v_l,v_v,y,x)
+    converged = bubbledew_check(model,p,T_sat,v_l,v_v,x,y)
     if converged
         return (T_sat, v_l, v_v, x)
     else

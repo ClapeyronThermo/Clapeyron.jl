@@ -160,7 +160,7 @@ function tp_flash_K0!(K,model,p,T)
     if has_fast_crit_pure(model)
         wilson_k_values!(K,model,p,T)
     else
-        pures = split_model(model)
+        pures = split_pure_model(model)
         for i in 1:length(model)
             sat_x = extended_saturation_pressure(pures[i],T)
             K[i] = sat_x[3]/p
@@ -264,6 +264,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     end
     iszero(volx) && (volx = volume(model,p,T,x,phase = phasex))
     iszero(voly) && (voly = volume(model,p,T,y,phase = phasey))
+    has_a_res(model) && is_liquid(VT_identify_phase(model,voly,T,y)) && (voly = Rgas(model)*T/p)
     r = FlashResult(p,T,SA[x,y],SA[βl,βv],SA[volx,voly],sort = false)
     return r
 end

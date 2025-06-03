@@ -157,5 +157,6 @@ function recombine_saft!(model::SAFTModel,k = nothing,l = nothing)
     epsilon = model.params.epsilon
     sigma = sigma_LorentzBerthelot!(sigma,l)
     epsilon = epsilon_LorentzBerthelot!(epsilon,k)
+    recombine_assoc!(model)
     return model
 end

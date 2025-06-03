@@ -233,7 +233,7 @@ end
 struct MixedGCSegmentParam{T} <: ClapeyronParam
     name::String
     components::Array{String,1}
-    values::PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}
+    values::PackedVector{T}
 end
 
 MixedGCSegmentParam(name,components) = MixedGCSegmentParam{Float64}(name,components,PackedVofV(Int[],Float64[]))
@@ -241,7 +241,7 @@ MixedGCSegmentParam(name,components) = MixedGCSegmentParam{Float64}(name,compone
 Base.length(param::MixedGCSegmentParam) = length(param.values)
 
 Base.eltype(param::MixedGCSegmentParam) = eltype(typeof(param))
-Base.eltype(param::Type{MixedGCSegmentParam{T}}) where T = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}
+Base.eltype(param::Type{MixedGCSegmentParam{T}}) where T = PackedSubVector{T}
 
 paramtype(::MixedGCSegmentParam{T}) where T = T
 paramtype(::Type{MixedGCSegmentParam{T}}) where T = T
@@ -261,13 +261,12 @@ function Base.show(io::IO, ::MIME"text/plain", param::MixedGCSegmentParam)
     show_pairs(io,param.components,param.values,separator)
 end
 
-function MixedGCSegmentParam(group::GroupParam,s = FillArrays.Fill(1.0,length(groups.flattenedgroups)),segment = FillArrays.Fill(1.0,length(groups.flattenedgroups)))
+function MixedGCSegmentParam{T}(group::GroupParam,s = ones(T, length(group.flattenedgroups)),segment = ones(T, length(group.flattenedgroups))) where T <: Number
     name = "mixed segment"
     components = group.components
     nc = length(components)
     ng = length(group.flattenedgroups)
-    T = Base.promote_eltype(1.0,s,segment)
-    values = PackedVectorsOfVectors.packed_fill(zero(T),FillArrays.fill(ng,nc))
+    values = Clapeyron.PackedVectorsOfVectors.pack([zeros(T, ng) for _ in 1:nc])
     n_flattenedgroups = group.n_flattenedgroups
     for i in 1:nc
         val_i = values[i]
@@ -275,13 +274,26 @@ function MixedGCSegmentParam(group::GroupParam,s = FillArrays.Fill(1.0,length(gr
         val_i .= n_i
     end
     group_cache = MixedGCSegmentParam{T}(name,components,values)
-    mix_segment!(group_cache,s,segment)
+    mix_segment!(group_cache,group,s,segment)
     return group_cache
 end
+
+MixedGCSegmentParam(group::GroupParam,s,segment) = MixedGCSegmentParam{Float64}(group,s,segment)
+MixedGCSegmentParam(group::GroupParam,s) = MixedGCSegmentParam{Float64}(group,s)
+MixedGCSegmentParam(group::GroupParam) = MixedGCSegmentParam{Float64}(group)
 
 function Base.convert(::Type{MixedGCSegmentParam{T1}},param::MixedGCSegmentParam{T2}) where {T1<:Number,T2<:Number}
     p,v1 = param.values.p,param.values.v
     v = convert(Vector{T1},v1)
     values = PackedVofV(p,v)
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+    return MixedGCSegmentParam{T1}(param.name,param.components,values)
 end
+
+function Solvers.primalval(param::MixedGCSegmentParam)
+    p,v1 = param.values.p,param.values.v
+    v = Solvers.primalval_eager(v1)
+    values = PackedVofV(p,v)
+    return MixedGCSegmentParam(param.name,param.components,values)
+end
+
+export MixedGCSegmentParam

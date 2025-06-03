@@ -33,7 +33,7 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = nothing)
+function ab_premixing(model::EoSModel,mixing::MixingRule, k, l)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.Pc
@@ -46,25 +46,12 @@ function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = noth
     return a,b
 end
 
-function ab_premixing(model::CubicModel,kij::K,lij::L) where K <: Union{Nothing,PairParameter,AbstractMatrix} where L <: Union{Nothing,PairParameter,AbstractMatrix}
+ab_premixing(model::EoSModel,mixing::MixingRule,k) = ab_premixing(model,mixing,k,nothing)
+ab_premixing(model::EoSModel,mixing::MixingRule) = ab_premixing(model,mixing,nothing,nothing)
+
+function ab_premixing(model::EoSModel,kij::K,lij::L) where K <: Union{Nothing,PairParameter,AbstractMatrix} where L <: Union{Nothing,PairParameter,AbstractMatrix}
     return ab_premixing(model,model.mixing,kij,lij)
 end
-
-#legacy reasons
-function ab_premixing(model::CubicModel,mixing::MixingRule,Tc,Pc,kij,lij)
-    Ωa, Ωb = ab_consts(model)
-    comps = Tc.components
-    n = length(Tc)
-    a = PairParam("a",comps,zeros(n,n))
-    b = PairParam("b",comps,zeros(n,n))
-    diagvalues(a) .= @. Ωa*R̄^2*Tc^2/pc
-    diagvalues(b) .= @. Ωb*R̄*Tc/pc
-    epsilon_LorentzBerthelot!(a,kij)
-    sigma_LorentzBerthelot!(b,lij)
-    return a,b
-end
-
-ab_premixing(model::CubicModel,mixing::MixingRule,Tc,pc,vc,kij,lij) = ab_premixing(model,mixing,Tc,pc,kij,lij) #ignores the Vc unless dispatch
 
 function recombine_cubic!(model::CubicModel,k = nothing,l = nothing)
     recombine_mixing!(model,model.mixing,k,l)
@@ -421,7 +408,7 @@ function wilson_k_values!(K,model::ABCubicModel, p, T, crit = nothing)
     elseif w2 !== nothing
         ω = w2.values
     else
-        pure = split_model(model)
+        pure = split_pure_model(model)
         ω = zero(Tc)
         for i in 1:length(Tc)
             ps = first(saturation_pressure(pure[i], 0.7 * Tc[i]))
@@ -462,3 +449,108 @@ function vdw_tv_mix(Tc,Vc,z)
 end
 
 antoine_coef(model::ABCubicModel) = (6.668322465137264,6.098791871032391,-0.08318016317721941)
+
+
+function transform_params(::Type{ABCubicParam},params,components)
+    n = length(components)
+
+    Tc = get!(params,"Tc") do
+        SingleParam("Tc",components)
+    end
+
+    Pc = get!(params,"Pc") do
+        SingleParam("Pc",components)
+    end
+
+    a = get!(params,"a") do
+        aa = PairParam("a",components,zeros(Base.promote_eltype(Pc,Tc),n))
+    end
+    a isa SingleParam && (params["a"] = PairParam(a))
+
+    b = get!(params,"b") do
+        PairParam("b",components,zeros(Base.promote_eltype(Pc,Tc),n))
+    end
+    b isa SingleParam && (params["b"] = PairParam(b))
+
+    Mw = get!(params,"Mw") do
+        SingleParam("Mw",components)
+    end
+    return params
+end
+
+function transform_params(::Type{ABCCubicParam},params,components)
+    n = length(components)
+    transform_params(ABCubicParam,params,components)
+    Vc = get!(params,"Vc") do
+        SingleParam("Vc",components)
+    end
+    Tc = params["Tc"]
+    Pc = params["Pc"]
+    c = get!(params,"c") do
+        PairParam("c",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n))
+    end
+    c isa SingleParam && (params["c"] = PairParam(c))
+    return params
+end
+
+
+"""
+    CubicModel(cubicmodel::Type{T},params::Dict{String,ClapeyronParam},components;
+    idealmodel = BasicIdeal,
+    alpha = nothing,
+    mixing = nothing,
+    activity = nothing,
+    translation = nothing,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    alpha_userlocations = String[],
+    mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
+    reference_state = nothing,
+    verbose = false) where T <: CubicModel
+
+## Input models
+- `idealmodel`: Ideal Model
+- `alpha`: Alpha model
+- `mixing`: Mixing model
+- `activity`: Activity Model, used in the creation of the mixing model.
+- `translation`: Translation Model
+
+## Description
+
+Empty Cubic model constructor.
+It requires specifiying all model arguments.
+"""
+function CubicModel(cubicmodel::Type{T},params,components;
+    idealmodel = BasicIdeal,
+    alpha = nothing,
+    mixing = nothing,
+    activity = nothing,
+    translation = nothing,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    alpha_userlocations = String[],
+    mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
+    reference_state = nothing,
+    verbose = false) where T <: CubicModel
+
+    if CubicModel isa EoSModel
+        return cubicmodel
+    end
+
+    _components = format_components(components)
+    PARAM = parameterless_type(fieldtype(cubicmodel,:params))
+    transform_params(PARAM,params,_components)
+    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,params,alpha_userlocations,verbose)
+    init_translation = init_model(translation,components,translation_userlocations,verbose)
+    cubicparams = build_eosparam(PARAM,params)
+    references = default_references(cubicmodel)
+    return cubicmodel(_components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,references)
+end
+
+export CubicModel

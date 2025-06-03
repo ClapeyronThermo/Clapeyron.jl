@@ -19,6 +19,36 @@ struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
     references::Array{String,1}
 end
 
+function transform_params(::Type{CPA},params,_components)
+    a = PairParam(params["a"])
+    _components = a.components
+    b = PairParam(params["b"])
+    params["a"] = a
+    params["b"] = b
+    
+    sites = get!(params,"sites") do
+        SiteParam(_components)
+    end
+
+    Mw  = params["Mw"]
+    Tc = params["Tc"]
+    c1 = get(params,"c1",nothing)
+    Pc = get!(params,"Pc") do
+        SingleParam("Pc",_components)
+    end
+    params["Pc"] = Pc
+    epsilon_assoc = get!(params,"epsilon_assoc") do
+        AssocParam("epsilon_assoc",_components)
+    end
+    bondvol = get!(params,"bondvol") do
+        AssocParam("bondvol",_components)
+    end
+
+    #assoc mixing is done later.
+    #bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options,sites)
+    params
+end
+
 """
     CPAModel <: EoSModel
 
@@ -119,71 +149,84 @@ function CPA(components;
     end
 
     _components = format_components(components)
-    params = getparams(_components, locs; userlocations = userlocations, verbose = verbose)
+    params = getparams(_components, locs; userlocations = userlocations, verbose = verbose, ignore_missing_singleparams = ["Pc","Vc","acentricfactor"])    
+    references = ["10.1021/ie051305v"]
     
-    sites = get!(params,"sites") do
-        SiteParam(_components)
-    end
+    #adds missing parameters, in the correct shape
+    transform_params(CPA,params,components)
+    
+    #creates a CPAParam
+    packagedparams = CPAParam(params["Mw"],params["Tc"],params["a"],params["b"],params["c1"],params["epsilon_assoc"],params["bondvol"])
+    
+    #init empty cubic model
+    init_cubicmodel = CubicModel(cubicmodel,params,components;
+                                idealmodel,alpha,mixing,activity,translation,
+                                userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                                reference_state, verbose)
 
-    Pc = get!(params,"Pc") do
-        SingleParam("Pc",_components)
-    end
+    init_idealmodel = init_cubicmodel.idealmodel
 
-    Mw  = params["Mw"]
+    model = CPA(_components, radial_dist, init_cubicmodel, packagedparams, params["sites"], init_idealmodel, assoc_options, references)
+    
+    #perform mixing rules for a and b, perform association combining rules.
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    Tc = params["Tc"]
-    c1 = get(params,"c1",nothing)
-    a  = epsilon_LorentzBerthelot(params["a"], k)
-    b  = sigma_LorentzBerthelot(params["b"], l)
+    recombine_cpa!(model,k,l)
 
-    epsilon_assoc = get!(params,"epsilon_assoc") do
-        AssocParam("epsilon_assoc",_components)
-    end
-
-    bondvol = get!(params,"bondvol") do
-        AssocParam("bondvol",_components)
-    end
-
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options,sites)
-    packagedparams = CPAParam(Mw, Tc, a, b, c1, epsilon_assoc, bondvol)
-
-    references = ["10.1021/ie051305v"]
-
-    #init cubic model
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    if alpha isa Type && alpha <: CPAAlphaModel && c1 != nothing
-        alphaparams = CPAAlphaParam(c1)
-        init_alpha = alpha(_components,alphaparams,references)
-    else
-        init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    end
-
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    cubicparams = ABCubicParam(a, b, params["Tc"],Pc,Mw) #PR, RK, vdW
-    init_cubicmodel = cubicmodel(_components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
-    
-
-    model = CPA(_components, radial_dist, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
+    #calculates reference states, if any.
     set_reference_state!(model,reference_state;verbose)
     return model
 end
 
-function recombine_impl!(model::CPAModel)
-    assoc_options = model.assoc_options
+#needs to add overload for other mixing rules
+function ab_premixing(model::CPAModel,mixing::MixingRule, k, l)
     a = model.params.a
     b = model.params.b
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
+    return a,b
+end
 
-    a  = epsilon_LorentzBerthelot!(a)
-    b  = sigma_LorentzBerthelot!(b)
 
-    epsilon_assoc = model.params.epsilon_assoc
-    bondvol = model.params.bondvol
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options,model.sites) #combining rules for association
+function recombine_cpa!(model::CPAModel,k = nothing, l = nothing)
+    a = model.params.a
+    b = model.params.b
+    cubicmodel = model.cubicmodel
+    Pc = cubicmodel.params.Pc
+    components = model.components
+    for i in 1:length(components)
+        if Pc.ismissingvalues[i]
+            Ωa,Ωb = ab_consts(cubicmodel)
+            Ωa,Ωb = ab_consts(cubicmodel)
+            b̄r = b[i,i]/Ωb
+            ār = a[i,i]/Ωa
+            Pc[i] = ār/(b̄r*b̄r)
+        end
+    end
 
-    model.params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
-    model.params.bondvol.values.values[:] = bondvol.values.values
+    #recombine_mixing also calculates additional things for some ABC cubics
+    recombine_mixing!(model,cubicmodel.mixing,k,l)
+    cubicmodel.params.a.values .= a.values
+    cubicmodel.params.b.values .= b.values
+    recombine_translation!(cubicmodel,cubicmodel.translation)
+    
+    if model.cubicmodel.alpha isa CPAAlphaModel
+        cubicmodel.alpha.params.c1.values .= model.params.c1.values
+    else
+        recombine_alpha!(cubicmodel,cubicmodel.alpha)
+    end
+
+    #association recombining
+    recombine_assoc!(model,cbrt.(b))
+
+    return model
+end
+
+function recombine_impl!(model::CPAModel)
+    #this function recombines all parameters of CPA.
+    #for polar CPA or other variants, more code needs to be added here.
+    recombine_cpa!(model)
+
     return model
 end
 
@@ -290,6 +333,7 @@ function a_assoc(model::CPAModel, V0, T, z,_data = data(model,V0,T,z))
 end
 
 ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
+ab_consts(::Type{T}) where T <: CPAModel = ab_consts(fieldtype(T,:cubicmodel))
 
 function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
     n,ā,b̄,c̄ = _data
@@ -308,8 +352,9 @@ function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
 
     return g*expm1(ϵ_associjab/T)*βijab*b[i,j]/N_A
 end
+
 #optimized Δ function for CPA, we only calculate g once.
-function  Δ(model::CPA, V, T, z,_data=@f(data))
+function  Δ(model::CPAModel, V, T, z,_data=@f(data))
     n,ā,b̄,c̄ = _data
     β = model.params.bondvol.values
     b_cubic = model.params.b.values

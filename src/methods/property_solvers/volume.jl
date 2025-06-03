@@ -53,6 +53,7 @@ function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
     _1 = one(Base.promote_eltype(model,p,T,z))
     vᵢ = _1*v0
     Tᵢ = _1*T0
+    count_invalid_iters = 0
     for i in 1:100
         d²A,dA,_ = ∂2f(model,vᵢ,Tᵢ,z)
         ∂²A∂V∂T = d²A[1,2]
@@ -74,6 +75,13 @@ function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
         vnew = vᵢ + Δv
         if vnew > 0
             vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+            count_invalid_iters = 0
+        else
+            count_invalid_iters +=1
+        end
+        if count_invalid_iters >= 10
+            vᵢ = zero(vᵢ)/zero(vᵢ)
+            break
         end
         abs(ΔT) < Ttol*T && vnew > 0 && break
         !isfinite(vᵢ) && break
@@ -118,13 +126,7 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
         return -2*B
     end
     #only the left root has physical meaning
-
-    #stable way of calculating quadratics, seems to matter here
-    if b >= 0
-        return 2*c/(- b - sqrt(Δ))
-    else
-        return (-b + sqrt(Δ))/(2*a)
-    end
+    return (-b + sqrt(Δ))/(2*a)   
 end
 
 function pressure_virial(model,V,T,z)
@@ -172,10 +174,23 @@ An initial estimate of the volume `vol0` can be optionally be provided.
 """
 function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0=nothing)
     #this is used for dispatch on symbolic variables
+    phase2 = __symbolic_phase(p,T,z,phase)
     if z isa Number
-        return _volume(model,p,T,SA[z],phase,threaded,vol0)
+        return _volume(model,p,T,SA[z],phase2,threaded,vol0)
     else
-        return _volume(model,p,T,z,phase,threaded,vol0)
+        return _volume(model,p,T,z,phase2,threaded,vol0)
+    end
+end
+
+
+__is_symbolic(x) = false
+__is_symbolic(x::AbstractArray{T}) where T = __is_symbolic(T)
+
+function __symbolic_phase(p,T,z,phase)
+    if !__is_symbolic(p) && !__is_symbolic(T) && !__is_symbolic(z)
+        return phase
+    else
+        return string(phase)
     end
 end
 
@@ -343,6 +358,34 @@ function _label_and_volumes(model::EoSModel,cond)
     gl,gv = gibbs(Vl),gibbs(Vv)
     V = gv < gl ? 1 : 0
     return V,Vl,Vv
+end
+
+function volume_bracket_refine(model,p,T,z,v1,v2)
+    p1,dpdv1 = p∂p∂V(model,v1,T,z)
+    p2,dpdv2 = p∂p∂V(model,v2,T,z)
+    if p1 > p2
+        vhi,vlo = v1,v2
+        phi,dpdvhi = p1,dpdv1
+        plo,dpdvlo = p2,dpdv2
+    else
+        vlo,vhi = v1,v2
+        phi,dpdvhi = p2,dpdv2
+        plo,dpdvlo = p1,dpdv1
+    end
+    if plo <= p <= phi
+        logvhi,logvlo = log(vhi),log(vlo)
+        bhi = 1/(vhi*dpdvhi)
+        blo = 1/(vlo*dpdvlo)
+        poly_p = Solvers.hermite3_poly(plo,phi,logvlo,logvhi,blo,bhi)
+        Δp = p - plo
+        return exp(evalpoly(Δp,poly_p))
+    elseif p < plo
+        return vlo
+    elseif p > phi
+        return vhi
+    else
+        return zero(phi)/zero(plo)
+    end
 end
 
 export volume

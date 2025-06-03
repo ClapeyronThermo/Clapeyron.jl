@@ -43,9 +43,21 @@
                             (("CO2","a2"),("NH2","e")) => 142.64e-30])))
 
 
-        bondvol_mixed = model_mix.vrmodel.params.bondvol[1,2]
-        @test length(bondvol_mixed) == 2
-        @test vec(bondvol_mixed) ≈ [1.4264e-28, 3.2803e-27]
+        bondvol_mixed = model_mix.vrmodel.params.bondvol
+        co2 = "Carbon Dioxide"
+        mea = "MEA"
+        #normal
+        @test bondvol_mixed[(co2,"CO2/a1"),(mea,"NH2/e")] == 3280.3e-30
+        @test bondvol_mixed[(co2,"CO2/a2"),(mea,"NH2/e")] == 142.64e-30
+        #reverse
+        @test bondvol_mixed[(mea,"NH2/e"),(co2,"CO2/a1")] == 3280.3e-30
+        @test bondvol_mixed[(mea,"NH2/e"),(co2,"CO2/a2")] == 142.64e-30
+        
+        #swich sites: this should result in zeros:
+        @test bondvol_mixed[(co2,"CO2/e"),(mea,"NH2/a1")] == 0
+        @test bondvol_mixed[(mea,"CO2/e"),(co2,"NH2/a2")] == 0
+        @test bondvol_mixed[(mea,"NH2/a1"),(co2,"CO2/e")] == 0
+        @test bondvol_mixed[(co2,"NH2/a2"),(mea,"CO2/e")] == 0
     end
 
     @testset "#140" begin
@@ -132,8 +144,9 @@
         @test model2 isa Clapeyron.EoSModel
     end
 
-    @testset "#171" begin
+    @testset "#171, #366" begin
         #=
+        #171
         This is a problem that occurs in an intersection between split_model and cross-association sites
         a single component model created from scratch don't have any cross association sites,
         but a single component model created from split_model does have those sites.
@@ -145,6 +158,14 @@
         res_pure = Clapeyron.eos(model_pure,1.013e6,298.15) #works
         res_split = Clapeyron.eos(model_split,1.013e6,298.15) #should work
         @test res_pure ≈ res_split
+
+        #=
+        #366
+        incorrect conversion of MixedGCSegmentParam.
+        =#
+        mix_segment_f64 = model.params.mixed_segment
+        mix_segment_bigfloat = convert(Clapeyron.MixedGCSegmentParam{BigFloat},mix_segment_f64)
+        @test mix_segment_f64.values.v ≈ mix_segment_bigfloat.values.v
     end
 
     @testset "#188" begin

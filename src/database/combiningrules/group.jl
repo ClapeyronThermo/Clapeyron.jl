@@ -94,7 +94,8 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
 function group_sum(groups,::Nothing)
-    out = zeros(Float64,length(groups.components))
+    v = __get_group_sum_values(groups)
+    out = zeros(eltype(v[1]),length(groups.components))
     return group_sum!(out,groups,true)
 end
 
@@ -160,11 +161,10 @@ function group_pairmean(f::T,groups,param::SingleOrPair) where {T}
     return SingleParam(param.name,groups.components,group_pairmean(f,groups,param.values))
 end
 
-
 function group_pairmean(f::F,groups,p::AbstractArray) where {F}
     v = __get_group_sum_values(groups)
-    _0 = zero(Base.promote_eltype(1.0,p,v[1])) #we want a float type
-    res = fill(_0,length(groups.components))
+    T = Base.promote_eltype(1.0,p,v[1])
+    res = zeros(T, length(groups.components))
     return group_pairmean!(res,f,groups,p)
 end
 
@@ -230,14 +230,16 @@ modifies implace the field `n_groups_cache` (`μᵢₖ`) in the `GroupParam`:
 Where `S` is a shape factor parameter for each group and `vst` is the segment size for each group.
 used mainly for GC models (like `SAFTgammaMie`) in which the group fraction depends on segment size and shape factors.
 """
-function mix_segment!(groups,s = ones(length(groups.flattenedgroups)),segment = ones(length(groups.flattenedgroups)))
+function mix_segment!(groups,ngroups,s = ones(length(groups.flattenedgroups)),segment = ones(length(groups.flattenedgroups)))
     v = __get_group_sum_values(groups)
+    nv = __get_group_sum_values(ngroups)
     ng = length(v[1])
     nc = length(v)
     for i in 1:nc
         vi = v[i]
+        ni = nv[i]
         for k in 1:ng
-            vi[k] = vi[k]*s[k]*segment[k]
+            vi[k] = ni[k]*s[k]*segment[k]
         end
     end
     return groups

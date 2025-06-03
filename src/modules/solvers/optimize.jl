@@ -1,34 +1,83 @@
 
-function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0))
-    Hres = DiffResults.HessianResult(x0)
-    function _g(df,x,Gresult)
-        ForwardDiff.gradient!(Gresult,f,x)
-        df .= DiffResults.gradient(Gresult)
-        df
-    end
-    
-    function _fg(df,x,Gresult)
-        ForwardDiff.gradient!(Gresult,f,x)
-        df .= DiffResults.gradient(Gresult)
-        fx = DiffResults.value(Gresult)
+
+function ADScalarObjective(f,x0::T) where T <: AbstractArray
+    Hresult = DiffResults.HessianResult(x0)
+    Hconfig = ForwardDiff.HessianConfig(f,Hresult,x0)
+    function fg(_df,x)
+        Gconfig = _GradientConfig(Hconfig)
+        result = ForwardDiff.gradient!(Hresult,f,x,Gconfig)
+        if __is_implace(x)
+            _df .= DiffResults.gradient(result)
+            df = _df
+        else
+            df = DiffResults.gradient(result)
+        end
+        fx = DiffResults.value(result)
         return fx,df
     end
 
-    function _fgh(df,d2f,x,Hresult)
-        ForwardDiff.hessian!(Hresult,f,x)
-        d2f .= DiffResults.hessian(Hresult)
-        df .= DiffResults.gradient(Hresult)
-        fx = DiffResults.value(Hresult)
-        return fx,df,d2f
+      function g(df,x)
+        _,df = fg(df,x)
+        return df
+    end
+
+    function fgh(df,d2f,x)
+        result = ForwardDiff.hessian!(Hresult,f,x,Hconfig)
+        fx = DiffResults.value(result)
+        if __is_implace(x)
+            d2f .= DiffResults.hessian(result)
+            df .= DiffResults.gradient(result)
+            return fx,df,d2f
+        else
+            _d2f = DiffResults.hessian(result)
+            _df = DiffResults.gradient(result)
+            return fx,_df,_d2f
+        end 
     end
 
     function h(d2f,x)
-        ForwardDiff.hessian!(d2f,f,x)
-        d2f
+        result = ForwardDiff.hessian!(Hresult,f,x)
+        if __is_implace(x)
+            d2f .= DiffResults.hessian(result)
+            return d2f
+        else
+            return DiffResults.hessian(result)
+        end
     end
-    g(df,x) = _g(df,x,Hres)
-    fg(df,x) = _fg(df,x,Hres)
-    fgh(df,d2f,x) = _fgh(df,d2f,x,Hres)
+
+    return ScalarObjective(f=f,
+    g=g,
+    fg=fg,
+    fgh=fgh,
+    h=h)
+end
+
+function ADScalarObjective(f::F,x0::T) where {F,T <: SVector}
+    function g(_a1,x)
+        return ForwardDiff.gradient(f,x)
+    end
+    
+    function fg(_a1,x)
+        gres = DiffResults.GradientResult(x)
+        result = ForwardDiff.gradient!(gres,f,x)
+        df = DiffResults.gradient(result)
+        fx = DiffResults.value(result)
+        return fx,df
+    end
+
+    function fgh(_a1,_a2,x)
+        Hresult = DiffResults.HessianResult(x)
+        result = static_fgh(Hresult,f,x)
+        fx = DiffResults.value(result)
+        _d2f = DiffResults.hessian(result)
+        _df = DiffResults.gradient(result)
+        return fx,_df,_d2f
+    end
+
+    function h(_a1,x)
+        return ForwardDiff.hessian(f,x)
+    end
+
     return ScalarObjective(f=f,
     g=g,
     fg=fg,
@@ -37,64 +86,66 @@ function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0))
 end
 
 
-function ADScalarObjective(f,x0::Number,autochunk)
+function ADScalarObjective(f,x0::Number)
     function g(x)
         return derivative(f,x)
     end
 
-    function fg(∂fx,x)
+    function fg(_,x)
         ∂fx,x = f∂f(f,x)
         return ∂fx,x
     end
 
-    function fgh(∂fx,∂2fx,x)
+    function fgh(_,_,x)
         fx,∂fx,∂2fx = f∂f∂2f(f,x)
         return fx,∂fx,∂2fx
     end
 
-    function h(∂2fx,x)
+    function h(_,x)
         ∂2fx = derivative(g,x)
         return ∂2fx
     end
 
-    return ScalarObjective(f=f,
-    g=g,
-    fg=fg,
-    fgh=fgh,
-    h=h)
+    return ScalarObjective(f = f,
+    g = g,
+    fg = fg,
+    fgh = fgh,
+    h = h)
 end
+
 #uses brent, the same default that Optim.jl uses
 function optimize(f,x0::NTuple{2,T},method=BrentMin(),options=OptimizationOptions()) where T<:Real
-    scalarobj = ADScalarObjective(f,first(x0),nothing)
+    scalarobj = ADScalarObjective(f,first(x0))
     optprob = OptimizationProblem(obj = scalarobj,bounds = x0, inplace=false)
     res = NLSolvers.solve(optprob,method,options)
     return res
 end
+
 #general one, with support for ActiveBox
-function optimize(f,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
-    scalarobj = ADScalarObjective(f,x0,autochunk)
-    optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa Number),bounds = bounds)
+function optimize(f,x0,method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
+    inplace = __is_implace(x0)
+    scalarobj = ADScalarObjective(f,x0)
+    optprob = OptimizationProblem(obj = scalarobj,inplace = inplace,bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
-function optimize(optprob::OptimizationProblem,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
+function optimize(optprob::OptimizationProblem,x0,method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
     return NLSolvers.solve(optprob,x0,method,options)
 end
+
 #build scalar objective -> Optimization Problem
-function optimize(scalarobj::ScalarObjective,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
-    optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa Number),bounds = bounds)
+function optimize(scalarobj::ScalarObjective,x0,method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
+    inplace = __is_implace(x0)
+    optprob = OptimizationProblem(obj = scalarobj,inplace = inplace,bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
 function optimize(f,x0,method::NLSolvers.NelderMead,options=OptimizationOptions();bounds = nothing)
     scalarobj = ScalarObjective(f = f)
-    optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa Number),bounds = bounds)
+    optprob = OptimizationProblem(obj = scalarobj,inplace = false,bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
-x_minimum(res::NLSolvers.ConvergenceInfo) = res.info.minimum
-#for BrentMin (should be fixed at NLSolvers 0.3)
-x_minimum(res::Tuple{<:Number,<:Number}) = last(res)
 
 #= only_fg!: Optim.jl legacy form:
 function fg!(F,G,x)
@@ -221,12 +272,12 @@ function _1var_optimize_quad(f,x0)
         end
         xmin,xmax = extrema((xa,xb,xc))
         fxx = minimum((fa,fb,fc))
-        @show abs(xmin - xmax),fxx
+        #@show abs(xmin - xmax),fxx
         if abs(xmin - xmax) < sqrt(eps(xmin))
             break
         end
     end
     xmin,xmax = extrema((xa,xb,xc))
-    @show xa0,xmin,xmax,xb0
+    #@show xa0,xmin,xmax,xb0
     return 0.5*(xmin + xmax)
 end

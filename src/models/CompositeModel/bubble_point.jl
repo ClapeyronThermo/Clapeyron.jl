@@ -10,7 +10,7 @@ function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::Activ
         pure = model.fluid.pure
     else
         pmodel = model
-        pure = split_model(pmodel,1:length(model))
+        pure = split_pure_model(pmodel,1:length(model))
     end
 
     sat = saturation_pressure.(pure,T)

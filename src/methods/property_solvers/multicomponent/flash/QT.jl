@@ -21,7 +21,7 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
             βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         else
-            pures = split_model(model)
+            pures = split_pure_model(model)
             sat = extended_saturation_pressure.(pures,T)
             ps = first.(sat)
             K = similar(ps)
@@ -72,7 +72,7 @@ All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
     Using `qt_flash` with q = 0 or q = 1 is equivalent to calculating bubble or dew pressures.
     Passing `GeneralizedXYFlash` as a method to [`bubble_pressure`](@ref) of [`dew_pressure`](@ref) will use `qt_flash` to calculate the bubble/dew point.
 """
-function qt_flash(model::EoSModel,β,T,z;kwargs...)
+function qt_flash(model::EoSModel,β,T,z = SA[1.0];kwargs...)
     if !(0 <= β <= 1)
         throw(DomainError(β,"vapour fractions should be between 0 and 1"))
     end

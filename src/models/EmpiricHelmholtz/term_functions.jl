@@ -9,8 +9,16 @@ end
 function term_ar_exp(δ,τ,lnδ,lnτ,_0,n,t,d,l,g)
     αᵣ = zero(_0) 
     for k in eachindex(n)
-        dpart = lnδ*d[k] - g[k]*δ^l[k]
+        dpart = lnδ*d[k] - g[k]*exp(lnδ*l[k])
         αᵣ += n[k]*exp(dpart + lnτ*t[k])
+    end
+    return αᵣ
+end
+
+@inline function term_ar_exp2(δ,τ,lnδ,lnτ,_0,n,t,d,ld,gd,lt,gt)
+    αᵣ = zero(_0) 
+    for k in eachindex(n)
+        αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k] - gd[k]*exp(lnδ*ld[k]) - gt[k]*exp(lnτ*lt[k]))
     end
     return αᵣ
 end
@@ -39,22 +47,32 @@ end
 @inline function term_ar_na(δ,τ,lnδ,lnτ,_0,A,B,C,D,a,b,β,n)
     αᵣ = zero(_0)
     Δδ = δ-1
+    
+    Δδ2 = Δδ*Δδ
+    if iszero(primalval(Δδ2))
+        Δδ2 += 2.2250738585072014e-308*oneunit(Δδ2)
+    end
+
     Δτ = τ-1
-    logΔδ2 = log(Δδ*Δδ)
+
+    if iszero(primalval(Δτ))
+        Δτ += 1e-130*oneunit(Δτ)
+    end
+
     for k in eachindex(n)
         Ψ = exp(-C[k]*Δδ*Δδ - D[k]*Δτ*Δτ)
-        Θ = -Δτ + A[k]*exp(logΔδ2/(2*β[k]))
-        Δ = Θ*Θ + B[k]*exp(logΔδ2*a[k])
-        n[k]*δ*Ψ*Δ^b[k]
+        Θ = -Δτ + A[k]*Δδ2^(1/(2*β[k]))
+        
+        Δ = Θ*Θ + B[k]*Δδ2^a[k]
         αᵣ += n[k]*δ*Ψ*Δ^b[k]
     end
     return αᵣ
 end
 
-function term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε,κ,a,m,v̄ₙ)
+function term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε̄,κ̄,a,m,v̄ₙ)
     η = v̄ₙ*δ
     g = 0.5*(2 - η)/(1 - η)^3
-    Δ = g*(exp(ε*τ) - 1)*κ
+    Δ = g*(exp(ε̄*τ) - 1)*κ̄
     X = 2 / (sqrt(1 + 4 * Δ * δ) + 1)
     return m * a * ((log(X) - X / 2.0 + 0.5))
 end

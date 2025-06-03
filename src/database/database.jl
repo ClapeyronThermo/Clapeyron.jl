@@ -236,7 +236,7 @@ function buildsites(components,allparams,allnotfoundparams,options)
     options.return_sites || return nothing
     
     #if there aren't any assoc data files, return empty SiteParam
-    assoc_data_found = any(x -> x.type == assocdata,values(allparams)) 
+    assoc_data_found = any(x -> x.type == assocdata,values(allparams))
     assoc_data_notfound = any(x -> x == assocdata,values(allnotfoundparams))
     !assoc_data_found && !assoc_data_notfound && return nothing
     
@@ -245,13 +245,11 @@ function buildsites(components,allparams,allnotfoundparams,options)
 
     #Find the names of all possible sites for each component.
     allcomponentsites = findsites(allparams,components)
-
     #Unique sites
     v = String[]
     for sitei ∈ allcomponentsites
         append!(v,sitei)
     end
-
     unique!(v)
     @assert length(v) != 0 #this should not be false, we already checked with anysites
 
@@ -317,14 +315,14 @@ function findsites(data::Dict,components::Vector;verbose = false)
     for raw ∈ values(data)
         if raw.type === assocdata
             for (c1,c2,s1,s2) ∈ raw.component_info
-            push!(sites[c1], s1)
-            push!(sites[c2], s2)
+                push!(sites[c1], s1)
+                push!(sites[c2], s2)
             end
         end
     end
     output = Array{Array{String,1}}(undef, 0)
     for component ∈ components
-        push!(output, collect(sites[component]))
+        push!(output, sort!(collect(sites[component])))
     end
     verbose && @info("Found sites for $components are $(output).")
     return output
@@ -438,7 +436,11 @@ function compile_params(components,allparams,allnotfoundparams,sites,options)
     for prop in options.ignore_missing_singleparams
         get!(result,prop) do
             options.verbose && __verbose_missing_singleparams_added(prop)
-            SingleParam(prop,components)
+            if prop in options.asymmetricparams
+                PairParam(prop,components)
+            else
+                SingleParam(prop,components)
+            end
         end
     end
 

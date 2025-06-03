@@ -206,7 +206,7 @@ function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
                     kij = @. 1-aij/(sqrt(ai*aj))
                     append!(binary,kij)
                 end
-                unlike[paramname] = binary
+                unlike[:k] = binary
             elseif params[i] == :b
                 binary = Vector{Float64}()
                 for j in 1:ncomps-1
@@ -216,7 +216,7 @@ function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
                     lij = @. 1-2*bij/(bi+bj)
                     append!(binary,lij)
                 end
-                unlike[paramname] = binary
+                unlike[:l] = binary
             end
         end
     end

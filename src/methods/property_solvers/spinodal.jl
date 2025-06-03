@@ -39,13 +39,7 @@ function spinodal_pressure(model::EoSModel,T,z=SA[1.];v0=nothing,phase=:unknown)
     end
 
     f(vz) = det_∂²A∂ϱᵢ²(model, T, x ./ exp(vz))
-
-    function fdf(vz)
-        fx,dfx = Solvers.f∂f(f,vz)
-        return fx,fx/dfx
-    end
-
-    prob = Roots.ZeroProblem(fdf,log(_v0))
+    prob = Roots.ZeroProblem(Solvers.to_newton(f),log(_v0))
     log_V_spin = Roots.solve(prob,Roots.Newton())
     V_spin = exp(log_V_spin)
     p_spin = pressure(model,V_spin,T,x)

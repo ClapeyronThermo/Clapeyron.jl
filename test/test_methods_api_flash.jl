@@ -200,7 +200,7 @@ end
     model = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
     z = [0.25, 0.25, 0.25, 0.25]
     p = 1e5
-    h = enthalpy(model, 1e5, 303.15, z)
+    h = 6300.0
     r = Clapeyron.ph_flash(model, p, h, z)
     @test_throws ArgumentError qt_flash(model,0.5,308,z,flash_result = r)
     res4 = qp_flash(model,0.7,60000.0,z)
@@ -276,7 +276,7 @@ end
     @test res_qp2.fractions ≈ [6.0,4.0]
 
     #qp_flash scaling error (#325)
-    fluids= ["isopentane","isobutane"]
+    fluids = ["isopentane","isobutane"]
     model = cPR(fluids,idealmodel=ReidIdeal)
 
     p = 2*101325.0; z = [2.0,5.0];
@@ -294,6 +294,57 @@ end
     n_O2_a = 24.08 # mol O2
     sol_fl = vt_flash(model_a_pr, V_a, T, [n_H2O_a, n_O2_a])
     @test V_a ≈ volume(sol_fl)
+
+    #PH flash with supercritical pure components (#361)
+    fluid_model = SingleFluid("Hydrogen")
+    T_in = 70               # K
+    p_in = 350e5           # Pa
+    h_in = enthalpy(fluid_model,p_in,T_in)
+    sol_sc = ph_flash(fluid_model,p_in,h_in)
+    @test Clapeyron.temperature(sol_sc) ≈ T_in
+
+    #PH Flash where T is in the edge (#373)
+    model = cPR(["butane","isopentane"],idealmodel = ReidIdeal)
+    p = 101325
+    z = [1.0,1.0];
+    T = 286.43023797357927 #(0.5*bubble_temperature(model,p,z)[1] + 0.5*dew_temperature(model,p,z)[1])
+    h = -50380.604181769755 #Clapeyron.enthalpy(model,p,T,z)
+    flash_res_ph = ph_flash(model,p,h,z)
+    @test Clapeyron.numphases(flash_res_ph) == 2
+
+    #Inconsistency in flash computations near bubble and dew points (#353)
+    fluids =["isopentane","toluene"]
+    model = cPR(fluids,idealmodel = ReidIdeal)
+    p = 101325
+    z = [1.5,1.5]
+    T1,T2 = 380, 307.72162335900924 #T1 = 380; T2 = bubble_temperature(model,p,z)[1] - 10
+    h1,h2 = 30118.26278687942, -89833.18975112544 #h1 = enthalpy(model,p,T1,z); h2 = enthalpy(model,p,T2,z)
+    hrange = range(h1,h2,length=100)
+    Trange = similar(hrange)
+    for i in eachindex(hrange)
+        Ti = Clapeyron.PH.temperature(model,p,hrange[i],z)
+        Trange[i] = Ti
+        if i > 1
+            @test Trange[i] < Trange[i-1] #check that temperature is increasing
+            @test isfinite(Ti) #test that there are no NaNs
+        end
+    end
+
+    #VT flash: water + a tiny amount of hydrogen (#377)
+    # content of a cathode separation tank
+    n_H2O_c = 0.648e4
+    V_c = 0.35
+    n_H2_c = 251
+    mod_pr = cPR(["water","hydrogen"],idealmodel = ReidIdeal)
+    mult_H2 = reverse(0:0.1:5)
+    p_tank = similar(mult_H2)
+    for (i,mH2) in pairs(mult_H2)
+        res_i = vt_flash(mod_pr,V_c,T,[n_H2O_c, exp10(-mH2)*n_H2_c])
+        @test Clapeyron.numphases(res_i) == 2
+        @test pressure(res_i) > 0
+        p_tank[i] = pressure(res_i)
+    end
+    @test issorted(p_tank)
 end
 
 @testset "Saturation Methods" begin

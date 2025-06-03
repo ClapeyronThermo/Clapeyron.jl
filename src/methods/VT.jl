@@ -16,10 +16,16 @@ end
 
 function temperature end
 
+VT_pressure(model, V, T, z=SA[1.]) = pressure(model,V,T,z)
+VT_temperature(model, V, T, z=SA[1.]) = T
+VT_volume(model, V, T, z=SA[1.]) = V
+
 function pressure_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
     return -Solvers.derivative(fun,V)
 end
+
+VT_pressure_res(model, V, T, z=SA[1.]) = pressure_res(model,V,T,z)
 
 function VT_entropy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return -∂f∂T(model,V,T,z)
@@ -32,7 +38,7 @@ end
 
 function VT_internal_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     ideal = model isa IdealModel
-    if V == Inf && !ideal
+    if iszero(1/V) && !ideal
         return VT_internal_energy(idealmodel(model),V,T,z)
     end
 
@@ -47,14 +53,13 @@ function VT_internal_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
 end
 
 function VT_internal_energy_res(model::EoSModel, V, T, z=SA[1.])
-    dA, A = ∂f_res(model,V,T,z)
-    ∂A∂V, ∂A∂T = dA
+    A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,V,T,z)
     return A - T*∂A∂T
 end
 
 function VT_enthalpy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     ideal = model isa IdealModel
-    if V == Inf && !ideal
+    if iszero(1/V) && !ideal
         return VT_internal_energy(idealmodel(model),V,T,z)
     end
 
@@ -74,15 +79,14 @@ function VT_enthalpy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
 end
 
 function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
-    dA, A = ∂f_res(model,V,T,z)
-    A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
-    PrV = ifelse(V == Inf,zero(∂A∂V),- V*∂A∂V)
+    A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,V,T,z)
+    PrV = ifelse(isinf(primalval(V)),zero(∂A∂V),- V*∂A∂V)
     return A + PrV - T*∂A∂T
 end
 
 function VT_gibbs_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p = nothing)
     ideal = model isa IdealModel
-    if V == Inf && !ideal
+    if iszero(1/V) && !ideal
         return VT_gibbs_free_energy(idealmodel(model), V, T, z)
     end
 
@@ -103,7 +107,7 @@ end
 function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
     Ar,∂A∂Vr = Solvers.f∂f(fun,V)
-    PrV = ifelse(V == Inf,zero(∂A∂Vr),- V*∂A∂Vr)
+    PrV = ifelse(iszero(1/V),zero(∂A∂Vr),- V*∂A∂Vr)
     return Ar + PrV
 end
 
@@ -126,7 +130,7 @@ function VT_isochoric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf  || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
         return -T*∂²A∂T² + Rgas(model)*sum(z)
     else
@@ -139,7 +143,7 @@ function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_adiabatic_index(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
         1 - Rgas(model)*sum(z)/(∂²A∂T²*T)
     else
@@ -152,7 +156,7 @@ function VT_adiabatic_index(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         return V/(sum(z)*Rgas(model)*T)
     else
         _,∂p∂V = p∂p∂V(model,V,T,z)
@@ -161,7 +165,7 @@ function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isentropic_compressibility(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
         R = Rgas(model)
         V_∂²A∂V∂T_2 = R*R/V
@@ -178,7 +182,7 @@ end
 
 function VT_speed_of_sound(model::EoSModel, V, T, z=SA[1.])
     Mr = molecular_weight(model,z)
-    if V == Inf || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         γ = VT_adiabatic_index(model,V,T,z)
         return sqrt(γ*Rgas(model)*T*sum(z)/Mr)
     else
@@ -191,7 +195,7 @@ function VT_speed_of_sound(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isobaric_expansivity(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf  || model isa IdealModel
+    if iszero(1/V)  || model isa IdealModel
         return one(Base.promote_eltype(model,V,T,z))/T
     else
         d²A = f_hess(model,V,T,z)
@@ -202,7 +206,7 @@ function VT_isobaric_expansivity(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         B,∂B∂T = B∂B∂T(model,T,z)
         Cp = VT_isobaric_heat_capacity(model,V,T,z)
         return (T*∂B∂T - B)/Cp
@@ -277,7 +281,7 @@ function cross_second_virial(model,T,z)
         return zero(T + first(z))
     else
         binary_component_check(cross_second_virial,model)
-        model1,model2 = split_model(model)
+        model1,model2 = split_pure_model(model)
         B̄ = B(model,T,z)/∑z #1 mol
         B1,B2 = B(model1,T),B(model2,T) #1 mol by default
         #@show B1,B2,B̄
@@ -306,7 +310,7 @@ B12 = equivol_cross_second_virial(model,)
 function equivol_cross_second_virial(model,T,p_exp = 200000.0)
     binary_component_check(cross_second_virial,model)
     #they do experiments at constant volume and temperature, so we are gonna need to calculate the mole fractions for that
-    m1,m2 = split_model(model)
+    m1,m2 = split_pure_model(model)
     B = second_virial_coefficient
     B11,B22 = B(m1,T),B(m2,T)
     v01,v02 = volume_virial(B11,p_exp,T),volume_virial(B22,p_exp,T)
@@ -347,6 +351,8 @@ function pip(model::EoSModel, V, T, z=SA[1.0])
     Π,∂p∂V = _pip(model,V,T,z)
     return Π
 end
+
+VT_pip(model::EoSModel, V, T, z=SA[1.0]) = pip(model,V,T,z)
 
 function _pip(model::EoSModel, V, T, z=SA[1.0])
     _∂2p = ∂2p(model,V,T,z)
@@ -495,70 +501,35 @@ end
 export pressure
 export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
 
-module VT
-    #using Clapeyron: Clapeyron
-    import Clapeyron
-    const C = Clapeyron
-    using Clapeyron.StaticArrays
-    using Clapeyron: pressure
-    using Clapeyron: second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
+const CLAPEYRON_PROPS = [:temperature,:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
+                    :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
+                    #second derivative order properties
+                    :isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
+                    :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
+                    :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
+                    #higher derivative order properties
+                    :fundamental_derivative_of_gas_dynamics,
+                    #volume properties
+                    :mass_density, :molar_density, :compressibility_factor,
+                    #other properties
+                    :identify_phase, :pip,
+]
 
-    volume(model,V,T,z) = V
-    #first derivative order properties
-    entropy(model,V,T,z = SA[1.0]) = Clapeyron.VT_entropy(model,V,T,z)
-    enthalpy(model,V,T,z = SA[1.0]) = Clapeyron.VT_enthalpy(model,V,T,z)
-    internal_energy(model,V,T,z = SA[1.0]) = Clapeyron.VT_internal_energy(model,V,T,z)
-    gibbs_free_energy(model,V,T,z = SA[1.0]) = Clapeyron.VT_gibbs_free_energy(model,V,T,z)
-    const gibbs_energy = gibbs_free_energy
-    helmholtz_free_energy(model,V,T,z = SA[1.0]) = Clapeyron.VT_helmholtz_free_energy(model,V,T,z)
-    const helmholtz_energy = helmholtz_free_energy
-    
-    #residual first order properties
-    entropy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_entropy_res(model,V,T,z)
-    internal_energy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_internal_energy_res(model,V,T,z)
-    gibbs_free_energy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_gibbs_free_energy_res(model,V,T,z)
-    const gibbs_energy_res = gibbs_free_energy_res
-    helmholtz_free_energy_res(model,V,T,z = SA[1.0]) = Clapeyron.VT_helmholtz_free_energy_res(model,V,T,z)
-    const helmholtz_energy_res = helmholtz_free_energy
-    
-    #second derivative order properties
-    isochoric_heat_capacity(model,V,T,z = SA[1.0]) = Clapeyron.VT_isochoric_heat_capacity(model,V,T,z)
-    isobaric_heat_capacity(model,V,T,z = SA[1.0]) = Clapeyron.VT_isobaric_heat_capacity(model,V,T,z)
-    adiabatic_index(model,V,T,z = SA[1.0]) = Clapeyron.VT_adiabatic_index(model,V,T,z)
-    isothermal_compressibility(model,V,T,z = SA[1.0]) = Clapeyron.VT_isothermal_compressibility(model,V,T,z)
-    isentropic_compressibility(model,V,T,z = SA[1.0]) = Clapeyron.VT_isentropic_compressibility(model,V,T,z)
-    speed_of_sound(model,V,T,z = SA[1.0]) = Clapeyron.VT_speed_of_sound(model,V,T,z)
-    isobaric_expansivity(model,V,T,z = SA[1.0]) = Clapeyron.VT_isobaric_expansivity(model,V,T,z)
-    joule_thomson_coefficient(model,V,T,z = SA[1.0]) = Clapeyron.VT_joule_thomson_coefficient(model,V,T,z)
-    identify_phase(model,V,T,z = SA[1.0]) = Clapeyron.VT_identify_phase(model,V,T,z)
-    
-    #high order derivatives
-    fundamental_derivative_of_gas_dynamics(model,V,T,z = SA[1.0]) = Clapeyron.VT_fundamental_derivative_of_gas_dynamics(model,V,T,z)
-    
-    #volume properties
-    mass_density(model,V,T,z = SA[1.0]) = Clapeyron.VT_mass_density(model,V,T,z)
-    molar_density(model,V,T,z = SA[1.0]) = Clapeyron.VT_molar_density(model,V,T,z)
-    compressibility_factor(model,V,T,z = SA[1.0]) = Clapeyron.VT_compressibility_factor(model,V,T,z)
 
-    #=
-    using Clapeyron: entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
-    #second derivative order properties
-    using Clapeyron: isochoric_heat_capacity, isobaric_heat_capacity,adiabatic_index
-    using Clapeyron: isothermal_compressibility, isentropic_compressibility, speed_of_sound
-    using Clapeyron: isobaric_expansivity, joule_thomson_coefficient, inversion_temperature
-    #higher derivative order properties
-    using Clapeyron: fundamental_derivative_of_gas_dynamics
-    #volume properties
-    using Clapeyron: mass_density,molar_density, compressibility_factor
-    #molar gradient properties
-    using Clapeyron: chemical_potential, activity_coefficient, activity, aqueous_activity, fugacity_coefficient,reference_chemical_potential,reference_chemical_potential_type
-    using Clapeyron: chemical_potential_res
-    using Clapeyron: mixing, excess, gibbs_solvation
+function VT_symbol(x::Symbol)
+    return Symbol(:VT_,x)
+end
 
-    pressure(model, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing) = p 
-    using Clapeyron: second_virial_coefficient,cross_second_virial,equivol_cross_second_virial =#
-    function flash(model,v,T,z = Clapeyron.SA[1.0],args...;kwargs...)
-        return Clapeyron.vt_flash(model,v,T,z,args...;kwargs...)
+
+#module used to translate between the normal symbol and the VT_symbol.
+module VT0
+    using Clapeyron: Clapeyron, CLAPEYRON_PROPS
+    for prop in Clapeyron.CLAPEYRON_PROPS
+        VT_prop = Clapeyron.VT_symbol(prop)
+        @eval begin
+            function $prop(model,V,T,z=Clapeyron.SA[1.])
+                return Clapeyron.$VT_prop(model,V,T,z)
+            end
+        end
     end
-
 end

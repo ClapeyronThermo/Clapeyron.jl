@@ -4,27 +4,26 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, v
     RT = Rgas(model)*T
     logZ = log(p*vol/RT/sum(z))
 
-    if cache != nothing
+    if cache !== nothing
         result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
         nc = length(lnϕ)
-        aux .= 0
-        aux[1] = vol
-        aux[2:nc+1] = z
-        gconf,jconf = hconfig.gradient_config,hconfig.jacobian_config
-        seeds = jconf.seeds
-        duals = jconf.duals[1]
-        gconfig = ForwardDiff.GradientConfig{Nothing,eltype(aux),length(seeds),typeof(duals)}(seeds,duals)
-        gresult = ForwardDiff.MutableDiffResult(result.value,(result.derivs[1],))
-        F_res(model, V, T, z) = eos_res(model, V, T, z)
-        fun(aux) = F_res(model, aux[1], T, @view(aux[2:nc+1]))
-        _result = ForwardDiff.gradient!(gresult, fun, aux, gconfig, Val{false}())
-        dresult = _result.derivs[1]
-        μ_res = @view dresult[2:nc+1]
-        lnϕ .= μ_res ./ RT .- logZ
+        if nc == 1
+            lnϕ[1] = VT_lnϕ_pure(model,vol/sum(z),T,p)
+        else
+            aux .= 0
+            aux[1] = vol
+            aux[2:nc+1] = z
+            gconfig = Solvers._GradientConfig(hconfig)
+            F_res(model, V, T, z) = eos_res(model, V, T, z)
+            fun(aux) = F_res(model, aux[1], T, @view(aux[2:nc+1]))
+            _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
+            dresult = DiffResults.gradient(_result)
+            μ_res = @view dresult[2:nc+1]
+            lnϕ .= μ_res ./ RT .- logZ
+        end
     else
         μ_res = VT_chemical_potential_res(model, vol, T, z)
-        Z = p*vol/RT/sum(z)
-        lnϕ = μ_res/RT .- log(Z)
+        lnϕ = μ_res/RT .- logZ
     end
     return lnϕ, vol
 end
@@ -35,7 +34,11 @@ function lnϕ(model::IdealModel, p, T, z=SA[1.],cache = nothing; phase=:unknown,
     return lnϕ, vol
 end
 
-function lnϕ!(lnϕ, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
+function lnϕ!(cache, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
+    return lnϕ(model,p,T,z,cache;phase,vol0,threaded)
+end
+
+function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
     RT = Rgas(model)*T
     vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
     μ_res = VT_chemical_potential_res!(lnϕ,model, vol, T, z)
@@ -46,12 +49,13 @@ end
 
 function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
     RT = Rgas(model)*T
-    μ_res = a_res(model,V,T,SA[1.0])
+    p_res = p - RT/V
+    μ_res = eos_res(model,V,T) + p_res*V
     Z = p*V/RT
-    lnϕ = μ_res - log(Z)
+    return μ_res/RT - log(Z)
 end
 
-function ∂lnϕ_cache(model::EoSModel, p, T, z, dt::Val{B}) where B
+function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
     V = p
     lnϕ = zeros(@f(Base.promote_eltype),length(model))
     aux = zeros(@f(Base.promote_eltype),length(model) + 1 + B)

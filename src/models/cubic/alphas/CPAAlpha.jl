@@ -1,8 +1,11 @@
 abstract type CPAAlphaModel <: AlphaModel end
 
+#=
 struct CPAAlphaParam <: EoSParam
     c1::SingleParam{Float64}
 end
+moved to alphas.jl
+=#
 
 @newmodelsimple CPAAlpha CPAAlphaModel CPAAlphaParam
 export CPAAlpha

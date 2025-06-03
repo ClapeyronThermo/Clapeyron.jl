@@ -31,6 +31,10 @@ function promote_model(::Type{T},model::EoSModel) where T <: Number
     return promote_model_struct(T,model)
 end
 
+function promote_model(::Type{T},model::Array) where T <: Number
+    return promote_model.(T,model)
+end
+
 @generated function promote_model_struct(::Type{T},model::M) where {T,M}
     names = fieldnames(M)
     Base.typename(M).wrapper

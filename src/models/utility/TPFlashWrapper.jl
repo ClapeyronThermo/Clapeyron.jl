@@ -19,7 +19,7 @@ function tp_flash_K0!(K,wrapper::PTFlashWrapper,p,T)
 end
 
 function PTFlashWrapper(model::EoSModel,p,T::Number,equilibrium::Symbol)
-    pures = split_model(model)
+    pures = split_pure_model(model)
     RT = R̄*T
     sats = saturation_pressure.(pures,T)
     vv_pure = last.(sats)

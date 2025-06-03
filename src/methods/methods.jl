@@ -132,7 +132,7 @@ if `x` is an `EoSModel`, it will return if the model is able to contain a solid 
 If a string is passed, it is converted to symbol.
 """
 is_solid(sym::Symbol) = sym in SOLID_STR
-is_solid(str::String) = is_vapour(Symbol(str))
+is_solid(str::String) = is_solid(Symbol(str))
 is_solid(model::EoSModel) = false
 
 
@@ -309,7 +309,7 @@ set_k!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have 
 Sets the model "l-values" binary interaction parameter to the input matrix `l`. If the input model requires multiple l-matrices (as is the case for T-dependent values, i.e: l(T) = l1 + l2*T), then you must call `set_l!` with all the matrices as input (`set_l!(model,l1,l2)`).
 
 """
-set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
+set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting l-values"))
 
 export get_k,set_k!
 export get_l,set_l!
@@ -325,6 +325,10 @@ include("stability.jl")
 include("pT.jl")
 include("property_solvers/Tproperty.jl")
 include("property_solvers/Pproperty.jl")
-include("PH.jl")
-include("PS.jl")
+include("XY_methods/VT.jl")
+include("XY_methods/PS.jl")
+include("XY_methods/TS.jl")
+include("XY_methods/PH.jl")
+include("XY_methods/QX.jl")
+
 include("property_solvers/spinodal.jl")

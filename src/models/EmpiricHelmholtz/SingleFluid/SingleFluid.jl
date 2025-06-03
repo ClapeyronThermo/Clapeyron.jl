@@ -1,49 +1,16 @@
 
+abstract type MultiParameterTerm end
+
+include("terms/polexpgauss.jl")
+include("terms/exp2.jl")
+include("terms/gaob.jl")
+include("terms/nonanalytic.jl")
+include("terms/assoc2B.jl")
+
 include("structs.jl")
 
 const EmpiricAncillary = CompositeModel{FluidCorrelation{PolExpVapour, PolExpLiquid, PolExpSat, Nothing}, Nothing}
 #term dispatch. function definitions are in term_functions.jl
-
-function a_term(term::NonAnalyticTerm,δ,τ,lnδ,lnτ,_0)
-    if term.active
-        A,B,C,D,a,b,β,n = term.A,term.B,term.C,term.D,term.a,term.b,term.beta,term.n
-        αᵣ = term_ar_na(δ,τ,lnδ,lnτ,_0,A,B,C,D,a,b,β,n)
-    else
-        αᵣ = _0
-    end
-    return αᵣ
-end
-
-function a_term(term::GaoBTerm,δ,τ,lnδ,lnτ,_0)
-    if term.active
-        n = term.n
-        t = term.t
-        d = term.d
-        η = term.eta
-        β = term.beta
-        γ = term.gamma
-        ε = term.epsilon
-        b = term.b
-        αᵣ = term_ar_gaob(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε,b)
-    else
-        αᵣ = _0
-    end
-    return αᵣ
-end
-
-function a_term(term::Associating2BTerm,δ,τ,lnδ,lnτ,_0)
-    if term.active
-        ε = term.epsilonbar
-        κ = term.kappabar
-        a = term.a
-        m = term.m
-        v̄ₙ = term.vbarn
-        αᵣ = term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε,κ,a,m,v̄ₙ)
-    else
-        αᵣ = _0
-    end
-    return αᵣ
-end
 
 struct SingleFluid{𝔸} <: EmpiricHelmholtzModel
     components::Vector{String}
@@ -122,39 +89,9 @@ reduced_a_res(model::SingleFluid,δ,τ,lnδ = log(δ),lnτ = log(τ)) = reduced_
 function reduced_a_res(ℙ::MultiParameterParam,δ,τ,lnδ = log(δ),lnτ = log(τ))
     _0 = zero(δ+τ)
     αᵣ = _0
-    n,t,d = ℙ.n,ℙ.t,ℙ.d
-    k_pol,k_exp,k_gauss = ℙ.iterators
 
-    #strategy for storing.
-    #n, t, d, gauss values, always require views
-    #l, b does not require views. they are used just once.
-
-    #Polynomial terms
-    n_pol = view(n,k_pol)
-    t_pol = view(t,k_pol)
-    d_pol = view(d,k_pol)
-    αᵣ += term_ar_pol(δ,τ,lnδ,lnτ,αᵣ,n_pol,t_pol,d_pol)
-
-    #Exponential terms.
-    if length(k_exp) != 0
-        l,g = ℙ.l,ℙ.g
-        n_exp = view(n,k_exp)
-        t_exp = view(t,k_exp)
-        d_exp = view(d,k_exp)
-        αᵣ += term_ar_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l,g)
-    end
-
-    #Gaussian bell-shaped terms
-    η,β,γ,ε = ℙ.eta,ℙ.beta,ℙ.gamma,ℙ.epsilon
-    if length(k_gauss) != 0
-        n_gauss = view(n,k_gauss)
-        t_gauss = view(t,k_gauss)
-        d_gauss = view(d,k_gauss)
-        αᵣ += term_ar_gauss(δ,τ,lnδ,lnτ,αᵣ,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
-    end
-
-    #Especial terms are stored in structs.
-    __has_extra_params(ℙ) || return αᵣ
+    #pol+exp+gauss terms
+    αᵣ += a_term(ℙ.polexpgauss,δ,τ,lnδ,lnτ,_0)
 
     #gaoB terms
     αᵣ += a_term(ℙ.gao_b,δ,τ,lnδ,lnτ,_0)
@@ -278,44 +215,14 @@ function x0_sat_pure(model::SingleFluid,T)
     end
 end
 
-function x0_volume_liquid(model::SingleFluid,p,T,z)
+function x0_volume_liquid_lowT(model::SingleFluid,p,T,z)
     _1 = one(Base.promote_eltype(model,p,T,z))
     lb_v = lb_volume(model,T,z)*_1
     vl_lbv = 1.01*lb_v
     ancillary = model.ancillaries
     Tc = model.properties.Tc
-    Pc = model.properties.Pc
     Ttp = model.properties.Ttp
-    ptp = model.properties.ptp
-    (!isfinite(Ttp) | (Ttp < 0)) && (Ttp = 0.4*Tc)
-    (!isfinite(ptp) | (ptp < 0)) && (ptp = zero(ptp))
 
-    if p > Pc
-        #supercritical conditions, liquid
-        #https://doi.org/10.1016/j.ces.2018.08.043 gives an aproximation of the pv curve at T = Tc
-        #=
-        abs(1 - P/Pc) = abs(1-Vc/V)^(1/Zc)
-        abs(1 - P/Pc)^Zc = abs(1-Vc/V)
-        if T > Tc then V > V(T = Tc) ≈ V_crit(P)
-        =#
-        vc = 1/model.properties.rhoc
-        pc = model.properties.Pc
-        Zc = pc*vc/(Rgas(model)*Tc)
-        ΔVrm1 = _1*(abs(1 - p/pc))^Zc
-        v_crit_aprox = vc/(ΔVrm1 + 1)
-        #we suppose that V < Vc (liquid state), then the volume solver converges really well with this initial guess
-        if T >= Tc
-            return max(vl_lbv,v_crit_aprox)
-        else
-            #we can't be sure that v_crit_approx converges, we do some P-T iterations to go from (P,Tc) to (P,T)
-            vᵢ = v_crit_aprox
-            Tᵢ = _1*Tc
-            return volume_chill(model,p,T,z,vᵢ,Tᵢ)
-        end
-    end
-
-    #use information about the triple point (or made up triple point)
-    #move from (Ttp,ptp) to (T,p)
     if Ttp < T < Tc
         vᵢ = volume(ancillary,p,T,z,phase = :l)
         return vᵢ
@@ -330,8 +237,66 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
         #this is always a gas volume, so starting from the lowest volume does not hurt
         return vl_lbv
     end
-    #this should never hit, but nvm
-    return zero(_1)/zero(_1)
+end
+
+function x0_volume_liquid(model::SingleFluid,p,T,z)
+    _1 = one(Base.promote_eltype(model,p,T,z))
+    lb_v = lb_volume(model,T,z)*_1
+    vl_lbv = 1.001*lb_v
+    Tc = model.properties.Tc
+    Pc = model.properties.Pc
+    Ttp = model.properties.Ttp
+    ptp = model.properties.ptp
+    (!isfinite(Ttp) | (Ttp < 0)) && (Ttp = 0.4*Tc)
+    (!isfinite(ptp) | (ptp < 0)) && (ptp = zero(ptp))
+    return lb_v
+    if p > Pc
+        #supercritical conditions, liquid
+        #https://doi.org/10.1016/j.ces.2018.08.043 gives an aproximation of the pv curve at T = Tc
+        #=
+        abs(1 - P/Pc) = abs(1-Vc/V)^(1/Zc)
+        abs(1 - P/Pc)^Zc = abs(1-Vc/V)
+        if T > Tc then V > V(T = Tc) ≈ V_crit(P)
+        =#
+        vc = 1/model.properties.rhoc
+        pc = model.properties.Pc
+        Zc = pc*vc/(Rgas(model)*Tc)
+        ΔVrm1 = _1*(abs(1 - p/pc))^Zc
+        v_crit_aprox = vc/(ΔVrm1 + 1)
+        vhi =  max(vl_lbv,v_crit_aprox)
+        phi = pressure(model,vhi,T,z)
+        #we suppose that V < Vc (liquid state), then the volume solver converges really well with this initial guess
+        if T >= Tc
+            if phi > p
+                return vhi
+            elseif phi <= p <= pressure(model,lb_v,T,z)
+                return volume_bracket_refine(model,p,T,z,lb_v,vhi)
+            else
+                return vl_lbv
+            end
+        else
+            #we want two points: psat-vsat and phi-vhi
+            #we can interpolate those to calculate an initial volume
+
+            vsat = x0_volume_liquid_lowT(model,p,T,z)
+            psat = pressure(model,vsat,T,z)
+
+            if vhi > vsat
+                vhi = 0.9*vsat + 0.1*lb_v
+                phi = pressure(model,vhi,T,z)
+            end
+
+            if phi <= p
+                return volume_bracket_refine(model,p,T,z,vhi,lb_v)
+            elseif psat < p < ph
+                return volume_bracket_refine(model,p,T,z,vhi,vsat)
+            else
+                return vsat
+            end
+        end
+    else
+        return x0_volume_liquid_lowT(model,p,T,z)
+    end
 end
 
 x0_psat(model::SingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.fluid.saturation,T,SaturationCorrelation())[1]

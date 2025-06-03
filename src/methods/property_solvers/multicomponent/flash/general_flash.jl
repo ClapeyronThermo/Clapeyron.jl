@@ -141,19 +141,6 @@ function xy_input_to_result(spec,input,np,nc,z)
     return comps[idx],β[idx],volumes[idx],T
 end
 
-function spec_to_vt end
-
-for prop in [:entropy,:enthalpy,:temperature,:pressure,:internal_energy,:gibbs_free_energy,:helmholtz_free_energy]
-    @eval begin
-        function spec_to_vt(model,V,T,z,spec::typeof($prop))
-            VT.$prop(model,V,T,z)
-        end
-    end
-end
-
-spec_to_vt(model,V,T,z,spec::typeof(volume)) = V
-
-
 #s = dadt
 requires_pv(::typeof(entropy)) = false
 requires_st(::typeof(entropy)) = true
@@ -599,6 +586,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         nan_converged && break
         max_iters_reached && break
         ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
+        #TODO: fix volumes when they enter an unstable state. do it right here, were we have jacobian info.
         #do not iterate on slack variables
         Solvers.remove_slacks!(F,J,slacks)
         Jcache .= J
@@ -609,7 +597,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         s .= -F
         ldiv!(lu,s)
         finite_s = all(isfinite,s)
-        if !finite_s
+        if !finite_s && finite_J
             JJ = svd(Jcache)
             S = JJ.S
             for i in eachindex(S)
@@ -658,7 +646,8 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         p_result = pressure(model,volumes_result[end],T_result,comps_result[end])
     end
     β_result .*= ∑z
-    return FlashResult(model,p_result,T_result,comps_result,β_result,volumes_result)
+    flash_result = FlashResult(model,p_result,T_result,comps_result,β_result,volumes_result)
+    return merge_duplicate_phases!(flash_result)
 end
 
 #======================
@@ -677,13 +666,14 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via f
 - `equilibrium` (optional) = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria, `:unknown` if not specified
 - `p0` (optional), initial guess pressure, ignored if pressure is one of the flash specifications.
 - `T0` (optional), initial guess temperature, ignored if temperature is one of the flash specifications.
-- `K0` (optional), initial guess for the constants K
-- `x0` (optional), initial guess for the composition of phase x
-- `y0` = optional, initial guess for the composition of phase y
-- `vol0` = optional, initial guesses for phase x and phase y volumes
-- `atol` = absolute tolerance to stop the calculation
-- `rtol` = relative tolerance to stop the calculation
+- `K0` (optional), initial guess for the K-values.
+- `x0` (optional), initial guess for the composition of phase x.
+- `y0` = optional, initial guess for the composition of phase y.
+- `vol0` = optional, initial guesses for phase x and phase y volumes.
+- `atol` = absolute tolerance to stop the calculation.
+- `rtol` = relative tolerance to stop the calculation.
 - `max_iters` = maximum number of iterations
+- `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
 """
 struct GeneralizedXYFlash{P,T} <: FlashMethod
     equilibrium::Symbol
@@ -746,10 +736,10 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
         end
     end
 
-    if T == Nothing && v0 != nothing
+    if T == Nothing && v0 !== nothing
         TT = Base.promote_eltype(v0[1],v0[2])
         _v0 = (v0[1],v0[2])
-    elseif T != nothing && v0 != nothing
+    elseif T != nothing && v0 !== nothing
         TT = Base.promote_eltype(one(T),v0[1],v0[2])
         _v0 = (v0[1],v0[2])
     else
@@ -757,9 +747,9 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
         _v0 = v0
     end
 
-    if T0 == nothing && p0 == nothing
+    if T0 === nothing && p0 === nothing
         S = Nothing
-    elseif T0 != nothing && p0 != nothing
+    elseif T0 !== nothing && p0 !== nothing
         S = typeof(T0*p0)
     else
         S = typeof(something(T0,p0))
@@ -768,7 +758,7 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
 end
 
 function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
-    if method.T0 == nothing
+    if method.T0 === nothing
         T,_phase = _Tproperty(model,p,x,z,spec)
     else
         T = method.T0
@@ -784,13 +774,29 @@ function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
 end
 
 function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
-    Ts,vl,vv = saturation_temperature(model,p)
+
     ∑z = sum(z)
     x1 = SA[1.0*one(∑z)]
+
+    sat,crit,status = _extended_saturation_temperature(model,p)
+
+    if status == :fail
+        return FlashResultInvalid(1,sat[1])
+    end
+
+    if status == :supercritical
+        Tc,Pc,Vc = crit
+        T,_phase = _Tproperty(model,p,x/∑z,x1,spec,T0 = Tc)
+        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)],phase = _phase)
+    end
+
+    Ts,vl,vv = sat
+
     spec_to_vt(model,vl,Ts,x1,spec)
     xl = ∑z*spec_to_vt(model,vl,Ts,x1,spec)
     xv = ∑z*spec_to_vt(model,vv,Ts,x1,spec)
     βv = (x - xl)/(xv - xl)
+
     if !isfinite(βv)
         return FlashResultInvalid(1,βv)
     elseif βv < 0 || βv > 1
@@ -803,7 +809,7 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
 end
 
 function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
-    if method.p0 == nothing
+    if method.p0 === nothing
         p,_phase = _Pproperty(model,T,x,z,spec)
     else
         p = method.p0
@@ -819,9 +825,23 @@ function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
 end
 
 function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing) where F
-    ps,vl,vv = saturation_pressure(model,T)
+
     ∑z = sum(z)
     x1 = SA[1.0*one(∑z)]
+
+    sat,crit,status = _extended_saturation_pressure(model,T)
+
+    if status == :fail
+        return FlashResultInvalid(1,sat[1])
+    end
+
+    if status == :supercritical
+        Tc,Pc,Vc = crit #TODO: maybe use sat[1] instead?
+        T,_phase = _Pproperty(model,T,x/∑z,x1,spec,p0 = Pc)
+        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)])
+    end
+
+    ps,vl,vv = sat
     spec_to_vt(model,vl,T,x1,spec)
     xl = ∑z*spec_to_vt(model,vl,T,x1,spec)
     xv = ∑z*spec_to_vt(model,vv,T,x1,spec)

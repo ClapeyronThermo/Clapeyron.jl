@@ -53,7 +53,9 @@ function AssocParam(name,components,vals::Compressed4DMatrix{T}) where T
 end
 
 # If no value is provided, just initialise empty param.
-AssocParam(name,components) = AssocParam(name,components,Compressed4DMatrix{Float64}(),nothing)
+AssocParam{T}(name,components::Vector{String}) where T <: Number = AssocParam(name,components,Compressed4DMatrix{T}(),nothing)
+
+AssocParam(name,components) = AssocParam{Float64}(name,components)
 
 function Base.copyto!(dest::AssocParam,src::Base.Broadcast.Broadcasted)
     Base.copyto!(dest.values.values,src)
@@ -135,7 +137,7 @@ function Base.getindex(param::AssocParam,i::NTuple{2,String},j::NTuple{2,String}
     param[idx_i::Int,idx_j::Int][idx_a::Int,idx_b::Int]
 end
 
-function Base.setindex!(param::AssocParam,val,i::NTuple{2,String},j::NTuple{2,String})
+function Base.setindex!(param::AssocParam,val,i::NTuple{2,String},j::NTuple{2,String},symmetric = false)
     ii = first(i)
     jj = first(j)
     aa = last(i)
@@ -147,7 +149,7 @@ function Base.setindex!(param::AssocParam,val,i::NTuple{2,String},j::NTuple{2,St
     idx_a = _idx_a === nothing ? 0 : _idx_a
     idx_b = _idx_b === nothing ? 0 : _idx_b
     assoc_view = param[idx_i::Int,idx_j::Int]
-    setindex!(assoc_view,val,idx_a::Int,idx_b::Int)
+    setindex!(assoc_view,val,idx_a::Int,idx_b::Int,symmetric)
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", param::AssocParam{T}) where T

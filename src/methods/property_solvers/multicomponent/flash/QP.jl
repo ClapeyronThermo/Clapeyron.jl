@@ -27,7 +27,7 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         else
 
-        pures = split_model(model)
+        pures = split_pure_model(model)
         dpdT = extended_dpdT_temperature.(pures,p)
         Tmax = antoine_dew_solve(dpdT,p,z)
         Tmin = antoine_bubble_solve(dpdT,p,z)
@@ -82,7 +82,7 @@ All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
     Using `qp_flash` with q = 0 or q = 1 is equivalent to calculating bubble or dew temperatures.
     Passing `GeneralizedXYFlash` as a method to [`bubble_temperature`](@ref) of [`dew_temperature`](@ref) will use `qp_flash` to calculate the bubble/dew point.
 """
-function qp_flash(model::EoSModel,β,p,z;kwargs...)
+function qp_flash(model::EoSModel,β,p,z = SA[1.0];kwargs...)
     if !(0 <= β <= 1)
         throw(DomainError(β,"vapour fractions should be between 0 and 1"))
     end

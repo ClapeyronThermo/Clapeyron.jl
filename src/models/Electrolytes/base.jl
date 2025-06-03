@@ -62,6 +62,8 @@ function ESElectrolyte(solvents,ions;
     ionmodel_userlocations = userlocations
     init_ionmodel = @initmodel ionmodel(solvents,ions;RSPmodel=init_RSP,userlocations = userlocations,verbose=verbose)
 
+    components = init_neutralmodel.components
+
     references = String[]
     model = ESElectrolyte(components,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
     set_reference_state!(model,reference_state;verbose)

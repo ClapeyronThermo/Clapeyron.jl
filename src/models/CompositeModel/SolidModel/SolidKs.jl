@@ -128,7 +128,7 @@ function obj_sle_solubility(F,model::CompositeModel{L,S},p,T,zsolv,solu,idx_sol_
         γ = φ./φref
         μliq = Rgas()*T*log.(γ[idx_sol_l].*z[idx_sol_l])
     else
-        pure   = split_model(model.fluid)
+        pure   = split_pure_model(model.fluid)
         μ_mixt = chemical_potential(model.fluid, p, T, z)
         μ_ref = gibbs_free_energy.(pure, p, T)
         μliq = (μ_mixt - μ_ref)[idx_sol_l]

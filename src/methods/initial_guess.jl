@@ -17,7 +17,14 @@ x0_volume_liquid(model,T) = x0_volume_liquid(model,T,SA[1.0])
 Returns an initial guess to the gas volume, depending of pressure, temperature and composition. by default uses [`volume_virial`](@ref)
 """
 function x0_volume_gas(model,p,T,z)
-    return volume_virial(model,p,T,z)
+    B = second_virial_coefficient(model,T,z)
+    nRT = sum(z)*Rgas(model)*T
+    pmax = -0.25*nRT/B
+    if pmax < p || B > 0 || !isfinite(B)
+        return nRT/p
+    else
+        return volume_virial(B,p,T,z)
+    end
 end
 
 x0_volume_gas(model,p,T) = x0_volume_gas(model,p,T,SA[1.0])

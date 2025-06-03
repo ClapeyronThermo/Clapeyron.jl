@@ -156,7 +156,14 @@ function μp_equality2(models::NTuple{2,M}, F, PT::TPspec, v, w, short_view) whe
         F[i] = μ_long_view[i]
     end
     μ_short = resize!(μ_long,n_short)
-    μ_short = VT_chemical_potential_res!(μ_short,model_short,v_short,T,x_short)
+    if n_short == 1
+        ∑n_short = sum(x_short)
+        p_res = p_short - sum(x_short)*Rgas(model_short)*T/v_short
+        μ_short[1] = (eos_res(model_short,v_short,T,x_short) + p_res*v_short)/∑n_short
+    else
+        VT_chemical_potential_res!(μ_short,model_short,v_short,T,x_short)
+    end
+
     for i in 1:n_short
         μ_long_i = F[i]
         μ_short_i = μ_short[i]
@@ -200,12 +207,22 @@ function wilson_k_values!(K,model::EoSModel,p,T,crit = nothing)
     return K
 end
 
-function bubbledew_check(vl,vv,zin,zout)
-    (isapprox(vl,vv) && isapprox(zin,zout)) && return false
-    !all(isfinite,zout) && return false
-    !isfinite(vv) && return false
-    !all(>=(0),zin) && return false
-    !all(>=(0),zout) && return false
+function bubbledew_check(model,p,T,vw,vz,w,z)
+    (isapprox(vw,vz) && isapprox(w,z)) && return false
+    !all(isfinite,w) && return false
+    !isfinite(vw) && return false
+    !all(>=(0),w) && return false
+    !all(>=(0),z) && return false
+    if has_a_res(model) && !(any(iszero,w)) #the second check is to exclude nonvolatiles/noncondensables. TODO: find a better way to do this.
+        #all normal checks are ok, now we check if the origin phase result is really the most stable one
+        gz = VT_gibbs_free_energy(model,vz,T,z)
+        gz_p = gibbs_free_energy(model,p,T,z)
+        gz_w = VT_gibbs_free_energy(model,vw,T,w)
+        dg = (gz-gz_p)/gz
+        if gz_p < gz && abs(dg) > 0.001
+            return false
+        end
+    end
     return true
 end
 

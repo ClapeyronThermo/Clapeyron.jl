@@ -1,3 +1,118 @@
+# v0.6.13
+
+## New Features
+
+- Combining rules: support for matrices for all inplace combining rules
+- improved speed for in bubbledew calculations with nonvolatiles/noncondensables when one phase has only one element. 
+- new method: calculation of internal energy - volume flash (`uv_flash`) for single component models.
+- `MultiFluid`: support for Double-Exponential terms.
+- Cubics: new function, `CubicModel(modeltype,params,components;kwargs...)` that constructs a cubic model. All Clapeyron cubic models,as well as CPA, now use this function for their constructors.
+- `SAFTgammaMie` new method: `SAFTgammaMie(groups::GroupParam,param::Dict{String,ClapeyronParam})` for easier construction.
+
+## Bug Fixes
+
+- CPA: improved recombining rules
+- `SingleFluid`: derivatives of non-analytical terms at exactly the critical point are now calculated at an inifinitesimal point `(τ + εₜ,δ + εᵥ)`. This returns in somewhat better results than setting the whole term to zero.
+- improved volume initial points for `SingleFluid`
+- fixed bugs in `recombine!(model::SAFTgammaMie)`
+- fixed bugs in `recombine!(model::SAFTVRMie)`
+- Improvement of XY-flash results when one of the bubbledew calculation fails.
+- fix bug when using MultiParameter EoS with tp-flash.
+- assoc views: the sizes of assoc view now respect symmetry (diagonal entries have a square size) and transpose (`assoc_param[i,j] == transpose(assoc_param[j,i])`). Index access is not affected.
+- `Clapeyron.x0_volume`: return valid gas guess when B > 0.
+
+# v0.6.12
+
+## New Features
+
+- SAFTgammaMie: easier constructor for inner SAFTVRMie model
+- Clapeyron Parameters: support for typed empty constructor: (`SingleParam{BigFLoat}(name,components)`,`PairParam{BigFLoat}(name,components)`)
+- XY Flash: added `QT`, `QP` and `VT` modules.
+- XY Flash: support for second order properties with flash result if there is only one phase.
+- NRTL: support for passing `tau` and `alpha` as input, instead of (`a`,`b`,`c`)
+- CoolProp: initial support for superancillaries. At the moment, the superancillaries are used just as initial points. in future releases, We could return the result of the superancillary directly, to be in line with the CoolProp package.
+
+## Bug Fixes
+
+- Fixed incorrect value of `enthalpy_res`
+- CoolProp: Support bigger buffer sizes.
+- Implicit AD: misc bug fixes
+- Fixed conversion of `MixedSegmentGCParam`
+- Association: fix incorrect assumption of solved problem
+- CPA: fixed initialization without `Pc`
+- fix `promote_model` with `EoSVectorParam`
+
+# v0.6.11
+
+## New Features
+
+- The new minimum supported julia version is v1.10.
+- Support for `ForwardDiff` v1.0.
+- the following EoS now support parametric parameters:
+  - `SAFTgammaMie` (including `structSAFTgammaMie`)
+  - `PCPSAFT` (including `HeterogcPCPSAFT` and `HomogcPCPSAFT`)
+  - `CPPCSAFT`
+  - `sPCSAFT` (including `gcsPCSAFT`)
+  - `pharmaPCSAFT`
+
+Given a model with parametric parameters, one can now build another model with a different number type using the function `Clapeyron.promote_model(::Type{T},model) where T <: Number`.
+
+- `SAFTgammaMie`: mixed segment paramters are now stored in the model parameters instead of inside the groups.
+- Faster `split_model`
+- Faster parameter instantiation, as now the `sources` and `sourcescsv` can be optionally `nothing`,and there is less copying of vectors.
+- New Function: `USCT_temperature`. `USCT_mix` was renamed to `USCT_pressure` (The alias is still available, but it could be removed in future Clapeyron versions.)
+- Estimation Framework: initial support for gradient optimization (using `ForwardDiff`) with parametric models.
+
+## Bug Fixes
+
+- fixed `CPA` initialization with custom parameters.
+- fixed `CPA` default locations.
+- fixed `ePCSAFT` initialization with custom ideal models.
+- general flash: support for pure supercritical states.
+- fix bugs in noncondensable/nonvolatiles Fugacity solver.
+
+
+# v0.6.10
+
+## New Features
+
+- Experimental: support for using ForwardDiff through some equilibria procedures in some restricted cases:
+  - `saturation_temperature`
+  - `saturation_pressure`
+  - `bubble_pressure` (only helmholtz EoS, without non-volatiles)
+  - `bubble_temperature` (only helmholtz EoS, without non-volatiles)
+  - `dew_pressure` (only helmholtz EoS, without non-condensables)
+  - `dew_temperature` (only helmholtz EoS, without non-condensables)
+  - `tp_flash` (only helmholtz EoS, without non-condensables nor non-volatiles)
+  - `Pproperty`
+  - `TProperty`
+  - `X-Y` flashes (single component helmholtz EoS)
+
+  For example, this function now works without the need to propagate dual information through any iterative solvers:
+
+  ```julia
+  function ad_function(model,Q)
+
+    z = Clapeyron.SA[1.0]
+    p = 1e5
+    T = 350.0
+    k = 10
+    h1 = 6200.0
+    T1 = PH.temperature(model,p,h1,z)
+    h2 = h1 + Q
+    T2 = PH.temperature(model,p,h2,z)
+    return -Q + (T - (T1+T2)/2) * k
+  end
+  model = PR("air")
+  ForwardDiff.derivative(Base.Fix1(ad_function,model),500.0)
+  ```
+
+## Bug Fixes
+
+- Fix typo in composition return `ChemPotDewTemperature`
+- incorrect scaling for second virial coefficient in the case of cubics
+- fixing support for second order properties in activity + puremodel EoS calculation
+
 # v0.6.9
 
 ## New Features
