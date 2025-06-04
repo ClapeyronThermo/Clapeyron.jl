@@ -11,11 +11,18 @@ println("SAFTVRMie Tc, pc, rhoc = $(Tc2), $(pc2), $(vc2)")
 (Tc3, pc3, vc3) = crit_pure(model3)
 println("SAFTVRMieCP Tc, pc, rhoc = $(Tc3), $(pc3), $(vc3)")
 
-N    = 250
-Tstart = -45 + 273.15
-Tcr  = 0.999
+a1 = Clapeyron.VT_speed_of_sound(model1,vc1,Tc1*1.01,[1.])
+println("GERG2008 a = $(a1) m/s")
+a2 = Clapeyron.VT_speed_of_sound(model2,vc2,Tc2*1.01,[1.])
+println("SAFTVRMie a = $(a2) m/s")
+a3 = Clapeyron.VT_speed_of_sound(model3,vc3,Tc3*1.01,[1.])
+println("SAFTVRMieCP a = $(a3) m/s")
 
-T1    = LinRange(Tstart, Tc1*Tcr,  N)
+N    = 100
+Tcr1  = 0.995
+Tcr2  = 0.99995
+
+T1    = LinRange(Tc1*Tcr1, Tc1*Tcr2,  N)
 T1C   = zeros(N)
 psat1 = zeros(N)
 vl1   = zeros(N)
@@ -55,7 +62,7 @@ end
 rhol1 = 1e-3 ./vl1
 rhov1 = 1e-3 ./vv1
 
-T2    = LinRange(Tstart, Tc2*Tcr,  N)
+T2    = LinRange(Tc2*Tcr1, Tc2*Tcr2,  N)
 T2C   = zeros(N)
 psat2 = zeros(N)
 vl2   = zeros(N)
@@ -95,7 +102,7 @@ end
 rhol2 = 1e-3 ./vl2
 rhov2 = 1e-3 ./vv2
 
-T3    = LinRange(Tstart, Tc3*Tcr,  N)
+T3    = LinRange(Tc3*Tcr1, Tc3*Tcr2,  N)
 T3C   = zeros(N)
 psat3 = zeros(N)
 vl3   = zeros(N)
@@ -135,6 +142,11 @@ end
 rhol3 = 1e-3 ./vl3
 rhov3 = 1e-3 ./vv3
 
+T1C = T1 .- 273.15
+T2C = T2 .- 273.15
+T3C = T3 .- 273.15
+
+#=
 vvmax  = maximum(vv3)*0.7
 vvmin  = minimum(vl3)*1.5
 
@@ -192,10 +204,12 @@ end
 
 p1 = plot([rhov1,rhol1,rhov2,rhol2,rhov3,rhol3], [psat1,psat1,psat2,psat2,psat3,psat3], xlabel = "rho [kmol/m3]", ylabel = "p [bara]",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
 display(p1)
+=#
 
 p2 = plot([T1C,T1C,T2C,T2C,T3C,T3C], [cpV1,cpL1,cpV2,cpL2,cpV3,cpL3], xlabel = "Temperature [deg C]", ylabel = "Cp [j/mol]",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
 display(p2)
 
-p3 = plot([T1C,T1C,T2C,T2C,T3C,T3C], [aV1,aL1,aV2,aL2,aV3,aL3], xlabel = "Temperature [deg C]", ylabel = "Cp [j/mol]",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
+
+p3 = plot([T1C,T1C,T2C,T2C,T3C,T3C], [aV1,aL1,aV2,aL2,aV3,aL3], xlabel = "Temperature [deg C]", ylabel = "Speed of Sound [m/s]",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
 display(p3)
 
