@@ -203,7 +203,7 @@ function cubic_Δ(model::RKPRModel,z)
     return  -Δ2*z⁻¹, -Δ1*z⁻¹
 end
 
-function pure_cubic_zc(model::RKPRModel)
+function cubic_pure_zc(model::RKPRModel)
     δ = model.params.c.values[1]
     d = (1 + δ*δ)/(1+δ)
     y = 1 + cbrt(2*(1+δ)) + cbrt(4/(1+δ))
@@ -215,6 +215,6 @@ crit_pure(model::RKPRModel) = crit_pure_tp(model)
 function crit_pure_tp(model::RKPRModel)
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
-    Zc = pure_cubic_zc(model) #PV = ZRT
+    Zc = cubic_pure_zc(model) #PV = ZRT
     return (Tc,Pc,Zc*R̄*Tc/Pc)
 end

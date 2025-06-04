@@ -66,25 +66,31 @@ end
 
 function c_premixing end
 
-function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
+function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0])
     a = model.params.a.values
     b = model.params.b.values
     T = T * float(one(T))
     α = @f(α_function, model.alpha)
     c = @f(translation, model.translation)
     if length(z) > 1
-        ā, b̄, c̄ = @f(mixing_rule, model.mixing, α, a, b, c)
+        return @f(mixing_rule, model.mixing, α, a, b, c)
     else
-        ā = a[1, 1] * α[1]
-        b̄ = b[1, 1]
-        c̄ = c[1]
+        return @f(mixing_rule1, model.mixing, α, a, b, c)
     end
+end
+
+#mixing rules: optimization for one-component
+function mixing_rule1(model,V,T,z,mixing_model,α,a,b,c)
+    _1 = oneunit(z[1])
+    ā = a[1, 1] * α[1] * _1
+    b̄ = b[1, 1] * _1
+    c̄ = c[1] * _1
     return ā, b̄, c̄
 end
 
 function data(model::ABCubicModel, V, T, z)
     n = sum(z)
-    ā, b̄, c̄ = cubic_ab(model, V, T, z, n)
+    ā, b̄, c̄ = cubic_ab(model, V, T, z)
     return n, ā, b̄, c̄
 end
 
@@ -148,14 +154,14 @@ function cubic_p(model::ABCubicModel, V, T, z,_data = @f(data))
     return p
 end
 
-function pure_cubic_zc(model::ABCubicModel)
+function cubic_pure_zc(model::ABCubicModel)
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
     _,Ωb = ab_consts(model)
     Ωb = only(Ωb)
     return (1 + (Δ1+Δ2+1)*Ωb)/3
 end
 
-function pure_cubic_zc(model::ABCCubicModel)
+function cubic_pure_zc(model::ABCCubicModel)
     Vc = model.params.Vc.values[1]
     pc = model.params.Pc.values[1]
     Tc = model.params.Tc.values[1]
@@ -167,9 +173,14 @@ function second_virial_coefficient_impl(model::ABCubicModel,T,z = SA[1.0])
     return sum(z)*(b - c - a/(Rgas(model)*T))
 end
 
-function lb_volume(model::CubicModel, z)
+function lb_volume(model::CubicModel,T,z)
+    return cubic_lb_volume(model,T,z,model.mixing)
+end
+
+#some cubic mixing rules allow for T-dependent b.
+#the default case is assume T-independency.
+function cubic_lb_volume(model, T, z, mixing)
     V = 1e-5
-    T = 0.0
     n = sum(z)
     invn = one(n) / n
     b = model.params.b.values
