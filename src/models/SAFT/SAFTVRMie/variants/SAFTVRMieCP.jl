@@ -1,20 +1,46 @@
+struct SAFTVRMieCPParam{T} <: ParametricEoSParam{T}
+    Mw::SingleParam{T}
+    Tcrit::SingleParam{T}
+    pcrit::SingleParam{T}
+    Vcrit::SingleParam{T}
+    acrit::SingleParam{T}
+    bcrit::SingleParam{T}
+    ccrit::SingleParam{T}
+    dcrit::SingleParam{T}  
+    segment::SingleParam{T}
+    sigma::PairParam{T}
+    lambda_a::PairParam{T}
+    lambda_r::PairParam{T}
+    epsilon::PairParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T} 
+end
+
+function SAFTVRMieCPParam(Mw,Tcrit,pcrit,Vcrit,acrit,bcrit,ccrit,dcrit,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol)
+    return build_parametric_param(SAFTVRMieCPParam,Mw,Tcrit,pcrit,Vcrit,acrit,bcrit,ccrit,dcrit,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol) 
+end
+
 abstract type SAFTVRMieCPModel <: SAFTVRMieModel end
-@newmodel SAFTVRMieCP SAFTVRMieCPModel SAFTVRMieParam{T}
+@newmodel SAFTVRMieCP SAFTVRMieCPModel SAFTVRMieCPParam{T}
 default_references(::Type{SAFTVRMieCP}) = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
-default_locations(::Type{SAFTVRMieCP}) = ["SAFT/SAFTVRMie", "properties/molarmass.csv"]
-function transform_params(::Type{SAFTVRMieCP},params)
+default_locations(::Type{SAFTVRMieCP}) = ["SAFT/SAFTVRMie/SAFTVRMieCP", "properties/molarmass.csv"]
+
+function transform_params(::Type{SAFTVRMieCP},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
     sigma = sigma_LorentzBerthelot(sigma)
     epsilon = epsilon_HudsenMcCoubreysqrt(params["epsilon"], sigma)
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
+    
     params["sigma"] = sigma
     params["epsilon"] = epsilon
     params["lambda_a"] = lambda_a
     params["lambda_r"] = lambda_r
+
     return params
 end
+
 """
     SAFTVRMieCPModel <: SAFTVRMieModel
 
@@ -173,3 +199,27 @@ const SAFTVRMieCPconsts = (
         -8.35760085684382e-09	1.03868339224250e-09	0	0	0	0	0	0	0	0	0
         8.47595203890549e-10	0	0	0	0	0	0	0	0	0	0]],
 )
+
+# Critical point correction term
+function a_crit(model ::SAFTVRMieCPModel, V, T, z, _data=@f(data))
+    Tc = model.params.Tcrit.values
+    Vc = model.params.Vcrit.values
+    ac = model.params.acrit.values
+    bc = model.params.bcrit.values
+    cc = model.params.ccrit.values
+    dc = model.params.dcrit.values
+    ∑z = sum(z)
+    _a_crit = zero(T+V+first(z))
+    for i ∈ @comps
+        Trᵢ,zᵢ,Vci,acᵢ,bcᵢ,ccᵢ,dcᵢ = T/Tc[i],z[i],Vc[i],ac[i],bc[i],cc[i],dc[i]
+       _fnc = exp(-dcᵢ*(Trᵢ-1.35)^2)/exp(-dcᵢ*(1.0-1.35)^2)
+       _a_crit += zᵢ*_fnc*(acᵢ/(V/Vci) + bcᵢ/(V/Vci)^2 + ccᵢ/(V/Vci)^3)
+    end
+     _a_crit /= R̄*T*∑z
+    return _a_crit
+end
+
+function a_res(model ::SAFTVRMieCPModel, V, T, z) 
+    _data = @f(data) 
+    return @f(a_hs,_data) + @f(a_dispchain,_data) + @f(a_assoc,_data) + @f(a_crit,_data)
+end
