@@ -1,0 +1,36 @@
+function neutral_eCPA(components;
+            idealmodel = BasicIdeal,
+            radial_dist::Symbol = :KG,
+            cubicmodel = RK,
+            alpha = eCPAAlpha,
+            mixing = vdW1fRule,
+            activity = eCPANRTL,
+            translation = NoTranslation,
+            userlocations = String[],
+            ideal_userlocations = String[],
+            alpha_userlocations = String[],
+            activity_userlocations = String[],
+            mixing_userlocations = String[],
+            translation_userlocations = String[],
+            reference_state = nothing,
+            verbose = false,
+            assoc_options = AssocOptions())
+
+    return CPA(components;
+        idealmodel = idealmodel,
+        radial_dist = radial_dist,
+        cubicmodel = cubicmodel,
+        alpha = alpha,
+        mixing = mixing,
+        activity = activity,
+        translation = translation,
+        userlocations = userlocations,
+        ideal_userlocations = ideal_userlocations,
+        alpha_userlocations = alpha_userlocations,
+        activity_userlocations = activity_userlocations,
+        mixing_userlocations = mixing_userlocations,
+        translation_userlocations = translation_userlocations,
+        reference_state = reference_state,
+        verbose = verbose,
+        assoc_options = assoc_options)
+end

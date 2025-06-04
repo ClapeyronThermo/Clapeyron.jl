@@ -69,11 +69,4 @@ function eSAFTVRMie(solvents,ions;
     userlocations,ideal_userlocations,RSPmodel_userlocations,assoc_options,reference_state,verbose)
 end
 
-function a_res(model::eSAFTVRMieModel, V, T, z)
-    data_saft = data(model.neutralmodel,V,T,z)
-    data_ion = data(model.ionmodel,V,T,z)
-
-    return a_res(model.neutralmodel,V,T,z,data_saft)+a_res(model.ionmodel,V,T,z,data_ion)
-end
-
 export eSAFTVRMie

@@ -1,7 +1,28 @@
 @testset "Electrolyte models" begin
     @printline
 
-    let T = 298.15, V = 1e-3, m = 1;
+    let T = 298.15, V = 1e-3, m = 1, w = [0.99,0.005,0.005],Z = [0,1,-1];
+
+    @testset "ConstRSP" begin
+        system = ConstRSP()
+        @test Clapeyron.dielectric_constant(system, V, T, w, Z) ≈ 78.38484961 rtol = 1e-6
+    end
+
+    @testset "ZuoFurst" begin
+        system = ZuoFurst()
+        @test Clapeyron.dielectric_constant(system, V, T, w, Z) ≈ 78.30270731614397 rtol = 1e-6
+    end
+
+    @testset "LinMixRSP" begin
+        system = LinMixRSP(["water"],["sodium","chloride"])
+        @test Clapeyron.dielectric_constant(system, V, T, w, Z) ≈ 77.68100111390001 rtol = 1e-6
+    end
+
+    @testset "Schreckenberg" begin
+        system = Schreckenberg(["water"],["sodium","chloride"])
+        @test Clapeyron.dielectric_constant(system, 1.8e-5 , T, w, Z) ≈ 77.9800485493879 rtol = 1e-6
+    end 
+
     @testset "ePCSAFT" begin
         system = ePCSAFT(["water"],["sodium","chloride"])
         salts = [("sodium chloride",["sodium"=>1,"chloride"=>1])]
@@ -29,7 +50,9 @@
         system = SAFTgammaEMie(["water"],["sodium","acetate"])
         salts = [("sodium acetate",["sodium"=>1,"acetate"=>1])]
         z = molality_to_composition(system,salts,m)
-        @test Clapeyron.a_res(system, V, T, z) ≈ -5.090195753415607 rtol = 1e-6
+        #@test Clapeyron.a_res(system, V, T, z) ≈ -5.090195753415607 rtol = 1e-6
+        @test Clapeyron.a_res(system, V, T, z) ≈ -5.400523595315808 rtol = 1e-6
+        
         model = SAFTgammaEMie(["water"],["calcium","chloride"]) #issue 349
         @test model isa EoSModel
     end

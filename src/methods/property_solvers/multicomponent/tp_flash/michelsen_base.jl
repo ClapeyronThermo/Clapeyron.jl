@@ -96,20 +96,19 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
 end
 
 #updates lnK, returns lnK,volx,voly, gibbs if β != nothing
-function update_K!(lnK,model,p,T,x,y,β,vols,phases,non_inw,dlnϕ_cache = nothing)
+function update_K!(lnK,model,p,T,x,y,z,β,vols,phases,non_inw,dlnϕ_cache = nothing)
     volx,voly = vols
     phasex,phasey = phases
     non_inx,non_iny = non_inw
-    lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache; phase = :liquid, vol0=volx)
+    lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache; phase = phasex, vol0=volx)
     if isnan(volx)
         lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache, phase = phasex)
     end
-
     lnK .= lnϕx
     gibbs = zero(eltype(lnK))
     if β !== nothing
         for i in eachindex(y)
-            !non_inx[i] && (gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i]))
+            !non_inx[i] || isinf(lnK[i]) && (gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i]))
         end
     else
         gibbs = gibbs/gibbs
@@ -119,11 +118,10 @@ function update_K!(lnK,model,p,T,x,y,β,vols,phases,non_inw,dlnϕ_cache = nothin
     if isnan(voly)
         lnϕy, voly = lnϕ(model, p, T, y, dlnϕ_cache, phase = phasey)
     end
-
     lnK .-= lnϕy
     if β !== nothing
         for i in eachindex(y)
-            !non_iny[i] && (gibbs += β*y[i]*(log(y[i]) + lnϕy[i]))
+            !non_iny[i] || iszero(exp(lnK[i])) && (gibbs += β*y[i]*(log(y[i]) + lnϕy[i]))
         end
     else
         gibbs = gibbs/gibbs
@@ -138,12 +136,12 @@ function update_rr!(K,β,z,x,y,
     y .= x .* K
     for i in eachindex(z)
         # modification for non-in-y components Ki -> 0
-        if non_iny[i]
+        if non_iny[i] || iszero(K[i])
             x[i] = z[i] / (1. - β)
             y[i] = 0.
         end
         # modification for non-in-x components Ki -> ∞
-        if non_inx[i]
+        if non_inx[i] || isinf(K[i])
             x[i] = 0.
             y[i] = z[i] / β
         end
@@ -200,10 +198,10 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         volx = zero(_1)
         voly = zero(_1)
         if method.v0 == nothing
-            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(nothing,nothing),phases,non_inw)
+            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(nothing,nothing),phases,non_inw)
         else
             vl0,vv0 = method.v0
-            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(vl0,vv0),phases,non_inw)
+            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(vl0,vv0),phases,non_inw)
         end
         K = exp.(lnK)
     elseif is_vle(method) || is_unknown(method) && k0 == :wilson

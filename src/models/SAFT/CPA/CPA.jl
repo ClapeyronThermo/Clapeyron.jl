@@ -318,7 +318,18 @@ data(model::CPAModel, V, T, z) = data(model.cubicmodel,V,T,z)
 
 function a_res(model::CPAModel, V, T, z, _data = @f(data))
     n,ā,b̄,c̄ = _data
-    return a_res(model.cubicmodel,V,T,z,_data) + a_assoc(model,V+c̄*n,T,z,_data)
+    return a_res(model.cubicmodel,V,T,z,_data) + a_assoc(model,V,T,z,_data)
+end
+
+function a_assoc(model::CPAModel, V0, T, z,_data = data(model,V0,T,z))
+    n,ā,b̄,c̄ = _data
+    V = V0 + c̄*n #volume translation
+    _0 = zero(V+T+first(z))
+    nn = assoc_pair_length(model)
+    iszero(nn) && return _0
+    isone(nn) && return a_assoc_exact_1(model,V,T,z,_data)
+    _X = @f(X,_data)
+    return @f(a_assoc_impl,_X)
 end
 
 ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
