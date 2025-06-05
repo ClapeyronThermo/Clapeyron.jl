@@ -1,6 +1,28 @@
 const RKPRParam = ABCCubicParam
 abstract type RKPRModel <: ABCCubicModel end
 
+struct RKPRParam <: EoSParam
+    a::PairParam{Float64}
+    b::PairParam{Float64}
+    c::SingleParam{Float64}
+    Tc::SingleParam{Float64}
+    Pc::SingleParam{Float64}
+    Vc::SingleParam{Float64}
+    Mw::SingleParam{Float64}
+end
+
+function transform_params(::Type{RKPRParam},params,components)
+    n = length(components)
+    transform_params(ABCubicParam,params,components)
+    Tc = params["Tc"]
+    Pc = params["Pc"]
+    Vc = get(params,"Vc",1.0)
+    c = get!(params,"c") do
+        SingleParam("c",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n))
+    end
+    return params
+end
+
 struct RKPR{T <: IdealModel,α,c,M} <: RKPRModel
     components::Array{String,1}
     alpha::α
@@ -45,7 +67,7 @@ export RKPR
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `a`: Pair Parameter (`Float64`)
 - `b`: Pair Parameter (`Float64`)
-- `c`: Pair Parameter (`Float64`)
+- `c`: Single Parameter (`Float64`) - constant parameter (no units)
 
 ## Input models
 - `idealmodel`: Ideal Model
@@ -148,13 +170,12 @@ function RKPR(components;
     return model
 end
 
-default_references(::Type{RKPR}) = [ "10.1016/j.fluid.2005.03.020","10.1016/j.fluid.2018.10.005"]
+default_references(::Type{RKPR}) = ["10.1016/j.fluid.2005.03.020","10.1016/j.fluid.2018.10.005"]
 
 function __rkpr_f0_δ(δ,Zc)
-    δ2 = δ*δ
-    d1 = (1 + δ2)/(1 + δ)
-    y = 1 + cbrt(2*(1+δ)) + cbrt(4/(1+δ))
-    return Zc - y/(3*y + d1 - 1)
+    Δ1 = δ
+    Δ2 = (1 - δ)/(1 + δ)
+    return Zc - cubic_pure_zc(Δ1,Δ2)
 end
 
 function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
@@ -164,7 +185,7 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
     a = model.params.a
     b = model.params.b
     c = model.params.c
-    prob = Roots.ZeroProblem(__rkpr_f0_δ,0.0)
+    prob = Roots.ZeroProblem(__rkpr_f0_δ,zero(eltype(c)))
     for i in @comps
         if !_Vc.ismissingvalues[i] && c.ismissingvalues[i,i]
             pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
@@ -177,9 +198,9 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
                 Zci_eos = 1.168*Zci
                 δ = Roots.solve(prob,Roots.Order0(),Zci_eos)
             end
-            c[i,i] = δ
+            c[i] = δ
         else _Vc.ismissingvalues[i] && !c.ismissingvalues[i,i]
-            δ = c[i,i]
+            δ = c[i]
         end
         Δ2 = δ
         Δ1 = ((1 - δ)/(1 + δ))
