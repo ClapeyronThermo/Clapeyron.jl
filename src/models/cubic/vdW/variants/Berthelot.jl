@@ -134,7 +134,7 @@ function ab_premixing(model::BerthelotModel,mixing::MixingRule,k,l)
     return a,b
 end
 
-function pure_cubic_zc(model::BerthelotModel)
+function cubic_pure_zc(model::BerthelotModel)
     return only(model.params.Pc.values)*only(model.params.Vc.values)/(R̄*only(model.params.Tc.values))
 end
 

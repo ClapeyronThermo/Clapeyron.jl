@@ -112,7 +112,7 @@ function set_l!(model::CubicModel,l)
     return nothing
 end
 
-function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
+function a_res(model::DeltaCubicModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
     Δ1,Δ2 = cubic_Δ(model,z)
     ΔΔ = Δ2 - Δ1
@@ -130,7 +130,7 @@ function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     end
 end
 
-function cubic_poly(model::ABCubicModel,p,T,z)
+function cubic_poly(model::DeltaCubicModel,p,T,z)
     a,b,c = cubic_ab(model,p,T,z)
     RT⁻¹ = 1/(R̄*T)
     A = a*p*RT⁻¹*RT⁻¹
@@ -146,7 +146,7 @@ function cubic_poly(model::ABCubicModel,p,T,z)
 end
 
 
-function cubic_p(model::ABCubicModel, V, T, z,_data = @f(data))
+function cubic_p(model::DeltaCubicModel, V, T, z,_data = @f(data))
     Δ1,Δ2 = cubic_Δ(model,z)
     n,a,b,c = _data
     v = V/n+c
@@ -154,12 +154,21 @@ function cubic_p(model::ABCubicModel, V, T, z,_data = @f(data))
     return p
 end
 
-function cubic_pure_zc(model::ABCubicModel)
-    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
-    return _cubic_pure_zc(Δ1,Δ2)
+function crit_pure(model::CubicModel)
+
 end
 
-function _cubic_pure_zc(Δ1, Δ2)
+function cubic_pure_zc(model::ABCubicModel)
+    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
+    return cubic_pure_zc(Δ1,Δ2)
+end
+
+function cubic_pure_zc(model::ABCCubicModel)
+    Tc,Pc,Vc = crit_pure(model)
+    return Pc*Vc/(Rgas(model)*Tc)
+end
+
+function cubic_pure_zc(Δ1::Number, Δ2::Number)
     r2m1 = 1.0 - Δ2
     r1m1 = 1.0 - Δ1
     t1 = cbrt(r1m1*r2m1*r2m1)
@@ -219,10 +228,17 @@ function x0_crit_pure(model::CubicModel)
     (1.0, log10(lb_v / 0.3))
 end
 
-#works with models with a fixed (Tc,Pc) coordinate
-crit_pure_tp(model::ABCubicModel) = crit_pure_Δ(model)
+#by default, we assume Tc/Pc are fixed, Vc is variable.
+function crit_pure(model::CubicModel)
+    single_component_check(crit_pure,model)
+    Tc = model.params.Tc.values[1]
+    Pc = model.params.Pc.values[1]
+    Vc = volume(model,Pc,Tc,SA[1.])
+    return (Tc,Pc,Vc)
+end
 
-function crit_pure_Δ(model)
+#optimization for A-B cubic models.
+function crit_pure(model::ABCubicModel)
     single_component_check(crit_pure,model)
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
@@ -230,14 +246,6 @@ function crit_pure_Δ(model)
     Vc0 = Zc*Rgas(model)*Tc/Pc
     c = translation(model,Vc0,Tc,SA[1.0])
     Vc = Vc0 - c[1]
-    return (Tc,Pc,Vc)
-end
-
-function crit_pure_tp(model::CubicModel)
-    single_component_check(crit_pure,model)
-    Tc = model.params.Tc.values[1]
-    Pc = model.params.Pc.values[1]
-    Vc = volume(model,Pc,Tc,SA[1.])
     return (Tc,Pc,Vc)
 end
 
@@ -340,7 +348,7 @@ function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,re
     return vs - c
 end
 
-function liquid_spinodal_zero_limit(model::ABCubicModel,z)
+function liquid_spinodal_zero_limit(model::DeltaCubicModel,z)
     R̄ = Rgas(model)
     function F(Tx)
         a,b,c = cubic_ab(model,0,Tx,z)
@@ -361,7 +369,7 @@ function zero_pressure_impl(model,T,z)
     return default_volume_impl(model,0.0,T,z,:liquid,false,nothing)
 end
 
-function zero_pressure_impl(model::ABCubicModel,T,z)
+function zero_pressure_impl(model::DeltaCubicModel,T,z)
     a,b,c = cubic_ab(model,0,T,z)
     Δ1,Δ2 = cubic_Δ(model,z)
     return zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
@@ -425,7 +433,7 @@ Base.@assume_effects :foldable function ab_consts(Δ1::Number, Δ2::Number)
     return (Ωa, Ωb)
 end
 
-has_fast_crit_pure(model::ABCubicModel) = true
+has_fast_crit_pure(model::DeltaCubicModel) = true
 
 function x0_saturation_temperature(model::ABCubicModel,p,::Nothing)
     crit = crit_pure(model)
@@ -461,7 +469,7 @@ vl = b + sqrt(0.5RTb3/2a) - c
 =#
 
 
-function wilson_k_values!(K,model::ABCubicModel, p, T, crit = nothing)
+function wilson_k_values!(K,model::CubicModel, p, T, crit = nothing)
     Pc = model.params.Pc.values
     Tc = model.params.Tc.values
     α = typeof(model.alpha)

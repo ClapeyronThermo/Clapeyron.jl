@@ -181,7 +181,6 @@ function cubic_Δ(model::PatelTejaModel,z)
     return (-1/2*(tr12+sqrt(det12)),-1/2*(tr12-sqrt(det12)))
 end
 
-crit_pure(model::PatelTejaModel) = crit_pure_tp(model)
 #=
  (-B2-2(B2+B)+A)
  (-B2-2B2-2B+A)

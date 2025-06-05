@@ -1,5 +1,4 @@
-const RKPRParam = ABCCubicParam
-abstract type RKPRModel <: ABCCubicModel end
+abstract type RKPRModel <: ABCubicModel end
 
 struct RKPRParam <: EoSParam
     a::PairParam{Float64}
@@ -229,5 +228,3 @@ function cubic_Δ(model::RKPRModel,z)
     end
     return  -Δ2*z⁻¹, -Δ1*z⁻¹
 end
-
-crit_pure(model::RKPRModel) = crit_pure_Δ(model)
