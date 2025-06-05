@@ -335,6 +335,16 @@ end
 info_color(symbol::Symbol) = info_color(":" * string(symbol))
 
 
+function low_color(text)
+    colors = Base.text_colors
+    g = colors[:light_black]
+    reset = colors[:normal]
+    return g * text * reset
+end
+
+low_color(symbol::Symbol) = low_color(":" * string(symbol))
+
+
 function userlocation_merge(loc1,loc2)
     if isempty(loc2)
         return loc1
