@@ -32,7 +32,8 @@ export RKPR
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m3/mol]`
+- `Vc`: Single Parameter (`Float64`) (optional) - Critical Volume `[m3/mol]`
+- `c`: Single Parameter (`Float64`) (optional) - constant parameter (no units)
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `k`: Pair Parameter (`Float64`) (optional)
 - `l`: Pair Parameter (`Float64`) (optional)
@@ -68,7 +69,9 @@ bᵢᵢ = Ωbᵢ(R²Tcᵢ/Pcᵢ)
 dᵢ = (1 + cᵢ^2)/(1 + cᵢ)
 yᵢ = 1 + (2(1 + cᵢ))^(1/3) + (4/(1 + cᵢ))^(1/3)
 ```
-`cᵢ` is fitted to match:
+
+If `c` is not provided, `cᵢ` is fitted to match:
+
 ```
 if Zcᵢ[exp] > 0.29
     cᵢ = √2 - 1
@@ -163,21 +166,24 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
     c = model.params.c
     prob = Roots.ZeroProblem(__rkpr_f0_δ,0.0)
     for i in @comps
-        pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
-        Zci = pci * Vci / (R̄ * Tci)
-        #Roots.find_zero(x -> Clapeyron.__rkpr_f0_δ(sqrt(2) - 1,1.168*x),0.29)
-        #0.2897160510687658
-        if Zci >  0.2897160510687658
-            δ = sqrt(2) - 1
-        else
-            Zci_eos = 1.168*Zci
-            δ = Roots.solve(prob,Roots.Order0(),Zci_eos)
+        if !_Vc.ismissingvalues[i] && c.ismissingvalues[i,i]
+            pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
+            Zci = pci * Vci / (R̄ * Tci)
+            #Roots.find_zero(x -> Clapeyron.__rkpr_f0_δ(sqrt(2) - 1,1.168*x),0.29)
+            #0.2897160510687658
+            if Zci > 0.2897160510687658
+                δ = sqrt(2) - 1
+            else
+                Zci_eos = 1.168*Zci
+                δ = Roots.solve(prob,Roots.Order0(),Zci_eos)
+            end
+            c[i,i] = δ
+        else _Vc.ismissingvalues[i] && !c.ismissingvalues[i,i]
+            δ = c[i,i]
         end
-        c[i] = δ
-        d = (1 + δ*δ)/(1+δ)
-        y = 1 + cbrt(2*(1+δ)) + cbrt(4/(1+δ))
-        Ωa = (3*y*(y + d) + d*d + d - 1)/abs2(3*y + d - 1)
-        Ωb = 1/(3*y + d - 1)
+        Δ2 = δ
+        Δ1 = ((1 - δ)/(1 + δ))
+        Ωa,Ωb = ab_consts(Δ1,Δ2)
         a[i] = Ωa*R̄^2*Tci^2/pci
         b[i] = Ωb*R̄*Tci/pci
     end
@@ -203,18 +209,4 @@ function cubic_Δ(model::RKPRModel,z)
     return  -Δ2*z⁻¹, -Δ1*z⁻¹
 end
 
-function cubic_pure_zc(model::RKPRModel)
-    δ = model.params.c.values[1]
-    d = (1 + δ*δ)/(1+δ)
-    y = 1 + cbrt(2*(1+δ)) + cbrt(4/(1+δ))
-    Zc = y/(3y + d - 1)
-    return Zc
-end
-
-crit_pure(model::RKPRModel) = crit_pure_tp(model)
-function crit_pure_tp(model::RKPRModel)
-    Tc = model.params.Tc.values[1]
-    Pc = model.params.Pc.values[1]
-    Zc = cubic_pure_zc(model) #PV = ZRT
-    return (Tc,Pc,Zc*R̄*Tc/Pc)
-end
+crit_pure(model::RKPRModel) = crit_pure_Δ(model)

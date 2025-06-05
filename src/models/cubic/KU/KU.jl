@@ -190,8 +190,6 @@ function p_scale(model::KUModel,z)
     return dot(model.params.Pc.values,z)/sum(z)
 end
 
-kumar_zc(model::KUModel) = only(model.params.Pc.values)*only(model.params.Vc.values)/(R̄*only(model.params.Tc.values))
-
 function x0_crit_pure(model::KUModel)
     lb_v = lb_volume(model)
     vc = model.params.Vc.values[1]

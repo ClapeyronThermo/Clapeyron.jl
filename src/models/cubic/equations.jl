@@ -155,9 +155,18 @@ function cubic_p(model::ABCubicModel, V, T, z,_data = @f(data))
 end
 
 function cubic_pure_zc(model::ABCubicModel)
-    _,Ωb = ab_consts(model,SA[1.0])
-    Ωb = only(Ωb)
-    return (1 + (Δ1+Δ2+1)*Ωb)/3
+    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
+    return _cubic_pure_zc(Δ1,Δ2)
+end
+
+function _cubic_pure_zc(Δ1, Δ2)
+    r2m1 = 1.0 - Δ2
+    r1m1 = 1.0 - Δ1
+    t1 = cbrt(r1m1*r2m1*r2m1)
+    t2 = cbrt(r2m1*r1m1*r1m1)
+    ζc = (t1 + t2 + 1.0)
+    x1 = (1.0 + Δ1 + Δ2)
+    return ζc/(3.0*ζc - x1)
 end
 
 function cubic_pure_zc(model::ABCCubicModel)
@@ -211,19 +220,24 @@ function x0_crit_pure(model::CubicModel)
 end
 
 #works with models with a fixed (Tc,Pc) coordinate
-function crit_pure_tp(model)
+crit_pure_tp(model::ABCubicModel) = crit_pure_Δ(model)
+
+function crit_pure_Δ(model)
+    single_component_check(crit_pure,model)
+    Tc = model.params.Tc.values[1]
+    Pc = model.params.Pc.values[1]
+    Zc = cubic_pure_zc(model)
+    Vc0 = Zc*Rgas(model)*Tc/Pc
+    c = translation(model,Vc0,Tc,SA[1.0])
+    Vc = Vc0 - c[1]
+    return (Tc,Pc,Vc)
+end
+
+function crit_pure_tp(model::CubicModel)
     single_component_check(crit_pure,model)
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
     Vc = volume(model,Pc,Tc,SA[1.])
-    return (Tc,Pc,Vc)
-end
-
-function crit_pure_tp(model::ABCCubicModel)
-    single_component_check(crit_pure,model)
-    Tc = model.params.Tc.values[1]
-    Pc = model.params.Pc.values[1]
-    Vc = model.params.Vc.values[1]
     return (Tc,Pc,Vc)
 end
 
@@ -239,6 +253,7 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
     end
     nRTp = sum(z)*R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
+   
     c = c̄*sum(z)
     num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
     if num_isreal == 2
@@ -380,20 +395,20 @@ cubic_Δ(model::EoSModel) = cubic_Δ(typeof(model))
 
 function ab_consts(model::ABCubicModel,z)
     Δ1,Δ2 = cubic_Δ(model,z)
-    return ab_consts_ab(Δ1,Δ2)
+    return ab_consts(Δ1,Δ2)
 end
 
 function ab_consts(model::ABCubicModel)
     Δ1,Δ2 = cubic_Δ(model)
-    return ab_consts_ab(Δ1,Δ2)
+    return ab_consts(Δ1,Δ2)
 end
 
 Base.@assume_effects :foldable function ab_consts(::Type{T}) where T <: ABCubicModel
     Δ1,Δ2 = cubic_Δ(T)
-    return ab_consts_ab(Δ1,Δ2)
+    return ab_consts(Δ1,Δ2)
 end
 
-function ab_consts_ab(Δ1, Δ2)
+Base.@assume_effects :foldable function ab_consts(Δ1::Number, Δ2::Number)
     #calculate critical constants, from https://doi.org/10.1016/j.fluid.2012.05.008
     #code adapted from feos
     r2m1 = 1.0 - Δ2
@@ -402,12 +417,10 @@ function ab_consts_ab(Δ1, Δ2)
     term2 = cbrt(r2m1*r1m1*r1m1)
     ζc = (term1 + term2 + 1.0)
     ηc = 1/ζc
-    dx = 3.0 - ηc * (1.0 + Δ1 + Δ2)
-    d = 3.0*ζc - (1.0 + Δ1 + Δ2)
     Ωb⁻¹ = 3.0*ζc - (1.0 + Δ1 + Δ2)
-    d2 = Ωb⁻¹*Ωb⁻¹
+    Ωb2 = Ωb⁻¹*Ωb⁻¹
     Ωa = ζc*ζc*ζc*(1.0 - ηc*Δ1) * (1.0 - ηc*Δ2) * (2.0 - ηc*(Δ1 + Δ2)) /
-        ((ζc - 1) * d2)
+        ((ζc - 1) * Ωb2)
     Ωb = 1/Ωb⁻¹
     return (Ωa, Ωb)
 end
