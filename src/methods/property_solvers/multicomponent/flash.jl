@@ -187,7 +187,7 @@ function __molecular_weight(model,state::FlashResult)
     ∑mi = zero(eltype(comps[1]))
     for i in 1:length(comps)
         mwi = molecular_weight(model,comps[i])
-        ∑mi = β[i]*mwi
+        ∑mi += β[i]*mwi
     end
     return ∑mi
 end
