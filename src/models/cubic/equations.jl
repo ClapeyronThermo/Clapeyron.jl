@@ -66,7 +66,7 @@ end
 
 function c_premixing end
 
-function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0])
+function cubic_ab(model::CubicModel,V,T,z=SA[1.0])
     a = model.params.a.values
     b = model.params.b.values
     T = T * float(one(T))
@@ -88,7 +88,7 @@ function mixing_rule1(model,V,T,z,mixing_model,α,a,b,c)
     return ā, b̄, c̄
 end
 
-function data(model::ABCubicModel, V, T, z)
+function data(model::CubicModel, V, T, z)
     n = sum(z)
     ā, b̄, c̄ = cubic_ab(model, V, T, z)
     return n, ā, b̄, c̄
@@ -155,8 +155,7 @@ function cubic_p(model::ABCubicModel, V, T, z,_data = @f(data))
 end
 
 function cubic_pure_zc(model::ABCubicModel)
-    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
-    _,Ωb = ab_consts(model)
+    _,Ωb = ab_consts(model,SA[1.0])
     Ωb = only(Ωb)
     return (1 + (Δ1+Δ2+1)*Ωb)/3
 end
@@ -168,7 +167,7 @@ function cubic_pure_zc(model::ABCCubicModel)
     return pc*Vc/(R̄*Tc)
 end
 
-function second_virial_coefficient_impl(model::ABCubicModel,T,z = SA[1.0])
+function second_virial_coefficient_impl(model::CubicModel,T,z = SA[1.0])
     a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T,z)
     return sum(z)*(b - c - a/(Rgas(model)*T))
 end
@@ -228,7 +227,7 @@ function crit_pure_tp(model::ABCCubicModel)
     return (Tc,Pc,Vc)
 end
 
-function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
+function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
     lb_v = lb_volume(model,T,z)
     if iszero(p) && is_liquid(phase) #liquid root at zero pressure if available
         vl,_ = zero_pressure_impl(model,T,z)
@@ -343,6 +342,16 @@ function liquid_spinodal_zero_limit(model::ABCubicModel,z)
     return T,vl
 end
 
+function zero_pressure_impl(model,T,z)
+    return default_volume_impl(model,0.0,T,z,:liquid,false,nothing)
+end
+
+function zero_pressure_impl(model::ABCubicModel,T,z)
+    a,b,c = cubic_ab(model,0,T,z)
+    Δ1,Δ2 = cubic_Δ(model,z)
+    return zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
+end
+
 function zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
     #0 = R̄*T/(v-b) - a/((v-Δ1*b)*(v-Δ2*b))
     #f(v) = ((v-Δ1*b)*(v-Δ2*b))*R̄*T - (v-b)*a
@@ -360,14 +369,47 @@ function zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
     return vl,vmax
 end
 
-function zero_pressure_impl(model::ABCubicModel,T,z)
-    a,b,c = cubic_ab(model,0,T,z)
-    Δ1,Δ2 = cubic_Δ(model,z)
-    return zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
+#Δ1,Δ2 -> Ωa,Ωb infraestructure
+
+#default: most models will use this
+function cubic_Δ(model,z)
+    return cubic_Δ(typeof(model))
 end
 
-function ab_consts(model::CubicModel)
-    return ab_consts(typeof(model))
+cubic_Δ(model::EoSModel) = cubic_Δ(typeof(model))
+
+function ab_consts(model::ABCubicModel,z)
+    Δ1,Δ2 = cubic_Δ(model,z)
+    return ab_consts_ab(Δ1,Δ2)
+end
+
+function ab_consts(model::ABCubicModel)
+    Δ1,Δ2 = cubic_Δ(model)
+    return ab_consts_ab(Δ1,Δ2)
+end
+
+Base.@assume_effects :foldable function ab_consts(::Type{T}) where T <: ABCubicModel
+    Δ1,Δ2 = cubic_Δ(T)
+    return ab_consts_ab(Δ1,Δ2)
+end
+
+function ab_consts_ab(Δ1, Δ2)
+    #calculate critical constants, from https://doi.org/10.1016/j.fluid.2012.05.008
+    #code adapted from feos
+    r2m1 = 1.0 - Δ2
+    r1m1 = 1.0 - Δ1
+    term1 = cbrt(r1m1*r2m1*r2m1)
+    term2 = cbrt(r2m1*r1m1*r1m1)
+    ζc = (term1 + term2 + 1.0)
+    ηc = 1/ζc
+    dx = 3.0 - ηc * (1.0 + Δ1 + Δ2)
+    d = 3.0*ζc - (1.0 + Δ1 + Δ2)
+    Ωb⁻¹ = 3.0*ζc - (1.0 + Δ1 + Δ2)
+    d2 = Ωb⁻¹*Ωb⁻¹
+    Ωa = ζc*ζc*ζc*(1.0 - ηc*Δ1) * (1.0 - ηc*Δ2) * (2.0 - ηc*(Δ1 + Δ2)) /
+        ((ζc - 1) * d2)
+    Ωb = 1/Ωb⁻¹
+    return (Ωa, Ωb)
 end
 
 has_fast_crit_pure(model::ABCubicModel) = true

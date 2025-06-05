@@ -125,12 +125,7 @@ end
 
 default_references(::Type{PR}) = ["10.1021/I160057A011"]
 
-
-function ab_consts(::Type{<:PRModel})
-    return 0.45723552892138218938,0.077796073903888455972
-end
-
-function cubic_Δ(model::PRModel,z)
+@inline function cubic_Δ(::Type{<:PRModel})
     sqrt2 = sqrt(2)
     return (-1+sqrt2,-1-sqrt2)
 end

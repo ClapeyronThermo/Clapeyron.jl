@@ -132,13 +132,7 @@ function vdW(components;
     return model
 end
 
-function ab_consts(::Type{<:vdWModel})
-    Ωa = 27/64
-    Ωb = 1/8
-    return Ωa,Ωb
-end
-
-cubic_Δ(model::vdWModel,z) = (0.0,0.0)
+@inline cubic_Δ(::Type{<:vdWModel}) = (0.0,0.0)
 
 function a_res(model::vdWModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data

@@ -128,13 +128,7 @@ end
 
 default_references(::Type{RK}) = ["10.1021/cr60137a013"]
 
-function ab_consts(::Type{<:RKModel})
-    Ωa = 1/(9*(2^(1/3)-1))
-    Ωb = (2^(1/3)-1)/3
-    return Ωa,Ωb
-end
-
-function cubic_Δ(model::RKModel,z)
+@inline function cubic_Δ(::Type{<:RKModel})
     return (0.0,-1.0)
 end
 
