@@ -13,7 +13,7 @@ println("SAFTVRMieCP Tc, pc, rhoc = $(Tc3), $(pc3), $(vc3)")
 
 N    = 250
 Tstart = -45 + 273.15
-Tcr  = 0.999
+Tcr  = 0.9999
 
 T1    = LinRange(Tstart, Tc1*Tcr,  N)
 T1C   = zeros(N)
@@ -196,6 +196,34 @@ display(p1)
 p2 = plot([T1C,T1C,T2C,T2C,T3C,T3C], [cpV1,cpL1,cpV2,cpL2,cpV3,cpL3], xlabel = "Temperature [deg C]", ylabel = "Cp [j/mol]",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
 display(p2)
 
-p3 = plot([T1C,T1C,T2C,T2C,T3C,T3C], [aV1,aL1,aV2,aL2,aV3,aL3], xlabel = "Temperature [deg C]", ylabel = "Cp [j/mol]",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
+p3 = plot([T1C,T1C,T2C,T2C,T3C,T3C], [aV1,aL1,aV2,aL2,aV3,aL3], xlabel = "Temperature [deg C]", ylabel = "a [m/s]",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
 display(p3)
 
+X = zeros(3)
+X = Clapeyron.update_critical_params(model3)
+
+println("SAFTVRMieCP X = $(X)")
+
+T1    = LinRange(Tc1, Tc1*3.0,  N)
+T1C   = zeros(N)
+psat1 = zeros(N)
+a1   = zeros(N)
+
+for i in 1:N
+    a1[i] = Clapeyron.VT_speed_of_sound(model1,vc1,T1[i],[1.])
+end
+
+T3    = LinRange(Tc3, Tc3*3.0,  N)
+T3C   = zeros(N)
+psat3 = zeros(N)
+a3   = zeros(N)
+
+for i in 1:N
+    a3[i] = Clapeyron.VT_speed_of_sound(model3,vc3,T3[i],[1.])
+end
+
+T1C = T1 .- 273.15
+T3C = T3 .- 273.15
+
+p4 = plot([T1C,T3C], [a1,a3], xlabel = "Temperature [deg C]", ylabel = "a [m/s]",left_margin = 10Plots.mm,bottom_margin = 10Plots.mm,grid = :on,linewidth=3,size=(1600,1200))
+display(p4)

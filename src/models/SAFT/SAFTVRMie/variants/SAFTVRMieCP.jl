@@ -32,12 +32,10 @@ function transform_params(::Type{SAFTVRMieCP},params,components)
     epsilon = epsilon_HudsenMcCoubreysqrt(params["epsilon"], sigma)
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
-    
     params["sigma"] = sigma
     params["epsilon"] = epsilon
     params["lambda_a"] = lambda_a
     params["lambda_r"] = lambda_r
-
     return params
 end
 
@@ -200,8 +198,52 @@ const SAFTVRMieCPconsts = (
         8.47595203890549e-10	0	0	0	0	0	0	0	0	0	0]],
 )
 
+# base a_res without critical correction
+function a_res_base(model ::SAFTVRMieCPModel, V, T, z) 
+    _data = @f(data) 
+    return @f(a_hs,_data) + @f(a_dispchain,_data) + @f(a_assoc,_data)
+end
+
+function update_critical_params(model ::SAFTVRMieCPModel)
+    Vcrit,pcrit,Tcrit = model.params.Vcrit,model.params.pcrit,model.params.Tcrit
+    calc_critical_params = true
+    if calc_critical_params
+        Vc = Vcrit.values[1]
+        pc = pcrit.values[1]
+        Tc = Tcrit.values[1]
+        a(x)   = R̄*Tc*(log(x) - a_res_base(model, x, Tc, [1.])) 
+        da(x)  = Solvers.derivative(a,x)
+        d2a(x) = Clapeyron.Solvers.derivative(da,x)
+        d3a(x) = Clapeyron.Solvers.derivative(d2a,x)
+        A = zeros(3,3)
+        A[1,1] =  1.0*Vc/Vc^2
+        A[1,2] =  2.0*Vc^2/Vc^3
+        A[1,3] =  3.0*Vc^3/Vc^4
+        A[2,1] = -2.0*Vc/Vc^3
+        A[2,2] = -6.0*Vc^2/Vc^4
+        A[2,3] = -12.0*Vc^3/Vc^5
+        A[3,1] =  6.0*Vc/Vc^4
+        A[3,2] =  24.0*Vc^2/Vc^5
+        A[3,3] =  60.0*Vc^3/Vc^6
+        println("SAFTVRMieCP A = $(A)")
+        B = zeros(3)
+        X = zeros(3)
+        pc0, ∂p0_∂V, ∂²p0_∂V² = da(Vc), d2a(Vc), d3a(Vc)
+        println("SAFTVRMieCP pc0 = $(pc0)")#
+        println("SAFTVRMieCP ∂p0_∂V = $(∂p0_∂V)")
+        println("SAFTVRMieCP ∂²p0_∂V² = $(∂²p0_∂V²)")
+        B[1] =  pc - pc0
+        B[2] = -∂p0_∂V
+        B[3] = -∂²p0_∂V²
+        println("SAFTVRMieCP B = $(B)")
+        X = A \ B
+    end
+    return X
+end
+
 # Critical point correction term
 function a_crit(model ::SAFTVRMieCPModel, V, T, z, _data=@f(data))
+    pc = model.params.pcrit.values
     Tc = model.params.Tcrit.values
     Vc = model.params.Vcrit.values
     ac = model.params.acrit.values
@@ -212,7 +254,7 @@ function a_crit(model ::SAFTVRMieCPModel, V, T, z, _data=@f(data))
     _a_crit = zero(T+V+first(z))
     for i ∈ @comps
         Trᵢ,zᵢ,Vci,acᵢ,bcᵢ,ccᵢ,dcᵢ = T/Tc[i],z[i],Vc[i],ac[i],bc[i],cc[i],dc[i]
-       _fnc = exp(-dcᵢ*(Trᵢ-1.35)^2)/exp(-dcᵢ*(1.0-1.35)^2)
+       _fnc = 1.0 + tanh(dcᵢ*(Trᵢ - 1.0))
        _a_crit += zᵢ*_fnc*(acᵢ/(V/Vci) + bcᵢ/(V/Vci)^2 + ccᵢ/(V/Vci)^3)
     end
      _a_crit /= R̄*T*∑z
