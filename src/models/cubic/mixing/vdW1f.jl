@@ -37,7 +37,7 @@ function vdW1fRule(components; activity = nothing, userlocations = String[],acti
     vdW1fRule()
 end
 
-function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
+function mixing_rule(model::CubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2

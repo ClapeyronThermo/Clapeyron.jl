@@ -33,7 +33,7 @@ end
 #used in CompositeModel.jl
 init_mixing_act = init_model_act
 
-function infinite_pressure_gibbs_correction(model::CubicModel,z)
+function infinite_pressure_gibbs_correction(model::DeltaCubicModel,z)
     Δ1,Δ2 = cubic_Δ(model,z)
     if Δ1==Δ2
         return 1/(1-Δ1)

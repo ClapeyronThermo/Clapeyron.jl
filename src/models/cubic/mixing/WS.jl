@@ -83,9 +83,9 @@ function WSRule(components; activity = Wilson, userlocations = String[],activity
     return model
 end
 
-WS_λ(::WSRuleModel,model::ABCubicModel,z) = infinite_pressure_gibbs_correction(model,z)
+WS_λ(::WSRuleModel,model::DeltaCubicModel,z) = infinite_pressure_gibbs_correction(model,z)
 
-function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::WSRuleModel,α,a,b,c)
+function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::WSRuleModel,α,a,b,c)
     λ = WS_λ(mixing_model,model,z)
     n = sum(z)
     invn = (one(n)/n)

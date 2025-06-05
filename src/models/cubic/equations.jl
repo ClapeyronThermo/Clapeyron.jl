@@ -154,10 +154,6 @@ function cubic_p(model::DeltaCubicModel, V, T, z,_data = @f(data))
     return p
 end
 
-function crit_pure(model::CubicModel)
-
-end
-
 function cubic_pure_zc(model::ABCubicModel)
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
     return cubic_pure_zc(Δ1,Δ2)
@@ -176,13 +172,6 @@ function cubic_pure_zc(Δ1::Number, Δ2::Number)
     ζc = (t1 + t2 + 1.0)
     x1 = (1.0 + Δ1 + Δ2)
     return ζc/(3.0*ζc - x1)
-end
-
-function cubic_pure_zc(model::ABCCubicModel)
-    Vc = model.params.Vc.values[1]
-    pc = model.params.Pc.values[1]
-    Tc = model.params.Tc.values[1]
-    return pc*Vc/(R̄*Tc)
 end
 
 function second_virial_coefficient_impl(model::CubicModel,T,z = SA[1.0])

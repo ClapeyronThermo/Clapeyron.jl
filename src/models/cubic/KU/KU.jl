@@ -1,4 +1,4 @@
-abstract type KUModel <: ABCubicModel end
+abstract type KUModel <: ABCCubicModel end
 
 struct KUParam <: EoSParam
     a::PairParam{Float64}
