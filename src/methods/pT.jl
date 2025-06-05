@@ -40,6 +40,26 @@ function entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true,
 end
 
 """
+    mass_entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Default units: `[J/K/kg]`
+
+Calculates entropy, defined as:
+
+```julia
+S = -∂A/∂T/Mr
+```
+Where `Mr` is the molecular weight of the model at the input composition.
+
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_entropy(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function mass_entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    return PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_entropy)
+end
+
+"""
     entropy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
 Default units: `[J/K]`
@@ -112,6 +132,27 @@ function internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, thread
 end
 
 """
+    mass_internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Default units: `[J/kg]`
+
+Calculates the internal energy, defined as:
+
+```julia
+U = (A - T * ∂A/∂T)/Mr
+```
+
+Where `Mr` is the molecular weight of the model at the input composition.
+
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_internal_energy(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function mass_internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_internal_energy)
+end
+
+"""
     internal_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
 Default units: `[J]`
@@ -145,6 +186,27 @@ The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume
 """
 function enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     PT_property(model,p,T,z,phase,threaded,vol0,VT_enthalpy)
+end
+
+"""
+    mass_enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Default units: `[J/kg]`
+
+Calculates the enthalpy, defined as:
+
+```julia
+H = (A - T * ∂A/∂T - V * ∂A/∂V)/Mr
+```
+
+Where `Mr` is the molecular weight of the model at the input composition.
+
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_enthalpy(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function mass_enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_enthalpy)
 end
 
 """
@@ -182,6 +244,28 @@ The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume
 """
 function gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     PT_property(model,p,T,z,phase,threaded,vol0,VT_gibbs_free_energy,Val{true}())
+end
+
+"""
+    mass_gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    mass_gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Default units: `[J/kg]`
+
+Calculates the gibbs free energy, defined as:
+
+```julia
+G = (A + p*V)/Mr
+```
+
+Where `Mr` is the molecular weight of the model at the input composition.
+
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_gibbs_free_energy(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function mass_gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_gibbs_free_energy,Val{true}())
 end
 
 """
@@ -223,6 +307,28 @@ function helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, 
 end
 
 """
+    mass_helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    mass_helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Default units: `[J/kg]`
+
+Calculates the helmholtz free energy, defined as:
+
+```julia
+A = eos(model,V(p),T,z)/Mr
+```
+
+Where `Mr` is the molecular weight of the model at the input composition.
+
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_helmholtz_free_energy(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function mass_helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_helmholtz_free_energy)
+end
+
+"""
     helmholtz_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     helmholtz_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
@@ -245,7 +351,8 @@ const helmholtz_energy = helmholtz_free_energy
 const helmholtz_energy_res = helmholtz_free_energy_res 
 const gibbs_energy = gibbs_free_energy
 const gibbs_energy_res = gibbs_free_energy_res
-
+const mass_helmholtz_energy = mass_helmholtz_free_energy
+const mass_gibbs_energy = mass_gibbs_free_energy
 """
     isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
@@ -269,6 +376,30 @@ function isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown
 end
 
 """
+    mass_isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Default units: `[J/K/kg]`
+
+Calculates the isochoric heat capacity, defined as:
+
+```julia
+Cv = -T * ∂²A/∂T² / Mr
+```
+
+Where `Mr` is the molecular weight of the model at the input composition.
+
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_isochoric_heat_capacity(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+
+!!! warning "Accurate ideal model required"
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel = ReidIdeal)`).
+"""
+function mass_isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_isochoric_heat_capacity)
+end
+
+"""
     isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
 Default units: `[J/K]`
@@ -289,6 +420,31 @@ The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume
 """
 function isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     PT_property(model,p,T,z,phase,threaded,vol0,VT_isobaric_heat_capacity)
+end
+
+"""
+    mass_isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Default units: `[J/K/kg]`
+
+Calculates the isobaric heat capacity, defined as:
+
+```julia
+Cp = (-T*(∂²A/∂T² - (∂²A/∂V∂T)^2 / ∂²A/∂V²))/Mr
+```
+
+Where `Mr` is the molecular weight of the model at the input composition.
+
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_isobaric_heat_capacity(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+
+!!! warning "Accurate ideal model required"
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel = ReidIdeal)`).
+
+"""
+function mass_isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_isobaric_heat_capacity)
 end
 
 """
@@ -816,9 +972,10 @@ end
 export entropy, internal_energy, enthalpy, gibbs_free_energy, helmholtz_free_energy
 export entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
 export gibbs_energy,helmholtz_energy,gibbs_energy_res,helmholtz_energy_res
-
+export mass_enthalpy,mass_entropy,mass_internal_energy,mass_gibbs_energy,mass_gibbs_free_energy,mass_helmholtz_energy,mass_helmholtz_free_energy
 #second derivative order properties
 export isochoric_heat_capacity, isobaric_heat_capacity,adiabatic_index
+export mass_isobaric_heat_capacity,mass_isobaric_heat_capacity
 export isothermal_compressibility, isentropic_compressibility, speed_of_sound
 export isobaric_expansivity, joule_thomson_coefficient, inversion_temperature
 #higher derivative order properties
@@ -859,7 +1016,8 @@ supports_lever_rule(f) = false
 for prop in [:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
     :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
    #volume :properties
-    :mass_density,:molar_density]
+    :mass_density,:molar_density
+    :mass_enthalpy,:mass_entropy,:mass_internal_energy,:mass_gibbs_free_energy,:mass_helmholtz_free_energy]
     @eval begin
         supports_lever_rule(::typeof($prop)) = true
     end

@@ -31,6 +31,9 @@ function VT_entropy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return -∂f∂T(model,V,T,z)
 end
 
+VT_mass_entropy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_entropy(model,V,T,z)/molecular_weight(model,z)
+
+
 function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,V,x,z)
     return -Solvers.derivative(fun,T)
@@ -51,6 +54,9 @@ function VT_internal_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     A, ∂A∂T = f∂fdT(model,V₀,T,z)
     return A - T*∂A∂T
 end
+
+VT_mass_internal_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_internal_energy(model,V,T,z)/molecular_weight(model,z)
+
 
 function VT_internal_energy_res(model::EoSModel, V, T, z=SA[1.])
     A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,V,T,z)
@@ -78,6 +84,8 @@ function VT_enthalpy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     end
 end
 
+VT_mass_enthalpy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_enthalpy(model,V,T,z)/molecular_weight(model,z)
+
 function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
     A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,V,T,z)
     PrV = ifelse(isinf(primalval(V)),zero(∂A∂V),- V*∂A∂V)
@@ -104,6 +112,9 @@ function VT_gibbs_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p
     end
 end
 
+VT_mass_gibbs_free_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_gibbs_free_energy(model,V,T,z)/molecular_weight(model,z)
+
+
 function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
     Ar,∂A∂Vr = Solvers.f∂f(fun,V)
@@ -114,6 +125,9 @@ end
 function VT_helmholtz_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return eos(model,V,T,z)
 end
+
+VT_mass_helmholtz_free_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_helmholtz_free_energy(model,V,T,z)/molecular_weight(model,z)
+
 
 function VT_helmholtz_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     return eos_res(model,V,T,z)
@@ -129,6 +143,9 @@ function VT_isochoric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     return -T*∂²A∂T²
 end
 
+VT_mass_isochoric_heat_capacity(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_isochoric_heat_capacity(model,V,T,z)/molecular_weight(model,z)
+
+
 function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     if iszero(1/V) || model isa IdealModel
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
@@ -141,6 +158,9 @@ function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
         return -T*(∂²A∂T² - ∂²A∂V∂T^2/∂²A∂V²)
     end
 end
+
+VT_mass_isobaric_heat_capacity(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_isobaric_heat_capacity(model,V,T,z)/molecular_weight(model,z)
+
 
 function VT_adiabatic_index(model::EoSModel, V, T, z=SA[1.])
     if iszero(1/V) || model isa IdealModel
@@ -498,15 +518,27 @@ function VT_fugacity_coefficient!(φ,model::EoSModel,V,T,z=SA[1.],p = pressure(m
     return φ
 end
 
+const VT_helmholtz_energy = VT_helmholtz_free_energy
+const VT_gibbs_energy = VT_gibbs_free_energy
+const VT_mass_helmholtz_energy = VT_mass_helmholtz_free_energy
+const VT_mass_gibbs_energy = VT_mass_gibbs_free_energy
+
+
 export pressure
 export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
 
 const CLAPEYRON_PROPS = [:temperature,:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
                     :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
+                    :helmholtz_energy,:gibbs_energy,
+                    #mass properties, first order
+                    :mass_entropy,:mass_enthalpy,:mass_internal_energy,:mass_gibbs_free_energy,:mass_helmholtz_free_energy,
+                    :mass_helmholtz_energy,:mass_gibbs_energy,
                     #second derivative order properties
                     :isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
                     :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
                     :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
+                    #second derivative order, mass properties
+                    :mass_isobaric_heat_capacity,:mass_isochoric_heat_capacity,
                     #higher derivative order properties
                     :fundamental_derivative_of_gas_dynamics,
                     #volume properties
