@@ -100,7 +100,7 @@
         @testset "QCPR" begin
             system = QCPR(["neon","helium"])
             @test Clapeyron.a_res(system, V, 25, z) ≈ -0.04727884027682022 rtol = 1e-6
-            @test Clapeyron.lb_volume(system,z) ≈ 8.942337913474187e-6 rtol = 1e-6
+            @test Clapeyron.lb_volume(system,25,z) ≈ 1.3601716423130568e-5 rtol = 1e-6
             _a,_b,_c = Clapeyron.cubic_ab(system,V,25,z)
             @test _a ≈ 0.012772722389495079 rtol = 1e-6
             @test _b ≈ 1.0728356231510917e-5 rtol = 1e-6

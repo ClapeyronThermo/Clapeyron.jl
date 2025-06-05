@@ -176,6 +176,15 @@ function ab_premixing(model::KUModel,mixing::MixingRule,k,l)
     return a,b
 end
 
+function recombine_mixing!(model::KUModel,mixing_model,k = nothing,l = nothing)
+    recombine!(mixing_model)
+    a,b = ab_premixing(model,mixing_model,k,l)
+    #we set this again just in case
+    model.params.a .= a
+    model.params.b .= b
+    return mixing_model
+end
+
 ab_consts(model::KUModel) = model.params.omega_a.values,model.params.omega_b.values
 
 #only used in premixing

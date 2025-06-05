@@ -17,7 +17,7 @@ function transform_params(::Type{RKPRParam},params,components)
     Pc = params["Pc"]
     Vc = get(params,"Vc",1.0)
     c = get!(params,"c") do
-        SingleParam("c",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n))
+        SingleParam("c",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n),fill(true,n))
     end
     return params
 end
@@ -155,7 +155,7 @@ function RKPR(components;
     verbose = false)
     
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc"])
     
     model = CubicModel(RKPR,params,formatted_components;
                         idealmodel,alpha,mixing,activity,translation,
@@ -184,10 +184,12 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
     a = model.params.a
     b = model.params.b
     c = model.params.c
+    @show _Vc.ismissingvalues
+    @show c.ismissingvalues
     prob = Roots.ZeroProblem(__rkpr_f0_δ,zero(eltype(c)))
     for i in @comps
-        if !_Vc.ismissingvalues[i] && c.ismissingvalues[i,i]
-            pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
+        pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
+        if !_Vc.ismissingvalues[i] && c.ismissingvalues[i]
             Zci = pci * Vci / (R̄ * Tci)
             #Roots.find_zero(x -> Clapeyron.__rkpr_f0_δ(sqrt(2) - 1,1.168*x),0.29)
             #0.2897160510687658
@@ -198,8 +200,10 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
                 δ = Roots.solve(prob,Roots.Order0(),Zci_eos)
             end
             c[i] = δ
-        else _Vc.ismissingvalues[i] && !c.ismissingvalues[i,i]
+        elseif !c.ismissingvalues[i]
             δ = c[i]
+        else
+            throw(MissingException("RKPR: Vc or c needs to be specified."))
         end
         Δ2 = δ
         Δ1 = ((1 - δ)/(1 + δ))

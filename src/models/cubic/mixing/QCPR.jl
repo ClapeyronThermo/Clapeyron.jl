@@ -136,7 +136,7 @@ function cubic_lb_volume(model, T, z, mixing::QCPRRuleModel)
     b = model.params.b.values
     n = sum(z)
     invn = (one(n)/n)
-    c = @f(translation, model.translation)
+    c = translation(model,0.0,T,z)
     c̄ = dot(c,z)
     b̄ = zero(first(z))
     for i in 1:length(z)
