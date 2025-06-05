@@ -547,6 +547,7 @@ const CLAPEYRON_PROPS = [:temperature,:volume, :pressure, :entropy, :internal_en
                     :identify_phase, :pip,
 ]
 
+const CLAPEYRON_PROP_ALIASES = [:mass_gibbs_energy,:gibbs_energy,:helmholtz_energy,:mass_helmholtz_energy]
 
 function VT_symbol(x::Symbol)
     return Symbol(:VT_,x)

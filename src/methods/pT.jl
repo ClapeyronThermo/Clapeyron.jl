@@ -1016,7 +1016,7 @@ supports_lever_rule(f) = false
 for prop in [:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
     :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
    #volume :properties
-    :mass_density,:molar_density
+    :mass_density,:molar_density,
     :mass_enthalpy,:mass_entropy,:mass_internal_energy,:mass_gibbs_free_energy,:mass_helmholtz_free_energy]
     @eval begin
         supports_lever_rule(::typeof($prop)) = true
@@ -1026,6 +1026,7 @@ end
 function spec_to_vt end
 
 for prop in CLAPEYRON_PROPS
+    prop in CLAPEYRON_PROP_ALIASES && continue
     VT_prop = VT_symbol(prop)
     @eval begin
         function spec_to_vt(model,V,T,z,spec::typeof($prop))
