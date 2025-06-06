@@ -134,10 +134,6 @@ function cubic_lb_volume(model, T, z, mixing::QCPRRuleModel)
     Tc = model.params.Tc.values
     a = model.params.a.values
     b = model.params.b.values
-    n = sum(z)
-    invn = (one(n)/n)
-    c = translation(model,0.0,T,z)
-    c̄ = dot(c,z)
     b̄ = zero(first(z))
     for i in 1:length(z)
         zi = z[i]
@@ -158,7 +154,7 @@ function cubic_lb_volume(model, T, z, mixing::QCPRRuleModel)
             b̄ += zij*(bqi+bqj)*(1-l[i,j]) #2 * zij * 0.5(bi + bj)
         end
     end
-    return invn*(b̄ - c̄)
+    return b̄/sum(z)
 end
 
 export QCPRRule

@@ -172,9 +172,16 @@ end
 default_references(::Type{RKPR}) = ["10.1016/j.fluid.2005.03.020","10.1016/j.fluid.2018.10.005"]
 
 function __rkpr_f0_δ(δ,Zc)
-    Δ1 = δ
-    Δ2 = (1 - δ)/(1 + δ)
-    return Zc - cubic_pure_zc(Δ1,Δ2)
+    δ2 = δ*δ
+    d1 = (1 + δ2)/(1 + δ)
+    y = 1 + cbrt(2*(1+δ)) + cbrt(4/(1+δ))
+    return Zc - y/(3*y + d1 - 1)
+end
+
+function rkpr(δ)
+    Δ1 = -δ
+    Δ2 = -(1 - δ)/(1 + δ)
+    return cubic_pure_zc(Δ1,Δ2)
 end
 
 function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
@@ -184,9 +191,7 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
     a = model.params.a
     b = model.params.b
     c = model.params.c
-    @show _Vc.ismissingvalues
-    @show c.ismissingvalues
-    prob = Roots.ZeroProblem(__rkpr_f0_δ,zero(eltype(c)))
+    prob = Roots.ZeroProblem(__rkpr_f0_δ,0.41*oneunit(eltype(c))) #TODO: find a more stable way to solve this
     for i in @comps
         pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
         if !_Vc.ismissingvalues[i] && c.ismissingvalues[i]
@@ -205,8 +210,8 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
         else
             throw(MissingException("RKPR: Vc or c needs to be specified."))
         end
-        Δ2 = δ
-        Δ1 = ((1 - δ)/(1 + δ))
+        Δ1 = -δ
+        Δ2 = -(1 - δ)/(1 + δ)
         Ωa,Ωb = ab_consts(Δ1,Δ2)
         a[i] = Ωa*R̄^2*Tci^2/pci
         b[i] = Ωb*R̄*Tci/pci

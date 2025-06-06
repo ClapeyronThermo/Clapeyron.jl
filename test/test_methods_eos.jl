@@ -316,7 +316,7 @@ GC.gc()
         Tc,Pc,Vc = Clapeyron.crit_pure(system)
         @test Tc == system.params.Tc.values[1]
         @test Pc == system.params.Pc.values[1]
-        @test Vc == system.params.Vc.values[1]
+        @test pressure(system,Vc,Tc) ≈ Pc
     end
 end
 
@@ -331,8 +331,7 @@ end
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 2397.1315826665273 rtol = 1E-6
         Tc,Pc,Vc = Clapeyron.crit_pure(system)
         @test Tc == system.params.Tc.values[1]
-        @test Pc == system.params.Pc.values[1]
-        @test Vc == system.params.Vc.values[1]
+        @test pressure(system,Vc,Tc) ≈ Pc
     end
 end
 
@@ -350,10 +349,11 @@ end
 
 @testset "RKPR, single component" begin
     system = RKPR(["methane"])
-    vc = volume(system,system.params.Pc[1],system.params.Tc[1]) #vc calculated via cubic_poly
-    crit = crit_pure(system) #vc calculated via cubic_pure_zc
-    @test vc ≈ crit[3] rtol = 1e-4
-    @test vc/system.params.Vc[1] ≈ 1.168 rtol = 1e-4 #if Zc_exp < 0.29, this should hold, by definition
+    vc_vol = volume(system,system.params.Pc[1],system.params.Tc[1]) #vc calculated via cubic_poly
+    Tc,Pc,Vc = crit_pure(system) #vc calculated via cubic_pure_zc
+    @test vc_vol ≈ Vc rtol = 1e-4
+    @test vc_vol/system.params.Vc[1] ≈ 1.168 rtol = 1e-4 #if Zc_exp < 0.29, this should hold, by definition
+    @test Vc/system.params.Vc[1] ≈ 1.168 rtol = 1e-4 #if Zc_exp < 0.29, this should hold, by definition
 end
 
 @testset "EPPR78, single component" begin

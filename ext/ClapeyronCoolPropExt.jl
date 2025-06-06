@@ -403,7 +403,7 @@ end
 function eval_property(model,result,z,key::Parameters)
     igas_constant == key && return Clapeyron.Rgas(model)
     imolar_mass == key && return Clapeyron.molecular_weight(model,z)
-    iacentric_factor == key && return Clapeyron.acentricfactor(model)
+    iacentric_factor == key && return Clapeyron.acentric_factor(model)
     irhomolar_reducing == key && return property_not_implemented_error(key)
     irhomolar_critical == key && return sum(z)/Clapeyron.crit_pure(model)[3]
     iT_reducing == key && return property_not_implemented_error(key)

@@ -200,7 +200,7 @@ function p_scale(model::KUModel,z)
 end
 
 function x0_crit_pure(model::KUModel)
-    lb_v = lb_volume(model)
+    lb_v = lb_volume(model,model.params.Tc[1],SA[1.0])
     vc = model.params.Vc.values[1]
     (1.1, log10(vc))
 end

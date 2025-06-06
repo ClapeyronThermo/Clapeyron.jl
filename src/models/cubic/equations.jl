@@ -132,7 +132,7 @@ end
 
 function cubic_poly(model::DeltaCubicModel,p,T,z)
     a,b,c = cubic_ab(model,p,T,z)
-    RT⁻¹ = 1/(R̄*T)
+    RT⁻¹ = 1/(Rgas(model)*T)
     A = a*p*RT⁻¹*RT⁻¹
     B = b*p*RT⁻¹
     Δ1,Δ2 = cubic_Δ(model,z)
@@ -145,23 +145,32 @@ function cubic_poly(model::DeltaCubicModel,p,T,z)
     return (k₀,k₁,k₂,k₃),c
 end
 
-
-function cubic_p(model::DeltaCubicModel, V, T, z,_data = @f(data))
-    Δ1,Δ2 = cubic_Δ(model,z)
+function cubic_p(model::DeltaCubicModel, V, T, z,_data = @f(data),Δ = cubic_Δ(model,z))
+    Δ1,Δ2 = Δ
     n,a,b,c = _data
     v = V/n+c
-    p = R̄*T/(v-b) - a/((v-Δ1*b)*(v-Δ2*b))
+    p = Rgas(model)*T/(v-b) - a/((v-Δ1*b)*(v-Δ2*b))
     return p
 end
 
+function cubic_pure_zc(model::DeltaCubicModel)
+    Tc = model.params.Tc[1]
+    Pc = model.params.Pc[1]
+    b = lb_volume(model,Tc,SA[1.0])
+    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
+    B = b*Pc/(Rgas(model)*Tc)
+    return (1 + (Δ1 + Δ2 + 1)*B)/3 #Pc
+end
+
+function cubic_pure_zc(model::CubicModel)
+    Tc = model.params.Tc[1]
+    Pc = model.params.Pc[1]
+    return volume(model,Pc,Tc,SA[1.0])
+end
+#=
 function cubic_pure_zc(model::ABCubicModel)
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
     return cubic_pure_zc(Δ1,Δ2)
-end
-
-function cubic_pure_zc(model::ABCCubicModel)
-    Tc,Pc,Vc = crit_pure(model)
-    return Pc*Vc/(Rgas(model)*Tc)
 end
 
 function cubic_pure_zc(Δ1::Number, Δ2::Number)
@@ -172,7 +181,7 @@ function cubic_pure_zc(Δ1::Number, Δ2::Number)
     ζc = (t1 + t2 + 1.0)
     x1 = (1.0 + Δ1 + Δ2)
     return ζc/(3.0*ζc - x1)
-end
+end =#
 
 function second_virial_coefficient_impl(model::CubicModel,T,z = SA[1.0])
     a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T,z)
@@ -180,20 +189,24 @@ function second_virial_coefficient_impl(model::CubicModel,T,z = SA[1.0])
 end
 
 function lb_volume(model::CubicModel,T,z)
-    return cubic_lb_volume(model,T,z,model.mixing)
+    V = 1e-5
+    c = @f(translation, model.translation)
+    c̄ = dot(z, c) #result here should also be in m3
+    b̄ = cubic_lb_volume(model,T,z,model.mixing)
+    return b̄ - c̄
 end
 
 #some cubic mixing rules allow for T-dependent b.
 #the default case is assume T-independency.
+#the translation is added at the level of lb_volume
+cubic_lb_volume(model,T,z) = cubic_lb_volume(model, T, z, model.mixing)
+
 function cubic_lb_volume(model, T, z, mixing)
     V = 1e-5
     n = sum(z)
     invn = one(n) / n
     b = model.params.b.values
-    c = @f(translation, model.translation)
     b̄ = dot(z, Symmetric(b), z) * invn #b has m3/mol units, result should have m3 units
-    c̄ = dot(z, c) #result here should also be in m3
-    return b̄ - c̄
 end
 #dont use αa, just a, to avoid temperature dependence
 function T_scale(model::CubicModel, z)
@@ -213,7 +226,8 @@ function p_scale(model::CubicModel, z)
 end
 
 function x0_crit_pure(model::CubicModel)
-    lb_v = lb_volume(model)
+    Tc = model.params.Tc.values[1]
+    lb_v = lb_volume(model,Tc,SA[1.0])    
     (1.0, log10(lb_v / 0.3))
 end
 
@@ -226,16 +240,53 @@ function crit_pure(model::CubicModel)
     return (Tc,Pc,Vc)
 end
 
-#optimization for A-B cubic models.
-function crit_pure(model::ABCubicModel)
+function crit_pure(model::DeltaCubicModel)
     single_component_check(crit_pure,model)
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
-    Zc = cubic_pure_zc(model)
-    Vc0 = Zc*Rgas(model)*Tc/Pc
+    b = cubic_lb_volume(model,Tc,SA[1.0])
+    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
+    RT = Rgas(model)*Tc
+    RTp = RT/Pc
+    Vc0 = (RTp + (Δ1 + Δ2 + 1)*b)/3
     c = translation(model,Vc0,Tc,SA[1.0])
     Vc = Vc0 - c[1]
-    return (Tc,Pc,Vc)
+    #we know that in AB-cubics, the critical point is already determined.
+    model isa ABCubicModel && return (Tc,Pc,Vc)
+
+    #for a general cubic model, we check if the critical pressure corresponds to the calculated pressure
+    a = model.params.a[1,1]
+    Pc_calculated = RT/(Vc0-b) - a/((Vc0-Δ1*b)*(Vc0-Δ2*b))
+    Pc_calculated ≈ Pc && return (Tc,Pc,Vc)
+
+    #we failed. that means Pc is not the actual critical pressure. iterate (around Tc) and found Vc
+    (Tc1,Pc1,Vc1) = __crit_pure_Δ(Tc,Vc,Rgas(model),a,b,Δ1,Δ2)
+    return (Tc1,Pc1,Vc1 - c[1])
+end
+
+#given fixed Tc, calculate Vc.
+function __crit_pure_Δ(T,v0,R,a,b,Δ1,Δ2)
+    f(_v) = __crit_pure_Δ_obj(T,_v,R,a,b,Δ1,Δ2)
+    prob = Roots.ZeroProblem(f,v0)
+    v = Roots.solve(prob,Roots.Newton())
+    poly = (v - Δ1*b)*(v - Δ2*b)
+    p = R*T/(v - b) - a/poly
+    return (T,p,v)
+end
+
+
+function __crit_pure_Δ_obj(T,v,R,a,b,Δ1,Δ2)
+    RT = R*T
+    poly = (v - Δ1*b)*(v - Δ2*b)
+    bb = -b*(Δ1 + Δ2)
+    aRT = a/RT
+    dpdv_scale = v*v/RT
+    d2pdv2_scale = dpdv_scale*v
+    dpoly = (-b*(Δ1 + Δ2) + 2*v)
+    dpdv = -RT/(v - b)^2 + a*dpoly/poly/poly
+    d2pdv2 = 2RT/(v - b)^3 - 2a*(dpoly*dpoly/poly - 1)/(poly*poly)
+    f = dpdv*dpdv_scale
+    return dpdv*dpdv_scale,dpdv/d2pdv2
 end
 
 function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)

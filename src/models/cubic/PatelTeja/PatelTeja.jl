@@ -169,8 +169,8 @@ function c_premixing(model::PatelTejaModel)
 end
 
 function cubic_Δ(model::PatelTejaModel,z)
-    b = diagvalues(model.params.b)
-    c = diagvalues(model.params.c)
+    b = diagvalues(model.params.b.values)
+    c = diagvalues(model.params.c.values)
     z⁻¹ = sum(z)^-1
     b̄ = dot(b,z)*z⁻¹
     c̄ = dot(c,z)*z⁻¹

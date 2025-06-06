@@ -16,6 +16,8 @@ __is_implace(x::Number) = false
 __is_implace(x::Array) = true
 __is_implace(x::MVector) = true
 __is_implace(x::SVector) = false
+__is_implace(x::StaticArrays.SizedVector) = true
+
 #__is_implace(x::AbstractVector) = ArrayInterface.can_setindex(x)
 
 """
