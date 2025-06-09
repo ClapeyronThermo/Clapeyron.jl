@@ -38,7 +38,7 @@ function fast_build_alpha(::Type{T}) where T <: AlphaModel
 end
 
 function __ignored_crit_params(alpha)
-    if can_build_alpha_w(alpha)
+    if fast_build_alpha(alpha)
         return ["Vc"]
     else
         return ["Vc","acentricfactor"]
