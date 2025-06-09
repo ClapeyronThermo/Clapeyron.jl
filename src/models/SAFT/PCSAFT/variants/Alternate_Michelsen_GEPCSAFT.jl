@@ -1,8 +1,8 @@
 
-abstract type AdvGEPCSAFTModel <: PCSAFTModel end
+abstract type AltAdvGEPCSAFTModel <: PCSAFTModel end
 
 
-struct AdvGEPCSAFT{I <: IdealModel,T,γ} <: AdvGEPCSAFTModel
+struct AltAdvGEPCSAFT{I <: IdealModel,T,γ} <: AltAdvGEPCSAFTModel
     components::Array{String,1}
     sites::SiteParam
     activity::γ
@@ -13,9 +13,9 @@ struct AdvGEPCSAFT{I <: IdealModel,T,γ} <: AdvGEPCSAFTModel
 end
 
 """
-    AdvGEPCSAFT <: SAFTModel
+    AltAdvGEPCSAFT <: SAFTModel
 
-    AdvGEPCSAFT(components;
+    AltAdvGEPCSAFT(components;
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
@@ -49,10 +49,10 @@ end
 Perturbed-Chain SAFT (PC-SAFT), with Gᴱ mixing rule - using the Michelsen (0 pressure) limit.
 
 """
-AdvGEPCSAFT
+AltAdvGEPCSAFT
 
-export AdvGEPCSAFT
-function AdvGEPCSAFT(components;
+export AltAdvGEPCSAFT
+function AltAdvGEPCSAFT(components;
     idealmodel = BasicIdeal,
     activity = UNIFAC,
     userlocations = String[],
@@ -78,27 +78,29 @@ function AdvGEPCSAFT(components;
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     references = String["10.1021/acs.iecr.2c03464"]
-    model = AdvGEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
+    model = AltAdvGEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
 
-function _pcsaft(model::AdvGEPCSAFT{I,T}) where {I,T}
+function _pcsaft(model::AltAdvGEPCSAFT{I,T}) where {I,T}
     return PCSAFT{I,T}(model.components,model.sites,model.params,model.idealmodel,model.assoc_options,model.references)
 end
 
-function m2ϵσ3(model::AdvGEPCSAFTModel, V, T, z, _data=@f(data))
+function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
 
     function q_i(α, b)
-        c = [2.4943621118539628*(log(b))^2 + 317.1749262783832*log(b) + 10067.759452498541, 8.066923060464152*(log(b))^2 + 1065.837604157669*log(b) + 35238.98020488654]
-        return c[1]*α + c[2]
+        c = [0.16825491455291727, 10.296455569712531, 1.2476994961006087, 79.52567954035581, -1.5554400906899912, -100.34856564780112]
+        (c[1]*log(b) + c[2])*α^2 + (c[3]*log(b) + c[4])*α + c[5]*log(b) + c[6]
     end
 
     function α_mix(q̄,b̄)
-        c = [2.4943621118539628*(log(b̄))^2 + 317.1749262783832*log(b̄) + 10067.759452498541, 8.066923060464152*(log(b̄))^2 + 1065.837604157669*log(b̄) + 35238.98020488654]
-        # We have to solve the equation q(α, b) = q̄ 
-        # where q(α, b) = c[1]*α + c[2]
-        return (q̄ - c[2])/c[1]
+        c = [0.16825491455291727, 10.296455569712531, 1.2476994961006087, 79.52567954035581, -1.5554400906899912, -100.34856564780112]
+        A = (c[1]*log(b̄) + c[2])
+        B = (c[3]*log(b̄) + c[4])
+        C = c[5]*log(b̄) + c[6] - q̄
+        # Solve the quadratic equation A*α^2 + B*α + C = 0
+        return (-B-sqrt(B^2 - 4*A*C))/(2*A)
     end
 
     di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
@@ -136,14 +138,9 @@ function m2ϵσ3(model::AdvGEPCSAFTModel, V, T, z, _data=@f(data))
     m²σ³,b̄ = m²σ³/Σz,b̄/Σz
     A, B = A/Σz, B/Σz
     gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T*Σz)
-    
-    q̄ = gₑ + log(b̄) - B +  A
+    q̄ = gₑ + log(b̄)-B +  A
     ᾱ = α_mix(q̄, b̄)
-    # println("g_E/RT = ", gₑ)
-    # println("log( b̄ ) = ", log(b̄))
-    # println("B = ", B)
-    # println("A = ", A)
-    # println("q̄ = ", q̄)
+
     m2ϵσ3₁ = ᾱ*m²σ³/m̄
     m2ϵσ3₂ = m2ϵσ3₁*m2ϵσ3₁/m²σ³
 
