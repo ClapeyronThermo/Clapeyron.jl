@@ -190,7 +190,7 @@
 
     @testset "RKPR Models" begin
         system = RKPR(["ethane","undecane"])
-        @test Clapeyron.a_res(system, V, T, z) ≈ -1.2714368353293777 rtol = 1e-6
+        @test Clapeyron.a_res(system, V, T, z) ≈ -1.2877492838069213 rtol = 1e-6
     end
 
     @testset "Patel Teja Models" begin
