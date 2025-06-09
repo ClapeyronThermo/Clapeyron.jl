@@ -62,7 +62,7 @@ function init_alphamodel(alpha,components,params,userlocations = String[],verbos
         if can_build_alpha_w(alpha) && w !== nothing && isempty(userlocations)
             param = SimpleAlphaParam(w)
             return alpha(format_components(components),param,default_references(typeof(alpha)))
-        elseif can_build_alpha_cpa(alpha)  && w !== nothing && isempty(userlocations)
+        elseif can_build_alpha_cpa(alpha)  && c1 !== nothing && isempty(userlocations)
             param = CPAAlphaParam(c1)
             return alpha(format_components(components),param,default_references(typeof(alpha)))
         end
@@ -85,4 +85,5 @@ include("Twu.jl")
 include("MT.jl")
 include("KUAlpha.jl")
 include("RKPRAlpha.jl")
+include("Leibovici.jl")
 
