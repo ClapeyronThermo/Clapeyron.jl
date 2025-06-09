@@ -1,8 +1,6 @@
 
 abstract type AltAdvGEPCSAFTModel <: PCSAFTModel end
-stripdual(x) = x
-stripdual(x::ForwardDiff.Dual) = stripdual(ForwardDiff.value(x))
-stripdual(xs::AbstractArray) = map(stripdual, xs)
+
 
 struct AltAdvGEPCSAFT{I <: IdealModel,T,γ} <: AltAdvGEPCSAFTModel
     components::Array{String,1}
@@ -90,14 +88,14 @@ function _pcsaft(model::AltAdvGEPCSAFT{I,T}) where {I,T}
 end
 
 function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
-    
+
     function q_i(α, b)
-        c = [0.1233, 7.4616, 1.3199, 84.1024, -1.7074, -110.3117]
+        c = [0.16825491455291727, 10.296455569712531, 1.2476994961006087, 79.52567954035581, -1.5554400906899912, -100.34856564780112]
         (c[1]*log(b) + c[2])*α^2 + (c[3]*log(b) + c[4])*α + c[5]*log(b) + c[6]
     end
 
     function α_mix(q̄,b̄)
-        c = [0.1233, 7.4616, 1.3199, 84.1024, -1.7074, -110.3117]
+        c = [0.16825491455291727, 10.296455569712531, 1.2476994961006087, 79.52567954035581, -1.5554400906899912, -100.34856564780112]
         A = (c[1]*log(b̄) + c[2])
         B = (c[3]*log(b̄) + c[4])
         C = c[5]*log(b̄) + c[6] - q̄
@@ -139,11 +137,7 @@ function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
     end
     m²σ³,b̄ = m²σ³/Σz,b̄/Σz
     A, B = A/Σz, B/Σz
-    zval = stripdual(z)
-    Tval = stripdual(T)
-    Σzval = sum(zval)
-    p_sat = bubble_pressure(model.activity, Tval, zval)[1]
-    gₑ = excess_gibbs_free_energy(model.activity,p_sat,Tval,zval)/(R̄*Tval*Σzval)
+    gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T*Σz)
     q̄ = gₑ + log(b̄)-B +  A
     ᾱ = α_mix(q̄, b̄)
 
