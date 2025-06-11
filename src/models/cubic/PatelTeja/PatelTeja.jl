@@ -13,10 +13,17 @@ end
 function transform_params(::Type{PatelTejaParam},params,components)
     n = length(components)
     transform_params(ABCubicParam,params,components)
-    transform_params(ABCCubicParam,params,components)
-    Vc = params["Vc"]
     Tc = params["Tc"]
     Pc = params["Pc"]
+    c = get!(params,"c") do
+        SingleParam("c",components,zeros(Base.promote_eltype(Pc,Tc),n),fill(true,n))
+    end
+    Vc = params["Vc"]
+
+
+    Vc = get!(params,"Vc") do
+        SingleParam("Vc",components,zeros(Base.promote_eltype(Pc,Tc),n),fill(true,n))
+    end
     ω = get(params,"acentricfactor",nothing)
     if any(Vc.ismissingvalues)
         isnothing(ω) && throw(MissingException("PatelTeja: cannot estimate Vc: missing acentricfactor parameter."))
@@ -183,9 +190,9 @@ function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
         pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
         Zc = pci * Vci / (R̄ * Tci)        
         poly = (-Zc^3,3Zc^2,2-3*Zc,1.0)
-        _,Ωb1,Ωb2,Ωb3 = real_roots3(poly)
+        _,Ωb1,Ωb2,Ωb3 = Solvers.real_roots3(poly)
         Ωb = max(Ωb1,Ωb2,Ωb3)
-        Ωa = 3*Zc^2 + 3*(1 - 2*Zc)*Ωb + Ωb^2 + 1 - 3*_Zc
+        Ωa = 3*Zc^2 + 3*(1 - 2*Zc)*Ωb + Ωb^2 + 1 - 3*Zc
         a[i] = Ωa*R̄^2*Tci^2/pci
         b[i] = Ωb*R̄*Tci/pci
     end

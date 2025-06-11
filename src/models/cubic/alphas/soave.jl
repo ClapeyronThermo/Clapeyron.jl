@@ -1,4 +1,4 @@
-abstract type GeneralizedSuaveAlphaModel <: AlphaModel
+abstract type GeneralizedSuaveAlphaModel <: AlphaModel end
 
 abstract type SoaveAlphaModel <: GeneralizedSuaveAlphaModel end
 

@@ -644,6 +644,7 @@ function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B)
     vl = volume_from_spinodal(ps_mid,poly_l,vsl_lb,0.5*(vsl_lb + vsl) - vsl_lb)
     if psl < 0
         vv = volume_virial(B,ps_mid,T)
+        isnan(vv) && (vv = Rgas(model)*T/ps_mid)
         return ps_mid,vl,vv
     end
     psv_ub,dpsv_ub,d2psv_ub = Solvers.f∂f∂2f(p,vsv_ub)

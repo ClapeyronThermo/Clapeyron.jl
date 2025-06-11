@@ -16,8 +16,8 @@ function transform_params(::Type{RKPRParam},params,components)
     Tc = params["Tc"]
     Pc = params["Pc"]
     Vc = get(params,"Vc",1.0)
-    c = get!(params,"c") do
-        SingleParam("c",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n),fill(true,n))
+    delta = get!(params,"delta") do
+        SingleParam("delta",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n),fill(true,n))
     end
     return params
 end
@@ -194,7 +194,7 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
     for i in @comps
         pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
         δ = delta[i]
-        Δ1 = -delta[i]
+        Δ1 = -δ
         Δ2 = -(1 - δ)/(1 + δ)
         Ωa,Ωb = ab_consts(Δ1,Δ2)
         a[i] = Ωa*R̄^2*Tci^2/pci
