@@ -3,7 +3,7 @@ abstract type RKPRModel <: ABCubicModel end
 struct RKPRParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}
-    c::SingleParam{Float64}
+    delta::SingleParam{Float64}
     Tc::SingleParam{Float64}
     Pc::SingleParam{Float64}
     Vc::SingleParam{Float64}
@@ -54,7 +54,7 @@ export RKPR
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Vc`: Single Parameter (`Float64`) (optional) - Critical Volume `[m3/mol]`
-- `c`: Single Parameter (`Float64`) (optional) - constant parameter (no units)
+- `delta`: Single Parameter (`Float64`) (optional) - constant parameter (no units)
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `k`: Pair Parameter (`Float64`) (optional)
 - `l`: Pair Parameter (`Float64`) (optional)
@@ -66,7 +66,7 @@ export RKPR
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `a`: Pair Parameter (`Float64`)
 - `b`: Pair Parameter (`Float64`)
-- `c`: Single Parameter (`Float64`) - constant parameter (no units)
+- `delta`: Single Parameter (`Float64`) - constant parameter (no units)
 
 ## Input models
 - `idealmodel`: Ideal Model
@@ -190,27 +190,11 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
     _Vc = model.params.Vc
     a = model.params.a
     b = model.params.b
-    c = model.params.c
-    prob = Roots.ZeroProblem(__rkpr_f0_δ,0.41*oneunit(eltype(c))) #TODO: find a more stable way to solve this
+    delta = model.params.delta
     for i in @comps
         pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
-        if !_Vc.ismissingvalues[i] && c.ismissingvalues[i]
-            Zci = pci * Vci / (R̄ * Tci)
-            #Roots.find_zero(x -> Clapeyron.__rkpr_f0_δ(sqrt(2) - 1,1.168*x),0.29)
-            #0.2897160510687658
-            if Zci > 0.2897160510687658
-                δ = sqrt(2) - 1
-            else
-                Zci_eos = 1.168*Zci
-                δ = Roots.solve(prob,Roots.Order0(),Zci_eos)
-            end
-            c[i] = δ
-        elseif !c.ismissingvalues[i]
-            δ = c[i]
-        else
-            throw(MissingException("RKPR: Vc or c needs to be specified."))
-        end
-        Δ1 = -δ
+        δ = delta[i]
+        Δ1 = -delta[i]
         Δ2 = -(1 - δ)/(1 + δ)
         Ωa,Ωb = ab_consts(Δ1,Δ2)
         a[i] = Ωa*R̄^2*Tci^2/pci
@@ -221,16 +205,41 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
     return a,b
 end
 
-#premixing of c is done at ab_premixing level
-c_premixing(model::RKPRModel) = model.params.c
+function c_premixing(model::RKPRModel)
+    _Tc = model.params.Tc
+    _pc = model.params.Pc
+    _Vc = model.params.Vc
+    c = model.params.delta
+    prob = Roots.ZeroProblem(__rkpr_f0_δ,0.41*oneunit(eltype(c))) #TODO: find a more stable way to solve this
+    for i in @comps
+        pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
+        if !_Vc.ismissingvalues[i] && delta.ismissingvalues[i]
+            Zci = pci * Vci / (R̄ * Tci)
+            #Roots.find_zero(x -> Clapeyron.__rkpr_f0_δ(sqrt(2) - 1,1.168*x),0.29)
+            #0.2897160510687658
+            if Zci > 0.2897160510687658
+                δ = sqrt(2) - 1
+            else
+                Zci_eos = 1.168*Zci
+                δ = Roots.solve(prob,Roots.Order0(),Zci_eos)
+            end
+            delta[i] = δ
+        elseif !delta.ismissingvalues[i]
+            
+        else
+            throw(MissingException("RKPR: Vc or delta needs to be specified."))
+        end
+    end
+    return c
+end
 
 function cubic_Δ(model::RKPRModel,z)
-    c = diagvalues(model.params.c)
+    δ = diagvalues(model.params.delta)
     z⁻¹ = sum(z)^-1
     Δ1 = zero(eltype(z))
     Δ2 = zero(Δ1)
     for i in @comps
-        δi = c[i]
+        δi = δ[i]
         zi = z[i]
         Δ2 += zi*δi
         Δ1 += z[i]*((1 - δi)/(1 + δi))

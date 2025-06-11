@@ -64,7 +64,7 @@ function recombine_impl!(model::CubicModel)
     recombine_cubic!(model)
 end
 
-function c_premixing end
+c_premixing(model) = nothing
 
 function cubic_ab(model::CubicModel,V,T,z=SA[1.0])
     a = model.params.a.values
