@@ -209,8 +209,8 @@ function c_premixing(model::RKPRModel)
     _Tc = model.params.Tc
     _pc = model.params.Pc
     _Vc = model.params.Vc
-    c = model.params.delta
-    prob = Roots.ZeroProblem(__rkpr_f0_δ,0.41*oneunit(eltype(c))) #TODO: find a more stable way to solve this
+    delta = model.params.delta
+    prob = Roots.ZeroProblem(__rkpr_f0_δ,0.41*oneunit(eltype(delta))) #TODO: find a more stable way to solve this
     for i in @comps
         pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
         if !_Vc.ismissingvalues[i] && delta.ismissingvalues[i]
@@ -230,7 +230,7 @@ function c_premixing(model::RKPRModel)
             throw(MissingException("RKPR: Vc or delta needs to be specified."))
         end
     end
-    return c
+    return delta
 end
 
 function cubic_Δ(model::RKPRModel,z)

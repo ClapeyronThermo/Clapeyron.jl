@@ -50,7 +50,7 @@ default_locations(::Type{PTVAlpha}) = critical_data()
     Pc = model.params.Pc.values[i]
     Vc = model.params.Vc.values[i]
     Zc = Vc*Pc/(R̄*Tc)
-    coeff = (0.46283,3.58230*Zci,8.19417*Zci^2)
+    coeff = (0.46283,3.58230,8.19417)
     ω = alpha_model.params.acentricfactor.values[i]
-    return evalpoly(ω,coeff)
+    return evalpoly(ω*Zc,coeff)
 end
