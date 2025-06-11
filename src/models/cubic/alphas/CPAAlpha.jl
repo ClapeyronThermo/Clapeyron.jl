@@ -46,15 +46,8 @@ alpha = CPAAlpha(["water","carbon dioxide"];userlocations = (;c1 = [0.67,0.76]))
 CPAAlpha
 default_locations(::Type{CPAAlpha}) = ["SAFT/CPA/CPA_like.csv"]
 
-function α_function(model::CubicModel,V,T,z,alpha_model::CPAAlphaModel)
-    Tc = model.params.Tc.values
-    c1  = alpha_model.params.c1.values
-    α = zeros(typeof(1.0*T),length(Tc))
-    for i in @comps
-        Tr = T/Tc[i]
-        α[i] = (1+c1[i]*(1-√(Tr)))^2
-    end
-    return α
+@inline function α_m(model::CubicModel,alpha_model::CPAAlphaModel,i)
+    return alpha_model.params.c1.values[i]
 end
 
 const sCPAAlphaModel = CPAAlphaModel

@@ -1,4 +1,4 @@
-abstract type PTVAlphaModel <: AlphaModel end
+abstract type PTVAlphaModel <: GeneralizedSuaveAlphaModel end
 
 const PTVAlphaParam = SimpleAlphaParam
 
@@ -45,33 +45,12 @@ alpha = PTVAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-
 PTVAlpha
 default_locations(::Type{PTVAlpha}) = critical_data()
 
-function α_function(model::CubicModel,V,T,z,alpha_model::PTVAlphaModel)
-    Tc = model.params.Tc.values
-    Pc = model.params.Pc.values
-    Vc = model.params.Vc.values
-    Zc = @. Vc*Pc/(R̄*Tc)
-    ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(1.0*T),length(Tc))
-    for i in @comps
-        Zci = Vc[i]*Pc[i]/(R̄*Tc[i])
-        coeff = (0.46283,3.58230*Zci,8.19417*Zci^2)
-        ωi = ω[i]
-        Tr = T/Tc[i]
-        m = evalpoly(ωi,coeff)
-        α[i] = (1+m*(1-√(Tr)))^2
-    end
-    return α
-end
-
-function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::PTVAlphaModel)
-    Tc = model.params.Tc.values[1]
-    Pc = model.params.Pc.values[1]
-    Vc = model.params.Vc.values[1]
+@inline function α_m(model::PTVModel,alpha_model::PTVAlphaModel,i)
+    Tc = model.params.Tc.values[i]
+    Pc = model.params.Pc.values[i]
+    Vc = model.params.Vc.values[i]
     Zc = Vc*Pc/(R̄*Tc)
-    ω  = alpha_model.params.acentricfactor.values[1]
-    coeff = (0.46283,3.58230*Zc,8.19417*Zc^2)
-    Tr = T/Tc
-    m = evalpoly(ω,coeff)
-    α  = (1+m*(1-√(Tr)))^2
-    return α
+    coeff = (0.46283,3.58230*Zci,8.19417*Zci^2)
+    ω = alpha_model.params.acentricfactor.values[i]
+    return evalpoly(ω,coeff)
 end

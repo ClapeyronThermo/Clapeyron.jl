@@ -473,6 +473,14 @@ Base.@assume_effects :foldable function ab_consts(Δ1::Number, Δ2::Number)
     return (Ωa, Ωb)
 end
 
+#leivobici constants
+function cubic_K(model,z)
+    Δ1,Δ2 = cubic_Δ(model,z)
+    u = - Δ1 - Δ2
+    w = Δ1*Δ2
+    return (1 + u + w)/(u + 2)^2
+end
+
 has_fast_crit_pure(model::DeltaCubicModel) = true
 
 function x0_saturation_temperature(model::ABCubicModel,p,::Nothing)
@@ -595,11 +603,12 @@ end
 function transform_params(::Type{ABCCubicParam},params,components)
     n = length(components)
     transform_params(ABCubicParam,params,components)
-    Vc = get!(params,"Vc") do
-        SingleParam("Vc",components)
-    end
     Tc = params["Tc"]
     Pc = params["Pc"]
+    Vc = get!(params,"Vc") do
+        SingleParam("Vc",components,zeros(Base.promote_eltype(Tc,Vc),n),fill(true,n))
+    end
+
     c = get!(params,"c") do
         PairParam("c",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n))
     end

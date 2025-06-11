@@ -1,4 +1,4 @@
-abstract type LeiboviciAlphaModel <: AlphaModel end
+abstract type LeiboviciAlphaModel <: GeneralizedSuaveAlphaModel end
 
 const LeiboviciAlphaParam = SimpleAlphaParam
 
@@ -20,7 +20,16 @@ export LeiboviciAlpha
 ## Description
 
 Leibovici Cubic alpha `(α(T))` model.
-Works with almost all cubic models.
+Generalized soave model that works for all common cubic models.
+```
+αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
+Trᵢ = T/Tcᵢ
+mᵢ = ∑aᵢωᵢ^(i-1)
+aᵢ = ∑bᵢu₀^(i-1)
+u₀ = (u + 2)* √(2/(1 + u + w)) - 2
+u = - Δ1 - Δ2
+w = Δ1*Δ2
+```
 
 ## Model Construction Examples
 
@@ -40,35 +49,18 @@ alpha = LeiboviciAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-
 
 ## References
 
-1. .M. Boston, P.M. Mathias, Proceedings of the 2nd International Conference on Phase Equilibria and Fluid Properties in the Chemical Process Industries, West Berlin, March, 1980, pp. 823–849
+1. Leibovici, C. F. (1994). A unified m(ω) relation for cubic equations of state. Fluid Phase Equilibria, 101, 1–2. [doi:10.1016/0378-3812(94)02603-3](https://doi.org/10.1016/0378-3812(94)02603-3)
 
 """
 LeiboviciAlpha
 
 default_locations(::Type{LeiboviciAlpha}) = critical_data()
+default_references(::Type{LeiboviciAlpha}) = ["10.1016/0378-3812(94)02603-3"]
 
-function α_function(model::DeltaCubicModel,V,T,z,alpha_model::LeiboviciAlphaModel)
-    Tc = model.params.Tc.values
-    ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(1.0*T),length(Tc))
-    for i in @comps
-        ωi = ω[i]
-        coeff = α_m_leibovici(model,i)
-        m = evalpoly(ωi,coeff)
-        Tr = T/Tc[i]
-        α[i] = (1+m*(1-sqrt(Tr)))^2
-    end
-    return α
-end
-
-function α_function(model::DeltaCubicModel,V,T,z::SingleComp,alpha_model::LeiboviciAlphaModel)
-    Tc = model.params.Tc.values[1]
-    ω  = alpha_model.params.acentricfactor.values[1]
+@inline function α_m(model::DeltaCubicModel,alpha_model::LeiboviciAlphaModel,i)
     coeff = α_m_leibovici(model)
-    m = evalpoly(ω,coeff)
-    Tr = T/Tc
-    α  = (1+m*(1-sqrt(Tr)))^2
-    return α
+    ω = alpha_model.params.acentricfactor.values[i]
+    return evalpoly(ω,coeff)
 end
 
 function α_m_leibovici(model::DeltaCubicModel)
