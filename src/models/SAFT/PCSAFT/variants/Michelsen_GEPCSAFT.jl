@@ -90,15 +90,17 @@ end
 function m2ϵσ3(model::AdvGEPCSAFTModel, V, T, z, _data=@f(data))
 
     function q_i(α, b)
-        c = [2.4943621118539628*(log(b))^2 + 317.1749262783832*log(b) + 10067.759452498541, 8.066923060464152*(log(b))^2 + 1065.837604157669*log(b) + 35238.98020488654]
-        return c[1]*α + c[2]
+        c = [−20.26902951259874, −0.7403366013557632, 0.1169974006583398, 4.755929448762135, −2.1017686445335277]
+        α^2 + (c[1] + c[2]*log(b))*α + c[3]*(log(b))^2 + c[4]*log(b) + c[5]
     end
 
     function α_mix(q̄,b̄)
-        c = [2.4943621118539628*(log(b̄))^2 + 317.1749262783832*log(b̄) + 10067.759452498541, 8.066923060464152*(log(b̄))^2 + 1065.837604157669*log(b̄) + 35238.98020488654]
-        # We have to solve the equation q(α, b) = q̄ 
-        # where q(α, b) = c[1]*α + c[2]
-        return (q̄ - c[2])/c[1]
+        c = [−20.26902951259874, −0.7403366013557632, 0.1169974006583398, 4.755929448762135, −2.1017686445335277]
+        A = 1
+        B = (c[1] + c[2]*log(b̄))
+        C = c[3]*(log(b̄))^2 + c[4]*log(b̄) + c[5] - q̄
+        # Solve the quadratic equation A*α^2 + B*α + C = 0
+        return (-B+sqrt(B^2 - 4*A*C))/(2*A)
     end
 
     di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
@@ -136,14 +138,9 @@ function m2ϵσ3(model::AdvGEPCSAFTModel, V, T, z, _data=@f(data))
     m²σ³,b̄ = m²σ³/Σz,b̄/Σz
     A, B = A/Σz, B/Σz
     gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T*Σz)
-    
-    q̄ = gₑ + log(b̄) - B +  A
+    q̄ = gₑ + log(b̄)-B +  A
     ᾱ = α_mix(q̄, b̄)
-    # println("g_E/RT = ", gₑ)
-    # println("log( b̄ ) = ", log(b̄))
-    # println("B = ", B)
-    # println("A = ", A)
-    # println("q̄ = ", q̄)
+
     m2ϵσ3₁ = ᾱ*m²σ³/m̄
     m2ϵσ3₂ = m2ϵσ3₁*m2ϵσ3₁/m²σ³
 
