@@ -349,6 +349,18 @@ end
     (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model,pv_spin,x_spin;T0=225.,v0=vv_spin)
     @test Tl_spin_impl ≈ T_spin rtol = 1e-6
     @test Tv_spin_impl ≈ T_spin rtol = 1e-6
+
+    #test for #382: pure spinodal at low pressures
+    model2 = PCSAFT("carbon dioxide")
+    Tc,Pc,Vc = (310.27679925044134, 8.06391600653306e6, 9.976420206333288e-5)
+    T = LinRange(Tc-70,Tc-0.1,50)
+    psl = first.(spinodal_pressure.(model,T,phase = :l))
+    psv = first.(spinodal_pressure.(model,T,phase = :v))
+    psat = first.(saturation_pressure.(model,T))
+    @test all(psl .< psat)
+    @test all(psat .< psv)
+    @test issorted(psl)
+    @test issorted(psv)
 end
 
 @testset "supercritical lines" begin

@@ -454,18 +454,9 @@ function pure_spinodal_newton_bracket(model,T,v,f,dp_scale,z = SA[1.0])
     vs_old = vs*Inf
     for j in 1:25
         pj,dpj,d2pj = Solvers.f∂f∂2f(p,vs)
-        fs = dpj
         Δ = dpj/d2pj
         vs_newton = vs - Δ
-        if vlo <= vs_newton <= vhi || abs(Δ)/vs < 0.01
-            vs_old = vs
-            vs = vs_newton
-        else
-            Δ = vs_old - 0.5*(vlo + vhi)
-            vs_old = vs
-            vs = 0.5*(vlo + vhi)
-            _,fs = p∂p∂V(model,vs,T)
-        end
+        fs = dpj
         if fs*flo < 0
             vhi = vs
             fhi = fs
@@ -475,6 +466,16 @@ function pure_spinodal_newton_bracket(model,T,v,f,dp_scale,z = SA[1.0])
         else
             return vs
         end
+
+        if vlo <= vs_newton <= vhi || abs(Δ)/vs < 0.01
+            vs_old = vs
+            vs = vs_newton
+        else
+            Δ = vs_old - 0.5*(vlo + vhi)
+            vs_old = vs
+            vs = 0.5*(vlo + vhi)
+         
+        end
         if abs(Δ) < atol || abs(dp_scale*fs) < atol
             return vs
         end
@@ -483,11 +484,11 @@ function pure_spinodal_newton_bracket(model,T,v,f,dp_scale,z = SA[1.0])
     return zero(vs)/zero(vs)
 end
 
-function pure_spinodal_newton(model,T,z,v0,dp_scale)
+function pure_spinodal_newton(model,T,z,v0,dp_scale = v0*v0/(Rgas(model)*T))
     function dp(vs) #dpdrho = 0
         p(rho) = pressure(model,1/rho,T,z)
         pj,dpj,d2pj = Solvers.f∂f∂2f(p,1/vs)
-        return dpj/dp_scale,dpj/d2pj/dp_scale
+        return dpj/dp_scale,dpj/d2pj
     end
 
     prob = Roots.ZeroProblem(dp,1/v0)
@@ -514,7 +515,6 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
     #find the middle point between the liquid and vapour spinodals.
     vm = _find_vm(dpoly,v_lb,v_ub)
     fm,dfm,d2fm = Solvers.f∂f∂2f(p,vm)
-
     #find the liquid of gas spinodal using the quintic hermite interpolation.
     v_bracket_hermite = minmax(vx - v_lb,vm - v_lb)
     !(evalpoly(vx - v_lb,dpoly)*evalpoly(vm - v_lb,dpoly) < 0) && return nan
@@ -522,6 +522,7 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
     vh = Roots.solve(v_spinodal_hermite_prob,xrtol = 1e-5) + v_lb
     fh,dfh,d2fh = Solvers.f∂f∂2f(p,vh)
     unstable_not_found = dfx < 0 && dfm < 0 && dfh < 0
+
     if unstable_not_found
         if !retry
             return nan
@@ -568,7 +569,6 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
             dp_bracket= (dfm,dfx)
         end
     end
-
     pure_spinodal_newton_bracket(model,T,v_bracket,dp_bracket,dp_scale,z)
 end
 
