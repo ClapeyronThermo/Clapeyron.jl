@@ -293,7 +293,6 @@ function Pproperty_impl(model,T,prop,z,property::F,rootsolver,phase,abstol,relto
   prob = Roots.ZeroProblem(f,_1*log(p0))
 
   logp = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
-  @show logp,z
   if isnan(logp)
     return logp,:failure
   end
