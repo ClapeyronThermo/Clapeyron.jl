@@ -67,7 +67,7 @@ function transform_params(::Type{AsymmetricMixing},params)
     return params
 end
 
-function recombine_mixing!(model::MultiFluid,mixing::AsymmetricMixing,estimate)
+function recombine_mixing_reduced!(model::MultiFluid,mixing::AsymmetricMixing,estimate)
     Vc = model.params.Vc.values
     Tc = model.params.Tc.values
     n = length(model)

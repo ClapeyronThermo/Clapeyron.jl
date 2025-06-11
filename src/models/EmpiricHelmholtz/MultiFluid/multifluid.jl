@@ -123,7 +123,7 @@ function MultiFluid(components;
         end
     end
     model = MultiFluid(_components,params,pures,mixing,departure,Rgas,references)
-    recombine_mixing!(model,model.mixing,estimate_mixing)
+    recombine_mixing_reduced!(model,model.mixing,estimate_mixing)
     recombine_departure!(model,model.departure)
     set_reference_state!(model,verbose = verbose)
     return model
