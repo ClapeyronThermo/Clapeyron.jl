@@ -1,4 +1,4 @@
-abstract type CPAAlphaModel <: AlphaModel end
+abstract type CPAAlphaModel <: GeneralizedSuaveAlphaModel end
 
 #=
 struct CPAAlphaParam <: EoSParam
