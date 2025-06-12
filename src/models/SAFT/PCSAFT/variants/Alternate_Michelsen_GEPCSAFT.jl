@@ -89,24 +89,18 @@ end
 
 function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
 
-    function q_i(α, m)
-        c = [−17.119353995540894, 0.015967136231743857, −4.144762552874559, −0.2882731557448027, 0.20901473491529488, 3.3133577247796095]
-        (c[2]*m + c[2]*c[5])*α^2 + (c[1] + c[4]*m + c[4]*c[5])*α + (m^2*c[2] - m*c[3] + m*c[2]*c[5] - c[3]*c[5] + c[6])
+    function q_i(α, b, m)
+        c = [1.2568408567951958, 18.8500357205474445, 0.2568408567951958, 4.3428354083976375, 3.21234466508957, 205.67648963539912]
+        α^2 - (c[1]*m + c[2])*α + c[3]*m^2 + c[4]*m + c[5]*log(b) + c[6]
     end
 
-    function α_mix(q̄,m̄)
-        c = [−17.119353995540894, 0.015967136231743857, −4.144762552874559, −0.2882731557448027, 0.20901473491529488, 3.3133577247796095]
-        A = (c[2]*m̄ + c[2]*c[5])
-        B = (c[1] + c[4]*m̄ + c[4]*c[5])
-        C =  (m̄^2*c[2] - m̄*c[3] + m̄*c[2]*c[5] - c[3]*c[5] + c[6]) - q̄
+    function α_mix(q̄,b̄,m̄)
+        c = [1.2568408567951958, 18.8500357205474445, 0.2568408567951958, 4.3428354083976375, 3.21234466508957, 205.67648963539912]
+        A = 1
+        B = - (c[1]*m̄ + c[2])
+        C = c[3]*m̄^2 + c[4]*m̄ + c[5]*log(b̄) + c[6]- q̄
         # Solve the quadratic equation A*α^2 + B*α + C = 0
         return (-B-sqrt(B^2 - 4*A*C))/(2*A)
-    end
-
-    function q_double_prime(α, m)
-        c = [-17.119353995540894, 0.015967136231743857, -4.144762552874559,
-             -0.2882731557448027, 0.20901473491529488, 3.3133577247796095]
-        return 2 * (c[2]*m + c[2]*c[5])
     end
 
     di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
@@ -121,7 +115,7 @@ function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
 
     b = m.*di.^3
 
-    q = @. q_i(α, m)
+    q = @. q_i(α, b, m)
     # println(q)
     # println(α)
     # println(b)
@@ -130,30 +124,31 @@ function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
     Σz = sum(z)
     #Iᵢ = @f(Ii,1,_data)
     b̄ = zero(Base.promote_eltype(model,V,T,z))
-    m²σ³ = zero(b̄)
+    mσ³ = zero(b̄)
     A = zero(b̄)
     B = zero(b̄)
     @inbounds for i ∈ @comps
         mᵢ,bᵢ,σᵢ,qᵢ,zᵢ = m[i],b[i],σ[i],q[i],z[i]
         σ³ᵢ = σᵢ*σᵢ*σᵢ
-        m²σ³ += zᵢ*mᵢ*mᵢ*σ³ᵢ
+        mσ³ += zᵢ*mᵢ*σ³ᵢ
         b̄ += zᵢ*bᵢ
         A += zᵢ*qᵢ
         B += zᵢ*log(bᵢ)
     end
-    m²σ³,b̄ = m²σ³/Σz,b̄/Σz
+    mσ³,b̄ = mσ³/Σz,b̄/Σz
     A, B = A/Σz, B/Σz
     gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T*Σz)
-    q̄_init = gₑ + log(b̄)-B +  A
-    ᾱ_init = α_mix(q̄_init, m̄)
 
-    ᾱ_var = sum(z .* (α .- ᾱ_init).^2 )/Σz 
-    q̄ = q_i(ᾱ_init, m̄) + 0.5*q_double_prime(ᾱ_init, m̄)*ᾱ_var
+    q̄ = gₑ + 5*(log(b̄) - B) +  A
+    ᾱ = α_mix(q̄, b̄, m̄)
+    # println("g_E/RT = ", gₑ)
+    # println("log( b̄ ) = ", log(b̄))
+    # println("B = ", B)
+    # println("A = ", A)
+    # println("q̄ = ", q̄)
+    m2ϵσ3₁ = ᾱ*mσ³
+    m2ϵσ3₂ = ᾱ*ᾱ*mσ³/m̄
 
-    ᾱ = α_mix(q̄, m̄)
-
-    m2ϵσ3₁ = ᾱ*m²σ³/m̄
-    m2ϵσ3₂ = m2ϵσ3₁*m2ϵσ3₁/m²σ³
-
+    return m2ϵσ3₁, m2ϵσ3₂
     return m2ϵσ3₁, m2ϵσ3₂
 end

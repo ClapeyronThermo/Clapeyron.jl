@@ -1,8 +1,8 @@
 
-abstract type IntAdvGEPCSAFTModel <: PCSAFTModel end
+abstract type AltAltAdvGEPCSAFTModel <: PCSAFTModel end
 
 
-struct IntAdvGEPCSAFT{I <: IdealModel,T,γ} <: IntAdvGEPCSAFTModel
+struct AltAltAdvGEPCSAFT{I <: IdealModel,T,γ} <: AltAltAdvGEPCSAFTModel
     components::Array{String,1}
     sites::SiteParam
     activity::γ
@@ -10,13 +10,12 @@ struct IntAdvGEPCSAFT{I <: IdealModel,T,γ} <: IntAdvGEPCSAFTModel
     idealmodel::I
     assoc_options::AssocOptions
     references::Array{String,1}
-    Λ::T
 end
 
 """
-    IntAdvGEPCSAFT <: SAFTModel
+    AltAltAdvGEPCSAFT <: SAFTModel
 
-    IntAdvGEPCSAFT(components;
+    AltAltAdvGEPCSAFT(components;
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
@@ -50,10 +49,10 @@ end
 Perturbed-Chain SAFT (PC-SAFT), with Gᴱ mixing rule - using the Michelsen (0 pressure) limit.
 
 """
-IntAdvGEPCSAFT
+AltAltAdvGEPCSAFT
 
-export IntAdvGEPCSAFT
-function IntAdvGEPCSAFT(components;
+export AltAltAdvGEPCSAFT
+function AltAltAdvGEPCSAFT(components;
     idealmodel = BasicIdeal,
     activity = UNIFAC,
     userlocations = String[],
@@ -61,8 +60,7 @@ function IntAdvGEPCSAFT(components;
     activity_userlocations = String[],
     assoc_options = AssocOptions(),
     reference_state = nothing,
-    verbose = false,
-    Λ = 1.0)
+    verbose = false)
 
     params = getparams(components, ["SAFT/PCSAFT/PCSAFT_like.csv","SAFT/PCSAFT/PCSAFT_unlike.csv","SAFT/PCSAFT/PCSAFT_assoc.csv"]; userlocations = userlocations, verbose = verbose)
     sites = params["sites"]
@@ -80,16 +78,16 @@ function IntAdvGEPCSAFT(components;
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     references = String["10.1021/acs.iecr.2c03464"]
-    model = IntAdvGEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references,Λ)
+    model = AltAltAdvGEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
 
-function _pcsaft(model::IntAdvGEPCSAFT{I,T}) where {I,T}
+function _pcsaft(model::AltAltAdvGEPCSAFT{I,T}) where {I,T}
     return PCSAFT{I,T}(model.components,model.sites,model.params,model.idealmodel,model.assoc_options,model.references)
 end
 
-function m2ϵσ3(model::IntAdvGEPCSAFTModel, V, T, z, _data=@f(data))
+function m2ϵσ3(model::AltAltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
 
     function q_i(α, b)
         c = [2.4943621118539628*(log(b))^2 + 317.1749262783832*log(b) + 10067.759452498541, 8.066923060464152*(log(b))^2 + 1065.837604157669*log(b) + 35238.98020488654]
@@ -124,30 +122,30 @@ function m2ϵσ3(model::IntAdvGEPCSAFTModel, V, T, z, _data=@f(data))
     Σz = sum(z)
     #Iᵢ = @f(Ii,1,_data)
     b̄ = zero(Base.promote_eltype(model,V,T,z))
-    m²σ³ = zero(b̄)
+    mσ³ = zero(b̄)
     A = zero(b̄)
     B = zero(b̄)
     @inbounds for i ∈ @comps
         mᵢ,bᵢ,σᵢ,qᵢ,zᵢ = m[i],b[i],σ[i],q[i],z[i]
         σ³ᵢ = σᵢ*σᵢ*σᵢ
-        m²σ³ += zᵢ*mᵢ*mᵢ*σ³ᵢ
+        mσ³ += zᵢ*mᵢ*σ³ᵢ
         b̄ += zᵢ*bᵢ
         A += zᵢ*qᵢ
         B += zᵢ*log(bᵢ)
     end
-    m²σ³,b̄ = m²σ³/Σz,b̄/Σz
+    mσ³,b̄ = mσ³/Σz,b̄/Σz
     A, B = A/Σz, B/Σz
     gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T*Σz)
-    
-    q̄ = gₑ + model.Λ*(log(b̄) - B) +  A
+
+    q̄ = gₑ + log(b̄) - B +  A
     ᾱ = α_mix(q̄, b̄)
     # println("g_E/RT = ", gₑ)
     # println("log( b̄ ) = ", log(b̄))
     # println("B = ", B)
     # println("A = ", A)
     # println("q̄ = ", q̄)
-    m2ϵσ3₁ = ᾱ*m²σ³/m̄
-    m2ϵσ3₂ = m2ϵσ3₁*m2ϵσ3₁/m²σ³
+    m2ϵσ3₁ = ᾱ*mσ³
+    m2ϵσ3₂ = ᾱ*ᾱ*mσ³/m̄
 
     return m2ϵσ3₁, m2ϵσ3₂
 end
