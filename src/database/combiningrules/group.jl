@@ -3,29 +3,33 @@ __get_group_sum_values(group::GroupParam) = group.n_flattenedgroups
 __get_group_sum_values(group::MixedGCSegmentParam) = group.values
 
 function _group_sum!(out,groups,param)
+    out_idx = linearidx(out)
     v = __get_group_sum_values(groups)
     for (i,vi) in pairs(v)
-        out[i] = dot(vi,param)
+        out[out_idx[i]] = dot(vi,param)
     end
     return out
 end
 
 function _group_sum!(out,groups,param::Number)
     v = __get_group_sum_values(groups)
+    out_idx = linearidx(out)
     for (i,vi) in pairs(v)
-        out[i] = sum(vi)*param
+        out[out_idx] = sum(vi)*param
     end
     return out
 end
 
-function group_sum!(out::SingleParameter,groups,param::SingleParameter)
+function group_sum!(out::Union{SingleParameter,PairParameter},groups,param::SingleParameter)
     _group_sum!(out.values,groups,param)
     v = __get_group_sum_values(groups)
     missingvals_comps = out.ismissingvalues
     missingvals_gc = param.ismissingvalues
     #173
     gc = length(v[1])
-    comps = length(out.values)
+    
+    out_idx = linearidx(out.values)
+    comps = length(param.values)
     for i in 1:comps
         is_missing_i = false
         vi = v[i]
@@ -34,12 +38,12 @@ function group_sum!(out::SingleParameter,groups,param::SingleParameter)
                 is_missing_i = is_missing_i | missingvals_gc[j]
             end
         end
-        missingvals_comps[i] = is_missing_i
+        missingvals_comps[out_idx[i]] = is_missing_i
     end
     return out
 end
 
-function group_sum!(out,groups,param::Nothing)
+function group_sum!(out,groups,::Nothing)
     return _group_sum!(out,groups,true)
 end
 
