@@ -9,6 +9,8 @@ struct AltAltAdvGEPCSAFT{I <: IdealModel,T,γ} <: AltAltAdvGEPCSAFTModel
     params::PCSAFTParam{T}
     idealmodel::I
     assoc_options::AssocOptions
+    Λ::T
+    cross_correction::Bool
     references::Array{String,1}
 end
 
@@ -60,6 +62,8 @@ function AltAltAdvGEPCSAFT(components;
     activity_userlocations = String[],
     assoc_options = AssocOptions(),
     reference_state = nothing,
+    Λ = 1.0,
+    cross_correction = false,
     verbose = false)
 
     params = getparams(components, ["SAFT/PCSAFT/PCSAFT_like.csv","SAFT/PCSAFT/PCSAFT_unlike.csv","SAFT/PCSAFT/PCSAFT_assoc.csv"]; userlocations = userlocations, verbose = verbose)
@@ -78,7 +82,7 @@ function AltAltAdvGEPCSAFT(components;
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     references = String["10.1021/acs.iecr.2c03464"]
-    model = AltAltAdvGEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
+    model = AltAltAdvGEPCSAFT(format_components(components), sites, init_activity, packagedparams, init_idealmodel, assoc_options, Λ, cross_correction, references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
@@ -89,16 +93,18 @@ end
 
 function m2ϵσ3(model::AltAltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
 
-    function q_i(α, b)
-        c = [2.4943621118539628*(log(b))^2 + 317.1749262783832*log(b) + 10067.759452498541, 8.066923060464152*(log(b))^2 + 1065.837604157669*log(b) + 35238.98020488654]
-        return c[1]*α + c[2]
+    function q_i(α, b, m)
+        c = [1.2568408567951958, 18.8500357205474445, 0.2568408567951958, 4.3428354083976375, 3.21234466508957, 205.67648963539912]
+        α^2 - (c[1]*m + c[2])*α + c[3]*m^2 + c[4]*m + c[5]*log(b) + c[6]
     end
 
-    function α_mix(q̄,b̄)
-        c = [2.4943621118539628*(log(b̄))^2 + 317.1749262783832*log(b̄) + 10067.759452498541, 8.066923060464152*(log(b̄))^2 + 1065.837604157669*log(b̄) + 35238.98020488654]
-        # We have to solve the equation q(α, b) = q̄ 
-        # where q(α, b) = c[1]*α + c[2]
-        return (q̄ - c[2])/c[1]
+    function α_mix(q̄,b̄,m̄)
+        c = [1.2568408567951958, 18.8500357205474445, 0.2568408567951958, 4.3428354083976375, 3.21234466508957, 205.67648963539912]
+        A = 1
+        B = - (c[1]*m̄ + c[2])
+        C = c[3]*m̄^2 + c[4]*m̄ + c[5]*log(b̄) + c[6]- q̄
+        # Solve the quadratic equation A*α^2 + B*α + C = 0
+        return (-B-sqrt(B^2 - 4*A*C))/(2*A)
     end
 
     di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
@@ -113,7 +119,7 @@ function m2ϵσ3(model::AltAltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
 
     b = m.*di.^3
 
-    q = @. q_i(α, b)
+    q = @. q_i(α, b, m)
     # println(q)
     # println(α)
     # println(b)
@@ -137,8 +143,8 @@ function m2ϵσ3(model::AltAltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
     A, B = A/Σz, B/Σz
     gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T*Σz)
 
-    q̄ = gₑ + log(b̄) - B +  A
-    ᾱ = α_mix(q̄, b̄)
+    q̄ = gₑ + model.Λ*(log(b̄) - B) +  A
+    ᾱ = α_mix(q̄, b̄, m̄)
     # println("g_E/RT = ", gₑ)
     # println("log( b̄ ) = ", log(b̄))
     # println("B = ", B)
@@ -148,4 +154,12 @@ function m2ϵσ3(model::AltAltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
     m2ϵσ3₂ = ᾱ*ᾱ*mσ³/m̄
 
     return m2ϵσ3₁, m2ϵσ3₂
+end
+
+function a_assoc(model::AltAltAdvGEPCSAFT, V, T, z)
+    if model.activity isa NRTLAssocModel
+        return zero(eltype(z))  # skip association
+    else
+        return a_assoc(_pcsaft(model), V, T, z)  # default EoS
+    end
 end
