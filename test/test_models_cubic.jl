@@ -146,6 +146,11 @@
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2542346631395425 rtol = 1e-6
         end
 
+        @testset "PR w/ LeiboviciAlpha" begin
+            system = PR(["ethane","undecane"];alpha = LeiboviciAlpha)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2480909069722526 rtol = 1e-6
+        end
+
         @testset "PR w/ RackettTranslation" begin
             system = PR(["ethane","undecane"];translation = RackettTranslation)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2453853855058576 rtol = 1e-6

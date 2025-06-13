@@ -98,6 +98,7 @@ Clapeyron.Twu88Alpha
 Clapeyron.PatelTejaAlpha
 Clapeyron.KUAlpha
 Clapeyron.RKPRAlpha
+Clapeyron.LeiboviciAlpha
 ```
 
 ## Volume Translation Models

@@ -177,6 +177,7 @@ We support the following alpha functions:
 - [`MTAlpha`](@ref): Proposed by Magoulas and Tassios, this alpha function is essentially like the regular PR alpha function only to a higher order.
   It is used within UMRPR.
 - [`Soave2019Alpha`](@ref): Updated soave correlations for `PR` and (s)`RK` models.
+- [`LeiboviciAlpha`](@ref): generalized soave model for any cubic model. Almost equivalent to `SoaveAlpha` for `PR` and `RK` models, but it can also be used by Patel-Teja, RKPR and Patel-Teja-Valderrama cubics.
 
 ## Specifying a mixing rule
 

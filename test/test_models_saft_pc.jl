@@ -91,9 +91,10 @@ end
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.86685186469097 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
         system2 = CPPCSAFT("water")
-        @test Clapeyron.a_assoc(system2,V,T,Clapeyron.SA[1.0]) ≈ -5.928187577713146 rtol = 1e-6
-  
-        
+        @test Clapeyron.a_assoc(system2,V,T,Clapeyron.SA[1.0]) ≈ -5.928187577713146 rtol = 1e-6  
+        system3 = CPPCSAFT(["butane", "propane"])
+        @test Clapeyron.a_hc(system3, V, T, z) ≈ 3.856483933013827 rtol = 1e-6
+        @test Clapeyron.a_disp(system3, V, T, z) ≈ -6.613302753897683 rtol = 1e-6
         GC.gc()
     end
     @printline
@@ -101,7 +102,7 @@ end
         system = GEPCSAFT(["propane", "methanol"])
         @test Clapeyron.a_hc(system, V, T, z) ≈ 1.6473483928460233 rtol = 1e-6
         @test Clapeyron.a_disp(system, V, T, z) ≈ -3.271039575934372 rtol = 1e-6
-        @test Clapeyron.a_assoc(system, V, T, z) ≈ -0.6066238931153598 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.9511233680313027 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
         GC.gc()
     end
