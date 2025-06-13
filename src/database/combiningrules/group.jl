@@ -3,33 +3,36 @@ __get_group_sum_values(group::GroupParam) = group.n_flattenedgroups
 __get_group_sum_values(group::MixedGCSegmentParam) = group.values
 
 function _group_sum!(out,groups,param)
-    out_idx = linearidx(out)
+    _out = SingleOrPair_values(out)
+    _param = SingleOrPair_values(param)
+    out_idx = linearidx(_out)
+    vecparam = diagvalues(param)
     v = __get_group_sum_values(groups)
     for (i,vi) in pairs(v)
-        out[out_idx[i]] = dot(vi,param)
+        _out[out_idx[i]] = dot(vi,vecparam)
     end
     return out
 end
 
 function _group_sum!(out,groups,param::Number)
+    _out = SingleOrPair_values(out)
     v = __get_group_sum_values(groups)
     out_idx = linearidx(out)
     for (i,vi) in pairs(v)
-        out[out_idx] = sum(vi)*param
+        _out[out_idx] = sum(vi)*param
     end
     return out
 end
 
 function group_sum!(out::Union{SingleParameter,PairParameter},groups,param::SingleParameter)
-    _group_sum!(out.values,groups,param)
+    _group_sum!(diagvalues(out.values),groups,param)
     v = __get_group_sum_values(groups)
     missingvals_comps = out.ismissingvalues
     missingvals_gc = param.ismissingvalues
     #173
     gc = length(v[1])
-    
     out_idx = linearidx(out.values)
-    comps = length(param.values)
+    comps = length(groups.components)
     for i in 1:comps
         is_missing_i = false
         vi = v[i]
@@ -86,6 +89,9 @@ function group_sum(groups,param::AbstractVector)
     out = similar(param,length(groups.components))
     return group_sum!(out,groups,param)
 end
+
+group_sum(groups,param::AbstractMatrix) = group_sum(groups,diagvalues(param))
+
 
 """
     group_sum(groups::GroupParam,::Nothing)
@@ -252,15 +258,17 @@ end
 
 
 function group_pairmean2(groups::GroupParameter,param::PairParam)
-    newvals = group_pairmean2!(groups,copy(param.values))
-    return PairParam(param.name,groups.components,newvals,fill(false,size(newvals)),param.sources,param.sourcecsvs)
+    l_c = length(groups.components)
+    s = ((l_c,l_c))
+    out = zeros(eltype(param.values),s)
+    group_pairmean2!(out,groups,copy(param.values))
+    return PairParam(param.name,groups.components,out,fill(false,s),param.sources,param.sourcecsvs)
 end
 
-function group_pairmean2!(groups,mat)
+function group_pairmean2!(out,groups,mat)
     l_gc = length(groups.flattenedgroups)
     l_c = length(groups.components)
     _0 = zero(eltype(mat))
-    newmat = fill(_0,(l_c,l_c))
     n = groups.n_flattenedgroups
     for i ∈ 1:l_c
         for j ∈ 1:l_c
@@ -272,8 +280,8 @@ function group_pairmean2!(groups,mat)
                     sumn += n[i][k]*n[j][l]
                 end
             end
-            newmat[i,j] = res/sumn
+            out[i,j] = res/sumn
         end
     end
-    return newmat
+    return out
 end

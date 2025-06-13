@@ -120,7 +120,7 @@ end
 
 function sPCSAFT(groups::GroupParam,
                 param::gcsPCSAFTParam,
-                sites::SiteParam = SiteParam(group.flattenedgroups);
+                sites::SiteParam = SiteParam(groups.flattenedgroups);
                 idealmodel = BasicIdeal(),
                 assoc_options = AssocOptions(),
                 k = nothing,

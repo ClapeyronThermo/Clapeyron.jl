@@ -216,7 +216,7 @@ export SAFTgammaMie,SAFTγMie
 
 SAFTVRMie(model::SAFTgammaMieModel) = model.vrmodel
 
-function SAFTVRMie(groups::GroupParam,param::SAFTgammaMieParam,sites::SiteParam = SiteParam(group.flattenedgroups);
+function SAFTVRMie(groups::GroupParam,param::SAFTgammaMieParam,sites::SiteParam = SiteParam(groups.flattenedgroups);
     idealmodel = BasicIdeal(),assoc_options = AssocOptions(),
     epsilon_mixing = :default,
     verbose = false)
