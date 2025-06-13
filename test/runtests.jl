@@ -61,10 +61,10 @@ function test_scales(model,T = 300.0)
     z3 = ones(n) .* 3 ./ n
     z7 = ones(n) .* 7 ./ n
     T0 = 300.0
-    @test lb_volume(model,T0,z3) ≈ 3*lb_volume(model,z)
-    @test lb_volume(model,T0,z7) ≈ 7*lb_volume(model,z)
-    @test T_scale(model,z3) ≈ T_scale(model,z)
-    @test p_scale(model,z3) ≈ p_scale(model,z)
+    @test Clapeyron.lb_volume(model,T0,z3) ≈ 3*Clapeyron.lb_volume(model,z)
+    @test Clapeyron.lb_volume(model,T0,z7) ≈ 7*Clapeyron.lb_volume(model,z)
+    @test Clapeyron.T_scale(model,z3) ≈ Clapeyron.T_scale(model,z)
+    @test Clapeyron.p_scale(model,z3) ≈ Clapeyron.p_scale(model,z)
 end
 
 function test_recombine(model,innermodels = nothing)
