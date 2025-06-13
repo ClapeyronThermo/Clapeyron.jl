@@ -103,7 +103,7 @@ function bmcs_hs_zero_v(model,V,T,z,_d = @f(d),m = model.params.segment.values)
 end
 
 """
-    packing_fraction(model, V, T, z, _d = @f(d), m = model.params.segment.values)
+    packing_fraction(model, V, T, z)
     packing_fraction(model,data)
 
 Calculates the packing fraction, defined as:
@@ -111,14 +111,18 @@ Calculates the packing fraction, defined as:
 π/6*N_A/v * ∑xᵢmᵢdᵢ^3
 ```
 """
-function packing_fraction(model, V, T, z, _d = @f(d),m = model.params.segment.values)
+function packing_fraction(model, V, T, z)
+    return ζ(model,V,T,z,3)
+end
+
+function packing_fraction(model, V, T, z, _d, m)
     return ζ(model,V,T,z,3,_d,m)
 end
 
 #fast getter in case you already calculated the packing fraction.
 #overload in the following way:
 # packing_fraction(model::MyModel,data::Tuple)
-packing_fraction(model,data) = nothing
+# packing_fraction(model,data) = nothing
 
 function x0_crit_pure(model::SAFTModel)
     lb_v = lb_volume(model)

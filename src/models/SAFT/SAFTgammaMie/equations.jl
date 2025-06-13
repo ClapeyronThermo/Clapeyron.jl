@@ -69,7 +69,7 @@ function data(model::SAFTgammaMieModel, V, T, z)
     return (_d_gc,X,vrdata)
 end
 
-function packing_fraction(model::SAFTgammaMieModel,_data::Tuple)
+function packing_fraction(model::SAFTgammaMieModel,_data)
     _,_,vrdata = _data
     return packing_fraction(model.vrmodel,vrdata)
 end

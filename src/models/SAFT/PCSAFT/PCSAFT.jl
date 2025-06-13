@@ -96,7 +96,7 @@ function data(model::PCSAFTModel,V,T,z)
 end
 
 #unpacks packing_fraction from data
-function packing_fraction(model::PCSAFTModel,_data::Tuple)
+function packing_fraction(model::PCSAFTModel,_data)
     _,_,_,_,η,_ = _data
     return η
 end

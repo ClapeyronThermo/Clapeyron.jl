@@ -19,7 +19,7 @@ function _group_sum!(out,groups,param::Number)
     v = __get_group_sum_values(groups)
     out_idx = linearidx(out)
     for (i,vi) in pairs(v)
-        _out[out_idx] = sum(vi)*param
+        _out[out_idx[i]] = sum(vi)*param
     end
     return out
 end

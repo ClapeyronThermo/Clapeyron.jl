@@ -105,7 +105,7 @@ function data(model::SAFTVRMieModel, V, T, z)
     return (_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x,m̄)
 end
 
-function packing_fraction(model::SAFTVRMieModel,_data::Tuple)
+function packing_fraction(model::SAFTVRMieModel,_data)
     _,_,ζi,_,_,_,m̄ = _data
     _,_,_,η = ζi
     return η
