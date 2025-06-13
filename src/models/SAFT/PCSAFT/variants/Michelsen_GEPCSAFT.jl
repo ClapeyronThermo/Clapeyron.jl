@@ -150,5 +150,4 @@ function m2ϵσ3(model::AdvGEPCSAFTModel, V, T, z, _data=@f(data))
     m2ϵσ3₂ = ᾱ*ᾱ*mσ³/m̄
 
     return m2ϵσ3₁, m2ϵσ3₂
-    return m2ϵσ3₁, m2ϵσ3₂
 end

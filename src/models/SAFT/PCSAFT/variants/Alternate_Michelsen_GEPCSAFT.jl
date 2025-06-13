@@ -9,6 +9,7 @@ struct AltAdvGEPCSAFT{I <: IdealModel,T,γ} <: AltAdvGEPCSAFTModel
     params::PCSAFTParam{T}
     idealmodel::I
     assoc_options::AssocOptions
+    Λ::T
     references::Array{String,1}
 end
 
@@ -60,6 +61,7 @@ function AltAdvGEPCSAFT(components;
     activity_userlocations = String[],
     assoc_options = AssocOptions(),
     reference_state = nothing,
+    Λ = 1.0,
     verbose = false)
 
     params = getparams(components, ["SAFT/PCSAFT/PCSAFT_like.csv","SAFT/PCSAFT/PCSAFT_unlike.csv","SAFT/PCSAFT/PCSAFT_assoc.csv"]; userlocations = userlocations, verbose = verbose)
@@ -78,7 +80,7 @@ function AltAdvGEPCSAFT(components;
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     references = String["10.1021/acs.iecr.2c03464"]
-    model = AltAdvGEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
+    model = AltAdvGEPCSAFT(format_components(components), sites, init_activity, packagedparams, init_idealmodel, assoc_options, Λ, references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
@@ -139,7 +141,7 @@ function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
     A, B = A/Σz, B/Σz
     gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T*Σz)
 
-    q̄ = gₑ + 5*(log(b̄) - B) +  A
+    q̄ = gₑ + model.Λ*(log(b̄) - B) +  A
     ᾱ = α_mix(q̄, b̄, m̄)
     # println("g_E/RT = ", gₑ)
     # println("log( b̄ ) = ", log(b̄))
@@ -149,6 +151,5 @@ function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
     m2ϵσ3₁ = ᾱ*mσ³
     m2ϵσ3₂ = ᾱ*ᾱ*mσ³/m̄
 
-    return m2ϵσ3₁, m2ϵσ3₂
     return m2ϵσ3₁, m2ϵσ3₂
 end
