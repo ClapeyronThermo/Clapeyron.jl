@@ -56,11 +56,11 @@ function test_volume(model,p,T,z = Clapeyron.SA[1.0],rtol = 1e-8)
     @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
 end
 
-function test_scales(model,T = 300.0)
+function test_scales(model,T0 = 300.0)
     n = length(model)
-    z3 = ones(n) .* 3 ./ n
-    z7 = ones(n) .* 7 ./ n
-    T0 = 300.0
+    z = ones(n) ./ n
+    z3 = 3 .* z
+    z7 = 7 .* z
     @test Clapeyron.lb_volume(model,T0,z3) ≈ 3*Clapeyron.lb_volume(model,z)
     @test Clapeyron.lb_volume(model,T0,z7) ≈ 7*Clapeyron.lb_volume(model,z)
     @test Clapeyron.T_scale(model,z3) ≈ Clapeyron.T_scale(model,z)
