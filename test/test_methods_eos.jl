@@ -43,7 +43,7 @@ end
         @test Clapeyron.volume(system, p, T,phase=:v) ≈ 0.027368884099868623 rtol = 1e-6
         #volume(SAFTgammaMie(["ethanol"]),p,T,phase =:l)  =6.120507339375205e-5
         @test Clapeyron.volume(system, p, T,phase=:l) ≈ 6.245903786961202e-5 rtol = 1e-6
-        @test Clapeyron.volume(solid_system,2.3e9,298.14,phase = :s) ≈ 9.961905037894007e-5 rtol = 1e-6
+        @test Clapeyron.volume(solid_system,2.3e9,298.15,phase = :s) ≈ 9.961905037894007e-5 rtol = 1e-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 101341.9709136089 rtol = 1E-6
