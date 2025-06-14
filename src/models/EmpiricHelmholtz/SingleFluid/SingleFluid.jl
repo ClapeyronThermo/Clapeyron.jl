@@ -115,13 +115,6 @@ function __get_k_alpha0(model)
     end
 end
 
-function __set_Rgas(pure,Rgas)
-    components,p,ancillaries,ideal,residual,references = pure.components,pure.properties,pure.ancillaries,pure.ideal,pure.residual,pure.references
-    Mw,Tr,rhor,lb_volume,Tc,Pc,rhoc,Ttp,ptp,rhov_tp,rhol_tp,acentricfactor = p.Mw, p.Tr, p.rhor, p.lb_volume, p.Tc, p.Pc, p.rhoc, p.Ttp, p.ptp, p.rhov_tp, p.rhol_tp, p.acentricfactor
-    properties = ESFProperties(Mw,Tr,rhor,lb_volume,Tc,Pc,rhoc,Ttp,ptp,rhov_tp,rhol_tp,acentricfactor,Rgas)
-    return SingleFluid(components,properties,ancillaries,ideal,residual,references)
-end
-
 function a_ideal(model::SingleFluidIdeal,V,T,z=SA[1.],k = __get_k_alpha0(model))
     Tc = model.properties.Tr
     rhoc = model.properties.rhor
@@ -249,7 +242,6 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
     ptp = model.properties.ptp
     (!isfinite(Ttp) | (Ttp < 0)) && (Ttp = 0.4*Tc)
     (!isfinite(ptp) | (ptp < 0)) && (ptp = zero(ptp))
-    return lb_v
     if p > Pc
         #supercritical conditions, liquid
         #https://doi.org/10.1016/j.ces.2018.08.043 gives an aproximation of the pv curve at T = Tc
@@ -277,7 +269,6 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
         else
             #we want two points: psat-vsat and phi-vhi
             #we can interpolate those to calculate an initial volume
-
             vsat = x0_volume_liquid_lowT(model,p,T,z)
             psat = pressure(model,vsat,T,z)
 

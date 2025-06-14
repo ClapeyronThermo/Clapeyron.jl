@@ -258,6 +258,28 @@ end
         @test Clapeyron.a_ideal(system, V, T, z1) ≈ -0.33605470137749016 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T)  ≈ -34.16747927719535 rtol = 1e-6
     end
+
+    @testset "multiparameter misc" begin
+        T = 300.0
+        V = 1/200
+        z2 = [0.5,0.5]
+        z1 = Clapeyron.SA[1.0]
+        #=
+        apart from CO2+H2 (because we use a more recent departure), all models are compared with coolprop outputs:
+        PropsSI("alphar","Dmolar|gas",200.0,"T",300.0,fluid)
+        =#
+        model = MultiFluid(["carbon dioxide","hydrogen"],verbose = true) #test verbose and gauss+exponential
+        @test Clapeyron.a_res(model,V,T,z2) ≈ -0.005482930754339683 rtol = 1e-6
+        model2 = SingleFluid("ammonia",verbose = true) #test Gaob parser
+        @test Clapeyron.a_res(model2,V,T,z1) ≈ -0.05006143389915488 rtol = 1e-6
+        model3 = SingleFluid("D4",verbose = true) #ideal CP0 parser
+        @test Clapeyron.a_ideal(model3,V,T,z1) ≈ 0.8441669238992482 rtol = 1e-6
+        model4 = SingleFluid("R14",verbose = true) #ResidualHelmholtzExponential
+        @test Clapeyron.a_res(model4,V,T,z1) ≈ -0.017855323645451636 rtol = 1e-6
+        model5 = SingleFluid("water",Rgas = 10.0)
+        @test Rgas(model) == 10.0
+        
+    end
     @printline
     end
 end
