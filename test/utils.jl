@@ -35,7 +35,7 @@ else
     0
 end
 
-local_str = "Running in " * ifelse(IS_LOCAL,"local","CI") * " mode. " * ifelse(iszero(DISTRIBUTED_NUMBER),"","Distributed worker number: $DISTRIBUTED_NUMBER") * ifelse(DISTRIBUTED_NUMBER == 5," (Coverage)","")
+local_str = "Running in " * ifelse(IS_LOCAL,"local","CI") * " mode. " * ifelse(iszero(DISTRIBUTED_NUMBER),"","Distributed worker number: $DISTRIBUTED_NUMBER")
 
 println("""
 ___________________
@@ -43,7 +43,6 @@ ___________________
 Clapeyron.jl tests
 
 $local_str
-Coverage Test = $COVERAGE
 Running all tests in all workers = $ALL_TESTS
 ____________________
 
