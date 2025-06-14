@@ -105,6 +105,7 @@ end
 include_distributed distributes the test load among all workers
 =#
 display(Test.detect_ambiguities(Clapeyron))
+
 include_distributed("test_database.jl",4)
 include_distributed("test_solvers.jl",4)
 include_distributed("test_differentials.jl",4)
@@ -116,6 +117,7 @@ include_distributed("test_models_others.jl",2)
 include_distributed("test_models_saft_vr.jl",1)
 include_distributed("test_models_electrolytes.jl",1)
 include_distributed("test_methods_eos.jl",4)
+include_distributed("test_methods_eos.jl",5)
 include_distributed("test_methods_api.jl",2)
 include_distributed("test_methods_api_flash.jl",3)
 include_distributed("test_methods_electrolytes.jl",1)
