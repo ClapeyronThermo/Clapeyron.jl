@@ -272,6 +272,7 @@ end
         test_scales(model)
         pures = Clapeyron.split_pure_model(model)
         @test pures isa Vector{SingleFluid{EmpiricAncillary}}
+        @test Clapeyron.wilson_k_values(model,1e6,300.0) ≈ [6.738566125478432, 54.26124873240438] rtol = 1e-6
         @test Clapeyron.a_res(model,V,T,z2) ≈ -0.005482930754339683 rtol = 1e-6
         model2 = SingleFluid("ammonia",verbose = true) #test Gaob parser
         @test Clapeyron.a_res(model2,V,T,z1) ≈ -0.05006143389915488 rtol = 1e-6
@@ -281,7 +282,6 @@ end
         @test Clapeyron.a_res(model4,V,T,z1) ≈ -0.017855323645451636 rtol = 1e-6
         model5 = SingleFluid("water",Rgas = 10.0)
         @test Rgas(model) == 10.0
-
     end
     @printline
     end

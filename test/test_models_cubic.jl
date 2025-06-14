@@ -38,6 +38,11 @@
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2265133881057408 rtol = 1e-6
         end
 
+        @testset "tcRK" begin
+            system = tcRK(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2519495469149748 rtol = 1e-6
+        end
+
         @testset "RK w/ BMAlpha" begin
             system = RK(["ethane","undecane"];alpha = BMAlpha)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2569334957019538 rtol = 1e-6
