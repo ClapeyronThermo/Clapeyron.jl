@@ -12,6 +12,7 @@ GC.gc()
         @test Clapeyron.a_dispchain(system,V,T,z) - _a_chain ≈ _a_disp rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -4.18080707238976 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
+        test_recombine(system)
         GC.gc()
     end
 
@@ -21,6 +22,7 @@ GC.gc()
         @test Clapeyron.a_mp(system, V_GV, T, z) ≈ -0.7521858819355216 rtol = 1e-6
         test_gibbs_duhem(system,V_GV,T,z)
         GC.gc()
+        test_recombine(system)
     end
 
     @testset "SAFTVRQMie" begin
