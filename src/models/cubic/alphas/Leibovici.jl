@@ -58,17 +58,9 @@ default_locations(::Type{LeiboviciAlpha}) = critical_data()
 default_references(::Type{LeiboviciAlpha}) = ["10.1016/0378-3812(94)02603-3"]
 
 @inline function α_m(model::DeltaCubicModel,alpha_model::LeiboviciAlphaModel,i)
-    coeff = α_m_leibovici(model)
+    coeff = α_m_leibovici(model,i)
     ω = alpha_model.params.acentricfactor.values[i]
     return evalpoly(ω,coeff)
-end
-
-function α_m_leibovici(model::DeltaCubicModel)
-    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
-    u = - Δ1 - Δ2
-    w = Δ1*Δ2
-    u0 = (u + 2)*sqrt(2/(1 + u + w)) - 2
-    α_m_leibovici(u0)
 end
 
 function α_m_leibovici(model::DeltaCubicModel,i)
