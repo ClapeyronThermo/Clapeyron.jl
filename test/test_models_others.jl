@@ -269,6 +269,9 @@ end
         PropsSI("alphar","Dmolar|gas",200.0,"T",300.0,fluid)
         =#
         model = MultiFluid(["carbon dioxide","hydrogen"],verbose = true) #test verbose and gauss+exponential
+        test_scales(model)
+        pures = Clapeyron.split_pure_model(model)
+        @test pures isa Vector{SingleFluid{EmpiricAncillary}}
         @test Clapeyron.a_res(model,V,T,z2) ≈ -0.005482930754339683 rtol = 1e-6
         model2 = SingleFluid("ammonia",verbose = true) #test Gaob parser
         @test Clapeyron.a_res(model2,V,T,z1) ≈ -0.05006143389915488 rtol = 1e-6
@@ -278,7 +281,7 @@ end
         @test Clapeyron.a_res(model4,V,T,z1) ≈ -0.017855323645451636 rtol = 1e-6
         model5 = SingleFluid("water",Rgas = 10.0)
         @test Rgas(model) == 10.0
-        
+
     end
     @printline
     end
