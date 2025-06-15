@@ -479,7 +479,7 @@ fractions = [0.5,0.5]
 p0,T0 = NaN,NaN #in p-T flash, pressure and temperature are already specifications
 data = FlashData(p0,T0)
 result0 = FlashResult(compositions,fractions,volumes,data) #a FlashResult containing all necessary information
-result = xy_flash(model,spec,z,result) #perform the flash
+result = xy_flash(model,spec,z,result0) #perform the flash
 ```
 """
 function xy_flash end
