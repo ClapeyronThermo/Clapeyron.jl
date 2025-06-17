@@ -94,11 +94,11 @@ function data(model::CubicModel, V, T, z)
     return n, ā, b̄, c̄
 end
 
-function cubic_get_k end
-function cubic_get_l end
-
 get_k(model::CubicModel) = cubic_get_k(model,model.mixing,model.params)
 get_l(model::CubicModel) = cubic_get_l(model,model.mixing,model.params)
+
+cubic_get_k(model,mixing,params) = get_k_geomean(params.a.values)
+cubic_get_l(model,mixing,params) = get_k_mean(params.b.values)
 
 function set_k!(model::CubicModel,k)
     check_arraysize(model,k)
@@ -107,7 +107,7 @@ function set_k!(model::CubicModel,k)
 end
 
 function set_l!(model::CubicModel,l)
-    check_arraysize(model,k)
+    check_arraysize(model,l)
     recombine_mixing!(model,model.mixing,nothing,l)
     return nothing
 end
@@ -210,10 +210,8 @@ function cubic_lb_volume(model, T, z, mixing)
 end
 #dont use αa, just a, to avoid temperature dependence
 function T_scale(model::CubicModel, z)
-    n = sum(z)
-    invn2 = one(n) / (n * n)
     _Tc = model.params.Tc.values
-    Tc = dot(z, _Tc) * invn2
+    Tc = dot(z, _Tc) / sum(z)
     return Tc
 end
 

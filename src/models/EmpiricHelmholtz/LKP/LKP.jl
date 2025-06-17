@@ -204,7 +204,7 @@ end
 function lb_volume(model::LKPModel,T,z)
     V = 0.0
     Tc,Pc,Vc,ω̄ = @f(data)
-    return Vc/4 #?
+    return sum(z)*Vc/4 #?
 end
 
 function T_scale(model::LKPModel,z)

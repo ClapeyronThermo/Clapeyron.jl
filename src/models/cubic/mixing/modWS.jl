@@ -1,6 +1,6 @@
 abstract type modWSRuleModel <: WSRuleModel end
 
-struct modWSRule{γ} <: WSRuleModel
+struct modWSRule{γ} <: modWSRuleModel
     components::Array{String,1}
     activity::γ
     references::Array{String,1}

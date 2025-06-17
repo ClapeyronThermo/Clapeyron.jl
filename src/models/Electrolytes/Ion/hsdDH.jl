@@ -54,15 +54,17 @@ function hard_sphere_diameter(model::SAFTgammaMieModel, V, T, z, _data = @f(data
     return first(vrdata)
 end
 
-function get_sigma(ionmodel::hsdDHModel, V, T, z, model, neutral_data = @f(data))
-    if model isa CPAModel
-        b = model.cubicmodel.params.b.values
-        σ = similar(b,length(neutralmodel))
-        for i in 1:length(neutralmodel)
-            σ[i] = cbrt((3/2/N_A/π)*b[i,i])
-        end
-    else
-        σ = hard_sphere_diameter(model,V,T,z,neutral_data)
+function hard_sphere_diameter(model::CPAModel, V, T, z, _data = @f(data))
+    σ = zeros(Base.promote_eltype(model,T,z),length(model))
+    for i in 1:length(model)
+        zi = FillArrays.OneElement(i, length(model))
+        bi = lb_volume(model.cubicmodel,T,zi)
+        σ[i] = cbrt((3/2/N_A/π)*bi)
     end
     return σ
+end
+
+
+function get_sigma(ionmodel::hsdDHModel, V, T, z, model, neutral_data = @f(data))
+    return hard_sphere_diameter(model,V,T,z,neutral_data)
 end

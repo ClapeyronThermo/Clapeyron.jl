@@ -56,6 +56,8 @@ GC.gc()
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.07550931466871749 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V_γMie, T, z) ≈ -0.8205840455850311 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
+        test_scales(system)
+        test_recombine(system)
         GC.gc()
     end
     

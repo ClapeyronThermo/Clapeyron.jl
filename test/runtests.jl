@@ -61,8 +61,8 @@ function test_scales(model,T0 = 300.0)
     z = ones(n) ./ n
     z3 = 3 .* z
     z7 = 7 .* z
-    @test Clapeyron.lb_volume(model,T0,z3) ≈ 3*Clapeyron.lb_volume(model,z)
-    @test Clapeyron.lb_volume(model,T0,z7) ≈ 7*Clapeyron.lb_volume(model,z)
+    @test Clapeyron.lb_volume(model,T0,z3) ≈ 3*Clapeyron.lb_volume(model,T0,z)
+    @test Clapeyron.lb_volume(model,T0,z7) ≈ 7*Clapeyron.lb_volume(model,T0,z)
     @test Clapeyron.T_scale(model,z3) ≈ Clapeyron.T_scale(model,z)
     @test Clapeyron.p_scale(model,z3) ≈ Clapeyron.p_scale(model,z)
 end
@@ -100,6 +100,54 @@ function _test_recombine(model1,model2)
         end
     end
 end
+
+function test_kl(model; test_k = true, test_l = true)  
+    model2 = deepcopy(model)
+    
+    if test_k
+        k_orig = Clapeyron.get_k(model2)
+        
+        k0 = zeros(size(k_orig))
+        Clapeyron.set_k!(model2,k0)
+        @test k0 ≈ Clapeyron.get_k(model2)
+        
+        k1 = zeros(size(k_orig))
+        s1,s2 = size(k1)
+        for i in 1:s1
+            for j in (i + 1):s2
+                k1[j,i] = 0.01
+            end
+        end
+        Clapeyron.set_k!(model2,k1)
+        @test k1 ≈ Clapeyron.get_k(model2)
+
+        Clapeyron.set_k!(model2,k_orig)
+        @test k_orig ≈ Clapeyron.get_k(model2)
+    end
+
+    if test_l
+        l_orig = Clapeyron.get_l(model2)
+        
+        l0 = zeros(size(l_orig))
+        Clapeyron.set_l!(model2,l0)
+        @test l0 ≈ Clapeyron.get_l(model2)
+        
+        l1 = zeros(size(l_orig))
+        s1,s2 = size(l1)
+        for i in 1:s1
+            for j in (i + 1):s2
+                l1[j,i] = 0.01
+            end
+        end
+        Clapeyron.set_l!(model2,l1)
+        @test l1 ≈ Clapeyron.get_l(model2)
+
+        Clapeyron.set_l!(model2,l_orig)
+        @test l_orig ≈ Clapeyron.get_l(model2)
+    end
+end
+test_k(model) = test_kl(model,test_l = false)
+test_l(model) = test_kl(model,test_k = false)
 
 #=
 include_distributed distributes the test load among all workers

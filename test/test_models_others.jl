@@ -231,6 +231,8 @@ end
         Vx = 1/(18002.169)
         zx   = [0.6,0.4]
         system = EOS_LNG(["methane","butane"])
+        dep = departure_functions(system)
+        @test count(!iszero,dep) == 1
         @test Clapeyron.eos(system,Vx,Tx,zx) ≈ -6020.0044 rtol = 5e-6
     end
 
@@ -239,8 +241,13 @@ end
         Vx = 1/(18002.169)
         zx   = [0.6,0.4]
         system = LKP(["methane","butane"])
+        test_scales(system)
+        test_k(system)
         #Clapeyron.a_res(EOS_LNG(["methane","butane"]),V,T,z) ≈ -6.56838705236683
         @test Clapeyron.a_res(system,Vx,Tx,zx) ≈ -6.469596957611441 rtol = 5e-6
+        system2 = LKPSJT(["methane","butane"])
+        #TODO:check this value
+        @test Clapeyron.a_res(system,Vx,Tx,zx) ≈ -5.636923220762173 rtol = 5e-6
     end
 
     @testset "LJRef" begin

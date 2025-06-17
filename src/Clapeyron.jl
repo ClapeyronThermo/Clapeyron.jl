@@ -9,7 +9,7 @@ const PackedSubVector{T} = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, tr
 #for non allocating vectors of zeros and ones
 using Roots: Roots
 
-using Scratch 
+using Scratch
 import LogExpFunctions
 using FillArrays: FillArrays
 import BlackBoxOptim
@@ -39,7 +39,7 @@ import .Fractions
 using .Fractions: FractionVector
 
 #Gas constant, Boltzmann Constant
-include("base/constants.jl") 
+include("base/constants.jl")
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/EoSModel.jl")
@@ -70,7 +70,7 @@ using Tables,CSV
 using JSON3
 
 #getparams options
-include("database/ParamOptions.jl") 
+include("database/ParamOptions.jl")
 #getparams definition
 include("database/database.jl")
 #transform Tables.jl tables to Clapeyron csv files
@@ -277,6 +277,8 @@ include("methods/property_solvers/multicomponent/tp_flash/electrolyte_flash.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
 
 include("estimation/estimation.jl")
+
+
 
 #precompile workload. should be loaded at the end
 #include("precompile.jl")

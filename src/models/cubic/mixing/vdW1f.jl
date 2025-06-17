@@ -64,11 +64,3 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b
 end
 
 is_splittable(::vdW1fRule) = false
-
-function cubic_get_k(model::CubicModel,mixing::vdW1fRuleModel,params)
-    return get_k_geomean(params.a.values)
-end
-
-function cubic_get_l(model::CubicModel,mixing::vdW1fRuleModel,params)
-    return get_k_mean(params.b.values)
-end

@@ -485,6 +485,7 @@ GC.gc()
     model = HelmAct(["water","ethanol"])
     p = 12666.0
     x1 = Clapeyron.FractionVector(0.00350)
+    test_scales(model) #
     @test bubble_temperature(model,p,x1)[4][1] ≈ 0.00198 rtol = 1e-2
 end
 
