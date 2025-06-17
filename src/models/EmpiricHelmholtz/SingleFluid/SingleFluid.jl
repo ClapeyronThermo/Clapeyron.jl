@@ -279,7 +279,7 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
 
             if phi <= p
                 return volume_bracket_refine(model,p,T,z,vhi,lb_v)
-            elseif psat < p < ph
+            elseif psat < p < phi
                 return volume_bracket_refine(model,p,T,z,vhi,vsat)
             else
                 return vsat
