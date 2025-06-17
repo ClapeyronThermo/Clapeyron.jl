@@ -281,7 +281,7 @@ end
         model4 = SingleFluid("R14",verbose = true) #ResidualHelmholtzExponential
         @test Clapeyron.a_res(model4,V,T,z1) ≈ -0.017855323645451636 rtol = 1e-6
         model5 = SingleFluid("water",Rgas = 10.0)
-        @test Rgas(model) == 10.0
+        @test Rgas(model5) == 10.0
     end
     @printline
     end
