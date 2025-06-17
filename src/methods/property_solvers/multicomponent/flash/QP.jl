@@ -71,7 +71,7 @@ Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculat
 Inputs:
  - `q`, vapour fraction
  - `p`, pressure
- - `z`, vector of number of moles of each species
+ - `n`, vector of number of moles of each species
 
 All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
 
