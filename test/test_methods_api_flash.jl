@@ -416,8 +416,7 @@ end
     #issue 387
     cpr = cPR("Propane",idealmodel = ReidIdeal)
     crit_cpr = crit_pure(cpr)
-    saturation_temperature(cpr,crit_cpr[2] - 1e3)[1] ≈ 369.88681908031606 rtol = 1e-6
-
+    @test saturation_temperature(cpr,crit_cpr[2] - 1e3)[1] ≈ 369.88681908031606 rtol = 1e-6
 end
 
 @testset "Tproperty" begin
