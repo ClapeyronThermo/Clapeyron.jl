@@ -781,8 +781,7 @@ function x0_saturation_temperature(model,p)
     #=
     x0_saturation_temperature(model::MyModel,p) = x0_saturation_temperature(model,p,crit_pure(model))
     =#
-    if has_fast_crit_pure(model)
-
+    if !has_fast_crit_pure(model)
         return x0_saturation_temperature_refine(model,p)
     else
         return x0_saturation_temperature_crit(model,p,crit_pure(model))
@@ -851,7 +850,11 @@ function dpdTsat_step(model,p,T0,satmethod,multiple::Bool = true)
         Tinv0 = 1/T
         Tinv = Tinv0 + dTinvdlnp*Δlnp
         dT = T - 1/Tinv
-        T = 1/Tinv
+        if 1/Tinv > T
+            T = 0.5*T + 0.5/Tinv #we could skip over the critical temperature
+        else
+            T = 1/Tinv
+        end
         #!multiple && return T,sat
         if abs(dT)/T < 0.02
             return T,sat

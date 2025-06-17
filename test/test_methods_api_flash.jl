@@ -412,6 +412,12 @@ end
 
     #Issue 328
     @test saturation_pressure(cPR("butane"),406.5487245045052)[1] ≈ 2.815259927796967e6 rtol = 1e-6
+    
+    #issue 387
+    cpr = cPR("Propane",idealmodel = ReidIdeal)
+    crit_cpr = crit_pure(cpr)
+    saturation_temperature(cpr,crit_cpr[2] - 1e3)[1] ≈ 369.88681908031606 rtol = 1e-6
+
 end
 
 @testset "Tproperty" begin
