@@ -420,15 +420,18 @@ end
         @test mass_density(system,0.992418352e5,300.0) ≈ 996.556 rtol = 1e-6
         @test mass_density(system,0.200022515e8,300.0) ≈ 1005.308 rtol = 1e-6
         @test mass_density(system,0.700004704e9,300.0) ≈ 1188.202 rtol = 1e-6
+        test_volume(system,0.992418352e5,300.0)
+        test_volume(system,0.200022515e8,300.0)
+        test_volume(system,0.700004704e9,300.0)
         @test entropy(system,0.992418352e5,300.0) ≈ mw*393.062643 rtol = 1e-6
         @test entropy(system,0.200022515e8,300.0) ≈ mw*387.405401 rtol = 1e-6
         @test entropy(system,0.700004704e9,300.0) ≈ mw*132.609616 rtol = 1e-6
         @test speed_of_sound(system,0.992418352e5,300.0) ≈ 1501.51914 rtol = 1e-6
         @test speed_of_sound(system,0.200022515e8,300.0) ≈ 1534.92501 rtol = 1e-6
         @test speed_of_sound(system,0.700004704e9,300.0) ≈ 2443.57992 rtol = 1e-6
-        @test mass_density(system,1e6,265.0) ≈ 999.2257952385045 rtol = 1e-6
-        @test mass_density(system,1e8,265.0) ≈ 1046.7757592645048 rtol = 1e-6
-
+        #below triple point/ liquid
+        test_volume(system,1e6,265.0,phase = :l)
+        test_volume(system,1e8,265.0,phase = :l)
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293388718283  rtol = 1E-6
