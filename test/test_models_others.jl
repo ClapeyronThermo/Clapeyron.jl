@@ -247,7 +247,7 @@ end
         @test Clapeyron.a_res(system,Vx,Tx,zx) ≈ -6.469596957611441 rtol = 5e-6
         system2 = LKPSJT(["methane","butane"])
         #TODO:check this value
-        @test Clapeyron.a_res(system,Vx,Tx,zx) ≈ -5.636923220762173 rtol = 5e-6
+        @test Clapeyron.a_res(system2,Vx,Tx,zx) ≈ -5.636923220762173 rtol = 5e-6
     end
 
     @testset "LJRef" begin

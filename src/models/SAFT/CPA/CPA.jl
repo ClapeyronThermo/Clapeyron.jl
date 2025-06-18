@@ -322,7 +322,7 @@ data(model::CPAModel, V, T, z) = data(model.cubicmodel,V,T,z)
 
 function a_res(model::CPAModel, V, T, z, _data = @f(data))
     n,ā,b̄,c̄ = _data
-    return a_res(model.cubicmodel,V,T,z,_data) + a_assoc(model,V0 + c̄*n,T,z,_data)
+    return a_res(model.cubicmodel,V,T,z,_data) + a_assoc(model,V + c̄*n,T,z,_data)
 end
 
 function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
