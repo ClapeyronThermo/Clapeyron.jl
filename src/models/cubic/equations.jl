@@ -211,16 +211,12 @@ end
 #dont use αa, just a, to avoid temperature dependence
 function T_scale(model::CubicModel, z)
     _Tc = model.params.Tc.values
-    Tc = dot(z, _Tc) / sum(z)
-    return Tc
+    return dot(z, _Tc) / sum(z)
 end
 
 function p_scale(model::CubicModel, z)
-    n = sum(z)
-    invn2 = one(n) / (n * n)
     _pc = model.params.Pc.values
-    pc = dot(z, _pc) * invn2
-    return pc
+    return dot(z, _pc) / sum(z)
 end
 
 function x0_crit_pure(model::CubicModel)

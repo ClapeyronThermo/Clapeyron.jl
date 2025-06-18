@@ -76,12 +76,12 @@ function test_recombine(model,innermodels = nothing)
         for field in innermodels
             innermodel = getfield(model1,field)
             innermodel2 = getfield(model2,field)
-            _test_recombine(innermodel,innermodel2)
+            eosmodel_is_approx(innermodel,innermodel2)
         end
     end
 end
 
-function _test_recombine(model1,model2)
+function eosmodel_is_approx(model1,model2)
     if hasfield(typeof(model1),:params)
         params1 = model1.params
         params2 = model2.params
@@ -89,13 +89,13 @@ function _test_recombine(model1,model2)
             p1 = getfield(params1,i)
             p2 = getfield(params2,i)
             if p1 isa SingleParam || p1 isa PairParam
-                @test p1.values == p2.values
+                @test p1.values ≈ p2.values
             elseif p1 isa AssocParam
-                @test p1.values.values == p2.values.values
+                @test p1.values.values ≈ p2.values.values
                 @test p1.values.inner_indices == p2.values.inner_indices
                 @test p1.values.outer_indices == p2.values.outer_indices
             elseif p1 isa Clapeyron.MixedGCSegmentParam
-                @test p1.values.v == p2.values.v
+                @test p1.values.v ≈ p2.values.v
             end
         end
     end

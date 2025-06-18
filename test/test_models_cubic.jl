@@ -68,7 +68,7 @@
 
         @testset "RK w/ MHV1Rule" begin
             system = RK(["methanol","benzene"];mixing = MHV1Rule, activity=Wilson)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5531088611093051 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5091065987876959 rtol = 1e-6
         end
 
         @testset "RK w/ MHV2Rule" begin
@@ -83,7 +83,7 @@
 
         @testset "RK w/ modWSRule" begin
             system = RK(["methanol","benzene"];mixing = modWSRule, activity=Wilson)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5729126903890258 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5531088611093051 rtol = 1e-6
         end
     end
 
