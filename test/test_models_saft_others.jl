@@ -58,7 +58,7 @@
         @test Clapeyron.a_LJ(system, V, T, z) ≈ -3.960728242264164 rtol = 1e-6
         @test Clapeyron.a_chain(system, V, T, z) ≈ 0.3736728407455211 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -2.0461376618069034 rtol = 1e-6
-        test_recombine(model)
+        test_recombine(system)
         #TODO: check here why the error is so big
         #we disable this test for now, it takes too much time
         #test_gibbs_duhem(system,V,T,z,rtol = 1e-12)
