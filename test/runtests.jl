@@ -71,7 +71,7 @@ function test_recombine(model,innermodels = nothing)
     model1 = deepcopy(model)
     model2 = deepcopy(model)
     Clapeyron.recombine!(model1)
-    _test_recombine(model1,model2)
+    eosmodel_is_approx(model1,model2)
     if innermodels != nothing
         for field in innermodels
             innermodel = getfield(model1,field)
