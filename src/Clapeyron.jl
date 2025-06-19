@@ -276,6 +276,9 @@ include("models/CrossOver/crossover.jl")
 
 include("models/CrossOver/variants/Kiselev2000.jl")
 
+include("models/SAFT/SAFTVRMie/variants/SAFTVRMieKiselev.jl")
+
+
 include("methods/property_solvers/electrolytes/electrolytes.jl")
 include("methods/property_solvers/multicomponent/tp_flash/electrolyte_flash.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")

@@ -67,3 +67,12 @@ Rgas(model::CrossOver) = Rgas(model.basemodel)
 molecular_weight(model::CrossOver,z) = molecular_weight(model.basemodel,z)
 Base.eltype(x::CrossOver) = Base.promote_eltype(x.basemodel,x.params)
 reference_state(model::CrossOver) = reference_state(model.basemodel)
+
+
+function Base.show(io::IO,mime::MIME"text/plain",model::CrossOver)
+    print(io,"Critical cross-over Model")
+    length(model) == 1 && print(io, " with 1 component:")
+    length(model) > 1 && print(io, " with ", length(model), " components:")
+    print(io,'\n'," Base Model: ",model.basemodel)
+    print(io,'\n'," Liquid Model: ",model.critmodel)
+end
