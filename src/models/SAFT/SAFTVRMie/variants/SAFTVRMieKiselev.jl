@@ -15,7 +15,6 @@ function SAFTVRMieKiselev(components;
     #build SAFTVRMie
     
     basemodel = SAFTVRMie15(_components,params;idealmodel,ideal_userlocations,assoc_options,reference_state,verbose)
-    return basemodel
     return CrossOver(basemodel,critmodel;verbose)
 end
 

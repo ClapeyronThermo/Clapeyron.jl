@@ -35,7 +35,7 @@ function CrossOver(model::EoSModel,critmodel::CrossOverModel;verbose = false)
     params = CritParam(Tc0,Pc0,Vc0)
     crossover_model = CrossOver(components,params,model,critmodel)
     recombine_crossover!(crossover_model,critmodel)
-    set_reference_state!(crossover_model,model.basemodel.reference_state;verbose)
+    set_reference_state!(crossover_model,reference_state(model);verbose)
     return crossover_model
 end
 
@@ -58,7 +58,7 @@ function recombine_impl!(model::CrossOver)
 end
 
 recombine_crossover!(model,critmodel) = recombine_crossover!(model,critmodel,split_pure_model(model.basemodel)) 
-
+recombine_crossover!(model,critmodel,pures) = model
 idealmodel(model::CrossOver) = idealmodel(model.basemodel)
 lb_volume(model::CrossOver,T,z) = lb_volume(model.basemodel,T,z)
 T_scale(model::CrossOver,z) = T_scale(model.basemodel,z)
