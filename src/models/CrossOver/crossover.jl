@@ -34,13 +34,13 @@ function CrossOver(model::EoSModel,critmodel::CrossOverModel;verbose = false)
     Vc0 = SingleParam("Vc0",model.components)
     params = CritParam(Tc0,Pc0,Vc0)
     crossover_model = CrossOver(components,params,model,critmodel)
-    recombine_crossover!(crossover_model,critmodel)
+    recombine!(crossover_model)
     set_reference_state!(crossover_model,reference_state(model);verbose)
     return crossover_model
 end
 
 function a_res(model::CrossOver,V,T,z)
-    return a_res_crossover(model,V,T,z,model.crossover)
+    return a_res_crossover(model,V,T,z,model.critmodel)
 end
 
 function recombine_impl!(model::CrossOver)
@@ -54,11 +54,10 @@ function recombine_impl!(model::CrossOver)
     model.params.Pc0 .= Pc
     model.params.Tc0 .= Tc
     model.params.Vc0 .= Vc
-    recombine_crossover!(model,critmodel,pures)
+    recombine!(model.critmodel)
+    return model
 end
 
-recombine_crossover!(model,critmodel) = recombine_crossover!(model,critmodel,split_pure_model(model.basemodel)) 
-recombine_crossover!(model,critmodel,pures) = model
 idealmodel(model::CrossOver) = idealmodel(model.basemodel)
 lb_volume(model::CrossOver,T,z) = lb_volume(model.basemodel,T,z)
 T_scale(model::CrossOver,z) = T_scale(model.basemodel,z)
@@ -68,11 +67,16 @@ molecular_weight(model::CrossOver,z) = molecular_weight(model.basemodel,z)
 Base.eltype(x::CrossOver) = Base.promote_eltype(x.basemodel,x.params)
 reference_state(model::CrossOver) = reference_state(model.basemodel)
 
-
 function Base.show(io::IO,mime::MIME"text/plain",model::CrossOver)
     print(io,"Critical cross-over Model")
     length(model) == 1 && print(io, " with 1 component:")
     length(model) > 1 && print(io, " with ", length(model), " components:")
     print(io,'\n'," Base Model: ",model.basemodel)
     print(io,'\n'," Liquid Model: ",model.critmodel)
+end
+
+function x0_crit_pure(model::CrossOver)
+    Ts = T_scale(model,SA[1.0])
+    Tc0 = model.params.Tc0[1]
+    return (Tc0/Ts,log10(model.params.Vc0[1]))
 end

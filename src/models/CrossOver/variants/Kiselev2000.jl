@@ -21,7 +21,7 @@ function a_res_crossover(model::CrossOver,V,T,z,critmodel::Kiselev2000Model)
     Tc = critmodel.params.Tc.values
     vc = critmodel.params.Vc.values
     Tc0 = model.params.Tc0.values
-    vc0 = model.params.vc0.values
+    vc0 = model.params.Vc0.values
     d1 = critmodel.params.d1.values
     v1 = critmodel.params.v1.values
     Gi = critmodel.params.Gi.values
