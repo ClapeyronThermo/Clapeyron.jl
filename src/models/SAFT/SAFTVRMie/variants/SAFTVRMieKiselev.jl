@@ -13,7 +13,6 @@ function SAFTVRMieKiselev(components;
     critmodel = Kiselev2000(_components,critparams,default_references(Kiselev2000))
 
     #build SAFTVRMie
-    
     basemodel = SAFTVRMie15(_components,params;idealmodel,ideal_userlocations,assoc_options,reference_state,verbose)
     return CrossOver(basemodel,critmodel;verbose)
 end
