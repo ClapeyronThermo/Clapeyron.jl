@@ -160,11 +160,16 @@ end
 
 function each_split_model(param::AssocParam,I)
     _value  = each_split_model(param.values,I)
+    if param.sites === nothing
+        sites_i = nothing
+    else
+        sites_i = param.sites[I]
+    end
     return AssocParam(
             param.name,
             param.components[I],
             _value,
-            param.sites[I],
+            sites_i,
             param.sourcecsvs,
             param.sources
             )
