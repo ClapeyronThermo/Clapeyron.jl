@@ -52,6 +52,10 @@
         model0 = SAFTgammaMie(["ethane"])
         model0_split = SAFTgammaMie(["methane","ethane"]) |> split_model |> last
         @test model0.params.epsilon.values[1,1] == model0_split.params.epsilon.values[1,1]
+
+        #error on spliting assoc models without sites
+        model_nosites = PCSAFT(["a"],userlocations = (Mw = 1.0,segment = 1.0,sigma = 1.0,epsilon = 1.0))
+        @test split_model(model_nosites)[1] isa PCSAFT 
     end
 
     @testset "export_model" begin
