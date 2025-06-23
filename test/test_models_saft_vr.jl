@@ -18,14 +18,18 @@ GC.gc()
 
     @testset "SAFTVRMieGV" begin
         system = SAFTVRMieGV(["benzene","acetone"])
+        test_gibbs_duhem(system,V_GV,T,z)
+        test_recombine(system)
+        
         V_GV = 8e-5
         @test Clapeyron.a_mp(system, V_GV, T, z) ≈ -0.7521858819355216 rtol = 1e-6
-        test_gibbs_duhem(system,V_GV,T,z)
-        GC.gc()
-        test_recombine(system)
-
+        
         system2 = SAFTVRMieGV(["carbon dioxide","benzene"])
         @test Clapeyron.a_mp(system2, V_GV, T, z) ≈ -0.33476290652200424 rtol = 1e-6
+
+        system3 = SAFTVRMieGV(["acetone","diethyl ether","ethyl acetate"])
+        @test Clapeyron.a_mp(system3, V_GV, T, [0.3,0.3,0.4]) ≈ -0.8088095725122674 rtol = 1e-6
+        GC.gc()
     end
 
     @testset "SAFTVRQMie" begin

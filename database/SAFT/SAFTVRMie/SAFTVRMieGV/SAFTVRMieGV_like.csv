@@ -1,5 +1,5 @@
-Clapeyron Database File,,,,,,,,,,,,,,
-SAFTVRMieGV Like Parameters,,,,,,,,,,,,,,
+Clapeyron Database File
+SAFTVRMieGV Like Parameters
 species,DIPPR Number,Mw,segment,sigma,epsilon,lambda_r,lambda_a,n_H,n_e,dipole,quadrupole,np,nQ,source
 methane,,16.04,1.0,3.737,152.58,12.504,6,0,0,0.0,0.0,0.0,0.0,10.1016/j.fluid.2015.12.044
 ethane,,30.07,1.4373,3.7257,206.12,12.4,6,0,0,0.0,0.0,0.0,0.0,10.1063/1.4819786

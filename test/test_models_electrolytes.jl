@@ -49,6 +49,7 @@
     @testset "SAFTgammaEMie" begin
         system = SAFTgammaEMie(["water"],["sodium","acetate"])
         test_scales(system)
+        test_recombine(system)
         salts = [("sodium acetate",["sodium"=>1,"acetate"=>1])]
         z = molality_to_composition(system,salts,m)
         #@test Clapeyron.a_res(system, V, T, z) ≈ -5.090195753415607 rtol = 1e-6
