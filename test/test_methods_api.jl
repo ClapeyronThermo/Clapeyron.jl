@@ -223,6 +223,20 @@ end
         @test Clapeyron.VT_enthalpy(model5,v5,T5,z5) ≈ 123 atol = 1e-6
         @test Clapeyron.VT_entropy(model5,v5,T5,z5) ≈ 456 atol = 1e-6
     end
+
+    #reference state from EoSVectorParam
+    mod_pr = cPR(["water","ethanol"],idealmodel = ReidIdeal,reference_state = :ntp)
+    mod_vec = Clapeyron.EoSVectorParam(mod_pr)
+    Clapeyron.recombine!(mod_vec)
+    @test reference_state(mod_vec).std_type == :ntp
+    @test length(reference_state(mod_vec).a0) == 2
+
+    #reference state from Activity models
+    puremodel = mod_pr = cPR(["water","ethanol"],idealmodel = ReidIdeal)
+    act = NRTL(["water","ethanol"],puremodel = puremodel,reference_state = :ntp)
+    @test reference_state(act).std_type == :ntp
+    @test length(reference_state(act).a0) == 2
+
 end
 
 @testset "Solid Phase Equilibria" begin

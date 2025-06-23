@@ -46,6 +46,32 @@
         @test Clapeyron.a_res(system, V, T, z) ≈ -5.37837866742139 rtol = 1e-6
     end
 
+    @testset "SAFTVREMie + MSA" begin
+        system = SAFTVREMie(["water"],["sodium","chloride"], ionmodel = MSA)
+        salts = [("sodium chloride",["sodium"=>1,"chloride"=>1])]
+        z = molality_to_composition(system,salts,m)
+        @test Clapeyron.a_res(system, V, T, z) ≈ -2.266066359288185 rtol = 1e-6
+    end
+
+    @testset "SAFTVREMie + Born" begin
+        system = SAFTVREMie(["water"],["sodium","chloride"], ionmodel = Born)
+        salts = [("sodium chloride",["sodium"=>1,"chloride"=>1])]
+        z = molality_to_composition(system,salts,m)
+        @test Clapeyron.a_res(system, V, T, z) ≈ -4.907123437550198 rtol = 1e-6
+    end
+
+    @testset "SAFTVREMie + MSAID" begin
+        ionmodel = MSAID(["water"],["sodium","chloride"];
+                    userlocations = (;
+                    charge = [0,1,-1],
+                    sigma  = [4.,4.,4.],
+                    dipole = [2.2203,0.,0.]))
+
+        system = SAFTVREMie(["water"],["sodium","chloride"], ionmodel = ionmodel)
+        iondata = Clapeyron.iondata(system,1.8e-5,298.15, [0.9,0.05,0.05])
+        @test Clapeyron.a_res(ionmodel, 1.8e-5,298.15, [0.9,0.05,0.05],iondata) ≈ -224.13923847423726 rtol = 1e-6
+    end
+
     @testset "SAFTgammaEMie" begin
         system = SAFTgammaEMie(["water"],["sodium","acetate"])
         test_scales(system)

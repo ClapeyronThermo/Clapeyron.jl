@@ -7,7 +7,7 @@ using MultiComponentFlash: MultiComponentFlash
 using Clapeyron.LinearAlgebra
 using Clapeyron.StaticArrays
 using Clapeyron: has_sites,has_groups
-
+using Clapeyron: PH, QT, QP, TS, VT, PT
 #=
 
 Modify this constant to true to run all tests in all workers

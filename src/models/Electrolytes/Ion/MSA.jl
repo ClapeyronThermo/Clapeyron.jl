@@ -22,21 +22,21 @@ export MSA
 This function is used to create a Mean Spherical Approximation model. The MSA term gives the excess Helmholtz energy to account for the electrostatic interactions between ions in solution.
 
 ## References
-1. Blum, L. (1974). Solution of a model for the solvent‐electrolyte interactions in the mean spherical approximation, 61, 2129–2133.
+1. Blum, L. (1974). Solution of a model for the solvent-electrolyte interactions in the mean spherical approximation. The Journal of Chemical Physics, 61(5), 2129–2133. [doi:10.1063/1.1682224](https://doi.org/10.1063/1.1682224)
 """
 function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
-    params = getparams(components; userlocations=userlocations,ignore_missing_singleparams=["sigma_born"], verbose=verbose)
-    packagedparams = MSAParam(sigma)
 
-    references = String[]
+    references = default_references(MSA)
 
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
     model = MSA(components, init_RSPmodel, references)
     return model
 end
+
+default_references(::Type{MSA}) = ["10.1063/1.1682224"]
 
 function a_res(model::MSAModel, V, T, z, iondata)
     return @f(a_MSA,iondata)

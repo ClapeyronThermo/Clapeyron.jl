@@ -35,7 +35,7 @@ This function is used to create a Mean Spherical Approximation-Born model. The M
 function MSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
-    params = getparams(components, append!(["Electrolytes/properties/charges.csv","Electrolytes/Born/born_like.csv"]); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
+    params = getparams(components, ["Electrolytes/properties/charges.csv","Electrolytes/Born/born_like.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     sigma_born = params["sigma_born"]
     sigma_born.values .*= 1E-10
 

@@ -176,6 +176,8 @@ end
     h = enthalpy(model,p,T,z)
     res0 = ph_flash(model,p,h,z)
     @test Clapeyron.temperature(res0) ≈ T rtol = 1e-6
+    @test PH.temperature(p,h,z)  ≈ T rtol = 1e-6
+    @test Clapeyron.temperature(PH.flash(p,h,z))
     @test enthalpy(model,res0) ≈ h rtol = 1e-6
 
     #2 phases
@@ -193,9 +195,10 @@ end
     model = cPR(["ethane","propane"],idealmodel=ReidIdeal)
     res2 = qt_flash(model,0.5,208.0,[0.5,0.5])
     @test Clapeyron.pressure(res2) ≈ 101634.82435966855 rtol = 1e-6
+    @test QT.pressure(model,0.5,208.0,[0.5,0.5]) ≈ 101634.82435966855 rtol = 1e-6
     res3 = qp_flash(model,0.5,120000.0,[0.5,0.5])
     @test Clapeyron.temperature(res3) ≈ 211.4972567716822 rtol = 1e-6
-
+    @test QP.temperature(model,0.5,120000.0,[0.5,0.5]) ≈ 211.4972567716822 rtol = 1e-6
     #1 phase input should error
     model = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
     z = [0.25, 0.25, 0.25, 0.25]

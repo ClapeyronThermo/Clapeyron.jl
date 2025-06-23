@@ -59,6 +59,8 @@ function MSAID(solvents,ions; userlocations, verbose=false)
     return model
 end
 
+IonDependency(model::MSAIDModel) = IndependentIonModel()
+
 function data(model::MSAIDModel, V, T, z , iondata = (model.params.charge.values, model.params.sigma.values, 1.0))
     β = 1/(k_B*T)
     σ = model.params.sigma.values
