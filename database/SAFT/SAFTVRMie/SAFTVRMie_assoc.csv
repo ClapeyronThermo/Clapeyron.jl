@@ -1,7 +1,7 @@
 Clapeyron Database File,,,,,,,,
 SaftVRMie Assoc Parameters,,,,,,,,
 species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
-ethanol,CCO,H,ethanol,CCO,e,2833.7,0.34558,10.1063/1.4819786
+ethanol,CCO,H,ethanol,CCO,e,2833.7,6.2309e-29,10.1063/1.4819786
 propanol~|~1-propanol~|~propan-1-ol,CCCO,H,propanol~|~1-propanol~|~propan-1-ol,CCCO,e,2097.9,6.2309e-29,10.1016/j.fluid.2015.12.041
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,CCCCO,H,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,CCCCO,e,2097.9,6.2309e-29,10.1016/j.fluid.2015.12.041
 water,O,H,water,O,e,1985.4,1.0169e-28,10.1080/00268976.2015.1029027
@@ -9,5 +9,5 @@ methanol,CO,H,methanol,CO,e,2062.1,1.0657e-28,10.1016/j.fluid.2015.12.041
 methanol,CO,H,water,O,e,1993.5,1.0411e-28,10.1016/j.fluid.2015.12.041
 methanol,CO,e,water,O,H,1993.5,1.0411e-28,10.1016/j.fluid.2015.12.041
 water,O,e,carbon dioxide,O=C(=O),H,1398.1,9.1419e-29,10.1016/j.fluid.2015.12.041
-water,O,H,hydroxide,O,e,1492.0,76.411e-30,10.1080/00268976.2015.1029027
+water,O,H,hydroxide,O,e,1492,76.411e-30,10.1080/00268976.2015.1029027
 water,O,e,hydronium,O,H,1985.4,1.0169e-28,10.1080/00268976.2015.1029027
