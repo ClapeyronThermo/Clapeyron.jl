@@ -23,6 +23,9 @@ GC.gc()
         test_gibbs_duhem(system,V_GV,T,z)
         GC.gc()
         test_recombine(system)
+
+        system2 = SAFTVRMieGV(["carbon dioxide","benzene"])
+        @test Clapeyron.a_mp(system2, V_GV, T, z) ≈ -0.33476290652200424 rtol = 1e-6
     end
 
     @testset "SAFTVRQMie" begin
