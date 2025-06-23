@@ -268,4 +268,52 @@ function tp_flash_K0!(K,model::ESElectrolyteModel,p,T)
     return K
 end
 
+function recombine_impl!(model::ESElectrolyteModel)
+    recombine!(model.neutralmodel)
+    recombine_ion!(model,model.ionmodel)
+end
+
+recombine_ion!(model,ionmodel) = recombine!(ionmodel)
+
+function show_comps_with_charge(io,components,Z)
+    function f(x)
+        comp,zi = x
+        if iszero(zi)
+            return '"' * comp* '"' 
+        elseif zi < 0
+            return '"' * comp * '"' * low_color(" (-" * string(abs(zi)) * ")")
+        else
+            return '"' * comp * '"' * low_color(" (+" * string(abs(zi)) * ")")
+        end
+    end
+    show_pairs(io,map(f,zip(components,Z)),quote_string = false)
+end
+
+function Base.show(io::IO,mime::MIME"text/plain",model::ESElectrolyteModel)
+    neutralmodel = model.neutralmodel
+    print(io,"Explicit Electrolyte Model")
+    if hasfield(typeof(neutralmodel),:components)
+        length(neutralmodel) == 1 && println(io, " with 1 component:")
+        length(neutralmodel) > 1 && println(io, " with ", length(neutralmodel), " components:")
+        if has_groups(neutralmodel)
+            groups = neutralmodel.groups
+            show_groups(io,groups)
+            #println(io)
+            #print(io,"Group Type: ",groups.grouptype)
+        else
+            show_comps_with_charge(io,neutralmodel.components,model.charge)
+        end
+    else
+        print(io,"()")
+    end    
+    print(io,'\n',"Neutral Model: ",typeof(model.neutralmodel))
+    print(io,'\n',"Ion Model: ",typeof(model.ionmodel))
+
+    if requires_rsp(model.ionmodel)
+        print(io,'\n',"RSP Model: ",typeof(model.ionmodel.RSPmodel))
+    end
+
+    show_reference_state(io,model;space = true)
+end
+
 export dielectric_constant, ESElectrolyte
