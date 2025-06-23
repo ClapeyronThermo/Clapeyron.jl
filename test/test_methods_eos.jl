@@ -347,6 +347,12 @@ end
         @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = false))[1] ≈ 19393.76058757084 rtol = 1e-6
         @test Clapeyron.dew_temperature(system2, 19386.939256733036, z)[1]  ≈ T2 rtol = 1E-6
     end
+
+    @testset "LLE" begin
+        model3 = NRTL(["methanol","hexane"])
+        x1,x2 = Clapeyron.LLE(model3,290.0)
+        @testset x[1] ≈ 0.15878439462531743 rtol = 1E-6
+    end
 end
 GC.gc()
 @testset "GERG2008 methods, single components" begin

@@ -25,6 +25,7 @@ Clapeyron.azeotrope_pressure
 Clapeyron.azeotrope_temperature
 Clapeyron.LLE_pressure
 Clapeyron.LLE_temperature
+Clapeyron.LLE
 Clapeyron.VLLE_pressure
 Clapeyron.VLLE_temperature
 Clapeyron.crit_mix
