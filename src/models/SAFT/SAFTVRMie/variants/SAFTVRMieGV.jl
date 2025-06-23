@@ -3,7 +3,7 @@ SAFT-VR Mie multipolar approach using GV polar terms.
 
 Polar terms copied verbatim from PCPSAFT and QPCPSAFT since they are the same ones used here.
 """
-struct SAFTVRMieGVParam <: EoSParam
+struct SAFTVRMieGVParam{T} <: ParametricEoSParam{T}
     Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
@@ -20,8 +20,13 @@ struct SAFTVRMieGVParam <: EoSParam
 	nQ::SingleParam{Float64}   
 end
 
+
+function SAFTVRMieGVParam(Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol,dipole,dipole2,np,quadrupole,quadrupole2,nQ)
+    return build_parametric_param(SAFTVRMieGVParam,Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol,dipole,dipole2,np,quadrupole,quadrupole2,nQ) 
+end
+
 abstract type SAFTVRMieGVModel <: SAFTVRMieModel end
-@newmodel SAFTVRMieGV SAFTVRMieGVModel SAFTVRMieGVParam
+@newmodel SAFTVRMieGV SAFTVRMieGVModel SAFTVRMieGVParam{T}
 default_references(::Type{SAFTVRMieGV}) = ["10.1016/j.fluid.2017.09.027","10.1021/acs.jced.0c00705"]
 default_locations(::Type{SAFTVRMieGV}) = ["SAFT/SAFTVRMie/SAFTVRMieGV/","properties/molarmass.csv"] 
 
