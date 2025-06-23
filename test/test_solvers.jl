@@ -35,7 +35,7 @@ end
 function opt_test(k)
     my_rosenbrock(x) = (1.0 - k*x[1])^2 + 100 * (x[2] - x[1]^2)^2
     x0 = Clapeyron.SA[0.0,0.0]
-    return SOL.solution(SOL.optimize(my_rosenbrock,x0,SOL.LineSearch(Sol.Newton()))) #uses newton as default.
+    return SOL.solution(SOL.optimize(my_rosenbrock,x0,SOL.LineSearch(SOL.Newton()))) #uses newton as default.
     #return solution(optimize(rosenbrock,x0,LineSearch(Newton()),OptimizationOptions())
 end
 @testset "Solvers Module" begin
