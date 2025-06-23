@@ -351,7 +351,7 @@ end
     @testset "LLE" begin
         model3 = NRTL(["methanol","hexane"])
         x1,x2 = Clapeyron.LLE(model3,290.0)
-        @test x[1] ≈ 0.15878439462531743 rtol = 1E-6
+        @test x1[1] ≈ 0.15878439462531743 rtol = 1E-6
     end
 end
 GC.gc()
