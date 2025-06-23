@@ -346,6 +346,25 @@ end
         p_tank[i] = pressure(res_i)
     end
     @test issorted(p_tank)
+
+    #issue #390
+    #=
+    model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)
+    z = [0.5,0.5]
+    p_crit= 4.1778440598996202e6
+    p = collect(range(101325,0.7p_crit,100))
+    T_bubble = similar(p)
+    T_dew = similar(p)
+    s_bubble = similar(p)
+    s_dew = similar(p)
+    q0 = 0.0
+    q1 = 1.0
+
+    for i in eachindex(p)
+        res_dew = qp_flash(model,q1,p[i],z)
+        T_dew[i] = Clapeyron.temperature(res_dew)
+        s_dew[i] = Clapeyron.entropy(model,res_dew)
+    end =#
 end
 
 @testset "Saturation Methods" begin

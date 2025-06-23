@@ -30,6 +30,8 @@ function backtracking_linesearch!(Θ,F,X,d,Θ0,Xnew,α = 1.0;tol = 1e-10, decay 
         Θx = Θ(F,Xnew)
         if Θx <= Θ0
             done = true
+        elseif abs(Θx - Θ0) < tol
+            done = true
         else
             if α < tol || !isfinite(Θx)
                 return zero(α)/zero(α),Θx
@@ -37,7 +39,7 @@ function backtracking_linesearch!(Θ,F,X,d,Θ0,Xnew,α = 1.0;tol = 1e-10, decay 
             α *= decay
         end
     end
-    return α,Θx
+    return α,Θx,Θx <= Θ0
 end
 
 function remove_slacks!(F,J,slacks::AbstractVector{Bool})
