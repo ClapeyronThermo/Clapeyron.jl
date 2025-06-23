@@ -20,7 +20,7 @@
         @test Clapeyron.a_polar(system, V, T, z3) ≈ -0.6541688650413224 rtol = 1e-6
         
         system2 = PCPSAFT(["acetone", "water", "DMSO"])
-        @test Clapeyron.a_polar(system2, V, T, z3) ≈ -0.6318599798899884rtol = 1e-6
+        @test Clapeyron.a_polar(system2, V, T, z3) ≈ -0.6318599798899884 rtol = 1e-6
         GC.gc()
     end
     @printline

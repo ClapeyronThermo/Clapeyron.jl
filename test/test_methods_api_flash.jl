@@ -176,8 +176,8 @@ end
     h = enthalpy(model,p,T,z)
     res0 = ph_flash(model,p,h,z)
     @test Clapeyron.temperature(res0) ≈ T rtol = 1e-6
-    @test PH.temperature(p,h,z)  ≈ T rtol = 1e-6
-    @test Clapeyron.temperature(PH.flash(p,h,z))
+    @test PH.temperature(model,p,h,z)  ≈ T rtol = 1e-6
+    @test Clapeyron.temperature(PH.flash(model,p,h,z))
     @test enthalpy(model,res0) ≈ h rtol = 1e-6
 
     #2 phases
