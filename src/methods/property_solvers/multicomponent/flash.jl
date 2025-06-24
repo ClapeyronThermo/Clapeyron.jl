@@ -276,12 +276,6 @@ function assert_only_phase_index(state::FlashResult)
     end
 end
 
-@noinline function __multiphase_onephase_function_error(f,np,p,T)
-    throw(ArgumentError("The state at p = $p, T = $T has $np phases, it cannot be used to evaluate $f"))
-end
-
-
-
 for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
     :mass_isochoric_heat_capacity, :mass_isobaric_heat_capacity,
     :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
@@ -296,7 +290,7 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
             T = temperature(state)
             p = pressure(state)
             if iszero(i)
-                __multiphase_onephase_function_error($prop,numphases(state),p,T)
+                invalid_property_multiphase_error($prop,numphases(state),p,T)
             end
             
             x,v = state.compositions[i],state.volumes[i]

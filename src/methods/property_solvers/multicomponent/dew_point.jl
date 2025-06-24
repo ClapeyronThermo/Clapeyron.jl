@@ -139,7 +139,6 @@ end
 
 
 function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
-    multi_component_check(x0_dew_temperature,model)
     y_r = @view y[condensables]
 
     if Tx0 !== nothing

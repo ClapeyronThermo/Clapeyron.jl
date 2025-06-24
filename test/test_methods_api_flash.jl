@@ -297,6 +297,10 @@ end
     n_O2_a = 24.08 # mol O2
     sol_fl = vt_flash(model_a_pr, V_a, T, [n_H2O_a, n_O2_a])
     @test V_a ≈ volume(sol_fl)
+    water_cpr = cPR(["water"],idealmodel = ReidIdeal)
+    @test_throws ArgumentError Clapeyron.VT.speed_of_sound(model,1e-4,373.15)
+    water_cpr_flash = Clapeyron.VT.flash(model,1e-4,373.15)
+    @test_throws ArgumentError speed_of_sound(model,water_cpr_flash) 
 
     #PH flash with supercritical pure components (#361)
     fluid_model = SingleFluid("Hydrogen")
@@ -434,7 +438,7 @@ end
 
     #Issue 328
     @test saturation_pressure(cPR("butane"),406.5487245045052)[1] ≈ 2.815259927796967e6 rtol = 1e-6
-    
+
     #issue 387
     cpr = cPR("Propane",idealmodel = ReidIdeal)
     crit_cpr = crit_pure(cpr)
