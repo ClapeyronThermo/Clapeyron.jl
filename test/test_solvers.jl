@@ -159,6 +159,11 @@ end
         @test ad.f(zeros(2)) == 1.0
         @test ad.fg(ones(2),zeros(2))[2] == [-2.0,0.0]
         @test ad.fgh(ones(2),ones(2,2),zeros(2))[3] == [2.0 0.0; 0.0 200.0]
+
+        d1 = SOL.grad_at_i(rosenbrock,[2.0,2.0],1)
+        d2 = SOL.grad_at_i(rosenbrock,[2.0,2.0],2)
+        d = SOL.gradient(rosenbrock,[2.0,2.0])
+        @test [d1,d2] == d
     end
 
     @testset "evalexppoly" begin
