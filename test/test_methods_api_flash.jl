@@ -299,7 +299,7 @@ end
     @test V_a ≈ volume(sol_fl)
     water_cpr = cPR(["water"],idealmodel = ReidIdeal)
     @test_throws ArgumentError Clapeyron.VT.speed_of_sound(water_cpr,1e-4,373.15)
-    water_cpr_flash = Clapeyron.VT.flash(model,1e-4,373.15)
+    water_cpr_flash = Clapeyron.VT.flash(water_cpr,1e-4,373.15)
     @test_throws ArgumentError speed_of_sound(water_cpr,water_cpr_flash) 
 
     #PH flash with supercritical pure components (#361)
