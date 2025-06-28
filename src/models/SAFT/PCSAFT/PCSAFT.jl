@@ -265,3 +265,9 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
     end
     return Δout
 end
+
+#Function to make the packing fraction accessible to the user 
+function packing_fraction_user(model::PCSAFTModel, V, T, z, _data=@f(data))
+    _,_,_,_,η,_ = _data
+    return η
+end
