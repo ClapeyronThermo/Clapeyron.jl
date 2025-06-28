@@ -1,4 +1,4 @@
-abstract type PR78AlphaModel <: AlphaModel end
+abstract type PR78AlphaModel <: GeneralizedSuaveAlphaModel end
 
 const PR78AlphaParam = SimpleAlphaParam
 
@@ -45,20 +45,11 @@ alpha = PR78Alpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,
 PR78Alpha
 default_locations(::Type{PR78Alpha}) = critical_data()
 
-
-function α_function(model::CubicModel,V,T,z,alpha_model::PR78AlphaModel)
-    Tc = model.params.Tc.values
-    ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(1.0*T),length(Tc))
-    for i in @comps
-        ωi = ω[i]
-        m = ifelse(ωi<=0.491,
-            evalpoly(ωi,(0.37464,1.54226,-0.26992)),
-            evalpoly(ωi,(0.379642,1.487503,-0.164423,-0.016666)))
-        Tr = T/Tc[i]
-        α[i] = (1+m*(1-√(Tr)))^2
+@inline function α_m(model::PRModel,alpha_model::PR78AlphaModel,i)
+    ω  = alpha_model.params.acentricfactor.values[i]
+    if ωi <= 0.491
+        return evalpoly(ωi,(0.37464,1.54226,-0.26992))
+    else
+        return evalpoly(ωi,(0.379642,1.487503,-0.164423,-0.016666)))
     end
-    
-    return α
-
 end
