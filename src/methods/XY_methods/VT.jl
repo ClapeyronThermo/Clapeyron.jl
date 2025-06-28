@@ -19,7 +19,7 @@ function VT_property(model,V,T,z,f::F,phase,p0) where {F}
     res = vt_flash(model,V,T,z,p0 = p0)
     if f == temperature
         return temperature(res)
-    elseif p == pressure
+    elseif f == pressure
         return pressure(res)
     else
         return f(model,res)
@@ -33,13 +33,11 @@ import Clapeyron
 for f in Clapeyron.CLAPEYRON_PROPS
     @eval begin
         function $f(model,V,T,z = Clapeyron.SA[1.0],p0 = nothing,phase = :unknown)
-            Clapeyron.VT_property(model,V,T,z,Clapeyron.$f,p0,phase)
+            Clapeyron.VT_property(model,V,T,z,Clapeyron.$f,phase,p0)
         end
     end
-
-    
-    function flash(model,V,T,z = Clapeyron.SA[1.0],args...;kwargs...)
-        return Clapeyron.vt_flash(model,V,T,z,args...;kwargs...)
-    end
+end
+function flash(model,V,T,z = Clapeyron.SA[1.0],args...;kwargs...)
+    return Clapeyron.vt_flash(model,V,T,z,args...;kwargs...)
 end
 end #VT module

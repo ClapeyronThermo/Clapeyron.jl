@@ -2,10 +2,14 @@ module ClapeyronCoolPropExt
 
 using Clapeyron
 using CoolProp
-
+using CoolProp.Unitful
+using CoolProp: libcoolprop
 function Clapeyron.coolprop_handler()
-    Base.Libc.Libdl.dlopen(CoolProp.CoolProp_jll.libcoolprop;throw_error = false)
+    Base.Libc.Libdl.dlopen(libcoolprop;throw_error = false)
 end
+
+using Clapeyron.StaticArrays
+using Clapeyron: molecular_weight
 
 #TODO: CoolProp-Clapeyron integration?
 
@@ -32,5 +36,449 @@ function Clapeyron.coolprop_crit_data(components)
 
 end
 
+# Define Parameters enum (equivalent to CoolProp's parameters)
+@enum Parameters begin
+    INVALID_PARAMETER = 0
+    igas_constant
+    imolar_mass
+    iacentric_factor
+    irhomolar_reducing
+    irhomolar_critical
+    iT_reducing
+    iT_critical
+    irhomass_reducing
+    irhomass_critical
+    iP_critical
+    iP_reducing
+    iT_triple
+    iP_triple
+    iT_min
+    iT_max
+    iP_max
+    iP_min
+    idipole_moment
+    iT
+    iP
+    iQ
+    iTau
+    iDelta
+    iDmolar
+    iHmolar
+    iSmolar
+    iCpmolar
+    iCp0molar
+    iCvmolar
+    iUmolar
+    iGmolar
+    iHelmholtzmolar
+    iHmolar_residual
+    iSmolar_residual
+    iGmolar_residual
+    iDmass
+    iHmass
+    iSmass
+    iCpmass
+    iCp0mass
+    iCvmass
+    iUmass
+    iGmass
+    iHelmholtzmass
+    iviscosity
+    iconductivity
+    isurface_tension
+    iPrandtl
+    ispeed_sound
+    iisothermal_compressibility
+    iisobaric_expansion_coefficient
+    iisentropic_expansion_coefficient
+    ifundamental_derivative_of_gas_dynamics
+    ialphar
+    idalphar_dtau_constdelta
+    idalphar_ddelta_consttau
+    ialpha0
+    idalpha0_dtau_constdelta
+    idalpha0_ddelta_consttau
+    id2alpha0_ddelta2_consttau
+    id3alpha0_ddelta3_consttau
+    iBvirial
+    iCvirial
+    idBvirial_dT
+    idCvirial_dT
+    iZ
+    iPIP
+    ifraction_min
+    ifraction_max
+    iT_freeze
+    iGWP20
+    iGWP100
+    iGWP500
+    iFH
+    iHH
+    iPH
+    iODP
+    iPhase
+    iundefined_parameter
+end
 
+
+# Define InputPairs enum (equivalent to CoolProp's input_pairs)
+
+@enum InputPairs begin
+    INPUT_PAIR_INVALID = 0
+    QT_INPUTS
+    PQ_INPUTS
+    QSmolar_INPUTS
+    QSmass_INPUTS
+    HmolarQ_INPUTS
+    HmassQ_INPUTS
+    DmolarQ_INPUTS
+    DmassQ_INPUTS
+    PT_INPUTS
+    DmassT_INPUTS
+    DmolarT_INPUTS
+    HmolarT_INPUTS
+    HmassT_INPUTS
+    SmolarT_INPUTS
+    SmassT_INPUTS
+    TUmolar_INPUTS
+    TUmass_INPUTS
+    DmassP_INPUTS
+    DmolarP_INPUTS
+    HmassP_INPUTS
+    HmolarP_INPUTS
+    PSmass_INPUTS
+    PSmolar_INPUTS
+    PUmass_INPUTS
+    PUmolar_INPUTS
+    HmassSmass_INPUTS
+    HmolarSmolar_INPUTS
+    SmassUmass_INPUTS
+    SmolarUmolar_INPUTS
+    DmassHmass_INPUTS
+    DmolarHmolar_INPUTS
+    DmassSmass_INPUTS
+    DmolarSmolar_INPUTS
+    DmassUmass_INPUTS
+    DmolarUmolar_INPUTS
+end
+
+
+# Helper function to check if parameters match a specific pair (in any order)
+function match_pair(key1::Parameters, key2::Parameters, x1::Parameters, x2::Parameters)
+    matched = (key1 == x1 && key2 == x2) || (key1 == x2 && key2 == x1)
+    swap = matched && (key1 != x1)  # Determine if values need swapping
+    return matched, swap
+end
+
+# Main function to generate input pair and ensure consistent parameter order
+function generate_update_pair(key1::Parameters, value1::T, key2::Parameters, value2::T) where T
+    # Check all possible input pair combinations
+    matched, swap = match_pair(key1, key2, iQ, iT)
+    matched && return (QT_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iP, iQ)
+    matched && return (PQ_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iP, iT)
+    matched && return (PT_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmolar, iT)
+    matched && return (DmolarT_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmass, iT)
+    matched && return (DmassT_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iHmolar, iT)
+    matched && return (HmolarT_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iHmass, iT)
+    matched && return (HmassT_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iSmolar, iT)
+    matched && return (SmolarT_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iSmass, iT)
+    matched && return (SmassT_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iT, iUmolar)
+    matched && return (TUmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iT, iUmass)
+    matched && return (TUmass_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmass, iHmass)
+    matched && return (DmassHmass_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmolar, iHmolar)
+    matched && return (DmolarHmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmass, iSmass)
+    matched && return (DmassSmass_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmolar, iSmolar)
+    matched && return (DmolarSmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmass, iUmass)
+    matched && return (DmassUmass_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmolar, iUmolar)
+    matched && return (DmolarUmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmass, iP)
+    matched && return (DmassP_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmolar, iP)
+    matched && return (DmolarP_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmass, iQ)
+    matched && return (DmassQ_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iDmolar, iQ)
+    matched && return (DmolarQ_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iHmass, iP)
+    matched && return (HmassP_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iHmolar, iP)
+    matched && return (HmolarP_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iP, iSmass)
+    matched && return (PSmass_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iP, iSmolar)
+    matched && return (PSmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iP, iUmass)
+    matched && return (PUmass_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iP, iUmolar)
+    matched && return (PUmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iHmass, iSmass)
+    matched && return (HmassSmass_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iHmolar, iSmolar)
+    matched && return (HmolarSmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iSmass, iUmass)
+    matched && return (SmassUmass_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    matched, swap = match_pair(key1, key2, iSmolar, iUmolar)
+    matched && return (SmolarUmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
+
+    # Return invalid pair if no match found
+    return (INPUT_PAIR_INVALID, (value1, value2))
+end
+
+function CoolProp.PropsSI(output::AbstractString, name1::AbstractString, value1::Real, name2::AbstractString, value2::Real, fluid::EoSModel)
+    return ClapeyronPropsSI(output,name1,value1,name2,value2,(fluid,Clapeyron.SA[1.0]))
+end
+
+function CoolProp.PropsSI(output::AbstractString, fluid::EoSModel)
+    return ClapeyronPropsSI(output,(fluid,Clapeyron.SA[1.0]))
+end
+
+function CoolProp.PropsSI(output::AbstractString, fluid::Tuple{EoSModel,Any})
+    return ClapeyronPropsSI(output,fluid)
+end
+
+function CoolProp.PropsSI(output::AbstractString, name1::AbstractString, value1::Union{Unitful.Quantity,Real}, name2::AbstractString, value2::Union{Unitful.Quantity,Real}, fluid::EoSModel)
+    return ClapeyronPropsSI(output,name1,value1,name2,value2,(fluid,Clapeyron.SA[1.0]))
+end
+
+function CoolProp.PropsSI(output::AbstractString, name1::AbstractString, value1::Real, name2::AbstractString, value2::Real, fluid::Tuple{EoSModel,Any})
+    return ClapeyronPropsSI(output,name1,value1,name2,value2,fluid)
+end
+
+function CoolProp.PropsSI(output::AbstractString, name1::AbstractString, value1::Union{Unitful.Quantity,Real}, name2::AbstractString, value2::Union{Unitful.Quantity,Real}, fluid::Tuple{EoSModel,Any})
+    unit1 = CoolProp._get_unit(name1,false)
+    unit2 = CoolProp._get_unit(name2,false)
+    outunit = CoolProp._get_unit(output,false)
+    return ClapeyronPropsSI(output, name1, CoolProp._si_value(unit1,value1), name2, CoolProp._si_value(unit2,value2), fluid)*outunit
+end
+
+function ClapeyronPropsSI(output::AbstractString, name1::AbstractString, value1::Real, name2::AbstractString, value2::Real, fluid::Tuple{EoSModel,Any})
+    model,z = fluid
+    i1 = Parameters(CoolProp.get_param_index(name1))
+    i2 = Parameters(CoolProp.get_param_index(name2))
+    if i1 == i2
+        throw(error("cannot set two inputs of the same type"))
+    end
+    io = Parameters(CoolProp.get_param_index(output))
+
+    if io == i1
+        return value1
+    end
+
+    if io == i2
+        return value2
+    end
+
+    res = generate_update_pair(i1,value1,i2,value2)
+    itype,(x,y) = res
+
+    
+    flash = flash_by_input(model,x,y,z,itype)
+    flash.fractions ./= sum(flash.fractions) #we move to a 1-mol basis
+    fracs = z ./ sum(z)
+    return eval_property(model,flash,fracs,io)
+end
+
+function ClapeyronPropsSI(output::AbstractString, fluid::Tuple{EoSModel,Any})
+    model,z = fluid
+    io = Parameters(CoolProp.get_param_index(output))
+    fracs = z ./ sum(z)
+    return eval_property(model,nothing,fracs,io)
+end
+
+function flash_not_implemented_error(input)
+    str = string(Symbol(input))
+    throw(error("Flash prodedure not implemented for $str"))
+end
+
+function property_not_implemented_error(input)
+    str = string(Symbol(input))
+    throw(error("Property evaluation of $str is not implemented."))
+end
+
+_vol(model,v,z) = 1/v
+
+_molar(model,x,z) = x*Clapeyron.molecular_weight(model,z)
+function _dmass(model,rhomass,z)
+    molar_weight = molecular_weight(model,z)
+    molar_weight/rhomass
+end
+
+function _dmolar(model,rhomolar,z)
+    sum(z)/rhomolar
+end
+
+function _emolar(model,e,z)
+    sum(z)*e
+end
+
+function _emass(model,e,z)
+    molar_weight = molecular_weight(model,z)
+    return e/molar_weight
+end
+
+function flash_by_input(model,x,y,z,itype::InputPairs)
+    QT_INPUTS == itype && return Clapeyron.QT.flash(model,x,y,z)
+    PQ_INPUTS == itype && return Clapeyron.QP.flash(model,y,x,z)
+    QSmolar_INPUTS == itype && flash_not_implemented_error(itype)
+    QSmass_INPUTS  == itype && flash_not_implemented_error(itype)
+    HmolarQ_INPUTS == itype && flash_not_implemented_error(itype)
+    HmassQ_INPUTS == itype && flash_not_implemented_error(itype)
+    DmolarQ_INPUTS == itype && flash_not_implemented_error(itype)
+    DmassQ_INPUTS == itype && flash_not_implemented_error(itype)
+    PT_INPUTS && return Clapeyron.PT.flash(x,y,z)
+    DmassT_INPUTS && return Clapeyron.VT.flash(_dmass(model,x,z),y,z)
+    DmolarT_INPUTS && return Clapeyron.PT.flash(_dmolar(model,x,z),y,z)
+    HmolarT_INPUTS == itype && flash_not_implemented_error(itype)
+    HmassT_INPUTS == itype && flash_not_implemented_error(itype)
+    SmolarT_INPUTS && return Clapeyron.TS.flash(y,_emolar(model,x,z),z)
+    SmassT_INPUTS && return Clapeyron.TS.flash(y,_emass(model,x,z),z)
+    TUmolar_INPUTS == itype && flash_not_implemented_error(itype)
+    TUmass_INPUTS == itype && flash_not_implemented_error(itype)
+    DmassP_INPUTS == itype && flash_not_implemented_error(itype)
+    DmolarP_INPUTS == itype && flash_not_implemented_error(itype)
+    HmassP_INPUTS && return Clapeyron.PH.flash(y,_emass(model,x,z),z)
+    HmolarP_INPUTS && return Clapeyron.PH.flash(y,_emolar(model,x,z),z)
+    PSmass_INPUTS && return Clapeyron.PS.flash(x,_emass(model,y,z),z)
+    PSmolar_INPUTS && return Clapeyron.PS.flash(x,_emass(model,y,z),z)
+    PUmass_INPUTS == itype && flash_not_implemented_error(itype)
+    PUmolar_INPUTS == itype && flash_not_implemented_error(itype)
+    HmassSmass_INPUTS == itype && flash_not_implemented_error(itype)
+    HmolarSmolar_INPUTS == itype && flash_not_implemented_error(itype)
+    SmassUmass_INPUTS == itype && flash_not_implemented_error(itype)
+    SmolarUmolar_INPUTS == itype && flash_not_implemented_error(itype)
+    DmassHmass_INPUTS == itype && flash_not_implemented_error(itype)
+    DmolarHmolar_INPUTS == itype && flash_not_implemented_error(itype)
+    DmassSmass_INPUTS == itype && flash_not_implemented_error(itype)
+    DmolarSmolar_INPUTS == itype && flash_not_implemented_error(itype)
+    DmassUmass_INPUTS == itype && Clapeyron.uv_flash(model,_dmass(model,x,z),_emass(model,y,z),z)
+    DmolarUmolar_INPUTS && Clapeyron.uv_flash(model,_dmolar(model,x,z),_emolar(model,y,z),z)
+end
+
+function eval_property(model,result,z,key::Parameters)
+    igas_constant == key && return Clapeyron.Rgas(model)
+    imolar_mass == key && return Clapeyron.molecular_weight(model,z)
+    iacentric_factor == key && return Clapeyron.acentric_factor(model)
+    irhomolar_reducing == key && return property_not_implemented_error(key)
+    irhomolar_critical == key && return sum(z)/Clapeyron.crit_pure(model)[3]
+    iT_reducing == key && return property_not_implemented_error(key)
+    iT_critical == key && crit_pure(model)[1]
+    irhomass_reducing == key && return property_not_implemented_error(key)
+    irhomass_critical == key && return molecular_weight(model,SA[1.0])/crit_pure(model)[3]
+    iP_critical == key && return crit_pure(model)[2]
+    iP_reducing == key && return property_not_implemented_error(key)
+    iT_triple == key && return property_not_implemented_error(key)
+    iP_triple == key && return property_not_implemented_error(key)
+    iT_min == key && return property_not_implemented_error(key)
+    iT_max == key && return property_not_implemented_error(key)
+    iP_max == key && return property_not_implemented_error(key)
+    iP_min == key && return property_not_implemented_error(key)
+    idipole_moment == key && return property_not_implemented_error(key)
+    iT == key && return Clapeyron.temperature(flash)
+    iP == key && return Clapeyron.pressure(flash)
+    iQ == key && return property_not_implemented_error(key)
+    iTau == key && return property_not_implemented_error(key)
+    iDelta == key && return property_not_implemented_error(key)
+    iDmolar == key && return molar_density(model,result)
+    iHmolar == key && return enthalpy(model,result)
+    iSmolar == key && return entropy(model,result)
+    iCpmolar == key && return isobaric_heat_capacity(model,result)
+    iCp0molar == key && return isobaric_heat_capacity(idealmodel(model),result)
+    iCvmolar == key && return isochoric_heat_capacity(model,result)
+    iUmolar == key && return internal_energy(model,result)
+    iGmolar == key && return gibbs_free_energy(model,result)
+    iHelmholtzmolar == key && return helmholtz_energy(model,result)
+    iHmolar_residual == key && return enthalpy_res(model,result)
+    iSmolar_residual == key && return entropy_res(model,result)
+    iGmolar_residual == key && return gibbs_free_energy_res(model,result)
+    iDmass == key && return mass_density(model,result)
+    iHmass == key && return mass_enthalpy(model,result)
+    iSmass == key && return mass_entropy(model,result)
+    iCpmass == key && return mass_isobaric_heat_capacity(model,result)
+    iCp0mass == key && return mass_isobaric_heat_capacity(idealmodel(model),result)
+    iCvmass == key && return mass_isochoric_heat_capacity(model,result)
+    iUmass == key && return mass_internal_energy(model,result)
+    iGmass == key && return mass_gibbs_energy(model,result)
+    iHelmholtzmass == key && return mass_helmholtz_energy(model,result)
+    iviscosity == key && return property_not_implemented_error(key)
+    iconductivity == key && return property_not_implemented_error(key)
+    isurface_tension == key && return property_not_implemented_error(key)
+    iPrandtl == key && return property_not_implemented_error(key)
+    ispeed_sound == key && return speed_of_sound(model,result)
+    iisothermal_compressibility == key && return isothermal_compressibility(model,result)
+    iisobaric_expansion_coefficient == key && return isobaric_expansivity(model,result)
+    iisentropic_expansion_coefficient == key && return isentropic_compressibility(model,result)
+    ifundamental_derivative_of_gas_dynamics == key && fundamental_derivative_of_gas_dynamics(model,result)
+    ialphar == key && return return property_not_implemented_error(key)
+    idalphar_dtau_constdelta == key && return property_not_implemented_error(key)
+    idalphar_ddelta_consttau == key && return property_not_implemented_error(key)
+    ialpha0 == key && return property_not_implemented_error(key)
+    idalpha0_dtau_constdelta == key && return property_not_implemented_error(key)
+    idalpha0_ddelta_consttau == key && return property_not_implemented_error(key)
+    id2alpha0_ddelta2_consttau == key && return property_not_implemented_error(key)
+    id3alpha0_ddelta3_consttau == key && return property_not_implemented_error(key)
+    iBvirial == key && return property_not_implemented_error(key)
+    iCvirial == key && return property_not_implemented_error(key)
+    idBvirial_dT == key && return property_not_implemented_error(key)
+    idCvirial_dT == key && return property_not_implemented_error(key)
+    iZ == key && return compressibility_factor(model,result)
+    iPIP == key && return Clapeyron.pip(model,result)
+    ifraction_min == key && return property_not_implemented_error(key)
+    ifraction_max == key && return property_not_implemented_error(key)
+    iT_freeze == key && return property_not_implemented_error(key)
+    iGWP20 == key && return property_not_implemented_error(key)
+    iGWP100 == key && return property_not_implemented_error(key)
+    iGWP500 == key && return property_not_implemented_error(key)
+    iFH == key && return property_not_implemented_error(key)
+    iHH == key && return property_not_implemented_error(key)
+    iPH == key && return property_not_implemented_error(key)
+    iODP == key && return property_not_implemented_error(key)
+    iPhase == key && return property_not_implemented_error(key)
+    iundefined_parameter == key &&  return property_not_implemented_error(key)
+    end
 end

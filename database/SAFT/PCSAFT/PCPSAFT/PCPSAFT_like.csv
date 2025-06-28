@@ -1033,7 +1033,7 @@ methylethylether~|~ethyl methyl ether,60.058,2.70452,3.35445,213.00357,1.23,1,0,
 "2,2,3-trimethylpentane",114.141,3.07212,4.0839,261.52779,0.0,0,0,,NONPOLAR,OK
 fluorine,37.997,1.30208,2.93343,99.77277,0.0,1,1,,ASSOCIATIVE,kappa_ab: lower
 "propadiene~|~1,2-propadiene",40.031,1.97921,3.36589,222.99172,0.0,0,0,,NONPOLAR,OK
-amyl formate~|~pentyl methanoate~|~formicacidpentylester,116.084,4.24093,3.44788,237.7671,1.9,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
+amyl formate~|~pentyl formate~|~pentyl methanoate~|~formicacidpentylester,116.084,4.24093,3.44788,237.7671,1.9,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 n-octyl formate~|~octyl methanoate~|~formicacidoctylester,158.131,5.05811,3.64662,249.70825,0.0,2,0,,NONPOLAR,OK
 "5,8,11-trioxapentadecane~|~diethyleneglycoldibutylether~|~diethylene glycol di-n-butyl ether",218.188,4.60277,4.22311,288.04347,0.0,3,0,,NONPOLAR,OK
 "phosphonic acid, dimethyl ester",110.013,3.42999,3.35188,303.80162,0.0,3,0,,NONPOLAR,OK

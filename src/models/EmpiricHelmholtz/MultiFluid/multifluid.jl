@@ -123,7 +123,7 @@ function MultiFluid(components;
         end
     end
     model = MultiFluid(_components,params,pures,mixing,departure,Rgas,references)
-    recombine_mixing!(model,model.mixing,estimate_mixing)
+    recombine_mixing_reduced!(model,model.mixing,estimate_mixing)
     recombine_departure!(model,model.departure)
     set_reference_state!(model,verbose = verbose)
     return model
@@ -214,13 +214,25 @@ function x0_volume_gas(model::MultiFluid,p,T,z)
     return V
 end
 
+has_fast_crit_pure(model::MultiFluid) = true
+
 #use each available pure x0_volume_liquid
 function x0_volume_liquid(model::MultiFluid,p,T,z)
     v0 = zero(Base.promote_eltype(model,p,T,z))
+    lb_v = lb_volume(model,T,z)
     for (i,pure) in pairs(model.pures)
-        v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
+        if T > pure.properties.Tc
+            v0 += z[i]*1.01*lb_volume(pure,T,SA[1.0])
+        else
+            v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
+        end
     end
     p0 = pressure(model,v0,T,z)
+    for i in 1:10
+        p0 > 0 && break
+        v0 = 0.5v0 + 0.5*1.01*lb_v
+        p0 = pressure(model,v0,T,z)
+    end
     if p0 >= p
         return v0
     else

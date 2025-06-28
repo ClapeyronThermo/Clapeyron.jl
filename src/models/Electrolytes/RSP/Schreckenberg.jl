@@ -3,17 +3,14 @@ abstract type SchreckenbergModel <: RSPModel end
 struct SchreckenbergParam <: EoSParam
     d_T::SingleParam{Float64}
     d_V::SingleParam{Float64}
-    charge::SingleParam{Float64}
 end
 
 struct Schreckenberg <: SchreckenbergModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::SchreckenbergParam
     references::Array{String,1}
 end
 
-@registermodel Schreckenberg
 export Schreckenberg
 
 """
@@ -25,7 +22,6 @@ export Schreckenberg
 ## Input parameters
 - `d_T::Float64`: Single Parameter - Temperature dependent dielectric constant `[-]`
 - `d_V::Float64`: Single Parameter - Volume dependent dielectric constant `[-]`
-- `charge::Float64`: Single Parameter - Charge `[-]`
 
 ## Description
 This function is used to create a Schreckenberg model. The Schreckenberg term estimates the dielectric constant for a mixture of solvents.
@@ -37,54 +33,42 @@ function Schreckenberg(solvents,ions; userlocations::Vector{String}=String[], ve
     components = deepcopy(ions)
     prepend!(components,solvents)
     components = format_components(components)
-    icomponents = 1:length(components)
 
-    params = getparams(components, ["Electrolytes/RSP/Schreckenberg.csv","Electrolytes/properties/charges.csv"]; userlocations=userlocations, verbose=verbose, ignore_missing_singleparams=["d_T","d_V"])
+    params = getparams(components, ["Electrolytes/RSP/Schreckenberg.csv"]; userlocations=userlocations, verbose=verbose, ignore_missing_singleparams=["d_T","d_V"])
     d_T = params["d_T"]
     d_V = params["d_V"]
-    charge = params["charge"]
-    packagedparams = SchreckenbergParam(d_T,d_V,charge)
+    packagedparams = SchreckenbergParam(d_T,d_V)
 
-    references = String[]
+    references = String["10.1080/00268976.2014.910316"]
 
-    model = Schreckenberg(components,icomponents,packagedparams,references)
+    model = Schreckenberg(components,packagedparams,references)
     return model
 end
 
-function dielectric_constant(model::SchreckenbergModel,V,T,z,_data=nothing)
+function dielectric_constant(model::SchreckenbergModel, V, T, z, Z)
         d_T = model.params.d_T.values
         d_V = model.params.d_V.values
-        Z = model.params.charge.values
-        icomponents = model.icomponents
-
+        ineutrals = @ineutral()
         if all(!iszero,Z)
             return zero(Base.promote_eltype(model,V,T,z))
         end
 
-        n_solv = zero(eltype(z))
-        for i in icomponents
-            Z[i] == 0 && (n_solv += z[i])
-        end
-
+        n_solv = sum(z[i] for i ∈ ineutrals)
         ρ_solv = n_solv / V
         d̄ = zero(Base.promote_eltype(model,T,z))
 
-        for i in icomponents
-            Zi = Z[i]
-            if Z[i] == 0
-                di = d_V[i]*(d_T[i]/T-1)
-                dij,zi = di,z[i]
-                d̄ += dij*zi*zi
-                for j in icomponents#ineutral[ineutral.!=i]
-                    if Z[j] == 0 && j != i
-                        dj = d_V[j]*(d_T[j]/T-1)
-                        dij,zj = 0.5*(di+dj),z[j]
-                        d̄ += dij*zi*zj
-                    end
+        for i ∈ ineutrals
+            di = d_V[i]*(d_T[i]/T - 1)
+            dij,zi = di,z[i]
+            d̄ += dij*zi*zi
+            for j in ineutrals
+                if j != i
+                    dj = d_V[j]*(d_T[j]/T-1)
+                    dij,zj = 0.5*(di+dj),z[j]
+                    d̄ += dij*zi*zj
                 end
             end
         end
-
     d̄ = d̄/(n_solv*n_solv)
     return 1+ρ_solv*d̄
 end

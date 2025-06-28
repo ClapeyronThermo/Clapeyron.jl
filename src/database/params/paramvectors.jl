@@ -224,7 +224,7 @@ function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
     # i,j = minmax(i,j)
     @inbounds begin
     idx = searchsorted(m.outer_indices,(i,j))
-    if iszero(idx)
+    if iszero(idx) && i != j #check symmetric only if the component pair is actually different
         idx = searchsorted(m.outer_indices,(j,i))
     end
     #return AssocView(view(m.values,idx),view(m.inner_indices,idx),m.inner_size)
@@ -269,12 +269,24 @@ end
 
 function Base.size(m::AssocView)
     a,b = 0,0
+    idx = m.indices
+    iszero(length(idx)) && return a,b
     for ab in view(m.values.inner_indices,m.indices)
         _a,_b = ab
         a,b = max(a,_a),max(b,_b)
     end
-    return a,b
+    ii,jj = m.at
+    if ii == jj
+        ab = max(a,b)
+        return ab,ab
+    end
+    if m.values.outer_indices[m.indices[1]] == m.at
+        return a,b
+    else
+        return b,a
+    end
 end
+
 Base.eltype(m::AssocView{T}) where T = T
 
 #returns the absolute index. that is. it is directly indexable by the parent array

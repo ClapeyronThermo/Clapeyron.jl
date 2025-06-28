@@ -105,7 +105,7 @@ function data(model::SAFTVRMieModel, V, T, z)
     return (_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x,m̄)
 end
 
-function packing_fraction(model::SAFTVRMieModel,_data::Tuple)
+function packing_fraction(model::SAFTVRMieModel,_data)
     _,_,ζi,_,_,_,m̄ = _data
     _,_,_,η = ζi
     return η
@@ -117,7 +117,7 @@ end
 
 #fused chain and disp calculation
 function a_res(model::SAFTVRMieModel, V, T, z, _data = @f(data))
-    return @f(a_hs,_data)+@f(a_dispchain,_data) + @f(a_assoc,_data)
+    return @f(a_hs,_data) + @f(a_dispchain,_data) + @f(a_assoc,_data)
 end
 
 function a_mono(model::SAFTVRMieModel, V, T, z,_data = @f(data))

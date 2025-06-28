@@ -22,12 +22,12 @@ function transform_params(::Type{PCSAFT},params)
     return saft_lorentz_berthelot(params)
 end
 
-function get_k(model::PCSAFTModel)   
+function get_k(model::PCSAFTModel)
     has_groups(model) && return nothing
     return get_k_geomean(model.params.epsilon)
 end
 
-function get_l(model::PCSAFTModel)   
+function get_l(model::PCSAFTModel)
     has_groups(model) && return nothing
     return get_k_mean(model.params.sigma)
 end
@@ -46,7 +46,7 @@ end
 """
     PCSAFTModel <: SAFTModel
 
-    PCSAFT(components; 
+    PCSAFT(components;
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
@@ -96,7 +96,7 @@ function data(model::PCSAFTModel,V,T,z)
 end
 
 #unpacks packing_fraction from data
-function packing_fraction(model::PCSAFTModel,_data::Tuple)
+function packing_fraction(model::PCSAFTModel,_data)
     _,_,_,_,η,_ = _data
     return η
 end
@@ -145,7 +145,7 @@ function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     end
     res *= N_A*π/6/V
     return res
-end =# 
+end =#
 
 function g_hs(model::PCSAFTModel, V, T, z, i, j, _data=@f(data))
     _d,ζ0,ζ1,ζ2,ζ3,_ = _data
@@ -208,12 +208,12 @@ function I(model::PCSAFTModel, V, T, z, n, _data=@f(data))
     end
     return res
 end
- 
+
 function Δ(model::PCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     _0 = zero(V+T+first(z)+one(eltype(model)))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
-    κijab = κ[i,j][a,b] 
+    κijab = κ[i,j][a,b]
     iszero(κijab) && return _0
     σ = model.params.sigma.values
     gij = @f(g_hs,i,j,_data)
@@ -241,7 +241,7 @@ const PCSAFTconsts = (
     (-355.60235612, -165.20769346, -29.666905585)]
 )
 
-#= 
+#=
 Specific PCSAFT optimizations
 This code is not generic, in the sense that is only used by PCSAFT and not any model <:PCSAFTModel
 but, because it is one of the more commonly used EoS,

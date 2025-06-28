@@ -23,6 +23,7 @@ end
 default_references(::Type{HeterogcPCPSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/","properties/molarmass_groups.csv"]
 default_gclocations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_groups.csv","SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_intragroups.csv"]
+default_ignore_missing_singleparams(::Type{HeterogcPCPSAFT}) = String["k"]
 
 function transform_params(::Type{HeterogcPCPSAFT},params,groups)
     components = groups.components
@@ -145,10 +146,21 @@ export HeterogcPCPSAFT
 
 function lb_volume(model::gcPCPSAFTModel, z)
     vk  = model.groups.n_flattenedgroups
-    seg = model.params.segment.values
+    m = model.params.segment.values
     σ = model.params.sigma.values
-    val = π/6*N_A*sum(z[i]*sum(vk[i][k]*seg[k]*σ[k,k]^3 for k in @groups(i)) for i in @comps)
-    return val
+    σ_idx = linearidx(σ)
+    m_idx = linearidx(m)
+    val = zero(Base.promote_eltype(m,σ,z))
+    for i in 1:length(model)
+        val_i = zero(eltype(model))
+        vi = vk[i]
+        for k in 1:length(model.groups.flattenedgroups)
+            mk,σk = m[m_idx[k]],σ[σ_idx[k]]
+            val_i += vi[k]*mk*σk*σk*σk
+        end
+        val += z[i]*val_i
+    end
+    return π/6*N_A*val
 end
 
 function data(model::gcPCPSAFTModel,V,T,z)

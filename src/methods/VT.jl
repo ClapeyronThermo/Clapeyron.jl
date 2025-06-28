@@ -31,6 +31,9 @@ function VT_entropy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return -∂f∂T(model,V,T,z)
 end
 
+VT_mass_entropy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_entropy(model,V,T,z)/molecular_weight(model,z)
+
+
 function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,V,x,z)
     return -Solvers.derivative(fun,T)
@@ -38,7 +41,7 @@ end
 
 function VT_internal_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     ideal = model isa IdealModel
-    if V == Inf && !ideal
+    if iszero(1/V) && !ideal
         return VT_internal_energy(idealmodel(model),V,T,z)
     end
 
@@ -52,6 +55,9 @@ function VT_internal_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return A - T*∂A∂T
 end
 
+VT_mass_internal_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_internal_energy(model,V,T,z)/molecular_weight(model,z)
+
+
 function VT_internal_energy_res(model::EoSModel, V, T, z=SA[1.])
     A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,V,T,z)
     return A - T*∂A∂T
@@ -59,7 +65,7 @@ end
 
 function VT_enthalpy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     ideal = model isa IdealModel
-    if V == Inf && !ideal
+    if iszero(1/V) && !ideal
         return VT_internal_energy(idealmodel(model),V,T,z)
     end
 
@@ -78,6 +84,8 @@ function VT_enthalpy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     end
 end
 
+VT_mass_enthalpy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_enthalpy(model,V,T,z)/molecular_weight(model,z)
+
 function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
     A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,V,T,z)
     PrV = ifelse(isinf(primalval(V)),zero(∂A∂V),- V*∂A∂V)
@@ -86,7 +94,7 @@ end
 
 function VT_gibbs_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p = nothing)
     ideal = model isa IdealModel
-    if V == Inf && !ideal
+    if iszero(1/V) && !ideal
         return VT_gibbs_free_energy(idealmodel(model), V, T, z)
     end
 
@@ -104,16 +112,22 @@ function VT_gibbs_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p
     end
 end
 
+VT_mass_gibbs_free_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_gibbs_free_energy(model,V,T,z)/molecular_weight(model,z)
+
+
 function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
     Ar,∂A∂Vr = Solvers.f∂f(fun,V)
-    PrV = ifelse(V == Inf,zero(∂A∂Vr),- V*∂A∂Vr)
+    PrV = ifelse(iszero(1/V),zero(∂A∂Vr),- V*∂A∂Vr)
     return Ar + PrV
 end
 
 function VT_helmholtz_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return eos(model,V,T,z)
 end
+
+VT_mass_helmholtz_free_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_helmholtz_free_energy(model,V,T,z)/molecular_weight(model,z)
+
 
 function VT_helmholtz_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     return eos_res(model,V,T,z)
@@ -129,8 +143,11 @@ function VT_isochoric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     return -T*∂²A∂T²
 end
 
+VT_mass_isochoric_heat_capacity(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_isochoric_heat_capacity(model,V,T,z)/molecular_weight(model,z)
+
+
 function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf  || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
         return -T*∂²A∂T² + Rgas(model)*sum(z)
     else
@@ -142,8 +159,11 @@ function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     end
 end
 
+VT_mass_isobaric_heat_capacity(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_isobaric_heat_capacity(model,V,T,z)/molecular_weight(model,z)
+
+
 function VT_adiabatic_index(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
         1 - Rgas(model)*sum(z)/(∂²A∂T²*T)
     else
@@ -156,7 +176,7 @@ function VT_adiabatic_index(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         return V/(sum(z)*Rgas(model)*T)
     else
         _,∂p∂V = p∂p∂V(model,V,T,z)
@@ -165,7 +185,7 @@ function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isentropic_compressibility(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
         R = Rgas(model)
         V_∂²A∂V∂T_2 = R*R/V
@@ -182,7 +202,7 @@ end
 
 function VT_speed_of_sound(model::EoSModel, V, T, z=SA[1.])
     Mr = molecular_weight(model,z)
-    if V == Inf || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         γ = VT_adiabatic_index(model,V,T,z)
         return sqrt(γ*Rgas(model)*T*sum(z)/Mr)
     else
@@ -195,7 +215,7 @@ function VT_speed_of_sound(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isobaric_expansivity(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf  || model isa IdealModel
+    if iszero(1/V)  || model isa IdealModel
         return one(Base.promote_eltype(model,V,T,z))/T
     else
         d²A = f_hess(model,V,T,z)
@@ -206,7 +226,7 @@ function VT_isobaric_expansivity(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
-    if V == Inf || model isa IdealModel
+    if iszero(1/V) || model isa IdealModel
         B,∂B∂T = B∂B∂T(model,T,z)
         Cp = VT_isobaric_heat_capacity(model,V,T,z)
         return (T*∂B∂T - B)/Cp
@@ -498,15 +518,27 @@ function VT_fugacity_coefficient!(φ,model::EoSModel,V,T,z=SA[1.],p = pressure(m
     return φ
 end
 
+const VT_helmholtz_energy = VT_helmholtz_free_energy
+const VT_gibbs_energy = VT_gibbs_free_energy
+const VT_mass_helmholtz_energy = VT_mass_helmholtz_free_energy
+const VT_mass_gibbs_energy = VT_mass_gibbs_free_energy
+
+
 export pressure
 export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
 
 const CLAPEYRON_PROPS = [:temperature,:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
                     :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
+                    :helmholtz_energy,:gibbs_energy,
+                    #mass properties, first order
+                    :mass_entropy,:mass_enthalpy,:mass_internal_energy,:mass_gibbs_free_energy,:mass_helmholtz_free_energy,
+                    :mass_helmholtz_energy,:mass_gibbs_energy,
                     #second derivative order properties
                     :isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
                     :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
                     :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
+                    #second derivative order, mass properties
+                    :mass_isobaric_heat_capacity,:mass_isochoric_heat_capacity,
                     #higher derivative order properties
                     :fundamental_derivative_of_gas_dynamics,
                     #volume properties
@@ -515,6 +547,7 @@ const CLAPEYRON_PROPS = [:temperature,:volume, :pressure, :entropy, :internal_en
                     :identify_phase, :pip,
 ]
 
+const CLAPEYRON_PROP_ALIASES = [:mass_gibbs_energy,:gibbs_energy,:helmholtz_energy,:mass_helmholtz_energy]
 
 function VT_symbol(x::Symbol)
     return Symbol(:VT_,x)

@@ -120,6 +120,8 @@ end
 
 #Base.summary(::NLSolvers.Newton{<:Direct, typeof(static_linsolve)}) = "Newton's method with optional static linsolve"
 
+const EMPTY_INT_VEC = Int[]
+
 struct Clapeyronlinsolve{M,V,LB,UB}
     m::M
     v::V
@@ -131,7 +133,7 @@ end
 
 Base.summary(::NLSolvers.Newton{<:Direct, <:Clapeyronlinsolve}) = "Newton's method with modified linsolve"
 
-_to_matrix(::Nothing) = nothing,nothing,Int[]
+_to_matrix(::Nothing) = nothing,nothing,EMPTY_INT_VEC
 function _to_matrix(x::AbstractVector)
     l = length(x)
     return similar(x,(l,l)),similar(x),Vector{Int}(undef,l)
@@ -148,6 +150,10 @@ function (linsolve::Clapeyronlinsolve{Nothing})(d,B,∇f)
     success && return d
     lup_linsolve(d,B,∇f,check = linsolve.check)
     return d
+end
+
+function (linsolve::Clapeyronlinsolve{Nothing})(B,∇f)
+    return B\∇f
 end
 
 function (linsolve::Clapeyronlinsolve{T})(d,B,∇f) where T <: AbstractMatrix

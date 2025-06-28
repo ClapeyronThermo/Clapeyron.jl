@@ -226,7 +226,6 @@ function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
     else
         name=name*"_"*model_name
     end
-    @show unlike
 
     if length(unlike) != 2
         ParamTable(:unlike, Tables.columntable(unlike); name=name, location=location)

@@ -6,18 +6,18 @@ Method to solve non-reactive multicomponent flash problem by Michelsen's method.
 Only two phases are supported. if `K0` is `nothing`, it will be calculated via the Wilson correlation.
 
 ### Keyword Arguments:
-- `equilibrium`: `:vle` for liquid vapor equilibria, `:lle` for liquid liquid equilibria, `:unknown` if not specified
-- `K0`: initial guess for the constants K
-- `x0`: initial guess for the composition of phase x
-- `y0`: initial guess for the composition of phase y
-- `vol0`: initial guesses for phase x and phase y volumes
-- `K_tol`: tolerance to stop the calculation
-- `ss_iters`: number of Successive Substitution iterations to perform
+- `equilibrium`: `:vle` for liquid vapor equilibria, `:lle` for liquid liquid equilibria, `:unknown` if not specified.
+- `K0`: initial guess for the K-values.
+- `x0`: initial guess for the composition of phase x.
+- `y0`: initial guess for the composition of phase y.
+- `vol0`: initial guesses for phase x and phase y volumes.
+- `K_tol`: tolerance to stop the calculation.
+- `ss_iters`: number of Successive Substitution iterations to perform.
 - `nacc`: accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
-- `second_order`: wheter to solve the gibbs energy minimization using the analytical hessian or not
-- `noncondensables`: arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase
-- `nonvolatiles`: arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase
-- `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses
+- `second_order`: wheter to solve the gibbs energy minimization using the analytical hessian or not.
+- `noncondensables`: arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase.
+- `nonvolatiles`: arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase.
+- `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
 """
 struct MichelsenTPFlash{T} <: TPFlashMethod
     equilibrium::Symbol
@@ -193,7 +193,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         x = x0 ./ sum(x0)
         y = y0 ./ sum(y0)
         lnK .= log.(y ./ x)
-        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(volx,voly),phases,non_inw,dlnϕ_cache)
+        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(volx,voly),phases,non_inw,dlnϕ_cache)
         K .= exp.(lnK)
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
@@ -212,7 +212,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         K .= K0_lle_init(model,p,T,z)
         lnK .= log.(K)
     end
-    _1 = one(p+T+first(z))
+    _1 = one(eltype(K))
     # Initial guess for phase split
     β,singlephase,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
     g0,g1 = g01
@@ -255,7 +255,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         lnK_old .= lnK
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
-        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,β,(volx,voly),phases,non_inw,dlnϕ_cache)
+        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,z,β,(volx,voly),phases,non_inw,dlnϕ_cache)
         vcache[] = (volx,voly)
         # acceleration step
         if itacc == (nacc - 2)
@@ -270,7 +270,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             K_dem .= exp.(lnK_dem)
             β_dem = rachfordrice(K_dem, z; β0=β, non_inx=non_inx, non_iny=non_iny)
             x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
-            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,β,(volx,voly),phases,non_inw,dlnϕ_cache)
+            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,z,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
             # only accelerate if the gibbs free energy is reduced
             if gibbs_dem < gibbs
                 lnK .= lnK_dem

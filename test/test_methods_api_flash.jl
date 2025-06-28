@@ -176,6 +176,8 @@ end
     h = enthalpy(model,p,T,z)
     res0 = ph_flash(model,p,h,z)
     @test Clapeyron.temperature(res0) ≈ T rtol = 1e-6
+    @test PH.temperature(model,p,h,z) ≈ T rtol = 1e-6
+    @test Clapeyron.temperature(PH.flash(model,p,h,z)) ≈ T rtol = 1e-6
     @test enthalpy(model,res0) ≈ h rtol = 1e-6
 
     #2 phases
@@ -193,14 +195,15 @@ end
     model = cPR(["ethane","propane"],idealmodel=ReidIdeal)
     res2 = qt_flash(model,0.5,208.0,[0.5,0.5])
     @test Clapeyron.pressure(res2) ≈ 101634.82435966855 rtol = 1e-6
+    @test QT.pressure(model,0.5,208.0,[0.5,0.5]) ≈ 101634.82435966855 rtol = 1e-6
     res3 = qp_flash(model,0.5,120000.0,[0.5,0.5])
     @test Clapeyron.temperature(res3) ≈ 211.4972567716822 rtol = 1e-6
-
+    @test QP.temperature(model,0.5,120000.0,[0.5,0.5]) ≈ 211.4972567716822 rtol = 1e-6
     #1 phase input should error
     model = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
     z = [0.25, 0.25, 0.25, 0.25]
     p = 1e5
-    h = enthalpy(model, 1e5, 303.15, z)
+    h = 6300.0
     r = Clapeyron.ph_flash(model, p, h, z)
     @test_throws ArgumentError qt_flash(model,0.5,308,z,flash_result = r)
     res4 = qp_flash(model,0.7,60000.0,z)
@@ -276,7 +279,7 @@ end
     @test res_qp2.fractions ≈ [6.0,4.0]
 
     #qp_flash scaling error (#325)
-    fluids= ["isopentane","isobutane"]
+    fluids = ["isopentane","isobutane"]
     model = cPR(fluids,idealmodel=ReidIdeal)
 
     p = 2*101325.0; z = [2.0,5.0];
@@ -294,6 +297,10 @@ end
     n_O2_a = 24.08 # mol O2
     sol_fl = vt_flash(model_a_pr, V_a, T, [n_H2O_a, n_O2_a])
     @test V_a ≈ volume(sol_fl)
+    water_cpr = cPR(["water"],idealmodel = ReidIdeal)
+    @test_throws ArgumentError Clapeyron.VT.speed_of_sound(water_cpr,1e-4,373.15)
+    water_cpr_flash = Clapeyron.VT.flash(water_cpr,1e-4,373.15)
+    @test_throws ArgumentError speed_of_sound(water_cpr,water_cpr_flash) 
 
     #PH flash with supercritical pure components (#361)
     fluid_model = SingleFluid("Hydrogen")
@@ -302,6 +309,69 @@ end
     h_in = enthalpy(fluid_model,p_in,T_in)
     sol_sc = ph_flash(fluid_model,p_in,h_in)
     @test Clapeyron.temperature(sol_sc) ≈ T_in
+
+    #PH Flash where T is in the edge (#373)
+    model = cPR(["butane","isopentane"],idealmodel = ReidIdeal)
+    p = 101325
+    z = [1.0,1.0];
+    T = 286.43023797357927 #(0.5*bubble_temperature(model,p,z)[1] + 0.5*dew_temperature(model,p,z)[1])
+    h = -50380.604181769755 #Clapeyron.enthalpy(model,p,T,z)
+    flash_res_ph = ph_flash(model,p,h,z)
+    @test Clapeyron.numphases(flash_res_ph) == 2
+
+    #Inconsistency in flash computations near bubble and dew points (#353)
+    fluids =["isopentane","toluene"]
+    model = cPR(fluids,idealmodel = ReidIdeal)
+    p = 101325
+    z = [1.5,1.5]
+    T1,T2 = 380, 307.72162335900924 #T1 = 380; T2 = bubble_temperature(model,p,z)[1] - 10
+    h1,h2 = 30118.26278687942, -89833.18975112544 #h1 = enthalpy(model,p,T1,z); h2 = enthalpy(model,p,T2,z)
+    hrange = range(h1,h2,length=100)
+    Trange = similar(hrange)
+    for i in eachindex(hrange)
+        Ti = Clapeyron.PH.temperature(model,p,hrange[i],z)
+        Trange[i] = Ti
+        if i > 1
+            @test Trange[i] < Trange[i-1] #check that temperature is increasing
+            @test isfinite(Ti) #test that there are no NaNs
+        end
+    end
+
+    #VT flash: water + a tiny amount of hydrogen (#377)
+    # content of a cathode separation tank
+    n_H2O_c = 0.648e4
+    V_c = 0.35
+    n_H2_c = 251
+    mod_pr = cPR(["water","hydrogen"],idealmodel = ReidIdeal)
+    mult_H2 = reverse(0:0.1:5)
+    p_tank = similar(mult_H2)
+    T_tank = 70 + 273.15
+    for (i,mH2) in pairs(mult_H2)
+        res_i = vt_flash(mod_pr,V_c,T_tank,[n_H2O_c, exp10(-mH2)*n_H2_c])
+        #@test Clapeyron.numphases(res_i) == 2
+        #@test pressure(res_i) > 0
+        p_tank[i] = pressure(res_i)
+    end
+    @test issorted(p_tank)
+
+    #issue #390
+    #=
+    model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)
+    z = [0.5,0.5]
+    p_crit= 4.1778440598996202e6
+    p = collect(range(101325,0.7p_crit,100))
+    T_bubble = similar(p)
+    T_dew = similar(p)
+    s_bubble = similar(p)
+    s_dew = similar(p)
+    q0 = 0.0
+    q1 = 1.0
+
+    for i in eachindex(p)
+        res_dew = qp_flash(model,q1,p[i],z)
+        T_dew[i] = Clapeyron.temperature(res_dew)
+        s_dew[i] = Clapeyron.entropy(model,res_dew)
+    end =#
 end
 
 @testset "Saturation Methods" begin
@@ -368,6 +438,11 @@ end
 
     #Issue 328
     @test saturation_pressure(cPR("butane"),406.5487245045052)[1] ≈ 2.815259927796967e6 rtol = 1e-6
+
+    #issue 387
+    cpr = cPR("Propane",idealmodel = ReidIdeal)
+    crit_cpr = crit_pure(cpr)
+    @test saturation_temperature(cpr,crit_cpr[2] - 1e3)[1] ≈ 369.88681908031606 rtol = 1e-6
 end
 
 @testset "Tproperty" begin

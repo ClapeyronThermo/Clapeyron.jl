@@ -132,7 +132,7 @@ if `x` is an `EoSModel`, it will return if the model is able to contain a solid 
 If a string is passed, it is converted to symbol.
 """
 is_solid(sym::Symbol) = sym in SOLID_STR
-is_solid(str::String) = is_vapour(Symbol(str))
+is_solid(str::String) = is_solid(Symbol(str))
 is_solid(model::EoSModel) = false
 
 
@@ -174,36 +174,8 @@ end
 equivalent to `sum(iterator,init=0.0)`.
 
 """
-function ∑(iterator)
-    len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
-    hastype = (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
-    local _0
-    if hastype
-        _0 = zero(eltype(iterator))
-    else
-        _0 = 0.0
-    end
-    len && iszero(length(iterator)) && return _0
-    !len && return reduce(Base.add_sum,iterator,init=_0)
-    return sum(iterator)
-end
-
-∑(x::AbstractArray) = sum(x)
-∑(f,x::AbstractArray) = sum(f,x)
-
-function ∑(fn,iterator)
-    len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
-    hastype = (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
-    local _0
-    if hastype
-        _0 = zero(eltype(iterator))
-    else
-        _0 = 0.0
-    end
-    len && iszero(length(iterator)) && return _0
-    !len && return mapreduce(fn,Base.add_sum,iterator,init=_0)
-    return sum(fn,iterator)
-end
+∑(x) = sum(x,init = 0.0)
+∑(f,x) = sum(f,x,init = 0.0)
 
 function is_ad_input(model,V,T,z)
     #model_primal = Solvers.primal_eltype(model)
@@ -309,7 +281,7 @@ set_k!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have 
 Sets the model "l-values" binary interaction parameter to the input matrix `l`. If the input model requires multiple l-matrices (as is the case for T-dependent values, i.e: l(T) = l1 + l2*T), then you must call `set_l!` with all the matrices as input (`set_l!(model,l1,l2)`).
 
 """
-set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
+set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting l-values"))
 
 export get_k,set_k!
 export get_l,set_l!

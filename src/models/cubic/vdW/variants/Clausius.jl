@@ -133,10 +133,3 @@ function cubic_Δ(model::ClausiusModel,z)
     c̄ = dot(c,z)*z⁻¹
     return (-c̄/b̄,-c̄/b̄)
 end
-
-crit_pure(model::ClausiusModel) = crit_pure_tp(model)
-#=
- (-B2-2(B2+B)+A)
- (-B2-2B2-2B+A)
- (-3B2-2B+A)
-=#

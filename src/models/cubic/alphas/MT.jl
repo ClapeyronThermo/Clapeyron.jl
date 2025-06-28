@@ -15,11 +15,12 @@ export MTAlpha
 
 ## Description
 
-Magoulas & Tassios Cubic alpha `(α(T))` model. Default for [`UMRPR`](@ref) EoS.
+Magoulas & Tassios Cubic alpha `(α(T))` model. Default for [`UMRPR`](@ref) EoS. Also defined for `vdW` models.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
-mᵢ = 0.384401 + 1.52276ωᵢ - 0.213808ωᵢ^2 + 0.034616ωᵢ^3 - 0.001976ωᵢ^4 
+mᵢ = 0.384401 + 1.52276ωᵢ - 0.213808ωᵢ^2 + 0.034616ωᵢ^3 - 0.001976ωᵢ^4 (PR)
+mᵢ = 0.483798 + 1.643232ωᵢ - 0.288718ωᵢ^2 + 0.066013ωᵢ^3 (vdW)
 ```
 
 ## Model Construction Examples
@@ -44,5 +45,7 @@ alpha = MTAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0
 """
 MTAlpha
 default_locations(::Type{MTAlpha}) = critical_data()
+default_references(::Type{MTAlpha}) = ["10.1016/0378-3812(90)85098-u"]
 
-@inline α_m(model,::MTAlpha) = (0.384401,1.52276,-0.213808,0.034616,-0.001976)
+@inline α_m(model::PRModel,::MTAlpha) = (0.384401,1.52276,-0.213808,0.034616,-0.001976)
+@inline α_m(model::vdWModel,::MTAlpha) = (0.483798,1.643232,-0.288718,0.066013)

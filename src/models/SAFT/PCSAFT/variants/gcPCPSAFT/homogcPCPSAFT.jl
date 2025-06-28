@@ -1,12 +1,29 @@
 
 abstract type HomogcPCPSAFTModel <: PCPSAFTModel end
+
+struct HomogcPCPSAFTParam{T} <: ParametricEoSParam{T}
+    Mw::SingleParam{T}
+    segment::SingleParam{T}
+    sigma::PairParam{T}
+    epsilon::PairParam{T}
+    k::PairParam{T}
+    dipole::SingleParam{T}
+    dipole2::SingleParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
+end
+
+function HomogcPCPSAFTParam(Mw,segment,sigma,epsilon,k,dipole,dipole2,epsilon_assoc,bondvol)
+    return build_parametric_param(HomogcPCPSAFTParam,Mw,segment,sigma,epsilon,k,dipole,dipole2,epsilon_assoc,bondvol)
+end
+
 struct HomogcPCPSAFT{I,T} <: HomogcPCPSAFTModel
     components::Vector{String}
     groups::GroupParam
     sites::SiteParam
-    params::PCPSAFTParam{T}
+    params::HomogcPCPSAFTParam{T}
     idealmodel::I
-    ppcmodel::PCPSAFT{I,T}
+    pcpmodel::PCPSAFT{I,T}
     assoc_options::AssocOptions
     references::Array{String,1}
 end
@@ -29,8 +46,8 @@ export HomogcPCPSAFT
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
 - `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
@@ -39,6 +56,7 @@ export HomogcPCPSAFT
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
 - `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
@@ -63,125 +81,154 @@ function HomogcPCPSAFT(components;
     reference_state = nothing,
     assoc_options = AssocOptions(combining = :cr1))
     groups = GroupParam(components,["SAFT/PCSAFT/gcPCPSAFT/homo/HomogcPCPSAFT_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
-    gc_params = getparams(groups,["SAFT/PCSAFT/gcPCPSAFT/homo/"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["k"])
-    gc_components = components
-    components = groups.components    
-    sites = gc_params["sites"]
-    
-    gc_mw = gc_params["Mw"]
-    mw = group_sum(groups,gc_mw)
+    params = getparams(groups,["SAFT/PCSAFT/gcPCPSAFT/homo/"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["k"])
+    return HomogcPCPSAFT(groups,params;idealmodel,ideal_userlocations,reference_state,verbose,assoc_options)
+end
 
-    gc_segment = gc_params["segment"]
-    segment = group_sum(groups,gc_segment)
+default_references(::Type{HomogcPCPSAFT}) = references = ["10.1021/ie020753p"]
 
-    gc_sigma = gc_params["sigma"]
-    gc_sigma.values .*= 1E-10
-    gc_sigma.values .^= 3
-    gc_sigma.values .*= gc_segment.values
-    sigma = group_sum(groups,gc_sigma)
+function HomogcPCPSAFT(groups::GroupParam,params::Dict{String,ClapeyronParam};
+    idealmodel = BasicIdeal,
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
+    assoc_options = AssocOptions())
+
+    components = groups.components
+    sites = params["sites"]
+    mw = params["Mw"]
+    segment = params["segment"]
+    _sigma = params["sigma"]
+    _sigma.values .= 1e-10
+    sigma = sigma_LorentzBerthelot(_sigma)
+    epsilon = params["epsilon"] |> epsilon_LorentzBerthelot
+    epsilon_assoc = params["epsilon_assoc"]
+    bondvol = params["bondvol"]
+    dipole = params["dipole"]
+    dipole2 = SingleParam("Dipole squared", groups.flattenedgroups, dipole.^2 ./ k_B*1e-36*(1e-10*1e-3))
+
+    k = get(params, "k") do
+        n_gc = length(groups.n_flattenedgroups)
+        PairParam(components,"k",zeros(n_gc,n_gc),fill(true,(n_gc,n_gc)))
+    end
+
+    gcparams = HomogcPCPSAFTParam(mw, segment, sigma, epsilon, k, dipole, dipole2, epsilon_assoc, bondvol)
+
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+
+    pcpmodel = PCPSAFT(groups,gcparams,sites;
+                idealmodel = init_idealmodel,
+                assoc_options = assoc_options,
+                verbose = verbose)
+
+    model = HomogcPCPSAFT(components,groups,sites,gcparams,pcpmodel.idealmodel,pcpmodel,assoc_options,default_references(HomogcPCPSAFT))
+    set_reference_state!(model,reference_state;verbose)
+    return model
+end
+
+function PCPSAFT(groups::GroupParam,
+                param::HomogcPCPSAFTParam,
+                sites::SiteParam = SiteParam(groups.flattenedgroups);
+                idealmodel = BasicIdeal(),
+                assoc_options = AssocOptions(),
+                verbose = false)
+
+
+    components = groups.components
+    mw = group_sum(groups,param.Mw)
+    segment = group_sum(groups,param.segment)
+    gc_sigma3 = param.sigma .^3
+    sigma = SingleParam("sigma",components,group_sum(groups,gc_sigma3))
     sigma.values ./= segment.values
     sigma.values .= cbrt.(sigma.values)
     sigma = sigma_LorentzBerthelot(sigma)
-    gc_k = get(gc_params, "k") do
-        n_gc = length(gc_sigma.components)
-        PairParam(gc_sigma.components, "k",zeros(n_gc,n_gc))
-    end
-    k = group_pairmean2(groups,gc_k)
-    gc_epsilon = gc_params["epsilon"]
-    gc_epsilon.values .*= gc_segment.values
+
+    k = group_pairmean2(groups,param.k)
+    gc_epsilon = SingleParam("epsilon",groups.flattenedgroups,diagvalues(param.epsilon))
+    gc_epsilon.values .*= param.segment.values
     epsilon = group_sum(groups,gc_epsilon)
     epsilon.values ./= segment.values
     epsilon = epsilon_LorentzBerthelot(epsilon,k)
 
-    gc_dipole = gc_params["dipole"]
-    gc_dipole2 = SingleParam("Dipole squared", groups.flattenedgroups, gc_dipole.^2 ./ k_B*1e-36*(1e-10*1e-3))
-    dipole2 = group_sum(groups,gc_dipole2)
-    dipole2 = SingleParam("Dipole squared",components, dipole2 ./ segment)
+    dipole2 = SingleParam("Dipole squared",components, group_sum(groups,param.dipole2 ./ param.segment))
     dipole = SingleParam("Dipole",components, sqrt.(dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3)))
 
-    gc_epsilon_assoc = gc_params["epsilon_assoc"]
-    gc_bondvol = gc_params["bondvol"]
-
     comp_sites = gc_to_comp_sites(sites,groups)
-    bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
-    epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options,comp_sites) #combining rules for association
+    bondvol = gc_to_comp_sites(param.bondvol,comp_sites)
+    epsilon_assoc = gc_to_comp_sites(param.epsilon_assoc,comp_sites)
 
-    gc_sigma = gc_params["sigma"] |> sigma_LorentzBerthelot
-    gc_epsilon = gc_params["epsilon"] |> epsilon_LorentzBerthelot
+    pcpparams = PCPSAFTParam(mw, segment, sigma, epsilon, dipole, dipole2, epsilon_assoc, bondvol)
 
-    gcparams = PCPSAFTParam(gc_mw, gc_segment, gc_sigma, gc_epsilon, gc_dipole, gc_dipole2, gc_epsilon_assoc,gc_bondvol)
-    params = PCPSAFTParam(mw, segment, sigma, epsilon, dipole, dipole2, epsilon_assoc, bondvol)
-    
-    idmodel = init_model(idealmodel,gc_components,ideal_userlocations,verbose)
-
-    references = ["10.1021/ie020753p"]
-    pc = PCPSAFT(components,comp_sites,params,idmodel, assoc_options, references)
-    model = HomogcPCPSAFT(components, groups, sites, gcparams,idmodel,pc, assoc_options, references)
-    set_reference_state!(model,reference_state;verbose)
-    return model
+    return PCPSAFT(groups.components, comp_sites, pcpparams, idealmodel, assoc_options, default_references(PCPSAFT))
 end
+
 
 function recombine_impl!(model::HomogcPCPSAFTModel)
     groups = model.groups
     components = model.components
     sites = model.sites
     assoc_options = model.assoc_options
+    gcparams = model.params
+    pcpmodel = model.pcpmodel
+    params = pcpmodel.params
 
-    gc_msigma3 = model.params.msigma3
-    gc_mepsilon = model.params.mepsilon
-    gc_segment = model.params.segment
-    gc_epsilon_assoc = model.params.epsilon_assoc
-    gc_bondvol = model.params.bondvol
+    #recombine outer params
+    sigma_LorentzBerthelot!(gcparams.sigma)
+    epsilon_LorentzBerthelot!(gcparams.epsilon)
+    gcparams.dipole2 .= gcparams.dipole.^2 ./ k_B*1e-36*(1e-10*1e-3)
+    
+    #recombine inner PCP model
+    mw = group_sum!(params.Mw,groups,gcparams.Mw)
+    segment = group_sum!(params.segment,groups,gcparams.segment)
+    gc_sigma3 = gcparams.sigma .^3
+    sigma_diag = diagvalues(params.sigma)
+    group_sum!(sigma_diag,groups,gc_sigma3)
+    sigma_diag ./= segment.values
+    sigma_diag .= cbrt.(sigma_diag)
+    sigma_LorentzBerthelot!(params.sigma)
 
-    segment = group_sum(groups,gc_segment)
-    model.pcmodel.params.segment.values[:] = segment.values
+    k = group_pairmean2(groups,gcparams.k)
+    gc_mepsilon = diagvalues(gcparams.epsilon.values) .* gcparams.segment.values
+    epsilon = group_sum!(params.epsilon,groups,gc_mepsilon)
+    diagvalues(epsilon.values) ./= segment.values
+    epsilon_LorentzBerthelot!(epsilon,k)
 
-    sigma = group_sum(groups,gc_msigma3)
-    sigma.values ./= segment.values
-    sigma.values .= cbrt.(sigma.values)
-    sigma = sigma_LorentzBerthelot(sigma)
-    model.pcmodel.params.sigma.values[:] = sigma.values
 
-    epsilon = group_sum(groups,gc_mepsilon)
-    epsilon.values ./= segment.values
-    epsilon = epsilon_LorentzBerthelot(epsilon)
-    model.pcmodel.params.epsilon.values[:] = epsilon.values
-
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options)
-    model.params.bondvol.values.values[:] = gc_bondvol.values.values
-    model.params.epsilon_assoc.values.values[:] = gc_epsilon_assoc.values.values
+    group_sum!(params.dipole2,groups,gcparams.dipole2 ./ gcparams.segment)
+    params.dipole .= sqrt.(params.dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3))
 
     comp_sites = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
-    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
+    comp_bondvol = gc_to_comp_sites(gcparams.bondvol,comp_sites)
+    comp_epsilon_assoc = gc_to_comp_sites(gcparams.epsilon_assoc,comp_sites)
 
-    model.pcmodel.params.bondvol.values.values[:] = comp_bondvol.values.values
-    model.pcmodel.params.epsilon_assoc.values.values[:] = comp_epsilon_assoc.values.values
+    bondvol,epsilon_assoc = assoc_mix(comp_bondvol,comp_epsilon_assoc,params.sigma,assoc_options,comp_sites)
+    params.bondvol.values.values[:] = bondvol.values.values
+    params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
+
     return model
 end
 
 function a_res(model::HomogcPCPSAFTModel,V,T,z)
-    return a_res(model.ppcmodel,V,T,z)
+    return a_res(model.pcpmodel,V,T,z)
 end
 
-assoc_shape(model::HomogcPCPSAFTModel) = assoc_shape(model.ppcmodel)
-getsites(model::HomogcPCPSAFTModel) = getsites(model.ppcmodel)
+assoc_shape(model::HomogcPCPSAFTModel) = assoc_shape(model.pcpmodel)
+getsites(model::HomogcPCPSAFTModel) = getsites(model.pcpmodel)
 
 function lb_volume(model::HomogcPCPSAFTModel, z)
-    return lb_volume(model.ppcmodel, z)
+    return lb_volume(model.pcpmodel, z)
 end
 
 function T_scale(model::HomogcPCPSAFTModel,z)
-    return T_scale(model.ppcmodel,z)
+    return T_scale(model.pcpmodel,z)
 end
 
 function T_scales(model::HomogcPCPSAFTModel)
-    return T_scales(model.ppcmodel)
+    return T_scales(model.pcpmodel)
 end
 
 function p_scale(model::HomogcPCPSAFTModel,z)
-    return p_scale(model.ppcmodel,z)
+    return p_scale(model.pcpmodel,z)
 end
 
 export HomogcPCPSAFT

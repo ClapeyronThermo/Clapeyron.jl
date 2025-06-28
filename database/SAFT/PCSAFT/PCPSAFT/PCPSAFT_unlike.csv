@@ -4154,7 +4154,7 @@ octane~|~n-octane,formylmorpholine~|~n-formylmorpholine,0.0304593253664034
 octane~|~n-octane,hexamethylphosphoric acid triamide,0.0156128741417442
 octane~|~n-octane,etbe~|~tert-butyl ethyl ether~|~ethyl tert-butyl ether~|~2-ethoxy-2-methylpropane~|~2-ethoxy-2-methyl-propane,0.0023933946553126
 octane~|~n-octane,diethyl carbonate~|~carbonic acid diethyl ester,0.0368673131892408
-octane~|~n-octane,amyl formate~|~pentyl methanoate~|~formicacidpentylester,0.0251433534343634
+octane~|~n-octane,amyl formate~|~pentyl formate~|~pentyl methanoate~|~formicacidpentylester,0.0251433534343634
 octane~|~n-octane,2-propoxyethanol~|~ethylene glycol monopropyl ether,0.0067555468391769
 octane~|~n-octane,2-hexyne,0.0113562512491359
 octane~|~n-octane,"2-methyl-6-methylene-2,7-octadiene~|~7-methyl-3-methylene-1,6-octadiene",0.004247743588863
@@ -6641,7 +6641,7 @@ carbon dioxide,"(s)-(+)-carvone~|~p-mentha-6,8-dien-2-one, (s)-(+)-",0.072806035
 carbon dioxide,"dibutyl succinate~|~butanedioic acid, dibutyl ester",0.0780409094089216
 carbon dioxide,butylcyclohexane~|~n-butylcyclohexane,0.1768477411213071
 carbon dioxide,butyne~|~1-butyne~|~ethylacetylene,0.0565291199427374
-carbon dioxide,amyl formate~|~pentyl methanoate~|~formicacidpentylester,0.0273441583107934
+carbon dioxide,amyl formate~|~pentyl formate~|~pentyl methanoate~|~formicacidpentylester,0.0273441583107934
 carbon dioxide,"5,8,11-trioxapentadecane~|~diethyleneglycoldibutylether~|~diethylene glycol di-n-butyl ether",0.1326162815945689
 carbon dioxide,decanal~|~1-decanal~|~n-decanal,0.0846944592011439
 carbon dioxide,"linalool~|~3,7-dimethyl-1,6-octadien-3-ol",0.0555214648002251

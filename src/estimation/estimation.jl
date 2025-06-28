@@ -64,7 +64,7 @@ export Estimation
 # Mutable for now to make it easy to just replace the model
 """
     Estimation
-    Estimation(model,toestimate,filepaths,ignorefield,objective_form)
+    Estimation(model::EoSModel,toestimate::Dict,filepaths;ignorefield = Vector{String},objective_form = mse(pred,exp) = ((pred-exp)/exp)^2)
 ## Input parameters:
 - ` model`: The initial model containing the species we wish to parameterise
 - `toestimate`: The dictionary of parameters being fitted
@@ -96,6 +96,8 @@ mutable struct Estimation{T<:EoSModel,F}
     objective_form::F
 end
 
+__mse(pred,exp) = ((pred-exp)/exp)^2
+
 function Base.show(io::IO, mime::MIME"text/plain", estimation::Estimation)
     print(io, typeof(estimation))
     println(io, " with data for:")
@@ -116,31 +118,38 @@ function Base.show(io::IO, estimation::Estimation)
     print(io, typeof(estimation))
 end
 
-function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}, ignorefield::Vector{Symbol}, objective_form::Function = mse(pred,exp) = ((pred-exp)/exp)^2)
-    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths),ignorefield,objective_form)
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}},objective_form::Base.Callable,ignorefield::Union{Symbol,Vector{Symbol}})
+    return _Estimation(model, toestimate, filepaths, objective_form, ignorefield)
+end
 
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}, ignorefield::Union{Symbol,Vector{Symbol}})
+    return _Estimation(model, toestimate, filepaths, __mse, ignorefield)
+end
+
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}},objective_form::Base.Callable)
+    return _Estimation(model, toestimate, filepaths, objective_form, Symbol[])
+end
+
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}; objective_form = __mse, ignorefield = Symbol[])
+    return _Estimation(model, toestimate, filepaths, objective_form, ignorefield)
+end
+
+function _Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths, objective_form, ignorefield)
+    
+    if ignorefield isa Symbol
+        _ignorefield = [ignorefield]
+    else
+        _ignorefield = ignorefield
+    end
+    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths), _ignorefield, objective_form)
     nparams = length(estimation.toestimate.params)
-
     objective(x) = objective_function(estimation,x)
-
     x0 = [estimation.toestimate.guess[i][1] for i ∈ 1:nparams]
     upper = [estimation.toestimate.upper[i][1] for i ∈ 1:nparams]
     lower = [estimation.toestimate.lower[i][1] for i ∈ 1:nparams]
     return estimation, objective, x0, upper, lower
 end
 
-function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}, objective_form::Function = mse(pred,exp) = ((pred-exp)/exp)^2)
-    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths), Symbol[], objective_form)
-
-    nparams = length(estimation.toestimate.params)
-
-    objective(x) = objective_function(estimation,x)
-
-    x0 = [estimation.toestimate.guess[i][1] for i ∈ 1:nparams]
-    upper = [estimation.toestimate.upper[i][1] for i ∈ 1:nparams]
-    lower = [estimation.toestimate.lower[i][1] for i ∈ 1:nparams]
-    return estimation, objective, x0, upper, lower
-end
 
 function reload_data(estimation::Estimation)
     estimationdata = EstimationData(estimation.filepaths)

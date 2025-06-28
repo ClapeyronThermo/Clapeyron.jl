@@ -1,6 +1,6 @@
 abstract type modWSRuleModel <: WSRuleModel end
 
-struct modWSRule{γ} <: WSRuleModel
+struct modWSRule{γ} <: modWSRuleModel
     components::Array{String,1}
     activity::γ
     references::Array{String,1}
@@ -83,7 +83,7 @@ function modWSRule(components; activity = Wilson, userlocations = String[],activ
     return model
 end
 
-function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::modWSRuleModel,α,a,b,c)
+function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::modWSRuleModel,α,a,b,c)
     λ = WS_λ(mixing_model,model,z)
     n = sum(z)
     invn = (one(n)/n)

@@ -143,6 +143,7 @@ include("params/ReferenceState.jl")
 
 
 const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
+
 function Base.show(io::IO,param::SingleOrPair)
     print(io, typeof(param), "(\"", param.name, "\")")
     show(io,param.components)
@@ -162,6 +163,7 @@ end
 
 Base.iterate(param::SingleOrPair) = iterate(param.values)
 Base.iterate(param::SingleOrPair,state) = iterate(param.values,state)
+linearidx(param::SingleOrPair) = linearidx(param.values)
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
 export AssocOptions

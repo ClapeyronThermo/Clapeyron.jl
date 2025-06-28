@@ -161,7 +161,6 @@ function c_premixing(model::PTVModel)
     _Vc = model.params.Vc
     c = model.params.c
     _Zc = @. _pc.*_Vc./(R̄*_Tc)
-
     Ωc = @. 0.57765-1.87080*_Zc
     diagvalues(c) .= Ωc .* R̄ .*_Tc ./ _pc
     c = sigma_LorentzBerthelot!(c)

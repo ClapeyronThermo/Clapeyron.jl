@@ -57,10 +57,10 @@ function Base.show(io::IO,mime::MIME"text/plain",model::FluidCorrelation)
     print(io,"Fluid Correlation Model")
     length(model) == 1 && print(io, " with 1 component:")
     length(model) > 1 && print(io, " with ", length(model), " components:")
-    model.gas !== nothing && print(io,'\n'," Gas Model: ",model.gas)
-    model.liquid !== nothing && print(io,'\n'," Liquid Model: ",model.liquid)
-    model.saturation !== nothing && print(io,'\n'," Saturation Model: ",model.saturation)
-    model.liquid_cp !== nothing && print(io,'\n'," Liquid Caloric Model: ",model.liquid_cp)
+    model.gas !== nothing && print(io,'\n',"Gas Model: ",model.gas)
+    model.liquid !== nothing && print(io,'\n',"Liquid Model: ",model.liquid)
+    model.saturation !== nothing && print(io,'\n',"Saturation Model: ",model.saturation)
+    model.liquid_cp !== nothing && print(io,'\n',"Liquid Caloric Model: ",model.liquid_cp)
 end
 
 reference_state(model::FluidCorrelation) = reference_state(model.gas)
@@ -274,7 +274,7 @@ function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
     end
 end
 
-function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,vols,phases,non_inw,cache = nothing)
+function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,z,β,vols,phases,non_inw,cache = nothing)
     volx,voly = vols
     phasex,phasey = phases
     non_inx,non_iny = non_inw

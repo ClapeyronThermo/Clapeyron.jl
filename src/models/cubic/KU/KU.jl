@@ -1,4 +1,4 @@
-abstract type KUModel <: ABCubicModel end
+abstract type KUModel <: ABCCubicModel end
 
 struct KUParam <: EoSParam
     a::PairParam{Float64}
@@ -176,6 +176,15 @@ function ab_premixing(model::KUModel,mixing::MixingRule,k,l)
     return a,b
 end
 
+function recombine_mixing!(model::KUModel,mixing_model,k = nothing,l = nothing)
+    recombine!(mixing_model)
+    a,b = ab_premixing(model,mixing_model,k,l)
+    #we set this again just in case
+    model.params.a .= a
+    model.params.b .= b
+    return mixing_model
+end
+
 ab_consts(model::KUModel) = model.params.omega_a.values,model.params.omega_b.values
 
 #only used in premixing
@@ -190,10 +199,8 @@ function p_scale(model::KUModel,z)
     return dot(model.params.Pc.values,z)/sum(z)
 end
 
-kumar_zc(model::KUModel) = only(model.params.Pc.values)*only(model.params.Vc.values)/(R̄*only(model.params.Tc.values))
-
 function x0_crit_pure(model::KUModel)
-    lb_v = lb_volume(model)
+    lb_v = lb_volume(model,model.params.Tc[1],SA[1.0])
     vc = model.params.Vc.values[1]
     (1.1, log10(vc))
 end

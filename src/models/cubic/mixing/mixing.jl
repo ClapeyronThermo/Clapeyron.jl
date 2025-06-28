@@ -33,7 +33,7 @@ end
 #used in CompositeModel.jl
 init_mixing_act = init_model_act
 
-function infinite_pressure_gibbs_correction(model::CubicModel,z)
+function infinite_pressure_gibbs_correction(model::DeltaCubicModel,z)
     Δ1,Δ2 = cubic_Δ(model,z)
     if Δ1==Δ2
         return 1/(1-Δ1)
@@ -46,24 +46,11 @@ function infinite_pressure_gibbs_correction(model::vdWModel,z)
     return -1.0
 end
 
+#default
 function recombine_mixing!(model,mixing_model,k = nothing, l = nothing)
     recombine!(mixing_model)
-    a,b = ab_premixing(model,mixing_model,k,l)
-    #we set this again just in case
-    model.params.a .= a
-    model.params.b .= b
-    return mixing_model
-end
-
-
-function recombine_mixing!(model::ABCCubicModel,mixing_model,k = nothing,l = nothing)
-    recombine!(mixing_model)
-    a,b = ab_premixing(model,mixing_model,k,l)
-    c = c_premixing(model) 
-     #we set this again just in case
-    model.params.a .= a
-    model.params.b .= b
-    model.params.c .= c
+    c = c_premixing(model)
+    ab_premixing(model,mixing_model,k,l)
     return mixing_model
 end
 

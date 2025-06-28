@@ -113,14 +113,6 @@ const sSAFTgammaMie = structSAFTgammaMie
 
 export structSAFTgammaMie,sSAFTgammaMie,sSAFTγMie
 
-function a_res(model::structSAFTgammaMieModel, V, T, z)
-    _data = @f(data)
-    dgc,X,vrdata = _data
-    _,ρS,ζi,_ζ_X,_ζst,σ3x,m̄ = vrdata
-    vrdata_disp = (dgc,ρS,ζi,_ζ_X,_ζst,σ3x,m̄)
-    return @f(a_hs,_data) + a_disp(model,V,T,X,vrdata_disp)/sum(z) + @f(a_chain,_data) + @f(a_assoc,_data)
-end
-
 function a_chain(model::structSAFTgammaMieModel, V, T, z,_data = @f(data))
     _d,_,vrdata = _data
     _,ρS,_,_ζ_X,_ζst,_,_ = vrdata
