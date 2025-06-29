@@ -186,22 +186,20 @@ function a_chain(model::CKSAFTModel, V, T, z, _data = @f(data))
     _d, m̄, ζi, Σz = _data
     ζ0,ζ1,ζ2,ζ3 = ζi
     m = model.params.segment.values
-    return ∑(z[i]*(1-m[i])*log(@f(g_hsij,i,i,_data)) for i ∈ @comps)/Σz
+    return ∑(z[i]*(1-m[i])*log(@f(g_hs,i,i,_data)) for i ∈ @comps)/Σz
 end
 
-function g_hsij(model::CKSAFTModel, V, T, z, i, j,_data = @f(data))
+function g_hs(model::CKSAFTModel, V, T, z, i, j,_data = @f(data))
     _d, m̄, ζi, Σz = _data
     ζ0,ζ1,ζ2,ζ3 = ζi
-    di = _d[i]
-    dj = _d[j]
-    return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
+    return g_hs_ij(_d,ζ2,ζ3,i,j)
 end
 
 function Δ(model::CKSAFTModel, V, T, z, i, j, a, b,_data = @f(data))
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
     κijab = model.params.bondvol.values[i,j][a,b]
     σij = model.params.sigma.values[i,j]
-    gij = @f(g_hsij,i,j,_data)
+    gij = @f(g_hs,i,j,_data)
     return gij*σij^3*expm1(ϵ_associjab/T)*κijab
 end
 

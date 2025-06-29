@@ -50,6 +50,6 @@ default_locations(::Type{PR78Alpha}) = critical_data()
     if ωi <= 0.491
         return evalpoly(ωi,(0.37464,1.54226,-0.26992))
     else
-        return evalpoly(ωi,(0.379642,1.487503,-0.164423,-0.016666)))
+        return evalpoly(ωi,(0.379642,1.487503,-0.164423,-0.016666))
     end
 end

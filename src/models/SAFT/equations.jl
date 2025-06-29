@@ -71,6 +71,10 @@ function ζ(model, V, T, z, n, _d = @f(d),m = model.params.segment.values)
     return ζn
 end
 
+g_hs_ij(d, ζ2, ζ3, i::Integer, j::Integer) = g_hs_ij(d[i], d[j], ζ2, ζ3) 
+g_hs_ij(di, dj, ζ2, ζ3) = 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
+
+
 #=
 when you evaluate an EoS at zero volume, the hard sphere term diverges.
 teqp implements an alternate expression to evaluate the boublik-mansoori-carnahan-starling
@@ -171,3 +175,4 @@ function recombine_saft!(model::SAFTModel,k = nothing,l = nothing)
     recombine_assoc!(model)
     return model
 end
+
