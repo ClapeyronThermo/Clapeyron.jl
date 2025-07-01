@@ -71,9 +71,14 @@ function ζ(model, V, T, z, n, _d = @f(d),m = model.params.segment.values)
     return ζn
 end
 
-g_hs_ij(d, ζ2, ζ3, i::Integer, j::Integer) = g_hs_ij(d[i], d[j], ζ2, ζ3) 
-g_hs_ij(di, dj, ζ2, ζ3) = 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
+g_hs_ij(d, ζ2, ζ3, i::Integer, j::Integer) = g_hs_ij(d[i], d[j], ζ2, ζ3)
 
+function g_hs_ij(di, dj, ζ2, ζ3)
+    dij = di*dj/(di+dj)
+    ζ3inv = 1/(1-ζ3)
+    dζ = dij*ζ3inv
+    return ζ3inv + dζ*3ζ2*ζ3inv + 2*(dζ*dζ*ζ2*ζ2)*ζ3inv
+end
 
 #=
 when you evaluate an EoS at zero volume, the hard sphere term diverges.
