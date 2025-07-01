@@ -46,7 +46,7 @@ PR78Alpha
 default_locations(::Type{PR78Alpha}) = critical_data()
 
 @inline function α_m(model::PRModel,alpha_model::PR78AlphaModel,i)
-    ω  = alpha_model.params.acentricfactor.values[i]
+    ωi  = alpha_model.params.acentricfactor.values[i]
     if ωi <= 0.491
         return evalpoly(ωi,(0.37464,1.54226,-0.26992))
     else
