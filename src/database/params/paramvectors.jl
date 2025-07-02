@@ -427,4 +427,21 @@ function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
         end
     end
 end
- =#
+
+function each_split_model(y::SparsePackedMofV,I)
+    idx = y.idx[I,I]
+    if iszero(length(y.storage))
+        return SparsePackedMofV(y.storage,idx)
+    end
+
+    if iszero(nnz(idx))
+        st = y.storage
+        storage = PackedVofV([1],zeros(eltype(st.v),0))
+        return SparsePackedMofV(storage,idx)
+    else
+        str = y.storage[nnz(idx)]
+        storage = PackedVectorsOfVectors.pack(str)
+        return SparsePackedMofV(storage,idx)
+    end
+end 
+=#

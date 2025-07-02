@@ -64,23 +64,6 @@ function each_split_model(y::SparseMatrixCSC{<:AbstractVector},I)
     return SparseMatrixCSC(m,n,colptr,rowval,nzval)
 end
 
-function each_split_model(y::SparsePackedMofV,I)
-    idx = y.idx[I,I]
-    if iszero(length(y.storage))
-        return SparsePackedMofV(y.storage,idx)
-    end
-
-    if iszero(nnz(idx))
-        st = y.storage
-        storage = PackedVofV([1],zeros(eltype(st.v),0))
-        return SparsePackedMofV(storage,idx)
-    else
-        str = y.storage[nnz(idx)]
-        storage = PackedVectorsOfVectors.pack(str)
-        return SparsePackedMofV(storage,idx)
-    end
-end
-
 function each_split_model(param::PackedVofV,I)
     val = PackedVectorsOfVectors.pack(param[I])
     return val
