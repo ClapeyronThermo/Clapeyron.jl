@@ -101,10 +101,6 @@ function pack_vectors(x::AbstractVector{<:AbstractVector})
     return PackedVectorsOfVectors.pack(x)
 end
 
-function pack_vectors(x::SparseMatrixCSC{<:AbstractVector})
-    return SparsePackedMofV(x)
-end
-
 function param_length_check(paramtype,name,comp_length,val_length)
     if comp_length != val_length
         throw(DimensionMismatch(string(paramtype) * "(\"$(name)\"): expected length of components ($comp_length) equal to component length in values ($val_length)"))

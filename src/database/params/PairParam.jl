@@ -223,11 +223,3 @@ function Base.convert(::Type{PairParam{T1}},param::PairParam{T2}) where {T1<:Num
     values = convert(Matrix{T1},param.values)
     return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
-
-function pack_vectors(param::PairParameter{<:AbstractVector})
-    name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources
-    vals = pack_vectors(vals)
-    return PairParam(name,components,vals,missingvals,srccsv,src)
-end
-
-const PackedSparsePairParam{T} = Clapeyron.PairParameter{PackedSubVector{T}, SparsePackedMofV{PackedSubVector{T}, PackedVector{T}}} where T
