@@ -28,8 +28,8 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
     iszero(p₀) && (V0 == Inf) && return _1/_0 #ideal gas
     p0ᵢ = _0
     dp0dVᵢ = _1
-    Π0 = nan
     check_1 = false
+    atol = 8*eps(typeof(logV0))
     try
         for i in 1:max_iters
             logVᵢ < log_lb_v && return nan
@@ -40,17 +40,14 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
                 dp0dVᵢ = dpdVᵢ
             end
 
-            dpdVᵢ > 0 && return _0/_0 #inline mechanical stability.
+            dpdVᵢ > 0 && return nan #inline mechanical stability.
             abs(pᵢ-p₀) < 3eps(p₀) && return Vᵢ #this helps convergence near critical points.
-
 
             #zeroth order check:
             #slope between initial point and current point, must be negative.
             #a positive slope means we jumped across an spinodal
             m = (pᵢ - p0ᵢ)/(logVᵢ - logV0)
-            if m > _0 && i > 1
-                return nan
-            end
+            m > _0 && i > 1 && return nan
 
             #first order check
             #a third order polynomial interpolant should not present any minima:
@@ -103,11 +100,8 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
                     check_1 = true
                 end
             end =#
-
             Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
-            #@show dm,dm_V,Δᵢ,logVᵢ
-            #@show (Vᵢ*dpdVᵢ),pᵢ
-            abs(Δᵢ) < 1e-12 && return Vᵢ
+            abs(Δᵢ/logVᵢ) < max(abs(Δᵢ)*1e-12,atol) && return Vᵢ
             logVᵢ = logVᵢ + Δᵢ
         end
     catch err
