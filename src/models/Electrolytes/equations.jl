@@ -12,7 +12,7 @@ function salt_stoichiometry(model::ElectrolyteModel,salts)
         v = salts[i][2]
         for j in 1:length(v)
             name,vj = v[j]
-            for k in 1:length(v)
+            for k in 1:length(ions)
                 if name == ions[k]
                     ν[i,k] = vj
                 end

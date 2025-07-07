@@ -118,7 +118,7 @@ function a_dh(model::GCMSABornModel, V, T, z, iondata)
     Z = model.params.charge.values
     ∑z = sum(z)
     #iions = igroups[Z.!=0]
-    if all(iszero,Z)
+    if all(iszero,[sum(model.groups.n_flattenedgroups[i].* model.params.charge.values)*z[i] for i in 1:length(model)])
         return zero(Base.promote_eltype(model,V,T,z))
     end
     ρ = N_A*∑z/V
@@ -226,8 +226,8 @@ function a_born(model::GCMSABornModel, V, T, z, iondata)
             end
         end
     end
-    if all(iszero,Z)
-        return zero(T+∑zg)
+    if all(iszero,[sum(model.groups.n_flattenedgroups[i].* model.params.charge.values)*z[i] for i in 1:length(model)])
+        return zero(T+∑z)
     end
     return -e_c^2/(4π*ϵ_0*k_B*T*∑z)*(1-1/ϵ_r)*_∑1
 end
