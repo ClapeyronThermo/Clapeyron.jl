@@ -95,9 +95,9 @@ function sle_solubility(model::CompositeModel{F,S},p,T,z;solute=nothing,x0=nothi
         if isnothing(x0)
             x0 = x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
         end
-        f!(F,x) = obj_sle_solubility(F,model,p,T,z[idx_solv],exp10(x[1]),idx_sol_l,idx_sol_s,idx_solv,ν_l)
+        f!(F,x) = obj_sle_solubility(F,model,p,T,z,exp10(x[1]),idx_sol_l,idx_sol_s,idx_solv,ν_l)
         results = Solvers.nlsolve(f!,x0,LineSearch(Newton()),NEqOptions(f_abstol=1e-6,f_reltol=1e-8),ForwardDiff.Chunk{1}())
-        sol[i,.!(idx_solv)] .= exp10(Solvers.x_sol(results)[1])
+        sol[i,.!(idx_solv)] .= exp10(Solvers.x_sol(results)[1]).*ν_l
         sol[i,idx_solv] = z[idx_solv]
         sol[i,:] ./= sum(sol[i,:])
     end
@@ -109,24 +109,23 @@ function sle_solubility(model::CompositeModel{F,S},p,T,z;solute=nothing,x0=nothi
 end
 
 function obj_sle_solubility(F,model::CompositeModel{L,S},p,T,zsolv,solu,idx_sol_l,idx_sol_s,idx_solv,ν_l) where L <: EoSModel where S <: SolidKsModel
-
     z = zeros(typeof(solu),length(model.fluid))
-    z[.!(idx_solv)] .= solu
-    z[idx_solv] .= zsolv
+    z[.!(idx_solv)] .= solu.*ν_l
+    z[idx_solv] .= zsolv[idx_solv]
     z ./= sum(z)
 
     if typeof(model.fluid) <: ESElectrolyteModel
-        φ = fugacity_coefficient(model.fluid,p,T,z)
+        μ = chemical_potential(model.fluid,p,T,z)
+        
         zref = zeros(length(model.fluid))
         ineutral = model.fluid.charge .== 0
 
         zref[.!(ineutral)] .= 1e-30
-        zref[ineutral] .= 1.
+        zref[ineutral] .= zsolv[ineutral]
         zref ./= sum(zref)
-        φref = fugacity_coefficient(model.fluid,p,T,zref)
+        μref = chemical_potential(model.fluid,p,T,zref)
 
-        γ = φ./φref
-        μliq = Rgas()*T*log.(γ[idx_sol_l].*z[idx_sol_l])
+        μliq = (μ - μref)[idx_sol_l]
     else
         pure   = split_pure_model(model.fluid)
         μ_mixt = chemical_potential(model.fluid, p, T, z)
@@ -138,8 +137,7 @@ function obj_sle_solubility(F,model::CompositeModel{L,S},p,T,zsolv,solu,idx_sol_
     μsol = chemical_potential(solid_r,p,T,[1.])
 
     μliq = sum(μliq.*ν_l)
-    # println(μliq)
-    F[1] = μliq - μsol[1]
+    F[1] = (μliq - μsol[1])/(Rgas()*T)
     return F
 end
 
