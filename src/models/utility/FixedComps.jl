@@ -1,3 +1,4 @@
+#=
 struct FixedComps{𝕋,𝕍,𝕀} <: EoSModel
     model::𝕋
     indices::𝕀
@@ -26,4 +27,4 @@ for f in (:eos, :eos_res, :a_res)
     @eval begin
     ($f)(model::FixedComps,V,T,z) = ($f)(model.model,V,T,expand_compositions(model,z))
     end
-end
+end =#

@@ -180,6 +180,16 @@ requires_pv(x::FlashSpecifications) = requires_pv(x.spec1) | requires_pv(x.spec2
 requires_st(x::FlashSpecifications) = requires_st(x.spec1) | requires_st(x.spec2)
 requires_a(x::FlashSpecifications) = requires_a(x.spec1) | requires_a(x.spec2)
 
+function __min(x,y)
+    if x < y
+        return x
+    elseif y < x
+        return y
+    else
+        return y
+    end
+end
+
 struct XYFlashTag end
 
 function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
@@ -356,6 +366,18 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     β_constraints = @view βξspec_constraints[1:np]
 
     ξ_constraints .= zbulk
+
+    val1,spec1,val2,spec2 = state.val1,state.spec1,state.val2,state.spec2
+
+    if spec1 isa Vfrac
+        idx_β = spec1.k
+        βx = val1
+    elseif spec2 isa Vfrac
+        idx_β = spec2.k
+    else
+        idx_β = 0
+        βx = val2
+    end
     for j in 1:np
         ξj = viewn(ξ,nc,j)
         βj = β[j]
@@ -364,7 +386,9 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         #there are better ways to solve MCP.
         #ben-gharbia uses a Non-Parametric-Interior-Point method (npipm)
         #there is also MixedComplementarityProblems.jl
-        β_constraints[j] = min(βj,1 - ∑ξj)
+        #@show primalval(βj),primalval(1 - ∑ξj)
+        β_constraints[j] = __min(βj,1 - ∑ξj)
+        
         for i in 1:nc
             ξ_constraints[i] -= βj*ξj[i]
         end
@@ -415,42 +439,23 @@ function detect_and_set_slack_variables!(x,spec::FlashSpecifications,np,nc)
         slack[end] = true
         x[end] = spec.val2
     end
+    return slack 
+    #FIXME: we need to perform dew temperatures correctly, and that will need extra slacks.
+    slack_comps = @view slack[1:nc*np]
 
-    #TODO: does fixing the vapour fractions work?
-    #=
-    _,β,_ = xy_input_to_flash_vars(x,np,nc)
-    _,βslack,_ = xy_input_to_flash_vars(slack,np,nc)
-
-    if spec.spec1 isa Vfrac
-        k,βk = spec.spec1.k,spec.val1
-        βslack[k] = true
-        if βk == 1
-            β .= 0
-            β[k] = βk
-            βslack .= true
-        elseif np == 2
-            k2 = k == 1 ? 2 : 1
-            β[k] = βk
-            β[k2] = 1 - βk
-            βslack .= true
-        end
+    #bubbledew condition in first spec
+    if spec.spec1 isa Vfrac && np == 2 && (iszero(spec.val1) || isone(spec.val1))
+        k = spec.spec1.k
+        xk = viewn(slack_comps,nc,k)
+        xk .= true
     end
 
-    if spec.spec2 isa Vfrac
-        k,βk = spec.spec2.k,spec.val2
-        βslack[k] = true
-        if βk == 1
-            β .= 0
-            β[k] = βk
-            βslack .= true
-        elseif np == 2
-            k2 = k == 1 ? 2 : 1
-            β[k] = βk
-            β[k2] = 1 - βk
-            βslack .= true
-        end
+    #bubbledew condition in second spec
+    if spec.spec2 isa Vfrac && np == 2 && (iszero(spec.val2) || isone(spec.val2))
+        k = spec.spec2.k
+        xk = viewn(slack_comps,nc,k)
+        xk .= true
     end
-    =#
     return slack
 end
 

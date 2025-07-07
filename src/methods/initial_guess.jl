@@ -20,8 +20,10 @@ function x0_volume_gas(model,p,T,z)
     B = second_virial_coefficient(model,T,z)
     nRT = sum(z)*Rgas(model)*T
     pmax = -0.25*nRT/B
-    if pmax < p || B > 0 || !isfinite(B)
+    if B >= 0 || !isfinite(B)
         return nRT/p
+    elseif pmax < p && B < 0
+        return -2*B
     else
         return volume_virial(B,p,T,z)
     end
@@ -433,7 +435,24 @@ function _find_vm(dpoly,v_lb::K,v_ub::K) where K
     d3poly = Solvers.polyder(d2poly)
     lb = zero(v_lb)
     ub = v_ub - v_lb
-    nr,v1,v2,v3 = Solvers.real_roots3(d2poly)
+    if iszero(last(d2poly))
+        c,b,a,_ = d2poly
+        if iszero(a)
+            #bx + c = 0
+            v = -c/b
+            nr,v1,v2,v3 = 1,v,v,v
+        else
+            dd = sqrt(b*b - 4*a*c)
+            isnan(dd) && return zero(K)/zero(K)
+            v1 = (-b + dd)/(2*a)
+            v2 = (-b - dd)/(2*a)
+            v3 = zero(K)/zero(K)
+            nr = 2
+        end
+    else
+        nr,v1,v2,v3 = Solvers.real_roots3(d2poly)
+    end
+    
     if evalpoly(v1,dpoly) > 0 && (lb <= v1 <= ub) && evalpoly(v1,d3poly) < 0
         return v1 + v_lb
     elseif evalpoly(v2,dpoly) > 0 && (lb <= v2 <= ub) && nr > 1 && evalpoly(v2,d3poly) < 0
@@ -552,7 +571,7 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
         return pure_spinodal(model,T,v_lb_new,v_ub_new,phase,false)
     end
 
-    if dfx*dfh < 0
+    if dfx*dfh <= 0
         if vx < vh
             v_bracket = (vx,vh)
             dp_bracket = (dfx,dfh)
@@ -560,16 +579,19 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
             v_bracket = (vh,vx)
             dp_bracket = (dfh,dfx)
         end
-    elseif dfx*dfm < 0
+        return pure_spinodal_newton_bracket(model,T,v_bracket,dp_bracket,dp_scale,z)
+    elseif dfx*dfm <= 0
         if vx < vm
             v_bracket = (vx,vm)
             dp_bracket = (dfx,dfm)
         else
             v_bracket = (vm,vx)
-            dp_bracket= (dfm,dfx)
+            dp_bracket = (dfm,dfx)
         end
+        return pure_spinodal_newton_bracket(model,T,v_bracket,dp_bracket,dp_scale,z)
+    else
+        throw(error("Cannot determine spinodal bracket for $(typeof(model)) at phase = :$phase. input volume values are: ($v_lb,$v_ub)"))
     end
-    pure_spinodal_newton_bracket(model,T,v_bracket,dp_bracket,dp_scale,z)
 end
 
 """

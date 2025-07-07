@@ -156,7 +156,7 @@ formic acid~|~methanoic acid,a,dipropyl ether~|~di-n-propylether,b,1463.220515,0
 formic acid~|~methanoic acid,a,1-ethoxybutane~|~butyl ethyl ether~|~ethyl butyl ether~|~n-butyl ethyl ether,b,1756.745524,0.60493
 formic acid~|~methanoic acid,a,propylformate~|~n-propylformate~|~propyl methanoate~|~n-propylmethanoate~|~formic acid propyl ester,b,1648.288614,0.60493
 formic acid~|~methanoic acid,a,gamma-valerolactone~|~tetrahydro-5-methyl-2-furanone~|~dihydro-5-methyl-2(3h)-furanone,b,2150.804145,0.60493
-formic acid~|~methanoic acid,a,amyl formate~|~pentyl methanoate~|~formicacidpentylester,b,1540.084631,0.60493
+formic acid~|~methanoic acid,a,amyl formate~|~pentyl formate~|~pentyl methanoate~|~formicacidpentylester,b,1540.084631,0.60493
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,a,2-butanol~|~butan-2-ol,b,1144.611633,0.00622
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,a,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,974.0534372,0.01435
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,a,2-propanol~|~propan-2-ol~|~isopropanol,b,371.3467923,0.03508
@@ -1094,7 +1094,7 @@ formic acid~|~methanoic acid,b,dipropyl ether~|~di-n-propylether,a,1463.220515,0
 formic acid~|~methanoic acid,b,1-ethoxybutane~|~butyl ethyl ether~|~ethyl butyl ether~|~n-butyl ethyl ether,a,1756.745524,0.60493
 formic acid~|~methanoic acid,b,propylformate~|~n-propylformate~|~propyl methanoate~|~n-propylmethanoate~|~formic acid propyl ester,a,1648.288614,0.60493
 formic acid~|~methanoic acid,b,gamma-valerolactone~|~tetrahydro-5-methyl-2-furanone~|~dihydro-5-methyl-2(3h)-furanone,a,2150.804145,0.60493
-formic acid~|~methanoic acid,b,amyl formate~|~pentyl methanoate~|~formicacidpentylester,a,1540.084631,0.60493
+formic acid~|~methanoic acid,b,amyl formate~|~pentyl formate~|~pentyl methanoate~|~formicacidpentylester,a,1540.084631,0.60493
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,b,2-butanol~|~butan-2-ol,a,1144.611633,0.00622
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,b,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,974.0534372,0.01435
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,b,2-propanol~|~propan-2-ol~|~isopropanol,a,371.3467923,0.03508

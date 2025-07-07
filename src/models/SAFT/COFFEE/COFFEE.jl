@@ -275,6 +275,7 @@ function ∫∫∫dξ₁dξ₂dγ12(I::Function)
     return _I
 end
 
+#=
 function Xij(model::COFFEEModel, V, T, z, _data=@f(data))
     nc = length(model)
     Χᵢⱼ = similar(Base.promote_eltype(model,V,T,z),nc,nc)
@@ -371,7 +372,7 @@ function COFFEE_ξᵢⱼ(z,σ,i,j)
     end
     return ∑1/∑2
 end
-
+=#
 const COFFEEconsts = (
     corr_I = (1.4713,-0.7842,0.6010,1.2336,-0.6978,-1.6837,0.4262,-0.4824,0.3502,0.2707),
 

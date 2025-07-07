@@ -174,36 +174,8 @@ end
 equivalent to `sum(iterator,init=0.0)`.
 
 """
-function ∑(iterator)
-    len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
-    hastype = (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
-    local _0
-    if hastype
-        _0 = zero(eltype(iterator))
-    else
-        _0 = 0.0
-    end
-    len && iszero(length(iterator)) && return _0
-    !len && return reduce(Base.add_sum,iterator,init=_0)
-    return sum(iterator)
-end
-
-∑(x::AbstractArray) = sum(x)
-∑(f,x::AbstractArray) = sum(f,x)
-
-function ∑(fn,iterator)
-    len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
-    hastype = (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
-    local _0
-    if hastype
-        _0 = zero(eltype(iterator))
-    else
-        _0 = 0.0
-    end
-    len && iszero(length(iterator)) && return _0
-    !len && return mapreduce(fn,Base.add_sum,iterator,init=_0)
-    return sum(fn,iterator)
-end
+∑(x) = sum(x,init = 0.0)
+∑(f,x) = sum(f,x,init = 0.0)
 
 function is_ad_input(model,V,T,z)
     #model_primal = Solvers.primal_eltype(model)

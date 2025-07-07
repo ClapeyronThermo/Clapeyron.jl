@@ -245,26 +245,34 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
     end
     length(model) == 1 && print(io, " with 1 component:")
     length(model) > 1 && print(io, " with ", length(model), " components:")
+    println(io)
+    show_pairs(io,model.components)
+
     if solid !== nothing
         if solid isa SolidCorrelation
-            solid.phase !== nothing && print(io,'\n'," Solid Phase Model: ",model.solid)
-            solid.melting !== nothing && print(io,'\n'," Melting Model: ",model.melting)
-            solid.sublimation !== nothing && print(io,'\n'," Sublimation Model: ",model.saturation)
+            solid.phase !== nothing && print(io,'\n',"Solid Phase Model: ",typeof(model.solid))
+            solid.melting !== nothing && print(io,'\n',"Melting Model: ",typeof(model.melting))
+            solid.sublimation !== nothing && print(io,'\n',"Sublimation Model: ",typeof(model.saturation))
         else
-            print(io,'\n'," Solid Model: ",solid)
+            print(io,'\n',"Solid Model: ",solid)
         end
     end
 
     if fluid !== nothing
         if fluid isa GammaPhi
-            print(io,'\n'," Activity Model: ",fluid.activity)
-            print(io,'\n'," Fluid Model: ",fluid.fluid.model) #on gamma-phi, fluid is an EoSVectorParam
+            act = fluid.activity
+            if hasfield(typeof(act),:puremodel)
+                rint(io,'\n',"Activity Model: ", parameterless_type(act))
+            else
+                print(io,'\n',"Activity Model: ",typeof(act))
+            end
+            print(io,'\n',"Fluid Model: ",typeof(fluid.fluid.model)) #on gamma-phi, fluid is an EoSVectorParam
         elseif fluid isa FluidCorrelation
-            fluid.gas !== nothing && print(io,'\n'," Gas Model: ",fluid.gas)
-            fluid.liquid !== nothing && print(io,'\n'," Liquid Model: ",fluid.liquid)
-            fluid.saturation !== nothing && print(io,'\n'," Saturation Model: ",fluid.saturation)
+            fluid.gas !== nothing && print(io,'\n',"Gas Model: ",typeof(fluid.gas))
+            fluid.liquid !== nothing && print(io,'\n',"Liquid Model: ",typeof(fluid.liquid))
+            fluid.saturation !== nothing && print(io,'\n',"Saturation Model: ",typeof(fluid.saturation))
         else
-            fluid !== nothing && print(io,'\n'," Fluid Model: ",fluid)
+            fluid !== nothing && print(io,'\n',"Fluid Model: ",fluid)
         end
     end
     show_reference_state(io,model;space = true)

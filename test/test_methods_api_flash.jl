@@ -176,6 +176,8 @@ end
     h = enthalpy(model,p,T,z)
     res0 = ph_flash(model,p,h,z)
     @test Clapeyron.temperature(res0) ≈ T rtol = 1e-6
+    @test PH.temperature(model,p,h,z) ≈ T rtol = 1e-6
+    @test Clapeyron.temperature(PH.flash(model,p,h,z)) ≈ T rtol = 1e-6
     @test enthalpy(model,res0) ≈ h rtol = 1e-6
 
     #2 phases
@@ -193,9 +195,10 @@ end
     model = cPR(["ethane","propane"],idealmodel=ReidIdeal)
     res2 = qt_flash(model,0.5,208.0,[0.5,0.5])
     @test Clapeyron.pressure(res2) ≈ 101634.82435966855 rtol = 1e-6
+    @test QT.pressure(model,0.5,208.0,[0.5,0.5]) ≈ 101634.82435966855 rtol = 1e-6
     res3 = qp_flash(model,0.5,120000.0,[0.5,0.5])
     @test Clapeyron.temperature(res3) ≈ 211.4972567716822 rtol = 1e-6
-
+    @test QP.temperature(model,0.5,120000.0,[0.5,0.5]) ≈ 211.4972567716822 rtol = 1e-6
     #1 phase input should error
     model = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
     z = [0.25, 0.25, 0.25, 0.25]
@@ -294,6 +297,10 @@ end
     n_O2_a = 24.08 # mol O2
     sol_fl = vt_flash(model_a_pr, V_a, T, [n_H2O_a, n_O2_a])
     @test V_a ≈ volume(sol_fl)
+    water_cpr = cPR(["water"],idealmodel = ReidIdeal)
+    @test_throws ArgumentError Clapeyron.VT.speed_of_sound(water_cpr,1e-4,373.15)
+    water_cpr_flash = Clapeyron.VT.flash(water_cpr,1e-4,373.15)
+    @test_throws ArgumentError speed_of_sound(water_cpr,water_cpr_flash) 
 
     #PH flash with supercritical pure components (#361)
     fluid_model = SingleFluid("Hydrogen")
@@ -346,6 +353,25 @@ end
         p_tank[i] = pressure(res_i)
     end
     @test issorted(p_tank)
+
+    #issue #390
+    #=
+    model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)
+    z = [0.5,0.5]
+    p_crit= 4.1778440598996202e6
+    p = collect(range(101325,0.7p_crit,100))
+    T_bubble = similar(p)
+    T_dew = similar(p)
+    s_bubble = similar(p)
+    s_dew = similar(p)
+    q0 = 0.0
+    q1 = 1.0
+
+    for i in eachindex(p)
+        res_dew = qp_flash(model,q1,p[i],z)
+        T_dew[i] = Clapeyron.temperature(res_dew)
+        s_dew[i] = Clapeyron.entropy(model,res_dew)
+    end =#
 end
 
 @testset "Saturation Methods" begin
@@ -412,7 +438,7 @@ end
 
     #Issue 328
     @test saturation_pressure(cPR("butane"),406.5487245045052)[1] ≈ 2.815259927796967e6 rtol = 1e-6
-    
+
     #issue 387
     cpr = cPR("Propane",idealmodel = ReidIdeal)
     crit_cpr = crit_pure(cpr)

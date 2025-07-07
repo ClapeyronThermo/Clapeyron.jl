@@ -89,7 +89,7 @@ end
 function a_chain(model::ogSAFTModel, V, T, z,_data = @f(data))
     #x = z/∑(z)
     m = model.params.segment.values
-    return sum(z[i]*(1-m[i])*log(@f(g_hsij, i, i,_data)) for i ∈ @comps)/sum(z)
+    return sum(z[i]*(1-m[i])*log(@f(g_hs, i, i,_data)) for i ∈ @comps)/sum(z)
 end
 
 function d(model::ogSAFTModel, V, T, z)
@@ -138,11 +138,10 @@ end
 #     return N_A*∑z*π/6/V*@f(dx)^3*m̄
 # end
 
-function g_hsij(model::ogSAFTModel, V, T, z, i, j,_data = @f(data))
+function g_hs(model::ogSAFTModel, V, T, z, i, j,_data = @f(data))
     _d, m̄, ζi = _data
     ζ0,ζ1,ζ2,ζ3 = ζi
-    di,dj = _d[i],_d[j]
-    return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
+    return g_hs_ij(_d,ζ2,ζ3,i,j)
 end
 
 # function a_hs(model::ogSAFTModel, V, T, z)
@@ -230,7 +229,7 @@ function Δ(model::ogSAFTModel, V, T, z, i, j, a, b,_data = @f(data))
     κ = model.params.bondvol.values
     kijab =κ[i,j][a,b]
     ϵ_assoc = model.params.epsilon_assoc.values
-    g = @f(g_hsij,i,j)
+    g = @f(g_hs,i,j)
     return (_d[i]+_d[j])^3/2^3*g*(expm1(ϵ_assoc[i,j][a,b]/T))*kijab
 end
 

@@ -15,19 +15,6 @@ function single_component_error(method,model)
     throw(DimensionMismatch(msg))
 end
 
-function multi_component_check(method,model)
-    l = length(model)
-    l > 1 && return nothing
-    single_component_error(method,model)
-end
-
-function multi_component_error(method,model)
-    l = length(model)
-    msg = string(method," only supports multiple component models, ",model," has ",l," components.")
-    throw(DimensionMismatch(msg))
-end
-
-
 """
     binary_component_check(method,model)
 
@@ -85,5 +72,9 @@ function reference_state_checkempty(model,ref)
 end
 
 function invalid_property_multiphase_error(f)
-    throw(DomainError(f,"$f cannot be used with multiphase conditions."))
+    throw(ArgumentError("The input state has at least 2 phases, it cannot be used to evaluate $f"))
+end
+
+@noinline function invalid_property_multiphase_error(f,np,p,T)
+    throw(ArgumentError("The state at p = $p, T = $T has $np phases, it cannot be used to evaluate $f"))
 end

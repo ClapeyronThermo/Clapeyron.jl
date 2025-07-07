@@ -149,9 +149,7 @@ end =#
 
 function g_hs(model::PCSAFTModel, V, T, z, i, j, _data=@f(data))
     _d,ζ0,ζ1,ζ2,ζ3,_ = _data
-    di = _d[i]
-    dj = _d[j]
-    return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
+    return g_hs_ij(_d,ζ2,ζ3,i,j)
 end
 
 function a_hs(model::PCSAFTModel, V, T, z, _data=@f(data))

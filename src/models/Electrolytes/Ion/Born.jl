@@ -2,7 +2,7 @@ struct BornParam <: EoSParam
     sigma_born::SingleParam{Float64}
 end
 
-abstract type BornModel <: EoSModel end
+abstract type BornModel <: IonModel end
 
 struct Born{ϵ} <: BornModel
     components::Array{String,1}
@@ -23,7 +23,6 @@ export Born
 
 ## Input parameters
 - `sigma_born`: Single Parameter (`Float64`) - Born Diameter `[m]`
-- `charge`: Single Parameter (`Float64`) - Charge `[-]`
 
 ## Input models
 - `RSPmodel`: Relative Static Permittivity Model
@@ -38,7 +37,7 @@ function Born(solvents,ions; RSPmodel = ConstRSP, userlocations=String[], RSPmod
     
     components = deepcopy(ions)
     prepend!(components,solvents)    
-    params = getparams(components, ["Electrolytes/Born/Born.csv"], verbose=verbose)
+    params = getparams(components, ["Electrolytes/Born/born_like.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     params["sigma_born"].values .*= 1E-10
     sigma_born = params["sigma_born"]
 
@@ -58,7 +57,7 @@ function data(model::BornModel, V, T, z)
 end
 
 function a_res(ionmodel::BornModel, V, T, z, iondata)
-    return a_born(model, V, T, z, iondata)
+    return a_born(ionmodel, V, T, z, iondata)
 end
 
 function a_born(model::EoSModel, V, T, z, iondata)

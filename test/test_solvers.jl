@@ -13,7 +13,31 @@ function quadratic_fixpoint(y,x)
     y
 end
 
+minlog(x) = ((x - 2)^2 - log(x))
 
+#=
+2*(x - 2) - 1/x = 0
+2x - 4 - 1/x = 0
+2x^2 - 4x - 1 = 0
+x^2 - 2x - 0.5 = 0
+(2 + sqrt(4 + 2))/2
+(2 + sqrt(6))/2
+=#
+
+function opt_test(k,method)
+    my_rosenbrock(x) = (1.0 - k*x[1])^2 + 100 * (x[2] - x[1]^2)^2
+    x0 = Clapeyron.SA[0.0,0.0]
+    return SOL.solution(SOL.optimize(my_rosenbrock,x0,method)) #uses newton as default.
+    #return solution(optimize(rosenbrock,x0,LineSearch(Newton()),OptimizationOptions())
+end
+
+
+function opt_test(k)
+    my_rosenbrock(x) = (1.0 - k*x[1])^2 + 100 * (x[2] - x[1]^2)^2
+    x0 = Clapeyron.SA[0.0,0.0]
+    return SOL.solution(SOL.optimize(my_rosenbrock,x0,SOL.LineSearch(SOL.Newton()))) #uses newton as default.
+    #return solution(optimize(rosenbrock,x0,LineSearch(Newton()),OptimizationOptions())
+end
 @testset "Solvers Module" begin
     @testset "newton,halley" begin
         x0 = 2+rand()
@@ -135,10 +159,31 @@ end
         @test ad.f(zeros(2)) == 1.0
         @test ad.fg(ones(2),zeros(2))[2] == [-2.0,0.0]
         @test ad.fgh(ones(2),ones(2,2),zeros(2))[3] == [2.0 0.0; 0.0 200.0]
+
+        d1 = SOL.grad_at_i(rosenbrock,[2.0,2.0],1)
+        d2 = SOL.grad_at_i(rosenbrock,[2.0,2.0],2)
+        d = SOL.gradient(rosenbrock,[2.0,2.0])
+        @test [d1,d2] == d
     end
 
     @testset "evalexppoly" begin
         @test Clapeyron.evalexppoly(2,(1,2,3),(3,2,1)) == 22
+    end
+
+    @testset "optimize" begin
+        xs = [1/3,1/9] #solution
+        x1 = opt_test(3.0)
+        @test x1 ≈ xs
+
+        x2 = opt_test(3.0,SOL.NelderMead())
+        @test x2 ≈ xs
+
+        xs_1v = (2 + sqrt(6))/2
+        x3 = SOL.solution(SOL.optimize(minlog,(1.5,2.5),SOL.BrentMin()))
+        @test x3 ≈ xs_1v
+
+        x4 = SOL.solution(SOL.optimize(minlog,(1.5,2.5),SOL.BoundOptim1Var()))
+        @test x4 ≈ xs_1v
     end
 end
 @printline

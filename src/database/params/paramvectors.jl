@@ -345,6 +345,19 @@ function indices(x::Compressed4DMatrix)
     return zip(l,xin,x.inner_indices)
 end
 
+function Solvers.primalval(x::Compressed4DMatrix{T}) where T
+    vals = x.values
+    vals₀ = Solvers.primalval(vals)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
+end
+
+function Solvers.primalval_eager(x::Compressed4DMatrix{T}) where T
+    vals = x.values
+    vals₀ = Solvers.primalval_eager(vals)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
+end
+
+#=
 """
     SparsePackedMofV{T,V<:AbstractVector{T}} <:SparseArrays.AbstractSparseMatrixCSC{E,Int}
 Sparse Matrix struct used internally to store a matrix of Vectors efficiently.
@@ -415,14 +428,20 @@ function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
     end
 end
 
-function Solvers.primalval(x::Compressed4DMatrix{T}) where T
-    vals = x.values
-    vals₀ = Solvers.primalval(vals)
-    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
-end
+function each_split_model(y::SparsePackedMofV,I)
+    idx = y.idx[I,I]
+    if iszero(length(y.storage))
+        return SparsePackedMofV(y.storage,idx)
+    end
 
-function Solvers.primalval_eager(x::Compressed4DMatrix{T}) where T
-    vals = x.values
-    vals₀ = Solvers.primalval_eager(vals)
-    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
-end
+    if iszero(nnz(idx))
+        st = y.storage
+        storage = PackedVofV([1],zeros(eltype(st.v),0))
+        return SparsePackedMofV(storage,idx)
+    else
+        str = y.storage[nnz(idx)]
+        storage = PackedVectorsOfVectors.pack(str)
+        return SparsePackedMofV(storage,idx)
+    end
+end 
+=#
