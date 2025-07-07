@@ -43,19 +43,44 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
             dpdVᵢ > 0 && return _0/_0 #inline mechanical stability.
             abs(pᵢ-p₀) < 3eps(p₀) && return Vᵢ #this helps convergence near critical points.
 
-            m = (pᵢ - p0ᵢ)/(logVᵢ - logV0)
-            #slope between initial point and current point, should always be negative.
+
+            #zeroth order check:
+            #slope between initial point and current point, must be negative.
             #a positive slope means we jumped across an spinodal
+            m = (pᵢ - p0ᵢ)/(logVᵢ - logV0)
             if m > _0 && i > 1
                 return nan
             end
-            dm_V = (dpdVᵢ - dp0dVᵢ)/(Vᵢ - V0)
-            dm_rho = (dp0dVᵢ*V0*V0 - dpdVᵢ*Vᵢ*Vᵢ)/(Vᵢ - V0)
-            
-            if max(dm_V,dm_rho) < 0 && i > 1
-                return nan
+
+            #first order check
+            #a third order polynomial interpolant should not present any minima:
+            if V0 < Vᵢ && i > 1 && false
+                poly3 = Solvers.hermite3_poly(V0,Vᵢ,p0ᵢ,pᵢ,dp0dVᵢ,dpdVᵢ)
+                dpoly3 = Solvers.polyder(poly3)
+                dpolyx = (dpoly3[1],dpoly3[2],dpoly3[3],_0,_0)
+                #@show dp0dVᵢ,dpdVᵢ
+                Vm = _find_vm(dpolyx,V0,Vᵢ)
+                if !isnan(Vm)
+                    @show log(Vm),logV0,logVᵢ
+                end
+                (V0 <= Vm <= Vᵢ) && return nan
+            elseif i > 1 && false
+                poly3 = Solvers.hermite3_poly(Vᵢ,V0,pᵢ,p0ᵢ,dpdVᵢ,dp0dVᵢ)
+                dpoly3 = Solvers.polyder(poly3)
+                dpolyx = (dpoly3[1],dpoly3[2],dpoly3[3],_0,_0)
+                Vm = _find_vm(dpolyx,Vᵢ,V0)
+                #@show Vm
+                (Vᵢ <= Vm <= V0) && return nan
             end
 
+            #dm_V = (dpdVᵢ - dp0dVᵢ)/(Vᵢ - V0)
+            #dm_rho = (dp0dVᵢ*V0*V0 - dpdVᵢ*Vᵢ*Vᵢ)/(Vᵢ - V0)
+
+            #if max(dm_V,dm_rho) < 0 && i > 1
+            #    return nan
+            #end
+
+            #=
             if min(dm_V,dm_rho) < 0 && i > 1 && !check_1
                 f(v) = pressure(model,v,T,z)
                 _,_,d2p0ᵢdV02 = Solvers.f∂f∂2f(f,V0)
@@ -77,7 +102,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
                     (Vᵢ <= Vm <= V0) && return nan
                     check_1 = true
                 end
-            end
+            end =#
 
             Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
             #@show dm,dm_V,Δᵢ,logVᵢ
