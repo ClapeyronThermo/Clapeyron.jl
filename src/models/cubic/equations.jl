@@ -299,11 +299,11 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
     c = c̄*sum(z)
     num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
     if num_isreal == 2
-        vvl,vvg = nRTp*z1,nRTp*z2
+        vvl,vvg = nRTp*z1 - c,nRTp*z2 - c
     elseif num_isreal == 3
-        vvl,vvg = nRTp*z1,nRTp*z3
+        vvl,vvg = nRTp*z1 - c,nRTp*z3 - c
     else
-        vvl,vvg = nRTp*z1,nRTp*z1
+        vvl,vvg = nRTp*z1 - c,nRTp*z1 - c
     end
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if !isfinite(vvl) && !isfinite(vvg) && phase != :unknown
@@ -317,7 +317,7 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
         _vl = vvl
         vl = ifelse(_vl > lb_v, _vl, vg) #catch case where solution is unphysical
     else # 1 real root (or 2 with the second one degenerate)
-        vg = vl = z1 * nRTp
+        vg = vl = z1 * nRTp - c
     end
 
     function gibbs(v)
@@ -331,17 +331,17 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
     end
     #this catches the supercritical phase as well
     if vl ≈ vg
-        return vl - c
+        return vl
     end
 
     if is_liquid(phase)
-        return vl - c
+        return vl
     elseif is_vapour(phase)
-        return vg - c
+        return vg
     else
-        gg = gibbs(vg - c)
-        gl = gibbs(vl - c)
-        return ifelse(gg < gl, vg - c, vl - c)
+        gg = gibbs(vg)
+        gl = gibbs(vl)
+        return ifelse(gg < gl, vg, vl)
     end
 end
 
