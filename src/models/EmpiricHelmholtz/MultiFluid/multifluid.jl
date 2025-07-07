@@ -209,10 +209,9 @@ function lb_volume(model::MultiFluid,z)
 end
 
 #use ideal gas
-function x0_volume_gas(model::MultiFluid,p,T,z)
-    V = sum(z)*R̄*T/p
-    return V
-end
+#function x0_volume_gas(model::MultiFluid,p,T,z)
+#    
+#end
 
 has_fast_crit_pure(model::MultiFluid) = true
 

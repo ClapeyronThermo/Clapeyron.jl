@@ -19,33 +19,80 @@ end
 
 function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(Base.promote_eltype(model,p,T,z,V0))
-    _1 = one(_0)
-    isnan(V0) && return _0/_0
+    _1,nan = one(_0),_0/_0
+    isnan(V0) && return nan
     p₀ = _1*p
-    XX = typeof(p₀)
-    nan = _0/_0
-    logV0 = primalval(log(V0)*_1)
-    log_lb_v = log(primalval(lb_volume(model,T,z)))
-    if iszero(p₀) & (V0 == Inf) #ideal gas
-        return _1/_0
-    end
-    function logstep(logVᵢ::TT) where TT
-        logVᵢ < log_lb_v && return TT(zero(logVᵢ)/zero(logVᵢ))
-        Vᵢ = exp(logVᵢ)
-        _pᵢ,_dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
-        pᵢ,dpdVᵢ = primalval(_pᵢ),primalval(_dpdVᵢ) #ther could be rare cases where the model itself has derivative information.
-        dpdVᵢ > 0 && return TT(zero(logVᵢ)/zero(logVᵢ)) #inline mechanical stability.
-        abs(pᵢ-p₀) < 3eps(p₀) && return TT(zero(Vᵢ)) #this helps convergence near critical points.
-        Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
-        return TT(Δᵢ)
-    end
-    function f_fixpoint(logVᵢ::TT) where TT
-        res = TT(logVᵢ + logstep(logVᵢ))
-        return res
-    end
+    logV0 = log(V0)*_1
+    log_lb_v = log(lb_volume(model,T,z))
+    logVᵢ = logV0
+    iszero(p₀) && (V0 == Inf) && return _1/_0 #ideal gas
+    p0ᵢ = _0
+    dp0dVᵢ = _1
+    Π0 = nan
+    check_1 = false
+    try
+        for i in 1:max_iters
+            logVᵢ < log_lb_v && return nan
+            Vᵢ = exp(logVᵢ)
+            pᵢ,dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
+            if i == 1
+                p0ᵢ = pᵢ
+                dp0dVᵢ = dpdVᵢ
+            end
 
-    logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters)::XX,nan)
-    return exp(logV)
+            dpdVᵢ > 0 && return _0/_0 #inline mechanical stability.
+            abs(pᵢ-p₀) < 3eps(p₀) && return Vᵢ #this helps convergence near critical points.
+
+            m = (pᵢ - p0ᵢ)/(logVᵢ - logV0)
+            #slope between initial point and current point, should always be negative.
+            #a positive slope means we jumped across an spinodal
+            if m > _0 && i > 1
+                return nan
+            end
+            dm_V = (dpdVᵢ - dp0dVᵢ)/(Vᵢ - V0)
+            dm_rho = (dp0dVᵢ*V0*V0 - dpdVᵢ*Vᵢ*Vᵢ)/(Vᵢ - V0)
+            
+            if max(dm_V,dm_rho) < 0 && i > 1
+                return nan
+            end
+
+            if min(dm_V,dm_rho) < 0 && i > 1 && !check_1
+                f(v) = pressure(model,v,T,z)
+                _,_,d2p0ᵢdV02 = Solvers.f∂f∂2f(f,V0)
+                _,_,d2pᵢdVᵢ2 = Solvers.f∂f∂2f(f,Vᵢ)
+                    #p = quintic
+                    #dpdv = quartic
+                    #d2pdpv = cubic we want a point where d2pdpv = 0
+                    #we reuse the spinodal machinery (_find_vm)
+                if V0 < Vᵢ
+                    poly = Solvers.hermite5_poly(V0,Vᵢ,p0ᵢ,pᵢ,dp0dVᵢ,dpdVᵢ,d2p0ᵢdV02,d2pᵢdVᵢ2)
+                    dpoly = Solvers.polyder(poly)
+                    Vm = _find_vm(dpoly,V0,Vᵢ)
+                    (V0 <= Vm <= Vᵢ) && return nan
+                    check_1 = true
+                else
+                    poly = Solvers.hermite5_poly(Vᵢ,V0,pᵢ,p0ᵢ,dpdVᵢ,dp0dVᵢ,d2pᵢdVᵢ2,d2p0ᵢdV02)
+                    dpoly = Solvers.polyder(poly)
+                    Vm = _find_vm(dpoly,Vᵢ,V0)
+                    (Vᵢ <= Vm <= V0) && return nan
+                    check_1 = true
+                end
+            end
+
+            Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
+            #@show dm,dm_V,Δᵢ,logVᵢ
+            #@show (Vᵢ*dpdVᵢ),pᵢ
+            abs(Δᵢ) < 1e-12 && return Vᵢ
+            logVᵢ = logVᵢ + Δᵢ
+        end
+    catch err
+        if err isa DomainError
+            return nan
+        else
+            rethrow(err)
+        end
+    end
+    return nan
 end
 
 #"chills" a state from T0,p to T,p, starting at v = v0
@@ -112,8 +159,8 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
 
     #=
     PV/RT∑z = 1 + B/V // a = P/RT∑z, .*= V
-    aV2 = V + B 
-    aV2 - V - B = 0 
+    aV2 = V + B
+    aV2 - V - B = 0
     =#
     B > _0 && return _0/_0
     a = p/(R *T*sum(z))
@@ -126,7 +173,7 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
         return -2*B
     end
     #only the left root has physical meaning
-    return (-b + sqrt(Δ))/(2*a)   
+    return (-b + sqrt(Δ))/(2*a)
 end
 
 function pressure_virial(model,V,T,z)
@@ -281,12 +328,12 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
         #=
         ch = Channel{TYPE}(3) do ys
             Threads.@sync for v0 in volumes0
-                Threads.@spawn put!(ys, _volume_compress($model,$p,$T,$z,v0)) 
+                Threads.@spawn put!(ys, _volume_compress($model,$p,$T,$z,v0))
             end
         end
         v1::TYPE = take!(ch)
         v2::TYPE = take!(ch)
-        v3::TYPE = take!(ch) 
+        v3::TYPE = take!(ch)
         volumes = (v1,v2,v3)
         =#
         _Vg = StableTasks.@spawn _volume_compress($fluid,$p,$T,$z,$Vg0)

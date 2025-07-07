@@ -389,6 +389,15 @@ end
         #test found in #371
         model2 = GERG2008(["carbon dioxide","nitrogen","water"])
         @test mass_density(model2,64.0e5,30+273.15,[0.4975080785711593, 0.0049838428576813995, 0.4975080785711593],phase = :l) ≈ 835.3971524715569 rtol = 1e-6
+    
+        #test found in #395:
+
+        p395 = range(log(3.12e6),log(1e8),1000)
+        model395 = GERG2008(["carbon dioxide","nitrogen"])
+        z395 = Ref([0.95,0.05])
+        v395 = volume.(model395,exp.(p395),250.0,z395,phase = :v)
+        @test count(isnan,vv) == 999
+
     end
     @testset "VLE properties" begin
         system = GERG2008(["carbon dioxide","water"])
