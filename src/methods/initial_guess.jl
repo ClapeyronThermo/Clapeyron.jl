@@ -4,7 +4,7 @@
 
 Returns an initial guess to the liquid volume, dependent on temperature and composition. by default is 1.25 times [`lb_volume`](@ref).
 """
-function x0_volume_liquid(model,T,z)
+function x0_volume_liquid(model,T,z::AbstractVector)
     v_lb = lb_volume(model,T,z)
     return v_lb*1.25
 end

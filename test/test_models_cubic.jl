@@ -225,6 +225,15 @@
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2696422558756286 rtol = 1e-6
             @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
         end
+
+        @testset "YFR" begin
+            zz = [0.95,0.05]
+            system = YFR(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, zz) ≈ 0.17277878581138775 rtol = 1e-6
+            @test Clapeyron.cubic_p(system, V, T, zz) ≈ Clapeyron.pressure(system, V, T, zz) rtol = 1e-6
+            @test Clapeyron.crit_pure(YFR("water"))[3] ≈ 6.50936094952025e-5 rtol = 1e-6
+        end
+
     end
     end
     @printline

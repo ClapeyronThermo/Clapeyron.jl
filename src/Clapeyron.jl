@@ -236,6 +236,7 @@ include("models/cubic/PR/variants/tcPR.jl")
 include("models/cubic/PR/variants/tcPRW.jl")
 include("models/cubic/PR/variants/cPR.jl")
 include("models/cubic/PR/variants/EPPR78.jl")
+include("models/cubic/PatelTeja/variants/YFR.jl")
 
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
 

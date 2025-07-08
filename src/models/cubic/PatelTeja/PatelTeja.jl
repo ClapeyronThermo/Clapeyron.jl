@@ -92,7 +92,7 @@ bᵢᵢ = Ωbᵢ(R²Tcᵢ/Pcᵢ)
 cᵢ = Ωcᵢ(R²Tcᵢ/Pcᵢ)
 Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
 Ωaᵢ = 3Zcᵢ² + 3(1 - 2Zcᵢ)Ωbᵢ + Ωbᵢ² + 1 - 3Zcᵢ
-0 = -Zcᵢ³ + (3Zcᵢ²)*Ωbᵢ + (2 - 3Zcᵢ)*Ωbᵢ² + Ωbᵢ³
+Ωbᵢ: maximum real solution of 0 = -Zcᵢ³ + (3Zcᵢ²)*Ωbᵢ + (2 - 3Zcᵢ)*Ωbᵢ² + Ωbᵢ³
 Ωcᵢ = 1 - 3Zcᵢ
 
 γ = ∑cᵢxᵢ/∑bᵢxᵢ
@@ -179,6 +179,23 @@ end
 
 default_references(::Type{PatelTeja}) = ["10.1016/0009-2509(82)80099-7"]
 
+function PatelTeja_Ωb(ξc)
+    #poly = (-Zc^3,3Zc^2,2-3*Zc,1.0)
+    #_,Ωb1,Ωb2,Ωb3 = Solvers.real_roots3(poly)
+    #Ωb = max(Ωb1,Ωb2,Ωb3)
+    Z̄c = complex(ξc)
+    Z̄c2 = Z̄c*Z̄c
+    Z̄c3 = Z̄c2*Z̄c
+    d  = (36*Z̄c - 8 - 27*Z̄c2 + 3*sqrt(3)*sqrt(Z̄c3*(27*Z̄c -8)))^(1/3)
+    Ωb = real(1/3*(3*Z̄c - 2) - (12*Z̄c - 4)/(3*d) + 1/3*d)
+end
+
+function PatelTeja_Ωab(ξc)
+    Ωb = PatelTeja_Ωb(ξc)
+    Ωa = 3*ξc*ξc + 3*(1 - 2*ξc)*Ωb + Ωb*Ωb + 1 - 3*ξc
+    return Ωa,Ωb
+end
+
 function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
     _Tc = model.params.Tc
     _pc = model.params.Pc
@@ -189,13 +206,9 @@ function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
     for i in 1:length(model)
         pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
         Zc = pci * Vci / (R̄ * Tci)
-        #poly = (-Zc^3,3Zc^2,2-3*Zc,1.0)
-        #_,Ωb1,Ωb2,Ωb3 = Solvers.real_roots3(poly)
-        #Ωb = max(Ωb1,Ωb2,Ωb3)
         Z̄c = complex(Zc,zero(Zc))
         d  = (36*Z̄c - 8 - 27*Z̄c^2 + 3*sqrt(3)*sqrt(27*Z̄c^4 -8*Z̄c^3))^(1/3)
-        Ωb = real(1/3*(3*Z̄c - 2) - (12*Z̄c - 4)/(3*d) + 1/3*d)
-        Ωa = 3*Zc^2 + 3*(1 - 2*Zc)*Ωb + Ωb^2 + 1 - 3*Zc
+        Ωa,Ωb = PatelTeja_Ωab(Zc)
         a[i] = Ωa*R̄^2*Tci^2/pci
         b[i] = Ωb*R̄*Tci/pci
     end
@@ -215,10 +228,9 @@ function c_premixing(model::PatelTejaModel)
     return c
 end
 
-function cubic_Δ(model::PatelTejaModel,z)
-    b = diagvalues(model.params.b.values)
+function cubic_ΔT(model::PatelTejaModel,T,z)
     c = diagvalues(model.params.c.values)
-    b̄ = dot(b,z)
+    b̄ = cubic_lb_volume(model,T,z)
     c̄ = dot(c,z)
     γ = c̄/b̄
     δ = sqrt(evalpoly(γ,(1,6,1)))
