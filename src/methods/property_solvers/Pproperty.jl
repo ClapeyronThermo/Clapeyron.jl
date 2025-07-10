@@ -205,7 +205,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
       verbose && @info "pressure($property) < pressure(dew point)"
       return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
     else
-      _0 = Base.promote_eltype(model,T,prop,z)
+      _0 = zero(Base.promote_eltype(model,T,prop,z))
       return _0/_0,:failure
     end
 end
@@ -252,7 +252,7 @@ function Pproperty_pure(model,T,prop,z,property::F,rootsolver,phase,abstol,relto
     return __Pproperty(model,T,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,Psat)
   else
     verbose && @error "PProperty calculation failed"
-    _0 = Base.promote_eltype(model,T,prop,z)
+    _0 = zero(Base.promote_eltype(model,T,prop,z))
     return _0/_0,:failure
   end
 end

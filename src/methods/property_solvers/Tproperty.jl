@@ -228,7 +228,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
       __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_T)
     else
       verbose && @error "TProperty calculation failed"
-      _0 = Base.promote_eltype(model,p,prop,z)
+      _0 = zero(Base.promote_eltype(model,p,prop,z))
       return _0/_0,:failure
     end
 end
@@ -274,7 +274,7 @@ function Tproperty_pure(model,p,prop,z,property::F,rootsolver,phase,abstol,relto
     return __Tproperty(model,p,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,Tsat)
   else
     verbose && @error "TProperty calculation failed"
-    _0 = Base.promote_eltype(model,p,prop,z)
+    _0 = zero(Base.promote_eltype(model,p,prop,z))
     return _0/_0,:failure
   end
 end

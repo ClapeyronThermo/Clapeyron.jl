@@ -114,7 +114,7 @@ end
 
 function a_res(model::DeltaCubicModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
-    Δ1,Δ2 = cubic_Δ(model,z)
+    Δ1,Δ2 = cubic_ΔT(model,T,z)
     ΔΔ = Δ2 - Δ1
     RT⁻¹ = 1/(R̄*T)
     ρt = (V/n+c̄)^(-1) # translated density
@@ -135,7 +135,7 @@ function cubic_poly(model::DeltaCubicModel,p,T,z)
     RT⁻¹ = 1/(Rgas(model)*T)
     A = a*p*RT⁻¹*RT⁻¹
     B = b*p*RT⁻¹
-    Δ1,Δ2 = cubic_Δ(model,z)
+    Δ1,Δ2 = cubic_ΔT(model,T,z)
     ∑Δ = -Δ1 - Δ2
     Δ1Δ2 = Δ1*Δ2
     k₀ = -B*evalpoly(B,(A,Δ1Δ2,Δ1Δ2))
@@ -145,7 +145,7 @@ function cubic_poly(model::DeltaCubicModel,p,T,z)
     return (k₀,k₁,k₂,k₃),c
 end
 
-function cubic_p(model::DeltaCubicModel, V, T, z,_data = @f(data),Δ = cubic_Δ(model,z))
+function cubic_p(model::DeltaCubicModel, V, T, z,_data = @f(data),Δ = cubic_ΔT(model,T,z))
     Δ1,Δ2 = Δ
     n,a,b,c = _data
     v = V/n+c
@@ -157,7 +157,7 @@ function cubic_pure_zc(model::DeltaCubicModel)
     Tc = model.params.Tc[1]
     Pc = model.params.Pc[1]
     b = lb_volume(model,Tc,SA[1.0])
-    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
+    Δ1,Δ2 = cubic_ΔT(model,Tc,SA[1.0])
     B = b*Pc/(Rgas(model)*Tc)
     return (1 + (Δ1 + Δ2 + 1)*B)/3 #Pc
 end
@@ -239,7 +239,7 @@ function crit_pure(model::DeltaCubicModel)
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
     b = cubic_lb_volume(model,Tc,SA[1.0])
-    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
+    Δ1,Δ2 = cubic_ΔT(model,Tc,SA[1.0])
     RT = Rgas(model)*Tc
     RTp = RT/Pc
     Vc0 = (RTp + (Δ1 + Δ2 + 1)*b)/3
@@ -350,7 +350,7 @@ function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,re
     Segura, H., & Wisniak, J. (1997). Calculation of pure saturation properties using cubic equations of state. Computers & Chemical Engineering, 21(12), 1339–1347. doi:10.1016/s0098-1354(97)00016-1
     =#
     a,b,c = cubic_ab(model,v_lb,T,z)
-    Δ1,Δ2 = cubic_Δ(model,z)
+    Δ1,Δ2 = cubic_ΔT(model,T,z)
     c1_c2 = - Δ1 - Δ2
     c1c2 = Δ1*Δ2
     RT = Rgas(model)*T
@@ -386,7 +386,7 @@ function liquid_spinodal_zero_limit(model::DeltaCubicModel,z)
     R̄ = Rgas(model)
     function F(Tx)
         a,b,c = cubic_ab(model,0,Tx,z)
-        Δ1,Δ2 = cubic_Δ(model,z)
+        Δ1,Δ2 = cubic_ΔT(model,T,z)
         Ax = R̄*Tx
         Bx = -(Ax*b*(Δ1+Δ2) + a)
         Cx = b*(Ax*Δ1*Δ2*b + a)
@@ -405,7 +405,7 @@ end
 
 function zero_pressure_impl(model::DeltaCubicModel,T,z)
     a,b,c = cubic_ab(model,0,T,z)
-    Δ1,Δ2 = cubic_Δ(model,z)
+    Δ1,Δ2 = cubic_Δ(model,T,z)
     return zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
 end
 
@@ -429,6 +429,9 @@ end
 #Δ1,Δ2 -> Ωa,Ωb infraestructure
 
 #default: most models will use this
+
+cubic_ΔT(model,T,z) = cubic_Δ(model,z)
+
 function cubic_Δ(model,z)
     return cubic_Δ(typeof(model))
 end
