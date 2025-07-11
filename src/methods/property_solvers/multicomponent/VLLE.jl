@@ -19,9 +19,9 @@ calculates the Vapor-Liquid-Liquid equilibrium pressure and properties of a bina
 
 Returns a tuple, containing:
 - VLLE Pressure `[Pa]`
-- Liquid volume of composition `x₁` at VLLE Point [`m³`]
-- Liquid volume of composition `x₂` at VLLE Point  [`m³`]
-- Vapour volume of composition `y` at VLLE Point  [`m³`]
+- Liquid volume of composition `x₁` at VLLE Point `[m³]`
+- Liquid volume of composition `x₂` at VLLE Point  `[m³]`
+- Vapour volume of composition `y` at VLLE Point  `[m³]`
 - Liquid composition `x₁`
 - Liquid composition `x₂`
 - Liquid composition `y`
@@ -77,9 +77,9 @@ calculates the Vapor-Liquid-Liquid equilibrium temperature and properties of a b
 
 Returns a tuple, containing:
 - VLLE temperature `[K]`
-- Liquid volume of composition `x₁` at VLLE Point [`m³`]
-- Liquid volume of composition `x₂` at VLLE Point  [`m³`]
-- Vapour volume of composition `y` at VLLE Point  [`m³`]
+- Liquid volume of composition `x₁` at VLLE Point `[m³]`
+- Liquid volume of composition `x₂` at VLLE Point  `[m³]`
+- Vapour volume of composition `y` at VLLE Point  `[m³]`
 - Liquid composition `x₁`
 - Liquid composition `x₂`
 - Liquid composition `y`
