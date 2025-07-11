@@ -1794,7 +1794,7 @@ ethyl levulinate~|~4-oxo-pentanoic acid ethyl ester,144.079,4.58228,3.50871,273.
 "syringol~|~2,6-dimethoxyphenol",154.063,2.2492,4.44988,399.51861,0.0,3,1,,ASSOCIATIVE,OK
 "1,1,1-trifluoro-2-(1,1,2-trifluoroethoxy) ethane",182.017,4.86075,3.17084,184.94086,0.0,1,0,,NONPOLAR,OK
 "1,1,2,2-tetrafluoro-2-(2,2-difluoroethoxy)ethane~|~1,1,2,2,-tetrafluoroethyl-2,2-difluoroethyl ether",182.017,4.82846,3.16725,194.11151,0.0,1,0,,NONPOLAR,OK
-"3-bromo-2,4,6-trichlorophenol~|~1,1,1,2,2,-pentafluoro-3-(1,1,2,2-tetrafluoroethoxy) propane",250.004,5.05078,3.38909,180.66796,0.0,1,0,,NONPOLAR,OK
+"1,1,1,2,2,-pentafluoro-3-(1,1,2,2-tetrafluoroethoxy) propane",250.004,5.05078,3.38909,180.66796,0.0,1,0,,NONPOLAR,OK
 "r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene~|~2,3,3,3-tetrafluoroprop-1-ene",114.009,2.88557,3.35657,175.92411,0.0,0,0,,NONPOLAR,OK
 "(z)-1,2,3,3,3-pentafluoropropene",132.0,3.30351,3.22025,170.31726,0.0,0,0,,NONPOLAR,OK
 5-hydroxymethylfurfural~|~5-(hydroxymethyl) furfural~|~5-(hydroxymethyl)furan-2-carbaldehyde,126.032,1.6816,4.5,426.61839,0.0,3,1,,ASSOCIATIVE,"sigma: higher, epsilon_k_ab: higher"
