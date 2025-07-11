@@ -4,8 +4,8 @@
 calculates the azeotrope pressure and properties at a given temperature.
 Returns a tuple, containing:
 - Azeotrope Pressure `[Pa]`
-- liquid volume at Azeotrope Point [`m³`]
-- vapour volume at Azeotrope Point [`m³`]
+- liquid volume at Azeotrope Point `[m³]`
+- vapour volume at Azeotrope Point `[m³]`
 - Azeotrope composition
 """
 function azeotrope_pressure(model::EoSModel, T; v0 = nothing)
@@ -54,8 +54,8 @@ end
 Calculates the azeotrope temperature and properties at a given pressure.
 Returns a tuple, containing:
 - Azeotrope Temperature `[K]`
-- liquid volume at Azeotrope Point [`m³`]
-- vapour volume at Azeotrope Point [`m³`]
+- liquid volume at Azeotrope Point `[m³]`
+- vapour volume at Azeotrope Point `[m³]`
 - Azeotrope composition
 """
 function azeotrope_temperature(model::EoSModel,p;v0=nothing)

@@ -5,8 +5,8 @@
 Calculates the Upper critical solution point of a mixture at a given Temperature.
 
 returns:
-- UCST Pressure [`Pa`]
-- volume at UCST Point [`m³`]
+- UCST Pressure `[Pa]`
+- volume at UCST Point `[m³]`
 - molar composition at UCST Point
 """
 function UCST_pressure(model::EoSModel,T; v0=nothing)
@@ -56,12 +56,12 @@ Calculates the Upper critical solution point of a mixture at a given pressure.
 
 inputs:
 - model: EoS model
-- p: pressure [`Pa`]
+- p: pressure `[Pa]`
 - v0 (optional): an initial guess,consisting of a tuple of initial temperature, volume and composition.
 
 returns:
-- UCST Temperature [`K`]
-- volume at UCST Point [`m³`]
+- UCST Temperature `[K]`
+- volume at UCST Point `[m³]`
 - molar composition at UCST Point
 """
 function UCST_temperature(model::EoSModel,p;v0 = nothing)
