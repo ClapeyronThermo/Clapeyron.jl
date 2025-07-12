@@ -101,36 +101,42 @@ function data(model::GEPCSAFTModel,V,T,z)
 end
 
 
-function a_hc(model::AdvGEPCSAFTModel, V, T, z , _data = @f(data))
-    _,_,_,_,η,m̄ = _data
-    g_hs = (1-η/2)/(1-η)^3
-    a_hs = (4η-3η^2)/(1-η)^2
-    return m̄*a_hs - (m̄-1)*log(g_hs)
-end
+# function a_hc(model::AdvGEPCSAFTModel, V, T, z , _data = @f(data))
+#     _,_,_,_,η,m̄ = _data
+#     g_hs = (1-η/2)/(1-η)^3
+#     a_hs = (4η-3η^2)/(1-η)^2
+#     return m̄*a_hs - (m̄-1)*log(g_hs)
+# end
 
-function g_hs(model::AdvGEPCSAFTModel, V, T, z,_data = @f(data))
-    _,_,_,_,η,_ = _data
-    return (1-η/2)/(1-η)^3
-end
+# function g_hs(model::AdvGEPCSAFTModel, V, T, z,_data = @f(data))
+#     _,_,_,_,η,_ = _data
+#     return (1-η/2)/(1-η)^3
+# end
 
-function a_hs(model::AdvGEPCSAFTModel, V, T, z)
-    _,_,_,_,η,_ = _data
-    return (4η-3η^2)/(1-η)^2
-end
+# function a_hs(model::AdvGEPCSAFTModel, V, T, z)
+#     _,_,_,_,η,_ = _data
+#     return (4η-3η^2)/(1-η)^2
+# end
 
 
 function m2ϵσ3(model::AdvGEPCSAFTModel, V, T, z, _data=@f(data))
 
-    function q_i(α, b)
-        c = [2.4943621118539628*(log(b))^2 + 317.1749262783832*log(b) + 10067.759452498541, 8.066923060464152*(log(b))^2 + 1065.837604157669*log(b) + 35238.98020488654]
-        return c[1]*α + c[2]
+    function q_i(α, m)
+        c = [-1, -3.312911261372218, (log(m) + -2.26053639783524) * (4.373514008544666 - log(m)^2 * -0.5438472133955807 - 2.7803145680981665*log(m))]
+
+        # c = [2.4943621118539628*(log(b))^2 + 317.1749262783832*log(b) + 10067.759452498541, 8.066923060464152*(log(b))^2 + 1065.837604157669*log(b) + 35238.98020488654]
+        # return c[1]*α + c[2]
+        return c[1]*α^2 + c[2]*α + c[3]
     end
 
-    function α_mix(q̄,b̄)
-        c = [2.4943621118539628*(log(b̄))^2 + 317.1749262783832*log(b̄) + 10067.759452498541, 8.066923060464152*(log(b̄))^2 + 1065.837604157669*log(b̄) + 35238.98020488654]
+    function α_mix(q̄,m̄)
+        c = [-1, -3.312911261372218, (log(m̄) + -2.26053639783524) * (4.373514008544666 - log(m̄)^2 * -0.5438472133955807 - 2.7803145680981665*log(m̄))- q̄]
+        # c = [2.4943621118539628*(log(b̄))^2 + 317.1749262783832*log(b̄) + 10067.759452498541, 8.066923060464152*(log(b̄))^2 + 1065.837604157669*log(b̄) + 35238.98020488654]
+        
         # We have to solve the equation q(α, b) = q̄ 
         # where q(α, b) = c[1]*α + c[2]
-        return (q̄ - c[2])/c[1]
+        # return (q̄ - c[2])/c[1]
+        return (-c[2]-sqrt(c[2]^2-4*c[1]*c[3]))/(2c[1])
     end
 
     di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
@@ -141,11 +147,11 @@ function m2ϵσ3(model::AdvGEPCSAFTModel, V, T, z, _data=@f(data))
     m = model.params.segment.values
     ϵ = diagvalues(model.params.epsilon)
     σ = diagvalues(model.params.sigma)
-    α = m.*ϵ./T
+    α = ϵ./T
 
     b = m.*di.^3
 
-    q = @. q_i(α, b)
+    q = @. q_i(α, m)*m
     # println(q)
     # println(α)
     # println(b)
@@ -154,30 +160,31 @@ function m2ϵσ3(model::AdvGEPCSAFTModel, V, T, z, _data=@f(data))
     Σz = sum(z)
     #Iᵢ = @f(Ii,1,_data)
     b̄ = zero(Base.promote_eltype(model,V,T,z))
-    mσ³ = zero(b̄)
+    m²σ³ = zero(b̄)
     A = zero(b̄)
     B = zero(b̄)
     @inbounds for i ∈ @comps
         mᵢ,bᵢ,σᵢ,qᵢ,zᵢ = m[i],b[i],σ[i],q[i],z[i]
         σ³ᵢ = σᵢ*σᵢ*σᵢ
-        mσ³ += zᵢ*mᵢ*σ³ᵢ
+        m²σ³ += zᵢ*mᵢ*σ³ᵢ
         b̄ += zᵢ*bᵢ
         A += zᵢ*qᵢ
         B += zᵢ*log(bᵢ)
     end
-    mσ³,b̄ = mσ³/Σz,b̄/Σz
+    m²σ³,b̄ = m²σ³/Σz,b̄/Σz
     A, B = A/Σz, B/Σz
     gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T*Σz)
     
-    q̄ = gₑ +  A
-    ᾱ = α_mix(q̄, b̄)
+    q̄ = gₑ + (log(b̄) - B) +  A
+    ᾱ = α_mix(q̄/m̄, m̄)
     # println("g_E/RT = ", gₑ)
     # println("log( b̄ ) = ", log(b̄))
     # println("B = ", B)
     # println("A = ", A)
     # println("q̄ = ", q̄)
-    m2ϵσ3₁ = ᾱ*mσ³
-    m2ϵσ3₂ = ᾱ*ᾱ*mσ³/m̄
+    # println("ᾱ = ", ᾱ)
+    m2ϵσ3₁ = ᾱ*m²σ³*m̄
+    m2ϵσ3₂ = ᾱ*m2ϵσ3₁
 
     return m2ϵσ3₁, m2ϵσ3₂
 end
