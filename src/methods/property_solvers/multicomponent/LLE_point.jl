@@ -50,8 +50,8 @@ calculates the Liquid-Liquid equilibrium pressure and properties at a given temp
 
 Returns a tuple, containing:
 - LLE Pressure `[Pa]`
-- liquid volume of composition `x₁ = x` at LLE Point [`m³`]
-- liquid volume of composition `x₂` at LLE Point  [`m³`]
+- liquid volume of composition `x₁ = x` at LLE Point `[m³]`
+- liquid volume of composition `x₂` at LLE Point  `[m³]`
 - Liquid composition `x₂`
 """
 function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
@@ -91,8 +91,8 @@ calculates the Liquid-Liquid equilibrium temperature and properties at a given p
 
 Returns a tuple, containing:
 - LLE Pressure `[Pa]`
-- liquid volume of composition `x₁ = x` at LLE Point [`m³`]
-- liquid volume of composition `x₂` at LLE Point  [`m³`]
+- liquid volume of composition `x₁ = x` at LLE Point `[m³]`
+- liquid volume of composition `x₂` at LLE Point  `[m³]`
 - Liquid composition `x₂`
 """
 function LLE_temperature(model::EoSModel,p,x;v0=nothing)

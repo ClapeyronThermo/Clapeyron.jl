@@ -11,7 +11,7 @@ Inputs:
 - `modelx`: liquid equation of state model, if any noncondensable compounds are present
 - `modely`: vapour equation of state model
 - `y`: vapour phase composition
-- `T`: temperature [`K`]
+- `T`: temperature `[K]`
 - `vol_cache`: array used to update the phases' volumes
 _ `condensable`: condensable component indices, if any noncondensable compounds are present
 
@@ -40,10 +40,10 @@ systems of equations.
 
 Inputs:
 - `model`: equation of state model
-- `T`: dew temperature [`K`]
+- `T`: dew temperature `[K]`
 - `y`: vapor phase composition
 - `x0`: initial guess for the liquid phase composition
-- `p0`: initial guess for the dew pressure [`Pa`]
+- `p0`: initial guess for the dew pressure `[Pa]`
 - `vol0`: optional, initial guesses for the liquid and vapor phase volumes
 - `itmax_newton`: optional, number of iterations to update the pressure using newton's method
 - `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
@@ -111,7 +111,7 @@ system of equations.
 
 Inputs:
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
-- `p0 = nothing`: optional, initial guess for the dew pressure [`Pa`]
+- `p0 = nothing`: optional, initial guess for the dew pressure `[Pa]`
 - `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
 - `itmax_newton = 10`: optional, number of iterations to update the pressure using newton's method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
@@ -217,7 +217,7 @@ Inputs:
 - `model`: general equation of state model
 - `modelx`: liquid equation of state model, if any noncondensable compounds are present
 - `modely`: vapour equation of state model
-- `P`: pressure [`Pa`]
+- `P`: pressure `[Pa]`
 - `vol_cache`: array used to update the phases' volumes
 _ `condensable`: condensable component indices, if any noncondensable compounds are present
 
@@ -246,10 +246,10 @@ non-linear system of equations.
 
 Inputs:
 model: equation of state model
-- `P`: pressure [`Pa`]
+- `P`: pressure `[Pa]`
 - `y`: vapor phase composition
 - `x0`: initial guess for the liquid phase composition
-- `T0`: initial guess for the dew temperature [`K`]
+- `T0`: initial guess for the dew temperature `[K]`
 - `vol0`: optional, initial guesses for the liquid and vapor phase volumes
 - `itmax_newton`: optional, number of iterations to update the temperature using newton's method
 - `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
@@ -315,7 +315,7 @@ non-linear system of equations.
 
 Inputs:
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
-- `T0 = nothing`: optional, initial guess for the dew temperature [`K`]
+- `T0 = nothing`: optional, initial guess for the dew temperature `[K]`
 - `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
 - `itmax_newton = 10`: optional, number of iterations to update the temperature using newton's method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution

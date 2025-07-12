@@ -70,8 +70,8 @@ Routine to solve non-reactive two-phase multicomponent flash problem. with vapou
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
 Inputs:
  - `q`, vapour fraction
- - `p`, pressure
- - `n`, vector of number of moles of each species
+ - `p`, pressure `[Pa]`
+ - `n`, vector of number of moles of each species `[mol]`
 
 All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
 

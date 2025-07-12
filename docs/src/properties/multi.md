@@ -84,7 +84,7 @@ Clapeyron.supports_reduction
 ```
 
 ## General Flash
-```
+```@docs
 Clapeyron.FlashResult
 Clapeyron.FlashData
 Clapeyron.FlashSpecifications
