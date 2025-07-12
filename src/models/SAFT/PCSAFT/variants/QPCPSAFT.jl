@@ -181,25 +181,6 @@ function a_2_dq(model ::QPCPSAFTModel, V, T, z, _data=@f(data))
     end
     _a_2 *= -π*9/4*ρ/(T*T)/(∑z*∑z)
     return _a_2
-    dp_comps, qp_comps = @f(polar_comps)
-    Q̄² = model.params.quadrupole2.values
-    μ̄² = model.params.dipole2.values
-    _,_,_,_,η,_ = _data
-    ∑z = sum(z)
-    ρ = N_A*∑z/V
-    _a_2 = zero(T+V+first(z))
-    m = model.params.segment.values
-    ϵ = model.params.epsilon.values
-    #ϵ_TS = [sqrt(ϵ[i,i]*ϵ[j,j]) for i ∈ @comps, j ∈ @comps]
-    σ = model.params.sigma.values
-    @inbounds for i ∈ dp_comps
-        for j ∈ qp_comps
-            _J2_ij = @f(J2,:DQ,i,j,η,m)
-            _a_2 += z[i]*z[j]*μ̄²[i]*Q̄²[j]/σ[i,j]^5*_J2_ij
-        end
-    end
-    _a_2 *= -π*9/4*ρ/(T*T)/(∑z*∑z)
-    return _a_2
 end
 
 function a_3_qq(model ::QPCPSAFTModel, V, T, z, _data=@f(data))
@@ -272,15 +253,6 @@ function a_3_dq(model ::QPCPSAFTModel, V, T, z, _data=@f(data))
     _a_3 *= -ρ^2/(T*T*T)/(∑z*∑z*∑z)
     return _a_3
 end
-
-function polar_comps(model, V, T, z)
-    μ̄² = model.params.dipole2.values
-    Q̄² = model.params.quadrupole2.values
-    dipole_comps = findall(!iszero,μ̄²)
-    quadrupole_comps = findall(!iszero,Q̄²)
-    return dipole_comps, quadrupole_comps
-end
-
 
 function J2(model::QPCPSAFTModel, V, T, z, type::Symbol, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵT⁻¹ = model.params.epsilon.values[i,j]/T)
     m̄ = sqrt(m[i]*m[j])

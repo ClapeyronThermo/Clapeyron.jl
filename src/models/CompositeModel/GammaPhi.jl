@@ -15,8 +15,15 @@ function Base.show(io::IO,mime::MIME"text/plain",model::GammaPhi)
     print(io,"γ-ϕ Model")
     length(model) == 1 && print(io, " with 1 component:")
     length(model) > 1 && print(io, " with ", length(model), " components:")
-    print(io,'\n'," Activity Model: ",model.activity)
-    print(io,'\n'," Fluid Model: ",model.fluid.model)
+    println(io)
+    show_pairs(io,model.components)
+    act = model.activity
+    if hasfield(typeof(act),:puremodel)
+        print(io,'\n',"Activity Model: ", parameterless_type(act))
+    else
+        print(io,'\n',"Activity Model: ",typeof(act))
+    end
+    print(io,'\n',"Fluid Model: ",typeof(model.fluid.model))
     show_reference_state(io,model;space = true)
 end
 
@@ -241,7 +248,7 @@ end
 
 __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
-function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,vols,phases,non_inw,cache = nothing)
+function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,z,β,vols,phases,non_inw,cache = nothing)
     volx,voly = vols
     phasex,phasey = phases
     non_inx,non_iny = non_inw

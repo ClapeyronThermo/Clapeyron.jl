@@ -195,13 +195,6 @@ function I(model::CPPCSAFTModel, V, T, z, n, _data=@f(data))
     return res
 end
 
-function lb_volume(model::CPPCSAFTModel, z = SA[1.0])
-    m = model.params.segment.values
-    σ = model.params.sigma.values
-    val = π/6*N_A*sum(z[i]*m[i,i]*σ[i,i]^3 for i in 1:length(z))
-    return val
-end
-
 const CPPCSAFTconsts = (
     corr1 =
     SA[(0.880823927666, -0.349731891574, -0.041574194083),

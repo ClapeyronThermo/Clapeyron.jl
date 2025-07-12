@@ -154,7 +154,13 @@ function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     print(io, "SingleParam{",eltype(param.values), "}(\"", param.name)
     println(io, "\") with ", len, " component", ifelse(len==1, ":", "s:"))
     separator = " => "
-    vals = [ifelse(m,missing,v) for (m,v) in zip(param.ismissingvalues, param.values)]
+    vals = string.(param.values)
+    for i in 1:length(vals)
+        if param.ismissingvalues[i]
+            vals[i] = vals[i] * low_color(" (missing)") 
+        end
+    end
+    #vals = [ifelse(m,missing,v) for (m,v) in zip(param.ismissingvalues, param.values)]
     show_pairs(io,param.components,vals,separator)
 end
 

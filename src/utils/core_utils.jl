@@ -79,7 +79,8 @@ show_default(io::IO,mime::MIME"text/plain",arg) = Base.show_default(io,arg)
 
 function show_as_namedtuple(io::IO,x)
     compact_io = IOContext(io, :compact => true)
-    print(io,typeof(x).name.name,"(")
+    print(io,parameterless_type(x))
+    print(io,"(")
     names = fieldnames(typeof(x))
     l = length(names)
     equal = " = "

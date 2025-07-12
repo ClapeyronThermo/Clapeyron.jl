@@ -19,6 +19,8 @@ end
 """
 function translation end
 
+translation(model::CubicModel,V,T,z) = translation(model,V,T,z,model.translation)
+
 include("NoTranslation.jl")
 include("Rackett.jl")
 include("Peneloux.jl")

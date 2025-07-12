@@ -126,13 +126,7 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
         return -2*B
     end
     #only the left root has physical meaning
-
-    #stable way of calculating quadratics, seems to matter here
-    if b >= 0
-        return 2*c/(- b - sqrt(Δ))
-    else
-        return (-b + sqrt(Δ))/(2*a)
-    end
+    return (-b + sqrt(Δ))/(2*a)   
 end
 
 function pressure_virial(model,V,T,z)
@@ -180,10 +174,23 @@ An initial estimate of the volume `vol0` can be optionally be provided.
 """
 function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0=nothing)
     #this is used for dispatch on symbolic variables
+    phase2 = __symbolic_phase(p,T,z,phase)
     if z isa Number
-        return _volume(model,p,T,SA[z],phase,threaded,vol0)
+        return _volume(model,p,T,SA[z],phase2,threaded,vol0)
     else
-        return _volume(model,p,T,z,phase,threaded,vol0)
+        return _volume(model,p,T,z,phase2,threaded,vol0)
+    end
+end
+
+
+__is_symbolic(x) = false
+__is_symbolic(x::AbstractArray{T}) where T = __is_symbolic(T)
+
+function __symbolic_phase(p,T,z,phase)
+    if !__is_symbolic(p) && !__is_symbolic(T) && !__is_symbolic(z)
+        return phase
+    else
+        return string(phase)
     end
 end
 

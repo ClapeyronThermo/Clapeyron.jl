@@ -187,7 +187,7 @@ function __molecular_weight(model,state::FlashResult)
     ∑mi = zero(eltype(comps[1]))
     for i in 1:length(comps)
         mwi = molecular_weight(model,comps[i])
-        ∑mi = β[i]*mwi
+        ∑mi += β[i]*mwi
     end
     return ∑mi
 end
@@ -196,6 +196,17 @@ function mass_density(model::EoSModel,state::FlashResult)
     V = volume(model,state)
     molar_weight = molecular_weight(model,state)
     return molar_weight/V
+end
+
+function mass_density(model::EoSModel,state::FlashResult, i::Integer)
+    vi,T,xi,βi = state.volumes[i],state.data.T,state.compositions[i],state.fractions[i]
+    molar_weight = molecular_weight(model,xi)
+    return molar_weight/vi
+end
+
+function volume(model::EoSModel,state::FlashResult, i::Integer)
+    vi,T,xi,βi = state.volumes[i],state.data.T,state.compositions[i],state.fractions[i]
+    return vi*βi
 end
 
 function gibbs_free_energy(model::EoSModel,state::FlashResult)
@@ -207,6 +218,11 @@ function gibbs_free_energy(model::EoSModel,state::FlashResult)
     return res
 end
 
+function gibbs_free_energy(model::EoSModel,state::FlashResult, i)
+    p = pressure(state)
+    vi,T,xi,βi = state.volumes[i],state.data.T,state.compositions[i],state.fractions[i]
+    return βi*VT_gibbs_energy(model,vi,T,xi,p)
+end
 
 for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
     @eval begin
@@ -225,7 +241,24 @@ for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
                 return res
             end
         end
-    end
+end
+
+mass_entropy(model::EoSModel,state::FlashResult) = entropy(model,state)/molecular_weight(model,state)
+mass_enthalpy(model::EoSModel,state::FlashResult) = mass_enthalpy(model,state)/molecular_weight(model,state)
+mass_internal_energy(model::EoSModel,state::FlashResult) = mass_internal_energy(model,state)/molecular_weight(model,state)
+mass_gibbs_free_energy(model::EoSModel,state::FlashResult) = mass_gibbs_free_energy(model,state)/molecular_weight(model,state)
+mass_helmholtz_free_energy(model::EoSModel,state::FlashResult) = mass_helmholtz_free_energy(model,state)/molecular_weight(model,state)
+
+for prop in [:mass_enthalpy,:mass_entropy,:mass_internal_energy,:mass_helmholtz_free_energy,:mass_gibbs_free_energy]
+    @eval begin
+            function $prop(model::EoSModel,state::FlashResult, i::Integer)
+                res = zero(Base.promote_eltype(model,state))
+                vi,T,xi = state.volumes[i],state.data.T,state.compositions[i]
+                res += VT0.$prop(model,vi,T,xi)
+                return res
+            end
+        end
+end
 
 function assert_only_phase_index(state::FlashResult)
     np = numphases(state)
@@ -243,13 +276,8 @@ function assert_only_phase_index(state::FlashResult)
     end
 end
 
-@noinline function __multiphase_onephase_function_error(f,np,p,T)
-    throw(ArgumentError("The state at p = $p, T = $T has $np phases, it cannot be used to evaluate $f"))
-end
-
-
-
 for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
+    :mass_isochoric_heat_capacity, :mass_isobaric_heat_capacity,
     :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
     :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
     #higher :derivative :order :properties
@@ -262,7 +290,7 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
             T = temperature(state)
             p = pressure(state)
             if iszero(i)
-                __multiphase_onephase_function_error($prop,numphases(state),p,T)
+                invalid_property_multiphase_error($prop,numphases(state),p,T)
             end
             
             x,v = state.compositions[i],state.volumes[i]

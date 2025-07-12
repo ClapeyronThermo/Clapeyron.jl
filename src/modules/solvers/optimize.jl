@@ -227,7 +227,7 @@ end
 struct BoundOptim1Var end
 
 function optimize(f,x0::NTuple{2,T},method::BoundOptim1Var,options=OptimizationOptions()) where T<:Real
-    return _1var_optimize_quad(f,x0)
+    return _1var_optimize_quad(f,x0,options)
 end
 
 quad_interp(x,f) = quad_interp(x[1],x[2],x[3],f[1],f[2],f[3])
@@ -243,13 +243,18 @@ function quad_interp(xa,xb,xc,fa,fb,fc)
     return a,b,c
 end
 
-function _1var_optimize_quad(f,x0)
+function _1var_optimize_quad(f,x0,options)
+    time0 = time()
     xa,xb = minmax(x0[1],x0[2])
     xa0,xb0 = xa,xb
     fa,fb = f(xa),f(xb)
     xc = 0.5*(xa + xb)
     fc = f(xc)
-    for i in 1:20
+    fc0 = fc
+    fxx = Inf*fc
+    iter_x = 0
+    for i in 1:options.maxiter
+        iter_x += 1
         a,b,c = quad_interp(xa,xb,xc,fa,fb,fc)
         xmin = -b/(2*a)
         fmin = f(xmin)
@@ -268,7 +273,10 @@ function _1var_optimize_quad(f,x0)
             xc = 0.5*(xa + xb)
             fc = f(xc)
         else
-            return zero(fmin)/zero(fmin)
+            fxx = zero(fmin)/zero(fmin)
+            xmin,xmax = fxx,fxx
+            break
+            
         end
         xmin,xmax = extrema((xa,xb,xc))
         fxx = minimum((fa,fb,fc))
@@ -279,5 +287,10 @@ function _1var_optimize_quad(f,x0)
     end
     xmin,xmax = extrema((xa,xb,xc))
     #@show xa0,xmin,xmax,xb0
-    return 0.5*(xmin + xmax)
+    xmin = 0.5*(xmin + xmax) 
+    return NLSolvers.ConvergenceInfo(
+        BoundOptim1Var(),
+        (; solution = xmin, f0 = fc0, minimum = fxx, time = time() - time0, iter = iter_x),
+        options,
+    )
 end

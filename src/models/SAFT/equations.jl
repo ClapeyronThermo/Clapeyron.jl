@@ -1,8 +1,15 @@
 function lb_volume(model::SAFTModel, z = SA[1.0])
     m = model.params.segment.values
     σ = model.params.sigma.values
-    val = π/6*N_A*sum(z[i]*m[i]*σ[i,i]^3 for i in 1:length(z))
-    return val
+    m_idx = linearidx(m)
+    σ_idx = linearidx(σ)
+    val = zero(Base.promote_eltype(m,σ,z))
+    for i in 1:length(model)
+        mi = m[m_idx[i]]
+        σi = σ[σ_idx[i]]
+        val += z[i]*mi*σi*σi*σi
+    end
+    return π/6*N_A*val
 end
 
 """
@@ -96,7 +103,7 @@ function bmcs_hs_zero_v(model,V,T,z,_d = @f(d),m = model.params.segment.values)
 end
 
 """
-    packing_fraction(model, V, T, z, _d = @f(d), m = model.params.segment.values)
+    packing_fraction(model, V, T, z)
     packing_fraction(model,data)
 
 Calculates the packing fraction, defined as:
@@ -104,14 +111,18 @@ Calculates the packing fraction, defined as:
 π/6*N_A/v * ∑xᵢmᵢdᵢ^3
 ```
 """
-function packing_fraction(model, V, T, z, _d = @f(d),m = model.params.segment.values)
+function packing_fraction(model, V, T, z)
+    return ζ(model,V,T,z,3)
+end
+
+function packing_fraction(model, V, T, z, _d, m)
     return ζ(model,V,T,z,3,_d,m)
 end
 
 #fast getter in case you already calculated the packing fraction.
 #overload in the following way:
 # packing_fraction(model::MyModel,data::Tuple)
-packing_fraction(model,data) = nothing
+# packing_fraction(model,data) = nothing
 
 function x0_crit_pure(model::SAFTModel)
     lb_v = lb_volume(model)

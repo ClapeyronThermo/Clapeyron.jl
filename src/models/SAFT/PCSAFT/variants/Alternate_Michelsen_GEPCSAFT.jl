@@ -87,20 +87,56 @@ function _pcsaft(model::AltAdvGEPCSAFT{I,T}) where {I,T}
     return PCSAFT{I,T}(model.components,model.sites,model.params,model.idealmodel,model.assoc_options,model.references)
 end
 
+function a_res(model::AltAdvGEPCSAFTModel, V, T, z)    
+    _data = @f(data)
+    return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data)
+end
+
+function data(model::AltAdvGEPCSAFTModel,V,T,z)
+    _d = @f(d)
+    ζ0,ζ1,ζ2,ζ3 = @f(ζ0123,_d)
+    m = model.params.segment.values
+    m̄ = dot(z, m)/sum(z)
+    return (_d,ζ0,ζ1,ζ2,ζ3,m̄)
+end
+
+
+# function a_hc(model::AltAdvGEPCSAFTModel, V, T, z , _data = @f(data))
+#     _,_,_,_,η,m̄ = _data
+#     g_hs = (1-η/2)/(1-η)^3
+#     a_hs = (4η-3η^2)/(1-η)^2
+#     return m̄*a_hs - (m̄-1)*log(g_hs)
+# end
+
+# function g_hs(model::AltAdvGEPCSAFTModel, V, T, z,_data = @f(data))
+#     _,_,_,_,η,_ = _data
+#     return (1-η/2)/(1-η)^3
+# end
+
+# function a_hs(model::AltAdvGEPCSAFTModel, V, T, z)
+#     _,_,_,_,η,_ = _data
+#     return (4η-3η^2)/(1-η)^2
+# end
+
+
 function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
 
-    function q_i(α, b)
-        c = [0.16825491455291727, 10.296455569712531, 1.2476994961006087, 79.52567954035581, -1.5554400906899912, -100.34856564780112]
-        (c[1]*log(b) + c[2])*α^2 + (c[3]*log(b) + c[4])*α + c[5]*log(b) + c[6]
+    function q_i(α, m)
+        c = [2*4.140090253547626, 2*5.917154444564794*0.8549524961776253*log(m) - 2*0.8549524961776253(log(m))^2 + 2*−11.842506926061144, 1.0622160636835105] 
+
+        # c = [2.4943621118539628*(log(b))^2 + 317.1749262783832*log(b) + 10067.759452498541, 8.066923060464152*(log(b))^2 + 1065.837604157669*log(b) + 35238.98020488654]
+        # return c[1]*α + c[2]
+        return c[1]*α^2 + c[2]*α + c[3]
     end
 
-    function α_mix(q̄,b̄)
-        c = [0.16825491455291727, 10.296455569712531, 1.2476994961006087, 79.52567954035581, -1.5554400906899912, -100.34856564780112]
-        A = (c[1]*log(b̄) + c[2])
-        B = (c[3]*log(b̄) + c[4])
-        C = c[5]*log(b̄) + c[6] - q̄
-        # Solve the quadratic equation A*α^2 + B*α + C = 0
-        return (-B-sqrt(B^2 - 4*A*C))/(2*A)
+    function α_mix(q̄,m̄)
+        c = [2*4.140090253547626, 2*5.917154444564794*0.8549524961776253*log(m̄) - 2*0.8549524961776253(log(m̄))^2 + 2*−11.842506926061144, 1.0622160636835105 - q̄] 
+        # c = [2.4943621118539628*(log(b̄))^2 + 317.1749262783832*log(b̄) + 10067.759452498541, 8.066923060464152*(log(b̄))^2 + 1065.837604157669*log(b̄) + 35238.98020488654]
+        
+        # We have to solve the equation q(α, b) = q̄ 
+        # where q(α, b) = c[1]*α + c[2]
+        # return (q̄ - c[2])/c[1]
+        return (-c[2]-sqrt(c[2]^2-4*c[1]*c[3]))/(2c[1])
     end
 
     di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
@@ -111,11 +147,11 @@ function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
     m = model.params.segment.values
     ϵ = diagvalues(model.params.epsilon)
     σ = diagvalues(model.params.sigma)
-    α = m.*ϵ./T
+    α = ϵ./T
 
     b = m.*di.^3
 
-    q = @. q_i(α, b)
+    q = @. q_i(α, m)*m
     # println(q)
     # println(α)
     # println(b)
@@ -130,19 +166,27 @@ function m2ϵσ3(model::AltAdvGEPCSAFTModel, V, T, z, _data=@f(data))
     @inbounds for i ∈ @comps
         mᵢ,bᵢ,σᵢ,qᵢ,zᵢ = m[i],b[i],σ[i],q[i],z[i]
         σ³ᵢ = σᵢ*σᵢ*σᵢ
-        m²σ³ += zᵢ*mᵢ*mᵢ*σ³ᵢ
+        m²σ³ += zᵢ*mᵢ*σ³ᵢ
         b̄ += zᵢ*bᵢ
         A += zᵢ*qᵢ
         B += zᵢ*log(bᵢ)
     end
     m²σ³,b̄ = m²σ³/Σz,b̄/Σz
     A, B = A/Σz, B/Σz
-    gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T*Σz)
-    q̄ = gₑ + log(b̄)-B +  A
-    ᾱ = α_mix(q̄, b̄)
-
-    m2ϵσ3₁ = ᾱ*m²σ³/m̄
-    m2ϵσ3₂ = m2ϵσ3₁*m2ϵσ3₁/m²σ³
+    p = pressure(PCSAFT(model.components), V, T, z)
+    T_sat,_,_,_ = bubble_temperature(model.activity, p, z)
+    gₑ = excess_gibbs_free_energy(model.activity,V,T_sat,z)/(R̄*T*Σz)
+    
+    q̄ = gₑ + (log(b̄) - B) +  A
+    ᾱ = α_mix(q̄/m̄, m̄)
+    # println("g_E/RT = ", gₑ)
+    # println("log( b̄ ) = ", log(b̄))
+    # println("B = ", B)
+    # println("A = ", A)
+    # println("q̄ = ", q̄)
+    # println("ᾱ = ", ᾱ)
+    m2ϵσ3₁ = ᾱ*m²σ³*m̄
+    m2ϵσ3₂ = ᾱ*m2ϵσ3₁
 
     return m2ϵσ3₁, m2ϵσ3₂
 end

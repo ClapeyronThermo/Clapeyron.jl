@@ -87,12 +87,12 @@ function _pcsaft(model::AdvGEPCSAFT{I,T}) where {I,T}
     return PCSAFT{I,T}(model.components,model.sites,model.params,model.idealmodel,model.assoc_options,model.references)
 end
 
-function a_res(model::GEPCSAFTModel, V, T, z)    
+function a_res(model::AdvGEPCSAFTModel, V, T, z)    
     _data = @f(data)
     return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data)
 end
 
-function data(model::GEPCSAFTModel,V,T,z)
+function data(model::AdvGEPCSAFTModel,V,T,z)
     _d = @f(d)
     ζ0,ζ1,ζ2,ζ3 = @f(ζ0123,_d)
     m = model.params.segment.values

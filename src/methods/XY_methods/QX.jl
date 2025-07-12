@@ -4,7 +4,7 @@ function QT_property(model,q,T,z,f::F,p0) where F
     end
 
     res = qt_flash(model,q,T,z,p0 = p0)
-    if isone(numphases(res)) && !isone(q) !izero(q)
+    if isone(numphases(res)) && !isone(q) !iszero(q)
         #What to do here?
     end
     if f == temperature

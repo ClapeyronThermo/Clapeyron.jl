@@ -180,6 +180,16 @@ requires_pv(x::FlashSpecifications) = requires_pv(x.spec1) | requires_pv(x.spec2
 requires_st(x::FlashSpecifications) = requires_st(x.spec1) | requires_st(x.spec2)
 requires_a(x::FlashSpecifications) = requires_a(x.spec1) | requires_a(x.spec2)
 
+function __min(x,y)
+    if x < y
+        return x
+    elseif y < x
+        return y
+    else
+        return y
+    end
+end
+
 struct XYFlashTag end
 
 function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
@@ -356,6 +366,18 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     β_constraints = @view βξspec_constraints[1:np]
 
     ξ_constraints .= zbulk
+
+    val1,spec1,val2,spec2 = state.val1,state.spec1,state.val2,state.spec2
+
+    if spec1 isa Vfrac
+        idx_β = spec1.k
+        βx = val1
+    elseif spec2 isa Vfrac
+        idx_β = spec2.k
+    else
+        idx_β = 0
+        βx = val2
+    end
     for j in 1:np
         ξj = viewn(ξ,nc,j)
         βj = β[j]
@@ -364,7 +386,9 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         #there are better ways to solve MCP.
         #ben-gharbia uses a Non-Parametric-Interior-Point method (npipm)
         #there is also MixedComplementarityProblems.jl
-        β_constraints[j] = min(βj,1 - ∑ξj)
+        #@show primalval(βj),primalval(1 - ∑ξj)
+        β_constraints[j] = __min(βj,1 - ∑ξj)
+        
         for i in 1:nc
             ξ_constraints[i] -= βj*ξj[i]
         end
@@ -415,42 +439,23 @@ function detect_and_set_slack_variables!(x,spec::FlashSpecifications,np,nc)
         slack[end] = true
         x[end] = spec.val2
     end
+    return slack 
+    #FIXME: we need to perform dew temperatures correctly, and that will need extra slacks.
+    slack_comps = @view slack[1:nc*np]
 
-    #TODO: does fixing the vapour fractions work?
-    #=
-    _,β,_ = xy_input_to_flash_vars(x,np,nc)
-    _,βslack,_ = xy_input_to_flash_vars(slack,np,nc)
-
-    if spec.spec1 isa Vfrac
-        k,βk = spec.spec1.k,spec.val1
-        βslack[k] = true
-        if βk == 1
-            β .= 0
-            β[k] = βk
-            βslack .= true
-        elseif np == 2
-            k2 = k == 1 ? 2 : 1
-            β[k] = βk
-            β[k2] = 1 - βk
-            βslack .= true
-        end
+    #bubbledew condition in first spec
+    if spec.spec1 isa Vfrac && np == 2 && (iszero(spec.val1) || isone(spec.val1))
+        k = spec.spec1.k
+        xk = viewn(slack_comps,nc,k)
+        xk .= true
     end
 
-    if spec.spec2 isa Vfrac
-        k,βk = spec.spec2.k,spec.val2
-        βslack[k] = true
-        if βk == 1
-            β .= 0
-            β[k] = βk
-            βslack .= true
-        elseif np == 2
-            k2 = k == 1 ? 2 : 1
-            β[k] = βk
-            β[k2] = 1 - βk
-            βslack .= true
-        end
+    #bubbledew condition in second spec
+    if spec.spec2 isa Vfrac && np == 2 && (iszero(spec.val2) || isone(spec.val2))
+        k = spec.spec2.k
+        xk = viewn(slack_comps,nc,k)
+        xk .= true
     end
-    =#
     return slack
 end
 
@@ -479,7 +484,7 @@ fractions = [0.5,0.5]
 p0,T0 = NaN,NaN #in p-T flash, pressure and temperature are already specifications
 data = FlashData(p0,T0)
 result0 = FlashResult(compositions,fractions,volumes,data) #a FlashResult containing all necessary information
-result = xy_flash(model,spec,z,result) #perform the flash
+result = xy_flash(model,spec,z,result0) #perform the flash
 ```
 """
 function xy_flash end
@@ -586,6 +591,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         nan_converged && break
         max_iters_reached && break
         ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
+        #TODO: fix volumes when they enter an unstable state. do it right here, were we have jacobian info.
         #do not iterate on slack variables
         Solvers.remove_slacks!(F,J,slacks)
         Jcache .= J
@@ -596,7 +602,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         s .= -F
         ldiv!(lu,s)
         finite_s = all(isfinite,s)
-        if !finite_s
+        if !finite_s && finite_J
             JJ = svd(Jcache)
             S = JJ.S
             for i in eachindex(S)
@@ -665,13 +671,14 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via f
 - `equilibrium` (optional) = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria, `:unknown` if not specified
 - `p0` (optional), initial guess pressure, ignored if pressure is one of the flash specifications.
 - `T0` (optional), initial guess temperature, ignored if temperature is one of the flash specifications.
-- `K0` (optional), initial guess for the constants K
-- `x0` (optional), initial guess for the composition of phase x
-- `y0` = optional, initial guess for the composition of phase y
-- `vol0` = optional, initial guesses for phase x and phase y volumes
-- `atol` = absolute tolerance to stop the calculation
-- `rtol` = relative tolerance to stop the calculation
+- `K0` (optional), initial guess for the K-values.
+- `x0` (optional), initial guess for the composition of phase x.
+- `y0` = optional, initial guess for the composition of phase y.
+- `vol0` = optional, initial guesses for phase x and phase y volumes.
+- `atol` = absolute tolerance to stop the calculation.
+- `rtol` = relative tolerance to stop the calculation.
 - `max_iters` = maximum number of iterations
+- `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
 """
 struct GeneralizedXYFlash{P,T} <: FlashMethod
     equilibrium::Symbol

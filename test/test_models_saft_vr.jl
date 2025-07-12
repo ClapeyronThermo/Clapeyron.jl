@@ -12,14 +12,24 @@ GC.gc()
         @test Clapeyron.a_dispchain(system,V,T,z) - _a_chain ≈ _a_disp rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -4.18080707238976 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
+        test_recombine(system)
         GC.gc()
     end
 
     @testset "SAFTVRMieGV" begin
         system = SAFTVRMieGV(["benzene","acetone"])
         V_GV = 8e-5
-        @test Clapeyron.a_mp(system, V_GV, T, z) ≈ -0.7521858819355216 rtol = 1e-6
         test_gibbs_duhem(system,V_GV,T,z)
+        test_recombine(system)
+        
+        
+        @test Clapeyron.a_mp(system, V_GV, T, z) ≈ -0.7521858819355216 rtol = 1e-6
+        
+        system2 = SAFTVRMieGV(["carbon dioxide","benzene"])
+        @test Clapeyron.a_mp(system2, V_GV, T, z) ≈ -0.33476290652200424 rtol = 1e-6
+
+        system3 = SAFTVRMieGV(["acetone","diethyl ether","ethyl acetate"])
+        @test Clapeyron.a_mp(system3, V_GV, T, [0.3,0.3,0.4]) ≈ -0.8088095725122674 rtol = 1e-6
         GC.gc()
     end
 
@@ -54,6 +64,8 @@ GC.gc()
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.07550931466871749 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V_γMie, T, z) ≈ -0.8205840455850311 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
+        test_scales(system)
+        test_recombine(system)
         GC.gc()
     end
     

@@ -1,29 +1,26 @@
 function __electrolyte_fugacities(model,salts,p,T,m,zsolvent = SA[1.0];sat = false)
-    isolvent = model.icomponents[model.charge.==0]
-    iions = model.icomponents[model.charge.!=0]
+    icomponents = 1:length(model)
+    isolvent = icomponents[model.charge.==0]
+    iions = icomponents[model.charge.!=0]
     
     ν = salt_stoichiometry(model,salts)
     z0 = molality_to_composition(model,salts,ones(length(m)).*1e-20,zsolvent,ν)
     z = molality_to_composition(model,salts,m,zsolvent,ν)
     if sat
-        ions = model.components[model.charge.!=0]
-        method = FugBubblePressure(nonvolatiles=ions)
-        (px,vl,vv,y) = bubble_pressure(model,T,z,method)
+        (px,vl,vv,y) = bubble_pressure(model,T,z)
+        v = vl
     else
         px = p
+        v = volume(model,px,T,z;phase=:l)
     end
 
-    R̄ = Rgas(model)
-
-    v = volume(model,px,T,z;phase=:l)
-    μ = VT_chemical_potential_res(model,v,T,z)./(R̄*T)
-    Z = px*v/R̄/T/sum(z)
-    v0 = volume(model,px,T,z0;phase=:l)
-    μ0 = VT_chemical_potential_res(model,v0,T,z0)./(R̄*T)
-    Z0 = px*v0/R̄/T/sum(z0)
-
-    γ = @. exp(μ-μ0)*Z0/Z
-
+    RT = Rgas(model)*T
+    μ = VT_chemical_potential_res(model,v,T,z)
+    Z = px*v/RT/sum(z)
+    v0 = volume(model,px,T,z0; phase=:l)
+    μ0 = VT_chemical_potential_res(model,v0,T,z0)
+    Z0 = px*v0/RT/sum(z0)
+    γ = @. exp((μ-μ0)/RT)*Z0/Z
     return (z,z0),γ,(isolvent,iions),ν
 end
 

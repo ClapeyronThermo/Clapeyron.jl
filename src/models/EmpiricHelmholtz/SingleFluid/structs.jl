@@ -199,6 +199,8 @@ struct SingleFluidProperties <: EoSParam
 end
 
 is_splittable(::SingleFluidProperties) = false
+Base.show(io::IO,props::SingleFluidProperties) = show_as_namedtuple(io,props)
+Base.show(io::IO,::MIME"text/plain",props::SingleFluidProperties) = show_as_namedtuple(io,props)
 
 const ESFProperties = SingleFluidProperties
 const ESFIdealParam = SingleFluidIdealParam

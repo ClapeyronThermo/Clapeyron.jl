@@ -140,8 +140,15 @@ function compile_param(components,name,raw::CSVType,sites,options)
         return compile_pair(name,components,raw,options)
     elseif raw == assocdata
         return compile_assoc(name,components,raw,sites,options)
+    elseif raw == groupdata
+        #this means that there is no group information about the input components
+        __group_missing_error()
     end
     return nothing
+end
+
+@noinline function __group_missing_error()
+    throw(MissingException(lazy"no group information found for all components. Try passing a group CSV file or specify the groups for each component."))
 end
 
 function compile_single(name,components,raw::RawParam,options)

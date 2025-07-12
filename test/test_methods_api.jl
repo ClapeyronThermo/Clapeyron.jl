@@ -223,6 +223,20 @@ end
         @test Clapeyron.VT_enthalpy(model5,v5,T5,z5) ≈ 123 atol = 1e-6
         @test Clapeyron.VT_entropy(model5,v5,T5,z5) ≈ 456 atol = 1e-6
     end
+
+    #reference state from EoSVectorParam
+    mod_pr = cPR(["water","ethanol"],idealmodel = ReidIdeal,reference_state = :ntp)
+    mod_vec = Clapeyron.EoSVectorParam(mod_pr)
+    Clapeyron.recombine!(mod_vec)
+    @test reference_state(mod_vec).std_type == :ntp
+    @test length(reference_state(mod_vec).a0) == 2
+
+    #reference state from Activity models
+    puremodel = mod_pr = cPR(["water","ethanol"],idealmodel = ReidIdeal)
+    act = NRTL(["water","ethanol"],puremodel = puremodel,reference_state = :ntp)
+    @test reference_state(act).std_type == :ntp
+    @test length(reference_state(act).a0) == 2
+
 end
 
 @testset "Solid Phase Equilibria" begin
@@ -349,6 +363,18 @@ end
     (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model,pv_spin,x_spin;T0=225.,v0=vv_spin)
     @test Tl_spin_impl ≈ T_spin rtol = 1e-6
     @test Tv_spin_impl ≈ T_spin rtol = 1e-6
+
+    #test for #382: pure spinodal at low pressures
+    model2 = PCSAFT("carbon dioxide")
+    Tc,Pc,Vc = (310.27679925044134, 8.06391600653306e6, 9.976420206333288e-5)
+    T = LinRange(Tc-70,Tc-0.1,50)
+    psl = first.(spinodal_pressure.(model2,T,phase = :l))
+    psv = first.(spinodal_pressure.(model2,T,phase = :v))
+    psat = first.(saturation_pressure.(model2,T))
+    @test all(psl .< psat)
+    @test all(psat .< psv)
+    @test issorted(psl)
+    @test issorted(psv)
 end
 
 @testset "supercritical lines" begin

@@ -47,17 +47,24 @@ end
 @inline function term_ar_na(δ,τ,lnδ,lnτ,_0,A,B,C,D,a,b,β,n)
     αᵣ = zero(_0)
     Δδ = δ-1
+    
     Δδ2 = Δδ*Δδ
+    if iszero(primalval(Δδ2))
+        Δδ2 += 2.2250738585072014e-308*oneunit(Δδ2)
+    end
+
     Δτ = τ-1
-    logΔδ2 = log(Δδ*Δδ)
+
+    if iszero(primalval(Δτ))
+        Δτ += 1e-130*oneunit(Δτ)
+    end
+
     for k in eachindex(n)
         Ψ = exp(-C[k]*Δδ*Δδ - D[k]*Δτ*Δτ)
         Θ = -Δτ + A[k]*Δδ2^(1/(2*β[k]))
+        
         Δ = Θ*Θ + B[k]*Δδ2^a[k]
-        αᵣₖ = Solvers.strong_zero(Δ) do Δₖ
-            n[k]*δ*Ψ*Δₖ^b[k]
-        end
-        αᵣ += αᵣₖ
+        αᵣ += n[k]*δ*Ψ*Δ^b[k]
     end
     return αᵣ
 end

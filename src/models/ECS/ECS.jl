@@ -113,7 +113,7 @@ fh = a(T)/a₀(T₀)
 function shape_factors end
 shape_factors(model::ECS,V,T,z=SA[1.0]) = shape_factors(model,model.shape_ref,V,T,z)
 
-function shape_factors(model::ECS,shape_ref::ABCubicModel,V,T,z=SA[1.0])
+function shape_factors(model::ECS,shape_ref::DeltaCubicModel,V,T,z=SA[1.0])
     a,b = cubic_ab(model.shape_model,V,T,z)
     n = sum(z)
     v = V/n

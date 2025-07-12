@@ -20,19 +20,9 @@ function unsafe_coolprop_handler()
     end
 end
 
-@static if !isdefined(Base,:get_extension)
-    coolprop_handler() = unsafe_coolprop_handler()
-    function is_coolprop_loaded()
-        handler = coolprop_handler()
-        res = handler !== nothing
-        Base.Libc.Libdl.dlclose(handler)
-        return res
-    end
-else
-    #defined in ClapeyronCoolPropExt
-    function coolprop_handler end
-    is_coolprop_loaded() = !isnothing(Base.get_extension(Clapeyron,:ClapeyronCoolPropExt))
-end
+#defined in ClapeyronCoolPropExt
+function coolprop_handler end
+is_coolprop_loaded() = !isnothing(Base.get_extension(Clapeyron,:ClapeyronCoolPropExt))
 
 function coolprop_csv(component::String,comp = "")
     lib_handler = coolprop_handler()
@@ -687,8 +677,8 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
                     end
                 else
                     push!(gauss.n,ni[i])
-                    push!(gauss.t,tg[i])
-                    push!(gauss.d,dg[i])
+                    push!(gauss.t,ti[i])
+                    push!(gauss.d,di[i])
                     push!(gauss.eta,ηi[i])
                     push!(gauss.beta,βi[i])
                     push!(gauss.gamma,γi[i])

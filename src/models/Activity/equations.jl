@@ -209,22 +209,42 @@ function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)
 end
 
 #LLE point. it does not require an imput concentration, because it assumes that activities are pressure-independent.
+"""
+    LLE(model::ActivityModel, T; v0=nothing)
 
+Calculates the Liquid-Liquid equilibrium compositions at a given temperature.
+
+Returns a tuple, containing:
+- Liquid composition `x₁`
+- Liquid composition `x₂`
+
+`v0` is a vector containing `vcat(x1[1:nc-1],x2[1:nc-1])`.
+"""
 function LLE(model::ActivityModel,T;v0=nothing)
+    nc = length(model)
+    vv0 = zeros(Base.promote_eltype(model,T),2*nc-2)
     if v0 === nothing
-        if length(model) == 2
-        v0 = [0.25,0.75]
+        if nc == 2
+            vv0 .= [0.25,0.75]
         else
             throw(error("unable to provide an initial point for LLE pressure"))
         end
+    else
+        vv0 = zeros(eltype())
+        if 2*length(model) == length(v0)
+            vv0[1:nc-1] .= v0[1:nc-1]
+            vv0[nc:end] .= v0[(nc+1):(2*nc-1)]
+        else
+            vv0 .= v0
+        end
     end
-    len = length(v0)
-    Fcache = zeros(eltype(v0),len)
-    f!(F,z) = Obj_LLE(model, F, T, z[1], z[2])
-    r  = Solvers.nlsolve(f!,v0,LineSearch(Newton()))
+
+    len = length(vv0)
+    f!(F,z) = Obj_LLE(model, F, T, @view(z[1:nc-1]), @view(z[nc:end]))
+    r  = Solvers.nlsolve(f!,vv0,LineSearch(Newton()))
     sol = Solvers.x_sol(r)
-    x = sol[1]
-    xx = sol[2]
+    x = FractionVector(sol[1:nc-1]) |> collect
+    xx = FractionVector(sol[nc:end]) |> collect
     return x,xx
 end
 

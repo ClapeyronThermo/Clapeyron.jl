@@ -126,7 +126,7 @@ function dew_pressure(model::EoSModel, T, y,method::ThermodynamicMethod)
 
     (P_sat, v_l, v_v, x_r) = dew_pressure_result
     x = index_expansion(x_r,idx_r)
-    converged = bubbledew_check(v_l,v_v,y,x)
+    converged = bubbledew_check(model,P_sat,T,v_l,v_v,x,y)
     if converged
         return (P_sat, v_l, v_v, x)
     else
@@ -139,7 +139,6 @@ end
 
 
 function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
-    multi_component_check(x0_dew_temperature,model)
     y_r = @view y[condensables]
 
     if Tx0 !== nothing
@@ -278,7 +277,7 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
 
     (T_sat, v_l, v_v, x_r) = dew_temperature_result
     x = index_expansion(x_r,idx_r)
-    converged = bubbledew_check(v_l,v_v,y,x)
+    converged = bubbledew_check(model,p,T_sat,v_l,v_v,x,y)
     if converged
         return (T_sat, v_l, v_v, x)
     else

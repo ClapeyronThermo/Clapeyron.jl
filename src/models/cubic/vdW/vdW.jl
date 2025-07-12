@@ -132,13 +132,7 @@ function vdW(components;
     return model
 end
 
-function ab_consts(::Type{<:vdWModel})
-    Ωa = 27/64
-    Ωb = 1/8
-    return Ωa,Ωb
-end
-
-cubic_Δ(model::vdWModel,z) = (0.0,0.0)
+@inline cubic_Δ(::Type{<:vdWModel}) = (0.0,0.0)
 
 function a_res(model::vdWModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
@@ -149,8 +143,6 @@ function a_res(model::vdWModel, V, T, z,_data = data(model,V,T,z))
     #
     #return -log(V-n*b̄) - ā*n/(R̄*T*V) + log(V)
 end
-
-crit_pure(model::vdWModel) = crit_pure_tp(model)
 
 const vdW_p = Solvers.ChebyshevRange(
     (0.02962962962962963,0.03796296296296296,0.0462962962962963,0.06296296296296297,0.0962962962962963,0.16296296296296295,0.2962962962962963),

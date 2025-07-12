@@ -1,20 +1,20 @@
-# v0.6.12
+# v0.6.14
 
 ## New Features
 
-- SAFTgammaMie: easier constructor for inner SAFTVRMie model
-- Clapeyron Parameters: support for typed empty constructor: (`SingleParam{BigFLoat}(name,components)`,`PairParam{BigFLoat}(name,components)`)
-- XY Flash: added `QT`, `QP` and `VT` modules.
-- XY Flash: support for second order properties with flash result if there is only one phase.
-- NRTL: support for passing `tau` and `alpha` as input, instead of (`a`,`b`,`c`)
-- CoolProp: initial support for superancillaries. At the moment, the superancillaries are used just as initial points. in future releases, We could return the result of the superancillary directly, to be in line with the CoolProp package.
+- Cubics: `ab_consts` is now defined automatically from `cubic_Δ`.
+- Cubics: new abstract type for alpha models, `GeneralizedSoaveAlphaModel` (soave models with a different expression of `m` for each component.). `CPAAlphaModel`, `PTVAlpha` and `PatelTejaAlpha` are now subtypes of `GeneralizedSoaveAlphaModel`
+- Electrolytes: revamp of code to make it more general.
+- CoolProp: Experimental support for `CoolProp.PropsSI`
+- new methods: `mass_entropy`,`mass_enthalpy`,`mass_internal_energy`,`mass_gibbs_free_energy`/`mass_gibbs_energy`, `mass_helmholtz_free_energy`/`mass_helmholtz_energy`, `mass_isochoric_heat_capacity`, `mass_isobaric_heat_capacity`. Note that those functions still take total volume and mol amounts as inputs.
+- New alpha model: `LeiboviciAlpha`, a generalized soave model that works with any cubic (the value of `m` depends on the acentric factor and the values of `cubic_Δ`)
+- `RKPR`: the `delta` parameter can now be specified from a database.
+- `RKPRAlpha`: the `k1` and `k2` exponents can now be specified from a database
+- `PatelTeja`: if `Vc` is not specified, it can be estimated from the acentric factor.
+- `MTAlpha`: now works with `vdW`
 
 ## Bug Fixes
 
-- Fixed incorrect value of `enthalpy_res`
-- CoolProp: Support bigger buffer sizes.
-- Implicit AD: misc bug fixes
-- Fixed conversion of `MixedSegmentGCParam`
-- Association: fix incorrect assumption of solved problem
-- CPA: fixed initialization without `Pc`
-- fix `promote_model` with `EoSVectorParam`
+- typo in `QT` properties ([#380](https://github.com/ClapeyronThermo/Clapeyron.jl/issues/380))
+- typo in `RKPRAlpha`
+- improvements in spinodal calculation ([#382](https://github.com/ClapeyronThermo/Clapeyron.jl/discussions/382))

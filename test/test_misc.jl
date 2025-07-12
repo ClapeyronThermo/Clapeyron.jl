@@ -1,11 +1,3 @@
-#struct for testset "#161"
-struct PCSAFT161 <: Clapeyron.PCSAFTModel
-    components::Vector{String}
-    params::Clapeyron.PCSAFTParam
-    references::Vector{String}
-    weird_thing::Int
-end
-
 @testset "misc" begin
     @printline
     model2 = PCSAFT(["water","ethanol"])
@@ -60,6 +52,10 @@ end
         model0 = SAFTgammaMie(["ethane"])
         model0_split = SAFTgammaMie(["methane","ethane"]) |> split_model |> last
         @test model0.params.epsilon.values[1,1] == model0_split.params.epsilon.values[1,1]
+
+        #error on spliting assoc models without sites
+        model_nosites = PCSAFT(["a"],userlocations = (Mw = 1.0,segment = 1.0,sigma = 1.0,epsilon = 1.0))
+        @test split_model(model_nosites)[1] isa PCSAFT 
     end
 
     @testset "export_model" begin
@@ -122,13 +118,6 @@ end
         @test Clapeyron.@f(f_eos,pi) == 2+pi
         @test Clapeyron.@nan(Base.log(-1),3) == 3
         @test_throws MethodError Clapeyron.@nan(Base.log("s"),3)
-
-        #problems with registermodel
-        Clapeyron.@registermodel PCSAFT161
-        @test hasmethod(Base.length,Tuple{PCSAFT161})
-        @test hasmethod(Base.show,Tuple{IO,PCSAFT161})
-        @test hasmethod(Base.show,Tuple{IO,MIME"text/plain",PCSAFT161})
-        @test hasmethod(Clapeyron.molecular_weight,Tuple{PCSAFT161,Array{Float64}})
     end
 
     

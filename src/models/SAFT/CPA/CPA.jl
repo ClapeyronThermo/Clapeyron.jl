@@ -233,11 +233,15 @@ end
 lb_volume(model::CPAModel,T,z) = lb_volume(model.cubicmodel,T,z)
 T_scale(model::CPAModel,z) = T_scale(model.cubicmodel,z)
 
+ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
+ab_consts(model::CPAModel,z) = ab_consts(model.cubicmodel,z)
+ab_consts(::Type{T}) where T <: CPAModel = ab_consts(fieldtype(T,:cubicmodel))
+
 function p_scale(model::CPAModel,z)
     #does not depend on Pc, so it can be made optional on CPA input
     b = model.cubicmodel.params.b.values
     a = model.cubicmodel.params.a.values
-    Ωa,Ωb = ab_consts(model.cubicmodel)
+    Ωa,Ωb = ab_consts(model,z)
     b̄r = dot(z,b,z)/(sum(z)*Ωb)
     ār = dot(z,a,z)/Ωa
     return ār/(b̄r*b̄r)
@@ -318,11 +322,8 @@ data(model::CPAModel, V, T, z) = data(model.cubicmodel,V,T,z)
 
 function a_res(model::CPAModel, V, T, z, _data = @f(data))
     n,ā,b̄,c̄ = _data
-    return a_res(model.cubicmodel,V,T,z,_data) + a_assoc(model,V+c̄*n,T,z,_data)
+    return a_res(model.cubicmodel,V,T,z,_data) + a_assoc(model,V + c̄*n,T,z,_data)
 end
-
-ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
-ab_consts(::Type{T}) where T <: CPAModel = ab_consts(fieldtype(T,:cubicmodel))
 
 function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
     n,ā,b̄,c̄ = _data
@@ -331,12 +332,12 @@ function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
     b = model.params.b.values
     η = n*b̄/(4*V)
     rdf = model.radial_dist
-    g = if rdf == :CS #CPA original
-        (1-0.5*η)/(1-η)^3
+    if rdf == :CS #CPA original
+        g = (1-0.5*η)/(1-η)^3
     elseif rdf == :KG #sCPA
-        1/(1-1.9η)
+        g = 1/(1-1.9η)
     else
-        zero(η)/zero(η)
+        g = zero(η)/zero(η)
     end
 
     return g*expm1(ϵ_associjab/T)*βijab*b[i,j]/N_A
@@ -349,12 +350,12 @@ function  Δ(model::CPAModel, V, T, z,_data=@f(data))
     b_cubic = model.params.b.values
     η = n*b̄/(4*V)
     rdf = model.radial_dist
-    g = if rdf == :CS #CPA original
-        (1-0.5*η)/(1-η)^3
+    if rdf == :CS #CPA original
+        g = (1-0.5*η)/(1-η)^3
     elseif rdf == :KG #sCPA
-        1/(1-1.9η)
+        g = 1/(1-1.9η)
     else
-        zero(η)/zero(η)
+        g = zero(η)/zero(η)
     end
     Δout = assoc_similar(β,typeof(V+T+first(z)+one(eltype(model))))
     ϵ_assoc = model.params.epsilon_assoc
