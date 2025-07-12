@@ -84,7 +84,7 @@ function modWSRule(components; activity = Wilson, userlocations = String[],activ
 end
 
 function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::modWSRuleModel,α,a,b,c)
-    λ = WS_λ(mixing_model,model,z)
+    λ = WS_λ(mixing_model,model,T,z)
     n = sum(z)
     invn = (one(n)/n)
     RT⁻¹ = 1/(R̄*T)
