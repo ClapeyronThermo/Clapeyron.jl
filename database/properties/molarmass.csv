@@ -120,7 +120,6 @@ butene~|~1-butene,106-98-9,56.11
 isobutene~|~isobutylene~|~2-methylpropene,115-11-7,56.11
 "isoprene~|~2-methyl-1,3-butadiene",78-79-5,68.12
 "1,3-pentadiene~|~(z)-1,3-pentadiene~|~cis-1,3-pentadiene",1574-41-0,68.12
-"(e)-1,3-pentadiene~|~trans-1,3-pentadiene",504-60-9,68.12
 "1,4-pentadiene",591-93-5,68.12
 "1,2-pentadiene",591-95-7,68.12
 "2,3-pentadiene",591-96-8,68.12
@@ -162,7 +161,6 @@ cis-3-heptene,7642-10-6,98.19
 "2,2,4-trimethyl-2-pentene~|~2,4,4-trimethyl-2-pentene",107-40-4,112.21
 2-ethyl-1-hexene~|~3-methyleneheptane,1632-16-2,112.21
 (e)-2-octene~|~trans-2-octene,13389-42-9,112.21
-cis-2-octene,111-67-1,112.21
 (e)-3-octene~|~trans-3-octene,14919-01-8,112.21
 cis-3-octene,14850-22-7,112.21
 (e)-4-octene~|~trans-4-octene,14850-23-8,112.21
@@ -623,7 +621,6 @@ acetovanillone~|~1-(4-hydroxy-3-methoxyphenyl)-ethanone,498-02-2,166.1739
 "acetal~|~1,1-diethoxyethane",105-57-7,118.17416
 "1,1-diethylcyclohexane",78-01-3,140.2658
 "1,1-dimethoxyethane",534-15-6,90.121
-"allyl-tert-butylperoxide~|~1,1-dimethylethyl-2-propenylperoxide",39972-78-6,130.18486
 "1,1-diphenylethane",612-00-0,182.26096
 "ethylidene diacetate~|~ethylidene diethanoate~|~1,1-ethanedioldiacetate",542-10-9,146.1412
 "dipa~|~diisopropanolamine~|~1,1'-iminobis-2-propanol~|~n-(2-hydroxypropyl)-2-hydroxy-1-propanamine",110-97-4,133.1888
@@ -643,7 +640,6 @@ acetovanillone~|~1-(4-hydroxy-3-methoxyphenyl)-ethanone,498-02-2,166.1739
 "1,2,3-benzenetriol~|~1,2,3-trihydroxybenzene",87-66-1,126.11004
 "1,2,3-butanetriol~|~1,2,3-trihydroxybutane",4435-50-1,106.1204
 "1,2,3-trimethylindene~|~1,2,3-trimethyl-1h-indene",4773-83-5,158.23956
-"1,2,3-trimethyl-4-ethylbenzene",61827-86-9,148.24474
 "1,2,4,5-benzenetetracarboxylic acid",89-05-4,254.14984
 "1,2,4,5-tetraisopropylbenzene~|~1,2,4,5-tetrakis(1-methylethyl)benzene",635-11-0,246.431
 "1,2,4-benzenetricarboxylic acid",528-44-9,210.14034
@@ -811,7 +807,7 @@ n-methylpyrrolidine~|~1-methyl-pyrrolidine,120-94-5,85.14754
 1-tetracosene,10192-32-2,336.638
 tetradecylamine~|~1-tetradecanamine~|~n-tetradecylamine,2016-42-4,213.40264
 1-tetradecanol,112-72-1,214.3874
-"1-trans-3-pentadiene~|~trans-1,3-pentadiene",2004-70-8,68.11702
+"1-trans-3-pentadiene~|~(e)-1,3-pentadiene~|~trans-1,3-pentadiene",2004-70-8,68.11702
 1-triacontene,18435-53-5,420.797
 1-tridecanol~|~n-tridecanol,112-70-9,200.36082
 1-undecanethiol~|~undecyl mercaptan,5332-52-5,188.37326
@@ -1242,7 +1238,7 @@ cinnamic acid~|~trans-cinnamic acid,140-10-3,148.15862
 "cis-1,8-terpin",565-48-0,172.265
 cis-1-propenylbenzene,766-90-5,118.1757
 "cis-2-butene-1,4-diol",6117-80-2,88.10512
-cis-2-decene~|~trans-2-decene,20348-51-0,140.2658
+cis-2-decene,20348-51-0,140.2658
 cis-2-dodecene,7206-26-0,168.31896
 cis-2-methylcyclohexanol,7443-70-1,114.18546
 cis-2-nonene,6434-77-1,126.239
@@ -1849,7 +1845,7 @@ chloroacetyl chloride,79-04-9,112.94268
 chlorofluoromethane,593-70-4,68.477983
 "chlorotrifluoroethylene~|~1-chloro-1,2,2-trifluroethene",79-38-9,116.46961
 "cis-1,3-dichloropropene",542-75-6,110.96986
-"cis-1,3-dimethylcyclopentane",2453-00-1,98.18606
+"1,3-dimethylcyclopentane",2453-00-1,98.18606
 cis-crotonic acid,3724-65-0,86.09
 cis-crotonitrile,4786-20-3,67.04219916558
 cyanogen chloride,506-77-4,61.4704
@@ -1919,7 +1915,6 @@ isosorbide,652-67-5,146.1412
 lactonitrile~|~2-hydroxy propionitrile,78-97-7,71.0779
 l-arabinose,609-06-3,150.1299
 levoglucosan,498-07-7,162.1406
-linoleic acid,2197-37-7,280.4
 "l-menthol~|~dl-menthol~|~(1r,2s,5r)-(-)-2-isopropyl-5-methyl-cyclohexanol",2216-51-5,156.2652
 maleic anhydride,108-31-6,98.05688
 maltol,118-71-8,126.11004

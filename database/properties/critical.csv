@@ -341,7 +341,7 @@ acetovanillone~|~1-(4-hydroxy-3-methoxyphenyl)-ethanone,498-02-2,786.0,3.65e6,0.
 "1,2,3-benzenetriol~|~1,2,3-trihydroxybenzene",87-66-1,830.0,8.81e6,,0.945171
 "1,2,3-butanetriol~|~1,2,3-trihydroxybutane",4435-50-1,719.0,5.83e6,,1.750415
 "1,2,3-trimethylindene~|~1,2,3-trimethyl-1h-indene",4773-83-5,726.0,2.77e6,0.000529,0.441894
-"1,2,3-trimethyl-4-ethylbenzene",61827-86-9,702.7,2.795e6,0.000531,0.457433
+"1,2,3-trimethyl-4-ethylbenzene",41903-41-7,702.7,2.795e6,0.000531,0.457433
 "1,2,3-trimethylbenzene",526-73-8,664.5,3.454e6,0.000414,0.366553
 "1,2,4,5-benzenetetracarboxylic acid",89-05-4,893.0,3.14e6,,1.83014
 "1,2,4,5-tetraisopropylbenzene~|~1,2,4,5-tetrakis(1-methylethyl)benzene",635-11-0,703.0,1.556e6,0.0009127,0.635984
@@ -570,7 +570,7 @@ n-methylpyrrolidine~|~1-methyl-pyrrolidine,120-94-5,550.0,4.2e6,0.0003,0.225755
 tetradecylamine~|~1-tetradecanamine~|~n-tetradecylamine,2016-42-4,722.0,1.66e6,0.00084,0.860884
 1-tetradecanol,112-72-1,745.3,1.682e6,,0.716811
 1-tetradecene,1120-36-1,691.0,1.627e6,0.000865,0.650303
-"1-trans-3-pentadiene~|~trans-1,3-pentadiene",2004-70-8,500.0,3.74e6,,0.116159
+"1-trans-3-pentadiene~|~(e)-1,3-pentadiene~|~trans-1,3-pentadiene",2004-70-8,500.0,3.74e6,,0.116159
 1-triacontene,18435-53-5,857.0,847000.0,0.00205,1.18169
 1-tridecanol~|~n-tridecanol,112-70-9,732.4,1.81e6,0.00086,0.688102
 1-tridecene,2437-56-1,674.8,1.749e6,0.000795,0.607351
@@ -1113,7 +1113,7 @@ cinnamic acid~|~trans-cinnamic acid,140-10-3,797.0,3.54e6,0.000431,0.712052
 "cis-1,8-terpin",565-48-0,694.8,2.949e6,0.000551,1.08005
 cis-1-propenylbenzene,766-90-5,671.0,3.36e6,0.000407,0.341093
 "cis-2-butene-1,4-diol",6117-80-2,678.0,5.2e6,,1.17501
-cis-2-decene~|~trans-2-decene,20348-51-0,621.0,2.18e6,0.00059,0.475175
+cis-2-decene,20348-51-0,621.0,2.18e6,0.00059,0.475175
 cis-2-dodecene,7206-26-0,663.0,1.89e6,0.000726,0.56922
 "cis-2-heptene~|~2-heptene, (z)-",6443-92-1,543.7,2.84e6,0.000402,0.336337
 cis-2-methylcyclohexanol,7443-70-1,614.0,3.79e6,0.000374,0.68049
@@ -1646,13 +1646,11 @@ neon,7440-01-9,44.4,2.653e6,2.653e-5,-0.0396
 "trans-1,3-dimethylcyclohexane",,598.0,2.938e6,0.2335,
 trans-decalin~|~trans-decahydronaphthalene,493-02-7,687.0,3.2e6,0.00048,0.2993
 "propadiene~|~1,2-propadiene",463-49-0,394.0,5.25e6,0.000165,0.1041
-"(e)-1,3-pentadiene~|~trans-1,3-pentadiene",504-60-9,500.0,3.74e6,0.000276,0.1162
 "1,4-pentadiene",591-93-5,479.0,3.74e6,0.000303,0.0837
 "1,2-pentadiene",591-95-7,500.0,3.8e6,0.000276,0.1542
 "2,3-pentadiene",591-96-8,497.0,3.8e6,0.000295,0.2184
 "dimethylallene~|~3-methyl-1,2-butadiene",598-25-4,490.0,3.83e6,0.000291,0.1874
 "2,4-hexadiene~|~cis,trans-2,4-hexadiene",592-46-1,538.0,3.35e6,0.000331,0.2754
-cis-2-octene,111-67-1,572.0,2.59e6,0.000462,0.3889
 cis-3-octene,14850-22-7,569.0,2.59e6,0.000461,0.38
 "dibenzofuran~|~dibenzo[bd]furan~|~dibenzo[b,d]furan",132-64-9,824.0,3.64e6,0.000495,0.3988
 pyrene,129-0-0,936.0,2.61e6,0.00066,0.5074
@@ -1707,7 +1705,6 @@ xenon,7440-63-3,289.74,5.84e6,0.000118,0.0
 "1,1,5-trimethylindan",40650-41-7,713.6,2.719e6,0.000555,0.3565
 "1,1-difluoroethene~|~1,1-difluoroethylene",75-38-7,302.8,4.46e6,0.000154,0.1362
 "1,2,3,6-tetrahydrobenzyl alcohol",1679-51-2,703.7,4.05e6,0.000372,0.4465
-"1,2,3-trimethyl-4-ethylbenzene",41903-41-7,702.7,2.795e6,0.000531,0.4574
 "1,2-dibromopropane",78-75-1,647.9,4.653e6,0.000322,0.2553
 "1,2-dichlorohexafluorocyclobutane",356-18-3,497.0,2.73e6,0.000386,0.233
 "1,2-difluorobenzene",367-11-3,566.0,4.299e6,0.00029,0.2792
@@ -1801,7 +1798,6 @@ acetone cyanohydrin~|~2-hydroxy-2-methylpropionitrile,75-86-5,620.0,4.25e6,0.000
 acetyl chloride,75-36-5,508.0,5.74e6,0.000196,0.334
 acridine,260-94-6,905.0,3.64e6,0.000543,0.44
 acrolein cyanohydrin,5809-59-6,639.0,4.51e6,0.000278,0.8435
-"allyl-tert-butylperoxide~|~1,1-dimethylethyl-2-propenylperoxide",39972-78-6,563.0,2.88e6,0.000447,0.402
 alpha-hydroxyisobutyramide,13027-88-8,771.7,5.342e6,0.000318,0.6453
 alpha-phellandrene,4221-98-1,649.0,2.82e6,0.000489,0.3807
 aminoacetonitrile,540-61-4,638.0,5.44e6,0.000229,0.4657
@@ -1831,7 +1827,7 @@ chloroacetyl chloride,79-04-9,581.0,5.11e6,0.000245,0.354
 chlorofluoromethane,593-70-4,427.0,5.62e6,0.000154,0.2108
 "chlorotrifluoroethylene~|~1-chloro-1,2,2-trifluroethene",79-38-9,379.15,4.053e6,0.000212,0.2442
 "cis-1,3-dichloropropene",542-75-6,594.4,4.704e6,0.000275,0.2278
-"cis-1,3-dimethylcyclopentane",2453-00-1,551.0,3.445e6,0.00036,0.2743
+"(z)-1,3-dimethylcyclopentane~|~1,cis-3-dimethylcyclopentane~|~cis-1,3-dimethylcyclopentane",2453-00-1,551.0,3.445e6,0.00036,0.2743
 "cis-1,4-dimethylcyclohexane",2207-4-7,598.15,2.938e6,0.00046,0.2311
 cis-crotonic acid,3724-65-0,647.0,4.7e6,0.00027,0.5723
 cis-crotonitrile,4786-20-3,568.0,3.88e6,0.000265,0.3787
@@ -1902,7 +1898,6 @@ isosorbide,652-67-5,824.7,5.133e6,0.000347,0.7121
 lactonitrile~|~2-hydroxy propionitrile,78-97-7,643.0,5.03e6,0.000243,0.7886
 l-arabinose,609-06-3,955.7,5.842e6,0.000343,0.8465
 levoglucosan,498-07-7,905.7,4.797e6,0.000415,0.8037
-linoleic acid,2197-37-7,775.0,1.41e6,0.00099,1.1801
 "l-menthol~|~dl-menthol~|~(1r,2s,5r)-(-)-2-isopropyl-5-methyl-cyclohexanol",2216-51-5,658.0,2.71e6,0.000533,0.7796
 maleic anhydride,108-31-6,721.0,7.28e6,0.000219,0.5463
 maltol,118-71-8,748.5,4.853e6,0.00031,0.5242

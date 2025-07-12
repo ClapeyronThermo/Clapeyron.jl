@@ -278,7 +278,7 @@ diisobutylamine~|~2-methyl-n-(2-methylpropyl)-1-propanamine,a,diisobutylamine~|~
 m-tolualcohol~|~m-methylbenzylalcohol~|~3-methylbenzyl alcohol,a,m-tolualcohol~|~m-methylbenzylalcohol~|~3-methylbenzyl alcohol,b,0.0001,3158.02548,10.1021/acs.iecr.3c02255
 cinnamic acid~|~trans-cinnamic acid,a,cinnamic acid~|~trans-cinnamic acid,b,0.01328,5000.0,10.1021/acs.iecr.3c02255
 "linolenic acid~|~9,12,15-octadecatrienoic acid",a,"linolenic acid~|~9,12,15-octadecatrienoic acid",b,0.00206,3789.84501,10.1021/acs.iecr.3c02255
-linoleic acid,a,linoleic acid,b,0.00109,4063.6129,10.1021/acs.iecr.3c02255
+"linoleic acid~|~(z,z)-9,12-octadecadienoic acid",a,"linoleic acid~|~(z,z)-9,12-octadecadienoic acid",b,0.00109,4063.6129,10.1021/acs.iecr.3c02255
 arachidic acid~|~eicosanoic acid,a,arachidic acid~|~eicosanoic acid,b,0.00463,3405.5317,10.1021/acs.iecr.3c02255
 methyl 2-hydroxy-2-methylpropanoate~|~alpha-hydroxy-isobutyric acid methyl ester,a,methyl 2-hydroxy-2-methylpropanoate~|~alpha-hydroxy-isobutyric acid methyl ester,b,0.02819,2156.91415,10.1021/acs.iecr.3c02255
 "2,6-dimethyl-4-heptanol",a,"2,6-dimethyl-4-heptanol",b,0.00178,3475.76808,10.1021/acs.iecr.3c02255
