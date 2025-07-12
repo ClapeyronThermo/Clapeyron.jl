@@ -54,7 +54,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         x = x0 ./ sum(x0)
         y = y0 ./ sum(y0)
         lnK .= log.(y ./ x)
-        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,nothing,(volx,voly),phases,non_inw)
+        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(volx,voly),phases,non_inw,dlnϕ_cache)
         K .= exp.(lnK)
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
@@ -62,7 +62,6 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
             Kmin,Kmax = extrema(K)
-
             if Kmin > 1 || Kmax < 1
                 K = K0_lle_init(model,p,T,z)
             end

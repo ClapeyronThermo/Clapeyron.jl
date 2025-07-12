@@ -59,6 +59,10 @@ function RRTPFlash(;equilibrium = :unknown,
         np = numphases(flash_result)
         np != 2 && incorrect_np_flash_error(RRTPFlash,flash_result)
     end
+    
+    nonvolatiles isa String && (nonvolatiles = [nonvolatiles])
+    noncondensables isa String && (noncondensables = [noncondensables])
+
     #we call Michelsen to check if the arguments are correct.
     m = MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,noncondensables,nonvolatiles,flash_result)
     return RRTPFlash{eltype(m)}(m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,max_iters,m.nacc,m.noncondensables,m.nonvolatiles)

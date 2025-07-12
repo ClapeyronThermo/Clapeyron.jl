@@ -163,7 +163,7 @@ function tp_flash_K0!(K,model,p,T)
         pures = split_pure_model(model)
         for i in 1:length(model)
             sat_x = extended_saturation_pressure(pures[i],T)
-            K[i] = sat_x[3]/p
+            K[i] = sat_x[1]/p
         end
     end
     return K

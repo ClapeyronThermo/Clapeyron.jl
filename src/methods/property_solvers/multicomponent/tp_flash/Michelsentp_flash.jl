@@ -90,7 +90,8 @@ function MichelsenTPFlash(;equilibrium = :unknown,
     #        throw(error("LLE equilibria does not support setting noncondensables"))
     #    end
     #end
-
+    nonvolatiles isa String && (nonvolatiles = [nonvolatiles])
+    noncondensables isa String && (noncondensables = [noncondensables])
     #check for nacc
     if nacc in (1,2,3) || nacc < 0
         throw(error("incorrect specification for nacc"))

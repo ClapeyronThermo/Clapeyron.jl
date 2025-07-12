@@ -95,6 +95,12 @@
         @test Clapeyron.tp_flash(model_a_ideal,134094.74892634258,70 + 273.15,[18500.0, 24.08],noncondensables = ["oxygen"])[1] ≈
         [1.0 0.0;
         0.23252954843762222 0.7674704515623778] rtol = 1e-6
+
+        #403
+        model403 = PCSAFT(["water","carbon dioxide"])
+        res = Clapeyron.tp_flash2(model403, 1e5, 323.15,[0.5,0.5],MichelsenTPFlash(nonvolatiles==["water"]))
+        @test res.compositions[2] == [0.,1.]
+        @test res.compositions[1] ≈ [0.999642, 0.000358065] rtol = 1e-6
     end
 
     @testset "Michelsen Algorithm, activities" begin

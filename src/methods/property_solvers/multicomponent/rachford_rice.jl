@@ -334,22 +334,24 @@ function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillA
     #βmax = min(1., maximum(((1 .- z) ./ (1. .- K))[K .< 1]))
     sumz = sum(z)
     for i in eachindex(K)
-        Ki,xi = K[i],z[i]/sumz
-        if non_inx[i] #
+        Ki,zi = K[i],z[i]/sumz
+        if non_inx[i] #noncondensables
             Ki = Inf*one(Ki)
         end
 
-        if non_iny[i]
+        if non_iny[i] # #nonvolatiles
             Ki = zero(Ki)
         end
         if Ki > 1
             # modification for non-in-x components Ki -> ∞
-            βmin_i = (non_inx[i] || isinf(Ki)) ? one(Ki)*xi : (Ki*xi - 1)/(Ki - 1)
+            not_xi = non_inx[i] || isinf(Ki)
+            βmin_i = not_xi ? one(Ki)*zi : (Ki*zi - 1)/(Ki - 1)
             βmin = min(βmin,βmin_i)
         end
         if Ki < 1
             # modification for non-in-y components Ki -> 0
-            βmax_i = (non_iny[i] || iszero(Ki)) ? zero(βmax) : (xi - 1)/(Ki - 1)
+            not_yi = non_iny[i] || iszero(Ki)
+            βmax_i = not_yi ? (1 - zi) : (zi - 1)/(Ki - 1)
             βmax = max(βmax,βmax_i)
         end
     end
