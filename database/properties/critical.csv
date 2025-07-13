@@ -45,7 +45,6 @@ isobutene~|~isobutylene~|~2-methylpropene,115-11-7,417.9,3.98e6,0.000268,0.192
 "1,2-butadiene",590-19-2,452.0,4.36e6,0.000265,0.166
 "butadiene~|~1,3-butadiene",106-99-0,425.17,4.3e6,0.000253,0.192
 "isoprene~|~2-methyl-1,3-butadiene",78-79-5,484.0,3.85e6,0.000321,0.158
-acetylene,12071-15-7,308.32,6.15e6,0.000128,0.188
 propyne~|~1-propyne~|~methylacetylene,74-99-7,402.39,5.62e6,0.000183,0.216
 2-butyne~|~dimethylacetylene,503-17-3,473.2,4.87e6,0.000248,0.239
 3-methyl-1-butyne,598-23-2,463.2,4.2e6,0.000282,0.308
@@ -107,7 +106,7 @@ methylethylether~|~ethyl methyl ether,540-67-0,437.8,4.47e6,0.00025,0.229
 methylisopropylether~|~isopropyl methyl ether,598-53-8,464.5,3.89e6,0.000305,0.28
 methylbutyl ether~|~butyl methyl ether~|~methyl-n-butylether~|~methyl n-butyl ether,628-28-4,510.0,3.31e6,0.000394,0.335
 methylisobutylether,625-44-5,497.0,3.41e6,0.000372,0.31
-methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,1634-04-4,497.1,3.41e6,0.000373,0.264
+mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,1634-04-4,497.1,3.41e6,0.000373,0.264
 diethyl ether,60-29-7,466.7,3.64e6,0.000328,0.281
 ethyl propyl ether,628-32-0,500.23,3.37e6,0.000379,0.347
 2-ethoxy-propane~|~ethyl isopropyl ether,625-54-7,489.0,3.41e6,0.000366,0.306
@@ -210,7 +209,6 @@ bromobenzene,108-86-1,670.15,4.52e6,0.000379,0.251
 air,132259-10-0,132.45,3.79e6,8.93e-5,0.0
 hydrogen,1333-74-0,33.19,1.32e6,6.43e-5,-0.215
 helium~|~helium-4,7440-59-7,5.2,230000.0,5.78e-5,-0.388
-neon,7440-1-9,44.4,2.67e6,4.25e-5,-0.038
 argon,7440-37-1,150.86,4.9e6,7.87e-5,0.0
 fluorine,7782-41-4,144.12,5.17e6,7.12e-5,0.053
 cl2~|~chlorine,7782-50-5,417.15,7.79e6,0.000137,0.073
@@ -1246,7 +1244,6 @@ arachidic acid~|~eicosanoic acid,506-30-9,820.0,1.2e6,,1.08228
 methyl eicosanoate~|~eicosanoicacidmethylester,1120-28-1,797.9,959100.0,0.00147,0.902137
 erucic-acid~|~erucic acid,112-86-7,809.9,1.021e6,0.00155,1.24175
 ethanedial,107-22-2,496.7,6.279e6,,0.436264
-ethanethiol~|~ethyl mercaptan,75-08-1,499.15,5.49e6,,0.187751
 mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,678.2,7.124e6,,0.446737
 ketene~|~ethenone,463-51-4,370.0,5.81e6,0.000144,0.125656
 ethine~|~ethyne~|~acetylene,74-86-2,308.3,6.138e6,,0.191185
@@ -1577,7 +1574,7 @@ thp~|~tetrahydropyran,142-68-7,572.04,4.7712e6,0.0002627,0.216217
 thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,89-83-8,698.25,3.408e6,0.000436,0.722626
 "trans,trans-2,4-hexadiene",5194-51-4,535.0,3.35e6,0.000331,0.282106
 "trans-1,2-dichloroethene~|~trans-1,2-dichloroethylene",156-60-5,516.5,5.51e6,0.000224,0.223396
-"1,2-dimethylcyclohexane~|~trans-1,2-dimethylcyclohexane",6876-23-9,596.15,2.93843e6,0.00046,0.237864
+"trans-1,2-dimethylcyclohexane~|~(1r,2r)-1,2-dimethylcyclohexane",6876-23-9,596.15,2.93843e6,0.00046,0.237864
 "trans-1,2-dimethylcyclopentane~|~1,trans-2-dimethylcyclopentane",822-50-4,553.15,3.44505e6,0.00036,0.269784
 "trans-1,3-dichloropropene~|~trans-1,3-dichloro-1-propene",10061-02-6,606.5,4.704e6,0.000277,0.223379
 "trans-1,3-dimethylcyclohexane",2207-03-6,598.0,2.93843e6,0.00046,0.23346
@@ -1640,11 +1637,10 @@ vanillic-acid~|~vanillic acid,121-34-6,825.1,3.798e6,0.00045,0.850294
 vinylcyclohexane,695-12-5,599.4,3.27e6,0.000407,0.2902
 vinylformate,692-45-5,498.0,5.02e6,0.000217,0.284881
 vinylnorbornene~|~5-ethenylbicyclo[2.2.1]-2-heptene,3048-64-4,626.0,3.21e6,0.000427,0.248691
-neon,7440-01-9,44.4,2.653e6,2.653e-5,-0.0396
+neon,7440-01-9,44.4,2.66163e6,4.149377593360996e-5,-0.0354926
 "cis-1,2-dimethylcyclohexane",2207-01-4,606.15,2.938e6,,0.2324
 "cis-1,3-dimethylcyclohexane",591-21-9,591.15,2.938e6,0.00045,0.2366
 "trans-1,3-dimethylcyclohexane",,598.0,2.938e6,0.2335,
-trans-decalin~|~trans-decahydronaphthalene,493-02-7,687.0,3.2e6,0.00048,0.2993
 "propadiene~|~1,2-propadiene",463-49-0,394.0,5.25e6,0.000165,0.1041
 "1,4-pentadiene",591-93-5,479.0,3.74e6,0.000303,0.0837
 "1,2-pentadiene",591-95-7,500.0,3.8e6,0.000276,0.1542
@@ -1989,7 +1985,6 @@ thionyl chloride,7719-09-7,567.0,4.43e6,0.000208,0.0946
 thiourea,62-56-6,854.0,8.23e6,0.000248,0.3586
 tin(iv) chloride~|~stannic chloride~|~tin tetrachloride,7646-78-8,591.85,3.744e6,0.000351,0.2613
 titanium tetrachloride,7550-45-0,638.0,4.661e6,0.00034,0.2837
-"1,2-dimethylcyclohexane~|~trans-1,2-dimethylcyclohexane",583-57-3,596.15,2.938e6,0.00046,0.2379
 "r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene",29118-24-9,382.51,3.662e6,0.000235,0.3238
 "trans-1,3-hexadiene",592-48-3,521.1,3.354e6,0.000331,0.2783
 "trans-1,4-diethylcyclohexane",1679-00-1,649.9,2.817e6,0.000527,0.3846
@@ -2024,7 +2019,7 @@ paradeuterium,7782-39-0p,38.34,1.6796e6,0.01440799992093,-0.136290274128
 parahydrogen~|~para-hydrogen,1333-74-0p,32.938,1.2858e6,0.03192568371016,-0.219
 "r1233zde~|~r1233zd(e)~|~trans-1-chloro-3,3,3-trifluoropropene~|~(e)-1-chloro-3,3,3-trifluoroprop-1-ene~|~trans-1-chloro-3,3,3-trifluoro-1-propene",102687-65-0,439.6,3.623638e6,0.00208238154614,0.302452293580176
 "r1234zez~|~r1234ze(z)~|~cis-1,3,3,3-tetrafluoropropene~|~(z)-1,3,3,3-tetrafluoro-1-propene~|~(z)-1,3,3,3-tetrafluoroprop-1-ene",29118-25-0,423.27,3.53062e6,0.00212765944014,0.326838720064214
-1-cis-2-trans-4-trimethylcyclopentane,16883-48-0,579.26,2.878e6,417.0,0.2775
+"1-cis-2-trans-4-trimethylcyclopentane~|~(1r,2s)-1,2,4-trimethylcyclopentane",4850-28-6,579.26,2.878e6,417.0,0.2775
 "1,3,5-trimethylcyclohexane~|~1-trans-3,5-trimethylcyclohexane",1839-63-0,602.2,2.84e6,,0.3671
 calcium,7440-70-2,3267.0,1.53e7,,0.1167
 9h-carbazole~|~dibenzopyrrole,86-74-8,899.0,3.26e6,,0.4938

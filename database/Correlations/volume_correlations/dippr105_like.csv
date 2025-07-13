@@ -26,7 +26,7 @@ CAS,species,A,B,C,D,Tmin,Tmax
 74-83-9,ch3br~|~bromomethane,1676.2,0.26141,467.0,0.28402,179.47,467.0
 74-84-0,ethane,1912.2,0.27937,305.32,0.29187,90.35,305.32
 74-85-1,ethene~|~ethylene~|~1-ethylene,2096.1,0.27657,282.34,0.29147,104.0,282.34
-74-86-2,acetylene,2450.7,0.27448,308.3,0.28752,192.4,308.3
+74-86-2,ethine~|~ethyne~|~acetylene,2450.7,0.27448,308.3,0.28752,192.4,308.3
 74-87-3,r40~|~chloromethane~|~methyl chloride,1817.0,0.25877,416.25,0.2833,175.43,416.25
 74-89-5,methylamine~|~methanamine,1390.0,0.21405,430.05,0.2275,179.69,430.05
 74-90-8,hydrogen cyanide,1341.3,0.18589,456.65,0.28206,259.83,456.65
@@ -318,7 +318,7 @@ CAS,species,A,B,C,D,Tmin,Tmax
 3877-15-4,2-thiapentane~|~methylpropyl sulfide~|~1-(methylthio)-propane~|~methyl-n-propyl sulfide~|~methyl n-propyl sulfide,874.96,0.26862,565.0,0.30259,160.17,565.0
 5756-43-4,1-ethoxy-hexane~|~ethylhexyl ether,557.29,0.2714,583.0,0.29538,180.0,583.0
 6032-29-7,2-pentanol~|~pentan-2-ol,793.24,0.25806,561.0,0.28571,200.0,561.0
-6876-23-9,"1,2-dimethylcyclohexane~|~trans-1,2-dimethylcyclohexane",544.05,0.25026,596.15,0.2658,184.99,596.15
+6876-23-9,"trans-1,2-dimethylcyclohexane~|~(1r,2r)-1,2-dimethylcyclohexane",544.05,0.25026,596.15,0.2658,184.99,596.15
 7440-01-9,neon,7371.8,0.3067,44.4,0.2786,24.56,44.4
 7440-37-1,argon,3846.9,0.2881,150.86,0.29783,83.78,150.86
 7440-59-7,helium~|~helium-4,7247.5,0.41865,5.2,0.24096,2.2,5.2

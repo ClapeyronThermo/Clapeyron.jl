@@ -102,7 +102,7 @@ species,ZRA
 "1-chloro-1,1-difluoroethane",0.2668
 1-chloronaphthalene,0.2464
 1-chloropentane,0.2567
-1-cis-2-trans-4-trimethylcyclopentane,0.2605
+"1-cis-2-trans-4-trimethylcyclopentane~|~(1r,2s)-1,2,4-trimethylcyclopentane",0.2605
 1-decanol,0.2493
 1-decene,0.2556
 1-decyne,0.2577
