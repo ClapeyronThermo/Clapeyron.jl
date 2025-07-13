@@ -108,7 +108,7 @@
 
         #403
         model403 = PCSAFT(["water","carbon dioxide"])
-        res = Clapeyron.tp_flash2(model403, 1e5, 323.15,[0.5,0.5],MichelsenTPFlash(nonvolatiles==["water"]))
+        res = Clapeyron.tp_flash2(model403, 1e5, 323.15,[0.5,0.5],MichelsenTPFlash(nonvolatiles=["water"]))
         @test res.compositions[2] == [0.,1.]
         @test res.compositions[1] ≈ [0.999642, 0.000358065] rtol = 1e-6
     end
