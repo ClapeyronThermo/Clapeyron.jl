@@ -1901,7 +1901,7 @@ CAS;species;SMILES;inchikey;canonicalsmiles;
 78-97-7;lactonitrile~|~2-hydroxy propionitrile;CC(C#N)O;WOFDVDFSGLBFAC-VKHMYHEASA-N;CC(O)C#N;
 609-06-3;l-arabinose;C(C(C(C(C=O)O)O)O)O;PYMYPHUHKUWMLA-UHFFFAOYSA-N;O=CC(O)C(O)C(O)CO;
 498-07-7;levoglucosan;C1[C@@H]2[C@H]([C@@H]([C@H]([C@H](O1)O2)O)O)O;TWNIBLMWSKIRAT-VFUOTHLCSA-N;O[C@@H]1[C@@H](O)[C@@H]2OC[C@@H](O2)[C@H]1O;
-2197-37-7;(z,e)-9,12-octadecadienoic acid;;CCCCCC=CCC=CCCCCCCCC(=O)O;OYHQOLUKZRVURQ-UHFFFAOYSA-N;CCCCCC=CCC=CCCCCCCCC(=O)O;
+2197-37-7;(z,e)-9,12-octadecadienoic acid;CCCCCC=CCC=CCCCCCCCC(=O)O;OYHQOLUKZRVURQ-UHFFFAOYSA-N;CCCCCC=CCC=CCCCCCCCC(=O)O;
 2216-51-5;l-menthol~|~dl-menthol~|~(1r,2s,5r)-(-)-2-isopropyl-5-methyl-cyclohexanol;C[C@@H]1CC[C@H]([C@@H](C1)O)C(C)C;NOOLISFMXDJSKH-KXUCPTDWSA-N;CC(C)[C@@H]1CC[C@@H](C)C[C@H]1O;
 108-31-6;maleic anhydride;C1=CC(=O)OC1=O;FPYJFEHAWHCUMM-UHFFFAOYSA-N;O=C1C=CC(=O)O1;
 118-71-8;maltol;CC1=C(C(=O)C=CO1)O;XPCTZQVDEJYUGT-UHFFFAOYSA-N;Cc1occc(=O)c1O;
@@ -3748,7 +3748,7 @@ propenyl_cyclohexene;propenyl cyclohexene~|~1-[(e)-prop-1-enyl]-cyclohexene;C/C=
 7782-39-0o;orthodeuterium;;OrthoDeuterium;;
 1333-74-0o;orthohydrogen~|~ortho-hydrogen;;OrthoHydrogen;;
 7782-39-0p;paradeuterium;;ParaDeuterium;;
-1333-74-0p;parahydrogen~|~ -hydrogen;;ParaHydrogen;;
+1333-74-0p;parahydrogen~|~para-hydrogen;;ParaHydrogen;;
 132259-10-0;air;;HQTMLRUQTHILKM-CHKASDEDSA-N;;
 13637-63-3;chlorine fluoride (clf5);FCl(F)(F)(F)F;KNSWNNXPAWSACI-UHFFFAOYSA-N;FCl(F)(F)(F)F;
 7790-91-2;chlorine trifluoride;FCl(F)F;LWCSGONZUGPMHI-UHFFFAOYSA-N;FCl(F)F;
