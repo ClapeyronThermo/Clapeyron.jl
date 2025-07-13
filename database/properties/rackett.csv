@@ -883,7 +883,7 @@ propadiene,0.2677
 propanal,0.2549
 propane,0.277
 propargyl alcohol,0.2405
-propenyl cyclohexene,0.2616
+propenylcyclohexene~|~1-allylcyclohexene~|~1-(2-propenyl)cyclohexene,0.2616
 propionic acid,0.2284
 propionic anhydride,0.2571
 propionitrile,0.2176

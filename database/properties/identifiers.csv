@@ -41,7 +41,7 @@ CAS;species;SMILES;inchikey;canonicalsmiles;
 29911-27-1;dowanol dpnp ~|~dipropylene glycol n-propyl ether~|~1-(1-methyl-2-propoxyethoxy)-2-propanol;CC(O)COC(C)COCCC;WEZPLQKRXDBPEP-UHFFFAOYSA-N;CCCOCC(C)OCC(C)O;
 1860-27-1;isopropyl butyl ether~|~1-(1-methylethoxy)-butane;CCCCOC(C)C;GPDFVOVLOXMSBT-UHFFFAOYSA-N;CCCCOC(C)C;
 118-93-4;2'-hydroxyacetophenone~|~1-(2-hydroxyphenyl)ethanone;c1(C(=O)C)c(O)cccc1;JECYUBVRTQDVAT-UHFFFAOYSA-N;CC(=O)c1ccccc1O;
-13511-13-2;propenylcyclohexene~|~1-(2-propenyl)cyclohexene;C1CCCC=C1CC=C;GTUOTYSUNDPMPS-UHFFFAOYSA-N;C=CCC1=CCCCC1;
+13511-13-2;propenylcyclohexene~|~1-allylcyclohexene~|~1-(2-propenyl)cyclohexene;C1CCCC=C1CC=C;GTUOTYSUNDPMPS-UHFFFAOYSA-N;C=CCC1=CCCCC1;
 498-02-2;acetovanillone~|~1-(4-hydroxy-3-methoxyphenyl)-ethanone;c1(OC)c(O)ccc(C(=O)C)c1;DFYRUELUNQRZTB-UHFFFAOYSA-N;COc1cc(C(C)=O)ccc1O;
 99-93-4;4-hydroxyacetophenone~|~1-(4-hydroxyphenyl)ethanone;c1(C(=O)C)ccc(O)cc1;TXFPEBPIARQUIG-UHFFFAOYSA-N;CC(=O)c1ccc(O)cc1;
 3698-94-0;3-thiaundecane~|~ethyl octyl sulfide~|~1-(ethylthio)-octane~|~ethyl n-octyl sulfide;CCSCCCCCCCC;WAITXWGCJQLPGH-UHFFFAOYSA-N;CCCCCCCCSCC;
@@ -1904,7 +1904,6 @@ CAS;species;SMILES;inchikey;canonicalsmiles;
 108-78-1;melamine;C1(=NC(=NC(=N1)N)N)N;SCZKOLFGNYHVTR-UHFFFAOYSA-N;Nc1nc(N)nc(N)n1;
 7487-94-7;mercury dichloride;Cl[Hg]Cl;LWJROJCJINYWOX-UHFFFAOYSA-L;Cl[Hg]Cl;
 126-98-7;methacrylonitrile~|~isopropenylnitrile;CC(=C)C#N;GYCMBHHDWRMZGG-UHFFFAOYSA-N;C=C(C)C#N;
-COC1CCOC=C1;methoxydihydropyran;COC1CCOC=C1;OTWQGQGARJLQON-UHFFFAOYSA-N;COC1C=COCC1;
 17860-39-8;methyl alpha-methoxyisobutyrate;CC(C)(C(=O)OC)OC;AKWHOGIYEOZALP-UHFFFAOYSA-N;COC(=O)C(C)(C)OC;
 79-22-1;methyl chloroformate;COC(=O)Cl;XMJHPCRAQCTCFT-UHFFFAOYSA-N;COC(=O)Cl;
 78-98-8;methyl glyoxal;CC(=O)C=O;AIJULSRZWUXGPQ-UHFFFAOYSA-N;CC(=O)C=O;
@@ -2036,7 +2035,6 @@ COC1CCOC=C1;methoxydihydropyran;COC1CCOC=C1;OTWQGQGARJLQON-UHFFFAOYSA-N;COC1C=CO
 7439-97-6;mercury;[Hg];QSHDDOUJBYECFT-UHFFFAOYSA-N;[Hg];
 10025-87-3;phosphoryl chloride~|~phosphorus oxychloride~|~phosphoryl trichloride;O=P(Cl)(Cl)Cl;XHXFXVLFKHQFAL-UHFFFAOYSA-N;O=P(Cl)(Cl)Cl;
 7440-09-7;potassium;[K];ZLMJMSJWJFRBEC-UHFFFAOYSA-N;[K];
-propenyl_cyclohexene;propenyl cyclohexene~|~1-[(e)-prop-1-enyl]-cyclohexene;C/C=C/C1=CCCCC1;BXIHKZJXKILOSE-QHHAFSJGSA-N;C/C=C/C1=CCCCC1;
 10545-99-0;sulfur dichloride;S(Cl)Cl;FWMUJAIKEJWSSY-UHFFFAOYSA-N;ClSCl;
 78-10-4;tetraethoxysilane;CCO[Si](OCC)(OCC)OCC;BOTDANWDWHJENH-UHFFFAOYSA-N;CCO[Si](OCC)(OCC)OCC;
 7440-62-2;vanadium;[V];LEONUFNNVUYDNQ-UHFFFAOYSA-N;[V];
@@ -3741,11 +3739,12 @@ propenyl_cyclohexene;propenyl cyclohexene~|~1-[(e)-prop-1-enyl]-cyclohexene;C/C=
 3426-89-9;phenyldichlorophosphite;ClP(Cl)Oc1ccccc1;LXHWDUISRBUGRA-UHFFFAOYSA-N;ClP(Cl)Oc1ccccc1;
 138-86-3;limonene;C=C(C)C1CC=C(C)CC1;XMGQYMWWDOXHJM-UHFFFAOYSA-N;C=C(C)C1CC=C(C)CC1;
 630-08-0;carbon monoxide;[C+]#[O-];UGFAIRIUMAVXCW-UHFFFAOYSA-N;[C+]#[O-];
+132259-10-0;air;;HQTMLRUQTHILKM-CHKASDEDSA-N;;
+13637-63-3;chlorine fluoride (clf5)~|~chlorine pentafluoride;FCl(F)(F)(F)F;KNSWNNXPAWSACI-UHFFFAOYSA-N;FCl(F)(F)(F)F;
+7790-91-2;chlorine trifluoride;FCl(F)F;LWCSGONZUGPMHI-UHFFFAOYSA-N;FCl(F)F;
+7616-94-6;perchloryl fluoride;O=Cl(=O)(=O)F;XHFXMNZYIKFCPN-UHFFFAOYSA-N;O=Cl(=O)(=O)F
+COC1CCOC=C1;methoxydihydropyran~|~4-methoxydihydropyran;COC1CCOC=C1;OTWQGQGARJLQON-UHFFFAOYSA-N;COC1C=COCC1;
 7782-39-0o;orthodeuterium;;OrthoDeuterium;;
 1333-74-0o;orthohydrogen~|~ortho-hydrogen;;OrthoHydrogen;;
 7782-39-0p;paradeuterium;;ParaDeuterium;;
 1333-74-0p;parahydrogen~|~para-hydrogen;;ParaHydrogen;;
-132259-10-0;air;;HQTMLRUQTHILKM-CHKASDEDSA-N;;
-13637-63-3;chlorine fluoride (clf5);FCl(F)(F)(F)F;KNSWNNXPAWSACI-UHFFFAOYSA-N;FCl(F)(F)(F)F;
-7790-91-2;chlorine trifluoride;FCl(F)F;LWCSGONZUGPMHI-UHFFFAOYSA-N;FCl(F)F;
-7616-94-6;perchloryl fluoride;O=Cl(=O)(=O)F;XHFXMNZYIKFCPN-UHFFFAOYSA-N;O=Cl(=O)(=O)F

@@ -1694,7 +1694,7 @@ trifluoroacetonitrile~|~trifluoroethanenitrile,,0.133206,0.834196944,2.822923728
 methyl lactate~|~methyl 2-hydroxypropanoate~|~2-hydroxy-propanoicacid-methylester,,0.308899,0.836823956,2.760322583,
 1-octadecene,,0.218001,0.793718921,3.789074802,
 levulinic acid~|~4-oxopentanoic acid~|~4-oxo-pentanoic acid,,0.793024,0.899550337,1.905898971,
-chlorine fluoride (clf5),,0.539726,0.951774738,1.328544149,
+chlorine fluoride (clf5)~|~chlorine pentafluoride,,0.539726,0.951774738,1.328544149,
 "butanoic acid, 2-methyl-, butyl ester",,1.825596,0.979189461,0.490043627,
 "1h,8h-perfluorooctane~|~1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8-hexadecafluorooctane",,0.740798,0.89223306,1.985546357,
 "2,4-dimethylpyridine",,0.638174,0.820859124,1.186185792,

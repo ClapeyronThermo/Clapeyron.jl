@@ -272,7 +272,7 @@ dibutyl maleate~|~(z)-2-butenedioicaciddibutylester,105-76-0,716.0,1.9e6,0.00071
 dowanol dpnp ~|~dipropylene glycol n-propyl ether~|~1-(1-methyl-2-propoxyethoxy)-2-propanol,29911-27-1,629.0,2.4e6,,0.963095
 isopropyl butyl ether~|~1-(1-methylethoxy)-butane,1860-27-1,549.0,2.74e6,0.000435,0.403229
 2'-hydroxyacetophenone~|~1-(2-hydroxyphenyl)ethanone,118-93-4,707.0,4.45e6,,0.637734
-propenyl cyclohexene~|~1-[(e)-prop-1-enyl]-cyclohexene,13511-13-2,636.0,3.12e6,,0.341975
+propenylcyclohexene~|~1-allylcyclohexene~|~1-(2-propenyl)cyclohexene,13511-13-2,636.0,3.12e6,,0.341975
 acetovanillone~|~1-(4-hydroxy-3-methoxyphenyl)-ethanone,498-02-2,786.0,3.65e6,0.000467,0.785577
 4-hydroxyacetophenone~|~1-(4-hydroxyphenyl)ethanone,99-93-4,860.0,4.45e6,0.000394,0.640919
 3-thiaundecane~|~ethyl octyl sulfide~|~1-(ethylthio)-octane~|~ethyl n-octyl sulfide,3698-94-0,700.0,2.4e6,0.0007009,0.534638
@@ -1899,7 +1899,7 @@ m-chlorobenzoyl chloride,618-46-2,724.0,3.68e6,0.000406,0.4542
 melamine,108-78-1,1008.0,5.858e6,0.000304,0.6973
 mercury dichloride,7487-94-7,972.0,1.1521e7,0.0001746,0.2563
 methacrylonitrile~|~isopropenylnitrile,126-98-7,554.0,3.88e6,0.000265,0.3013
-methoxydihydropyran,COC1CCOC=C1,599.0,3.93e6,0.000331,0.3669
+methoxydihydropyran~|~4-methoxydihydropyran,COC1CCOC=C1,599.0,3.93e6,0.000331,0.3669
 methyl alpha-methoxyisobutyrate,17860-39-8,589.3,2.935e6,0.000411,0.4212
 methyl chloroformate,79-22-1,525.0,5.36e6,0.000221,0.3921
 methyl glyoxal,78-98-8,534.9,5.505e6,0.000209,0.3371
@@ -2034,7 +2034,6 @@ maleonitrile,928-53-0,704.0,3.73e6,,0.5575
 mercury,7439-97-6,1735.0,1.60803e8,,-0.1645
 phosphoryl chloride~|~phosphorus oxychloride~|~phosphoryl trichloride,10025-87-3,602.15,3.44e6,,0.0832
 potassium,7440-09-7,2223.0,1.6e7,,-0.2028
-propenyl cyclohexene~|~1-[(e)-prop-1-enyl]-cyclohexene,propenyl_cyclohexene,636.0,3.12e6,0.000437,0.342
 sulfur dichloride,10545-99-0,542.0,6.68e6,,0.2561
 tetraethoxysilane,78-10-4,592.2,2.045e6,,0.6325
 vanadium,7440-62-2,11325.0,1.0314e9,,-0.1868
