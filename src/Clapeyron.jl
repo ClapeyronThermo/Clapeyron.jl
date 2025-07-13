@@ -240,7 +240,6 @@ include("models/cubic/PR/variants/EPPR78.jl")
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/Michelsen_GEPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/Alternate_Michelsen_GEPCSAFT.jl")
-include("models/SAFT/PCSAFT/variants/Training_Michelsen_GEPCSAFT.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
