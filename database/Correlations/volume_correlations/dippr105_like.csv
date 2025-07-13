@@ -61,7 +61,7 @@ CAS,species,A,B,C,D,Tmin,Tmax
 75-73-0,r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,1955.0,0.27884,227.51,0.28571,89.56,227.51
 75-94-5,vinyltrichlorosilane,595.95,0.24314,543.15,0.24856,178.35,543.15
 78-78-4,isopentane~|~methylbutane~|~2-methylbutane,919.91,0.27815,460.4,0.28667,113.25,460.4
-78-80-8,2-methyl-1-butene-3-yne,1115.7,0.27671,492.0,0.30821,160.15,492.0
+78-80-8,isopropenylacetylene~|~2-methyl-1-buten-3-yne~|~2-methyl-1-butene-3-yne,1115.7,0.27671,492.0,0.30821,160.15,492.0
 78-87-5,"1,2-dichloropropane",898.33,0.26142,572.0,0.2868,172.71,572.0
 78-92-2,2-butanol~|~butan-2-ol,968.2,0.26244,535.9,0.26749,158.45,535.9
 78-93-3,butanone~|~2-butanone~|~methyl ethyl ketone,937.67,0.25035,535.5,0.29964,186.48,535.5
@@ -253,7 +253,7 @@ CAS,species,A,B,C,D,Tmin,Tmax
 565-80-0,"diisopropyl ketone~|~di-isopropyl ketone~|~2,4-dimethyl-3-pentanone",646.19,0.26881,576.0,0.28036,204.81,576.0
 584-03-2,"1,2-butanediol",816.96,0.24755,680.0,0.24535,220.0,680.0
 589-38-8,3-hexanone,676.66,0.25578,582.82,0.27746,217.5,582.82
-590-18-1,2-butene~|~(z)-2-butene~|~cis-2-butene,1159.1,0.27085,435.5,0.28116,134.26,435.5
+590-18-1,(z)-2-butene~|~cis-2-butene,1159.1,0.27085,435.5,0.28116,134.26,435.5
 590-19-2,"1,2-butadiene",1187.0,0.26114,452.0,0.3065,136.95,452.0
 590-66-9,"1,1-dimethylcyclohexane",558.73,0.25143,591.15,0.27758,239.66,591.15
 590-67-0,1-methylcyclohexanol,701.3,0.266,686.0,0.28571,285.15,686.0

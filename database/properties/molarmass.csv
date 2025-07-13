@@ -115,9 +115,10 @@ ethene~|~ethylene~|~1-ethylene,74-85-1,28.05
 propene~|~propylene,115-07-1,42.08
 "1,2-butadiene",590-19-2,54.09
 "butadiene~|~1,3-butadiene",106-99-0,54.09
-butene~|~1-butene,106-98-9,56.11
-2-butene,590-18-1,56.11
-isobutene~|~isobutylene~|~2-methylpropene,115-11-7,56.11
+butene~|~1-butene,106-98-9,56.10632
+(z)-2-butene~|~cis-2-butene,590-18-1,56.10632
+2-butene,107-01-7,56.10632
+isobutene~|~isobutylene~|~2-methylpropene,115-11-7,56.10632
 "isoprene~|~2-methyl-1,3-butadiene",78-79-5,68.12
 "1,3-pentadiene~|~(z)-1,3-pentadiene~|~cis-1,3-pentadiene",1574-41-0,68.12
 "1,4-pentadiene",591-93-5,68.12
@@ -873,7 +874,7 @@ methylethanolamine~|~n-methylethanolamine~|~2-(methylamino)ethanol~|~2-(methylam
 "2,5-dimethylthiophene",638-02-8,112.19272
 "squalane~|~2,6,10,15,19,23-hexamethyltetracosane",111-01-3,422.81328
 "2,6,8-trimethyl-4-nonanone",123-18-2,184.31836
-"2,6-di-tert-butyl-p-cresol~|~2,6-di-tert.butyl-4-methylphenol~|~2,6-bis(1,1-dimethylethyl)-4-methylphenol",128-37-0,220.35046
+"butylhydroxytoluene~|~2,6-di-tert-butyl-p-cresol~|~2,6-di-tert.butyl-4-methylphenol~|~2,6-bis(1,1-dimethylethyl)-4-methylphenol",128-37-0,220.35046
 "2,6-diethylbenzeneamine",579-66-8,149.2328
 "2,6-diethylnaphthalene",59919-41-4,184.27684
 "2,6-dihydroxy-2,6-dimethyl-4-heptanone",3682-91-5,174.23742
@@ -967,7 +968,7 @@ isobutylamine~|~2-methylpropylamine~|~2-methyl-1-propanamine,78-81-9,73.13684
 allyl methacrylate~|~2-methyl-2-propenoicacid2-propenylester,96-05-9,126.1531
 2-methyl-2-propenoicacidhexadecylester,2495-27-4,310.51452
 2-methyl-3-pentanone~|~ethyl isopropyl ketone,565-69-5,100.15888
-"alpha-phellandrene~|~2-methyl-5-(1-methylethyl)-1,3-cyclohexadiene",99-83-2,136.23404
+"menthadiene~|~alpha-phellandrene~|~2-methyl-5-(1-methylethyl)-1,3-cyclohexadiene",99-83-2,136.23404
 propyleneimine~|~2-methylaziridine,75-55-8,57.0944
 o-tolualdehyde~|~2-methylbenzaldehyde,529-20-4,120.14852
 o-toluidine~|~2-methylaniline~|~o-methylaniline~|~2-methyl-benzeneamine,95-53-4,107.15306
@@ -1233,7 +1234,7 @@ r13~|~chlorotrifluoromethane,75-72-9,104.4589096
 chrysene,218-01-9,228.28788
 cinnamic acid~|~trans-cinnamic acid,140-10-3,148.15862
 "cis-1,2-dichloroethene~|~(z)-1,2-dichloroethene~|~cis-1,2-dichloroethylene",156-59-2,96.94328
-"cis-1,3-dichloropropene",10061-01-5,110.97
+"cis-1,3-dichloropropene~|~cis-1,3-dichloro-1-propene",10061-01-5,110.96986
 "cis-1,4-dimethylcyclohexane",624-29-3,112.21264
 "cis-1,8-terpin",565-48-0,172.265
 cis-1-propenylbenzene,766-90-5,118.1757
@@ -1627,7 +1628,7 @@ thp~|~tetrahydropyran,142-68-7,86.1323
 thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,89-83-8,150.218
 "trans-1,2-dichloroethene~|~trans-1,2-dichloroethylene",156-60-5,96.94328
 "1,2-dimethylcyclohexane~|~trans-1,2-dimethylcyclohexane",6876-23-9,112.21264
-"trans-1,3-dichloropropene~|~trans-1,3-dichloro-1-propene",10061-02-6,110.97
+"trans-1,3-dichloropropene~|~trans-1,3-dichloro-1-propene",10061-02-6,110.96986
 "trans-1,3-dimethylcyclohexane",2207-03-6,112.21264
 "trans-1,3-dimethylcyclopentane~|~(1r,3r)-1,3-dimethylcyclopentane",1759-58-6,98.18606
 "trans-1,4-diethylcyclohexane",13990-93-7,140.2658
@@ -1776,7 +1777,6 @@ isobutyric anhydride~|~2-methyl-propionic anhydride,97-72-3,158.19496
 2-ethylhexyl benzoate,5444-75-7,234.33
 2-mercaptobenzothiazole,149-30-4,167.2513
 2-methyl benzothiophene,1195-14-8,148.22482
-2-methyl-1-butene-3-yne,39842-01-8,163.23946
 2-methyl-2-aminobutane,594-39-8,87.16342
 2-methylbenzofuran~|~2-methylbenzo[b]furan,4265-25-2,132.15922
 2-methyltetrahydrofuran,96-47-9,86.1323
@@ -1817,7 +1817,6 @@ acrolein cyanohydrin,5809-59-6,69.06202
 air,132259-10-0,28.9647
 "allyl-tert-butylperoxide~|~1,1-dimethylethyl-2-propenylperoxide",39972-78-6,130.09937969036
 alpha-hydroxyisobutyramide,13027-88-8,103.11976
-alpha-phellandrene,4221-98-1,136.23404
 aminoacetonitrile,540-61-4,56.06656
 aminocapronitrile,27243-20-5,112.17
 ammonium chloride,12125-02-9,53.49146
@@ -1844,7 +1843,7 @@ chlorine trifluoride,7790-91-2,92.44821
 chloroacetyl chloride,79-04-9,112.94268
 chlorofluoromethane,593-70-4,68.477983
 "chlorotrifluoroethylene~|~1-chloro-1,2,2-trifluroethene",79-38-9,116.46961
-"cis-1,3-dichloropropene",542-75-6,110.96986
+"1,3-dichloropropene",542-75-6,110.96986
 "1,3-dimethylcyclopentane",2453-00-1,98.18606
 cis-crotonic acid,3724-65-0,86.09
 cis-crotonitrile,4786-20-3,67.04219916558
@@ -2148,7 +2147,7 @@ undecafluoropiperidine,836-77-1,283.0444348
 "n,n-dimethyl(2-pentylnonyl)amine~|~n,n-dimethyl-2-pentyl-1-nonanamine",99916-30-0,241.463
 "2,3-dimethyl-2-butanethiol",1639-01-6,118.238
 "benzonitrile, o-chloro-",873-32-5,137.566
-"2,6-bis(1,1-dimethylethyl)-4-methylphenol",,220.356
+"2,6-di-t-butyl-4-hydroxytoluene~|~3,5-di-tert-butyl-4-methylphenol",,220.356
 3-ethyl-2-methyl-1-pentene~|~2-methyl-3-ethyl-1-pentene,19780-66-6,112.216
 "r338ccb~|~1,1,1,2,2,3,3,4-octafluorobutane",662-35-1,202.0472253
 "2,4-dimethylthiazole",541-58-2,113.178
@@ -3571,7 +3570,6 @@ triphenylphosphine,603-35-0,262.091
 5-chloro-2-pentanone,5891-21-4,120.034
 2-tert-butyl-4-methylphenol,2409-55-4,164.12
 fluorosulfonic acid,7789-21-1,99.963
-2-butene,107-01-7,56.063
 molybdenum hexafluoride,7783-77-9,211.896
 tripropylaluminum,102-67-0,156.146
 "hexanoic acid 1,2,3-propanetriyl ester",621-70-5,386.267
