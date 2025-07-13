@@ -14,6 +14,16 @@
         pcp_system = PCPSAFT(substances)
         res = Clapeyron.tp_flash2(pcp_system, 25_000.0, 300.15, [1.0, 1.0, 1.0, 1.0], RRTPFlash())
         @test res.data.g ≈ -8.900576759774916 rtol = 1e-6
+
+        #https://julialang.zulipchat.com/#narrow/channel/265161-Clapeyron.2Ejl/topic/The.20meaning.20of.20subcooled.20liquid.20flash.20results
+        z_zulip1 = [0.25, 0.25, 0.25, 0.25]
+        p_zulip1 = 1e5
+        model_zulip1 = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
+        #bubble_temperature(model, p, z) # 282.2827723244425 K
+        res1 = Clapeyron.tp_flash2(model_zulip1, p_zulip1, 282.2, z_zulip1, RRTPFlash(equilibrium=:vle))
+        res2 = Clapeyron.tp_flash2(model_zulip1, p_zulip1, 282.3, z_zulip1, RRTPFlash(equilibrium=:vle))
+        @test all(isnan,res1.fractions)
+        @test res2.fractions[2] ≈ 0.00089161 rtol = 1e-6
     end
 
     if isdefined(Base,:get_extension)

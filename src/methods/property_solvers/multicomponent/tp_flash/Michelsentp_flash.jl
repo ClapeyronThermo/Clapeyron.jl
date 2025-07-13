@@ -114,9 +114,17 @@ end
 #hook to precalculate things with the activity model.
 __tpflash_cache_model(model::EoSModel,p,T,z,equilibrium) = model
 
-function __tpflash_gibbs_reduced(model,p,T,x,y,β,eq)
-    (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/Rgas(model)/T
+__tpflash_gibbs_reduced(model,p,T,x,y,β,eq) = __tpflash_gibbs_reduced(model,p,T,x,y,β,eq,nothing)
+
+function __tpflash_gibbs_reduced(model,p,T,x,y,β,eq,volumes)
+    if volumes == nothing
+        return (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/Rgas(model)/T
+    else
+        vx,vy = volumes
+        return (VT_gibbs_free_energy(model,vx,T,x,p)*(1-β)+VT_gibbs_free_energy(model,vy,T,y,p)*β)/Rgas(model)/T
+    end
 end
+
 
 function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
 
@@ -132,10 +140,15 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
     if isnan(β) && isapprox(x,z) && isapprox(y,z) && !isnan(v[1]) && !isnan(v[2])
         return FlashResult([x],[one(β)],[v[1]],FlashData(p,T))
     end
-    g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
+
+    volumes = [v[1],v[2]]
+    if has_a_res(model_cached)
+        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium,volumes)
+    else
+        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
+    end
 
     comps = [x,y]
-    volumes = [v[1],v[2]]
     βi = [1-β ,β]
     return FlashResult(comps,βi,volumes,FlashData(p,T,g))
 end
@@ -331,6 +344,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
         singlephase = false
+    elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
+        singlephase = true
     elseif any(isnan,view(K,in_equilibria))
         singlephase = true
         vn = zero(vx)/zero(vy)

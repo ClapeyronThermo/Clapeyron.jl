@@ -188,9 +188,12 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
         singlephase = false
+    elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
+        singlephase = true
     elseif any(isnan,view(K,in_equilibria)) || isnan(ψ)
         singlephase = true
     end
+
     if singlephase
         β = zero(β)/zero(β)
         x .= z

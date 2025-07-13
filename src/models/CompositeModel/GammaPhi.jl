@@ -319,7 +319,7 @@ function ∂lnϕ_cache(model::PTFlashWrapper{GammaPhi{<:Any,<:IdealModel}}, p, T
     return nothing
 end
 
-function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,eq)
+function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,eq,vols)
     pures = wrapper.model.fluid.pure
     model = wrapper.model
     fluidmodel = model.fluid.model
