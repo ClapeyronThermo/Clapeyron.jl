@@ -3,9 +3,9 @@ NRTL Assoc Parameters [csvtype = like],,,,,
 species,δA,δD,nA,nD,rI
 chloroform,0,0.145,0,1,2.87
 p-cresol,0,5.234,0,1,4.29
-cyclohexane,0,0,0,0,4.05
+cyclohexane,0,0,0,0,5.423
 dimethyl sulfoxide,3.387,0,2,0,2.83
-n-hexane,0,0,0,0,4.5
+n-hexane,0,0,0,0,5.45
 methanol,1,1,2,1,1.43
 n-octane,0,0,0,0,5.85
 water,1,1,2,2,0.76
