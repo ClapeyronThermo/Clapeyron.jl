@@ -73,7 +73,7 @@ function NRTLAssoc(components; puremodel=PR,
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = NRTLAssocParam(a,b,c,Mw,δA,δD,nA,nD,rI)
-    references = String["10.1002/aic.690140124"]
+    references = String["10.1002/aic.690140124", "10.1002/aic.17061"]
     model = NRTLAssoc(formatted_components,packagedparams,_puremodel,references)
     set_reference_state!(model,reference_state,verbose = verbose)
     return model
