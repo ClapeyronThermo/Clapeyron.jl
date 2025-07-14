@@ -1,11 +1,81 @@
 ﻿Clapeyron Database File,,,,,
 NRTL Assoc Parameters [csvtype = like],,,,,
-species,δA,δD,nA,nD,rI
-chloroform,0,0.145,0,1,2.87
-p-cresol,0,5.234,0,1,4.29
-cyclohexane,0,0,0,0,5.423
-dimethyl sulfoxide,3.387,0,2,0,2.83
-n-hexane,0,0,0,0,5.45
-methanol,1,1,2,1,1.43
-n-octane,0,0,0,0,5.85
-water,1,1,2,2,0.76
+species,δA,δD,nA,nD,rI,source
+acetic acid,0.500,3.717,1,1,2.20,10.1021/acs.iecr.9b02078
+acetone~|~propanone,0.623,0.000,2,0,2.57,10.1021/acs.iecr.9b02078
+acetonitrile,0.000,0.576,1,0,1.87,10.1021/acs.iecr.9b02078
+aniline,1.261,0.075,1,2,3.72,10.1021/acs.iecr.9b02078
+anisole,0.138,0.000,2,0,4.17,10.1021/acs.iecr.9b02078
+benzene,0.093,0.000,1,0,3.19,10.1021/acs.iecr.9b02078
+benzonitrile,0.735,0.000,1,0,4.21,10.1021/acs.iecr.9b02078
+1-butanol,1,1,2,1,3.45,10.1021/acs.iecr.9b02078
+2-butanol,1,1,2,1,3.60,10.1021/acs.iecr.9b02078
+t-butanol,1,1,2,1,6.42,10.1021/acs.iecr.9b02078
+n-butyl acetate,0.598,0.000,2,0,4.83,10.1021/acs.iecr.9b02078
+carbon tetrachloride,0,0,0,0,3.45,10.1021/acs.iecr.9b02078
+chlorobenzene,0,0,0,0,3.81,10.1021/acs.iecr.9b02078
+chcl3~|~chloroform~|~trichloromethane,0,0.145,0,1,2.87,10.1002/aic.17061
+cumene,0.336,0.000,1,0,5.27,10.1021/acs.iecr.9b02078
+cyclohexane,0,0,0,0,5.423,10.1002/aic.17061
+1-decanol,1,1,2,1,7.50,10.1021/acs.iecr.9b02078
+1,2-dichloroethane,0,0,0,0,2.88,10.1021/acs.iecr.9b02078
+1,1-dichloroethylene,0,0,0,0,2.73,10.1021/acs.iecr.9b02078
+1,2-dichloroethylene,0,0,0,0,2.73,10.1021/acs.iecr.9b02078
+dichloromethane,0.021,0.000,2,0,2.29,10.1021/acs.iecr.9b02078
+diethyl ether,0.348,0.000,2,0,3.39,10.1021/acs.iecr.9b02078
+diethylene glycol,0.847,1.000,6,2,4.00,10.1021/acs.iecr.9b02078
+1,2-dimethoxyethane,0.512,0.000,4,0,3.64,10.1021/acs.iecr.9b02078
+N,N-dimethylacetamide,1.947,0.000,3,0,3.76,10.1021/acs.iecr.9b02078
+N,N-dimethylformamide,1.278,0.000,3,0,3.09,10.1021/acs.iecr.9b02078
+dimethyl sulfoxide,3.387,0,2,0,2.83,10.1002/aic.17061
+1,4-dioxane,0.394,0.000,4,0,3.07,10.1021/acs.iecr.9b02078
+ethanol,1,1,2,1,2.11,10.1021/acs.iecr.9b02078
+2-ethoxyethanol,0.723,0.000,4,1,3.70,10.1021/acs.iecr.9b02078
+ethyl acetate,0.542,0.000,2,0,3.48,10.1021/acs.iecr.9b02078
+ethyl formate,0.557,0.000,2,0,2.82,10.1021/acs.iecr.9b02078
+ethylbenzene,0.132,0.000,1,0,4.60,10.1021/acs.iecr.9b02078
+ethylene glycol,1,1,4,2,2.41,10.1021/acs.iecr.9b02078
+ethylene glycol n-butyl ether,1,0.260,2,1,5.05,10.1002/aic.17061 # ToDo: Add second association site
+formamide,0.845,0.510,3,2,1.68,10.1021/acs.iecr.9b02078
+formic acid,7.938,0.536,1,1,1.50,10.1021/acs.iecr.9b02078
+n-heptane,0,0,0,0,5.17,10.1021/acs.iecr.9b02078
+hexane~|~n-hexane,0,0,0,0,5.45,10.1002/aic.17061
+1-hexene,0,0,0,0,4.27,10.1021/acs.iecr.9b02078
+1-hexanol,1,1,2,1,4.80,10.1021/acs.iecr.9b02078
+isobutyl acetate,0.729,0.000,2,0,4.83,10.1021/acs.iecr.9b02078
+isobutyl alcohol,1,1,2,1,3.45,10.1021/acs.iecr.9b02078
+isopropyl acetate,0.579,0.000,2,0,2.91,10.1021/acs.iecr.9b02078
+isopropyl alcohol,1,1,2,1,2.91,10.1021/acs.iecr.9b02078
+methanol,1,1,2,1,1.43,10.1002/aic.17061
+2-methoxyethanol,0.759,0.000,4,1,3.02,10.1021/acs.iecr.9b02078
+N-methyl-2-pyrrolidone,1.581,0.000,3,0,3.98,10.1021/acs.iecr.9b02078
+methyl acetate,0.439,0.000,2,0,2.80,10.1021/acs.iecr.9b02078
+methyl butyl ketone,0.700,0.000,2,0,4.60,10.1021/acs.iecr.9b02078
+methyl ethyl ketone,0.519,0.000,2,0,3.25,10.1021/acs.iecr.9b02078
+N-methylformamide,1.067,0.493,3,1,2.40,10.1021/acs.iecr.9b02078
+methyl isobutyl ketone,0.689,0.000,2,0,4.60,10.1021/acs.iecr.9b02078
+methyl tert-butyl ether,0.450,0.000,2,0,4.07,10.1021/acs.iecr.9b02078
+3-methyl-1-butanol,1,1,2,1,4.27,10.1021/acs.iecr.9b02078
+methylcyclohexane,0,0,0,0,4.64,10.1021/acs.iecr.9b02078
+nitromethane,0,0.049,5,0,2.01,10.1021/acs.iecr.9b02078
+i-octane,0,0,0,0,5.85,10.1021/acs.iecr.9b02078
+n-octane,0,0,0,0,5.85,10.1002/aic.17061
+1-octanol,1,1,2,1,6.15,10.1021/acs.iecr.9b02078
+n-pentane,0,0,0,0,3.83,10.1021/acs.iecr.9b02078
+1-pentanol,1,1,2,1,4.13,10.1021/acs.iecr.9b02078
+p-cresol,0,5.234,0,1,4.29,10.1002/aic.17061
+1-propanol,1,1,2,1,2.78,10.1021/acs.iecr.9b02078
+n-propyl acetate,0.468,0.000,2,0,4.15,10.1021/acs.iecr.9b02078
+propylene glycol,1,1,4,2,3.08,10.1021/acs.iecr.9b02078
+pyridine,3.794,0.000,1,0,3.00,10.1021/acs.iecr.9b02078
+sulfolane,0.437,0.000,4,0,4.04,10.1021/acs.iecr.9b02078
+tetraethylene glycol,0.810,1,10,2,7.19,10.1021/acs.iecr.9b02078
+tetrahydrofuran,0.719,0.000,2,0,2.87,10.1021/acs.iecr.9b02078
+1,2,3,4-tetrahydronaphthalene,0.134,0.000,1,0,5.34,10.1021/acs.iecr.9b02078
+toluene,0.100,0.000,1,0,3.92,10.1021/acs.iecr.9b02078
+1,1,1-trichloroethane,0.007,0.000,3,0,3.54,10.1021/acs.iecr.9b02078
+trichloroethylene,0.089,0.000,1,0,3.27,10.1021/acs.iecr.9b02078
+triethylamine,5.883,0.000,1,0,5.01,10.1021/acs.iecr.9b02078
+triethylene glycol,0.508,1,8,2,5.59,10.1021/acs.iecr.9b02078
+water,1,1,2,2,0.76,10.1002/aic.17061
+m-xylene,0.201,0,1,0,4.66,10.1021/acs.iecr.9b02078
