@@ -382,4 +382,4 @@ export bubble_pressure,    dew_pressure,    LLE_pressure,    azeotrope_pressure,
 export bubble_temperature, dew_temperature, LLE_temperature, azeotrope_temperature, VLLE_temperature
 export crit_mix, UCEP_mix, UCST_pressure, UCST_temperature, UCST_mix
 export krichevskii_parameter
-export sle_solubility, eutectic_point, slle_solubility
+export sle_solubility, sle_solubility_T, eutectic_point, slle_solubility
