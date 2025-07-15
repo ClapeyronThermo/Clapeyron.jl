@@ -18,13 +18,13 @@ In particular, `widom_pressure` calculates the widom point at a specified temper
 
 # Arguments
 - `model`: Thermodynamic model used for calculations
-- `T`: Temperature at which to calculate the Widom pressure
+- `T`: Temperature at which to calculate the Widom pressure `[K]`
 - `p0`: Optional initial pressure guess. If not provided, a default value will be used
 - `v0`: Optional initial volume guess. If not provided, a default value will be used
 
 # Returns
-- `pw`: Widom pressure at the specified temperature
-- `vw`: Volume at the Widom pressure and specified temperature
+- `pw`: Widom pressure at the specified temperature `[Pa]`
+- `vw`: Volume at the Widom pressure and specified temperature `[m³]`
 
 # Example
 ```julia
@@ -71,13 +71,13 @@ In particular, `widom_temperature` calculates the widom point at a specified tem
 
 # Arguments
 - `model`: Thermodynamic model used for calculations
-- `p`: Pressure at which to calculate the Widom temperature
+- `p`: Pressure at which to calculate the Widom temperature `[Pa]`
 - `T0`: Optional initial temperature guess. If not provided, a default value will be used
 - `v0`: Optional initial volume guess. If not provided, a default value will be used
 
 # Returns
-- `Tw`: Widom temperature at the specified pressure
-- `vw`: Volume at the Widom temperature and specified pressure
+- `Tw`: Widom temperature at the specified pressure `[K]`
+- `vw`: Volume at the Widom temperature and specified pressure `[m³]`
 
 # Example
 ```julia
@@ -139,13 +139,13 @@ Widom lines which represent maxima of Cp along isobars.
 
 # Arguments
 - `model`: Thermodynamic model used for calculations
-- `T`: Temperature at which to calculate the CIIC pressure
+- `T`: Temperature at which to calculate the CIIC pressure `[K]`
 - `p0`: Optional initial pressure guess. If not provided, a default value will be used
 - `v0`: Optional initial volume guess. If not provided, a default value will be used
 
 # Returns
-- `p_ciic`: Pressure at the CIIC point for the specified temperature
-- `v_ciic`: Volume at the CIIC point
+- `p_ciic`: Pressure at the CIIC point for the specified temperature `[Pa]`
+- `v_ciic`: Volume at the CIIC point `[m³]`
 
 # Example
 ```julia
@@ -197,13 +197,13 @@ Widom lines which represent maxima of Cp along isobars.
 
 # Arguments
 - `model`: Thermodynamic model used for calculations
-- `p`: Pressure at which to calculate the CIIC temperature
+- `p`: Pressure at which to calculate the CIIC temperature `[Pa]`
 - `T0`: Optional initial temperature guess. If not provided, a default value will be used
 - `v0`: Optional initial volume guess. If not provided, a default value will be used
 
 # Returns
-- `T_ciic`: Temperature at the CIIC point for the specified pressure
-- `v_ciic`: Volume at the CIIC point
+- `T_ciic`: Temperature at the CIIC point for the specified pressure `[K]`
+- `v_ciic`: Volume at the CIIC point `[m³]`
 
 # Example
 ```julia

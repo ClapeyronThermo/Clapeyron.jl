@@ -5,7 +5,7 @@
 
 """
     volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-Main routine to calculate a volume, given a pressure, temperature, composition and intitial volume guess. each step is taken by locally aproximating the EoS as an isothermal compressibility process.
+Main routine to calculate a volume, given a pressure, temperature, composition and initial volume guess. each step is taken by locally aproximating the EoS as an isothermal compressibility process.
 The new volume is calculated by the following recurrence formula:
 ```julia
 v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
@@ -195,7 +195,7 @@ Z(v) ≈ 1 + B(T)/v
 ```
 where `Z` is the compressibility factor and `B` is the second virial coefficient.
 If `B>0`, (over the inversion temperature) returns `NaN`. If the solution to the problem is complex (`Z = 1 + B/v` implies solving a quadratic polynomial), returns `-2*B`.
-If you pass an `EoSModel` as the first argument, `B` will be calculated from the EoS at the input `T`. You can provide your own second virial coefficient instead of a model.
+If you pass an `EoSModel` as the first argument, `B` will be calculated from the EoS at the input temperature `T`. You can provide your own second virial coefficient instead of a model.
 """
 function volume_virial end
 

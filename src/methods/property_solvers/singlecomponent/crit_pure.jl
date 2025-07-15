@@ -1,7 +1,7 @@
 """
     crit_pure(model::EoSModel,x0=nothing)
 Calculates the critical point of a single component modelled by `model`. 
-Returns `(Tc, pc, Vc)` where `Tc` is the critical temperature (in K), `pc` is the critical pressure (in Pa) and `Vc` is the critical volume (in  m³)
+Returns `(Tc, pc, Vc)` where `Tc` is the critical temperature (in `[K]`), `pc` is the critical pressure (in `[Pa]`) and `Vc` is the critical volume (in  `[m³]`)
 """
 
 function crit_pure(model::EoSModel)
