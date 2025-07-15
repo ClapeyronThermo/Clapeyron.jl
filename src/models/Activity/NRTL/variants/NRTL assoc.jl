@@ -3,7 +3,7 @@ struct NRTLAssocParam <: EoSParam
     b::PairParam{Float64}
     c::PairParam{Float64}
     Mw::SingleParam{Float64}
-    δA::SingleParam{Float64} # ToDo: Add option to haev multiple types of association site on the same component
+    δA::SingleParam{Float64} # ToDo: Add option to have multiple types of association site on the same component
     δD::SingleParam{Float64}
     nA::SingleParam{Float64}
     nD::SingleParam{Float64}
@@ -144,7 +144,7 @@ function excess_g_comb(model::NRTLAssocModel,p,T,z)
     ϕ_I = rI ^ (2/3) .* x ./ sum(rI ^ (2/3) .* x)
     lnγ_comb = one(Tz) - ϕ_I./x - ln(ϕ_I./x)
 
-    return n * R * T * lnγ_comb
+    return n * R * T * sum(lnγ_comb)
 end
 
 function excess_g_res(model::NRTLAssocModel,p,T,z)
