@@ -3,7 +3,7 @@ struct NRTLAssocParam <: EoSParam
     b::PairParam{Float64}
     c::PairParam{Float64}
     Mw::SingleParam{Float64}
-    δA::SingleParam{Float64}
+    δA::SingleParam{Float64} # ToDo: Add option to have multiple types of association site on the same component
     δD::SingleParam{Float64}
     nA::SingleParam{Float64}
     nD::SingleParam{Float64}
@@ -73,6 +73,7 @@ function NRTLAssoc(components; puremodel=PR,
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = NRTLAssocParam(a,b,c,Mw,δA,δD,nA,nD,rI)
+    #                    Main NRTL article       Main Association NRTL article 
     references = String["10.1002/aic.690140124", "10.1002/aic.17061"]
     model = NRTLAssoc(formatted_components,packagedparams,_puremodel,references)
     set_reference_state!(model,reference_state,verbose = verbose)
@@ -131,8 +132,22 @@ function excess_g_assoc(model::NRTLAssocModel, p, T, z)
     return n * R * T * lnγ_assoc
 end
 
+function excess_g_comb(model::NRTLAssocModel,p,T,z)
+    Tz = Base.promote_eltype(T, z)
+    R = R̄
+    x = z ./ sum(z)
+    comps = @comps
+    n = sum(z)
+
+    rI = model.params.rI.values
+
+    ϕ_I = rI ^ (2/3) .* x ./ sum(rI ^ (2/3) .* x)
+    lnγ_comb = one(Tz) - ϕ_I./x - ln(ϕ_I./x)
+
+    return n * R * T * sum(lnγ_comb)
+end
+
 function excess_g_res(model::NRTLAssocModel,p,T,z)
-    g_assoc = excess_g_assoc(model, p, T, z)
     a = model.params.a.values
     b  = model.params.b.values
     c  = model.params.c.values
@@ -155,7 +170,15 @@ function excess_g_res(model::NRTLAssocModel,p,T,z)
         end
         res += xi*ΣτGx/ΣGx
     end
-    return n*res*R̄*T + g_assoc
+    return n*res*R̄*T
+
 end
 
-excess_gibbs_free_energy(model::NRTLAssocModel,p,T,z) = excess_g_res(model,p,T,z)
+function excess_gibbs_free_energy(model::NRTLAssocModel,p,T,z) 
+
+    g_assoc = excess_g_assoc(model, p, T, z)
+    g_comb = excess_g_comb(model, p, T, z)
+    g_res = excess_g_res(model,p,T,z)
+    return g_comb + g_res + g_assoc 
+
+end    
