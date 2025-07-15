@@ -26,7 +26,7 @@ end
 """
     psub,vs,vv = sublimation_pressure(model::CompositeModel,T;v0=x0_sublimation_pressure(model,T))
 
-Calculates the sublimation pressure of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure.
+Calculates the sublimation pressure `psub` of a `CompositeModel` containing a solid and fluid phase EoS, at a specified temperature `T`.
 You can pass a tuple of initial values for the volumes `(vs0,vv0)`.
 
 returns:
@@ -128,9 +128,9 @@ function ChemPotSublimationTemperature(;v0 = nothing,
 end
 
 """
-    pm,vs,vl = sublimation_temperature(model::CompositeModel,T;v0=x0_sublimation_pressure(model,T))
+    pm,vs,vl = sublimation_temperature(model::CompositeModel,p;v0=x0_sublimation_pressure(model,T))
 
-Calculates the sublimation temperature of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure.
+Calculates the sublimation temperature of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure `p`.
 You can pass a tuple of initial values for the volumes `(vs0,vl0)`.
 
 returns:

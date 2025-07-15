@@ -26,7 +26,7 @@ end
 """
     pm,vs,vl = melting_pressure(model::CompositeModel,T;v0=x0_melting_pressure(model,T))
 
-Calculates the melting pressure of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure.
+Calculates the melting pressure of a `CompositeModel` containing a solid and fluid phase EoS, at a specified temperature `T`.
 You can pass a tuple of initial values for the volumes `(vs0,vl0)`.
 
 returns:
@@ -125,9 +125,9 @@ function ChemPotMeltingTemperature(;v0 = nothing,
 end
 
 """
-    pm,vs,vl = melting_temperature(model::CompositeModel,T;v0=x0_melting_pressure(model,T))
+    pm,vs,vl = melting_temperature(model::CompositeModel,p;v0=x0_melting_pressure(model,T))
 
-Calculates the melting temperature of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure.
+Calculates the melting temperature of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure `p`.
 You can pass a tuple of initial values for the volumes `(vs0,vl0)`.
 
 returns:
