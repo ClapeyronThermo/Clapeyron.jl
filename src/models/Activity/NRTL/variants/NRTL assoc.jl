@@ -148,8 +148,6 @@ function excess_g_comb(model::NRTLAssocModel,p,T,z)
 end
 
 function excess_g_res(model::NRTLAssocModel,p,T,z)
-    g_assoc = excess_g_assoc(model, p, T, z)
-    g_comb = excess_g_comb(model, p, T, z)
     a = model.params.a.values
     b  = model.params.b.values
     c  = model.params.c.values
@@ -172,7 +170,15 @@ function excess_g_res(model::NRTLAssocModel,p,T,z)
         end
         res += xi*ΣτGx/ΣGx
     end
-    return n*res*R̄*T + g_assoc + g_comb
+    return n*res*R̄*T
+
 end
 
-excess_gibbs_free_energy(model::NRTLAssocModel,p,T,z) = excess_g_res(model,p,T,z)
+function excess_gibbs_free_energy(model::NRTLAssocModel,p,T,z) 
+
+    g_assoc = excess_g_assoc(model, p, T, z)
+    g_comb = excess_g_comb(model, p, T, z)
+    g_res = excess_g_res(model,p,T,z)
+    return g_comb + g_res + g_assoc 
+
+end    
