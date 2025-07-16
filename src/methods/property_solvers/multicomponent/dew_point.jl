@@ -80,13 +80,13 @@ function dew_pressure_init(model,T,y,vol0,p0,x0,condensables)
 end
 
 """
-    dew_pressure(model::EoSModel, T, y,method = ChemPotDewPressure())
+    dew_pressure(model::EoSModel, T, y, method = ChemPotDewPressure())
 
 Calculates the dew pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Dew Pressure `[Pa]`
-- liquid volume at Dew Point `[m³]`
-- vapour volume at Dew Point `[m³]`
+- Liquid volume at Dew Point `[m³]`
+- Vapour volume at Dew Point `[m³]`
 - Liquid composition at Dew Point
 
 By default, uses equality of chemical potentials, via [`ChemPotDewPressure`](@ref)
@@ -226,11 +226,11 @@ end
 """
     dew_temperature(model::EoSModel, p, y, method = ChemPotDewTemperature())
 
-calculates the dew temperature and properties at a given pressure `p`.
+Calculates the dew temperature and properties at a given pressure `p`.
 Returns a tuple, containing:
 - Dew Temperature `[K]`
-- liquid volume at Dew Point `[m³]`
-- vapour volume at Dew Point `[m³]`
+- Liquid volume at Dew Point `[m³]`
+- Vapour volume at Dew Point `[m³]`
 - Liquid composition at Dew Point
 
 By default, uses equality of chemical potentials, via [`ChemPotDewTemperature`](@ref)

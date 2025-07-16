@@ -15,7 +15,7 @@ end
 """
     VLLE_pressure(model::EoSModel, T; v0 = x0_LLE_pressure(model,T))
 
-calculates the Vapor-Liquid-Liquid equilibrium pressure and properties of a binary mixture at a given temperature `T`.
+Calculates the Vapor-Liquid-Liquid equilibrium pressure and properties of a binary mixture at a given temperature `T`.
 
 Returns a tuple, containing:
 - VLLE Pressure `[Pa]`

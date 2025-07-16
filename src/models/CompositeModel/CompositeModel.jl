@@ -19,19 +19,19 @@ end
     reference_state = nothing,
     verbose = false)
 
-Model that holds representations of fluid (and/or solid) that aren't evaluated using the helmholtz energy-based approach used in the rest of the library.
+Model that holds representations of fluid (and/or solid) that aren't evaluated using the Helmholtz energy-based approach used in the rest of the library.
 
 It contains a "fluid" and a "solid" field. there are three available representations for a fluid:
-- a helmholtz-based EoS
-- Fluid Correlations, consisting in a gas model, a correlation for obtaining the saturation pressure, and a liquid model. both gas and liquid models can optionally be helmholtz models too, but correlations for saturated liquid and vapour are also allowed.
-- Activity models, consisting of a liquid activity and a model for the fluid. the fluid model can be a helmholtz-based model, or another `CompositeModel` containing correlations.
+- A Helmholtz-based EoS.
+- Fluid Correlations, consisting in a gas model, a correlation for obtaining the saturation pressure, and a liquid model. Both gas and liquid models can optionally be Helmholtz models too, but correlations for saturated liquid and vapour are also allowed.
+- Activity models, consisting of a liquid activity and a model for the fluid. The fluid model can be a Helmholtz-based model, or another `CompositeModel` containing correlations.
 
-When the solid field is specified, some properties (like `volume`) start taking in account the solid phase in their calculations. optionally, there are other models that provide specific correlations for SLE equilibria (like `SolidHfus`)
+When the solid field is specified, some properties (like `volume`) start taking in account the solid phase in their calculations. Optionally, there are other models that provide specific correlations for SLE equilibria (like `SolidHfus`)
 
 ## Examples:
 - Saturation pressure calculated using Correlations:
 ```julia-repl
-#rackett correlation for liquids, DIPPR 101 correlation for the saturation pressure, ideal gas for the vapour volume
+#Rackett correlation for liquids, DIPPR 101 correlation for the saturation pressure, ideal gas for the vapour volume.
 julia> model = CompositeModel(["water"],liquid = RackettLiquid,saturation = DIPPR101Sat,gas = BasicIdeal)
 Composite Model (Correlation-Based) with 1 component:
  Gas Model: BasicIdeal()
@@ -56,7 +56,7 @@ julia> bubble_pressure(model,300.15,[0.9,0.1])
 
 - Bubble Pressure, using an Activity Model along with another model for fluid properties:
 ```julia-repl
-#using a helmholtz-based fluid
+#using a Helmholtz-based fluid
 julia> model = CompositeModel(["octane","heptane"],liquid = UNIFAC,fluid = PR)
 Composite Model (γ-ϕ) with 2 components:
  Activity Model: UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}("octane", "heptane")
@@ -301,9 +301,9 @@ function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
             return nan
         end
     else #phase = :unknown
-        #there is a helmholtz energy model in fluid and solid phases.
+        #there is a Helmholtz free energy model in fluid and solid phases.
         #this requires checking evaluating all volumes and checking
-        #what value is the correct one via gibbs energies.
+        #what value is the correct one via Gibbs energies.
         if !(model.fluid isa GammaPhi) && !(model.fluid isa FluidCorrelation) && !(model.solid isa SolidCorrelation)
             return default_volume_impl(model,p,T,z,phase,threaded,vol0)
         else
@@ -396,16 +396,16 @@ function dew_temperature(model::CompositeModel, T, x, method::DewPointMethod)
     return dew_temperature(model.fluid, T, x, method)
 end
 
-#Michelsen TPFlash and rachford rice tpflash support
+#Michelsen TPFlash and Rachford-Rice TPFlash support
 function init_preferred_method(method::typeof(tp_flash),model::CompositeModel{<:Any,Nothing},kwargs)
     init_preferred_method(method,model.fluid,kwargs)
 end
 
 __tpflash_cache_model(model::CompositeModel{<:Any,Nothing},p,T,z,equilibrium) = __tpflash_cache_model(model.fluid,p,T,z,equilibrium)
 
-function gibbs_solvation(model::CompositeModel,T)
-    binary_component_check(gibbs_solvation,model)
-    return gibbs_solvation(model.fluid,T)
+function Gibbs_solvation(model::CompositeModel,T)
+    binary_component_check(Gibbs_solvation,model)
+    return Gibbs_solvation(model.fluid,T)
 end
 
 export CompositeModel
