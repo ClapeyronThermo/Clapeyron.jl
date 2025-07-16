@@ -4,7 +4,7 @@
 
 Abstract type for `bubble_pressure` and `bubble_temperature` routines.
 
-Should at least support passing the `y0` keyword, containing an initial guess for vapour phase, if available.
+Should at least support passing the `y0` keyword, containing an initial guess value for vapour phase, if available.
 
 """
 abstract type BubblePointMethod <: ThermodynamicMethod end

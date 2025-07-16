@@ -233,7 +233,7 @@ end
 
 Default units: `[J]`
 
-Calculates the gibbs free energy, defined as:
+Calculates the Gibbs free energy, defined as:
 
 ```julia
 G = A + p*V
@@ -250,9 +250,9 @@ end
     mass_gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     mass_gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/kg]`
+Default units: `[J kg⁻¹]`
 
-Calculates the gibbs free energy, defined as:
+Calculates the Gibbs free energy, defined as:
 
 ```julia
 G = (A + p*V)/Mr
@@ -274,7 +274,7 @@ end
 
 Default units: `[J]`
 
-Calculates the residual gibbs free energy, defined as:
+Calculates the residual Gibbs free energy, defined as:
 
 ```julia
 G = Ar - V*∂Ar/∂V
@@ -293,7 +293,7 @@ end
 
 Default units: `[J]`
 
-Calculates the helmholtz free energy, defined as:
+Calculates the Helmholtz free energy, defined as:
 
 ```julia
 A = eos(model,V(p),T,z)
@@ -312,7 +312,7 @@ end
 
 Default units: `[J/kg]`
 
-Calculates the helmholtz free energy, defined as:
+Calculates the Helmholtz free energy, defined as:
 
 ```julia
 A = eos(model,V(p),T,z)/Mr
@@ -334,7 +334,7 @@ end
 
 Default units: `[J]`
 
-Calculates the residual helmholtz free energy, defined as:
+Calculates the residual Helmholtz free energy, defined as:
 
 ```julia
 A = eos_res(model,V(p),T,z)
@@ -910,7 +910,7 @@ end
 """
     gibbs_solvation(model::EoSModel, T; threaded=true, vol0=(nothing,nothing))
 
-Calculates the solvation gibbs free energy as:
+Calculates the solvation Gibbs free energy as:
 
 ```julia
 g_solv = -R̄*T*log(K)
