@@ -141,7 +141,6 @@ Calculates the internal energy, defined as:
 ```julia
 U = (A - T * ∂A/∂T)/Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_internal_energy(model,V,T,z)`.
@@ -198,7 +197,6 @@ Calculates the enthalpy, defined as:
 ```julia
 H = (A - T * ∂A/∂T - V * ∂A/∂V)/Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_enthalpy(model,V,T,z)`.
@@ -257,7 +255,6 @@ Calculates the Gibbs free energy, defined as:
 ```julia
 G = (A + p*V)/Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_gibbs_free_energy(model,V,T,z)`.
@@ -317,7 +314,6 @@ Calculates the Helmholtz free energy, defined as:
 ```julia
 A = eos(model,V(p),T,z)/Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_helmholtz_free_energy(model,V,T,z)`.
@@ -385,7 +381,6 @@ Calculates the isochoric heat capacity, defined as:
 ```julia
 Cv = -T * ∂²A/∂T² / Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_isochoric_heat_capacity(model,V,T,z)`.
@@ -432,7 +427,6 @@ Calculates the isobaric heat capacity, defined as:
 ```julia
 Cp = (-T*(∂²A/∂T² - (∂²A/∂V∂T)^2 / ∂²A/∂V²))/Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_isobaric_heat_capacity(model,V,T,z)`.
@@ -471,7 +465,7 @@ end
 """
     isothermal_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[Pa⁻¹]`
+Default units: `[Pa⁻¹]`
 
 Calculates the isothermal compressibility, defined as:
 
@@ -490,7 +484,7 @@ end
 """
     isentropic_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[Pa⁻¹]`
+Default units: `[Pa⁻¹]`
 
 Calculates the isentropic compressibility, defined as:
 
@@ -513,7 +507,7 @@ end
 """
     speed_of_sound(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[m s⁻¹]`
+Default units: `[m s⁻¹]`
 
 Calculates the speed of sound, defined as:
 
@@ -538,7 +532,7 @@ end
 """
     isobaric_expansivity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[K⁻¹]`
+Default units: `[K⁻¹]`
 
 Calculates the isobaric expansivity, defined as:
 
@@ -557,7 +551,7 @@ end
 """
     joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[K Pa⁻¹]`
+Default units: `[K Pa⁻¹]`
 
 Calculates the Joule–Thomson coefficient, defined as:
 
@@ -582,9 +576,9 @@ end
 
 
 Returns the phase of a fluid at the conditions specified by `V`, `T` and `z`.
-Uses the phase identification parameter criteria from `Clapeyron.pip`
+Uses the phase identification parameter criteria from `Clapeyron.pip`.
 
-returns `:liquid` if the phase is liquid (or liquid-like), `:vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed.
+Returns `:liquid` if the phase is liquid (or liquid-like), `:vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_enthalpy(model,V,T,z)`.
 
@@ -637,6 +631,7 @@ end
     activity_coefficient(model::EoSModel,p,T,z=SA[1.0];reference = :pure, phase=:unknown, threaded=true, vol0=nothing)
 
 Calculates the activity, defined as:
+
 ```julia
 log(γ*z) = (μ_mixt - μ_ref) / R̄ / T
 ```
@@ -674,6 +669,7 @@ end
     activity(model::EoSModel,p,T,z=SA[1.0];reference = :pure, phase=:unknown, threaded=true, vol0=nothing)
 
 Calculates the activity, defined as:
+
 ```julia
 log(a) = (μ_mixt - μ_ref) / R̄ / T
 ```
@@ -729,6 +725,7 @@ end
     aqueous_activity(model::EoSModel,p,T,z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
 
 Calculates the activity with the reference being infinite dilution in water, defined as:
+
 ```julia
 log(a) = (μ_mixt - μ_inf) / R̄ / T
 ```
@@ -818,7 +815,7 @@ end
 """
     molar_density(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[mol m⁻³]`
+Default units: `[mol m⁻³]`
 
 Calculates the molar density, defined as:
 
@@ -838,7 +835,7 @@ end
 """
     mass_density(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true)
 
-default units: `[kg m⁻³]`
+Default units: `[kg m⁻³]`
 
 Calculates the mass density, defined as:
 

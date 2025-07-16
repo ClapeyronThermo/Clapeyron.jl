@@ -1,7 +1,7 @@
 """
     pressure(model::EoSModel, V, T, z=SA[1.])
 
-default units: `[Pa]`
+Default units: `[Pa]`
 
 Returns the pressure of the model at a given volume `V`, temperature `T` and composition `z`, defined as:
 
@@ -236,7 +236,7 @@ function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
         ∂²A∂V∂T = d²A[1,2]
         ∂²A∂V² = d²A[1,1]
         ∂²A∂T² = d²A[2,2]
-        return -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))^-1
+        return -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))⁻¹
     end
 end
 
@@ -339,7 +339,7 @@ function equivol_cross_second_virial(model,T,p_exp = 200000.0)
     if isnan(v1+v2)
         return v1 + v2
     end
-    #the test was done on equal volume chambers (300 cc), but mathematically it doesn't matter
+    #the test was done on equal volume chambers (300 cm³), but mathematically it doesn't matter
     v_test = 1.0
     z1 = v_test/v1
     z2 = v_test/v2
@@ -356,7 +356,7 @@ end
 
 Phase identification parameter `Π`, as described in _1_. If `Π > 1`, then the phase is clasified as a liquid or a liquid-like vapor, being a vapor or vapor-like liquid otherwise.
 
-This identification parameter fails at temperatures and pressures well aboVe the critical point.
+This identification parameter fails at temperatures and pressures well above the critical point.
 
 Calculated as:
 ```
@@ -364,7 +364,6 @@ Calculated as:
 ```
 ## References
 1.  G. Venkatarathnama, L.R. Oellrich, Identification of the phase of a fluid using partial derivatives of pressure, volume,and temperature without reference to saturation properties: Applications in phase equilibria calculations, Fluid Phase Equilibria 301 (2011) 225–233
-
 """
 function pip(model::EoSModel, V, T, z=SA[1.0])
     Π,∂p∂V = _pip(model,V,T,z)
