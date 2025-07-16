@@ -24,7 +24,7 @@ end
 """
     entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/K]`
+Default units: `[J K⁻¹]`
 
 Calculates entropy, defined as:
 
@@ -62,7 +62,7 @@ end
 """
     entropy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/K]`
+Default units: `[J K⁻¹]`
 
 Calculates residual entropy, defined as:
 
@@ -80,7 +80,7 @@ end
 """
     chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/mol]`
+Default units: `[J mol⁻¹]`
 
 Calculates the chemical potential, defined as:
 
@@ -98,7 +98,7 @@ end
 """
     chemical_potential_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/mol]`
+Default units: `[J mol⁻¹]`
 
 Calculates the residual chemical potential, defined as:
 
@@ -134,7 +134,7 @@ end
 """
     mass_internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/kg]`
+Default units: `[J kg⁻¹]`
 
 Calculates the internal energy, defined as:
 
@@ -476,7 +476,7 @@ default units: `[Pa⁻¹]`
 Calculates the isothermal compressibility, defined as:
 
 ```julia
-κT = -(V*∂p/∂V)^-1
+κₜ = -(V*∂p/∂V)⁻¹
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isothermal_compressibility(model,V,T,z)`.
@@ -495,7 +495,7 @@ default units: `[Pa⁻¹]`
 Calculates the isentropic compressibility, defined as:
 
 ```julia
-κS = (V*( ∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T² ))^-1
+κₛ = (V*( ∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T² ))⁻¹
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isentropic_compressibility(model,V,T,z)`.
@@ -559,10 +559,10 @@ end
 
 default units: `[K Pa⁻¹]`
 
-Calculates the joule thomson coefficient, defined as:
+Calculates the Joule–Thomson coefficient, defined as:
 
 ```julia
-μⱼₜ = -(∂²A/∂V∂T - ∂²A/∂V² * ((T*∂²A/∂T² + V*∂²A/∂V∂T) / (T*∂²A/∂V∂T + V*∂²A/∂V²)))^-1
+μⱼₜ = -(∂²A/∂V∂T - ∂²A/∂V² * ((T*∂²A/∂T² + V*∂²A/∂V∂T) / (T*∂²A/∂V∂T + V*∂²A/∂V²)))⁻¹
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_joule_thomson_coefficient(model,V,T,z)`.
@@ -935,7 +935,7 @@ end
 """
     partial_property(model::EoSModel, p, T, z, property::X; phase=:unknown, threaded=true, vol0=nothing) where {X} is any extensive property.
 
-Calculate the partial molar property of a mixture at specified temperature, pressure, mol amounts, and extensive property of interest.
+Calculates the partial molar property of a mixture at specified temperature, pressure, mol amounts, and extensive property of interest.
 The equality `sum(z .* partial_property(model,p,T,z,property) - property(model,p,T,z))` should hold.
     
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
@@ -1004,7 +1004,7 @@ end #module
 """
     supports_lever_rule(::f)::Bool
 
-returns `true` if the input property function can be used to describe multiphase mixtures using the lever rule:
+Returns `true` if the input property function can be used to describe multiphase mixtures using the lever rule:
 ```
 f(a)/f(b) = (f - f(b))/f(a) - f(b))
 ```

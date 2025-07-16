@@ -3,18 +3,19 @@
 
 default units: `[Pa]`
 
-Returns the pressure of the model at a given volume, temperature and composition, defined as:
+Returns the pressure of the model at a given volume `V`, temperature `T` and composition `z`, defined as:
 
 ```julia
 p = -∂A/∂V
 ```
-
+where A is the Helmholtz free energy `[J]`,
+V is the volume `[m³]`
 """
 function pressure(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂V(model,V,T,z)
 end
 
-function temperature end
+function temperature end # This is a bit weird, I don't know if this is desired or it is just a typo.
 
 VT_pressure(model, V, T, z=SA[1.]) = pressure(model,V,T,z)
 VT_temperature(model, V, T, z=SA[1.]) = T
@@ -250,14 +251,14 @@ end
 """
     second_virial_coefficient(model::EoSModel, T, z=SA[1.])
 
-Default units: `[m^3]`
+Default units: `[m³]`
 
 Calculates the second virial coefficient `B`, defined as:
 
 ```julia
 B = lim(ρ->0)[∂Aᵣ/∂ρ]
 ```
-where `Aᵣ` is the residual helmholtz energy.
+where `Aᵣ` is the residual Helmholtz free energy.
 """
 function second_virial_coefficient(model::EoSModel, T, z=SA[1.])
    return second_virial_coefficient_impl(model,T,z)
@@ -277,7 +278,7 @@ end
 """
     cross_second_virial(model,T,z)
 
-Default units: `[m^3]`
+Default units: `[m³]`
 
 Calculates the second cross virial coefficient (B₁₂) of a binary mixture, using the definition:
 
@@ -288,7 +289,7 @@ B₁₂ = (B̄ - x₁^2*B₁₁ - x₂^2*B₂₂)/2x₁x₂
 
 
 !!! info "Composition-dependent property"
-    The second cross virial coefficient calculated from a equation of state can present a dependency on composition [1], but normally, experiments for obtaining the second virial coefficient are made by mixing the same volume of two gases. you can calculate B12 in this way by using (Clapeyron.equivol_cross_second_virial)[@ref]
+    The second cross virial coefficient calculated from an equation of state can present a dependency on composition [1], but normally, experiments for obtaining the second virial coefficient are made by mixing the same volume of two gases. You can calculate B₁₂ in this way by using (Clapeyron.equivol_cross_second_virial)[@ref]
 
 ## References
 1. Jäger, A., Breitkopf, C., & Richter, M. (2021). The representation of cross second virial coefficients by multifluid mixture models and other equations of state. Industrial & Engineering Chemistry Research, 60(25), 9286–9295. [doi:10.1021/acs.iecr.1c01186](https://doi.org/10.1021/acs.iecr.1c01186)
@@ -315,13 +316,13 @@ end
 """
     equivol_cross_second_virial(model::EoSModel,T,p_exp = 200000.0)
 
-calculates the second cross virial coefficient, by simulating the mixing of equal volumes of pure gas, at T,P conditions.
+Calculates the second cross virial coefficient, by simulating the mixing of equal volumes of pure gas, at T,P conditions.
 The equal volume of each pure gas sets an specific molar amount for each component. Details of the experiment can be found at [1].
 
 ## Example
 ```
 model = SAFTVRQMie(["helium","neon"])
-B12 = equivol_cross_second_virial(model,)
+B12 = equivol_cross_second_virial(model,model,T,p_exp = 200000.0)
 
 ```
 ## References
@@ -353,7 +354,7 @@ end
 """
     pip(model::EoSModel,V,T,z=[1.0])
 
-Phase identification parameter `Π`. as described in _1_. If `Π > 1`, then the phase is clasified as a liquid or a liquid-like vapor, being a vapor or vapor-like liquid otherwise.
+Phase identification parameter `Π`, as described in _1_. If `Π > 1`, then the phase is clasified as a liquid or a liquid-like vapor, being a vapor or vapor-like liquid otherwise.
 
 This identification parameter fails at temperatures and pressures well aboVe the critical point.
 
@@ -361,10 +362,8 @@ Calculated as:
 ```
 Π = V*((∂²p/∂V∂T)/(∂p/∂T) - (∂²p/∂V²)/(∂p/∂V))
 ```
-
-
+## References
 1.  G. Venkatarathnama, L.R. Oellrich, Identification of the phase of a fluid using partial derivatives of pressure, volume,and temperature without reference to saturation properties: Applications in phase equilibria calculations, Fluid Phase Equilibria 301 (2011) 225–233
-
 
 """
 function pip(model::EoSModel, V, T, z=SA[1.0])
@@ -406,10 +405,10 @@ end
 """
     VT_identify_phase(model::EoSModel, V, T, z=SA[1.0])::Symbol
 
-Returns the phase of a fluid at the conditions specified by `V`, `T` and `z`.
+Returns the phase of a fluid at the conditions specified by volume `V`, temperature`T` and composition `z`.
 Uses the phase identification parameter criteria from `Clapeyron.pip`
 
-returns `liquid` if the phase is liquid (or liquid-like), `vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed (the V-T-z point was mechanically unstable).
+Returns `liquid` if the phase is liquid (or liquid-like), `vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed (the V-T-z point was mechanically unstable).
 """
 function VT_identify_phase(model::EoSModel, V, T, z=SA[1.0])
     Π,∂p∂V = _pip(model, V, T, z)
