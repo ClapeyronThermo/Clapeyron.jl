@@ -12,7 +12,7 @@
 ## Bug Fixes
 
 - CPA: improved recombining rules
-- `SingleFluid`: derivatives of non-analytical terms at exactly the critical point are now calculated at an inifinitesimal point `(τ + εₜ,δ + εᵥ)`. This returns in somewhat better results than setting the whole term to zero.
+- `SingleFluid`: derivatives of non-analytical terms at exactly the critical point are now calculated at an infinitesimal point `(τ + εₜ,δ + εᵥ)`. This returns in somewhat better results than setting the whole term to zero.
 - improved volume initial points for `SingleFluid`
 - fixed bugs in `recombine!(model::SAFTgammaMie)`
 - fixed bugs in `recombine!(model::SAFTVRMie)`

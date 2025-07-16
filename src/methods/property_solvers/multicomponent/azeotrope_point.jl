@@ -1,7 +1,7 @@
 """
     azeotrope_pressure(model::EoSModel, T; v0 = x0_azeotrope_pressure(model,T))
 
-calculates the azeotrope pressure and properties at a given temperature.
+Calculates the azeotrope pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Azeotrope Pressure `[Pa]`
 - liquid volume at Azeotrope Point `[m³]`
@@ -32,7 +32,7 @@ end
 
 Initial point for `azeotrope_pressure(model,T)`.
 
-Returns a vector, containing the initial guess azeotrope composition at a given temperature. defaults to equimolar
+Returns a vector, containing the initial guess azeotrope composition at a given temperature `T`. defaults to equimolar
 """
 function x0_azeotrope_pressure(model,T)
     n = length(model)
@@ -51,7 +51,7 @@ end
 """
     azeotrope_temperature(model::EoSModel, T; v0 = x0_bubble_pressure(model,T,[0.5,0.5]))
 
-Calculates the azeotrope temperature and properties at a given pressure.
+Calculates the azeotrope temperature and properties at a given pressure `p`.
 Returns a tuple, containing:
 - Azeotrope Temperature `[K]`
 - liquid volume at Azeotrope Point `[m³]`

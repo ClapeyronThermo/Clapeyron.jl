@@ -87,7 +87,7 @@ end
 """
     LLE_temperature(model::EoSModel, p, x; T0 = x0_LLE_temperature(model,p,x))
 
-Calculates the Liquid-Liquid equilibrium temperature and properties at a given pressure.
+Calculates the Liquid-Liquid equilibrium temperature and properties at a given pressure `p`.
 
 Returns a tuple, containing:
 - LLE Pressure `[Pa]`

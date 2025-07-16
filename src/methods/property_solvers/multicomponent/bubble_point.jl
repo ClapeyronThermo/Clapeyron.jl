@@ -348,7 +348,7 @@ end
 """
     bubble_pressure(model::EoSModel, T, x, method = ChemPotBubblePressure())
 
-Calculates the bubble pressure and properties at a given temperature.
+Calculates the bubble pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Bubble Pressure `[Pa]`
 - liquid volume at Bubble Point `[m³]`
@@ -500,7 +500,7 @@ end
 """
     bubble_temperature(model::EoSModel, p, x,method::BubblePointMethod = ChemPotBubbleTemperature())
 
-Calculates the bubble temperature and properties at a given pressure.
+Calculates the bubble temperature and properties at a given pressure `p`.
 Returns a tuple, containing:
 - Bubble Temperature `[K]`
 - liquid volume at Bubble Point `[m³]`

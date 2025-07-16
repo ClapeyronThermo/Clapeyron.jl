@@ -450,9 +450,7 @@ end
 """
     adiabatic_index(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/K]`
-
-Calculates the isobaric heat capacity, defined as:
+Calculates the adiabatic index, defined as:
 
 ```julia
 γ = Cp/Cv
@@ -473,7 +471,7 @@ end
 """
     isothermal_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[Pa^-1]`
+default units: `[Pa⁻¹]`
 
 Calculates the isothermal compressibility, defined as:
 
@@ -492,7 +490,7 @@ end
 """
     isentropic_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[Pa^-1]`
+default units: `[Pa⁻¹]`
 
 Calculates the isentropic compressibility, defined as:
 
@@ -515,7 +513,7 @@ end
 """
     speed_of_sound(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[m/s]`
+default units: `[m s⁻¹]`
 
 Calculates the speed of sound, defined as:
 
@@ -540,7 +538,7 @@ end
 """
     isobaric_expansivity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[K^-1]`
+default units: `[K⁻¹]`
 
 Calculates the isobaric expansivity, defined as:
 
@@ -559,7 +557,7 @@ end
 """
     joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[K/Pa]`
+default units: `[K Pa⁻¹]`
 
 Calculates the joule thomson coefficient, defined as:
 
@@ -762,7 +760,7 @@ reference_chemical_potential_type(model) = :pure
 """
     reference_chemical_potential(model::EoSModel,p,T,reference; phase=:unknown, threaded=true, vol0=nothing)
 
-Returns a reference chemical potential. used in calculation of `activity` and actitivy_coefficient. there are two available references:
+Returns a reference chemical potential. Used in calculation of `activity` and activity_coefficient. there are two available references:
 - `:pure`: the reference potential is a pure component at specified `T`, `p` and `phase`
 - `:aqueous`: the chemical potential of the pure components at specified `T`, `p` and `phase`
 - `:sat_pure_T`:  the reference potential is the pure saturated liquid phase at specified `T`.
@@ -820,7 +818,7 @@ end
 """
     molar_density(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[mol/m^3]`
+default units: `[mol m⁻³]`
 
 Calculates the molar density, defined as:
 
@@ -840,7 +838,7 @@ end
 """
     mass_density(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true)
 
-default units: `[kg/m^3]`
+default units: `[kg m⁻³]`
 
 Calculates the mass density, defined as:
 
@@ -912,7 +910,7 @@ end
 """
     gibbs_solvation(model::EoSModel, T; threaded=true, vol0=(nothing,nothing))
 
-Calculates the solvation free energy as:
+Calculates the solvation gibbs free energy as:
 
 ```julia
 g_solv = -R̄*T*log(K)
@@ -935,7 +933,7 @@ function gibbs_solvation(model::EoSModel, T; threaded=true, vol0=(nothing,nothin
 end
 
 """
-    partial_property(model::EoSModel, p, T, z, property::X; phase=:unknown, threaded=true, vol0=nothing) where {X}
+    partial_property(model::EoSModel, p, T, z, property::X; phase=:unknown, threaded=true, vol0=nothing) where {X} is any extensive property.
 
 Calculate the partial molar property of a mixture at specified temperature, pressure, mol amounts, and extensive property of interest.
 The equality `sum(z .* partial_property(model,p,T,z,property) - property(model,p,T,z))` should hold.

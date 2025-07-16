@@ -2,7 +2,7 @@
 """
 krichevskii_parameter(model::EoSModel, T, crit = nothing)
 
-Calculates the krichevskii parameter,defined as:
+Calculates the krichevskii parameter, defined as:
 ```
 ∂p/∂x₂ |T → Tc₁,V → Vc₁, x₂ → 0
 ```

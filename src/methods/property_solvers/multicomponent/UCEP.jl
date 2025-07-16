@@ -6,10 +6,10 @@ Calculates the Upper Critical End Point of a binary mixture.
 returns:
 - UCEP Temperature `[K]`
 - UCEP Pressure `[Pa]`
-- liquid volume at UCEP Point `[m³]`
-- vapour volume at UCEP Point `[m³]`
-- liquid molar composition at UCEP Point
-- vapour molar composition at UCEP Point
+- Liquid volume at UCEP Point `[m³]`
+- Vapour volume at UCEP Point `[m³]`
+- Liquid molar composition at UCEP Point
+- Vapour molar composition at UCEP Point
 
 """
 function UCEP_mix(model::EoSModel;v0=nothing)

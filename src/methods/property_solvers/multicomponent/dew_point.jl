@@ -82,7 +82,7 @@ end
 """
     dew_pressure(model::EoSModel, T, y,method = ChemPotDewPressure())
 
-Calculates the dew pressure and properties at a given temperature.
+Calculates the dew pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Dew Pressure `[Pa]`
 - liquid volume at Dew Point `[m³]`
@@ -226,7 +226,7 @@ end
 """
     dew_temperature(model::EoSModel, p, y, method = ChemPotDewTemperature())
 
-calculates the dew temperature and properties at a given pressure.
+calculates the dew temperature and properties at a given pressure `p`.
 Returns a tuple, containing:
 - Dew Temperature `[K]`
 - liquid volume at Dew Point `[m³]`
