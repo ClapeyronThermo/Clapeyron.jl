@@ -15,7 +15,7 @@ function pressure(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂V(model,V,T,z)
 end
 
-function temperature end # This is a bit weird, I don't know if this is desired or it is just a typo.
+function temperature end
 
 VT_pressure(model, V, T, z=SA[1.]) = pressure(model,V,T,z)
 VT_temperature(model, V, T, z=SA[1.]) = T
