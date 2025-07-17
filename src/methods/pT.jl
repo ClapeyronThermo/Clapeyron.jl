@@ -24,7 +24,7 @@ end
 """
     entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/K]`
+Default units: `[J K⁻¹]`
 
 Calculates entropy, defined as:
 
@@ -62,7 +62,7 @@ end
 """
     entropy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/K]`
+Default units: `[J K⁻¹]`
 
 Calculates residual entropy, defined as:
 
@@ -80,7 +80,7 @@ end
 """
     chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/mol]`
+Default units: `[J mol⁻¹]`
 
 Calculates the chemical potential, defined as:
 
@@ -98,7 +98,7 @@ end
 """
     chemical_potential_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/mol]`
+Default units: `[J mol⁻¹]`
 
 Calculates the residual chemical potential, defined as:
 
@@ -134,14 +134,13 @@ end
 """
     mass_internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/kg]`
+Default units: `[J kg⁻¹]`
 
 Calculates the internal energy, defined as:
 
 ```julia
 U = (A - T * ∂A/∂T)/Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_internal_energy(model,V,T,z)`.
@@ -198,7 +197,6 @@ Calculates the enthalpy, defined as:
 ```julia
 H = (A - T * ∂A/∂T - V * ∂A/∂V)/Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_enthalpy(model,V,T,z)`.
@@ -233,7 +231,7 @@ end
 
 Default units: `[J]`
 
-Calculates the gibbs free energy, defined as:
+Calculates the Gibbs free energy, defined as:
 
 ```julia
 G = A + p*V
@@ -250,14 +248,13 @@ end
     mass_gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     mass_gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/kg]`
+Default units: `[J kg⁻¹]`
 
-Calculates the gibbs free energy, defined as:
+Calculates the Gibbs free energy, defined as:
 
 ```julia
 G = (A + p*V)/Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_gibbs_free_energy(model,V,T,z)`.
@@ -274,7 +271,7 @@ end
 
 Default units: `[J]`
 
-Calculates the residual gibbs free energy, defined as:
+Calculates the residual Gibbs free energy, defined as:
 
 ```julia
 G = Ar - V*∂Ar/∂V
@@ -293,7 +290,7 @@ end
 
 Default units: `[J]`
 
-Calculates the helmholtz free energy, defined as:
+Calculates the Helmholtz free energy, defined as:
 
 ```julia
 A = eos(model,V(p),T,z)
@@ -312,12 +309,11 @@ end
 
 Default units: `[J/kg]`
 
-Calculates the helmholtz free energy, defined as:
+Calculates the Helmholtz free energy, defined as:
 
 ```julia
 A = eos(model,V(p),T,z)/Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_helmholtz_free_energy(model,V,T,z)`.
@@ -334,7 +330,7 @@ end
 
 Default units: `[J]`
 
-Calculates the residual helmholtz free energy, defined as:
+Calculates the residual Helmholtz free energy, defined as:
 
 ```julia
 A = eos_res(model,V(p),T,z)
@@ -385,7 +381,6 @@ Calculates the isochoric heat capacity, defined as:
 ```julia
 Cv = -T * ∂²A/∂T² / Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_isochoric_heat_capacity(model,V,T,z)`.
@@ -432,7 +427,6 @@ Calculates the isobaric heat capacity, defined as:
 ```julia
 Cp = (-T*(∂²A/∂T² - (∂²A/∂V∂T)^2 / ∂²A/∂V²))/Mr
 ```
-
 Where `Mr` is the molecular weight of the model at the input composition.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_mass_isobaric_heat_capacity(model,V,T,z)`.
@@ -450,9 +444,7 @@ end
 """
     adiabatic_index(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/K]`
-
-Calculates the isobaric heat capacity, defined as:
+Calculates the adiabatic index, defined as:
 
 ```julia
 γ = Cp/Cv
@@ -473,12 +465,12 @@ end
 """
     isothermal_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[Pa^-1]`
+Default units: `[Pa⁻¹]`
 
 Calculates the isothermal compressibility, defined as:
 
 ```julia
-κT = -(V*∂p/∂V)^-1
+κₜ = -(V*∂p/∂V)⁻¹
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isothermal_compressibility(model,V,T,z)`.
@@ -492,12 +484,12 @@ end
 """
     isentropic_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[Pa^-1]`
+Default units: `[Pa⁻¹]`
 
 Calculates the isentropic compressibility, defined as:
 
 ```julia
-κS = (V*( ∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T² ))^-1
+κₛ = (V*( ∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T² ))⁻¹
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isentropic_compressibility(model,V,T,z)`.
@@ -515,7 +507,7 @@ end
 """
     speed_of_sound(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[m/s]`
+Default units: `[m s⁻¹]`
 
 Calculates the speed of sound, defined as:
 
@@ -540,7 +532,7 @@ end
 """
     isobaric_expansivity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[K^-1]`
+Default units: `[K⁻¹]`
 
 Calculates the isobaric expansivity, defined as:
 
@@ -559,12 +551,12 @@ end
 """
     joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[K/Pa]`
+Default units: `[K Pa⁻¹]`
 
-Calculates the joule thomson coefficient, defined as:
+Calculates the Joule–Thomson coefficient, defined as:
 
 ```julia
-μⱼₜ = -(∂²A/∂V∂T - ∂²A/∂V² * ((T*∂²A/∂T² + V*∂²A/∂V∂T) / (T*∂²A/∂V∂T + V*∂²A/∂V²)))^-1
+μⱼₜ = -(∂²A/∂V∂T - ∂²A/∂V² * ((T*∂²A/∂T² + V*∂²A/∂V∂T) / (T*∂²A/∂V∂T + V*∂²A/∂V²)))⁻¹
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_joule_thomson_coefficient(model,V,T,z)`.
@@ -584,9 +576,9 @@ end
 
 
 Returns the phase of a fluid at the conditions specified by `V`, `T` and `z`.
-Uses the phase identification parameter criteria from `Clapeyron.pip`
+Uses the phase identification parameter criteria from `Clapeyron.pip`.
 
-returns `:liquid` if the phase is liquid (or liquid-like), `:vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed.
+Returns `:liquid` if the phase is liquid (or liquid-like), `:vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed.
 
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_enthalpy(model,V,T,z)`.
 
@@ -639,6 +631,7 @@ end
     activity_coefficient(model::EoSModel,p,T,z=SA[1.0];reference = :pure, phase=:unknown, threaded=true, vol0=nothing)
 
 Calculates the activity, defined as:
+
 ```julia
 log(γ*z) = (μ_mixt - μ_ref) / R̄ / T
 ```
@@ -676,6 +669,7 @@ end
     activity(model::EoSModel,p,T,z=SA[1.0];reference = :pure, phase=:unknown, threaded=true, vol0=nothing)
 
 Calculates the activity, defined as:
+
 ```julia
 log(a) = (μ_mixt - μ_ref) / R̄ / T
 ```
@@ -731,6 +725,7 @@ end
     aqueous_activity(model::EoSModel,p,T,z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
 
 Calculates the activity with the reference being infinite dilution in water, defined as:
+
 ```julia
 log(a) = (μ_mixt - μ_inf) / R̄ / T
 ```
@@ -762,7 +757,7 @@ reference_chemical_potential_type(model) = :pure
 """
     reference_chemical_potential(model::EoSModel,p,T,reference; phase=:unknown, threaded=true, vol0=nothing)
 
-Returns a reference chemical potential. used in calculation of `activity` and actitivy_coefficient. there are two available references:
+Returns a reference chemical potential. Used in calculation of `activity` and activity_coefficient. there are two available references:
 - `:pure`: the reference potential is a pure component at specified `T`, `p` and `phase`
 - `:aqueous`: the chemical potential of the pure components at specified `T`, `p` and `phase`
 - `:sat_pure_T`:  the reference potential is the pure saturated liquid phase at specified `T`.
@@ -820,7 +815,7 @@ end
 """
     molar_density(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-default units: `[mol/m^3]`
+Default units: `[mol m⁻³]`
 
 Calculates the molar density, defined as:
 
@@ -840,7 +835,7 @@ end
 """
     mass_density(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true)
 
-default units: `[kg/m^3]`
+Default units: `[kg m⁻³]`
 
 Calculates the mass density, defined as:
 
@@ -912,7 +907,7 @@ end
 """
     gibbs_solvation(model::EoSModel, T; threaded=true, vol0=(nothing,nothing))
 
-Calculates the solvation free energy as:
+Calculates the solvation Gibbs free energy as:
 
 ```julia
 g_solv = -R̄*T*log(K)
@@ -935,9 +930,9 @@ function gibbs_solvation(model::EoSModel, T; threaded=true, vol0=(nothing,nothin
 end
 
 """
-    partial_property(model::EoSModel, p, T, z, property::X; phase=:unknown, threaded=true, vol0=nothing) where {X}
+    partial_property(model::EoSModel, p, T, z, property::X; phase=:unknown, threaded=true, vol0=nothing) where {X} is any extensive property.
 
-Calculate the partial molar property of a mixture at specified temperature, pressure, mol amounts, and extensive property of interest.
+Calculates the partial molar property of a mixture at specified temperature, pressure, mol amounts, and extensive property of interest.
 The equality `sum(z .* partial_property(model,p,T,z,property) - property(model,p,T,z))` should hold.
     
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
@@ -1006,7 +1001,7 @@ end #module
 """
     supports_lever_rule(::f)::Bool
 
-returns `true` if the input property function can be used to describe multiphase mixtures using the lever rule:
+Returns `true` if the input property function can be used to describe multiphase mixtures using the lever rule:
 ```
 f(a)/f(b) = (f - f(b))/f(a) - f(b))
 ```

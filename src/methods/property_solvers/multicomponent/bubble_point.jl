@@ -4,7 +4,7 @@
 
 Abstract type for `bubble_pressure` and `bubble_temperature` routines.
 
-Should at least support passing the `y0` keyword, containing an initial vapour phase, if available.
+Should at least support passing the `y0` keyword, containing an initial guess value for vapour phase, if available.
 
 """
 abstract type BubblePointMethod <: ThermodynamicMethod end
@@ -348,12 +348,12 @@ end
 """
     bubble_pressure(model::EoSModel, T, x, method = ChemPotBubblePressure())
 
-Calculates the bubble pressure and properties at a given temperature.
+Calculates the bubble pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Bubble Pressure `[Pa]`
-- liquid volume at Bubble Point `[m³]`
-- vapour volume at Bubble Point `[m³]`
-- Gas composition at Bubble Point
+- Liquid volume at Bubble Point `[m³]`
+- Vapour volume at Bubble Point `[m³]`
+- Vapour composition at Bubble Point
 
 By default, uses equality of chemical potentials, via [`ChemPotBubblePressure`](@ref)
 """
@@ -500,12 +500,12 @@ end
 """
     bubble_temperature(model::EoSModel, p, x,method::BubblePointMethod = ChemPotBubbleTemperature())
 
-Calculates the bubble temperature and properties at a given pressure.
+Calculates the bubble temperature and properties at a given pressure `p`.
 Returns a tuple, containing:
 - Bubble Temperature `[K]`
-- liquid volume at Bubble Point `[m³]`
-- vapour volume at Bubble Point `[m³]`
-- Gas composition at Bubble Point
+- Liquid volume at Bubble Point `[m³]`
+- Vapour volume at Bubble Point `[m³]`
+- Vapour composition at Bubble Point
 
 By default, uses equality of chemical potentials, via [`ChemPotBubbleTemperature`](@ref)
 """

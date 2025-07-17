@@ -8,12 +8,12 @@ end
 Struct that holds two specifications for a general flash.
 The keyword arguments have the following meaning:
 
-- `T`: temperature
-- `v`: total volume
-- `p`: pressure
-- `h`: enthalpy
-- `s`: entropy
-- `u`: internal energy
+- `T`: temperature `[K]`
+- `v`: total volume `[m³]`
+- `p`: pressure `[Pa]`
+- `h`: enthalpy `[J]`
+- `s`: entropy `[J K⁻¹]`
+- `u`: internal energy `[J]`
 - `q`: vapour fraction
 
 ## Examples:
@@ -669,12 +669,12 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via f
 
 ### Keyword Arguments:
 - `equilibrium` (optional) = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria, `:unknown` if not specified
-- `p0` (optional), initial guess pressure, ignored if pressure is one of the flash specifications.
-- `T0` (optional), initial guess temperature, ignored if temperature is one of the flash specifications.
+- `p0` (optional), initial guess pressure, ignored if pressure is one of the flash specifications `[Pa]`.
+- `T0` (optional), initial guess temperature, ignored if temperature is one of the flash specifications `[K]`.
 - `K0` (optional), initial guess for the K-values.
 - `x0` (optional), initial guess for the composition of phase x.
 - `y0` = optional, initial guess for the composition of phase y.
-- `vol0` = optional, initial guesses for phase x and phase y volumes.
+- `vol0` = optional, initial guesses for phase x and phase y volumes `[m³]`.
 - `atol` = absolute tolerance to stop the calculation.
 - `rtol` = relative tolerance to stop the calculation.
 - `max_iters` = maximum number of iterations
