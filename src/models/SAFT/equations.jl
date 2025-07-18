@@ -159,8 +159,16 @@ end
 function p_scale(model::SAFTModel,z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    val = sum(z[i]*σ[i,i]^3/ϵ[i,i] for i in 1:length(z))*N_A/R̄
-    return sum(z)/val
+    V = zero(Base.promote_eltype(ϵ,σ,z))
+    T = zero(Base.promote_eltype(ϵ,σ,z))
+    n = zero(eltype(z))
+    for i in 1:length(z)
+        zi = z[i]
+        V += zi*N_A*σ[i,i]^3
+        T += zi*ϵ[i,i]
+        n += zi
+    end
+    return n*Rgas(model)*T/V
 end
 
 function antoine_coef(model::SAFTModel)

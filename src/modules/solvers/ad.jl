@@ -8,6 +8,8 @@ recursive_fd_value(x::AbstractArray) = recursive_fd_value.(x)
 
 recursive_fd_extract_derivative(T::TT,x::Number) where TT = ForwardDiff.extract_derivative(T,x)
 recursive_fd_extract_derivative(T::TT,x::Tuple) where TT = recursive_fd_extract_derivative.(T,x)
+recursive_fd_extract_derivative(T::TT,x::Tuple{}) where TT = x
+
 recursive_fd_extract_derivative(T::TT,x::AbstractArray) where TT = recursive_fd_extract_derivative.(T,x)
 
 @inline function derivative(f::F, x::R) where {F,R<:Real}
@@ -99,7 +101,7 @@ end
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
     dual2 = ForwardDiff.Dual{T,R,2}(x2, ForwardDiff.Partials((_0,_1)))
-    out = f(dual1,dual2)
+    out::ForwardDiff.Dual{T,R,2} = f(dual1,dual2)
     ∂out = ForwardDiff.partials(out)
     return ForwardDiff.value(out),SVector(∂out.values)
 end
