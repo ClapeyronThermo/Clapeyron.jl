@@ -268,6 +268,8 @@ function __Pproperty(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,t
   return p,phase
 end
 
+__Pproperty(model,T,prop,z,property::F,phase,p0) where F = __Tproperty(model,T,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,true,p0)
+
 function Pproperty_impl(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,p0) where F
   if is_unknown(phase)
     new_phase = identify_phase(model,p0,T,z)

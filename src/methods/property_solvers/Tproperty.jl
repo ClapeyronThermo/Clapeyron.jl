@@ -290,6 +290,7 @@ function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,t
   return T,phase
 end
 
+__Tproperty(model,p,prop,z,property::F,phase,T0) where F = __Tproperty(model,p,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,true,T0)
 
 function Tproperty_impl(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
   if is_unknown(phase)

@@ -405,7 +405,7 @@ end
 
 function zero_pressure_impl(model::DeltaCubicModel,T,z)
     a,b,c = cubic_ab(model,0,T,z)
-    Δ1,Δ2 = cubic_Δ(model,T,z)
+    Δ1,Δ2 = cubic_ΔT(model,T,z)
     return zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
 end
 
