@@ -15,7 +15,7 @@ end
 """
     VLLE_pressure(model::EoSModel, T; v0 = x0_LLE_pressure(model,T))
 
-calculates the Vapor-Liquid-Liquid equilibrium pressure and properties of a binary mixture at a given temperature.
+Calculates the Vapor-Liquid-Liquid equilibrium pressure and properties of a binary mixture at a given temperature `T`.
 
 Returns a tuple, containing:
 - VLLE Pressure `[Pa]`
@@ -24,7 +24,7 @@ Returns a tuple, containing:
 - Vapour volume of composition `y` at VLLE Point  `[m³]`
 - Liquid composition `x₁`
 - Liquid composition `x₂`
-- Liquid composition `y`
+- Vapour composition `y`
 """
 function VLLE_pressure(model::EoSModel, T; v0 =nothing)
     if v0 === nothing
@@ -73,7 +73,7 @@ end
 """
     VLLE_temperature(model::EoSModel, p; T0 = x0_LLE_temperature(model,p))
 
-calculates the Vapor-Liquid-Liquid equilibrium temperature and properties of a binary mixture at a given temperature.
+Calculates the Vapor-Liquid-Liquid equilibrium temperature and properties of a binary mixture at a given pressure `p`.
 
 Returns a tuple, containing:
 - VLLE temperature `[K]`
@@ -82,7 +82,7 @@ Returns a tuple, containing:
 - Vapour volume of composition `y` at VLLE Point  `[m³]`
 - Liquid composition `x₁`
 - Liquid composition `x₂`
-- Liquid composition `y`
+- Vapour composition `y`
 """
 function VLLE_temperature(model::EoSModel,p;v0=nothing)
     if v0 === nothing

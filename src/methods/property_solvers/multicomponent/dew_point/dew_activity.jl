@@ -10,7 +10,7 @@ Inputs:
 - `poynting = true`: if the solver use the poynting correction on the liquid fugacity coefficients. on `ActivityModel` is set by default to `false`
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
 - `p0 = nothing`: optional, initial guess for the dew pressure `[Pa]`
-- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
@@ -185,7 +185,7 @@ Inputs:
 - `poynting = true`: if the solver use the poynting correction on the liquid fugacity coefficients. on `ActivityModel` is set by default to `false`
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
 - `T0 = nothing`: optional, initial guess for the dew temperature `[K]`
-- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations

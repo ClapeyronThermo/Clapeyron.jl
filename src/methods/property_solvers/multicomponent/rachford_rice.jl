@@ -2,10 +2,11 @@
     rr_vle_vapor_fraction(K,z,α = NaN)
 
 Given a vector of K values and a vector of compositions, calculates the vapor fraction `β`.
-the algorithm is a modification of _(1)_ , with safeguards for extreme cases.
+The algorithm is a modification of _(1)_ , with safeguards for extreme cases.
 
 If the algorithm fails to converge, returns `NaN`. if it converges to a value `β ∉ [0,1]`, returns `-Inf` or `Inf`, depending on the case.
 
+## References
 1. Vassilis Gaganis, "Solution of the Rachford Rice equation using perturbation analysis", Fluid Phase Equilibria, Volume 536,2021,112981
 """
 function rr_vle_vapor_fraction(K,z)
