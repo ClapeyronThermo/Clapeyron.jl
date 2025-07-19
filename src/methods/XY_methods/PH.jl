@@ -9,28 +9,25 @@ function PH_property(model,p,h,z,f::F,phase,T0,threaded) where F
     end
 
     if f == temperature && length(model) == 1
-        return Tproperty(model,p,h,z,enthalpy,T0 = T0,phase = phase,threaded = threaded)
+        z1 = SVector(z[1])
+        return Tproperty(model,p,h,z1,enthalpy,T0 = T0,phase = phase,threaded = threaded)
     end
 
     if !is_unknown(phase)
-        T,calc_phase = _Tproperty(model,p,h,z,T0 = T0,phase = phase,threaded = threaded)
+        T,calc_phase = _Tproperty(model,p,h,z,enthalpy,T0 = T0,phase = phase,threaded = threaded)
         if calc_phase != :eq && calc_phase != :failure
-            return XX(f(model,p,T,z;phase = calc_phase))
-        elseif calc_phase == :eq && !supports_lever_rule(f)
-            thow(invalid_property_multiphase_error(f))
-        elseif calc_phase == :eq && supports_lever_rule(f)
+            return f(model,p,T,z;phase = calc_phase)
+        elseif calc_phase == :eq
+            !supports_lever_rule(f) && thow(invalid_property_multiphase_error(f))
             result = ph_flash(model,p,h,z,T0)
-            return XX(f(model,result))
+            return f(model,result)
         else
-            return XX(f(model,p,T,z;phase = phase))
+            return f(model,p,T,z;phase = phase)
         end
     else
         res = ph_flash(model,p,h,z,T0 = T0)
-        if f == temperature
-            return XX(temperature(res))
-        else
-            return XX(f(model,res))
-        end
+        f == temperature && return temperature(res)
+        return f(model,res)
     end
 end
 

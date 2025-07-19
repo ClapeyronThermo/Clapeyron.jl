@@ -31,11 +31,7 @@ function Pproperty(model::EoSModel,T,prop,z = SA[1.0],
                   p0 = nothing,
                   verbose = false,
                   threaded = true) where TT
-
   p,st = _Pproperty(model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
-  if st == :failure
-    @error "Pproperty calculation failed."
-  end
   return p
 end
 
@@ -49,15 +45,11 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
           verbose = false,
           threaded = true) where TT
 
-  #handle volume variations
-  if property == molar_density
-    return _Pproperty(model,T,sum(z)/prop,z,volume;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
-  end
+  norm_prop,norm_property = normalize_property(model,prop,z,property)
 
-  if property == mass_density
-    return _Pproperty(model,T,molecular_weight(model,z)/prop,z,volume;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
+  if norm_property !== property
+    return _Pproperty(model,T,norm_prop,z,norm_property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
   end
-
   if length(model) == 1 && length(z) == 1
     return Pproperty_pure(model,T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
   end
@@ -204,10 +196,9 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     elseif β < 0
       verbose && @info "pressure($property) < pressure(dew point)"
       return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
-    else
-      _0 = zero(Base.promote_eltype(model,T,prop,z))
-      return _0/_0,:failure
     end
+    _0 = zero(Base.promote_eltype(model,T,prop,z))
+    return _0/_0,:failure
 end
 
 function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,p0) where F
@@ -219,12 +210,12 @@ function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,v
   sat,crit,status = _extended_saturation_pressure(model,T)
 
   if status == :fail
-    #verbose && @error "PProperty calculation failed"
+    verbose && @error "PProperty calculation failed"
     return nan,:failure
   end
 
   if status == :supercritical
-    #verbose && @info "temperature is above critical temperature"
+    verbose && @info "temperature is above critical temperature"
     Tc,Pc,Vc = crit
     return __Pproperty(model,T,x,z,property,rootsolver,phase,abstol,reltol,threaded,Pc)
   end
@@ -236,15 +227,15 @@ function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,v
   βv = (x - xl)/(xv - xl)
 
   if !isfinite(βv)
-    #verbose && @error "PProperty calculation failed"
+    verbose && @error "PProperty calculation failed"
     return nan,:failure
   elseif βv < 0 || βv > 1
     phase0 = βv < 0 ? :liquid : :vapour
-    #is_liquid(phase0) && verbose && @info "pressure($property) > saturation pressure"
-    #is_vapour(phase0) && verbose && @info "pressure($property) < saturation pressure"
+    is_liquid(phase0) && verbose && @info "pressure($property) > saturation pressure"
+    is_vapour(phase0) && verbose && @info "pressure($property) < saturation pressure"
     return __Pproperty(model,T,x,z,property,rootsolver,phase0,abstol,reltol,threaded,ps)
   else
-    #verbose && @warn "$property value in phase change region. Will return pressure at saturation point"
+    verbose && @warn "$property value in phase change region. Will return pressure at saturation point"
     return ps,:eq
   end
 end

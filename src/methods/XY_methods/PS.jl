@@ -8,7 +8,8 @@ function PS_property(model,p,s,z,f::F,phase,T0,threaded) where F
     end
 
     if f == temperature && length(model) == 1
-        return Tproperty(model,p,s,z,entropy,T0 = T0,phase = phase,threaded = threaded)
+        z1 = SVector(z[1])
+        return Tproperty(model,p,s,z1,entropy,T0 = T0,phase = phase,threaded = threaded)
     end
 
     if !is_unknown(phase)
@@ -25,11 +26,8 @@ function PS_property(model,p,s,z,f::F,phase,T0,threaded) where F
         end
     else
         res = ps_flash(model,p,s,z,T0 = T0)
-        if f == temperature
-            return temperature(res)
-        else
-            return f(model,res)
-        end
+        f == temperature && return temperature(res)
+        return f(model,res)
     end
 end
 

@@ -104,7 +104,7 @@ end
 
 function xy_input_to_flash_vars(input,np,nc,comps_offset = 0)
     idx_comps_end = np*(nc-comps_offset)
-    
+
     idx_comps = 1:idx_comps_end
     idx_volumes = (1:np) .+ idx_comps[end]
     idx_β = (1:np) .+ idx_volumes[end]
@@ -112,7 +112,7 @@ function xy_input_to_flash_vars(input,np,nc,comps_offset = 0)
     comps = @view input[idx_comps]
     volumes = @view input[idx_volumes]
     β = @view input[idx_β]
-    
+
     return comps,β,volumes
 end
 
@@ -391,7 +391,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         #there is also MixedComplementarityProblems.jl
         #@show primalval(βj),primalval(1 - ∑ξj)
         β_constraints[j] = __min(βj,1 - ∑ξj)
-        
+
         for i in 1:nc
             ξ_constraints[i] -= βj*ξj[i]
         end
@@ -442,7 +442,7 @@ function detect_and_set_slack_variables!(x,spec::FlashSpecifications,np,nc,comps
         slack[end] = true
         x[end] = spec.val2
     end
-    return slack 
+    return slack
     #FIXME: we need to perform dew temperatures correctly, and that will need extra slacks.
     slack_comps = @view slack[1:np*(nc-comps_offset)]
 
@@ -706,6 +706,8 @@ function index_reduction(m::GeneralizedXYFlash,idx::AbstractVector)
     return GeneralizedXYFlash(;equilibrium,T0,p0,K0,x0,y0,v0,atol,rtol,max_iters)
 end
 
+index_reduction(m::GeneralizedXYFlash{Nothing,Nothing},idx::AbstractVector) = m
+
 numphases(::GeneralizedXYFlash) = 2
 
 function GeneralizedXYFlash(;equilibrium = :unknown,
@@ -817,7 +819,7 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
 end
 
 function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
-    
+
     if spec == pressure
         p,_phase = x,:eq #we suppose equilibria
     elseif method.p0 === nothing
