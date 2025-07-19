@@ -210,50 +210,42 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     end
 end
 
-function Pproperty_pure(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,p0) where F
+function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,p0) where F
+  TT = Base.promote_eltype(model,T,x,z)
+  nan = zero(TT)/zero(TT)
   ∑z = sum(z)
-  if p0 !== nothing
-    sol = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p0)
+  x1 = SA[1.0*one(∑z)]
+
+  sat,crit,status = _extended_saturation_pressure(model,T)
+
+  if status == :fail
+    #verbose && @error "PProperty calculation failed"
+    return nan,:failure
   end
 
-  crit = crit_pure(model)
-  Tc,Pc,Vc = crit
-
-  if T >= Tc
-    verbose && @info "temperature is above critical temperature"
-    return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Pc)
+  if status == :supercritical
+    #verbose && @info "temperature is above critical temperature"
+    Tc,Pc,Vc = crit
+    return __Pproperty(model,T,x,z,property,rootsolver,phase,abstol,reltol,threaded,Pc)
   end
 
-  Psat,vlsat,vvpat = saturation_pressure(model,T,crit = crit)
+  ps,vl,vv = TT.(sat)
 
-  if !is_unknown(phase)
+  xl = ∑z*spec_to_vt(model,vl,T,x1,property)
+  xv = ∑z*spec_to_vt(model,vv,T,x1,property)
+  βv = (x - xl)/(xv - xl)
 
-    return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Psat)
-  end
-
-  if property == volume
-    prop_v = vvsat
-    prop_l = vlsat
+  if !isfinite(βv)
+    #verbose && @error "PProperty calculation failed"
+    return nan,:failure
+  elseif βv < 0 || βv > 1
+    phase0 = βv < 0 ? :liquid : :vapour
+    #is_liquid(phase0) && verbose && @info "pressure($property) > saturation pressure"
+    #is_vapour(phase0) && verbose && @info "pressure($property) < saturation pressure"
+    return __Pproperty(model,T,x,z,property,rootsolver,phase0,abstol,reltol,threaded,ps)
   else
-    prop_v = property(model,Psat,T,z,phase = :v)
-    prop_l = property(model,Psat,T,z,phase = :l)
-  end
-
-  β = (prop - prop_l)/(prop_v - prop_l)
-  if 0 <= β <= 1
-    verbose && @warn "$property value in phase change region. Will return pressure at saturation point"
-    return Psat,:eq
-  elseif β < 0
-    verbose && @info "pressure($property) > saturation pressure"
-    return __Pproperty(model,T,prop,z,property,rootsolver,:liquid,abstol,reltol,threaded,Psat)
-
-  elseif β > 1
-    verbose && @info "pressure($property) < saturation pressure"
-    return __Pproperty(model,T,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,Psat)
-  else
-    verbose && @error "PProperty calculation failed"
-    _0 = zero(Base.promote_eltype(model,T,prop,z))
-    return _0/_0,:failure
+    #verbose && @warn "$property value in phase change region. Will return pressure at saturation point"
+    return ps,:eq
   end
 end
 
@@ -268,7 +260,7 @@ function __Pproperty(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,t
   return p,phase
 end
 
-__Pproperty(model,T,prop,z,property::F,phase,p0) where F = __Tproperty(model,T,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,true,p0)
+__Pproperty(model,T,prop,z,property::F,phase,p0) where F = __Pproperty(model,T,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,true,p0)
 
 function Pproperty_impl(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,p0) where F
   if is_unknown(phase)
@@ -283,15 +275,16 @@ function Pproperty_impl(model,T,prop,z,property::F,rootsolver,phase,abstol,relto
   _1 = oneunit(typeof(prop))
 
   if property == volume
-    p = pressure(model,prop,T,z)
-    phase = VT_identify_phase(model,prop,T,z)
-    if is_unknown(phase)
-      return p,:failure
+    px = pressure(model,prop,T,z)
+    phasex = VT_identify_phase(model,prop,T,z)
+    if is_unknown(phasex)
+      return px,:failure
     else
-      return p,phase
+      return px,phasex
     end
   end
-  f(lnp,prop) = _1*property(model,exp(lnp),T,z,phase = phase,threaded = threaded) - prop
+
+  f(_lnp,_prop) = _1*property(model,exp(_lnp),T,z,phase = phase,threaded = threaded) - _prop
   prob = Roots.ZeroProblem(f,_1*log(p0))
 
   logp = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)

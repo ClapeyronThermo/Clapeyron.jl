@@ -8,6 +8,10 @@ function PH_property(model,p,h,z,f::F,phase,T0,threaded) where F
         return XX(p)
     end
 
+    if f == temperature && length(model) == 1
+        return Tproperty(model,p,h,z,enthalpy,T0 = T0,phase = phase,threaded = threaded)
+    end
+
     if !is_unknown(phase)
         T,calc_phase = _Tproperty(model,p,h,z,T0 = T0,phase = phase,threaded = threaded)
         if calc_phase != :eq && calc_phase != :failure

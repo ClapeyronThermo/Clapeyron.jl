@@ -7,6 +7,10 @@ function PS_property(model,p,s,z,f::F,phase,T0,threaded) where F
         return p
     end
 
+    if f == temperature && length(model) == 1
+        return Tproperty(model,p,s,z,entropy,T0 = T0,phase = phase,threaded = threaded)
+    end
+
     if !is_unknown(phase)
         T,calc_phase = _Tproperty(model,p,h,z,entropy,T0 = T0,phase = phase,threaded = threaded)
         if calc_phase != :eq && calc_phase != :failure
