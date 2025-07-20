@@ -63,6 +63,11 @@ end
 
 function tp_flash2(model::EoSModel, p, T, n,method::FlashMethod)
     check_arraysize(model,n)
+    
+    if n isa SingleComp || length(model) == 1
+        return FlashResult(model,p,T,SVector(n[1]))
+    end
+    
     if supports_reduction(method)
         model_r,idx_r = index_reduction(model,n)
         n_r = n[idx_r]

@@ -3,7 +3,7 @@
     result = ps_flash(model, p, s, n; kwargs...)
 
 Routine to solve non-reactive two-phase multicomponent flash problem. with P-S specifications.
-Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
+Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
 Inputs:
  - `p`, pressure `[Pa]`
  - `s`, entropy `[J/K]`
@@ -19,12 +19,20 @@ function ps_flash(model::EoSModel,p,s,z = SA[1.0];kwargs...)
     return ps_flash(model,p,s,z,method)
 end
 
-function init_preferred_method(method::typeof(ps_flash),model::EoSModel,kwargs) 
+function init_preferred_method(method::typeof(ps_flash),model::EoSModel,kwargs)
     GeneralizedXYFlash(;kwargs...)
 end
 
 function ps_flash(model,p,s,z,method::FlashMethod)
     check_arraysize(model,z)
+
+    if z isa SingleComp || length(model) == 1
+        z1 = SVector(z[1])
+        T0 = hasfield(typeof(method),:T0) ? method.T0 : nothing
+        result1 = px_flash_pure(model,p,s,z1,entropy,T0)
+        return result1
+    end
+
     if supports_reduction(method)
         model_r,idx_r = index_reduction(model,z)
         z_r = z[idx_r]
@@ -33,12 +41,14 @@ function ps_flash(model,p,s,z,method::FlashMethod)
         model_r,idx_r = model,trues(length(model))
         method_r,z_r = method,z
     end
+
     if length(model_r) == 1
+        z1r = SVector(z_r[1])
         T0 = hasfield(typeof(method),:T0) ? method.T0 : nothing
-        result1 = px_flash_pure(model,p,s,z,entropy,T0)
-        return index_expansion(result1,idx_r)
+        result1r = px_flash_pure(model_r,p,s,z1r,entropy,T0)
+        return index_expansion(result1r,idx_r)
     end
-    
+
     result = ps_flash_impl(model_r,p,s,z_r,method_r)
     if !issorted(result.volumes)
         #this is in case we catch a bad result.

@@ -44,9 +44,11 @@ function ph_flash(model,p,h,z,method::FlashMethod)
         model_r,idx_r = model,trues(length(model))
         method_r,z_r = method,z
     end
+
     if length(model_r) == 1
+        z1r = SVector(z_r[1])
         T0 = hasfield(typeof(method),:T0) ? method.T0 : nothing
-        result1r = px_flash_pure(model_r,p,h,z_r,enthalpy,T0)
+        result1r = px_flash_pure(model_r,p,h,z1r,enthalpy,T0)
         return index_expansion(result1r,idx_r)
     end
 

@@ -1,11 +1,8 @@
 function PS_property(model,p,s,z,f::F,phase,T0,threaded) where F
-    if f == entropy
-        return s
-    end
-
-    if f == pressure
-        return p
-    end
+    z isa Number && return PS_property(model,p,s,SVector(z),f,phase,T0,threaded)
+    XX = Base.promote_eltype(model,p,s,z)
+    f == entropy && return XX(s)
+    f == pressure && return XX(p)
 
     if f == temperature && length(model) == 1
         z1 = SVector(z[1])
@@ -16,19 +13,16 @@ function PS_property(model,p,s,z,f::F,phase,T0,threaded) where F
         T,calc_phase = _Tproperty(model,p,h,z,entropy,T0 = T0,phase = phase,threaded = threaded)
         if calc_phase != :eq && calc_phase != :failure
             return f(model,p,T,z;phase = calc_phase)
-        elseif calc_phase == :eq && !supports_lever_rule(f)
-            thow(invalid_property_multiphase_error(f))
-        elseif calc_phase == :eq && supports_lever_rule(f)
+        elseif calc_phase == :eq
+            supports_lever_rule(f) || thow(invalid_property_multiphase_error(f))
             result = ps_flash(model,p,s,z,T0)
             return f(model,result)
         else
             return f(model,p,T,z;phase = phase)
         end
-    else
-        res = ps_flash(model,p,s,z,T0 = T0)
-        f == temperature && return temperature(res)
-        return f(model,res)
     end
+    res = ps_flash(model,p,s,z,T0 = T0)
+    return f(model,res)
 end
 
 module PS

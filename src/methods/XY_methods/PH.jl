@@ -1,12 +1,8 @@
 function PH_property(model,p,h,z,f::F,phase,T0,threaded) where F
+    z isa Number && return PH_property(model,p,h,SVector(z),f,phase,T0,threaded)
     XX = Base.promote_eltype(model,p,h,z)
-    if f == enthalpy
-        return XX(h)
-    end
-
-    if f == pressure
-        return XX(p)
-    end
+    f == enthalpy && return XX(h)
+    f == pressure && return XX(p)
 
     if f == temperature && length(model) == 1
         z1 = SVector(z[1])
@@ -18,17 +14,15 @@ function PH_property(model,p,h,z,f::F,phase,T0,threaded) where F
         if calc_phase != :eq && calc_phase != :failure
             return f(model,p,T,z;phase = calc_phase)
         elseif calc_phase == :eq
-            !supports_lever_rule(f) && thow(invalid_property_multiphase_error(f))
+            supports_lever_rule(f) || thow(invalid_property_multiphase_error(f))
             result = ph_flash(model,p,h,z,T0)
             return f(model,result)
         else
             return f(model,p,T,z;phase = phase)
         end
-    else
-        res = ph_flash(model,p,h,z,T0 = T0)
-        f == temperature && return temperature(res)
-        return f(model,res)
     end
+    res = ph_flash(model,p,h,z,T0 = T0)
+    return f(model,res)
 end
 
 module PH

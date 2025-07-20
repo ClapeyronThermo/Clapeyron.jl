@@ -25,6 +25,14 @@ end
 
 function ts_flash(model,T,S,z,method::FlashMethod)
     check_arraysize(model,z)
+    
+    if z isa SingleComp || length(model) == 1
+        z1 = SVector(z[1])
+        P0 = hasfield(typeof(method),:p0) ? method.p0 : nothing
+        result1r = tx_flash_pure(model,T,S,z1,entropy,P0)
+        return result1r
+    end
+    
     if supports_reduction(method)
         model_r,idx_r = index_reduction(model,z)
         z_r = z[idx_r]
@@ -34,8 +42,9 @@ function ts_flash(model,T,S,z,method::FlashMethod)
         method_r,z_r = method,z
     end
     if length(model_r) == 1
+        z1r = SVector(z_r[1])
         P0 = hasfield(typeof(method),:p0) ? method.p0 : nothing
-        result1 = tx_flash_pure(model,T,S,z,entropy,P0)
+        result1 = tx_flash_pure(model_r,T,S,z1r,entropy,P0)
         return index_expansion(result1,idx_r)
     end
 

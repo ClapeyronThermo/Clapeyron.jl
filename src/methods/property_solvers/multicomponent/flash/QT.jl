@@ -86,6 +86,13 @@ end
 
 function qt_flash(model,β,T,z,method::FlashMethod)
     check_arraysize(model,z)
+
+    if z isa SingleComp || length(model) == 1
+        z1 = SVector(z[1])
+        result1 = qflash_pure(model,temperature,T,β,z1)
+        return result1
+    end
+
     if supports_reduction(method)
         model_r,idx_r = index_reduction(model,z)
         z_r = z[idx_r]
@@ -94,8 +101,9 @@ function qt_flash(model,β,T,z,method::FlashMethod)
         model_r,idx_r = model,trues(length(model))
         method_r,z_r = method,z
     end
+
     if length(model_r) == 1
-        result1 = qflash_pure(model,temperature,T,β,z)
+        result1 = qflash_pure(model_r,temperature,T,β,z_r)
         return index_expansion(result1,idx_r)
     end
 
