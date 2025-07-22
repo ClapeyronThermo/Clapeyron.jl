@@ -1,19 +1,11 @@
 function QT_property(model,q,T,z,f::F,p0) where F
-    if f == temperature
-        return T
-    end
-
+    XX = Base.promote_eltype(model,q,T,z)
+    f == temperature && return XX(T)
     res = qt_flash(model,q,T,z,p0 = p0)
     if isone(numphases(res)) && !isone(q) !iszero(q)
         #What to do here?
     end
-    if f == temperature
-        return temperature(res)
-    elseif f == pressure
-        return pressure(res)
-    else
-        return f(model,res)
-    end
+    return f(model,res)
 end
 
 module QT
@@ -31,21 +23,13 @@ end
 end #module
 
 function QP_property(model,q,p,z,f::F,T0) where F
-    if f == pressure
-        return p
-    end
-
+    XX = Base.promote_eltype(model,q,p,z)
+    f == pressure && return XX(p)
     res = qp_flash(model,q,p,z,T0 = T0)
     if isone(numphases(res)) && !isone(q) !iszero(q)
         #What to do here?
     end
-    if f == temperature
-        return temperature(res)
-    elseif p == pressure
-        return pressure(res)
-    else
-        return f(model,res)
-    end
+    return f(model,res)
 end
 
 module QP

@@ -977,7 +977,11 @@ function critical_vsat_extrapolation(model,T,Tc,Vc)
         return nan,nan
     end
     ρc = 1/Vc
-    dp(ρ,T) = Solvers.derivative(dρ -> pressure(model, 1/dρ, T), ρ)
+    function dp(ρ,T) 
+        _,dpdV = p∂p∂V(model,1/ρ,T)
+        return -dpdV*ρ*ρ
+    end
+    #Solvers.derivative(dρ -> pressure(model, 1/dρ, T), ρ)
     _,d2p,d3p = Solvers.∂J2(dp,ρc,Tc)
     ∂²p∂ρ∂T = d2p[2]
     ∂³p∂ρ³ = d3p[1,1]

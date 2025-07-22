@@ -14,6 +14,16 @@
         pcp_system = PCPSAFT(substances)
         res = Clapeyron.tp_flash2(pcp_system, 25_000.0, 300.15, [1.0, 1.0, 1.0, 1.0], RRTPFlash())
         @test res.data.g ≈ -8.900576759774916 rtol = 1e-6
+
+        #https://julialang.zulipchat.com/#narrow/channel/265161-Clapeyron.2Ejl/topic/The.20meaning.20of.20subcooled.20liquid.20flash.20results
+        z_zulip1 = [0.25, 0.25, 0.25, 0.25]
+        p_zulip1 = 1e5
+        model_zulip1 = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
+        #bubble_temperature(model, p, z) # 282.2827723244425 K
+        res1 = Clapeyron.tp_flash2(model_zulip1, p_zulip1, 282.2, z_zulip1, RRTPFlash(equilibrium=:vle))
+        res2 = Clapeyron.tp_flash2(model_zulip1, p_zulip1, 282.3, z_zulip1, RRTPFlash(equilibrium=:vle))
+        @test all(isnan,res1.fractions)
+        @test res2.fractions[2] ≈ 0.00089161 rtol = 1e-6
     end
 
     if isdefined(Base,:get_extension)
@@ -95,6 +105,12 @@
         @test Clapeyron.tp_flash(model_a_ideal,134094.74892634258,70 + 273.15,[18500.0, 24.08],noncondensables = ["oxygen"])[1] ≈
         [1.0 0.0;
         0.23252954843762222 0.7674704515623778] rtol = 1e-6
+
+        #403
+        model403 = PCSAFT(["water","carbon dioxide"])
+        res = Clapeyron.tp_flash2(model403, 1e5, 323.15,[0.5,0.5],MichelsenTPFlash(nonvolatiles=["water"]))
+        @test res.compositions[2] == [0.,1.]
+        @test res.compositions[1] ≈ [0.999642, 0.000358065] rtol = 1e-6
     end
 
     @testset "Michelsen Algorithm, activities" begin

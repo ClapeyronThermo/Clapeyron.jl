@@ -147,7 +147,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b,c)
         end
     end
     b̄ = b̄*invn2
-    Λ = infinite_pressure_gibbs_correction(model,z)
+    Λ = infinite_pressure_gibbs_correction(model,T,z)
     ā = (res + gᴱᵣ/Λ)*b̄*invn
     c̄ = dot(z,c)*invn
     return ā,b̄,c̄

@@ -44,7 +44,7 @@ function mixing_rule(model::YFRModel,V,T,z,mixing_model::YFR1fRule,α,a,b,c)
     return ā,b̄,c̄
 end
 
-function mixing_rule1(model,V,T,z,mixing_model::YFR1fRule,α,a,b,c)
+function mixing_rule1(model::YFRModel,V,T,z,mixing_model::YFR1fRule,α,a,b,c)
     Tc = model.params.Tc.values[1]
     Vc = model.params.Vc.values[1]
     Zc = Vc/b[1,1]

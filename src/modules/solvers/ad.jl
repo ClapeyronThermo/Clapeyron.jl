@@ -8,6 +8,8 @@ recursive_fd_value(x::AbstractArray) = recursive_fd_value.(x)
 
 recursive_fd_extract_derivative(T::TT,x::Number) where TT = ForwardDiff.extract_derivative(T,x)
 recursive_fd_extract_derivative(T::TT,x::Tuple) where TT = recursive_fd_extract_derivative.(T,x)
+recursive_fd_extract_derivative(T::TT,x::Tuple{}) where TT = x
+
 recursive_fd_extract_derivative(T::TT,x::AbstractArray) where TT = recursive_fd_extract_derivative.(T,x)
 
 @inline function derivative(f::F, x::R) where {F,R<:Real}

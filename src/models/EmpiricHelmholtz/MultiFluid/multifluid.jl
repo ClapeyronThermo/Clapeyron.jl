@@ -239,7 +239,7 @@ function x0_volume_liquid(model::MultiFluid,p,T,z)
     end
 end
 
-function wilson_k_values!(K,model::MultiFluid,p,T,crit = nothing)
+function wilson_k_values!(K,model::MultiFluid,p,T,crit)
     n = length(model)
     pure = model.pures
     _Tc = model.params.Tc.values

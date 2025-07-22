@@ -59,6 +59,10 @@ function RRTPFlash(;equilibrium = :unknown,
         np = numphases(flash_result)
         np != 2 && incorrect_np_flash_error(RRTPFlash,flash_result)
     end
+    
+    nonvolatiles isa String && (nonvolatiles = [nonvolatiles])
+    noncondensables isa String && (noncondensables = [noncondensables])
+
     #we call Michelsen to check if the arguments are correct.
     m = MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,noncondensables,nonvolatiles,flash_result)
     return RRTPFlash{eltype(m)}(m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,max_iters,m.nacc,m.noncondensables,m.nonvolatiles)
@@ -73,10 +77,14 @@ function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
     K_tol = method.K_tol,itss = method.max_iters, nacc=method.nacc,
     non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
     reduced = true, use_opt_solver = false)
-
-    g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
-    comps = [x,y]
+    n = sum(z)
     volumes = [v[1],v[2]]
+    if has_a_res(model_cached)
+        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium,volumes)
+    else
+        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
+    end
+    comps = [x,y]
     βi = [1-β ,β]
     return FlashResult(comps,βi,volumes,FlashData(p,T,g))
 end

@@ -235,7 +235,7 @@ acetone~|~propanone,67-64-1,benzene,71-43-2,1.0,1.0,0.9982,0.98198,10.1021/acs.j
 acetone~|~propanone,67-64-1,butane~|~n-butane,106-97-8,1.0,1.0,0.98364,0.93303,10.1021/acs.jced.6b00257
 acetone~|~propanone,67-64-1,dodecane~|~n-dodecane,112-40-3,1.0,1.0,1.0322,0.99897,10.1021/acs.jced.6b00257
 acetone~|~propanone,67-64-1,tetradecane~|~n-tetradecane,629-59-4,1.0,1.0,1.02803,1.02375,10.1021/acs.jced.6b00257
-acetone~|~propanone,67-64-1,2-butene~|~(z)-2-butene~|~cis-2-butene,590-18-1,1.0,1.0,0.98583,0.95209,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,(z)-2-butene~|~cis-2-butene,590-18-1,1.0,1.0,0.98583,0.95209,10.1021/acs.jced.6b00257
 acetone~|~propanone,67-64-1,carbon dioxide,124-38-9,1.0,1.0,1.01322,1.0805,10.1021/acs.jced.6b00257
 acetone~|~propanone,67-64-1,cyclohexane,110-82-7,1.0,1.0,0.9912,0.92123,10.1021/acs.jced.6b00257
 acetone~|~propanone,67-64-1,decane~|~n-decane,124-18-5,1.0,1.0,1.02395,0.96708,10.1021/acs.jced.6b00257
@@ -313,7 +313,7 @@ benzene,71-43-2,"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tet
 benzene,71-43-2,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,1.0106,1.03496,10.1021/acs.jced.6b00257
 benzene,71-43-2,toluene,108-88-3,1.0,1.0,1.00015,1.00176,10.1021/acs.jced.6b00257
 butane~|~n-butane,106-97-8,tetradecane~|~n-tetradecane,629-59-4,1.0,1.0,0.97985,1.15977,10.1021/acs.jced.6b00257
-butane~|~n-butane,106-97-8,2-butene~|~(z)-2-butene~|~cis-2-butene,590-18-1,1.0,1.0,0.9988,0.99538,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,(z)-2-butene~|~cis-2-butene,590-18-1,1.0,1.0,0.9988,0.99538,10.1021/acs.jced.6b00257
 butane~|~n-butane,106-97-8,cyclohexane,110-82-7,1.0,1.0,1.00719,1.02834,10.1021/acs.jced.6b00257
 butane~|~n-butane,106-97-8,dimethyl ether,115-10-6,1.0,1.0,0.99621,0.96541,10.1021/acs.jced.6b00257
 butane~|~n-butane,106-97-8,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,1.02263,1.05892,10.1021/acs.jced.6b00257
@@ -360,8 +360,8 @@ methylcyclohexane,108-87-2,pentane~|~n-pentane,109-66-0,1.0,1.0,1.00254,1.00312,
 methylcyclohexane,108-87-2,propane~|~n-propane,74-98-6,1.0,1.0,0.99917,1.054,10.1021/acs.jced.6b00257
 methylcyclohexane,108-87-2,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,1.00133,0.99463,10.1021/acs.jced.6b00257
 methylcyclohexane,108-87-2,toluene,108-88-3,1.0,1.0,0.99987,0.98708,10.1021/acs.jced.6b00257
-2-butene~|~(z)-2-butene~|~cis-2-butene,590-18-1,ethanol,64-17-5,1.0,1.0,1.02589,0.94964,10.1021/acs.jced.6b00257
-2-butene~|~(z)-2-butene~|~cis-2-butene,590-18-1,methanol,67-56-1,1.0,1.0,1.02664,0.90617,10.1021/acs.jced.6b00257
+(z)-2-butene~|~cis-2-butene,590-18-1,ethanol,64-17-5,1.0,1.0,1.02589,0.94964,10.1021/acs.jced.6b00257
+(z)-2-butene~|~cis-2-butene,590-18-1,methanol,67-56-1,1.0,1.0,1.02664,0.90617,10.1021/acs.jced.6b00257
 propylcyclohexane~|~n-propylcyclohexane~|~1-cyclohexylpropane,1678-92-8,ethane,74-84-0,1.0,1.0,1.01912,1.195,10.1021/acs.jced.6b00257
 propylcyclohexane~|~n-propylcyclohexane~|~1-cyclohexylpropane,1678-92-8,hydrogen sulfide,7783-06-4,1.0,1.0,1.00425,1.10114,10.1021/acs.jced.6b00257
 propylcyclohexane~|~n-propylcyclohexane~|~1-cyclohexylpropane,1678-92-8,nitrogen,7727-37-9,1.0,1.0,1.01206,1.69332,10.1021/acs.jced.6b00257

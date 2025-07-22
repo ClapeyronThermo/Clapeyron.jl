@@ -37,6 +37,12 @@ function FindEdge(f::Function,a,b)
     end
 end
 
+
+normalize_property(model,prop,z,property::F) where F = prop,property
+normalize_property(model,prop,z,property::typeof(molar_density)) = sum(z)/prop,volume
+normalize_property(model,prop,z,property::typeof(mass_density)) = molecular_weight(model,z)/prop,volume
+
+
 """
     Tproperty(model::EoSModel,p,prop,z::AbstractVector,property = enthalpy;rootsolver = Roots.Order0(),phase =:unknown,abstol = 1e-15,reltol = 1e-15, verbose = false)
 
@@ -53,11 +59,7 @@ function Tproperty(model::EoSModel,p,prop,z = SA[1.0],
                   T0 = nothing,
                   verbose = false,
                   threaded = true) where TT
-
   T,st = _Tproperty(model,p,prop,z,property;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
-  if st == :failure
-    @error "Tproperty calculation failed."
-  end
   return T
 end
 
@@ -71,13 +73,11 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
                   verbose = false,
                   threaded = true) where TT
 
-  #handle volume variations
-  if property == molar_density
-    return _Tproperty(model,p,sum(z)/prop,z,volume;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
-  end
 
-  if property == mass_density
-    return _Tproperty(model,p,molecular_weight(model,z)/prop,z,volume;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
+  norm_prop,norm_property = normalize_property(model,prop,z,property)
+
+  if norm_property !== property
+    return _Tproperty(model,p,norm_prop,z,norm_property;rootsolver,phase,abstol,reltol,T0,verbose,threaded)
   end
 
   if length(model) == 1 && length(z) == 1
@@ -226,57 +226,49 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     elseif β < 0
       verbose && @info "temperature($property) > temperature(dew point)"
       __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_T)
-    else
-      verbose && @error "TProperty calculation failed"
-      _0 = zero(Base.promote_eltype(model,p,prop,z))
-      return _0/_0,:failure
     end
-end
-
-function Tproperty_pure(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,T0) where F
-  ∑z = sum(z)
-  if T0 !== nothing
-    sol = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T0)
-  end
-
-  crit = crit_pure(model)
-  Tc,Pc,Vc = crit
-
-  if p >= Pc
-    verbose && @info "pressure is above critical pressure"
-    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tc)
-  end
-
-  Tsat,vlsat,vvpat = saturation_temperature(model,p,crit = crit)
-
-  if !is_unknown(phase)
-    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tsat)
-  end
-
-  if property == volume
-    prop_v = vvsat
-    prop_l = vlsat
-  else
-    prop_v = property(model,p,Tsat,z,phase = :v)
-    prop_l = property(model,p,Tsat,z,phase = :l)
-  end
-
-  β = (prop - prop_l)/(prop_v - prop_l)
-  if 0 <= β <= 1
-    verbose && @warn "$property value in phase change region. Will return temperature at saturation point"
-    return Psat,:eq
-  elseif β < 0
-    verbose && @info "temperature($property) < saturation temperature"
-    return __Tproperty(model,p,prop,z,property,rootsolver,:liquid,abstol,reltol,threaded,Tsat)
-
-  elseif β > 1
-    verbose && @info "temperature($property) > saturation temperature"
-    return __Tproperty(model,p,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,Tsat)
-  else
     verbose && @error "TProperty calculation failed"
     _0 = zero(Base.promote_eltype(model,p,prop,z))
     return _0/_0,:failure
-  end
+end
+
+function Tproperty_pure(model,p,x,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,T0) where F
+    TT = Base.promote_eltype(model,p,x,z)
+    nan = zero(TT)/zero(TT)
+    ∑z = sum(z)
+    x1 = SVector(1.0*one(∑z))
+
+    sat,crit,status = _extended_saturation_temperature(model,p)
+
+    if status == :fail
+      verbose && @error "TProperty calculation failed"
+      return nan,:failure
+    end
+
+    if status == :supercritical
+      verbose && @info "pressure is above critical pressure"
+      Tc,Pc,Vc = crit
+      return __Tproperty(model,p,x,z,property,rootsolver,phase,abstol,reltol,threaded,Tc)
+    end
+
+    Ts,vl,vv = TT.(sat)
+
+    xl = ∑z*spec_to_vt(model,vl,Ts,x1,property)
+    xv = ∑z*spec_to_vt(model,vv,Ts,x1,property)
+    βv = (x - xl)/(xv - xl)
+
+    if !isfinite(βv)
+      verbose && @error "TProperty calculation failed"
+      return nan,:failure
+    elseif βv < 0 || βv > 1
+      phase0 = βv < 0 ? :liquid : :vapour
+      is_liquid(phase0) && verbose && @info "temperature($property) < saturation temperature"
+      is_vapour(phase0) && verbose && @info "temperature($property) > saturation temperature"
+      return __Tproperty(model,p,x,z,property,rootsolver,phase0,abstol,reltol,threaded,Ts)
+    else
+      #verbose && @warn "$property value in phase change region. Will return temperature at saturation point"
+      return Ts,:eq
+    end
 end
 
 function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
@@ -290,6 +282,7 @@ function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,t
   return T,phase
 end
 
+__Tproperty(model,p,prop,z,property::F,phase,T0) where F = __Tproperty(model,p,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,true,T0)
 
 function Tproperty_impl(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
   if is_unknown(phase)

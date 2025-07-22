@@ -125,6 +125,16 @@ function FlashResultInvalid(nc::Int,val::Number)
     return FlashResult(comps,β,volumes,data)
 end
 
+function FlashResultInvalid(nc::SVector{N,T},val::Number) where {N,T}
+    nan = zero(T)/zero(T)
+    xx = nc .* nan
+    comps = [xx]
+    volumes = [nan]
+    β = [nan]
+    data = FlashData(nan,nan,nan)
+    return FlashResult(comps,β,volumes,data)
+end
+
 function Base.show(io::IO,mime::MIME"text/plain",obj::FlashResult)
     comps,β,volumes,data = obj
     np = length(comps)

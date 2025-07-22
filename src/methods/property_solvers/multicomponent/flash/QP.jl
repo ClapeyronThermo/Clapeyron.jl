@@ -70,8 +70,8 @@ Routine to solve non-reactive two-phase multicomponent flash problem. with vapou
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
 Inputs:
  - `q`, vapour fraction
- - `p`, pressure
- - `n`, vector of number of moles of each species
+ - `p`, pressure `[Pa]`
+ - `n`, vector of number of moles of each species `[mol]`
 
 All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
 
@@ -96,6 +96,12 @@ end
 
 function qp_flash(model,β,p,z,method::FlashMethod)
     check_arraysize(model,z)
+
+    if z isa SingleComp || length(model) == 1
+        result1 = qflash_pure(model_r,pressure,p,β,z)
+        return result1
+    end
+
     if supports_reduction(method)
         model_r,idx_r = index_reduction(model,z)
         z_r = z[idx_r]
@@ -105,8 +111,9 @@ function qp_flash(model,β,p,z,method::FlashMethod)
         method_r,z_r = method,z
     end
     if length(model_r) == 1
-        result1 = qflash_pure(model_r,pressure,p,β,z)
-        return index_expansion(result1,idx_r)
+        z1r = SVector(z_r[1])
+        result1r = qflash_pure(model_r,pressure,p,β,z1r)
+        return index_expansion(result1r,idx_r)
     end
 
     result = qp_flash_impl(model_r,β,p,z_r,method_r)

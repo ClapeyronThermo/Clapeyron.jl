@@ -1,32 +1,28 @@
 function TS_property(model,T,s,z,f::F,phase,p0,threaded) where F
-    if f == entropy
-        return s
-    end
+    z isa Number && return TS_property(model,T,s,SVector(z),f,phase,T0,threaded)
+    XX = Base.promote_eltype(model,T,s,z)
+    f == entropy && return XX(s)
+    f == temperature && return XX(T)
 
-    if f == temperature
-        return T
+    if f == pressure && length(model) == 1
+        z1 = SVector(z[1])
+        return Pproperty(model,T,s,z1,entropy,p0 = p0,phase = phase,threaded = threaded)
     end
 
     if !is_unknown(phase)
-        T,calc_phase = _Tproperty(model,T,s,z,p0 = p0,phase = phase,threaded = threaded)
+        p,calc_phase = _Pproperty(model,T,s,z,p0 = p0,phase = phase,threaded = threaded)
         if calc_phase != :eq && calc_phase != :failure
             return f(model,p,T,z;phase = calc_phase)
-        elseif calc_phase == :eq && !supports_lever_rule(f)
-            thow(invalid_property_multiphase_error(f))
-        elseif calc_phase == :eq && supports_lever_rule(f)
+        elseif calc_phase == :eq
+            supports_lever_rule(f) || thow(invalid_property_multiphase_error(f))
             result = ts_flash(model,T,s,z,p0)
             return f(model,result)
         else
             return f(model,p,T,z;phase = phase)
         end
-    else
-        res = ts_flash(model,T,s,z,p0 = p0)
-        if f == pressure
-            return pressure(res)
-        else
-            return f(model,res)
-        end
     end
+    res = ts_flash(model,T,s,z,p0 = p0)
+    return f(model,res)
 end
 
 module TS

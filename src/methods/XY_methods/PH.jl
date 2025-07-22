@@ -1,32 +1,28 @@
 function PH_property(model,p,h,z,f::F,phase,T0,threaded) where F
-    if f == enthalpy
-        return h
-    end
+    z isa Number && return PH_property(model,p,h,SVector(z),f,phase,T0,threaded)
+    XX = Base.promote_eltype(model,p,h,z)
+    f == enthalpy && return XX(h)
+    f == pressure && return XX(p)
 
-    if f == pressure
-        return p
+    if f == temperature && length(model) == 1
+        z1 = SVector(z[1])
+        return Tproperty(model,p,h,z1,enthalpy,T0 = T0,phase = phase,threaded = threaded)
     end
 
     if !is_unknown(phase)
-        T,calc_phase = _Tproperty(model,p,h,z,T0 = T0,phase = phase,threaded = threaded)
+        T,calc_phase = _Tproperty(model,p,h,z,enthalpy,T0 = T0,phase = phase,threaded = threaded)
         if calc_phase != :eq && calc_phase != :failure
             return f(model,p,T,z;phase = calc_phase)
-        elseif calc_phase == :eq && !supports_lever_rule(f)
-            thow(invalid_property_multiphase_error(f))
-        elseif calc_phase == :eq && supports_lever_rule(f)
+        elseif calc_phase == :eq
+            supports_lever_rule(f) || thow(invalid_property_multiphase_error(f))
             result = ph_flash(model,p,h,z,T0)
             return f(model,result)
         else
             return f(model,p,T,z;phase = phase)
         end
-    else
-        res = ph_flash(model,p,h,z,T0 = T0)
-        if f == temperature
-            return temperature(res)
-        else
-            return f(model,res)
-        end
     end
+    res = ph_flash(model,p,h,z,T0 = T0)
+    return f(model,res)
 end
 
 module PH

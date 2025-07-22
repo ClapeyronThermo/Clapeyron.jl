@@ -319,7 +319,7 @@ function ∂lnϕ_cache(model::PTFlashWrapper{GammaPhi{<:Any,<:IdealModel}}, p, T
     return nothing
 end
 
-function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,eq)
+function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,eq,vols)
     pures = wrapper.model.fluid.pure
     model = wrapper.model
     fluidmodel = model.fluid.model
@@ -436,7 +436,7 @@ function tpd_obj(model::GammaPhi, p, T, di, isliquid, cache = tpd_neq_cache(mode
         fx = @sum(w[i]*(lnγw[i] + log(w[i]) - di[i])) - sum(w) + 1
     end
 
-    obj = Solvers.ADScalarObjective(f,di,ForwardDiff.Chunk{2}())
+    obj = Solvers.ADScalarObjective(f,di)
     optprob = OptimizationProblem(obj = obj,inplace = true)
 end
 

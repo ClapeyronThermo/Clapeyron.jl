@@ -4,7 +4,7 @@
 
 Abstract type for `bubble_pressure` and `bubble_temperature` routines.
 
-Should at least support passing the `y0` keyword, containing an initial vapour phase, if available.
+Should at least support passing the `y0` keyword, containing an initial guess value for vapour phase, if available.
 
 """
 abstract type BubblePointMethod <: ThermodynamicMethod end
@@ -43,38 +43,44 @@ function extended_saturation_pressure(pure,T,_crit = nothing; crit_retry = true)
 end
 
 function _extended_saturation_pressure(pure, T, _crit = nothing; crit_retry = true)
+    _extended_saturation_pressure(pure,T,_crit,crit_retry)
+end
+
+function _extended_saturation_pressure(pure, T, _crit, crit_retry)
     #try without critical point information
     _0 = zero(Base.promote_eltype(pure,T))
     nan = _0/_0
+    fail3 = (nan,nan,nan)
+    X = typeof(nan)
     #no crit point available, try calculating sat_p without it
     if _crit === nothing
         sat = saturation_pressure(pure,T,crit_retry = false)
         if isnan(first(sat))
             if !crit_retry
-                return sat,(nan,nan,nan),:fail
+                return sat,fail3,:fail
             end
         else
-            return sat,(nan,nan,nan),:success
+            return sat,fail3,:success
         end
     end
     #calculate critical point, try again
     if _crit !== nothing && !isnan(first(_crit))
-        crit = _crit
+        crit = X.(_crit)
     elseif crit_retry
-        crit = crit_pure(pure)
+        crit = X.(crit_pure(pure))
     else
-        nan = _0/_0
-        crit = (nan,nan,nan)
+        crit = fail3
     end
     Tc,Pc,Vc = crit
     if T < Tc
-        sat = saturation_pressure(pure,T,crit = crit) #calculate sat_p with crit info
-        !isnan(first(sat)) && (return sat,crit,:success)
+        sat2 = saturation_pressure(pure,T,crit = crit) #calculate sat_p with crit info
+        !isnan(first(sat2)) && (return sat2,crit,:success)
     else
         nan = _0/_0
         sat = (nan,nan,nan)
         return sat, crit, :supercritical
     end
+    return fail3,crit,:supercritical
 end
 
 function extended_saturation_temperature(pure,p,_crit = nothing; crit_retry = true)
@@ -96,49 +102,48 @@ function extended_saturation_temperature(pure,p,_crit = nothing; crit_retry = tr
 end
 
 #this function does not do the crit calculation.
+
 function _extended_saturation_temperature(pure, p, _crit = nothing; crit_retry = true)
+    _extended_saturation_temperature(pure,p,_crit,crit_retry)
+end
+
+function _extended_saturation_temperature(pure, p, _crit, crit_retry)
     _0 = zero(Base.promote_eltype(pure,p))
     nan = _0/_0
+    fail3 = (nan,nan,nan)
+    X = typeof(nan)
     if _crit === nothing #no crit point available, try calculating sat_p without it
-        sat = saturation_temperature(pure,p,crit_retry = false)
+        sat::NTuple{3,X} = saturation_temperature(pure,p,crit_retry = false)
         if isnan(first(sat))
             if !crit_retry
-                return sat,(nan,nan,nan),:fail #failed
+                return sat,fail3,:fail #failed
             end
         else
-            return sat,(nan,nan,nan),:success #sucess
+            return sat,fail3,:success #sucess
         end
     end
-
     #calculate critical point, try again
     if _crit !== nothing
-        crit = _crit
+        crit::NTuple{3,X} = X.(_crit)
     elseif crit_retry
-        crit = crit_pure(pure)
+        crit = X.(crit_pure(pure))
     else
-        nan = _0/_0
-        crit = (nan,nan,nan)
+        crit = fail3
     end
 
     Tc,Pc,Vc = crit
-    if p < Pc
-        sat = saturation_temperature(pure,p,crit = crit) #calculate sat_p with crit info
-        !isnan(first(sat)) && (return sat,crit,:success)
-    else
-        nan = _0/_0
-        sat = (nan,nan,nan)
-        (return sat,crit,:supercritical)
-    end
-    #create initial point from critical values
-    #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
 
-    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,p,true,:supercritical)
-    #lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
-    Tinv = (log(p) - logp0)/dlnpdTinv + Tcinv
-    T0  = 1/Tinv
-    vl0 = x0_volume(pure,p,T0,phase = :l)
-    vv0 = max(1.2*Vc,3*Rgas(pure)*T0/Pc)
-    return (T0,vl0,vv0),crit,:supercritical
+    if p < Pc
+        sat2::NTuple{3,X} = saturation_temperature(pure,p,crit = crit) #calculate sat_p with crit info
+        if !isnan(first(sat2)) 
+            return X.(sat2),crit,:success
+        else
+            fail3,crit,:fail
+        end
+        return fail3,crit,:supercritical
+    end
+
+    return fail3,crit,:supercritical
 end
 
 function __is_high_pressure_state(pure,sat,T)
@@ -348,12 +353,12 @@ end
 """
     bubble_pressure(model::EoSModel, T, x, method = ChemPotBubblePressure())
 
-Calculates the bubble pressure and properties at a given temperature.
+Calculates the bubble pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Bubble Pressure `[Pa]`
-- liquid volume at Bubble Point [`m³`]
-- vapour volume at Bubble Point [`m³`]
-- Gas composition at Bubble Point
+- Liquid volume at Bubble Point `[m³]`
+- Vapour volume at Bubble Point `[m³]`
+- Vapour composition at Bubble Point
 
 By default, uses equality of chemical potentials, via [`ChemPotBubblePressure`](@ref)
 """
@@ -500,12 +505,12 @@ end
 """
     bubble_temperature(model::EoSModel, p, x,method::BubblePointMethod = ChemPotBubbleTemperature())
 
-Calculates the bubble temperature and properties at a given pressure.
+Calculates the bubble temperature and properties at a given pressure `p`.
 Returns a tuple, containing:
 - Bubble Temperature `[K]`
-- liquid volume at Bubble Point [`m³`]
-- vapour volume at Bubble Point [`m³`]
-- Gas composition at Bubble Point
+- Liquid volume at Bubble Point `[m³]`
+- Vapour volume at Bubble Point `[m³]`
+- Vapour composition at Bubble Point
 
 By default, uses equality of chemical potentials, via [`ChemPotBubbleTemperature`](@ref)
 """

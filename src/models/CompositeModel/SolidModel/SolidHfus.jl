@@ -38,7 +38,9 @@ function volume_impl(model::SolidHfusModel,p,T,z,phase,threaded,vol0)
     return _0/_0
 end
 
-function chemical_potential(model::SolidHfusModel, p, T, z)
+sle_T_ref(model::SolidHfusModel) = model.params.Tm.values
+
+function chemical_potential_impl(model::SolidHfusModel,p,T,z,phase,threaded,vol0)
     Hfus = model.params.Hfus.values
     Tm = model.params.Tm.values
     CpSL = model.params.CpSL.values

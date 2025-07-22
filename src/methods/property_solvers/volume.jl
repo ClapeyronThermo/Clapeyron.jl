@@ -5,7 +5,7 @@
 
 """
     volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-Main routine to calculate a volume, given a pressure, temperature, composition and intitial volume guess. each step is taken by locally aproximating the EoS as an isothermal compressibility process.
+Main routine to calculate a volume, given a pressure, temperature, composition and initial volume guess. each step is taken by locally aproximating the EoS as an isothermal compressibility process.
 The new volume is calculated by the following recurrence formula:
 ```julia
 v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
@@ -18,6 +18,37 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
 end
 
 function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+    _0 = zero(Base.promote_eltype(model,p,T,z,V0))
+    _1 = one(_0)
+    isnan(V0) && return _0/_0
+    p₀ = _1*p
+    XX = typeof(p₀)
+    nan = _0/_0
+    logV0 = primalval(log(V0)*_1)
+    log_lb_v = log(primalval(lb_volume(model,T,z)))
+    if iszero(p₀) & (V0 == Inf) #ideal gas
+        return _1/_0
+    end
+    function logstep(logVᵢ::TT) where TT
+        logVᵢ < log_lb_v && return TT(zero(logVᵢ)/zero(logVᵢ))
+        Vᵢ = exp(logVᵢ)
+        _pᵢ,_dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
+        pᵢ,dpdVᵢ = primalval(_pᵢ),primalval(_dpdVᵢ) #ther could be rare cases where the model itself has derivative information.
+        dpdVᵢ > 0 && return TT(zero(logVᵢ)/zero(logVᵢ)) #inline mechanical stability.
+        abs(pᵢ-p₀) < 3eps(p₀) && return TT(zero(Vᵢ)) #this helps convergence near critical points.
+        Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
+        return TT(Δᵢ)
+    end
+    function f_fixpoint(logVᵢ::TT) where TT
+        res = TT(logVᵢ + logstep(logVᵢ))
+        return res
+    end
+
+    logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters)::XX,nan)
+    return exp(logV)
+end
+#=
+function _volume_compress2(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(Base.promote_eltype(model,p,T,z,V0))
     _1,nan = one(_0),_0/_0
     isnan(V0) && return nan
@@ -113,7 +144,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
     end
     return nan
 end
-
+=#
 #"chills" a state from T0,p to T,p, starting at v = v0
 function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
     _1 = one(Base.promote_eltype(model,p,T,z))
@@ -164,7 +195,7 @@ Z(v) ≈ 1 + B(T)/v
 ```
 where `Z` is the compressibility factor and `B` is the second virial coefficient.
 If `B>0`, (over the inversion temperature) returns `NaN`. If the solution to the problem is complex (`Z = 1 + B/v` implies solving a quadratic polynomial), returns `-2*B`.
-If you pass an `EoSModel` as the first argument, `B` will be calculated from the EoS at the input `T`. You can provide your own second virial coefficient instead of a model.
+If you pass an `EoSModel` as the first argument, `B` will be calculated from the EoS at the input temperature `T`. You can provide your own second virial coefficient instead of a model.
 """
 function volume_virial end
 

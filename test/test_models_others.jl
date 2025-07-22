@@ -277,6 +277,9 @@ end
         =#
         model = MultiFluid(["carbon dioxide","hydrogen"],verbose = true) #test verbose and gauss+exponential
         test_scales(model)
+        test_repr(model.departure.params.parameters[1,2],str = ["Departure MultiParameter coefficients:","Fij:","Polynomial power terms:","Gaussian bell-shaped terms:"])
+        test_repr(model.pures[1],str = ["Exponential terms: 27","Non Analytic terms:","Polynomial power terms:","Gaussian bell-shaped terms:"])
+
         pures = Clapeyron.split_pure_model(model)
         @test pures isa Vector{SingleFluid{EmpiricAncillary}}
         @test Clapeyron.wilson_k_values(model,1e6,300.0) ≈ [6.738566125478432, 54.26124873240438] rtol = 1e-6

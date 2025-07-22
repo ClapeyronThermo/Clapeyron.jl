@@ -2,10 +2,11 @@
     rr_vle_vapor_fraction(K,z,α = NaN)
 
 Given a vector of K values and a vector of compositions, calculates the vapor fraction `β`.
-the algorithm is a modification of _(1)_ , with safeguards for extreme cases.
+The algorithm is a modification of _(1)_ , with safeguards for extreme cases.
 
 If the algorithm fails to converge, returns `NaN`. if it converges to a value `β ∉ [0,1]`, returns `-Inf` or `Inf`, depending on the case.
 
+## References
 1. Vassilis Gaganis, "Solution of the Rachford Rice equation using perturbation analysis", Fluid Phase Equilibria, Volume 536,2021,112981
 """
 function rr_vle_vapor_fraction(K,z)
@@ -334,22 +335,24 @@ function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillA
     #βmax = min(1., maximum(((1 .- z) ./ (1. .- K))[K .< 1]))
     sumz = sum(z)
     for i in eachindex(K)
-        Ki,xi = K[i],z[i]/sumz
-        if non_inx[i] #
+        Ki,zi = K[i],z[i]/sumz
+        if non_inx[i] #noncondensables
             Ki = Inf*one(Ki)
         end
 
-        if non_iny[i]
+        if non_iny[i] # #nonvolatiles
             Ki = zero(Ki)
         end
         if Ki > 1
             # modification for non-in-x components Ki -> ∞
-            βmin_i = (non_inx[i] || isinf(Ki)) ? one(Ki)*xi : (Ki*xi - 1)/(Ki - 1)
+            not_xi = non_inx[i] || isinf(Ki)
+            βmin_i = not_xi ? one(Ki)*zi : (Ki*zi - 1)/(Ki - 1)
             βmin = min(βmin,βmin_i)
         end
         if Ki < 1
             # modification for non-in-y components Ki -> 0
-            βmax_i = (non_iny[i] || iszero(Ki)) ? zero(βmax) : (xi - 1)/(Ki - 1)
+            not_yi = non_iny[i] || iszero(Ki)
+            βmax_i = not_yi ? (1 - zi) : (zi - 1)/(Ki - 1)
             βmax = max(βmax,βmax_i)
         end
     end
@@ -456,6 +459,30 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
     prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
     return Roots.solve(prob,Roots.BracketedHalley())
 end
+
+function material_balance_rr_converged(w,z,β::Number,n = sum(z),ztol = sqrt(eps(eltype(β))))
+    βx = SVector(1 - β,β)
+    return material_balance_rr_converged(w,z,βx,n,ztol)
+end
+
+function material_balance_rr_converged(w,z,β::AbstractVector,n = sum(z),ztol = sqrt(eps(eltype(β))))
+    rk = zero(Base.promote_eltype(w[1],z,β))
+    np = length(β)
+    #material balance test from https://github.com/WhitsonAS/Rachford-Rice-Contest
+    for i in 1:length(z)
+        rk1 = zero(rk)
+        rk2 = zero(rk)
+        zi = z[i]/n
+        for j in 1:np
+            Vi = β[j]*w[j][i]
+            rk1 +=  Vi
+            rk2 += abs(Vi)
+        end
+        rk = max(rk,abs(rk1 - zi)/abs(rk2 + zi))
+    end
+    return rk <= ztol
+end
+
 
 #=
 it = 0

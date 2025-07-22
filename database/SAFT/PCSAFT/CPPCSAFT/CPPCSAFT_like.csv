@@ -56,7 +56,7 @@ benzophenone,3.90064,343.759,3.9904,1.0,10.1002/aic.15715,0,0,2
 indene~|~1h-indene,5.28936,258.041,3.15898,1.0,10.1002/aic.15715,0,0,2
 cis-decalin~|~decahydronaphthalene~|~cis-decahydronaphthalene,3.7163,296.39,3.91085,1.0,10.1002/aic.15715,0,0,2
 hydrogen sulfide,1.2332,254.04,3.4229,1.0,10.1016/j.molliq.2020.113266,0,0,0
-methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,3.548,212.91,3.5169,1.0,10.1016/j.molliq.2020.113266,0,0,0
+mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,3.548,212.91,3.5169,1.0,10.1016/j.molliq.2020.113266,0,0,0
 etbe~|~tert-butyl ethyl ether~|~ethyl tert-butyl ether~|~2-ethoxy-2-methylpropane~|~2-ethoxy-2-methyl-propane,3.1662,227.61,3.8504,1.0,10.1016/j.molliq.2020.113266,0,0,0
 tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,3.642,226.57,3.6582,1.0,10.1016/j.molliq.2020.113266,0,0,0
 dibutyl ether~|~di-n-butylether,4.4121,232.11,3.7415,1.0,10.1016/j.molliq.2020.113266,0,0,0

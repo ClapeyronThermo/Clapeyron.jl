@@ -64,8 +64,9 @@ default_references(::Type{LeiboviciAlpha}) = ["10.1016/0378-3812(94)02603-3"]
 end
 
 function α_m_leibovici(model::DeltaCubicModel,i)
+    T = 0.7*model.params.Tc.values[i]
     z = FillArrays.OneElement(i, length(model))
-    Δ1,Δ2 = cubic_Δ(model,z)
+    Δ1,Δ2 = cubic_ΔT(model,T,z)
     u = - Δ1 - Δ2
     w = Δ1*Δ2
     u0 = (u + 2)*sqrt(2/(1 + u + w)) - 2

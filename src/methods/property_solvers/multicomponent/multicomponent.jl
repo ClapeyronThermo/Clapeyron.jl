@@ -8,7 +8,7 @@
 """
     mixture_critical_constraint(model,V,T,z)
 
-with `a(x)` the reduced `(A/RT)` helmholtz energy dependent on composition `xᵢ` for `i` ∈ `1:n`, returns `L` and `det(M)`, where `L` and `M` are defined as:
+with `a(x)` the reduced `(A/RT)` Helmholtz free energy dependent on composition `xᵢ` for `i` ∈ `1:n`, returns `L` and `det(M)`, where `L` and `M` are defined as:
 ```
 L := det(ℍ(a)) (ℍ = hessian)
 M := ℍ(a) for rows ∈ 1:n-1
@@ -191,7 +191,9 @@ function wilson_k_values(model::EoSModel,p,T,crit = nothing)
     return wilson_k_values!(K,model,p,T,crit)
 end
 
-function wilson_k_values!(K,model::EoSModel,p,T,crit = nothing)
+wilson_k_values!(K,model::EoSModel,p,T) = wilson_k_values!(K,model,p,T,nothing)
+
+function wilson_k_values!(K,model::EoSModel,p,T,crit)
     n = length(model)
     pure = split_model.(model)
     if crit === nothing

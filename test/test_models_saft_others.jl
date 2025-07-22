@@ -91,11 +91,13 @@ end
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.1575210505284332 rtol = 1e-6
         test_gibbs_duhem(system, V, T, z)
         test_scales(system)
+        test_repr(system,str = ["RDF: Carnahan-Starling (original CPA)"])
         GC.gc()
     end
 
     @testset "sCPA" begin
         system = sCPA(["water","carbon dioxide"])
+        test_repr(system,str = ["RDF: Kontogeorgis (s-CPA)"])
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.957518287413705 rtol = 1e-6
         GC.gc()
     end

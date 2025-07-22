@@ -102,7 +102,7 @@ species,ZRA
 "1-chloro-1,1-difluoroethane",0.2668
 1-chloronaphthalene,0.2464
 1-chloropentane,0.2567
-1-cis-2-trans-4-trimethylcyclopentane,0.2605
+"1-cis-2-trans-4-trimethylcyclopentane~|~(1r,2s)-1,2,4-trimethylcyclopentane",0.2605
 1-decanol,0.2493
 1-decene,0.2556
 1-decyne,0.2577
@@ -431,7 +431,7 @@ chlorotrifluoromethane,0.2772
 "cis-1,2-dimethylcyclohexane",0.2544
 "cis-1,2-dimethylcyclopentane",0.2698
 "cis-1,3-dimethylcyclohexane",0.2634
-"cis-1,3-dimethylcyclopentane",0.2801
+"(z)-1,3-dimethylcyclopentane~|~1,cis-3-dimethylcyclopentane~|~cis-1,3-dimethylcyclopentane",0.2801
 "cis-1,3-pentadiene",0.2559
 "cis-1,4-dimethylcyclohexane",0.2592
 cis-1-propenylbenzene,0.2558
@@ -440,7 +440,7 @@ cis-2-decene,0.2516
 cis-2-heptene,0.2574
 cis-2-hexene,0.2605
 cis-2-methylcyclohexanol,0.267
-cis-2-octene,0.2554
+(z)-2-octene~|~cis-2-octene,0.2554
 cis-2-pentene,0.2701
 cis-3-heptene,0.2588
 cis-3-hexene,0.2634
@@ -883,7 +883,7 @@ propadiene,0.2677
 propanal,0.2549
 propane,0.277
 propargyl alcohol,0.2405
-propenyl cyclohexene,0.2616
+propenylcyclohexene~|~1-allylcyclohexene~|~1-(2-propenyl)cyclohexene,0.2616
 propionic acid,0.2284
 propionic anhydride,0.2571
 propionitrile,0.2176
@@ -953,7 +953,7 @@ toluene,0.2643
 "trans-1,3,3,3-tetrafluoropropene",0.2664
 "trans-1,3-dimethylcyclohexane",0.2591
 "trans-1,3-dimethylcyclopentane",0.2779
-"trans-1,3-pentadiene",0.2595
+"1-trans-3-pentadiene~|~(e)-1,3-pentadiene~|~trans-1,3-pentadiene",0.2595
 "trans-1,4-dimethylcyclohexane",0.2644
 trans-2-butene,0.272
 trans-2-heptene,0.2592

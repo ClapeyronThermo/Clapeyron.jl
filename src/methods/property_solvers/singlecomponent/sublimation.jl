@@ -26,13 +26,13 @@ end
 """
     psub,vs,vv = sublimation_pressure(model::CompositeModel,T;v0=x0_sublimation_pressure(model,T))
 
-Calculates the sublimation pressure of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure.
+Calculates the sublimation pressure `psub` of a `CompositeModel` containing a solid and fluid phase EoS, at a specified temperature `T`.
 You can pass a tuple of initial values for the volumes `(vs0,vv0)`.
 
 returns:
-- Sublimation Pressure [`Pa`]
-- Sublimation solid volume at specified temperature [`m³`]
-- Sublimation vapour volume at specified temperature [`m³`]
+- Sublimation Pressure `[Pa]`
+- Sublimation solid volume at specified temperature `[m³]`
+- Sublimation vapour volume at specified temperature `[m³]`
 """
 function sublimation_pressure(model::CompositeModel,T;kwargs...)
     method = init_preferred_method(sublimation_pressure,model,kwargs)
@@ -128,15 +128,15 @@ function ChemPotSublimationTemperature(;v0 = nothing,
 end
 
 """
-    pm,vs,vl = sublimation_temperature(model::CompositeModel,T;v0=x0_sublimation_pressure(model,T))
+    pm,vs,vl = sublimation_temperature(model::CompositeModel,p;v0=x0_sublimation_pressure(model,T))
 
-Calculates the sublimation temperature of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure.
+Calculates the sublimation temperature of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure `p`.
 You can pass a tuple of initial values for the volumes `(vs0,vl0)`.
 
 returns:
-- Sublimation Temperature [`K`]
-- sublimation solid volume at specified pressure [`m³`]
-- sublimation vapour volume at specified pressure [`m³`]
+- Sublimation Temperature `[K]`
+- sublimation solid volume at specified pressure `[m³]`
+- sublimation vapour volume at specified pressure `[m³]`
 """
 function sublimation_temperature(model::CompositeModel,p;kwargs...)
     method = init_preferred_method(sublimation_temperature,model,kwargs)
