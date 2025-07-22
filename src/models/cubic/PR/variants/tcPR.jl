@@ -119,7 +119,7 @@ function tcPR(components;
             if cc.ismissingvalues[i] 
                 
                 Tci = Tc[i]
-                Pci = Pc[i]
+                Pci = pc[i]
                 R = Rgas()
                 RTp = (R*Tci/Pci)
                 if zra !== nothing && !zra.ismissingvalues[i]
