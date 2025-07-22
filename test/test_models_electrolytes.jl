@@ -25,6 +25,7 @@
 
     @testset "ePCSAFT" begin
         system = ePCSAFT(["water"],["sodium","chloride"])
+        test_repr(system,str = ["Neutral Model:","Ion Model:","RSP Model"])
         salts = [("sodium chloride",["sodium"=>1,"chloride"=>1])]
         z = molality_to_composition(system,salts,m)
         #this result is using normal water parameters. From Clapeyron 0.6.9 onwards, "water" will use T-dependend sigma on pharmaPCSAFT.

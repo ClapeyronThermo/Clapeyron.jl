@@ -149,6 +149,23 @@ end
 test_k(model) = test_kl(model,test_l = false)
 test_l(model) = test_kl(model,test_k = false)
 
+function test_repr(val;str = nothing,str_compact = nothing)
+    x = repr("text/plain",val)
+    @test x isa String
+    x_compact = repr(val)
+    @test x_compact isa String
+    if str != nothing
+        for s in str
+            @test occursin(s,x)
+        end
+    end
+
+    if str_compact != nothing
+        for s in str_compact
+            @test occursin(s,x_compact)
+        end
+    end
+end
 #=
 include_distributed distributes the test load among all workers
 =#

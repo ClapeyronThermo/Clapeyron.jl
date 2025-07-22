@@ -66,6 +66,7 @@ GC.gc()
         test_gibbs_duhem(system,V,T,z)
         test_scales(system)
         test_recombine(system)
+        test_repr(system,str = ["\"methanol\": \"CH3OH\" => 1"])
         GC.gc()
     end
     

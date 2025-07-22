@@ -101,7 +101,7 @@ end
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
     dual2 = ForwardDiff.Dual{T,R,2}(x2, ForwardDiff.Partials((_0,_1)))
-    out::ForwardDiff.Dual{T,R,2} = f(dual1,dual2)
+    out = f(dual1,dual2)
     ∂out = ForwardDiff.partials(out)
     return ForwardDiff.value(out),SVector(∂out.values)
 end

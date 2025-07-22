@@ -262,7 +262,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
         if fluid isa GammaPhi
             act = fluid.activity
             if hasfield(typeof(act),:puremodel)
-                rint(io,'\n',"Activity Model: ", parameterless_type(act))
+                print(io,'\n',"Activity Model: ", parameterless_type(act))
             else
                 print(io,'\n',"Activity Model: ",typeof(act))
             end

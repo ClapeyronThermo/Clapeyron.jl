@@ -92,7 +92,11 @@ Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_chemical_potential)
+    μ = chemical_potential_impl(model,p,T,z,phase,threaded,vol0)
+end
+
+function chemical_potential_impl(model,p,T,z,phase,threaded,vol0)
+    return PT_property(model,p,T,z,phase,threaded,vol0,VT_chemical_potential)
 end
 
 """
@@ -660,9 +664,9 @@ function activity_coefficient(model::EoSModel,p,T,z=SA[1.];
 end
 
 function activity_coefficient_impl(model,p,T,z,μ_ref,reference,phase,threaded,vol0)
-    R̄ = Rgas(model)
+    RT = Rgas(model)*T
     μ_mixt = chemical_potential(model, p, T, z; phase, threaded, vol0)
-    return sum(z) .* exp.((μ_mixt .- μ_ref) ./ R̄ ./ T) ./z
+    return sum(z) .* exp.((μ_mixt .- μ_ref) ./ RT) ./z
 end
 
 """
