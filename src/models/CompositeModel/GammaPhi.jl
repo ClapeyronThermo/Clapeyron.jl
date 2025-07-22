@@ -436,7 +436,7 @@ function tpd_obj(model::GammaPhi, p, T, di, isliquid, cache = tpd_neq_cache(mode
         fx = @sum(w[i]*(lnγw[i] + log(w[i]) - di[i])) - sum(w) + 1
     end
 
-    obj = Solvers.ADScalarObjective(f,di,ForwardDiff.Chunk{2}())
+    obj = Solvers.ADScalarObjective(f,di)
     optprob = OptimizationProblem(obj = obj,inplace = true)
 end
 

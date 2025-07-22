@@ -514,13 +514,12 @@ vl = b + sqrt(0.5RTb3/2a) - c
 =#
 
 
-function wilson_k_values!(K,model::CubicModel, p, T, crit = nothing)
+function wilson_k_values!(K,model::CubicModel, p, T, crit)
     Pc = model.params.Pc.values
     Tc = model.params.Tc.values
     α = typeof(model.alpha)
     w1 = getparam(model,:acentricfactor)
     w2 = getparam(model.alpha,:acentricfactor)
-
     #we can find stored acentric factor values, so we calculate those
     if w1 !== nothing
         ω = w1.values
