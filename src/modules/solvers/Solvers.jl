@@ -56,5 +56,6 @@ include("optimize.jl")
 include("integral.jl")
 include("chebyshev.jl")
 include("npipm.jl")
+include("tr_optimizer.jl")
 
 end # module
