@@ -238,7 +238,6 @@ function x0_sat_pure_virial(model,T)
         x0l = 3*lb_v
         px = pressure(model,x0l,T)
         if px < 0 #low pressure
-            vl,vv = x0_sat_pure_near0(model,T;B = B)
             p = RT/vv
             return p,vl,vv
         else #high pressure?
@@ -388,6 +387,9 @@ function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B 
         vl = volume(model,p,T,z,vol0 = vl0,phase = :l)
     else
         vl = vl0*oneunit(vv)
+    end
+    if isnan(vv)
+        vv = RT/p
     end
     return p,vl,vv
 end
@@ -727,17 +729,18 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
         vl,vv = critical_vsat_extrapolation(model,T,Tc,Vc)
         p = pressure(model,vl,T)
         return p,vl,vv
-    elseif 0.8 <= Tr <= 0.99
-        B = second_virial_coefficient(model,T)
-        v_ub = -2*B
-        pl0 = liquid_pressure_from_virial(model,T,B)
-        v_lb = volume(model,pl0,T,phase = :l)
+    end
+
+    B = second_virial_coefficient(model,T)
+    v_ub = -2B
+    if v_ub < 0
+        return x0_sat_pure_near0(model,T,B = B)
+    end
+    v_ub = -2*B
+    pl0 = liquid_pressure_from_virial(model,T,B)
+    if 0.8 <= Tr <= 0.99
         return x0_sat_pure_spinodal(model,T,v_lb,v_ub,B,Vc)
     elseif 0 <= Tr < 0.8
-        B = second_virial_coefficient(model,T)
-        v_ub = -2*B
-        pl0 = liquid_pressure_from_virial(model,T,B)
-        vl = volume(model,pl0,T,phase = :l)
         return x0_sat_pure_near0(model,T,vl;B = B)
     else
         return nan,nan,nan

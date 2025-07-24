@@ -52,10 +52,10 @@ end
 """
     PatelTeja(components;
     idealmodel = BasicIdeal,
-    alpha = NoAlpha,
+    alpha = PatelTejaAlpha,
     mixing = vdW1fRule,
     activity = nothing,
-    translation = PatelTejaTranslation,
+    translation = NoTranslation,
     userlocations = String[],
     ideal_userlocations = String[],
     alpha_userlocations = String[],
@@ -232,7 +232,7 @@ function cubic_ΔT(model::PatelTejaModel,T,z)
     c = diagvalues(model.params.c.values)
     b̄ = cubic_lb_volume(model,T,z)
     c̄ = dot(c,z)
-    γ = c̄/b̄
+    γ = complex(c̄/b̄)
     δ = sqrt(evalpoly(γ,(1,6,1)))
     ϵ = 1 + γ
     return (-0.5*(ϵ + δ), -0.5*(ϵ - δ))

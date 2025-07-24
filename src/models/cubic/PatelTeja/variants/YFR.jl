@@ -340,7 +340,7 @@ function crit_pure(model::YFRModel)
     Δ1,Δ2 = cubic_ΔT(model,Tc,SA[1.0])
     RT = Rgas(model)*Tc
     RTp = RT/Pc
-    Vc0 = (RTp + (Δ1 + Δ2 + 1)*b)/3
+    Vc0 = real((RTp + (Δ1 + Δ2 + 1)*b)/3)
     c = translation(model,Vc0,Tc,SA[1.0])
     Vc = Vc0 - c[1]
     return Tc,Pc,Vc
