@@ -137,7 +137,12 @@ function obj_sle_solubility(F,model::CompositeModel{L,S},p,T,zsolv,solu,idx_sol_
 
     if typeof(model.fluid) <: ESElectrolyteModel
         μ = chemical_potential(model.fluid,p,T,z)
+        
+        # zref = ones(length(model.fluid))*1e-30
+        # idx_water = find_water_indx(model.fluid)
+        # zref[idx_water] = 1.0
         zref = zeros(length(model.fluid))
+
         ineutral = model.fluid.charge .== 0
         zref[.!(ineutral)] .= 1e-30
         zref[ineutral] .= zsolv[ineutral]

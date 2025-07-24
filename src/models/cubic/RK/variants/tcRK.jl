@@ -119,7 +119,7 @@ function tcRK(components;
         for i in 1:n
             if cc.ismissingvalues[i]
                 Tci = Tc[i]
-                Pci = Pc[i]
+                Pci = pc[i]
                 R = Rgas()
                 RTp = (R*Tci/Pci)
                 !estimate_translation && SingleMissingError(c)
