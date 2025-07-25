@@ -328,7 +328,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     end
     #fill chemical potential equalities:
 
-    idx_μ_constraints = (1:((np-1)*nc)) .+ (np - 1)
+    idx_μ_constraints = (1:((np-1)*nc)) .+ (idx_p_constraints[end])
     μ_constraints = @view output[idx_μ_constraints]
     μ_end = similar(output,nc)
 
@@ -363,9 +363,9 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     end
 
     #fill β,extended composition constraints
-    idx_β_constraints = (1:np) .+ (idx_μ_constraints[end] + 1)
-    idx_ξ_constraints = (1:nc) .+ (idx_β_constraints[end] + 1)
-
+    idx_β_constraints = (1:np) .+ (idx_μ_constraints[end])
+    idx_ξ_constraints = (1:nc) .+ (idx_β_constraints[end])
+    
     β_constraints = @view output[idx_β_constraints]
     ξ_constraints = @view output[idx_ξ_constraints]
 
@@ -813,7 +813,8 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
         return FlashResultInvalid(x1,βv)
     elseif βv < 0 || βv > 1
         phase0 = βv < 0 ? :liquid : :vapour
-        Tx,_phase = __Tproperty(model,p,x/∑z,x1,spec,phase0,Ts)
+        _T0 = T0 === nothing ? TT(Ts) : TT(primalval(T0))
+        Tx,_phase = __Tproperty(model,p,x/∑z,x1,spec,phase0,_T0)
         return FlashResult(model,p,Tx,SA[∑z*one(p)*one(Tx)],phase = _phase)
     else
         return FlashResult(model,p,Ts,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false)
@@ -866,7 +867,8 @@ function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing) where F
         return FlashResultInvalid(x1,βv)
     elseif βv < 0 || βv > 1
         phase0 = βv < 0 ? :liquid : :vapour
-        px,_phase = __Pproperty(model,T,x/∑z,x1,spec,phase0,P0)
+        _p0 = P0 === nothing ? TT(ps) : TT(primalval(P0))
+        px,_phase = __Pproperty(model,T,x/∑z,x1,spec,phase0,_p0)
         return FlashResult(model,px,T,SA[∑z*one(px)*one(T)],phase = _phase)
     else
         return FlashResult(model,ps,T,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false)
