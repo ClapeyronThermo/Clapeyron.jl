@@ -788,12 +788,14 @@ function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
 end
 
 function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
+
     ∑z = sum(z)
     x1 = SVector(1.0*one(∑z))
+    TT = Base.promote_eltype(model,p,x,z)
+
     sat,crit,status = _extended_saturation_temperature(model,p)
 
-    if status == :fail
-        TT = Base.promote_eltype(model,p,x,z)
+    if status == :fail    
         return FlashResultInvalid(x1,one(TT))
     end
 

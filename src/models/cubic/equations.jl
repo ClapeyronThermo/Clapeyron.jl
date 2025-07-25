@@ -671,6 +671,7 @@ function CubicModel(cubicmodel::Type{T},params,components;
     _components = format_components(components)
     PARAM = parameterless_type(fieldtype(cubicmodel,:params))
     transform_params(PARAM,params,_components)
+    transform_params(T,params,_components)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_alphamodel(alpha,components,params,alpha_userlocations,verbose)
