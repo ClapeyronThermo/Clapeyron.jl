@@ -363,9 +363,11 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     end
 
     #fill β,extended composition constraints
-    βξspec_constraints = viewlast(output,np+nc+2)
-    ξ_constraints = @view βξspec_constraints[np+1:end-2]
-    β_constraints = @view βξspec_constraints[1:np-1]
+    idx_β_constraints = (1:np) .+ (idx_μ_constraints[end] + 1)
+    idx_ξ_constraints = (1:nc) .+ (idx_β_constraints[end] + 1)
+
+    β_constraints = @view output[idx_β_constraints]
+    ξ_constraints = @view output[idx_ξ_constraints]
 
     ξ_constraints .= zbulk
 
