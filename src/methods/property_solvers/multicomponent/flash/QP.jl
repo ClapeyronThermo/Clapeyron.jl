@@ -98,7 +98,7 @@ function qp_flash(model,β,p,z,method::FlashMethod)
     check_arraysize(model,z)
 
     if z isa SingleComp || length(model) == 1
-        result1 = qflash_pure(model_r,pressure,p,β,z)
+        result1 = qflash_pure(model,pressure,p,β,z)
         return result1
     end
 
