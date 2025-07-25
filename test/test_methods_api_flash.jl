@@ -154,21 +154,15 @@
 
         #running the vle part
         if hasfield(UNIFAC,:puremodel)
-            model_vle = UNIFAC(["water", "ethanol"],puremodel = PCSAFT)
+            model_vle = UNIFAC(["octane","heptane"],puremodel = cPR)
         else
-            model_vle = CompositeModel(["water", "ethanol"],liquid = UNIFAC,fluid = PCSAFT)
+            model_vle = CompositeModel(["octane","heptane"],liquid = UNIFAC,fluid = cPR)
         end
-        flash4 = tp_flash(model_vle, 101325, 363.15, [0.5, 0.5], MichelsenTPFlash())
-        #=@test flash4[1] ≈
-        [0.6824441505154921 0.31755584948450793
-        0.3025308123759482 0.6974691876240517] rtol = 1e-6
-        this was wrong, we were calculating the gas volume as the addition of partial pressures,
-        basically ideal gas.
-        =#
+        flash4 = tp_flash(model_vle, 2500.0, 300.15, [0.9, 0.1], MichelsenTPFlash())
 
         @test flash4[1] ≈
-        [0.7006206854062672 0.29937931459373285;
-        0.43355504959745633 0.5664449504025437] rtol = 1e-6
+        [0.923964726801428 0.076035273198572; 
+        0.7934765930306608 0.20652340696933932] rtol = 1e-6
         #test equality of activities does not make sense in VLE
     end
 
@@ -370,6 +364,13 @@ end
     end
     @test issorted(p_tank)
 
+    #394
+    fluid394 = cPR(["R134a"],idealmodel=ReidIdeal);
+    f394(x) = Clapeyron.PH.temperature(fluid394,101325,x,[1.0]);
+    h394 = collect(range(-26617.0,-4282.0,100));
+    h394 = -25000.0
+    @test iszero(Clapeyron.ForwardDiff.derivative(f394,h394))
+    
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)
