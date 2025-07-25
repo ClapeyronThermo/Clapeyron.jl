@@ -201,9 +201,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     verbose && @info "temperature($property) > temperature(dew point)"
     res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_T)
     return __Tproperty_check(res,verbose)
-  end
-
-  if 0 <= β <= 1
+  elseif 0 <= β <= 1
     T_edge = FindEdge(F,bubble_T,dew_T)
     if !isfinite(T_edge)
       verbose && @error "failure to calculate edge point"
@@ -239,9 +237,8 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     end
   end
 
-  verbose && @error "TProperty calculation failed"
   _0 = zero(Base.promote_eltype(model,p,prop,z))
-  return _0/_0,:failure
+  return __Tproperty_check((_0/_0,:failure),verbose)
 end
 
 function Tproperty_pure(model,p,x,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,T0) where F

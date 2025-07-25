@@ -149,7 +149,7 @@ saturation_model(model::T) where T = model
     has_fast_crit_pure(model::EoSModel)::Bool
 
 Used to indicate if a model can calculate their critical point without iterative calculations.
-Having a critical point available results in speed ups for saturation calculations. 
+Having a critical point available results in speed ups for saturation calculations.
 By default returns `false`
 """
 function has_fast_crit_pure(model)::Bool
@@ -406,7 +406,7 @@ function liquid_pressure_from_virial(model,T,B = second_virial_coefficient(model
     because at near critical pressures, the virial predicted pressure is below the liquid spinodal pressure
     in one sense, γc is a correction factor.
     =#
-    
+
     vv_virial = -2*B #maximum gas volume predicted by virial equation
     pv_virial = -0.25*Rgas(model)*T/B #maximum virial predicted pressure
     γT = pv_eos/pv_virial
@@ -454,7 +454,7 @@ function _find_vm(dpoly,v_lb::K,v_ub::K) where K
     else
         nr,v1,v2,v3 = Solvers.real_roots3(d2poly)
     end
-    
+
     if evalpoly(v1,dpoly) > 0 && (lb <= v1 <= ub) && evalpoly(v1,d3poly) < 0
         return v1 + v_lb
     elseif evalpoly(v2,dpoly) > 0 && (lb <= v2 <= ub) && nr > 1 && evalpoly(v2,d3poly) < 0
@@ -495,7 +495,7 @@ function pure_spinodal_newton_bracket(model,T,v,f,dp_scale,z = SA[1.0])
             Δ = vs_old - 0.5*(vlo + vhi)
             vs_old = vs
             vs = 0.5*(vlo + vhi)
-         
+
         end
         if abs(Δ) < atol || abs(dp_scale*fs) < atol
             return vs
@@ -637,13 +637,13 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
     if isnan(vsv)
         return pressure(model,v_lb,T),v_lb,v_ub
     end
-    
+
     plb = p(v_lb)
     pub = p(v_ub)
     psl = p(vsl)
     psv = p(vsv)
     pmid = 0.5*max(zero(psl),psl) + 0.5*psv
-    
+
     if plb <= pmid
         vsl_lb = volume(model,psv,T,phase = :l, vol0 = v_lb)
     else
@@ -673,7 +673,7 @@ function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B)
     end
     psv_ub,dpsv_ub,d2psv_ub = Solvers.f∂f∂2f(p,vsv_ub)
     dpsv = zero(psl)
-    poly_v = Solvers.hermite5_poly(vsv,vsv_ub,psv,psv_ub,dpsv,dpsv_ub,d2psv,d2psv_ub)  
+    poly_v = Solvers.hermite5_poly(vsv,vsv_ub,psv,psv_ub,dpsv,dpsv_ub,d2psv,d2psv_ub)
     vv = volume_from_spinodal(ps_mid,poly_v,vsv,(zero(vsv),vsv_ub - vsv))
     return ps_mid,vl,vv
 end
@@ -733,15 +733,18 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
 
     B = second_virial_coefficient(model,T)
     v_ub = -2B
+
     if v_ub < 0
         return x0_sat_pure_near0(model,T,B = B)
     end
-    v_ub = -2*B
+
     pl0 = liquid_pressure_from_virial(model,T,B)
+    v_lb = volume(model,pl0,T,phase = :l)
+
     if 0.8 <= Tr <= 0.99
         return x0_sat_pure_spinodal(model,T,v_lb,v_ub,B,Vc)
     elseif 0 <= Tr < 0.8
-        return x0_sat_pure_near0(model,T,vl;B = B)
+        return x0_sat_pure_near0(model,T,v_lb,B = B)
     else
         return nan,nan,nan
     end
@@ -980,7 +983,7 @@ function critical_vsat_extrapolation(model,T,Tc,Vc)
         return nan,nan
     end
     ρc = 1/Vc
-    function dp(ρ,T) 
+    function dp(ρ,T)
         _,dpdV = p∂p∂V(model,1/ρ,T)
         return -dpdV*ρ*ρ
     end
@@ -1007,7 +1010,7 @@ critical_vsat_extrapolation(model,T,crit) = critical_vsat_extrapolation(model,T,
 Given critical information and a temperature, extrapolate the saturation pressure.
 
 !!! note
-    This function will not check if the input temperature is over the critical point.  
+    This function will not check if the input temperature is over the critical point.
 """
 function critical_psat_extrapolation(model,T,Tc,Pc,Vc)
     _p(_T) = pressure(model,Vc,_T)

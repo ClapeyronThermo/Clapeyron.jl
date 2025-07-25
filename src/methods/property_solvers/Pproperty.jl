@@ -35,6 +35,15 @@ function Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   return p
 end
 
+function __Pproperty_check(res,verbose)
+  p,st = res
+  if verbose && st == :failure
+    @error "PProperty calculation failed"
+    return zero(p)/zero(p),st
+  end
+  return p,st
+end
+
 function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
           property::TT = enthalpy;
           rootsolver = Roots.Order0(),
@@ -51,21 +60,25 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     return _Pproperty(model,T,norm_prop,z,norm_property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
   end
   if length(model) == 1 && length(z) == 1
-    return Pproperty_pure(model,T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
+    res = Pproperty_pure(model,T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
+    return __Pproperty_check(res,verbose)
   end
 
   if p0 !== nothing
-    return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p0)
+    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p0)
+    return __Pproperty_check(res,verbose)
   end
 
   if is_liquid(phase)
     p00 = bubble_pressure(model,T,z)[1]
-    return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p00)
+    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p00)
+    return __Pproperty_check(res,verbose)
   end
 
   if is_vapour(phase)
     p00 = dew_pressure(model,T,z)[1]
-    return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p00)
+    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p00)
+    return __Pproperty_check(res,verbose)
   end
 
   bubble_prop,dew_prop,full_prop = x0_Pproperty(model,T,z,verbose)
@@ -136,69 +149,63 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     prop_dew = property(model,dew_p,T,z,phase=phase)
   end
 
-  F(P) = property(model,P,T,z,phase = phase)
+  F(P) = property(model,P,T,z)
 
   if verbose
-    @info "input property:           $prop"
-    @info "property at dew point:    $prop_dew"
-    @info "property at bubble point: $prop_bubble"
-    @info "pressure at dew point:    $dew_p"
-    @info "pressure at bubble point: $bubble_p"
+    @info "input property:              $prop"
+    @info "property at dew point:       $prop_dew"
+    @info "property at bubble point:    $prop_bubble"
+    @info "pressure at dew point:       $dew_p"
+    @info "pressure at bubble point:    $bubble_p"
   end
 
   β = (prop - prop_dew)/(prop_bubble - prop_dew)
-  if 0 <= β <= 1
-      P_edge = FindEdge(F,dew_p,bubble_p) # dew_p < bubble_p --> condition for FindEdge
-      if !isfinite(P_edge)
-        verbose && @warn "failure to calculate edge point"
-        verbose && @warn "$property in the phase change region, returning a linear interpolation of the bubble and dew pressures"
-        return β*bubble_p + (1 - β)*dew_p,:eq
-      end
-      verbose && @info "pressure at edge point:   $P_edge"
-      prop_edge1 = property(model,P_edge - 1e-10,T,z,phase = phase);
-      prop_edge2 = property(model,P_edge + 1e-10,T,z,phase = phase);
-      #=
-      the order is the following:
-      bubble -> edge1 -> edge2 -> dew
-      or:
-      dew -> edge2 -> edge1 -> bubble
-      =#
 
-      βedge = (prop - prop_edge1)/(prop_edge2 - prop_edge1)
-
-      if 0 <= βedge <= 1
-        verbose && @warn "In the phase change region"
-        return P_edge,:eq
-      elseif βedge < 0 #prop <= prop_edge2
-        verbose && @info "pressure($property) ∈ (pressure(dew point),pressure(edge point))"
-        px,st = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
-        if st == :failure
-          verbose && @warn "failure to calculate edge point solution, returning edge point"
-          return P_edge,:eq
-        else
-          return px,:eq
-        end
-        #abs(prop) > abs(prob_edge1)
-      elseif βedge > 1
-        verbose && @info "pressure($property) ∈ (pressure(edge point),pressure(bubble point))"
-        px,st = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
-        if st == :failure
-          verbose && @warn "failure to calculate edge point solution, returning edge point"
-          return P_edge,:eq
-        else
-          return px,:eq
-        end
-      end
-
-    elseif β > 1
-      verbose && @info "pressure($property) > pressure(bubble point)"
-      return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
-    elseif β < 0
-      verbose && @info "pressure($property) < pressure(dew point)"
-      return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
+  if β > 1
+    verbose && @info "pressure($property) > pressure(bubble point)"
+    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
+    return __Pproperty_check(res,verbose)
+  elseif β < 0
+    verbose && @info "pressure($property) < pressure(dew point)"
+    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
+    return __Pproperty_check(res,verbose)
+  elseif 0 <= β <= 1
+    P_edge = FindEdge(F,dew_p,bubble_p) # dew_p < bubble_p --> condition for FindEdge
+    if !isfinite(P_edge)
+      verbose && @warn "failure to calculate edge point"
+      verbose && @warn "$property in the phase change region, returning a linear interpolation of the bubble and dew pressures"
+      return β*bubble_p + (1 - β)*dew_p,:eq
     end
-    _0 = zero(Base.promote_eltype(model,T,prop,z))
-    return _0/_0,:failure
+    prop_edge_dew = property(model,P_edge - 1e-10,T,z,phase = phase);
+    prop_edge_bubble = property(model,P_edge + 1e-10,T,z,phase = phase);
+    verbose && @info "property at dew edge:        $prop_edge_dew"
+    verbose && @info "property at bubble edge:     $prop_edge_bubble"
+    verbose && @info "pressure at edge point:      $T_edge"
+  
+    #=
+    the order is the following:
+    bubble -> edge_bubble -> edge_dew -> dew
+    or:
+    dew -> edge_dew -> edge_bubble -> bubble
+    =#
+
+    βedge = (prop - prop_edge_bubble)/(prop_edge_dew - prop_edge_bubble)
+    βedge_bubble = (prop - prop_edge_bubble)/(prop_bubble - prop_edge_bubble)
+    βedge_dew = (prop - prop_edge_dew)/(prop_dew - prop_edge_dew)
+
+    if 0 <= βedge <= 1
+      verbose && @warn "In the phase change region"
+      return P_edge,:eq
+    elseif βedge < 0 #prop <= prop_edge2
+      verbose && @info "pressure($property) ∈ (pressure(dew point),pressure(edge point))"
+      return βedge_dew*dew_p + (1 - βedge_dew)*P_edge,:eq
+    elseif βedge > 1
+      verbose && @info "pressure($property) ∈ (pressure(edge point),pressure(bubble point))"
+     return βedge_dew*dew_p + (1 - βedge_dew)*P_edge,:eq
+    end
+  end
+  _0 = zero(Base.promote_eltype(model,T,prop,z))
+  return __Pproperty_check((_0/_0,:failure),verbose)
 end
 
 function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,p0) where F
