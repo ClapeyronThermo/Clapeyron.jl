@@ -35,11 +35,11 @@ function Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   return p
 end
 
-function __Pproperty_check(res,verbose)
+function __Pproperty_check(res,verbose,p_other = zero(res[1])/zero(res[1]))
   p,st = res
   if verbose && st == :failure
     @error "PProperty calculation failed"
-    return zero(p)/zero(p),st
+    return p_other,st
   end
   return p,st
 end
@@ -180,7 +180,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     prop_edge_bubble = property(model,P_edge + 1e-10,T,z,phase = phase);
     verbose && @info "property at dew edge:        $prop_edge_dew"
     verbose && @info "property at bubble edge:     $prop_edge_bubble"
-    verbose && @info "pressure at edge point:      $T_edge"
+    verbose && @info "pressure at edge point:      $P_edge"
   
     #=
     the order is the following:
@@ -197,11 +197,16 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
       verbose && @warn "In the phase change region"
       return P_edge,:eq
     elseif βedge < 0 #prop <= prop_edge2
-      verbose && @info "pressure($property) ∈ (pressure(dew point),pressure(edge point))"
-      return βedge_dew*dew_p + (1 - βedge_dew)*P_edge,:eq
+      verbose && @info "pressure($property) ∈ (pressure(bubble point),pressure(edge point))"
+      P_edge_bubble = exp(βedge_bubble*log(bubble_p) + (1 - βedge_bubble)*log(P_edge))
+      px,_ = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,P_edge_bubble)
+      return __Pproperty_check((px,:eq),verbose,P_edge)
     elseif βedge > 1
-      verbose && @info "pressure($property) ∈ (pressure(edge point),pressure(bubble point))"
-     return βedge_dew*dew_p + (1 - βedge_dew)*P_edge,:eq
+      verbose && @info "pressure($property) ∈ (pressure(edge point),pressure(dew point))"
+      P_edge_dew = exp(βedge_dew*log(dew_p) + (1 - βedge_dew)*log(P_edge))
+      @show P_edge_dew
+      px,_ = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,P_edge_dew)
+      return __Pproperty_check((px,:eq),verbose,P_edge)
     end
   end
   _0 = zero(Base.promote_eltype(model,T,prop,z))

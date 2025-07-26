@@ -63,11 +63,11 @@ function Tproperty(model::EoSModel,p,prop,z = SA[1.0],
   return T
 end
 
-function __Tproperty_check(res,verbose)
+function __Tproperty_check(res,verbose,Tother = zero(res[1])/zero(res[1]))
   T,st = res
   if verbose && st == :failure
     @error "TProperty calculation failed"
-    return zero(T)/zero(T),st
+    return Tother,st
   end
   return T,st
 end
@@ -230,10 +230,16 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
       return T_edge,:eq
     elseif βedge > 1
       verbose && @info "temperature($property) ∈ (temperature(dew point),temperature(edge point))"
-      return βedge_dew*dew_T + (1 - βedge_dew)*T_edge,:eq
+      T_edge_dew = βedge_dew*dew_T + (1 - βedge_dew)*T_edge
+      #TODO: we could skip this calculation when Tproperty is used as initial point.
+      Tx,_ = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_edge_dew)
+      return __Tproperty_check((Tx,:eq),verbose,T_edge)
     elseif βedge < 0
       verbose && @info "temperature($property) ∈ (temperature(edge point),temperature(bubble point))"
-      return βedge_bubble*bubble_T + (1 - βedge_bubble)*T_edge,:eq
+      T_edge_bubble = βedge_bubble*bubble_T + (1 - βedge_bubble)*T_edge
+      #TODO: we could skip this calculation when Tproperty is used as initial point.
+      Tx,_ = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_edge_bubble)
+      return __Tproperty_check((Tx,:eq),verbose,T_edge)
     end
   end
 
@@ -311,8 +317,87 @@ function Tproperty_impl(model,p,prop,z,property::F,rootsolver,phase,abstol,relto
     return T,:failure
   end
   return T,phase
+
+  #return Tproperty_solver(model,p,prop,z,property,phase,abstol,reltol,T0)
+end
+#=
+function Tproperty_solver(model,p,prop,z,property,phase = :unknown,abstol = 1e-15,reltol = 1e-15,T0 = NaN)
+  XX = Base.promote_eltype(model,p,prop,z)
+  Ta = XX(T0)
+  h = cbrt(eps(one(Ta)))
+  δT = h * oneunit(Ta) + abs(Ta) * h^2
+
+  Tb = T0 + δT
+  nan = (0Ta)/(0Ta)
+  Tmin,Tmax = nan,nan
+  vmin,vmax = nan,nan
+  va::XX = volume(model,p,Ta,z,phase = phase)
+  vb::XX = volume(model,p,Tb,z,phase = phase)
+  fa::XX = spec_to_vt(model,va,Ta,z,property) - prop
+  fb::XX = spec_to_vt(model,vb,Tb,z,property) - prop
+  abs(fa) <= max(abstol, abs(Ta) * reltol) && return Ta,phase
+  abs(fb) <= max(abstol, abs(Tb) * reltol) && return Tb,phase
+  fa == fb && return nan,:failure
+
+  #step 1: secant
+  success = false
+  for _ in 1:100
+    Tm::XX = Tb - (Tb - Ta) * fb / (fb - fa)
+    vm::XX = volume(model,p,Tm,z,phase = phase)
+    fm::XX = spec_to_vt(model,vm,Tm,z,property) - prop
+    iszero(fm) && return Tm,phase
+    isnan(fm) && return nan,:failure
+    abs(fm) <= max(abstol, abs(Tm) * reltol) && return Tm,phase
+    if fm == fb
+      return nan,phase
+    end
+    Tmin,Tmax = minmax(Ta,Tb)
+    vmin,vmax = minmax(va,vb)
+    if Tmin <= Tm <= Tmax 
+      success = true
+      break
+    end
+    Ta, Tb, fa, fb, va, vb = Tb, Tm, fb, fm, vb, vm
+  end
+  success || (return nan,:failure)
+  #step 2: newton
+  f_newton(vt) = Tproperty_obj(vt,model,p,prop,z,property)
+  fj(xx) = Solvers.FJ_ad(f_newton,xx)
+  x = SVector(0.5*(vmin + vmax),0.5*(Tmin + Tmax))
+  for _ in 1:20
+    Fx,Jx = fj(x)
+    d = Jx \ -Fx
+    y = x + d
+    y1,y2 = y
+    y1 < vmin && (y1 = 0.5*(x[1] + vmin))
+    y1 > vmax && (y1 = 0.5*(x[1] + vmax))
+    y2 < Tmin && (y2 = 0.5*(x[2] + Tmin))
+    y2 > Tmax && (y2 = 0.5*(x[2] + Tmax))
+    x = SVector(y1,y2)
+    ρF = norm(Fx, Inf)
+    ρs = norm(d, Inf)
+    ρx = norm(x, Inf)
+    #@show ρF, ρs
+    if ρs <= max(abstol, ρx*reltol) || ρF <= max(abstol, ρx * reltol)
+        return x[2],phase
+    end
+
+    if !all(isfinite,x)
+        return nan,:failure
+    end
+  end
+  return nan,:failure
 end
 
+function Tproperty_obj(vt,model,p,x,z,spec)
+  v,T = vt
+  px = pressure(model,v,T,z)
+  propx = spec_to_vt(model,v,T,z,spec)
+  F1 = (p - px)/p
+  F2 = (propx - x)/x
+  return SVector(F1,F2)
+end
+=#
 function __Tproperty(model,p,prop,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
   __Tproperty(model,p,prop,SA[1.0],property,rootsolver,phase,abstol,reltol,threaded,T0)
 end

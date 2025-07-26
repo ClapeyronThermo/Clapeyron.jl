@@ -463,14 +463,14 @@ end
 end
 
 @testset "Tproperty" begin
-    model1 = PCSAFT(["propane","dodecane"])
+    model1 = cPR(["propane","dodecane"])
     p = 101325.0; T = 300.0;z = [0.5,0.5]
     h_ = enthalpy(model1,p,T,z)
     s_ = entropy(model1,p,T,z)
     @test Tproperty(model1,p,h_,z,enthalpy) ≈ T
     @test Tproperty(model1,p,s_,z,entropy) ≈ T
 
-    model2 = PCSAFT(["propane"])
+    model2 = cPR(["propane"])
     z2 = [1.]
     h2_ = enthalpy(model2,p,T,z2)
     s2_ = entropy(model2,p,T,z2)
