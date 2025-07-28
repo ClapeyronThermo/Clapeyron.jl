@@ -38,9 +38,7 @@ function volume_impl(model::SolidKsModel,p,T,z,phase,threaded,vol0)
     return _0/_0
 end
 
-sle_T_ref(model::SolidKsModel) = model.params.Tref.values
-
-function chemical_potential_impl(model::SolidKsModel,p,T,z,phase,threaded,vol0)
+function chemical_potential(model::SolidKsModel, p, T, z)
     Gform = model.params.Gform.values
     Hform = model.params.Hform.values
     Tref = model.params.Tref.values
@@ -57,7 +55,6 @@ Returns a matrix containing the composition of the SLE phase boundary for each c
 
 Can only function when solid and fluid models are specified within a CompositeModel.
 """
-
 function sle_solubility(model::CompositeModel{F,S},p,T,z;solute=nothing,x0=nothing) where F <: EoSModel where S <: SolidKsModel
     mapping = model.mapping
     if isnothing(solute)
@@ -74,48 +71,30 @@ function sle_solubility(model::CompositeModel{F,S},p,T,z;solute=nothing,x0=nothi
         idx_sol_s[model.solid.components .==solute[i]] .= true
 
         #TODO: express this in terms of melting_temperature
-        #Tm = model.solid.params.Tm.values[idx_sol_s][1]
 
         idx_sol_l = zeros(Bool,length(model.fluid.components))
         solute_l = mapping[idx_sol_s][1]
         ν_l = [solute_l[1][i][2] for i in 1:length(solute_l[1])]
         solute_l = [solute_l[1][i][1] for i in 1:length(solute_l[1])]
 
+
         for i in solute_l
             idx_sol_l[model.fluid.components .== i] .= true
         end
         idx_solv = zeros(Bool,length(model.fluid.components))
-        if length(solute_l) == length(model.fluid)
+        if length(solute_l) == length(model)
             idx_solv[findfirst(idx_sol_l)] = true
         else
             idx_solv[.!(idx_sol_l)] .= true
         end
 
-        #if T > model.solid.params.Tm.values[idx_sol_s][1]
-        #    error("Temperature above melting point of $(solute[i])")
-        #end
-
         solid_r,idx_sol_r = index_reduction(model.solid,idx_sol_s)
         μsol = chemical_potential(solid_r,p,T,[1.])
-
-        Tref = sle_T_ref(solid_r)[1]
-        zref = 1.0 .* ν_l
-        zref ./= sum(zref)
-        fluid_r,idx_liq_r = index_reduction(model.fluid,idx_sol_l)
-        γref = activity_coefficient(fluid_r,p,Tref,zref)
-        Kref = one(eltype(γref))
-        for i in 1:length(Kref)
-            Kref *= (zref[i]*γref[i])^ν_l[i]
-        end
-        lnKref = log(Kref)
-        #μsol[1] += lnKref*Rgas()*T
+        # println(μsol)
 
         if isnothing(x0)
             x0 = x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
         end
-        μ_ref = reference_chemical_potential(model.fluid,p,T,reference_chemical_potential_type(model.fluid))
-        data = (μ_ref,idx_sol_l,idx_solv,μsol[1])
-
         f!(F,x) = obj_sle_solubility(F,model,p,T,z,exp10(x[1]),idx_sol_l,idx_sol_s,idx_solv,ν_l)
         results = Solvers.nlsolve(f!,x0,LineSearch(Newton()),NEqOptions(f_abstol=1e-6,f_reltol=1e-8),ForwardDiff.Chunk{1}())
         sol[i,.!(idx_solv)] .= exp10(Solvers.x_sol(results)[1]).*ν_l
@@ -174,7 +153,7 @@ function x0_sle_solubility(model::CompositeModel{L,S},p,T,z,idx_solv,idx_sol_l,�
     z∞ ./= sum(z∞)
     γ∞ = activity_coefficient(model.fluid,p,T,z∞)[idx_sol_l]
     γ∞ = prod(γ∞.^ν_l)
-    x0 = [1/sum(ν_l)*log10(exp(μsol[1]/RT-log(γ∞)))]
+    x0 = [1/sum(ν_l)*log10(exp(μsol[1]/(Rgas()*T)-log(γ∞)))]
     if x0[1] > 0
         x0 = [log10(0.5)]
     end

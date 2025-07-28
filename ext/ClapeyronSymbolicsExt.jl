@@ -142,6 +142,10 @@ for f in (:eos,:VT_enthalpy,:VT_entropy,:VT_gibbs_free_energy,:VT_helmholtz_free
     @eval begin
         @register_symbolic Clapeyron.$f(model::EoSModel,V,T,z::AbstractVector)
     end
+    f_res = Symbol(string(f,"_res"))
+    @eval begin
+        @register_symbolic Clapeyron.$f_res(model::EoSModel,V,T,z::AbstractVector)
+    end
 end
 
 #SymbolicUtils.promote_symtype(::typeof(Clapeyron._volume), args...) = Real

@@ -70,7 +70,7 @@ function α_m_leibovici(model::DeltaCubicModel,i)
     u = - Δ1 - Δ2
     w = Δ1*Δ2
     u0 = (u + 2)*sqrt(2/(1 + u + w)) - 2
-    α_m_leibovici(u0)
+    α_m_leibovici(real(u0))
 end
 
 function α_m_leibovici(u::Number)

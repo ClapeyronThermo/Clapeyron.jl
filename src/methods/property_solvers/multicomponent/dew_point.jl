@@ -27,7 +27,7 @@ function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArr
     sat = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
     p0inv_r = 1. ./ first.(sat)
     p0inv = index_expansion(p0inv_r,condensables)
-    yipi = y .* p0inv
+    yipi = y .* p0inv ./ sum(y)
     p0 = 1/sum(yipi)
     if isnothing(x0)
         xx = yipi
@@ -107,7 +107,7 @@ function dew_pressure(model::EoSModel,T,x;kwargs...)
     return dew_pressure(model, T, x, method)
 end
 
-function dew_pressure(model::EoSModel, T, y,method::ThermodynamicMethod)
+function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     y = y/sum(y)
     T = float(T)
     model_r,idx_r = index_reduction(model,y)
@@ -152,7 +152,7 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
         p0inv_r = 1.0 ./ antoine_pressure.(dPdTsat,T0)
         high_conditions = __is_high_temperature_state(pure,dPdTsat,T0)
     end
-    yipi_r = x_r = y_r .* p0inv_r
+    yipi_r = x_r = y_r .* p0inv_r ./ sum(y_r)
     p = 1/sum(yipi_r)
     x_r .*= p
     x0 = index_expansion(x_r,condensables)

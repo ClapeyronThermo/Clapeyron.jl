@@ -122,11 +122,12 @@ function a_res(model::DeltaCubicModel, V, T, z,_data = data(model,V,T,z))
     b̄ρt = b̄*ρt
     a₁ = -log1p((c̄-b̄)*ρ)
     if Δ1 == Δ2
-        return a₁ - ā*ρt*RT⁻¹/(1-Δ1*b̄ρt)
+        return a₁ - ā*ρt*RT⁻¹/(1-real(Δ1)*b̄ρt)
     else
         l1 = log1p(-Δ1*b̄ρt)
         l2 = log1p(-Δ2*b̄ρt)
-        return a₁ - ā*RT⁻¹*(l1-l2)/(ΔΔ*b̄)
+        dl = l1 - l2
+        return a₁ - ā*RT⁻¹*real(dl/(ΔΔ*b̄))
     end
 end
 
@@ -138,9 +139,9 @@ function cubic_poly(model::DeltaCubicModel,p,T,z)
     Δ1,Δ2 = cubic_ΔT(model,T,z)
     ∑Δ = -Δ1 - Δ2
     Δ1Δ2 = Δ1*Δ2
-    k₀ = -B*evalpoly(B,(A,Δ1Δ2,Δ1Δ2))
-    k₁ = evalpoly(B,(A,-∑Δ,Δ1Δ2-∑Δ))
-    k₂ = (∑Δ - 1)*B - 1
+    k₀ = real(-B*evalpoly(B,(A,Δ1Δ2,Δ1Δ2)))
+    k₁ = real(evalpoly(B,(A,-∑Δ,Δ1Δ2-∑Δ)))
+    k₂ = real((∑Δ - 1)*B - 1)
     k₃ = one(A) # important to enable autodiff
     return (k₀,k₁,k₂,k₃),c
 end
@@ -149,17 +150,18 @@ function cubic_p(model::DeltaCubicModel, V, T, z,_data = @f(data),Δ = cubic_ΔT
     Δ1,Δ2 = Δ
     n,a,b,c = _data
     v = V/n+c
-    p = Rgas(model)*T/(v-b) - a/((v-Δ1*b)*(v-Δ2*b))
+    p = Rgas(model)*T/(v-b) - real(a/((v-Δ1*b)*(v-Δ2*b)))
     return p
 end
 
 function cubic_pure_zc(model::DeltaCubicModel)
     Tc = model.params.Tc[1]
     Pc = model.params.Pc[1]
-    b = lb_volume(model,Tc,SA[1.0])
+    b = cubic_lb_volume(model,Tc,SA[1.0])
     Δ1,Δ2 = cubic_ΔT(model,Tc,SA[1.0])
+    ∑Δ = real(Δ1 + Δ2)
     B = b*Pc/(Rgas(model)*Tc)
-    return (1 + (Δ1 + Δ2 + 1)*B)/3 #Pc
+    return (1 + (∑Δ + 1)*B)/3 #Pc
 end
 
 function cubic_pure_zc(model::CubicModel)
@@ -242,7 +244,7 @@ function crit_pure(model::DeltaCubicModel)
     Δ1,Δ2 = cubic_ΔT(model,Tc,SA[1.0])
     RT = Rgas(model)*Tc
     RTp = RT/Pc
-    Vc0 = (RTp + (Δ1 + Δ2 + 1)*b)/3
+    Vc0 = (RTp + (real(Δ1 + Δ2) + 1)*b)/3
     c = translation(model,Vc0,Tc,SA[1.0])
     Vc = Vc0 - c[1]
     #we know that in AB-cubics, the critical point is already determined.
@@ -250,11 +252,14 @@ function crit_pure(model::DeltaCubicModel)
 
     #for a general cubic model, we check if the critical pressure corresponds to the calculated pressure
     a = model.params.a[1,1]
-    Pc_calculated = RT/(Vc0-b) - a/((Vc0-Δ1*b)*(Vc0-Δ2*b))
+    Pc_calculated = RT/(Vc0-b) - real(a/((Vc0-Δ1*b)*(Vc0-Δ2*b)))
     Pc_calculated ≈ Pc && return (Tc,Pc,Vc)
 
     #we failed. that means Pc is not the actual critical pressure. iterate (around Tc) and found Vc
     (Tc1,Pc1,Vc1) = __crit_pure_Δ(Tc,Vc,Rgas(model),a,b,Δ1,Δ2)
+    if isnan(Pc1)
+        return (Tc,Pc,Vc) #bail out
+    end
     return (Tc1,Pc1,Vc1 - c[1])
 end
 
@@ -263,20 +268,19 @@ function __crit_pure_Δ(T,v0,R,a,b,Δ1,Δ2)
     f(_v) = __crit_pure_Δ_obj(T,_v,R,a,b,Δ1,Δ2)
     prob = Roots.ZeroProblem(f,v0)
     v = Roots.solve(prob,Roots.Newton())
-    poly = (v - Δ1*b)*(v - Δ2*b)
+    poly = real((v - Δ1*b)*(v - Δ2*b))
     p = R*T/(v - b) - a/poly
     return (T,p,v)
 end
 
-
 function __crit_pure_Δ_obj(T,v,R,a,b,Δ1,Δ2)
     RT = R*T
-    poly = (v - Δ1*b)*(v - Δ2*b)
-    bb = -b*(Δ1 + Δ2)
+    poly = real((v - Δ1*b)*(v - Δ2*b))
+    bb = real(-b*(Δ1 + Δ2))
     aRT = a/RT
     dpdv_scale = v*v/RT
     d2pdv2_scale = dpdv_scale*v
-    dpoly = (-b*(Δ1 + Δ2) + 2*v)
+    dpoly = real((-b*(Δ1 + Δ2) + 2*v))
     dpdv = -RT/(v - b)^2 + a*dpoly/poly/poly
     d2pdv2 = 2RT/(v - b)^3 - 2a*(dpoly*dpoly/poly - 1)/(poly*poly)
     f = dpdv*dpdv_scale
@@ -345,7 +349,7 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
     end
 end
 
-function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
+function pure_spinodal(model::DeltaCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
     #=
     Segura, H., & Wisniak, J. (1997). Calculation of pure saturation properties using cubic equations of state. Computers & Chemical Engineering, 21(12), 1339–1347. doi:10.1016/s0098-1354(97)00016-1
     =#
@@ -356,10 +360,10 @@ function pure_spinodal(model::ABCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,re
     RT = Rgas(model)*T
     bRT = b*RT
     Q4 = -RT
-    Q3 = 2*(a - bRT*c1_c2)
-    Q2 = b*(a*(c1_c2 - 4) - bRT*(c1_c2*c1_c2 + 2*c1c2))
-    Q1 = 2*b*b*(a*(1 - c1_c2) - bRT*c1c2*c1_c2)
-    Q0 = b*b*b*(a*c1_c2 - bRT*c1c2*c1c2)
+    Q3 = 2*(a - bRT*c1_c2) |> real
+    Q2 = b*(a*(c1_c2 - 4) - bRT*(c1_c2*c1_c2 + 2*c1c2)) |> real
+    Q1 = 2*b*b*(a*(1 - c1_c2) - bRT*c1c2*c1_c2) |> real
+    Q0 = b*b*b*(a*c1_c2 - bRT*c1c2*c1c2) |> real
     dpoly = (Q0,Q1,Q2,Q3,Q4)
     #on single component, a good approximate for vm is the critical volume.
     d2poly = (Q1,2*Q2,3*Q3,4*Q4)
@@ -386,11 +390,11 @@ function liquid_spinodal_zero_limit(model::DeltaCubicModel,z)
     R̄ = Rgas(model)
     function F(Tx)
         a,b,c = cubic_ab(model,0,Tx,z)
-        Δ1,Δ2 = cubic_ΔT(model,T,z)
+        Δ1,Δ2 = cubic_ΔT(model,Tx,z)
         Ax = R̄*Tx
         Bx = -(Ax*b*(Δ1+Δ2) + a)
         Cx = b*(Ax*Δ1*Δ2*b + a)
-        return Bx^2 - 4*Ax*Cx
+        return real(Bx^2 - 4*Ax*Cx)
     end
     T0 = T_scale(model,z)
     prob = Roots.ZeroProblem(F,T0)
@@ -414,23 +418,27 @@ function zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
     #f(v) = ((v-Δ1*b)*(v-Δ2*b))*R̄*T - (v-b)*a
     #RT(v^2 -(Δ1+Δ2)vb + Δ1Δ2b2) - av + ab
     #RTv^2 -(RT*Δ1b+Δ2b - a)*v + (RT*Δ1Δ2b2 + ab)
-    A = R̄*T
-    B = -(R̄*T*b*(Δ1+Δ2) + a)
-    C = b*(R̄*T*Δ1*Δ2*b + a)
+    RT = R̄*T
+    A = one(RT)/b
+    B = -((Δ1+Δ2) + a/(RT*b))
+    C = (Δ1*Δ2*b + a/RT)
     #Δ = B2 - 4AC
     #R̄*T*b*(Δ1+Δ2)^2 + 2*R̄*T*b*(Δ1+Δ2)*a + a2 - 4*R̄*T*b*(R̄*T*Δ1*Δ2*b + a)
     #R̄*T*b*(Δ1+Δ2)^2 + 2*R̄*T*b*(Δ1+Δ2)*a + a2 - 4*R̄*T*b*(R̄*T*Δ1*Δ2*b + a)
     Δ = sqrt(B^2 - 4*A*C)
     vl = (-B - Δ)/(2*A) - c
     vmax = -B/(2*A) - c
-    return vl,vmax
+    return real(vl),real(vmax)
 end
 
 #Δ1,Δ2 -> Ωa,Ωb infraestructure
 
 #default: most models will use this
 
-cubic_ΔT(model,T,z) = cubic_Δ(model,z)
+function cubic_ΔT(model,T,z)
+    Δ1,Δ2 = cubic_Δ(model,z)
+    return complex(Δ1),complex(Δ2)
+end
 
 function cubic_Δ(model,z)
     return cubic_Δ(typeof(model))
@@ -663,6 +671,7 @@ function CubicModel(cubicmodel::Type{T},params,components;
     _components = format_components(components)
     PARAM = parameterless_type(fieldtype(cubicmodel,:params))
     transform_params(PARAM,params,_components)
+    transform_params(T,params,_components)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_alphamodel(alpha,components,params,alpha_userlocations,verbose)

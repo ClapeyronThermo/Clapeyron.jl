@@ -36,14 +36,14 @@ init_mixing_act = init_model_act
 function infinite_pressure_gibbs_correction(model::DeltaCubicModel,T,z)
     Δ1,Δ2 = cubic_ΔT(model,T,z)
     if Δ1==Δ2
-        return 1/(1-Δ1)
+        return real(1/(1-Δ1))
     else
-        return -log((1-Δ1)/(1-Δ2))/(Δ1 - Δ2)
+        return real(-log((1-Δ1)/(1-Δ2))/(Δ1 - Δ2))
     end
 end
 
 function infinite_pressure_gibbs_correction(model::vdWModel,T,z)
-    return -1.0
+    return -one(eltype(model))
 end
 
 #default
