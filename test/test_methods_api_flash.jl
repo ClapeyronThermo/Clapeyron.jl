@@ -362,6 +362,7 @@ end
         #@test pressure(res_i) > 0
         p_tank[i] = pressure(res_i)
     end
+    @test count(isnan,p_tank) == 0
     @test issorted(p_tank)
 
     #394

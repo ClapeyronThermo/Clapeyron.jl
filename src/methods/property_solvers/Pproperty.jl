@@ -112,17 +112,16 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
       prop_bubble = vl
       prop_dew = vv
     else
-      prop_bubble = spec_to_vt(model,vl,T,wdew,spec)
-      prop_dew = spec_to_vt(model,vv,T,z,spec)/sum(z)
+      prop_bubble = spec_to_vt(model,vl,T,wdew,property)
+      prop_dew = spec_to_vt(model,vv,T,z,property)/sum(z)
     end
-    β = (prop/sum(z) - prop_dew)/(prop_bubble - prop_dew)
-    0 <= β <= 1 && return (dew_p,:eq)
+    β = (prop/sum(z) - prop_bubble)/(prop_dew - prop_bubble)
+    0 <= β <= 1 && (return dew_p,:eq)
     verbose && @info "pressure($property) < pressure(dew point)"
     return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
   elseif !isnan(bubble_p) && isnan(dew_p)
     verbose && @warn "non-finite dew point, trying to solve using the bubble point"
-        verbose && @warn "non-finite bubble point, trying to solve using the dew point"
-        bubble_point,_ = full_prop
+    bubble_point,_ = full_prop
     _,vl,vv,wbubble = bubble_point
     if property == volume
       prop_bubble = vl
@@ -131,7 +130,6 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
       prop_bubble = spec_to_vt(model,vl,T,z,spec)/sum(z)
       prop_dew = spec_to_vt(model,vv,T,wbubble,spec)
     end
-
     β = (prop/sum(z) - prop_dew)/(prop_bubble - prop_dew)
     0 <= β <= 1 && (return bubble_p,:eq)
     verbose && @info "pressure($property) > pressure(bubble point)"
@@ -170,11 +168,18 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
     return __Pproperty_check(res,verbose)
   elseif 0 <= β <= 1
+    
+    if property == volume
+      verbose && @info "$property in the phase change region, returning a linear interpolation of the bubble and dew pressures"
+      return exp(β*log(bubble_p) + (1 - β)*log(dew_p)),:eq
+    end
+
     P_edge = FindEdge(F,dew_p,bubble_p) # dew_p < bubble_p --> condition for FindEdge
+    
     if !isfinite(P_edge)
       verbose && @warn "failure to calculate edge point"
       verbose && @warn "$property in the phase change region, returning a linear interpolation of the bubble and dew pressures"
-      return β*bubble_p + (1 - β)*dew_p,:eq
+      return exp(β*log(bubble_p) + (1 - β)*log(dew_p)),:eq
     end
     prop_edge_dew = property(model,P_edge - 1e-10,T,z,phase = phase);
     prop_edge_bubble = property(model,P_edge + 1e-10,T,z,phase = phase);

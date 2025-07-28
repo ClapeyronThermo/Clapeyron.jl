@@ -147,7 +147,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
       prop_bubble = spec_to_vt(model,vl,T,wdew,spec)
       prop_dew = spec_to_vt(model,vv,T,z,spec)/sum(z)
     end
-    β = (prop/sum(z) - prop_dew)/(prop_bubble - prop_dew)
+    β = (prop/sum(z) - prop_bubble)/(prop_dew - prop_bubble)
     0 <= β <= 1 && return (dew_T,:eq)
     verbose && @info "pressure($property) < pressure(dew point)"
     return __Pproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_T)
@@ -160,8 +160,8 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
       prop_bubble = vl
       prop_dew = vv
     else
-      prop_bubble = spec_to_vt(model,vl,T,z,spec)/sum(z)
-      prop_dew = spec_to_vt(model,vv,T,wbubble,spec)
+      prop_bubble = spec_to_vt(model,vl,T,z,property)/sum(z)
+      prop_dew = spec_to_vt(model,vv,T,wbubble,property)
     end
 
     β = (prop/sum(z) - prop_dew)/(prop_bubble - prop_dew)
@@ -202,6 +202,12 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_T)
     return __Tproperty_check(res,verbose)
   elseif 0 <= β <= 1
+
+    if property == volume
+      verbose && @info "$property in the phase change region, returning a linear interpolation of the bubble and dew temperatures"
+      return β*bubble_T + (1 - β)*dew_T,:eq
+    end
+
     T_edge = FindEdge(F,bubble_T,dew_T)
     if !isfinite(T_edge)
       verbose && @error "failure to calculate edge point"

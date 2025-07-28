@@ -272,14 +272,14 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
         yy = index_expansion(y_r,in_media)
         yy ./= sum(yy)
         vv = volume(model,p,T,y,phase = :v)
-        return p,T,x,yy,vlx,vv
+        return p,T,x,yy,vlx/sum(x),vv
     else
         y_r = @view y[in_media]
         x_r = rr_flash_liquid(K_r,y_r,one(eltype(K)))
         xx = index_expansion(x_r,in_media)
         xx ./= sum(xx)
         vl = volume(model,p,T,xx,phase = :l)
-        vv = volume(model,p,T,y,phase = :v)
+        vv = volume(model,p,T,y,phase = :v)/sum(y)
         return p,T,xx,y,vl,vv
     end
 end
@@ -297,7 +297,7 @@ function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillA
     sat = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
     p0r = first.(sat)
     p0 = index_expansion(p0r,volatiles)
-    xipi = p0 .* x
+    xipi = p0 .* x ./ sum(x)
     p0 = sum(xipi)
     if isnothing(y0)
         yx = xipi
@@ -421,7 +421,7 @@ function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = F
         p_i_r = antoine_pressure.(dPdTsat,T0)
         high_conditions = __is_high_temperature_state(pure,dPdTsat,T0)
     end
-    xipi_r = y_r = p_i_r .* x_r
+    xipi_r = y_r = p_i_r .* x_r ./ sum(x_r)
     p = sum(xipi_r)
     y_r ./= p
     y0 = index_expansion(y_r,volatiles)
