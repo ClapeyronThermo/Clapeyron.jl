@@ -57,7 +57,7 @@ Returns a matrix containing the composition of the SLE phase boundary for each c
 
 Can only function when solid and fluid models are specified within a CompositeModel.
 """
-#=
+
 function sle_solubility(model::CompositeModel{F,S},p,T,z;solute=nothing,x0=nothing) where F <: EoSModel where S <: SolidKsModel
     mapping = model.mapping
     if isnothing(solute)
@@ -136,18 +136,20 @@ function obj_sle_solubility(F,model::CompositeModel{L,S},p,T,zsolv,solu,idx_sol_
     z ./= sum(z)
 
     if typeof(model.fluid) <: ESElectrolyteModel
-        μ = chemical_potential(model.fluid,p,T,z)
+        v = volume(model.fluid,p,T,z)
+        μ = VT_chemical_potential_res(model.fluid,v,T,z) .- Rgas()*T*log(v*p/(Rgas()*T*sum(z))) + Rgas()  * T * log.(z)
         
-        # zref = ones(length(model.fluid))*1e-30
-        # idx_water = find_water_indx(model.fluid)
-        # zref[idx_water] = 1.0
-        zref = zeros(length(model.fluid))
+        zref = ones(length(model.fluid))*1e-30
+        idx_water = find_water_indx(model.fluid)
+        zref[idx_water] = 1.0
+        # zref = zeros(length(model.fluid))
 
-        ineutral = model.fluid.charge .== 0
-        zref[.!(ineutral)] .= 1e-30
-        zref[ineutral] .= zsolv[ineutral]
+        # ineutral = model.fluid.charge .== 0
+        # zref[.!(ineutral)] .= 1e-30
+        # zref[ineutral] .= zsolv[ineutral]
         zref ./= sum(zref)
-        μref = chemical_potential(model.fluid,p,T,zref)
+        vref = volume(model.fluid,p,T,zref)
+        μref = VT_chemical_potential_res(model.fluid,vref,T,zref) .- Rgas()*T*log(vref*p/(Rgas()*T*sum(zref)))
 
         μliq = (μ - μref)[idx_sol_l]
     else
@@ -177,4 +179,4 @@ function x0_sle_solubility(model::CompositeModel{L,S},p,T,z,idx_solv,idx_sol_l,�
         x0 = [log10(0.5)]
     end
     return x0
-end =#
+end
