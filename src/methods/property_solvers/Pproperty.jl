@@ -1,17 +1,13 @@
 function x0_Pproperty(model::EoSModel,T,z::AbstractVector,verbose = false)
   bubble = Clapeyron.bubble_pressure(model,T,z)
   dew = Clapeyron.dew_pressure(model,T,z)
-  bubble_T = bubble[1]
-  v_dew_vapour = dew[3]*sum(z)
-  v_bubble_liquid = bubble[2]*sum(z)
-  dew_T = dew[1]
-  if isnan(bubble_T)
+  if isnan(bubble[1])
     verbose && @error "bubble_pressure calculation failed."
   end
-  if isnan(dew_T)
+  if isnan(dew[1])
     verbose && @error "dew_pressure calculation failed."
   end
-  return (bubble_T,v_bubble_liquid),(dew_T,v_dew_vapour),(bubble,dew)
+  return bubble,dew
 end
 
 
@@ -81,9 +77,9 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     return __Pproperty_check(res,verbose)
   end
 
-  bubble_prop,dew_prop,full_prop = x0_Pproperty(model,T,z,verbose)
-  bubble_p,bubble_vol = bubble_prop
-  dew_p,dew_vol = dew_prop
+  bubble,dew = x0_Pproperty(model,T,z,verbose)
+  bubble_p,bubble_vl,bubble_vv,w_bubble = bubble
+  dew_p,dew_vl,dew_vv,w_dew = dew
 
   #trivial
   if property === pressure
@@ -105,33 +101,62 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   #if any bubble/dew pressure is NaN, try solving for the non-NaN value
   #if both values are NaN, try solving using p_scale(model,z)
   if isnan(bubble_p) && !isnan(dew_p)
+
+    #=
+    this happens when there is a mixture with non-condensables (water + hydrogen)
+    we suppose:
+    - the properties of the liquid phase are not affected by changes in pressure (we solve for the gas phase)
+    - the composition of the liquid is approximately equal to the composition of the liquid at the dew point.
+    =#
+  
     verbose && @warn "non-finite bubble point, trying to solve using the dew point"
-    _,dew_point = full_prop
-    _,vl,vv,wdew = dew_point
     if property == volume
-      prop_bubble = vl
-      prop_dew = vv
+      prop_bubble = dew_vl
+      prop_dew = dew_vv
     else
-      prop_bubble = spec_to_vt(model,vl,T,wdew,property)
-      prop_dew = spec_to_vt(model,vv,T,z,property)/sum(z)
+      prop_bubble = spec_to_vt(model,dew_vl,T,w_dew,property)
+      prop_dew = spec_to_vt(model,dew_vv,T,z,property)/sum(z)
     end
     β = (prop/sum(z) - prop_bubble)/(prop_dew - prop_bubble)
-    0 <= β <= 1 && (return dew_p,:eq)
+    if 0 <= β <= 1
+      #strategy: substract the liquid part, and solve for the gas fraction
+      damp = Solvers.positive_linesearch(z/sum(z),w_dew,decay = 0.95) #make sure that the gas fraction is positive
+      βx = damp*(1 - β)*sum(z)
+      new_prop = prop - βx*prop_bubble
+      new_z = z - w_dew * βx
+      px,stx = __Pproperty(model,T,new_prop,new_z,property,rootsolver,:gas,abstol,reltol,threaded,dew_p)
+      stx == :failure && (return dew_p,:eq)
+      return px,:eq
+    end
     verbose && @info "pressure($property) < pressure(dew point)"
     return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
   elseif !isnan(bubble_p) && isnan(dew_p)
+
+    #=
+    this happens when there is a mixture with non-volatiles (water + dodecatriene)
+    we suppose:
+    - the properties of the liquid phase are not affected by changes in pressure (we solve for the gas phase)
+    - the composition of the liquid is approximately equal to the composition of the liquid at the bubble point.
+    =#
+
     verbose && @warn "non-finite dew point, trying to solve using the bubble point"
-    bubble_point,_ = full_prop
-    _,vl,vv,wbubble = bubble_point
     if property == volume
-      prop_bubble = vl
-      prop_dew = vv
+      prop_bubble = bubble_vl
+      prop_dew = bubble_vv
     else
-      prop_bubble = spec_to_vt(model,vl,T,z,spec)/sum(z)
-      prop_dew = spec_to_vt(model,vv,T,wbubble,spec)
+      prop_bubble = spec_to_vt(model,bubble_vl,T,z,spec)/sum(z)
+      prop_dew = spec_to_vt(model,bubble_vv,T,w_bubble,spec)
     end
     β = (prop/sum(z) - prop_dew)/(prop_bubble - prop_dew)
-    0 <= β <= 1 && (return bubble_p,:eq)
+    if 0 <= β <= 1
+      damp = Solvers.positive_linesearch(z/sum(z),w_bubble,decay = 0.95) #make sure that the gas fraction is positive
+      βx = damp*(1 - β)*sum(z)
+      new_prop = βx*prop_bubble
+      new_z = w_bubble * βx
+      px,stx = __Pproperty(model,T,new_prop,new_z,property,rootsolver,:gas,abstol,reltol,threaded,bubble_p)
+      stx == :failure && (return bubble_p,:eq)
+      return px,:eq
+    end
     verbose && @info "pressure($property) > pressure(bubble point)"
     return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_p)
   elseif isnan(bubble_p) && isnan(dew_p)
@@ -140,8 +165,8 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   end
 
   if property == volume
-    prop_bubble = bubble_vol
-    prop_dew = dew_vol
+    prop_bubble = bubble_vl*sum(z)
+    prop_dew = dew_vv*sum(z)
   else
     prop_bubble = property(model,bubble_p,T,z,phase=phase)
     prop_dew = property(model,dew_p,T,z,phase=phase)
@@ -168,25 +193,20 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_p)
     return __Pproperty_check(res,verbose)
   elseif 0 <= β <= 1
-    
-    if property == volume
-      verbose && @info "$property in the phase change region, returning a linear interpolation of the bubble and dew pressures"
-      return exp(β*log(bubble_p) + (1 - β)*log(dew_p)),:eq
-    end
 
-    P_edge = FindEdge(F,dew_p,bubble_p) # dew_p < bubble_p --> condition for FindEdge
-    
+    P_edge,prop_edge_dew,prop_edge_bubble = FindEdge(F,dew_p,bubble_p) # dew_p < bubble_p --> condition for FindEdge
+    px0 = exp(β*log(bubble_p) + (1 - β)*log(dew_p))
+
     if !isfinite(P_edge)
       verbose && @warn "failure to calculate edge point"
       verbose && @warn "$property in the phase change region, returning a linear interpolation of the bubble and dew pressures"
-      return exp(β*log(bubble_p) + (1 - β)*log(dew_p)),:eq
+      return px0,:eq
     end
-    prop_edge_dew = property(model,P_edge - 1e-10,T,z,phase = phase);
-    prop_edge_bubble = property(model,P_edge + 1e-10,T,z,phase = phase);
+
     verbose && @info "property at dew edge:        $prop_edge_dew"
     verbose && @info "property at bubble edge:     $prop_edge_bubble"
     verbose && @info "pressure at edge point:      $P_edge"
-  
+
     #=
     the order is the following:
     bubble -> edge_bubble -> edge_dew -> dew
@@ -204,14 +224,15 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     elseif βedge < 0 #prop <= prop_edge2
       verbose && @info "pressure($property) ∈ (pressure(bubble point),pressure(edge point))"
       P_edge_bubble = exp(βedge_bubble*log(bubble_p) + (1 - βedge_bubble)*log(P_edge))
+      property == volume && return P_edge_bubble,:eq
       px,_ = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,P_edge_bubble)
-      return __Pproperty_check((px,:eq),verbose,P_edge)
+      return __Pproperty_check((px,:eq),verbose,P_edge_bubble)
     elseif βedge > 1
       verbose && @info "pressure($property) ∈ (pressure(edge point),pressure(dew point))"
       P_edge_dew = exp(βedge_dew*log(dew_p) + (1 - βedge_dew)*log(P_edge))
-      @show P_edge_dew
+      property == volume && return P_edge_bubble,:eq
       px,_ = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,P_edge_dew)
-      return __Pproperty_check((px,:eq),verbose,P_edge)
+      return __Pproperty_check((px,:eq),verbose,P_edge_dew)
     end
   end
   _0 = zero(Base.promote_eltype(model,T,prop,z))
