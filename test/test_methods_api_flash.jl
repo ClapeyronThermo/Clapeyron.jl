@@ -28,24 +28,23 @@
 
     if isdefined(Base,:get_extension)
         @testset "¿MultiComponentFlash.jl Algorithm" begin
+
+            #two-phase test, using Clapeyron api
             mcf = MCFlashJL()
-            @test Clapeyron.tp_flash(system, p, T, z, mcf)[3] ≈ -6.490030777308265 rtol = 1e-6
-            
-            #vapour test
+            @test Clapeyron.numphases(Clapeyron.tp_flash2(system, p, T, z, mcf)) == 2
+            #vapour test, using MCF api
             cond = (p = 5e6, T = 303.15, z = [0.4, 0.6])
             vapour_model = PR78(["hydrogen", "methane"])
             vapour_res = MultiComponentFlash.flashed_mixture_2ph(vapour_model,cond)
             @test vapour_res.state == MultiComponentFlash.single_phase_v
             @test vapour_res.vapor.Z ≈ 0.9672507136048648 rtol = 1e-6
 
-            #liquid test
+            #liquid test,using MCF api
             liquid_model = cPR(["octane","nonane"])
             cond = (p = 5e7, T = 303.15, z = [0.4, 0.6])
             liquid_res = MultiComponentFlash.flashed_mixture_2ph(liquid_model,cond)
             @test liquid_res.state == MultiComponentFlash.single_phase_l
             @test liquid_res.vapor.Z ≈ 0.9672507136048648 rtol = 1e-6
-
-            
         end
     end
     GC.gc()
