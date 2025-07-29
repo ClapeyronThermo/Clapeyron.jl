@@ -59,13 +59,9 @@ function η_from_v(model::EoSModel, V, T, z)
     return log((V - lb)/sum(z))
 end
 
-function η_from_v(model::EoSModel,model_r, V, T, z)
-    if model_r == nothing
-        return η_from_v(model,V,T,z)
-    else
-        return η_from_v(model_r,V,T,z)
-    end
-end
+η_from_v(model::EoSModel,::Nothing, V, T, z) = η_from_v(model,V,T,z)
+η_from_v(model::EoSModel,model_r::EoSModel, V, T, z) = η_from_v(model_r,V,T,z)
+
 
 struct TPspec{TT}
     T::TT
@@ -361,6 +357,19 @@ function zero_non_equilibria!(w,in_equilibria)
         in_equilibria[i] || (w[i] = 0)
     end
     return w
+end
+
+
+function comps_in_equilibria(components,::Nothing)
+    return fill(true,length(components))
+end
+
+function comps_in_equilibria(components,not_in_w)
+    res = fill(true,length(components))
+    for i in 1:length(components)
+        res[i] = !in(components[i],not_in_w)
+    end
+    return res
 end
 
 include("fugacity.jl")

@@ -177,15 +177,11 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 
     nc = length(model)
     # constructing non-in-x list
-    non_inx = fill(false,nc)
+    non_inx = comps_in_equilibria(model.components,non_inx_list)
+    non_inx .= (!).(non_inx)
     # constructing non-in-y list
-    non_iny = fill(false,nc)
-
-    for i in 1:nc
-        component = model.components[i]
-        non_inx[i] = !isnothing(non_inx_list) && (component in non_inx_list) && true
-        non_iny[i] = !isnothing(non_iny_list) && (component in non_iny_list) && true
-    end
+    non_iny = comps_in_equilibria(model.components,non_inx_list)
+    non_iny .= (!).(non_iny)
 
     non_inw = (non_inx,non_iny)
     phases = (phasex,phasey)

@@ -68,21 +68,17 @@ end
 
 function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
 
-    if !isnothing(method.noncondensables)
-        condensables = [!in(x,method.noncondensables) for x in model.components]
+    is_non_condensable = !isnothing(method.noncondensables)
+    condensables = comps_in_equilibria(model.components,method.noncondensables)
+    model_x,_ = index_reduction(model,condensables)
+    p0,vl,vv,x0 = dew_pressure_init(model,T,y,method.vol0,method.p0,method.x0,condensables)
+
+    if is_non_condensable
+        ηl0 = η_from_v(model_x,vl,T,x0)
     else
-        condensables = fill(true,length(model))
+        ηl0 = η_from_v(model,vl,T,x0)
     end
 
-    _vol0,_p0,_x0 = method.vol0,method.p0,method.x0
-    p0,vl,vv,x0 = dew_pressure_init(model,T,y,_vol0,_p0,_x0,condensables)
-    if !isnothing(method.noncondensables)
-        model_x,condensables = index_reduction(model,condensables)
-        x0 = x0[condensables]
-    else
-        model_x = nothing
-    end
-    ηl0 = η_from_v(model,model_x,vl,T,x0)
     ηv0 = η_from_v(model,vv,T,y)
     _,idx_max = findmax(x0)
     v0 = vcat(ηl0,ηv0,deleteat(x0,idx_max)) #select component with highest fraction as pivot
@@ -104,7 +100,11 @@ function Obj_dew_pressure(model::EoSModel,model_x, F, T, ηl, ηv, x, y, _view, 
     vv = v_from_η(model,ηv,T,y)
     v = (vv,vl)
     w = (y,xx)
-    return μp_equality2(model,model_x, F, Tspec(T), v, w, _view)
+    if all(_view)
+        return μp_equality2(model,nothing, F, Tspec(T), v, w, _view)
+    else
+        return μp_equality2(model,model_x, F, Tspec(T), v, w, _view)
+    end
 end
 
 """
@@ -176,19 +176,16 @@ function ChemPotDewTemperature(;vol0 = nothing,
 end
 
 function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
-    if !isnothing(method.noncondensables)
-        condensables = [!in(x,method.noncondensables) for x in model.components]
-    else
-        condensables = fill(true,length(model))
-    end
 
-    _vol0,_T0,_x0 = method.vol0,method.T0,method.x0
-    T0,vl,vv,x0 = dew_temperature_init(model,p,y,_vol0,_T0,_x0,condensables)
-    if !isnothing(method.noncondensables)
-        model_x,condensables = index_reduction(model,condensables)
-        x0 = x0[condensables]
+    is_non_condensable = !isnothing(method.noncondensables)
+    condensables = comps_in_equilibria(model.components,method.noncondensables)
+    model_x,_ = index_reduction(model,condensables)
+    T0,vl,vv,x0 = dew_temperature_init(model,T,y,method.vol0,method.T0,method.x0,condensables)
+
+    if is_non_condensable
+        ηl0 = η_from_v(model_x,vl,T0,x0)
     else
-        model_x = nothing
+        ηl0 = η_from_v(model,vl,T0,x0)
     end
 
     ηl = η_from_v(model,model_x,vl,T0,x0)
@@ -213,8 +210,11 @@ function Obj_dew_temperature(model::EoSModel,model_x, F, p, T, ηl, ηv, x, y, _
     w = (y,xx)
     vl = v_from_η(model,model_x,ηl,T,xx)
     v = (vv,vl)
-    F = μp_equality2(model, model_x, F, Pspec(p,T), v, w, _view)
-    return F
+    if all(_view)
+        return μp_equality2(model, nothing, F, Pspec(p,T), v, w, _view)
+    else
+        return μp_equality2(model, model_x, F, Pspec(p,T), v, w, _view)
+    end
 end
 
 export ChemPotDewPressure, ChemPotDewTemperature

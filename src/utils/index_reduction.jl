@@ -68,10 +68,11 @@ If the sizes of `x` and `idx` are the same, return the original input.
 """
 function index_expansion(x::AbstractVector,idr::AbstractVector)
     numspecies = length(idr)
-    if length(x) == numspecies
-        return x
-    end
     res = similar(x, numspecies)
+    if length(x) == numspecies
+        res .= x
+        return res
+    end
     res .= false
     res[idr] .= x
     return res
