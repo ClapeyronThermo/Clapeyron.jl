@@ -39,7 +39,7 @@ using Clapeyron, Test, LinearAlgebra
         #test that we have a sigma inside params1
         @test haskey(params1, "sigma")
         
-        for param_i in values params1
+        for param_i in values(params1)
             test_repr(param_i)
         end
         #this fails, because there are missing params

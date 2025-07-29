@@ -98,7 +98,7 @@ end
 function Obj_bubble_pressure(model::EoSModel, model_y, F, T, ηl, ηv, x, y, _view,yy_i)
     v_l = v_from_η(model,ηl,T,x)
     yy = FractionVector(y,yy_i)
-    v_v = v_from_η(model,model_y,ηv,T,yy)
+    v_v = v_from_η(model_y,ηv,T,yy)
     v = (v_l,v_v)
     w = (x,yy)
     if all(_view)
@@ -189,6 +189,7 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     volatiles = comps_in_equilibria(model.components,method.nonvolatiles)
     model_y,_ = index_reduction(model,volatiles)
     T0,vl,vv,y0 = bubble_temperature_init(model,p,x,method.vol0,method.T0,method.y0,volatiles)
+    y0 = y0[volatiles]
 
     ηl = η_from_v(model, vl, T0, x)
     if is_non_volatile
@@ -210,10 +211,10 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     return T, v_l, v_v, y
 end
 
-function Obj_bubble_temperature(model::EoSModel, model_y, F, p, T, ηl, ηv, x, y, _view,yy_i)
+function Obj_bubble_temperature(model::EoSModel, model_y, F, p, T, ηl, ηv, x, y, _view, yy_i)
     yy = FractionVector(y,yy_i)
     vl = v_from_η(model, ηl, T, x)
-    vv = v_from_η(model, model_y, ηv, T, yy)
+    vv = v_from_η(model_y, ηv, T, yy)
     v = (vl,vv)
     w = (x,yy)
     if all(_view)
