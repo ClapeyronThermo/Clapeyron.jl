@@ -59,7 +59,7 @@ end
     model_esd = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :esd))
     model_esd_r = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :elliott_runtime))
     model_dufal = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :dufal))
-
+    test_repr(AssocOptions(combining = :dufal))
     V = 5e-5
     T = 298.15
     z = [0.5,0.5]
@@ -166,7 +166,7 @@ end
         T12,v12,_ = saturation_temperature(pure1[2],101325.0)
         @test Clapeyron.VT_enthalpy(pure1[2],v12,T12) ≈ 0.0 atol = 1e-6
         @test Clapeyron.VT_entropy(pure1[2],v12,T12) ≈ 0.0 atol = 1e-6
-
+        test_repr(Clapeyron.reference_state(model1))
         #test that multifluids work.
         model1b = GERG2008("water",reference_state = :nbp)
         T1b,v1b,_ = saturation_temperature(model1b,101325.0)
@@ -236,7 +236,6 @@ end
     act = NRTL(["water","ethanol"],puremodel = puremodel,reference_state = :ntp)
     @test reference_state(act).std_type == :ntp
     @test length(reference_state(act).a0) == 2
-
 end
 
 @testset "Solid Phase Equilibria" begin

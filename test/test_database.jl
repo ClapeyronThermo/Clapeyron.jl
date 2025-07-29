@@ -39,6 +39,9 @@ using Clapeyron, Test, LinearAlgebra
         #test that we have a sigma inside params1
         @test haskey(params1, "sigma")
         
+        for param_i in values params1
+            test_repr(param_i)
+        end
         #this fails, because there are missing params
         @test_throws MissingException Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,nothing,opts) #generate ClapeyronParams
         
@@ -248,6 +251,10 @@ using Clapeyron, Test, LinearAlgebra
         @test convert(SingleParam{String},substr_single) isa SingleParam{String}
         @test convert(SingleParam{Float64},intbool) isa SingleParam{Float64}
         @test convert(SingleParam{Int},floatbool) isa SingleParam{Int}
+        single_dual = Clapeyron.promote_model(Clapeyron.ForwardDiff.Dual{Nothing,Float64,2},floatbool)
+        single_primal = Clapeyron.primalval(single_dual)
+        @test single_primal.values == floatbool.values
+
         #SingleParam - indexing
         @test intbool["aa"] == 1
         intbool["bb"] = 2
@@ -265,7 +272,10 @@ using Clapeyron, Test, LinearAlgebra
         @test convert(PairParam{Bool},floatbool) isa PairParam{Bool}
         @test convert(PairParam{Float64},intbool) isa PairParam{Float64}
         @test convert(PairParam{Int},floatbool) isa PairParam{Int}
-        
+        pair_dual = Clapeyron.promote_model(Clapeyron.ForwardDiff.Dual{Nothing,Float64,2},floatbool)
+        pair_primal = Clapeyron.primalval(pair_dual)
+        @test pair_primal.values == floatbool.values
+
         floatbool .= exp.(1.1 .+ floatbool)
         @test_throws InexactError convert(PairParam{Int},floatbool)
         #indexing for PairParam
@@ -323,6 +333,9 @@ using Clapeyron, Test, LinearAlgebra
         @test convert(AssocParam{Int},assoc_int) isa AssocParam{Int}
         @test convert(AssocParam{String},assoc_substr) isa AssocParam{String}
         @test convert(AssocParam{String},assoc_str) isa AssocParam{String}
+        assoc_dual = Clapeyron.promote_model(Clapeyron.ForwardDiff.Dual{Nothing,Float64,2},assoc_float)
+        assoc_primal = Clapeyron.primalval(assoc_dual)
+        @test assoc_primal.values.values == assoc_float.values.values
 
         assoc_float .= 1.2
         @test_throws InexactError convert(AssocParam{Int},assoc_float)
@@ -436,5 +449,8 @@ using Clapeyron, Test, LinearAlgebra
         @test all(Clapeyron.defaultmissing(fill(missing,4))[2])
         @test Clapeyron.defaultmissing(["a",1,missing])[1] == ["a","1",""]
         @test Clapeyron.defaultmissing(["a",1,missing])[2] == Bool[0, 0, 1]
+
+        c1 = Clapeyron.cas("water")
+        @test c1[1] == "7732-18-5"
     end
 end

@@ -155,7 +155,6 @@ function _indexin(query,list,separator)
     return _indexin(querydict,list,separator,keys(list))
 end
 
-if isdefined(Base,:eachsplit)
 function _indexin(query,list,separator,indices)
     kq = keys(query)
     res = zeros(Int,0)
@@ -174,69 +173,6 @@ function _indexin(query,list,separator,indices)
     return res,comp_res
 end
 
-else
-    function _indexin(query,list,separator,indices)
-        kq = keys(query)
-        res = zeros(Int,0)
-        comp_res = zeros(Int,0)
-        sizehint!(res,2*length(kq))
-        sizehint!(comp_res,2*length(kq))
-        for k in indices
-            list_i = list[k]
-            if !occursin(separator,list_i) #simple format
-                if list_i in kq
-                    push!(res,k)
-                    push!(comp_res,query[list_i])
-                end
-            else #separator format
-                for ki in kq
-                    if startswith(list_i,ki * separator) #starts with string
-                        push!(res,k)
-                        push!(comp_res,query[ki])
-                    elseif endswith(list_i,separator * ki)  #ends with string
-                        push!(res,k)
-                        push!(comp_res,query[ki])
-                    elseif occursin(separator * ki * separator,list_i) #string in between
-                        push!(res,k)
-                        push!(comp_res,query[ki])
-                    end
-                end
-            end
-        end
-        return res,comp_res
-    end
-end
-#=
-function _indexin(query,list,separator,indices)
-    kq = keys(query)
-    res = zeros(Int,0)
-    comp_res = zeros(Int,0)
-    sizehint!(res,2*length(kq))
-    sizehint!(comp_res,2*length(kq))
-    for k in indices
-        list_i = list[k]
-        if !occursin(separator,list_i) #simple format
-            if list_i in kq
-                push!(res,k)
-                push!(comp_res,query[list_i])
-            end
-        else #separator format
-            for ki in kq
-                if startswith(list_i,ki * separator) #starts with string
-                    push!(res,k)
-                    push!(comp_res,query[ki])
-                elseif endswith(list_i,separator * ki)  #ends with string
-                    push!(res,k)
-                    push!(comp_res,query[ki])
-                elseif occursin(separator * ki * separator,list_i) #string in between
-                    push!(res,k)
-                    push!(comp_res,query[ki])
-                end
-            end
-        end
-    end
-    return res,comp_res
-end =#
 function defaultmissing(array::Array{<:Number},defaultvalue = zero(eltype(array)))
     return deepcopy(array),Array(ismissing.(array))
 end
@@ -410,7 +346,8 @@ function normalize_components_sym(components)
     _,sp = by_cas2(caslist)
     return sp
 end
-
+#=
+utilities for feos parsing
 function to_groups(x)
     s = unique(x)
     vals = [count(isequal(si),x) for si in s]
@@ -446,4 +383,4 @@ function bond_to_pair(segments,bonds)
         res[i] = res_i
     end
     return res
-end
+end =#
