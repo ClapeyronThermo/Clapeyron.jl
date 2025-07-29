@@ -68,7 +68,7 @@ function UMRRule(components; activity = UNIFAC, userlocations = String[],activit
     return model
 end
 
-function ab_premixing(model::PRModel,mixing::UMRRuleModel,k = nothing, l = nothing)
+function ab_premixing(model::PRModel,mixing::UMRRuleModel, k, l)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.Pc

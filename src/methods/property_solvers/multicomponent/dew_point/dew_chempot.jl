@@ -6,8 +6,8 @@ It directly solves the equality of chemical potentials system of equations.
 
 Inputs:
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
-- `p0 = nothing`: optional, initial guess for the dew pressure [`Pa`]
-- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `p0 = nothing`: optional, initial guess for the dew pressure `[Pa]`
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 1000`: optional, maximum number of iterations
@@ -76,37 +76,21 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
 
     _vol0,_p0,_x0 = method.vol0,method.p0,method.x0
     p0,vl,vv,x0 = dew_pressure_init(model,T,y,_vol0,_p0,_x0,condensables)
-
     if !isnothing(method.noncondensables)
         model_x,condensables = index_reduction(model,condensables)
         x0 = x0[condensables]
     else
         model_x = nothing
     end
-
-    Ts = isnothing(model_x) ? T_scales(model) : T_scales(model_x)
-
-    if T > 0.9minimum(Ts) && method.ss
-        converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,(vl,vv),false,true,condensables)
-        p,T,x,y,vol,lnK = res
-        volx,voly = vol
-        if converged
-            return p,volx,voly,index_expansion(x,condensables)
-        elseif isnan(volx) || isnan(voly)
-            return p,volx,voly,index_expansion(x,condensables)
-        else
-            x0 = x
-            vl,vv = vol
-            T0 = T
-        end
-    end
     ηl0 = η_from_v(model,model_x,vl,T,x0)
     ηv0 = η_from_v(model,vv,T,y)
-    v0 = vcat(ηl0,ηv0,x0[1:end-1])
-    f!(F,z) = Obj_dew_pressure(model,model_x, F, T, z[1], z[2], z[3:end], y, condensables)
-    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
+    _,idx_max = findmax(x0)
+    v0 = vcat(ηl0,ηv0,deleteat(x0,idx_max)) #select component with highest fraction as pivot
+    f!(F,z) = Obj_dew_pressure(model,model_x, F, T, z[1], z[2], z[3:end], y, condensables, idx_max)
+    r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
-    x_r = FractionVector(sol[3:end])
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
+    x_r = FractionVector(sol[3:end],idx_max)
     v_l = v_from_η(model,model_x,sol[1],T,x_r)
     v_v = v_from_η(model,sol[2],T,y)
     P_sat = pressure(model,v_v,T,y)
@@ -114,8 +98,8 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
     return (P_sat, v_l, v_v, x)
 end
 
-function Obj_dew_pressure(model::EoSModel,model_x, F, T, ηl, ηv, x, y, _view)
-    xx = FractionVector(x)
+function Obj_dew_pressure(model::EoSModel,model_x, F, T, ηl, ηv, x, y, _view, xx_i)
+    xx = FractionVector(x,xx_i)
     vl = v_from_η(model,model_x,ηl,T,xx)
     vv = v_from_η(model,ηv,T,y)
     v = (vv,vl)
@@ -131,8 +115,8 @@ It directly solves the equality of chemical potentials system of equations.
 
 Inputs:
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
-- `T0  =nothing`: optional, initial guess for the dew temperature [`K`]
-- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `T0  =nothing`: optional, initial guess for the dew temperature `[K]`
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 1000`: optional, maximum number of iterations
@@ -206,38 +190,26 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     else
         model_x = nothing
     end
-    Ps = isnothing(model_x) ? p_scale(model,x0) : p_scale(model_x,x0)
-    if log(p) > 0.9log(Ps) && method.ss
-        converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,(vl,vv),false,false,condensables)
-        p,T,x,y,vol,lnK = res
-        volx,voly = vol
-        if converged
-            return T,volx,voly,index_expansion(x,condensables)
-        elseif isnan(volx) || isnan(voly)
-            return T,volx,voly,index_expansion(x,condensables)
-        else
-            x0 = x
-            vl,vv = vol
-        end
-    end
+
     ηl = η_from_v(model,model_x,vl,T0,x0)
     ηv = η_from_v(model,vv,T0,y)
-    v0 = vcat(T0,ηl,ηv,x0[1:end-1])
-    f!(F,z) = Obj_dew_temperature(model,model_x, F, p, z[1], z[2], z[3], z[4:end], y, condensables)
-    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
+    _,idx_max = findmax(x0)
+    v0 = vcat(T0,ηl,ηv,deleteat(x0,idx_max)) #select component with highest fraction as pivot
+    f!(F,z) = Obj_dew_temperature(model,model_x, F, p, z[1], z[2], z[3], z[4:end], y, condensables,idx_max)
+    r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
     T   = sol[1]
-    x_r = FractionVector(sol[4:end])
+    x_r = FractionVector(sol[4:end],idx_max)
     v_l = v_from_η(model,model_x,sol[2],T,x_r)
     v_v = v_from_η(model,sol[3],T,y)
-    x_r = FractionVector(sol[4:end])
     x = index_expansion(x_r,condensables)
     return T, v_l, v_v, x
 end
 
-function Obj_dew_temperature(model::EoSModel,model_x, F, p, T, ηl, ηv, x, y, _view)
+function Obj_dew_temperature(model::EoSModel,model_x, F, p, T, ηl, ηv, x, y, _view,xx_i)
     vv = v_from_η(model,ηv,T,y)
-    xx = FractionVector(x)
+    xx = FractionVector(x,xx_i)
     w = (y,xx)
     vl = v_from_η(model,model_x,ηl,T,xx)
     v = (vv,vl)

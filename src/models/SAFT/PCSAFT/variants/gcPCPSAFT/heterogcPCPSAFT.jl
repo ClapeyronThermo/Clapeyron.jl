@@ -1,24 +1,29 @@
 
 abstract type gcPCPSAFTModel <: PCPSAFTModel end
 
-struct HeterogcPCPSAFTParam <: EoSParam
-    Mw::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    comp_segment::SingleParam{Float64}
-    comp_sigma::PairParam{Float64}
-    comp_epsilon::PairParam{Float64}
-    dipole::SingleParam{Float64}
-    dipole2::SingleParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
+struct HeterogcPCPSAFTParam{T} <: ParametricEoSParam{T}
+    Mw::SingleParam{T}
+    segment::SingleParam{T}
+    sigma::PairParam{T}
+    epsilon::PairParam{T}
+    comp_segment::SingleParam{T}
+    comp_sigma::PairParam{T}
+    comp_epsilon::PairParam{T}
+    dipole::SingleParam{T}
+    dipole2::SingleParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
 end
 
-@newmodelgc HeterogcPCPSAFT gcPCPSAFTModel HeterogcPCPSAFTParam true
+function HeterogcPCPSAFTParam(Mw,m,σ,ϵ,mc,σc,ϵc,μ,μ2,ϵijab,β)
+    return build_parametric_param(HeterogcPCPSAFTParam,Mw,m,σ,ϵ,mc,σc,ϵc,μ,μ2,ϵijab,β)
+end
+
+@newmodelgc HeterogcPCPSAFT gcPCPSAFTModel HeterogcPCPSAFTParam{T} true
 default_references(::Type{HeterogcPCPSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/","properties/molarmass_groups.csv"]
 default_gclocations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_groups.csv","SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_intragroups.csv"]
+default_ignore_missing_singleparams(::Type{HeterogcPCPSAFT}) = String["k"]
 
 function transform_params(::Type{HeterogcPCPSAFT},params,groups)
     components = groups.components
@@ -141,10 +146,21 @@ export HeterogcPCPSAFT
 
 function lb_volume(model::gcPCPSAFTModel, z)
     vk  = model.groups.n_flattenedgroups
-    seg = model.params.segment.values
+    m = model.params.segment.values
     σ = model.params.sigma.values
-    val = π/6*N_A*sum(z[i]*sum(vk[i][k]*seg[k]*σ[k,k]^3 for k in @groups(i)) for i in @comps)
-    return val
+    σ_idx = linearidx(σ)
+    m_idx = linearidx(m)
+    val = zero(Base.promote_eltype(m,σ,z))
+    for i in 1:length(model)
+        val_i = zero(eltype(model))
+        vi = vk[i]
+        for k in 1:length(model.groups.flattenedgroups)
+            mk,σk = m[m_idx[k]],σ[σ_idx[k]]
+            val_i += vi[k]*mk*σk*σk*σk
+        end
+        val += z[i]*val_i
+    end
+    return π/6*N_A*val
 end
 
 function data(model::gcPCPSAFTModel,V,T,z)
@@ -167,14 +183,17 @@ end
 
 function a_hc(model::gcPCPSAFTModel, V, T, z,_data=@f(data))
     ngroups = length(model.groups.flattenedgroups)
-
     _d,ζ0,ζ1,ζ2,ζ3,m̄ = _data
     m = model.params.segment.values
     Σz = sum(z)
     c1 = 1/(1-ζ3)
     c2 = 3ζ2/(1-ζ3)^2
     c3 = 2ζ2^2/(1-ζ3)^3
-    a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    if !iszero(ζ3)
+        a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    else
+        a_hs = @f(bmcs_hs_zero_v,_d)
+    end
     g_hs = zero(V+T+first(z))*zeros(ngroups,ngroups)
     for k ∈ @groups
         dₖ = _d[k]

@@ -15,16 +15,16 @@ end
 """
     VLLE_pressure(model::EoSModel, T; v0 = x0_LLE_pressure(model,T))
 
-calculates the Vapor-Liquid-Liquid equilibrium pressure and properties of a binary mixture at a given temperature.
+Calculates the Vapor-Liquid-Liquid equilibrium pressure and properties of a binary mixture at a given temperature `T`.
 
 Returns a tuple, containing:
 - VLLE Pressure `[Pa]`
-- Liquid volume of composition `x₁` at VLLE Point [`m³`]
-- Liquid volume of composition `x₂` at VLLE Point  [`m³`]
-- Vapour volume of composition `y` at VLLE Point  [`m³`]
+- Liquid volume of composition `x₁` at VLLE Point `[m³]`
+- Liquid volume of composition `x₂` at VLLE Point  `[m³]`
+- Vapour volume of composition `y` at VLLE Point  `[m³]`
 - Liquid composition `x₁`
 - Liquid composition `x₂`
-- Liquid composition `y`
+- Vapour composition `y`
 """
 function VLLE_pressure(model::EoSModel, T; v0 =nothing)
     if v0 === nothing
@@ -46,6 +46,7 @@ function VLLE_pressure(model::EoSModel, T; v0 =nothing)
 
     r  = Solvers.nlsolve(f!,w0,LineSearch(Newton2(w0)))
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
     x = FractionVector(sol[idx_x])
     xx = FractionVector(sol[idx_xx])
     y = FractionVector(sol[idx_y])
@@ -57,7 +58,7 @@ function VLLE_pressure(model::EoSModel, T; v0 =nothing)
 end
 
 function x0_VLLE_pressure(model::EoSModel, T)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     sat  = saturation_pressure.(pure,T)
     y0 = Fractions.zeros(length(model))
     x0    = [0.75,0.25] #if we change this, VLLE_pressure (and temperature) can be switched to more than two components.
@@ -72,16 +73,16 @@ end
 """
     VLLE_temperature(model::EoSModel, p; T0 = x0_LLE_temperature(model,p))
 
-calculates the Vapor-Liquid-Liquid equilibrium temperature and properties of a binary mixture at a given temperature.
+Calculates the Vapor-Liquid-Liquid equilibrium temperature and properties of a binary mixture at a given pressure `p`.
 
 Returns a tuple, containing:
 - VLLE temperature `[K]`
-- Liquid volume of composition `x₁` at VLLE Point [`m³`]
-- Liquid volume of composition `x₂` at VLLE Point  [`m³`]
-- Vapour volume of composition `y` at VLLE Point  [`m³`]
+- Liquid volume of composition `x₁` at VLLE Point `[m³]`
+- Liquid volume of composition `x₂` at VLLE Point  `[m³]`
+- Vapour volume of composition `y` at VLLE Point  `[m³]`
 - Liquid composition `x₁`
 - Liquid composition `x₂`
-- Liquid composition `y`
+- Vapour composition `y`
 """
 function VLLE_temperature(model::EoSModel,p;v0=nothing)
     if v0 === nothing
@@ -103,6 +104,7 @@ function VLLE_temperature(model::EoSModel,p;v0=nothing)
     options = NLSolvers.NEqOptions(maxiter = 1000)
     r  = Solvers.nlsolve(f!,w0,LineSearch(Newton2(w0)),options)
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
     T  = sol[1]
     x = FractionVector(sol[idx_x])
     xx = FractionVector(sol[idx_xx])
@@ -114,7 +116,7 @@ function VLLE_temperature(model::EoSModel,p;v0=nothing)
 end
 
 function x0_VLLE_temperature(model::EoSModel,p)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     sat  = saturation_temperature.(pure,p)
     y0 = Fractions.zeros(length(model))
     T0 = 0.95*minimum(getindex.(sat,1))

@@ -26,13 +26,13 @@ end
 """
     pm,vs,vl = melting_pressure(model::CompositeModel,T;v0=x0_melting_pressure(model,T))
 
-Calculates the melting pressure of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure.
+Calculates the melting pressure of a `CompositeModel` containing a solid and fluid phase EoS, at a specified temperature `T`.
 You can pass a tuple of initial values for the volumes `(vs0,vl0)`.
 
 returns:
-- Melting Pressure [`Pa`]
-- melting solid volume at specified temperature [`m³`]
-- melting liquid volume at specified temperature [`m³`]
+- Melting Pressure `[Pa]`
+- melting solid volume at specified temperature `[m³]`
+- melting liquid volume at specified temperature `[m³]`
 """
 function melting_pressure(model::CompositeModel,T;kwargs...)
     method = init_preferred_method(melting_pressure,model,kwargs)
@@ -125,15 +125,15 @@ function ChemPotMeltingTemperature(;v0 = nothing,
 end
 
 """
-    pm,vs,vl = melting_temperature(model::CompositeModel,T;v0=x0_melting_pressure(model,T))
+    pm,vs,vl = melting_temperature(model::CompositeModel,p;v0=x0_melting_pressure(model,T))
 
-Calculates the melting temperature of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure.
+Calculates the melting temperature of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure `p`.
 You can pass a tuple of initial values for the volumes `(vs0,vl0)`.
 
 returns:
-- Melting Temperature [`K`]
-- melting solid volume at specified pressure [`m³`]
-- melting liquid volume at specified pressure [`m³`]
+- Melting Temperature `[K]`
+- melting solid volume at specified pressure `[m³]`
+- melting liquid volume at specified pressure `[m³]`
 """
 function melting_temperature(model::CompositeModel,p;kwargs...)
     method = init_preferred_method(melting_temperature,model,kwargs)
@@ -178,7 +178,7 @@ end
 function x0_melting_temperature(model::CompositeModel,p)
     Tt,pt,vs0,vl0,_ = triple_point(model)
     solid,fluid = solid_model(model),fluid_model(model)
-    K0 = -dpdT_pure(solid,fluid,vs0,vl0,Tt)*Tt*Tt/pt  
+    K0 = -dpdT_saturation(solid,fluid,vs0,vl0,Tt)*Tt*Tt/pt  
     #Clausius Clapeyron
     #log(P/Ptriple) = K0 * (1/T - 1/Ttriple)
     Tinv = log(p/pt)/K0 + 1/Tt

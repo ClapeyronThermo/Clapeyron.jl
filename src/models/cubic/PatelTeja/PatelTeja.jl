@@ -1,6 +1,43 @@
 abstract type PatelTejaModel <: ABCCubicModel end
 
-const PatelTejaParam = ABCCubicParam
+struct PatelTejaParam <: EoSParam
+    a::PairParam{Float64}
+    b::PairParam{Float64}
+    c::SingleParam{Float64}
+    Tc::SingleParam{Float64}
+    Pc::SingleParam{Float64}
+    Vc::SingleParam{Float64}
+    Mw::SingleParam{Float64}
+end
+
+function transform_params(::Type{PatelTejaParam},params,components)
+    n = length(components)
+    transform_params(ABCubicParam,params,components)
+    Tc = params["Tc"]
+    Pc = params["Pc"]
+    c = get!(params,"c") do
+        SingleParam("c",components,zeros(Base.promote_eltype(Pc,Tc),n),fill(true,n))
+    end
+    Vc = params["Vc"]
+
+
+    Vc = get!(params,"Vc") do
+        SingleParam("Vc",components,zeros(Base.promote_eltype(Pc,Tc),n),fill(true,n))
+    end
+    ω = get(params,"acentricfactor",nothing)
+    if any(Vc.ismissingvalues)
+        isnothing(ω) && throw(MissingException("PatelTeja: cannot estimate Vc: missing acentricfactor parameter."))
+
+        for i in 1:n
+            if Vc.ismissingvalues[i]
+                ζc = evalpoly(ω[i],(0.329032,-0.076799,0.0211947))
+                Vc[i] = ζc * R̄ * Tc[i] / Pc[i]
+            end
+        end
+    end
+
+    return params
+end
 
 struct PatelTeja{T <: IdealModel,α,c,γ} <:PatelTejaModel
     components::Array{String,1}
@@ -15,10 +52,10 @@ end
 """
     PatelTeja(components;
     idealmodel = BasicIdeal,
-    alpha = NoAlpha,
+    alpha = PatelTejaAlpha,
     mixing = vdW1fRule,
     activity = nothing,
-    translation = PatelTejaTranslation,
+    translation = NoTranslation,
     userlocations = String[],
     ideal_userlocations = String[],
     alpha_userlocations = String[],
@@ -55,7 +92,7 @@ bᵢᵢ = Ωbᵢ(R²Tcᵢ/Pcᵢ)
 cᵢ = Ωcᵢ(R²Tcᵢ/Pcᵢ)
 Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
 Ωaᵢ = 3Zcᵢ² + 3(1 - 2Zcᵢ)Ωbᵢ + Ωbᵢ² + 1 - 3Zcᵢ
-0 = -Zcᵢ³ + (3Zcᵢ²)*Ωbᵢ + (2 - 3Zcᵢ)*Ωbᵢ² + Ωbᵢ³
+Ωbᵢ: maximum real solution of 0 = -Zcᵢ³ + (3Zcᵢ²)*Ωbᵢ + (2 - 3Zcᵢ)*Ωbᵢ² + Ωbᵢ³
 Ωcᵢ = 1 - 3Zcᵢ
 
 γ = ∑cᵢxᵢ/∑bᵢxᵢ
@@ -64,6 +101,11 @@ Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
 
 Δ₁ = -(ϵ + √δ)/2
 Δ₂ = -(ϵ - √δ)/2
+```
+if `Vc` is not known, `Zc` can be estimated, using the acentric factor:
+
+```
+Zc = 0.329032 - 0.076799ω + 0.0211947ω²
 ```
 
 ## Model Construction Examples
@@ -122,27 +164,36 @@ function PatelTeja(components;
     verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
-    k  = get(params,"k",nothing)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc"])
+    model = CubicModel(PatelTeja,params,formatted_components;
+                        idealmodel,alpha,mixing,activity,translation,
+                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                        reference_state, verbose)
+
+    k = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    pc = params["Pc"]
-    Vc = params["Vc"]
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    acentricfactor = get(params,"acentricfactor",nothing)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    n = length(Tc)
-    a = PairParam("a",formatted_components,zeros(n))
-    b = PairParam("b",formatted_components,zeros(n))
-    c = PairParam("c",formatted_components,zeros(n))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
-    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)
-    references = String["10.1016/0009-2509(82)80099-7"]
-    model = PatelTeja(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
+end
+
+default_references(::Type{PatelTeja}) = ["10.1016/0009-2509(82)80099-7"]
+
+function PatelTeja_Ωb(ξc)
+    #poly = (-Zc^3,3Zc^2,2-3*Zc,1.0)
+    #_,Ωb1,Ωb2,Ωb3 = Solvers.real_roots3(poly)
+    #Ωb = max(Ωb1,Ωb2,Ωb3)
+    Z̄c = complex(ξc)
+    Z̄c2 = Z̄c*Z̄c
+    Z̄c3 = Z̄c2*Z̄c
+    d  = (36*Z̄c - 8 - 27*Z̄c2 + 3*sqrt(3)*sqrt(Z̄c3*(27*Z̄c -8)))^(1/3)
+    Ωb = real(1/3*(3*Z̄c - 2) - (12*Z̄c - 4)/(3*d) + 1/3*d)
+end
+
+function PatelTeja_Ωab(ξc)
+    Ωb = PatelTeja_Ωb(ξc)
+    Ωa = 3*ξc*ξc + 3*(1 - 2*ξc)*Ωb + Ωb*Ωb + 1 - 3*ξc
+    return Ωa,Ωb
 end
 
 function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
@@ -151,14 +202,16 @@ function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
     _Vc = model.params.Vc
     a = model.params.a
     b = model.params.b
-    n = length(model)
-    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)
-    _poly = [(-_Zc[i]^3,3*_Zc[i]^2,2-3*_Zc[i],1.) for i ∈ 1:n]
-    sols = Solvers.roots3.(_poly)
-    Ωb = [minimum(real.(sols[i][isreal.(sols[1]).*real.(sols[1]).>0])) for i ∈ 1:n]
-    Ωa = @. 3*_Zc^2+3*(1-2*_Zc)*Ωb+Ωb^2+1-3*_Zc
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+
+    for i in 1:length(model)
+        pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
+        Zc = pci * Vci / (R̄ * Tci)
+        Z̄c = complex(Zc,zero(Zc))
+        d  = (36*Z̄c - 8 - 27*Z̄c^2 + 3*sqrt(3)*sqrt(27*Z̄c^4 -8*Z̄c^3))^(1/3)
+        Ωa,Ωb = PatelTeja_Ωab(Zc)
+        a[i] = Ωa*R̄^2*Tci^2/pci
+        b[i] = Ωb*R̄*Tci/pci
+    end
     epsilon_LorentzBerthelot!(a,k)
     sigma_LorentzBerthelot!(b,l)
     return a,b
@@ -170,28 +223,17 @@ function c_premixing(model::PatelTejaModel)
     _Vc = model.params.Vc
     c = model.params.c
     _Zc = _pc .* _Vc ./ (R̄ .* _Tc)
-    Ωc = @. 1-3*_Zc
-    diagvalues(c) .= Ωc .* R̄ .*_Tc ./ _pc
-    c = sigma_LorentzBerthelot!(c)
+    Ωc = @. 1 - 3*_Zc
+    c .= Ωc .* R̄ .*_Tc ./ _pc
     return c
 end
 
-function cubic_Δ(model::PatelTejaModel,z)
-    b = diagvalues(model.params.b)
-    c = diagvalues(model.params.c)
-    z⁻¹ = sum(z)^-1
-    b̄ = dot(b,z)*z⁻¹
-    c̄ = dot(c,z)*z⁻¹
-
-    cb⁻¹ = c̄/b̄
-    det12 = 1+6*cb⁻¹+cb⁻¹^2
-    tr12 = 1+cb⁻¹
-    return (-1/2*(tr12+sqrt(det12)),-1/2*(tr12-sqrt(det12)))
+function cubic_ΔT(model::PatelTejaModel,T,z)
+    c = diagvalues(model.params.c.values)
+    b̄ = cubic_lb_volume(model,T,z)
+    c̄ = dot(c,z)
+    γ = complex(c̄/b̄)
+    δ = sqrt(evalpoly(γ,(1,6,1)))
+    ϵ = 1 + γ
+    return (-0.5*(ϵ + δ), -0.5*(ϵ - δ))
 end
-
-crit_pure(model::PatelTejaModel) = crit_pure_tp(model)
-#=
- (-B2-2(B2+B)+A)
- (-B2-2B2-2B+A)
- (-3B2-2B+A)
-=#

@@ -83,28 +83,21 @@ function Clausius(components;
 
     formatted_components = format_components(components)
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
-    k  = get(params,"k",nothing)
-    l  = get(params,"l",nothing)
-    pc = params["Pc"]
-    Vc = params["Vc"]
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    acentricfactor = get(params,"acentricfactor",nothing)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",formatted_components,zeros(length(Tc)))
-    b = PairParam("b",formatted_components,zeros(length(Tc)))
-    c = PairParam("c",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
-    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = ClausiusParam(a,b,c,Tc,pc,Vc,Mw)
-    references = String["10.1002/andp.18802450302"]
-    model = Clausius(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = CubicModel(Clausius,params,formatted_components;
+                        idealmodel,alpha,mixing,activity,translation,
+                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                        reference_state, verbose)
+    
+    k = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 
-function ab_premixing(model::ClausiusModel,mixing::MixingRule,k=nothing,l=nothing)
+default_references(::Type{Clausius}) = ["10.1002/andp.18802450302"]
+
+function ab_premixing(model::ClausiusModel,mixing::MixingRule,k,l)
     _Tc = model.params.Tc
     _pc = model.params.Pc
     _Vc = model.params.Vc
@@ -140,10 +133,3 @@ function cubic_Δ(model::ClausiusModel,z)
     c̄ = dot(c,z)*z⁻¹
     return (-c̄/b̄,-c̄/b̄)
 end
-
-crit_pure(model::ClausiusModel) = crit_pure_tp(model)
-#=
- (-B2-2(B2+B)+A)
- (-B2-2B2-2B+A)
- (-3B2-2B+A)
-=#

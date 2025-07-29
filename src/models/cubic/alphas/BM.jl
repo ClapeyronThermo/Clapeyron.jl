@@ -19,7 +19,7 @@ export BMAlpha
 
 ## Description
 
-Boston Mathias Cubic alpha `(α(T))` model.
+Boston Mathias Cubic alpha `(α(T))` model. Identical to a soave model when Tr <= 1, while having the correct behaviour at supercritical temperatures (via extrapolation at the critical point.)
 ```
 if Trᵢ > 1
     αᵢ = (exp((1-2/(2+mᵢ))*(1-Trᵢ^(1+mᵢ/2))))^2
@@ -28,10 +28,10 @@ else
 
 Trᵢ = T/Tcᵢ
 
-for PR models:
-    mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
-for RK models:
-    mᵢ = 0.480 + 1.547ωᵢ - 0.176ωᵢ^2
+for PR models, RK, vdW models:
+    mᵢ = m(Soave)
+other cubic models:
+    mᵢ = m(Leivobici)
 ```
 
 ## Model Construction Examples
@@ -57,30 +57,39 @@ alpha = BMAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0
 BMAlpha
 default_locations(::Type{BMAlpha}) = critical_data()
 
-function α_function(model::RKModel,V,T,z,alpha_model::BMAlphaModel)
+function α_function(model::DeltaCubicModel,V,T,z,alpha_model::BMAlphaModel)
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
     α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         ωi = ω[i]
-        m = evalpoly(ωi,(0.480,1.547,-0.176))
+        poly = α_m_BM(model,alpha_model,i)
+        m = evalpoly(ωi,poly)
         Tr = T/Tc[i]
-        α[i] = ifelse(Tr>1,(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2,(1+m*(1-√(Tr)))^2)
+        if Tr > 1
+            α[i] = (exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2
+        else
+            α[i] = (1+m*(1-sqrt(Tr)))^2
+        end
     end
     return α
 end
 
-function α_function(model::PRModel,V,T,z,alpha_model::BMAlphaModel)
-    Tc = model.params.Tc.values
-    ω  = alpha_model.params.acentricfactor.values
-    #m  = @. 0.37464+1.54226*ω-0.26992*ω^2
-    #α  = @. (Tr>1)*(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2+(Tr<=1)*(1+m*(1-√(Tr)))^2
-    α = zeros(typeof(T),length(Tc))
-    for i in @comps
-        ωi = ω[i]
-        m = evalpoly(ωi,(0.37464,1.54226,-0.26992))
-        Tr = T/Tc[i]
-        α[i] = ifelse(Tr>1,(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2,(1+m*(1-√(Tr)))^2)
+function α_function(model::DeltaCubicModel,V,T,z::SingleComp,alpha_model::BMAlphaModel)
+    Tc = model.params.Tc.values[1]
+    ωi  = alpha_model.params.acentricfactor.values[1]
+    poly = α_m_BM(model,alpha_model,1)
+    m = evalpoly(ωi,poly)
+    Tr = T/Tc
+    if Tr > 1
+        α = (exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2
+    else
+        α = (1+m*(1-sqrt(Tr)))^2
     end
     return α
 end
+
+@inline α_m_BM(model::RKModel,::BMAlphaModel,i) = (0.480,1.547,-0.176)
+@inline α_m_BM(model::PRModel,::BMAlphaModel,i) = (0.37464,1.54226,-0.26992)
+@inline α_m_BM(model::vdWModel,::BMAlphaModel,i) = (0.4998,1.5928,0.19563,0.025)
+α_m_BM(model::DeltaCubicModel,::BMAlphaModel,i) = α_m_leibovici(model,i)

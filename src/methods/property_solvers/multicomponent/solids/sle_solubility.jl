@@ -1,7 +1,7 @@
 """
     sle_solubility(model::CompositeModel, p, T, z; solute)
 
-Calculates the solubility of each component within a solution of the other components, at a given temperature and composition.
+Calculates the solubility of each component within a solution of the other components, at a given temperature, pressure and composition.
 Returns a matrix containing the composition of the SLE phase boundary for each component. If `solute` is specified, returns only the solubility of the specified component.
 
 Can only function when solid and fluid models are specified within a CompositeModel.
@@ -86,6 +86,7 @@ function obj_sle_solubility(F,model,p,T,zsolv,solu,data,ν_l)
     z = zeros(typeof(solu),length(model.fluid))
     z[.!(idx_solv)] .= solu
     z[idx_solv] .= zsolv
+    z ./= sum(z)
     R = Rgas(model.fluid)
     ∑z = sum(z)
     γliq = activity_coefficient(model.fluid,p,T,z/∑z,μ_ref = μ_ref)

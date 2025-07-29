@@ -1,7 +1,7 @@
 name = "Clapeyron"
 uuid = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
 authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pjwalker@caltech.edu>", "Andrés Riedemann <andres.riedemann@gmail.com>"]
-version = "0.6.2"
+version = "0.6.14"
 
 [deps]
 BlackBoxOptim = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
@@ -54,7 +54,7 @@ DiffResults = "^1.1"
 Downloads = "1"
 EoSSuperancillaries = "1.2.3"
 FillArrays = "^0.12, 0.13, 1"
-ForwardDiff = "^0.10"
+ForwardDiff = "0.10.36,1"
 JSON3 = "1"
 JutulDarcy = "0.2"
 LinearAlgebra = "1"
@@ -76,7 +76,7 @@ Symbolics = "^6.2"
 Tables = "^1.8"
 UUIDs = "1"
 Unitful = "^1.12"
-julia = "1.6"
+julia = "1.10"
 
 [extras]
 CoolProp = "e084ae63-2819-5025-826e-f8e611a84251"

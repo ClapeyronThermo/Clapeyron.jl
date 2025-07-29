@@ -6,7 +6,7 @@ Interface function used in cubic models. it should return a vector of cᵢ. such
 ## Example:
 
 ```julia
-function α_function(model::CubicModel,V,T,z,translation_model::RackettTranslation)
+function translation(model::CubicModel,V,T,z,translation_model::RackettTranslation)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = translation_model.params.Vc.values
@@ -18,6 +18,8 @@ end
 ```
 """
 function translation end
+
+translation(model::CubicModel,V,T,z) = translation(model,V,T,z,model.translation)
 
 include("NoTranslation.jl")
 include("Rackett.jl")

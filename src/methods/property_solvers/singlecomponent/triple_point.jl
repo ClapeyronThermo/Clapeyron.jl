@@ -22,10 +22,10 @@ function x0_triple_point(model::CompositeModel,T0 = 0.65*T_scale(fluid_model(mod
 
     #saturation
     p_sat,vl_sat,vv_sat = saturation_pressure(fluid,T0,crit_retry = false)
-    Ksat = -dpdT_pure(fluid,vl_sat,vv_sat,T0)*T0*T0/p_sat
+    Ksat = -dpdT_saturation(fluid,vl_sat,vv_sat,T0)*T0*T0/p_sat
     vs_sub,vv_sub = x0_sublimation_pressure(model,T0)
     p_sub = pressure(fluid,vv_sub,T0)
-    Ksub = -dpdT_pure(solid,fluid,vs_sub,vv_sub,T0)*T0*T0/p_sub
+    Ksub = -dpdT_saturation(solid,fluid,vs_sub,vv_sub,T0)*T0*T0/p_sub
     #=
 
     Clausius Clapeyron
@@ -61,11 +61,11 @@ end
 Calculates the triple point of a `CompositeModel` containing solid and fluid phase EoS.
 
 returns:
-- Triple point Temperature [`K`]
-- Triple point Pressure [`Pa`]
-- solid volume at Triple Point [`m³`]
-- liquid volume at Triple Point [`m³`]
-- vapour volume at Triple Point [`m³`]
+- Triple point Temperature `[K]`
+- Triple point Pressure `[Pa]`
+- solid volume at Triple Point `[m³]`
+- liquid volume at Triple Point `[m³]`
+- vapour volume at Triple Point `[m³]`
 """
 function triple_point(model::CompositeModel;v0 = x0_triple_point(model))
     if isnothing(model.solid) || isnothing(model.fluid)

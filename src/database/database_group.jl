@@ -120,7 +120,7 @@ function __GroupParam(components,found_gcpairs,found_intragcpairs,grouplocations
     filepaths = flattenfilepaths(grouplocations,usergrouplocations)
 
     gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(components))
-    
+
     #fill gccomponents_parsed
     for i in 1:length(components)
         if !to_lookup[i]
@@ -131,9 +131,9 @@ function __GroupParam(components,found_gcpairs,found_intragcpairs,grouplocations
     #using parsing machinery
     if any(to_lookup)
         allparams,allnotfoundparams = createparams(componentstolookup, filepaths, options, :group) #merge all found params
-        raw_result, _ = compile_params(componentstolookup,allparams,allnotfoundparams,options) #generate ClapeyronParams
+        raw_result = compile_params(componentstolookup,allparams,allnotfoundparams,nothing,options) #generate ClapeyronParams
         raw_groups = raw_result["groups"] #SingleParam{String}
-        
+
         is_valid_param(raw_groups,options) #this will check if we actually found all params, via single missing detection.
         groupsourcecsvs = raw_groups.sourcecsvs
 
@@ -161,7 +161,7 @@ function __GroupParam(components,found_gcpairs,found_intragcpairs,grouplocations
     end
     #group without second order information
     group1 = GroupParam(gccomponents_parsed,_grouptype,groupsourcecsvs,nothing)
-    
+
     #if we don't have second order information, return early
     if all(isnothing,found_intragcpairs) && !haskey(raw_result,"intragroups")
         return group1
@@ -202,7 +202,7 @@ function __GroupParam(components,found_gcpairs,found_intragcpairs,grouplocations
                     structgc_components_parsed[i] = _parse_group_string(intragroups.values[k],NTuple{2,String})
                 end
             end
-            
+
         end
     end
     #add intragroup data to the current group param, it takes care of missing values.

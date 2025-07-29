@@ -15,7 +15,6 @@ butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,CCCCO,H,butanol~|~n-butanol~|~1-but
 water,O,H,water,O,e,2500.7,0.034868,10.1021/ie010954d
 ethanol,O,H,water,O,e,2577.05,0.03356196748232913,10.1021/ie010954d
 water,O,H,ethanol,O,e,2577.05,0.03356196748232913,10.1021/ie010954d
-water08,O,H,water08,O,e,2425.6714,0.04509,10.1016/j.cep.2007.02.034
 methylamine~|~methanamine,CN,H,methylamine~|~methanamine,CN,e,684.3,0.095103,10.1021/ie010954d
 ethylamine~|~ethanamine,CCN,H,ethylamine~|~ethanamine,CCN,e,854.7,0.017275,10.1021/ie010954d
 propylamine~|~n-propylamine~|~1-propylamine~|~propan-1-amine,CCCN,H,propylamine~|~n-propylamine~|~1-propylamine~|~propan-1-amine,CCCN,e,1028.1,0.022674,10.1021/ie010954d
@@ -23,7 +22,6 @@ propylamine~|~n-propylamine~|~1-propylamine~|~propan-1-amine,CCCN,H,propylamine~
 aniline,,H,aniline,,e,1351.6,0.074883,10.1021/ie010954d
 acetic acid,CC(=O)O,H,acetic acid,CC(=O)O,e,3044.4,0.07555,10.1021/ie010954d
 acetonitrile,,e,water,,H,2264.61,0.0183,
-acetonitrile,,e,water08,,H,2264.61,0.0183,
 paracetamol~|~acetaminophen,,e,paracetamol~|~acetaminophen,,H,2003.76,0.01,
 thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,,e,thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,,H,3504.46,0.0451,
 menthol,,e,menthol,,H,3530.68,0.0566,

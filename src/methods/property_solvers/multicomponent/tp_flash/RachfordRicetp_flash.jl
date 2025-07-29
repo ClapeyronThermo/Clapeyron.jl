@@ -6,16 +6,18 @@ Method to solve non-reactive multicomponent flash problem by Rachford-Rice equat
 Only two phases are supported. if `K0` is `nothing`, it will be calculated via the Wilson correlation.
 
 ### Keyword Arguments:
-- equilibrium = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria
-- `K0` (optional), initial guess for the constants K
-- `x0` (optional), initial guess for the composition of phase x
-- `y0` = optional, initial guess for the composition of phase y
-- `vol0` = optional, initial guesses for phase x and phase y volumes
-- `K_tol` = tolerance to stop the calculation
-- `max_iters` = number of Successive Substitution iterations to perform
-- `nacc` = accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
-- `noncondensables` = arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase
-- `nonvolatiles` = arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase
+- `equilibrium`: `:vle` for liquid vapor equilibria, `:lle` for liquid liquid equilibria, `:unknown` if not specified
+- `K0`: initial guess for the K-values.
+- `x0`: initial guess for the composition of phase x.
+- `y0`: initial guess for the composition of phase y.
+- `vol0`: initial guesses for phase x and phase y volumes.
+- `K_tol`: tolerance to stop the calculation.
+- `ss_iters`: number of Successive Substitution iterations to perform.
+- `nacc`: accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
+- `second_order`: wheter to solve the gibbs energy minimization using the analytical hessian or not.
+- `noncondensables`: arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase.
+- `nonvolatiles`: arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase.
+- `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
 
 """
 struct RRTPFlash{T} <: TPFlashMethod
@@ -32,9 +34,6 @@ struct RRTPFlash{T} <: TPFlashMethod
 end
 
 Base.eltype(method::RRTPFlash{T}) where T = T
-
-is_vle(method::RRTPFlash) = is_vle(method.equilibrium)
-is_lle(method::RRTPFlash) = is_lle(method.equilibrium)
 
 function index_reduction(m::RRTPFlash,idx::AbstractVector)
     equilibrium,K0,x0,y0,v0,K_tol,max_iters,nacc,noncondensables,nonvolatiles = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.max_iters,m.nacc,m.noncondensables,m.nonvolatiles
@@ -53,10 +52,19 @@ function RRTPFlash(;equilibrium = :unknown,
     max_iters = 100,
     nacc = 5,
     noncondensables = nothing,
-    nonvolatiles = nothing)
+    nonvolatiles = nothing,
+    flash_result = nothing)
     ss_iters = max_iters
+    if flash_result isa FlashResult
+        np = numphases(flash_result)
+        np != 2 && incorrect_np_flash_error(RRTPFlash,flash_result)
+    end
+    
+    nonvolatiles isa String && (nonvolatiles = [nonvolatiles])
+    noncondensables isa String && (noncondensables = [noncondensables])
+
     #we call Michelsen to check if the arguments are correct.
-    m = MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,noncondensables,nonvolatiles)
+    m = MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,noncondensables,nonvolatiles,flash_result)
     return RRTPFlash{eltype(m)}(m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,max_iters,m.nacc,m.noncondensables,m.nonvolatiles)
 end
 
@@ -69,12 +77,16 @@ function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
     K_tol = method.K_tol,itss = method.max_iters, nacc=method.nacc,
     non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
     reduced = true, use_opt_solver = false)
-
-    g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
-    comps = [x,y]
+    n = sum(z)
     volumes = [v[1],v[2]]
+    if has_a_res(model_cached)
+        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium,volumes)
+    else
+        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
+    end
+    comps = [x,y]
     βi = [1-β ,β]
-    return comps,βi,volumes,g
+    return FlashResult(comps,βi,volumes,FlashData(p,T,g))
 end
 
 export RRTPFlash

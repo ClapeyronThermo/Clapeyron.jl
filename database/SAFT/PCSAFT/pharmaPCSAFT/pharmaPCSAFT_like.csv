@@ -1,0 +1,4 @@
+Clapeyron Database File
+water T-dependent sigma PCSAFT Like Parameters
+species,DIPPR Number,Mw,segment,sigma,epsilon,n_H,n_e,source
+water08~|~water,,18.01528,1.2046817736,2.7927,353.9449,1,1,10.1016/j.cep.2007.02.034

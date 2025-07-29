@@ -97,7 +97,7 @@ ethanol,a,"propylenecarbonate~|~4-methyl-1,3-dioxolan-2-one",b,1680.197739,0.055
 ethanol,a,pentanal~|~1-pentanal~|~valeraldehyde,b,1879.897336,0.05533
 ethanol,a,thp~|~tetrahydropyran,b,1361.307484,0.05533
 ethanol,a,"acetylacetone~|~2,4-pentanedione",b,715.184268,0.05533
-ethanol,a,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,b,1455.250446,0.05533
+ethanol,a,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,b,1455.250446,0.05533
 ethanol,a,tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,b,1178.882998,0.05533
 ethanol,a,hexylacetate~|~n-hexylacetate~|~hexyl ethanoate,b,1200.681931,0.05533
 ethanol,a,ethyl valerate~|~ethyl pentanoate,b,961.8140451,0.05533
@@ -156,7 +156,7 @@ formic acid~|~methanoic acid,a,dipropyl ether~|~di-n-propylether,b,1463.220515,0
 formic acid~|~methanoic acid,a,1-ethoxybutane~|~butyl ethyl ether~|~ethyl butyl ether~|~n-butyl ethyl ether,b,1756.745524,0.60493
 formic acid~|~methanoic acid,a,propylformate~|~n-propylformate~|~propyl methanoate~|~n-propylmethanoate~|~formic acid propyl ester,b,1648.288614,0.60493
 formic acid~|~methanoic acid,a,gamma-valerolactone~|~tetrahydro-5-methyl-2-furanone~|~dihydro-5-methyl-2(3h)-furanone,b,2150.804145,0.60493
-formic acid~|~methanoic acid,a,amyl formate~|~pentyl methanoate~|~formicacidpentylester,b,1540.084631,0.60493
+formic acid~|~methanoic acid,a,amyl formate~|~pentyl formate~|~pentyl methanoate~|~formicacidpentylester,b,1540.084631,0.60493
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,a,2-butanol~|~butan-2-ol,b,1144.611633,0.00622
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,a,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,974.0534372,0.01435
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,a,2-propanol~|~propan-2-ol~|~isopropanol,b,371.3467923,0.03508
@@ -220,7 +220,7 @@ ethylacetate~|~ethyl ethanoate,a,2-pyrrolidon~|~2-pyrrolidone~|~2-pyrrolidinone,
 2-butanol~|~butan-2-ol,a,propylbutyrate~|~n-propylbutyrate~|~propyl butanoate~|~n-propylbutanoate~|~n-propyl n-butyrate~|~butanoic acid propyl ester,b,1633.38066,0.00622
 2-butanol~|~butan-2-ol,a,methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,b,1495.517348,0.00622
 2-butanol~|~butan-2-ol,a,thp~|~tetrahydropyran,b,1823.598499,0.00622
-2-butanol~|~butan-2-ol,a,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,b,1862.006513,0.00622
+2-butanol~|~butan-2-ol,a,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,b,1862.006513,0.00622
 2-butanol~|~butan-2-ol,a,tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,b,1578.551088,0.00622
 2-butanol~|~butan-2-ol,a,sec-butylacetate~|~1-methylpropyl ethanoate,b,1806.225461,0.00622
 "2,3-butanediol",a,butylacetate~|~n-butylacetate~|~butyl ethanoate~|~n-butylethanoate,b,2464.054876,0.03413
@@ -272,7 +272,7 @@ butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,dimethyl ether,b,1716.321414,0.01
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,propylbutyrate~|~n-propylbutyrate~|~propyl butanoate~|~n-propylbutanoate~|~n-propyl n-butyrate~|~butanoic acid propyl ester,b,1357.878473,0.01435
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,b,1301.841456,0.01435
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,thp~|~tetrahydropyran,b,1695.163497,0.01435
-butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,b,1767.344653,0.01435
+butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,b,1767.344653,0.01435
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,b,1485.358208,0.01435
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,isobutylformate~|~2-methylpropyl methanoate,b,1242.472123,0.01435
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,sec-butylacetate~|~1-methylpropyl ethanoate,b,1503.072429,0.01435
@@ -379,7 +379,7 @@ dipropylamine~|~1-propanamine~|~di-n-propylamine,a,"tripropylamine~|~n,n-dipropy
 2-propanol~|~propan-2-ol~|~isopropanol,a,dimethyl ether,b,1432.556102,0.03508
 2-propanol~|~propan-2-ol~|~isopropanol,a,"diisopropyl ketone~|~di-isopropyl ketone~|~2,4-dimethyl-3-pentanone",b,680.7843819,0.03508
 2-propanol~|~propan-2-ol~|~isopropanol,a,thp~|~tetrahydropyran,b,332.5185905,0.03508
-2-propanol~|~propan-2-ol~|~isopropanol,a,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,b,841.9232379,0.03508
+2-propanol~|~propan-2-ol~|~isopropanol,a,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,b,841.9232379,0.03508
 2-propanol~|~propan-2-ol~|~isopropanol,a,sec-butylacetate~|~1-methylpropyl ethanoate,b,972.7823202,0.03508
 2-propanol~|~propan-2-ol~|~isopropanol,a,gamma-valerolactone~|~tetrahydro-5-methyl-2-furanone~|~dihydro-5-methyl-2(3h)-furanone,b,1354.551978,0.03508
 2-propanol~|~propan-2-ol~|~isopropanol,a,"butoxide~|~ethyloxirane~|~1,2-epoxybutane",b,815.2924462,0.03508
@@ -453,7 +453,7 @@ methanol,a,ethyl benzoate,b,1566.321396,0.08716
 methanol,a,methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,b,1242.163639,0.08716
 methanol,a,thp~|~tetrahydropyran,b,1186.85883,0.08716
 methanol,a,"acetylacetone~|~2,4-pentanedione",b,887.0223528,0.08716
-methanol,a,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,b,1402.886427,0.08716
+methanol,a,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,b,1402.886427,0.08716
 methanol,a,"diglyme~|~2,5,8-trioxanonane~|~diethylene glycol dimethyl ether",b,1694.767345,0.08716
 methanol,a,tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,b,1113.450579,0.08716
 methanol,a,hexylacetate~|~n-hexylacetate~|~hexyl ethanoate,b,1334.409138,0.08716
@@ -511,7 +511,7 @@ isobutanol~|~2-methyl-1-propanol,a,propylbutyrate~|~n-propylbutyrate~|~propyl bu
 isobutanol~|~2-methyl-1-propanol,a,"diisopropyl ketone~|~di-isopropyl ketone~|~2,4-dimethyl-3-pentanone",b,2000.607551,0.00677
 isobutanol~|~2-methyl-1-propanol,a,methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,b,1629.428247,0.00677
 isobutanol~|~2-methyl-1-propanol,a,thp~|~tetrahydropyran,b,2027.439525,0.00677
-isobutanol~|~2-methyl-1-propanol,a,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,b,1889.17071,0.00677
+isobutanol~|~2-methyl-1-propanol,a,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,b,1889.17071,0.00677
 isobutanol~|~2-methyl-1-propanol,a,isobutylformate~|~2-methylpropyl methanoate,b,1692.471803,0.00677
 isobutanol~|~2-methyl-1-propanol,a,sec-butylacetate~|~1-methylpropyl ethanoate,b,1895.816917,0.00677
 isobutanol~|~2-methyl-1-propanol,a,isobutylisobutyrate~|~2-methylpropyl 2-methylpropanoate,b,1622.825727,0.00677
@@ -527,7 +527,7 @@ nitromethane,a,1-hexanol~|~hexan-1-ol,b,1689.445441,0.00722
 1-pentanol~|~pentan-1-ol,a,butylbutyrate~|~butyl butanoate~|~n-butyl n-butyrate~|~butanoic acid butyl ester,b,1888.098003,0.01039
 1-pentanol~|~pentan-1-ol,a,dimethyl carbonate~|~carbonic acid dimethyl ester,b,941.3838792,0.01039
 1-pentanol~|~pentan-1-ol,a,2-hexanone,b,2116.033566,0.01039
-1-pentanol~|~pentan-1-ol,a,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,b,1727.969075,0.01039
+1-pentanol~|~pentan-1-ol,a,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,b,1727.969075,0.01039
 1-pentanol~|~pentan-1-ol,a,diethyl carbonate~|~carbonic acid diethyl ester,b,1369.037683,0.01039
 1-pentanol~|~pentan-1-ol,a,ethyl octanoate~|~octanoic acid ethyl ester,b,1724.458228,0.01039
 1-pentanol~|~pentan-1-ol,a,ethyl hexanoate~|~hexanoic acid ethyl ester,b,1650.4905,0.01039
@@ -559,7 +559,7 @@ propanol~|~1-propanol~|~propan-1-ol,a,propylbutyrate~|~n-propylbutyrate~|~propyl
 propanol~|~1-propanol~|~propan-1-ol,a,"diisopropyl ketone~|~di-isopropyl ketone~|~2,4-dimethyl-3-pentanone",b,1156.826117,0.03853
 propanol~|~1-propanol~|~propan-1-ol,a,methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,b,879.9857494,0.03853
 propanol~|~1-propanol~|~propan-1-ol,a,thp~|~tetrahydropyran,b,1156.227069,0.03853
-propanol~|~1-propanol~|~propan-1-ol,a,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,b,1364.067656,0.03853
+propanol~|~1-propanol~|~propan-1-ol,a,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,b,1364.067656,0.03853
 propanol~|~1-propanol~|~propan-1-ol,a,"diglyme~|~2,5,8-trioxanonane~|~diethylene glycol dimethyl ether",b,1235.760292,0.03853
 propanol~|~1-propanol~|~propan-1-ol,a,tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,b,983.9207658,0.03853
 propanol~|~1-propanol~|~propan-1-ol,a,sec-butylacetate~|~1-methylpropyl ethanoate,b,1241.328424,0.03853
@@ -611,7 +611,7 @@ water,a,gamma-butyrolactone~|~.gamma.-butyrolactone,b,783.98042,0.35319
 water,a,"2,5,8,11-tetraoxadodecane~|~triethylene glycol dimethyl ether",b,614.6271139,0.35319
 water,a,"propylenecarbonate~|~4-methyl-1,3-dioxolan-2-one",b,328.223638,0.35319
 water,a,pentanal~|~1-pentanal~|~valeraldehyde,b,1198.66858,0.35319
-water,a,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,b,721.9733128,0.35319
+water,a,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,b,721.9733128,0.35319
 water,a,"diglyme~|~2,5,8-trioxanonane~|~diethylene glycol dimethyl ether",b,988.3875453,0.35319
 water,a,cis-crotonitrile,b,468.9971433,0.35319
 water,a,formylmorpholine~|~n-formylmorpholine,b,1253.39974,0.35319
@@ -674,7 +674,7 @@ butylformate~|~n-butyl formate~|~butyl methanoate~|~n-butylmethanoate~|~formic a
 1-hexanol~|~hexan-1-ol,a,dipropyl ether~|~di-n-propylether,b,1739.40833,0.00722
 1-hexanol~|~hexan-1-ol,a,isobutyl acetate~|~2-methylpropyl ethanoate~|~aceticacid-2-methylpropylester,b,1959.306058,0.00722
 1-hexanol~|~hexan-1-ol,a,dimethyl ether,b,870.2073952,0.00722
-1-hexanol~|~hexan-1-ol,a,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,b,2085.927281,0.00722
+1-hexanol~|~hexan-1-ol,a,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,b,2085.927281,0.00722
 1-hexanol~|~hexan-1-ol,a,hexylacetate~|~n-hexylacetate~|~hexyl ethanoate,b,1976.263566,0.00722
 1-hexanol~|~hexan-1-ol,a,2-octanone,b,1947.562284,0.00722
 1-hexanol~|~hexan-1-ol,a,diethyl carbonate~|~carbonic acid diethyl ester,b,1447.379258,0.00722
@@ -1035,7 +1035,7 @@ ethanol,b,"propylenecarbonate~|~4-methyl-1,3-dioxolan-2-one",a,1680.197739,0.055
 ethanol,b,pentanal~|~1-pentanal~|~valeraldehyde,a,1879.897336,0.05533
 ethanol,b,thp~|~tetrahydropyran,a,1361.307484,0.05533
 ethanol,b,"acetylacetone~|~2,4-pentanedione",a,715.184268,0.05533
-ethanol,b,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,a,1455.250446,0.05533
+ethanol,b,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,a,1455.250446,0.05533
 ethanol,b,tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,a,1178.882998,0.05533
 ethanol,b,hexylacetate~|~n-hexylacetate~|~hexyl ethanoate,a,1200.681931,0.05533
 ethanol,b,ethyl valerate~|~ethyl pentanoate,a,961.8140451,0.05533
@@ -1094,7 +1094,7 @@ formic acid~|~methanoic acid,b,dipropyl ether~|~di-n-propylether,a,1463.220515,0
 formic acid~|~methanoic acid,b,1-ethoxybutane~|~butyl ethyl ether~|~ethyl butyl ether~|~n-butyl ethyl ether,a,1756.745524,0.60493
 formic acid~|~methanoic acid,b,propylformate~|~n-propylformate~|~propyl methanoate~|~n-propylmethanoate~|~formic acid propyl ester,a,1648.288614,0.60493
 formic acid~|~methanoic acid,b,gamma-valerolactone~|~tetrahydro-5-methyl-2-furanone~|~dihydro-5-methyl-2(3h)-furanone,a,2150.804145,0.60493
-formic acid~|~methanoic acid,b,amyl formate~|~pentyl methanoate~|~formicacidpentylester,a,1540.084631,0.60493
+formic acid~|~methanoic acid,b,amyl formate~|~pentyl formate~|~pentyl methanoate~|~formicacidpentylester,a,1540.084631,0.60493
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,b,2-butanol~|~butan-2-ol,a,1144.611633,0.00622
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,b,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,974.0534372,0.01435
 ethylformate~|~ethyl methanoate~|~formic acid ethyl ester,b,2-propanol~|~propan-2-ol~|~isopropanol,a,371.3467923,0.03508
@@ -1158,7 +1158,7 @@ ethylacetate~|~ethyl ethanoate,b,2-pyrrolidon~|~2-pyrrolidone~|~2-pyrrolidinone,
 2-butanol~|~butan-2-ol,b,propylbutyrate~|~n-propylbutyrate~|~propyl butanoate~|~n-propylbutanoate~|~n-propyl n-butyrate~|~butanoic acid propyl ester,a,1633.38066,0.00622
 2-butanol~|~butan-2-ol,b,methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,a,1495.517348,0.00622
 2-butanol~|~butan-2-ol,b,thp~|~tetrahydropyran,a,1823.598499,0.00622
-2-butanol~|~butan-2-ol,b,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,a,1862.006513,0.00622
+2-butanol~|~butan-2-ol,b,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,a,1862.006513,0.00622
 2-butanol~|~butan-2-ol,b,tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,a,1578.551088,0.00622
 2-butanol~|~butan-2-ol,b,sec-butylacetate~|~1-methylpropyl ethanoate,a,1806.225461,0.00622
 "2,3-butanediol",b,butylacetate~|~n-butylacetate~|~butyl ethanoate~|~n-butylethanoate,a,2464.054876,0.03413
@@ -1210,7 +1210,7 @@ butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,dimethyl ether,a,1716.321414,0.01
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,propylbutyrate~|~n-propylbutyrate~|~propyl butanoate~|~n-propylbutanoate~|~n-propyl n-butyrate~|~butanoic acid propyl ester,a,1357.878473,0.01435
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,a,1301.841456,0.01435
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,thp~|~tetrahydropyran,a,1695.163497,0.01435
-butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,a,1767.344653,0.01435
+butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,a,1767.344653,0.01435
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,a,1485.358208,0.01435
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,isobutylformate~|~2-methylpropyl methanoate,a,1242.472123,0.01435
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,sec-butylacetate~|~1-methylpropyl ethanoate,a,1503.072429,0.01435
@@ -1317,7 +1317,7 @@ dipropylamine~|~1-propanamine~|~di-n-propylamine,b,"tripropylamine~|~n,n-dipropy
 2-propanol~|~propan-2-ol~|~isopropanol,b,dimethyl ether,a,1432.556102,0.03508
 2-propanol~|~propan-2-ol~|~isopropanol,b,"diisopropyl ketone~|~di-isopropyl ketone~|~2,4-dimethyl-3-pentanone",a,680.7843819,0.03508
 2-propanol~|~propan-2-ol~|~isopropanol,b,thp~|~tetrahydropyran,a,332.5185905,0.03508
-2-propanol~|~propan-2-ol~|~isopropanol,b,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,a,841.9232379,0.03508
+2-propanol~|~propan-2-ol~|~isopropanol,b,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,a,841.9232379,0.03508
 2-propanol~|~propan-2-ol~|~isopropanol,b,sec-butylacetate~|~1-methylpropyl ethanoate,a,972.7823202,0.03508
 2-propanol~|~propan-2-ol~|~isopropanol,b,gamma-valerolactone~|~tetrahydro-5-methyl-2-furanone~|~dihydro-5-methyl-2(3h)-furanone,a,1354.551978,0.03508
 2-propanol~|~propan-2-ol~|~isopropanol,b,"butoxide~|~ethyloxirane~|~1,2-epoxybutane",a,815.2924462,0.03508
@@ -1391,7 +1391,7 @@ methanol,b,ethyl benzoate,a,1566.321396,0.08716
 methanol,b,methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,a,1242.163639,0.08716
 methanol,b,thp~|~tetrahydropyran,a,1186.85883,0.08716
 methanol,b,"acetylacetone~|~2,4-pentanedione",a,887.0223528,0.08716
-methanol,b,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,a,1402.886427,0.08716
+methanol,b,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,a,1402.886427,0.08716
 methanol,b,"diglyme~|~2,5,8-trioxanonane~|~diethylene glycol dimethyl ether",a,1694.767345,0.08716
 methanol,b,tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,a,1113.450579,0.08716
 methanol,b,hexylacetate~|~n-hexylacetate~|~hexyl ethanoate,a,1334.409138,0.08716
@@ -1449,7 +1449,7 @@ isobutanol~|~2-methyl-1-propanol,b,propylbutyrate~|~n-propylbutyrate~|~propyl bu
 isobutanol~|~2-methyl-1-propanol,b,"diisopropyl ketone~|~di-isopropyl ketone~|~2,4-dimethyl-3-pentanone",a,2000.607551,0.00677
 isobutanol~|~2-methyl-1-propanol,b,methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,a,1629.428247,0.00677
 isobutanol~|~2-methyl-1-propanol,b,thp~|~tetrahydropyran,a,2027.439525,0.00677
-isobutanol~|~2-methyl-1-propanol,b,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,a,1889.17071,0.00677
+isobutanol~|~2-methyl-1-propanol,b,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,a,1889.17071,0.00677
 isobutanol~|~2-methyl-1-propanol,b,isobutylformate~|~2-methylpropyl methanoate,a,1692.471803,0.00677
 isobutanol~|~2-methyl-1-propanol,b,sec-butylacetate~|~1-methylpropyl ethanoate,a,1895.816917,0.00677
 isobutanol~|~2-methyl-1-propanol,b,isobutylisobutyrate~|~2-methylpropyl 2-methylpropanoate,a,1622.825727,0.00677
@@ -1465,7 +1465,7 @@ nitromethane,b,1-hexanol~|~hexan-1-ol,a,1689.445441,0.00722
 1-pentanol~|~pentan-1-ol,b,butylbutyrate~|~butyl butanoate~|~n-butyl n-butyrate~|~butanoic acid butyl ester,a,1888.098003,0.01039
 1-pentanol~|~pentan-1-ol,b,dimethyl carbonate~|~carbonic acid dimethyl ester,a,941.3838792,0.01039
 1-pentanol~|~pentan-1-ol,b,2-hexanone,a,2116.033566,0.01039
-1-pentanol~|~pentan-1-ol,b,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,a,1727.969075,0.01039
+1-pentanol~|~pentan-1-ol,b,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,a,1727.969075,0.01039
 1-pentanol~|~pentan-1-ol,b,diethyl carbonate~|~carbonic acid diethyl ester,a,1369.037683,0.01039
 1-pentanol~|~pentan-1-ol,b,ethyl octanoate~|~octanoic acid ethyl ester,a,1724.458228,0.01039
 1-pentanol~|~pentan-1-ol,b,ethyl hexanoate~|~hexanoic acid ethyl ester,a,1650.4905,0.01039
@@ -1497,7 +1497,7 @@ propanol~|~1-propanol~|~propan-1-ol,b,propylbutyrate~|~n-propylbutyrate~|~propyl
 propanol~|~1-propanol~|~propan-1-ol,b,"diisopropyl ketone~|~di-isopropyl ketone~|~2,4-dimethyl-3-pentanone",a,1156.826117,0.03853
 propanol~|~1-propanol~|~propan-1-ol,b,methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,a,879.9857494,0.03853
 propanol~|~1-propanol~|~propan-1-ol,b,thp~|~tetrahydropyran,a,1156.227069,0.03853
-propanol~|~1-propanol~|~propan-1-ol,b,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,a,1364.067656,0.03853
+propanol~|~1-propanol~|~propan-1-ol,b,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,a,1364.067656,0.03853
 propanol~|~1-propanol~|~propan-1-ol,b,"diglyme~|~2,5,8-trioxanonane~|~diethylene glycol dimethyl ether",a,1235.760292,0.03853
 propanol~|~1-propanol~|~propan-1-ol,b,tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,a,983.9207658,0.03853
 propanol~|~1-propanol~|~propan-1-ol,b,sec-butylacetate~|~1-methylpropyl ethanoate,a,1241.328424,0.03853
@@ -1549,7 +1549,7 @@ water,b,gamma-butyrolactone~|~.gamma.-butyrolactone,a,783.98042,0.35319
 water,b,"2,5,8,11-tetraoxadodecane~|~triethylene glycol dimethyl ether",a,614.6271139,0.35319
 water,b,"propylenecarbonate~|~4-methyl-1,3-dioxolan-2-one",a,328.223638,0.35319
 water,b,pentanal~|~1-pentanal~|~valeraldehyde,a,1198.66858,0.35319
-water,b,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,a,721.9733128,0.35319
+water,b,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,a,721.9733128,0.35319
 water,b,"diglyme~|~2,5,8-trioxanonane~|~diethylene glycol dimethyl ether",a,988.3875453,0.35319
 water,b,cis-crotonitrile,a,468.9971433,0.35319
 water,b,formylmorpholine~|~n-formylmorpholine,a,1253.39974,0.35319
@@ -1612,7 +1612,7 @@ butylformate~|~n-butyl formate~|~butyl methanoate~|~n-butylmethanoate~|~formic a
 1-hexanol~|~hexan-1-ol,b,dipropyl ether~|~di-n-propylether,a,1739.40833,0.00722
 1-hexanol~|~hexan-1-ol,b,isobutyl acetate~|~2-methylpropyl ethanoate~|~aceticacid-2-methylpropylester,a,1959.306058,0.00722
 1-hexanol~|~hexan-1-ol,b,dimethyl ether,a,870.2073952,0.00722
-1-hexanol~|~hexan-1-ol,b,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,a,2085.927281,0.00722
+1-hexanol~|~hexan-1-ol,b,mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,a,2085.927281,0.00722
 1-hexanol~|~hexan-1-ol,b,hexylacetate~|~n-hexylacetate~|~hexyl ethanoate,a,1976.263566,0.00722
 1-hexanol~|~hexan-1-ol,b,2-octanone,a,1947.562284,0.00722
 1-hexanol~|~hexan-1-ol,b,diethyl carbonate~|~carbonic acid diethyl ester,a,1447.379258,0.00722

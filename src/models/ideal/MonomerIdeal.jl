@@ -62,5 +62,3 @@ function a_ideal(model::MonomerIdealModel, V, T, z)
     end
     return res/sum(z) - 1
 end
-
-molecular_weight(model::MonomerIdealModel,z) = comp_molecular_weight(mw(model),z)

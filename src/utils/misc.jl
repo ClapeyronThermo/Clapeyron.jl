@@ -147,6 +147,12 @@ format_gccomponents(str::String) = [str]
 format_gccomponents(str::AbstractString) = format_components(String(str))
 format_gccomponents(str::Vector{String}) = str
 
+"""
+    viewn(x,chunk,i)
+
+Returns the ith view of x, of size `chunk`.
+
+"""
 function viewn(x,chunk,i)
     l = length(x)
     l < chunk*i && throw(BoundsError(x,chunk*i))
@@ -155,9 +161,15 @@ end
 
 viewlast(x,i) = @view(x[(end - i + 1):end])
 viewfirst(x,i) = @view(x[begin:i])
+viewlast(x,i,n) = viewfirst(viewlast(x,i),n)
 
+linearidx(x::AbstractVector) = LinearIndices(x)
 
-linearidx(x::AbstractVector) = 1:length(x)
-linearidx(x::AbstractMatrix) = diagind(x)
+if Base.VERSION < v"1.11"
+    linearidx(x::AbstractMatrix) = diagind(x,0)
+else
+    linearidx(x::AbstractMatrix) = diagind(x,0,IndexStyle(x))
+end
 
 mid(a,b,c) =  max(min(a,b),min(max(a,b),c))
+deleteat(x,i) = deleteat!(copy(x),i)

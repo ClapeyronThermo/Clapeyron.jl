@@ -76,7 +76,7 @@ function gErRule(components; activity = NRTL, userlocations = String[],activity_
     return model
 end
 
-function ab_premixing(model::PRModel,mixing::gErRuleModel,k = nothing, l = nothing)
+function ab_premixing(model::PRModel,mixing::gErRuleModel, k, l)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.Pc
@@ -90,9 +90,37 @@ function ab_premixing(model::PRModel,mixing::gErRuleModel,k = nothing, l = nothi
     return a,b
 end
 
+function ab_premixing(model::RKModel,mixing::gErRuleModel, k, l)
+    Ωa, Ωb = ab_consts(model)
+    _Tc = model.params.Tc
+    _pc = model.params.Pc
+    a = model.params.a
+    b = model.params.b
+    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a) #not used
+    gEr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
+    kij_mix!(gEr_mix,b,l)
+    return a,b
+end
+
+function ab_premixing(model::CPAModel,mixing::gErRuleModel,k, l)
+    a = model.params.a
+    b = model.params.b
+    epsilon_LorentzBerthelot!(a) #not used
+    gEr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
+    kij_mix!(gEr_mix,b,l)
+    return a,b
+end
+
 function cubic_get_l(model::CubicModel,mixing::gErRuleModel,params)
     return get_k_powmean(params.b.values,2/3)
 end
+
+function cubic_get_k(model::CubicModel,mixing::gErRuleModel,params)
+    return get_k_geomean(params.a.values)
+end
+
 
 __excess_g_res(model,p,T,z,b,c) = excess_g_res(model,p,T,z)
 function __excess_g_res(model::WilsonModel,p,T,z,b,c)
@@ -119,7 +147,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b,c)
         end
     end
     b̄ = b̄*invn2
-    Λ = infinite_pressure_gibbs_correction(model,z)
+    Λ = infinite_pressure_gibbs_correction(model,T,z)
     ā = (res + gᴱᵣ/Λ)*b̄*invn
     c̄ = dot(z,c)*invn
     return ā,b̄,c̄

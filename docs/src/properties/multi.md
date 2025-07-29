@@ -25,11 +25,13 @@ Clapeyron.azeotrope_pressure
 Clapeyron.azeotrope_temperature
 Clapeyron.LLE_pressure
 Clapeyron.LLE_temperature
+Clapeyron.LLE
 Clapeyron.VLLE_pressure
 Clapeyron.VLLE_temperature
 Clapeyron.crit_mix
 Clapeyron.UCEP_mix
-Clapeyron.UCST_mix
+Clapeyron.UCST_pressure
+Clapeyron.UCST_temperature
 Clapeyron.gibbs_solvation
 Clapeyron.cross_second_virial
 Clapeyron.equivol_cross_second_virial
@@ -39,6 +41,7 @@ Clapeyron.eutectic_point
 ```
 
 ### Bubble/Dew methods
+
 ```@docs
 Clapeyron.ChemPotBubblePressure
 Clapeyron.FugBubblePressure
@@ -79,3 +82,19 @@ Clapeyron.MCFlashJL
 Clapeyron.numphases
 Clapeyron.supports_reduction
 ```
+
+## General Flash
+```@docs
+Clapeyron.FlashResult
+Clapeyron.FlashData
+Clapeyron.FlashSpecifications
+Clapeyron.xy_flash
+Clapeyron.GeneralizedXYFlash
+Clapeyron.ph_flash
+Clapeyron.ps_flash
+Clapeyron.qt_flash
+Clapeyron.qp_flash
+Clapeyron.ts_flash
+Clapeyron.vt_flash
+```
+

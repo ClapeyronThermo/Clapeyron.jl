@@ -105,20 +105,21 @@ alpha = Twu88Alpha(["neon","hydrogen"];
 ## References
 1. Twu, C. H., Lee, L. L., & Starling, K. E. (1980). Improved analytical representation of argon thermodynamic behavior. Fluid Phase Equilibria, 4(1–2), 35–44. [doi:10.1016/0378-3812(80)80003-3](https://doi.org/10.1016/0378-3812(80)80003-3)
 """
-function Twu88Alpha(components::Vector{String}; userlocations = String[], verbose::Bool=false)
-    params = getparams(components, ["alpha/Twu/Twu_like.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["N"])
+function Twu88Alpha(components; userlocations = String[], verbose::Bool=false)
+    _components = format_components(components)
+    params = getparams(_components, ["alpha/Twu/Twu_like.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["N"])
     M = params["M"]
     N = params["N"]
     L = params["L"]
 
-    n = length(components)
+    n = length(_components)
     for i in 1:n
         if N.ismissingvalues[i]
             N[i] = 2
         end
     end
     packagedparams = TwuAlphaParam(M,N,L)
-    model = TwuAlpha(packagedparams, verbose = verbose)
+    model = TwuAlpha(_components,packagedparams,String["10.1016/0378-3812(80)80003-3"])
     return model
 end
 

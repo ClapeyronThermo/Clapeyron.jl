@@ -3,7 +3,8 @@
     TillnerRothFriend(components = ["water","ammonia"],
     Rgas = R̄,
     reference_state = nothing,
-    verbose = verbose)
+    verbose = verbose,
+    reference_state = nothing)
 
 ## Input parameters
 none
@@ -19,7 +20,8 @@ Tillner-Roth and Friend model for water-ammonia mixtures.
 function TillnerRothFriend(components = ["water","ammonia"],
                             Rgas = R̄,
                             reference_state = nothing,
-                             verbose = false)
+                            verbose = false)
+
     water = findfirst(isequal("water"),components)
     watermodel = IAPWS95()
     ammoniamodel = SingleFluid("ammonia",userlocations = ["@DB/Empiric/TLF/ammonia.json"],coolprop_userlocations = false,Rgas = Rgas)

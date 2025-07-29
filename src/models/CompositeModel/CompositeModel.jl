@@ -3,6 +3,7 @@ struct CompositeModel{𝔽,𝕊} <: EoSModel
     components::Vector{String}
     fluid::𝔽
     solid::𝕊
+    mapping::Union{Vector{Pair{Vector{Tuple{String,Int64}},Tuple{String,Int64}}},Nothing}
 end
 =#
 
@@ -13,21 +14,24 @@ end
     saturation = LeeKeslerSat,
     gas_userlocations = String[],
     liquid_userlocations = String[],
-    saturation_userlocations = String[]
+    saturation_userlocations = String[],
+    mapping = nothing,
+    reference_state = nothing,
+    verbose = false)
 
-Model that holds representations of fluid (and/or solid) that aren't evaluated using the helmholtz energy-based approach used in the rest of the library.
+Model that holds representations of fluid (and/or solid) that aren't evaluated using the Helmholtz energy-based approach used in the rest of the library.
 
 It contains a "fluid" and a "solid" field. there are three available representations for a fluid:
-- a helmholtz-based EoS
-- Fluid Correlations, consisting in a gas model, a correlation for obtaining the saturation pressure, and a liquid model. both gas and liquid models can optionally be helmholtz models too, but correlations for saturated liquid and vapour are also allowed.
-- Activity models, consisting of a liquid activity and a model for the fluid. the fluid model can be a helmholtz-based model, or another `CompositeModel` containing correlations.
+- A Helmholtz-based EoS.
+- Fluid Correlations, consisting in a gas model, a correlation for obtaining the saturation pressure, and a liquid model. Both gas and liquid models can optionally be Helmholtz models too, but correlations for saturated liquid and vapour are also allowed.
+- Activity models, consisting of a liquid activity and a model for the fluid. The fluid model can be a Helmholtz-based model, or another `CompositeModel` containing correlations.
 
-When the solid field is specified, some properties (like `volume`) start taking in account the solid phase in their calculations. optionally, there are other models that provide specific correlations for SLE equilibria (like `SolidHfus`)
+When the solid field is specified, some properties (like `volume`) start taking in account the solid phase in their calculations. Optionally, there are other models that provide specific correlations for SLE equilibria (like `SolidHfus`)
 
 ## Examples:
 - Saturation pressure calculated using Correlations:
 ```julia-repl
-#rackett correlation for liquids, DIPPR 101 correlation for the saturation pressure, ideal gas for the vapour volume
+#Rackett correlation for liquids, DIPPR 101 correlation for the saturation pressure, ideal gas for the vapour volume.
 julia> model = CompositeModel(["water"],liquid = RackettLiquid,saturation = DIPPR101Sat,gas = BasicIdeal)
 Composite Model (Correlation-Based) with 1 component:
  Gas Model: BasicIdeal()
@@ -52,7 +56,7 @@ julia> bubble_pressure(model,300.15,[0.9,0.1])
 
 - Bubble Pressure, using an Activity Model along with another model for fluid properties:
 ```julia-repl
-#using a helmholtz-based fluid
+#using a Helmholtz-based fluid
 julia> model = CompositeModel(["octane","heptane"],liquid = UNIFAC,fluid = PR)
 Composite Model (γ-ϕ) with 2 components:
  Activity Model: UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}("octane", "heptane")
@@ -71,9 +75,9 @@ Composite Model (γ-ϕ) with 2 components:
 julia> bubble_pressure(model2,300.15,[0.9,0.1])
 (2551.6008524130893, 0.00015684158726046333, 0.9780471551726359, [0.7378273929683233, 0.2621726070316766])
 ```
-
 """
 CompositeModel
+
 """
     RestrictedEquilibriaModel <: EoSModel
 
@@ -87,6 +91,7 @@ include("GammaPhi.jl")
 include("GenericAncEvaluator.jl")
 include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
+#include("LiquidCpModel/LiquidCpModel.jl")
 include("PolExpVapour.jl")
 include("SolidModel/SolidHfus.jl")
 include("SolidModel/SolidKs.jl")
@@ -135,7 +140,8 @@ function CompositeModel(components ;
     saturation_userlocations = String[],
     melting_userlocations = String[],
     sublimation_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     _components = format_components(components)
     #take care of the solid phase first
@@ -161,7 +167,7 @@ function CompositeModel(components ;
         init_gas = init_model(gas,components,gas_userlocations,verbose)
         init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
         init_sat = init_model(saturation,components,saturation_userlocations,verbose)
-        init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat)
+        init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat,nothing)
     elseif !isnothing(_fluid) && !isnothing(liquid) && (gas == saturation == nothing)
         #case 3: liquid activity and a model for the fluid.
         init_liquid = init_model_act(liquid,components,liquid_userlocations,verbose)
@@ -177,7 +183,7 @@ function CompositeModel(components ;
             #case 3.b, one alternative is to leave this as an error.
             init_gas = _fluid
             init_sat = _fluid
-            init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat)
+            init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat,nothing)
         end
     elseif !isnothing(liquid) && (fluid == gas == saturation == nothing)
     #legacy case, maybe we are constructing an activity that has a puremodel
@@ -211,7 +217,20 @@ function CompositeModel(components ;
             end
         end
     end
-    return CompositeModel(_components,init_fluid,init_solid,_mapping)
+    model = CompositeModel(_components,init_fluid,init_solid,_mapping)
+    set_reference_state!(model,reference_state,verbose = verbose)
+    return model
+end
+
+reference_state(model::CompositeModel) = reference_state(model.fluid)
+
+function __calculate_reference_state_consts(model::CompositeModel,v,T,p,z,H0,S0,phase)
+    ∑z = sum(z)
+    S00 = entropy(model,p,T,z,phase = phase)
+    a1 = (S00 - S0)#/∑z
+    H00 = enthalpy(model,p,T,z,phase = phase)
+    a0 = (-H00 + H0)#/∑z
+    return a0,a1
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
@@ -226,43 +245,51 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
     end
     length(model) == 1 && print(io, " with 1 component:")
     length(model) > 1 && print(io, " with ", length(model), " components:")
+    println(io)
+    show_pairs(io,model.components)
+
     if solid !== nothing
         if solid isa SolidCorrelation
-            solid.phase !== nothing && print(io,'\n'," Solid Phase Model: ",model.solid)
-            solid.melting !== nothing && print(io,'\n'," Melting Model: ",model.melting)
-            solid.sublimation !== nothing && print(io,'\n'," Sublimation Model: ",model.saturation)
+            solid.phase !== nothing && print(io,'\n',"Solid Phase Model: ",typeof(model.solid))
+            solid.melting !== nothing && print(io,'\n',"Melting Model: ",typeof(model.melting))
+            solid.sublimation !== nothing && print(io,'\n',"Sublimation Model: ",typeof(model.saturation))
         else
-            print(io,'\n'," Solid Model: ",solid)
+            print(io,'\n',"Solid Model: ",solid)
         end
     end
 
     if fluid !== nothing
         if fluid isa GammaPhi
-            print(io,'\n'," Activity Model: ",fluid.activity)
-            print(io,'\n'," Fluid Model: ",fluid.fluid.model) #on gamma-phi, fluid is an EoSVectorParam
+            act = fluid.activity
+            if hasfield(typeof(act),:puremodel)
+                print(io,'\n',"Activity Model: ", parameterless_type(act))
+            else
+                print(io,'\n',"Activity Model: ",typeof(act))
+            end
+            print(io,'\n',"Fluid Model: ",typeof(fluid.fluid.model)) #on gamma-phi, fluid is an EoSVectorParam
         elseif fluid isa FluidCorrelation
-            fluid.gas !== nothing && print(io,'\n'," Gas Model: ",fluid.gas)
-            fluid.liquid !== nothing && print(io,'\n'," Liquid Model: ",fluid.liquid)
-            fluid.saturation !== nothing && print(io,'\n'," Saturation Model: ",fluid.saturation)
+            fluid.gas !== nothing && print(io,'\n',"Gas Model: ",typeof(fluid.gas))
+            fluid.liquid !== nothing && print(io,'\n',"Liquid Model: ",typeof(fluid.liquid))
+            fluid.saturation !== nothing && print(io,'\n',"Saturation Model: ",typeof(fluid.saturation))
         else
-            fluid !== nothing && print(io,'\n'," Fluid Model: ",fluid)
+            fluid !== nothing && print(io,'\n',"Fluid Model: ",fluid)
         end
     end
+    show_reference_state(io,model;space = true)
 end
 
-"""
-    __gas_model(model::EoSModel)
 
-internal function.
-provides the model used to calculate gas properties.
-normally, this is the identity, but `CompositeModel` has a gas model by itself.
-"""
-__gas_model(model::EoSModel) = model
-__gas_model(model::CompositeModel) = model.fluid
 fluid_model(model::CompositeModel) = model.fluid
 solid_model(model::CompositeModel) = model.solid
+molecular_weight(model::CompositeModel,z) = molecular_weight(model.fluid,z)
 
 function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
+    if model.solid == nothing
+        return volume_impl(model.fluid,p,T,z,phase,threaded,vol0)
+    elseif model.fluid == nothing
+        return volume_impl(model.solid,p,T,z,phase,threaded,vol0)
+    end
+    
     if is_liquid(phase) || is_vapour(phase)
         return volume_impl(model.fluid,p,T,z,phase,threaded,vol0)
     elseif is_solid(phase)
@@ -274,15 +301,39 @@ function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
             return nan
         end
     else #phase = :unknown
-        #there is a helmholtz energy model in fluid and solid phases.
+        #there is a Helmholtz free energy model in fluid and solid phases.
         #this requires checking evaluating all volumes and checking
-        #what value is the correct one via gibbs energies.
+        #what value is the correct one via Gibbs energies.
         if !(model.fluid isa GammaPhi) && !(model.fluid isa FluidCorrelation) && !(model.solid isa SolidCorrelation)
             return default_volume_impl(model,p,T,z,phase,threaded,vol0)
         else
             #TODO: implement these when we have an actual sublimation-melting empiric model.
             throw(error("automatic phase detection not implemented for $(typeof(model))"))
         end
+    end
+end
+
+#dispatcher for bulk properties
+function PT_property(model::CompositeModel,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+    
+    if model.solid === nothing
+        return PT_property(model.fluid,p,T,z,phase,threaded,vol0,f,USEP)
+    end
+
+    if model.fluid === nothing
+        return PT_property(model.solid,p,T,z,phase,threaded,vol0,f,USEP)
+    end
+
+    if is_unknown(phase) || phase == :stable
+        throw(error("automatic phase detection not implemented for $(typeof(model))"))
+    end
+
+    if is_liquid(phase) || is_vapour(phase)
+        return PT_property(fluid_model(model),p,T,z,phase,threaded,vol0,f,USEP)
+    elseif is_solid(phase)
+        return PT_property(solid_model(model),p,T,z,phase,threaded,vol0,f,USEP)
+    else
+        throw(error("invalid phase specifier: $phase"))
     end
 end
 
@@ -297,27 +348,7 @@ end
 
 reference_chemical_potential_type(model::CompositeModel) = reference_chemical_potential_type(model.fluid)
 
-function init_preferred_method(method::typeof(saturation_pressure),model::CompositeModel,kwargs)
-    return init_preferred_method(saturation_pressure,model.fluid,kwargs)
-end
-
-function init_preferred_method(method::typeof(saturation_temperature),model::CompositeModel,kwargs)
-    return init_preferred_method(saturation_temperature,model.fluid,kwargs)
-end
-
-function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
-    return saturation_pressure(model.fluid,T,method)
-end
-
-crit_pure(model::CompositeModel) = crit_pure(model.fluid)
-
-x0_sat_pure(model::CompositeModel,T) = x0_sat_pure(model.fluid)
-
-x0_psat(model::CompositeModel,T) = x0_psat(model.fluid,T)
-
-function saturation_temperature(model::CompositeModel,p,method::SaturationMethod)
-    return saturation_temperature(model.fluid,p,method)
-end
+saturation_model(model::CompositeModel) = model.fluid
 
 #defer bubbledew eq to the fluid field
 
@@ -365,7 +396,7 @@ function dew_temperature(model::CompositeModel, T, x, method::DewPointMethod)
     return dew_temperature(model.fluid, T, x, method)
 end
 
-#Michelsen TPFlash and rachford rice tpflash support
+#Michelsen TPFlash and Rachford-Rice TPFlash support
 function init_preferred_method(method::typeof(tp_flash),model::CompositeModel{<:Any,Nothing},kwargs)
     init_preferred_method(method,model.fluid,kwargs)
 end
@@ -377,5 +408,12 @@ function gibbs_solvation(model::CompositeModel,T)
     return gibbs_solvation(model.fluid,T)
 end
 
+function promote_model(::Type{T},model::CompositeModel) where T <: Number
+    components = model.components
+    fluid = promote_model(T,model.fluid)
+    solid = promote_model(T,model.solid)
+    mapping = model.mapping
+    return CompositeModel(components,fluid,solid,mapping)
+end
 
 export CompositeModel

@@ -58,6 +58,7 @@ function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSMo
     end
     show_info(io,model)
     show_params(io,model)
+    show_reference_state(io,model)
     may_show_references(io,model)
 end
 
@@ -95,6 +96,22 @@ function Base.show(io::IO,model::EoSModel)
         eosshow(io,model)
     else
         show_default(io,model)
+    end
+end
+
+function show_reference_state(io::IO,model::EoSModel;space = false)
+    return show_reference_state(io,reference_state(model),model,space)
+end
+
+show_reference_state(io::IO,ref::Nothing,model::EoSModel,space) = nothing
+
+function show_reference_state(io::IO,ref,model::EoSModel,space)
+    type = ref.std_type
+    if type != :no_set
+        println(io)
+        space && print(io," ")
+        print(io,"Reference state: ")
+        print(io,type)
     end
 end
 

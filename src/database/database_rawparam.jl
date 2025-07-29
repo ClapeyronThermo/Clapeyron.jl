@@ -18,6 +18,8 @@ struct RawParam{T}
     grouptype::Symbol #in the future, this could hold an "Options" type,generated per CSV
 end
 
+const EMPTY_STR = ""
+
 Base.eltype(raw::RawParam) = Base.eltype(raw.data)
 Base.length(raw::RawParam) = Base.length(raw.data)
 
@@ -119,35 +121,42 @@ it also builds empty params, if you pass a CSVType instead of a RawParam
 
 Base.@nospecialize
 
-function compile_param(components,name,raw::RawParam,site_strings,options)
+function compile_param(components,name,raw::RawParam,sites,options)
+    
     if raw.type == singledata || raw.type == groupdata
         return compile_single(name,components,raw,options)
     elseif raw.type == pairdata
         return compile_pair(name,components,raw,options)
     elseif raw.type == assocdata
-        return compile_assoc(name,components,raw,site_strings,options)
+        return compile_assoc(name,components,raw,sites,options)
     end
     return nothing
 end
 
-function compile_param(components,name,raw::CSVType,site_strings,options)
+function compile_param(components,name,raw::CSVType,sites,options)
     if raw == singledata
         return compile_single(name,components,raw,options)
     elseif raw == pairdata
         return compile_pair(name,components,raw,options)
     elseif raw == assocdata
-        return compile_assoc(name,components,raw,site_strings,options)
+        return compile_assoc(name,components,raw,sites,options)
+    elseif raw == groupdata
+        #this means that there is no group information about the input components
+        __group_missing_error()
     end
     return nothing
+end
+
+@noinline function __group_missing_error()
+    throw(MissingException(lazy"no group information found for all components. Try passing a group CSV file or specify the groups for each component."))
 end
 
 function compile_single(name,components,raw::RawParam,options)
 
     if isnothing(raw.component_info) #build from named tuple
-        return SingleParam(raw.name,components,raw.data)
+        return SingleParam(raw.name,components,deepcopy(raw.data))
     end
 
-    EMPTY_STR = ""
     l = length(components)
     L = eltype(raw)
     if L <: Number
@@ -169,7 +178,27 @@ function compile_single(name,components,raw::RawParam,options)
     sources_csv = unique!(sources_csv)
     filter!(!isequal(EMPTY_STR),sources)
     filter!(!isequal(EMPTY_STR),sources_csv)
-    return SingleParameter(name,components,values,ismissingvals,sources_csv,sources)
+    return SingleParam(name,components,values,ismissingvals,sources_csv,sources)
+end
+
+#just build single parameter vector values, no metadata.
+function compile_single_vec(components,raw::RawParam)
+    L = eltype(raw)
+    l = length(components)
+    if L <: Number
+        values = zeros(L,l)
+    else
+        values = fill("",l)
+    end
+    if raw.component_info == nothing #named tuple input
+        return raw.data
+    end
+    
+    for (k,v) ∈ zip(raw.component_info,raw.data)
+        i = findfirst(==(k[1]),components)::Int
+        values[i] = v
+    end
+    return values
 end
 
 function compile_single(name,components,type::CSVType,options)
@@ -182,13 +211,11 @@ function compile_single(name,components,type::CSVType,options)
 end
 
 function compile_pair(name,components,raw::RawParam,options)
-
     if isnothing(raw.component_info) #build from named tuple
         l = length(components)
-        return PairParam(raw.name,components,reshape(raw.data,(l,l)))
+        return PairParam(raw.name,components,deepcopy(reshape(raw.data,(l,l))))
     end
 
-    EMPTY_STR = ""
     symmetric = name ∉ options.asymmetricparams
     l = length(components)
     L = eltype(raw)
@@ -227,8 +254,16 @@ function compile_pair(name,components,type::CSVType,options)
     return PairParam(name,components)
 end
 
-function compile_assoc(name,components,raw::RawParam,site_strings,options)
-    EMPTY_STR = ""
+@noinline function __compile_assoc_missing_site_error(name) 
+    color_name = error_color(name)
+    throw(MissingException("$color_name - empty site data, but nonempty association data"))
+end
+
+function compile_assoc(name,components,raw::RawParam,sites,options)
+    if isnothing(sites) && length(raw.component_info) > 0
+        __compile_assoc_missing_site_error(name)
+    end
+    site_strings = sites.sites
     _ijab = standardize_comp_info(raw.component_info,components,site_strings)
     unique_sitepairs = unique(raw.component_info)
     l = length(unique_sitepairs)
@@ -259,9 +294,12 @@ function compile_assoc(name,components,raw::RawParam,site_strings,options)
     return param
 end
 
-function compile_assoc(name,components,raw::CSVType,site_strings,options)
-    values = Compressed4DMatrix{Float64}()
-    return AssocParam(name,components,values,site_strings,String[],String[])
+function compile_assoc(name,components,raw::CSVType,sites,options)
+    if sites === nothing
+        AssocParam(name,components)
+    else
+        AssocParam(name,components,Compressed4DMatrix{Float64}(),sites.sites)
+    end
 end
 
 #Sort site tape, so that components are sorted by the input.
@@ -314,6 +352,8 @@ function is_valid_param(param::PairParameter,options)
     return nothing
 end
 
+is_valid_param(param::SiteParam,options) = nothing
+
 function SingleMissingError(param::SingleParameter;all = false)
     if all
         throw(MissingException("cannot found values of " * error_color(param.name) * " for all input components."))
@@ -321,7 +361,7 @@ function SingleMissingError(param::SingleParameter;all = false)
         missingvals = param.ismissingvalues
         idx = findall(param.ismissingvalues)
         comps = param.components[idx]
-        throw(MissingException(string("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")))        
+        throw(MissingException(string("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")))
     end
 end
 

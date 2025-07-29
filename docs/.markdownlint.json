@@ -1,0 +1,12 @@
+{
+    "default": true,
+    "line-length": false,
+
+    "code-block-style": { "style": "fenced" },
+    "emphasis-style": { "style": "asterisk" },
+    "first-line-heading": false,
+    "heading-style": { "style": "atx" },
+    "no-hard-tabs": true,
+    "ol-prefix": { "style": "one" },
+    "strong-style": { "style": "asterisk" }
+}

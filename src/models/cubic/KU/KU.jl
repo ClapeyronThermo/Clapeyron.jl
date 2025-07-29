@@ -1,4 +1,4 @@
-abstract type KUModel <: ABCubicModel end
+abstract type KUModel <: ABCCubicModel end
 
 struct KUParam <: EoSParam
     a::PairParam{Float64}
@@ -138,20 +138,20 @@ function KU(components;
     Mw = params["Mw"]
     Tc = params["Tc"]
     Vc = params["Vc"]
-    acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     n = length(formatted_components)
     a = PairParam("a",formatted_components,zeros(n))
     b = PairParam("b",formatted_components,zeros(n))
     omega_a = SingleParam("Ωa",formatted_components,zeros(n))
     omega_b = SingleParam("Ωb",formatted_components,zeros(n))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
-    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,params,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = KUParam(a,b,omega_a,omega_b,Tc,pc,Vc,Mw)
     references = String["10.1016/j.ces.2020.116045"]
     model = KU(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 
@@ -176,6 +176,15 @@ function ab_premixing(model::KUModel,mixing::MixingRule,k,l)
     return a,b
 end
 
+function recombine_mixing!(model::KUModel,mixing_model,k = nothing,l = nothing)
+    recombine!(mixing_model)
+    a,b = ab_premixing(model,mixing_model,k,l)
+    #we set this again just in case
+    model.params.a .= a
+    model.params.b .= b
+    return mixing_model
+end
+
 ab_consts(model::KUModel) = model.params.omega_a.values,model.params.omega_b.values
 
 #only used in premixing
@@ -190,10 +199,8 @@ function p_scale(model::KUModel,z)
     return dot(model.params.Pc.values,z)/sum(z)
 end
 
-kumar_zc(model::KUModel) = only(model.params.Pc.values)*only(model.params.Vc.values)/(R̄*only(model.params.Tc.values))
-
 function x0_crit_pure(model::KUModel)
-    lb_v = lb_volume(model)
+    lb_v = lb_volume(model,model.params.Tc[1],SA[1.0])
     vc = model.params.Vc.values[1]
     (1.1, log10(vc))
 end

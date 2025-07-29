@@ -11,8 +11,6 @@ function PCSAFTParam(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
     return build_parametric_param(PCSAFTParam,Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
 end
 
-Base.eltype(p::PCSAFTParam{T}) where T = T
-
 abstract type PCSAFTModel <: SAFTModel end
 @newmodel PCSAFT PCSAFTModel PCSAFTParam{T}
 default_references(::Type{PCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
@@ -24,12 +22,12 @@ function transform_params(::Type{PCSAFT},params)
     return saft_lorentz_berthelot(params)
 end
 
-function get_k(model::PCSAFTModel)   
+function get_k(model::PCSAFTModel)
     has_groups(model) && return nothing
     return get_k_geomean(model.params.epsilon)
 end
 
-function get_l(model::PCSAFTModel)   
+function get_l(model::PCSAFTModel)
     has_groups(model) && return nothing
     return get_k_mean(model.params.sigma)
 end
@@ -48,7 +46,7 @@ end
 """
     PCSAFTModel <: SAFTModel
 
-    PCSAFT(components; 
+    PCSAFT(components;
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
@@ -97,6 +95,12 @@ function data(model::PCSAFTModel,V,T,z)
     return (_d,ζ0,ζ1,ζ2,ζ3,m̄)
 end
 
+#unpacks packing_fraction from data
+function packing_fraction(model::PCSAFTModel,_data)
+    _,_,_,_,η,_ = _data
+    return η
+end
+
 function a_hc(model::PCSAFTModel, V, T, z,_data=@f(data))
     dii,ζ0,ζ1,ζ2,ζ3,m̄ = _data
     m = model.params.segment.values
@@ -104,7 +108,11 @@ function a_hc(model::PCSAFTModel, V, T, z,_data=@f(data))
     c1 = 1/(1-ζ3)
     c2 = 3ζ2/(1-ζ3)^2
     c3 = 2ζ2^2/(1-ζ3)^3
-    a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    if !iszero(ζ3)
+        a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    else
+        a_hs = @f(bmcs_hs_zero_v,dii)
+    end
     res = zero(a_hs)
     for i ∈ @comps
         dᵢ = dii[i]
@@ -137,13 +145,11 @@ function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     end
     res *= N_A*π/6/V
     return res
-end =# 
+end =#
 
 function g_hs(model::PCSAFTModel, V, T, z, i, j, _data=@f(data))
     _d,ζ0,ζ1,ζ2,ζ3,_ = _data
-    di = _d[i]
-    dj = _d[j]
-    return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
+    return g_hs_ij(_d,ζ2,ζ3,i,j)
 end
 
 function a_hs(model::PCSAFTModel, V, T, z, _data=@f(data))
@@ -191,20 +197,21 @@ function I(model::PCSAFTModel, V, T, z, n, _data=@f(data))
     res = zero(η)
     m̄1 = (m̄-1)/m̄
     m̄2 = (m̄-1)/m̄*(m̄-2)/m̄
+    ηi = one(η)
     @inbounds for i ∈ 1:length(corr)
-        ii = i-1 
         corr1,corr2,corr3 = corr[i]
         ki = corr1 + m̄1*corr2 + m̄2*corr3
-        res +=ki*η^ii
+        res += ki*ηi
+        ηi *= η
     end
     return res
 end
- 
+
 function Δ(model::PCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     _0 = zero(V+T+first(z)+one(eltype(model)))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
-    κijab = κ[i,j][a,b] 
+    κijab = κ[i,j][a,b]
     iszero(κijab) && return _0
     σ = model.params.sigma.values
     gij = @f(g_hs,i,j,_data)
@@ -232,7 +239,7 @@ const PCSAFTconsts = (
     (-355.60235612, -165.20769346, -29.666905585)]
 )
 
-#= 
+#=
 Specific PCSAFT optimizations
 This code is not generic, in the sense that is only used by PCSAFT and not any model <:PCSAFTModel
 but, because it is one of the more commonly used EoS,

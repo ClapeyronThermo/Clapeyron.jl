@@ -1,14 +1,44 @@
 # Function to compute fugacity coefficient
-function lnϕ(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing,threaded = true)
-    RT = Rgas(model)*T
+function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, vol0=nothing,threaded = true)
     vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
-    μ_res = VT_chemical_potential_res(model, vol, T, z)
-    Z = p*vol/RT/sum(z)
-    lnϕ = μ_res/RT .- log(Z)
+    RT = Rgas(model)*T
+    logZ = log(p*vol/RT/sum(z))
+
+    if cache !== nothing
+        result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
+        nc = length(lnϕ)
+        if nc == 1
+            lnϕ[1] = VT_lnϕ_pure(model,vol/sum(z),T,p)
+        else
+            aux .= 0
+            aux[1] = vol
+            aux[2:nc+1] = z
+            gconfig = Solvers._GradientConfig(hconfig)
+            F_res(model, V, T, z) = eos_res(model, V, T, z)
+            fun(aux) = F_res(model, aux[1], T, @view(aux[2:nc+1]))
+            _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
+            dresult = DiffResults.gradient(_result)
+            μ_res = @view dresult[2:nc+1]
+            lnϕ .= μ_res ./ RT .- logZ
+        end
+    else
+        μ_res = VT_chemical_potential_res(model, vol, T, z)
+        lnϕ = μ_res/RT .- logZ
+    end
     return lnϕ, vol
 end
 
-function lnϕ!(lnϕ, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
+function lnϕ(model::IdealModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, vol0=nothing,threaded = true)
+    vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
+    lnϕ = FillArrays.Zeros(length(z))
+    return lnϕ, vol
+end
+
+function lnϕ!(cache, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
+    return lnϕ(model,p,T,z,cache;phase,vol0,threaded)
+end
+
+function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
     RT = Rgas(model)*T
     vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
     μ_res = VT_chemical_potential_res!(lnϕ,model, vol, T, z)
@@ -19,32 +49,33 @@ end
 
 function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
     RT = Rgas(model)*T
-    μ_res = a_res(model,V,T,SA[1.0])
+    p_res = p - RT/V
+    μ_res = eos_res(model,V,T) + p_res*V
     Z = p*V/RT
-    lnϕ = μ_res - log(Z)
+    return μ_res/RT - log(Z)
 end
 
-
-function ∂lnϕ_cache(model::EoSModel, p, T, z, dt::Val{B}) where B 
+function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
     V = p
     lnϕ = zeros(@f(Base.promote_eltype),length(model))
-    aux = zeros(@f(Base.promote_eltype),length(model) + 1+ B)
+    aux = zeros(@f(Base.promote_eltype),length(model) + 1 + B)
     ∂lnϕ∂n = lnϕ * transpose(lnϕ)
     result = DiffResults.HessianResult(aux)
     ∂lnϕ∂n = lnϕ * transpose(lnϕ)
     ∂lnϕ∂P = similar(lnϕ)
     ∂P∂n = similar(lnϕ)
+    hconfig = ForwardDiff.HessianConfig(nothing,result,aux)
     if B
-        ∂lnϕ∂T = similar(lnϕ)  
+        ∂lnϕ∂T = similar(lnϕ)
     else
         ∂lnϕ∂T = lnϕ
     end
-    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T
+    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig
 end
 
 # Function to compute fugacity coefficient and its pressure and composition derivatives
-function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cache(model,p,T,z,Val{false}()); phase=:unknown, vol0=nothing)
-    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T = cache
+function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}()); phase=:unknown, vol0=nothing)
+    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
     RT = R̄*T
     V = volume(model, p, T, z, phase=phase, vol0=vol0)
     n = sum(z)
@@ -56,8 +87,7 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cache(m
     ncomponents = length(z)
     aux[1] = V
     aux[2:end] = z
-    result = DiffResults.HessianResult(aux)
-    result = ForwardDiff.hessian!(result, fun, aux)
+    result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
 
     F = DiffResults.value(result)
     ∂F = DiffResults.gradient(result)
@@ -72,7 +102,7 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cache(m
 
     ∂P∂V = -RT*∂2F∂V2 - n*RT/V^2
     ∂P∂n .= - RT .* ∂2F∂n∂V .+ RT ./ V
-    lnϕ = ∂F∂n .- log(Z)
+    lnϕ .= ∂F∂n .- log(Z)
     for i in 1:ncomponents
         ∂P∂ni = ∂P∂n[i]
         ∂V∂ni = - ∂P∂ni/∂P∂V
@@ -87,7 +117,7 @@ end
 
 # Function to compute fugacity coefficient and its temperature, pressure and composition derivatives
 function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cache(model,p,T,z,Val{true}()); phase=:unknown, vol0=nothing)
-    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T = cache
+    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
     RT = R̄*T
     V = volume(model, p, T, z, phase=phase, vol0=vol0)
     n = sum(z)
@@ -99,7 +129,7 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
     aux[3:end] .= z
     F_res(model, V, T, z) = eos_res(model, V, T, z) / R̄ / T
     fun(aux) = F_res(model, aux[1], aux[2], @view(aux[3:(ncomponents+2)]))
-    result = ForwardDiff.hessian!(result, fun, aux)
+    result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
 
     F = DiffResults.value(result)
     ∂F = DiffResults.gradient(result)
@@ -117,7 +147,6 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
     ∂2F∂V∂T = ∂2F[1, 2]
 
     lnϕ .= ∂F∂n .- log(Z)
-
     ∂P∂V = -RT*∂2F∂V2 - n*RT/V^2
     ∂P∂n .= -RT .* ∂2F∂n∂V .+ RT ./ V
     ∂P∂T = -RT*∂2F∂V∂T + p/T
@@ -131,5 +160,6 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
             ∂lnϕ∂n[i,j] = ∂2F∂n2[i,j] + 1/n + (∂P∂ni * ∂P∂n[j])/∂P∂V/RT
         end
     end
+
     return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, ∂lnϕ∂T, V
 end

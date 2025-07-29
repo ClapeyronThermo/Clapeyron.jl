@@ -4,12 +4,12 @@
 Calculates the Upper Critical End Point of a binary mixture.
 
 returns:
-- UCEP Temperature [`K`]
-- UCEP Pressure [`Pa`]
-- liquid volume at UCEP Point [`m³`]
-- vapour volume at UCEP Point [`m³`]
-- liquid molar composition at UCEP Point
-- vapour molar composition at UCEP Point
+- UCEP Temperature `[K]`
+- UCEP Pressure `[Pa]`
+- Liquid volume at UCEP Point `[m³]`
+- Vapour volume at UCEP Point `[m³]`
+- Liquid molar composition at UCEP Point
+- Vapour molar composition at UCEP Point
 
 """
 function UCEP_mix(model::EoSModel;v0=nothing)
@@ -17,8 +17,9 @@ function UCEP_mix(model::EoSModel;v0=nothing)
         v0 = x0_UCEP_mix(model)
     end
     f! = (F,x) -> Obj_UCEP_mix(model, F, x[1], x[2], exp10(x[3]), exp10(x[4]), x[5])
-    r  = Solvers.nlsolve(f!,v0[1:end],LineSearch(Newton()))
+    r  = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)))
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
     x = FractionVector(sol[1])
     y = FractionVector(sol[2])
     V_l = exp10(sol[3])

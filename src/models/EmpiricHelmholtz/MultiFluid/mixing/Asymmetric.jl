@@ -67,7 +67,7 @@ function transform_params(::Type{AsymmetricMixing},params)
     return params
 end
 
-function recombine_mixing!(model::MultiFluid,mixing::AsymmetricMixing,estimate)
+function recombine_mixing_reduced!(model::MultiFluid,mixing::AsymmetricMixing,estimate)
     Vc = model.params.Vc.values
     Tc = model.params.Tc.values
     n = length(model)
@@ -116,7 +116,7 @@ function __error_estimate_multifluid(i,j)
 end
 
 function v_scale(model::MultiFluid,z,mixing::AsymmetricMixing,∑z)
-    vc = model.params.Vc.values
+    vc = model.params.Vr.values
     res = mixing_rule_asymmetric(
         mix_mean3,
         _gerg_asymmetric_mix_rule,
@@ -129,7 +129,7 @@ function v_scale(model::MultiFluid,z,mixing::AsymmetricMixing,∑z)
 end
 
 function T_scale(model::MultiFluid,z,mixing::AsymmetricMixing,∑z)
-    Tc = model.params.Tc.values
+    Tc = model.params.Tr.values
     #isone(length(z)) && return only(Tc)
     return mixing_rule_asymmetric(
         mix_geomean,

@@ -29,7 +29,9 @@ export UNIFAC
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
+
 ## Input parameters
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
@@ -169,7 +171,8 @@ function UNIFAC(components;
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
@@ -188,6 +191,7 @@ function UNIFAC(components;
     references = String["10.1021/i260064a004"]
     cache = UNIFACCache(groups,packagedparams)
     model = UNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 
@@ -277,7 +281,7 @@ function excess_g_res(model::UNIFACModel,p,T,z)
     Q = model.params.Q.values
     ∑vikQk = [dot(Q,vi) for vi in v]
     #calculate Θ with the least amount of allocs possible
-    X = group_matrix(model.groups)*z
+    X = group_fractions(model.groups,z)
     ∑XQ⁻¹ = 1/dot(X,Q)
     X .*= Q
     X .*= ∑XQ⁻¹

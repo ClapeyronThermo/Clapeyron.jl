@@ -4,11 +4,12 @@ using SparseArrays
 #for the assoc solver and the sparse packed VofV
 import PackedVectorsOfVectors
 const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
-
+const PackedVector{T} = PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}} where T
+const PackedSubVector{T} = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true} where T
 #for non allocating vectors of zeros and ones
 using Roots: Roots
 
-using Scratch 
+using Scratch
 import LogExpFunctions
 using FillArrays: FillArrays
 import BlackBoxOptim
@@ -38,7 +39,7 @@ import .Fractions
 using .Fractions: FractionVector
 
 #Gas constant, Boltzmann Constant
-include("base/constants.jl") 
+include("base/constants.jl")
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/EoSModel.jl")
@@ -69,7 +70,7 @@ using Tables,CSV
 using JSON3
 
 #getparams options
-include("database/ParamOptions.jl") 
+include("database/ParamOptions.jl")
 #getparams definition
 include("database/database.jl")
 #transform Tables.jl tables to Clapeyron csv files
@@ -157,7 +158,8 @@ include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
 include("models/cubic/KU/KU.jl")
 include("models/cubic/RKPR/RKPR.jl")
-
+include("models/cubic/PatelTeja/PatelTeja.jl")
+include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 #SAFT models
 include("models/SAFT/association.jl")
@@ -185,12 +187,15 @@ include("models/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRMie15.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRSMie.jl")
+include("models/SAFT/SAFTVRMie/variants/SAFTVRMieGV.jl")
 include("models/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
 include("models/SAFT/SAFTgammaMie/variants/structSAFTgammaMie.jl")
 include("models/SAFT/CKSAFT/CKSAFT.jl")
 include("models/SAFT/CKSAFT/variants/sCKSAFT.jl")
 include("models/SAFT/BACKSAFT/BACKSAFT.jl")
 include("models/SAFT/DAPT/DAPT.jl")
+include("models/SAFT/COFFEE/COFFEE.jl")
+
 #Activity models
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/Wilson/variants/tcPRWilsonRes.jl")
@@ -199,7 +204,9 @@ include("models/Activity/NRTL/variants/aspenNRTL.jl")
 include("models/Activity/UNIQUAC/UNIQUAC.jl")
 include("models/Activity/UNIFAC/utils.jl")
 include("models/Activity/UNIFAC/UNIFAC.jl")
+include("models/Activity/UNIFAC/variants/UNIFAC2.jl")
 include("models/Activity/UNIFAC/variants/ogUNIFAC.jl")
+include("models/Activity/UNIFAC/variants/ogUNIFAC2.jl")
 include("models/Activity/UNIFAC/variants/UNIFACFV.jl")
 include("models/Activity/UNIFAC/variants/UNIFACFVPoly.jl")
 include("models/Activity/UNIFAC/variants/PSRK.jl")
@@ -229,8 +236,7 @@ include("models/cubic/PR/variants/tcPR.jl")
 include("models/cubic/PR/variants/tcPRW.jl")
 include("models/cubic/PR/variants/cPR.jl")
 include("models/cubic/PR/variants/EPPR78.jl")
-include("models/cubic/PatelTeja/PatelTeja.jl")
-include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
+include("models/cubic/PatelTeja/variants/YFR.jl")
 
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
 
@@ -242,23 +248,31 @@ include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
 include("models/PeTS/PeTS.jl")
 
+#electrolytes
 include("models/Electrolytes/equations.jl")
 include("models/Electrolytes/base.jl")
 include("models/Electrolytes/RSP/ConstRSP.jl")
 include("models/Electrolytes/RSP/ZuoFurst.jl")
 include("models/Electrolytes/RSP/Schreckenberg.jl")
 include("models/Electrolytes/RSP/LinMixRSP.jl")
+
 include("models/Electrolytes/Ion/Born.jl")
 include("models/Electrolytes/Ion/DH.jl")
+include("models/Electrolytes/Ion/hsdDH.jl")
 include("models/Electrolytes/Ion/DHBorn.jl")
 include("models/Electrolytes/Ion/MSA.jl")
 include("models/Electrolytes/Ion/MSABorn.jl")
 include("models/Electrolytes/Ion/GCMSABorn.jl")
+include("models/Electrolytes/Ion/MSAID.jl")
+include("models/Electrolytes/RSP/MM1.jl")
+
 include("models/SAFT/SAFTgammaMie/variants/SAFTgammaEMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVREMie.jl")
 include("models/SAFT/SAFTVRMie/variants/eSAFTVRMie.jl")
 include("models/SAFT/PCSAFT/variants/ePCSAFT.jl")
-# include("models/Electrolytes/ElectrolyteSAFT/eCPA.jl")
+include("models/SAFT/CPA/variants/eCPA.jl")
+
+
 include("methods/property_solvers/electrolytes/electrolytes.jl")
 include("methods/property_solvers/multicomponent/tp_flash/electrolyte_flash.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
@@ -275,6 +289,8 @@ if !isdefined(Base,:get_extension)
 end
 
 include("estimation/estimation.jl")
+
+
 
 #precompile workload. should be loaded at the end
 #include("precompile.jl")

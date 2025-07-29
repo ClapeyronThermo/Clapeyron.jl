@@ -200,7 +200,7 @@ function Compressed4DMatrix(vals::AbstractVector,idxs::AbstractVector)
 end
 
 function Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
-    if !unsafe
+    if !unsafe && !issorted(zip(ij,ab))
         ijab = [(ij...,ab...) for (ij,ab) in zip(ij,ab)]
         return Compressed4DMatrix(vals,ijab)
     end
@@ -224,7 +224,7 @@ function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
     # i,j = minmax(i,j)
     @inbounds begin
     idx = searchsorted(m.outer_indices,(i,j))
-    if iszero(idx)
+    if iszero(idx) && i != j #check symmetric only if the component pair is actually different
         idx = searchsorted(m.outer_indices,(j,i))
     end
     #return AssocView(view(m.values,idx),view(m.inner_indices,idx),m.inner_size)
@@ -240,6 +240,24 @@ end
 
 Base.setindex!(m::Compressed4DMatrix,val,i::Int) = Base.setindex!(m.values,val,i)
 
+function Base.copyto!(dest::Compressed4DMatrix,src::Base.Broadcast.Broadcasted) #general, just copies the values, used in a .= f.(a)
+    Base.copyto!(dest.values,src)
+    return dest
+end
+
+function Base.copyto!(dest::Compressed4DMatrix,src::AbstractArray) #general, just copies the values, used in a .= f.(a)
+    Base.copyto!(dest.values,src)
+    return dest
+end
+
+function Base.copyto!(dest::Compressed4DMatrix,src::Compressed4DMatrix) #specific
+    n = length(src.values)
+    copyto!(resize!(dest.values,n),src.values)
+    copyto!(resize!(dest.inner_indices,n),src.inner_indices)
+    copyto!(resize!(dest.outer_indices,n),src.outer_indices)
+    return dest
+end
+
 struct AssocView{T,V<:Compressed4DMatrix{T},I} <: AbstractMatrix{T}
     values::V
     indices::I
@@ -251,23 +269,38 @@ end
 
 function Base.size(m::AssocView)
     a,b = 0,0
+    idx = m.indices
+    iszero(length(idx)) && return a,b
     for ab in view(m.values.inner_indices,m.indices)
         _a,_b = ab
         a,b = max(a,_a),max(b,_b)
     end
-    return a,b
+    ii,jj = m.at
+    if ii == jj
+        ab = max(a,b)
+        return ab,ab
+    end
+    if m.values.outer_indices[m.indices[1]] == m.at
+        return a,b
+    else
+        return b,a
+    end
 end
+
 Base.eltype(m::AssocView{T}) where T = T
 
 #returns the absolute index. that is. it is directly indexable by the parent array
-function validindex(m::AssocView{T},i::Int,j::Int) where T
-    if m.at[1] > m.at[2]
+function validindex(m::AssocView{T},i::Int,j::Int,symmetric = false) where T
+    if m.at[1] == m.at[2] || symmetric
+        i,j = minmax(i,j)
+    elseif m.at[1] > m.at[2]
         i,j = j,i
     end
     indices = view(m.values.inner_indices,m.indices)
     @inbounds begin
         idxs = searchsorted(indices,(i,j))
         if iszero(length(idxs))
+            !symmetric && return 0
             idxs = searchsorted(indices,(j,i))
             iszero(length(idxs)) &&  return 0
         end
@@ -281,7 +314,7 @@ function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
     return m.values.values[idx]
 end
 
-function Base.setindex!(m::AssocView{T},value,a::Int,b::Int,symmetric = true) where T
+function Base.setindex!(m::AssocView{T},value,a::Int,b::Int,symmetric = false) where T
     idx = validindex(m,a,b)
     iszero(idx) && throw(BoundsError())
     vals = m.values.values
@@ -312,6 +345,19 @@ function indices(x::Compressed4DMatrix)
     return zip(l,xin,x.inner_indices)
 end
 
+function Solvers.primalval(x::Compressed4DMatrix{T}) where T
+    vals = x.values
+    vals₀ = Solvers.primalval(vals)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
+end
+
+function Solvers.primalval_eager(x::Compressed4DMatrix{T}) where T
+    vals = x.values
+    vals₀ = Solvers.primalval_eager(vals)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
+end
+
+#=
 """
     SparsePackedMofV{T,V<:AbstractVector{T}} <:SparseArrays.AbstractSparseMatrixCSC{E,Int}
 Sparse Matrix struct used internally to store a matrix of Vectors efficiently.
@@ -382,8 +428,20 @@ function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
     end
 end
 
-function Solvers.primalval(x::Compressed4DMatrix{T}) where T
-    vals = x.values
-    vals₀ = Solvers.primalval(vals)
-    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
-end
+function each_split_model(y::SparsePackedMofV,I)
+    idx = y.idx[I,I]
+    if iszero(length(y.storage))
+        return SparsePackedMofV(y.storage,idx)
+    end
+
+    if iszero(nnz(idx))
+        st = y.storage
+        storage = PackedVofV([1],zeros(eltype(st.v),0))
+        return SparsePackedMofV(storage,idx)
+    else
+        str = y.storage[nnz(idx)]
+        storage = PackedVectorsOfVectors.pack(str)
+        return SparsePackedMofV(storage,idx)
+    end
+end 
+=#

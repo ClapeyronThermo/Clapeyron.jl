@@ -10,7 +10,7 @@ function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::Activ
         pure = model.fluid.pure
     else
         pmodel = model
-        pure = split_model(pmodel,1:length(model))
+        pure = split_pure_model(pmodel,1:length(model))
     end
 
     sat = saturation_pressure.(pure,T)
@@ -35,14 +35,14 @@ function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::Activ
     ϕ .= 1.0
     RT = R̄*T
     if method.gas_fug
-        logϕ, vv = lnϕ!(logϕ,__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
+        logϕ, vv = lnϕ!(logϕ,gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
         ϕ .= exp.(logϕ)
     else
         vv = volume(pmodel,p,T,y,phase = :vapor, vol0 = vv)
     end
     #fugacity of pure component at saturation conditions
     if method.gas_fug
-        μpure = only.(VT_chemical_potential_res.(__gas_model.(pure),vv_pure,T))
+        μpure = only.(VT_chemical_potential_res.(gas_model.(pure),vv_pure,T))
         ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
     else
         ϕpure = copy(ϕ)
@@ -65,7 +65,7 @@ function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::Activ
         p = sum(y)
         y ./= p
         if method.gas_fug
-            logϕ, vv = lnϕ!(logϕ,__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
+            logϕ, vv = lnϕ!(logϕ,gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
             ϕ .= exp.(logϕ)
         else
             vv = volume(pmodel,p,T,y,phase = :vapor, vol0 = vv)
@@ -87,7 +87,12 @@ end
 function bubble_temperature_impl(model::RestrictedEquilibriaModel,p,x,method::ActivityBubbleTemperature)
     if model isa GammaPhi
         pmodel = model.fluid.model
-        pure = model.fluid.pure
+        pure_all = model.fluid.pure
+        if model.fluid.model isa FluidCorrelation
+            pure = map(x -> x.saturation,pure_all)
+        else
+            pure = pure_all
+        end
     else
         pmodel = model
         pure = split_model(pmodel,1:length(model))

@@ -16,9 +16,11 @@ function eutectic_point(model::CompositeModel,p=1e5)
     f!(F,x) = obj_eutectic_point(F,solid,fluid,p,x[1]*200.,FractionVector(x[2]))
     x0 = x0_eutectic_point(model,p)
     # println(x0)
-    results = Solvers.nlsolve(f!,x0)
-    T = Solvers.x_sol(results)[1]*200
-    x = FractionVector(Solvers.x_sol(results)[2])
+    r  = Solvers.nlsolve(f!,x0)
+    sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
+    T = sol[1]*200
+    x = FractionVector(sol[2])
     return T,x
 end
 
@@ -31,12 +33,12 @@ function obj_eutectic_point(F,solid,liquid,p,T,x)
 end
 
 function x0_eutectic_point(model::EoSModel,p)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     fus = melting_temperature.(pure,p)
     Tm = first.(fus)
     vs = getindex.(fus,2)
     vl = last.(fus)
-    K(modeli,_Vs,_Vl,_T) = -dpdT_pure(fluid_model(modeli),solid_model(modeli),_Vl,_Vs,_T)*_T*_T/p
+    K(modeli,_Vs,_Vl,_T) = -dpdT_saturation(fluid_model(modeli),solid_model(modeli),_Vl,_Vs,_T)*_T*_T/p
     Ki = K.(pure,vs,vl,Tm)
     #Clausius-Clapeyron correlation
     Tmax = 2/minimum(Tm)

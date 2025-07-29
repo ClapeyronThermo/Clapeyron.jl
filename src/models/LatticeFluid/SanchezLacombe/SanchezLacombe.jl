@@ -5,11 +5,8 @@ struct SanchezLacombeParam <: EoSParam
     vol::PairParam{Float64}
 end
 
-
-
 abstract type SanchezLacombeModel <: LatticeFluidModel end
 include("mixing/mixing.jl")
-
 
 struct SanchezLacombe{T <: SLMixingRule,I<:IdealModel} <:SanchezLacombeModel
     components::Array{String,1}
@@ -79,11 +76,12 @@ function SanchezLacombe(components;
     unmixed_vol = params["vol"]
     Mw = params["Mw"]
     mixmodel = init_slmixing(mixing,components,params,mixing_userlocations,verbose)
-    ideal = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+    ideal = init_model(idealmodel,components,ideal_userlocations,verbose)
     premixed_vol,premixed_epsilon = sl_mix(unmixed_vol,unmixed_epsilon,mixmodel)
     packagedparams = SanchezLacombeParam(Mw, segment, premixed_epsilon, premixed_vol)
     references = ["10.1016/S0378-3812(02)00176-0"]
     model = SanchezLacombe(components,mixmodel,packagedparams,ideal,references)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

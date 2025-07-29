@@ -3,8 +3,8 @@ using Clapeyron, Test
 @printline
 
 struct TestModel <: EoSModel end
-
-function Clapeyron.eos(model::TestModel,V,T,z)
+Clapeyron.idealmodel(::TestModel) = BasicIdeal()
+function Clapeyron.eos_impl(model::TestModel,V,T,z)
     z_part = 1*z[1] + 2*z[2]+3*z[3]
     v_part = log(V)
     T_part = T^6
@@ -12,6 +12,10 @@ function Clapeyron.eos(model::TestModel,V,T,z)
     return vt_part+T_part+v_part+z_part
 end
 
+function Clapeyron.∂f∂V(model::TestModel,V,T,z::AbstractVector)
+    f(v) = eos(model,v,T,z)
+    return Clapeyron.Solvers.derivative(f,V)
+end
 
 ∂f∂T_analytical(model::TestModel,V,T,z) =6*T^5 +2*T*V*V
 ∂f∂V_analytical(model::TestModel,V,T,z) =1/V +2*V*T*T
@@ -21,6 +25,7 @@ end
 ∂3f∂V3_analytical(model::TestModel,V,T,z) =2/(V*V*V)
 ∂3f∂V2∂T_analytical(model::TestModel,V,T,z) = 4*T
 ∂3f∂V∂T2_analytical(model::TestModel,V,T,z) = 4*V
+
 
 @testset "differentials" begin
     model = TestModel()

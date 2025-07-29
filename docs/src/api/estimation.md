@@ -15,6 +15,7 @@ Pages = ["estimation.md"]
 ```
 
 ## Estimation Tools
+
 ```@docs
 Clapeyron.ToEstimate
 Clapeyron.Estimation

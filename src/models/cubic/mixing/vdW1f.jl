@@ -37,14 +37,14 @@ function vdW1fRule(components; activity = nothing, userlocations = String[],acti
     vdW1fRule()
 end
 
-function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
+function mixing_rule(model::CubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
     #b̄ = dot(z,Symmetric(b),z) * invn2
     ā = zero(T+first(z))
     b̄ = zero(first(z))
-    for i in 1:length(z)
+    for i in 1:length(model)
         zi = z[i]
         αi = α[i]
         zi2 = zi^2
@@ -64,11 +64,3 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a
 end
 
 is_splittable(::vdW1fRule) = false
-
-function cubic_get_k(model::CubicModel,mixing::vdW1fRuleModel,params)
-    return get_k_geomean(params.a.values)
-end
-
-function cubic_get_l(model::CubicModel,mixing::vdW1fRuleModel,params)
-    return get_k_mean(params.b.values)
-end

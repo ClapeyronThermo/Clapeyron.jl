@@ -68,7 +68,7 @@ function tcPR(components;
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     a = PairParam("a",formatted_components,zeros(n))
     b = PairParam("b",formatted_components,zeros(n))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
 
     w = get(params,"acentricfactor",nothing)
     zra = get(params,"ZRA",nothing)
@@ -119,7 +119,7 @@ function tcPR(components;
             if cc.ismissingvalues[i] 
                 
                 Tci = Tc[i]
-                Pci = Pc[i]
+                Pci = pc[i]
                 R = Rgas()
                 RTp = (R*Tci/Pci)
                 if zra !== nothing && !zra.ismissingvalues[i]
@@ -138,6 +138,7 @@ function tcPR(components;
     references = String["10.1016/j.fluid.2016.09.003","10.1021/acs.jced.8b00640","10.1002/aic.17518","10.1021/acs.iecr.1c03003"]
     model = PR(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 

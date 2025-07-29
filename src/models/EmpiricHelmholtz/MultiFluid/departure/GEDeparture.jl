@@ -90,8 +90,8 @@ function multiparameter_a_res(model,V,T,z,departure::GEDeparture,δ,τ,∑z = su
     Δa = zero(aᵣ)
     m = model.pures
     Tinv = 1/T
-    Tc = model.params.Tc.values
-    Vc = model.params.Vc.values
+    Tc = model.params.Tr.values
+    Vc = model.params.Vr.values
     for i in @comps
         mᵢ = m[i]
         τᵢ = Tc[i]*Tinv

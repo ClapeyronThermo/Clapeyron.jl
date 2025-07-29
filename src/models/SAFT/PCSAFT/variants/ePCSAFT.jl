@@ -2,7 +2,6 @@ abstract type ePCSAFTModel <: ESElectrolyteModel end
 
 struct ePCSAFT{T<:IdealModel,c<:EoSModel,i<:IonModel} <: ePCSAFTModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     charge::Vector{Int64}
     idealmodel::T
     neutralmodel::c
@@ -17,10 +16,11 @@ end
         neutralmodel::EoSModel = pharmaPCSAFT,
         ionmodel::IonModel = DH,
         RSPmodel::RSPModel = ConstRSP,
-        userlocations::Vector{String}=[],
-        ideal_userlocations::Vector{String}=[],
+        userlocations::Vector{String} = [],
+        ideal_userlocations::Vector{String} = [],
         assoc_options::AssocOptions = AssocOptions(),
-        verbose::Bool=false)
+        verbose::Bool = false,
+        reference_state = nothing)
 
 ## Description
 This function is used to create an ePCSAFT model which is a combination of the PC-SAFT and Debye-Hückel model. It is based on the ePC-SAFT Revised variant.
@@ -49,20 +49,19 @@ This function is used to create an ePCSAFT model which is a combination of the P
 function ePCSAFT(solvents,ions; 
     idealmodel = BasicIdeal,
     neutralmodel = pharmaPCSAFT,
-    ionmodel = DH,
+    ionmodel = hsdDH,
     RSPmodel = ConstRSP,
     userlocations=String[], 
     ideal_userlocations=String[],
     assoc_options = AssocOptions(),
-     verbose=false)
+    verbose = false,
+    reference_state = nothing)
     components = deepcopy(ions)
     prepend!(components,solvents)
 
     params = getparams(format_components(components), ["Electrolytes/properties/charges.csv"]; userlocations=userlocations, verbose=verbose)
     _charge = params["charge"]
     charge = _charge.values
-
-    icomponents = 1:length(components)
 
     neutral_path = DB_PATH.*["/SAFT/PCSAFT","/SAFT/PCSAFT/ePCSAFT","/SAFT/PCSAFT/pharmaPCSAFT"]
 
@@ -80,20 +79,11 @@ function ePCSAFT(solvents,ions;
         end
     end
 
-
-
     references = ["10.1016/j.cherd.2014.05.017"]
     components = format_components(components)
-    model = ePCSAFT(components,icomponents,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    model = ePCSAFT(components,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    set_reference_state!(model,reference_state;verbose)
     return model
-end
-
-function a_res(model::ePCSAFTModel, V, T, z)
-    data_pcsaft = data(model.neutralmodel,V,T,z)
-    data_ion = data(model.ionmodel,V,T,z)
-    data_ion = (data_ion[1],data_pcsaft[1])
-
-    return a_res(model.neutralmodel,V,T,z,data_pcsaft)+a_res(model.ionmodel,V,T,z,data_ion)
 end
 
 export ePCSAFT

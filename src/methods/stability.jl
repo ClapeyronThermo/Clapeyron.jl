@@ -1,12 +1,14 @@
 """
-    isstable(model,V,T,z)::Bool
+    isstable(model,p,T,z)::Bool
 
-Performs stability tests for a (V,T,z) pair, and warn if any tests fail. returns `true/false`.
+Performs stability tests for a (p,T,z) pair, and warn if any tests fail. returns `true/false`.
 
-Checks:
+Checks, in order of complexity:
  - mechanical stability: isothermal compressibility is not negative.
  - diffusive stability: all eigenvalues of `∂²A/∂n²` are positive.
  - chemical stability: there isn't any other combinations of compositions at p(V,T),T that are more stable than the input composition.
+
+For checking (V,T,z) pairs, use `Clapeyron.VT_isstable(model,V,T,z)` instead.
 """
 function isstable(model,p,T,z = SA[1.0])
     V = volume(model,p,T,z)
@@ -35,20 +37,40 @@ function VT_mechanical_stability(model,V,T,z = SA[1.0])
     return VT_isothermal_compressibility(model,V,T,z) >= 0
 end
 
-
 """
     VT_diffusive_stability(model,V,T,z)::Bool
 
 Performs a diffusive stability for a (V,T,z) pair, returns `true/false`.
 Checks if all eigenvalues of `∂²A/∂n²` are positive.
+Returns `false` if the eos calculation failed. this normally occurs when evaluating on densities lower than the maximum density (given by `Clapeyron.lb_volume(model,T,z)`)
 """
 function VT_diffusive_stability(model,V,T,z = SA[1.0])
-    isone(length(model)) && return true
-    ρᵢ = x ./ V
+    ρᵢ = similar(z,Base.promote_eltype(V,z))
+    ρᵢ .= z ./ V
     HΨ = Ψ_hessian(model,T,ρᵢ)
+    if any(!isfinite,HΨ)
+        return false
+    end
+    if length(model) == 1
+        return HΨ[1,1] > 0
+    end
     λ = eigmin(Hermitian(HΨ)) # calculating just minimum eigenvalue more efficient than calculating all & finding min
     return λ > 0
 end
+
+function VT_diffusive_eigvalue(model,V,T,z = SA[1.0])
+    ρᵢ = similar(z,Base.promote_eltype(V,z))
+    ρᵢ .= z ./ V
+    HΨ = Ψ_hessian(model,T,ρᵢ)
+    if any(!isfinite,HΨ)
+        return zero(eltype(HΨ))/zero(eltype(HΨ))
+    end
+    if length(model) == 1
+        return HΨ[1,1]
+    end
+    return eigmin(Hermitian(HΨ)) # calculating just minimum eigenvalue more efficient than calculating all & finding min
+end
+
 """
     diffusive_stability(model,p,T,z = SA[1.0],phase = :unknown,threaded = true,vol0 = nothing)
 
@@ -98,7 +120,7 @@ If the model is not an `IdealModel`, then `Clapeyron.idealmodel(model)` will be 
 
 function ideal_consistency(model,V,T,z =SA[1.0])
     id = idealmodel(model)
-    if id === nothing
+    if id === nothing || id === model
         f(∂V) = a_ideal(model,∂V,T,z)
         ∂f0∂V = Solvers.derivative(f,V)
         n = sum(z)
@@ -115,11 +137,10 @@ Performs a chemical stability check using the tangent plane distance criterion, 
 """
 function VT_chemical_stability(model::EoSModel,V,T,z,check_vol = true)
     if isone(length(z))
-        return pure_chemical_instability(model,V/sum(z),T) 
+        return pure_chemical_instability(model,V/sum(z),T)
     end
-    
+    p = pressure(model,V,T,z)
     if check_vol
-        p = pressure(model,V,T,z)
         Vx = volume(model,p,T,z)
         #we check first if the phase itself is stable, maybe there is another phase
         #with the same composition, but with a different volume, that is more stable.

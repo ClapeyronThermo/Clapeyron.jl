@@ -157,11 +157,11 @@ end
 function a_assoc(model::DAPTModel, V, T, z, _data = @f(data))
     Irc,X_ = _data
     θ_c = model.params.theta_c.values[1,1][2]
-    κ = (1 - cos(θ_c*π/180))^2/4
+    κ = 0.25*(1 - cospi(θ_c/180))^2
     σ = model.params.sigma.values[1]
-    ε = model.params.epsilon_assoc.values[1,1][2]
-    f = exp(ε/(T))-1
-    ∑z = ∑(z)
+    ε_assoc = model.params.epsilon_assoc.values[1,1][2]
+    f = expm1(ε_assoc/T)
+    ∑z = sum(z)
     ρ = N_A*∑z/V
     XA = X_[1][1]
     X4 = (1-XA)^4
@@ -173,13 +173,15 @@ function X(model::DAPTModel, V, T, z,Irc = @f(I))
     σ = model.params.sigma.values[1][1]
     θ_c = model.params.theta_c.values[1,1][2,1]
     κ = (1 - cos(θ_c*π/180))^2/4
-    ε_as = model.params.epsilon_assoc.values[1,1][2,1]
-    f = exp(ε_as/(T))-1
-    ρ = N_A*∑(z)/V
+    ε_assoc = model.params.epsilon_assoc.values[1,1][2,1]
+    f = expm1(ε_assoc/T)
+    ρ = N_A*sum(z)/V
+    ρm = π*ρ*σ^3
     Xsol = @assoc_loop Xold Xnew for i ∈ @comps, a ∈ @sites(i)
-            X4 = (1-Xold[i][a])^4
-            c_A = 8*π*κ*σ^3*f*(ρ*Xold[i][a]*(Irc*(1-X4) + X4/(π*ρ*σ^3)) + 2*ρ*(Xold[i][a]^2)*((1 - Xold[i][a])^3)*(Irc - 1/(π*ρ*σ^3)) )
-            Xnew[i][a] =1/(1+c_A)
+            Xia = Xold[i][a]
+            X4 = (1 - Xia)^4
+            c_A = 8*π*κ*σ^3*f*(ρ*Xia*(Irc*(1-X4) + X4/ρm) + 2*ρ*(Xia*Xia)*((1 - Xia)^3)*(Irc - 1/ρm) )
+            Xnew[i][a] =1/(1 + c_A)
     end
     return Xsol
 end

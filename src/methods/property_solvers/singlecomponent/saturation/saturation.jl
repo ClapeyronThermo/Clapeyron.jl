@@ -12,8 +12,8 @@ abstract type SaturationMethod <: ThermodynamicMethod end
     saturation_pressure(model::EoSModel,T,method::SaturationMethod)
     saturation_pressure(model,T,x0::Union{Tuple,Vector})
 
-Performs a single component saturation equilibrium calculation, at the specified temperature `T`, of one mol of pure sustance specified by `model`
-Returns `(p₀, Vₗ, Vᵥ)` where `p₀` is the saturation pressure (in Pa), `Vₗ` is the liquid saturation volume (in m³) and `Vᵥ` is the vapour saturation volume (in m³).
+Performs a single component saturation equilibrium calculation, at the specified temperature `T`, of one mol of pure sustance specified by `model`.
+Returns `(p₀, Vₗ, Vᵥ)` where `p₀` is the saturation pressure (in `[Pa]`), `Vₗ` is the liquid saturation volume (in `[m³]`) and `Vᵥ` is the vapour saturation volume (in `[m³]`).
 
 If the calculation fails, returns  `(NaN, NaN, NaN)`
 
@@ -40,10 +40,21 @@ julia> p,vl,vv = saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)
 function saturation_pressure(model::EoSModel,T,method::SaturationMethod)
     single_component_check(saturation_pressure,model)
     T = T*(T/T)*oneunit(eltype(model))
-    return saturation_pressure_impl(model,T,method)
+    satmodel = saturation_model(model)
+    satmodel !== model && saturation_pressure(satmodel,T,method)
+    if has_a_res(model)
+        res = saturation_pressure_impl(primalval(model),primalval(T),method)
+        saturation_pressure_ad(model,T,res)
+    else
+        return saturation_pressure_impl(model,T,method)
+    end
 end
 
 function saturation_pressure(model::EoSModel,T;kwargs...)
+    satmodel = saturation_model(model)
+    if satmodel !== model
+        return saturation_pressure(satmodel,T;kwargs...)
+    end
     if keys(kwargs) == (:v0,)
         nt_kwargs = NamedTuple(kwargs)
         v0 = nt_kwargs.v0
@@ -58,6 +69,10 @@ function saturation_pressure(model::EoSModel,T;kwargs...)
 end
 
 function saturation_pressure(model::EoSModel,T,V0::Union{Tuple,Vector})
+    satmodel = saturation_model(model)
+    if satmodel !== model
+        return saturation_pressure(satmodel,T,V0)
+    end
     single_component_check(saturation_pressure,model)
     vl = first(V0)
     vv = last(V0)
@@ -66,14 +81,39 @@ function saturation_pressure(model::EoSModel,T,V0::Union{Tuple,Vector})
     return saturation_pressure(model,T,method)
 end
 
+function saturation_pressure_ad(model,T,result)
+    if has_dual(model) || has_dual(T)
+        p_primal,vl_primal,vv_primal = result
+
+        #=
+        update step from https://github.com/lucpaoli/SAFT_ML/blob/f22648055bdf4cd244cf427a596fc7b1c03e6383/saftvrmienn.jl#L138-L157
+        =#
+        Δg = eos(model, vv_primal, T) - eos(model,vl_primal, T) + p_primal*(vv_primal - vl_primal)
+        Δv = vv_primal - vl_primal
+        p = p_primal - Δg/Δv
+        #=
+        for volume, we use a volume update
+        =#
+        vl = volume_ad(model,vl_primal,T,SA[1.0],p)
+        vv = volume_ad(model,vv_primal,T,SA[1.0],p)
+        return p,vl,vv
+    else
+        return result
+    end
+end
+
+function derivx(f,i)
+    h = sqrt(eps(i))
+    return (1*f(i-2h)-8*f(i-1h)+0*f(i)+8*f(i+1h)-1*f(i+2h))/(12*h)
+end
+
 """
     saturation_temperature(model::EoSModel, p, kwargs...)
     saturation_temperature(model::EoSModel, p, method::SaturationMethod)
     saturation_temperature(model, p, T0::Number)
 
-Performs a single component saturation temperature equilibrium calculation, at the specified pressure `T`, of one mol of pure sustance specified by `model`
-
-Returns `(T₀, Vₗ, Vᵥ)` where `p₀` is the saturation Temperature (in K), `Vₗ` is the liquid saturation volume (in m³) and `Vᵥ` is the vapour saturation volume (in m³).
+Performs a single component saturation temperature equilibrium calculation, at the specified temperature `T`, of one mol of pure sustance specified by `model`.
+Returns `(T₀, Vₗ, Vᵥ)` where `T₀` is the saturation Temperature (in `[K]`), `Vₗ` is the liquid saturation volume (in `[m³]`) and `Vᵥ` is the vapour saturation volume (in `[m³]`).
 
 If the calculation fails, returns  `(NaN, NaN, NaN)`
 
@@ -95,21 +135,63 @@ julia> saturation_pressure(pr,Ts)
 ```
 """
 function saturation_temperature(model,p;kwargs...)
+    satmodel = saturation_model(model)
+    if satmodel !== model
+        return saturation_temperature(satmodel,p;kwargs...)
+    end
     method = init_preferred_method(saturation_temperature,model,kwargs)
     return saturation_temperature(model,p,method)
 end
 
 function saturation_temperature(model,p,method::SaturationMethod)
+    satmodel = saturation_model(model)
+    if satmodel !== model
+        return saturation_temperature(satmodel,p;method)
+    end
     single_component_check(crit_pure,model)
     p = p*p/p
-    return saturation_temperature_impl(model,p,method)
+
+    if has_a_res(model)
+        res = saturation_temperature_impl(primalval(model),primalval(p),method)
+        return saturation_temperature_ad(model,p,res)
+    else
+        return saturation_temperature_impl(model,p,method)
+    end
 end
 
 #if a number is provided as initial point, it will instead proceed to solve directly
 function saturation_temperature(model::EoSModel, p, T0::Number)
+    satmodel = saturation_model(model)
+    if satmodel !== model
+        return saturation_temperature(satmodel,p,T0)
+    end
     kwargs = (;T0)
     method = init_preferred_method(saturation_temperature,model,kwargs)
     saturation_temperature(model,p,method)
+end
+
+function saturation_temperature_ad(model,p,result)
+    if has_dual(model) || has_dual(p)
+        T_primal,vl_primal,vv_primal = result
+        vl = volume_ad(model,vl_primal,T_primal,SA[1.0],p)
+
+        #manual volume_ad for vapour volume, we reuse p_primal for the calculation of the T step.
+        p_primal,∂p∂V = p∂p∂V(model,vv_primal,T_primal,SA[1.0])
+        vv = vv_primal - (p_primal - p)/∂p∂V
+
+        #for T, we use a dlnpdTinv step, a dpdT step is fine too
+        dpdT = dpdT_saturation(model,vv_primal,vl_primal,T_primal)
+        dTinvdlnp = -p_primal/(dpdT*T_primal*T_primal)
+        Δlnp = log(p/p_primal)
+        Tinv0 = 1/T_primal
+        Tinv = Tinv0 + dTinvdlnp*Δlnp
+        dT = T_primal - 1/Tinv
+        T = 1/Tinv
+        T = T_primal - (p_primal - p)/dpdT
+        return T,vl,vv
+    else
+        return result
+    end
 end
 
 include("ChemPotV.jl")
@@ -129,9 +211,10 @@ Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies 
 function enthalpy_vap(model::EoSModel, T,satmethod = ChemPotVSaturation())
     single_component_check(enthalpy_vap,model)
     (P_sat,V_l,V_v) = saturation_pressure(model,T,satmethod)
-    H_v = VT_enthalpy(model,V_v,T)
-    H_l = VT_enthalpy(model,V_l,T)
-    H_vap=H_v -H_l
+    H_v = VT_enthalpy_res(model,V_v,T)
+    H_l = VT_enthalpy_res(model,V_l,T)
+    #H_v(res) - H_l(res) = H_l - H_v
+    H_vap = H_v - H_l
     return H_vap
 end
 
