@@ -27,7 +27,7 @@
     end
 
     if isdefined(Base,:get_extension)
-        @testset "¿MultiComponentFlash.jl Algorithm" begin
+        @testset "MultiComponentFlash.jl Algorithm" begin
 
             #two-phase test, using Clapeyron api
             mcf = MCFlashJL()
@@ -44,7 +44,7 @@
             cond = (p = 5e7, T = 303.15, z = [0.4, 0.6])
             liquid_res = MultiComponentFlash.flashed_mixture_2ph(liquid_model,cond)
             @test liquid_res.state == MultiComponentFlash.single_phase_l
-            @test liquid_res.vapor.Z ≈ 0.9672507136048648 rtol = 1e-6
+            @test liquid_res.liquid.Z ≈ 3.458550315299117 rtol = 1e-6
         end
     end
     GC.gc()
