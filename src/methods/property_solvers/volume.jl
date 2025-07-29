@@ -440,6 +440,8 @@ used by MultiComponentFlash.jl extension
 function _label_and_volumes(model::EoSModel,cond)
     #gibbs comparison, the phase with the least amount of gibbs energy is the most stable.
     p,T,z = cond.p,cond.T,cond.z
+    _0 = zero(Base.promote_eltype(model,p,T,z))
+    _1 = one(_0)
     Vl = volume(model,p,T,z,phase =:l)
     Vv = volume(model,p,T,z,phase =:v)
     function gibbs(fV)
@@ -450,10 +452,22 @@ function _label_and_volumes(model::EoSModel,cond)
         fV == Inf && iszero(dV) && return _f
         return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
     end
-    isnan(Vl) && return 1,Vv,Vv #could not converge on gas volume, assuming stable liquid phase
-    isnan(Vv) && return 0,Vl,Vl #could not converge on liquid volume, assuming stable gas phase
+    isnan(Vl) && return _1,Vv,Vv #could not converge on gas volume, assuming stable liquid phase
+    isnan(Vv) && return _0,Vl,Vl #could not converge on liquid volume, assuming stable gas phase
+    if Vl == Vv
+        phase = VT_identify_phase(model,Vl,T,z)
+        if is_liquid(phase)
+            return _0,Vl,Vl
+        else
+            return _1,Vl,Vl
+        end
+    end
     gl,gv = gibbs(Vl),gibbs(Vv)
-    V = gv < gl ? 1 : 0
+    if gl < gv
+        V = zero(gl+gv)
+    else
+        V = one(gl+gv)
+    end
     return V,Vl,Vv
 end
 

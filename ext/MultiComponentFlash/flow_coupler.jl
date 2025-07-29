@@ -26,29 +26,35 @@ function M.flashed_mixture_2ph!(storage, eos::C.EoSModel, conditions, K; kwarg..
     p = conditions.p
     T = conditions.T
     z = conditions.z
-
-    x = @. M.liquid_mole_fraction(z, K, V)
-    y = @. M.vapor_mole_fraction(x, K)
-    if V == 0 || V == 1
-    #=
-    instead of Li correlation, we just check the gibbs energies of the mixtures.
-    we do this anyway in the volume calculation, so it better to be more explicit.
-    =#
+    x = similar(K)
+    y = similar(K)
+    if V == 0 || V == 1 || isnan(V)
+        #=
+        instead of Li correlation, we just check the gibbs energies of the mixtures.
+        we do this anyway in the volume calculation, so it better to be more explicit.
+        =#  
         V,Vl,Vv = C._label_and_volumes(eos, conditions)
+        n = sum(z)
+        nRT = C.Rgas(eos)*T*n
         if V == 0
-            state = single_phase_l
-            Zx = Vl*p/C.Rgas(model)/T/sum(z)
+            state = M.single_phase_l
+            Zx = Vl*p/nRT
         else
-            state = single_phase_v
-            Zx = Vv*p/C.Rgas(model)/T/sum(z)
+            state = M.single_phase_v
+            Zx = Vv*p/nRT
         end
         Z_L,Z_V = Zx,Zx
+        x .= z ./ n
+        y .= z ./ n
     else
+        @. x = M.liquid_mole_fraction(z, K, V)
+        @. y = M.vapor_mole_fraction(x, K)
         state = M.two_phase_lv
         Z_L = C.compressibility_factor(eos, p, T, x, phase = :l)
         Z_V = C.compressibility_factor(eos, p, T, y, phase = :v)
     end
-    return M.FlashedMixture2Phase(state, K, V, x, y, Z_L, Z_V)
+    nan = zero(V)/zero(V)
+    return M.FlashedMixture2Phase(state, K, V, x, y, Z_L, Z_V, nan, conditions, rep.stability)
 end
 
 @inline function M.two_phase_vapor_saturation(eos::C.EoSModel, p, Temp, f::M.FlashedMixture2Phase{T}) where T
