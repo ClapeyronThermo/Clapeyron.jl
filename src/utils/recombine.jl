@@ -35,14 +35,6 @@ function promote_model(::Type{T},model::Array) where T <: Number
     return promote_model.(T,model)
 end
 
-function promote_model(::Type{T},model::CompositeModel) where T <: Number
-    components = model.components
-    fluid = promote_model(T,model.fluid)
-    solid = promote_model(T,model.solid)
-    mapping = model.mapping
-    return CompositeModel(components,fluid,solid,mapping)
-end
-
 @generated function promote_model_struct(::Type{T},model::M) where {T,M}
     names = fieldnames(M)
     Base.typename(M).wrapper
