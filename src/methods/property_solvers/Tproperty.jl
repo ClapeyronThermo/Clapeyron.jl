@@ -144,21 +144,20 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
       prop_bubble = dew_vl
       prop_dew = dew_vv
     else
-      prop_bubble = spec_to_vt(model,dew_vl,T,w_dew,spec)
-      prop_dew = spec_to_vt(model,dew_vv,T,z,spec)/sum(z)
+      prop_bubble = spec_to_vt(model,dew_vl,dew_T,w_dew,spec)
+      prop_dew = spec_to_vt(model,dew_vv,dew_T,z,spec)/sum(z)
     end
     β = (prop/sum(z) - prop_bubble)/(prop_dew - prop_bubble)
     if 0 <= β <= 1
       #strategy: substract the liquid part, and solve for the gas fraction
-      damp = Solvers.positive_linesearch(z/sum(z),w_dew,decay = 0.95) #make sure that the gas fraction is positive
-      βx = damp*(1 - β)*sum(z)
-      new_prop = prop - βx*prop_bubble
-      new_z = z - w_dew * βx
-      Tx,stx = __Tproperty(model,p,new_prop,new_z,property,rootsolver,:gas,abstol,reltol,threaded,dew_T)
-      stx == :failure && (return dew_T,:eq)
-      return Tx,:eq
+      #damp = Solvers.positive_linesearch(z/sum(z),w_dew,decay = 0.95) #make sure that the gas fraction is positive
+      #βx = damp*(1 - β)*sum(z)
+      #new_prop = prop - βx*prop_bubble
+      #new_z = z - w_dew * βx
+      #Tx,stx = __Tproperty(model,p,new_prop,new_z,property,rootsolver,:gas,abstol,reltol,threaded,dew_T)
+      #stx == :failure && (return dew_T,:eq)
+      return dew_T,:eq
     end
-    return (dew_T,:eq)
     verbose && @info "pressure($property) < pressure(dew point)"
     return __Pproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_T)
   elseif !isnan(bubble_T) && isnan(dew_T)
@@ -167,8 +166,8 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
       prop_bubble = bubble_vl
       prop_dew = bubble_vv
     else
-      prop_bubble = spec_to_vt(model,bubble_vl,T,z,property)/sum(z)
-      prop_dew = spec_to_vt(model,bubble_vv,T,w_bubble,property)
+      prop_bubble = spec_to_vt(model,bubble_vl,bubble_T,z,property)/sum(z)
+      prop_dew = spec_to_vt(model,bubble_vv,bubble_T,w_bubble,property)
     end
 
     β = (prop/sum(z) - prop_dew)/(prop_bubble - prop_dew)
