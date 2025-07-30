@@ -175,8 +175,8 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     verbose && @info "pressure($property) > pressure(bubble point)"
     return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_T)
   elseif isnan(bubble_T) && isnan(dew_T)
-    verbose && @warn "non-finite dew and bubble points, trying to solve using Clapeyron.p_scale(model,z)"
-    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p_scale(model,z))
+    verbose && @warn "non-finite dew and bubble points, trying to solve using Clapeyron.T_scale(model,z)"
+    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
   end
 
   if property == volume

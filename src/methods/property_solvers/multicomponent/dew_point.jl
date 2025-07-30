@@ -180,8 +180,13 @@ function antoine_dew_solve(dpdt,p_dew,y)
         return sum(y)/pinv - p_dew
     end
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
-    prob = Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
-    return Roots.solve(prob)
+    if antoine_f0(Tmin)*antoine_f0(Tmax) < 0
+        prob = Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+        return Roots.solve(prob)
+    else
+        prob = Roots.ZeroProblem(antoine_f0,0.5*(Tmin+Tmax))
+        return Roots.solve(prob) 
+    end
 end
 
 function x0_dew_temperature(model::EoSModel,p,y,T0 = nothing)

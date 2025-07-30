@@ -456,10 +456,16 @@ function antoine_bubble_solve(dpdt,p_bubble,x,T0 = nothing)
 
     if T0 === nothing
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
-        prob = Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
-        return Roots.solve(prob)
+        if antoine_f0(Tmin)*antoine_f0(Tmax) < 0.0
+            prob = Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+            return Roots.solve(prob)
+        else
+            T0 = 0.5*(Tmin+Tmax) #in supercritical cases this could happen
+            prob = Roots.ZeroProblem(antoine_f0,T0)
+            return Roots.solve(prob)
+        end
     else
-        return Roots.ZeroProblem(antoine_f0,T0)
+        prob = Roots.ZeroProblem(antoine_f0,T0)
         return Roots.solve(prob)
     end
 end

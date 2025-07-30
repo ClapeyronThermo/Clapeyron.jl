@@ -515,6 +515,11 @@ end
     s2 = entropy(model4,p2,T2)
     h2 = enthalpy(model4,p2,T2)
     @test s2 ≈ s1
+
+    #issue 409
+    fluid409 = cPR(["Propane","R134a"],idealmodel=ReidIdeal);z409 = [1.0,1.0];
+    s409 = -104.95768957075641; p409 = 5.910442025416817e6;
+    @test Tproperty(fluid409,p409,s409,z409,entropy) ≈ 406.0506318701147 rtol = 1e-6
 end
 
 @testset "bubble/dew point algorithms" begin
