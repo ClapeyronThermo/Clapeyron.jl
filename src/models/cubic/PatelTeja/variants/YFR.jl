@@ -235,8 +235,7 @@ function YFR(components;
 
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv"];
                         userlocations = userlocations,
-                        verbose = verbose,
-                        ignore_missing_singleparams = __ignored_crit_params(alpha))
+                        verbose = verbose)
 
     model = CubicModel(YFR,params,formatted_components;
                         idealmodel,alpha,mixing,activity,translation,

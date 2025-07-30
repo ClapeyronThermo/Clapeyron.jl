@@ -26,32 +26,27 @@ struct CPAAlphaParam <: EoSParam
     c1::SingleParam{Float64}
 end
 
-function fast_build_alpha(::Type{T}) where T <: AlphaModel
+function fast_build_alpha(T,params)
     if hasfield(T,:params)
-        if fieldtype(T,:params) == SimpleAlphaParam
-            return true
-        elseif fieldtype(T,:params) == CPAAlphaParam
-            return true
+        P = fieldtype(T,:params)
+        if P == SimpleAlphaParam
+            haskey(params,"acentricfactor") || return false
+            w = params["acentricfactor"]
+            return !any(w.ismissingvalues)
+        elseif P == CPAAlphaParam
+            haskey(params,"c1") || return false
+            c1 = params["c1"]
+            return !any(c1.ismissingvalues)
         end
     end
     return false
 end
 
-function __ignored_crit_params(alpha)
-    if fast_build_alpha(alpha)
-        return ["Vc"]
-    else
-        return ["Vc","acentricfactor"]
-    end
-end
-
-fast_build_alpha(T) = false
-
 function init_alphamodel(alpha,components,params,userlocations = String[],verbose = [])
     #Base.Callable = Union{Type,Function}
     if alpha isa Base.Callable && alpha <: AlphaModel
         _comps = format_components(components)
-        if fast_build_alpha(alpha) && isempty(userlocations)
+        if fast_build_alpha(alpha,params) && isempty(userlocations)
             PARAM = fieldtype(alpha,:params)
             out_params = transform_params(PARAM,params,_comps)
             param = build_eosparam(PARAM,out_params)

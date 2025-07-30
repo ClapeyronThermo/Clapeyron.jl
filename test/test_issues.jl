@@ -376,4 +376,14 @@
         bubP1_2 = bubble_pressure(model1,298.15,x1,FugBubblePressure(nonvolatiles=["calcium","chloride"]))[1]
         @test bubP1 ≈ bubP1_test rtol = 1e-6
     end
+
+    @testset "416" begin
+        #if we build a cubic and only provide critical parameters (without acentric factor), read the database
+        #to build the alpha model
+        model = PR(["nitrogen"]; userlocations=(;
+           Tc = [0.3],
+           Pc = [1.],
+           Mw = [1.]))
+        @test model.alpha.params.acentricfactor.ismissingvalues[1]
+    end
 end

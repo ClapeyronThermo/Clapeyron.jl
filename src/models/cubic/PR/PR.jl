@@ -109,7 +109,7 @@ function PR(components;
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
         userlocations = userlocations,
         verbose = verbose,
-        ignore_missing_singleparams = __ignored_crit_params(alpha))
+        ignore_missing_singleparams = ["Vc","acentricfactor"])
 
     model = CubicModel(PR,params,formatted_components;
                         idealmodel,alpha,mixing,activity,translation,

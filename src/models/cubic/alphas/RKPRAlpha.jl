@@ -70,8 +70,9 @@ function transform_params(::Type{RKPRAlphaParam},params,components)
     return params
 end
 
-fast_build_alpha(::Type{RKPRAlpha}) = true
-
+function fast_build_alpha(::Type{RKPRAlpha},params)
+    return haskey(params,"acentricfactor")
+end
 
 function α_function(model::CubicModel,V,T,z,alpha_model::RKPRAlphaModel)
     k1 = alpha_model.params.k1.values
