@@ -181,7 +181,7 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     is_non_condensable = !isnothing(method.noncondensables)
     condensables = comps_in_equilibria(model.components,method.noncondensables)
     model_x,_ = index_reduction(model,condensables)
-    T0,vl,vv,x0 = dew_temperature_init(model,T,y,method.vol0,method.T0,method.x0,condensables)
+    T0,vl,vv,x0 = dew_temperature_init(model,p,y,method.vol0,method.T0,method.x0,condensables)
     x0 = x0[condensables]
     
     if is_non_condensable
