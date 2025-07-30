@@ -131,12 +131,12 @@ end
     pm,vs,vl = sublimation_temperature(model::CompositeModel,p;v0=x0_sublimation_pressure(model,T))
 
 Calculates the sublimation temperature of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure `p`.
-You can pass a tuple of initial values for the volumes `(vs0,vl0)`.
+You can pass a tuple of initial values for the volumes `(vs0,vv0)`.
 
 returns:
 - Sublimation Temperature `[K]`
-- sublimation solid volume at specified pressure `[m³]`
-- sublimation vapour volume at specified pressure `[m³]`
+- Sublimation solid volume at specified pressure `[m³]`
+- Sublimation vapour volume at specified pressure `[m³]`
 """
 function sublimation_temperature(model::CompositeModel,p;kwargs...)
     method = init_preferred_method(sublimation_temperature,model,kwargs)
