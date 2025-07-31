@@ -397,10 +397,6 @@ struct CompositeModel{𝔽,𝕊} <: EoSModel
 end
 ```
 
-Here’s an improved version of your text with refined clarity, flow, and grammar while maintaining the technical accuracy:
-
----
-
 ### Composite Models for the Fluid Phase
 
 The simplest case to consider is when we use a Helmholtz-based model (which includes nearly all models in Clapeyron.jl). For example:
@@ -504,6 +500,7 @@ model_gammaphi3 = CompositeModel(["water", "isopropanol"], fluid = fluidmodel, l
 ```
 
 Here, `model_gammaphi3` uses:
+
 - **Liquid activities**: NRTL
 - **Gas fugacities**: Ideal gas (ϕ = 1)
 - **Saturation curve**: `DIPPR101Sat`
