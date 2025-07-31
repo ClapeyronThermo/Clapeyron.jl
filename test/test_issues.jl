@@ -384,6 +384,6 @@
            Tc = [0.3],
            Pc = [1.],
            Mw = [1.]))
-        @test model.alpha.params.acentricfactor.ismissingvalues[1]
+        @test !model.alpha.params.acentricfactor.ismissingvalues[1]
     end
 end
