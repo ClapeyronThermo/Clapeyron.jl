@@ -389,25 +389,135 @@ In these cases, we need to combine various models together to obtain the 'full' 
 `CompositeModels` allows users to mix-and-match all of our available models.
 
 ```julia
-struct CompositeModel{𝕃,𝕊} <: EoSModel
+struct CompositeModel{𝔽,𝕊} <: EoSModel
     components::Vector{String}
-    fluid::𝕃
-    solid::𝕊
+    fluid::𝔽 #stores the fluid model
+    solid::𝕊 #stores the solid model
+    mapping::Union{Vector{Pair{Vector{Tuple{String,Int64}},Tuple{String,Int64}}},Nothing} #stores a mapping between the fluid components and the solid components.
 end
 ```
 
-The simplest case to consider is where we use the ideal gas model to represent the vapour phase, a correlation for the liquid (`RackettLiquid`) and saturation curve (`LeeKeslerSat`):
+Here’s an improved version of your text with refined clarity, flow, and grammar while maintaining the technical accuracy:
+
+---
+
+### Composite Models for the Fluid Phase
+
+The simplest case to consider is when we use a Helmholtz-based model (which includes nearly all models in Clapeyron.jl). For example:
 
 ```julia
-julia> model = CompositeModel(["water"])
-Composite Model:
- Gas Model: BasicIdeal()
- Liquid Model: RackettLiquid("water")
- Saturation Model: LeeKeslerSat("water")
+julia> model = CompositeModel(["water"], fluid = PR)
+Composite Model with 1 component:
+ "water"
+Fluid Model: PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}("water")
 ```
 
-The possibilities with this methodology are truly limitless.
-A useful example is in the case of [Solid–liquid equilibrium](./sle_phase_diagrams.md) calculations.
+This model is functionally equivalent to `PR("water")`. Since the Peng-Robinson equation of state (like many others) can model both liquid and gas phases simultaneously, this construction is not particularly useful on its own.
+
+However, what if we have a set of models, each specialized for a different region of the phase diagram?
+
+If we have:
+
+* A correlation for liquid properties,
+* A correlation for vapour properties,
+* A correlation for the saturation curve,
+
+we can "stitch" these models together to cover the entire fluid domain.
+
+Using correlations has advantages, particularly in computational speed and accuracy (if reliable data is available). Notably, we can also use full-fledged equations of state (EoS) as correlations for the liquid, vapour, or saturation regions.
+
+Consider the following set of models:
+
+* **Vapour phase**: Ideal gas (`BasicIdeal`)
+* **Liquid volume**: `RackettLiquid` correlation
+* **Saturation curve**: `LeeKeslerSat` correlation
+
+```julia
+julia> model = CompositeModel(["ethane", "propane"], liquid = RackettLiquid, saturation = DIPPR101Sat, gas = BasicIdeal)
+Composite Model (Correlation-Based) with 2 components:
+ "ethane"
+ "propane"
+Gas Model: BasicIdeal
+Liquid Model: RackettLiquid
+Saturation Model: DIPPR101Sat
+```
+
+This composite model can calculate saturation properties, volumes, and, most importantly, can be used for multicomponent phase equilibria.
+
+For multicomponent equilibria, a common approach is to use **activity coefficient models** to describe complex interactions in the liquid phase. If we combine:
+
+* A model for vapour-phase fugacities and saturation calculations,
+* A model for liquid-phase activities,
+
+the resulting framework is known as the **γ-ϕ approach**.
+
+For example:
+
+* **Gas fugacities**: Peng-Robinson (`PR`)
+* **Liquid activities**: NRTL
+
+A `CompositeModel` implementing γ-ϕ equilibria can be constructed as follows:
+
+```julia
+julia> model_gammaphi = CompositeModel(["water", "isopropanol"], fluid = PR, liquid = NRTL)
+Composite Model (γ-ϕ) with 2 components:
+ "water"
+ "isopropanol"
+Activity Model: NRTL
+Fluid Model: PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}
+```
+
+This is functionally similar to using the `puremodel` keyword in activity models. In fact, the following model is equivalent to `model_gammaphi`:
+
+```julia
+julia> model_gammaphi2 = NRTL(["water", "isopropanol"], puremodel = PR)
+NRTL{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}} with 2 components:
+ "water"
+ "isopropanol"
+Contains parameters: a, b, c, Mw
+```
+
+When used in vapour-liquid equilibrium (VLE) calculations, these models share a common representation:
+
+```julia
+julia> model_gammaphi.fluid  # GammaPhi struct stored in the `fluid` field
+γ-ϕ Model with 2 components:
+ "water"
+ "isopropanol"
+Activity Model: NRTL
+Fluid Model: PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}
+
+julia> GammaPhi(model_gammaphi2)  # Activity model converted to GammaPhi
+γ-ϕ Model with 2 components:
+ "water"
+ "isopropanol"
+Activity Model: NRTL
+Fluid Model: PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}
+```
+
+The fluid model does not need to be a full EoS, it can also be a composite of correlations:
+
+```julia
+fluidmodel = CompositeModel(["ethane", "propane"], liquid = RackettLiquid, saturation = DIPPR101Sat, gas = BasicIdeal)
+
+model_gammaphi3 = CompositeModel(["water", "isopropanol"], fluid = fluidmodel, liquid = NRTL)
+```
+
+Here, `model_gammaphi3` uses:
+- **Liquid activities**: NRTL
+- **Gas fugacities**: Ideal gas (ϕ = 1)
+- **Saturation curve**: `DIPPR101Sat`
+- **Liquid volumes**: `RackettLiquid`
+
+This model can handle multicomponent equilibria with complex liquid-phase interactions.
+
+### Composite Models for Solid–liquid equilibria.
+
+The last section was focused on how can `CompositeModel` be used to model a fluid phase with any collection of models and/or correlations.
+
+We can also compose fluid and solid models to calculate solid-liquid equilibria.
+
+A useful example is in the case of [Solid–liquid equilibrium](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/sle_slle.ipynb) calculations.
 
 ## Group-Contribution Models
 
@@ -470,5 +580,3 @@ julia> _,groups_ibuprofen = get_groups_from_smiles("CC(Cc1ccc(cc1)C(C(=O)O)C)C",
 
 julia> model = UNIFAC(["water" => ["H2O" => 1],"ibuprofen" => groups_ibuprofen])
 ```
-
-For more information about

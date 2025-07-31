@@ -8,25 +8,40 @@ end
 =#
 
 """
-    CompositeModel(components;
-    gas = BasicIdeal,
-    liquid = RackettLiquid,
-    saturation = LeeKeslerSat,
+
+function CompositeModel(components ;
+    mapping = nothing,
+    liquid = nothing,
+    gas = nothing,
+    fluid = nothing,
+    solid = nothing,
+    saturation = nothing,
+    melting = nothing,
+    sublimation = nothing,
     gas_userlocations = String[],
     liquid_userlocations = String[],
+    fluid_userlocations = String[],
+    solid_userlocations = String[],
     saturation_userlocations = String[],
-    mapping = nothing,
-    reference_state = nothing,
-    verbose = false)
+    melting_userlocations = String[],
+    sublimation_userlocations = String[],
+    verbose = false,
+    reference_state = nothing)
 
 Model that holds representations of fluid (and/or solid) that aren't evaluated using the Helmholtz energy-based approach used in the rest of the library.
 
-It contains a "fluid" and a "solid" field. there are three available representations for a fluid:
+It contains a fluid model, a solid model (optional), and a mapping between the solid and liquid components (if necessary). 
+
+There are three available representations for the fluid model:
+
 - A Helmholtz-based EoS.
 - Fluid Correlations, consisting in a gas model, a correlation for obtaining the saturation pressure, and a liquid model. Both gas and liquid models can optionally be Helmholtz models too, but correlations for saturated liquid and vapour are also allowed.
 - Activity models, consisting of a liquid activity and a model for the fluid. The fluid model can be a Helmholtz-based model, or another `CompositeModel` containing correlations.
-
 When the solid field is specified, some properties (like `volume`) start taking in account the solid phase in their calculations. Optionally, there are other models that provide specific correlations for SLE equilibria (like `SolidHfus`)
+
+The solid model is optional and does not impact VLE (and LLE) calculations. there are two available representations for the solid model
+- a Helmholtz-based EoS, can be used to calculate both melting/sublimation and solubilities.
+- Chemical Potential models, can be used for solubilities.
 
 ## Examples:
 - Saturation pressure calculated using Correlations:
