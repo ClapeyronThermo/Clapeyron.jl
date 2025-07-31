@@ -39,7 +39,7 @@ There are three available representations for the fluid model:
 - Activity models, consisting of a liquid activity and a model for the fluid. The fluid model can be a Helmholtz-based model, or another `CompositeModel` containing correlations.
 When the solid field is specified, some properties (like `volume`) start taking in account the solid phase in their calculations. Optionally, there are other models that provide specific correlations for SLE equilibria (like `SolidHfus`).
 
-The solid model is optional and does not impact VLE (and LLE) calculations. Rhere are two available representations for the solid model:
+The solid model is optional and does not impact VLE (and LLE) calculations. There are two available representations for the solid model:
 - a Helmholtz-based EoS, can be used to calculate both melting/sublimation and solubilities.
 - Chemical Potential models, can be used for solubilities.
 
