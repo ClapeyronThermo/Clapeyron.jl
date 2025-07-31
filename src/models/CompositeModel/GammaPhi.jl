@@ -1,7 +1,7 @@
 """
     GammaPhi{γ,Φ} <: RestrictedEquilibriaModel
 
-wrapper struct to signal that a `CompositeModel` uses an activity model in conjunction with a fluid.
+Wrapper struct to signal that a `CompositeModel` uses an activity model in conjunction with a fluid.
 """
 struct GammaPhi{γ,Φ} <: RestrictedEquilibriaModel
     components::Vector{String}

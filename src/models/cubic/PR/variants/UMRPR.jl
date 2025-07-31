@@ -11,7 +11,7 @@
     reference_state = nothing,
     verbose = false)
 
-Universal Mixing Rule Peng Robinson equation of state. it uses the following models:
+Universal Mixing Rule Peng Robinson equation of state. It uses the following models:
 - Translation Model: [`MTTranslation`](@ref)
 - Alpha Model: [`MTAlpha`](@ref)
 - Mixing Rule Model: [`UMRRule`](@ref) with [`UNIFAC`](@ref) activity

@@ -14,13 +14,12 @@ export BMAlpha
 
 ## Input Parameters
 
-
 - `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
 
-Boston Mathias Cubic alpha `(α(T))` model. Identical to a soave model when Tr <= 1, while having the correct behaviour at supercritical temperatures (via extrapolation at the critical point.)
-```
+Boston Mathias Cubic alpha `(α(T))` model. Identical to a Soave model when Tr <= 1, while having the correct behaviour at supercritical temperatures (via extrapolation at the critical point).
+```julia
 if Trᵢ > 1
     αᵢ = (exp((1-2/(2+mᵢ))*(1-Trᵢ^(1+mᵢ/2))))^2
 else

@@ -17,9 +17,9 @@ end
 
 ## Parameters
 
-- `Hfus`: Single Parameter (`Float64`) - Enthalpy of Fusion at 1 bar `[J/mol]`
+- `Hfus`: Single Parameter (`Float64`) - Enthalpy of Fusion at 1 bar `[J·mol⁻¹]`
 - `Tm`: Single Parameter (`Float64`) - Melting Temperature `[K]`
-- `CpSL`: Single Parameter (`Float64`) (optional) - Heat Capacity of the Solid-Liquid Phase Transition `[J/mol/K]`
+- `CpSL`: Single Parameter (`Float64`) (optional) - Heat Capacity of the Solid-Liquid Phase Transition `[J·mol⁻¹·K⁻¹]`
 
 ## Description
 

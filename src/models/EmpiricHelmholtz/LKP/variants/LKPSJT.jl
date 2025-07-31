@@ -50,10 +50,10 @@ end
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) (optional) - Critical Volume `[m^3]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Vc`: Single Parameter (`Float64`) (optional) - Critical Volume `[m³]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor (no units)
-- `k`: Pair Parameter (`Float64`) (optional) - binary interaction parameter (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 
 ## Input models
 - `idealmodel`: Ideal Model

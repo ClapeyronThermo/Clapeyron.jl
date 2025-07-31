@@ -37,7 +37,7 @@ end
 
 Creates a departure model for use in a `MultiFluid` model with `EmpiricDeparture`.
 
-If `data` is a `String` and starts with `{` or `[`, it will be recognized as JSON text. the text will be parsed as a file location otherwise. 
+If `data` is a `String` and starts with `{` or `[`, it will be recognized as JSON text. The text will be parsed as a file location otherwise. 
 You can pass a `Dict` or `NamedTuple` if you want to skip the JSON parsing.
 
 ## Examples

@@ -277,6 +277,7 @@ The functions for the physical properties that we currently support are as follo
   Cp = isobaric_heat_capacity(model, p, T, z)
   betaT = thermal_compressibility(model, p, T, z)
   betaS = isentropic_compressibility(model, p, T, z)
+  adiabatic_index = adiabatic_index(model, p, T, z)
   u = speed_of_sound(model, p, T, z)
   alphaV = isobaric_expansivity(model, p, T, z)
   muJT = joule_thomson_coefficient(model, p, T, z)

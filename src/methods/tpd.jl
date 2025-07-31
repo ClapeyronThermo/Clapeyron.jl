@@ -139,7 +139,7 @@ end
     wl,wv = tpd_solver(model,p,T,z,K0)
 
 given p,T,z,K0, tries to perform a tangent-phase stability criterion with the given K value.
-it tries both liquid and vapour phase. returns the resulting compositions `wl` and `wv`.
+It tries both liquid and vapour phase. Returns the resulting compositions `wl` and `wv`.
 """
 function tpd_solver(model,p,T,z,K0,
     fz = mixture_fugacity(model,p,T,z),

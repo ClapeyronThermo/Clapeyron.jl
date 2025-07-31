@@ -29,10 +29,10 @@ export UNIQUAC
 
 ## Input parameters
 - `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Energy Parameter
-- `r`: Single Parameter (`Float64`)  - Normalized Van der Vals volume
+- `r`: Single Parameter (`Float64`)  - Normalized Van der Waals volume
 - `q`: Single Parameter (`Float64`) - Normalized Surface Area
 - `q_p`: Single Parameter (`Float64`) - Modified Normalized Surface Area 
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 
 
 ## Input models

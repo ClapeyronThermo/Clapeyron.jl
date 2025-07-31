@@ -8,7 +8,7 @@ abstract type SaturationModel <: EoSModel end
 """
     SaturationCorrelation <: SaturationMethod
 
-saturation method used for dispatch on saturation correlations.
+Saturation method used for dispatch on saturation correlations.
 """
 struct SaturationCorrelation <: SaturationMethod end
 

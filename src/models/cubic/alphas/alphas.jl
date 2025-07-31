@@ -1,7 +1,7 @@
 """
     α_function(model::CubicModel,V,T,z,αmodel::AlphaModel)
 
-Interface function used in cubic models. it should return a vector of αᵢ(T).
+Interface function used in cubic models. It should return a vector of αᵢ(T).
 
 ## Example:
 

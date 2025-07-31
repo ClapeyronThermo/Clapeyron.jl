@@ -10,7 +10,7 @@
     reference_state = nothing,
     verbose = false)
 
-consistent Peng Robinson equation of state. it uses the following models:
+Consistent Peng Robinson equation of state. It uses the following models:
 - Translation Model: [`NoTranslation`](@ref)
 - Alpha Model: [`TwuAlpha`](@ref)
 - Mixing Rule Model: [`vdW1fRule`](@ref)

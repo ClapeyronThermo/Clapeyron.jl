@@ -17,9 +17,9 @@ end
 
 ## Parameters
 
-- `Hfus`: Single Parameter (`Float64`) - Enthalpy of Fusion at 1 bar `[J/mol]`
+- `Hfus`: Single Parameter (`Float64`) - Enthalpy of Fusion at 1 bar `[J·mol⁻¹]`
 - `Tm`: Single Parameter (`Float64`) - Melting Temperature `[K]`
-- `CpSL`: Single Parameter (`Float64`) - Heat Capacity of the Solid-Liquid Phase Transition `[J/mol/K]`
+- `CpSL`: Single Parameter (`Float64`) - Heat Capacity of the Solid-Liquid Phase Transition `[J·mol⁻¹·K⁻¹]`
 
 ## Description
 
@@ -50,7 +50,7 @@ export SolidKs
 """
     sle_solubility(model::CompositeModel, p, T, z; solute)
 
-Calculates the solubility of each component within a solution of the other components, at a given temperature and composition.
+Calculates the solubility of each component within a solution of the other components, at a given temperature `T` and composition `z`.
 Returns a matrix containing the composition of the SLE phase boundary for each component. If `solute` is specified, returns only the solubility of the specified component.
 
 Can only function when solid and fluid models are specified within a CompositeModel.

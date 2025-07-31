@@ -22,7 +22,7 @@ export tcPRWilsonRes
     reference_state = nothing)
 
 ## Input parameters
-- `g`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
+- `g`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Parameter
 - `v`: Single Parameter (optional) (`Float64`) - individual volumes.
 
 ## Input models

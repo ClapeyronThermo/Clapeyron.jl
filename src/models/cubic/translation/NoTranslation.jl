@@ -11,7 +11,7 @@ None
 
 ## Description
 
-Default volume translation model for cubic models. it performs no translation:
+Default volume translation model for cubic models. It performs no translation:
 
 ```
 V = V₀ + mixing_rule(cᵢ)

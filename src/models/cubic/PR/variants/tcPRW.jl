@@ -10,7 +10,7 @@
     reference_state = nothing,
     verbose = false)
 
-translated and consistent Peng Robinson equation of state,with an gE mixing rule. it uses the following models:
+Translated and consistent Peng Robinson equation of state, with an gE mixing rule. It uses the following models:
 - Translation Model: [`ConstantTranslation`](@ref)
 - Alpha Model: [`TwuAlpha`](@ref)
 - Mixing Rule Model: [`gErRule`](@ref)

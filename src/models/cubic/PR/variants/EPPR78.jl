@@ -56,7 +56,7 @@ HC=-C-
     translation_userlocations = String[],
     reference_state = nothing,
     verbose = false)
-Enhanced Predictive Peng Robinson equation of state. it uses the following models:
+Enhanced Predictive Peng Robinson equation of state. It uses the following models:
 - Translation Model: [`NoTranslation`](@ref)
 - Alpha Model: [`PR78Alpha`](@ref)
 - Mixing Rule Model: [`PPR78Rule`](@ref)

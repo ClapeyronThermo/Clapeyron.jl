@@ -15,7 +15,7 @@ end
 ## Input Models
 
 - `shape_model`: shape model
-- `shape_ref`:  shape reference. is the same type of EoS that `shape_model`
+- `shape_ref`:  shape reference. Is the same type of EoS that `shape_model`.
 - `model_ref`: Reference model
 
 ## Description

@@ -71,7 +71,7 @@ end
     real_roots3(pol::NTuple{4,T}) where {T<:Real}
 
 Given a cubic real polynom of the form `pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3`,
-return `(n, zl, zg)` where `n` is the number of real roots and:
+returns `(n, zl, zg)` where `n` is the number of real roots and:
 - if `n == 1`, `zl` and `zg` are equal to the only real root, the other two are complex.
 - if `n == 2`, `zl` is the single real root and `zg` is the double (degenerate) real root.
 - if `n == 3`, `zl` is the lowest real root and `zg` the greatest real root.
@@ -111,7 +111,7 @@ real_roots3(a,b,c,d) = real_roots3((a,b,c,d))
 """
     polyder(poly)
 
-returns the coefficients of the derivative of the polynomial.
+Returns the coefficients of the derivative of the polynomial.
 
 """
 function polyder(x::NTuple{N,T}) where {N,T}

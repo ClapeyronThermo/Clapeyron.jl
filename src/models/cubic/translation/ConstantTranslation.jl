@@ -13,7 +13,7 @@ end
     verbose::Bool=false)
 ## Input Parameters
 
-- `v_shift`: Single Parameter (`Float64`) - Volume shift `[m³/mol]`
+- `v_shift`: Single Parameter (`Float64`) - Volume shift `[m³·mol⁻¹]`
 
 ## Description
 Constant Translation model for cubics:

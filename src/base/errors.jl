@@ -18,7 +18,7 @@ end
 """
     binary_component_check(method,model)
 
-Checks if a model is a single component model, throws an error otherwise.
+Checks if a model is a binary component model, throws an error otherwise.
 """
 function binary_component_check(method,model)
     l = length(model)

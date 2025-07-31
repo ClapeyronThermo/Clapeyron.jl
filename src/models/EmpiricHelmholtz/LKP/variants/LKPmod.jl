@@ -11,16 +11,16 @@ abstract type LKPmodModel <: LKPModel end
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) (optional) - Critical Volume `[m^3]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Vc`: Single Parameter (`Float64`) (optional) - Critical Volume `[m³]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor (no units)
-- `k`: Pair Parameter (`Float64`) (optional) - binary interaction parameter (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 
 ## Input models
 - `idealmodel`: Ideal Model
 
 ## Description
-Lee-Kesler-Plöker equation of state. corresponding states using interpolation between a simple, spherical fluid (methane, `∅`)  and a reference fluid (n-octane, `ref`):
+Lee-Kesler-Plöker equation of state. Corresponding states using interpolation between a simple, spherical fluid (methane, `∅`)  and a reference fluid (n-octane, `ref`):
 
 Coefficients of the original EoS were modified in [2] guarantee a correct behaviour of the EoS in the liquid phase.
 ```
