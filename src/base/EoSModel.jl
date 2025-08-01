@@ -31,11 +31,11 @@ Returns the total Helmholtz free energy.
 - `T` Temperature, in `[K]`
 - `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
 # Outputs:
-- Total Helmholtz free energy, in `[J]`
-by default, it calls `R̄*T*∑(z)*(a_ideal(ideal_model,V,T,z) + a_res(model,V,T,z))` where `ideal_model == idealmodel(model)`, where `a_res` is the reduced residual Helmholtz energy and `a_ideal` is the reduced ideal Helmholtz energy.
+- Total Helmholtz free energy, in `[J]`.
+By default, it calls `R̄*T*∑(z)*(a_ideal(ideal_model,V,T,z) + a_res(model,V,T,z))` where `ideal_model == idealmodel(model)`, where `a_res` is the reduced residual Helmholtz energy and `a_ideal` is the reduced ideal Helmholtz energy.
 You can mix and match ideal models if you provide:
-- `[idealmodel](@ref)(model)`: extracts the ideal model from your Thermodynamic model
-- `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz free energy
+- `[idealmodel](@ref)(model)`: extracts the ideal model from your Thermodynamic model.
+- `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz free energy.
 """
 function eos(model::EoSModel, V, T, z::AbstractVector = SA[1.0])
     return eos_impl(model,V,T,z)
@@ -46,7 +46,7 @@ eos(model::EoSModel, V, T, z::Number) = eos(model, V, T, SA[z])
 """
     idealmodel(model::EoSModel)
 
-retrieves the ideal model from the input's model. if the model is already an idealmodel, return `nothing`
+Retrieves the ideal model from the input's model. If the model is already an idealmodel, return `nothing`
 # Examples:
 ```julia-repl
 julia> pr = PR(["water"],idealmodel = MonomerIdeal)
@@ -80,8 +80,8 @@ Returns the residual Helmholtz free energy.
 - `T` Temperature, in `[K]`
 - `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
 # Outputs:
-- Residual Helmholtz free energy, in `[J]`
-by default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where [`a_res`](@ref) is the reduced residual Helmholtz energy.
+- Residual Helmholtz free energy, in `[J]`.
+By default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where [`a_res`](@ref) is the reduced residual Helmholtz energy.
 """
 function eos_res(model::EoSModel, V, T, z=SA[1.0])
     return Rgas(model)*sum(z)*T*a_res(model,V,T,z)
@@ -97,7 +97,7 @@ Returns reduced residual Helmholtz free energy.
 - `T` Temperature, in `[K]`
 - `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
 # Outputs:
-- Residual Helmholtz free energy, no units
+- Residual Helmholtz free energy, no units.
 You can define your own EoS by adding a method to `a_res` that accepts your custom model.
 """
 function a_res end
@@ -118,7 +118,7 @@ Base.summary(model::EoSModel) = string(parameterless_type(model))
 """
     @comps
 
-This macro is an alias to `1:length(model)`
+This macro is an alias to `1:length(model)`.
 The caveat is that `model` has to exist in the local namespace.
 `model` is expected to any struct that has length defined in terms of the amount of components.
 """
@@ -131,7 +131,7 @@ end
 """
     R̄
 
-This macro is an alias to `Rgas(model)`
+This macro is an alias to `Rgas(model)`.
 The caveat is that `model` has to exist in the local namespace.
 """
 macro R̄()

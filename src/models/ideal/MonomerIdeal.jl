@@ -16,7 +16,7 @@ abstract type MonomerIdealModel <: IdealModel end
 
 ## Input parameters
 
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 
 ## Model Parameters
 

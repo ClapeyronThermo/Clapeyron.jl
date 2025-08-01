@@ -27,16 +27,16 @@ end
     verbose = false)
 
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `epsilon`: Single Parameter (`Float64`) - Nonbonded interaction energy per monomer `[J/mol]`
-- `vol`: Single Parameter (`Float64`) - Closed Packed Specific volume `[m^3/mol]`
+- `epsilon`: Single Parameter (`Float64`) - Nonbonded interaction energy per monomer `[J·mol⁻¹]`
+- `vol`: Single Parameter (`Float64`) - Closed Packed Specific volume `[m³·mol⁻¹]`
 
 ## Model Parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `epsilon`: Pair Parameter (`Float64`) - Nonbonded interaction energy per monomer `[J/mol]`
-- `vol`: Pair Parameter (`Float64`) - Closed Packed Specific volume `[m^3/mol]`
+- `epsilon`: Pair Parameter (`Float64`) - Nonbonded interaction energy per monomer `[J·mol⁻¹]`
+- `vol`: Pair Parameter (`Float64`) - Closed Packed Specific volume `[m³·mol⁻¹]`
 
 ## Input models
 - `idealmodel`: Ideal Model

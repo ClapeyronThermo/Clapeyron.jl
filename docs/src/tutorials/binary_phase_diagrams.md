@@ -343,6 +343,7 @@ If we just blindly plot the *pxy* (or *Txy*) diagram, we will see some unphysica
 One can see the presence of an unphysical crossover in the dew curve, as well as a maxima in the bubble curve.
 These are the tell-tale signs of the presence of VLLE at these conditions.
 Something similar also occurs in the *Txy* diagram:
+
 ![water_pentoh_Txy_wrong](../assets/water_pentoh_Txy_wrong.png)
 
 Once VLLE has been identified, to solve for its exact state, we can use the `VLLE_pressure(model, T)` / `VLLE_temperature(model, p)` functions.
@@ -648,6 +649,7 @@ Eventually, this curve becomes the UCST curve.
 However, there is a critical curve originating from the more volatile component
 However, this time, it terminates at the UCEP.
 We can repeat the same steps as above to obtain the UCEP:
+
 ![me_hept_pT](../assets/me_hept_pT.png)
 
 Especially in cases with very different volatilities, it will be very difficult to see the separation between the VLLE, critical and saturation curve as shown above.

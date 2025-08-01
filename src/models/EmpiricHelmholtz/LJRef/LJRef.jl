@@ -23,13 +23,13 @@ export LJRef
 ## Input parameters
 - `sigma`: Single Parameter (`Float64`) - particle size `[Å]`
 - `epsilon`: Single Parameter (`Float64`) - dispersion energy `[K]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `k`: Pair Parameter (`Float64`) (optional)
 - `sigma` mixing coefficient
 ## Model Parameters
 - `sigma`: Pair Parameter (`Float64`) - particle size `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - dispersion energy `[K]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 ## Description
 Lennard-Jones Reference equation of state. Valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
 ```
@@ -244,11 +244,11 @@ end
 
 - `sigma`: Single Parameter (`Float64`) - particle size `[Å]`
 - `epsilon`: Single Parameter (`Float64`) - dispersion energy `[K]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 
 ## Description
 
-Lennard-Jones Reference equation of state. Ideal Part. valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
+Lennard-Jones Reference equation of state. Ideal Part. Valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
 
 
 ```

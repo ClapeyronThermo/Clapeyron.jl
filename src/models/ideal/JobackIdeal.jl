@@ -65,7 +65,7 @@ export JobackIdeal
 
 ## Input parameters
 
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `N_a`: Single Parameter (`Float64`)
 - `T_c`: Single Parameter (`Float64`)
 - `P_c`: Single Parameter (`Float64`)
@@ -85,7 +85,7 @@ export JobackIdeal
 
 ## Description
  
-Joback Group Contribution Ideal Model. GC version of `ReidIdeal`. Helmholtz energy obtained via integration of specific heat capacity:
+Joback Group Contribution Ideal Model. GC version of `ReidIdeal`. Helmholtz free energy obtained via integration of specific heat capacity:
 
 ```
 aᵢ = ∑(νᵢₖbₖ) - 37.93

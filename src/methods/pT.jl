@@ -24,7 +24,7 @@ end
 """
     entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J K⁻¹]`
+Default units: `[J·K⁻¹]`
 
 Calculates entropy, defined as:
 
@@ -42,7 +42,7 @@ end
 """
     mass_entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/K/kg]`
+Default units: `[J·kg⁻¹·K⁻¹]`
 
 Calculates entropy, defined as:
 
@@ -62,7 +62,7 @@ end
 """
     entropy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J K⁻¹]`
+Default units: `[J·K⁻¹]`
 
 Calculates residual entropy, defined as:
 
@@ -80,7 +80,7 @@ end
 """
     chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J mol⁻¹]`
+Default units: `[J·mol⁻¹]`
 
 Calculates the chemical potential, defined as:
 
@@ -102,7 +102,7 @@ end
 """
     chemical_potential_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J mol⁻¹]`
+Default units: `[J·mol⁻¹]`
 
 Calculates the residual chemical potential, defined as:
 
@@ -138,7 +138,7 @@ end
 """
     mass_internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J kg⁻¹]`
+Default units: `[J·kg⁻¹]`
 
 Calculates the internal energy, defined as:
 
@@ -194,7 +194,7 @@ end
 """
     mass_enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/kg]`
+Default units: `[J·kg⁻¹]`
 
 Calculates the enthalpy, defined as:
 
@@ -252,7 +252,7 @@ end
     mass_gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     mass_gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J kg⁻¹]`
+Default units: `[J·kg⁻¹]`
 
 Calculates the Gibbs free energy, defined as:
 
@@ -311,7 +311,7 @@ end
     mass_helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     mass_helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/kg]`
+Default units: `[J·kg⁻¹]`
 
 Calculates the Helmholtz free energy, defined as:
 
@@ -356,7 +356,7 @@ const mass_gibbs_energy = mass_gibbs_free_energy
 """
     isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/K]`
+Default units: `[J·K⁻¹]`
 
 Calculates the isochoric heat capacity, defined as:
 
@@ -378,7 +378,7 @@ end
 """
     mass_isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/K/kg]`
+Default units: `[J·kg⁻¹·K⁻¹]`
 
 Calculates the isochoric heat capacity, defined as:
 
@@ -401,7 +401,7 @@ end
 """
     isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/K]`
+Default units: `[J·K⁻¹]`
 
 Calculates the isobaric heat capacity, defined as:
 
@@ -424,7 +424,7 @@ end
 """
     mass_isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[J/K/kg]`
+Default units: `[J·kg⁻¹·K⁻¹]`
 
 Calculates the isobaric heat capacity, defined as:
 
@@ -511,7 +511,7 @@ end
 """
     speed_of_sound(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[m s⁻¹]`
+Default units: `[m·s⁻¹]`
 
 Calculates the speed of sound, defined as:
 
@@ -555,7 +555,7 @@ end
 """
     joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[K Pa⁻¹]`
+Default units: `[K·Pa⁻¹]`
 
 Calculates the Joule–Thomson coefficient, defined as:
 
@@ -819,7 +819,7 @@ end
 """
     molar_density(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
-Default units: `[mol m⁻³]`
+Default units: `[mol·m⁻³]`
 
 Calculates the molar density, defined as:
 
@@ -839,7 +839,7 @@ end
 """
     mass_density(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true)
 
-Default units: `[kg m⁻³]`
+Default units: `[kg·m⁻³]`
 
 Calculates the mass density, defined as:
 

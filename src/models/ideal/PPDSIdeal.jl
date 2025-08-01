@@ -30,7 +30,7 @@ export PPDSIdeal
 - `E`: Single Parameter (`Float64`) - Model Coefficient
 - `F`: Single Parameter (`Float64`) - Model Coefficient
 - `G`: Single Parameter (`Float64`) - Model Coefficient
-- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
 
 ## Description
 

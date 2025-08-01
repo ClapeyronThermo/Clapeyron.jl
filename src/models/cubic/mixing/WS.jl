@@ -41,7 +41,7 @@ for Peng-Robinson:
     λ = 1/(2√(2))log((2+√(2))/(2-√(2))) (0.6232252401402305)
 ```
 
-`λ` is a coefficient indicating the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. see [1] for more information. it can be customized by defining `WS_λ(::WSRuleModel,::CubicModel)`
+`λ` is a coefficient indicating the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. See [1] for more information. It can be customized by defining `WS_λ(::WSRuleModel,::CubicModel)`.
 
 ## Model Construction Examples
 ```
