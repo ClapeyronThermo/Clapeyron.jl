@@ -4,7 +4,7 @@
 Calculates the eutectic point of a binary mixture (at a given pressure).
 Returns a tuple containing the eutectic temperature and the composition at the eutectic point.
 
-Can only function when solid and liquid models are specified within a CompositeModel.
+Can only function when solid and liquid models are specified within a `CompositeModel`.
 """
 function eutectic_point(model::CompositeModel,p=1e5)
     p = p*one(eltype(model))
