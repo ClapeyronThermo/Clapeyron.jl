@@ -98,15 +98,15 @@ end
     verbose = false)
 
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
-- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
 
 ## Model Parameters
-- `Mw`: Pair Parameter (`Float64`) - Mixed Molecular Weight `[g/mol]`
+- `Mw`: Pair Parameter (`Float64`) - Mixed Molecular Weight `[g·mol⁻¹]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)

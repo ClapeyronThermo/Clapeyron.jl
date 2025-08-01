@@ -42,7 +42,7 @@ export HANNA
 
 ## Input parameters
 - `canonicalsmiles`: canonical SMILES (using RDKit) representation of the components
-- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
 
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties

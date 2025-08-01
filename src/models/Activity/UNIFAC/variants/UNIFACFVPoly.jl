@@ -65,7 +65,7 @@ export UNIFACFVPoly
 ## Input parameters
 - `volume`: Single Parameter (`Float64`)  - specific volume of species `[g/cm^3]`
 - `c` Single Parameter  (`Float64`)  - number of external degrees of freedom per solvent molecule
-- `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
+- `R`: Single Parameter (`Float64`)  - Normalized group Van der Waals volume
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
 - `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
 - `Mw`: Single Parameter (`Float64`) - Molecular weight of groups

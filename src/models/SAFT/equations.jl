@@ -15,7 +15,7 @@ end
 """
     ck_diameter(model, T, z, k1 = 0.12, k2 = 3.0)
 
-Chen and Kregleswski efective diameter.
+Chen and Kregleswski effective diameter.
 ```
 dᵢ = σᵢ*(1 - k1*exp(-k2ᵢ/ T))
 ```

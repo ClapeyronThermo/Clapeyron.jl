@@ -177,7 +177,7 @@ This includes:
 * **Mixing rules**, which can improve the predicted phase behaviour.
   These come in two flavours:
 
-  * Generic one-fluid mixing rules such as the van der Waals one-fluid mixing rule (the default in all cubics):
+  * Generic one-fluid mixing rules such as the Van der Waals one-fluid mixing rule (the default in all cubics):
 
     ```julia
     julia> model = PR(["methanol","benzene"])

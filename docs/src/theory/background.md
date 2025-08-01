@@ -72,7 +72,7 @@ Note that the reference states, $\rho_0$, $H_{0,i}$ and $S_{0,i}$, can typically
 ### Cubic equations of state
 
 This is the mostpopular class of equations of state.
-The progenitor of these is the van der Waals (`vdW`) equation of state, published in 1873, which can be written as:
+The progenitor of these is the Van der Waals (`vdW`) equation of state, published in 1873, which can be written as:
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2a}{V^2}``
 
@@ -84,7 +84,7 @@ In principle, therefore, one could obtain values of $a$ and $b$ for a particular
 However, since $a$ and $b$ can be related to the critical temperature and pressure of the vdW fluid, to relate the equation of state to a particular species, it is conventional to use the critical temperature and pressure of the species to obtain working values of the parameters.
 
 Unfortunately, although its simple functional form makes calculations quite straightforward, the vdW equation is inadequate for quantitative modelling, particularly for volumetric properties, and is most useful only for providing a qualitative description of the thermodynamic properties of the fluid.
-As a result, many other engineering cubic equations have been developed, retaining (as far as possible) the simple mathematical form of van der Waals' equation.
+As a result, many other engineering cubic equations have been developed, retaining (as far as possible) the simple mathematical form of Van der Waals' equation.
 The first noteworthy one of these is the Redlich–Kwong (`RK`) equation:
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2a}{\sqrt{T}V(V+Nb)}``
@@ -120,13 +120,13 @@ Like the ideal gas equation, there will be missing temperature and compositional
 
 One may wonder how to model mixtures using such equations.
 This can be achieved using *mixing rules*, in conjunction with *combining rules*.
-Although there are many variants, one of the more popular mixing rules is the van der Waals one-fluid mixing rule: the mixture is treated as a hypothetical pure fluid, characterised by parameters $\bar{a}$ and $\bar{b}$ that are given by
+Although there are many variants, one of the more popular mixing rules is the Van der Waals one-fluid mixing rule: the mixture is treated as a hypothetical pure fluid, characterised by parameters $\bar{a}$ and $\bar{b}$ that are given by
 
 ``\bar{a}=\sum_i\sum_jx_ix_ja_{ij}``
 
 ``\bar{b}=\sum_i\sum_jx_ix_jb_{ij}``
 
-When $i=j$, $a$ and $b$ are just the normal van der Waals parameters for the pure.
+When $i=j$, $a$ and $b$ are just the normal Van der Waals parameters for the pure.
 However, when $i\neq j$, these parameter characterise the unlike interactions between $i$ and $j$.
 We typically need to use *combining rules* (not to be confused with *mixing rules*) to determine the unlike parameters.
 Examples of these include:
@@ -142,13 +142,13 @@ More complicated mixing rules (such as the Wong–Sandler mixing rule) are avail
 
 ### SAFT equations of state
 
-In comparison to the cubic equations of state, equations based on the Statistical Associating Fluid Theory (SAFT) are based on a more theoretical approach, although still can be considered as descendants of van der Waals' equation.
-As mentioned earlier, the van der Waals equation can be derived from statistical mechanics, whereby the Helmholtz free energy of the van der Waals fluid is obtained as
+In comparison to the cubic equations of state, equations based on the Statistical Associating Fluid Theory (SAFT) are based on a more theoretical approach, although still can be considered as descendants of Van der Waals' equation.
+As mentioned earlier, the Van der Waals equation can be derived from statistical mechanics, whereby the Helmholtz free energy of the Van der Waals fluid is obtained as
 
 ``\frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}``;
 
 here the ideal and hard-sphere (HS) terms combine to give the repulsive term (of the pressure form of the equation) whilst the $A_1$ term results in the attractive term.
-We can see from this that, using the van der Waals equation, species are effectively modelled as hard spheres with dispersive interactions (we sometimes call these London dispersion interactions).
+We can see from this that, using the Van der Waals equation, species are effectively modelled as hard spheres with dispersive interactions (we sometimes call these London dispersion interactions).
 The latter two terms can be merged into what is referred to as the monomer or segment term.
 
 Whilst, as already noted, this is clearly a step up from the ideal gas, most species can't be modelled effectively as single spheres; they may be highly non-spherical in shape (as is usually the case with large molecules), or they may experience interactions that are more complex than simple dispersion.

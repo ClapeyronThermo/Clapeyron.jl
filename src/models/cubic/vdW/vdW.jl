@@ -53,7 +53,7 @@ export vdW
 
 ## Description
 
-van der Waals Equation of state.
+Van der Waals Equation of state.
 
 ```
 P = RT/(V-Nb) + a•α(T)/V²
@@ -93,7 +93,7 @@ model = vdW(["neon","hydrogen"];
 
 ## References
 
-1. van der Waals JD. Over de Continuiteit van den Gasen Vloeistoftoestand. PhD thesis, University of Leiden; 1873
+1. Van der Waals JD. Over de Continuiteit van den Gasen Vloeistoftoestand. PhD thesis, University of Leiden; 1873
 
 """
 vdW

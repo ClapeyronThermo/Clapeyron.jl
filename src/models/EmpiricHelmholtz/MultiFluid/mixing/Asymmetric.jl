@@ -15,10 +15,10 @@ end
     verbose = false)
 
 ## Input parameters
-- `beta_v`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)
-- `gamma_v`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)
-- `beta_T`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)
-- `gamma_T`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)
+- `beta_v`: Pair Parameter (`Float64`) - Binary Interaction Parameter  (no units)
+- `gamma_v`: Pair Parameter (`Float64`) - Binary Interaction Parameter  (no units)
+- `beta_T`: Pair Parameter (`Float64`) - Binary Interaction Parameter  (no units)
+- `gamma_T`: Pair Parameter (`Float64`) - Binary Interaction Parameter  (no units)
 
 ## Description
 Asymmetric mixing rule for MultiParameter EoS models:

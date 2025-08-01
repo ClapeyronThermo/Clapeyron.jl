@@ -24,7 +24,7 @@ export UNIFAC2
     reference_state = nothing)
 
 ## Input parameters
-- `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
+- `R`: Single Parameter (`Float64`)  - Normalized group Van der Waals volume
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
 - `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
 - `B`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter

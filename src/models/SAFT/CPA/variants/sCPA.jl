@@ -20,22 +20,22 @@
         assoc_options = AssocOptions())
 
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `a`: Single Parameter (`Float64`) - Atraction parameter `[m^6*Pa/mol]`
-- `b`: Single Parameter (`Float64`) - Covolume `[m^3/mol]`
+- `a`: Single Parameter (`Float64`) - Atraction parameter `[m⁶·Pa·mol⁻¹]`
+- `b`: Single Parameter (`Float64`) - Covolume `[m³·mol⁻¹]`
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 
 ## Model Parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter `[m^6*Pa/mol]`
-- `b`: Pair Parameter (`Float64`) - Mixed Covolume `[m^3/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+- `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter `[m⁶·Pa·mol⁻¹]`
+- `b`: Pair Parameter (`Float64`) - Mixed Covolume `[m³·mol⁻¹]`
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[J]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 
 ## Input models
 - `idealmodel`: Ideal Model

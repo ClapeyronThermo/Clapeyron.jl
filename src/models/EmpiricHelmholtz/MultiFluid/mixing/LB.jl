@@ -5,8 +5,8 @@
     verbose = false)
 
 ## Input parameters
-- `k`: Pair Parameter (`Float64`) - binary interaction parameter for temperature  (no units)
-- `l`: Pair Parameter (`Float64`) - binary interaction parameter for volume (no units)
+- `k`: Pair Parameter (`Float64`) - Binary Interaction Parameter for temperature  (no units)
+- `l`: Pair Parameter (`Float64`) - Binary Interaction Parameter for volume (no units)
 
 ## Description
 Lorentz-Berthelot Mixing for MultiParameter EoS models:
