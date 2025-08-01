@@ -32,7 +32,7 @@ If the result of the phase equilibria is not stable, then it proceeds to add/rem
 - `K_tol = sqrt(eps(Float64))`, tolerance to stop the calculation (`norm(lnK,1) < K_tol`)
 - `ss_iters = 4`, number of Successive Substitution iterations to perform
 - `nacc = 3`, accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
-- `second_order = true`, whether to solve the gibbs energy minimization using the analytical hessian or not. If set to `false`, the gibbs minimization will be done using L-BFGS.
+- `second_order = true`, whether to solve the Gibbs free energy minimization using the analytical hessian or not. If set to `false`, the gibbs minimization will be done using L-BFGS.
 - `full_tpd` = false, whether to start with a simple K-split or using an intensive TPD search first.
 - `max_phases = typemax(Int)`, the algorithm stops if there are more than `min(max_phases,nc)` phases
 - `phase_iters = 20`, the maximum number of solve-add/remove-phase iterations
@@ -928,7 +928,7 @@ function _remove_phases!(model,p,T,z,result,cache,options)
         gi = eos(model,vi,T,wi) + vi*p
         gmix = eos(model,vmix,T,wmix) + vmix*p
         Δg = βsum*gmix - βi*gi - βmin*gmin
-        if Δg < 0 #the mixed phase has a lower gibbs energy than the sum of its parts. remove minimum fraction phase.
+        if Δg < 0 #the mixed phase has a lower Gibbs free energy than the sum of its parts. remove minimum fraction phase.
             δn_remove = true
             comps[i] = wmix
             β[i] = βsum

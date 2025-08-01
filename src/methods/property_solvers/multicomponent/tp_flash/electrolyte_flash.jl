@@ -122,7 +122,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
             K̄_dem .= K_dem .* exp.(Z .* ψ_dem)
             x_dem,y_dem = update_rr!(K̄_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
             lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,z,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
-            #add effect of electroneutrality condition on gibbs energy
+            #add effect of electroneutrality condition on Gibbs free energy
             gibbs_dem += β_dem*ψ_dem*dot(x_dem,Z)
             # only accelerate if the gibbs free energy is reduced
             if gibbs_dem < gibbs
@@ -265,7 +265,7 @@ function dgibbs_obj!(model::ElectrolyteModel, p, T, z, phasex, phasey,
     volx,voly = vcache[]
     all_equilibria = all(in_equilibria)
     if H !== nothing
-        # Computing Gibbs Energy Hessian
+        # Computing Gibbs free energy Hessian
         lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x; phase=phasex, vol0=volx)
         lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y; phase=phasey, vol0=voly)
 
@@ -298,14 +298,14 @@ function dgibbs_obj!(model::ElectrolyteModel, p, T, z, phasex, phasey,
     ϕx = log.(x) .+ lnϕx #log(xi*ϕxi)
     ϕy = log.(y) .+ lnϕy #log(yi*ϕyi)
 
-    # to avoid NaN in Gibbs energy
+    # to avoid NaN in Gibbs free energy
     for i in eachindex(z)
         non_iny[i] && (ϕy[i] = 0.)
         non_inx[i] && (ϕx[i] = 0.)
     end
 
     if G !== nothing
-        # Computing Gibbs Energy gradient
+        # Computing Gibbs free energy gradient
         i0 = 0
         for i in eachindex(in_equilibria)
             if in_equilibria[i]
@@ -317,7 +317,7 @@ function dgibbs_obj!(model::ElectrolyteModel, p, T, z, phasex, phasey,
     end
 
     if F !== nothing
-        # Computing Gibbs Energy
+        # Computing Gibbs free energy
         FO = dot(ny,ϕy) + dot(nx,ϕx) + ψ*dot(nx,Z)
         return FO
     end

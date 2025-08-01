@@ -38,7 +38,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     volx,voly = vcache[]
     all_equilibria = all(in_equilibria)
     if H !== nothing
-        # Computing Gibbs Energy Hessian
+        # Computing Gibbs free energy Hessian
         lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x; phase=phasex, vol0=volx)
         lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y; phase=phasey, vol0=voly)
 
@@ -71,14 +71,14 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     ϕx = log.(x) .+ lnϕx #log(xi*ϕxi)
     ϕy = log.(y) .+ lnϕy #log(yi*ϕyi)
 
-    # to avoid NaN in Gibbs energy
+    # to avoid NaN in Gibbs free energy
     for i in eachindex(z)
         non_iny[i] && (ϕy[i] = 0.)
         non_inx[i] && (ϕx[i] = 0.)
     end
 
     if G !== nothing
-        # Computing Gibbs Energy gradient
+        # Computing Gibbs free energy gradient
         i0 = 0
         for i in eachindex(in_equilibria)
             if in_equilibria[i]
@@ -89,7 +89,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     end
 
     if F !== nothing
-        # Computing Gibbs Energy
+        # Computing Gibbs free energy
         FO = dot(ny,ϕy) + dot(nx,ϕx)
         return FO
     end

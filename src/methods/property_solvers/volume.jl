@@ -438,7 +438,7 @@ end
 used by MultiComponentFlash.jl extension
 =#
 function _label_and_volumes(model::EoSModel,cond)
-    #gibbs comparison, the phase with the least amount of gibbs energy is the most stable.
+    #gibbs comparison, the phase with the least amount of Gibbs free energy is the most stable.
     p,T,z = cond.p,cond.T,cond.z
     _0 = zero(Base.promote_eltype(model,p,T,z))
     _1 = one(_0)
