@@ -935,7 +935,7 @@ T_scales(model,z) = T_scales(model)
 """
     solve_2ph_taylor(v10,v20,a1,da1,d2a1,a2,da2,d2a2,p_scale = 1.0,μ_scale = 1.0)
 
-Solves the 2-phase problem with 1 component, using a 2nd order taylor approx in Helmholtz free energy and a isothermal compressibility factor approximation for pressure.
+Solves the 2-phase problem with 1 component, using a 2nd order taylor approx in Helmholtz energy and a isothermal compressibility factor approximation for pressure.
 """
 function solve_2ph_taylor(v10,v20,a1,da1,d2a1,a2,da2,d2a2,p_scale = 1.0,μ_scale = 1.0)
     function F0(x)

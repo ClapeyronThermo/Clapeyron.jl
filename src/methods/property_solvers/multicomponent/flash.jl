@@ -8,8 +8,8 @@
     FlashResult(flash::FlashResult,g = nothing;sort = true)
 
 Structure used to contain the result of a flash.
-Contains a list of molar compositions, a list of molar amounts per phase, a list of molar volumes and an auxiliary struct, `FlashData`, containing the pressure, temperature and reduced Gibbs free energy.
-when an `EoSModel` is used as an input for a `FlashResult`, the reduced molar Gibbs free energy (g = g/NRT) is calculated, if not provided.
+Contains a list of molar compositions, a list of molar amounts per phase, a list of molar volumes and an auxiliary struct, `FlashData`, containing the pressure, temperature and reduced Gibbs energy.
+when an `EoSModel` is used as an input for a `FlashResult`, the reduced molar Gibbs energy (g = g/NRT) is calculated, if not provided.
 By default, the phases are sorted by volume, this can be changed by passing the keyword argument `sort = false`
 `FlashResult(model,p,T,z;phase)` constructs a single phase `FlashResult`.
 If the bulk composition `z` is provided, it will be used to scale the fractions, forcing `sum(fractions) == sum(z)`
@@ -24,7 +24,7 @@ end
 """
     FlashData
 
-Auxiliary struct that contains information about the current `FlashResult` object. It stores the pressure, temperature and reduced Gibbs free energy (`g = G/nRT`)
+Auxiliary struct that contains information about the current `FlashResult` object. It stores the pressure, temperature and reduced Gibbs energy (`g = G/nRT`)
 """
 struct FlashData{R}
     p::R
@@ -60,7 +60,7 @@ function FlashResult(model::EoSModel,p,T,z::Union{Number,AbstractVector{<:Number
     return FlashResult(model,p,T,comps,_β,volumes,g;sort)
 end
 
-#constructor that fills the Gibbs free energy automatically
+#constructor that fills the Gibbs energy automatically
 function FlashResult(model::EoSModel,p,T,comps,β,volumes,g = nothing;sort = true)
     if g == nothing
         flash = FlashResult(p,T,comps,β,volumes,sort = false)

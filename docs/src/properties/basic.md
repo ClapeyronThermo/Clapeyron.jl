@@ -16,7 +16,7 @@ Pages = ["basic.md"]
 
 ## Primitive functions
 
-Almost all models in Clapeyron based on Helmholtz free energy have at least one of the following functions defined:
+Almost all models in Clapeyron based on Helmholtz energy have at least one of the following functions defined:
 
 ```@docs
 Clapeyron.eos

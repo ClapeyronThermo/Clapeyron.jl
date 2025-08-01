@@ -23,7 +23,7 @@ end
 A Extended Corresponding states method.
 
 The idea is to use a "shape model" that provides a corresponding states parameters
-and a "reference model" that implements a Helmholtz free energy function, so that:
+and a "reference model" that implements a Helmholtz energy function, so that:
 
 ```
 eos(shape_model,v,T,x)/RT = eos(model_ref,v₀,T₀)/RT₀

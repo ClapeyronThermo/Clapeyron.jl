@@ -8,7 +8,7 @@ Returns the pressure of the model at a given volume `V`, temperature `T` and com
 ```julia
 p = -∂A/∂V
 ```
-where A is the Helmholtz free energy `[J]`,
+where A is the Helmholtz energy `[J]`,
 V is the volume `[m³]`
 """
 function pressure(model::EoSModel, V, T, z=SA[1.])
@@ -258,7 +258,7 @@ Calculates the second virial coefficient `B`, defined as:
 ```julia
 B = lim(ρ->0)[∂Aᵣ/∂ρ]
 ```
-where `Aᵣ` is the residual Helmholtz free energy.
+where `Aᵣ` is the residual Helmholtz energy.
 """
 function second_virial_coefficient(model::EoSModel, T, z=SA[1.])
    return second_virial_coefficient_impl(model,T,z)

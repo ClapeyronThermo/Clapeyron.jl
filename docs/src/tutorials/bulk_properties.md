@@ -19,7 +19,7 @@ julia> volume(model,1e5,298.15)
 1.9539250955201878e-5
 ```
 
-And that's it! However, technically, water has two volume roots at these conditions; unless the phase is specified, Clapeyron will pick the phase with the lowest Gibbs free energy.
+And that's it! However, technically, water has two volume roots at these conditions; unless the phase is specified, Clapeyron will pick the phase with the lowest Gibbs energy.
 You can force the solvers to pick the vapour root by:
 
 ```julia

@@ -28,7 +28,7 @@ function CompositeModel(components ;
     verbose = false,
     reference_state = nothing)
 
-Model that holds representations of fluid (and/or solid) that aren't evaluated using the Helmholtz free energy-based approach used in the rest of the library.
+Model that holds representations of fluid (and/or solid) that aren't evaluated using the Helmholtz energy-based approach used in the rest of the library.
 
 It contains a fluid model, a solid model (optional), and a mapping between the solid and liquid components (if necessary). 
 
@@ -316,7 +316,7 @@ function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
             return nan
         end
     else #phase = :unknown
-        #there is a Helmholtz free energy model in fluid and solid phases.
+        #there is a Helmholtz energy model in fluid and solid phases.
         #this requires checking evaluating all volumes and checking
         #what value is the correct one via Gibbs energies.
         if !(model.fluid isa GammaPhi) && !(model.fluid isa FluidCorrelation) && !(model.solid isa SolidCorrelation)

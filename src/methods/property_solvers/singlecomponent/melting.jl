@@ -81,7 +81,7 @@ function x0_melting_pressure(model::CompositeModel,T)
     vl00 = x0_volume(liquid,p,T,z,phase = :l)
     #=
     strategy:
-    quadratic taylor expansion for Helmholtz free energy
+    quadratic taylor expansion for Helmholtz energy
     isothermal compressibility approximation for pressure
    =#
     ps,μs = equilibria_scale(liquid)

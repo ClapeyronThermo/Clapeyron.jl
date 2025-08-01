@@ -12,7 +12,7 @@ included in https://github.com/ClapeyronThermo/Clapeyron.jl/pull/56
     logspace = false,
     equilibrium = :auto)
 
-Method to solve non-reactive multicomponent flash problem by finding global minimum of Gibbs Free Energy via Differential Evolution.
+Method to solve non-reactive multicomponent flash problem by finding global minimum of Gibbs energy via Differential Evolution.
 
 User must assume a number of phases, `numphases`. If true number of phases is smaller than numphases, model should predict either (a) identical composition in two or more phases, or (b) one phase with negligible total number of moles. If true number of phases is larger than numphases, a thermodynamically unstable solution will be predicted.
 
@@ -64,7 +64,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     logspace = method.logspace
     volumes = zeros(TYPE,numphases)
     GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,volumes,logspace,method.equilibrium)
-    #Minimize Gibbs Free Energy
+    #Minimize Gibbs energy
 
     #=
     options = Metaheuristics.Options(time_limit = method.time_limit,iterations = method.max_steps,seed = UInt(373))
@@ -109,7 +109,7 @@ end
 """
     Obj_de_tp_flash(model,p,T,z,dividers,numphases,vcache,logspace = false)
 
-Function to calculate Gibbs Free Energy for given partition of moles between phases.
+Function to calculate Gibbs energy for given partition of moles between phases.
 This is a little tricky.
 
 We must find a way of uniquely converting a vector of numbers,
@@ -144,7 +144,7 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     #nvals = zeros(TYPE,numphases, numspecies)
     #Calculate partition of species into phases
     partition!(dividers,n,x,nvals)
-    #Calculate Overall Gibbs Free Energy (J)
+    #Calculate Overall Gibbs energy (J)
     #If any errors are encountered, return a big number, ensuring point is discarded
     #by DE Algorithm
     G = _0

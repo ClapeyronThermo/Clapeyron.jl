@@ -7,7 +7,7 @@ CurrentModule = Clapeyron
 Within `Clapeyron`, we provide a few methods which we use to obtain thermodynamic properties (you can find out more details on how we implement these methods in our background information):
 
 - `[volume(model, p, T, z)](@ref Clapeyron.volume)`: Obtains the volume of a system at a given temperature, pressure and composition.
-  If the phase is unknown, it will find the vapour and liquid roots and return the one that minimises the Gibbs free energy.
+  If the phase is unknown, it will find the vapour and liquid roots and return the one that minimises the Gibbs energy.
   This function is called by all of our bulk property methods.
 - `[saturation_pressure(model, T)](@ref Clapeyron.saturation_pressure)`: Obtains the saturation pressures and volumes for a pure species.
 - `[crit_pure(model)](@ref Clapeyron.crit_pure)`: Obtains the critical point for a pure species.

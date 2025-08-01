@@ -85,7 +85,7 @@ export JobackIdeal
 
 ## Description
  
-Joback Group Contribution Ideal Model. GC version of `ReidIdeal`. Helmholtz free energy obtained via integration of specific heat capacity:
+Joback Group Contribution Ideal Model. GC version of `ReidIdeal`. Helmholtz energy obtained via integration of specific heat capacity:
 
 ```
 aᵢ = ∑(νᵢₖbₖ) - 37.93

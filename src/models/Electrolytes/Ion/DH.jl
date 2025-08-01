@@ -18,7 +18,7 @@ end
 - `RSPmodel`: Relative Static Permittivity Model
 
 ## Description
-This function is used to create a Debye-Hückel model. The Debye-Hückel term gives the excess Helmholtz free energy to account for the electrostatic interactions between ions in solution.
+This function is used to create a Debye-Hückel model. The Debye-Hückel term gives the excess Helmholtz energy to account for the electrostatic interactions between ions in solution.
 
 ## References
 1. Debye, P., Huckel, E. (1923). Phys. Z. 24, 185.

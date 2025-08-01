@@ -241,11 +241,11 @@ end
 
 Calculates the volume `(m³)` of the compound modelled by `model` at a certain pressure `p`, temperature `T` and moles `z`.
 `phase` is a Symbol that determines the initial volume root to look for:
-- If `phase =:unknown` (Default), it will return the physically correct volume root with the least gibbs free energy.
+- If `phase =:unknown` (Default), it will return the physically correct volume root with the least Gibbs energy.
 - If `phase =:liquid`, it will return the volume of the phase using a liquid initial point.
 - If `phase =:vapor`, it will return the volume of the phase using a gas initial point.
 - If `phase =:solid`, it will return the volume of the phase using a solid initial point (only supported for EoS that support a solid phase)
-- If `phase =:stable`, it will return the physically correct volume root with the least gibbs free energy, and perform a stability test on the result.
+- If `phase =:stable`, it will return the physically correct volume root with the least Gibbs energy, and perform a stability test on the result.
 
 All volume calculations are checked for mechanical stability, that is: `dP/dV <= 0`.
 
@@ -438,7 +438,7 @@ end
 used by MultiComponentFlash.jl extension
 =#
 function _label_and_volumes(model::EoSModel,cond)
-    #gibbs comparison, the phase with the least amount of Gibbs free energy is the most stable.
+    #gibbs comparison, the phase with the least amount of Gibbs energy is the most stable.
     p,T,z = cond.p,cond.T,cond.z
     _0 = zero(Base.promote_eltype(model,p,T,z))
     _1 = one(_0)

@@ -33,7 +33,7 @@ Furthermore, another similar property users might be interested is excess functi
 
 where we are now interested in deviations of mixing functions from ideal mixing functions.
 This is only really relevant in the case of excess Gibbs free energies or excess entropies as, for most other properties, the excess function is identical to the mixing function.
-The process to obtain these functions is identical to the `mixing` function mentioned previously where we now have an `excess(model, p, T, n, property)` function, as demonstrated below for the excess Gibbs free energy (also in the case of water and ethanol):
+The process to obtain these functions is identical to the `mixing` function mentioned previously where we now have an `excess(model, p, T, n, property)` function, as demonstrated below for the excess Gibbs energy (also in the case of water and ethanol):
 
 ```julia
 julia> excess(model, 1e5, 298.15, [0.5,0.5], gibbs_free_energy)

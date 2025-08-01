@@ -14,7 +14,7 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via t
 - `K_tol`: tolerance to stop the calculation.
 - `ss_iters`: number of Successive Substitution iterations to perform.
 - `nacc`: accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
-- `second_order`: whether to solve the Gibbs free energy minimization using the analytical hessian or not.
+- `second_order`: whether to solve the Gibbs energy minimization using the analytical hessian or not.
 - `noncondensables`: arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase.
 - `nonvolatiles`: arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase.
 - `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
@@ -281,7 +281,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             β_dem = rachfordrice(K_dem, z; β0=β, non_inx=non_inx, non_iny=non_iny)
             x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
             lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,z,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
-            # only accelerate if the gibbs free energy is reduced
+            # only accelerate if the Gibbs energy is reduced
             if gibbs_dem < gibbs
                 lnK .= lnK_dem
                 volx = _1 * volx_dem
@@ -297,7 +297,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
     end
-    # Stage 2: Minimization of Gibbs Free Energy
+    # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
         nx = zeros(nc)
         ny = zeros(nc)

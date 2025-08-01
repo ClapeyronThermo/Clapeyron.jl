@@ -294,7 +294,7 @@ The functions for the physical properties that we currently support are as follo
     V = volume(model, p, T, z; phase=:liquid)
     ```
 
-    The default value is `:unknown` where it will find both the vapour and liquid roots first and determine which has the lowest Gibbs free energy.
+    The default value is `:unknown` where it will find both the vapour and liquid roots first and determine which has the lowest Gibbs energy.
 
   - `threaded`: This determines whether or not to run the vapour and liquid calculations in parallel or not and is only relevant for when the phases are unknown and non-cubic models.
 
