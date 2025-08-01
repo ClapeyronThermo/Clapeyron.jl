@@ -12,8 +12,8 @@ end
     verbose = false)
 
 ## Input parameters
-- `k0`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)
-- `k1`: Pair Parameter (`Float64`) - binary, T-dependent interaction parameter `[K^-1]`
+- `k0`: Pair Parameter (`Float64`) - Binary Interaction Parameter  (no units)
+- `k1`: Pair Parameter (`Float64`) - Binary, T-dependent, Interaction Parameter `[K⁻¹]`
 
 ## Description
 

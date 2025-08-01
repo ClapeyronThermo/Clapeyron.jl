@@ -15,12 +15,12 @@ end
 ## Input parameters
 
 - `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
+- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
 - `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor
 
 ## Description
 
-COSTALD Equation of State for saturated liquids. it is independent of the pressure.
+COSTALD Equation of State for saturated liquids. It is independent of the pressure.
 
 ## Model Construction Examples
 ```julia

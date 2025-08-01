@@ -1,7 +1,7 @@
 """
     isstable(model,p,T,z)::Bool
 
-Performs stability tests for a (p,T,z) pair, and warn if any tests fail. returns `true/false`.
+Performs stability tests for a (p,T,z) pair, and warn if any tests fail. Returns `true/false`.
 
 Checks, in order of complexity:
  - mechanical stability: isothermal compressibility is not negative.
@@ -42,7 +42,7 @@ end
 
 Performs a diffusive stability for a (V,T,z) pair, returns `true/false`.
 Checks if all eigenvalues of `∂²A/∂n²` are positive.
-Returns `false` if the eos calculation failed. this normally occurs when evaluating on densities lower than the maximum density (given by `Clapeyron.lb_volume(model,T,z)`)
+Returns `false` if the eos calculation failed. This normally occurs when evaluating on densities lower than the maximum density (given by `Clapeyron.lb_volume(model,T,z)`).
 """
 function VT_diffusive_stability(model,V,T,z = SA[1.0])
     ρᵢ = similar(z,Base.promote_eltype(V,z))
@@ -89,14 +89,14 @@ end
 """
     gibbs_duhem(model,V,T,z=[1.0])
 
-performs a Gibbs-Duhem check on the input conditions:
+Performs a Gibbs-Duhem check on the input conditions:
 
 ```
 ∑zᵢμᵢ - G ≈ 0
 ```
-Where `G` is the total gibbs energy. it can help diagnose if a user-defined eos is consistent.
+Where `G` is the total gibbs free energy. It can help diagnose if a user-defined eos is consistent.
 
-return |∑zᵢμᵢ - G|, ∑zᵢμᵢ and G at the specified conditions.
+Returns |∑zᵢμᵢ - G|, ∑zᵢμᵢ and G at the specified conditions.
 """
 function gibbs_duhem(model,V,T,z=SA[1.0])
     μ = dot(z,Clapeyron.VT_chemical_potential(model,V,T,z))
@@ -107,11 +107,11 @@ end
 """
     ideal_consistency(model,V,T,z=[1.0])
 
-performs a ideal model consistency check:
+Performs a ideal model consistency check:
 ```
 ∂a₀∂V + 1/V ≈ 0
 ```
-Where `∂a₀∂V` is the derivative of `a_ideal` respect to `V`. it can help diagnose if a user-defined ideal model is consistent.
+Where `∂a₀∂V` is the derivative of `a_ideal` respect to `V`. It can help diagnose if a user-defined ideal model is consistent.
 
 Return |∂a₀∂V + 1/V| at the specified conditions.
 

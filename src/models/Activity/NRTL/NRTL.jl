@@ -27,16 +27,16 @@ export NRTL
     reference_state = nothing)
 
 ## Input parameters
-- `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
-- `b`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
-- `c`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
-- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
+- `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Parameter
+- `b`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Parameter
+- `c`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Parameter
+- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
 
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties
 
 ## Description
-NRTL (Non Random Two Fluid) activity model:
+NRTL (Non Random Two Liquids) activity model:
 ```
 Gᴱ = nRT∑[xᵢ(∑τⱼᵢGⱼᵢxⱼ)/(∑Gⱼᵢxⱼ)]
 Gᵢⱼ exp(-cᵢⱼτᵢⱼ)

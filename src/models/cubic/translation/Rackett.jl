@@ -16,12 +16,12 @@ end
 
 ## Input Parameters
 
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
+- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
 
 ## Model Parameters
 
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
-- `v_shift`: Single Parameter (`Float64`) - Volume shift `[m³/mol]`
+- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
+- `v_shift`: Single Parameter (`Float64`) - Volume shift `[m³·mol⁻¹]`
 
 ## Description
 

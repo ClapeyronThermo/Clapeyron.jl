@@ -250,6 +250,7 @@ Contains parameters: Mw, segment, sigma, lambda_a, lambda_r, epsilon, epsilon_as
 ```
 
 For this system, the only interesting composition range is up to 3\% mole fraction of carbon dioxide in the liquid phase:
+
 ![co2_h2o_pxy](../assets/co2_h2o_pxy.png)
 
 Going much beyond this composition range, particularly when one reaches pressures in GPa, will typically encounter numerical issues.
@@ -338,10 +339,12 @@ Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
 
 If we just blindly plot the *pxy* (or *Txy*) diagram, we will see some unphysical behaviour:
 ![water_pentoh_pxy_wrong](../assets/water_pentoh_pxy_wrong.png)
+
 One can see the presence of an unphysical crossover in the dew curve, as well as a maxima in the bubble curve.
 These are the tell-tale signs of the presence of VLLE at these conditions.
 Something similar also occurs in the *Txy* diagram:
 ![water_pentoh_Txy_wrong](../assets/water_pentoh_Txy_wrong.png)
+
 Once VLLE has been identified, to solve for its exact state, we can use the `VLLE_pressure(model, T)` / `VLLE_temperature(model, p)` functions.
 Unfortunately, generating good initial guesses automatically is very challenging.
 As such, users will need to provide decent initial guesses.
@@ -528,6 +531,7 @@ end
 For simple mixtures, one doesn't need to update the initial guesses.
 And with that, we have now drawn the *pT* projection for this mixture:
 ![eth_dec_pT_mix](../assets/eth_dec_pT_mix.png)
+
 Unfortunately, this is the simplest type of *pT* projection one can draw.
 
 ### Type-II mixture
@@ -561,7 +565,8 @@ end
 
 With this, the plot looks like:
 ![cyhex_meoh_pT_mix](../assets/cyhex_meoh_pT_mix.png)
-The critical curve may look a bit odd but it is physical (as a challenge, try to draw the *pxy* phase diagram around 500K).
+
+The critical curve may look a bit odd but it is physical (as a challenge, try to draw the *pxy* phase diagram around 500 K).
 
 What makes type-II mixtures unique is the fact that these system exhibit VLLE behaviour, typically at low temperatures.
 Due to the Gibbs Phase Rule, there is only a single pressure at a given temperature that VLLE occurs.
@@ -623,6 +628,7 @@ end
 
 And with this, we can complete the phase diagram:
 ![cyhex_meoh_pT_full](../assets/cyhex_meoh_pT_full.png)
+
 Note that there is no formal definition for where the azeotrope meets the critical curve.
 Thus the end point must be determined ahead of time.
 
@@ -637,11 +643,13 @@ julia> model = GERG2008(["heptane","methane"])
 Type-III mixtures are unique as the critical curve is broken into two.
 If one starts from the less volatile component, we find that the curve does not reconnect with the critical point of the more volatile component:
 ![me_hept_pT_1](../assets/me_hept_pT_1.png)
+
 Eventually, this curve becomes the UCST curve.
 However, there is a critical curve originating from the more volatile component
 However, this time, it terminates at the UCEP.
 We can repeat the same steps as above to obtain the UCEP:
 ![me_hept_pT](../assets/me_hept_pT.png)
+
 Especially in cases with very different volatilities, it will be very difficult to see the separation between the VLLE, critical and saturation curve as shown above.
 However, if one zooms in, we can see the three independent curves:
 ![me_hept_pT_zoom](../assets/me_hept_pT_zoom.png)
@@ -662,6 +670,7 @@ julia> model = PR(["hexane","methane"])
 
 Examining the critical curve originating from the less-volatile component:
 ![me_hex_pT_1](../assets/me_hex_pT_1.png)
+
 As we can see, the critical curve overshoots the critical point of the more volatile component.
 This critical curve will terminate at the first UCEP.
 The critical curve originating from the more volatile component will terminate at a second UCEP.
@@ -669,5 +678,7 @@ Connecting the two UCEPs will be the VLLE curve.
 We have described all the tools needed to trace these curves in earlier section.
 The result should look like:
 ![me_hex_pT_full](../assets/me_hex_pT_full.png)
+
 Zooming in to the UCEPs, we see that, much like the previous example, the VLLE curve is very close to the saturation curve of the less-volatile component:
+
 ![me_hex_pT_zoom](../assets/me_hex_pT_zoom.png)

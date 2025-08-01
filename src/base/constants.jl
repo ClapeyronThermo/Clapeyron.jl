@@ -1,7 +1,7 @@
-const N_A = 6.02214076e23 # mol-1
+const N_A = 6.02214076e23 # mol⁻¹
 const ln_N_A = 54.75489994294367 #log(N_A)
-const k_B = 1.380649e-23 # m2 kg s-2 K-1
-const R̄   = N_A*k_B # m2 kg s-2 K-1 mol-1
+const k_B = 1.380649e-23 # m² kg s⁻² K⁻¹
+const R̄   = N_A*k_B # m² kg s⁻² K⁻¹ mol⁻¹
 const ħ = 1.054571817e-34 # J s
 const h = 1.054571817e-34*2*π # J s
 const SingleComp = Union{SVector{1, Float64},Float64,Int64}

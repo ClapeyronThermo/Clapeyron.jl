@@ -70,7 +70,7 @@ const laguerre10_w = (0.30844111576502015, 0.40111992915527356, 0.21806828761180
 """
     laguerre5(f,r = 1, a = 0)
 
-Performs a 5-point translated gauss-laguerre integration of the form:
+Performs a 5-point translated Gauss-Laguerre integration of the form:
 
 ```
 ∫exp(-ry)f(y) dy,    y ∈ (a,∞)
@@ -83,7 +83,7 @@ end
 """
     laguerre5(f,r = 1, a = 0)
 
-Performs a 10-point translated gauss-laguerre integration of the form:
+Performs a 10-point translated Gauss-Laguerre integration of the form:
 
 ```
 ∫exp(-ry)f(y) dy,    y ∈ (a,∞)

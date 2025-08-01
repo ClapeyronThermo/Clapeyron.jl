@@ -30,15 +30,15 @@ export Wilson
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `g`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+- `g`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Parameter
 
 ## model parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `ZRA`: Single Parameter (`Float64`) - Rackett compresibility factor
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `g`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+- `g`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Parameter
 
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties

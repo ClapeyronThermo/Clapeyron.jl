@@ -57,7 +57,7 @@ end
 """
     f∂f(f,x)
 
-returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
+Returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 @inline function f∂f(f::F, x::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
@@ -71,7 +71,7 @@ f∂f(f::F) where F = Base.Fix1(f∂f,f)
 """
     f∂f∂2f(f,x)
 
-returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
+Returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 @inline function f∂f∂2f(f::F,x::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
@@ -88,7 +88,7 @@ f∂f∂2f(f::F) where F = Base.Fix1(f∂f∂2f,f)
 """
     fgradf2(f,x1,x2)
 
-returns f and ∇f(x),using `ForwardDiff.jl`
+Returns f and ∇f(x),using `ForwardDiff.jl`
 """
 function fgradf2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)
@@ -253,7 +253,7 @@ end
 """
     primalval(x::Real)
 
-returns the primal value of a value. strips all duals from `ForwardDiff`. useful in debugging:
+Returns the primal value of a value. Strips all duals from `ForwardDiff`. Useful in debugging:
 
 ## Example
 ```julia

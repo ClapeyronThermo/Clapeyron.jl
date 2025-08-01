@@ -51,8 +51,8 @@ export Berthelot
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `Vc`: Single Parameter (`Float64`) - Molar Volume `[m^3/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+- `Vc`: Single Parameter (`Float64`) - Molar Volume `[m³·mol⁻¹]`
 - `k`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
@@ -60,8 +60,8 @@ export Berthelot
 - `b`: Pair Parameter (`Float64`)
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) - Molar Volume `[m^3/mol]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Vc`: Single Parameter (`Float64`) - Molar Volume `[m³·mol⁻¹]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 
 
 ## Input models
@@ -73,7 +73,7 @@ export Berthelot
 
 ## Description
 
-Berthelot Equation of state. it uses the Volume-Pressure Based mixing rules, that is:
+Berthelot Equation of state. It uses the Volume-Pressure Based mixing rules, that is:
 ```
 a = 8*Pc*Vc^2
 b = Vc/3

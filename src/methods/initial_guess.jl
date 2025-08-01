@@ -2,7 +2,7 @@
     x0_volume_liquid(model,T,z)
     x0_volume_liquid(model,p,T,z)
 
-Returns an initial guess to the liquid volume, dependent on temperature and composition. by default is 1.25 times [`lb_volume`](@ref).
+Returns an initial guess to the liquid volume, dependent on temperature and composition. By default is 1.25 times [`lb_volume`](@ref).
 """
 function x0_volume_liquid(model,T,z)
     v_lb = lb_volume(model,T,z)
@@ -14,7 +14,7 @@ x0_volume_liquid(model,T) = x0_volume_liquid(model,T,SA[1.0])
 """
     x0_volume_gas(model,p,T,z)
 
-Returns an initial guess to the gas volume, depending of pressure, temperature and composition. by default uses [`volume_virial`](@ref)
+Returns an initial guess to the gas volume, depending of pressure, temperature and composition. By default uses [`volume_virial`](@ref)
 """
 function x0_volume_gas(model,p,T,z)
     B = second_virial_coefficient(model,T,z)
@@ -34,7 +34,7 @@ x0_volume_gas(model,p,T) = x0_volume_gas(model,p,T,SA[1.0])
     x0_volume_solid(model,T,z)
     x0_volume_solid(model,p,T,z)
 
-Returns an initial guess to the solid volume, dependent on temperature and composition. needs to be defined for EoS that support solid phase. by default returns NaN. can be overrided if the EoS defines `is_solid(::EoSModel) = true`
+Returns an initial guess to the solid volume, dependent on temperature and composition. Needs to be defined for EoS that support solid phase. By default returns NaN. Can be overrided if the EoS defines `is_solid(::EoSModel) = true`
 """
 function x0_volume_solid(model,T,z)
     if is_solid(model)
@@ -54,7 +54,7 @@ Returns an initial guess of the volume at a pressure, temperature, composition a
 If the suggested phase is `:unknown` or `:liquid`, calls [`x0_volume_liquid`](@ref).
 If the suggested phase is `:gas`, calls [`x0_volume_gas`](@ref).
 If the suggested phase is `solid`, calls [`x0_volume_solid`](@ref).
-Returns `NaN` otherwise
+Returns `NaN` otherwise.
 """
 function x0_volume(model, p, T, z = SA[1.0]; phase = :unknown)
     return x0_volume_impl(model,p,T,z,phase)
@@ -84,8 +84,8 @@ Returns the lower bound volume.
 It has different meanings depending on the Equation of State, but symbolizes the minimum allowable volume at a certain composition:
 - SAFT EoS: the packing volume
 - Cubic EoS, covolume (b) parameter
-On empiric equations of state, the value is chosen to match the volume of the conditions at maximum pressure and minimum temperature
-, but the equation itself normally can be evaluated at lower volumes.
+On empiric equations of state, the value is chosen to match the volume of the conditions at maximum pressure and minimum temperature,
+but the equation itself normally can be evaluated at lower volumes.
 On SAFT and Cubic EoS, volumes lower than `lb_volume` will likely error.
 The lower bound volume is used for guesses of liquid volumes at a certain pressure, saturated liquid volumes and critical volumes.
 
@@ -125,7 +125,7 @@ function p_scale(model,z)
 end
 """
     antoine_coef(model)
-should return a 3-Tuple containing reduced Antoine Coefficients. The Coefficients follow the correlation:
+Should return a 3-Tuple containing reduced Antoine Coefficients. The Coefficients follow the correlation:
 ```
 lnp̄ = log(p / p_scale(model))
 T̃ = T/T_scale(model)
@@ -150,7 +150,7 @@ saturation_model(model::T) where T = model
 
 Used to indicate if a model can calculate their critical point without iterative calculations.
 Having a critical point available results in speed ups for saturation calculations.
-By default returns `false`
+By default returns `false`.
 """
 function has_fast_crit_pure(model)::Bool
     satmodel = saturation_model(model)
@@ -206,7 +206,7 @@ end
     p,vl,vv = x0_sat_pure_virial(model,T)
 
 Calculates initial points for pure saturation pressure using a virial + corresponding states approach.
-the corresponding states model (a vdW fluid fitted from 2 p-V points) is used to select between zero-pressure or spinodal initial points.
+The corresponding states model (a vdW fluid fitted from 2 p-V points) is used to select between zero-pressure or spinodal initial points.
 The points selected to fit the vdW fluid are a function of B(T).
 """
 function x0_sat_pure_virial(model,T)
@@ -372,7 +372,7 @@ end
                                 refine_vl = true)
 
 Calculates initial points for pure saturation pressure, using a zero-pressure volume approach.
-If `refine_vl` is set to `true`, then the liquid volume will be recalculated using the calculated saturation pressure,otherwise it will be returned as is.
+If `refine_vl` is set to `true`, then the liquid volume will be recalculated using the calculated saturation pressure, otherwise it will be returned as is.
 """
 function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B = second_virial_coefficient(model,T), refine_vl = true)
     R̄ = Rgas(model)
@@ -766,7 +766,7 @@ end
 Initial point for saturation pressure, given the temperature and V,T critical coordinates.
 On moderate pressures it will use a Zero Pressure initialization. On pressures near the critical point it will switch to spinodal finding.
 Used in [`saturation_pressure`](@ref) methods that require initial pressure guesses.
-if the initial temperature is over the critical point, it returns `NaN`.
+If the initial temperature is over the critical point, it returns `NaN`.
 It can be overloaded to provide more accurate estimates if necessary.
 """
 function x0_psat(model,T)

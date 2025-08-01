@@ -27,11 +27,11 @@ Rgas() = R̄
 Returns the total Helmholtz free energy.
 # Inputs:
 - `model::EoSModel` Thermodynamic model to evaluate
-- `V` Total volume, in [m³]
-- `T` Temperature, in [K]
-- `z` mole amounts, in [mol], by default is `@SVector [1.0]`
+- `V` Total volume, in `[m³]`
+- `T` Temperature, in `[K]`
+- `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
 # Outputs:
-- Total Helmholtz free energy, in [J]
+- Total Helmholtz free energy, in `[J]`
 by default, it calls `R̄*T*∑(z)*(a_ideal(ideal_model,V,T,z) + a_res(model,V,T,z))` where `ideal_model == idealmodel(model)`, where `a_res` is the reduced residual Helmholtz energy and `a_ideal` is the reduced ideal Helmholtz energy.
 You can mix and match ideal models if you provide:
 - `[idealmodel](@ref)(model)`: extracts the ideal model from your Thermodynamic model
@@ -76,11 +76,11 @@ end
 Returns the residual Helmholtz free energy.
 # Inputs:
 - `model::EoSModel` Thermodynamic model to evaluate
-- `V` Total volume, in [m³]
-- `T` Temperature, in [K]
-- `z` mole amounts, in [mol], by default is `@SVector [1.0]`
+- `V` Total volume, in `[m³]`
+- `T` Temperature, in `[K]`
+- `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
 # Outputs:
-- Residual Helmholtz free energy, in [J]
+- Residual Helmholtz free energy, in `[J]`
 by default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where [`a_res`](@ref) is the reduced residual Helmholtz energy.
 """
 function eos_res(model::EoSModel, V, T, z=SA[1.0])
@@ -90,12 +90,12 @@ end
 
 """
     a_res(model::EoSModel, V, T, z,args...)
-Reduced residual Helmholtz free energy.
+Returns reduced residual Helmholtz free energy.
 # Inputs:
 - `model::EoSModel` Thermodynamic model to evaluate
-- `V` Total volume, in [m³]
-- `T` Temperature, in [K]
-- `z` mole amounts, in [mol], by default is `@SVector [1.0]`
+- `V` Total volume, in `[m³]`
+- `T` Temperature, in `[K]`
+- `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
 # Outputs:
 - Residual Helmholtz free energy, no units
 You can define your own EoS by adding a method to `a_res` that accepts your custom model.
@@ -198,7 +198,7 @@ end
 """
     default_references(::Type{<:EoSModel})::Vector{String}
 
-Return the default references of a model. If you are using the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros, define this function to set the references for the defined EoS.
+Returns the default references of a model. If you are using the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros, define this function to set the references for the defined EoS.
 
 """
 function default_references end
@@ -260,7 +260,7 @@ end
 
 """
     recombine!(model::EoSModel)
-Recalculate all mixing rules, combining rules and parameter caches inside an `EoSModel`.
+Recalculates all mixing rules, combining rules and parameter caches inside an `EoSModel`.
 """
 function recombine! end
 

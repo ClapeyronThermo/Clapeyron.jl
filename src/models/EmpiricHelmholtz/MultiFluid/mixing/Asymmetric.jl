@@ -144,7 +144,7 @@ end
 """
     mixing_rule_asymmetric(op, op_asym, x, p, A, A_asym)
 
-returns an efficient implementation of:
+Returns an efficient implementation of:
 ` sum(A[i,j] * x[i] * x[j] * op(p[i],p[j]) * op_asym(x[i],x[j],A_asym[i,j])) for i = 1:n , j = 1:n)`
 where `op(p[i],p[j]) == op(p[j],p[i])` , op_asym doesn't follow this symmetry.
 

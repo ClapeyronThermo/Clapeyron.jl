@@ -37,9 +37,9 @@ There are three available representations for the fluid model:
 - A Helmholtz-based EoS.
 - Fluid Correlations, consisting in a gas model, a correlation for obtaining the saturation pressure, and a liquid model. Both gas and liquid models can optionally be Helmholtz models too, but correlations for saturated liquid and vapour are also allowed.
 - Activity models, consisting of a liquid activity and a model for the fluid. The fluid model can be a Helmholtz-based model, or another `CompositeModel` containing correlations.
-When the solid field is specified, some properties (like `volume`) start taking in account the solid phase in their calculations. Optionally, there are other models that provide specific correlations for SLE equilibria (like `SolidHfus`)
+When the solid field is specified, some properties (like `volume`) start taking in account the solid phase in their calculations. Optionally, there are other models that provide specific correlations for SLE equilibria (like `SolidHfus`).
 
-The solid model is optional and does not impact VLE (and LLE) calculations. there are two available representations for the solid model
+The solid model is optional and does not impact VLE (and LLE) calculations. There are two available representations for the solid model:
 - a Helmholtz-based EoS, can be used to calculate both melting/sublimation and solubilities.
 - Chemical Potential models, can be used for solubilities.
 
@@ -96,7 +96,7 @@ CompositeModel
 """
     RestrictedEquilibriaModel <: EoSModel
 
-Abstract type of models that implement simplifications over the equality of chemical potentials approach for phase equilibria. subtypes of `RestrictedEquilibriaModel` are the `GammaPhi` (activity + gas), `FluidCorrelation` (for fluid phase change and volume correlations) and `SolidCorrelation` (for solid phase change and solid volume correlations)
+Abstract type of models that implement simplifications over the equality of chemical potentials approach for phase equilibria. Subtypes of `RestrictedEquilibriaModel` are the `GammaPhi` (activity + gas), `FluidCorrelation` (for fluid phase change and volume correlations) and `SolidCorrelation` (for solid phase change and solid volume correlations).
 """
 abstract type RestrictedEquilibriaModel <: EoSModel end
 

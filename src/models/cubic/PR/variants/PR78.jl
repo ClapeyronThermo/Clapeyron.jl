@@ -13,7 +13,7 @@
     reference_state = nothing,
     verbose = false)
 
-Peng Robinson (1978) equation of state. it uses the following models:
+Peng Robinson (1978) equation of state. It uses the following models:
 - Translation Model: [`NoTranslation`](@ref)
 - Alpha Model: [`PR78Alpha`](@ref)
 - Mixing Rule Model: [`vdW1fRule`](@ref)

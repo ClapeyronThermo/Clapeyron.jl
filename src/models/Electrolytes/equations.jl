@@ -1,6 +1,6 @@
 """
     salt_stoichiometry(model::ElectrolyteModel,salts)
-Obtain the stoichiometry matrix of `salts` made up of ions stored in the `model`. This will also check that the salt is electroneutral and that all ions are involved in the salts.
+Obtains the stoichiometry matrix of `salts` made up of ions stored in the `model`. This will also check that the salt is electroneutral and that all ions are involved in the salts.
 """
 function salt_stoichiometry(model::ElectrolyteModel,salts)
     iions = model.charge.!=0

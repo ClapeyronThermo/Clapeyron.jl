@@ -42,11 +42,11 @@ GEDeparture <: MultiFluidDepartureModel
 
 ## Input parameters
 none
-- `k1`: Pair Parameter (`Float64`) - binary, T-dependent interaction parameter `[K^-1]`
+- `k1`: Pair Parameter (`Float64`) - binary, T-dependent interaction parameter `[K⁻¹]`
 ## Model parameters
-- `vref`: Single Parameter (`Float64`, calculated) - Reference pure molar volume `[m3/mol]`
+- `vref`: Single Parameter (`Float64`, calculated) - Reference pure molar volume `[m³·mol⁻¹]`
 ## Input models
-- `activity`: activity model
+- `activity`: activity coefficient model
 
 ## Description
 

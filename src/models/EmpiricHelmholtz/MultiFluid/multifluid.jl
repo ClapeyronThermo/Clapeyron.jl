@@ -55,7 +55,7 @@ Rgas(model::MultiFluid) = model.Rgas
 - JSON data (CoolProp and teqp format)
 
 ## Input models
-- `idealmodel`: Ideal Model. if it is `nothing`, then it will parse the ideal model from the input JSON.
+- `idealmodel`: Ideal Model. If it is `nothing`, then it will parse the ideal model from the input JSON.
 - `mixing`: mixing model for temperature and volume.
 - `departure`: departure model
 

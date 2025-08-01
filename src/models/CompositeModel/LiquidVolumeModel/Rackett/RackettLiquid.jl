@@ -16,19 +16,19 @@ end
 
 ## Input parameters
 
-- `Tc`: Single Parameter (Float64) - Critical Temperature [K]
-- `Pc`: Single Parameter (Float64) - Critical Pressure [Pa]
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
+- `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
+- `Pc`: Single Parameter (Float64) - Critical Pressure `[Pa]`
+- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
 
 ## Model Parameters
 
-- `Tc`: Single Parameter (Float64) - Critical Temperature [K]
+- `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (Float64) - Critical Pressure [Pa]
 - `Zc`: Single Parameter (Float64) - Critical Compressibility Factor
 
 ## Description
 
-Rackett Equation of State for saturated liquids. it is independent of the pressure.
+Rackett Equation of State for saturated liquids. It is independent of the pressure.
 ```
 Tr = T/Tc
 V = (R̄Tc/Pc)Zc^(1+(1-Tr)^(2/7))
