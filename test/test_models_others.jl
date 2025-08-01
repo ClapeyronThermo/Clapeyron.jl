@@ -190,7 +190,7 @@ end
 
 @testset "Multi-parameter models" begin
     @printline
-    let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333]; 
+    let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333];
     #warning, we are in the pseudo maxwell loop, those properties are nonsense, but they evaluate anyway.
     @printline
     @testset "IAPWS95" begin
@@ -299,7 +299,7 @@ end
 
 @testset "SPUNG models" begin
     @printline
-    let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333]; 
+    let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333];
     @testset "SRK" begin
         system = SPUNG(["ethane"])
         @test Clapeyron.shape_factors(system, V, T, z)[1] ≈ 0.8246924617474896 rtol = 1e-6
@@ -315,7 +315,7 @@ end
 
 @testset "lattice models" begin
     @printline
-    let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333]; 
+    let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333];
 
     @testset "single component" begin
         system = Clapeyron.SanchezLacombe(["carbon dioxide"])
@@ -366,7 +366,7 @@ end
         @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.6837207241594103e-5 rtol = 1e-6
     end
 
-    
+
     @testset "AbbottVirial" begin
         system = AbbottVirial(["methane","ethane"])
         @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.024820060368027988 rtol = 1e-6
