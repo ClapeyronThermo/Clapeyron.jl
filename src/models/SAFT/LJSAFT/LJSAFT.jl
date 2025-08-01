@@ -41,8 +41,8 @@ end
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `b`: Single Parameter (`Float64`) - Segment Volume `[dm³·mol⁻¹]`
 - `T_tilde`: Single Parameter (`Float64`) - Lennard-Jones attraction parameter  `[K]`
-- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater for energy(no units)
-- `zeta`: Pair Parameter (`Float64`) - Binary Interaction Paramater for volume (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter for energy(no units)
+- `zeta`: Pair Parameter (`Float64`) - Binary Interaction Parameter for volume (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 

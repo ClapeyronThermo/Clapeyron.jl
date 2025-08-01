@@ -49,7 +49,7 @@ export CKSAFT
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `vol`: Single Parameter (`Float64`) - Segment Volume `[dm³]`
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
-- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 - `c`: Single Parameter (`Float64`) - Dispersion T-dependent parameter (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`

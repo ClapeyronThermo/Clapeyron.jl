@@ -59,8 +59,8 @@ export pharmaPCSAFT
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
-- `k`: Pair Parameter (`Float64`) (optional) - Constant binary Interaction Paramater (no units)
-- `kT`: Pair Parameter (`Float64`) - T-dependent inary Interaction Paramater `[K^-1]`
+- `k`: Pair Parameter (`Float64`) (optional) - Constant binary Interaction Parameter (no units)
+- `kT`: Pair Parameter (`Float64`) - T-dependent Binary Interaction Parameter `[K⁻¹]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 ## Model Parameters
@@ -68,8 +68,8 @@ export pharmaPCSAFT
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
-- `k`: Pair Parameter (`Float64`) (optional) - Constant binary Interaction Paramater (no units)
-- `kT`: Pair Parameter (`Float64`) - T-dependent inary Interaction Paramater `[K^-1]`
+- `k`: Pair Parameter (`Float64`) (optional) - Constant binary Interaction Parameter (no units)
+- `kT`: Pair Parameter (`Float64`) - T-dependent Binary Interaction Parameter `[K⁻¹]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 ## Input models

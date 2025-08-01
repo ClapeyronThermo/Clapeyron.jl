@@ -96,7 +96,7 @@ end
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
 - `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) - Binary Interaction Parameter (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 
