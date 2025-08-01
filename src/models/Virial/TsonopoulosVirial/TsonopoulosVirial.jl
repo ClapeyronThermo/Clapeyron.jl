@@ -22,7 +22,7 @@ default_references(::Type{TsonopoulosVirial}) = ["10.1002/aic.690200209"]
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 
 ## Input models
 - `idealmodel`: Ideal Model

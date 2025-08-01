@@ -34,7 +34,7 @@ abstract type AlyLeeIdealModel <: IdealModel end
 - `G`: Single Parameter (`Float64`) - Model Coefficient
 - `H`: Single Parameter (`Float64`) - Model Coefficient
 - `I`: Single Parameter (`Float64`) - Model Coefficient
-- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
 
 ## Description
 

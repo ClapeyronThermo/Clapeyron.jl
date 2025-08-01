@@ -1,12 +1,12 @@
 function ∂Helmholtz(model::EoSModel, ρ, T, z=[1.0])
-    # Auxiliar functions to compute Helmholtz Energy and its first density derivative
+    # Auxiliar functions to compute Helmholtz energy and its first density derivative
     f(dρ) = eos(model, 1. / dρ, T, z)
     A, ∂A, = Solvers.f∂f(f, ρ)
     return A, ∂A
 end
 
 function ∂2Helmholtz(model::EoSModel, ρ, T, z=[1.0])
-    # Auxiliar functions to compute Helmholtz Energy and its first and second density derivatives
+    # Auxiliar functions to compute Helmholtz energy and its first and second density derivatives
     f(dρ) = eos(model, 1. / dρ, T, z)
     A, ∂A, ∂2A = Solvers.f∂f∂2f(f, ρ)
     return A, ∂A, ∂2A

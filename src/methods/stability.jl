@@ -94,7 +94,7 @@ Performs a Gibbs-Duhem check on the input conditions:
 ```
 ∑zᵢμᵢ - G ≈ 0
 ```
-Where `G` is the total gibbs free energy. It can help diagnose if a user-defined eos is consistent.
+Where `G` is the total Gibbs energy. It can help diagnose if a user-defined eos is consistent.
 
 Returns |∑zᵢμᵢ - G|, ∑zᵢμᵢ and G at the specified conditions.
 """

@@ -16,7 +16,7 @@ Here, ``\mathrm{DoF}`` means "Degrees of Freedom"; this is the number of so-call
 As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; system size itself is not included so, in practice, this represents one more variable that we can specify, giving $N_\mathrm{species}+2$.
 Thus, taking the simple case of a single species, we can specify at most three conditions in our system.
 For a traditional equation of state, we specify volume, $V$, temperature, $T$, and the size of the system – for example the number of particles, $N$, or moles, $n$; the equation of state then returns the pressure, $p$.
-Many modern equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks) and, accordingly, the three variable chosen are again usually $T$, $V$ and $N$; the output of these equations is usually the Helmholtz free energy, $A$.
+Many modern equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks) and, accordingly, the three variable chosen are again usually $T$, $V$ and $N$; the output of these equations is usually the Helmholtz energy, $A$.
 
 Many equations of state are based on an underlying molecular model.
 Consequently, it is also typical for an equation of state to require parameters, $\boldsymbol{\Xi}$, to model certain species.
@@ -35,7 +35,7 @@ Most (if not all) subsequent equations of state are descended from Clapeyron's e
 
 Unfortunately, if we wish to determine other thermodynamic properties this equation is a little inconvenient.
 It would be much easier if it was expressed in the form of the free energy, from which other properties can then be evaluated using standard thermodynamic relationships.
-Accordingly, we could first integrate the above equation with respect to volume to determine the Helmholtz free energy:
+Accordingly, we could first integrate the above equation with respect to volume to determine the Helmholtz energy:
 
 ``A_\mathrm{ideal} =- \int p\,dV =- Nk_\mathrm{B}T\ln{V}+c(T,N)``
 
@@ -62,7 +62,7 @@ The statistical–mechanical derivation of the ideal free energy becomes a littl
 Here $N_{\mathrm{rot},i}$, $\theta_{\mathrm{rot},i}$ and $N_{\mathrm{vib},i}$ are the number of rotations, the number of vibrations and the rotational temperature of a species $i$, respectively; $g_{i,\mathrm{v}}$ and $\theta_{\mathrm{vib},i,\mathrm{v}}$ represent the degeneracy and vibrational temperature of a vibrational mode $\mathrm{v}$ of species $i$.
 The `WalkerIdeal` model provides the necessary parameters to use such an equation.
 However, the morecommonly used approach is through the use of correlations of the ideal isobaric heat capacity, $C_{p,i}^0$, such as the `ReidIdeal`, `WilhoitIdeal` and `AlyLeeIdeal` models.
-From the ideal isobaric heat capacity, it is possible to determine the ideal Helmholtz free energy using the following equation:
+From the ideal isobaric heat capacity, it is possible to determine the ideal Helmholtz energy using the following equation:
 
 ``\frac{A_{\mathrm{ideal}}}{Nk_\mathrm{B}T} = \sum_{i=1}^{N_{\mathrm{Component}}} x_i\left[\ln{\frac{\rho_i}{\rho_0}}
     + \frac{1}{Nk_\mathrm{B}T} \int_{T_0}^T \!\!C_{p,i}^0 dT + \frac{H_{0,i}}{Nk_\mathrm{B}T}- \frac{1}{Nk_{B}}\!\!\int_{T_0}^T \frac{C_{p,i}^0}{T} dT -\ln{\frac{T}{T_0}}-\frac{S_{0,i}}{Nk_\mathrm{B}} - 1\right]``
@@ -72,7 +72,7 @@ Note that the reference states, $\rho_0$, $H_{0,i}$ and $S_{0,i}$, can typically
 ### Cubic equations of state
 
 This is the mostpopular class of equations of state.
-The progenitor of these is the van der Waals (`vdW`) equation of state, published in 1873, which can be written as:
+The progenitor of these is the Van der Waals (`vdW`) equation of state, published in 1873, which can be written as:
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2a}{V^2}``
 
@@ -84,7 +84,7 @@ In principle, therefore, one could obtain values of $a$ and $b$ for a particular
 However, since $a$ and $b$ can be related to the critical temperature and pressure of the vdW fluid, to relate the equation of state to a particular species, it is conventional to use the critical temperature and pressure of the species to obtain working values of the parameters.
 
 Unfortunately, although its simple functional form makes calculations quite straightforward, the vdW equation is inadequate for quantitative modelling, particularly for volumetric properties, and is most useful only for providing a qualitative description of the thermodynamic properties of the fluid.
-As a result, many other engineering cubic equations have been developed, retaining (as far as possible) the simple mathematical form of van der Waals' equation.
+As a result, many other engineering cubic equations have been developed, retaining (as far as possible) the simple mathematical form of Van der Waals' equation.
 The first noteworthy one of these is the Redlich–Kwong (`RK`) equation:
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2a}{\sqrt{T}V(V+Nb)}``
@@ -113,20 +113,20 @@ Before moving on from cubic equations of state we note that, within `Clapeyron`,
 A CPA equation is the amalgamation of a cubic equation (usually SRK, as in `Clapeyron`, or PR) with the association term from the SAFT equation, which we will meet later.
 Strictly speaking, it is neither a cubic nor a SAFT equation of state but, rather, occupies a middle ground between these two classes of equation.
 
-Something that may be apparent in all these equations is the fact that these are all functions that return the pressure and, thus, must be integrated to obtain the Helmholtz free energy.
+Something that may be apparent in all these equations is the fact that these are all functions that return the pressure and, thus, must be integrated to obtain the Helmholtz energy.
 Like the ideal gas equation, there will be missing temperature and compositional dependencies which need to be included.
 
 #### Mixtures with cubic equations of state
 
 One may wonder how to model mixtures using such equations.
 This can be achieved using *mixing rules*, in conjunction with *combining rules*.
-Although there are many variants, one of the more popular mixing rules is the van der Waals one-fluid mixing rule: the mixture is treated as a hypothetical pure fluid, characterised by parameters $\bar{a}$ and $\bar{b}$ that are given by
+Although there are many variants, one of the more popular mixing rules is the Van der Waals one-fluid mixing rule: the mixture is treated as a hypothetical pure fluid, characterised by parameters $\bar{a}$ and $\bar{b}$ that are given by
 
 ``\bar{a}=\sum_i\sum_jx_ix_ja_{ij}``
 
 ``\bar{b}=\sum_i\sum_jx_ix_jb_{ij}``
 
-When $i=j$, $a$ and $b$ are just the normal van der Waals parameters for the pure.
+When $i=j$, $a$ and $b$ are just the normal Van der Waals parameters for the pure.
 However, when $i\neq j$, these parameter characterise the unlike interactions between $i$ and $j$.
 We typically need to use *combining rules* (not to be confused with *mixing rules*) to determine the unlike parameters.
 Examples of these include:
@@ -142,13 +142,13 @@ More complicated mixing rules (such as the Wong–Sandler mixing rule) are avail
 
 ### SAFT equations of state
 
-In comparison to the cubic equations of state, equations based on the Statistical Associating Fluid Theory (SAFT) are based on a more theoretical approach, although still can be considered as descendants of van der Waals' equation.
-As mentioned earlier, the van der Waals equation can be derived from statistical mechanics, whereby the Helmholtz free energy of the van der Waals fluid is obtained as
+In comparison to the cubic equations of state, equations based on the Statistical Associating Fluid Theory (SAFT) are based on a more theoretical approach, although still can be considered as descendants of Van der Waals' equation.
+As mentioned earlier, the Van der Waals equation can be derived from statistical mechanics, whereby the Helmholtz energy of the Van der Waals fluid is obtained as
 
 ``\frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}``;
 
 here the ideal and hard-sphere (HS) terms combine to give the repulsive term (of the pressure form of the equation) whilst the $A_1$ term results in the attractive term.
-We can see from this that, using the van der Waals equation, species are effectively modelled as hard spheres with dispersive interactions (we sometimes call these London dispersion interactions).
+We can see from this that, using the Van der Waals equation, species are effectively modelled as hard spheres with dispersive interactions (we sometimes call these London dispersion interactions).
 The latter two terms can be merged into what is referred to as the monomer or segment term.
 
 Whilst, as already noted, this is clearly a step up from the ideal gas, most species can't be modelled effectively as single spheres; they may be highly non-spherical in shape (as is usually the case with large molecules), or they may experience interactions that are more complex than simple dispersion.
@@ -157,7 +157,7 @@ A classic example of the latter is water; although the water molecule is small a
 Using Wertheim's TPT1 theory of association, it is possible to model molecules as chains of spheres; the shape of the model molecule can thereby be tailored to represent that of the real molecule far better than a single sphere.
 Wertheim's TPT1 theory can also be used to account for intermolecular association interactions (such as dipole–dipole interactions, or hydrogen bonding), which are strongly directional.
 These are described using associations sites that are located on one or more of the spherical segments comprising the chain molecule.
-This results in the addition of two extra contributions to the Helmholtz free energy (note that the HS and dispersive terms have been merged into a monomer term):
+This results in the addition of two extra contributions to the Helmholtz energy (note that the HS and dispersive terms have been merged into a monomer term):
 
 ``\frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{chain}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{assoc.}}{Nk_\mathrm{B}T}``
 
@@ -370,13 +370,13 @@ This equation has also been extended to electrolytes through SAFT‑$\gamma$E Mi
 ### The problem
 
 The aim of this document is to outline all of the various tools used to obtain the relevant properties from a SAFT-type equation of state.
-In short, SAFT equations of state provide the Helmholtz free energy of a system at a given composition $\mathbf{z}$, volume $V$ and temperature $T$:
+In short, SAFT equations of state provide the Helmholtz energy of a system at a given composition $\mathbf{z}$, volume $V$ and temperature $T$:
 
 ``A=A(\mathbf{z},V,T)``
 
 Taking derivatives of this function (within the `Clapeyron` module, this is done using automatic differentiation) can give us a wide range of properties which are given in the appendix.
 However, it is more common that we are interested in the state of a system at certain conditions ($\mathbf{z}_0$, $p_0$ , $T_0$).
-The answer to this can be determined from the following, deceptively simple, minimisation of the Gibbs free energy:
+The answer to this can be determined from the following, deceptively simple, minimisation of the Gibbs energy:
 
 ``\min G(\mathbf{z}_0,p_0,T_0)``
 
@@ -411,7 +411,7 @@ We can see that this is equivalent to solving for the volume at which the pressu
 
 Effectively, we can reword this as a root-finding problem.
 One slight issue with this is that there is often more than one root (there can actually be up to five, even in SAFT-type equations).
-The true root will be the one that minimises the Gibbs free energy; thus we must first find the candidate phases and determine their Gibbs free energy before reporting the volume.
+The true root will be the one that minimises the Gibbs energy; thus we must first find the candidate phases and determine their Gibbs energy before reporting the volume.
 
 For the cubics, this problem is quite straightforward given that (as the name suggests) all these equations can be rearranged as a cubic equation in $V$:
 

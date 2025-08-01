@@ -68,11 +68,11 @@ SAFTgammaMie(components;
     assoc_options = AssocOptions())
 
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `vst`: Single Parameter (`Float64`) - Number of segments (no units)
 - `S`: Single Parameter (`Float64`) - Shape factor for segment (no units)
-- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
-- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
@@ -86,7 +86,7 @@ SAFTgammaMie(components;
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 - `mixed_segment`: Mixed Group Contribution Parameter: ∑nᵢₖνₖmₖ
 
 ## Input models

@@ -35,20 +35,20 @@ end
     assoc_options = AssocOptions())
     
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `r_c`: Single Parameter (`Float64`)
 - `c1`: Single Parameter (`Float64`)
 - `c2`: Single Parameter (`Float64`)
 - `c3`: Single Parameter (`Float64`)
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
-- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `theta_c`: Association Parameter (`Float64`)
 
 ## Model Parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `r_c`: Single Parameter (`Float64`)
 - `c1`: Single Parameter (`Float64`)
 - `c2`: Single Parameter (`Float64`)
@@ -57,7 +57,7 @@ end
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 - `theta_c`: Association Parameter (`Float64`)
 
 ## Input models

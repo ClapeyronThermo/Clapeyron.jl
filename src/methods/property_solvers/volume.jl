@@ -5,7 +5,7 @@
 
 """
     volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-Main routine to calculate a volume, given a pressure, temperature, composition and initial volume guess. each step is taken by locally aproximating the EoS as an isothermal compressibility process.
+Main routine to calculate a volume, given a pressure `p`, temperature `T`, composition `z` and initial volume guess. Each step is taken by locally aproximating the EoS as an isothermal compressibility process.
 The new volume is calculated by the following recurrence formula:
 ```julia
 v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
@@ -189,7 +189,7 @@ end
 """
     volume_virial(model::EoSModel,p,T,z=SA[1.0])
     volume_virial(B::Real,p,T,z=SA[1.0])
-Calculates an aproximation to the gas volume at specified pressure, volume and composition, by aproximating:
+Calculates an approximation to the gas volume at specified pressure `p`, temperature `T` and composition `z`, by aproximating:
 ```julia
 Z(v) ≈ 1 + B(T)/v
 ```
@@ -239,13 +239,13 @@ end
 """
     volume(model::EoSModel, p, T, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
 
-Calculates the volume (m³) of the compound modelled by `model` at a certain pressure, temperature and moles.
+Calculates the volume `(m³)` of the compound modelled by `model` at a certain pressure `p`, temperature `T` and moles `z`.
 `phase` is a Symbol that determines the initial volume root to look for:
-- If `phase =:unknown` (Default), it will return the physically correct volume root with the least gibbs energy.
+- If `phase =:unknown` (Default), it will return the physically correct volume root with the least Gibbs energy.
 - If `phase =:liquid`, it will return the volume of the phase using a liquid initial point.
 - If `phase =:vapor`, it will return the volume of the phase using a gas initial point.
 - If `phase =:solid`, it will return the volume of the phase using a solid initial point (only supported for EoS that support a solid phase)
-- If `phase =:stable`, it will return the physically correct volume root with the least gibbs energy, and perform a stability test on the result.
+- If `phase =:stable`, it will return the physically correct volume root with the least Gibbs energy, and perform a stability test on the result.
 
 All volume calculations are checked for mechanical stability, that is: `dP/dV <= 0`.
 
@@ -259,7 +259,7 @@ An initial estimate of the volume `vol0` can be optionally be provided.
     Such a starting point can be found from physical knowledge, or by computing the volume using a different model for example.
 
 !!! warning "Stability checks"
-    The stability check is disabled by default. that means that the volume obtained just follows the the relation `P = pressure(model,V,T,z)`.
+    The stability check is disabled by default. That means that the volume obtained just follows the the relation `p = pressure(model,V,T,z)`.
     For single component models, this is alright, but phase splits (with different compositions that the input) can and will occur, meaning that
     the volume solution does not correspond to an existing phase.
     For unknown multicomponent mixtures, it is recommended to use a phase equilibrium procedure (like `tp_flash`) to obtain a list of valid compositions, and then perform a volume calculation over those compositions.
@@ -438,7 +438,7 @@ end
 used by MultiComponentFlash.jl extension
 =#
 function _label_and_volumes(model::EoSModel,cond)
-    #gibbs comparison, the phase with the least amount of gibbs energy is the most stable.
+    #gibbs comparison, the phase with the least amount of Gibbs energy is the most stable.
     p,T,z = cond.p,cond.T,cond.z
     _0 = zero(Base.promote_eltype(model,p,T,z))
     _1 = one(_0)

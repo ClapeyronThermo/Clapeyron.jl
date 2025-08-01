@@ -586,7 +586,7 @@ end
         #for some reason, it requires 2 newton iterations.
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(itmax_newton = 2))[1] ≈ pres2 rtol = 1E-6
         GC.gc()
-        #not exactly the same results, as activity coefficients are ultimately an aproximation of the real helmholtz function.
+        #not exactly the same results, as activity coefficients are ultimately an approximation of the real helmholtz function.
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure())[1] ≈ pres2 rtol = 1E-3
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure(x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-3
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure(p0 = 1.5e6))[1] ≈ pres2 rtol = 1E-3

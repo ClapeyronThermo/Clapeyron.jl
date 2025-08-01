@@ -122,9 +122,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
             K̄_dem .= K_dem .* exp.(Z .* ψ_dem)
             x_dem,y_dem = update_rr!(K̄_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
             lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,z,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
-            #add effect of electroneutrality condition on gibbs energy
+            #add effect of electroneutrality condition on Gibbs energy
             gibbs_dem += β_dem*ψ_dem*dot(x_dem,Z)
-            # only accelerate if the gibbs free energy is reduced
+            # only accelerate if the Gibbs energy is reduced
             if gibbs_dem < gibbs
                 lnK .= lnK_dem
                 volx = _1 * volx_dem
@@ -243,8 +243,8 @@ function dgibbs_obj!(model::ElectrolyteModel, p, T, z, phasex, phasey,
     F=nothing, G=nothing, H=nothing)
 
     Z = model.charge
-    # Objetive Function to minimize the Gibbs Free Energy
-    # It computes the Gibbs free energy, its gradient and its hessian
+    # Objetive Function to minimize the Gibbs energy
+    # It computes the Gibbs energy, its gradient and its hessian
     iv = 0
     for i in eachindex(z)
         if in_equilibria[i]
@@ -265,7 +265,7 @@ function dgibbs_obj!(model::ElectrolyteModel, p, T, z, phasex, phasey,
     volx,voly = vcache[]
     all_equilibria = all(in_equilibria)
     if H !== nothing
-        # Computing Gibbs Energy Hessian
+        # Computing Gibbs energy Hessian
         lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x; phase=phasex, vol0=volx)
         lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y; phase=phasey, vol0=voly)
 
@@ -305,7 +305,7 @@ function dgibbs_obj!(model::ElectrolyteModel, p, T, z, phasex, phasey,
     end
 
     if G !== nothing
-        # Computing Gibbs Energy gradient
+        # Computing Gibbs energy gradient
         i0 = 0
         for i in eachindex(in_equilibria)
             if in_equilibria[i]
@@ -317,7 +317,7 @@ function dgibbs_obj!(model::ElectrolyteModel, p, T, z, phasex, phasey,
     end
 
     if F !== nothing
-        # Computing Gibbs Energy
+        # Computing Gibbs energy
         FO = dot(ny,ϕy) + dot(nx,ϕx) + ψ*dot(nx,Z)
         return FO
     end

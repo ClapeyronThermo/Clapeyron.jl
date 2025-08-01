@@ -316,7 +316,7 @@ function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
             return nan
         end
     else #phase = :unknown
-        #there is a Helmholtz free energy model in fluid and solid phases.
+        #there is a Helmholtz energy model in fluid and solid phases.
         #this requires checking evaluating all volumes and checking
         #what value is the correct one via Gibbs energies.
         if !(model.fluid isa GammaPhi) && !(model.fluid isa FluidCorrelation) && !(model.solid isa SolidCorrelation)

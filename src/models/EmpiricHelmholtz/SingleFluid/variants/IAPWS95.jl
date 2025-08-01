@@ -23,7 +23,7 @@ aʳ₄(δ,τ) = ∑nᵢδΨΔ^(bᵢ), i ∈ 55:56
 θ = (1 - τ) + Aᵢ[(δ - 1)^2]^(1/2βᵢ)
 Ψ = exp(-Cᵢ(δ - 1)^2 - Dᵢ(τ - 1)^2)
 ```
-parameters `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`α`,`β`,`γ`,`ε`,`A`,`B`,`C`,`D` where obtained via fitting.
+Parameters `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`α`,`β`,`γ`,`ε`,`A`,`B`,`C`,`D` where obtained via fitting.
 
 ## References
 

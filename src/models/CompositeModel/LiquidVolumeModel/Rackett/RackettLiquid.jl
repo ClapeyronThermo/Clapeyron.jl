@@ -23,7 +23,7 @@ end
 ## Model Parameters
 
 - `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (Float64) - Critical Pressure [Pa]
+- `Pc`: Single Parameter (Float64) - Critical Pressure `[Pa]`
 - `Zc`: Single Parameter (Float64) - Critical Compressibility Factor
 
 ## Description

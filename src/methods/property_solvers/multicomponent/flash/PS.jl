@@ -6,7 +6,7 @@ Routine to solve non-reactive two-phase multicomponent flash problem. with P-S s
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
 Inputs:
  - `p`, pressure `[Pa]`
- - `s`, entropy `[J/K]`
+ - `s`, entropy `[J·K⁻¹]`
  - `n`, vector of number of moles of each species `[mol]`
 
 All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).

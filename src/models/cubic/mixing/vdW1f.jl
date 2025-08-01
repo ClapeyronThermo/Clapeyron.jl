@@ -14,7 +14,7 @@ export vdW1fRule
 ## Input Parameters
 None
 ## Description
-van der Wals One-Fluid mixing rule for cubic parameters:
+Van der Waals One-Fluid mixing rule for cubic parameters:
 ```
 aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
 bᵢⱼ = (1 - lᵢⱼ)(bᵢ + bⱼ)/2

@@ -28,7 +28,7 @@ default_gclocations(::Type{WalkerIdeal}) = ["ideal/WalkerIdeal_Groups.csv"]
 
 ## Input parameters
 
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `Nrot`: Single Parameter (`Int`)
 - `theta1`: Single Parameter (`Float64`)
 - `theta2`: Single Parameter (`Float64`)

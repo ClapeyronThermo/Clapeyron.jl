@@ -19,7 +19,7 @@ Inputs:
 Outputs - Tuple containing:
  - xᵢⱼ, Array of mole fractions of species j in phase i
  - nᵢⱼ, Array of mole numbers of species j in phase i, `[mol]`
- - G, Gibbs Free Energy of Equilibrium Mixture `[J]`
+ - G, Gibbs energy of Equilibrium Mixture `[J]`
 """
 function tp_flash(model::EoSModel, p, T, n = SA[1.0]; kwargs...)
     method = init_preferred_method(tp_flash,model,kwargs)

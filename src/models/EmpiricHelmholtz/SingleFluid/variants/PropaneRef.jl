@@ -18,7 +18,7 @@ function _propaneref_tsat(p)
     P_c = 4.2512e6
     T_c = 369.89
     p > P_c && return zero(p)/zero(p)
-    #first aproximation
+    #first approximation
     A,B,C = 13.6515,1850.8,249.99-273.15
     T0 = B/(A - log(p*1e-3)) - C
     T0 > T_c && (T0 = T_c*p/P_c)
@@ -47,7 +47,7 @@ aʳ₂(δ,τ)  = ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 6:11
 aʳ₃(δ,τ)  = ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 12:18
 
 ```
-parameters  `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
+Parameters  `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 
 ## References
 1. Lemmon, E. W., McLinden, M. O., & Wagner, W. (2009). Thermodynamic properties of propane. III. A reference equation of state for temperatures from the melting line to 650 K and pressures up to 1000 MPa. Journal of Chemical and Engineering Data, 54(12), 3141–3180. [doi:10.1021/je900217v](https://doi.org/10.1021/je900217v)

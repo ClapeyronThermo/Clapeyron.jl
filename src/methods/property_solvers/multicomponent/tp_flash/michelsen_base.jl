@@ -16,8 +16,8 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
     F=nothing, G=nothing, H=nothing)
 
-    # Objetive Function to minimize the Gibbs Free Energy
-    # It computes the Gibbs free energy, its gradient and its hessian
+    # Objetive Function to minimize the Gibbs energy
+    # It computes the Gibbs energy, its gradient and its hessian
     iv = 0
     for i in eachindex(z)
         if in_equilibria[i]
@@ -38,7 +38,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     volx,voly = vcache[]
     all_equilibria = all(in_equilibria)
     if H !== nothing
-        # Computing Gibbs Energy Hessian
+        # Computing Gibbs energy Hessian
         lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x; phase=phasex, vol0=volx)
         lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y; phase=phasey, vol0=voly)
 
@@ -78,7 +78,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     end
 
     if G !== nothing
-        # Computing Gibbs Energy gradient
+        # Computing Gibbs energy gradient
         i0 = 0
         for i in eachindex(in_equilibria)
             if in_equilibria[i]
@@ -89,7 +89,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     end
 
     if F !== nothing
-        # Computing Gibbs Energy
+        # Computing Gibbs energy
         FO = dot(ny,ϕy) + dot(nx,ϕx)
         return FO
     end

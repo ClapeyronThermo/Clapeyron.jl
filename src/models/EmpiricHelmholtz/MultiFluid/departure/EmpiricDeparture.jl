@@ -92,7 +92,7 @@ EmpiricDeparture <: MultiFluidDepartureModel
 
 ## Input parameters
 none
-- `F`: Pair Parameter (`Float64`) - binary interaction parameter (no units)
+- `F`: Pair Parameter (`Float64`) - Binary Interaction Parameter (no units)
 - `parameters`: Pair Parameter (`String`) - JSON data containing the departure terms for the binary pair
 
 ## Description

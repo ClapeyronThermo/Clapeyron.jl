@@ -76,7 +76,7 @@ end
 
 function x0_sublimation_pressure(model,T)
     #we can suppose we are in a low pressure regime, we treat the solid as a liquid,
-    #and apply the zero pressure aproximation.
+    #and apply the zero pressure approximation.
     solid = solid_model(model)
     fluid = fluid_model(model)
     R̄ = Rgas(solid)

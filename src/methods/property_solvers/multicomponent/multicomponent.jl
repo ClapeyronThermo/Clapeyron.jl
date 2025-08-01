@@ -8,7 +8,7 @@
 """
     mixture_critical_constraint(model,V,T,z)
 
-with `a(x)` the reduced `(A/RT)` Helmholtz free energy dependent on composition `xᵢ` for `i` ∈ `1:n`, returns `L` and `det(M)`, where `L` and `M` are defined as:
+with `a(x)` the reduced `(A/RT)` Helmholtz energy dependent on composition `xᵢ` for `i` ∈ `1:n`, returns `L` and `det(M)`, where `L` and `M` are defined as:
 ```
 L := det(ℍ(a)) (ℍ = hessian)
 M := ℍ(a) for rows ∈ 1:n-1

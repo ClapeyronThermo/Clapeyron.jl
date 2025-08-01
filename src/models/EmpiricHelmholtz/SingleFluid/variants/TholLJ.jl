@@ -59,7 +59,7 @@ end
 """
     TholLJ()
 
-Lennard-Jones Reference equation of state. valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
+Lennard-Jones Reference equation of state. Valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
 ```
 τᵢ = 1.32/T
 δᵢ = n/0.31V

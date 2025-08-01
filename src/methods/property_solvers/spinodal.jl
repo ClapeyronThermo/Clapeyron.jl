@@ -2,9 +2,9 @@
 """
     spinodal_pressure(model::EoSModel, T, x; v0, phase)
 
-Calculates the spinodal pressure and volume for a given temperature and composition. Returns a tuple, containing:
-- spinodal pressure `[Pa]`
-- spinodal volume `[m³]`    
+Calculates the spinodal pressure `p` and `v` volume for a given temperature `T` and composition `z`. Returns a tuple, containing:
+- Spinodal pressure `[Pa]`
+- Spinodal volume `[m³]`    
     
 Calculates either the liquid or the vapor spinodal point depending on the given starting volume `v0` or the `phase`. The keyword `phase` is ignored if `v0` is given.
 """
@@ -48,11 +48,11 @@ function spinodal_pressure(model::EoSModel,T,z=SA[1.];v0=nothing,phase=:unknown)
 end
 
 """
-    spinodal_temperature(model::EoSModel, p, x; T0, v0, phase)
+    spinodal_temperature(model::EoSModel, p, z; T0, v0, phase)
 
-Calculates the spinodal pressure and volume for a given pressure and composition. Returns a tuple, containing:
-- spinodal temperature `[K]`
-- spinodal volume `[m³]`    
+Calculates the spinodal temperature `T` and volume `V` for a given pressure `p` and composition `z`. Returns a tuple, containing:
+- Spinodal temperature `[K]`
+- Spinodal volume `[m³]`    
 
 Calculates either the liquid or the vapor spinodal point depending on the given starting temperature `T0` and volume `v0` or the `phase`. The keyword `phase` is ignored if `T0` or `v0` is given.
 """

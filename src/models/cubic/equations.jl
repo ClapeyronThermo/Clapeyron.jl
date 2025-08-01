@@ -25,7 +25,7 @@ const ONLY_ACENTRICFACTOR = vcat(IGNORE_HEADERS,["Tc", "Pc", "Vc"])
     ab_premixing(model,mixing,kij = nothing,lij = nothing)
 
 Given a model::CubicModel, that has `a::PairParam`, `b::PairParam`, a mixing::MixingRule and `kij`,`lij` matrices, `ab_premixing` will perform an implace calculation
-to obtain the values of `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the van der Waals One-Fluid mixing rule. that is:
+to obtain the values of `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the Van der Waals One-Fluid mixing rule. that is:
 ```
 aᵢⱼ = sqrt(aᵢ*aⱼ)*(1-kᵢⱼ)
 bᵢⱼ = (bᵢ + bⱼ)/2

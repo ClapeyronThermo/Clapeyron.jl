@@ -46,16 +46,16 @@ export BACKSAFT
     assoc_options = AssocOptions())
 
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `vol`: Single Parameter (`Float64`) - Segment Volume [`dm^3`]
-- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K/mol]`
-- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
+- `vol`: Single Parameter (`Float64`) - Segment Volume `[dm³]`
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K·mol⁻¹]`
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 - `c`: Single Parameter (`Float64`) - Adjustable parameter (no units)
 - `alpha`: Single Parameter (`Float64`) - Non-spherical deviation (no units)
 
 ## Model Parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`

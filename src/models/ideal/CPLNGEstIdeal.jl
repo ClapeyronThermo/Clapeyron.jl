@@ -15,11 +15,11 @@ end
 
 ## Input parameters
 
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 
 ## Model parameters
 
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `coeffs`: Single Parameter (`NTuple{5,Float64}`) - polynomial coefficients
 
 ## Description

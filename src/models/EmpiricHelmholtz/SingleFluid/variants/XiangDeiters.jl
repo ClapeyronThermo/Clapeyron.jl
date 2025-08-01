@@ -26,8 +26,8 @@ end
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m3/mol]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `acentricfactor`: Single Parameter (`Float64`)
   
 ## Input models

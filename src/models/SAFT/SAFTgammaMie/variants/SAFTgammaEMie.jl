@@ -15,11 +15,11 @@ This function is used to create an SAFT-gammaE Mie model which is a combination 
 
 ## Input parameters
 ### SAFT-VR Mie Parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `vst`: Single Parameter (`Float64`) - Number of segments (no units)
 - `S`: Single Parameter (`Float64`) - Shape factor for segment (no units)
-- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
-- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`

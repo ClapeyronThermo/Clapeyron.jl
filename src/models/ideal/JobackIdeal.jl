@@ -65,7 +65,7 @@ export JobackIdeal
 
 ## Input parameters
 
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `N_a`: Single Parameter (`Float64`)
 - `T_c`: Single Parameter (`Float64`)
 - `P_c`: Single Parameter (`Float64`)

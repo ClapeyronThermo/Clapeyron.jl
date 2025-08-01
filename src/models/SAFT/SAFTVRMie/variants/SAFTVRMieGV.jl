@@ -71,22 +71,22 @@ end
     assoc_options = AssocOptions()) # SS: is it possible to add another parameter here to select/deselect DQ term?
 
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
-- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
 - `lambda_a`: Pair Parameter (`Float64`) - Attractive range parameter (no units)
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
-- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 - `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
 - `np` : Single Parameter (`Float64`) - number of dipolar segments (no units)
-- `quadrupole`: Single Parameter (`Float64`) - Quadrupole moment `[DA°]`
+- `quadrupole`: Single Parameter (`Float64`) - Quadrupole moment `[D·Å]`
 - `nQ` : Single Parameter (`Float64`) - number of quadrupolar segments (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 
 ## Model Parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
@@ -94,10 +94,10 @@ end
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
 - `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
 - `np` : Single Parameter (`Float64`) - number of dipolar segments (no units)
-- `quadrupole`: Single Parameter (`Float64`) - Quadrupole moment `[DA°]`
+- `quadrupole`: Single Parameter (`Float64`) - Quadrupole moment `[D·Å]`
 - `nQ` : Single Parameter (`Float64`) - number of quadrupolar segments (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 
 ## Input models
 - `idealmodel`: Ideal Model

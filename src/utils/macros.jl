@@ -9,7 +9,7 @@ function arbitraryparam(params)
     paramstype = typeof(params)
     idx = findfirst(z->z <: ClapeyronParam,fieldtypes(paramstype))
     if isnothing(idx)
-        error("The paramater struct ", paramstype, " must contain at least one ClapeyronParam")
+        error("The parameter struct ", paramstype, " must contain at least one ClapeyronParam")
     end
      return fieldnames(paramstype)[idx] |> z->getfield(params,z)
 end
