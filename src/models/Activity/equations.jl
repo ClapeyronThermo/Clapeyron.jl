@@ -66,7 +66,7 @@ end
 this is technically wrong on the strict sense of helmholtz residual energy,
 but allows us to evaluate the excess terms of an activity model with ease.
 
-The main problem is that activity models are defined in a P-T basis, while the helmholtz energy framework used by Clapeyron requires a V-T basis.
+The main problem is that activity models are defined in a P-T basis, while the Helmholtz free energy framework used by Clapeyron requires a V-T basis.
 we circunvent this by using the dispatches on PT_property.
 Activity models are transformed into a GammaPhi wrapper that evaluates the pure and excess parts in a correct way.
 

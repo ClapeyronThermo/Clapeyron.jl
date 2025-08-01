@@ -244,7 +244,7 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
     (!isfinite(ptp) | (ptp < 0)) && (ptp = zero(ptp))
     if p > Pc
         #supercritical conditions, liquid
-        #https://doi.org/10.1016/j.ces.2018.08.043 gives an aproximation of the pv curve at T = Tc
+        #https://doi.org/10.1016/j.ces.2018.08.043 gives an approximation of the pv curve at T = Tc
         #=
         abs(1 - P/Pc) = abs(1-Vc/V)^(1/Zc)
         abs(1 - P/Pc)^Zc = abs(1-Vc/V)

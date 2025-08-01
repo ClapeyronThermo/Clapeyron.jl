@@ -189,7 +189,7 @@ end
 """
     volume_virial(model::EoSModel,p,T,z=SA[1.0])
     volume_virial(B::Real,p,T,z=SA[1.0])
-Calculates an aproximation to the gas volume at specified pressure `p`, temperature `T` and composition `z`, by aproximating:
+Calculates an approximation to the gas volume at specified pressure `p`, temperature `T` and composition `z`, by aproximating:
 ```julia
 Z(v) ≈ 1 + B(T)/v
 ```

@@ -13,7 +13,7 @@ abstract type MixingRule <:EoSModel end #mixing rules for cubics (and empiric He
 abstract type ActivityModel <: EoSModel end
 abstract type IdealModel <: EoSModel end
 abstract type EmpiricHelmholtzModel <: EoSModel end
-abstract type SatPureAproximation <: EoSModel end
+abstract type SatPureapproximation <: EoSModel end
 abstract type AlphaModel <:EoSModel end
 abstract type ElectrolyteModel <: EoSModel end
 abstract type IonModel <: ElectrolyteModel end

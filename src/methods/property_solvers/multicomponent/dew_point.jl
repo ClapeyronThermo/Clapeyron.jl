@@ -24,7 +24,7 @@ function index_reduction(method::DewPointMethod,idx_r)
 end
 
 function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables), crit = nothing)
-    sat = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
+    sat = extended_saturation_pressure.(pure,T,crit) #saturation, or approximation via critical point.
     p0inv_r = 1. ./ first.(sat)
     p0inv = index_expansion(p0inv_r,condensables)
     yipi = y .* p0inv ./ sum(y)

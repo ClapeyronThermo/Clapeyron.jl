@@ -18,7 +18,7 @@ function _propaneref_tsat(p)
     P_c = 4.2512e6
     T_c = 369.89
     p > P_c && return zero(p)/zero(p)
-    #first aproximation
+    #first approximation
     A,B,C = 13.6515,1850.8,249.99-273.15
     T0 = B/(A - log(p*1e-3)) - C
     T0 > T_c && (T0 = T_c*p/P_c)

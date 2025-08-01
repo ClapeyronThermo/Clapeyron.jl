@@ -54,7 +54,7 @@ COSTALD
 # Virial Models
 
 Virial models are defined in terms of the second virial coefficient, `B(T,z)`.
-The reduced residual Helmholtz energy is defined as:
+The reduced residual Helmholtz free energy is defined as:
 
 ``\frac{A_\mathrm{res}}{Nk_\mathrm{B}T} = \frac{B}{V}``,
 

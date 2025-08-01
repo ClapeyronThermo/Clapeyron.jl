@@ -19,7 +19,7 @@ export MSA
 - `RSPmodel`: Relative Static Permittivity Model
 
 ## Description
-This function is used to create a Mean Spherical Approximation model. The MSA term gives the excess Helmholtz energy to account for the electrostatic interactions between ions in solution.
+This function is used to create a Mean Spherical Approximation model. The MSA term gives the excess Helmholtz free energy to account for the electrostatic interactions between ions in solution.
 
 ## References
 1. Blum, L. (1974). Solution of a model for the solvent-electrolyte interactions in the mean spherical approximation. The Journal of Chemical Physics, 61(5), 2129–2133. [doi:10.1063/1.1682224](https://doi.org/10.1063/1.1682224)

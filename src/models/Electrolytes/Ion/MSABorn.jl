@@ -26,7 +26,7 @@ export MSABorn
 - `RSPmodel`: Relative Static Permittivity Model
 
 ## Description
-This function is used to create a Mean Spherical Approximation-Born model. The MSA-Born term gives the excess Helmholtz energy to account for the electrostatic interactions between ions in solution.
+This function is used to create a Mean Spherical Approximation-Born model. The MSA-Born term gives the excess Helmholtz free energy to account for the electrostatic interactions between ions in solution.
 
 ## References
 1. Blum, L. (1974). Solution of a model for the solvent‐electrolyte interactions in the mean spherical approximation, 61, 2129–2133.

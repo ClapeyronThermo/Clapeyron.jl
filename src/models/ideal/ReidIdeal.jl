@@ -61,7 +61,7 @@ abstract type ReidIdealModel <: PolynomialIdealModel end
 
 ## Description
 
-Reid Ideal Model. Helmholtz energy obtained via integration of specific heat capacity:
+Reid Ideal Model. Helmholtz free energy obtained via integration of specific heat capacity:
 
 ```
 Cpᵢ(T) = aᵢ  + bᵢT + cᵢT^2 + dᵢT^3 + eᵢT^4

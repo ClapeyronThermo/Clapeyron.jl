@@ -32,7 +32,7 @@ Returns the total Helmholtz free energy.
 - `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
 # Outputs:
 - Total Helmholtz free energy, in `[J]`.
-By default, it calls `R̄*T*∑(z)*(a_ideal(ideal_model,V,T,z) + a_res(model,V,T,z))` where `ideal_model == idealmodel(model)`, where `a_res` is the reduced residual Helmholtz energy and `a_ideal` is the reduced ideal Helmholtz energy.
+By default, it calls `R̄*T*∑(z)*(a_ideal(ideal_model,V,T,z) + a_res(model,V,T,z))` where `ideal_model == idealmodel(model)`, where `a_res` is the reduced residual Helmholtz free energy and `a_ideal` is the reduced ideal Helmholtz free energy.
 You can mix and match ideal models if you provide:
 - `[idealmodel](@ref)(model)`: extracts the ideal model from your Thermodynamic model.
 - `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz free energy.
@@ -81,7 +81,7 @@ Returns the residual Helmholtz free energy.
 - `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
 # Outputs:
 - Residual Helmholtz free energy, in `[J]`.
-By default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where [`a_res`](@ref) is the reduced residual Helmholtz energy.
+By default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where [`a_res`](@ref) is the reduced residual Helmholtz free energy.
 """
 function eos_res(model::EoSModel, V, T, z=SA[1.0])
     return Rgas(model)*sum(z)*T*a_res(model,V,T,z)

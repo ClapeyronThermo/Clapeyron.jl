@@ -28,7 +28,7 @@ function CompositeModel(components ;
     verbose = false,
     reference_state = nothing)
 
-Model that holds representations of fluid (and/or solid) that aren't evaluated using the Helmholtz energy-based approach used in the rest of the library.
+Model that holds representations of fluid (and/or solid) that aren't evaluated using the Helmholtz free energy-based approach used in the rest of the library.
 
 It contains a fluid model, a solid model (optional), and a mapping between the solid and liquid components (if necessary). 
 

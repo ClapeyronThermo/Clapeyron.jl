@@ -294,7 +294,7 @@ end
 
 function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,volatiles),crit = nothing)
     #check each T with T_scale, if treshold is over, replace Pi with inf
-    sat = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
+    sat = extended_saturation_pressure.(pure,T,crit) #saturation, or approximation via critical point.
     p0r = first.(sat)
     p0 = index_expansion(p0r,volatiles)
     xipi = p0 .* x ./ sum(x)

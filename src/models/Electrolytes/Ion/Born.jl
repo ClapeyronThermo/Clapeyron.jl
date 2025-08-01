@@ -28,7 +28,7 @@ export Born
 - `RSPmodel`: Relative Static Permittivity Model
 
 ## Description
-This function is used to create a Born model. The Born term gives the excess Helmholtz energy to account for the electrostatic interactions between ions in solution.
+This function is used to create a Born model. The Born term gives the excess Helmholtz free energy to account for the electrostatic interactions between ions in solution.
 
 ## References
 1. Born, M. (1920). Z. Phys. 1, 45.

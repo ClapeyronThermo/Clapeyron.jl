@@ -220,8 +220,8 @@ Let us imagine we are trying to implement `PCSAFT`.
    If we obey that convention, we may use the `@f` macro, which automatically substitutes the first four parameters for compactness.
    For example, `@f(func,i,j)` is equivalent to calling `func(model,V,T,z,i,j)`.
 
-   Clapeyron obtains all the properties of a model by differentiating the total Helmholtz energy ([`eos`](@ref)) or the residual Helmholtz energy ([`eos_res`](@ref)).
-   `eos` and `eos_res` themselves are defined in terms of the reduced ideal Helmholtz energy (`a_res`).
+   Clapeyron obtains all the properties of a model by differentiating the total Helmholtz free energy ([`eos`](@ref)) or the residual Helmholtz free energy ([`eos_res`](@ref)).
+   `eos` and `eos_res` themselves are defined in terms of the reduced ideal Helmholtz free energy (`a_res`).
    In this case, we are going to define `a_res` for our own model:
 
    ```julia
