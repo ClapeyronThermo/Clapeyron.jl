@@ -7,7 +7,7 @@
 """
     ∂f∂T(model,V,T,z=SA[1.0])
 
-Returns `∂f/∂T` at constant total volume and composition, where f is the total Helmholtz energy, given by `eos(model,V,T,z)`.
+Returns `∂f/∂T` at constant total volume and composition, where `f` is the total Helmholtz energy, given by `eos(model,V,T,z)`.
 
 """
 function ∂f∂T(model,V,T,z::AbstractVector)
@@ -156,7 +156,7 @@ end
 """
     f_hess(model,V,T,z)
 
-Returns the second order volume (`V`) and temperature (`T`) derivatives of the total Helmholtz energy `f` (given by `eos(model,V,T,z)`). The result is given in a 2x2 `SMatrix`, in the form:
+Returns the second order volume `V` and temperature `T` derivatives of the total Helmholtz energy `f` (given by `eos(model,V,T,z)`). The result is given in a 2x2 `SMatrix`, in the form:
 
 ```julia
 [ ∂²f/∂V²  ∂²f/∂V∂T

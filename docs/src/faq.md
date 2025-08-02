@@ -14,7 +14,7 @@ In summary, the user should consider the conditions and type of properties when 
 
 ## Why are the default caloric properties so bad?
 
-By Default, almost all models use `BasicIdeal` for their ideal model.
+By default, almost all models use `BasicIdeal` for their ideal model.
 This model assumes an isobaric heat capacity of `Cp = 2.5R` (the theoretical value for a monoatomic gas).
 If an user is only looking to calculate pressure‑dependent properties (equilibria, saturation, critical points, etc), the `BasicIdeal` model will not ask for additional parameters.
 Note that `SingleFluid` models (and by extension, `MultiFluid` models) have a reference ideal model included.
@@ -54,7 +54,7 @@ There are two main causes for a slow function in julia:
 
   # good
   function Clapeyron.a_res(model::MyvdW,V,T,z)
-      result = zero(Base.promote_eltype(model,V,T,z))  # the result value already considers the types of the model, V,T and the input amounts
+      result = zero(Base.promote_eltype(model,V,T,z))  # the result value already considers the types of the model, V, T and the input amounts
       n = sum(z)
       a = model.a
       b = model.b

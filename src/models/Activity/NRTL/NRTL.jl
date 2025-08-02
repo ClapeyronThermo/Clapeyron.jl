@@ -36,7 +36,7 @@ export NRTL
 - `puremodel`: model to calculate pure pressure-dependent properties
 
 ## Description
-NRTL (Non Random Two Liquids) activity model:
+NRTL (Non-random two-liquid) activity coefficient model:
 ```
 Gᴱ = nRT∑[xᵢ(∑τⱼᵢGⱼᵢxⱼ)/(∑Gⱼᵢxⱼ)]
 Gᵢⱼ exp(-cᵢⱼτᵢⱼ)
