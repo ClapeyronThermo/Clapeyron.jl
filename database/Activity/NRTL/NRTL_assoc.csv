@@ -35,7 +35,7 @@ ethyl acetate,0.542,0.000,2,0,3.48,10.1021/acs.iecr.9b02078
 ethyl formate,0.557,0.000,2,0,2.82,10.1021/acs.iecr.9b02078
 ethylbenzene,0.132,0.000,1,0,4.60,10.1021/acs.iecr.9b02078
 ethylene glycol,1,1,4,2,2.41,10.1021/acs.iecr.9b02078
-ethylene glycol n-butyl ether,1,0.260,2,1,5.05,10.1002/aic.17061 # ToDo: Add second association site
+EGBE~|~ethylene glycol monobutyl ether~|~2-Butoxyethanol~|~ethylene glycol n-butyl ether,~|~2-butoxyethanol~|~2-butoxyethan-1-ol,1,0.260,2,1,5.05,10.1002/aic.17061 # ToDo: Add second association site
 formamide,0.845,0.510,3,2,1.68,10.1021/acs.iecr.9b02078
 formic acid,7.938,0.536,1,1,1.50,10.1021/acs.iecr.9b02078
 n-heptane,0,0,0,0,5.17,10.1021/acs.iecr.9b02078
@@ -63,7 +63,7 @@ n-octane,0,0,0,0,5.85,10.1002/aic.17061
 1-octanol,1,1,2,1,6.15,10.1021/acs.iecr.9b02078
 n-pentane,0,0,0,0,3.83,10.1021/acs.iecr.9b02078
 1-pentanol,1,1,2,1,4.13,10.1021/acs.iecr.9b02078
-p-cresol,0,5.234,0,1,4.29,10.1002/aic.17061
+p-cresol~|~4-methylphenol,0,5.234,0,1,4.29,10.1002/aic.17061
 1-propanol,1,1,2,1,2.78,10.1021/acs.iecr.9b02078
 n-propyl acetate,0.468,0.000,2,0,4.15,10.1021/acs.iecr.9b02078
 propylene glycol,1,1,4,2,3.08,10.1021/acs.iecr.9b02078

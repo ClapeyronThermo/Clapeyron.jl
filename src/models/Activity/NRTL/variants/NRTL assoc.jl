@@ -25,7 +25,7 @@ NRTLAssoc
 
 default_locations(::Type{NRTLAssoc}) = [
     "properties/molarmass.csv",
-    "Activity/NRTL/NRTL_unlike.csv",
+    "Activity/NRTL/NRTL_assoc_unlike.csv",
     "Activity/NRTL/NRTL_assoc.csv"
 ]
 
