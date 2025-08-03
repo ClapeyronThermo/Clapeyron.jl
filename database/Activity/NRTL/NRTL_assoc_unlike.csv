@@ -5,7 +5,7 @@ hexane~|~n-hexane,,water,,-0.33,3.64,0.2,10.1002/aic.17061
 dmso~|~dimethyl sulfoxide,,chcl3~|~chloroform~|~trichloromethane,,0.50,1.17,0.3,10.1002/aic.17061
 dmso~|~dimethyl sulfoxide,,water,,-1.24,1.10,0.3,10.1002/aic.17061
 chcl3~|~chloroform~|~trichloromethane,,water,,-1.21,2.85,0.2,
-EGBE~|~ethylene glycol monobutyl ether~|~2-Butoxyethanol~|~ethylene glycol n-butyl ether,,water,,2.66,-2.08,0.3,10.1002/aic.17061
+EGBE~|~ethylene glycol monobutyl ether~|~2-Butoxyethanol~|~ethylene glycol n-butyl ether,~|~2-butoxyethanol~|~2-butoxyethan-1-ol,,water,,2.66,-2.08,0.3,10.1002/aic.17061
 methanol,,hexane~|~n-hexane,,-1.45,2.188,0.2,10.1002/aic.17061
 methanol,,cyclohexane,,-1.474,2.379,0.2,10.1002/aic.17061
 hexane~|~n-hexane,,cyclohexane,,-0.37,0.52,0.3,10.1002/aic.17061
