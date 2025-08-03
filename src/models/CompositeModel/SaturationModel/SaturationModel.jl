@@ -44,4 +44,5 @@ end
 
 include("LeeKeslerSat/LeeKeslerSat.jl")
 include("DIPPR101Sat/DIPPR101Sat.jl")
+include("AntoineSat/AntoineSat.jl")
 include("PolExpSat/PolExpSat.jl")

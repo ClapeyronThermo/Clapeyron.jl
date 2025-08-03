@@ -1,5 +1,5 @@
 Clapeyron Database File
-DIPPR101 Like Parameters for molar volume (from Perry)
+DIPPR101 Like Parameters for saturation pressure (from Perry)
 CAS,species,A,B,C,D,E,Tmin,Tmax
 50-00-0,methanal~|~formaldehyde,101.51,-4917.2,-13.765,0.022031,1.0,181.15,408.0
 55-21-0,benzamide,85.474,-11932.0,-8.3348,1.285e-18,6.0,403.0,824.0
