@@ -17,7 +17,7 @@ end
 
 ## Parameters
 
-- `Gform`: Single Parameter (`Float64`) - Formation gibbs free energy in water at infinite dilution 1 bar and the reference temperature`[J·mol⁻¹]`
+- `Gform`: Single Parameter (`Float64`) - Formation Gibbs energy in water at infinite dilution 1 bar and the reference temperature`[J·mol⁻¹]`
 - `Hform`: Single Parameter (`Float64`) -Formation enthalpy in water at infinite dilution 1 bar and the reference temperature`[J·mol⁻¹]`
 - `Tref`: Single Parameter (`Float64`) - Reference temperature `[K]`
 
