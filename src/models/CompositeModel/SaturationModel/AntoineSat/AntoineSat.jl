@@ -23,22 +23,21 @@ end
 
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `A`: Single Parameter (`Float64`)
-- `B`: Single Parameter (`Float64`)
-- `C`: Single Parameter (`Float64`)
-- `Tmin`: Single Parameter (`Float64`)  - mininum Temperature range `[K]`
-- `Tmax`: Single Parameter (`Float64`)  - maximum Temperature range `[K]`
+- `A`: Single Parameter (`Float64`) - First coefficient `[dimensionless]`
+- `B`: Single Parameter (`Float64`) - Second coefficent `[°C]`
+- `C`: Single Parameter (`Float64`) - Third coefficent `[°C]`
+- `Tmin`: Single Parameter (`Float64`)  - Mininum Temperature range `[K]`
+- `Tmax`: Single Parameter (`Float64`)  - Maximum Temperature range `[K]`
 
 ## Model Parameters
 
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `A`: Single Parameter (`Float64`)
-- `B`: Single Parameter (`Float64`)
-- `C`: Single Parameter (`Float64`)
-- `Tmin`: Single Parameter (`Float64`)  - mininum Temperature range `[K]`
-- `Tmax`: Single Parameter (`Float64`)  - maximum Temperature range `[K]`
-
+- `A`: Single Parameter (`Float64`) - First coefficient `[dimensionless]`
+- `B`: Single Parameter (`Float64`) - Second coefficent `[°C]`
+- `C`: Single Parameter (`Float64`) - Third coefficent `[°C]`
+- `Tmin`: Single Parameter (`Float64`)  - Mininum Temperature range `[K]`
+- `Tmax`: Single Parameter (`Float64`)  - Maximum Temperature range `[K]`
 ## Description
 
 Antoine Equation for saturation pressure:

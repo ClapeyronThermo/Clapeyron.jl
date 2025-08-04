@@ -1,23 +1,23 @@
-struct MargulesParam <: EoSParam
+struct VanLaarParam <: EoSParam
     A₁₂::SingleParam{Float64}
     A₂₁::SingleParam{Float64}
     Mw::SingleParam{Float64}
 end
 
-abstract type MargulesModel <: ActivityModel end
+abstract type VanLaarModel <: ActivityModel end
 
-struct Margules{c<:EoSModel} <: MargulesModel
+struct VanLaar{c<:EoSModel} <: VanLaarModel
     components::Array{String,1}
-    params::MargulesParam
+    params::VanLaarParam
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
 end
 
-export Margules
+export VanLaar
 
 """
-    Margules <: ActivityModel
-    Margules(components;
+    VanLaar <: ActivityModel
+    VanLaar(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
@@ -37,30 +37,30 @@ export Margules
 - `puremodel`: model to calculate pure pressure-dependent properties
 
 ## Description
-Margules activity coefficient model, for binary mixture:
+VanLaar activity coefficient model, for binary mixture:
 ```
-Gᴱ = nRT·(x₁·x₂·(A₂₁·x₁+A₁₂·x₂))
+Gᴱ = nRT·(A₁₂·x₁·A₂₁·x₂/(A₁₂·x₁ + A₂₁·x₂))
 ```
 
 ## Model Construction Examples
 ```
 # Using the default database
-model = Margules(["water","ethanol"]) #Default pure model: PR
-model = Margules(["water","ethanol"],puremodel = BasicIdeal) #Using Ideal Gas for pure model properties
-model = Margules(["water","ethanol"],puremodel = PCSAFT) #Using Real Gas model for pure model properties
+model = VanLaar(["water","ethanol"]) #Default pure model: PR
+model = VanLaar(["water","ethanol"],puremodel = BasicIdeal) #Using Ideal Gas for pure model properties
+model = VanLaar(["water","ethanol"],puremodel = PCSAFT) #Using Real Gas model for pure model properties
 
 # Passing a prebuilt model
 
 my_puremodel = AbbottVirial(["water","ethanol"]; userlocations = ["path/to/my/db","critical.csv"])
-mixing = Margules(["water","ethanol"],puremodel = my_puremodel)
+mixing = VanLaar(["water","ethanol"],puremodel = my_puremodel)
 
 # Using user-provided parameters
 
 # Passing files or folders
-model = Margules(["water","ethanol"];userlocations = ["path/to/my/db","margules.csv"])
+model = VanLaar(["water","ethanol"];userlocations = ["path/to/my/db","vanLaar.csv"])
 
 # Passing parameters directly
-model = Margules(["water","ethanol"],
+model = VanLaar(["water","ethanol"],
         userlocations = (A₁₂ = [4512],
                         A₂₁ = [3988.52],
                         Mw = [18.015, 46.069])
@@ -68,13 +68,15 @@ model = Margules(["water","ethanol"],
 ```
 
 ## References
-1. Max Margules, « Über die Zusammensetzung der gesättigten Dämpfe von Misschungen », Sitzungsberichte der Kaiserliche Akadamie der Wissenschaften Wien Mathematisch-Naturwissenschaftliche Klasse II, vol. 104, 1895, p. 1243–1278
+[1] J. J. van Laar, Sechs Vorträgen über das thermodynamische Potential. (Six Lectures on the Thermodynamic Potential). Braunschweig, Fried. Vieweg & Sohn, 1906.
+[2] J. J. van Laar, “Über Dampfspannungen von binären Gemischen (The vapor pressure of binary mixtures)”, Z. Physik. Chem., vol. 72, pp. 723-751, May 1910.
+[3] J. J. van Laar, “Zur Theorie der Dampfspannungen von binären Gemischen. Erwiderung an Herrn F. Dolezalek (Theory of vapor pressure of binary mixtures. Reply to Mr. F. Dolezalek)”, Z. Physik. Chem., vol. 83, pp. 599-608, June 1913. 
 """
-Margules
+VanLaar
 
-default_locations(::Type{Margules}) = ["properties/critical.csv", "properties/molarmass.csv","Activity/Margules/margules_unlike.csv"]
+default_locations(::Type{VanLaar}) = ["properties/critical.csv", "properties/molarmass.csv","Activity/VanLaar/vanLaar_unlike.csv"]
 
-function Margules(components;
+function VanLaar(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
@@ -82,28 +84,28 @@ function Margules(components;
     reference_state = nothing)
     
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(Margules); userlocations = userlocations, asymmetricparams=["A₁₂","A₂₁"], ignore_missing_singleparams=["A₁₂","A₂₁"], verbose = verbose)
+    params = getparams(formatted_components, default_locations(VanLaar); userlocations = userlocations, asymmetricparams=["A₁₂","A₂₁"], ignore_missing_singleparams=["A₁₂","A₂₁"], verbose = verbose)
     A₁₂        = params["A₁₂"]
     A₂₁        = params["A₂₁"]
     Mw         = params["Mw"]
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    packagedparams = MargulesParam(A₁₂,A₂₁,Mw)
+    packagedparams = VanLaarParam(A₁₂,A₂₁,Mw)
     references = String["10.1021/ja01056a002"]
-    model = Margules(formatted_components,packagedparams,_puremodel,references)
+    model = VanLaar(formatted_components,packagedparams,_puremodel,references)
     set_reference_state!(model,reference_state,verbose = verbose)
-    binary_component_check(Margules,model)
+    binary_component_check(VanLaar,model)
     return model
 end
 
-function excess_g_margules(model::MargulesModel, p, T, z)
+function excess_g_VanLaar(model::VanLaarModel, p, T, z)
     n = sum(z)
     x = z ./ n
 
     A₁₂ = model.params.A₁₂.values[1]
     A₂₁ = model.params.A₂₁.values[1]
 
-    ge = x[1] * x[2] * (A₂₁*x[1] + A₁₂*x[2])
+    ge = A₁₂ * x[1] * A₂₁ * x[2] / (A₁₂*x[1] + A₂₁*x[2])
 
     return n * R̄ * T * ge
 end
