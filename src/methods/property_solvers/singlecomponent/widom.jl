@@ -70,8 +70,8 @@ The Widom point represents the temperature `T` where maxima of the isobaric heat
 In particular, `widom_temperature` calculates the widom point at a specified temperature.
 
 # Arguments
-- `model`: Thermodynamic model used for calculations.
-- `p`: Pressure at which to calculate the Widom temperature `[Pa]`.
+- `model`: Thermodynamic model used for calculations
+- `p`: Pressure at which to calculate the Widom temperature `[Pa]`
 - `T0`: Optional initial temperature guess `[K]`. If not provided, a default value will be used.
 - `v0`: Optional initial volume guess `[m³]`. If not provided, a default value will be used.
 
