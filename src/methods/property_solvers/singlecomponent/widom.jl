@@ -72,8 +72,8 @@ In particular, `widom_temperature` calculates the widom point at a specified tem
 # Arguments
 - `model`: Thermodynamic model used for calculations
 - `p`: Pressure at which to calculate the Widom temperature `[Pa]`
-- `T0`: Optional initial temperature guess. If not provided, a default value will be used
-- `v0`: Optional initial volume guess. If not provided, a default value will be used
+- `T0`: Optional initial temperature guess. If not provided, a default value will be used.
+- `v0`: Optional initial volume guess. If not provided, a default value will be used.
 
 # Returns
 - `Tw`: Widom temperature at the specified pressure `[K]`
