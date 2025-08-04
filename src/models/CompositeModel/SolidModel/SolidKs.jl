@@ -17,13 +17,13 @@ end
 
 ## Parameters
 
-- `Hfus`: Single Parameter (`Float64`) - Enthalpy of Fusion at 1 bar `[J·mol⁻¹]`
-- `Tm`: Single Parameter (`Float64`) - Melting Temperature `[K]`
-- `CpSL`: Single Parameter (`Float64`) - Heat Capacity of the Solid-Liquid Phase Transition `[J·mol⁻¹·K⁻¹]`
+- `Gform`: Single Parameter (`Float64`) - Formation gibbs free energy in water at infinite dilution 1 bar and the reference temperature`[J·mol⁻¹]`
+- `Hform`: Single Parameter (`Float64`) -Formation enthalpy in water at infinite dilution 1 bar and the reference temperature`[J·mol⁻¹]`
+- `Tref`: Single Parameter (`Float64`) - Reference temperature `[K]`
 
 ## Description
 
-Approximation of the excess chemical potential in the solid phase, using enthalpies and gibbs energies of formation:
+Approximation of the excess chemical potential in the solid phase, using enthalpies and gibbs energies of formation where the liquid reference is at infinite dilution in water:
 ```
 ln(xᵢγᵢ) = -Gformᵢ*T/Trefᵢ - Hformᵢ*(1 - T/Trefᵢ)
 ```
