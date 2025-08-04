@@ -51,23 +51,26 @@ function ePCSAFT(solvents,ions;
     neutralmodel = pharmaPCSAFT,
     ionmodel = hsdDH,
     RSPmodel = ConstRSP,
-    userlocations=String[], 
-    ideal_userlocations=String[],
+    charges = String[],
+    ideal_userlocations = String[],
+    neutralmodel_userlocations = String[],
+    ionmodel_userlocations = String[],
+    RSPmodel_userlocations = String[],
     assoc_options = AssocOptions(),
     verbose = false,
     reference_state = nothing)
     components = deepcopy(ions)
     prepend!(components,solvents)
 
-    params = getparams(format_components(components), ["Electrolytes/properties/charges.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(format_components(components), ["Electrolytes/properties/charges.csv"]; userlocations=charges, verbose=verbose)
     _charge = params["charge"]
     charge = _charge.values
 
     neutral_path = DB_PATH.*["/SAFT/PCSAFT","/SAFT/PCSAFT/ePCSAFT","/SAFT/PCSAFT/pharmaPCSAFT"]
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_neutralmodel = neutralmodel(components;userlocations=append!(userlocations,neutral_path),verbose=verbose,assoc_options=assoc_options)
-    init_ionmodel = ionmodel(solvents,ions;RSPmodel=RSPmodel,userlocations=append!(userlocations,neutral_path),verbose=verbose)
+    init_neutralmodel = neutralmodel(components;userlocations=append!(neutralmodel_userlocations,neutral_path),verbose=verbose,assoc_options=assoc_options)
+    init_ionmodel = ionmodel(solvents,ions;RSPmodel=RSPmodel,userlocations=append!(ionmodel_userlocations,neutral_path),verbose=verbose)
 
 
     for i in ions

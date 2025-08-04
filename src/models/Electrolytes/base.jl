@@ -37,8 +37,10 @@ function ESElectrolyte(solvents,ions;
     neutralmodel = pharmaPCSAFT,
     ionmodel = DH,
     RSPmodel = ConstRSP,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    charges = String[],
+    ideal_userlocations = String[],
+    neutralmodel_userlocations = String[],
+    ionmodel_userlocations = String[],
     RSPmodel_userlocations = String[],
     assoc_options = AssocOptions(),
     verbose = false,
@@ -46,7 +48,7 @@ function ESElectrolyte(solvents,ions;
     components = deepcopy(ions)
     prepend!(components,solvents)
 
-    params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=charges, verbose=verbose)
     charge = params["charge"].values
     #path0 = default_locations(neutralmodel)
     #remove unused datapaths
@@ -54,13 +56,13 @@ function ESElectrolyte(solvents,ions;
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_RSP = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations,verbose = verbose)
     if has_sites(neutralmodel)
-        init_neutralmodel = neutralmodel(components;userlocations,verbose,assoc_options)
+        init_neutralmodel = neutralmodel(components;userlocations=neutralmodel_userlocations,verbose,assoc_options)
     else
-        init_neutralmodel = neutralmodel(components;userlocations,verbose)
+        init_neutralmodel = neutralmodel(components;userlocations=neutralmodel_userlocations,verbose)
     end
 
     ionmodel_userlocations = userlocations
-    init_ionmodel = @initmodel ionmodel(solvents,ions;RSPmodel=init_RSP,userlocations = userlocations,verbose=verbose)
+    init_ionmodel = @initmodel ionmodel(solvents,ions;RSPmodel=init_RSP,userlocations=ionmodel_userlocations,verbose=verbose)
 
     components = init_neutralmodel.components
 
