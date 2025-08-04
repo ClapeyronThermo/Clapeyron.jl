@@ -61,7 +61,6 @@ function ESElectrolyte(solvents,ions;
         init_neutralmodel = neutralmodel(components;userlocations=neutralmodel_userlocations,verbose)
     end
 
-    ionmodel_userlocations = userlocations
     init_ionmodel = @initmodel ionmodel(solvents,ions;RSPmodel=init_RSP,userlocations=ionmodel_userlocations,verbose=verbose)
 
     components = init_neutralmodel.components
