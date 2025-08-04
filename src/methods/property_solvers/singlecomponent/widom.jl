@@ -13,18 +13,18 @@ dCₚdP|T = dCₚdV|T * dPdV|T
 
 Calculate the Widom pressure and corresponding volume at a given temperature for a thermodynamic model.
 
-The Widom point represents the temperature where maxima of the isobaric heat capacity occurs along an isobar in the supercritical region.
+The Widom point represents the temperature `T` where maxima of the isobaric heat capacity occurs along an isobar in the supercritical region.
 In particular, `widom_pressure` calculates the widom point at a specified temperature.
 
 # Arguments
-- `model`: Thermodynamic model used for calculations
-- `T`: Temperature at which to calculate the Widom pressure `[K]`
-- `p0`: Optional initial pressure guess. If not provided, a default value will be used
-- `v0`: Optional initial volume guess. If not provided, a default value will be used
+- `model`: Thermodynamic model used for calculations.
+- `T`: Temperature at which to calculate the Widom pressure `[K]`.
+- `p0`: Optional initial pressure guess `[Pa]`. If not provided, a default value will be used.
+- `v0`: Optional initial volume guess `[m³]`. If not provided, a default value will be used.
 
 # Returns
-- `pw`: Widom pressure at the specified temperature `[Pa]`
-- `vw`: Volume at the Widom pressure and specified temperature `[m³]`
+- `pw`: Widom pressure at the specified temperature `[Pa]`.
+- `vw`: Volume at the Widom pressure and specified temperature `[m³]`.
 
 # Example
 ```julia
@@ -66,18 +66,18 @@ end
 
 Calculate the Widom temperature and corresponding volume at a given pressure for a thermodynamic model.
 
-The Widom point represents the temperature where maxima of the isobaric heat capacity occurs along an isobar in the supercritical region.
+The Widom point represents the temperature `T` where maxima of the isobaric heat capacity occurs along an isobar in the supercritical region.
 In particular, `widom_temperature` calculates the widom point at a specified temperature.
 
 # Arguments
-- `model`: Thermodynamic model used for calculations
-- `p`: Pressure at which to calculate the Widom temperature `[Pa]`
-- `T0`: Optional initial temperature guess. If not provided, a default value will be used
-- `v0`: Optional initial volume guess. If not provided, a default value will be used
+- `model`: Thermodynamic model used for calculations.
+- `p`: Pressure at which to calculate the Widom temperature `[Pa]`.
+- `T0`: Optional initial temperature guess `[K]`. If not provided, a default value will be used.
+- `v0`: Optional initial volume guess `[m³]`. If not provided, a default value will be used.
 
 # Returns
-- `Tw`: Widom temperature at the specified pressure `[K]`
-- `vw`: Volume at the Widom temperature and specified pressure `[m³]`
+- `Tw`: Widom temperature at the specified pressure `[K]`.
+- `vw`: Volume at the Widom temperature and specified pressure `[m³]`.
 
 # Example
 ```julia
@@ -138,14 +138,14 @@ The CIIC represents points of maximum isobaric heat capacity (Cp) along isotherm
 Widom lines which represent maxima of Cp along isobars.
 
 # Arguments
-- `model`: Thermodynamic model used for calculations
-- `T`: Temperature at which to calculate the CIIC pressure `[K]`
-- `p0`: Optional initial pressure guess. If not provided, a default value will be used
-- `v0`: Optional initial volume guess. If not provided, a default value will be used
+- `model`: Thermodynamic model used for calculations.
+- `T`: Temperature at which to calculate the CIIC pressure `[K]`.
+- `p0`: Optional initial pressure guess `[Pa]`. If not provided, a default value will be used.
+- `v0`: Optional initial volume guess `[m³]`. If not provided, a default value will be used.
 
 # Returns
-- `p_ciic`: Pressure at the CIIC point for the specified temperature `[Pa]`
-- `v_ciic`: Volume at the CIIC point `[m³]`
+- `p_ciic`: Pressure at the CIIC point for the specified temperature `[Pa]`.
+- `v_ciic`: Volume at the CIIC point `[m³]`.
 
 # Example
 ```julia
@@ -196,14 +196,14 @@ The CIIC represents points of maximum isobaric heat capacity (Cp) along isotherm
 Widom lines which represent maxima of Cp along isobars.
 
 # Arguments
-- `model`: Thermodynamic model used for calculations
-- `p`: Pressure at which to calculate the CIIC temperature `[Pa]`
-- `T0`: Optional initial temperature guess. If not provided, a default value will be used
-- `v0`: Optional initial volume guess. If not provided, a default value will be used
+- `model`: Thermodynamic model used for calculations.
+- `p`: Pressure at which to calculate the CIIC temperature `[Pa]`.
+- `T0`: Optional initial temperature guess `[K]`. If not provided, a default value will be used.
+- `v0`: Optional initial volume guess `[m³]`. If not provided, a default value will be used.
 
 # Returns
-- `T_ciic`: Temperature at the CIIC point for the specified pressure `[K]`
-- `v_ciic`: Volume at the CIIC point `[m³]`
+- `T_ciic`: Temperature at the CIIC point for the specified pressure `[K]`.
+- `v_ciic`: Volume at the CIIC point `[m³]`.
 
 # Example
 ```julia
