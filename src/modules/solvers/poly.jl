@@ -1,7 +1,7 @@
 """
     det_22(a,b,c,d)
 
-Calculates `a*b - c*d` with less rounding error than doing it naively
+Calculates `a*b - c*d` with less rounding error than doing it naively.
 """
 function det_22(a,b,c,d)
     t = c*d

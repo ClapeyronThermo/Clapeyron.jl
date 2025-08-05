@@ -9,8 +9,8 @@ end
 """
     ad_newton(f,x0;atol = oneunit(T) * (eps(one(T)))^(4/5),rtol = )
 
-    Performs newton root finding (via Roots.jl), but the derivatives are calculated with ForwardDiff.jl
-    kwargs are passed to `Roots.find_zero`
+    Performs Newton root finding (via Roots.jl), but the derivatives are calculated with ForwardDiff.jl,
+    kwargs are passed to `Roots.find_zero`.
 """
 function ad_newton(f::F,x0::T;
     rtol= (eps(one(T)))^(4/5),

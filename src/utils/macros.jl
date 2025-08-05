@@ -541,7 +541,7 @@ end
 """
     @registermodel(model)
 
-given an existing model, composed of Clapeyron EoS models, ClapeyronParams or EoSParams, it will generate
+Given an existing model, composed of Clapeyron EoS models, ClapeyronParams or EoSParams, it will generate
 the necessary traits to make the model compatible with Clapeyron routines.
 
 !!! info
