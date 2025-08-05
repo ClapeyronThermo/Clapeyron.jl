@@ -8,7 +8,7 @@ abstract type ClapeyronParam end
 """
     EoSParam
 Abstract type corresponding to a container of `ClapeyronParam`s.
-it supposes that all fields are `ClapeyronParam`s.
+It supposes that all fields are `ClapeyronParam`s.
 """
 abstract type EoSParam end
 abstract type ParametricEoSParam{T} <: EoSParam end

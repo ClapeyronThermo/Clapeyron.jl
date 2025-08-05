@@ -16,16 +16,16 @@ end
     ReferenceState(type::Symbol = :no_set;T0 = NaN;P0 = NaN,H0 = NaN,S0 = NaN,phase = :unknown,z0 = Float64[])
 
 Parameter used to define a reference state for enthalpy and entropy, normally stored in the ideal model. 
-when set, it calculates a set of `a0` and `a1` values such as the entropy and enthalpy at a specified point are fixed.
+When set, it calculates a set of `a0` and `a1` values such as the entropy and enthalpy at a specified point are fixed.
 
 the `type` argument accepts the following standalone options:
 - `:no_set`: it returns the current defaults stablished by the equation of state.
-- `:ashrae`: h = s = 0 at -40°C saturated liquid
-- `:iir`: h = 200.0 kJ/kg, s=1.0 kJ/kg/K at 0C saturated liquid
+- `:ashrae`: h = s = 0 at -40 °C saturated liquid
+- `:iir`: h = 200.0 kJ/kg, s=1.0 kJ/kg/K at 0 °C saturated liquid
 - `:nbp`: h = s = 0 at 1 atm saturated liquid
-- `:stp`: h = s = 0 at 1 bar, 0°C fluid of the most stable phase
-- `:stp_old`: h = s = 0 at 1 atm, 0°C fluid of the most stable phase
-- `:ntp`: h = s = 0 at 1 atm, 20°C fluid of the most stable phase
+- `:stp`: h = s = 0 at 1 bar, 0 °C fluid of the most stable phase
+- `:stp_old`: h = s = 0 at 1 atm, 0 °C fluid of the most stable phase
+- `:ntp`: h = s = 0 at 1 atm, 20 °C fluid of the most stable phase
 
 it also accepts the following options, that require additional specifications:
 - `:volume` h = H0, s = S0, at T = T0, v = `volume(model,P0,T0,z0,phase = phase)`
