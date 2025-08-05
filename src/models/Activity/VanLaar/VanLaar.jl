@@ -84,7 +84,7 @@ function VanLaar(components;
     reference_state = nothing)
     
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(VanLaar); userlocations = userlocations, asymmetricparams=["A₁₂","A₂₁"], ignore_missing_singleparams=["A₁₂","A₂₁"], verbose = verbose)
+    params = getparams(formatted_components, default_locations(VanLaar); userlocations = userlocations, asymmetricparams=["A₁₂","A₂₁"], ignore_missing_singleparams=["A₁₂","A₂₁","Mw"], verbose = verbose)
     A₁₂        = params["A₁₂"]
     A₂₁        = params["A₂₁"]
     Mw         = params["Mw"]

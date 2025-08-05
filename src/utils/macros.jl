@@ -439,7 +439,7 @@ end
 """
     @newmodelsingleton name parent
 
-A macro that defines an EoSModel without any fields (\"singleton\" struct.). useful for defining EoS that don't use any parameters, while being composable with other `EoSModels`.
+A macro that defines an EoSModel without any fields (\"singleton\" struct.). Useful for defining EoS that don't use any parameters, while being composable with other `EoSModels`.
 """
 macro newmodelsingleton(name,parent)
     quote
@@ -456,8 +456,8 @@ end
     init_model(model::EoSModel,components,userlocations = String[],verbose = false)
     init_model(::Type{𝕄},components,userlocations = String[],verbose = false) where 𝕄 <: EoSModel
 
-Utility for building simple models. if a model instance is passed, it will return that instance.
-otherwise, it will build the model from the input components and user locations.
+Utility for building simple models. If a model instance is passed, it will return that instance.
+Otherwise, it will build the model from the input components and user locations.
 
 It is normally used for models that don't have additional submodels (like ideal models)
 or when such submodels are not used at all (like the pure model part of an Activity model when used in an Advanced mixing rule Cubic model)

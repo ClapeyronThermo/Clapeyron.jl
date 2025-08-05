@@ -2,7 +2,7 @@
     x0_volume_liquid(model,T,z)
     x0_volume_liquid(model,p,T,z)
 
-Returns an initial guess to the liquid volume, dependent on temperature and composition. By default is 1.25 times [`lb_volume`](@ref).
+Returns an initial guess to the liquid volume, dependent on temperature `T` and composition `z`. By default is 1.25 times [`lb_volume`](@ref).
 """
 function x0_volume_liquid(model,T,z)
     v_lb = lb_volume(model,T,z)
@@ -14,7 +14,7 @@ x0_volume_liquid(model,T) = x0_volume_liquid(model,T,SA[1.0])
 """
     x0_volume_gas(model,p,T,z)
 
-Returns an initial guess to the gas volume, depending of pressure, temperature and composition. By default uses [`volume_virial`](@ref)
+Returns an initial guess to the gas volume, depending of pressure `p`, temperature `T` and composition `z`. By default uses [`volume_virial`](@ref)
 """
 function x0_volume_gas(model,p,T,z)
     B = second_virial_coefficient(model,T,z)
@@ -34,7 +34,7 @@ x0_volume_gas(model,p,T) = x0_volume_gas(model,p,T,SA[1.0])
     x0_volume_solid(model,T,z)
     x0_volume_solid(model,p,T,z)
 
-Returns an initial guess to the solid volume, dependent on temperature and composition. Needs to be defined for EoS that support solid phase. By default returns NaN. Can be overrided if the EoS defines `is_solid(::EoSModel) = true`
+Returns an initial guess to the solid volume, dependent on temperature `T` and composition `z`. Needs to be defined for EoS that support solid phase. By default returns NaN. Can be overrided if the EoS defines `is_solid(::EoSModel) = true`
 """
 function x0_volume_solid(model,T,z)
     if is_solid(model)
