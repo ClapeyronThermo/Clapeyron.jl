@@ -17,7 +17,7 @@ end
 """
     edge,fa,fb = FindEdge(f::Function,a,b)
 Finds approx singularity location in range `a`,`b` for function `f`. There should be only 1 singularity in [`a`,`b`].
-Returns the edge point `edge`, and the values at both sides of the edge, sorted such as `a < b`
+Returns the edge point `edge`, and the values at both sides of the edge, sorted such as `a < b`.
 """
 function FindEdge(f::T,a,b) where T
   fa,fb = f(a),f(b)
@@ -48,7 +48,7 @@ normalize_property(model,prop,z,property::typeof(mass_density)) = molecular_weig
 """
     Tproperty(model::EoSModel,p,prop,z::AbstractVector,property = enthalpy;rootsolver = Roots.Order0(),phase =:unknown,abstol = 1e-15,reltol = 1e-15, verbose = false)
 
-Given `p` and any other bulk property `prop` calculated via `property`, returns the required temperature `T` such that `property(model,p,T,z,phase) = prop`
+Given `p` and any other bulk property `prop` calculated via `property`, returns the required temperature `T` such that `property(model,p,T,z,phase) = prop`.
 
 Not all cases of pressure will work as `Clapeyron.bubble_temperature(model,p,z)` and `Clapeyron.dew_temperature(model,p,z)` does not always find a correct starting point.
 """

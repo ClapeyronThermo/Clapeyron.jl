@@ -89,7 +89,7 @@ function Margules(components;
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = MargulesParam(A₁₂,A₂₁,Mw)
-    references = String["10.1021/ja01056a002"]
+    references = String[""]
     model = Margules(formatted_components,packagedparams,_puremodel,references)
     set_reference_state!(model,reference_state,verbose = verbose)
     binary_component_check(Margules,model)

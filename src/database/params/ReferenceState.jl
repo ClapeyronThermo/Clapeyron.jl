@@ -21,7 +21,7 @@ When set, it calculates a set of `a0` and `a1` values such as the entropy and en
 the `type` argument accepts the following standalone options:
 - `:no_set`: it returns the current defaults stablished by the equation of state.
 - `:ashrae`: h = s = 0 at -40 °C saturated liquid
-- `:iir`: h = 200.0 kJ/kg, s=1.0 kJ/kg/K at 0 °C saturated liquid
+- `:iir`: h = 200.0 kJ·kg⁻¹, s=1.0 kJ·kg⁻¹·K⁻¹ at 0 °C saturated liquid
 - `:nbp`: h = s = 0 at 1 atm saturated liquid
 - `:stp`: h = s = 0 at 1 bar, 0 °C fluid of the most stable phase
 - `:stp_old`: h = s = 0 at 1 atm, 0 °C fluid of the most stable phase
@@ -180,7 +180,7 @@ end
 """
     has_reference_state(model)::Bool
 
-Checks if the input `EoSModel` has a reference state. Returns `true/false`
+Checks if the input `EoSModel` has a reference state. Returns `true/false`.
 
 ## Examples
 
