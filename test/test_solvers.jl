@@ -39,7 +39,7 @@ function opt_test(k)
     #return solution(optimize(rosenbrock,x0,LineSearch(Newton()),OptimizationOptions())
 end
 @testset "Solvers Module" begin
-    @testset "newton,halley" begin
+    @testset "Newton, Halley" begin
         x0 = 2+rand()
         fdf = SOL.f∂f(quadratic,x0)
         @test fdf[1] ≈ quadratic(x0)

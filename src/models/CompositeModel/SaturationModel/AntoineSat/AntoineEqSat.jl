@@ -1,6 +1,6 @@
-abstract type AntoineSatModel <: SaturationModel end
+abstract type AntoineEqSatModel <: SaturationModel end
 
-struct AntoineSatParam <: EoSParam 
+struct AntoineEqSatParam <: EoSParam 
     Tc::SingleParam{Float64}
     Pc::SingleParam{Float64}
     A::SingleParam{Float64}
@@ -10,12 +10,12 @@ struct AntoineSatParam <: EoSParam
     Tmax::SingleParam{Float64}
 end
 
-@newmodelsimple AntoineSat AntoineSatModel AntoineSatParam
+@newmodelsimple AntoineEqSat AntoineEqSatModel AntoineEqSatParam
 
 """
-    AntoineSat <: SaturationModel
+    AntoineEqSat <: SaturationModel
     
-    AntoineSat(components;
+    AntoineEqSat(components;
     userlocations = String[],
     verbose::Bool=false)
 
@@ -52,17 +52,17 @@ Returns saturation pressure of a pure substance, given temperature `T`.
 
 1. Antoine, C. (1888), «Tensions des vapeurs; nouvelle relation entre les tensions et les températures», Comptes Rendus des Séances de l'Académie des Sciences 107: 681-684, 778-780, 836-837.
 """
-AntoineSat
-default_locations(::Type{AntoineSat}) = ["properties/critical.csv","Correlations/saturation_correlations/Antoine_like.csv"]
+AntoineEqSat
+default_locations(::Type{AntoineEqSat}) = ["properties/critical.csv","Correlations/saturation_correlations/Antoine_like.csv"]
 
-function crit_pure(model::AntoineSatModel)
+function crit_pure(model::AntoineEqSatModel)
     single_component_check(crit_pure,model)
     tc = only(model.params.Tc.values)
     pc = only(model.params.Pc.values)
     return (tc,pc,NaN)
 end
 
-function saturation_pressure_impl(model::AntoineSatModel,T,method::SaturationCorrelation)
+function saturation_pressure_impl(model::AntoineEqSatModel,T,method::SaturationCorrelation)
     nan = zero(T)/zero(T)
     tc = only(model.params.Tc.values)
     A = only(model.params.A.values)
@@ -77,4 +77,4 @@ function saturation_pressure_impl(model::AntoineSatModel,T,method::SaturationCor
     return psat*101325/760,nan,nan
 end
 
-export AntoineSat
+export AntoineEqSat

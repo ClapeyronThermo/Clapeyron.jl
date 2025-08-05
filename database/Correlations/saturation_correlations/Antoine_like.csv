@@ -1,5 +1,5 @@
-Clapeyron Database File
-Antoine Like Parameters for saturation pressure
+Clapeyron Database File,,,,,
+Antoine Like Parameters for saturation pressure,,,,,
 CAS,species,A,B,C,Tmin,Tmax,source
 7732-18-5,water,8.14019,1810.94,244.485,372.15,647.096
 67-56-1,methanol,8.08097,1582.271,239.7,288.15,357.15,"p.36; The Vapour Pressures of Pure Substances; Elsevier; Amsterdam; Boublik, Fried, Hála; 1973"
