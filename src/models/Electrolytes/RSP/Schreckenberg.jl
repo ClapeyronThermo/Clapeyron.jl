@@ -20,8 +20,8 @@ export Schreckenberg
          verbose::Bool=false)
 
 ## Input parameters
-- `d_T::Float64`: Single Parameter - Temperature dependent dielectric constant `[-]`
-- `d_V::Float64`: Single Parameter - Volume dependent dielectric constant `[-]`
+- `d_T::Float64`: Single Parameter - Temperature dependent parameter `[K]`
+- `d_V::Float64`: Single Parameter - Volume dependent parameter `[m³·mol⁻¹]`
 
 ## Description
 This function is used to create a Schreckenberg model. The Schreckenberg term estimates the dielectric constant for a mixture of solvents.
