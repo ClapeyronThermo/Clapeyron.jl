@@ -52,7 +52,7 @@ end
 Soft SAFT equation of state for the solid phase.
 
 ## References
-1. Johnson, J. K., Zollweg, J. A., & Gubbins, K. E. (1993). Modelling the solid–liquid–vapour phase behaviour ofn-alkanes in a TPT-1framework. Molecular physics, 78(3), 591–618. [doi:10.1080/00268979300100411](https://doi.org/10.1080/00268979300100411)
+1. Johnson, J. K., Zollweg, J. A., & Gubbins, K. E. (1993). The Lennard-Jones equation of state revisited. Molecular physics, 78(3), 591–618. [doi:10.1080/00268979300100411](https://doi.org/10.1080/00268979300100411)
 1. FELIPE J. BLAS and LOURDES F. VEGA. (1997). Thermodynamic behaviour of homonuclear and heteronuclear Lennard-Jones chains with association sites from simulation and theory. Molecular physics, 92(1), 135–150. [doi:10.1080/002689797170707](https://doi.org/10.1080/002689797170707)
 3. Ramírez-Carpio, V., Galindo, A., & Gil-Villegas, A. (2023). Modelling the solid–liquid–vapour phase behaviour of n -alkanes in a TPT-1 framework. Molecular Physics, 121(19–20). [doi:10.1080/00268976.2023.2204150](https://doi.org/10.1080/00268976.2023.2204150)
 """
