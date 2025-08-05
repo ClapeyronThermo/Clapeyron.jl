@@ -1,6 +1,6 @@
 struct MargulesParam <: EoSParam
-    A₁₂::SingleParam{Float64}
-    A₂₁::SingleParam{Float64}
+    A12::SingleParam{Float64}
+    A21::SingleParam{Float64}
     Mw::SingleParam{Float64}
 end
 
@@ -25,13 +25,13 @@ export Margules
     reference_state = nothing)
 
 ## Input parameters
-- `A₁₂`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
-- `A₂₁`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+- `A12`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+- `A21`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 
 ## model parameters
-- `A₁₂`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
-- `A₂₁`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+- `A12`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+- `A21`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
 
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties
@@ -39,7 +39,7 @@ export Margules
 ## Description
 Margules activity coefficient model, for binary mixture:
 ```
-Gᴱ = nRT·(x₁·x₂·(A₂₁·x₁+A₁₂·x₂))
+Gᴱ = nRT·(x₁·x₂·(A21·x₁+A12·x₂))
 ```
 
 ## Model Construction Examples
@@ -61,8 +61,8 @@ model = Margules(["water","ethanol"];userlocations = ["path/to/my/db","margules.
 
 # Passing parameters directly
 model = Margules(["water","ethanol"],
-        userlocations = (A₁₂ = [4512],
-                        A₂₁ = [3988.52],
+        userlocations = (A12 = [4512],
+                        A21 = [3988.52],
                         Mw = [18.015, 46.069])
                         )
 ```
@@ -82,13 +82,13 @@ function Margules(components;
     reference_state = nothing)
     
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(Margules); userlocations = userlocations, asymmetricparams=["A₁₂","A₂₁"], ignore_missing_singleparams=["A₁₂","A₂₁","Mw"], verbose = verbose)
-    A₁₂        = params["A₁₂"]
-    A₂₁        = params["A₂₁"]
-    Mw         = params["Mw"]
+    params = getparams(formatted_components, default_locations(Margules); userlocations = userlocations, asymmetricparams=["A12","A21"], ignore_missing_singleparams=["A12","A21","Mw"], verbose = verbose)
+    A12        = get(params,"A12",SingleParam("A12",formatted_components))
+    A21        = get(params,"A21",SingleParam("A21",formatted_components))
+    Mw         = get(params,"Mw",SingleParam("Mw",formatted_components))
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    packagedparams = MargulesParam(A₁₂,A₂₁,Mw)
+    packagedparams = MargulesParam(A12,A21,Mw)
     references = String[""]
     model = Margules(formatted_components,packagedparams,_puremodel,references)
     set_reference_state!(model,reference_state,verbose = verbose)
@@ -100,10 +100,10 @@ function excess_g_margules(model::MargulesModel, p, T, z)
     n = sum(z)
     x = z ./ n
 
-    A₁₂ = model.params.A₁₂.values[1]
-    A₂₁ = model.params.A₂₁.values[1]
+    A12 = model.params.A12.values
+    A21 = model.params.A21.values
 
-    ge = x[1] * x[2] * (A₂₁*x[1] + A₁₂*x[2])
+    ge = x[1] * x[2] * (A21*x[1] + A12*x[2])
 
     return n * R̄ * T * ge
 end

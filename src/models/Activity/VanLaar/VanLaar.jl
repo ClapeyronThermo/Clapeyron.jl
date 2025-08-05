@@ -25,13 +25,13 @@ export VanLaar
     reference_state = nothing)
 
 ## Input parameters
-- `A₁₂`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
-- `A₂₁`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+- `A12`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+- `A21`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 
 ## model parameters
-- `A₁₂`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
-- `A₂₁`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+- `A12`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+- `A21`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
 
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties
@@ -39,7 +39,7 @@ export VanLaar
 ## Description
 VanLaar activity coefficient model, for binary mixture:
 ```
-Gᴱ = nRT·(A₁₂·x₁·A₂₁·x₂/(A₁₂·x₁ + A₂₁·x₂))
+Gᴱ = nRT·(A12·x₁·A21·x₂/(A12·x₁ + A21·x₂))
 ```
 
 ## Model Construction Examples
@@ -61,8 +61,8 @@ model = VanLaar(["water","ethanol"];userlocations = ["path/to/my/db","vanLaar.cs
 
 # Passing parameters directly
 model = VanLaar(["water","ethanol"],
-        userlocations = (A₁₂ = [4512],
-                        A₂₁ = [3988.52],
+        userlocations = (A12 = [4512],
+                        A21 = [3988.52],
                         Mw = [18.015, 46.069])
                         )
 ```
@@ -84,13 +84,13 @@ function VanLaar(components;
     reference_state = nothing)
     
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(VanLaar); userlocations = userlocations, asymmetricparams=["A₁₂","A₂₁"], ignore_missing_singleparams=["A₁₂","A₂₁","Mw"], verbose = verbose)
-    A₁₂        = params["A₁₂"]
-    A₂₁        = params["A₂₁"]
+    params = getparams(formatted_components, default_locations(VanLaar); userlocations = userlocations, asymmetricparams=["A12","A21"], ignore_missing_singleparams=["A12","A21","Mw"], verbose = verbose)
+    A12        = params["A12"]
+    A21        = params["A21"]
     Mw         = params["Mw"]
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    packagedparams = VanLaarParam(A₁₂,A₂₁,Mw)
+    packagedparams = VanLaarParam(A12,A21,Mw)
     references = String[""]
     model = VanLaar(formatted_components,packagedparams,_puremodel,references)
     set_reference_state!(model,reference_state,verbose = verbose)
@@ -102,10 +102,10 @@ function excess_g_VanLaar(model::VanLaarModel, p, T, z)
     n = sum(z)
     x = z ./ n
 
-    A₁₂ = model.params.A₁₂.values[1]
-    A₂₁ = model.params.A₂₁.values[1]
+    A12 = model.params.A12.values[1]
+    A21 = model.params.A21.values[1]
 
-    ge = A₁₂ * x[1] * A₂₁ * x[2] / (A₁₂*x[1] + A₂₁*x[2])
+    ge = A12 * x[1] * A21 * x[2] / (A12*x[1] + A21*x[2])
 
     return n * R̄ * T * ge
 end
