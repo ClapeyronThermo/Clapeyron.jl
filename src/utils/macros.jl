@@ -3,7 +3,7 @@
 """
     arbitraryparam(params)
 
-returns the first field in the struct that is a subtype of `ClapeyronParam`. errors if it finds none.
+Returns the first field in the struct that is a subtype of `ClapeyronParam`. Errors if it finds none.
 """
 function arbitraryparam(params)
     paramstype = typeof(params)
@@ -81,7 +81,7 @@ end
 """
     @sum(expr)
 
-a macro that can be used to sum over all the variables in an expression. a faster alternative to `sum(@. expr)`
+A macro that can be used to sum over all the variables in an expression. A faster alternative to `sum(@. expr)`.
 
 ## Example
 ```julia
@@ -259,9 +259,9 @@ end
 This is a data type that contains all the information needed to use an EoS model.
 It also functions as an identifier to ensure that the right functions are called.
 
-You can pass an optional 4th `Bool` argument  indicating if you want to use sites with this model or not. defaults to `true`
+You can pass an optional 4th `Bool` argument  indicating if you want to use sites with this model or not. Defaults to `true`.
 
-You can also pass another optional 5th `Bool` argument indicating if a second order GroupParam (`StructGroupParam`) is used or not. defaults to `false`
+You can also pass another optional 5th `Bool` argument indicating if a second order GroupParam (`StructGroupParam`) is used or not. Defaults to `false`
 
 = Fields =
 The Struct consists of the following fields:
@@ -344,7 +344,7 @@ All group parameters are absent in this struct.
 The sites are associated to the main component rather than the groups,
 and the respective fieldnames are named correspondingly.
 
-You can pass an optional bool indicating if you want to use sites with this model or not. defaults to `true`
+You can pass an optional bool indicating if you want to use sites with this model or not. Defaults to `true`.
 
 ## Example
 ```julia
