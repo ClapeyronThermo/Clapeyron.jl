@@ -394,4 +394,32 @@ end
         model = SolidHfus(["water"])
         @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
     end
+
+    @testset "IAPWS-06, Ice2009" begin
+        model = Ice2009()
+        #table 6 of Ice-Rev2009 document
+        p1,T1 = 611.657, 273.16
+        p2,T2 = 101325.0, 273.152519
+        p3,T3 = 100e6, 100.0
+        Mw = Clapeyron.molecular_weight(model)
+        @test mass_gibbs_energy(model,p1,T1) ≈ 0.611784135 rtol = 1e-6
+        @test mass_gibbs_energy(model,p2,T2) ≈ 0.10134274069e3 rtol = 1e-6
+        @test mass_gibbs_energy(model,p3,T3) ≈ -0.222296513088e6 rtol = 1e-6
+        @test volume(model,p1,T1)/Mw ≈ 0.109085812737e-2 rtol = 1e-6
+        @test volume(model,p2,T2)/Mw ≈ 0.109084388214e-2 rtol = 1e-6
+        @test volume(model,p3,T3)/Mw ≈ 0.106193389260e-2 rtol = 1e-6
+        test_volume(model,p1,T1)
+        test_volume(model,p2,T2)
+        test_volume(model,p3,T3)
+        @test mass_isobaric_heat_capacity(model,p1,T1) ≈ 0.209678431622e4 rtol = 1e-6
+        @test mass_isobaric_heat_capacity(model,p2,T2) ≈ 0.209671391024e4 rtol = 1e-6
+        @test mass_isobaric_heat_capacity(model,p3,T3) ≈ 0.866333195517e3 rtol = 1e-6
+        @test isentropic_compressibility(model,p1,T1) ≈ 0.114161597779e-9 rtol = 1e-6
+        @test isentropic_compressibility(model,p2,T2) ≈ 0.114154442556e-9 rtol = 1e-6
+        @test isentropic_compressibility(model,p3,T3) ≈ 0.886060982687e-10 rtol = 1e-6
+        @test isothermal_compressibility(model,p1,T1) ≈ 0.117793449348e-9 rtol = 1e-6
+        @test isothermal_compressibility(model,p2,T2) ≈ 0.117785291765e-9 rtol = 1e-6
+        @test isothermal_compressibility(model,p3,T3) ≈ 0.886880048115e-10 rtol = 1e-6
+    end
+
 end

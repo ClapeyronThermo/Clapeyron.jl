@@ -3,7 +3,7 @@ abstract type AssociationModel <: LatticeFluidModel end
 abstract type CPAModel <: AssociationModel end
 abstract type SAFTModel <: AssociationModel end
 abstract type GCSAFTModel <: SAFTModel end
-
+abstract type GibbsBasedModel <: EoSModel end
 abstract type CubicModel <: EoSModel end #cubics that have an exact polynomial form to solve Z roots, this excludes CPA
 abstract type DeltaCubicModel <: CubicModel end #cubics with a a/((v-Δ1*b)*(v-Δ2*b)) term
 abstract type ABCubicModel <: DeltaCubicModel end #cubics where the critical point is just a function of Δ1,Δ2 (enforced via mixing rules)
