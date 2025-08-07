@@ -45,8 +45,10 @@ function SAFTVREMie(solvents,ions;
     neutralmodel = SAFTVRMie,
     ionmodel = MSABorn,
     RSPmodel = Schreckenberg,
-    userlocations = String[], 
-    ideal_userlocations=String[],
+    charges = String[], 
+    ideal_userlocations = String[],
+    neutralmodel_userlocations = String[],
+    ionmodel_userlocations = String[],
     RSPmodel_userlocations = String[],
     assoc_options = AssocOptions(),
     reference_state = nothing,
@@ -54,7 +56,7 @@ function SAFTVREMie(solvents,ions;
 
     return ESElectrolyte(solvents,ions;
     idealmodel,neutralmodel,ionmodel,RSPmodel,
-    userlocations,ideal_userlocations,RSPmodel_userlocations,assoc_options,reference_state,verbose)
+    charges,ideal_userlocations,neutralmodel_userlocations,ionmodel_userlocations,RSPmodel_userlocations,assoc_options,reference_state,verbose)
 end
 
 export SAFTVREMie
