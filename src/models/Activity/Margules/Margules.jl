@@ -14,7 +14,51 @@ struct Margules{C<:EoSModel} <: MargulesModel
     puremodel::EoSVectorParam{C}
     references::Vector{String}
 end
-
+"""
+    Margules <: ActivityModel
+    Margules(components;
+    puremodel = PR,
+    userlocations = String[],
+    pure_userlocations = String[],
+    verbose = false,
+    reference_state = nothing)
+## Input parameters
+- `A12`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+- `A21`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+## model parameters
+- `A12`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+- `A21`: Single Parameter (`Float64`, defaults to `0`) - Binary Interaction Parameter
+## Input models
+- `puremodel`: model to calculate pure pressure-dependent properties
+## Description
+Margules activity coefficient model, for binary mixture:
+```
+Gᴱ = nRT·(x₁·x₂·(A21·x₁+A12·x₂))
+```
+## Model Construction Examples
+```
+# Using the default database
+model = Margules(["water","ethanol"]) #Default pure model: PR
+model = Margules(["water","ethanol"],puremodel = BasicIdeal) #Using Ideal Gas for pure model properties
+model = Margules(["water","ethanol"],puremodel = PCSAFT) #Using Real Gas model for pure model properties
+# Passing a prebuilt model
+my_puremodel = AbbottVirial(["water","ethanol"]; userlocations = ["path/to/my/db","critical.csv"])
+mixing = Margules(["water","ethanol"],puremodel = my_puremodel)
+# Using user-provided parameters
+# Passing files or folders
+model = Margules(["water","ethanol"];userlocations = ["path/to/my/db","margules.csv"])
+# Passing parameters directly
+model = Margules(["water","ethanol"],
+        userlocations = (A12 = [4512],
+                        A21 = [3988.52],
+                        Mw = [18.015, 46.069])
+                        )
+```
+## References
+1. Max Margules, « Über die Zusammensetzung der gesättigten Dämpfe von Misschungen », Sitzungsberichte der Kaiserliche Akadamie der Wissenschaften Wien Mathematisch-Naturwissenschaftliche Klasse II, vol. 104, 1895, p. 1243–1278
+"""
+Margules
 default_locations(::Type{Margules}) = [
     "properties/critical.csv",
     "properties/molarmass.csv",
