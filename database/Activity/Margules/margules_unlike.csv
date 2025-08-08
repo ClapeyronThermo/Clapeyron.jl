@@ -1,6 +1,6 @@
 Clapeyron Database File,,,,,,,
 Margules Unlike Parameters,,,,,,,
-species1,SMILES1,species2,SMILES2,A₁₂,A₂₁,source
+species1,SMILES1,species2,SMILES2,A12,A21,source
 methanol,,ethanol,,4.712,-1162.3,
 methanol,,water,,0.4354,0.5222,
 water,,"1,2-propanediol",,-0.6728,-0.0135,

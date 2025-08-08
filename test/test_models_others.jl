@@ -4,13 +4,13 @@
     @printline
     let T = 333.15, V = 1e-3, p = 1e5, z = [0.5, 0.5], z1 = Clapeyron.SA[1.0], z2 = [0.5,0.5], z3 = [0.333, 0.333, 0.333];
     @testset "Margules" begin
-        system = Margules(["methanol","ethanol"])
+        system = Margules(["methanol","water"])
        #= @test Clapeyron.activity_coefficient(system,p,T,z)[1] #≈ 1.530046633499114 rtol = 1e-6
         @test Clapeyron.activity_coefficient(system,p,T,z) #≈ Clapeyron.test_activity_coefficient(system,p,T,z)  rtol = 1e-6
         =#@test Clapeyron.excess_gibbs_free_energy(system,p,T,z) #≈ Clapeyron.test_excess_gibbs_free_energy(system,p,T,z)  rtol = 1e-6
     end
     @testset "VanLaar" begin
-        system = VanLaar(["methanol","ethanol"])
+        system = VanLaar(["methanol","water"])
      #=   @test Clapeyron.activity_coefficient(system,p,T,z)[1] #≈ 1.530046633499114 rtol = 1e-6
         @test Clapeyron.activity_coefficient(system,p,T,z) #≈ Clapeyron.test_activity_coefficient(system,p,T,z)  rtol = 1e-6
         =#@test Clapeyron.excess_gibbs_free_energy(system,p,T,z) #≈ Clapeyron.test_excess_gibbs_free_energy(system,p,T,z)  rtol = 1e-6
