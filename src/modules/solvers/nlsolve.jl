@@ -10,11 +10,11 @@ is_rootsjl_method(method) = false
 Given a function `f!(result,x)` that returns a system of equations,
 `nlsolve(f!,x0)` returns a `NLSolvers.ConvergenceInfo` struct that contains the results of the non-linear solving procedure.
 
-Uses `NLSolvers.jl` as backend, the jacobian is calculated with `ForwardDiff.jl`, with the specified `chunk` size
+Uses `NLSolvers.jl` as backend, the jacobian is calculated with `ForwardDiff.jl`, with the specified `chunk` size.
 
-To obtain the underlying solution vector, use [`solution`](@ref)
+To obtain the underlying solution vector, use [`solution`](@ref).
 
-To see available solvers and options, check `NLSolvers.jl`
+To see available solvers and options, check `NLSolvers.jl`.
 """
 function nlsolve(f!,x0,method = TrustRegion(Newton(), Dogleg()),options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
     if is_rootsjl_method(method)

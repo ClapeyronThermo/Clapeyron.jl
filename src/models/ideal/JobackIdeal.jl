@@ -187,19 +187,19 @@ end
 """
     JobackGC
 
-Module containing group contribution calculations using the joback method. the available functions are:
+Module containing group contribution calculations using the joback method. The available functions are:
 
-- `JobackGC.T_c(model::JobackModel)`: critical temperature (in K)
-- `JobackGC.P_c(model::JobackModel)`: critical pressure (in Pa)
-- `JobackGC.V_c(model::JobackModel)`: critical volume (in m3/mol)
-- `JobackGC.T_b(model::JobackModel)`: normal boiling point (in K)
-- `JobackGC.H_form(model::JobackModel)`: enthalpy of formation at 298K, ideal gas (in J/mol)
-- `JobackGC.G_form(model::JobackModel)`: gibbs energy of formation at 298K, ideal gas (in J/mol)
-- `JobackGC.S_form(model::JobackModel)`: entropy of formation at 298K, ideal gas (in J/mol/K)
-- `JobackGC.H_fusion(model::JobackModel)`: enthalpy of fusion (in J/mol, at 1 atm)
-- `JobackGC.H_vap(model::JobackModel)`: molar enthalpy of vaporization (in J/mol, at normal boiling point)
-- `JobackGC.C_p(model::JobackModel, T)`: ideal gas isobaric heat capacity (in J/mol/K)
-- `JobackGC.Visc(model::JobackModel, T)`: liquid dynamic viscocity (in Pa*s)
+- `JobackGC.T_c(model::JobackModel)`: critical temperature (in `[K]`)
+- `JobackGC.P_c(model::JobackModel)`: critical pressure (in `[Pa]`)
+- `JobackGC.V_c(model::JobackModel)`: critical volume (in `[m³·mol⁻¹]`)
+- `JobackGC.T_b(model::JobackModel)`: normal boiling point (in `[K]`)
+- `JobackGC.H_form(model::JobackModel)`: enthalpy of formation at 298 K, ideal gas (in `[J·mol⁻¹]`)
+- `JobackGC.G_form(model::JobackModel)`: Gibbs energy of formation at 298 K, ideal gas (in `[J·mol⁻¹]`)
+- `JobackGC.S_form(model::JobackModel)`: entropy of formation at 298 K, ideal gas (in `[J·mol⁻¹·K⁻¹]`)
+- `JobackGC.H_fusion(model::JobackModel)`: enthalpy of fusion (in `[J·mol⁻¹]`, at 1 atm)
+- `JobackGC.H_vap(model::JobackModel)`: molar enthalpy of vaporization (in `[J·mol⁻¹]`, at normal boiling point)
+- `JobackGC.C_p(model::JobackModel, T)`: ideal gas isobaric heat capacity (in `[J·mol⁻¹·K⁻¹]`)
+- `JobackGC.Visc(model::JobackModel, T)`: liquid dynamic viscocity (in `[Pa·s]`)
 """
 module JobackGC
     using Clapeyron: JobackIdeal
@@ -207,7 +207,7 @@ module JobackGC
 """
     JobackGC.T_b(model::JobackIdeal)::Vector{Float64}
 
-Given a `JobackIdeal` model, returns a vector containing normal boiling points (in K), for each component.
+Given a `JobackIdeal` model, returns a vector containing normal boiling points (in `[K]`), for each component.
 """
 function T_b(model::JobackIdeal)
     result = zeros(Float64,length(model))
@@ -222,7 +222,7 @@ end
 """
     JobackGC.T_c(model::JobackIdeal)::Vector{Float64}
 
-Given a `JobackIdeal` model, returns a vector containing critical temperatures (in K), for each component.
+Given a `JobackIdeal` model, returns a vector containing critical temperatures (in `[K]`), for each component.
 """
 function T_c(model::JobackIdeal,Tb=T_b(model))
     n = model.groups.n_flattenedgroups
@@ -238,7 +238,7 @@ end
 """
     JobackGC.V_c(model::JobackIdeal)::Vector{Float64}
 
-Given a `JobackIdeal` model, returns a vector containing critical volumes (in m3/mol), for each component.
+Given a `JobackIdeal` model, returns a vector containing critical volumes (in `[m³·mol⁻¹]`), for each component.
 """
 function V_c(model::JobackIdeal)
     n = model.groups.n_flattenedgroups
@@ -254,7 +254,7 @@ end
 """
     JobackGC.P_c(model::JobackIdeal)::Vector{Float64}
 
-Given a `JobackIdeal` model, returns a vector containing critical pressures (in Pa), for each component.
+Given a `JobackIdeal` model, returns a vector containing critical pressures (in `[Pa]`), for each component.
 """
 function P_c(model::JobackIdeal)
     n = model.groups.n_flattenedgroups
@@ -274,7 +274,7 @@ end
 """
     G_form(model::JobackIdeal)::Vector{Float64}
 
-Given a `JobackIdeal` model, returns a vector containing gibbs energies of formation (J/mol, at ideal gas, 298K), for each component.
+Given a `JobackIdeal` model, returns a vector containing gibbs energies of formation (`[J·mol⁻¹]`, at ideal gas, 298 K), for each component.
 """
 function G_form(model::JobackIdeal)
     n = model.groups.n_flattenedgroups
@@ -291,7 +291,7 @@ end
 """
     H_form(model::JobackIdeal)::Vector{Float64}
 
-Given a `JobackIdeal` model, returns a vector containing entalpies of formation (J/mol, at ideal gas, 298K), for each component.
+Given a `JobackIdeal` model, returns a vector containing entalpies of formation (`[J·mol⁻¹]`, at ideal gas, 298 K), for each component.
 """
 function H_form(model::JobackIdeal)
     n = model.groups.n_flattenedgroups
@@ -308,7 +308,7 @@ end
 """
     S_form(model::JobackIdeal)::Vector{Float64}
 
-Given a `JobackIdeal` model, returns a vector containing entropies of formation (J/mol/K, at ideal gas, 298K), for each component.
+Given a `JobackIdeal` model, returns a vector containing entropies of formation (`[J·mol⁻¹·K⁻¹]`, at ideal gas, 298 K), for each component.
 """
 function S_form(model::JobackIdeal)
     n = model.groups.n_flattenedgroups
@@ -328,7 +328,7 @@ end
 """
     H_fusion(model::JobackIdeal)::Vector{Float64}
 
-Given a `JobackIdeal` model, returns a vector containing enthalpies of fusion (J/mol, at 1 atm), for each component.
+Given a `JobackIdeal` model, returns a vector containing enthalpies of fusion (`[J·mol⁻¹]`, at 1 atm), for each component.
 """
 function H_fusion(model::JobackIdeal)
     n = model.groups.n_flattenedgroups
@@ -345,7 +345,7 @@ end
 """
     H_vap(model::JobackIdeal)::Vector{Float64}
 
-Given a `JobackIdeal` model, returns a vector containing enthalpies of vaporization (J/mol, at normal boiling point), for each component.
+Given a `JobackIdeal` model, returns a vector containing enthalpies of vaporization (`[J·mol⁻¹]`, at normal boiling point), for each component.
 """
 function H_vap(model::JobackIdeal)
     n = model.groups.n_flattenedgroups
@@ -362,7 +362,7 @@ end
 """
     C_p(model::JobackIdeal,T)::Vector
 
-Given a `JobackIdeal` model, returns a vector containing ideal gas isobaric heat capacities (J/mol/K), for each component.
+Given a `JobackIdeal` model, returns a vector containing ideal gas isobaric heat capacities (`[J·mol⁻¹·K⁻¹]`), for each component.
 """
 function C_p(model::JobackIdeal,T)
     n = model.groups.n_flattenedgroups
@@ -384,7 +384,7 @@ end
 """
     Visc(model::JobackIdeal,T)::Vector
 
-Given a `JobackIdeal` model, returns a vector containing liquid dynamic viscocities (Pa*s), for each component.
+Given a `JobackIdeal` model, returns a vector containing liquid dynamic viscosities `[Pa·s]`, for each component.
 """
 function Visc(model::JobackIdeal,T)
     n = model.groups.n_flattenedgroups

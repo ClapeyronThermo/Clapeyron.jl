@@ -20,7 +20,7 @@ end
 
 """
     xlogx(x::Real,k = one(x))
-Return `x * log(k*x)` for `x ≥ 0`, handling ``x = 0`` by taking the downward limit.
+Returns `x * log(k*x)` for `x ≥ 0`, handling ``x = 0`` by taking the downward limit.
 
 copied from LogExpFunctions.jl
 """

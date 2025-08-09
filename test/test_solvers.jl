@@ -39,7 +39,7 @@ function opt_test(k)
     #return solution(optimize(rosenbrock,x0,LineSearch(Newton()),OptimizationOptions())
 end
 @testset "Solvers Module" begin
-    @testset "newton,halley" begin
+    @testset "Newton, Halley" begin
         x0 = 2+rand()
         fdf = SOL.f∂f(quadratic,x0)
         @test fdf[1] ≈ quadratic(x0)
@@ -91,7 +91,7 @@ end
     end
 
 
-    @testset "Rachford Rice" begin
+    @testset "Rachford-Rice" begin
     #error, all Ks > 0, from CalebBell/Chemicals
     zs = [0.0, 0.0885053990596404, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.721469918219507, 0.01742948033685831,
             0.1725952023839942]

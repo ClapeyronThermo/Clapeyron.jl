@@ -208,11 +208,11 @@ function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)
     PTFlashWrapper(compmodel,p,T,equilibrium)
 end
 
-#LLE point. it does not require an input concentration, because it assumes that activities are pressure-independent.
+#LLE point. It does not require an input concentration, because it assumes that activities are pressure-independent.
 """
     LLE(model::ActivityModel, T; v0=nothing)
 
-Calculates the Liquid-Liquid equilibrium compositions at a given temperature `T`.
+Calculates the Liquid-Liquid equilibrium compositions at a given temperature `T` in `[K]`.
 
 Returns a tuple, containing:
 - Liquid composition `x₁`

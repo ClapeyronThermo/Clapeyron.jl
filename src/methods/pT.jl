@@ -761,7 +761,7 @@ reference_chemical_potential_type(model) = :pure
 """
     reference_chemical_potential(model::EoSModel,p,T,reference; phase=:unknown, threaded=true, vol0=nothing)
 
-Returns a reference chemical potential. Used in calculation of `activity` and activity_coefficient. there are two available references:
+Returns a reference chemical potential. Used in calculation of `activity` and activity_coefficient. There are two available references:
 - `:pure`: the reference potential is a pure component at specified `T`, `p` and `phase`
 - `:aqueous`: the chemical potential of the pure components at specified `T`, `p` and `phase`
 - `:sat_pure_T`:  the reference potential is the pure saturated liquid phase at specified `T`.
@@ -916,7 +916,7 @@ Calculates the solvation Gibbs energy as:
 ```julia
 g_solv = -R̄*T*log(K)
 ```
-where the first component is the solvent and second is the solute.
+Where the first component is the solvent and second is the solute.
 """
 function gibbs_solvation(model::EoSModel, T; threaded=true, vol0=(nothing,nothing))
     binary_component_check(gibbs_solvation, model)

@@ -27,7 +27,7 @@ end
 
 """
     mean_ionic_activity_coefficient_sat(model::ESElectrolyteModel,salts,T,m,zsolvent=[1.])
-Calculates the mean ionic activity coefficient of selection of salts at the saturation point at a certain temperature and molality. These are defined as:
+Calculates the mean ionic activity coefficient of selection of salts at the saturation point at a certain temperature `T` and molality `m`. These are defined as:
 ```
 γ± = φ±/φ±₀ * ∑zsolv/∑z
 ```
@@ -50,7 +50,7 @@ end
 
 """
     mean_ionic_activity_coefficient(model::ESElectrolyteModel,salts,p,T,m,zsolvent=[1.])
-Calculates the mean ionic activity coefficient of selection of salts at a given pressure, temperature and molality. These are defined as:
+Calculates the mean ionic activity coefficient of selection of salts at a given pressure `p`, temperature `T` and molality `m`. These are defined as:
 ```
 γ± = φ±/φ±₀ * ∑zsolv/∑z
 ```
@@ -78,7 +78,7 @@ end
 
 """
     osmotic_coefficient_sat(model::ESElectrolyteModel,salts,T,m,zsolvent=[1.])
-Calculates the osmotic coefficient of selection of solvents at the saturation point at a certain temperature and molality. These are defined as:
+Calculates the osmotic coefficient of selection of solvents at the saturation point at a certain temperature `T` and molality `m`. These are defined as:
 ```
 ϕ = -1/(∑νi*mi*Mw)*log(asolv)
 ```

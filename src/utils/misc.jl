@@ -52,7 +52,7 @@ DOI2BIB_CACHE = Dict{String,String}()
 """
     doi2bib(doi::String)
 
-given a DOI identifier, returns a BibTeX entry. requires an internet connection. if the value is not found, returns an empty string. results are cached in `Clapeyron.DOI2BIB_CACHE`
+Given a DOI identifier, returns a BibTeX entry. Requires an internet connection. If the value is not found, returns an empty string. Results are cached in `Clapeyron.DOI2BIB_CACHE`
 
 ## Example
 

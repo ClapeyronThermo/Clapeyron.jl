@@ -117,7 +117,7 @@ end
 """
     group_matrix(groups::MixedGCSegmentParam)
 
-returns a matrix of size `(k,i)` with values νₖᵢ. when multiplied with a molar amount, it returns the amount of moles of each group.
+Returns a matrix of size `(k,i)` with values νₖᵢ. When multiplied with a molar amount, it returns the amount of moles of each group.
 """
 function group_matrix(groups::MixedGCSegmentParam)
     vals = groups.values
@@ -233,7 +233,7 @@ end
 """
     mix_segment!(groups::MixedGCSegmentParam,S = ones(length(@groups)),vst = ones(length(@groups)))
 
-modifies implace the field `n_groups_cache` (`μᵢₖ`) in the `GroupParam`:
+Modifies implace the field `n_groups_cache` (`μᵢₖ`) in the `GroupParam`:
 ```
 μᵢₖ = νᵢₖ*Sₖ*vstₖ
 ```

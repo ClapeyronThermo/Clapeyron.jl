@@ -244,7 +244,7 @@ Calculates the volume `(m³)` of the compound modelled by `model` at a certain p
 - If `phase =:unknown` (Default), it will return the physically correct volume root with the least Gibbs energy.
 - If `phase =:liquid`, it will return the volume of the phase using a liquid initial point.
 - If `phase =:vapor`, it will return the volume of the phase using a gas initial point.
-- If `phase =:solid`, it will return the volume of the phase using a solid initial point (only supported for EoS that support a solid phase)
+- If `phase =:solid`, it will return the volume of the phase using a solid initial point (only supported for EoS that support a solid phase).
 - If `phase =:stable`, it will return the physically correct volume root with the least Gibbs energy, and perform a stability test on the result.
 
 All volume calculations are checked for mechanical stability, that is: `dP/dV <= 0`.

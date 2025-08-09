@@ -88,7 +88,7 @@ f∂f∂2f(f::F) where F = Base.Fix1(f∂f∂2f,f)
 """
     fgradf2(f,x1,x2)
 
-Returns f and ∇f(x),using `ForwardDiff.jl`
+Returns f and ∇f(x), using `ForwardDiff.jl`.
 """
 function fgradf2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)
