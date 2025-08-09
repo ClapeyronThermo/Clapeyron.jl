@@ -124,3 +124,5 @@ function excess_g_vanlaar(m::VanLaarModel, p, T, z)
     ge = (A12*A21*x[1]*x[2]) / (A12*x[1] + A21*x[2])
     return n*R̄*T*ge
 end
+
+excess_gibbs_free_energy(model::VanLaarModel,p,T,z) = excess_g_vanlaar(model,p,T,z)

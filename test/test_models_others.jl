@@ -7,13 +7,13 @@
         system = Margules(["methanol","water"])
        #= @test Clapeyron.activity_coefficient(system,p,T,z)[1] #≈ 1.530046633499114 rtol = 1e-6
         @test Clapeyron.activity_coefficient(system,p,T,z) #≈ Clapeyron.test_activity_coefficient(system,p,T,z)  rtol = 1e-6
-        =#@test Clapeyron.excess_gibbs_free_energy(system,p,T,z) #≈ Clapeyron.test_excess_gibbs_free_energy(system,p,T,z)  rtol = 1e-6
+        =#@test Clapeyron.excess_gibbs_free_energy(system,p,T,z) ≈ Clapeyron.test_excess_gibbs_free_energy(system,p,T,z)  rtol = 1e-6
     end
     @testset "VanLaar" begin
         system = VanLaar(["methanol","water"])
      #=   @test Clapeyron.activity_coefficient(system,p,T,z)[1] #≈ 1.530046633499114 rtol = 1e-6
         @test Clapeyron.activity_coefficient(system,p,T,z) #≈ Clapeyron.test_activity_coefficient(system,p,T,z)  rtol = 1e-6
-        =#@test Clapeyron.excess_gibbs_free_energy(system,p,T,z) #≈ Clapeyron.test_excess_gibbs_free_energy(system,p,T,z)  rtol = 1e-6
+        =#@test Clapeyron.excess_gibbs_free_energy(system,p,T,z) ≈ Clapeyron.test_excess_gibbs_free_energy(system,p,T,z)  rtol = 1e-6
     end
     @testset "Wilson" begin
         system = Wilson(["methanol","benzene"])

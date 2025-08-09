@@ -122,3 +122,5 @@ function excess_g_margules(m::MargulesModel, p, T, z)
     ge = x[1]*x[2]*(A21*x[1] + A12*x[2])
     return n*R̄*T*ge
 end
+
+excess_gibbs_free_energy(model::MargulesModel,p,T,z) = excess_g_margules(model,p,T,z)
