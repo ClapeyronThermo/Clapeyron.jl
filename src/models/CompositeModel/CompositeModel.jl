@@ -109,7 +109,7 @@ include("LiquidVolumeModel/LiquidVolumeModel.jl")
 #include("LiquidCpModel/LiquidCpModel.jl")
 include("PolExpVapour.jl")
 include("SolidModel/GibbsBased.jl")
-include("SolidModel/Ice2009.jl")
+include("SolidModel/IAPWS06.jl")
 include("SolidModel/SolidHfus.jl")
 include("SolidModel/SolidKs.jl")
 

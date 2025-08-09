@@ -150,7 +150,14 @@ function VT_pressure(model::GibbsBasedModel,V,T,z)
 end
 
 function x0_pressure(model,V,T,z)
-    return p_scale(model,z)
+    p = p_scale(model,z)*one(T+first(z)+V)
+        for i in 1:20
+        if volume(model,p,T) < V
+            return p
+        end
+        p *= 2
+    end
+    return p
 end
 
 function chemical_potential_impl(model::GibbsBasedModel,p,T,z,phase,threaded,vol0)

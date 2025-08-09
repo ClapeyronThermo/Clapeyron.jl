@@ -395,8 +395,8 @@ end
         @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
     end
 
-    @testset "IAPWS-06, Ice2009" begin
-        model = Ice2009()
+    @testset "IAPWS-06" begin
+        model = IAPWS06()
         #table 6 of Ice-Rev2009 document
         p1,T1 = 611.657, 273.16
         p2,T2 = 101325.0, 273.152519
