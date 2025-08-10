@@ -53,7 +53,8 @@ function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPre
     else
         v0 = method.v0
     end
-    vs0,vl0 = v0
+    vs0 = v0[1]
+    vl0 = v0[2]
     _0 = zero(vs0*vl0*T*oneunit(eltype(model)))
     nan = _0/_0
     fail = (nan,nan,nan)
@@ -87,7 +88,6 @@ function x0_melting_pressure(model::CompositeModel,T)
     ps,μs = equilibria_scale(liquid)
     return solve_2ph_taylor(solid,liquid,T,vs00,vl00,ps,μs)
 end
-
 
 function Obj_Mel_Temp(model::EoSModel, F, T, V_s, V_l,p,p̄,T̄)
     z = SA[1.0]
