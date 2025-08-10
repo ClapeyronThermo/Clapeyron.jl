@@ -40,6 +40,8 @@ function SingleFluidIdeal(model::SingleFluid)
     return SingleFluidIdeal(model.components,model.properties,model.ideal,model.references)
 end
 
+mw(model::SingleFluidIdeal) = SA[model.properties.Mw]
+
 idealmodel(model::SingleFluid) = SingleFluidIdeal(model)
 
 Rgas(model::SingleFluid) = model.properties.Rgas

@@ -35,17 +35,16 @@ function 𝕘∂𝕘dT(model,p,T,z::AbstractVector)
     return SVector(G,∂G∂T)
 end
 
-function ∂𝕘_res(model,V,T,z)
-     #TODO
-    #f(∂V,∂T) = eos_res(model,∂V,∂T,z)
-    #_f,_df = Solvers.fgradf2(f,V,T)
-    #return _df,_f
-end
-
 function V∂V∂p(model,p,T,z::AbstractVector=SA[1.0])
-    f(∂p) = volume(model,∂p,T,z)
+    f(∂p) = simple_volume(model,∂p,T,z)
     V,∂V∂p = Solvers.f∂f(f,p)
     return SVector(V,∂V∂p)
+end
+
+function V∂V∂T(model,p,T,z::AbstractVector=SA[1.0])
+    f(∂T) = simple_volume(model,p,∂T,z)
+    V,∂V∂T = Solvers.f∂f(f,T)
+    return SVector(V,∂V∂T)
 end
 
 function ∂2𝕘(model,p,T,z)
@@ -126,6 +125,10 @@ function PT_property_gibbs(model,p,T,z,f::typeof(VT_isothermal_compressibility))
     return -∂V∂p/V
 end
 
+function PT_property_gibbs(model,p,T,z,f::typeof(VT_isobaric_expansivity))
+    v,dvdT = V∂V∂T(model,p,T,z)
+    return -dvdT/v
+end
 
 function PT_property_gibbs(model,p,T,z,f::typeof(VT_isentropic_compressibility))
     ∂²g,∂g,g = ∂2𝕘(model,p,T,z)
@@ -152,7 +155,7 @@ end
 function x0_pressure(model,V,T,z)
     p = p_scale(model,z)*one(T+first(z)+V)
         for i in 1:20
-        if volume(model,p,T) < V
+        if volume(model,p,T) < V || !isfinite(p)
             return p
         end
         p *= 2

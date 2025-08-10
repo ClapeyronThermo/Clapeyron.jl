@@ -133,4 +133,24 @@ function x0_pressure(model::IAPWS06,V,T,z)
     return p
 end
 
+function x0_melting_pressure(model::CompositeModel{<:Any,IAPWS06},T)
+    solid = solid_model(model)
+    liquid = fluid_model(model)
+    z = SA[1.0]
+    p  = x0_iapws06_fus(T)
+    vs = volume(solid,p,T)
+    vl = x0_volume(liquid,p,T,z,phase = :l)
+    return vs,vl,p
+end
+
+function x0_sublimation_pressure(model::CompositeModel{<:Any,IAPWS06},T)
+    solid = solid_model(model)
+    liquid = fluid_model(model)
+    z = SA[1.0]
+    p  = x0_iapws06_sub(T)
+    vs = volume(solid,p,T)
+    vv = Rgas(fluid)*T/p
+    return vs,vv,p
+end
+
 export IAPWS06

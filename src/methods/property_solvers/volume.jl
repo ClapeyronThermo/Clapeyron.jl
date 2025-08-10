@@ -499,4 +499,9 @@ function volume_bracket_refine(model,p,T,z,v1,v2)
     end
 end
 
+#circunvent volume machinery.
+#gibbs models do not need iterative calculations for volume
+simple_volume(model,p,T,z) = volume_impl(model,p,T,z,:unknown,false,nothing)
+
+
 export volume
