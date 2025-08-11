@@ -69,6 +69,7 @@ end
 #property logic
 
 function PT_property(model::GibbsBasedModel,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+    z isa Number && return PT_property_gibbs(model,p,T,SVector(z),f)
     return PT_property_gibbs(model,p,T,z,f)
 end
 
@@ -143,19 +144,19 @@ function VT_pressure(model::GibbsBasedModel,V,T,z)
     _p0 = x0_pressure(model,V,T,z)
     p0 = one(Base.promote_eltype(model,V,T,z))*_p0
     !isfinite(p0) && return p0
-    function f(logp) 
-        pp = exp(logp)
-        return volume(model,exp(logp),T,z)/V - 1
+    function fixpoint_p(pᵢ)
+        Vᵢ,∂V∂pᵢ = V∂V∂p(model,pᵢ,T,z)
+        dp = log(V/Vᵢ)*Vᵢ/∂V∂pᵢ
+        px = pᵢ + dp
+        return pᵢ + dp
     end
-    prob = Roots.ZeroProblem(Solvers.to_newton(f),log(p0))
-    logp_solution = Roots.solve(prob,Roots.Newton())
-    return exp(logp_solution)
+    return Solvers.fixpoint(fixpoint_p,p0,Solvers.SSFixPoint(),rtol = 1e-12)
 end
 
 function x0_pressure(model,V,T,z)
     p = p_scale(model,z)*one(T+first(z)+V)
         for i in 1:20
-        if volume(model,p,T) < V || !isfinite(p)
+        if volume(model,p,T) <= V || !isfinite(p)
             return p
         end
         p *= 2

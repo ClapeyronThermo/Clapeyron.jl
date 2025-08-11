@@ -1,6 +1,37 @@
 abstract type GrenkeElliottModel <: GibbsBasedModel end
 @newmodelsingleton GrenkeElliottWater GrenkeElliottModel
 
+"""
+    GrenkeElliottWater <: GibbsBasedModel
+    GrenkeElliottWater()
+
+## Input parameters
+
+None
+
+## Description
+
+Grenke and Elliott's model for liquid water at low temperatures (200-300 K) and high pressures (0.1−400 MPa)
+
+```
+v = MW*v₀*(1 - C*log((B + p)/(B + p₀)))
+v₀ = a₁*exp(a₂T) + a₃*exp(a₄T) + a₅
+p₀ = 101325
+MW = 0.0180153
+B = 1e8*(b₁/(1 + (T/b₂)^b₃)^b₄)
+C = c₁/((1 + (T/c₂)^c₃)^c₄) + c₅
+Cₚ(p₀,T) = (d₁exp(d₂T) + d₃)*Mw
+g(p,T) = ∫∫Cₚ/T dT + ∫v dp + g₀₁ + g₀₂T
+```
+
+Where `g₀₁`and `g₀₂` are reference state constants, calculated to match `gibbs(ice,1 atm,273.15 K) == gibbs(liquid,1 atm,273.15 K)` and `Δh_fus(1 atm,273.15 K) = 6010 K J·mol⁻¹`
+
+## References
+
+1. Grenke, J. H., & Elliott, J. A. W. (2025). Analytic correlation for the thermodynamic properties of water at low temperatures (200-300 K) and high pressures (0.1-400 MPa). The Journal of Physical Chemistry. B, 129(7), 1997–2012. [doi:10.1021/acs.jpcb.4c03909](https://doi.org/10.1021/acs.jpcb.4c03909)
+"""
+GrenkeElliottWater
+
 molecular_weight(model::GrenkeElliottModel,z) = 0.0180153*sum(z)
 
 function v0_water(model::GrenkeElliottModel,T)
@@ -40,8 +71,24 @@ function volume_impl(model::GrenkeElliottModel,p,T,z,phase,threaded,vol0)
     p0 = 101325.0
     K1 = (B + p0)*exp(1/C)
     K2 = v0*C
-    lnBp = log((B + p)/(B + p0))
+    lnBp = log1p(p/B) - log1p(p0/B)
     return v0*(1 - C*lnBp)
+end
+
+function x0_pressure(model::GrenkeElliottModel,V,T,z)
+    v = V/sum(z)
+    mw = molecular_weight(model)
+    v0 = v0_water(model,T)*mw
+    B = B_water(model,T)
+    C = C_water(model,T)
+    p0 = 101325.0
+    #=
+    v = v0*(1 - C*lnBp)
+    v/v0 = 1 - ClnBp
+    ClnBp = 1 - v/v0
+    =#
+    p = B*expm1((1/C + log1p(p0/B)) - v/(v0*C))
+    return p
 end
 
 function eos_g(model::GrenkeElliottModel,p,T,z)
@@ -52,39 +99,45 @@ function eos_g(model::GrenkeElliottModel,p,T,z)
     p0 = 101325.0
     K1 = (B + p0)*exp(1/C)
     K2 = v0*C
-    lnBp = log((B + p)/(B + p0))
-    #V = v0*(1 - C*lnBp)
+    lnBp = log1p(p/B) - log1p(p0/B)
+
     gT = water_g0(model,T)*mw #T-dependent
-    gpT = v0*(- C*(B + p)*lnBp + C*p + p) #p-T-dependent
+    gpTx = v0*(- C*(B + p)*lnBp + C*p + p) #p-T-dependent
+    gpT0 = v0*(C*p0 + p0)
+    gpT = gpTx - gpT0
+
     #=
     ## Reference state calculations ##
 
-    We need to calculate l1 and l2 constants so that g(p,T) + l1 + l2*T is a valid water eos
+    We need to calculate g01 and g02 constants so that g(p,T) + g01 + g02*T is a valid water eos
     compatible with the ice equation of state.
 
-    at triple point:
-    g(water,Tt) - g(ice,Tt) = 0 -> = g_water - g_ice + l1 + l2*Tt
-    h(water,Tt) - h(ice,Tt) - dh(Tt) = 0 h_water - h_ice - dh + h(l1 + l2*Tt)
+    at T0 = 273.15, p0 = 101325:
+    g(water) - g(ice) = 0       -> g_water - g_ice + g01 + g02*T0
+    h(water) - h(ice) - dh = 0  -> h_water - h_ice - dh + h(g01 + g02*T0)
 
     h = g - T*∂g∂T
-    h(l1 + l2*T) = l1 + l2*T - T*l2 = l1
+    h(g01 + g02*T) = g01 + g02*T - T*g02 = g01
     then:
     h(water) - h(ice) - c = 0
-    h0 - h_ice - dh + l1 = 0
-    l1 = dh + h_ice - h_water0
+    h0 - h_ice - dh + g01 = 0
+    g01 = dh + h_ice - h_water0
 
-    g_water - g_ice + l1 + l2*T = 0
-    l2 = (g_ice - g_water - l1)/Triple
-    g_ice = 0.011021455141630443
-    g_water0 = -94649.62410803317
-    h_water0 = 20522.78895968775
-    h_ice = -6007.087598248805
-    dh = 6007.098619700405 #calculated with IAPWS95 at triple point
-    l1 = dh + h_ice - h_water0
-    l2 = (g_ice - g_water0 - l1)/273.16
+    g_water - g_ice + g01 + g02*T = 0
+    g02 = (g_ice - g_water - g01)/T0
+
+    Code to calculate constants:
+    
+    g_ice = 1.7703171209449624
+    g_water0 = -94645.65737009811
+    h_water0 = 20521.980322791598
+    h_ice = -6005.5725370923665
+    dh = 6010 #tabulated
+    g01 = dh + h_ice - h_water0
+    g02 = (g_ice - g_water0 - g01)/273.15
     =#
-    l1, l2 = -20522.77793823615, 421.6298618674932
-    gref = sum(z)*(l1 + l2*T)
+    g01, g02 = -20517.552859883966, 421.6180873040565
+    gref = sum(z)*(g01 + g02*T)
     return gT + gpT + gref
 end
 
@@ -112,11 +165,4 @@ function water_g0(model::GrenkeElliottModel,T)
     return d1*exp_part + d3*c_part
 end
 
-#=
-test function
-function water_cp2(model,T)
-    f(x) = water_g0(model,x)
-    _,_,fx = Solvers.f∂f∂2f(f,T)
-    return -T*fx
-end
-=#
+export GrenkeElliottWater

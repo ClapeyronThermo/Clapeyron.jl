@@ -110,7 +110,7 @@ function x0_pressure(model::IAPWS06,V,T,z)
 
     if 251.165 <= T <= 273.16
         #it could be sublimation or melting correlation
-        #check if the volume is lower or higher than the triple point
+        #check if the volume is lower or higher than the triple point      
         if V > Vst
             p = x0_iapws06_sub(T)
         else
@@ -125,7 +125,7 @@ function x0_pressure(model::IAPWS06,V,T,z)
     end
 
     for i in 1:20
-        if volume(model,p,T) < V
+        if volume(model,p,T) <= V
             return p
         end
         p *= 2

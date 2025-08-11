@@ -49,6 +49,7 @@ They return `volume(model,p,T,z, phase = :liquid)`.
 RackettLiquid
 YamadaGunnLiquid
 COSTALD
+GrenkeElliotWater
 ```
 
 # Virial Models
@@ -74,4 +75,5 @@ Intended to be used in conjunction with a liquid model within a CompositeModel.
 ```@docs
 SolidHfus
 SolidKs
+IAPWS06
 ```

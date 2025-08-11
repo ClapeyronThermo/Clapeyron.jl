@@ -422,4 +422,22 @@ end
         @test isothermal_compressibility(model,p3,T3) ≈ 0.886880048115e-10 rtol = 1e-6
     end
 
+    @testset "Grenke-Elliott water" begin
+        system = GrenkeElliottWater()
+        system_ref = IAPWS95()
+        p1,T1 = 611.657, 273.16
+        p2,T2 = 101325.0, 273.152519
+        for Ti in range(250.0,280.0,30)
+            for log10Pi in range(5,8,20)
+                Pi = exp10(log10Pi)
+                v = volume(system,Pi,Ti)
+                v_ref = volume(system_ref,Pi,Ti,phase = :l)
+                @test v ≈ v_ref rtol = 1e-3
+                @test pressure(system,v,Ti) ≈ pressure(system_ref,v_ref,Ti) rtol = 1e-3
+            end
+            Cpi = Clapeyron.mass_isobaric_heat_capacity(system,101325.0,Ti)
+            Cpi_test = Clapeyron.water_cp(system,Ti)
+            @test Cpi ≈ Cpi_test rtol = 1e-3
+        end
+    end
 end
