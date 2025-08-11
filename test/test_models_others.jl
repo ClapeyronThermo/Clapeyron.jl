@@ -437,7 +437,7 @@ end
             end
             Cpi = Clapeyron.mass_isobaric_heat_capacity(system,101325.0,Ti)
             Cpi_test = Clapeyron.water_cp(system,Ti)
-            @test Cpi ≈ Cpi_test rtol = 1e-3
+            @test Cpi ≈ Cpi_test rtol = 1e-6
         end
     end
 end

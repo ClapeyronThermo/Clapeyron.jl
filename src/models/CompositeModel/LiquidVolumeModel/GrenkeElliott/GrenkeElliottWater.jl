@@ -46,19 +46,19 @@ end
 Base.length(model::GrenkeElliottModel) = 1
 
 function B_water(model::GrenkeElliottModel,T)
-    b1 = 3.340 #[Pa]
-    b2 = 213.58 #[K]
-    b3 = -11.252
-    b4 = 4.490
+    b1 = 3.1520397 #±1.0495712 [Pa]
+    b2 = 203.8085375 #±96.2898756 [K]
+    b3 = −11.1985548 #±4.6162330
+    b4 = 7.2689427 #±33.5643396
     return 1e8*(b1/(1 + (T/b2)^b3)^b4)
 end
 
 function C_water(model::GrenkeElliottModel,T)
-    c1 = 0.07169
-    c2 = 225.18 # [K]
-    c3 = -13.38
-    c4 = 1.910
-    c5 = 0.06829
+    c1 = 0.0790029 #±0.0949956
+    c2 = 237.9009619 #±42.5843445 #[K]
+    c3 = −14.8806681 #±12.8489102
+    c4 = 0.8778057 #±2.7595783
+    c5 = 0.0532605 #±0.1059223
     return c1/((1 + (T/c2)^c3)^c4) + c5
 end
 
