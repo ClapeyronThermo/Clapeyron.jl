@@ -1,4 +1,4 @@
-abstract type GibbsBasedModel <: EoSModel end
+#abstract type GibbsBasedModel <: EoSModel end
 
 #derivative logic
 
