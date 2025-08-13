@@ -58,7 +58,7 @@ function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPre
     _0 = zero(vs0*vl0*T*oneunit(eltype(model)))
     nan = _0/_0
     fail = (nan,nan,nan)
-    valid_input = check_valid_2ph_input(vs0,vl0,true,T)
+    valid_input = _is_positive((vs0,vl0,T))
     if !valid_input
         return fail
     end
@@ -246,6 +246,8 @@ function melting_pressure_impl(model::CompositeModel,T,method::IsoGibbsMeltingPr
     fluid = fluid_model(model)
     nan = _1*NaN
     p,lnp,vl,vs = p0,log(p0),nan,nan
+    valid_input = _is_positive((p,T))
+    !valid_input && return (nan,nan,nan)
     max_iters = method.max_iters
     for i in 1:max_iters
         gl,vl = g_and_v(fluid,p,T,vl,phase = :liquid)
@@ -260,7 +262,10 @@ function melting_pressure_impl(model::CompositeModel,T,method::IsoGibbsMeltingPr
         lnp = lnp + dlnp
         converged,_ = Solvers.convergence(lnp,lnp + dlnp,method.atol,method.rtol)
         p = exp(lnp)
-        converged && return p,vs,vl
+        if converged 
+            !_is_positive((p,vl,vs)) && break
+            return p,vs,vl
+        end
     end
 
     return nan,nan,nan
@@ -322,6 +327,8 @@ function melting_temperature_impl(model::CompositeModel,p,method::IsoGibbsMeltin
     fluid = fluid_model(model)
     nan = _1*NaN
     T,vl,vs = T0,nan,nan
+    valid_input = _is_positive((p,T))
+    !valid_input && return (nan,nan,nan)
     max_iters = method.max_iters
     for i in 1:max_iters
         gl,sl,vl = g_and_sv(fluid,p,T,vl,phase = :liquid)
@@ -332,7 +339,10 @@ function melting_temperature_impl(model::CompositeModel,p,method::IsoGibbsMeltin
         !isfinite(dT) && break
         T = T + dT
         converged,_ = Solvers.convergence(T,T + dT,method.atol,method.rtol)
-        converged && return T,vs,vl
+        if converged 
+            !_is_positive((T,vs,vl)) && return (nan,nan,nan)
+            return T,vs,vl
+        end
     end
 
     return nan,nan,nan

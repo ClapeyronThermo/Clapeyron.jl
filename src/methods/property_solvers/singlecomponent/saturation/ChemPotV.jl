@@ -73,7 +73,7 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
     _0 = zero(vl0*vv0*T*oneunit(eltype(model)))
     nan = _0/_0
     fail = (nan,nan,nan)
-    valid_input = check_valid_2ph_input(vl0,vv0,true,T)
+    valid_input = _is_positive((vl0,vv0,T))
     if !valid_input
         return fail
     end

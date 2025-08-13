@@ -60,7 +60,7 @@ function sublimation_pressure_impl(model::CompositeModel,T,method::ChemPotSublim
     _0 = zero(vs0*vv0*T*oneunit(eltype(model)))
     nan = _0/_0
     fail = (nan,nan,nan)
-    valid_input = check_valid_2ph_input(vs0,vv0,true,T)
+    valid_input = _is_positive((vs0,vv0,T))
     if !valid_input
         return fail
     end
