@@ -2,7 +2,19 @@
 
 @testset "Activity models" begin
     @printline
-    let T = 333.15, V = 1e-3,p = 1e5,z = [0.5,0.5],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333];
+    let T = 333.15, V = 1e-3, p = 1e5, z = [0.5, 0.5], z1 = Clapeyron.SA[1.0], z2 = [0.5,0.5], z3 = [0.333, 0.333, 0.333];
+    @testset "Margules" begin
+        system = Margules(["methanol","water"])
+       #= @test Clapeyron.activity_coefficient(system,p,T,z)[1] #≈ 1.530046633499114 rtol = 1e-6
+        @test Clapeyron.activity_coefficient(system,p,T,z) #≈ Clapeyron.test_activity_coefficient(system,p,T,z)  rtol = 1e-6
+        =#@test Clapeyron.excess_gibbs_free_energy(system,p,T,z) ≈ Clapeyron.test_excess_gibbs_free_energy(system,p,T,z)  rtol = 1e-6
+    end
+    @testset "VanLaar" begin
+        system = VanLaar(["methanol","water"])
+     #=   @test Clapeyron.activity_coefficient(system,p,T,z)[1] #≈ 1.530046633499114 rtol = 1e-6
+        @test Clapeyron.activity_coefficient(system,p,T,z) #≈ Clapeyron.test_activity_coefficient(system,p,T,z)  rtol = 1e-6
+        =#@test Clapeyron.excess_gibbs_free_energy(system,p,T,z) ≈ Clapeyron.test_excess_gibbs_free_energy(system,p,T,z)  rtol = 1e-6
+    end
     @testset "Wilson" begin
         system = Wilson(["methanol","benzene"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.530046633499114 rtol = 1e-6
@@ -336,62 +348,103 @@ end
 
 
 @testset "Correlations" begin
-    @testset "DIPPR101Sat" begin
-        system = DIPPR101Sat(["water"])
-        p0 = saturation_pressure(system,400.01)[1]
-        @test p0 ≈ 245338.15099198322 rtol = 1e-6
-        @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+    @testset "Saturation" begin
+        @testset "AntoineSat" begin
+            system = AntoineEqSat(["water"])
+            p0 = saturation_pressure(system,400.01)[1]
+            @test p0 ≈ 244561.488609 rtol = 1e-6
+            @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+        end
+
+        @testset "DIPPR101Sat" begin
+            system = DIPPR101Sat(["water"])
+            p0 = saturation_pressure(system,400.01)[1]
+            @test p0 ≈ 245338.15099198322 rtol = 1e-6
+            @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+        end
+        
+        @testset "LeeKeslerSat" begin
+            system = LeeKeslerSat(["water"])
+            p0 = saturation_pressure(system,400.01)[1]
+            @test p0 ≈ 231731.79240876858 rtol = 1e-6
+            @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+        end
+
+        #=@testset "PolExpSat" begin
+            system = PolExpSat(["water"])
+            p0 = saturation_pressure(system,400.01)[1]
+            @test p0 ≈ 231731.79240876858 rtol = 1e-6
+            @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+        end=#
+    end
+    @testset "LiquidVolume" begin
+        @testset "COSTALD" begin
+            system = COSTALD(["water"])
+            @test volume(system,1e5,300.15) ≈ 1.8553472145724288e-5 rtol = 1e-6
+            system2 = COSTALD(["water","methanol"])
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 2.834714146558056e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.8553472145724288e-5 rtol = 1e-6
+        end
+
+        @testset "DIPPR105Liquid" begin
+            system = DIPPR105Liquid(["water"])
+            @test volume(system,1e5,300.15) ≈ 1.8057164858551208e-5 rtol = 1e-6
+            system2 = DIPPR105Liquid(["water","methanol"])
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 2.9367802477146567e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.8057164858551208e-5 rtol = 1e-6
+        end
+
+        @testset "RackettLiquid" begin
+            system = RackettLiquid(["water"])
+            @test volume(system,1e5,300.15) ≈ 1.6837207241594103e-5 rtol = 1e-6
+            system2 = RackettLiquid(["water","methanol"])
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.2516352601748416e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.6837207241594103e-5 rtol = 1e-6
+        end
+
+        @testset "YamadaGunnLiquid" begin
+            system = YamadaGunnLiquid(["water"])
+            @test volume(system,1e5,300.15) ≈ 2.0757546189420953e-5 rtol = 1e-6
+            system2 = YamadaGunnLiquid(["water","methanol"])
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.825994563177142e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[1.,0.]) ≈ 2.0757546189420953e-5 rtol = 1e-6
+        end
     end
 
-    @testset "LeeKeslerSat" begin
-        system = LeeKeslerSat(["water"])
-        p0 = saturation_pressure(system,400.01)[1]
-        @test p0 ≈ 231731.79240876858 rtol = 1e-6
-        @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+    @testset "Virial Coeff" begin
+        @testset "AbbottVirial" begin
+            system = AbbottVirial(["methane","ethane"])
+            @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.024820060368027988 rtol = 1e-6
+            #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
+            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0024543543773067693 rtol = 1e-6
+        end
+
+        @testset "TsonopoulosVirial" begin
+            system = TsonopoulosVirial(["methane","ethane"])
+            @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.02485310667780686 rtol = 1e-6
+            #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
+            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0017990881811592349 rtol = 1e-6
+        end
+
+        @testset "EoSVirial2" begin
+            cub = PR(["methane","ethane"])
+            system = EoSVirial2(cub)
+            #exact equality here, as cubics have an exact second virial coefficient
+            @test volume(system,1e5,300,[0.5,0.5]) == Clapeyron.volume_virial(cub,1e5,300,[0.5,0.5])
+            #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
+            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0023728381262076137 rtol = 1e-6
+        end
     end
 
-    @testset "COSTALD" begin
-        system = COSTALD(["water"])
-        @test volume(system,1e5,300.15) ≈ 1.8553472145724288e-5 rtol = 1e-6
-        system2 = COSTALD(["water","methanol"])
-        @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 2.834714146558056e-5 rtol = 1e-6
-        @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.8553472145724288e-5 rtol = 1e-6
-    end
+    @testset "SolidProp" begin
+        @testset "SolidHfus" begin
+            model = SolidHfus(["water"])
+            @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
+        end
 
-    @testset "RackettLiquid" begin
-        system = RackettLiquid(["water"])
-        @test volume(system,1e5,300.15) ≈ 1.6837207241594103e-5 rtol = 1e-6
-        system2 = RackettLiquid(["water","methanol"])
-        @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.2516352601748416e-5 rtol = 1e-6
-        @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.6837207241594103e-5 rtol = 1e-6
-    end
-
-    
-    @testset "AbbottVirial" begin
-        system = AbbottVirial(["methane","ethane"])
-        @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.024820060368027988 rtol = 1e-6
-        #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
-        @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0024543543773067693 rtol = 1e-6
-    end
-
-    @testset "TsonopoulosVirial" begin
-        system = TsonopoulosVirial(["methane","ethane"])
-        @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.02485310667780686 rtol = 1e-6
-        #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
-        @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0017990881811592349 rtol = 1e-6
-    end
-
-    @testset "EoSVirial2" begin
-        cub = PR(["methane","ethane"])
-        system = EoSVirial2(cub)
-        #exact equality here, as cubics have an exact second virial coefficient
-        @test volume(system,1e5,300,[0.5,0.5]) == Clapeyron.volume_virial(cub,1e5,300,[0.5,0.5])
-        #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
-        @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0023728381262076137 rtol = 1e-6
-    end
-
-    @testset "SolidHfus" begin
-        model = SolidHfus(["water"])
-        @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
+        @testset "SolidKs" begin
+            model = SolidKs(["water"])
+            @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
+        end
     end
 end

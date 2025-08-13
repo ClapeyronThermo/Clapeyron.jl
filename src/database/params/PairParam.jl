@@ -13,7 +13,7 @@ PairParameter(name,components,values,ismissingvalues,src) = PairParameter(name,c
 
 """
     PairParam{T}
-Struct designed to contain pair data. used a matrix as underlying data storage.
+Struct designed to contain pair data. Used a matrix as underlying data storage.
 ## Creation:
 ```julia-repl
 julia> kij = PairParam("interaction params",["water","ammonia"],[0.1 0.0;0.1 0.0])

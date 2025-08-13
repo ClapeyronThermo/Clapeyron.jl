@@ -94,7 +94,7 @@ Performs a Gibbs-Duhem check on the input conditions:
 ```
 ∑zᵢμᵢ - G ≈ 0
 ```
-Where `G` is the total Gibbs energy. It can help diagnose if a user-defined eos is consistent.
+Where `G` is the total Gibbs energy `[J]`. It can help diagnose if a user-defined eos is consistent.
 
 Returns |∑zᵢμᵢ - G|, ∑zᵢμᵢ and G at the specified conditions.
 """
@@ -113,7 +113,7 @@ Performs a ideal model consistency check:
 ```
 Where `∂a₀∂V` is the derivative of `a_ideal` respect to `V`. It can help diagnose if a user-defined ideal model is consistent.
 
-Return |∂a₀∂V + 1/V| at the specified conditions.
+Return |∂a₀∂V + 1/V| at the specified conditions of volume `V`, of temperature `T`.
 
 If the model is not an `IdealModel`, then `Clapeyron.idealmodel(model)` will be called to obtain the respective ideal model.
 """
@@ -133,7 +133,7 @@ end
 """
     VT_chemical_stability(model,V,T,z)::Bool
 
-Performs a chemical stability check using the tangent plane distance criterion, using the [tpd](@ref) function
+Performs a chemical stability check using the tangent plane distance criterion, using the [tpd](@ref) function.
 """
 function VT_chemical_stability(model::EoSModel,V,T,z,check_vol = true)
     if isone(length(z))
@@ -173,7 +173,7 @@ end
 
 """
     tangent_plane_distance(model,V,T,z,phase::Symbol,w)::Float
-Calculates the tangent plane distance for a tangent plane stability test
+Calculates the tangent plane distance for a tangent plane stability test.
 """
 function tangent_plane_distance(model,p,T,z,phase,w)
     w = w./sum(w)
