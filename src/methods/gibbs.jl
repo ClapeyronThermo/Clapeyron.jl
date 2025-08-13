@@ -136,8 +136,8 @@ function PT_property_gibbs(model,p,T,z,f::typeof(VT_isentropic_compressibility))
     ∂²g∂T² = ∂²g[2,2]
     ∂²g∂p² = ∂²g[1,1]
     ∂²g∂T∂p = ∂²g[1,2]
-    ∂g∂p = ∂g[1]
-    return (∂²g∂T∂p*∂²g∂T∂p - ∂²g∂T²*∂²g∂p²)/(∂g∂p*∂²g∂T²)
+    V = ∂g[1]
+    return (∂²g∂T∂p*∂²g∂T∂p - ∂²g∂T²*∂²g∂p²)/∂²g∂T²/V
 end
 
 function VT_pressure(model::GibbsBasedModel,V,T,z)
@@ -152,6 +152,10 @@ function VT_pressure(model::GibbsBasedModel,V,T,z)
     end
     return Solvers.fixpoint(fixpoint_p,p0,Solvers.SSFixPoint(),rtol = 1e-12)
 end
+
+x0_volume_liquid(model::GibbsBasedModel,p,T,z) = simple_volume(model,p,T,z)
+x0_volume_solid(model::GibbsBasedModel,p,T,z) = simple_volume(model,p,T,z)
+x0_volume_gas(model::GibbsBasedModel,p,T,z) = simple_volume(model,p,T,z)
 
 function x0_pressure(model,V,T,z)
     p = p_scale(model,z)*one(T+first(z)+V)

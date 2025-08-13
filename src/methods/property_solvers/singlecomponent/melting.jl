@@ -185,3 +185,83 @@ function x0_melting_temperature(model::CompositeModel,p)
     T0 =  1/Tinv
     return T0,vs0,vl0
 end
+
+#=
+init of pressure-based iterative methods
+used by gibbs-based models
+=#
+
+function g_and_v(model,p,T,v;phase = :unknown)
+    v = volume(model,p,T,SA[1.0],phase = phase,vol0 = v)
+    g = VT_gibbs_free_energy(model,v,T,SA[1.0])
+    return g,v
+end
+
+function g_and_v(model::GibbsBasedModel,p,T,v;phase = :unknown)
+    return 𝕘∂𝕘dp(model,p,T,SA[1.0])
+end
+
+
+struct IsoGibbsMeltingPressure{V} <: ThermodynamicMethod
+    p0::V
+    check_triple::Bool
+    f_limit::Float64
+    atol::Float64
+    rtol::Float64
+    max_iters::Int
+end
+
+function IsoGibbsMeltingPressure(;p0 = nothing,
+                                    check_triple = false,
+                                    f_limit = 0.0,
+                                    atol = 1e-8,
+                                    rtol = 1e-12,
+                                    max_iters = 10000)
+
+    return IsoGibbsMeltingPressure(p0,check_triple,f_limit,atol,rtol,max_iters)
+end
+
+function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:EoSModel,<:GibbsBasedModel},kwargs)
+    return IsoGibbsMeltingPressure(kwargs...)
+end
+
+function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:GibbsBasedModel,<:GibbsBasedModel},kwargs)
+    return IsoGibbsMeltingPressure(kwargs...)
+end
+
+function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:GibbsBasedModel,<:EoSModel},kwargs)
+    return IsoGibbsMeltingPressure(kwargs...)
+end
+
+function melting_pressure_impl(model::CompositeModel,T,method::IsoGibbsMeltingPressure)
+    _1 = one(Base.promote_eltype(model,T))
+    if method.p0 == nothing
+        v0 = x0_melting_pressure(model,T)
+        p0 = v0[3]*_1
+    else
+        p0 = method.p0*_1
+    end
+    
+    solid = solid_model(model)
+    fluid = fluid_model(model)
+    nan = _1*NaN
+    p,lnp,vl,vs = p0,log(p0),nan,nan
+    max_iters = method.max_iters
+    for i in 1:max_iters
+        gl,vl = g_and_v(fluid,p,T,vl,phase = :liquid)
+        gs,vs = g_and_v(solid,p,T,vs,phase = :solid)
+
+        #f(lp) = gs(exp(lp)) - gl(exp(lp))
+        #df(lp) = vs(exp(lp))*
+        f = gs - gl
+        df = p*(vs - vl)
+        dlnp = -f/df
+        !isfinite(dlnp) && break
+        lnp = lnp + dlnp
+        converged,_ = Solvers.convergence(lnp,lnp + dlnp,method.atol,method.rtol)
+        p = exp(lnp)
+        converged && return p,vs,vl
+    end
+
+    return nan,nan,nan
+end

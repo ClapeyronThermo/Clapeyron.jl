@@ -169,4 +169,7 @@ function water_g0(model::GrenkeElliottModel,T)
     return d1*exp_part + d3*c_part
 end
 
+T_scale(model::GrenkeElliottModel,z) = 273.15
+p_scale(model::GrenkeElliottModel,z) = 101325.0
+
 export GrenkeElliottWater
