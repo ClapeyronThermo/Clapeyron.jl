@@ -4,13 +4,13 @@ abstract type AbstractFixPoint end
 
 """
   Solvers.fixpoint(f,x0::Real,method=SSFixPoint())
-does a fixpoint iteration convergence on a series of real numbers.
-f is a function that should 
+Does a fixpoint iteration convergence on a series of real numbers.
+`f` is a function that should 
 the following strategies:
  - `SSFixPoint(dampingfactor = 1.0)`: performs succesive substitutions until convergence is met. 
-α = `dampingfactor` is determines a buffer for each iteration, defined as `x1 = α*f(x1) + (1-α)*x1`
+α = `dampingfactor` it determines a buffer for each iteration, defined as `x1 = α*f(x1) + (1-α)*x1`
 
-- `Aitken()`: uses Aitken's delta-squared process to accelerate convergence of the series. recommended for harmonic iterates.
+- `Aitken()`: uses Aitken's delta-squared process to accelerate convergence of the series. Recommended for harmonic iterates.
 
 """
 function fixpoint end

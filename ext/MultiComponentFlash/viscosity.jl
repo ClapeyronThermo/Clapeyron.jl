@@ -52,10 +52,10 @@ function M.pseudo_critical_properties(model::C.CubicModel, z::V) where V<:Abstra
     pc = model.params.Pc.values
     Tc = C.dot(tc,z)
     Pc = C.dot(pc,z)
-    if hasfield(typeof(model.params),:Vc)
-        Vc = C.dot(model.params.Vc.values,z)
-    else
-        Vc = C.volume(model,Pc,Tc,z)
+    pures = C.split_pure_model(model)
+    Vc = zero(Base.promote_eltype(model,Tc,Pc))
+    for i in 1:length(z)
+        Vc += z[i]*C.volume(pures[i],pc[i],tc[i])
     end
     return mw,Pc,Tc,Vc
 end

@@ -206,7 +206,7 @@ include("AntoineSat.jl")
 """
     enthalpy_vap(model::EoSModel, T,method = ChemPotVSaturation(x0_sat_pure(model,T)))
 
-Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies at temperature `T`, in J
+Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies at temperature `T` `[K]`, in `[J]`
 """
 function enthalpy_vap(model::EoSModel, T,satmethod = ChemPotVSaturation())
     single_component_check(enthalpy_vap,model)
@@ -221,7 +221,7 @@ end
 """
     acentric_factor(model::EoSModel;crit = crit_pure(model), satmethod = ChemPotVSaturation())
 
-calculates the acentric factor using its definition:
+Calculates the acentric factor using its definition:
 ```
 ω = -log10(psatᵣ) -1, at Tᵣ = 0.7
 ```

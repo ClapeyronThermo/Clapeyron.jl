@@ -2,7 +2,19 @@
 
 @testset "Activity models" begin
     @printline
-    let T = 333.15, V = 1e-3,p = 1e5,z = [0.5,0.5],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333];
+    let T = 333.15, V = 1e-3, p = 1e5, z = [0.5, 0.5], z1 = Clapeyron.SA[1.0], z2 = [0.5,0.5], z3 = [0.333, 0.333, 0.333];
+    @testset "Margules" begin
+        system = Margules(["methanol","water"])
+       #= @test Clapeyron.activity_coefficient(system,p,T,z)[1] #≈ 1.530046633499114 rtol = 1e-6
+        @test Clapeyron.activity_coefficient(system,p,T,z) #≈ Clapeyron.test_activity_coefficient(system,p,T,z)  rtol = 1e-6
+        =#@test Clapeyron.excess_gibbs_free_energy(system,p,T,z) ≈ Clapeyron.test_excess_gibbs_free_energy(system,p,T,z)  rtol = 1e-6
+    end
+    @testset "VanLaar" begin
+        system = VanLaar(["methanol","water"])
+     #=   @test Clapeyron.activity_coefficient(system,p,T,z)[1] #≈ 1.530046633499114 rtol = 1e-6
+        @test Clapeyron.activity_coefficient(system,p,T,z) #≈ Clapeyron.test_activity_coefficient(system,p,T,z)  rtol = 1e-6
+        =#@test Clapeyron.excess_gibbs_free_energy(system,p,T,z) ≈ Clapeyron.test_excess_gibbs_free_energy(system,p,T,z)  rtol = 1e-6
+    end
     @testset "Wilson" begin
         system = Wilson(["methanol","benzene"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.530046633499114 rtol = 1e-6
@@ -336,108 +348,149 @@ end
 
 
 @testset "Correlations" begin
-    @testset "DIPPR101Sat" begin
-        system = DIPPR101Sat(["water"])
-        p0 = saturation_pressure(system,400.01)[1]
-        @test p0 ≈ 245338.15099198322 rtol = 1e-6
-        @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
-    end
+    @testset "Saturation" begin
+        @testset "AntoineSat" begin
+            system = AntoineEqSat(["water"])
+            p0 = saturation_pressure(system,400.01)[1]
+            @test p0 ≈ 244561.488609 rtol = 1e-6
+            @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+        end
 
-    @testset "LeeKeslerSat" begin
-        system = LeeKeslerSat(["water"])
-        p0 = saturation_pressure(system,400.01)[1]
-        @test p0 ≈ 231731.79240876858 rtol = 1e-6
-        @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
-    end
+        @testset "DIPPR101Sat" begin
+            system = DIPPR101Sat(["water"])
+            p0 = saturation_pressure(system,400.01)[1]
+            @test p0 ≈ 245338.15099198322 rtol = 1e-6
+            @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+        end
+        
+        @testset "LeeKeslerSat" begin
+            system = LeeKeslerSat(["water"])
+            p0 = saturation_pressure(system,400.01)[1]
+            @test p0 ≈ 231731.79240876858 rtol = 1e-6
+            @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+        end
 
-    @testset "COSTALD" begin
-        system = COSTALD(["water"])
-        @test volume(system,1e5,300.15) ≈ 1.8553472145724288e-5 rtol = 1e-6
-        system2 = COSTALD(["water","methanol"])
-        @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 2.834714146558056e-5 rtol = 1e-6
-        @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.8553472145724288e-5 rtol = 1e-6
+        #=@testset "PolExpSat" begin
+            system = PolExpSat(["water"])
+            p0 = saturation_pressure(system,400.01)[1]
+            @test p0 ≈ 231731.79240876858 rtol = 1e-6
+            @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+        end=#
     end
+    @testset "LiquidVolume" begin
+        @testset "COSTALD" begin
+            system = COSTALD(["water"])
+            @test volume(system,1e5,300.15) ≈ 1.8553472145724288e-5 rtol = 1e-6
+            system2 = COSTALD(["water","methanol"])
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 2.834714146558056e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.8553472145724288e-5 rtol = 1e-6
+        end
 
-    @testset "RackettLiquid" begin
-        system = RackettLiquid(["water"])
-        @test volume(system,1e5,300.15) ≈ 1.6837207241594103e-5 rtol = 1e-6
-        system2 = RackettLiquid(["water","methanol"])
-        @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.2516352601748416e-5 rtol = 1e-6
-        @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.6837207241594103e-5 rtol = 1e-6
-    end
+        @testset "DIPPR105Liquid" begin
+            system = DIPPR105Liquid(["water"])
+            @test volume(system,1e5,300.15) ≈ 1.8057164858551208e-5 rtol = 1e-6
+            system2 = DIPPR105Liquid(["water","methanol"])
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 2.9367802477146567e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.8057164858551208e-5 rtol = 1e-6
+        end
 
-    
-    @testset "AbbottVirial" begin
-        system = AbbottVirial(["methane","ethane"])
-        @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.024820060368027988 rtol = 1e-6
-        #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
-        @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0024543543773067693 rtol = 1e-6
-    end
+        @testset "RackettLiquid" begin
+            system = RackettLiquid(["water"])
+            @test volume(system,1e5,300.15) ≈ 1.6837207241594103e-5 rtol = 1e-6
+            system2 = RackettLiquid(["water","methanol"])
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.2516352601748416e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.6837207241594103e-5 rtol = 1e-6
+        end
 
-    @testset "TsonopoulosVirial" begin
-        system = TsonopoulosVirial(["methane","ethane"])
-        @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.02485310667780686 rtol = 1e-6
-        #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
-        @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0017990881811592349 rtol = 1e-6
-    end
+        @testset "YamadaGunnLiquid" begin
+            system = YamadaGunnLiquid(["water"])
+            @test volume(system,1e5,300.15) ≈ 2.0757546189420953e-5 rtol = 1e-6
+            system2 = YamadaGunnLiquid(["water","methanol"])
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.825994563177142e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[1.,0.]) ≈ 2.0757546189420953e-5 rtol = 1e-6
+        end
 
-    @testset "EoSVirial2" begin
-        cub = PR(["methane","ethane"])
-        system = EoSVirial2(cub)
-        #exact equality here, as cubics have an exact second virial coefficient
-        @test volume(system,1e5,300,[0.5,0.5]) == Clapeyron.volume_virial(cub,1e5,300,[0.5,0.5])
-        #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
-        @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0023728381262076137 rtol = 1e-6
-    end
-
-    @testset "SolidHfus" begin
-        model = SolidHfus(["water"])
-        @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
-    end
-
-    @testset "IAPWS-06" begin
-        model = IAPWS06()
-        #table 6 of Ice-Rev2009 document
-        p1,T1 = 611.657, 273.16
-        p2,T2 = 101325.0, 273.152519
-        p3,T3 = 100e6, 100.0
-        Mw = Clapeyron.molecular_weight(model)
-        @test mass_gibbs_energy(model,p1,T1) ≈ 0.611784135 rtol = 1e-6
-        @test mass_gibbs_energy(model,p2,T2) ≈ 0.10134274069e3 rtol = 1e-6
-        @test mass_gibbs_energy(model,p3,T3) ≈ -0.222296513088e6 rtol = 1e-6
-        @test volume(model,p1,T1)/Mw ≈ 0.109085812737e-2 rtol = 1e-6
-        @test volume(model,p2,T2)/Mw ≈ 0.109084388214e-2 rtol = 1e-6
-        @test volume(model,p3,T3)/Mw ≈ 0.106193389260e-2 rtol = 1e-6
-        test_volume(model,p1,T1)
-        test_volume(model,p2,T2)
-        test_volume(model,p3,T3)
-        @test mass_isobaric_heat_capacity(model,p1,T1) ≈ 0.209678431622e4 rtol = 1e-6
-        @test mass_isobaric_heat_capacity(model,p2,T2) ≈ 0.209671391024e4 rtol = 1e-6
-        @test mass_isobaric_heat_capacity(model,p3,T3) ≈ 0.866333195517e3 rtol = 1e-6
-        @test isentropic_compressibility(model,p1,T1) ≈ 0.114161597779e-9 rtol = 1e-6
-        @test isentropic_compressibility(model,p2,T2) ≈ 0.114154442556e-9 rtol = 1e-6
-        @test isentropic_compressibility(model,p3,T3) ≈ 0.886060982687e-10 rtol = 1e-6
-        @test isothermal_compressibility(model,p1,T1) ≈ 0.117793449348e-9 rtol = 1e-6
-        @test isothermal_compressibility(model,p2,T2) ≈ 0.117785291765e-9 rtol = 1e-6
-        @test isothermal_compressibility(model,p3,T3) ≈ 0.886880048115e-10 rtol = 1e-6
-    end
-
-    @testset "Grenke-Elliott water" begin
-        system = GrenkeElliottWater()
-        system_ref = IAPWS95()
-        p1,T1 = 611.657, 273.16
-        p2,T2 = 101325.0, 273.152519
-        for Ti in range(250.0,280.0,30)
-            for log10Pi in range(5,8,20)
-                Pi = exp10(log10Pi)
-                v = volume(system,Pi,Ti)
-                v_ref = volume(system_ref,Pi,Ti,phase = :l)
-                @test v ≈ v_ref rtol = 1e-3
-                @test pressure(system,v,Ti) ≈ pressure(system_ref,v_ref,Ti) rtol = 1e-3
+        @testset "Grenke-Elliott water" begin
+            system = GrenkeElliottWater()
+            system_ref = IAPWS95()
+            p1,T1 = 611.657, 273.16
+            p2,T2 = 101325.0, 273.152519
+            for Ti in range(250.0,280.0,30)
+                for log10Pi in range(5,8,20)
+                    Pi = exp10(log10Pi)
+                    v = volume(system,Pi,Ti)
+                    v_ref = volume(system_ref,Pi,Ti,phase = :l)
+                    @test v ≈ v_ref rtol = 1e-3
+                    @test pressure(system,v,Ti) ≈ pressure(system_ref,v_ref,Ti) rtol = 1e-3
+                end
+                Cpi = Clapeyron.mass_isobaric_heat_capacity(system,101325.0,Ti)
+                Cpi_test = Clapeyron.water_cp(system,Ti)
+                @test Cpi ≈ Cpi_test rtol = 1e-6
             end
-            Cpi = Clapeyron.mass_isobaric_heat_capacity(system,101325.0,Ti)
-            Cpi_test = Clapeyron.water_cp(system,Ti)
-            @test Cpi ≈ Cpi_test rtol = 1e-6
+        end
+    end
+
+    @testset "Virial Coeff" begin
+        @testset "AbbottVirial" begin
+            system = AbbottVirial(["methane","ethane"])
+            @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.024820060368027988 rtol = 1e-6
+            #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
+            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0024543543773067693 rtol = 1e-6
+        end
+
+        @testset "TsonopoulosVirial" begin
+            system = TsonopoulosVirial(["methane","ethane"])
+            @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.02485310667780686 rtol = 1e-6
+            #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
+            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0017990881811592349 rtol = 1e-6
+        end
+
+        @testset "EoSVirial2" begin
+            cub = PR(["methane","ethane"])
+            system = EoSVirial2(cub)
+            #exact equality here, as cubics have an exact second virial coefficient
+            @test volume(system,1e5,300,[0.5,0.5]) == Clapeyron.volume_virial(cub,1e5,300,[0.5,0.5])
+            #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
+            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0023728381262076137 rtol = 1e-6
+        end
+    end
+
+    @testset "SolidProp" begin
+        @testset "SolidHfus" begin
+            model = SolidHfus(["water"])
+            @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
+        end
+
+        @testset "SolidKs" begin
+            model = SolidKs(["water"])
+            @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
+        end
+
+        @testset "IAPWS-06" begin
+            model = IAPWS06()
+            #table 6 of Ice-Rev2009 document
+            p1,T1 = 611.657, 273.16
+            p2,T2 = 101325.0, 273.152519
+            p3,T3 = 100e6, 100.0
+            Mw = Clapeyron.molecular_weight(model)
+            @test mass_gibbs_energy(model,p1,T1) ≈ 0.611784135 rtol = 1e-6
+            @test mass_gibbs_energy(model,p2,T2) ≈ 0.10134274069e3 rtol = 1e-6
+            @test mass_gibbs_energy(model,p3,T3) ≈ -0.222296513088e6 rtol = 1e-6
+            @test volume(model,p1,T1)/Mw ≈ 0.109085812737e-2 rtol = 1e-6
+            @test volume(model,p2,T2)/Mw ≈ 0.109084388214e-2 rtol = 1e-6
+            @test volume(model,p3,T3)/Mw ≈ 0.106193389260e-2 rtol = 1e-6
+            test_volume(model,p1,T1)
+            test_volume(model,p2,T2)
+            test_volume(model,p3,T3)
+            @test mass_isobaric_heat_capacity(model,p1,T1) ≈ 0.209678431622e4 rtol = 1e-6
+            @test mass_isobaric_heat_capacity(model,p2,T2) ≈ 0.209671391024e4 rtol = 1e-6
+            @test mass_isobaric_heat_capacity(model,p3,T3) ≈ 0.866333195517e3 rtol = 1e-6
+            @test isentropic_compressibility(model,p1,T1) ≈ 0.114161597779e-9 rtol = 1e-6
+            @test isentropic_compressibility(model,p2,T2) ≈ 0.114154442556e-9 rtol = 1e-6
+            @test isentropic_compressibility(model,p3,T3) ≈ 0.886060982687e-10 rtol = 1e-6
+            @test isothermal_compressibility(model,p1,T1) ≈ 0.117793449348e-9 rtol = 1e-6
+            @test isothermal_compressibility(model,p2,T2) ≈ 0.117785291765e-9 rtol = 1e-6
+            @test isothermal_compressibility(model,p3,T3) ≈ 0.886880048115e-10 rtol = 1e-6
         end
     end
 end

@@ -38,6 +38,7 @@ Clapeyron.SaturationModel
 Clapeyron.SaturationCorrelation
 Clapeyron.LeeKeslerSat
 Clapeyron.DIPPR101Sat
+Clapeyron.AntoineEqSat
 ```
 
 # Liquid Volume Correlations

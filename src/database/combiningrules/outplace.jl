@@ -2,7 +2,7 @@
     kij_mix(f,p::ClapeyronParam,k::PairParam)::PairParam
     kij_mix(f,p::ClapeyronParam)::PairParam
 
-General combining rule for pair parameter with a `kᵢⱼ` interaction parameter. returns a pair parameter with non diagonal entries equal to:
+General combining rule for pair parameter with a `kᵢⱼ` interaction parameter. Returns a pair parameter with non diagonal entries equal to:
 ```
 pᵢⱼ = f(pᵢ,pⱼ,kᵢⱼ)
 ```
@@ -45,7 +45,7 @@ end
     pair_mix(g,P::ClapeyronParam,Q::ClapeyronParam)::PairParam
     pair_mix(g,P::ClapeyronParam,Q::ClapeyronParam)::PairParam
 
-General combining rule for a pair and a single parameter. returns a pair parameter `P` with non diagonal entries equal to:
+General combining rule for a pair and a single parameter. Returns a pair parameter `P` with non diagonal entries equal to:
 ```
 Pᵢⱼ = g(Pᵢ,Pⱼ,Qᵢ,Qⱼ,Qᵢⱼ)
 ```

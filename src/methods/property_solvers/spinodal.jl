@@ -2,7 +2,7 @@
 """
     spinodal_pressure(model::EoSModel, T, x; v0, phase)
 
-Calculates the spinodal pressure `p` and `v` volume for a given temperature `T` and composition `z`. Returns a tuple, containing:
+Calculates the spinodal pressure `p` and `V` volume for a given temperature `T` and composition `z`. Returns a tuple, containing:
 - Spinodal pressure `[Pa]`
 - Spinodal volume `[m³]`    
     

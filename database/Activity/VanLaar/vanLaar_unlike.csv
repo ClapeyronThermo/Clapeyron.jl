@@ -1,0 +1,9 @@
+Clapeyron Database File,,,,,,,
+VanLaar Unlike Parameters,,,,,,,
+species1,SMILES1,species2,SMILES2,A12,A21,source
+methanol,,ethanol,,4.712,-1162.3,
+methanol,,water,,0.4472,0.5113,
+water,,"1,2-proanediol",-0.6219,-0.3087,
+water,,1-butanol,,1.0996,4.1760,
+water,,pyridine,,0.5825,2.7672,
+water,,pyridine,,0.8395,2.9757,

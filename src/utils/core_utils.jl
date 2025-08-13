@@ -3,7 +3,7 @@ Base.@assume_effects :foldable __parameterless_type(T) = Base.typename(T).wrappe
 
 """
     parameterless_type(x)
-given a type or instance of type, it will return the type without any parameters attached.
+Given a type or instance of type, it will return the type without any parameters attached.
 ## Examples:
 ```julia-repl
 julia> Clapeyron.parameterless_type(Vector{Float64})

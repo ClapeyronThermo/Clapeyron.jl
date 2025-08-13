@@ -63,9 +63,9 @@ Calculates the triple point of a `CompositeModel` containing solid and fluid pha
 returns:
 - Triple point Temperature `[K]`
 - Triple point Pressure `[Pa]`
-- solid volume at Triple Point `[m³]`
-- liquid volume at Triple Point `[m³]`
-- vapour volume at Triple Point `[m³]`
+- Solid volume at Triple Point `[m³]`
+- Liquid volume at Triple Point `[m³]`
+- Vapour volume at Triple Point `[m³]`
 """
 function triple_point(model::CompositeModel;v0 = x0_triple_point(model))
     if isnothing(model.solid) || isnothing(model.fluid)

@@ -196,6 +196,8 @@ include("models/SAFT/DAPT/DAPT.jl")
 include("models/SAFT/COFFEE/COFFEE.jl")
 
 #Activity models
+include("models/Activity/Margules/Margules.jl")
+include("models/Activity/VanLaar/VanLaar.jl")
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/Wilson/variants/tcPRWilsonRes.jl")
 include("models/Activity/NRTL/NRTL.jl")

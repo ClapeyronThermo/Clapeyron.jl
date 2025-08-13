@@ -30,9 +30,9 @@ Calculates the melting pressure of a `CompositeModel` containing a solid and flu
 You can pass a tuple of initial values for the volumes `(vs0,vl0)`.
 
 returns:
-- Melting Pressure `[Pa]`
-- melting solid volume at specified temperature `[m³]`
-- melting liquid volume at specified temperature `[m³]`
+- `pm` is melting Pressure `[Pa]`
+- `vs` is melting solid volume at specified temperature `[m³]`
+- `vl` is melting liquid volume at specified temperature `[m³]`
 """
 function melting_pressure(model::CompositeModel,T;kwargs...)
     method = init_preferred_method(melting_pressure,model,kwargs)
