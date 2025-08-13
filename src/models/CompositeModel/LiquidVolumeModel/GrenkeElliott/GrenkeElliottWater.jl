@@ -160,7 +160,11 @@ function water_g0(model::GrenkeElliottModel,T)
     d1 = 4.44575e12 #± 3.00530e12 [J/kgK]
     d2 = −0.0928377 #± 0.0028242 [1/K]
     d3 = 4172.09 #± 8.06 [J/kgK]
-    exp_part = -T*SpecialFunctions.expinti(d2*T) + exp(d2*T)/d2
+
+    #forgive me lord for this
+    Ei = BlackBoxOptim.Distributions.SpecialFunctions.expinti
+
+    exp_part = -T*Ei(d2*T) + exp(d2*T)/d2
     c_part = T - xlogx(T)
     return d1*exp_part + d3*c_part
 end

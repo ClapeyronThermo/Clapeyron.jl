@@ -18,7 +18,6 @@ using StaticArrays
 using DiffResults, ForwardDiff
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
-import SpecialFunctions #exponential integral function
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
 
