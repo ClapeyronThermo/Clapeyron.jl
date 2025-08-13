@@ -158,7 +158,7 @@ function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMelting
     else
         v0 = method.v0
     end
-    _1 = 
+    _1 =
     V0 = SVector(v0[1],log(v0[2]),log(v0[3]))
     f!(F,x) = Obj_Mel_Temp(model,F,x[1],exp(x[2]),exp(x[3]),p,p̄,T̄)
     results = Solvers.nlsolve(f!,V0,TrustRegion(Newton(),Dogleg()),NEqOptions(method))
@@ -178,7 +178,7 @@ end
 function x0_melting_temperature(model::CompositeModel,p)
     Tt,pt,vs0,vl0,_ = triple_point(model)
     solid,fluid = solid_model(model),fluid_model(model)
-    K0 = -dpdT_saturation(solid,fluid,vs0,vl0,Tt)*Tt*Tt/pt  
+    K0 = -dpdT_saturation(solid,fluid,vs0,vl0,Tt)*Tt*Tt/pt
     #Clausius Clapeyron
     #log(P/Ptriple) = K0 * (1/T - 1/Ttriple)
     Tinv = log(p/pt)/K0 + 1/Tt
@@ -241,7 +241,7 @@ function melting_pressure_impl(model::CompositeModel,T,method::IsoGibbsMeltingPr
     else
         p0 = method.p0*_1
     end
-    
+
     solid = solid_model(model)
     fluid = fluid_model(model)
     nan = _1*NaN
@@ -261,6 +261,78 @@ function melting_pressure_impl(model::CompositeModel,T,method::IsoGibbsMeltingPr
         converged,_ = Solvers.convergence(lnp,lnp + dlnp,method.atol,method.rtol)
         p = exp(lnp)
         converged && return p,vs,vl
+    end
+
+    return nan,nan,nan
+end
+
+function g_and_sv(model,p,T,v;phase = :unknown)
+    v = volume(model,p,T,SA[1.0],phase = phase,vol0 = v)
+    g = VT_gibbs_free_energy(model,v,T,SA[1.0])
+    s = VT_entropy(model,v,T,SA[1.0])
+    return g,s,v
+end
+
+function g_and_sv(model::GibbsBasedModel,p,T,v;phase = :unknown)
+    g,v,sn =  ∂𝕘_vec(model,p,T,SA[1.0])
+    return g,-sn,v
+end
+
+struct IsoGibbsMeltingTemperature{V} <: ThermodynamicMethod
+    T0::V
+    check_triple::Bool
+    f_limit::Float64
+    atol::Float64
+    rtol::Float64
+    max_iters::Int
+end
+
+function IsoGibbsMeltingTemperature(;T0 = nothing,
+                                    check_triple = false,
+                                    f_limit = 0.0,
+                                    atol = 1e-8,
+                                    rtol = 1e-12,
+                                    max_iters = 10000)
+
+    return IsoGibbsMeltingTemperature(T0,check_triple,f_limit,atol,rtol,max_iters)
+end
+
+function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:EoSModel,<:GibbsBasedModel},kwargs)
+    return IsoGibbsMeltingTemperature(kwargs...)
+end
+
+function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:GibbsBasedModel,<:GibbsBasedModel},kwargs)
+    return IsoGibbsMeltingTemperature(kwargs...)
+end
+
+function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:GibbsBasedModel,<:EoSModel},kwargs)
+    return IsoGibbsMeltingTemperature(kwargs...)
+end
+
+function melting_temperature_impl(model::CompositeModel,p,method::IsoGibbsMeltingTemperature)
+    _1 = one(Base.promote_eltype(model,p))
+    if method.T0 == nothing
+        v0 = x0_melting_temperature(model,p)
+        T0 = v0[1]*_1
+    else
+        T0 = method.T0*_1
+    end
+
+    solid = solid_model(model)
+    fluid = fluid_model(model)
+    nan = _1*NaN
+    T,vl,vs = T0,nan,nan
+    max_iters = method.max_iters
+    for i in 1:max_iters
+        gl,sl,vl = g_and_sv(fluid,p,T,vl,phase = :liquid)
+        gs,ss,vs = g_and_sv(solid,p,T,vs,phase = :solid)
+        f = gs - gl
+        df = -(ss - sl)
+        dT = -f/df
+        !isfinite(dT) && break
+        T = T + dT
+        converged,_ = Solvers.convergence(T,T + dT,method.atol,method.rtol)
+        converged && return T,vs,vl
     end
 
     return nan,nan,nan
