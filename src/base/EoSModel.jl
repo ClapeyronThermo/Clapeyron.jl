@@ -1,3 +1,20 @@
+"""
+
+    EoSModel
+
+Root type for all equation of state (EOS) models in Clapeyron.jl. 
+    
+Subtypes of `EoSModel` represent specific equations of state (e.g., cubic, SAFT, activity coefficient models) 
+and must implement their core interface methods.
+
+By default, `EoSModel` subtypes are considered to be helmholtz-based EoS, and as such, they must implement their core interface methods:
+
+- [`a_res`](@ref): An implementation of the reduced residual Helmholtz energy
+- [`lb_volume`](@ref): Lower bound volume for the equation of state
+- [`T_scale`](@ref): A temperature scaling factor.
+
+Other `EoSModel` subtypes may have other interfaces (like activity models or volume-based models).
+"""
 abstract type EoSModel end
 
 function eos_impl(model::EoSModel,V,T,z)
@@ -24,6 +41,7 @@ Rgas() = R̄
 
 """
     eos(model::EoSModel, V, T, z=SA[1.0])
+
 Returns the total Helmholtz energy.
 # Inputs:
 - `model::EoSModel` Thermodynamic model to evaluate
@@ -73,6 +91,7 @@ end
 
 """
     eos_res(model::EoSModel, V, T, z=SA[1.0])
+
 Returns the residual Helmholtz energy.
 # Inputs:
 - `model::EoSModel` Thermodynamic model to evaluate
@@ -87,9 +106,9 @@ function eos_res(model::EoSModel, V, T, z=SA[1.0])
     return Rgas(model)*sum(z)*T*a_res(model,V,T,z)
 end
 
-
 """
     a_res(model::EoSModel, V, T, z,args...)
+
 Returns reduced residual Helmholtz energy.
 # Inputs:
 - `model::EoSModel` Thermodynamic model to evaluate
@@ -125,18 +144,6 @@ The caveat is that `model` has to exist in the local namespace.
 macro comps()
     return quote
         1:length(model)
-    end |> esc
-end
-
-"""
-    R̄
-
-This macro is an alias to `Rgas(model)`.
-The caveat is that `model` has to exist in the local namespace.
-"""
-macro R̄()
-    return quote
-        Rgas(model)
     end |> esc
 end
 
