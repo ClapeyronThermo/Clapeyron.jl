@@ -58,7 +58,7 @@ function eos_g(model::SolidHfusModel,p,T,z)
     return g
 end
 
-function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:EoSModel,<:SolidHfusModel},kwargs...)
+function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:GibbsBasedModel,<:SolidHfusModel},kwargs...)
     return MeltingCorrelation()
 end
 
@@ -85,7 +85,7 @@ function melting_pressure_impl(model::SolidHfusModel,T,method::MeltingCorrelatio
     return P, nan, nan
 end
 
-function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:EoSModel,<:SolidHfusModel},kwargs...)
+function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:GibbsBasedModel,<:SolidHfusModel},kwargs...)
     return MeltingCorrelation()
 end
 

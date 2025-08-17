@@ -39,7 +39,11 @@ function sublimation_pressure(model::CompositeModel,T;kwargs...)
     return sublimation_pressure(model,T,method)
 end
 
-function init_preferred_method(method::typeof(sublimation_pressure),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
+function init_preferred_method(method::typeof(sublimation_pressure),model::CompositeModel{<:EoSModel},kwargs)
+    init_preferred_method(method,model.solid,kwargs)
+end
+
+function init_preferred_method(method::typeof(sublimation_pressure),model::EoSModel,kwargs)
     ChemPotSublimationPressure(;kwargs...)
 end
 
@@ -143,7 +147,12 @@ function sublimation_temperature(model::CompositeModel,p;kwargs...)
     method = init_preferred_method(sublimation_temperature,model,kwargs)
     return sublimation_temperature(model,p,method)
 end
-function init_preferred_method(method::typeof(sublimation_temperature),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
+
+function init_preferred_method(method::typeof(sublimation_temperature),model::CompositeModel{<:EoSModel},kwargs)
+    init_preferred_method(method,model.solid,kwargs)
+end
+
+function init_preferred_method(method::typeof(sublimation_temperature),model::EoSModel,kwargs)
     ChemPotSublimationTemperature(;kwargs...)
 end
 

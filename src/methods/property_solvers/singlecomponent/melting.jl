@@ -38,8 +38,13 @@ function melting_pressure(model::CompositeModel,T;kwargs...)
     method = init_preferred_method(melting_pressure,model,kwargs)
     return melting_pressure(model,T,method)
 end
-function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
-    ChemPotMeltingPressure(;kwargs...)
+
+function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:EoSModel},kwargs)
+    return init_preferred_method(method,model.solid,kwargs)
+end
+
+function init_preferred_method(method::typeof(melting_pressure),model::EoSModel,kwargs)
+    return ChemPotMeltingPressure(;kwargs...)
 end
 
 function melting_pressure(model::CompositeModel,T,method::ThermodynamicMethod)
@@ -139,7 +144,11 @@ function melting_temperature(model::CompositeModel,p;kwargs...)
     method = init_preferred_method(melting_temperature,model,kwargs)
     return melting_temperature(model,p,method)
 end
-function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
+function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:EoSModel},kwargs)
+    init_preferred_method(method,model.solid,kwargs)
+end
+
+function init_preferred_method(method::typeof(melting_temperature),model::EoSModel,kwargs)
     ChemPotMeltingTemperature(;kwargs...)
 end
 
@@ -221,15 +230,11 @@ function IsoGibbsMeltingPressure(;p0 = nothing,
     return IsoGibbsMeltingPressure(p0,check_triple,f_limit,atol,rtol,max_iters)
 end
 
-function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:EoSModel,<:GibbsBasedModel},kwargs)
+function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:GibbsBasedModel},kwargs)
     return IsoGibbsMeltingPressure(kwargs...)
 end
 
-function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:GibbsBasedModel,<:GibbsBasedModel},kwargs)
-    return IsoGibbsMeltingPressure(kwargs...)
-end
-
-function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:GibbsBasedModel,<:EoSModel},kwargs)
+function init_preferred_method(method::typeof(melting_pressure),model::GibbsBasedModel,kwargs)
     return IsoGibbsMeltingPressure(kwargs...)
 end
 
@@ -302,15 +307,11 @@ function IsoGibbsMeltingTemperature(;T0 = nothing,
     return IsoGibbsMeltingTemperature(T0,check_triple,f_limit,atol,rtol,max_iters)
 end
 
-function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:EoSModel,<:GibbsBasedModel},kwargs)
+function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:GibbsBasedModel},kwargs)
     return IsoGibbsMeltingTemperature(kwargs...)
 end
 
-function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:GibbsBasedModel,<:GibbsBasedModel},kwargs)
-    return IsoGibbsMeltingTemperature(kwargs...)
-end
-
-function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:GibbsBasedModel,<:EoSModel},kwargs)
+function init_preferred_method(method::typeof(melting_temperature),model::GibbsBasedModel,kwargs)
     return IsoGibbsMeltingTemperature(kwargs...)
 end
 
