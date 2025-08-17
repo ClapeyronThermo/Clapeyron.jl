@@ -128,7 +128,7 @@ end
 
 function PT_property_gibbs(model,p,T,z,f::typeof(VT_isobaric_expansivity))
     v,dvdT = V∂V∂T(model,p,T,z)
-    return -dvdT/v
+    return dvdT/v
 end
 
 function PT_property_gibbs(model,p,T,z,f::typeof(VT_isentropic_compressibility))
@@ -138,6 +138,17 @@ function PT_property_gibbs(model,p,T,z,f::typeof(VT_isentropic_compressibility))
     ∂²g∂T∂p = ∂²g[1,2]
     V = ∂g[1]
     return (∂²g∂T∂p*∂²g∂T∂p - ∂²g∂T²*∂²g∂p²)/∂²g∂T²/V
+end
+
+function PT_property_gibbs(model,p,T,z,f::typeof(VT_speed_of_sound))
+    Mr = molecular_weight(model,z)
+    ∂²g,∂g,g = ∂2𝕘(model,p,T,z)
+    ∂²g∂T² = ∂²g[2,2]
+    ∂²g∂p² = ∂²g[1,1]
+    ∂²g∂T∂p = ∂²g[1,2]
+    V = ∂g[1]
+    βsρ = (∂²g∂T∂p*∂²g∂T∂p - ∂²g∂T²*∂²g∂p²)/∂²g∂T²
+    V*sqrt(1/(βsρ*Mr))
 end
 
 function VT_pressure(model::GibbsBasedModel,V,T,z)

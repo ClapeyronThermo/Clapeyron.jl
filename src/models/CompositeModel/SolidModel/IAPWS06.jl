@@ -133,7 +133,7 @@ function x0_pressure(model::IAPWS06,V,T,z)
     return p
 end
 
-function x0_melting_pressure(model::CompositeModel{<:Any,IAPWS06},T)
+function x0_melting_pressure(model::CompositeModel{<:EoSModel,IAPWS06},T)
     solid = solid_model(model)
     liquid = fluid_model(model)
     z = SA[1.0]
@@ -143,8 +143,7 @@ function x0_melting_pressure(model::CompositeModel{<:Any,IAPWS06},T)
     return vs,vl,p
 end
 
-
-function x0_melting_temperature(model::CompositeModel{<:Any,IAPWS06},p)
+function x0_melting_temperature(model::CompositeModel{<:EoSModel,IAPWS06},p)
     solid = solid_model(model)
     liquid = fluid_model(model)
     z = SA[1.0]
@@ -156,7 +155,7 @@ function x0_melting_temperature(model::CompositeModel{<:Any,IAPWS06},p)
     return T,vs,vl
 end
 
-function x0_sublimation_pressure(model::CompositeModel{<:Any,IAPWS06},T)
+function x0_sublimation_pressure(model::CompositeModel{<:EoSModel,IAPWS06},T)
     solid = solid_model(model)
     liquid = fluid_model(model)
     z = SA[1.0]
@@ -164,6 +163,18 @@ function x0_sublimation_pressure(model::CompositeModel{<:Any,IAPWS06},T)
     vs = volume(solid,p,T)
     vv = Rgas(fluid)*T/p
     return vs,vv,p
+end
+
+function x0_sublimation_temperature(model::CompositeModel{<:EoSModel,IAPWS06},p)
+    solid = solid_model(model)
+    liquid = fluid_model(model)
+    z = SA[1.0]
+    f(T) = x0_iapws06_sub(T) - p
+    prob = Roots.ZeroProblem(f,T_scale(liquid))
+    T = Roots.solve(prob)
+    vs = volume(solid,p,T)
+    vv = x0_volume(liquid,p,T,z,phase = :v)
+    return T,vs,vv
 end
 
 export IAPWS06

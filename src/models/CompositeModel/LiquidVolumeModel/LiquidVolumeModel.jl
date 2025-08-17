@@ -1,7 +1,5 @@
 abstract type LiquidVolumeModel <: GibbsBasedModel end
 
-
-
 include("NaNLiquid/NaNLiquid.jl")
 include("Rackett/RackettLiquid.jl")
 include("COSTALD/costald.jl")

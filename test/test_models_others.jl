@@ -428,6 +428,40 @@ end
                 @test Cpi ≈ Cpi_test rtol = 1e-6
             end
         end
+
+        @testset "Holten Water" begin
+            model = HoltenWater()
+            Tc = 228.2
+            Rm = 461.523087
+            ρ0 = 1081.6482
+
+            #table 8
+            verification_data = [
+                273.15 0.101325 999.84229  −0.683042  5.088499  4218.3002 1402.3886 0.09665472 0.62120474
+                235.15 0.101325 968.09999  −29.633816 11.580785 5997.5632 1134.5855 0.25510286 0.091763676
+                250    200      1090.45677 3.267768   3.361311  3708.3902 1668.2020 0.03042927 0.72377081
+                200    400      1185.02800 6.716009   2.567237  3338.525  1899.3294 0.00717008 1.1553965
+                250    400      1151.71517 4.929927   2.277029  3757.2144 2015.8782 0.00535884 1.4345145
+                ]
+            
+            for i in 1:5
+                T = verification_data[i,1]
+                p = verification_data[i,2]*1e6
+                @test mass_density(model,p,T) ≈ verification_data[i,3] rtol = 1e-6
+                @test isobaric_expansivity(model,p,T)*1e4 ≈ verification_data[i,4] rtol = 1e-6
+                @test isothermal_compressibility(model,p,T)*1e10 ≈ verification_data[i,5] rtol = 1e-6
+                @test mass_isobaric_heat_capacity(model,p,T) ≈ verification_data[i,6] rtol = 1e-6
+                @test speed_of_sound(model,p,T) ≈ verification_data[i,7] rtol = 1e-6
+                
+
+                𝕡 = p/(Rm*Tc*ρ0)
+                L = Clapeyron.water_L(model,𝕡,T)
+                ω = 2 + 0.5212269*𝕡
+                xe = Clapeyron.water_x_frac(model,L,ω)
+                @test xe ≈ verification_data[i,8] rtol = 1e-6
+                @test L ≈ verification_data[i,9] rtol = 1e-6
+            end
+        end
     end
 
     @testset "Virial Coeff" begin
