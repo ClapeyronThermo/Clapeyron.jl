@@ -375,6 +375,8 @@ function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length
     elseif g1 > 0
         β = _1 #comment to enable negative flashes
         singlephase = true
+    elseif iszero(g0) && iszero(g1)
+        singlephase = true
     end
     βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
     if singlephase
