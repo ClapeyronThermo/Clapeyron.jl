@@ -55,6 +55,14 @@ WalkerIdeal
 
 export WalkerIdeal
 
+function __walker_fi(θ,T)
+    if !iszero(primalval(θ))
+        log(1-exp(-θ/T)) + θ/(2*T)
+    else
+        return zero(θ/T)# + θ/(2*T)
+    end
+end
+
 function a_ideal(model::WalkerIdealModel,V,T,z)
     Mw = model.params.Mw.values
     Nrot = model.params.Nrot.values
@@ -72,12 +80,13 @@ function a_ideal(model::WalkerIdealModel,V,T,z)
     res = zero(V+T+first(z))
     Σz = sum(z)
     @inbounds for i in @comps
-        ni = n[i]
-        Mwi = sum(ni[k]*Mw[k] for k in @groups(i))
-        Nroti = sum(ni[k]*Nrot[k] for k in @groups(i))/sum(ni[k] for k in @groups(i))
+        ni,zi = n[i],z[i]
+        Mwi = dot(ni,Mw)
+        Nroti = dot(ni,Nrot)/sum(ni)
         Λ = h/√(k_B*T*Mwi/N_A)
-        res += xlogx(z[i],N_A/V*Λ^3)
-        res += z[i]*(-Nroti/2*log(T)+sum(ni[k]*sum(g_vib[v][k]*(θ_vib[v][k]/2/T+log(1-exp(-θ_vib[v][k]/T))) for v in 1:4) for k in @groups(i)))
+        res += xlogx(zi,N_A/V*Λ^3)
+        res += zi*(-Nroti/2*log(T))
+        res += zi*(sum(ni[k]*sum(g_vib[v][k]*(__walker_fi(θ_vib[v][k],T)) for v in 1:4) for k in @groups(i)))
     end
     return res/Σz - 1.
 end

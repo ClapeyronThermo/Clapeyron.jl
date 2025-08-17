@@ -138,6 +138,15 @@ end
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 179.51502015696653 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
         @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
+        
+        ideal_csv = """
+        Clapeyron Database File
+        Walker Ideal Like Parameters  [csvtype = like,grouptype = Walker]
+        species,Mw,Nrot,theta1,theta2,theta3,theta4,deg1,deg2,deg3,deg4,source
+        ideal,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,ideal gas
+        """
+        system2 = WalkerIdeal(["ideal gas" => ["ideal" => 1]],userlocations = [ideal_csv])
+        @test Clapeyron.isobaric_heat_capacity(system2,1e5,T)/Clapeyron.Rgas() ≈ 2.5 
     end
 
     @testset "Monomer" begin
