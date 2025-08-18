@@ -141,5 +141,3 @@ function d2ΨdT2_grad!(∇Ψ,model,T,ρᵢ)
     ForwardDiff.gradient!(∇Ψ,Ψ,d2ΨrdT2)
     return ∇Ψ
 end 
-
-

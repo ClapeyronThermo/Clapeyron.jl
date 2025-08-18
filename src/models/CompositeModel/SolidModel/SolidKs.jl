@@ -1,4 +1,4 @@
-abstract type SolidKsModel <: EoSModel end
+abstract type SolidKsModel <: GibbsBasedModel end
 
 struct SolidKsParam <: EoSParam
     Gform::SingleParam{Float64}
@@ -38,11 +38,24 @@ function volume_impl(model::SolidKsModel,p,T,z,phase,threaded,vol0)
     return _0/_0
 end
 
-function chemical_potential(model::SolidKsModel, p, T, z)
+function chemical_potential_impl(model::SolidKsModel,p,T,z,phase,threaded,vol0)
     Gform = model.params.Gform.values
     Hform = model.params.Hform.values
     Tref = model.params.Tref.values
     return @. -Gform*T/Tref - Hform*(1 - T/Tref)
+end
+
+function eos_g(model::SolidKsModel,p,T,z)
+    Gform = model.params.Gform.values
+    Hform = model.params.Hform.values
+    Tref = model.params.Tref.values
+    g = zero(Base.promote_eltype(model,T,z))
+    for i in 1:length(model)
+        Trefi = Tref[i]
+        μi = -Gform[i]*T/Trefi - Hform[i]*(1 - T/Trefi)
+        g += z[i]*μi
+    end
+    return g
 end
 
 export SolidKs

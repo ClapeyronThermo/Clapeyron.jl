@@ -138,6 +138,15 @@ end
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 179.51502015696653 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
         @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
+        
+        ideal_csv = """
+        Clapeyron Database File
+        Walker Ideal Like Parameters  [csvtype = like,grouptype = Walker]
+        species,Mw,Nrot,theta1,theta2,theta3,theta4,deg1,deg2,deg3,deg4,source
+        ideal,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,ideal gas
+        """
+        system2 = WalkerIdeal(["ideal gas" => ["ideal" => 1]],userlocations = [ideal_csv])
+        @test Clapeyron.isobaric_heat_capacity(system2,1e5,T)/Clapeyron.Rgas() ≈ 2.5 
     end
 
     @testset "Monomer" begin
@@ -409,6 +418,59 @@ end
             @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.825994563177142e-5 rtol = 1e-6
             @test volume(system2,1e5,300.15,[1.,0.]) ≈ 2.0757546189420953e-5 rtol = 1e-6
         end
+
+        @testset "Grenke-Elliott water" begin
+            system = GrenkeElliottWater()
+            system_ref = IAPWS95()
+            p1,T1 = 611.657, 273.16
+            p2,T2 = 101325.0, 273.152519
+            for Ti in range(250.0,280.0,30)
+                for log10Pi in range(5,8,20)
+                    Pi = exp10(log10Pi)
+                    v = volume(system,Pi,Ti)
+                    v_ref = volume(system_ref,Pi,Ti,phase = :l)
+                    @test v ≈ v_ref rtol = 1e-3
+                    @test pressure(system,v,Ti) ≈ pressure(system_ref,v_ref,Ti) rtol = 1e-3
+                end
+                Cpi = Clapeyron.mass_isobaric_heat_capacity(system,101325.0,Ti)
+                Cpi_test = Clapeyron.water_cp(system,Ti)
+                @test Cpi ≈ Cpi_test rtol = 1e-6
+            end
+        end
+
+        @testset "Holten Water" begin
+            model = HoltenWater()
+            Tc = 228.2
+            Rm = 461.523087
+            ρ0 = 1081.6482
+
+            #table 8
+            verification_data = [
+                273.15 0.101325 999.84229  −0.683042  5.088499  4218.3002 1402.3886 0.09665472 0.62120474
+                235.15 0.101325 968.09999  −29.633816 11.580785 5997.5632 1134.5855 0.25510286 0.091763676
+                250    200      1090.45677 3.267768   3.361311  3708.3902 1668.2020 0.03042927 0.72377081
+                200    400      1185.02800 6.716009   2.567237  3338.525  1899.3294 0.00717008 1.1553965
+                250    400      1151.71517 4.929927   2.277029  3757.2144 2015.8782 0.00535884 1.4345145
+                ]
+            
+            for i in 1:5
+                T = verification_data[i,1]
+                p = verification_data[i,2]*1e6
+                @test mass_density(model,p,T) ≈ verification_data[i,3] rtol = 1e-6
+                @test isobaric_expansivity(model,p,T)*1e4 ≈ verification_data[i,4] rtol = 1e-6
+                @test isothermal_compressibility(model,p,T)*1e10 ≈ verification_data[i,5] rtol = 1e-6
+                @test mass_isobaric_heat_capacity(model,p,T) ≈ verification_data[i,6] rtol = 1e-6
+                @test speed_of_sound(model,p,T) ≈ verification_data[i,7] rtol = 1e-6
+                
+
+                𝕡 = p/(Rm*Tc*ρ0)
+                L = Clapeyron.water_L(model,𝕡,T)
+                ω = 2 + 0.5212269*𝕡
+                xe = Clapeyron.water_x_frac(model,L,ω)
+                @test xe ≈ verification_data[i,8] rtol = 1e-6
+                @test L ≈ verification_data[i,9] rtol = 1e-6
+            end
+        end
     end
 
     @testset "Virial Coeff" begin
@@ -445,6 +507,33 @@ end
         @testset "SolidKs" begin
             model = SolidKs(["water"])
             @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
+        end
+
+        @testset "IAPWS-06" begin
+            model = IAPWS06()
+            #table 6 of Ice-Rev2009 document
+            p1,T1 = 611.657, 273.16
+            p2,T2 = 101325.0, 273.152519
+            p3,T3 = 100e6, 100.0
+            Mw = Clapeyron.molecular_weight(model)
+            @test mass_gibbs_energy(model,p1,T1) ≈ 0.611784135 rtol = 1e-6
+            @test mass_gibbs_energy(model,p2,T2) ≈ 0.10134274069e3 rtol = 1e-6
+            @test mass_gibbs_energy(model,p3,T3) ≈ -0.222296513088e6 rtol = 1e-6
+            @test volume(model,p1,T1)/Mw ≈ 0.109085812737e-2 rtol = 1e-6
+            @test volume(model,p2,T2)/Mw ≈ 0.109084388214e-2 rtol = 1e-6
+            @test volume(model,p3,T3)/Mw ≈ 0.106193389260e-2 rtol = 1e-6
+            test_volume(model,p1,T1)
+            test_volume(model,p2,T2)
+            test_volume(model,p3,T3)
+            @test mass_isobaric_heat_capacity(model,p1,T1) ≈ 0.209678431622e4 rtol = 1e-6
+            @test mass_isobaric_heat_capacity(model,p2,T2) ≈ 0.209671391024e4 rtol = 1e-6
+            @test mass_isobaric_heat_capacity(model,p3,T3) ≈ 0.866333195517e3 rtol = 1e-6
+            @test isentropic_compressibility(model,p1,T1) ≈ 0.114161597779e-9 rtol = 1e-6
+            @test isentropic_compressibility(model,p2,T2) ≈ 0.114154442556e-9 rtol = 1e-6
+            @test isentropic_compressibility(model,p3,T3) ≈ 0.886060982687e-10 rtol = 1e-6
+            @test isothermal_compressibility(model,p1,T1) ≈ 0.117793449348e-9 rtol = 1e-6
+            @test isothermal_compressibility(model,p2,T2) ≈ 0.117785291765e-9 rtol = 1e-6
+            @test isothermal_compressibility(model,p3,T3) ≈ 0.886880048115e-10 rtol = 1e-6
         end
     end
 end

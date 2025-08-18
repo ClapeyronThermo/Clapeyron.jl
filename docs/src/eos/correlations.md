@@ -44,12 +44,15 @@ Clapeyron.AntoineEqSat
 # Liquid Volume Correlations
 
 Liquid Volume Correlations are any `EoSModel` that are subtypes of `LiquidVolumeModel`.
-They return `volume(model,p,T,z, phase = :liquid)`.
+
+Most Liquid volume correlations are only defined by a volume equation, but some models are defined in terms of the gibbs free energy.
 
 ```@docs
 RackettLiquid
 YamadaGunnLiquid
 COSTALD
+GrenkeElliotWater
+HoltenWater
 ```
 
 # Virial Models
@@ -70,9 +73,10 @@ EoSVirial2
 # Solid Models
 
 Solid models provide simple approximations to the excess chemical potential in the solid phase.
-Intended to be used in conjunction with a liquid model within a CompositeModel.
+Intended to be used in conjunction with a liquid model within a [CompositeModel](@ref).
 
 ```@docs
 SolidHfus
 SolidKs
+IAPWS06
 ```

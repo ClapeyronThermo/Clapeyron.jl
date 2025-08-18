@@ -447,6 +447,8 @@ end
         #below triple point/ liquid
         test_volume(system,1e6,265.0,phase = :l)
         test_volume(system,1e8,265.0,phase = :l)
+
+        @test Clapeyron.molecular_weight(Clapeyron.idealmodel(system)) == mw
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293388718283  rtol = 1E-6

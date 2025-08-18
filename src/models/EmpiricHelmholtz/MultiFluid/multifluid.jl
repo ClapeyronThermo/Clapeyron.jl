@@ -178,16 +178,15 @@ function eos_impl(model::MultiFluid,V,T,z)
     a₀ = a_ideal(model,V,T,z,∑z)
     δ,τ = reduced_delta_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
-    return ∑z*@R̄()*T*(a₀+aᵣ) + reference_state_eval(model,V,T,z)
+    return ∑z*Rgas(model)*T*(a₀+aᵣ) + reference_state_eval(model,V,T,z)
 end
 
 function eos_res(model::MultiFluid,V,T,z = SA[1.0])
     ∑z = sum(z)
     δ,τ = reduced_delta_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
-    return ∑z*@R̄()*T*aᵣ
+    return ∑z*Rgas(model)*T*aᵣ
 end
-
 
 v_scale(model::MultiFluid,z) = v_scale(model,z,sum(z))
 T_scale(model::MultiFluid,z) = T_scale(model,z,sum(z))

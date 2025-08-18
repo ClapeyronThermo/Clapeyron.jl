@@ -12,12 +12,12 @@ where A is the Helmholtz energy `[J]`,
 V is the volume `[m³]`
 """
 function pressure(model::EoSModel, V, T, z=SA[1.])
-    return -∂f∂V(model,V,T,z)
+    return VT_pressure(model, V, T, z)
 end
 
 function temperature end
 
-VT_pressure(model, V, T, z=SA[1.]) = pressure(model,V,T,z)
+VT_pressure(model, V, T, z=SA[1.]) = -∂f∂V(model,V,T,z)
 VT_temperature(model, V, T, z=SA[1.]) = T
 VT_volume(model, V, T, z=SA[1.]) = V
 
@@ -161,7 +161,6 @@ function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
 end
 
 VT_mass_isobaric_heat_capacity(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_isobaric_heat_capacity(model,V,T,z)/molecular_weight(model,z)
-
 
 function VT_adiabatic_index(model::EoSModel, V, T, z=SA[1.])
     if iszero(1/V) || model isa IdealModel
