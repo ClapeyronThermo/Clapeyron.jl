@@ -148,7 +148,7 @@ function x0_melting_temperature(model::CompositeModel{<:EoSModel,IAPWS06},p)
     liquid = fluid_model(model)
     z = SA[1.0]
     f(T) = x0_iapws06_fus(T) - p
-    prob = Roots.ZeroProblem(f,T_scale(liquid))
+    prob = Roots.ZeroProblem(f,273.15)
     T = Roots.solve(prob)
     vs = volume(solid,p,T)
     vl = x0_volume(liquid,p,T,z,phase = :l)
@@ -170,7 +170,7 @@ function x0_sublimation_temperature(model::CompositeModel{<:EoSModel,IAPWS06},p)
     liquid = fluid_model(model)
     z = SA[1.0]
     f(T) = x0_iapws06_sub(T) - p
-    prob = Roots.ZeroProblem(f,T_scale(liquid))
+    prob = Roots.ZeroProblem(f,273.15)
     T = Roots.solve(prob)
     vs = volume(solid,p,T)
     vv = x0_volume(liquid,p,T,z,phase = :v)
