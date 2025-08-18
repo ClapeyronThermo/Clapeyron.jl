@@ -108,8 +108,10 @@ include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
 #include("LiquidCpModel/LiquidCpModel.jl")
 include("PolExpVapour.jl")
+include("SolidModel/IAPWS06.jl")
 include("SolidModel/SolidHfus.jl")
 include("SolidModel/SolidKs.jl")
+
 include("bubble_point.jl")
 include("dew_point.jl")
 
@@ -218,6 +220,8 @@ function CompositeModel(components ;
     end
 
     if isnothing(init_fluid) || isnothing(init_solid) && isnothing(mapping)
+        _mapping = nothing
+    elseif !hasfield(typeof(init_fluid),:components) || !hasfield(typeof(init_solid),:components)
         _mapping = nothing
     else
         if isnothing(mapping) && init_fluid.components!=init_solid.components

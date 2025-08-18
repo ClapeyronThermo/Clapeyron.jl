@@ -39,7 +39,11 @@ function sublimation_pressure(model::CompositeModel,T;kwargs...)
     return sublimation_pressure(model,T,method)
 end
 
-function init_preferred_method(method::typeof(sublimation_pressure),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
+function init_preferred_method(method::typeof(sublimation_pressure),model::CompositeModel{<:EoSModel},kwargs)
+    init_preferred_method(method,model.solid,kwargs)
+end
+
+function init_preferred_method(method::typeof(sublimation_pressure),model::EoSModel,kwargs)
     ChemPotSublimationPressure(;kwargs...)
 end
 
@@ -55,11 +59,12 @@ function sublimation_pressure_impl(model::CompositeModel,T,method::ChemPotSublim
     else
         v0 = method.v0
     end
-    vs0,vv0 = v0
+    vs0 = v0[1]
+    vv0 = v0[2]
     _0 = zero(vs0*vv0*T*oneunit(eltype(model)))
     nan = _0/_0
     fail = (nan,nan,nan)
-    valid_input = check_valid_2ph_input(vs0,vv0,true,T)
+    valid_input = _is_positive((vs0,vv0,T))
     if !valid_input
         return fail
     end
@@ -85,9 +90,9 @@ function x0_sublimation_pressure(model,T)
     ares = a_res(solid, vs_at_0, T, z)
     lnϕ_s0 = ares - 1 + log(R̄*T/vs_at_0)
     P0 = exp(lnϕ_s0)
-    vv0 = R̄*T/P0
+    vv0 = Rgas(fluid)*T/P0
     vs0 = vs_at_0
-    return vs0,vv0
+    return vs0,vv0,P0
 end
 
 
@@ -142,7 +147,12 @@ function sublimation_temperature(model::CompositeModel,p;kwargs...)
     method = init_preferred_method(sublimation_temperature,model,kwargs)
     return sublimation_temperature(model,p,method)
 end
-function init_preferred_method(method::typeof(sublimation_temperature),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
+
+function init_preferred_method(method::typeof(sublimation_temperature),model::CompositeModel{<:EoSModel},kwargs)
+    init_preferred_method(method,model.solid,kwargs)
+end
+
+function init_preferred_method(method::typeof(sublimation_temperature),model::EoSModel,kwargs)
     ChemPotSublimationTemperature(;kwargs...)
 end
 

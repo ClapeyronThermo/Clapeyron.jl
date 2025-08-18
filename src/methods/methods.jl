@@ -286,21 +286,28 @@ set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have 
 export get_k,set_k!
 export get_l,set_l!
 
+#initial guesses for most methods
 include("initial_guess.jl")
+
+#differentials and properties in V-T base
 include("differentials.jl")
 include("VT.jl")
+
+#base functions for isochoric base
 include("isochoric.jl")
-include("fugacity_coefficient.jl")
-include("property_solvers/property_solvers.jl")
-include("tpd.jl")
-include("stability.jl")
+
+#properties in p-T base
 include("pT.jl")
-include("property_solvers/Tproperty.jl")
-include("property_solvers/Pproperty.jl")
+
+#property solvers
+include("property_solvers/property_solvers.jl")
+
+#gibbs models in p-T base
+include("gibbs.jl")
+
+#properties in other bases
 include("XY_methods/VT.jl")
 include("XY_methods/PS.jl")
 include("XY_methods/TS.jl")
 include("XY_methods/PH.jl")
 include("XY_methods/QX.jl")
-
-include("property_solvers/spinodal.jl")

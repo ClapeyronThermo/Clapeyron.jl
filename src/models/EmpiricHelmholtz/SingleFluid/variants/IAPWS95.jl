@@ -120,6 +120,8 @@ function IAPWS95()
     return SingleFluid(components,properties,ancillaries,ideal,residual,references)
 end
 
+IAPWS95(components;idealmodel = nothing,userlocations = nothing,verbose = false,reference_state = nothing) = IAPWS95()
+
 
 """
     IAPWS95Ideal <: IdealModel
