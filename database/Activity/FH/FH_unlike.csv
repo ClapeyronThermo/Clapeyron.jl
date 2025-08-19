@@ -1,0 +1,27 @@
+Clapeyron Database File,,,,
+Margules Unlike Parameters,,,,
+species1,species2,a,b,source
+water,poly(ethylene oxide),0.8,-100,10.1021/ma301193h
+polystyrene,poly(methyl methacrylate),0.0209,2.87,10.1021/ma4004538
+polystyrene,polycaprolactone,-0.913,412,10.1021/ma301531a10.1016/0032-3861(95)93654-5
+polystyrene,polyisoprene,-0.07,63,10.1021/ma400098u10.1063/1.469130
+polystyrene,poly(ethylene oxide),-0.0229,29.8,,10.1021/ma202196c10.1209/epl/i2001-00205-7
+polystyrene,polydimethylsiloxane,-0.061,57.4,,10.1021/ma301047y10.1021/ja0278584
+polystyrene,polybutadiene,-0.03813,30.137,,10.1021/ma101140m10.1063/1.47074910.1002/1521-3900(200001)149:1<99::AID-MASY99>3.0.CO;2-X10.021/ma981665c10.1021/ma030020w
+polystyrene,poly(ethylene oxide),-0.023,29.8,,10.1021/ma301238j10.1021/ma020651a
+polystyrene,poly(ethylene oxide),-0.0229,29.8,,10.1021/ma100400q10.1021/ma062778w10.1209/epl/i2001-00205-7
+polystyrene,polybutadiene,0.019,21.6,,10.1021/ma202717p10.1063/1.470749
+polystyrene,poly(n-hexyl methacrylate),0.035,3.93,,10.1021/ma402526q10.1021/ma981055c
+polystyrene,polybutadiene,0.00659,13.6,,10.1021/ma301487e10.1021/ma00036a019
+polyisoprene,poly(ethylene oxide),-0.0579,90.7,,10.1021/ma202196c10.1209/epl/i2001-00205-7
+polyisoprene,poly(lactic acid),-0.48,381,,10.1021/acs.macromol.5b00277
+polyethylene,polydimethylsiloxane,-0.095,90.7,,10.1021/ma301047y10.1021/ma020148y
+polydimethylsiloxane,polystyrene,0.072,6.85,,10.1021/acs.macromol.5b00518
+polydimethylsiloxane,poly(methyl methacrylate),0.13,31.5,,10.1021/acs.macromol.5b00518
+polydimethylsiloxane,poly(methyl methacrylate),0.13,24.5,,10.1021/acs.macromol.5b00518
+poly(ethylene oxide),polyisoprene,0.125,65,,10.1021/ma402356z10.1021/ma001957p10.1063/1.478122
+poly(n-butyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,1,-119,,10.1021/ma401450w
+poly(n-butyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,0.79,-83,,10.1021/ma401450w
+poly(n-butyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,0.83,-87,,10.1021/ma401450w
+poly(n-butyl methacrylate),1-butyl-3-methylimidazolium bis(trifluoromethylsulfonyl)imide,1.07,-149,,10.1021/ma401450w
+poly(n-butyl acrylate),poly(benzyl methacrylate),0.036,-0.56,,10.1021/ma1003776
