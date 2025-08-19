@@ -106,7 +106,7 @@ In addition to the inclusion of an $\alpha$ function, Peng and Robinson further 
 
 The SRK and PR equations of state are comparable in performance, although the latter generally provides liquid densities with a greater degree of accuracy, while the former usually provides better fugacities.
 However, when it comes to modelling complex species such as polymers (macromolecules), or associating species, both equations struggle to perform well.
-This is unsurprising, since the underlying molecular model remains, in essence, a "van der Waalsian sphere" – in other words,a hard spherical core surrounded by a region of attraction.
+This is unsurprising, since the underlying molecular model remains, in essence, a "van der Waalsian sphere" – in other words, a hard spherical core surrounded by a region of attraction.
 A more sophisticated molecular model is required to account well for the increased molecular complexities of these species.
 
 Before moving on from cubic equations of state we note that, within `Clapeyron`, the cubic plus association (`CPA`) equation of state is supported.
@@ -225,7 +225,7 @@ We will next go through each of the variants of the SAFT equation available in `
 #### Original SAFT
 
 Derived by Chapman et al. (1990), this is the first variant of the SAFT equation of state.
-This equation can be seen as a `proof of concept' as not many parameters are available (none for mixtures).
+This equation can be seen as a 'proof of concept' as not many parameters are available (none for mixtures).
 Nevertheless, a noteworthy feature of this equation is the use of a semi-empirical equation to obtain the hard-sphere diameter that depends on the number of segments of a species (in no other SAFT variant is this done).
 The hard-sphere pair distribution is used in the chain term; this has a much simpler analytical form than what is chosen for use in some other SAFT equations.
 The association strength, $\Delta$ is evaluated in a unique way as well:
@@ -291,7 +291,7 @@ Finally, many variants of the PC‑SAFT equation have been developed.
 These include:
 
 * Polar PC‑SAFT (PPC‑SAFT)
-* PC‑Polar SAFT (PCP‑SAFT); yes, these are distinct equations
+* PC‑Polar SAFT (PCP‑SAFT); yes, these are distinct equations.
 * Electrolyte PC‑SAFT (ePC‑SAFT)
 * Electrolyte PPC‑SAFT (ePPC‑SAFT)
 * Polyelectrolyte ePC‑SAFT (epPC‑SAFT)
@@ -370,7 +370,7 @@ This equation has also been extended to electrolytes through SAFT‑$\gamma$E Mi
 ### The problem
 
 The aim of this document is to outline all of the various tools used to obtain the relevant properties from a SAFT-type equation of state.
-In short, SAFT equations of state provide the Helmholtz energy of a system at a given composition $\mathbf{z}$, volume $V$ and temperature $T$:
+In short, SAFT equations of state provide the Helmholtz energy $A$ of a system at a given composition $\mathbf{z}$, volume $V$ and temperature $T$:
 
 ``A=A(\mathbf{z},V,T)``
 
