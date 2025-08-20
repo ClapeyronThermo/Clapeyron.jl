@@ -212,6 +212,7 @@ include("models/Activity/UNIFAC/variants/UNIFACFV.jl")
 include("models/Activity/UNIFAC/variants/UNIFACFVPoly.jl")
 include("models/Activity/UNIFAC/variants/PSRK.jl")
 include("models/Activity/UNIFAC/variants/VTPR.jl")
+include("models/Activity/FH/FH.jl")
 include("models/Activity/equations.jl")
 # include("models/Activity/NRTL/eCPANRTL.jl")
 

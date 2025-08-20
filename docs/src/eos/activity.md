@@ -39,6 +39,7 @@ Clapeyron.PSRKUNIFAC
 Clapeyron.VTPRUNIFAC
 Clapeyron.UNIFACFV
 Clapeyron.UNIFACFVPoly
+Clapeyron.FloryHuggins
 Clapeyron.tcPRWilsonRes
 Clapeyron.COSMOSAC02
 Clapeyron.COSMOSAC10
