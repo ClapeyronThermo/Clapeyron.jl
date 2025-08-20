@@ -17,6 +17,33 @@ end
 
 export FloryHuggins
 
+"""
+    FloryHuggins <: ActivityModel
+    FloryHuggins(components, N;
+    puremodel = BasicIdeal,
+    userlocations = String[],
+    pure_userlocations = String[],
+    verbose = false,
+    reference_state = nothing)
+## Input parameters
+- `N`: Single Parameter (`Float64`) - Degree of Polymerization
+- `v`: Single Parameter (`Float64`) - Monomer Volume
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight
+- `a`: Pair Parameter (`Float64`, defaults to `0`) - Interaction Parameter
+- `b`: Pair Parameter (`Float64`, defaults to `0`) - Interaction Parameter
+
+## Input models
+- `puremodel`: model to calculate pure pressure-dependent properties
+## Description
+Flory-Huggins activity coefficient model:
+```
+Gᴱ = nRT·(∑[xᵢlog(rᵢ)]+N∑[ϕᵢϕⱼχᵢⱼ])
+```
+## References
+1. Flory, P. J. (1953). "Principles of Polymer Chemistry". Cornell University Press.
+2. Huggins, M. L. (1941). "Solutions of Long-Chain Compounds". Journal of Chemical Physics, 9(5), 440-440.
+"""
+FloryHuggins
 default_locations(::Type{FloryHuggins}) = ["properties/molarmass.csv","Activity/FH/FH_unlike.csv","Activity/FH/FH_like.csv"]
 
 function FloryHuggins(components, N; puremodel=BasicIdeal,
