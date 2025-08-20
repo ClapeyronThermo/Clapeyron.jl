@@ -15,7 +15,8 @@ struct FloryHuggins{c<:EoSModel} <: FloryHugginsModel
     references::Array{String,1}
 end
 
-export FloryHuggins
+const FH = FloryHuggins
+export FH, FloryHuggins
 
 """
     FloryHuggins <: ActivityModel
