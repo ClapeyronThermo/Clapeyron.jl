@@ -74,7 +74,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     end
     _1 = one(eltype(K))
     # Initial guess for phase split
-    ψ = zero(eltype(K))
+    ψ = -sum(Z.*lnK)/sum(abs.(Z))
     K̄ = K.*exp.(Z.*ψ)
     β,singlephase,_,_ = rachfordrice_β0(K̄,z,nothing,non_inx,non_iny)
     #=TODO:
@@ -93,7 +93,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         x_dem,y_dem = x,y
     end
 
-    lnK_old = similar(lnK)
+    lnK̄_old = similar(lnK)
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
@@ -101,10 +101,11 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     while error_lnK > K_tol && it < itss && !singlephase
         it += 1
         itacc += 1
-        lnK_old .= lnK
+        lnK̄_old .= lnK + Z.*ψ
         x,y = update_rr!(K̄,β,z,x,y,non_inx,non_iny)
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,z,β,(volx,voly),phases,non_inw,dlnϕ_cache)
+        
         gibbs +=  β*ψ*dot(x,Z)
         vcache[] = (volx,voly)
         # acceleration step
@@ -136,12 +137,12 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         end
         K .= exp.(lnK)
         β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
+        lnK̄ = lnK + Z.*ψ
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
-        error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
+        error_lnK = dnorm(@view(lnK̄[in_equilibria]),@view(lnK̄_old[in_equilibria]),1)
     end
-
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
         nx = zeros(nc)
         ny = zeros(nc)
@@ -177,12 +178,10 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         x .= nx ./ nxsum
         y .= ny ./ nysum
         β = sum(ny)
-
     end
     K .= y ./ x
-    K̄ .= K.*exp.(Z.*ψ)
     #convergence checks (TODO, seems to fail with activity models)
-    _,singlephase,_,_ = rachfordrice_β0(K̄,z,β,non_inx,non_iny)
+    _,singlephase,_,_ = rachfordrice_β0(K,z,β,non_inx,non_iny)
     vx,vy = vcache[]
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
@@ -226,7 +225,7 @@ function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill
             end
             return SVector((F1,F2))
         end
-        x0 = SVector(Base.promote(β0,log(ψ0)))
+        x0 = SVector(Base.promote(β0,ψ0))
         ff(F,x) = rachford_rice_donnan(x,K,z,Z)
         results = Solvers.nlsolve(ff,x0,TrustRegion(Newton(), Dogleg()))
         sol = Clapeyron.Solvers.x_sol(results)
