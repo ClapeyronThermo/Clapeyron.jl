@@ -4,3 +4,4 @@ species,Mw,Gform,Hform,Tref
 water,18.01,0.,6000,273.15
 sodium.chloride,58.44,9000.,-3900,298.15
 sodium.chloride.2water,154.00,8500,-13540.,298.15
+calcium.carbonate,100.09,-47.32e3,13.04e5,298.15
