@@ -1,6 +1,6 @@
 function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, K0=nothing,
                                      x0=nothing, y0=nothing, vol0=(nothing, nothing),
-                                     K_tol=1e-12, itss=21, nacc=5, second_order=false, use_opt_solver = true,
+                                     K_tol=1e-12, itss=101, nacc=5, second_order=false, use_opt_solver = true,
                                      non_inx_list=nothing, non_iny_list=nothing, reduced=false)
 
 
@@ -138,10 +138,12 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         K .= exp.(lnK)
         β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
         lnK̄ = lnK + Z.*ψ
+        # println(ψ)
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK̄[in_equilibria]),@view(lnK̄_old[in_equilibria]),1)
+        # println(error_lnK)
     end
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
         nx = zeros(nc)
@@ -180,8 +182,11 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         β = sum(ny)
     end
     K .= y ./ x
+    β = ((z.-x)./(y.-x))[1]
+    # println(y)
     #convergence checks (TODO, seems to fail with activity models)
     _,singlephase,_,_ = rachfordrice_β0(K,z,β,non_inx,non_iny)
+    # println(β)
     vx,vy = vcache[]
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
@@ -227,7 +232,7 @@ function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill
         end
         x0 = SVector(Base.promote(β0,ψ0))
         ff(F,x) = rachford_rice_donnan(x,K,z,Z)
-        results = Solvers.nlsolve(ff,x0,TrustRegion(Newton(), Dogleg()))
+        results = Solvers.nlsolve(ff,x0)
         sol = Clapeyron.Solvers.x_sol(results)
         β = sol[1]
         ψ = sol[2]
