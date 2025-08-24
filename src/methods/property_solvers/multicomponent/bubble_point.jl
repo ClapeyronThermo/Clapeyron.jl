@@ -473,6 +473,7 @@ end
 function x0_bubble_temperature(model::EoSModel,p,x)
     T0,V0_l,V0_v,y = __x0_bubble_temperature(model,p,x)
     v0 = similar(x)
+    v0 .= y
     return vcat(T0, log10(V0_l),log10(V0_v),v0)
 end
 

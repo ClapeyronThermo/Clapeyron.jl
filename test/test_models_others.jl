@@ -65,13 +65,18 @@
     end
 
     @testset "UNIFAC-FV" begin
-        system = UNIFACFV(["benzene","PS(1960)"])
-        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 0.2813003396669342 rtol = 1e-6
+        system = UNIFACFV(["PMMA","PS"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 8.63962025235759 rtol = 1e-6
     end
 
     @testset "UNIFAC-FV-poly" begin
-        system = system = UNIFACFVPoly(["PMMA(6350)","PS(1390)"])
-        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 2.7045808205365796 rtol = 1e-6
+        system = UNIFACFVPoly(["PMMA","PS"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 4.8275769947121985 rtol = 1e-6
+    end
+
+    @testset "FH" begin
+        system = FH(["PMMA","PS"],[100,100])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.8265799707907238 rtol = 1e-6
     end
 
     @testset "COSMOSAC02" begin
