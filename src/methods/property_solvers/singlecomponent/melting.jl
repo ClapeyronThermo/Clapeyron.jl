@@ -254,13 +254,14 @@ function melting_pressure_impl(model::CompositeModel,T,method::IsoGibbsMeltingPr
     valid_input = _is_positive((p,T))
     !valid_input && return (nan,nan,nan)
     max_iters = method.max_iters
+    k1,k2 = calculate_gibbs_reference_state(solid,fluid)
     for i in 1:max_iters
         gl,vl = g_and_v(fluid,p,T,vl,phase = :liquid)
         gs,vs = g_and_v(solid,p,T,vs,phase = :solid)
 
         #f(lp) = gs(exp(lp)) - gl(exp(lp))
         #df(lp) = vs(exp(lp))*
-        f = gs - gl
+        f = gs - gl + k1 + k2*T
         df = p*(vs - vl)
         dlnp = -f/df
         !isfinite(dlnp) && break
@@ -331,11 +332,12 @@ function melting_temperature_impl(model::CompositeModel,p,method::IsoGibbsMeltin
     valid_input = _is_positive((p,T))
     !valid_input && return (nan,nan,nan)
     max_iters = method.max_iters
+    k1,k2 = calculate_gibbs_reference_state(solid,fluid)
     for i in 1:max_iters
         gl,sl,vl = g_and_sv(fluid,p,T,vl,phase = :liquid)
         gs,ss,vs = g_and_sv(solid,p,T,vs,phase = :solid)
-        f = gs - gl
-        df = -(ss - sl)
+        f = gs - gl + k1 + k2*T
+        df = -(ss - sl - k2)
         dT = -f/df
         !isfinite(dT) && break
         T = T + dT

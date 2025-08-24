@@ -93,7 +93,6 @@ function init_preferred_method(method::typeof(melting_temperature),model::SolidH
     return MeltingCorrelation()
 end
 
-
 function melting_temperature(model::CompositeModel{<:Any,<:SolidHfusModel},P,method::ThermodynamicMethod)
     return melting_temperature_impl(model,P,method)
 end

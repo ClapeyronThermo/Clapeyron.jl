@@ -177,4 +177,12 @@ function x0_sublimation_temperature(model::CompositeModel{<:EoSModel,IAPWS06},p)
     return T,vs,vv
 end
 
+function gibbsmodel_reference_state_consts(ice::IAPWS06,water::EmpiricHelmholtzModel)
+    return :zero,0.0,0.0,0.0
+end
+
+function gibbsmodel_reference_state_consts(water::IAPWS06)
+    return :dH,101325,273.15,6010.0
+end
+
 export IAPWS06

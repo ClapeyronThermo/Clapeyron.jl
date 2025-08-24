@@ -271,6 +271,11 @@ end
         @test melting_temperature(model4,101325.0)[1] ≈ 273.15 rtol = 1e-6
         @test melting_pressure(model4,273.15)[1] ≈ 101325.0 rtol = 1e-6
 
+        #solid gibbs + any other fluid helmholtz
+        model5 = CompositeModel("water", solid = IAPWS06(),fluid = cPR("water"))
+        @test melting_temperature(model5,101325.0)[1] ≈ 273.15 rtol = 1e-6
+        @test melting_pressure(model5,273.15)[1] ≈ 101325.0 rtol = 1e-6
+
     end
     GC.gc()
     @testset "Mixture Solid-Liquid Equilibria" begin

@@ -172,4 +172,9 @@ end
 T_scale(model::GrenkeElliottModel,z) = 273.15
 p_scale(model::GrenkeElliottModel,z) = 101325.0
 
+function gibbsmodel_reference_state_consts(ice::IAPWS06,water::GrenkeElliottModel)
+    #return :dH,101325,273.15,6010.0
+    return :zero,0.,0.,0.
+end
+
 export GrenkeElliottWater

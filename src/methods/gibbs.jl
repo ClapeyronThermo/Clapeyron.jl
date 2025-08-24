@@ -182,3 +182,87 @@ end
 function chemical_potential_impl(model::GibbsBasedModel,p,T,z,phase,threaded,vol0)
     return VT_molar_gradient(model,p,T,z,eos_g)
 end
+
+"""
+    type,p,T,W = gibbsmodel_reference_state_consts(model)
+    type,p,T,W = gibbsmodel_reference_state_consts(model,other_model)
+    
+Returns a equilibrium condition to equilibrate the gibbs energies of two models.
+Used for solid-fluid equilibria.
+By default, it returns `nothing`. 
+The two-argument method is used to disambiguate between two different models.
+Available options for the type are:
+    - :dH: difference in enthalpy at p,T conditions (`h(other_model) - h(model)`) is equal to W
+    - :zero: the models are already equilibrated, no additional calculation is necessary (like `IAPWS06` in conjunction with `IAPWS05`)
+
+
+The equilibration corresponds to the calculation of constants `k1` and `k2`, that enforce the gibbs criteria: `gibbs(model,p,T) + k1 + k2*T == gibbs(other_model,p,T)`
+The constants `k1` and `k2` are calculated by `Clapeyron.calculate_gibbs_reference_state(model,other_model)`
+"""
+gibbsmodel_reference_state_consts(model::EoSModel) = nothing
+gibbsmodel_reference_state_consts(model1,model2) = nothing
+function _gibbsmodel_reference_state_consts(model1,model2)
+    ref1 = gibbsmodel_reference_state_consts(model1,model2)
+    ref2 = gibbsmodel_reference_state_consts(model2,model1)
+    ref2 == nothing && ref1 == nothing && return nothing,0
+    ref1 == nothing && return ref2,2
+    ref2 == nothing && return ref1,1
+    throw(error("invalid specification for gibbs_reference_state_consts: both model1 and model2 define their own order."))
+end
+
+
+"""
+    k1,k2 = calculate_gibbs_reference_state(model,other_model)
+    
+Calculates the reference state constants that force the equilibrium conditions specified by `Clapeyron.gibbsmodel_reference_state_consts`
+"""
+function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel)
+
+    _0 = zero(Base.promote_eltype(model1,model2))
+    (model1 isa GibbsBasedModel) || (model2 isa GibbsBasedModel) || return _0,_0 
+    refx,nx = _gibbsmodel_reference_state_consts(model1,model2)
+    if refx == nothing
+        ref1 = gibbsmodel_reference_state_consts(model1)
+        ref2 = gibbsmodel_reference_state_consts(model2)
+        if ref1 == nothing && ref2 == nothing
+            throw(error("Empty gibbs reference. for gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model)`"))
+        end
+        if ref1 == nothing
+            ref = ref2
+            n = 2
+        elseif ref2 == nothing
+            ref = ref1
+            n = 1
+        elseif ref2 != nothing && ref1 != nothing
+            
+            isnothing(refx) && throw(error("Empty gibbs reference. for gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model1,model2)`"))
+        end
+    else
+        ref = refx
+        n = nx
+    end
+    type,p,T,W = ref
+
+    if type == :dH
+        #=
+        dH reference: at p = p0,T = T0, g1 = g2, H1 - H2 = Hfus:
+        gibbs(model1) + g1 + g2*T0 = gibbs(model2)
+        enthalpy(model2) - enthalpy(model1) - W - g1 = 0
+        =#
+        gibbs1,gibb2 = gibbs_energy(model1,p,T),gibbs_energy(model2,p,T)
+        h1,h2 = enthalpy(model1,p,T),enthalpy(model2,p,T)
+        dH = W
+        if n == 2 #invert
+            gibbs1,gibb2 = gibbs2,gibbs1
+            h1,h2 = h2,h1
+            dH = -dH
+        end
+        g1 = h1 - h2 + dH
+        g2 = (gibb2 - g1 - gibbs1)/T
+        return g1,g2
+    elseif type == :zero
+        return _0,_0
+    else
+        throw(error("invalid gibbs reference state. Expected :dH, got: $type"))
+    end
+end
