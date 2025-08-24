@@ -61,11 +61,11 @@ function index_reduction(model::EoSModel,bools::BitVector;check = true)
 end
 
 @noinline function __index_reduction_empty_error(z)
-    throw(error("Clapeyron.index_reduction(model,z): inpút composition $z results in an empty model."))
+    throw(error("Clapeyron.index_reduction(model,z): input composition $z results in an empty model."))
 end
 
 @noinline function __index_reduction_negative_error(z)
-    throw(error("Clapeyron.index_reduction(model,z): inpút composition $z has significant negative values."))
+    throw(error("Clapeyron.index_reduction(model,z): input composition $z has significant negative values."))
 end
 
 @noinline function __index_reduction_empty_error(z::AbstractVector{Bool})
