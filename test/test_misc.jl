@@ -56,7 +56,8 @@
         #error on spliting assoc models without sites
         model_nosites = PCSAFT(["a"],userlocations = (Mw = 1.0,segment = 1.0,sigma = 1.0,epsilon = 1.0))
         @test split_model(model_nosites)[1] isa PCSAFT 
-
+        
+        #index reduction testing
         #https://discourse.julialang.org/t/mtk-solve-weird-error-message/131638
         model_idx = PCSAFT(["ethane","propane","methane"])
         @test length(Clapeyron.index_reduction(model_idx,[1.,0.,0.])[1]) == 1
