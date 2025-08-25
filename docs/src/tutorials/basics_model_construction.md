@@ -190,7 +190,7 @@ This includes:
     vdW1fRule()
     ```
 
-  * ``G_E``-mixing rules where an activity coefficient model is used in conjunction with the cubic equation of state:
+  * ``G_E``-mixing rules where an activity coefficient model is used in conjunction with a cubic equation of state:
 
     ```julia
     julia> model = PR(["methanol","benzene"];mixing=HVRule,activity=UNIFAC)

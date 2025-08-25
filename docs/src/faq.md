@@ -8,7 +8,7 @@ Every model has tradeoffs:
 - Cubics are the fastest, but the liquid density deviates significantly from the experimental value if a translation rule is not used
 - Activity coefficient models are not useful for high pressure conditions.
 - Reference Helmholtz equations of state (like the ones used by REFPROP) cannot be used to calculate spinodal points, specially far from the critical point, and they have poor extrapolation behaviour.
-- A saturation Correlation will be faster for calculating saturation conditions than a helmholtz equation of state.
+- A saturation Correlation will be faster for calculating saturation conditions than a Helmholtz equation of state.
 
 In summary, the user should consider the conditions and type of properties when selecting an equation of state.
 
