@@ -111,6 +111,8 @@ include("LiquidVolumeModel/LiquidVolumeModel.jl")
 include("PolExpVapour.jl")
 include("SolidModel/SolidHfus.jl")
 include("SolidModel/SolidKs.jl")
+include("SolidModel/JagerSpanSolidCO2.jl")
+
 
 include("bubble_point.jl")
 include("dew_point.jl")

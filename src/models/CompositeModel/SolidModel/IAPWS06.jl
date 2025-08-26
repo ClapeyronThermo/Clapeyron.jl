@@ -3,11 +3,10 @@ struct IAPWS06 <: GibbsBasedModel
     s0::Float64
     Rgas::Float64
     references::Vector{String}
-
 end
 
 """
-    IAPWS06 <: EmpiricHelmholtzModel
+    IAPWS06 <: GibbsBasedModel
     IAPWS06()
 
 ## Input parameters
@@ -182,7 +181,7 @@ function gibbsmodel_reference_state_consts(ice::IAPWS06,water::EmpiricHelmholtzM
 end
 
 function gibbsmodel_reference_state_consts(water::IAPWS06)
-    return :dH,101325,273.15,6010.0
+    return :dH,101325.0,273.15,6010.0
 end
 
 export IAPWS06
