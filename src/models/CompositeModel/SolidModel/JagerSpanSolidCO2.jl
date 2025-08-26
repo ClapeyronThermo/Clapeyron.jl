@@ -16,7 +16,9 @@ Jäger and Span gibbs model for solid carbon dioxide.
 
 1. Jäger, A., & Span, R. (2012). Equation of state for solid carbon dioxide based on the Gibbs free energy. Journal of Chemical and Engineering Data, 57(2), 590–597. [doi:10.1021/je2011677]((https://doi.org/10.1021/je2011677)
 """
-IAPWS06
+JagerSpanSolidCO2
+
+default_references(::Type{JagerSpanSolidCO2}) = ["10.1021/je2011677"]
 
 function eos_g(model::JagerSpanSolidCO2,p,T,z)
     g =
@@ -58,6 +60,11 @@ end
 function gibbsmodel_reference_state_consts(model::JagerSpanSolidCO2)
     return :dH,517950.0,216.592,8875.0
 end
+
+function gibbsmodel_reference_state_consts(ice::JagerSpanSolidCO2,water::EmpiricHelmholtzModel)
+    return :zero,0.0,0.0,0.0
+end
+
 p_scale(model::JagerSpanSolidCO2,z) = 101325.0
 T_scale(model::JagerSpanSolidCO2,z) = 150.0
 
