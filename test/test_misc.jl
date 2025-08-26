@@ -57,6 +57,10 @@
         model_nosites = PCSAFT(["a"],userlocations = (Mw = 1.0,segment = 1.0,sigma = 1.0,epsilon = 1.0))
         @test split_model(model_nosites)[1] isa PCSAFT 
         
+        #error on splitting models with ReferenceState
+        model_reference_state = JobackIdeal(["propane","hexane"])
+        @test split_model(model_reference_state) isa JobackIdeal
+        
         #index reduction testing
         #https://discourse.julialang.org/t/mtk-solve-weird-error-message/131638
         model_idx = PCSAFT(["ethane","propane","methane"])

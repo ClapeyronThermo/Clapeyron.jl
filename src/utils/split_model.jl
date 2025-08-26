@@ -43,6 +43,8 @@ function each_split_model(param::UnitRange{Int},I)
     return 1:length(I)
 end
 
+each_split_model(param::ReferenceState,group,I_component,I_group) = each_split_model(param,I_component)
+
 function each_split_model(param::ReferenceState,I)
     sym = param.std_type
     if length(param.a1) == 0
@@ -316,6 +318,10 @@ end
 function each_split_model(model::EoSModel,I)
     if !is_splittable(model)
         return model
+    end
+
+    if I isa AbstractVector{Bool}
+        return each_split_model(model,findall(I))
     end
     if has_groups(model)
         Ic = I
