@@ -363,7 +363,6 @@ Returns a tuple, containing:
 By default, uses equality of chemical potentials, via [`ChemPotBubblePressure`](@ref)
 """
 function bubble_pressure(model::EoSModel,T,x;kwargs...)
-    @assert all(>(0), x) "Mole vector contains non-positive values!"
     if keys(kwargs) == (:v0,)
         nt_kwargs = NamedTuple(kwargs)
         v0 = nt_kwargs.v0
@@ -380,7 +379,7 @@ function bubble_pressure(model::EoSModel,T,x;kwargs...)
 end
 
 function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
-    @assert all(>(0), x) "Mole vector contains non-positive values!"
+    moles_positivity(x)
     x = x/sum(x)
     T = float(T)
     model_r,idx_r = index_reduction(model,x)
@@ -524,7 +523,7 @@ Returns a tuple, containing:
 By default, uses equality of chemical potentials, via [`ChemPotBubbleTemperature`](@ref)
 """
 function bubble_temperature(model::EoSModel,p,x;kwargs...)
-    @assert all(>(0), x) "Mole vector contains non-positive values!"
+    moles_positivity(x)
     if keys(kwargs) == (:v0,)
         nt_kwargs = NamedTuple(kwargs)
         v0 = nt_kwargs.v0
@@ -542,14 +541,14 @@ function bubble_temperature(model::EoSModel,p,x;kwargs...)
 end
 
 function bubble_temperature(model::EoSModel, p , x, T0::Number)
-    @assert all(>(0), x) "Mole vector contains non-positive values!"
+   moles_positivity(x)
     kwargs = (;T0)
     method = init_preferred_method(bubble_temperature,model,kwargs)
     return bubble_temperature(model,p,x,method)
 end
 
 function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
-    @assert all(>(0), x) "Mole vector contains non-positive values!"
+    moles_positivity(x)
     x = x/sum(x)
     p = float(p)
     model_r,idx_r = index_reduction(model,x)
