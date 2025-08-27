@@ -67,16 +67,10 @@ function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
     volx, voly = vol0
 
     #check if noncondensables are set
-    if !isnothing(noncondensables)
-        condensables = [!in(x,noncondensables) for x in model.components]
-        model_x,condensables = index_reduction(model,condensables)
-        x0 = x0[condensables]
-        x0 = x0/sum(x0)
-    else
-        condensables = fill(true,length(model))
-        model_x = nothing
-    end
-
+    condensables = comps_in_equilibria(component_list(model),noncondensables)
+    model_x,_ = index_reduction(model,condensables)
+    x0 = x0[condensables]
+    x0 = x0/sum(x0)
     converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,vol0,FugEnum.DEW_PRESSURE,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p, tol_xy = tol_x, tol_of = tol_of)
     p,T,x,y,vol,lnK = res
     volx,voly = vol
@@ -185,13 +179,8 @@ end
 
 
 function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
-    
-    if !isnothing(method.noncondensables)
-        condensables = [!in(x,method.noncondensables) for x in model.components]
-    else
-        condensables = fill(true,length(model))
-    end
-
+    noncondensables = method.noncondensables
+    condensables = comps_in_equilibria(component_list(model),noncondensables)
     _vol0,_p0,_x0 = method.vol0,method.p0,method.x0
     p0,vl,vv,x0 = dew_pressure_init(model,T,y,_vol0,_p0,_x0,condensables)
     itmax_newton = method.itmax_newton
@@ -200,7 +189,7 @@ function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
     tol_p = method.tol_p
     tol_of = method.tol_of
     vol0 = (vl,vv)
-    noncondensables = method.noncondensables
+    
     return dew_pressure_fug(model,T,y,x0,p0;vol0,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,noncondensables)
 end
 
@@ -272,15 +261,10 @@ function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothin
     vol0 === nothing && (vol0 = (nothing,nothing))
     volx, voly = vol0
     #check if noncondensables are set
-    if !isnothing(noncondensables)
-        condensables = [!in(x,noncondensables) for x in model.components]
-        model_x,condensables = index_reduction(model,condensables)
-        x0 = x0[condensables]
-        x0 = x0/sum(x0)
-    else
-        condensables = fill(true,length(model))
-        model_x = nothing
-    end
+    condensables = comps_in_equilibria(component_list(model),noncondensables)
+    model_x,_ = index_reduction(model,condensables)
+    x0 = x0[condensables]
+    x0 = x0/sum(x0)
 
     converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,vol0,FugEnum.DEW_TEMPERATURE,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_x, tol_of = tol_of)
     p,T,x,y,vol,lnK = res
@@ -387,12 +371,8 @@ function FugDewTemperature(;vol0 = nothing,
 end
 
 function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
-    if !isnothing(method.noncondensables)
-        condensables = [!in(x,method.noncondensables) for x in model.components]
-    else
-        condensables = fill(true,length(model))
-    end
-
+    noncondensables = method.noncondensables
+    condensables = comps_in_equilibria(component_list(model),noncondensables)
     _vol0,_T0,_x0 = method.vol0,method.T0,method.x0
     T0,vl,vv,x0 = dew_temperature_init(model,p,y,_vol0,_T0,_x0,condensables)
     itmax_newton = method.itmax_newton
@@ -402,7 +382,6 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
     tol_of = method.tol_of
     vol0 = (vl,vv)
 
-    noncondensables = method.noncondensables
     return dew_temperature_fug(model,p,y,x0,T0;vol0,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,noncondensables)
 end
 

@@ -270,13 +270,15 @@ function set_reference_state!(model::EoSModel,new_ref::ReferenceState;verbose = 
     end
     #allocate the appropiate caches.
     initialize_reference_state!(model,ref)
-    if all(iszero,ref.z0) #pure case
+    if all(iszero,ref.z0) && length(model) != 1 #pure case, multiple components
         pures = split_pure_model(model)
         _set_reference_state!.(pures)
         pure_refs = reference_state.(pures)
         ref.a0 .= only.(getfield.(pure_refs,:a0))
         ref.a1 .= only.(getfield.(pure_refs,:a1))
-    else
+    elseif all(iszero,ref.z0) #pure case, one component
+        _set_reference_state!(model)
+    else #mixture case
         _set_reference_state!(model,ref.z0)
     end
     return model
@@ -338,7 +340,8 @@ function initialize_reference_state!(model,ref = reference_state(model))
 
     if length(comps) == 0
         resize!(comps,len)
-        comps .= model.components
+        model_comps = component_list(model)
+        comps .= model_comps
     else
         #this means the ReferenceState struct was already initialized. check for inconsistencies in size
         check_arraysize(model,comps)

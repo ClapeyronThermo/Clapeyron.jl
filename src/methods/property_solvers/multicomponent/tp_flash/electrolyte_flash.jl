@@ -5,7 +5,8 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
 
 
     Z = model.charge
-    ions = model.components[Z.!=0]
+    model_components = component_list(model)
+    ions = model_components[Z.!=0]
     if !reduced
         model_full,z_full = model,z
         model,z_nonzero = index_reduction(model_full,z_full)
@@ -29,7 +30,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     non_iny = fill(false,nc)
 
     for i in 1:nc
-        component = model.components[i]
+        component = model_components[i]
         non_inx[i] = !isnothing(non_inx_list) && (component in non_inx_list) && true
         non_iny[i] = !isnothing(non_iny_list) && (component in non_iny_list) && true
     end

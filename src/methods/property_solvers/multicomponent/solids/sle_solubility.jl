@@ -15,25 +15,25 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
     T = T*one(eltype(model))
     sol = zeros(length(solute),length(model.components))
     idxs = convert(Vector{Int},indexin(solute,model.solid.components))
-    idx_sol = zeros(Bool,length(model.solid.components))
+    idx_sol = zeros(Bool,ns)
     idx_sol[idxs] .= true
     for i in 1:length(solute)
-        idx_sol_s = zeros(Bool,length(model.solid.components))
+        idx_sol_s = zeros(Bool,ns)
         idx_sol_s[model.solid.components .==solute[i]] .= true
 
         #TODO: express this in terms of melting_temperature
         Tm = model.solid.params.Tm.values[idx_sol_s][1]
 
-        idx_sol_l = zeros(Bool,length(model.fluid.components))
+        idx_sol_l = zeros(Bool,nf)
         solute_l = mapping[idx_sol_s][1]
         ν_l = [solute_l[1][i][2] for i in 1:length(solute_l[1])]
         solute_l = [solute_l[1][i][1] for i in 1:length(solute_l[1])]
 
 
         for i in solute_l
-            idx_sol_l[model.fluid.components .== i] .= true
+            idx_sol_l[fluid_components .== i] .= true
         end
-        idx_solv = zeros(Bool,length(model.fluid.components))
+        idx_solv = zeros(Bool,nf)
         if length(solute_l) == length(model.fluid)
             idx_solv[findfirst(idx_sol_l)] = true
         else
@@ -129,27 +129,31 @@ function sle_solubility_T(model::CompositeModel,z,p=1e5;solute=nothing,x0=nothin
     if isnothing(solute)
         solute = model.solid.components
     end
+    ns = length(model.solid)
+    nf = length(model.fluid)
+    solid_components = component_list(model.solid)
+    fluid_components = component_list(model.fluid)
     p = p*one(eltype(model))
-    Tsol = zeros(length(solute),length(model.components))
-    idxs = convert(Vector{Int},indexin(solute,model.solid.components))
-    idx_sol = zeros(Bool,length(model.solid.components))
+    Tsol = zeros(length(solute),length(model.fluid))
+    idxs = convert(Vector{Int},indexin(solute,solid_components))
+    idx_sol = zeros(Bool,ns)
     idx_sol[idxs] .= true
     for i in 1:length(solute)
-        idx_sol_s = zeros(Bool,length(model.solid.components))
-        idx_sol_s[model.solid.components .==solute[i]] .= true
+        idx_sol_s = zeros(Bool,ns)
+        idx_sol_s[solid_components .==solute[i]] .= true
 
         #TODO: express this in terms of melting_temperature
         Tm = model.solid.params.Tm.values[idx_sol_s][1]
 
-        idx_sol_l = zeros(Bool,length(model.fluid.components))
+        idx_sol_l = zeros(Bool,nf)
         solute_l = mapping[idx_sol_s][1]
         ν_l = [solute_l[1][i][2] for i in 1:length(solute_l[1])]
         solute_l = [solute_l[1][i][1] for i in 1:length(solute_l[1])]
 
         for i in solute_l
-            idx_sol_l[model.fluid.components .== i] .= true
+            idx_sol_l[fluid_components .== i] .= true
         end
-        idx_solv = zeros(Bool,length(model.fluid.components))
+        idx_solv = zeros(Bool,nf)
         if length(solute_l) == length(model.fluid)
             idx_solv[findlast(idx_sol_l)] = true
         else

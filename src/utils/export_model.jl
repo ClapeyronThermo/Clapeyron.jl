@@ -16,7 +16,7 @@ function export_model(model::EoSModel,name="";location=".")
         species = model.groups.flattenedgroups
         ncomps = length(species)
     else
-        species = model.components
+        species = component_list(model)
         ncomps = length(species)
     end
 

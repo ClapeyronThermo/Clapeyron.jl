@@ -134,7 +134,7 @@ __act_to_gammaphi(model::ActivityModel) = __act_to_gammaphi(model,nothing,true)
 GammaPhi(model::ActivityModel) = __act_to_gammaphi(model)
 #convert ActivityModel into a RestrictedEquilibriaModel
 function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
-    components = model.components
+    components = component_list(model)
     if hasfield(typeof(model),:puremodel) && !ignore && model.puremodel.model isa IdealModel
         ActivitySaturationError(model,method)
     end
@@ -142,11 +142,11 @@ function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
     if hasfield(typeof(model),:puremodel)
         pure = model.puremodel
         if pure.model isa CompositeModel
-            pure = EoSVectorParam(pure.model.fluid,model.components)
+            pure = EoSVectorParam(pure.model.fluid,components)
         end
     else
         if ignore
-            pure = EoSVectorParam(BasicIdeal(),model.components)
+            pure = EoSVectorParam(BasicIdeal(),components)
         else
             ActivitySaturationError(model,method)
         end

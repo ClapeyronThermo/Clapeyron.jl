@@ -69,7 +69,7 @@ end
 
 function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressure)
 
-    volatiles = comps_in_equilibria(model.components,method.nonvolatiles)
+    volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
     p0,vl,vv,y0 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles)
     is_non_volatile = !isnothing(method.nonvolatiles)
     model_y,_ = index_reduction(model,volatiles)
@@ -186,7 +186,7 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     
 
     is_non_volatile = !isnothing(method.nonvolatiles)
-    volatiles = comps_in_equilibria(model.components,method.nonvolatiles)
+    volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
     model_y,_ = index_reduction(model,volatiles)
     T0,vl,vv,y0 = bubble_temperature_init(model,p,x,method.vol0,method.T0,method.y0,volatiles)
     y0 = y0[volatiles]

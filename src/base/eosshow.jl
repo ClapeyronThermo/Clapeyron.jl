@@ -51,7 +51,7 @@ function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSMo
             println(io)
             print(io,"Group Type: ",groups.grouptype)
         else
-            show_pairs(io,model.components)
+            show_pairs(io,component_list(model))
         end
     else
         print(io,"()")
@@ -65,7 +65,7 @@ end
 function eosshow(io::IO, Base.@nospecialize(model::EoSModel))
     print(io, typeof(model))
     print(io, "(")
-    show_pairs(io,model.components,pair_separator = ", ")
+    show_pairs(io,component_list(model),pair_separator = ", ")
     print(io, ")")
 end
 
