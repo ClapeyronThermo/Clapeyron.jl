@@ -144,8 +144,8 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
       prop_bubble = dew_vl
       prop_dew = dew_vv
     else
-      prop_bubble = spec_to_vt(model,dew_vl,dew_T,w_dew,spec)
-      prop_dew = spec_to_vt(model,dew_vv,dew_T,z,spec)/sum(z)
+      prop_bubble = spec_to_vt(model,dew_vl,dew_T,w_dew,property)
+      prop_dew = spec_to_vt(model,dew_vv,dew_T,z,property)/sum(z)
     end
     β = (prop/sum(z) - prop_bubble)/(prop_dew - prop_bubble)
     if 0 <= β <= 1
