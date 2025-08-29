@@ -92,6 +92,7 @@ Returns a tuple, containing:
 By default, uses equality of chemical potentials, via [`ChemPotDewPressure`](@ref)
 """
 function dew_pressure(model::EoSModel,T,x;kwargs...)
+    moles_positivity(x)
     if keys(kwargs) == (:v0,)
         nt_kwargs = NamedTuple(kwargs)
         v0 = nt_kwargs.v0
@@ -108,6 +109,7 @@ function dew_pressure(model::EoSModel,T,x;kwargs...)
 end
 
 function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
+    moles_positivity(y)
     y = y/sum(y)
     T = float(T)
     model_r,idx_r = index_reduction(model,y)
@@ -241,6 +243,7 @@ Returns a tuple, containing:
 By default, uses equality of chemical potentials, via [`ChemPotDewTemperature`](@ref)
 """
 function dew_temperature(model::EoSModel,p,x;kwargs...)
+    moles_positivity(x)
     if keys(kwargs) == (:v0,)
         nt_kwargs = NamedTuple(kwargs)
         v0 = nt_kwargs.v0
@@ -258,12 +261,14 @@ function dew_temperature(model::EoSModel,p,x;kwargs...)
 end
 
 function dew_temperature(model::EoSModel, p , x, T0::Number)
+    moles_positivity(x)
     kwargs = (;T0)
     method = init_preferred_method(dew_temperature,model,kwargs)
     return dew_temperature(model,p,x,method)
 end
 
 function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
+    moles_positivity(y)
     y = y/sum(y)
     p = float(p)
     model_r,idx_r = index_reduction(model,y)
