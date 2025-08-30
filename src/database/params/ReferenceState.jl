@@ -19,7 +19,8 @@ Parameter used to define a reference state for enthalpy and entropy, normally st
 When set, it calculates a set of `a0` and `a1` values such as the entropy and enthalpy at a specified point are fixed.
 
 the `type` argument accepts the following standalone options:
-- `:no_set`: it returns the current defaults stablished by the equation of state.
+- `:no_set`: it returns the current defaults stablished by the equation of state. Leaves the `ReferenceState` struct uninitialized.
+- `:zero`: also returns the current defaults, but initializes the reference state struct, for later modification
 - `:ashrae`: h = s = 0 at -40 °C saturated liquid
 - `:iir`: h = 200.0 kJ·kg⁻¹, s=1.0 kJ·kg⁻¹·K⁻¹ at 0 °C saturated liquid
 - `:nbp`: h = s = 0 at 1 atm saturated liquid
@@ -292,7 +293,9 @@ function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
     T0,P0,H0,S0 = ref.T0,ref.P0,ref.H0,ref.S0
     a0,a1 = ref.a0,ref.a1
     R = Rgas(model)
-    if type == :ashrae
+    if type == :zero
+        _a0,_a1 = 0.0,0.0
+    elseif type == :ashrae
         #ASHRAE: h = 0, s = 0 @ -40C saturated liquid
         single_component_check(set_reference_state!,model)
         T_ashrae = 273.15 - 40
@@ -316,7 +319,7 @@ function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
         _a0,_a1 = calculate_reference_state_consts(model,:volume,T_stp,p_stp,0.0,0.0,z0,ref.phase)
     elseif type == :ntp
         T_nist = 273.15 + 20.0
-        p_nist = 1.0e5
+        p_nist = 101325.0
         _a0,_a1 = calculate_reference_state_consts(model,:volume,T_nist,p_nist,0.0,0.0,z0,ref.phase)
     elseif type in (:volume,:saturation_pressure,:saturation_temperature)
         _a0,_a1 = calculate_reference_state_consts(model,type,T0,P0,first(H0),first(S0),z0,ref.phase)
