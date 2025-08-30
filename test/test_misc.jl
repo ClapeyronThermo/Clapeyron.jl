@@ -59,8 +59,8 @@
         
         #error on splitting models with ReferenceState
         model_reference_state = JobackIdeal(["propane","hexane"])
-        @test split_model(model_reference_state) isa JobackIdeal
-        
+        @test split_model(model_reference_state)[1] isa JobackIdeal
+
         #index reduction testing
         #https://discourse.julialang.org/t/mtk-solve-weird-error-message/131638
         model_idx = PCSAFT(["ethane","propane","methane"])

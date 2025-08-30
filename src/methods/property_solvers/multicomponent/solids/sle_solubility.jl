@@ -11,9 +11,11 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
     if isnothing(solute)
         solute = model.solid.components
     end
+    ns = length(model.solid)
+    nf = length(model.fluid)
     p = p*one(eltype(model))
     T = T*one(eltype(model))
-    sol = zeros(length(solute),length(model.components))
+    sol = zeros(length(solute),nf)
     idxs = convert(Vector{Int},indexin(solute,model.solid.components))
     idx_sol = zeros(Bool,ns)
     idx_sol[idxs] .= true
