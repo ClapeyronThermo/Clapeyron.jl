@@ -939,7 +939,7 @@ function set_formation_reference_state!(model;userlocations = String[],verbose =
     refs = ReferenceState[]
     pures = split_model(model)
     for i in 1:length(model)
-        ref_i = ReferenceState(type = :volume,T0 = T0[i],p0 =p0[i],S0 = S0[i],H0 = H0[i],phase = Symbol(phase[i])))
+        ref_i = ReferenceState(type = :volume,T0 = T0[i],p0 =p0[i],S0 = S0[i],H0 = H0[i],phase = Symbol(phase[i]))
         set_reference_state!(pures[i],ref_i,verbose = verbose)
         push!(ref_i,reference_state(pure[i]))
     end
