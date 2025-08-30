@@ -56,6 +56,15 @@ include("base/eosshow.jl")
 #EoSParam, ClapeyronParam, All Params
 include("database/ClapeyronParam.jl")
 
+#check models/CompositeModel/CompositeModel.jl
+struct CompositeModel{𝔽,𝕊} <: EoSModel
+    components::Vector{String}
+    fluid::𝔽
+    solid::𝕊
+    mapping::Union{Vector{Pair{Vector{Tuple{String,Int64}},Tuple{String,Int64}}},Nothing}
+    solid_reference_state::ReferenceState
+end
+
 #recombine options
 include("utils/recombine.jl")
 

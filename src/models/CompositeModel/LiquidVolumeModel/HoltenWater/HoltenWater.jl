@@ -53,6 +53,7 @@ end
 
 molecular_weight(model::HoltenWaterModel,z) = 0.0180153*sum(z)
 default_references(::Type{HoltenWater}) = ["10.1063/1.4895593"]
+component_list(::HoltenWater) = ["water"]
 
 function water_L(model::HoltenWaterModel,p,T)
     L0 = 0.76317954

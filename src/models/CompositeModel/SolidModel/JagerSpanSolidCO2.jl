@@ -74,4 +74,7 @@ gα = (0.039993365, 0.0023945101, 0.32839467, 0.057918471, 0.0023945101, -0.0026
 gk = (2.2690751e-1,-7.5019750e-2,2.6442913e-1),
 )
 
+component_list(::JagerSpanSolidCO2) = ["carbon dioxide"]
+Base.length(::JagerSpanSolidCO2) = 1
+
 export JagerSpanSolidCO2

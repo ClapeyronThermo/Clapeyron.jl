@@ -196,7 +196,7 @@ Available options for the type are:
     - :zero: the models are already equilibrated, no additional calculation is necessary (like `IAPWS06` in conjunction with `IAPWS05`)
 
 
-The equilibration corresponds to the calculation of constants `k1` and `k2`, that enforce the gibbs criteria: `gibbs(model,p,T) + k1 + k2*T == gibbs(other_model,p,T)`
+The equilibration corresponds to the calculation of constants `k1` and `k2`, that enforce the gibbs criteria: `gibbs_energy(model,p,T) + k1 + k2*T == gibbs_energy(other_model,p,T)`
 The constants `k1` and `k2` are calculated by `Clapeyron.calculate_gibbs_reference_state(model,other_model)`
 """
 gibbsmodel_reference_state_consts(model::EoSModel) = nothing
@@ -216,7 +216,7 @@ end
     
 Calculates the reference state constants that force the equilibrium conditions specified by `Clapeyron.gibbsmodel_reference_state_consts`
 """
-function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel)
+function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel,x1 = SA[1.0],x2 = SA[1.0])
 
     _0 = zero(Base.promote_eltype(model1,model2))
     (model1 isa GibbsBasedModel) || (model2 isa GibbsBasedModel) || return _0,_0 
@@ -246,11 +246,11 @@ function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel)
     if type == :dH
         #=
         dH reference: at p = p0,T = T0, g1 = g2, H1 - H2 = Hfus:
-        gibbs(model1) + g1 + g2*T0 = gibbs(model2)
+        eos_g(model1) + g1 + g2*T0 = eos_g(model2)
         enthalpy(model2) - enthalpy(model1) - W - g1 = 0
         =#
-        gibbs1,gibb2 = gibbs_energy(model1,p,T),gibbs_energy(model2,p,T)
-        h1,h2 = enthalpy(model1,p,T),enthalpy(model2,p,T)
+        gibbs1,gibb2 = gibbs_energy(model1,p,T,x1),gibbs_energy(model2,p,T,x2)
+        h1,h2 = enthalpy(model1,p,T,x1),enthalpy(model2,p,T,x2)
         dH = W
         if n == 2 #invert
             gibbs1,gibb2 = gibbs2,gibbs1
@@ -265,4 +265,45 @@ function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel)
     else
         throw(error("invalid gibbs reference state. Expected :dH, got: $type"))
     end
+end
+
+
+
+function dpdT_saturation_gibbs(model1,model2,p,T,w1 = SA[1.0],w2 = SA[1.0],k = calculate_gibbs_reference_state(model1,model2);phase1 = :unknown,phase2 = :unknown)
+    k1,k2 = k
+    ∑w1 = sum(w1)
+    ∑w2 = sum(w2)  
+    v1 = volume(model1,p,T)/∑w1
+    v2 = volume(model2,p,T)/∑w2
+    s1 = entropy(model1,p,T,w1)
+    s2 = entropy(model2,p,T,w2)
+    dS = s1/∑w1 + k2 - s2/∑w2
+    dv = v1/∑w1 - v2/∑w2
+    return dS/dv
+end
+
+#=
+init of pressure-based iterative methods
+=#
+
+function g_and_v(model,p,T,v;phase = :unknown)
+    v = volume(model,p,T,SA[1.0],phase = phase,vol0 = v)
+    g = VT_gibbs_free_energy(model,v,T,SA[1.0])
+    return g,v
+end
+
+function g_and_v(model::GibbsBasedModel,p,T,v;phase = :unknown)
+    return 𝕘∂𝕘dp(model,p,T,SA[1.0])
+end
+
+function g_and_sv(model,p,T,v;phase = :unknown)
+    v = volume(model,p,T,SA[1.0],phase = phase,vol0 = v)
+    g = VT_gibbs_free_energy(model,v,T,SA[1.0])
+    s = VT_entropy(model,v,T,SA[1.0])
+    return g,s,v
+end
+
+function g_and_sv(model::GibbsBasedModel,p,T,v;phase = :unknown)
+    g,v,sn =  ∂𝕘_vec(model,p,T,SA[1.0])
+    return g,-sn,v
 end

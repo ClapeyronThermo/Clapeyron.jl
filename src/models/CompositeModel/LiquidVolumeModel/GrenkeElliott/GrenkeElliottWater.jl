@@ -34,6 +34,8 @@ GrenkeElliottWater
 
 molecular_weight(model::GrenkeElliottModel,z) = 0.0180153*sum(z)
 
+component_list(::GrenkeElliottWater) = ["water"]
+
 function v0_water(model::GrenkeElliottModel,T)
     a1 = 68.4089 #±24.0366 #[m3/kg]
     a2 = −0.0611145# ±0.0015535 #[1/K]

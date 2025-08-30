@@ -142,6 +142,28 @@ function init_model_act(model::Union{Type{<:ActivityModel},Base.Function},compon
     end
 end
 
+##mapping utilities:
+
+_mapping_split(model::CompositeModel) = _mapping_split(model,model.mapping)
+_mapping_split(model::CompositeModel,::Nothing) = [[i] for i in 1:length(model)]
+function _mapping_split(model::CompositeModel,mapping)
+    comps = component_list(model)
+    comps_fluid = map.(first,first.(mapping))
+    idxs = Vector{Int64}.(indexin.(comps_fluid,Ref(comps)))
+    return idxs
+end
+
+_mapping_fractions(model::CompositeModel) = _mapping_fractions(model,model.mapping)
+_mapping_fractions(model::CompositeModel,::Nothing) =  [[1.0] for i in 1:length(model)]
+
+function _mapping_fractions(model::CompositeModel,mapping)
+    idx = _mapping_split(model,mapping)
+    comps = component_list(model)
+    n_fluids = map.(last,first.(mapping))
+    n_solids = map(last,last.(mapping))
+    return n_fluids .* inv.(n_solids)
+    #idxs = Vector{Int64}.(indexin.(comps_fluid,Ref(comps)))
+end
 
 function CompositeModel(components ;
     mapping = nothing,
@@ -238,9 +260,39 @@ function CompositeModel(components ;
             end
         end
     end
-    model = CompositeModel(_components,init_fluid,init_solid,_mapping)
+    model = CompositeModel(_components,init_fluid,init_solid,_mapping,ReferenceState(:solid))
     set_reference_state!(model,reference_state,verbose = verbose)
+    set_solid_reference_state!(model,verbose = verbose)
     return model
+end
+
+function set_solid_reference_state!(model::CompositeModel;verbose = false)
+    solid = solid_model(model)
+    isnothing(solid) && return nothing
+    ref_solid = gibbsmodel_reference_state_consts(solid)
+    if isnothing(ref_solid)
+        verbose && @info "$(typeof(solid)) does not have Clapeyron.gibbsmodel_reference_state_consts defined. skipping solid reference initialization" 
+        return nothing
+    end
+    fluid = fluid_model(model)
+    ref = model.solid_reference_state
+    mapped_split = _mapping_split(model)
+    mapped_fractions = _mapping_fractions(model)
+    xs = SA[1.0]
+    initialize_reference_state!(model.solid,ref)
+    #TODO: support mapping
+    if isone(length(solid)) && isone(length(fluid))
+        k1,k2 = calculate_gibbs_reference_state(solid,fluid)
+        ref.a0[1] = k1
+        ref.a1[1] = k2
+    else
+        pure_solid = split_pure_model(solid)
+        mapped_fluid = split_model(fluid,mapped_split) #inject mapping here
+        k = calculate_gibbs_reference_state.(pure_solid,mapped_fluid,Ref(xs),mapped_fractions)
+        ref.a0 .= first.(k)
+        ref.a1 .= last.(k)
+    end
+    return nothing
 end
 
 reference_state(model::CompositeModel) = reference_state(model.fluid)
@@ -437,4 +489,26 @@ function promote_model(::Type{T},model::CompositeModel) where T <: Number
     return CompositeModel(components,fluid,solid,mapping)
 end
 
+function split_pure_solid(model::CompositeModel)
+    idx = _mapping_split(model)
+    fluid = split_model(model.fluid,idx)
+    solid = split_model(model.solid)
+    mapping = split_model(model.mapping)
+    comps = split_model(model.components,idx)
+    ref = split_model(model.solid_reference_state)
+    return CompositeModel.(comps,fluid,solid,mapping,ref)
+end
+
+function calculate_gibbs_reference_state(model::CompositeModel)
+    solid = solid_model(model)
+    single_component_check(calculate_gibbs_reference_state,solid)
+    ref = model.solid_reference_state
+    if length(ref.z0) == 0
+        fluid = fluid_model(model)
+        return calculate_gibbs_reference_state(solid,fluid)
+    else
+        a0,a1 = ref.a0[1],ref.a1[1]
+        return a0,a1
+    end
+end
 export CompositeModel

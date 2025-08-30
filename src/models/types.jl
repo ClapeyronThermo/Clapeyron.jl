@@ -22,11 +22,3 @@ abstract type RSPModel <: ElectrolyteModel end
 export SAFTModel,CubicModel,EmpiricHelmholtzModel
 export IdealModel
 export AlphaModel
-
-#check models/CompositeModel/CompositeModel.jl
-struct CompositeModel{𝔽,𝕊} <: EoSModel
-    components::Vector{String}
-    fluid::𝔽
-    solid::𝕊
-    mapping::Union{Vector{Pair{Vector{Tuple{String,Int64}},Tuple{String,Int64}}},Nothing}
-end

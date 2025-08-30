@@ -184,4 +184,6 @@ function gibbsmodel_reference_state_consts(water::IAPWS06)
     return :dH,101325.0,273.15,6010.0
 end
 
+component_list(water::IAPWS06) = ["water"]
+
 export IAPWS06
