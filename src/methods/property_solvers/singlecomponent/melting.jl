@@ -93,7 +93,7 @@ function x0_melting_pressure(model::CompositeModel,T)
     if solid isa GibbsBasedModel || fluid isa GibbsBasedModel
         k1,k2 = calculate_gibbs_reference_state(model)
 
-        return solve_2ph_gibbs(solid,liquid,p,T)
+        return solve_2ph_gibbs(model,p,T)
     else
         ps,μs = equilibria_scale(liquid)
         return solve_2ph_taylor(solid,liquid,T,vs00,vl00,ps,μs)
@@ -101,7 +101,23 @@ function x0_melting_pressure(model::CompositeModel,T)
    
 end
 
-function solve_2ph_gibbs(solid,liquid,p,T)
+function gibbs2_expansion(model::GibbsBasedModel,p,T)
+    f(_p) = gibbs_energy(model,_p,T)
+    return Solvers.f∂f∂2f(f,p)
+end
+
+function gibbs2_expansion(model,p,T)
+    V = volume(model,p,T)
+    f(_V) = eos(model,_V,T)
+    a,da,d2a = Solvers.f∂f∂2f(f,V)
+    g = a + p*V
+    dg = V
+    d2g = -1/d2a
+    return g,dg,d2g
+end
+
+function solve_2ph_gibbs(model,p,T)
+    solid,liquid = solid_model(model),fluid_model(model)
     gs,dgs,d2gs = gibbs2_expansion(solid,p,T)
     gl,dgl,d2gl = gibbs2_expansion(liquid,p,T)
     k1,k2 = calculate_gibbs_reference_state(model)
@@ -111,7 +127,10 @@ function solve_2ph_gibbs(solid,liquid,p,T)
     det = b*b - 4*a*c
     p1 = (b + sqrt(det))/(2*a) + p
     p2 = (b - sqrt(det))/(2*a) + p 
-
+    p = max(p1,p2)
+    vs = volume(solid,p,T,phase = :s)
+    vl = volume(liquid,p,T,phase = :l)
+    return vs, vl, p
 end
 
 function Obj_Mel_Temp(model::EoSModel, F, T, V_s, V_l,p,p̄,T̄)
@@ -207,7 +226,13 @@ end
 function x0_melting_temperature(model::CompositeModel,p)
     Tt,pt,vs0,vl0,_ = triple_point(model)
     solid,fluid = solid_model(model),fluid_model(model)
-    K0 = -dpdT_saturation(solid,fluid,vs0,vl0,Tt)*Tt*Tt/pt
+
+    if solid isa GibbsBasedModel || fluid isa GibbsBasedModel
+        K0 = -dpdT_saturation_gibbs(solid,fluid,pt,Tt,phase1 = :solid,phase2 = :liquid)*Tt*Tt/pt
+    else
+        K0 = -dpdT_saturation(solid,fluid,vs0,vl0,Tt)*Tt*Tt/pt
+    end
+    
     #Clausius Clapeyron
     #log(P/Ptriple) = K0 * (1/T - 1/Ttriple)
     Tinv = log(p/pt)/K0 + 1/Tt

@@ -307,3 +307,8 @@ function g_and_sv(model::GibbsBasedModel,p,T,v;phase = :unknown)
     g,v,sn =  ∂𝕘_vec(model,p,T,SA[1.0])
     return g,-sn,v
 end
+
+function eos_g_incomp(model,p,T,z,p0,T0)
+    V = simple_volume(model,p,T,z)
+    return V*(p - p0) + gibbs_cp_integral(idealmodel(model),T,z,T0)
+end
