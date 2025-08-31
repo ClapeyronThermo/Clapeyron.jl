@@ -8,20 +8,24 @@ Can only function when solid and fluid models are specified within a CompositeMo
 """
 function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
     mapping = model.mapping
+    solid_components = component_list(model.solid)
+    fluid_components = component_list(model.fluid)
+
     if isnothing(solute)
-        solute = model.solid.components
+        solute = solid_components
     end
+    
     ns = length(model.solid)
     nf = length(model.fluid)
     p = p*one(eltype(model))
     T = T*one(eltype(model))
     sol = zeros(length(solute),nf)
-    idxs = convert(Vector{Int},indexin(solute,model.solid.components))
+    idxs = convert(Vector{Int},indexin(solute,solid_components))
     idx_sol = zeros(Bool,ns)
     idx_sol[idxs] .= true
     for i in 1:length(solute)
         idx_sol_s = zeros(Bool,ns)
-        idx_sol_s[model.solid.components .==solute[i]] .= true
+        idx_sol_s[solid_components .==solute[i]] .= true
 
         #TODO: express this in terms of melting_temperature
         Tm = model.solid.params.Tm.values[idx_sol_s][1]
