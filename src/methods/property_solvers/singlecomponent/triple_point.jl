@@ -88,7 +88,7 @@ function triple_point(model::CompositeModel;v0 = x0_triple_point(model))
     if model.solid isa GibbsBasedModel || model.fluid isa GibbsBasedModel #the second condition is unlikely.
         return triple_point_gibbs(model,v0)
     else
-        return triple_pointhelmholtz(model,v0)
+        return triple_point_helmholtz(model,v0)
     end
     return (Tp,pp,vs,vl,vv)
 end
