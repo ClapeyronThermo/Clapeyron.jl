@@ -183,6 +183,14 @@ function chemical_potential_impl(model::GibbsBasedModel,p,T,z,phase,threaded,vol
     return VT_molar_gradient(model,p,T,z,eos_g)
 end
 
+function __calculate_reference_state_consts(model::GibbsBasedModel,v,T,p,z,H0,S0,phase)
+    S00 = entropy(model,p,T,z)
+    a1 = (S00 - S0)#/∑z
+    H00 = enthalpy(model,p,T,z)
+    a0 = (-H00 + H0)#/∑z
+    return a0,a1
+end
+
 """
     type,p,T,W = gibbsmodel_reference_state_consts(model)
     type,p,T,W = gibbsmodel_reference_state_consts(model,other_model)
@@ -285,6 +293,21 @@ end
 #=
 init of pressure-based iterative methods
 =#
+
+function gibbs2_expansion(model::GibbsBasedModel,p,T)
+    f(_p) = gibbs_energy(model,_p,T)
+    return Solvers.f∂f∂2f(f,p)
+end
+
+function gibbs2_expansion(model,p,T)
+    V = volume(model,p,T)
+    f(_V) = eos(model,_V,T)
+    a,da,d2a = Solvers.f∂f∂2f(f,V)
+    g = a + p*V
+    dg = V
+    d2g = -1/d2a
+    return g,dg,d2g
+end
 
 function g_and_v(model,p,T,v;phase = :unknown)
     v = volume(model,p,T,SA[1.0],phase = phase,vol0 = v)

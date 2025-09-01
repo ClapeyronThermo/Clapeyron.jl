@@ -37,7 +37,7 @@ function x0_triple_point(model::CompositeModel,T0 = 0.65*T_scale(fluid_model(mod
     Ksat = -dpdT_saturation(fluid,vl_sat,vv_sat,T0)*T0*T0/p_sat
     vs_sub,vv_sub,p_sub = x0_sublimation_pressure(model,T0)
     if fluid isa GibbsBasedModel || solid isa GibbsBasedModel
-        Ksub = dpdT_saturation_gibbs(solid,fluid,p_sub,T0,phase1 = :solid,phase2 = :liquid)*T0*T0/p_sub
+        Ksub = -dpdT_saturation_gibbs(solid,fluid,p_sub,T0,phase1 = :solid,phase2 = :liquid)*T0*T0/p_sub
     else
         Ksub = -dpdT_saturation(solid,fluid,vs_sub,vv_sub,T0)*T0*T0/p_sub
     end

@@ -88,22 +88,29 @@ function x0_sublimation_pressure(model,T)
     z = SA[1.0]
     if solid isa GibbsBasedModel
         p = p_scale(solid)
-        vs_at_0 = volume(solid,p,T)
         k1,k2 = calculate_gibbs_reference_state(model)
-        A = helmholtz_energy(solid,p,T) + k1 + k2*T
-        A0 = helmholtz_energy(idealmodel(fluid),p,T)
-        ares = (A - A0)/(R̄*T)
+        g,dg,d2g = gibbs2_expansion(solid,p,T)
+        vs_at_0 = dg - d2g*p
+        g_ig = gibbs_energy(idealmodel(fluid),p,T)
+        dg = g + k1 + k2*T - g_ig
+        P0 = p*exp(dg/(R̄*T))
     else
         vs_at_0 = volume(solid,0.0,T,phase = :s)
         ares = a_res(solid, vs_at_0, T, z)
+        lnϕ_s0 = ares - 1 + log(R̄*T/vs_at_0)
+        P0 = exp(lnϕ_s0)
     end
-    lnϕ_s0 = ares - 1 + log(R̄*T/vs_at_0)
-    P0 = exp(lnϕ_s0)
+    
     vv0 = Rgas(fluid)*T/P0
     vs0 = vs_at_0
     return vs0,vv0,P0
 end
 
+#=
+lnphi_s = ln_phi0*V*(p - psub)
+
+
+=#
 
 function Obj_Sub_Temp(model::EoSModel, F, T, V_s, V_v,p,p̄,T̄)
     z = SA[1.0]
@@ -268,6 +275,7 @@ function sublimation_pressure_impl(model::CompositeModel,T,method::IsoGibbsSubli
         #df(lp) = vs(exp(lp))*
         f = gs - gl + k1 + k2*T
         df = p*(vs - vl)
+
         dlnp = -f/df
         !isfinite(dlnp) && break
         lnp = lnp + dlnp

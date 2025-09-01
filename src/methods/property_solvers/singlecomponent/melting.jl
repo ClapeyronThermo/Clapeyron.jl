@@ -101,21 +101,6 @@ function x0_melting_pressure(model::CompositeModel,T)
    
 end
 
-function gibbs2_expansion(model::GibbsBasedModel,p,T)
-    f(_p) = gibbs_energy(model,_p,T)
-    return Solvers.f∂f∂2f(f,p)
-end
-
-function gibbs2_expansion(model,p,T)
-    V = volume(model,p,T)
-    f(_V) = eos(model,_V,T)
-    a,da,d2a = Solvers.f∂f∂2f(f,V)
-    g = a + p*V
-    dg = V
-    d2g = -1/d2a
-    return g,dg,d2g
-end
-
 function solve_2ph_gibbs(model,p,T)
     solid,liquid = solid_model(model),fluid_model(model)
     gs,dgs,d2gs = gibbs2_expansion(solid,p,T)

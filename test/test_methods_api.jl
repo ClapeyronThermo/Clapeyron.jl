@@ -282,7 +282,7 @@ end
         Ttp6 = tp6[1]
         ptp6 = tp6[2]
         @test Ttp6 ≈ model6.fluid.properties.Ttp rtol = 1e-5
-        @test_broken sublimation_pressure(model6,Ttp6)[1] ≈ ptp6 rtol = 1e-6
+        @test sublimation_pressure(model6,Ttp6)[1] ≈ ptp6 rtol = 1e-6
         @test sublimation_temperature(model6,ptp6)[1] ≈ Ttp6 rtol = 1e-6
         @test melting_pressure(model6,Ttp6)[1] ≈ ptp6 rtol = 1e-6
         @test melting_temperature(model6,ptp6)[1] ≈ Ttp6 rtol = 1e-6
