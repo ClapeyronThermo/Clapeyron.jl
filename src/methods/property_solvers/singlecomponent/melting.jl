@@ -90,9 +90,7 @@ function x0_melting_pressure(model::CompositeModel,T)
     quadratic taylor expansion for Helmholtz energy
     isothermal compressibility approximation for pressure
    =#
-    if solid isa GibbsBasedModel || fluid isa GibbsBasedModel
-        k1,k2 = calculate_gibbs_reference_state(model)
-
+    if solid isa GibbsBasedModel || liquid isa GibbsBasedModel
         return solve_2ph_gibbs(model,p,T)
     else
         ps,μs = equilibria_scale(liquid)

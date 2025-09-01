@@ -286,7 +286,7 @@ set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have 
 """
     IGFormReferenceState(components;H0 = nothing, S0 = nothing, userlocations = nothing, verbose = false,)
 
-Returns a [`ReferenceState`](@ref) storing the ideal gas formation entropies and enthalpies, at 1 bar and 298.15
+Returns a [`ReferenceState`](@ref) storing the ideal gas formation entropies and enthalpies, at 1 bar and 298.15 K
 
 """
 function IGFormReferenceState(_components;userlocations = String[],H0 = nothing,S0 = nothing,verbose = false)

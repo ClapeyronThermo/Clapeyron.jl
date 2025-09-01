@@ -432,7 +432,7 @@ function calculate_reference_state_consts(model,type,T0,P0,H0,S0,z0,phase)
         p = P0
     elseif type == :ideal_gas
         id_model = idealmodel(model)
-        if id_model == model
+        if id_model == model                                              
             v = volume(id_model,P0,T0,z0,phase = phase)
             T = T0
             p = P0
