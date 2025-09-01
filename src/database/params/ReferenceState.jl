@@ -29,9 +29,10 @@ the `type` argument accepts the following standalone options:
 - `:ntp`: h = s = 0 at 1 atm, 20 °C fluid of the most stable phase
 
 it also accepts the following options, that require additional specifications:
-- `:volume` h = H0, s = S0, at T = T0, v = `volume(model,P0,T0,z0,phase = phase)`
-- `:saturation_pressure` h = H0, s = S0, at T = T0, saturated phase (specified by the `phase` argument)
-- `:saturation_temperature` h = H0, s = S0, at p = P0, saturated phase (specified by the `phase` argument)
+- `:volume`: h = H0, s = S0, at T = T0, v = `volume(model,P0,T0,z0,phase = phase)`
+- `:ideal_gas`: h = H0, s = S0, at T = T0, v = `volume(Clapeyron.idealmodel(model),P0,T0,z0)`
+- `:saturation_pressure`: h = H0, s = S0, at T = T0, saturated phase (specified by the `phase` argument)
+- `:saturation_temperature`: h = H0, s = S0, at p = P0, saturated phase (specified by the `phase` argument)
 
 If `z0` is not specified, the reference state calculation will be done for each component separately.
 
@@ -67,8 +68,26 @@ julia> entropy(pure[1],101325.0,T)
 ReferenceState
 
 function ReferenceState(symbol = :no_set;T0 = NaN,P0 = NaN,H0 = NaN,S0 = NaN,phase = :unknown, z0 = Float64[])
-    _H0 = isnan(H0) ? Float64[] : [H0]
-    _S0 = isnan(S0) ? Float64[] : [S0]
+    
+    if H0 isa Number
+        if isnan(H0)
+            _H0 = Float64[]
+        else
+            _H0 = [Float64(H0)]
+        end
+    else
+        _H0 = Vector{Float64}(H0)
+    end
+
+    if S0 isa Number
+        if isnan(S0)
+            _S0 = Float64[]
+        else
+            _S0 = [Float64(S0)]
+        end
+    else
+        _S0 = Vector{Float64}(S0)
+    end
     _symbol = if !isnan(T0) & !isnan(P0) & (symbol == :no_set)
         :volume
     else
@@ -295,6 +314,14 @@ function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
     R = Rgas(model)
     if type == :zero
         _a0,_a1 = 0.0,0.0
+    elseif type == :ideal_gas
+        idmodel = idealmodel(model)
+        if idmodel == model
+            _a0,_a1 = calculate_reference_state_consts(idmodel,:volume,T0,P0,first(H0),first(S0),z0,:vapour)
+        else
+            return _set_reference_state!(idmodel,z0,ref)
+        end
+        
     elseif type == :ashrae
         #ASHRAE: h = 0, s = 0 @ -40C saturated liquid
         single_component_check(set_reference_state!,model)
@@ -330,10 +357,16 @@ function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
     a1 .= _a1
 end
 
-function initialize_reference_state!(model,ref = reference_state(model))
+
+
+function initialize_reference_state!(model::EoSModel,ref = reference_state(model))
+    return initialize_reference_state!(component_list(model),ref)
+end
+
+function initialize_reference_state!(model_comps,ref = reference_state(model))
     comps,T0,P0,H0,S0 = ref.components,ref.T0,ref.P0,ref.H0,ref.S0
     z0 = ref.z0
-    len = length(model)
+    len = length(model_comps)
     pure_check = length(z0) == 0
 
     if pure_check
@@ -343,11 +376,10 @@ function initialize_reference_state!(model,ref = reference_state(model))
 
     if length(comps) == 0
         resize!(comps,len)
-        model_comps = component_list(model)
         comps .= model_comps
     else
         #this means the ReferenceState struct was already initialized. check for inconsistencies in size
-        check_arraysize(model,comps)
+        check_arraysize(model_comps,comps)
     end
 
     if length(H0) == 0
@@ -398,13 +430,24 @@ function calculate_reference_state_consts(model,type,T0,P0,H0,S0,z0,phase)
         v = volume(model,P0,T0,z0,phase = phase)
         T = T0
         p = P0
+    elseif type == :ideal_gas
+        id_model = idealmodel(model)
+        if id_model == model
+            v = volume(id_model,P0,T0,z0,phase = phase)
+            T = T0
+            p = P0
+        else
+            return calculate_reference_state_consts(id_model,type,T0,P0,H0,S0,z0,phase)
+        end
     else
+        _0 = zero(Base.promote_eltype(model,P0,T0))
+        nan = _0/_0
+        return nan,nan
     end
     return __calculate_reference_state_consts(model,v,T,p,z0,H0,S0,phase)
 end
 
 function __calculate_reference_state_consts(model,v,T,p,z,H0,S0,phase)
-    ∑z = sum(z)
     S00 = VT_entropy(model,v,T,z)
     a1 = (S00 - S0)#/∑z
     H00 = VT_enthalpy(model,v,T,z)

@@ -283,8 +283,27 @@ Sets the model "l-values" binary interaction parameter to the input matrix `l`. 
 """
 set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting l-values"))
 
-export get_k,set_k!
-export get_l,set_l!
+"""
+    IGFormReferenceState(components;H0 = nothing, S0 = nothing, userlocations = nothing, verbose = false,)
+
+Returns a [`ReferenceState`](@ref) storing the ideal gas formation entropies and enthalpies, at 1 bar and 298.15
+
+"""
+function IGFormReferenceState(_components;userlocations = String[],H0 = nothing,S0 = nothing,verbose = false)
+    components = format_components(_components)
+    if H0 != nothing && S0 != nothing
+        _H0 = convert(Vector{Float64},H0)
+        _S0 = convert(Vector{Float64},S0)
+    else
+
+        params = getparams(components,["properties/formation_ig.csv"];userlocations = userlocations,verbose = verbose)
+        _H0 = convert(Vector{Float64},params["H0"].values)
+        _S0 = convert(Vector{Float64},params["S0"].values)
+    end 
+    ref = ReferenceState(:ideal_gas,T0 = 298.15,P0 = 1e5,S0 = _S0,H0 = _H0,phase = :vapour)
+    #initialize_reference_state!(components,ref)
+    return ref
+end
 
 #initial guesses for most methods
 include("initial_guess.jl")
@@ -311,3 +330,6 @@ include("XY_methods/PS.jl")
 include("XY_methods/TS.jl")
 include("XY_methods/PH.jl")
 include("XY_methods/QX.jl")
+
+export get_k,set_k!
+export get_l,set_l!

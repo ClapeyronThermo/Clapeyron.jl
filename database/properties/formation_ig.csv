@@ -1,0 +1,1364 @@
+Clapeyron database file
+ideal gas formation enthalpies and entropies at 1 bar, 298.15 K  [csvtype = single,sep = ;]
+CAS;species;H0;S0
+50-0-0;methanal~|~formaldehyde;-108600;218.8
+51-17-2;1H-Benzimidazole;181700;
+51-28-5;2,4-dinitrophenol;-128100;
+51-79-6;Ethyl carbamate;-446300;
+51-80-9;n,n,n',n'-tetramethylmethanediamine;-18200;
+55-21-0;benzamide;-100900;
+55-63-0;nitroglycerin~|~1,2,3-propanetrioltrinitrate;-279100;545.9
+56-12-2;4-Aminobutanoic acid;-441000;
+56-23-5;ccl4~|~tetrachloromethane~|~carbon tetrachloride;-95700;
+56-40-6;glycine;-392100;
+56-41-7;L-Alanine;-465900;
+56-55-3;benzanthracene~|~benz(a)anthracene~|~benz[a]anthracene;293000;
+56-81-5;glycerol;-577900;
+57-10-3;palmitic acid~|~hexadecanoic acid;-737100;
+57-11-4;stearic acid~|~octadecanoic acid;-781200;
+57-13-6;Urea;-245800;
+57-14-7;n,n-dimethylhydrazine~|~1,1-dimethylhydrazine;84100;
+57-55-6;propyleneglycol~|~1,2-propanediol~|~1,2-propylene glycol;-429800;
+57-57-8;2-oxetanone~|~beta-propiolactone;-282900;
+59-31-4;2-Quinolinol;-25500;
+59-67-6;niacin~|~3-pyridinecarboxylic acid;-221500;
+60-29-7;diethyl ether;-252100;342.7
+60-34-4;methylhydrazine;94700;278.8
+60-35-5;acetamide~|~ethanamide;-238300;
+61-90-5;L-Leucine;-486800;
+62-53-3;aniline;87500;317.9
+62-55-5;Thioacetamide;11400;
+62-56-6;thiourea;22900;
+62-76-0;Sodium oxalate;-1318000;
+63-68-3;L-Methionine;-413500;
+63-91-2;phenylalanine~|~l-phenylalanine;-312900;
+64-17-5;ethanol;-234800;281.6
+64-18-6;formic acid~|~methanoic acid;-378700;
+64-19-7;acetic acid;-432200;283.5
+64-67-5;sulfuric acid,diethyl ester;-756300;
+65-71-4;Thymine;-328700;
+65-85-0;benzoic acid;-294000;
+66-22-8;Uracil;-302900;
+67-56-1;methanol;-201000;239.9
+67-63-0;2-propanol~|~propan-2-ol~|~isopropanol;-272600;309.2
+67-64-1;acetone~|~propanone;-217100;295.3
+67-66-3;chcl3~|~chloroform~|~trichloromethane;-102700;295.7
+67-68-5;dmso~|~dimethyl sulfoxide;-151300;
+67-71-0;Dimethyl sulfone;-373100;310.6
+67-72-1;hexachloroethane;-143600;
+68-12-2;dmf~|~dimethylformamide~|~n,n-dimethylformamide;-192400;
+69-72-7;salicylic acid;-494800;
+70-29-1;diethyl sulfoxide;-205600;
+71-23-8;propanol~|~1-propanol~|~propan-1-ol;-255100;322.6
+71-36-3;butanol~|~n-butanol~|~1-butanol~|~butan-1-ol;-274900;
+71-41-0;1-pentanol~|~pentan-1-ol;-294600;
+71-43-2;benzene;82900;269.2
+71-55-6;r140a~|~1,1,1-trichloroethane;-144400;323.1
+72-18-4;L-Valine;-455100;
+73-24-5;Adenine;205700;
+74-11-3;4-Chlorobenzoic acid;-341000;
+74-82-8;methane;-74600;186.3
+74-83-9;ch3br~|~r40b1~|~bromomethane~|~methyl bromide;-35400;246.4
+74-84-0;ethane;-84000;229.2
+74-85-1;ethene~|~ethylene~|~1-ethylene;52400;219.3
+74-86-2;ethine~|~ethyne~|~acetylene;227400;200.9
+74-87-3;r40~|~chloromethane~|~methyl chloride;-81900;234.6
+74-88-4;ch3i~|~iodomethane~|~methyl iodide;14400;254.1
+74-89-5;methylamine~|~methanamine;-22500;242.9
+74-90-8;hydrogen cyanide;135100;201.8
+74-93-1;methanethiol~|~methyl mercaptan;-22900;255.2
+74-96-4;bromoethane~|~ethyl bromide;-61900;286.7
+74-98-6;propane~|~n-propane;-103800;270.3
+74-99-7;propyne~|~1-propyne~|~methylacetylene;184900;
+75-0-3;chloroethane~|~ethyl chloride;-112100;276.0
+75-1-4;chloroethene~|~vinyl chloride;37200;264.0
+75-2-5;vinyl fluoride;-138800;
+75-3-6;iodoethane~|~ethyl iodide;-8100;306.0
+75-4-7;ethylamine~|~ethanamine;-47500;283.8
+75-5-8;acetonitrile;74000;243.4
+75-7-0;ethanal~|~acetaldehyde;-166200;263.8
+75-8-1;ethanethiol~|~ethyl mercaptan;-46100;296.2
+75-9-2;ch2cl2~|~dichloromethane;-95400;270.2
+75-10-5;r32~|~difluoromethane;-452300;246.7
+75-11-6;diiodomethane;119500;309.7
+75-12-7;formamide;-193900;
+75-15-0;cs2~|~carbon disulfide;116700;237.8
+75-18-3;2-thiapropane~|~dimethylsulfide;-37400;286.0
+75-19-4;cyclopropane;53300;237.5
+75-21-8;oxirane~|~ethyleneoxide;-52600;242.5
+75-24-1;trimethylaluminum;-74100;
+75-25-2;r20b3~|~chbr3~|~bromoform~|~tribromomethane;23800;330.9
+75-26-3;2-bromopropane~|~isopropyl bromide;-99400;
+75-28-5;isobutane~|~2-methylpropane;-134200;
+75-29-6;2-chloropropane~|~isopropyl chloride;-144900;
+75-30-9;2-iodopropane~|~isopropyl iodide;-40300;
+75-31-0;2-propylamine~|~2-propanamine~|~isopropylamine;-83700;312.2
+75-33-2;2-propanethiol~|~2-propyl mercaptan~|~isopropyl mercaptan;-76200;
+75-34-3;r150a~|~1,1-dichloroethane;-127700;305.1
+75-35-4;1,1-dichloroethene~|~1,1-dichloroethylene;2800;289.0
+75-36-5;acetyl chloride;-242800;295.1
+75-37-6;r152a~|~difluoroethane~|~1,1-difluoroethane;-497000;282.5
+75-38-7;1,1-difluoroethene~|~1,1-difluoroethylene;-335000;266.2
+75-44-5;phosgene;-219100;283.5
+75-45-6;r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane;-482600;280.9
+75-46-7;r23~|~fluoroform~|~trifluoromethane;-695400;259.7
+75-47-8;Triiodomethane;251000;356.2
+75-50-3;trimethylamine;-23600;287.1
+75-52-5;nitromethane;-80800;282.9
+75-62-7;r10b1~|~bromotrichloromethane;-41100;
+75-63-8;cf3br~|~r13b1~|~bromotrifluoromethane~|~trifluorobromomethane;-648300;
+75-64-9;tert-butylamine~|~2-methyl-2-propanamine;-121000;
+75-65-0;tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol;-312500;326.7
+75-66-1;tert-butyl mercaptan~|~2-methyl-2-propanethiol;-109600;
+75-69-4;r11~|~cfcl3~|~trichlorofluoromethane;-268300;
+75-71-8;r12~|~dichlorodifluoromethane;-477400;300.8
+75-72-9;r13~|~chlorotrifluoromethane;-706300;
+75-73-0;r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride;-933600;261.6
+75-74-1;tetramethyllead;135900;
+75-76-3;tetramethylsilane;-239100;359.0
+75-77-4;trimethylchlorosilane~|~chlorotrimethylsilane;-352800;369.1
+75-79-6;trichloromethylsilane~|~methyl trichlorosilane;-528900;351.1
+75-83-2;2,2-dimethylbutane;-185900;
+75-85-4;tert-pentanol~|~2-methyl-2-butanol~|~2-methylbutan-2-ol;-329300;
+75-87-6;trichloroacetaldehyde~|~2,2,2-trichloroacetaldehyde;-196600;
+75-89-8;2,2,2-trifluoroethanol;-888400;
+75-91-2;t-butyl hydroperoxide~|~tert-butylhydroperoxide~|~tert.butyl hydroperoxide;-245900;
+75-97-8;3,3-dimethyl-2-butanone;-290600;
+75-98-9;pivalic acid~|~2,2-dimethylpropanoic acid~|~2,2-dimethyl-propanoic acid;-491300;
+76-1-7;pentachloroethane;-142000;
+76-2-8;trichloroacetyl chloride;-239800;
+76-5-1;trifluoroacetic acid~|~trifluoroethanoic acid;-1031400;
+76-11-9;2,2-difluorotetrachloroethane~|~1,1,1,2-tetrachlorodifluoroethane;-489900;382.9
+76-13-1;r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane;-716800;
+76-14-2;r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane;-937000;
+76-15-3;r115~|~chloroperfluoroethane~|~chloropentafluoroethane~|~1-chloro-1,1,2,2,2-pentafluoroethane;-1118800;
+76-16-4;r116~|~perfluoroethane~|~hexafluoroethane;-1344200;332.3
+76-19-7;r218~|~perfluoropropane~|~octafluoropropane;-1783200;
+76-37-9;2,2,3,3-tetrafluoro-1-propanol;-1061300;
+77-76-9;2,2-dimethoxypropane~|~3,3-dimethyl-2,4-dioxapentane;-429900;
+77-78-1;dimethyl sulfate;-687000;
+78-0-2;tetraethyl lead~|~tetraethylplumbane;109600;
+78-11-5;2,2-bis(nitrooxy)methyl-1,3-propanedioldinitrate;-387000;614.7
+78-75-1;1,2-dibromopropane;-71600;
+78-78-4;isopentane~|~methylbutane~|~2-methylbutane;-153600;
+78-79-5;isoprene~|~2-methyl-1,3-butadiene;75500;
+78-81-9;isobutylamine~|~2-methylpropylamine~|~2-methyl-1-propanamine;-98700;
+78-82-0;isobutyronitrile~|~2-methylpropanenitrile;23400;
+78-83-1;isobutanol~|~2-methyl-1-propanol;-283800;
+78-84-2;isobutanal~|~2-methylpropanal;-215700;
+78-92-2;2-butanol~|~butan-2-ol;-292800;359.5
+78-93-3;butanone~|~2-butanone~|~methyl ethyl ketone;-238500;339.9
+78-98-8;methyl glyoxal;-271000;
+79-0-5;1,1,2-trichloroethane;-151300;337.2
+79-1-6;trichloroethene~|~trichloroethylene;-9000;324.8
+79-4-9;chloroacetyl chloride;-244800;
+79-5-0;propanamide~|~propionamide;-259000;
+79-6-1;acrylamide~|~2-propenamide;-130200;
+79-8-3;Bromoacetic acid;-383500;337.0
+79-9-4;propionic acid~|~propanoic acid~|~n-propanoic acid;-455700;
+79-11-8;chloroacetic acid~|~chloroethanoic acid;-427600;325.9
+79-14-1;glycolic acid~|~hydroxy-acetic acid;-583000;318.6
+79-20-9;methylacetate~|~methyl ethanoate;-413300;324.4
+79-24-3;nitroethane;-103800;320.5
+79-29-8;2,3-dimethylbutane;-178100;
+79-34-5;1,1,2,2-tetrachloroethane;-149200;362.8
+79-36-7;dichloroacetyl chloride;-241000;
+79-37-8;Oxalyl chloride;-335800;
+79-38-9;chlorotrifluoroethylene~|~1-chloro-1,2,2-trifluroethene;-505500;322.1
+79-40-3;Ethanedithioamide;83000;
+79-46-9;2-nitropropane;-138900;
+80-15-9;cumene-hydroperoxide~|~cumene hydroperoxide;-78400;
+80-56-8;2-pinene~|~alpha-pinene~|~.alpha.-pinene;28300;
+81-64-1;1,4-Dihydroxy-9,10-anthracenedione;-471700;
+83-32-9;acenaphthene;156000;
+84-11-7;9,10-Phenanthrenedione;-46600;
+84-65-1;anthraquinone;-75700;
+84-66-2;diethylphthalate~|~diethyl 1,2-benzenedioate~|~phthalic acid diethyl ester;-688400;
+84-74-2;dibutylphthalate~|~di-n-butyl phthalate~|~phthalic acid dibutyl ester~|~dibutyl 1,2-benzenedicarboxylate;-750900;
+85-1-8;phenanthrene;207500;
+85-2-9;Benzo[f]quinoline;233700;
+85-44-9;phthalic anhydride;-371400;
+86-55-5;1-Naphthalenecarboxylic acid;-223100;
+86-57-7;1-Nitronaphthalene;111200;
+86-73-7;fluorene;175000;
+86-74-8;9h-carbazole~|~dibenzopyrrole;200700;
+87-61-6;1,2,3-trichlorobenzene;3800;
+87-66-1;1,2,3-benzenetriol~|~1,2,3-trihydroxybenzene;-434200;
+87-85-4;hexamethylbenzene;-77400;
+88-14-2;2-Furancarboxylic acid;-390000;
+88-69-7;2-(1-methylethyl)phenol;-182200;
+88-74-4;2-nitroaniline~|~o-nitroaniline~|~2-nitrobenzeneamine;63800;
+89-83-8;thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene;-218500;
+90-0-6;2-ethylphenol~|~o-ethylphenol;-145200;
+90-13-1;1-chloronaphthalene;119800;
+90-14-2;1-iodonaphthalene;233800;
+90-15-3;1-naphthol;-30400;
+90-41-5;2-aminodiphenyl~|~2-amino-1,1'-biphenyl;184400;
+91-16-7;1,2-dimethoxybenzene;-223300;
+91-20-3;naphthalene;150600;333.1
+91-22-5;chinoline~|~quinoline;200500;
+91-57-6;2-methylnaphthalene;106700;
+91-58-7;2-chloronaphthalene;137400;
+91-59-8;2-Naphthylamine;134300;
+92-51-3;bicyclohexyl~|~1,1'-bicyclohexyl;-215700;
+92-52-4;biphenyl;181400;
+92-82-0;phenazine;328800;
+92-85-3;thianthrene;286000;
+92-94-4;p-terphenyl~|~1,1'-4',1''-terphenyl;279000;
+93-9-4;2-Naphthalenecarboxylic acid;-232500;
+93-58-3;methyl benzoate~|~benzoic acid methyl ester;-287900;
+94-36-0;benzoylperoxide;-281700;
+95-13-6;indene~|~1h-indene;163400;
+95-14-7;1H-Benzotriazole;335500;
+95-15-8;benzo thiophene~|~benzo(b)thiophene~|~benzo[b]thiophene;166300;
+95-47-6;oxylene~|~o-xylene~|~1,2-dimethylbenzene;19100;
+95-48-7;o-cresol~|~2-methylphenol;-128600;
+95-50-1;o-dichloro benzene~|~1,2-dichlorobenzene;30200;
+95-53-4;o-toluidine~|~2-methylaniline~|~o-methylaniline~|~2-methyl-benzeneamine;56400;351.0
+95-63-6;1,2,4-trimethylbenzene;-13800;
+95-65-8;3,4-xylenol~|~3,4-dimethylphenol;-157300;
+95-87-4;2,5-xylenol~|~2,5-dimethylphenol;-161600;
+95-92-1;ethyloxalat~|~diethyl ethanedioate;-742000;
+96-14-0;3-methylpentane;-171900;
+96-18-4;1,2,3-trichloropropane;-182900;
+96-22-0;3-pentanone~|~pentan-3-one~|~diethylketone;-257900;
+96-23-1;1,3-dichloro-2-propanol;-318400;
+96-33-3;methylacrylate~|~methyl propenoate~|~2-propenoic acid methyl ester;-333000;
+96-34-4;methyl chloroacetate~|~methyl chloroethanoate~|~chloroaceticacidmethylester;-444000;
+96-37-7;methylcyclopentane;-106200;
+96-41-3;cyclopentanol;-242500;362.9
+96-48-0;gamma-butyrolactone~|~.gamma.-butyrolactone;-366500;
+96-49-1;1,3-dioxolan-2-one~|~ethylene carbonate;-508400;
+96-54-8;n-methylpyrrole;103100;
+97-85-8;isobutylisobutyrate~|~2-methylpropyl 2-methylpropanoate;-542900;
+97-94-9;Triethylborane;-157700;437.8
+97-99-4;tetrahydrofurfurylalcohol~|~2-tetrahydrofurylmethanol;-369100;
+98-0-0;furfuryl alcohol~|~2-hydroxymethylfuran;-211800;
+98-1-1;furfural~|~2-furaldehyde;-151000;
+98-6-6;tert-butylbenzene~|~(1,1-dimethylethyl)benzene;-23000;
+98-51-1;p-tert-butyltoluene~|~1-(1,1-dimethylethyl)-4-methylbenzene;-57000;
+98-82-8;cumene~|~isopropylbenzene;4000;
+98-86-2;acetophenone~|~methyl phenyl ketone;-86700;
+98-88-4;benzoyl chloride;-103200;
+98-95-3;nitrobenzene;68500;348.8
+99-5-8;Aniline-3-carboxylic acid;-283600;
+99-9-2;m-nitroaniline~|~3-nitrobenzenamine~|~3-aminonitrobenzene;58400;
+99-86-5;alpha-terpinene~|~.alpha.-terpinene~|~1-methyl-4-(1-methylethyl)-1,3-cyclohexadiene;-20600;
+99-89-8;4-(1-methylethyl)phenol;-175300;
+99-99-0;p-nitrotoluene~|~1-methyl-4-nitrobenzene~|~1-methyl-4-nitro-benzene;31000;
+100-1-6;p-nitroaniline~|~4-aminonitrobenzene;58800;
+100-21-0;terephthalic acid~|~1,4-benzenedicarboxylic acid;-717900;
+100-41-4;ethylbenzene;29900;
+100-42-5;styrene;147900;
+100-44-7;benzyl chloride~|~(chloromethyl)benzene~|~(chloromethyl)-benzene;18900;
+100-46-9;benzylamine~|~alpha-aminotoluene;94400;
+100-47-0;benzonitrile;215700;
+100-51-6;benzylalcohol~|~benzenemethanol;-100400;
+100-52-7;benzaldehyde;-36700;
+100-63-0;phenylhydrazine;202900;
+100-66-3;anisole~|~methoxybenzene~|~methyl phenyl ether;-67900;
+100-75-4;1-nitrosopiperidine;16600;
+101-81-5;diphenylmethane;139000;
+101-84-8;diphenyl ether;52000;
+102-69-2;tripropylamine~|~n,n-dipropyl-1-propanamine;-161000;
+102-71-6;triethanolamine;-558300;
+102-76-1;glycerol-triacetate~|~glyceryl triacetate~|~glyceryl triethanoate~|~1,2,3-propanetriol-triacetate;-1245000;
+103-29-7;1,2-diphenylethane~|~1,1'-(1,2-ethanediyl)bis-benzene;142900;
+103-30-0;trans-stilbene~|~(e)-1,1'-(1,2-ethenediyl)bis-benzene;236100;
+103-65-1;propylbenzene~|~n-propylbenzene;7900;
+103-69-5;ethylaniline~|~n-ethylaniline~|~n-ethylaminobenzene;56300;
+103-73-1;phenetole~|~ethoxybenzene;-101600;
+104-51-8;butylbenzene~|~n-butylbenzene;-11800;
+104-72-3;decylbenzene~|~n-decylbenzene~|~1-phenyldecane;-138600;
+104-76-7;2-ethyl-1-hexanol;-365300;
+105-37-3;ethylpropionate~|~ethyl propanoate~|~propanoic acid ethyl ester;-463400;
+105-57-7;acetal~|~1,1-diethoxyethane;-453500;
+105-58-8;diethyl carbonate~|~carbonic acid diethyl ester;-637900;
+105-60-2;caprolactam~|~epsilon-caprolactam~|~1-aza-2-cycloheptanone;-239600;
+105-67-9;2,4-xylenol~|~2,4-dimethylphenol;-163800;
+106-35-4;3-heptanone;-297100;
+106-42-3;pxylene~|~p-xylene~|~1,4-dimethylbenzene;18000;
+106-44-5;p-cresol~|~4-methylphenol;-125400;
+106-46-7;p-dichlorobenzene~|~1,4-dichlorobenzene;22500;
+106-49-0;p-toluidine~|~4-methylaniline~|~p-methylaniline;55300;347.0
+106-51-4;quinone;-122900;
+106-70-7;methyl hexanoate~|~hexanoic acid methyl ester;-492200;
+106-73-0;methyl heptanoate;-515500;
+106-93-4;1,2-dibromoethane;-37500;
+106-94-5;1-bromopropane~|~propyl bromide;-87000;
+106-95-6;3-bromo-1-propene;45200;
+106-97-8;butane~|~n-butane;-125700;
+106-98-9;butene~|~1-butene;100;
+106-99-0;butadiene~|~1,3-butadiene;110000;
+107-0-6;butyne~|~1-butyne~|~ethylacetylene;165200;
+107-3-9;1-propanethiol~|~propyl mercaptan~|~n-propyl mercaptan;-67800;
+107-6-2;dichloroethane~|~1,2-dichloroethane;-126400;308.4
+107-8-4;1-iodopropane~|~n-propyl iodide;-30000;
+107-10-8;propylamine~|~n-propylamine~|~1-propylamine~|~propan-1-amine;-70100;325.4
+107-12-0;propionitrile~|~propanenitrile;51700;
+107-13-1;acrylonitrile~|~2-propenenitrile;180600;
+107-15-3;ethylenediamine~|~1,2-diaminoethane~|~ethane-1,2-diamine;-18000;
+107-18-6;2-propenol~|~2-propen-1-ol~|~allyl alcohol;-124500;
+107-21-1;glycol~|~1,2-ethanediol~|~ethylene glycol;-392200;303.8
+107-22-2;ethanedial;-212000;272.5
+107-31-3;methylformate~|~methyl methanoate;-357400;285.3
+107-39-1;2,4,4-trimethyl-1-pentene;-110500;
+107-40-4;2,2,4-trimethyl-2-pentene~|~2,4,4-trimethyl-2-pentene;-104900;
+107-46-0;mm~|~hexamethyldisiloxane;-777700;535.0
+107-47-1;di-tert-butyl sulfide~|~2,2,4,4-tetramethyl-3-thiapentane;-188800;
+107-83-5;isohexane~|~2-methylpentane;-174600;
+107-84-6;1-Chloro-3-methylbutane;-179700;
+107-87-9;2-pentanone~|~pentan-2-one~|~methyln-propylketone;-258800;
+107-88-0;1,3-butanediol;-433200;
+107-92-6;butyric acid~|~butanoic acid~|~n-butyric acid~|~n-butanoic acid;-475900;
+107-95-9;β-Alanine;-424000;
+107-97-1;Sarcosine;-367300;
+108-1-0;dmmea~|~dimethylethanolamine~|~n,n-dimethylethanolamine~|~2-(dimethylamino)-ethanol~|~2-(n,n-dimethylamino)ethanol;-203600;
+108-3-2;1-nitropropane;-124300;350.0
+108-5-4;vinyl acetate;-314400;
+108-8-7;2,4-dimethylpentane;-201600;
+108-18-9;diisopropylamine~|~di-isopropyl amine;-143800;
+108-20-3;diisopropyl ether~|~di-isopropyl ether;-319200;
+108-21-4;isopropylacetate~|~1-methylethyl ethanoate~|~acetic acid isopropyl ester;-481600;
+108-24-7;acetic anhydride~|~ethanoic anhydride;-572500;
+108-29-2;gamma-valerolactone~|~tetrahydro-5-methyl-2-furanone~|~dihydro-5-methyl-2(3h)-furanone;-406500;
+108-30-5;succinic anhydride;-527900;
+108-31-6;maleic anhydride;-398300;
+108-32-7;propylenecarbonate~|~4-methyl-1,3-dioxolan-2-one;-582500;
+108-38-3;mxylene~|~m-xylene~|~1,3-dimethylbenzene;17300;
+108-39-4;m-cresol~|~in-cresol~|~3-methylphenol~|~3-hydroxytoluene;-132300;
+108-44-1;m-toluidine~|~3-methylaniline~|~m-methylaniline;54600;352.5
+108-46-3;resorcinol~|~1,3-benzenediol~|~1,3-dihydroxybenzene;-274700;
+108-47-4;2,4-dimethylpyridine;63600;
+108-48-5;2,6-dimethylpyridine;58100;
+108-64-5;ethyl isovalerate~|~3-methylbutanoicacidethylester;-527000;
+108-67-8;mesitylene~|~1,3,5-trimethylbenzene;-15900;
+108-68-9;3,5-xylenol~|~3,5-dimethylphenol;-162400;
+108-70-3;1,3,5-trichlorobenzene;-13400;
+108-73-6;1,3,5-Benzenetriol;-452900;
+108-83-8;diisobutyl ketone~|~2,6-dimethyl-4-heptanone;-357600;
+108-87-2;methylcyclohexane;-154700;
+108-88-3;toluene;50500;
+108-89-4;4-methylpyridine;103800;
+108-90-7;chlorobenzene~|~monochlorobenzene;52000;
+108-91-8;cyclohexylamine;-104000;
+108-93-0;cyclohexanol;-286200;
+108-94-1;cyclohexanone;-226100;
+108-95-2;phenol;-96400;
+108-98-5;benzenethiol~|~phenyl mercaptan;111300;
+108-99-6;3-picoline~|~3-methylpyridine;106400;
+109-6-8;2-methylpyridine;99200;
+109-52-4;bucooh~|~n-bucooh~|~pentanoic acid~|~n-pentanoic acid;-491900;
+109-61-5;propyl chloroformate;-492700;
+109-65-9;1-bromobutane~|~butyl bromide;-107100;
+109-66-0;pentane~|~n-pentane;-146900;
+109-67-1;pentene~|~1-pentene;-21100;
+109-69-3;1-chlorobutane~|~butyl chloride~|~n-butyl chloride;-154400;
+109-73-9;butylamine~|~1-butylamine~|~n-butylamine~|~1-butanamine;-91900;
+109-74-0;butyronitrile~|~butanenitrile~|~n-butyronitrile;33600;
+109-75-1;allylcyanide~|~3-butenenitrile~|~vinylacetonitrile;159700;
+109-77-3;Malononitrile;265500;
+109-79-5;butanethiol~|~1-butanethiol~|~butyl mercaptan~|~n-butyl mercaptan;-88000;
+109-80-8;1,3-Propanedithiol;-29800;
+109-87-5;methylal~|~dimethoxymethane;-348500;
+109-89-7;diethylamine~|~n,n-diethylamine;-72200;
+109-92-2;ethoxy-ethene~|~ethyl vinyl ether;-140800;
+109-93-3;divinyl ether;-13600;
+109-97-7;pyrrole;108200;
+109-99-9;thf~|~tetrahydrofuran;-184100;302.4
+110-0-9;furan;-34800;267.2
+110-1-0;tetrahydrothiophene;-34100;309.6
+110-2-1;thiophene;114900;278.8
+110-6-5;di-tert-butyl disulfide;-201000;
+110-15-6;succinic acid;-823000;
+110-16-7;maleic acid~|~(z)-2-butenedioic acid;-679400;
+110-17-8;fumaric acid;-675800;
+110-42-9;methyl decanoate~|~decanoicacidmethylester;-573800;
+110-52-1;1,4-dibromobutane;-87800;
+110-53-2;1-bromopentane;-128900;
+110-54-3;hexane~|~n-hexane;-166900;
+110-56-5;1,4-dichlorobutane;-183400;
+110-59-8;valeronitrile~|~pentanenitrile;10500;
+110-61-2;butanedinitrile;209700;
+110-62-3;pentanal~|~1-pentanal~|~valeraldehyde;-228400;
+110-63-4;1,4-butadiol~|~1,4-butanediol;-428700;
+110-66-7;1-pentanethiol~|~pentyl mercaptan~|~n-pentyl mercaptan;-110000;
+110-74-7;propylformate~|~n-propylformate~|~propyl methanoate~|~n-propylmethanoate~|~formic acid propyl ester;-462700;
+110-75-8;2-Chloroethyl vinyl ether;-170100;
+110-81-6;diethyldisulfide~|~3,4-dithiahexane;-79400;
+110-82-7;cyclohexane;-123400;
+110-83-8;cyclohexene;-5000;
+110-86-1;pyridine;140400;
+110-88-3;trioxane~|~1,3,5-trioxane;-465900;
+110-89-4;piperidine;-47100;
+110-96-3;diisobutylamine~|~2-methyl-n-(2-methylpropyl)-1-propanamine;-179200;
+111-11-5;methyl octanoate~|~methyl caprylate~|~octanoic acid methyl ester;-533900;
+111-14-8;heptanoic acid~|~n-heptanoic acid;-536200;
+111-20-6;decanedioic acid;-921900;
+111-25-1;1-bromohexane;-148300;
+111-27-3;1-hexanol~|~hexan-1-ol;-315900;
+111-29-5;1,5-pentanediol;-450800;
+111-31-9;1-hexanethiol~|~hexyl mercaptan~|~n-hexyl mercaptan;-129900;
+111-34-2;butylvinylether~|~1-(ethenyloxy)butane;-182600;
+111-42-2;dea~|~diethanolamine~|~2,2'-diethanolamine;-397100;
+111-43-3;dipropyl ether~|~di-n-propylether;-293000;
+111-46-6;deg~|~diethylene glycol;-571200;
+111-65-9;octane~|~n-octane;-208500;
+111-66-0;octene~|~1-octene~|~oct-1-ene;-81300;
+111-69-3;adiponitrile~|~hexanedinitrile~|~1,4-dicyanobutane;149500;
+111-70-6;1-heptanol~|~heptan-1-ol;-336500;
+111-71-7;heptanal~|~1-heptanal;-263800;
+111-82-0;methyl dodecanoate~|~dodecanoicacidmethylester;-614900;
+111-83-1;1-bromooctane;-189300;
+111-84-2;nonane~|~n-nonane;-228200;
+111-85-3;1-chlorooctane;-238900;
+111-87-5;1-octanol~|~octan-1-ol;-355600;
+111-92-2;dibutylamine~|~di-n-butylamine;-156600;
+112-5-0;nonanoic acid~|~n-nonanoic acid;-577300;
+112-27-6;teg~|~triethylene glycol;-725000;
+112-30-1;1-decanol~|~decan-1-ol;-396600;
+112-40-3;dodecane~|~n-dodecane;-289400;
+112-41-4;1-dodecene;-165400;
+112-52-7;1-chlorododecane;-321100;
+112-53-8;dodecanol~|~1-dodecanol~|~dodecan-1-ol;-436600;
+112-60-7;tetraethylene glycol~|~3,6,9-trioxa-1,11-undecanediol~|~2,2'-oxybis(2,1-ethanediyloxy)bisethanol;-883000;
+112-62-9;methyloleate~|~methyl cis-9-octadecenoate;-649900;
+112-82-3;1-Bromohexadecane;-350200;
+115-7-1;propene~|~propylene;20000;
+115-10-6;dimethyl ether;-184100;266.4
+115-11-7;isobutene~|~isobutylene~|~2-methylpropene;-16900;
+115-25-3;rc318~|~perfluorocyclobutane~|~octafluorocyclobutane;-1542600;
+115-77-5;pentaerythritol;-776700;
+116-14-3;tetrafluoroethene~|~tetrafluoroethylene;-658900;300.1
+118-74-1;hexachlorobenzene;-35500;
+118-91-2;o-chlorobenzoic acid~|~2-chloro-benzoic acid;-325000;
+118-92-3;Aniline-2-carboxylic acid;-296000;
+119-61-9;benzophenone;54900;
+119-64-2;tetralin~|~1,2,3,4-tetrahydronaphthalene;26000;
+119-65-3;isoquinoline;204600;
+120-12-7;anthracene;230900;
+120-72-9;indole~|~1h-indole;156500;
+120-80-9;pyrocatechol~|~1,2-benzenediol~|~1,2-dihydroxybenzene;-267500;
+120-82-1;1,2,4-trichlorobenzene;-8100;
+120-83-2;2,4-dichlorophenol;-156300;
+120-92-3;cyclopentanone;-192100;
+121-14-2;2,4-dinitrotoluene~|~1-methyl-2,4-dinitrobenzene;33200;
+121-44-8;triethylamine;-92700;
+121-69-7;n,n-dimethylaniline~|~n n-dimethylaniline;100500;
+121-82-4;rdx;192000;482.4
+121-91-5;isophthalic acid~|~1,3-benzenedicarboxylic acid;-696300;
+122-39-4;diphenylamine;219300;
+123-5-7;2-ethyl-hexanal~|~2-ethyl hexanal~|~2-ethylhexanaldehyde;-299600;
+123-7-9;4-ethylphenol~|~p-ethylphenol;-144100;
+123-19-3;4-heptanone;-298300;
+123-31-9;hydroquinone~|~p-hydroquinone~|~1,4-benzenediol;-265300;
+123-38-6;propanal~|~1-propanal~|~propionaldehyde;-185600;304.5
+123-51-3;isopentanol~|~3-methylbutan-1-ol~|~3-methyl-1-butanol;-300700;
+123-54-6;acetylacetone~|~2,4-pentanedione;-382000;
+123-56-8;succinimide;-375400;
+123-62-6;propionic anhydride~|~propanoic anhydride;-626500;
+123-63-7;paraldehyde~|~2,4,6-trimethyl-1,3,5-trioxane;-631700;
+123-72-8;butanal~|~1-butanal~|~butyraldehyde;-204800;343.7
+123-73-9;trans-crotonaldehyde;-100600;
+123-75-1;pyrrolidine;-3600;
+123-86-4;butylacetate~|~n-butylacetate~|~butyl ethanoate~|~n-butylethanoate;-485300;
+123-91-1;dioxane~|~p-dioxane~|~1,4-dioxane;-315300;
+124-7-2;caprylic acid~|~octanoic acid~|~n-octanoic acid;-554300;
+124-10-7;methyl myristate~|~methyl tetradecanoate~|~tetradecanoic acid methyl ester;-656900;
+124-12-9;octanenitrile;-50500;
+124-13-0;octanal~|~1-octanal;-291900;365.4
+124-18-5;decane~|~n-decane;-249500;
+124-38-9;carbon dioxide;-393500;213.8
+124-40-3;dimethylamine;-18800;273.1
+124-73-2;1,2-dibromotetrafluoroethane~|~1,2-dibromo-1,1,2,2-tetrafluoroethane;-789100;
+126-84-1;2,2-diethoxypropane;-506900;
+127-18-4;tetrachloroethene~|~tetrachloroethylene;-10900;
+127-19-5;n,n-dimethylacetamide~|~n,n-dimethylethanamide;-228000;
+127-91-3;beta-pinene~|~.beta.-pinene;38700;
+128-37-0;butylhydroxytoluene~|~2,6-di-tert-butyl-p-cresol~|~2,6-di-tert.butyl-4-methylphenol~|~2,6-bis(1,1-dimethylethyl)-4-methylphenol;-296900;
+129-0-0;pyrene;225700;
+132-64-9;dibenzofuran~|~dibenzo[bd]furan~|~dibenzo[b,d]furan;83400;
+132-65-0;dibenzothiophene;205100;
+134-32-7;1-naphthalenamine;132800;
+134-81-6;Benzil;-55500;
+135-19-3;2-naphthol~|~2-hydroxynaphthalene;-29900;366.6
+140-88-5;ethyl acrylate~|~ethyl propenoate~|~2-propenoicacidethylester;-354200;
+141-6-0;Propyl pentanoate;-533600;
+141-32-2;n-butyl acrylate~|~butyl 2-propenoate~|~2-propenoicacidbutylester;-375300;
+141-78-6;ethylacetate~|~ethyl ethanoate;-443600;
+142-28-9;1,3-dichloropropane;-159200;
+142-29-0;cyclopentene;34000;
+142-62-1;hexanoic acid~|~n-hexanoic acid~|~n-pentyl formate;-511900;
+142-68-7;thp~|~tetrahydropyran;-223400;
+142-82-5;heptane~|~n-heptane;-187600;
+142-84-7;dipropylamine~|~1-propanamine~|~di-n-propylamine;-116000;
+142-96-1;dibutyl ether~|~di-n-butylether;-332800;
+143-7-7;lauric acid~|~dodecanoic acid~|~n-dodecanoic acid;-642000;
+143-8-8;1-nonanol~|~nonan-1-ol;-376500;
+143-10-2;1-decanethiol~|~decyl mercaptan~|~n-decyl mercaptan;-211500;
+143-15-7;1-bromododecane;-269900;
+144-62-7;oxalic acid;-731800;320.6
+147-85-3;L-Proline;-366200;
+149-57-5;2-ethylhexanoic acid~|~2-ethyl-hexanoic acid;-559500;
+150-13-0;Aniline-4-carboxylic acid;-296700;
+151-56-4;aziridine~|~ethylenimine~|~ethyleneimine~|~azacyclopropane;126500;
+151-67-7;halothane~|~2-bromo-2-chloro-1,1,1-trifluoroethane~|~1-bromo-1-chloro-2,2,2-trifluoroethane;-690400;
+156-59-2;cis-1,2-dichloroethene~|~(z)-1,2-dichloroethene~|~cis-1,2-dichloroethylene;4600;289.6
+156-60-5;trans-1,2-dichloroethene~|~trans-1,2-dichloroethylene;5000;290.0
+157-20-0;Thiirene;300000;255.3
+157-40-4;spiro[2.2]pentane;185200;
+180-43-8;spiro[5.5]undecane;-188300;
+206-44-0;fluoranthene;289000;
+208-96-8;acenaphthylene~|~acenaphthalene;259700;
+218-1-9;chrysene;269800;
+229-87-8;phenanthridine;240500;
+260-94-6;acridine;273900;
+271-44-3;1H-Indazole;243000;
+273-53-0;benzoxazole;44800;
+275-51-4;bicyclo[5.3.0]deca-2,4,6,8,10-pentaene;289100;
+279-23-2;norbornane~|~bicyclo[2.2.1]heptane;-54800;
+287-23-0;cyclobutane;27700;
+287-27-4;thiacyclobutane~|~trimethylene sulfide;60600;285.0
+287-92-3;cyclopentane;-76400;
+288-13-1;pyrazole;179400;
+288-14-2;isoxazole~|~1,2-oxazole;78600;
+288-32-4;imidazole~|~1h-imidazole;132900;
+288-42-6;oxazole~|~1,3-oxazole;-15500;
+289-80-5;pyridazine;278300;
+289-95-2;pyrimidine~|~1,3-diazabenzene;195700;
+290-37-9;pyrazine;196100;
+291-21-4;1,3,5-Trithiane;80000;336.4
+291-64-5;cycloheptane;-118100;
+292-64-8;cyclooctane;-124400;
+302-1-2;hydrazine;95400;238.5
+334-48-5;capric acid~|~decanoic acid~|~n-decanoic acid;-594900;
+335-57-9;perfluoroheptane~|~perfluoro-n-heptane~|~hexadecafluoroheptane;-3383600;
+344-7-0;chloropentafluorobenzene;-809300;
+352-32-9;4-fluorotoluene~|~1-fluoro-4-methylbenzene;-147400;
+352-93-2;3-thiapentane~|~diethylsulfide;-83500;368.1
+353-50-4;carbonyl fluoride;-639800;
+353-83-3;1,1,1-Trifluoro-2-iodoethane;-644500;
+353-85-5;trifluoroacetonitrile~|~trifluoroethanenitrile;-497900;298.1
+354-6-3;1-Bromo-2-chloro-1,1,2-trifluoroethane;-644800;
+354-33-6;r125~|~pentafluoroethane;-1100400;
+354-51-8;1,2-dibromo-2-chloro-1,1,2-trifluroethane~|~1,2-dibromo-1-chloro-1,2,2-trifluoroethane;-656600;
+354-55-2;Bromopentafluoroethane;-1064400;
+355-2-2;perfluoromethylcyclohexane~|~(trifluoromethyl)undecaflurocyclohexane;-2897200;
+355-68-0;Perfluorocyclohexane;-2370400;
+355-75-9;cyclohexene, decafluoro-;-1932700;
+359-10-4;r1122~|~2-chloro-1,1-difluoroethylene~|~1-chloro-2,2-difluoroethylene;-315500;303.0
+359-11-5;r1123~|~trifluoroethene~|~trifluoroethylene;-490500;
+363-72-4;pentafluorobenzene;-806500;
+367-11-3;1,2-difluorobenzene;-293800;
+367-57-7;1,1,1-Trifluoro-2,4-pentanedione;-993300;
+372-18-9;1,3-difluorobenzene;-309200;
+392-56-3;perfluorobenzene~|~hexafluorobenzene;-955400;
+420-12-2;thiirane~|~thiacyclopropane~|~ethylene sulfide;82000;255.2
+420-26-8;2-Fluoropropane;-293500;
+420-46-2;r143a~|~1,1,1-trifluoroethane;-744600;279.9
+421-6-7;2-Bromo-1,1,1-trifluoroethane;-694500;
+430-66-0;r143~|~1,1,2-trifluoroethane;-730700;
+460-13-9;1-Fluoropropane;-285900;
+460-19-5;cyanogen~|~ethanedinitrile;306700;241.9
+462-6-6;fluorobenzene;-115900;
+462-95-3;ethylal~|~diethoxymethane;-414700;
+463-49-0;propadiene~|~1,2-propadiene;190500;
+463-51-4;ketene~|~ethenone;-47500;247.6
+463-58-1;carbonyl sulfide;-142000;231.6
+463-82-1;neopentane~|~2,2-dimethylpropane;-168000;
+464-6-2;2,2,3-trimethylbutane~|~2,2,3-trimethyl-butane;-204400;
+471-46-5;Oxamide;-387100;
+471-47-6;Oxamic acid;-552300;
+493-1-6;cis-decalin~|~decahydronaphthalene~|~cis-decahydronaphthalene;-169200;
+493-2-7;trans-decalin~|~trans-decahydronaphthalene;-182100;
+496-11-7;indane~|~hydrindene;60300;
+497-26-7;methyldioxolane~|~2-methyl-1,3-dioxolane;-352000;
+502-56-7;5-nonanone;-344900;
+503-17-3;2-butyne~|~dimethylacetylene;145700;
+503-30-0;oxetane~|~1,3-propylene oxide;-80500;
+503-74-2;isovaleric acid~|~3-methylbutanoic acid;-510000;
+504-63-2;1,3-propanediol~|~propan-1,3-diol~|~1 3-propylene glycol~|~1,3-propylene glycol;-408000;
+505-22-6;1,3-dioxane;-340600;
+505-23-7;1,3-Dithiane;-10000;333.5
+505-29-3;1,4-Dithiane;0;326.2
+506-30-9;arachidic acid~|~eicosanoic acid;-812400;
+506-68-3;Cyanogen bromide;186200;248.3
+506-77-4;cyanogen chloride;138000;236.2
+506-78-5;Cyanogen iodide;225500;256.8
+506-82-1;Dimethyl cadmium;101600;303.0
+506-96-7;acetyl bromide;-190400;
+507-2-8;Acetyl iodide;-126400;
+507-9-5;Thioacetic acid;-175100;
+507-19-7;tert-butyl bromide~|~2-bromo-2-methylpropane;-132400;
+507-20-0;tert-butyl chloride~|~2-chloro-2-methylpropane;-182200;
+507-25-5;Tetraiodomethane;474000;391.9
+509-14-8;tetranitromethane;82400;503.7
+513-35-9;2-methyl-2-butene;-41700;
+513-36-0;isobutyl chloride~|~1-chloro-2-methylpropane~|~1-chloro-2-methyl-propane;-159300;
+513-44-0;isobutyl mercaptan~|~iso-butylmercaptan~|~2-methyl-1-propanethiol;-97300;
+517-25-9;Trinitromethane;-13400;435.6
+526-73-8;1,2,3-trimethylbenzene;-9500;
+526-75-0;2,3-xylenol~|~2,3-dimethylphenol;-157200;
+533-73-3;1,2,4-Benzenetriol;-444000;
+533-98-2;1,2-Dibromobutane;-91600;
+534-15-6;1,1-dimethoxyethane;-389700;
+535-80-8;3-Chlorobenzoic acid;-342300;
+538-93-2;isobutylbenzene~|~2-methylpropyl benzene~|~(2-methylpropyl)benzene;-21900;
+539-82-2;ethyl valerate~|~ethyl pentanoate;-505900;
+540-36-3;1,4-difluorobenzene;-306700;
+540-54-5;propyl chloride~|~1-chloropropane;-131900;
+540-63-6;1,2-ethanedithiol;-9700;
+540-67-0;methylethylether~|~ethyl methyl ether;-216400;309.2
+540-73-8;1,2-Dimethylhydrazine;92200;
+540-84-1;isooctane~|~2,2,4-trimethylpentane;-224000;
+540-88-5;tert-butylacetate~|~1,1-dimethylethyl ethanoate;-516500;
+541-31-1;3-methyl-1-butanethiol;-114900;
+541-35-5;butanamide;-282000;
+541-41-3;ethyl chloroformate~|~ethyl chloromethanoate;-462900;
+541-73-1;m-dichlorobenzene~|~1,3-dichlorobenzene;25700;
+542-18-7;chlorocyclohexane;-163700;
+542-28-9;tetrahydropyran-2-one;-379600;
+542-92-7;cyclopentadiene~|~1,3-cyclopentadiene;134300;
+543-59-9;1-chloropentane;-174900;
+544-2-5;diisopentylsulfide;-221500;
+544-40-1;5-thianonane~|~dibutylsulfide~|~di-n-butylsulfide;-167700;
+544-63-8;myristic acid~|~tetradecanoic acid;-693700;
+544-76-3;hexadecane~|~n-hexadecane;-374800;
+544-85-4;dotriacontane~|~n-dotriacontane;-697200;
+544-97-8;Dimethyl zinc;53000;
+553-90-2;dimethyl ethanedioate;-708900;
+554-14-3;2-methylthiophene;83500;
+556-56-9;3-Iodopropene;91500;
+557-17-5;1-methoxypropane~|~methylpropyl ether~|~methyl-n-propylether~|~methyl n-propyl ether;-238100;
+557-22-2;1,2-Dithiolane;0;313.5
+557-98-2;2-chloropropene~|~2-chloropropylene~|~2-chloro-1-propene;-21000;
+557-99-3;Acetyl fluoride;-442100;
+558-13-4;Tetrabromomethane;83900;358.1
+558-17-8;2-Iodo-2-methylpropane;-72100;
+558-37-2;3,3-dimethyl-1-butene;-60300;
+560-21-4;2,3,3-trimethylpentane;-216300;
+560-95-2;bromotrinitromethane;80300;
+562-49-2;3,3-dimethylpentane;-201000;
+563-16-6;3,3-dimethylhexane;-219900;
+563-45-1;3-methyl-1-butene;-27500;
+563-46-2;2-methyl-1-butene;-35200;
+563-78-0;2,3-dimethyl-1-butene;-62400;
+563-79-1;2,3-dimethyl-2-butene;-68100;
+563-80-4;3-methyl-2-butanone~|~methyl isopropyl ketone;-262600;
+563-83-7;2-Methylpropanamide;-282600;
+564-2-3;2,2,3-trimethylpentane;-220000;
+564-4-5;2,2-dimethyl-3-pentanone;-313600;
+565-59-3;2,3-dimethylpentane;-198700;
+565-69-5;2-methyl-3-pentanone~|~ethyl isopropyl ketone;-286000;
+565-75-3;2,3,4-trimethylpentane;-217300;
+565-80-0;diisopropyl ketone~|~di-isopropyl ketone~|~2,4-dimethyl-3-pentanone;-311300;
+576-26-1;2,6-xylenol~|~2,6-dimethylphenol;-162100;
+583-48-2;3,4-dimethylhexane;-212800;
+583-58-4;3,4-dimethylpyridine;68800;
+583-61-9;2,3-dimethylpyridine;67100;
+584-2-1;3-pentanol;-314900;
+584-94-1;2,3-dimethylhexane;-213800;
+589-38-8;3-hexanone;-277600;
+589-43-5;2,4-dimethylhexane~|~2 4-dimethylhexane;-219200;
+589-53-7;4-methylheptane;-211900;
+589-81-1;3-methylheptane;-212500;
+589-93-5;2,5-dimethylpyridine;66500;
+590-2-3;Butyl chloroacetate;-487400;
+590-13-6;cis-1-Bromopropene;40800;
+590-18-1;(z)-2-butene~|~cis-2-butene;-7100;
+590-19-2;1,2-butadiene;162300;
+590-26-1;(z)-1,2-diiodoethene;-207400;
+590-35-2;2,2-dimethylpentane;-205700;
+590-66-9;1,1-dimethylcyclohexane;-180900;
+590-73-8;2,2-dimethylhexane;-224500;
+591-7-1;N-(Aminocarbonyl)acetamide;-441200;
+591-22-0;3,5-dimethylpyridine;72000;
+591-50-4;iodobenzene;164900;
+591-68-4;butyl valerate~|~n-butyl valerate~|~pentanoicacidbutylester;-560200;
+591-76-4;2-methylhexane;-194500;
+591-78-6;2-hexanone;-278900;
+591-93-5;1,4-pentadiene;105700;
+591-95-7;1,2-pentadiene;140700;
+591-96-8;2,3-pentadiene;133100;
+592-13-2;2,5-dimethylhexane;-222500;
+592-27-8;2-methylheptane;-215300;
+592-41-6;hexene~|~1-hexene~|~hex-1-ene;-43500;
+592-42-7;1,5-hexadiene;84200;
+592-65-4;2,6-dimethyl-4-thiaheptane;-180500;
+592-76-7;1-heptene;-62300;
+593-45-3;octadecane~|~n-octadecane;-414600;
+593-60-2;bromoethene~|~vinyl bromide;79200;275.8
+593-74-8;dimethylmercury;94400;306.0
+593-75-9;Isocyanomethane;163500;246.9
+593-90-8;Trimethylborane;-124300;314.7
+593-95-3;Carbonyl bromide;-96200;309.1
+594-20-7;2,2-dichloropropane;-173200;
+594-27-4;tetramethylstannane;-18800;
+594-34-3;1,2-dibromo-2-methylpropane;-113300;
+594-36-5;2-chloro-2-methylbutane;-202200;
+594-51-4;2,3-Dibromo-2-methylbutane;-137600;
+594-56-9;2,3,3-trimethyl-1-butene;-85500;
+594-70-7;2-methyl-2-nitropropane;-177100;
+594-82-1;2,2,3,3-tetramethylbutane;-226000;
+598-5-0;Dipropyl sulfate;-792000;
+598-29-8;1,2-Diiodopropane;35600;
+598-31-2;Bromoacetone;-181000;
+598-53-8;methylisopropylether~|~isopropyl methyl ether;-252000;
+598-58-3;Methyl nitrate;-122000;305.8
+598-78-7;2-chloropropanoic acid;-475800;
+598-98-1;methyl 2,2-dimethylpropanoate;-491200;
+601-76-3;1,1-dinitropropane;-100700;
+603-34-9;triphenylamine;326800;
+609-26-7;2-methyl-3-ethylpentane~|~3-ethyl-2-methylpentane~|~2-methyl-3-ethyl-pentane;-211000;
+609-39-2;2-Nitrofuran;-28800;
+611-14-3;o-ethyltoluene~|~1-methyl-2-ethylbenzene~|~1-ethyl-2-methylbenzene;1300;
+612-55-5;2-Iodonaphthalene;235100;
+615-38-3;cis-2-methylcyclohexanol;-327000;
+615-39-4;trans-2-Methylcyclohexanol, (±)-;-352500;
+616-2-4;3-Methyl-2,5-furandione;-447200;
+616-12-6;(e)-3-methyl-2-pentene~|~3-methyl-trans-2-pentene~|~trans-3-methyl-2-pentene;-63100;
+616-23-9;2,3-dichloro-1-propanol;-316300;
+616-42-2;dimethylester sulfurous acid;-483400;
+616-43-3;3-Methylpyrrole;70200;
+616-44-4;methylthiophene~|~3-methyl thiophene;82500;
+617-78-7;3-ethylpentane;-189500;
+618-45-1;3-(1-methylethyl)phenol;-196000;
+619-99-8;3-ethylhexane;-210700;
+620-14-4;m-ethyltoluene~|~1-methyl-3-ethylbenzene~|~1-ethyl-3-methylbenzene;-1800;
+620-17-7;m-ethylphenol~|~3-ethylphenol;-146100;
+622-42-4;(Nitromethyl)benzene;30700;
+622-96-8;p-ethyltoluene~|~1-ethyl-4-methylbenzene;-3200;
+623-30-3;3-(2-Furanyl)-2-propenal;-105900;
+623-43-8;Methyl trans-2-butenoate;-341900;
+623-70-1;Ethyl trans-2-butenoate;-375600;
+623-81-4;diethylsulfite;-552200;
+624-24-8;methyl valerate~|~methyl pentanoate;-471100;
+624-29-3;cis-1,4-dimethylcyclohexane;-176600;
+624-64-6;(e)-2-butene~|~trans-2-butene;-11400;
+624-73-7;1,2-Diiodoethane;75000;
+624-79-3;Ethyl isocyanide;141700;
+624-89-5;2-thiabutane~|~(methylthio)-ethane~|~methyl ethyl sulfide~|~ethyl methyl sulfide;-59600;
+624-91-9;Methyl nitrite;-66100;
+624-92-0;2,3-dithiabutane~|~dimethyldisulfide;-24700;
+625-27-4;2-methyl-2-pentene;-66900;
+625-58-1;ethyl nitrate;-154100;
+625-60-5;ethyl thioacetate~|~ethyl thiolacetate;-228100;
+625-65-0;2,4-dimethyl-2-pentene;-88700;
+625-76-3;Dinitromethane;-61500;358.1
+625-80-9;diisopropyl sulfide~|~2,4-dimethyl-3-thiapentane;-142000;
+625-84-3;2,5-dimethyl pyrrole~|~2,5-dimethyl-1h-pyrrole;39800;
+626-26-6;2-(1-methylpropylthio)butane;-167700;
+626-85-7;Dibutyl sulfite;-625300;
+626-97-1;Pentanamide;-290200;
+627-5-4;1-nitrobutane;-143900;369.9
+627-12-3;Propyl carbamate;-471400;
+627-13-4;n-propyl nitrate;-174100;362.6
+627-20-3;(z)-2-pentene~|~cis-2-pentene;-27600;
+627-26-9;trans-crotonitrile;134300;
+627-44-1;Diethyl mercury;75300;
+628-2-4;hexanamide;-324200;
+628-5-7;1-nitropentane;-164400;390.9
+628-28-4;methylbutyl ether~|~butyl methyl ether~|~methyl-n-butylether~|~methyl n-butyl ether;-258100;
+628-29-5;2-thiahexane~|~methylbutyl sulfide~|~1-(methylthio)butane~|~methyl n-butyl sulfide~|~methyl-n-butyl sulfide;-102400;
+628-32-0;ethyl propyl ether;-272000;
+628-34-2;2-Chloroethyl ethyl ether;-301300;
+629-1-6;Octanamide;-362700;
+629-4-9;1-bromoheptane;-167800;
+629-8-3;heptanenitrile;-31000;
+629-11-8;1,6-hexanediol;-461200;
+629-14-1;3,6-dioxaoctane~|~1,2-diethoxyethane;-408100;
+629-19-6;4,5-dithiaoctane~|~dipropyldisulfide~|~di-n-propyl disulfide;-118300;
+629-45-8;5,6-dithiadecane~|~di-n-butyl disulfide;-160600;
+629-63-0;tetradecanenitrile;-174900;
+629-73-2;1-hexadecene;-248400;
+630-8-0;carbon monoxide;-110500;197.7
+630-18-2;2,2-dimethylpropionitrile~|~2,2-dimethylpropanenitrile;-2300;
+631-65-2;2-Chloro-3-methylbutane;-185100;
+636-41-9;2-Methylpyrrole;74000;
+637-92-3;etbe~|~tert-butyl ethyl ether~|~ethyl tert-butyl ether~|~2-ethoxy-2-methylpropane~|~2-ethoxy-2-methyl-propane;-313900;
+638-4-0;cis-1,3-dimethylcyclohexane;-184600;
+638-28-8;2-Chlorohexane;-204300;
+638-46-0;3-thiaheptane~|~ethyl butyl sulfide;-127800;
+641-6-5;Triacetamide;-550100;
+645-49-8;cis-stilbene~|~(z)-1,2-diphenylethene;252300;
+646-4-8;(e)-2-pentene~|~trans-2-pentene;-31900;
+646-6-0;1,3-dioxolane;-298000;
+660-88-8;5-Aminopentanoic acid;-460000;
+670-54-2;Tetracyanoethene;705000;
+674-76-0;(e)-4-methyl-2-pentene~|~4-methyl-trans-2-pentene;-61500;
+674-82-8;diketene~|~4-methylene-2-oxetanone;-190300;
+677-21-4;r1243zf~|~3,3,3-trifluoropropene~|~3,3,3-trifluoro-1-propene~|~1,1,1-trifluoro-2-propene~|~3,3,3-trifluoropropylene (r1243zf);-614200;
+683-68-1;1,2-Dibromo-1,2-dichloroethane;-36900;
+690-8-4;(e)-4,4-dimethyl-2-pentene~|~trans-4,4-dimethyl-2-pentene;-88800;
+690-92-6;(z)-2,2-dimethyl-3-hexene~|~cis-2,2-dimethyl-3-hexene;-89300;
+690-93-7;(e)-2,2-dimethyl-3-hexene~|~trans-2,2-dimethyl-3-hexene;-107700;
+691-37-2;4-methyl-1-pentene;-51300;
+691-38-3;cis-4-methyl-2-pentene~|~(z)-4-methyl-2-pentene~|~4-methyl-cis-2-pentene;-57500;
+693-23-2;dodecanedioic acid;-976900;
+693-89-0;methylcyclopentene~|~1-methylcyclopentene;-3800;
+693-95-8;4-methylthiazole;111800;
+700-12-9;pentamethylbenzene~|~1,2,3,4,5-pentamethylbenzene;-67200;
+754-10-9;2,2-Dimethylpropanamide;-313100;
+760-20-3;3-methyl-1-pentene;-49500;
+760-21-4;2-ethyl-1-butene;-56000;
+762-62-9;4,4-dimethyl-1-pentene;-81600;
+762-63-0;(z)-4,4-dimethyl-2-pentene~|~cis-4,4-dimethyl-2-pentene;-72600;
+763-29-1;2-methyl-1-pentene;-59400;
+764-42-1;fumaronitrile;340200;
+765-30-0;cyclopropanamine~|~cyclopropylamine;77000;
+765-85-5;methyl cyclobutanecarboxylate;-350200;
+766-5-2;cyanocyclohexane;4800;
+766-94-9;Phenyl vinyl ether;22700;
+768-66-1;2,2,6,6-Tetramethylpiperidine;-159900;
+771-56-2;2,3,4,5,6-pentafluorotoluene;-842700;
+811-93-8;2-methyl-1,2-propanediamine;-90300;
+821-55-6;2-nonanone;-340700;
+821-67-0;Azopropane;51300;
+822-35-5;cyclobutene;156700;
+822-50-4;trans-1,2-dimethylcyclopentane~|~1,trans-2-dimethylcyclopentane;-136600;
+826-36-8;2,2,6,6-Tetramethyl-4-piperidinone;-273400;
+827-52-1;cyclohexylbenzene~|~phenylcyclohexane;-16700;
+871-83-0;2-methylnonane~|~2-methyl-nonane;-260200;
+872-5-9;1-decene;-123300;
+872-10-6;6-thiaundecane;-204900;
+872-36-6;1,3-Dioxol-2-one;-418600;
+873-49-4;Cyclopropylbenzene;150500;
+922-62-3;(z)-3-methyl-2-pentene~|~3-methyl-cis-2-pentene~|~cis-3-methyl-2-pentene;-62300;
+930-90-5;trans-1-Ethyl-2-methylcyclopentane;-156200;
+933-52-8;2,2,4,4-Tetramethyl-1,3-cyclobutanedione;-307600;
+1002-84-2;pentadecanoic acid~|~n-pentadecanoic acid;-699000;
+1003-3-8;cyclopentanamine~|~cyclopentylamine;-54900;
+1003-64-1;Ethylidenecyclohexane;-59500;
+1055-23-8;9,9'-Bianthracene;454300;
+1067-8-9;3-ethyl-3-methylpentane~|~3-methyl-3-ethylpentane;-214800;
+1067-20-5;3,3-diethylpentane;-233300;
+1069-53-0;2,3,5-trimethylhexane;-242600;
+1070-87-7;2,2,4,4-tetramethylpentane;-241600;
+1071-98-3;2-Butynedinitrile;529200;
+1072-43-1;Methylthiirane;45800;
+1119-49-9;N-Butylacetamide;-305900;
+1120-21-4;undecane~|~n-undecane;-270800;
+1120-56-5;exo-methylenecyclobutane;121600;
+1120-59-8;2,3-Dihydrothiophene;90700;303.5
+1120-62-3;3-methylcyclopentene;7400;
+1120-64-5;2-Methyl-2-oxazoline;-130500;
+1120-97-4;4-methyl-1,3-dioxane;-376900;
+1186-53-4;2,2,3,4-tetramethylpentane;-236900;
+1187-3-7;tetraethylurea~|~n,n,n',n'-tetraethylurea;-316400;
+1190-22-3;1,3-dichlorobutane;-195000;
+1191-8-8;1,4-Butanedithiol;-50600;
+1192-18-3;(z)-1,2-dimethylcyclopentane~|~cis-1,2-dimethylcyclopentane~|~1,cis-2-dimethylcyclopentane;-129500;
+1192-37-6;methylenecyclohexane;-25200;
+1303-86-2;Boron oxide;-843800;279.8
+1304-28-5;Barium oxide;-112000;
+1310-58-3;Potassium hydroxide;-232000;238.3
+1310-65-2;Lithium hydroxide;-229000;214.4
+1310-73-2;Sodium hydroxide;-191000;229.0
+1310-82-3;Rubidium hydroxide;-238000;248.5
+1312-41-0;Indium antimonide;344300;
+1314-8-5;Palladium(II) oxide;348900;218.0
+1314-11-0;Strontium oxide;1500;
+1314-68-7;Rhenium(VII) oxide;-1100000;452.0
+1333-74-0;hydrogen;0;130.7
+1333-82-0;Chromium(VI) oxide;-292900;266.2
+1344-57-6;Uranium(IV) oxide;-465700;274.6
+1484-12-4;9-methyl-9h-carbazole;201000;
+1487-18-9;2-Vinylfuran;27800;
+1499-10-1;9,10-Diphenylanthracene;465600;
+1511-62-2;bromodifluoromethane;-424900;295.1
+1551-21-9;3-methyl-2-thiabutane~|~methyl isopropyl sulfide;-90500;
+1569-69-3;cyclohexanethiol~|~cyclohexyl mercaptan;-96200;
+1574-41-0;1,3-pentadiene~|~(z)-1,3-pentadiene~|~cis-1,3-pentadiene;81400;
+1590-87-0;disilane;80300;272.7
+1613-51-0;thiacyclohexane~|~tetrahydrothiopyran;-63500;323.0
+1615-75-4;1-Chloro-1-fluoroethane;-313400;
+1630-94-0;1,1-Dimethylcyclopropane;-8200;
+1633-97-2;2-methyl-2-pentanethiol;-148300;
+1634-4-4;mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane;-283700;
+1638-26-2;1,1-dimethylcyclopentane;-138200;
+1639-1-6;2,3-dimethyl-2-butanethiol;-147900;
+1639-9-4;1-heptanethiol~|~heptyl mercaptan~|~n-heptyl mercaptan;-149900;
+1640-89-7;ethylcyclopentane;-126900;
+1678-91-7;ethylcyclohexane;-171500;
+1678-92-8;propylcyclohexane~|~n-propylcyclohexane~|~1-cyclohexylpropane;-192300;
+1678-93-9;butylcyclohexane~|~n-butylcyclohexane;-213700;
+1679-7-8;cyclopentanethiol;-48100;
+1679-8-9;2,2-dimethyl-1-propanethiol;-129000;
+1679-9-0;2-methyl-2-butanethiol~|~2-methyl-2-butyl mercaptan;-127100;
+1708-32-3;2,5-dihydrothiophene;86900;297.1
+1712-64-7;isopropyl nitrate;-191000;
+1731-84-6;methyl nonanoate~|~nonanoic acid methyl ester;-554200;
+1731-86-8;Methyl undecanoate;-593800;
+1731-88-0;methyl tridecanoate;-635300;
+1741-83-9;2-thiaheptane~|~methylpentylsulfide;-121800;
+1759-58-6;trans-1,3-dimethylcyclopentane~|~(1r,3r)-1,3-dimethylcyclopentane;-133600;
+1759-81-5;4-methylcyclopentene;14600;
+1795-26-2;1a,3a,5b-trimethylcyclohexane;-212100;
+1855-63-6;1-Cyclohexenecarbonitrile;101600;
+1943-16-4;Chlorotrinitromethane;18400;
+1975-78-6;1-decanenitrile;-91500;
+2004-70-8;1-trans-3-pentadiene~|~(e)-1,3-pentadiene~|~trans-1,3-pentadiene;76100;
+2040-96-2;propylcyclopentane~|~n-propylcyclopentane;-147700;
+2074-87-5;Cyanide;437600;202.6
+2084-18-6;3-Methyl-2-butanethiol;-121300;
+2146-38-5;1-ethylcyclopentene;-19800;
+2159-75-3;Azobutane;9200;
+4-1-2207;cis-1,2-dimethylcyclohexane;-172100;
+6-3-2207;trans-1,3-dimethylcyclohexane;-176500;
+7-4-2207;1,4-dimethylcyclohexane~|~trans-1,4-dimethylcyclohexane;-184500;
+2213-32-3;2,4-dimethyl-1-pentene;-83800;
+4-7-2229;Methyl;145700;194.2
+2264-21-3;Trifluoromethyl;-477000;264.5
+2307-10-0;S-Propyl thioacetate;-250400;
+2314-97-8;r13i1~|~trifluoroiodomethane~|~iodotrifluoromethane;-587800;307.4
+2406-52-2;Stannane;162800;227.7
+2465-56-7;Methylene;390400;194.9
+2516-34-9;Cyclobutanamine;41200;
+2532-58-3;(z)-1,3-dimethylcyclopentane~|~1,cis-3-dimethylcyclopentane~|~cis-1,3-dimethylcyclopentane;-135800;
+2551-62-4;sulfur hexafluoride;-1220500;291.5
+2597-44-6;Oxomethyl (HCO);43100;224.7
+2691-41-0;hmx;187900;568.8
+2696-92-6;nitrosyl chloride;51700;261.7
+2781-85-3;Cyclopropene;277100;
+2782-91-4;Tetramethylthiourea;44900;
+2944-5-0;carbon sulfide~|~carbon monosulfide;280300;210.6
+3000-79-1;2-Methylpiperidine, (±)-;-84400;
+3-4-3019;Iodoacetone;-130500;
+3047-38-9;1-Cyclopentenecarbonitrile;156500;
+3129-90-6;Isothiocyanic acid;127600;247.8
+3153-36-4;Ethyl 4-chlorobutanoate;-513800;
+3170-80-7;Trichloromethyl;59000;
+3170-83-0;Hydroperoxy;10500;229.0
+3315-37-5;Methylidyne;595800;
+3352-57-6;Hydroxyl;39000;183.7
+3386-33-2;1-chlorooctadecane;-446000;
+3-9-3452;1-nonyne;62300;
+3524-73-0;5-methyl-1-hexene;-65700;
+3524-75-2;Allylcyclopentane;-24100;
+3638-64-0;Nitroethene;33300;300.5
+6-7-3657;Butyl trichloroacetate;-492300;
+8-7-3744;Difluoroamidogen;43100;249.9
+3877-15-4;2-thiapentane~|~methylpropyl sulfide~|~1-(methylthio)-propane~|~methyl-n-propyl sulfide~|~methyl n-propyl sulfide;-82200;
+3899-36-3;(e)-3-methyl-3-hexene;-76800;
+3938-95-2;ethyltrimethylacetate~|~ethyl 2,2-dimethylpropanoate~|~2,2-dimethylpropanoic acid ethyl ester;-536000;
+4050-45-7;trans-2-hexene;-53900;
+4110-50-3;3-thiahexane~|~ethyln-propylsulfide~|~ethyl propyl sulfide;-104800;
+4253-91-2;dipropylsulfoxide;-254900;
+8-2-4254;Cyclopentanecarbonitrile;44100;
+3-11-4426;Cyclobutanecarbonitrile;147400;
+4625-24-5;1-Methylbicyclo[3.1.0]hexane;1700;
+4753-80-4;Thiepane;-65800;363.5
+4806-61-5;ethylcyclobutane;-27500;
+3-4-4829;1,3-Dithiolane;10000;323.3
+4912-92-9;2,3-dihydro-1,1-dimethyl-1h-indene;-1600;
+4914-89-0;(z)-3-methyl-3-hexene~|~cis-3-methyl-3-hexene;-79400;
+5145-99-3;2-methyl-3-thiapentane;-118300;
+5396-24-7;Propyl chloroacetate;-467000;
+5408-86-6;2,3-Dibromobutane;-102000;
+5454-79-5;cis-3-methylcyclohexanol;-350900;
+5500-21-0;cyclopropyl cyanide~|~cyclopropanecarbonitrile;182800;
+5787-31-5;2-Bromobutane, (±)-;-120300;
+5857-36-3;2,2,4-Trimethyl-3-pentanone;-338300;
+6032-29-7;2-pentanol~|~pentan-2-ol;-311000;
+6163-64-0;methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane~|~methyl-t-butyl sulfide;-121300;
+6163-66-2;di-tert-butyl ether;-362000;
+6553-48-6;trans-1,2-Divinylcyclobutane;143500;
+6863-58-7;2,2'-oxybis-butane~|~di-sec-butyl ether;-360600;
+6876-23-9;trans-1,2-dimethylcyclohexane~|~(1r,2r)-1,2-dimethylcyclohexane;-179900;
+6920-22-5;1,2-hexanediol;-490100;
+6921-35-3;3,3-Dimethyloxetane;-148200;
+6982-25-8;2,3-butanediol;-482300;
+7119-92-8;N-Nitrodiethylamine;-53000;
+7119-94-0;1-nitropiperidine;-44500;
+7132-64-1;methyl pentadecanoate;-680000;
+7133-36-0;cyclopentyl-1-thiaethane;-64700;
+7154-79-2;2,2,3,3-tetramethylpentane;-237100;
+7357-93-9;2-ethyl-3-methyl-1-butene~|~1-butene, 2-ethyl-3-methyl-;-79500;
+7429-90-5;Aluminum;330000;164.6
+7429-91-6;Dysprosium;290400;196.6
+7439-88-5;Iridium;665300;193.6
+7439-89-6;iron;416300;180.5
+7439-90-9;krypton;0;164.1
+7439-91-0;Lanthanum;431000;182.4
+7439-92-1;Lead;195200;175.4
+7439-93-2;lithium;159300;138.8
+7439-94-3;Lutetium;427600;184.8
+7439-95-4;Magnesium;147100;148.6
+7439-96-5;Manganese;280700;173.7
+7439-97-6;mercury;61400;175.0
+7439-98-7;Molybdenum;658100;182.0
+7440-0-8;Neodymium;327600;189.4
+9-1-7440;neon;0;146.3
+7440-2-0;Nickel;429700;182.2
+1-3-7440;Niobium;725900;186.3
+2-4-7440;Osmium;791000;192.6
+3-5-7440;Palladium;378200;167.1
+4-6-7440;Platinum;565300;192.4
+7-9-7440;potassium;89000;160.3
+7440-10-0;Praseodymium;355600;189.8
+7440-13-3;Protactinium;607000;198.1
+7440-14-4;Radium;159000;176.5
+7440-15-5;Rhenium;769900;188.9
+7440-16-6;Rhodium;556900;185.8
+7440-17-7;Rubidium;80900;170.1
+7440-18-8;Ruthenium;642700;186.5
+7440-19-9;Samarium;206700;183.0
+7440-20-2;Scandium;377800;174.8
+7440-21-3;Silicon;450000;168.0
+7440-22-4;Silver;284900;173.0
+7440-23-5;Sodium;107500;153.7
+7440-24-6;Strontium;164400;164.6
+7440-25-7;Tantalum;782000;185.2
+7440-26-8;Technetium;678000;181.1
+7440-27-9;Terbium;388700;203.6
+7440-28-0;Thallium;182200;181.0
+7440-29-1;Thorium;602000;190.2
+7440-30-4;Thulium;232200;190.1
+7440-32-6;Titanium;473000;180.3
+7440-33-7;Tungsten;849400;174.0
+7440-34-8;Actinium;406000;188.1
+7440-36-0;Antimony;262300;180.3
+7440-37-1;argon;0;154.8
+7440-38-2;Arsenic (gray);302500;174.2
+7440-39-3;Barium;180000;170.2
+7440-41-7;Beryllium;324000;136.3
+7440-42-8;Boron;565000;153.4
+7440-43-9;Cadmium;111800;167.7
+7440-45-1;Cerium;423000;191.8
+7440-46-2;cesium;76500;175.6
+7440-47-3;Chromium;396600;174.5
+7440-48-4;Cobalt;424700;179.5
+7440-50-8;Copper;337400;166.4
+7440-52-0;Erbium;317100;195.6
+7440-53-1;Europium;175300;188.8
+7440-54-2;Gadolinium;397500;194.3
+7440-55-3;Gallium;272000;169.0
+7440-56-4;germanium;372000;167.9
+7440-57-5;Gold;366100;180.5
+7440-58-6;Hafnium;619200;186.9
+7440-59-7;helium~|~helium-4;0;126.2
+7440-60-0;Holmium;300800;195.6
+7440-61-1;Uranium;533000;199.8
+7440-62-2;vanadium;514200;182.3
+7440-63-3;xenon;0;169.7
+7440-64-4;Ytterbium;152300;173.1
+7440-65-5;Yttrium;421300;179.5
+7440-66-6;Zinc;130400;161.0
+7440-67-7;Zirconium;608800;181.4
+7440-69-9;Bismuth;207100;187.0
+7440-70-2;calcium;177800;154.9
+7440-74-6;Indium;243300;173.8
+7443-55-2;trans-3-methylcyclohexanol;-329100;
+5-9-7446;sulfur dioxide;-296800;248.2
+9-11-7446;Sulfur trioxide (α-form);-395700;256.8
+7446-70-0;Aluminum chloride;-583200;
+7447-40-7;Potassium chloride;-214600;239.1
+7550-45-0;titanium tetrachloride;-763200;353.2
+7553-56-2;i2~|~iodine;62400;260.7
+7616-94-6;perchloryl fluoride;-23800;279.0
+7632-51-1;vanadium tetrachloride;-525500;362.4
+2-7-7637;boron trifluoride;-1136000;254.4
+3-9-7642;(z)-3-hexene~|~cis-3-hexene;-47600;
+7646-78-8;tin(iv) chloride~|~stannic chloride~|~tin tetrachloride;-471500;365.8
+7646-85-7;Zinc chloride;-266100;
+7647-1-0;hcl~|~hydrogen chloride~|~hydrochloric acid;-92300;186.9
+7647-15-6;Sodium bromide;-143100;241.2
+7647-19-0;phosphorus pentafluoride;-1594400;300.8
+7664-39-3;hydrogen fluoride;-273300;173.8
+7664-41-7;ammonia;-45900;192.8
+7688-21-3;(z)-2-hexene~|~cis-2-hexene;-52300;
+7697-37-2;nitric acid;-133900;266.9
+7704-34-9;Sulfur (rhombic);277200;167.8
+7705-14-8;Dipentene;-2600;
+7-9-7719;thionyl chloride;-212500;309.8
+2-12-7719;Phosphorus(III) chloride;-287000;311.8
+7720-83-4;Titanium(IV) iodide;-277800;
+7722-84-1;hydrogen peroxide;-136300;232.7
+7723-14-0;Phosphorus (white);316500;163.2
+7726-95-6;bromine;30900;245.5
+7727-15-3;aluminum bromide;-425100;
+7727-18-6;vanadium oxytrichloride;-695600;344.3
+7727-37-9;nitrogen;0;191.6
+7731-28-4;cis-4-methylcyclohexanol;-347500;
+7731-29-5;trans-4-methylcyclohexanol;-367200;
+7732-18-5;water;-241800;188.8
+7782-41-4;fluorine;0;202.8
+7782-42-5;Carbon (graphite);716700;158.1
+7782-44-7;oxygen;0;205.2
+7782-49-2;Selenium (gray);227100;176.7
+7782-50-5;cl2~|~chlorine;0;223.1
+7782-65-2;Germane;90800;217.1
+7782-77-6;Nitrous acid;-79500;254.1
+7782-79-8;Hydrazoic acid;294100;239.0
+4-6-7783;hydrogen sulfide;-20600;205.8
+5-7-7783;selenium hydride~|~hydrogen selenide;29700;219.0
+7-9-7783;Hydrogen telluride;99600;
+7783-26-8;trisilane;120900;
+7783-41-7;oxygen difluoride;24500;247.5
+7783-44-0;Difluorine dioxide;19200;277.2
+7783-54-2;nitrogen trifluoride;-132100;260.8
+7783-55-3;phosphorus trifluoride;-958400;273.1
+7783-58-6;germanium tetrafluoride;-1190200;301.9
+7783-60-0;sulfur tetrafluoride;-763200;299.6
+7783-61-1;tetrafluorosilane~|~silicon tetrafluoride;-1615000;282.8
+7783-66-6;iodine fluoride~|~iodine pentafluoride;-822500;327.7
+7783-68-8;Niobium(V) fluoride;-1739700;321.9
+7783-72-4;Vanadium(V) fluoride;-1433900;320.9
+7783-75-7;Iridium(VI) fluoride;-544000;357.8
+7783-77-9;molybdenum hexafluoride;-1557700;350.5
+7783-79-1;Selenium hexafluoride;-1117000;313.9
+7783-80-4;Tellurium hexafluoride;-1318000;
+7783-81-5;Uranium(VI) fluoride;-2147400;377.9
+7783-82-6;Tungsten(VI) fluoride;-1721700;341.1
+7784-18-1;Aluminum fluoride;-1204600;277.1
+7784-23-8;Aluminum iodide;-289400;223.6
+7784-33-0;Arsenic(III) bromide;-130000;363.9
+7784-34-1;arsenic trichloride~|~arsenic (iii) chloride;-261500;327.2
+7784-35-2;Arsenic(III) fluoride;-785800;289.1
+7784-42-1;arsine;66400;222.8
+7787-60-2;Bismuth trichloride;-265700;358.9
+7787-71-5;Bromine trifluoride;-255600;292.5
+7789-25-5;Nitrosyl fluoride;-66500;248.1
+7789-27-7;Thallium(I) fluoride;-182400;
+7789-30-2;Bromine pentafluoride;-428900;320.2
+7789-33-5;Iodine bromide;40800;258.8
+7789-40-4;Thallium(I) bromide;-37700;
+7789-57-3;Tribromosilane;-317600;348.6
+7789-60-8;phosphorus tribromide;-139300;348.1
+7789-61-9;Antimony(III) bromide;-194600;372.9
+7789-66-4;Tetrabromosilane;-415500;377.9
+7789-67-5;Tin(IV) bromide;-314600;411.9
+7789-68-6;Titanium(IV) bromide;-549400;398.4
+7790-30-9;Thallium(I) iodide;7100;
+7790-89-8;Chlorine fluoride;-50300;217.9
+7790-91-2;chlorine trifluoride;-163200;281.6
+7790-92-3;Hypochlorous acid;-78700;236.7
+7790-99-0;Iodine chloride;17800;247.6
+7791-12-0;Thallium(I) chloride;-67800;
+7791-21-1;Chlorine monoxide;80300;266.2
+7791-25-5;sulfuryl chloride;-364000;311.9
+7803-51-2;phosphine~|~phosphorous trihydride;5400;210.2
+7803-52-3;stibine;145100;232.8
+7803-62-5;silane;34300;204.6
+10024-97-2;nitrous oxide~|~dinitrogen monoxide;81600;220.0
+10025-78-2;trichlorosilane;-513000;313.9
+10025-82-8;Indium(III) chloride;-374000;
+10025-87-3;phosphoryl chloride~|~phosphorus oxychloride~|~phosphoryl trichloride;-558500;325.5
+10026-4-7;tetrachlorosilane;-657000;330.7
+10026-8-1;Thorium(IV) chloride;-964400;390.7
+10026-10-5;Uranium(IV) chloride;-809600;419.0
+10026-12-7;Niobium(V) chloride;-703700;400.6
+10026-13-8;Phosphorus(V) chloride;-374900;364.6
+10028-15-6;ozone;142700;238.9
+10028-16-7;Ditellurium;168200;268.1
+10034-85-2;hydrogen iodide;26500;206.6
+10035-10-6;hydrogen bromide;-36300;198.7
+10036-47-2;tetrafluorohydrazine;-8400;301.2
+10038-98-9;tetrachlorogermane~|~germanium tetrachloride;-495800;347.7
+10043-11-5;Boron nitride;647500;212.3
+10043-35-3;Boric acid;-994100;
+10043-92-2;radon;0;176.2
+10049-4-4;chlorine dioxide;102500;256.8
+10049-14-6;Uranium(IV) fluoride;-1598700;368.0
+10097-28-6;Silicon monoxide;-99600;211.6
+10097-32-2;Bromine (atomic);111900;175.0
+10099-66-8;Lutetium chloride;-649000;
+10102-3-1;Nitrogen pentoxide;13300;355.7
+10102-43-9;nitric oxide~|~nitrogen oxide~|~nitrogen oxide (no);91300;210.8
+10102-44-0;nitrogen dioxide;33200;240.1
+10294-33-4;boron tribromide;-205600;324.2
+10294-34-5;boron trichloride;-403800;290.1
+10361-92-9;Yttrium chloride;-750200;
+10424-38-1;1,2-Propanediamine, (±)-;-53600;
+10544-72-6;dinitrogen tetroxide;11100;304.4
+10544-73-7;Nitrogen trioxide;86600;314.7
+10588-10-0;2-methylpropyl pentanoate;-568600;
+11128-24-8;Fluorosilylidyne;7100;225.8
+12004-36-3;Aluminum oxide (Al2O);-130000;259.4
+12005-99-1;Arsenic monoxide;70000;
+12007-33-9;Boron sulfide;67000;
+12024-8-7;Gallium monoxide;279500;231.1
+12025-32-0;Germanium(II) sulfide;92000;234.0
+12030-14-7;Indium(II) sulfide;238000;
+12035-97-1;Uranium(II) oxide;21000;
+12061-70-0;Fluorine oxide;109000;216.4
+12070-15-4;Dicarbon;831900;199.4
+12136-26-4;Indium monoxide;387000;236.5
+12137-18-7;Rhodium monoxide;385000;
+12164-97-5;Phosphorus dioxide;-279900;252.1
+12185-9-0;Diphosphorus;144000;218.1
+12185-10-3;Tetraphosphorus;58900;280.0
+12185-17-0;Diselenium;146000;252.0
+12187-6-3;Disilver;410000;257.1
+12187-9-6;Digold;515100;
+12187-12-1;Dibismuth;219700;
+12190-70-4;Dicopper;484200;241.6
+12228-39-6;Boron monosulfide;342000;216.2
+12251-90-0;Aluminum monosulfide;200900;230.6
+12385-13-6;Hydrogen (atomic);218000;114.7
+12504-41-5;Silicon monosulfide;112500;223.7
+12505-77-0;Boron monoxide;25000;203.5
+12596-5-3;Digermanium;473100;252.8
+12596-25-7;Dimercury;108800;288.1
+12597-35-2;Disilicon;594000;229.9
+12640-89-0;Selenium monoxide;53400;234.0
+13205-44-2;Borane carbonyl;-111200;249.4
+13269-52-8;(e)-3-hexene~|~trans-3-hexene;-54400;
+13283-1-7;Tungsten(VI) chloride;-513800;
+13283-31-3;Borane(3);89200;188.2
+13403-37-7;epichlorohydrin~|~alpha-epichlorohydrin~|~(chloromethyl)-oxirane~|~1-chloro-2,3-epoxypropane;-107800;
+13444-87-6;Nitrosyl bromide;82200;273.7
+13444-90-1;Nitryl chloride;12600;272.2
+13445-50-6;Diphosphine;20900;
+13450-92-5;Germanium(IV) bromide;-300000;396.2
+13450-95-8;Germanium(IV) iodide;-56900;428.9
+13460-50-9;Metaboric acid (β form);-561900;240.1
+13463-39-3;nickel carbonyl~|~nickel tetracarbonyl;-602900;410.6
+13464-75-0;Gold hydride;295000;211.2
+13465-7-1;Hydrogen disulfide;15500;
+13465-9-3;Indium(III) bromide;-282000;
+13465-10-6;Indium(I) chloride;-75000;
+13475-76-8;11-Butyldocosane;-593400;
+13478-20-1;Phosphoryl fluoride;-1254300;285.4
+13494-80-9;Tellurium;196700;182.7
+13499-5-3;Hafnium(IV) chloride;-884500;
+13510-35-5;Indium(III) iodide;-120500;
+13517-10-7;Boron triiodide;71100;349.2
+13569-45-4;Bromosilylene;-464400;
+13595-30-7;Vanadium(IV) bromide;-336800;
+13595-81-8;Aluminum monochloride;-47700;228.1
+13595-82-9;Aluminum monofluoride;-258200;215.0
+13701-67-2;Tetrachlorodiborane;-490400;357.4
+13709-47-2;Scandium fluoride;-1247000;300.5
+13709-49-4;Yttrium fluoride;-1288700;311.8
+13709-52-9;Hafnium(IV) fluoride;-1669800;
+13709-59-6;Thorium(IV) fluoride;-1759000;341.7
+13763-23-0;Uranium(VI) chloride;-1013000;431.0
+13765-26-9;Gadolinium(III) fluoride;-1297000;
+13766-26-2;Borane(1);442700;171.8
+13766-28-4;Diboron dioxide;-454800;242.5
+13768-60-0;Fluoroborane(1);-122200;200.5
+13774-92-0;Imidogen;351500;181.2
+13774-94-2;Silylidyne;361000;
+13775-6-9;Uranium(III) fluoride;-1058500;331.9
+13776-62-0;trans-Difluorodiazine;82000;
+13812-43-6;cis-Difluorodiazine;69500;
+13818-89-8;Digermane;162300;
+13821-15-3;Sodium tetrafluoroaluminate;-1869000;345.7
+13827-32-2;Sulfur monoxide;6300;222.0
+13830-68-7;Hexafluorodisilane;-2383300;391.0
+13840-88-5;Boron dioxide;-300400;229.6
+13842-84-7;Thorium(III) fluoride;-1166100;339.2
+13845-12-0;Aluminum hexachloride;-1290800;490.0
+13863-41-7;Bromine chloride;14600;240.1
+13863-59-7;Bromine fluoride;-93800;229.0
+13873-84-2;Iodine fluoride;-95700;236.2
+13939-6-5;Molybdenum carbonyl;-912100;490.0
+13940-21-1;Mercapto;142700;195.7
+13965-73-6;Tetrafluorodiborane;-1440100;317.3
+13966-57-9;Chlorosilylidyne;189900;
+13966-66-0;Difluorosilylene;-619000;252.7
+13966-78-4;Gallium monofluoride;-251900;
+13966-94-4;Indium(I) iodide;7500;267.3
+13966-95-5;Indium(I) fluoride;-203400;
+13967-22-1;Aluminum monohydride;259200;187.9
+14280-53-6;Indium(I) bromide;-56900;259.5
+14362-44-8;Iodine (atomic);106800;180.8
+14452-59-6;Dilithium;215900;197.0
+14452-61-0;Diboron;830500;201.9
+14452-66-5;Phosphorus monoxide;-28500;222.8
+14457-64-8;Aluminum monoxide;91200;218.4
+14691-44-2;Trigermane;226800;
+14696-98-1;Iodine monoxide;126000;239.6
+14762-94-8;Fluorine (atomic);79400;158.8
+14791-57-2;Bromosilyldyne;209000;
+14808-60-7;Silicon dioxide (α-quartz);-322000;
+14929-46-5;Germanium monofluoride;-33400;
+14931-39-6;Trihydro(phosphorus trifluoride)boron;-854000;
+14977-61-8;Chromium(VI) dichloride dioxide;-538100;329.8
+14989-30-1;Chlorine oxide (ClO);101800;226.6
+15499-23-7;Fluorine superoxide (FOO);25400;259.5
+15600-49-4;Iron(III) iodide;71000;
+15656-19-6;Bromine monoxide;125800;233.0
+15831-18-2;Vanadium(IV) iodide;-122600;
+15869-85-9;5-methylnonane~|~5-methyl-nonane;-258600;
+16033-71-9;methyloxirane~|~1,2-epoxypropane~|~1,2-propylene oxide;-94700;286.9
+16177-46-1;cis-1,2-Divinylcyclobutane;166500;
+16529-66-1;trans-3-Pentenenitrile;125700;
+16603-84-2;Aluminum dichloride;-331000;
+16747-38-9;2,3,3,4-tetramethylpentane;-236100;
+16962-7-5;Aluminum borohydride;13000;379.2
+17348-59-3;isopropyl tert-butyl ether~|~1-methylethyl 1,1-dimethylethyl ether;-358100;
+17376-9-9;Chlorine superoxide (ClOO);89100;263.7
+17655-31-1;Amidogen;184900;195.0
+17702-41-9;Decaborane(14);47300;350.7
+17739-47-8;Phosphorus nitride;171500;211.1
+17778-80-2;Oxygen (atomic);249200;161.1
+17778-88-0;Nitrogen (atomic);472700;153.3
+17949-86-9;Aluminum hexafluoride;-2628000;
+18283-93-7;Tetraborane(10);66100;280.3
+18362-97-5;Isopropyl pentanoate;-544900;
+18433-84-6;Pentaborane(11);103300;321.0
+18898-34-5;Aluminum hexabromide;-970700;
+18898-35-6;Aluminum hexaiodide;-516700;
+19287-45-7;diborane;36400;232.1
+19465-30-6;Nonaborane(15);158400;364.9
+19624-22-7;Pentaborane(9);73200;280.6
+19780-66-6;3-ethyl-2-methyl-1-pentene~|~2-methyl-3-ethyl-1-pentene;-100300;
+19961-29-6;Bromoborane(1);238100;225.0
+20089-7-0;2-Methyl-1-butanethiol, (+);-114900;
+20281-86-1;2-hexanol;-333500;
+20583-55-5;Chloroborane(1);149500;213.2
+20619-16-3;Germanium(II) oxide;-46200;224.3
+20816-12-0;osmium tetroxide;-337200;293.8
+20972-43-4;trans-Azoxybenzene;342000;
+21110-21-4;Germanium monochloride;155200;247.0
+21255-83-4;Bromine dioxide;152000;271.1
+21351-79-1;Cesium hydroxide;-256000;254.8
+21368-68-3;Camphor, (±)-;-267500;
+21651-19-4;Tin(II) oxide;15100;232.1
+22359-97-3;Aluminum monobromide;-4000;239.5
+22537-15-1;Chlorine (atomic);121300;165.2
+22987-45-7;Selenium dibromide;-21000;
+23361-55-9;Chloroxyborane;-314000;
+23361-56-0;Fluorooxyborane;-607000;
+23550-45-0;Disulfur;128600;228.2
+23777-80-2;Hexaborane(10);94600;296.8
+23878-46-8;Diarsenic;222200;239.4
+25681-79-2;Disodium;142100;230.2
+25681-80-5;Dipotassium;123700;249.7
+25884-11-1;Germanium monobromide;235600;
+26198-63-0;1,2-Dichloropropane, (±)-;-162800;
+27387-79-7;Butyl 3-chloropropanoate;-502300;
+29003-73-4;Butyl dichloroacetate;-497800;
+29904-79-8;Dimagnesium;287700;
+29977-41-1;Aluminum monoiodide;65500;
+32679-33-7;Diantimony;235600;254.9
+32752-94-6;Dialuminum;485900;233.2
+33021-2-2;isobutyl-tert-butylether~|~isobutyl tert-butyl ether~|~2-methyl-1-tert-butoxypropane;-369000;
+33560-15-5;Isobutyl trichloroacetate;-500200;
+33966-50-6;2-butanamine~|~sec-butylamine;-104600;
+34713-94-5;2-Methyl-1-butanol, (±)-;-301400;
+36383-15-0;sec-Butylbenzene, (±)-;-18400;
+36653-82-4;1-hexadecanol;-517000;
+42474-21-5;1,2-dibromoheptane;-157900;
+53178-20-4;2-chlorobutane~|~sec-butyl chloride;-161100;
+54819-86-2;Butyl 2-chloropropanoate;-517300;
+55282-16-1;5-butyldocosane;-587600;
+55314-57-3;Ethyl 2-pentynoate;-250300;
+55320-6-4;11-decylhenicosane;-705800;
+57392-55-9;Isopentyl trichloroacetate;-523100;
+61178-97-0;Diindium;380900;
+62108-66-1;Propyl 3-chloropropanoate;-485700;
+62108-68-3;Isobutyl 3-chloropropanoate;-517300;
+62108-69-4;3-Methylbutyl 2-chloropropanoate;-575000;
+62108-70-7;3-Methylbutyl 3-chloropropanoate;-539400;
+62108-71-8;Propyl 2-chlorobutanoate;-578400;
+70116-68-6;3-Methyl-2-butanol, (±)-;-313500;
+74508-24-0;Digallium;438500;
+78918-91-9;3-methylhexane~|~3-methyl-hexane;-191300;
+91840-99-2;2-butanethiol~|~sec-butyl mercaptan;-96900;
+99685-96-8;Carbon [fullerene-C60];2502000;544.0
+114489-96-2;Isobutyl 2-chloropropanoate;-549600;
+115383-22-7;Carbon [fullerene-C70];2755000;614.0
+116836-32-9;sec-Butyl pentanoate;-573200;

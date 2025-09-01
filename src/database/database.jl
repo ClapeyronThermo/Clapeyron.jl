@@ -927,25 +927,4 @@ end
 include("database_group.jl")
 include("database_writer.jl")
 
-function set_formation_reference_state!(model;userlocations = String[],verbose = false)
-    ref = reference_state(model)
-    ref == nothing && throw(error("set_formation_reference_state!: the input model does not have a reference state"))
-    params = getparams(component_list(model),["properties/formation.csv"];userlocations = userlocations,verbose = verbose)
-    H0 = params["H0"].values
-    S0 = params["S0"].values
-    T0 = params["T0"].values
-    p0 = params["p0"].values
-    phase = params["phase"]
-    refs = ReferenceState[]
-    pures = split_model(model)
-    for i in 1:length(model)
-        ref_i = ReferenceState(type = :volume,T0 = T0[i],p0 =p0[i],S0 = S0[i],H0 = H0[i],phase = Symbol(phase[i]))
-        set_reference_state!(pures[i],ref_i,verbose = verbose)
-        push!(ref_i,reference_state(pure[i]))
-    end
-    ref.a0 .= only.(getfield.(refs,:a0))
-    ref.a1 .= only.(getfield.(refs,:a1))
-    return nothing
-end
-
 export getparams
