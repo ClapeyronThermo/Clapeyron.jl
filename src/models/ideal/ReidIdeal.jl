@@ -112,19 +112,13 @@ end
 evalcoeff(::ReidIdealModel,coeffs,T,lnT = log(T)) = evalpoly(T,coeffs)
 
 function eval∫coeff(::ReidIdealModel,coeffs,T,lnT = log(T))
-    n = length(coeffs)
-    div1 = NTuple{n,Int}(1:n)
-    ∫poly = coeffs ./ div1
-    return evalpoly(T,∫poly)*T
+    return Solvers.evalpolyint(T,coeffs)
 end
 
 function eval∫coeffT(::ReidIdealModel,coeffs,T,lnT = log(T))
-    n = length(coeffs)
-    div1 = NTuple{n-1,Int}(1:(n-1))
     A = first(coeffs)
     coeffs1 = coeffs[2:end]
-    ∫polyT = coeffs1 ./ div1
-    return evalpoly(T,∫polyT)*T + A*lnT
+    return Solvers.evalpolyint(T,coeffs1) + A*lnT
 end
 
 function a_ideal(model::PolynomialIdealModel, V, T, z)
