@@ -8,8 +8,8 @@ Pages = ["activity.md"]
 
 There are two alternatives on the definition of an activity model:
 
-- Defining an excess Gibbs energy function
-- Defining an activity coefficient function
+- Defining an excess Gibbs energy function.
+- Defining an activity coefficient function.
 
 those two can be converted between one form to another via:
 
@@ -27,6 +27,8 @@ Where ``\mu_i`` and ``\mu^{0}_i`` are the mixture and pure chemical potentials o
 In this case, those potentials are dependent of the pressure, whereas activity models are usually only temperature and composition dependent.
 
 ```@docs
+Clapeyron.Margules
+Clapeyron.VanLaar
 Clapeyron.Wilson
 Clapeyron.NRTL
 Clapeyron.aspenNRTL
