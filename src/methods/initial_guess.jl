@@ -559,7 +559,7 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
             v_ub_new = vh
         end
 
-        phase_h = VT_identify_phase(model,vh,T)
+        phase_h = VT_identify_phase(model,vh,T,z)
 
         if is_vapour(phase_h) && is_liquid(phase) && d2fh > 0 && d2fm > 0
             #v_lb_new = v_lb - dfl/d2fl
@@ -570,7 +570,7 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
             v_lb_new = vh
         end
 
-        return pure_spinodal(model,T,v_lb_new,v_ub_new,phase,false)
+        return pure_spinodal(model,T,v_lb_new,v_ub_new,phase,false,z)
     end
 
     if dfx*dfh <= 0

@@ -124,7 +124,7 @@ function Base.show(io::IO,::MIME"text/plain",ref::ReferenceState)
     for i in 1:n
         print(io,sp,quot,comps[i])
         print(io,quot,sp,arrow)
-        pm = sign(a1[i]) >= 0 ? '+' : '-'  
+        pm = sign(a1[i]) >= 0 ? '+' : '-'
         print(compact_io,sp,a0[i])
         print(io,sp,pm,sp)
         print(compact_io,abs(a1[i]))
