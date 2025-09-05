@@ -8,35 +8,45 @@ CurrentModule = Clapeyron
 Pages = ["saft.md"]
 ```
 
-## SAFT Models
+## PC-SAFT Models
 
 ```@docs
-Clapeyron.ogSAFT
-Clapeyron.CKSAFT
-Clapeyron.sCKSAFT
-Clapeyron.BACKSAFT
 Clapeyron.PCSAFT
+Clapeyron.sPCSAFT
 Clapeyron.PCPSAFT
+Clapeyron.pharmaPCSAFT
 Clapeyron.QPCPSAFT
 Clapeyron.HomogcPCPSAFT
 Clapeyron.HeterogcPCPSAFT
-Clapeyron.sPCSAFT
 Clapeyron.gcsPCSAFT
-Clapeyron.pharmaPCSAFT
 Clapeyron.CPPCSAFT
 Clapeyron.GEPCSAFT
 Clapeyron.ADPCSAFT
-Clapeyron.LJSAFT
-Clapeyron.softSAFT
-Clapeyron.softSAFT2016
-Clapeyron.solidsoftSAFT
-Clapeyron.SAFTVRSW
+```
+
+## SAFT-VR Models
+
+```@docs
 Clapeyron.SAFTVRMie
 Clapeyron.SAFTVRMie15
 Clapeyron.SAFTVRQMie
 Clapeyron.SAFTVRSMie
 Clapeyron.SAFTgammaMie
 Clapeyron.structSAFTgammaMie
+Clapeyron.SAFTVRSW
+```
+
+## Other SAFT Models
+
+```@docs
+Clapeyron.ogSAFT
+Clapeyron.CKSAFT
+Clapeyron.sCKSAFT
+Clapeyron.BACKSAFT
+Clapeyron.LJSAFT
+Clapeyron.softSAFT
+Clapeyron.softSAFT2016
+Clapeyron.solidsoftSAFT
 Clapeyron.DAPT
 ```
 

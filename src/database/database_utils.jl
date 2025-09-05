@@ -401,17 +401,3 @@ function bond_to_pair(segments,bonds)
     end
     return res
 end =#
-
-function merge2(x1,x2)
-    x3 = similar(x1)
-    for i in 1:length(x2)
-        if isempty(x1[i]) && isempty(x2[i])
-            x3[i] = ""
-        elseif isempty(x2[i])
-            x3[i] = x1[i]
-        else
-            x3[i] = x2[i]
-        end
-    end
-    return x3
-end

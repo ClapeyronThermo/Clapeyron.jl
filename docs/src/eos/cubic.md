@@ -48,34 +48,50 @@ Clapeyron.ab_premixing
 Clapeyron.mixing_rule
 ```
 
-## Main Models
+## van der Walls Models
 
 ```@docs
 Clapeyron.vdW
 Clapeyron.Clausius
-Clapeyron.RK
-Clapeyron.PR
-Clapeyron.RKPR
-Clapeyron.PatelTeja
-Clapeyron.KU
+Clapeyron.Berthelot
 ```
 
-## Variant Models
+## Redlich-Kwong Models
 
 ```@docs
-Clapeyron.Berthelot
+Clapeyron.RK
 Clapeyron.SRK
 Clapeyron.PSRK
 Clapeyron.tcRK
+```
+
+## Peng-Robinson Models
+
+```@docs
+Clapeyron.PR
 Clapeyron.PR78
-Clapeyron.PTV
-Clapeyron.EPPR78
-Clapeyron.UMRPR
+Clapeyron.cPR
 Clapeyron.VTPR
+Clapeyron.UMRPR
 Clapeyron.tcPR
 Clapeyron.tcPRW
-Clapeyron.cPR
+Clapeyron.EPPR78
 Clapeyron.QCPR
+```
+
+## Patel-Teja Models
+
+```@docs
+Clapeyron.PatelTeja
+Clapeyron.PTV
+Clapeyron.YFR
+```
+
+## Other cubic Models
+
+```@docs
+Clapeyron.RKPR
+Clapeyron.KU
 ```
 
 ## Alpha `(α(T))` Models

@@ -189,7 +189,6 @@ function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMelting
     else
         v0 = method.v0
     end
-    _1 =
     V0 = SVector(v0[1],log(v0[2]),log(v0[3]))
     f!(F,x) = Obj_Mel_Temp(model,F,x[1],exp(x[2]),exp(x[3]),p,p̄,T̄)
     results = Solvers.nlsolve(f!,V0,TrustRegion(Newton(),Dogleg()),NEqOptions(method))
