@@ -89,10 +89,4 @@ function sqrtp1(x)
 end
 export bmcs_hs,xlogx
 
-function testxx()
-    for x in -10:10
-        dx = cbrtp1(x) - cbrt(x+1)
-        println(dx)
-    end
-end
 end #module

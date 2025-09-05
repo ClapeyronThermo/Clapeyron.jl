@@ -129,7 +129,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
     return nan
 end
 
-function _maybe_spinodal(model,_T,_v_lb,_v_ub,z) where K
+function _maybe_spinodal(model,_T,_v_lb,_v_ub,z)
     T,v_lb,v_ub = promote(_T,_v_lb,_v_ub)
     isnan(v_lb) && return true
     isnan(v_ub) && return true
