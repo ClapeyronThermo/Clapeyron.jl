@@ -29,8 +29,7 @@ function check_valid_eq2(model1,model2,p,V1,V2,T,ε0 = 5e7)
             _is_positive((p1,p2,V2,V2,T,p)) #positive and finite pressures and volumes
 end
 
-function μp_equality1_p(model1,model2,v1,v2,T,ps,μs)
-    z = SA[1.0]
+function μp_equality1_p(model1,model2,v1,v2,T,ps,μs,z = SA[1.0])
     RT = Rgas(model1)*T
     f1(V) = a_res(model1,V,T,z)
     f2(V) = a_res(model2,V,T,z)
@@ -43,13 +42,12 @@ function μp_equality1_p(model1,model2,v1,v2,T,ps,μs)
     return SVector(Fμ,Fp)
 end
 
-function μp_equality1_p(model,v1,v2,T) 
-    ps,μs = equilibria_scale(model)
-    μp_equality1_p(model,model,v1,v2,T,ps,μs)
+function μp_equality1_p(model,v1,v2,T,z = SA[1.0]) 
+    ps,μs = equilibria_scale(model,z)
+    μp_equality1_p(model,model,v1,v2,T,ps,μs,z)
 end
 
-function μp_equality1_T(model1,model2,v1,v2,p,T,ps,μs)
-    z = SA[1.0]
+function μp_equality1_T(model1,model2,v1,v2,p,T,ps,μs,z = SA[1.0])
     RT = Rgas(model1)*T
     f1(V) = a_res(model1,V,T,z)
     f2(V) = a_res(model2,V,T,z)
@@ -61,6 +59,11 @@ function μp_equality1_T(model1,model2,v1,v2,p,T,ps,μs)
     Fp1 = (p1 - p)*ps
     Fp2 = (p2 - p)*ps
     return SVector(Fμ,Fp1,Fp2)
+end
+
+function μp_equality1_T(model,v1,v2,p,T,z = SA[1.0]) 
+    ps,μs = equilibria_scale(model,z)
+    μp_equality1_T(model,model,v1,v2,p,T,ps,μs,z)
 end
 
 function try_2ph_pure_pressure(model,T,v10,v20,ps,mus,method)

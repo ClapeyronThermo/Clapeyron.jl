@@ -1,17 +1,60 @@
-"""
-    `x0_Tproperty(model::EoSModel,p,z::AbstractVector)`
-Peforms some initial checks to see if a possible solution exists in `Clapeyron.jl`.
-"""
-function x0_Tproperty(model::EoSModel,p,z::AbstractVector,verbose = false)
-    bubble = Clapeyron.bubble_temperature(model,p,z)
-    dew = Clapeyron.dew_temperature(model,p,z)
-    if isnan(bubble[1])
-      verbose && @error "bubble_temperature calculation failed."
-    end
-    if isnan(dew[1])
-      verbose && @error "dew_temperature calculation failed."
-    end
-    return bubble,dew
+normalize_property(model,prop,z,property::F) where F = prop,property
+normalize_property(model,prop,z,property::typeof(molar_density)) = sum(z)/prop,volume
+normalize_property(model,prop,z,property::typeof(mass_density)) = molecular_weight(model,z)/prop,volume
+
+function x0_edge_temperature(model,p,z,pure = split_pure_model(model))
+  dPdTsat = extended_dpdT_temperature.(pure,p)
+  T_bubble = antoine_bubble_solve(dPdTsat,p,z)
+  T_dew = antoine_dew_solve(dPdTsat,p,z)
+  return (T_bubble,T_dew),(pure,dPdTsat)
+end
+
+function μp_equality1_T2(model,p,z,x,Ts)
+    lnv1,lnv2,T1,T2 = x
+    n = sum(z)
+    v1,v2 = exp(lnv1),exp(lnv2)
+    RT1,RT2 = n*Rgas(model)*T1,n*Rgas(model)*T2
+    f1(V) = a_res(model,V,T1,z)
+    f2(V) = a_res(model,V,T2,z)
+    A1,Av1 = Solvers.f∂f(f1,v1)
+    A2,Av2 =Solvers.f∂f(f2,v2)
+    p1,p2 = RT1*(-Av1 + 1/v1),RT2*(-Av2 + 1/v2)
+    Δμᵣ = A1 - v1*Av1 - A2 + v2*Av2 + log(v2/v1)
+    Fμ = Δμᵣ
+    Fp1 = (p1 - p)/p
+    Fp2 = (p2 - p)/p
+    FT = (T1 - T2)/Ts
+    return SVector(Fμ,Fp1,Fp2,FT)
+end
+
+function edge_temperature(model,p,z,v0 = nothing)
+  if v0 == nothing
+    vv0,_ = x0_edge_temperature(model,p,z)
+  else
+    vv0 = (v0[1],v0[2])
+  end
+  T1 = vv0[1]
+  T2 = vv0[2]
+  Tmin,Tmax = minmax(T1,T2)
+  n = sum(z)
+  v_Tmin = volume(model,p,Tmin,z,phase = :l)
+  v_Tmax = volume(model,p,Tmax,z,phase = :v)
+  Ts = 0.5*(T1 + T2)
+  f(x) = μp_equality1_T2(model,p,z,x,Ts)
+  V0 = SVector(promote(log(v_Tmin),log(v_Tmax),Tmin,Tmax))
+
+  if !_is_positive((v_Tmin,v_Tmax,Tmin,Tmax))
+    _0 = zero(V0[1])
+    nan = _0/_0
+    fail = (nan,nan,nan)
+    return fail
+  end
+
+  sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var())
+  v1 = exp(sol[1])
+  v2 = exp(sol[2])
+  T_eq = 0.5*(sol[3] + sol[4])
+  return T_eq,v1,v2
 end
 
 """
@@ -24,26 +67,26 @@ function FindEdge(f::T,a,b) where T
   return FindEdge(f,a,b,fa,fb)
 end
 
-function FindEdge(f::T,a,b,fa,fb) where T
-  @assert a <= b
-  if isapprox(a,b,atol=1e-10)
-    return a,fa,fb
-  end
-    c = (a+b)/2
+function FindEdge(f::T,_a,_b,_fa,_fb) where T
+  @assert _a <= _b
+
+  a,b,fa,fb = promote(_a,_b,_fa,_fb)
+  for i in 1:40
+    isapprox(a,b,rtol=1e-10,atol = 1e-10) && return a,fa,fb
+    c = 0.5*(a+b)
     fc = f(c)
     ∇fa,∇fc = (fc - fa)/(c - a),(fb - fc)/(b - a)
     if abs(∇fc) > abs(∇fa)
-      FindEdge(f,c,b,fc,fb)
+      a = c
+      fa = fc
     else
-      FindEdge(f,a,c,fa,fc)
+      b = c
+      fb = fc
     end
+  end
+  nan = zero(a)/zero(a)
+  return nan,nan,nan
 end
-
-
-normalize_property(model,prop,z,property::F) where F = prop,property
-normalize_property(model,prop,z,property::typeof(molar_density)) = sum(z)/prop,volume
-normalize_property(model,prop,z,property::typeof(mass_density)) = molecular_weight(model,z)/prop,volume
-
 
 """
     Tproperty(model::EoSModel,p,prop,z::AbstractVector,property = enthalpy;rootsolver = Roots.Order0(),phase =:unknown,abstol = 1e-15,reltol = 1e-15, verbose = false)
@@ -115,143 +158,46 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     return __Tproperty_check(res,verbose)
   end
 
-  bubble,dew = x0_Tproperty(model,p,z,verbose)
-  bubble_T,bubble_vl,bubble_vv,w_bubble = bubble
-  dew_T,dew_vl,dew_vv,w_dew = dew
+  T_edge,v_l,v_v = edge_temperature(model,p,z)
 
-  #trivial
-  if property === temperature
-    T = prop*one(bubble_T)
-    β = (T - dew_T)/(bubble_T - dew_T)
-    if 0 <= β <= 1
-      verbose && @warn "In the phase change region"
-      _new_phase = :eq
-    elseif β > 1
-      _new_phase = :vapour
-    elseif β < 0
-      _new_phase = :liquid
-    else
-      _new_phase = :failure
-    end
-    return T,_new_phase
+  if !isfinite(T_edge)
+    verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.T_scale(model,z)"
+    res = __Tproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
+    return __Tproperty_check(res,verbose)
+  end
+  
+  prop_l = spec_to_vt(model,v_l,T_edge,z,property)
+  prop_v = spec_to_vt(model,v_v,T_edge,z,property)
+
+  verbose && @info "property at liquid edge:     $prop_l"
+  verbose && @info "property at vapour edge:     $prop_v"
+  verbose && @info "temperature at edge point:   $P_edge"
+
+  β = (prop - prop_l)/(prop_v - prop_l)
+
+  #we are inside equilibria.
+  if 0 <= β <= 1
+    verbose && @info "property between the liquid and vapour edges, in the phase change region"
+    return P_edge,:eq
   end
 
-  #if any bubble/dew temp is NaN, try solving for the non-NaN value
-  #if both values are NaN, try solving using T_scale(model,z)
-  if isnan(bubble_T) && !isnan(dew_T)
-    verbose && @warn "non-finite bubble point, trying to solve using the dew point"
-    if property == volume
-      prop_bubble = dew_vl
-      prop_dew = dew_vv
-    else
-      prop_bubble = spec_to_vt(model,dew_vl,dew_T,w_dew,property)
-      prop_dew = spec_to_vt(model,dew_vv,dew_T,z,property)/sum(z)
-    end
-    β = (prop/sum(z) - prop_bubble)/(prop_dew - prop_bubble)
-    if 0 <= β <= 1
-      #strategy: substract the liquid part, and solve for the gas fraction
-      #damp = Solvers.positive_linesearch(z/sum(z),w_dew,decay = 0.95) #make sure that the gas fraction is positive
-      #βx = damp*(1 - β)*sum(z)
-      #new_prop = prop - βx*prop_bubble
-      #new_z = z - w_dew * βx
-      #Tx,stx = __Tproperty(model,p,new_prop,new_z,property,rootsolver,:gas,abstol,reltol,threaded,dew_T)
-      #stx == :failure && (return dew_T,:eq)
-      return dew_T,:eq
-    end
-    verbose && @info "pressure($property) < pressure(dew point)"
-    return __Pproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_T)
-  elseif !isnan(bubble_T) && isnan(dew_T)
-    verbose && @warn "non-finite dew point, trying to solve using the bubble point"
-    if property == volume
-      prop_bubble = bubble_vl
-      prop_dew = bubble_vv
-    else
-      prop_bubble = spec_to_vt(model,bubble_vl,bubble_T,z,property)/sum(z)
-      prop_dew = spec_to_vt(model,bubble_vv,bubble_T,w_bubble,property)
-    end
-
-    β = (prop/sum(z) - prop_dew)/(prop_bubble - prop_dew)
-    0 <= β <= 1 && (return bubble_T,:eq)
-    verbose && @info "pressure($property) > pressure(bubble point)"
-    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_T)
-  elseif isnan(bubble_T) && isnan(dew_T)
-    verbose && @warn "non-finite dew and bubble points, trying to solve using Clapeyron.T_scale(model,z)"
-    return __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
-  end
-
-  if property == volume
-    prop_bubble = bubble_vl*sum(z)
-    prop_dew = dew_vv*sum(z)
-  else
-    prop_bubble = property(model,p,bubble_T,z,phase=phase)
-    prop_dew = property(model,p,dew_T,z,phase=phase)
-  end
-
-  F(T) = property(model,p,T,z)
-
-  if verbose
-    @info "input property:              $prop"
-    @info "property at dew point:       $prop_dew"
-    @info "property at bubble point:    $prop_bubble"
-    @info "temperature at dew point:    $dew_T"
-    @info "temperature at bubble point: $bubble_T"
-  end
-
-  β = (prop - prop_dew)/(prop_bubble - prop_dew)
-
+  #gas side, maybe eq, maybe not
   if β > 1
-    verbose && @info "temperature($property) < temperature(bubble point)"
-    res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,bubble_T)
+    res = __Tproperty(model,T,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,T_edge)
+    ψ_stable = diffusive_stability(model,p,res[1],z,phase = :vapour)
+    !ψ_stable && verbose && @info "pseudo-vapour temperature($property) in phase change region (diffusively unstable)"
+    !ψ_stable && return __Tproperty_check((res[1],:eq),verbose,T_edge)
+    #TODO: hook dew temperature here
     return __Tproperty_check(res,verbose)
-  elseif β < 0
-    verbose && @info "temperature($property) > temperature(dew point)"
-    res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,dew_T)
+  end
+
+  if β < 0
+    res = __Tproperty(model,T,prop,z,property,rootsolver,:liquid,abstol,reltol,threaded,P_edge)
+    ψ_stable = diffusive_stability(model,p,res[1],z,phase = :liquid)
+    !ψ_stable && verbose && @info "pseudo-liquid temperature($property) in phase change region (diffusively unstable)."
+    !ψ_stable && return __Tproperty_check((res[1],:eq),verbose,T_edge)
+    #TODO: hook bubble temperature here
     return __Tproperty_check(res,verbose)
-  elseif 0 <= β <= 1
-
-    if property == volume
-      verbose && @info "$property in the phase change region, returning a linear interpolation of the bubble and dew temperatures"
-      return β*bubble_T + (1 - β)*dew_T,:eq
-    end
-
-    T_edge,prop_edge_bubble,prop_edge_dew = FindEdge(F,bubble_T,dew_T)
-
-    if !isfinite(T_edge)
-      verbose && @error "failure to calculate edge point"
-      verbose && @warn "$property in the phase change region, returning a linear interpolation of the bubble and dew temperatures"
-      return β*bubble_T + (1 - β)*dew_T,:eq
-    end
-    verbose && @info "property at dew edge:        $prop_edge_dew"
-    verbose && @info "property at bubble edge:     $prop_edge_bubble"
-    verbose && @info "temperature at edge point:   $T_edge"
-
-    #=
-    the order is the following:
-    bubble -> edge_bubble -> edge_dew -> dew
-    or:
-    dew -> edge_dew -> edge_bubble -> bubble
-    =#
-
-    βedge = (prop - prop_edge_bubble)/(prop_edge_dew - prop_edge_bubble)
-    βedge_bubble = (prop - prop_edge_bubble)/(prop_bubble - prop_edge_bubble)
-    βedge_dew = (prop - prop_edge_dew)/(prop_dew - prop_edge_dew)
-
-    if 0 <= βedge <= 1
-      verbose && @warn "In the phase change region"
-      return T_edge,:eq
-    elseif βedge > 1
-      verbose && @info "temperature($property) ∈ (temperature(dew point),temperature(edge point))"
-      T_edge_dew = βedge_dew*dew_T + (1 - βedge_dew)*T_edge
-      #TODO: we could skip this calculation when Tproperty is used as initial point.
-      Tx,_ = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_edge_dew)
-      return __Tproperty_check((Tx,:eq),verbose,T_edge)
-    elseif βedge < 0
-      verbose && @info "temperature($property) ∈ (temperature(edge point),temperature(bubble point))"
-      T_edge_bubble = βedge_bubble*bubble_T + (1 - βedge_bubble)*T_edge
-      #TODO: we could skip this calculation when Tproperty is used as initial point.
-      Tx,_ = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_edge_bubble)
-      return __Tproperty_check((Tx,:eq),verbose,T_edge)
-    end
   end
 
   _0 = zero(Base.promote_eltype(model,p,prop,z))
