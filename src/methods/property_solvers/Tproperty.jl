@@ -27,6 +27,8 @@ function μp_equality1_T2(model,p,z,x,Ts)
     return SVector(Fμ,Fp1,Fp2,FT)
 end
 
+mechanical_critical_point(model,z,x0) = crit_pure(model,x0,z)
+
 function edge_temperature(model,p,z,v0 = nothing)
   if v0 == nothing
     vv0,_ = x0_edge_temperature(model,p,z)
@@ -54,6 +56,25 @@ function edge_temperature(model,p,z,v0 = nothing)
   v1 = exp(sol[1])
   v2 = exp(sol[2])
   T_eq = 0.5*(sol[3] + sol[4])
+  if v1 ≈ v2 #fail when calculating edge temperature, this happens near the (mechanical) critical point
+    Tr = T_eq/T_scale(model,z)
+    vlog = log10(v1)
+    Tc,Pc,Vc = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
+    if Pc <= p
+      nan = zero(Tr)/zero(Tr)
+      return nan,nan,nan #TODO: return critical point?
+    else
+      T_extrapolated = critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z/sum(z))
+      vlc,vvc = critical_vsat_extrapolation(model,T_extrapolated,Tc,Vc,z)
+      V1 = SVector(promote(log(vlc),log(vvc),T_extrapolated,T_extrapolated))
+      sol1 = Solvers.nlsolve2(f,V1,Solvers.Newton2Var())
+      v3 = exp(sol1[1])
+      v4 = exp(sol1[2])
+      T_eq2 = 0.5*(sol1[3] + sol1[4])
+      return T_eq2,v3,v4
+    end
+    return Tc,Vc,Vc
+  end
   return T_eq,v1,v2
 end
 
@@ -162,7 +183,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
   if !isfinite(T_edge)
     verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.T_scale(model,z)"
-    res = __Tproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
+    res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
     return __Tproperty_check(res,verbose)
   end
   
@@ -171,7 +192,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
   verbose && @info "property at liquid edge:     $prop_l"
   verbose && @info "property at vapour edge:     $prop_v"
-  verbose && @info "temperature at edge point:   $P_edge"
+  verbose && @info "temperature at edge point:   $T_edge"
 
   β = (prop - prop_l)/(prop_v - prop_l)
 
@@ -183,20 +204,23 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
   #gas side, maybe eq, maybe not
   if β > 1
-    res = __Tproperty(model,T,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,T_edge)
+    res = __Tproperty(model,p,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,T_edge)
     ψ_stable = diffusive_stability(model,p,res[1],z,phase = :vapour)
     !ψ_stable && verbose && @info "pseudo-vapour temperature($property) in phase change region (diffusively unstable)"
     !ψ_stable && return __Tproperty_check((res[1],:eq),verbose,T_edge)
     #TODO: hook dew temperature here
+    verbose && @info "temperature($property) in vapour branch"
     return __Tproperty_check(res,verbose)
   end
 
   if β < 0
-    res = __Tproperty(model,T,prop,z,property,rootsolver,:liquid,abstol,reltol,threaded,P_edge)
+    res = __Tproperty(model,p,prop,z,property,rootsolver,:liquid,abstol,reltol,threaded,T_edge)
     ψ_stable = diffusive_stability(model,p,res[1],z,phase = :liquid)
+    
     !ψ_stable && verbose && @info "pseudo-liquid temperature($property) in phase change region (diffusively unstable)."
     !ψ_stable && return __Tproperty_check((res[1],:eq),verbose,T_edge)
     #TODO: hook bubble temperature here
+    verbose && @info "temperature($property) in liquid branch"
     return __Tproperty_check(res,verbose)
   end
 

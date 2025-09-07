@@ -72,7 +72,7 @@ function VT_diffusive_eigvalue(model,V,T,z = SA[1.0])
 end
 
 """
-    diffusive_stability(model,p,T,z = SA[1.0],phase = :unknown,threaded = true,vol0 = nothing)
+    diffusive_stability(model,p,T,z = SA[1.0];phase = :unknown,threaded = true,vol0 = nothing)
 
 Performs a diffusive stability for a (V,T,z) pair, returns `true/false`.
 
@@ -81,7 +81,7 @@ Performs a diffusive stability for a (V,T,z) pair, returns `true/false`.
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 
 """
-function diffusive_stability(model,p,T,z = SA[1.0],phase = :unknown,threaded = true,vol0 = nothing)
+function diffusive_stability(model,p,T,z = SA[1.0];phase = :unknown,threaded = true,vol0 = nothing)
     V = volume(model,p,T,z;phase,threaded,vol0)
     return VT_diffusive_stability(model,V,T,z)
 end

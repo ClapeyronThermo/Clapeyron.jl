@@ -288,6 +288,7 @@ function __crit_pure_Δ_obj(T,v,R,a,b,Δ1,Δ2)
 end
 
 function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
+    check_arraysize(model,z)
     lb_v = lb_volume(model,T,z)
     if iszero(p) && is_liquid(phase) #liquid root at zero pressure if available
         vl,_ = zero_pressure_impl(model,T,z)

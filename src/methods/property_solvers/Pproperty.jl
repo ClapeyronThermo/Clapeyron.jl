@@ -117,7 +117,6 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   verbose && @info "pressure at edge point:      $P_edge"
 
   β = (prop - prop_l)/(prop_v - prop_l)
-  @show 
   #we are inside equilibria.
   if 0 <= β <= 1
     verbose && @info "property between the liquid and vapour edges, in the phase change region"

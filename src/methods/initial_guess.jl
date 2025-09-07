@@ -978,16 +978,16 @@ end
 
 Given critical information and a temperature, extrapolate the liquid and vapor saturation volumes.
 """
-function critical_vsat_extrapolation(model,T,Tc,Vc)
+function critical_vsat_extrapolation(model,T,Tc,Vc,z = SA[1.0])
     if T > Tc
-        _0 = zero(Base.promote_eltype(model,T))
+        _0 = zero(Base.promote_eltype(model,T,z))
         nan = _0/_0
         return nan,nan
     end
     ρc = 1/Vc
     function dp(ρ,T)
-        _,dpdV = p∂p∂V(model,1/ρ,T)
-        return -dpdV*ρ*ρ
+        _,dpdV = p∂p∂V(model,1/ρ,T,z)
+        return -sum(z)*dpdV*ρ*ρ
     end
     #Solvers.derivative(dρ -> pressure(model, 1/dρ, T), ρ)
     _,d2p,d3p = Solvers.∂J2(dp,ρc,Tc)
@@ -1038,8 +1038,8 @@ Given critical information and a pressure, extrapolate the saturation temperatur
     This function will not check if the input pressure is over the critical point.
 
 """
-function critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
-    _p(_T) = pressure(model,Vc,_T)
+function critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z = SA[1.0])
+    _p(_T) = pressure(model,Vc,_T,z)
     dpdT = Solvers.derivative(_p,Tc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = log(p/Pc)
