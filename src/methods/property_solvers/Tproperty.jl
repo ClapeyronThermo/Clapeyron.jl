@@ -186,15 +186,19 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     return __Tproperty_check(res,verbose)
   end
 
-  edge,crit,status = _edge_temperature(model,p,z)
+  v0_edge,v0_bubbledew = x0_edge_temperature(model,p,z)
+  edge,crit,status = _edge_temperature(model,p,z,v0_edge)
   T_edge,v_l,v_v = edge
 
   if status == :supercritical
+    #=
+    TODO: what to do in this zone? 
+    we are smooth in the p-v curves, 
+    but there are still phase separation up until the mixture critical point. =#
     Tc,Pc,Vc = crit
     verbose && @info "mechanical critical pressure:        $Pc"
     verbose && @info "mechanical critical temperature:     $Tc"
-    verbose && @info "temperature($property) over mechanical critical point"
-    res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tc)
+    res = __Tproperty(model,p,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,Tc)
     res[2] == :failure && return __Tproperty_check(res,verbose)
     ψ_stable = diffusive_stability(model,p,res[1],z,phase = :vapour)
     !ψ_stable && verbose && @info "pseudo-critical temperature($property) in phase change region (diffusively unstable)"
