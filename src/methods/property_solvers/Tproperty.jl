@@ -30,6 +30,11 @@ end
 mechanical_critical_point(model,z,x0) = crit_pure(model,x0,z)
 
 function edge_temperature(model,p,z,v0 = nothing)
+  edge,crit,status = _edge_temperature(model,p,z,v0)
+  return edge
+end
+
+function _edge_temperature(model,p,z,v0 = nothing)
   if v0 == nothing
     vv0,_ = x0_edge_temperature(model,p,z)
   else
@@ -45,37 +50,39 @@ function edge_temperature(model,p,z,v0 = nothing)
   f(x) = μp_equality1_T2(model,p,z,x,Ts)
   V0 = SVector(promote(log(v_Tmin),log(v_Tmax),Tmin,Tmax))
 
-  if !_is_positive((v_Tmin,v_Tmax,Tmin,Tmax))
-    _0 = zero(V0[1])
-    nan = _0/_0
-    fail = (nan,nan,nan)
-    return fail
-  end
+  _0 = zero(V0[1])
+  nan = _0/_0
+  fail = (nan,nan,nan)
+
+  _is_positive((v_Tmin,v_Tmax,Tmin,Tmax)) || return fail,fail,:failure
 
   sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var())
   v1 = exp(sol[1])
   v2 = exp(sol[2])
   T_eq = 0.5*(sol[3] + sol[4])
-  if v1 ≈ v2 #fail when calculating edge temperature, this happens near the (mechanical) critical point
-    Tr = T_eq/T_scale(model,z)
-    vlog = log10(v1)
-    Tc,Pc,Vc = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
-    if Pc <= p
-      nan = zero(Tr)/zero(Tr)
-      return nan,nan,nan #TODO: return critical point?
-    else
-      T_extrapolated = critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z/sum(z))
-      vlc,vvc = critical_vsat_extrapolation(model,T_extrapolated,Tc,Vc,z)
-      V1 = SVector(promote(log(vlc),log(vvc),T_extrapolated,T_extrapolated))
-      sol1 = Solvers.nlsolve2(f,V1,Solvers.Newton2Var())
-      v3 = exp(sol1[1])
-      v4 = exp(sol1[2])
-      T_eq2 = 0.5*(sol1[3] + sol1[4])
-      return T_eq2,v3,v4
-    end
-    return Tc,Vc,Vc
-  end
-  return T_eq,v1,v2
+  edge = (T_eq,v1,v2)
+  check_valid_sat_pure(model,p,v1,v2,T_eq,z) && (return edge,fail,:success)
+
+  #fail when calculating edge temperature, this happens near the (mechanical) critical point
+  Tr = T_eq/T_scale(model,z)
+  vlog = log10(v1)
+  crit = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
+  Tc,Pc,Vc = crit
+
+  !isfinite(Pc) && return fail,fail,:failure
+  Pc <= p && return fail,crit,:supercritical
+
+  T_extrapolated = critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z/sum(z))
+  vlc,vvc = critical_vsat_extrapolation(model,T_extrapolated,Tc,Vc,z)
+  V1 = SVector(promote(log(vlc),log(vvc),T_extrapolated,T_extrapolated))
+  sol1 = Solvers.nlsolve2(f,V1,Solvers.Newton2Var())
+  v3 = exp(sol1[1])
+  v4 = exp(sol1[2])
+  T_eq2 = 0.5*(sol1[3] + sol1[4])
+  edge2 = (T_eq2,v3,v4)
+  check_valid_sat_pure(model,p,v3,v4,T_eq2,z) && return edge2,crit,:success
+
+  return fail,fail,:failure
 end
 
 """
@@ -179,14 +186,32 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     return __Tproperty_check(res,verbose)
   end
 
-  T_edge,v_l,v_v = edge_temperature(model,p,z)
+  edge,crit,status = _edge_temperature(model,p,z)
+  T_edge,v_l,v_v = edge
 
-  if !isfinite(T_edge)
-    verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.T_scale(model,z)"
-    res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
+  if status == :supercritical
+    Tc,Pc,Vc = crit
+    verbose && @info "mechanical critical pressure:        $Pc"
+    verbose && @info "mechanical critical temperature:     $Tc"
+    verbose && @info "temperature($property) over mechanical critical point"
+    res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Tc)
+    res[2] == :failure && return __Tproperty_check(res,verbose)
+    ψ_stable = diffusive_stability(model,p,res[1],z,phase = :vapour)
+    !ψ_stable && verbose && @info "pseudo-critical temperature($property) in phase change region (diffusively unstable)"
+    !ψ_stable && return __Tproperty_check((res[1],:eq),verbose)
     return __Tproperty_check(res,verbose)
   end
-  
+
+  if status == :failure
+    verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.T_scale(model,z)"
+    res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
+    res[2] == :failure && return __Tproperty_check(res,verbose)
+    ψ_stable = diffusive_stability(model,p,res[1],z,phase = :vapour)
+    !ψ_stable && verbose && @info "pseudo-critical temperature($property) in phase change region (diffusively unstable)"
+    !ψ_stable && return __Tproperty_check((res[1],:eq),verbose)
+    return __Tproperty_check(res,verbose)
+  end
+
   prop_l = spec_to_vt(model,v_l,T_edge,z,property)
   prop_v = spec_to_vt(model,v_v,T_edge,z,property)
 
@@ -199,28 +224,52 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
   #we are inside equilibria.
   if 0 <= β <= 1
     verbose && @info "property between the liquid and vapour edges, in the phase change region"
-    return P_edge,:eq
+    return T_edge,:eq
   end
 
   #gas side, maybe eq, maybe not
   if β > 1
     res = __Tproperty(model,p,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,T_edge)
+    res[2] == :failure && return __Tproperty_check(res,verbose,T_edge)
     ψ_stable = diffusive_stability(model,p,res[1],z,phase = :vapour)
     !ψ_stable && verbose && @info "pseudo-vapour temperature($property) in phase change region (diffusively unstable)"
     !ψ_stable && return __Tproperty_check((res[1],:eq),verbose,T_edge)
-    #TODO: hook dew temperature here
+
     verbose && @info "temperature($property) in vapour branch"
+
+    dew = dew_temperature(model,p,z)
+    T_dew,_,v_dew,_ = dew
+    prob_dew = spec_to_vt(model,v_dew*sum(z),T_dew,z,property)
+    
+    verbose && @info "temperature at dew point:  $T_dew"
+    verbose && @info "property at dew point:     $prob_dew"
+
+    β_dew = (prop - prop_l)/(prob_dew - prop_l)
+    0 < β_dew < 1 && verbose && @info "pseudo-liquid temperature($property) in phase change region (between edge and dew point)."
+    0 < β_dew < 1 && return __Tproperty_check((res[1],:eq),verbose,T_edge)
     return __Tproperty_check(res,verbose)
   end
 
   if β < 0
     res = __Tproperty(model,p,prop,z,property,rootsolver,:liquid,abstol,reltol,threaded,T_edge)
+    res[2] == :failure && return __Tproperty_check(res,verbose,T_edge)
     ψ_stable = diffusive_stability(model,p,res[1],z,phase = :liquid)
-    
+
     !ψ_stable && verbose && @info "pseudo-liquid temperature($property) in phase change region (diffusively unstable)."
     !ψ_stable && return __Tproperty_check((res[1],:eq),verbose,T_edge)
-    #TODO: hook bubble temperature here
+
     verbose && @info "temperature($property) in liquid branch"
+    
+    bubble = bubble_temperature(model,p,z)
+    T_bubble,v_bubble,_,_ = bubble
+    prob_bubble = spec_to_vt(model,v_bubble*sum(z),T_bubble,z,property)
+    
+    verbose && @info "temperature at bubble point:  $T_bubble"
+    verbose && @info "property at bubble point:     $prob_bubble"
+
+    β_bubble = (prop - prop_l)/(prob_bubble - prop_l)
+    0 < β_bubble < 1 && verbose && @info "pseudo-liquid temperature($property) in phase change region (between edge and bubble point)."
+    0 < β_bubble < 1 && return __Tproperty_check((res[1],:eq),verbose,T_edge)
     return __Tproperty_check(res,verbose)
   end
 

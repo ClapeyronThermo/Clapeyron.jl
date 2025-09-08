@@ -7,6 +7,11 @@ function x0_edge_pressure(model,T,z,pure = split_pure_model(model))
 end
 
 function edge_pressure(model,T,z,v0 = nothing)
+  edge,crit,status = _edge_pressure(model,T,z,v0)
+  return edge
+end
+
+function _edge_pressure(model,T,z,v0 = nothing)
   if v0 == nothing
     vv0,_ = x0_edge_pressure(model,T,z)
   else
@@ -19,20 +24,40 @@ function edge_pressure(model,T,z,v0 = nothing)
   v_pmax = volume(model,pmax,T,z,phase = :l)
   f(x) = μp_equality1_p(model,exp(x[1]),exp(x[2]),T,z)
   TT = T*one(Base.promote_eltype(model,v_pmin,v_pmax,T))
-  V0 = svec2(log(v_pmin),log(v_pmax),TT)
+  V0 = svec2(log(v_pmax),log(v_pmin),TT)
 
-  if !_is_positive((v_pmin,v_pmax,T))
-    _0 = zero(V0[1])
-    nan = _0/_0
-    fail = (nan,nan,nan)
-    return fail
-  end
+  _0 = zero(V0[1])
+  nan = _0/_0
+  fail = (nan,nan,nan)
+
+  _is_positive((v_pmin,v_pmax,T)) || return fail,fail,:failure
 
   sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var())
   v1 = exp(sol[1])
   v2 = exp(sol[2])
   p_eq = pressure(model,v2,T,z)
-  return p_eq,v1,v2
+  edge = (p_eq,v1,v2)
+  check_valid_sat_pure(model,p_eq,v1,v2,T,z) && return edge,fail,:success
+
+  #fail when calculating edge pressure, this happens near the (mechanical) critical point
+  Tr = T/T_scale(model,z)
+  vlog = log10(v1)
+  crit = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
+  Tc,Pc,Vc = crit
+
+  !isfinite(Tc) && return fail,fail,:failure
+  Tc <= T && return fail,crit,:supercritical
+
+  vlc,vvc = critical_vsat_extrapolation(model,T,Tc,Vc,z)
+  V1 = SVector(promote(log(vlc),log(vvc)))
+  sol1 = Solvers.nlsolve2(f,V1,Solvers.Newton2Var())
+  v3 = exp(sol1[1])
+  v4 = exp(sol1[2])
+  p_eq2 = pressure(model,v2,T,z)
+  edge2 = (v3,v4,p_eq2)
+  check_valid_sat_pure(model,p_eq2,v3,v4,T,z) && return (edge2,crit,:success)
+
+  return fail,fail,:failure
 end
 
 
@@ -102,13 +127,32 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     return __Pproperty_check(res,verbose)
   end
 
-  P_edge,v_l,v_v = edge_pressure(model,T,z)
+  edge,crit,status = _edge_pressure(model,T,z)
+  P_edge,v_l,v_v = edge
 
-  if !isfinite(P_edge)
-    verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.p_scale(model,z)"
-    return __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p_scale(model,z))
+  if status == :supercritical
+    Tc,Pc,Vc = crit
+    verbose && @info "mechanical critical pressure:        $Pc"
+    verbose && @info "mechanical critical temperature:     $Tc"
+    verbose && @info "pressure($property) over mechanical critical point"
+    res = __Pproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,Pc)
+    res[2] == :failure && return __Pproperty_check(res,verbose)
+    ψ_stable = diffusive_stability(model,res[1],T,z,phase = :vapour)
+    !ψ_stable && verbose && @info "pseudo-critical pressure($property) in phase change region (diffusively unstable)"
+    !ψ_stable && return __Pproperty_check((res[1],:eq),verbose)
+    return res
   end
-  
+
+  if status == :failure
+    verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.T_scale(model,z)"
+    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p_scale(model,z))
+    res[2] == :failure && return __Pproperty_check(res,verbose)
+    ψ_stable = diffusive_stability(model,res[1],T,z,phase = :vapour)
+    !ψ_stable && verbose && @info "pseudo-critical pressure($property) in phase change region (diffusively unstable)"
+    !ψ_stable && return __Pproperty_check((res[1],:eq),verbose)
+    return __Pproperty_check(res,verbose)
+  end
+
   prop_l = spec_to_vt(model,v_l,T,z,property)
   prop_v = spec_to_vt(model,v_v,T,z,property)
 
@@ -117,6 +161,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   verbose && @info "pressure at edge point:      $P_edge"
 
   β = (prop - prop_l)/(prop_v - prop_l)
+
   #we are inside equilibria.
   if 0 <= β <= 1
     verbose && @info "property between the liquid and vapour edges, in the phase change region"
@@ -126,19 +171,44 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   #gas side, maybe eq, maybe not
   if β > 1
     res = __Pproperty(model,T,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,P_edge)
+    res[2] == :failure && return __Pproperty_check(res,verbose,P_edge)
     ψ_stable = diffusive_stability(model,res[1],T,z,phase = :vapour)
     !ψ_stable && verbose && @info "pseudo-vapour pressure($property) in phase change region (diffusively unstable)"
     !ψ_stable && return __Pproperty_check((res[1],:eq),verbose,P_edge)
-    #TODO: hook dew pressure here
+
+    dew = dew_pressure(model,T,z)
+    p_dew,_,v_dew,_ = dew
+    prob_dew = spec_to_vt(model,v_dew*sum(z),T,z,property)
+
+    verbose && @info "pressure at dew point:       $p_dew"
+    verbose && @info "property at dew point:       $prob_dew"
+
+    β_dew = (prop - prop_l)/(prob_dew - prop_l)
+    0 < β_dew < 1 && verbose && @info "pseudo-liquid pressure($property) in phase change region (between edge and dew point)."
+    0 < β_dew < 1 && return __Pproperty_check((res[1],:eq),verbose,P_edge)
+
     return __Pproperty_check(res,verbose)
   end
 
   if β < 0
     res = __Pproperty(model,T,prop,z,property,rootsolver,:liquid,abstol,reltol,threaded,P_edge)
+    res[2] == :failure && return __Pproperty_check(res,verbose,P_edge)
     ψ_stable = diffusive_stability(model,res[1],T,z,phase = :liquid)
     !ψ_stable && verbose && @info "pseudo-liquid pressure($property) in phase change region (diffusively unstable)."
     !ψ_stable && return __Pproperty_check((res[1],:eq),verbose,P_edge)
-    #TODO: hook bubble pressure here
+    bubble = bubble_pressure(model,T,z)
+    p_bubble,v_bubble,_,_ = bubble
+    prob_bubble = spec_to_vt(model,v_bubble*sum(z),T,z,property)
+
+    verbose && @info "pressure at bubble point:    $p_bubble"
+    verbose && @info "property at bubble point:    $prob_bubble"
+
+    β_bubble = (prop - prop_l)/(prob_bubble - prop_l)
+    0 < β_bubble < 1 && verbose && @info "pseudo-liquid pressure($property) in phase change region (between edge and bubble point)."
+    0 < β_bubble < 1 && return __Pproperty_check((res[1],:eq),verbose,P_edge)
+
+    verbose && @info "pressure($property) > pressure(bubble point)"
+
     return __Pproperty_check(res,verbose)
   end
 

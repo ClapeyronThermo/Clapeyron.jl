@@ -1,12 +1,12 @@
 """
-    check_valid_sat_pure(model,P_sat,Vl,Vv,T,ε0 = 5e7)
+    check_valid_sat_pure(model,P_sat,Vl,Vv,T,z = SA[1.0])
 
 Checks that a saturation method converged correctly. it checks:
 - That both volumes are mechanically stable
 - That both volumes are different, with a difference of at least `ε0` epsilons
 """
-function check_valid_sat_pure(model,P_sat,V_l,V_v,T,ε0 = 5e7)
-   return check_valid_eq2(model,model,P_sat,V_l,V_v,T,ε0)
+function check_valid_sat_pure(model,P_sat,V_l,V_v,T,z = SA[1.0])
+   return check_valid_eq2(model,model,P_sat,V_l,V_v,T,z)
 end
 
 _p∂p∂V(model,V,T,z,p) = p∂p∂V(model,V,T,z)
@@ -19,11 +19,11 @@ end
 _is_positive(x::Number) = isfinite(x) && x > zero(x)
 _is_positive(x::Tuple) = all(_is_positive,x)
 
-function check_valid_eq2(model1,model2,p,V1,V2,T,ε0 = 5e7)
+function check_valid_eq2(model1,model2,p,V1,V2,T,z = SA[1.0],ε0 = 5e7)
     ε = abs(V1-V2)/(eps(typeof(V1-V2)))
     ε <= ε0 && return false
-    p1,dpdv1 = _p∂p∂V(model1,V1,T,SA[1.0],p)
-    p2,dpdv2 = _p∂p∂V(model2,V2,T,SA[1.0],p)
+    p1,dpdv1 = _p∂p∂V(model1,V1,T,z,p)
+    p2,dpdv2 = _p∂p∂V(model2,V2,T,z,p)
     return  (dpdv1 <= 0)                    && #mechanical stability of phase 1
             (dpdv2 <= 0)                    && #mechanical stability of phase 2
             _is_positive((p1,p2,V2,V2,T,p)) #positive and finite pressures and volumes
