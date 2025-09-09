@@ -186,31 +186,53 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     return __Tproperty_check(res,verbose)
   end
 
+  n = sum(z)
   v0_edge,v0_bubbledew = x0_edge_temperature(model,p,z)
   edge,crit,status = _edge_temperature(model,p,z,v0_edge)
   T_edge,v_l,v_v = edge
 
   if status == :supercritical
     #=
-    TODO: what to do in this zone? 
-    we are smooth in the p-v curves, 
+    TODO: what to do in this zone?
+    we are smooth in the p-v curves,
     but there are still phase separation up until the mixture critical point. =#
     Tc,Pc,Vc = crit
-    verbose && @info "mechanical critical pressure:        $Pc"
-    verbose && @info "mechanical critical temperature:     $Tc"
+    verbose && @info "mechanical critical pressure:           $Pc"
+    verbose && @info "mechanical critical temperature:        $Tc"
+    verbose && @info "mechanical critical molar volume        $Vc"
     res = __Tproperty(model,p,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,Tc)
     res[2] == :failure && return __Tproperty_check(res,verbose)
-    ψ_stable = diffusive_stability(model,p,res[1],z,phase = :vapour)
-    !ψ_stable && verbose && @info "pseudo-critical temperature($property) in phase change region (diffusively unstable)"
-    !ψ_stable && return __Tproperty_check((res[1],:eq),verbose)
-    return __Tproperty_check(res,verbose)
+
+    #instead of calculating the mixture critical point, we just suppose
+    #that all volumes between the bubble and dew volumes evaluated at T = Tc (or P = Pc)
+    #are equilibrium ones
+    #TODO: we could calculate dvsatdP (or dvsatdT) and estimate a line instead of a vertical threshold
+    Tx = res[1]
+    Vx = volume(model,p,Tx,z,vol0 = Vc*n)/n
+
+    if Vx <= Vc
+      Tsat,Vsat,_,_ = bubble_temperature(model,Pc,z,T0 = 0.99Tc)
+      satpoint = "bubble"
+      verbose && @info "molar volume at bubble point:           $Vsat"
+    else
+      Tsat,_,Vsat,_ = dew_temperature(model,Pc,z,T0 = 1.01Tc)
+      satpoint = "dew"
+      verbose && @info "molar volume at dew point:              $Vsat"
+    end
+    verbose && @info "molar volume at temperature(property):  $Vx"
+
+    βx = (Vx - Vsat)/(Vc - Vsat)
+    0 <= βx <= 1 && verbose && @info "pseudo-critical temperature($property) in phase change region (between critical and $satpoint points)"
+    0 <= βx <= 1 && return Tx,:eq
+    verbose && @info "temperature(property) in the critical pseudo-$(string(res[2])) branch, outside the phase change region"
+    return res
   end
 
   if status == :failure
     verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.T_scale(model,z)"
     res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
     res[2] == :failure && return __Tproperty_check(res,verbose)
-    ψ_stable = diffusive_stability(model,p,res[1],z,phase = :vapour)
+    ψ_stable = diffusive_stability(model,p,res[1],z,phase = res[2])
     !ψ_stable && verbose && @info "pseudo-critical temperature($property) in phase change region (diffusively unstable)"
     !ψ_stable && return __Tproperty_check((res[1],:eq),verbose)
     return __Tproperty_check(res,verbose)
@@ -231,49 +253,41 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     return T_edge,:eq
   end
 
-  #gas side, maybe eq, maybe not
-  if β > 1
-    res = __Tproperty(model,p,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,T_edge)
-    res[2] == :failure && return __Tproperty_check(res,verbose,T_edge)
-    ψ_stable = diffusive_stability(model,p,res[1],z,phase = :vapour)
-    !ψ_stable && verbose && @info "pseudo-vapour temperature($property) in phase change region (diffusively unstable)"
-    !ψ_stable && return __Tproperty_check((res[1],:eq),verbose,T_edge)
+  new_phase = β > 1 ? :vapour : :liquid
+  res = __Tproperty(model,p,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,T_edge)
+  res[2] == :failure && return __Tproperty_check(res,verbose,T_edge)
+  ψ_stable = diffusive_stability(model,p,res[1],z,phase = new_phase)
+  !ψ_stable && verbose && @info "pseudo-$(string(new_phase)) temperature($property) in phase change region (diffusively unstable)"
+  !ψ_stable && return __Tproperty_check((res[1],:eq),verbose,T_edge)
 
-    verbose && @info "temperature($property) in vapour branch"
-
+  if β > 1 #check vapour branch
     dew = dew_temperature(model,p,z)
     T_dew,_,v_dew,_ = dew
-    prob_dew = spec_to_vt(model,v_dew*sum(z),T_dew,z,property)
-    
+    prob_dew = spec_to_vt(model,v_dew*n,T_dew,z,property)
+
     verbose && @info "temperature at dew point:  $T_dew"
     verbose && @info "property at dew point:     $prob_dew"
 
     β_dew = (prop - prop_l)/(prob_dew - prop_l)
-    0 < β_dew < 1 && verbose && @info "pseudo-liquid temperature($property) in phase change region (between edge and dew point)."
+
+    0 < β_dew < 1 && verbose && @info "pseudo-vapour temperature($property) in phase change region (between edge and dew point)."
     0 < β_dew < 1 && return __Tproperty_check((res[1],:eq),verbose,T_edge)
+    verbose && @info "vapour temperature($property) outside the phase change region"
     return __Tproperty_check(res,verbose)
   end
 
-  if β < 0
-    res = __Tproperty(model,p,prop,z,property,rootsolver,:liquid,abstol,reltol,threaded,T_edge)
-    res[2] == :failure && return __Tproperty_check(res,verbose,T_edge)
-    ψ_stable = diffusive_stability(model,p,res[1],z,phase = :liquid)
-
-    !ψ_stable && verbose && @info "pseudo-liquid temperature($property) in phase change region (diffusively unstable)."
-    !ψ_stable && return __Tproperty_check((res[1],:eq),verbose,T_edge)
-
-    verbose && @info "temperature($property) in liquid branch"
-    
+  if β < 0 #check liquid branch
     bubble = bubble_temperature(model,p,z)
     T_bubble,v_bubble,_,_ = bubble
-    prob_bubble = spec_to_vt(model,v_bubble*sum(z),T_bubble,z,property)
-    
+    prob_bubble = spec_to_vt(model,v_bubble*n,T_bubble,z,property)
+
     verbose && @info "temperature at bubble point:  $T_bubble"
     verbose && @info "property at bubble point:     $prob_bubble"
 
     β_bubble = (prop - prop_l)/(prob_bubble - prop_l)
     0 < β_bubble < 1 && verbose && @info "pseudo-liquid temperature($property) in phase change region (between edge and bubble point)."
     0 < β_bubble < 1 && return __Tproperty_check((res[1],:eq),verbose,T_edge)
+    verbose && @info "liquid temperature($property) outside the phase change region"
     return __Tproperty_check(res,verbose)
   end
 
