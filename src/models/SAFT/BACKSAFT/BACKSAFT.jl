@@ -92,8 +92,9 @@ function x0_volume_liquid(model::BACKSAFTModel,T,z)
     return v_lb*1.01
 end
 
-function x0_crit_pure(model::BACKSAFTModel)
-    lb_v = lb_volume(model)
+function x0_crit_pure(model::BACKSAFTModel,z)
+    T = T_scale(model,z)
+    lb_v = lb_volume(model,T,z)/sum(z)
     (2.0, log10(lb_v/0.4))
 end
 

@@ -85,8 +85,8 @@ end
 Calculates the dew pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Dew Pressure `[Pa]`
-- Liquid volume at Dew Point `[m³]`
-- Vapour volume at Dew Point `[m³]`
+- Liquid molar volume at Dew Point `[m³·mol⁻¹]`
+- Vapour molar volume at Dew Point `[m³·mol⁻¹]`
 - Liquid composition at Dew Point
 
 By default, uses equality of chemical potentials, via [`ChemPotDewPressure`](@ref)
@@ -236,8 +236,8 @@ end
 Calculates the dew temperature and properties at a given pressure `p`.
 Returns a tuple, containing:
 - Dew Temperature `[K]`
-- Liquid volume at Dew Point `[m³]`
-- Vapour volume at Dew Point `[m³]`
+- Liquid molar volume at Dew Point `[m³·mol⁻¹]`
+- Vapour molar volume at Dew Point `[m³·mol⁻¹]`
 - Liquid composition at Dew Point
 
 By default, uses equality of chemical potentials, via [`ChemPotDewTemperature`](@ref)

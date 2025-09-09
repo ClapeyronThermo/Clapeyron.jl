@@ -900,16 +900,17 @@ function x0_saturation_temperature_refine(model,p,T0::XX = 0.9*T_scale(model)*on
 end
 
 """
-    x0_crit_pure(model::EoSModel)
+    x0_crit_pure(model::EoSModel,z)
 Returns a 2-tuple corresponding to
     `(k,log10(Vc0))`, where `k` is `Tc0/T_scale(model,z)`
 """
 function x0_crit_pure end
 
-function x0_crit_pure(model::EoSModel)
-    z = SA[1.0]
+x0_crit_pure(model) = x0_crit_pure(model,SA[1.0])
+
+function x0_crit_pure(model::EoSModel,z)
     Ts = T_scale(model,z)
-    lb_v = lb_volume(model,Ts,z)
+    lb_v = lb_volume(model,Ts,z)/sum(z)
     (1.5, log10(lb_v/0.3))
 end
 

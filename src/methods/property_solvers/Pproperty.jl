@@ -6,6 +6,16 @@ function x0_edge_pressure(model,T,z,pure = split_pure_model(model))
   return (p_bubble,p_dew),sat
 end
 
+"""
+    edge_pressure(model,p,z,v0 = nothing)
+
+Calculates the pressure at which two fluid phases have the same gibbs and pressure at the specified temperature.
+
+Returns a tuple, containing:
+- Edge Pressure `[Pa]`
+- Liquid volume of edge Point `[m³]`
+- Vapour volume at edge Point `[m³]`
+"""
 function edge_pressure(model,T,z,v0 = nothing)
   edge,crit,status = _edge_pressure(model,T,z,v0)
   return edge
@@ -365,4 +375,4 @@ sol1 = Pproperty(model,T,h_,z,enthalpy)
 sol2 = Pproperty(model,T,s_,z,entropy)
 sol3 = Pproperty(model,T,ρ_,z,mass_density) =#
 
-export Pproperty
+export Pproperty, edge_pressure

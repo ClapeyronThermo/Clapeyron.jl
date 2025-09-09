@@ -356,8 +356,8 @@ end
 Calculates the bubble pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Bubble Pressure `[Pa]`
-- Liquid volume at Bubble Point `[m³]`
-- Vapour volume at Bubble Point `[m³]`
+- Liquid molar volume at Bubble Point `[m³·mol⁻¹]`
+- Vapour molar volume at Bubble Point `[m³·mol⁻¹]`
 - Vapour composition at Bubble Point
 
 By default, uses equality of chemical potentials, via [`ChemPotBubblePressure`](@ref)

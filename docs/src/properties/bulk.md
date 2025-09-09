@@ -102,6 +102,13 @@ Clapeyron.aqueous_activity
 Clapeyron.mixing
 ```
 
+## Isogibbs condition functions
+
+```@docs
+Clapeyron.edge_pressure
+Clapeyron.edge_temperature
+```
+
 ## Initial guess functions
 
 These methods are considered internal, they don't support `Symbolics.jl` or `Unitful.jl` overloads.

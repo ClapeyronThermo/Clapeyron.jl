@@ -221,9 +221,9 @@ function p_scale(model::CubicModel, z)
     return dot(z, _pc) / sum(z)
 end
 
-function x0_crit_pure(model::CubicModel)
-    Tc = model.params.Tc.values[1]
-    lb_v = lb_volume(model,Tc,SA[1.0])    
+function x0_crit_pure(model::CubicModel,z)
+    Tc = T_scale(model,z)
+    lb_v = lb_volume(model,Tc,z)/sum(z)
     (1.0, log10(lb_v / 0.3))
 end
 
@@ -300,7 +300,7 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
     end
     nRTp = sum(z)*R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
-   
+
     c = c̄*sum(z)
     num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
     if num_isreal == 2
@@ -575,6 +575,17 @@ function vdw_tv_mix(Tc,Vc,z)
     return (Tcm,Vcm)
 end
 
+function x0_crit_mix(model::CubicModel,z)
+    pure = split_pure_model(model)
+    crit = crit_pure.(pure)
+    vci = getindex.(crit,3)
+    tci = model.params.Tc.values
+    ∑z = sum(z)
+    T_c  = prod(tci[i]^(z[i]/∑z) for i ∈ 1:length(model))
+
+
+    return (log10(V_c),T_c)
+end
 antoine_coef(model::ABCubicModel) = (6.668322465137264,6.098791871032391,-0.08318016317721941)
 
 

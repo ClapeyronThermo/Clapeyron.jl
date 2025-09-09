@@ -391,6 +391,6 @@ include("solids/eutectic_point.jl")
 export bubble_pressure_fug, bubble_temperature_fug, dew_temperature_fug, dew_pressure_fug
 export bubble_pressure,    dew_pressure,    LLE_pressure,    azeotrope_pressure, VLLE_pressure
 export bubble_temperature, dew_temperature, LLE_temperature, azeotrope_temperature, VLLE_temperature
-export crit_mix, UCEP_mix, UCST_pressure, UCST_temperature, UCST_mix
+export crit_mix, UCEP_mix, UCST_pressure, UCST_temperature, UCST_mix, mechanical_critical_point
 export krichevskii_parameter
 export sle_solubility, sle_solubility_T, eutectic_point, slle_solubility

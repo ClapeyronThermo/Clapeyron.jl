@@ -27,12 +27,23 @@ function μp_equality1_T2(model,p,z,x,Ts)
     return SVector(Fμ,Fp1,Fp2,FT)
 end
 
-mechanical_critical_point(model,z,x0) = crit_pure(model,x0,z)
 
+"""
+    edge_temperature(model,p,z,v0 = nothing)
+
+Calculates the temperature at which two fluid phases have the same gibbs and temperature at the specified pressure.
+
+Returns a tuple, containing:
+- Edge Temperature `[K]`
+- Liquid volume of edge Point `[m³]`
+- Vapour volume at edge Point `[m³]`
+"""
 function edge_temperature(model,p,z,v0 = nothing)
   edge,crit,status = _edge_temperature(model,p,z,v0)
   return edge
 end
+
+edge_temperature(model,p) = saturation_temperature(model,p)
 
 function _edge_temperature(model,p,z,v0 = nothing)
   if v0 == nothing
@@ -492,4 +503,4 @@ end
 # sol3 = Tproperty(model,p,ρ_,z,mass_density)
 # sol4 = Tproperty(model,p,ic_,z,isentropic_compressibility)
 
-export Tproperty
+export Tproperty, edge_temperature

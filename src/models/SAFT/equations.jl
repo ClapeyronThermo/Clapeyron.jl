@@ -133,8 +133,9 @@ end
 # packing_fraction(model::MyModel,data::Tuple)
 # packing_fraction(model,data) = nothing
 
-function x0_crit_pure(model::SAFTModel)
-    lb_v = lb_volume(model)
+function x0_crit_pure(model::SAFTModel,z)
+    T = T_scale(model,z)
+    lb_v = lb_volume(model,T,z)/sum(z)
     (2.0, log10(lb_v/0.3))
 end
 

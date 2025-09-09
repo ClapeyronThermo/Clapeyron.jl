@@ -29,6 +29,7 @@ Clapeyron.LLE
 Clapeyron.VLLE_pressure
 Clapeyron.VLLE_temperature
 Clapeyron.crit_mix
+Clapeyron.mechanical_critical_point
 Clapeyron.UCEP_mix
 Clapeyron.UCST_pressure
 Clapeyron.UCST_temperature
