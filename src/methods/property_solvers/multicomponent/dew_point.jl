@@ -205,7 +205,7 @@ function dew_temperature_init(model,p,y,vol0,T0,x0,condensables)
                 vl,vv = vol0
             else
                 vl = volume(model,p,T0,x0,phase = :l)
-                vv = volume(model,p,T0,y,phase =:v)
+                vv = volume(model,p,T0,y,phase = :v)
             end
         else
             T0,vl0,vv0,_ = __x0_dew_temperature(model,p,y,T0,condensables)

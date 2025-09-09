@@ -3,7 +3,7 @@ function x0_edge_pressure(model,T,z,pure = split_pure_model(model))
   n = sum(z)
   p_bubble = sum(z[i]*first(sat[i]) for i in 1:length(model))/n
   p_dew = n/sum(z[i]/first(sat[i]) for i in 1:length(model))
-  return (p_bubble,p_dew),(pure,sat)
+  return (p_bubble,p_dew),sat
 end
 
 function edge_pressure(model,T,z,v0 = nothing)
@@ -60,6 +60,19 @@ function _edge_pressure(model,T,z,v0 = nothing)
   return fail,fail,:failure
 end
 
+function bubble_pressure_pproperty_method(model,p0,T,z,sat)
+  y0 = z .* first.(sat)
+  y0 ./= sum(y0)
+  p,_,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,z,y0,FugEnum.BUBBLE_PRESSURE,FillArrays.Trues(length(z)),false)
+  return ChemPotBubblePressure((vl0,vv0),p,y,nothing,0.0,1e-8,1e-12,1000,false)
+end
+
+function dew_pressure_pproperty_method(model,p0,T,z,sat)
+  x0 = z ./ first.(sat)
+  x0 ./= sum(x0)
+  p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,x0,z,FugEnum.DEW_PRESSURE,FillArrays.Trues(length(z)),false)
+  return ChemPotDewPressure((vl0,vv0),p,x,nothing,0.0,1e-8,1e-12,1000,false)
+end
 
 """
     Pproperty(model::EoSModel,T,prop,z = SA[1.0],property::TT = enthalpy;rootsolver = Roots.Order0(),phase =:unknown,abstol = 1e-15,reltol = 1e-15, verbose = false)
@@ -129,7 +142,8 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   end
 
   n = sum(z)
-  v0_edge,v0_bubbledew = x0_edge_pressure(model,T,z)
+  v0_edge,pure_sats = x0_edge_pressure(model,T,z)
+  p0_bubble,p0_dew = v0_edge
   edge,crit,status = _edge_pressure(model,T,z,v0_edge)
   P_edge,v_l,v_v = edge
 
@@ -154,11 +168,13 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     Vx = volume(model,px,T,z,vol0 = Vc*n)/n
 
     if Vx <= Vc
-      Psat,Vsat,_,_ = bubble_pressure(model,Tc,z,p0 = 1.01Pc)
+      bubble_method_crit = bubble_pressure_pproperty_method(model,1.01Pc,Tc,z,pure_sats)
+      Psat,Vsat,_,_ = bubble_pressure(model,Tc,z,bubble_method_crit)
       satpoint = "bubble"
       verbose && @info "molar volume at bubble point:        $Vsat"
     else
-      Psat,_,Vsat,_ = dew_pressure(model,Tc,z,p0 = 0.99Pc)
+      dew_method_crit = dew_pressure_pproperty_method(model, 0.99Pc,Tc,z,pure_sats)
+      Psat,_,Vsat,_ = dew_pressure(model,Tc,z,dew_method_crit)
       satpoint = "dew"
       verbose && @info "molar volume at dew point:           $Vsat"
     end
@@ -176,9 +192,6 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.T_scale(model,z)"
     res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p_scale(model,z))
     res[2] == :failure && return __Pproperty_check(res,verbose)
-    ψ_stable = diffusive_stability(model,res[1],T,z,phase = res[2])
-    !ψ_stable && verbose && @info "pseudo-critical pressure($property) in phase change region (diffusively unstable)"
-    !ψ_stable && return __Pproperty_check((res[1],:eq),verbose)
     return __Pproperty_check(res,verbose)
   end
 
@@ -201,12 +214,10 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
 
   res = __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,P_edge)
   res[2] == :failure && return __Pproperty_check(res,verbose,P_edge)
-  ψ_stable = diffusive_stability(model,res[1],T,z,phase = new_phase)
-  !ψ_stable && verbose && @info "pseudo-$(string(new_phase)) pressure($property) in phase change region (diffusively unstable)"
-  !ψ_stable && return __Pproperty_check((res[1],:eq),verbose,P_edge)
 
   if β > 1 #check vapour branch
-    dew = dew_pressure(model,T,z)
+    dew_method = dew_pressure_pproperty_method(model,p0_dew,Tc,z,pure_sats)
+    dew = dew_pressure(model,T,z,dew_method)
     p_dew,_,v_dew,_ = dew
     prob_dew = spec_to_vt(model,v_dew*n,T,z,property)
 
@@ -222,7 +233,8 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   end
 
   if β < 0  #check liquid branch
-    bubble = bubble_pressure(model,T,z)
+    bubble_method = bubble_pressure_pproperty_method(model,p0_bubble,Tc,z,pure_sats)
+    bubble = bubble_pressure(model,T,z,bubble_method)
     p_bubble,v_bubble,_,_ = bubble
     prob_bubble = spec_to_vt(model,v_bubble*n,T,z,property)
 

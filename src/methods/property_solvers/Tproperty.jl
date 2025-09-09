@@ -6,7 +6,7 @@ function x0_edge_temperature(model,p,z,pure = split_pure_model(model))
   dPdTsat = extended_dpdT_temperature.(pure,p)
   T_bubble = antoine_bubble_solve(dPdTsat,p,z)
   T_dew = antoine_dew_solve(dPdTsat,p,z)
-  return (T_bubble,T_dew),(pure,dPdTsat)
+  return (T_bubble,T_dew),dPdTsat
 end
 
 function μp_equality1_T2(model,p,z,x,Ts)
@@ -116,6 +116,20 @@ function FindEdge(f::T,_a,_b,_fa,_fb) where T
   return nan,nan,nan
 end
 
+function bubble_temperature_tproperty_method(model,p,T0,z,dPdT)
+  y0 = z .* antoine_pressure.(dPdT,T0)
+  y0 ./= sum(y0)
+  _,T,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,z,y0,FugEnum.BUBBLE_TEMPERATURE,FillArrays.Trues(length(z)),false)
+  return ChemPotBubbleTemperature((vl0,vv0),T,y,nothing,0.0,1e-8,1e-12,1000,false)
+end
+
+function dew_temperature_tproperty_method(model,p,T0,z,dPdT)
+  x0 = z ./ antoine_pressure.(dPdT,T0)
+  x0 ./= sum(x0)
+  _,T,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x0,z,FugEnum.DEW_TEMPERATURE,FillArrays.Trues(length(z)),false)
+  return ChemPotDewTemperature((vl0,vv0),T,x,nothing,0.0,1e-8,1e-12,1000,false)
+end
+
 """
     Tproperty(model::EoSModel,p,prop,z::AbstractVector,property = enthalpy;rootsolver = Roots.Order0(),phase =:unknown,abstol = 1e-15,reltol = 1e-15, verbose = false)
 
@@ -187,7 +201,8 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
   end
 
   n = sum(z)
-  v0_edge,v0_bubbledew = x0_edge_temperature(model,p,z)
+  v0_edge,dpdT = x0_edge_temperature(model,p,z)
+  T0_bubble,T0_dew = v0_edge
   edge,crit,status = _edge_temperature(model,p,z,v0_edge)
   T_edge,v_l,v_v = edge
 
@@ -211,11 +226,13 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     Vx = volume(model,p,Tx,z,vol0 = Vc*n)/n
 
     if Vx <= Vc
-      Tsat,Vsat,_,_ = bubble_temperature(model,Pc,z,T0 = 0.99Tc)
+      bubble_method_crit = bubble_temperature_tproperty_method(model,p,0.99Tc,z,dpdT)
+      Tsat,Vsat,_,_ = bubble_temperature(model,Pc,z,bubble_method_crit)
       satpoint = "bubble"
       verbose && @info "molar volume at bubble point:           $Vsat"
     else
-      Tsat,_,Vsat,_ = dew_temperature(model,Pc,z,T0 = 1.01Tc)
+      dew_method_crit = dew_temperature_tproperty_method(model,p,1.001Tc,z,dpdT)
+      Tsat,_,Vsat,_ = dew_temperature(model,Pc,z,dew_method_crit)
       satpoint = "dew"
       verbose && @info "molar volume at dew point:              $Vsat"
     end
@@ -232,9 +249,6 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.T_scale(model,z)"
     res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T_scale(model,z))
     res[2] == :failure && return __Tproperty_check(res,verbose)
-    ψ_stable = diffusive_stability(model,p,res[1],z,phase = res[2])
-    !ψ_stable && verbose && @info "pseudo-critical temperature($property) in phase change region (diffusively unstable)"
-    !ψ_stable && return __Tproperty_check((res[1],:eq),verbose)
     return __Tproperty_check(res,verbose)
   end
 
@@ -256,12 +270,10 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
   new_phase = β > 1 ? :vapour : :liquid
   res = __Tproperty(model,p,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,T_edge)
   res[2] == :failure && return __Tproperty_check(res,verbose,T_edge)
-  ψ_stable = diffusive_stability(model,p,res[1],z,phase = new_phase)
-  !ψ_stable && verbose && @info "pseudo-$(string(new_phase)) temperature($property) in phase change region (diffusively unstable)"
-  !ψ_stable && return __Tproperty_check((res[1],:eq),verbose,T_edge)
 
   if β > 1 #check vapour branch
-    dew = dew_temperature(model,p,z)
+    dew_method = dew_temperature_tproperty_method(model,p,T0_dew,z,dpdT)
+    dew = dew_temperature(model,p,z,dew_method)
     T_dew,_,v_dew,_ = dew
     prob_dew = spec_to_vt(model,v_dew*n,T_dew,z,property)
 
@@ -277,7 +289,8 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
   end
 
   if β < 0 #check liquid branch
-    bubble = bubble_temperature(model,p,z)
+    bubble_method = bubble_temperature_tproperty_method(model,p,T0_bubble,z,dpdT)
+    bubble = bubble_temperature(model,p,z,bubble_method)
     T_bubble,v_bubble,_,_ = bubble
     prob_bubble = spec_to_vt(model,v_bubble*n,T_bubble,z,property)
 

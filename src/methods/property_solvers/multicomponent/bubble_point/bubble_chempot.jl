@@ -133,7 +133,7 @@ Function to compute [`bubble_temperature`](@ref) via chemical potentials.
 It directly solves the equality of chemical potentials system of equations.
 
 Inputs:
-- `y = nothing`: optional, initial guess for the vapor phase composition.
+- `y0 = nothing`: optional, initial guess for the vapor phase composition.
 - `T0 = nothing`: optional, initial guess for the bubble temperature `[K]`.
 - `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
