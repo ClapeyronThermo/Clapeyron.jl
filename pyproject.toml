@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyclapeyron"
+version = "0.1.0"
+description = "Python bindings for the Julia package Clapeyron.jl"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "juliacall>=0.9",
+]
+authors = [
+  { name = "Your Name", email = "you@example.com" }
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyclapeyron*"]
+
+[tool.setuptools.package-data]
+pyclapeyron = ["juliapkg.json"]

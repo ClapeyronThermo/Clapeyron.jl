@@ -1,0 +1,9 @@
+{
+    "julia": "1.10",
+    "packages": {
+        "Clapeyron": {
+            "uuid": "7c7805af-46cc-48c9-995b-ed0ed2dc909a",
+            "version": "0.6.16"
+        }
+    }
+}
