@@ -237,12 +237,12 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     Vx = volume(model,p,Tx,z,vol0 = Vc*n)/n
 
     if Vx <= Vc
-      bubble_method_crit = bubble_temperature_tproperty_method(model,p,0.99Tc,z,dpdT)
+      bubble_method_crit = bubble_temperature_tproperty_method(model,Pc,Tc,z,dpdT)
       Tsat,Vsat,_,_ = bubble_temperature(model,Pc,z,bubble_method_crit)
       satpoint = "bubble"
       verbose && @info "molar volume at bubble point:           $Vsat"
     else
-      dew_method_crit = dew_temperature_tproperty_method(model,p,1.001Tc,z,dpdT)
+      dew_method_crit = dew_temperature_tproperty_method(model,Pc,Tc,z,dpdT)
       Tsat,_,Vsat,_ = dew_temperature(model,Pc,z,dew_method_crit)
       satpoint = "dew"
       verbose && @info "molar volume at dew point:              $Vsat"

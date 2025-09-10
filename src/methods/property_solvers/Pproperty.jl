@@ -178,12 +178,12 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     Vx = volume(model,px,T,z,vol0 = Vc*n)/n
 
     if Vx <= Vc
-      bubble_method_crit = bubble_pressure_pproperty_method(model,1.01Pc,Tc,z,pure_sats)
+      bubble_method_crit = bubble_pressure_pproperty_method(model,Pc,Tc,z,pure_sats)
       Psat,Vsat,_,_ = bubble_pressure(model,Tc,z,bubble_method_crit)
       satpoint = "bubble"
       verbose && @info "molar volume at bubble point:        $Vsat"
     else
-      dew_method_crit = dew_pressure_pproperty_method(model, 0.99Pc,Tc,z,pure_sats)
+      dew_method_crit = dew_pressure_pproperty_method(model,Pc,Tc,z,pure_sats)
       Psat,_,Vsat,_ = dew_pressure(model,Tc,z,dew_method_crit)
       satpoint = "dew"
       verbose && @info "molar volume at dew point:           $Vsat"

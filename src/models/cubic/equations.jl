@@ -576,14 +576,11 @@ function vdw_tv_mix(Tc,Vc,z)
 end
 
 function x0_crit_mix(model::CubicModel,z)
-    pure = split_pure_model(model)
-    crit = crit_pure.(pure)
-    vci = getindex.(crit,3)
     tci = model.params.Tc.values
     ∑z = sum(z)
     T_c  = prod(tci[i]^(z[i]/∑z) for i ∈ 1:length(model))
-
-
+    P_c = dot(model.params.Pc.values,z)/∑z
+    V_c = volume(model,P_c,T_c,z,phase = :v)/∑z
     return (log10(V_c),T_c)
 end
 antoine_coef(model::ABCubicModel) = (6.668322465137264,6.098791871032391,-0.08318016317721941)

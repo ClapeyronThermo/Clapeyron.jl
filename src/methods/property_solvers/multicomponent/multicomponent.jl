@@ -206,7 +206,7 @@ function wilson_k_values!(K,model::EoSModel,p,T,crit)
 end
 
 function bubbledew_check(model,p,T,vw,vz,w,z)
-    (isapprox(vw,vz) && isapprox(w,z)) && return false
+    (isapprox(vw,vz) && z_norm(z,w) < 1e-5) && return false
     !all(isfinite,w) && return false
     !isfinite(vw) && return false
     !all(>=(0),w) && return false

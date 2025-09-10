@@ -207,6 +207,11 @@ function lb_volume(model::MultiFluid,z)
     return dot(z,model.params.lb_volume.values)
 end
 
+function x0_crit_pure(model::MultiFluid,z)
+    return (1.0,log10(v_scale(model,z)))
+end
+
+
 #use ideal gas
 #function x0_volume_gas(model::MultiFluid,p,T,z)
 #    
