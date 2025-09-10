@@ -226,7 +226,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   res[2] == :failure && return __Pproperty_check(res,verbose,P_edge)
 
   if β > 1 #check vapour branch
-    dew_method = dew_pressure_pproperty_method(model,p0_dew,Tc,z,pure_sats)
+    dew_method = dew_pressure_pproperty_method(model,p0_dew,T,z,pure_sats)
     dew = dew_pressure(model,T,z,dew_method)
     p_dew,_,v_dew,_ = dew
     prob_dew = spec_to_vt(model,v_dew*n,T,z,property)
