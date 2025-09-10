@@ -243,7 +243,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   end
 
   if β < 0  #check liquid branch
-    bubble_method = bubble_pressure_pproperty_method(model,p0_bubble,Tc,z,pure_sats)
+    bubble_method = bubble_pressure_pproperty_method(model,p0_bubble,T,z,pure_sats)
     bubble = bubble_pressure(model,T,z,bubble_method)
     p_bubble,v_bubble,_,_ = bubble
     prob_bubble = spec_to_vt(model,v_bubble*n,T,z,property)
