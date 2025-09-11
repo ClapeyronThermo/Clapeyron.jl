@@ -12,7 +12,9 @@ dependencies = [
     "juliacall>=0.9",
 ]
 authors = [
-  { name = "Your Name", email = "you@example.com" }
+  { name = "Hon Wa Yew", email = "yewhonwa@gmail.com" },
+  { name = "Pierre Walker", email = "pjwalker@caltech.edu" },
+  { name = "Andrés Riedemann", email = "andres.riedemann@gmail.com" }
 ]
 
 [tool.setuptools.packages.find]
