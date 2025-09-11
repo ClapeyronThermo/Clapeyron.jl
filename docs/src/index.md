@@ -51,6 +51,12 @@ Clapeyron.jl is a registered package, it can be installed from the general regis
 pkg> add Clapeyron
 ```
 
+## Usage from Python
+
+`Clapeyron.jl` can also be used from Python via [`juliacall`](https://juliapy.github.io/PythonCall.jl/stable/juliacall/).
+Therefore, a python package named `pyclapeyron` can be installed via `pip`, i.e. `pip install pyclapeyron`.
+A detailed description of the `pyclapeyron` package is given in [Python package `pyclapeyron`](@ref).
+
 ## Citing `Clapeyron.jl`
 
 If you are using Clapeyron for your research work, please cite the following:

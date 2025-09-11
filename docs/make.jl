@@ -41,6 +41,7 @@ warnonly = Documenter.except(),
                   "Macros" => "api/macros.md",
                   "Association" => "api/association.md",
                   "Parameter Estimation" => "api/estimation.md"],
+        "`pyclapeyron`" => "python.md",
         "To-do list" => "to-do_list.md"]
                   )
 
