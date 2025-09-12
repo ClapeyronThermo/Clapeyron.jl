@@ -900,16 +900,17 @@ function x0_saturation_temperature_refine(model,p,T0::XX = 0.9*T_scale(model)*on
 end
 
 """
-    x0_crit_pure(model::EoSModel)
+    x0_crit_pure(model::EoSModel,z)
 Returns a 2-tuple corresponding to
     `(k,log10(Vc0))`, where `k` is `Tc0/T_scale(model,z)`
 """
 function x0_crit_pure end
 
-function x0_crit_pure(model::EoSModel)
-    z = SA[1.0]
+x0_crit_pure(model) = x0_crit_pure(model,SA[1.0])
+
+function x0_crit_pure(model::EoSModel,z)
     Ts = T_scale(model,z)
-    lb_v = lb_volume(model,Ts,z)
+    lb_v = lb_volume(model,Ts,z)/sum(z)
     (1.5, log10(lb_v/0.3))
 end
 
@@ -978,16 +979,16 @@ end
 
 Given critical information and a temperature, extrapolate the liquid and vapor saturation volumes.
 """
-function critical_vsat_extrapolation(model,T,Tc,Vc)
+function critical_vsat_extrapolation(model,T,Tc,Vc,z = SA[1.0])
     if T > Tc
-        _0 = zero(Base.promote_eltype(model,T))
+        _0 = zero(Base.promote_eltype(model,T,z))
         nan = _0/_0
         return nan,nan
     end
     ρc = 1/Vc
     function dp(ρ,T)
-        _,dpdV = p∂p∂V(model,1/ρ,T)
-        return -dpdV*ρ*ρ
+        _,dpdV = p∂p∂V(model,1/ρ,T,z)
+        return -sum(z)*dpdV*ρ*ρ
     end
     #Solvers.derivative(dρ -> pressure(model, 1/dρ, T), ρ)
     _,d2p,d3p = Solvers.∂J2(dp,ρc,Tc)
@@ -1038,8 +1039,8 @@ Given critical information and a pressure, extrapolate the saturation temperatur
     This function will not check if the input pressure is over the critical point.
 
 """
-function critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
-    _p(_T) = pressure(model,Vc,_T)
+function critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z = SA[1.0])
+    _p(_T) = pressure(model,Vc,_T,z)
     dpdT = Solvers.derivative(_p,Tc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = log(p/Pc)

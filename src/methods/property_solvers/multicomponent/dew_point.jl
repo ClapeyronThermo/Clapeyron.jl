@@ -85,8 +85,8 @@ end
 Calculates the dew pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Dew Pressure `[Pa]`
-- Liquid volume at Dew Point `[m³]`
-- Vapour volume at Dew Point `[m³]`
+- Liquid molar volume at Dew Point `[m³·mol⁻¹]`
+- Vapour molar volume at Dew Point `[m³·mol⁻¹]`
 - Liquid composition at Dew Point
 
 By default, uses equality of chemical potentials, via [`ChemPotDewPressure`](@ref)
@@ -205,7 +205,7 @@ function dew_temperature_init(model,p,y,vol0,T0,x0,condensables)
                 vl,vv = vol0
             else
                 vl = volume(model,p,T0,x0,phase = :l)
-                vv = volume(model,p,T0,y,phase =:v)
+                vv = volume(model,p,T0,y,phase = :v)
             end
         else
             T0,vl0,vv0,_ = __x0_dew_temperature(model,p,y,T0,condensables)
@@ -236,8 +236,8 @@ end
 Calculates the dew temperature and properties at a given pressure `p`.
 Returns a tuple, containing:
 - Dew Temperature `[K]`
-- Liquid volume at Dew Point `[m³]`
-- Vapour volume at Dew Point `[m³]`
+- Liquid molar volume at Dew Point `[m³·mol⁻¹]`
+- Vapour molar volume at Dew Point `[m³·mol⁻¹]`
 - Liquid composition at Dew Point
 
 By default, uses equality of chemical potentials, via [`ChemPotDewTemperature`](@ref)

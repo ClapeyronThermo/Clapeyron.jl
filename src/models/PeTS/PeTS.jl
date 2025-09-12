@@ -115,7 +115,7 @@ const PeTS_B = (
 
 function lb_volume(model::PeTSModel,z)
     σ3,_,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
-    return m̄*N_A*σ3*π/6
+    return sum(z)*m̄*N_A*σ3*π/6
 end
 
 function x0_volume_liquid(model::PeTSModel,T,z)
@@ -134,7 +134,8 @@ function T_scale(model::PeTSModel,z)
     return ϵ
 end
 
-function x0_crit_pure(model::PeTSModel)
-    lb_v = lb_volume(model)
+function x0_crit_pure(model::PeTSModel,z)
+    σ3,ϵ,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
+    lb_v = m̄*N_A*σ3*π/6
     (1.08, log10(lb_v/0.32))
 end
