@@ -19,3 +19,8 @@ LocalPreferences.toml
 /notebooks
 examples/Playground/*
 .DS_Store
+*.venv*
+*dist
+*.egg-info
+*build
+*__pycache__
