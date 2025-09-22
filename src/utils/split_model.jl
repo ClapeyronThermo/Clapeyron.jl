@@ -274,7 +274,8 @@ function each_split_model(param::SiteParam,group,Ic,Ig)
         __each_split_model_ambiguous_comps("sites",SiteParam)
     end
 
-    if group != nothing && site.site_translator != nothing && I == Ic
+    @show Ic,Ig
+    if group != nothing && site.site_translator != nothing
         ng = length(group.flattenedgroups)
         recalculate_site_translator!(site,Ig,ng)
     end
