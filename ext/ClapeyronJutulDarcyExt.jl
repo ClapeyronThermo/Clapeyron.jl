@@ -4,7 +4,14 @@ module ClapeyronJutulDarcyExt
     const C = Clapeyron
     const M = MultiComponentFlash
     const J = JutulDarcy
-    function J.MultiPhaseCompositionalSystemLV(equation_of_state::C.EoSModel, phases = (J.LiquidPhase(), J.VaporPhase()); reference_densities = ones(length(phases)), other_name = "Water")
+    function J.MultiPhaseCompositionalSystemLV(
+            equation_of_state::C.EoSModel, 
+            phases = (J.LiquidPhase(), J.VaporPhase()); 
+            reference_densities = ones(length(phases)), 
+            other_name = "Water",
+            reference_phase_index = J.get_reference_phase_index(phases))
+
+        
         c = copy(equation_of_state.components)
         N = length(c)
         phases = tuple(phases...)
@@ -22,7 +29,7 @@ module ClapeyronJutulDarcyExt
         end
         only(findall(isequal(J.LiquidPhase()), phases))
         only(findall(isequal(J.VaporPhase()), phases))
-        J.MultiPhaseCompositionalSystemLV{typeof(equation_of_state), T, O, typeof(reference_densities),N}(phases, c, equation_of_state, reference_densities)
+        J.MultiPhaseCompositionalSystemLV{typeof(equation_of_state), T, O, typeof(reference_densities),N}(phases, c, equation_of_state, reference_densities, reference_phase_index)
     end
 
     function Base.show(io::IO, sys::J.MultiPhaseCompositionalSystemLV{<:C.EoSModel})
@@ -34,7 +41,7 @@ module ClapeyronJutulDarcyExt
             name = "(no water)"
         end
         eos = sys.equation_of_state
-        cnames = join(eos.components, ", ")
+        cnames = join(C.component_list(eos), ", ")
         print(io, "MultiPhaseCompositionalSystemLV $name with $(Base.summary(eos)) EOS with $n components: $cnames")
     end
 
@@ -71,4 +78,10 @@ module ClapeyronJutulDarcyExt
         return (Z_L::AD, Z_V::AD, V::AD, phase_state)
     end
 
+#=
+const FD = C.ForwardDiff
+
+FD.:≺(::J.Cells, ::Type{<:FD.Tag}) = false
+FD.:≺(::Type{<:FD.Tag}, ::J.Cells) = true
+=#
 end #module
