@@ -8,7 +8,6 @@ const PackedVector{T} = PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int6
 const PackedSubVector{T} = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true} where T
 #for non allocating vectors of zeros and ones
 using Roots: Roots
-
 using Scratch
 import LogExpFunctions
 using FillArrays: FillArrays

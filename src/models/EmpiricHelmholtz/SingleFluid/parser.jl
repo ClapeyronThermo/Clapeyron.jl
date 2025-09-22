@@ -886,7 +886,7 @@ end
 
 function idealmodel_to_json_data(model::MonomerIdealModel,Tr,T0,Vr)
     Mwᵢ = model.params.Mw[1]*0.001
-    Λᵢ = h/√(k_B*Mwᵢ/N_A) # * T^(-1/2)
+    Λᵢ = h/sqrt(k_B*Mwᵢ/N_A) # * T^(-1/2)
     kᵢ = N_A*Λᵢ^3 #T^(-3/2)
     # monomer: a = ∑ xi * [log(xi*ki*T^-1.5/v)] - 1
     # ∑ xi * [log(xi) +  1.5*log(ki*T/v)]
@@ -916,7 +916,7 @@ function idealmodel_to_json_data(model::WalkerIdealModel,Tr,T0,Vr)
     groups_i = model.groups.i_groups[1]
     Mwᵢ = sum(ni[k]*model.params.Mw[k] for k in groups_i)
     Nrot = model.params.Nrot.values
-    Λᵢ = h/√(k_B*Mwᵢ/N_A) # * T^(-1/2)
+    Λᵢ = h/sqrt(k_B*Mwᵢ/N_A) # * T^(-1/2)
     kᵢ = N_A*Λᵢ^3 #T^(-3/2)
     # monomer: a = ∑ xi * [log(xi*ki*T^-1.5/v)] - 1
     # ∑ xi * [log(xi) +  1.5*log(ki*T/v)]

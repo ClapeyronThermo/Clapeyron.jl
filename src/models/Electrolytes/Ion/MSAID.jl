@@ -74,8 +74,8 @@ function data(model::MSAIDModel, V, T, z , iondata = (model.params.charge.values
     σₙ = σ[isolv]
     xₙ = z[isolv]/∑z
     ρₙ = ρ*xₙ
-    α₀ = e_c*√(β/ϵ_0) # Checked
-    α₂ = μ*√(β/3/ϵ_0) # Checked
+    α₀ = e_c*sqrt(β/ϵ_0) # Checked
+    α₂ = μ*sqrt(β/3/ϵ_0) # Checked
     Δ = 1 - π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ @comps)/∑z
     ξ₂ = ρ*sum(z[i]*σ[i]^2 for i ∈ @comps)/∑z
     χ = sum(z[i]*σ[i]*Z[i] for i ∈ @iions)/∑z
@@ -98,7 +98,7 @@ function obj_MSAID(model::MSAIDModel,z,Γ,B,b₂,_data)
 
     W₁ = ρ*sum(z[i]*Z[i]^2/(β₆*(σₙ + σ[i]*λ)*(1+σ[i]*Γ)) for i ∈ iions)/∑z # Checked
     W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(z[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ))^2 for i ∈ iions)/∑z # Checked
-    Vη = (-W₁/2+√((W₁/2)^2+2B*W₂/β₆^2))/(W₂) # Checked
+    Vη = (-W₁/2+sqrt((W₁/2)^2+2B*W₂/β₆^2))/(W₂) # Checked
 
 
     #[ΔΓ] - > [Dᶠ] -> (D,Dac,Ω) ->  ([Γₛ],[a⁰],a¹)
@@ -179,7 +179,7 @@ function a_res(model::MSAIDModel, V, T, z, iondata = (model.params.charge.values
 
     W₁ = ρ*sum(z[i]*Z[i]^2/(β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ)) for i ∈ iions)/∑z # Checked
     W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(z[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ))^2 for i ∈ iions)/∑z # Checked
-    Vη = (-W₁/2+√((W₁/2)^2+2B*W₂/β₆^2))/(W₂) # Checked
+    Vη = (-W₁/2+sqrt((W₁/2)^2+2B*W₂/β₆^2))/(W₂) # Checked
 
     ΔΓ = @. Vη*ρₙ*σₙ^2*σ^2*B/(8*β₆*(σₙ+λ*σ)) # Checked
     Dᶠ = @. Z*β₆/(2*(1+σ*Γ-ΔΓ)) # Checked
