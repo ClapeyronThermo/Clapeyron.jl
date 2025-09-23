@@ -80,16 +80,31 @@ function dew_pressure_init(model,T,y,vol0,p0,x0,condensables)
 end
 
 """
+    dew_pressure(model::EoSModel, T, y; kwargs...)
     dew_pressure(model::EoSModel, T, y, method = ChemPotDewPressure())
 
 Calculates the dew pressure and properties at a given temperature `T`.
-Returns a tuple, containing:
-- Dew Pressure `[Pa]`
-- Liquid molar volume at Dew Point `[m³·mol⁻¹]`
-- Vapour molar volume at Dew Point `[m³·mol⁻¹]`
-- Liquid composition at Dew Point
+The default method uses equality of chemical potentials. see [`ChemPotDewPressure`](@ref)
 
-By default, uses equality of chemical potentials, via [`ChemPotDewPressure`](@ref)
+Inputs:
+ - T, Temperature `[K]`
+ - y, overall composition (vapour-side)
+
+Keywords:
+ - Packed-state path:
+    - `v0`: packed initial state vector `[T0, log10(vL0), log10(vV0), x0...]`  
+      `v0` can be constructed via `Clapeyron.x0_dew_temperature(model, T, y, T0)`.  
+      **Note:** to trigger this path, `v0` must be the only keyword.
+ - Keyword-forwarding path:
+    - `p0`: initial pressure guess `[Pa]`
+    - Additional keywords are forwarded to the selected dew-point method.
+      See [`ChemPotDewTemperature`](@ref) for supported keywords.
+
+Returns a Tuple, containing:
+ - Dew Pressure `[Pa]`
+ - Liquid molar volume at Dew Point `[m³·mol⁻¹]`
+ - Vapour molar volume at Dew Point `[m³·mol⁻¹]`
+ - Liquid molar composition at Dew Point
 """
 function dew_pressure(model::EoSModel,T,x;kwargs...)
     moles_positivity(x)
@@ -231,16 +246,32 @@ function dew_temperature_init(model,p,y,vol0,T0,x0,condensables)
 end
 
 """
+    dew_temperature(model::EoSModel, p, y; kwargs...)
     dew_temperature(model::EoSModel, p, y, method = ChemPotDewTemperature())
+    dew_temperature(model::EoSModel, p, y, T0::Number)
 
-Calculates the dew temperature and properties at a given pressure `p`.
-Returns a tuple, containing:
-- Dew Temperature `[K]`
-- Liquid molar volume at Dew Point `[m³·mol⁻¹]`
-- Vapour molar volume at Dew Point `[m³·mol⁻¹]`
-- Liquid composition at Dew Point
+Calculates the dew-point temperature and properties at a given pressure `p`.
+The default method uses equality of chemical potentials. see [`ChemPotDewTemperature`](@ref)
 
-By default, uses equality of chemical potentials, via [`ChemPotDewTemperature`](@ref)
+Inputs:
+ - p, Pressure `[Pa]`
+ - y, overall composition (vapour-side)
+
+Keywords:
+ - Packed-state path:
+    - `v0`: packed initial state vector `[T0, log10(vL0), log10(vV0), x0...]`  
+      `v0` can be constructed via `Clapeyron.x0_dew_temperature(model, T, y, T0)`.  
+      **Note:** to trigger this path, `v0` must be the only keyword.
+ - Keyword-forwarding path:
+    - `T0`: initial temperature guess `[K]`
+    - Additional keywords are forwarded to the selected dew-point method.
+      See [`ChemPotDewTemperature`](@ref) for supported keywords.
+
+Returns a Tuple, containing:
+ - Dew Temperature `[K]`
+ - Liquid molar volume at Dew Point `[m³·mol⁻¹]`
+ - Vapour molar volume at Dew Point `[m³·mol⁻¹]`
+ - Liquid molar composition at Dew Point
 """
 function dew_temperature(model::EoSModel,p,x;kwargs...)
     moles_positivity(x)
