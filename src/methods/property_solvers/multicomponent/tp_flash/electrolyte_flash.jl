@@ -1,12 +1,23 @@
-function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, K0=nothing,
-                                     x0=nothing, y0=nothing, vol0=(nothing, nothing),
-                                     K_tol=1e-12, itss=101, nacc=5, second_order=false, use_opt_solver = true,
-                                     non_inx_list=nothing, non_iny_list=nothing, reduced=false)
+function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = MichelsenTPFlash(),reduced = false)
 
+    equilibrium = method.equilibrium
+    K0 = method.K0
+    x0 = method.x0
+    y0 = method.y0
+    vol0 = method.vol0
+    K_tol = method.K_tol
+    itss = michelsen_itss(method)
+    nacc = method.nacc
+    second_order = hasfield(typeof(method),:second_order) ? method.second_order : false
+    use_opt_solver = michelsen_use_opt_solver(method)
+    verbose = method.verbose
+    non_inx_list = method.noncondensables
+    non_iny_list = method.nonvolatiles
 
     Z = model.charge
     model_components = component_list(model)
     ions = model_components[Z.!=0]
+
     if !reduced
         model_full,z_full = model,z
         model,z_nonzero = index_reduction(model_full,z_full)
@@ -106,7 +117,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         x,y = update_rr!(K̄,β,z,x,y,non_inx,non_iny)
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,z,β,(volx,voly),phases,non_inw,dlnϕ_cache)
-        
+
         gibbs +=  β*ψ*dot(x,Z)
         vcache[] = (volx,voly)
         # acceleration step
