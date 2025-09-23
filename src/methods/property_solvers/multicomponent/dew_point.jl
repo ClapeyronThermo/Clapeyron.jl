@@ -155,8 +155,8 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
         high_conditions = __is_high_temperature_state(pure,dPdTsat,T0)
     end
     yipi_r = x_r = y_r .* p0inv_r ./ sum(y_r)
-    p = 1/sum(yipi_r)
-    x_r .*= p
+    p_r = 1/sum(yipi_r)
+    x_r .*= p_r
     x0 = index_expansion(x_r,condensables)
     _,T,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x0,y,FugEnum.DEW_TEMPERATURE,condensables,high_conditions)
     return T,vl0,vv0,x
