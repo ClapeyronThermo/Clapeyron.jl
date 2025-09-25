@@ -16,6 +16,7 @@ M := ℍ(a) for rows ∈ 1:n-1
 ```
 """
 function mixture_critical_constraint(model,V,T,z)
+    #=
     f(x) = sum(x)*(a_res(model,V,T,x) + a_ideal(BasicIdeal(),V,T,x))
     H(x) = ForwardDiff.hessian(f,x) #∂A/∂zᵢ∂zⱼ == ∂A/∂zⱼ∂zᵢ
     L(x) = det(Symmetric(H(x)))
@@ -26,8 +27,12 @@ function mixture_critical_constraint(model,V,T,z)
     Mᵢ .=  dL(z)
     MM = HH
     #M(x) = [HH[1:end-1,:];transpose(dL(x))]
-    return LL, det(MM)
+    return LL, det(MM)=#
+    f(_v) = det_∂²A∂ϱᵢ²(model,_v,T,z)
+    fx,dfx = Solvers.f∂f(f,V)
+    return fx,V*dfx
 end
+
 
 function μp_equality(model,v,T,w)
     np = length(v)
