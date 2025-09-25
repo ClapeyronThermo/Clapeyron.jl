@@ -1,8 +1,17 @@
+#=
 function Obj_crit_mix(model::EoSModel,F,z,V,T)
     L,detM = mixture_critical_constraint(model,V,T,z)
     F[1] = L
     F[2] = detM
     return F
+end
+=#
+
+#instead of the heidemann conditions, lets use the spinodal conditions
+function Obj_crit_mix(model::EoSModel,V,T,z)
+    f(_v) = det_∂²A∂ϱᵢ²(model,_v,T,z)
+    fx,dfx = Solvers.f∂f(f,V)
+    return SVector(fx,V*dfx)
 end
 
 
@@ -25,23 +34,20 @@ function crit_mix(model::EoSModel,z;v0=nothing)
         return (T_c,p_c,V_c*∑z)
     end
 
-
     z_r = z[idx_r]
     z_r ./= ∑z
     if v0 === nothing
         v0 = x0_crit_mix(model_r,z_r)
     end
-
-    x0 = [v0[1],v0[2]] #could replace for MVector{2}
-    f! = (F,x) -> Obj_crit_mix(model_r, F, z_r, exp10(x[1]), x[2])
-    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton2(x0)))
-    sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
+    x0 = SVector(v0[1],v0[2]) #could replace for MVector{2}
+    f(x) = Obj_crit_mix(model_r, exp10(x[1]), x[2], z_r)
+    sol  = Solvers.nlsolve2(f,x0,Solvers.Newton2Var())
     T_c = sol[2]
     V_c = exp10(sol[1])
     p_c = pressure(model_r, V_c, T_c, z_r)
     return (T_c, p_c, ∑z*V_c)
 end
+
 """
     x0_crit_mix(model::EoSModel,z)
 
