@@ -113,8 +113,7 @@ function VT_gibbs_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p
     end
 end
 
-VT_mass_gibbs_free_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_gibbs_free_energy(model,V,T,z)/molecular_weight(model,z)
-
+VT_mass_gibbs_free_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0],p = nothing) = VT_gibbs_free_energy(model,V,T,z,p)/molecular_weight(model,z)
 
 function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)

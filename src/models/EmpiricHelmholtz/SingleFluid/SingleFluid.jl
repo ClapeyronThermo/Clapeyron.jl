@@ -101,6 +101,9 @@ function reduced_a_res(ℙ::MultiParameterParam,δ,τ,lnδ = log(δ),lnτ = log(
     #Non-analytical terms
     αᵣ += a_term(ℙ.na,δ,τ,lnδ,lnτ,_0)
 
+    #Double exponential terms.
+    αᵣ += a_term(ℙ.exp2,δ,τ,lnδ,lnτ,_0)
+
     #associating terms.
     αᵣ += a_term(ℙ.assoc,δ,τ,lnδ,lnτ,_0)
 
