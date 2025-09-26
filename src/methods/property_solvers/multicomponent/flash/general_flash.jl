@@ -801,7 +801,12 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
 
     if status == :supercritical
         Tc,Pc,Vc = crit
-        Tsc,_phase = __Tproperty(model,p,x/∑z,x1,spec,:unknown,Tc)
+        if T0 !== nothing
+            Tcrit0 = TT(T0)
+        else
+            Tcrit0 = TT(1.001Tc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
+        end
+        Tsc,_phase = __Tproperty(model,p,x/∑z,x1,spec,:unknown,Tcrit0)
         return FlashResult(model,p,Tsc,SA[∑z*one(p)*one(Tsc)],phase = _phase)
     end
 
@@ -855,7 +860,12 @@ function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing) where F
 
     if status == :supercritical
         Tc,Pc,Vc = crit #TODO: maybe use critical extrapolation instead?
-        psc,_phase = __Pproperty(model,T,x/∑z,x1,spec,:unknown,Pc)
+        if P0 !== nothing
+            Pcrit0 = TT(P0)
+        else
+            Pcrit0 = TT(1.001Pc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
+        end
+        psc,_phase = __Pproperty(model,T,x/∑z,x1,spec,:unknown,Pcrit0)
         return FlashResult(model,psc,T,SA[∑z*one(psc)*one(T)])
     end
 

@@ -334,8 +334,13 @@ function Tproperty_pure(model,p,x,z,property::F,rootsolver,phase,abstol,reltol,v
 
     if status == :supercritical
       verbose && @info "pressure is above critical pressure"
-      Tc,Pc,Vc = crit
-      return __Tproperty(model,p,x,z,property,rootsolver,phase,abstol,reltol,threaded,Tc)
+      Tc,Pc,Vc = crit      
+      if T0 !== nothing
+        Tcrit0 = TT(T0)
+      else
+        Tcrit0 = TT(1.001Tc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
+      end
+      return __Tproperty(model,p,x,z,property,rootsolver,:liquid,abstol,reltol,threaded,Tcrit0)
     end
 
     Ts,vl,vv = TT.(sat)

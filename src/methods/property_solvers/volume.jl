@@ -480,11 +480,19 @@ function volume_bracket_refine(model,p,T,z,v1,v2)
     end
     if plo <= p <= phi
         logvhi,logvlo = log(vhi),log(vlo)
-        bhi = 1/(vhi*dpdvhi)
-        blo = 1/(vlo*dpdvlo)
-        poly_p = Solvers.hermite3_poly(plo,phi,logvlo,logvhi,blo,bhi)
-        Δp = p - plo
-        return exp(evalpoly(Δp,poly_p))
+        #we use p/phi
+        bhi = 1/(vhi*dpdvhi*phi)
+        blo = 1/(vlo*dpdvlo*phi)
+        poly_p = Solvers.hermite3_poly(plo/phi,phi/phi,logvlo,logvhi,blo,bhi)
+        Δp = (p - plo)/phi
+        vx = exp(evalpoly(Δp,poly_p))
+        if vhi <= vx <= vlo
+            return vx
+        else
+            dlogvdp = (logvhi - logvlo)/(phi - plo)
+            logvx = logvlo + dlogvdp*(p - plo)
+            return exp(logvx)
+        end
     elseif p < plo
         return vlo
     elseif p > phi
@@ -493,6 +501,15 @@ function volume_bracket_refine(model,p,T,z,v1,v2)
         return zero(phi)/zero(plo)
     end
 end
+
+#=
+logv = logv1 + (P-p1)/(v1*dpdV1)
+logv = logv2 + (P-p2)/(v2*dpdV2)
+dlogvdp = 1/vdpdv
+dlogv/dp =  
+
+
+=#
 
 #circunvent volume machinery.
 #gibbs models do not need iterative calculations for volume

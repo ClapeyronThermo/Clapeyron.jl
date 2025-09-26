@@ -507,7 +507,8 @@ GC.gc()
 end
 
 @testset "SingleFluid - CoolProp" begin
-    #methanol, uses assoc term
+    #methanol, uses double exponential term
+    #before, it used the association term, but now no model uses it
     @test saturation_pressure(SingleFluid("methanol"),300.15)[1] ≈ PropsSI("P","T",300.15,"Q",1.,"methanol") rtol = 1e-6
     
     r134 = SingleFluid("r134a")

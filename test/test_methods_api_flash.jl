@@ -392,6 +392,23 @@ end
     h394 = -25000.0
     @test iszero(Clapeyron.ForwardDiff.derivative(f394,h394))
     
+
+    #https://github.com/CoolProp/CoolProp/issues/2622
+    model = SingleFluid("R123")
+    Mw5 = Clapeyron.molecular_weight(model)
+    h5 = 233250.0
+    s5 = 1.1049e3
+    sm5 = s5*Mw5
+    hm5 = h5*Mw5
+    p5 = 5e6
+    T51 = CoolProp.PropsSI("T","Hmolar",hm5,"P",p5,model)
+    T52 = CoolProp.PropsSI("T","H",h5,"P",p5,model)
+    T53 = CoolProp.PropsSI("T","Smolar",sm5,"P",p5,model)
+    T54 = CoolProp.PropsSI("T","S",s5,"P",p5,model)
+    @test T51 == T52
+    @test T53 == T54
+    @test T53 ≈ 304.88 rtol = 5e-5
+    @test T51 ≈ 304.53 rtol = 5e-5
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)

@@ -247,7 +247,7 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
     ptp = model.properties.ptp
     (!isfinite(Ttp) | (Ttp < 0)) && (Ttp = 0.4*Tc)
     (!isfinite(ptp) | (ptp < 0)) && (ptp = zero(ptp))
-    if p > Pc
+    if p >= Pc
         #supercritical conditions, liquid
         #https://doi.org/10.1016/j.ces.2018.08.043 gives an approximation of the pv curve at T = Tc
         #=
@@ -264,7 +264,7 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
         phi = pressure(model,vhi,T,z)
         #we suppose that V < Vc (liquid state), then the volume solver converges really well with this initial guess
         if T >= Tc
-            if phi > p
+            if phi >= p
                 return vhi
             elseif phi <= p <= pressure(model,lb_v,T,z)
                 return volume_bracket_refine(model,p,T,z,lb_v,vhi)
