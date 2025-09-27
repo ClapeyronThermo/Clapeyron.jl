@@ -28,7 +28,14 @@ function coolprop_csv(component::String,comp = "")
     lib_handler = coolprop_handler()
     if !isnothing(lib_handler)
        #libcoolprop is present.
-        buffer_length = 2<<12
+
+        maybe_length_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_fluid_param_string_len,throw_error = false)
+        if isnothing(maybe_length_handler)
+            buffer_length = 2<<12
+        else
+            buffer_length = ccall(maybe_length_handler, Cint, (Cstring, Cstring), component, "JSON") + 1
+        end
+        
         message_buffer = Vector{UInt8}(undef,buffer_length)
         method_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_fluid_param_string)
         err_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_global_param_string)
@@ -38,7 +45,7 @@ function coolprop_csv(component::String,comp = "")
             if val == 0
                 ccall(err_handler, Clong, (Cstring, Ptr{UInt8}, Int), "errstring", message_buffer::Array{UInt8, 1}, buffer_length)
                 err = unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
-                if err == "Buffer size is too small"
+                if startswith(err,"Buffer is too small") || startswith(err,"Buffer size is too small")
                     resize!(message_buffer,buffer_length<<1)
                     buffer_length = length(message_buffer)
                 else

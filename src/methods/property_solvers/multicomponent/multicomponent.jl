@@ -26,8 +26,9 @@ function mixture_critical_constraint(model,V,T,z)
     Mᵢ .=  dL(z)
     MM = HH
     #M(x) = [HH[1:end-1,:];transpose(dL(x))]
-    return LL, det(MM)
+    return LL , det(MM)
 end
+
 
 function μp_equality(model,v,T,w)
     np = length(v)

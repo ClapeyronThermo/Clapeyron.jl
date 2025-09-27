@@ -170,6 +170,11 @@ function match_pair(key1::Parameters, key2::Parameters, x1::Parameters, x2::Para
     return matched, swap
 end
 
+function generate_update_pair(key1::Parameters,value1::T1,key2::Parameters,value2::T2) where {T1,T2}
+    v1,v2 = promote(value1,value2)
+    generate_update_pair(key1,v1,key2,v2)
+end
+
 # Main function to generate input pair and ensure consistent parameter order
 function generate_update_pair(key1::Parameters, value1::T, key2::Parameters, value2::T) where T
     # Check all possible input pair combinations
@@ -316,8 +321,6 @@ function ClapeyronPropsSI(output::AbstractString, name1::AbstractString, value1:
 
     res = generate_update_pair(i1,value1,i2,value2)
     itype,(x,y) = res
-
-    
     flash = flash_by_input(model,x,y,z,itype)
     flash.fractions ./= sum(flash.fractions) #we move to a 1-mol basis
     fracs = z ./ sum(z)
@@ -359,7 +362,7 @@ end
 
 function _emass(model,e,z)
     molar_weight = molecular_weight(model,z)
-    return e/molar_weight
+    return e*molar_weight
 end
 
 function flash_by_input(model,x,y,z,itype::InputPairs)
@@ -371,21 +374,21 @@ function flash_by_input(model,x,y,z,itype::InputPairs)
     HmassQ_INPUTS == itype && flash_not_implemented_error(itype)
     DmolarQ_INPUTS == itype && flash_not_implemented_error(itype)
     DmassQ_INPUTS == itype && flash_not_implemented_error(itype)
-    PT_INPUTS && return Clapeyron.PT.flash(x,y,z)
-    DmassT_INPUTS && return Clapeyron.VT.flash(_dmass(model,x,z),y,z)
-    DmolarT_INPUTS && return Clapeyron.PT.flash(_dmolar(model,x,z),y,z)
+    PT_INPUTS == itype && return Clapeyron.PT.flash(model,x,y,z)
+    DmassT_INPUTS == itype && return Clapeyron.VT.flash(_dmass(model,x,z),y,z)
+    DmolarT_INPUTS == itype && return Clapeyron.PT.flash(_dmolar(model,x,z),y,z)
     HmolarT_INPUTS == itype && flash_not_implemented_error(itype)
     HmassT_INPUTS == itype && flash_not_implemented_error(itype)
-    SmolarT_INPUTS && return Clapeyron.TS.flash(y,_emolar(model,x,z),z)
-    SmassT_INPUTS && return Clapeyron.TS.flash(y,_emass(model,x,z),z)
+    SmolarT_INPUTS == itype && return Clapeyron.TS.flash(model,y,_emolar(model,x,z),z)
+    SmassT_INPUTS  == itype && return Clapeyron.TS.flash(model,y,_emass(model,x,z),z)
     TUmolar_INPUTS == itype && flash_not_implemented_error(itype)
     TUmass_INPUTS == itype && flash_not_implemented_error(itype)
     DmassP_INPUTS == itype && flash_not_implemented_error(itype)
     DmolarP_INPUTS == itype && flash_not_implemented_error(itype)
-    HmassP_INPUTS && return Clapeyron.PH.flash(y,_emass(model,x,z),z)
-    HmolarP_INPUTS && return Clapeyron.PH.flash(y,_emolar(model,x,z),z)
-    PSmass_INPUTS && return Clapeyron.PS.flash(x,_emass(model,y,z),z)
-    PSmolar_INPUTS && return Clapeyron.PS.flash(x,_emass(model,y,z),z)
+    HmassP_INPUTS == itype && return Clapeyron.PH.flash(model,y,_emass(model,x,z),z)
+    HmolarP_INPUTS == itype && return Clapeyron.PH.flash(model,y,_emolar(model,x,z),z)
+    PSmass_INPUTS == itype && return Clapeyron.PS.flash(model,x,_emass(model,y,z),z)
+    PSmolar_INPUTS == itype && return Clapeyron.PS.flash(model,x,_emolar(model,y,z),z)
     PUmass_INPUTS == itype && flash_not_implemented_error(itype)
     PUmolar_INPUTS == itype && flash_not_implemented_error(itype)
     HmassSmass_INPUTS == itype && flash_not_implemented_error(itype)
@@ -397,7 +400,7 @@ function flash_by_input(model,x,y,z,itype::InputPairs)
     DmassSmass_INPUTS == itype && flash_not_implemented_error(itype)
     DmolarSmolar_INPUTS == itype && flash_not_implemented_error(itype)
     DmassUmass_INPUTS == itype && Clapeyron.uv_flash(model,_dmass(model,x,z),_emass(model,y,z),z)
-    DmolarUmolar_INPUTS && Clapeyron.uv_flash(model,_dmolar(model,x,z),_emolar(model,y,z),z)
+    DmolarUmolar_INPUTS == itype && Clapeyron.uv_flash(model,_dmolar(model,x,z),_emolar(model,y,z),z)
 end
 
 function eval_property(model,result,z,key::Parameters)
@@ -419,8 +422,8 @@ function eval_property(model,result,z,key::Parameters)
     iP_max == key && return property_not_implemented_error(key)
     iP_min == key && return property_not_implemented_error(key)
     idipole_moment == key && return property_not_implemented_error(key)
-    iT == key && return Clapeyron.temperature(flash)
-    iP == key && return Clapeyron.pressure(flash)
+    iT == key && return Clapeyron.temperature(result)
+    iP == key && return Clapeyron.pressure(result)
     iQ == key && return property_not_implemented_error(key)
     iTau == key && return property_not_implemented_error(key)
     iDelta == key && return property_not_implemented_error(key)

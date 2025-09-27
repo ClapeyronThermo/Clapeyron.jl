@@ -108,9 +108,12 @@ end
 # Objective function for spinodal calculation -> det(∂²A/∂ϱᵢ) = 0
 function det_∂²A∂ϱᵢ²(model,T,ϱ)
     # calculates det(∂²A∂xᵢ² ⋅ ϱ) at V,T constant (see www.doi.org/10.1016/j.fluid.2017.04.009)
-    Av(ϱi) = Ψ_eos(model, T, ϱi)
-    H = ForwardDiff.hessian(Av,ϱ)
-    return det(Symmetric(H))
+    return det(Ψ_hessian(model,T,ϱ))
+end
+
+function det_∂²A∂ϱᵢ²(model,V,T,z)
+    ϱ = z./V
+    return det_∂²A∂ϱᵢ²(model,T,ϱ)
 end
 
 liquid_spinodal_zero_limit(model) = liquid_spinodal_zero_limit(model,SA[1.0])
