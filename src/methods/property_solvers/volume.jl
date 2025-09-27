@@ -134,8 +134,8 @@ function _maybe_spinodal(model,_T,_v_lb,_v_ub,z)
     isnan(v_lb) && return true
     isnan(v_ub) && return true
     p(x) = pressure(model,x,T,z)
-    fl,dfl,d2fl = Solvers.f∂f∂2f(p,v_lb,∂Tag{:maybe_spinodal}())
-    fv,dfv,d2fv = Solvers.f∂f∂2f(p,v_ub,∂Tag{:maybe_spinodal}())
+    fl,dfl,d2fl = p∂p∂2p(model,v_lb,T,z)
+    fv,dfv,d2fv = p∂p∂2p(model,v_ub,T,z)
     nan = zero(fl)/zero(fl)
     _0 = zero(nan)
     poly = Solvers.hermite5_poly(v_lb,v_ub,fl,fv,dfl,dfv,d2fl,d2fv)

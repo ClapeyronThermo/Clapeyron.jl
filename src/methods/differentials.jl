@@ -173,14 +173,14 @@ function f_hess(model,V,T,z)
 end
 
 """
-    ∂²³f(model,V,T,z=SA[1.0])
+    p∂p∂2p(model,V,T,z=SA[1.0])
 
-Returns `∂²A/∂V²` and `∂³A/∂V³`, in a single ForwardDiff pass. Used mainly in `crit_pure` objective function.
+Returns the pressure `p` and their first and second volume derivatives `∂p/∂V` and `∂²p/∂V²`, in a single ForwardDiff pass.
 
 """
-function ∂²³f(model,V,T,z=SA[1.0])
+function p∂p∂2p(model,V,T,z=SA[1.0])
     f(∂V) = pressure(model,∂V,T,z)
-    _, ∂²A∂V², ∂³A∂V³ = Solvers.f∂f∂2f(f,V,∂Tag{:∂²³f}())
+    _, ∂²A∂V², ∂³A∂V³ = Solvers.f∂f∂2f(f,V,∂Tag{:p∂p∂2p}())
     return ∂²A∂V², ∂³A∂V³
 end
 
@@ -195,8 +195,6 @@ function ∂²f∂T²(model,V,T,z)
     _,_,∂²A∂T² = Solvers.f∂f∂2f(A,V,∂Tag{:∂²f∂T²}())
     return ∂²A∂T²
 end
-
-const _d23f = ∂²³f
 
 #derivarive logic: model Dual numbers:
 
