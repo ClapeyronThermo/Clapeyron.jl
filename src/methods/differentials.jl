@@ -180,8 +180,8 @@ Returns the pressure `p` and their first and second volume derivatives `∂p/∂
 """
 function p∂p∂2p(model,V,T,z=SA[1.0])
     f(∂V) = pressure(model,∂V,T,z)
-    _, ∂²A∂V², ∂³A∂V³ = Solvers.f∂f∂2f(f,V,∂Tag{:p∂p∂2p}())
-    return ∂²A∂V², ∂³A∂V³
+    p, ∂²A∂V², ∂³A∂V³ = Solvers.f∂f∂2f(f,V,∂Tag{:p∂p∂2p}())
+    return p, ∂²A∂V², ∂³A∂V³
 end
 
 """
@@ -191,8 +191,8 @@ Returns `∂²A/∂T²` via Autodiff. Used mainly for ideal gas properties. It i
 
 """
 function ∂²f∂T²(model,V,T,z)
-    A(x) = eos(model,V,x,z)
-    _,_,∂²A∂T² = Solvers.f∂f∂2f(A,V,∂Tag{:∂²f∂T²}())
+    A(_T) = eos(model,V,_T,z)
+    _,_,∂²A∂T² = Solvers.f∂f∂2f(A,T,∂Tag{:∂²f∂T²}())
     return ∂²A∂T²
 end
 
