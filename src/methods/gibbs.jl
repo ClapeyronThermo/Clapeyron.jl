@@ -36,13 +36,13 @@ function 𝕘∂𝕘dT(model,p,T,z::AbstractVector)
 end
 
 function V∂V∂p(model,p,T,z::AbstractVector=SA[1.0])
-    f(∂p) = simple_volume(model,∂p,T,z)
+    f(∂p) = ∂𝕘∂p(model,∂p,T,z)
     V,∂V∂p = Solvers.f∂f(f,p,∂Tag{:V∂V∂p}())
     return SVector(V,∂V∂p)
 end
 
 function V∂V∂T(model,p,T,z::AbstractVector=SA[1.0])
-    f(∂T) = simple_volume(model,p,∂T,z)
+    f(∂T) = ∂𝕘∂p(model,p,∂T,z)
     V,∂V∂T = Solvers.f∂f(f,T,∂Tag{:V∂V∂T}())
     return SVector(V,∂V∂T)
 end
