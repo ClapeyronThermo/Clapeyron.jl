@@ -12,18 +12,9 @@ recursive_fd_extract_derivative(T::TT,x::Tuple{}) where TT = x
 
 recursive_fd_extract_derivative(T::TT,x::AbstractArray) where TT = recursive_fd_extract_derivative.(T,x)
 
-@inline function derivative(f::F, x::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(f, R))
+@inline function derivative(f::F, x::R, TAG = f) where {F,R<:Real}
+    T = typeof(ForwardDiff.Tag(TAG, R))
     return recursive_fd_extract_derivative(T, f(ForwardDiff.Dual{T}(x, one(x))))
-end
-
-@inline function derivative(f::F, x::R,check::Val{false}) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(nothing,R))
-    return recursive_fd_value(T, f(ForwardDiff.Dual{T}(x, one(x))))
-end
-
-@inline function derivative(f::F, x::R,check::Val{true}) where {F,R<:Real}
-    return derivative(f,x)
 end
 
 @inline function gradient(f::F, x) where {F}
@@ -38,8 +29,8 @@ end
     return ForwardDiff.hessian(f,x)
 end
 
-@inline function gradient2(f::F, x1::R,x2::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(f, R))
+@inline function gradient2(f::F, x1::R,x2::R,tag = f) where {F,R<:Real}
+    T = typeof(ForwardDiff.Tag(tag, R))
     _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
@@ -49,9 +40,9 @@ end
     return SVector(∂out.values)
 end
 
-function gradient2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
+function gradient2(f::F,x1::R1,x2::R2,tag = f) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)
-    return gradient2(f,y1,y2)
+    return gradient2(f,y1,y2,tag)
 end
 
 """
@@ -59,8 +50,8 @@ end
 
 Returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
-@inline function f∂f(f::F, x::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(f, R))
+@inline function f∂f(f::F, x::R,tag = f) where {F,R<:Real}
+    T = typeof(ForwardDiff.Tag(tag, R))
     out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),))))
     return recursive_fd_value(out),  recursive_fd_extract_derivative(T, out)
 end
@@ -73,8 +64,8 @@ f∂f(f::F) where F = Base.Fix1(f∂f,f)
 
 Returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
-@inline function f∂f∂2f(f::F,x::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(f, R))
+@inline function f∂f∂2f(f::F,x::R,tag = f) where {F,R<:Real}
+    T = typeof(ForwardDiff.Tag(tag, R))
     out = ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),)))
     _f,_df = f∂f(f,out)
     fx = ForwardDiff.value(_f)
@@ -90,13 +81,13 @@ f∂f∂2f(f::F) where F = Base.Fix1(f∂f∂2f,f)
 
 Returns f and ∇f(x), using `ForwardDiff.jl`.
 """
-function fgradf2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
+function fgradf2(f::F,x1::R1,x2::R2,tag = f) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)
-    return fgradf2(f,y1,y2)
+    return fgradf2(f,y1,y2,tag)
 end
 
-@inline function fgradf2(f::F,x1::R,x2::R) where{F,R<:Real}
-    T = typeof(ForwardDiff.Tag(f, R))
+@inline function fgradf2(f::F,x1::R,x2::R,tag = f) where{F,R<:Real}
+    T = typeof(ForwardDiff.Tag(tag, R))
     _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
@@ -106,9 +97,14 @@ end
     return ForwardDiff.value(out),SVector(∂out.values)
 end
 
+function ∂2(f::F,x1::R1,x2::R2,tag = f) where{F,R1<:Real,R2<:Real}
+    y1,y2 = promote(x1,x2)
+    return ∂2(f,y1,y2,tag)
+end
+
 #Manual implementation of an hyperdual.
-@inline function ∂2(f::F,x1::R,x2::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(f, R))
+@inline function ∂2(f::F,x1::R,x2::R,tag = f) where {F,R<:Real}
+    T = typeof(ForwardDiff.Tag(tag, R))
     _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
@@ -124,8 +120,8 @@ end
 end
 
 #Manual implementation of an hyperdual.
-@inline function J2(f::F,x::SVector{2,R}) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(f, R))
+@inline function J2(f::F,x::SVector{2,R},tag = f) where {F,R<:Real}
+    T = typeof(ForwardDiff.Tag(tag, R))
     _1 = oneunit(R)
     _0 = zero(R)
     x1,x2 = x
@@ -141,8 +137,8 @@ end
     return F̄,J
 end
 
-@inline function J3(f::FF,x::SVector{3,R}) where {FF,R<:Real}
-    T = typeof(ForwardDiff.Tag(f, R))
+@inline function J3(f::FF,x::SVector{3,R},tag = f) where {FF,R<:Real}
+    T = typeof(ForwardDiff.Tag(tag, R))
     _1 = oneunit(R)
     _0 = zero(R)
     x1,x2,x3 = x
@@ -160,15 +156,15 @@ end
     return Fx,Jx
 end
 
-function FJ_ad(f::F,x::SVector{3,R}) where {F,R<:Real}
-    return J3(f,x)
+function FJ_ad(f::F,x::SVector{3,R},tag = f) where {F,R<:Real}
+    return J3(f,x,tag)
 end
 
-function FJ_ad(f::F,x::SVector{2,R}) where {F,R<:Real}
-    return J2(f,x)
+function FJ_ad(f::F,x::SVector{2,R},tag = f) where {F,R<:Real}
+    return J2(f,x,tag)
 end
 
-function FJ_ad(f::F,x::X) where {F,X}
+function FJ_ad(f::F,x::X,tag = f) where {F,X}
     Jresult = DiffResults.JacobianResult(x)
     result = ForwardDiff.jacobian!(Jresult,f,x)
     Fx = DiffResults.value(result)
@@ -176,13 +172,9 @@ function FJ_ad(f::F,x::X) where {F,X}
     return Fx,Jx
 end
 
-function ∂2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
-    y1,y2 = promote(x1,x2)
-    return ∂2(f,y1,y2)
-end
 
-@inline function ∂J2(f::F,x1::R,x2::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(f, R))
+@inline function ∂J2(f::F,x1::R,x2::R,tag = f) where {F,R<:Real}
+    T = typeof(ForwardDiff.Tag(tag, R))
     _1 = one(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))

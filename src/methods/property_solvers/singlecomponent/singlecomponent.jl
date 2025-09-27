@@ -33,8 +33,8 @@ function μp_equality1_p(model1,model2,v1,v2,T,ps,μs,z = SA[1.0])
     RT = Rgas(model1)*T
     f1(V) = a_res(model1,V,T,z)
     f2(V) = a_res(model2,V,T,z)
-    A1,Av1 = Solvers.f∂f(f1,v1)
-    A2,Av2 =Solvers.f∂f(f2,v2)
+    A1,Av1 = Solvers.f∂f(f1,v1,∂Tag{:μp_equality1_p}())
+    A2,Av2 =Solvers.f∂f(f2,v2,∂Tag{:μp_equality1_p}())
     p1,p2 = RT*(-Av1 + 1/v1),RT*(-Av2 + 1/v2)
     Δμᵣ = A1 - v1*Av1 - A2 + v2*Av2 + log(v2/v1)
     Fμ = Δμᵣ
@@ -51,8 +51,8 @@ function μp_equality1_T(model1,model2,v1,v2,p,T,ps,μs,z = SA[1.0])
     RT = Rgas(model1)*T
     f1(V) = a_res(model1,V,T,z)
     f2(V) = a_res(model2,V,T,z)
-    A1,Av1 = Solvers.f∂f(f1,v1)
-    A2,Av2 =Solvers.f∂f(f2,v2)
+    A1,Av1 = Solvers.f∂f(f1,v1,∂Tag{:μp_equality1_T}())
+    A2,Av2 =Solvers.f∂f(f2,v2,∂Tag{:μp_equality1_T}())
     p1,p2 = RT*(-Av1 + 1/v1),RT*(-Av2 + 1/v2)
     Δμᵣ = A1 - v1*Av1 - A2 + v2*Av2 + log(v2/v1)
     Fμ = Δμᵣ
@@ -82,7 +82,7 @@ function try_2ph_pure_pressure(model1,model2,T,v10,v20,ps,mus,method)
         return fail,false
     end
 
-    sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),NEqOptions(method))
+    sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),NEqOptions(method),∂Tag{:pure_pressure}())
     v1 = exp(sol[1])
     v2 = exp(sol[2])
     p_eq = pressure(model2,v2,T)
@@ -111,7 +111,7 @@ function try_2ph_pure_temperature(model1,model2,p,T0,v10,v20,ps,mus,method)
         return fail,false
     end
 
-    sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),NEqOptions(method))
+    sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),NEqOptions(method),∂Tag{:pure_temperature}())
     T_eq = sol[1]
     v1 = exp(sol[2])
     v2 = exp(sol[3])

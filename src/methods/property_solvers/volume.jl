@@ -134,8 +134,8 @@ function _maybe_spinodal(model,_T,_v_lb,_v_ub,z)
     isnan(v_lb) && return true
     isnan(v_ub) && return true
     p(x) = pressure(model,x,T,z)
-    fl,dfl,d2fl = Solvers.f∂f∂2f(p,v_lb)
-    fv,dfv,d2fv = Solvers.f∂f∂2f(p,v_ub)
+    fl,dfl,d2fl = Solvers.f∂f∂2f(p,v_lb,∂Tag{:maybe_spinodal}())
+    fv,dfv,d2fv = Solvers.f∂f∂2f(p,v_ub,,∂Tag{:maybe_spinodal}())
     nan = zero(fl)/zero(fl)
     _0 = zero(nan)
     poly = Solvers.hermite5_poly(v_lb,v_ub,fl,fv,dfl,dfv,d2fl,d2fv)
@@ -409,7 +409,7 @@ function volume_label(models::F,p,T,z,vols) where F
     function gibbs(model,fV)
         isnan(fV) && return one(fV)/zero(fV)
         f(V) = eos(model,V,T,z)
-        _f,_dV = Solvers.f∂f(f,fV)
+        _f,_dV = f∂fdV(model,fV,T,z)
         #for the ideal gas case, p*V == 0, so the result reduces to eos(model,V,T,z)
         fV == Inf && iszero(_dV) && return _f
         return ifelse(abs((p+_dV)/p) > 0.03,one(fV)/zero(fV),_f + p*fV)

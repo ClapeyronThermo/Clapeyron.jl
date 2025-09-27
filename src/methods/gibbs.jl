@@ -4,17 +4,17 @@
 
 function ∂𝕘∂T(model,p,T,z::AbstractVector)
     g(∂T) = eos_g(model,p,∂T,z)
-    return Solvers.derivative(g,T)
+    return Solvers.derivative(g,T,∂Tag{:∂𝕘∂T}())
 end
 
 function ∂𝕘∂p(model,p,T,z::AbstractVector)
     g(∂p) = eos_g(model,∂p,T,z)
-    return Solvers.derivative(g,p)
+    return Solvers.derivative(g,p,∂Tag{:∂𝕘∂p}())
 end
 
 function ∂𝕘(model,p,T,z)
     f(∂p,∂T) = eos_g(model,∂p,∂T,z)
-    _f,_df = Solvers.fgradf2(f,p,T)
+    _f,_df = Solvers.fgradf2(f,p,T,∂Tag{:∂𝕘}())
     return _df,_f
 end
 
@@ -25,31 +25,31 @@ end
 
 function 𝕘∂𝕘dp(model,p,T,z::AbstractVector)
     f(x) = eos_g(model,x,T,z)
-    G,∂G∂p = Solvers.f∂f(f,p)
+    G,∂G∂p = Solvers.f∂f(f,p,∂Tag{:𝕘∂𝕘dp}())
     return SVector(G,∂G∂p)
 end
 
 function 𝕘∂𝕘dT(model,p,T,z::AbstractVector)
     f(x) = eos_g(model,p,x,z)
-    G,∂G∂T = Solvers.f∂f(f,T)
+    G,∂G∂T = Solvers.f∂f(f,T,∂Tag{:𝕘∂𝕘dp}())
     return SVector(G,∂G∂T)
 end
 
 function V∂V∂p(model,p,T,z::AbstractVector=SA[1.0])
     f(∂p) = simple_volume(model,∂p,T,z)
-    V,∂V∂p = Solvers.f∂f(f,p)
+    V,∂V∂p = Solvers.f∂f(f,p,∂Tag{:V∂V∂p}())
     return SVector(V,∂V∂p)
 end
 
 function V∂V∂T(model,p,T,z::AbstractVector=SA[1.0])
     f(∂T) = simple_volume(model,p,∂T,z)
-    V,∂V∂T = Solvers.f∂f(f,T)
+    V,∂V∂T = Solvers.f∂f(f,T,∂Tag{:V∂V∂T}())
     return SVector(V,∂V∂T)
 end
 
 function ∂2𝕘(model,p,T,z)
     f(_p,_T) = eos_g(model,_p,_T,z)
-    _f,_∂f,_∂2f = Solvers.∂2(f,p,T)
+    _f,_∂f,_∂2f = Solvers.∂2(f,p,T,∂Tag{:∂2𝕘}())
     return (_∂2f,_∂f,_f)
 end
 
@@ -62,9 +62,8 @@ end
 
 function ∂²𝕘∂T²(model,p,T,z)
     G(x) = eos_g(model,p,x,z)
-    ∂G∂T(x) = Solvers.derivative(G,x)
-    ∂²G∂T²(x) = Solvers.derivative(∂G∂T,x)
-    return ∂²G∂T²(T)
+    _,_,∂²G∂T² = Solvers.f∂f∂2f(G,T,∂Tag{:∂²𝕘∂T²}())
+    return ∂²G∂T²
 end
 #property logic
 

@@ -23,7 +23,7 @@ VT_volume(model, V, T, z=SA[1.]) = V
 
 function pressure_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
-    return -Solvers.derivative(fun,V)
+    return -Solvers.derivative(fun,V,∂Tag{:pressure_res}())
 end
 
 VT_pressure_res(model, V, T, z=SA[1.]) = pressure_res(model,V,T,z)
@@ -37,7 +37,7 @@ VT_mass_entropy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_entropy(
 
 function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,V,x,z)
-    return -Solvers.derivative(fun,T)
+    return -Solvers.derivative(fun,T,∂Tag{:entropy_res}())
 end
 
 function VT_internal_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
@@ -117,7 +117,7 @@ VT_mass_gibbs_free_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0],p = 
 
 function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
-    Ar,∂A∂Vr = Solvers.f∂f(fun,V)
+    Ar,∂A∂Vr = Solvers.f∂f(fun,V,∂Tag{:gibbs_energy_res}())
     PrV = ifelse(iszero(1/V),zero(∂A∂Vr),- V*∂A∂Vr)
     return Ar + PrV
 end
@@ -266,12 +266,12 @@ function second_virial_coefficient_impl(model::EoSModel, T, z = SA[1.0])
     TT = one(Base.promote_eltype(model,T,z))
     V = 1/sqrt(eps(TT))
     f(∂ρ) = a_res(model,1/∂ρ,T,z)
-    return Solvers.derivative(f,1/V)
+    return Solvers.derivative(f,1/V,∂Tag{:B}())
 end
 
 function B∂B∂T(model,T,z = SA[1.0])
     b(T) = second_virial_coefficient(model,T,z)
-    return Solvers.f∂f(b,T)
+    return Solvers.f∂f(b,T,∂Tag{:B∂B∂T}())
 end
 """
     cross_second_virial(model,T,z)
@@ -489,7 +489,7 @@ end
 
 function _VT_fugacity_coefficient(model::EoSModel,V,T,z::SingleComp)
     f(_V) = eos_res(model, _V, T,z)
-    A,dAdV = Solvers.f∂f(f,V)
+    A,dAdV = Solvers.f∂f(f,V,∂Tag{:fugacity_coefficient}())
     R̄ = Rgas(model)
     ∑z= sum(z)
     p_ideal = ∑z*R̄*T/V
