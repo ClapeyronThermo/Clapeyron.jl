@@ -116,8 +116,8 @@ function Obj_Sub_Temp(model::EoSModel, F, T, V_s, V_v, p, p̄, T̄)
     z = SA[1.0]
     eos_solid(V) = eos(model.solid,V,T,z)
     eos_fluid(V) = eos(model.fluid,V,T,z)
-    A_v,Av_v = Solvers.f∂f(eos_fluid,V_v,∂Tag{:μp_equality1_T}())
-    A_s,Av_s =Solvers.f∂f(eos_solid,V_s,∂Tag{:μp_equality1_T}())
+    A_v,Av_v = Solvers.f∂f(eos_fluid,V_v)
+    A_s,Av_s =Solvers.f∂f(eos_solid,V_s)
     g_v = muladd(-V_v,Av_v,A_v)
     g_s = muladd(-V_s,Av_s,A_s)
     F1 = -(Av_v+p)/p̄

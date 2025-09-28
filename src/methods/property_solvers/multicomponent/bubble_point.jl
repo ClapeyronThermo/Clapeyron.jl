@@ -198,7 +198,7 @@ function __dlnPdTinvsat(pure,sat,crit,xx,is_sat_temperature,status)
     elseif status === :supercritical
         Tc,Pc,Vc = crit
         _p(_T) = pressure(pure,Vc,_T)
-        dpdT = Solvers.derivative(_p,Tc,∂Tag{:∂p∂T}())
+        dpdT = Solvers.derivative(_p,Tc)
         return -dpdT*Tc*Tc/Pc,log(Pc),1/Tc
     elseif status == :fail
         return sat

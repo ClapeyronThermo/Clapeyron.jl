@@ -507,7 +507,7 @@ end
 function pure_spinodal_newton(model,T,z,v0,dp_scale = v0*v0/(Rgas(model)*T))
     function dp(vs) #dpdrho = 0
         p(rho) = pressure(model,1/rho,T,z)
-        pj,dpj,d2pj = Solvers.f∂f∂2f(p,1/vs,∂Tag{:pure_spinodal}())
+        pj,dpj,d2pj = Solvers.f∂f∂2f(p,1/vs)
         return dpj/dp_scale,dpj/d2pj
     end
 
@@ -1014,7 +1014,7 @@ Given critical information and a temperature, extrapolate the saturation pressur
 """
 function critical_psat_extrapolation(model,T,Tc,Pc,Vc)
     _p(_T) = pressure(model,Vc,_T)
-    dpdT = Solvers.derivative(_p,Tc,∂Tag{:∂p∂T}())
+    dpdT = Solvers.derivative(_p,Tc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = (1/T - 1/Tc)/dTinvdlnp
     p = exp(Δlnp)*Pc
@@ -1038,7 +1038,7 @@ Given critical information and a pressure, extrapolate the saturation temperatur
 """
 function critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z = SA[1.0])
     _p(_T) = pressure(model,Vc,_T,z)
-    dpdT = Solvers.derivative(_p,Tc,∂Tag{:∂p∂T}())
+    dpdT = Solvers.derivative(_p,Tc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = log(p/Pc)
     Tinv = 1/Tc + dTinvdlnp*Δlnp

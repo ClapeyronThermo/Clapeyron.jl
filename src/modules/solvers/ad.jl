@@ -1,6 +1,3 @@
-
-
-struct ∂Tag end
 const ForwardDiffStatic = Base.get_extension(ForwardDiff,:ForwardDiffStaticArraysExt)
 recursive_fd_value(x::Number) = ForwardDiff.value(x)
 recursive_fd_value(x::Tuple) = recursive_fd_value.(x)
