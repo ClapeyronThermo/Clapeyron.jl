@@ -107,8 +107,10 @@ end
 
 # Objective function for spinodal calculation -> det(∂²A/∂ϱᵢ) = 0
 function det_∂²A∂ϱᵢ²(model,T,ϱ)
+    H = Ψ_hessian(model,T,ϱ)
+    fac = Solvers.unsafe_LU!(H)
     # calculates det(∂²A∂xᵢ² ⋅ ϱ) at V,T constant (see www.doi.org/10.1016/j.fluid.2017.04.009)
-    return det(Ψ_hessian(model,T,ϱ))
+    return det(fac)
 end
 
 function det_∂²A∂ϱᵢ²(model,V,T,z)
@@ -161,6 +163,46 @@ function liquid_spinodal_zero_limit(model::EoSModel,z)
     return Tw,vw
 end
 
+"""
+    spinodal_maximum(model::EoSModel,z;v0=x=x0_crit_mix(model,z))
+
+Returns the maximum temperature/pressure at which there is a mixture spinodal point.
+
+Returns a tuple, containing:
+- Spinodal maximum Temperature `[K]`
+- Spinodal maximum Pressure `[Pa]`
+- Volume at spinodal maximum `[m³]`
+"""
+function spinodal_maximum(model::EoSModel,z;v0=nothing)
+    ∑z = sum(z)
+    model_r,idx_r = index_reduction(model,z)
+
+    if length(model_r)==1
+        (T_c,p_c,V_c) = crit_pure(model_r)
+        return (T_c,p_c,V_c*∑z)
+    end
+
+    z_r = z[idx_r]
+    z_r ./= ∑z
+    if v0 === nothing
+        v0 = x0_crit_pure(model_r,z_r)
+    end
+    Ts = T_scale(model_r,z_r)
+    x0 = SVector(v0[1],v0[2]) #could replace for MVector{2}
+    f(x) = obj_spinodal_maximum(model_r, exp10(x[2]), Ts*x[1], z_r)
+    sol  = Solvers.nlsolve2(f,x0,Solvers.Newton2Var())
+    T_c = sol[1]*Ts
+    V_c = exp10(sol[2])
+    p_c = pressure(model_r, V_c, T_c, z_r)
+    return (T_c, p_c, ∑z*V_c)
+end
+
+function obj_spinodal_maximum(model,V,T,z)
+    f(V) = det_∂²A∂ϱᵢ²(model,V,T,z)
+    fv,dfv = Solvers.f∂f(f,V)
+    return SVector(fv,dfv)
+end
+
 #=
 function crit_pure_sp(model)
     T,vl = liquid_spinodal_zero_limit(model)
@@ -194,4 +236,4 @@ function eigmin_minimum_pressure(model,T,z,v0hi,v0lo = -second_virial_coefficien
     return pressure(model,v,T,z),v,f0(ln_v)
 end
 
-export spinodal_pressure, spinodal_temperature
+export spinodal_pressure, spinodal_temperature, spinodal_maximum

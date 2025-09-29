@@ -158,7 +158,7 @@ function roots_nlsolve(f::F,x0,method::Roots.AbstractBracketingMethod,options) w
         sol = zero(brk)/zero(brk)
     else
         sol = Roots.solve(prob,method)
-    end    
+    end
 end
 
 function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNonBracketingMethod ,options) where F
