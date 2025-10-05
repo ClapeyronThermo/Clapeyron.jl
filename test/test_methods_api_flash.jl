@@ -409,6 +409,10 @@ end
     @test T53 == T54
     @test T53 ≈ 304.88 rtol = 5e-5
     @test T51 ≈ 304.53 rtol = 5e-5
+
+    TUV1 = CoolProp.PropsSI("T","U",29550.0,"D",1000,"water")
+    TUV2 = CoolProp.PropsSI("T","U",29550.0,"D",1000,IAPWS95())
+    @test TUV1 ≈ TUV2 rtol = 1e-6
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)
