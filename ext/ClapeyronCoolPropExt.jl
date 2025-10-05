@@ -287,8 +287,7 @@ function ClapeyronPropsSI(output::AbstractString, name1::AbstractString, value1:
     end
 
     value1_std,j1 = standarize_value_and_itype(model,z,value1,i1)
-    value2_std,j2 = standarize_value_and_itype(model,z,value1,i1)
-
+    value2_std,j2 = standarize_value_and_itype(model,z,value2,i2)
     res = generate_update_pair(j1,value1_std,j2,value2_std)
     itype,(x,y) = res
     flash = flash_by_input(model,x,y,z,itype)

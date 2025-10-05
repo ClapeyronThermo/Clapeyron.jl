@@ -502,18 +502,8 @@ function volume_bracket_refine(model,p,T,z,v1,v2)
     end
 end
 
-#=
-logv = logv1 + (P-p1)/(v1*dpdV1)
-logv = logv2 + (P-p2)/(v2*dpdV2)
-dlogvdp = 1/vdpdv
-dlogv/dp =  
-
-
-=#
-
 #circunvent volume machinery.
 #gibbs models do not need iterative calculations for volume
 simple_volume(model,p,T,z) = volume_impl(model,p,T,z,:unknown,false,nothing)
-
 
 export volume

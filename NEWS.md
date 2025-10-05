@@ -1,26 +1,19 @@
-# v0.6.16
+# v0.6.17
 
 ## New Features
 
-- New model type: Gibbs models (`model <: GibbsBasedModel`): EoS that use the gibbs energy as the main function. Properties and single component equilibria are implemented.
-- Liquid Volume models are now a subtype of `GibbsBasedModel`
-- New method: `component_list(model)` that returns a vector of component names.
-- New property method: `sle_solubility_T`
-- New Gibbs EoS: IAPWS-06 standard for ice-ih (`IAPWS06`)
-- New Gibbs EoS: Grenke-Elliott model for liquid water (`GrenkeElliottWater`)
-- New Gibbs EoS: Holten 2-state model for liquid supercooled water (`HoltenWater`)
-- New Gibbs EoS: Jäger and Span model for solid carbon dioxide (`JagerSpanSolidCO2`)
-- New Activity model: Van Laar binary activity coefficient model (`VanLaar`)
-- New Activity model: Margules binary activity coefficient model (`Margules`)
-- New Activity model: Flory-Huggins activity coefficient model (`FloryHuggins`)
-- New Correlation Model: Antoine saturation pressure correlation (`AntoineEqSat`)
-- Reference State: new type: `:ideal_gas`, that calculated the reference state only with the ideal gas model.
+- `Tproperty` and `Pproperty` speed improvements for multicomponent models.
+- New method: `edge_pressure` and `edge_temperature`, that solves the isogibbs criteria for single and multicomponent models. Those functions are equivalent to `saturation_pressure`/`saturation_temperature` for single component models.
+- New method: `mechanical_critical_point`, that calculates the mechanical stability limit for single and multicomponent models. For single component models, this is equivalent to `crit_pure`.
+- New method: `spinodal_maximum`, that returns the maximum temperature and pressure of the diffusive spinodal line ($det(∂₂G) = 0$)
+
+- `x0_crit_pure` now accepts an optional mol amount composition input.
 - Misc documentation improvements.
 
 ## Bug Fixes
 
-- Volume solver: the solver now tries to detect if there was a "jump" in the chosen (liquid or vapour) branch being iterated. For EoS with more than two maxwell loops, branch jumps sometimes caused the final volume to be in a invalid branch.
-- Misc improvements to the database.
-- Fixed initialization for `ReferenceState` when `H0` and `S0` are vectors.
-- improved initialization for electrolyte models.
-- bubble/dew: improved handling of negative fractions.
+- JutulDarcy extension: fixes to allow Clapeyron work with the latest JutulDarcy extension
+- CoolProp extension: fixes in `CoolProp.PropsSI` with Clapeyron models.
+- CoolProp extension: fixes to support JSON parsing with CoolProp v7.
+- Fixes to bubble/dew initial points.
+- `SingleFluid`: Fixes when using Double exponential terms.
