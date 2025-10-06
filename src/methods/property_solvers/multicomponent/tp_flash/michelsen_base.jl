@@ -8,7 +8,7 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
     if !singlephase
         return rr_flash_refine(K,z,β,non_inx,non_iny,limits)
     else
-        return β
+        return zero(β)/zero(β)
     end
 end
 
