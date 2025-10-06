@@ -547,6 +547,17 @@ function wilson_k_values!(K,model::CubicModel, p, T, crit)
 
 end
 
+function tp_flash_fast_K0!(K,model::CubicModel,p,T,z)
+    w1 = getparam(model,:acentricfactor)
+    w2 = getparam(model.alpha,:acentricfactor)
+    if w1 == nothing && w2 == nothing
+        return false
+    else
+        wilson_k_values!(K,model, p, T, nothing)
+        return true
+    end
+end
+
 function vdw_tv_mix(Tc,Vc,z)
     Tm = zero(first(Tc)+first(Vc))
     Vm = zero(eltype(Vc))

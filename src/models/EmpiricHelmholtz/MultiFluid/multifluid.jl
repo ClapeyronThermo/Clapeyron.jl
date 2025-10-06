@@ -251,11 +251,29 @@ function wilson_k_values!(K,model::MultiFluid,p,T,crit)
     for i ∈ 1:n
         pure_i = pure[i]
         Tc,pc = _Tc[i],_Pc[i]
-        ps = first(saturation_pressure(pure_i,0.7*Tc))
+        ps = x0_psat(pure_i,0.7*Tc)
         ω = -log10(ps/pc) - 1.0
         K[i] = exp(log(pc/p)+ 5.3726985503194395*(1+ω)*(1-Tc/T))  #5.37 = log(10)*7/3
     end
     return K
+end
+
+function tp_flash_fast_K0!(K,model::MultiFluid,p,T,z)
+    n = length(model)
+    pure = model.pures
+    for i ∈ 1:n
+        pure_i = pure[i]
+        Tc,pc = _Tc[i],_Pc[i]
+        if T < Tc
+            ps = x0_psat(pure_i,T)
+            K[i] = ps/p
+        else
+            ps = x0_psat(pure_i,0.7*Tc)
+            ω = -log10(ps/pc) - 1.0
+            K[i] = exp(log(pc/p)+ 5.3726985503194395*(1+ω)*(1-Tc/T))
+        end
+    end
+    return true
 end
 
 function split_pure_model(model::MultiFluid,splitter)
