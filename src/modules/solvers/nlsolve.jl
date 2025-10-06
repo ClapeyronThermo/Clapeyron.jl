@@ -103,9 +103,9 @@ end
 
 struct Newton2Var end
 
-function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions()) where {FF,NN,TT}
+function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions(), tag = f) where {FF,NN,TT}
     function FJ(_z)
-        return FJ_ad(f,_z)
+        return FJ_ad(f,_z,tag)
     end
     Fx, Jx = FJ(x)
     z = x
@@ -158,7 +158,7 @@ function roots_nlsolve(f::F,x0,method::Roots.AbstractBracketingMethod,options) w
         sol = zero(brk)/zero(brk)
     else
         sol = Roots.solve(prob,method)
-    end    
+    end
 end
 
 function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNonBracketingMethod ,options) where F

@@ -67,15 +67,10 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
     volx, voly = vol0
 
     #check if nonvolatiles are set
-    if !isnothing(nonvolatiles)
-        volatiles = [!in(x,nonvolatiles) for x in model.components]
-        model_y,volatiles = index_reduction(model,volatiles)
-        y0 = y0[volatiles]
-        y0 = y0/sum(y0)
-    else
-        volatiles = fill(true,length(model))
-        model_y = nothing
-    end
+    volatiles = comps_in_equilibria(component_list(model),nonvolatiles)
+    model_y,_ = index_reduction(model,volatiles)
+    y0 = y0[volatiles]
+    y0 = y0/sum(y0)
 
     converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,vol0,FugEnum.BUBBLE_PRESSURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p,tol_xy = tol_y,tol_of=tol_of)
     p,T,x,y,vol,lnK = res
@@ -186,11 +181,9 @@ function FugBubblePressure(;vol0 = nothing,
 end
 
 function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
-    if !isnothing(method.nonvolatiles)
-        volatiles = [!in(x,method.nonvolatiles) for x in model.components]
-    else
-        volatiles = fill(true,length(model))
-    end
+    nonvolatiles = method.nonvolatiles
+    volatiles = comps_in_equilibria(component_list(model),nonvolatiles)
+
     _vol0,_p0,_y0 = method.vol0,method.p0,method.y0
     p0,vl,vv,y0 = bubble_pressure_init(model,T,x,_vol0,_p0,_y0,volatiles)
     itmax_newton = method.itmax_newton
@@ -199,7 +192,6 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
     tol_p = method.tol_p
     tol_of = method.tol_of
     vol0 = (vl,vv)
-    nonvolatiles = method.nonvolatiles
     return bubble_pressure_fug(model,T,x,y0,p0;vol0,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,nonvolatiles)
 end
 
@@ -274,15 +266,10 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
     volx, voly = vol0
 
     #check if nonvolatiles are set
-    if !isnothing(nonvolatiles)
-        volatiles = [!in(x,nonvolatiles) for x in model.components]
-        model_y,volatiles = index_reduction(model,volatiles)
-        y0 = y0[volatiles]
-        y0 = y0/sum(y0)
-    else
-        volatiles = fill(true,length(model))
-        model_y = nothing
-    end
+    volatiles = comps_in_equilibria(component_list(model),nonvolatiles)
+    model_y,_ = index_reduction(model,volatiles)
+    y0 = y0[volatiles]
+    y0 = y0/sum(y0)
 
     converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,vol0,FugEnum.BUBBLE_TEMPERATURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_y, tol_of = tol_of)
     p,T,x,y,vol,lnK = res
@@ -390,11 +377,8 @@ function FugBubbleTemperature(;vol0 = nothing,
 end
 
 function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTemperature)
-    if !isnothing(method.nonvolatiles)
-        volatiles = [!in(x,method.nonvolatiles) for x in model.components]
-    else
-        volatiles = fill(true,length(model))
-    end
+    nonvolatiles = method.nonvolatiles
+    volatiles = comps_in_equilibria(component_list(model),nonvolatiles)
     _vol0,_T0,_y0 = method.vol0,method.T0,method.y0
     T0,vl,vv,y0 = bubble_temperature_init(model,p,x,_vol0,_T0,_y0,volatiles)
     itmax_newton = method.itmax_newton
@@ -403,7 +387,6 @@ function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTempera
     tol_T = method.tol_T
     tol_of = method.tol_of
     vol0 = (vl,vv)
-    nonvolatiles = method.nonvolatiles
     return bubble_temperature_fug(model,p,x,y0,T0;vol0,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,nonvolatiles)
 end
 

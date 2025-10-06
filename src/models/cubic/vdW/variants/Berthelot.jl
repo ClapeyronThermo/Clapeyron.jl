@@ -169,8 +169,9 @@ function p_scale(model::BerthelotModel,z)
     dot(model.params.Pc.values,z)/sum(z)
 end
 
-function x0_crit_pure(model::BerthelotModel)
-    lb_v = lb_volume(model)
+function x0_crit_pure(model::BerthelotModel,z)
+    T = T_scale(model,z)
+    lb_v = lb_volume(model,T,z)
     (1.1, log10(lb_v*3))
 end
 

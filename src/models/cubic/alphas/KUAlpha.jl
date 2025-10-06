@@ -78,7 +78,7 @@ function α_function(model::CubicModel,V,T,z,alpha_model::KUAlphaModel)
         m = evalpoly(ωi,coeff_m)
         n = evalpoly(ωi,coeff_n)
         if Tr <= 1
-            α[i]  = (1+m*(1-√(Tr))^n)^2
+            α[i]  = (1+m*(1-sqrt(Tr))^n)^2
         else
             #α[i] = (1-m*(√(Tr)-1)^n)^2
             α[i] = taylor_alpha_kumar(Tr,m,n)
@@ -96,7 +96,7 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::KUAlphaMod
     m = evalpoly(ω,coeff_m)
     n = evalpoly(ω,coeff_n)
     if Tr <= 1
-        α  = (1+m*(1-√(Tr))^n)^2
+        α  = (1+m*(1-sqrt(Tr))^n)^2
     else
         #α = (1-m*(√(Tr)-1)^n)^2
         α = taylor_alpha_kumar(Tr,m,n)

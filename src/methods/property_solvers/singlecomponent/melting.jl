@@ -90,8 +90,30 @@ function x0_melting_pressure(model::CompositeModel,T)
     quadratic taylor expansion for Helmholtz energy
     isothermal compressibility approximation for pressure
    =#
-    ps,μs = equilibria_scale(liquid)
-    return solve_2ph_taylor(solid,liquid,T,vs00,vl00,ps,μs)
+    if solid isa GibbsBasedModel || liquid isa GibbsBasedModel
+        return solve_2ph_gibbs(model,p,T)
+    else
+        ps,μs = equilibria_scale(liquid)
+        return solve_2ph_taylor(solid,liquid,T,vs00,vl00,ps,μs)
+    end
+   
+end
+
+function solve_2ph_gibbs(model,p,T)
+    solid,liquid = solid_model(model),fluid_model(model)
+    gs,dgs,d2gs = gibbs2_expansion(solid,p,T)
+    gl,dgl,d2gl = gibbs2_expansion(liquid,p,T)
+    k1,k2 = calculate_gibbs_reference_state(model)
+    gs += k1 + k2*T
+    dg_poly = (gs - gl,dgs - dgl,0.5*(d2gs - d2gl))
+    a,b,c = dg_poly
+    det = b*b - 4*a*c
+    p1 = (b + sqrt(det))/(2*a) + p
+    p2 = (b - sqrt(det))/(2*a) + p 
+    p = max(p1,p2)
+    vs = volume(solid,p,T,phase = :s)
+    vl = volume(liquid,p,T,phase = :l)
+    return vs, vl, p
 end
 
 function Obj_Mel_Temp(model::EoSModel, F, T, V_s, V_l,p,p̄,T̄)
@@ -167,7 +189,6 @@ function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMelting
     else
         v0 = method.v0
     end
-    _1 =
     V0 = SVector(v0[1],log(v0[2]),log(v0[3]))
     f!(F,x) = Obj_Mel_Temp(model,F,x[1],exp(x[2]),exp(x[3]),p,p̄,T̄)
     results = Solvers.nlsolve(f!,V0,TrustRegion(Newton(),Dogleg()),NEqOptions(method))
@@ -187,29 +208,19 @@ end
 function x0_melting_temperature(model::CompositeModel,p)
     Tt,pt,vs0,vl0,_ = triple_point(model)
     solid,fluid = solid_model(model),fluid_model(model)
-    K0 = -dpdT_saturation(solid,fluid,vs0,vl0,Tt)*Tt*Tt/pt
+
+    if solid isa GibbsBasedModel || fluid isa GibbsBasedModel
+        K0 = -dpdT_saturation_gibbs(solid,fluid,pt,Tt,phase1 = :solid,phase2 = :liquid)*Tt*Tt/pt
+    else
+        K0 = -dpdT_saturation(solid,fluid,vs0,vl0,Tt)*Tt*Tt/pt
+    end
+    
     #Clausius Clapeyron
     #log(P/Ptriple) = K0 * (1/T - 1/Ttriple)
     Tinv = log(p/pt)/K0 + 1/Tt
     T0 =  1/Tinv
     return T0,vs0,vl0
 end
-
-#=
-init of pressure-based iterative methods
-used by gibbs-based models
-=#
-
-function g_and_v(model,p,T,v;phase = :unknown)
-    v = volume(model,p,T,SA[1.0],phase = phase,vol0 = v)
-    g = VT_gibbs_free_energy(model,v,T,SA[1.0])
-    return g,v
-end
-
-function g_and_v(model::GibbsBasedModel,p,T,v;phase = :unknown)
-    return 𝕘∂𝕘dp(model,p,T,SA[1.0])
-end
-
 
 struct IsoGibbsMeltingPressure{V} <: ThermodynamicMethod
     p0::V
@@ -254,13 +265,14 @@ function melting_pressure_impl(model::CompositeModel,T,method::IsoGibbsMeltingPr
     valid_input = _is_positive((p,T))
     !valid_input && return (nan,nan,nan)
     max_iters = method.max_iters
+    k1,k2 = calculate_gibbs_reference_state(model)
     for i in 1:max_iters
         gl,vl = g_and_v(fluid,p,T,vl,phase = :liquid)
         gs,vs = g_and_v(solid,p,T,vs,phase = :solid)
 
         #f(lp) = gs(exp(lp)) - gl(exp(lp))
         #df(lp) = vs(exp(lp))*
-        f = gs - gl
+        f = gs - gl + k1 + k2*T
         df = p*(vs - vl)
         dlnp = -f/df
         !isfinite(dlnp) && break
@@ -274,18 +286,6 @@ function melting_pressure_impl(model::CompositeModel,T,method::IsoGibbsMeltingPr
     end
 
     return nan,nan,nan
-end
-
-function g_and_sv(model,p,T,v;phase = :unknown)
-    v = volume(model,p,T,SA[1.0],phase = phase,vol0 = v)
-    g = VT_gibbs_free_energy(model,v,T,SA[1.0])
-    s = VT_entropy(model,v,T,SA[1.0])
-    return g,s,v
-end
-
-function g_and_sv(model::GibbsBasedModel,p,T,v;phase = :unknown)
-    g,v,sn =  ∂𝕘_vec(model,p,T,SA[1.0])
-    return g,-sn,v
 end
 
 struct IsoGibbsMeltingTemperature{V} <: ThermodynamicMethod
@@ -331,11 +331,12 @@ function melting_temperature_impl(model::CompositeModel,p,method::IsoGibbsMeltin
     valid_input = _is_positive((p,T))
     !valid_input && return (nan,nan,nan)
     max_iters = method.max_iters
+    k1,k2 = calculate_gibbs_reference_state(model)
     for i in 1:max_iters
         gl,sl,vl = g_and_sv(fluid,p,T,vl,phase = :liquid)
         gs,ss,vs = g_and_sv(solid,p,T,vs,phase = :solid)
-        f = gs - gl
-        df = -(ss - sl)
+        f = gs - gl + k1 + k2*T
+        df = -(ss - sl - k2)
         dT = -f/df
         !isfinite(dT) && break
         T = T + dT

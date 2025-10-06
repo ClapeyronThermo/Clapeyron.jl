@@ -120,7 +120,6 @@ end
     iundefined_parameter
 end
 
-
 # Define InputPairs enum (equivalent to CoolProp's input_pairs)
 
 @enum InputPairs begin
@@ -170,6 +169,11 @@ function match_pair(key1::Parameters, key2::Parameters, x1::Parameters, x2::Para
     return matched, swap
 end
 
+function generate_update_pair(key1::Parameters,value1::T1,key2::Parameters,value2::T2) where {T1,T2}
+    v1,v2 = promote(value1,value2)
+    generate_update_pair(key1,v1,key2,v2)
+end
+
 # Main function to generate input pair and ensure consistent parameter order
 function generate_update_pair(key1::Parameters, value1::T, key2::Parameters, value2::T) where T
     # Check all possible input pair combinations
@@ -185,89 +189,57 @@ function generate_update_pair(key1::Parameters, value1::T, key2::Parameters, val
     matched, swap = match_pair(key1, key2, iDmolar, iT)
     matched && return (DmolarT_INPUTS, swap ? (value2, value1) : (value1, value2))
 
-    matched, swap = match_pair(key1, key2, iDmass, iT)
-    matched && return (DmassT_INPUTS, swap ? (value2, value1) : (value1, value2))
-
     matched, swap = match_pair(key1, key2, iHmolar, iT)
     matched && return (HmolarT_INPUTS, swap ? (value2, value1) : (value1, value2))
-
-    matched, swap = match_pair(key1, key2, iHmass, iT)
-    matched && return (HmassT_INPUTS, swap ? (value2, value1) : (value1, value2))
 
     matched, swap = match_pair(key1, key2, iSmolar, iT)
     matched && return (SmolarT_INPUTS, swap ? (value2, value1) : (value1, value2))
 
-    matched, swap = match_pair(key1, key2, iSmass, iT)
-    matched && return (SmassT_INPUTS, swap ? (value2, value1) : (value1, value2))
-
     matched, swap = match_pair(key1, key2, iT, iUmolar)
     matched && return (TUmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
-
-    matched, swap = match_pair(key1, key2, iT, iUmass)
-    matched && return (TUmass_INPUTS, swap ? (value2, value1) : (value1, value2))
-
-    matched, swap = match_pair(key1, key2, iDmass, iHmass)
-    matched && return (DmassHmass_INPUTS, swap ? (value2, value1) : (value1, value2))
 
     matched, swap = match_pair(key1, key2, iDmolar, iHmolar)
     matched && return (DmolarHmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
 
-    matched, swap = match_pair(key1, key2, iDmass, iSmass)
-    matched && return (DmassSmass_INPUTS, swap ? (value2, value1) : (value1, value2))
-
     matched, swap = match_pair(key1, key2, iDmolar, iSmolar)
     matched && return (DmolarSmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
-
-    matched, swap = match_pair(key1, key2, iDmass, iUmass)
-    matched && return (DmassUmass_INPUTS, swap ? (value2, value1) : (value1, value2))
 
     matched, swap = match_pair(key1, key2, iDmolar, iUmolar)
     matched && return (DmolarUmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
 
-    matched, swap = match_pair(key1, key2, iDmass, iP)
-    matched && return (DmassP_INPUTS, swap ? (value2, value1) : (value1, value2))
-
     matched, swap = match_pair(key1, key2, iDmolar, iP)
     matched && return (DmolarP_INPUTS, swap ? (value2, value1) : (value1, value2))
-
-    matched, swap = match_pair(key1, key2, iDmass, iQ)
-    matched && return (DmassQ_INPUTS, swap ? (value2, value1) : (value1, value2))
 
     matched, swap = match_pair(key1, key2, iDmolar, iQ)
     matched && return (DmolarQ_INPUTS, swap ? (value2, value1) : (value1, value2))
 
-    matched, swap = match_pair(key1, key2, iHmass, iP)
-    matched && return (HmassP_INPUTS, swap ? (value2, value1) : (value1, value2))
-
     matched, swap = match_pair(key1, key2, iHmolar, iP)
     matched && return (HmolarP_INPUTS, swap ? (value2, value1) : (value1, value2))
-
-    matched, swap = match_pair(key1, key2, iP, iSmass)
-    matched && return (PSmass_INPUTS, swap ? (value2, value1) : (value1, value2))
 
     matched, swap = match_pair(key1, key2, iP, iSmolar)
     matched && return (PSmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
 
-    matched, swap = match_pair(key1, key2, iP, iUmass)
-    matched && return (PUmass_INPUTS, swap ? (value2, value1) : (value1, value2))
-
     matched, swap = match_pair(key1, key2, iP, iUmolar)
     matched && return (PUmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
 
-    matched, swap = match_pair(key1, key2, iHmass, iSmass)
-    matched && return (HmassSmass_INPUTS, swap ? (value2, value1) : (value1, value2))
-
     matched, swap = match_pair(key1, key2, iHmolar, iSmolar)
     matched && return (HmolarSmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
-
-    matched, swap = match_pair(key1, key2, iSmass, iUmass)
-    matched && return (SmassUmass_INPUTS, swap ? (value2, value1) : (value1, value2))
 
     matched, swap = match_pair(key1, key2, iSmolar, iUmolar)
     matched && return (SmolarUmolar_INPUTS, swap ? (value2, value1) : (value1, value2))
 
     # Return invalid pair if no match found
     return (INPUT_PAIR_INVALID, (value1, value2))
+end
+
+function standarize_value_and_itype(model,z,value,itype)
+    mw = molecular_weight(model,z)/sum(z)
+    itype == iDmass && return value/mw,iDmolar
+    itype == iHmass && return value*mw,iHmolar
+    itype == iUmass && return value*mw,iUmolar
+    itype == iSmass && return value*mw,iSmolar
+    itype == iHelmholtzmass && return value*mw,iHelmholtzmolar
+    return value,itype
 end
 
 function CoolProp.PropsSI(output::AbstractString, name1::AbstractString, value1::Real, name2::AbstractString, value2::Real, fluid::EoSModel)
@@ -314,10 +286,10 @@ function ClapeyronPropsSI(output::AbstractString, name1::AbstractString, value1:
         return value2
     end
 
-    res = generate_update_pair(i1,value1,i2,value2)
+    value1_std,j1 = standarize_value_and_itype(model,z,value1,i1)
+    value2_std,j2 = standarize_value_and_itype(model,z,value2,i2)
+    res = generate_update_pair(j1,value1_std,j2,value2_std)
     itype,(x,y) = res
-
-    
     flash = flash_by_input(model,x,y,z,itype)
     flash.fractions ./= sum(flash.fractions) #we move to a 1-mol basis
     fracs = z ./ sum(z)
@@ -359,45 +331,29 @@ end
 
 function _emass(model,e,z)
     molar_weight = molecular_weight(model,z)
-    return e/molar_weight
+    return e*molar_weight
 end
 
 function flash_by_input(model,x,y,z,itype::InputPairs)
     QT_INPUTS == itype && return Clapeyron.QT.flash(model,x,y,z)
     PQ_INPUTS == itype && return Clapeyron.QP.flash(model,y,x,z)
     QSmolar_INPUTS == itype && flash_not_implemented_error(itype)
-    QSmass_INPUTS  == itype && flash_not_implemented_error(itype)
     HmolarQ_INPUTS == itype && flash_not_implemented_error(itype)
-    HmassQ_INPUTS == itype && flash_not_implemented_error(itype)
     DmolarQ_INPUTS == itype && flash_not_implemented_error(itype)
-    DmassQ_INPUTS == itype && flash_not_implemented_error(itype)
-    PT_INPUTS && return Clapeyron.PT.flash(x,y,z)
-    DmassT_INPUTS && return Clapeyron.VT.flash(_dmass(model,x,z),y,z)
-    DmolarT_INPUTS && return Clapeyron.PT.flash(_dmolar(model,x,z),y,z)
+    PT_INPUTS == itype && return Clapeyron.PT.flash(model,x,y,z)
+    DmolarT_INPUTS == itype && return Clapeyron.PT.flash(_dmolar(model,x,z),y,z)
     HmolarT_INPUTS == itype && flash_not_implemented_error(itype)
-    HmassT_INPUTS == itype && flash_not_implemented_error(itype)
-    SmolarT_INPUTS && return Clapeyron.TS.flash(y,_emolar(model,x,z),z)
-    SmassT_INPUTS && return Clapeyron.TS.flash(y,_emass(model,x,z),z)
+    SmolarT_INPUTS == itype && return Clapeyron.TS.flash(model,y,_emolar(model,x,z),z)
     TUmolar_INPUTS == itype && flash_not_implemented_error(itype)
-    TUmass_INPUTS == itype && flash_not_implemented_error(itype)
-    DmassP_INPUTS == itype && flash_not_implemented_error(itype)
     DmolarP_INPUTS == itype && flash_not_implemented_error(itype)
-    HmassP_INPUTS && return Clapeyron.PH.flash(y,_emass(model,x,z),z)
-    HmolarP_INPUTS && return Clapeyron.PH.flash(y,_emolar(model,x,z),z)
-    PSmass_INPUTS && return Clapeyron.PS.flash(x,_emass(model,y,z),z)
-    PSmolar_INPUTS && return Clapeyron.PS.flash(x,_emass(model,y,z),z)
-    PUmass_INPUTS == itype && flash_not_implemented_error(itype)
+    HmolarP_INPUTS == itype && return Clapeyron.PH.flash(model,y,_emolar(model,x,z),z)
+    PSmolar_INPUTS == itype && return Clapeyron.PS.flash(model,x,_emolar(model,y,z),z)
     PUmolar_INPUTS == itype && flash_not_implemented_error(itype)
-    HmassSmass_INPUTS == itype && flash_not_implemented_error(itype)
     HmolarSmolar_INPUTS == itype && flash_not_implemented_error(itype)
-    SmassUmass_INPUTS == itype && flash_not_implemented_error(itype)
     SmolarUmolar_INPUTS == itype && flash_not_implemented_error(itype)
-    DmassHmass_INPUTS == itype && flash_not_implemented_error(itype)
     DmolarHmolar_INPUTS == itype && flash_not_implemented_error(itype)
-    DmassSmass_INPUTS == itype && flash_not_implemented_error(itype)
     DmolarSmolar_INPUTS == itype && flash_not_implemented_error(itype)
-    DmassUmass_INPUTS == itype && Clapeyron.uv_flash(model,_dmass(model,x,z),_emass(model,y,z),z)
-    DmolarUmolar_INPUTS && Clapeyron.uv_flash(model,_dmolar(model,x,z),_emolar(model,y,z),z)
+    DmolarUmolar_INPUTS == itype && Clapeyron.uv_flash(model,_emolar(model,y,z),_dmolar(model,x,z),z)
 end
 
 function eval_property(model,result,z,key::Parameters)
@@ -419,8 +375,8 @@ function eval_property(model,result,z,key::Parameters)
     iP_max == key && return property_not_implemented_error(key)
     iP_min == key && return property_not_implemented_error(key)
     idipole_moment == key && return property_not_implemented_error(key)
-    iT == key && return Clapeyron.temperature(flash)
-    iP == key && return Clapeyron.pressure(flash)
+    iT == key && return Clapeyron.temperature(result)
+    iP == key && return Clapeyron.pressure(result)
     iQ == key && return property_not_implemented_error(key)
     iTau == key && return property_not_implemented_error(key)
     iDelta == key && return property_not_implemented_error(key)

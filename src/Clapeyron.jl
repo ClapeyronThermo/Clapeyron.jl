@@ -8,7 +8,6 @@ const PackedVector{T} = PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int6
 const PackedSubVector{T} = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true} where T
 #for non allocating vectors of zeros and ones
 using Roots: Roots
-
 using Scratch
 import LogExpFunctions
 using FillArrays: FillArrays
@@ -55,6 +54,15 @@ include("base/eosshow.jl")
 
 #EoSParam, ClapeyronParam, All Params
 include("database/ClapeyronParam.jl")
+
+#check models/CompositeModel/CompositeModel.jl
+struct CompositeModel{𝔽,𝕊} <: EoSModel
+    components::Vector{String}
+    fluid::𝔽
+    solid::𝕊
+    mapping::Union{Vector{Pair{Vector{Tuple{String,Int64}},Tuple{String,Int64}}},Nothing}
+    solid_reference_state::ReferenceState
+end
 
 #recombine options
 include("utils/recombine.jl")
@@ -212,6 +220,7 @@ include("models/Activity/UNIFAC/variants/UNIFACFV.jl")
 include("models/Activity/UNIFAC/variants/UNIFACFVPoly.jl")
 include("models/Activity/UNIFAC/variants/PSRK.jl")
 include("models/Activity/UNIFAC/variants/VTPR.jl")
+include("models/Activity/FH/FH.jl")
 include("models/Activity/equations.jl")
 # include("models/Activity/NRTL/eCPANRTL.jl")
 

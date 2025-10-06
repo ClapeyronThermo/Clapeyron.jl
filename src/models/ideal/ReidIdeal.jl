@@ -112,19 +112,13 @@ end
 evalcoeff(::ReidIdealModel,coeffs,T,lnT = log(T)) = evalpoly(T,coeffs)
 
 function eval∫coeff(::ReidIdealModel,coeffs,T,lnT = log(T))
-    n = length(coeffs)
-    div1 = NTuple{n,Int}(1:n)
-    ∫poly = coeffs ./ div1
-    return evalpoly(T,∫poly)*T
+    return Solvers.evalpolyint(T,coeffs)
 end
 
 function eval∫coeffT(::ReidIdealModel,coeffs,T,lnT = log(T))
-    n = length(coeffs)
-    div1 = NTuple{n-1,Int}(1:(n-1))
     A = first(coeffs)
     coeffs1 = coeffs[2:end]
-    ∫polyT = coeffs1 ./ div1
-    return evalpoly(T,∫polyT)*T + A*lnT
+    return Solvers.evalpolyint(T,coeffs1) + A*lnT
 end
 
 function a_ideal(model::PolynomialIdealModel, V, T, z)
@@ -148,6 +142,29 @@ function a_ideal(model::PolynomialIdealModel, V, T, z)
         α₀ᵢ = H - TS + lnT - lnT0
         res += z[i]*α₀ᵢ
         res += xlogx(z[i],V⁻¹)
+    end
+    return res/Σz
+end
+
+#used for gibbs based models
+function gibbs_cp_integral(model::PolynomialIdealModel,T,z,T0)
+        #x = z/sum(z)
+    polycoeff = model.params.coeffs.values
+    #return sum(x[i]*(log(z[i]/V) + 1/(R̄*T)*(sum(polycoeff[k][i]/k*(T^k-298^k) for k in 1:4)) -
+    #    1/R̄*((polycoeff[k][1]-R̄)*log(T/298)+sum(polycoeff[k][i]/(k-1)*(T^(k-1)-298^(k-1)) for k in 2:4))) for i in @comps)
+    res = zero(T+first(z))
+    Σz = sum(z)
+    RT = R̄*T
+    R̄⁻¹ = 1/R̄
+    RT⁻¹ = 1/RT
+    lnT0 = log(T0)
+    lnT = log(T)
+    @inbounds for i in @comps
+        coeffs = polycoeff[i] 
+        H = (eval∫coeff(model,coeffs,T,lnT) - eval∫coeff(model,coeffs,T0,lnT0))*RT⁻¹
+        TS = (eval∫coeffT(model,coeffs,T,lnT) - eval∫coeffT(model,coeffs,T0,lnT0))*R̄⁻¹
+        α₀ᵢ = H - TS + lnT - lnT0
+        res += z[i]*α₀ᵢ
     end
     return res/Σz
 end

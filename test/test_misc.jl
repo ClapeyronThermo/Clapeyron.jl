@@ -56,6 +56,26 @@
         #error on spliting assoc models without sites
         model_nosites = PCSAFT(["a"],userlocations = (Mw = 1.0,segment = 1.0,sigma = 1.0,epsilon = 1.0))
         @test split_model(model_nosites)[1] isa PCSAFT 
+        
+        #error on splitting models with ReferenceState
+        model_reference_state = JobackIdeal(["propane","hexane"])
+        @test split_model(model_reference_state)[1] isa JobackIdeal
+
+        #index reduction testing
+        #https://discourse.julialang.org/t/mtk-solve-weird-error-message/131638
+        model_idx = PCSAFT(["ethane","propane","methane"])
+        @test length(Clapeyron.index_reduction(model_idx,[1.,0.,0.])[1]) == 1
+        @test length(Clapeyron.index_reduction(model_idx,[1.,0.,1.])[1]) == 2
+        @test length(Clapeyron.index_reduction(model_idx,[1.,1.,1.])[1]) == 3
+        @test length(Clapeyron.index_reduction(model_idx,[1.,-5e-16,1.])[1]) == 2
+        @test_throws ErrorException Clapeyron.index_reduction(model_idx,[0.,-5e-16,0.])
+        @test_throws ErrorException Clapeyron.index_reduction(model_idx,[0.,0.0,0.])
+        @test_throws BoundsError Clapeyron.index_reduction(model_idx,[0.,-5e-16,0.,0.0])
+        @test_throws BoundsError Clapeyron.index_reduction(model_idx,[0.,-5e-16])
+        @test_throws BoundsError Clapeyron.index_reduction(model_idx,[true,true])
+        @test_throws BoundsError Clapeyron.index_reduction(model_idx,[true,true,true,true])
+        @test_throws ErrorException Clapeyron.index_reduction(model_idx,[false,false,false])
+        @test_throws ErrorException Clapeyron.index_reduction(model_idx,[0.,0.0,0.])
     end
 
     @testset "export_model" begin

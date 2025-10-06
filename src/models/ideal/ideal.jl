@@ -11,3 +11,12 @@ idealmodel(model::IdealModel) = model
 
 @newmodelsingleton ZeroIdeal IdealModel
 a_ideal(::ZeroIdeal,V,T,z) = zero(Base.promote_eltype(V,T,z))
+
+#just for completion
+function eos_g(model::IdealModel,p,T,z)
+    R = Rgas(model)
+    RT = R*T
+    n = sum(z)
+    V = n*RT/p
+    return n*RT*(a_ideal(model,V,T,z) + 1)
+end

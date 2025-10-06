@@ -469,12 +469,11 @@ end
 function pure_spinodal_newton_bracket(model,T,v,f,dp_scale,z = SA[1.0])
     vlo,vhi = v
     flo,fhi = f
-    p(x) = pressure(model,x,T,z)
     vs = 0.5*(vlo + vhi)
     atol = 1e-8
     vs_old = vs*Inf
     for j in 1:25
-        pj,dpj,d2pj = Solvers.f∂f∂2f(p,vs)
+        pj,dpj,d2pj = p∂p∂2p(model,vs,T,z)
         Δ = dpj/d2pj
         vs_newton = vs - Δ
         fs = dpj
@@ -517,9 +516,8 @@ function pure_spinodal_newton(model,T,z,v0,dp_scale = v0*v0/(Rgas(model)*T))
 end
 
 function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
-    p(x) = pressure(model,x,T,z)
-    fl,dfl,d2fl = Solvers.f∂f∂2f(p,v_lb)
-    fv,dfv,d2fv = Solvers.f∂f∂2f(p,v_ub)
+    fl,dfl,d2fl = p∂p∂2p(model,v_lb,T,z)
+    fv,dfv,d2fv = p∂p∂2p(model,v_ub,T,z)
     dfx = ifelse(is_liquid(phase),dfl,dfv)
     vx = ifelse(is_liquid(phase),v_lb,v_ub)
     nan = zero(fl)/zero(fl)
@@ -535,13 +533,13 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
 
     #find the middle point between the liquid and vapour spinodals.
     vm = _find_vm(dpoly,v_lb,v_ub)
-    fm,dfm,d2fm = Solvers.f∂f∂2f(p,vm)
+    fm,dfm,d2fm = p∂p∂2p(model,vm,T,z)
     #find the liquid of gas spinodal using the quintic hermite interpolation.
     v_bracket_hermite = minmax(vx - v_lb,vm - v_lb)
     !(evalpoly(vx - v_lb,dpoly)*evalpoly(vm - v_lb,dpoly) < 0) && return nan
     v_spinodal_hermite_prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket_hermite)
     vh = Roots.solve(v_spinodal_hermite_prob,xrtol = 1e-5) + v_lb
-    fh,dfh,d2fh = Solvers.f∂f∂2f(p,vh)
+    fh,dfh,d2fh = p∂p∂2p(model,vh,T,z)
     unstable_not_found = dfx < 0 && dfm < 0 && dfh < 0
 
     if unstable_not_found
@@ -559,7 +557,7 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
             v_ub_new = vh
         end
 
-        phase_h = VT_identify_phase(model,vh,T)
+        phase_h = VT_identify_phase(model,vh,T,z)
 
         if is_vapour(phase_h) && is_liquid(phase) && d2fh > 0 && d2fm > 0
             #v_lb_new = v_lb - dfl/d2fl
@@ -570,7 +568,7 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
             v_lb_new = vh
         end
 
-        return pure_spinodal(model,T,v_lb_new,v_ub_new,phase,false)
+        return pure_spinodal(model,T,v_lb_new,v_ub_new,phase,false,z)
     end
 
     if dfx*dfh <= 0
@@ -658,10 +656,9 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
 end
 
 function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B)
-    p(x) = pressure(model,x,T)
-    psl,_,d2psl = Solvers.f∂f∂2f(p,vsl)
-    psv,_,d2psv = Solvers.f∂f∂2f(p,vsv)
-    psl_lb,dpsl_lb,d2psl_lb = Solvers.f∂f∂2f(p,vsl_lb)
+    psl,_,d2psl = p∂p∂2p(model,vsl,T,SA[1.0])
+    psv,_,d2psv = p∂p∂2p(model,vsv,T,SA[1.0])
+    psl_lb,dpsl_lb,d2psl_lb = p∂p∂2p(model,vsl_lb,T,SA[1.0])
     dpsl = zero(psl)
     poly_l = Solvers.hermite5_poly(vsl_lb,vsl,psl_lb,psl,dpsl_lb,dpsl,d2psl_lb,d2psl)
     ps_mid = 0.5*(psv + max(psl,zero(psl)))
@@ -671,7 +668,7 @@ function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B)
         isnan(vv) && (vv = Rgas(model)*T/ps_mid)
         return ps_mid,vl,vv
     end
-    psv_ub,dpsv_ub,d2psv_ub = Solvers.f∂f∂2f(p,vsv_ub)
+    psv_ub,dpsv_ub,d2psv_ub = p∂p∂2p(model,vsv_ub,T,SA[1.0])
     dpsv = zero(psl)
     poly_v = Solvers.hermite5_poly(vsv,vsv_ub,psv,psv_ub,dpsv,dpsv_ub,d2psv,d2psv_ub)
     vv = volume_from_spinodal(ps_mid,poly_v,vsv,(zero(vsv),vsv_ub - vsv))
@@ -900,16 +897,17 @@ function x0_saturation_temperature_refine(model,p,T0::XX = 0.9*T_scale(model)*on
 end
 
 """
-    x0_crit_pure(model::EoSModel)
+    x0_crit_pure(model::EoSModel,z)
 Returns a 2-tuple corresponding to
     `(k,log10(Vc0))`, where `k` is `Tc0/T_scale(model,z)`
 """
 function x0_crit_pure end
 
-function x0_crit_pure(model::EoSModel)
-    z = SA[1.0]
+x0_crit_pure(model) = x0_crit_pure(model,SA[1.0])
+
+function x0_crit_pure(model::EoSModel,z)
     Ts = T_scale(model,z)
-    lb_v = lb_volume(model,Ts,z)
+    lb_v = lb_volume(model,Ts,z)/sum(z)
     (1.5, log10(lb_v/0.3))
 end
 
@@ -978,16 +976,16 @@ end
 
 Given critical information and a temperature, extrapolate the liquid and vapor saturation volumes.
 """
-function critical_vsat_extrapolation(model,T,Tc,Vc)
+function critical_vsat_extrapolation(model,T,Tc,Vc,z = SA[1.0])
     if T > Tc
-        _0 = zero(Base.promote_eltype(model,T))
+        _0 = zero(Base.promote_eltype(model,T,z))
         nan = _0/_0
         return nan,nan
     end
     ρc = 1/Vc
     function dp(ρ,T)
-        _,dpdV = p∂p∂V(model,1/ρ,T)
-        return -dpdV*ρ*ρ
+        _,dpdV = p∂p∂V(model,1/ρ,T,z)
+        return -sum(z)*dpdV*ρ*ρ
     end
     #Solvers.derivative(dρ -> pressure(model, 1/dρ, T), ρ)
     _,d2p,d3p = Solvers.∂J2(dp,ρc,Tc)
@@ -1038,8 +1036,8 @@ Given critical information and a pressure, extrapolate the saturation temperatur
     This function will not check if the input pressure is over the critical point.
 
 """
-function critical_tsat_extrapolation(model,p,Tc,Pc,Vc)
-    _p(_T) = pressure(model,Vc,_T)
+function critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z = SA[1.0])
+    _p(_T) = pressure(model,Vc,_T,z)
     dpdT = Solvers.derivative(_p,Tc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = log(p/Pc)

@@ -9,11 +9,12 @@ Can only function when solid and liquid models are specified within a `Composite
 function slle_solubility(model::CompositeModel,p,T)
     p = p*one(eltype(model))
     T = T*one(eltype(model))
-    if length(model.components) != 3
+    if length(model) != 3
         error("SLLE can only be obtained for ternary systems")
     end
-    solute = model.components[end]
-    idx_sol = solute.==model.components
+    model_components = component_list(model)
+    solute = model_components[end]
+    idx_sol = solute.==model_components
 
     solid_r,idx_sol_r = index_reduction(model.solid,idx_sol)
     μsol = chemical_potential(solid_r,p,T,[1.])

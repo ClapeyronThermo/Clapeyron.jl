@@ -134,7 +134,7 @@ __act_to_gammaphi(model::ActivityModel) = __act_to_gammaphi(model,nothing,true)
 GammaPhi(model::ActivityModel) = __act_to_gammaphi(model)
 #convert ActivityModel into a RestrictedEquilibriaModel
 function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
-    components = model.components
+    components = component_list(model)
     if hasfield(typeof(model),:puremodel) && !ignore && model.puremodel.model isa IdealModel
         ActivitySaturationError(model,method)
     end
@@ -142,11 +142,11 @@ function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
     if hasfield(typeof(model),:puremodel)
         pure = model.puremodel
         if pure.model isa CompositeModel
-            pure = EoSVectorParam(pure.model.fluid,model.components)
+            pure = EoSVectorParam(pure.model.fluid,components)
         end
     else
         if ignore
-            pure = EoSVectorParam(BasicIdeal(),model.components)
+            pure = EoSVectorParam(BasicIdeal(),components)
         else
             ActivitySaturationError(model,method)
         end
@@ -230,7 +230,6 @@ function LLE(model::ActivityModel,T;v0=nothing)
             throw(error("unable to provide an initial point for LLE pressure"))
         end
     else
-        vv0 = zeros(eltype())
         if 2*length(model) == length(v0)
             vv0[1:nc-1] .= v0[1:nc-1]
             vv0[nc:end] .= v0[(nc+1):(2*nc-1)]

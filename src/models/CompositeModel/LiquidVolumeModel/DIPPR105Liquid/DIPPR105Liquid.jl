@@ -1,6 +1,5 @@
 abstract type DIPPR105LiquidModel <: LiquidVolumeModel end
 
-
 struct DIPPR105LiquidParam <: EoSParam
     A::SingleParam{Float64}
     B::SingleParam{Float64}

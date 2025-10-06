@@ -79,4 +79,5 @@ Intended to be used in conjunction with a liquid model within a [CompositeModel]
 SolidHfus
 SolidKs
 IAPWS06
+JagerSpanSolidCO2
 ```

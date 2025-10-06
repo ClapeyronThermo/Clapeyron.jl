@@ -26,13 +26,23 @@ Those functions can also be derived from any arbitrary equation of state:
 Where ``\mu_i`` and ``\mu^{0}_i`` are the mixture and pure chemical potentials of component ``i``.
 In this case, those potentials are dependent of the pressure, whereas activity models are usually only temperature and composition dependent.
 
+## Common models
+
 ```@docs
+Clapeyron.FloryHuggins
 Clapeyron.Margules
 Clapeyron.VanLaar
 Clapeyron.Wilson
+Clapeyron.tcPRWilsonRes
 Clapeyron.NRTL
 Clapeyron.aspenNRTL
 Clapeyron.UNIQUAC
+Clapeyron.FloryHuggins
+```
+
+## UNIFAC models
+
+```@docs
 Clapeyron.ogUNIFAC
 Clapeyron.ogUNIFAC2
 Clapeyron.UNIFAC
@@ -41,9 +51,18 @@ Clapeyron.PSRKUNIFAC
 Clapeyron.VTPRUNIFAC
 Clapeyron.UNIFACFV
 Clapeyron.UNIFACFVPoly
-Clapeyron.tcPRWilsonRes
+```
+
+## COSMO-SAC models
+
+```@docs
 Clapeyron.COSMOSAC02
 Clapeyron.COSMOSAC10
 Clapeyron.COSMOSACdsp
+```
+
+## HANNA Model
+
+```@docs
 ClapeyronHANNA.HANNA
 ```

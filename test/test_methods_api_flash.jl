@@ -392,6 +392,27 @@ end
     h394 = -25000.0
     @test iszero(Clapeyron.ForwardDiff.derivative(f394,h394))
     
+
+    #https://github.com/CoolProp/CoolProp/issues/2622
+    model = SingleFluid("R123")
+    Mw5 = Clapeyron.molecular_weight(model)
+    h5 = 233250.0
+    s5 = 1.1049e3
+    sm5 = s5*Mw5
+    hm5 = h5*Mw5
+    p5 = 5e6
+    T51 = CoolProp.PropsSI("T","Hmolar",hm5,"P",p5,model)
+    T52 = CoolProp.PropsSI("T","H",h5,"P",p5,model)
+    T53 = CoolProp.PropsSI("T","Smolar",sm5,"P",p5,model)
+    T54 = CoolProp.PropsSI("T","S",s5,"P",p5,model)
+    @test T51 == T52
+    @test T53 == T54
+    @test T53 ≈ 304.88 rtol = 5e-5
+    @test T51 ≈ 304.53 rtol = 5e-5
+
+    TUV1 = CoolProp.PropsSI("T","U",29550.0,"D",1000,"water")
+    TUV2 = CoolProp.PropsSI("T","U",29550.0,"D",1000,IAPWS95())
+    @test TUV1 ≈ TUV2 rtol = 1e-6
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)
@@ -483,7 +504,7 @@ end
     @test saturation_temperature(cpr,crit_cpr[2] - 1e3)[1] ≈ 369.88681908031606 rtol = 1e-6
 end
 
-@testset "Tproperty" begin
+@testset "Tproperty/Property" begin
     model1 = cPR(["propane","dodecane"])
     p = 101325.0; T = 300.0;z = [0.5,0.5]
     h_ = enthalpy(model1,p,T,z)
@@ -525,6 +546,13 @@ end
     fluid409 = cPR(["Propane","R134a"],idealmodel=ReidIdeal);z409 = [1.0,1.0];
     s409 = -104.95768957075641; p409 = 5.910442025416817e6;
     @test Tproperty(fluid409,p409,s409,z409,entropy) ≈ 406.0506318701147 rtol = 1e-6
+
+    model5 = cPR(["R134a","propane"],idealmodel=ReidIdeal)
+    @test Clapeyron._Pproperty(model5,450.0,0.03,[0.5,0.5],volume)[2] == :vapour
+    @test Clapeyron._Pproperty(model5,450.0,0.03,[0.5,0.5],volume)[2] == :vapour
+    @test Clapeyron._Pproperty(model5,450.0,0.00023,[0.5,0.5],volume)[2]  == :eq
+    @test Clapeyron._Pproperty(model5,450.0,0.000222,[0.5,0.5],volume)[2]  == :eq
+    @test Clapeyron._Pproperty(model5,450.0,0.000222,[0.5,0.5],volume)[2]  == :eq
 end
 
 @testset "bubble/dew point algorithms" begin

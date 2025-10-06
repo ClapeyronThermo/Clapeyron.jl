@@ -78,3 +78,8 @@ end
 @noinline function invalid_property_multiphase_error(f,np,p,T)
     throw(ArgumentError("The state at p = $p, T = $T has $np phases, it cannot be used to evaluate $f"))
 end
+
+
+function moles_positivity(x::AbstractVector{T}) where T<:Real
+    @assert all(>=(0), x) "Mole vector contains non-positive values! Contains values $x"
+end

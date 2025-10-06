@@ -5,7 +5,7 @@ struct EoSVectorParam{T} <: EoSModel
     reference_state::Union{Nothing,ReferenceState}
 end
 
-function EoSVectorParam(model::EoSModel,components = model.components)
+function EoSVectorParam(model::EoSModel,components = component_list(model))
     pure = split_pure_model(model,1:length(components))
     if has_reference_state(model)
         ref = nothing

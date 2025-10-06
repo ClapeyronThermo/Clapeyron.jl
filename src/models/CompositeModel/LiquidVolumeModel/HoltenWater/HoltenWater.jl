@@ -53,6 +53,7 @@ end
 
 molecular_weight(model::HoltenWaterModel,z) = 0.0180153*sum(z)
 default_references(::Type{HoltenWater}) = ["10.1063/1.4895593"]
+component_list(::HoltenWater) = ["water"]
 
 function water_L(model::HoltenWaterModel,p,T)
     L0 = 0.76317954
@@ -110,6 +111,10 @@ end
 
 p_scale(model::HoltenWaterModel,z) = 101325.0
 T_scale(model::HoltenWaterModel,z) = 228.2
+
+function gibbsmodel_reference_state_consts(ice::IAPWS06,water::HoltenWaterModel)
+    return :zero,0.0,0.0,0.0
+end
 
 const HoltenWaterConsts = (
     c = [-8.1570681381655, 1.2875032, 7.0901673598012, -0.032779161, 0.73703949, -0.21628622, -5.1782479, 0.00042293517, 0.023592109, 4.3773754, -0.002996777, -0.96558018, 3.7595286, 1.2632441, 0.28542697, -0.85994947, -0.32916153, 0.090019616, 0.081149726, -3.2788213],

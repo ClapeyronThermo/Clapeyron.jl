@@ -73,9 +73,9 @@ end
     end
 
     @testset "third order" begin
-        dddf = Clapeyron.∂²³f(model,V,T,z)
-        @test dddf[1] ≈ -vv
-        @test dddf[2] ≈ -vvv
+        dddf = Clapeyron.p∂p∂2p(model,V,T,z)
+        @test dddf[2] ≈ -vv
+        @test dddf[3] ≈ -vvv
 
         ddp = Clapeyron.∂2p(model,V,T,z)
         @test ddp[3] ≈ p

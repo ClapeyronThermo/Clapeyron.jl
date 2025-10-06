@@ -43,7 +43,7 @@ function chemical_potential_impl(model::SolidHfusModel,p,T,z,phase,threaded,vol0
 end
 
 p_scale(model::SolidHfusModel,z) = 101325.0
-T_scale(model::SolidHfusModel,z) = dot(model.params.Tm.values,z)/sum(z) 
+T_scale(model::SolidHfusModel,z) = dot(model.params.Tm.values,z)/sum(z)
 
 function eos_g(model::SolidHfusModel,p,T,z)
     Hfus = model.params.Hfus.values
@@ -92,7 +92,6 @@ end
 function init_preferred_method(method::typeof(melting_temperature),model::SolidHfusModel,kwargs...)
     return MeltingCorrelation()
 end
-
 
 function melting_temperature(model::CompositeModel{<:Any,<:SolidHfusModel},P,method::ThermodynamicMethod)
     return melting_temperature_impl(model,P,method)

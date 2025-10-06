@@ -135,6 +135,13 @@ end
 Base.summary(model::EoSModel) = string(parameterless_type(model))
 
 """
+    component_list(model)::AbstractVector{String}
+
+Function that returns a list with the components used in the input `EoSModel`.
+"""
+component_list(model) = model.components
+
+"""
     @comps
 
 This macro is an alias to `1:length(model)`.
@@ -277,4 +284,12 @@ function setreferences!(model,references)
     oldrefs .= references
 end
 
-export EoSModel, eos, has_groups, has_sites, Rgas
+"""
+    Clapeyron∂Tag{X}
+
+Clapeyron's `ForwardDiff.jl` custom tag.
+"""
+struct Clapeyron∂Tag{X} end
+const ∂Tag = Clapeyron∂Tag
+
+export EoSModel, eos, has_groups, has_sites, Rgas, Clapeyron∂Tag

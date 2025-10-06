@@ -3,11 +3,10 @@ struct IAPWS06 <: GibbsBasedModel
     s0::Float64
     Rgas::Float64
     references::Vector{String}
-
 end
 
 """
-    IAPWS06 <: EmpiricHelmholtzModel
+    IAPWS06 <: GibbsBasedModel
     IAPWS06()
 
 ## Input parameters
@@ -176,5 +175,15 @@ function x0_sublimation_temperature(model::CompositeModel{<:EoSModel,IAPWS06},p)
     vv = x0_volume(liquid,p,T,z,phase = :v)
     return T,vs,vv
 end
+
+function gibbsmodel_reference_state_consts(ice::IAPWS06,water::EmpiricHelmholtzModel)
+    return :zero,0.0,0.0,0.0
+end
+
+function gibbsmodel_reference_state_consts(water::IAPWS06)
+    return :dH,101325.0,273.15,6010.0
+end
+
+component_list(water::IAPWS06) = ["water"]
 
 export IAPWS06

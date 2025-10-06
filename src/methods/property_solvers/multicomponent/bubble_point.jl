@@ -271,7 +271,7 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
         y_r = rr_flash_vapor(K_r,x_r,zero(eltype(K)))
         yy = index_expansion(y_r,in_media)
         yy ./= sum(yy)
-        vv = volume(model,p,T,y,phase = :v)
+        vv = volume(model,p,T,yy,phase = :v)
         return p,T,x,yy,vlx/sum(x),vv
     else
         y_r = @view y[in_media]
@@ -356,8 +356,8 @@ end
 Calculates the bubble pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Bubble Pressure `[Pa]`
-- Liquid volume at Bubble Point `[m³]`
-- Vapour volume at Bubble Point `[m³]`
+- Liquid molar volume at Bubble Point `[m³·mol⁻¹]`
+- Vapour molar volume at Bubble Point `[m³·mol⁻¹]`
 - Vapour composition at Bubble Point
 
 By default, uses equality of chemical potentials, via [`ChemPotBubblePressure`](@ref)
@@ -379,6 +379,7 @@ function bubble_pressure(model::EoSModel,T,x;kwargs...)
 end
 
 function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
+    moles_positivity(x)
     x = x/sum(x)
     T = float(T)
     model_r,idx_r = index_reduction(model,x)
@@ -522,6 +523,7 @@ Returns a tuple, containing:
 By default, uses equality of chemical potentials, via [`ChemPotBubbleTemperature`](@ref)
 """
 function bubble_temperature(model::EoSModel,p,x;kwargs...)
+    moles_positivity(x)
     if keys(kwargs) == (:v0,)
         nt_kwargs = NamedTuple(kwargs)
         v0 = nt_kwargs.v0
@@ -539,12 +541,14 @@ function bubble_temperature(model::EoSModel,p,x;kwargs...)
 end
 
 function bubble_temperature(model::EoSModel, p , x, T0::Number)
+   moles_positivity(x)
     kwargs = (;T0)
     method = init_preferred_method(bubble_temperature,model,kwargs)
     return bubble_temperature(model,p,x,method)
 end
 
 function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
+    moles_positivity(x)
     x = x/sum(x)
     p = float(p)
     model_r,idx_r = index_reduction(model,x)

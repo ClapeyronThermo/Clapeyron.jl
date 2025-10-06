@@ -261,10 +261,9 @@ function show_info(io,model::CPAModel)
     end
 end
 
-function x0_crit_pure(model::CPAModel)
-    z = SA[1.0]
+function x0_crit_pure(model::CPAModel,z)
     T = T_scale(model,z)
-    lb_v = lb_volume(model,T,z)
+    lb_v = lb_volume(model,T,z)/sum(z)
     return (1.0, log10(lb_v/0.3))
 end
 

@@ -221,9 +221,9 @@ function p_scale(model::CubicModel, z)
     return dot(z, _pc) / sum(z)
 end
 
-function x0_crit_pure(model::CubicModel)
-    Tc = model.params.Tc.values[1]
-    lb_v = lb_volume(model,Tc,SA[1.0])    
+function x0_crit_pure(model::CubicModel,z)
+    Tc = T_scale(model,z)
+    lb_v = lb_volume(model,Tc,z)/sum(z)
     (1.0, log10(lb_v / 0.3))
 end
 
@@ -288,6 +288,7 @@ function __crit_pure_Δ_obj(T,v,R,a,b,Δ1,Δ2)
 end
 
 function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
+    check_arraysize(model,z)
     lb_v = lb_volume(model,T,z)
     if iszero(p) && is_liquid(phase) #liquid root at zero pressure if available
         vl,_ = zero_pressure_impl(model,T,z)
@@ -299,7 +300,7 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
     end
     nRTp = sum(z)*R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
-   
+
     c = c̄*sum(z)
     num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
     if num_isreal == 2
@@ -574,6 +575,14 @@ function vdw_tv_mix(Tc,Vc,z)
     return (Tcm,Vcm)
 end
 
+function x0_crit_mix(model::CubicModel,z)
+    tci = model.params.Tc.values
+    ∑z = sum(z)
+    T_c  = prod(tci[i]^(z[i]/∑z) for i ∈ 1:length(model))
+    P_c = dot(model.params.Pc.values,z)/∑z
+    V_c = volume(model,P_c,T_c,z,phase = :v)/∑z
+    return (log10(V_c),T_c)
+end
 antoine_coef(model::ABCubicModel) = (6.668322465137264,6.098791871032391,-0.08318016317721941)
 
 

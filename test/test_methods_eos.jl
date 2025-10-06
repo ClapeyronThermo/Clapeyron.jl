@@ -268,6 +268,8 @@ end
     @testset "VLE properties" begin
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 1.5760730143760687e6 rtol = 1E-6
         @test Clapeyron.crit_mix(system, z)[1] ≈ 575.622237585033 rtol = 1E-6
+        @test Clapeyron.mechanical_critical_point(system,z)[1] ≈ 483.08783138464617 rtol = 1E-6
+        @test Clapeyron.spinodal_maximum(system,z)[1] ≈ 578.7715447554762 rtol = 1E-6
         srksystem  = SRK(["ethane","undecane"])
         @test Clapeyron.wilson_k_values(srksystem,p,T) ≈ [0.4208525854463047, 1.6171551943938252e-5] rtol = 1E-6
         #test scaling of crit_mix
@@ -396,7 +398,7 @@ end
         model395 = GERG2008(["carbon dioxide","nitrogen"])
         z395 = Ref([0.95,0.05])
         v395 = volume.(model395,exp.(p395),250.0,z395,phase = :v)
-        #@test_broken count(isnan,vv) == 999
+        @test count(isnan,v395) == 999
 
     end
     @testset "VLE properties" begin
@@ -507,7 +509,8 @@ GC.gc()
 end
 
 @testset "SingleFluid - CoolProp" begin
-    #methanol, uses assoc term
+    #methanol, uses double exponential term
+    #before, it used the association term, but now no model uses it
     @test saturation_pressure(SingleFluid("methanol"),300.15)[1] ≈ PropsSI("P","T",300.15,"Q",1.,"methanol") rtol = 1e-6
     
     r134 = SingleFluid("r134a")

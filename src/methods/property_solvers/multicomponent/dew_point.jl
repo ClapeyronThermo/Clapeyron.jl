@@ -80,18 +80,34 @@ function dew_pressure_init(model,T,y,vol0,p0,x0,condensables)
 end
 
 """
+    dew_pressure(model::EoSModel, T, y; kwargs...)
     dew_pressure(model::EoSModel, T, y, method = ChemPotDewPressure())
 
 Calculates the dew pressure and properties at a given temperature `T`.
-Returns a tuple, containing:
-- Dew Pressure `[Pa]`
-- Liquid volume at Dew Point `[m³]`
-- Vapour volume at Dew Point `[m³]`
-- Liquid composition at Dew Point
+The default method uses equality of chemical potentials. see [`ChemPotDewPressure`](@ref)
 
-By default, uses equality of chemical potentials, via [`ChemPotDewPressure`](@ref)
+Inputs:
+ - T, Temperature `[K]`
+ - y, overall composition (vapour-side)
+
+Keywords:
+ - Packed-state path:
+    - `v0`: packed initial state vector `[T0, log10(vL0), log10(vV0), x0...]`  
+      `v0` can be constructed via `Clapeyron.x0_dew_temperature(model, T, y, T0)`.  
+      **Note:** to trigger this path, `v0` must be the only keyword.
+ - Keyword-forwarding path:
+    - `p0`: initial pressure guess `[Pa]`
+    - Additional keywords are forwarded to the selected dew-point method.
+      See [`ChemPotDewTemperature`](@ref) for supported keywords.
+
+Returns a Tuple, containing:
+ - Dew Pressure `[Pa]`
+ - Liquid molar volume at Dew Point `[m³·mol⁻¹]`
+ - Vapour molar volume at Dew Point `[m³·mol⁻¹]`
+ - Liquid molar composition at Dew Point
 """
 function dew_pressure(model::EoSModel,T,x;kwargs...)
+    moles_positivity(x)
     if keys(kwargs) == (:v0,)
         nt_kwargs = NamedTuple(kwargs)
         v0 = nt_kwargs.v0
@@ -108,6 +124,7 @@ function dew_pressure(model::EoSModel,T,x;kwargs...)
 end
 
 function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
+    moles_positivity(y)
     y = y/sum(y)
     T = float(T)
     model_r,idx_r = index_reduction(model,y)
@@ -153,8 +170,8 @@ function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = F
         high_conditions = __is_high_temperature_state(pure,dPdTsat,T0)
     end
     yipi_r = x_r = y_r .* p0inv_r ./ sum(y_r)
-    p = 1/sum(yipi_r)
-    x_r .*= p
+    p_r = 1/sum(yipi_r)
+    x_r .*= p_r
     x0 = index_expansion(x_r,condensables)
     _,T,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x0,y,FugEnum.DEW_TEMPERATURE,condensables,high_conditions)
     return T,vl0,vv0,x
@@ -203,7 +220,7 @@ function dew_temperature_init(model,p,y,vol0,T0,x0,condensables)
                 vl,vv = vol0
             else
                 vl = volume(model,p,T0,x0,phase = :l)
-                vv = volume(model,p,T0,y,phase =:v)
+                vv = volume(model,p,T0,y,phase = :v)
             end
         else
             T0,vl0,vv0,_ = __x0_dew_temperature(model,p,y,T0,condensables)
@@ -229,18 +246,35 @@ function dew_temperature_init(model,p,y,vol0,T0,x0,condensables)
 end
 
 """
+    dew_temperature(model::EoSModel, p, y; kwargs...)
     dew_temperature(model::EoSModel, p, y, method = ChemPotDewTemperature())
+    dew_temperature(model::EoSModel, p, y, T0::Number)
 
-Calculates the dew temperature and properties at a given pressure `p`.
-Returns a tuple, containing:
-- Dew Temperature `[K]`
-- Liquid volume at Dew Point `[m³]`
-- Vapour volume at Dew Point `[m³]`
-- Liquid composition at Dew Point
+Calculates the dew-point temperature and properties at a given pressure `p`.
+The default method uses equality of chemical potentials. see [`ChemPotDewTemperature`](@ref)
 
-By default, uses equality of chemical potentials, via [`ChemPotDewTemperature`](@ref)
+Inputs:
+ - p, Pressure `[Pa]`
+ - y, overall composition (vapour-side)
+
+Keywords:
+ - Packed-state path:
+    - `v0`: packed initial state vector `[T0, log10(vL0), log10(vV0), x0...]`  
+      `v0` can be constructed via `Clapeyron.x0_dew_temperature(model, T, y, T0)`.  
+      **Note:** to trigger this path, `v0` must be the only keyword.
+ - Keyword-forwarding path:
+    - `T0`: initial temperature guess `[K]`
+    - Additional keywords are forwarded to the selected dew-point method.
+      See [`ChemPotDewTemperature`](@ref) for supported keywords.
+
+Returns a Tuple, containing:
+ - Dew Temperature `[K]`
+ - Liquid molar volume at Dew Point `[m³·mol⁻¹]`
+ - Vapour molar volume at Dew Point `[m³·mol⁻¹]`
+ - Liquid molar composition at Dew Point
 """
 function dew_temperature(model::EoSModel,p,x;kwargs...)
+    moles_positivity(x)
     if keys(kwargs) == (:v0,)
         nt_kwargs = NamedTuple(kwargs)
         v0 = nt_kwargs.v0
@@ -258,12 +292,14 @@ function dew_temperature(model::EoSModel,p,x;kwargs...)
 end
 
 function dew_temperature(model::EoSModel, p , x, T0::Number)
+    moles_positivity(x)
     kwargs = (;T0)
     method = init_preferred_method(dew_temperature,model,kwargs)
     return dew_temperature(model,p,x,method)
 end
 
 function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
+    moles_positivity(y)
     y = y/sum(y)
     p = float(p)
     model_r,idx_r = index_reduction(model,y)

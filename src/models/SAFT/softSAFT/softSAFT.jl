@@ -110,7 +110,7 @@ function a_LJ(model::softSAFTModel, V, T, z,_data = @f(data))
     T_inv3 = 1/T3
     T_inv4 = 1/T4
 
-    a1 = x[1]*T̄ + x[2]*√(T̄) + x[3] + x[4]*T_inv + x[5]*T_inv2
+    a1 = x[1]*T̄ + x[2]*sqrt(T̄) + x[3] + x[4]*T_inv + x[5]*T_inv2
     a2 = x[6]*T̄ + x[7] + x[8]*T_inv + x[9]*T_inv2
     a3 = x[11] + x[10]*T̄ + x[12]*T_inv
     a4 = x[13]

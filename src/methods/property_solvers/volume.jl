@@ -17,7 +17,7 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
     return _volume_compress(model,p,T,z,V0,max_iters)
 end
 
-function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+function _volume_compress_old(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(Base.promote_eltype(model,p,T,z,V0))
     _1 = one(_0)
     isnan(V0) && return _0/_0
@@ -47,8 +47,8 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
     logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters)::XX,nan)
     return exp(logV)
 end
-#=
-function _volume_compress2(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+
+function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(Base.promote_eltype(model,p,T,z,V0))
     _1,nan = one(_0),_0/_0
     isnan(V0) && return nan
@@ -59,92 +59,115 @@ function _volume_compress2(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:l
     iszero(p₀) && (V0 == Inf) && return _1/_0 #ideal gas
     p0ᵢ = _0
     dp0dVᵢ = _1
-    check_1 = false
+    is_gas = false
+    check_sp = true
+    nRT = sum(z)*T*Rgas(model)
     atol = 8*eps(typeof(logV0))
-    try
-        for i in 1:max_iters
-            logVᵢ < log_lb_v && return nan
-            Vᵢ = exp(logVᵢ)
-            pᵢ,dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
-            if i == 1
-                p0ᵢ = pᵢ
-                dp0dVᵢ = dpdVᵢ
-            end
-
-            dpdVᵢ > 0 && return nan #inline mechanical stability.
-            abs(pᵢ-p₀) < 3eps(p₀) && return Vᵢ #this helps convergence near critical points.
-
-            #zeroth order check:
-            #slope between initial point and current point, must be negative.
-            #a positive slope means we jumped across an spinodal
-            m = (pᵢ - p0ᵢ)/(logVᵢ - logV0)
-            m > _0 && i > 1 && return nan
-
-            #first order check
-            #a third order polynomial interpolant should not present any minima:
-            if V0 < Vᵢ && i > 1 && false
-                poly3 = Solvers.hermite3_poly(V0,Vᵢ,p0ᵢ,pᵢ,dp0dVᵢ,dpdVᵢ)
-                dpoly3 = Solvers.polyder(poly3)
-                dpolyx = (dpoly3[1],dpoly3[2],dpoly3[3],_0,_0)
-                #@show dp0dVᵢ,dpdVᵢ
-                Vm = _find_vm(dpolyx,V0,Vᵢ)
-                if !isnan(Vm)
-                    @show log(Vm),logV0,logVᵢ
-                end
-                (V0 <= Vm <= Vᵢ) && return nan
-            elseif i > 1 && false
-                poly3 = Solvers.hermite3_poly(Vᵢ,V0,pᵢ,p0ᵢ,dpdVᵢ,dp0dVᵢ)
-                dpoly3 = Solvers.polyder(poly3)
-                dpolyx = (dpoly3[1],dpoly3[2],dpoly3[3],_0,_0)
-                Vm = _find_vm(dpolyx,Vᵢ,V0)
-                #@show Vm
-                (Vᵢ <= Vm <= V0) && return nan
-            end
-
-            #dm_V = (dpdVᵢ - dp0dVᵢ)/(Vᵢ - V0)
-            #dm_rho = (dp0dVᵢ*V0*V0 - dpdVᵢ*Vᵢ*Vᵢ)/(Vᵢ - V0)
-
-            #if max(dm_V,dm_rho) < 0 && i > 1
-            #    return nan
-            #end
-
-            #=
-            if min(dm_V,dm_rho) < 0 && i > 1 && !check_1
-                f(v) = pressure(model,v,T,z)
-                _,_,d2p0ᵢdV02 = Solvers.f∂f∂2f(f,V0)
-                _,_,d2pᵢdVᵢ2 = Solvers.f∂f∂2f(f,Vᵢ)
-                    #p = quintic
-                    #dpdv = quartic
-                    #d2pdpv = cubic we want a point where d2pdpv = 0
-                    #we reuse the spinodal machinery (_find_vm)
-                if V0 < Vᵢ
-                    poly = Solvers.hermite5_poly(V0,Vᵢ,p0ᵢ,pᵢ,dp0dVᵢ,dpdVᵢ,d2p0ᵢdV02,d2pᵢdVᵢ2)
-                    dpoly = Solvers.polyder(poly)
-                    Vm = _find_vm(dpoly,V0,Vᵢ)
-                    (V0 <= Vm <= Vᵢ) && return nan
-                    check_1 = true
-                else
-                    poly = Solvers.hermite5_poly(Vᵢ,V0,pᵢ,p0ᵢ,dpdVᵢ,dp0dVᵢ,d2pᵢdVᵢ2,d2p0ᵢdV02)
-                    dpoly = Solvers.polyder(poly)
-                    Vm = _find_vm(dpoly,Vᵢ,V0)
-                    (Vᵢ <= Vm <= V0) && return nan
-                    check_1 = true
-                end
-            end =#
-            Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
-            abs(Δᵢ/logVᵢ) < max(abs(Δᵢ)*1e-12,atol) && return Vᵢ
-            logVᵢ = logVᵢ + Δᵢ
+    for i in 1:max_iters
+        logVᵢ < log_lb_v && return nan
+        Vᵢ = exp(logVᵢ)
+        pᵢ,dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
+        if i == 1
+            p0ᵢ = pᵢ
+            dp0dVᵢ = dpdVᵢ
+            is_gas = -nRT/Vᵢ/Vᵢ - dpdVᵢ
         end
-    catch err
-        if err isa DomainError
+
+        dpdVᵢ > 0 && return nan #inline mechanical stability.
+        abs(pᵢ-p₀) < 3eps(p₀) && return Vᵢ #this helps convergence near critical points.
+
+        #zeroth order check:
+        #the pressure slope between initial point and current point, must be negative.
+        #a positive slope means we jumped across an spinodal
+        dlnv = (logVᵢ - logV0)
+        dp = (pᵢ - p0ᵢ)
+        ddp = (dpdVᵢ - dp0dVᵢ)
+        m = (pᵢ - p0ᵢ)/(logVᵢ - logV0)
+
+        if m > _0 && i > 1 && sqrt(abs(dlnv/logVᵢ)) > 5e-8 && sqrt(abs(dp/pᵢ)) > 5e-8
+            #@warn "zeroth order check failed with $(model) at p = $p, T = $T, z= $z, v0 = $V0"
+            #@info "pi = $pᵢ, Vi = $(exp(logVᵢ))"
             return nan
-        else
-            rethrow(err)
         end
-    end
+       
+        #=
+        ∂p∂V heuristic:
+        at the ideal gas, ∂p∂V = -RT/V^2
+        as we decrease the volume, ∂p∂V disminishes until reaching zero.
+
+        so ∂p∂V(ideal) > ∂p∂V in the gas phase.
+
+        at the liquid phase, we have initial ∂p∂V << ∂p∂V(ideal) (except near the critical point)
+
+        in any case, along the sequence of fixed points generated by the volume iteration,
+
+        Δ∂p∂V = ∂p∂V(ideal) - ∂p∂V(iteration = i) should have the same sign.
+        
+        If there is any change in sign, then we can check if there are any spinodals, just to be sure.
+        =#
+        is_gas_i = -nRT/Vᵢ/Vᵢ - dpdVᵢ
+        if i > 1 && is_gas_i != is_gas
+            #@warn "first order check failed with $(model) at p = $p, T = $T, z= $z, v0 = $V0"
+            if check_sp
+                v_lb,v_ub = minmax(Vᵢ,exp(logV0))
+                _maybe_spinodal(model,T,v_lb,v_ub,z) && return nan
+                check_sp = false
+            end
+        end
+        
+        Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
+        converged,finite = Solvers.convergence(logVᵢ,logVᵢ + Δᵢ,zero(Δᵢ),1e-12)
+        logVᵢ = logVᵢ + Δᵢ
+        if converged 
+            if finite 
+                return exp(logVᵢ)
+            else
+                return nan
+            end
+        end
+        end
     return nan
 end
-=#
+
+function _maybe_spinodal(model,_T,_v_lb,_v_ub,z)
+    T,v_lb,v_ub = promote(_T,_v_lb,_v_ub)
+    isnan(v_lb) && return true
+    isnan(v_ub) && return true
+    p(x) = pressure(model,x,T,z)
+    fl,dfl,d2fl = p∂p∂2p(model,v_lb,T,z)
+    fv,dfv,d2fv = p∂p∂2p(model,v_ub,T,z)
+    nan = zero(fl)/zero(fl)
+    _0 = zero(nan)
+    poly = Solvers.hermite5_poly(v_lb,v_ub,fl,fv,dfl,dfv,d2fl,d2fv)
+    dpoly = Solvers.polyder(poly)
+
+    #we already have a bracket.
+    dfl*dfv < 0 && return true
+
+    #find the middle point between the liquid and vapour spinodals.
+    vm = _find_vm(dpoly,v_lb,v_ub)
+    fm,dfm = p∂p∂V(model,vm,T,z)
+    dfm > 0 && return true
+    #find the liquid of gas spinodal using the quintic hermite interpolation.
+    v_bracket_1 = minmax(_0,vm - v_lb)
+    v_bracket_2 = minmax(v_ub - v_lb,vm - v_lb)
+
+    no_hermite_bracket_1 = !(evalpoly(_0,dpoly)*evalpoly(vm - v_lb,dpoly) < 0)
+    no_hermite_bracket_2 = !(evalpoly(v_ub - v_lb,dpoly)*evalpoly(vm - v_lb,dpoly) < 0)
+    
+    no_hermite_bracket_1 && no_hermite_bracket_2 && return false
+
+    v1_hermite_prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket_1)
+    v2_hermite_prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket_2)
+    vh1 = Roots.solve(v1_hermite_prob,xrtol = 1e-5) + v_lb
+    vh2 = Roots.solve(v2_hermite_prob,xrtol = 1e-5) + v_lb
+
+    fh1,dfh1 = p∂p∂V(model,vh1,T,z)
+    fh2,dfh2 = p∂p∂V(model,vh2,T,z)
+
+    return (dfh1 > 0) | (dfh2 > 0)
+end
+
 #"chills" a state from T0,p to T,p, starting at v = v0
 function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
     _1 = one(Base.promote_eltype(model,p,T,z))
@@ -386,7 +409,7 @@ function volume_label(models::F,p,T,z,vols) where F
     function gibbs(model,fV)
         isnan(fV) && return one(fV)/zero(fV)
         f(V) = eos(model,V,T,z)
-        _f,_dV = Solvers.f∂f(f,fV)
+        _f,_dV = f∂fdV(model,fV,T,z)
         #for the ideal gas case, p*V == 0, so the result reduces to eos(model,V,T,z)
         fV == Inf && iszero(_dV) && return _f
         return ifelse(abs((p+_dV)/p) > 0.03,one(fV)/zero(fV),_f + p*fV)
@@ -457,11 +480,19 @@ function volume_bracket_refine(model,p,T,z,v1,v2)
     end
     if plo <= p <= phi
         logvhi,logvlo = log(vhi),log(vlo)
-        bhi = 1/(vhi*dpdvhi)
-        blo = 1/(vlo*dpdvlo)
-        poly_p = Solvers.hermite3_poly(plo,phi,logvlo,logvhi,blo,bhi)
-        Δp = p - plo
-        return exp(evalpoly(Δp,poly_p))
+        #we use p/phi
+        bhi = 1/(vhi*dpdvhi*phi)
+        blo = 1/(vlo*dpdvlo*phi)
+        poly_p = Solvers.hermite3_poly(plo/phi,phi/phi,logvlo,logvhi,blo,bhi)
+        Δp = (p - plo)/phi
+        vx = exp(evalpoly(Δp,poly_p))
+        if vhi <= vx <= vlo
+            return vx
+        else
+            dlogvdp = (logvhi - logvlo)/(phi - plo)
+            logvx = logvlo + dlogvdp*(p - plo)
+            return exp(logvx)
+        end
     elseif p < plo
         return vlo
     elseif p > phi
@@ -474,6 +505,5 @@ end
 #circunvent volume machinery.
 #gibbs models do not need iterative calculations for volume
 simple_volume(model,p,T,z) = volume_impl(model,p,T,z,:unknown,false,nothing)
-
 
 export volume

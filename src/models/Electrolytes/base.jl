@@ -17,8 +17,11 @@ end
         neutralmodel::EoSModel = pharmaPCSAFT,
         ionmodel::IonModel = DH,
         RSPmodel::RSPModel = ConstRSP,
-        userlocations::Vector{String}=[],
-        ideal_userlocations::Vector{String}=[],
+        charges = String[], 
+        ideal_userlocations = String[],
+        neutralmodel_userlocations = String[],
+        ionmodel_userlocations = String[],
+        RSPmodel_userlocations = String[],
         verbose::Bool=false)
 
 ## Description

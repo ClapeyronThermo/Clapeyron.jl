@@ -66,7 +66,7 @@ end
 
 function f∂fdT(model,V,T,z::AbstractVector)
     f(x) = eos(model,V,x,z)
-    A,∂A∂T = Solvers.f∂f(f,T)
+    A,∂A∂T = Solvers.f∂f(f,T,)
     return SVector(A,∂A∂T)
 end
 
@@ -173,15 +173,15 @@ function f_hess(model,V,T,z)
 end
 
 """
-    ∂²³f(model,V,T,z=SA[1.0])
+    p∂p∂2p(model,V,T,z=SA[1.0])
 
-Returns `∂²A/∂V²` and `∂³A/∂V³`, in a single ForwardDiff pass. Used mainly in `crit_pure` objective function.
+Returns the pressure `p` and their first and second volume derivatives `∂p/∂V` and `∂²p/∂V²`, in a single ForwardDiff pass.
 
 """
-function ∂²³f(model,V,T,z=SA[1.0])
+function p∂p∂2p(model,V,T,z=SA[1.0])
     f(∂V) = pressure(model,∂V,T,z)
-    _, ∂²A∂V², ∂³A∂V³ = Solvers.f∂f∂2f(f,V)
-    return ∂²A∂V², ∂³A∂V³
+    p, ∂²A∂V², ∂³A∂V³ = Solvers.f∂f∂2f(f,V)
+    return p, ∂²A∂V², ∂³A∂V³
 end
 
 """
@@ -191,21 +191,10 @@ Returns `∂²A/∂T²` via Autodiff. Used mainly for ideal gas properties. It i
 
 """
 function ∂²f∂T²(model,V,T,z)
-    A(x) = eos(model,V,x,z)
-    ∂A∂T(x) = Solvers.derivative(A,x)
-    ∂²A∂T²(x) = Solvers.derivative(∂A∂T,x)
-    return ∂²A∂T²(T)
+    A(_T) = eos(model,V,_T,z)
+    _,_,∂²A∂T² = Solvers.f∂f∂2f(A,T)
+    return ∂²A∂T²
 end
-
-function d2fdt2(model,V,T,z)
-    A(x) = eos(model,V,x,z)
-    ∂A∂T(x) = Solvers.derivative(A,x)
-    ∂²A∂T²(x) = Solvers.derivative(∂A∂T,x)
-    return ∂²A∂T²(T)
-end
-
-
-const _d23f = ∂²³f
 
 #derivarive logic: model Dual numbers:
 

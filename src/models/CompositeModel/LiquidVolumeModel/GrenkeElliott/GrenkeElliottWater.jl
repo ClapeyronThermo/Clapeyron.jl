@@ -34,6 +34,8 @@ GrenkeElliottWater
 
 molecular_weight(model::GrenkeElliottModel,z) = 0.0180153*sum(z)
 
+component_list(::GrenkeElliottWater) = ["water"]
+
 function v0_water(model::GrenkeElliottModel,T)
     a1 = 68.4089 #±24.0366 #[m3/kg]
     a2 = −0.0611145# ±0.0015535 #[1/K]
@@ -171,5 +173,10 @@ end
 
 T_scale(model::GrenkeElliottModel,z) = 273.15
 p_scale(model::GrenkeElliottModel,z) = 101325.0
+
+function gibbsmodel_reference_state_consts(ice::IAPWS06,water::GrenkeElliottModel)
+    #return :dH,101325,273.15,6010.0
+    return :zero,0.,0.,0.
+end
 
 export GrenkeElliottWater

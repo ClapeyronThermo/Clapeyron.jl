@@ -280,7 +280,6 @@ end
 
 low_color(symbol::Symbol) = low_color(":" * string(symbol))
 
-
 function userlocation_merge(loc1,loc2)
     if isempty(loc2)
         return loc1
@@ -321,6 +320,23 @@ function by_cas(caslist)
     return species
 end
 
+function standarize_cas(cas)
+    if isdigit(last(cas))
+        vx = split(cas,"-")
+        if length(vx) != 3
+            @show vx
+            return String(cas)
+        end
+        v1,v2,v3 = vx[1],vx[2],vx[3]
+        val1,val2,val3 = parse(Int64,v1),parse(Int64,v2),parse(Int64,v3)
+        return string(val1) * '-' * string(val2) * '-' * string(val3) 
+    else
+        return String(cas)
+    end
+end
+standarize_cas(cas::Missing) = missing
+
+
 function cas(components)
     components = format_components(components)
     params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES","canonicalsmiles","inchikey"],ignore_missing_singleparams = ["CAS"])
@@ -334,8 +350,9 @@ function SMILES(components)
 end
 
 function by_cas2(caslist)
-    cas = format_components(caslist)
-    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[], ignore_missing_singleparams = ["CAS","species","SMILES","inchikey"])
+    raw_cas = format_components(caslist)
+    cas = standarize_cas.(raw_cas)
+    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[], ignore_missing_singleparams = ["CAS","species","SMILES","inchikey","canonicalsmiles"])
     species = params["species"]
     d = Dict(k => v for (k,v) in zip(species.components,species.values))
     return d,species.values

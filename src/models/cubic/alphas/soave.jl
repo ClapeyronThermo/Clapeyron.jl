@@ -61,7 +61,7 @@ function α_function(model::CubicModel,V,T,z,alpha_model::SoaveAlphaModel)
         ωi = ω[i]
         Tr = T/Tc[i]
         m = evalpoly(ωi,coeff)
-        α[i] = (1+m*(1-√(Tr)))^2
+        α[i] = (1+m*(1-sqrt(Tr)))^2
     end
     return α
 end
@@ -72,7 +72,7 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::SoaveAlpha
     coeff = α_m(model,alpha_model)
     Tr = T/Tc
     m = evalpoly(ω,coeff)
-    α  = (1+m*(1-√(Tr)))^2
+    α  = (1+m*(1-sqrt(Tr)))^2
     return α
 end
 
@@ -91,7 +91,7 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::Generalize
     Tc = model.params.Tc.values[1]
     m = α_m(model,alpha_model,1)
     Tr = T/Tc
-    α  = (1+m*(1-√(Tr)))^2
+    α  = (1+m*(1-sqrt(Tr)))^2
     return α
 end
 

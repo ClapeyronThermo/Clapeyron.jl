@@ -83,7 +83,7 @@ function a_ideal(model::WalkerIdealModel,V,T,z)
         ni,zi = n[i],z[i]
         Mwi = dot(ni,Mw)
         Nroti = dot(ni,Nrot)/sum(ni)
-        Λ = h/√(k_B*T*Mwi/N_A)
+        Λ = h/sqrt(k_B*T*Mwi/N_A)
         res += xlogx(zi,N_A/V*Λ^3)
         res += zi*(-Nroti/2*log(T))
         res += zi*(sum(ni[k]*sum(g_vib[v][k]*(__walker_fi(θ_vib[v][k],T)) for v in 1:4) for k in @groups(i)))

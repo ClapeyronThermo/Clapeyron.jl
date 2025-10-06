@@ -1,0 +1,188 @@
+Clapeyron Database File,,,,
+FH Like Parameters,,,,
+species,v,Mw,source
+poly(4-methyl-1-pentene),0.83,84.15948
+poly(1-pentene),0.85,70.1329
+poly(1-butene),0.86,56.10632
+poly(1-hexene),0.86,84.15948
+poly(1-octadecene),0.86,252.47844
+"polypropylene, atactic",0.866,42.07974
+polymethylhexadecylsiloxane,0.88,311.7245
+polymethyltetradecylsiloxane,0.88,283.6445
+poly(vinyl n-decyl ether),0.883,184.399
+polymethyloctadecylsiloxane,0.886,340.8045
+"poly(1,4-pentadiene)",0.89,68.12
+poly(methyl n-tetradecyl siloxane),0.89,283.6445
+poly(methyl n-octadecylsiloxane),0.89,340.8045
+poly(vinyl n-dodecyl ether),0.892,212.459
+"poly(1,4-butadiene)",0.892,54.09
+"polypropylene, isotactic",0.9,42.07974
+polybutadiene~|~PBD,0.9,54.09044
+poly(vinyl 2-ethylhexyl ether),0.904,156.2652
+polyisoprene,0.906,68.11702
+"polybutadiene, dicarboxy terminated",0.907,54.09044
+"poly(1,2-butadiene)",0.909,54.09
+polymethylhexylsiloxane,0.91,171.3645
+polydimethylsilane,0.91,58.15454
+polymethyloctylsiloxane,0.91,199.4445
+poly(methyl n-octylsiloxane),0.91,199.4445
+poly(methyl n-hexylsiloxane),0.91,171.3645
+poly(vinyl n-octyl ether),0.914,156.319
+"poly(1-butene), isotactic",0.915,56.10632
+polyisobutylene~|~PIB,0.92,56.10632
+"polyethylene, low density~|~LDPE",0.92,28.05316
+poly(vinyl sec-butyl ether),0.92,100.15899999999999
+poly(vinyl isopropyl ether),0.924,86.1323
+poly(vinyl n-hexyl ether),0.925,128.239
+poly(vinyl n-butyl ether),0.927,100.15888
+poly(lauryl methacrylate),0.929,254.4082
+poly(dodecyl methacrylate),0.929,254.4082
+poly(vinyl isobutyl ether),0.93,100.15888
+"polydimethylsiloxane, ethoxy terminated",0.94,112.2045
+"polyethylene, high density~|~HDPE",0.95,28.05316
+poly(p-t-butyl styrene),0.95,160.25
+poly(vinyl ethyl ether),0.95,72.10572
+poly(vinyl cyclohexane),0.95,110.19676
+"poly(butadiene-co-acrylonitrile), dicarboxy terminated-18% acrylonitrile",0.955,217.34982
+"poly(butadiene-co-acrylonitrile), amine terminated-16.5% acrylonitrile",0.956,324.50287999999995
+"poly(butadiene-co-acrylonitrile), dicarboxy terminated-21.5% acrylonitrile",0.958,431.65593999999993
+"polyisoprene, trans",0.96,68.11702
+"poly(butadiene-co-acrylonitrile), dicarboxy terminated-26% acrylonitrile",0.96,175.27008
+"poly(methyl vinyl ether/maleic acid), monobutyl ester",0.962,85.119
+polydimethylsiloxane,0.97,112.2045
+poly(n-octyl methacrylate),0.971,198.30188
+poly(tetramethylene ether) glycol,0.979,114.19899999999998
+"polydimethylsiloxane, dihydroxy terminated",0.98,112.2045
+"polydimethylsiloxane, dimethylamine terminated",0.98,112.2045
+"polydimethylsiloxane, acetoxy terminated",0.98,112.2045
+"poly(propylene oxide), monoamine terminated",0.98,58.07914
+poly(vinyl n-butyl sulfide),0.98,116.23
+poly(vinylmethylsiloxane),0.98,113.2045
+polymethylhydrosiloxane,0.99,86.1645
+poly(neopentyl methacrylate),0.993,156.25
+"poly(propylene oxide), diamine terminated",0.9964,58.07914
+"poly(propylene oxide), diurea terminated",0.9989,58.07914
+poly(vinyl stearate),1.0,310.51452
+"polydimethylsiloxane, chlorine terminated",1.0,112.2045
+poly(propylene oxide),1.0,58.07914
+poly(t-butyl acrylate),1.0,128.17
+"poly(propylene oxide), triamine terminated",1.003,58.07914
+poly(propylene glycol),1.005,76.09442
+poly(n-hexyl methacrylate),1.007,170.24872
+poly(1-methylpentyl methacrylate),1.013,198.32999999999998
+poly(vinyl propionate),1.02,100.11582
+poly(t-butyl methacrylate),1.022,142.19556
+poly(o-methyl styrene),1.027,118.1757
+poly(1-methylbutyl methacrylate),1.03,184.29
+poly(isopentyl methacrylate),1.032,156.22214
+"poly(n,n-dimethyl-3,5-dimethylene piperidinium chloride)",1.033,203.23712
+poly(isopropyl methacrylate),1.033,128.16898
+poly(4-methylstyrene),1.04,118.1757
+poly(2-ethylbutyl methacrylate),1.04,170.24872
+poly(vinyl n-pentyl ether),1.041,114.19899999999998
+poly(isobutyl methacrylate),1.045,142.19556
+poly(vinyl methyl ether),1.05,58.07914
+polystyrene~|~PS,1.05,104.14912
+poly(5-phenyl-1-pentene),1.05,146.22886
+poly(sec-butyl methacrylate),1.052,142.19556
+poly(n-butyl methacrylate)~|~PBMA,1.055,142.19556
+"polyethyleneimine, epichlorohydrin modified",1.055,43.0678
+polydiethoxysiloxane,1.06,44.0845
+poly(isobutyl acrylate),1.06,128.16898
+poly(isobornyl methacrylate),1.06,222.32328
+polyphenylene oxide,1.06,120.15
+poly(diethylene triamine-co-adipic acid),1.07,430.96776
+polyethyleneimine,1.07,43.0678
+poly(alpha-methylstyrene),1.075,118.1757
+"poly(ethylene oxide), diamine terminated",1.08,44.05256
+poly(isopropyl acrylate),1.08,114.1424
+"polyethyleneimine, 80% ethoxylated",1.08,43.0678
+poly(n-propyl methacrylate),1.08,128.16898
+poly(vinyl butyral),1.083,142.198
+poly(ethylene sebacate),1.085,228.28
+poly(n-butyl acrylate),1.087,128.16898
+poly(methyl m-chlorophenylethylsiloxane),1.09,86.1645
+"poly(alpha,alpha-dimethylpropiolactone)",1.097,100.1158
+poly(ethylene glycol mono-methyl ether),1.097,76.09442
+polystyrene sulfonic acid,1.1,184.21
+"polyethylene, chlorinated-25% chlorine",1.1,28.05316
+polymethacrylonitrile,1.1,67.0892
+poly(cyclohexyl methacrylate),1.1,168.23284
+poly(methyl m-chlorophenylsiloxane),1.1,86.1645
+poly(ethyl methacrylate),1.11,114.1424
+polymethylphenylsiloxane,1.11,86.1645
+poly(methylphenylsiloxane),1.11,86.1645
+poly(p-cyclohexylphenyl methacrylate),1.115,170.29000000000002
+poly(vinyl methyl ketone),1.12,70.08984
+poly(ethyl acrylate),1.12,100.11582
+poly(1-phenylethyl methacrylate),1.129,190.23836
+poly(2-ethyl-2-oxazoline),1.14,99.13106
+"poly(2,6-diphenyl-1,4-phenylene oxide)",1.14,244.3
+polycaprolactone,1.143,114.1424
+poly(t-butylaminoethyl methacrylate),1.15,171.26999999999998
+poly(2-hydroxyethyl methacrylate),1.15,130.1418
+poly(styrene oxide),1.15,120.14852
+"polyethylene, chlorinated-36% chlorine",1.16,28.05316
+poly(diphenylmethyl methacrylate),1.168,127.17
+poly(ethylene succinate),1.175,144.126
+poly(benzyl methacrylate),1.179,176.21178
+poly(vinyl methyl sulfide),1.18,74.15
+"poly(methacrylic acid), sodium salt",1.18,86.08924
+poly(ethylene azelate),1.183,214.25822
+polyacrylonitrile,1.184,53.06262
+poly(vinyl acetate),1.19,86.08924
+"poly(1,4-cyclohexylidene dimethylene terephthalate)",1.196,0.0
+poly(methyl methacrylate)~|~PMMA,1.2,100.11582
+poly(n-vinyl carbazole),1.2,193.24384
+polycarbonate,1.2,60.0089
+"poly[1,1-(1-phenylethane) bis(4-phenyl)carbonate]",1.2,106.165
+poly(ethylene glycol),1.207,62.06784
+poly(ethylene-co-chlorotrifluoroethylene),1.21,279.68769
+poly(phenyl methacrylate),1.21,162.1852
+poly(ethylene oxide),1.21,44.05256
+poly(methyl acrylate),1.22,86.08924
+"polyimidazoline, quaternized",1.22,70.09314
+polychloroprene,1.23,88.5355
+"polyethylene, chlorinated-48% chlorine",1.25,28.05316
+polyoxymethylene,1.25,30.02598
+poly(N-vinyl pyrrolidone),1.25,111.14176
+poly(diallyl isophthalate),1.256,246.25856
+poly(diallyl phthalate),1.267,246.25856
+poly(tetramethylene isophthalate),1.268,220.22
+poly(isopropyl a-chloroacrylate),1.27,136.58
+"polyethylene, chlorosulfonated",1.28,28.05316
+poly(vinyl alcohol),1.29,44.05256
+poly(methyl y-trifluoropropylsiloxane),1.3,171.2745
+polyacrylamide,1.302,71.0779
+poly(methyl alpha-cyanoacrylate),1.304,111.10
+polybutadiene terephthalate,1.31,220.22
+poly(2-chloroethyl methacrylate),1.32,148.58746
+poly(m-trifluoromethylstyrene),1.32,172.15
+poly(ethylene phthalate),1.338,192.17
+polyepichlorohydrin,1.36,92.5242
+poly(B-propiolactone),1.36,72.06266
+poly(3-chloropropylene oxide),1.37,92.5242
+poly(vinyl fluoride),1.38,46.043623
+poly(ethylene terephthalate),1.385,192.17
+"poly(vinyl chloride), carboxylated",1.39,62.49822
+poly(ethyl a-chloroacrylate),1.39,134.56
+poly(vinyl chloride),1.4,62.49822
+poly(acrylic acid),1.41,72.06266
+polyacetal,1.42,118.17416
+poly(vinyl chloroacetate),1.45,120.5343
+"poly(3,3,3-trifluoroethylene)",1.58,82.025
+poly(glycolic acid),1.6,76.05136
+"polyisoprene, chlorinated",1.63,68.11702
+poly(vinylidene chloride),1.66,96.94328
+poly(vinylidene fluoride),1.76,64.034086
+poly(hexafluoropropylene oxide),1.91,166.021919
+polychlorotrifluoroethylene,1.92,116.46961
+poly(tetrafluoroethylene),2.0,100.015013
+"poly(2,4,6-tribromostyrene)",2.1,340.84
+poly[tetrafluoroethylene-co-perfluoro(alkyl vinyl ether)],2.15,43.039
+water,1.0,18.01528
+acetone,1.0,58.0802
+toluene,1.0,92.14
+tetrahydrofuran,1.0,72.10594
+benzene,1.0,78.1136
+carbon tetrachloride,1.0,153.823

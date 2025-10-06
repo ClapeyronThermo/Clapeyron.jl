@@ -15,8 +15,8 @@ end
 (m::MixLambda{K})(λ_i,λ_j,z) where K = mix_lambda(λ_i,λ_j,m.k)
 
 # for use in pair_mix
-mix_HudsenMcCoubrey(ϵᵢ,ϵⱼ,σᵢ,σⱼ,σᵢⱼ) = √(ϵᵢ*ϵⱼ)*(σᵢ^3 * σⱼ^3)/σᵢⱼ^6
-mix_HudsenMcCoubreysqrt(ϵᵢ,ϵⱼ,σᵢ,σⱼ,σᵢⱼ) = √(ϵᵢ*ϵⱼ*(σᵢ^3 * σⱼ^3))/σᵢⱼ^3
+mix_HudsenMcCoubrey(ϵᵢ,ϵⱼ,σᵢ,σⱼ,σᵢⱼ) = sqrt(ϵᵢ*ϵⱼ)*(σᵢ^3 * σⱼ^3)/σᵢⱼ^6
+mix_HudsenMcCoubreysqrt(ϵᵢ,ϵⱼ,σᵢ,σⱼ,σᵢⱼ) = sqrt(ϵᵢ*ϵⱼ*(σᵢ^3 * σⱼ^3))/σᵢⱼ^3
 mix_lambda_squarewell(λᵢ,λⱼ,σᵢ,σⱼ,σᵢⱼ) = (σᵢ*λᵢ + σⱼ*λⱼ)/(σᵢ + σⱼ)
 
 #throw error if the pair_mix function requires qij, but just a vector is provided.

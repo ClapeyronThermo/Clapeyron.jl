@@ -90,10 +90,8 @@ module ClapeyronMultiComponentFlashExt
     end
 
     if isdefined(M,:component_names)
-        M.component_names(model::C.EoSModel) = model.components #TODO: we need an abstraction of this type on our code
+        M.component_names(model::C.EoSModel) = C.component_list(model)
     end
-
-
     include("MultiComponentFlash/stability.jl")
     include("MultiComponentFlash/flash.jl")
     include("MultiComponentFlash/flow_coupler.jl")

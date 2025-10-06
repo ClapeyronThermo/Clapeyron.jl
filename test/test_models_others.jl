@@ -67,13 +67,18 @@
     end
 
     @testset "UNIFAC-FV" begin
-        system = UNIFACFV(["benzene","PS(1960)"])
-        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 0.2813003396669342 rtol = 1e-6
+        system = UNIFACFV(["PMMA","PS"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 8.63962025235759 rtol = 1e-6
     end
 
     @testset "UNIFAC-FV-poly" begin
-        system = system = UNIFACFVPoly(["PMMA(6350)","PS(1390)"])
-        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 2.7045808205365796 rtol = 1e-6
+        system = UNIFACFVPoly(["PMMA","PS"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 4.8275769947121985 rtol = 1e-6
+    end
+
+    @testset "FH" begin
+        system = FH(["PMMA","PS"],[100,100])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.8265799707907238 rtol = 1e-6
     end
 
     @testset "COSMOSAC02" begin
@@ -500,7 +505,7 @@ end
         end
     end
 
-    @testset "SolidProp" begin
+    @testset "Solid Models" begin
         @testset "SolidHfus" begin
             model = SolidHfus(["water"])
             @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
@@ -536,6 +541,27 @@ end
             @test isothermal_compressibility(model,p1,T1) ≈ 0.117793449348e-9 rtol = 1e-6
             @test isothermal_compressibility(model,p2,T2) ≈ 0.117785291765e-9 rtol = 1e-6
             @test isothermal_compressibility(model,p3,T3) ≈ 0.886880048115e-10 rtol = 1e-6
+        end
+
+        @testset "Jäger-Span solid CO2" begin
+            model = JagerSpanSolidCO2()
+            #table 5 of 10.1021/je2011677 
+            p1,T1 = 0.51795e6, 216.592
+            p2,T2 = 100e6, 100.0
+            @test gibbs_energy(model,p1,T1) ≈ -1.447007522e3 rtol = 1e-6
+            @test gibbs_energy(model,p2,T2) ≈ -2.961795962e3 rtol = 1e-6
+            @test volume(model,p1,T1) ≈ 2.848595255e-5 rtol = 1e-6
+            @test volume(model,p2,T2) ≈ 2.614596591e-5 rtol = 1e-6
+            test_volume(model,p1,T1)
+            test_volume(model,p2,T2)
+            @test entropy(model,p1,T1) ≈ -1.803247012e1 rtol = 1e-6
+            @test entropy(model,p2,T2) ≈ -5.623154438e1 rtol = 1e-6
+            @test isobaric_heat_capacity(model,p1,T1) ≈ 5.913420271e1 rtol = 1e-6
+            @test isobaric_heat_capacity(model,p2,T2) ≈ 3.911045710e1 rtol = 1e-6
+            @test isobaric_expansivity(model,p1,T1) ≈ 8.127788321e-4 rtol = 1e-6
+            @test isobaric_expansivity(model,p2,T2) ≈ 3.843376525e-4 rtol = 1e-6
+            @test isothermal_compressibility(model,p1,T1) ≈ 2.813585169e-10 rtol = 1e-6
+            @test isothermal_compressibility(model,p2,T2) ≈ 1.149061787e-10 rtol = 1e-6
         end
     end
 end
