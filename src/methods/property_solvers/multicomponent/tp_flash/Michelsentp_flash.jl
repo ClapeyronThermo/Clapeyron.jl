@@ -221,7 +221,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
         verbose && @info "K0 calculated via pure VLE correlation"
-        tp_flash_K0!(K,model,p,T)
+        tp_flash_K0!(K,model,p,T,z)
         Kmin,Kmax = extrema(K)
 
         if is_vle(equilibrium) && Kmin >= 1 || Kmax <= 1

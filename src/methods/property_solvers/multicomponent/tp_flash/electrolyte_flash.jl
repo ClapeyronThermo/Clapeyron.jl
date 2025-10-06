@@ -70,7 +70,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
         K .= exp.(lnK)
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
-        tp_flash_K0!(K,model,p,T)
+        tp_flash_K0!(K,model,p,T,z)
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
             Kmin,Kmax = extrema(K)

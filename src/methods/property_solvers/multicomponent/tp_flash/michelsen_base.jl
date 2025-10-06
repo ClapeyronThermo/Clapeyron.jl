@@ -151,12 +151,12 @@ function update_rr!(K,β,z,x,y,
     return x,y
 end
 
-function tp_flash_K0(model,p,T)
-    K = zeros(Base.promote_eltype(model,p,T),length(model))
-    return tp_flash_K0!(K,model,p,T)
+function tp_flash_K0(model,p,T,z)
+    K = zeros(Base.promote_eltype(model,p,T,z),length(model))
+    return tp_flash_K0!(K,model,p,T,z)
 end
 
-function tp_flash_K0!(K,model,p,T)
+function tp_flash_K0!(K,model,p,T,z)
     if has_fast_crit_pure(model)
         wilson_k_values!(K,model,p,T)
     else
@@ -204,9 +204,9 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
             lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(vl0,vv0),phases,non_inw)
         end
         K = exp.(lnK)
-    elseif is_vle(method) || is_unknown(method) && k0 == :wilson
+    elseif is_vle(method) || is_unknown(method)
         # Wilson Correlation for K
-        K = tp_flash_K0(model,p,T)
+        K = tp_flash_K0(model,p,T,z)
         #if we can't predict K, we use lle
         if is_unknown(method)
             Kmin,Kmax = extrema(K)
@@ -214,12 +214,6 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
                 K = K0_lle_init(model,p,T,z)
             end
         end
-        lnK = log.(K)
-        volx = zero(_1)
-        voly = zero(_1)
-       # volx,voly = NaN*_1,NaN*_1
-    elseif is_vle(method) || is_unknown(method)
-        K = suggest_K(model,p,T,z)
         lnK = log.(K)
         volx = zero(_1)
         voly = zero(_1)
