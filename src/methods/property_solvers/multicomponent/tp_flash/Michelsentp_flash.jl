@@ -264,8 +264,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
     end
 
-    verbose && @info "β(K0) = $β"
-    verbose && singlephase && @info "probably single phase, exiting early."
+    verbose && @info "initial vapour fraction = $β"
+    verbose && singlephase && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
@@ -321,14 +321,11 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
     end
-    verbose && @info "$it SS iterations done, error(lnK) = $error_lnK"
-    if !material_balance_rr_converged((x,y),z,β)
-        error_lnK = oneunit(error_lnK)
-        it = itss
-    end
+    verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
+
     # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
-        verbose && @info "$itss error(lnK) > $K_tol, solving via non-linear system"
+        verbose && @info "$error(lnK) > $K_tol, solving via non-linear system"
         nx = zeros(nc)
         ny = zeros(nc)
         if any(non_inx)
@@ -349,7 +346,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         fgibbs!(F, G, ny_var) = fgibbs!(F, G, nothing, ny_var)
 
         if second_order
-            sol = Solvers.optimize(Solvers.only_fgh!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton()))
+            sol = Solvers.optimize(Solvers.only_fgh!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton2(ny_var0)))
         else
             sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.BFGS()))
         end
@@ -368,6 +365,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
 
     #convergence checks (TODO, seems to fail with activity models)
     _,singlephase,_,_ = rachfordrice_β0(K,z,β,non_inx,non_iny)
+    verbose && singlephase && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
+
     vx,vy = vcache[]
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
@@ -375,7 +374,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         verbose && @info "trivial result but different volumes (maybe azeotrope?)"
         singlephase = false
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
-        verbose && @info "material balance failed"
+        verbose && @info "material balance failed."
         singlephase = true
     elseif any(isnan,view(K,in_equilibria))
         singlephase = true

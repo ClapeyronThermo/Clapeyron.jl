@@ -99,9 +99,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     in the case of incorrect initialization.
     =#
     # Stage 1: Successive Substitution
-    verbose && @info "β(K0) = $β"
+    verbose && @info "initial vapour fraction = $β"
     verbose && @info "ψ(K0) = $ψ"
-    verbose && singlephase && @info "probably single phase, exiting early."
+    verbose && singlephase && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
     error_lnK = _1
     it = 0
     itacc = 0
@@ -156,7 +156,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
             end
         end
         K .= exp.(lnK)
-        verbose && @info "$itss SS iterations done, error(lnK) = $error_lnK"
+        verbose && it > 0 && @info "$itss SS iterations done, error(lnK) = $error_lnK"
 
         β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
         lnK̄ = lnK + Z.*ψ
@@ -208,10 +208,10 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     verbose && @info "final K values: $K"
     β = ((z.-x)./(y.-x))[1]
     verbose && @info "final vapour fraction: $β"
-    # println(y)
     #convergence checks (TODO, seems to fail with activity models)
     _,singlephase,_,_ = rachfordrice_β0(K,z,β,non_inx,non_iny)
-    # println(β)
+    verbose && singlephase && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
+
     vx,vy = vcache[]
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
@@ -219,7 +219,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
         verbose && @info "trivial result but different volumes (maybe azeotrope?)"
         singlephase = false
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
-        verbose && @info "material balance failed"
+        verbose && @info "material balance failed."
         singlephase = true
     elseif any(isnan,view(K,in_equilibria)) || isnan(ψ)
         singlephase = true

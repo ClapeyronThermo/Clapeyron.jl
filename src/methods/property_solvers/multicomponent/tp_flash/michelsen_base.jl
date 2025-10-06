@@ -24,7 +24,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
             iv += 1
             nyi = ny_var[iv]
             ny[i] = nyi
-            nx[i] =z[i] - nyi
+            nx[i] = z[i] - nyi
         end
     end    # nx = z .- ny
 
@@ -131,7 +131,9 @@ end
 
 #updates x,y after a sucessful rachford rice procedure
 function update_rr!(K,β,z,x,y,
-    non_inx=FillArrays.Fill(false,length(z)),non_iny=non_inx)
+                    non_inx=FillArrays.Fill(false,length(z)),
+                    non_iny=FillArrays.Fill(false,length(z)))
+
     x = rr_flash_liquid!(x,K,z,β)
     y .= x .* K
     for i in eachindex(z)
