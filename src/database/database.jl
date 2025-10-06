@@ -809,7 +809,8 @@ function __verbose_findparams_found(foundvalues)
             show_pairs(io,first.(v.component_info),v.data," => ",quote_string = false)
             vals = String(take!(io))
             kk = info_color(v.name)
-            @info("""Found single component data: $kk with values:
+            TT = eltype(v.data)
+            @info("""Found single component data: $kk with $TT values:
             $vals
             """)
         elseif v.type == pairdata
@@ -817,7 +818,8 @@ function __verbose_findparams_found(foundvalues)
             show_pairs(io,first.(v.component_info,2),v.data," => ",quote_string = false)
             vals = String(take!(io))
             kk = info_color(v.name)
-            @info("""Found pair component data: $kk with values:
+            TT = eltype(v.data)
+            @info("""Found pair component data: $kk with $TT values:
             $vals
             """)
         elseif v.type == assocdata
@@ -825,7 +827,8 @@ function __verbose_findparams_found(foundvalues)
             show_pairs(io,__assoc_string.(v.component_info),v.data," => ",quote_string = false)
             vals = String(take!(io))
             kk = info_color(v.name)
-            @info("""Found association component data: $kk with values:
+            TT = eltype(v.data)
+            @info("""Found association component data: $kk with $TT values:
             $vals
             """)
         elseif v.type == groupdata
