@@ -62,25 +62,30 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     if !isnothing(K0)
         K .= 1. * K0
         lnK .= log.(K)
+        verbose && @info "K0 already provided"
     elseif !isnothing(x0) && !isnothing(y0)
         x = x0 ./ sum(x0)
         y = y0 ./ sum(y0)
         lnK .= log.(y ./ x)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(volx,voly),phases,non_inw,dlnϕ_cache)
         K .= exp.(lnK)
+        verbose && @info "x0,y0 provided, calculating K0 via Clapeyron.update_K!"
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
-        # Wilson Correlation for K
+        # VLE Correlation for K
+        verbose && @info "K0 calculated via pure VLE correlation"
         tp_flash_K0!(K,model,p,T,z)
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
             Kmin,Kmax = extrema(K)
             if Kmin > 1 || Kmax < 1
+                verbose && @info "VLE correlation falied, trying LLE initial point."
                 K = K0_lle_init(model,p,T,z)
             end
         end
         lnK .= log.(K)
        # volx,voly = NaN*_1,NaN*_1
     else
+        verbose && @info "K0 calculated via LLE initial point (tpd)"
         K .= K0_lle_init(model,p,T,z)
         lnK .= log.(K)
     end
@@ -94,6 +99,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     in the case of incorrect initialization.
     =#
     # Stage 1: Successive Substitution
+    verbose && @info "β(K0) = $β"
+    verbose && @info "ψ(K0) = $ψ"
+    verbose && singlephase && @info "probably single phase, exiting early."
     error_lnK = _1
     it = 0
     itacc = 0
@@ -148,6 +156,8 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
             end
         end
         K .= exp.(lnK)
+        verbose && @info "$itss SS iterations done, error(lnK) = $error_lnK"
+
         β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
         lnK̄ = lnK + Z.*ψ
         # println(ψ)
@@ -158,6 +168,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
         # println(error_lnK)
     end
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
+        verbose && @info "$it error(lnK) > $K_tol, solving via non-linear system"
         nx = zeros(nc)
         ny = zeros(nc)
 
@@ -194,7 +205,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
         β = sum(ny)
     end
     K .= y ./ x
+    verbose && @info "final K values: $K"
     β = ((z.-x)./(y.-x))[1]
+    verbose && @info "final vapour fraction: $β"
     # println(y)
     #convergence checks (TODO, seems to fail with activity models)
     _,singlephase,_,_ = rachfordrice_β0(K,z,β,non_inx,non_iny)
@@ -203,8 +216,10 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
+        verbose && @info "trivial result but different volumes (maybe azeotrope?)"
         singlephase = false
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
+        verbose && @info "material balance failed"
         singlephase = true
     elseif any(isnan,view(K,in_equilibria)) || isnan(ψ)
         singlephase = true

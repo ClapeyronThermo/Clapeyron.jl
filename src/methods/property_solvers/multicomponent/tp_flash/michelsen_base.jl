@@ -153,20 +153,27 @@ end
 
 function tp_flash_K0(model,p,T,z)
     K = zeros(Base.promote_eltype(model,p,T,z),length(model))
-    return tp_flash_K0!(K,model,p,T,z)
+    tp_flash_K0!(K,model,p,T,z)
+    return K
 end
 
 function tp_flash_K0!(K,model,p,T,z)
-    if has_fast_crit_pure(model)
-        wilson_k_values!(K,model,p,T)
-    else
-        pures = split_pure_model(model)
-        for i in 1:length(model)
-            sat_x = extended_saturation_pressure(pures[i],T)
-            K[i] = sat_x[1]/p
+    K_calculated = tp_flash_fast_K0!(K,model,p,T,z)
+    
+    if K_calculated
+        Kmin,Kmax = extrema(K)
+        if Kmin >= 1 || Kmax <= 1
+            K_calculated = false
         end
     end
-    return K
+    
+    if !K_calculated
+        K .= suggest_K(model,p,T,z)
+    end
+end
+
+function tp_flash_fast_K0!(K,model,p,T,z)
+    return false
 end
 
 function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArrays.Fill(false,length(model)),non_iny = FillArrays.Fill(false,length(model));k0 = :wilson)

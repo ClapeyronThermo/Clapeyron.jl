@@ -637,10 +637,14 @@ function suggest_K(model,p,T,z,pure = split_pure_model(model),volatiles = FillAr
             K[i] = exp(lnϕl[1])/exp(lnϕz[i])
         elseif tpd_l >= 0 && tpd_v < 0
             K[i] = exp(lnϕz[i])/exp(lnϕv[1])
-        else
-            sat_x = extended_saturation_pressure(pure[i],T,crit[i])
-            psat = first(sat_x)
-            K[i] = psat / p
+        else #=tpd >= 0 && tpd_v >= 0=#
+            if tpd_l > tpd_v
+                K[i] = exp(lnϕv[1])
+            else
+                K[i] = exp(lnϕl[1])
+            end
+            #sat_x = extended_saturation_pressure(pure[i],T,crit[i])
+            #psat = first(sat_x)
         end
     end
     return K

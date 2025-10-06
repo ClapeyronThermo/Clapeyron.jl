@@ -219,25 +219,16 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         K .= exp.(lnK)
         verbose && @info "x0,y0 provided, calculating K0 via Clapeyron.update_K!"
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
-        # Wilson Correlation for K
+        # VLE correlation for K
         verbose && @info "K0 calculated via pure VLE correlation"
         tp_flash_K0!(K,model,p,T,z)
-        Kmin,Kmax = extrema(K)
-
-        if is_vle(equilibrium) && Kmin >= 1 || Kmax <= 1
-        end
 
         #if we can't predict K, we use lle
-        if Kmin >= 1 || Kmax <= 1
-            verbose && @info "pure VLE-correlation failed, using VLE-thermopack initial point"
-            K2 = suggest_K(model,p,T,z)
-            Kmin2,Kmax2 = extrema(K2)
-
-            if is_unknown(equilibrium) && Kmin2 >= 1 || Kmax2 <= 1
+        if is_unknown(equilibrium)
+            Kmin,Kmax = extrema(K)
+            if Kmin > 1 || Kmax < 1
                 verbose && @info "VLE correlation falied, trying LLE initial point."
-                K .= K0_lle_init(model,p,T,z) 
-            else
-                K .= K2
+                K = K0_lle_init(model,p,T,z)
             end
         end
         lnK .= log.(K)
@@ -330,8 +321,14 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
     end
+    verbose && @info "$it SS iterations done, error(lnK) = $error_lnK"
+    if !material_balance_rr_converged((x,y),z,β)
+        error_lnK = oneunit(error_lnK)
+        it = itss
+    end
     # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
+        verbose && @info "$itss error(lnK) > $K_tol, solving via non-linear system"
         nx = zeros(nc)
         ny = zeros(nc)
         if any(non_inx)
@@ -366,14 +363,19 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         β = sum(ny)
     end
     K .= y ./ x
+    verbose && @info "final K values: $K"
+    verbose && @info "final vapour fraction: $β"
+
     #convergence checks (TODO, seems to fail with activity models)
     _,singlephase,_,_ = rachfordrice_β0(K,z,β,non_inx,non_iny)
     vx,vy = vcache[]
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
+        verbose && @info "trivial result but different volumes (maybe azeotrope?)"
         singlephase = false
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
+        verbose && @info "material balance failed"
         singlephase = true
     elseif any(isnan,view(K,in_equilibria))
         singlephase = true
