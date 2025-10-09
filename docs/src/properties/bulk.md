@@ -19,6 +19,8 @@ Pages = ["bulk.md"]
 ```@docs
 Clapeyron.pressure
 Clapeyron.second_virial_coefficient
+Clapeyron.cross_second_virial
+Clapeyron.equivol_cross_second_virial
 Clapeyron.pip
 ```
 
@@ -78,35 +80,24 @@ Clapeyron.isobaric_expansivity
 Clapeyron.joule_thomson_coefficient
 ```
 
-### Methods that require first order composition derivatives
+### Chemical potential functions
 
 ```@docs
 Clapeyron.chemical_potential
 Clapeyron.chemical_potential_res
 Clapeyron.fugacity_coefficient
-```
-
-### Activity Coefficient
-
-```@docs
-Clapeyron.reference_chemical_potential
-Clapeyron.reference_chemical_potential_type
 Clapeyron.activity_coefficient
 Clapeyron.activity
 Clapeyron.aqueous_activity
+Clapeyron.reference_chemical_potential
+Clapeyron.reference_chemical_potential_type
 ```
 
-### Mixing
+### Mixing and partial properties
 
 ```@docs
 Clapeyron.mixing
-```
-
-## Isogibbs condition functions
-
-```@docs
-Clapeyron.edge_pressure
-Clapeyron.edge_temperature
+Clapeyron.partial_property
 ```
 
 ## Initial guess functions

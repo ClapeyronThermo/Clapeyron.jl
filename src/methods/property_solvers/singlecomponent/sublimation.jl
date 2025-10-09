@@ -112,7 +112,7 @@ lnphi_s = ln_phi0*V*(p - psub)
 
 =#
 
-function Obj_Sub_Temp(model::EoSModel, F, T, V_s, V_v,p,p̄,T̄)
+function Obj_Sub_Temp(model::EoSModel, F, T, V_s, V_v, p, p̄, T̄)
     z = SA[1.0]
     eos_solid(V) = eos(model.solid,V,T,z)
     eos_fluid(V) = eos(model.fluid,V,T,z)
@@ -120,7 +120,6 @@ function Obj_Sub_Temp(model::EoSModel, F, T, V_s, V_v,p,p̄,T̄)
     A_s,Av_s =Solvers.f∂f(eos_solid,V_s)
     g_v = muladd(-V_v,Av_v,A_v)
     g_s = muladd(-V_s,Av_s,A_s)
-
     F1 = -(Av_v+p)/p̄
     F2 = -(Av_s+p)/p̄
     F3 = (g_v-g_s)/(R̄*T̄)

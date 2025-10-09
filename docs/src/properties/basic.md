@@ -37,7 +37,7 @@ Clapeyron.p∂p∂V
 Clapeyron.∂2f
 Clapeyron.∂2p
 Clapeyron.f_hess
-Clapeyron.∂²³f
+Clapeyron.p∂p∂2p
 ```
 
 ## Thermodynamic Method Dispatch types

@@ -76,7 +76,7 @@ function __ObjCritPure(model::T,T̄,x,z) where T
     RT = Rgas(model)*T_c
     ∂²A∂V²_scale = V_c*V_c/RT
     ∂³A∂V³_scale = ∂²A∂V²_scale*V_c
-    ∂²A∂V², ∂³A∂V³ = ∂²³f(model, V_c, T_c, z)
+    _, ∂²A∂V², ∂³A∂V³ = p∂p∂2p(model, V_c, T_c, z)
     F1 = -∂²A∂V²*∂²A∂V²_scale
     F2 = -∂³A∂V³*∂³A∂V³_scale
     return SVector((F1,F2))

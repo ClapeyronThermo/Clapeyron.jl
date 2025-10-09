@@ -346,7 +346,11 @@ function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillA
         if Ki > 1
             # modification for non-in-x components Ki -> ∞
             not_xi = non_inx[i] || isinf(Ki)
-            βmin_i = not_xi ? one(Ki)*zi : (Ki*zi - 1)/(Ki - 1)
+
+            
+            βmin1 = 1/(Ki - 1)
+            βmin2 = Ki*zi*βmin1
+            βmin_i = not_xi ? one(Ki)*zi : βmin2 - βmin1
             βmin = min(βmin,βmin_i)
         end
         if Ki < 1
@@ -458,8 +462,25 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
     if !isfinite(β)
         return β
     end
-    prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
-    return Roots.solve(prob,Roots.BracketedHalley())
+    rrmin = FO(βmin)[1]
+    rrmax = FO(βmax)[1]
+    rr0 = FO(β)[1]
+    if rrmin*rrmax <= 0
+        prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
+        return Roots.solve(prob,Roots.BracketedHalley())
+    elseif rrmin*rr0 <= 0
+        βx = 0.5*(βmin+β)
+        prob = Roots.ZeroProblem(FO,(βmin,β,βx))
+        return Roots.solve(prob,Roots.BracketedHalley())
+    elseif rrmax*rr0 <= 0
+        βx = 0.5*(βmax+β)
+        prob = Roots.ZeroProblem(FO,(β,βmax,βx))
+        return Roots.solve(prob,Roots.BracketedHalley())
+    else
+        #just try to solve
+        prob = Roots.ZeroProblem(FO,β)
+        return Roots.solve(prob,Roots.Halley())
+    end
 end
 
 function material_balance_rr_converged(w,z,β::Number,n = sum(z),ztol = sqrt(eps(eltype(β))))

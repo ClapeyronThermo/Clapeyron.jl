@@ -437,7 +437,7 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     #step 0: initialize values
 
     if strategy == :default || strategy == :wilson
-        K = tp_flash_K0(model,p,T) #normally wilson
+        K = tp_flash_K0(model,p,T,z) #normally wilson
     else
         K = zeros(Base.promote_eltype(model,p,T,z),length(z))
     end
@@ -637,10 +637,14 @@ function suggest_K(model,p,T,z,pure = split_pure_model(model),volatiles = FillAr
             K[i] = exp(lnϕl[1])/exp(lnϕz[i])
         elseif tpd_l >= 0 && tpd_v < 0
             K[i] = exp(lnϕz[i])/exp(lnϕv[1])
-        else
+        else #=tpd_l >= 0 && tpd_v >= 0=#
+            #if tpd_l > tpd_v
+                #K[i] = exp(lnϕv[1])
+            #else
+                #K[i] = exp(lnϕl[1])
+            #end
             sat_x = extended_saturation_pressure(pure[i],T,crit[i])
-            psat = first(sat_x)
-            K[i] = psat / p
+            K[i] = first(sat_x)/p
         end
     end
     return K

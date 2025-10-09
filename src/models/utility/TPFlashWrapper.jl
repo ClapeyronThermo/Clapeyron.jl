@@ -10,11 +10,11 @@ end
 
 Base.length(model::PTFlashWrapper) = length(model.model)
 
-function tp_flash_K0(wrapper::PTFlashWrapper,p,T)
+function tp_flash_K0(wrapper::PTFlashWrapper,p,T,z)
     first.(wrapper.sat) ./ p
 end
 
-function tp_flash_K0!(K,wrapper::PTFlashWrapper,p,T)
+function tp_flash_K0!(K,wrapper::PTFlashWrapper,p,T,z)
     K .=  first.(wrapper.sat) ./ p 
 end
 

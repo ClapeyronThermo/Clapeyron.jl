@@ -57,12 +57,12 @@ function v_HSU_T0(model,x,v,spec::F,crit) where F
         end
         xl = spec_to_vt(model,vl,Ti,z1,spec)
         xv = spec_to_vt(model,vv,Ti,z1,spec)
-        xx = spec_to_vt(model, v,Ti,z1,spec)
         βxv = (x - xl)/(xv - xl)
         if vl <= v <= vv
             #note, that if the energy value is outside, we are sure that it is outside
             #but if the energy value is inside, maybe it is outside at a higher temp
-            inside = (0 <= βxv <= 1)
+            #inside = (0 <= βxv <= 1)
+            inside = true
             Tmin = Ti
             break
         end

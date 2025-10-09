@@ -8,7 +8,7 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
     if !singlephase
         return rr_flash_refine(K,z,β,non_inx,non_iny,limits)
     else
-        return β
+        return zero(β)/zero(β)
     end
 end
 
@@ -24,7 +24,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
             iv += 1
             nyi = ny_var[iv]
             ny[i] = nyi
-            nx[i] =z[i] - nyi
+            nx[i] = z[i] - nyi
         end
     end    # nx = z .- ny
 
@@ -131,7 +131,9 @@ end
 
 #updates x,y after a sucessful rachford rice procedure
 function update_rr!(K,β,z,x,y,
-    non_inx=FillArrays.Fill(false,length(z)),non_iny=non_inx)
+                    non_inx=FillArrays.Fill(false,length(z)),
+                    non_iny=FillArrays.Fill(false,length(z)))
+
     x = rr_flash_liquid!(x,K,z,β)
     y .= x .* K
     for i in eachindex(z)
@@ -151,22 +153,29 @@ function update_rr!(K,β,z,x,y,
     return x,y
 end
 
-function tp_flash_K0(model,p,T)
-    K = zeros(Base.promote_eltype(model,p,T),length(model))
-    return tp_flash_K0!(K,model,p,T)
+function tp_flash_K0(model,p,T,z)
+    K = zeros(Base.promote_eltype(model,p,T,z),length(model))
+    tp_flash_K0!(K,model,p,T,z)
+    return K
 end
 
-function tp_flash_K0!(K,model,p,T)
-    if has_fast_crit_pure(model)
-        wilson_k_values!(K,model,p,T)
-    else
-        pures = split_pure_model(model)
-        for i in 1:length(model)
-            sat_x = extended_saturation_pressure(pures[i],T)
-            K[i] = sat_x[1]/p
+function tp_flash_K0!(K,model,p,T,z)
+    K_calculated = tp_flash_fast_K0!(K,model,p,T,z)
+    
+    if K_calculated
+        Kmin,Kmax = extrema(K)
+        if Kmin >= 1 || Kmax <= 1
+            K_calculated = false
         end
     end
-    return K
+    
+    if !K_calculated
+        K .= suggest_K(model,p,T,z)
+    end
+end
+
+function tp_flash_fast_K0!(K,model,p,T,z)
+    return false
 end
 
 function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArrays.Fill(false,length(model)),non_iny = FillArrays.Fill(false,length(model));k0 = :wilson)
@@ -204,9 +213,9 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
             lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(vl0,vv0),phases,non_inw)
         end
         K = exp.(lnK)
-    elseif is_vle(method) || is_unknown(method) && k0 == :wilson
+    elseif is_vle(method) || is_unknown(method)
         # Wilson Correlation for K
-        K = tp_flash_K0(model,p,T)
+        K = tp_flash_K0(model,p,T,z)
         #if we can't predict K, we use lle
         if is_unknown(method)
             Kmin,Kmax = extrema(K)
@@ -214,12 +223,6 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
                 K = K0_lle_init(model,p,T,z)
             end
         end
-        lnK = log.(K)
-        volx = zero(_1)
-        voly = zero(_1)
-       # volx,voly = NaN*_1,NaN*_1
-    elseif is_vle(method) || is_unknown(method)
-        K = suggest_K(model,p,T,z)
         lnK = log.(K)
         volx = zero(_1)
         voly = zero(_1)

@@ -268,6 +268,8 @@ end
     @testset "VLE properties" begin
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 1.5760730143760687e6 rtol = 1E-6
         @test Clapeyron.crit_mix(system, z)[1] ≈ 575.622237585033 rtol = 1E-6
+        @test Clapeyron.mechanical_critical_point(system,z)[1] ≈ 483.08783138464617 rtol = 1E-6
+        @test Clapeyron.spinodal_maximum(system,z)[1] ≈ 578.7715447554762 rtol = 1E-6
         srksystem  = SRK(["ethane","undecane"])
         @test Clapeyron.wilson_k_values(srksystem,p,T) ≈ [0.4208525854463047, 1.6171551943938252e-5] rtol = 1E-6
         #test scaling of crit_mix

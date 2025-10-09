@@ -219,25 +219,16 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         K .= exp.(lnK)
         verbose && @info "x0,y0 provided, calculating K0 via Clapeyron.update_K!"
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
-        # Wilson Correlation for K
+        # VLE correlation for K
         verbose && @info "K0 calculated via pure VLE correlation"
-        tp_flash_K0!(K,model,p,T)
-        Kmin,Kmax = extrema(K)
-
-        if is_vle(equilibrium) && Kmin >= 1 || Kmax <= 1
-        end
+        tp_flash_K0!(K,model,p,T,z)
 
         #if we can't predict K, we use lle
-        if Kmin >= 1 || Kmax <= 1
-            verbose && @info "pure VLE-correlation failed, using VLE-thermopack initial point"
-            K2 = suggest_K(model,p,T,z)
-            Kmin2,Kmax2 = extrema(K2)
-
-            if is_unknown(equilibrium) && Kmin2 >= 1 || Kmax2 <= 1
+        if is_unknown(equilibrium)
+            Kmin,Kmax = extrema(K)
+            if Kmin > 1 || Kmax < 1
                 verbose && @info "VLE correlation falied, trying LLE initial point."
-                K .= K0_lle_init(model,p,T,z) 
-            else
-                K .= K2
+                K = K0_lle_init(model,p,T,z)
             end
         end
         lnK .= log.(K)
@@ -273,8 +264,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
     end
 
-    verbose && @info "β(K0) = $β"
-    verbose && singlephase && @info "probably single phase, exiting early."
+    verbose && @info "initial vapour fraction = $β"
+    verbose && singlephase && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
@@ -297,6 +288,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         itacc += 1
         lnK_old .= lnK
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
+
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,z,β,(volx,voly),phases,non_inw,dlnϕ_cache)
         vcache[] = (volx,voly)
@@ -325,13 +317,22 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         end
         K .= exp.(lnK)
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
+
+        if isnan(β) #try to save K? basically damping
+            K .= 0.5 * K .+ 0.5 * y ./ x
+            β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny)
+        end
+
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
     end
+    verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
+
     # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
+        verbose && @info "$error(lnK) > $K_tol, solving via non-linear system"
         nx = zeros(nc)
         ny = zeros(nc)
         if any(non_inx)
@@ -352,7 +353,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         fgibbs!(F, G, ny_var) = fgibbs!(F, G, nothing, ny_var)
 
         if second_order
-            sol = Solvers.optimize(Solvers.only_fgh!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton()))
+            sol = Solvers.optimize(Solvers.only_fgh!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton2(ny_var0)))
         else
             sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.BFGS()))
         end
@@ -366,14 +367,21 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         β = sum(ny)
     end
     K .= y ./ x
+    verbose && @info "final K values: $K"
+    verbose && @info "final vapour fraction: $β"
+
     #convergence checks (TODO, seems to fail with activity models)
     _,singlephase,_,_ = rachfordrice_β0(K,z,β,non_inx,non_iny)
+    verbose && singlephase && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
+
     vx,vy = vcache[]
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
+        verbose && @info "trivial result but different volumes (maybe azeotrope?)"
         singlephase = false
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
+        verbose && @info "material balance failed."
         singlephase = true
     elseif any(isnan,view(K,in_equilibria))
         singlephase = true
