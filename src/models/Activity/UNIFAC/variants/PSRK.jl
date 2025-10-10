@@ -47,7 +47,8 @@ function PSRKUNIFAC(components;
     verbose = false,
     reference_state = nothing)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/PSRK/PSRK_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
+    _components = format_components(components)
+    groups = GroupParam(_components, ["Activity/UNIFAC/PSRK/PSRK_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
     params = getparams(groups, default_locations(PSRKUNIFAC);
                         userlocations = userlocations,
                         asymmetricparams=["A","B","C"],

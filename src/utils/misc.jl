@@ -165,6 +165,7 @@ end
 format_gccomponents(str::String) = [str]
 format_gccomponents(str::AbstractString) = format_components(String(str))
 format_gccomponents(str::Vector{String}) = str
+format_gccomponents(str) = map(format_component_i,str)
 
 """
     viewn(x,chunk,i)
