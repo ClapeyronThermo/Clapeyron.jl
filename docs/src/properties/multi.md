@@ -84,6 +84,8 @@ Clapeyron.isstable
 Clapeyron.VT_mechanical_stability
 Clapeyron.VT_diffusive_stability
 Clapeyron.VT_chemical_stability
+Clapeyron.diffusive_stability
+Clapeyron.chemical_stability
 Clapeyron.tpd
 ```
 

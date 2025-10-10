@@ -22,3 +22,9 @@ Clapeyron.osmotic_coefficient_sat
 ```@docs
 Clapeyron.molality_to_composition
 ```
+
+## Other electrolyte utilities
+
+```@docs
+Clapeyron.dielectric_constant
+```
