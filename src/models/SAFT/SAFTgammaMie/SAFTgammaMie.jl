@@ -187,6 +187,7 @@ function SAFTgammaMie(groups::GroupParam, params::Dict{String,ClapeyronParam};
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
     
+    epsilon_mixing = Symbol(epsilon_mixing)
     if epsilon_mixing == :default
         epsilon = epsilon_HudsenMcCoubreysqrt(params["epsilon"], sigma)
     elseif epsilon_mixing == :hudsen_mccoubrey
@@ -245,6 +246,7 @@ function SAFTVRMie(groups::GroupParam,param::SAFTgammaMieParam,sites::SiteParam 
     sigma = sigma_LorentzBerthelot(sigma3)
 
     #epsilon
+    epsilon_mixing = Symbol(epsilon_mixing)
     if epsilon_mixing == :default
         epsilon = epsilon_HudsenMcCoubreysqrt(group_pairmean(mixed_segment,gc_epsilon),sigma)
     elseif epsilon_mixing == :hudsen_mccoubrey
