@@ -81,12 +81,24 @@ Clapeyron.group_matrix
 Clapeyron.split_model
 Clapeyron.is_splittable
 Clapeyron.index_reduction
+Clapeyron.split_model_binaries
+```
+
+## Math/Utility Functions
+
+```@docs
+Clapeyron.bmcs_hs
+Clapeyron.xlogx
 ```
 
 ## Model Exporting
 
 ```@docs
 Clapeyron.export_model
+Clapeyron.FluidCorrelation
+Clapeyron.GammaPhi
+Clapeyron.ExtendedCorrespondingStates
+Clapeyron.ECS
 ```
 
 ## Model Citing

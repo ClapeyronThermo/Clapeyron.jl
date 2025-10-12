@@ -70,7 +70,7 @@ function MichelsenTPFlash(;equilibrium = :unknown,
         np != 2 && incorrect_np_flash_error(MichelsenTPFlash,flash_result)
         w1,w2 = comps[1],comps[2]
         v = (volumes[1],volumes[2])
-        return Michelsentp_flash(;equilibrium,x0 = w1,y0 = w2,vol0 = v,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles,verbose)
+        return MichelsenTPFlash(;equilibrium,x0 = w1,y0 = w2,v0 = v,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles,verbose)
     end
 
     if K0 == x0 == y0 == nothing #nothing specified
