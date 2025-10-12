@@ -324,17 +324,22 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,
     model = wrapper.model
     fluidmodel = model.fluid.model
     g_pures = wrapper.μ
-
-    γx = activity_coefficient(model.activity, p, T, x)
     RT = R̄*T
-    n = length(model)
-    g_E_x = sum(x[i]*RT*log(γx[i]) for i ∈ 1:n)
-    g_ideal_x = sum(x[i]*RT*(log(x[i])) for i ∈ 1:n)
-    g_pure_x = dot(x,g_pures)
-    gibbs = (g_E_x + g_ideal_x + g_pure_x)*(1-β)/RT
-    if is_vle(eq)
+
+    gibbs = zero(Base.promote_eltype(model,p,T,x,β))
+
+    if !isone(β)
+        γx = activity_coefficient(model.activity, p, T, x)
+        n = length(model)
+        g_E_x = sum(x[i]*RT*log(γx[i]) for i ∈ 1:n)
+        g_ideal_x = sum(x[i]*RT*(log(x[i])) for i ∈ 1:n)
+        g_pure_x = dot(x,g_pures)
+        gibbs += (g_E_x + g_ideal_x + g_pure_x)*(1-β)/RT
+    end
+
+    if is_vle(eq) && !iszero(β)
         gibbs += gibbs_free_energy(gas_model(fluidmodel),p,T,y,phase =:v)*β/R̄/T
-    else #lle
+    elseif !iszero(β) #lle
         γy = activity_coefficient(model.activity, p, T, y)
         g_E_y = sum(y[i]*RT*log(γy[i]) for i ∈ 1:n)
         g_ideal_y = sum(y[i]*R̄*T*(log(y[i])) for i ∈ 1:n)

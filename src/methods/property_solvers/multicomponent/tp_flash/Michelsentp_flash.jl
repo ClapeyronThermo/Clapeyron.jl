@@ -122,11 +122,16 @@ __tpflash_cache_model(model::EoSModel,p,T,z,equilibrium) = model
 __tpflash_gibbs_reduced(model,p,T,x,y,β,eq) = __tpflash_gibbs_reduced(model,p,T,x,y,β,eq,nothing)
 
 function __tpflash_gibbs_reduced(model,p,T,x,y,β,eq,volumes)
+    RT = Rgas(model)*T
     if volumes == nothing
-        return (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/Rgas(model)/T
+        isone(β) && return gibbs_free_energy(model,p,T,y)/RT
+        iszero(β) && return gibbs_free_energy(model,p,T,x)/RT
+        return (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/RT
     else
         vx,vy = volumes
-        return (VT_gibbs_free_energy(model,vx,T,x,p)*(1-β)+VT_gibbs_free_energy(model,vy,T,y,p)*β)/Rgas(model)/T
+        isone(β) && return VT_gibbs_free_energy(model,vy,T,y,p)/RT
+        iszero(β) && return VT_gibbs_free_energy(model,vx,T,x,p)/RT
+        return (VT_gibbs_free_energy(model,vx,T,x,p)*(1-β)+VT_gibbs_free_energy(model,vy,T,y,p)*β)/RT
     end
 end
 
@@ -137,20 +142,18 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
 
     x,y,β,v = tp_flash_michelsen(model_cached,p,T,z,method,true)
     
+    volumes = [v[1],v[2]]
+    comps = [x,y]
+    βi = [1-β ,β]
 
     if isnan(β)
-        return FlashResult([x],[one(β)],[v[1]],FlashData(p,T))
-    end
-
-    volumes = [v[1],v[2]]
-    if has_a_res(model_cached)
+        g = β
+    elseif has_a_res(model_cached)
         g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium,volumes)
     else
         g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
     end
 
-    comps = [x,y]
-    βi = [1-β ,β]
     return FlashResult(comps,βi,volumes,FlashData(p,T,g))
 end
 

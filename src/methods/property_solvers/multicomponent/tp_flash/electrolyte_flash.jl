@@ -102,7 +102,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     verbose && @info "initial vapour fraction = $β"
     verbose && @info "ψ(K0) = $ψ"
     verbose && status != RREq && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
-    status0 == status
+    status0 = status
     
     error_lnK = _1
     it = 0
