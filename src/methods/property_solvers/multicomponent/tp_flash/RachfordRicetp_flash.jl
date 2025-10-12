@@ -75,6 +75,12 @@ function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
 
     x,y,β,v = tp_flash_michelsen(model_cached,p,T,z,method,true)
+    
+    
+    if isnan(β)
+        return FlashResult([x],[one(β)],[v[1]],FlashData(p,T))
+    end
+
     n = sum(z)
     volumes = [v[1],v[2]]
     if has_a_res(model_cached)

@@ -1,11 +1,11 @@
 function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
     # Function to solve Rachdord-Rice mass balance
-    β,singlephase,limits,_ = rachfordrice_β0(K,z,β0,non_inx,non_iny)
-    if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && !singlephase
+    β,status,limits,_ = rachfordrice_β0(K,z,β0,non_inx,non_iny)
+    if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && status == RREq
         return rr_vle_vapor_fraction_exact(K,z)
     end
     #halley refinement
-    if !singlephase
+    if status == RREq
         return rr_flash_refine(K,z,β,non_inx,non_iny,limits)
     else
         return zero(β)/zero(β)
@@ -232,19 +232,19 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         volx = zero(_1)
         voly = zero(_1)
     end
-    β,singlephase,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
+    β,status,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
     g0,g1 = g01
-    #if singlephase == true, maybe initial K values overshoot the actual phase split.
-    if singlephase
+    #if status != RREq, maybe initial K values overshoot the actual phase split.
+    if status != RREq
         Kmin,Kmax = extrema(K)
         if !(Kmin >= 1 || Kmax <= 1)
             #valid K, still single phase.
             if g0 <= 0 && g1 < 0 #bubble point.
                 β = eps(typeof(β))
-                singlephase = false
+                status = RREq
             elseif g0 > 0 && g1 >= 0 #dew point
                 β = one(β) - eps(typeof(β))
-                singlephase = false
+                status = RREq
             end
         end
     else

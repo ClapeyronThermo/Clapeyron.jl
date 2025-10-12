@@ -136,8 +136,9 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
 
     x,y,β,v = tp_flash_michelsen(model_cached,p,T,z,method,true)
+    
 
-    if isnan(β) && isapprox(x,z) && isapprox(y,z) && !isnan(v[1]) && !isnan(v[2])
+    if isnan(β)
         return FlashResult([x],[one(β)],[v[1]],FlashData(p,T))
     end
 
@@ -227,7 +228,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         if is_unknown(equilibrium)
             Kmin,Kmax = extrema(K)
             if Kmin > 1 || Kmax < 1
-                verbose && @info "VLE correlation falied, trying LLE initial point."
+                verbose && @info "VLE correlation failed, trying LLE initial point."
                 K = K0_lle_init(model,p,T,z)
             end
         end
@@ -241,11 +242,11 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     verbose && @info "K0 = $K"
     _1 = one(eltype(K))
     # Initial guess for phase split
-    β,singlephase,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
+    β,status,_,g01 = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
     
     g0,g1 = g01
-    #if singlephase == true, maybe initial K values overshoot the actual phase split.
-    if singlephase
+    #if status != RREq, maybe initial K values overshoot the actual phase split.
+    if status != RREq
         verbose && @info "rachford-rice limits suggests single phase result, trying to check bubble or dew conditions"
         Kmin,Kmax = extrema(K)
         if !(Kmin >= 1 || Kmax <= 1)
@@ -253,11 +254,11 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             if g0 <= 0 && g1 < 0 #bubble point.
                 verbose && @info "suppossing β = 0 (bubble initialization)"
                 β = eps(typeof(β))
-                singlephase = false
+                status = RREq
             elseif g0 > 0 && g1 >= 0 #dew point
                 verbose && @info "suppossing β = 1 (dew initialization)"
                 β = one(β) - eps(typeof(β))
-                singlephase = false
+                status = RREq
             end
         end
     else
@@ -265,7 +266,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     end
 
     verbose && @info "initial vapour fraction = $β"
-    verbose && singlephase && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
+    status0 = status
+    verbose && status != RREq && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
@@ -283,7 +285,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
-    while error_lnK > K_tol && it < itss && !singlephase
+    while error_lnK > K_tol && it < itss && status == RREq
         it += 1
         itacc += 1
         lnK_old .= lnK
@@ -323,7 +325,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny)
         end
 
-        singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
+        status,_ = rachfordrice_status(K,z,non_inx,non_iny)
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
@@ -331,7 +333,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
 
     # Stage 2: Minimization of Gibbs energy
-    if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
+    if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
         verbose && @info "$error(lnK) > $K_tol, solving via non-linear system"
         nx = zeros(nc)
         ny = zeros(nc)
@@ -371,38 +373,44 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     verbose && @info "final vapour fraction: $β"
 
     #convergence checks (TODO, seems to fail with activity models)
-    _,singlephase,_,_ = rachfordrice_β0(K,z,β,non_inx,non_iny)
-    verbose && singlephase && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
+    status,_ = rachfordrice_status(K,z,non_inx,non_iny)
+    verbose && status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
 
     vx,vy = vcache[]
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
-    if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
+    if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && status != RREq
         verbose && @info "trivial result but different volumes (maybe azeotrope?)"
-        singlephase = false
+        status = RREq
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
         verbose && @info "material balance failed."
-        singlephase = true
-    elseif any(isnan,view(K,in_equilibria))
-        singlephase = true
-        vn = zero(vx)/zero(vy)
-        #phase = VT_identify_phase(model,vn,T,z)
-        vx = vn
-        vy = vn
-    elseif abs(β) <= eps(one(β))
-        vy = vx
-        singlephase = true
-    elseif  abs(1 - β) <= eps(one(β))
-        vx = vy
-        singlephase = true
+        status = RRFailure
+    elseif status == RRTrivial
+        verbose && @info "procedure converged to trivial K-values, checking initial conditions to see if resulting phase is liquid or vapour."
+        status0 == RRLiquid && (status = RRLiquid)
+        status0 == RRVapour && (status = RRVapour)
     end
 
-    if singlephase
-        β = zero(β)/zero(β)
+    verbose && status == RRLiquid && @info "procedure converged to a single liquid phase."
+    verbose && status == RRVapour && @info "procedure converged to a single vapour phase."
+
+    if status != RREq
+        _0 = zero(eltype(x))
+        _1 = one(eltype(x))
         x .= z
         y .= z
-        vx = NaN
-        vy = vx
+        if status == RRLiquid
+            β = _0
+            vz = volume(model,p,T,z,phase = :l)
+        elseif status == RRVapour
+            β = _1
+            vz = volume(model,p,T,z,phase = :v)
+        else
+            β = _0/_0
+            vz = _0/_0
+        end
+        vx = vz
+        vy = vz
     end
 
     if !reduced

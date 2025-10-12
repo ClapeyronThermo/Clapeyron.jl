@@ -347,7 +347,7 @@ function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillA
             # modification for non-in-x components Ki -> ∞
             not_xi = non_inx[i] || isinf(Ki)
 
-            
+
             βmin1 = 1/(Ki - 1)
             βmin2 = Ki*zi*βmin1
             βmin_i = not_xi ? one(Ki)*zi : βmin2 - βmin1
@@ -365,37 +365,57 @@ function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillA
     return βmin,βmax
 end
 
+@enum RachfordRiceStatus RRLiquid RRVapour RREq RRFailure RRTrivial
+
 function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
     g0 = Clapeyron.rr_flash_eval(K,z,0,non_inx,non_iny)
     g1 = Clapeyron.rr_flash_eval(K,z,1,non_inx,non_iny)
-    isnan(g0) && return g0,false,(g0,g0),(g0,g1)
-    singlephase = false
+
+    status,(g0,g1) = rachfordrice_status(K,z,non_inx,non_iny)
+
     _1 = one(g1)
     _0 = zero(g1)
+    nan = _0/_0
 
-    if g0 < 0
-        β = _0 #comment to enable negative flashes
-        singlephase = true
-    elseif g1 > 0
-        β = _1 #comment to enable negative flashes
-        singlephase = true
-    elseif iszero(g0) && iszero(g1)
-        singlephase = true
+    if status == RRTrivial || status == RRFailure
+        return nan,status,(nan,nan),(g0,g1)
+    elseif status == RRLiquid
+        return _0,status,(nan,nan),(g0,g1)
+    elseif status == RRVapour
+        return _1,status,(nan,nan),(g0,g1)
     end
+
     βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
-    if singlephase
-        βmax = max(zero(βmax),βmax)
-        βmin = min(βmin,oneunit(βmin))
-    end
 
     if β0 !== nothing
         β = β0
     else
         β = (βmax + βmin)/2
     end
-    return β,singlephase,(βmin,βmax),(g0,g1)
+
+    return β,status,(βmin,βmax),(g0,g1)
 end
 
+function rachfordrice_status(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
+    g0 = Clapeyron.rr_flash_eval(K,z,0,non_inx,non_iny)
+    g1 = Clapeyron.rr_flash_eval(K,z,1,non_inx,non_iny)
+
+    _1 = one(g1)
+    _0 = zero(g1)
+
+    if isnan(g0) || isnan(g1)
+        status = RRFailure
+    elseif g0 < 0 #liquid
+        status = RRLiquid
+    elseif g1 > 0 #gas
+        status = RRVapour
+    elseif iszero(g0) && iszero(g1) #K = 1 case, convergence to trivial solution
+        status = RRTrivial
+    else
+        status = RREq
+    end
+    status,(g0,g1)
+end
 
 #refines a rachford-rice result via Halley iterations
 function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx,limits = rr_βminmax(K,z,non_inx,non_iny))
