@@ -22,13 +22,13 @@
         #bubble_temperature(model, p, z) # 282.2827723244425 K
         res1 = Clapeyron.tp_flash2(model_zulip1, p_zulip1, 282.2, z_zulip1, RRTPFlash(equilibrium=:vle))
         res2 = Clapeyron.tp_flash2(model_zulip1, p_zulip1, 282.3, z_zulip1, RRTPFlash(equilibrium=:vle))
-        @test all(isnan,res1.fractions)
+        @test Clapeyron.numphases(Clapeyron.merge_duplicate_phases!(res1)) == 1
         @test res2.fractions[2] ≈ 0.00089161 rtol = 1e-6
 
         #https://julialang.zulipchat.com/#narrow/channel/265161-Clapeyron.2Ejl/topic/The.20meaning.20of.20subcooled.20liquid.20flash.20results/near/534216551
         model_zulip2 = PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"])
         res2 = Clapeyron.tp_flash2(model_zulip2, 1e5 , 450, z_zulip1, RRTPFlash(equilibrium=:vle))
-        @test all(isnan,res2.fractions)
+        @test Clapeyron.numphases(Clapeyron.merge_duplicate_phases!(res2)) == 1
     end
 
     if isdefined(Base,:get_extension)

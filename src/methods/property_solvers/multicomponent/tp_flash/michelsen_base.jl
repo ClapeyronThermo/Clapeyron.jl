@@ -4,6 +4,8 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
     if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && status == RREq
         return rr_vle_vapor_fraction_exact(K,z)
     end
+
+    
     #halley refinement
     if status == RREq
         return rr_flash_refine(K,z,β,non_inx,non_iny,limits)

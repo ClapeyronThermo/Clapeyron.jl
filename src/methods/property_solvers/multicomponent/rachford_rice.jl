@@ -388,7 +388,11 @@ function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length
     βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
 
     if β0 !== nothing
-        β = β0
+        if βmin <= β0 <= βmax
+            β = β0
+        else
+            β = (βmax + βmin)/2
+        end
     else
         β = (βmax + βmin)/2
     end

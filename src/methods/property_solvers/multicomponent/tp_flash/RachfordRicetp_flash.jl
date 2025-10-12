@@ -76,10 +76,9 @@ function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
 
     x,y,β,v = tp_flash_michelsen(model_cached,p,T,z,method,true)
     
-    
-    if isnan(β)
-        return FlashResult([x],[one(β)],[v[1]],FlashData(p,T))
-    end
+    volumes = [v[1],v[2]]
+    comps = [x,y]
+    βi = [1-β ,β]
 
     if isnan(β)
         g = β
