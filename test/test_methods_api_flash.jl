@@ -77,13 +77,40 @@
         x0 = [0.9997755902156433, 0.0002244097843566859, 0.0]
         y0 = [6.425238373915699e-6, 0.9999935747616262, 0.0]
         method = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium= :lle)
+        res0 = Clapeyron.tp_flash2(system, p, T, [0.5,0.5,0.0],method)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method)[3] ≈ -7.577270350886795 rtol = 1e-6
-
+        @test Clapeyron.tp_flash(system,p,,T,MichelsenTPFlash(flash_result = res0,equilibrium = :lle))[3] ≈ -7.577270350886795 rtol = 1e-6 
         method2 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 4, second_order = false)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method2)[3] ≈ -7.577270350886795 rtol = 1e-6
 
         method3 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 4,second_order = true)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method3)[3] ≈ -7.577270350886795 rtol = 1e-6
+    
+        @testset "#454" begin
+            mix = PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"];
+                        idealmodel=AlyLeeIdeal,
+                        userlocations=(;
+                            Tc             = [425.12, 469.7, 507.6, 540.2],
+                            Pc             = [37.96e5, 33.7e5, 30.25e5, 27.4e5],
+                            Mw             = [58.1234, 72.15028, 86.17716, 100.20404],
+                            acentricfactor = [0.200164, 0.251506, 0.301261, 0.349469],
+                            k              = [
+                            0.0        0.0174       -0.0056      0.0033
+                            0.0174     0.0          -0.00071726  0.0074
+                            -0.0056    -0.00071726    0.0        -0.0078
+                            0.0033     0.0074       -0.0078      0.0],
+                            l              = zeros(4, 4)
+                        )
+                    )
+
+            res1 = Clapeyron.tp_flash2(mix, 153_823.0, 321.9670623578307, [0.007682, 0.9923, 1.517e-17, 1.918e-31], RRTPFlash(equilibrium = :vle))
+            @test res1.compositions[1] ≈ [0.0023666624484214222, 0.9976333375515787, 0.0, 0.0] rtol = 1e-6
+        
+            res2 = Clapeyron.tp_flash2(mix, 701739.83, 430.74, [2.984e-14, 0.0615, 3.48, 2.059], RRTPFlash(equilibrium = :vle))
+            @test res2.compositions[1] ≈ [5.306960867808201e-15, 0.010962897986743346, 0.6212133688148559, 0.3678237331983954] rtol = 1e-6
+        
+        end
+    
     end
     GC.gc()
 
@@ -458,6 +485,13 @@ end
     p4b,vl4b,vv4b = Clapeyron.psat_chempot(model,T,vl,vv)
     @test p4 ≈ p rtol = 1e-6
     @test (p4 == p4b) && (vl4 == vl4b) && (vv4 == vv4b)
+
+    #457
+    @test dew_pressure(vdw,T,1)[1] ≈ px rtol = 1e-6
+    @test bubble_pressure(vdw,T,1)[1] ≈ px rtol = 1e-6
+    @test dew_temperature(vdw,px,1) ≈ T rtol = 1e-6
+    @test bubble_temperature(vdw,px,1) ≈ T rtol = 1e-6
+
     GC.gc()
 
     #test IsoFugacity, near criticality

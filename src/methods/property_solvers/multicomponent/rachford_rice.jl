@@ -368,21 +368,19 @@ end
 @enum RachfordRiceStatus RRLiquid RRVapour RREq RRFailure RRTrivial
 
 function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
-    g0 = Clapeyron.rr_flash_eval(K,z,0,non_inx,non_iny)
-    g1 = Clapeyron.rr_flash_eval(K,z,1,non_inx,non_iny)
-
-    status,(g0,g1) = rachfordrice_status(K,z,non_inx,non_iny)
-
-    _1 = one(g1)
-    _0 = zero(g1)
+    status= rachfordrice_status(K,z,non_inx,non_iny)
+    _1 = one(Base.promote_eltype(K,z))
+    _0 = zero(_1)
     nan = _0/_0
 
     if status == RRTrivial || status == RRFailure
-        return nan,status,(nan,nan),(g0,g1)
+        return nan,status,(nan,nan)
     elseif status == RRLiquid
-        return _0,status,(nan,nan),(g0,g1)
+        βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
+        return _0,status,(βmin,βmax)
     elseif status == RRVapour
-        return _1,status,(nan,nan),(g0,g1)
+        βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
+        return _1,status,(βmin,βmax)
     end
 
     βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
@@ -397,7 +395,7 @@ function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length
         β = (βmax + βmin)/2
     end
 
-    return β,status,(βmin,βmax),(g0,g1)
+    return β,status,(βmin,βmax)
 end
 
 function rachfordrice_status(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
@@ -418,7 +416,7 @@ function rachfordrice_status(K,z,non_inx=FillArrays.Fill(false,length(z)), non_i
     else
         status = RREq
     end
-    status,(g0,g1)
+    return status
 end
 
 #refines a rachford-rice result via Halley iterations
