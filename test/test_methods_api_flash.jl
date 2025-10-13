@@ -79,7 +79,7 @@
         method = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium= :lle)
         res0 = Clapeyron.tp_flash2(system, p, T, [0.5,0.5,0.0],method)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method)[3] ≈ -7.577270350886795 rtol = 1e-6
-        @test Clapeyron.tp_flash(system,p,,T,MichelsenTPFlash(flash_result = res0,equilibrium = :lle))[3] ≈ -7.577270350886795 rtol = 1e-6 
+        @test Clapeyron.tp_flash(system,p,T,MichelsenTPFlash(flash_result = res0,equilibrium = :lle))[3] ≈ -7.577270350886795 rtol = 1e-6 
         method2 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 4, second_order = false)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method2)[3] ≈ -7.577270350886795 rtol = 1e-6
 
