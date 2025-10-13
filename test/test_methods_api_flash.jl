@@ -502,8 +502,8 @@ end
     #457
     @test dew_pressure(vdw,T,1)[1] ≈ px rtol = 1e-6
     @test bubble_pressure(vdw,T,1)[1] ≈ px rtol = 1e-6
-    @test dew_temperature(vdw,px,1) ≈ T rtol = 1e-6
-    @test bubble_temperature(vdw,px,1) ≈ T rtol = 1e-6
+    @test dew_temperature(vdw,px,1)[1] ≈ T rtol = 1e-6
+    @test bubble_temperature(vdw,px,1)[1] ≈ T rtol = 1e-6
 
     GC.gc()
 
