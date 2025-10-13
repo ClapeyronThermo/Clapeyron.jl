@@ -165,10 +165,11 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
         K̄ = exp.(lnK̄)
         # println(ψ)
         status = rachfordrice_status(K,z,non_inx,non_iny)
-        if status == RRLiquid && minimum(@view(K[in_equilibria])) < 1
+        Kmin,Kmax = K_extrema(K,non_inx,non_iny)
+        if status == RRLiquid && Kmin < 1
             status = RREq
             β = eps(eltype(β))
-        elseif status == RRVapour && maximum(@view(K[in_equilibria])) > 1
+        elseif status == RRVapour && Kmax > 1
             status = RREq
             β = 1 - eps(eltype(β))
         end
@@ -213,13 +214,14 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
         x .= nx ./ nxsum
         y .= ny ./ nysum
         β = sum(ny)
+        K .= y ./ x
     end
-    K .= y ./ x
+    
     verbose && @info "final K values: $K"
-    zv = @view(z[in_equilibria])
-    xv = @view(x[in_equilibria])
-    yv = @view(z[in_equilibria])
-    β = (zv[1] - xv[1])/(yv[1] - xv[1])
+    #zv = @view(z[in_equilibria])
+    #xv = @view(x[in_equilibria])
+    #yv = @view(z[in_equilibria])
+    #β = (zv[1] - xv[1])/(yv[1] - xv[1])
 
     verbose && @info "final vapour fraction: $β"
     #convergence checks (TODO, seems to fail with activity models)

@@ -22,13 +22,26 @@
         #bubble_temperature(model, p, z) # 282.2827723244425 K
         res1 = Clapeyron.tp_flash2(model_zulip1, p_zulip1, 282.2, z_zulip1, RRTPFlash(equilibrium=:vle))
         res2 = Clapeyron.tp_flash2(model_zulip1, p_zulip1, 282.3, z_zulip1, RRTPFlash(equilibrium=:vle))
-        @test Clapeyron.numphases(Clapeyron.merge_duplicate_phases!(res1)) == 1
-        @test res2.fractions[2] ≈ 0.00089161 rtol = 1e-6
+        if Clapeyron.numphases(res1) == 2
+            @test iszero(res1.fractions[2])
+            @test res1.volumes[1] ≈ 0.00010665596678830227 rtol = 1e-6
+        else
+            @test res1.volumes[1] ≈ 0.00010665596678830227 rtol = 1e-6
+        end
+
+        @test Clapeyron.numphases(res2) == 2
+        @test res2.fractions[1] ≈ 0.9991083897702745 rtol = 1e-6
 
         #https://julialang.zulipchat.com/#narrow/channel/265161-Clapeyron.2Ejl/topic/The.20meaning.20of.20subcooled.20liquid.20flash.20results/near/534216551
         model_zulip2 = PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"])
-        res2 = Clapeyron.tp_flash2(model_zulip2, 1e5 , 450, z_zulip1, RRTPFlash(equilibrium=:vle))
-        @test Clapeyron.numphases(Clapeyron.merge_duplicate_phases!(res2)) == 1
+        res3 = Clapeyron.tp_flash2(model_zulip2, 1e5 , 450, z_zulip1, RRTPFlash(equilibrium=:vle))
+        
+        if Clapeyron.numphases(res3) == 2
+            @test isone(res3.fractions[2])
+            @test res3.volumes[1] ≈ 0.03683358805181434 rtol = 1e-6
+        else
+            @test res3.volumes[1] ≈ 0.03683358805181434 rtol = 1e-6
+        end
     end
 
     if isdefined(Base,:get_extension)
@@ -79,13 +92,13 @@
         method = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium= :lle)
         res0 = Clapeyron.tp_flash2(system, p, T, [0.5,0.5,0.0],method)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method)[3] ≈ -7.577270350886795 rtol = 1e-6
-        @test Clapeyron.tp_flash(system,p,T,MichelsenTPFlash(flash_result = res0,equilibrium = :lle))[3] ≈ -7.577270350886795 rtol = 1e-6 
+        @test Clapeyron.tp_flash(system,p,T,[0.5,0.5,0.0], MichelsenTPFlash(flash_result = res0,equilibrium = :lle))[3] ≈ -7.577270350886795 rtol = 1e-6
         method2 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 4, second_order = false)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method2)[3] ≈ -7.577270350886795 rtol = 1e-6
 
         method3 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 4,second_order = true)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method3)[3] ≈ -7.577270350886795 rtol = 1e-6
-    
+
         @testset "#454" begin
             mix = PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"];
                         idealmodel=AlyLeeIdeal,
@@ -105,12 +118,12 @@
 
             res1 = Clapeyron.tp_flash2(mix, 153_823.0, 321.9670623578307, [0.007682, 0.9923, 1.517e-17, 1.918e-31], RRTPFlash(equilibrium = :vle))
             @test res1.compositions[1] ≈ [0.0023666624484214222, 0.9976333375515787, 0.0, 0.0] rtol = 1e-6
-        
+
             res2 = Clapeyron.tp_flash2(mix, 701739.83, 430.74, [2.984e-14, 0.0615, 3.48, 2.059], RRTPFlash(equilibrium = :vle))
             @test res2.compositions[1] ≈ [5.306960867808201e-15, 0.010962897986743346, 0.6212133688148559, 0.3678237331983954] rtol = 1e-6
-        
+
         end
-    
+
     end
     GC.gc()
 
@@ -208,7 +221,7 @@
         flash4 = tp_flash(model_vle, 2500.0, 300.15, [0.9, 0.1], MichelsenTPFlash())
 
         @test flash4[1] ≈
-        [0.923964726801428 0.076035273198572; 
+        [0.923964726801428 0.076035273198572;
         0.7934765930306608 0.20652340696933932] rtol = 1e-6
         #test equality of activities does not make sense in VLE
     end
@@ -357,7 +370,7 @@ end
     water_cpr = cPR(["water"],idealmodel = ReidIdeal)
     @test_throws ArgumentError Clapeyron.VT.speed_of_sound(water_cpr,1e-4,373.15)
     water_cpr_flash = Clapeyron.VT.flash(water_cpr,1e-4,373.15)
-    @test_throws ArgumentError speed_of_sound(water_cpr,water_cpr_flash) 
+    @test_throws ArgumentError speed_of_sound(water_cpr,water_cpr_flash)
 
     #PH flash with supercritical pure components (#361)
     fluid_model = SingleFluid("Hydrogen")
@@ -418,7 +431,7 @@ end
     h394 = collect(range(-26617.0,-4282.0,100));
     h394 = -25000.0
     @test iszero(Clapeyron.ForwardDiff.derivative(f394,h394))
-    
+
 
     #https://github.com/CoolProp/CoolProp/issues/2622
     model = SingleFluid("R123")

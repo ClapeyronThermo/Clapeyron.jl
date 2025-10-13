@@ -5,13 +5,32 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
         return rr_vle_vapor_fraction_exact(K,z)
     end
 
-    return rr_flash_refine(K,z,β,non_inx,non_iny,limits)
-    #halley refinement
-    #if status == RREq
-    #    
-    #else
-    #    return zero(β)/zero(β)
-    #end
+    if status == RREq
+        return rr_flash_refine(K, z, β, non_inx, non_iny, limits) # bracketed Halley when possible
+    elseif status == RRLiquid
+        return zero(β)   # or eps(eltype(β))
+    elseif status == RRVapour
+        return one(β)   # or 1 - eps(eltype(β))
+    else
+        return zero(β)/zero(β)
+    end
+end
+
+function K_extrema(K::AbstractVector{T},non_inx,non_iny) where T
+    Kmax = T(-Inf)
+    Kmin = T(Inf)
+    for i in 1:length(K)
+        if non_inx[i]
+            Ki = T(Inf)
+        elseif non_iny[i]
+            Ki = T(0)
+        else
+            Ki = K[i]
+        end
+        Kmax = max(Ki,Kmax)
+        Kmin = min(Ki,Kmin)
+    end
+    return Kmin,Kmax
 end
 
 function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
@@ -237,7 +256,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     β,status,_ = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
     #if status != RREq, maybe initial K values overshoot the actual phase split.
     if status != RREq
-        Kmin,Kmax = extrema(K)
+        Kmin,Kmax = K_extrema(K,non_inx,non_iny)
         if !(Kmin >= 1 || Kmax <= 1)
             #valid K, still single phase.
             if status == RRLiquid #bubble point.

@@ -229,7 +229,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
 
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
-            Kmin,Kmax = extrema(K)
+            Kmin,Kmax = K_extrema(K,non_inx,non_iny)
             if Kmin > 1 || Kmax < 1
                 verbose && @info "VLE correlation failed, trying LLE initial point."
                 K = K0_lle_init(model,p,T,z)
@@ -330,10 +330,11 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         end
 
         status = rachfordrice_status(K,z,non_inx,non_iny)
-        if status == RRLiquid && minimum(@view(K[in_equilibria])) < 1
+        Kmin,Kmax = K_extrema(K,non_inx,non_iny)
+        if status == RRLiquid && Kmin < 1
             status = RREq
             β = eps(eltype(β))
-        elseif status == RRVapour && maximum(@view(K[in_equilibria])) > 1
+        elseif status == RRVapour && Kmax > 1
             status = RREq
             β = 1 - eps(eltype(β))
         end
@@ -378,8 +379,9 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         x .= nx ./ nxsum
         y .= ny ./ nysum
         β = sum(ny)
+        K .= y ./ x
     end
-    K .= y ./ x
+    
     verbose && @info "final K values: $K"
     verbose && @info "final vapour fraction: $β"
 
