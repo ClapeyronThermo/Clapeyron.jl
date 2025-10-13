@@ -6,8 +6,8 @@
 - New method: `edge_pressure` and `edge_temperature`, that solves the isogibbs criteria for single and multicomponent models. Those functions are equivalent to `saturation_pressure`/`saturation_temperature` for single component models.
 - New method: `mechanical_critical_point`, that calculates the mechanical stability limit for single and multicomponent models. For single component models, this is equivalent to `crit_pure`.
 - New method: `spinodal_maximum`, that returns the maximum temperature and pressure of the diffusive spinodal line ($det(∂₂G) = 0$)
-
 - `x0_crit_pure` now accepts an optional mol amount composition input.
+- `MichelsenTPFlash`: improvements in rachford-rice identification of K-value types, support for `verbose` keyword argument.
 - Misc documentation improvements.
 
 ## Bug Fixes
