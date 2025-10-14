@@ -152,7 +152,7 @@ function SAFTgammaMie(components;
     epsilon_mixing = :default,
     assoc_options = AssocOptions())
 
-    _components = format_components(components)
+    _components = format_gccomponents(components)
     groups = GroupParam(_components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
 
