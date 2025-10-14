@@ -249,32 +249,32 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     # Initial guess for phase split
     status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
     status0 = status
-    #if status != RREq, maybe initial K values overshoot the actual phase split.
-    if status != RREq
-        verbose && @info "rachford-rice limits suggests single phase result, trying to check bubble or dew conditions"
-        Kmin,Kmax = extrema(K)
-        if !(Kmin >= 1 || Kmax <= 1)
-            #valid K, still single phase.
-            if status == RRLiquid #bubble point
-                verbose && @info "suppossing β = 0 (bubble initialization)"
-                β = eps(typeof(_1))
-                status = RREq
-            elseif status == RRVapour #dew point
-                verbose && @info "suppossing β = 1 (dew initialization)"
-                β = _1 - eps(typeof(_1))
-                status = RREq
-            else
-                β = zero(_1)/zero(_1)
-            end
-        elseif status == RRLiquid
-            β = zero(_1)
-        elseif status == RRVapour
-            β = _1
-        else
-            β = zero(_1)/zero(_1)
+    
+    #=
+    TREND bubble/dew initialization
+    Maybe initial K values overshoot the actual phase split.
+    if the initial K values generate a single phase result, but we can split the K into two compositions (Kmin < 1 or Kmax > 1)
+    then we start at the bubble (or dew conditions)
+    =#
+    
+    if status == RRLiquid
+        β = zero(_1)
+        if maximum(K) >= 1 #liquid phase, but there is posibility to generate a vapour composition
+            verbose && @info "suppossing β = 0 (bubble initialization)"
+            status = RREq
+            β += eps(eltype(β))
         end
-    else
+    elseif status == RRVapour
+        β = _1
+        if minimum(K) <= 1 #vapour phase, but there is posibility to generate a liquid composition
+            verbose && @info "suppossing β = 1 (dew initialization)"
+            status = RREq
+            β -= eps(eltype(β))
+        end
+    elseif status == RREq
         β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny)
+    else
+        β = zero(_1)/zero(_1)
     end
 
     verbose && @info "initial vapour fraction = $β"
