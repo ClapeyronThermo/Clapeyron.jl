@@ -353,11 +353,9 @@ function split_phase!(result::FlashResult,i::Integer,wj,βj,vj)
     push!(β,βi0*βj)
     push!(volumes,vj/nj)
     push!(comps,_wj)
-    @show β
-    @show sum(β)
+
     #remove moles from phase i
     wi0 .= wi0 .-  βj .* _wj
-    @show wi0
     wi0 ./= sum(wi0)
 
     return result

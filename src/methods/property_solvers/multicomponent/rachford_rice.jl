@@ -398,7 +398,7 @@ function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length
     return β,status,(βmin,βmax)
 end
 
-function rachfordrice_status(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
+function rachfordrice_status(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z));K_tol = 4*eps(eltype(K)))
     g0 = Clapeyron.rr_flash_eval(K,z,0,non_inx,non_iny)
     g1 = Clapeyron.rr_flash_eval(K,z,1,non_inx,non_iny)
 
@@ -407,16 +407,22 @@ function rachfordrice_status(K,z,non_inx=FillArrays.Fill(false,length(z)), non_i
 
     if isnan(g0) || isnan(g1)
         status = RRFailure
+    elseif __log_K_norm(K,non_inx,non_iny) <= K_tol
+        status = RRTrivial
     elseif g0 < 0 #liquid
         status = RRLiquid
     elseif g1 > 0 #gas
         status = RRVapour
-    elseif iszero(g0) && iszero(g1) #K = 1 case, convergence to trivial solution
-        status = RRTrivial
     else
         status = RREq
     end
     return status
+end
+
+function __log_K_norm(K::AbstractVector{T},non_inx,non_iny) where T
+    any(non_inx) && return T(Inf)
+    any(non_iny) && return T(Inf)
+    return maximum(abs ∘ log,K)
 end
 
 #refines a rachford-rice result via Halley iterations

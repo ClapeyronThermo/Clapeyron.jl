@@ -329,7 +329,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny)
         end
 
-        status = rachfordrice_status(K,z,non_inx,non_iny)
+        status = rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol)
+
         Kmin,Kmax = K_extrema(K,non_inx,non_iny)
         if status == RRLiquid && Kmin < 1
             status = RREq
@@ -395,13 +396,13 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && status != RREq
         verbose && @info "trivial result but different volumes (maybe azeotrope?)"
         status = RREq
-    elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
-        verbose && @info "material balance failed."
-        status = RRFailure
     elseif status == RRTrivial && it > 0
         verbose && @info "procedure converged to trivial K-values, checking initial conditions to see if resulting phase is liquid or vapour."
         status0 == RRLiquid && (status = RRLiquid)
         status0 == RRVapour && (status = RRVapour)
+    elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
+        verbose && @info "material balance failed."
+        status = RRFailure
     elseif status == RREq && β <= eps(eltype(β))
         status = RRLiquid
     elseif status == RREq && β >=  one(β)  - eps(eltype(β))
