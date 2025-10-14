@@ -243,13 +243,11 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         K .= K0_lle_init(model,p,T,z)
         lnK .= log.(K)
     end
-
     verbose && @info "K0 = $K"
     _1 = one(eltype(K))
     # Initial guess for phase split
     status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
     status0 = status
-    
     #=
     TREND bubble/dew initialization
     Maybe initial K values overshoot the actual phase split.
@@ -272,7 +270,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             β -= eps(eltype(β))
         end
     elseif status == RREq
-        β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny)
+        β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny,K_tol = K_tol)
     else
         β = zero(_1)/zero(_1)
     end
@@ -330,11 +328,13 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             end
         end
         K .= exp.(lnK)
-        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
+        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
 
         if isnan(β) #try to save K? basically damping
-            K .= 0.5 * K .+ 0.5 * y ./ x
-            β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny)
+            if rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol) != RRTrivial
+                K .= 0.5 * K .+ 0.5 * y ./ x
+                β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
+            end
         end
 
         status = rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol)

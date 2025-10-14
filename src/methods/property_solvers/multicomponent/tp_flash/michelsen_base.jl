@@ -1,12 +1,14 @@
-function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
+function rachfordrice(K, z; β0=nothing,K_tol = 4*eps(eltype(K)), non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
     # Function to solve Rachdord-Rice mass balance
-    β,status,limits = rachfordrice_β0(K,z,β0,non_inx,non_iny)
+    β,status,limits = rachfordrice_β0(K,z,β0,non_inx,non_iny;K_tol = K_tol)
     if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && status == RREq
-        return rr_vle_vapor_fraction_exact(K,z)
+        βx = rr_vle_vapor_fraction_exact(K,z)
+        return clamp(βx,zero(β),one(β))
     end
 
     if status == RREq
-        return rr_flash_refine(K, z, β, non_inx, non_iny, limits) # bracketed Halley when possible
+        βx = rr_flash_refine(K, z, β, non_inx, non_iny, limits) # bracketed Halley when possible
+        return clamp(βx,zero(β),one(β))
     elseif status == RRLiquid
         return zero(β)   # or eps(eltype(β))
     elseif status == RRVapour
