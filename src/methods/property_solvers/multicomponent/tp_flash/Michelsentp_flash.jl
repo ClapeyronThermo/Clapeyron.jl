@@ -299,6 +299,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         it += 1
         itacc += 1
         lnK_old .= lnK
+        
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
 
         # Updating K's
@@ -351,6 +352,11 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
     end
+    
+    if !isnan(β) && it > 0
+        x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
+    end
+    
     verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
 
     # Stage 2: Minimization of Gibbs energy
