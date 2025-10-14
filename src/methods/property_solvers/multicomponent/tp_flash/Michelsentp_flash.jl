@@ -263,7 +263,15 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
                 verbose && @info "suppossing β = 1 (dew initialization)"
                 β = _1 - eps(typeof(_1))
                 status = RREq
+            else
+                β = zero(_1)/zero(_1)
             end
+        elseif status == RRLiquid
+            β = zero(_1)
+        elseif status == RRVapour
+            β = _1
+        else
+            β = zero(_1)/zero(_1)
         end
     else
         β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny)
