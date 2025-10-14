@@ -36,15 +36,12 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
 
     nc = length(model)
     # constructing non-in-x list
-    non_inx = fill(false,nc)
+    model_components = component_list(model)
+    non_inx = comps_in_equilibria(model_components,non_inx_list)
+    non_inx .= (!).(non_inx)
     # constructing non-in-y list
-    non_iny = fill(false,nc)
-
-    for i in 1:nc
-        component = model_components[i]
-        non_inx[i] = !isnothing(non_inx_list) && (component in non_inx_list) && true
-        non_iny[i] = !isnothing(non_iny_list) && (component in non_iny_list) && true
-    end
+    non_iny = comps_in_equilibria(model_components,non_iny_list)
+    non_iny .= (!).(non_iny)
 
     non_inw = (non_inx,non_iny)
     phases = (phasex,phasey)
@@ -59,8 +56,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     y .= z
     K,lnK = similar(x),similar(x)
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
+    _1 = one(eltype(K))
     if !isnothing(K0)
-        K .= 1. * K0
+        K .= K0
         lnK .= log.(K)
         verbose && @info "K0 already provided"
     elseif !isnothing(x0) && !isnothing(y0)
@@ -94,6 +92,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     ψ = -sum(Z.*lnK)/sum(abs.(Z))
     K̄ = K.*exp.(Z.*ψ)
     β,status,_ = rachfordrice_β0(K̄,z,nothing,non_inx,non_iny)
+    status0 = status
     #=TODO:
     there is a method used in TREND that tries to obtain adequate values of K
     in the case of incorrect initialization.
@@ -102,7 +101,6 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     verbose && @info "initial vapour fraction = $β"
     verbose && @info "ψ(K0) = $ψ"
     verbose && status != RREq && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
-    status0 = status
     
     error_lnK = _1
     it = 0
@@ -238,13 +236,13 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
         verbose && @info "procedure converged to trivial K-values, checking initial conditions to see if resulting phase is liquid or vapour."
         status0 == RRLiquid && (status = RRLiquid)
         status0 == RRVapour && (status = RRVapour)
-    elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
-        verbose && @info "material balance failed."
-        status = RRFailure
     elseif status == RREq && β <= eps(eltype(β))
         status = RRLiquid
     elseif status == RREq && β >=  one(β)  - eps(eltype(β))
         status = RRVapour
+    elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
+        verbose && @info "material balance failed."
+        status = RRFailure
     end
 
     verbose && status == RRLiquid && @info "procedure converged to a single liquid phase."

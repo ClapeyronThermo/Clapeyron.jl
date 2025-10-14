@@ -211,8 +211,9 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     y .= z
     K,lnK = similar(x),similar(x)
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
+    _1 = one(eltype(K))
     if !isnothing(K0)
-        K .= 1. * K0
+        K .= K0
         lnK .= log.(K)
         verbose && @info "K0 already provided"
     elseif !isnothing(x0) && !isnothing(y0)
@@ -246,9 +247,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     verbose && @info "K0 = $K"
     _1 = one(eltype(K))
     # Initial guess for phase split
-    β,status,_ = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
-
-
+    status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
+    status0 = status
     #if status != RREq, maybe initial K values overshoot the actual phase split.
     if status != RREq
         verbose && @info "rachford-rice limits suggests single phase result, trying to check bubble or dew conditions"
@@ -257,20 +257,20 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             #valid K, still single phase.
             if status == RRLiquid #bubble point
                 verbose && @info "suppossing β = 0 (bubble initialization)"
-                β = eps(typeof(β))
+                β = eps(typeof(_1))
                 status = RREq
             elseif status == RRVapour #dew point
                 verbose && @info "suppossing β = 1 (dew initialization)"
-                β = one(β) - eps(typeof(β))
+                β = _1 - eps(typeof(_1))
                 status = RREq
             end
         end
     else
-        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
+        β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny)
     end
 
     verbose && @info "initial vapour fraction = $β"
-    status0 = status
+    
     verbose && status != RREq && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
     # Stage 1: Successive Substitution
     error_lnK = _1
@@ -387,9 +387,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     verbose && @info "final vapour fraction: $β"
 
     #convergence checks (TODO, seems to fail with activity models)
-    status = rachfordrice_status(K,z,non_inx,non_iny)
+    status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
     verbose && status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
-
     vx,vy = vcache[]
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
@@ -400,13 +399,13 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         verbose && @info "procedure converged to trivial K-values, checking initial conditions to see if resulting phase is liquid or vapour."
         status0 == RRLiquid && (status = RRLiquid)
         status0 == RRVapour && (status = RRVapour)
-    elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
-        verbose && @info "material balance failed."
-        status = RRFailure
     elseif status == RREq && β <= eps(eltype(β))
         status = RRLiquid
     elseif status == RREq && β >=  one(β)  - eps(eltype(β))
         status = RRVapour
+    elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
+        verbose && @info "material balance failed."
+        status = RRFailure
     end
 
     verbose && status == RRLiquid && @info "procedure converged to a single liquid phase."

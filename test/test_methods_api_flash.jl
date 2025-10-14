@@ -125,6 +125,11 @@
             res3 = Clapeyron.tp_flash2(mix, 1.985550610608908e6, 416.6628781711617, [55.461373286206445, 0.09264900343401582, 7.265116936961075e-9, 8.855321114218425e-14], RRTPFlash(equilibrium = :vle))
             @test iszero(res3.fractions[1])
             @test res3.fractions[2] ≈ 55.554022296905664
+
+            res4 = Clapeyron.tp_flash2(mix, 5.35202e5, 393.265, [36.495044786426966, 0.005798955283355085, 1.9416516061189107e-10, 2.0015179988524742e-15], RRTPFlash(equilibrium=:vle, verbose=true))
+            @test iszero(res4.fractions[1])
+            @test res4.fractions[2] ≈ 36.50084374190448
+        
         end
 
     end
