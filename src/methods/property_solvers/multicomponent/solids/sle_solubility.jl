@@ -56,7 +56,7 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         zref = 1.0 .* ν_l
         zref ./= sum(zref)
         fluid_r,idx_liq_r = index_reduction(model.fluid,idx_sol_l)
-        γref = activity_coefficient(fluid_r,p,Tm,zref)
+        γref = activity_coefficient(fluid_r,p,Tm,zref; phase=:l)
         Kref = one(eltype(γref))
         for i in 1:length(γref)
             Kref *= (zref[i]*γref[i])^ν_l[i]
@@ -71,7 +71,7 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         if isnothing(x0)
             x0 = x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
         end
-        μ_ref = reference_chemical_potential(model.fluid,p,T,reference_chemical_potential_type(model.fluid))
+        μ_ref = reference_chemical_potential(model.fluid,p,T,reference_chemical_potential_type(model.fluid); phase=:l)
         data = (μ_ref,idx_sol_l,idx_solv,μsol[1])
         # println(x0)
         f!(F,x) = obj_sle_solubility(F,model,p,T,z[idx_solv],exp10(x[1]),data,ν_l)
@@ -95,7 +95,7 @@ function obj_sle_solubility(F,model,p,T,zsolv,solu,data,ν_l)
     z ./= sum(z)
     R = Rgas(model.fluid)
     ∑z = sum(z)
-    γliq = activity_coefficient(model.fluid,p,T,z/∑z,μ_ref = μ_ref)
+    γliq = activity_coefficient(model.fluid,p,T,z/∑z,μ_ref = μ_ref; phase=:l)
     γl = @view(γliq[idx_sol_l])
     zl = @view(z[idx_sol_l])
     μliq = zero(eltype(γliq))
@@ -112,7 +112,7 @@ function x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
     z∞[idx_solv] .= z[idx_solv]
     z∞[.!(idx_solv)] .= 1e-10
     z∞ ./= sum(z∞)
-    γ∞ = activity_coefficient(model.fluid,p,T,z∞)[idx_sol_l]
+    γ∞ = activity_coefficient(model.fluid,p,T,z∞; phase=:l)[idx_sol_l]
     γ∞ = prod(γ∞.^ν_l)
     x0 = [1/sum(ν_l)*log10(exp(μsol[1]/(Rgas()*T)-log(γ∞)))]
     # println(x0)
@@ -199,11 +199,11 @@ function obj_sle_solubility_T(F,model,p,T,z,data,ν_l)
     μsol = chemical_potential(solid_r,p,T,[1.])[1]
     μsol += lnKref*Rgas(model.fluid)*T
 
-    μ_ref = reference_chemical_potential(model.fluid,p,T,reference_chemical_potential_type(model.fluid))
+    μ_ref = reference_chemical_potential(model.fluid,p,T,reference_chemical_potential_type(model.fluid); phase=:l)
 
     R = Rgas(model.fluid)
     ∑z = sum(z)
-    γliq = activity_coefficient(model.fluid,p,T,z)
+    γliq = activity_coefficient(model.fluid,p,T,z; phase=:l)
     γl = @view(γliq[idx_sol_l])
     zl = @view(z[idx_sol_l])
     μliq = zero(eltype(γliq))
