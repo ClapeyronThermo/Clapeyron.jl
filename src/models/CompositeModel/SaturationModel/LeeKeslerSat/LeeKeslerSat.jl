@@ -25,7 +25,7 @@ end
 
 Lee-Kesler correlation for saturation pressure:
 ```
-psat(T) = f₀ + ω•f₁
+psat(T) = Pc•exp(f₀ + ω•f₁)
 Tr = T/Tc
 f₀ = 5.92714 - 6.09648/Tr - 1.28862•log(Tr) + 0.169347•Tr⁶
 f₁ = 15.2518 - 15.6875/Tr - 13.4721•log(Tr) + 0.43577•Tr⁶
