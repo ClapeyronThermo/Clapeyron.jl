@@ -365,7 +365,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
                 F0 = Clapeyron.rr_flash_eval(K, z, zero(β), non_inx, non_iny)   # F(0)
                 F1 = Clapeyron.rr_flash_eval(K, z, one(β),  non_inx, non_iny)   # F(1)
                 if verbose
-                    δβ = oftype(β, 1e-8)
+                    δβ = oftype(β, sqrt(eps(typeof(β))))
                     Fp0_num = (Clapeyron.rr_flash_eval(K, z, δβ, non_inx, non_iny) - F0) / δβ
                     @info "boundary check: |F(0)|=$(abs(F0)) |F(1)|=$(abs(F1)) F'(0)≈$(Fp0_num)  β_margin=$(β_margin) gate=$(gateβ)"
                 end
