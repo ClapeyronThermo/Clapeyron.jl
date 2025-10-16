@@ -244,7 +244,9 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         lnK .= log.(K)
     end
     verbose && @info "K0 = $K"
-    _1 = one(eltype(K))
+    Ktype = eltype(K)
+    _0 = zero(Ktype)
+    _1 = one(Ktype)
     # Initial guess for phase split
     status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
     status0 = status
@@ -256,7 +258,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     =#
     
     if status == RRLiquid
-        β = zero(_1)
+        β = _0
         if maximum(K) >= 1 #liquid phase, but there is posibility to generate a vapour composition
             verbose && @info "suppossing β = 0 (bubble initialization)"
             status = RREq
@@ -272,7 +274,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     elseif status == RREq
         β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny,K_tol = K_tol)
     else
-        β = zero(_1)/zero(_1)
+        β = _0/_0
     end
 
     verbose && @info "initial vapour fraction = $β"
@@ -295,11 +297,12 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
+    verbose && @info "iter         β      error_lnK            K"
     while error_lnK > K_tol && it < itss && status == RREq
         it += 1
         itacc += 1
         lnK_old .= lnK
-        
+
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
 
         # Updating K's
@@ -330,6 +333,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         end
         K .= exp.(lnK)
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
+        verbose && @info "$it    $β  $(round(error_lnK,sigdigits=4)) $K"
 
         if isnan(β) #try to save K? basically damping
             if rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol) != RRTrivial
@@ -343,22 +347,65 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         Kmin,Kmax = K_extrema(K,non_inx,non_iny)
         if status == RRLiquid && Kmin < 1
             status = RREq
-            β = eps(eltype(β))
+            β = eps(Ktype)
         elseif status == RRVapour && Kmax > 1
             status = RREq
-            β = 1 - eps(eltype(β))
+            β = 1 - eps(Ktype)
         end
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
     end
     
-    if !isnan(β) && it > 0
+    verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
+
+    if it > 0 && !isnan(β)
+        β_margin = min(β, _1 - β)
+        # 4 guards to pinpoint the scenario of #465
+        if status == RREq && β_margin <= cbrt(K_tol) && Kmin < _1 && Kmax > _1
+            F0 = Clapeyron.rr_flash_eval(K, z, _0, non_inx, non_iny) # F(0)
+            F1 = Clapeyron.rr_flash_eval(K, z, _1, non_inx, non_iny) # F(1)
+            cond0 = (abs(F0) <= K_tol) && (F1 < 0) # bubble candidate
+            cond1 = (abs(F1) <= K_tol) && (F0 > 0) # dew candidate
+            if verbose
+                δβ = sqrt(eps(Ktype))
+                Fp0_num = (Clapeyron.rr_flash_eval(K, z, δβ, non_inx, non_iny) - F0) / δβ
+                @info "boundary check: F(0)=$(F0) F(1)=$(F1) F'(0)≈$(Fp0_num) β_margin=$(β_margin) gate=$(cbrt(K_tol)) cond0=$(cond0) cond1=$(cond1)"
+            end
+            if cond0 && !cond1
+                β = _0
+                status = RRLiquid
+                verbose && @info "boundary projection applied: β→0 (bubble), status=RRLiquid"
+            elseif !cond0 && cond1
+                β = _1
+                status = RRVapour
+                verbose && @info "boundary projection applied: β→1 (dew), status=RRVapour"
+            elseif cond0 && cond1
+                # choose the boundary with smaller linearized step δβ = |F|/|F'|
+                Fp0,Fp1 = _0,_0
+                @inbounds for i in eachindex(K,z)
+                    Δ   = K[i]-_1
+                    zi  = z[i]
+                    Fp0 -= zi*(Δ*Δ)
+                    Fp1 -= zi*(Δ*Δ)/(K[i]*K[i])
+                end
+                δβ0 = abs(F0)/(abs(Fp0)+eps(Ktype))
+                δβ1 = abs(F1)/(abs(Fp1)+eps(Ktype))
+                if δβ0 <= δβ1
+                    β = _0
+                    status = RRLiquid
+                    verbose && @info "boundary projection via linearized distance: β→0 (δβ0=$(δβ0) ≤ δβ1=$(δβ1))"
+                else
+                    β = _1
+                    status = RRVapour
+                    verbose && @info "boundary projection via linearized distance: β→1 (δβ1=$(δβ1) < δβ0=$(δβ0))"
+                end
+            end
+        end
+        # single composition update with the (possibly projected) β
         x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
     end
     
-    verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
-
     # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
         verbose && @info "$error(lnK) > $K_tol, solving via non-linear system"
