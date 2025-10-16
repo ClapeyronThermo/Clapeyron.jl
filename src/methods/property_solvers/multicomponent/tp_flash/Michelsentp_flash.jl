@@ -295,11 +295,13 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
+    verbose && @info "iter         β      error_lnK            K"
     while error_lnK > K_tol && it < itss && status == RREq
         it += 1
         itacc += 1
         lnK_old .= lnK
-        
+        verbose && @info "$it    $β  $(round(error_lnK,sigdigits=4)) $K"
+
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
 
         # Updating K's
@@ -353,12 +355,35 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
     end
     
-    if !isnan(β) && it > 0
+    verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
+
+    if it > 0 && !isnan(β)
+        gateβ = cbrt(K_tol)
+        β_margin = min(β, one(β) - β)
+        if β_margin <= gateβ
+            if Kmin < one(β) && Kmax > one(β) # guard: only meaningful if K straddles 1
+                F0 = Clapeyron.rr_flash_eval(K, z, zero(β), non_inx, non_iny)   # F(0)
+                F1 = Clapeyron.rr_flash_eval(K, z, one(β),  non_inx, non_iny)   # F(1)
+                if verbose
+                    δβ = oftype(β, 1e-8)
+                    Fp0_num = (Clapeyron.rr_flash_eval(K, z, δβ, non_inx, non_iny) - F0) / δβ
+                    @info "boundary check: |F(0)|=$(abs(F0)) |F(1)|=$(abs(F1)) F'(0)≈$(Fp0_num)  β_margin=$(β_margin) gate=$(gateβ)"
+                end
+                if abs(F0) <= K_tol
+                    β = zero(β)
+                    status = RRLiquid 
+                    verbose && @info "boundary projection applied: β→0 (bubble), status=RRLiquid"
+                elseif abs(F1) <= K_tol
+                    β = one(β)
+                    status = RRVapour
+                    verbose && @info "boundary projection applied: β→1 (dew), status=RRVapour"
+                end
+            end
+        end
+        # single composition update with the (possibly projected) β
         x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
     end
     
-    verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
-
     # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
         verbose && @info "$error(lnK) > $K_tol, solving via non-linear system"
