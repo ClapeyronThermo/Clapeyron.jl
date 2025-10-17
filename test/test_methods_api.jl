@@ -300,6 +300,7 @@ end
         (TE,xE) = eutectic_point(model)
         @test TE ≈ 271.97967645045804 rtol = 1e-6
     end
+
     GC.gc()
 
     @testset "Solid-Liquid-Liquid Equilibria" begin
@@ -308,6 +309,11 @@ end
         T = 323.15
         (s1,s2) = slle_solubility(model,p,T)
         @test s1[3] ≈ 0.0015804179997257882 rtol = 1e-6
+    end
+
+    @testset "466" begin
+        sol = test_466()
+        @test sol isa Array
     end
 end
 GC.gc()
