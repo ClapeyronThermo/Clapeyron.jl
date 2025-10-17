@@ -203,7 +203,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
 
     # components that are allowed to be in two phases
     in_equilibria  = @. !non_inx & !non_iny
-    equilibria_idx = findall(in_equilibria)
 
     # Computing the initial guess for the K vector
     x = similar(z,Base.promote_eltype(model,p,T,z))
@@ -436,10 +435,14 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.BFGS()))
         end
         ny_var = Solvers.x_sol(sol)
-        for (k, i) in enumerate(equilibria_idx)
-            zi = z[i]
-            ny[i] = clamp(ny_var[k], _0, zi)
-            nx[i] = zi - ny[i]
+        k = 0
+        for (i, val) in enumerate(in_equilibria)
+            if val
+                k += 1
+                zi = z[i]
+                ny[i] = clamp(ny_var[k], _0, zi)
+                nx[i] = zi - ny[i]
+            end
         end
         nxsum = sum(nx)
         β = nysum = sum(ny)
