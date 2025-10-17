@@ -131,7 +131,9 @@ function update_K!(lnK,model,p,T,x,y,z,β,vols,phases,non_inw,dlnϕ_cache = noth
     gibbs = zero(eltype(lnK))
     if β !== nothing
         for i in eachindex(y)
-            !non_inx[i] || isinf(lnK[i]) && (gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i]))
+            if !non_inx[i] || isinf(lnK[i]) 
+                 gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i])
+            end
         end
     else
         gibbs = gibbs/gibbs
@@ -144,7 +146,9 @@ function update_K!(lnK,model,p,T,x,y,z,β,vols,phases,non_inw,dlnϕ_cache = noth
     lnK .-= lnϕy
     if β !== nothing
         for i in eachindex(y)
-            !non_iny[i] || iszero(exp(lnK[i])) && (gibbs += β*y[i]*(log(y[i]) + lnϕy[i]))
+            if !non_iny[i] || iszero(exp(lnK[i]))
+                gibbs += β*y[i]*(log(y[i]) + lnϕy[i])
+            end
         end
     else
         gibbs = gibbs/gibbs

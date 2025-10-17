@@ -131,7 +131,7 @@
             @test res4.fractions[2] ≈ 36.50084374190448
 
             res5 = Clapeyron.tp_flash2(mix, 442595.31887270656, 318.91991913774194, [18.697907101753938, 9.208988950434023e-8, 2.317361697667793e-22, 1.9317538045050555e-32], RRTPFlash(equilibrium=:vle, verbose=true))
-            @test res5.fractions[1] ≈ 18.69790719384074 rtol = 1e-6
+            @test res5.fractions[1] ≈ 18.69790719384074 rtol = 1e-4
         end
 
     end

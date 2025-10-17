@@ -156,9 +156,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
             end
         end
         K .= exp.(lnK)
-        verbose && it > 0 && @info "$itss SS iterations done, error(lnK) = $error_lnK"
-
         β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
+        verbose && @info "$it    $β  $(round(error_lnK,sigdigits=4)) $K"
+        
         lnK̄ = lnK + Z.*ψ
         K̄ = exp.(lnK̄)
         # println(ψ)
@@ -176,6 +176,57 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
         error_lnK = dnorm(@view(lnK̄[in_equilibria]),@view(lnK̄_old[in_equilibria]),1)
         # println(error_lnK)
     end
+    
+    verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
+
+    if it > 0 && !isnan(β)
+        β_margin = min(β, _1 - β)
+        # 4 guards to pinpoint the scenario of #465
+        if status == RREq && β_margin <= cbrt(K_tol) && Kmin < _1 && Kmax > _1
+            F0 = Clapeyron.rr_flash_eval(K, z, _0, non_inx, non_iny) # F(0)
+            F1 = Clapeyron.rr_flash_eval(K, z, _1, non_inx, non_iny) # F(1)
+            cond0 = (abs(F0) <= K_tol) && (F1 < 0) # bubble candidate
+            cond1 = (abs(F1) <= K_tol) && (F0 > 0) # dew candidate
+            if verbose
+                δβ = sqrt(eps(Ktype))
+                Fp0_num = (Clapeyron.rr_flash_eval(K, z, δβ, non_inx, non_iny) - F0) / δβ
+                @info "boundary check: F(0)=$(F0) F(1)=$(F1) F'(0)≈$(Fp0_num) β_margin=$(β_margin) gate=$(cbrt(K_tol)) cond0=$(cond0) cond1=$(cond1)"
+            end
+            if cond0 && !cond1
+                β = _0
+                status = RRLiquid
+                verbose && @info "boundary projection applied: β→0 (bubble), status=RRLiquid"
+            elseif !cond0 && cond1
+                β = _1
+                status = RRVapour
+                verbose && @info "boundary projection applied: β→1 (dew), status=RRVapour"
+            elseif cond0 && cond1
+                # choose the boundary with smaller linearized step δβ = |F|/|F'|
+                Fp0,Fp1 = _0,_0
+                @inbounds for i in eachindex(K,z)
+                    Δ   = K[i]-_1
+                    zi  = z[i]
+                    Fp0 -= zi*(Δ*Δ)
+                    Fp1 -= zi*(Δ*Δ)/(K[i]*K[i])
+                end
+                δβ0 = abs(F0)/(abs(Fp0)+eps(Ktype))
+                δβ1 = abs(F1)/(abs(Fp1)+eps(Ktype))
+                if δβ0 <= δβ1
+                    β = _0
+                    status = RRLiquid
+                    verbose && @info "boundary projection via linearized distance: β→0 (δβ0=$(δβ0) ≤ δβ1=$(δβ1))"
+                else
+                    β = _1
+                    status = RRVapour
+                    verbose && @info "boundary projection via linearized distance: β→1 (δβ1=$(δβ1) < δβ0=$(δβ0))"
+                end
+            end
+        end
+        # single composition update with the (possibly projected) β
+        x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
+    end
+
+    # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
         verbose && @info "$it error(lnK) > $K_tol, solving via non-linear system"
         nx = zeros(nc)

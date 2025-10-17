@@ -115,11 +115,15 @@ end
 Performs a single component saturation temperature equilibrium calculation, at the specified temperature `T`, of one mol of pure sustance specified by `model`.
 Returns `(T₀, Vₗ, Vᵥ)` where `T₀` is the saturation Temperature (in `[K]`), `Vₗ` is the liquid saturation volume (in `[m³]`) and `Vᵥ` is the vapour saturation volume (in `[m³]`).
 
-If the calculation fails, returns  `(NaN, NaN, NaN)`
+If the calculation fails, returns `(NaN, NaN, NaN)`
 
-By default, it uses [`AntoineSaturation`](@ref)
+## Available methods
 
-## Examples:
+- [`AntoineSaturation`](@ref): (default) direct VT solver (fast and robust).
+- [`ClapeyronSaturation`](@ref): Clapeyron-equation descent that repeatedly calls a saturation solver (reliable but slower; supports `T0`/`crit`).
+- [`SuperAncSaturation`](@ref): superancillary correlations for supported EoS (cubic, PC-SAFT via extension); requires enabling superancillaries and is only available on supported models.
+
+## Examples
 julia-repl
 ```
 julia> pr = PR(["water"])
