@@ -148,8 +148,8 @@ function Base.show(io::IO,mime::MIME"text/plain",obj::FlashResult)
         print(io,"s")
     end
     println(io,":")
-    nt = map(comps,β,volumes) do xi,βi,vi
-        (x = xi,β = βi,v = vi)
+    nt = map(comps,β,volumes) do xi,ni,vi
+        (x = xi,n = ni,v = vi)
     end
     Base.print_matrix(IOContext(io, :compact => true),nt)
 end

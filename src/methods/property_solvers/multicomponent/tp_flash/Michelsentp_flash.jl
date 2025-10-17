@@ -202,7 +202,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     phases = (phasex,phasey)
 
     # components that are allowed to be in two phases
-    in_equilibria = @. !non_inx & !non_iny
+    in_equilibria  = @. !non_inx & !non_iny
+    equilibria_idx = findall(in_equilibria)
 
     # Computing the initial guess for the K vector
     x = similar(z,Base.promote_eltype(model,p,T,z))
@@ -408,17 +409,18 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     
     # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
-        verbose && @info "$error(lnK) > $K_tol, solving via non-linear system"
-        nx = zeros(nc)
-        ny = zeros(nc)
-        if any(non_inx)
-            ny[non_inx] = @view(z[non_inx])
-            nx[non_inx] .= 0.
-        end
-
-        if any(non_iny)
-            ny[non_iny] .= 0.
-            nx[non_iny] = @view(z[non_iny])
+        verbose && @info "error_lnK ($error_lnK) > K_tol ($K_tol), solving via non-linear system"
+        nx = zeros(Ktype,nc)
+        ny = zeros(Ktype,nc)
+        for j = 1:nc
+            zi = z[j]
+            if non_inx[j]
+                ny[j] = zi
+                nx[j] = _0
+            elseif non_iny[j]
+                ny[j] = _0
+                nx[j] = zi
+            end
         end
 
         ny_var0 = y[in_equilibria] * β
@@ -434,14 +436,24 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.BFGS()))
         end
         ny_var = Solvers.x_sol(sol)
-        ny[in_equilibria] .= ny_var
-        nx[in_equilibria] .= @view(z[in_equilibria]) .- @view(ny[in_equilibria])
+        for (k, i) in enumerate(equilibria_idx)
+            zi = z[i]
+            ny[i] = clamp(ny_var[k], _0, zi)
+            nx[i] = zi - ny[i]
+        end
         nxsum = sum(nx)
-        nysum = sum(ny)
-        x .= nx ./ nxsum
-        y .= ny ./ nysum
-        β = sum(ny)
-        K .= y ./ x
+        β = nysum = sum(ny)
+
+        ε = sqrt(eps(Ktype))  
+        if β >= 1 - ε 
+            status = RRVapour              
+        elseif β <= ε                    
+            status = RRLiquid             
+        else
+            x .= nx ./ nxsum
+            y .= ny ./ nysum
+            K .= y ./ x
+        end
     end
     
     verbose && @info "final K values: $K"
