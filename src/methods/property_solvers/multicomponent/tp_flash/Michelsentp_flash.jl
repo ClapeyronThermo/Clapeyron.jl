@@ -409,6 +409,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
         verbose && @info "$error(lnK) > $K_tol, solving via non-linear system"
+        
         nx = zeros(nc)
         ny = zeros(nc)
         if any(non_inx)
@@ -422,16 +423,19 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         end
 
         ny_var0 = y[in_equilibria] * β
-        fgibbs!(F, G, H, ny_var) = dgibbs_obj!(model, p, T, z, phasex, phasey,
-                                                        nx, ny, vcache, ny_var, in_equilibria, non_inx, non_iny;
-                                                        F=F, G=G, H=H)
 
-        fgibbs!(F, G, ny_var) = fgibbs!(F, G, nothing, ny_var)
-
+        in_eq = (in_equilibria,non_inx,non_iny)
+        caches = (nx,ny,vcache,dlnϕ_cache,in_eq,phases)
+        flash_obj = michelsen_optimization_obj(model,p,T,z,caches)
+        ub = similar(ny_var0)
+        ub .= @view z[in_equilibria]
+        lb = similar(ny_var0)
+        lb .= 0
+        opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-8,maxiter = 100)
         if second_order
-            sol = Solvers.optimize(Solvers.only_fgh!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton2(ny_var0)))
+            sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.Newton2(ny_var0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         else
-            sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.BFGS()))
+            sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub,)),opt_options)
         end
         ny_var = Solvers.x_sol(sol)
         ny[in_equilibria] .= ny_var

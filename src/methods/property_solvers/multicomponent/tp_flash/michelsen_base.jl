@@ -35,6 +35,164 @@ function K_extrema(K::AbstractVector{T},non_inx,non_iny) where T
     return Kmin,Kmax
 end
 
+
+function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
+    second_order = !isnothing(H)
+    nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
+    in_equilibria,non_inx,non_iny = in_eq
+    phasex,phasey = phases
+    volx,voly = vcache[]
+    iv = 0
+    for i in eachindex(z)
+        if in_equilibria[i]
+            iv += 1
+            nyi = ny_var[iv]
+            ny[i] = nyi
+            nx[i] = z[i] - nyi
+        elseif non_inx[i]
+            ny[i] = z[i]
+            nx[i] = 0.0
+        elseif non_iny[i]
+            ny[i] = 0.0
+            nx[i] = z[i]
+        end
+    end    # nx = z .- ny
+
+    nxsum = sum(nx)
+    nysum = sum(ny)
+    x = nx ./ nxsum
+    y = ny ./ nysum
+    f = zero(eltype(ny_var))
+    f -= gz
+    !isnothing(g) && (g .= 0) 
+    if second_order
+        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
+        ∂x,∂2x = lnϕx,∂lnϕ∂nx
+        ∂2x .-= 1
+        ∂2x ./= sum(nx)
+        for i in 1:size(∂2x,1)
+            ∂2x[i,i] += 1/nx[i]
+            ∂x[i] += log(x[i])
+            non_inx[i] && (∂x[i] = 0)
+        end
+        H .= @view ∂2x[in_equilibria, in_equilibria]
+        !isnothing(g) && (g .= @view ∂x[in_equilibria])
+        f += dot(@view(∂x[in_equilibria]),@view(nx[in_equilibria]))
+
+        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
+        ∂y,∂2y = lnϕy,∂lnϕ∂ny
+        ∂2y .-= 1
+        ∂2y ./= sum(ny)
+        for i in 1:size(∂2y,1)
+            ∂2y[i,i] += 1/ny[i]
+            ∂y[i] += log(y[i])
+            non_iny[i] && (∂y[i] = 0)
+        end
+
+        H .+= @view ∂2y[in_equilibria, in_equilibria]
+        !isnothing(g) && (g .-= @view ∂y[in_equilibria])
+        !isnothing(g) && (g .*= -1)
+
+        f += dot(@view(∂y[in_equilibria]),@view(ny[in_equilibria]))
+    else
+        ∂x,volx = lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
+        for i in 1:size(∂x,1)
+            ∂x[i] += log(x[i])
+            non_inx[i] && (∂x[i] = 0)
+        end
+        !isnothing(g) && (g .= @view ∂x[in_equilibria])
+        f += dot(@view(∂x[in_equilibria]),@view(nx[in_equilibria]))
+        ∂y,voly = lnϕ(model, p, T, y,lnϕ_cache; phase=phasey, vol0=voly)
+        for i in 1:size(∂y,1)
+            ∂y[i] += log(y[i])
+            non_iny[i] && (∂y[i] = 0)
+        end
+        !isnothing(g) && (g .-= @view ∂y[in_equilibria])
+        !isnothing(g) && (g .*= -1)
+        f += dot(@view(∂y[in_equilibria]),@view(ny[in_equilibria]))
+    end
+    vcache[] = (volx,voly)
+    return f
+end
+
+function eval_michelsen(model,p,T,z,K)
+    b = rachfordrice(K,z)
+    y = rr_flash_vapor(K,z,b)
+    x = rr_flash_liquid(K,z,b)
+    dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
+    in_eq1 = fill(true,length(model))
+    non_inx,non_iny,in_equilibria =fill(false,length(model)),fill(false,length(model)),fill(true,length(model))
+    in_eq = (in_equilibria,non_inx,non_iny)
+    vx = volume(model,p,T,x,phase = :l)
+    vy = volume(model,p,T,y,phase = :v)
+    vcache = Ref((vx, vy))
+    phasex = :liquid
+    phasey = :vapour
+    phases = (phasex,phasey)
+    nx = copy(x)
+    ny = copy(y)
+    caches = (nx,ny,vcache,dlnϕ_cache,in_eq,phases)
+    ny_var = b .* y
+    f1 = michelsen_optimization_obj(model,p,T,z,caches)
+    function f2(xxx)
+        H = zeros(length(model),length(model))
+        G  = zeros(length(model))
+        F = 0.0 
+        ff = dgibbs_obj!(model, p, T, z, phasex, phasey,
+                                                        nx, ny, vcache, xxx, in_equilibria, non_inx, non_iny;
+                                                        F=F, G=G, H=H)
+        return ff,G,H
+    end
+
+    function f1(xxx)
+        H = zeros(length(model),length(model))
+        G  = zeros(length(model))
+        ff = michelsen_optimization_of!(G,H,model,p,T,z,caches,xxx,0.0)
+        return ff,G,H
+    end
+
+    return ny_var,f1,f2
+
+end
+
+function michelsen_optimization_obj(model,p,T,z,caches)
+    nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
+    in_equilibria,non_inx,non_iny = in_eq
+    ∂z,volz = lnϕ(model, p, T, z, lnϕ_cache)
+    ∂z  .+= log.(z)
+    gz = dot(@view(z[in_equilibria]),@view(∂z[in_equilibria]))
+
+    function objective_ip(x)
+        fx = michelsen_optimization_of!(nothing,nothing,model,p,T,z,caches,x,gz)
+    end
+
+    function gradient_ip(∇f, x)
+        fx = michelsen_optimization_of!(∇f,nothing,model,p,T,z,caches,x,gz)
+        return ∇f
+    end
+
+    function objective_gradient_ip(∇f, x) 
+        fx = michelsen_optimization_of!(∇f,nothing,model,p,T,z,caches,x,gz)
+        return fx,∇f
+    end
+    function hessian_ip(∇²f, x)
+        fx = michelsen_optimization_of!(nothing,∇²f,model,p,T,z,caches,x,gz)
+        return ∇²f
+    end
+    function objective_gradient_hessian_ip(∇f, ∇²f, x)
+        fx = michelsen_optimization_of!(∇f,∇²f,model,p,T,z,caches,x,gz)
+        return fx, ∇f, ∇²f
+    end
+
+    scalarobj_ip = NLSolvers.ScalarObjective(f=objective_ip,
+                                g=gradient_ip,
+                                fg=objective_gradient_ip,
+                                fgh=objective_gradient_hessian_ip,
+                                h=hessian_ip)
+    #optprob_ip = NLSolvers.OptimizationProblem(scalarobj_ip; inplace=true)
+end
+
+
 function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
     F=nothing, G=nothing, H=nothing)
@@ -131,7 +289,7 @@ function update_K!(lnK,model,p,T,x,y,z,β,vols,phases,non_inw,dlnϕ_cache = noth
     gibbs = zero(eltype(lnK))
     if β !== nothing
         for i in eachindex(y)
-            if !non_inx[i] || isinf(lnK[i]) 
+            if !non_inx[i] || isinf(lnK[i])
                  gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i])
             end
         end
@@ -188,14 +346,14 @@ end
 
 function tp_flash_K0!(K,model,p,T,z)
     K_calculated = tp_flash_fast_K0!(K,model,p,T,z)
-    
+
     if K_calculated
         Kmin,Kmax = extrema(K)
         if Kmin >= 1 || Kmax <= 1
             K_calculated = false
         end
     end
-    
+
     if !K_calculated
         K .= suggest_K(model,p,T,z)
     end
