@@ -34,16 +34,32 @@ function lnϕ(model::IdealModel, p, T, z=SA[1.],cache = nothing; phase=:unknown,
     return lnϕ, vol
 end
 
-function lnϕ!(cache, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
+function lnϕ!(cache::Tuple, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
+    if model isa IdealModel
+        lnϕ .= 0
+        return lnϕ,volume(model,p,T,z)
+    end
     return lnϕ(model,p,T,z,cache;phase,vol0,threaded)
 end
 
-function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
-    RT = Rgas(model)*T
-    vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
-    μ_res = VT_chemical_potential_res!(lnϕ,model, vol, T, z)
-    Z = p*vol/RT/sum(z)
-    lnϕ .= μ_res ./ RT .- log(Z)
+function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, vol0=nothing, threaded = true)
+    if model isa IdealModel
+        lnϕ .= 0
+        return lnϕ,volume(model,p,T,z)
+    end
+    
+    if cache != nothing
+        lnϕ(model,p,T,z,cache;phase,vol0,threaded)
+        result,aux,lnϕw,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
+        vol = aux[1]
+        lnϕ .= lnϕw
+    else
+        RT = Rgas(model)*T
+        vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
+        μ_res = VT_chemical_potential_res!(lnϕ,model, vol, T, z)
+        Z = p*vol/RT/sum(z)
+        lnϕ .= μ_res ./ RT .- log(Z)
+    end
     return lnϕ, vol
 end
 
