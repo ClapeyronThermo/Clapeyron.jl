@@ -474,7 +474,11 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
     β0 = copy(βi)
     resize!(β0,np - 1)
 
-    ls = RestrictedLineSearch(ls_restricted,Backtracking())
+    lb_β = similar(β0)
+    ub_β = similar(β0)
+    lb_β .= 0
+    ub_β .= Inf
+    ls = Solvers.BoundedLineSearch(lb_β,ub_β)
     βsol = similar(β0)
     βresult = Solvers.optimize(f,β0,LineSearch(Newton(linsolve = static_linsolve),ls))
     i_deact = deactivated_phase[]

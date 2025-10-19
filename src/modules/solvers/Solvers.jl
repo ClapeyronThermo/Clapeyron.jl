@@ -10,7 +10,6 @@ using Roots
 
 
 export CholeskyNewton,static_linsolve,Newton2
-export RestrictedLineSearch
 
 __is_implace(x::Number) = false
 __is_implace(x::Array) = true
@@ -37,12 +36,6 @@ x_minimum(res::NLSolvers.ConvergenceInfo) = res.info.minimum
 x_minimum(res::Tuple{<:Number,<:Number}) = last(res)
 
 
-
-#=
-function NLSolvers.find_steplength(mstyle::NLSolvers.MethodStyle, ls::RestrictedLineSearch{F,LS}, φ::T, λ) where {F,LS,T}
-    α = ls.f(φ,λ)
-    return NLSolvers.find_steplength(mstyle,ls.ls,φ,α)
-end =#
 include("linsolve.jl")
 include("nlsolvers.jl")
 include("poly.jl")
