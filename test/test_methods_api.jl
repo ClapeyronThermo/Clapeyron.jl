@@ -313,7 +313,7 @@ end
 
     @testset "466" begin
         sol = test_466()
-        @test sol isa Array
+        @test all(!isnan,sol)
     end
 end
 GC.gc()
