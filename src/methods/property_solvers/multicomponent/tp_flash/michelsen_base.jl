@@ -35,6 +35,63 @@ function K_extrema(K::AbstractVector{T},non_inx,non_iny) where T
     return Kmin,Kmax
 end
 
+function rr_margin_check(K,z,non_inx = FillArrays.Fill(false,length(K)),non_iny = FillArrays.Fill(false,length(K));K_tol = sqrt(eps(eltype(K))),verbose = false)
+    Ktype = eltype(K)
+    _0 = zero(Ktype)
+    _1 = one(Ktype)
+    F0 = Clapeyron.rr_flash_eval(K, z, _0, non_inx, non_iny) # F(0)
+    F1 = Clapeyron.rr_flash_eval(K, z, _1, non_inx, non_iny) # F(1)
+    cond0 = (abs(F0) <= K_tol) && (F1 < 0) # bubble candidate
+    cond1 = (abs(F1) <= K_tol) && (F0 > 0) # dew candidate
+    
+    if verbose
+        δβ = sqrt(eps(Ktype))
+        Fp0_num = (Clapeyron.rr_flash_eval(K, z, δβ, non_inx, non_iny) - F0) / δβ
+        @info """ checking boundary conditions: 
+        F(0)             = $(F0)
+        F(1)             = $(F1) 
+        F'(0)            ≈ $(Fp0_num) 
+        gate             = $(cbrt(K_tol))
+        bubble condition = $(cond0) 
+        dew condition    = $(cond1)
+        """
+    end
+
+    if cond0 && !cond1
+        β = _0
+        status = RRLiquid
+        verbose && @info "boundary projection applied: β→0 (bubble), status=RRLiquid"
+    elseif !cond0 && cond1
+        β = _1
+        status = RRVapour
+        verbose && @info "boundary projection applied: β→1 (dew), status=RRVapour"
+    elseif cond0 && cond1
+        # choose the boundary with smaller linearized step δβ = |F|/|F'|
+        Fp0,Fp1 = _0,_0
+        @inbounds for i in eachindex(K,z)
+            Δ   = K[i]-_1
+            zi  = z[i]
+            Fp0 -= zi*(Δ*Δ)
+            Fp1 -= zi*(Δ*Δ)/(K[i]*K[i])
+        end
+        δβ0 = abs(F0)/(abs(Fp0)+eps(Ktype))
+        δβ1 = abs(F1)/(abs(Fp1)+eps(Ktype))
+        if δβ0 <= δβ1
+            β = _0
+            status = RRLiquid
+            verbose && @info "boundary projection via linearized distance: β→0 (δβ0=$(δβ0) ≤ δβ1=$(δβ1))"
+        else
+            β = _1
+            status = RRVapour
+            verbose && @info "boundary projection via linearized distance: β→1 (δβ1=$(δβ1) < δβ0=$(δβ0))"
+        end
+    else
+        verbose && @info "boundary projection not conclusive."
+        status = RREq
+        β = _0/_0
+    end
+    return status,β
+end
 
 function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     second_order = !isnothing(H)
@@ -115,52 +172,17 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     return f
 end
 
-function eval_michelsen(model,p,T,z,K)
-    b = rachfordrice(K,z)
-    y = rr_flash_vapor(K,z,b)
-    x = rr_flash_liquid(K,z,b)
-    dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
-    in_eq1 = fill(true,length(model))
-    non_inx,non_iny,in_equilibria =fill(false,length(model)),fill(false,length(model)),fill(true,length(model))
-    in_eq = (in_equilibria,non_inx,non_iny)
-    vx = volume(model,p,T,x,phase = :l)
-    vy = volume(model,p,T,y,phase = :v)
-    vcache = Ref((vx, vy))
-    phasex = :liquid
-    phasey = :vapour
-    phases = (phasex,phasey)
-    nx = copy(x)
-    ny = copy(y)
-    caches = (nx,ny,vcache,dlnϕ_cache,in_eq,phases)
-    ny_var = b .* y
-    f1 = michelsen_optimization_obj(model,p,T,z,caches)
-    function f2(xxx)
-        H = zeros(length(model),length(model))
-        G  = zeros(length(model))
-        F = 0.0 
-        ff = dgibbs_obj!(model, p, T, z, phasex, phasey,
-                                                        nx, ny, vcache, xxx, in_equilibria, non_inx, non_iny;
-                                                        F=F, G=G, H=H)
-        return ff,G,H
-    end
-
-    function f1(xxx)
-        H = zeros(length(model),length(model))
-        G  = zeros(length(model))
-        ff = michelsen_optimization_of!(G,H,model,p,T,z,caches,xxx,0.0)
-        return ff,G,H
-    end
-
-    return ny_var,f1,f2
-
-end
-
-function michelsen_optimization_obj(model,p,T,z,caches)
+function michelsen_gibbs_feed(model,p,T,z,caches)
     nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
     in_equilibria,non_inx,non_iny = in_eq
     ∂z,volz = lnϕ(model, p, T, z, lnϕ_cache)
     ∂z  .+= log.(z)
     gz = dot(@view(z[in_equilibria]),@view(∂z[in_equilibria]))
+    return gz
+end
+
+function michelsen_optimization_obj(model,p,T,z,caches)
+    gz = michelsen_gibbs_feed(model,p,T,z,caches)
 
     function objective_ip(x)
         fx = michelsen_optimization_of!(nothing,nothing,model,p,T,z,caches,x,gz)
@@ -192,89 +214,6 @@ function michelsen_optimization_obj(model,p,T,z,caches)
     #optprob_ip = NLSolvers.OptimizationProblem(scalarobj_ip; inplace=true)
 end
 
-
-function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
-    nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
-    F=nothing, G=nothing, H=nothing)
-
-    # Objetive Function to minimize the Gibbs energy
-    # It computes the Gibbs energy, its gradient and its hessian
-    iv = 0
-    for i in eachindex(z)
-        if in_equilibria[i]
-            iv += 1
-            nyi = ny_var[iv]
-            ny[i] = nyi
-            nx[i] = z[i] - nyi
-        end
-    end    # nx = z .- ny
-
-    nxsum = sum(nx)
-    nysum = sum(ny)
-    x = nx ./ nxsum
-    y = ny ./ nysum
-
-    # Volumes are set from local cache to reuse their values for following
-    # Iterations
-    volx,voly = vcache[]
-    all_equilibria = all(in_equilibria)
-    if H !== nothing
-        # Computing Gibbs energy Hessian
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x; phase=phasex, vol0=volx)
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y; phase=phasey, vol0=voly)
-
-        if !all_equilibria
-            ∂ϕx = ∂lnϕ∂nx[in_equilibria, in_equilibria]
-            ∂ϕy = ∂lnϕ∂ny[in_equilibria, in_equilibria]
-        else
-            #skip a copy if possible
-            ∂ϕx,∂ϕy = ∂lnϕ∂nx,∂lnϕ∂ny
-        end
-            ∂ϕx .-= 1
-            ∂ϕy .-= 1
-            ∂ϕx ./= nxsum
-            ∂ϕy ./= nysum
-        for (i,idiag) in pairs(diagind(∂ϕy))
-            ∂ϕx[idiag] += 1/nx[i]
-            ∂ϕy[idiag] += 1/ny[i]
-        end
-
-        #∂ϕx = eye./nx .- 1/nxsum .+ ∂lnϕ∂nx/nxsum
-        #∂ϕy = eye./ny .- 1/nysum .+ ∂lnϕ∂ny/nysum
-        H .= ∂ϕx .+ ∂ϕy
-    else
-        lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
-        lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
-    end
-    #volumes are stored in the local cache
-    vcache[] = (volx,voly)
-
-    ϕx = log.(x) .+ lnϕx #log(xi*ϕxi)
-    ϕy = log.(y) .+ lnϕy #log(yi*ϕyi)
-
-    # to avoid NaN in Gibbs energy
-    for i in eachindex(z)
-        non_iny[i] && (ϕy[i] = 0.)
-        non_inx[i] && (ϕx[i] = 0.)
-    end
-
-    if G !== nothing
-        # Computing Gibbs energy gradient
-        i0 = 0
-        for i in eachindex(in_equilibria)
-            if in_equilibria[i]
-                i0 += 1
-                G[i0] = ϕy[i] - ϕx[i]
-            end
-        end
-    end
-
-    if F !== nothing
-        # Computing Gibbs energy
-        FO = dot(ny,ϕy) + dot(nx,ϕx)
-        return FO
-    end
-end
 
 #updates lnK, returns lnK,volx,voly, gibbs if β != nothing
 function update_K!(lnK,model,p,T,x,y,z,β,vols,phases,non_inw,dlnϕ_cache = nothing)
@@ -455,3 +394,88 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     r = FlashResult(p,T,SA[x,y],SA[βl,βv],SA[volx,voly],sort = false)
     return r
 end
+
+#=
+function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
+    nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
+    F=nothing, G=nothing, H=nothing)
+
+    # Objetive Function to minimize the Gibbs energy
+    # It computes the Gibbs energy, its gradient and its hessian
+    iv = 0
+    for i in eachindex(z)
+        if in_equilibria[i]
+            iv += 1
+            nyi = ny_var[iv]
+            ny[i] = nyi
+            nx[i] = z[i] - nyi
+        end
+    end    # nx = z .- ny
+
+    nxsum = sum(nx)
+    nysum = sum(ny)
+    x = nx ./ nxsum
+    y = ny ./ nysum
+
+    # Volumes are set from local cache to reuse their values for following
+    # Iterations
+    volx,voly = vcache[]
+    all_equilibria = all(in_equilibria)
+    if H !== nothing
+        # Computing Gibbs energy Hessian
+        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x; phase=phasex, vol0=volx)
+        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y; phase=phasey, vol0=voly)
+
+        if !all_equilibria
+            ∂ϕx = ∂lnϕ∂nx[in_equilibria, in_equilibria]
+            ∂ϕy = ∂lnϕ∂ny[in_equilibria, in_equilibria]
+        else
+            #skip a copy if possible
+            ∂ϕx,∂ϕy = ∂lnϕ∂nx,∂lnϕ∂ny
+        end
+            ∂ϕx .-= 1
+            ∂ϕy .-= 1
+            ∂ϕx ./= nxsum
+            ∂ϕy ./= nysum
+        for (i,idiag) in pairs(diagind(∂ϕy))
+            ∂ϕx[idiag] += 1/nx[i]
+            ∂ϕy[idiag] += 1/ny[i]
+        end
+
+        #∂ϕx = eye./nx .- 1/nxsum .+ ∂lnϕ∂nx/nxsum
+        #∂ϕy = eye./ny .- 1/nysum .+ ∂lnϕ∂ny/nysum
+        H .= ∂ϕx .+ ∂ϕy
+    else
+        lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
+        lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
+    end
+    #volumes are stored in the local cache
+    vcache[] = (volx,voly)
+
+    ϕx = log.(x) .+ lnϕx #log(xi*ϕxi)
+    ϕy = log.(y) .+ lnϕy #log(yi*ϕyi)
+
+    # to avoid NaN in Gibbs energy
+    for i in eachindex(z)
+        non_iny[i] && (ϕy[i] = 0.)
+        non_inx[i] && (ϕx[i] = 0.)
+    end
+
+    if G !== nothing
+        # Computing Gibbs energy gradient
+        i0 = 0
+        for i in eachindex(in_equilibria)
+            if in_equilibria[i]
+                i0 += 1
+                G[i0] = ϕy[i] - ϕx[i]
+            end
+        end
+    end
+
+    if F !== nothing
+        # Computing Gibbs energy
+        FO = dot(ny,ϕy) + dot(nx,ϕx)
+        return FO
+    end
+end
+=#

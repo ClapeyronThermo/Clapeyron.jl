@@ -126,12 +126,15 @@
             @test iszero(res3.fractions[1])
             @test res3.fractions[2] ≈ 55.554022296905664
 
-            res4 = Clapeyron.tp_flash2(mix, 5.35202e5, 393.265, [36.495044786426966, 0.005798955283355085, 1.9416516061189107e-10, 2.0015179988524742e-15], RRTPFlash(equilibrium=:vle, verbose=true))
+            res4 = Clapeyron.tp_flash2(mix, 5.35202e5, 393.265, [36.495044786426966, 0.005798955283355085, 1.9416516061189107e-10, 2.0015179988524742e-15], RRTPFlash(equilibrium=:vle))
             @test iszero(res4.fractions[1])
             @test res4.fractions[2] ≈ 36.50084374190448
 
             res5 = Clapeyron.tp_flash2(mix, 442595.31887270656, 318.91991913774194, [18.697907101753938, 9.208988950434023e-8, 2.317361697667793e-22, 1.9317538045050555e-32], RRTPFlash(equilibrium=:vle, verbose=true))
             @test res5.fractions[1] ≈ 18.69790719384074 rtol = 1e-4
+
+            res6 = Clapeyron.tp_flash2(mix, 2.2099578494144413e6, 464.63699168781847, [2.7561794126981888e-6, 55.964211412167195, 12.860133735598001, 1.0819681996211576], MichelsenTPFlash(equilibrium=:vle,verbose = true))
+            @test res5.fractions[2] ≈ 69.90631610356577
         end
 
     end
