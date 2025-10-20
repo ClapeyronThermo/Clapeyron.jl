@@ -132,9 +132,10 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
+        
         H .= @view ∂2x[in_equilibria, in_equilibria]
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
-        f += dot(@view(∂x[in_equilibria]),@view(nx[in_equilibria]))
+        f += dot(∂x,nx)
 
         lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
         ∂y,∂2y = lnϕy,∂lnϕ∂ny
@@ -150,7 +151,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         !isnothing(g) && (g .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g .*= -1)
 
-        f += dot(@view(∂y[in_equilibria]),@view(ny[in_equilibria]))
+        f += dot(∂y,ny)
     else
         ∂x,volx = lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
         for i in 1:size(∂x,1)
@@ -158,7 +159,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
             non_inx[i] && (∂x[i] = 0)
         end
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
-        f += dot(@view(∂x[in_equilibria]),@view(nx[in_equilibria]))
+        f += dot(∂x,nx)
         ∂y,voly = lnϕ(model, p, T, y,lnϕ_cache; phase=phasey, vol0=voly)
         for i in 1:size(∂y,1)
             ∂y[i] += log(y[i])
@@ -166,7 +167,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         end
         !isnothing(g) && (g .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g .*= -1)
-        f += dot(@view(∂y[in_equilibria]),@view(ny[in_equilibria]))
+        f += dot(∂y,ny)
     end
     vcache[] = (volx,voly)
     return f

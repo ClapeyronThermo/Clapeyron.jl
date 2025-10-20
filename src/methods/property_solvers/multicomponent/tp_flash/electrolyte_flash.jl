@@ -225,7 +225,8 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
             sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub,)),opt_options)
         end
         ny_var_and_ψ = Solvers.x_sol(sol)
-        ny_var = @view ny_var[1:end-1]
+        ny_var = @view ny_var_and_ψ[1:end-1]
+        ψ = ny_var_and_ψ[end]
         ny[in_equilibria] .= ny_var
         nx[in_equilibria] .= @view(z[in_equilibria]) .- @view(ny[in_equilibria])
         nxsum = sum(nx)
@@ -370,7 +371,7 @@ function michelsen_optimization_of!(g,H,model::ElectrolyteModel,p,T,z,caches,ny_
         !isnothing(g) && (g[1:end-1] .= @view ∂x[in_equilibria])
         !isnothing(g) && (g[1:end-1] .+= @view(Z[in_equilibria]) .* ψ)
 
-        f += dot(@view(∂x[in_equilibria]),@view(nx[in_equilibria]))
+        f += dot(∂x,nx)
 
         lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
         ∂y,∂2y = lnϕy,∂lnϕ∂ny
@@ -387,8 +388,7 @@ function michelsen_optimization_of!(g,H,model::ElectrolyteModel,p,T,z,caches,ny_
         !isnothing(g) && (g[1:end-1] .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g[1:end-1] .*= -1)
 
-        f += dot(@view(∂y[in_equilibria]),@view(ny[in_equilibria]))
-        f += dot(nx,Z)
+        f += dot(∂y,ny) + dot(nx,Z)
     else
         ∂x,volx = lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
         for i in 1:size(∂x,1)
@@ -397,7 +397,7 @@ function michelsen_optimization_of!(g,H,model::ElectrolyteModel,p,T,z,caches,ny_
         end
         !isnothing(g) && (g[1:end-1] .= @view ∂x[in_equilibria])
         !isnothing(g) && (g[1:end-1] .+= @view(Z[in_equilibria]) .* ψ)
-        f += dot(@view(∂x[in_equilibria]),@view(nx[in_equilibria]))
+        f += dot(∂x,nx)
         ∂y,voly = lnϕ(model, p, T, y,lnϕ_cache; phase=phasey, vol0=voly)
         for i in 1:size(∂y,1)
             ∂y[i] += log(y[i])
@@ -405,8 +405,8 @@ function michelsen_optimization_of!(g,H,model::ElectrolyteModel,p,T,z,caches,ny_
         end
         !isnothing(g) && (g[1:end-1] .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g[1:end-1] .*= -1)
-        f += dot(@view(∂y[in_equilibria]),@view(ny[in_equilibria]))
-        f += dot(nx,Z)
+
+        f += dot(∂y,ny) + dot(nx,Z)
     end
     vcache[] = (volx,voly)
     return f

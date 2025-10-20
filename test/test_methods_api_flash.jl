@@ -134,7 +134,7 @@
             @test res5.fractions[1] ≈ 18.69790719384074 rtol = 1e-4
 
             res6 = Clapeyron.tp_flash2(mix, 2.2099578494144413e6, 464.63699168781847, [2.7561794126981888e-6, 55.964211412167195, 12.860133735598001, 1.0819681996211576], MichelsenTPFlash(equilibrium=:vle,verbose = true))
-            @test res5.fractions[2] ≈ 69.90631610356577
+            @test res6.fractions[2] ≈ 69.90631610356577
         end
 
     end

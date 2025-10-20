@@ -217,8 +217,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         lnK .= log.(K)
         verbose && @info "K0 already provided"
     elseif !isnothing(x0) && !isnothing(y0)
-        x = x0 ./ sum(x0)
-        y = y0 ./ sum(y0)
+        x .= x0 ./ sum(x0)
+        y .= y0 ./ sum(y0)
         lnK .= log.(y ./ x)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(volx,voly),phases,non_inw,dlnϕ_cache)
         K .= exp.(lnK)
@@ -395,11 +395,11 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         ub .= @view z[in_equilibria]
         lb = similar(ny_var0)
         lb .= 0
-        opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-8,maxiter = 100)
+        opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-12,maxiter = 100)
         if second_order
             sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.Newton2(ny_var0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         else
-            sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub,)),opt_options)
+            sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         end
         ny_var = Solvers.x_sol(sol)
         ny[in_equilibria] .= ny_var
