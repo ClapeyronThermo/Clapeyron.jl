@@ -10,9 +10,9 @@ function rachfordrice(K, z; β0=nothing,K_tol = 4*eps(eltype(K)), non_inx=FillAr
         βx = rr_flash_refine(K, z, β, non_inx, non_iny, limits) # bracketed Halley when possible
         return clamp(βx,zero(β),one(β))
     elseif status == RRLiquid
-        return β0   # or eps(eltype(β))
+        return zero(β)   # or eps(eltype(β))
     elseif status == RRVapour
-        return β0   # or 1 - eps(eltype(β))
+        return one(β)   # or 1 - eps(eltype(β))
     else
         return zero(β)/zero(β)
     end

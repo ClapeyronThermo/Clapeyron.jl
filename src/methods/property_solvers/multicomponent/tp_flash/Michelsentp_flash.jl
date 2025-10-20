@@ -299,7 +299,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
     verbose && @info "iter         β      error_lnK            K"
-    while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status == RREq
+    while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss
         it += 1
         itacc += 1
         lnK_old .= lnK
@@ -347,13 +347,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         status = rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol)
 
         Kmin,Kmax = K_extrema(K,non_inx,non_iny)
-        if status == RRLiquid && Kmin < 1
-            status = RREq
-            # β = eps(Ktype)
-        elseif status == RRVapour && Kmax > 1
-            status = RREq
-            # β = 1 - eps(Ktype)
-        end
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
