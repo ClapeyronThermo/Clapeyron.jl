@@ -268,7 +268,7 @@ function update_rr!(K,β,z,x,y,
 end
 
 function update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
-    iv = 0
+    iv = 0mar
     for i in eachindex(z)            
         if non_inx[i]
             ny[i] = z[i]

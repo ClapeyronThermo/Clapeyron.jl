@@ -406,9 +406,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         K .= y ./ x
         β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
 
+        #another margin check
         β_margin = min(β, _1 - β)
         verbose && @info "boundary check: β_margin = $(β_margin)"
-        # 4 guards to pinpoint the scenario of #465
+        Kmin,Kmax = K_extrema(K,non_inx,non_iny)
         if β_margin <= cbrt(K_tol) && Kmin < _1 && Kmax > _1
             status, newβ = rr_margin_check(K,z,non_inx,non_iny;K_tol = K_tol,verbose = verbose)
             status != RREq && (β = newβ)
