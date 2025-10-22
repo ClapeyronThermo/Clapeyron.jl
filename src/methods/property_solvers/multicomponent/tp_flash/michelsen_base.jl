@@ -43,16 +43,16 @@ function rr_margin_check(K,z,non_inx = FillArrays.Fill(false,length(K)),non_iny 
     F1 = Clapeyron.rr_flash_eval(K, z, _1, non_inx, non_iny) # F(1)
     cond0 = (abs(F0) <= K_tol) && (F1 < 0) # bubble candidate
     cond1 = (abs(F1) <= K_tol) && (F0 > 0) # dew candidate
-    
+
     if verbose
         δβ = sqrt(eps(Ktype))
         Fp0_num = (Clapeyron.rr_flash_eval(K, z, δβ, non_inx, non_iny) - F0) / δβ
-        @info """ checking boundary conditions: 
+        @info """ checking boundary conditions:
         F(0)             = $(F0)
-        F(1)             = $(F1) 
-        F'(0)            ≈ $(Fp0_num) 
+        F(1)             = $(F1)
+        F'(0)            ≈ $(Fp0_num)
         gate             = $(cbrt(K_tol))
-        bubble condition = $(cond0) 
+        bubble condition = $(cond0)
         dew condition    = $(cond1)
         """
     end
@@ -106,7 +106,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     y = ny ./ nysum
     f = zero(eltype(ny_var))
     f -= gz
-    !isnothing(g) && (g .= 0) 
+    !isnothing(g) && (g .= 0)
     if second_order
         lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
         ∂x,∂2x = lnϕx,∂lnϕ∂nx
@@ -183,7 +183,7 @@ function michelsen_optimization_obj(model,p,T,z,caches)
         return ∇f
     end
 
-    function objective_gradient_ip(∇f, x) 
+    function objective_gradient_ip(∇f, x)
         fx = michelsen_optimization_of!(∇f,nothing,model,p,T,z,caches,x,gz)
         return fx,∇f
     end
@@ -268,8 +268,8 @@ function update_rr!(K,β,z,x,y,
 end
 
 function update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
-    iv = 0mar
-    for i in eachindex(z)            
+    ii = 0
+    for i in eachindex(z)
         if non_inx[i]
             ny[i] = z[i]
             nx[i] = 0.0
@@ -277,12 +277,12 @@ function update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
             ny[i] = 0.0
             nx[i] = z[i]
         else
-            iv += 1
-            nyi = ny_var[iv]
+            ii += 1
+            nyi = ny_var[ii]
             ny[i] = nyi
             nx[i] = z[i] - nyi
         end
-    end 
+    end
     return nx,ny
 end
 

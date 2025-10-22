@@ -156,7 +156,6 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
 
     return FlashResult(comps,βi,volumes,FlashData(p,T,g))
 end
-rrrrr = Ref{Any}()
 function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(), reduced = false)
 
     equilibrium = method.equilibrium
