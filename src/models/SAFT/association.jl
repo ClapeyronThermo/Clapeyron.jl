@@ -202,25 +202,6 @@ function inverse_index(idxs,o)
     return i,a
 end
 
-nonzero_extrema(K::SparseArrays.SparseMatrixCSC) = extrema(K.nzval)
-
-function nonzero_extrema(K)
-    _0 = zero(eltype(K))
-    _max = _0
-    _min = _0
-    for k in K
-        _max = max(k,_max)
-        if iszero(_min)
-            _min = k
-        else
-            if !iszero(k)
-            _min = min(_min,k)
-            end
-        end
-    end
-    return _min,_max
-end
-
 function assoc_site_matrix(model,V,T,z,data = nothing,delta = @f(delta_assoc,data))
     options = assoc_options(model)
     return dense_assoc_site_matrix(model,V,T,z,data,delta)

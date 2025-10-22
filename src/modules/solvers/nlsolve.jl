@@ -103,9 +103,9 @@ end
 
 struct Newton2Var end
 
-function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions(), tag = f) where {FF,NN,TT}
+function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions(),tag = f;bounds = nothing) where {FF,NN,TT}
     function FJ(_z)
-        return FJ_ad(f,_z,tag)
+        return FJ_ad(f,_z)
     end
     Fx, Jx = FJ(x)
     z = x
@@ -123,10 +123,11 @@ function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions(
     while iter ≤ options.maxiter
         d = Jx \ -Fx
         #@show Jx, Fx
-        x = x + d
+        x = __new_x_newton2var(x,d,bounds)
         Fx, Jx = FJ(x)
-        ρF = norm(Fx, Inf)
-        ρs = norm(d, Inf)
+        in_bounds = __newton2var_in_bounds(x,d,bounds)
+        ρF = bounded_norm(Fx, Inf, in_bounds)
+        ρs = bounded_norm(Fx, Inf, in_bounds)
         #@show ρF, ρs
         if ρs <= stoptol || ρF <= stoptol
             converged = true
@@ -145,6 +146,36 @@ function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions(
     return x
 end
 
+
+
+bounded_norm(x,nn,in_bounds) = norm(x .* in_bounds,nn)
+bounded_norm(x,nn,::Nothing) = norm(x,nn)
+
+__newton2var_in_bounds(x,d,::Nothing) = nothing
+function __newton2var_in_bounds(x,d,bounds)
+    lb,ub = bounds
+    return (lb .<= (x + d) .<= ub) 
+end
+
+function __new_x_newton2var(x::A,d::B,::Nothing) where {A,B}
+    return x + d
+end
+
+function __new_x_newton2var(x::A,d::B,bounds) where {A,B}
+    lb,ub = bounds
+    return bound_1d.(x,d,lb,ub)
+end
+
+function bound_1d(x,d,lb,ub)
+    y = x + d
+    if y < lb
+        return 0.5*(x + lb)
+    elseif y > ub
+        return 0.5*(x + ub)
+    else
+        return y
+    end
+end
 #=
 Roots.jl extension
 =#

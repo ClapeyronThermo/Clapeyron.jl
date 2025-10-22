@@ -353,11 +353,9 @@ function split_phase!(result::FlashResult,i::Integer,wj,βj,vj)
     push!(β,βi0*βj)
     push!(volumes,vj/nj)
     push!(comps,_wj)
-    @show β
-    @show sum(β)
+
     #remove moles from phase i
     wi0 .= wi0 .-  βj .* _wj
-    @show wi0
     wi0 ./= sum(wi0)
 
     return result
@@ -396,7 +394,12 @@ function findfirst_duplicate_phases(comps,β,volumes)
             xj,vj,βj = comps[j],volumes[j],β[j]
             iszero(βj) && continue
             #equality criteria used in the HELD algorithm
-            if dnorm(xi,xj,Inf) <= 1e-5 && abs(1/vi - 1/vj) <= 1e-5
+            if isnan(vi) && isnan(vj)
+                equal_v = true
+            else
+                equal_v = abs(1/vi - 1/vj) <= 1e-5
+            end
+            if dnorm(xi,xj,Inf) <= 1e-5 && equal_v
                 return minmax(i,j)
             end
         end

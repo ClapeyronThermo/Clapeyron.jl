@@ -346,7 +346,11 @@ function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillA
         if Ki > 1
             # modification for non-in-x components Ki -> ∞
             not_xi = non_inx[i] || isinf(Ki)
-            βmin_i = not_xi ? one(Ki)*zi : (Ki*zi - 1)/(Ki - 1)
+
+
+            βmin1 = 1/(Ki - 1)
+            βmin2 = Ki*zi*βmin1
+            βmin_i = not_xi ? one(Ki)*zi : βmin2 - βmin1
             βmin = min(βmin,βmin_i)
         end
         if Ki < 1
@@ -361,37 +365,65 @@ function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillA
     return βmin,βmax
 end
 
-function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
-    g0 = Clapeyron.rr_flash_eval(K,z,0,non_inx,non_iny)
-    g1 = Clapeyron.rr_flash_eval(K,z,1,non_inx,non_iny)
-    isnan(g0) && return g0,false,(g0,g0),(g0,g1)
-    singlephase = false
-    _1 = one(g1)
-    _0 = zero(g1)
+@enum RachfordRiceStatus RRLiquid RRVapour RREq RRFailure RRTrivial
 
-    if g0 < 0
-        β = _0 #comment to enable negative flashes
-        singlephase = true
-    elseif g1 > 0
-        β = _1 #comment to enable negative flashes
-        singlephase = true
-    elseif iszero(g0) && iszero(g1)
-        singlephase = true
+function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z));K_tol = 4*eps(eltype(K)))
+    status= rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
+    _1 = one(Base.promote_eltype(K,z))
+    _0 = zero(_1)
+    nan = _0/_0
+
+    if status == RRTrivial || status == RRFailure
+        return nan,status,(nan,nan)
+    elseif status == RRLiquid
+        βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
+        return _0,status,(βmin,βmax)
+    elseif status == RRVapour
+        βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
+        return _1,status,(βmin,βmax)
     end
+
     βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
-    if singlephase
-        βmax = max(zero(βmax),βmax)
-        βmin = min(βmin,oneunit(βmin))
-    end
 
     if β0 !== nothing
-        β = β0
+        if βmin <= β0 <= βmax
+            β = β0
+        else
+            β = (βmax + βmin)/2
+        end
     else
         β = (βmax + βmin)/2
     end
-    return β,singlephase,(βmin,βmax),(g0,g1)
+
+    return β,status,(βmin,βmax)
 end
 
+function rachfordrice_status(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z));K_tol = 4*eps(eltype(K)))
+    g0 = Clapeyron.rr_flash_eval(K,z,0,non_inx,non_iny)
+    g1 = Clapeyron.rr_flash_eval(K,z,1,non_inx,non_iny)
+
+    _1 = one(g1)
+    _0 = zero(g1)
+
+    if isnan(g0) || isnan(g1)
+        status = RRFailure
+    elseif __log_K_norm(K,non_inx,non_iny) <= K_tol
+        status = RRTrivial
+    elseif g0 < 0 #liquid
+        status = RRLiquid
+    elseif g1 > 0 #gas
+        status = RRVapour
+    else
+        status = RREq
+    end
+    return status
+end
+
+function __log_K_norm(K::AbstractVector{T},non_inx,non_iny) where T
+    any(non_inx) && return T(Inf)
+    any(non_iny) && return T(Inf)
+    return maximum(abs ∘ log,K)
+end
 
 #refines a rachford-rice result via Halley iterations
 function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx,limits = rr_βminmax(K,z,non_inx,non_iny))
@@ -458,8 +490,25 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
     if !isfinite(β)
         return β
     end
-    prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
-    return Roots.solve(prob,Roots.BracketedHalley())
+    rrmin = FO(βmin)[1]
+    rrmax = FO(βmax)[1]
+    rr0 = FO(β)[1]
+    if rrmin*rrmax <= 0
+        prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
+        return Roots.solve(prob,Roots.BracketedHalley())
+    elseif rrmin*rr0 <= 0
+        βx = 0.5*(βmin+β)
+        prob = Roots.ZeroProblem(FO,(βmin,β,βx))
+        return Roots.solve(prob,Roots.BracketedHalley())
+    elseif rrmax*rr0 <= 0
+        βx = 0.5*(βmax+β)
+        prob = Roots.ZeroProblem(FO,(β,βmax,βx))
+        return Roots.solve(prob,Roots.BracketedHalley())
+    else
+        #just try to solve
+        prob = Roots.ZeroProblem(FO,β)
+        return Roots.solve(prob,Roots.Halley())
+    end
 end
 
 function material_balance_rr_converged(w,z,β::Number,n = sum(z),ztol = sqrt(eps(eltype(β))))
