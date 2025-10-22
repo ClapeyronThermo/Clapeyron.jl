@@ -405,6 +405,14 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         y .= ny ./ sum(ny)
         K .= y ./ x
         β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
+
+        β_margin = min(β, _1 - β)
+        verbose && @info "boundary check: β_margin = $(β_margin)"
+        # 4 guards to pinpoint the scenario of #465
+        if β_margin <= cbrt(K_tol) && Kmin < _1 && Kmax > _1
+            status, newβ = rr_margin_check(K,z,non_inx,non_iny;K_tol = K_tol,verbose = verbose)
+            status != RREq && (β = newβ)
+        end
     end
     
     verbose && @info "final K values: $K"
@@ -425,7 +433,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         status0 == RRVapour && (status = RRVapour)
     elseif status == RREq && β <= eps(eltype(β))
         status = RRLiquid
-    elseif status == RREq && β >=  one(β)  - eps(eltype(β))
+    elseif status == RREq && β >=  one(β) - eps(eltype(β))
         status = RRVapour
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
         verbose && @info "material balance failed."
