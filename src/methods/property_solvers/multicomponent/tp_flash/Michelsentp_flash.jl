@@ -156,7 +156,7 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
 
     return FlashResult(comps,βi,volumes,FlashData(p,T,g))
 end
-
+rrrrr = Ref{Any}()
 function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(), reduced = false)
 
     equilibrium = method.equilibrium
@@ -375,19 +375,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
         verbose && @info "$error(lnK) > $K_tol, solving via non-linear system"
         
-        nx = zeros(nc)
-        ny = zeros(nc)
-        if any(non_inx)
-            ny[non_inx] = @view(z[non_inx])
-            nx[non_inx] .= 0.
-        end
-
-        if any(non_iny)
-            ny[non_iny] .= 0.
-            nx[non_iny] = @view(z[non_iny])
-        end
-
+        nx = similar(K)
+        ny = similar(K)
         ny_var0 = y[in_equilibria] * β
+        update_nxy!(nx,ny,ny_var0,z,non_inx,non_iny)
         in_eq = (in_equilibria,non_inx,non_iny)
         caches = (nx,ny,vcache,dlnϕ_cache,in_eq,phases)
         flash_obj = michelsen_optimization_obj(model,p,T,z,caches)
@@ -401,15 +392,19 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         else
             sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         end
+
+        #= TODO: do something with the values of the optimization procedure
+        if abs(sol.info.fx) <= 4*eps(eltype(K))
+
+        elseif sol.info.fx > sol.info.f0 + 4*eps(eltype(K))
+        
+        end =#
         ny_var = Solvers.x_sol(sol)
-        ny[in_equilibria] .= ny_var
-        nx[in_equilibria] .= @view(z[in_equilibria]) .- @view(ny[in_equilibria])
-        nxsum = sum(nx)
-        nysum = sum(ny)
-        x .= nx ./ nxsum
-        y .= ny ./ nysum
-        β = sum(ny)
+        update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
+        x .= nx ./ sum(nx)
+        y .= ny ./ sum(ny)
         K .= y ./ x
+        β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
     end
     
     verbose && @info "final K values: $K"

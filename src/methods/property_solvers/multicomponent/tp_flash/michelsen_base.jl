@@ -99,22 +99,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     in_equilibria,non_inx,non_iny = in_eq
     phasex,phasey = phases
     volx,voly = vcache[]
-    iv = 0
-    for i in eachindex(z)
-        if in_equilibria[i]
-            iv += 1
-            nyi = ny_var[iv]
-            ny[i] = nyi
-            nx[i] = z[i] - nyi
-        elseif non_inx[i]
-            ny[i] = z[i]
-            nx[i] = 0.0
-        elseif non_iny[i]
-            ny[i] = 0.0
-            nx[i] = z[i]
-        end
-    end    # nx = z .- ny
-
+    update_nxy!(nx,ny,ny_var,z,non_inx,non_iny) #updates nx, ny with ny_var vector
     nxsum = sum(nx)
     nysum = sum(ny)
     x = nx ./ nxsum
@@ -132,7 +117,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
-        
+
         H .= @view ∂2x[in_equilibria, in_equilibria]
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
         f += dot(∂x,nx)
@@ -176,9 +161,13 @@ end
 function michelsen_gibbs_feed(model,p,T,z,caches)
     nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
     in_equilibria,non_inx,non_iny = in_eq
-    ∂z,volz = lnϕ(model, p, T, z, lnϕ_cache)
-    ∂z  .+= log.(z)
-    gz = dot(@view(z[in_equilibria]),@view(∂z[in_equilibria]))
+    if all(in_equilibria)
+        ∂z,volz = lnϕ(model, p, T, z, lnϕ_cache)
+        ∂z .+= log.(z)
+        gz = dot(@view(z[in_equilibria]),@view(∂z[in_equilibria]))
+    else
+        gz = zero(Base.promote_eltype(model,p,T,z))
+    end
     return gz
 end
 
@@ -276,6 +265,25 @@ function update_rr!(K,β,z,x,y,
     x ./= sum(x)
     y ./= sum(y)
     return x,y
+end
+
+function update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
+    iv = 0
+    for i in eachindex(z)            
+        if non_inx[i]
+            ny[i] = z[i]
+            nx[i] = 0.0
+        elseif non_iny[i]
+            ny[i] = 0.0
+            nx[i] = z[i]
+        else
+            iv += 1
+            nyi = ny_var[iv]
+            ny[i] = nyi
+            nx[i] = z[i] - nyi
+        end
+    end 
+    return nx,ny
 end
 
 function tp_flash_K0(model,p,T,z)
