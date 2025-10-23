@@ -8,9 +8,7 @@ Can only function when solid and liquid models are specified within a `Composite
 """
 function eutectic_point(model::CompositeModel,p=1e5; x0=nothing)
     p = p*one(eltype(model))
-    if length(model) != 2
-        error("Eutectic point only defined for binary systems")
-    end
+    binary_component_check(eutectic_point,model)
     solid = solid_model(model)
     fluid = fluid_model(model)
     f!(F,x) = obj_eutectic_point(F,solid,fluid,p,x[1]*200.,FractionVector(x[2]))
@@ -27,8 +25,13 @@ end
 function obj_eutectic_point(F,solid,liquid,p,T,x)
     μsol = chemical_potential(solid,p,T,x)
     γliq = activity_coefficient(liquid,p,T,x; phase=:l)
+    RT = Rgas()*T
     μliq = @. Rgas()*T*log(γliq*x)
-    F[1:2] = μliq .- μsol
+    dμ1 = exp(μsol[1]/RT)/(γliq[1]*x[1])
+    dμ2 = exp(μsol[2]/RT)/(γliq[2]*x[2])
+    F[1] = dμ1
+    F[2] = dμ2
+    #F[1:2] = μliq .- μsol
     return F
 end
 
