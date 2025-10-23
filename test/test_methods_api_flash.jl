@@ -466,6 +466,12 @@ end
     TUV1 = CoolProp.PropsSI("T","U",29550.0,"D",1000,"water")
     TUV2 = CoolProp.PropsSI("T","U",29550.0,"D",1000,IAPWS95())
     @test TUV1 ≈ TUV2 rtol = 1e-6
+
+    #issue #475
+    fluid475 = cPR(["pentane","butane"],idealmodel = ReidIdeal)
+    h475 = Clapeyron.PS.enthalpy(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
+    res475 = Clapeyron.PS.flash(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
+    @test enthalpy(fluid475,res475) ≈ h475 rtol = 1e-6
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)
