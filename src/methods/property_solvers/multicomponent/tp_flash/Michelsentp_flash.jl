@@ -353,13 +353,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
 
     if it > 0 && !isnan(β)
-        β_margin = min(β, _1 - β)
-        verbose && @info "boundary check: β_margin = $(β_margin)"
-        # 4 guards to pinpoint the scenario of #465
-        if status == RREq && β_margin <= cbrt(K_tol) && Kmin < _1 && Kmax > _1
-            status, newβ = rr_margin_check(K,z,non_inx,non_iny;K_tol = K_tol,verbose = verbose)
-            status != RREq && (β = newβ)
-        end
         # single composition update with the (possibly projected) β
         x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
     end
