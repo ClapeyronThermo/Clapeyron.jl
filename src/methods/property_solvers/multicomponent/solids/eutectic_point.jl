@@ -21,7 +21,7 @@ function eutectic_point(model::CompositeModel,p=1e5; x0=nothing)
     solid = solid_model(model)
     fluid = fluid_model(model)
     f(x) = obj_eutectic_point(solid,fluid,p,1/x[1],FractionVector(exp(x[2])))
-    if x0 === nothing 
+    if x0 === nothing
         T0,x10 = x0_eutectic_point(model,p)
     else
         T0,x10 = x0
@@ -66,25 +66,65 @@ function x0_eutectic_point(model::CompositeModel,p)
         K2 = -dpdT_saturation(m2,solid,vl2,vs2,T2)*T2*T2/p
     end
 
-    #account for non-idealities due to activity coefficients
-    #taylor expansion of log(γ1) around xi = 1, T = Tm
+
+    Te,x1e = ideal_eutectic_solver(K1,K2,T1,T2)
+
     #=
-    ϵx = sqrt(eps())
-    ϵT1,ϵT2 = sqrt(eps(T1)),sqrt(eps(T2))
-    γ1ϵ = activity_coefficient(fluid,p,T1 - ϵT1,FractionVector(1.0 - ϵx,2); phase=:l)[1]
-    γ2ϵ = activity_coefficient(fluid,p,T2 - ϵT2,FractionVector(1.0 - ϵx,1); phase=:l)[2]
-    ∂γ1γT1,∂γ2γT2 = (1 - γ1ϵ)/ϵT1,(1 - γ2ϵ)/ϵT2
-    ∂γ1γx1,∂γ2γx2 = (1 - γ1ϵ)/ϵx,(1 - γ2ϵ)/ϵx
-    ∂logγ1γw1,∂logγ2γw2 = ∂γ1γx1,∂γ2γx2
-    ∂logγ1γτ1,∂logγ2γτ2 = -∂γ1γT1*T1*T1,-∂γ2γT2*T2*T2
-    @show γ1ϵ,γ2ϵ
-    @show ∂logγ1γw1,∂logγ2γw2
-    K̄1 = (K1 - ∂logγ1γτ1)/(1 + ∂logγ1γw1)
-    K̄2 = (K2 - ∂logγ2γτ2)/(1 + ∂logγ2γw2)
-    @show K̄1,K̄2
-    @show K1,K2 =#
-    #return ideal_eutectic_solver(K̄1,K̄2,T1,T2)
-    return ideal_eutectic_solver(K1,K2,T1,T2)
+    successive substitution method with bounds in T
+    
+    1D function:
+    f(τ) = 1 - exp(K1*(τ - τ1))/γ1(τ,x1) - exp(K2*(τ - τ2))/γ2(τ,x1)
+    
+    0. start with Te,x1e from ideal eutectic solution -> calculate γ1,γ2
+    
+    at each step:
+        1. τe_ss = (log((1 - x1e)*γ2)/K2 + τ2)
+        2. τe update: check if τe_ss is in bounds, if τe_ss is outside bounds, use bisection step
+        3. x1e = exp(K1*(τe - τ1))/γ1
+        4. update γ1,γ2
+        5. check bounds to see if we break the iteration.
+    
+    
+    For SolidHfus, this is equivalent to the 2d eutectic solver
+    =#
+
+
+
+    γ1,γ2 = activity_coefficient(fluid,p,Te,FractionVector(x1e,2); phase=:l)
+    τe = 1/Te
+    τ1,τ2 = 1/T1,1/T2
+    τmin = max(τ1,τ2)*one(τe+γ1)
+    τmax = Inf*one(τe+γ1)
+    fτ = 1 - exp(K1*(τe - τ1))/γ1 - exp(K2*(τe - τ2))/γ2
+    if fτ > 0
+        τmax = τe
+    else
+        τmin = τe
+    end
+
+    for i in 1:20
+        τex = (log((1 - x1e)*γ2)/K2 + τ2)
+
+        if τex < τmin
+            τe = 0.5*τe + 0.5*τmin 
+        elseif τex > τmax
+            τe = 0.5*τe + 0.5*τmax
+        else
+            τe = τex
+        end
+
+        x1e = exp(K1*(τe - τ1))/γ1
+        Te = 1/τe
+        γ1,γ2 = activity_coefficient(fluid,p,Te,FractionVector(x1e,2); phase=:l)
+        fτ = 1 - exp(K1*(τe - τ1))/γ1 - exp(K2*(τe - τ2))/γ2
+        if fτ > 0
+            τmax = τe
+        else
+            τmin = τe
+        end
+        abs(τmax-τmin)/τe < 1e-4 && break
+    end
+    return Te,x1e
 end
 
 ideal_eutectic_solver(K1,K2,T1,T2) = ideal_eutectic_solver(promote(K1,K2,T1,T2)...)
@@ -106,8 +146,8 @@ function ideal_eutectic_solver(K1::T,K2::T,T1::T,T2::T) where T
     for i in 1:100
         fx = f(τmax)
         fx > 0 && break
-        τmax *= 2 
-    end    
+        τmax *= 2
+    end
     prob = Roots.ZeroProblem(f,(τmin,τmax))
     τ = Roots.solve(prob)
     T0 = 1/τ
