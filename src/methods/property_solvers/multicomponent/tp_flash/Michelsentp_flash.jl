@@ -298,8 +298,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
-    verbose && @info "iter         β      error_lnK            K"
-    while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss
+    verbose && @info "iter  status        β      error_lnK            K"
+    while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status != RRTrivial
         it += 1
         itacc += 1
         lnK_old .= lnK
@@ -335,16 +335,15 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         end
         K .= exp.(lnK)
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
-        verbose && @info "$it    $β  $(round(error_lnK,sigdigits=4)) $K"
+        status = rachfordrice_status(K,z,non_inx,non_iny;K_tol)
 
-        if isnan(β) #try to save K? basically damping
-            if rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol) != RRTrivial
-                K .= 0.5 * K .+ 0.5 * y ./ x
-                β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
-            end
+        verbose && @info "$it    $status   $β  $(round(error_lnK,sigdigits=4)) $K"
+
+        if isnan(β) && status != RRTrivial
+            #try to save K? basically damping
+            K .= 0.5 * K .+ 0.5 * y ./ x
+            β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
         end
-
-        status = rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol)
 
         Kmin,Kmax = K_extrema(K,non_inx,non_iny)
         # Computing error
