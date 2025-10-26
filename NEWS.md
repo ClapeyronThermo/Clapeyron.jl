@@ -1,19 +1,9 @@
-# v0.6.17
+# v0.6.18
 
 ## New Features
 
-- `Tproperty` and `Pproperty` speed improvements for multicomponent models.
-- New method: `edge_pressure` and `edge_temperature`, that solves the isogibbs criteria for single and multicomponent models. Those functions are equivalent to `saturation_pressure`/`saturation_temperature` for single component models.
-- New method: `mechanical_critical_point`, that calculates the mechanical stability limit for single and multicomponent models. For single component models, this is equivalent to `crit_pure`.
-- New method: `spinodal_maximum`, that returns the maximum temperature and pressure of the diffusive spinodal line ($det(∂₂G) = 0$)
-- `x0_crit_pure` now accepts an optional mol amount composition input.
-- `MichelsenTPFlash`: improvements in rachford-rice identification of K-value types, support for `verbose` keyword argument.
-- Misc documentation improvements.
-
-## Bug Fixes
-
-- JutulDarcy extension: fixes to allow Clapeyron work with the latest JutulDarcy extension
-- CoolProp extension: fixes in `CoolProp.PropsSI` with Clapeyron models.
-- CoolProp extension: fixes to support JSON parsing with CoolProp v7.
-- Fixes to bubble/dew initial points.
-- `SingleFluid`: Fixes when using Double exponential terms.
+- `tp_flash`: improvements to `MichelsenTPFlash` in determination of the vapour phase fraction.
+- `eutectic_point`: New keyword argument `x0` for passing an initial point.
+- `eutectic_point`: support for `eutectic_point(model::SolidHfusModel,p)`
+- `eutectic_point`: initial point calculation performs some succesive substitution iterations to improve the reliability of the solver (#466)
+- support for `JutulDarcy` 0.3

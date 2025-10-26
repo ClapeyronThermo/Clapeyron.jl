@@ -1,7 +1,7 @@
 name = "Clapeyron"
 uuid = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
 authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pjwalker@caltech.edu>", "Andrés Riedemann <andres.riedemann@gmail.com>"]
-version = "0.6.17"
+version = "0.6.18"
 
 [deps]
 BlackBoxOptim = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
