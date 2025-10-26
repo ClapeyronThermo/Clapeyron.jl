@@ -293,14 +293,16 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     end
 
     lnK_old = similar(lnK)
+    β_old = typemax(Ktype)
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
-    verbose && @info "iter         β      error_lnK            K"
-    while error_lnK > K_tol && it < itss && status == RREq
+    verbose && @info "iter  status        β      error_lnK            K"
+    while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status != RRTrivial
         it += 1
         itacc += 1
         lnK_old .= lnK
+        β_old = β
 
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
 
@@ -332,25 +334,17 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         end
         K .= exp.(lnK)
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
-        verbose && @info "$it    $β  $(round(error_lnK,sigdigits=4)) $K"
+        status = rachfordrice_status(K,z,non_inx,non_iny;K_tol)
 
-        if isnan(β) #try to save K? basically damping
-            if rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol) != RRTrivial
-                K .= 0.5 * K .+ 0.5 * y ./ x
-                β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
-            end
+        verbose && @info "$it    $status   $β  $(round(error_lnK,sigdigits=4)) $K"
+
+        if isnan(β) && status != RRTrivial
+            #try to save K? basically damping
+            K .= 0.5 * K .+ 0.5 * y ./ x
+            β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
         end
-
-        status = rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol)
 
         Kmin,Kmax = K_extrema(K,non_inx,non_iny)
-        if status == RRLiquid && Kmin < 1
-            status = RREq
-            β = eps(Ktype)
-        elseif status == RRVapour && Kmax > 1
-            status = RREq
-            β = 1 - eps(Ktype)
-        end
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
@@ -359,13 +353,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
 
     if it > 0 && !isnan(β)
-        β_margin = min(β, _1 - β)
-        verbose && @info "boundary check: β_margin = $(β_margin)"
-        # 4 guards to pinpoint the scenario of #465
-        if status == RREq && β_margin <= cbrt(K_tol) && Kmin < _1 && Kmax > _1
-            status, newβ = rr_margin_check(K,z,non_inx,non_iny;K_tol = K_tol,verbose = verbose)
-            status != RREq && (β = newβ)
-        end
         # single composition update with the (possibly projected) β
         x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
     end

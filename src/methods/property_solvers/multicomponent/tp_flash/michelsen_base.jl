@@ -1,21 +1,38 @@
 function rachfordrice(K, z; β0=nothing,K_tol = 4*eps(eltype(K)), non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
     # Function to solve Rachdord-Rice mass balance
     β,status,limits = rachfordrice_β0(K,z,β0,non_inx,non_iny;K_tol = K_tol)
-    if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && status == RREq
-        βx = rr_vle_vapor_fraction_exact(K,z)
-        return clamp(βx,zero(β),one(β))
+    _0,_1 = zero(β),one(β)
+    # single-phase shortcuts
+    if status == RRLiquid
+        return _0
+    elseif status == RRVapour
+        return _1
+    elseif status != RREq
+        return _0/_0
     end
 
-    if status == RREq
-        βx = rr_flash_refine(K, z, β, non_inx, non_iny, limits) # bracketed Halley when possible
-        return clamp(βx,zero(β),one(β))
-    elseif status == RRLiquid
-        return zero(β)   # or eps(eltype(β))
-    elseif status == RRVapour
-        return one(β)   # or 1 - eps(eltype(β))
+    if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny)
+        βx = rr_vle_vapor_fraction_exact(K,z)
     else
-        return zero(β)/zero(β)
+        βx = rr_flash_refine(K, z, β, non_inx, non_iny, limits) # bracketed Halley when possible
     end
+    βx = clamp(βx,_0,_1)
+
+    # near-boundary stabilization: if βx is within gate of 0 or 1 and K spans unity,
+    # use rr_margin_check to project to boundary.
+    Kmin,Kmax = K_extrema(K,non_inx,non_iny)
+    if (Kmin < one(eltype(K)) && Kmax > one(eltype(K)))
+        β_margin = min(βx,_1-βx)
+        gate = cbrt(K_tol)
+        if β_margin <= gate
+            status_p,βb = rr_margin_check(K,z,non_inx,non_iny;K_tol = K_tol)
+            if status_p != RREq
+                # verbose && @info("rachfordrice boundary project", βx=βx, βb=βb, β_margin=β_margin, gate=gate, status_p=status_p)
+                return clamp(βb,_0,_1)
+            end
+        end
+    end
+    return βx
 end
 
 function K_extrema(K::AbstractVector{T},non_inx,non_iny) where T
