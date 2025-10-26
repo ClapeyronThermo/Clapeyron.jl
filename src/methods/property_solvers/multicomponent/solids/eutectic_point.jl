@@ -55,8 +55,9 @@ function x0_eutectic_point(model::CompositeModel,p)
 
     if solid isa SolidHfusModel
         Tm,Hfus = solid.params.Tm.values,solid.params.Hfus.values
-        T1,T2 = Tm[1],Tm[2]
-        K1,K2 = -Hfus[1]/R,-Hfus[2]/R
+        T1,T2 = Tm[1]*_1,Tm[2]*_1
+        _1 = one(Base.promote_eltype(fluid,p))
+        K1,K2 = -_1*Hfus[1]/R,-_1*Hfus[2]/R
     else
         pure = split_pure_model(model)
         m1,m2 = pure[1],pure[2]
@@ -103,8 +104,9 @@ function x0_eutectic_point(model::CompositeModel,p)
     end
 
     for i in 1:20
-        τex = (log((1 - x1e)*γ2)/K2 + τ2)
-
+        τe1 = (log((1 - x1e)*γ2)/K2 + τ2)
+        τe2 = (log(x1e*γ1)/K1 + τ1)
+        τex = 0.5*τe1 + 0.5*τe2
         if τex < τmin
             τe = 0.5*τe + 0.5*τmin 
         elseif τex > τmax
@@ -124,6 +126,7 @@ function x0_eutectic_point(model::CompositeModel,p)
         end
         abs(τmax-τmin)/τe < 1e-4 && break
     end
+    
     return Te,x1e
 end
 
