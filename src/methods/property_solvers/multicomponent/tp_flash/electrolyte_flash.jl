@@ -194,21 +194,12 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
         verbose && @info "$it error(lnK) > $K_tol, solving via non-linear system"
-        nx = zeros(nc)
-        ny = zeros(nc)
-        if any(non_inx)
-            ny[non_inx] = @view(z[non_inx])
-            nx[non_inx] .= 0.
-        end
-
-        if any(non_iny)
-            ny[non_iny] .= 0.
-            nx[non_iny] = @view(z[non_iny])
-        end
-
-        ny_var_and_ψ0 = similar(y,count(in_equilibria)+1)
+        nx = similar(K)
+        ny = similar(K)
+        ny_var_and_ψ0 = similar(K,count(in_equilibria)+1)
         ny_var_and_ψ0[1:end-1] .= @view(y[in_equilibria]) .* β
         ny_var_and_ψ0[end] = ψ
+        update_nxy!(nx,ny,@view(ny_var_and_ψ0[1:end-1]),z,non_inx,non_iny)
         in_eq = (in_equilibria,non_inx,non_iny)
         caches = (nx,ny,vcache,dlnϕ_cache,in_eq,phases)
         flash_obj = michelsen_optimization_obj(model,p,T,z,caches)
@@ -225,15 +216,22 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
             sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub,)),opt_options)
         end
         ny_var_and_ψ = Solvers.x_sol(sol)
-        ny_var = @view ny_var[1:end-1]
-        ny[in_equilibria] .= ny_var
-        nx[in_equilibria] .= @view(z[in_equilibria]) .- @view(ny[in_equilibria])
-        nxsum = sum(nx)
-        nysum = sum(ny)
-        x .= nx ./ nxsum
-        y .= ny ./ nysum
-        β = sum(ny)
+        ny_var = @view ny_var_and_ψ[1:end-1]
+        ψ = ny_var_and_ψ[end]
+        update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
+        x .= nx ./ sum(nx)
+        y .= ny ./ sum(ny)
         K .= y ./ x
+        β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
+
+        #another margin check
+        β_margin = min(β, _1 - β)
+        verbose && @info "boundary check: β_margin = $(β_margin)"
+        Kmin,Kmax = K_extrema(K,non_inx,non_iny)
+        if β_margin <= cbrt(K_tol) && Kmin < _1 && Kmax > _1
+            status, newβ = rr_margin_check(K,z,non_inx,non_iny;K_tol = K_tol,verbose = verbose)
+            status != RREq && (β = newβ)
+        end
     end
 
     verbose && @info "final K values: $K"
@@ -333,21 +331,7 @@ function michelsen_optimization_of!(g,H,model::ElectrolyteModel,p,T,z,caches,ny_
     volx,voly = vcache[]
     iv = 0
     Z = model.charge
-    for i in eachindex(z)
-        if in_equilibria[i]
-            iv += 1
-            nyi = ny_var[iv]
-            ny[i] = nyi
-            nx[i] = z[i] - nyi
-        elseif non_inx[i]
-            ny[i] = z[i]
-            nx[i] = 0.0
-        elseif non_iny[i]
-            ny[i] = 0.0
-            nx[i] = z[i]
-        end
-    end    # nx = z .- ny
-
+    update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
     nxsum = sum(nx)
     nysum = sum(ny)
     x = nx ./ nxsum
@@ -370,7 +354,7 @@ function michelsen_optimization_of!(g,H,model::ElectrolyteModel,p,T,z,caches,ny_
         !isnothing(g) && (g[1:end-1] .= @view ∂x[in_equilibria])
         !isnothing(g) && (g[1:end-1] .+= @view(Z[in_equilibria]) .* ψ)
 
-        f += dot(@view(∂x[in_equilibria]),@view(nx[in_equilibria]))
+        f += dot(∂x,nx)
 
         lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
         ∂y,∂2y = lnϕy,∂lnϕ∂ny
@@ -387,8 +371,7 @@ function michelsen_optimization_of!(g,H,model::ElectrolyteModel,p,T,z,caches,ny_
         !isnothing(g) && (g[1:end-1] .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g[1:end-1] .*= -1)
 
-        f += dot(@view(∂y[in_equilibria]),@view(ny[in_equilibria]))
-        f += dot(nx,Z)
+        f += dot(∂y,ny) + dot(nx,Z)
     else
         ∂x,volx = lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
         for i in 1:size(∂x,1)
@@ -397,7 +380,7 @@ function michelsen_optimization_of!(g,H,model::ElectrolyteModel,p,T,z,caches,ny_
         end
         !isnothing(g) && (g[1:end-1] .= @view ∂x[in_equilibria])
         !isnothing(g) && (g[1:end-1] .+= @view(Z[in_equilibria]) .* ψ)
-        f += dot(@view(∂x[in_equilibria]),@view(nx[in_equilibria]))
+        f += dot(∂x,nx)
         ∂y,voly = lnϕ(model, p, T, y,lnϕ_cache; phase=phasey, vol0=voly)
         for i in 1:size(∂y,1)
             ∂y[i] += log(y[i])
@@ -405,8 +388,8 @@ function michelsen_optimization_of!(g,H,model::ElectrolyteModel,p,T,z,caches,ny_
         end
         !isnothing(g) && (g[1:end-1] .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g[1:end-1] .*= -1)
-        f += dot(@view(∂y[in_equilibria]),@view(ny[in_equilibria]))
-        f += dot(nx,Z)
+
+        f += dot(∂y,ny) + dot(nx,Z)
     end
     vcache[] = (volx,voly)
     return f

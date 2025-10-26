@@ -156,7 +156,6 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
 
     return FlashResult(comps,βi,volumes,FlashData(p,T,g))
 end
-
 function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(), reduced = false)
 
     equilibrium = method.equilibrium
@@ -217,8 +216,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         lnK .= log.(K)
         verbose && @info "K0 already provided"
     elseif !isnothing(x0) && !isnothing(y0)
-        x = x0 ./ sum(x0)
-        y = y0 ./ sum(y0)
+        x .= x0 ./ sum(x0)
+        y .= y0 ./ sum(y0)
         lnK .= log.(y ./ x)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(volx,voly),phases,non_inw,dlnϕ_cache)
         K .= exp.(lnK)
@@ -369,19 +368,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
         verbose && @info "$error(lnK) > $K_tol, solving via non-linear system"
         
-        nx = zeros(nc)
-        ny = zeros(nc)
-        if any(non_inx)
-            ny[non_inx] = @view(z[non_inx])
-            nx[non_inx] .= 0.
-        end
-
-        if any(non_iny)
-            ny[non_iny] .= 0.
-            nx[non_iny] = @view(z[non_iny])
-        end
-
+        nx = similar(K)
+        ny = similar(K)
         ny_var0 = y[in_equilibria] * β
+        update_nxy!(nx,ny,ny_var0,z,non_inx,non_iny)
         in_eq = (in_equilibria,non_inx,non_iny)
         caches = (nx,ny,vcache,dlnϕ_cache,in_eq,phases)
         flash_obj = michelsen_optimization_obj(model,p,T,z,caches)
@@ -389,21 +379,34 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         ub .= @view z[in_equilibria]
         lb = similar(ny_var0)
         lb .= 0
-        opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-8,maxiter = 100)
+        opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-12,maxiter = 100)
         if second_order
             sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.Newton2(ny_var0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         else
-            sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub,)),opt_options)
+            sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         end
+
+        #= TODO: do something with the values of the optimization procedure
+        if abs(sol.info.fx) <= 4*eps(eltype(K))
+
+        elseif sol.info.fx > sol.info.f0 + 4*eps(eltype(K))
+        
+        end =#
         ny_var = Solvers.x_sol(sol)
-        ny[in_equilibria] .= ny_var
-        nx[in_equilibria] .= @view(z[in_equilibria]) .- @view(ny[in_equilibria])
-        nxsum = sum(nx)
-        nysum = sum(ny)
-        x .= nx ./ nxsum
-        y .= ny ./ nysum
-        β = sum(ny)
+        update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
+        x .= nx ./ sum(nx)
+        y .= ny ./ sum(ny)
         K .= y ./ x
+        β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
+
+        #another margin check
+        β_margin = min(β, _1 - β)
+        verbose && @info "boundary check: β_margin = $(β_margin)"
+        Kmin,Kmax = K_extrema(K,non_inx,non_iny)
+        if β_margin <= cbrt(K_tol) && Kmin < _1 && Kmax > _1
+            status, newβ = rr_margin_check(K,z,non_inx,non_iny;K_tol = K_tol,verbose = verbose)
+            status != RREq && (β = newβ)
+        end
     end
     
     verbose && @info "final K values: $K"
@@ -424,7 +427,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         status0 == RRVapour && (status = RRVapour)
     elseif status == RREq && β <= eps(eltype(β))
         status = RRLiquid
-    elseif status == RREq && β >=  one(β)  - eps(eltype(β))
+    elseif status == RREq && β >=  one(β) - eps(eltype(β))
         status = RRVapour
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
         verbose && @info "material balance failed."

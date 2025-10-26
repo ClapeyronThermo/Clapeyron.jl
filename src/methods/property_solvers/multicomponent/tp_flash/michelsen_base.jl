@@ -60,16 +60,16 @@ function rr_margin_check(K,z,non_inx = FillArrays.Fill(false,length(K)),non_iny 
     F1 = Clapeyron.rr_flash_eval(K, z, _1, non_inx, non_iny) # F(1)
     cond0 = (abs(F0) <= K_tol) && (F1 < 0) # bubble candidate
     cond1 = (abs(F1) <= K_tol) && (F0 > 0) # dew candidate
-    
+
     if verbose
         δβ = sqrt(eps(Ktype))
         Fp0_num = (Clapeyron.rr_flash_eval(K, z, δβ, non_inx, non_iny) - F0) / δβ
-        @info """ checking boundary conditions: 
+        @info """ checking boundary conditions:
         F(0)             = $(F0)
-        F(1)             = $(F1) 
-        F'(0)            ≈ $(Fp0_num) 
+        F(1)             = $(F1)
+        F'(0)            ≈ $(Fp0_num)
         gate             = $(cbrt(K_tol))
-        bubble condition = $(cond0) 
+        bubble condition = $(cond0)
         dew condition    = $(cond1)
         """
     end
@@ -116,29 +116,14 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     in_equilibria,non_inx,non_iny = in_eq
     phasex,phasey = phases
     volx,voly = vcache[]
-    iv = 0
-    for i in eachindex(z)
-        if in_equilibria[i]
-            iv += 1
-            nyi = ny_var[iv]
-            ny[i] = nyi
-            nx[i] = z[i] - nyi
-        elseif non_inx[i]
-            ny[i] = z[i]
-            nx[i] = 0.0
-        elseif non_iny[i]
-            ny[i] = 0.0
-            nx[i] = z[i]
-        end
-    end    # nx = z .- ny
-
+    update_nxy!(nx,ny,ny_var,z,non_inx,non_iny) #updates nx, ny with ny_var vector
     nxsum = sum(nx)
     nysum = sum(ny)
     x = nx ./ nxsum
     y = ny ./ nysum
     f = zero(eltype(ny_var))
     f -= gz
-    !isnothing(g) && (g .= 0) 
+    !isnothing(g) && (g .= 0)
     if second_order
         lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
         ∂x,∂2x = lnϕx,∂lnϕ∂nx
@@ -149,9 +134,10 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
+
         H .= @view ∂2x[in_equilibria, in_equilibria]
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
-        f += dot(@view(∂x[in_equilibria]),@view(nx[in_equilibria]))
+        f += dot(∂x,nx)
 
         lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
         ∂y,∂2y = lnϕy,∂lnϕ∂ny
@@ -167,7 +153,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         !isnothing(g) && (g .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g .*= -1)
 
-        f += dot(@view(∂y[in_equilibria]),@view(ny[in_equilibria]))
+        f += dot(∂y,ny)
     else
         ∂x,volx = lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
         for i in 1:size(∂x,1)
@@ -175,7 +161,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
             non_inx[i] && (∂x[i] = 0)
         end
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
-        f += dot(@view(∂x[in_equilibria]),@view(nx[in_equilibria]))
+        f += dot(∂x,nx)
         ∂y,voly = lnϕ(model, p, T, y,lnϕ_cache; phase=phasey, vol0=voly)
         for i in 1:size(∂y,1)
             ∂y[i] += log(y[i])
@@ -183,7 +169,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         end
         !isnothing(g) && (g .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g .*= -1)
-        f += dot(@view(∂y[in_equilibria]),@view(ny[in_equilibria]))
+        f += dot(∂y,ny)
     end
     vcache[] = (volx,voly)
     return f
@@ -192,9 +178,13 @@ end
 function michelsen_gibbs_feed(model,p,T,z,caches)
     nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
     in_equilibria,non_inx,non_iny = in_eq
-    ∂z,volz = lnϕ(model, p, T, z, lnϕ_cache)
-    ∂z  .+= log.(z)
-    gz = dot(@view(z[in_equilibria]),@view(∂z[in_equilibria]))
+    if all(in_equilibria)
+        ∂z,volz = lnϕ(model, p, T, z, lnϕ_cache)
+        ∂z .+= log.(z)
+        gz = dot(@view(z[in_equilibria]),@view(∂z[in_equilibria]))
+    else
+        gz = zero(Base.promote_eltype(model,p,T,z))
+    end
     return gz
 end
 
@@ -210,7 +200,7 @@ function michelsen_optimization_obj(model,p,T,z,caches)
         return ∇f
     end
 
-    function objective_gradient_ip(∇f, x) 
+    function objective_gradient_ip(∇f, x)
         fx = michelsen_optimization_of!(∇f,nothing,model,p,T,z,caches,x,gz)
         return fx,∇f
     end
@@ -292,6 +282,25 @@ function update_rr!(K,β,z,x,y,
     x ./= sum(x)
     y ./= sum(y)
     return x,y
+end
+
+function update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
+    ii = 0
+    for i in eachindex(z)
+        if non_inx[i]
+            ny[i] = z[i]
+            nx[i] = 0.0
+        elseif non_iny[i]
+            ny[i] = 0.0
+            nx[i] = z[i]
+        else
+            ii += 1
+            nyi = ny_var[ii]
+            ny[i] = nyi
+            nx[i] = z[i] - nyi
+        end
+    end
+    return nx,ny
 end
 
 function tp_flash_K0(model,p,T,z)
