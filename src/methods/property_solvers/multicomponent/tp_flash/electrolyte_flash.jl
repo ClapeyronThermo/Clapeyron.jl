@@ -100,7 +100,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     =#
 
     K̄ .= K.*exp.(Z.*ψ)
-    logK̄ .= log.(K̄)
+    lnK̄ .= log.(K̄)
     β,status,_ = rachfordrice_β0(K̄,z,nothing,non_inx,non_iny)
     status0 = status
     #=TODO:
@@ -132,7 +132,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status in (RREq,RRLiquid,RRVapour)
         it += 1
         itacc += 1
-        lnK̄_old .= lnK + Z.*ψ
+        lnK̄_old .= lnK̄
         β_old = β
 
         x,y = update_rr!(K̄,β,z,x,y,non_inx,non_iny)
