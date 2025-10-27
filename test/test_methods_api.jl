@@ -321,9 +321,8 @@ end
 
         T1,_ = Clapeyron.eutectic_point(la_gly)
         T2,_ = Clapeyron.eutectic_point(ox_gly)
-        @show T1,T2
-        @test !isnan(T1)
-        @test !isnan(T2)
+        @test T1 ≈ 300.23095880432294 rtol = 1e-6
+        @test T2 ≈ 454.27284723964925 rtol = 1e-6
     end
 end
 GC.gc()
