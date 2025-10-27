@@ -342,7 +342,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
         end
 
-        Kmin,Kmax = K_extrema(K,non_inx,non_iny)
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
@@ -389,15 +388,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         y .= ny ./ sum(ny)
         K .= y ./ x
         β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
-
-        #another margin check
-        β_margin = min(β, _1 - β)
-        verbose && @info "boundary check: β_margin = $(β_margin)"
-        Kmin,Kmax = K_extrema(K,non_inx,non_iny)
-        if β_margin <= cbrt(K_tol) && Kmin < _1 && Kmax > _1
-            status, newβ = rr_margin_check(K,z,non_inx,non_iny;K_tol = K_tol,verbose = verbose)
-            status != RREq && (β = newβ)
-        end
     end
     
     verbose && @info "final K values: $K"
