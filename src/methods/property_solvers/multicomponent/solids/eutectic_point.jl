@@ -52,11 +52,11 @@ function x0_eutectic_point(model::CompositeModel,p)
     solid = solid_model(model)
     fluid = fluid_model(model)
     R = Rgas(fluid)
+    _1 = one(Base.promote_eltype(fluid,p))
 
     if solid isa SolidHfusModel
         Tm,Hfus = solid.params.Tm.values,solid.params.Hfus.values
         T1,T2 = Tm[1]*_1,Tm[2]*_1
-        _1 = one(Base.promote_eltype(fluid,p))
         K1,K2 = -_1*Hfus[1]/R,-_1*Hfus[2]/R
     else
         pure = split_pure_model(model)
@@ -72,20 +72,20 @@ function x0_eutectic_point(model::CompositeModel,p)
 
     #=
     successive substitution method with bounds in T
-    
+
     1D function:
     f(τ) = 1 - exp(K1*(τ - τ1))/γ1(τ,x1) - exp(K2*(τ - τ2))/γ2(τ,x1)
-    
+
     0. start with Te,x1e from ideal eutectic solution -> calculate γ1,γ2
-    
+
     at each step:
         1. τe_ss = (log((1 - x1e)*γ2)/K2 + τ2)
         2. τe update: check if τe_ss is in bounds, if τe_ss is outside bounds, use bisection step
         3. x1e = exp(K1*(τe - τ1))/γ1
         4. update γ1,γ2
         5. check bounds to see if we break the iteration.
-    
-    
+
+
     For SolidHfus, this is equivalent to the 2d eutectic solver
     =#
 
@@ -108,7 +108,7 @@ function x0_eutectic_point(model::CompositeModel,p)
         τe2 = (log(x1e*γ1)/K1 + τ1)
         τex = 0.5*τe1 + 0.5*τe2
         if τex < τmin
-            τe = 0.5*τe + 0.5*τmin 
+            τe = 0.5*τe + 0.5*τmin
         elseif τex > τmax
             τe = 0.5*τe + 0.5*τmax
         else
@@ -126,7 +126,7 @@ function x0_eutectic_point(model::CompositeModel,p)
         end
         abs(τmax-τmin)/τe < 1e-4 && break
     end
-    
+
     return Te,x1e
 end
 
