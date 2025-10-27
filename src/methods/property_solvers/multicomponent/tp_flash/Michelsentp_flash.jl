@@ -204,13 +204,14 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     in_equilibria = @. !non_inx & !non_iny
 
     # Computing the initial guess for the K vector
-    x = similar(z,Base.promote_eltype(model,p,T,z))
-    y = similar(z,Base.promote_eltype(model,p,T,z))
+    TT = Base.promote_eltype(model,p,T,z)
+    x = similar(z,TT)
+    y = similar(z,TT)
     x .= z
     y .= z
     K,lnK = similar(x),similar(x)
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
-    _1 = one(eltype(K))
+    _0,_1 = zero(TT),one(TT)
     if !isnothing(K0)
         K .= K0
         lnK .= log.(K)
@@ -243,9 +244,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         lnK .= log.(K)
     end
     verbose && @info "K0 = $K"
-    Ktype = eltype(K)
-    _0 = zero(Ktype)
-    _1 = one(Ktype)
     # Initial guess for phase split
     status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
     status0 = status
@@ -271,7 +269,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             β -= eps(eltype(β))
         end
     elseif status == RREq
-        β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny,K_tol = K_tol)
+        β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
     else
         β = _0/_0
     end
@@ -293,12 +291,12 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     end
 
     lnK_old = similar(lnK)
-    β_old = typemax(Ktype)
+    β_old = typemax(TT)
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
     verbose && @info "iter  status        β      error_lnK            K"
-    while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status != RRTrivial
+    while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status in (RREq,RRLiquid,RRVapour)
         it += 1
         itacc += 1
         lnK_old .= lnK
@@ -320,7 +318,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             # acceleration using DEM (1 eigenvalues)
             lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3,(ΔlnK1,ΔlnK2))
             K_dem .= exp.(lnK_dem)
-            β_dem = rachfordrice(K_dem, z; β0=β, non_inx=non_inx, non_iny=non_iny)
+            β_dem = rachfordrice(K_dem, z; β0=β, non_inx, non_iny, verbose)
             x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
             lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,z,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
             # only accelerate if the Gibbs energy is reduced
@@ -333,7 +331,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             end
         end
         K .= exp.(lnK)
-        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
+        β = rachfordrice(K, z; β0=β, non_inx, non_iny, K_tol, verbose)
         status = rachfordrice_status(K,z,non_inx,non_iny;K_tol)
 
         verbose && @info "$it    $status   $β  $(round(error_lnK,sigdigits=4)) $K"
@@ -341,7 +339,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         if isnan(β) && status != RRTrivial
             #try to save K? basically damping
             K .= 0.5 * K .+ 0.5 * y ./ x
-            β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
+            β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
         end
 
         Kmin,Kmax = K_extrema(K,non_inx,non_iny)
@@ -390,7 +388,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         x .= nx ./ sum(nx)
         y .= ny ./ sum(ny)
         K .= y ./ x
-        β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
+        β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
 
         #another margin check
         β_margin = min(β, _1 - β)
@@ -414,13 +412,13 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && status != RREq
         verbose && @info "trivial result but different volumes (maybe azeotrope?)"
         status = RREq
-    elseif status == RRTrivial && it > 0
+    elseif status == RRTrivial
         verbose && @info "procedure converged to trivial K-values, checking initial conditions to see if resulting phase is liquid or vapour."
         status0 == RRLiquid && (status = RRLiquid)
         status0 == RRVapour && (status = RRVapour)
     elseif status == RREq && β <= eps(eltype(β))
         status = RRLiquid
-    elseif status == RREq && β >=  one(β) - eps(eltype(β))
+    elseif status == RREq && β >= one(β) - eps(eltype(β))
         status = RRVapour
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
         verbose && @info "material balance failed."
