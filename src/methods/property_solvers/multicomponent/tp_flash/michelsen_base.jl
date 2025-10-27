@@ -1,4 +1,4 @@
-function rachfordrice(K, z; β0=nothing,K_tol = 4*eps(eltype(K)), non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
+function rachfordrice(K, z; β0=nothing, K_tol=4*eps(eltype(K)), non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)), verbose=false)
     # Function to solve Rachdord-Rice mass balance
     β,status,limits = rachfordrice_β0(K,z,β0,non_inx,non_iny;K_tol = K_tol)
     _0,_1 = zero(β),one(β)
@@ -25,9 +25,9 @@ function rachfordrice(K, z; β0=nothing,K_tol = 4*eps(eltype(K)), non_inx=FillAr
         β_margin = min(βx,_1-βx)
         gate = cbrt(K_tol)
         if β_margin <= gate
-            status_p,βb = rr_margin_check(K,z,non_inx,non_iny;K_tol = K_tol)
+            status_p,βb = rr_margin_check(K,z,non_inx,non_iny;K_tol,verbose)
             if status_p != RREq
-                # verbose && @info("rachfordrice boundary project", βx=βx, βb=βb, β_margin=β_margin, gate=gate, status_p=status_p)
+                verbose && @info "rachfordrice boundary project" βx βb β_margin gate status_p
                 return clamp(βb,_0,_1)
             end
         end
