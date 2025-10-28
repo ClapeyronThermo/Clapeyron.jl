@@ -1,6 +1,11 @@
 # Function to compute fugacity coefficient
-function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, vol0=nothing,threaded = true)
-    vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
+function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
+            phase=:unknown,
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+
+
     RT = Rgas(model)*T
     logZ = log(p*vol/RT/sum(z))
 
@@ -28,34 +33,47 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, v
     return lnϕ, vol
 end
 
-function lnϕ(model::IdealModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, vol0=nothing,threaded = true)
-    vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
+function lnϕ(model::IdealModel, p, T, z=SA[1.],cache = nothing;
+            phase=:unknown,
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+
     lnϕ = FillArrays.Zeros(length(z))
     return lnϕ, vol
 end
 
-function lnϕ!(cache::Tuple, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
+function lnϕ!(cache::Tuple, model::EoSModel, p, T, z=SA[1.];
+            phase=:unknown,
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+
     if model isa IdealModel
         lnϕ .= 0
-        return lnϕ,volume(model,p,T,z)
+        return lnϕ,vol
     end
-    return lnϕ(model,p,T,z,cache;phase,vol0,threaded)
+    return lnϕ(model,p,T,z,cache;vol)
 end
 
-function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = nothing; phase=:unknown, vol0=nothing, threaded = true)
+function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = nothing;
+            phase=:unknown, 
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+
     if model isa IdealModel
         lnϕ .= 0
-        return lnϕ,volume(model,p,T,z)
+        return lnϕ,vol
     end
-    
+
     if cache != nothing
-        lnϕ(model,p,T,z,cache;phase,vol0,threaded)
+        lnϕ(model,p,T,z,cache;vol)
         result,aux,lnϕw,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
         vol = aux[1]
         lnϕ .= lnϕw
     else
         RT = Rgas(model)*T
-        vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
         μ_res = VT_chemical_potential_res!(lnϕ,model, vol, T, z)
         Z = p*vol/RT/sum(z)
         lnϕ .= μ_res ./ RT .- log(Z)
@@ -90,10 +108,15 @@ function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
 end
 
 # Function to compute fugacity coefficient and its pressure and composition derivatives
-function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}()); phase=:unknown, vol0=nothing)
+function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
+            phase=:unknown, 
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+
     result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
-    RT = R̄*T
-    V = volume(model, p, T, z, phase=phase, vol0=vol0)
+    RT = Rgas(model)*T
+    V = vol
     n = sum(z)
     Z = p*V/RT/n
 
@@ -132,10 +155,15 @@ end
 
 
 # Function to compute fugacity coefficient and its temperature, pressure and composition derivatives
-function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cache(model,p,T,z,Val{true}()); phase=:unknown, vol0=nothing)
+function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cache(model,p,T,z,Val{true}());
+            phase=:unknown, 
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+    
     result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
-    RT = R̄*T
-    V = volume(model, p, T, z, phase=phase, vol0=vol0)
+    RT = Rgas(model)*T
+    V = vol
     n = sum(z)
     Z = p*V/RT/n
 
@@ -143,7 +171,7 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
     aux[1] = V
     aux[2] = T
     aux[3:end] .= z
-    F_res(model, V, T, z) = eos_res(model, V, T, z) / R̄ / T
+    F_res(model, V, T, z) = eos_res(model, V, T, z) / RT
     fun(aux) = F_res(model, aux[1], aux[2], @view(aux[3:(ncomponents+2)]))
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
 
