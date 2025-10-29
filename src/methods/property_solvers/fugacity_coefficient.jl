@@ -90,9 +90,9 @@ function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
 end
 
 function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
-    V = p
-    lnϕ = zeros(@f(Base.promote_eltype),length(model))
-    aux = zeros(@f(Base.promote_eltype),length(model) + 1 + B)
+    TT = Base.promote_eltype(model,p,T,z)
+    lnϕ = zeros(TT,length(model))
+    aux = zeros(TT,length(model) + 1 + B)
     ∂lnϕ∂n = lnϕ * transpose(lnϕ)
     result = DiffResults.HessianResult(aux)
     ∂lnϕ∂n = lnϕ * transpose(lnϕ)
