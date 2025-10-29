@@ -209,10 +209,10 @@ function tpd_solver(model,p,T,z,w0,
     if keep_going
         α0 = 2 .* sqrt.(w)
         prob = tpd_obj(model, p, T, di, isliquidw, cache, break_first)
-        res = Solvers.optimize(prob_l, α0, LineSearch(Newton2(α0)), opt_options)
+        res = Solvers.optimize(prob, α0, LineSearch(Newton2(α0)), opt_options)
         α = Solvers.x_sol(res)
         w .= α .* α .* 0.25
-        w ./= sum(ww)
+        w ./= sum(w)
         tpd = Solvers.x_minimum(res)
         vw = vcache[]
     end
@@ -293,7 +293,7 @@ It iterates over each two-phase combination, starting from pure trial compositio
 If the vectors are empty, then the procedure couldn't find a negative `tpd`. That is an indication that the phase is (almost) surely stable.
 
 """
-function tpd(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing)
+function tpd(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing, verbose = false)
     z = n ./ sum(n)
     check_arraysize(model,z)
     if !reduced
@@ -304,7 +304,7 @@ function tpd(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_fi
         idx_reduced = trues(length(model))
         zr = z
     end
-    result = _tpd(model_reduced,p,T,zr,cache,break_first,lle,tol_trivial,strategy,di)
+    result = _tpd(model_reduced,p,T,zr,cache,break_first,lle,tol_trivial,strategy,di,verbose)
     values,comps,phase_z,phase_w = result
     idx_by_tpd = sortperm(values)
     for i in idx_by_tpd
@@ -314,14 +314,27 @@ function tpd(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_fi
     #do index expansion and sorting here
 end
 
-function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing)
+function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing,verbose = false)
     #step 0: initialize values
 
-    if strategy == :default || strategy == :wilson
+    perform_K_test = strategy == :default || strategy == :wilson
+    perform_K_test = perform_K_test && !lle
+    if perform_K_test
         K = tp_flash_K0(model,p,T,z) #normally wilson
     else
         K = zeros(Base.promote_eltype(model,p,T,z),length(z))
     end
+
+    
+    Kmin,Kmax = extrema(K)
+
+    if Kmin > 1.0 || Kmax < 1.0
+        verbose && @info "K-values unable to generate phase-split, skipping K-value tests."
+        perform_K_test = false
+    else
+        any(!iszero,K) && verbose && @info "trying tpd with K-values:                     $K"
+    end
+
     w_test = similar(K)
     cond = (model,p,T,z)
     fz,phasez,v = tpd_input_composition(model,p,T,z,di,lle,cache)
@@ -336,43 +349,58 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
 
     #we asked for lle, but the input phase itself is a vapour.
     lle && !isliquidz && return result
-    lle = lle || !isliquidz #if we have a vapour phase, dont calculate additional ones.
-    if strategy == :default || strategy == :wilson
+    lle_yet = lle & isliquidz #if we have a vapour phase, dont calculate additional ones.
+    if perform_K_test
         #step 1: wilson initial values  (and the inverse)
         rr_flash_vapor!(w_test,K,z,false)
+        
         w_test ./= sum(w_test)
         phasew = :liquid
+        
         proposed = tpd_solver(model,p,T,z,w_test,fz,cache;break_first,tol_trivial,phasew)
         added = add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial)
-        added && break_first && return result
-        @show phasew,phasez,w_test,added
+        verbose && @info """
 
-        if !lle && !isliquidz
+        test composition (K-value, phase = $phasew):   $w_test
+        final composition (added to tpd: $added): $(ifelse(added," ",""))     $(proposed[1])
+        """
+        added && break_first && return result
+
+        if !lle_yet
             phasew = :vapour
             proposed = tpd_solver(model,p,T,z,w_test,fz,cache;break_first,tol_trivial,phasew)
             added = add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial)
+            verbose && @info """
+
+            test composition (K-value, phase = $phasew):   $w_test
+            final composition (added to tpd: $added): $(ifelse(added," ",""))     $(proposed[1])
+            """
             added && break_first && return result
-            @show phasew,phasez,w_test,added
         end
 
         K .= 1 ./ K
         rr_flash_vapor!(w_test,K,z,false)
         w_test ./= sum(w_test)
-        
         phasew = :liquid
         proposed = tpd_solver(model,p,T,z,w_test,fz,cache;break_first,tol_trivial,phasew)
         added = add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial)
-        added && break_first && return result
-        @show phasew,phasez,w_test,added
+        verbose && @info """
 
-        if !lle && !isliquidz
-            phasew = :vapour
-            
+        test composition (1/K-value, phase = $phasew): $w_test
+        final composition (added to tpd: $added): $(ifelse(added," ",""))     $(proposed[1])
+        """
+        added && break_first && return result
+        if !lle_yet
+            phasew = :vapour 
             proposed = tpd_solver(model,p,T,z,w_test,fz,cache;break_first,tol_trivial,phasew)
             added = add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial)
+            verbose && @info """
+
+            test composition (1/K-value, phase = $phasew): $w_test
+            final composition (added to tpd: $added): $(ifelse(added," ",""))     $(proposed[1])
+            """
             added && break_first && return result
-            @show phasew,phasez,w_test,added
-            lle = lle | any(is_vapour,phase_w)
+            lle_yet = lle_yet | any(is_vapour,phase_w)
         end
     end
 
@@ -383,18 +411,25 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
         for i in ids
             z_pure!(w_test,i)
             phasew = :liquid
-            
             proposed = tpd_solver(model,p,T,z,w_test,fz,cache;break_first,tol_trivial,phasew)
             added = add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial)
+            verbose && @info """
+
+            test composition (pure, phase = $phasew):      $w_test
+            final composition (added to tpd: $added): $(ifelse(added," ",""))     $(proposed[1])
+            """
             added && break_first && return result
-            @show phasew,phasez,w_test,added
-            if !lle && !isliquidz
+            if !lle_yet
                 phasew = :vapour
                 proposed = tpd_solver(model,p,T,z,w_test,fz,cache;break_first,tol_trivial,phasew)
                 added = add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial)
+                verbose && @info """
+
+                test composition (pure, phase = $phasew):      $w_test
+                final composition (added to tpd: $added): $(ifelse(added," ",""))     $(proposed[1])
+                """
                 added && break_first && return result
-                @show phasew,phasez,w_test,added
-                lle = lle | any(is_vapour,phase_w)
+                lle_yet = lle_yet | any(is_vapour,phase_w)
             end
         end
     end
@@ -474,7 +509,6 @@ function add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial = 1e-5)
     for i in 1:length(comps)
         dz = z_norm(comps[i],w)
         dzc = cosine_norm(comps[i],w)
-        @show dzc
         dz < tol_trivial && return false
         abs(tpd - values[i]) < min_tpd*tol_trivial && return false
     end
