@@ -376,11 +376,6 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
     for i in 1:max_iters
         itacc += 1
         fixpoint_multiphase!(x, x0, model, p, T, z, _result, ss_cache)
-        if get(ENV,"CLAPEYRON_MPFLASH_DEBUG","0") == "1"
-            if any(!isfinite, βi) || any(xi->any(!isfinite,xi), comps) || any(!isfinite, volumes)
-                println("[MPFLASH] ss_iter ", i, ": NaN detected → β=",βi, ", any_nan_x=", any(xi->any(!isfinite,xi), comps), ", vols=", volumes)
-            end
-        end
         equal_phases = _findfirst_equalphases(comps,β,volumes)
         #a phase needs to be removed.
         equal_phases != (0,0) && break
