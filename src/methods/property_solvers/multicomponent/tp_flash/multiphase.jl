@@ -123,8 +123,8 @@ function index_reduction(m::MultiPhaseTPFlash,idx::AbstractVector)
             n0[i] = n0i[idx]
         end
     end
-    T = eltype(K0)
-    return MultiPhaseTPFlash{T}(K0,n0,K_tol,ss_iters,nacc,second_order,full_tpd,max_phases,phase_iters)
+    # Delegate type resolution to keyword constructor to avoid eltype(K0) on nothing
+    return MultiPhaseTPFlash(;K0,n0,K_tol,ss_iters,nacc,second_order,full_tpd,max_phases,phase_iters)
 end
 
 function tpd_cache end
@@ -220,27 +220,37 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         δn_add = true
         _result = (comps, βi, volumes, idx_vapour)
     elseif options.full_tpd #calculate full tpd.
-        comps,tpds,_,phase_w = tpd(model,p,T,z,strategy = :pure)
-        βi = initial_beta!(comps,z)
-        volumes = similar(βi)
-        n_phases = length(comps)
-        for i in 1:length(comps)
-            phase_i = phase_w[i]
-            volumes[i] = volume(model,p,T,comps[i],phase = phase_i)
-            if idx_vapour[] == 0
-                if is_vapour(phase_i)
-                    idx_vapour[] = i
+        comps,tpds,_,phase_w = tpd(model,p,T,z,strategy = :default)
+        # println("[MPFLASH] full_tpd: candidates=", length(comps), ", min_tpd=", (length(tpds) > 0 ? minimum(tpds) : "NA"))
+        if isempty(comps)
+            # No unstable phase found by TPD: fall back to single-phase init
+            comps = [Vector{TT}(z)]
+            vz = volume(model,p,T,z)
+            volumes = [vz]
+            βi = [one(eltype(z))]
+            _result = (comps, βi, volumes, idx_vapour)
+            δn_add = _add_phases!(model,p,T,z,_result,cache,options)
+            # println("[MPFLASH] full_tpd: fallback to single-phase; δn_add=", δn_add)
+        else
+            βi = initial_beta!(comps,z)
+            volumes = similar(βi)
+            n_phases = length(comps)
+            for i in 1:length(comps)
+                phase_i = phase_w[i]
+                volumes[i] = volume(model,p,T,comps[i],phase = phase_i)
+                if idx_vapour[] == 0
+                    if is_vapour(phase_i)
+                        idx_vapour[] = i
+                    end
                 end
             end
+            _result = (comps, βi, volumes, idx_vapour)
+            δn_add = true
         end
-        _result = (comps, βi, volumes, idx_vapour)
-        δn_add = true
     else #split model manually
         n_phases = 1
         V = p
-        z̄ = zeros(TT,length(z))
-        z̄ .= z
-        z̄ ./= sum(z)
+        z̄ = Vector{TT}(z)
         comps = [z̄]
         vz = volume(model,p,T,z)
         volumes = [vz]
@@ -296,6 +306,12 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         done = done || converged
         done = done || any(!isfinite,βi) || minimum(βi) < 0
     end
+    # Final cleanup: if duplicate phases remain (e.g., K≈1 leading to identical phases),
+    # attempt a last consolidation to avoid returning duplicated phases.
+    if length(comps) > 1
+        removed = _remove_phases!(model,p,T,z,_result,cache,options)
+        # println("[MPFLASH] final cleanup: removed duplicate/degenerate phases")
+    end
     if isnan(gmix)
         gmix = _multiphase_gibbs(model,p,T,result)/(Rgas(model)*T)
     end
@@ -337,7 +353,15 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
     for i in 1:(np-1)
         lnKi = viewn(x0,nc,i)
         xi = comps[i]
-        lnKi .= log.(xi ./ xnp)
+        # robust log ratio to avoid 0/0 → NaN
+        for j in 1:nc
+            xij,xnpj = xi[j],xnp[j]
+            if xij == 0 && xnpj == 0
+                lnKi[j] = zero(eltype(lnKi)) #log(1)
+            else
+                lnKi[j] = log(xij / xnpj)
+            end
+        end
     end
 
     #options
@@ -352,6 +376,11 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
     for i in 1:max_iters
         itacc += 1
         fixpoint_multiphase!(x, x0, model, p, T, z, _result, ss_cache)
+        if get(ENV,"CLAPEYRON_MPFLASH_DEBUG","0") == "1"
+            if any(!isfinite, βi) || any(xi->any(!isfinite,xi), comps) || any(!isfinite, volumes)
+                println("[MPFLASH] ss_iter ", i, ": NaN detected → β=",βi, ", any_nan_x=", any(xi->any(!isfinite,xi), comps), ", vols=", volumes)
+            end
+        end
         equal_phases = _findfirst_equalphases(comps,β,volumes)
         #a phase needs to be removed.
         equal_phases != (0,0) && break
@@ -457,16 +486,29 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
     nc = length(z)
     np = length(βi)
     βF = viewn(F,nc,np)
+    #I've added a verbose option here, which can be converted into function parameters later
+    verbose = false
 
     #transforms lnK to K
     multiphase_lnK_K!(F_cache,x,np,nc)
     if np == 2
         K = viewn(F_cache,nc,1)
-        βsol = rachfordrice(K,z)
+        # Use log-K norm to detect trivial split (K ≈ 1 multiplicatively)
+        non_inx = non_iny = FillArrays.Fill(false,nc)
+        Ktol = sqrt(eps(eltype(K)))
+        if any(!isfinite, K) || __log_K_norm(K,non_inx,non_iny) <= Ktol
+            βsol = clamp(βi[1], 0.0, 1.0)
+            verbose && println("[MPFLASH] RR_β: using previous β due to logK≈0; βprev=", βsol)
+        else
+            βsol = rachfordrice(K,z)
+        end
         βF[1] = βsol #two-phase solution does not require solving a neq problem
         βF[2] = 1 - βsol
         βi[1] = βsol
         βi[2] = 1 - βsol
+        if verbose && !(isfinite(βsol) && 0 <= βsol <= 1)
+            println("[MPFLASH] RR_β: invalid βsol (", βsol, ") K=", K, ", z=", z)
+        end
         return F
     end
     deactivated_phase = Ref(0)
@@ -747,7 +789,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
         if idx_vapour[] == 0
             phase_wi = VT_identify_phase(model,vw,T,w)
             if is_vapour(phase_wi)
-                idx_vapour[] == i
+                idx_vapour[] = i
             end
         else
             if idx_vapour[] == i
@@ -757,8 +799,11 @@ function _add_phases!(model,p,T,z,result,cache,options)
             end 
         end
         
-        is_lle = idx_vapour[] != 0 #if we have a vapour phase, we only search for liquid-liquid splits
+        # If we only have a vapour phase and no liquid yet, we must search VLE, not LLE.
+        # Restrict to LLE only once we already have both vapour and at least one liquid phase.
+        is_lle = (idx_vapour[] != 0) && (length(comps) > 1)
         tpd_i = tpd(model,p,T,w,tpd_cache,reduced = true,break_first = true, strategy = :pure,lle = is_lle)
+        # println("[MPFLASH] _add_phases!: i=", i, ", idx_vapour=", idx_vapour[], ", is_lle=", is_lle, ", found=", length(tpd_i[1]))
         length(tpd_i[1]) == 0 && continue
         already_found = false
         tpd_comps,_ttpd,phases_z,phases_w = tpd_i
@@ -783,6 +828,11 @@ function _add_phases!(model,p,T,z,result,cache,options)
         push!(found_tpd_lnphi,lnϕy)
     end
     #step 2: calculate a matrix of tpd for each value.
+    # if no TPD candidates were found, nothing to add
+    if length(found_tpd) == 0
+        # println("[MPFLASH] _add_phases!: no TPD candidates found (found_tpd=0)")
+        return false
+    end
 
     tpds = zeros(length(found_tpd),length(comps))
     #cache di of components
@@ -801,7 +851,10 @@ function _add_phases!(model,p,T,z,result,cache,options)
         end
     end
     #step 3: find the tpd with the lowest tpd value
-    minimum(tpds) > 0 && return false
+    # treat extremely small negative tpd as zero to avoid degenerate splits
+    tpd_tol = 1e-12
+    # println("[MPFLASH] _add_phases!: min(tpds)=", minimum(tpds), ", tol=", tpd_tol)
+    (minimum(tpds) > -tpd_tol) && return false
     #check our current phases and the trial ones
     for ii in 1:length(found_tpd)
         for jj in 1:length(comps)
@@ -810,13 +863,13 @@ function _add_phases!(model,p,T,z,result,cache,options)
             w,vw = comps[jj],volumes[jj]
 
             #identify phase if not done
-            if is_unknown(phases_comps[jj]) && idx_vapour == 0
+            if is_unknown(phases_comps[jj]) && idx_vapour[] == 0
                 phases_comps[jj] = VT_identify_phase(model,vw,T,w)
             end
             
             phase_w = phases_comps[jj]
             if is_vapour(phase_w) && idx_vapour[] == 0 #we identified the vapour phase
-                _idx_vapour[] = ii
+                idx_vapour[] = jj
             end
 
             y,vy = found_tpd[ii],found_tpd_volumes[ii]
@@ -827,6 +880,9 @@ function _add_phases!(model,p,T,z,result,cache,options)
             #vy = volume(model,p,T,y,phase = phase_y)
             #phase not stable: generate a new one from tpd result
             β1,x1,v1,β2,x2,v2,dgi = split_phase_tpd(model,p,T,w,y,phase_w,phase_y,vw,vy)
+            # println("[MPFLASH] split result: β1=",β1,", β2=",β2,", dgi=",dgi)
+            # println("[MPFLASH] split x1 sum=",sum(x1),", any_nan=",any(!isfinite,x1),", v1=",v1)
+            # println("[MPFLASH] split x2 sum=",sum(x2),", any_nan=",any(!isfinite,x2),", v2=",v2)
             #check that the new generated phase is not equal to one existing composition
             knew = 0
             for i in 1:length(comps)
@@ -835,7 +891,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
                 end
             end
             
-            if (!isnan(dgi) && (dgi < 0)) || isone(length(np))
+            if (!isnan(dgi) && (dgi < 0)) || isone(np)
                 β0 = β[jj]
                 β[jj] = β0*β2
                 comps[jj] = x2
@@ -908,7 +964,7 @@ function _remove_phases!(model,p,T,z,result,cache,options)
         push!(volumes,volume(model,p,T,comps[end]))
         if idx_vapour[] == 0
             if is_vapour(VT_identify_phase(model,volumes[end],T,comps[end]))
-                idx_vapour[] == length(comps)
+                idx_vapour[] = length(comps)
             end
         end
         return true
@@ -999,13 +1055,18 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
     =#
     β1 = zero(eltype(w))
     β2 = one(eltype(w))
-    for i in 1:length(z)
-        β2 = min(β2,z[i]/w[i])
+    # Robust upper bound: consider only indices with w[i] > 0 to avoid 0/0 and Inf pollution
+    for (zi, wi) in zip(z,w)
+        β2 = ifelse(wi > 0, min(β2, zi/wi), β2)
     end
     x2 = similar(w)
     g1 = eos(model,vw,T,w) + p*vw
     gz = eos(model,vz,T,z) + p*vz
-    x2 .= (z .-  β2 .* w) ./ (1 .- β2)
+    if isone(β2)
+        x2 .= z
+    else
+        @. x2 = (z -  β2 * w) / (1 - β2)
+    end
     x3 = x2
     phase = phase_w == phase_z ? phase_z : :unknown
     if is_vapour(phase_w) && is_unknown(phase)
@@ -1160,6 +1221,7 @@ function multi_g_obj(model,p,T,z,_result,ss_cache)
 end
 
 function initial_beta!(comps,z)
+    isempty(comps) && throw(ArgumentError("initial_beta! received no phase compositions (comps is empty)"))
     βi = reduce(hcat,comps) \ z
     βmin,imin = findmin(βi)
 
