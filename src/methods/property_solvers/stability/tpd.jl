@@ -133,17 +133,28 @@ function _tpd_fz_and_v!(cache,model,p,T,w,vol0,liquid_overpressure = false,phase
 end
 
 """
-    wl,tpd,wv = tpd_solver(model,p,T,z,w0;phasew = :liquid,break_first = true,tol_trivial = 1e-5)
+    w,tpd,vw = tpd_solver(model,p,T,z,w0,dz = nothing;
+                phasew = :liquid,
+                break_first = true,
+                tol_trivial = 1e-5,
+                tol_equil = 1e-10,
+                it_ss = 30)
 
-given p,T,z,w0, tries to perform a tangent-phase stability criterion with the given an initial input composition.
-It tries both liquid and vapour phase. Returns the resulting compositions `wl` and `wv`.
+Given `p`,`T`,`z`,`w0` and `dz = logϕ(z) .+ log(z)`, tries to perform a tangent-phase stability criterion with the given an initial input composition.
+Returns a Tuple, containing:
+ - molar composition at minimum tangent plane distance
+ - Tangent plane distance at minimum
+ - Vapour molar volume at minimum tangent plane distance `[m³·mol⁻¹]`
+ - 
 """
 function tpd_solver(model,p,T,z,w0,
     dz = nothing,
     cache = tpd_cache(model,p,T,z,w0);
     phasew = :unknown,
     break_first = false,
-    tol_trivial = 1e-5)
+    tol_trivial = 1e-5,
+    tol_equil = 1e-10,
+    it_ss = 30)
 
     w,_,_,dzz,vcache,Hϕ = cache
 
@@ -162,16 +173,16 @@ function tpd_solver(model,p,T,z,w0,
     end
     phase = phasew
     #do initial sucessive substitutions
-    w,tpd,vw,status = tpd_ss!(model,p,T,z,w0,cache;tol_trivial,phase)
+    maxiter = it_ss
+    w,tpd,vw,status = tpd_ss!(model,p,T,z,w0,cache;tol_trivial,tol_equil,maxiter,phase)
     stable,trivial = status
     if trivial
         w .= NaN
         tpd = NaN*tpd
     end
-    #@show trivial
-    #@show stable
+
     keep_going = !trivial && stable
-    #@show keep_going
+
     if !stable
         tpd < 0 && break_first && return w,tpd,vw
     end
@@ -210,6 +221,7 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
     w,_,fz,di,vcache,Hϕ = cache
     fz .= exp.(di) .* p
     w .= w0
+    w ./= sum(w0)
     tpd,S,S_norm,v = TT(Inf),TT(Inf),TT(Inf),TT(NaN)
     while !done
         iter += 1
@@ -223,20 +235,14 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
             S += wi
             
         end
-        dtm = 1 + S*(log(S) - 1)
-        dtmds = log(S) - 1/S
-
         S_norm = abs(S_old - S)
         w ./=  S
         tpd = one(TT)
-        tm = one(TT)
         for i in eachindex(w)
             wi,lnϕwi = w[i],lnϕw[i]
             K_norm += log(wi/z[i])^2
-            tm += wi*(log(wi) + lnϕwi - di[i] - 1)
             tpd += wi*(log(wi) + lnϕwi - di[i] - 1)
         end
-        q = (dtm + tm)/(S*dtmds)
         #@show w,S_norm,q
         # Two convergence criteria:
         # - Approaching trivial solution (K-values are all 1)
@@ -333,10 +339,10 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
         added = add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial)
         verbose && @info """
         $(tpd_print_strategy(strategy))
-               Test composition:    $w_test
-               Final composition:   $(proposed[1])
-               Final tpd:           $(proposed[2])            
-               Added to solution:   $added
+              Test composition:    $w_test
+              Final composition:   $(proposed[1])
+              Final tpd:           $(proposed[2])            
+              Added to solution:   $added
         """
         added && break_first && return result
         is_vapour(phasew) && (lle_yet = lle_yet | any(is_vapour,phase_w))
