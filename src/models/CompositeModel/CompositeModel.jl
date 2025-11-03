@@ -181,18 +181,20 @@ function CompositeModel(components ;
     verbose = false,
     reference_state = nothing)
 
+    components = format_gccomponents(components)
     _components = format_components(components)
+
     #take care of the solid phase first
     if melting == sublimation == nothing
-        init_solid = init_model(solid,_components,solid_userlocations,verbose)
+        init_solid = init_model(solid,components,solid_userlocations,verbose)
     else
-        init_solid_phase = init_model(solid,_components,solid_userlocations,verbose)
-        init_melting = init_model(melting,_components,melting_userlocations,verbose)
-        init_sublimation = init_model(sublimation,_components,sublimation_userlocations,verbose)
+        init_solid_phase = init_model(solid,components,solid_userlocations,verbose)
+        init_melting = init_model(melting,components,melting_userlocations,verbose)
+        init_sublimation = init_model(sublimation,components,sublimation_userlocations,verbose)
         init_solid = SolidCorrelation(_components,init_solid_phase,init_melting,init_sublimation)
     end
 
-    _fluid = init_model(fluid,_components,fluid_userlocations,verbose)
+    _fluid = init_model(fluid,components,fluid_userlocations,verbose)
     if _fluid isa EoSModel && liquid == gas == saturation == nothing
         #case 1: fluid isa EoSModel. no other model is specified
         if !(_fluid isa ActivityModel)
@@ -202,19 +204,19 @@ function CompositeModel(components ;
         end
     elseif fluid == nothing && !isnothing(liquid) && !isnothing(gas) && !isnothing(saturation)
         #case 2: fluid not specified, V,L,sat specified, use FluidCorrelation struct
-        init_gas = init_model(gas,_components,gas_userlocations,verbose)
-        init_liquid = init_model(liquid,_components,liquid_userlocations,verbose)
-        init_sat = init_model(saturation,_components,saturation_userlocations,verbose)
+        init_gas = init_model(gas,components,gas_userlocations,verbose)
+        init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+        init_sat = init_model(saturation,components,saturation_userlocations,verbose)
         init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat,nothing)
     elseif !isnothing(_fluid) && !isnothing(liquid) && (gas == saturation == nothing)
         #case 3: liquid activity and a model for the fluid.
-        init_liquid = init_model_act(liquid,_components,liquid_userlocations,verbose)
+        init_liquid = init_model_act(liquid,components,liquid_userlocations,verbose)
         if init_liquid isa ActivityModel
             #case 3.a, the fluid itself is a composite model. unwrap the fluid field.
             if _fluid isa CompositeModel
-                _fluid = init_puremodel(_fluid.fluid,_components,nothing,verbose)
+                _fluid = init_puremodel(_fluid.fluid,components,nothing,verbose)
             else
-                _fluid = init_puremodel(_fluid,_components,nothing,verbose)
+                _fluid = init_puremodel(_fluid,components,nothing,verbose)
             end
             init_fluid = GammaPhi(_components,init_liquid,_fluid)
         else
@@ -225,12 +227,12 @@ function CompositeModel(components ;
         end
     elseif !isnothing(liquid) && (fluid == gas == saturation == nothing)
     #legacy case, maybe we are constructing an activity that has a puremodel
-    init_liquid = init_model(liquid,_components,liquid_userlocations,verbose)
+    init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
         if init_liquid isa ActivityModel
             if hasfield(typeof(init_liquid),:puremodel)
                 pure = init_liquid.puremodel
             else
-                pure = init_puremodel(BasicIdeal(),_components,userlocations,verbose)
+                pure = init_puremodel(BasicIdeal(),components,userlocations,verbose)
             end
             init_fluid = GammaPhi(_components,init_liquid,pure)
         else
