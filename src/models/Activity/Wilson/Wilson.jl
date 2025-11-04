@@ -103,7 +103,7 @@ function Wilson(components;
     ZRA.values .*= -0.08775
     ZRA.values .+= 0.29056
     
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    _puremodel = init_puremodel(puremodel,formatted_components,pure_userlocations,verbose)
     packagedparams = WilsonParam(g,Tc,pc,ZRA,Mw)
     references = String["10.1021/ja01056a002"]
     model = Wilson(formatted_components,packagedparams,_puremodel,references)

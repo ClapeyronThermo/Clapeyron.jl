@@ -181,7 +181,9 @@ function CompositeModel(components ;
     verbose = false,
     reference_state = nothing)
 
+    components = format_gccomponents(components)
     _components = format_components(components)
+
     #take care of the solid phase first
     if melting == sublimation == nothing
         init_solid = init_model(solid,components,solid_userlocations,verbose)
@@ -212,9 +214,9 @@ function CompositeModel(components ;
         if init_liquid isa ActivityModel
             #case 3.a, the fluid itself is a composite model. unwrap the fluid field.
             if _fluid isa CompositeModel
-                _fluid = init_puremodel(_fluid.fluid,_components,nothing,verbose)
+                _fluid = init_puremodel(_fluid.fluid,components,nothing,verbose)
             else
-                _fluid = init_puremodel(_fluid,_components,nothing,verbose)
+                _fluid = init_puremodel(_fluid,components,nothing,verbose)
             end
             init_fluid = GammaPhi(_components,init_liquid,_fluid)
         else

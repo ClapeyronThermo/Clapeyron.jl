@@ -47,7 +47,8 @@ function PPR78Rule(components;
     activity_userlocations = String[],
     verbose::Bool=false)
     
-    groups = GroupParam(components,["cubic/EPPR78/EPPR78_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
+    _components = format_gccomponents(components)
+    groups = GroupParam(_components,["cubic/EPPR78/EPPR78_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
     params = getparams(groups, ["cubic/EPPR78/EPPR78_unlike.csv"]; userlocations = userlocations, verbose = verbose, ignore_missing_singleparams=["A","B"])
     pkgparams = PPR78Param(params["A"],params["B"])
     references = ["10.1002/aic.12232","10.1016/j.fluid.2022.113456"]
