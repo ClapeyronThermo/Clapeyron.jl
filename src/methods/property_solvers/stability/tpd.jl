@@ -209,7 +209,7 @@ function tpd_optimization(model,p,T,z,w0,di,cache = tpd_cache(model,p,T,z,K0),ph
     lb .= 0
     ub .= Inf
     opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-10,maxiter = 100)
-    res = Solvers.optimize(prob, α0, LineSearch(Solvers.Newton2(α0),Solvers.BoundedLineSearch(lb,ub))), opt_options)
+    res = Solvers.optimize(prob, α0, LineSearch(Solvers.Newton2(α0),Solvers.BoundedLineSearch(lb,ub)), opt_options)
     α = Solvers.x_sol(res)
     w .= α .* α .* 0.25
     w ./= sum(w)
