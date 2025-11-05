@@ -10,7 +10,6 @@ function tpd_obj(model, p, T, di, phase, cache = tpd_cache(model,p,T,di), break_
 
     function f(α)
         w,dtpd,_,_,vcache,Hϕ = cache
-        nc = length(model)
         w .= α .* α .* 0.25
         w ./= sum(w)
         volw0 = vcache[]
@@ -21,7 +20,6 @@ function tpd_obj(model, p, T, di, phase, cache = tpd_cache(model,p,T,di), break_
 
     function g(df,α)
         w,dtpd,_,_,vcache,Hϕ = cache
-        nc = length(model)
         w .= α .* α .* 0.25
         w ./= sum(w)
         lnϕw, volw = lnϕ!(Hϕ, model, p, T, w; phase=phase, vol0=vcache[])
@@ -37,7 +35,6 @@ function tpd_obj(model, p, T, di, phase, cache = tpd_cache(model,p,T,di), break_
 
     function fg(df,α)
         w,dtpd,_,_,vcache,Hϕ = cache
-        nc = length(model)
         w .= α .* α .* 0.25
         w ./= sum(w)
         volw0 = vcache[]
@@ -190,7 +187,7 @@ function tpd_solver(model,p,T,z,w0,
     vcache[] = vw
     
     if keep_going
-        w,tpd,vw = tpd_optimization(model,p,T,z,w0,dzz,cache,phasew)
+        w,tpd,vw = tpd_optimization(model,p,T,z,w,dzz,cache,phasew)
     end
     #success,tpd_v_proposed = assert_correct_volume(fxy,model,p,T,wv,vv,:vapour,di)
     #!success && (tpd_v = tpd_v_proposed)

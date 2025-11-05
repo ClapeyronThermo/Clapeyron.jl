@@ -30,6 +30,8 @@ function PTFlashWrapper(model::EoSModel,p,T::Number,equilibrium::Symbol)
     return PTFlashWrapper(component_list(model),model,sats,ϕpure,g_pure,equilibrium)
 end
 
+gas_model(model::PTFlashWrapper) = gas_model(model.model)
+
 function volume_impl(model::PTFlashWrapper, p, T, z, phase, threaded, vol0)
     volume_impl(model.model, p, T, z, phase, threaded, vol0)
 end
