@@ -314,11 +314,6 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,z,β,vols,pha
     return lnK,volx,voly,gibbs
 end
 
-#do not cache fugacity coefficient calculations if the model is an ideal model
-function ∂lnϕ_cache(model::PTFlashWrapper{GammaPhi{<:Any,<:IdealModel}}, p, T, z, dt::Val{B}) where B
-    return nothing
-end
-
 function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,eq,vols)
     pures = wrapper.model.fluid.pure
     model = wrapper.model
@@ -396,35 +391,235 @@ TPD support.
 
 TODO: support vle in TPD.
 =#
+function tpd_delta_d_vapour!(d,wrapper,p)
+    ϕsat,sat = wrapper.fug,wrapper.sat
+    for i in eachindex(d)
+        ps,vl,vv = sat[i]
+        d[i] = d[i] - vl*(p - ps) - log(ϕsat[i]) - log(ps/p)
+    end
+    return d
+end
+function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cache = tpd_cache(model,p,T,z,di))
 
-function tpd_input_composition(model::GammaPhi,p,T,z,di,lle)
-    γ = activity_coefficient(model.activity,p,T,z)
-    #v = volume(model.fluid.model,p,T,z,phase = :l)
-    v = one(eltype(γ))
-    fz = γ .* p .* z
-    fz,:liquid,v
+    TT = Base.promote_eltype(model,p,T,z)
+
+    pures = wrapper.model.fluid.pure
+    model = wrapper.model
+    fluidmodel = model.fluid.model
+    g_pures = wrapper.μ
+    RT = R̄*T
+
+    d_l,d_v,_,_,_,Hϕ = cache
+
+    TT = Base.promote_eltype(model,p,T,z)
+    
+    n = sum(z)
+    logsumz = log(n)
+    d_v .= log(z) .- logsumz
+    d_l .= log(z) .- logsumz
+
+    d,vl = _tpd_fz_and_v!(wrapper,model,p,T,z,nothing,false,:liquid)
+    d_l .= d
+    d_l .+= log(z) .- logsumz
+
+    lle && return d_l,:liquid,vl
+
+    d,vv = _tpd_fz_and_v!(wrapper,model,p,T,z,nothing,false,:vapour)
+    d_v .= d  
+    d_v .+= log.(z) .- logsumz
+
+    gr_l = dot(z,d_l)
+    gr_v = dot(z,d_v)
+
+    if gr_l < gr_v
+        return d_l,:liquid,vl
+    else
+        return d_v,:vapour,vv
+    end
 end
 
-function _tpd_fz_and_v!(cache,model::GammaPhi,p,T,w,vol0,liquid_overpressure = false,phase = :l,_vol = nothing)
-    γ = activity_coefficient(model.activity,p,T,w)
-    v = one(eltype(γ))
-    γ .= log.(γ)
-    return γ,v,true
-end
-
-function tpd_obj(model::GammaPhi, p, T, di, isliquid, cache = tpd_cache(model,p,T,di,di), break_first = false)
-    # vcache[] = one(eltype(di))
-    function f(α)
-        w = α .* α .* 0.25
-        w ./= sum(w)
+function _tpd_fz_and_v!(cache,wrapper::PTFlashWrapper{<:GammaPhi},p,T,w,vol0,liquid_overpressure = false,phase = :l,_vol = nothing)
+    pures = wrapper.model.fluid.pure
+    model = wrapper.model
+    fluidmodel = model.fluid.model
+    g_pures = wrapper.μ
+    RT = R̄*T
+    
+    if is_liquid(phase)
         γ = activity_coefficient(model.activity,p,T,w)
+        v = one(eltype(γ))
         γ .= log.(γ)
-        lnγw = γ
-        fx = @sum(w[i]*(lnγw[i] + log(w[i]) - di[i])) - sum(w) + 1
+        return γ,v,true
+    else
+        fxy,v = lnϕ!(cache,model,p,T,w;vol)
+        overpressure = false
+        if isnan(v) && liquid_overpressure && is_liquid(phase)
+            overpressure = true
+            #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the
+            #specified conditions. try elevating the pressure at the first iter.
+            fxy,v = lnϕ!(cache,model,1.2p,T,w,phase = phase)
+            
+        end
+        tpd_delta_d_vapour!(fxy,wrapper,p)
+        return fxy,v,overpressure
+    end
+end
+
+function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, dzz, phasew, cache)
+        
+    function f(α)
+        w,dtpd,_,γ,vcache,Hϕ = cache
+        ϕsat,sat = wrapper.fug,wrapper.sat
+        if is_liquid(phasew)
+            w .= α .* α .* 0.25
+            w ./= sum(w)
+            γ .= activity_coefficient(model.activity,p,T,w)
+            dtpd .= log.(w) .+ log.(γ) .- di
+        else
+            nc = length(model)
+            w .= α .* α .* 0.25
+            w ./= sum(w)
+            volw0 = vcache[]
+            lnϕw, volw = lnϕ!(Hϕ, model, p, T, w; phase=phase, vol0=volw0)
+            tpd_delta_d_vapour!(lnϕw,wrapper,p)
+            dtpd .= log.(w) .+ lnϕw .- di
+            vcache[] = volw
+        end
+        fx = dot(w,dtpd) - sum(w) + 1
     end
 
-    obj = Solvers.ADScalarObjective(f,di)
+    function g(df,α)
+        w,dtpd,_,_,vcache,Hϕ = cache
+        nc = length(model)
+        w .= α .* α .* 0.25
+        w ./= sum(w)
+
+        if is_liquid(phasew)
+            w .= α .* α .* 0.25
+            w ./= sum(w)
+            γ .= activity_coefficient(model.activity,p,T,w)
+            dtpd .= log.(w) .+ log.(γ) .- di
+        else
+            nc = length(model)
+            w .= α .* α .* 0.25
+            w ./= sum(w)
+            volw0 = vcache[]
+            lnϕw, volw = lnϕ!(Hϕ, model, p, T, w; phase=phase, vol0=volw0)
+            tpd_delta_d_vapour!(lnϕw,wrapper,p)
+            dtpd .= log.(w) .+ lnϕw .- di
+            vcache[] = volw
+        end
+        df .= dtpd .*  sqrt.(w)
+        return df
+    end
+
+    function fg(df,α)
+        w,dtpd,_,_,vcache,Hϕ = cache
+        nc = length(model)
+        w .= α .* α .* 0.25
+        w ./= sum(w)
+
+        if is_liquid(phasew)
+            w .= α .* α .* 0.25
+            w ./= sum(w)
+            γ .= activity_coefficient(model.activity,p,T,w)
+            dtpd .= log.(w) .+ log.(γ) .- di
+        else
+            nc = length(model)
+            w .= α .* α .* 0.25
+            w ./= sum(w)
+            volw0 = vcache[]
+            lnϕw, volw = lnϕ!(Hϕ, model, p, T, w; phase=phase, vol0=volw0)
+            tpd_delta_d_vapour!(lnϕw,wrapper,p)
+            dtpd .= log.(w) .+ lnϕw .- di
+            vcache[] = volw
+        end
+        df .= dtpd .*  sqrt.(w)
+        fx = dot(w,dtpd) - sum(w) + 1
+        return fx,df
+    end
+
+    #=
+    from thermopack:
+    We see that ln Wi + lnφ(W) − di will be zero at the solution of the tangent plane minimisation.
+    It can therefore be removed from the second derivative, without affecting the convergence properties.
+    =#
+    function fgh(df,d2f,α)
+        w,dtpd,_,_,vcache,Hϕ = cache
+        nc = length(model)
+        w .= α .* α .* 0.25
+        w ./= sum(w)
+        volw0 = vcache[]
+        lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
+        for i in 1:nc
+            xi = sqrt(w[i])
+            for j in 1:nc
+                xj = sqrt(w[j])
+                δij = Int(i == j)
+                d2f[i,j] = δij + xi*xj*∂lnϕ∂nw[i,j]
+            end
+        end
+        dtpd .= log.(w) .+ lnϕw .- di
+        df .= dtpd .*  sqrt.(w)
+        fx = dot(w,dtpd) - sum(w) + 1
+        #if fx < -1e-10 && break_first
+        #    df .= 0
+        #end
+        vcache[] = volw
+        return fx,df,d2f
+    end
+
+    function h(d2f,α)
+        w,dtpd,_,_,vcache,Hϕ = cache
+        nc = length(model)
+        w .= α .* α .* 0.25
+        w ./= sum(w)
+        volw0 = vcache[]
+        lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
+        for i in 1:nc
+            xi = sqrt(w[i])
+            for j in 1:nc
+                xj = sqrt(w[j])
+                δij = Int(i == j)
+                d2f[i,j] = δij + xi*xj*∂lnϕ∂nw[i,j]# + 0.5*αi*dtpd[i]
+            end
+        end
+        vcache[] = volw
+        d2f
+    end
+
+    obj = NLSolvers.ScalarObjective(f=f,g=g,fg=fg,fgh=fgh,h=h)
     optprob = OptimizationProblem(obj = obj,inplace = true)
+
+    obj = Solvers.ADScalarObjective(f,di)
+    prob = OptimizationProblem(obj = obj,inplace = true)
+end
+
+
+
+function tpd_optimization(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,w0,di,cache = tpd_cache(model,p,T,z,K0),phasew = :liquid)
+    if is_liquid(phase)
+        return tpd_optimization_liquid(wrapper.activity,p,T,z,w0,di,cache)
+    else
+        return tpd_optimization_vapour(wrapper,p,T,z,w0,di,cache)
+    end
+end
+
+function tpd_optimization(model::PTFlashWrapper{<:GammaPhi},p,T,z,w0,di,cache = tpd_cache(model,p,T,z,K0),phasew = :liquid)
+    w,_,_,dzz,vcache,Hϕ = cache
+    α0 = 2 .* sqrt.(w0)
+    prob = tpd_obj(model, p, T, dzz, phasew, cache)
+    opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-10,maxiter = 100)
+    lb,ub = similar(α0),similar(α0)
+    lb .= 0
+    ub .= Inf
+    res = Solvers.optimize(prob, α0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub)), opt_options)
+    α = Solvers.x_sol(res)
+    w .= α .* α .* 0.25
+    w ./= sum(w)
+    tpd = Solvers.x_minimum(res)
+    vw = vcache[]
+    return w,tpd,vw
 end
 
 export GammaPhi

@@ -154,14 +154,13 @@ function tpd_solver(model,p,T,z,w0,
     break_first = false,
     tol_trivial = 1e-5,
     tol_equil = 1e-10,
-    it_ss = 30)
+    it_ss = 30,lle = false)
 
     w,_,_,dzz,vcache,Hϕ = cache
 
     if dz == nothing
-        dz_temp,_ = _tpd_fz_and_v!(last(cache),model,p,T,z,nothing,false,:unknown,nothing)
-        logsumz = log(sum(z))
-        dzz .= dz_temp .+ log.(z) .- logsumz 
+        dz_temp,_,_ = tpd_input_composition(model,p,T,z,lle,cache)
+        dzz .= dz_temp
     else
         dzz .= dz
     end
@@ -187,18 +186,11 @@ function tpd_solver(model,p,T,z,w0,
         tpd < 0 && break_first && return w,tpd,vw
     end
 
-    opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-10,maxiter = 100)
-
+    
     vcache[] = vw
+    
     if keep_going
-        α0 = 2 .* sqrt.(w)
-        prob = tpd_obj(model, p, T, dzz, phasew, cache, break_first)
-        res = Solvers.optimize(prob, α0, LineSearch(Newton2(α0)), opt_options)
-        α = Solvers.x_sol(res)
-        w .= α .* α .* 0.25
-        w ./= sum(w)
-        tpd = Solvers.x_minimum(res)
-        vw = vcache[]
+        w,tpd,vw = tpd_optimization(model,p,T,z,w0,dzz,cache,phasew)
     end
     #success,tpd_v_proposed = assert_correct_volume(fxy,model,p,T,wv,vv,:vapour,di)
     #!success && (tpd_v = tpd_v_proposed)
@@ -207,6 +199,23 @@ end
 
 function tpd_ss!(model,p,T,z,w0,cache = tpd_cache(model,p,T,z,K0);phase = :liquid,tol_equil = 1e-10, tol_trivial = 1e-5, maxiter = 30)
     _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
+end
+
+function tpd_optimization(model,p,T,z,w0,di,cache = tpd_cache(model,p,T,z,K0),phasew = :liquid)
+    w,_,_,dzz,vcache,Hϕ = cache
+    α0 = 2 .* sqrt.(w0)
+    prob = tpd_obj(model, p, T, dzz, phasew, cache)
+    lb,ub = similar(α0),similar(α0)
+    lb .= 0
+    ub .= Inf
+    opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-10,maxiter = 100)
+    res = Solvers.optimize(prob, α0, LineSearch(Solvers.Newton2(α0),Solvers.BoundedLineSearch(lb,ub))), opt_options)
+    α = Solvers.x_sol(res)
+    w .= α .* α .* 0.25
+    w ./= sum(w)
+    tpd = Solvers.x_minimum(res)
+    vw = vcache[]
+    return w,tpd,vw
 end
 
 #TPD pure solver.
@@ -282,15 +291,18 @@ If the vectors are empty, then the procedure couldn't find a negative `tpd`. Tha
 function tpd(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing, verbose = false)
     z = n ./ sum(n)
     check_arraysize(model,z)
+
     if !reduced
-        model_reduced,idx_reduced = index_reduction(model,z)
-        zr = z[idx_reduced]
+        model_reduced,idx_reduced = index_reduction(model,n)
     else
-        model_reduced = model
-        idx_reduced = trues(length(model))
-        zr = z
+        model_reduced,idx_reduced = model,fill(true,length(model))
     end
-    result = _tpd(model_reduced,p,T,zr,cache,break_first,lle,tol_trivial,strategy,di,verbose)
+
+    zr = z[idx_reduced]
+    eq = lle ? :lle : :vle
+    model_reduced_cached = __tpflash_cache_model(model_reduced,p,T,z,eq)
+
+    result = _tpd(model_reduced_cached,p,T,zr,cache,break_first,lle,tol_trivial,strategy,di,verbose)
     values,comps,phase_z,phase_w = result
     idx_by_tpd = sortperm(values)
     for i in idx_by_tpd
@@ -304,7 +316,16 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     #step 0: initialize values
     
     cond = (model,p,T,z)
-    dz,phasez,v = tpd_input_composition(model,p,T,z,di,lle,cache)
+
+    if di != nothing
+        WW = Base.promote_eltype(model,p,T,z,di)
+        dz = similar(di,WW)
+        dz .= di
+        phasez = :unknown
+        v = zero(WW)
+    end
+
+    dz,phasez,v = tpd_input_composition(model,p,T,z,lle,cache)
     TT = Base.promote_eltype(model,p,T,z,dz)
     K = similar(z,TT)
     K .= 0
@@ -460,47 +481,40 @@ function tpd_print_strategy(strategy)
     end
 end
 
-function tpd_input_composition(model,p,T,z,di,lle,cache = tpd_cache(model,p,T,z,di)) 
+function tpd_input_composition(model,p,T,z,lle,cache = tpd_cache(model,p,T,z,di)) 
     TT = Base.promote_eltype(model,p,T,z)
-    if di == nothing
-        vl = volume(model,p,T,z,phase = :liquid)
-        vv = volume(model,p,T,z,phase = :vapour)
+    vl = volume(model,p,T,z,phase = :liquid)
+    vv = volume(model,p,T,z,phase = :vapour)
 
-        if lle
-            v = vl
-            if vl ≈ vv
-                isliquidz = is_liquid(VT_identify_phase(model,v,T,z))
-            else
-                isliquidz = true
-                phasez = :liquid
-            end
+    if lle
+        v = vl
+        if vl ≈ vv
+            isliquidz = is_liquid(VT_identify_phase(model,v,T,z))
         else
-            idx,v,_ = volume_label((model,model),p,T,z,(vl,vv))
-            if vl ≈ vv
-                isliquidz = is_liquid(VT_identify_phase(model,v,T,z))
-            elseif idx == 1 #v = vl
-                isliquidz = true
-            elseif idx == 2 #v = vv
-                isliquidz = false
-            else
-                # this should not be reachable. the only case is when v = NaN, in that case
-                #we catch that later.
-                isliquidz = false
-            end
+            isliquidz = true
+            phasez = :liquid
         end
-        phasez = isliquidz ? :liquid : :vapour
-        dz,_ = _tpd_fz_and_v!(last(cache),model,p,T,z,nothing,false,:unknown,v)
-        logn = log(sum(z))
-        dz .+= log.(z)
-        dz .-= logn
-        return copy(dz),phasez,v
     else
-        dz = similar(TT,length(z))
-        dz .= di
-        phasez = :unknown
-        v = zero(eltype(dz))
-        return dz,phasez,v
+        idx,v,_ = volume_label((model,model),p,T,z,(vl,vv))
+        if vl ≈ vv
+            isliquidz = is_liquid(VT_identify_phase(model,v,T,z))
+        elseif idx == 1 #v = vl
+            isliquidz = true
+        elseif idx == 2 #v = vv
+            isliquidz = false
+        else
+            # this should not be reachable. the only case is when v = NaN, in that case
+            #we catch that later.
+            isliquidz = false
+        end
     end
+
+    phasez = isliquidz ? :liquid : :vapour
+    dz,_ = _tpd_fz_and_v!(last(cache),model,p,T,z,nothing,false,:unknown,v)
+    logn = log(sum(z))
+    dz .+= log.(z)
+    dz .-= logn
+    return copy(dz),phasez,v
 end
 
 function z_pure!(K,i)
