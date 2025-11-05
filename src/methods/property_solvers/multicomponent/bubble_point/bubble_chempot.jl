@@ -101,7 +101,7 @@ function Obj_bubble_pressure(model::EoSModel, model_y, F, T, ηl, ηv, x, y, _vi
     v_v = v_from_η(model_y,ηv,T,yy)
     v = (v_l,v_v)
     w = (x,yy)
-    if all(_view)
+    if isnothing(_view) || all(_view)
         return μp_equality2(model, nothing, F, Tspec(T), v, w, _view)
     else
         return μp_equality2(model, model_y, F, Tspec(T), v, w, _view)
@@ -110,7 +110,7 @@ end
 
 #used by LLE_pressure
 function Obj_bubble_pressure(model::EoSModel, F, T, ηl, ηv, x, y)
-    return Obj_bubble_pressure(model, nothing, F, T, ηl, ηv, x, y,nothing, length(model))
+    return Obj_bubble_pressure(model, model, F, T, ηl, ηv, x, y, nothing, length(model))
 end
 
 
@@ -217,7 +217,7 @@ function Obj_bubble_temperature(model::EoSModel, model_y, F, p, T, ηl, ηv, x, 
     vv = v_from_η(model_y, ηv, T, yy)
     v = (vl,vv)
     w = (x,yy)
-    if all(_view)
+    if isnothing(_view) || all(_view)
         return μp_equality2(model, nothing, F, Pspec(p,T), v, w, _view)
     else
         return μp_equality2(model, model_y, F, Pspec(p,T), v, w, _view)
@@ -226,7 +226,7 @@ end
 
 #used by LLE_temperature
 function Obj_bubble_temperature(model::EoSModel, F, p, T, ηl, ηv, x, y)
-    return Obj_bubble_temperature(model,nothing, F, p, T, ηl, ηv, x, y,nothing,length(model))
+    return Obj_bubble_temperature(model,model, F, p, T, ηl, ηv, x, y,nothing,length(model))
 end
 
 export ChemPotBubblePressure, ChemPotBubbleTemperature
