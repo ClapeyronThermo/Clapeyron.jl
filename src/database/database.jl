@@ -701,10 +701,10 @@ function findparamsinnt(components,
 
     for (k,v) in pairs(nt)
         ks = string(k)
-        if k == :groups && parsegroups == :groups
+        if ks == "groups" && parsegroups == :groups
             param = RawParam(ks,nothing,copy(v),nothing,nothing,groupdata,:unknown)
             push!(foundvalues,param)
-        elseif (k == :epsilon_assoc || k == :bondvol) && parsegroups == :off && v === nothing #TODO: what to do here in case of other assoc names?
+        elseif (ks == "epsilon_assoc" || ks == "bondvol") && parsegroups == :off && v === nothing #TODO: what to do here in case of other assoc names?
             notfoundvalues[ks] = assocdata
         elseif v isa AbstractVector && parsegroups == :off
             vv = convert(Vector,v)

@@ -48,6 +48,9 @@ function ESElectrolyte(solvents,ions;
     assoc_options = AssocOptions(),
     verbose = false,
     reference_state = nothing)
+    
+    solvents = format_components(solvents)
+    ions = format_components(ions)
     components = deepcopy(ions)
     prepend!(components,solvents)
 

@@ -69,18 +69,19 @@ function SanchezLacombe(components;
     reference_state = nothing,
     verbose = false)
 
-    params = getparams(components, ["LatticeFluid/SanchezLacombe","properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose)
+    _components = format_components(components)
+    params = getparams(_components, ["LatticeFluid/SanchezLacombe","properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose)
 
     segment = params["segment"]
     unmixed_epsilon = params["epsilon"]
     unmixed_vol = params["vol"]
     Mw = params["Mw"]
-    mixmodel = init_slmixing(mixing,components,params,mixing_userlocations,verbose)
-    ideal = init_model(idealmodel,components,ideal_userlocations,verbose)
+    mixmodel = init_slmixing(mixing,_components,params,mixing_userlocations,verbose)
+    ideal = init_model(idealmodel,_components,ideal_userlocations,verbose)
     premixed_vol,premixed_epsilon = sl_mix(unmixed_vol,unmixed_epsilon,mixmodel)
     packagedparams = SanchezLacombeParam(Mw, segment, premixed_epsilon, premixed_vol)
     references = ["10.1016/S0378-3812(02)00176-0"]
-    model = SanchezLacombe(components,mixmodel,packagedparams,ideal,references)
+    model = SanchezLacombe(_components,mixmodel,packagedparams,ideal,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end

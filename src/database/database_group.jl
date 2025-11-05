@@ -83,16 +83,16 @@ gc_get_intragroup(x::Tuple{Any,Any,Any}) = x[3]
 gc_get_intragroup(x::Pair) = nothing
 
 
-function GroupParam(gccomponents::Union{Vector,Tuple{String,Vector},Pair{String,Vector}},
+function GroupParam(gccomponents::Union{AbstractVector,Tuple{String,Vector},Pair{String,Vector}},
     group_locations=String[];
     group_userlocations = String[],
     verbose::Bool = false,
     grouptype = :unknown)
-    options = ParamOptions(;group_userlocations,verbose)
-    if isa(gccomponents,Vector)
-        return GroupParam(gccomponents,group_locations,options,grouptype)
+    options = ParamOptions(;group_userlocations=String.(group_userlocations),verbose)
+    if isa(gccomponents,AbstractVector)
+        return GroupParam(gccomponents,String.(group_locations),options,grouptype)
     else
-        return GroupParam([gccomponents],group_locations,options,grouptype)
+        return GroupParam([gccomponents],String.(group_locations),options,grouptype)
     end
 end
 
@@ -106,16 +106,18 @@ function GroupParam(gccomponents,
     # gccomponents = ["ethane",
     #                ("hexane", ["CH3" => 2, "CH2" => 4]),
     #                ("octane", ["CH3" => 2, "CH2" => 6])]
-    components = map(gc_get_comp,gccomponents)
-    found_gcpairs = map(gc_get_group,gccomponents)
-    found_intragcpairs = map(gc_get_intragroup,gccomponents)
+
+    _gccomponents = format_gccomponents(gccomponents)
+    components = map(gc_get_comp,_gccomponents)
+    found_gcpairs = map(gc_get_group,_gccomponents)
+    found_intragcpairs = map(gc_get_intragroup,_gccomponents)
     return __GroupParam(components,found_gcpairs,found_intragcpairs,grouplocations,options,grouptype)
 end
 
 function __GroupParam(components,found_gcpairs,found_intragcpairs,grouplocations,options,grouptype)
 
     to_lookup = isnothing.(found_gcpairs)
-    usergrouplocations = options.group_userlocations
+    usergrouplocations = String.(options.group_userlocations)
     componentstolookup = components[to_lookup]
     filepaths = flattenfilepaths(grouplocations,usergrouplocations)
 

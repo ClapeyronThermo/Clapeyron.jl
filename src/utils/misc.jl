@@ -151,7 +151,11 @@ format_component_i(x::Pair) = first(x)
 
 format_gccomponents(str::Tuple) = [str]
 format_gccomponents(str::Pair) = [str]
-format_gccomponents(str) = str
+format_gccomponents(str::String) = [str]
+format_gccomponents(str::AbstractString) = format_components(String(str))
+format_gccomponents(str::Vector{String}) = str
+format_gccomponents(str::AbstractVector) = Array(str)
+# format_gccomponents(str) = map(format_component_i,str)
 
 function mole_to_mass(model, x)
     w = x .* mw(model)
@@ -162,9 +166,6 @@ function mass_to_mole(model, w)
     x = w ./ mw(model)
     return x ./ sum(x)
 end
-format_gccomponents(str::String) = [str]
-format_gccomponents(str::AbstractString) = format_components(String(str))
-format_gccomponents(str::Vector{String}) = str
 
 """
     viewn(x,chunk,i)
