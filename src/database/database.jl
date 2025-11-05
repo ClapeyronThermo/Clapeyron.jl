@@ -706,17 +706,21 @@ function findparamsinnt(components,
             push!(foundvalues,param)
         elseif (k == :epsilon_assoc || k == :bondvol) && parsegroups == :off && v === nothing #TODO: what to do here in case of other assoc names?
             notfoundvalues[ks] = assocdata
-        elseif v isa Vector && parsegroups == :off
-            param = RawParam(ks,nothing,copy(v),nothing,nothing,singledata,:unknown)
+        elseif v isa AbstractVector && parsegroups == :off
+            vv = convert(Vector,v)
+            param = RawParam(ks,nothing,copy(vv),nothing,nothing,singledata,:unknown)
             push!(foundvalues,param)
-        elseif v isa Matrix && parsegroups == :off
-            param = RawParam(ks,nothing,vec(copy(v)),nothing,nothing,pairdata,:unknown)
+        elseif v isa AbstractMatrix && parsegroups == :off
+            vv = vec(convert(Matrix,v))
+            param = RawParam(ks,nothing,copy(vv),nothing,nothing,pairdata,:unknown)
             push!(foundvalues,param)
         elseif v isa Number && parsegroups == :off && length(components) == 1
             param = RawParam(ks,nothing,[v],nothing,nothing,singledata,:unknown)
             push!(foundvalues,param)
-        elseif v isa Dict{Tuple{Tuple{String,String},Tuple{String,String}}}
-            param = RawParam(ks,Vector{NTuple{4,String}}(undef,0),Vector{valtype(v)}(undef,0),String[],String[],assocdata,:unknown)
+        elseif v isa AbstractDict
+            val1 = first(values(v))
+            assoc_values = Vector{typeof(val1)}(undef,0)
+            param = RawParam(ks,Vector{NTuple{4,String}}(undef,0),assoc_values,String[],String[],assocdata,:unknown)
             empty_string = ""
             for (k_dict,v_dict) in pairs(v)
                 sp1,s1 = first(k_dict)
