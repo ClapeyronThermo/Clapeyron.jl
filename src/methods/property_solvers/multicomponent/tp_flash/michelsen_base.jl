@@ -110,6 +110,14 @@ function rr_margin_check(K,z,non_inx = FillArrays.Fill(false,length(K)),non_iny 
     return status,β
 end
 
+function modified_lnϕ(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
+    lnϕz,vz = lnϕ(model, p, T, z, cache; phase, vol0)
+    if isnan(vz)
+        lnϕz,vz = lnϕ(model, p, T, z, cache; phase)
+    end
+    return lnϕz,vz
+end
+
 function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     second_order = !isnothing(H)
     nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
@@ -155,14 +163,14 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
 
         f += dot(∂y,ny)
     else
-        ∂x,volx = lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
+        ∂x,volx = modified_lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
         for i in 1:size(∂x,1)
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
         f += dot(∂x,nx)
-        ∂y,voly = lnϕ(model, p, T, y,lnϕ_cache; phase=phasey, vol0=voly)
+        ∂y,voly = modified_lnϕ(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
         for i in 1:size(∂y,1)
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
@@ -178,8 +186,8 @@ end
 function michelsen_gibbs_feed(model,p,T,z,caches)
     nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
     in_equilibria,non_inx,non_iny = in_eq
-    if all(in_equilibria)
-        ∂z,volz = lnϕ(model, p, T, z, lnϕ_cache)
+    if all(in_equilibria) && has_a_res(model)
+        ∂z,volz = modified_lnϕ(model, p, T, z, lnϕ_cache)
         ∂z .+= log.(z)
         gz = dot(@view(z[in_equilibria]),@view(∂z[in_equilibria]))
     else
@@ -227,10 +235,8 @@ function update_K!(lnK,model,p,T,x,y,z,β,vols,phases,non_inw,dlnϕ_cache = noth
     volx,voly = vols
     phasex,phasey = phases
     non_inx,non_iny = non_inw
-    lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache; phase = phasex, vol0=volx)
-    if isnan(volx)
-        lnϕx, volx = lnϕ(model, p, T, x, dlnϕ_cache, phase = phasex)
-    end
+    lnϕx, volx = modified_lnϕ(model, p, T, x, dlnϕ_cache; phase = phasex, vol0=volx)
+
     lnK .= lnϕx
     gibbs = zero(eltype(lnK))
     if β !== nothing
@@ -243,10 +249,7 @@ function update_K!(lnK,model,p,T,x,y,z,β,vols,phases,non_inw,dlnϕ_cache = noth
         gibbs = gibbs/gibbs
     end
 
-    lnϕy, voly = lnϕ(model, p, T, y, dlnϕ_cache; phase = phasey, vol0=voly)
-    if isnan(voly)
-        lnϕy, voly = lnϕ(model, p, T, y, dlnϕ_cache, phase = phasey)
-    end
+    lnϕy, voly = modified_lnϕ(model, p, T, y, dlnϕ_cache; phase = phasey, vol0=voly)
     lnK .-= lnϕy
     if β !== nothing
         for i in eachindex(y)
@@ -257,6 +260,7 @@ function update_K!(lnK,model,p,T,x,y,z,β,vols,phases,non_inw,dlnϕ_cache = noth
     else
         gibbs = gibbs/gibbs
     end
+
     return lnK,volx,voly,gibbs
 end
 

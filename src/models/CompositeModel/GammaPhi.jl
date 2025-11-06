@@ -54,12 +54,15 @@ saturation_model(model::GammaPhi) = saturation_model(model.fluid)
 idealmodel(model::GammaPhi) = idealmodel(model.fluid.model)
 
 function init_preferred_method(method::typeof(tp_flash),model::GammaPhi,kwargs)
-    RRTPFlash(;kwargs...)
+    second_order = get(kwargs,:second_order,false)
+    second_order && throw(error("γ-ϕ Composite Models don't support second order solvers."))    
+    
+    MichelsenTPFlash(;kwargs...)
 end
 
 # Error handling for Activity models that don't provide saturation properties, in the context of VLE.
 function ActivitySaturationError(model,method)
-    throw(ArgumentError("$method requires $model to be used in conjuction with another EoS model that supports saturation properties. If you are using an Activity Model as a raw input, use `CompositeModel(components, liquid = activity_model, fluid = fluid_model)` instead."))
+    throw(ArgumentError("$method requires $model to be used along with another EoS model that supports saturation properties. If you are using an Activity Model as a raw input, use `CompositeModel(components, liquid = activity_model, fluid = fluid_model)` instead."))
 end
 
 struct ActivityEval{γ} <: IdealModel
@@ -248,70 +251,28 @@ end
 
 __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
-function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,z,β,vols,phases,non_inw,cache = nothing)
-    volx,voly = vols
-    phasex,phasey = phases
-    non_inx,non_iny = non_inw
-    model = wrapper.model
-    fluidmodel = model.fluid.model
-    sats = wrapper.sat
-    g_pures = wrapper.μ
-    n = length(model)
-    #crits = wrapper.crit
-    fug = wrapper.fug
-    RT = R̄*T
-    γx = activity_coefficient(model, p, T, x)
-    volx = volume(fluidmodel, p, T, x, phase = phasex, vol0 = volx)
-    _0 = zero(eltype(lnK))
-    is_ideal = fluidmodel isa IdealModel
-    if β === nothing
-        _0 = zero(eltype(lnK))
-        gibbs = _0/_0
-    else
-        gibbs = _0
-        for i in eachindex(x)
-            if !non_inx[i]
-                g_E_x = x[i]*RT*log(γx[i])
-                g_ideal_x = x[i]*RT*log(x[i])
-                g_pure_x = x[i]*g_pures[i]
-                gibbs += (g_E_x + g_ideal_x + g_pure_x)*(1-β)/RT
-            end
-        end
-    end
-
-    if is_vapour(phasey)
-        lnϕy, voly = lnϕ(gas_model(fluidmodel), p, T, y, cache; phase=phasey, vol0=voly)
-        for i in eachindex(lnK)
-            if non_inx[i]
-                lnK[i] = Inf
-            elseif non_iny[i]
-                lnK[i] = -Inf
-            else
-                ϕli = fug[i]
-                p_i = sats[i][1]
-                lnKi = log(γx[i]*p_i*ϕli/p) - lnϕy[i]
-                !is_ideal && (lnKi += volx*(p - p_i)/RT) #add poynting corrections only if the fluid model itself has non-ideal corrections
-                lnK[i] = lnKi
-            end
-            !non_iny[i] && β !== nothing && (gibbs += β*y[i]*(log(y[i]) + lnϕy[i]))
+function modified_lnϕ(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, z, cache; phase = :unknown, vol0 = nothing)
+    if is_vapour(phase) || is_liquid(phase)
+        lnϕz,vz = tpd_lnϕ_and_v!(cache,wrapper,p,T,z,vol0,false,phase,nothing)
+    elseif is_unknown(phase)
+        lnϕz1,vzl = tpd_lnϕ_and_v!(cache,wrapper,p,T,z,vol0,false,:liquid,nothing)
+        lnϕzl = copy(lnϕz1)
+        logsumz = log(sum(z))
+        minz = -1e100*one(eltype(z))
+        lnϕz1 .+ log.(z) .- logsumz
+        gl =  @sum(lnϕz1[i]*max(z[i],minz))
+        lnϕz2,vzv = tpd_lnϕ_and_v!(cache,wrapper,p,T,z,vol0,false,:vapour,nothing)
+        lnϕzv = copy(lnϕz2)
+        lnϕz2 .+ log.(z) .- logsumz
+        gv = @sum(lnϕz2[i]*max(z[i],minz))
+        if gv < gl
+            return lnϕzv,vzv
+        else
+            return lnϕzl,vzl
         end
     else
-        γy = activity_coefficient(model, p, T, y)
-        lnK .= log.(γx ./ γy)
-        voly = volume(fluidmodel, p, T, y, phase = phasey, vol0 = voly)
-        if β !== nothing
-            for i in eachindex(y)
-                if !non_inx[i]
-                    g_E_y = y[i]*RT*log(γy[i])
-                    g_ideal_y = y[i]*RT*(log(y[i]))
-                    g_pure_y = y[i]*g_pures[i]
-                    gibbs += (g_E_y + g_ideal_y + g_pure_y)*β/RT
-                end
-            end
-        end
+        throw(error("invalid phase specification, got $phase"))
     end
-
-    return lnK,volx,voly,gibbs
 end
 
 function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,eq,vols)
@@ -345,13 +306,6 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,
     #(gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
 end
 
-#TODO: derive expressions for this
-
-function dgibbs_obj!(model::PTFlashWrapper{<:GammaPhi}, p, T, z, phasex, phasey,
-    nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
-    F=nothing, G=nothing, H=nothing)
-    throw(error("γ-ϕ Composite Model don't support gibbs energy optimization in MichelsenTPFlash."))
-end
 
 function K0_lle_init(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z)
     return K0_lle_init(wrapper.model.activity,p,T,z)
@@ -418,13 +372,13 @@ function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cac
 
     n = sum(z)
     logsumz = log(n)
-    d,vl = _tpd_fz_and_v!(last(cache),wrapper,p,T,z,nothing,false,:liquid)
+    d,vl = tpd_lnϕ_and_v!(last(cache),wrapper,p,T,z,nothing,false,:liquid)
     d_l .= d
     d_l .+= log.(z) .- logsumz
 
     lle && return copy(d_l),:liquid,vl
 
-    d,vv = _tpd_fz_and_v!(last(cache),wrapper,p,T,z,nothing,false,:vapour)
+    d,vv = tpd_lnϕ_and_v!(last(cache),wrapper,p,T,z,nothing,false,:vapour)
     d_v .= d
     d_v .+= log.(z) .- logsumz
     gr_l = dot(z,d_l)
@@ -436,7 +390,7 @@ function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cac
     end
 end
 
-function _tpd_fz_and_v!(cache,wrapper::PTFlashWrapper{<:GammaPhi},p,T,w,vol0,liquid_overpressure = false,phase = :l,_vol = nothing)
+function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper{<:GammaPhi},p,T,w,vol0,liquid_overpressure = false,phase = :l,_vol = nothing)
     pures = wrapper.model.fluid.pure
     model = wrapper.model
     fluidmodel = model.fluid.model
@@ -452,7 +406,7 @@ function _tpd_fz_and_v!(cache,wrapper::PTFlashWrapper{<:GammaPhi},p,T,w,vol0,liq
         if _vol != nothing
             vol = _vol
         else
-            vol = volume(gas_model(wrapper),p,T,w,phase = :vapour)
+            vol = volume(gas_model(wrapper),p,T,w,phase = :vapour,vol0 = vol0)
         end
         fxy,v = lnϕ!(cache,gas_model(wrapper),p,T,w;vol)
         overpressure = false
@@ -461,21 +415,25 @@ function _tpd_fz_and_v!(cache,wrapper::PTFlashWrapper{<:GammaPhi},p,T,w,vol0,liq
             #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the
             #specified conditions. try elevating the pressure at the first iter.
             fxy,v = lnϕ!(cache,gas_model(wrapper),1.2p,T,w,phase = phase)
+        elseif isnan(v) && !isnan(vol0) && isnothing(vol) #innacurate initial volume
+            fxy,v = lnϕ!(cache,gas_model(wrapper),p,T,w,phase = phase)
+        elseif isnan(vol) #inaccurate final volume
+            fxy,v = lnϕ!(cache,gas_model(wrapper),p,T,w,phase = phase)
         end
+
         tpd_delta_d_vapour!(fxy,wrapper,p,T)
         return fxy,v,overpressure
     end
 end
 
 function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
-
     function f(α)
         w,dtpd,_,_,vcache,Hϕ = cache
         ϕsat,sat = wrapper.fug,wrapper.sat
         w .= α .* α .* 0.25
         w ./= sum(w)
         if is_liquid(phasew)
-            logγ,_ = _tpd_fz_and_v!(last(cache),wrapper,p,T,w,nothing,false,:liquid)
+            logγ,_ = tpd_lnϕ_and_v!(last(cache),wrapper,p,T,w,nothing,false,:liquid)
             dtpd .= log.(w) .+ logγ .- di
         else
             volw0 = vcache[]
@@ -493,7 +451,7 @@ function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
         w ./= sum(w)
         #@show w
         if is_liquid(phasew)
-            logγ,_ = _tpd_fz_and_v!(last(cache),wrapper,p,T,w,nothing,false,:liquid)
+            logγ,_ = tpd_lnϕ_and_v!(last(cache),wrapper,p,T,w,nothing,false,:liquid)
             dtpd .= log.(w) .+ logγ .- di
         else
             volw0 = vcache[]
@@ -511,7 +469,7 @@ function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
         w .= α .* α .* 0.25
         w ./= sum(w)
         if is_liquid(phasew)
-            logγ,_ = _tpd_fz_and_v!(last(cache),wrapper,p,T,w,nothing,false,:liquid)
+            logγ,_ = tpd_lnϕ_and_v!(last(cache),wrapper,p,T,w,nothing,false,:liquid)
             dtpd .= log.(w) .+ logγ .- di
         else
             volw0 = vcache[]
@@ -586,6 +544,7 @@ function tpd_optimization(model::PTFlashWrapper{<:GammaPhi},p,T,z,w0,di,cache = 
     lb,ub = similar(α0),similar(α0)
     lb .= 0
     ub .= Inf
+    #TODO: implement second order derivatives
     res = Solvers.optimize(prob, α0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub)), opt_options)
     α = Solvers.x_sol(res)
     w .= α .* α .* 0.25

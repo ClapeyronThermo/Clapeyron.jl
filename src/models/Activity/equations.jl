@@ -199,7 +199,9 @@ function init_preferred_method(method::typeof(dew_temperature),model::ActivityMo
 end
 
 function init_preferred_method(method::typeof(tp_flash),model::ActivityModel,kwargs)
-    return RRTPFlash(;kwargs...)
+    second_order = get(kwargs,:second_order,false)
+    second_order && throw(error("activity models don't support second order solvers."))    
+    return MichelsenTPFlash(;kwargs...)
 end
 
 function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)

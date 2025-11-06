@@ -233,7 +233,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             Kmin,Kmax = K_extrema(K,non_inx,non_iny)
             if Kmin > 1 || Kmax < 1
                 verbose && @info "VLE correlation failed, trying LLE initial point."
-                K = K0_lle_init(model,p,T,z)
+                K .= K0_lle_init(model,p,T,z)
+                lnK .= log.(K)
+                phasey = :liquid
+                phases = (:liquid,:liquid)
             end
         end
         lnK .= log.(K)
@@ -242,6 +245,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         verbose && @info "K0 calculated via LLE initial point (tpd)"
         K .= K0_lle_init(model,p,T,z)
         lnK .= log.(K)
+        phasey = :liquid
+        phases = (:liquid,:liquid)
     end
     verbose && @info "K0 = $K"
     # Initial guess for phase split
