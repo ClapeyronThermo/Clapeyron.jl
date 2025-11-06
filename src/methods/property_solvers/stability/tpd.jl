@@ -117,7 +117,7 @@ function _tpd_fz_and_v!(cache,model,p,T,w,vol0,liquid_overpressure = false,phase
     else
         vol = _vol*one(Base.promote_eltype(model,p,T,w))
     end
-    
+
     fxy,v = lnϕ!(cache,model,p,T,w;vol)
     overpressure = false
     if isnan(v) && liquid_overpressure && is_liquid(phase)
@@ -142,7 +142,7 @@ Returns a Tuple, containing:
  - molar composition at minimum tangent plane distance
  - Tangent plane distance at minimum
  - Vapour molar volume at minimum tangent plane distance `[m³·mol⁻¹]`
- - 
+ -
 """
 function tpd_solver(model,p,T,z,w0,
     dz = nothing,
@@ -183,9 +183,9 @@ function tpd_solver(model,p,T,z,w0,
         tpd < 0 && break_first && return w,tpd,vw
     end
 
-    
+
     vcache[] = vw
-    
+
     if keep_going
         w,tpd,vw = tpd_optimization(model,p,T,z,w,dzz,cache,phasew)
     end
@@ -217,6 +217,7 @@ end
 
 #TPD pure solver.
 function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
+
     TT = Base.promote_eltype(model,p,T,z,w0)
     #is this a trivial solution?
     trivial = false
@@ -239,7 +240,7 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
             wi = exp(di[i]-lnϕw[i])
             w[i] = wi
             S += wi
-            
+
         end
         S_norm = abs(S_old - S)
         w ./=  S
@@ -311,7 +312,7 @@ end
 
 function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing,verbose = false)
     #step 0: initialize values
-    
+
     cond = (model,p,T,z)
 
     if di != nothing
@@ -323,6 +324,7 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     end
 
     dz,phasez,v = tpd_input_composition(model,p,T,z,lle,cache)
+
     TT = Base.promote_eltype(model,p,T,z,dz)
     K = similar(z,TT)
     K .= 0
@@ -359,7 +361,7 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
         $(tpd_print_strategy(strategy))
               Test composition:    $w_test
               Final composition:   $(proposed[1])
-              Final tpd:           $(proposed[2])            
+              Final tpd:           $(proposed[2])
               Added to solution:   $added
         """
         added && break_first && return result
@@ -371,7 +373,7 @@ end
 
 function tpd_plan(z,is_liquidz,lle,id_test,K_test,pure_test)
     plan = Tuple{Symbol,Symbol,Int}[]
-    
+
     if is_liquidz && id_test && !lle
         push!(plan,(:ideal_gas,:vapour,0))
     end
@@ -414,7 +416,7 @@ function tpd_test_composition!(strategy,conds,w_test,K,dz,verbose)
     skip = false
     skip_k = all(==(-1),K)
 
-    is_k_plan = (plan == :K || plan == :invK) 
+    is_k_plan = (plan == :K || plan == :invK)
     if skip_k && is_k_plan
         skip = true
     end
@@ -424,10 +426,10 @@ function tpd_test_composition!(strategy,conds,w_test,K,dz,verbose)
         w_test ./= sum(w_test)
     elseif plan == :pure
         z_pure!(w_test,ix)
-    
+
     elseif is_k_plan && !skip_k
         if all(iszero,K)
-            K .= tp_flash_K0(model,p,T,z) 
+            K .= tp_flash_K0(model,p,T,z)
         end
 
         all(>(0),K) && verbose && @info "trying K-values:      $K"
@@ -470,7 +472,7 @@ function tpd_print_strategy(strategy)
         else
             res = "Strategy: (K-values)^$(ix), test phase: $phase"
         end
-        
+
     elseif plan == :pure
         res = "Strategy: pure initial point, test phase: $phase"
     else
@@ -478,7 +480,7 @@ function tpd_print_strategy(strategy)
     end
 end
 
-function tpd_input_composition(model,p,T,z,lle,cache = tpd_cache(model,p,T,z,di)) 
+function tpd_input_composition(model,p,T,z,lle,cache = tpd_cache(model,p,T,z,di))
     TT = Base.promote_eltype(model,p,T,z)
     vl = volume(model,p,T,z,phase = :liquid)
     vv = volume(model,p,T,z,phase = :vapour)
@@ -667,7 +669,7 @@ function double_tangency_points(model,p,T,z)
         zij[1] = z[ij1]
         zij[2] = z[ij2]
         zij ./= sum(zij)
-        
+
         compsij,_,phasezij,phasewij = tpd(modelij,p,T,zij,cache,strategy = :pure,break_first = true)
         if length(compsij) != 0
             append!(comps,compsij)

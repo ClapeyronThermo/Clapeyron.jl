@@ -414,28 +414,25 @@ function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cac
     d_l,d_v,_,_,_,Hϕ = cache
 
     TT = Base.promote_eltype(model,p,T,z)
-    
+
     n = sum(z)
     logsumz = log(n)
-
     d,vl = _tpd_fz_and_v!(last(cache),wrapper,p,T,z,nothing,false,:liquid)
-    @show d
     d_l .= d
     d_l .+= log.(z) .- logsumz
 
-    lle && return d_l,:liquid,vl
+    lle && return copy(d_l),:liquid,vl
 
     d,vv = _tpd_fz_and_v!(last(cache),wrapper,p,T,z,nothing,false,:vapour)
-    @show d
-    d_v .= d  
+    d_v .= d
     d_v .+= log.(z) .- logsumz
 
     gr_l = dot(z,d_l)
     gr_v = dot(z,d_v)
-    if gr_l < gr_v
-        return d_l,:liquid,vl
+    if gr_l >= gr_v
+        return copy(d_l),:liquid,vl
     else
-        return d_v,:vapour,vv
+        return copy(d_v),:vapour,vv
     end
 end
 
@@ -445,7 +442,7 @@ function _tpd_fz_and_v!(cache,wrapper::PTFlashWrapper{<:GammaPhi},p,T,w,vol0,liq
     fluidmodel = model.fluid.model
     g_pures = wrapper.μ
     RT = R̄*T
-    
+
     if is_liquid(phase)
         γ = activity_coefficient(model.activity,p,T,w)
         v = one(eltype(γ))
@@ -471,7 +468,7 @@ function _tpd_fz_and_v!(cache,wrapper::PTFlashWrapper{<:GammaPhi},p,T,w,vol0,liq
 end
 
 function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
-        
+
     function f(α)
         w,dtpd,_,_,vcache,Hϕ = cache
         ϕsat,sat = wrapper.fug,wrapper.sat
@@ -482,7 +479,7 @@ function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
             dtpd .= log.(w) .+ logγ .- di
         else
             volw0 = vcache[]
-            lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phase, vol0=volw0)
+            lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phasew, vol0=volw0)
             tpd_delta_d_vapour!(lnϕw,wrapper,p)
             dtpd .= log.(w) .+ lnϕw .- di
             vcache[] = volw
@@ -500,7 +497,7 @@ function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
             dtpd .= log.(w) .+ logγ .- di
         else
             volw0 = vcache[]
-            lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phase, vol0=volw0)
+            lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phasew, vol0=volw0)
             tpd_delta_d_vapour!(lnϕw,wrapper,p)
             dtpd .= log.(w) .+ lnϕw .- di
             vcache[] = volw
@@ -518,7 +515,7 @@ function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
             dtpd .= log.(w) .+ logγ .- di
         else
             volw0 = vcache[]
-            lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phase, vol0=volw0)
+            lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phasew, vol0=volw0)
             tpd_delta_d_vapour!(lnϕw,wrapper,p)
             dtpd .= log.(w) .+ lnϕw .- di
             vcache[] = volw
@@ -532,7 +529,7 @@ function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
     from thermopack:
     We see that ln Wi + lnφ(W) − di will be zero at the solution of the tangent plane minimisation.
     It can therefore be removed from the second derivative, without affecting the convergence properties.
-    
+
     function fgh(df,d2f,α)
         w,dtpd,_,_,vcache,Hϕ = cache
         nc = length(model)
@@ -589,9 +586,7 @@ function tpd_optimization(model::PTFlashWrapper{<:GammaPhi},p,T,z,w0,di,cache = 
     lb,ub = similar(α0),similar(α0)
     lb .= 0
     ub .= Inf
-    @show w0
     res = Solvers.optimize(prob, α0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub)), opt_options)
-    display(res)
     α = Solvers.x_sol(res)
     w .= α .* α .* 0.25
     w ./= sum(w)
