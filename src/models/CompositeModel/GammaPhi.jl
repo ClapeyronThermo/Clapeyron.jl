@@ -391,12 +391,13 @@ TPD support.
 
 TODO: support vle in TPD.
 =#
-function tpd_delta_d_vapour!(d,wrapper,p)
+function tpd_delta_d_vapour!(d,wrapper,p,T)
     gas_model(wrapper) isa IdealModel && return d
     ϕsat,sat = wrapper.fug,wrapper.sat
+    RT = R̄*T
     for i in eachindex(d)
         ps,vl,vv = sat[i]
-        d[i] = d[i] - vl*(p - ps) - log(ϕsat[i]) - log(ps/p)
+        d[i] = d[i] - vl*(p - ps)/RT - log(ϕsat[i]) - log(ps/p)
     end
     return d
 end
@@ -426,10 +427,9 @@ function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cac
     d,vv = _tpd_fz_and_v!(last(cache),wrapper,p,T,z,nothing,false,:vapour)
     d_v .= d
     d_v .+= log.(z) .- logsumz
-
     gr_l = dot(z,d_l)
     gr_v = dot(z,d_v)
-    if gr_l >= gr_v
+    if gr_l < gr_v
         return copy(d_l),:liquid,vl
     else
         return copy(d_v),:vapour,vv
@@ -462,7 +462,7 @@ function _tpd_fz_and_v!(cache,wrapper::PTFlashWrapper{<:GammaPhi},p,T,w,vol0,liq
             #specified conditions. try elevating the pressure at the first iter.
             fxy,v = lnϕ!(cache,gas_model(wrapper),1.2p,T,w,phase = phase)
         end
-        tpd_delta_d_vapour!(fxy,wrapper,p)
+        tpd_delta_d_vapour!(fxy,wrapper,p,T)
         return fxy,v,overpressure
     end
 end
@@ -480,7 +480,7 @@ function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
         else
             volw0 = vcache[]
             lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phasew, vol0=volw0)
-            tpd_delta_d_vapour!(lnϕw,wrapper,p)
+            tpd_delta_d_vapour!(lnϕw,wrapper,p,T)
             dtpd .= log.(w) .+ lnϕw .- di
             vcache[] = volw
         end
@@ -498,7 +498,7 @@ function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
         else
             volw0 = vcache[]
             lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phasew, vol0=volw0)
-            tpd_delta_d_vapour!(lnϕw,wrapper,p)
+            tpd_delta_d_vapour!(lnϕw,wrapper,p,T)
             dtpd .= log.(w) .+ lnϕw .- di
             vcache[] = volw
         end
@@ -516,7 +516,7 @@ function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
         else
             volw0 = vcache[]
             lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phasew, vol0=volw0)
-            tpd_delta_d_vapour!(lnϕw,wrapper,p)
+            tpd_delta_d_vapour!(lnϕw,wrapper,p,T)
             dtpd .= log.(w) .+ lnϕw .- di
             vcache[] = volw
         end
