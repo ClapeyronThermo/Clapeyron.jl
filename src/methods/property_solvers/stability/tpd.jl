@@ -106,12 +106,12 @@ struct TPDKSolver end
 struct TPDPureSolver end
 
 function _tpd_sum!(cache,model,p,T,w,di,v)
-    lnϕw,_ = _tpd_fz_and_v!(cache,model,p,T,w,nothing,false,:unknown,v)
+    lnϕw,_ = tpd_lnϕ_and_v!(cache,model,p,T,w,nothing,false,:unknown,v)
     tpd = @sum(w[i]*(lnϕw[i] + log(w[i]) - di[i])) - sum(w) + 1
     return tpd
 end
 
-function _tpd_fz_and_v!(cache,model,p,T,w,vol0,liquid_overpressure = false,phase = :liquid,_vol = nothing)
+function tpd_lnϕ_and_v!(cache,model,p,T,w,vol0,liquid_overpressure = false,phase = :liquid,_vol = nothing)
     if _vol === nothing
         vol = volume(model,p,T,w;phase,vol0)
     else
@@ -232,7 +232,7 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
     tpd,S,S_norm,v = TT(Inf),TT(Inf),TT(Inf),TT(NaN)
     while !done
         iter += 1
-        lnϕw,v,liquid_overpressure = _tpd_fz_and_v!(Hϕ,model,p,T,w,v,liquid_overpressure,phase)
+        lnϕw,v,liquid_overpressure = tpd_lnϕ_and_v!(Hϕ,model,p,T,w,v,liquid_overpressure,phase)
         S_old = S
         S = zero(TT)
         K_norm,tm,dtm = one(TT),zero(TT),zero(TT)
@@ -405,9 +405,7 @@ function tpd_plan(z,is_liquidz,lle,id_test,K_test,pure_test)
             end
         end
     end
-    #display(plan)
     return plan
-
 end
 
 function tpd_test_composition!(strategy,conds,w_test,K,dz,verbose)
@@ -426,7 +424,8 @@ function tpd_test_composition!(strategy,conds,w_test,K,dz,verbose)
         w_test ./= sum(w_test)
     elseif plan == :pure
         z_pure!(w_test,ix)
-
+    elseif plan == :pure_electrolyte
+        z_pure_electrolyte!(model,w_test,z,ix)
     elseif is_k_plan && !skip_k
         if all(iszero,K)
             K .= tp_flash_K0(model,p,T,z)
@@ -475,6 +474,8 @@ function tpd_print_strategy(strategy)
 
     elseif plan == :pure
         res = "Strategy: pure initial point, test phase: $phase"
+    elseif plan == :pure_electrolyte
+        res = "Strategy: pure solvent with electrolytes"
     else
         res = ""
     end
@@ -509,7 +510,7 @@ function tpd_input_composition(model,p,T,z,lle,cache = tpd_cache(model,p,T,z,di)
     end
 
     phasez = isliquidz ? :liquid : :vapour
-    dz,_ = _tpd_fz_and_v!(last(cache),model,p,T,z,nothing,false,:unknown,v)
+    dz,_ = tpd_lnϕ_and_v!(last(cache),model,p,T,z,nothing,false,:unknown,v)
     logn = log(sum(z))
     dz .+= log.(z)
     dz .-= logn
@@ -520,6 +521,18 @@ function z_pure!(K,i)
     K .= 0
     K[i] = 1
     K
+end
+
+function z_pure_electrolyte!(model,w_test,z,ix)
+    Z = model.charge
+    w_test .= 0
+    for i in 1:length(model)
+        if Z[i] != 0
+            w_test[i] = z[i]
+        end
+    end
+    w_test[ix] = z[ix]
+    w_test ./= sum(w_test)
 end
 
 function z_norm(z,w)
