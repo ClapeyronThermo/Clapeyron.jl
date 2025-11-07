@@ -259,7 +259,6 @@ include("models/ECS/variants/SPUNG.jl")
 include("models/PeTS/PeTS.jl")
 
 #electrolytes
-include("models/Electrolytes/equations.jl")
 include("models/Electrolytes/base.jl")
 include("models/Electrolytes/RSP/ConstRSP.jl")
 include("models/Electrolytes/RSP/ZuoFurst.jl")
