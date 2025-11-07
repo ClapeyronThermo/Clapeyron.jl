@@ -179,6 +179,23 @@ function viewn(x,chunk,i)
     @view x[((i - 1)*chunk+1):(i*chunk)]
 end
 
+"""
+    copy_without_pivot!(dst, src, pivot)
+
+Copy all elements from `src` into `dst` except the one at index `pivot`.
+`dst` must have length `length(src) - 1`.
+"""
+@inline function copy_without_pivot!(dst, src, pivot)
+    k = 1
+    @inbounds @simd for i in eachindex(src)
+        if i != pivot
+            dst[k] = src[i]
+            k += 1
+        end
+    end
+    return dst
+end
+
 viewlast(x,i) = @view(x[(end - i + 1):end])
 viewfirst(x,i) = @view(x[begin:i])
 viewlast(x,i,n) = viewfirst(viewlast(x,i),n)

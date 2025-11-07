@@ -66,18 +66,6 @@ function ChemPotDewPressure(;vol0 = nothing,
     end
 end
 
-@inline function copy_without_pivot!(dst, src, pivot)
-    # @assert length(dst)  == length(src) - 1
-    k = 1
-    @inbounds @simd for i in eachindex(src)
-        if i != pivot
-            dst[k] = src[i]
-            k += 1
-        end
-    end
-    return dst
-end
-
 function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
     is_non_condensable = !isnothing(method.noncondensables)
     condensables = comps_in_equilibria(component_list(model),method.noncondensables)
