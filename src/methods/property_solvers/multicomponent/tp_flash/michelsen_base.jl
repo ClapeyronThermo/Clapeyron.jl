@@ -267,7 +267,7 @@ end
 #updates x,y after a sucessful rachford rice procedure
 function update_rr!(K,β,z,x,y,
                     non_inx=FillArrays.Fill(false,length(z)),
-                    non_iny=FillArrays.Fill(false,length(z)))
+                    non_iny=FillArrays.Fill(false,length(z)),normalize = true)
 
     x = rr_flash_liquid!(x,K,z,β)
     y .= x .* K
@@ -283,8 +283,10 @@ function update_rr!(K,β,z,x,y,
             y[i] = z[i] / β
         end
     end
-    x ./= sum(x)
-    y ./= sum(y)
+    if normalize
+        x ./= sum(x)
+        y ./= sum(y)
+    end
     return x,y
 end
 

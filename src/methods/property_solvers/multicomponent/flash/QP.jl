@@ -162,4 +162,6 @@ function dew_temperature_impl(model::EoSModel,p,z,method::GeneralizedXYFlash)
     return temperature(result),vl,vv,x
 end
 
+include("../tp_flash/RRQXFlash.jl")
+
 export qp_flash
