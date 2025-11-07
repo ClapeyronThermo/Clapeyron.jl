@@ -84,7 +84,7 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
         (F,z) -> Obj_dew_pressure(model, model_x, F, T, z[1], z[2], @view(z[3:end]), y, condensables, idx_max)
     end
     r = Solvers.nlsolve(f!, v0,
-            LineSearch(Newton2(v0), NLSolvers.Static(1.0)),
+            LineSearch(Newton2(v0)),
             NLSolvers.NEqOptions(method),
             ForwardDiff.Chunk{min(length(v0), 8)}()
         )
@@ -203,7 +203,7 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
         (F,z) -> Obj_dew_temperature(model, model_x, F, p, z[1], z[2], z[3], @view(z[4:end]), y, condensables, idx_max)
     end
     r = Solvers.nlsolve(f!, v0,
-            LineSearch(Newton2(v0), NLSolvers.Static(1.0)),
+            LineSearch(Newton2(v0)),
             NLSolvers.NEqOptions(method),
             ForwardDiff.Chunk{min(length(v0), 8)}()
         )
