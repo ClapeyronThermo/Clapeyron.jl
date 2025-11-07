@@ -279,18 +279,18 @@ A few things to note:
     One easy way to check if a phase split occurs is to use the `Clapeyron.isstable(model, p, T, z)` function.
     If this function returns `false`, then we know the system is unstable as a single phase and must phase split:
 
-        ```julia
-            julia> Clapeyron.isstable(model, 1e5, 298.15, [0.5,0.5])
-            false
-        ```
+    ```julia
+        julia> Clapeyron.isstable(model, 1e5, 298.15, [0.5 0.5])
+        false
+    ```
     
 
 2.  Although we have a more-detailed tutorial going over flash algorithms, one way to quickly speed up the calculations is to specify an initial guess for the partition coefficient of each species. 
     So long as the magnitude of each coefficient is large enough, the flash algorithm should work:
 
-        ```julia
-         julia> tp_flash(model,1e5,288.15,[0.5,0.5],MichelsenTPFlash(equilibrium=:lle,K0=[1e5,1e-4]));
-        ```
+    ```julia
+        julia> tp_flash(model,1e5,288.15,[0.5,0.5],MichelsenTPFlash(equilibrium=:lle,K0=[1e5,1e-4]));
+    ```
 
 To trace the full LLE region, we simply need to iterate in temperature (or pressure) until the LLE region closes at the UCST (or LCST).
 Much like the earlier system with one supercritical component, we don't necessarily know ahead of time where the region closes.
