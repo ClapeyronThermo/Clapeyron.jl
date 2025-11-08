@@ -181,22 +181,16 @@ function qp_flash_impl(model,β,p,z,method::RRQXFlash)
     prob = Roots.ZeroProblem(update_K_QP!,Tinv0)
     Tinv = Roots.solve(prob,Roots.Order1(),params)
     T = 1/Tinv
-
+    n = sum(z)
     resize!(lnK,2)
     resize!(K,2)
     K[1] = 1 - β
     K[2] = β
-    K .*= sum(z)
+    x ./= sum(x)
+    y ./= sum(y)
+    K .*= n
+    lnK ./= n
     return FlashResult(flash0.compositions,K,lnK,FlashData(p,T))
-end
-
-function qp_flash_rrqx(model, p, z, method) 
-    t = t0
-    @. x = z / (vf * (K - 1) + 1)
-    @. y = K * x
-    rachford_rice!(t, (p, vf, x, y, z, K))
-    t = find_zero(rachford_rice!, t0, Order1(), (p, vf, x, y, z, K); xatol, atol, verbose)
-    return t, K
 end
 
 export RRQXFlash
