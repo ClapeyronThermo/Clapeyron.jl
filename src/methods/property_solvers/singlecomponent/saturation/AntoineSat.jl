@@ -94,7 +94,7 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation{TT,VV,CC}
         Tinv0 = 1/T2
         Tinv = Tinv0 + dTinvdlnp*Δlnp
         T3 = 1/Tinv
-        (_,vl3,vv3) = saturation_pressure(model, T3, (vl2, vv2))
+        (_,vl3,vv3) = saturation_pressure(model,T3,ChemPotVSaturation(crit_retry = false))
         res,converged = try_2ph_pure_temperature(model,p,T3,vl3,vv3,ps,μs,method)
         converged && return res
     end
