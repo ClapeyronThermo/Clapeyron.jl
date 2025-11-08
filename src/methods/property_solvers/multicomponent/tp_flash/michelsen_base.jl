@@ -337,6 +337,7 @@ end
 function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArrays.Fill(false,length(model)),non_iny = FillArrays.Fill(false,length(model));k0 = :wilson)
     ∑n = sum(n)
     z = n/∑n
+    TT = Base.promote_eltype(model,p,T,n)
     if is_vle(method)
         phasex,phasey = :liquid,:vapour
     elseif is_lle(method)
@@ -347,69 +348,93 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     phases = (phasex,phasey)
     non_inw = (non_inx,non_iny)
     nc = length(model)
-    _1 = oneunit(Base.promote_eltype(model,p,T,z))
-    x,y = fill(_1,nc),fill(_1,nc)
+    _1,_0 = one(TT),zero(TT)
+    x,y = similar(z,TT),similar(z,TT)
     x .= z
     y .= z
+    K,lnK = similar(z,TT),similar(z,TT)
+    verbose = hasfield(typeof(method),:verbose) ? getfield(method,:verbose)::Bool : false
     if !isnothing(method.K0)
-        K = _1 * method.K0
-        lnK = log.(K)
+        K .= _1 * method.K0
+        lnK .= log.(K)
         volx = zero(_1)
         voly = zero(_1)
+        verbose && @info "K0 already provided"
     elseif !isnothing(method.x0) && !isnothing(method.y0)
-        x = method.x0 ./ sum(method.x0)
-        y = method.y0 ./ sum(method.y0)
-        lnK = log.(x ./ y)
+        x .= method.x0 ./ sum(method.x0)
+        y .= method.y0 ./ sum(method.y0)
+        lnK .= log.(x ./ y)
         volx = zero(_1)
-        voly = zero(_1)
+        voly = zero(_1) 
         if method.v0 == nothing
             lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(nothing,nothing),phases,non_inw)
         else
             vl0,vv0 = method.v0
             lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(vl0,vv0),phases,non_inw)
         end
-        K = exp.(lnK)
+        K .= exp.(lnK)
+        verbose && @info "x0,y0 provided, calculating K0 via Clapeyron.update_K!"
     elseif is_vle(method) || is_unknown(method)
-        # Wilson Correlation for K
-        K = tp_flash_K0(model,p,T,z)
+        # VLE correlation for K
+        verbose && @info "K0 calculated via pure VLE correlation"
+        tp_flash_K0!(K,model,p,T,z)
+
         #if we can't predict K, we use lle
         if is_unknown(method)
-            Kmin,Kmax = extrema(K)
-            if Kmin >= 1 || Kmax <= 1
-                K = K0_lle_init(model,p,T,z)
+            Kmin,Kmax = K_extrema(K,non_inx,non_iny)
+            if Kmin > 1 || Kmax < 1
+                verbose && @info "VLE correlation failed, trying LLE initial point."
+                K .= K0_lle_init(model,p,T,z)
+                lnK .= log.(K)
+                phasey = :liquid
+                phases = (:liquid,:liquid)
             end
         end
-        lnK = log.(K)
+        lnK .= log.(K)
         volx = zero(_1)
         voly = zero(_1)
     else
-        K = K0_lle_init(model,p,T,z)
-        lnK = log.(K)
-        volx = zero(_1)
-        voly = zero(_1)
+        verbose && @info "K0 calculated via LLE initial point (tpd)"
+        K .= K0_lle_init(model,p,T,z)
+        lnK .= log.(K)
+        phasey = :liquid
+        phases = (:liquid,:liquid)
     end
-    β,status,_ = rachfordrice_β0(K,z,nothing,non_inx,non_iny)
-    #if status != RREq, maybe initial K values overshoot the actual phase split.
-    if status != RREq
-        Kmin,Kmax = K_extrema(K,non_inx,non_iny)
-        if !(Kmin >= 1 || Kmax <= 1)
-            #valid K, still single phase.
-            if status == RRLiquid #bubble point.
-                β = eps(typeof(β))
-                status = RREq
-            elseif status == RRVapour #dew point
-                β = one(β) - eps(typeof(β))
-                status = RREq
-            end
+
+    verbose && @info "K0 = $K"
+    # Initial guess for phase split
+    status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = 1e-10)
+
+#=
+    TREND bubble/dew initialization
+    Maybe initial K values overshoot the actual phase split.
+    if the initial K values generate a single phase result, but we can split the K into two compositions (Kmin < 1 or Kmax > 1)
+    then we start at the bubble (or dew conditions)
+    =#
+    
+    if status == RRLiquid
+        β = _0
+        if maximum(K) >= 1 #liquid phase, but there is posibility to generate a vapour composition
+            verbose && @info "suppossing β = 0 (bubble initialization)"
+            status = RREq
+            β += eps(eltype(β))
         end
+    elseif status == RRVapour
+        β = _1
+        if minimum(K) <= 1 #vapour phase, but there is posibility to generate a liquid composition
+            verbose && @info "suppossing β = 1 (dew initialization)"
+            status = RREq
+            β -= eps(eltype(β))
+        end
+    elseif status == RREq
+        β = rachfordrice(K, z; non_inx, non_iny, verbose)
     else
-        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
+        β = _0/_0
     end
-    if β > 1
-        β = one(β)
-    elseif β < 0
-        β = zero(β)
-    end
+
+    verbose && @info "initial vapour fraction = $β"
+    #verbose && status != RREq && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
+
     y = rr_flash_vapor!(y,K,z,β)
     y ./= sum(y)
     x = rr_flash_liquid!(x,K,z,β)

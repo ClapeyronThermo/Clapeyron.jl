@@ -179,7 +179,7 @@ function qp_flash_impl(model,β,p,z,method::RRQXFlash)
     params = (model,β,p,w,phases,non_inw,vec_cache,dlnϕ_cache)
     Tinv0 = 1/temperature(flash0)
     prob = Roots.ZeroProblem(update_K_QP!,Tinv0)
-    Tinv = Roots.solve(prob,Roots.Order1(),params)
+    Tinv = Roots.solve(prob,Roots.Order1(),params,atol = method.atol,rtol = method.rtol)
     T = 1/Tinv
     n = sum(z)
     resize!(lnK,2)
