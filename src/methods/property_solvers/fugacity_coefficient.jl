@@ -49,10 +49,8 @@ function lnϕ!(cache::Tuple, model::EoSModel, p, T, z=SA[1.];
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-    if model isa IdealModel
-        lnϕ .= 0
-        return lnϕ,vol
-    end
+    model isa IdealModel && return (fill!(cache[3],0.0),vol)
+
     return lnϕ(model,p,T,z,cache;vol)
 end
 

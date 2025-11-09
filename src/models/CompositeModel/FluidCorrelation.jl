@@ -274,53 +274,12 @@ function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
     end
 end
 
-function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,z,β,vols,phases,non_inw,cache = nothing)
-    volx,voly = vols
-    phasex,phasey = phases
-    non_inx,non_iny = non_inw
-    model = wrapper.model
-    sats = wrapper.sat
-    #crits = wrapper.crit
-    fug = wrapper.fug
-    RT = R̄*T
-    volx = volume(model.liquid, p, T, x, phase = phasex, vol0 = volx)
-    gasmodel = gas_model(model)
-    lnϕy, voly = lnϕ(gas_model(model), p, T, y, cache; phase=phasey, vol0=voly)
-    is_ideal = gasmodel isa IdealModel
-    if is_vapour(phasey)
-        for i in eachindex(lnK)
-            if non_inx[i]
-                lnK[i] = Inf
-            elseif non_iny[i]
-                lnK[i] = -Inf
-            else
-                ϕli = fug[i]
-                p_i = sats[i][1]
-                lnKi = log(p_i*ϕli/p) - lnϕy[i]
-                !is_ideal && (lnKi += volx*(p - p_i)/RT) #add poynting corrections only if the fluid model itself has non-ideal corrections
-                lnK[i] = lnKi
-            end
-        end
-    else
-        throw(error("Correlation-Based Composite Model does not support LLE equilibria."))
-    end
-    return lnK,volx,voly,NaN*one(T+p+first(x))
-end
-
 function ∂lnϕ_cache(model::PTFlashWrapper{FluidCorrelation{<:IdealModel}}, p, T, z, dt::Val{B}) where B
     return nothing
 end
 
-
 function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,eq,vols)
     return NaN*one(T+p+first(x))
-end
-
-function dgibbs_obj!(model::PTFlashWrapper{<:FluidCorrelation}, p, T, z, phasex, phasey,
-    nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
-    F=nothing, G=nothing, H=nothing)
-    throw(error("Correlation-Based Composite Model does not support gibbs energy optimization in MichelsenTPFlash."))
-    #
 end
 
 function K0_lle_init(model::PTFlashWrapper{<:FluidCorrelation},p,T,z)

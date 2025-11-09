@@ -161,8 +161,6 @@ function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isentropic_compr
     return 1/V/(∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)
 end
 
-
-
 function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_speed_of_sound),USEP)
     Mr = molecular_weight(model,z)
     d²A,V = gammaphi_f_hess(model,p,T,z)
@@ -178,7 +176,6 @@ function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isobaric_expansi
     ∂²A∂V² = d²A[1,1]
     return -∂²A∂V∂T/(V*∂²A∂V²)
 end
-
 
 function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_joule_thomson_coefficient),USEP)
     d²A,V = gammaphi_f_hess(model,p,T,z)
@@ -251,9 +248,10 @@ end
 
 __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
-function modified_lnϕ(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, z, cache; phase = :unknown, vol0 = nothing)
+function modified_lnϕ(wrapper::PTFlashWrapper, p, T, z, cache; phase = :unknown, vol0 = nothing)
     if is_vapour(phase) || is_liquid(phase)
         lnϕz,vz = tpd_lnϕ_and_v!(cache,wrapper,p,T,z,vol0,false,phase,nothing)
+        return lnϕz,vz
     elseif is_unknown(phase)
         lnϕz1,vzl = tpd_lnϕ_and_v!(cache,wrapper,p,T,z,vol0,false,:liquid,nothing)
         lnϕzl = copy(lnϕz1)
@@ -285,7 +283,7 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,
     gibbs = zero(Base.promote_eltype(model,p,T,x,β))
 
     if !isone(β)
-        γx = activity_coefficient(model.activity, p, T, x)
+        γx = activity_coefficient(model, p, T, x)
         n = length(model)
         g_E_x = sum(x[i]*RT*log(γx[i]) for i ∈ 1:n)
         g_ideal_x = sum(x[i]*RT*(log(x[i])) for i ∈ 1:n)
@@ -296,7 +294,7 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,
     if is_vle(eq) && !iszero(β)
         gibbs += gibbs_free_energy(gas_model(fluidmodel),p,T,y,phase =:v)*β/R̄/T
     elseif !iszero(β) #lle
-        γy = activity_coefficient(model.activity, p, T, y)
+        γy = activity_coefficient(model, p, T, y)
         g_E_y = sum(y[i]*RT*log(γy[i]) for i ∈ 1:n)
         g_ideal_y = sum(y[i]*R̄*T*(log(y[i])) for i ∈ 1:n)
         g_pure_y = dot(y,g_pures)
@@ -346,12 +344,14 @@ TPD support.
 TODO: support vle in TPD.
 =#
 function tpd_delta_d_vapour!(d,wrapper,p,T)
-    gas_model(wrapper) isa IdealModel && return d
     ϕsat,sat = wrapper.fug,wrapper.sat
+    is_ideal = gas_model(wrapper) isa IdealModel
     RT = R̄*T
     for i in eachindex(d)
         ps,vl,vv = sat[i]
-        d[i] = d[i] - vl*(p - ps)/RT - log(ϕsat[i]) - log(ps/p)
+        Δd = log(ϕsat[i]) + log(ps/p)
+        is_ideal || (Δd += vl*(p - ps)/RT)
+        d[i] = d[i] - Δd
     end
     return d
 end
@@ -390,18 +390,19 @@ function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cac
     end
 end
 
-function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper{<:GammaPhi},p,T,w,vol0,liquid_overpressure = false,phase = :l,_vol = nothing)
-    pures = wrapper.model.fluid.pure
+function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpressure = false,phase = :l,_vol = nothing)
     model = wrapper.model
-    fluidmodel = model.fluid.model
-    g_pures = wrapper.μ
     RT = R̄*T
-
     if is_liquid(phase)
-        γ = activity_coefficient(model.activity,p,T,w)
-        v = one(eltype(γ))
-        γ .= log.(γ)
-        return γ,v,true
+        γ = activity_coefficient(model,p,T,w)
+        v = zero(eltype(γ))
+        if ismutable(γ)
+            logγ = γ
+        else
+            logγ = similar(γ)
+        end
+        logγ .= log.(γ)
+        return logγ,v,true
     else
         if _vol != nothing
             vol = _vol
