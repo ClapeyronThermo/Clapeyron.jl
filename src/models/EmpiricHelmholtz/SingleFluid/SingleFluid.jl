@@ -181,6 +181,11 @@ end
 has_fast_crit_pure(model::SingleFluid) = true
 
 function x0_sat_pure(model::SingleFluid,T)
+    if is_pseudo_pure(model)
+        _0 = zero(Base.promote_eltype(model,T))
+        _nan = _0/_0
+        return _nan,_nan
+    end
     z=SA[1.0]
     Ttp0 = model.properties.Ttp*one(T)
     gas_ancillary = model.ancillaries.fluid.gas
