@@ -189,7 +189,7 @@ struct SingleFluidProperties <: EoSParam
     rhol_tp::Float64 #triple point liquid volume, mol/m3
     acentricfactor::Float64 #acentric factor
     Rgas::Float64 #gas constant used
-
+    pseudo_pure::Bool #support for pseudo-pures.
     function SingleFluidProperties(Mw,Tr,rhor,lb_volume,
         Tc = NaN,Pc = NaN,rhoc = NaN,
         Ttp = NaN,ptp = NaN, rhov_tp = NaN,rhol_tp = NaN,

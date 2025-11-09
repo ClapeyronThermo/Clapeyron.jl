@@ -24,7 +24,7 @@ end
 function coolprop_handler end
 is_coolprop_loaded() = !isnothing(Base.get_extension(Clapeyron,:ClapeyronCoolPropExt))
 
-function coolprop_csv(component::String,comp = "")
+function coolprop_json_string(component::String,comp = "")
     lib_handler = coolprop_handler()
     if !isnothing(lib_handler)
        #libcoolprop is present.
@@ -94,8 +94,11 @@ function get_json_data_coolprop(component,norm_comp1 = normalisestring(component
     alternative_comp = get!(COOLPROP_IDENTIFIER_CACHE,norm_comp1) do
         cas(norm_comp1)[1]
     end
-
-    success,json_string = coolprop_csv(alternative_comp,component)
+    if isempty(alternative_comp) && !isempty(norm_comp1)
+        #try with the original name
+        norm_comp1,alternative_comp = alternative_comp,component
+    end
+    success,json_string = coolprop_json_string(alternative_comp,component)
     if success
         data = JSON3.read(json_string)[1]
         return data
@@ -397,7 +400,7 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
 
-    return SingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    return SingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas,pseudo_pure)
 end
 
 function _parse_ideal(id_data,verbose = false)

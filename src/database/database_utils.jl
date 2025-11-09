@@ -341,7 +341,9 @@ standarize_cas(cas::Missing) = missing
 function cas(components)
     components = format_components(components)
     params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES","canonicalsmiles","inchikey"],ignore_missing_singleparams = ["CAS"])
-    return params["CAS"].values
+    cas_i = params["CAS"].values
+    _iszero(cas_i[1]) && return [""]
+    return cas_i
 end
 
 function SMILES(components)
