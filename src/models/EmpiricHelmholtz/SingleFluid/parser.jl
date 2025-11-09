@@ -399,7 +399,7 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     isnan(lb_volume) && (lb_volume = 1/tryparse_units(get(eos_data,:rhomolar_max,NaN),get(eos_data,:rhomolar_max_units,"")))
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
-
+    pseudo_pure = get(eos_data,:pseudo_pure,false)
     return SingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas,pseudo_pure)
 end
 
@@ -815,11 +815,20 @@ function _parse_ancillaries(component,anc_data;verbose = false)
         rhov_anc = PolExpVapour(Solvers.ChebyshevRange(rhov_data))
         rhol_anc = PolExpLiquid(Solvers.ChebyshevRange(rhol_data))
     else
-        p_data = anc_data[:pS]
+        if haskey(anc_data,:pS) && !haskey(anc_data,:pL) && !haskey(anc_data,:pV)
+            pl_anc = _parse_ancilliary_func(anc_data[:pS],:T_r,:reducing_value)
+            pv_anc = pl_anc
+        elseif !haskey(anc_data,:pS) && haskey(anc_data,:pL) && haskey(anc_data,:pV)
+            pl_anc = _parse_ancilliary_func(anc_data[:pL],:T_r,:reducing_value)
+            pv_anc = _parse_ancilliary_func(anc_data[:pV],:T_r,:reducing_value)
+        else
+            throw(error("invalid specification for parsing saturation ancillaries. expected pS or (pL,pV)"))
+        end
+
         rhol_data = anc_data[:rhoL]
         rhov_data = anc_data[:rhoV]
 
-        ps_anc = PolExpSat(_parse_ancilliary_func(p_data,:T_r,:reducing_value))
+        ps_anc = PolExpSat(pl_anc,pv_anc)
         rhov_anc = PolExpVapour(_parse_ancilliary_func(rhov_data,:T_r,:reducing_value))
         rhol_anc = PolExpLiquid(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
     end

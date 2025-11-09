@@ -137,6 +137,7 @@ include("models/CompositeModel/CompositeModel.jl")
 
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/SingleFluid/SingleFluid.jl")
+include("models/EmpiricHelmholtz/SingleFluid/variants/PseudoPure.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/IAPWS95.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/PropaneRef.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/Ammonia2023.jl")
