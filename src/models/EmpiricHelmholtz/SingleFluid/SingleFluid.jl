@@ -228,6 +228,10 @@ function x0_volume_liquid_lowT(model::SingleFluid,p,T,z)
 
     if Ttp < T < Tc
         vᵢ = volume(ancillary,p,T,z,phase = :l)
+        for i in 1:15
+            pressure(model,vᵢ,T,z) > p && break
+            vᵢ = 0.9*vᵢ + 0.1*vl_lbv
+        end
         return vᵢ
     elseif Ttp < T
         vᵢ = volume(ancillary,p,Ttp,z,phase = :l)
