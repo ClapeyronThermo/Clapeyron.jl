@@ -210,7 +210,8 @@ function SingleFluid(components;
         Rgas = nothing,
         verbose = false,
         idealmodel = nothing,
-        ideal_userlocations = String[])
+        ideal_userlocations = String[],
+        allow_pseudo_pure = false)
 
 
     _components = format_components(components)
@@ -227,7 +228,7 @@ function SingleFluid(components;
     end
     eos_data = first(data[:EOS])
     #properties
-    properties = _parse_properties(data,Rgas,verbose)
+    properties = _parse_properties(data,Rgas,verbose,allow_pseudo_pure)
     #ideal
     if idealmodel === nothing
         ideal_data = eos_data[:alpha0]
@@ -320,7 +321,7 @@ function SingleFluidIdeal(components;
     return SingleFluidIdeal(_components,properties,ideal,references)
 end
 
-function _parse_properties(data,Rgas0 = nothing, verbose = false)
+function _parse_properties(data,Rgas0 = nothing, verbose = false, allow_pseudo_pure = false)
     verbose && @info "Starting parsing of properties from JSON."
     #info = data[:INFO]
     eos_data_vec  = data[:EOS]
@@ -400,6 +401,9 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
     pseudo_pure = get(eos_data,:pseudo_pure,false)
+    if pseudo_pure && !allow_pseudo_pure
+        throw(error("SingleFluid does not support pseudo-pures, use EmpiricPseudoPure(component;kwargs) instead."))
+    end
     return SingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas,pseudo_pure)
 end
 

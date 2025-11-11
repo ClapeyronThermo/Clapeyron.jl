@@ -165,7 +165,7 @@ T_scale(model::SingleFluid,z) = model.properties.Tc
 
 p_scale(model::SingleFluid,z) = model.properties.Pc
 
-lb_volume(model::SingleFluid,z) = model.properties.lb_volume #finally, an eos model that mentions it max density.
+lb_volume(model::SingleFluid,T,z) = model.properties.lb_volume #finally, an eos model that mentions it max density.
 
 Base.length(::SingleFluid) = 1
 
@@ -178,6 +178,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::SingleFluidIdeal)
     println(io,"Ideal MultiParameter Equation of state for $(model.components[1]):")
     show_multiparameter_coeffs(io,model.ideal)
 end
+
 has_fast_crit_pure(model::SingleFluid) = true
 
 function x0_sat_pure(model::SingleFluid,T)

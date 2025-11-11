@@ -571,6 +571,14 @@ end
     @test iszero(count(isnan,v_T37))
     @test iszero(count(isnan,v_T202))
     @test iszero(count(isnan,v_T371))
+
+    #pseudo pure
+    pseudo_pure = SingleFluid("R410A")
+    @test bubble_pressure(pseudo_pure,220.0,[1.0])[1] ≈ PropsSI("P","T",220.0,"Q",0.,"R410A") rtol = 1e-6
+    @test dew_pressure(pseudo_pure,220.0,[1.0])[1] ≈ PropsSI("P","T",220.0,"Q",1.,"R410A") rtol = 1e-6
+    @test bubble_temperature(pseudo_pure,1e5,[1.0])[1] ≈ PropsSI("T","P",1e5,"Q",0.,"R410A") rtol = 1e-6
+    @test dew_temperature(pseudo_pure,1e5,[1.0])[1] ≈ PropsSI("T","P",1e5,"Q",1.,"R410A") rtol = 1e-6
+
 end
 
 @testset "LKP methods" begin
