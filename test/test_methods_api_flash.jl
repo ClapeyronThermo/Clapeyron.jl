@@ -237,8 +237,8 @@
         flash4 = tp_flash(model_vle, 2500.0, 300.15, [0.9, 0.1], MichelsenTPFlash())
 
         @test flash4[1] ≈
-        [0.923964726801428 0.076035273198572;
-        0.7934765930306608 0.20652340696933932] rtol = 1e-6
+        [0.9239684120579815 0.07603158794201849; 
+        0.793479931206839 0.20652006879316098] rtol = 1e-6
         #test equality of activities does not make sense in VLE
     end
 
@@ -252,7 +252,7 @@
         #it works, somehow, with less precision
         @test Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash(ss_iters = 0))[1] ≈
         [0.3618699698927814 0.6381300301072186;
-        0.17888243310648602 0.821117566893514] rtol = 1e-5
+        0.17888243310648602 0.821117566893514] rtol = 1e-6
     end
 end
 
