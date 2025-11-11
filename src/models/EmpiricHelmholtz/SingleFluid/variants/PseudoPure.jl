@@ -36,7 +36,7 @@ MultiParameter Pseudo-Pure Equation of state for R410A:
  Polynomial power terms: 5
  Exponential terms: 16
 """
-function EmpiricPseudoPure(components;
+function EmpiricPseudoPure(components::Union{AbstractString,AbstractVector{<:AbstractString}};
         userlocations = String[],
         ancillaries = nothing,
         ancillaries_userlocations = String[],
