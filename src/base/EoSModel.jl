@@ -284,12 +284,7 @@ function setreferences!(model,references)
     oldrefs .= references
 end
 
-"""
-    Clapeyron∂Tag{X}
+#generic function to support pseudo-pures
+is_pseudo_pure(model) = false
 
-Clapeyron's `ForwardDiff.jl` custom tag.
-"""
-struct Clapeyron∂Tag{X} end
-const ∂Tag = Clapeyron∂Tag
-
-export EoSModel, eos, has_groups, has_sites, Rgas, Clapeyron∂Tag
+export EoSModel, eos, has_groups, has_sites, Rgas

@@ -128,7 +128,7 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     y = y/sum(y)
     T = float(T)
     model_r,idx_r = index_reduction(model,y)
-    if length(model_r)==1
+    if length(model_r) == 1 && !is_pseudo_pure(model)
         (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
         return (P_sat,v_l,v_v,y)
     end
@@ -303,7 +303,7 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     y = y/sum(y)
     p = float(p)
     model_r,idx_r = index_reduction(model,y)
-    if length(model_r)==1
+    if length(model_r)==1 && !is_pseudo_pure(model)
         (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
         return (T_sat,v_l,v_v,y)
     end

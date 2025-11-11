@@ -1,6 +1,9 @@
 struct PolExpSat <: SaturationModel
     data::GenericAncEvaluator
+    data2::GenericAncEvaluator #used in pseudo pure models.
 end
+
+PolExpSat(data::GenericAncEvaluator) = PolExpSat(data,data)
 
 PolExpSat(anc::Solvers.ChebyshevRange) = PolExpSat(GenericAncEvaluator(anc))
 
