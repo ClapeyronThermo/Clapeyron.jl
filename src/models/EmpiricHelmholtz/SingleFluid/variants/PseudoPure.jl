@@ -35,6 +35,13 @@ julia> model = EmpiricPseudoPure("R410A")
 MultiParameter Pseudo-Pure Equation of state for R410A:
  Polynomial power terms: 5
  Exponential terms: 16
+
+julia> dew_temperature(model,1e5,[1.0])
+(221.52761616090058, 5.376121328091072e-5, 0.017602536047533646, [1.0])
+
+julia> bubble_temperature(model,1e5,[1.0])
+(221.44972990854794, 5.3751419376901554e-5, 0.01759490410595897, [1.0])
+```
 """
 function EmpiricPseudoPure(components::Union{AbstractString,AbstractVector{<:AbstractString}};
         userlocations = String[],
@@ -58,7 +65,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::EmpiricPseudoPure)
 end
 
 Base.length(::EmpiricPseudoPure) = 1
-
+is_pseudo_pure(::EmpiricPseudoPure) = true
 #zero-arg
 for f in (:is_splittable,:SingleFluidIdeal,:recombine_impl!,:mw,:idealmodel,:Rgas,:crit_pure,:has_fast_crit_pure)
     @eval begin
