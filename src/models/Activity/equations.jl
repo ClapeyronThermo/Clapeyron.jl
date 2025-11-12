@@ -4,9 +4,18 @@ function recombine_impl!(model::ActivityModel)
     return model
 end
 
+function lnγ_impl! end
+
+has_lnγ_impl(model::T) where T = hasmethod(lnγ_impl!,Tuple{Any,T,Any,Any,Any})
+
 function excess_gibbs_free_energy(model::ActivityModel,p,T,z)
-    γ = activity_coefficient(model,p,T,z)
-    return Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ @comps)
+    if has_lnγ_impl(model)
+        lnγx = lnγ(lnγ,model,p,T,z)
+        return Rgas(model)*T*dot(z[i]*lnγx[i])
+    else
+        γ = activity_coefficient(model,p,T,z)
+        return Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ @comps)
+    end
 end
 
 function test_excess_gibbs_free_energy(model::ActivityModel,p,T,z)
@@ -21,10 +30,62 @@ function volume_impl(model::ActivityModel, p, T, z, phase, threaded, vol0)
         return volume(BasicIdeal(), p, T, z, phase=phase, threaded=threaded, vol0=vol0)
     end
 end
+
 #for use in models that have Gibbs energy defined.
 function activity_coefficient(model::ActivityModel,p,T,z)
-    X = gradient_type(model,T+p,z)
-    return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(Rgas(model)*T))::X
+    lnγx = lnγ(model,p,T,z)
+    if ismutable(lnγx)
+        lnγx .= exp.(lnγx)
+        return lnγx
+    else
+        return exp.(lnγ)
+    end
+end
+
+__γ_unwrap(model) = model
+
+@newmodelsingleton IdeaLiquidlSolution ActivityModel
+excess_gibbs_free_energy(::IdeaLiquidlSolution,p,T,z) = zero(Base.promote_eltype(T,z))
+function lnγ_impl!(res,::IdeaLiquidlSolution,p,T,z)
+    res .= 0
+    return res
+end
+
+function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
+    X = gradient_type(model,T,z)
+    nc = length(model)
+    if has_lnγ_impl(model)
+        if cache isa Tuple
+            result,aux,lnγ,∂lnγ∂n,∂lnγ∂T,_,_,hconfig = cache
+            lnγ_impl!(lnγ,model,p,T,z)
+            return lnγ
+        elseif cache isa AbstractVector
+            lnγ_impl!(cache,model,p,T,z)
+            return cache
+        else
+            out = similar(X,length(model))
+            lnγ_impl!(out,model,p,T,z)
+            return out
+        end
+    else
+        fun(x) = excess_gibbs_free_energy(model,p,T,@view(x[1:nc]))/(Rgas(model)*T)
+        if cache isa Tuple
+            result,aux,lnγ,∂lnγ∂n,∂lnγ∂T,_,_,hconfig = cache
+            aux .= 0
+            aux[1:nc] = z
+            gconfig = Solvers._GradientConfig(hconfig)
+            _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
+            dresult = DiffResults.gradient(_result)
+            lnγx = @view dresult[1:nc]
+            lnγ .= lnγx
+            return lnγ
+        elseif cache isa AbstractVector
+            ForwardDiff.gradient!(cache,fun,z)
+            return cache
+        else
+            return Solvers.gradient(fun,z)
+        end
+    end
 end
 
 function activity_coefficient_impl(model::ActivityModel,p,T,z,μ_ref,reference,phase,threaded,vol0)

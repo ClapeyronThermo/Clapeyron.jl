@@ -119,6 +119,8 @@ function activity_coefficient(model::FluidCorrelation,p,T,z=SA[1.];
     return FillArrays.Ones(length(model))
 end
 
+__γ_unwrap(model::FluidCorrelation) = IdealLiquidSolution()
+
 function a_res_activity(model,V,T,z,pures::EoSVectorParam{M}) where M <: FluidCorrelation{E} where E
     if pures.model.gas isa IdealModel
         return a_res_activity(model,V,T,z,BasicIdeal())

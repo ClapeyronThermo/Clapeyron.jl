@@ -89,6 +89,13 @@ function activity_coefficient(model::COSMOSAC02Model,V,T,z)
     return exp.(@f(lnγ_comb) .+ @f(lnγ_res))
 end
 
+function lnγ_impl!(lnγ,model::COSMOSAC02Model,V,T,z)
+    lnγ .= 0
+    lnγ .+= @f(lnγ_res)
+    lnγ .+= @f(lnγ_comb)
+    return lnγ
+end
+
 function excess_g_res(model::COSMOSAC02Model,V,T,z)
     lnγ = @f(lnγ_res)
     sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
@@ -111,7 +118,7 @@ function lnγ_comb(model::COSMOSAC02Model,p,T,z)
         lnγ_comb[i] = log(Φi)+(1-Φi)-5*qi*(log(Φi/θi)+(1-Φi/θi))
     end
     return lnγ_comb
-  end
+end
 
 function lnγ_res(model::COSMOSAC02Model,V,T,z)
     aeff = 7.5

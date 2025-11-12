@@ -39,6 +39,8 @@ function activity_coefficient(model::GammaPhi,p,T,z=SA[1.];
     return activity_coefficient(model.activity,p,T,z;μ_ref,reference,phase,threaded,vol0)
 end
 
+__γ_unwrap(model::GammaPhi) = __γ_unwrap(model.activity)
+
 function excess_gibbs_free_energy(model::GammaPhi,p,T,z)
     return excess_gibbs_free_energy(model.activity,p,T,z)
 end
@@ -65,10 +67,6 @@ function ActivitySaturationError(model,method)
     throw(ArgumentError("$method requires $model to be used along with another EoS model that supports saturation properties. If you are using an Activity Model as a raw input, use `CompositeModel(components, liquid = activity_model, fluid = fluid_model)` instead."))
 end
 
-struct ActivityEval{γ} <: IdealModel
-    gammaphi::γ
-end
-
 function gibbs_solvation(model::GammaPhi,T)
     z = [1.0,1e-30]
     p,v_l,v_v = saturation_pressure(model.fluid[1],T)
@@ -77,7 +75,6 @@ function gibbs_solvation(model::GammaPhi,T)
     K = v_v/v_l*γ[2]*p2/p
     return -R̄*T*log(K)
 end
-
 
 #=
 some equations require more delicate handling. the general case only works for extensive properties.
@@ -394,15 +391,9 @@ function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpre
     model = wrapper.model
     RT = R̄*T
     if is_liquid(phase)
-        γ = activity_coefficient(model,p,T,w)
-        v = zero(eltype(γ))
-        if ismutable(γ)
-            logγ = γ
-        else
-            logγ = similar(γ)
-        end
-        logγ .= log.(γ)
-        return logγ,v,true
+        logγx = logγ(__γ_unwrap(model),p,T,z,cache)
+        v = zero(eltype(logγx))
+        return logγx,v,true
     else
         if _vol != nothing
             vol = _vol

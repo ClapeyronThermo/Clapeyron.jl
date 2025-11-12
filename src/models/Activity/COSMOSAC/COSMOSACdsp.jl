@@ -162,6 +162,14 @@ function activity_coefficient(model::COSMOSACdspModel,V,T,z)
     return exp.(@f(lnγ_comb) .+@f(lnγ_res).+@f(lnγ_dsp))
 end
 
+function lnγ_impl!(lnγ,model::COSMOSACdspModel,V,T,z)
+    lnγ .= 0
+    lnγ .+= @f(lnγ_res)
+    lnγ .+= @f(lnγ_comb)
+    lnγ .+= @f(lnγ_dsp)
+    return lnγ
+end
+
 function excess_g_res(model::COSMOSACdspModel,V,T,z)
     lnγ = @f(lnγ_res) .+ @f(lnγ_dsp)
     sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)

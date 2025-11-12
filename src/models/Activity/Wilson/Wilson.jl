@@ -110,7 +110,7 @@ function Wilson(components;
     set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
-
+#=
 function activity_coefficient(model::WilsonModel,p,T,z)
     return activity_coefficient_wilson(model,p,T,z)
 end
@@ -121,6 +121,7 @@ function activity_coefficient_wilson(model::WilsonModel,p,T,z,Vi = wilson_volume
     lnγ = 1 .- log.(sum(x[i]*Λ[:,i] for i ∈ @comps)) .-sum(x[j] .*Λ[j,:] ./(sum(x[i]*Λ[j,i] for i ∈ @comps)) for j ∈ @comps)
     return exp.(lnγ)
 end
+=#
 
 function excess_gibbs_free_energy(model::WilsonModel,p,T,z)
     excess_g_wilson(model::WilsonModel,p,T,z)
@@ -154,7 +155,6 @@ function excess_g_wilson(model::WilsonModel,p,T,z,V = wilson_volume(model,T))
         xi = z[i]*invn
         for j ∈ @comps
             Λij = exp(-g[i,j]*invRT)*V[j]/V[i]
-
             ∑xΛ += Λij*z[j]*invn
         end
         res += xi*log(∑xΛ)
