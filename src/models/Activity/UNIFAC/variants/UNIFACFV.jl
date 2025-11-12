@@ -129,14 +129,13 @@ function lnγ_impl!(res,model::UNIFACFVModel,V,T,z)
 end
 
 function data(model::UNIFACFVModel,V,T,z)
-    Mw = model.UNIFACFVPoly.Mw
+    Mw = model.UNIFACFV_cache.Mw
     zmw = dot(z,Mw)
     x = z ./ sum(z)
     w = z .* Mw / zmw
     c = FillArrays.Fill(1.1,length(model))
     return w,x,c
 end
-
 
 function lnγ_comb(model::UNIFACFVModel,V,T,z,_data=@f(data))
     w,x = _data

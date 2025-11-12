@@ -121,25 +121,6 @@ end
 
 __γ_unwrap(model::FluidCorrelation) = IdealLiquidSolution()
 
-function a_res_activity(model,V,T,z,pures::EoSVectorParam{M}) where M <: FluidCorrelation{E} where E
-    if pures.model.gas isa IdealModel
-        return a_res_activity(model,V,T,z,BasicIdeal())
-    end
-    Σz = sum(z)
-    R = Rgas(model)
-    v = V/Σz
-    Σa_resᵢ = sum(z[i]*a_res(pures[i].gas,v,T,SA[1.0]) for i ∈ @comps)
-    nRT = Σz*R*T
-    if model isa ActivityModel
-        p = nRT/V
-    else
-        p = pressure(pures.model.gas,V,T,z)
-    end
-    g_E = excess_gibbs_free_energy(model,p,T,z)
-    return g_E/(Σz*Rgas(model)*T) + Σa_resᵢ
-end
-
-
 reference_chemical_potential_type(model::FluidCorrelation) = :zero
 
 function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
