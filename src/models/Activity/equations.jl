@@ -44,9 +44,9 @@ end
 
 __γ_unwrap(model) = model
 
-@newmodelsingleton IdeaLiquidlSolution ActivityModel
-excess_gibbs_free_energy(::IdeaLiquidlSolution,p,T,z) = zero(Base.promote_eltype(T,z))
-function lnγ_impl!(res,::IdeaLiquidlSolution,p,T,z)
+@newmodelsingleton IdealLiquidSolution ActivityModel
+excess_gibbs_free_energy(::IdealLiquidSolution,p,T,z) = zero(Base.promote_eltype(T,z))
+function lnγ_impl!(res,::IdealLiquidSolution,p,T,z)
     res .= 0
     return res
 end

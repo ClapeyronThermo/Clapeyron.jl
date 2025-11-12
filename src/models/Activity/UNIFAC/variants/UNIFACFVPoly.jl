@@ -81,11 +81,6 @@ function UNIFACFVPoly(components;
     return model
 end
 
-function recombine_impl!(model::UNIFACFVPolyModel)
-    recombine_unifac_cache!(model.UNIFACFVPoly_cache,model.groups,model.params)
-    recombine!(model.puremodel)
-    return model
-end
 
 function data(model::UNIFACFVPolyModel,V,T,z)
     Mw = model.UNIFACFV_cache.Mw
