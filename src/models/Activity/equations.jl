@@ -10,8 +10,8 @@ has_lnγ_impl(model::T) where T = hasmethod(lnγ_impl!,Tuple{Any,T,Any,Any,Any})
 
 function excess_gibbs_free_energy(model::ActivityModel,p,T,z)
     if has_lnγ_impl(model)
-        lnγx = lnγ(lnγ,model,p,T,z)
-        return Rgas(model)*T*dot(z[i]*lnγx[i])
+        lnγx = lnγ(model,p,T,z)
+        return Rgas(model)*T*dot(z,lnγx)
     else
         γ = activity_coefficient(model,p,T,z)
         return Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ @comps)

@@ -280,9 +280,7 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,
     gibbs = zero(Base.promote_eltype(model,p,T,x,β))
 
     if !isone(β)
-        γx = activity_coefficient(model, p, T, x)
-        n = length(model)
-        g_E_x = sum(x[i]*RT*log(γx[i]) for i ∈ 1:n)
+        g_E_x = excess_gibbs_free_energy(model.activity,p,T,x)
         g_ideal_x = sum(x[i]*RT*(log(x[i])) for i ∈ 1:n)
         g_pure_x = dot(x,g_pures)
         gibbs += (g_E_x + g_ideal_x + g_pure_x)*(1-β)/RT
@@ -291,8 +289,7 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,
     if is_vle(eq) && !iszero(β)
         gibbs += gibbs_free_energy(gas_model(fluidmodel),p,T,y,phase =:v)*β/R̄/T
     elseif !iszero(β) #lle
-        γy = activity_coefficient(model, p, T, y)
-        g_E_y = sum(y[i]*RT*log(γy[i]) for i ∈ 1:n)
+        g_E_y = excess_gibbs_free_energy(model.activity,p,T,y)
         g_ideal_y = sum(y[i]*R̄*T*(log(y[i])) for i ∈ 1:n)
         g_pure_y = dot(y,g_pures)
         gibbs += (g_E_y + g_ideal_y + g_pure_y)*β/RT
@@ -313,8 +310,7 @@ function __eval_G_DETPFlash(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,equilibriu
     g_pures = wrapper.μ
     R = Rgas()
     RT = R*T
-    γx = activity_coefficient(model.activity, p, T, x)
-    g_E_x = sum(x[i]*RT*log(γx[i]) for i ∈ 1:n)
+    g_E_x = excess_gibbs_free_energy(model.activity,p,T,x)
     g_ideal_x = sum(x[i]*RT*(log(x[i])) for i ∈ 1:n)
     g_pure_x = dot(x,g_pures)
     gl = (g_E_x + g_ideal_x + g_pure_x)
