@@ -387,7 +387,7 @@ function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpre
     model = wrapper.model
     RT = R̄*T
     if is_liquid(phase)
-        logγx = lnγ(__γ_unwrap(model),p,T,z,cache)
+        logγx = lnγ(__γ_unwrap(model),p,T,w,cache)
         v = zero(eltype(logγx))
         return logγx,v,true
     else
