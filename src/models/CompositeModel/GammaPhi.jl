@@ -281,7 +281,7 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,
 
     if !isone(β)
         g_E_x = excess_gibbs_free_energy(model.activity,p,T,x)
-        g_ideal_x = sum(x[i]*RT*(log(x[i])) for i ∈ 1:n)
+        g_ideal_x = RT*sum(xlogx,x)
         g_pure_x = dot(x,g_pures)
         gibbs += (g_E_x + g_ideal_x + g_pure_x)*(1-β)/RT
     end
@@ -290,7 +290,7 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,
         gibbs += gibbs_free_energy(gas_model(fluidmodel),p,T,y,phase =:v)*β/R̄/T
     elseif !iszero(β) #lle
         g_E_y = excess_gibbs_free_energy(model.activity,p,T,y)
-        g_ideal_y = sum(y[i]*R̄*T*(log(y[i])) for i ∈ 1:n)
+        g_ideal_y = RT*sum(xlogx,y)
         g_pure_y = dot(y,g_pures)
         gibbs += (g_E_y + g_ideal_y + g_pure_y)*β/RT
     end
