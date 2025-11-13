@@ -53,7 +53,7 @@ end
 
 function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
     X = gradient_type(model,T,z)
-    nc = length(model)
+    nc = length(z)
     if has_lnγ_impl(model)
         if cache isa Tuple
             result,aux,lnγ,∂lnγ∂n,∂lnγ∂T,_,_,hconfig = cache
@@ -63,7 +63,7 @@ function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
             lnγ_impl!(cache,model,p,T,z)
             return cache
         else
-            out = similar(X,length(model))
+            out = similar(X,nc)
             lnγ_impl!(out,model,p,T,z)
             return out
         end

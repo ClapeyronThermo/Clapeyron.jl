@@ -8,10 +8,9 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
 
     RT = Rgas(model)*T
     logZ = log(p*vol/RT/sum(z))
-
+    nc = length(z)
     if cache !== nothing
         result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
-        nc = length(lnϕ)
         if nc == 1
             lnϕ[1] = VT_lnϕ_pure(model,vol/sum(z),T,p)
         else
@@ -55,7 +54,7 @@ function lnϕ!(cache::Tuple, model::EoSModel, p, T, z=SA[1.];
 end
 
 function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = nothing;
-            phase=:unknown, 
+            phase=:unknown,
             vol0=nothing,
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
@@ -107,7 +106,7 @@ end
 
 # Function to compute fugacity coefficient and its pressure and composition derivatives
 function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
-            phase=:unknown, 
+            phase=:unknown,
             vol0=nothing,
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
@@ -154,11 +153,11 @@ end
 
 # Function to compute fugacity coefficient and its temperature, pressure and composition derivatives
 function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cache(model,p,T,z,Val{true}());
-            phase=:unknown, 
+            phase=:unknown,
             vol0=nothing,
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
-    
+
     result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
     RT = Rgas(model)*T
     V = vol
@@ -204,4 +203,61 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
     end
 
     return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, ∂lnϕ∂T, V
+end
+
+#=
+VT-based versions
+
+instead of working in terms of lnphi, we work directly in terms of lnf = ln(phi*p)
+
+ Z = p*V/RT/sum(z)
+lnϕ .= μ_res ./ RT .- log(Z)
+ln(f) = ln(ϕ*p) = log(ϕ) + log(p)
+ln(f) = μ_res ./ RT .- log(V/RT/sum(z))
+- logZ - log(p) =
+=#
+
+function lnf(model::EoSModel, V, T, z,cache = nothing)
+    RT = Rgas(model)*T
+    n = sum(z)
+    logZp = log(V/RT/n)
+    nc = length(z)
+    TT = Base.promote_eltype(model,V,T,z)
+    F_res(_model, _V, _T, _z) = eos_res(_model, _V, _T, _z)
+    fun(aux) = F_res(model, aux[1], T, @view(aux[2:nc+1]))
+    if cache !== nothing
+        result,aux,lnf,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
+        if nc == 1
+            lnf1,p = VT_lnf_pure(model,V,T)
+            lnf[1] = lnf1
+        else
+            aux .= 0
+            aux[1] = V
+            aux[2:nc+1] = z
+            gconfig = Solvers._GradientConfig(hconfig)
+            _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
+            dresult = DiffResults.gradient(_result)
+            dfdv = dresult[1]
+            μ_res = @view dresult[2:nc+1]
+            p = -(dfdv - RT*n/V)
+            lnf .= μ_res ./ RT .- logZp
+        end
+    else
+        μ_res = VT_chemical_potential_res(model,V,T,z)
+        p = pressure(model,V,T,z)
+        lnf = μ_res ./ RT .- logZp
+    end
+    return lnf, p
+end
+
+function VT_lnf_pure(model,V,T)
+    RT = Rgas(model)*T
+    f(dV) = eos_res(model,dV,T,SA[1.0])
+    F,dFdV = Solvers.f∂f(f,V)
+    p_res = -dFdV
+    μ_res = eos_res(model,V,T,SA[1.0]) + p_res*V
+    Zp = V/RT
+    lnf = μ_res/RT - log(Zp)
+    p = p_res + RT/V
+    return lnf,p
 end
