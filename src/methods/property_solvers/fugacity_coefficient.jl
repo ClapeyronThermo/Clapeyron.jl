@@ -86,6 +86,9 @@ function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
     return μ_res/RT - log(Z)
 end
 
+
+struct ∂lnϕTag end
+
 function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
     TT = Base.promote_eltype(model,p,T,z)
     lnϕ = zeros(TT,length(model))
@@ -95,7 +98,7 @@ function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
     ∂lnϕ∂n = lnϕ * transpose(lnϕ)
     ∂lnϕ∂P = similar(lnϕ)
     ∂P∂n = similar(lnϕ)
-    hconfig = ForwardDiff.HessianConfig(nothing,result,aux)
+    hconfig = ForwardDiff.HessianConfig(Tuple{∂lnϕTag,typeof(model),typeof(p),typeof(T),typeof(z)},result,aux)
     if B
         ∂lnϕ∂T = similar(lnϕ)
     else
