@@ -86,6 +86,21 @@ function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
     return μ_res/RT - log(Z)
 end
 
+function ∑zlogϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
+            phase=:unknown,
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+
+    RT = Rgas(model)*T
+    n = sum(z)
+    A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,vol,T,z)
+    PrV = ifelse(iszero(1/vol),zero(∂A∂V),- vol*∂A∂V)
+    g_res = A + PrV
+    p = -(∂A∂V - RT*n/vol)
+    logZ = log(p*vol/RT/n)
+    return g_res/RT - n*logZ
+end
 
 struct ∂lnϕTag end
 
@@ -99,12 +114,17 @@ function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
     ∂lnϕ∂P = similar(lnϕ)
     ∂P∂n = similar(lnϕ)
     hconfig = ForwardDiff.HessianConfig(Tuple{∂lnϕTag,typeof(model),typeof(p),typeof(T),typeof(z)},result,aux)
+    if has_lnγ_impl(__γ_unwrap(model))
+        jcache = similar(aux)
+    else
+        jcache = aux
+    end
     if B
         ∂lnϕ∂T = similar(lnϕ)
     else
         ∂lnϕ∂T = lnϕ
     end
-    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig
+    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig,jcache
 end
 
 # Function to compute fugacity coefficient and its pressure and composition derivatives

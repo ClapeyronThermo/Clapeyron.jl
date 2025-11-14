@@ -182,13 +182,53 @@ function x0_volume_liquid(model::ActivityModel,p,T,z)
     return sum(z[i]*x0_volume_liquid(pures[i],p,T,SA[1.0]) for i ∈ @comps)
 end
 
-function γdγdn(model::ActivityModel,p,T,z)
-    storage = DiffResults.JacobianResult(z)
-    γ(_z) = activity_coefficient(model,p,T,_z)
-    ForwardDiff.jacobian!(storage,γ,z)
-    γz = DiffResults.value(storage)
-    dyz = DiffResults.jacobian(storage)
-    return γz,dyz
+function ∂lnγ∂n(model,p,T,z,cache = nothing)
+    nc = length(z)
+    RT = Rgas(model)*T
+    n = sum(z)
+    fun_g(w) = excess_gibbs_free_energy(model,p,T,@view(w[1:nc]))/RT
+    function fun_lnγ(out,w)
+        Clapeyron.lnγ(model,p,T,@view(w[1:nc]),@view(out[1:nc]))
+        return out
+    end
+    if cache == nothing
+        if has_lnγ_impl(model)
+            lnγ = zeros(Base.promote_eltype(model,p,T,z),nc)
+            ∂lnγ∂ni = ForwardDiff.jacobian!(lnγ,fun_lnγ,z)
+            g_E = dot(z,lnγ)*RT
+            return g_E,lnγ,∂lnγ∂ni
+        else
+            hresult = DiffResults.HessianResult(z)
+            result = ForwardDiff.hessian!(hresult,fun_g,z)
+            g_E = DiffResults.value(result)*RT
+            lnγ = DiffResults.gradient(result)
+            ∂lnγ∂ni = DiffResults.hessian(result)
+            return g_E,lnγ,∂lnγ∂ni
+        end
+    else
+        result,aux,lnγ,∂lnγ∂ni,_,_,_,hconfig,jcache = cache
+        aux .= 0
+        aux[1:nc] .= z
+        if has_lnγ_impl(model)
+            jconfig = Solvers._JacobianConfig(hconfig)
+            jresult = ForwardDiff.DiffResults.MutableDiffResult(result.derivs[1],(result.derivs[2],))
+            _result = ForwardDiff.jacobian!(jresult,fun_lnγ,jcache,aux,jconfig,Val{false}())
+            ∂lnγ = DiffResults.jacobian(_result)
+            ∂lnγ∂ni .=  @view ∂lnγ[1:nc,1:nc]
+            ∂g_E = DiffResults.value(_result)
+            lnγ .= @view ∂g_E[1:nc]
+            g_E = dot(z,lnγ)*RT
+            return g_E,lnγ,∂lnγ∂ni
+        else            
+            _result = ForwardDiff.hessian!(result, fun_g, aux, hconfig, Val{false}())
+            g_E = DiffResults.value(_result)*RT
+            ∂g_E = DiffResults.gradient(_result)
+            lnγ .= @view ∂g_E[1:nc]
+            ∂lnγ = DiffResults.hessian(_result)
+            ∂lnγ∂ni .= @view ∂lnγ[1:nc,1:nc]
+            return g_E,lnγ,∂lnγ∂ni
+        end
+    end
 end
 
 __act_to_gammaphi(model::ActivityModel) = __act_to_gammaphi(model,nothing,true)
