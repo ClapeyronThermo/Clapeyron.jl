@@ -228,6 +228,20 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
     return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, ∂lnϕ∂T, V
 end
 
+#functions used to overload gamma-phi models
+function modified_lnϕ(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
+    lnϕz,vz = lnϕ(model, p, T, z, cache; phase, vol0)
+    if isnan(vz)
+        lnϕz,vz = lnϕ(model, p, T, z, cache; phase)
+    end
+    return lnϕz,vz
+end
+
+function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
+    lnϕ, ∂lnϕ∂n, _, vol = ∂lnϕ∂n∂P(model, p, T, z, lnϕ_cache; phase=phasex, vol0=volx)
+    return lnϕ,∂lnϕ∂n,vol
+end
+
 #=
 VT-based versions
 

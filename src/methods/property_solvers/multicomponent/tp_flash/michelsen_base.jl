@@ -110,14 +110,6 @@ function rr_margin_check(K,z,non_inx = FillArrays.Fill(false,length(K)),non_iny 
     return status,β
 end
 
-function modified_lnϕ(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
-    lnϕz,vz = lnϕ(model, p, T, z, cache; phase, vol0)
-    if isnan(vz)
-        lnϕz,vz = lnϕ(model, p, T, z, cache; phase)
-    end
-    return lnϕz,vz
-end
-
 function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     second_order = !isnothing(H)
     nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
@@ -133,7 +125,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     f -= gz
     !isnothing(g) && (g .= 0)
     if second_order
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
+        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = modified_∂lnϕ∂n(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
         ∂x,∂2x = lnϕx,∂lnϕ∂nx
         ∂2x .-= 1
         ∂2x ./= sum(nx)
@@ -147,7 +139,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
         f += dot(∂x,nx)
 
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
+        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = modified_∂lnϕ∂n(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
         ∂y,∂2y = lnϕy,∂lnϕ∂ny
         ∂2y .-= 1
         ∂2y ./= sum(ny)

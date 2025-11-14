@@ -6,98 +6,63 @@ function tpd_cache(model,p,T,z,k0 = z)
     return x1,x2,x3,x4,vcache,Hϕ
 end
 
+function tpd_obj!(G,H,model,p,T,di,phase,cache)
+    second_order = !isnothing(H)
+    w,dtpd,_,_,vcache,Hϕ = cache
+    w .= α .* α .* 0.25
+    w ./= sum(w)
+    nc = length(di)
+    volw0 = vcache[]
+    if second_order
+        lnϕw, volw = modified_lnϕ(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
+    else
+        lnϕw, ∂lnϕ∂nw, volw = modified_∂lnϕ∂n(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
+        #=
+        from thermopack:
+        We see that ln Wi + lnφ(W) − di will be zero at the solution of the tangent plane minimisation.
+        It can therefore be removed from the second derivative, without affecting the convergence properties.
+        =#
+        for i in 1:nc
+            xi = sqrt(w[i])
+            for j in 1:nc
+                xj = sqrt(w[j])
+                δij = Int(i == j)
+                H[i,j] = δij + xi*xj*∂lnϕ∂nw[i,j]# + 0.5*αi*dtpd[i]
+            end
+        end
+    end
+    vcache[] = volw
+    dtpd .= log.(w) .+ lnϕw .- di
+    if !isnothing(g)
+        df .= dtpd .*  sqrt.(w)
+    end
+    fx = dot(w,dtpd) - sum(w) + 1
+    return fx
+end
+
 function tpd_obj(model, p, T, di, phase, cache = tpd_cache(model,p,T,di), break_first = false)
-
-    function f(α)
-        w,dtpd,_,_,vcache,Hϕ = cache
-        w .= α .* α .* 0.25
-        w ./= sum(w)
-        volw0 = vcache[]
-        lnϕw, volw = lnϕ!(Hϕ, model, p, T, w; phase=phase, vol0=volw0)
-        dtpd .= log.(w) .+ lnϕw .- di
-        fx = dot(w,dtpd) - sum(w) + 1
+    function f(x)
+        fx = tpd_obj!(nothing,nothing,model,p,T,di,phase,cache)
     end
 
-    function g(df,α)
-        w,dtpd,_,_,vcache,Hϕ = cache
-        w .= α .* α .* 0.25
-        w ./= sum(w)
-        lnϕw, volw = lnϕ!(Hϕ, model, p, T, w; phase=phase, vol0=vcache[])
-        dtpd .= log.(w) .+ lnϕw .- di
-        df .= dtpd .*  sqrt.(w)
-        vcache[] = volw
-        fx = dot(w,dtpd) - sum(w) + 1
-        #if fx < -1e-10 && break_first
-        #    df .= 0
-        #end
-        df
+    function g(∇f, x)
+        fx = tpd_obj!(∇f,nothing,model,p,T,di,phase,cache)
+        return ∇f
     end
 
-    function fg(df,α)
-        w,dtpd,_,_,vcache,Hϕ = cache
-        w .= α .* α .* 0.25
-        w ./= sum(w)
-        volw0 = vcache[]
-        lnϕw, volw = lnϕ!(Hϕ, model, p, T, w; phase=phase, vol0=volw0)
-        dtpd .= log.(w) .+ lnϕw .- di
-        df .= dtpd .*  sqrt.(w)
-        vcache[] = volw
-        fx = dot(w,dtpd) - sum(w) + 1
-        #if fx < -1e-10 && break_first
-        #    df .= 0
-        #end
-        return fx,df
+    function fg(∇f, x)
+        fx = tpd_obj!(∇f,nothing,model,p,T,di,phase,cache)
+        return fx,∇f
     end
-
-    #=
-    from thermopack:
-    We see that ln Wi + lnφ(W) − di will be zero at the solution of the tangent plane minimisation.
-    It can therefore be removed from the second derivative, without affecting the convergence properties.
-    =#
-    function fgh(df,d2f,α)
-        w,dtpd,_,_,vcache,Hϕ = cache
-        nc = length(model)
-        w .= α .* α .* 0.25
-        w ./= sum(w)
-        volw0 = vcache[]
-        lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
-        for i in 1:nc
-            xi = sqrt(w[i])
-            for j in 1:nc
-                xj = sqrt(w[j])
-                δij = Int(i == j)
-                d2f[i,j] = δij + xi*xj*∂lnϕ∂nw[i,j]
-            end
-        end
-        dtpd .= log.(w) .+ lnϕw .- di
-        df .= dtpd .*  sqrt.(w)
-        fx = dot(w,dtpd) - sum(w) + 1
-        #if fx < -1e-10 && break_first
-        #    df .= 0
-        #end
-        vcache[] = volw
-        return fx,df,d2f
+    function h(∇²f, x)
+        fx = tpd_obj!(nothing,∇²f,model,p,T,di,phase,cache)
+        return ∇²f
     end
-
-    function h(d2f,α)
-        w,dtpd,_,_,vcache,Hϕ = cache
-        nc = length(model)
-        w .= α .* α .* 0.25
-        w ./= sum(w)
-        volw0 = vcache[]
-        lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
-        for i in 1:nc
-            xi = sqrt(w[i])
-            for j in 1:nc
-                xj = sqrt(w[j])
-                δij = Int(i == j)
-                d2f[i,j] = δij + xi*xj*∂lnϕ∂nw[i,j]# + 0.5*αi*dtpd[i]
-            end
-        end
-        vcache[] = volw
-        d2f
+    function fgh(∇f, ∇²f, x)
+        fx = fx = tpd_obj!(∇f,∇²f,model,p,T,di,phase,cache)
+        return fx, ∇f, ∇²f
     end
-
+    
     obj = NLSolvers.ScalarObjective(f=f,g=g,fg=fg,fgh=fgh,h=h)
     optprob = OptimizationProblem(obj = obj,inplace = true)
 end

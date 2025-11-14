@@ -414,132 +414,18 @@ function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpre
     end
 end
 
-function tpd_obj(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, di, phasew, cache)
-    function f(α)
-        w,dtpd,_,_,vcache,Hϕ = cache
-        ϕsat,sat = wrapper.fug,wrapper.sat
-        w .= α .* α .* 0.25
-        w ./= sum(w)
-        if is_liquid(phasew)
-            logγ,_ = tpd_lnϕ_and_v!(last(cache),wrapper,p,T,w,nothing,false,:liquid)
-            dtpd .= log.(w) .+ logγ .- di
-        else
-            volw0 = vcache[]
-            lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phasew, vol0=volw0)
-            tpd_delta_d_vapour!(lnϕw,wrapper,p,T)
-            dtpd .= log.(w) .+ lnϕw .- di
-            vcache[] = volw
-        end
-        fx = dot(w,dtpd) - sum(w) + 1
+function modified_∂lnϕ∂n(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, z, cache; phase = :unknown, vol0 = nothing)
+    model = wrapper.model
+    if is_vapour(phase)
+        lnϕ,∂lnϕ∂n,vol =  modified_∂lnϕ∂n(gas_model(model),p,T,z,cache;phase,vol0)
+        tpd_delta_d_vapour!(lnϕ,wrapper,p,T)
+        return lnϕ,∂lnϕ∂n,vol
+    else is_liquid(phase)
+        g_E,lnγ,∂lnγ∂ni = ∂lnγ∂n(__γ_unwrap(model),p,T,z,cache)
+        return lnγ,∂lnγ∂ni,zero(g_E)
+    else
+        throw(error("invalid specification for phase: $phase"))
     end
-
-    function g(df,α)
-        w,dtpd,_,_,vcache,Hϕ = cache
-        w .= α .* α .* 0.25
-        w ./= sum(w)
-        #@show w
-        if is_liquid(phasew)
-            logγ,_ = tpd_lnϕ_and_v!(last(cache),wrapper,p,T,w,nothing,false,:liquid)
-            dtpd .= log.(w) .+ logγ .- di
-        else
-            volw0 = vcache[]
-            lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phasew, vol0=volw0)
-            tpd_delta_d_vapour!(lnϕw,wrapper,p,T)
-            dtpd .= log.(w) .+ lnϕw .- di
-            vcache[] = volw
-        end
-        df .= dtpd .*  sqrt.(w)
-        return df
-    end
-
-    function fg(df,α)
-        w,dtpd,_,_,vcache,Hϕ = cache
-        w .= α .* α .* 0.25
-        w ./= sum(w)
-        if is_liquid(phasew)
-            logγ,_ = tpd_lnϕ_and_v!(last(cache),wrapper,p,T,w,nothing,false,:liquid)
-            dtpd .= log.(w) .+ logγ .- di
-        else
-            volw0 = vcache[]
-            lnϕw, volw = lnϕ!(Hϕ, gas_model(wrapper), p, T, w; phase=phasew, vol0=volw0)
-            tpd_delta_d_vapour!(lnϕw,wrapper,p,T)
-            dtpd .= log.(w) .+ lnϕw .- di
-            vcache[] = volw
-        end
-        df .= dtpd .*  sqrt.(w)
-        fx = dot(w,dtpd) - sum(w) + 1
-        return fx,df
-    end
-
-    #=
-    from thermopack:
-    We see that ln Wi + lnφ(W) − di will be zero at the solution of the tangent plane minimisation.
-    It can therefore be removed from the second derivative, without affecting the convergence properties.
-
-    function fgh(df,d2f,α)
-        w,dtpd,_,_,vcache,Hϕ = cache
-        nc = length(model)
-        w .= α .* α .* 0.25
-        w ./= sum(w)
-        volw0 = vcache[]
-        lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
-        for i in 1:nc
-            xi = sqrt(w[i])
-            for j in 1:nc
-                xj = sqrt(w[j])
-                δij = Int(i == j)
-                d2f[i,j] = δij + xi*xj*∂lnϕ∂nw[i,j]
-            end
-        end
-        dtpd .= log.(w) .+ lnϕw .- di
-        df .= dtpd .*  sqrt.(w)
-        fx = dot(w,dtpd) - sum(w) + 1
-        #if fx < -1e-10 && break_first
-        #    df .= 0
-        #end
-        vcache[] = volw
-        return fx,df,d2f
-    end
-
-    function h(d2f,α)
-        w,dtpd,_,_,vcache,Hϕ = cache
-        nc = length(model)
-        w .= α .* α .* 0.25
-        w ./= sum(w)
-        volw0 = vcache[]
-        lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
-        for i in 1:nc
-            xi = sqrt(w[i])
-            for j in 1:nc
-                xj = sqrt(w[j])
-                δij = Int(i == j)
-                d2f[i,j] = δij + xi*xj*∂lnϕ∂nw[i,j]# + 0.5*αi*dtpd[i]
-            end
-        end
-        vcache[] = volw
-        d2f
-    end
-    =#
-    obj = NLSolvers.ScalarObjective(f=f,g=g,fg=fg,fgh=nothing,h=nothing)
-    optprob = OptimizationProblem(obj = obj,inplace = true)
-end
-
-function tpd_optimization(model::PTFlashWrapper{<:GammaPhi},p,T,z,w0,di,cache = tpd_cache(model,p,T,z,K0),phasew = :liquid)
-    w,_,_,dzz,vcache,Hϕ = cache
-    α0 = 2 .* sqrt.(w0)
-    prob = tpd_obj(model, p, T, dzz, phasew, cache)
-    opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-10,maxiter = 100)
-    lb,ub = similar(α0),similar(α0)
-    lb .= 0
-    ub .= Inf
-    #TODO: implement second order derivatives
-    res = Solvers.optimize(prob, α0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub)), opt_options)
-    α = Solvers.x_sol(res)
-    w .= α .* α .* 0.25
-    w ./= sum(w)
-    tpd = Solvers.x_minimum(res)
-    vw = vcache[]
-    return w,tpd,vw
 end
 
 export GammaPhi
