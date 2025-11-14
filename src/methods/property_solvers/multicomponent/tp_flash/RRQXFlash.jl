@@ -193,4 +193,12 @@ function qp_flash_impl(model,β,p,z,method::RRQXFlash)
     return FlashResult(flash0.compositions,K,lnK,FlashData(p,T))
 end
 
+function bubble_temperature_impl(model::EoSModel,p,z,method::RRQXFlash)
+    return qp_to_bubblep(model,p,z,method)
+end
+
+function dew_temperature_impl(model::EoSModel,p,z,method::RRQXFlash)
+    return qp_to_dewp(model,p,z,method)
+end
+
 export RRQXFlash
