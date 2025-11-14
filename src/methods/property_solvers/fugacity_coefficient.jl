@@ -238,7 +238,7 @@ function modified_lnϕ(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
 end
 
 function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
-    lnϕ, ∂lnϕ∂n, _, vol = ∂lnϕ∂n∂P(model, p, T, z, lnϕ_cache; phase=phasex, vol0=volx)
+    lnϕ, ∂lnϕ∂n, _, vol = ∂lnϕ∂n∂P(model, p, T, z, lnϕ_cache; phase, vol0)
     return lnϕ,∂lnϕ∂n,vol
 end
 
