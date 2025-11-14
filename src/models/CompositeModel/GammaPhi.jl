@@ -420,7 +420,7 @@ function modified_∂lnϕ∂n(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, z, cach
         lnϕ,∂lnϕ∂n,vol =  modified_∂lnϕ∂n(gas_model(model),p,T,z,cache;phase,vol0)
         tpd_delta_d_vapour!(lnϕ,wrapper,p,T)
         return lnϕ,∂lnϕ∂n,vol
-    else is_liquid(phase)
+    elseif is_liquid(phase)
         g_E,lnγ,∂lnγ∂ni = ∂lnγ∂n(__γ_unwrap(model),p,T,z,cache)
         return lnγ,∂lnγ∂ni,zero(g_E)
     else
