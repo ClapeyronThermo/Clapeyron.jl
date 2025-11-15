@@ -13,7 +13,7 @@ function tpd_obj!(G,H,model,p,T,α,di,phase,cache)
     w ./= sum(w)
     nc = length(di)
     volw0 = vcache[]
-    if second_order
+    if !second_order
         lnϕw, volw = modified_lnϕ(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
     else
         lnϕw, ∂lnϕ∂nw, volw = modified_∂lnϕ∂n(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
@@ -33,8 +33,8 @@ function tpd_obj!(G,H,model,p,T,α,di,phase,cache)
     end
     vcache[] = volw
     dtpd .= log.(w) .+ lnϕw .- di
-    if !isnothing(g)
-        df .= dtpd .*  sqrt.(w)
+    if !isnothing(G)
+        G .= dtpd .*  sqrt.(w)
     end
     fx = dot(w,dtpd) - sum(w) + 1
     return fx
@@ -42,7 +42,7 @@ end
 
 function tpd_obj(model, p, T, di, phase, cache = tpd_cache(model,p,T,di), break_first = false)
     function f(α)
-        fx = tpd_obj!(nothing,nothing,model,p,T,di,phase,cache)
+        fx = tpd_obj!(nothing,nothing,model,p,T,α,di,phase,cache)
     end
 
     function g(∇f, α)
@@ -64,11 +64,8 @@ function tpd_obj(model, p, T, di, phase, cache = tpd_cache(model,p,T,di), break_
     end
 
     obj = NLSolvers.ScalarObjective(f=f,g=g,fg=fg,fgh=fgh,h=h)
-    optprob = OptimizationProblem(obj = obj,inplace = true)
+    optprob = OptimizationProblem(obj = obj, inplace = true)
 end
-
-struct TPDKSolver end
-struct TPDPureSolver end
 
 function _tpd_sum!(cache,model,p,T,w,di,v)
     lnϕw,_ = tpd_lnϕ_and_v!(cache,model,p,T,w,nothing,false,:unknown,v)
