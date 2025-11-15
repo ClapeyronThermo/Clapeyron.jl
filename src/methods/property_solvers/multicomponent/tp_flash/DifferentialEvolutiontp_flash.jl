@@ -104,6 +104,12 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
 
     comps = [vec(x[i,:]) for i in 1:numphases]
     βi = [sum(@view(nvals[i,:])) for i in 1:numphases]
+    for i in 1:numphases
+        if iszero(volumes[i]) && model isa PTFlashWrapper
+            #we suppose liquid volume, evaluate here
+            volumes[i] = volume(model,p,T,comps[i],phase = :l)
+        end 
+    end
     return FlashResult(comps, βi, volumes, FlashData(p,T,g))
 end
 """

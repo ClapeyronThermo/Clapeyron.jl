@@ -99,7 +99,8 @@ function ∑zlogϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
     g_res = A + PrV
     p = -(∂A∂V - RT*n/vol)
     logZ = log(p*vol/RT/n)
-    return g_res/RT - n*logZ
+    ∑zlogϕi = g_res/RT - n*logZ
+    return ∑zlogϕi,vol
 end
 
 struct ∂lnϕTag end

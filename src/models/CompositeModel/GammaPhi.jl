@@ -271,70 +271,61 @@ function modified_lnϕ(wrapper::PTFlashWrapper, p, T, z, cache; phase = :unknown
 end
 
 function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,eq,vols)
-    pures = wrapper.model.fluid.pure
     model = wrapper.model
-    fluidmodel = model.fluid.model
-    g_pures = wrapper.μ
-    RT = R̄*T
-
     gibbs = zero(Base.promote_eltype(model,p,T,x,β))
-
     if !isone(β)
-        g_E_x = excess_gibbs_free_energy(model.activity,p,T,x)
-        g_ideal_x = RT*sum(xlogx,x)
-        g_pure_x = dot(x,g_pures)
-        gibbs += (g_E_x + g_ideal_x + g_pure_x)*(1-β)/RT
+        gx,_ = gammaphi_gibbs(wrapper,p,T,x,:l)
+        gibbs += gx*(1-β)
     end
 
     if is_vle(eq) && !iszero(β)
-        gibbs += gibbs_free_energy(gas_model(fluidmodel),p,T,y,phase =:v)*β/R̄/T
+        gy,_ = gammaphi_gibbs(wrapper,p,T,y,:v)
+        gibbs += gy*β
     elseif !iszero(β) #lle
-        g_E_y = excess_gibbs_free_energy(model.activity,p,T,y)
-        g_ideal_y = RT*sum(xlogx,y)
-        g_pure_y = dot(y,g_pures)
-        gibbs += (g_E_y + g_ideal_y + g_pure_y)*β/RT
+        gy,_ = gammaphi_gibbs(wrapper,p,T,y,:l)
+        gibbs += gy*β
     end
     return gibbs
-    #(gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
 end
 
-
-function K0_lle_init(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z)
-    return K0_lle_init(wrapper.model.activity,p,T,z)
+function K0_lle_init(wrapper::PTFlashWrapper,p,T,z)
+    return K0_lle_init(__γ_unwrap(wrapper),p,T,z)
 end
 
-function __eval_G_DETPFlash(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,equilibrium)
+function __eval_G_DETPFlash(wrapper::PTFlashWrapper,p,T,x,equilibrium)
     model = wrapper.model
     phase = is_lle(equilibrium) ? :liquid : :unknown
-    n = length(model)
-    g_pures = wrapper.μ
-    R = Rgas()
-    RT = R*T
-    g_E_x = excess_gibbs_free_energy(model.activity,p,T,x)
-    g_ideal_x = sum(x[i]*RT*(log(x[i])) for i ∈ 1:n)
-    g_pure_x = dot(x,g_pures)
-    gl = (g_E_x + g_ideal_x + g_pure_x)
-    vl = volume(model.fluid.model,p,T,x,phase = :l)
-    if phase == :liquid
-        return gl,vl
-    else
-        throw(error("γ-ϕ Composite Model does not support VLE calculation with `DETPFlash`. if you want to calculate LLE equilibria, try using `DETPFlash(equilibrium = :lle)`"))
-        #=
-        vv = volume(model.fluid.model,p,T,x,phase = :v)
-        gv = VT_gibbs_free_energy(model.fluid.model, vv, T, x)
-        if gv > gl
+    return gammaphi_gibbs(wrapper,p,T,x,phase)
+end
+
+function gammaphi_gibbs(wrapper::PTFlashWrapper,p,T,w,phase = :unknown)
+    model = wrapper.model
+    RT = Rgas(model)*T
+    g_ideal = sum(xlogx,w)
+    vl = zero(Base.promote_eltype(__γ_unwrap(model),p,T,w))
+    if is_liquid(phase)
+        return excess_gibbs_free_energy(__γ_unwrap(model),p,T,w)/RT + g_ideal,vl
+    elseif is_vapour(phase)
+        ∑zlogϕi,vv = ∑zlogϕ(gas_model(model),p,T,w,phase = :v)
+        return ∑zlogϕi + tpd_delta_g_vapour(wrapper,p,T,w) + g_ideal,vv
+    elseif is_unknown(phase)
+        ∑zlogϕi,vv = ∑zlogϕ(gas_model(model),p,T,w,phase = :v)
+        gl = excess_gibbs_free_energy(__γ_unwrap(model),p,T,w)/RT + g_ideal
+        gv = ∑zlogϕi + tpd_delta_g_vapour(wrapper,p,T,w) + g_ideal
+        if gl < gv
             return gl,vl
         else
             return gv,vv
         end
-        =#
+    else
+        throw(error("invalid phase specification: $phase"))
     end
 end
 
 function tpd_delta_d_vapour!(d,wrapper,p,T)
     ϕsat,sat = wrapper.fug,wrapper.sat
     is_ideal = gas_model(wrapper) isa IdealModel
-    RT = R̄*T
+    RT = Rgas(gas_model(wrapper))*T
     for i in eachindex(d)
         ps,vl,vv = sat[i]
         Δd = log(ϕsat[i]) + log(ps/p)
@@ -344,6 +335,20 @@ function tpd_delta_d_vapour!(d,wrapper,p,T)
     return d
 end
 
+function tpd_delta_g_vapour(wrapper,p,T,w)
+    ϕsat,sat = wrapper.fug,wrapper.sat
+    is_ideal = gas_model(wrapper) isa IdealModel
+    RT = Rgas(gas_model(wrapper))*T
+    res = zero(Base.promote_eltype(gas_model(wrapper),p,T,w))
+    for i in eachindex(w)
+        ps,vl,vv = sat[i]
+        Δd = log(ϕsat[i]) + log(ps/p)
+        is_ideal || (Δd += vl*(p - ps)/RT)
+        res -= w[i]*Δd
+    end
+    return res
+end
+
 function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cache = tpd_cache(model,p,T,z,di))
 
     TT = Base.promote_eltype(wrapper.model,p,T,z)
@@ -351,7 +356,6 @@ function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cac
     pures = wrapper.model.fluid.pure
     model = wrapper.model
     fluidmodel = model.fluid.model
-    g_pures = wrapper.μ
     RT = R̄*T
 
     d_l,d_v,_,_,_,Hϕ = cache
