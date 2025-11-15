@@ -125,7 +125,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     f -= gz
     !isnothing(g) && (g .= 0)
     if second_order
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = modified_∂lnϕ∂n(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
+        lnϕx, ∂lnϕ∂nx, volx = modified_∂lnϕ∂n(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
         ∂x,∂2x = lnϕx,∂lnϕ∂nx
         ∂2x .-= 1
         ∂2x ./= sum(nx)
@@ -139,7 +139,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
         f += dot(∂x,nx)
 
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = modified_∂lnϕ∂n(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
+        lnϕy, ∂lnϕ∂ny, voly = modified_∂lnϕ∂n(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
         ∂y,∂2y = lnϕy,∂lnϕ∂ny
         ∂2y .-= 1
         ∂2y ./= sum(ny)
@@ -326,7 +326,7 @@ function tp_flash_fast_K0!(K,model,p,T,z)
     return false
 end
 
-function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArrays.Fill(false,length(model)),non_iny = FillArrays.Fill(false,length(model));k0 = :wilson)
+function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArrays.Fill(false,length(model)),non_iny = FillArrays.Fill(false,length(model)))
     ∑n = sum(n)
     z = n/∑n
     TT = Base.promote_eltype(model,p,T,n)

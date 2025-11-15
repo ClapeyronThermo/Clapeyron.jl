@@ -442,31 +442,19 @@ function init_preferred_method(method::typeof(dew_temperature),model::CompositeM
     init_preferred_method(method,model.fluid,kwargs)
 end
 
-function bubble_pressure(model::CompositeModel, T, x, method::BubblePointMethod)
-    if !(method isa ActivityBubblePressure) && !(model.fluid isa RestrictedEquilibriaModel)
-        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
-    end
+function bubble_pressure(model::CompositeModel, T, x, method::ThermodynamicMethod)
     return bubble_pressure(model.fluid, T, x, method)
 end
 
-function bubble_temperature(model::CompositeModel, T, x, method::BubblePointMethod)
-    if !(method isa ActivityBubbleTemperature) && !(model.fluid isa RestrictedEquilibriaModel)
-        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
-    end
+function bubble_temperature(model::CompositeModel, T, x, method::ThermodynamicMethod)
     return bubble_temperature(model.fluid, T, x, method)
 end
 
-function dew_pressure(model::CompositeModel, T, x, method::DewPointMethod)
-    if !(method isa ActivityDewPressure)  && !(model.fluid isa RestrictedEquilibriaModel)
-        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
-    end
+function dew_pressure(model::CompositeModel, T, x, method::ThermodynamicMethod)
     return dew_pressure(model.fluid, T, x, method)
 end
 
-function dew_temperature(model::CompositeModel, T, x, method::DewPointMethod)
-    if !(method isa ActivityDewTemperature)  && !(model.fluid isa RestrictedEquilibriaModel)
-        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
-    end
+function dew_temperature(model::CompositeModel, T, x, method::ThermodynamicMethod)
     return dew_temperature(model.fluid, T, x, method)
 end
 

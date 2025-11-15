@@ -58,7 +58,7 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
     else
         T = method.T0
     end
-    r = pt_flash_x0(model,p,T,z,method;k0 = :suggest)
+    r = pt_flash_x0(model,p,T,z,method)
     return r
 end
 
@@ -134,22 +134,9 @@ function qp_flash_impl(model,β,p,z,method::GeneralizedXYFlash)
     return xy_flash(model,spec,z,flash0,method)
 end
 
-function qp_to_dewp(model,p,T,z,method)
-    result = Clapeyron.qp_flash(model,1,p,z,method)
-    x1,x2 = result.compositions
-    v1,v2 = result.volumes
-    if x1 ≈ z
-        x = x2
-        vl,vv = v2,v1
-    else
-        x = x1
-        vl,vv = v1,v2
-    end
-    return temperature(result),vl,vv,x
-end
-
-function qp_to_bubblep(model,p,T,z,method)
-    result = Clapeyron.qp_flash(model,0,p,z,method)
+function qp_to_bubbledew(model,p,T,z,method,bubble)
+    β = bubble ? 0 : 1
+    result = Clapeyron.qp_flash(model,β,p,z,method)
     x1,x2 = result.compositions
     v1,v2 = result.volumes
     if x1 ≈ z
@@ -161,6 +148,10 @@ function qp_to_bubblep(model,p,T,z,method)
     end
     return temperature(result),vl,vv,y
 end
+
+qp_to_dewp(model,p,T,z,method) = qp_to_bubbledew(model,p,T,z,method,false)
+qp_to_bubblep(model,p,T,z,method) = qp_to_bubbledew(model,p,T,z,method,true)
+
 
 function bubble_temperature_impl(model::EoSModel,p,z,method::GeneralizedXYFlash)
     return qp_to_bubblep(model,p,z,method)

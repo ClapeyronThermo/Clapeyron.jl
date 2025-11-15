@@ -113,7 +113,7 @@ function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
     ∂lnϕ∂n = lnϕ * transpose(lnϕ)
     ∂lnϕ∂P = similar(lnϕ)
     ∂P∂n = similar(lnϕ)
-    hconfig = ForwardDiff.HessianConfig(Tuple{∂lnϕTag,typeof(model),typeof(p),typeof(T),typeof(z)},result,aux)
+    hconfig = ForwardDiff.HessianConfig(Tuple{∂lnϕTag(),typeof(model),typeof(p),typeof(T),typeof(z)},result,aux)
     if has_lnγ_impl(__γ_unwrap(model))
         jcache = similar(aux)
     else
@@ -238,7 +238,7 @@ function modified_lnϕ(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
 end
 
 function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
-    lnϕ, ∂lnϕ∂n, _, vol = ∂lnϕ∂n∂P(model, p, T, z, lnϕ_cache; phase, vol0)
+    lnϕ, ∂lnϕ∂n, _, vol = ∂lnϕ∂n∂P(model, p, T, z, cache; phase, vol0)
     return lnϕ,∂lnϕ∂n,vol
 end
 

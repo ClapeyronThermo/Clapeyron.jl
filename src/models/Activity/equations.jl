@@ -255,25 +255,20 @@ function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
     γϕmodel = GammaPhi(components,model,pure)
 end
 
-function bubble_pressure(model::ActivityModel,T,x,method::BubblePointMethod)
+for f in (:bubble_pressure,:bubble_temperature,:dew_pressure,:dew_temperature)
+    @eval begin
+        function $f(model::ActivityModel,T,x,method::ThermodynamicMethod)
+            compmodel = __act_to_gammaphi(model,method)
+        return $f(compmodel,T,x,method)
+        end
+    end
+end
+
+function bubble_pressure(model::ActivityModel,T,x,method::ThermodynamicMethod)
     compmodel = __act_to_gammaphi(model,method)
     return bubble_pressure(compmodel,T,x,method)
 end
 
-function bubble_temperature(model::ActivityModel,p,x,method::BubblePointMethod)
-    compmodel = __act_to_gammaphi(model,method)
-    return bubble_temperature(compmodel,p,x,method)
-end
-
-function dew_pressure(model::ActivityModel,T,y,method::DewPointMethod)
-    compmodel = __act_to_gammaphi(model,method)
-    return dew_pressure(compmodel,T,y,method)
-end
-
-function dew_temperature(model::ActivityModel,p,y,method::DewPointMethod)
-    compmodel = __act_to_gammaphi(model,method)
-    return dew_temperature(compmodel,p,y,method)
-end
 
 function init_preferred_method(method::typeof(bubble_pressure),model::ActivityModel,kwargs)
     gas_fug = get(kwargs,:gas_fug,false)
@@ -300,9 +295,11 @@ function init_preferred_method(method::typeof(dew_temperature),model::ActivityMo
 end
 
 function init_preferred_method(method::typeof(tp_flash),model::ActivityModel,kwargs)
-    second_order = get(kwargs,:second_order,false)
-    second_order && throw(error("activity models don't support second order solvers."))    
     return MichelsenTPFlash(;kwargs...)
+end
+
+function gas_model(model::T) where T <:ActivityModel
+    return gas_model(__act_to_gammaphi(model,tp_flash,true))
 end
 
 function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)

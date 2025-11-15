@@ -784,7 +784,7 @@ function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
         return FlashResult(model,p,T,z,phase = _phase)
     end
 
-    return pt_flash_x0(model,p,T,z,method;k0 = :suggest)
+    return pt_flash_x0(model,p,T,z,method)
 end
 
 function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
@@ -843,7 +843,7 @@ function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
         return FlashResult(model,p,T,z,phase = _phase)
     end
 
-    return pt_flash_x0(model,p,T,z,method;k0 = :suggest)
+    return pt_flash_x0(model,p,T,z,method)
 end
 
 function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing) where F

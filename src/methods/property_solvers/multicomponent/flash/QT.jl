@@ -48,7 +48,7 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
     else
         p = method.p0
     end
-    res =  pt_flash_x0(model,p,T,z,method;k0 = :suggest)
+    res =  pt_flash_x0(model,p,T,z,method)
     return res
 end
 
@@ -125,8 +125,9 @@ function qt_flash_impl(model,β,T,z,method::GeneralizedXYFlash)
     return xy_flash(model,spec,z,flash0,method)
 end
 
-function bubble_pressure_impl(model::EoSModel,T,z,method::GeneralizedXYFlash)
-    result = Clapeyron.qt_flash(model,0,T,z,method)
+function qt_to_bubbledew(model,T,z,method,bubble)
+    β = bubble ? 0 : 1
+    result = Clapeyron.qt_flash(model,β,T,z,method)
     x1,x2 = result.compositions
     v1,v2 = result.volumes
     if x1 ≈ z
@@ -139,18 +140,15 @@ function bubble_pressure_impl(model::EoSModel,T,z,method::GeneralizedXYFlash)
     return pressure(result),vl,vv,y
 end
 
+qt_to_bubblet(model,T,z,method) = qt_to_bubbledew(model,T,z,method,true)
+qt_to_dewt(model,T,z,method) = qt_to_bubbledew(model,T,z,method,false)
+
+function bubble_pressure_impl(model::EoSModel,T,z,method::GeneralizedXYFlash)
+    return qt_to_bubblet(model,T,z,method)
+end
+
 function dew_pressure_impl(model::EoSModel,T,z,method::GeneralizedXYFlash)
-    result = Clapeyron.qt_flash(model,1,T,z,method)
-    x1,x2 = result.compositions
-    v1,v2 = result.volumes
-    if x1 ≈ z
-        x = x2
-        vl,vv = v2,v1
-    else
-        x = x1
-        vl,vv = v1,v2
-    end
-    return pressure(result),vl,vv,x
+    return qt_to_dewt(model,T,z,method)
 end
 
 export qt_flash

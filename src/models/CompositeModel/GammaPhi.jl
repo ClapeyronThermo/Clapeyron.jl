@@ -331,11 +331,6 @@ function __eval_G_DETPFlash(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,equilibriu
     end
 end
 
-#=
-TPD support.
-
-TODO: support vle in TPD.
-=#
 function tpd_delta_d_vapour!(d,wrapper,p,T)
     ϕsat,sat = wrapper.fug,wrapper.sat
     is_ideal = gas_model(wrapper) isa IdealModel
