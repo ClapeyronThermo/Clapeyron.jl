@@ -8,8 +8,8 @@ Pages = ["activity.md"]
 
 There are two alternatives on the definition of an activity model:
 
-- Defining an excess Gibbs energy function
-- Defining an activity coefficient function
+- Defining an excess Gibbs energy function (via `Clapeyron.excess_gibbs_free_energy`)
+- Defining an activity coefficient function (via `Clapeyron.lnγ_impl!`)
 
 those two can be converted between one form to another via:
 
@@ -37,7 +37,6 @@ Clapeyron.tcPRWilsonRes
 Clapeyron.NRTL
 Clapeyron.aspenNRTL
 Clapeyron.UNIQUAC
-Clapeyron.FloryHuggins
 ```
 
 ## UNIFAC models
