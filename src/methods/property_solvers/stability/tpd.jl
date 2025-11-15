@@ -6,7 +6,7 @@ function tpd_cache(model,p,T,z,k0 = z)
     return x1,x2,x3,x4,vcache,Hϕ
 end
 
-function tpd_obj!(G,H,model,p,T,di,phase,cache)
+function tpd_obj!(G,H,model,p,T,α,di,phase,cache)
     second_order = !isnothing(H)
     w,dtpd,_,_,vcache,Hϕ = cache
     w .= α .* α .* 0.25
@@ -46,23 +46,23 @@ function tpd_obj(model, p, T, di, phase, cache = tpd_cache(model,p,T,di), break_
     end
 
     function g(∇f, x)
-        fx = tpd_obj!(∇f,nothing,model,p,T,di,phase,cache)
+        fx = tpd_obj!(∇f,nothing,model,p,T,α,di,phase,cache)
         return ∇f
     end
 
     function fg(∇f, x)
-        fx = tpd_obj!(∇f,nothing,model,p,T,di,phase,cache)
+        fx = tpd_obj!(∇f,nothing,model,p,T,α,di,phase,cache)
         return fx,∇f
     end
     function h(∇²f, x)
-        fx = tpd_obj!(nothing,∇²f,model,p,T,di,phase,cache)
+        fx = tpd_obj!(nothing,∇²f,model,p,T,α,di,phase,cache)
         return ∇²f
     end
     function fgh(∇f, ∇²f, x)
-        fx = fx = tpd_obj!(∇f,∇²f,model,p,T,di,phase,cache)
+        fx = fx = tpd_obj!(∇f,∇²f,model,p,T,α,di,phase,cache)
         return fx, ∇f, ∇²f
     end
-    
+
     obj = NLSolvers.ScalarObjective(f=f,g=g,fg=fg,fgh=fgh,h=h)
     optprob = OptimizationProblem(obj = obj,inplace = true)
 end
