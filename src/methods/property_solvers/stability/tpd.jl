@@ -41,24 +41,24 @@ function tpd_obj!(G,H,model,p,T,α,di,phase,cache)
 end
 
 function tpd_obj(model, p, T, di, phase, cache = tpd_cache(model,p,T,di), break_first = false)
-    function f(x)
+    function f(α)
         fx = tpd_obj!(nothing,nothing,model,p,T,di,phase,cache)
     end
 
-    function g(∇f, x)
+    function g(∇f, α)
         fx = tpd_obj!(∇f,nothing,model,p,T,α,di,phase,cache)
         return ∇f
     end
 
-    function fg(∇f, x)
+    function fg(∇f, α)
         fx = tpd_obj!(∇f,nothing,model,p,T,α,di,phase,cache)
         return fx,∇f
     end
-    function h(∇²f, x)
+    function h(∇²f, α)
         fx = tpd_obj!(nothing,∇²f,model,p,T,α,di,phase,cache)
         return ∇²f
     end
-    function fgh(∇f, ∇²f, x)
+    function fgh(∇f, ∇²f, α)
         fx = fx = tpd_obj!(∇f,∇²f,model,p,T,α,di,phase,cache)
         return fx, ∇f, ∇²f
     end
