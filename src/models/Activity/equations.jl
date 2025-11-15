@@ -264,12 +264,6 @@ for f in (:bubble_pressure,:bubble_temperature,:dew_pressure,:dew_temperature)
     end
 end
 
-function bubble_pressure(model::ActivityModel,T,x,method::ThermodynamicMethod)
-    compmodel = __act_to_gammaphi(model,method)
-    return bubble_pressure(compmodel,T,x,method)
-end
-
-
 function init_preferred_method(method::typeof(bubble_pressure),model::ActivityModel,kwargs)
     gas_fug = get(kwargs,:gas_fug,false)
     poynting = get(kwargs,:poynting,false)
