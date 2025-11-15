@@ -283,7 +283,9 @@ end
     #examples for qt, qp flash (#314)
     model = cPR(["ethane","propane"],idealmodel=ReidIdeal)
     res2 = qt_flash(model,0.5,208.0,[0.5,0.5])
+    res2a = qt_flash(model,0.5,208.0,[0.5,0.5],RRQXFlash())
     @test Clapeyron.pressure(res2) ≈ 101634.82435966855 rtol = 1e-6
+    @test Clapeyron.pressure(res2a) ≈ 101634.82435966855 rtol = 1e-6
     @test QT.pressure(model,0.5,208.0,[0.5,0.5]) ≈ 101634.82435966855 rtol = 1e-6
     res3 = qp_flash(model,0.5,120000.0,[0.5,0.5])
     @test Clapeyron.temperature(res3) ≈ 211.4972567716822 rtol = 1e-6

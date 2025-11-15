@@ -193,6 +193,57 @@ function qp_flash_impl(model,β,p,z,method::RRQXFlash)
     return FlashResult(flash0.compositions,K,lnK,FlashData(p,T))
 end
 
+function qt_flash_impl(model,β,T,z,method::RRQXFlash)
+    flash0 = qt_flash_x0(model,β,T,z,method)
+    TT = Base.promote_eltype(model,β,T,z)
+    x = flash0.compositions[1]
+    y = flash0.compositions[2]
+    K = similar(z,TT)
+    lnK = similar(K)
+    x .= flash0.compositions[1]
+    y .= flash0.compositions[2]
+    w = (x,y,z)
+    if is_vle(method.equilibrium) || is_unknown(method.equilibrium)
+        phasex,phasey = :liquid,:vapour
+    elseif is_lle(method.equilibrium)
+        phasex,phasey = :liquid,:liquid
+    end
+    phases = (phasex,phasey)
+    nc = length(model)
+    #TODO: support this
+    non_inx = FillArrays.Fill(false,nc)
+    non_iny = FillArrays.Fill(false,nc)
+    non_inw = (non_inx,non_iny)
+
+    dlnϕ_cache = ∂lnϕ_cache(model, β, T, x, Val{false}())
+    vec_cache = (K,lnK)
+    #model,p,T,w,β,Kx,phases,non_inw,vec_cache,dlnϕ_cache,spec
+
+    params = (model,β,T,w,phases,non_inw,vec_cache,dlnϕ_cache)
+    logp0 = log(pressure(flash0))
+    prob = Roots.ZeroProblem(update_K_QT!,logp0)
+    logp = Roots.solve(prob,Roots.Order1(),params,atol = method.atol,rtol = method.rtol)
+    p = exp(logp)
+    n = sum(z)
+    resize!(lnK,2)
+    resize!(K,2)
+    K[1] = 1 - β
+    K[2] = β
+    x ./= sum(x)
+    y ./= sum(y)
+    K .*= n
+    lnK ./= n
+    return FlashResult(flash0.compositions,K,lnK,FlashData(p,T))
+end
+
+function bubble_pressure_impl(model::EoSModel,T,z,method::RRQXFlash)
+    return qp_to_bubblep(model,T,z,method)
+end
+
+function dew_pressure_impl(model::EoSModel,T,z,method::RRQXFlash)
+    return qp_to_dewp(model,T,z,method)
+end
+
 function bubble_temperature_impl(model::EoSModel,p,z,method::RRQXFlash)
     return qp_to_bubblep(model,p,z,method)
 end
