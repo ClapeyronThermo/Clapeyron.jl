@@ -1,4 +1,4 @@
-#hooks to TPFlashWrapper
+#hooks to PTFlashWrapper
 update_pressure!(model,p) = nothing
 update_temperature!(model,T) = nothing
 

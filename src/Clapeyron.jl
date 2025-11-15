@@ -130,7 +130,7 @@ include("models/ideal/AlyLeeIdeal.jl")
 #Basic utility EoS
 include("models/utility/EoSVectorParam.jl")
 include("models/utility/ZeroResidual.jl")
-include("models/utility/TPFlashWrapper.jl")
+include("models/utility/PTFlashWrapper.jl")
 
 #Empiric Models uses CompositeModel
 include("models/CompositeModel/CompositeModel.jl")
