@@ -1,10 +1,10 @@
 #wrapper used to cache results in case of activity models and CompositeModel
-struct PTFlashWrapper{T,R,S} <: EoSModel
+struct PTFlashWrapper{T,T2,R,S} <: EoSModel
     components::Vector{String}
     model::T
+    pures::T2
     sat::Vector{R}
     fug::Vector{S}
-    μ::Vector{S}
     equilibrium::Symbol
 end
 
@@ -18,16 +18,41 @@ function tp_flash_K0!(K,wrapper::PTFlashWrapper,p,T,z)
     K .=  first.(wrapper.sat) ./ p 
 end
 
-function PTFlashWrapper(model::EoSModel,p,T::Number,equilibrium::Symbol)
-    pures = split_pure_model(model)
-    RT = R̄*T
-    sats = saturation_pressure.(pures,T)
-    vv_pure = last.(sats)
-    p_pure = first.(sats)
-    μpure = only.(VT_chemical_potential_res.(gas_model.(pures),vv_pure,T))
-    ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
-    g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
-    return PTFlashWrapper(component_list(model),model,sats,ϕpure,g_pure,equilibrium)
+function PTFlashWrapper{TT}(model,equilibrium::Symbol,pures = split_pure_model(model)) where TT
+    nc = length(model)
+    sat = Vector{Tuple{TT,TT,TT}}(undef,nc)
+    ϕpure = Vector{TT}(undef,nc)
+    return PTFlashWrapper(component_list(model),model,pures,sat,ϕpure,equilibrium)
+end
+
+function PTFlashWrapper(model,equilibrium::Symbol,pures = split_pure_model(model))
+    TT = Base.promote_eltype(model,Float64)
+    return PTFlashWrapper{TT}(model,equilibrium,pures)
+end
+
+function PTFlashWrapper(model,p,T,equilibrium::Symbol)
+    wrapper = PTFlashWrapper(model,equilibrium)
+    update_temperature!(wrapper,T)
+    return wrapper
+end
+
+function update_temperature!(model::PTFlashWrapper,T)
+    pures = model.pures
+    ϕ = model.fug
+    sats = model.sat
+    TT = eltype(ϕ)
+    for i in 1:length(model)
+        pure = pures[i]
+        sat = saturation_pressure(pure,T)
+        ps,vl,vv = sat
+        sats[i] = sat
+        if gas_model(pure) isa IdealModel
+            ϕ[i] = 1.0
+        else
+            ϕ[i] = exp(VT_lnϕ_pure(gas_model(pure),vv,T,ps))
+        end
+    end
+    return nothing
 end
 
 gas_model(model::PTFlashWrapper) = gas_model(model.model)

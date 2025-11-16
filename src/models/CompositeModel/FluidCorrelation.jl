@@ -231,30 +231,8 @@ function init_preferred_method(method::typeof(tp_flash),model::FluidCorrelation{
     RRTPFlash(;nacc = 0,kwargs...)
 end
 
-__tpflash_cache_model(model::FluidCorrelation,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
-
-function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
-    fluidmodel = model.gas
-    #check that we can actually solve the equilibria
-    pures = split_pure_model(fluidmodel,default_splitter(model))
-    satpures = split_pure_model(model.saturation,default_splitter(model))
-    RT = R̄*T
-    if fluidmodel isa IdealModel
-        vv = RT/p
-        nan = zero(vv)/zero(vv)
-        sats = saturation_pressure.(satpures,T)
-        ϕpure = fill(one(vv),length(model))
-        g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv,T) for i in 1:length(model)]
-        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
-    else
-        sats = saturation_pressure.(satpures,T)
-        vv_pure = last.(sats)
-        p_pure = first.(sats)
-        μpure = only.(VT_chemical_potential_res.(gas_model.(pures),vv_pure,T))
-        ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
-        g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
-        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
-    end
+function __tpflash_cache_model(model::FluidCorrelation,p,T,z,equilibrium) 
+    PTFlashWrapper(model,p,T,equilibrium)
 end
 
 function ∂lnϕ_cache(model::PTFlashWrapper{FluidCorrelation{<:IdealModel}}, p, T, z, dt::Val{B}) where B

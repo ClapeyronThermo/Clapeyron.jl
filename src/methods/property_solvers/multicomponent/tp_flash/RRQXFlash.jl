@@ -14,9 +14,7 @@ function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,spec)
     if spec == pressure #QT flash
         update_pressure!(model,p)
     elseif spec == temperature
-        update_temperature!(model,T)
-    else
-        throw(error("invalid specification for update_K_QX!"))
+        update_temperature!(model,T)   
     end
 
     lnϕx, volx = modified_lnϕ(model, p, T, x, dlnϕ_cache; phase = phasex)

@@ -299,7 +299,7 @@ end
 function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)
     ignore = is_lle(equilibrium)
     compmodel = __act_to_gammaphi(model,tp_flash,ignore)
-    PTFlashWrapper(compmodel,p,T,equilibrium)
+    return __tpflash_cache_model(compmodel,p,T,z,equilibrium)
 end
 
 #LLE point. It does not require an input concentration, because it assumes that activities are pressure-independent.

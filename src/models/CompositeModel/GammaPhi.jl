@@ -217,33 +217,19 @@ function __calculate_reference_state_consts(model::GammaPhi,v,T,p,z,H0,S0,phase)
     return a0,a1
 end
 
-function PTFlashWrapper(model::GammaPhi,p,T::Number,equilibrium::Symbol)
+function __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium)
     fluidmodel = model.fluid
     #check that we can actually solve the equilibria
     if fluidmodel isa IdealModel && !is_lle(equilibrium)
         ActivitySaturationError(model.activity,tp_flash)
     end
-    pures = fluidmodel.pure
-    RT = R̄*T
-    if fluidmodel.model isa IdealModel
-        vv = RT/p
-        nan = zero(vv)/zero(vv)
-        sats = fill((nan,nan,vv),length(model))
-        ϕpure = fill(one(vv),length(model))
-        g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv,T) for i in 1:length(model)]
-        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
-    else
-        sats = saturation_pressure.(pures,T)
-        vv_pure = last.(sats)
-        p_pure = first.(sats)
-        μpure = only.(VT_chemical_potential_res.(gas_model.(pures),vv_pure,T))
-        ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
-        g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
-        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
+    TT = Base.promote_eltype(model,p,T,z)
+    wrapper = PTFlashWrapper{TT}(model,equilibrium,fluidmodel.pure)
+    if is_vle(equilibrium) || is_unknown(equilibrium)
+        update_temperature!(wrapper,T)
     end
+    return wrapper
 end
-
-__tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
 function modified_lnϕ(wrapper::PTFlashWrapper, p, T, z, cache; phase = :unknown, vol0 = nothing)
     if is_vapour(phase) || is_liquid(phase)
@@ -279,7 +265,8 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,
     end
 
     if is_vle(eq) && !iszero(β)
-        gy,_ = gammaphi_gibbs(wrapper,p,T,y,:v)
+        vv = vols[2]
+        gy,_ = gammaphi_gibbs(wrapper,p,T,y,:v,vols[2])
         gibbs += gy*β
     elseif !iszero(β) #lle
         gy,_ = gammaphi_gibbs(wrapper,p,T,y,:l)
@@ -298,7 +285,7 @@ function __eval_G_DETPFlash(wrapper::PTFlashWrapper,p,T,x,equilibrium)
     return gammaphi_gibbs(wrapper,p,T,x,phase)
 end
 
-function gammaphi_gibbs(wrapper::PTFlashWrapper,p,T,w,phase = :unknown)
+function gammaphi_gibbs(wrapper::PTFlashWrapper,p,T,w,phase = :unknown,vol = NaN)
     model = wrapper.model
     RT = Rgas(model)*T
     g_ideal = sum(xlogx,w)
@@ -306,7 +293,12 @@ function gammaphi_gibbs(wrapper::PTFlashWrapper,p,T,w,phase = :unknown)
     if is_liquid(phase)
         return excess_gibbs_free_energy(__γ_unwrap(model),p,T,w)/RT + g_ideal,vl
     elseif is_vapour(phase)
-        ∑zlogϕi,vv = ∑zlogϕ(gas_model(model),p,T,w,phase = :v)
+        if isnan(vol)
+            volw = volume(model,p,T,w,phase = phase)
+        else
+            volw = vol
+        end
+        ∑zlogϕi,vv = ∑zlogϕ(gas_model(model),p,T,w,phase = :v,vol = volw)
         return ∑zlogϕi + tpd_delta_g_vapour(wrapper,p,T,w) + g_ideal,vv
     elseif is_unknown(phase)
         ∑zlogϕi,vv = ∑zlogϕ(gas_model(model),p,T,w,phase = :v)
