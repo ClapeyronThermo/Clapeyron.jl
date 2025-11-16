@@ -409,15 +409,6 @@ function PT_property(model::CompositeModel,p,T,z,phase,threaded,vol0,f::F,USEP::
     end
 end
 
-function activity_coefficient(model::CompositeModel,p,T,z=SA[1.];
-                            μ_ref = nothing,
-                            reference = :pure,
-                            phase=:unknown,
-                            threaded=true,
-                            vol0=nothing)
-    return activity_coefficient(model.fluid,p,T,z;μ_ref,reference,phase,threaded,vol0)
-end
-
 __γ_unwrap(model::CompositeModel) = __γ_unwrap(model.fluid)
 
 reference_chemical_potential_type(model::CompositeModel) = reference_chemical_potential_type(model.fluid)

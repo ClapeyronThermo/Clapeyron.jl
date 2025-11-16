@@ -158,10 +158,6 @@ function COSMOSACdsp(components;
     return model
 end
 
-function activity_coefficient(model::COSMOSACdspModel,V,T,z)
-    return exp.(@f(lnγ_comb) .+@f(lnγ_res).+@f(lnγ_dsp))
-end
-
 function lnγ_impl!(lnγ,model::COSMOSACdspModel,V,T,z)
     lnγ .= 0
     lnγ .+= @f(lnγ_res)

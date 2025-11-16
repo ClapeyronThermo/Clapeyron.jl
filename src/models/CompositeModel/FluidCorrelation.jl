@@ -110,15 +110,6 @@ function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,USEP
     end
 end
 
-function activity_coefficient(model::FluidCorrelation,p,T,z=SA[1.];
-    μ_ref = nothing,
-    reference = :pure,
-    phase=:unknown,
-    threaded=true,
-    vol0=nothing)
-    return FillArrays.Ones(length(model))
-end
-
 __γ_unwrap(model::FluidCorrelation) = IdealLiquidSolution()
 
 reference_chemical_potential_type(model::FluidCorrelation) = :zero

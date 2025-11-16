@@ -29,16 +29,6 @@ end
 
 fluid_model(model::GammaPhi) = model.fluid.model
 
-function activity_coefficient(model::GammaPhi,p,T,z=SA[1.];
-                            μ_ref = nothing,
-                            reference = :pure,
-                            phase=:unknown,
-                            threaded=true,
-                            vol0=nothing)
-
-    return activity_coefficient(model.activity,p,T,z;μ_ref,reference,phase,threaded,vol0)
-end
-
 __γ_unwrap(model::GammaPhi) = __γ_unwrap(model.activity)
 
 function excess_gibbs_free_energy(model::GammaPhi,p,T,z)
