@@ -51,6 +51,8 @@ function lnγ_impl!(res,::IdealLiquidSolution,p,T,z)
     return res
 end
 
+K0_lle_init(::IdealLiquidSolution,p,T,z) = throw(error("IdealLiquidSolution() does not support LLE equilibria."))
+
 function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
     X = gradient_type(model,T,z)
     nc = length(z)
@@ -135,7 +137,7 @@ Activity models are transformed into a GammaPhi wrapper that evaluates the pure 
 function eos_impl(model::ActivityModel,V,T,z)
     return excess_gibbs_free_energy(model,V,T,z) + reference_state_eval(model,V,T,z)
 end
- 
+
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
     dfT = Solvers.derivative(f,T)
@@ -219,7 +221,7 @@ function ∂lnγ∂n(model,p,T,z,cache = nothing)
             lnγ .= @view ∂g_E[1:nc]
             g_E = dot(z,lnγ)*RT
             return g_E,lnγ,∂lnγ∂ni
-        else            
+        else
             _result = ForwardDiff.hessian!(result, fun_g, aux, hconfig, Val{false}())
             g_E = DiffResults.value(_result)*RT
             ∂g_E = DiffResults.gradient(_result)

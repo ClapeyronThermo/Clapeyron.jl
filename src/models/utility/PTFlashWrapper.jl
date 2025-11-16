@@ -60,3 +60,18 @@ gas_model(model::PTFlashWrapper) = gas_model(model.model)
 function volume_impl(model::PTFlashWrapper, p, T, z, phase, threaded, vol0)
     volume_impl(model.model, p, T, z, phase, threaded, vol0)
 end
+
+function Base.show(io::IO,mime::MIME"text/plain",wrapper::PTFlashWrapper)
+    model = wrapper.model
+    pure = wrapper.pures
+    print(io,"PT-Flash Wrapper")
+    length(model) == 1 && print(io, " with 1 component:")
+    length(model) > 1 && print(io, " with ", length(model), " components:")
+    println(io)
+    show_pairs(io,wrapper.components)
+    print(io,'\n',"Mixture model: ", typeof(model))
+    print(io,'\n',"Pure model: ",eltype(pure))
+    print(io,'\n',"Equilibrium type: :",wrapper.equilibrium)
+    show_reference_state(io,model;space = true)
+end
+

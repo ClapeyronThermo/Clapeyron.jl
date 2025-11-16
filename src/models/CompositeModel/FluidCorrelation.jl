@@ -234,10 +234,6 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:FluidCorrelation},p,T
     return NaN*one(T+p+first(x))
 end
 
-function K0_lle_init(model::PTFlashWrapper{<:FluidCorrelation},p,T,z)
-    throw(error("Correlation-Based Composite Model does not support LLE equilibria."))
-end
-
 function __eval_G_DETPFlash(model::PTFlashWrapper{<:FluidCorrelation},p,T,xi,equilibrium)
     throw(error("Correlation-Based Composite Model does not support DETPFlash."))
 end
