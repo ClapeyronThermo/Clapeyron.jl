@@ -47,8 +47,8 @@ idealmodel(model::GammaPhi) = idealmodel(model.fluid.model)
 
 function init_preferred_method(method::typeof(tp_flash),model::GammaPhi,kwargs)
     second_order = get(kwargs,:second_order,false)
-    second_order && throw(error("γ-ϕ Composite Models don't support second order solvers."))    
-    
+    second_order && throw(error("γ-ϕ Composite Models don't support second order solvers."))
+
     MichelsenTPFlash(;kwargs...)
 end
 
@@ -207,7 +207,7 @@ function __calculate_reference_state_consts(model::GammaPhi,v,T,p,z,H0,S0,phase)
     return a0,a1
 end
 
-function __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium)
+function PTFlashWrapper(model::GammaPhi,p,T,z,equilibrium)
     fluidmodel = model.fluid
     #check that we can actually solve the equilibria
     if fluidmodel isa IdealModel && !is_lle(equilibrium)
@@ -367,32 +367,43 @@ end
 function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpressure = false,phase = :l,_vol = nothing)
     model = wrapper.model
     RT = R̄*T
-    if is_liquid(phase)
-        logγx = lnγ(__γ_unwrap(model),p,T,w,cache)
-        v = zero(eltype(logγx))
-        return logγx,v,true
-    else
-        if _vol != nothing
-            vol = _vol
-        else
-            vol = volume(gas_model(wrapper),p,T,w,phase = :vapour,vol0 = vol0)
+    if is_liquid(phase) 
+        γmodel = __γ_unwrap(model)
+        #=
+        If the model is not an activity model, then PTFlashWrapper is wrapping
+        a normal helmholtz model, we just return lnϕ.
+        =#
+        if γmodel isa ActivityModel
+            logγx = lnγ(γmodel,p,T,w,cache)
+            v = zero(eltype(logγx))
+            return logγx,v,true
+        elseif is_vle(wrapper.equilibrium)
+            logγx,v = __lnγ_sat(model,p,T,w,cache)
+            return logγx,v,true
         end
-        fxy,v = lnϕ!(cache,gas_model(wrapper),p,T,w;vol)
-        overpressure = false
-        if isnan(v) && liquid_overpressure && is_liquid(phase)
-            overpressure = true
-            #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the
-            #specified conditions. try elevating the pressure at the first iter.
-            fxy,v = lnϕ!(cache,gas_model(wrapper),1.2p,T,w,phase = phase)
-        elseif isnan(v) && !isnan(vol0) && isnothing(vol) #innacurate initial volume
-            fxy,v = lnϕ!(cache,gas_model(wrapper),p,T,w,phase = phase)
-        elseif isnan(vol) #inaccurate final volume
-            fxy,v = lnϕ!(cache,gas_model(wrapper),p,T,w,phase = phase)
-        end
-
-        tpd_delta_d_vapour!(fxy,wrapper,p,T)
-        return fxy,v,overpressure
     end
+
+    fxy,v,overpressure = tpd_lnϕ_and_v!(cache,gas_model(model),p,T,w,vol0,liquid_overpressure,phase,_vol)
+    is_vapour(phase) && is_vle(wrapper.equilibrium) && tpd_delta_d_vapour!(fxy,wrapper,p,T)
+
+    return fxy,v,overpressure
+end
+
+function __lnγ_sat(model::PTFlashWrapper,p,T,w,cache = nothing,vol0 = nothing,vol = volume(model,p,T,w,vol0 = vol,phase = :l))
+    μmix_temp = VT_chemical_potential_res!(cache,model,vol,T,z)
+    result,aux,logγ,A1,x1,x2,x3,hconfig = cache
+    μmix .= μmix_temp
+    sat = wrapper.sat
+    fug = wrapper.fug
+    for i in 1:length(logγ)
+        ϕᵢ = fug[i]
+        pᵢ,vpureᵢ,_ = sat[i]
+        #logϕᵢ = μ_res ./ RT .- logZ
+        #ϕᵢZ*RT + μ_res
+        μᵢ = ϕᵢ*pᵢ*vpureᵢ
+        logγ[i] = log(vpureᵢ/vl) + (μmix[i] - μᵢ)/RT -  vpureᵢ*(p -pᵢ)/RT
+    end
+    return logγ,vol
 end
 
 function modified_∂lnϕ∂n(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, z, cache; phase = :unknown, vol0 = nothing)

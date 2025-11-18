@@ -298,10 +298,10 @@ function gas_model(model::T) where T <:ActivityModel
     return gas_model(__act_to_gammaphi(model,tp_flash,true))
 end
 
-function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)
+function PTFlashWrapper(model::ActivityModel,p,T,z,equilibrium)
     ignore = is_lle(equilibrium)
     compmodel = __act_to_gammaphi(model,tp_flash,ignore)
-    return __tpflash_cache_model(compmodel,p,T,z,equilibrium)
+    return PTFlashWrapper(compmodel,p,T,z,equilibrium)
 end
 
 #LLE point. It does not require an input concentration, because it assumes that activities are pressure-independent.

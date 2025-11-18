@@ -223,7 +223,7 @@ function init_preferred_method(method::typeof(tp_flash),model::FluidCorrelation{
 end
 
 function __tpflash_cache_model(model::FluidCorrelation,p,T,z,equilibrium) 
-    PTFlashWrapper(model,p,T,equilibrium)
+    PTFlashWrapper(model,p,T,z,equilibrium)
 end
 
 function ∂lnϕ_cache(model::PTFlashWrapper{FluidCorrelation{<:IdealModel}}, p, T, z, dt::Val{B}) where B
