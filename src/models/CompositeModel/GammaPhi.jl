@@ -221,6 +221,10 @@ function PTFlashWrapper(model::GammaPhi,p,T,z,equilibrium)
     return wrapper
 end
 
+function __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium) 
+    PTFlashWrapper(model,p,T,z,equilibrium)
+end
+
 function modified_lnϕ(wrapper::PTFlashWrapper, p, T, z, cache; phase = :unknown, vol0 = nothing)
     if is_vapour(phase) || is_liquid(phase)
         lnϕz,vz = tpd_lnϕ_and_v!(cache,wrapper,p,T,z,vol0,false,phase,nothing)

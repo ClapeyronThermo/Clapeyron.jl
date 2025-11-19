@@ -360,6 +360,11 @@ function PTFlashWrapper(model::ActivityModel,p,T,z,equilibrium)
     return PTFlashWrapper(compmodel,p,T,z,equilibrium)
 end
 
+function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)
+    PTFlashWrapper(model,p,T,z,equilibrium)
+end
+
+
 #LLE point. It does not require an input concentration, because it assumes that activities are pressure-independent.
 """
     LLE(model::ActivityModel, T; v0=nothing)
