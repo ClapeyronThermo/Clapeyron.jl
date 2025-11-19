@@ -98,7 +98,7 @@ CompositeModel
 
 Abstract type of models that implement simplifications over the equality of chemical potentials approach for phase equilibria. Subtypes of `RestrictedEquilibriaModel` are the `GammaPhi` (activity + gas), `FluidCorrelation` (for fluid phase change and volume correlations) and `SolidCorrelation` (for solid phase change and solid volume correlations).
 """
-abstract type RestrictedEquilibriaModel <: EoSModel end
+RestrictedEquilibriaModel
 
 include("FluidCorrelation.jl")
 include("SolidCorrelation.jl")

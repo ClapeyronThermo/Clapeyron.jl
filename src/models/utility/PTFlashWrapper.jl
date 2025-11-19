@@ -135,7 +135,7 @@ function __x0_bubble_temperature(model::PTFlashWrapper,p,x,Tx0 = nothing,volatil
     return T,vl0,vv0,y
 end
 
-function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
+function __x0_dew_temperature(model::PTFlashWrapper,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
     y_r = @view y[condensables]
     pure = @view model.pures[condensables]
     sat = @view model.sat[condensables]
