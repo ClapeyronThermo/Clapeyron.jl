@@ -445,11 +445,7 @@ function VT_molar_gradient(model::EoSModel,V,T,z::AbstractVector,property::ℜ) 
     return Solvers.gradient(fun,z)::TT
 end
 
-function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F,ℜ}
-    return VT_molar_gradient!(fx,model,V,T,z,property,nothing)
-end
-
-function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ,::Nothing) where {F,ℜ}
+function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F<:AbstractVector,ℜ}
     if isnan(V) || isnan(T) || any(isnan,z)
         fx .= NaN
         return fx
@@ -458,14 +454,29 @@ function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ,::Nothing)
     return Solvers.gradient!(fx,fun,z)::F
 end
 
-function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ,config) where {F,ℜ}
+function VT_molar_gradient!(cache::F,model::EoSModel,V,T,z,property::ℜ) where {F<:Tuple,ℜ}
     if isnan(V) || isnan(T) || any(isnan,z)
         fx .= NaN
         return fx
     end
-    fun = ZVar(property,model,V,T)
-    return ForwardDiff.gradient!(fx,fun,z,config)::F
+    result,aux,∇f,A1,x1,x2,x3,hconfig = cache
+    nc = length(z)
+    if nc == 1
+        f1(_z) = property(model,V,T,SVector(_z))
+        ∇f[1] = ForwardDiff.derivative(f1,z[1])
+    else
+        aux .= 0
+        aux[1:nc] = z
+        gconfig = Solvers._GradientConfig(hconfig)
+        fun(aux) = property(model, V, T, @view(aux[1:nc]))
+        _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
+        dresult = DiffResults.gradient(_result)
+        fx_temp = @view dresult[1:nc]
+        ∇f .= fx_temp
+    end
+    return ∇f
 end
+
 
 
 VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_molar_gradient(model,V,T,z,eos)

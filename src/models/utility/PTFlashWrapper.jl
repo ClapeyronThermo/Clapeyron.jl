@@ -1,4 +1,5 @@
 #wrapper used to cache results in case of activity models and CompositeModel
+#=
 struct PTFlashWrapper{T,T2,R,S} <: EoSModel
     components::Vector{String}
     model::T
@@ -6,11 +7,11 @@ struct PTFlashWrapper{T,T2,R,S} <: EoSModel
     sat::Vector{R}
     fug::Vector{S}
     equilibrium::Symbol
-end
+end =#
 
 Base.length(model::PTFlashWrapper) = length(model.model)
-Base.eltype(model::PTFlashWrapper) = Base.promote_eltype(model.model,fug)
-
+Base.eltype(model::PTFlashWrapper) = Base.promote_eltype(model.model)
+__γ_unwrap(model::PTFlashWrapper) = __γ_unwrap(model.model)
 function tp_flash_K0(wrapper::PTFlashWrapper,p,T,z)
     first.(wrapper.sat) ./ p
 end
@@ -90,7 +91,7 @@ function __x0_bubble_pressure(model::PTFlashWrapper,T,x,y0 = nothing,volatiles =
     else
         yx = y0
     end
-    p,_,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,x,yx,FugEnum.BUBBLE_PRESSURE,volatiles,high_conditions)
+    p,_,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,x,yx,FugEnum.BUBBLE_PRESSURE,volatiles,false)
     return p,vl0,vv0,y
 end
 
@@ -106,11 +107,37 @@ function __x0_dew_pressure(model::PTFlashWrapper,T,y,x0=nothing,condensables = F
     else
         xx = x0
     end
-    p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,xx,y,FugEnum.DEW_PRESSURE,condensables,high_conditions)
+    p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,xx,y,FugEnum.DEW_PRESSURE,condensables,false)
     return p,vl0,vv0,x
 end
 
+function __x0_bubble_temperature(model::PTFlashWrapper,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = nothing,crit = nothing)
+    x_r = @view x[volatiles]
+    pure = @view model.pures[volatiles]
+    sat = @view model.sat[volatiles]
+    if Tx0 !== nothing
+        T0 = Tx0
+        for i in 1:length(pure)
+            sat[i] = saturation_pressure(pure[i],T0)
+        end
+        p_i_r = first.(sat)
+    else
+        dPdTsat = extended_dpdT_temperature.(pure,p,crit)
+        T0 = antoine_bubble_solve(dPdTsat,p,x_r)
+        p_i_r = antoine_pressure.(dPdTsat,T0)
+    end
+    xipi_r = y_r = p_i_r .* x_r ./ sum(x_r)
+    p = sum(xipi_r)
+    y_r ./= p
+    y0 = index_expansion(y_r,volatiles)
+    _,T,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x,y0,FugEnum.BUBBLE_TEMPERATURE,volatiles,false)
+    update_temperature!(model,T)
+    return T,vl0,vv0,y
+end
+
 function improve_bubbledew_suggestion(model::PTFlashWrapper,p0,T0,x,y,method,in_media,high_conditions)
+    TT = Base.promote_eltype(model,p0,T0,x,y)
+    p,T = TT(p0),TT(T0)
     vl = volume(model,p,T,x,phase = :l)/sum(x)
     vv = volume(model,p,T,y,phase = :v)/sum(y)
     return p,T,x,y,vl,vv

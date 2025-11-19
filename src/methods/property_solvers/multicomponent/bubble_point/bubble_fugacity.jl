@@ -31,11 +31,9 @@ end
                          itmax_newton = 10, itmax_ss = 5, tol_y = 1e-8,
                          tol_p = 1e-8, tol_of = 1e-8)
 
-Function to compute bubble pressure via fugacity coefficients. First it uses
-successive substitution to update the phase composition and a outer newtown
-loop to update the pressure. If no convergence is reached after itmax_newton
-iterations, the system is solved using a multidimensional non-linear
-systems of equations.
+Function to compute bubble pressure via fugacity coefficients. 
+First it uses successive substitution to update the phase composition and a outer newton (or secant) loop to update the pressure. 
+If no convergence is reached after `itmax_newton` iterations, the system is solved using a multidimensional non-linear system of equations.
 
 Inputs:
 model: equation of state model
@@ -44,7 +42,7 @@ model: equation of state model
 - `y0`: initial guess for the vapor phase composition
 - `p0`: initial guess for the bubble pressure `[Pa]`
 - `vol0`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
-- `itmax_newton`: optional, number of iterations to update the pressure using newton's method
+- `itmax_newton`: optional, number of iterations to update the pressure using newton's (or secant) method
 - `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x`: optional, tolerance to stop successive substitution cycle
 - `tol_p`: optional, tolerance to stop newton cycle
@@ -52,14 +50,14 @@ model: equation of state model
 - `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
 
 Returns:
-`p`: bubble pressure `[Pa]`
-`volx`: saturared liquid volume `[m³]`
-`voly`: saturared vapor volume `[m³]`
-`y`: saturated vapor composition
+- `p`: bubble pressure `[Pa]`
+- `volx`: saturared liquid volume `[m³]`
+- `voly`: saturared vapor volume `[m³]`
+- `y`: saturated vapor composition
 """
 function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothing),
                          itmax_newton = 10, itmax_ss = 5, tol_y = 1e-8,
-                         tol_p = 1e-8, tol_of = 1e-8,nonvolatiles = nothing)
+                         tol_p = 1e-8, tol_of = 1e-8,nonvolatiles = nothing,second_order = true)
 
 
     # Setting the initial guesses for volumes
@@ -72,20 +70,24 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
     y0 = y0[volatiles]
     y0 = y0/sum(y0)
 
-    converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,vol0,FugEnum.BUBBLE_PRESSURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p,tol_xy = tol_y,tol_of=tol_of)
+    converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,vol0,FugEnum.BUBBLE_PRESSURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p,tol_xy = tol_y,tol_of = tol_of,second_order = second_order)
     p,T,x,y,vol,lnK = res
     volx,voly = vol
-    if converged
-        return p,volx,voly,index_expansion(y,volatiles)
-    elseif isnan(volx) || isnan(voly)
+    if converged || isnan(volx) || isnan(voly)
         return p,volx,voly,index_expansion(y,volatiles)
     else
         inc0 = vcat(lnK, log(p))
         vol_cache = [volx, voly]
-        problem = OF_bubblepy!(model,model_y, x, T, vol_cache,volatiles)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
-        inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        problem = OF_bubblepy!(model, model_y, x, T, vol_cache, volatiles)
+        if second_order
+            sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+            inc = Solvers.x_sol(sol)
+            !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        else
+            sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.LBFGS()))
+            inc = Solvers.x_sol(sol)
+            !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        end
         lnp = inc[end]
         lnK = inc[1:(end-1)]
 
@@ -118,6 +120,7 @@ Inputs:
 - `tol_p = 1e-8`: optional, tolerance to stop newton cycle
 - `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
 - `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
+- `second_order`: optional, decide if the algorithm uses second order information when updating the guess estimates. Second order methods are slower, but more reliable.
 """
 struct FugBubblePressure{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -133,6 +136,7 @@ struct FugBubblePressure{T} <: BubblePointMethod
     tol_y::Float64
     tol_p::Float64
     tol_of::Float64
+    second_order::Bool
 end
 
 function FugBubblePressure(;vol0 = nothing,
@@ -147,37 +151,47 @@ function FugBubblePressure(;vol0 = nothing,
                                 itmax_ss = 5,
                                 tol_y = 1e-8,
                                 tol_p = 1e-8,
-                                tol_of = 1e-8)
+                                tol_of = 1e-8,
+                                second_order = true)
 
     if p0 == y0 == vol0 == nothing
-        return FugBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order)
     elseif (p0 == y0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return FugBubblePressure{typeof(vl)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubblePressure{typeof(vl)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order)
     elseif (vol0 == y0 == nothing) && !isnothing(p0)
         p0 = float(p0)
-        return FugBubblePressure{typeof(p0)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubblePressure{typeof(p0)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order)
     elseif (p0 == vol0 == nothing) && !isnothing(y0)
         T = eltype(y0)
-        return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(y0)
         vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order)
     elseif !isnothing(vol0) && !isnothing(y0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order)
     elseif  !isnothing(p0) && !isnothing(y0)
         p0,_ = promote(p0,first(y0))
         T = eltype(p0)
         y0 = convert(Vector{T},y0)
-        return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order)
     else
         throw(error("invalid specification for bubble pressure"))
     end
+end
+
+function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::FugBubblePressure)
+    wrapper = PTFlashWrapper(model,NaN,T,x,:vle)
+    return bubble_pressure_impl(wrapper,T,x,method)
+end
+
+function bubble_pressure_impl(model::CompositeModel,T,x,method::FugBubblePressure)
+    return bubble_pressure_impl(model.fluid,T,x,method)
 end
 
 function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
@@ -191,8 +205,9 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
     tol_y = method.tol_y
     tol_p = method.tol_p
     tol_of = method.tol_of
+    second_order = method.second_order
     vol0 = (vl,vv)
-    return bubble_pressure_fug(model,T,x,y0,p0;vol0,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,nonvolatiles)
+    return bubble_pressure_fug(model,T,x,y0,p0;vol0,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order,nonvolatiles)
 end
 
 ################ Bubble temperature solver
@@ -258,7 +273,7 @@ Returns:
 """
 function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,nothing),
                          itmax_newton = 10, itmax_ss = 5, tol_y = 1e-8,
-                         tol_T = 1e-8, tol_of = 1e-8,nonvolatiles = nothing)
+                         tol_T = 1e-8, tol_of = 1e-8,nonvolatiles = nothing,second_order = true)
 
     # Setting the initial guesses for volumes
     
@@ -271,7 +286,7 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
     y0 = y0[volatiles]
     y0 = y0/sum(y0)
 
-    converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,vol0,FugEnum.BUBBLE_TEMPERATURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_y, tol_of = tol_of)
+    converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,vol0,FugEnum.BUBBLE_TEMPERATURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_y, tol_of = tol_of, second_order = second_order)
     p,T,x,y,vol,lnK = res
     volx,voly = vol
     if converged
@@ -297,22 +312,22 @@ end
 """
     FugBubbleTemperature(kwargs...)
 
-Method to compute [`bubble_temperature`](@ref) via fugacity coefficients. First it uses
-successive substitution to update the phase composition and a outer newtown
-loop to update the temperature. If no convergence is reached after
-`itmax_newton` iterations, the system is solved using a multidimensional
-non-linear system of equations.
+Function to compute bubble pressure via fugacity coefficients. 
+First it uses successive substitution to update the phase composition and a outer newton (or secant) loop to update the temperature. 
+If no convergence is reached after `itmax_newton` iterations, the system is solved using a multidimensional non-linear system of equations.
+
 
 Inputs:
 - `y = nothing`: optional, initial guess for the vapor phase composition.
 - `T0 = nothing`: optional, initial guess for the bubble temperature `[K]`.
 - `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
-- `itmax_newton = 10`: optional, number of iterations to update the temperature using newton's method
+- `itmax_newton = 10`: optional, number of iterations to update the pressure using newton's (or secant) method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
 - `tol_T = 1e-8`: optional, tolerance to stop newton cycle
 - `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
 - `nonvolatiles`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
+- `second_order`: optional, decide if the algorithm uses second order information when updating the guess estimates. Second order methods are slower, but more reliable.
 """
 struct FugBubbleTemperature{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -328,6 +343,7 @@ struct FugBubbleTemperature{T} <: BubblePointMethod
     tol_y::Float64
     tol_T::Float64
     tol_of::Float64
+    second_order::Bool
 end
 
 
@@ -343,37 +359,47 @@ function FugBubbleTemperature(;vol0 = nothing,
     itmax_ss = 5,
     tol_y = 1e-8,
     tol_T = 1e-8,
-    tol_of = 1e-8)
+    tol_of = 1e-8,
+    second_order = true)
 
     if T0 == y0 == vol0 == nothing
-        return FugBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+        return FugBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order)
     elseif (T0 == y0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return FugBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+        return FugBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order)
     elseif (vol0 == y0 == nothing) && !isnothing(T0)
         T0 = float(T0)
-        return FugBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+        return FugBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order)
     elseif (T0 == vol0 == nothing) && !isnothing(y0)
         T = eltype(y0)
-        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(y0)
         vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order)
     elseif !isnothing(vol0) && !isnothing(y0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order)
     elseif  !isnothing(T0) && !isnothing(y0)
         T0,_ = promote(T0,first(y0))
         T = eltype(T0)
         y0 = convert(Vector{T},y0)
-        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order)
     else
         throw(error("invalid specification for bubble temperature"))
     end
+end
+
+function bubble_temperature_impl(model::RestrictedEquilibriaModel,p,x,method::FugBubbleTemperature)
+    wrapper = PTFlashWrapper(model,p,NaN,x,:vle)
+    return bubble_temperature_impl(wrapper,p,x,method)
+end
+
+function bubble_temperature_impl(model::CompositeModel,p,x,method::FugBubbleTemperature)
+    return bubble_temperature_impl(model.fluid,p,x,method)
 end
 
 function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTemperature)
@@ -386,8 +412,9 @@ function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTempera
     tol_y = method.tol_y
     tol_T = method.tol_T
     tol_of = method.tol_of
+    second_order = method.second_order
     vol0 = (vl,vv)
-    return bubble_temperature_fug(model,p,x,y0,T0;vol0,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,nonvolatiles)
+    return bubble_temperature_fug(model,p,x,y0,T0;vol0,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order,nonvolatiles)
 end
 
 export FugBubblePressure, FugBubbleTemperature

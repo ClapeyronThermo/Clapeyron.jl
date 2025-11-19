@@ -64,6 +64,15 @@ struct CompositeModel{𝔽,𝕊} <: EoSModel
     solid_reference_state::ReferenceState
 end
 
+struct PTFlashWrapper{T,T2,R,S} <: EoSModel
+    components::Vector{String}
+    model::T
+    pures::T2
+    sat::Vector{R}
+    fug::Vector{S}
+    equilibrium::Symbol
+end
+
 #recombine options
 include("utils/recombine.jl")
 

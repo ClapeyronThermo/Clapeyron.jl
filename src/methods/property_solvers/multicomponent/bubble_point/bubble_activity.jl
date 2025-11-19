@@ -13,6 +13,7 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
+- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
 """
 struct ActivityBubblePressure{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -71,18 +72,19 @@ function bubble_pressure_impl(model::CompositeModel,T,x,method::ActivityBubblePr
 end
 
 function bubble_pressure_impl(wrapper::PTFlashWrapper,T,x,method::ActivityBubblePressure)
+    model = wrapper.model
     TT = Base.promote_eltype(wrapper,T,x)
     volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
-    p,vl,vv,y = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles)
+    p,volx,voly,y = bubble_pressure_init(wrapper,T,x,method.vol0,method.p0,method.y0,volatiles)
     cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     lnK = similar(x,TT)
     pold = -p
     lnK = similar(x,TT)
     K = similar(x,TT)
     for k in 1:method.itmax_ss
-        lnϕx, volx = modified_lnϕ(model, p, T, x, cache; phase = phasex, vol0 = volx)
+        lnϕx, volx = modified_lnϕ(wrapper, p, T, x, cache; phase = :liquid, vol0 = volx)
         lnK .= lnϕx
-        lnϕy, voly = modified_lnϕ(model, p, T, y, cache; phase = phasey, vol0 = voly)
+        lnϕy, voly = modified_lnϕ(wrapper, p, T, y, cache; phase = :vapour, vol0 = voly)
         lnK .-= lnϕy
         lnK .+= log(p)
         K .= exp.(lnK)
@@ -94,10 +96,10 @@ function bubble_pressure_impl(wrapper::PTFlashWrapper,T,x,method::ActivityBubble
         !isfinite(err) && break
         err < method.rtol_ss && break
     end
-    if iszero(vl)
-        vl = volume(wrapper,p,T,x,phase = :liquid)
+    if iszero(volx)
+        volx = volume(wrapper,p,T,x,phase = :liquid)
     end
-    return (p,vl,vv,y)
+    return (p,volx,voly,y)
 end
 
 

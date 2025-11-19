@@ -4,6 +4,10 @@ function qt_f0_p!(K,z,p,ps,β0)
 end
 
 function qt_flash_x0(model,β,T,z,method::FlashMethod)
+    cached_model = PTFlashWrapper(model,NaN,T,z,:vle)
+    if model != cached_model
+        return qt_flash_x0(cached_model,β,T,z,method)
+    end
     ∑z = sum(z)
     if method.p0 == nothing
         if 0 <= β <= 0.01
@@ -21,8 +25,14 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
             βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         else
-            pures = split_pure_model(model)
-            sat = extended_saturation_pressure.(pures,T)
+            if model isa PTFlashWrapper
+                pures = model.pures
+                sat = model.sat
+            else
+                pures = split_pure_model(model)
+                sat = extended_saturation_pressure.(pures,T)
+            end
+            
             ps = first.(sat)
             K = similar(ps)
             p_bubble = @sum(ps[i]*z[i])/∑z
@@ -48,7 +58,7 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
     else
         p = method.p0
     end
-    res =  pt_flash_x0(model,p,T,z,method)
+    res = pt_flash_x0(model,p,T,z,method)
     return res
 end
 

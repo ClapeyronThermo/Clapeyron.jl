@@ -1050,9 +1050,8 @@ critical_tsat_extrapolation(model,p,crit) = critical_tsat_extrapolation(model,p,
 critical_tsat_extrapolation(model,p,Tc,Vc) = critical_tsat_extrapolation(model,p,Tc,pressure(model,Vc,Tc),Vc)
 
 
-dpdT_saturation(model,v1,v2,T) = dpdT_saturation(model,model,v1,v2,T,SA[1.0],SA[1.0])
-dpdT_saturation(model1,model2,v1,v2,T) = dpdT_saturation(model1,model2,v1,v2,T,SA[1.0],SA[1.0])
-
+dpdT_saturation(model::EoSModel,v1::Number,v2,T) = dpdT_saturation(model,model,v1,v2,T,SA[1.0],SA[1.0])
+dpdT_saturation(model1::EoSModel,model2::EoSModel,v1,v2,T) = dpdT_saturation(model1,model2,v1,v2,T,SA[1.0],SA[1.0])
 function dpdT_saturation(model1::EoSModel,model2::EoSModel,v1,v2,T,w1,w2)
     ∑w1 = sum(w1)
     ∑w2 = sum(w2)

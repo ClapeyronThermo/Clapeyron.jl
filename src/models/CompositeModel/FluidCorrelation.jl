@@ -214,6 +214,10 @@ function saturation_temperature(model::FluidCorrelation,p,method::SaturationMeth
     end
 end
 
+function dpdT_saturation(model::FluidCorrelation,v1::Number,v2,T)
+    return dpdT_saturation(model.saturation,v1,v2,p,T)
+end
+
 function init_preferred_method(method::typeof(tp_flash),model::FluidCorrelation,kwargs)
     RRTPFlash(;kwargs...)
 end

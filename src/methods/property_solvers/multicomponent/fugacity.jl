@@ -12,7 +12,7 @@ module FugEnum
     is_pressure(x::BubbleDew) = !is_temperature(x) 
 end
 
-function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,method;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8)
+function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,method;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8,second_order = true)
     volx,voly = vol0
     converged = false
     _bubble,_pressure = FugEnum.is_bubble(method),FugEnum.is_pressure(method)
@@ -43,6 +43,7 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,method;itmax_ss = 5, itmax_newt
     end
 
     valid_iter = true
+    T_old,p_old = T,p
     for j in 1:itmax_newton
         w_restart .= w_calc
         volx_restart,voly_restart = volx,voly
@@ -51,8 +52,8 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,method;itmax_ss = 5, itmax_newt
             break
         end
         for i in 1:itmax_ss
-            lnϕx, volx = lnϕ(model, p, T, _x, Hϕx, vol0=volx, phase = :liquid)
-            lnϕy, voly = lnϕ(model, p, T, _y, Hϕy, vol0=voly, phase = :vapour)
+            lnϕx, volx = modified_lnϕ(model, p, T, _x, Hϕx, vol0=volx, phase = :liquid)
+            lnϕy, voly = modified_lnϕ(model, p, T, _y, Hϕy, vol0=voly, phase = :vapour)
 
             if isnan(volx)
                 lnϕx, volx = lnϕ(model, p, T, _x, Hϕx, phase = :liquid)
@@ -124,14 +125,13 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,method;itmax_ss = 5, itmax_newt
             break
         end
 
-
-
         if _pressure
             ∂step = clamp(∂step,-0.4*p,0.4*p)
             p -= ∂step
         else
             ∂step = clamp(∂step,-0.05*T,0.05*T)
             T -= ∂step
+            update_temperature!(model,T)
         end
 
         if !isfinite(∂step) #error, fail early, the NaN propagation is handled upstream
@@ -154,11 +154,11 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,method;itmax_ss = 5, itmax_newt
     return converged,(p,T,_x,_y,(volx,voly),lnK)
 end
 
-function _fug_OF_ss(modelx::EoSModel,modely::Nothing,p,T,x,y,vol0,method,_view;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8)
+function _fug_OF_ss(modelx::EoSModel,modely::Nothing,p,T,x,y,vol0,method,_view;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8,second_order = true)
     return _fug_OF_ss(modelx,p,T,x,y,vol0,method;itmax_ss, itmax_newton,tol_pT,tol_xy,tol_of)
 end
 
-function _fug_OF_ss(modelx::Nothing,modely::EoSModel,p,T,x,y,vol0,method,_view;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8)
+function _fug_OF_ss(modelx::Nothing,modely::EoSModel,p,T,x,y,vol0,method,_view;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8,second_order = true)
     return _fug_OF_ss(modely,p,T,x,y,vol0,method;itmax_ss, itmax_newton,tol_pT,tol_xy,tol_of)
 end
 
@@ -166,7 +166,8 @@ end
 ##general successive substitution method to solve bubble/dew problems via fugacity coefficients
 ##support for nonvolatiles/noncondensables
 
-function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,method,_view;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8)
+
+function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,method,_view;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8,second_order = true)
     volx,voly = vol0
     converged = false
     _bubble,_pressure = FugEnum.is_bubble(method),FugEnum.is_pressure(method)
@@ -178,7 +179,6 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,method,_view;
         n = length(modelx)
         zz = view(y,_view)
     end
-
 
     #caches for ∂lnϕ∂n∂P∂T/∂lnϕ∂n∂P
     if _pressure
@@ -195,7 +195,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,method,_view;
     w_old = similar(lnK)
     w_calc = similar(lnK)
     w_restart = similar(lnK)
-
+    OF = NaN*zero(eltype(lnK))
     if _bubble
         w .= y
         _x,_y = x,w
@@ -203,28 +203,21 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,method,_view;
         w .= x
         _x,_y = w,y
     end
+
+    p_old,T_old = p,T
     valid_iter = false
     for j in 1:itmax_newton
         if isnan(volx) || isnan(voly)
             break
         end
+        
         w_restart .= w_calc
         volx_restart,voly_restart = volx,voly
         valid_iter = true
 
         for i in 1:itmax_ss
-
-            lnϕx, volx = lnϕ(modelx, p, T, _x, Hϕx, phase=:liquid, vol0=volx)
-            lnϕy, voly = lnϕ(modely, p, T, _y, Hϕy, phase=:vapour, vol0=voly)
-
-            if isnan(volx)
-                lnϕx, volx = lnϕ(modelx, p, T, _x, Hϕx, phase = :liquid)
-            end
-
-            if isnan(voly)
-                lnϕy, voly = lnϕ(modely, 1.1p, T, _y, Hϕy, phase = :vapour)
-            end
-
+            lnϕx, volx = modified_lnϕ(modelx, p, T, _x, Hϕx, phase=:liquid, vol0=volx)
+            lnϕy, voly = modified_lnϕ(modely, p, T, _y, Hϕy, phase=:vapour, vol0=voly)
             if isnan(volx) || isnan(voly)
                 break
             end
@@ -238,6 +231,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,method,_view;
             end
 
             K .= exp.(lnK)
+            
             w_old .=  w
 
             if _bubble
@@ -274,7 +268,10 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,method,_view;
             end
         end
 
-        if _pressure
+        OF_old = OF
+        OF = sum(w_calc) - 1.0
+
+        if _pressure && second_order
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(modelx, p, T, _x, Hϕx, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(modely, p, T, _y, Hϕy, phase=:vapour, vol0=voly)
             if _bubble
@@ -284,7 +281,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,method,_view;
                 _∂lnϕ∂Py = view(∂lnϕ∂Py,_view)
                 ∂OF = @sum(w[i]*(∂lnϕ∂Px[i] - _∂lnϕ∂Py[i]))
             end
-        else
+        elseif !_pressure && second_order
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(modelx, p, T, _x, Hϕx, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(modely, p, T, _y, Hϕy, phase=:vapour, vol0=voly)
             if _bubble
@@ -294,33 +291,48 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,method,_view;
                 _∂lnϕ∂Ty = view(∂lnϕ∂Ty,_view)
                 ∂OF = @sum(w_calc[i]*(∂lnϕ∂Tx[i] - _∂lnϕ∂Ty[i]))
             end
+        elseif _pressure && !second_order
+            if j == 1
+                ∂OF = OF/sqrt(eps(p))
+            else
+                ∂OF = (OF - OF_old)/(p - p_old)
+            end
+        else
+            if j == 1
+                ∂OF = OF/sqrt(eps(T))
+            else
+                ∂OF = (OF - OF_old)/(T - T_old)
+            end  
         end
+    
         if isnan(volx) || isnan(voly)
             break
-        end
-
-        if !_bubble
-            ∂OF = -∂OF
         end
 
         if _bubble
             _lnϕx = view(lnϕx,_view)
             lnK .=_lnϕx .- lnϕy
         else
+            if second_order
+                ∂OF = -∂OF
+            end
             _lnϕy = view(lnϕy,_view)
             lnK .= lnϕx .- _lnϕy
         end
+
         K .= exp.(lnK)
 
-        OF = sum(w_calc) - 1.0
         ∂step = OF / ∂OF
 
         if _pressure
-            ∂step = clamp(∂step,-0.4*p,0.4*p)
-            p -= ∂step
+            ∂step∂p = clamp(∂step,-0.4*p,0.4*p)
+            p_old = p
+            p -= ∂step∂p
         else
-            ∂step = clamp(∂step,-0.05*T,0.05*T)
-            T -= ∂step
+            ∂step∂T = clamp(∂step,-0.05*T,0.05*T)
+            T_old = T
+            T -= ∂step∂T
+            update_temperature!(modely,T)
         end
 
         if valid_iter && abs(∂step) < tol_pT || abs(OF) < tol_of
@@ -344,7 +356,6 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,method,_view;
             T = w[1]
         end
     end
-
     return converged,(p,T,_x,_y,(volx,voly),lnK)
 end
 
@@ -415,8 +426,8 @@ function _fug_OF_neqsystem(model,_x, _y, _p, _T, vol_cache,method,_phase)
         K .= exp.(lnK)
         p,T = _select_pT(inc,_p,_T,_pressure)
         x,y = _select_xy(w,K,_x,_y,_bubble)
-        lnϕx, volx = lnϕ(model, p, T, x, Hϕx, phase=_phase[1], vol0=volx)
-        lnϕy, voly = lnϕ(model, p, T, y, Hϕy, phase=_phase[2], vol0=voly)
+        lnϕx, volx = modified_lnϕ(model, p, T, x, Hϕx, phase=_phase[1], vol0=volx)
+        lnϕy, voly = modified_lnϕ(model, p, T, y, Hϕy, phase=_phase[2], vol0=voly)
         F[1:end-1] .= lnK .+ lnϕy .- lnϕx
         F[end] = sum(y)  - sum(x)
         vol_cache .= (volx, voly)
@@ -435,6 +446,7 @@ function _fug_OF_neqsystem(model,_x, _y, _p, _T, vol_cache,method,_phase)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, Hϕy, phase=_phase[2], vol0=voly)
             J[1:(end-1), end] .= p .* (∂lnϕ∂Py .- ∂lnϕ∂Px)
         else
+            update_temperature!(model,T)
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, Hϕx, phase=_phase[1], vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, Hϕy, phase=_phase[2], vol0=voly)
             J[1:(end-1), end] .= T .* (∂lnϕ∂Ty .- ∂lnϕ∂Tx)
@@ -459,6 +471,7 @@ function _fug_OF_neqsystem(model,_x, _y, _p, _T, vol_cache,method,_phase)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, phase=_phase[2], vol0=voly)
             J[1:(end-1), end] .= p .* (∂lnϕ∂Py .- ∂lnϕ∂Px)
         else
+            update_temperature!(model,T)
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=_phase[1], vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=_phase[2], vol0=voly)
             J[1:(end-1), end] .= T .* (∂lnϕ∂Ty .- ∂lnϕ∂Tx)
@@ -527,8 +540,8 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel, _x, _y, _p, _T, vo
         p,T = _select_pT(inc,_p,_T,_pressure)
         x,y = _select_xy(w,K,_x,_y,_bubble,_view)
 
-        lnϕx, volx = lnϕ(modelx, p, T, x, Hϕx, phase=_phase[1], vol0=volx)
-        lnϕy, voly = lnϕ(modely, p, T, y, Hϕy, phase=_phase[2], vol0=voly)
+        lnϕx, volx = modified_lnϕ(modelx, p, T, x, Hϕx, phase=_phase[1], vol0=volx)
+        lnϕy, voly = modified_lnϕ(modely, p, T, y, Hϕy, phase=_phase[2], vol0=voly)
 
         if _bubble
             lnϕview = @view lnϕx[_view]

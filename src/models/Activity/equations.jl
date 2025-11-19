@@ -233,6 +233,70 @@ function ∂lnγ∂n(model,p,T,z,cache = nothing)
     end
 end
 
+function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
+    nc = length(z)
+    RT = Rgas(model)*T
+    n = sum(z)
+    fun_g(w) = excess_gibbs_free_energy(model,p,w[nc+1],@view(w[1:nc]))/RT
+    function fun_lnγ(out,w)
+        Clapeyron.lnγ(model,p,w[1:nc+1],@view(w[1:nc]),@view(out[1:nc]))
+        return out
+    end
+    if cache == nothing
+        if has_lnγ_impl(model)
+            lnγ = zeros(Base.promote_eltype(model,p,T,z),nc)
+            aux = similar(lnγ,nc+1)
+            aux[1:nc] = z
+            aux[nc+1] = T
+            ∂g_E = ForwardDiff.jacobian!(lnγ,fun_lnγ,aux)
+            ∂lnγ∂ni = ∂g_E[1:nc,1:nc]
+            ∂lnγ∂T = resize!(aux,nc)
+            ∂lnγ∂T .= @view ∂g_E[:,nc + 1]
+            g_E = dot(z,lnγ)*RT
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+        else
+            hresult = DiffResults.HessianResult(z)
+            result = ForwardDiff.hessian!(hresult,fun_g,z)
+
+            g_E = DiffResults.value(result)*RT
+            lnγ_and_T = DiffResults.gradient(result)
+            lnγ = resize!(lnγ_and_T,nc)
+
+            ∂lnγ∂ni∂T = DiffResults.hessian(result)
+            ∂lnγ∂ni = ∂lnγ∂ni∂T[1:nc,1:nc]
+            ∂lnγ∂T = ∂lnγ∂ni∂T[:,nc + 1]
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+        end
+    else
+        result,aux,lnγ,∂lnγ∂ni,∂lnγ∂T,_,_,hconfig,jcache = cache
+        aux .= 0
+        aux[1:nc] .= z
+        aux[nc+1] = T
+        if has_lnγ_impl(model)
+            jconfig = Solvers._JacobianConfig(hconfig)
+            jresult = ForwardDiff.DiffResults.MutableDiffResult(result.derivs[1],(result.derivs[2],))
+            _result = ForwardDiff.jacobian!(jresult,fun_lnγ,jcache,aux,jconfig,Val{false}())
+            ∂lnγ = DiffResults.jacobian(_result)
+            ∂lnγ∂ni .=  @view ∂lnγ[1:nc,1:nc]
+            ∂lnγ∂T .= @view ∂lnγ[:,nc + 1]
+            ∂g_E = DiffResults.value(_result)
+            lnγ .= @view ∂g_E[1:nc]
+            g_E = dot(z,lnγ)*RT
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+        else
+            _result = ForwardDiff.hessian!(result, fun_g, aux, hconfig, Val{false}())
+            g_E = DiffResults.value(_result)*RT
+            ∂g_E = DiffResults.gradient(_result)
+            lnγ .= @view ∂g_E[1:nc]
+            ∂lnγ = DiffResults.hessian(_result)
+            ∂lnγ∂ni .= @view ∂lnγ[1:nc,1:nc]
+            ∂lnγ∂T .= @view ∂lnγ[1:nc,nc + 1]
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+        end
+    end
+end
+
+
 __act_to_gammaphi(model::ActivityModel) = __act_to_gammaphi(model,nothing,true)
 GammaPhi(model::ActivityModel) = __act_to_gammaphi(model)
 #convert ActivityModel into a RestrictedEquilibriaModel
@@ -261,33 +325,25 @@ for f in (:bubble_pressure,:bubble_temperature,:dew_pressure,:dew_temperature)
     @eval begin
         function $f(model::ActivityModel,T,x,method::ThermodynamicMethod)
             compmodel = __act_to_gammaphi(model,method)
-        return $f(compmodel,T,x,method)
+            return $f(compmodel,T,x,method)
         end
     end
 end
 
 function init_preferred_method(method::typeof(bubble_pressure),model::ActivityModel,kwargs)
-    gas_fug = get(kwargs,:gas_fug,false)
-    poynting = get(kwargs,:poynting,false)
-    return ActivityBubblePressure(;gas_fug,poynting,kwargs...)
+    return ActivityBubblePressure(;kwargs...)
 end
 
 function init_preferred_method(method::typeof(bubble_temperature),model::ActivityModel,kwargs)
-    gas_fug = get(kwargs,:gas_fug,false)
-    poynting = get(kwargs,:poynting,false)
-    return ActivityBubbleTemperature(;gas_fug,poynting,kwargs...)
+    return FugBubbleTemperature(;kwargs...)
 end
 
 function init_preferred_method(method::typeof(dew_pressure),model::ActivityModel,kwargs)
-    gas_fug = get(kwargs,:gas_fug,false)
-    poynting = get(kwargs,:poynting,false)
-    return ActivityDewPressure(;gas_fug,poynting,kwargs...)
+    return ActivityDewPressure(;kwargs...)
 end
 
 function init_preferred_method(method::typeof(dew_temperature),model::ActivityModel,kwargs)
-    gas_fug = get(kwargs,:gas_fug,false)
-    poynting = get(kwargs,:poynting,false)
-    return ActivityDewTemperature(;gas_fug,poynting,kwargs...)
+    return FugDewTemperature(;kwargs...)
 end
 
 function init_preferred_method(method::typeof(tp_flash),model::ActivityModel,kwargs)

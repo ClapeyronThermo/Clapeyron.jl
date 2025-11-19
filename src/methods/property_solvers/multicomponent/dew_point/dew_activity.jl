@@ -3,7 +3,7 @@
 
 Function to compute [`dew_pressure`](@ref) using Activity Coefficients.
 On activity coefficient models it solves the problem via succesive substitucion.
-On helmholtz-based models, it uses the Chapman approximation for activity coefficients.
+On helmholtz-based models, it approximates the activity coefficient using the saturated pure state as reference.
 
 Inputs:
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
@@ -12,6 +12,8 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
+- `noncondensables`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
+
 """
 struct ActivityDewPressure{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -70,20 +72,24 @@ function dew_pressure_impl(model::CompositeModel,T,y,method::ActivityDewPressure
 end
 
 function dew_pressure_impl(wrapper::PTFlashWrapper,T,y,method::ActivityDewPressure)
-    condensables = comps_in_equilibria(component_list(model),method.noncondensables)
-    p,volx,voly,y = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.x0,condensables)
-    cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
+    condensables = comps_in_equilibria(component_list(wrapper),method.noncondensables)
+    p,volx,voly,x = bubble_pressure_init(wrapper,T,y,method.vol0,method.p0,method.x0,condensables)
+    zero_non_equilibria!(x,condensables)
+    cache = ∂lnϕ_cache(wrapper, p, T, x, Val{false}())
     lnK = similar(x)
     pold = -p
     lnK = similar(x)
     K = similar(x)
     for k in 1:method.itmax_ss
-        lnϕx, volx = modified_lnϕ(model, p, T, x, cache; phase = phasex, vol0 = volx)
+        lnϕx, volx = modified_lnϕ(wrapper, p, T, x, cache; phase = :liquid, vol0 = volx)
         lnK .= lnϕx
-        lnϕy, voly = modified_lnϕ(model, p, T, y, cache; phase = phasey, vol0 = voly)
+        lnϕy, voly = modified_lnϕ(wrapper, p, T, y, cache; phase = :vapour, vol0 = voly)
         lnK .-= lnϕy
         lnK .+= log(p)
         K .= exp.(lnK)
+        for i in 1:length(K)
+            condensables[i] || (K[i] = Inf)
+        end
         x .= y ./ K
         pold = p
         p = 1/sum(x)
@@ -92,10 +98,10 @@ function dew_pressure_impl(wrapper::PTFlashWrapper,T,y,method::ActivityDewPressu
         !isfinite(err) && break
         err < method.rtol_ss && break
     end
-    if iszero(vl)
-        vl = volume(wrapper,p,T,x,phase = :liquid)
+    if iszero(volx)
+        volx = volume(wrapper,p,T,x,phase = :liquid)
     end
-    return (p,vl,vv,x)
+    return (p,volx,voly,x)
 end
 
 export ActivityDewPressure
