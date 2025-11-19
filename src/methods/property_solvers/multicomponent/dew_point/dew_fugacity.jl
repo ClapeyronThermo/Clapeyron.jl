@@ -270,7 +270,7 @@ Returns:
 """
 function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothing),
                              itmax_newton = 10, itmax_ss = 5, tol_x = 1e-8,
-                             tol_T = 1e-8, tol_of = 1e-8,noncondensables = nothing)
+                             tol_T = 1e-8, tol_of = 1e-8,noncondensables = nothing,second_order = true)
 
      # Setting the initial guesses for volumes
     vol0 === nothing && (vol0 = (nothing,nothing))
@@ -391,6 +391,15 @@ function FugDewTemperature(;vol0 = nothing,
     else
         throw(error("invalid specification for bubble temperature"))
     end
+end
+
+function dew_temperature_impl(model::RestrictedEquilibriaModel,p,y,method::FugDewTemperature)
+    wrapper = PTFlashWrapper(model,p,NaN,y,:vle)
+    return dew_temperature_impl(wrapper,p,y,method)
+end
+
+function dew_temperature_impl(model::CompositeModel,p,y,method::FugDewTemperature)
+    return dew_temperature_impl(model.fluid,p,y,method)
 end
 
 function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)

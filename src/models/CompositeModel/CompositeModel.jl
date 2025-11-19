@@ -110,10 +110,6 @@ include("LiquidVolumeModel/LiquidVolumeModel.jl")
 include("SolidModel/SolidModel.jl")
 include("PolExpVapour.jl")
 
-
-include("bubble_point.jl")
-include("dew_point.jl")
-
 function init_model_act(model,components,userlocations,verbose)
     init_model(model,components,userlocations,verbose)
 end
@@ -491,4 +487,21 @@ function calculate_gibbs_reference_state(model::CompositeModel)
         return a0,a1
     end
 end
+
+function init_preferred_method(method::typeof(bubble_pressure),model::RestrictedEquilibriaModel,kwargs)
+    return ActivityBubblePressure(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(bubble_temperature),model::RestrictedEquilibriaModel,kwargs)
+    return FugBubbleTemperature(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_pressure),model::RestrictedEquilibriaModel,kwargs)
+    return ActivityDewPressure(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_temperature),model::RestrictedEquilibriaModel,kwargs)
+    return FugDewTemperature(;kwargs...)
+end
+
 export CompositeModel

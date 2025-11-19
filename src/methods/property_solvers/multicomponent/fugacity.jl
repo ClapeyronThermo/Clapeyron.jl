@@ -98,20 +98,32 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,method;itmax_ss = 5, itmax_newt
                 break
             end
         end
-        if _pressure
+        if _pressure && second_order
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, _x, Hϕx, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, _y, Hϕy, phase=:vapour, vol0=voly)
             ∂OF =@sum(w_calc[i]*(∂lnϕ∂Px[i] - ∂lnϕ∂Py[i]))
-        else
+        elseif !_pressure && second_order
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, _x, Hϕx, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, _y, Hϕy, phase=:vapour, vol0=voly)
             ∂OF = @sum(w_calc[i]*(∂lnϕ∂Tx[i] - ∂lnϕ∂Ty[i]))
+        elseif _pressure && !second_order
+            if j == 1
+                ∂OF = OF/sqrt(eps(p))
+            else
+                ∂OF = (OF - OF_old)/(p - p_old)
+            end
+        else
+            if j == 1
+                ∂OF = OF/sqrt(eps(T))
+            else
+                ∂OF = (OF - OF_old)/(T - T_old)
+            end  
         end
         if isnan(volx) || isnan(voly)
             break
         end
 
-        if !_bubble
+        if !_bubble && !second_order
             ∂OF = -∂OF
         end
 
@@ -335,7 +347,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,method,_view;
             update_temperature!(modely,T)
         end
 
-        if valid_iter && abs(∂step) < tol_pT || abs(OF) < tol_of
+        if valid_iter && (abs(∂step) < tol_pT || abs(OF) < tol_of)
             converged = true
             break
         end

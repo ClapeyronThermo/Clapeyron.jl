@@ -135,6 +135,30 @@ function __x0_bubble_temperature(model::PTFlashWrapper,p,x,Tx0 = nothing,volatil
     return T,vl0,vv0,y
 end
 
+function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
+    y_r = @view y[condensables]
+    pure = @view model.pures[condensables]
+    sat = @view model.sat[condensables]
+    if Tx0 !== nothing
+        T0 = Tx0
+        for i in 1:length(pure)
+            sat[i] = saturation_pressure(pure[i],T0)
+        end
+        p0inv_r = 1 ./ first.(sat)
+    else
+        dPdTsat = extended_dpdT_temperature.(pure,p,crit)
+        T0 = antoine_bubble_solve(dPdTsat,p,y_r)
+        p0inv_r = 1 ./ antoine_pressure.(dPdTsat,T0)
+    end
+    yipi_r = x_r = y_r .* p0inv_r ./ sum(y_r)
+    p_r = 1/sum(yipi_r)
+    x_r .*= p_r
+    x0 = index_expansion(x_r,condensables)
+    update_temperature!(model,T0)
+    _,T,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x0,y,FugEnum.DEW_TEMPERATURE,condensables,false)
+    return T,vl0,vv0,x
+end
+
 function improve_bubbledew_suggestion(model::PTFlashWrapper,p0,T0,x,y,method,in_media,high_conditions)
     TT = Base.promote_eltype(model,p0,T0,x,y)
     p,T = TT(p0),TT(T0)
