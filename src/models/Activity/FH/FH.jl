@@ -100,7 +100,7 @@ function excess_g_res(model::FloryHugginsModel, p, T, z)
         res += xi * log(ri)
         for j ∈ i+1:length(model.components)
             xj = z[j]*ninv
-            ϕj = xj * v[i] * N[i] / V
+            ϕj = xj * v[j] * N[j] / V
             χij = a[i,j] + b[i,j]/T
             res += ϕi * ϕj * χij * NT
         end

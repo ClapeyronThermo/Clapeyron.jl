@@ -477,11 +477,9 @@ function VT_molar_gradient!(cache::F,model::EoSModel,V,T,z,property::ℜ) where 
     return ∇f
 end
 
-
-
 VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_molar_gradient(model,V,T,z,eos)
 VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_molar_gradient(model,V,T,z,eos_res)
-VT_chemical_potential_res!(r,model::EoSModel, V, T, z=SA[1.],config = nothing) = VT_molar_gradient!(r,model,V,T,z,eos_res,config)
+VT_chemical_potential_res!(r, model::EoSModel, V, T, z=SA[1.]) = VT_molar_gradient!(r,model,V,T,z,eos_res)
 VT_chemical_potential!(result,model,V,T,z) = VT_molar_gradient!(result,model,V,T,z,eos)
 
 function VT_fugacity_coefficient(model::EoSModel,V,T,z=SA[1.])
