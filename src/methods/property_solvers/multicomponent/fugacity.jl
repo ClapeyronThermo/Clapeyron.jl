@@ -438,6 +438,7 @@ function _fug_OF_neqsystem(model,_x, _y, _p, _T, vol_cache,method,_phase)
         K .= exp.(lnK)
         p,T = _select_pT(inc,_p,_T,_pressure)
         x,y = _select_xy(w,K,_x,_y,_bubble)
+        !_pressure && update_temperature!(model,T)
         lnϕx, volx = modified_lnϕ(model, p, T, x, Hϕx, phase=_phase[1], vol0=volx)
         lnϕy, voly = modified_lnϕ(model, p, T, y, Hϕy, phase=_phase[2], vol0=voly)
         F[1:end-1] .= lnK .+ lnϕy .- lnϕx
@@ -551,7 +552,7 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel, _x, _y, _p, _T, vo
         K .= exp.(lnK)
         p,T = _select_pT(inc,_p,_T,_pressure)
         x,y = _select_xy(w,K,_x,_y,_bubble,_view)
-
+        !_pressure && update_temperature!(modely,T)
         lnϕx, volx = modified_lnϕ(modelx, p, T, x, Hϕx, phase=_phase[1], vol0=volx)
         lnϕy, voly = modified_lnϕ(modely, p, T, y, Hϕy, phase=_phase[2], vol0=voly)
 
@@ -583,6 +584,7 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel, _x, _y, _p, _T, vo
                 J[1:(end-1), end] .= p .* (@view(∂lnϕ∂Py[_view]) .- ∂lnϕ∂Px)
             end
         else
+            update_temperature!(modely,T)
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(modelx, p, T, x, Hϕx, phase=_phase[1], vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(modely, p, T, y, Hϕy, phase=_phase[2], vol0=voly)
             if _bubble
@@ -621,6 +623,7 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel, _x, _y, _p, _T, vo
                 J[1:(end-1), end] .= p .* (@view(∂lnϕ∂Py[_view]) .- ∂lnϕ∂Px)
             end
         else
+            update_temperature!(modely,T)
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(modelx, p, T, x, Hϕx, phase=_phase[1], vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(modely, p, T, y, Hϕy, phase=_phase[2], vol0=voly)
             if _bubble
