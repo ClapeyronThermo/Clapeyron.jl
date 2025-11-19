@@ -88,7 +88,7 @@ function excess_g_res(model::FloryHugginsModel, p, T, z)
     n = sum(z)
     ninv = 1/n
     V = @sum(z[i]*v[i]*N[i])/n
-    NT = sum(z[i]*N[i])/n    
+    NT = @sum(z[i]*N[i])/n    
     v0 = V / NT
     #ϕ = x .* v .* N ./ V  # Volume fraction of each component
     res = zero(Base.promote_eltype(model,T,z))
