@@ -426,7 +426,7 @@ function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpre
     end
 
     fxy,v,overpressure = tpd_lnϕ_and_v!(cache,gas_model(model),p,T,w,vol0,liquid_overpressure,phase,_vol)
-    is_vapour(phase) && is_vle(wrapper.equilibrium) && tpd_delta_d_vapour!(fxy,wrapper,p,T)
+    is_vapour(phase) && !is_lle(wrapper.equilibrium) && tpd_delta_d_vapour!(fxy,wrapper,p,T)
 
     return fxy,v,overpressure
 end

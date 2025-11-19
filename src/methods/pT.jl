@@ -682,7 +682,7 @@ The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume
 
 If the `μ_ref` keyword argument is not provided, the `reference` keyword is used to specify the reference chemical potential..
 """
-function activity_coefficient(model::EoSModel,p,T,z;
+function activity_coefficient(model::EoSModel,p,T,z = SA[1.0];
                             μ_ref = nothing,
                             reference = :pure,
                             phase=:unknown,
