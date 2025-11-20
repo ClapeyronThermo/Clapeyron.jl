@@ -352,7 +352,7 @@ end
 
         pd1 = Clapeyron.dew_pressure(system2, T2, z)[1]
         @test pd1 ≈ 19393.924550078184 rtol = 1E-6
-        pd1b = Clapeyron.dew_pressure(system2, T2, z, FubDewPressure(second_order = false))[1]
+        pd1b = Clapeyron.dew_pressure(system2, T2, z, FugDewPressure(second_order = false))[1]
         @test pd1b ≈ pd1 rtol = 1E-6
         @test Clapeyron.dew_temperature(system2, pd1, z)[1] ≈ T2 rtol = 1e-6
     end

@@ -214,7 +214,8 @@
 
         #test K0_lle_init initialization
         alg3 = RRTPFlash(
-            equilibrium = :lle)
+            equilibrium = :lle
+        )
         flash3 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg3)
         act_x3 = activity_coefficient(system, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
         act_y3 = activity_coefficient(system, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]

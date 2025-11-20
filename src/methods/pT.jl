@@ -688,13 +688,15 @@ function activity_coefficient(model::EoSModel,p,T,z = SA[1.0];
                             phase=:unknown,
                             threaded=true,
                             vol0=nothing)
-    if model isa ActivityModel
-        return activity_coefficient(model,p,T,z)
+
+    γmodel = __γ_unwrap(model)
+    if γmodel isa ActivityModel
+        return activity_coefficient(γmodel,p,T,z)
     end
     if μ_ref == nothing
-        return activity_coefficient_impl(__γ_unwrap(model),p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
+        return activity_coefficient_impl(model,p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
     else
-        return activity_coefficient_impl(__γ_unwrap(model),p,T,z,μ_ref,reference,phase,threaded,vol0)
+        return activity_coefficient_impl(model,p,T,z,μ_ref,reference,phase,threaded,vol0)
     end
 end
 
