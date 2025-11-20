@@ -28,8 +28,8 @@ function Base.show(io::IO,mime::MIME"text/plain",model::GammaPhi)
 end
 
 fluid_model(model::GammaPhi) = model.fluid.model
-
 __γ_unwrap(model::GammaPhi) = __γ_unwrap(model.activity)
+gas_model(model::GammaPhi) = gas_model(model.fluid.model)
 
 function excess_gibbs_free_energy(model::GammaPhi,p,T,z)
     return excess_gibbs_free_energy(model.activity,p,T,z)
@@ -424,7 +424,6 @@ function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpre
             return logγx,v,true
         end
     end
-
     fxy,v,overpressure = tpd_lnϕ_and_v!(cache,gas_model(model),p,T,w,vol0,liquid_overpressure,phase,_vol)
     is_vapour(phase) && !is_lle(wrapper.equilibrium) && tpd_delta_d_vapour!(fxy,wrapper,p,T)
 
