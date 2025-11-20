@@ -332,7 +332,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     μ_constraints = @view output[idx_μ_constraints]
     μ_end = similar(output,nc)
 
-    VT_chemical_potential_res!(μ_end,model,v_end,T,x_end,μconfig)
+    VT_chemical_potential_res!(μ_end,model,v_end,T,x_end)
 
     jj = 0
     for j in 1:np
