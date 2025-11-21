@@ -3,11 +3,15 @@ function qt_f0_p!(K,z,p,ps,β0)
     return rachfordrice(K,z) - β0
 end
 
+function qt_flash_x0(model::RestrictedEquilibriaModel,β,T,z,method::FlashMethod)
+    qt_flash_x0(__tpflash_cache_model(model,NaN,T,z,:vle),β,T,z,method)
+end
+
+function qt_flash_x0(model::CompositeModel,β,T,z,method::FlashMethod)
+    qt_flash_x0(model.fluid,β,T,z,method)
+end
+
 function qt_flash_x0(model,β,T,z,method::FlashMethod)
-    cached_model = PTFlashWrapper(model,NaN,T,z,:vle)
-    if model != cached_model
-        return qt_flash_x0(cached_model,β,T,z,method)
-    end
     ∑z = sum(z)
     if method.p0 == nothing
         if 0 <= β <= 0.01

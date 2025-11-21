@@ -1,5 +1,5 @@
 
-function qp_f0_T!(K,z,dpdT,T0,p,T,β0)
+function qp_f0_T!(K,z,dpdT,p,T,β0)
     for i in 1:length(K)
         dlnpdTinv,logp0,T0inv = dpdT[i]
         #dTinvdlnp = -p/(dpdT[i]*T*T)
@@ -7,6 +7,14 @@ function qp_f0_T!(K,z,dpdT,T0,p,T,β0)
         K[i] = exp(ΔTinv*dlnpdTinv)
     end
     return rachfordrice(K,z) - β0
+end
+
+function qp_flash_x0(model::RestrictedEquilibriaModel,β,p,z,method::FlashMethod)
+    qp_flash_x0(__tpflash_cache_model(model,p,NaN,z,:vle),β,p,z,method)
+end
+
+function qp_flash_x0(model::CompositeModel,β,p,z,method::FlashMethod)
+    qp_flash_x0(model.fluid,β,p,z,method)
 end
 
 function qp_flash_x0(model,β,p,z,method::FlashMethod)
@@ -26,38 +34,34 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
             βl = sum(z) - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         else
-
-        pures = split_pure_model(model)
-        dpdT = extended_dpdT_temperature.(pures,p)
-        Tmax = antoine_dew_solve(dpdT,p,z)
-        Tmin = antoine_bubble_solve(dpdT,p,z)
-        #@show Td0,Tb0
-        T0 = 1 ./ last.(dpdT)
-        #Tmin,Tmax = extrema(T0)
-        #we approximate sat(T) ≈ exp(-dpdT*T*T(1/T - 1/T0)/p)*p
-        K = similar(T0)
-        x = z ./ sum(z)
-        ft(T) = qp_f0_T!(K,x,dpdT,T0,p,T,β)
-        #we do a search over Tmin-Tmax domain, finding the minimum value of the objective function
-        Tm = β*Tmax + (1 - β)*Tmin
-        Tr1 = range(Tmin,Tm,5*length(model))
-        Tr2 = range(Tm,Tmax,5*length(model))
-        δβ1 = abs.(ft.(Tr1))
-        δβ2 = abs.(ft.(Tr2))
-            δβ1_min,i1 = findmin(δβ1)
-            δβ2_min,i2 = findmin(δβ2)
-            if δβ1_min < δβ2_min
-                T00 = Tr1[i1]
+            if model isa PTFlashWrapper
+                pures = model.pures
             else
-                T00 = Tr2[i2]
+                pures = split_pure_model(model)
             end
-            
+            dpdT = extended_dpdT_temperature.(pures,p)
+            Tmax = antoine_dew_solve(dpdT,p,z)
+            Tmin = antoine_bubble_solve(dpdT,p,z)
+            #@show Td0,Tb0
+            #Tmin,Tmax = extrema(T0)
+            #we approximate sat(T) ≈ exp(-dpdT*T*T(1/T - 1/T0)/p)*p
+            K = similar(dpdT,typeof(Tmax))
+            x = z ./ sum(z)
+            ft(_T) = qp_f0_T!(K,x,dpdT,p,_T,β)
+            #we do a search over Tmin-Tmax domain, finding the minimum value of the objective function
+            Tm = β*Tmax + (1 - β)*Tmin
+            Tr1 = range(Tmin,Tm,5*length(model))
+            Tr2 = range(Tm,Tmax,5*length(model))
+            δβ1_min,i1 = findmin(w -> abs(ft(w)),Tr1)
+            δβ2_min,i2 = findmin(w -> abs(ft(w)),Tr2)
+            T00 = δβ1_min < δβ2_min ? Tr1[i1] : Tr2[i2]
             prob = Roots.ZeroProblem(ft,T00)
             T = Roots.solve(prob)
         end
     else
         T = method.T0
     end
+    update_temperature!(model,T)
     r = pt_flash_x0(model,p,T,z,method)
     return r
 end
