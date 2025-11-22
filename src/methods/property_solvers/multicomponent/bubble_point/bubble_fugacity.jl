@@ -1,107 +1,4 @@
 """
-    OF_bubblepy!(model::EoSModel,modely x, T, vol_cache)
-    OF_bubblepy!(modelx::EoSModel,modely::EoSModel x, T, vol_cache,volatile)
-
-Objective function to compute bubble pressure using a multidimensional
-system of equations via fugacity coefficients.
-
-Inputs:
-- `model`: general equation of state model
-- `modelx`: liquid equation of state model
-- `modely`: vapour equation of state model, if any nonvolatile compounds are present
-- `x`: liquid phase composition
-- `T`: temperature `[K]`
-- `vol_cache`: array used to update the phases' volumes
-_ `volatile`: volatile component indices, if any nonvolatile compounds are present
-
-Returns: NLSolvers.NEqProblem
-"""
-function OF_bubblepy! end
-
-function OF_bubblepy!(model, x, T, vol_cache)
-    return _fug_OF_neqsystem(model,x, nothing, nothing, T, vol_cache, FugEnum.BUBBLE_PRESSURE,(:liquid,:vapor))
-end
-
-function OF_bubblepy!(model,modely, x, T, vol_cache,volatile)
-    return _fug_OF_neqsystem(model, modely, x, nothing, nothing, T, vol_cache, FugEnum.BUBBLE_PRESSURE, (:liquid,:vapor), volatile)
-end
-
-"""
-    bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothing),
-                         itmax_newton = 10, itmax_ss = 5, tol_y = 1e-8,
-                         tol_p = 1e-8, tol_of = 1e-8)
-
-Function to compute bubble pressure via fugacity coefficients. 
-First it uses successive substitution to update the phase composition and a outer newton (or secant) loop to update the pressure. 
-If no convergence is reached after `itmax_newton` iterations, the system is solved using a multidimensional non-linear system of equations.
-
-Inputs:
-model: equation of state model
-- `T`: bubble temperature `[K]`
-- `x`: liquid phase composition
-- `y0`: initial guess for the vapor phase composition
-- `p0`: initial guess for the bubble pressure `[Pa]`
-- `vol0`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
-- `itmax_newton`: optional, number of iterations to update the pressure using newton's (or secant) method
-- `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
-- `tol_x`: optional, tolerance to stop successive substitution cycle
-- `tol_p`: optional, tolerance to stop newton cycle
-- `tol_of`: optional, tolerance to check if the objective function is zero.
-- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
-
-Returns:
-- `p`: bubble pressure `[Pa]`
-- `volx`: saturared liquid volume `[m³]`
-- `voly`: saturared vapor volume `[m³]`
-- `y`: saturated vapor composition
-"""
-function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothing),
-                         itmax_newton = 10, itmax_ss = 5, tol_y = 1e-8,
-                         tol_p = 1e-8, tol_of = 1e-8,nonvolatiles = nothing,second_order = true)
-
-
-    # Setting the initial guesses for volumes
-    vol0 === nothing && (vol0 = (nothing,nothing))
-    volx, voly = vol0
-
-    #check if nonvolatiles are set
-    volatiles = comps_in_equilibria(component_list(model),nonvolatiles)
-    model_y,_ = index_reduction(model,volatiles)
-    y0 = y0[volatiles]
-    y0 = y0/sum(y0)
-
-    converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,vol0,FugEnum.BUBBLE_PRESSURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p,tol_xy = tol_y,tol_of = tol_of,second_order = second_order)
-    p,T,x,y,vol,lnK = res
-    volx,voly = vol
-    if converged || isnan(volx) || isnan(voly)
-        return p,volx,voly,index_expansion(y,volatiles)
-    else
-        inc0 = vcat(lnK, log(p))
-        vol_cache = [volx, voly]
-        problem = OF_bubblepy!(model, model_y, x, T, vol_cache, volatiles)
-        if second_order
-            sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
-            inc = Solvers.x_sol(sol)
-            !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
-        else
-            sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.LBFGS()))
-            inc = Solvers.x_sol(sol)
-            !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
-        end
-        lnp = inc[end]
-        lnK = inc[1:(end-1)]
-
-        y_r = exp.(lnK) .* x[volatiles]
-        y = index_expansion(y_r,volatiles)
-        p = exp.(lnp)
-        volx, voly = vol_cache[:]
-        # println("Second order method ", p, " ", y)
-    end
-    #@show p,volx,voly,y
-    return p, volx, voly, y
-end
-
-"""
     FugBubblePressure(kwargs...)
 
 Function to compute [`bubble_pressure`](@ref) via fugacity coefficients. First it uses
@@ -197,123 +94,67 @@ end
 function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
     nonvolatiles = method.nonvolatiles
     volatiles = comps_in_equilibria(component_list(model),nonvolatiles)
-
     _vol0,_p0,_y0 = method.vol0,method.p0,method.y0
-    p0,vl,vv,y0 = bubble_pressure_init(model,T,x,_vol0,_p0,_y0,volatiles)
-    itmax_newton = method.itmax_newton
-    itmax_ss = method.itmax_ss
-    tol_y = method.tol_y
-    tol_p = method.tol_p
-    tol_of = method.tol_of
-    second_order = method.second_order
-    vol0 = (vl,vv)
-    return bubble_pressure_fug(model,T,x,y0,p0;vol0,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order,nonvolatiles)
-end
-
-################ Bubble temperature solver
-
-"""
-    OF_bubbleTy!(model::EoSModel, y, p, vol_cache)
-    OF_bubblepy!(modelx::EoSModel,modely::EoSModel x, p, vol_cache,_views)
-
-Objective function to compute bubble temperature using a multidimensional
-system of equations via fugacity coefficients.
-
-Inputs:
-- `model`: general equation of state model
-- `modelx`: liquid equation of state model
-- `modely`: vapour equation of state model, if any nonvolatile compounds are present
-- `x`: liquid phase composition
-- `p`: pressure `[Pa]`
-- `vol_cache`: array used to update the phases' volumes
-_ `volatile`: volatile component indices, if any nonvolatile compounds are present
-
-Returns: NLSolvers.NEqProblem
-"""
-function OF_bubbleTy! end
-
-function OF_bubbleTy!(model, x, p, vol_cache)
-    return _fug_OF_neqsystem(model,x, nothing, p, nothing, vol_cache, FugEnum.BUBBLE_TEMPERATURE, (:liquid,:vapor))
-end
-
-function OF_bubbleTy!(model,modely, x, p, vol_cache,volatile)
-    return _fug_OF_neqsystem(model, modely, x, nothing, p, nothing, vol_cache, FugEnum.BUBBLE_TEMPERATURE, (:liquid,:vapor), volatile)
-end
-
-"""
-    bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,nothing),
-                         itmax_newton = 10, itmax_ss = 5, tol_y = 1e-8,
-                         tol_T = 1e-8, tol_of = 1e-8)
-
-Function to compute bubble temperature via fugacity coefficients. First it uses
-successive substitution to update the phase composition and a outer newtown
-loop to update the temperature. If no convergence is reached after
-itmax_newton iterations, the system is solved using a multidimensional
-non-linear systems of equations.
-
-Inputs:
-- model: equation of state model
-- `P`: pressure `[Pa]`
-- `x`: liquid phase composition
-- `y`: initial guess for the vapor phase composition
-- `T0`: initial guess for the bubble temperature `[K]`
-- `vol0`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
-- `itmax_newton`: optional, number of iterations to update the temperature using newton's method
-- `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
-- `tol_x`: optional, tolerance to stop successive substitution cycle
-- `tol_T`: optional, tolerance to stop newton cycle
-- `tol_of`: optional, tolerance to check if the objective function is zero.
-- `nonvolatiles`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
-
-Returns:
-- `T`: bubble temperature `[K]`
-- `volx`: saturared liquid volume `[m³]`
-- `voly`: saturared vapor volume `[m³]`
-- `y`: saturated vapor composition
-"""
-function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,nothing),
-                         itmax_newton = 10, itmax_ss = 5, tol_y = 1e-8,
-                         tol_T = 1e-8, tol_of = 1e-8,nonvolatiles = nothing,second_order = true)
-
-    # Setting the initial guesses for volumes
-    
-    vol0 === nothing && (vol0 = (nothing,nothing))
-    volx, voly = vol0
-
-    #check if nonvolatiles are set
-    volatiles = comps_in_equilibria(component_list(model),nonvolatiles)
+    p0,volx,voly,y0 = bubble_pressure_init(model,T,x,_vol0,_p0,_y0,volatiles)
+    vol0 = (volx,voly)
     model_y,_ = index_reduction(model,volatiles)
     y0 = y0[volatiles]
-    y0 = y0/sum(y0)
+    y0 ./= sum(y0)
 
-    converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,vol0,FugEnum.BUBBLE_TEMPERATURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_y, tol_of = tol_of, second_order = second_order)
-    p,T,x,y,vol,lnK = res
-    volx,voly = vol
-    if converged
-        return T,volx,voly,index_expansion(y,volatiles)
+    data = FugData(FugEnum.BUBBLE_PRESSURE,
+                    method.itmax_ss,
+                    method.itmax_newton,
+                    method.tol_p,
+                    method.tol_y,
+                    method.tol_of,
+                    method.second_order,
+                    false)
+
+    cache = fug_bubbledew_cache(model,model_y,p0,T,x,y0,data)
+
+    if all(volatiles)
+        converged,res = _fug_OF_ss(model,p0,T,x,y0,vol0,data,cache)
     else
-        inc0 = vcat(lnK, log(T))
-        vol_cache = [volx, voly]
-        problem = OF_bubbleTy!(model,model_y, x, p, vol_cache,volatiles)
+        converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,vol0,volatiles,data,cache)
+    end
+
+    p,T,x,y,vol = res
+    volx,voly = vol
+
+    if converged || isnan(volx) || isnan(voly)
+        return p,volx,voly,index_expansion(y,volatiles)
+    end
+
+    lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
+    inc0 = vcat(lnK, log(p))
+    vol_cache[] = (volx,voly)
+
+    if all(volatiles)
+        problem = _fug_OF_neq(model,T,x,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
         inc = Solvers.x_sol(sol)
         !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
-        lnK = inc[1:(end-1)]
-        lnT = inc[end]
-
-        y_r = exp.(lnK) .* x[volatiles]
-        y = index_expansion(y_r,volatiles)
-        T = exp(lnT)
-        volx, voly = vol_cache[:]
+    else
+        problem = _fug_OF_neq(model,model_y,T,x,volatiles,data,cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
     end
 
-    return T, volx, voly, y
+    lnp = inc[end]
+    lnK = @view inc[1:(end-1)]
+    y_r = exp.(lnK) .* @view(x[volatiles])
+    y = index_expansion(y_r,volatiles)
+    p = exp(lnp)
+    volx,voly = vol_cache[]
+    return p, volx, voly, y
 end
+
 """
     FugBubbleTemperature(kwargs...)
 
-Function to compute bubble pressure via fugacity coefficients. 
-First it uses successive substitution to update the phase composition and a outer newton (or secant) loop to update the temperature. 
+Function to compute bubble pressure via fugacity coefficients.
+First it uses successive substitution to update the phase composition and a outer newton (or secant) loop to update the temperature.
 If no convergence is reached after `itmax_newton` iterations, the system is solved using a multidimensional non-linear system of equations.
 
 
@@ -345,7 +186,6 @@ struct FugBubbleTemperature{T} <: BubblePointMethod
     tol_of::Float64
     second_order::Bool
 end
-
 
 function FugBubbleTemperature(;vol0 = nothing,
     T0 = nothing,
@@ -406,15 +246,59 @@ function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTempera
     nonvolatiles = method.nonvolatiles
     volatiles = comps_in_equilibria(component_list(model),nonvolatiles)
     _vol0,_T0,_y0 = method.vol0,method.T0,method.y0
-    T0,vl,vv,y0 = bubble_temperature_init(model,p,x,_vol0,_T0,_y0,volatiles)
-    itmax_newton = method.itmax_newton
-    itmax_ss = method.itmax_ss
-    tol_y = method.tol_y
-    tol_T = method.tol_T
-    tol_of = method.tol_of
-    second_order = method.second_order
-    vol0 = (vl,vv)
-    return bubble_temperature_fug(model,p,x,y0,T0;vol0,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order,nonvolatiles)
+    T0,volx,voly,y0 = bubble_temperature_init(model,p,x,_vol0,_T0,_y0,volatiles)
+    vol0 = (volx,voly)
+    model_y,_ = index_reduction(model,volatiles)
+    y0 = y0[volatiles]
+    y0 ./= sum(y0)
+
+    data = FugData(FugEnum.BUBBLE_TEMPERATURE,
+                    method.itmax_ss,
+                    method.itmax_newton,
+                    method.tol_T,
+                    method.tol_y,
+                    method.tol_of,
+                    method.second_order,
+                    false)
+
+    cache = fug_bubbledew_cache(model,model_y,p,T0,x,y0,data)
+
+    if all(volatiles)
+        converged,res = _fug_OF_ss(model,p,T0,x,y0,vol0,data,cache)
+    else
+        converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,vol0,volatiles,data,cache)
+    end
+
+    p,T,x,y,vol = res
+    volx,voly = vol
+
+    if converged || isnan(volx) || isnan(voly)
+        return T,volx,voly,index_expansion(y,volatiles)
+    end
+
+    lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
+    inc0 = vcat(lnK, log(T))
+    vol_cache[] = (volx,voly)
+
+    if all(volatiles)
+        problem = _fug_OF_neq(model,p,x,data,cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+    else
+        problem = _fug_OF_neq(model,model_y,p,x,volatiles,data,cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+    end
+
+    lnT = inc[end]
+    lnK = @view inc[1:(end-1)]
+    y_r = exp.(lnK) .* @view(x[volatiles])
+    y = index_expansion(y_r,volatiles)
+    T = exp(lnT)
+    volx,voly = vol_cache[]
+    return T, volx, voly, y
 end
 
 export FugBubblePressure, FugBubbleTemperature

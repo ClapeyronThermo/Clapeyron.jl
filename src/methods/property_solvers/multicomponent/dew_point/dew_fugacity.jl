@@ -1,105 +1,3 @@
-########## Dew pressure calculation
-"""
-    OF_dewPx!(model::EoSModel,modely y, T, vol_cache)
-    OF_dewPx!(modelx::EoSModel,modely::EoSModel y, T, vol_cache,_views)
-
-Objective function to compute dew pressure using a multidimensional
-system of equations via fugacity coefficients.
-
-Inputs:
-- `model`: general equation of state model
-- `modelx`: liquid equation of state model, if any noncondensable compounds are present
-- `modely`: vapour equation of state model
-- `y`: vapour phase composition
-- `T`: temperature `[K]`
-- `vol_cache`: array used to update the phases' volumes
-_ `condensable`: condensable component indices, if any noncondensable compounds are present
-
-Returns: NLSolvers.NEqProblem
-"""
-function OF_dewPx! end
-
-function OF_dewPx!(model, y, T, vol_cache)
-    return _fug_OF_neqsystem(model, nothing, y, nothing, T, vol_cache, FugEnum.DEW_PRESSURE, (:liquid,:vapor))
-end
-
-function OF_dewPx!(modelx,modely, y, T, vol_cache,condensable)
-    return _fug_OF_neqsystem(modelx, modely, nothing, y, nothing, T, vol_cache, FugEnum.DEW_PRESSURE, (:liquid,:vapor), condensable)
-end
-
-"""
-    function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
-                             itmax_newton = 10, itmax_ss = 5, tol_x = 1e-8,
-                             tol_p = 1e-8, tol_of = 1e-8)
-
-Function to compute dew pressure via fugacity coefficients. First it uses
-successive substitution to update the phase composition and a outer newtown
-loop to update the pressure. If no convergence is reached after itmax_newton
-iterations, the system is solved using a multidimensional non-linear
-systems of equations.
-
-Inputs:
-- `model`: equation of state model
-- `T`: dew temperature `[K]`
-- `y`: vapor phase composition
-- `x0`: initial guess for the liquid phase composition `[m³]`
-- `p0`: initial guess for the dew pressure `[Pa]`
-- `vol0`: optional, initial guesses for the liquid and vapor phase volumes
-- `itmax_newton`: optional, number of iterations to update the pressure using newton's method
-- `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
-- `tol_x`: optional, tolerance to stop successive substitution cycle
-- `tol_p`: optional, tolerance to stop newton cycle
-- `tol_of`: optional, tolerance to check if the objective function is zero.
-- `noncondensables`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
-
-Returns:
-- `p`: dew pressure `[Pa]`
-- `volx`: saturared liquid volume `[m³]`
-- `voly`: saturared vapor volume `[m³]`
-- `x`: saturated liquid composition
-"""
-function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
-                             itmax_newton = 10, itmax_ss = 5, tol_x = 1e-8,
-                             tol_p = 1e-8, tol_of = 1e-8, noncondensables = nothing,second_order = true)
-
-     # Setting the initial guesses for volumes
-    vol0 === nothing && (vol0 = (nothing,nothing))
-    volx, voly = vol0
-
-    #check if noncondensables are set
-    condensables = comps_in_equilibria(component_list(model),noncondensables)
-    model_x,_ = index_reduction(model,condensables)
-    x0 = x0[condensables]
-    x0 = x0/sum(x0)
-    converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,vol0,FugEnum.DEW_PRESSURE,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p, tol_xy = tol_x, tol_of = tol_of, second_order = second_order)
-    p,T,x,y,vol,lnK = res
-    volx,voly = vol
-    if converged
-        return p,volx,voly,index_expansion(x,condensables)
-    else
-        inc0 = vcat(lnK, log(p))
-        vol_cache = [volx, voly]
-        problem = OF_dewPx!(model_x,model, y, T, vol_cache,condensables)
-        if true
-            sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
-            inc = Solvers.x_sol(sol)
-            !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
-        else
-            sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.BFGS()))
-            inc = Solvers.x_sol(sol)
-            !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
-        end
-        lnK = inc[1:(end-1)]
-        lnp = inc[end]
-
-        x_r = y[condensables] ./ exp.(lnK)
-        x = index_expansion(x_r,condensables)
-        p = exp(lnp)
-        volx, voly = vol_cache
-     end
-
-     return p, volx, voly, x
-end
 """
     FugDewPressure(kwargs...)
 
@@ -197,116 +95,60 @@ function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
     noncondensables = method.noncondensables
     condensables = comps_in_equilibria(component_list(model),noncondensables)
     _vol0,_p0,_x0 = method.vol0,method.p0,method.x0
-    p0,vl,vv,x0 = dew_pressure_init(model,T,y,_vol0,_p0,_x0,condensables)
-    itmax_newton = method.itmax_newton
-    itmax_ss = method.itmax_ss
-    tol_x = method.tol_x
-    tol_p = method.tol_p
-    tol_of = method.tol_of
-    vol0 = (vl,vv)
-    second_order = method.second_order
-    return dew_pressure_fug(model,T,y,x0,p0;vol0,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,noncondensables,second_order)
-end
-
-################# Dew temperature calculation
-
-"""
-    OF_dewTx!(model::EoSModel, y, p, vol_cache)
-    OF_dewTx!(modelx::EoSModel,modely::EoSModel y, p, vol_cache,_views)
-
-Objective function to compute dew temperature using a multidimensional
-system of equations via fugacity coefficients.
-
-Inputs:
-- `model`: general equation of state model
-- `modelx`: liquid equation of state model, if any noncondensable compounds are present
-- `modely`: vapour equation of state model
-- `P`: pressure `[Pa]`
-- `vol_cache`: array used to update the phases' volumes
-_ `condensable`: condensable component indices, if any noncondensable compounds are present
-
-Returns: NLSolvers.NEqProblem
-"""
-function OF_dewTx! end
-
-function OF_dewTx!(model, y, p, vol_cache)
-    return _fug_OF_neqsystem(model, nothing, y, p, nothing, vol_cache, FugEnum.DEW_TEMPERATURE, (:liquid,:vapor))
-end
-
-function OF_dewTx!(model,modely, y, p, vol_cache,condensable)
-    return _fug_OF_neqsystem(model, modely, nothing, y, p, nothing, vol_cache, FugEnum.DEW_TEMPERATURE, (:liquid,:vapor), condensable)
-end
-
-"""
-    dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothing),
-                             itmax_newton = 10, itmax_ss = 5, tol_x = 1e-8,
-                             tol_T = 1e-8, tol_of = 1e-8)
-
-Function to compute dew temperature via fugacity coefficients. First it uses
-successive substitution to update the phase composition and a outer newtown
-loop to update the temperature. If no convergence is reached after
-itmax_newton iterations, the system is solved using a multidimensional
-non-linear system of equations.
-
-Inputs:
-model: equation of state model
-- `P`: pressure `[Pa]`
-- `y`: vapor phase composition
-- `x0`: initial guess for the liquid phase composition
-- `T0`: initial guess for the dew temperature `[K]`
-- `vol0`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
-- `itmax_newton`: optional, number of iterations to update the temperature using newton's method
-- `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
-- `tol_x`: optional, tolerance to stop successive substitution cycle
-- `tol_T`: optional, tolerance to stop newton cycle
-- `tol_of`: optional, tolerance to check if the objective function is zero.
-- `noncondensables`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
-
-Returns:
-`T`: dew temperature `[K]`
-`volx`: saturared liquid volume `[m³]`
-`voly`: saturared vapor volume `[m³]`
-`x`: saturated liquid composition
-"""
-function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothing),
-                             itmax_newton = 10, itmax_ss = 5, tol_x = 1e-8,
-                             tol_T = 1e-8, tol_of = 1e-8,noncondensables = nothing,second_order = true)
-
-     # Setting the initial guesses for volumes
-    vol0 === nothing && (vol0 = (nothing,nothing))
-    volx, voly = vol0
-    #check if noncondensables are set
-    condensables = comps_in_equilibria(component_list(model),noncondensables)
+    p0,volx,voly,x0 = dew_pressure_init(model,T,y,_vol0,_p0,_x0,condensables)
+    vol0 = (volx,voly)
     model_x,_ = index_reduction(model,condensables)
     x0 = x0[condensables]
     x0 = x0/sum(x0)
 
-    converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,vol0,FugEnum.DEW_TEMPERATURE,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_x, tol_of = tol_of, second_order = second_order)
-    p,T,x,y,vol,lnK = res
-    volx,voly = vol
-    if converged
-        return T,volx,voly,index_expansion(x,condensables)
+    data = FugData(FugEnum.DEW_PRESSURE,
+                method.itmax_ss,
+                method.itmax_newton,
+                method.tol_p,
+                method.tol_x,
+                method.tol_of,
+                method.second_order,
+                false)
+    
+    cache = fug_bubbledew_cache(model_x,model,p0,T,x0,y,data)
+
+    if all(condensables)
+        converged,res = _fug_OF_ss(model,p0,T,x0,y,vol0,data,cache)
     else
-        inc0 = vcat(lnK, log(T))
-        vol_cache = [volx, voly]
-        problem = OF_dewTx!(model_x,model, y, p, vol_cache,condensables)
-        if second_order
-            sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
-            inc = Solvers.x_sol(sol)
-            !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
-        else
-            sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.LBFGS()))
-            inc = Solvers.x_sol(sol)
-            !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
-        end
-        lnK = inc[1:(end-1)]
-        lnT = inc[end]
-        x_r = y[condensables]./ exp.(lnK)
-        x = index_expansion(x_r,condensables)
-        T = exp(lnT)
-        volx, voly = vol_cache[:]
+        converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,vol0,condensables,data,cache)
     end
-    return T, volx, voly, x
+
+    p,T,x,y,vol = res
+    volx,voly = vol
+
+    if converged
+        return p,volx,voly,index_expansion(x,condensables)
+    end
+
+    lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
+    inc0 = vcat(lnK, log(p))
+    vol_cache[] = (volx,voly)
+
+    if all(condensables)
+        problem = _fug_OF_neq(model,T,y,data,cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+    else
+        problem = _fug_OF_neq(model_x,model,T,y,condensables,data,cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+    end
+
+    lnp = inc[end]
+    lnK = @view inc[1:(end-1)]
+    x_r = @view(y[condensables]) ./ exp.(lnK)
+    x = index_expansion(x_r,condensables)
+    p = exp(lnp)
+    volx,voly = vol_cache[]
+
+     return p, volx, voly, x
 end
 
 """
@@ -406,15 +248,60 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
     noncondensables = method.noncondensables
     condensables = comps_in_equilibria(component_list(model),noncondensables)
     _vol0,_T0,_x0 = method.vol0,method.T0,method.x0
-    T0,vl,vv,x0 = dew_temperature_init(model,p,y,_vol0,_T0,_x0,condensables)
-    itmax_newton = method.itmax_newton
-    itmax_ss = method.itmax_ss
-    tol_x = method.tol_x
-    tol_T = method.tol_T
-    tol_of = method.tol_of
-    vol0 = (vl,vv)
+    T0,volx,voly,x0 = dew_temperature_init(model,p,y,_vol0,_T0,_x0,condensables)
+    model_x,_ = index_reduction(model,condensables)
+    vol0 = (volx,voly)
+    x0 = x0[condensables]
+    x0 ./= sum(x0)
 
-    return dew_temperature_fug(model,p,y,x0,T0;vol0,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,noncondensables)
+    data = FugData(FugEnum.DEW_TEMPERATURE,
+                method.itmax_ss,
+                method.itmax_newton,
+                method.tol_T,
+                method.tol_x,
+                method.tol_of,
+                method.second_order,
+                false)
+    
+    cache = fug_bubbledew_cache(model_x,model,p,T0,x0,y,data)
+
+    if all(condensables)
+        converged,res = _fug_OF_ss(model,p,T0,x0,y,vol0,data,cache)
+    else
+        converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,vol0,condensables,data,cache)
+    end
+    
+    p,T,x,y,vol = res
+    volx,voly = vol
+
+    if converged
+        return T,volx,voly,index_expansion(x,condensables)
+    end
+
+    lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
+    inc0 = vcat(lnK, log(T))
+    vol_cache[] = (volx,voly)
+
+    if all(condensables)
+        problem = _fug_OF_neq(model,p,y,data,cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+    else
+        problem = _fug_OF_neq(model_x,model,p,y,condensables,data,cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+    end
+
+    lnT = inc[end]
+    lnK = @view inc[1:(end-1)]
+    x_r = @view(y[condensables]) ./ exp.(lnK)
+    x = index_expansion(x_r,condensables)
+    p = exp(lnT)
+    volx,voly = vol_cache[]
+    
+    return T, volx, voly, x
 end
 
 export FugDewPressure, FugDewTemperature
