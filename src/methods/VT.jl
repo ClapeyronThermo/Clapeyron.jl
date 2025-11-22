@@ -455,11 +455,12 @@ function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F<
 end
 
 function VT_molar_gradient!(cache::F,model::EoSModel,V,T,z,property::ℜ) where {F<:Tuple,ℜ}
-    if isnan(V) || isnan(T) || any(isnan,z)
-        fx .= NaN
-        return fx
-    end
+
     result,aux,∇f,A1,x1,x2,x3,hconfig = cache
+    if isnan(V) || isnan(T) || any(isnan,z)
+        ∇f .= NaN
+        return ∇f
+    end
     nc = length(z)
     if nc == 1
         f1(_z) = property(model,V,T,SVector(_z))
