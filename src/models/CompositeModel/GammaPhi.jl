@@ -441,16 +441,10 @@ function __lnγ_sat(wrapper::PTFlashWrapper,p,T,w,cache = nothing,vol0 = nothing
     for i in 1:length(logγ)
         ϕᵢ = fug[i]
         pᵢ,vpureᵢ,_ = sat[i]
-        #logϕᵢ = μ_res ./ RT .- logZ
-        #ϕᵢZ*RT + μ_res
-        #=
-        log(ϕpure) .= μpure ./ RT .- log.(p_pure .* vl_pure ./ RT)
-        
-        =#
+
         μᵢ_over_RT = log(ϕᵢ) + log(pᵢ*vpureᵢ/RT)
         logγ[i] = log(vpureᵢ/vol) + μmix[i]/RT - μᵢ_over_RT -  vpureᵢ*(p - pᵢ)/RT
     end
-    @show logγ
     return logγ,vol
 end
 
