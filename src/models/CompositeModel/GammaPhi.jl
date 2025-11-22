@@ -420,7 +420,7 @@ function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpre
             v = zero(eltype(logγx))
             return logγx,v,true
         elseif is_vle(wrapper.equilibrium)
-            logγx,v = __lnγ_sat(model,p,T,w,cache)
+            logγx,v = __lnγ_sat(wrapper,p,T,w,cache)
             return logγx,v,true
         end
     end
@@ -430,20 +430,27 @@ function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpre
     return fxy,v,overpressure
 end
 
-function __lnγ_sat(model::PTFlashWrapper,p,T,w,cache = nothing,vol0 = nothing,vol = volume(model,p,T,w,vol0 = vol,phase = :l))
-    μmix_temp = VT_chemical_potential_res!(cache,model,vol,T,z)
-    result,aux,logγ,A1,x1,x2,x3,hconfig = cache
+function __lnγ_sat(wrapper::PTFlashWrapper,p,T,w,cache = nothing,vol0 = nothing,vol = volume(wrapper.model,p,T,w,vol0 = vol0,phase = :l))
+    model = wrapper.model
+    μmix_temp = VT_chemical_potential_res!(cache,model,vol,T,w)
+    result,aux,logγ,A1,μmix,x2,x3,hconfig = cache
     μmix .= μmix_temp
     sat = wrapper.sat
     fug = wrapper.fug
+    RT = Rgas(model)*T
     for i in 1:length(logγ)
         ϕᵢ = fug[i]
         pᵢ,vpureᵢ,_ = sat[i]
         #logϕᵢ = μ_res ./ RT .- logZ
         #ϕᵢZ*RT + μ_res
-        μᵢ = ϕᵢ*pᵢ*vpureᵢ
-        logγ[i] = log(vpureᵢ/vl) + (μmix[i] - μᵢ)/RT -  vpureᵢ*(p -pᵢ)/RT
+        #=
+        log(ϕpure) .= μpure ./ RT .- log.(p_pure .* vl_pure ./ RT)
+        
+        =#
+        μᵢ_over_RT = log(ϕᵢ) + log(pᵢ*vpureᵢ/RT)
+        logγ[i] = log(vpureᵢ/vol) + μmix[i]/RT - μᵢ_over_RT -  vpureᵢ*(p - pᵢ)/RT
     end
+    @show logγ
     return logγ,vol
 end
 
