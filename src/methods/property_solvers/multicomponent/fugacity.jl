@@ -149,6 +149,7 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,data::FugData,cache)
                 w ./= sum(w_restart)
                 valid_iter = false
                 volx,voly = volx_restart,voly_restart
+
                 break
             end
         end
@@ -190,12 +191,14 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,data::FugData,cache)
             break
         end
 
+        if !valid_iter && !second_order
+            K .= y ./ x
+            lnK .= log.(K)
+        end
+
         if !_bubble && second_order
             ∂OF = -∂OF
         end
-
-        lnK .= lnϕx .- lnϕy
-        K .= exp.(lnK)
 
         ∂step = OF / ∂OF
         if valid_iter && abs(∂step) < tol_pT || abs(OF) < tol_of
@@ -206,12 +209,10 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,data::FugData,cache)
             ∂step = clamp(∂step,-0.4*p,0.4*p)
             p_old = p
             p -= ∂step
-            @show p
         else
             ∂step = clamp(∂step,-0.05*T,0.05*T)
             T_old = T
             T -= ∂step
-            @show T
             update_temperature!(model,T)
         end
 
@@ -381,15 +382,26 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_view,data::F
         if _bubble
             _lnϕx = view(lnϕx,_view)
             lnK .=_lnϕx .- lnϕy
+            K .= exp.(lnK)
         else
             if second_order
                 ∂OF = -∂OF
             end
             _lnϕy = view(lnϕy,_view)
             lnK .= lnϕx .- _lnϕy
+            K .= exp.(lnK)
         end
 
-        K .= exp.(lnK)
+        if !valid_iter && !second_order
+            if _bubble
+                xv = view(x,_view)
+                K .= y ./ xv
+            else
+                yv = view(y,_view)
+                K .= yv ./ x
+            end
+            lnK .= log.(K)
+        end
 
         ∂step = OF / ∂OF
 
