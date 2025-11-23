@@ -171,9 +171,6 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,data::FugData,cache)
             lnϕy, _, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, _y, Hϕx, phase=phasey, vol0=voly)
             lnK .-= lnϕy
             ∂OF -= dot(∂lnϕ∂Ty,w_calc)
-            if ∂OF < tol_pT && j == 1 
-                ∂OF = OF/sqrt(eps(p))
-            end
         elseif _pressure && !second_order
             if j == 1
                 ∂OF = OF/sqrt(eps(p))
@@ -212,7 +209,9 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,data::FugData,cache)
         else
             ∂step = clamp(∂step,-0.05*T,0.05*T)
             T_old = T
-            T -= ∂step
+            Tinv = 1/T + ∂step/(T*T)
+            T = 1/Tinv
+            #T -= ∂step
             update_temperature!(model,T)
         end
 
@@ -532,6 +531,9 @@ function _fug_OF_neq!(F,J,inc,model,prop,z,data::FugData,cache)
             F[end] = sum(y)  - sum(x)
         end
     else
+        if !_pressure
+            update_temperature!(model,T)
+        end
         lnϕx, volx = modified_lnϕ(model, p, T, x, Hϕx, phase=phasex, vol0=volx)
         F[1:end-1] .= lnK .- lnϕx
         lnϕy, voly = modified_lnϕ(model, p, T, y, Hϕx, phase=phasey, vol0=voly)

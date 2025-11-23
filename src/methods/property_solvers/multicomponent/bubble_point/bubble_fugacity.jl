@@ -128,15 +128,15 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
     lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
     inc0 = vcat(lnK, log(p))
     vol_cache[] = (volx,voly)
-
+    opts = NLSolvers.NEqOptions(method)
     if all(volatiles)
         problem = _fug_OF_neq(model,T,x,data,cache)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
         !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
     else
         problem = _fug_OF_neq(model,model_y,T,x,volatiles,data,cache)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
         !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
     end
@@ -271,7 +271,7 @@ function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTempera
 
     p,T,x,y,vol = res
     volx,voly = vol
-
+    opts = NLSolvers.NEqOptions(method)
     if converged || isnan(volx) || isnan(voly)
         return T,volx,voly,index_expansion(y,volatiles)
     end
@@ -279,15 +279,15 @@ function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTempera
     lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
     inc0 = vcat(lnK, log(T))
     vol_cache[] = (volx,voly)
-
+    
     if all(volatiles)
         problem = _fug_OF_neq(model,p,x,data,cache)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
         !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
     else
         problem = _fug_OF_neq(model,model_y,p,x,volatiles,data,cache)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
         !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
     end

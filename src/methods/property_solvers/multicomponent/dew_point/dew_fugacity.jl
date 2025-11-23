@@ -128,15 +128,15 @@ function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
     lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
     inc0 = vcat(lnK, log(p))
     vol_cache[] = (volx,voly)
-
+    opts = NLSolvers.NEqOptions(method)
     if all(condensables)
         problem = _fug_OF_neq(model,T,y,data,cache)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
         !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
     else
         problem = _fug_OF_neq(model_x,model,T,y,condensables,data,cache)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
         !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
     end
@@ -281,15 +281,15 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
     lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
     inc0 = vcat(lnK, log(T))
     vol_cache[] = (volx,voly)
-
+    opts = NLSolvers.NEqOptions(method)
     if all(condensables)
         problem = _fug_OF_neq(model,p,y,data,cache)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
         !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
     else
         problem = _fug_OF_neq(model_x,model,p,y,condensables,data,cache)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
         !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
     end
@@ -298,7 +298,7 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
     lnK = @view inc[1:(end-1)]
     x_r = @view(y[condensables]) ./ exp.(lnK)
     x = index_expansion(x_r,condensables)
-    p = exp(lnT)
+    T = exp(lnT)
     volx,voly = vol_cache[]
     
     return T, volx, voly, x
