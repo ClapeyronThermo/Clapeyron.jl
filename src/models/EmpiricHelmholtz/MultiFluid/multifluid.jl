@@ -260,6 +260,8 @@ end
 function tp_flash_fast_K0!(K,model::MultiFluid,p,T,z)
     n = length(model)
     pure = model.pures
+    _Tc = model.params.Tc.values
+    _Pc = model.params.Pc.values
     for i ∈ 1:n
         pure_i = pure[i]
         Tc,pc = _Tc[i],_Pc[i]

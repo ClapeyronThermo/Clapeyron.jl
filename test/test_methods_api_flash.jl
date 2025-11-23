@@ -481,6 +481,15 @@ end
     h475 = Clapeyron.PS.enthalpy(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
     res475 = Clapeyron.PS.flash(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
     @test enthalpy(fluid475,res475) ≈ h475 rtol = 1e-6
+    
+    #issue 492
+    fluid492 = GERG2008(["propane", "butane"])
+    p492 = 1.5e6
+    z492 = [0.5, 0.5]
+    h492 = -13168.282596816884
+    res492 = Clapeyron.ph_flash(fluid492, p492, h492, z492)
+    @test enthalpy(fluid492,res492) ≈ h492 rtol = 1e-6
+
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)
