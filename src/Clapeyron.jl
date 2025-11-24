@@ -64,6 +64,15 @@ struct CompositeModel{𝔽,𝕊} <: EoSModel
     solid_reference_state::ReferenceState
 end
 
+struct PTFlashWrapper{T,T2,R,S} <: EoSModel
+    components::Vector{String}
+    model::T
+    pures::T2
+    sat::Vector{R}
+    fug::Vector{S}
+    equilibrium::Symbol
+end
+
 #recombine options
 include("utils/recombine.jl")
 
@@ -130,13 +139,14 @@ include("models/ideal/AlyLeeIdeal.jl")
 #Basic utility EoS
 include("models/utility/EoSVectorParam.jl")
 include("models/utility/ZeroResidual.jl")
-include("models/utility/TPFlashWrapper.jl")
+include("models/utility/PTFlashWrapper.jl")
 
 #Empiric Models uses CompositeModel
 include("models/CompositeModel/CompositeModel.jl")
 
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/SingleFluid/SingleFluid.jl")
+include("models/EmpiricHelmholtz/SingleFluid/variants/PseudoPure.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/IAPWS95.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/PropaneRef.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/Ammonia2023.jl")
@@ -259,7 +269,6 @@ include("models/ECS/variants/SPUNG.jl")
 include("models/PeTS/PeTS.jl")
 
 #electrolytes
-include("models/Electrolytes/equations.jl")
 include("models/Electrolytes/base.jl")
 include("models/Electrolytes/RSP/ConstRSP.jl")
 include("models/Electrolytes/RSP/ZuoFurst.jl")

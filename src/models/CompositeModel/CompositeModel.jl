@@ -98,7 +98,7 @@ CompositeModel
 
 Abstract type of models that implement simplifications over the equality of chemical potentials approach for phase equilibria. Subtypes of `RestrictedEquilibriaModel` are the `GammaPhi` (activity + gas), `FluidCorrelation` (for fluid phase change and volume correlations) and `SolidCorrelation` (for solid phase change and solid volume correlations).
 """
-abstract type RestrictedEquilibriaModel <: EoSModel end
+RestrictedEquilibriaModel
 
 include("FluidCorrelation.jl")
 include("SolidCorrelation.jl")
@@ -109,10 +109,6 @@ include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
 include("SolidModel/SolidModel.jl")
 include("PolExpVapour.jl")
-
-
-include("bubble_point.jl")
-include("dew_point.jl")
 
 function init_model_act(model,components,userlocations,verbose)
     init_model(model,components,userlocations,verbose)
@@ -181,7 +177,9 @@ function CompositeModel(components ;
     verbose = false,
     reference_state = nothing)
 
+    components = format_gccomponents(components)
     _components = format_components(components)
+
     #take care of the solid phase first
     if melting == sublimation == nothing
         init_solid = init_model(solid,components,solid_userlocations,verbose)
@@ -212,9 +210,9 @@ function CompositeModel(components ;
         if init_liquid isa ActivityModel
             #case 3.a, the fluid itself is a composite model. unwrap the fluid field.
             if _fluid isa CompositeModel
-                _fluid = init_puremodel(_fluid.fluid,_components,nothing,verbose)
+                _fluid = init_puremodel(_fluid.fluid,components,nothing,verbose)
             else
-                _fluid = init_puremodel(_fluid,_components,nothing,verbose)
+                _fluid = init_puremodel(_fluid,components,nothing,verbose)
             end
             init_fluid = GammaPhi(_components,init_liquid,_fluid)
         else
@@ -407,14 +405,7 @@ function PT_property(model::CompositeModel,p,T,z,phase,threaded,vol0,f::F,USEP::
     end
 end
 
-function activity_coefficient(model::CompositeModel,p,T,z=SA[1.];
-                            μ_ref = nothing,
-                            reference = :pure,
-                            phase=:unknown,
-                            threaded=true,
-                            vol0=nothing)
-    return activity_coefficient(model.fluid,p,T,z;μ_ref,reference,phase,threaded,vol0)
-end
+__γ_unwrap(model::CompositeModel) = __γ_unwrap(model.fluid)
 
 reference_chemical_potential_type(model::CompositeModel) = reference_chemical_potential_type(model.fluid)
 
@@ -438,31 +429,19 @@ function init_preferred_method(method::typeof(dew_temperature),model::CompositeM
     init_preferred_method(method,model.fluid,kwargs)
 end
 
-function bubble_pressure(model::CompositeModel, T, x, method::BubblePointMethod)
-    if !(method isa ActivityBubblePressure) && !(model.fluid isa RestrictedEquilibriaModel)
-        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
-    end
+function bubble_pressure(model::CompositeModel, T, x, method::ThermodynamicMethod)
     return bubble_pressure(model.fluid, T, x, method)
 end
 
-function bubble_temperature(model::CompositeModel, T, x, method::BubblePointMethod)
-    if !(method isa ActivityBubbleTemperature) && !(model.fluid isa RestrictedEquilibriaModel)
-        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
-    end
+function bubble_temperature(model::CompositeModel, T, x, method::ThermodynamicMethod)
     return bubble_temperature(model.fluid, T, x, method)
 end
 
-function dew_pressure(model::CompositeModel, T, x, method::DewPointMethod)
-    if !(method isa ActivityDewPressure)  && !(model.fluid isa RestrictedEquilibriaModel)
-        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
-    end
+function dew_pressure(model::CompositeModel, T, x, method::ThermodynamicMethod)
     return dew_pressure(model.fluid, T, x, method)
 end
 
-function dew_temperature(model::CompositeModel, T, x, method::DewPointMethod)
-    if !(method isa ActivityDewTemperature)  && !(model.fluid isa RestrictedEquilibriaModel)
-        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
-    end
+function dew_temperature(model::CompositeModel, T, x, method::ThermodynamicMethod)
     return dew_temperature(model.fluid, T, x, method)
 end
 
@@ -508,4 +487,21 @@ function calculate_gibbs_reference_state(model::CompositeModel)
         return a0,a1
     end
 end
+
+function init_preferred_method(method::typeof(bubble_pressure),model::RestrictedEquilibriaModel,kwargs)
+    return ActivityBubblePressure(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(bubble_temperature),model::RestrictedEquilibriaModel,kwargs)
+    return FugBubbleTemperature(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_pressure),model::RestrictedEquilibriaModel,kwargs)
+    return ActivityDewPressure(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_temperature),model::RestrictedEquilibriaModel,kwargs)
+    return FugDewTemperature(;kwargs...)
+end
+
 export CompositeModel

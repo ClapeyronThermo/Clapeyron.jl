@@ -197,8 +197,13 @@ function __dlnPdTinvsat(pure,sat,crit,xx,is_sat_temperature,status)
         return -dpdT*T*T/p,log(p),1/T
     elseif status === :supercritical
         Tc,Pc,Vc = crit
-        _p(_T) = pressure(pure,Vc,_T)
-        dpdT = Solvers.derivative(_p,Tc)
+        if has_a_res(pure)
+            _p(_T) = pressure(pure,Vc,_T)
+            dpdT = Solvers.derivative(_p,Tc)
+        else
+            f(_T) = first(saturation_pressure(model,_T))
+            dpdT = dpdT_saturation(pure,NaN,NaN,T)
+        end
         return -dpdT*Tc*Tc/Pc,log(Pc),1/Tc
     elseif status == :fail
         return sat
@@ -383,7 +388,7 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     x = x/sum(x)
     T = float(T)
     model_r,idx_r = index_reduction(model,x)
-    if length(model_r)==1
+    if length(model_r)==1 && !is_pseudo_pure(model)
         (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
         return (P_sat,v_l,v_v,x)
     end
@@ -552,7 +557,7 @@ function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
     x = x/sum(x)
     p = float(p)
     model_r,idx_r = index_reduction(model,x)
-    if length(model_r)==1
+    if length(model_r)==1 && !is_pseudo_pure(model)
         (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
         return (T_sat,v_l,v_v,x)
     end

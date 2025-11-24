@@ -1,19 +1,16 @@
-# v0.6.17
+# v0.6.19
 
 ## New Features
 
-- `Tproperty` and `Pproperty` speed improvements for multicomponent models.
-- New method: `edge_pressure` and `edge_temperature`, that solves the isogibbs criteria for single and multicomponent models. Those functions are equivalent to `saturation_pressure`/`saturation_temperature` for single component models.
-- New method: `mechanical_critical_point`, that calculates the mechanical stability limit for single and multicomponent models. For single component models, this is equivalent to `crit_pure`.
-- New method: `spinodal_maximum`, that returns the maximum temperature and pressure of the diffusive spinodal line ($det(∂₂G) = 0$)
-- `x0_crit_pure` now accepts an optional mol amount composition input.
-- `MichelsenTPFlash`: improvements in rachford-rice identification of K-value types, support for `verbose` keyword argument.
-- Misc documentation improvements.
+- Activity models: support for second-order Michelsen TP flash. in VLE and LLE equilibria
+- Activity models: support for tpd in VLE and LLE equilibria
+- Activity models: new intrinsic: `lnγ_impl!(out,model,p,T,z)` that allows evaluation of activity coefficients without allocations.
+- Activity model performance improvements due to caching.
+- New model: `EmpiricPseudoPure`: a Clapeyron implementation of CoolProp's pseudo pure models.
+- New method: `RRQXFlash` for `qp_flash` and `qt_flash`.
+- `Clapeyron.tpd`: added ideal gas testing composition.
 
-## Bug Fixes
+## Bug fixes
 
-- JutulDarcy extension: fixes to allow Clapeyron work with the latest JutulDarcy extension
-- CoolProp extension: fixes in `CoolProp.PropsSI` with Clapeyron models.
-- CoolProp extension: fixes to support JSON parsing with CoolProp v7.
-- Fixes to bubble/dew initial points.
-- `SingleFluid`: Fixes when using Double exponential terms.
+- Convergence failure in Michelsen TP flash when equilibria = :unkwown and LLE was detected.
+- Fixes on `MultiphaseTPFlash`

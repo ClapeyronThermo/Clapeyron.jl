@@ -311,9 +311,18 @@ end
         @test s1[3] ≈ 0.0015804179997257882 rtol = 1e-6
     end
 
-    @testset "466" begin
-        sol = test_466()
-        @test all(!isnan,sol)
+    @testset "#466" begin
+        glycine = ("glycine" => ["COOH" => 1, "CH2" => 1, "NH2" => 1])
+        lactic_acid = ("lactic acid" =>["COOH" => 1, "CH3" => 1, "CHOH" => 1])
+        oxalic_acid = ("oxalic acid" => ["COOH" => 2])
+
+        ox_gly = CompositeModel([oxalic_acid,glycine];fluid=SAFTgammaMie,solid=SolidHfus)
+        la_gly = CompositeModel([lactic_acid,glycine];fluid=SAFTgammaMie,solid=SolidHfus)
+
+        T1,_ = Clapeyron.eutectic_point(la_gly)
+        T2,_ = Clapeyron.eutectic_point(ox_gly)
+        @test T1 ≈ 300.23095880432294 rtol = 1e-6
+        @test T2 ≈ 454.27284723964925 rtol = 1e-6
     end
 end
 GC.gc()

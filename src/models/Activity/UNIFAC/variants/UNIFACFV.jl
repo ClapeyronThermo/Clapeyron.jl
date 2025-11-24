@@ -119,16 +119,22 @@ function recombine_impl!(model::UNIFACFVModel)
     return model
 end
 
-function activity_coefficient(model::UNIFACFVModel,V,T,z)
-    _data=@f(data)
-    return exp.(@f(lnγ_comb,_data)+ @f(lnγ_res,_data)+ @f(lnγ_FV,_data))
+function lnγ_impl!(res,model::UNIFACFVModel,V,T,z)
+    _data = @f(data)
+    res .= 0
+    res .+= @f(lnγ_comb,_data)
+    res .+= @f(lnγ_res,_data)
+    res .+= @f(lnγ_FV,_data)
+    return res
 end
 
 function data(model::UNIFACFVModel,V,T,z)
     Mw = model.UNIFACFV_cache.Mw
+    zmw = dot(z,Mw)
     x = z ./ sum(z)
-    w = z.*Mw / sum(z.*Mw)
-    return w,x
+    w = z .* Mw / zmw
+    c = FillArrays.Fill(1.1,length(model))
+    return w,x,c
 end
 
 function lnγ_comb(model::UNIFACFVModel,V,T,z,_data=@f(data))
@@ -178,16 +184,13 @@ function Ψ(model::UNIFACFVModel,V,T,z)
 end
 
 function lnγ_FV(model::UNIFACFVModel,V,T,z,_data=@f(data))
-    w,x = _data
-    c = 1.1
+    w,x,c = _data
     b = 1.28
     v = model.params.volume.values
     r = model.UNIFACFV_cache.r
-
     v̄  = @. v/(15.17*b*r)
     v̄ₘ = dot(v,w)/(15.17*b*dot(r,w))
-
-    return @. 3*c*log((v̄^(1/3)-1)/(v̄ₘ^(1/3)-1))-c*((v̄/v̄ₘ-1)/(1-v̄^(-1/3)))
+    return @. 3*c*log((v̄^(1/3)-1)/(cbrt(v̄ₘ)-1))-c*((v̄/v̄ₘ-1)/(1-v̄^(-1/3)))
 end
 
 function excess_g_SG(model::UNIFACFVModel,p,T,z)

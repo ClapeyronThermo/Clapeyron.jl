@@ -50,13 +50,15 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     in_equilibria = @. !non_inx & !non_iny
 
     # Computing the initial guess for the K vector
-    x = similar(z,Base.promote_eltype(model,p,T,z))
-    y = similar(z,Base.promote_eltype(model,p,T,z))
+    TT = Base.promote_eltype(model,p,T,z)
+    x = similar(z,TT)
+    y = similar(z,TT)
     x .= z
     y .= z
     K,lnK = similar(x),similar(x)
+    K̄,lnK̄ = similar(x),similar(x)
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
-    _1 = one(eltype(K))
+    _0,_1 = one(TT),one(TT)
     if !isnothing(K0)
         K .= K0
         lnK .= log.(K)
@@ -90,7 +92,15 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     _1 = one(eltype(K))
     # Initial guess for phase split
     ψ = -sum(Z.*lnK)/sum(abs.(Z))
-    K̄ = K.*exp.(Z.*ψ)
+
+    #=
+    notation:
+    K = ϕx/ϕy
+    K̄ = K.*exp.(Z.*ψ) = y/x
+    =#
+
+    K̄ .= K.*exp.(Z.*ψ)
+    lnK̄ .= log.(K̄)
     β,status,_ = rachfordrice_β0(K̄,z,nothing,non_inx,non_iny)
     status0 = status
     #=TODO:
@@ -114,20 +124,24 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     end
 
     lnK̄_old = similar(lnK)
+    β_old = typemax(TT)
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
-
-    while error_lnK > K_tol && it < itss && status == RREq
+    verbose && @info "iter  status        β      error_lnK            K"
+    while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status in (RREq,RRLiquid,RRVapour)
         it += 1
         itacc += 1
-        lnK̄_old .= lnK + Z.*ψ
+        lnK̄_old .= lnK̄
+        β_old = β
+
         x,y = update_rr!(K̄,β,z,x,y,non_inx,non_iny)
+
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,z,β,(volx,voly),phases,non_inw,dlnϕ_cache)
-
-        gibbs +=  β*ψ*dot(x,Z)
         vcache[] = (volx,voly)
+        gibbs +=  β*ψ*dot(x,Z)
+
         # acceleration step
         if itacc == (nacc - 2)
             lnK3 .= lnK
@@ -139,7 +153,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
             # acceleration using DEM (1 eigenvalues)
             lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3,(ΔlnK1,ΔlnK2))
             K_dem .= exp.(lnK_dem)
-            β_dem,ψ_dem = rachfordrice(K_dem, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
+            β_dem,ψ_dem = rachfordrice(K_dem, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny, verbose = verbose)
             K̄_dem .= K_dem .* exp.(Z .* ψ_dem)
             x_dem,y_dem = update_rr!(K̄_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
             lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,z,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
@@ -155,60 +169,38 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
                 ψ = _1 * ψ_dem
             end
         end
+    
         K .= exp.(lnK)
-        β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
-        verbose && @info "$it    $β  $(round(error_lnK,sigdigits=4)) $K"
+        β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny,verbose = verbose)
+        
 
-        lnK̄ = lnK + Z.*ψ
+        lnK̄ .= lnK .+ Z.*ψ
         K̄ = exp.(lnK̄)
-        # println(ψ)
-        status = rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol)
-        Kmin,Kmax = K_extrema(K,non_inx,non_iny)
-        if status == RRLiquid && Kmin < 1
-            status = RREq
-            β = eps(eltype(β))
-        elseif status == RRVapour && Kmax > 1
-            status = RREq
-            β = 1 - eps(eltype(β))
-        end
+        status = rachfordrice_status(K̄,z,non_inx,non_iny;K_tol)
+    
+        verbose && @info "$it    $status   $β  $(round(error_lnK,sigdigits=4)) $K̄"
+    
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK̄[in_equilibria]),@view(lnK̄_old[in_equilibria]),1)
-        # println(error_lnK)
     end
 
     verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
 
     if it > 0 && !isnan(β)
-        β_margin = min(β, _1 - β)
-        verbose && @info "boundary check: β_margin = $(β_margin)"
-        # 4 guards to pinpoint the scenario of #465
-        if status == RREq && β_margin <= cbrt(K_tol) && Kmin < _1 && Kmax > _1
-            status, newβ = rr_margin_check(K,z,non_inx,non_iny;K_tol = K_tol,verbose = verbose)
-            status != RREq && (β = newβ)
-        end
         # single composition update with the (possibly projected) β
-        x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
+        x, y = update_rr!(K̄, β, z, x, y, non_inx, non_iny)
     end
 
     # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
         verbose && @info "$it error(lnK) > $K_tol, solving via non-linear system"
-        nx = zeros(nc)
-        ny = zeros(nc)
-        if any(non_inx)
-            ny[non_inx] = @view(z[non_inx])
-            nx[non_inx] .= 0.
-        end
-
-        if any(non_iny)
-            ny[non_iny] .= 0.
-            nx[non_iny] = @view(z[non_iny])
-        end
-
-        ny_var_and_ψ0 = similar(y,count(in_equilibria)+1)
+        nx = similar(K)
+        ny = similar(K)
+        ny_var_and_ψ0 = similar(K,count(in_equilibria)+1)
         ny_var_and_ψ0[1:end-1] .= @view(y[in_equilibria]) .* β
         ny_var_and_ψ0[end] = ψ
+        update_nxy!(nx,ny,@view(ny_var_and_ψ0[1:end-1]),z,non_inx,non_iny)
         in_eq = (in_equilibria,non_inx,non_iny)
         caches = (nx,ny,vcache,dlnϕ_cache,in_eq,phases)
         flash_obj = michelsen_optimization_obj(model,p,T,z,caches)
@@ -227,21 +219,18 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
         ny_var_and_ψ = Solvers.x_sol(sol)
         ny_var = @view ny_var_and_ψ[1:end-1]
         ψ = ny_var_and_ψ[end]
-        ny[in_equilibria] .= ny_var
-        nx[in_equilibria] .= @view(z[in_equilibria]) .- @view(ny[in_equilibria])
-        nxsum = sum(nx)
-        nysum = sum(ny)
-        x .= nx ./ nxsum
-        y .= ny ./ nysum
-        β = sum(ny)
-        K .= y ./ x
+        update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
+        x .= nx ./ sum(nx)
+        y .= ny ./ sum(ny)
+        K̄ .= y ./ x
+        β = rachfordrice(K̄, z; non_inx, non_iny, K_tol, verbose)
     end
 
     verbose && @info "final K values: $K"
 
     verbose && @info "final vapour fraction: $β"
     #convergence checks (TODO, seems to fail with activity models)
-    status = rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol)
+    status = rachfordrice_status(K̄,z,non_inx,non_iny;K_tol = K_tol)
     verbose && status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
 
     vx,vy = vcache[]
@@ -250,13 +239,13 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && status != RREq
         verbose && @info "trivial result but different volumes (maybe azeotrope?)"
         status = RREq
-    elseif status == RRTrivial && it > 0
+    elseif status == RRTrivial
         verbose && @info "procedure converged to trivial K-values, checking initial conditions to see if resulting phase is liquid or vapour."
         status0 == RRLiquid && (status = RRLiquid)
         status0 == RRVapour && (status = RRVapour)
     elseif status == RREq && β <= eps(eltype(β))
         status = RRLiquid
-    elseif status == RREq && β >=  one(β)  - eps(eltype(β))
+    elseif status == RREq && β >= one(β) - eps(eltype(β))
         status = RRVapour
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
         verbose && @info "material balance failed."
@@ -292,7 +281,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     return x, y, β, (vx,vy)
 end
 
-function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
+function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)),verbose = false)
     # Function to solve Rachdord-Rice mass balance
     β,status,limits = rachfordrice_β0(K.*exp.(Z.*ψ0),z,β0,non_inx,non_iny)
     if status == RREq
@@ -334,21 +323,7 @@ function michelsen_optimization_of!(g,H,model::ElectrolyteModel,p,T,z,caches,ny_
     volx,voly = vcache[]
     iv = 0
     Z = model.charge
-    for i in eachindex(z)
-        if in_equilibria[i]
-            iv += 1
-            nyi = ny_var[iv]
-            ny[i] = nyi
-            nx[i] = z[i] - nyi
-        elseif non_inx[i]
-            ny[i] = z[i]
-            nx[i] = 0.0
-        elseif non_iny[i]
-            ny[i] = 0.0
-            nx[i] = z[i]
-        end
-    end    # nx = z .- ny
-
+    update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
     nxsum = sum(nx)
     nysum = sum(ny)
     x = nx ./ nxsum

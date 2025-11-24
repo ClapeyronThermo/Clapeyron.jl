@@ -171,51 +171,6 @@ include_distributed distributes the test load among all workers
 =#
 display(Test.detect_ambiguities(Clapeyron))
 
-function test_466()
-glycine = ("glycine" => ["COOH" => 1, "CH2" => 1, "NH2" => 1])
-lactic_acid = ("lactic acid" =>["COOH" => 1, "CH3" => 1, "CHOH" => 1])
-oxalic_acid = ("oxalic acid" => ["COOH" => 2])
-
-ox_gly = CompositeModel([oxalic_acid,glycine];fluid=SAFTgammaMie,solid=SolidHfus)
-la_gly = CompositeModel([lactic_acid,glycine];fluid=SAFTgammaMie,solid=SolidHfus)
-
-models = [ox_gly, la_gly]
-
-M = length(models)
-TE = zeros(M,1)
-sol = zeros(10,2,M)
-T = zeros(10,2,M)
-
-for k in 1:2
-    
-    model = models[k]
-
-    # Use the melting temperatures as the starting points
-    Tm = model.solid.params.Tm.values
-
-    # Obtain the eutetic temperature as the end point
-    TE[k] = eutectic_point(model)[1]
-
-    # Consider each side of the SLE curve separately
-    for i in 1:2
-        T[:,i,k] = LinRange(TE[k],Tm[i]*0.9999,10)
-        for j in 1:length(T[:,i,k])
-            try
-                sol[j,i,k] = sle_solubility(model,1e5,T[j,i,k],ones(2);solute=[model.components[i]])[1]
-            catch
-                @info """test #466 failed at: 
-                    model = $model
-                    T = $(T[j,i,k])
-                    solute = $(model.components[i])
-                """
-                sol[j,i,k] = NaN
-            end
-        end
-    end
-end
-    return sol
-end
-
 include_distributed("test_database.jl",4)
 include_distributed("test_solvers.jl",4)
 include_distributed("test_differentials.jl",4)
@@ -227,7 +182,7 @@ include_distributed("test_models_others.jl",2)
 include_distributed("test_models_saft_vr.jl",1)
 include_distributed("test_models_electrolytes.jl",1)
 include_distributed("test_methods_eos.jl",4)
-include_distributed("test_methods_eos.jl",5)
+include_distributed("test_methods_eos_pcsaft.jl",5)
 include_distributed("test_methods_api.jl",2)
 include_distributed("test_methods_api_flash.jl",3)
 include_distributed("test_methods_electrolytes.jl",1)

@@ -682,14 +682,16 @@ The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume
 
 If the `μ_ref` keyword argument is not provided, the `reference` keyword is used to specify the reference chemical potential..
 """
-function activity_coefficient(model::EoSModel,p,T,z=SA[1.];
+function activity_coefficient(model::EoSModel,p,T,z = SA[1.0];
                             μ_ref = nothing,
                             reference = :pure,
                             phase=:unknown,
                             threaded=true,
                             vol0=nothing)
-    if model isa ActivityModel
-        return activity_coefficient(model,p,T,z)
+
+    γmodel = __γ_unwrap(model)
+    if γmodel isa ActivityModel
+        return activity_coefficient(γmodel,p,T,z)
     end
     if μ_ref == nothing
         return activity_coefficient_impl(model,p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
@@ -720,7 +722,7 @@ The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume
 
 If the `μ_ref` keyword argument is not provided, the `reference` keyword is used to specify the reference chemical potential..
 """
-function activity(model::EoSModel,p,T,z=SA[1.];
+function activity(model::EoSModel,p,T,z;
                 μ_ref = nothing,
                 reference = :pure,
                 phase=:unknown,
@@ -730,9 +732,9 @@ function activity(model::EoSModel,p,T,z=SA[1.];
         return activity(model,p,T,z)
     end
     if μ_ref == nothing
-        return activity_impl(model,p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
+        return activity_impl(__γ_unwrap(model),p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
     else
-        return activity_impl(model,p,T,z,μ_ref,reference,phase,threaded,vol0)
+        return activity_impl(__γ_unwrap(model),p,T,z,μ_ref,reference,phase,threaded,vol0)
     end
 end
 

@@ -332,7 +332,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     μ_constraints = @view output[idx_μ_constraints]
     μ_end = similar(output,nc)
 
-    VT_chemical_potential_res!(μ_end,model,v_end,T,x_end,μconfig)
+    VT_chemical_potential_res!(μ_end,model,v_end,T,x_end)
 
     jj = 0
     for j in 1:np
@@ -784,7 +784,7 @@ function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
         return FlashResult(model,p,T,z,phase = _phase)
     end
 
-    return pt_flash_x0(model,p,T,z,method;k0 = :suggest)
+    return pt_flash_x0(model,p,T,z,method)
 end
 
 function px_flash_pure(model,p,x,z,spec::F,T0 = nothing) where F
@@ -843,7 +843,7 @@ function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
         return FlashResult(model,p,T,z,phase = _phase)
     end
 
-    return pt_flash_x0(model,p,T,z,method;k0 = :suggest)
+    return pt_flash_x0(model,p,T,z,method)
 end
 
 function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing) where F

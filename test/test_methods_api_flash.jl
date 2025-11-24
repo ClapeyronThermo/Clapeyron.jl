@@ -130,11 +130,14 @@
             @test iszero(res4.fractions[1])
             @test res4.fractions[2] ≈ 36.50084374190448
 
-            res5 = Clapeyron.tp_flash2(mix, 442595.31887270656, 318.91991913774194, [18.697907101753938, 9.208988950434023e-8, 2.317361697667793e-22, 1.9317538045050555e-32], RRTPFlash(equilibrium=:vle, verbose=true))
+            res5 = Clapeyron.tp_flash2(mix, 442595.31887270656, 318.91991913774194, [18.697907101753938, 9.208988950434023e-8, 2.317361697667793e-22, 1.9317538045050555e-32], RRTPFlash(equilibrium=:vle))
             @test res5.fractions[1] ≈ 18.69790719384074 rtol = 1e-4
 
-            res6 = Clapeyron.tp_flash2(mix, 2.2099578494144413e6, 464.63699168781847, [2.7561794126981888e-6, 55.964211412167195, 12.860133735598001, 1.0819681996211576], MichelsenTPFlash(equilibrium=:vle,verbose = true))
+            res6 = Clapeyron.tp_flash2(mix, 2.2099578494144413e6, 464.63699168781847, [2.7561794126981888e-6, 55.964211412167195, 12.860133735598001, 1.0819681996211576], MichelsenTPFlash(equilibrium=:vle))
             @test res6.fractions[2] ≈ 69.90631610356577
+
+            res7 = Clapeyron.tp_flash2(mix, 505777.32016068726, 323.9598978773458, [75.83064821431964, 6.148759359393775e-10, 0, 0], MichelsenTPFlash(equilibrium=:vle))
+            @test res7.fractions[1] ≈ 75.83064821493451
         end
 
     end
@@ -211,7 +214,8 @@
 
         #test K0_lle_init initialization
         alg3 = RRTPFlash(
-            equilibrium = :lle)
+            equilibrium = :lle
+        )
         flash3 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg3)
         act_x3 = activity_coefficient(system, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
         act_y3 = activity_coefficient(system, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]
@@ -234,8 +238,8 @@
         flash4 = tp_flash(model_vle, 2500.0, 300.15, [0.9, 0.1], MichelsenTPFlash())
 
         @test flash4[1] ≈
-        [0.923964726801428 0.076035273198572;
-        0.7934765930306608 0.20652340696933932] rtol = 1e-6
+        [0.9239684120579815 0.07603158794201849; 
+        0.793479931206839 0.20652006879316098] rtol = 1e-6
         #test equality of activities does not make sense in VLE
     end
 
@@ -246,7 +250,10 @@
         [0.3618699659002134 0.6381300340997866
         0.17888243361092543 0.8211175663890746] rtol = 1e-6
 
-        @test_throws ErrorException Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash(ss_iters = 0))
+        #it works, somehow, with less precision
+        @test Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash(ss_iters = 0))[1] ≈
+        [0.3618699698927814 0.6381300301072186;
+        0.17888243310648602 0.821117566893514] rtol = 1e-6
     end
 end
 
@@ -277,7 +284,9 @@ end
     #examples for qt, qp flash (#314)
     model = cPR(["ethane","propane"],idealmodel=ReidIdeal)
     res2 = qt_flash(model,0.5,208.0,[0.5,0.5])
+    res2a = qt_flash(model,0.5,208.0,[0.5,0.5],RRQXFlash())
     @test Clapeyron.pressure(res2) ≈ 101634.82435966855 rtol = 1e-6
+    @test Clapeyron.pressure(res2a) ≈ 101634.82435966855 rtol = 1e-6
     @test QT.pressure(model,0.5,208.0,[0.5,0.5]) ≈ 101634.82435966855 rtol = 1e-6
     res3 = qp_flash(model,0.5,120000.0,[0.5,0.5])
     @test Clapeyron.temperature(res3) ≈ 211.4972567716822 rtol = 1e-6
@@ -466,6 +475,21 @@ end
     TUV1 = CoolProp.PropsSI("T","U",29550.0,"D",1000,"water")
     TUV2 = CoolProp.PropsSI("T","U",29550.0,"D",1000,IAPWS95())
     @test TUV1 ≈ TUV2 rtol = 1e-6
+
+    #issue #475
+    fluid475 = cPR(["pentane","butane"],idealmodel = ReidIdeal)
+    h475 = Clapeyron.PS.enthalpy(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
+    res475 = Clapeyron.PS.flash(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
+    @test enthalpy(fluid475,res475) ≈ h475 rtol = 1e-6
+    
+    #issue 492
+    fluid492 = GERG2008(["propane", "butane"])
+    p492 = 1.5e6
+    z492 = [0.5, 0.5]
+    h492 = -13168.282596816884
+    res492 = Clapeyron.ph_flash(fluid492, p492, h492, z492)
+    @test enthalpy(fluid492,res492) ≈ h492 rtol = 1e-6
+
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)

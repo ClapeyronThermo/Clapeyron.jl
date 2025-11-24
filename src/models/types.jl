@@ -18,6 +18,7 @@ abstract type AlphaModel <:EoSModel end
 abstract type ElectrolyteModel <: EoSModel end
 abstract type IonModel <: ElectrolyteModel end
 abstract type RSPModel <: ElectrolyteModel end
+abstract type RestrictedEquilibriaModel <: EoSModel end
 
 export SAFTModel,CubicModel,EmpiricHelmholtzModel
 export IdealModel

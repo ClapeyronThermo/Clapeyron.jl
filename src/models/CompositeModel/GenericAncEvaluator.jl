@@ -51,3 +51,29 @@ function _eval_generic_anc(data::GenericAncEvaluator,input)
         throw(error("unrecognized type: " * string(type)))
     end
 end
+
+function _eval_inverse_generic_anc(data::GenericAncEvaluator,output)
+    f(input) = _eval_generic_anc(data,input) - output
+    input_r = data.input_r
+    output_r = data.output_r
+    TT = Base.promote_eltype(1.0,output)
+    lo,hi = TT(NaN),TT(NaN)
+    output > output_r && return hi
+    lo = TT(input_r)
+    bracketed = false
+    for i in 1:10
+        hi = lo
+        lo *= 0.9
+        if _eval_generic_anc(data,lo) < output
+            bracketed = true
+            break
+        end 
+    end
+    if bracketed
+        prob = Roots.ZeroProblem(f,(lo,hi))
+        return Roots.solve(prob)
+    else
+        prob = Roots.ZeroProblem(f,lo)
+        return Roots.solve(prob)
+    end
+end

@@ -62,10 +62,13 @@ function ePCSAFT(solvents,ions;
     assoc_options = AssocOptions(),
     verbose = false,
     reference_state = nothing)
+
+    solvents = format_components(solvents)
+    ions = format_components(ions)
     components = deepcopy(ions)
     prepend!(components,solvents)
 
-    params = getparams(format_components(components), ["Electrolytes/properties/charges.csv"]; userlocations=charges, verbose=verbose)
+    params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=charges, verbose=verbose)
     _charge = params["charge"]
     charge = _charge.values
 

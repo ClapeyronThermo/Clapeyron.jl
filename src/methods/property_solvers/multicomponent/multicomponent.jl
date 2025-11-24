@@ -87,10 +87,10 @@ function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.
 
     μ1 = μj = similar(F,length(model))
     p1 = pressure(model,v1,T,w1)
-    ∑w1 = sum(w1)
     VT_chemical_potential_res!(μ1,model,v1,T,w1)
-    for j in 1:(n_p - 1)
-        Fj = @inbounds viewn(F,n_c,j)
+    log_v1 = log(v1)
+    @inbounds for j in 1:(n_p - 1)
+        Fj = viewn(F,n_c,j)
         for i in 1:n_c
             Fj[i] = μ1[i]
         end
@@ -100,9 +100,9 @@ function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.
     idx_p_start = n_c*(n_p - 1) + 1
     idx_p_end = n_c*(n_p - 1) + n_p - 1
     Fp = view(F,idx_p_start:idx_p_end)
-    for j in 1:(n_p - 1)
-        vj = @inbounds v[j+1]
-        wj = @inbounds w[j+1]
+    @inbounds for j in 1:(n_p - 1)
+        vj = v[j+1]
+        wj = w[j+1]
         pj = pressure(model,vj,T,wj)
         #pᵣ_res_j = pressure_res(model,vj,T,wj)*RTinv
         #Δp = pᵣ_res_1 - pᵣ_res_j
@@ -111,12 +111,12 @@ function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.
         VT_chemical_potential_res!(μ1,model,vj,T,wj)
         Fj = viewn(F,n_c,j)
 
+        log_v_common = log(vj) - log_v1
         for i in 1:n_c
             μ1i = Fj[i]
             μji = μj[i]
             Δuᵣ = μ1i - μji
-            Δu = Δuᵣ*RTinv + log(vj) + log(w1[i]) - log(v1) - log(wj[i])
-            Fj[i] = Δu
+            Fj[i] = Δuᵣ*RTinv + log_v_common + log(w1[i]) - log(wj[i])
         end
     end
 
@@ -149,25 +149,30 @@ function μp_equality2(models::NTuple{2,M}, F, PT::TPspec, v, w, short_view) whe
     RTinv = 1/(Rgas(model_long)*T)
     μ_long_view = @view(μ_long[short_view])
     x_long_view = @view(x_long[short_view])
-    for i in 1:n_short
+    @inbounds for i in 1:n_short
         F[i] = μ_long_view[i]
     end
     μ_short = resize!(μ_long,n_short)
+    log_v_common = log(v_short/v_long)
     if n_short == 1
         ∑n_short = sum(x_short)
-        p_res = p_short - sum(x_short)*Rgas(model_short)*T/v_short
-        μ_short[1] = (eos_res(model_short,v_short,T,x_short) + p_res*v_short)/∑n_short
+        p_res = p_short - ∑n_short*Rgas(model_short)*T/v_short
+        μ_short_1 = (eos_res(model_short,v_short,T,x_short) + p_res*v_short)/∑n_short
+        μ_long_1 = F[1]
+        Δuᵣ = μ_long_1 - μ_short_1
+        Δμ = Δuᵣ*RTinv + log_v_common + (log(x_long_view[1]) - log(x_short[1]))
+        F[1] = Δμ*RT⁻¹
     else
         VT_chemical_potential_res!(μ_short,model_short,v_short,T,x_short)
+        @inbounds for i in 1:n_short
+            μ_long_i  = F[i]
+            μ_short_i = μ_short[i]
+            Δuᵣ = μ_long_i - μ_short_i
+            Δμ = Δuᵣ*RTinv + log_v_common + (log(x_long_view[i]) - log(x_short[i]))
+            F[i] = Δμ*RT⁻¹
+        end
     end
 
-    for i in 1:n_short
-        μ_long_i = F[i]
-        μ_short_i = μ_short[i]
-        Δuᵣ = (μ_long_i - μ_short_i)
-        Δμ = Δuᵣ*RTinv + log(v_short) + log(x_long_view[i])  - log(v_long) - log(x_short[i])
-        F[i] = Δμ*RT⁻¹
-    end
     F[n_short+1] = (p_long-p_short)*p⁻¹
     if PT.pressure_specified
         F[n_short+2] = (p_long-p)*p⁻¹

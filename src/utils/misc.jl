@@ -151,7 +151,11 @@ format_component_i(x::Pair) = first(x)
 
 format_gccomponents(str::Tuple) = [str]
 format_gccomponents(str::Pair) = [str]
-format_gccomponents(str) = str
+format_gccomponents(str::String) = [str]
+format_gccomponents(str::AbstractString) = format_components(String(str))
+format_gccomponents(str::Vector{String}) = str
+format_gccomponents(str::AbstractVector) = Array(str)
+# format_gccomponents(str) = map(format_component_i,str)
 
 function mole_to_mass(model, x)
     w = x .* mw(model)
@@ -162,9 +166,6 @@ function mass_to_mole(model, w)
     x = w ./ mw(model)
     return x ./ sum(x)
 end
-format_gccomponents(str::String) = [str]
-format_gccomponents(str::AbstractString) = format_components(String(str))
-format_gccomponents(str::Vector{String}) = str
 
 """
     viewn(x,chunk,i)
@@ -176,6 +177,23 @@ function viewn(x,chunk,i)
     l = length(x)
     l < chunk*i && throw(BoundsError(x,chunk*i))
     @view x[((i - 1)*chunk+1):(i*chunk)]
+end
+
+"""
+    copy_without_pivot!(dst, src, pivot)
+
+Copy all elements from `src` into `dst` except the one at index `pivot`.
+`dst` must have length `length(src) - 1`.
+"""
+@inline function copy_without_pivot!(dst, src, pivot)
+    k = 1
+    @inbounds @simd for i in eachindex(src)
+        if i != pivot
+            dst[k] = src[i]
+            k += 1
+        end
+    end
+    return dst
 end
 
 viewlast(x,i) = @view(x[(end - i + 1):end])

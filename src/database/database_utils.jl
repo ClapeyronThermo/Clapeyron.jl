@@ -252,7 +252,7 @@ function singletopair(params::Vector{T1},::T2 =_zero(T1)) where {T1,T2}
 end
 
 ##Error and info display utils
-function error_color(text)
+function error_color(text::AbstractString)
     colors = Base.text_colors
     red = colors[:bold] * colors[:red]
     reset = colors[:normal]
@@ -260,8 +260,8 @@ function error_color(text)
 end
 
 error_color(symbol::Symbol) = error_color(":" * string(symbol))
-
-function info_color(text)
+error_color(x) = error_color(string(x))
+function info_color(text::AbstractString)
     colors = Base.text_colors
     red = colors[:bold] * colors[:cyan]
     reset = colors[:normal]
@@ -269,9 +269,9 @@ function info_color(text)
 end
 
 info_color(symbol::Symbol) = info_color(":" * string(symbol))
+info_color(x) = info_color(string(x))
 
-
-function low_color(text)
+function low_color(text::AbstractString)
     colors = Base.text_colors
     g = colors[:light_black]
     reset = colors[:normal]
@@ -279,6 +279,7 @@ function low_color(text)
 end
 
 low_color(symbol::Symbol) = low_color(":" * string(symbol))
+low_color(x) = low_color(string(x))
 
 function userlocation_merge(loc1,loc2)
     if isempty(loc2)
@@ -340,7 +341,9 @@ standarize_cas(cas::Missing) = missing
 function cas(components)
     components = format_components(components)
     params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES","canonicalsmiles","inchikey"],ignore_missing_singleparams = ["CAS"])
-    return params["CAS"].values
+    cas_i = params["CAS"].values
+    _iszero(cas_i[1]) && return [""]
+    return cas_i
 end
 
 function SMILES(components)

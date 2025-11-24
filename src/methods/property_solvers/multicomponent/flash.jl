@@ -14,10 +14,10 @@ By default, the phases are sorted by volume, this can be changed by passing the 
 `FlashResult(model,p,T,z;phase)` constructs a single phase `FlashResult`.
 If the bulk composition `z` is provided, it will be used to scale the fractions, forcing `sum(fractions) == sum(z)`
 """
-struct FlashResult{C,B,D}
+struct FlashResult{C,B,V,D}
     compositions::C
     fractions::B
-    volumes::B
+    volumes::V
     data::D
 end
 
@@ -40,7 +40,7 @@ Solvers.primalval(result::FlashResult) = FlashResult(primalval.(result.compositi
 
 function FlashData(p::R1,T::R2,g::R3) where{R1,R2,R3}
     if g === nothing
-        FlashData(p,T)
+        FlashData(promote(p,T)...)
     else
         return FlashData(promote(p,T,g)...)
     end

@@ -231,6 +231,16 @@ function _GradientConfig(hconfig::ForwardDiff.HessianConfig{T,V,N}) where {T,V,N
     return ForwardDiff.GradientConfig{T,V,N,typeof(duals)}(seeds,duals)
 end
 
+function _JacobianConfig(hconfig::ForwardDiff.HessianConfig{T,V,N},yduals = nothing) where {T,V,N}
+    seeds = hconfig.jacobian_config.seeds
+    duals = hconfig.jacobian_config.duals
+    #duals = (xduals,yduals)
+    #@show xduals[1]
+    #@show xduals[2]
+    #@show typeof(xduals)
+    return ForwardDiff.JacobianConfig{T,V,N,typeof(duals)}(seeds,duals)
+end
+
 chunksize(::ForwardDiff.Chunk{C}) where {C} = C
 chunksize(x::AbstractArray) = chunksize(ForwardDiff.Chunk(x))
 

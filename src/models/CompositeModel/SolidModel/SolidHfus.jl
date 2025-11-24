@@ -112,22 +112,18 @@ function melting_temperature_impl(model::SolidHfusModel,P,method::MeltingCorrela
     return T, nan, nan
 end
 
-function x0_eutectic_point(model::CompositeModel{<:EoSModel,<:SolidHfusModel},p)
-    return x0_eutectic_point(model.solid,p)
-end
-
 function x0_eutectic_point(model::SolidHfusModel,p)
     Hfus = model.params.Hfus.values
     Tm = model.params.Tm.values
-    #Hfus correlation
-    Tmax = 2/minimum(Tm)
-    R = Rgas()
-    f(tinv) = 1 - exp(-Hfus[1]/R*(tinv -1/Tm[1])) - exp(-Hfus[2]/R*(tinv -1/Tm[2]))
-    prob = Roots.ZeroProblem(f,(zero(Tmax),Tmax))
-    T0inv = Roots.solve(prob)
-    T0 = 1/T0inv
-    x0 = exp(-Hfus[1]/Rgas()*(1/T0-1/Tm[1]))
-    return [T0/200.,x0]
+    R = Rgas(model)
+    K1,K2 = -Hfus[1]/R,-Hfus[2]/R
+    T1,T2 = Tm[1],Tm[2]
+    return ideal_eutectic_solver(K1,K2,T1,T2)
+end
+
+function eutectic_point(model::SolidHfusModel,p=1e5; x0=nothing)
+    T,x1 = x0_eutectic_point(model,p)
+    return T,FractionVector(x1)
 end
 
 export SolidHfus

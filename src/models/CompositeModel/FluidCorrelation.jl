@@ -110,33 +110,7 @@ function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,USEP
     end
 end
 
-function activity_coefficient(model::FluidCorrelation,p,T,z=SA[1.];
-    μ_ref = nothing,
-    reference = :pure,
-    phase=:unknown,
-    threaded=true,
-    vol0=nothing)
-    return FillArrays.Ones(length(model))
-end
-
-function a_res_activity(model,V,T,z,pures::EoSVectorParam{M}) where M <: FluidCorrelation{E} where E
-    if pures.model.gas isa IdealModel
-        return a_res_activity(model,V,T,z,BasicIdeal())
-    end
-    Σz = sum(z)
-    R = Rgas(model)
-    v = V/Σz
-    Σa_resᵢ = sum(z[i]*a_res(pures[i].gas,v,T,SA[1.0]) for i ∈ @comps)
-    nRT = Σz*R*T
-    if model isa ActivityModel
-        p = nRT/V
-    else
-        p = pressure(pures.model.gas,V,T,z)
-    end
-    g_E = excess_gibbs_free_energy(model,p,T,z)
-    return g_E/(Σz*Rgas(model)*T) + Σa_resᵢ
-end
-
+__γ_unwrap(model::FluidCorrelation) = IdealLiquidSolution()
 
 reference_chemical_potential_type(model::FluidCorrelation) = :zero
 
@@ -240,6 +214,10 @@ function saturation_temperature(model::FluidCorrelation,p,method::SaturationMeth
     end
 end
 
+function dpdT_saturation(model::FluidCorrelation,v1::Number,v2,T)
+    return dpdT_saturation(model.saturation,v1,v2,T)
+end
+
 function init_preferred_method(method::typeof(tp_flash),model::FluidCorrelation,kwargs)
     RRTPFlash(;kwargs...)
 end
@@ -248,83 +226,16 @@ function init_preferred_method(method::typeof(tp_flash),model::FluidCorrelation{
     RRTPFlash(;nacc = 0,kwargs...)
 end
 
-__tpflash_cache_model(model::FluidCorrelation,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
-
-function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
-    fluidmodel = model.gas
-    #check that we can actually solve the equilibria
-    pures = split_pure_model(fluidmodel,default_splitter(model))
-    satpures = split_pure_model(model.saturation,default_splitter(model))
-    RT = R̄*T
-    if fluidmodel isa IdealModel
-        vv = RT/p
-        nan = zero(vv)/zero(vv)
-        sats = saturation_pressure.(satpures,T)
-        ϕpure = fill(one(vv),length(model))
-        g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv,T) for i in 1:length(model)]
-        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
-    else
-        sats = saturation_pressure.(satpures,T)
-        vv_pure = last.(sats)
-        p_pure = first.(sats)
-        μpure = only.(VT_chemical_potential_res.(gas_model.(pures),vv_pure,T))
-        ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
-        g_pure = [VT_gibbs_free_energy(gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
-        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
-    end
-end
-
-function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,z,β,vols,phases,non_inw,cache = nothing)
-    volx,voly = vols
-    phasex,phasey = phases
-    non_inx,non_iny = non_inw
-    model = wrapper.model
-    sats = wrapper.sat
-    #crits = wrapper.crit
-    fug = wrapper.fug
-    RT = R̄*T
-    volx = volume(model.liquid, p, T, x, phase = phasex, vol0 = volx)
-    gasmodel = gas_model(model)
-    lnϕy, voly = lnϕ(gas_model(model), p, T, y, cache; phase=phasey, vol0=voly)
-    is_ideal = gasmodel isa IdealModel
-    if is_vapour(phasey)
-        for i in eachindex(lnK)
-            if non_inx[i]
-                lnK[i] = Inf
-            elseif non_iny[i]
-                lnK[i] = -Inf
-            else
-                ϕli = fug[i]
-                p_i = sats[i][1]
-                lnKi = log(p_i*ϕli/p) - lnϕy[i]
-                !is_ideal && (lnKi += volx*(p - p_i)/RT) #add poynting corrections only if the fluid model itself has non-ideal corrections
-                lnK[i] = lnKi
-            end
-        end
-    else
-        throw(error("Correlation-Based Composite Model does not support LLE equilibria."))
-    end
-    return lnK,volx,voly,NaN*one(T+p+first(x))
+function __tpflash_cache_model(model::FluidCorrelation,p,T,z,equilibrium) 
+    PTFlashWrapper(model,p,T,z,equilibrium)
 end
 
 function ∂lnϕ_cache(model::PTFlashWrapper{FluidCorrelation{<:IdealModel}}, p, T, z, dt::Val{B}) where B
     return nothing
 end
 
-
 function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,eq,vols)
     return NaN*one(T+p+first(x))
-end
-
-function dgibbs_obj!(model::PTFlashWrapper{<:FluidCorrelation}, p, T, z, phasex, phasey,
-    nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
-    F=nothing, G=nothing, H=nothing)
-    throw(error("Correlation-Based Composite Model does not support gibbs energy optimization in MichelsenTPFlash."))
-    #
-end
-
-function K0_lle_init(model::PTFlashWrapper{<:FluidCorrelation},p,T,z)
-    throw(error("Correlation-Based Composite Model does not support LLE equilibria."))
 end
 
 function __eval_G_DETPFlash(model::PTFlashWrapper{<:FluidCorrelation},p,T,xi,equilibrium)

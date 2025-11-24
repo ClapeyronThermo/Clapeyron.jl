@@ -172,8 +172,8 @@ function x0_volume_gas(model::ECS,p,T,z)
 end
 
 function T_scale(model::ECS,z)
-    lb_v0 = lb_volume(model.model_ref)
-    T0 = T_scale(model.model_ref)
+    T0 = T_scale(model.model_ref,SA[1.0])
+    lb_v0 = lb_volume(model.model_ref,T0,SA[1.0])
     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
     return T0*f
 end

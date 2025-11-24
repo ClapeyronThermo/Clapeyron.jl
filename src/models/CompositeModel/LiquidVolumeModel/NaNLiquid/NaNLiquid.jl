@@ -1,10 +1,10 @@
-abstract type NaNLiquidModel <: LiquidVolumeModel end
-@newmodelsingleton NaNLiquid NaNLiquidModel
+abstract type ZeroLiquidModel <: LiquidVolumeModel end
+@newmodelsingleton ZeroLiquid ZeroLiquidModel
 
 """
-    NaNLiquid <: IdealModel
+    ZeroLiquid <: IdealModel
 
-    NaNLiquid(components; 
+    ZeroLiquid(components; 
     userlocations = String[],
     reference_state = nothing,
     verbose = false)
@@ -12,24 +12,25 @@ abstract type NaNLiquidModel <: LiquidVolumeModel end
 ## Input parameters
 None
 ## Description
-Placeholder liquid model. Returns NaN for any input.
+Placeholder liquid model. Returns 0 for any input.
 
 ## Model Construction Examples
 ```
 # Because this model does not have parameters, all those constructors are equivalent:
-liquid = NaNLiquid()
-liquid = NaNLiquid("water")
-liquid = NaNLiquid(["water","carbon dioxide"])
+liquid = ZeroLiquid()
+liquid = ZeroLiquid("water")
+liquid = ZeroLiquid(["water","carbon dioxide"])
 ```
 """
-NaNLiquid
+ZeroLiquid
 
-export NaNLiquid
+export ZeroLiquid
+const NaNLiquid = ZeroLiquid
 
-function volume_impl(model::NaNLiquidModel,p,T,z,phase,threaded,vol0)
+function volume_impl(model::ZeroLiquidModel,p,T,z,phase,threaded,vol0)
     _0 = zero(first(z))
-    return _0/_0
+    return _0
 end
 
-check_arraysize(::NaNLiquid,x::AbstractVector) = nothing
-check_arraysize(::NaNLiquid,x::AbstractMatrix) = nothing
+check_arraysize(::ZeroLiquidModel,x::AbstractVector) = nothing
+check_arraysize(::ZeroLiquidModel,x::AbstractMatrix) = nothing

@@ -793,9 +793,9 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
             λa*x_0ij^(2*λa)*(aS_1_2a+B_2a))
         g_2_ = (1+γc)*gMCA2
         #@show (g_2_,i)
-        g_Mie_ = g_HSi*exp(ϵ/T*g_1_/g_HSi+(ϵ/T)^2*g_2_/g_HSi)
+        log_g_Mie_ = log(g_HSi) + (ϵ/T*g_1_/g_HSi+(ϵ/T)^2*g_2_/g_HSi)
         #@show (g_Mie_,i)
-        achain +=  z[i]*(log(g_Mie_)*(m[i]-1))
+        achain +=  z[i]*(log_g_Mie_*(m[i]-1))
     end
     return -achain/∑z
 end
