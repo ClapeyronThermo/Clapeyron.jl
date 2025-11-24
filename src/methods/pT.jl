@@ -1020,8 +1020,8 @@ end
 
 function thermodynamic_factor(model::ActivityModel, p, T, z)
     N = length(model)
-    ∑z = sum(z)
-    x = z ./ ∑z
+    N == 1 && return one(T)
+    x = z ./ sum(z)
     xN1 = @view x[1:N-1]
 
     fun_lnγ(_xN1) = begin
