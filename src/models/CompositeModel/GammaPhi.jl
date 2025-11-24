@@ -514,16 +514,17 @@ function ∂lnϕ∂n∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂lnϕ
     end
 end
 
-function ∂lnϕ∂P(model::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
+function ∂lnϕ∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
             phase=:unknown,
             vol0=nothing,
             threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
+            vol = volume(wrapper,p,T,z;phase,vol0,threaded))
 
     if is_liquid(phase)
-        ∂lnγ∂Ti = ∂lnγ∂T(__γ_unwrap(wrapper), p, T, z,cache)
-        V = zero(eltype(∂lnγ∂Ti))
-        return ∂lnγ∂Ti,V
+        result,aux,logγ,A1,x1,x2,∂lnγ∂Pi,hconfig = cache
+        ∂lnγ∂Pi .= 0
+        V = zero(eltype(∂lnγ∂Pi))
+        return ∂lnγ∂Pi,V
     else
         if vol === nothing
             _vol = volume(gas_model(wrapper),p,T,z;phase,vol0,threaded)
@@ -536,16 +537,16 @@ function ∂lnϕ∂P(model::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cach
     end
 end
 
-function ∂lnϕ∂T(model::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
+function ∂lnϕ∂T(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
             phase=:unknown,
             vol0=nothing,
             threaded = true,
-            vol = volume(model,p,T,z;phase,vol0,threaded))
+            vol = volume(wrapper,p,T,z;phase,vol0,threaded))
 
     if is_liquid(phase)
-        ∂lnϕ∂T = ∂lnγ∂T(__γ_unwrap(model),p,T,z,cache)
-        V = zero(eltype(∂lnϕ∂T))
-        return ∂lnϕ∂T,V
+        ∂lnϕ∂Ti = ∂lnγ∂T(__γ_unwrap(wrapper),p,T,z,cache)
+        V = zero(eltype(∂lnϕ∂Ti))
+        return ∂lnϕ∂Ti,V
     else
         if vol === nothing
             _vol = volume(gas_model(wrapper),p,T,z;phase,vol0,threaded)
