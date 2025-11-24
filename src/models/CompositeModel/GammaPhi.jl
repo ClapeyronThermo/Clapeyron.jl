@@ -221,7 +221,7 @@ function PTFlashWrapper(model::GammaPhi,p,T,z,equilibrium)
     return wrapper
 end
 
-function __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium) 
+function __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium)
     PTFlashWrapper(model,p,T,z,equilibrium)
 end
 
@@ -409,7 +409,7 @@ end
 function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpressure = false,phase = :l,_vol = nothing)
     model = wrapper.model
     RT = R̄*T
-    if is_liquid(phase) 
+    if is_liquid(phase)
         γmodel = __γ_unwrap(model)
         #=
         If the model is not an activity model, then PTFlashWrapper is wrapping
@@ -511,6 +511,50 @@ function ∂lnϕ∂n∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂lnϕ
         tpd_delta_d_vapour!(lnϕ,wrapper,p,T)
         tpd_∂delta_d∂P_vapour!(∂lnϕ∂P,wrapper,p,T)
         return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, V
+    end
+end
+
+function ∂lnϕ∂P(model::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
+            phase=:unknown,
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+
+    if is_liquid(phase)
+        ∂lnγ∂Ti = ∂lnγ∂T(__γ_unwrap(wrapper), p, T, z,cache)
+        V = zero(eltype(∂lnγ∂Ti))
+        return ∂lnγ∂Ti,V
+    else
+        if vol === nothing
+            _vol = volume(gas_model(wrapper),p,T,z;phase,vol0,threaded)
+        else
+            _vol = vol
+        end
+        ∂lnϕ∂Pi, V = ∂lnϕ∂P(gas_model(wrapper), p, T, z,cache;vol = _vol)
+        tpd_∂delta_d∂P_vapour!(∂lnϕ∂Pi,wrapper,p,T)
+        return ∂lnϕ∂Pi, V
+    end
+end
+
+function ∂lnϕ∂T(model::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
+            phase=:unknown,
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+
+    if is_liquid(phase)
+        ∂lnϕ∂T = ∂lnγ∂T(__γ_unwrap(model),p,T,z,cache)
+        V = zero(eltype(∂lnϕ∂T))
+        return ∂lnϕ∂T,V
+    else
+        if vol === nothing
+            _vol = volume(gas_model(wrapper),p,T,z;phase,vol0,threaded)
+        else
+            _vol = vol
+        end
+        ∂lnϕ∂Ti, V = ∂lnϕ∂T(gas_model(wrapper), p, T, z, cache;vol = _vol)
+        tpd_∂delta_d∂T_vapour!(∂lnϕ∂Ti,wrapper,p,T)
+        return ∂lnϕ∂Ti, V
     end
 end
 

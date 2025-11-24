@@ -241,6 +241,10 @@ function _JacobianConfig(hconfig::ForwardDiff.HessianConfig{T,V,N},yduals = noth
     return ForwardDiff.JacobianConfig{T,V,N,typeof(duals)}(seeds,duals)
 end
 
+function _DerivativeConfig(duals::AbstractVector{ForwardDiff.Dual{T,V,1}}) where {T,V}
+    return ForwardDiff.DerivativeConfig{T,typeof(duals)}(duals)
+end
+
 chunksize(::ForwardDiff.Chunk{C}) where {C} = C
 chunksize(x::AbstractArray) = chunksize(ForwardDiff.Chunk(x))
 
