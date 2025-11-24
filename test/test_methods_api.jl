@@ -440,3 +440,18 @@ end
     @test p_ciic ≈ ciic_pressure(model,T_initial,p0 = 1.01*p_ciic)[1] rtol = 1e-6
     @test p_ciic ≈ ciic_pressure(model,T_initial,v0 = 1.01*v3)[1] rtol = 1e-6
 end
+
+@testset "thermodynamic factor" begin 
+    eos_model = PCSAFT(["water", "ethanol"])
+    Γ_eos = thermodynamic_factor(eos_model, 1e5, 300., [2.,4.])
+    @test size(Γ_eos) == (1,1)
+    @test Γ_eos[1,1] ≈ 0.6178686409160774 rtol=1e-6 
+
+    act_model = NRTL(["1-propanol", "toluene", "acetone"])
+    Γ_act = thermodynamic_factor(act_model, 1e5, 300., [2.,4., 6.])
+    @test size(Γ_act) == (2,2)
+    @test Γ_act[1,1] ≈ 1.0308707308001777 rtol=1e-6
+    @test Γ_act[1,2] ≈ -0.02375026917028083 rtol=1e-6
+    @test Γ_act[2,1] ≈ -0.16515765618382755 rtol=1e-6 
+    @test Γ_act[2,2] ≈ 0.7576311167469985 rtol=1e-6
+end
