@@ -1004,6 +1004,39 @@ function _partial_property(model::EoSModel, V, T, z::AbstractVector, VT_prop::F)
     return ∂x∂nᵢ .- ∂x∂V .* ∂p∂nᵢ ./ ∂p∂V
 end
 
+"""
+    thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Calculates the thermodynamic factor matrix Γᵢⱼ (size: N-1 × N-1) defined as:
+
+```julia
+Γᵢⱼ = δᵢⱼ + xᵢ ∂lnγᵢ/∂xⱼ
+```
+"""
+function thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    length(model) == 1 && return one(T)
+    return PT_property(model,p,T,z,phase,threaded,vol0,VT_thermodynamic_factor)
+end
+
+function thermodynamic_factor(model::ActivityModel, p, T, z)
+    N = length(model)
+    ∑z = sum(z)
+    x = z ./ ∑z
+    xN1 = @view x[1:N-1]
+
+    fun_lnγ(_xN1) = begin
+        _xN = 1 - sum(_xN1)
+        _x = vcat(_xN1, _xN)
+        return activity_coefficient(model, p, T, _x)
+    end
+    
+    J_full = ForwardDiff.jacobian(fun_lnγ, xN1)
+    ∂lnγᵢ∂xⱼ = J_full[1:N-1, 1:N-1]
+
+    Γ = LinearAlgebra.I(N-1) .+  xN1 .* ∂lnγᵢ∂xⱼ
+    return Γ
+end
+
 #first derivative order properties
 export entropy, internal_energy, enthalpy, gibbs_free_energy, helmholtz_free_energy
 export entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res

@@ -524,6 +524,35 @@ function VT_fugacity_coefficient!(φ,model::EoSModel,V,T,z=SA[1.],p = pressure(m
     return φ
 end
 
+function VT_thermodynamic_factor(model::EoSModel, V, T, z)
+    N = length(model)
+    ∑z = sum(z)
+    v = V / ∑z
+    x = z ./ ∑z
+    xN1 = @view x[1:N-1]
+    RT = Rgas(model) * T
+
+    fun_A(_xv) = begin
+        _x = @view _xv[1:N]
+        _v = last(_xv)
+        return eos(model, _v, T, _x)
+    end
+    H_A = Solvers.hessian(fun_A, vcat(x, v))
+    H_A_nn = @view H_A[1:N,1:N]
+    H_A_nv = @view H_A[N+1,1:N] 
+    H_A_vv⁻¹ = inv(H_A[N+1,N+1])
+    H_G_nn = H_A_nn .- (H_A_nv * H_A_nv') .* H_A_vv⁻¹
+
+    H_G_nN = @view H_G_nn[1:N-1,N]
+    H_G_Nn = @view H_G_nn[N,1:N-1]
+    H_G_xx = H_G_nn[1:N-1,1:N-1] .- H_G_nN .- H_G_Nn .+ H_G_nn[N,N]
+    F = [i == j ? 1-x[i] : -x[i] for i in 1:N-1, j in 1:N-1]
+    ∂μᵢ∂xⱼ = H_G_xx * F
+
+    Γ = xN1 ./ RT .* ∂μᵢ∂xⱼ
+    return Γ
+end
+
 const VT_helmholtz_energy = VT_helmholtz_free_energy
 const VT_gibbs_energy = VT_gibbs_free_energy
 const VT_mass_helmholtz_energy = VT_mass_helmholtz_free_energy
