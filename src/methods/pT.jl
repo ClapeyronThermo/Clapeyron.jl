@@ -1056,6 +1056,7 @@ export chemical_potential, activity_coefficient, activity, aqueous_activity, fug
 export chemical_potential_res
 export mixing, excess, gibbs_solvation, partial_property
 export identify_phase
+export thermodynamic_factor
 
 module PT
     import Clapeyron
