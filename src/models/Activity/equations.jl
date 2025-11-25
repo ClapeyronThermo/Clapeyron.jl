@@ -426,3 +426,17 @@ function set_reference_state!(model::ActivityModel,reference_state::ReferenceSta
 end
 
 reference_state(model::ActivityModel) = reference_state(model.puremodel)
+
+# Thermodynamic factor
+function thermodynamic_factor(model::ActivityModel, p, T, z)
+    N = length(model)
+    N == 1 && return one(T)
+    x = z ./ sum(z)
+    xN1 = @view x[1:N-1]
+    
+    _, _, J = ∂lnγ∂n(model, p, T, x)
+    ∂lnγᵢ∂xⱼ = J[1:N-1, 1:N-1] .- J[1:N-1, N]
+
+    Γ = LinearAlgebra.I(N-1) .+  xN1 .* ∂lnγᵢ∂xⱼ
+    return Γ
+end

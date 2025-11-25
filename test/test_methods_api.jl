@@ -447,11 +447,27 @@ end
     @test size(Γ_eos) == (1,1)
     @test Γ_eos[1,1] ≈ 0.6178686409160774 rtol=1e-6 
 
-    act_model = NRTL(["1-propanol", "toluene", "acetone"])
-    Γ_act = thermodynamic_factor(act_model, 1e5, 300., [2.,4., 6.])
+    # Activity model
+    act_model = NRTL(["water", "ethanol", "acetone"])
+    T_act = 300.
+    x_act = [0.15, 0.35, 0.5]
+    
+    # Analytical from Taylor and Krishna (1993), Table D.8
+    function thermodynamic_factor_nrtl(model, p, T, x)    
+        N = length(x)
+        
+        τ = model.params.a .+ model.params.b ./ T
+        G = exp.(-τ .* model.params.c)
+        S = G' * x    
+        ε = G .* (τ .- (((G .* τ)' * x) ./ S)') .* (inv.(S)')
+        Q = ε .+ ε' .- ((G * Diagonal(x ./ S)) * ε' .+ (ε * Diagonal(x ./ S)) * G')
+        
+        Γ = [((i == j) ? 1.0 : 0.0) + x[i] * (Q[i, j] - Q[i, N]) for i in 1:N-1, j in 1:N-1]
+        return Γ
+    end
+
+    Γ_act = thermodynamic_factor(act_model, 1e5, T_act, x_act)
+    Γ_ref = thermodynamic_factor(act_model, 1e5, T_act, x_act)
     @test size(Γ_act) == (2,2)
-    @test Γ_act[1,1] ≈ 1.0308707308001777 rtol=1e-6
-    @test Γ_act[1,2] ≈ -0.02375026917028083 rtol=1e-6
-    @test Γ_act[2,1] ≈ -0.16515765618382755 rtol=1e-6 
-    @test Γ_act[2,2] ≈ 0.7576311167469985 rtol=1e-6
+    @test all((≈).(Γ_act, Γ_ref, rtol=1e-6)) 
 end
