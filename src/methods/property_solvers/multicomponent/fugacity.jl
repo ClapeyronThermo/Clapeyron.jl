@@ -67,21 +67,6 @@ function fug_bubbledew_cache(modelx,modely,p,T,x,y,data)
     return w1,w2,w3,w4,w5,w6,volcache,Hϕx,Hϕy,w7
 end
 
-#utility to update PTFlashWrapper's
-function _update_temperature_with_view!(model1,model2,T,_view)
-    n1,n2 = length(model1),length(model2)
-    if n1 > n2
-        update_temperature!(model1,T)
-        model2.sat .= @view model1.sat[_view]
-        model2.fug .= @view model1.fug[_view]
-    else
-        update_temperature!(model2,T)
-        model1.sat .= @view model2.sat[_view]
-        model1.fug .= @view model2.fug[_view]
-    end
-    return nothing
-end
-
 function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,data::FugData,cache)
     volx,voly = vol0
 
