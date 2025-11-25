@@ -1004,6 +1004,20 @@ function _partial_property(model::EoSModel, V, T, z::AbstractVector, VT_prop::F)
     return ∂x∂nᵢ .- ∂x∂V .* ∂p∂nᵢ ./ ∂p∂V
 end
 
+"""
+    thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Calculates the thermodynamic factor matrix Γᵢⱼ (size: N-1 × N-1) defined as:
+
+```julia
+Γᵢⱼ = δᵢⱼ + xᵢ ∂lnγᵢ/∂xⱼ
+```
+"""
+function thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    length(model) == 1 && return one(T)
+    return PT_property(model,p,T,z,phase,threaded,vol0,VT_thermodynamic_factor)
+end
+
 #first derivative order properties
 export entropy, internal_energy, enthalpy, gibbs_free_energy, helmholtz_free_energy
 export entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
@@ -1023,6 +1037,7 @@ export chemical_potential, activity_coefficient, activity, aqueous_activity, fug
 export chemical_potential_res
 export mixing, excess, gibbs_solvation, partial_property
 export identify_phase
+export thermodynamic_factor
 
 module PT
     import Clapeyron

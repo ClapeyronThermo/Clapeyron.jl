@@ -101,6 +101,7 @@ Clapeyron.reference_chemical_potential_type
 Clapeyron.mixing
 Clapeyron.partial_property
 Clapeyron.shape_factors
+Clapeyron.thermodynamic_factor
 ```
 
 ### Phase identification
