@@ -39,8 +39,7 @@ Modified UNIFAC 2.0 (Dortmund) implementation.
 The method is identical to [`UNIFAC`](@ref) but with a new parameters fitted by matrix completion methods.
 
 ## References
-1. Hayer, N., Hasse, H., Jirasek, F., Modified UNIFAC 2.0 - A Group-Contribution Method Completed with Machine Learning. Arxive preprint (2024). [10.48550/arXiv.2412.12962](https://doi.org/10.48550/arXiv.2412.12962)
-).
+1. Hayer, N., Hasse, H., Jirasek, F.: Modified UNIFAC 2.0-A Group-Contribution Method Completed with Machine Learning, Ind. Eng. Chem. Res. 64 (2025) 10304–10313, DOI: [10.1021/acs.iecr.5c00077](https://doi.org/10.1021/acs.iecr.5c00077).
 """
 UNIFAC2
 
