@@ -417,22 +417,16 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_view,data::F
 end
 
 ##general multidimensional non linear system generator to solve bubble/dew problems via fugacity coefficients
-function _fug_J(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
-    for i in 1:size(J,1)
+function _fug_J_∂i∂j!(J,w,∂lnϕ∂nw)
+    neq = length(w)
+    for i in 1:neq
         J[i,i] = 1
     end
-    J[end, end] = 0
-    Jwlnϕw = @view J[1:(end-1), 1:(end-1)]
-    Jw = @view(J[end, 1:(end-1)])
-    if _bubble
-        ∂lnϕ∂ny .= y .* ∂lnϕ∂ny
-        w = y
-        w_∂lnϕ∂nw = transpose(∂lnϕ∂ny)
-    else
-        ∂lnϕ∂nx .= x .* ∂lnϕ∂nx
-        w_∂lnϕ∂nw = transpose(∂lnϕ∂nx)
-        w = x
-    end
+    J[neq+1, neq+1] = 0
+    Jwlnϕw = @view J[1:neq, 1:neq]
+    Jw = @view(J[neq+1, 1:neq])
+    ∂lnϕ∂nw .= w .* ∂lnϕ∂nw
+    w_∂lnϕ∂nw = transpose(∂lnϕ∂nw)
     Jwlnϕw .+= w_∂lnϕ∂nw
     Jw .= w
     return J
@@ -473,17 +467,20 @@ function _fug_OF_neq!(F,J,inc,model,prop,z,data::FugData,cache)
         if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, Hϕx, phase=phasex, vol0=volx)
             J[1:(end-1), end] .-= p .* ∂lnϕ∂Px
+            !_bubble && _fug_J_∂i∂j!_∂i∂j!(J,x,∂lnϕ∂nx)
             !isnothing(F) && (F[1:end-1] .= lnK .- lnϕx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, Hϕx, phase=phasey, vol0=voly)
             J[1:(end-1), end] .+= p .* ∂lnϕ∂Py
+            _bubble && _fug_J_∂i∂j!_∂i∂j!(J,y,∂lnϕ∂ny)
         else
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, Hϕx, phase=phasex, vol0=volx)
+            !_bubble && _fug_J_∂i∂j!(J,x,∂lnϕ∂nx)
             J[1:(end-1), end] .-= T .* ∂lnϕ∂Tx
             !isnothing(F) && (F[1:end-1] .= lnK .- lnϕx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, Hϕx, phase=phasey, vol0=voly)
             J[1:(end-1), end] .+= T .* ∂lnϕ∂Ty
+            _bubble && _fug_J_∂i∂j!(J,y,∂lnϕ∂ny)
         end
-        _fug_J(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
         if !isnothing(F)
             F[1:end-1] .+= lnϕy
             F[end] = sum(y)  - sum(x)
@@ -549,7 +546,11 @@ function _fug_OF_neq!(F,J,inc,modelx,modely,prop,z,_view,data::FugData,cache)
                 J[1:(end-1), end] .= T .* (@view(∂lnϕ∂Ty[_view]) .- ∂lnϕ∂Tx)
             end
         end
-        _fug_J(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
+        if _bubble
+            _fug_J_∂i∂j!(J,y,∂lnϕ∂ny)
+        else
+            _fug_J_∂i∂j!(J,x,∂lnϕ∂nx)
+        end
         if F !== nothing
             if _bubble
                 lnϕview = @view lnϕx[_view]
