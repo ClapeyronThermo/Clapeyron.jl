@@ -467,11 +467,11 @@ function _fug_OF_neq!(F,J,inc,model,prop,z,data::FugData,cache)
         if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, Hϕx, phase=phasex, vol0=volx)
             J[1:(end-1), end] .-= p .* ∂lnϕ∂Px
-            !_bubble && _fug_J_∂i∂j!_∂i∂j!(J,x,∂lnϕ∂nx)
+            !_bubble && _fug_J_∂i∂j!(J,x,∂lnϕ∂nx)
             !isnothing(F) && (F[1:end-1] .= lnK .- lnϕx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, Hϕx, phase=phasey, vol0=voly)
             J[1:(end-1), end] .+= p .* ∂lnϕ∂Py
-            _bubble && _fug_J_∂i∂j!_∂i∂j!(J,y,∂lnϕ∂ny)
+            _bubble && _fug_J_∂i∂j!(J,y,∂lnϕ∂ny)
         else
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, Hϕx, phase=phasex, vol0=volx)
             !_bubble && _fug_J_∂i∂j!(J,x,∂lnϕ∂nx)
@@ -526,7 +526,7 @@ function _fug_OF_neq!(F,J,inc,modelx,modely,prop,z,_view,data::FugData,cache)
         p,T = propy,propx
         _update_temperature_with_view!(modelx,modely,T,_view)
     end
-    
+
     if second_order
         J .= 0.0
         if _pressure
