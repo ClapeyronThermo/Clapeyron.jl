@@ -67,7 +67,7 @@ function ChemPotBubblePressure(;vol0 = nothing,
     end
 end
 
-function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressure)
+function bubble_pressure_impl(model::EoSModel, T, x, method::ChemPotBubblePressure)
     volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
     p0,vl0,vv0,y00 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles)
     is_non_volatile = !isnothing(method.nonvolatiles)
@@ -78,12 +78,12 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     neq = count(volatiles)
     cache = Clapeyron.fug_bubbledew_cache(model,model_y,T,T,x,x,Val{false}())
     y_r,_,_,_,_,_,p_cache,_,_ = cache
-    inc0 = similar(y_r,length(y_r)+2)
+    inc0 = similar(y_r,neq+2)
     inc0[1:neq] .= log.(y0 ./ @view(x[volatiles]))
     inc0[neq+1] = log(vl0)
     inc0[neq+2] = log(vv0)
     opts = NLSolvers.NEqOptions(method)
-    if true #is_non_volatile
+    if !is_non_volatile
         problem = _mu_OF_neq(model,T,x,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),Static(1.0)),opts)
         inc = Solvers.x_sol(sol)
@@ -94,54 +94,15 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
         inc = Solvers.x_sol(sol_vol)
         !all(<(sol_vol.options.f_abstol),sol_vol.info.best_residual) && (inc .= NaN)
     end
-    lnK = @view inc[1:end-2]
+    lnK = @view inc[1:neq]
     y_r .= exp.(lnK) .* @view(x[volatiles])
     y = index_expansion(y_r,volatiles)
-    vl = exp(inc[end-1])
-    vv = exp(inc[end])
+    vl = exp(inc[neq+1])
+    vv = exp(inc[neq+2])
     px,py = p_cache[]
     p = 0.5*(px + py)
     return (p, vl, vv, y)
 end
-
-
-function bubble_pressure2(model::EoSModel, T, x,method::ChemPotBubblePressure)
-    volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
-    p0,vl,vv,y0 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles)
-    is_non_volatile = !isnothing(method.nonvolatiles)
-    model_y,_ = index_reduction(model,volatiles)
-    y0 = y0[volatiles]
-
-    ηl = η_from_v(model, vl, T, x)
-    if is_non_volatile
-        ηv = η_from_v(model_y, vv, T, y0)
-    else
-        ηv = η_from_v(model, vv, T, y0)
-    end
-
-    # select component with highest fraction as pivot
-    idx_max = argmax(y0)
-    v0 = Vector{eltype(y0)}(undef, 2 + length(y0) - 1)
-    v0[1],v0[2] = ηl,ηv
-    copy_without_pivot!(view(v0, 3:lastindex(v0)), y0, idx_max)
-    f! = let model = model, model_y = model_y, T=T, x=x, volatiles=volatiles, idx_max=idx_max
-        (F,z) -> Obj_bubble_pressure(model, model_y, F, T, z[1], z[2], x, @view(z[3:end]), volatiles, idx_max)
-    end
-    r = Solvers.nlsolve(f!, v0,
-        LineSearch(Newton2(v0)),
-        NLSolvers.NEqOptions(method),
-        ForwardDiff.Chunk{min(length(v0), 8)}()
-    )
-    sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
-    v_l = v_from_η(model,sol[1],T,x)
-    y_r = FractionVector(@view(sol[3:end]),idx_max)
-    v_v = v_from_η(model,model_y,sol[2],T,y_r)
-    y_sol = index_expansion(y_r,volatiles)
-    P_sat = pressure(model,v_l,T,x)
-    return (P_sat, v_l, v_v, y_sol)
-end
-
 
 function Obj_bubble_pressure(model::EoSModel, model_y, F, T, ηl, ηv, x, y, _view,yy_i)
     v_l = v_from_η(model,ηl,T,x)
@@ -230,41 +191,42 @@ function ChemPotBubbleTemperature(;vol0 = nothing,
     end
 end
 
-function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemperature)
-    is_non_volatile = !isnothing(method.nonvolatiles)
+
+function bubble_temperature_impl(model::EoSModel, p, x, method::ChemPotBubbleTemperature)
     volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
+    T0,vl0,vv0,y00 = bubble_temperature_init(model,p,x,method.vol0,method.T0,method.y0,volatiles)
+    is_non_volatile = !isnothing(method.nonvolatiles)
     model_y,_ = index_reduction(model,volatiles)
-    T0,vl,vv,y0 = bubble_temperature_init(model,p,x,method.vol0,method.T0,method.y0,volatiles)
-    y0 = y0[volatiles]
-
-    ηl = η_from_v(model, vl, T0, x)
-    if is_non_volatile
-        ηv = η_from_v(model_y, vv, T0, y0)
+    y0 = y00[volatiles]
+    data = FugEnum.BUBBLE_TEMPERATURE
+    
+    neq = count(volatiles)
+    cache = Clapeyron.fug_bubbledew_cache(model,model_y,p,p,x,x,Val{true}())
+    y_r,_,_,_,_,_,_,_,_ = cache
+    inc0 = similar(y_r,neq+3)
+    inc0[1:neq] .= log.(y0 ./ @view(x[volatiles]))
+    inc0[neq+1] = log(vl0)
+    inc0[neq+2] = log(vv0)
+    inc0[neq+3] = log(T0)
+    opts = NLSolvers.NEqOptions(method)
+    if true #is_non_volatile
+        problem = _mu_OF_neq(model,p,x,data,cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),Static(1.0)),opts)
+        inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
     else
-        ηv = η_from_v(model, vv, T0, y0)
+        problem = _mu_OF_neq(model,model_y,p,x,volatiles,data,cache)
+        sol_vol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),Static(1.0)),opts)
+        inc = Solvers.x_sol(sol_vol)
+        !all(<(sol_vol.options.f_abstol),sol_vol.info.best_residual) && (inc .= NaN)
     end
-
-    # select component with highest fraction as pivot
-    idx_max = argmax(y0)
-    v0 = Vector{eltype(y0)}(undef, 3 + length(y0) - 1)
-    v0[1],v0[2],v0[3] = T0,ηl,ηv
-    copy_without_pivot!(view(v0, 4:lastindex(v0)), y0, idx_max)
-    f! = let model = model, model_y = model_y, p=p, x=x, volatiles=volatiles, idx_max=idx_max
-        (F,z) -> Obj_bubble_temperature(model, model_y, F, p, z[1], z[2], z[3], x, @view(z[4:end]), volatiles, idx_max)
-    end
-    r = Solvers.nlsolve(f!, v0,
-        LineSearch(Newton2(v0)), 
-        NLSolvers.NEqOptions(method),
-        ForwardDiff.Chunk{min(length(v0), 8)}()
-    )
-    sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
-    T = sol[1]
-    y_r = FractionVector(@view(sol[4:end]), idx_max)
-    v_l = v_from_η(model, sol[2], T, x)
-    v_v = v_from_η(model, model_y, sol[3], T, y_r)
+    lnK = @view inc[1:neq]
+    y_r .= exp.(lnK) .* @view(x[volatiles])
     y = index_expansion(y_r,volatiles)
-    return T, v_l, v_v, y
+    vl = exp(inc[neq+1])
+    vv = exp(inc[neq+2])
+    T = exp(inc[neq+3])
+    return (T, vl, vv, y)
 end
 
 function Obj_bubble_temperature(model::EoSModel, model_y, F, p, T, ηl, ηv, x, y, _view, yy_i)

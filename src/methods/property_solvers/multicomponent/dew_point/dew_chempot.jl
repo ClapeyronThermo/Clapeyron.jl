@@ -66,36 +66,41 @@ function ChemPotDewPressure(;vol0 = nothing,
     end
 end
 
-function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
+function dew_pressure_impl(model::EoSModel, T, y, method::ChemPotDewPressure)
     is_non_condensable = !isnothing(method.noncondensables)
     condensables = comps_in_equilibria(component_list(model),method.noncondensables)
     model_x,_ = index_reduction(model,condensables)
-    p0,vl,vv,x0 = dew_pressure_init(model,T,y,method.vol0,method.p0,method.x0,condensables)
-    x0 = x0[condensables]
-
-    ηl0 = is_non_condensable ? η_from_v(model_x,vl,T,x0) : η_from_v(model,vl,T,x0)
-    ηv0 = η_from_v(model,vv,T,y)
-    idx_max = argmax(x0)
-
-    v0 = Vector{eltype(x0)}(undef, 2+length(x0)-1)
-    v0[1],v0[2] = ηl0,ηv0
-    copy_without_pivot!(view(v0, 3:lastindex(v0)), x0, idx_max) #select component with highest fraction as pivot
-    f! = let model=model, model_x=model_x, T=T, y=y, condensables=condensables, idx_max=idx_max
-        (F,z) -> Obj_dew_pressure(model, model_x, F, T, z[1], z[2], @view(z[3:end]), y, condensables, idx_max)
+    p0,vl0,vv0,x00 = dew_pressure_init(model,T,y,method.vol0,method.p0,method.x0,condensables)
+    x0 = x00[condensables]
+    data = FugEnum.DEW_PRESSURE
+    
+    neq = count(condensables)
+    cache = Clapeyron.fug_bubbledew_cache(model_x,model,T,T,y,y,Val{false}())
+    x_r,_,_,_,_,_,p_cache,_,_ = cache
+    inc0 = similar(x_r,neq+2)
+    inc0[1:neq] .= log.(@view(y[condensables]) ./ x0)
+    inc0[neq+1] = log(vl0)
+    inc0[neq+2] = log(vv0)
+    opts = NLSolvers.NEqOptions(method)
+    if !is_non_condensable
+        problem = _mu_OF_neq(model,T,y,data,cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),Static(1.0)),opts)
+        inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+    else
+        problem = _mu_OF_neq(model_x,model,T,y,condensables,data,cache)
+        sol_vol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),Static(1.0)),opts)
+        inc = Solvers.x_sol(sol_vol)
+        !all(<(sol_vol.options.f_abstol),sol_vol.info.best_residual) && (inc .= NaN)
     end
-    r = Solvers.nlsolve(f!, v0,
-            LineSearch(Newton2(v0)),
-            NLSolvers.NEqOptions(method),
-            ForwardDiff.Chunk{min(length(v0), 8)}()
-        )
-    sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
-    x_r = FractionVector(@view(sol[3:end]),idx_max)
-    v_l = v_from_η(model,model_x,sol[1],T,x_r)
-    v_v = v_from_η(model,sol[2],T,y)
-    P_sat = pressure(model,v_v,T,y)
+    lnK = @view inc[1:neq]
+    x_r .= @view(y[condensables]) ./  exp.(lnK)
     x = index_expansion(x_r,condensables)
-    return (P_sat, v_l, v_v, x)
+    vl = exp(inc[neq+1])
+    vv = exp(inc[neq+2])
+    px,py = p_cache[]
+    p = 0.5*(px + py)
+    return (p, vl, vv, x)
 end
 
 function Obj_dew_pressure(model::EoSModel,model_x, F, T, ηl, ηv, x, y, _view, xx_i)
@@ -179,42 +184,41 @@ function ChemPotDewTemperature(;vol0 = nothing,
     end
 end
 
-function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
-    # is_non_condensable = !isnothing(method.noncondensables)
+function dew_temperature_impl(model::EoSModel, p, y, method::ChemPotDewTemperature)
+    is_non_condensable = !isnothing(method.noncondensables)
     condensables = comps_in_equilibria(component_list(model),method.noncondensables)
     model_x,_ = index_reduction(model,condensables)
-    T0,vl,vv,x0 = dew_temperature_init(model,p,y,method.vol0,method.T0,method.x0,condensables)
-    x0 = x0[condensables]
+    T0,vl0,vv0,x00 = dew_temperature_init(model,p,y,method.vol0,method.T0,method.x0,condensables)
+    x0 = x00[condensables]
+    data = FugEnum.DEW_TEMPERATURE
     
-    # if is_non_condensable
-    #     ηl0 = η_from_v(model_x,vl,T0,x0)
-    # else
-    #     ηl0 = η_from_v(model,vl,T0,x0)
-    # end
-
-    ηl = η_from_v(model,model_x,vl,T0,x0)
-    ηv = η_from_v(model,vv,T0,y)
-    idx_max = argmax(x0)
-
-    v0 = Vector{eltype(x0)}(undef, 3+length(x0)-1)
-    v0[1],v0[2],v0[3] = T0,ηl,ηv
-    copy_without_pivot!(view(v0, 4:lastindex(v0)), x0, idx_max) #select component with highest fraction as pivot
-    f! = let model=model, model_x=model_x, p=p, y=y, condensables=condensables, idx_max=idx_max
-        (F,z) -> Obj_dew_temperature(model, model_x, F, p, z[1], z[2], z[3], @view(z[4:end]), y, condensables, idx_max)
+    neq = count(condensables)
+    cache = Clapeyron.fug_bubbledew_cache(model_x,model,p,p,y,y,Val{true}())
+    x_r,_,_,_,_,_,_,_,_ = cache
+    inc0 = similar(x_r,neq+3)
+    inc0[1:neq] .= log.(@view(y[condensables]) ./ x0)
+    inc0[neq+1] = log(vl0)
+    inc0[neq+2] = log(vv0)
+    inc0[neq+3] = log(T0)
+    opts = NLSolvers.NEqOptions(method)
+    if !is_non_condensable
+        problem = _mu_OF_neq(model,p,y,data,cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),Static(1.0)),opts)
+        inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+    else
+        problem = _mu_OF_neq(model_x,model,p,y,condensables,data,cache)
+        sol_vol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),Static(1.0)),opts)
+        inc = Solvers.x_sol(sol_vol)
+        !all(<(sol_vol.options.f_abstol),sol_vol.info.best_residual) && (inc .= NaN)
     end
-    r = Solvers.nlsolve(f!, v0,
-            LineSearch(Newton2(v0)),
-            NLSolvers.NEqOptions(method),
-            ForwardDiff.Chunk{min(length(v0), 8)}()
-        )
-    sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
-    T   = sol[1]
-    x_r = FractionVector(@view(sol[4:end]),idx_max)
-    v_l = v_from_η(model,model_x,sol[2],T,x_r)
-    v_v = v_from_η(model,sol[3],T,y)
+    lnK = @view inc[1:neq]
+    x_r .= @view(y[condensables]) ./  exp.(lnK)
     x = index_expansion(x_r,condensables)
-    return T, v_l, v_v, x
+    vl = exp(inc[neq+1])
+    vv = exp(inc[neq+2])
+    T = exp(inc[neq+3])
+    return (T, vl, vv, x)
 end
 
 function Obj_dew_temperature(model::EoSModel,model_x, F, p, T, ηl, ηv, x, y, _view,xx_i)

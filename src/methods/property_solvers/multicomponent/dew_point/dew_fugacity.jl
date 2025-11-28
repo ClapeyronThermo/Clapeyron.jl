@@ -110,7 +110,7 @@ function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
                 method.second_order,
                 false)
     
-    cache = fug_bubbledew_cache(model_x,model,p0,T,x0,y,data)
+    cache = fug_bubbledew_cache(model_x,model,p0,T,x0,y,Val{false}())
 
     if all(condensables)
         converged,res = _fug_OF_ss(model,p0,T,x0,y,vol0,data,cache)
@@ -263,7 +263,7 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
                 method.second_order,
                 false)
     
-    cache = fug_bubbledew_cache(model_x,model,p,T0,x0,y,data)
+    cache = fug_bubbledew_cache(model_x,model,p,T0,x0,y,Val{true}())
 
     if all(condensables)
         converged,res = _fug_OF_ss(model,p,T0,x0,y,vol0,data,cache)
