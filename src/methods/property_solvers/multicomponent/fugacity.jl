@@ -646,23 +646,22 @@ function _mu_OF_neq!(F,J,inc,model,prop,z,method,cache)
     RT = Rgas(model)*T
     if second_order
         J .= 0.0
+        Jxv = @view J[1:neq, neq+1]
+        Jyv = @view J[1:neq, neq+2]
         if _pressure
             lnfx, ∂lnf∂nx, ∂lnfvx, ∂P∂nx, px, ∂P∂vx = ∂lnf∂n∂V(model, vx, T, x, Hϕx)
             !_bubble && _fug_J_∂i∂j!(J,x,∂lnf∂nx)
-            Jxv = @view J[1:neq, neq+1]
             Jxv .-= vx .* ∂lnfvx
             !isnothing(F) && (F[1:neq] .= lnK .- lnfx)
             !_bubble && (J[neq+2, 1:neq] .= 0.0 .- ∂P∂nx .* x ./ ps)
 
             lnfy, ∂lnf∂ny, ∂lnf∂vy, ∂P∂ny, py, ∂P∂vy = ∂lnf∂n∂V(model, vy, T, y, Hϕx)
-            Jyv = @view J[1:neq, neq+2]
             Jyv .+= vy .* ∂lnf∂vy
             _bubble && _fug_J_∂i∂j!(J,y,∂lnf∂ny)
             _bubble && (J[neq+2, 1:neq] .= ∂P∂ny .* y ./ ps)
 
         else
             lnfx, ∂lnf∂nx, ∂lnfvx, ∂lnf∂Tx, ∂P∂nx, px, ∂P∂vx, ∂P∂Tx = ∂lnf∂n∂V∂T(model, vx, T, x, Hϕx)
-            Jxv = @view J[1:neq, neq+1]
             JxT = @view J[1:neq, neq+3]
             Jxv .-= vx .* ∂lnfvx
             JxT .-= T .* ∂lnf∂Tx
@@ -708,94 +707,147 @@ function _mu_OF_neq!(F,J,inc,model,prop,z,method,cache)
     return nothing
 end
 
-function _mu_OF_neq!(F,J,inc,modelx,modely,prop,z,_view,method,cache)
+function copy_view!(out,in,_view)
+    k = 0
+    for i in eachindex(in)
+        if _view[i]
+            k += 1
+            out[k] = in[i]
+        end
+    end
+    #out .= @view in[_view]
+    out
+end
+
+function _mu_OF_neq!(F,J,inc,modelx,modely,prop,z,_view::V,method,cache) where V
     _bubble = FugEnum.is_bubble(method)
     _pressure = FugEnum.is_pressure(method)
     phasex,phasey = FugEnum.phases(method)
-    _,K,w,u,_,_,p_cache,Hϕx,Hϕy,u = cache
+    _,K,w,w2,fw1,fw2,p_cache,Hϕx,Hϕy,u = cache
     second_order = !isnothing(J)
-    neq = length(inc) - 2 - Int(!_pressure)
+    neq = length(_view)
     lnK = @view inc[1:neq]
     K .= exp.(lnK)
     u .= z
+
     vx = exp(inc[neq+1])
     vy = exp(inc[neq+2])
-
+    w .= 0
+    copy_view!(w,u,_view)
     if _bubble
-        w .= K .* @view(u[_view])
+        w .*= K
         x,y = u,w
-        ps = p_scale(modelx,u)
     else
-        w .= @view(u[_view]) ./ K
+        w ./= K
         x,y = w,u
-        ps = p_scale(modely,u)
     end
 
     propx = exp(last(inc))
     propy = oftype(propx,prop)
-
     if _pressure
         p,T = NaN*propy,propy
     else
         p,T = propy,propx
     end
 
-    RT = Rgas(model)*T
+    ps = p_scale(modelx,z)
+    RT = Rgas(modelx)*T
+
     if second_order
         J .= 0.0
+        Jxv = @view J[1:neq, neq+1]
+        Jyv = @view J[1:neq, neq+2]
+        Jdpdn = @view J[neq+2, 1:neq]
         if _pressure
-            lnfx, ∂lnf∂nx, ∂lnfvx, ∂P∂nx, px, ∂P∂vx = ∂lnf∂n∂V(model, vx, T, x, Hϕx)
-            J[1:neq, neq+1] .-= vx .* ∂lnfvx
-            !isnothing(F) && (F[1:neq] .= lnK .- lnfx)
-            !_bubble && _fug_J_∂i∂j!(J,x,∂lnf∂nx)
-            !_bubble && (J[neq+2, 1:neq] .= 0.0 .- ∂P∂nx .* x ./ ps)
-
-            lnfy, ∂lnf∂ny, ∂lnf∂vy, ∂P∂ny, py, ∂P∂vy = ∂lnf∂n∂V(model, vy, T, y, Hϕy)
-            J[1:neq, neq+2] .+= vy .* ∂lnf∂vy
-            _bubble && _fug_J_∂i∂j!(J,y,∂lnf∂ny)
-            _bubble && (J[neq+2, 1:neq] .= ∂P∂ny .* y ./ ps)
+            # Phase X derivatives
+            lnfx, ∂lnf∂nx, ∂lnf∂vx, ∂P∂nx, px, ∂P∂vx = ∂lnf∂n∂V(modelx, vx, T, x, Hϕx)
+            lnfy, ∂lnf∂ny, ∂lnf∂vy, ∂P∂ny, py, ∂P∂vy = ∂lnf∂n∂V(modely, vy, T, y, Hϕy)
+            
+            if _bubble
+                _fug_J_∂i∂j!(J, y, ∂lnf∂ny)
+                _∂lnf∂vx = copy_view!(fw1,∂lnf∂vx,_view)
+                Jxv .-= vx .* _∂lnf∂vx
+                Jyv .+= vy .* ∂lnf∂vy
+                Jdpdn .= ∂P∂ny .* y ./ ps
+            else
+                _fug_J_∂i∂j!(J, x, ∂lnf∂nx)
+                _∂lnf∂vy = copy_view!(fw1,∂lnf∂vy,_view)
+                Jxv .-= vx .* ∂lnf∂vx
+                Jyv .+= vy .* _∂lnf∂vy
+                Jdpdn .= (0.0 .- ∂P∂nx) .* x ./ ps
+            end
 
         else
-            lnfx, ∂lnf∂nx, ∂lnfvx, ∂lnf∂Tx, ∂P∂nx, px, ∂P∂vx, ∂P∂Tx = ∂lnf∂n∂V∂T(model, vx, T, x, Hϕx)
-            J[1:neq, neq+1] .-= vx .* ∂lnfvx
-            J[1:neq, neq+3] .-= T .* ∂lnf∂Tx
-            !isnothing(F) && (F[1:neq] .= lnK .- lnfx)
-            !_bubble && _fug_J_∂i∂j!(J,x,∂lnf∂nx)
-            !_bubble && (J[neq+2, 1:neq] .= 0.0 .- ∂P∂nx .* x ./ ps)
-            lnfy, ∂lnf∂ny, ∂lnf∂vy, ∂lnf∂Ty, ∂P∂ny, py, ∂P∂vy, ∂P∂Ty = ∂lnf∂n∂V∂T(model, vy, T, y, Hϕy)
-            J[1:neq, neq+2] .+= vy .* ∂lnf∂vy
-            J[1:neq, neq+3] .+= T .* ∂lnf∂Ty
-            _bubble && _fug_J_∂i∂j!(J,y,∂lnf∂ny)
-            _bubble && (J[neq+2, 1:neq] .= ∂P∂ny .* y ./ ps)
-            J[neq+2,neq+3] = T*(∂P∂Ty - ∂P∂Tx)/ps
-            J[neq+3,1:neq] .= ∂P∂ny .* y ./ ps
-            J[neq+3,neq+2] = ∂P∂vy  * vy / ps
-            J[neq+3,neq+3] = T*∂P∂Ty/ps
+            # Temperature case - with temperature derivatives
+            lnfx, ∂lnf∂nx, ∂lnf∂vx, ∂lnf∂Tx, ∂P∂nx, px, ∂P∂vx, ∂P∂Tx = ∂lnf∂n∂V∂T(modelx, vx, T, x, Hϕx)
+            lnfy, ∂lnf∂ny, ∂lnf∂vy, ∂lnf∂Ty, ∂P∂ny, py, ∂P∂vy, ∂P∂Ty = ∂lnf∂n∂V∂T(modely, vy, T, y, Hϕy)
+            JxT = @view J[1:neq, neq+3]
+
+            J[neq+2, neq+3] = T * (∂P∂Ty - ∂P∂Tx) / ps
+            J[neq+3, neq+2] .= ∂P∂vy * vy / ps
+            J[neq+3, neq+3] .= T * ∂P∂Ty / ps
+            if _bubble
+                _fug_J_∂i∂j!(J, y, ∂lnf∂ny)
+                _∂lnf∂vx = copy_view!(fw1,∂lnf∂vx,_view)
+                _∂lnf∂Tx = copy_view!(fw2,∂lnf∂Tx,_view)
+                Jxv .-= vx .* _∂lnf∂vx
+                Jyv .+= vy .* ∂lnf∂vy
+                JxT .+= T .* (∂lnf∂Ty .- _∂lnf∂Tx)
+                J[neq+2, 1:neq] .= ∂P∂ny .* y ./ ps
+                J[neq+3, 1:neq] .= ∂P∂ny .* y ./ ps
+            else
+                _fug_J_∂i∂j!(J, x, ∂lnf∂nx)
+                _∂lnf∂vy = copy_view!(fw1,∂lnf∂vy,_view)
+                _∂lnf∂Ty = copy_view!(fw2,∂lnf∂Ty,_view)
+                Jxv .-= vx .* ∂lnf∂vx
+                Jyv .+= vy .* _∂lnf∂vy
+                JxT .+= T .* (_∂lnf∂Ty .- ∂lnf∂Tx)
+                J[neq+2, 1:neq] .= (0.0 .- ∂P∂nx) .* x ./ ps
+                _y = copy_view!(fw1,y,_view)
+                _∂P∂ny = copy_view!(fw2,∂P∂ny,_view)
+                J[neq+3, 1:neq] .= _∂P∂ny .* _y ./ ps
+            end
         end
-        J[neq + 2,neq + 1] = -∂P∂vx * vx / ps
-        J[neq + 2,neq + 2] = ∂P∂vy * vy / ps
-        #_fug_J_∂i∂j!(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
-        if !isnothing(F)
-            F[1:neq] .+= lnfy
-            F[neq + 1] = sum(y)  - sum(x)
-            F[neq + 2] = (py - px)/ps
+        J[neq + 2, neq + 1] = -∂P∂vx * vx / ps
+        J[neq + 2, neq + 2] = ∂P∂vy * vy / ps
+        if F !== nothing
+            if _bubble
+                lnfview = copy_view!(fw1,lnfx,_view)
+                F[1:neq] .= lnK .+ lnfy .- lnfview
+            else
+                lnfview = copy_view!(fw1,lnfy,_view)
+                F[1:neq] .= lnK .+ lnfview .- lnfx
+            end
+
+            F[neq + 1] = sum(y) - sum(x)
+            F[neq + 2] = (py - px) / ps
+
             if !_pressure
-                F[neq + 3] = (py - p)/ps
+                F[neq + 3] = (py - p) / ps
             end
         end
     else
-        lnfx, px = lnf(model, vx, T, x, Hϕx)
-        F[1:neq] .= lnK .- lnfx
-        lnfy, py = lnf(model, vy, T, y, Hϕy)
-        F[1:neq] .+= lnfy
-        F[neq + 1] = sum(y)  - sum(x)
-        F[neq + 2] = py - px
+        # First-order only (no Jacobian)
+        lnfx, px = lnf(modelx, vx, T, x, Hϕx)
+        lnfy, py = lnf(modely, vy, T, y, Hϕy)
+
+        if _bubble
+            lnfview = copy_view!(fw1,lnfx,_view)
+            F[1:neq] = lnK .+ lnfy .- lnfview
+        else
+            lnfview = copy_view!(fw1,lnfy,_view)
+            F[1:neq] = lnK .+ lnfview .- lnfx
+        end
+
+        F[neq + 1] = sum(y) - sum(x)
+        F[neq + 2] = (py - px) / ps
+
         if !_pressure
-            F[neq + 3] = py - p
+            F[neq + 3] = (py - p) / ps
         end
     end
-    !isnothing(F) && @show F
-    p_cache[] = (px,py)
+
+    p_cache[] = (px, py)
     return nothing
 end
 

@@ -120,7 +120,7 @@ function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
     hconfig = ForwardDiff.HessianConfig((∂lnϕTag(),model,p,T,z),result,aux)
     ∂tag = ForwardDiff.tagtype(hconfig.jacobian_config.duals[1][1])
     if has_lnγ_impl(__γ_unwrap(model))
-        jcache = similar(aux) 
+        jcache = similar(aux)
         dlnγdT_cache = Vector{ForwardDiff.Dual{∂tag,TT,1}}(undef,length(model))
     else
         jcache = aux
@@ -198,7 +198,7 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
         ∂lnϕ∂P .= ∂V∂p .* ∇pᵣ ./ RT .- (1/p) .+ (∂V∂p/vol)
         return ∂lnϕ∂P,vol
     end
-    
+
     result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
     aux .= 0
     aux[nc+1] = vol
@@ -391,25 +391,25 @@ function VT_lnf_pure(model,V,T)
 end
 
 function ∂lnf∂n∂V(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{false}()))
-    
+
     result,aux,lnf,∂lnf∂n,∂lnf∂V,∂P∂n,∂lnf∂T,hconfig = cache
-    
+
     RT = Rgas(model)*T
     n = sum(z)
     Zp = V/RT/n
     ncomponents = length(z)
-    
+
     F_res(model, V, T, z) = eos_res(model, V, T, z) / RT
     fun(aux) = F_res(model, aux[1], T, @view(aux[2:(ncomponents+1)]))
-  
+
     aux[1] = V
     aux[2:end] = z
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
-    
+
     F = DiffResults.value(result)
     ∂F = DiffResults.gradient(result)
     ∂2F = DiffResults.hessian(result)
-    
+
     ∂F∂V = ∂F[1]
     ∂F∂n = @view ∂F[2:(ncomponents+1)]
 
@@ -420,7 +420,7 @@ function ∂lnf∂n∂V(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{fa
     ∂P∂V = -RT*∂2F∂V2 - n*RT/V^2
     ∂P∂n .= - RT .* ∂2F∂n∂V .+ RT ./ V
     lnf .= ∂F∂n .- log(Zp)
-    
+
     for i in 1:ncomponents
         ∂P∂ni = ∂P∂n[i]
         ∂lnf∂V[i] = ∂2F∂n∂V[i] - 1/V
@@ -432,14 +432,14 @@ function ∂lnf∂n∂V(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{fa
 end
 
 function ∂lnf∂n∂V∂T(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{true}()))
-    
+
     result,aux,lnf,∂lnf∂n,∂lnf∂V,∂P∂n,∂lnf∂T,hconfig = cache
-    
+
     RT = Rgas(model)*T
     n = sum(z)
     Zp = V/RT/n
     ncomponents = length(z)
-    
+
     aux[1] = V
     aux[2] = T
     aux[3:end] .= z
@@ -460,7 +460,7 @@ function ∂lnf∂n∂V∂T(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Va
     ∂2F∂n∂V = @view ∂2F[1, 3:(ncomponents+2)]
     ∂2F∂n∂T = @view ∂2F[2, 3:(ncomponents+2)]
     ∂2F∂V∂T = ∂2F[1, 2]
-    
+
     p = -RT*(∂F∂V - n/V)
     ∂P∂V = -RT*∂2F∂V2 - n*RT/V^2
     ∂P∂n .= - RT .* ∂2F∂n∂V .+ RT ./ V
