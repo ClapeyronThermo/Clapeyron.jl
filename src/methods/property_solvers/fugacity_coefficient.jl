@@ -476,3 +476,27 @@ function ∂lnf∂n∂V∂T(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Va
     end
     return lnf, ∂lnf∂n, ∂lnf∂V, ∂lnf∂T, ∂P∂n, p, ∂P∂V, ∂P∂T
 end
+
+function ∂lnf∂V(model::EoSModel, V, T, z=SA[1.], cache = ∂lnϕ_cache(model,V,T,z,Val{false}()))
+
+    RT = Rgas(model)*T
+    nc = length(z)
+    n = sum(z)
+    result,aux,_,_,∂lnf∂V,∂P∂n,_,hconfig = cache
+    aux .= 0
+    aux[nc+1] = V
+    aux[1:nc] = z
+    gconfig = Solvers._GradientConfig(hconfig)
+    fun(aux) = pressure_res(model,aux[nc+1],T,aux[1:nc])
+    _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
+    dresult = DiffResults.gradient(_result)
+    pᵣ = DiffResults.value(_result)
+    p = pᵣ + n*RT/V
+    ∇pᵣ = @view dresult[1:nc]
+    ∂pᵣ∂V = dresult[nc+1]
+    ∂p∂V = ∂pᵣ∂V - n*RT/(V*V)
+    ∂V∂p = -1/∂p∂V
+    ∂lnf∂V .= - ∇pᵣ ./ RT .- 1/V
+    ∂P∂n .= ∇pᵣ .+ RT ./ V
+    return ∂lnf∂V, ∂P∂n, p, ∂p∂V
+end

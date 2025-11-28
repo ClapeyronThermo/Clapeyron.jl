@@ -459,32 +459,35 @@ function _fug_OF_neq!(F,J,inc,model,prop,z,data::FugData,cache)
 
     if second_order
         J .= 0.0
+        J1 = @view J[1:(end-1), end]
         if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, Hϕx, phase=phasex, vol0=volx)
-            J[1:(end-1), end] .-= p .* ∂lnϕ∂Px
+            J1 .-= p .* ∂lnϕ∂Px
             !_bubble && _fug_J_∂i∂j!(J,x,∂lnϕ∂nx)
             !isnothing(F) && (F[1:end-1] .= lnK .- lnϕx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, Hϕx, phase=phasey, vol0=voly)
-            J[1:(end-1), end] .+= p .* ∂lnϕ∂Py
+            J1 .+= p .* ∂lnϕ∂Py
             _bubble && _fug_J_∂i∂j!(J,y,∂lnϕ∂ny)
         else
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, Hϕx, phase=phasex, vol0=volx)
             !_bubble && _fug_J_∂i∂j!(J,x,∂lnϕ∂nx)
-            J[1:(end-1), end] .-= T .* ∂lnϕ∂Tx
+            J1 .-= T .* ∂lnϕ∂Tx
             !isnothing(F) && (F[1:end-1] .= lnK .- lnϕx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, Hϕx, phase=phasey, vol0=voly)
-            J[1:(end-1), end] .+= T .* ∂lnϕ∂Ty
+            J1 .+= T .* ∂lnϕ∂Ty
             _bubble && _fug_J_∂i∂j!(J,y,∂lnϕ∂ny)
         end
         if !isnothing(F)
-            F[1:end-1] .+= lnϕy
+            Feq = @view F[1:end-1]
+            Feq .+= lnϕy
             F[end] = sum(y)  - sum(x)
         end
     else
+        Feq = @view F[1:end-1]
         lnϕx, volx = modified_lnϕ(model, p, T, x, Hϕx, phase=phasex, vol0=volx)
-        F[1:end-1] .= lnK .- lnϕx
+        Feq.= lnK .- lnϕx
         lnϕy, voly = modified_lnϕ(model, p, T, y, Hϕx, phase=phasey, vol0=voly)
-        F[1:end-1] .+= lnϕy
+        Feq .+= lnϕy
         F[end] = sum(y)  - sum(x)
     end
     vol_cache[] = (volx,voly)
@@ -645,11 +648,10 @@ function _mu_OF_neq!(F,J,inc,model,prop,z,method,cache)
         J .= 0.0
         if _pressure
             lnfx, ∂lnf∂nx, ∂lnfvx, ∂P∂nx, px, ∂P∂vx = ∂lnf∂n∂V(model, vx, T, x, Hϕx)
-
+            !_bubble && _fug_J_∂i∂j!(J,x,∂lnf∂nx)
             Jxv = @view J[1:neq, neq+1]
             Jxv .-= vx .* ∂lnfvx
             !isnothing(F) && (F[1:neq] .= lnK .- lnfx)
-            !_bubble && _fug_J_∂i∂j!(J,x,∂lnf∂nx)
             !_bubble && (J[neq+2, 1:neq] .= 0.0 .- ∂P∂nx .* x ./ ps)
 
             lnfy, ∂lnf∂ny, ∂lnf∂vy, ∂P∂ny, py, ∂P∂vy = ∂lnf∂n∂V(model, vy, T, y, Hϕx)
@@ -682,7 +684,8 @@ function _mu_OF_neq!(F,J,inc,model,prop,z,method,cache)
         J[neq + 2,neq + 2] = ∂P∂vy * vy / ps
         #_fug_J_∂i∂j!(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
         if !isnothing(F)
-            F[1:neq] .+= lnfy
+            Fneq = @view F[1:neq]
+            Fneq .+= lnfy
             F[neq + 1] = sum(y)  - sum(x)
             F[neq + 2] = (py - px)/ps
             if !_pressure
@@ -690,14 +693,15 @@ function _mu_OF_neq!(F,J,inc,model,prop,z,method,cache)
             end
         end
     else
+        Fneq = @view F[1:neq]
         lnfx, px = lnf(model, vx, T, x, Hϕx)
-        F[1:neq] .= lnK .- lnfx
+        Fneq .= lnK .- lnfx
         lnfy, py = lnf(model, vy, T, y, Hϕx)
-        F[1:neq] .+= lnfy
+        Fneq .+= lnfy
         F[neq + 1] = sum(y)  - sum(x)
-        F[neq + 2] = py - px
+        F[neq + 2] = (py - px)/ps
         if !_pressure
-            F[neq + 3] = py - p
+            F[neq + 3] = (py - p)/ps
         end
     end
     p_cache[] = (px,py)
