@@ -366,13 +366,13 @@ function zero_non_equilibria!(w,in_equilibria)
 end
 
 
-function comps_in_equilibria(components,::Nothing)
+function comps_in_equilibria(components,::Nothing)::Vector{Bool}
     return fill(true,length(components))
 end
 
-function comps_in_equilibria(components,not_in_w)
+function comps_in_equilibria(components,not_in_w)::Vector{Bool}
     res = fill(true,length(components))
-    for i in 1:length(components)
+    for i in eachindex(res)
         res[i] = !in(components[i],not_in_w)
     end
     return res

@@ -32,7 +32,11 @@ Base.@kwdef struct FugData{T}
     verbose::Bool = false
 end
 
-function fug_bubbledew_cache(modelx,modely,p,T,x,y,data)
+FugEnum.is_pressure(data::FugData) = FugEnum.is_pressure(data.method)
+FugEnum.is_bubble(data::FugData) = FugEnum.is_bubble(data.method)
+
+
+function fug_bubbledew_cache(modelx,modely,p,T,x,y,val::Val{B}) where B
     TT = Base.promote_eltype(modelx,p,T,x,y)
     n1 = length(modelx)
     n2 = length(modely)
@@ -49,20 +53,11 @@ function fug_bubbledew_cache(modelx,modely,p,T,x,y,data)
         w7 = similar(x,TT,nmax)
     end
     volcache = Base.RefValue{Tuple{TT,TT}}()
-    if FugEnum.is_pressure(data.method)
-        Hϕx = ∂lnϕ_cache(modelx, p, T, x, Val{false}())
-        if n1 != n2
-            Hϕy = ∂lnϕ_cache(modely, p, T, y, Val{false}())
-        else
-            Hϕy = Hϕx
-        end
+    Hϕx = ∂lnϕ_cache(modelx, p, T, x, val)
+    if n1 != n2
+        Hϕy = ∂lnϕ_cache(modely, p, T, y, val)
     else
-        Hϕx = ∂lnϕ_cache(modelx, p, T, x, Val{true}())
-        if n1 != n2
-            Hϕy = ∂lnϕ_cache(modely, p, T, y, Val{true}())
-        else
-            Hϕy = Hϕx
-        end
+        Hϕy = Hϕx
     end
     return w1,w2,w3,w4,w5,w6,volcache,Hϕx,Hϕy,w7
 end
@@ -610,6 +605,229 @@ function _fug_OF_neq(modelx,modely,prop,z,_view,data,cache)
 
     function j!(J, α)
         fx = _fug_OF_neq!(nothing,J,x,modelx,modely,prop,z,_view,data,cache)
+        return ∇f
+    end
+
+    obj = NLSolvers.VectorObjective(f!,j!,fj!,nothing)
+    prob = NEqProblem(obj, inplace = true)
+end
+
+function _mu_OF_neq!(F,J,inc,model,prop,z,method,cache)
+    _bubble = FugEnum.is_bubble(method)
+    _pressure = FugEnum.is_pressure(method)
+    phasex,phasey = FugEnum.phases(method)
+    _,K,w,u,_,_,p_cache,Hϕx = cache
+    second_order = !isnothing(J)
+    neq = length(inc) - 2 - Int(!_pressure)
+    lnK = @view inc[1:neq]
+    K .= exp.(lnK)
+    u .= z
+    vx = exp(inc[neq+1])
+    vy = exp(inc[neq+2])
+    if _bubble
+        w .= K .* u
+        x,y = u,w
+    else
+        w .= u ./ K
+        x,y = w,u
+    end
+
+    propx = exp(last(inc))
+    propy = oftype(propx,prop)
+    if _pressure
+        p,T = NaN*propy,propy
+    else
+        p,T = propy,propx
+    end
+    ps = p_scale(model,z)
+    RT = Rgas(model)*T
+    if second_order
+        J .= 0.0
+        if _pressure
+            lnfx, ∂lnf∂nx, ∂lnfvx, ∂P∂nx, px, ∂P∂vx = ∂lnf∂n∂V(model, vx, T, x, Hϕx)
+
+            Jxv = @view J[1:neq, neq+1]
+            Jxv .-= vx .* ∂lnfvx
+            !isnothing(F) && (F[1:neq] .= lnK .- lnfx)
+            !_bubble && _fug_J_∂i∂j!(J,x,∂lnf∂nx)
+            !_bubble && (J[neq+2, 1:neq] .= 0.0 .- ∂P∂nx .* x ./ ps)
+
+            lnfy, ∂lnf∂ny, ∂lnf∂vy, ∂P∂ny, py, ∂P∂vy = ∂lnf∂n∂V(model, vy, T, y, Hϕx)
+            Jyv = @view J[1:neq, neq+2]
+            Jyv .+= vy .* ∂lnf∂vy
+            _bubble && _fug_J_∂i∂j!(J,y,∂lnf∂ny)
+            _bubble && (J[neq+2, 1:neq] .= ∂P∂ny .* y ./ ps)
+
+        else
+            lnfx, ∂lnf∂nx, ∂lnfvx, ∂lnf∂Tx, ∂P∂nx, px, ∂P∂vx, ∂P∂Tx = ∂lnf∂n∂V∂T(model, vx, T, x, Hϕx)
+            Jxv = @view J[1:neq, neq+1]
+            JxT = @view J[1:neq, neq+3]
+            Jxv .-= vx .* ∂lnfvx
+            JxT .-= T .* ∂lnf∂Tx
+            !isnothing(F) && (F[1:neq] .= lnK .- lnfx)
+            !_bubble && _fug_J_∂i∂j!(J,x,∂lnf∂nx)
+            !_bubble && (J[neq+2, 1:neq] .= 0.0 .- ∂P∂nx .* x ./ ps)
+            lnfy, ∂lnf∂ny, ∂lnf∂vy, ∂lnf∂Ty, ∂P∂ny, py, ∂P∂vy, ∂P∂Ty = ∂lnf∂n∂V∂T(model, vy, T, y, Hϕx)
+            Jyv = @view J[1:neq, neq+2]
+            Jyv .+= vy .* ∂lnf∂vy
+            JxT .+= T .* ∂lnf∂Ty
+            _bubble && _fug_J_∂i∂j!(J,y,∂lnf∂ny)
+            _bubble && (J[neq+2, 1:neq] .= ∂P∂ny .* y ./ ps)
+            J[neq+2,neq+3] = T*(∂P∂Ty - ∂P∂Tx)/ps
+            J[neq+3,1:neq] .= ∂P∂ny .* y ./ ps
+            J[neq+3,neq+2] = ∂P∂vy  * vy / ps
+            J[neq+3,neq+3] = T*∂P∂Ty/ps
+        end
+        J[neq + 2,neq + 1] = -∂P∂vx * vx / ps
+        J[neq + 2,neq + 2] = ∂P∂vy * vy / ps
+        #_fug_J_∂i∂j!(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
+        if !isnothing(F)
+            F[1:neq] .+= lnfy
+            F[neq + 1] = sum(y)  - sum(x)
+            F[neq + 2] = (py - px)/ps
+            if !_pressure
+                F[neq + 3] = (py - p)/ps
+            end
+        end
+    else
+        lnfx, px = lnf(model, vx, T, x, Hϕx)
+        F[1:neq] .= lnK .- lnfx
+        lnfy, py = lnf(model, vy, T, y, Hϕx)
+        F[1:neq] .+= lnfy
+        F[neq + 1] = sum(y)  - sum(x)
+        F[neq + 2] = py - px
+        if !_pressure
+            F[neq + 3] = py - p
+        end
+    end
+    p_cache[] = (px,py)
+    return nothing
+end
+
+function _mu_OF_neq!(F,J,inc,modelx,modely,prop,z,_view,method,cache)
+    _bubble = FugEnum.is_bubble(method)
+    _pressure = FugEnum.is_pressure(method)
+    phasex,phasey = FugEnum.phases(method)
+    _,K,w,u,_,_,p_cache,Hϕx,Hϕy,u = cache
+    second_order = !isnothing(J)
+    neq = length(inc) - 2 - Int(!_pressure)
+    lnK = @view inc[1:neq]
+    K .= exp.(lnK)
+    u .= z
+    vx = exp(inc[neq+1])
+    vy = exp(inc[neq+2])
+
+    if _bubble
+        w .= K .* @view(u[_view])
+        x,y = u,w
+        ps = p_scale(modelx,u)
+    else
+        w .= @view(u[_view]) ./ K
+        x,y = w,u
+        ps = p_scale(modely,u)
+    end
+
+    propx = exp(last(inc))
+    propy = oftype(propx,prop)
+
+    if _pressure
+        p,T = NaN*propy,propy
+    else
+        p,T = propy,propx
+    end
+
+    RT = Rgas(model)*T
+    if second_order
+        J .= 0.0
+        if _pressure
+            lnfx, ∂lnf∂nx, ∂lnfvx, ∂P∂nx, px, ∂P∂vx = ∂lnf∂n∂V(model, vx, T, x, Hϕx)
+            J[1:neq, neq+1] .-= vx .* ∂lnfvx
+            !isnothing(F) && (F[1:neq] .= lnK .- lnfx)
+            !_bubble && _fug_J_∂i∂j!(J,x,∂lnf∂nx)
+            !_bubble && (J[neq+2, 1:neq] .= 0.0 .- ∂P∂nx .* x ./ ps)
+
+            lnfy, ∂lnf∂ny, ∂lnf∂vy, ∂P∂ny, py, ∂P∂vy = ∂lnf∂n∂V(model, vy, T, y, Hϕy)
+            J[1:neq, neq+2] .+= vy .* ∂lnf∂vy
+            _bubble && _fug_J_∂i∂j!(J,y,∂lnf∂ny)
+            _bubble && (J[neq+2, 1:neq] .= ∂P∂ny .* y ./ ps)
+
+        else
+            lnfx, ∂lnf∂nx, ∂lnfvx, ∂lnf∂Tx, ∂P∂nx, px, ∂P∂vx, ∂P∂Tx = ∂lnf∂n∂V∂T(model, vx, T, x, Hϕx)
+            J[1:neq, neq+1] .-= vx .* ∂lnfvx
+            J[1:neq, neq+3] .-= T .* ∂lnf∂Tx
+            !isnothing(F) && (F[1:neq] .= lnK .- lnfx)
+            !_bubble && _fug_J_∂i∂j!(J,x,∂lnf∂nx)
+            !_bubble && (J[neq+2, 1:neq] .= 0.0 .- ∂P∂nx .* x ./ ps)
+            lnfy, ∂lnf∂ny, ∂lnf∂vy, ∂lnf∂Ty, ∂P∂ny, py, ∂P∂vy, ∂P∂Ty = ∂lnf∂n∂V∂T(model, vy, T, y, Hϕy)
+            J[1:neq, neq+2] .+= vy .* ∂lnf∂vy
+            J[1:neq, neq+3] .+= T .* ∂lnf∂Ty
+            _bubble && _fug_J_∂i∂j!(J,y,∂lnf∂ny)
+            _bubble && (J[neq+2, 1:neq] .= ∂P∂ny .* y ./ ps)
+            J[neq+2,neq+3] = T*(∂P∂Ty - ∂P∂Tx)/ps
+            J[neq+3,1:neq] .= ∂P∂ny .* y ./ ps
+            J[neq+3,neq+2] = ∂P∂vy  * vy / ps
+            J[neq+3,neq+3] = T*∂P∂Ty/ps
+        end
+        J[neq + 2,neq + 1] = -∂P∂vx * vx / ps
+        J[neq + 2,neq + 2] = ∂P∂vy * vy / ps
+        #_fug_J_∂i∂j!(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
+        if !isnothing(F)
+            F[1:neq] .+= lnfy
+            F[neq + 1] = sum(y)  - sum(x)
+            F[neq + 2] = (py - px)/ps
+            if !_pressure
+                F[neq + 3] = (py - p)/ps
+            end
+        end
+    else
+        lnfx, px = lnf(model, vx, T, x, Hϕx)
+        F[1:neq] .= lnK .- lnfx
+        lnfy, py = lnf(model, vy, T, y, Hϕy)
+        F[1:neq] .+= lnfy
+        F[neq + 1] = sum(y)  - sum(x)
+        F[neq + 2] = py - px
+        if !_pressure
+            F[neq + 3] = py - p
+        end
+    end
+    !isnothing(F) && @show F
+    p_cache[] = (px,py)
+    return nothing
+end
+
+function _mu_OF_neq(model,prop,z,data,cache)
+    function f!(F,x)
+        _mu_OF_neq!(F,nothing,x,model,prop,z,data,cache)
+        F
+    end
+
+    function fj!(F,J,x)
+        _mu_OF_neq!(F,J,x,model,prop,z,data,cache)
+        F,J
+    end
+
+    function j!(J, α)
+        fx = _mu_OF_neq!(nothing,J,x,model,prop,z,data,cache)
+        return ∇f
+    end
+
+    obj = NLSolvers.VectorObjective(f!,j!,fj!,nothing)
+    prob = NEqProblem(obj, inplace = true)
+end
+
+function _mu_OF_neq(modelx,modely,prop,z,_view,data,cache)
+    function f!(F,x)
+        _mu_OF_neq!(F,nothing,x,modelx,modely,prop,z,_view,data,cache)
+        F
+    end
+
+    function fj!(F,J,x)
+        _mu_OF_neq!(F,J,x,modelx,modely,prop,z,_view,data,cache)
+        F,J
+    end
+
+    function j!(J, α)
+        fx = _mu_OF_neq!(nothing,J,x,modelx,modely,prop,z,_view,data,cache)
         return ∇f
     end
 

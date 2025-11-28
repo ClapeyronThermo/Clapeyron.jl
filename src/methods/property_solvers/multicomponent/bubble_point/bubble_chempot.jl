@@ -33,7 +33,7 @@ function ChemPotBubblePressure(;vol0 = nothing,
                                 f_limit = 0.0,
                                 atol = 1e-8,
                                 rtol = 1e-12,
-                                max_iters = 10^3,
+                                max_iters = 1000,
                                 ss = false)
 
     if p0 == y0 == vol0 == nothing
@@ -68,6 +68,44 @@ function ChemPotBubblePressure(;vol0 = nothing,
 end
 
 function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressure)
+    volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
+    p0,vl0,vv0,y00 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles)
+    is_non_volatile = !isnothing(method.nonvolatiles)
+    model_y,_ = index_reduction(model,volatiles)
+    y0 = y00[volatiles]
+    data = FugEnum.BUBBLE_PRESSURE
+    
+    neq = count(volatiles)
+    cache = Clapeyron.fug_bubbledew_cache(model,model_y,T,T,x,x,Val{false}())
+    y_r,_,_,_,_,_,p_cache,_,_ = cache
+    inc0 = similar(y_r,length(y_r)+2)
+    inc0[1:neq] .= log.(y0 ./ @view(x[volatiles]))
+    inc0[neq+1] = log(vl0)
+    inc0[neq+2] = log(vv0)
+    opts = NLSolvers.NEqOptions(method)
+    if true #is_non_volatile
+        problem = _mu_OF_neq(model,T,x,data,cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),Static(1.0)),opts)
+        inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+    else
+        problem = _mu_OF_neq(model,model_y,T,x,volatiles,data,cache)
+        sol_vol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),Static(1.0)),opts)
+        inc = Solvers.x_sol(sol_vol)
+        !all(<(sol_vol.options.f_abstol),sol_vol.info.best_residual) && (inc .= NaN)
+    end
+    lnK = @view inc[1:end-2]
+    y_r .= exp.(lnK) .* @view(x[volatiles])
+    y = index_expansion(y_r,volatiles)
+    vl = exp(inc[end-1])
+    vv = exp(inc[end])
+    px,py = p_cache[]
+    p = 0.5*(px + py)
+    return (p, vl, vv, y)
+end
+
+
+function bubble_pressure2(model::EoSModel, T, x,method::ChemPotBubblePressure)
     volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
     p0,vl,vv,y0 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles)
     is_non_volatile = !isnothing(method.nonvolatiles)

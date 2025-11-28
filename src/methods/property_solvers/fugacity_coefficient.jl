@@ -345,7 +345,7 @@ ln(f) = μ_res ./ RT .- log(V/RT/sum(z))
 - logZ - log(p) =
 =#
 
-function lnf(model::EoSModel, V, T, z,cache = nothing)
+function lnf(model, V, T, z,cache = nothing)
     RT = Rgas(model)*T
     n = sum(z)
     logZp = log(V/RT/n)
@@ -388,4 +388,91 @@ function VT_lnf_pure(model,V,T)
     lnf = μ_res/RT - log(Zp)
     p = p_res + RT/V
     return lnf,p
+end
+
+function ∂lnf∂n∂V(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{false}()))
+    
+    result,aux,lnf,∂lnf∂n,∂lnf∂V,∂P∂n,∂lnf∂T,hconfig = cache
+    
+    RT = Rgas(model)*T
+    n = sum(z)
+    Zp = V/RT/n
+    ncomponents = length(z)
+    
+    F_res(model, V, T, z) = eos_res(model, V, T, z) / RT
+    fun(aux) = F_res(model, aux[1], T, @view(aux[2:(ncomponents+1)]))
+  
+    aux[1] = V
+    aux[2:end] = z
+    result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
+    
+    F = DiffResults.value(result)
+    ∂F = DiffResults.gradient(result)
+    ∂2F = DiffResults.hessian(result)
+    
+    ∂F∂V = ∂F[1]
+    ∂F∂n = @view ∂F[2:(ncomponents+1)]
+
+    ∂2F∂V2 = ∂2F[1, 1]
+    ∂2F∂n2 = @view ∂2F[2:(ncomponents+1), 2:(ncomponents+1)]
+    ∂2F∂n∂V = @view ∂2F[1, 2:(ncomponents+1)]
+    p = -RT*(∂F∂V - n/V)
+    ∂P∂V = -RT*∂2F∂V2 - n*RT/V^2
+    ∂P∂n .= - RT .* ∂2F∂n∂V .+ RT ./ V
+    lnf .= ∂F∂n .- log(Zp)
+    
+    for i in 1:ncomponents
+        ∂P∂ni = ∂P∂n[i]
+        ∂lnf∂V[i] = ∂2F∂n∂V[i] - 1/V
+        for j in 1:ncomponents
+            ∂lnf∂n[i,j] = ∂2F∂n2[i,j] + 1/n
+        end
+    end
+    return lnf, ∂lnf∂n, ∂lnf∂V, ∂P∂n, p, ∂P∂V
+end
+
+function ∂lnf∂n∂V∂T(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{true}()))
+    
+    result,aux,lnf,∂lnf∂n,∂lnf∂V,∂P∂n,∂lnf∂T,hconfig = cache
+    
+    RT = Rgas(model)*T
+    n = sum(z)
+    Zp = V/RT/n
+    ncomponents = length(z)
+    
+    aux[1] = V
+    aux[2] = T
+    aux[3:end] .= z
+    F_res(model, V, T, z) = eos_res(model, V, T, z) / (Rgas(model)*T)
+    fun(aux) = F_res(model, aux[1], aux[2], @view(aux[3:(ncomponents+2)]))
+    result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
+
+    F = DiffResults.value(result)
+    ∂F = DiffResults.gradient(result)
+    ∂2F = DiffResults.hessian(result)
+    ∂F∂V = ∂F[1]
+    ∂F∂T = ∂F[2]
+    ∂F∂n = @view ∂F[3:(ncomponents+2)]
+
+    ∂2F∂V2 = ∂2F[1, 1]
+    ∂2F∂n2 = @view ∂2F[3:(ncomponents+2), 3:(ncomponents+2)]
+    ∂2F∂T2 = ∂2F[2, 2]
+    ∂2F∂n∂V = @view ∂2F[1, 3:(ncomponents+2)]
+    ∂2F∂n∂T = @view ∂2F[2, 3:(ncomponents+2)]
+    ∂2F∂V∂T = ∂2F[1, 2]
+    
+    p = -RT*(∂F∂V - n/V)
+    ∂P∂V = -RT*∂2F∂V2 - n*RT/V^2
+    ∂P∂n .= - RT .* ∂2F∂n∂V .+ RT ./ V
+    lnf .= ∂F∂n .- log(Zp)
+    ∂P∂T = -RT*∂2F∂V∂T + p/T
+    for i in 1:ncomponents
+        ∂P∂ni = ∂P∂n[i]
+        ∂lnf∂V[i] = ∂2F∂n∂V[i] - 1/V
+        ∂lnf∂T[i] = ∂2F∂n∂T[i] + 1/T
+        for j in 1:ncomponents
+            ∂lnf∂n[i,j] = ∂2F∂n2[i,j] + 1/n
+        end
+    end
+    return lnf, ∂lnf∂n, ∂lnf∂V, ∂lnf∂T, ∂P∂n, p, ∂P∂V, ∂P∂T
 end
