@@ -568,8 +568,8 @@ function a_dispchain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
                     λa*x_0ij_2λa*(aS₁_2a+B_2a)
                 )
         g_2_ = (1 + γc)*gMCA2
-        g_Mie_ = g_HSi*exp(τ*g_1_/g_HSi+τ^2*g_2_/g_HSi)
-        achain -= z[i]*(log(g_Mie_)*(mi - 1))
+        log_g_Mie_ = log(g_HSi)+(τ*g_1_/g_HSi+τ^2*g_2_/g_HSi)
+        achain -= z[i]*(log_g_Mie_*(mi - 1))
         for j ∈ 1:i-1
             x_Sj = z[j]*m[j]*m̄inv
             ϵ = _ϵ[i,j]
