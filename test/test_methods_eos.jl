@@ -82,15 +82,18 @@ end
 
 @testset "SAFT-γ Mie methods, single components" begin
     system = SAFTγMie(["ethanol"])
+    system500 = Serialization.deserialize("model500.jls")
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 5.753982584153832e-5 rtol = 1e-6
         @test Clapeyron.molecular_weight(system)*1000 ≈ 46.065
     end
+
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7714.8637084302 rtol = 1E-5
         @test Clapeyron.crit_pure(system)[1] ≈ 521.963002384691 rtol = 1E-5
+        @test Clapeyron.crit_pure(system500)[1] ≈ 404.97536526401734 rtol = 1E-5
     end
 end
 

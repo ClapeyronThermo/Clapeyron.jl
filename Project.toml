@@ -89,9 +89,10 @@ EoSSuperancillaries = "c1bf003f-4e47-49d9-bdfd-5a4051db3c04"
 JutulDarcy = "82210473-ab04-4dce-b31b-11573c4f8e0a"
 Metaheuristics = "bcdb8e00-2c21-11e9-3065-2b553b22f898"
 MultiComponentFlash = "35e5bd01-9722-4017-9deb-64a5d32478ff"
+Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["CoolProp", "EoSSuperancillaries", "MultiComponentFlash", "Test", "Unitful"]
+test = ["CoolProp", "EoSSuperancillaries", "MultiComponentFlash", "Serialization", "Test", "Unitful"]
