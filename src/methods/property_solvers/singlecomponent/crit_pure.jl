@@ -52,7 +52,7 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     zz = z/sum(z)
     f!(F,x) = ObjCritPure(primalmodel,F,primalval(T̄),x,zz,lbv)
     solver_res = Solvers.nlsolve(f!, x0, TrustRegion(Newton(), NLSolvers.NWI()), options)
-    !all(<(solver_res.options.f_abstol),solver_res.info.best_residual) && (sol .= NaN)
+    !all(<(solver_res.options.f_abstol),solver_res.info.best_residual) && (solver_res .= NaN)
     r  = Solvers.x_sol(solver_res)
     T_c = r[1]*T̄
     V_c = crit_x_to_v(lbv,r[2])
