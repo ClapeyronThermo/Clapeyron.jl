@@ -77,19 +77,20 @@ BACKSAFT
 recombine_impl!(model::BACKSAFTModel) = recombine_saft!(model)
 
 
-function lb_volume(model::BACKSAFTModel,z)
-    α = model.params.alpha.values[1]
-    pol(x) = evalpoly(x,(1.0,3α-2,3α*α - 3α +1 , -α*α))
-    k = Solvers.ad_newton(pol,1.81)
-    seg = model.params.segment.values
+function lb_volume(model::BACKSAFTModel,T,z)
+    m = model.params.segment.values
     σᵢᵢ = model.params.sigma.values
-    val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i,i]^3 for i in 1:length(z)) #limit at η -> 0
-    return k*val #only positive root of η 
+    val = π/6*N_A*sum(z[i]*m[i]*σᵢᵢ[i,i]^3 for i in 1:length(z))
+    return val
 end
 
 function x0_volume_liquid(model::BACKSAFTModel,T,z)
-    v_lb = lb_volume(model,z)
-    return v_lb*1.01
+    V = 0.0
+    _d = @f(d)
+    m = model.params.segment.values
+    dᵢ = @f(d)
+    val = π/6*N_A*sum(z[i]*m[i]*dᵢ[i]^3 for i in 1:length(z))
+    return val*1.01
 end
 
 function x0_crit_pure(model::BACKSAFTModel,z)
