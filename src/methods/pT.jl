@@ -847,6 +847,18 @@ function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown,
     return p*V/(sum(z)*Rgas(model)*T)
 end
 
+"""
+    inversion_temperature(model::EoSModel, p, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
+
+Calculates the inversion temperature `T_inv`, defined as the temperature where the Joule-Thomson coefficient becomes zero, i.e.
+
+```julia
+μⱼₜ(T) = 0
+```
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+
+See also [`joule_thomson_coefficient`](@ref).
+"""
 function inversion_temperature(model::EoSModel, p, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
     T0 = 6.75*T_scale(model,z)
     μⱼₜ(T) = joule_thomson_coefficient(model, p, T, z; phase, threaded, vol0)
