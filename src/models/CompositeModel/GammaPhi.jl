@@ -46,9 +46,6 @@ saturation_model(model::GammaPhi) = saturation_model(model.fluid)
 idealmodel(model::GammaPhi) = idealmodel(model.fluid.model)
 
 function init_preferred_method(method::typeof(tp_flash),model::GammaPhi,kwargs)
-    second_order = get(kwargs,:second_order,false)
-    second_order && throw(error("γ-ϕ Composite Models don't support second order solvers."))
-
     MichelsenTPFlash(;kwargs...)
 end
 
