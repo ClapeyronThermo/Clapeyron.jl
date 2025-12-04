@@ -43,18 +43,19 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     end
     x01,x02 = x0
     T̄  = T_scale(primalmodel,zp)*one(x01*one(x02))
-    lbv = lb_volume(primalmodel,T̄,zp)
+    Tc0 = x01*T̄
+    lbv0 = lb_volume(primalmodel,Tc0,zp)
     _1 = oneunit(T̄)
     Tx0 = primalval(x01)
     vc0 = exp10(primalval(x02))
-    #x0 = SVector(_1*x01,_1*x02)
-    x0 = vec2(Tx0,crit_v_to_x(lbv,vc0),_1)
+    x0 = vec2(Tx0,crit_v_to_x(lbv0,vc0),_1)
     zz = z/sum(z)
-    f!(F,x) = ObjCritPure(primalmodel,F,primalval(T̄),x,zz,lbv)
+    f!(F,x) = ObjCritPure(primalmodel,F,primalval(T̄),x,zz)
     solver_res = Solvers.nlsolve(f!, x0, TrustRegion(Newton(), NLSolvers.NWI()), options)
     r  = Solvers.x_sol(solver_res)
     !all(<(solver_res.options.f_abstol),solver_res.info.best_residual) && (r .= NaN)
     T_c = r[1]*T̄
+    lbv = lb_volume(primalmodel,T_c,z)
     V_c = crit_x_to_v(lbv,r[2])
     p_c = pressure(model, V_c, T_c, zz)
     if p_c < 0
@@ -85,15 +86,16 @@ function crit_pure_ad(model,crit,z)
     end
 end
 
-function ObjCritPure(model::T,F,T̄,x,z,lbv) where T
-    sv = __ObjCritPure(model,T̄,x,z,lbv)
+function ObjCritPure(model::T,F,T̄,x,z) where T
+    sv = __ObjCritPure(model,T̄,x,z)
     F[1] = sv[1]
     F[2] = sv[2]
     return F
 end
 
-function __ObjCritPure(model::T,T̄,x,z,lbv) where T
+function __ObjCritPure(model::T,T̄,x,z,) where T
     T_c = x[1]*T̄
+    lbv = lb_volume(model,T_c,z)
     V_c = crit_x_to_v(lbv,x[2])
     RT = Rgas(model)*T_c
     ∂²A∂V²_scale = V_c*V_c/RT
