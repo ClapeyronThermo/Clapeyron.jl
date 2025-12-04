@@ -267,6 +267,10 @@ function x0_sat_pure_virial(model,T)
     =#
 
     a,b = vdw_coefficients(vl,pl0,vv_virial,pv_eos,T)
+    if b < lb_v
+        b = lb_v
+        a = RT*(b - B)
+    end
     T̃ = RT*b/a
     T̃max = 0.2962962962962963 # Ωb/Ωa = 8/27
     T̃min = 0.1*T̃max
@@ -381,8 +385,13 @@ function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B 
     ares = a_res(model, vl0, T, z)
     lnϕ_liq0 = ares - 1 + log(RT/vl0)
     p = exp(lnϕ_liq0)
-    vv = volume_virial(B,p,T)
     pB = -0.25*RT/B
+    if lnϕ_liq0 < log(eps(eltype(T)))
+        p = oneunit(p)*0.5*pB
+        vl0 = volume(model,p,T,z,vol0 = vl0,phase = :l)
+    end
+    vv = volume_virial(B,p,T)
+    
     if refine_vl && pB/p > 10
         vl = volume(model,p,T,z,vol0 = vl0,phase = :l)
     else

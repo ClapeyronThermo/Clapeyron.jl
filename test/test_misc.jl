@@ -87,6 +87,11 @@
             @test model_og.params.segment.values == model_ex.params.segment.values
             @test model_og.params.epsilon.values == model_ex.params.epsilon.values
             @test model_og.params.epsilon_assoc.values.values == model_ex.params.epsilon_assoc.values.values
+        
+            model_repr = eval(Meta.parse(Clapeyron.eos_repr(model_og)))
+            @test model_og.params.segment.values == model_repr.params.segment.values
+            @test model_og.params.epsilon.values == model_repr.params.epsilon.values
+            @test model_og.params.epsilon_assoc.values.values == model_repr.params.epsilon_assoc.values.values
         end
 
         @testset "Cubic Model" begin

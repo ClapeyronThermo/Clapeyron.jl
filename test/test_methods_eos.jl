@@ -61,8 +61,8 @@ end
         @test Clapeyron.volume(system, p, T) ≈ 0.00019299766073894634 rtol = 1e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 167.8313793818096 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 618.8455740197799 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 167.83338420356327 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 618.8448255146585 rtol = 1E-6
     end
 end
 
@@ -82,15 +82,18 @@ end
 
 @testset "SAFT-γ Mie methods, single components" begin
     system = SAFTγMie(["ethanol"])
+    system500 = model500()
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 5.753982584153832e-5 rtol = 1e-6
         @test Clapeyron.molecular_weight(system)*1000 ≈ 46.065
     end
+
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7714.8637084302 rtol = 1E-5
         @test Clapeyron.crit_pure(system)[1] ≈ 521.963002384691 rtol = 1E-5
+        @test Clapeyron.crit_pure(system500)[1] ≈ 404.97536526401734 rtol = 1E-5
     end
 end
 
