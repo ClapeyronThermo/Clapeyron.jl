@@ -67,13 +67,11 @@ Clapeyron.FugBubblePressure
 Clapeyron.ActivityBubblePressure
 Clapeyron.ChemPotBubbleTemperature
 Clapeyron.FugBubbleTemperature
-Clapeyron.ActivityBubbleTemperature
 Clapeyron.ChemPotDewPressure
 Clapeyron.FugDewPressure
 Clapeyron.ActivityDewPressure
 Clapeyron.ChemPotDewTemperature
 Clapeyron.FugDewTemperature
-Clapeyron.ActivityDewTemperature
 ```
 
 ## Consistency and Stability

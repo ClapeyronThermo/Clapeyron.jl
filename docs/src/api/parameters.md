@@ -97,7 +97,6 @@ Clapeyron.xlogx
 Clapeyron.export_model
 Clapeyron.FluidCorrelation
 Clapeyron.GammaPhi
-Clapeyron.ExtendedCorrespondingStates
 Clapeyron.ECS
 ```
 

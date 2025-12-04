@@ -8,6 +8,7 @@ Returns a tuple, containing:
 - Critical pressure `[Pa]`
 - Critical molar volume `[m³·mol⁻¹]`
 """
+crit_pure
 
 function crit_pure(model::EoSModel)
     satmodel = saturation_model(model)
