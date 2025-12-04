@@ -82,7 +82,7 @@ end
 
 @testset "SAFT-γ Mie methods, single components" begin
     system = SAFTγMie(["ethanol"])
-    system500 = Serialization.deserialize("model500.jls")
+    system500 = model500()
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin

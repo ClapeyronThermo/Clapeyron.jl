@@ -115,4 +115,79 @@ function show_reference_state(io::IO,ref,model::EoSModel,space)
     end
 end
 
-export eosshow
+"""
+    eos_repr(io::IO,model,newlines = true)
+    eos_repr(model;newlines = true)::String
+
+Given a `model::EoSModel`, returns a copy-pastable text representation of that model, designed to be parseable julia code.
+By default, `eos_repr` inserts some newlines for easier human reading of the output, that can be disabled via the `newlines` keyword argument.
+
+## Examples:
+
+```julia-repr
+julia> model = PCSAFT("methane")
+PCSAFT{BasicIdeal, Float64} with 1 component:
+ "methane"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> push!(model.references,"test")
+3-element Vector{String}:
+ "10.1021/ie0003887"
+ "10.1021/ie010954d"
+ "test"
+
+julia> s = eos_repr(model);
+
+julia> model2 = eval(Meta.parse(s)) #exactly the same model
+PCSAFT{BasicIdeal, Float64} with 1 component:
+ "methane"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> model2.references
+3-element Vector{String}:
+ "10.1021/ie0003887"
+ "10.1021/ie010954d"
+ "test"
+```
+"""
+function eos_repr(io::IO,model;inside = false,newlines = true)
+    M = typeof(model)
+    n = fieldnames(M)
+    newlines && print(io,"\n")
+    print(io,M)
+    print(io,"(")
+    if !inside && newlines
+        print(io,"\n")
+    end
+    k = 0
+    nf = length(n)
+    for i in n
+        k += 1
+        f = getfield(model,i)
+        F = typeof(f)
+        if F.name.module == Clapeyron || F isa EoSModel
+            eos_repr(io,f,inside = true)
+        elseif f isa PackedVofV
+            print(io,"Clapeyron.PackedVofV(")
+            show(io,f.p)
+            print(io,", ")
+            show(io,f.v)
+            print(io,")")
+        else
+            show(io,f)
+        end
+        k != nf && print(io,", ")
+    end
+    print(io,")")
+    
+
+    return nothing
+end
+
+function eos_repr(model;newlines = false)
+    io = IOBuffer()
+    eos_repr(io,model;newlines)
+    return String(take!(io))
+end
+
+export eosshow, eos_repr
