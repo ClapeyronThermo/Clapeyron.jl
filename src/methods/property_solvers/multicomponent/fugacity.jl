@@ -32,7 +32,11 @@ Base.@kwdef struct FugData{T}
     verbose::Bool = false
 end
 
-function fug_bubbledew_cache(modelx,modely,p,T,x,y,data)
+FugEnum.is_pressure(data::FugData) = FugEnum.is_pressure(data.method)
+FugEnum.is_bubble(data::FugData) = FugEnum.is_bubble(data.method)
+
+
+function fug_bubbledew_cache(modelx,modely,p,T,x,y,val::Val{B}) where B
     TT = Base.promote_eltype(modelx,p,T,x,y)
     n1 = length(modelx)
     n2 = length(modely)
@@ -49,20 +53,11 @@ function fug_bubbledew_cache(modelx,modely,p,T,x,y,data)
         w7 = similar(x,TT,nmax)
     end
     volcache = Base.RefValue{Tuple{TT,TT}}()
-    if FugEnum.is_pressure(data.method)
-        Hϕx = ∂lnϕ_cache(modelx, p, T, x, Val{false}())
-        if n1 != n2
-            Hϕy = ∂lnϕ_cache(modely, p, T, y, Val{false}())
-        else
-            Hϕy = Hϕx
-        end
+    Hϕx = ∂lnϕ_cache(modelx, p, T, x, val)
+    if n1 != n2
+        Hϕy = ∂lnϕ_cache(modely, p, T, y, val)
     else
-        Hϕx = ∂lnϕ_cache(modelx, p, T, x, Val{true}())
-        if n1 != n2
-            Hϕy = ∂lnϕ_cache(modely, p, T, y, Val{true}())
-        else
-            Hϕy = Hϕx
-        end
+        Hϕy = Hϕx
     end
     return w1,w2,w3,w4,w5,w6,volcache,Hϕx,Hϕy,w7
 end
@@ -464,32 +459,35 @@ function _fug_OF_neq!(F,J,inc,model,prop,z,data::FugData,cache)
 
     if second_order
         J .= 0.0
+        J1 = @view J[1:(end-1), end]
         if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, Hϕx, phase=phasex, vol0=volx)
-            J[1:(end-1), end] .-= p .* ∂lnϕ∂Px
+            J1 .-= p .* ∂lnϕ∂Px
             !_bubble && _fug_J_∂i∂j!(J,x,∂lnϕ∂nx)
             !isnothing(F) && (F[1:end-1] .= lnK .- lnϕx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, Hϕx, phase=phasey, vol0=voly)
-            J[1:(end-1), end] .+= p .* ∂lnϕ∂Py
+            J1 .+= p .* ∂lnϕ∂Py
             _bubble && _fug_J_∂i∂j!(J,y,∂lnϕ∂ny)
         else
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, Hϕx, phase=phasex, vol0=volx)
             !_bubble && _fug_J_∂i∂j!(J,x,∂lnϕ∂nx)
-            J[1:(end-1), end] .-= T .* ∂lnϕ∂Tx
+            J1 .-= T .* ∂lnϕ∂Tx
             !isnothing(F) && (F[1:end-1] .= lnK .- lnϕx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, Hϕx, phase=phasey, vol0=voly)
-            J[1:(end-1), end] .+= T .* ∂lnϕ∂Ty
+            J1 .+= T .* ∂lnϕ∂Ty
             _bubble && _fug_J_∂i∂j!(J,y,∂lnϕ∂ny)
         end
         if !isnothing(F)
-            F[1:end-1] .+= lnϕy
+            Feq = @view F[1:end-1]
+            Feq .+= lnϕy
             F[end] = sum(y)  - sum(x)
         end
     else
+        Feq = @view F[1:end-1]
         lnϕx, volx = modified_lnϕ(model, p, T, x, Hϕx, phase=phasex, vol0=volx)
-        F[1:end-1] .= lnK .- lnϕx
+        Feq.= lnK .- lnϕx
         lnϕy, voly = modified_lnϕ(model, p, T, y, Hϕx, phase=phasey, vol0=voly)
-        F[1:end-1] .+= lnϕy
+        Feq .+= lnϕy
         F[end] = sum(y)  - sum(x)
     end
     vol_cache[] = (volx,voly)

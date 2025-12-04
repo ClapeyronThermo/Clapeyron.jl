@@ -110,7 +110,7 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
                     method.second_order,
                     false)
 
-    cache = fug_bubbledew_cache(model,model_y,p0,T,x,y0,data)
+    cache = fug_bubbledew_cache(model,model_y,p0,T,x,y0,Val{false}())
 
     if all(volatiles)
         converged,res = _fug_OF_ss(model,p0,T,x,y0,vol0,data,cache)
@@ -261,7 +261,7 @@ function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTempera
                     method.second_order,
                     false)
 
-    cache = fug_bubbledew_cache(model,model_y,p,T0,x,y0,data)
+    cache = fug_bubbledew_cache(model,model_y,p,T0,x,y0,Val{true}())
 
     if all(volatiles)
         converged,res = _fug_OF_ss(model,p,T0,x,y0,vol0,data,cache)
