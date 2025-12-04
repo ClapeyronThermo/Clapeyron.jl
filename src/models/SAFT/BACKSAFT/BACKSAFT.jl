@@ -78,16 +78,6 @@ BACKSAFT
 
 recombine_impl!(model::BACKSAFTModel) = recombine_saft!(model)
 
-
-function lb_volume2(model::BACKSAFTModel,T,z)
-    V = 0.0
-    m = model.params.segment.values
-    dᵢ = @f(d)
-    #dᵢ = model.params.sigma.values
-    val = 2π/6*N_A*sum(z[i]*m[i]*dᵢ[i,i]^3 for i in 1:length(z))
-    return val
-end
-
 function lb_volume(model::BACKSAFTModel,T,z)
     α = dot(model.params.alpha.values,z)/sum(z)
 
@@ -101,7 +91,7 @@ function lb_volume(model::BACKSAFTModel,T,z)
     end
     prob = Roots.ZeroProblem(pol,1.81)
     k = Roots.solve(prob,Roots.Newton())
-    
+
     m = model.params.segment.values
     σᵢᵢ = model.params.sigma.values
     V = 0.0

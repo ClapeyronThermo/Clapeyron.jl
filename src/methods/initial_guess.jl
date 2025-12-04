@@ -387,7 +387,6 @@ function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B 
     p = exp(lnϕ_liq0)
     pB = -0.25*RT/B
     if lnϕ_liq0 < log(eps(eltype(T)))
-        @show "here"
         p = oneunit(p)*0.5*pB
         vl0 = volume(model,p,T,z,vol0 = vl0,phase = :l)
     end
