@@ -58,7 +58,7 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     T_c = r[1]*T̄
     lbv = lb_volume(primalmodel,T_c,z)
     V_c = crit_x_to_v(lbv,r[2])
-    p_c = pressure(model, V_c, T_c, zz)
+    p_c = pressure(primalmodel, V_c, T_c, zz)
     if p_c < 0
         p_c *= NaN
         V_c *= NaN
@@ -74,7 +74,8 @@ function crit_pure_ad(model,crit,z)
         T̄  = T_scale(model)
         lbv = lb_volume(model,T̄,z)
         x = SVector(T_c_primal/T̄,crit_v_to_x(lbv,V_c_primal))
-        f(zz) = __ObjCritPure(model,T̄,z,zz,lbv)
+        x = primalval.(x)
+        f(zz) = __ObjCritPure(model,T̄,zz,z)
         F,J = Solvers.J2(f,x)
         ∂x = J\F
         r = x .- ∂x
@@ -94,7 +95,7 @@ function ObjCritPure(model::T,F,T̄,x,z) where T
     return F
 end
 
-function __ObjCritPure(model::T,T̄,x,z,) where T
+function __ObjCritPure(model::T,T̄,x,z) where T
     T_c = x[1]*T̄
     lbv = lb_volume(model,T_c,z)
     V_c = crit_x_to_v(lbv,x[2])
