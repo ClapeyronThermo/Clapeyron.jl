@@ -37,7 +37,7 @@ end
 function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     check_arraysize(model,z)
     #f! = (F,x) -> obj_crit(model, F, x[1]*T̄, exp10(x[2]))
-    zp = SA[1.0] # always work on 1.0 mol basis for intensive property
+    zp = primalval(z)
     primalmodel = primalval(model)
     if x0 === nothing
         x0 = x0_crit_pure(primalmodel,zp)
@@ -50,7 +50,8 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     Tx0 = primalval(x01)
     vc0 = exp10(primalval(x02))
     x0 = vec2(Tx0,crit_v_to_x(lbv0,vc0),_1)
-    f!(F,x) = ObjCritPure(primalmodel,F,primalval(T̄),x,zp)
+    zz = zp/sum(zp)
+    f!(F,x) = ObjCritPure(primalmodel,F,primalval(T̄),x,zz)
     solver_res = Solvers.nlsolve(f!, x0, TrustRegion(Newton(), NLSolvers.NWI()), options)
     r  = Solvers.x_sol(solver_res)
     !all(<(solver_res.options.f_abstol),solver_res.info.best_residual) && (r .= NaN)
@@ -68,31 +69,31 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
 end
 
 function crit_pure_ad(model,crit,z)
-    T_c,p_c,V_c = crit
-    if has_dual(model) # do check here to avoid recomputation of pressure if no AD
-        x = SVector(T_c,V_c)
-        tups = (model,)
-        f(x) = begin
-            model = tups[1]
-            T,V = x
-            _,F1,F2 = p∂p∂2p(model,V,T)
-            SVector(F1,F2)
+    if has_dual(model) || has_dual(z) # do check here to avoid recomputation of pressure if no AD
+        tups = (model,z)
+        x = SVector(crit[1],crit[3])
+        f(x,tups) = begin
+            model,z = tups
+            Tc,Vc = x
+            _,F1,F2 = p∂p∂2p(model, Vc, Tc, z)
+            return SVector(F1,F2)
         end
         T_c,V_c = __gradients_for_root_finders(x,tups,f)
-        p_c = pressure(model,V_c,T_c,z)
+        P_c = pressure(model,V_c,T_c,z)
+        return (T_c,P_c,V_c)
+    else
+        return crit
     end
-    V_c *= z[1]
-    return (T_c,p_c,V_c)
 end
 
-function ObjCritPure(model::T,F,T̄,x,z=SA[1.0]) where T
+function ObjCritPure(model::T,F,T̄,x,z) where T
     sv = __ObjCritPure(model,T̄,x,z)
     F[1] = sv[1]
     F[2] = sv[2]
     return F
 end
 
-function __ObjCritPure(model::T,T̄,x,z=SA[1.0]) where T
+function __ObjCritPure(model::T,T̄,x,z) where T
     T_c = x[1]*T̄
     lbv = lb_volume(model,T_c,z)
     V_c = crit_x_to_v(lbv,x[2])
