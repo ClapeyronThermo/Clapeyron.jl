@@ -282,10 +282,13 @@ function bubbledew_pressure_ad(model,T,z,result,_bubble)
             else
                 _x,_y = w,z
             end
-            F1 = pressure(model,vl,T,_x) - pressure(model,vv,T,_y)
+            lnfl,pl = lnf(model,vl,T,_x)
+            lnfv,pv = lnf(model,vv,T,_y)
+            
+            F1 = pl - pv
             F2 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
-            F3 = VT_chemical_potential(model,vl,T,_x) - VT_chemical_potential(model,vv,T,_y)
-            vcat(F1,F2,F3...) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
+            F3 = lnfl - lnfv
+            vcat(F1,F2,F3) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
         end
         x_dual = __gradients_for_root_finders(x,tups,f)
         vl,vv = x_dual[1:2]
@@ -313,11 +316,13 @@ function bubbledew_temperature_ad(model,p,z,result,_bubble)
         else
             _x,_y = w,z
         end
-        F1 = pressure(model,vl,T,_x) - p
-        F2 = pressure(model,vv,T,_y) - p
+        pl,lnfl = lnf(model,vl,T,_x)
+        pv,lnfv = lnf(model,vv,T,_y)
+        F1 = pl - p
+        F2 = pv - p
         F3 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
-        F4 = VT_chemical_potential(model,vl,T,_x) - VT_chemical_potential(model,vv,T,_y)
-        vcat(F1,F2,F3,F4...) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
+        F4 = lnfl - lnfv
+        vcat(F1,F2,F3,F4) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
     end
     x_dual = __gradients_for_root_finders(x,tups,f)
     T,vl,vv = x_dual[1:3]
