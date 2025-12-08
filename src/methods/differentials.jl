@@ -286,8 +286,7 @@ function multiple_tag_ad_check(a::T) where T <: Tuple
     valid_tags = tags[duals]
     t1 = first(valid_tags)
     t = Base.tail(valid_tags)
-    for i in 1:length(i)
-        ti = t[i]
+    for ti in t
         if t1 != ti
             msg = "Found multiple Dual tags: $t1 and $ti. This is currently not supported in implicit differentiation."
             throw(MultipleTagError(msg))
