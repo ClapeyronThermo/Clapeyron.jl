@@ -211,3 +211,61 @@ function _primalval(model::EoSModel,::Type{T}) where T <: ForwardDiff.Dual
 end
 
 _primalval(model::EoSModel,::T) where T = model
+
+"""
+    `__gradients_for_root_finders(x::AbstractVector{T},tups::Tuple,f::Function) where T<:Real`
+Computes the gradients of `x` with respect to the relevant parameters in `tups` under the condition that
+`x` is implicitly defined through the root finding problem `f(x,tups) = 0`. The function uses the implicit 
+function theorem to compute the gradients efficiently through the reconstruction of Duals.
+
+Note: Currently only supports first order AD. Trying to differentiate nested Duals or Duals with different tags will throw an error.
+"""
+function __gradients_for_root_finders(x::AbstractVector{T},tups::Tuple,f::Function) where T<:Real
+    # Checks
+    eltype_tups = eltype.(tups)
+    idx_tups_is_dual = findall(Clapeyron.has_dual.(eltype_tups))
+    if isempty(idx_tups_is_dual) # No duals, return primal
+        return x
+    end
+    if length(idx_tups_is_dual) > 1
+        tag1 = eltype_tups[idx_tups_is_dual[1]].parameters[1]
+        for idx in idx_tups_is_dual[2:end]
+            tag1 !== eltype_tups[idx].parameters[1] && error("Found multiple Dual tags. This is currently not supported.")
+            eltype_tups[idx].parameters[2] <: ForwardDiff.Dual && error("Found nested Duals. This is currently not supported.")
+        end
+    end
+    eltype_tups[idx_tups_is_dual[1]].parameters[2] <: ForwardDiff.Dual && error("Found nested Duals. This is currently not supported.")
+
+    # compute partials
+    tups_primal = Clapeyron.primalval.(tups)
+    ∂f_∂x = DifferentiationInterface.jacobian(f,DifferentiationInterface.AutoForwardDiff(),x,DifferentiationInterface.Constant(tups_primal))
+    @assert size(∂f_∂x,1) == size(∂f_∂x,2) "Number of equations must equal number of variables for implicit function theorem to hold." 
+    ∂f_∂θ_dual = f(x,tups)
+    # get dual
+    T_dual = eltype(∂f_∂θ_dual)
+    n_params = T_dual.parameters[3]
+    primal_type = T_dual.parameters[2]
+    T_partials = ForwardDiff.Partials{n_params,primal_type}
+    n_equations = length(x)
+    # preallocate to be efficient?
+    ∂f_∂θ = Matrix{primal_type}(undef, n_equations, n_params)
+    for i in 1:n_equations
+        ∂f_∂θ[i,:] .= ∂f_∂θ_dual[i].partials
+    end
+    # gradient through implicit function theorem
+    dx_dθ = - ∂f_∂x \ ∂f_∂θ
+    x_dual = Vector{T_dual}(undef, n_equations) # preallocate
+    for i in 1:n_equations
+        x_dual[i] = T_dual(x[i],T_partials(Tuple(@view dx_dθ[i,:])))
+    end
+    return x_dual
+end
+
+function __gradients_for_root_finders(x::T,tups::Tuple,f::Function) where T<:Real
+    x_vec = [x]
+    f_vec(x_vec,tups) = [f(x_vec[1],tups)]
+    x_dual_vec = __gradients_for_root_finders(x_vec,tups,f_vec)
+    return x_dual_vec[1]
+end
+
+__gradients_for_root_finders(::Union{AbstractArray{T},T},::Tuple,::Function) where T<:ForwardDiff.Dual = error("Input `x` cannot be a dual")

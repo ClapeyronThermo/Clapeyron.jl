@@ -37,7 +37,7 @@ end
 function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     check_arraysize(model,z)
     #f! = (F,x) -> obj_crit(model, F, x[1]*T̄, exp10(x[2]))
-    zp = primalval(z)
+    zp = SA[1.0] # always work on 1.0 mol basis for intensive property
     primalmodel = primalval(model)
     if x0 === nothing
         x0 = x0_crit_pure(primalmodel,zp)
@@ -50,15 +50,14 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     Tx0 = primalval(x01)
     vc0 = exp10(primalval(x02))
     x0 = vec2(Tx0,crit_v_to_x(lbv0,vc0),_1)
-    zz = z/sum(z)
-    f!(F,x) = ObjCritPure(primalmodel,F,primalval(T̄),x,zz)
+    f!(F,x) = ObjCritPure(primalmodel,F,primalval(T̄),x,zp)
     solver_res = Solvers.nlsolve(f!, x0, TrustRegion(Newton(), NLSolvers.NWI()), options)
     r  = Solvers.x_sol(solver_res)
     !all(<(solver_res.options.f_abstol),solver_res.info.best_residual) && (r .= NaN)
     T_c = r[1]*T̄
-    lbv = lb_volume(primalmodel,T_c,z)
+    lbv = lb_volume(primalmodel,T_c,zp)
     V_c = crit_x_to_v(lbv,r[2])
-    p_c = pressure(primalmodel, V_c, T_c, zz)
+    p_c = pressure(primalmodel, V_c, T_c, zp)
     if p_c < 0
         p_c *= NaN
         V_c *= NaN
@@ -69,33 +68,31 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
 end
 
 function crit_pure_ad(model,crit,z)
-    if has_dual(model) || has_dual(z)
-        T_c_primal, p_c_primal, V_c_primal = crit
-        T̄  = T_scale(model)
-        lbv = lb_volume(model,T̄,z)
-        x = SVector(T_c_primal/T̄,crit_v_to_x(lbv,V_c_primal))
-        x = primalval.(x)
-        f(zz) = __ObjCritPure(model,T̄,zz,z)
-        F,J = Solvers.J2(f,x)
-        ∂x = J\F
-        r = x .- ∂x
-        T_c = r[1]*T̄
-        V_c = crit_x_to_v(lbv,r[2])
-        P_c = pressure(model,V_c,T_c,z)
-        return (T_c,P_c,V_c)
-    else
-        return crit
+    T_c,p_c,V_c = crit
+    if has_dual(model) # do check here to avoid recomputation of pressure if no AD
+        x = SVector(T_c,V_c)
+        tups = (model,)
+        f(x) = begin
+            model = tups[1]
+            T,V = x
+            _,F1,F2 = p∂p∂2p(model,V,T)
+            SVector(F1,F2)
+        end
+        T_c,V_c = __gradients_for_root_finders(x,tups,f)
+        p_c = pressure(model,V_c,T_c,z)
     end
+    V_c *= z[1]
+    return (T_c,p_c,V_c)
 end
 
-function ObjCritPure(model::T,F,T̄,x,z) where T
+function ObjCritPure(model::T,F,T̄,x,z=SA[1.0]) where T
     sv = __ObjCritPure(model,T̄,x,z)
     F[1] = sv[1]
     F[2] = sv[2]
     return F
 end
 
-function __ObjCritPure(model::T,T̄,x,z) where T
+function __ObjCritPure(model::T,T̄,x,z=SA[1.0]) where T
     T_c = x[1]*T̄
     lbv = lb_volume(model,T_c,z)
     V_c = crit_x_to_v(lbv,x[2])

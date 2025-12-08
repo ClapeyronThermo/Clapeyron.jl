@@ -480,18 +480,17 @@ function __Tproperty(model,p,prop,property::F,rootsolver,phase,abstol,reltol,thr
 end
 
 function Tproperty_ad(model,p,prop,z,property::F,T_primal,phase) where F
-  if has_dual(model) || has_dual(p) || has_dual(prop) || has_dual(z)
-    #=
-    we know that T_primal is the solution to
-    property(model,p,T_primal,z,phase = phase,threaded = threaded) - prop = 0
-    =#
-    _property(_T) = property(model,p,_T,z,phase = phase)
-    fprop,∂prop∂T = Solvers.f∂f(_property,T_primal)
-    T = T_primal + (prop - fprop)/∂prop∂T
+    tups = (model,p,z,prop)
+    f(T,tups) = begin 
+        #=
+        we know that T_primal is the solution to
+        property(model,p,T_primal,z,phase = phase,threaded = threaded) - prop = 0
+        =#
+        model,p,z,prop = tups
+        property(model,p,T,z,phase = phase) - prop
+    end
+    T = __gradients_for_root_finders(T_primal,tups,f)
     return T
-  else
-    return T_primal
-  end
 end
 
 # model = PCSAFT(["propane","dodecane"])

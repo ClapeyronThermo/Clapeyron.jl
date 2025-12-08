@@ -296,17 +296,13 @@ function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, t
 end
 
 function volume_ad(model,v,T,z,p)
-    if has_dual(model) || has_dual(p) || has_dual(T) || has_dual(z)
-        #netwon step to recover derivative information:
-        #V = V - (p(V) - p)/(dpdV(V))
-        #dVdP = -1/dpdV
-        #dVdT = dpdT/dpdV
-        #dVdn = dpdn/dpdV
-        psol,dpdVsol = p∂p∂V(model,v,T,z)
-        return v - (psol - p)/dpdVsol
-    else
-        return v
+    tups = (model,p,T,z)
+    f(v,tups) = begin
+        model,p,T,z = tups
+        pressure(model,v,T,z) - p
     end
+    v = __gradients_for_root_finders(v,tups,f) # does dual checks internally, else returns v_primal
+    return v
 end
 
 #comprises solid and liquid phases.
