@@ -234,8 +234,8 @@ function __gradients_for_root_finders(x::AbstractVector{T},tups::Tuple,f::Functi
     ∂f_∂θ_dual = f(x,tups)
     # get dual
     T_dual = eltype(∂f_∂θ_dual)
-    n_params = T_dual.parameters[3]
-    primal_type = T_dual.parameters[2]
+    n_params = ForwardDiff.npartials(T_dual)
+    primal_type = ForwardDiff.valtype(T_dual)
     T_partials = ForwardDiff.Partials{n_params,primal_type}
     n_equations = length(x)
     # preallocate to be efficient?
