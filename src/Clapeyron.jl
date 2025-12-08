@@ -14,7 +14,7 @@ using FillArrays: FillArrays
 import BlackBoxOptim
 using StaticArrays
 
-using DiffResults, ForwardDiff
+using DiffResults, ForwardDiff, Differentiationinterface
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
 #compatibility and raw julia utilities
