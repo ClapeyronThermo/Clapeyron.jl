@@ -355,7 +355,7 @@ end
 
 function Pproperty_ad(model,T,prop,z,property::F,p_primal,phase) where F
     tups = (model,T,z,prop)
-    f(p) = begin
+    f(p,tups) = begin
       #=
       we know that p_primal is the solution to
       property(model,p_primal,t,z,phase = phase,threaded = threaded) - prop = 0

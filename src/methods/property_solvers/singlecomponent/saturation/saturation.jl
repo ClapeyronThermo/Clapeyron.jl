@@ -90,7 +90,7 @@ function saturation_pressure_ad(model,T,result)
             vl,vv = x
             F1 = VT_chemical_potential(model,vl,T) - VT_chemical_potential(model,vv,T)
             F2 = pressure(model,vl,T) - pressure(model,vv,T)
-            SVector(F1,F2)
+            SVector(F1[1],F2)
         end
         vl,vv = __gradients_for_root_finders(x,tups,f)
         p = pressure(model,vl,T)
@@ -181,7 +181,7 @@ function saturation_temperature_ad(model,p,result)
         F1 = VT_chemical_potential(model,vl,T) - VT_chemical_potential(model,vv,T)
         F2 = pressure(model,vl,T) - p
         F3 = pressure(model,vv,T) - p
-        SVector(F1,F2,F3)
+        SVector(F1[1],F2,F3)
     end
     T,vl,vv = __gradients_for_root_finders(x,tups,f)
     return T,vl,vv
