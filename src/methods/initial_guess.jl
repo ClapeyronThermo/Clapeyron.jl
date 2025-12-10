@@ -394,6 +394,9 @@ function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B 
     
     if refine_vl && pB/p > 10
         vl = volume(model,p,T,z,vol0 = vl0,phase = :l)
+        if vl ≈ vv #refinement failed, stick with vl0
+            vl = vl0*oneunit(vv)
+        end
     else
         vl = vl0*oneunit(vv)
     end
