@@ -41,6 +41,8 @@ f,h = shape_factors(model::ECS,shape_ref::EoSModel,V,T,z)
 
 .1 Mollerup, J. (1998). Unification of the two-parameter equation of state and the principle of corresponding states. Fluid Phase Equilibria, 148(1–2), 1–19. [doi:10.1016/s0378-3812(98)00230-1](https://doi.org/10.1016/s0378-3812(98)00230-1)
 """
+ECS
+
 const ECS = ExtendedCorrespondingStates
 
 Base.length(model::ECS) = length(model.shape_model)
@@ -110,7 +112,8 @@ fh = a(T)/a₀(T₀)
 1. Mollerup, J. (1998). Unification of the two-parameter equation of state and the principle of corresponding states. Fluid Phase Equilibria, 148(1–2), 1–19. [doi:10.1016/s0378-3812(98)00230-1](https://doi.org/10.1016/s0378-3812(98)00230-1)
 
 """
-function shape_factors end
+shape_factors
+
 shape_factors(model::ECS,V,T,z=SA[1.0]) = shape_factors(model,model.shape_ref,V,T,z)
 
 function shape_factors(model::ECS,shape_ref::DeltaCubicModel,V,T,z=SA[1.0])

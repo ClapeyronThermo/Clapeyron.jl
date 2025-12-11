@@ -46,9 +46,6 @@ saturation_model(model::GammaPhi) = saturation_model(model.fluid)
 idealmodel(model::GammaPhi) = idealmodel(model.fluid.model)
 
 function init_preferred_method(method::typeof(tp_flash),model::GammaPhi,kwargs)
-    second_order = get(kwargs,:second_order,false)
-    second_order && throw(error("γ-ϕ Composite Models don't support second order solvers."))
-
     MichelsenTPFlash(;kwargs...)
 end
 
@@ -221,7 +218,7 @@ function PTFlashWrapper(model::GammaPhi,p,T,z,equilibrium)
     return wrapper
 end
 
-function __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium) 
+function __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium)
     PTFlashWrapper(model,p,T,z,equilibrium)
 end
 
@@ -409,7 +406,7 @@ end
 function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpressure = false,phase = :l,_vol = nothing)
     model = wrapper.model
     RT = R̄*T
-    if is_liquid(phase) 
+    if is_liquid(phase)
         γmodel = __γ_unwrap(model)
         #=
         If the model is not an activity model, then PTFlashWrapper is wrapping
@@ -511,6 +508,51 @@ function ∂lnϕ∂n∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂lnϕ
         tpd_delta_d_vapour!(lnϕ,wrapper,p,T)
         tpd_∂delta_d∂P_vapour!(∂lnϕ∂P,wrapper,p,T)
         return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, V
+    end
+end
+
+function ∂lnϕ∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
+            phase=:unknown,
+            vol0=nothing,
+            threaded = true,
+            vol = volume(wrapper,p,T,z;phase,vol0,threaded))
+
+    if is_liquid(phase)
+        result,aux,logγ,A1,x1,x2,∂lnγ∂Pi,hconfig = cache
+        ∂lnγ∂Pi .= 0
+        V = zero(eltype(∂lnγ∂Pi))
+        return ∂lnγ∂Pi,V
+    else
+        if vol === nothing
+            _vol = volume(gas_model(wrapper),p,T,z;phase,vol0,threaded)
+        else
+            _vol = vol
+        end
+        ∂lnϕ∂Pi, V = ∂lnϕ∂P(gas_model(wrapper), p, T, z,cache;vol = _vol)
+        tpd_∂delta_d∂P_vapour!(∂lnϕ∂Pi,wrapper,p,T)
+        return ∂lnϕ∂Pi, V
+    end
+end
+
+function ∂lnϕ∂T(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
+            phase=:unknown,
+            vol0=nothing,
+            threaded = true,
+            vol = volume(wrapper,p,T,z;phase,vol0,threaded))
+
+    if is_liquid(phase)
+        ∂lnϕ∂Ti = ∂lnγ∂T(__γ_unwrap(wrapper),p,T,z,cache)
+        V = zero(eltype(∂lnϕ∂Ti))
+        return ∂lnϕ∂Ti,V
+    else
+        if vol === nothing
+            _vol = volume(gas_model(wrapper),p,T,z;phase,vol0,threaded)
+        else
+            _vol = vol
+        end
+        ∂lnϕ∂Ti, V = ∂lnϕ∂T(gas_model(wrapper), p, T, z, cache;vol = _vol)
+        tpd_∂delta_d∂T_vapour!(∂lnϕ∂Ti,wrapper,p,T)
+        return ∂lnϕ∂Ti, V
     end
 end
 

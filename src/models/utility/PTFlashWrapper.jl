@@ -12,6 +12,8 @@ end =#
 Base.length(model::PTFlashWrapper) = length(model.model)
 Base.eltype(model::PTFlashWrapper) = Base.promote_eltype(model.model)
 __γ_unwrap(model::PTFlashWrapper) = __γ_unwrap(model.model)
+gas_model(model::PTFlashWrapper) = gas_model(model.model)
+
 function tp_flash_K0(wrapper::PTFlashWrapper,p,T,z)
     first.(wrapper.sat) ./ p
 end
@@ -59,7 +61,22 @@ function update_temperature!(model::PTFlashWrapper,T)
     return nothing
 end
 
-gas_model(model::PTFlashWrapper) = gas_model(model.model)
+
+function _update_temperature_with_view!(model1::TT,model2::TT,T,_view) where TT <: PTFlashWrapper
+    n1,n2 = length(model1),length(model2)
+    if n1 > n2
+        update_temperature!(model1,T)
+        model2.sat .= @view model1.sat[_view]
+        model2.fug .= @view model1.fug[_view]
+    else
+        update_temperature!(model2,T)
+        model1.sat .= @view model2.sat[_view]
+        model1.fug .= @view model2.fug[_view]
+    end
+    return nothing
+end
+
+_update_temperature_with_view!(model1,model2,T,_view) = nothing
 
 function volume_impl(model::PTFlashWrapper, p, T, z, phase, threaded, vol0)
     volume_impl(model.model, p, T, z, phase, threaded, vol0)

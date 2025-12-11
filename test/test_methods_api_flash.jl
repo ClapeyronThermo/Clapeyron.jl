@@ -490,6 +490,17 @@ end
     res492 = Clapeyron.ph_flash(fluid492, p492, h492, z492)
     @test enthalpy(fluid492,res492) ≈ h492 rtol = 1e-6
 
+    #issue 506
+    phase506  = :vapour
+    fluid506  = cPR(["di methylether","di ethylether"],idealmodel  = ReidIdeal)
+    p_in_506  = 101325.0; z_506 = [1.0,1.0]
+    T_in_506  = dew_temperature(fluid506,p_in_506,z_506)[1] + 10;  # we are now pure vapour
+    p_out_506 = 3.0*p_in_506
+    h_in_506  = enthalpy(fluid506,p_in_506,T_in_506,z) 
+    s_in_506  = Clapeyron.PH.entropy(fluid506, p_in_506, h_in_506,z_506,phase = phase506)
+    h_out_506 = Clapeyron.PS.enthalpy(fluid506, p_out_506, s_in_506,z_506,phase = phase506)
+    s_out_506 = Clapeyron.PH.entropy(fluid506, p_out_506, h_out_506,z_506,phase = phase506)
+    @test s_in_506 ≈ s_out_506 rtol = 1e-6
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)

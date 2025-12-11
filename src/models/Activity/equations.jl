@@ -237,7 +237,7 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
     nc = length(z)
     RT = Rgas(model)*T
     n = sum(z)
-    fun_g(w) = excess_gibbs_free_energy(model,p,w[nc+1],@view(w[1:nc]))/RT
+    fun_g(w) = excess_gibbs_free_energy(model,p,w[nc+1],@view(w[1:nc]))/(Rgas(model)*w[nc + 1])
     function fun_lnγ(out,w)
         Clapeyron.lnγ(model,p,w[1:nc+1],@view(w[1:nc]),@view(out[1:nc]))
         return out
@@ -255,8 +255,9 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             g_E = dot(z,lnγ)*RT
             return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
         else
-            hresult = DiffResults.HessianResult(z)
-            result = ForwardDiff.hessian!(hresult,fun_g,z)
+            aux = vcat(z,T)
+            hresult = DiffResults.HessianResult(aux)
+            result = ForwardDiff.hessian!(hresult,fun_g,aux)
 
             g_E = DiffResults.value(result)*RT
             lnγ_and_T = DiffResults.gradient(result)
@@ -264,7 +265,7 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
 
             ∂lnγ∂ni∂T = DiffResults.hessian(result)
             ∂lnγ∂ni = ∂lnγ∂ni∂T[1:nc,1:nc]
-            ∂lnγ∂T = ∂lnγ∂ni∂T[:,nc + 1]
+            ∂lnγ∂T = ∂lnγ∂ni∂T[1:nc,nc + 1]
             return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
         end
     else
@@ -296,6 +297,45 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
     end
 end
 
+function dG_EdT(model::ActivityModel,p,T,z)
+    f(_T) = excess_gibbs_free_energy(model,p,_T,z)/(Rgas(model)*_T)
+    return Solvers.derivative(f,T)
+end
+
+function ∂lnγ∂T(model,p,T,z,cache = nothing)
+    nc = length(z)
+    RT = Rgas(model)*T
+    n = sum(z)
+    dgEdt(w) = dG_EdT(model,p,T,@view(w[1:nc]))
+    if cache == nothing
+        if has_lnγ_impl(model)
+            out = zeros(Base.promote_eltype(model,p,T,z))
+            ∂lnγ∂T = ForwardDiff.derivative!(out,lnγ_impl!,T)
+            return ∂lnγ∂T
+        else
+            ∂lnγ∂T = ForwardDiff.gradient(dgEdt,z)
+            return ∂lnγ∂T
+        end
+    else
+        result,aux,lnγ,∂lnγ∂ni,∂lnγ∂T,_,_,hconfig,jcache,∂lnγ∂T_out = cache
+        aux .= 0
+        aux[1:nc] .= z
+        aux[nc+1] = T
+        if has_lnγ_impl(model)
+            Dconfig = Solvers._DerivativeConfig(∂lnγ∂T_out)
+            ForwardDiff.derivative!(∂lnγ∂T,lnγ_impl!,lnγ,T,Dconfig,Val{false}())
+            return ∂lnγ∂T
+        else
+            aux .= 0
+            aux[1:nc] = z
+            gconfig = Solvers._GradientConfig(hconfig)
+            _result = ForwardDiff.gradient!(result, dgEdt, aux, gconfig, Val{false}())
+            dresult = DiffResults.gradient(_result)
+            ∂lnγ∂T .= @view dresult[1:nc]
+            return ∂lnγ∂T
+        end
+    end
+end
 
 __act_to_gammaphi(model::ActivityModel) = __act_to_gammaphi(model,nothing,true)
 GammaPhi(model::ActivityModel) = __act_to_gammaphi(model)
@@ -426,3 +466,17 @@ function set_reference_state!(model::ActivityModel,reference_state::ReferenceSta
 end
 
 reference_state(model::ActivityModel) = reference_state(model.puremodel)
+
+# Thermodynamic factor
+function thermodynamic_factor(model::ActivityModel, p, T, z)
+    N = length(model)
+    N == 1 && return one(T)
+    x = z ./ sum(z)
+    xN1 = @view x[1:N-1]
+    
+    _, _, J = ∂lnγ∂n(model, p, T, x)
+    ∂lnγᵢ∂xⱼ = J[1:N-1, 1:N-1] .- J[1:N-1, N]
+
+    Γ = LinearAlgebra.I(N-1) .+  xN1 .* ∂lnγᵢ∂xⱼ
+    return Γ
+end

@@ -23,25 +23,32 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
 
     _1 = one(T)
     third = _1/3
-    a1  = complex(one(T) / poly[4])
+    a1  = one(T) / poly[4]
     E1  = -poly[3]*a1
     E2  = poly[2]*a1
     E3  = -poly[1]*a1
     s0  = E1
     E12 = E1*E1
-    A   = det_22(2*E1,E12,9*E1,E2) + 27*E3
+    A = evalpoly(E1,(27*E3,-9*E2,zero(T),T(2)))
     #A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
     B = det_22(E1,E1,3,E2)
     #B   = E12 - 3*E2                 # = s1 s2
     # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
-    Δ2 = det_22(A,A,4*B*B,B)
-    Δ = Base.sqrt(Δ2)
+    Δ2 = 27*evalpoly(E1,(4*E2*E2*E2 + 27*E3*E3,
+                        -18*E2*E3,
+                        -E2*E2,
+                        4*E3))
+
+    Δ = Base.sqrt(complex(Δ2))
     #Δ = (A*A - 4*B*B*B)^0.5
-    if real(conj(A)*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
-        s1 = exp(log(0.5 * (A + Δ)) * third)
+    if real(A*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
+        s10 = 0.5 * (A + Δ)
     else
-        s1 = exp(log(0.5 * (A - Δ)) * third)
+        s10 = 0.5 * (A - Δ)
     end
+    r = abs(s10)
+    θ = angle(s10)
+    s1 =  cbrt(r) * cis(θ * third)
     if s1 == 0
         s2 = s1
     else
@@ -87,9 +94,9 @@ function real_roots3(pol::NTuple{4,T}) where {T<:Real}
     mid23 = (x2 + x3)/2
     between1 = evalpoly(mid12, pol)
     between2 = evalpoly(mid23, pol)
-    if abs(between1) <  eps(typeof(between1))
+    if abs(between1) <  eps(typeof(between1)) && isapprox(x1,x2)
         (2, x3, mid12, mid12) # first the single root, then the double root
-    elseif abs(between2) < eps(typeof(between2))
+    elseif abs(between2) < eps(typeof(between2)) && isapprox(x2,x3)
         (2, x1, mid23, mid23) # first the single root, then the double root
     else
         sign1 = signbit(between1)

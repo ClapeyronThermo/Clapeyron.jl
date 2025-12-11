@@ -3,6 +3,12 @@ SingleOrPair_values(x) = x
 SingleOrPair_values(x::SingleOrPair) = x.values
 
 ### kij_mix
+
+"""
+    kij_mix!(f,out)
+
+Inplace version of [`kij_mix`](@ref)
+"""
 function kij_mix!(f::F,out) where F
     return kij_mix!(f,out,nothing)
 end
@@ -73,7 +79,11 @@ function kij_mix!(f::F,p::AbstractMatrix,K::AbstractMatrix,B::AbstractMatrix) wh
 end
 
 ## pair_mix!
+"""
+    pair_mix!(f,out,Q)
 
+Inplace version of [`pair_mix`](@ref)
+"""
 function pair_mix!(f::F,out,Q) where F
     _out = SingleOrPair_values(out)
     q = SingleOrPair_values(Q)

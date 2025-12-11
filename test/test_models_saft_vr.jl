@@ -69,6 +69,13 @@ GC.gc()
         test_repr(system,str = ["\"methanol\": \"CH3OH\" => 1"])
         GC.gc()
     end
+
+    @testset "SAFTgammaMie_custom_name_with_MonomerIdeal" begin
+        species = [("test_propane", ["CH3"=>2, "CH2"=>1])]
+        system = SAFTgammaMie(species; idealmodel = MonomerIdeal)
+        @test !isnothing(system)
+        GC.gc()
+    end
     
     @testset "structSAFTgammaMie" begin
         species = [("ethanol",["CH3"=>1,"CH2OH"=>1],[("CH3","CH2OH")=>1]),

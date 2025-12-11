@@ -202,9 +202,11 @@ function SAFTgammaMie(groups::GroupParam, params::Dict{String,ClapeyronParam};
     bondvol,epsilon_assoc = assoc_mix(bondvol0,epsilon_assoc0,sigma,assoc_options,sites) #combining rules for association
 
     gcparams = SAFTgammaMieParam(segment, shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
+    Mw_comps = group_sum(groups,params["Mw"])
+    ideal_userlocations = _update_idealuserlocations_for_GC(idealmodel,ideal_userlocations,Mw_comps)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     vrmodel = SAFTVRMie(groups,gcparams,sites,idealmodel = init_idealmodel,assoc_options = assoc_options,epsilon_mixing = epsilon_mixing,verbose = verbose)
-    group_sum!(vrmodel.params.Mw,groups,params["Mw"])
+    vrmodel.params.Mw.values .= Mw_comps.values
     model = SAFTgammaMie(components,groups,sites,gcparams,init_idealmodel,vrmodel,epsilon_mixing,assoc_options,default_references(SAFTgammaMie))
     set_reference_state!(model,reference_state;verbose)
     return model

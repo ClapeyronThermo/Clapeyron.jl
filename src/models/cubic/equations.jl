@@ -298,18 +298,30 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
         _1 = one(_0)
         return _1/_0
     end
+    R̄ = Rgas(model)
     nRTp = sum(z)*R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
 
     c = c̄*sum(z)
-    num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
-    if num_isreal == 2
-        vvl,vvg = nRTp*z1 - c,nRTp*z2 - c
-    elseif num_isreal == 3
-        vvl,vvg = nRTp*z1 - c,nRTp*z3 - c
+
+    B = lb_v*p/(R̄*T)
+    if B > 4eps(typeof(B))
+        num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
+
+        if num_isreal == 2
+            vvl,vvg = nRTp*z1 - c,nRTp*z2 - c
+        elseif num_isreal == 3
+            vvl,vvg = nRTp*z1 - c,nRTp*z3 - c
+        else
+            vvl,vvg = nRTp*z1 - c,nRTp*z1 - c
+        end
     else
-        vvl,vvg = nRTp*z1 - c,nRTp*z1 - c
+        vl0,_ = zero_pressure_impl(model,T,z)
+        vvg = volume_virial(model,p,T,z) #TODO refine (necessary?)
+        vvl = _volume_compress(model,p,T,z,vl0)
+        num_isreal = 3
     end
+
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if !isfinite(vvl) && !isfinite(vvg) && phase != :unknown
         V0 = x0_volume(model, p, T, z; phase)
@@ -322,7 +334,7 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
         _vl = vvl
         vl = ifelse(_vl > lb_v, _vl, vg) #catch case where solution is unphysical
     else # 1 real root (or 2 with the second one degenerate)
-        vg = vl = z1 * nRTp - c
+        vg = vl = vvg
     end
 
     function gibbs(v)
