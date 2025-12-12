@@ -316,9 +316,18 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
             vvl,vvg = nRTp*z1 - c,nRTp*z1 - c
         end
     else
-        vl0,_ = zero_pressure_impl(model,T,z)
-        vvg = volume_virial(model,p,T,z) #TODO refine (necessary?)
-        vvl = _volume_compress(model,p,T,z,vl0)
+        if is_liquid(phase)
+            vl0,_ = zero_pressure_impl(model,T,z)
+            vvl = _volume_compress(model,p,T,z,vl0)
+            vvg = vvl
+        elseif is_vapour(phase)
+            vvg = volume_virial(model,p,T,z) #TODO refine (necessary?)
+            vvl = vvg
+        else
+            vl0,_ = zero_pressure_impl(model,T,z)
+            vvl = _volume_compress(model,p,T,z,vl0)
+            vvg = volume_virial(model,p,T,z)
+        end
         num_isreal = 3
     end
 
