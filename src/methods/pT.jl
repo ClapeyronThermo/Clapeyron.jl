@@ -205,7 +205,7 @@ Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function internal_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_internal_energy_res_res)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_internal_energy_res)
 end
 
 """
