@@ -32,7 +32,7 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
     Ap = (27*E3,-9*E2,zero(T),T(2))
     A = evalpoly(E1,Ap) #TODO: compensated arithmetic evalpoly really needed
 
-    if abs(A) < 10*eps(T)
+    if abs(A) < 10*eps(typeof(A))
         A = det_22(2*E1,E12,9*E1,E2) + 27*E3
     end
     #A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
@@ -41,7 +41,7 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
     # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
     Δ2p = (4*E2*E2*E2 + 27*E3*E3,-18*E2*E3,-E2*E2,4*E3)
     Δ2 = 27*evalpoly(E1,Δ2p) #TODO: compensated arithmetic evalpoly really needed
-    if Δ2 < 10*eps(T)
+    if Δ2 < 10*eps(typeof(A))
         E1p = (one(E1),E1,E1*E1,E1*E1*E1)
         Δ2 = 27*dot(E1p,Δ2p)
     end
