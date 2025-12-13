@@ -65,59 +65,6 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
     return (third*(s0 + s1 + s2), third*(s0 + s1*zeta2 + s2*zeta1), third*(s0 + s1*zeta1 + s2*zeta2))
 end
 
-function solve_cubic_eq2(poly::NTuple{4,T}) where {T<:Real}
-    # copied from PolynomialRoots.jl, adapted to be AD friendly
-    # Cubic equation solver for complex polynomial (degree=3)
-    # http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
-    # poly = (a,b,c,d) that represents a + bx + cx3 + dx4
-
-    _1 = one(T)
-    third = _1/3
-    a1  = one(T) / poly[4]
-    E1  = -poly[3]*a1
-    E2  = poly[2]*a1
-    E3  = -poly[1]*a1
-    s0  = E1
-    E12 = E1*E1
-    @show E1,E2,E3
-    
-    
-    Ap = (27*E3,-9*E2,zero(T),T(2))
-    A = dot(E1p,Ap)
-    if abs(A) < 10*eps(T)
-        A = det_22(2*E1,E12,9*E1,E2) + 27*E3
-    end
-    #A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
-    B = det_22(E1,E1,3,E2)
-    #@show B
-    #B   = E12 - 3*E2                 # = s1 s2
-    # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
-    Δ2p = (4*E2*E2*E2 + 27*E3*E3,
-                        -18*E2*E3,
-                        -E2*E2,
-                        4*E3)
-    Δ2 = dot(E1p,Δ2p)
-    Δ = Base.sqrt(complex((Δ2)))
-    if real(A*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
-        s10 = 0.5 * (A + Δ)
-    else
-        s10 = 0.5 * (A - Δ)
-    end
-    #@show s10
-    s1 =  s10^(third)
-    if s1 == 0
-        s2 = s1
-    else
-        s2 = B / s1
-    end
-    z1 = complex(-0.5, sqrt(T(3.0))*0.5)
-    z2 = conj(z1)
-    r1 = third*(s0 + s1 + s2)
-    r2 = third*(s0 + s1*z2 + s2*z1)
-    r3 = third*(s0 + s1*z1 + s2*z2)
-    return (r1,r2,r3)
-end
-
 
 """
     roots3(pol)

@@ -236,6 +236,11 @@ end
     act = NRTL(["water","ethanol"],puremodel = puremodel,reference_state = :ntp)
     @test reference_state(act).std_type == :ntp
     @test length(reference_state(act).a0) == 2
+
+    #issue 511
+    ref511 = ReferenceState(:nbp)
+    model511 = cPR("water",idealmodel=ReidIdeal,reference_state = ref511)
+    @test Clapeyron.reference_state(model511).std_type == :nbp
 end
 
 @testset "Solid Phase Equilibria" begin
