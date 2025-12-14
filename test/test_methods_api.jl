@@ -381,6 +381,13 @@ GC.gc()
         model4 = SAFTVRMie(["methanol"])
         T4 = 164.7095044742657
         @test Clapeyron.saturation_pressure(model4,T4,crit_retry = false)[1] ≈ 0.02610821545005174 rtol = 1e-6
+    
+        @testset "saturation at low temperatures" begin
+            l1 = PR("1-butene")
+            Tc1 = 419.95
+            sat_low1 = saturation_pressure(l1,0.183Tc1)
+            @test sat_low1[1] ≈ 9.468875475768151e-9 rtol = 1e-6
+        end
     end
     GC.gc()
 end

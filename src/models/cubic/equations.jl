@@ -298,14 +298,14 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
         _1 = one(_0)
         return _1/_0
     end
+
     R̄ = Rgas(model)
     nRTp = sum(z)*R̄*T/p
-    _poly,c̄ = cubic_poly(model,p,T,z)
-
-    c = c̄*sum(z)
-
     B = lb_v*p/(R̄*T)
+
     if B > 4eps(typeof(B))
+        _poly,c̄ = cubic_poly(model,p,T,z)
+        c = c̄*sum(z)
         num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
 
         if num_isreal == 2

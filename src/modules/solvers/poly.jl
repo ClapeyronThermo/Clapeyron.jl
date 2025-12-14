@@ -65,6 +65,100 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
     return (third*(s0 + s1 + s2), third*(s0 + s1*zeta2 + s2*zeta1), third*(s0 + s1*zeta1 + s2*zeta2))
 end
 
+function solve_real_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
+    # copied from PolynomialRoots.jl, adapted to be AD friendly
+    # Cubic equation solver for complex polynomial (degree=3)
+    # http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
+    # poly = (a,b,c,d) that represents a + bx + cx3 + dx4
+
+    _1 = one(T)
+    third = _1/3
+    a1  = one(T) / poly[4]
+    E1  = -poly[3]*a1
+    E2  = poly[2]*a1
+    E3  = -poly[1]*a1
+    s0  = E1
+    E12 = E1*E1
+    Ap = (27*E3,-9*E2,zero(T),T(2))
+    A = evalpoly(E1,Ap)
+
+    if abs(A) < 10*eps(typeof(A))
+        A = det_22(2*E1,E12,9*E1,E2) + 27*E3
+    end
+    #A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
+    B = det_22(E1,E1,3,E2)
+    #B   = E12 - 3*E2                 # = s1 s2
+    # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
+    Δ2p = (4*E2*E2*E2 + 27*E3*E3,-18*E2*E3,-E2*E2,4*E3)
+    Δ2 = 27*evalpoly(E1,Δ2p)
+    if Δ2 < 10*eps(typeof(A))
+        E1p = (one(E1),E1,E1*E1,E1*E1*E1)
+        Δ2 = 27*dot(E1p,Δ2p)
+    end
+
+    if Δ2 > 0 #1 root only
+        Δr = sqrt(Δ2)
+        if A >= 0
+            s10 = 0.5 * (A + Δr)
+        else
+            s10 = 0.5 * (A - Δr)
+        end
+        s1 = cbrt(s10)
+        if iszero(primalval(s1))
+            s2 = s1
+        else
+            s2 = B / s1
+        end
+        z1 = third*(s0 + s1 + s2)
+        return z1,z1,z1
+    end
+
+    #2 or 3 roots
+    Δ = Base.sqrt(complex(Δ2))
+    #Δ = (A*A - 4*B*B*B)^0.5
+    if real(A*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
+        s10 = 0.5 * (A + Δ)
+    else
+        s10 = 0.5 * (A - Δ)
+    end
+    r = abs(s10)
+    θ = angle(s10)
+    s1 = cbrt(r) * cis(θ * third)
+    if s1 == 0
+        s2 = s1
+    else
+        s2 = B / s1
+    end
+    zeta1 = complex(-0.5, sqrt(T(3.0))*0.5)
+    zeta2 = conj(zeta1)
+    k1 = s1*zeta2 + s2*zeta1
+    k2 = s1*zeta1 + s2*zeta2
+    c1 = real(third*(s0 + s1 + s2))
+    c2 = real(third*(s0 + s1*zeta2 + s2*zeta1))
+    c3 = real(third*(s0 + s1*zeta1 + s2*zeta2))
+    Zmin = min(c1,c2,c3)
+    Zmax = max(c1,c2,c3)
+    Zmid = max(min(c1,c2),min(max(c1,c2),c3))
+    #refinement (https://sci-hub.st/10.1021/ie2023004)
+    #=
+    @show Zmin,Zmid,Zmax
+    a  = poly[1]*a1
+    b  = poly[2]*a1
+    c  = poly[3]*a1
+    
+    for i in 1:0
+        Zmin_old,Zmid_old,Zmax_old = Zmin,Zmid,Zmax
+        Zmax = 0.5*Zmax -0.5*a/(Zmin*Zmid)
+        Zmid = 0.5*Zmid + 0.5*(b - Zmax*Zmin)/(Zmax + Zmin)
+        Zmin = 0.5*Zmin - 0.5*c - 0.5*(Zmax + Zmid)
+        if abs(1 - Zmin_old/Zmin) < 8eps(typeof(Zmin))
+            break
+        end  
+    end =#
+    return Zmin,Zmid,Zmax
+
+end
+
 
 """
     roots3(pol)
@@ -95,8 +189,16 @@ returns `(n, zl, zg)` where `n` is the number of real roots and:
     to `(x+1)^3`, this will return `n == 2` and `zl == zg` equal to the root.
 """
 function real_roots3(pol::NTuple{4,T}) where {T<:Real}
-    z1, z2, z3 = sort(roots3(pol); by=real)
-    x1, x2, x3 = real(z1), real(z2), real(z3)
+    x1, x2, x3 = solve_real_cubic_eq(pol)
+    if x1 == x2 == x3
+        return 1,x1,x2,x3
+    elseif x1 == x2 || x2 == x3
+        xmin,xmax = minmax(x1,x3)
+        return 2,xmin,xmax,xmax
+    elseif x1 == x3
+        xmin,xmax = minmax(x1,x2)
+        return 2,xmin,xmax,xmax
+    end
     mid12 = (x1 + x2)/2
     mid23 = (x2 + x3)/2
     between1 = evalpoly(mid12, pol)
