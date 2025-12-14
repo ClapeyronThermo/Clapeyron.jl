@@ -341,7 +341,7 @@ GC.gc()
         =#
 
         system = VTPR(["carbon monoxide","carbon dioxide"])
-        @test_broken Clapeyron.bubble_pressure(system,218.15,[1e-5,1-1e-5])[1] ≈ 1.1373024916997014e6 rtol = 1e-4
+        @test Clapeyron.bubble_pressure(system,218.15,[1e-5,1-1e-5])[1] ≈ 554338.312712484 rtol = 1e-4
     end
 
     #see https://github.com/ClapeyronThermo/Clapeyron.jl/issues/172

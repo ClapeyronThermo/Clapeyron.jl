@@ -12,7 +12,7 @@
     verbose = false)
 
 Volume-translated Peng Robinson equation of state. It uses the following models:
-- Translation Model: [`RackettTranslation`](@ref)
+- Translation Model: [`VTPRTranslation`](@ref)
 - Alpha Model: [`TwuAlpha`](@ref)
 - Mixing Rule Model: [`VTPRRule`](@ref) with [`VTPRUNIFAC`](@ref) activity
 ## References
@@ -38,7 +38,7 @@ function VTPR(components;
 
     _components = activity.groups.components #extract pure component list
 
-    translation = RackettTranslation
+    translation = VTPRTranslation
     mixing = VTPRRule
 
     return PR(_components;

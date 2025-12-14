@@ -124,6 +124,7 @@ Clapeyron.translation
 Clapeyron.NoTranslation
 Clapeyron.ConstantTranslation
 Clapeyron.RackettTranslation
+Clapeyron.VTPRTranslation
 Clapeyron.PenelouxTranslation
 Clapeyron.MTTranslation
 ```
