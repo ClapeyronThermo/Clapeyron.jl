@@ -152,7 +152,10 @@ function C.x0_sat_pure(model::SuperancCubic,T,crit = nothing)
     end
     T̃ = T*C.Rgas(model)*b/a
     T̃c = Tc*C.Rgas(model)*bc/ac
-    T̃ < 0.1*T̃c && return C.x0_sat_pure_cubic_ab(model,T)
+    if T̃ < 0.1*T̃c
+        _,vl0,vv0 = C.x0_sat_pure_near0(model,T)
+        return vl0,vv0
+    end
     if model isa C.vdW
         return ES.vdw_vsat(T,a,b) .- c
     elseif model isa C.RK
