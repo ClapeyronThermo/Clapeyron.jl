@@ -82,24 +82,19 @@ function saturation_pressure(model::EoSModel,T,V0::Union{Tuple,Vector})
 end
 
 function saturation_pressure_ad(model,T,result)
-    if has_dual(model) || has_dual(T)
-        p_primal,vl_primal,vv_primal = result
-
-        #=
-        update step from https://github.com/lucpaoli/SAFT_ML/blob/f22648055bdf4cd244cf427a596fc7b1c03e6383/saftvrmienn.jl#L138-L157
-        =#
-        Δg = eos(model, vv_primal, T) - eos(model,vl_primal, T) + p_primal*(vv_primal - vl_primal)
-        Δv = vv_primal - vl_primal
-        p = p_primal - Δg/Δv
-        #=
-        for volume, we use a volume update
-        =#
-        vl = volume_ad(model,vl_primal,T,SA[1.0],p)
-        vv = volume_ad(model,vv_primal,T,SA[1.0],p)
+    if has_dual(model) || has_dual(T) # do check here to avoid recomputation of pressure if no AD
+        tups = (model,T)
+        x = SVector(result[2],result[3])
+        f(x,tups) = begin
+            model,T = tups
+            vl,vv = x
+            return μp_equality1_p(model,model,vl,vv,T,1.0,1.0)
+        end
+        vl,vv = __gradients_for_root_finders(x,tups,f)
+        p = pressure(model,vl,T)
         return p,vl,vv
-    else
-        return result
     end
+    return result
 end
 
 function derivx(f,i)
@@ -175,27 +170,16 @@ function saturation_temperature(model::EoSModel, p, T0::Number)
 end
 
 function saturation_temperature_ad(model,p,result)
-    if has_dual(model) || has_dual(p)
-        T_primal,vl_primal,vv_primal = result
-        vl = volume_ad(model,vl_primal,T_primal,SA[1.0],p)
-
-        #manual volume_ad for vapour volume, we reuse p_primal for the calculation of the T step.
-        p_primal,∂p∂V = p∂p∂V(model,vv_primal,T_primal,SA[1.0])
-        vv = vv_primal - (p_primal - p)/∂p∂V
-
-        #for T, we use a dlnpdTinv step, a dpdT step is fine too
-        dpdT = dpdT_saturation(model,vv_primal,vl_primal,T_primal)
-        dTinvdlnp = -p_primal/(dpdT*T_primal*T_primal)
-        Δlnp = log(p/p_primal)
-        Tinv0 = 1/T_primal
-        Tinv = Tinv0 + dTinvdlnp*Δlnp
-        dT = T_primal - 1/Tinv
-        T = 1/Tinv
-        T = T_primal - (p_primal - p)/dpdT
-        return T,vl,vv
-    else
-        return result
+    tups = (model,p)
+    T_primal,vl_primal,vv_primal = result
+    x = SVector(T_primal,vl_primal,vv_primal)
+    f(x,tups) = begin
+        model,p = tups
+        T,vl,vv = x
+        return μp_equality1_T(model,model,vl,vv,p,T,1.0,1.0)
     end
+    T,vl,vv = __gradients_for_root_finders(x,tups,f)
+    return T,vl,vv
 end
 
 include("ChemPotV.jl")

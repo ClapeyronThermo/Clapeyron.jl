@@ -42,8 +42,9 @@ warnonly = Documenter.except(),
                   "Macros" => "api/macros.md",
                   "Association" => "api/association.md",
                   "Parameter Estimation" => "api/estimation.md"],
-        "To-do list" => "to-do_list.md"]
-                  )
+        "To-do list" => "to-do_list.md",
+        "Advanced Topics" => ["Implicit differentiation of Properties"=>"implicit_differentiation.md"]
+                  ])
 
         deploydocs(;
     repo="github.com/ClapeyronThermo/Clapeyron.jl.git",
