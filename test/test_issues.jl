@@ -377,7 +377,7 @@
         @test bubP1 ≈ bubP1_test rtol = 1e-6
     end
 
-    @testset "416" begin
+    @testset "#416" begin
         #if we build a cubic and only provide critical parameters (without acentric factor), read the database
         #to build the alpha model
         model = PR(["nitrogen"]; userlocations=(;
@@ -385,5 +385,17 @@
            Pc = [1.],
            Mw = [1.]))
         @test !model.alpha.params.acentricfactor.ismissingvalues[1]
+    end
+
+    @testset "#513" begin
+        #=
+        error in x0_sat_pure_spinodal
+        incorrect bounds, causing failure in convergence.
+        =#
+        model = tcRK("R1243zf")
+        Tr = range(0.2,1.0,500)
+        Tc = first(crit_pure(model))
+        psat = first.(saturation_pressure.(model,Tr .* Tc))
+        @test count(isnan,psat[100:end]) == 0
     end
 end
