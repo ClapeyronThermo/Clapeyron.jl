@@ -470,124 +470,52 @@ is_unknown(method::FlashMethod) = is_unknown(method.equilibrium)
     throw(ArgumentError("$method does not support an input with $np phase$s as an initial point. Got the following input: \n\n $result"))
 end
 
-function tp_flash_1phase(model,p,T,z,result_primal)
-    if has_dual(model) || has_dual(p) || has_dual(T) || has_dual(z)
-        n1 = similar(z,Base.promote_eltype(model,p,T,z))
-        β = similar(n1,1)
-        v1 = similar(β)
-        ∑z = sum(z)
-        β[1] = ∑z
-        n1 .= z
-        n1 ./= ∑z
-        v1[1] = volume_ad(model,result_primal.volumes[1],T,n1,p)
-        nx = [n1]
-        result = FlashResult(nx,β,v1,FlashData(p,T))
-        if data_primal.g isa Number && !isnan(data_primal.g)
-            return FlashResult(model,p,T,nx,β,vols,sort = false)
-        end
-        return FlashResult(nx,β,vols,FlashData(p,T))
-    else
-        return result_primal
-    end
-end
-
-function tp_flash_ad(model,p,T,z,result_primal)
-    if has_dual(model) || has_dual(p) || has_dual(T) || has_dual(z)
-        data_primal = result_primal.data
-        T_primal,p_primal = data_primal.T,data_primal.p
-        v_primal = result_primal.volumes
-        np,nc = numphases(result_primal),length(model)
-
-        if np == 1
-            return tp_flash_1phase(model,p,T,z,result_primal)
-        end
-
-        comps_primal = result_primal.compositions
-        β_primal = result_primal.fractions
-        βmax,jmax = findmax(β_primal) #find biggest fraction, use that as an anchor to update the rest of compositions
-        v1_primal = v_primal[jmax]
-        w1 = comps_primal[jmax]
-        ∂ϕ1 = ∂lnϕ_cache(model, p_primal, T_primal, w1, Val{true}())
-        ∂ϕj = ∂lnϕ_cache(model, p_primal, T_primal, w1, Val{true}())
-        lnϕ1, ∂lnϕ∂n1, ∂lnϕ∂P1, ∂lnϕ∂T1, _ = ∂lnϕ∂n∂P∂T(model,p_primal,T_primal,w1,∂ϕ1,vol0 = v1_primal)
-        ∂lnϕ∂n1 .-= 1/βmax
-        for i in 1:nc
-            ∂lnϕ∂n1[i,i] += 1/(w1[i]*βmax)
-        end
-        Hcache = similar(∂lnϕ∂n1)
-        piv = zeros(Int,nc)
-        s = similar(lnϕ1)
-       
-        n1 = similar(w1,Base.promote_eltype(model,p,T,z))
-        vols = similar(n1)
-        β = similar(n1)
-        n1 .= primalval.(z)
-        nx = fill(n1,0)
-        for j in 1:np
-            wj = comps_primal[j]
-            vj_primal = v_primal[j]
-            βj = β_primal[j]
-            if j != jmax
-                nj = similar(n1)
-                nj .= wj .* βj
-                lnϕj, ∂lnϕ∂nj, ∂lnϕ∂Pj, ∂lnϕ∂Tj, _ = ∂lnϕ∂n∂P∂T(model,p_primal,T_primal,wj,∂ϕj,vol0 = vj_primal)
-                ∂lnϕ∂nj .-= 1/βj
-                for i in 1:nc
-                    ∂lnϕ∂nj[i,i] += 1/(wj[i]*βj)
-                end
-
-                H = ∂lnϕ∂nj
-                H .+= ∂lnϕ∂n1
-                Hcache .= H
-                
-                #∂ϕxj = eye./nj .- 1/βj.+ ∂lnϕ∂nxj/βj
-                #∂ϕx1 = eye./n1 .- 1/β1 .+ ∂lnϕ∂ny/β1
-                #H .= ∂ϕxj .+ ∂ϕx1
-
-                if has_dual(p)
-                    Hcache .= H
-                    lu = Solvers.unsafe_LU!(Hcache,piv)
-                    s .= ∂lnϕ∂Pj .- ∂lnϕ∂P1
-                    ldiv!(lu,s)
-                    nj .-= (p - p_primal) .* s
-                end
-
-                if has_dual(T)
-                    Hcache .= H
-                    lu = Solvers.unsafe_LU!(Hcache,piv)
-                    s .= ∂lnϕ∂Tj .- ∂lnϕ∂T1
-                    ldiv!(lu,s)
-                    dwjdT = H\(∂lnϕ∂Tj .- ∂lnϕ∂T1)
-                    nj .-= (T - T_primal) .* s
-                end
-                n1 .-= nj
-                nj ./= sum(nj)
-                vols[j] = volume_ad(model,vj_primal,T,nj,p)
-                push!(nx,nj)
-            else
-                push!(nx,n1)
-            end
-        end
-        n1./= sum(n1)
-
-        vols[jmax] = volume_ad(model,v_primal[jmax],T,n1,p)
-        for j in 1:np
-            wj = comps_primal[j]
-            vj_primal = v_primal[j]
-        end
-
-        result = FlashResult(nx,β,vols,FlashData(p,T))
-        if data_primal.g isa Number && !isnan(data_primal.g)
-            return FlashResult(model,p,T,nx,β,vols,sort = false)
-        end
-        return FlashResult(nx,β,vols,FlashData(p,T))
-        
-    else
-        return result_primal
-    end
-end
-
 include("flash/general_flash.jl")
+
+function tp_flash_ad(result,tup,tup_primal)
+    if any(has_dual,tup)
+        np = numphases(result)
+        if isone(np)
+            return tp_flash_ad1(result,tup,tup_primal)
+        end
+
+        function f(input,tups)
+            model0,p0,T0,zbulk = tups
+            output = similar(input)
+            spec = FlashSpecifications(p = p0,T = T0) #TODO, allow generalizing this to multiple specs
+            xy_flash_neq(output,model0,zbulk,np,input,spec,nothing)
+            return output
+        end
+        model,p,T,z = tups
+        nc = length(model)
+        x = 1
+        ∂spec = FlashSpecifications(p = p,T = T)
+        ∂x = __gradients_for_root_finders(x,tup,tup_primal,f)
+        ∂comps,∂β,∂volumes,_ = xy_input_to_result(∂spec,∂x,np,nc,z)
+        if result.g isa Number && !isnan(result.g)
+            return FlashResult(model,p,T,∂comps,∂β,∂volumes,sort = false)
+        end
+        ∂result = FlashResult(∂comps,∂β,∂volumes,FlashData(p,T))
+        return ∂result
+    end
+    return result
+end
+
+function tp_flash_ad1(result,tup,tup_primal)
+    λv = result.volumes[1]
+    ∂v = volume_ad(λv,tup,tup_primal)
+    model,p,T,z = tup
+    ∂β1 = sum(z)
+    ∂comp1 = z ./ ∂β1
+    ∂β = [∂β]
+    ∂comps = [∂comp1]
+    ∂volumes = [∂v]
+    if result.g isa Number && !isnan(result.g)
+        return FlashResult(model,p,T,∂comps,∂β,∂volumes,sort = false)
+    end
+    ∂result = FlashResult(∂comps,∂β,∂volumes,FlashData(p,T))
+end
+
 include("flash/PT.jl")
 include("flash/PH.jl")
 include("flash/PS.jl")

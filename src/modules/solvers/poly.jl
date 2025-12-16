@@ -5,8 +5,8 @@ Calculates `a*b - c*d` with less rounding error than doing it naively.
 """
 function det_22(a,b,c,d)
     t = c*d
-    e = muladd(c,d,-t) #cd - cd
-    f = muladd(a,b,-t) #ab - cd
+    e = fma(c,d,-t) #cd - cd
+    f = fma(a,b,-t) #ab - cd
     return f-e  #ab - cd + cd - cd
 end
 

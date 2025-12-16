@@ -289,10 +289,11 @@ function bubbledew_pressure_ad(result,tup,λtup,_bubble)
     end
     λx = vcat(result)
     ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
-    p = _bubble ? pressure(model,vl,T,z) : pressure(model,vv,T,z)
-    vl,vv = ∂x[1:2]
-    w = ∂x[3:end]
-    return result
+   
+    ∂vl,∂vv = ∂x[1],∂x[2]
+    ∂p = _bubble ? pressure(model,∂vl,T,z) : pressure(model,∂vv,T,z)
+    ∂w = ∂x[3:end]
+    return ∂p,∂vl,∂vv,∂w
 end
 
 bubble_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,true)
@@ -320,9 +321,9 @@ function bubbledew_temperature_ad(result,tup,λtup,_bubble)
     end
     λx = vcat(result)
     ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
-    T,vl,vv = ∂x[1:3]
-    w = ∂x[4:end]
-    return T,vl,vv,w
+    ∂T,∂vl,∂vv = ∂x[1:3]
+    ∂w = ∂x[4:end]
+    return ∂T,∂vl,∂vv,∂w
 end
 
 bubble_temperature_ad(model,p,z,result) = bubbledew_temperature_ad(model,p,z,result,true)
