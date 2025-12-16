@@ -65,13 +65,14 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
         T_c *= NaN
     end
     crit = (T_c, p_c, V_c)
-    return crit_pure_ad(model,crit,z)
+    tup = (model,z)
+    λtup = (primalmodel,zp)
+    return crit_pure_ad(crit,tup,λtup)
 end
 
-function crit_pure_ad(model,crit,z)
-    if has_dual(model) || has_dual(z) # do check here to avoid recomputation of pressure if no AD
-        tups = (model,z)
-        x = SVector(crit[1],crit[3])
+function crit_pure_ad(crit,tup,λtup)
+    if has_dual(tup) # do check here to avoid recomputation of pressure if no AD
+        λx = SVector(crit[1],crit[3])
         f(x,tups) = begin
             model,z = tups
             Tc,Vc = x

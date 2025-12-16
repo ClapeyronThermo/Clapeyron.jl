@@ -213,53 +213,62 @@ end
 _primalval(model::EoSModel,::T) where T = model
 
 """
-    `__gradients_for_root_finders(x::AbstractVector{T},tups::Tuple,f::Function) where T<:Real`
-Computes the gradients of `x` with respect to the relevant parameters in `tups` under the condition that
+    __gradients_for_root_finders(x::AbstractVector{T},tups::Tuple,tups_primal::Tuple,f::Function) where T<:Real
+
+    Computes the gradients of `x` with respect to the relevant parameters in `tups` under the condition that
 `x` is implicitly defined through the root finding problem `f(x,tups) = 0`. The function uses the implicit 
 function theorem to compute the gradients efficiently through the reconstruction of Duals.
 
 Note: Currently only supports first order AD. Trying to differentiate nested Duals or Duals with different tags will throw an error.
 """
-function __gradients_for_root_finders(x::AbstractVector{T},tups::Tuple,f::Function) where T<:Real
+function __gradients_for_root_finders(x::AbstractVector{T},tups::T1,tups_primal::T2,f::F) where {T<:Real,T1,T2,F}
     # check and return primal of no duals
-    !any(map(has_dual,tups)) && return x
+    !any(has_dual,tups) && return x
     
     # Checks
     implicit_ad_check(tups)
 
     # compute partials
-    tups_primal = Clapeyron.primalval.(tups)
-    ∂f_∂x = DifferentiationInterface.jacobian(f,DifferentiationInterface.AutoForwardDiff(),x,DifferentiationInterface.Constant(tups_primal))
-    @assert size(∂f_∂x,1) == size(∂f_∂x,2) "Number of equations must equal number of variables for implicit function theorem to hold." 
     ∂f_∂θ_dual = f(x,tups)
-    # get dual
-    T_dual = eltype(∂f_∂θ_dual)
-    n_params = ForwardDiff.npartials(T_dual)
-    primal_type = ForwardDiff.valtype(T_dual)
-    T_partials = ForwardDiff.Partials{n_params,primal_type}
-    n_equations = length(x)
-    # preallocate to be efficient?
-    ∂f_∂θ = Matrix{primal_type}(undef, n_equations, n_params)
-    for i in 1:n_equations
-        ∂f_∂θ[i,:] .= ∂f_∂θ_dual[i].partials
+
+    #guard against NaN in input or output
+    if any(isnan,x) || any(isnan,∂f_∂θ_dual)
+        _0 = zero(eltype(∂f_∂θ_dual))
+        nan = _0/_0
+        return nan .* x
     end
+
+    return __implicit_solver(f,x,tups_primal,∂f_∂θ_dual)
+end
+
+function __gradients_for_root_finders(x::T,tups::T1,primal_tups::T2,f::F) where {T<:Real,T1,T2,F}
+    x_vec = SVector(x)
+    f_vec(x_vec,tupsx) = SVector(f(x_vec[1],tupsx))
+    x_dual_vec = __gradients_for_root_finders(x_vec,tups,primal_tups,f_vec)
+    return only(x_dual_vec)
+end
+
+__gradients_for_root_finders(::Union{AbstractArray{T},T},_,_,_) where T<:ForwardDiff.Dual = error("Input `x` cannot be a dual")
+
+function __partial_to_svec(x::ForwardDiff.Dual{T,V,N}) where {T,V,N}
+    return SVector{N,V}(ForwardDiff.partials(x))
+end
+
+function __implicit_solver(f::F,x::AbstractVector{V1},tups_primal,∂f_∂θ_dual::AbstractVector{ForwardDiff.Dual{TAG,V2,Npartials}}) where {F,V1,TAG,V2,Npartials}
+    
+    ∂f_∂x = DifferentiationInterface.jacobian(f,DifferentiationInterface.AutoForwardDiff(),x,DifferentiationInterface.Constant(tups_primal))
+    LinearAlgebra.checksquare(∂f_∂x)
+    # get dual
+    ∂f_∂θi = map(__partial_to_svec,∂f_∂θ_dual)
+    ∂f_∂θ = transpose(reduce(hcat,∂f_∂θi))
+    
     # gradient through implicit function theorem
     dx_dθ = - ∂f_∂x \ ∂f_∂θ
-    x_dual = Vector{T_dual}(undef, n_equations) # preallocate
-    for i in 1:n_equations
-        x_dual[i] = T_dual(x[i],T_partials(Tuple(@view dx_dθ[i,:])))
-    end
-    return x_dual
-end
 
-function __gradients_for_root_finders(x::T,tups::Tuple,f::Function) where T<:Real
-    x_vec = [x]
-    f_vec(x_vec,tups) = [f(x_vec[1],tups)]
-    x_dual_vec = __gradients_for_root_finders(x_vec,tups,f_vec)
-    return x_dual_vec[1]
+    to_dual(x1,x2) = ForwardDiff.Dual{TAG,V2,Npartials}(x1,ForwardDiff.Partials(NTuple{Npartials,V2}(x2)))
+    x_dual2 = map(to_dual,x,eachrow(dx_dθ))
+    return x_dual2
 end
-
-__gradients_for_root_finders(::Union{AbstractArray{T},T},::Tuple,::Function) where T<:ForwardDiff.Dual = error("Input `x` cannot be a dual")
 
 function nested_ad_check(a::A) where A
     AT = eltype(a)

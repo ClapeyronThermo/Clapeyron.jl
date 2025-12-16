@@ -268,43 +268,37 @@ function near_candidate_fractions(n,k = 0.5*minimum(n))
     return x
 end
 
-function bubbledew_pressure_ad(model,T,z,result,_bubble)
-    if has_dual(model) || has_dual(T) || has_dual(z) # check here to avoid recomputation of pressure if no AD
-        tups = (model,T,z)
-        x = vcat(result[2:end]...)
-        f(x,tups) = begin
-            model,T,z = tups
-            vl = x[1]
-            vv = x[2]
-            w = @view x[3:end]
-            if _bubble
-                _x,_y = z,w
-            else
-                _x,_y = w,z
-            end
-            lnfl,pl = lnf(model,vl,T,_x)
-            lnfv,pv = lnf(model,vv,T,_y)
-            
-            F1 = pl - pv
-            F2 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
-            F3 = lnfl - lnfv
-            vcat(F1,F2,F3) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
+function bubbledew_pressure_ad(result,tup,λtup,_bubble)
+    f(x,tups) = begin
+        model,T,z = tups
+        vl = x[1]
+        vv = x[2]
+        w = @view x[3:end]
+        if _bubble
+            _x,_y = z,w
+        else
+            _x,_y = w,z
         end
-        x_dual = __gradients_for_root_finders(x,tups,f)
-        vl,vv = x_dual[1:2]
-        w = x_dual[3:end]
-        p = _bubble ? pressure(model,vl,T,z) : pressure(model,vv,T,z) # don't use dual w for efficiency
-        return p,vl,vv,w
+        lnfl,pl = lnf(model,vl,T,_x)
+        lnfv,pv = lnf(model,vv,T,_y)
+        
+        F1 = pl - pv
+        F2 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
+        F3 = lnfl - lnfv
+        vcat(F1,F2,F3) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
     end
+    λx = vcat(result)
+    ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
+    p = _bubble ? pressure(model,vl,T,z) : pressure(model,vv,T,z)
+    vl,vv = ∂x[1:2]
+    w = ∂x[3:end]
     return result
 end
 
-bubble_pressure_ad(model,T,z,result) = bubbledew_pressure_ad(model,T,z,result,true)
-dew_pressure_ad(model,T,z,result) = bubbledew_pressure_ad(model,T,z,result,false)
+bubble_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,true)
+dew_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,true)
 
-function bubbledew_temperature_ad(model,p,z,result,_bubble)
-    tups = (model,p,z)
-    x = vcat(result...)
+function bubbledew_temperature_ad(result,tup,λtup,_bubble)
     f(x,tups) = begin
         model,p,z = tups
         T = x[1]
@@ -324,9 +318,10 @@ function bubbledew_temperature_ad(model,p,z,result,_bubble)
         F4 = lnfl - lnfv
         vcat(F1,F2,F3,F4) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
     end
-    x_dual = __gradients_for_root_finders(x,tups,f)
-    T,vl,vv = x_dual[1:3]
-    w = x_dual[4:end]
+    λx = vcat(result)
+    ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
+    T,vl,vv = ∂x[1:3]
+    w = ∂x[4:end]
     return T,vl,vv,w
 end
 

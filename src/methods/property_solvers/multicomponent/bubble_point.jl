@@ -393,13 +393,22 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
         return (P_sat,v_l,v_v,x)
     end
     x_r = x[idx_r]
+
+    method_r = index_reduction(method,idx_r)
     if has_a_res(model)
-        bubble_pressure_result_primal = bubble_pressure_impl(primalval(model_r),primalval(T),primalval(x_r),index_reduction(method,idx_r))
-        bubble_pressure_result = bubble_pressure_ad(model_r,T,x_r,bubble_pressure_result_primal)
+        λmodel,λT,λx = primalval(model_r),primalval(T),primalval(x_r)
+        λresult = bubble_pressure_impl(λmodel,λT,λx,method_r)
+        tup = (model_r,T,x_r)
+        if has_dual(tup)
+            λtup = (λmodel,λT,λx)
+            result = bubble_pressure_ad(λresult,tup,λtup)
+        else
+            result = λresult
+        end
     else
-        bubble_pressure_result = bubble_pressure_impl(model_r,T,x_r,index_reduction(method,idx_r))
+        result = bubble_pressure_impl(model_r,T,x_r,method_r)
     end
-    (P_sat, v_l, v_v, y_r) = bubble_pressure_result
+    (P_sat, v_l, v_v, y_r) = result
     y = index_expansion(y_r,idx_r)
     converged = bubbledew_check(model,P_sat,T,v_v,v_l,y,x)
     if converged
@@ -563,15 +572,22 @@ function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
     end
     x_r = x[idx_r]
 
-
+    method_r = index_reduction(method,idx_r)
     if has_a_res(model)
-        bubble_temperature_result_primal =  bubble_temperature_impl(primalval(model_r),primalval(p),primalval(x_r),index_reduction(method,idx_r))
-        bubble_temperature_result =  bubble_temperature_ad(model_r,p,x_r,bubble_temperature_result_primal)
+        λmodel,λp,λx = primalval(model_r),primalval(p),primalval(x_r)
+        λresult = bubble_temperature_impl(λmodel,λp,λx,method_r)
+        tup = (model_r,p,x_r)
+        if has_dual(tup)
+            λtup = (λmodel,λp,λx)
+            result = bubble_temperature_ad(λresult,tup,λtup)
+        else
+            result = λresult
+        end
     else
-        bubble_temperature_result =  bubble_temperature_impl(model_r,p,x_r,index_reduction(method,idx_r))
+        result =  bubble_temperature_impl(model_r,p,x_r,method_r)
     end
 
-    (T_sat, v_l, v_v, y_r) = bubble_temperature_result
+    (T_sat, v_l, v_v, y_r) = result
     y = index_expansion(y_r,idx_r)
     converged = bubbledew_check(model,p,T_sat,v_v,v_l,y,x)
     if converged
