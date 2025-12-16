@@ -149,7 +149,7 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
         result = dew_pressure_impl(model_r,T,y_r,method_r)
     end
 
-    (P_sat, v_l, v_v, x_r) = dew_pressure_result
+    (P_sat, v_l, v_v, x_r) = result
     x = index_expansion(x_r,idx_r)
     converged = bubbledew_check(model,P_sat,T,v_l,v_v,x,y)
     if converged
@@ -332,7 +332,7 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
         result = dew_temperature_impl(model_r,p,y_r,method_r)
     end
 
-    (T_sat, v_l, v_v, x_r) = dew_temperature_result
+    (T_sat, v_l, v_v, x_r) = result
     x = index_expansion(x_r,idx_r)
     converged = bubbledew_check(model,p,T_sat,v_l,v_v,x,y)
     if converged
