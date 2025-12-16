@@ -215,16 +215,16 @@ _primalval(model::EoSModel,::T) where T = model
 """
     __gradients_for_root_finders(x::AbstractVector{T},tups::Tuple,tups_primal::Tuple,f::Function) where T<:Real
 
-    Computes the gradients of `x` with respect to the relevant parameters in `tups` under the condition that
-`x` is implicitly defined through the root finding problem `f(x,tups) = 0`. The function uses the implicit 
-function theorem to compute the gradients efficiently through the reconstruction of Duals.
+Computes the gradients of `x` with respect to the relevant parameters in `tups` under the condition that `x` is implicitly defined through the root finding problem `f(x,tups) = 0`. 
+The function uses the implicit function theorem to compute the gradients efficiently through the reconstruction of Duals.
 
-Note: Currently only supports first order AD. Trying to differentiate nested Duals or Duals with different tags will throw an error.
+!!! note 
+    Currently only supports first order AD. Trying to differentiate nested Duals or Duals with different tags will throw an error.
 """
 function __gradients_for_root_finders(x::AbstractVector{T},tups::T1,tups_primal::T2,f::F) where {T<:Real,T1,T2,F}
     # check and return primal of no duals
     !any(has_dual,tups) && return x
-    
+
     # Checks
     implicit_ad_check(tups)
 
@@ -238,7 +238,7 @@ function __gradients_for_root_finders(x::AbstractVector{T},tups::T1,tups_primal:
         return nan .* x
     end
 
-    return __implicit_solver(f,x,tups_primal,∂f_∂θ_dual)
+    return __gradients_for_root_finders_solver(f,x,tups_primal,∂f_∂θ_dual)
 end
 
 function __gradients_for_root_finders(x::T,tups::T1,primal_tups::T2,f::F) where {T<:Real,T1,T2,F}
@@ -254,14 +254,14 @@ function __partial_to_svec(x::ForwardDiff.Dual{T,V,N}) where {T,V,N}
     return SVector{N,V}(ForwardDiff.partials(x))
 end
 
-function __implicit_solver(f::F,x::AbstractVector{V1},tups_primal,∂f_∂θ_dual::AbstractVector{ForwardDiff.Dual{TAG,V2,Npartials}}) where {F,V1,TAG,V2,Npartials}
-    
+function __gradients_for_root_finders_solver(f::F,x::AbstractVector{V1},tups_primal,∂f_∂θ_dual::AbstractVector{ForwardDiff.Dual{TAG,V2,Npartials}}) where {F,V1,TAG,V2,Npartials}
+
     ∂f_∂x = DifferentiationInterface.jacobian(f,DifferentiationInterface.AutoForwardDiff(),x,DifferentiationInterface.Constant(tups_primal))
     LinearAlgebra.checksquare(∂f_∂x)
     # get dual
     ∂f_∂θi = map(__partial_to_svec,∂f_∂θ_dual)
     ∂f_∂θ = transpose(reduce(hcat,∂f_∂θi))
-    
+
     # gradient through implicit function theorem
     dx_dθ = - ∂f_∂x \ ∂f_∂θ
 
