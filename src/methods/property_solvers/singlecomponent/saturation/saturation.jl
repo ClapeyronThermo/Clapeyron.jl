@@ -84,17 +84,17 @@ end
 
 function saturation_pressure_ad(result,tup,tup_primal)
     if any(has_dual,tup) # do check here to avoid recomputation of pressure if no AD
-        f(x,tups) = begin
+        ff(x,tups) = begin
             model,T = tups
             vl,vv = x
             return μp_equality1_p(model,model,vl,vv,T,1.0,1.0)
         end
         λx = SVector(result[2],result[3])
-        ∂v = __gradients_for_root_finders(λx,tup,tup_primal,f)
-        vl,vv = ∂v
+        ∂v = __gradients_for_root_finders(λx,tup,tup_primal,ff)
+        ∂vl,∂vv = ∂v
         ∂model,∂T = tup
-        p = pressure(∂model,vl,∂T)
-        return p,vl,vv
+        p = pressure(∂model,∂vl,∂T)
+        return p,∂vl,∂vv
     end
     return result
 end
@@ -178,8 +178,8 @@ function saturation_temperature_ad(result,tup,tup_primal)
         return μp_equality1_T(model,model,vl,vv,p,T,1.0,1.0)
     end
     λx = SVector(result)
-    T,vl,vv = __gradients_for_root_finders(λx,tup,tup_primal,f)
-    return T,vl,vv
+    ∂T,∂vl,∂vv = __gradients_for_root_finders(λx,tup,tup_primal,f)
+    return ∂T,∂vl,∂vv
 end
 
 include("ChemPotV.jl")
