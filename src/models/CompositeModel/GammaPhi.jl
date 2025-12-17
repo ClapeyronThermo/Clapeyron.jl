@@ -57,8 +57,8 @@ idealmodel(model::GammaPhi) = idealmodel(model.fluid.model)
 
 function init_preferred_method(method::typeof(tp_flash),model::GammaPhi,kwargs)
     second_order = get(kwargs,:second_order,false)
-    second_order && throw(error("γ-ϕ Composite Models don't support second order solvers."))    
-    
+    second_order && throw(error("γ-ϕ Composite Models don't support second order solvers."))
+
     MichelsenTPFlash(;kwargs...)
 end
 
@@ -303,17 +303,18 @@ function K0_lle_init(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z)
     return K0_lle_init(wrapper.model.activity,p,T,z)
 end
 
-function __eval_G_DETPFlash(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,equilibrium)
+function __eval_G_DETPFlash(wrapper::PTFlashWrapper{<:GammaPhi},p,T,n,x,equilibrium)
     model = wrapper.model
     phase = is_lle(equilibrium) ? :liquid : :unknown
-    n = length(model)
     g_pures = wrapper.μ
     R = Rgas()
     RT = R*T
+    n_total = sum(n)
+    iszero(n_total) && return zero(RT),zero(RT)
     g_E_x = excess_gibbs_free_energy(model.activity,p,T,x)
-    g_ideal_x = sum(x[i]*RT*(log(x[i])) for i ∈ 1:n)
+    g_ideal_x = RT*sum(xlogx,x)
     g_pure_x = dot(x,g_pures)
-    gl = (g_E_x + g_ideal_x + g_pure_x)
+    gl = (g_E_x + g_ideal_x + g_pure_x)*n_total
     vl = volume(model.fluid.model,p,T,x,phase = :l)
     if phase == :liquid
         return gl,vl

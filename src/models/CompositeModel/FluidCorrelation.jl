@@ -269,8 +269,12 @@ function K0_lle_init(model::PTFlashWrapper{<:FluidCorrelation},p,T,z)
     throw(error("Correlation-Based Composite Model does not support LLE equilibria."))
 end
 
-function __eval_G_DETPFlash(model::PTFlashWrapper{<:FluidCorrelation},p,T,xi,equilibrium)
+function __eval_G_DETPFlash(model::PTFlashWrapper{<:FluidCorrelation},p,T,ni,equilibrium)
     throw(error("Correlation-Based Composite Model does not support DETPFlash."))
+end
+
+function __eval_G_DETPFlash(model::PTFlashWrapper{<:FluidCorrelation},p,T,ni,xi,equilibrium)
+    return __eval_G_DETPFlash(model,p,T,ni,equilibrium)
 end
 
 export FluidCorrelation

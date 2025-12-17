@@ -20,6 +20,6 @@ This is a list of currently available example notebooks for `Clapeyron.jl`:
 - [Multi-component equilibrium and critical points](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/multi-component_vle_vlle_lle_crit.ipynb): Examples of the various equilibrium and critical properties.
   Focused on the uncommon, more-complex types of diagrams.
 
-- [Differential Evolution Flash Algorithm in `Clapeyron.jl`](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/PTFlashDifferentialEvolution.ipynb): demonstration of a multi-component flash algorithm for use with `Clapeyron.jl`, which utilizes the excellent differential evolution black box optimization algorithms in `BlackBoxOptim.jl`.
+- [Differential Evolution Flash Algorithm in `Clapeyron.jl`](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/PTFlashDifferentialEvolution.ipynb): demonstration of a multi-component flash algorithm for use with `Clapeyron.jl`, which solves the flash by global optimization of the Gibbs energy.
 
-- [Parameter Estimation Framework](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/parameter_estimation.ipynb): demonstration of how the parameter estimation framework works, using `BlackBoxOptim.jl` as optimizer.
+- [Parameter Estimation Framework](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/parameter_estimation.ipynb): demonstration of how the parameter estimation framework works, using `Metaheuristics.jl` as optimizer.

@@ -5,9 +5,10 @@ included in https://github.com/ClapeyronThermo/Clapeyron.jl/pull/56
 =#
 """
     DETPFlash(; numphases = 2,
-    max_steps = 1e4*(numphases-1),
-    population_size =20,
+    max_steps = 10_000(numphases-1),
+    population_size = 50,
     time_limit = Inf,
+    seed = 1,
     verbose = false,
     logspace = false,
     equilibrium = :auto)
@@ -22,9 +23,10 @@ The `equilibrium` keyword allows to restrict the search of phases to just liquid
 """
 Base.@kwdef struct DETPFlash <: TPFlashMethod
     numphases::Int = 2
-    max_steps::Int = 1e4*(numphases-1)
+    max_steps::Int = 10_000(numphases-1)
     population_size::Int = 50
     time_limit::Float64 = Inf
+    seed::Int = 1
     verbose::Bool = false
     logspace::Bool = false
     equilibrium::Symbol = :auto
@@ -36,67 +38,68 @@ index_reduction(flash::DETPFlash,z) = flash
 function partition!(dividers,n,x,nvals)
     numphases, numspecies = size(x)
     @inbounds for j = 1:numspecies
-        nvals[1,j] = dividers[1,j]*n[j]
-        for i = 2:numphases - 1
-            Σ = sum(@view(nvals[1:(i-1), j]))
-            nvals[i,j] = dividers[i,j]*(n[j] - Σ)
+        nj = n[j]
+        remaining = nj
+        for i = 1:(numphases - 1)
+            nij = dividers[i, j]*remaining
+            nvals[i, j] = nij
+            remaining -= nij
         end
-        Σphases = sum(@view(nvals[1:(numphases-1), j]))
-        nvals[numphases, j] = n[j] - Σphases
+        nvals[numphases, j] = remaining
     end
-#Calculate mole fractions xij
-for i = 1:numphases
-    ni = @view(nvals[i, :])
-    invn = 1/sum(ni)
-    xi = @view(x[i, :])
-    xi  .= ni
-    xi .*= invn
-end
+    #Calculate mole fractions xij
+    @inbounds for i = 1:numphases
+        s = zero(eltype(nvals))
+        @simd for j = 1:numspecies
+            s += nvals[i, j]
+        end
+        if iszero(s)
+            fill!(@view(x[i, :]), zero(eltype(x)))
+        else
+            invs = one(s)/s
+            @simd for j = 1:numspecies
+                x[i, j] = nvals[i, j]*invs
+            end
+        end
+    end
 end
 
 function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     model = __tpflash_cache_model(model,p,T,n,method.equilibrium)
     numspecies = length(model)
-    TYPE = typeof(p+T+first(n))
+    TT = Base.promote_typeof(p, T, first(n))
     numphases = method.numphases
-    x = zeros(TYPE,numphases, numspecies)
-    nvals = zeros(TYPE,numphases, numspecies)
+    x = zeros(TT, numphases, numspecies)
+    nvals = zeros(TT, numphases, numspecies)
     logspace = method.logspace
-    volumes = zeros(TYPE,numphases)
-    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,volumes,logspace,method.equilibrium)
-    #Minimize Gibbs energy
+    volumes = zeros(TT, numphases)
 
-    #=
-    options = Metaheuristics.Options(time_limit = method.time_limit,iterations = method.max_steps,seed = UInt(373))
-    algorithm = Metaheuristics.WOA(N=method.population_size,options=options)
-    bounds = vcat(zeros(TYPE,(1,numspecies*(numphases-1))),ones(TYPE,1,numspecies*(numphases-1)))
-    result = Metaheuristics.optimize(GibbsFreeEnergy,bounds,algorithm)
-
-    dividers = reshape(Metaheuristics.minimizer(result),
-            (numphases - 1, numspecies))
-    best_f = Metaheuristics.minimum(result)
-
-    =#
-    if logspace
-        bounds = (log(4*eps(TYPE)),zero(TYPE))
+    # Minimize Gibbs energy
+    dim = numspecies*(numphases-1)
+    lb_scalar, ub_scalar = if logspace
+        (log(4eps(TT)), zero(TT))
     else
-        bounds = (zero(TYPE),one(TYPE))
+        (zero(TT), one(TT))
     end
-    result = BlackBoxOptim.bboptimize(GibbsFreeEnergy;
-        SearchRange = bounds,
-        NumDimensions = numspecies*(numphases-1),
-        MaxSteps=method.max_steps,
-        PopulationSize = method.population_size,
-        MaxTime = method.time_limit,
-        TraceMode = ifelse(method.verbose,:verbose,:silent))
+    lb = fill(Float64(lb_scalar), dim)
+    ub = fill(Float64(ub_scalar), dim)
 
-    dividers = reshape(BlackBoxOptim.best_candidate(result),
-            (numphases - 1, numspecies))
-    g = BlackBoxOptim.best_fitness(result)
+    algo = Solvers.RDEx(method.population_size, method.max_steps, lb, ub; seed = method.seed,
+        time_limit = method.time_limit)
+    while !Solvers.isdone(algo)
+        dividers_flat = Solvers.ask!(algo)
+        y = Obj_de_tp_flash(model, p, T, n, dividers_flat, numphases, x, nvals, volumes, logspace, method.equilibrium)
+        Solvers.tell!(algo, y)
+    end
+    best_u, g = Solvers.best(algo)
+    # Refresh cache for the best solution (the last evaluated point might not be the best).
+    Obj_de_tp_flash(model, p, T, n, copy(best_u), numphases, x, nvals, volumes, logspace, method.equilibrium)
+
     #Initialize arrays xij and nvalsij,
     #where i in 1..numphases, j in 1..numspecies
     #xij is mole fraction of j in phase i.
     #nvals is mole numbers of j in phase i.
+    dividers = reshape(best_u, (numphases - 1, numspecies))
     if logspace
         dividers .= exp.(dividers)
     end
@@ -104,6 +107,12 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
 
     comps = [vec(x[i,:]) for i in 1:numphases]
     βi = [sum(@view(nvals[i,:])) for i in 1:numphases]
+    for i in 1:numphases
+        if iszero(volumes[i]) && model isa PTFlashWrapper
+            #we suppose liquid volume, evaluate here
+            volumes[i] = volume(model,p,T,comps[i],phase = :l)
+        end
+    end
     return FlashResult(comps, βi, volumes, FlashData(p,T,g))
 end
 """
@@ -127,21 +136,22 @@ phases.
 vcache stores the current volumes for each phase
 """
 function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace = false,equilibrium = :auto)
-    _0 = zero(p+T+first(n))
+    # NOTE: avoid `Base.promote_typeof(p, T, first(n))` here; this function is slow
+    # `x/nvals/volumes` are allocated in `tp_flash_impl` using the promoted type already, so we can reuse the cache eltype.
+    TT = eltype(nvals)
+    _0 = zero(TT)
     numspecies = length(n)
-    TYPE  = typeof(_0)
-    bignum = TYPE(1e300)
+    bignum = TT(1e300)
     if logspace
         dividers .= exp.(dividers)
     end
-    dividers = reshape(dividers,
-        (numphases - 1, numspecies))
+    dividers = reshape(dividers, (numphases - 1, numspecies))
     #Initialize arrays xij and nvalsij,
     #where i in 1..numphases, j in 1..numspecies
     #xij is mole fraction of j in phase i.
     #nvals is mole numbers of j in phase i.
-    #x = zeros(TYPE,numphases, numspecies)
-    #nvals = zeros(TYPE,numphases, numspecies)
+    #x = zeros(TT,numphases, numspecies)
+    #nvals = zeros(TT,numphases, numspecies)
     #Calculate partition of species into phases
     partition!(dividers,n,x,nvals)
     #Calculate Overall Gibbs energy (J)
@@ -149,12 +159,13 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     #by DE Algorithm
     G = _0
     for i ∈ 1:numphases
-            xi = @view(nvals[i, :])
-            gi,vi = __eval_G_DETPFlash(model,p,T,xi,equilibrium)
-            vcache[i] = vi
-            G += gi
-            #calling with PTn calls the internal volume solver
-            #if it returns an error, is a bug in our part.
+        ni = @view(nvals[i, :])
+        xi = @view(x[i, :])
+        gi,vi = __eval_G_DETPFlash(model,p,T,ni,xi,equilibrium)
+        vcache[i] = vi
+        G += gi
+        #calling with PTn calls the internal volume solver
+        #if it returns an error, is a bug in our part.
     end
     if logspace
         dividers .= log.(dividers)
@@ -164,12 +175,14 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
 end
 
 #indirection to allow overloading this evaluation in activity models
-function __eval_G_DETPFlash(model::EoSModel,p,T,xi,equilibrium)
+function __eval_G_DETPFlash(model::EoSModel,p,T,ni,equilibrium)
     phase = is_lle(equilibrium) ? :liquid : :unknown
-    vi = volume(model,p,T,xi;phase = phase)
-    g = VT_gibbs_free_energy(model, vi, T, xi)
+    vi = volume(model,p,T,ni;phase = phase)
+    g = VT_gibbs_free_energy(model, vi, T, ni)
     return g,vi
 end
+
+__eval_G_DETPFlash(model::EoSModel,p,T,ni,xi,equilibrium) = __eval_G_DETPFlash(model,p,T,ni,equilibrium)
 
 numphases(method::DETPFlash) = method.numphases
 
