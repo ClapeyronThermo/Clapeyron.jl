@@ -38,6 +38,28 @@ Base.show(io::IO,options::FlashData) = show_as_namedtuple(io,options)
 Solvers.primalval(data::FlashData) = FlashData(primalval(data.p),primalval(data.T),primalval(data.g))
 Solvers.primalval(result::FlashResult) = FlashResult(primalval.(result.compositions),primalval(result.fractions),primalval(result.volumes),primalval(result.data))
 
+function Solvers.recursive_fd_extract_derivative(X::XX,result::FlashResult) where XX
+    comps = Solvers.recursive_fd_extract_derivative.(X,result.compositions)
+    β = Solvers.recursive_fd_extract_derivative(X,result.fractions)
+    vols = Solvers.recursive_fd_extract_derivative(X,result.volumes)
+    T = Solvers.recursive_fd_extract_derivative(X,result.data.T)
+    p = Solvers.recursive_fd_extract_derivative(X,result.data.p)
+    g = Solvers.recursive_fd_extract_derivative(X,result.data.g)
+    data = FlashData(p,T,g)
+    return FlashResult(comps,β,vols,data)
+end
+
+function Solvers.recursive_fd_value(result::FlashResult)
+    comps = Solvers.recursive_fd_value.(result.compositions)
+    β = Solvers.recursive_fd_value(result.fractions)
+    vols = Solvers.recursive_fd_value(result.volumes)
+    T = Solvers.recursive_fd_value(result.data.T)
+    p = Solvers.recursive_fd_value(result.data.p)
+    g = Solvers.recursive_fd_value(result.data.g)
+    data = FlashData(p,T,g)
+    return FlashResult(comps,β,vols,data)
+end
+
 function FlashData(p::R1,T::R2,g::R3) where{R1,R2,R3}
     if g === nothing
         FlashData(promote(p,T)...)
@@ -302,7 +324,7 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
             if iszero(i)
                 invalid_property_multiphase_error($prop,numphases(state),p,T)
             end
-            
+
             x,v = state.compositions[i],state.volumes[i]
             return VT0.$prop(model,v,T,x)
         end
@@ -472,48 +494,102 @@ end
 
 include("flash/general_flash.jl")
 
-function tp_flash_ad(result,tup,tup_primal)
+function xy_flash_ad(result,tup,tup_primal,spec1,spec2)
     if any(has_dual,tup)
         np = numphases(result)
-        if isone(np)
-            return tp_flash_ad1(result,tup,tup_primal)
+        if isone(np) || isone(np - count(iszero,result.fractions))
+            return xy_flash_ad1(result,tup,tup_primal,spec1,spec2)
         end
 
         function f(input,tups)
-            model0,p0,T0,zbulk = tups
-            output = similar(input)
-            spec = FlashSpecifications(p = p0,T = T0) #TODO, allow generalizing this to multiple specs
+            model0,_val1,_val2,zbulk = tups
+            TT = Base.promote_eltype(model0,_val1,_val2,zbulk,input)   
+            output = similar(input,TT)
+            spec = FlashSpecifications(spec1,_val1,spec2,_val2)
             xy_flash_neq(output,model0,zbulk,np,input,spec,nothing)
             return output
         end
-        model,p,T,z = tups
+        model,val1,val2,z = tup
         nc = length(model)
-        x = 1
-        ∂spec = FlashSpecifications(p = p,T = T)
-        ∂x = __gradients_for_root_finders(x,tup,tup_primal,f)
-        ∂comps,∂β,∂volumes,_ = xy_input_to_result(∂spec,∂x,np,nc,z)
-        if result.g isa Number && !isnan(result.g)
-            return FlashResult(model,p,T,∂comps,∂β,∂volumes,sort = false)
+        λx = vcat(reduce(vcat,result.compositions),result.volumes,result.fractions,result.data.T)
+        ∂spec = FlashSpecifications(spec1,val1,spec2,val2)
+        ∂x = __gradients_for_root_finders(λx,tup,tup_primal,f)
+        ∂comps,∂β,∂volumes,∂T = xy_input_to_result(∂spec,∂x,np,nc,z)
+
+        if spec1 == pressure
+            ∂p = oftype(∂T,val1)
+        elseif spec2 == pressure
+            ∂p = oftype(∂T,val2)
+        else
+            ∂p = pressure(model,∂volumes[end],∂T,∂comps[end])
         end
-        ∂result = FlashResult(∂comps,∂β,∂volumes,FlashData(p,T))
-        return ∂result
+
+        if result.data.g isa Number && !isnan(result.data.g)
+            return FlashResult(model,∂p,∂T,∂comps,∂β,∂volumes,sort = false)
+        end
+        return FlashResult(∂comps,∂β,∂volumes,FlashData(∂p,∂T))
     end
     return result
 end
 
-function tp_flash_ad1(result,tup,tup_primal)
-    λv = result.volumes[1]
-    ∂v = volume_ad(λv,tup,tup_primal)
-    model,p,T,z = tup
+function __xy_flash_ad1_fill1(orig::SVector{N,T},val::V) where {N,T,V}
+    v = ntuple(Returns(val),Val{N}())
+    return SVector{N,V}(v)
+end
+
+function __xy_flash_ad1_fill1(orig::AbstractVector{T},val::V) where {T,V}
+    dest = similar(orig,V)
+    fill!(dest,val)
+    return dest
+end
+
+function __xy_flash_ad1_fillβ(orig::SVector{N,T},β::B,ix) where {N,T,B}
+    v = ntuple(i -> i == ix ? β : zero(β),Val{N}())
+    return SVector{N,V}(v)
+end
+
+function __xy_flash_ad1_fillβ(orig::AbstractVector{T},β::B,ix) where {T,B}
+    dest = similar(orig,B)
+    fill!(dest,zero(β))
+    dest[ix] = β
+    return dest
+end
+
+function xy_flash_ad1(result,tup,tup_primal,spec1,spec2)
+    
+    function f(input,tups)
+        model0,_val1,_val2,zbulk = tups
+        v0,T0 = input
+        f1 = spec_to_vt(model0,v0,T0,zbulk,spec1) - _val1
+        f2 = spec_to_vt(model0,v0,T0,zbulk,spec2) - _val2
+        return SVector(f1,f2)
+    end
+    i = findfirst(!iszero,result.fractions)
+    λT = result.data.T
+    λv = result.volumes[i]
+    λx = SVector(λv,λT)
+    ∂x = __gradients_for_root_finders(λx,tup,tup_primal,f)
+    ∂v,∂T = ∂x[1],∂x[2]
+    model,val1,val2,z = tup
     ∂β1 = sum(z)
     ∂comp1 = z ./ ∂β1
-    ∂β = [∂β]
-    ∂comps = [∂comp1]
-    ∂volumes = [∂v]
-    if result.g isa Number && !isnan(result.g)
-        return FlashResult(model,p,T,∂comps,∂β,∂volumes,sort = false)
+    ∂β = __xy_flash_ad1_fillβ(result.fractions,∂β1,i)
+    ∂comps = __xy_flash_ad1_fill1(result.compositions,∂comp1)
+    ∂volumes = __xy_flash_ad1_fill1(result.volumes,∂v)
+
+    if spec1 == pressure
+        ∂p = oftype(∂T,val1)
+    elseif spec2 == pressure
+        ∂p = oftype(∂T,val2)
+    else
+        ∂p = pressure(model,∂v,∂T,∂comp1)
     end
-    ∂result = FlashResult(∂comps,∂β,∂volumes,FlashData(p,T))
+
+    if result.data.g isa Number && !isnan(result.data.g)
+        return FlashResult(model,∂p,∂T,∂comps,∂β,∂volumes,sort = false)
+    end
+    
+    return FlashResult(∂comps,∂β,∂volumes,FlashData(∂p,∂T))
 end
 
 include("flash/PT.jl")

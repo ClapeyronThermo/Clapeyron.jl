@@ -263,7 +263,13 @@ function __gradients_for_root_finders_solver(f::F,x::AbstractVector{V1},tups_pri
     ∂f_∂θ = transpose(reduce(hcat,∂f_∂θi))
 
     # gradient through implicit function theorem
-    dx_dθ = - ∂f_∂x \ ∂f_∂θ
+    dx_dθ = try
+         - ∂f_∂x \ ∂f_∂θ
+    catch
+        _0 = zero(eltype(∂f_∂θ))
+        nan = _0 / _0
+        vec(∂f_∂θ) .* nan
+    end
 
     to_dual(x1,x2) = ForwardDiff.Dual{TAG,V2,Npartials}(x1,ForwardDiff.Partials(NTuple{Npartials,V2}(x2)))
     x_dual2 = map(to_dual,x,eachrow(dx_dθ))

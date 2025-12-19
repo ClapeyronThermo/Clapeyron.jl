@@ -138,6 +138,11 @@
 
             res7 = Clapeyron.tp_flash2(mix, 505777.32016068726, 323.9598978773458, [75.83064821431964, 6.148759359393775e-10, 0, 0], MichelsenTPFlash(equilibrium=:vle))
             @test res7.fractions[1] ≈ 75.83064821493451
+
+            #test that we don't use LLE,even if equilibrium is unknown, when VLE initial point suggests vapour phase
+            mix8 = cPR(["ethane","propane"])
+            res8 = Clapeyron.tp_flash2(mix8,1e5,300.0,[0.5,0.5],MichelsenTPFlash())
+            @test iszero(res8.fractions[1])
         end
 
     end
