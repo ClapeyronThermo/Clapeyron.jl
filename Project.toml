@@ -4,6 +4,7 @@ version = "0.6.19"
 authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pjwalker@caltech.edu>", "Andrés Riedemann <andres.riedemann@gmail.com>"]
 
 [deps]
+BlackBoxOptim = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
@@ -50,6 +51,7 @@ ClapeyronSymbolicsExt = "Symbolics"
 ClapeyronUnitfulExt = "Unitful"
 
 [compat]
+BlackBoxOptim = "0.6.3"
 CSV = "0.10"
 CoolProp = "0.2"
 DiffResults = "^1.1"
