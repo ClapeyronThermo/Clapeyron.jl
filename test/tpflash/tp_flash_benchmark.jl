@@ -36,7 +36,7 @@ struct TPFlashRun
     seed::Int
     fe_max::Int
     nfes::Int
-    fe_star::Union{Int, Nothing}
+    fe_star::Union{Int,Nothing}
     g_best::Float64
     tgt::Float64
     ev_final::Float64
@@ -53,7 +53,7 @@ struct TPFlashAlgoResults
     algo::String
     created_at::DateTime
     config::TPFlashBenchmarkConfig
-    case_runs::Dict{String, Vector{TPFlashRun}}
+    case_runs::Dict{String,Vector{TPFlashRun}}
 end
 
 function _tgt_from_gstar(gstar::Float64; atol::Float64, rtol::Float64)
@@ -189,7 +189,7 @@ function compute_reference(case, cfg::TPFlashBenchmarkConfig)
         beta = _normalize_beta(beta_pad)
     end
 
-    tgt = _tgt_from_gstar(g; atol = cfg.atol_tgt, rtol = cfg.rtol_tgt)
+    tgt = _tgt_from_gstar(g; atol=cfg.atol_tgt, rtol=cfg.rtol_tgt)
     return TPFlashReference(g, tgt, x, beta)
 end
 
@@ -222,26 +222,15 @@ function run_case_with_optimizer(case, ref::TPFlashReference, seed::Int, cfg::TP
     volumes_cache = zeros(Float64, numphases)
 
     eval_count = Ref(0)
-    fe_star_ref = Ref{Union{Int, Nothing}}(nothing)
+    fe_star_ref = Ref{Union{Int,Nothing}}(nothing)
     best_so_far = Ref(Inf)
 
     function objective(u)
         eval_count[] += 1
         u_eval = case.logspace ? copy(u) : u
         y = try
-            Clapeyron.Obj_de_tp_flash(
-                model,
-                case.p,
-                case.T,
-                case.feed,
-                u_eval,
-                numphases,
-                x_cache,
-                nvals_cache,
-                volumes_cache,
-                case.logspace,
-                case.equilibrium,
-            )
+            Clapeyron.Obj_de_tp_flash(model, case.p, case.T, case.feed, u_eval, numphases,
+                x_cache, nvals_cache, volumes_cache, case.logspace, case.equilibrium)
         catch
             Inf
         end
@@ -255,18 +244,17 @@ function run_case_with_optimizer(case, ref::TPFlashReference, seed::Int, cfg::TP
         return y
     end
 
-    best_u, best_g = tpflash_optimize(
-        objective;
-        backend = cfg.backend,
-        population_size = cfg.population_size,
-        fe_max = fe_max,
-        lb = lb,
-        ub = ub,
-        seed = seed,
-        time_limit = cfg.time_limit,
-        stagnation_evals = cfg.stagnation_evals,
-        stagnation_tol = cfg.stagnation_tol,
-        verbose = false,
+    best_u, best_g = tpflash_optimize(objective;
+        backend=cfg.backend,
+        population_size=cfg.population_size,
+        fe_max=fe_max,
+        lb=lb,
+        ub=ub,
+        seed=seed,
+        time_limit=cfg.time_limit,
+        stagnation_evals=cfg.stagnation_evals,
+        stagnation_tol=cfg.stagnation_tol,
+        verbose=false,
     )
     nfes = eval_count[]
     fe_star = fe_star_ref[]
@@ -284,12 +272,12 @@ function run_case_with_optimizer(case, ref::TPFlashReference, seed::Int, cfg::TP
     end
     u_best = collect(Float64, best_u)
 
-    valid, vcode = _validity_gate(g_best, x, beta; tau_x = cfg.tau_x, tau_beta = cfg.tau_beta, beta_min = cfg.beta_min)
+    valid, vcode = _validity_gate(g_best, x, beta; tau_x=cfg.tau_x, tau_beta=cfg.tau_beta, beta_min=cfg.beta_min)
     if !valid
         return TPFlashRun(seed, fe_max, nfes, fe_star, g_best, ref.tgt, g_best - ref.tgt, false, Symbol[vcode], NaN, NaN, x, beta, u_best)
     end
 
-    _, e_x, e_beta = _phase_match_errors(x, beta, ref.x_star, ref.beta_star; beta_min = cfg.beta_min)
+    _, e_x, e_beta = _phase_match_errors(x, beta, ref.x_star, ref.beta_star; beta_min=cfg.beta_min)
 
     tags = Symbol[]
     g_best > ref.tgt && push!(tags, :TARGET_FAIL)
@@ -308,7 +296,7 @@ function _avg_rank!(ranks::Vector{Float64}, sorted_keys)
     i = 1
     while i <= n
         j = i
-        while j < n && sorted_keys[j + 1] == sorted_keys[i]
+        while j < n && sorted_keys[j+1] == sorted_keys[i]
             j += 1
         end
         avg = (i + j) / 2
@@ -324,7 +312,7 @@ end
 Compute per-run ranks (1..N, where N is best) using the protocol:
 
 - Any success outranks any failure
-- Success vs success: smaller FE* is better
+- Success vs success: smaller EV_final (or g_best) is better; FE* breaks ties
 - Failure vs failure: smaller EV_final is better
 
 Returns ranks aligned with `runs` order.
@@ -336,14 +324,17 @@ function ranks_for_case(runs::Vector{TPFlashRun})
     function key(r::TPFlashRun)
         if r.success
             fe = something(r.fe_star, r.nfes)
-            return (1, -fe, 0.0) # successes after failures; larger rank for smaller FE*
+            # Sort from worst -> best (ascending key), so the best run gets the largest rank (N).
+            # Successes always outrank failures. Within successes, prefer smaller EV_final (lower g_best),
+            # and use FE* (time-to-target) only as a tie-breaker.
+            return (1, -r.ev_final, -Float64(fe))
         else
-            return (0, -r.ev_final, 0.0) # failures first; larger rank for smaller EV
+            return (0, -r.ev_final, 0.0) # failures first; larger rank for smaller EV_final
         end
     end
 
     keys = map(i -> key(runs[i]), idx)
-    p = sortperm(1:n; by = i -> keys[i])
+    p = sortperm(1:n; by=i -> keys[i])
     idx_sorted = idx[p]
     keys_sorted = keys[p]
 
@@ -357,7 +348,7 @@ function ranks_for_case(runs::Vector{TPFlashRun})
     return ranks
 end
 
-function u_score_for_case(runs_by_algo::Dict{String, Vector{TPFlashRun}})
+function u_score_for_case(runs_by_algo::Dict{String,Vector{TPFlashRun}})
     algos = collect(keys(runs_by_algo))
     sort!(algos)
     m = length(algos)
@@ -375,14 +366,14 @@ function u_score_for_case(runs_by_algo::Dict{String, Vector{TPFlashRun}})
 
     ranks = ranks_for_case(all_runs)
 
-    sr = Dict{String, Float64}(a => 0.0 for a in algos)
+    sr = Dict{String,Float64}(a => 0.0 for a in algos)
     for (r, a) in zip(ranks, run_algo)
         sr[a] += r
     end
 
     cf = n * (n + 1) / 2
-    u = Dict{String, Float64}()
-    u_norm = Dict{String, Float64}()
+    u = Dict{String,Float64}()
+    u_norm = Dict{String,Float64}()
     denom = n * (N - n)
     for a in algos
         ua = sr[a] - cf

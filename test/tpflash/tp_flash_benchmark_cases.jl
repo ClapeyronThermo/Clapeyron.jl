@@ -21,9 +21,9 @@ struct TPFlashBenchmarkCase
     equilibrium::Symbol            # :auto, :vle, :lle
     numphases::Int                 # optimization assumes a fixed phase count
     logspace::Bool
-    g⁺::Union{Float64, Nothing}
-    x⁺::Union{Matrix{Float64}, Nothing} # (numphases, numspecies)
-    β⁺::Union{Vector{Float64}, Nothing} # length numphases, normalized
+    g⁺::Union{Float64,Nothing}
+    x⁺::Union{Matrix{Float64},Nothing} # (numphases, numspecies)
+    β⁺::Union{Vector{Float64},Nothing} # length numphases, normalized
 end
 
 function tpflash_benchmark_cases()
@@ -31,7 +31,7 @@ function tpflash_benchmark_cases()
 
     # --- VLLE (3 phases) ---
     push!(cases, TPFlashBenchmarkCase(
-        "vlle_pcsaft_water_cyclohexane_propane_298K_1bar",
+        "1. vlle_pcsaft_water_cyclohexane_propane_298K_1bar",
         "PCSAFT VLLE (water/cyclohexane/propane), T=298.15K, p=1e5 Pa, z=[0.333,0.333,0.334]",
         () -> PCSAFT(["water", "cyclohexane", "propane"]),
         1e5, 298.15, [0.333, 0.333, 0.334], :auto, 3, false,
@@ -44,7 +44,7 @@ function tpflash_benchmark_cases()
     # NOTE: near single-phase / subcooled degeneracy (from `test/test_methods_api_flash.jl` discussion).
     # Reference has x₁≈x₂≈z and β₂≈0, so g can be near-optimal even when β drifts.
     push!(cases, TPFlashBenchmarkCase(
-        "vle_pr_isobutane_nbutane_npenthane_nhexane_282p2K_1bar",
+        "2. vle_pr_isobutane_nbutane_npenthane_nhexane_282p2K_1bar",
         "PR VLE (IsoButane/n-Butane/n-Pentane/n-Hexane), T=282.2K, p=1e5 Pa, z=[0.25,0.25,0.25,0.25]",
         () -> PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"]),
         1e5, 282.2, [0.25, 0.25, 0.25, 0.25], :vle, 2, false,
@@ -55,7 +55,7 @@ function tpflash_benchmark_cases()
 
     # NOTE: near bubble/dew boundary: β₂ is small (≈8.9e-4), so the objective can be weakly sensitive to β.
     push!(cases, TPFlashBenchmarkCase(
-        "vle_pr_isobutane_nbutane_npenthane_nhexane_282p3K_1bar",
+        "3. vle_pr_isobutane_nbutane_npenthane_nhexane_282p3K_1bar",
         "PR VLE (IsoButane/n-Butane/n-Pentane/n-Hexane), T=282.3K, p=1e5 Pa, z=[0.25,0.25,0.25,0.25]",
         () -> PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"]),
         1e5, 282.3, [0.25, 0.25, 0.25, 0.25], :vle, 2, false,
@@ -67,7 +67,7 @@ function tpflash_benchmark_cases()
     # NOTE: near single-phase / saturated-vapor degeneracy (see `test/test_methods_api_flash.jl` logic).
     # Reference has x₁≈x₂≈z and β₁≈0, so g can be near-optimal even when β drifts.
     push!(cases, TPFlashBenchmarkCase(
-        "vle_pr_nbutane_npenthane_nhexane_nheptane_450K_1bar",
+        "4. vle_pr_nbutane_npenthane_nhexane_nheptane_450K_1bar",
         "PR VLE (n-butane/n-pentane/n-hexane/n-heptane), T=450K, p=1e5 Pa, z=[0.25,0.25,0.25,0.25]",
         () -> PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"]),
         1e5, 450.0, [0.25, 0.25, 0.25, 0.25], :vle, 2, false,
@@ -77,7 +77,7 @@ function tpflash_benchmark_cases()
     ))
 
     push!(cases, TPFlashBenchmarkCase(
-        "vle_pr_isobutane_nbutane_npenthane_nhexane_284p4K_1bar",
+        "5. vle_pr_isobutane_nbutane_npenthane_nhexane_284p4K_1bar",
         "PR VLE (IsoButane/n-Butane/n-Pentane/n-Hexane), T=284.4K, p=1e5 Pa, z=[0.25,0.25,0.25,0.25]",
         () -> PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"]),
         1e5, 284.4, [0.25, 0.25, 0.25, 0.25], :auto, 2, false,
@@ -88,7 +88,7 @@ function tpflash_benchmark_cases()
 
     # --- LLE (2 phases) ---
     push!(cases, TPFlashBenchmarkCase(
-        "lle_pcsaft_water_cyclohexane_propane_298K_1bar",
+        "6. lle_pcsaft_water_cyclohexane_propane_298K_1bar",
         "PCSAFT LLE (water/cyclohexane/propane), T=298.15K, p=1e5 Pa, z=[0.5,0.5,0.0]",
         () -> PCSAFT(["water", "cyclohexane", "propane"]),
         1e5, 298.15, [0.5, 0.5, 0.0], :lle, 2, false,
@@ -99,7 +99,7 @@ function tpflash_benchmark_cases()
 
     # --- Activity models (LLE + VLE) ---
     push!(cases, TPFlashBenchmarkCase(
-        "lle_unifac_water_hexane_303p15K_1atm",
+        "7. lle_unifac_water_hexane_303p15K_1atm",
         "UNIFAC LLE (water/hexane), T=303.15K, p=101325 Pa, z=[0.5,0.5]",
         () -> UNIFAC(["water", "hexane"]),
         101325.0, 303.15, [0.5, 0.5], :lle, 2, false,
@@ -113,7 +113,7 @@ function tpflash_benchmark_cases()
     # optimized by this benchmark's metaheuristics.
     #=
     push!(cases, TPFlashBenchmarkCase(
-        "vle_unifac_octane_heptane_300p15K_2500Pa",
+        "8. vle_unifac_octane_heptane_300p15K_2500Pa",
         "UNIFAC VLE (octane/heptane), T=300.15K, p=2500 Pa, z=[0.9,0.1]",
         () -> begin
             if hasfield(UNIFAC, :puremodel)
@@ -131,7 +131,7 @@ function tpflash_benchmark_cases()
     # so it cannot be benchmarked with the metaheuristic objective used here.
     #=
     push!(cases, TPFlashBenchmarkCase(
-        "vle_composite_water_ethanol_358p15K_1atm",
+        "9. vle_composite_water_ethanol_358p15K_1atm",
         "CompositeModel VLE (water/ethanol), T=358.15K, p=101325 Pa, z=[0.2,0.8]",
         () -> CompositeModel(["water", "ethanol"], gas = BasicIdeal, liquid = RackettLiquid, saturation = LeeKeslerSat),
         101325.0, 358.15, [0.2, 0.8], :auto, 2, false,
@@ -145,25 +145,25 @@ function tpflash_benchmark_cases()
     # --- Stress / regression cases from #454 (tp_flash2) ---
     function model_454()
         return PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"];
-            idealmodel = AlyLeeIdeal,
-            userlocations = (;
-                Tc = [425.12, 469.7, 507.6, 540.2],
-                Pc = [37.96e5, 33.7e5, 30.25e5, 27.4e5],
-                Mw = [58.1234, 72.15028, 86.17716, 100.20404],
-                acentricfactor = [0.200164, 0.251506, 0.301261, 0.349469],
-                k = [
-                    0.0        0.0174       -0.0056      0.0033
-                    0.0174     0.0          -0.00071726  0.0074
-                    -0.0056    -0.00071726   0.0        -0.0078
-                    0.0033     0.0074       -0.0078      0.0
+            idealmodel=AlyLeeIdeal,
+            userlocations=(;
+                Tc=[425.12, 469.7, 507.6, 540.2],
+                Pc=[37.96e5, 33.7e5, 30.25e5, 27.4e5],
+                Mw=[58.1234, 72.15028, 86.17716, 100.20404],
+                acentricfactor=[0.200164, 0.251506, 0.301261, 0.349469],
+                k=[
+                    0.0 0.0174 -0.0056 0.0033
+                    0.0174 0.0 -0.00071726 0.0074
+                    -0.0056 -0.00071726 0.0 -0.0078
+                    0.0033 0.0074 -0.0078 0.0
                 ],
-                l = zeros(4, 4),
+                l=zeros(4, 4),
             ),
         )
     end
 
     push!(cases, TPFlashBenchmarkCase(
-        "vle_454_case1_rr",
+        "10. vle_454_case1_rr",
         "#454 case 1 (RR): p=153823 Pa, T=321.967K, n=[0.007682,0.9923,1.517e-17,1.918e-31]",
         model_454,
         153_823.0, 321.9670623578307, [0.007682, 0.9923, 1.517e-17, 1.918e-31], :vle, 2, false,
@@ -174,7 +174,7 @@ function tpflash_benchmark_cases()
 
     # NOTE: near bubble/dew boundary: β₂ is small (≈1.49e-3), so the objective can be weakly sensitive to β.
     push!(cases, TPFlashBenchmarkCase(
-        "vle_454_case2_rr",
+        "11. vle_454_case2_rr",
         "#454 case 2 (RR): p=701739.83 Pa, T=430.74K, n=[2.984e-14,0.0615,3.48,2.059]",
         model_454,
         701_739.83, 430.74, [2.984e-14, 0.0615, 3.48, 2.059], :vle, 2, false,
@@ -186,7 +186,7 @@ function tpflash_benchmark_cases()
     # NOTE: near single-phase degeneracy (from the #454 block in `test/test_methods_api_flash.jl`):
     # it asserts one phase fraction is exactly zero; under fixed numphases=2 the objective can be flat in β.
     push!(cases, TPFlashBenchmarkCase(
-        "vle_454_case3_rr",
+        "12. vle_454_case3_rr",
         "#454 case 3 (RR): p=1.98555e6 Pa, T=416.663K, n=[55.4614,0.092649,7.265e-9,8.855e-14]",
         model_454,
         1.985550610608908e6, 416.6628781711617, [55.461373286206445, 0.09264900343401582, 7.265116936961075e-9, 8.855321114218425e-14], :vle, 2, false,
@@ -197,7 +197,7 @@ function tpflash_benchmark_cases()
 
     # NOTE: near single-phase degeneracy (see `test/test_methods_api_flash.jl` #454 block).
     push!(cases, TPFlashBenchmarkCase(
-        "vle_454_case4_rr",
+        "13. vle_454_case4_rr",
         "#454 case 4 (RR): p=5.35202e5 Pa, T=393.265K, n=[36.4950,0.005799,1.94e-10,2.0e-15]",
         model_454,
         5.35202e5, 393.265, [36.495044786426966, 0.005798955283355085, 1.9416516061189107e-10, 2.0015179988524742e-15], :vle, 2, false,
@@ -208,7 +208,7 @@ function tpflash_benchmark_cases()
 
     # NOTE: near single-phase degeneracy (see `test/test_methods_api_flash.jl` #454 block).
     push!(cases, TPFlashBenchmarkCase(
-        "vle_454_case5_rr",
+        "14. vle_454_case5_rr",
         "#454 case 5 (RR): p=442595.319 Pa, T=318.920K, n=[18.6979,9.209e-8,2.317e-22,1.932e-32]",
         model_454,
         442_595.31887270656, 318.91991913774194, [18.697907101753938, 9.208988950434023e-8, 2.317361697667793e-22, 1.9317538045050555e-32], :vle, 2, false,
@@ -219,7 +219,7 @@ function tpflash_benchmark_cases()
 
     # NOTE: near single-phase degeneracy (see `test/test_methods_api_flash.jl` #454 block).
     push!(cases, TPFlashBenchmarkCase(
-        "vle_454_case6_michelsen",
+        "15. vle_454_case6_michelsen",
         "#454 case 6 (Michelsen): p=2.20996e6 Pa, T=464.637K, n=[2.756e-6,55.9642,12.8601,1.0820]",
         model_454,
         2.2099578494144413e6, 464.63699168781847, [2.7561794126981888e-6, 55.964211412167195, 12.860133735598001, 1.0819681996211576], :vle, 2, false,
@@ -230,7 +230,7 @@ function tpflash_benchmark_cases()
 
     # NOTE: near single-phase degeneracy (see `test/test_methods_api_flash.jl` #454 block).
     push!(cases, TPFlashBenchmarkCase(
-        "vle_454_case7_michelsen",
+        "16. vle_454_case7_michelsen",
         "#454 case 7 (Michelsen): p=505777.32 Pa, T=323.960K, n=[75.8306,6.149e-10,0,0]",
         model_454,
         505_777.32016068726, 323.9598978773458, [75.83064821431964, 6.148759359393775e-10, 0.0, 0.0], :vle, 2, false,

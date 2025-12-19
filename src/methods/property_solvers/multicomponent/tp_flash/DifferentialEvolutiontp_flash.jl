@@ -9,6 +9,9 @@ included in https://github.com/ClapeyronThermo/Clapeyron.jl/pull/56
     population_size = 50,
     time_limit = Inf,
     seed = 1,
+    stagnation_evals = 0,
+    stagnation_tol = 0.0,
+    backend = :rdex,
     verbose = false,
     logspace = false,
     equilibrium = :auto)
@@ -27,6 +30,9 @@ Base.@kwdef struct DETPFlash <: TPFlashMethod
     population_size::Int = 50
     time_limit::Float64 = Inf
     seed::Int = 1
+    stagnation_evals::Int = 0
+    stagnation_tol::Float64 = 0.0
+    backend::Symbol = :rdex
     verbose::Bool = false
     logspace::Bool = false
     equilibrium::Symbol = :auto
@@ -65,17 +71,16 @@ function partition!(dividers,n,x,nvals)
 end
 
 function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
-    model = __tpflash_cache_model(model,p,T,n,method.equilibrium)
+    (; numphases, max_steps, population_size, time_limit, seed, stagnation_evals, stagnation_tol, backend, verbose, logspace, equilibrium) = method
+    model = __tpflash_cache_model(model,p,T,n,equilibrium)
     numspecies = length(model)
     TT = Base.promote_typeof(p, T, first(n))
-    numphases = method.numphases
     x = zeros(TT, numphases, numspecies)
     nvals = zeros(TT, numphases, numspecies)
-    logspace = method.logspace
     volumes = zeros(TT, numphases)
 
     # Minimize Gibbs energy
-    dim = numspecies*(numphases-1)
+    dim = numspecies * (numphases - 1)
     lb_scalar, ub_scalar = if logspace
         (log(4eps(TT)), zero(TT))
     else
@@ -84,16 +89,23 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     lb = fill(Float64(lb_scalar), dim)
     ub = fill(Float64(ub_scalar), dim)
 
-    algo = Solvers.RDEx(method.population_size, method.max_steps, lb, ub; seed = method.seed,
-        time_limit = method.time_limit)
+    algo = if backend === :sass
+        Solvers.SASS(population_size, max_steps, lb, ub; seed, stagnation_evals, stagnation_tol)
+    elseif backend === :rdex
+        Solvers.RDEx(population_size, max_steps, lb, ub; seed, stagnation_evals, stagnation_tol)
+    else
+        throw(DomainError(backend, "unknown DETPFlash backend (expected :rdex or :sass)"))
+    end
+    deadline_ns = isfinite(time_limit) ? time_ns() + floor(Int, 1e9time_limit) : typemax(Int)
     while !Solvers.isdone(algo)
         dividers_flat = Solvers.ask!(algo)
-        y = Obj_de_tp_flash(model, p, T, n, dividers_flat, numphases, x, nvals, volumes, logspace, method.equilibrium)
+        y = Obj_de_tp_flash(model, p, T, n, dividers_flat, numphases, x, nvals, volumes, logspace, equilibrium)
         Solvers.tell!(algo, y)
+        time_ns() >= deadline_ns && break
     end
     best_u, g = Solvers.best(algo)
     # Refresh cache for the best solution (the last evaluated point might not be the best).
-    Obj_de_tp_flash(model, p, T, n, copy(best_u), numphases, x, nvals, volumes, logspace, method.equilibrium)
+    Obj_de_tp_flash(model, p, T, n, copy(best_u), numphases, x, nvals, volumes, logspace, equilibrium)
 
     #Initialize arrays xij and nvalsij,
     #where i in 1..numphases, j in 1..numspecies
