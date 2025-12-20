@@ -346,7 +346,8 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
     show_reference_state(io,model;space = true)
 end
 
-
+Base.eltype(model::CompositeModel{<:Any,Nothing}) = eltype(model.fluid)
+Base.eltype(model::CompositeModel) = Base.promote_eltype(model.fluid,model.solid)
 fluid_model(model::CompositeModel) = model.fluid
 solid_model(model::CompositeModel) = model.solid
 molecular_weight(model::CompositeModel,z) = molecular_weight(model.fluid,z)

@@ -30,6 +30,7 @@ end
 fluid_model(model::GammaPhi) = model.fluid.model
 __γ_unwrap(model::GammaPhi) = __γ_unwrap(model.activity)
 gas_model(model::GammaPhi) = gas_model(model.fluid.model)
+Base.eltype(model::GammaPhi) = Base.promote_eltype(__γ_unwrap(model),gas_model(model))
 
 function excess_gibbs_free_energy(model::GammaPhi,p,T,z)
     return excess_gibbs_free_energy(model.activity,p,T,z)
@@ -279,7 +280,9 @@ end
 function gammaphi_gibbs(wrapper::PTFlashWrapper,p,T,w,phase = :unknown,vol = NaN)
     model = wrapper.model
     RT = Rgas(model)*T
-    g_ideal = sum(xlogx,w)
+    ∑w = sum(w)
+    iszero(∑w) && return zero(Base.promote_eltype(model,p,T,w))
+    g_ideal = sum(xlogx,w) - xlogx(sum(w)) 
     vl = zero(Base.promote_eltype(__γ_unwrap(model),p,T,w))
     if is_liquid(phase)
         return excess_gibbs_free_energy(__γ_unwrap(model),p,T,w)/RT + g_ideal,vl

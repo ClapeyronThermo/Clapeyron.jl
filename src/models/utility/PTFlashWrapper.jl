@@ -10,7 +10,7 @@ struct PTFlashWrapper{T,T2,R,S} <: EoSModel
 end =#
 
 Base.length(model::PTFlashWrapper) = length(model.model)
-Base.eltype(model::PTFlashWrapper) = Base.promote_eltype(model.model)
+Base.eltype(model::PTFlashWrapper) = Base.promote_eltype(model.model,model.fug)
 __γ_unwrap(model::PTFlashWrapper) = __γ_unwrap(model.model)
 gas_model(model::PTFlashWrapper) = gas_model(model.model)
 

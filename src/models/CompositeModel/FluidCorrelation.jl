@@ -64,6 +64,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::FluidCorrelation)
 end
 
 reference_state(model::FluidCorrelation) = reference_state(model.gas)
+Base.eltype(model::FluidCorrelation) = Base.promote_eltype(__γ_unwrap(model),gas_model(model))
 
 function idealmodel(model::FluidCorrelation{V}) where V
     idealmodel(model.gas)
