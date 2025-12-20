@@ -113,9 +113,9 @@ function tpflash_benchmark_stage1(;
                 if run.success
                     println("success")
                 elseif show_fail_details
-                    @printf("%s ev=%0.3e (g=%0.16g tgt=%0.16g) e_x=%0.3e e_beta=%0.3e nfes=%d\n",
+                    @printf("%s Δ=%0.3e (g=%0.16g tgt=%0.16g) e_x=%0.3e e_beta=%0.3e nfes=%d\n",
                         _format_failure_tags(run.failure_tags),
-                        run.ev_final,
+                        run.Δ_final,
                         run.g_best,
                         run.tgt,
                         run.e_x,
@@ -231,7 +231,7 @@ vle_454_case7_michelsen：g_best≈8565.53，tgt≈112.96（差 8452）。
 这类需要靠算法/参数（fe_factor、population_size、以及很可能给 #454 打开 logspace=true）去改善。
 X_FAIL / BETA_FAIL（目标到了但 x/β 不像参考）
 3. vle_pr_*_282p2K、vle_pr_*_450K：g_best <= tgt（g_best-tgt 是负的，说明过了 target gate），但 e_beta 很大（~0.19/0.30），所以卡在 accuracy gate。它们本质上是“接近单相退化”的情形，β 往往不容易被唯一确定/优化到参考那种 0/1 分配。
-为了让你下一次不需要反序列化看，我已经在 test/tpflash/tp_flash_benchmark_stage1.jl 加了开关：show_fail_details=true 时会把 ev_final(g_best-tgt)/e_x/e_beta/nfes 直接打印出来。
+为了让你下一次不需要反序列化看，我已经在 test/tpflash/tp_flash_benchmark_stage1.jl 加了开关：show_fail_details=true 时会把 Δ_final(g_best-tgt)/e_x/e_beta/nfes 直接打印出来。
 
 
 3. 这里的关键点是：“最小 Gibbs 能量”并不一定对应唯一的 β，尤其在你这两个 case 里其实是“单相/近单相退化”的情形。

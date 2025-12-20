@@ -6,25 +6,33 @@
 
 %─────── Fonts & language (LuaLaTeX + CJK) ───────
 \usepackage[T1]{fontenc}
-\usepackage{lmodern}
-
-\usepackage{fontspec}
-\usepackage{luatexja}
-\usepackage[match]{luatexja-fontspec}
-
-\setmainfont{Times New Roman}
-\setmainjfont{SimSun}
+\usepackage[utf8]{inputenc}
+\usepackage{newtxtext}
+\usepackage{newtxmath}
 
 %──────────────────── Common packages ────────────────────
-\usepackage{amsmath,amssymb}
 \usepackage{mathtools}
-\usepackage{graphicx}
-\usepackage{hyperref}
+\usepackage{float}
 \usepackage{geometry}
+\usepackage{graphicx}
 \geometry{margin=25mm}
 \graphicspath{{./}{test/tpflash/}}
 
-% --- Title (adjust as needed) ---
+\usepackage{hyperref}
+\newcommand{\filepath}[1]{\path{#1}}
+\newcommand{\MaybeIncludePlot}[2][]{%
+  \IfFileExists{#2}{\includegraphics[#1]{#2}}{\fbox{Missing figure: \texttt{#2}}}%
+}
+
+% -------------------- Bibliography (biblatex + biber) --------------------
+\usepackage[
+  backend=biber,
+  natbib=true,
+  style=numeric,
+  sorting=nyt
+]{biblatex}
+\addbibresource{refs.bib}
+
 \title{TP Flash Case Studies and Benchmark Results}
 \author{(Maintainer/Team)}
 \date{\today}
@@ -35,8 +43,8 @@
 \section{Experimental setup}\label{sec:results-setup}
 
 \paragraph{Problem set.}
-We benchmark on the 14 TP flash instances defined in \texttt{test/tpflash/tp\_flash\_benchmark\_cases.jl} (extracted from \texttt{test/test\_methods\_api\_flash.jl}).
-Each case fixes the phase count \texttt{numphases}, the feed vector (treated as ``$n$'' in the benchmark harness), and the equilibrium type (\texttt{:vle}, \texttt{:lle}, or \texttt{:auto}).
+We benchmark on the 14 TP flash instances defined in \filepath{test/tpflash/tp_flash_benchmark_cases.jl} (extracted from \filepath{test/test_methods_api_flash.jl}).
+Each case fixes the phase count \texttt{numphases}, the overall mole amounts vector (treated as $n$ in the benchmark implementation), and the equilibrium type (\texttt{:vle}, \texttt{:lle}, or \texttt{:auto}).
 
 \paragraph{Decision variables and bounds.}
 All metaheuristics optimize the same DETPFlash objective over the partition variables
@@ -71,46 +79,43 @@ A run is counted as successful only if it passes both the validity gate and the 
 \paragraph{U-score aggregation.}
 We report the mean normalized score \(\bar U^{\mathrm{norm}}\) (higher is better) and the overall success rate
 (successful runs divided by total runs).
-All results in this section are computed by the stage-2 aggregator over serialized run logs (\texttt{.ser}) in
-\texttt{test/tpflash/results/...}.
+All results in this section are computed by the stage-2 aggregator over serialized run logs (\texttt{.ser}).
+Raw run logs and intermediate tables are generated offline and are not included in the manuscript.
 
 %────────────────────────────────────────────────────────────────────────────────────────────
 \section{Offline tuning}\label{sec:tuning}
 
 \subsection{Population-size sweep}\label{sec:tuning-population}
 For each backend, we perform an offline sweep over population size on the tuning seed set (\texttt{-20:-1}) under the same evaluation budget and success criteria.
-Each tuning run is serialized as a \texttt{.ser} file (stage 1) and aggregated into \texttt{summary.csv} and \texttt{per\_case.csv} (stage 2).
+Each tuning run is serialized as a \texttt{.ser} file (stage 1) and aggregated into summary metrics (stage 2).
 We select one configuration per backend based on the best tuning \(\bar U^{\mathrm{norm}}\), then evaluate it on the disjoint validation seed set (\texttt{1:20}).
 
 \subsubsection{BlackBoxOptim.jl}\label{sec:tuning-bbo}
-We scan population size \(\{10,15,20,25,30,40,50,60,70,80\}\) and summarize the sweep in
-\texttt{test/tpflash/results/tuning/bbo/tpflash\_benchmark\_2025-12-19\_125512\_summary.csv}.
+We scan population size \(\{10,15,20,25,30,40,50,60,70,80\}\) and summarize the sweep using the stage-2 aggregation.
 \texttt{bbo20} is selected for validation as it attains the highest tuning \(\bar U^{\mathrm{norm}}\) (0.664).
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=0.82\linewidth]{results/tuning/bbo/plot.pdf}
+  \MaybeIncludePlot[width=0.82\linewidth]{results/tuning/bbo/plot.pdf}
   \caption{BlackBoxOptim.jl tuning sweep over population size (tuning seeds \texttt{-20:-1}).}
   \label{fig:tuning-bbo-population}
 \end{figure}
 
 \subsubsection{RDEx}\label{sec:tuning-rdex}
-We scan population size \(\{10,20,30,40,50,60,70,80\}\) and summarize the sweep in
-\texttt{test/tpflash/results/tuning/rdex/tpflash\_benchmark\_2025-12-19\_140721\_summary.csv}.
+We scan population size \(\{10,20,30,40,50,60,70,80\}\) and summarize the sweep using the stage-2 aggregation.
 \texttt{rdex40} is selected for validation as it attains the highest tuning \(\bar U^{\mathrm{norm}}\) (0.586).
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=0.82\linewidth]{results/tuning/rdex/plot.pdf}
+  \MaybeIncludePlot[width=0.82\linewidth]{results/tuning/rdex/plot.pdf}
   \caption{RDEx tuning sweep over population size (tuning seeds \texttt{-20:-1}).}
   \label{fig:tuning-rdex-population}
 \end{figure}
 
 \subsubsection{SASS}\label{sec:tuning-sass}
-We scan population size \(\{10,15,20,25,30,35,40,50,60,70,80\}\) and summarize the sweep in
-\texttt{test/tpflash/results/tuning/sass/tpflash\_benchmark\_2025-12-19\_160816\_summary.csv}.
+We scan population size \(\{10,15,20,25,30,35,40,50,60,70,80\}\) and summarize the sweep using the stage-2 aggregation.
 \texttt{sass15} is selected for validation as it attains the highest tuning \(\bar U^{\mathrm{norm}}\) (0.592).
-\begin{figure}[ht]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=0.82\linewidth]{results/tuning/sass/plot.pdf}
+  \MaybeIncludePlot[width=0.82\linewidth]{results/tuning/sass/plot.pdf}
   \caption{SASS tuning sweep over population size (tuning seeds \texttt{-20:-1}).}
   \label{fig:tuning-sass-population}
 \end{figure}
@@ -123,7 +128,7 @@ Table~\ref{tab:tpflash-validation-summary-2025-12-19-160647} summarizes overall 
 
 \begin{table}[ht]
   \centering
-  \caption{Validation summary (\texttt{tpflash\_benchmark\_2025-12-19\_160647\_summary.csv}).}
+  \caption{Validation summary (validation seeds \texttt{1:20}).}
   \label{tab:tpflash-validation-summary-2025-12-19-160647}
   \begin{tabular}{lrrrr}
     \hline
@@ -141,13 +146,15 @@ The normalized mean U-score \(\bar U^{\mathrm{norm}}\) ranks the algorithms by t
 The overall success rate complements \(\bar U^{\mathrm{norm}}\) by reporting the fraction of runs that pass the benchmark's success gates (validity and accuracy).
 
 \subsection{BlackBoxOptim.jl}\label{sec:results-bbo}
-On the validation suite (\texttt{tpflash\_benchmark\_2025-12-19\_160647\_summary.csv}), the BlackBoxOptim.jl backend configuration \texttt{bbo20} has 97/280 successful runs (34.64\%) and succeeds on 5/14 cases (see Table~\ref{tab:tpflash-validation-summary-2025-12-19-160647} for aggregated metrics).
+On the validation suite, the BlackBoxOptim.jl backend configuration \texttt{bbo20} has 97/280 successful runs (34.64\%) and succeeds on 5/14 cases (see Table~\ref{tab:tpflash-validation-summary-2025-12-19-160647} for aggregated metrics).
 Its non-zero per-case success rates are:
 \begin{itemize}
   \item Case 1: 1.00;\quad Case 5: 0.90;\quad Case 6: 1.00;\quad Case 7: 1.00;\quad Case 10: 0.95;\quad all other cases: 0.00.
 \end{itemize}
 
 \subsection{RDEx}\label{sec:results-rdex}
+RDEx~\citep{Tao_Yang_Zhao_Wang_Liu_Gao_2025} ranked first in the IEEE Congress on Evolutionary Computation (CEC) 2025 competition and special session on constrained single- and multi-objective numerical optimization considering accuracy and speed~\citep{Qiao_Ban_Chen_Lin_Price_Suganthan_Wen_Liang_Wu_Yue_2025}.
+
 On the same validation suite, the RDEx backend configuration \texttt{rdex40} succeeds on 5/14 cases (see Table~\ref{tab:tpflash-validation-summary-2025-12-19-160647} for aggregated metrics).
 Its non-zero per-case success rates are:
 \begin{itemize}
@@ -155,6 +162,8 @@ Its non-zero per-case success rates are:
 \end{itemize}
 
 \subsection{Self-adaptive spherical search}\label{sec:results-sass}
+Self-adaptive spherical search (SASS)~\citep{Kumar_Das_Zelinka_2020} ranked first in the IEEE CEC 2020 Real-World Single-Objective Constrained Optimisation Competition~\citep{Kumar_Wu_Ali_Mallipeddi_Suganthan_Das_2020}.
+
 On the same validation suite, the SASS backend configuration \texttt{sass15} succeeds on 7/14 cases (see Table~\ref{tab:tpflash-validation-summary-2025-12-19-160647} for aggregated metrics).
 Its non-zero per-case success rates are:
 \begin{itemize}
@@ -165,12 +174,14 @@ Its non-zero per-case success rates are:
 \section{Discussion}\label{sec:discussion}
 
 \subsection{Near single-phase degeneracy}\label{sec:case-studies-degeneracy}
-Some VLE cases (e.g., Case~2 and Case~4 in \texttt{tp\_flash\_benchmark\_cases.jl}) are near single-phase degeneracy problems:
+Some VLE cases (e.g., Case~2 and Case~4 in \filepath{test/tpflash/tp_flash_benchmark_cases.jl}) are near single-phase degeneracy problems:
 the reference has \(x_1 \approx x_2 \approx z\) and one phase fraction is close to zero (e.g., \(\beta_2 \approx 0\)).
 In such regimes, the Gibbs objective can be weakly sensitive to \(\beta\) near the boundary, yielding a flat valley of near-optimal solutions.
 Therefore, achieving a target-level \(g\) does not necessarily imply that \(\beta\) converges to the reference convention.
 In other words, \(\mathrm{TGT}_i\) can be satisfied while the run is still classified as a failure due solely to \texttt{BETA\_FAIL}.
 SASS can attain non-zero success on these degenerate cases because its constrained sampling/updates more often hit the boundary strongly enough
 to satisfy the accuracy gate on \(\beta\) (here, \texttt{max\_e\_beta = 0.01}), rather than merely achieving a target-level \(g\).
+
+\printbibliography[title={References}]
 
 \end{document}

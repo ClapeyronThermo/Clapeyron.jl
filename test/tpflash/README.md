@@ -1,65 +1,75 @@
 ## TP flash benchmark (two-stage)
 
-This implements the two-stage workflow described in `test/tpflash/tp_flash_definitions_and_eval_criteria.tex`:
+This folder implements the two-stage workflow described in `test/tpflash/tp_flash_definitions_and_eval_criteria.tex`:
 
-1. **Stage 1** (per algorithm): run one metaheuristic algorithm on all cases and save raw results.
-2. **Stage 2** (after all algorithms): load all saved results, compute per-case ranks, U-scores, and aggregate rankings.
+1. **Stage 1** (per algorithm): run one optimizer on all cases and save raw run logs (`.ser`).
+2. **Stage 2** (after all algorithms): load all logs, compute per-case ranks and U-scores, and write CSV summaries.
 
-### Files
+### Entry point (recommended)
 
-- `test/tpflash/tp_flash_benchmark_cases.jl`: benchmark case definitions (extracted from `test/test_methods_api_flash.jl`).
-- In each case, the reference `(g*, x*, β*)` is stored as numeric literals (`g⁺/x⁺/β⁺`) for scoring (no online reference solve).
-- `test/tpflash/tp_flash_benchmark_backend.jl`: optimizer backend hook (edit this to swap algorithms by “hacking source”).
-- `test/tpflash/tp_flash_benchmark.jl`: evaluation logic (targets, gates, ranking, U-score).
-- `test/tpflash/tp_flash_benchmark_stage1.jl`: stage 1 runner.
-- `test/tpflash/tp_flash_benchmark_stage2.jl`: stage 2 aggregator.
-
-### Stage 1: run one algorithm and save results
+Use `test/tpflash/run_benchmark_suites.jl` as the main entry point. It runs a tuning suite (population-size sweep) and a validation suite, and then triggers stage 2 aggregation.
 
 From the repo root:
 
 ```bash
-julia --project test/tpflash/tp_flash_benchmark_stage1.jl --algo=RDEx --outdir=test/tpflash/results --n=10
-```
-
-From the REPL (preferred if you don’t want CLI args):
-
-```julia
-include("test/tpflash/tp_flash_benchmark_stage1.jl")
-tpflash_benchmark_stage1(; algo="RDEx", outdir="test/tpflash/results", seeds=1:10)
-```
-
-Useful options:
-
-- `--algo=<name>`: label used for output filename and for stage 2 comparisons (required).
-- `--outdir=<dir>`: where `.ser` result files are written.
-- `--n=<int>` / `--seed-start=<int>`: generate seeds `[seed-start, ..., seed-start+n-1]`.
-- `--seeds=1,2,3`: explicit seed list.
-- `--pop=<int>`: population size for the optimizer backend.
-- `--time-limit=<seconds|Inf>`: per-run time limit passed to the optimizer.
-- `--stagnation-evals=<int>` and `--stagnation-tol=<float>`: early-stop parameters passed to `RDEx` (0 disables).
-- `--filter=<regex>`: only run case ids matching the regex.
-
-This benchmark does not compute reference solutions at runtime; it uses the literals embedded in `tp_flash_benchmark_cases.jl`.
-
-### Swap algorithm (per workflow constraint)
-
-Edit `test/tpflash/tp_flash_benchmark_backend.jl` (or hack the underlying solver implementation) and re-run stage 1 with a new `--algo` label. Repeat for each algorithm variant.
-
-### Stage 2: rank and aggregate after all algorithms finished
-
-```bash
-julia --project test/tpflash/tp_flash_benchmark_stage2.jl --indir=test/tpflash/results --outdir=test/tpflash/results
+julia --project test/tpflash/run_benchmark_suites.jl
 ```
 
 From the REPL:
 
 ```julia
-include("test/tpflash/tp_flash_benchmark_stage2.jl")
-tpflash_benchmark_stage2(; indir="test/tpflash/results", outdir="test/tpflash/results")
+include("test/tpflash/run_benchmark_suites.jl")
+```
+
+Edit `run_benchmark_suites.jl` to adjust:
+- seed ranges (tuning vs validation)
+- population sizes and `algo` labels (e.g. `sass15`)
+- FE budget (`fe_factor`) and target tolerances (`atol_tgt`, `rtol_tgt`)
+
+Note: `backend=:bbo` requires `BlackBoxOptim.jl` available in your active environment. If you do not have it, comment out the `:bbo` suite in `run_benchmark_suites.jl`.
+
+### Files
+
+- `test/tpflash/tp_flash_benchmark_cases.jl`: case definitions extracted from `test/test_methods_api_flash.jl`. Each case stores reference literals `(g*, x*, beta*)` for scoring (no online reference solve).
+- `test/tpflash/tp_flash_benchmark_backend.jl`: optimizer backend hook (edit this to map `backend` to a concrete optimizer).
+- `test/tpflash/tp_flash_benchmark.jl`: scoring logic (targets, gates, multi-tag failures, ranking, U-score aggregation).
+- `test/tpflash/tp_flash_benchmark_stage1.jl`: stage 1 runner (writes one `.ser` per algorithm label).
+- `test/tpflash/tp_flash_benchmark_stage2.jl`: stage 2 aggregator (reads `.ser`, writes CSV summaries).
+- `test/tpflash/run_benchmark_suites.jl`: convenience driver that runs stage 1 suites + stage 2.
+
+### Stage 1 (manual)
+
+From the repo root:
+
+```bash
+julia --project test/tpflash/tp_flash_benchmark_stage1.jl --algo=sass15 --backend=sass --outdir=test/tpflash/results --n=10
+```
+
+From the REPL:
+
+```julia
+include("test/tpflash/tp_flash_benchmark_stage1.jl")
+tpflash_benchmark_stage1(; algo="sass15", backend=:sass, outdir="test/tpflash/results", seeds=1:10)
+```
+
+Common options:
+- `--algo=<label>`: label used for output filename and stage 2 comparisons (required).
+- `--backend=<sass|bbo>`: optimizer backend selector.
+- `--outdir=<dir>`: where `.ser` logs are written.
+- `--n=<int>` / `--seed-start=<int>`: generate seeds `[seed-start, ..., seed-start+n-1]`.
+- `--seeds=1,2,3`: explicit seed list.
+- `--pop=<int>`: population size.
+- `--fe-factor=<int>`: FE budget scaling factor (`FE_max = fe_factor * D`).
+- `--time-limit=<seconds|Inf>`: per-run time limit.
+- `--stagnation-evals=<int>` and `--stagnation-tol=<float>`: backend stagnation stop controls (0 disables).
+- `--filter=<regex>`: only run case ids matching the regex.
+
+### Stage 2
+
+```bash
+julia --project test/tpflash/tp_flash_benchmark_stage2.jl --indir=test/tpflash/results --outdir=test/tpflash/results
 ```
 
 This writes two CSVs into `--outdir`:
-
-- `*_summary.csv`: per-algorithm mean normalized U-score + overall success rate.
-- `*_per_case.csv`: per-case U-score and success rate per algorithm.
+- `*_summary.csv`: per-algorithm mean normalized U-score and overall success rate.
+- `*_per_case.csv`: per-case U-score and per-case success rate per algorithm.

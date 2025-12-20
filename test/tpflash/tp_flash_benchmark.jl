@@ -2,16 +2,13 @@ using Clapeyron
 using Serialization
 using Dates
 
-"""
-Benchmark configuration (defaults follow `tp_flash_definitions_and_eval_criteria.tex`).
-"""
-Base.@kwdef struct TPFlashBenchmarkConfig
-    backend::Symbol = :rdex              # :rdex (ask–tell) or :bbo (BlackBoxOptim)
+@kwdef struct TPFlashBenchmarkConfig
+    backend::Symbol = :sass              # :bbo/:sass
     seeds::Vector{Int} = collect(1:10)
-    fe_factor::Int = 10_000                 # FE_max = fe_factor * D
+    fe_factor::Int = 10_000              # FE_max = fe_factor * D
     population_size::Int = 50
     time_limit::Float64 = Inf
-    stagnation_evals::Int = 0               # passed to optimizer backend; 0 disables
+    stagnation_evals::Int = 0            # passed to optimizer backend; 0 disables
     stagnation_tol::Float64 = 0.0
 
     atol_tgt::Float64 = 1e-14
@@ -28,8 +25,8 @@ end
 struct TPFlashReference
     g_star::Float64
     tgt::Float64
-    x_star::Matrix{Float64}   # (numphases, numspecies)
-    beta_star::Vector{Float64}# length numphases, normalized
+    x_star::Matrix{Float64}    # (numphases, numspecies)
+    beta_star::Vector{Float64} # length numphases, normalized
 end
 
 struct TPFlashRun
@@ -39,9 +36,9 @@ struct TPFlashRun
     fe_star::Union{Int,Nothing}
     g_best::Float64
     tgt::Float64
-    ev_final::Float64
+    Δ_final::Float64
     success::Bool
-    failure_tags::Vector{Symbol}  # may include multiple tags (e.g. TARGET_FAIL, X_FAIL, BETA_FAIL)
+    failure_tags::Vector{Symbol}  # may include multiple tags
     e_x::Float64
     e_beta::Float64
     x_best::Matrix{Float64}
@@ -80,17 +77,10 @@ const _PERMS_3 = (
     (3, 2, 1),
 )
 
-function _perms(k::Int)
-    if k == 1
-        return _PERMS_1
-    elseif k == 2
-        return _PERMS_2
-    elseif k == 3
-        return _PERMS_3
-    else
-        error("phase matching only implemented for k<=3 (got k=$k)")
-    end
-end
+_perms(k::Int) = k == 1 ? _PERMS_1 :
+                 k == 2 ? _PERMS_2 :
+                 k == 3 ? _PERMS_3 :
+                 error("phase matching only implemented for k <= 3 (got k=$k)")
 
 function _phase_match_errors(
     x::AbstractMatrix{<:Real},
@@ -202,7 +192,7 @@ that file without changing the benchmark harness.
 """
 function run_case_with_optimizer(case, ref::TPFlashReference, seed::Int, cfg::TPFlashBenchmarkConfig)
     model0 = case.model_builder()
-    model = Clapeyron.__tpflash_cache_model(model0, case.p, case.T, case.feed, case.equilibrium)
+    model = Clapeyron.__tpflash_cache_model(model0, case.p, case.T, case.n, case.equilibrium)
 
     numspecies = length(model)
     numphases = case.numphases
@@ -229,7 +219,7 @@ function run_case_with_optimizer(case, ref::TPFlashReference, seed::Int, cfg::TP
         eval_count[] += 1
         u_eval = case.logspace ? copy(u) : u
         y = try
-            Clapeyron.Obj_de_tp_flash(model, case.p, case.T, case.feed, u_eval, numphases,
+            Clapeyron.Obj_de_tp_flash(model, case.p, case.T, case.n, u_eval, numphases,
                 x_cache, nvals_cache, volumes_cache, case.logspace, case.equilibrium)
         catch
             Inf
@@ -261,7 +251,7 @@ function run_case_with_optimizer(case, ref::TPFlashReference, seed::Int, cfg::TP
 
     best_u_eval = case.logspace ? copy(best_u) : best_u
     g_best, beta, x = try
-        best_g2 = Clapeyron.Obj_de_tp_flash(model, case.p, case.T, case.feed, best_u_eval, numphases, x_cache, nvals_cache, volumes_cache, case.logspace, case.equilibrium)
+        best_g2 = Clapeyron.Obj_de_tp_flash(model, case.p, case.T, case.n, best_u_eval, numphases, x_cache, nvals_cache, volumes_cache, case.logspace, case.equilibrium)
         g_best = Float64(best_g2)
         beta_amounts = [sum(@view(nvals_cache[i, :])) for i = 1:numphases]
         beta = _normalize_beta(beta_amounts)
@@ -312,8 +302,8 @@ end
 Compute per-run ranks (1..N, where N is best) using the protocol:
 
 - Any success outranks any failure
-- Success vs success: smaller EV_final (or g_best) is better; FE* breaks ties
-- Failure vs failure: smaller EV_final is better
+- Success vs success: smaller Δ_final (or g_best) is better; FE* breaks ties
+- Failure vs failure: smaller Δ_final is better
 
 Returns ranks aligned with `runs` order.
 """
@@ -325,11 +315,11 @@ function ranks_for_case(runs::Vector{TPFlashRun})
         if r.success
             fe = something(r.fe_star, r.nfes)
             # Sort from worst -> best (ascending key), so the best run gets the largest rank (N).
-            # Successes always outrank failures. Within successes, prefer smaller EV_final (lower g_best),
+            # Successes always outrank failures. Within successes, prefer smaller Δ_final (lower g_best),
             # and use FE* (time-to-target) only as a tie-breaker.
-            return (1, -r.ev_final, -Float64(fe))
+            return (1, -r.Δ_final, -Float64(fe))
         else
-            return (0, -r.ev_final, 0.0) # failures first; larger rank for smaller EV_final
+            return (0, -r.Δ_final, 0.0) # failures first; larger rank for smaller Δ_final
         end
     end
 

@@ -40,18 +40,7 @@ function tpflash_optimize(
     stagnation_tol::Float64,
     verbose::Bool=false,
 )
-    if backend == :rdex
-        algo = Clapeyron.Solvers.RDEx(population_size, fe_max, lb, ub; seed, stagnation_evals, stagnation_tol)
-        deadline_ns = isfinite(time_limit) ? time_ns() + floor(Int, 1e9time_limit) : typemax(Int)
-        while !Clapeyron.Solvers.isdone(algo) && algo.state.nfes < fe_max
-            u = Clapeyron.Solvers.ask!(algo)
-            y = objective(u)
-            Clapeyron.Solvers.tell!(algo, y)
-            time_ns() >= deadline_ns && break
-        end
-        best_u, best_y = Clapeyron.Solvers.best(algo)
-        return collect(Float64, best_u), Float64(best_y)
-    elseif backend == :sass
+    if backend == :sass
         algo = Clapeyron.Solvers.SASS(population_size, fe_max, lb, ub; seed, stagnation_evals, stagnation_tol)
         deadline_ns = isfinite(time_limit) ? time_ns() + floor(Int, 1e9time_limit) : typemax(Int)
         while !Clapeyron.Solvers.isdone(algo) && algo.state.nfes < fe_max

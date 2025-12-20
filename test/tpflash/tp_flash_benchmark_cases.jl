@@ -17,7 +17,7 @@ struct TPFlashBenchmarkCase
     model_builder::Function
     p::Float64
     T::Float64
-    feed::Vector{Float64}          # can be normalized z or raw n; benchmark code treats it as "n"
+    n::Vector{Float64}
     equilibrium::Symbol            # :auto, :vle, :lle
     numphases::Int                 # optimization assumes a fixed phase count
     logspace::Bool
