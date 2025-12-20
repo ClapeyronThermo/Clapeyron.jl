@@ -218,37 +218,3 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     main()
 end
-
-#=
-TODO:
-我刚把你 test/tpflash/results/rdex.ser 反序列化看了下，失败大致分三类（所以不是单纯 tol 的问题）：
-
-1.差一点点的 TARGET_FAIL（基本就是 tol 太苛刻）
-vlle_pcsaft_water_cyclohexane_propane_298K_1bar：g_best=-6.759674475174063，tgt=-6.759674475174976，g_best-tgt=+9.13e-13（非常接近，但仍被判 TARGET_FAIL）。
-2.根本没搜到好的解（不是 tol）
-vle_454_case2_rr：g_best≈580.78，tgt≈103.70（差 477）。
-vle_454_case7_michelsen：g_best≈8565.53，tgt≈112.96（差 8452）。
-这类需要靠算法/参数（fe_factor、population_size、以及很可能给 #454 打开 logspace=true）去改善。
-X_FAIL / BETA_FAIL（目标到了但 x/β 不像参考）
-3. vle_pr_*_282p2K、vle_pr_*_450K：g_best <= tgt（g_best-tgt 是负的，说明过了 target gate），但 e_beta 很大（~0.19/0.30），所以卡在 accuracy gate。它们本质上是“接近单相退化”的情形，β 往往不容易被唯一确定/优化到参考那种 0/1 分配。
-为了让你下一次不需要反序列化看，我已经在 test/tpflash/tp_flash_benchmark_stage1.jl 加了开关：show_fail_details=true 时会把 Δ_final(g_best-tgt)/e_x/e_beta/nfes 直接打印出来。
-
-
-3. 这里的关键点是：“最小 Gibbs 能量”并不一定对应唯一的 β，尤其在你这两个 case 里其实是“单相/近单相退化”的情形。
-以 DETPFlash 的目标函数 Obj_de_tp_flash 为例，它是在你假设的 numphases=2 下，把总摩尔数按 dividers 分到两相，然后算
-[
-G = G_1(n_1,x_1) + G_2(n_2,x_2)
-]
-再除以 (RT) 得到标量目标。
-
-如果真实物理状态是单相（或两相组成几乎一样），那么最优很可能出现
-
-两相组成几乎相同：x₁ ≈ x₂ ≈ z（你看到 x_best 对 [0.25,0.25,0.25,0.25] 的误差只有 1e-8~1e-7 量级）
-此时摩尔 Gibbs 能（或化学势）在两相里几乎一样，所以把同样的混合物“分成两份”并不会改变总 (G)：
-直观上就是 (G \approx n_1 \bar g(z) + n_2 \bar g(z) = (n_1+n_2)\bar g(z))，对怎么分（β）基本不敏感。
-所以会出现你说的现象：g_best 已经过了 tgt（target gate 只看 g），但 β 还可以在一个很宽的范围内漂（accuracy gate 里 e_beta 就会偏大）。这里的 β⁺=[1,0] 更多是一种“约定”（把第二相视为消失），不是由目标函数强制出来的唯一值。
-
-总结一句：在单相/近单相退化 case 里，g 的最优解集合是一条（甚至一片）“平坦谷”，β 不可辨识；过了 tgt 并不意味着 β 会自动收敛到某个约定值。
-
-如果你希望这类 case 也能“按 β 达标”，就需要额外的规则/正则来打破退化（比如强制小相惩罚、或在评估时把 β 小于某阈值的相视为 inactive 不纳入 e_beta）。你想按哪种方式处理这类退化 case，我可以把 accuracy gate 的规则补进 tp_flash_definitions_and_eval_criteria.tex 并同步实现到 test/tpflash/tp_flash_benchmark.jl。
-=#

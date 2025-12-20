@@ -5,34 +5,39 @@ included in https://github.com/ClapeyronThermo/Clapeyron.jl/pull/56
 =#
 """
     DETPFlash(; numphases = 2,
-    max_steps = 10_000(numphases-1),
+    max_steps = 3000(numphases-1),
     population_size = 50,
     time_limit = Inf,
     seed = 1,
     stagnation_evals = 0,
     stagnation_tol = 0.0,
-    backend = :rdex,
+    backend = :sass,
     verbose = false,
     logspace = false,
     equilibrium = :auto)
 
-Method to solve non-reactive multicomponent flash problem by finding global minimum of Gibbs energy via Differential Evolution.
+Method to solve a non-reactive multicomponent TP-flash problem by global optimization of the Gibbs free energy.
+
+This implementation uses an ask–tell metaheuristic backend. The current default backend is `:sass`
+(Self-adaptive spherical search, SASS). The optimizer stops when it reaches `max_steps` function
+evaluations, exceeds `time_limit` seconds, or triggers stagnation-based early stopping controlled by
+`stagnation_evals` and `stagnation_tol`.
+
+Note: the file name is historical; the original implementation used differential evolution.
 
 User must assume a number of phases, `numphases`. If true number of phases is smaller than numphases, model should predict either (a) identical composition in two or more phases, or (b) one phase with negligible total number of moles. If true number of phases is larger than numphases, a thermodynamically unstable solution will be predicted.
 
-The optimizer will stop at `max_steps` evaluations or at `time_limit` seconds
-
 The `equilibrium` keyword allows to restrict the search of phases to just liquid-liquid equilibria (`equilibrium = :lle`). the default searches for liquid and gas phases.
 """
-Base.@kwdef struct DETPFlash <: TPFlashMethod
+@kwdef struct DETPFlash <: TPFlashMethod
     numphases::Int = 2
-    max_steps::Int = 10_000(numphases-1)
+    max_steps::Int = 3000(numphases-1)
     population_size::Int = 50
     time_limit::Float64 = Inf
     seed::Int = 1
     stagnation_evals::Int = 0
     stagnation_tol::Float64 = 0.0
-    backend::Symbol = :rdex
+    backend::Symbol = :sass
     verbose::Bool = false
     logspace::Bool = false
     equilibrium::Symbol = :auto
@@ -91,10 +96,8 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
 
     algo = if backend === :sass
         Solvers.SASS(population_size, max_steps, lb, ub; seed, stagnation_evals, stagnation_tol)
-    elseif backend === :rdex
-        Solvers.RDEx(population_size, max_steps, lb, ub; seed, stagnation_evals, stagnation_tol)
     else
-        throw(DomainError(backend, "unknown DETPFlash backend (expected :rdex or :sass)"))
+        throw(DomainError(backend, "unknown DETPFlash backend (expected :sass)"))
     end
     deadline_ns = isfinite(time_limit) ? time_ns() + floor(Int, 1e9time_limit) : typemax(Int)
     while !Solvers.isdone(algo)
