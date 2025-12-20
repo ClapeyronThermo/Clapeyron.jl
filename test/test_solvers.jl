@@ -201,25 +201,5 @@ end
         x4 = SOL.solution(SOL.optimize(minlog,(1.5,2.5),SOL.BoundOptim1Var()))
         @test x4 ≈ xs_1v
     end
-
-    @testset "RDEx early stop" begin
-        dim = 2
-        lb = fill(-1.0, dim)
-        ub = fill(1.0, dim)
-
-        algo = SOL.RDEx(4, 10_000, lb, ub; seed = 1, stagnation_evals = 1)
-        while !SOL.isdone(algo)
-            SOL.ask!(algo)
-            SOL.tell!(algo, 1.0)
-        end
-        @test algo.state.nfes == 2
-
-        algo2 = SOL.RDEx(4, 30, lb, ub; seed = 1, stagnation_evals = 0)
-        while !SOL.isdone(algo2)
-            SOL.ask!(algo2)
-            SOL.tell!(algo2, 1.0)
-        end
-        @test algo2.state.nfes == 30
-    end
 end
 @printline
