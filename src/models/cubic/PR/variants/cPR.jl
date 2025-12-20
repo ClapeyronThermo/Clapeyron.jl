@@ -56,7 +56,7 @@ function cPR(components;
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     a = PairParam("a",formatted_components,zeros(length(formatted_components)))
     b = PairParam("b",formatted_components,zeros(length(formatted_components)))
-    init_idealmodel = init_model(idealmodel,formatted_components,ideal_userlocations,verbose,reference_state)
+    init_idealmodel = init_model(idealmodel,formatted_components,ideal_userlocations,verbose)
 
     if alpha !== TwuAlpha
         init_alpha = init_alphamodel(alpha,formatted_components,w,alpha_userlocations,verbose)

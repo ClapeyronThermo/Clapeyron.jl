@@ -3,6 +3,14 @@ function qt_f0_p!(K,z,p,ps,β0)
     return rachfordrice(K,z) - β0
 end
 
+function qt_flash_x0(model::RestrictedEquilibriaModel,β,T,z,method::FlashMethod)
+    qt_flash_x0(__tpflash_cache_model(model,NaN,T,z,:vle),β,T,z,method)
+end
+
+function qt_flash_x0(model::CompositeModel,β,T,z,method::FlashMethod)
+    qt_flash_x0(model.fluid,β,T,z,method)
+end
+
 function qt_flash_x0(model,β,T,z,method::FlashMethod)
     ∑z = sum(z)
     if method.p0 == nothing
@@ -21,8 +29,14 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
             βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         else
-            pures = split_pure_model(model)
-            sat = extended_saturation_pressure.(pures,T)
+            if model isa PTFlashWrapper
+                pures = model.pures
+                sat = model.sat
+            else
+                pures = split_pure_model(model)
+                sat = extended_saturation_pressure.(pures,T)
+            end
+            
             ps = first.(sat)
             K = similar(ps)
             p_bubble = @sum(ps[i]*z[i])/∑z
@@ -48,7 +62,7 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
     else
         p = method.p0
     end
-    res =  pt_flash_x0(model,p,T,z,method)
+    res = pt_flash_x0(model,p,T,z,method)
     return res
 end
 

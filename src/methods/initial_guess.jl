@@ -267,6 +267,10 @@ function x0_sat_pure_virial(model,T)
     =#
 
     a,b = vdw_coefficients(vl,pl0,vv_virial,pv_eos,T)
+    if b < lb_v
+        b = lb_v
+        a = RT*(b - B)
+    end
     T̃ = RT*b/a
     T̃max = 0.2962962962962963 # Ωb/Ωa = 8/27
     T̃min = 0.1*T̃max
@@ -381,10 +385,13 @@ function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B 
     ares = a_res(model, vl0, T, z)
     lnϕ_liq0 = ares - 1 + log(RT/vl0)
     p = exp(lnϕ_liq0)
-    vv = volume_virial(B,p,T)
     pB = -0.25*RT/B
+    vv = volume_virial(B,p,T)
     if refine_vl && pB/p > 10
         vl = volume(model,p,T,z,vol0 = vl0,phase = :l)
+        if vl ≈ vv #refinement failed, stick with vl0
+            vl = vl0*oneunit(vv)
+        end
     else
         vl = vl0*oneunit(vv)
     end
@@ -641,13 +648,19 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
     psl = p(vsl)
     psv = p(vsv)
     pmid = 0.5*max(zero(psl),psl) + 0.5*psv
-
-    if plb <= pmid
+    #=
+    vl = volume(model,pmid,T,phase = :l,vol0 = v_lb)
+    vv = volume(model,pmid,T,phase = :v)
+    return pmid,vl,vv
+    =#
+    #
+    if plb < psv
         vsl_lb = volume(model,psv,T,phase = :l, vol0 = v_lb)
     else
         vsl_lb = one(psl)*v_lb
     end
-    if pub >= pmid
+
+    if pub >= min(pmid,max(psl,zero(psl)))
         vsv_ub = Rgas(model)*T/pmid
     else
         vsv_ub = one(psv)*v_ub
@@ -1050,9 +1063,8 @@ critical_tsat_extrapolation(model,p,crit) = critical_tsat_extrapolation(model,p,
 critical_tsat_extrapolation(model,p,Tc,Vc) = critical_tsat_extrapolation(model,p,Tc,pressure(model,Vc,Tc),Vc)
 
 
-dpdT_saturation(model,v1,v2,T) = dpdT_saturation(model,model,v1,v2,T,SA[1.0],SA[1.0])
-dpdT_saturation(model1,model2,v1,v2,T) = dpdT_saturation(model1,model2,v1,v2,T,SA[1.0],SA[1.0])
-
+dpdT_saturation(model::EoSModel,v1::Number,v2,T) = dpdT_saturation(model,model,v1,v2,T,SA[1.0],SA[1.0])
+dpdT_saturation(model1::EoSModel,model2::EoSModel,v1,v2,T) = dpdT_saturation(model1,model2,v1,v2,T,SA[1.0],SA[1.0])
 function dpdT_saturation(model1::EoSModel,model2::EoSModel,v1,v2,T,w1,w2)
     ∑w1 = sum(w1)
     ∑w2 = sum(w2)

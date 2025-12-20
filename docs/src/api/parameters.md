@@ -94,11 +94,8 @@ Clapeyron.xlogx
 ## Model Exporting
 
 ```@docs
+Clapeyron.eos_repr
 Clapeyron.export_model
-Clapeyron.FluidCorrelation
-Clapeyron.GammaPhi
-Clapeyron.ExtendedCorrespondingStates
-Clapeyron.ECS
 ```
 
 ## Model Citing

@@ -364,12 +364,15 @@ function Tproperty_pure(model,p,x,z,property::F,rootsolver,phase,abstol,reltol,v
 end
 
 function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
-  T_primal,phase = Tproperty_impl(primalval(model),primalval(p),primalval(prop),primalval(z),property,rootsolver,phase,abstol,reltol,threaded,primalval(T0))
   if has_a_res(model)
-    T = Tproperty_ad(model,p,prop,z,property,T_primal,phase)
+    λmodel,λp,λprop,λz,λT0 = primalval(model),primalval(p),primalval(prop),primalval(z),primalval(T0)
+    λT,phase = Tproperty_impl(λmodel,λp,λprop,λz,property,rootsolver,phase,abstol,reltol,threaded,λT0)
+    tup = (model,p,prop,z)
+    λtup = (λmodel,λp,λprop,λz)
+    T = Tproperty_ad(λT,property,phase,tup,λtup)
     return T,phase
   else
-    T = T_primal
+    T,phase = Tproperty_impl(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,primalval(T0))
   end
   return T,phase
 end
@@ -479,19 +482,17 @@ function __Tproperty(model,p,prop,property::F,rootsolver,phase,abstol,reltol,thr
   __Tproperty(model,p,prop,SA[1.0],property,rootsolver,phase,abstol,reltol,threaded,T0)
 end
 
-function Tproperty_ad(model,p,prop,z,property::F,T_primal,phase) where F
-  if has_dual(model) || has_dual(p) || has_dual(prop) || has_dual(z)
-    #=
-    we know that T_primal is the solution to
-    property(model,p,T_primal,z,phase = phase,threaded = threaded) - prop = 0
-    =#
-    _property(_T) = property(model,p,_T,z,phase = phase)
-    fprop,∂prop∂T = Solvers.f∂f(_property,T_primal)
-    T = T_primal + (prop - fprop)/∂prop∂T
+function Tproperty_ad(T_primal,property::F,phase,tups,primal_tups) where F
+    f(T,tups) = begin 
+        #=
+        we know that T_primal is the solution to
+        property(model,p,T_primal,z,phase = phase,threaded = threaded) - prop = 0
+        =#
+        model,p,prop,z = tups
+        property(model,p,T,z,phase = phase) - prop
+    end
+    T = __gradients_for_root_finders(T_primal,tups,primal_tups,f)
     return T
-  else
-    return T_primal
-  end
 end
 
 # model = PCSAFT(["propane","dodecane"])

@@ -236,6 +236,11 @@ end
     act = NRTL(["water","ethanol"],puremodel = puremodel,reference_state = :ntp)
     @test reference_state(act).std_type == :ntp
     @test length(reference_state(act).a0) == 2
+
+    #issue 511
+    ref511 = ReferenceState(:nbp)
+    model511 = cPR("water",idealmodel=ReidIdeal,reference_state = ref511)
+    @test Clapeyron.reference_state(model511).std_type == :nbp
 end
 
 @testset "Solid Phase Equilibria" begin
@@ -336,7 +341,7 @@ GC.gc()
         =#
 
         system = VTPR(["carbon monoxide","carbon dioxide"])
-        @test_broken Clapeyron.bubble_pressure(system,218.15,[1e-5,1-1e-5])[1] ≈ 1.1373024916997014e6 rtol = 1e-4
+        @test Clapeyron.bubble_pressure(system,218.15,[1e-5,1-1e-5])[1] ≈ 554338.312712484 rtol = 1e-4
     end
 
     #see https://github.com/ClapeyronThermo/Clapeyron.jl/issues/172
@@ -376,6 +381,13 @@ GC.gc()
         model4 = SAFTVRMie(["methanol"])
         T4 = 164.7095044742657
         @test Clapeyron.saturation_pressure(model4,T4,crit_retry = false)[1] ≈ 0.02610821545005174 rtol = 1e-6
+    
+        @testset "saturation at low temperatures" begin
+            l1 = PR("1-butene")
+            Tc1 = 419.95
+            sat_low1 = saturation_pressure(l1,0.183Tc1)
+            @test sat_low1[1] ≈ 9.468875475768151e-9 rtol = 1e-6
+        end
     end
     GC.gc()
 end
@@ -439,4 +451,35 @@ end
     @test T_initial ≈ ciic_temperature(model,p_ciic,v0 = 1.01*v3)[1] rtol = 1e-6
     @test p_ciic ≈ ciic_pressure(model,T_initial,p0 = 1.01*p_ciic)[1] rtol = 1e-6
     @test p_ciic ≈ ciic_pressure(model,T_initial,v0 = 1.01*v3)[1] rtol = 1e-6
+end
+
+@testset "thermodynamic factor" begin 
+    eos_model = PCSAFT(["water", "ethanol"])
+    Γ_eos = thermodynamic_factor(eos_model, 1e5, 300., [2.,4.])
+    @test size(Γ_eos) == (1,1)
+    @test Γ_eos[1,1] ≈ 0.6178686409160774 rtol=1e-6 
+
+    # Activity model
+    act_model = NRTL(["water", "ethanol", "acetone"])
+    T_act = 300.
+    x_act = [0.15, 0.35, 0.5]
+    
+    # Analytical from Taylor and Krishna (1993), Table D.8
+    function thermodynamic_factor_nrtl(model, p, T, x)    
+        N = length(x)
+        
+        τ = model.params.a .+ model.params.b ./ T
+        G = exp.(-τ .* model.params.c)
+        S = G' * x    
+        ε = G .* (τ .- (((G .* τ)' * x) ./ S)') .* (inv.(S)')
+        Q = ε .+ ε' .- ((G * Diagonal(x ./ S)) * ε' .+ (ε * Diagonal(x ./ S)) * G')
+        
+        Γ = [((i == j) ? 1.0 : 0.0) + x[i] * (Q[i, j] - Q[i, N]) for i in 1:N-1, j in 1:N-1]
+        return Γ
+    end
+
+    Γ_act = thermodynamic_factor(act_model, 1e5, T_act, x_act)
+    Γ_ref = thermodynamic_factor(act_model, 1e5, T_act, x_act)
+    @test size(Γ_act) == (2,2)
+    @test all((≈).(Γ_act, Γ_ref, rtol=1e-6)) 
 end

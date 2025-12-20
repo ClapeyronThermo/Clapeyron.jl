@@ -98,7 +98,7 @@ CompositeModel
 
 Abstract type of models that implement simplifications over the equality of chemical potentials approach for phase equilibria. Subtypes of `RestrictedEquilibriaModel` are the `GammaPhi` (activity + gas), `FluidCorrelation` (for fluid phase change and volume correlations) and `SolidCorrelation` (for solid phase change and solid volume correlations).
 """
-abstract type RestrictedEquilibriaModel <: EoSModel end
+RestrictedEquilibriaModel
 
 include("FluidCorrelation.jl")
 include("SolidCorrelation.jl")
@@ -109,10 +109,6 @@ include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
 include("SolidModel/SolidModel.jl")
 include("PolExpVapour.jl")
-
-
-include("bubble_point.jl")
-include("dew_point.jl")
 
 function init_model_act(model,components,userlocations,verbose)
     init_model(model,components,userlocations,verbose)
@@ -409,15 +405,6 @@ function PT_property(model::CompositeModel,p,T,z,phase,threaded,vol0,f::F,USEP::
     end
 end
 
-function activity_coefficient(model::CompositeModel,p,T,z=SA[1.];
-                            μ_ref = nothing,
-                            reference = :pure,
-                            phase=:unknown,
-                            threaded=true,
-                            vol0=nothing)
-    return activity_coefficient(model.fluid,p,T,z;μ_ref,reference,phase,threaded,vol0)
-end
-
 __γ_unwrap(model::CompositeModel) = __γ_unwrap(model.fluid)
 
 reference_chemical_potential_type(model::CompositeModel) = reference_chemical_potential_type(model.fluid)
@@ -500,4 +487,21 @@ function calculate_gibbs_reference_state(model::CompositeModel)
         return a0,a1
     end
 end
+
+function init_preferred_method(method::typeof(bubble_pressure),model::RestrictedEquilibriaModel,kwargs)
+    return ActivityBubblePressure(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(bubble_temperature),model::RestrictedEquilibriaModel,kwargs)
+    return FugBubbleTemperature(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_pressure),model::RestrictedEquilibriaModel,kwargs)
+    return ActivityDewPressure(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_temperature),model::RestrictedEquilibriaModel,kwargs)
+    return FugDewTemperature(;kwargs...)
+end
+
 export CompositeModel

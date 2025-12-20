@@ -138,6 +138,11 @@
 
             res7 = Clapeyron.tp_flash2(mix, 505777.32016068726, 323.9598978773458, [75.83064821431964, 6.148759359393775e-10, 0, 0], MichelsenTPFlash(equilibrium=:vle))
             @test res7.fractions[1] ≈ 75.83064821493451
+
+            #test that we don't use LLE,even if equilibrium is unknown, when VLE initial point suggests vapour phase
+            mix8 = cPR(["ethane","propane"])
+            res8 = Clapeyron.tp_flash2(mix8,1e5,300.0,[0.5,0.5],MichelsenTPFlash())
+            @test iszero(res8.fractions[1])
         end
 
     end
@@ -214,7 +219,8 @@
 
         #test K0_lle_init initialization
         alg3 = RRTPFlash(
-            equilibrium = :lle)
+            equilibrium = :lle
+        )
         flash3 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg3)
         act_x3 = activity_coefficient(system, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
         act_y3 = activity_coefficient(system, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]
@@ -480,6 +486,26 @@ end
     h475 = Clapeyron.PS.enthalpy(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
     res475 = Clapeyron.PS.flash(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
     @test enthalpy(fluid475,res475) ≈ h475 rtol = 1e-6
+    
+    #issue 492
+    fluid492 = GERG2008(["propane", "butane"])
+    p492 = 1.5e6
+    z492 = [0.5, 0.5]
+    h492 = -13168.282596816884
+    res492 = Clapeyron.ph_flash(fluid492, p492, h492, z492)
+    @test enthalpy(fluid492,res492) ≈ h492 rtol = 1e-6
+
+    #issue 506
+    phase506  = :vapour
+    fluid506  = cPR(["di methylether","di ethylether"],idealmodel  = ReidIdeal)
+    p_in_506  = 101325.0; z_506 = [1.0,1.0]
+    T_in_506  = dew_temperature(fluid506,p_in_506,z_506)[1] + 10;  # we are now pure vapour
+    p_out_506 = 3.0*p_in_506
+    h_in_506  = enthalpy(fluid506,p_in_506,T_in_506,z) 
+    s_in_506  = Clapeyron.PH.entropy(fluid506, p_in_506, h_in_506,z_506,phase = phase506)
+    h_out_506 = Clapeyron.PS.enthalpy(fluid506, p_out_506, s_in_506,z_506,phase = phase506)
+    s_out_506 = Clapeyron.PH.entropy(fluid506, p_out_506, h_out_506,z_506,phase = phase506)
+    @test s_in_506 ≈ s_out_506 rtol = 1e-6
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)

@@ -43,7 +43,6 @@ function tcRK(components;
     reference_state = nothing,
     verbose = false)
 
-
     #just read once if allowed.
 
     userlocations_tcRK = String[]
@@ -68,15 +67,15 @@ function tcRK(components;
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(n))
-    b = PairParam("b",components,zeros(n))
+    a = PairParam("a",formatted_components,zeros(n))
+    b = PairParam("b",formatted_components,zeros(n))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
 
     w = params["acentricfactor"]
     zra = params["ZRA"]
 
     if alpha !== TwuAlpha
-        init_alpha = init_alphamodel(alpha,components,w,alpha_userlocations,verbose)
+        init_alpha = init_alphamodel(alpha,formatted_components,w,alpha_userlocations,verbose)
     else
         M = params["M"]
         N = params["N"]

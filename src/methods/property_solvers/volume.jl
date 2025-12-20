@@ -288,25 +288,23 @@ end
 
 function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
     if has_a_res(model)
-        v = volume_impl(primalval(model),primalval(p),primalval(T),primalval(z),phase,threaded,primalval(vol0))
-        return volume_ad(model,v,T,z,p)
+        λmodel,λp,λT,λz,λvol0 = primalval(model),primalval(p),primalval(T),primalval(z),primalval(vol0)
+        λv = volume_impl(λmodel,λp,λT,λz,phase,threaded,λvol0)
+        tup = (model,p,T,z)
+        λtup = (λmodel,λp,λT,λz)
+        return volume_ad(λv,tup,λtup)
     else
         return volume_impl(model,p,T,z,phase,threaded,primalval(vol0))
     end
 end
 
-function volume_ad(model,v,T,z,p)
-    if has_dual(model) || has_dual(p) || has_dual(T) || has_dual(z)
-        #netwon step to recover derivative information:
-        #V = V - (p(V) - p)/(dpdV(V))
-        #dVdP = -1/dpdV
-        #dVdT = dpdT/dpdV
-        #dVdn = dpdn/dpdV
-        psol,dpdVsol = p∂p∂V(model,v,T,z)
-        return v - (psol - p)/dpdVsol
-    else
-        return v
+function volume_ad(v,tups,tups_primal)
+    f(vx,tups) = begin
+        model,p,T,z = tups
+        pressure(model,vx,T,z) - p
     end
+    v = __gradients_for_root_finders(v,tups,tups_primal,f) # does dual checks internally, else returns v_primal
+    return v
 end
 
 #comprises solid and liquid phases.

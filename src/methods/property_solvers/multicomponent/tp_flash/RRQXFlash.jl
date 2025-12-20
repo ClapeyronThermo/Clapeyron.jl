@@ -1,4 +1,4 @@
-#hooks to TPFlashWrapper
+#hooks to PTFlashWrapper
 update_pressure!(model,p) = nothing
 update_temperature!(model,T) = nothing
 
@@ -14,9 +14,7 @@ function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,spec)
     if spec == pressure #QT flash
         update_pressure!(model,p)
     elseif spec == temperature
-        update_temperature!(model,T)
-    else
-        throw(error("invalid specification for update_K_QX!"))
+        update_temperature!(model,T)   
     end
 
     lnϕx, volx = modified_lnϕ(model, p, T, x, dlnϕ_cache; phase = phasex)
@@ -151,6 +149,10 @@ function RRQXFlash(;equilibrium = :unknown,
 end
 
 function qp_flash_impl(model,β,p,z,method::RRQXFlash)
+    cached_model = __tpflash_cache_model(model,p,NaN,z,method.equilibrium)
+    if cached_model != model
+        return qp_flash_impl(cached_model,β,p,z,method)
+    end
     flash0 = qp_flash_x0(model,β,p,z,method)
     TT = Base.promote_eltype(model,β,p,z)
     x = flash0.compositions[1]
@@ -193,7 +195,11 @@ function qp_flash_impl(model,β,p,z,method::RRQXFlash)
     return FlashResult(flash0.compositions,K,lnK,FlashData(p,T))
 end
 
-function qt_flash_impl(model,β,T,z,method::RRQXFlash)
+function qt_flash_impl(model::M,β,T,z,method::RRQXFlash) where M
+    cached_model = __tpflash_cache_model(model,β,T,z,method.equilibrium)
+    if cached_model != model
+        return qt_flash_impl(cached_model,β,T,z,method)
+    end
     flash0 = qt_flash_x0(model,β,T,z,method)
     TT = Base.promote_eltype(model,β,T,z)
     x = flash0.compositions[1]
@@ -233,6 +239,17 @@ function qt_flash_impl(model,β,T,z,method::RRQXFlash)
     y ./= sum(y)
     K .*= n
     lnK ./= n
+
+    if model isa PTFlashWrapper
+        if iszero(lnK[1]) && is_liquid(phasex)
+            lnK[1] = volume(model,p,T,x,phase = phasex)
+        end
+
+        if iszero(lnK[2]) && is_liquid(phasey)
+            lnK[2] = volume(model,p,T,y,phase = phasey)
+        end
+    end
+
     return FlashResult(flash0.compositions,K,lnK,FlashData(p,T))
 end
 

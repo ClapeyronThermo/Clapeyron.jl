@@ -231,9 +231,12 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
             Kmin,Kmax = K_extrema(K,non_inx,non_iny)
-            if Kmin > 1 || Kmax < 1
+            if Kmax < 1 #only try LLE if the VLE K0 suggests only liquid phase
                 verbose && @info "VLE correlation failed, trying LLE initial point."
-                K .= K0_lle_init(model,p,T,z)
+                K_lle = K0_lle_init(model,p,T,z)
+                if any(!isone,K_lle) #only use LLE result if actually exists
+                    K .= K_lle
+                end
                 lnK .= log.(K)
                 phasey = :liquid
                 phases = (:liquid,:liquid)
@@ -258,7 +261,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     if the initial K values generate a single phase result, but we can split the K into two compositions (Kmin < 1 or Kmax > 1)
     then we start at the bubble (or dew conditions)
     =#
-    
+
     if status == RRLiquid
         β = _0
         if maximum(K) >= 1 #liquid phase, but there is posibility to generate a vapour composition
@@ -281,8 +284,13 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
 
     verbose && @info "initial vapour fraction = $β"
     
-    verbose && status != RREq && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
-    # Stage 1: Successive Substitution
+    if status != RREq 
+        verbose && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
+        exit_early = true    
+    else
+        exit_early = false
+    end
+        # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
     itacc = 0
@@ -301,7 +309,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
     verbose && @info "iter  status        β      error_lnK            K"
-    while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status in (RREq,RRLiquid,RRVapour)
+    while !exit_early && (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status in (RREq,RRLiquid,RRVapour)
         it += 1
         itacc += 1
         lnK_old .= lnK

@@ -192,7 +192,10 @@ has_dual(p::ForwardDiff.Dual) = true
 has_dual(p::AbstractArray{T}) where T= has_dual(T)
 has_dual(model::EoSModel) = has_dual(eltype(model))
 has_dual(x) = false
-
+function has_dual(x::NTuple{N,<:Any}) where N
+    #any_has_dual = ntuple(i -> has_dual(x[i]),Val{N}())
+    return any(has_dual,x)
+end
 """
     doi(model)
 Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. if there isn't a `references` field, it defaults to `default_references(model)`

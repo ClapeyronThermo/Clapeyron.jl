@@ -28,6 +28,7 @@ warnonly = Documenter.except(),
                             "Activity Models" => "eos/activity.md"
                             "SAFT and CPA Models"  => "eos/saft.md"
                             "Empiric Helmholtz Models" => "eos/empiric.md"
+                            "Electrolyte Models" => "eos/electrolytes.md"
                             "Property Correlations" =>  "eos/correlations.md"
                             "Other Models" => "eos/misc.md"],
         "Frequently Asked Questions" => "faq.md",
@@ -41,8 +42,9 @@ warnonly = Documenter.except(),
                   "Macros" => "api/macros.md",
                   "Association" => "api/association.md",
                   "Parameter Estimation" => "api/estimation.md"],
-        "To-do list" => "to-do_list.md"]
-                  )
+        "To-do list" => "to-do_list.md",
+        "Advanced Topics" => ["Implicit differentiation of Properties"=>"implicit_differentiation.md"]
+                  ])
 
         deploydocs(;
     repo="github.com/ClapeyronThermo/Clapeyron.jl.git",

@@ -42,6 +42,11 @@ function init_puremodel(model::SaturationModel,components,userlocations,verbose)
     return EoSVectorParam(fluid,_components)
 end 
 
+function dpdT_saturation(model::SaturationModel,v1::Number,v2,T)
+    sat(_T) = first(saturation_pressure(model,_T))
+    return Solvers.derivative(sat,T)
+end
+
 include("LeeKeslerSat/LeeKeslerSat.jl")
 include("DIPPR101Sat/DIPPR101Sat.jl")
 include("AntoineSat/AntoineEqSat.jl")

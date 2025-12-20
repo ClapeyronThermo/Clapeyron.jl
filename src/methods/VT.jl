@@ -445,11 +445,7 @@ function VT_molar_gradient(model::EoSModel,V,T,z::AbstractVector,property::ℜ) 
     return Solvers.gradient(fun,z)::TT
 end
 
-function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F,ℜ}
-    return VT_molar_gradient!(fx,model,V,T,z,property,nothing)
-end
-
-function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ,::Nothing) where {F,ℜ}
+function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F<:AbstractVector,ℜ}
     if isnan(V) || isnan(T) || any(isnan,z)
         fx .= NaN
         return fx
@@ -458,19 +454,33 @@ function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ,::Nothing)
     return Solvers.gradient!(fx,fun,z)::F
 end
 
-function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ,config) where {F,ℜ}
-    if isnan(V) || isnan(T) || any(isnan,z)
-        fx .= NaN
-        return fx
-    end
-    fun = ZVar(property,model,V,T)
-    return ForwardDiff.gradient!(fx,fun,z,config)::F
-end
+function VT_molar_gradient!(cache::F,model::EoSModel,V,T,z,property::ℜ) where {F<:Tuple,ℜ}
 
+    result,aux,∇f,A1,x1,x2,x3,hconfig = cache
+    if isnan(V) || isnan(T) || any(isnan,z)
+        ∇f .= NaN
+        return ∇f
+    end
+    nc = length(z)
+    if nc == 1
+        f1(_z) = property(model,V,T,SVector(_z))
+        ∇f[1] = ForwardDiff.derivative(f1,z[1])
+    else
+        aux .= 0
+        aux[1:nc] = z
+        gconfig = Solvers._GradientConfig(hconfig)
+        fun(aux) = property(model, V, T, @view(aux[1:nc]))
+        _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
+        dresult = DiffResults.gradient(_result)
+        fx_temp = @view dresult[1:nc]
+        ∇f .= fx_temp
+    end
+    return ∇f
+end
 
 VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_molar_gradient(model,V,T,z,eos)
 VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_molar_gradient(model,V,T,z,eos_res)
-VT_chemical_potential_res!(r,model::EoSModel, V, T, z=SA[1.],config = nothing) = VT_molar_gradient!(r,model,V,T,z,eos_res,config)
+VT_chemical_potential_res!(r, model::EoSModel, V, T, z=SA[1.]) = VT_molar_gradient!(r,model,V,T,z,eos_res)
 VT_chemical_potential!(result,model,V,T,z) = VT_molar_gradient!(result,model,V,T,z,eos)
 
 function VT_fugacity_coefficient(model::EoSModel,V,T,z=SA[1.])
@@ -512,6 +522,35 @@ function VT_fugacity_coefficient!(φ,model::EoSModel,V,T,z=SA[1.],p = pressure(m
     φ .= exp.(φ)
     φ ./= Z
     return φ
+end
+
+function VT_thermodynamic_factor(model::EoSModel, V, T, z)
+    N = length(model)
+    ∑z = sum(z)
+    v = V / ∑z
+    x = z ./ ∑z
+    xN1 = @view x[1:N-1]
+    RT = Rgas(model) * T
+
+    fun_A(_xv) = begin
+        _x = @view _xv[1:N]
+        _v = last(_xv)
+        return eos(model, _v, T, _x)
+    end
+    H_A = Solvers.hessian(fun_A, vcat(x, v))
+    H_A_nn = @view H_A[1:N,1:N]
+    H_A_nv = @view H_A[N+1,1:N] 
+    H_A_vv⁻¹ = inv(H_A[N+1,N+1])
+    H_G_nn = H_A_nn .- (H_A_nv * H_A_nv') .* H_A_vv⁻¹
+
+    H_G_nN = @view H_G_nn[1:N-1,N]
+    H_G_Nn = @view H_G_nn[N,1:N-1]
+    H_G_xx = H_G_nn[1:N-1,1:N-1] .- H_G_nN .- H_G_Nn .+ H_G_nn[N,N]
+    F = [i == j ? 1-x[i] : -x[i] for i in 1:N-1, j in 1:N-1]
+    ∂μᵢ∂xⱼ = H_G_xx * F
+
+    Γ = xN1 ./ RT .* ∂μᵢ∂xⱼ
+    return Γ
 end
 
 const VT_helmholtz_energy = VT_helmholtz_free_energy

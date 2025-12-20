@@ -61,8 +61,8 @@ end
         @test Clapeyron.volume(system, p, T) ≈ 0.00019299766073894634 rtol = 1e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 167.8313793818096 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 618.8455740197799 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 167.83338420356327 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 618.8448255146585 rtol = 1E-6
     end
 end
 
@@ -82,15 +82,18 @@ end
 
 @testset "SAFT-γ Mie methods, single components" begin
     system = SAFTγMie(["ethanol"])
+    system500 = model500()
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 5.753982584153832e-5 rtol = 1e-6
         @test Clapeyron.molecular_weight(system)*1000 ≈ 46.065
     end
+
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7714.8637084302 rtol = 1E-5
         @test Clapeyron.crit_pure(system)[1] ≈ 521.963002384691 rtol = 1E-5
+        @test Clapeyron.crit_pure(system500)[1] ≈ 404.97536526401734 rtol = 1E-5
     end
 end
 
@@ -338,16 +341,23 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.gibbs_solvation(system, T) ≈ -24707.145697543132 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.58099358788 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = true))[1] ≈ 23839.554959977086
-        @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = false))[1] ≈ 23833.324475723246
-        @test Clapeyron.bubble_pressure(system3,T3,z3)[1] ≈ 2460.897944633704 rtol = 1E-6
-        @test Clapeyron.bubble_temperature(system,23758.58099358788, z)[1] ≈ T rtol = 1E-6
+        pb1 = Clapeyron.bubble_pressure(system, T, z)[1]
+        @test pb1 ≈ 23839.554959977086 rtol = 1E-6
+        pb1b = Clapeyron.bubble_pressure(system, T, z, FugBubblePressure())[1]
+        @test pb1b ≈ pb1 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system,pb1, z)[1] ≈ T rtol = 1E-6
+        
+        pb2 = Clapeyron.bubble_pressure(system3,T3,z3)[1]
+        @test pb2 ≈ 2460.897944633704 rtol = 1E-6
+        pb2b = Clapeyron.bubble_pressure(system3,T3,z3,FugBubblePressure())[1]
+        @test pb2b ≈ pb2 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system3,pb2, z3)[1] ≈ T3 rtol = 1E-6
 
-        @test Clapeyron.dew_pressure(system2, T2, z)[1] ≈ 19386.939256733036 rtol = 1E-6
-        @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = true))[1] ≈ 19393.924550078184 rtol = 1e-6
-        @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = false))[1] ≈ 19393.76058757084 rtol = 1e-6
-        @test Clapeyron.dew_temperature(system2, 19386.939256733036, z)[1]  ≈ T2 rtol = 1E-6
+        pd1 = Clapeyron.dew_pressure(system2, T2, z)[1]
+        @test pd1 ≈ 19393.924550078184 rtol = 1E-6
+        pd1b = Clapeyron.dew_pressure(system2, T2, z, FugDewPressure(second_order = false))[1]
+        @test pd1b ≈ pd1 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system2, pd1, z)[1] ≈ T2 rtol = 1e-6
     end
 
     @testset "LLE" begin

@@ -151,6 +151,11 @@ function VT_chemical_stability(model::EoSModel,V,T,z,check_vol = true)
     return chemical_stability(model,p,T,z)
 end
 
+"""
+    chemical_stability(model,V,T,z)::Bool
+
+Performs a chemical stability check using the tangent plane distance criterion, using the [tpd](@ref) function.
+"""
 function chemical_stability(model,p,T,z)
     length(model) == 1 && return true #there aren't other combinations of composition.
     comps,wi,_,_ = tpd(model,p,T,z,break_first = true)

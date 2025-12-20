@@ -15,6 +15,7 @@ import SpecialFunctions
 using StaticArrays
 
 using DiffResults, ForwardDiff
+import DifferentiationInterface # keep function local
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
 #compatibility and raw julia utilities
@@ -62,6 +63,15 @@ struct CompositeModel{𝔽,𝕊} <: EoSModel
     solid::𝕊
     mapping::Union{Vector{Pair{Vector{Tuple{String,Int64}},Tuple{String,Int64}}},Nothing}
     solid_reference_state::ReferenceState
+end
+
+struct PTFlashWrapper{T,T2,R,S} <: EoSModel
+    components::Vector{String}
+    model::T
+    pures::T2
+    sat::Vector{R}
+    fug::Vector{S}
+    equilibrium::Symbol
 end
 
 #recombine options
@@ -130,7 +140,7 @@ include("models/ideal/AlyLeeIdeal.jl")
 #Basic utility EoS
 include("models/utility/EoSVectorParam.jl")
 include("models/utility/ZeroResidual.jl")
-include("models/utility/TPFlashWrapper.jl")
+include("models/utility/PTFlashWrapper.jl")
 
 #Empiric Models uses CompositeModel
 include("models/CompositeModel/CompositeModel.jl")

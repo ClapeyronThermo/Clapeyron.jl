@@ -268,91 +268,62 @@ function near_candidate_fractions(n,k = 0.5*minimum(n))
     return x
 end
 
-function bubbledew_pressure_ad(model,T,z,result,_bubble)
-    if has_dual(model) || has_dual(T) || has_dual(z)
-        p_primal,vl_primal,vv_primal,w_primal = result
+function bubbledew_pressure_ad(result,tup,λtup,_bubble)
+    f(x,tups) = begin
+        model,T,z = tups
+        vl = x[1]
+        vv = x[2]
+        w = @view x[3:end]
         if _bubble
-            _x,_y = z,w_primal
+            _x,_y = z,w
         else
-            _x,_y = w_primal,z
+            _x,_y = w,z
         end
-        Δg = eos(model, vv_primal, T, _y) - eos(model,vl_primal, T, _x)  + p_primal*(vv_primal - vl_primal)
-        Δv = vv_primal - vl_primal
-        p = p_primal - Δg/Δv
-        #=
-        for volume, we use a volume update
-        =#
-
-        vl = volume_ad(model,vl_primal,T,_x,p)
-        vv = volume_ad(model,vv_primal,T,_y,p)
-
-        RT = Rgas(model)*T
-
-        #for w, we do an ss update
-        lnϕl = VT_chemical_potential_res(model, vl, T, _x)
-        lnϕl .= lnϕl ./ RT .- log(p*vl/RT/sum(_x))
-        lnϕv = VT_chemical_potential_res(model, vv, T, _y)
-        lnϕv .= lnϕv ./ RT .- log(p*vv/RT/sum(_y))
-        K = exp.(lnϕl .- lnϕv)
-        if _bubble
-            K .= z .* K
-        else
-            K .= z ./ K
-        end
-        w = K
-        w ./= sum(w)
-        return p,vl,vv,w
-    else
-        return result
+        lnfl,pl = lnf(model,vl,T,_x)
+        lnfv,pv = lnf(model,vv,T,_y)
+        
+        F1 = pl - pv
+        F2 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
+        F3 = lnfl - lnfv
+        vcat(F1,F2,F3) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
     end
+    λx = vcat(result)
+    ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
+   
+    ∂vl,∂vv = ∂x[1],∂x[2]
+    ∂p = _bubble ? pressure(model,∂vl,T,z) : pressure(model,∂vv,T,z)
+    ∂w = ∂x[3:end]
+    return ∂p,∂vl,∂vv,∂w
 end
 
-bubble_pressure_ad(model,T,z,result) = bubbledew_pressure_ad(model,T,z,result,true)
-dew_pressure_ad(model,T,z,result) = bubbledew_pressure_ad(model,T,z,result,false)
+bubble_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,true)
+dew_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,true)
 
-function bubbledew_temperature_ad(model,p,z,result,_bubble)
-    if has_dual(model) || has_dual(p) || has_dual(z)
-        T_primal,vl_primal,vv_primal,w_primal = result
+function bubbledew_temperature_ad(result,tup,λtup,_bubble)
+    f(x,tups) = begin
+        model,p,z = tups
+        T = x[1]
+        vl = x[2]
+        vv = x[3]
+        w = @view x[4:end]
         if _bubble
-            _x,_y = z,w_primal
+            _x,_y = z,w
         else
-            _x,_y = w_primal,z
+            _x,_y = w,z
         end
-
-        p_primal,∂p∂V = p∂p∂V(model,vv_primal,T_primal,_y)
-        vv = vv_primal - (p_primal - p)/∂p∂V
-
-        #for T, we use a dlnpdTinv step, a dpdT step is fine too
-        dpdT = dpdT_saturation(model,vv_primal,vl_primal,T_primal)
-        dTinvdlnp = -p_primal/(dpdT*T_primal*T_primal)
-        Δlnp = log(p/p_primal)
-        Tinv0 = 1/T_primal
-        Tinv = Tinv0 + dTinvdlnp*Δlnp
-        dT = T_primal - 1/Tinv
-        T = 1/Tinv
-        T = T_primal - (p_primal - p)/dpdT
-
-        vl = volume_ad(model,vl_primal,T,_x,p)
-
-        RT = Rgas(model)*T
-
-       #for w, we do an ss update
-       lnϕl = VT_chemical_potential_res(model, vl, T, _x)
-       lnϕl .= lnϕl ./ RT .- log(p*vl/RT/sum(_x))
-       lnϕv = VT_chemical_potential_res(model, vv, T, _y)
-       lnϕv .= lnϕv ./ RT .- log(p*vv/RT/sum(_y))
-       K = exp.(lnϕl .- lnϕv)
-       if _bubble
-           K .= z .* K
-       else
-           K .= z ./ K
-       end
-       w = K
-       w ./= sum(w)
-        return T,vl,vv,w
-    else
-        return result
+        pl,lnfl = lnf(model,vl,T,_x)
+        pv,lnfv = lnf(model,vv,T,_y)
+        F1 = pl - p
+        F2 = pv - p
+        F3 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
+        F4 = lnfl - lnfv
+        vcat(F1,F2,F3,F4) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
     end
+    λx = vcat(result)
+    ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
+    ∂T,∂vl,∂vv = ∂x[1:3]
+    ∂w = ∂x[4:end]
+    return ∂T,∂vl,∂vv,∂w
 end
 
 bubble_temperature_ad(model,p,z,result) = bubbledew_temperature_ad(model,p,z,result,true)
@@ -366,13 +337,13 @@ function zero_non_equilibria!(w,in_equilibria)
 end
 
 
-function comps_in_equilibria(components,::Nothing)
+function comps_in_equilibria(components,::Nothing)::Vector{Bool}
     return fill(true,length(components))
 end
 
-function comps_in_equilibria(components,not_in_w)
+function comps_in_equilibria(components,not_in_w)::Vector{Bool}
     res = fill(true,length(components))
-    for i in 1:length(components)
+    for i in eachindex(res)
         res[i] = !in(components[i],not_in_w)
     end
     return res
@@ -394,7 +365,6 @@ include("solids/sle_solubility.jl")
 include("solids/slle_solubility.jl")
 include("solids/eutectic_point.jl")
 
-export bubble_pressure_fug, bubble_temperature_fug, dew_temperature_fug, dew_pressure_fug
 export bubble_pressure,    dew_pressure,    LLE_pressure,    azeotrope_pressure, VLLE_pressure
 export bubble_temperature, dew_temperature, LLE_temperature, azeotrope_temperature, VLLE_temperature
 export crit_mix, UCEP_mix, UCST_pressure, UCST_temperature, UCST_mix, mechanical_critical_point
