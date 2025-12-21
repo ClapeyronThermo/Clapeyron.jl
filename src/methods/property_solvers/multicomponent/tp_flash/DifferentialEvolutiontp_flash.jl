@@ -126,7 +126,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
         if iszero(volumes[i]) && model isa PTFlashWrapper
             #we suppose liquid volume, evaluate here
             volumes[i] = volume(model,p,T,comps[i],phase = :l)
-        end 
+        end
     end
     return FlashResult(comps, βi, volumes, FlashData(p,T,g))
 end
@@ -175,8 +175,7 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     G = _0
     for i ∈ 1:numphases
         ni = @view(nvals[i, :])
-        xi = @view(x[i, :])
-        gi,vi = __eval_G_DETPFlash(model,p,T,ni,xi,equilibrium)
+        gi,vi = __eval_G_DETPFlash(model,p,T,ni,equilibrium)
         vcache[i] = vi
         G += gi
         #calling with PTn calls the internal volume solver
@@ -196,8 +195,6 @@ function __eval_G_DETPFlash(model::EoSModel,p,T,ni,equilibrium)
     g = VT_gibbs_free_energy(model, vi, T, ni)
     return g,vi
 end
-
-__eval_G_DETPFlash(model::EoSModel,p,T,ni,xi,equilibrium) = __eval_G_DETPFlash(model,p,T,ni,equilibrium)
 
 numphases(method::DETPFlash) = method.numphases
 

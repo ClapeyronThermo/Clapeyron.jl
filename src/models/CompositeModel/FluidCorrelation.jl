@@ -24,25 +24,25 @@ function FluidCorrelation(_components;
                             liquid_reference_state = :ntp) #=Coolprop uses this reference=#
 
     components = format_components(_components)
-    if gas_volume != nothing
+    if gas_volume !== nothing
         init_gas = init_model(gas_volume,components,gas_volume_userlocations,verbose)
     else
         init_gas = nothing
     end
 
-    if liquid_volume != nothing
+    if liquid_volume !== nothing
         init_liquid = init_model(liquid_volume,components,liquid_volume_userlocations,verbose)
     else
         init_liquid = nothing
     end
 
-    if saturation != nothing
+    if saturation !== nothing
         init_sat = init_model(saturation,components,saturation_userlocations,verbose)
     else
         init_sat = nothing
     end
 
-    if liquid_cp != nothing
+    if liquid_cp !== nothing
         init_cp = init_model(liquid_cp,components,liquid_cp_userlocations,verbose)
     else
         init_cp = nothing
@@ -226,7 +226,7 @@ function init_preferred_method(method::typeof(tp_flash),model::FluidCorrelation{
     RRTPFlash(;nacc = 0,kwargs...)
 end
 
-function __tpflash_cache_model(model::FluidCorrelation,p,T,z,equilibrium) 
+function __tpflash_cache_model(model::FluidCorrelation,p,T,z,equilibrium)
     PTFlashWrapper(model,p,T,z,equilibrium)
 end
 
@@ -240,10 +240,6 @@ end
 
 function __eval_G_DETPFlash(model::PTFlashWrapper{<:FluidCorrelation},p,T,xi,equilibrium)
     throw(error("Correlation-Based Composite Model does not support DETPFlash."))
-end
-
-function __eval_G_DETPFlash(model::PTFlashWrapper{<:FluidCorrelation},p,T,ni,xi,equilibrium)
-    return __eval_G_DETPFlash(model,p,T,ni,equilibrium)
 end
 
 export FluidCorrelation
