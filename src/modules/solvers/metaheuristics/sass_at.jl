@@ -5,27 +5,26 @@ mutable struct Arch
 end
 
 struct SASSConfig
-    max_npop   :: Int
-    min_npop   :: Int
-    max_nfes   :: Int
-    stagnation_evals::Int
-    stagnation_tol::Float64
-    pbestratio :: Float64
-    Ar         :: Float64
-    Ms         :: Int
-    dim        :: Int
-    lb         :: Vector{Float64}
-    ub         :: Vector{Float64}
-    seed       :: Int
+    max_npop         :: Int
+    min_npop         :: Int
+    max_nfes         :: Int
+    stagnation_evals :: Int
+    stagnation_tol   :: Float64
+    pbestratio       :: Float64
+    Ar               :: Float64
+    Ms               :: Int
+    dim              :: Int
+    lb               :: Vector{Float64}
+    ub               :: Vector{Float64}
+    seed             :: Int
 end
 
 mutable struct SASSState
-    gen      :: Int
-    npop     :: Int
-    nfes     :: Int
-    stagnation_count::Int
-
-    rng        :: MersenneTwister
+    gen              :: Int
+    npop             :: Int
+    nfes             :: Int
+    stagnation_count :: Int
+    rng              :: MersenneTwister
 
     # populations
     x        :: Matrix{Float64}
@@ -38,13 +37,13 @@ mutable struct SASSState
     arch   :: Arch
     ci     :: Vector{Float64}
     rd     :: Vector{Float64}
-    mem_c̄ :: Vector{Float64}
+    mem_c̄  :: Vector{Float64}
     mem_rd :: Vector{Float64}
 
     # best tracking
-    best_x::Vector{Float64}
-    best_y_current::Float64
-    best_y_history::Vector{Float64}
+    best_x       :: Vector{Float64}
+    best_y       :: Float64
+    best_y_trace :: Vector{Float64}
 
     # ask–tell bookkeeping
     is_pending  :: Bool
@@ -82,17 +81,13 @@ function SASS(
 
     max_npop = Int(max_npop)
     max_nfes = Int(max_nfes)
-    stagnation_evals = Int(stagnation_evals)
-    stagnation_tol = Float64(stagnation_tol)
     max_npop >= 4 || throw(DomainError(max_npop, "Population size must be at least 4"))
     max_nfes >= max_npop || throw(DomainError(max_nfes, "max_nfes must be >= population size"))
     stagnation_evals >= 0 || throw(DomainError(stagnation_evals, "stagnation_evals must be >= 0 (0 disables early stopping)"))
     stagnation_tol >= 0.0 || throw(DomainError(stagnation_tol, "stagnation_tol must be >= 0"))
 
-    cfg = SASSConfig(max_npop, min_npop, max_nfes,
-        stagnation_evals, stagnation_tol,
-        pbestratio, Ar, Ms,
-        dim, collect(Float64, lb), collect(Float64, ub), Int(seed))
+    cfg = SASSConfig(max_npop, min_npop, max_nfes, stagnation_evals, stagnation_tol,
+        pbestratio, Ar, Ms, dim, collect(Float64, lb), collect(Float64, ub), Int(seed))
 
     npop = max_npop
     gen = 1
@@ -107,8 +102,8 @@ function SASS(
     y = Vector{Float64}(undef, 0)                    # baseline filled after gen 1
     curr_y2 = fill(NaN, npop)
     best_x = Vector{Float64}(undef, dim)
-    best_y_current = Inf
-    best_y_history = sizehint!(Float64[], max_nfes ÷ max(1, max_npop) * 5)
+    best_y = Inf
+    best_y_trace = sizehint!(Float64[], max_nfes ÷ max(1, max_npop) * 5)
 
     arch = Arch(round(Int, Ar * npop), zeros(dim, 0), Float64[])
     ci = Float64[]
@@ -116,11 +111,10 @@ function SASS(
     mem_rd = fill(rd0, Ms)
     mem_c̄ = fill(c̄0, Ms)
 
-    state = SASSState(gen, npop, nfes, stagnation_count,
-        rng,
+    state = SASSState(gen, npop, nfes, stagnation_count, rng,
         x, x_new, x_shadow, y, curr_y2,
         arch, ci, rd, mem_c̄, mem_rd,
-        best_x, best_y_current, best_y_history,
+        best_x, best_y, best_y_trace,
         false, 1, Vector{Float64}(undef, dim), 1)
 
     buffers = SASSWorkspace(zeros(Int, npop))
@@ -218,7 +212,7 @@ function _finalize_generation!(sa::SASS)
     pbestratio = c.pbestratio
 
     y₂ = s.curr_y2
-    push!(s.best_y_history, s.best_y_current)
+    push!(s.best_y_trace, s.best_y)
     # `nfes` is incremented in `tell!` (one evaluation per tell); do not accumulate here.
 
     if i == 1
@@ -271,7 +265,7 @@ function _finalize_generation!(sa::SASS)
     mem_rand_index = rand!(rng, sa.buffers.perm_buf, 1:Ms)
     MUci = s.mem_c̄[mem_rand_index]
     MUrd = s.mem_rd[mem_rand_index]
-    s.rd = (0.1 * randn(rng)) .+ MUrd
+    s.rd = 0.1randn(rng) .+ MUrd
     s.rd[MUrd.==-1] .= 0
     clamp!(s.rd, 0, 1)
     r_ci = rand(rng, s.npop)
@@ -345,9 +339,9 @@ function tell!(sa::SASS, y::Real)
     i = s.pending_col
     s.curr_y2[i] = y
 
-    old_best_y = s.best_y_current
-    if y < s.best_y_current
-        s.best_y_current = y
+    old_best_y = s.best_y
+    if y < s.best_y
+        s.best_y = y
         s.best_x .= s.pending_x
     end
     if c.stagnation_evals > 0
@@ -371,4 +365,4 @@ function isdone(sa::SASS)
     return (s.nfes >= c.max_nfes) || stagnating
 end
 
-best(sa::SASS) = (sa.state.best_x, sa.state.best_y_current)
+best(sa::SASS) = (sa.state.best_x, sa.state.best_y)
