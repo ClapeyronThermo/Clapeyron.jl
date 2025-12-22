@@ -13,10 +13,12 @@
 - CoolProp: support for CoolProp 7.2
 - Association: removed small static solvers for sizes 2-5 due to compilation slowdown.
 - Cubics: improved robustness in the volume solver
+- PCSAFT: improved robustness in the volume solver at low temperatures
 
 ## Method deprecations
 
 - `ActivityDewTemperature` and `ActivityBubbleTemperature` were removed, `FugBubbleTemperature` and `FugDewTemperature` are now the default for activity methods, with proper suppor for non-condensables/non-volatiles
+- `DETPFlash` now uses another global optimizer, with the main intention of dropping `BlackBoxOptim` as a dependency.
 
 ## Bug fixes
 
