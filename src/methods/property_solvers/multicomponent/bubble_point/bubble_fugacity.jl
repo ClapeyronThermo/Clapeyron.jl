@@ -133,12 +133,12 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
         problem = _fug_OF_neq(model,T,x,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     else
         problem = _fug_OF_neq(model,model_y,T,x,volatiles,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     end
 
     lnp = inc[end]
@@ -284,12 +284,12 @@ function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTempera
         problem = _fug_OF_neq(model,p,x,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     else
         problem = _fug_OF_neq(model,model_y,p,x,volatiles,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     end
 
     lnT = inc[end]

@@ -49,6 +49,12 @@ function group_Mw(Mw_gc::SingleParam,groups::GroupParam)
     return mw_comp
 end
 
+function __check_convergence(solver_result)
+    f_abstol = solver_result.options.f_abstol
+    best_residual = solver_result.info.best_residual
+    all(x -> abs(x) < f_abstol,best_residual)
+end
+
 function group_molecular_weight(groups::GroupParameter,mw,z = @SVector [1.])
     res = zero(first(z))
     for i in 1:length(groups.n_flattenedgroups)

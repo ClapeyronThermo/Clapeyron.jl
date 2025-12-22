@@ -133,12 +133,12 @@ function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
         problem = _fug_OF_neq(model,T,y,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     else
         problem = _fug_OF_neq(model_x,model,T,y,condensables,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     end
 
     lnp = inc[end]
@@ -286,12 +286,12 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
         problem = _fug_OF_neq(model,p,y,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     else
         problem = _fug_OF_neq(model_x,model,p,y,condensables,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     end
 
     lnT = inc[end]

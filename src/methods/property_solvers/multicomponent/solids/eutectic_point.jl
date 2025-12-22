@@ -30,7 +30,7 @@ function eutectic_point(model::CompositeModel,p=1e5; x0=nothing)
     v0 = svec2(1/T0,log(x10),_1)
     sol  = Solvers.nlsolve2(f,v0,Solvers.Newton2Var())
     #sol = Solvers.x_sol(r)
-    #!all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
+    #!__check_convergence(r) && (sol .= NaN)
     T = 1/sol[1]
     x = FractionVector(exp(sol[2]))
     return T,x

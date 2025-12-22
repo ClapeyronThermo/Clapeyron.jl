@@ -75,7 +75,7 @@ function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
     #putting the limit here allows to faster bail-out in case of unsucessful iteration
     r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),options)
     sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
+    !__check_convergence(r) && (sol .= NaN)
     xx_r = FractionVector(sol[3:end])
     vl = v_from_η(model_r,sol[1],T,x_r)
     vll = v_from_η(model_r,sol[2],T,xx_r)
@@ -119,7 +119,7 @@ function LLE_temperature(model::EoSModel,p,x;v0=nothing)
     v00 = v0[1:nc+2]
     r = Solvers.nlsolve(f!,v00,LineSearch(Newton2(v00)),options)
     sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
+    !__check_convergence(r) && (sol .= NaN)
     T = sol[1]
     xx_r = FractionVector(sol[4:end])
     vl = v_from_η(model_r,sol[2],T,x_r)

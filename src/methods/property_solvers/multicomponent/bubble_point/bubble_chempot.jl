@@ -95,7 +95,7 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
         ForwardDiff.Chunk{min(length(v0), 8)}()
     )
     sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
+    !__check_convergence(r) && (sol .= NaN)
     v_l = v_from_η(model,sol[1],T,x)
     y_r = FractionVector(@view(sol[3:end]),idx_max)
     v_v = v_from_η(model,model_y,sol[2],T,y_r)
@@ -220,7 +220,7 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
         ForwardDiff.Chunk{min(length(v0), 8)}()
     )
     sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
+    !__check_convergence(r) && (sol .= NaN)
     T = sol[1]
     y_r = FractionVector(@view(sol[4:end]), idx_max)
     v_l = v_from_η(model, sol[2], T, x)

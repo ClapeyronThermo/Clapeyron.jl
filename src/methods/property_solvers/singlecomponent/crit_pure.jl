@@ -54,7 +54,7 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     f!(F,x) = ObjCritPure(primalmodel,F,primalval(T̄),x,zz)
     solver_res = Solvers.nlsolve(f!, x0, TrustRegion(Newton(), NLSolvers.NWI()), options)
     r  = Solvers.x_sol(solver_res)
-    !all(<(solver_res.options.f_abstol),abs.(solver_res.info.best_residual)) && (r .= NaN)
+    !__check_convergence(solver_res) && (r .= NaN)
     T_c = r[1]*T̄
     lbv = lb_volume(primalmodel,T_c,zp)
     V_c = crit_x_to_v(lbv,r[2])
