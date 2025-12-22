@@ -82,6 +82,29 @@ end
         @test all(ddp[2] .≈ dp)
         @test all(ddp[1] .≈ d2p)
     end
+    
+    @testset "AD Error Checks" begin
+        import ForwardDiff
+        import Clapeyron: MultipleTagError, NestedADError, __gradients_for_root_finders
+        f_test(x,tups) = tups[1]*tups[2]*x # just a generic function to check error handling
+        tag1 = ForwardDiff.Tag{:tag1,Float64}
+        tag2 = ForwardDiff.Tag{:tag2,Float64}
+        Tdual1 = ForwardDiff.Dual{tag1,Float64,1}
+        Tdual2 = ForwardDiff.Dual{tag2,Float64,1}
+        parts = ForwardDiff.Partials{1,Float64}((1.0,))
+        theta1,theta2 = 0.5,2.0;
+        x = 0.0
+        x_dual = ForwardDiff.Dual{tag1,Float64,1}(x,parts)
+        tups_primal = (theta1,theta2)
+        tups_Dual2 = (Tdual1(theta1,parts),Tdual2(theta2,parts))
+        tups_nestedDual = (ForwardDiff.Dual{tag2,Tdual1,1}(Tdual1(theta1,parts)),theta2)
+        # Test multiple tag error
+        @test_throws MultipleTagError __gradients_for_root_finders(x,tups_Dual2,tups_primal,f_test)
+        # Test nested dual error
+        @test_throws NestedADError __gradients_for_root_finders(x,tups_nestedDual,tups_primal,f_test)
+        # Test dual as x error 
+        @test_throws ErrorException __gradients_for_root_finders(x_dual,(theta1,theta2),tups_primal,f_test)
+    end
 end
 
 

@@ -280,7 +280,7 @@ function nested_ad_check(a::A) where A
     AT = eltype(a)
     if AT <: ForwardDiff.Dual
         V = ForwardDiff.valtype(AT)
-        V isa ForwardDiff.Dual && throw(NestedADError("Found nested Duals of type $AT. This is currently not supported in implicit differentiation."))
+        V <: ForwardDiff.Dual && throw(NestedADError("Found nested Duals of type $AT. This is currently not supported in implicit differentiation."))
     end
     return nothing
 end
