@@ -92,8 +92,14 @@ struct NestedADError <: Exception
     msg::String
 end
 NestedADError() = NestedADError("")
+function Base.showerror(io::IO, e::NestedADError)
+    print(io, "NestedADError: ", e.msg)
+end
 
 struct MultipleTagError <: Exception
     msg::String
 end
 MultipleTagError() = MultipleTagError("")
+function Base.showerror(io::IO, e::MultipleTagError)
+    print(io, "MultipleTagError: ", e.msg)
+end
