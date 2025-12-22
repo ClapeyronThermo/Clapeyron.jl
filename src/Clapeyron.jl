@@ -11,7 +11,7 @@ using Roots: Roots
 using Scratch
 import LogExpFunctions
 using FillArrays: FillArrays
-import BlackBoxOptim
+import SpecialFunctions
 using StaticArrays
 
 using DiffResults, ForwardDiff

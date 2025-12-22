@@ -75,7 +75,9 @@
         flash0 = Clapeyron.tp_flash(act_system, p, T, [0.5,0.5,0.0], DETPFlash(equilibrium = :lle))
         act_x0 = activity_coefficient(act_system, p, T, flash0[1][1,:]) .* flash0[1][1,:]
         act_y0 = activity_coefficient(act_system, p, T, flash0[1][2,:]) .* flash0[1][2,:]
-        @test Clapeyron.dnorm(act_x0,act_y0) < 0.01 #not the most accurate, but it is global
+        @test Clapeyron.dnorm(act_x0,act_y0) < 1e-6
+        flash_RR = Clapeyron.tp_flash(act_system, p, T, [0.5,0.5,0.0], RRTPFlash(equilibrium = :lle))
+        @test flash0[3] ≈ flash_RR[3] rtol = 1e-12
     end
 
     @testset "Multiphase algorithm" begin
