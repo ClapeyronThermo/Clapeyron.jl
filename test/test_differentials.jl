@@ -95,14 +95,15 @@ end
         theta1,theta2 = 0.5,2.0;
         x = 0.0
         x_dual = ForwardDiff.Dual{tag1,Float64,1}(x,parts)
+        tups_primal = (theta1,theta2)
         tups_Dual2 = (Tdual1(theta1,parts),Tdual2(theta2,parts))
         tups_nestedDual = (ForwardDiff.Dual{tag2,Tdual1,1}(Tdual1(theta1,parts)),theta2)
         # Test multiple tag error
-        @test_throws MultipleTagError __gradients_for_root_finders(x,tups_Dual2,f_test)
+        @test_throws MultipleTagError __gradients_for_root_finders(x,tups_Dual2,tups_primal,f_test)
         # Test nested dual error
-        @test_throws NestedADError __gradients_for_root_finders(x,tups_nestedDual,f_test)
+        @test_throws NestedADError __gradients_for_root_finders(x,tups_nestedDual,tups_primal,f_test)
         # Test dual as x error 
-        @test_throws ErrorException __gradients_for_root_finders(x_dual,(theta1,theta2),f_test)
+        @test_throws ErrorException __gradients_for_root_finders(x_dual,(theta1,theta2),tups_primal,f_test)
     end
 end
 
