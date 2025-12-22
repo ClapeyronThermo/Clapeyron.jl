@@ -387,6 +387,12 @@ GC.gc()
             Tc1 = 419.95
             sat_low1 = saturation_pressure(l1,0.183Tc1)
             @test sat_low1[1] ≈ 9.468875475768151e-9 rtol = 1e-6
+
+            l2 = PCSAFT("1-butene")
+            Tc2 = 426.80960130305374
+            sat_low2 = saturation_pressure(l2,0.18Tc)
+            @test sat_low2[1] ≈ 1.7914820721239496e-9 rtol = 1e-6
+            
         end
     end
     GC.gc()
