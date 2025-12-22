@@ -1,3 +1,26 @@
+"""
+Simple usage example:
+
+```julia
+using Clapeyron
+const SOL = Clapeyron.Solvers
+
+f(x) = sum(abs2, x)
+dim = 2
+lb = fill(-5.0, dim)
+ub = fill(5.0, dim)
+
+algo = SOL.SASS(50, 10_000, lb, ub; seed = 1, stagnation_evals = 0, stagnation_tol = 0.0)
+while !SOL.isdone(algo)
+    x = SOL.ask!(algo)
+    y = f(x)
+    SOL.tell!(algo, y)
+end
+
+best_x, best_y = SOL.best(algo)
+```
+"""
+
 mutable struct Arch
     max_npop::Int
     x::Matrix{Float64}

@@ -279,11 +279,12 @@ end
 
 function gammaphi_gibbs(wrapper::PTFlashWrapper,p,T,w,phase = :unknown,vol = NaN)
     model = wrapper.model
+    TT = Base.promote_eltype(__γ_unwrap(model),p,T,w)
     RT = Rgas(model)*T
     ∑w = sum(w)
-    iszero(∑w) && return zero(Base.promote_eltype(model,p,T,w))
-    g_ideal = sum(xlogx,w) - xlogx(sum(w)) 
-    vl = zero(Base.promote_eltype(__γ_unwrap(model),p,T,w))
+    iszero(∑w) && return zero(TT), zero(TT)
+    g_ideal = sum(xlogx,w) - xlogx(∑w)
+    vl = zero(TT)
     if is_liquid(phase)
         return excess_gibbs_free_energy(__γ_unwrap(model),p,T,w)/RT + g_ideal,vl
     elseif is_vapour(phase)

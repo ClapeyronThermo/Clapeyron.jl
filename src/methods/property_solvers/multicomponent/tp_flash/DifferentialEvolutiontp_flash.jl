@@ -169,31 +169,33 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     #nvals = zeros(TT,numphases, numspecies)
     #Calculate partition of species into phases
     partition!(dividers,n,x,nvals)
-    #Calculate Overall Gibbs energy (J)
+    #Accumulate total reduced Gibbs energy, G/(RT)
     #If any errors are encountered, return a big number, ensuring point is discarded
     #by DE Algorithm
     G = _0
     for i ∈ 1:numphases
         ni = @view(nvals[i, :])
-        gi,vi = __eval_G_DETPFlash(model,p,T,ni,equilibrium)
+        gi_reduced,vi = __eval_G_DETPFlash(model,p,T,ni,equilibrium)
         vcache[i] = vi
-        G += gi
+        G += gi_reduced
         #calling with PTn calls the internal volume solver
         #if it returns an error, is a bug in our part.
     end
     if logspace
         dividers .= log.(dividers)
     end
-    R̄ = Rgas(model)
-    return ifelse(isnan(G),bignum,G/R̄/T)
+    # Per the FlashData definition, return the molar reduced Gibbs energy (g = G/(nRT))
+    ∑n = sum(n)
+    return ifelse(isnan(G),bignum,G/∑n)
 end
 
 #indirection to allow overloading this evaluation in activity models
 function __eval_G_DETPFlash(model::EoSModel,p,T,ni,equilibrium)
     phase = is_lle(equilibrium) ? :liquid : :unknown
+    RT = Rgas(model)*T
     vi = volume(model,p,T,ni;phase = phase)
     g = VT_gibbs_free_energy(model, vi, T, ni)
-    return g,vi
+    return g/RT,vi
 end
 
 numphases(method::DETPFlash) = method.numphases
