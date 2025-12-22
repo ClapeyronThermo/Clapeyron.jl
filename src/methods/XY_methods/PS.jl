@@ -22,7 +22,6 @@ function PS_property(model,p,s,z,f::F,phase,T0,threaded) where F
         end
     end
     res = ps_flash(model,p,s,z,T0 = T0)
-    display(res)
     return f(model,res)
 end
 
