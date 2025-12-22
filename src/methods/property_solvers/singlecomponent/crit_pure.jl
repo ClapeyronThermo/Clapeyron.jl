@@ -54,7 +54,7 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     f!(F,x) = ObjCritPure(primalmodel,F,primalval(T̄),x,zz)
     solver_res = Solvers.nlsolve(f!, x0, TrustRegion(Newton(), NLSolvers.NWI()), options)
     r  = Solvers.x_sol(solver_res)
-    !all(<(solver_res.options.f_abstol),solver_res.info.best_residual) && (r .= NaN)
+    !all(<(solver_res.options.f_abstol),abs.(solver_res.info.best_residual)) && (r .= NaN)
     T_c = r[1]*T̄
     lbv = lb_volume(primalmodel,T_c,zp)
     V_c = crit_x_to_v(lbv,r[2])
@@ -79,7 +79,7 @@ function crit_pure_ad(crit,tup,λtup)
             _,F1,F2 = p∂p∂2p(model, Vc, Tc, z)
             return SVector(F1,F2)
         end
-        T_c,V_c = __gradients_for_root_finders(x,tups,f)
+        T_c,V_c = __gradients_for_root_finders(x,tup,λtup,f)
         P_c = pressure(model,V_c,T_c,z)
         return (T_c,P_c,V_c)
     else
