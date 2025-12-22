@@ -122,7 +122,12 @@ function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
     volx,voly = vol
 
     if converged
-        return p,volx,voly,index_expansion(x,condensables)
+        xx = index_expansion(x,condensables)
+        if iszero(volx) && model isa PTFlashWrapper
+            vx = volume(model,p,T,xx,phase = :l)
+            volx = oftype(volx,vx)
+        end
+        return p,volx,voly,xx
     end
 
     lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
@@ -147,7 +152,10 @@ function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
     x = index_expansion(x_r,condensables)
     p = exp(lnp)
     volx,voly = vol_cache[]
-
+    if iszero(volx) && model isa PTFlashWrapper
+        vx = volume(model,p,T,x,phase = :l)
+        volx = oftype(volx,vx)
+    end
      return p, volx, voly, x
 end
 
@@ -275,7 +283,12 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
     volx,voly = vol
 
     if converged
-        return T,volx,voly,index_expansion(x,condensables)
+        xx = index_expansion(x,condensables)
+        if iszero(volx) && model isa PTFlashWrapper
+            vx = volume(model,p,T,xx,phase = :l)
+            volx = oftype(volx,vx)
+        end
+        return T,volx,voly,xx
     end
 
     lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
@@ -300,7 +313,10 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
     x = index_expansion(x_r,condensables)
     T = exp(lnT)
     volx,voly = vol_cache[]
-    
+    if iszero(volx) && model isa PTFlashWrapper
+        vx = volume(model,p,T,x,phase = :l)
+        volx = oftype(volx,vx)
+    end    
     return T, volx, voly, x
 end
 

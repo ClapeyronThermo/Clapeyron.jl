@@ -453,8 +453,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     #activity models don't need volume calculations for the flash calculation.
     #but we return volumes, so we calculate those at the end.
 
-    iszero(vx) && model isa PTFlashWrapper && is_liquid(phasex) && (vx = volume(model,p,T,x,phase = phasex))
-    iszero(vy) && model isa PTFlashWrapper && is_liquid(phasey) && (vy = volume(model,p,T,y,phase = phasey))
+    iszero(vx) && model isa PTFlashWrapper && is_liquid(phasex) && (vx = oftype(vx,volume(model,p,T,x,phase = phasex)))
+    iszero(vy) && model isa PTFlashWrapper && is_liquid(phasey) && (vy = oftype(vy,volume(model,p,T,y,phase = phasey)))
 
     if !reduced
         x = index_expansion(x,z_nonzero)

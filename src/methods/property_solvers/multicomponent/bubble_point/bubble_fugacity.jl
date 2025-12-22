@@ -87,11 +87,11 @@ function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::FugBu
     return bubble_pressure_impl(wrapper,T,x,method)
 end
 
-function bubble_pressure_impl(model::CompositeModel,T,x,method::FugBubblePressure)
+function bubble_pressure_impl(model::CompositeModel,T,x, method::FugBubblePressure)
     return bubble_pressure_impl(model.fluid,T,x,method)
 end
 
-function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
+function bubble_pressure_impl(model::EoSModel, T, x, method::FugBubblePressure)
     nonvolatiles = method.nonvolatiles
     volatiles = comps_in_equilibria(component_list(model),nonvolatiles)
     _vol0,_p0,_y0 = method.vol0,method.p0,method.y0
@@ -122,6 +122,10 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
     volx,voly = vol
 
     if converged || isnan(volx) || isnan(voly)
+        if iszero(volx) && model isa PTFlashWrapper
+            vx = volume(model,p,T,x,phase = :l)
+            volx = oftype(volx,vx)
+        end
         return p,volx,voly,index_expansion(y,volatiles)
     end
 
@@ -147,6 +151,10 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
     y = index_expansion(y_r,volatiles)
     p = exp(lnp)
     volx,voly = vol_cache[]
+    if iszero(volx) && model isa PTFlashWrapper
+        vx = volume(model,p,T,x,phase = :l)
+        volx = oftype(volx,vx)
+    end
     return p, volx, voly, y
 end
 
@@ -273,6 +281,10 @@ function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTempera
     volx,voly = vol
     opts = NLSolvers.NEqOptions(method)
     if converged || isnan(volx) || isnan(voly)
+        if iszero(volx) && model isa PTFlashWrapper
+            vx = volume(model,p,T,x,phase = :l)
+            volx = oftype(volx,vx)
+        end
         return T,volx,voly,index_expansion(y,volatiles)
     end
 
@@ -298,6 +310,10 @@ function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTempera
     y = index_expansion(y_r,volatiles)
     T = exp(lnT)
     volx,voly = vol_cache[]
+    if iszero(volx) && model isa PTFlashWrapper
+        vx = volume(model,p,T,x,phase = :l)
+        volx = oftype(volx,vx)
+    end
     return T, volx, voly, y
 end
 
