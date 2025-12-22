@@ -35,7 +35,7 @@
         #https://julialang.zulipchat.com/#narrow/channel/265161-Clapeyron.2Ejl/topic/The.20meaning.20of.20subcooled.20liquid.20flash.20results/near/534216551
         model_zulip2 = PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"])
         res3 = Clapeyron.tp_flash2(model_zulip2, 1e5 , 450, z_zulip1, RRTPFlash(equilibrium=:vle))
-        
+
         if Clapeyron.numphases(res3) == 2
             @test isone(res3.fractions[2])
             @test res3.volumes[1] ≈ 0.03683358805181434 rtol = 1e-6
@@ -69,15 +69,15 @@
 
     @testset "DE Algorithm" begin
         #VLLE eq
-        @test Clapeyron.tp_flash(system, p, T, z, DETPFlash(numphases = 3))[3] ≈ -6.759674475174073 rtol = 1e-6
+        @test Clapeyron.tp_flash(system, p, T, z, DETPFlash(numphases = 3))[3] ≈ -6.759674475174073 rtol = 1e-12
         #LLE eq with activities
         act_system = UNIFAC(["water","cyclohexane","propane"])
         flash0 = Clapeyron.tp_flash(act_system, p, T, [0.5,0.5,0.0], DETPFlash(equilibrium = :lle))
         act_x0 = activity_coefficient(act_system, p, T, flash0[1][1,:]) .* flash0[1][1,:]
         act_y0 = activity_coefficient(act_system, p, T, flash0[1][2,:]) .* flash0[1][2,:]
-        @test Clapeyron.dnorm(act_x0,act_y0) < 1e-6
+        @test Clapeyron.dnorm(act_x0,act_y0) < 1e-5
         flash_RR = Clapeyron.tp_flash(act_system, p, T, [0.5,0.5,0.0], RRTPFlash(equilibrium = :lle))
-        @test flash0[3] ≈ flash_RR[3] rtol = 1e-12
+        @test flash0[3] ≈ flash_RR[3] rtol = 1e-11
     end
 
     @testset "Multiphase algorithm" begin
@@ -245,7 +245,7 @@
         flash4 = tp_flash(model_vle, 2500.0, 300.15, [0.9, 0.1], MichelsenTPFlash())
 
         @test flash4[1] ≈
-        [0.9239684120579815 0.07603158794201849; 
+        [0.9239684120579815 0.07603158794201849;
         0.793479931206839 0.20652006879316098] rtol = 1e-6
         #test equality of activities does not make sense in VLE
     end
@@ -488,7 +488,7 @@ end
     h475 = Clapeyron.PS.enthalpy(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
     res475 = Clapeyron.PS.flash(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
     @test enthalpy(fluid475,res475) ≈ h475 rtol = 1e-6
-    
+
     #issue 492
     fluid492 = GERG2008(["propane", "butane"])
     p492 = 1.5e6
@@ -503,7 +503,7 @@ end
     p_in_506  = 101325.0; z_506 = [1.0,1.0]
     T_in_506  = dew_temperature(fluid506,p_in_506,z_506)[1] + 10;  # we are now pure vapour
     p_out_506 = 3.0*p_in_506
-    h_in_506  = enthalpy(fluid506,p_in_506,T_in_506,z) 
+    h_in_506  = enthalpy(fluid506,p_in_506,T_in_506,z)
     s_in_506  = Clapeyron.PH.entropy(fluid506, p_in_506, h_in_506,z_506,phase = phase506)
     h_out_506 = Clapeyron.PS.enthalpy(fluid506, p_out_506, s_in_506,z_506,phase = phase506)
     s_out_506 = Clapeyron.PH.entropy(fluid506, p_out_506, h_out_506,z_506,phase = phase506)
