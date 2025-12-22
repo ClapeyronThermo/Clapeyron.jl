@@ -11,6 +11,52 @@ end
 
 x0_volume_liquid(model,p,T,z) = x0_volume_liquid(model,T,z)
 x0_volume_liquid(model,T) = x0_volume_liquid(model,T,SA[1.0])
+
+##alternative initialization for liquid volume
+
+#defined in volume.jl
+function volume_bracket_refine end
+
+function x0_volume_liquid_lowT(model,p,T,z)
+    B = second_virial_coefficient(model,T,z)*oneunit(p)
+    v0 = -B
+    vmin = lb_volume(model,T,z)*(1 + 1e-6)*oneunit(p)
+    vmax = max(0.5*(v0 + vmin),4*vmin)
+    lnv = range(log(vmin),log(vmax),8)
+    vl = zero(vmin)/zero(vmin)
+    
+    lnvhi = lnv[1]
+    vhi = exp(lnvhi)
+    phi = pressure(model,vhi,T,z)
+    phi < p && return vmin
+    plo = Inf*phi
+    vlo = vhi
+    for i in 1:length(lnv) - 1
+        lnvlo = lnv[i+1]
+        vlo = exp(lnvlo)
+        plo = pressure(model,vlo,T,z)
+        if plo < 0
+            for i in 1:10
+                plo > 0 && break
+                vlo = sqrt(vlo*vhi)
+                plo = pressure(model,vlo,T,z)
+                #@show plo
+                if plo > p
+                    return vlo
+                end
+            end
+        end
+
+        if plo <= p <= phi
+            vl = sqrt(vlo*vhi)
+            break
+        else
+            vl = vlo
+        end
+        phi,lnvhi,vhi = plo,lnvlo,vlo
+    end
+    return vl
+end
 """
     x0_volume_gas(model,p,T,z)
 
