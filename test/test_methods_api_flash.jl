@@ -262,6 +262,30 @@
         [0.3618699698927814 0.6381300301072186;
         0.17888243310648602 0.821117566893514] rtol = 1e-6
     end
+
+    @testset "Michelsen Algorithm in Implicit AD" begin
+        admodel = cPR(["ethane","propane"])
+        function dflash(t)
+            T = 200*t
+            res = Clapeyron.tp_flash2(admodel,1e5,T,[0.5,0.5])
+            return res.volumes[2]
+        end
+        #=
+        
+        julia> Clapeyron.tp_flash2(admodel,1e5,200.0,[0.5,0.5])
+        Flash result at T = 200.0, p = 100000.0 with 2 phases:
+        (x = [0.407352, 0.592648], β = 0.799439, v = 6.10901e-5)
+        (x = [0.869296, 0.130704], β = 0.200561, v = 0.0161798)
+
+        julia> Clapeyron.tp_flash2(admodel,1e5,300.0,[0.5,0.5])
+        Flash result at T = 300.0, p = 100000.0 with 2 phases:
+        (x = [0.5, 0.5], β = 0.0, v = 0.0246478)
+        (x = [0.5, 0.5], β = 1.0, v = 0.0246478)
+        =#
+
+        @test Clapeyron.Solvers.derivative(dflash,1.0) ≈ Clapeyron.derivx(dflash,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dflash,1.5) ≈ Clapeyron.derivx(dflash,1.5) rtol = 1e-5
+    end
 end
 
 @testset "XY flash" begin
@@ -604,6 +628,12 @@ end
     cpr = cPR("Propane",idealmodel = ReidIdeal)
     crit_cpr = crit_pure(cpr)
     @test saturation_temperature(cpr,crit_cpr[2] - 1e3)[1] ≈ 369.88681908031606 rtol = 1e-6
+
+    #implicit AD
+    dsatp(T) = first(saturation_pressure(cpr,250.0*T))
+    dsatt(p) = first(saturation_temperature(cpr,1e5*p))
+    @test Clapeyron.Solvers.derivative(dsatp,1.0) ≈ Clapeyron.derivx(dsatp,1.0) rtol = 1e-6
+    @test Clapeyron.Solvers.derivative(dsatt,1.0) ≈ Clapeyron.derivx(dsatt,1.0) rtol = 1e-6
 end
 
 @testset "Tproperty/Property" begin
@@ -815,7 +845,6 @@ end
         @test Clapeyron.Solvers.derivative(dp,1.0) ≈ Clapeyron.derivx(dp,1.0) rtol = 1e-5
         @test Clapeyron.Solvers.derivative(bt,1.0) ≈ Clapeyron.derivx(bt,1.0) rtol = 1e-5
         @test Clapeyron.Solvers.derivative(dt,1.0) ≈ Clapeyron.derivx(dt,1.0) rtol = 1e-5
-
     end
 
 end
