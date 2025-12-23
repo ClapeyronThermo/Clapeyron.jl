@@ -71,7 +71,7 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
 end
 
 function crit_pure_ad(crit,tup,λtup)
-    if has_dual(tup) # do check here to avoid recomputation of pressure if no AD
+    if any(has_dual,tup) # do check here to avoid recomputation of pressure if no AD
         λx = SVector(crit[1],crit[3])
         f(x,tups) = begin
             model,z = tups

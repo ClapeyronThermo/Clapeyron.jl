@@ -284,20 +284,21 @@ function bubbledew_pressure_ad(result,tup,λtup,_bubble)
         
         F1 = pl - pv
         F2 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
-        F3 = lnfl - lnfv
-        vcat(F1,F2,F3) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
+        F3 = lnfl - lnfv + log.(_x) - log.(_y)
+        res = vcat(F1,F2,F3) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
+        return res
     end
-    λx = vcat(result)
+    λx = vcat(result[2],result[3],result[4])
     ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
-   
     ∂vl,∂vv = ∂x[1],∂x[2]
-    ∂p = _bubble ? pressure(model,∂vl,T,z) : pressure(model,∂vv,T,z)
+    ∂model,∂T,∂z = tup
+    ∂p = _bubble ? pressure(∂model,∂vl,∂T,∂z) : pressure(∂model,∂vv,∂T,∂z)
     ∂w = ∂x[3:end]
     return ∂p,∂vl,∂vv,∂w
 end
 
 bubble_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,true)
-dew_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,true)
+dew_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,false)
 
 function bubbledew_temperature_ad(result,tup,λtup,_bubble)
     f(x,tups) = begin
@@ -311,23 +312,23 @@ function bubbledew_temperature_ad(result,tup,λtup,_bubble)
         else
             _x,_y = w,z
         end
-        pl,lnfl = lnf(model,vl,T,_x)
-        pv,lnfv = lnf(model,vv,T,_y)
+        lnfl,pl = lnf(model,vl,T,_x)
+        lnfv,pv = lnf(model,vv,T,_y)
         F1 = pl - p
         F2 = pv - p
         F3 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
-        F4 = lnfl - lnfv
+        F4 = lnfl - lnfv + log.(_x) - log.(_y)
         vcat(F1,F2,F3,F4) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
     end
-    λx = vcat(result)
+    λx = vcat(result[1],result[2],result[3],result[4])
     ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
     ∂T,∂vl,∂vv = ∂x[1:3]
     ∂w = ∂x[4:end]
     return ∂T,∂vl,∂vv,∂w
 end
 
-bubble_temperature_ad(model,p,z,result) = bubbledew_temperature_ad(model,p,z,result,true)
-dew_temperature_ad(model,p,z,result) = bubbledew_temperature_ad(model,p,z,result,false)
+bubble_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad(result,tup,λtup,true)
+dew_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad(result,tup,λtup,false)
 
 function zero_non_equilibria!(w,in_equilibria)
     for i in eachindex(w)

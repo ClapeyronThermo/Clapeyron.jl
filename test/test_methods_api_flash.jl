@@ -804,4 +804,18 @@ end
         @test xa[3] == 0.0
     end
     GC.gc()
+
+    @testset "bubble/dew implicit AD" begin
+        admodel = cPR(["R134a","propane"])
+        bp(T) = first(bubble_pressure(admodel,300.0*T,[0.5,0.5]))
+        bt(p) = first(bubble_temperature(admodel,1e5*p,[0.5,0.5]))
+        dp(T) = first(dew_pressure(admodel,300.0*T,[0.5,0.5]))
+        dt(p) = first(dew_temperature(admodel,1e5*p,[0.5,0.5]))
+        @test Clapeyron.Solvers.derivative(bp,1.0) ≈ Clapeyron.derivx(bp,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dp,1.0) ≈ Clapeyron.derivx(dp,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(bt,1.0) ≈ Clapeyron.derivx(bt,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dt,1.0) ≈ Clapeyron.derivx(dt,1.0) rtol = 1e-5
+
+    end
+
 end
