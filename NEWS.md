@@ -17,11 +17,14 @@
 
 ## Method deprecations
 
-- `ActivityDewTemperature` and `ActivityBubbleTemperature` were removed, `FugBubbleTemperature` and `FugDewTemperature` are now the default for activity methods, with proper suppor for non-condensables/non-volatiles
-- `DETPFlash` now uses another global optimizer, with the main intention of dropping `BlackBoxOptim` as a dependency.
+- `ActivityDewTemperature` and `ActivityBubbleTemperature` were removed, `FugBubbleTemperature` and `FugDewTemperature` are now the default for activity methods, with proper support for non-condensables/non-volatiles
+- `DETPFlash` now uses another global optimizer, self-adaptive spherical search algorithm, with the main intention of dropping `BlackBoxOptim` as a dependency.
 
 ## Bug fixes
 
-- Convergence failure in Michelsen TP flash when equilibria = :unkwown and LLE was detected.
+- Convergence failure in Michelsen TP flash when `equilibrium = :unknown` and LLE was detected.
 - Fixes on `MultiphaseTPFlash`
 - Various fixes on `saturation_pressure` initial points
+- Fixed an extra `RT` division in `Obj_de_tp_flash`; it now returns the molar reduced Gibbs energy `G/(nRT)`.
+- `__eval_G_DETPFlash(model::EoSModel, p, T, ni, equilibrium)` now returns reduced Gibbs energy, consistent with the `PTFlashWrapper` overload.
+- `gammaphi_gibbs` now handles unnormalized inputs (mole amounts) correctly and always returns a `(g, v)` tuple for empty phases.
