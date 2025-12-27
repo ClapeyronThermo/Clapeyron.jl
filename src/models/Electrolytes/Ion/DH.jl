@@ -61,8 +61,9 @@ function a_dh(V, T, z, Z, σ, ϵ_r)
             σi = σ[i]
             yi = σ[i]*κ
             yip1 = yi + 1
+            χi = dh_term(yi)
             #χi = 3/(yi*yi*yi)*(1.5 + log1p(yi) - 2*yip1 + 0.5*yip1*yip1)
-            χi = (log1p(yi) + 0.5*yi*(yi - 2))/(yi*yi*yi)
+            #χi = (log1p(yi) + 0.5*yi*(yi - 2))/(yi*yi*yi)
             res +=z[i]*Zi*Zi*χi
         end
     end
@@ -74,4 +75,22 @@ function a_dh(V, T, z, Z, σ, ϵ_r)
     #y = σ*κ
     #χ = @. 3/y^3*(3/2+log1p(y)-2*(1+y)+1/2*(1+y)^2)
     # return -1/3*s*κ*sum(z[i]*Z[i]^2*χ[i] for i ∈ iions)/∑z
+end
+
+function dh_term(x)
+    #@show (-0.5x + 1/(1 + x) + 2) - 3*log(1 + x)/x
+    
+    #=
+    x is normally really small
+    because of this, dh_term(x) suffers from catastrofic cancellation
+
+    log(1 + x) = x - 0.5xx + O(x3)
+    log(1 + x) - x + 0.5*x*x = O(x3) !!!
+
+    #solution:
+
+    we replace log(1 + x) for a taylor expansion
+    
+    =#
+    return evalpoly(x,(0.333,-0.25,0.2,-1/6,1/7,-0.125))
 end
