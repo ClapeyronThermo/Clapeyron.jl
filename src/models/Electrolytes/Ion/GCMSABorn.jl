@@ -109,10 +109,10 @@ function recombine_impl!(model::GCMSABornModel)
 end
 
 function a_res(model::GCMSABornModel, V, T, z, iondata)
-    return a_dh(model,V,T,z,iondata) + a_born(model,V,T,z,iondata)
+    return a_msa(model,V,T,z,iondata) + a_born(model,V,T,z,iondata)
 end
 
-function a_dh(model::GCMSABornModel, V, T, z, iondata)
+function a_msa(model::GCMSABornModel, V, T, z, iondata)
     _,_, ϵ_r = iondata
     σ = model.params.gc_sigma.values
     Z = model.params.charge.values

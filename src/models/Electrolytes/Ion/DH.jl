@@ -89,8 +89,18 @@ function dh_term(x)
 
     #solution:
 
-    we replace log(1 + x) for a taylor expansion
+    we replace (log(1 + x) - x + 0.5*x*x)/xxx for their taylor expansion
     
     =#
-    return evalpoly(x,(0.333,-0.25,0.2,-1/6,1/7,-0.125))
+
+
+    #=
+    using RobustPade (https://github.com/mjp98/RobustPade.jl/blob/main/src/RobustPade.jl)
+    n = 10
+    coeffs = 1 ./ (3:(n+2)) .* - cospi.(3:(n+2))
+    p,q = robustpade(coeffs,4,5)
+    =#
+    p = (0.3333333333333333, 0.7222222222346917, 0.5314393939617089, 0.15151515152716674, 0.013227513229354138)
+    q = (1.0, 2.9166666667040753, 3.181818181913183, 1.5909090909939427, 0.3535353535662185, 0.026515151518857805)
+    return evalpoly(x,p)/evalpoly(x,q)
 end
