@@ -58,12 +58,7 @@ function a_dh(V, T, z, Z, σ, ϵ_r)
         Zi = Z[i]
         if Z[i] != 0 && !iszero(primalval(z[i]))
             count +=1
-            σi = σ[i]
-            yi = σ[i]*κ
-            yip1 = yi + 1
-            χi = dh_term(yi)
-            #χi = 3/(yi*yi*yi)*(1.5 + log1p(yi) - 2*yip1 + 0.5*yip1*yip1)
-            #χi = (log1p(yi) + 0.5*yi*(yi - 2))/(yi*yi*yi)
+            χi = dh_term(σ[i]*κ)
             res +=z[i]*Zi*Zi*χi
         end
     end
@@ -78,11 +73,9 @@ function a_dh(V, T, z, Z, σ, ϵ_r)
 end
 
 function dh_term(x)
-    #@show (-0.5x + 1/(1 + x) + 2) - 3*log(1 + x)/x
-    
     #=
-    x is normally really small
-    because of this, dh_term(x) suffers from catastrofic cancellation
+    
+    when x is really small, dh_term(x) suffers from catastrofic cancellation
 
     log(1 + x) = x - 0.5xx + O(x3)
     log(1 + x) - x + 0.5*x*x = O(x3) !!!
@@ -91,16 +84,20 @@ function dh_term(x)
 
     we replace (log(1 + x) - x + 0.5*x*x)/xxx for their taylor expansion
     
-    =#
+    #implementation:
 
-
-    #=
     using RobustPade (https://github.com/mjp98/RobustPade.jl/blob/main/src/RobustPade.jl)
     n = 10
     coeffs = 1 ./ (3:(n+2)) .* - cospi.(3:(n+2))
     p,q = robustpade(coeffs,4,5)
     =#
-    p = (0.3333333333333333, 0.7222222222346917, 0.5314393939617089, 0.15151515152716674, 0.013227513229354138)
-    q = (1.0, 2.9166666667040753, 3.181818181913183, 1.5909090909939427, 0.3535353535662185, 0.026515151518857805)
-    return evalpoly(x,p)/evalpoly(x,q)
+    if primalval(x) <= 1.5
+        p = (0.3333333333333333, 0.7222222222346917, 0.5314393939617089, 0.15151515152716674, 0.013227513229354138)
+        q = (1.0, 2.9166666667040753, 3.181818181913183, 1.5909090909939427, 0.3535353535662185, 0.026515151518857805)
+        return evalpoly(x,p)/evalpoly(x,q)
+    else
+        x2 = x*x
+        x3 = x*x*x
+        return (log(1 + x) - x + 0.5*x2)/x3
+    end
 end
