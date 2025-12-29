@@ -283,7 +283,7 @@ end
 
 function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)),verbose = false)
     # Function to solve Rachdord-Rice mass balance
-    status = rachfordrice_status(K.*exp.(Z.*ψ0),z,β0,non_inx,non_iny)
+    status = rachfordrice_status(K.*exp.(Z.*ψ0),z,non_inx,non_iny)
     if status == RREq
         function rachford_rice_donnan(x,K,z,Z)
             β = x[1]

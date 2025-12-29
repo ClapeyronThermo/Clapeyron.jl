@@ -256,7 +256,22 @@ function _1var_optimize_quad(f,x0,options)
     for i in 1:options.maxiter
         iter_x += 1
         a,b,c = quad_interp(xa,xb,xc,fa,fb,fc)
-        xmin = -b/(2*a)
+        
+        if iszero(a) && fa == fc && xa ≈ xc
+            fxx = fa
+            xmin = 0.5*(xa + xc)
+            break
+        elseif iszero(a) && fa == fb && xa ≈ xb
+            fxx = fa
+            xmin = 0.5*(xa + xb)
+            break
+        elseif iszero(a) && fc == fb && xc ≈ xb
+            fxx = fc
+            xmin = 0.5*(xc + xb)
+            break
+        else
+            xmin = -b/(2*a)
+        end
         fmin = f(xmin)
         _f = SVector((fa,fb,fc,fmin))
         f_worst,idx = findmax(_f)
@@ -281,9 +296,10 @@ function _1var_optimize_quad(f,x0,options)
         xmin,xmax = extrema((xa,xb,xc))
         fxx = minimum((fa,fb,fc))
         #@show abs(xmin - xmax),fxx
-        if abs(xmin - xmax) < options.x_abstol
-            break
-        end
+        dx = abs(xmin - xmax)
+        abs(xmin - xmax) < options.x_abstol && break
+        dx/abs(xmax) < options.x_reltol && break
+        
     end
     xmin,xmax = extrema((xa,xb,xc))
     #@show xa0,xmin,xmax,xb0

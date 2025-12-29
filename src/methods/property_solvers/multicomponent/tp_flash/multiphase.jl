@@ -1066,19 +1066,22 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
 
     x3 = x2
     phase = phase_w == phase_z ? phase_z : (is_vapour(phase_w) ? :liquid : :unknown)
-    vcache = Ref(g1)
+    cache = Ref(g1,g1)
 
     function ff(_β)
         x3 .= (z .-  _β .* w) ./ (1 .- _β)
         _v3  = volume(model,p,T,x3,threaded = false,phase = phase)
         g3 = eos(model,_v3,T,x3) + p*_v3
-        vcache[] = _v3
-        return _β*g1 + (1-_β)*g3 - gz
+        
+        dgi = _β*g1 + (1-_β)*g3 - gz
+        cache[] = _v3,dgi
+        return dgi
     end
 
     sol = Solvers.optimize(ff,(β2,oneunit(β2)),Solvers.BoundOptim1Var(),NLSolvers.OptimizationOptions(x_abstol = 1e-5))    #@assert βi*w + (1-βi)*x3 ≈ z
     βi = Solvers.x_sol(sol)
-    return (1-βi),x3,vcache[],βi,w,vw,dgi
+    v3_sol,dgi_sol = cache[]
+    return (1-βi),x3,v3_sol,βi,w,vw,dgi_sol
 end
 
 function split_phase_k(model,p,T,z,K = nothing,vz = volume(model,p,T,z),pures = split_pure_model(model))
