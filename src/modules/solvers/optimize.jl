@@ -275,8 +275,7 @@ function _1var_optimize_quad(f,x0,options)
             if xmin <= x_opt_quad_interp <= xmax
                 x_opt = x_opt_quad_interp
             else
-                phi = 0.618033988749 #to make it different from the bisection approach
-                x_opt = phi*xmin + (1-phi)*xmax
+                x_opt = 0.5*(xmin + xmax)
             end
         end
         f_opt = f(x_opt)
