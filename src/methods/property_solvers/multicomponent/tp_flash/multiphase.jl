@@ -1070,15 +1070,15 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
 
     function ff(_β)
         x3 .= (z .-  _β .* w) ./ (1 .- _β)
-        _v3  = volume(model,p,T,x3,threaded = false,phase = phase)
-        g3 = eos(model,_v3,T,x3) + p*_v3
+        _vw  = volume(model,p,T,x3,threaded = false,phase = phase)
+        gw = eos(model,_vw,T,x3) + p*_vw
         
-        dgi = _β*g1 + (1-_β)*g3 - gz
-        cache[] = _v3
+        dgi = _β*g1 + (1-_β)*gw - gz
+        cache[] = _vw
         return dgi
     end
 
-    sol = Solvers.optimize(ff,(β2,oneunit(β2)),Solvers.BoundOptim1Var(),NLSolvers.OptimizationOptions(x_abstol = 1e-5))    #@assert βi*w + (1-βi)*x3 ≈ z
+    sol = Solvers.optimize(ff,(zero(β2),β2),Solvers.BoundOptim1Var(),NLSolvers.OptimizationOptions(x_abstol = 1e-5))
     βi = Solvers.x_sol(sol)
     dgi_sol = Solvers.x_minimum(sol)
     v3_sol = cache[]
