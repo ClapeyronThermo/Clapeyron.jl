@@ -64,11 +64,9 @@ function molality_to_composition(model::ElectrolyteModel,salts,m,zsolv=SA[1.],ν
     nions = count(!iszero,Z)
     nneutral = nc - nions
     Mw = mw(model.neutralmodel).*1e-3
-    if salts isa GroupParam
-        isalts = 1:length(salts.components)
-    else
-        isalts = 1:length(salts)
-    end
+
+    nsalts = salts isa GroupParam ? length(salts.components) : length(salts)
+    isalts = 1:nsalts
     iions = 1:nions
     ineutral = 1:nneutral
     ∑mν = sum(m[k]*sum(ν[k,i] for i ∈ iions) for k ∈ isalts)

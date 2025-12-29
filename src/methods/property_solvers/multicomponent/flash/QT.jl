@@ -42,8 +42,8 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
             p_bubble = @sum(ps[i]*z[i])/∑z
             p_dew = ∑z/@sum(z[i]/ps[i])
             pmin,pmax = p_dew,p_bubble
-            x = z ./ sum(z)
-            fp(p) = qt_f0_p!(K,x,p,ps,β)
+            xx = z ./ sum(z)
+            fp(p) = qt_f0_p!(K,xx,p,ps,β)
             pm = β*pmin + (1-β)*pmax
             pr1 = range(pmin,pm,5*length(model))
             pr2 = range(pm,pmax,5*length(model))

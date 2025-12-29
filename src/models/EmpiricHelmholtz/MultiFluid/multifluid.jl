@@ -115,14 +115,16 @@ function MultiFluid(components;
     departure = init_model(departure,components,departure_userlocations,verbose)
     params = MultiFluidParam(_components,pures,reference_state)
     references = unique!(reduce(vcat,pure.references for pure in pures))
-    if Rgas == nothing
+    
+    
+    _Rgas = if Rgas == nothing
         if length(pures) != 1
-            Rgas = Clapeyron.Rgas()
+            Clapeyron.Rgas()
         else
-            Rgas = Clapeyron.Rgas(pures[1])
+            Clapeyron.Rgas(pures[1])
         end
     end
-    model = MultiFluid(_components,params,pures,mixing,departure,Rgas,references)
+    model = MultiFluid(_components,params,pures,mixing,departure,_Rgas,references)
     recombine_mixing_reduced!(model,model.mixing,estimate_mixing)
     recombine_departure!(model,model.departure)
     set_reference_state!(model,verbose = verbose)

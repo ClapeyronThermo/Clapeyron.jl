@@ -281,7 +281,7 @@ function _1var_optimize_quad(f,x0,options)
         xmin,xmax = extrema((xa,xb,xc))
         fxx = minimum((fa,fb,fc))
         #@show abs(xmin - xmax),fxx
-        if abs(xmin - xmax) < sqrt(eps(xmin))
+        if abs(xmin - xmax) < options.x_abstol
             break
         end
     end

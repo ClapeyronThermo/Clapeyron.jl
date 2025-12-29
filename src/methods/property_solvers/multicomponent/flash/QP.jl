@@ -46,8 +46,8 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
             #Tmin,Tmax = extrema(T0)
             #we approximate sat(T) ≈ exp(-dpdT*T*T(1/T - 1/T0)/p)*p
             K = similar(dpdT,typeof(Tmax))
-            x = z ./ sum(z)
-            ft(_T) = qp_f0_T!(K,x,dpdT,p,_T,β)
+            xx = z ./ sum(z)
+            ft(_T) = qp_f0_T!(K,xx,dpdT,p,_T,β)
             #we do a search over Tmin-Tmax domain, finding the minimum value of the objective function
             Tm = β*Tmax + (1 - β)*Tmin
             Tr1 = range(Tmin,Tm,5*length(model))

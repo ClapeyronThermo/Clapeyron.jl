@@ -139,7 +139,6 @@ function __dielectric_constant(model::ESElectrolyteModel, V, T, z, RSPmodel::MM1
 
     g = fill(_1,n_neutral)
     for i ∈ @ineutral
-        μ0i = μ0[i]
         if !iszero(μ0[i])
             Pi = P[i]
             μ0i = μ0[i]

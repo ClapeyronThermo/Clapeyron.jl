@@ -74,14 +74,15 @@ function screening_length(V, T, z, Z, σ, ϵ_r)
     nc = length(Z)
     Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ 1:nc)
     κ = debye_length(V,T,z,ϵ_r,Z)
-    Γold = κ
+    k1 = sqrt(π*e_c^2*ρ/(4π*ϵ_0*ϵ_r*k_B*T))
+    Γold = κ*oneunit(k1)
     _0 = zero(Γold)
     iszero(primalval(Γold)) && return _0
-    Γnew = _0
+    
     iter = 1
     tol = oneunit(_0)
-    k1 = sqrt(π*e_c^2*ρ/(4π*ϵ_0*ϵ_r*k_B*T))
-
+    
+    Γnew = _0*k1
     #step 1: bounded SS
     while tol>1e-12 && iter < 100
         Ω = 1+π*ρ/(2*Δ)*sum(z[i]*σ[i]^3/(1+Γold*σ[i]) for i ∈ iions)

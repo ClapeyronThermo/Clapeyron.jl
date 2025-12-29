@@ -573,17 +573,15 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     s = copy(input)
     #config,μconfig = xy_flash_config(model,input)
     f!(output,input) = xy_flash_neq(output,model,zz,np,input,new_spec,nothing)
-    Θ(_f) = 0.5*dot(_f,_f)
     srtol = abs2(cbrt(rtol))
     function Θ(_f,_z)
         f!(_f,_z)
         _f[slacks] .= 0
-        Θ(_f)
+        0.5*dot(_f,_f)
     end
     config = ForwardDiff.JacobianConfig(f!,F,x)
     #ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
-    f!(F,x)
-    Θx = Θ(F)
+    Θx = Θ(F,x)
     Fnorm = sqrt(2*Θx)
     spec_norm = norm(viewlast(F,2),Inf)
     converged = Fnorm < rtol

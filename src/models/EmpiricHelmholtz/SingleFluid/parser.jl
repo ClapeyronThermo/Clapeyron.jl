@@ -90,7 +90,6 @@ function compare_empiric_names(filename,input)
 end
 
 function get_json_data_coolprop(component,norm_comp1 = normalisestring(component))
-    norm_comp1 = normalisestring(component)
     alternative_comp = get!(COOLPROP_IDENTIFIER_CACHE,norm_comp1) do
         cas(norm_comp1)[1]
     end

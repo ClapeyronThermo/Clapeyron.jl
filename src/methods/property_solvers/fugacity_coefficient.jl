@@ -147,10 +147,11 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(
     n = sum(z)
     Z = p*V/RT/n
 
+    ncomponents = length(z)
     F_res(model, V, T, z) = eos_res(model, V, T, z) / RT
     fun(aux) = F_res(model, aux[1], T, @view(aux[2:(ncomponents+1)]))
 
-    ncomponents = length(z)
+    
     aux[1] = V
     aux[2:end] = z
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())

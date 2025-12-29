@@ -651,7 +651,7 @@ function transform_params(::Type{ABCCubicParam},params,components)
     Tc = params["Tc"]
     Pc = params["Pc"]
     Vc = get!(params,"Vc") do
-        SingleParam("Vc",components,zeros(Base.promote_eltype(Tc,Vc),n),fill(true,n))
+        SingleParam("Vc",components,zeros(Base.promote_eltype(Tc,Pc),n),fill(true,n))
     end
 
     c = get!(params,"c") do

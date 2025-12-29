@@ -1057,63 +1057,27 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
     x2 = similar(w)
     g1 = eos(model,vw,T,w) + p*vw
     gz = eos(model,vz,T,z) + p*vz
+    
     if isone(β2)
         x2 .= z
     else
         @. x2 = (z -  β2 * w) / (1 - β2)
     end
+
     x3 = x2
-    phase = phase_w == phase_z ? phase_z : :unknown
-    if is_vapour(phase_w) && is_unknown(phase)
-        phase = :liquid
+    phase = phase_w == phase_z ? phase_z : (is_vapour(phase_w) ? :liquid : :unknown)
+    vcache = Ref(g1)
+
+    function ff(_β)
+        x3 .= (z .-  _β .* w) ./ (1 .- _β)
+        _v3  = volume(model,p,T,x3,threaded = false,phase = phase)
+        g3 = eos(model,_v3,T,x3) + p*_v3
+        vcache[] = _v3
+        return _β*g1 + (1-_β)*g3 - gz
     end
-    v2 = volume(model,p,T,x2,threaded = false,phase = phase)
-    v3 = volume(model,p,T,x3,threaded = false,phase = phase)
-    g2 = eos(model,v2,T,x2) + p*v2
-    g3 = eos(model,v3,T,x3) + p*v3
-    dg1 = g1 - gz
-    dg2 = β2*g1 + (1-β2)*g2 - gz
-    function f(βx)
-        x3 .= (z .-  βx .* w) ./ (1 .- βx)
-        v3 = volume(model,p,T,x3,threaded = false,phase = phase)
-        g3 = eos(model,v3,T,x3) + p*v3
-        return βx*g1 + (1-βx)*g3 - gz
-    end
-    ϕ = 0.6180339887498949
-    βi = ϕ*β1 + (1-ϕ)*β2
-    βi0 = one(βi)*10
-    _1 = one(βi)
-    dgi = βi*g1 + (1-βi)*g3 - gz
-    βi*g1 + (1-βi)*g3 - gz
-    for i in 1:20
-        x3 .= (z .-  βi .* w) ./ (1 .- βi)
-        v3 = volume(model,p,T,x3,threaded = false,phase = phase)
-        g3 = eos(model,v3,T,x3) + p*v3
-        isnan(g3) && break
-        dgi = βi*g1 + (1-βi)*g3 - gz
-        #quadratic interpolation
-        A = @SMatrix [β1*β1 β1 _1; β2*β2 β2 _1; βi*βi βi _1]
-        b = SVector(dg1,dg2,dgi)
-        c = A\b
-        βi_intrp = -0.5*c[2]/c[1]
-        if dgi < dg2 < dg1
-            dg1,β1 = dgi,βi
-        elseif dgi < dg1 < dg2
-            dg2,β2,v2 = dgi,βi,v3
-        elseif dgi < dg1
-            dg1,β1,v1 = dgi,βi,v3
-        elseif dgi < dg2
-            dg2,β2,v2 = dgi,βi,v3
-        else
-            break
-        end
-        βi0 = βi
-        βi_bisec = ϕ*β1 + (1-ϕ)*β2
-        βi = β1 <= βi_intrp <= β2 ? βi_intrp : βi_bisec
-        abs(βi0 - βi) < 1e-5 && break
-    end
-    #@assert βi*w + (1-βi)*x3 ≈ z
-    return (1-βi),x3,v3,βi,w,vw,dgi
+
+    βi = Solvers.optimize(ff,(β2,oneunit(β2)),Solvers.BoundOptim1Var(),NLSolvers.OptimizationOptions(x_abstol = 1e-5))    #@assert βi*w + (1-βi)*x3 ≈ z
+    return (1-βi),x3,vcache[],βi,w,vw,dgi
 end
 
 function split_phase_k(model,p,T,z,K = nothing,vz = volume(model,p,T,z),pures = split_pure_model(model))

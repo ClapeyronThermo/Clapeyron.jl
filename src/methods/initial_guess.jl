@@ -1015,9 +1015,9 @@ function solve_2ph_taylor(v10,v20,a1,da1,d2a1,a2,da2,d2a2,p_scale = 1.0,μ_scale
     end
     x0 = SVector((log(v10),log(v20)))
     x = Solvers.nlsolve2(F0,x0,Solvers.Newton2Var())
-    v1,v2 = exp(x[1]), exp(x[2])
-    p1 = log(v1/v10)*(-v1*d2a1) - da1
-    return v1, v2, p1
+    v1_sol,v2_sol = exp(x[1]), exp(x[2])
+    p1_sol = log(v1_sol/v10)*(-v1_sol*d2a1) - da1
+    return v1_sol, v2_sol, p1_sol
 end
 
 function solve_2ph_taylor(model1::EoSModel,model2::EoSModel,T,v1,v2,p_scale = 1.0,μ_scale = 1.0)

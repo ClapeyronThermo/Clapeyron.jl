@@ -104,7 +104,7 @@ function widom_temperature(model,p;T0 = nothing,v0 = nothing)
         _T0 = T0*_1
     end
 
-    function f_wp(x::AbstractVector)
+    function f_wp_vec(x::AbstractVector)
         v,T = exp(x[1]),x[2]
         Cₚ(∂v,∂T) = VT_isobaric_heat_capacity(model,∂v,∂T,SA[1.0])
         fp(∂v,∂T) = pressure(model,∂v,∂T,SA[1.0])
@@ -119,12 +119,12 @@ function widom_temperature(model,p;T0 = nothing,v0 = nothing)
     #we do a refinement of the initial value first. it improves convergence near the critical point
     function f_wp(T)
         v = volume(model,p,T,phase = :l,vol0 = _v0)
-        return f_wp(SVector(log(v),T))[1]
+        return f_wp_vec(SVector(log(v),T))[1]
     end
     prob = Roots.ZeroProblem(f_wp,_T0)
     _T00 = Roots.solve(prob,Roots.Order2(),atol = 1e-1)
     _v00 = volume(model,p,_T00,phase = :l, vol0 = _v0)
-    res = Solvers.nlsolve2(f_wp,SVector(log(_v00),_T00),Solvers.Newton2Var())
+    res = Solvers.nlsolve2(f_wp_vec,SVector(log(_v00),_T00),Solvers.Newton2Var())
     log_v_widom,T_widom = res
     return T_widom,exp(log_v_widom)
 end
@@ -233,7 +233,7 @@ function ciic_temperature(model,p;T0 = nothing,v0 = nothing)
     lb_v = lb_volume(model,_T0,SA[1.0])
     scale = p*p/_T0/lb_volume(model,_T0,SA[1.0])
     #P*P/(T*v)
-    function f_ciic(x::AbstractVector)
+    function f_ciic_vec(x::AbstractVector)
         v,T = exp(x[1]),x[2]
         Cₚ(∂v) = VT_isobaric_heat_capacity(model,∂v,T,SA[1.0])
         fp(∂v) = pressure(model,∂v,T,SA[1.0])
@@ -247,13 +247,13 @@ function ciic_temperature(model,p;T0 = nothing,v0 = nothing)
     #we do a refinement of the initial value first. it improves convergence near the critical point
     function f_ciic(T)
         v = volume(model,p,T,phase = :l,vol0 = _v0)
-        return f_ciic(SVector(log(v),T))[1]
+        return f_ciic_vec(SVector(log(v),T))[1]
     end
     prob = Roots.ZeroProblem(f_ciic,_T0)
     _T00 = Roots.solve(prob,Roots.Order2(),atol = 1e-1)
     _v00 = volume(model,p,_T00,phase = :l, vol0 = _v0)
 
-    res = Solvers.nlsolve2(f_ciic,SVector(log(_v00),_T00),Solvers.Newton2Var())
+    res = Solvers.nlsolve2(f_ciic_vec,SVector(log(_v00),_T00),Solvers.Newton2Var())
     v_ciic,T_ciic = exp(res[1]),res[2]
     return T_ciic,v_ciic
 end
