@@ -246,6 +246,7 @@ end
 function _1var_optimize_quad(f,x0,options)
     time0 = time()
     xa,xb = minmax(x0[1],x0[2])
+    xmin,xmax = xa,xb
     xa0,xb0 = xa,xb
     fa,fb = f(xa),f(xb)
     xc = 0.5*(xa + xb)
@@ -259,27 +260,33 @@ function _1var_optimize_quad(f,x0,options)
         
         if iszero(a) && fa == fc && xa ≈ xc
             fxx = fa
-            xmin = 0.5*(xa + xc)
+            x_opt = 0.5*(xa + xc)
             break
         elseif iszero(a) && fa == fb && xa ≈ xb
             fxx = fa
-            xmin = 0.5*(xa + xb)
+            x_opt = 0.5*(xa + xb)
             break
         elseif iszero(a) && fc == fb && xc ≈ xb
             fxx = fc
-            xmin = 0.5*(xc + xb)
+            x_opt = 0.5*(xc + xb)
             break
         else
-            xmin = -b/(2*a)
+            x_opt_quad_interp = -b/(2*a)
+            if xmin <= x_opt_quad_interp <= xmax
+                x_opt = x_opt_quad_interp
+            else
+                phi = 0.618033988749 #to make it different from the bisection approach
+                x_opt = phi*xmin + (1-phi)*xmax
+            end
         end
-        fmin = f(xmin)
-        _f = SVector((fa,fb,fc,fmin))
+        f_opt = f(x_opt)
+        _f = SVector((fa,fb,fc,f_opt))
         f_worst,idx = findmax(_f)
-        if fmin != f_worst && isfinite(fmin)
-            _x = SVector((xa,xb,xc,xmin))
+        if f_opt != f_worst && isfinite(f_opt)
+            _x = SVector((xa,xb,xc,x_opt))
             xa,xb,xc = StaticArrays.deleteat(_x,idx)
             fa,fb,fc = StaticArrays.deleteat(_f,idx)
-        elseif fmin == f_worst
+        elseif f_opt == f_worst
             _f2 = SVector((fa,fb,fc))
             _x2 = SVector((xa,xb,xc))
             _,idx2 = findmax(_f2)
@@ -288,7 +295,7 @@ function _1var_optimize_quad(f,x0,options)
             xc = 0.5*(xa + xb)
             fc = f(xc)
         else
-            fxx = zero(fmin)/zero(fmin)
+            fxx = zero(f_opt)/zero(f_opt)
             xmin,xmax = fxx,fxx
             break
             
@@ -303,10 +310,10 @@ function _1var_optimize_quad(f,x0,options)
     end
     xmin,xmax = extrema((xa,xb,xc))
     #@show xa0,xmin,xmax,xb0
-    xmin = 0.5*(xmin + xmax) 
+    x_opt = 0.5*(xmin + xmax)
     return NLSolvers.ConvergenceInfo(
         BoundOptim1Var(),
-        (; solution = xmin, f0 = fc0, minimum = fxx, time = time() - time0, iter = iter_x),
+        (; solution = x_opt, f0 = fc0, minimum = fxx, time = time() - time0, iter = iter_x),
         options,
     )
 end
