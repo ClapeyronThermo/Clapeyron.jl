@@ -1076,7 +1076,8 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
         return _β*g1 + (1-_β)*g3 - gz
     end
 
-    βi = Solvers.optimize(ff,(β2,oneunit(β2)),Solvers.BoundOptim1Var(),NLSolvers.OptimizationOptions(x_abstol = 1e-5))    #@assert βi*w + (1-βi)*x3 ≈ z
+    sol = Solvers.optimize(ff,(β2,oneunit(β2)),Solvers.BoundOptim1Var(),NLSolvers.OptimizationOptions(x_abstol = 1e-5))    #@assert βi*w + (1-βi)*x3 ≈ z
+    βi = Solvers.x_sol(sol)
     return (1-βi),x3,vcache[],βi,w,vw,dgi
 end
 

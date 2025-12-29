@@ -22,9 +22,15 @@ function x0_volume_liquid_lowT(model,p,T,z)
     v0 = -B
     vmin = lb_volume(model,T,z)*(1 + 1e-6)*oneunit(p)
     vmax = max(0.5*(v0 + vmin),4*vmin)
+    if isnan(v0)
+        vmax = 5vmin
+    else
+        vmax = max(0.5*(v0 + vmin),4*vmin)
+    end
+    isnan(vmax) && return vmax
     lnv = range(log(vmin),log(vmax),8)
     vl = zero(vmin)/zero(vmin)
-    
+
     lnvhi = lnv[1]
     vhi = exp(lnvhi)
     phi = pressure(model,vhi,T,z)

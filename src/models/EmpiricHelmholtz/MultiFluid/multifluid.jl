@@ -123,6 +123,8 @@ function MultiFluid(components;
         else
             Clapeyron.Rgas(pures[1])
         end
+    else
+        Rgas
     end
     model = MultiFluid(_components,params,pures,mixing,departure,_Rgas,references)
     recombine_mixing_reduced!(model,model.mixing,estimate_mixing)
