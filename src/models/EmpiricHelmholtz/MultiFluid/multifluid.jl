@@ -94,11 +94,11 @@ function MultiFluid(components;
     verbose = false)
 
     _components = format_components(components)
-    if idealmodel === nothing
-        idealmodels = FillArrays.Fill(nothing,length(_components))
+    idealmodels = if idealmodel === nothing
+        fill(nothing,length(_components))
     else
         init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
-        idealmodels = split_model(init_idealmodel,1:length(_components))
+        split_model(init_idealmodel,1:length(_components))
     end
 
     pures = [
