@@ -6,7 +6,8 @@ struct PatelTejaParam <: EoSParam
     c::SingleParam{Float64}
     Tc::SingleParam{Float64}
     Pc::SingleParam{Float64}
-    Vc::SingleParam{Float64}
+    Vc_fit::SingleParam{Float64}
+    acentricfactor::SingleParam{Float64}
     Mw::SingleParam{Float64}
 end
 
@@ -18,22 +19,13 @@ function transform_params(::Type{PatelTejaParam},params,components)
     c = get!(params,"c") do
         SingleParam("c",components,zeros(Base.promote_eltype(Pc,Tc),n),fill(true,n))
     end
-    Vc = params["Vc"]
 
-
-    Vc = get!(params,"Vc") do
-        SingleParam("Vc",components,zeros(Base.promote_eltype(Pc,Tc),n),fill(true,n))
+    Vc = get!(params,"Vc_fit") do
+        SingleParam("Vc_fit",components,zeros(Base.promote_eltype(Pc,Tc),n),fill(true,n))
     end
-    ω = get(params,"acentricfactor",nothing)
-    if any(Vc.ismissingvalues)
-        isnothing(ω) && throw(MissingException("PatelTeja: cannot estimate Vc: missing acentricfactor parameter."))
 
-        for i in 1:n
-            if Vc.ismissingvalues[i]
-                ζc = evalpoly(ω[i],(0.329032,-0.076799,0.0211947))
-                Vc[i] = ζc * R̄ * Tc[i] / Pc[i]
-            end
-        end
+    acentricfactor = get!(params,"acentricfactor") do
+        SingleParam("acentricfactor",components,zeros(Base.promote_eltype(Pc,Tc),n),fill(true,n))
     end
 
     return params
@@ -68,15 +60,18 @@ end
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
+- `Vc_fit`: Single Parameter (`Float64`) - Fitted Critical Volume `[m³·mol⁻¹]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `k`: Pair Parameter (`Float64`) (optional)
 - `l`: Pair Parameter (`Float64`) (optional)
+- `acentricfactor`: Single Parameter (`Float64`) (optional) - acentric factor, used to fit the critical volume if no value is provided.
+
 
 ## Model Parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
+- `Vc_fit`: Single Parameter (`Float64`) - Fitted Critical Volume `[m³·mol⁻¹]`
+- `acentricfactor`: Single Parameter (`Float64`)
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `a`: Pair Parameter (`Float64`)
 - `b`: Pair Parameter (`Float64`)
@@ -102,7 +97,7 @@ Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
 Δ₁ = -(ϵ + √δ)/2
 Δ₂ = -(ϵ - √δ)/2
 ```
-if `Vc` is not known, `Zc` can be estimated, using the acentric factor:
+if `Vc_fit` is not known, `Zc` can be estimated, using the acentric factor:
 
 ```
 Zc = 0.329032 - 0.076799ω + 0.0211947ω²
@@ -132,7 +127,6 @@ model = PatelTeja(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/m
 model = PatelTeja(["neon","hydrogen"];
         userlocations = (;Tc = [44.492,33.19],
                         Pc = [2679000, 1296400],
-                        Vc = [4.25e-5, 6.43e-5],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
                         k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
@@ -164,7 +158,7 @@ function PatelTeja(components;
     verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc"])
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv","cubic/PatelTeja/PatelTeja_Vc_fit.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc"])
     model = CubicModel(PatelTeja,params,formatted_components;
                         idealmodel,alpha,mixing,activity,translation,
                         userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
@@ -199,9 +193,18 @@ end
 function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
     _Tc = model.params.Tc
     _pc = model.params.Pc
-    _Vc = model.params.Vc
+    _Vc = model.params.Vc_fit
     a = model.params.a
     b = model.params.b
+    ω = model.params.acentricfactor
+
+    for i in 1:length(model)
+        if _Vc.ismissingvalues[i]
+            w.ismissingvalues[i] && throw(MissingException("PatelTeja: cannot estimate Vc: missing acentricfactor parameter."))
+            ζc = evalpoly(ω[i],(0.329032,-0.076799,0.0211947))
+            _Vc[i] = ζc * R̄ * Tc[i] / Pc[i]
+        end
+    end
 
     for i in 1:length(model)
         pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
@@ -220,7 +223,7 @@ end
 function c_premixing(model::PatelTejaModel)
     _Tc = model.params.Tc
     _pc = model.params.Pc
-    _Vc = model.params.Vc
+    _Vc = model.params.Vc_fit
     c = model.params.c
     _Zc = _pc .* _Vc ./ (R̄ .* _Tc)
     Ωc = @. 1 - 3*_Zc
