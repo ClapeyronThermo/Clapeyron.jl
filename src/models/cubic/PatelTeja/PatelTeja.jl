@@ -28,6 +28,10 @@ function transform_params(::Type{PatelTejaParam},params,components)
         SingleParam("acentricfactor",components,zeros(Base.promote_eltype(Pc,Tc),n),fill(true,n))
     end
 
+    if all(Vc.ismissingvalues) && all(acentricfactor.ismissingvalues)
+        throw(MissingException("PatelTeja: cannot estimate Vc: missing acentricfactor parameter."))
+    end
+
     return params
 end
 
@@ -158,7 +162,7 @@ function PatelTeja(components;
     verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv","cubic/PatelTeja/PatelTeja_Vc_fit.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc"])
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv","cubic/PatelTeja/PatelTeja_Vc_fit.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc_fit","acentricfactor"])
     model = CubicModel(PatelTeja,params,formatted_components;
                         idealmodel,alpha,mixing,activity,translation,
                         userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
@@ -174,7 +178,7 @@ end
 default_references(::Type{PatelTeja}) = ["10.1016/0009-2509(82)80099-7"]
 
 function PatelTeja_Ωb(ξc)
-    #poly = (-Zc^3,3Zc^2,2-3*Zc,1.0)
+    #poly = (-ξc^3,3ξc^2,2-3*ξc,1.0)
     #_,Ωb1,Ωb2,Ωb3 = Solvers.real_roots3(poly)
     #Ωb = max(Ωb1,Ωb2,Ωb3)
     Z̄c = complex(ξc)
@@ -196,21 +200,11 @@ function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
     _Vc = model.params.Vc_fit
     a = model.params.a
     b = model.params.b
-    ω = model.params.acentricfactor
-
-    for i in 1:length(model)
-        if _Vc.ismissingvalues[i]
-            w.ismissingvalues[i] && throw(MissingException("PatelTeja: cannot estimate Vc: missing acentricfactor parameter."))
-            ζc = evalpoly(ω[i],(0.329032,-0.076799,0.0211947))
-            _Vc[i] = ζc * R̄ * Tc[i] / Pc[i]
-        end
-    end
 
     for i in 1:length(model)
         pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
         Zc = pci * Vci / (R̄ * Tci)
-        Z̄c = complex(Zc,zero(Zc))
-        d  = (36*Z̄c - 8 - 27*Z̄c^2 + 3*sqrt(3)*sqrt(27*Z̄c^4 -8*Z̄c^3))^(1/3)
+        #d  = (36*Z̄c - 8 - 27*Z̄c^2 + 3*sqrt(3)*sqrt(27*Z̄c^4 -8*Z̄c^3))^(1/3)
         Ωa,Ωb = PatelTeja_Ωab(Zc)
         a[i] = Ωa*R̄^2*Tci^2/pci
         b[i] = Ωb*R̄*Tci/pci
@@ -224,10 +218,20 @@ function c_premixing(model::PatelTejaModel)
     _Tc = model.params.Tc
     _pc = model.params.Pc
     _Vc = model.params.Vc_fit
+    ω = model.params.acentricfactor
     c = model.params.c
-    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)
-    Ωc = @. 1 - 3*_Zc
-    c .= Ωc .* R̄ .*_Tc ./ _pc
+
+    for i in 1:length(model)
+        Tc,Pc = _Tc[i],_pc[i]
+        if _Vc.ismissingvalues[i]
+            ω.ismissingvalues[i] && throw(MissingException("PatelTeja: cannot estimate Vc: missing acentricfactor parameter."))
+            ζc = evalpoly(ω[i],(0.329032,-0.076799,0.0211947))
+            _Vc[i] = ζc * R̄ * Tc / Pc
+        end
+        Zc = Pc*_Vc[i]/(R̄*Tc)
+        Ωc = 1 - 3*Zc
+        c[i] = Ωc*R̄*Tc/Pc
+    end
     return c
 end
 
