@@ -243,76 +243,73 @@ function quad_interp(xa,xb,xc,fa,fb,fc)
     return a,b,c
 end
 
+function mean2(xhi,xlo)
+    dx = xhi - xlo
+    return xlo + 0.6dx
+end
+
 function _1var_optimize_quad(f,x0,options)
+    xlo, xhi = minmax(x0[1],x0[2])
     time0 = time()
-    xa,xb = minmax(x0[1],x0[2])
-    xmin,xmax = xa,xb
-    xa0,xb0 = xa,xb
-    fa,fb = f(xa),f(xb)
-    xc = 0.5*(xa + xb)
-    fc = f(xc)
-    fc0 = fc
-    fxx = Inf*fc
+    # Initialize three points
+    x1 = xlo
+    x3 = xhi
+    x2 = (x1 + x3) / 2
+    xlo0 = xlo
+    xhi0 = xhi
+    f1 = f(x1)
+    f2 = f(x2)
+    f3 = f(x3)
+    f30 = f3
+    fx = NaN*f1
+    xx = NaN*f1
     iter_x = 0
-    for i in 1:options.maxiter
+    not_improved = 0
+    for iter in 1:options.maxiter
         iter_x += 1
-        a,b,c = quad_interp(xa,xb,xc,fa,fb,fc)
-        
-        if iszero(a) && fa == fc && xa ≈ xc
-            fxx = fa
-            x_opt = 0.5*(xa + xc)
+        iter_x == options.maxiter && break
+        not_improved == 2 && break
+        a,b,c = quad_interp(x1,x2,x3,f1,f2,f3)
+        xlo,xhi = extrema((x1, x2, x3))
+        df = f30 - fx
+        if a <= 0 || abs(xlo - xhi) < options.x_abstol
+            # Parabola opens downward or is linear, use best current point
+            fvals = SVector((f1, f2, f3))
+            xvals = (x1, x2, x3)
+            f_best,idx = findmin(fvals)
+            minidx = argmin(fvals)
+            x_best = xvals[idx]
+            xx = x_best
+            fx = f_best
             break
-        elseif iszero(a) && fa == fb && xa ≈ xb
-            fxx = fa
-            x_opt = 0.5*(xa + xb)
-            break
-        elseif iszero(a) && fc == fb && xc ≈ xb
-            fxx = fc
-            x_opt = 0.5*(xc + xb)
-            break
-        else
-            x_opt_quad_interp = -b/(2*a)
-            if xmin <= x_opt_quad_interp <= xmax
-                x_opt = x_opt_quad_interp
-            else
-                x_opt = 0.5*(xmin + xmax)
-            end
         end
-        f_opt = f(x_opt)
-        _f = SVector((fa,fb,fc,f_opt))
-        f_worst,idx = findmax(_f)
-        if f_opt != f_worst && isfinite(f_opt)
-            _x = SVector((xa,xb,xc,x_opt))
-            xa,xb,xc = StaticArrays.deleteat(_x,idx)
-            fa,fb,fc = StaticArrays.deleteat(_f,idx)
-        elseif f_opt == f_worst
-            _f2 = SVector((fa,fb,fc))
-            _x2 = SVector((xa,xb,xc))
-            _,idx2 = findmax(_f2)
-            xa,xb = StaticArrays.deleteat(_x2,idx2)
-            fa,fb = StaticArrays.deleteat(_f2,idx2)
-            xc = 0.5*(xa + xb)
-            fc = f(xc)
-        else
-            fxx = zero(f_opt)/zero(f_opt)
-            xmin,xmax = fxx,fxx
-            break
-            
-        end
-        xmin,xmax = extrema((xa,xb,xc))
-        fxx = minimum((fa,fb,fc))
-        #@show abs(xmin - xmax),fxx
-        dx = abs(xmin - xmax)
-        abs(xmin - xmax) < options.x_abstol && break
-        dx/abs(xmax) < options.x_reltol && break
+        x_interp = -b/2a
         
+        # Ensure new point is within current bounds
+        x_new = xlo0 <= x_interp <= xhi0 ? x_interp : mean2(xhi,xlo)
+        x_new = clamp(x_interp,xlo0,xhi0)
+        f_new = f(x_new)
+
+        # Create array of all four points
+
+        all_f = SVector((f1,f2,f3,f_new))
+        all_x = (x1,x2,x3,x_new)
+        idxs = sortperm(all_f)
+        i1,i2,i3 = idxs[1],idxs[2],idxs[3]
+        # Keep the three best points (reject worst)
+        x1, f1 = all_x[i1],all_f[i1]
+        x2, f2 = all_x[i2],all_f[i2]
+        x3, f3 = all_x[i3],all_f[i3]
+        if xx == x1
+            not_improved += 1
+        end
+        xx = x1
+        fx = f1
     end
-    xmin,xmax = extrema((xa,xb,xc))
-    #@show xa0,xmin,xmax,xb0
-    x_opt = 0.5*(xmin + xmax)
+    
     return NLSolvers.ConvergenceInfo(
         BoundOptim1Var(),
-        (; solution = x_opt, f0 = fc0, minimum = fxx, time = time() - time0, iter = iter_x),
+        (; solution = xx, f0 = f3, minimum = fx, time = time() - time0, iter = iter_x),
         options,
     )
 end
