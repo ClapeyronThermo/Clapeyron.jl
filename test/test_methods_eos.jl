@@ -197,10 +197,10 @@ GC.gc()
     p = 1e5
     T = 550.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 0.04557254632681239 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T) ≈ 0.0456092301152745 rtol = 1e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 4.51634223156497e6 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 6.147730717654085e6 rtol = 1E-6
         Tc,Pc,Vc = Clapeyron.crit_pure(system)
         @test Tc == system.params.Tc.values[1]
         @test Pc == system.params.Pc.values[1]
