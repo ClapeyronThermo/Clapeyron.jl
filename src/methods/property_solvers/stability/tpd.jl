@@ -305,7 +305,7 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     lle_yet = lle & isliquidz #if we have a vapour phase, dont calculate additional ones.
 
     #plan what strategies we are gonna use:
-    id_test = strategy == :default || strategy == :ideal_gas
+    id_test = strategy == :default || strategy == :ideal_gas || strategy == :pure
     K_test = strategy == :default || strategy == :wilson || strategy == :K_values
     K_test = K_test && !lle_yet
     pure_test = strategy == :default || strategy == :pure
