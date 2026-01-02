@@ -252,16 +252,16 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,
     model = wrapper.model
     gibbs = zero(Base.promote_eltype(model,p,T,x,β))
     if !isone(β)
-        gx,_ = gammaphi_gibbs(wrapper,p,T,x,:l)
+        gx,_ = modified_gibbs(wrapper,p,T,x,:l)
         gibbs += gx*(1-β)
     end
 
     if is_vle(eq) && !iszero(β)
         vv = vols[2]
-        gy,_ = gammaphi_gibbs(wrapper,p,T,y,:v,vols[2])
+        gy,_ = modified_gibbs(wrapper,p,T,y,:v,vols[2])
         gibbs += gy*β
     elseif !iszero(β) #lle
-        gy,_ = gammaphi_gibbs(wrapper,p,T,y,:l)
+        gy,_ = modified_gibbs(wrapper,p,T,y,:l)
         gibbs += gy*β
     end
     return gibbs
@@ -274,10 +274,10 @@ end
 function __eval_G_DETPFlash(wrapper::PTFlashWrapper,p,T,x,equilibrium)
     model = wrapper.model
     phase = is_lle(equilibrium) ? :liquid : :unknown
-    return gammaphi_gibbs(wrapper,p,T,x,phase)
+    return modified_gibbs(wrapper,p,T,x,phase)
 end
 
-function gammaphi_gibbs(wrapper::PTFlashWrapper,p,T,w,phase = :unknown,vol = NaN)
+function modified_gibbs(wrapper::PTFlashWrapper,p,T,w,phase = :unknown,vol = NaN)
     model = wrapper.model
     TT = Base.promote_eltype(__γ_unwrap(model),p,T,w)
     RT = Rgas(model)*T

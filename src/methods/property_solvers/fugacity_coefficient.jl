@@ -9,7 +9,10 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
     RT = Rgas(model)*T
     logZ = log(p*vol/RT/sum(z))
     nc = length(z)
-    if cache !== nothing
+    
+    if cache isa Vector
+        return lnϕ!(cache, model, p, T, z; vol)
+    elseif cache isa Tuple
         result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
         if nc == 1
             lnϕ[1] = VT_lnϕ_pure(model,vol/sum(z),T,p)
@@ -327,6 +330,21 @@ function modified_lnϕ(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
         lnϕz,vz = lnϕ(model, p, T, z, cache; phase)
     end
     return lnϕz,vz
+end
+
+function modified_gibbs(model,p,T,w,phase = :unknown,vol = NaN)
+    TT = Base.promote_eltype(model,p,T,w)
+    RT = Rgas(model)*T
+    ∑w = sum(w)
+    iszero(∑w) && return zero(TT), zero(TT)
+    g_ideal = sum(xlogx,w) - xlogx(∑w)
+    if isnan(vol)
+        volw = volume(model,p,T,w,phase = phase)
+    else
+        volw = vol
+    end
+    ∑zlogϕi,vv = ∑zlogϕ(model,p,T,w,phase = phase,vol = volw)
+    return ∑zlogϕi + g_ideal,vv
 end
 
 function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
