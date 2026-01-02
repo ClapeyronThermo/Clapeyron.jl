@@ -8,6 +8,7 @@ struct MultiPhaseTPFlash{T} <: TPFlashMethod
     full_tpd::Bool
     max_phases::Int
     phase_iters::Int
+    verbose::Bool
 end
 
 """
@@ -54,7 +55,8 @@ function MultiPhaseTPFlash(;
     full_tpd = false,
     max_phases = typemax(Int),
     flash_result = nothing,
-    phase_iters = 20) #TODO: find a better value for this
+    phase_iters = 20,
+    verbose = false) #TODO: find a better value for this
     
     if flash_result !== nothing
         comps = flash_result.compositions
@@ -109,13 +111,13 @@ function MultiPhaseTPFlash(;
     ss_iters < 0 && throw(error("incorrect specification for ss_iters"))
     phase_iters < 1 && throw(error("incorrect specification for phase_iters"))
 
-    return MultiPhaseTPFlash{T}(K0,n00,K_tol,ss_iters,nacc,second_order,full_tpd,max_phases,phase_iters)
+    return MultiPhaseTPFlash{T}(K0,n00,K_tol,ss_iters,nacc,second_order,full_tpd,max_phases,phase_iters,verbose)
 end
 
 export MultiPhaseTPFlash
 
 function index_reduction(m::MultiPhaseTPFlash,idx::AbstractVector)
-    K0,n0,K_tol,ss_iters,nacc,second_order,full_tpd,max_phases,phase_iters = m.K0,m.n0,m.K_tol,m.ss_iters,m.nacc,m.second_order,m.full_tpd,m.max_phases,m.phase_iters
+    K0,n0,K_tol,ss_iters,nacc,second_order,full_tpd,max_phases,phase_iters,verbose = m.K0,m.n0,m.K_tol,m.ss_iters,m.nacc,m.second_order,m.full_tpd,m.max_phases,m.phase_iters,m.verbose
     K0 !== nothing && (K0 = K0[idx])
     if n0 !== nothing
         for i in 1:length(n0)
@@ -124,7 +126,7 @@ function index_reduction(m::MultiPhaseTPFlash,idx::AbstractVector)
         end
     end
     # Delegate type resolution to keyword constructor to avoid eltype(K0) on nothing
-    return MultiPhaseTPFlash(;K0,n0,K_tol,ss_iters,nacc,second_order,full_tpd,max_phases,phase_iters)
+    return MultiPhaseTPFlash(;K0,n0,K_tol,ss_iters,nacc,second_order,full_tpd,max_phases,phase_iters,verbose)
 end
 
 function tpd_cache end
@@ -132,7 +134,7 @@ function tpd_cache end
 function tp_flash_multi_cache(model,p,T,z)
     pure = split_pure_model(model)
     _tpd_cache = tpd_cache(model,p,T,z)
-
+    Hϕ = _tpd_cache[end]
     F_cache = zeros(Base.promote_eltype(model,p,T,z),length(z))
     F_cache2 = similar(F_cache)
     F_cache3 = similar(F_cache)
@@ -147,14 +149,14 @@ function tp_flash_multi_cache(model,p,T,z)
     bi_cache = similar(f1)
     result_cache = comps_cache,bi_cache,v_cache
     phase_cache = (pure,_tpd_cache,found_tpd,found_tpd_lnphi,found_tpd_volumes)
-    ss_cache = result_cache,F_cache,F_cache2,F_cache3,f1,f2,f3,dem_cache
+    ss_cache = result_cache,F_cache,F_cache2,F_cache3,f1,f2,f3,dem_cache,Hϕ
     return phase_cache,ss_cache,nothing
 end
 
 function resize_cache!(cache,np)
     phase_cache,ss_cache,newton_cache = cache
     nc = length(phase_cache[1])
-    result_cache,F_cache,F_cache2,F_cache3,f1,f2,f3,dem_cache = ss_cache
+    result_cache,F_cache,F_cache2,F_cache3,f1,f2,f3,dem_cache,Hϕ = ss_cache
     comps2,bi2,volumes2 = result_cache
     np_old = length(comps2)
     resize!(comps2,np)
@@ -312,7 +314,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         removed = _remove_phases!(model,p,T,z,_result,cache,options)
         # println("[MPFLASH] final cleanup: removed duplicate/degenerate phases")
     end
-    if isnan(gmix)
+    if !isfinite(gmix)
         gmix = _multiphase_gibbs(model,p,T,result)/(Rgas(model)*T)
     end
     return FlashResult(comps, βi, volumes, FlashData(p,T,gmix))
@@ -324,7 +326,7 @@ function neq_converged(model,p,T,z,result)
 end
 
 function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
-    result_cache,x0,x,xx,f1,f2,f3,dem_cache = ss_cache
+    result_cache,x0,x,xx,f1,f2,f3,dem_cache,Hϕ = ss_cache
     comps, βi, volumes, idx_vapour = _result
 
     #we sort so the biggest phase fraction is at the end
@@ -438,7 +440,7 @@ function fixpoint_multiphase!(F, x, model, p, T, z, result, ss_cache)
 end
 
 function RR_t!(t,x,β,np,nc)
-    t .= 1
+    t .= 1    
     for l in 1:(np - 1)
         Kl = viewn(x,nc,l)
         βl = β[l]
@@ -458,6 +460,17 @@ function RR_β_ai!(a,F,i,nc,np)
     return a
 end
 
+function RR_t_x!(x,K,t,z)
+    for i in 1:length(x)
+        Ki,ti,zi = K[i],t[i],z[i]
+        if isinf(Ki)
+            x[i] = zi
+        else
+            x[i] = Ki * zi / ti
+        end
+    end
+end
+
 function ls_restricted(φ::P,λ) where P
     _d = φ.d
     _x = φ.z
@@ -475,7 +488,7 @@ end
 
 #constant K, calculate β
 function multiphase_RR_β!(F, x, z, _result, ss_cache)
-    _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+    _,_,_,F_cache,f1,f2,f3,dem_cache,Hϕ = ss_cache
     comps, βi, volumes, idx_vapour = _result
     result = comps, βi, volumes
     nc = length(z)
@@ -507,7 +520,7 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
         return F
     end
     deactivated_phase = Ref(0)
-    f = RR_obj(x, z, _result, ss_cache,deactivated_phase)
+    f = RR_obj(x, z, _result, ss_cache, deactivated_phase)
     β0 = copy(βi)
     resize!(β0,np - 1)
 
@@ -565,7 +578,7 @@ end
 function RR_obj(x, z, _result, ss_cache, deactivated_phase)
     #okuno et al. (2010): objetive function, gradient, hessian
     function f(β)
-        _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+        _,_,_,F_cache,f1,f2,f3,dem_cache,Hϕ = ss_cache
         comps, βi, volumes, idx_vapour = _result
         nc,np = length(z),length(comps)
         t = RR_t!(f3,x,β,np,nc) #we use lnK here.
@@ -577,7 +590,7 @@ function RR_obj(x, z, _result, ss_cache, deactivated_phase)
     end
 
     function g(df,β)
-        _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+        _,_,_,F_cache,f1,f2,f3,dem_cache,Hϕ = ss_cache
         comps, βi, volumes, idx_vapour = _result
         nc,np = length(z),length(comps)
         t = RR_t!(f3,x,β,np,nc) #we use lnK here.
@@ -596,7 +609,7 @@ function RR_obj(x, z, _result, ss_cache, deactivated_phase)
     end
 
     function fg(df,β)
-        _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+        _,_,_,F_cache,f1,f2,f3,dem_cache,Hϕ = ss_cache
         comps, βi, volumes, idx_vapour = _result
         nc,np = length(z),length(comps)
         ix = RR_deactivated_phase!(deactivated_phase,β)
@@ -619,7 +632,7 @@ function RR_obj(x, z, _result, ss_cache, deactivated_phase)
     end
 
     function fgh(df,d2f,β)
-        _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+        _,_,_,F_cache,f1,f2,f3,dem_cache,Hϕ = ss_cache
         comps, βi, volumes, idx_vapour = _result
         nc,np = length(z),length(comps)
         ix = RR_deactivated_phase!(deactivated_phase,β)
@@ -655,7 +668,7 @@ function RR_obj(x, z, _result, ss_cache, deactivated_phase)
     end
 
     function h(d2f,β)
-        _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+        _,_,_,F_cache,f1,f2,f3,dem_cache,Hϕ = ss_cache
         comps, βi, volumes, idx_vapour = _result
         nc,np = length(z),length(comps)
         ix = RR_deactivated_phase!(deactivated_phase,β)
@@ -710,7 +723,7 @@ function multiphase_K_lnK!(F,x,np,nc)
 end
 
 function multiphase_RR_lnK!(F, x, model, p, T, z, _result, ss_cache)
-    _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+    _,_,_,F_cache,f1,f2,f3,dem_cache,Hϕ = ss_cache
     comps, βi, volumes, idx_vapour = _result
     result = comps, βi, volumes
     nc = length(z)
@@ -722,20 +735,21 @@ function multiphase_RR_lnK!(F, x, model, p, T, z, _result, ss_cache)
 
     ##okuno et al. (2010) : calculate t
     t = RR_t!(f1,x,β,np,nc)
-
     #calculate new compositions for phase np
     xnp = comps[np]
     xnp .= z ./ t
     xnp ./= sum(xnp)
-    lnϕnp,vnp = lnϕ!(f2, model, p, T, xnp, vol0 = last(volumes))
-    isnan(vnp) && (lnϕnp,vnp = lnϕ!(f2, model, p, T, xnp)) #restart
+    phasenp = idx_vapour[] == np ? :vapour : :liquid
+    lnϕnp_temp,vnp = modified_lnϕ(model, p, T, xnp, Hϕ, vol0 = last(volumes),phase = phasenp)
+    #caches: f1 stores t, f2 stores lnϕ1
+    lnϕnp = f2
+    lnϕnp .= lnϕnp_temp
     volumes[end] = vnp
-
     #calculate new compositions for the rest of phases
     for i in 1:(np - 1)
         Ki = viewn(F_cache,nc,i)
         xi = comps[i]
-        xi .= Ki .* z ./ t
+        RR_t_x!(xi,Ki,t,z) #xi .= Ki .* z ./ t, handling the case of K = Inf
         xi ./= sum(xi)
     end
 
@@ -743,10 +757,8 @@ function multiphase_RR_lnK!(F, x, model, p, T, z, _result, ss_cache)
     for i in 1:np - 1
         lnKi = viewn(F,nc,i)
         xi = comps[i]
-        lnϕi,vi = lnϕ!(f3, model, p, T, xi, vol0 = volumes[i])
-        if isnan(vi) #restart
-            lnϕi,vi = lnϕ!(f1, model, p, T, xi)
-        end
+        phasei = idx_vapour[] == i ? :vapour : :liquid
+        lnϕi,vi = modified_lnϕ(model, p, T, xi, Hϕ, vol0 = volumes[i],phase = phasei)
         volumes[i] = vi
         lnKi .=  lnϕnp .- lnϕi
     end
@@ -760,6 +772,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
     comps, β, volumes,idx_vapour = result
     phase_cache,ss_cache,newton_cache = cache
     pures,tpd_cache,found_tpd,found_tpd_lnphi,found_tpd_volumes = phase_cache
+    _,_,_,_,_,Hϕ = tpd_cache
     result_cache = ss_cache[1]
     comp_cache = result_cache[1]
     np = length(comps)
@@ -797,7 +810,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
         # If we only have a vapour phase and no liquid yet, we must search VLE, not LLE.
         # Restrict to LLE only once we already have both vapour and at least one liquid phase.
         is_lle = (idx_vapour[] != 0) && (length(comps) > 1)
-        tpd_i = tpd(model,p,T,w,tpd_cache,reduced = true,break_first = true, strategy = :pure,lle = is_lle)
+        tpd_i = tpd(model,p,T,w,tpd_cache,reduced = true, strategy = :pure,break_first = true,lle = is_lle)
         # println("[MPFLASH] _add_phases!: i=", i, ", idx_vapour=", idx_vapour[], ", is_lle=", is_lle, ", found=", length(tpd_i[1]))
         length(tpd_i[1]) == 0 && continue
         already_found = false
@@ -818,9 +831,9 @@ function _add_phases!(model,p,T,z,result,cache,options)
         phases_comps[i] = phases_z[1]
         push!(phases_tpd,phases_w[1])
         push!(found_tpd,y)
-        lnϕy,vy = lnϕ(model,p,T,y,phase = phases_w[1])
+        lnϕy,vy = modified_lnϕ(model,p,T,y,Hϕ,phase = phases_w[1])
         push!(found_tpd_volumes,vy)
-        push!(found_tpd_lnphi,lnϕy)
+        push!(found_tpd_lnphi,copy(lnϕy))
     end
     #step 2: calculate a matrix of tpd for each value.
     # if no TPD candidates were found, nothing to add
@@ -833,8 +846,8 @@ function _add_phases!(model,p,T,z,result,cache,options)
     #cache di of components
     for i in 1:length(comps)
         di = comp_cache[i]
-        lnϕ!(di, model, p, T, comps[i], vol0 = volumes[i])
-        di .= di .+ log.(comps[i])
+        __di,_ = modified_lnϕ(model, p, T, comps[i], Hϕ, vol0 = volumes[i])
+        di .= __di .+ log.(comps[i])
     end
 
     for i in 1:length(found_tpd)
@@ -886,7 +899,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
                 end
             end
             
-            if (!isnan(dgi) && (dgi < 0)) || isone(np)
+            if (!isnan(dgi) && (dgi < 0) && !iszero(β2)) || isone(np)
                 β0 = β[jj]
                 β[jj] = β0*β2
                 comps[jj] = x2
@@ -1048,6 +1061,8 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
     z/w = β
     βmax = minimum(zi/wi for i in comps)
     =#
+    kk = (z = z,w = w)
+    #@show kk
     β1 = zero(eltype(w))
     β2 = one(eltype(w))
     # Robust upper bound: consider only indices with w[i] > 0 to avoid 0/0 and Inf pollution
@@ -1055,24 +1070,22 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
         β2 = ifelse(wi > 0, min(β2, zi/wi), β2)
     end
     x2 = similar(w)
-    g1 = eos(model,vw,T,w) + p*vw
-    gz = eos(model,vz,T,z) + p*vz
+    g1,_ = modified_gibbs(model,vw,T,w,phase_w,vw)
+    gz,_ = modified_gibbs(model,vw,T,z,phase_z,vz)
     
     if isone(β2)
         x2 .= z
     else
         @. x2 = (z -  β2 * w) / (1 - β2)
     end
-
+    #@show β2
     x3 = x2
     phase = phase_w == phase_z ? phase_z : (is_vapour(phase_w) ? :liquid : :unknown)
     cache = Ref(g1)
 
     function ff(_β)
         x3 .= (z .-  _β .* w) ./ (1 .- _β)
-        _vw  = volume(model,p,T,x3,threaded = false,phase = phase)
-        gw = eos(model,_vw,T,x3) + p*_vw
-        
+        gw,_vw = modified_gibbs(model,p,T,x3,phase)
         dgi = _β*g1 + (1-_β)*gw - gz
         cache[] = _vw
         return dgi
@@ -1082,6 +1095,8 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
     βi = Solvers.x_sol(sol)
     dgi_sol = Solvers.x_minimum(sol)
     v3_sol = cache[]
+    z2 = z
+    x3 .= (z .-  βi .* w) ./ (1 .- βi)
     return (1-βi),x3,v3_sol,βi,w,vw,dgi_sol
 end
 
@@ -1106,7 +1121,7 @@ function split_phase_k(model,p,T,z,K = nothing,vz = volume(model,p,T,z),pures = 
 end
 
 function tp_flash_multi_neq!(model,p,T,z,result,ss_cache,options)
-    result_cache,x0,x,xx,f1,f2,f3,dem_cache = ss_cache
+    result_cache,x0,x,xx,f1,f2,f3,dem_cache,Hϕ = ss_cache
     comps, βi, volumes, idx_vapour = result
     np = length(comps)
     nc = length(z)
@@ -1156,7 +1171,7 @@ function tp_flash_multi_neq!(model,p,T,z,result,ss_cache,options)
 end
 
 function multi_g_obj(model,p,T,z,_result,ss_cache)
-    result_cache,x0,x,xx,f1,f2,f3,dem_cache = ss_cache
+    result_cache,x0,x,xx,f1,f2,f3,dem_cache,Hϕ = ss_cache
     comps, βi, volumes, idx_vapour = _result
     nc = length(z)
     np = length(comps)
