@@ -28,7 +28,7 @@ function x0_volume_liquid_lowT(model,p,T,z)
         vmax = max(0.5*(v0 + vmin),4*vmin)
     end
     lnvmin,lnvmax = log(vmin),log(vmax)
-    isnan(lnvmin) || isnan(lnvmax) && return zero(lnvmax)/zero(lnvmin)
+    (isnan(lnvmin) || isnan(lnvmax)) && return zero(lnvmax)/zero(lnvmin)
     lnv = range(lnvmin,lnvmax,8)
     vl = zero(vmin)/zero(vmin)
 
