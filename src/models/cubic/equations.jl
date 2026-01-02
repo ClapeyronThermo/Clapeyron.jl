@@ -248,7 +248,7 @@ function crit_pure(model::DeltaCubicModel)
     c = translation(model,Vc0,Tc,SA[1.0])
     Vc = Vc0 - c[1]
     #we know that in AB-cubics, the critical point is already determined.
-    model isa ABCubicModel && return (Tc,Pc,Vc)
+    #model isa ABCubicModel && return (Tc,Pc,Vc)
 
     #for a general cubic model, we check if the critical pressure corresponds to the calculated pressure
     a = model.params.a[1,1]
