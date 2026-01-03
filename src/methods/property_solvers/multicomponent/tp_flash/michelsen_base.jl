@@ -352,7 +352,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         volx = zero(_1)
         voly = zero(_1)
         verbose && @info "K0 already provided"
-    elseif !isnothing(method.x0) && !isnothing(method.y0)
+    elseif hasfield(typeof(method),:x0) && hasfield(typeof(method),:y0) && !isnothing(method.x0) && !isnothing(method.y0)
         x .= method.x0 ./ sum(method.x0)
         y .= method.y0 ./ sum(method.y0)
         lnK .= log.(x ./ y)
@@ -433,7 +433,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     x ./= sum(x)
     βv = ∑n*β
     βl = ∑n - βv
-    if !isnothing(method.v0) && iszero(volx) && iszero(voly)
+    if hasfield(typeof(method),:v0) && !isnothing(method.v0) && iszero(volx) && iszero(voly)
         vl0,vv0 = method.v0
         volx,voly = _1*vl0,_1*vv0
     end

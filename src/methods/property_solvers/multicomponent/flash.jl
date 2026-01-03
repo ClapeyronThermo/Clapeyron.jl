@@ -407,14 +407,14 @@ function delete_phase!(result::FlashResult,i)
     return result
 end
 
-function findfirst_duplicate_phases(comps,β,volumes)
+function findfirst_duplicate_phases(comps,β,volumes,ignore_zeros = true)
     equal_phases = (0,0)
     for i in 1:length(comps)
         xi,vi,βi = comps[i],volumes[i],β[i]
-        iszero(βi) && continue
+        iszero(βi) && ignore_zeros && continue
         for j in (i+1):length(comps)
             xj,vj,βj = comps[j],volumes[j],β[j]
-            iszero(βj) && continue
+            iszero(βj) && ignore_zeros && continue
             #equality criteria used in the HELD algorithm
             if isnan(vi) && isnan(vj)
                 equal_v = true
@@ -429,15 +429,15 @@ function findfirst_duplicate_phases(comps,β,volumes)
     return (0,0)
 end
 
-function findfirst_duplicate_phases(result::FlashResult)
+function findfirst_duplicate_phases(result::FlashResult,ignore_zeros = true)
     comps,β,volumes = result.compositions,result.fractions,result.volumes
-    return findfirst_duplicate_phases(comps,β,volumes)
+    return findfirst_duplicate_phases(comps,β,volumes,ignore_zeros)
 end
 
-function merge_duplicate_phases!(result::FlashResult)
+function merge_duplicate_phases!(result::FlashResult;ignore_zeros = true)
     nc = numphases(result)
     for i in 1:(nc*nc)
-        i,j = findfirst_duplicate_phases(result)
+        i,j = findfirst_duplicate_phases(result,ignore_zeros)
         if i == j == 0
             break
         end
