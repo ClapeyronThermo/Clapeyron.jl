@@ -64,7 +64,11 @@ function transform_params(::Type{VTPRTranslation},params,components)
     v_shift = get!(params,"v_shift") do
         SingleParam("Volume shift",components,zeros(length(components)))
     end
-    params["v_shift"] = v_shift
+
+    Vc = get!(params,"Vc") do
+        SingleParam("Vc",components,zeros(length(components)))
+    end
+    #params["v_shift"] = v_shift
     return params
 end
 
@@ -98,6 +102,5 @@ end
 function recombine_translation!(model::CubicModel,translation_model::VTPRTranslation)
     c = translation_model.params.v_shift
     translation!(model,0.0,0.0,0.0,translation_model,c.values)
-    c.ismissingvalues .= false
     return translation_model
 end
