@@ -348,20 +348,12 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
     end
 end
 
-function _multiphase_gibbs(model,p,T,result)
-    if result isa FlashResult
-        return _multiphase_gibbs(model,p,T,(result.compositions,result.fractions,result.volumes))
-    end
-    if model isa PTFlashWrapper && length(β) == 2 #TODO: in the future, PTFlashWrappers could be multiphase
-        if model.model isa RestrictedEquilibriaModel
-            return zero(eltype(β))
-        end
-    end
-    comps = result[1]
-    β = result[2]
-    volumes = result[3]
-    data = FlashResult(model,p,T,comps,β,volumes)
-    return Rgas(model)*T*data.data.g
+function _multiphase_gibbs(model,result,vapour_phase_index = 0)
+    gibbs_energy(model,result)/Rgas(model)/result.data.T
+end
+
+function _multiphase_gibbs(model::PTFlashWrapper,result,vapour_phase_index = 0)
+    modified_gibbs(model,result;vapour_phase_index)/Rgas(model)/result.data.T
 end
 
 function __mpflash_phase(vapour_phase_index,i) 
