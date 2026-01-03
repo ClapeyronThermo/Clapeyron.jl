@@ -60,6 +60,18 @@ function Solvers.recursive_fd_value(result::FlashResult)
     return FlashResult(comps,β,vols,data)
 end
 
+function Base.copyto!(dest::FlashResult,src::FlashResult)
+    @assert numphases(dest) == numphases(src)
+    @assert length(dest.compositions[1]) == length(src.compositions[1])
+    copyto!(dest.volumes,src.volumes)
+    copyto!(dest.fractions,src.fractions)
+    dest_comps,src_comps = dest.compositions,src.compositions
+    for i in 1:numphases(dest)
+        copyto!(dest_comps[i],src_comps[i])
+    end
+    return dest
+end
+
 function FlashData(p::R1,T::R2,g::R3) where{R1,R2,R3}
     if g === nothing
         FlashData(promote(p,T)...)
@@ -352,6 +364,29 @@ function _multiphase_gibbs(model,p,T,result)
     return Rgas(model)*T*data.data.g
 end
 
+function __mpflash_phase(vapour_phase_index,i) 
+    if vapour_phase_index != 0
+        phase = vapour_phase_index == i ? :vapour : :liquid
+    else
+        phase = :unknown
+    end
+    return phase
+end
+
+function modified_gibbs(model,result::FlashResult;vapour_phase_index = 0)
+    np = numphases(result)
+    g = zero(Base.promote_eltype(result.compositions[1],result.fractions,result.volumes,result.data.p,result.data.T,model))
+    p,T = result.data.p,result.data.T
+    v = result.volumes
+    β = result.fractions
+    x = result.compositions
+    for i in 1:np
+        phase = __mpflash_phase(vapour_phase_index,i)
+        gi,_ = modified_gibbs(model,p,T,x[i],phase,v[i])
+        g += β[i]*gi
+    end
+    return g
+end
 
 #utilities to add/remove phases from an existing FlashResult
 

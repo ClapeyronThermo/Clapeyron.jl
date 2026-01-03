@@ -193,20 +193,8 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
     cache = tp_flash_multi_cache(model,p,T,z)
     phase_cache,ss_cache,newton_cache = cache
     idx_vapour = Ref(0)
-    pures = phase_cache[1]
-    if options.K0 !== nothing
-        #start at two phase.
-        n_phases = 2
-        βx,wx,vx,βy,wy,vy = split_phase_k(model,p,T,z,options.K0,volume(model,p,T,z),pures)
-        volumes = [vx,vy]
-        comps = [wx,wy]
-        βi = [βx,βy]
-        if is_vapour(VT_identify_phase(model,vy,T,wy))
-            idx_vapour[] = 2
-        end
-        δn_add = true
-        _result = (comps, βi, volumes, idx_vapour)
-    elseif options.n0 !== nothing
+    
+    if options.n0 !== nothing
         #n phases provided. calculate volumes and fractions
         n0 = options.n0
         n_phases = length(n0)
@@ -257,6 +245,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         end
     else #split model manually
         res0 = pt_flash_x0(model,p,T,z,options)
+        set_idx_vapour!(idx_vapour,model,res0)
         comps = [res0.compositions[1],res0.compositions[2]]
         volumes = [res0.volumes[1],res0.volumes[2]]
         βi = [res0.fractions[1],res0.fractions[2]]
@@ -279,7 +268,6 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         res_1 =  FlashResult(comps, βi, volumes, FlashData(p,T))
         g0 = _multiphase_gibbs(model,p,T,res_1)/(Rgas(model)*T)
         return FlashResult(comps, βi, volumes, FlashData(p,T,g0))
-
     end
     gmix = NaN*one(eltype(volumes))
     #step 2: main loop,iterate flashes until all phases are stable
@@ -362,6 +350,10 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
     x .= 0
     xx .= 0
     comps_cache,βi_cache,volumes_cache = result_cache
+
+    flash_result = FlashResult(comps,βi,volumes,FlashData(p,T))
+    flash_result_dem = FlashResult(comps_cache,βi_cache,volumes_cache,FlashData(p,T))
+    
     #fill F with data
     xnp = comps[np]
     β = viewn(x0,nc,np)
@@ -394,20 +386,14 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
     for i in 1:max_iters
         itacc += 1
         fixpoint_multiphase!(x, x0, model, p, T, z, _result, ss_cache, verbose)
-        equal_phases = _findfirst_equalphases(comps,β,volumes)
+        
         #a phase needs to be removed.
-        equal_phases != (0,0) && break
-
+        findfirst_duplicate_phases(comps,β,volumes,false) != (0,0) && break
+        
         #store values in cache
         βi_cache .= βi
         if minimum(βi) < 0 || any(!isfinite,βi)
             break
-        end
-
-        volumes_cache .= volumes
-        for i in 1:np
-            xi_cache,xi = comps_cache[i],comps[i]
-            xi_cache .= xi
         end
 
         #acceleration
@@ -420,17 +406,13 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
             F5 .= x
             # acceleration using DEM (1 eigenvalues)
             xdem = dem!(xdem, F5, F4, F3,(ΔF1,ΔF2))
+            copyto!(flash_result_dem,flash_result)
             fixpoint_multiphase!(Fdem, xdem, model, p, T, z, _result_cache, ss_cache, verbose)
 
-            gibbs = _multiphase_gibbs(model,p,T,result)
-            gibbs_dem = _multiphase_gibbs(model,p,T,result_cache)
+            gibbs = modified_gibbs(model,flash_result;vapour_phase_index = idx_vapour[])
+            gibbs_dem = modified_gibbs(model,flash_result_dem;vapour_phase_index = idx_vapour[])
             if gibbs_dem < gibbs
-                βi .= βi_cache
-                volumes .= volumes_cache
-                for i in 1:np
-                    xi,xi_cache = comps[i],comps_cache[i]
-                    xi .= xi_cache
-                end
+                copyto!(flash_result,flash_result_dem)
                 x .= Fdem
             end
         end
@@ -506,7 +488,6 @@ end
 function multiphase_RR_β!(F, x, z, _result, ss_cache, verbose)
     _,_,_,F_cache,f1,f2,f3,dem_cache,Hϕ = ss_cache
     comps, βi, volumes, idx_vapour = _result
-    result = comps, βi, volumes
     nc = length(z)
     np = length(βi)
     βF = viewn(F,nc,np)
@@ -517,9 +498,8 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache, verbose)
     if np == 2
         K = viewn(F_cache,nc,1)
         # Use log-K norm to detect trivial split (K ≈ 1 multiplicatively)
-        non_inx = non_iny = FillArrays.Fill(false,nc)
         Ktol = sqrt(eps(eltype(K)))
-        if any(!isfinite, K) || __log_K_norm(K,non_inx,non_iny) <= Ktol
+        if any(!isfinite, K) || __log_K_norm(K,false,false) <= Ktol
             βsol = clamp(βi[1], 0.0, 1.0)
             verbose && @info "[MPFLASH] RR_β: using previous β due to logK ≈ 0; βprev = $βsol"
         else
@@ -532,7 +512,6 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache, verbose)
         if verbose && !(isfinite(βsol) && 0 <= βsol <= 1)
             verbose && @info "[MPFLASH] RR_β: invalid βsol = $βsol, K= $K, z= $z"
         end
-        @show F
         return F
     end
     deactivated_phase = Ref(0)
@@ -741,7 +720,6 @@ end
 function multiphase_RR_lnK!(F, x, model, p, T, z, _result, ss_cache)
     _,_,_,F_cache,f1,f2,f3,dem_cache,Hϕ = ss_cache
     comps, βi, volumes, idx_vapour = _result
-    result = comps, βi, volumes
     nc = length(z)
     np = length(βi)
     imin,βmin = findmin(βi)
@@ -750,14 +728,14 @@ function multiphase_RR_lnK!(F, x, model, p, T, z, _result, ss_cache)
     β = viewn(F,nc,np)
 
     ##okuno et al. (2010) : calculate t
-    t = RR_t!(f1,x,β,np,nc)
+    t = RR_t!(f3,x,β,np,nc)
     #calculate new compositions for phase np
     xnp = comps[np]
     xnp .= z ./ t
     xnp ./= sum(xnp)
     phasenp = idx_vapour[] == np ? :vapour : :liquid
     lnϕnp_temp,vnp = modified_lnϕ(model, p, T, xnp, Hϕ, vol0 = last(volumes),phase = phasenp)
-    #caches: f1 stores t, f2 stores lnϕ1
+    #caches: f3 stores t, f2 stores lnϕ1
     lnϕnp = f2
     lnϕnp .= lnϕnp_temp
     volumes[end] = vnp
@@ -854,7 +832,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
     #step 2: calculate a matrix of tpd for each value.
     # if no TPD candidates were found, nothing to add
     if length(found_tpd) == 0
-        # println("[MPFLASH] _add_phases!: no TPD candidates found (found_tpd=0)")
+        verbose && @info("[MPFLASH] _add_phases!: no TPD candidates found")
         return false
     end
 
@@ -1002,7 +980,6 @@ function _remove_phases!(model,p,T,z,result,cache,options)
         return true
     end
 
-    
     #strategy B: remove one phase that does not help in equilibria
     βmin,imin = findmin(β)
     wmin,vmin = comps[imin],volumes[imin]
@@ -1016,9 +993,11 @@ function _remove_phases!(model,p,T,z,result,cache,options)
         βsum = βi + βmin
         wmix .= wmix ./ βsum
         vmix0 = (βi*vi + βmin * vmin)/βsum
-        vmix = volume(model,p,T,wmix,vol0 = vmix0)
-        gi = eos(model,vi,T,wi) + vi*p
-        gmix = eos(model,vmix,T,wmix) + vmix*p
+        phasei = __mpflash_phase(idx_vapour[],i)
+        #gi = eos(model,vi,T,wi) + vi*p
+        gi,_ = modified_gibbs(model,p,T,wi,phasei,vi)
+        #gmix = eos(model,vmix,T,wmix) + vmix*p
+        gmix,vmix = modified_gibbs(model,p,T,wi,:unknown,vi)
         Δg = βsum*gmix - βi*gi - βmin*gmin
         if Δg < 0 #the mixed phase has a lower Gibbs energy than the sum of its parts. remove minimum fraction phase.
             δn_remove = true
@@ -1029,7 +1008,6 @@ function _remove_phases!(model,p,T,z,result,cache,options)
             deleteat!(β,imin)
             deleteat!(volumes,imin)
             adjust_idx_vapour!(idx_vapour,imin)
-
             break
         end
     end
@@ -1056,22 +1034,26 @@ function adjust_idx_vapour!(idx_vapour,β_remove)
     return idx_vapour[]
 end
 
-function _findfirst_equalphases(comps,β,volumes)
-    equal_phases = (0,0)
-    for i in 1:length(comps)
-        xi,vi,βi = comps[i],volumes[i],β[i]
-        iszero(βi) && continue
-        for j in (i+1):length(comps)
-            xj,vj,βj = comps[j],volumes[j],β[j]
-            iszero(βj) && continue
-            #equality criteria used in the HELD algorithm
-            if dnorm(xi,xj,Inf) <= 1e-5 && abs(1/vi - 1/vj) <= 1e-5
-                return minmax(i,j)
-            end
+function set_idx_vapour!(idx_vapour,model,result)
+    idx_vapour[] != 0 && return idx_vapour
+    
+    np = numphases(result)
+    p,T = result.data.p,result.data.T
+    v = result.volumes
+    β = result.fractions
+    x = result.compositions
+    
+    for i in 1:np
+        if is_vapour(VT_identify_phase(model,v[i],T,x[i]))
+            idx_vapour[] = i
+            break
         end
     end
-    return (0,0)
+    return idx_vapour[]
 end
+
+
+
 function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz = volume(model,p,T,z,phase = phase_z),vw = volume(model,p,T,w,phase = phase_w))
     #w is a phase found via tpd.
     #=if w has a negative tpd, then it exists phases x1,x2 such as
@@ -1164,7 +1146,7 @@ function tp_flash_multi_neq!(model,p,T,z,result,ss_cache,options)
     opt_options = OptimizationOptions(maxiter = 30)
     f = multi_g_obj(model,p,T,z,result,ss_cache)
     if options.second_order
-        sol = Solvers.optimize(f,x,LineSearch(Newton(linsolve = static_linsolve),Backtracking()),opt_options)
+        sol = Solvers.optimize(f,x,LineSearch(Newton2(x),Backtracking()),opt_options)
         gmix = Solvers.x_minimum(sol)
         F = Solvers.x_sol(sol)
     else
