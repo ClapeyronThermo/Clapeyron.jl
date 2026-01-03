@@ -23,6 +23,13 @@ abstract type VTPRTranslationModel <: RackettTranslationModel end
 VTPR Translation model for cubics:
 ```
 V = V₀ + mixing_rule(cᵢ)
+```
+if there is experimental data:
+```
+cᵢ = vl(sat,experimental) - vl(sat,PR with TwuAlpha, no translation)
+```
+else, the following correlation is used:
+```
 cᵢ = 0.252*RTcᵢ/Pcᵢ*(1.5448Zcᵢ - 0.4024)
 Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 ```
