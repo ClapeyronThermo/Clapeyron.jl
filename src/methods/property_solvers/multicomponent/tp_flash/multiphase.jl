@@ -771,6 +771,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
     comp_cache = result_cache[1]
     np = length(comps)
     nc = length(z)
+    verbose = options.verbose
     δn_add = false
     np == nc && return false
     max_phases = min(options.max_phases,nc)
