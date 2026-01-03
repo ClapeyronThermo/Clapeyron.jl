@@ -1822,7 +1822,7 @@ butyl levulinate~|~levulinic acid n-butyl ester,172.11,6.2412,3.38379,244.56369,
 "2-chloro-3,3,3-trifluoropropene~|~2-chloro-3,3,3-trifluoro-1-propene",129.98,2.6848,3.59069,215.10285,0.0,0,0,,NONPOLAR,OK
 tetrapropylene glycol~|~2-[2-[2-(2-hydroxypropoxy)propoxy]propoxy]-1-propanol,250.178,4.11093,4.5,332.04242,0.0,5,2,,ASSOCIATIVE,"sigma: higher, kappa_ab: lower"
 bis(2-ethylhexyl) terephthalate,390.277,10.2806,3.8071,260.80458,0.0,4,0,,NONPOLAR,OK
-"(e)-1,1,1,4,4,4-hexafluorobut-2-ene",164.006,3.92242,3.28839,169.8351,0.0,0,0,,NONPOLAR,OK
+"r1336mzz(e)~|~r1336mzze~|~(e)-1,1,1,4,4,4-hexafluorobut-2-ene",164.006,3.92242,3.28839,169.8351,0.0,0,0,,NONPOLAR,OK
 trimethylene glycol dimethyl ether,136.074,4.45025,3.41506,246.35208,0.0,4,0,,NONPOLAR,OK
 tetramethylene glycoldimethyl ether,166.084,5.66809,3.32935,239.25585,0.0,5,0,,NONPOLAR,OK
 "1,5-diazabicyclo[4.3.0]non-5-ene",124.1,4.76957,3.27147,279.48445,0.0,2,0,,NONPOLAR,OK

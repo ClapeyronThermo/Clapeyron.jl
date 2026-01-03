@@ -5530,7 +5530,7 @@ propane~|~n-propane,1-dodecanethiol~|~n-dodecyl mercaptan,0.0004503666836635
 propane~|~n-propane,"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene~|~2,3,3,3-tetrafluoroprop-1-ene",0.0577716187469881
 propane~|~n-propane,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene",0.0680756945853261
 propane~|~n-propane,"r1234zez~|~r1234ze(z)~|~cis-1,3,3,3-tetrafluoropropene~|~(z)-1,3,3,3-tetrafluoro-1-propene~|~(z)-1,3,3,3-tetrafluoroprop-1-ene",0.0809485551028421
-propane~|~n-propane,"(e)-1,1,1,4,4,4-hexafluorobut-2-ene",0.0718907086381442
+propane~|~n-propane,"r1336mzz(e)~|~r1336mzze~|~(e)-1,1,1,4,4,4-hexafluorobut-2-ene",0.0718907086381442
 propylacetate~|~n-propylacetate~|~propyl ethanoate~|~n-propylethanoate,methylformate~|~methyl methanoate,-0.0059383850461052
 propylacetate~|~n-propylacetate~|~propyl ethanoate~|~n-propylethanoate,butanal~|~1-butanal~|~butyraldehyde,-0.0064055765183696
 propylacetate~|~n-propylacetate~|~propyl ethanoate~|~n-propylethanoate,cumene~|~isopropylbenzene,0.0136507116834899
@@ -6560,7 +6560,7 @@ cf3br~|~r13b1~|~bromotrifluoromethane~|~trifluorobromomethane,r125~|~pentafluoro
 "r152a~|~difluoroethane~|~1,1-difluoroethane","r245fa~|~1,1,1,3,3-pentafluoropropane",-0.0180982638284829
 "r152a~|~difluoroethane~|~1,1-difluoroethane","r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene~|~2,3,3,3-tetrafluoroprop-1-ene",-0.0208062488104146
 "r152a~|~difluoroethane~|~1,1-difluoroethane","r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene",-0.0320990926347675
-"r152a~|~difluoroethane~|~1,1-difluoroethane","(e)-1,1,1,4,4,4-hexafluorobut-2-ene",-0.0100447631522153
+"r152a~|~difluoroethane~|~1,1-difluoroethane","r1336mzz(e)~|~r1336mzze~|~(e)-1,1,1,4,4,4-hexafluorobut-2-ene",-0.0100447631522153
 ethanethiol~|~ethyl mercaptan,methane,0.0351103534387574
 ethanethiol~|~ethyl mercaptan,ethane,-0.2790486514437547
 ethanethiol~|~ethyl mercaptan,propene~|~propylene,0.0124542559534964
@@ -6788,7 +6788,7 @@ r32~|~difluoromethane,"r236fa~|~1,1,1,3,3,3-hexafluoropropane",-0.00292109419684
 r32~|~difluoromethane,"r236ea~|~1,1,1,2,3,3-hexafluoropropane",-0.0240963471693022
 r32~|~difluoromethane,"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene~|~2,3,3,3-tetrafluoroprop-1-ene",-0.0074775101497458
 r32~|~difluoromethane,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene",-0.0234625154071257
-r32~|~difluoromethane,"(e)-1,1,1,4,4,4-hexafluorobut-2-ene",-0.0297580732925807
+r32~|~difluoromethane,"r1336mzz(e)~|~r1336mzze~|~(e)-1,1,1,4,4,4-hexafluorobut-2-ene",-0.0297580732925807
 r30b1~|~ch2clbr~|~bromochloromethane,r10b1~|~bromotrichloromethane,0.0062346193810394
 "2,4-toluene diisocyanate",ethylsuccinate~|~diethyl succinate~|~diethyl butanedioate,-0.031257957281759
 "2,4-toluene diisocyanate","dimethyl adipate~|~dimethyl 1,6-hexanedioate",-0.0137272926766695
@@ -6842,7 +6842,7 @@ r161~|~fluoroethane~|~ethyl fluoride,pentafluorodimethyl ether ~|~difluoromethox
 r161~|~fluoroethane~|~ethyl fluoride,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",-0.0444970770032253
 r161~|~fluoroethane~|~ethyl fluoride,"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene~|~2,3,3,3-tetrafluoroprop-1-ene",-0.0231486384545678
 r161~|~fluoroethane~|~ethyl fluoride,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene",-0.0336823160597854
-r161~|~fluoroethane~|~ethyl fluoride,"(e)-1,1,1,4,4,4-hexafluorobut-2-ene",-0.0313799191958002
+r161~|~fluoroethane~|~ethyl fluoride,"r1336mzz(e)~|~r1336mzze~|~(e)-1,1,1,4,4,4-hexafluorobut-2-ene",-0.0313799191958002
 dimethylene glycol dimethyl ether,trimethylene glycol dimethyl ether,0.0045026988842885
 "r142b~|~1-chloro-1,1-difluoroethane","r134~|~1,1,2,2-tetrafluoroethane",0.0247215529217719
 "r142b~|~1-chloro-1,1-difluoroethane","r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",0.0191034445329222
@@ -6875,7 +6875,7 @@ ethyl lactate~|~dl-ethyl lactate~|~2-hydroxypropanoicacidethylester,1-methoxyiso
 "r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane","r245fa~|~1,1,1,3,3-pentafluoropropane",-0.0034475866090573
 "r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane","r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene~|~2,3,3,3-tetrafluoroprop-1-ene",-0.0054471498067784
 "r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane","r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene",-0.0078822420630517
-"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane","(e)-1,1,1,4,4,4-hexafluorobut-2-ene",0.0040429574617639
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane","r1336mzz(e)~|~r1336mzze~|~(e)-1,1,1,4,4,4-hexafluorobut-2-ene",0.0040429574617639
 "r141b~|~1,1-dichloro-1-fluoroethane","2-(difluoromethoxy)-1,1,1-trifluoroethane~|~1,1,1-trifluoro-2-(difluoromethoxy)ethane",0.0235846176278459
 "demea~|~(diethylamino)ethanol~|~n,n-diethylethanolamine~|~2-(diethylamino)-ethanol","n-methylpropane-1,3-diamine~|~1,3-propanediamine, n-methyl-",-0.0185264833147544
 "1,2-epoxycyclohexane~|~7-oxabicyclo[4.1.0]heptane",2-cyclohexen-1-one~|~2-cyclohexene-1-one,-0.0411889223242989
@@ -6901,4 +6901,4 @@ trimethylgallium,dimethylaluminum chloride,-0.003402383126584
 "r365mfc~|~1,1,1,3,3-pentafluorobutane","novec649~|~dodecafluoro-2-methylpentan-3-one~|~1,1,1,2,2,4,5,5,5-nonafluoro-4-(trifluoromethyl)-3-pentanone",0.0087398817844883
 "r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene~|~2,3,3,3-tetrafluoroprop-1-ene","r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene",0.0065378124552367
 "r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene~|~2,3,3,3-tetrafluoroprop-1-ene","2-chloro-3,3,3-trifluoropropene~|~2-chloro-3,3,3-trifluoro-1-propene",0.0125714845198128
-"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene","(e)-1,1,1,4,4,4-hexafluorobut-2-ene",0.0080135025939028
+"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene","r1336mzz(e)~|~r1336mzze~|~(e)-1,1,1,4,4,4-hexafluorobut-2-ene",0.0080135025939028
