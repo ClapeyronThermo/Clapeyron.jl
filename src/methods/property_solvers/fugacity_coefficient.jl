@@ -333,18 +333,13 @@ function modified_lnϕ(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
 end
 
 function modified_gibbs(model,p,T,w,phase = :unknown,vol = NaN)
-    TT = Base.promote_eltype(model,p,T,w)
-    RT = Rgas(model)*T
-    ∑w = sum(w)
-    iszero(∑w) && return zero(TT), zero(TT)
-    g_ideal = sum(xlogx,w) - xlogx(∑w)
     if isnan(vol)
         volw = volume(model,p,T,w,phase = phase)
     else
         volw = vol
     end
-    ∑zlogϕi,vv = ∑zlogϕ(model,p,T,w,phase = phase,vol = volw)
-    return ∑zlogϕi + g_ideal,vv
+    g =  VT_gibbs_energy(model,volw,T,w,p) #+ eos_g(BasicIdeal(),p,T,w)
+    return g,volw
 end
 
 function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)

@@ -60,6 +60,18 @@ function Solvers.recursive_fd_value(result::FlashResult)
     return FlashResult(comps,β,vols,data)
 end
 
+function Base.copyto!(dest::FlashResult,src::FlashResult)
+    @assert numphases(dest) == numphases(src)
+    @assert length(dest.compositions[1]) == length(src.compositions[1])
+    copyto!(dest.volumes,src.volumes)
+    copyto!(dest.fractions,src.fractions)
+    dest_comps,src_comps = dest.compositions,src.compositions
+    for i in 1:numphases(dest)
+        copyto!(dest_comps[i],src_comps[i])
+    end
+    return dest
+end
+
 function FlashData(p::R1,T::R2,g::R3) where{R1,R2,R3}
     if g === nothing
         FlashData(promote(p,T)...)
@@ -336,22 +348,37 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
     end
 end
 
-function _multiphase_gibbs(model,p,T,result)
-    if result isa FlashResult
-        return _multiphase_gibbs(model,p,T,(result.compositions,result.fractions,result.volumes))
-    end
-    if model isa PTFlashWrapper && length(β) == 2 #TODO: in the future, PTFlashWrappers could be multiphase
-        if model.model isa RestrictedEquilibriaModel
-            return zero(eltype(β))
-        end
-    end
-    comps = result[1]
-    β = result[2]
-    volumes = result[3]
-    data = FlashResult(model,p,T,comps,β,volumes)
-    return Rgas(model)*T*data.data.g
+function _multiphase_gibbs(model,result,vapour_phase_index = 0)
+    gibbs_energy(model,result)/Rgas(model)/result.data.T
 end
 
+function _multiphase_gibbs(model::PTFlashWrapper,result,vapour_phase_index = 0)
+    modified_gibbs(model,result;vapour_phase_index)/Rgas(model)/result.data.T
+end
+
+function __mpflash_phase(vapour_phase_index,i) 
+    if vapour_phase_index != 0
+        phase = vapour_phase_index == i ? :vapour : :liquid
+    else
+        phase = :unknown
+    end
+    return phase
+end
+
+function modified_gibbs(model,result::FlashResult;vapour_phase_index = 0)
+    np = numphases(result)
+    g = zero(Base.promote_eltype(result.compositions[1],result.fractions,result.volumes,result.data.p,result.data.T,model))
+    p,T = result.data.p,result.data.T
+    v = result.volumes
+    β = result.fractions
+    x = result.compositions
+    for i in 1:np
+        phase = __mpflash_phase(vapour_phase_index,i)
+        gi,_ = modified_gibbs(model,p,T,x[i],phase,v[i])
+        g += β[i]*gi
+    end
+    return g
+end
 
 #utilities to add/remove phases from an existing FlashResult
 
@@ -407,14 +434,14 @@ function delete_phase!(result::FlashResult,i)
     return result
 end
 
-function findfirst_duplicate_phases(comps,β,volumes)
+function findfirst_duplicate_phases(comps,β,volumes,ignore_zeros = true)
     equal_phases = (0,0)
     for i in 1:length(comps)
         xi,vi,βi = comps[i],volumes[i],β[i]
-        iszero(βi) && continue
+        iszero(βi) && ignore_zeros && continue
         for j in (i+1):length(comps)
             xj,vj,βj = comps[j],volumes[j],β[j]
-            iszero(βj) && continue
+            iszero(βj) && ignore_zeros && continue
             #equality criteria used in the HELD algorithm
             if isnan(vi) && isnan(vj)
                 equal_v = true
@@ -429,15 +456,15 @@ function findfirst_duplicate_phases(comps,β,volumes)
     return (0,0)
 end
 
-function findfirst_duplicate_phases(result::FlashResult)
+function findfirst_duplicate_phases(result::FlashResult,ignore_zeros = true)
     comps,β,volumes = result.compositions,result.fractions,result.volumes
-    return findfirst_duplicate_phases(comps,β,volumes)
+    return findfirst_duplicate_phases(comps,β,volumes,ignore_zeros)
 end
 
-function merge_duplicate_phases!(result::FlashResult)
+function merge_duplicate_phases!(result::FlashResult;ignore_zeros = true)
     nc = numphases(result)
     for i in 1:(nc*nc)
-        i,j = findfirst_duplicate_phases(result)
+        i,j = findfirst_duplicate_phases(result,ignore_zeros)
         if i == j == 0
             break
         end
