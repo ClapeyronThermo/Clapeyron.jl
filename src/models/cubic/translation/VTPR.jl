@@ -23,7 +23,7 @@ abstract type VTPRTranslationModel <: RackettTranslationModel end
 VTPR Translation model for cubics:
 ```
 V = V₀ + mixing_rule(cᵢ)
-cᵢ = 0.252*RTcᵢ/Pcᵢ*(1.5448Zcᵢ - 0.4024)
+cᵢ = -0.252*RTcᵢ/Pcᵢ*(1.5448Zcᵢ - 0.4024)
 Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 ```
 
@@ -69,7 +69,7 @@ function translation!(model::CubicModel,V,T,z,translation_model::VTPRTranslation
         Pci = Pc[i]
         RT = Tci*R̄
         Zc = Pci*Vc[i]/RT
-        c[i] = 0.252*RT/Pci*(1.5448Zc - 0.4024)
+        c[i] = -0.252*RT/Pci*(1.5448Zc - 0.4024)
     end
     return c
 end
