@@ -30,7 +30,7 @@ cᵢ = vl(sat,experimental) - vl(sat,PR with TwuAlpha, no translation)
 ```
 else, the following correlation is used:
 ```
-cᵢ = 0.252*RTcᵢ/Pcᵢ*(1.5448Zcᵢ - 0.4024)
+cᵢ = -0.252*RTcᵢ/Pcᵢ*(1.5448Zcᵢ - 0.4024)
 Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 ```
 
@@ -86,7 +86,7 @@ function translation!(model::CubicModel,V,T,z,translation_model::VTPRTranslation
             Pci = Pc[i]
             RT = Tci*R̄
             Zc = Pci*Vc[i]/RT
-            c[i] = 0.252*RT/Pci*(1.5448Zc - 0.4024)
+            c[i] = -0.252*RT/Pci*(1.5448Zc - 0.4024)
         elseif missing_vc[i] && missing_c[i]
             throw(MissingException("VTPRTranslation: cannot estimate v_shift: missing Vc parameter."))
         end

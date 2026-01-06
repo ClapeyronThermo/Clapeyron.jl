@@ -287,7 +287,7 @@ function __symbolic_phase(p,T,z,phase)
 end
 
 function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
-    if has_a_res(model)
+    if has_a_res(model) && !(model isa IdealModel)
         λmodel,λp,λT,λz,λvol0 = primalval(model),primalval(p),primalval(T),primalval(z),primalval(vol0)
         λv = volume_impl(λmodel,λp,λT,λz,phase,threaded,λvol0)
         tup = (model,p,T,z)

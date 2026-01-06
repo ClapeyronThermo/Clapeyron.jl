@@ -75,6 +75,10 @@ GC.gc()
         system = SAFTgammaMie(species; idealmodel = MonomerIdeal)
         @test !isnothing(system)
         GC.gc()
+
+        #GC model, GC ideal model
+        system2 = SAFTgammaMie(species; idealmodel = JobackIdeal)
+        @test !isnothing(system)
     end
     
     @testset "structSAFTgammaMie" begin

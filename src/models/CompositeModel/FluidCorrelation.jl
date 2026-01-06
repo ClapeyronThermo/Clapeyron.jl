@@ -130,33 +130,11 @@ function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
     elseif is_vapour(phase)
         return volume(model.gas, p, T, z; phase, threaded, vol0)
     else
-        if length(model) == 1
-            psat,vl,vv = saturation_pressure(model,T)
-            if !isnan(psat)
-                if p > psat
-                    return vl
-                else
-                    return vv
-                end
-            else
-                tc,pc,vc = crit_pure(model)
-                if T > tc #supercritical conditions. ideally, we could go along the critical isochore, but we dont have that.
-                    if p > pc # supercritical fluid
-                        return volume(model.liquid, p, T, z; phase, threaded, vol0)
-                    else #gas phase
-                        return volume(model.gas, p, T, z; phase, threaded, vol0)
-                    end
-                else #something failed on saturation_pressure, not related to passing the critical point
-                    return nan
-                end
-
-            end
-
-            return nan
-        else
-            throw(error("multicomponent automatic phase detection not implemented for $(typeof(model))"))
-            return nan
-        end
+    TT = Base.promote_eltype(model,p,T,z)
+    RT = Rgas(model)*T
+    ∑z = sum(z)
+    g_ideal = sum(xlogx,z) - xlogx(∑z)
+    vl = zero(TT)
     end
 end
 

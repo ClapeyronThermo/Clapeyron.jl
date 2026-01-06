@@ -308,6 +308,16 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = fa
 
                 Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options,reference_state)
             end
+
+            function $name(groups::GroupParam,params::Dict{String,Clapeyron.ClapeyronParam};
+                idealmodel = Clapeyron.BasicIdeal,
+                ideal_userlocations = String[],
+                assoc_options = Clapeyron.default_assoc_options($name),
+                reference_state = nothing,
+                verbose = false)
+
+                Clapeyron.build_eosmodel($name,groups,params,idealmodel,ideal_userlocations,verbose,assoc_options,reference_state)
+            end
         end
     else
         quote
@@ -328,6 +338,15 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = fa
                 verbose = false)
 
                 Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,nothing,reference_state)
+            end
+
+            function $name(groups::GroupParam,params::Dict{String,Clapeyron.ClapeyronParam};
+                idealmodel = Clapeyron.BasicIdeal,
+                ideal_userlocations = String[],
+                reference_state = nothing,
+                verbose = false)
+
+                Clapeyron.build_eosmodel($name,groups,params,idealmodel,ideal_userlocations,verbose,nothing,reference_state)
             end
         end
     end
@@ -390,6 +409,16 @@ macro newmodel(name, parent, paramstype,sitemodel = true)
 
                 Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,nothing,ideal_userlocations,verbose,assoc_options,reference_state)
             end
+
+            function $name(components,params::Dict{String,Clapeyron.ClapeyronParam};
+                idealmodel = Clapeyron.BasicIdeal,
+                ideal_userlocations = String[],
+                assoc_options = Clapeyron.default_assoc_options($name),
+                reference_state = nothing,
+                verbose = false)
+
+                Clapeyron.build_eosmodel($name,components,params,idealmodel,ideal_userlocations,verbose,assoc_options,reference_state)
+            end
         end
     else
         quote
@@ -408,6 +437,15 @@ macro newmodel(name, parent, paramstype,sitemodel = true)
                 verbose = false)
 
                 Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,nothing,ideal_userlocations,verbose,nothing,reference_state)
+            end
+
+            function $name(components,params::Dict{String,Clapeyron.ClapeyronParam};
+                idealmodel = Clapeyron.BasicIdeal,
+                ideal_userlocations = String[],
+                reference_state = nothing,
+                verbose = false)
+
+                Clapeyron.build_eosmodel($name,components,params,idealmodel,ideal_userlocations,verbose,nothing,reference_state)
             end
         end
     end
@@ -432,6 +470,10 @@ macro newmodelsimple(name, parent, paramstype)
 
         function $name(components;userlocations = String[],reference_state = nothing,verbose = false)
             Clapeyron.build_eosmodel($name,components,nothing,userlocations,nothing,nothing,verbose,nothing,reference_state)
+        end
+
+        function $name(components,params::Dict{String,Clapeyron.ClapeyronParam},reference_state = nothing,verbose = false)
+            Clapeyron.build_eosmodel($name,components,params,nothing,nothing,verbose,nothing,reference_state)
         end
     end |> esc
 end
@@ -551,35 +593,79 @@ macro registermodel(model)
     esc(model)
 end
 
+function SiteParam!(params,components)
+    get!(params,"sites") do
+        SiteParam(components)
+    end
+    return params
+end
+
+function ReferenceState!(params,reference_state)
+    get!(params,"reference_state") do
+        params["reference_state"] = __init_reference_state_kw(reference_state)
+    end
+end
+
+
+function AssocOptions!(params,assoc_options)
+    get!(params,"assoc_options") do
+        params["assoc_options"] = __init_assoc_options_kw(assoc_options)
+    end
+end
+
 function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options = nothing,reference_state = nothing) where M <: EoSModel
 
     paramtype = fieldtype(M,:params)
-    _components = format_components(components)
 
     #non-splittable
     if paramtype === Nothing
         return M()
     #we don't need to parse params.
     elseif Base.issingletontype(paramtype)
-        return M(_components,paramtype(),default_references(M))
+        return M(format_components(components),paramtype(),default_references(M))
     end
-    #all fields of the model.
-    result = Dict{Symbol,Any}()
-    result[:components] = _components
     #parse params from database.
     options = default_getparams_arguments(M,userlocations,verbose)
     if has_groups(M)
         groups = GroupParam(format_gccomponents(components),default_gclocations(M);group_userlocations,verbose)
         params_in = getparams(groups, default_locations(M),options)
-        result[:groups] = groups
+        params_in["___groups"] = groups
+        return build_eosmodel(M,components,params_in,idealmodel,ideal_userlocations,verbose,assoc_options,reference_state)
     else
         groups = nothing
-        params_in = getparams(_components, default_locations(M),options)
+        params_in = getparams(format_components(components), default_locations(M),options)
+        return build_eosmodel(M,components,params_in,idealmodel,ideal_userlocations,verbose,assoc_options,reference_state)
+    end
+end
+
+function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,ClapeyronParam},idealmodel,ideal_userlocations,verbose,assoc_options = nothing,reference_state = nothing) where M <: EoSModel
+
+    #all fields of the model.
+    result = Dict{Symbol,Any}()
+    paramtype = fieldtype(M,:params)
+    #components: raw components (could be a string, or a gc-based component input)
+    #_components::Vector{String}: formatted components
+    if components_or_groups isa GroupParam #GroupParam passed via constructor
+        groups = components_or_groups
+        _components = groups.components
+        components = _components
+        result[:groups] = groups
+    elseif haskey(params_in,"___groups") #GroupParam generated via build_eosmodel
+        groups = params_in["___groups"]
+        _components = groups.components
+        components = components_or_groups
+        result[:groups] = groups
+    else
+        components = components_or_groups
+        _components = format_components(components)
+        groups = nothing
     end
 
+    result[:components] = _components
+    #parse params from database.
     #inject reference state if not built
     if has_reference_state(M)
-            params_in["reference_state"] = __init_reference_state_kw(reference_state)
+        ReferenceState!(params_in,reference_state)
     else
         #this could fail when the type is not entirely known.
         #reference_state_checkempty(M,reference_state)
@@ -588,18 +674,14 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     #put AssocOptions inside params, so it can be used in transform_params
     if has_sites(M)
         if !haskey(params_in,"assoc_options")
-            params_in["assoc_options"] = assoc_options
+            AssocOptions!(params_in,assoc_options)
         else
             #throw(error("cannot overwrite \"assoc_options\" key, already exists!"))
         end
 
         #legacy case: the model has a SiteParam, but it does not have association parameters.
         #we just build an empty one
-        if !haskey(params_in,"sites")
-            #todo: check how this interact with GC, but i suspect that with our new Approach
-            #we always want component-based sites
-            params_in["sites"] = SiteParam(_components)
-        end
+        SiteParam!(params_in,_components)
     end
 
     #perform any transformations, pass components or groups
