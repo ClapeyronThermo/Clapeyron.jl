@@ -31,8 +31,8 @@ If the result of the phase equilibria is not stable, then it proceeds to add/rem
 - `y0` (optional), initial guess for the composition of phase y
 - `n0` (optional), initial guess for all compositions. it can be a matrix or a vector of vectors.
 - `K_tol = sqrt(eps(Float64))`, tolerance to stop the calculation (`norm(lnK,1) < K_tol`)
-- `ss_iters = 4`, number of Successive Substitution iterations to perform
-- `nacc = 3`, accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
+- `ss_iters = 21`, number of Successive Substitution iterations to perform.
+- `nacc = 5`, accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
 - `second_order = true`, whether to solve the Gibbs energy minimization using the analytical hessian or not. If set to `false`, the gibbs minimization will be done using L-BFGS.
 - `full_tpd` = false, whether to start with a simple K-split or using an intensive TPD search first.
 - `max_phases = typemax(Int)`, the algorithm stops if there are more than `min(max_phases,nc)` phases
@@ -49,7 +49,7 @@ function MultiPhaseTPFlash(;
     y0 = nothing,
     n0 = nothing,
     K_tol = sqrt(eps(Float64)),
-    ss_iters = 2,
+    ss_iters = 21,
     nacc = 5,
     second_order = true,
     full_tpd = false,
@@ -180,7 +180,8 @@ function resize_cache!(cache,np)
 end
 
 function tp_flash_impl(model,p,T,z,method::MultiPhaseTPFlash)
-    return tp_flash_multi(model,p,T,z,method)
+    cached_model = __tpflash_cache_model(model,p,T,z,:unknown)
+    return tp_flash_multi(cached_model,p,T,z,method)
 end
 
 function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
@@ -205,7 +206,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         for i in 1:length(comps)
             volumes[i] = volume(model,p,T,comps[i])
             if idx_vapour[] == 0
-                if is_vapour(VT_identify_phase(model,volumes[i],T,comps[i]))
+                if is_vapour(identify_phase(model,p,T,comps[i],vol = volumes[i]))
                     idx_vapour[] = i
                 end
             end
@@ -788,7 +789,7 @@ function _add_phases!(model,p,T,z,_result,cache,options)
         vw = volumes[i]
 
         if idx_vapour[] == 0
-            phase_wi = VT_identify_phase(model,vw,T,w)
+            phase_wi = identify_phase(model,p,T,w,vol = vw)
             if is_vapour(phase_wi)
                 idx_vapour[] = i
             end
@@ -865,7 +866,7 @@ function _add_phases!(model,p,T,z,_result,cache,options)
 
             #identify phase if not done
             if is_unknown(phases_comps[jj]) && idx_vapour[] == 0
-                phases_comps[jj] = VT_identify_phase(model,vw,T,w)
+                phases_comps[jj] = identify_phase(model,p,T,w,vol = vw)
             end
 
             phase_w = phases_comps[jj]
@@ -875,7 +876,7 @@ function _add_phases!(model,p,T,z,_result,cache,options)
 
             y,vy = found_tpd[ii],found_tpd_volumes[ii]
             if is_unknown(phases_tpd[ii])
-                phases_tpd[ii] = VT_identify_phase(model,vy,T,y)
+                phases_tpd[ii] = identify_phase(model,p,T,y,vol = vy)
             end
             phase_y = phases_tpd[ii]
             #vy = volume(model,p,T,y,phase = phase_y)
@@ -906,7 +907,7 @@ function _add_phases!(model,p,T,z,_result,cache,options)
                     push!(comps,x1)
                     push!(volumes,v1)
                     push!(β,β0*β1)
-                    if is_vapour(VT_identify_phase(model,v1,T,x1))
+                    if is_vapour(identify_phase(model,p,T,x1,vol = v1))
                         idx_vapour[] = length(comps)
                     end
                     return true
@@ -968,7 +969,7 @@ function _remove_phases!(model,p,T,z,_result,cache,options)
         reconstitute_x!(comps,z,β,length(β))
         push!(volumes,volume(model,p,T,comps[end]))
         if idx_vapour[] == 0
-            if is_vapour(VT_identify_phase(model,volumes[end],T,comps[end]))
+            if is_vapour(identify_phase(model,p,T,comps[end],vol = volumes[end]))
                 idx_vapour[] = length(comps)
             end
         end
@@ -1036,7 +1037,7 @@ function set_idx_vapour!(idx_vapour,model,result)
     x = result.compositions
 
     for i in 1:np
-        if is_vapour(VT_identify_phase(model,v[i],T,x[i]))
+        if is_vapour(identify_phase(model,p,T,x[i],vol = v[i]))
             idx_vapour[] = i
             break
         end
@@ -1118,7 +1119,7 @@ function tp_flash_multi_neq!(model,p,T,z,_result,ss_cache,options)
         false,gmix
     end
     opt_options = OptimizationOptions(maxiter = 30)
-    f = multi_g_obj(model,p,T,z,result,ss_cache)
+    f = multi_g_obj(model,p,T,z,_result,ss_cache)
     if options.second_order
         sol = Solvers.optimize(f,x,LineSearch(Newton2(x),Backtracking()),opt_options)
         gmix = Solvers.x_minimum(sol)
@@ -1169,13 +1170,16 @@ function multi_g_obj(model,p,T,z,_result,ss_cache)
         βnp = 1 - sum(β)
         xnp .= z ./ t
         vnp = vols[np]
-        g = βnp*(eos(model,vnp,T,xnp) + p*vnp)
+        phase_np = __mpflash_phase(idx_vapour[],np)
+        g = modified_gibbs(model,p,T,xnp,phase_np,vnp)[1]
+        #g = βnp*(eos(model,vnp,T,xnp) + p*vnp)
         for i in 1:np-1
             Ki = viewn(𝕏,nc,i)
             xi .= xnp .* exp.(Ki)
             vi = exp(vols[i])
             #g += β[i]*(eos(model,vi,T,xi) + p*vi)
-            g += modified_gibbs(model,p,T,xi,:unknown,vi)
+            phase_i = __mpflash_phase(idx_vapour[],i)
+            g += modified_gibbs(model,p,T,xi,phase_i,vi)[1]
         end
         return g/(Rgas(model)*T)
     end

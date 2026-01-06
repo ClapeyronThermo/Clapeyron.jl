@@ -623,11 +623,15 @@ Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the
 
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
-function identify_phase(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    #TODO: what do we do with composite models here?
-    V = volume(model, p, T, z; phase, threaded, vol0)
+function identify_phase(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, vol = NaN)
+    if isnan(vol)
+        V = volume(model, p, T, z; phase, threaded, vol0)
+    else
+        V = vol*oneunit(Base.promote_eltype(model,p,T,z))
+    end
     return VT_identify_phase(model,V,T,z)
 end
+
 
 """
     fundamental_derivative_of_gas_dynamics(model::EoSModel, p, T, z=SA[1.]; phase=:gas, threaded=true, vol0=nothing)::Symbol

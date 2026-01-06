@@ -437,8 +437,8 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         vl0,vv0 = method.v0
         volx,voly = _1*vl0,_1*vv0
     end
-    iszero(volx) && (volx = volume(model,p,T,x,phase = phasex))
-    iszero(voly) && (voly = volume(model,p,T,y,phase = phasey))
+    #iszero(volx) && (volx = volume(model,p,T,x,phase = phasex))
+    #iszero(voly) && (voly = volume(model,p,T,y,phase = phasey))
     has_a_res(model) && is_liquid(VT_identify_phase(model,voly,T,y)) && (voly = Rgas(model)*T/p)
     r = FlashResult(p,T,SA[x,y],SA[βl,βv],SA[volx,voly],sort = false)
     return r

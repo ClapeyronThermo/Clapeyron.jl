@@ -279,7 +279,7 @@ end
 
 function modified_gibbs(wrapper::PTFlashWrapper,p,T,w,phase = :unknown,vol = NaN)
     model = wrapper.model
-    TT = Base.promote_eltype(__γ_unwrap(model),p,T,w)
+    TT = Base.promote_eltype(wrapper,p,T,w)
     RT = Rgas(model)*T
     ∑w = sum(w)
     iszero(∑w) && return zero(TT), zero(TT)
@@ -306,6 +306,28 @@ function modified_gibbs(wrapper::PTFlashWrapper,p,T,w,phase = :unknown,vol = NaN
         end
     else
         throw(error("invalid phase specification: $phase"))
+    end
+end
+
+function identify_phase(wrapper::PTFlashWrapper, p, T, w=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, vol = NaN)
+    model = wrapper.model
+    TT = Base.promote_eltype(wrapper,p,T,w)
+    RT = Rgas(model)*T
+    ∑w = sum(w)
+    g_ideal = sum(xlogx,w) - xlogx(∑w)
+    vl = zero(TT)
+    if isnan(vol)
+        vv = volume(gas_model(model),p,T,w,phase = :v,vol0 = vol0)
+    else
+        vv = TT(vol)
+    end
+    ∑zlogϕi,_ = ∑zlogϕ(gas_model(model),p,T,w,phase = :v,vol = vol)
+    gl = excess_gibbs_free_energy(__γ_unwrap(model),p,T,w)/RT + g_ideal
+    gv = ∑zlogϕi + tpd_delta_g_vapour(wrapper,p,T,w) + g_ideal
+    if gl < gv
+        return :liquid
+    else
+        return :vapour
     end
 end
 
