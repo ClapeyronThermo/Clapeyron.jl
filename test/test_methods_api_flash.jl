@@ -82,11 +82,15 @@
 
     @testset "Multiphase algorithm" begin
         #standard 3-phase system
-        @test Clapeyron.tp_flash(system, p, T, z, MultiPhaseTPFlash())[3] ≈ -6.759674475175065 rtol = 1e-6
+        res1 = Clapeyron.tp_flash2(system, p, T, z, MultiPhaseTPFlash())
+        @test Clapeyron.numphases(res1) == 3
+        @test res1.data.g ≈ -6.759674475175065 rtol = 1e-6
         
         #hard system, 2 phases
         system2 = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
-        @test Clapeyron.tp_flash(system2, 1e5, 284.4, [1,1,1,1]*0.25, MultiPhaseTPFlash())[3] ≈ -6.618441125949686 rtol = 1e-6
+        res2 = Clapeyron.tp_flash2(system2, 1e5, 284.4, [1,1,1,1]*0.25, MultiPhaseTPFlash())
+        @test Clapeyron.numphases(res2) == 2
+        @test res2.data.g ≈ -6.618441125949686 rtol = 1e-6
         
         #same standard 3-phase system, but with activities
         system3 = UNIFAC(["water","cyclohexane","propane"],puremodel = DIPPR101Sat)

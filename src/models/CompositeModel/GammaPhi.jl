@@ -309,7 +309,7 @@ function modified_gibbs(wrapper::PTFlashWrapper,p,T,w,phase = :unknown,vol = NaN
     end
 end
 
-function identify_phase(wrapper::PTFlashWrapper, p, T, w=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, vol = NaN)
+function identify_phase(wrapper::PTFlashWrapper, p::Number, T, w=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, vol = NaN)
     model = wrapper.model
     TT = Base.promote_eltype(wrapper,p,T,w)
     RT = Rgas(model)*T

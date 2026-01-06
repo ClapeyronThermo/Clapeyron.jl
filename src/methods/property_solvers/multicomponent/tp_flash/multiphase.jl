@@ -31,7 +31,7 @@ If the result of the phase equilibria is not stable, then it proceeds to add/rem
 - `y0` (optional), initial guess for the composition of phase y
 - `n0` (optional), initial guess for all compositions. it can be a matrix or a vector of vectors.
 - `K_tol = sqrt(eps(Float64))`, tolerance to stop the calculation (`norm(lnK,1) < K_tol`)
-- `ss_iters = 21`, number of Successive Substitution iterations to perform.
+- `ss_iters = 6`, number of Successive Substitution iterations to perform.
 - `nacc = 5`, accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
 - `second_order = true`, whether to solve the Gibbs energy minimization using the analytical hessian or not. If set to `false`, the gibbs minimization will be done using L-BFGS.
 - `full_tpd` = false, whether to start with a simple K-split or using an intensive TPD search first.
@@ -49,7 +49,7 @@ function MultiPhaseTPFlash(;
     y0 = nothing,
     n0 = nothing,
     K_tol = sqrt(eps(Float64)),
-    ss_iters = 21,
+    ss_iters = 6,
     nacc = 5,
     second_order = true,
     full_tpd = false,
@@ -1035,7 +1035,7 @@ function set_idx_vapour!(idx_vapour,model,result)
     v = result.volumes
     β = result.fractions
     x = result.compositions
-
+    
     for i in 1:np
         if is_vapour(identify_phase(model,p,T,x[i],vol = v[i]))
             idx_vapour[] = i
