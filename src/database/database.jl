@@ -346,6 +346,11 @@ function createparams(components::Vector{String},
     allnotfoundparams = Dict{String,CSVType}()
     #in case of NamedTuple or Dict user-provided params, the filepath string should be empty.
     #but if its not, parse those anyway.
+
+    if isempty(filepaths) && options.verbose
+        @info "No string filepaths in the input."
+    end
+
     for filepath ∈ filepaths
 
         _replace = startswith(filepath,"@REPLACE")
