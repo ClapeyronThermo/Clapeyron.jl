@@ -1,8 +1,13 @@
 """
+    salt_stoichiometry(model::ElectrolyteModel)
     salt_stoichiometry(model::ElectrolyteModel,salts)
-Obtains the stoichiometry matrix of `salts` made up of ions stored in the `model`. This will also check that the salt is electroneutral and that all ions are involved in the salts.
+
+Obtains the stoichiometry matrix of `salts` made up of ions stored in the `model`. 
+This will also check that the salt is electroneutral and that all ions are involved in the salts.
+If no `salts` argument is specified, it will be created via `Clapeyron.auto_binary_salts(model)`
+
 """
-function salt_stoichiometry(model::ElectrolyteModel,salts)
+function salt_stoichiometry(model::ElectrolyteModel,salts = auto_binary_salts(model))
     iions = model.charge.!=0
     ions = model.components[iions]
     ν = zeros(length(salts),length(ions))
@@ -54,25 +59,53 @@ function salt_stoichiometry(model::ElectrolyteModel,salts::GroupParam)
 end
 
 """
-    molality_to_composition(model::ElectrolyteModel,salts,m,zsolv=[1.])
+    molality_to_composition(model::ElectrolyteModel,salts,m,zsolv = SA[1.0])
+    molality_to_composition(model::ElectrolyteModel,m,zsolv = SA[1.0])
 
 Convert molality (mol/kg) to composition for a given model, salts, molality, and solvent composition.
+If no `salts` argument is specified, it will be created via `Clapeyron.auto_binary_salts(model)`
 """
-function molality_to_composition(model::ElectrolyteModel,salts,m,zsolv=SA[1.],ν = salt_stoichiometry(model,salts))
+function molality_to_composition(model::ElectrolyteModel,salts::Union{AbstractVector,GroupParam},m,zsolv=SA[1.],ν = salt_stoichiometry(model,salts))
     nc = length(model)
     Z = model.charge
     nions = count(!iszero,Z)
     nneutral = nc - nions
     Mw = mw(model.neutralmodel).*1e-3
-
     nsalts = salts isa GroupParam ? length(salts.components) : length(salts)
     isalts = 1:nsalts
     iions = 1:nions
     ineutral = 1:nneutral
+    if length(zsolv) != nneutral
+        throw(error("Incorrect length of zsolv vector,expected length(zsolv) = $nneutral, got $zsolv"))
+    end
     ∑mν = sum(m[k]*sum(ν[k,i] for i ∈ iions) for k ∈ isalts)
-    x_solv = zsolv ./ (1+sum(zsolv[j]*Mw[j] for j in ineutral)*∑mν)
-    x_ions = [sum(m[k]*ν[k,l] for k ∈ isalts) / (1/sum(zsolv[j]*Mw[j] for j in ineutral)+∑mν) for l ∈ iions]
-    return vcat(x_solv,x_ions)
+    ∑zsolv = sum(zsolv)
+    TT = Base.promote_eltype(model,m,zsolv)
+    x = zeros(TT,length(model))
+    ∑xsolvMw = sum(zsolv[j]*Mw[j] for j in ineutral)/∑zsolv
+    iion = 0
+    for i in 1:length(model)
+        if iszero(Z[i])
+            x[i] = zsolv[i]/(∑zsolv*(1+∑xsolvMw*∑mν))
+        else
+            iion += 1
+            x[i] = sum(m[k]*ν[k,iion] for k ∈ isalts) / (1/∑xsolvMw+∑mν)
+        end
+    end
+    return x
+    #x_solv = zsolv ./ (1+∑xsolvMw*∑mν) ./ ∑zsolv
+    #x_ions = [sum(m[k]*ν[k,l] for k ∈ isalts) / (1/∑xsolvMw+∑mν) for l ∈ iions]
+
+    #return vcat(x_solv,x_ions)
+end
+
+function molality_to_composition(model::ElectrolyteModel,m,zsolv=SA[1.0],ν = nothing)
+    salts = auto_binary_salts(model)
+    if isnothing(ν)
+        return molality_to_composition(model,salts,m,zsolv)
+    else
+        return molality_to_composition(model,salts,m,zsolv,ν)
+    end
 end
 
 """
@@ -119,6 +152,33 @@ end
 
 function a_ion(ionmodel, rsp, neutralmodel, V, T, z, neutral_data, ϵ_r)
     return a_ion(ionmodel, V, T, z, ϵ_r)
+end
+
+auto_binary_salts(model) = auto_binary_salts(model.charge,component_list(model))
+
+function auto_binary_salts(Z,comps)
+    #Z = model.charge
+    Z_minus = findall(<(0),Z)
+    Z_plus = findall(>(0),Z)
+    #comps = component_list(model)
+    res = Tuple{String,Vector{Pair{String,Int}}}[]
+    for i in 1:length(Z_plus)
+        Zi = Z[Z_plus[i]]
+        comp_i = comps[Z_plus[i]]
+        for j in 1:length(Z_minus)
+            Zj = Z[Z_minus[j]]
+            comp_j = comps[Z_minus[j]]
+            Zij = lcm(abs(Zi),abs(Zj))
+            ci = div(Zij,abs(Zi))
+            cj = div(Zij,abs(Zj))
+            cci = isone(ci) ? "" : string(ci)
+            ccj = isone(cj) ? "" : string(cj)
+            salt_ij = cci * comp_i * "." *  ccj * comp_j
+            
+            push!(res,(salt_ij,[comp_i => ci,comp_j => cj]))
+        end
+    end
+    return res
 end
 
 export molality_to_composition

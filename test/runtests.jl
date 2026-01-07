@@ -151,9 +151,9 @@ test_l(model) = test_kl(model,test_k = false)
 
 function test_repr(val;str = nothing,str_compact = nothing)
     x = repr("text/plain",val)
-    @test x isa String
+    @test !isempty(x)
     x_compact = repr(val)
-    @test x_compact isa String
+    @test !isempty(x_compact)
     if str != nothing
         for s in str
             @test occursin(s,x)
