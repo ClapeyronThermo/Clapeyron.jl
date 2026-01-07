@@ -181,4 +181,6 @@ function auto_binary_salts(Z,comps)
     return res
 end
 
+is_electrolyte(model::ElectrolyteModel) = true
+
 export molality_to_composition

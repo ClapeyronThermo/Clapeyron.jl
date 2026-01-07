@@ -290,6 +290,5 @@ end
 #generic function to support pseudo-pures
 is_pseudo_pure(model) = false
 is_electrolyte(model) = false
-is_electrolyte(model::ElectrolyteModel) = true
 
 export EoSModel, eos, has_groups, has_sites, Rgas
