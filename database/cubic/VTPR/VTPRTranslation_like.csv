@@ -1,0 +1,108 @@
+Clapeyron Database File
+VTPR translation single params
+species,v_shift
+"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",3.515414293669137e-6
+oxygen,3.0415005896597615e-6
+"r365mfc~|~1,1,1,3,3-pentafluorobutane",6.01397746026858e-6
+cyclopropane,2.2103159160228144e-6
+pentane~|~n-pentane,2.9517604718144736e-6
+(e)-2-butene~|~trans-2-butene,3.6990670178718764e-6
+methyloleate~|~methyl cis-9-octadecenoate,-3.0098302510506495e-5
+"r142b~|~1-chloro-1,1-difluoroethane",1.3130670739381386e-6
+r32~|~difluoromethane,-6.127981992598149e-6
+butene~|~1-butene,4.831963045708604e-6
+r125~|~pentafluoroethane,2.5455632212871375e-6
+decane~|~n-decane,-1.3204502954878243e-5
+"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",7.027143951749486e-6
+d5~|~decamethylcyclopentasiloxane,-2.3864765520966184e-5
+r40~|~chloromethane~|~methyl chloride,7.04432568007481e-7
+"neopentane~|~2,2-dimethylpropane",7.777741286818743e-6
+"r245ca~|~1,1,2,2,3-pentafluoropropane",3.701581487053953e-6
+"r1233zde~|~r1233zd(e)~|~trans-1-chloro-3,3,3-trifluoropropene~|~(e)-1-chloro-3,3,3-trifluoroprop-1-ene~|~trans-1-chloro-3,3,3-trifluoro-1-propene",2.7702307536290975e-6
+r13~|~chlorotrifluoromethane,4.990312727822565e-6
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,1.275097463380171e-6
+argon,3.567829758969733e-6
+cyclohexane,6.858348108092774e-6
+isobutene~|~isobutylene~|~2-methylpropene,3.3766406848203037e-6
+mdm~|~octamethyltrisiloxane,1.5959851100135045e-5
+krypton,4.082445209352721e-6
+hcl~|~hydrogen chloride~|~hydrochloric acid,-2.0431795941276628e-7
+dimethyl ether,1.3246916766629694e-6
+r41~|~fluoromethane~|~methyl fluoride,-4.896080605347316e-6
+water,-4.5614119123449305e-6
+ammonia,-3.3570515974242077e-6
+nitrogen,3.993525878258956e-6
+r12~|~dichlorodifluoromethane,5.162345331617674e-6
+hydrogen,5.6260346572170105e-6
+propyne~|~1-propyne~|~methylacetylene,1.462930175513146e-6
+r23~|~fluoroform~|~trifluoromethane,-2.002417800730819e-6
+methyl stearate~|~methyl octadecanoate~|~octadecanoicacidmethylester,-0.00011988466442074873
+heptane~|~n-heptane,-1.9583950661182037e-6
+rc318~|~perfluorocyclobutane~|~octafluorocyclobutane,7.761803089849635e-6
+"methyllinolenate~|~methyl (z,z,z)-9,12,15-octadecatrienoate",-4.309721638389764e-5
+"mxylene~|~m-xylene~|~1,3-dimethylbenzene",-3.124845316414786e-6
+ethylbenzene,-1.3536640029009745e-6
+"r141b~|~1,1-dichloro-1-fluoroethane",6.23901474984824e-6
+undecane~|~n-undecane,-1.4440820982530226e-5
+"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene",2.5952694410278504e-6
+"dichloroethane~|~1,2-dichloroethane",1.4569245616826603e-6
+"oxylene~|~o-xylene~|~1,2-dimethylbenzene",-3.3629755077606966e-7
+isobutane~|~2-methylpropane,5.022223494611849e-6
+methane,4.081563428527748e-6
+"r124~|~1-chloro-1,2,2,2-tetrafluoroethane~|~2-chloro-1,1,1,2-tetrafluoroethane",3.2799643232594625e-6
+"r115~|~chloroperfluoroethane~|~chloropentafluoroethane~|~1-chloro-1,1,2,2,2-pentafluoroethane",7.5151750836262386e-6
+d4~|~octamethylcyclotetrasiloxane,1.2151859988787823e-6
+dodecane~|~n-dodecane,-2.0043872767643717e-5
+sulfur hexafluoride,6.205388577955266e-6
+"r1234zez~|~r1234ze(z)~|~cis-1,3,3,3-tetrafluoropropene~|~(z)-1,3,3,3-tetrafluoro-1-propene~|~(z)-1,3,3,3-tetrafluoroprop-1-ene",-8.313587967466042e-6
+parahydrogen~|~para-hydrogen,5.030311775231081e-6
+r161~|~fluoroethane~|~ethyl fluoride,-2.464514505627334e-6
+propene~|~propylene,4.72620111475031e-6
+"r143a~|~1,1,1-trifluoroethane",-3.3911524224280543e-6
+oxirane~|~ethyleneoxide,-1.8056848699423474e-6
+r21~|~chfcl2~|~dichlorofluoromethane,2.9728037481429226e-6
+"r245fa~|~1,1,1,3,3-pentafluoropropane",2.1491837764064557e-6
+sulfur dioxide,4.0020231151212334e-7
+octane~|~n-octane,-5.253362776193511e-6
+carbon monoxide,3.852567159279681e-6
+r13i1~|~trifluoroiodomethane~|~iodotrifluoromethane,5.0321673067624e-6
+neon,2.6865759365480233e-6
+fluorine,2.7864988489892366e-6
+r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,5.0560108550887196e-6
+water-d2~|~heavywater~|~deuterium oxide,-4.6259079280369256e-6
+acetone~|~propanone,-1.0341987100792341e-5
+cyclopentane,5.426318586507786e-6
+benzene,2.8235648961637104e-6
+"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",6.495357764078099e-6
+"pxylene~|~p-xylene~|~1,4-dimethylbenzene",-3.775406795039274e-6
+nonane~|~n-nonane,-5.041916533080613e-6
+"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene~|~2,3,3,3-tetrafluoroprop-1-ene",7.519105429174797e-7
+carbonyl sulfide,3.2382733443837405e-6
+isopentane~|~methylbutane~|~2-methylbutane,4.863644796294765e-6
+hydrogen sulfide,3.2070761462970297e-6
+mm~|~hexamethyldisiloxane,1.1531295088046319e-5
+"r236ea~|~1,1,1,2,3,3-hexafluoropropane",3.1943799934953254e-6
+(z)-2-butene~|~cis-2-butene,3.812078176555639e-6
+ethane,4.125514253325055e-6
+methanol,-7.297710230834019e-6
+toluene,2.3849415211170616e-7
+"r123~|~2,2-dichloro-1,1,1-trifluoroethane~|~1,1-dichloro-2,2,2-trifluoroethane",3.0507484568790947e-6
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",-1.0964079985335492e-6
+"r152a~|~difluoroethane~|~1,1-difluoroethane",-4.304356417054241e-6
+hexane~|~n-hexane,2.216810309510958e-6
+ethanol,-4.4736895375391505e-6
+"r1243zf~|~3,3,3-trifluoropropene~|~3,3,3-trifluoro-1-propene~|~1,1,1-trifluoro-2-propene~|~3,3,3-trifluoropropylene (r1243zf)",2.667856258299216e-7
+nitrous oxide~|~dinitrogen monoxide,1.9872803487902503e-6
+dimethyl carbonate~|~carbonic acid dimethyl ester,-6.383474266255645e-6
+isohexane~|~2-methylpentane,3.297701007856288e-6
+"r236fa~|~1,1,1,3,3,3-hexafluoropropane",3.3047631535079925e-6
+butane~|~n-butane,4.171217612952219e-6
+r218~|~perfluoropropane~|~octafluoropropane,9.277405892663961e-6
+r116~|~perfluoroethane~|~hexafluoroethane,6.3158821579007335e-6
+r11~|~cfcl3~|~trichlorofluoromethane,5.8479069934319654e-6
+carbon dioxide,1.6285590261146097e-6
+methyl palmitate~|~methyl hexadecanoate~|~hexadecanoicacidmethylester,-8.970913572884287e-5
+diethyl ether,1.2367028859268706e-6
+ethene~|~ethylene~|~1-ethylene,3.966930873014619e-6
+propane~|~n-propane,4.015968958347201e-6
+xenon,4.538063240260674e-6

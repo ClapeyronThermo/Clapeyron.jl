@@ -1,0 +1,121 @@
+Clapeyron Database File
+saturated molar volume at 0.7Tc - Single Parameters (from CoolProp)
+species,v_exp_07
+"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",0.00011151758913028589
+oxygen,3.059972122156722e-5
+"r365mfc~|~1,1,1,3,3-pentafluorobutane",0.00012293597881705642
+cyclopropane,6.498438068490007e-5
+pentane~|~n-pentane,0.00012242288797308177
+(e)-2-butene~|~trans-2-butene,9.409202072828628e-5
+methyloleate~|~methyl cis-9-octadecenoate,0.00042981412927851925
+"r142b~|~1-chloro-1,1-difluoroethane",8.828036269731404e-5
+r32~|~difluoromethane,4.552388685875246e-5
+butene~|~1-butene,9.44605569051258e-5
+r125~|~pentafluoroethane,8.175684045928818e-5
+decane~|~n-decane,0.00023047165571153547
+"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",0.00011659210485238593
+d5~|~decamethylcyclopentasiloxane,0.0004596474352851683
+r40~|~chloromethane~|~methyl chloride,5.47554101853509e-5
+"neopentane~|~2,2-dimethylpropane",0.0001247633202803051
+"r245ca~|~1,1,2,2,3-pentafluoropropane",9.94066359612892e-5
+"r1233zde~|~r1233zd(e)~|~trans-1-chloro-3,3,3-trifluoropropene~|~(e)-1-chloro-3,3,3-trifluoroprop-1-ene~|~trans-1-chloro-3,3,3-trifluoro-1-propene",0.0001052998870122923
+r13~|~chlorotrifluoromethane,7.257513821411038e-5
+"r1336mzz(e)~|~r1336mzze~|~(e)-1,1,1,4,4,4-hexafluorobut-2-ene",0.00011960532495088254
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,6.503072044499174e-5
+argon,3.131394474437334e-5
+cyclohexane,0.00012300200194456496
+re143a~|~hfe143m~|~trifluoromethoxymethane~|~trifluoromethyl methyl ether,8.372862469235285e-5
+isobutene~|~isobutylene~|~2-methylpropene,9.426077007657889e-5
+mdm~|~octamethyltrisiloxane,0.00033259105810249284
+krypton,3.815559150457277e-5
+hcl~|~hydrogen chloride~|~hydrochloric acid,3.372235634631458e-5
+dimethyl ether,6.682661321634455e-5
+r41~|~fluoromethane~|~methyl fluoride,4.14538625051752e-5
+md2m~|~decamethyltetrasiloxane,0.0004293198277170799
+water,2.030589038947284e-5
+ammonia,2.7304060916896485e-5
+nitrogen,3.71752374286494e-5
+r12~|~dichlorodifluoromethane,8.590895614234875e-5
+hydrogen,2.9944993214017778e-5
+propyne~|~1-propyne~|~methylacetylene,6.28233050113279e-5
+r23~|~fluoroform~|~trifluoromethane,5.098597249770902e-5
+methyl stearate~|~methyl octadecanoate~|~octadecanoicacidmethylester,0.00043714672802010825
+heptane~|~n-heptane,0.00016502996468748088
+rc318~|~perfluorocyclobutane~|~octafluorocyclobutane,0.0001251462782187971
+"methyllinolenate~|~methyl (z,z,z)-9,12,15-octadecatrienoate",0.00040408435996615007
+"mxylene~|~m-xylene~|~1,3-dimethylbenzene",0.00014437402073422712
+md3m~|~dodecamethylpentasiloxane,0.0005285318171239498
+ethylbenzene,0.00014399508431860053
+"r141b~|~1,1-dichloro-1-fluoroethane",0.00010074365809428818
+helium~|~helium-4,2.9835007089552562e-5
+undecane~|~n-undecane,0.00025265328711063066
+"methyllinoleate~|~methyl (z,z)-9,12-octadecadienate~|~(z,z)-9,12-octadecadienoic acid methyl ester",0.00042103666398367773
+"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene~|~(e)-1,3,3,3-tetrafluoroprop-1-ene",9.082112031968922e-5
+"dichloroethane~|~1,2-dichloroethane",9.030584185269561e-5
+"oxylene~|~o-xylene~|~1,2-dimethylbenzene",0.00014233232203444632
+isobutane~|~2-methylpropane,0.00010265911831854853
+methane,4.130759836505748e-5
+"r124~|~1-chloro-1,2,2,2-tetrafluoroethane~|~2-chloro-1,1,1,2-tetrafluoroethane",9.573348853134981e-5
+"r115~|~chloroperfluoroethane~|~chloropentafluoroethane~|~1-chloro-1,1,2,2,2-pentafluoroethane",0.00010302415803710713
+d4~|~octamethylcyclotetrasiloxane,0.000363199095716485
+dodecane~|~n-dodecane,0.00027483676699318184
+sulfur hexafluoride,7.906742140065736e-5
+"r1234zez~|~r1234ze(z)~|~cis-1,3,3,3-tetrafluoropropene~|~(z)-1,3,3,3-tetrafluoro-1-propene~|~(z)-1,3,3,3-tetrafluoroprop-1-ene",9.275478827283043e-5
+parahydrogen~|~para-hydrogen,2.9932588341450635e-5
+r161~|~fluoroethane~|~ethyl fluoride,6.187906060530053e-5
+propene~|~propylene,7.357337192078514e-5
+md4m~|~tetradecamethylhexasiloxane,0.0006310669930258611
+"r143a~|~1,1,1-trifluoroethane",7.497185537024872e-5
+oxirane~|~ethyleneoxide,5.387351619251823e-5
+r21~|~chfcl2~|~dichlorofluoromethane,7.790884845397446e-5
+"r245fa~|~1,1,1,3,3-pentafluoropropane",0.00010030464180943112
+sulfur dioxide,4.7193483941592183e-5
+octane~|~n-octane,0.00018669684378058626
+carbon monoxide,3.780121127940476e-5
+r13i1~|~trifluoroiodomethane~|~iodotrifluoromethane,9.182383855634858e-5
+orthohydrogen~|~ortho-hydrogen,2.996328883297222e-5
+neon,1.783935537518206e-5
+fluorine,2.7509758391738414e-5
+r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,5.768925477995975e-5
+water-d2~|~heavywater~|~deuterium oxide,2.030347107731627e-5
+acetone~|~propanone,8.10476431844172e-5
+cyclopentane,0.00010360847447450573
+benzene,0.00010188459990051045
+"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",0.0001286363009575897
+"pxylene~|~p-xylene~|~1,4-dimethylbenzene",0.00014486085345113826
+nonane~|~n-nonane,0.0002082023731242802
+"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene~|~2,3,3,3-tetrafluoroprop-1-ene",9.31946831267914e-5
+carbonyl sulfide,5.5717497739073694e-5
+orthodeuterium,2.62363317340439e-5
+isopentane~|~methylbutane~|~2-methylbutane,0.000122368189667553
+hydrogen sulfide,3.9709706071068267e-5
+mm~|~hexamethyldisiloxane,0.00023618174251066585
+"r236ea~|~1,1,1,2,3,3-hexafluoropropane",0.00010441858655494962
+d6~|~dodecamethylcyclohexasiloxane,0.0005611884129001555
+(z)-2-butene~|~cis-2-butene,9.240736054121136e-5
+ethane,5.951297941931538e-5
+methanol,4.413308756390869e-5
+deuterium,2.62363317340439e-5
+toluene,0.00012336777735015475
+"r123~|~2,2-dichloro-1,1,1-trifluoroethane~|~1,1-dichloro-2,2,2-trifluoroethane",0.0001086945539253862
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",7.666233508269468e-5
+"r152a~|~difluoroethane~|~1,1-difluoroethane",6.843991412840586e-5
+hexane~|~n-hexane,0.00014371525246518078
+ethanol,6.331300021413498e-5
+"r1243zf~|~3,3,3-trifluoropropene~|~3,3,3-trifluoro-1-propene~|~1,1,1-trifluoro-2-propene~|~3,3,3-trifluoropropylene (r1243zf)",8.97431906619335e-5
+"novec649~|~dodecafluoro-2-methylpentan-3-one~|~1,1,1,2,2,4,5,5,5-nonafluoro-4-(trifluoromethyl)-3-pentanone",0.00020153489249161188
+nitrous oxide~|~dinitrogen monoxide,3.890303558940279e-5
+dimethyl carbonate~|~carbonic acid dimethyl ester,9.634356061806983e-5
+isohexane~|~2-methylpentane,0.00014363789148068496
+"r236fa~|~1,1,1,3,3,3-hexafluoropropane",0.00010676259837062013
+butane~|~n-butane,0.0001013487018750351
+r218~|~perfluoropropane~|~octafluoropropane,0.0001181619650324952
+r116~|~perfluoroethane~|~hexafluoroethane,8.850109217832227e-5
+r11~|~cfcl3~|~trichlorofluoromethane,9.826718035054082e-5
+carbon dioxide,3.693250458697848e-5
+methyl palmitate~|~methyl hexadecanoate~|~hexadecanoicacidmethylester,0.000388732633682553
+paradeuterium,2.62363317340439e-5
+diethyl ether,0.00011024193789576919
+ethene~|~ethylene~|~1-ethylene,5.3433259627923376e-5
+propane~|~n-propane,8.058286833031535e-5
+xenon,4.913882185359481e-5

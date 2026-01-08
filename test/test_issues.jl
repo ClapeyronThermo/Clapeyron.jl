@@ -4,7 +4,7 @@
         model = VTPR(["carbon dioxide"])
         p = 1e5
         T = 273.15
-        @test fugacity_coefficient(model, p, T)[1] ≈ 0.9930275329424039 rtol = 1E-6
+        @test fugacity_coefficient(model, p, T)[1] ≈ 0.9928755806091429 rtol = 1E-6
         @test activity_coefficient(model, p, T)[1] ≈ 1.0
     end
     @testset "#112" begin

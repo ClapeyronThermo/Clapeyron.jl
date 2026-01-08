@@ -3724,7 +3724,7 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 355-17-9;1,1,1,2,2,3,3-heptafluoropentan-4-one;CC(=O)C(F)(F)C(F)(F)C(F)(F)F;XJYXROGTQYHLTH-UHFFFAOYSA-N;CC(=O)C(F)(F)C(F)(F)C(F)(F)F
 678-18-2;1,1,1,2,2,3,3,4,4-nonafluorohexan-5-one;CC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F;LPPFRPMJUNOKRS-UHFFFAOYSA-N;CC(=O)C(F)(F)C(F)(F)C(F)(F)C(F)(F)F
 6422-86-2;bis(2-ethylhexyl) terephthalate;CCCCC(CC)COC(=O)c1ccc(C(=O)OCC(CC)CCCC)cc1;RWPICVVBGZBXNA-UHFFFAOYSA-N;CCCCC(CC)COC(=O)c1ccc(C(=O)OCC(CC)CCCC)cc1
-66711-86-2;(e)-1,1,1,4,4,4-hexafluorobut-2-ene;FC(F)(F)/C=C/C(F)(F)F;NLOLSXYRJFEOTA-OWOJBTEDSA-N;FC(F)(F)/C=C/C(F)(F)F
+66711-86-2;r1336mzz(e)~|~r1336mzze~|~(e)-1,1,1,4,4,4-hexafluorobut-2-ene;FC(F)(F)/C=C/C(F)(F)F;NLOLSXYRJFEOTA-OWOJBTEDSA-N;FC(F)(F)/C=C/C(F)(F)F
 13353-3-2;trimethylene glycol dimethyl ether;COCOCOCOC;NYENPQBYHWPGNG-UHFFFAOYSA-N;COCOCOCOC
 13352-75-5;tetramethylene glycoldimethyl ether;COCOCOCOCOC;ZWVWZUHELWJLMG-UHFFFAOYSA-N;COCOCOCOCOC
 791616-87-0;trans-1,1,1,3-tetrafluoro-2-butene;C/C(F)=C\C(F)(F)F;VSPVOSOCAZPIJQ-NSCUHMNNSA-N;C/C(F)=C\C(F)(F)F
