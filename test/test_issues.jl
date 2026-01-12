@@ -398,4 +398,13 @@
         psat = first.(saturation_pressure.(model,Tr .* Tc))
         @test count(isnan,psat[100:end]) == 0
     end
+
+    @testset "#528" begin
+        #=
+        Cubics: error in not considering if a and b are non-missing before building it 
+        =#
+        model = PR(["MethylLinoleate"];userlocations = (;a = [14.253080968127202], b = [0.0003800760318341279], Tc = [799.0001945392406], Pc = [1.3408208824579124e6], Mw = [294.472], Vc = [0.0012370135229711869] ))
+        @test model.params.a.values[1,1] == 14.253080968127202
+        @test model.params.b.values[1,1] == 0.0003800760318341279
+    end
 end
