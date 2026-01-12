@@ -47,7 +47,17 @@ alpha = SoaveAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03
 """
 SoaveAlpha
 default_locations(::Type{SoaveAlpha}) = critical_data()
-
+function default_ignore_missing_singleparams(::Type{T}) where T <: GeneralizedSuaveAlphaModel
+    if hasfield(T,:params)
+        P = fieldtype(T,:params)
+        if hasfield(P,:Vc)
+            return String[]
+        else
+            return ["Vc"]
+        end
+    end
+    return String[]
+end
 @inline α_m(model::RKModel,::SoaveAlpha) = (0.480,1.547,-0.176)
 @inline α_m(model::PRModel,::SoaveAlpha) = (0.37464,1.54226,-0.26992) #equal to PRAlpha
 @inline α_m(model::vdWModel,::SoaveAlpha) = (0.4998,1.5928,0.19563,0.025)
