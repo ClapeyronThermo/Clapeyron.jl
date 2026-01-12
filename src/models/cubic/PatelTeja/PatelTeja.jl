@@ -206,8 +206,13 @@ function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
         Zc = pci * Vci / (R̄ * Tci)
         #d  = (36*Z̄c - 8 - 27*Z̄c^2 + 3*sqrt(3)*sqrt(27*Z̄c^4 -8*Z̄c^3))^(1/3)
         Ωa,Ωb = PatelTeja_Ωab(Zc)
-        a[i] = Ωa*R̄^2*Tci^2/pci
-        b[i] = Ωb*R̄*Tci/pci
+        if a.ismissingvalues[i,i]
+            a[i] = Ωa*R̄^2*Tci^2/pci
+        end
+
+        if b.ismissingvalues[i,i]
+            b[i] = Ωb*R̄*Tci/pci
+        end
     end
     epsilon_LorentzBerthelot!(a,k)
     sigma_LorentzBerthelot!(b,l)

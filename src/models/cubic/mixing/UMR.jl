@@ -69,13 +69,9 @@ function UMRRule(components; activity = UNIFAC, userlocations = String[],activit
 end
 
 function ab_premixing(model::PRModel,mixing::UMRRuleModel, k, l)
-    Ωa, Ωb = ab_consts(model)
-    _Tc = model.params.Tc
-    _pc = model.params.Pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    ab_diagvalues!(model)
     epsilon_LorentzBerthelot!(a)
     umr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,0.5)
     kij_mix!(umr_mix,b,l)

@@ -52,16 +52,9 @@ end
 recombine_impl!(model::QCPRRule) = model
 
 function ab_premixing(model::PRModel,mixing::QCPRRuleModel,kij,lij)
-    Tc = model.params.Tc
-    Pc = model.params.Pc
-    Ωa, Ωb = ab_consts(model)
-    comps = Tc.components
-    n = length(Tc)
     a = model.params.a
     b = model.params.b
-    aii,bii = diagvalues(a),diagvalues(b)
-    @. aii = Ωa*R̄^2*Tc^2/Pc
-    @. bii = Ωb*R̄*Tc/Pc
+    ab_diagvalues!(model)
     epsilon_LorentzBerthelot!(a,kij)
     sigma_LorentzBerthelot!(b)
     if lij !== nothing

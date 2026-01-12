@@ -33,16 +33,55 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model::EoSModel,mixing::MixingRule, k, l)
+"""
+    ab_diagvalues!(a,b,Ωa,Ωb,Tc,Pc,R)
+    ab_diagvalues!(model)
+
+Calculates the diagonal (pure) terms of `a` and `b` in a cubic model, ignoring non-missing entries.
+"""
+function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::Number,Ωb::Number,Tc,Pc,R̄)
+    for i in 1:length(Tc)
+        Tci,Pci = Tc[i],Pc[i]
+        if a.ismissingvalues[i,i]
+            a[i,i] = Ωa*R̄^2*Tci^2/Pci
+        end
+
+        if b.ismissingvalues[i,i]
+            b[i,i] = Ωb*R̄*Tci/Pci
+        end
+    end
+    return nothing
+end
+
+function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::AbstractVector,Ωb::AbstractVector,Tc,Pc,R̄)
+    for i in 1:length(Tc)
+        Tci,Pci = Tc[i],Pc[i]
+        if a.ismissingvalues[i,i]
+            a[i,i] = Ωa[i]*R̄^2*Tci^2/Pci
+        end
+
+        if b.ismissingvalues[i,i]
+            b[i,i] = Ωb[i]*R̄*Tci/Pci
+        end
+    end
+    return nothing
+end
+
+function ab_diagvalues!(model::EoSModel)
     Ωa, Ωb = ab_consts(model)
-    _Tc = model.params.Tc
-    _pc = model.params.Pc
+    Tc = model.params.Tc
+    Pc = model.params.Pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
-    epsilon_LorentzBerthelot!(a,k)
-    sigma_LorentzBerthelot!(b,l)
+    ab_diagvalues!(a,b,Ωa,Ωb,Tc,Pc,Rgas(model))
+end
+
+function ab_premixing(model::EoSModel,mixing::MixingRule, k, l)
+    a = model.params.a
+    b = model.params.b
+    ab_diagvalues!(model)
+    epsilon_LorentzBerthelot!(model.params.a,k)
+    sigma_LorentzBerthelot!(model.params.b,l)
     return a,b
 end
 
@@ -630,12 +669,12 @@ function transform_params(::Type{ABCubicParam},params,components)
     end
 
     a = get!(params,"a") do
-        aa = PairParam("a",components,zeros(Base.promote_eltype(Pc,Tc),n))
+        aa = PairParam("a",components,zeros(Base.promote_eltype(Pc,Tc),n,n),ones(Bool,n,n))
     end
     a isa SingleParam && (params["a"] = PairParam(a))
 
     b = get!(params,"b") do
-        PairParam("b",components,zeros(Base.promote_eltype(Pc,Tc),n))
+        PairParam("b",components,zeros(Base.promote_eltype(Pc,Tc),n,n),ones(Bool,n,n))
     end
     b isa SingleParam && (params["b"] = PairParam(b))
 
@@ -655,7 +694,7 @@ function transform_params(::Type{ABCCubicParam},params,components)
     end
 
     c = get!(params,"c") do
-        PairParam("c",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n))
+        PairParam("c",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n,n),ones(Bool,n,n))
     end
     c isa SingleParam && (params["c"] = PairParam(c))
     return params

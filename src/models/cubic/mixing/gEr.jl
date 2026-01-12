@@ -77,13 +77,9 @@ function gErRule(components; activity = NRTL, userlocations = String[],activity_
 end
 
 function ab_premixing(model::PRModel,mixing::gErRuleModel, k, l)
-    Ωa, Ωb = ab_consts(model)
-    _Tc = model.params.Tc
-    _pc = model.params.Pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    ab_diagvalues!(model)
     epsilon_LorentzBerthelot!(a)
     gEr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
     kij_mix!(gEr_mix,b,l)
@@ -91,13 +87,9 @@ function ab_premixing(model::PRModel,mixing::gErRuleModel, k, l)
 end
 
 function ab_premixing(model::RKModel,mixing::gErRuleModel, k, l)
-    Ωa, Ωb = ab_consts(model)
-    _Tc = model.params.Tc
-    _pc = model.params.Pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    ab_diagvalues!(model)
     epsilon_LorentzBerthelot!(a) #not used
     gEr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
     kij_mix!(gEr_mix,b,l)

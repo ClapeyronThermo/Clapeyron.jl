@@ -80,13 +80,9 @@ function VTPRRule(components; activity = UNIFAC, userlocations = String[],activi
 end
 
 function ab_premixing(model::PRModel,mixing::VTPRRule,k,l)
-    Ωa, Ωb = ab_consts(model)
-    _Tc = model.params.Tc
-    _pc = model.params.Pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    ab_diagvalues!(model)
     epsilon_LorentzBerthelot!(a,k)
     vtpr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,3/4)
     kij_mix!(vtpr_mix,b,l)

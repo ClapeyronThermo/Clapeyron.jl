@@ -169,8 +169,7 @@ function ab_premixing(model::KUModel,mixing::MixingRule,k,l)
     Ωb = @. Zc*α
     model.params.omega_a .= Ωa
     model.params.omega_b .= Ωb
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    ab_diagvalues!(a,b,Ωa,Ωb,_Tc,_pc,Rgas(model))
     a = epsilon_LorentzBerthelot!(a,k)
     b = sigma_LorentzBerthelot!(b,l)
     return a,b
