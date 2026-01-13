@@ -198,12 +198,17 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
         S_old = S
         S = zero(TT)
         K_norm,tm,dtm = one(TT),zero(TT),zero(TT)
+
+        #simple loop, overloaded for electrolyte models
+        #=
         for i in eachindex(w)
-            wi = exp(di[i]-lnϕw[i])
+            wi = exp(d[i]-lnϕw[i])
             w[i] = wi
             S += wi
-
         end
+        =#
+        S = __tpd_ss_update_w_and_S!(w,model,di,lnϕw)
+
         S_norm = abs(S_old - S)
         w ./=  S
         tpd = one(TT)
@@ -231,6 +236,14 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
     #@show S,iter,S_norm
     stable = trivial || S <= 1 + tol_trivial
     return (w,tpd,v,(stable,trivial))
+end
+
+function __tpd_ss_update_w_and_S!(w,model,d,lnϕw)
+    for i in eachindex(w)
+        wi = exp(d[i]-lnϕw[i])
+        w[i] = wi
+        S += wi
+    end
 end
 
 """
@@ -311,7 +324,7 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     pure_test = strategy == :default || strategy == :pure
 
     #create a list of what test composition strategies we use
-    tpd_strategies = tpd_plan(z,isliquidz,lle,id_test,K_test,pure_test)
+    tpd_strategies = tpd_plan(model,z,isliquidz,lle,id_test,K_test,pure_test)
 
     for strategy in tpd_strategies
         w,phasew,skip = tpd_test_composition!(strategy,cond,w_test,K,dz,verbose)
@@ -333,22 +346,22 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     return result
 end
 
-function tpd_plan(z,is_liquidz,lle,id_test,K_test,pure_test)
-    plan = Tuple{Symbol,Symbol,Int}[]
+function tpd_plan(model,z,is_liquidz,lle,id_test,K_test,pure_test)
+    plan = Tuple{Symbol,Symbol,NTuple{3,Int}}[]
 
     if is_liquidz && id_test && !lle
-        push!(plan,(:ideal_gas,:vapour,0))
+        push!(plan,(:ideal_gas,:vapour,(0,0,0)))
     end
 
     if K_test
         if is_liquidz
-            lle || push!(plan,(:K,:vapour,1))
+            lle || push!(plan,(:K,:vapour,(1,0,0)))
             push!(plan,(:K,:liquid,1))
             push!(plan,(:K,:liquid,-1))
-            lle || push!(plan,(:K,:vapour,-1))
+            lle || push!(plan,(:K,:vapour,(-1,0,0)))
         else
-            push!(plan,(:K,:liquid,1))
-            push!(plan,(:K,:liquid,-1))
+            push!(plan,(:K,:liquid,(1,0,0)))
+            push!(plan,(:K,:liquid,(-1,0,0)))
         end
     end
 
@@ -356,22 +369,25 @@ function tpd_plan(z,is_liquidz,lle,id_test,K_test,pure_test)
         ids = sortperm(z)
         if is_liquidz
             for i in 1:length(z)
-                push!(plan,(:pure,:liquid,ids[i]))
+                push!(plan,(:pure,:liquid,(ids[i],0,0)))
             end
             for i in 1:length(z)
-                lle || push!(plan,(:pure,:vapour,ids[i]))
+                lle || push!(plan,(:pure,:vapour,(ids[i],0,0)))
             end
         else
             for i in 1:length(z)
-                push!(plan,(:pure,:liquid,ids[i]))
+                push!(plan,(:pure,:liquid,(ids[i],0,0)))
             end
         end
     end
     return plan
 end
 
+tpd_test_composition!(strategy,conds,w_test) = tpd_test_composition!(strategy,conds,w_test,w_test,w_test,false)
+
 function tpd_test_composition!(strategy,conds,w_test,K,dz,verbose)
-    plan,phase,ix = strategy
+    plan,phase,ixx = strategy
+    ix,ix2,ix3 = ixx
     model,p,T,z = conds
     skip = false
     skip_k = all(==(-1),K)
@@ -386,8 +402,8 @@ function tpd_test_composition!(strategy,conds,w_test,K,dz,verbose)
         w_test ./= sum(w_test)
     elseif plan == :pure
         z_pure!(w_test,ix)
-    elseif plan == :pure_electrolyte
-        z_pure_electrolyte!(model,w_test,z,ix)
+    elseif plan == :electrolyte_balanced
+        z_electrolyte_balanced!(model,w_test,z,ixx)
     elseif is_k_plan && !skip_k
         if all(iszero,K)
             K .= tp_flash_K0(model,p,T,z)
@@ -422,7 +438,8 @@ function tpd_test_composition!(strategy,conds,w_test,K,dz,verbose)
 end
 
 function tpd_print_strategy(strategy)
-    plan,phase,ix = strategy
+    plan,phase,ixx = strategy
+    ix,ix2,ix3 = ixx
     if plan == :ideal_gas
         res = "Strategy: ideal gas, test phase: $phase"
     elseif plan == :K
@@ -436,8 +453,8 @@ function tpd_print_strategy(strategy)
 
     elseif plan == :pure
         res = "Strategy: pure initial point, test phase: $phase"
-    elseif plan == :pure_electrolyte
-        res = "Strategy: pure solvent with electrolytes"
+    elseif plan == :electrolyte_balanced
+        res = "Strategy: electrolyte-constrainted composition"
     else
         res = ""
     end
@@ -485,15 +502,18 @@ function z_pure!(K,i)
     K
 end
 
-function z_pure_electrolyte!(model,w_test,z,ix)
+function z_electrolyte_balanced!(model,w_test,z,ixx)
+    isolv,ielec,ic = ixx
+
     Z = model.charge
+    Zx = Z[ic]
     w_test .= 0
     for i in 1:length(model)
-        if Z[i] != 0
-            w_test[i] = z[i]
-        end
+        isolv == i && (w_test[i] = z[i])
+        ielec == i && (w_test[i] = z[i])
     end
-    w_test[ix] = z[ix]
+    Zw = dot(Z,w_test)
+    w_test[ic] = - Zw/Zx
     w_test ./= sum(w_test)
 end
 

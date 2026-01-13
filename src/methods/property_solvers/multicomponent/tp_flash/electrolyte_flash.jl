@@ -281,6 +281,23 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = Michelsen
     return x, y, β, (vx,vy)
 end
 
+function bound_electrochemical_potential(K,Z)
+    TT = eltype(K)
+    ψmin,ψmax = TT(Inf),TT(-Inf)
+    for i in 1:length(K)
+        Zi = Z[i]
+        ψ = -log(K[i])/Zi
+        if ψ <= ψmin && Zi != 0
+            ψmin = ψ
+        end
+
+        if ψ >= ψmax && Zi != 0
+            ψmax = ψ
+        end
+    end
+    return ψmin,ψmax
+end
+
 function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)),verbose = false)
     # Function to solve Rachdord-Rice mass balance
     status = rachfordrice_status(K.*exp.(Z.*ψ0),z,non_inx,non_iny)
