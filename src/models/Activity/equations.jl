@@ -160,11 +160,6 @@ function gibbs_solvation(model::ActivityModel,T)
     return gibbs_solvation(__act_to_gammaphi(model,gibbs_solvation),T)
 end
 
-function lb_volume(model::ActivityModel,z)
-    b = sum(lb_volume(model.puremodel[i])*z[i] for i in @comps)
-    return b
-end
-
 function lb_volume(model::ActivityModel,T,z)
     b = sum(lb_volume(model.puremodel[i],T,SA[1.0])*z[i] for i in @comps)
     return b

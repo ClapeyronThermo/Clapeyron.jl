@@ -106,7 +106,7 @@ function multiparameter_a_res(model,V,T,z,departure::GEDeparture,δ,τ,∑z = su
     return aᵣ + lnb*(gᴱ*∑z⁻¹/(R*T) - Δa)
 end
 
-function lb_volume(model::MultiFluid{A,M,GEDeparture},z) where {A,M}
+function lb_volume(model::MultiFluid{A,M,GEDeparture}, T, z) where {A,M}
     vref = model.departure.vref
     v̄ref = dot(z,vref)/sum(z)
     return 0.8547008547008548*v̄ref

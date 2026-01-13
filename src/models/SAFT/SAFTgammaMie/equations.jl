@@ -3,7 +3,7 @@ function x0_volume_liquid(model::SAFTgammaMieModel,T,z)
     return v_lb*2.0
 end
 
-function lb_volume(model::SAFTgammaMieModel, z)
+function lb_volume(model::SAFTgammaMieModel, T, z)
     vk  = model.groups.n_flattenedgroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values

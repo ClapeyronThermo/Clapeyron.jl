@@ -113,8 +113,8 @@ const PeTS_B = (
     209.3942909,
     -353.2743581)
 
-function lb_volume(model::PeTSModel,z)
-    σ3,_,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
+function lb_volume(model::PeTSModel,T,z)
+    σ3,_,m̄ = σϵ_m_vdw1f(model,1.0,T,z)
     return sum(z)*m̄*N_A*σ3*π/6
 end
 

@@ -186,10 +186,6 @@ function a_res(ionmodel::IonModel, V, T, z, iondata, neutralmodel, neutral_data)
     return a_res(ionmodel, V, T, z, iondata)
 end
 
-function lb_volume(model::ESElectrolyteModel,z)
-    return lb_volume(model.neutralmodel,z)
-end
-
 function lb_volume(model::ESElectrolyteModel,T,z)
     return lb_volume(model.neutralmodel,T,z)
 end

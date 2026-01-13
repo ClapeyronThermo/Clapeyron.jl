@@ -92,8 +92,6 @@ pharmaPCSAFT
 
 x0_volume_liquid(model::pharmaPCSAFTModel,p,T,z) = lb_volume(model,T,z)*1.7
 
-lb_volume(model::pharmaPCSAFTModel, z) = lb_volume(model,298.15,z)
-
 function lb_volume(model::pharmaPCSAFTModel,T, z)
     seg = model.params.segment.values
     σ = model.params.sigma.values

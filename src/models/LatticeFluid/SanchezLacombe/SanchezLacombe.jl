@@ -126,7 +126,7 @@ function rmix(model::SanchezLacombe,V,T,z)
     return r̄
 end
 
-function lb_volume(model::SanchezLacombe,z)
+function lb_volume(model::SanchezLacombe,T,z)
     r = model.params.segment.values
     v = model.params.vol.values
     #v_r,ε_r = mix_vε(model,0.0,0.0,z,model.mixing,r̄,Σz)

@@ -106,8 +106,8 @@ function x0_volume_solid(model::AnalyticalSLVModel,T,z = SA[1.0])
     return 1.01*b̄
 end
 
-function lb_volume(model::AnalyticalSLVModel,z)
-    return x0_volume_solid(model,0,z)/1.01
+function lb_volume(model::AnalyticalSLVModel,T,z)
+    return x0_volume_solid(model,T,z)/1.01
 end
 
 function data(model::AnalyticalSLVModel,V,T,z)

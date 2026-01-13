@@ -207,7 +207,7 @@ function saturation_model(model::MultiFluid)
     return only(model.pures)
 end
 
-function lb_volume(model::MultiFluid,z)
+function lb_volume(model::MultiFluid,T,z)
     return dot(z,model.params.lb_volume.values)
 end
 

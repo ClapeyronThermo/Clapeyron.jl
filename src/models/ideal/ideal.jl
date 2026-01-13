@@ -5,7 +5,7 @@ function volume_impl(model::IdealModel,p,T,z,phase,threaded,vol0)
     return sum(z)*R̄*T/p
 end
 
-lb_volume(model::IdealModel,z) = zero(eltype(z))
+lb_volume(model::IdealModel,T,z) = zero(eltype(z))
 
 idealmodel(model::IdealModel) = model
 
