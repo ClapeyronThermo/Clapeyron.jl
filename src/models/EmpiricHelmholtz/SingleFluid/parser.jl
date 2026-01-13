@@ -99,7 +99,7 @@ function get_json_data_coolprop(component,norm_comp1 = normalisestring(component
     end
     success,json_string = coolprop_json_string(alternative_comp,component)
     if success
-        data = JSON3.read(json_string)[1]
+        data = JSON.parse(json_string; dicttype=Dict{Symbol,Any})[1]
         return data
     else
         if length(json_string) == 0
@@ -145,10 +145,10 @@ function get_json_data(components;
         verbose && @info "JSON found: $_path"
 
         json_string = read(_path, String)
-        data = JSON3.read(json_string)
+        data = JSON.parse(json_string; dicttype=Dict{Symbol,Any})
     else
         verbose && @info "parsing supplied JSON data."
-        data = JSON3.read(component)
+        data = JSON.parse(component; dicttype=Dict{Symbol,Any})
     end
     return data
 end
@@ -315,7 +315,7 @@ function SingleFluidIdeal(components;
     ideal = _parse_ideal(ideal_data,verbose)
     references = String[]
     if haskey(eos_data,:BibTeX_EOS)
-        push!(references,get(eos_data,:BibTeX_EOS))
+        push!(references,eos_data[:BibTeX_EOS])
     end
     return SingleFluidIdeal(_components,properties,ideal,references)
 end

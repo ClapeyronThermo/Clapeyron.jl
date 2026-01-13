@@ -84,7 +84,7 @@ include("database/combiningrules.jl")
 using Tables,CSV
 
 #used for reading multiparameter json files
-using JSON3
+using JSON
 
 #getparams options
 include("database/ParamOptions.jl")
