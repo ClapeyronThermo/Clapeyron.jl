@@ -61,7 +61,7 @@ function COSMOSAC02(components;
             file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma", IOBuffer())))
             lines = split(file,r"\n")
             meta = lines[1][9:end]
-            json = JSON3.read(meta)
+            json = JSON.parse(meta)
             A[i] = json["area [A^2]"]
             V[i] = json["volume [A^3]"]
             Pi[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
