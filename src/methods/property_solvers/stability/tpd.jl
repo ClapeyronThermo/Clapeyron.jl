@@ -358,8 +358,8 @@ function tpd_plan(model,z,is_liquidz,lle,id_test,K_test,pure_test)
     if K_test
         if is_liquidz
             lle || push!(plan,(:K,:vapour,(1,0,0)))
-            push!(plan,(:K,:liquid,1))
-            push!(plan,(:K,:liquid,-1))
+            push!(plan,(:K,:liquid,(1,0,0)))
+            push!(plan,(:K,:liquid,(-1,0,0)))
             lle || push!(plan,(:K,:vapour,(-1,0,0)))
         else
             push!(plan,(:K,:liquid,(1,0,0)))
