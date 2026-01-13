@@ -91,6 +91,7 @@ function C.x0_crit_pure(model::SuperancPCSAFT)
         vc = ES.pcsaft_vc(m,σ + Δσ(model,Tc))
         return Tc/ϵ,log10(vc)
     else
+        Ts = T_scale(model,SA[1.0])
         lb_v = C.lb_volume(model,Ts,SA[1.0])
         return (2.0*oneunit(lb_v), log10(lb_v/0.3))
     end
