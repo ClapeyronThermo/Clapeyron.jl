@@ -196,11 +196,11 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
         iter += 1
         lnϕw,v,liquid_overpressure = tpd_lnϕ_and_v!(Hϕ,model,p,T,w,v,liquid_overpressure,phase)
         S_old = S
-        S = zero(TT)
         K_norm,tm,dtm = one(TT),zero(TT),zero(TT)
 
         #simple loop, overloaded for electrolyte models
         #=
+        S = 0.0
         for i in eachindex(w)
             wi = exp(d[i]-lnϕw[i])
             w[i] = wi
@@ -239,11 +239,13 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
 end
 
 function __tpd_ss_update_w_and_S!(w,model,d,lnϕw)
+    S = zero(eltype(w))
     for i in eachindex(w)
         wi = exp(d[i]-lnϕw[i])
         w[i] = wi
         S += wi
     end
+    return S
 end
 
 """
