@@ -57,7 +57,8 @@ Perturbed-Chain SAFT (PC-SAFT), with parameters fitted to reproduce the critical
 ## References
 1.  Moine, E., Piña-Martinez, A., Jaubert, J.-N., Sirjean, B., & Privat, R. (2019). I-PC-SAFT: An Industrialized Version of the Volume-Translated PC-SAFT Equation of State for Pure Components, Resulting from Experience Acquired All through the Years on the Parameterization of SAFT-Type and Cubic Models. Industrial & Engineering Chemistry Research, 58(45), 20815–20827. [10.1021/acs.iecr.9b04660](https://doi.org/10.1021/acs.iecr.9b04660)
 """
-PCSAFT
+iPCSAFT
+
 export iPCSAFT
 
 default_references(::Type{iPCSAFT}) = ["10.1021/acs.iecr.9b04660"]
