@@ -1,4 +1,6 @@
-function lb_volume(model::SAFTModel, z = SA[1.0])
+lb_volume(model::SAFTModel, T, z) = lb_volume_saft(model, T, z)
+
+function lb_volume_saft(model, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
     m_idx = linearidx(m)

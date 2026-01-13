@@ -34,6 +34,19 @@ end
     end
 end
 
+@testset "iPCSAFT, single components" begin
+    m1 = iPCSAFT("methane")
+    c = m1.params.v_shift.values[1]
+    Tc1,Pc1,Vc1 = crit_pure(m1)
+    m1.params.v_shift .= 0
+    Tc2,Pc2,Vc2 = crit_pure(m1)
+    #mainly test that the translation only affects the volume
+    @test Tc1 ≈ Tc2 rtol = 1e-6
+    @test (Vc2 - Vc1) ≈ c rtol = 1e-6
+
+    
+end
+
 @testset "softSAFT methods, single components" begin
     system = softSAFT(["ethanol"])
     solid_system = solidsoftSAFT("octane")

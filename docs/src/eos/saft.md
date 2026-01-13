@@ -22,6 +22,7 @@ Clapeyron.gcsPCSAFT
 Clapeyron.CPPCSAFT
 Clapeyron.GEPCSAFT
 Clapeyron.ADPCSAFT
+Clapeyron.iPCSAFT
 ```
 
 ## SAFT-VR Models
