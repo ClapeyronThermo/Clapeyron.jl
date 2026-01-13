@@ -91,7 +91,7 @@ function recombine_impl!(model::SAFTVRMieModel)
 end
 
 function x0_volume_liquid(model::SAFTVRMieModel,T,z)
-    v_lb = lb_volume(model,z)
+    v_lb = lb_volume(model,T,z)
     return v_lb*1.5
 end
 

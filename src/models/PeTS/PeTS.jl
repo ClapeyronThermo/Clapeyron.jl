@@ -119,7 +119,7 @@ function lb_volume(model::PeTSModel,T,z)
 end
 
 function x0_volume_liquid(model::PeTSModel,T,z)
-    v_lb = lb_volume(model,z)
+    v_lb = lb_volume(model,T,z)
     return v_lb*1.8
 end
 

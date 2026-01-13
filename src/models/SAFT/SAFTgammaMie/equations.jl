@@ -1,5 +1,5 @@
 function x0_volume_liquid(model::SAFTgammaMieModel,T,z)
-    v_lb = lb_volume(model,z)
+    v_lb = lb_volume(model,T,z)
     return v_lb*2.0
 end
 

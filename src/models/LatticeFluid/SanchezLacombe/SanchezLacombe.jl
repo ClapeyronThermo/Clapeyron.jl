@@ -152,7 +152,7 @@ function p_scale(model::SanchezLacombe,z)
 end
 
 function x0_volume_liquid(model::SanchezLacombe,T,z)
-    v_lb = lb_volume(model,z)
+    v_lb = lb_volume(model,T,z)
     return v_lb*1.1
 end
 #SL does not work with the virial coefficient
