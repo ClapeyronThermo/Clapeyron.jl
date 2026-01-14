@@ -101,7 +101,7 @@ fh = a(T)/a₀(T₀)
 !!! info "General Shape Factors?"
     For general EoS, there is no existent publications on how to obtain shape factors. However, we can "map" any EoS to a cubic with:
     ```
-    b ≈ lb_volume(model,z)
+    b ≈ lb_volume(model,T,z)
     a ≈ RT*(b - B)
     B = second_virial_coefficient(model,T)
     ```

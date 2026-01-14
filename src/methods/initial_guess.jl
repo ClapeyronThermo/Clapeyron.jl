@@ -91,7 +91,7 @@ Returns an initial guess to the solid volume, dependent on temperature `T` and c
 """
 function x0_volume_solid(model,T,z)
     if is_solid(model)
-        v_lb = lb_volume(model,z)
+        v_lb = lb_volume(model,T,z)
         return v_lb*1.05
     else
         _0 = zero(T+first(z))
