@@ -190,6 +190,15 @@ function getparams(components,
                     return_sites::Bool = true,
                     component_delimiter = "~|~"
                     )
+    
+    userlocations = String.(userlocations)
+    asymmetricparams = String.(asymmetricparams)
+    ignore_missing_singleparams = String.(ignore_missing_singleparams)
+    ignore_headers = String.(ignore_headers)
+
+    species_columnreference = String(species_columnreference)
+    source_columnreference = String(source_columnreference)
+    site_columnreference = String(site_columnreference)
 
     options = ParamOptions(;userlocations,
                             asymmetricparams,
