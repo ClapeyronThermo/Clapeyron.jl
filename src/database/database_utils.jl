@@ -40,7 +40,7 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
  "/home/user/.julia/packages/Clapeyron.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_unlike.csv"
 ```
 """
-function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vector{String}
+function getpaths(location::AbstractString; relativetodatabase::Bool=false)
     # We do not use realpath here directly because we want to make the .csv suffix optional.
     is_inline_csv(location) && return [location]
     if startswith(location,"@REPLACE")

@@ -186,10 +186,10 @@ function diagvalues(x::Number)
     return x
 end
 
-function _get_sources(x::Vector)::Vector{String}
+function _get_sources(x::Vector)
     return collect(Set(r for y ∈ x for r ∈ y.sources))
 end
 
-function _get_sources(x)::Vector{String}
+function _get_sources(x)
     return copy(x.sources)
 end

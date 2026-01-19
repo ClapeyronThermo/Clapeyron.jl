@@ -148,11 +148,11 @@ function recombine!(param::GroupParameter)
     return param
 end
 
-function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs::Vector{String})
+function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs)
     return GroupParam(input,grouptype,sourcecsvs,nothing)
 end
 
-function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs::Vector{String},gc_intragroups)
+function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs,gc_intragroups)
     components = [first(i) for i ∈ input]
     raw_groups = [last(i) for i ∈ input]
     groups = [first.(grouppairs) for grouppairs ∈ raw_groups]

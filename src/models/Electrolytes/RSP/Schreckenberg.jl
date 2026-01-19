@@ -29,7 +29,7 @@ This function is used to create a Schreckenberg model. The Schreckenberg term es
 ## References
 1. Schreckenberg, J., Dufal, S., Haslam, A.J., Adjiman, C.S., Jackson, G., Galindo, A. (2014). Modelling of the thermodynamic and solvation properties of electrolyte solutions with the statistical associating fluid theory for potentials of variable range. Molecular Physics, 112(17), 2339-2364.
 """
-function Schreckenberg(solvents,ions; userlocations::Vector{String}=String[], verbose::Bool=false)
+function Schreckenberg(solvents,ions; userlocations=String[], verbose::Bool=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
     components = format_components(components)
