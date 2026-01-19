@@ -72,6 +72,7 @@ Clapeyron.PR
 Clapeyron.PR78
 Clapeyron.cPR
 Clapeyron.VTPR
+Clapeyron.TVTPR
 Clapeyron.UMRPR
 Clapeyron.tcPR
 Clapeyron.tcPRW
@@ -125,6 +126,7 @@ Clapeyron.NoTranslation
 Clapeyron.ConstantTranslation
 Clapeyron.RackettTranslation
 Clapeyron.VTPRTranslation
+Clapeyron.TVTPRTranslation
 Clapeyron.PenelouxTranslation
 Clapeyron.MTTranslation
 ```

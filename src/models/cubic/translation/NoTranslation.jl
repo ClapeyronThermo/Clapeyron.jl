@@ -31,5 +31,3 @@ NoTranslation
 function translation(model::CubicModel,V,T,z,translation_model::NoTranslation)
     return FillArrays.Zeros{Float64}(length(z))
 end
-
-recombine_translation!(model::CubicModel,translation_model::NoTranslation) = translation_model

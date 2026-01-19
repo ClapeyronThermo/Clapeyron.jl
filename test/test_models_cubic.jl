@@ -105,6 +105,11 @@
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2363824487050494 rtol = 1e-6
         end
 
+        @testset "TVTPR" begin
+            system = TVTPR(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2332185093557617 rtol = 1e-6
+        end
+
         @testset "UMRPR" begin
             system = UMRPR(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.1447330557895619 rtol = 1e-6
