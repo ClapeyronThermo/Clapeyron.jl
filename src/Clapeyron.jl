@@ -269,7 +269,7 @@ include("models/Virial/Virial.jl")
 
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
-include("models/PeTS/PeTS.jl")
+include("models/Potentials/PeTS/PeTS.jl")
 
 #electrolytes
 include("models/Electrolytes/base.jl")
