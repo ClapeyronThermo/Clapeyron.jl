@@ -84,6 +84,29 @@ function translation(model::CubicModel,V,T,z,translation_model::TVTPRTranslation
     return c
 end
 
+function translation2(model::CubicModel,V,T,z,translation_model::TVTPRTranslation,a,b,α)
+    res = zeros(eltype(V+T+first(z)),length(z))
+    Tc = model.params.Tc.values
+    Pc = model.params.Pc.values
+    Vc = translation_model.params.Vc.values
+    c = zero(Base.promote_eltype(model,T,z))
+    #Zc_PR = Clapeyron.pure_cubic_zc(PR("water"))
+    Zc_PR = 0.30740130869870386
+    for i ∈ @comps
+        Tci = Tc[i]
+        Pci = Pc[i]
+        RT = Tci*Rgas(model)
+        Zc = Pci*Vc[i]/RT
+        Tr = T/Tci
+        η = -74.458*Zc+26.966
+        γ = 246.78*Zc^2-107.21*Zc+12.67
+        β = 0.35/(0.35+(η*abs(Tr-α[i]))^γ)
+        cc = (Zc_PR - Zc)*RT/Pci
+        c += z[i]*cc*β
+    end
+    return c
+end
+
 """
     TVTPR(components;
     idealmodel = BasicIdeal,

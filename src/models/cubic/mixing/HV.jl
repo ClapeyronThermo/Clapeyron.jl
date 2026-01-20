@@ -79,12 +79,12 @@ end
 
 HV_λ(::HVRuleModel,model::DeltaCubicModel,T,z) = infinite_pressure_gibbs_correction(model,T,z)
 
-function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,c)
+function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b)
     n = sum(z)
     invn = 1/n
     invn2 = invn*invn
     b̄ = dot(z,Symmetric(b),z) * invn2
-    c̄ = dot(z,c)/n
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     gᴱ = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
     ∑ab = sum(z[i]*a[i,i]*α[i]/b[i,i] for i ∈ @comps)*invn
     _λ = HV_λ(mixing_model,model,T,z)

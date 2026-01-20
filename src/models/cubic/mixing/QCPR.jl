@@ -63,7 +63,7 @@ function ab_premixing(model::PRModel,mixing::QCPRRuleModel,kij,lij)
     return a,b
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
@@ -95,7 +95,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
     end
     ā *= invn2
     b̄ *= invn2
-    c̄ = dot(z,c)*invn
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     #dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
     return ā,b̄,c̄
 end

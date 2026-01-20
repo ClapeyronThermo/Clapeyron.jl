@@ -58,13 +58,13 @@ end
 
 recombine_impl!(model::PPR78Rule) = model
 
-function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
+function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b)
     n = sum(z)
     invn = 1/n
     invn2 = invn*invn
     T̄ = 298.15/T
     b̄ = dot(z,diagvalues(b)) * invn
-    c̄ = dot(z,c)*invn
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     _0 = zero(T+first(z))
     gᴱ = _0
 

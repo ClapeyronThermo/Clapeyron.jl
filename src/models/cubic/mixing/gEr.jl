@@ -120,7 +120,7 @@ function __excess_g_res(model::WilsonModel,p,T,z,b,c)
     return excess_g_res_wilson(model,p,T,z,V)
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b,c)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b)
     n = sum(z)
     #x = z./n
     invn = (one(n)/n)
@@ -141,6 +141,6 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b,c)
     b̄ = b̄*invn2
     Λ = infinite_pressure_gibbs_correction(model,T,z)
     ā = (res + gᴱᵣ/Λ)*b̄*invn
-    c̄ = dot(z,c)*invn
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     return ā,b̄,c̄
 end

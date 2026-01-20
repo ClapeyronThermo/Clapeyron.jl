@@ -86,7 +86,7 @@ function UMR_g_E(model::UNIFACModel,V,T,z)
     return g_SG+g_res
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b,c)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b)
     n = sum(z)
     activity = mixing_model.activity
     invn = (one(n)/n)
@@ -95,7 +95,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b,c)
     #b = Diagonal(b).diag
     #b = ((b.^(1/2).+b'.^(1/2))/2).^2
     b̄ = dot(z,Symmetric(b),z) * invn2
-    c̄ = dot(z,c)*invn
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     Σab = sum(z[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)*invn
     ā = b̄*R̄*T*(Σab-1/0.53*g_E/(R̄*T))
     return ā,b̄,c̄

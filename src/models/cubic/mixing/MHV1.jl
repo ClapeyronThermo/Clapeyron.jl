@@ -85,13 +85,13 @@ MHV1q(::MHV1RuleModel,::RKModel) = 0.593 #check if it applies to vanilla RK
 #MHV1q(::MHV1RuleModel,::SRKModel) = 0.593 causes ambiguities
 MHV1q(::MHV1RuleModel,::vdWModel) = 0.85
 
-function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::MHV1RuleModel,α,a,b,c)
+function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::MHV1RuleModel,α,a,b)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
     g_E = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z) / n
     b̄ = dot(z,Symmetric(b),z) * invn2
-    c̄ = dot(z,c)/n
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     q = MHV1q(mixing_model,model)
     Σlogb = sum(z[i]*log(b̄/b[i,i]) for i ∈ @comps)*invn
     Σab = invn*sum(z[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)

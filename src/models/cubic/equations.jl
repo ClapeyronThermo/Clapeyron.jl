@@ -110,12 +110,19 @@ function cubic_ab(model::CubicModel,V,T,z=SA[1.0])
     b = model.params.b.values
     T = T * float(one(T))
     α = @f(α_function, model.alpha)
-    c = @f(translation, model.translation)
+    
     if length(z) > 1
-        return @f(mixing_rule, model.mixing, α, a, b, c)
+        return @f(mixing_rule, model.mixing, α, a, b)
     else
-        return @f(mixing_rule1, model.mixing, α, a, b, c)
+        return @f(mixing_rule1, model.mixing, α, a, b)
     end
+end
+
+
+function mixing_rule(model,V,T,z,mixing_model,α,a,b,c)
+    c̄ = dot(z,c)/sum(z)
+    ā,b̄,_ = @f(mixing_rule, model.mixing, α, a, b)
+    return ā,b̄,c̄
 end
 
 #mixing rules: optimization for one-component
@@ -125,6 +132,23 @@ function mixing_rule1(model,V,T,z,mixing_model,α,a,b,c)
     b̄ = b[1, 1] * _1
     c̄ = c[1] * _1
     return ā, b̄, c̄
+end
+
+#For compatibility with earlier versions of Clapeyron, where we used to calculate translation as a vector
+function translation2(model,V,T,z,translation_model,a,b,α)
+    c = translation(model,V,T,z,translation_model)
+    return dot(c,z)
+end
+
+function mixing_rule1(model,V,T,z,mixing_model,α,a,b)
+    ā, b̄ = @f(mixing_rule1, model.mixing, α, a, b, 0.0)
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)
+    return ā, b̄, c̄
+end
+
+function mixing_rule(model,V,T,z,mixing_model,α,a,b)
+    c = @f(translation, model.translation)
+    @f(mixing_rule, model.mixing, α, a, b, c)
 end
 
 function data(model::CubicModel, V, T, z)

@@ -12,7 +12,7 @@
     verbose = false)
 
 Volume-translated Peng Robinson equation of state. It uses the following models:
-- Translation Model: [`VTPRTranslation`](@ref)
+- Translation Model: [`PenelouxTranslation`](@ref)
 - Alpha Model: [`TwuAlpha`](@ref)
 - Mixing Rule Model: [`VTPRRule`](@ref) with [`VTPRUNIFAC`](@ref) activity
 ## References

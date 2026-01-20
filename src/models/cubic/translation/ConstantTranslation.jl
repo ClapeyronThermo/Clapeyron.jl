@@ -41,3 +41,7 @@ export ConstantTranslation
 function translation(model::CubicModel,V,T,z,translation_model::ConstantTranslationModel)
     return translation_model.params.v_shift.values
 end
+
+function translation2(model::CubicModel,V,T,z,translation_model::ConstantTranslationModel,a,b,α)
+    return dot(translation_model.params.v_shift.values,z)
+end

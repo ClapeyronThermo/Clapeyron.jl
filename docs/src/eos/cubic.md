@@ -124,10 +124,8 @@ Clapeyron.LeiboviciAlpha
 Clapeyron.translation
 Clapeyron.NoTranslation
 Clapeyron.ConstantTranslation
-Clapeyron.RackettTranslation
-Clapeyron.VTPRTranslation
-Clapeyron.TVTPRTranslation
 Clapeyron.PenelouxTranslation
+Clapeyron.TVTPRTranslation
 Clapeyron.MTTranslation
 ```
 
