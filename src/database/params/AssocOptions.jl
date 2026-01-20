@@ -44,5 +44,5 @@ Base.show(io::IO,options::AssocOptions) = show_as_namedtuple(io,options)
 is_splittable(::AssocOptions) = false
 
 __init_assoc_options_kw(::Nothing) = AssocOptions()
-__init_assoc_options_kw(s::Symbol) = AssocOptions(combining = s)
+__init_assoc_options_kw(s) = AssocOptions(combining = Symbol(s))
 __init_assoc_options_kw(ref::AssocOptions) = ref

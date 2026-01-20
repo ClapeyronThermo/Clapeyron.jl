@@ -1,6 +1,6 @@
 function neutral_eCPA(components;
             idealmodel = BasicIdeal,
-            radial_dist::Symbol = :KG,
+            radial_dist = :KG,
             cubicmodel = RK,
             alpha = eCPAAlpha,
             mixing = vdW1fRule,
@@ -15,6 +15,8 @@ function neutral_eCPA(components;
             reference_state = nothing,
             verbose = false,
             assoc_options = AssocOptions())
+
+        radial_dist = Symbol(radial_dist)
 
     return CPA(components;
         idealmodel = idealmodel,

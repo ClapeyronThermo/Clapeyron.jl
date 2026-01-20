@@ -12,6 +12,7 @@ function gcPCPSAFT(components;
     reference_state = nothing,
     assoc_options = AssocOptions())
 
+    mixing = Symbol(mixing)
     if mixing == :homo
         return HomogcPCPSAFT(components;
         idealmodel = idealmodel,
@@ -36,6 +37,7 @@ function gcPCPSAFT(components;
 end
 
 function __gcpcpsaft_combine(mixing)
+    mixing = Symbol(mixing)
     if mixing == :homo
         return :cr1
     elseif mixing ==:hetero
@@ -54,6 +56,8 @@ function gcPCSAFT(components;
     verbose = false,
     reference_state = nothing,
     assoc_options = AssocOptions(combining = __gcpcpsaft_combine(mixing)))
+
+    mixing = Symbol(mixing)
 
     if mixing == :homo
         return HomogcPCPSAFT(components;
