@@ -40,6 +40,12 @@ export GCMSABorn
 This function is used to create a group-contribution Mean Spherical Approximation-Born model used in SAFT-gamma E Mie
 """
 function GCMSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[],RSPmodel_userlocations = String[], verbose=false)
+    solvents = format_components(solvents)
+    ions = format_components(ions)
+
+    userlocations = normalize_userlocations(userlocations)
+    RSPmodel_userlocations = normalize_userlocations(RSPmodel_userlocations)
+
     groups = GroupParam(cat(solvents,ions,dims=1), ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/"]; userlocations=userlocations,return_sites=false,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     components = groups.components

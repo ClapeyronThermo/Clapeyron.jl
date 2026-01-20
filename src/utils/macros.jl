@@ -544,6 +544,7 @@ function init_model(::Nothing,components,userlocations = String[],verbose = fals
 end
 
 function init_model(::Type{𝕄},components,userlocations = String[],verbose = false,reference_state = nothing) where  𝕄 <: EoSModel
+    userlocations = normalize_userlocations(userlocations)
     if verbose
         @info "Building an instance of $(info_color(string(𝕄))) with components $components"
     end
@@ -555,6 +556,7 @@ function init_model(::Type{𝕄},components,userlocations = String[],verbose = f
 end
 
 function init_model(f::Function,components,userlocations = String[],verbose = false,reference_state = nothing)
+    userlocations = normalize_userlocations(userlocations)
     if verbose
         @info "building an EoS model, using function $(info_color(string(f))) with components $components"
     end
@@ -615,6 +617,10 @@ end
 
 function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options = nothing,reference_state = nothing) where M <: EoSModel
 
+    userlocations = normalize_userlocations(userlocations)
+    group_userlocations = normalize_userlocations(group_userlocations)
+    ideal_userlocations = normalize_userlocations(ideal_userlocations)
+
     paramtype = fieldtype(M,:params)
 
     #non-splittable
@@ -639,6 +645,8 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
 end
 
 function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,ClapeyronParam},idealmodel,ideal_userlocations,verbose,assoc_options = nothing,reference_state = nothing) where M <: EoSModel
+
+    ideal_userlocations = normalize_userlocations(ideal_userlocations)
 
     #all fields of the model.
     result = Dict{Symbol,Any}()

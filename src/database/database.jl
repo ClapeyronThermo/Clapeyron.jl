@@ -191,8 +191,8 @@ function getparams(components,
                     component_delimiter = "~|~"
                     )
     
-    userlocations = String.(userlocations)
-    asymmetricparams = String.(asymmetricparams)
+    userlocations = normalize_userlocations(userlocations)
+    asymmetricparams = normalize_userlocations(asymmetricparams)
     ignore_missing_singleparams = String.(ignore_missing_singleparams)
     ignore_headers = String.(ignore_headers)
 
