@@ -366,7 +366,7 @@ end
         @testset "AntoineSat" begin
             system = AntoineEqSat(["water"])
             p0 = saturation_pressure(system,400.01)[1]
-            @test p0 ≈ 244561.488609 rtol = 1e-6
+            @test p0 ≈ 244930.458389 rtol = 1e-6
             @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
         end
 

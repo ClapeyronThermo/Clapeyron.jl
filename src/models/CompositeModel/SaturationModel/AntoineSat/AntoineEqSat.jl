@@ -38,15 +38,13 @@ end
 - `C`: Single Parameter (`Float64`) - Third coefficent `[°C]`
 - `Tmin`: Single Parameter (`Float64`)  - Mininum Temperature range `[K]`
 - `Tmax`: Single Parameter (`Float64`)  - Maximum Temperature range `[K]`
+
 ## Description
 
 Antoine Equation for saturation pressure:
 ```
-psat(T) = 10^(A + B/(T + C))
+pₛ / Pa = 10^(A + B/(T - 273.15 K + C))
 ```
-Returns saturation pressure of a pure substance, given temperature `T`.
-- Temperature `T` `[K]`
-- Saturation Pressure `psat` `[Pa]`
 
 ## References
 
@@ -62,19 +60,19 @@ function crit_pure(model::AntoineEqSatModel)
     return (tc,pc,NaN)
 end
 
-function saturation_pressure_impl(model::AntoineEqSatModel,T,method::SaturationCorrelation)
+function saturation_pressure_impl(model::AntoineEqSatModel,T,::SaturationCorrelation; )
     nan = zero(T)/zero(T)
-    tc = only(model.params.Tc.values)
+    Tc = only(model.params.Tc.values)
     A = only(model.params.A.values)
     B = only(model.params.B.values)
     C = only(model.params.C.values)
     Tmin = only(model.params.Tmin.values)
     Tmax = only(model.params.Tmax.values)
 
-    T > tc && (return nan,nan,nan)
+    T > Tc && (return nan,nan,nan)
     Tmin <= T <= Tmax || (return nan,nan,nan)
-    psat = 10^(A - B/(T-273.15 + C))
-    return psat*101325/760,nan,nan
+    psat = 10^(A - B/(T + C - 273.15))
+    return psat,nan,nan
 end
 
 export AntoineEqSat
