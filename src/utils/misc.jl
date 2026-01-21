@@ -157,6 +157,12 @@ format_gccomponents(str::Vector{String}) = str
 format_gccomponents(str::AbstractVector) = Array(str)
 # format_gccomponents(str) = map(format_component_i,str)
 
+normalize_userlocations(loc::Nothing) = loc
+normalize_userlocations(loc::AbstractArray) = String.(loc)
+normalize_userlocations(loc::Tuple) = String.(loc)
+normalize_userlocations(loc::NamedTuple) = loc
+normalize_userlocations(loc) = loc
+
 function mole_to_mass(model, x)
     w = x .* mw(model)
     return w ./ sum(w)

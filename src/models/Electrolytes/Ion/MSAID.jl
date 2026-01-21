@@ -32,8 +32,12 @@ This function is used to create a Mean Spherical Approximation model. The MSAID 
 1. Blum, L. (1974). Solution of a model for the solvent‐electrolyte interactions in the mean spherical approximation, 61, 2129–2133.
 """
 function MSAID(solvents,ions; userlocations, verbose=false)
-    components = deepcopy(ions)
-    prepend!(components,solvents)
+    solvents = format_components(solvents)
+    ions = format_components(ions)
+    components = vcat(solvents, ions)
+
+    userlocations = normalize_userlocations(userlocations)
+
     params = getparams(components, ["Electrolytes/properties/charges.csv","properties/molarmass.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     if any(keys(params).=="b")
         params["b"].values .*= 3/2/N_A/π*1e-3

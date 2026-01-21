@@ -692,7 +692,7 @@ function activity_coefficient(model::EoSModel,p,T,z = SA[1.0];
                             phase=:unknown,
                             threaded=true,
                             vol0=nothing)
-
+    reference = Symbol(reference)
     γmodel = __γ_unwrap(model)
     if γmodel isa ActivityModel
         return activity_coefficient(γmodel,p,T,z)
@@ -732,6 +732,7 @@ function activity(model::EoSModel,p,T,z;
                 phase=:unknown,
                 threaded=true,
                 vol0=nothing)
+    reference = Symbol(reference)
     if model isa ActivityModel
         return activity(model,p,T,z)
     end
@@ -810,6 +811,7 @@ Returns a reference chemical potential. Used in calculation of `activity` and ac
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function reference_chemical_potential(model::EoSModel,p,T,reference = reference_chemical_potential_type(model); phase=:unknown, threaded=true, vol0=nothing)
+    reference = Symbol(reference)
     if reference == :pure
         pure = split_pure_model(model)
         return gibbs_free_energy.(pure, p, T; phase, threaded)

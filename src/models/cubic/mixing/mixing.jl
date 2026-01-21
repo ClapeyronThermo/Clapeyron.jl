@@ -27,6 +27,10 @@ function init_model(model::Type{<:MixingRule},components,activity,userlocations,
     if verbose
         @info "Building an instance of $(info_color(string(model))) with components $components"
     end
+    
+    userlocations = normalize_userlocations(userlocations)
+    activity_userlocations = normalize_userlocations(activity_userlocations)
+
     return model(components;activity,userlocations,activity_userlocations,verbose)
 end
 

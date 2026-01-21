@@ -25,8 +25,12 @@ This function is used to create a Mean Spherical Approximation model. The MSA te
 1. Blum, L. (1974). Solution of a model for the solvent-electrolyte interactions in the mean spherical approximation. The Journal of Chemical Physics, 61(5), 2129–2133. [doi:10.1063/1.1682224](https://doi.org/10.1063/1.1682224)
 """
 function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
-    components = deepcopy(ions)
-    prepend!(components,solvents)
+    solvents = format_components(solvents)
+    ions = format_components(ions)
+    components = vcat(solvents, ions)
+
+    userlocations = normalize_userlocations(userlocations)
+    RSPmodel_userlocations = normalize_userlocations(RSPmodel_userlocations)
 
     references = default_references(MSA)
 

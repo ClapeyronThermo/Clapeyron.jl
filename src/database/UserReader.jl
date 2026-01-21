@@ -42,11 +42,13 @@ SingleParam{Float64}("Mw") with 2 components:
  "methanol" => 32.042
 ```
 """
-function ParamTable(type::Symbol,data;
+function ParamTable(type,data;
     location::Union{String,Nothing} = nothing,
     name::Union{String,Nothing} = nothing,
-    grouptype::Symbol = :unknown,
+    grouptype = :unknown,
     options::ParamOptions = DefaultOptions)
+    type = Symbol(type)
+    grouptype = Symbol(grouptype)
     if location === nothing
         location = generate_location!()
     end

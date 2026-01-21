@@ -28,8 +28,12 @@ DH
 export DH
 function DH(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
 
-    components = deepcopy(ions)
-    prepend!(components,solvents)
+    solvents = format_components(solvents)
+    ions = format_components(ions)
+    components = vcat(solvents, ions)
+
+    userlocations = normalize_userlocations(userlocations)
+    RSPmodel_userlocations = normalize_userlocations(RSPmodel_userlocations)
 
     references = String[]
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
