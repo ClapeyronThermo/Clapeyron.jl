@@ -23,6 +23,13 @@ abstract type VTPRTranslationModel <: RackettTranslationModel end
 VTPR Translation model for cubics:
 ```
 V = V₀ + mixing_rule(cᵢ)
+```
+if there is experimental data:
+```
+cᵢ = vl(sat,experimental) - vl(sat,PR with TwuAlpha, no translation)
+```
+else, the following correlation is used:
+```
 cᵢ = -0.252*RTcᵢ/Pcᵢ*(1.5448Zcᵢ - 0.4024)
 Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 ```
@@ -50,11 +57,18 @@ translation = VTPRTranslation(["neon","hydrogen"];userlocations = (;Vc = [4.25e-
 VTPRTranslation
 
 export VTPRTranslation
-default_locations(::Type{VTPRTranslation}) = critical_data()
+default_locations(::Type{VTPRTranslation}) = vcat("cubic/VTPR/VTPRTranslation_like.csv",critical_data())
+default_ignore_missing_singleparams(::Type{VTPRTranslation}) = ["v_shift,Vc"]
+
 function transform_params(::Type{VTPRTranslation},params,components)
-    v_shift = SingleParam("Volume shift",components,zeros(length(components)))
-    v_shift.ismissingvalues .= true
-    params["v_shift"] = v_shift
+    v_shift = get!(params,"v_shift") do
+        SingleParam("Volume shift",components,zeros(length(components)))
+    end
+
+    Vc = get!(params,"Vc") do
+        SingleParam("Vc",components,zeros(length(components)))
+    end
+    #params["v_shift"] = v_shift
     return params
 end
 
@@ -64,31 +78,29 @@ function translation!(model::CubicModel,V,T,z,translation_model::VTPRTranslation
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = translation_model.params.Vc.values
+    missing_c = translation_model.params.v_shift.ismissingvalues
+    missing_vc = translation_model.params.Vc.ismissingvalues
     for i ∈ @comps
-        Tci = Tc[i]
-        Pci = Pc[i]
-        RT = Tci*R̄
-        Zc = Pci*Vc[i]/RT
-        c[i] = -0.252*RT/Pci*(1.5448Zc - 0.4024)
+        if missing_c[i] && !missing_vc[i]
+            Tci = Tc[i]
+            Pci = Pc[i]
+            RT = Tci*R̄
+            Zc = Pci*Vc[i]/RT
+            c[i] = -0.252*RT/Pci*(1.5448Zc - 0.4024)
+        elseif missing_vc[i] && missing_c[i]
+            throw(MissingException("VTPRTranslation: cannot estimate v_shift: missing Vc parameter."))
+        end
     end
     return c
 end
 
 function translation(model::CubicModel,V,T,z,translation_model::VTPRTranslation)
     c = translation_model.params.v_shift
-    cmissing = c.ismissingvalues
-    if any(cmissing)
-        res = copy(c.values)
-        translation!(model,V,T,z,translation_model,res)
-    else
-        res = c
-    end
-    return res
+    return c
 end
 
 function recombine_translation!(model::CubicModel,translation_model::VTPRTranslation)
     c = translation_model.params.v_shift
     translation!(model,0.0,0.0,0.0,translation_model,c.values)
-    c.ismissingvalues .= false
     return translation_model
 end
