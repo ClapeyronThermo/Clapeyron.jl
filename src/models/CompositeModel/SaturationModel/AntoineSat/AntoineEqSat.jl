@@ -24,8 +24,8 @@ end
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `A`: Single Parameter (`Float64`) - First coefficient `[dimensionless]`
-- `B`: Single Parameter (`Float64`) - Second coefficent `[°C]`
-- `C`: Single Parameter (`Float64`) - Third coefficent `[°C]`
+- `B`: Single Parameter (`Float64`) - Second coefficent `[dimensionless]`
+- `C`: Single Parameter (`Float64`) - Third coefficent `[dimensionless]`
 - `Tmin`: Single Parameter (`Float64`)  - Mininum Temperature range `[K]`
 - `Tmax`: Single Parameter (`Float64`)  - Maximum Temperature range `[K]`
 
@@ -34,8 +34,8 @@ end
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `A`: Single Parameter (`Float64`) - First coefficient `[dimensionless]`
-- `B`: Single Parameter (`Float64`) - Second coefficent `[°C]`
-- `C`: Single Parameter (`Float64`) - Third coefficent `[°C]`
+- `B`: Single Parameter (`Float64`) - Second coefficent `[dimensionless]`
+- `C`: Single Parameter (`Float64`) - Third coefficent `[dimensionless]`
 - `Tmin`: Single Parameter (`Float64`)  - Mininum Temperature range `[K]`
 - `Tmax`: Single Parameter (`Float64`)  - Maximum Temperature range `[K]`
 
@@ -43,7 +43,7 @@ end
 
 Antoine Equation for saturation pressure:
 ```
-pₛ / Pa = 10^(A + B/(T - 273.15 K + C))
+log₁₀( pₛ/Pa ) = A + B / (T/K - 273.15 + C)
 ```
 
 ## References
