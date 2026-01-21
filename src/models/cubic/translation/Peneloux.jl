@@ -73,25 +73,16 @@ function transform_params(::Type{PenelouxTranslation},params,components)
 end
 
 function translation(model::CubicModel,V,T,z,translation_model::PenelouxTranslation)
-    c = translation_model.params.v_shift
-    cmissing = c.ismissingvalues
-    if any(cmissing)
-        res = copy(c.values)
-        translation!(model,V,T,z,translation_model,res)
-    else
-        res = c
-    end
-    return res
+    return translation_model.params.v_shift.values
 end
 
 function recombine_translation!(model::CubicModel,translation_model::PenelouxTranslation)
     c = translation_model.params.v_shift
-    translation!(model,0.0,0.0,0.0,translation_model,c.values)
-    c.ismissingvalues .= false
+    translation!(c,model,translation_model)
     return translation_model
 end
 
-function translation!(model::PRModel,V,T,z,translation_model::PenelouxTranslation,c)
+function translation!(c,model::PRModel,translation_model::PenelouxTranslation)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = translation_model.params.Vc.values
@@ -105,7 +96,7 @@ function translation!(model::PRModel,V,T,z,translation_model::PenelouxTranslatio
     return c
 end
 
-function translation!(model::RKModel,V,T,z,translation_model::PenelouxTranslation,c)
+function translation!(c,model::RKModel,translation_model::PenelouxTranslation)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = translation_model.params.Vc.values

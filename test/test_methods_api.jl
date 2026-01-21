@@ -26,10 +26,10 @@
     @test Clapeyron.second_virial_coefficient(model10,T10)*pc10/(R*Tc10) |> Unitful.ustrip ≈ -0.22346581496303466 rtol = 1E-6
 
     #example 3.13, abbott and van ness, 7th ed.
-    model13 = PR(["ammonia"],translation = RackettTranslation)
-    v13 = 26.545235297652496u"cm^3"
+    model13 = PR(["ammonia"],translation = PenelouxTranslation)
+    v13 = 30.769606571028624u"cm^3"
     T13 = 310u"K"
-    #experimental value is 29.14 cm3/mol. PR default is ≈ 32, Racckett overcorrects
+    #experimental value is 29.14 cm3/mol. PR default is ≈ 32, Peneloux overcorrects a little
     @test saturation_pressure(model13,T13,output = (u"atm",u"cm^3",u"cm^3"))[2] ≈ v13 rtol = 1E-6
     @test Clapeyron.pip(model13,v13,T13) > 1 #check if is a liquid phase
 

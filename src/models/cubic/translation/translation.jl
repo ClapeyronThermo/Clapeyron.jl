@@ -24,9 +24,7 @@ translation(model::CubicModel,V,T,z) = translation(model,V,T,z,model.translation
 recombine_translation!(model::CubicModel,translation_model) = translation_model
 
 include("NoTranslation.jl")
-include("Rackett.jl")
 include("Peneloux.jl")
 include("MT.jl")
 include("ConstantTranslation.jl")
-include("VTPR.jl")
 #include("Clausius.jl")
