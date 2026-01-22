@@ -650,14 +650,14 @@ end
         @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ vv rtol = 1e-6
 
         #GERG2008(["ethane]) : 318 m/s
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 308.38846317827625 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 308.4054802581367 rtol = 1e-6
     end
 
     T_sat = 250.15
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 1.3085074415334722e6 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 1.3096239233531626e6 rtol = 1E-6
         #Critical point of ethane: 305.322
-        @test Clapeyron.crit_pure(system)[1] ≈ 305.37187249327553 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 305.3719105078928 rtol = 1E-6
     end
 end
 GC.gc()

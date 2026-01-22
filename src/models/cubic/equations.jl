@@ -126,11 +126,11 @@ function mixing_rule(model,V,T,z,mixing_model,α,a,b,c)
 end
 
 #mixing rules: optimization for one-component
-function mixing_rule1(model,V,T,z,mixing_model,α,a,b,c)
+function mixing_rule1(model,V,T,z,mixing_model,α,a,b)
     _1 = oneunit(z[1])
     ā = a[1, 1] * α[1] * _1
     b̄ = b[1, 1] * _1
-    c̄ = c[1] * _1
+    c̄ = translation2(model,V/sum(z),T,SA[1.0],model.translation,ā,b̄,α)
     return ā, b̄, c̄
 end
 
@@ -140,9 +140,9 @@ function translation2(model,V,T,z,translation_model,a,b,α)
     return dot(c,z)
 end
 
-function mixing_rule1(model,V,T,z,mixing_model,α,a,b)
-    ā, b̄ = @f(mixing_rule1, model.mixing, α, a, b, 0.0)
-    c̄ = translation2(model,V,T,z,model.translation,a,b,α)
+function mixing_rule1(model,V,T,z,mixing_model,α,a,b,c)
+    ā, b̄, _ = @f(mixing_rule1, model.mixing, α, a, b)
+    c̄ = dot(c,z)/sum(z)
     return ā, b̄, c̄
 end
 
