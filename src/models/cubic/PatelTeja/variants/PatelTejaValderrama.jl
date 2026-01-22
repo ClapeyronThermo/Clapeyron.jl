@@ -165,6 +165,8 @@ function c_premixing(model::PTVModel)
     c = sigma_LorentzBerthelot!(c)
     return c
 end
+
+has_fast_crit_pure(model::PTVModel) = false
 #=
  (-B2-2(B2+B)+A)
  (-B2-2B2-2B+A)
