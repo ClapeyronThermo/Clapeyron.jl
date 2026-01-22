@@ -112,10 +112,5 @@ end
 
 function translation2(model::CubicModel,V,T,z,translation_model::PenelouxTranslation,a,b,α)
     c = translation_model.params.v_shift
-    cmissing = c.ismissingvalues
-    if any(cmissing)
-        translation!(model,V,T,z,translation_model,c)
-    end
-
     return dot(c.values,z)
 end
