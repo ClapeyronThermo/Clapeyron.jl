@@ -301,6 +301,12 @@ end
 
 function crit_pure(model::DeltaCubicModel)
     single_component_check(crit_pure,model)
+    
+    if !has_fast_crit_pure(model)
+        x0c = x0_crit_pure(model,SA[1.0])
+        return crit_pure(model,x0c)
+    end
+    
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
     b = cubic_lb_volume(model,Tc,SA[1.0])
