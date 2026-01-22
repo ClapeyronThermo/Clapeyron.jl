@@ -71,7 +71,7 @@ struct SiteParam <: ClapeyronParam
     site_translator::Union{Nothing,Vector{Vector{NTuple{2,Int}}}}
 end
 
-function SiteParam(components::Vector{String},sites::Array{Array{String,1},1},n_sites::Vector{Vector{Int}},sourcecsvs = String[],site_translator = nothing)
+function SiteParam(components,sites,n_sites,sourcecsvs = String[],site_translator = nothing)
     n_sites = PackedVectorsOfVectors.pack(n_sites)
     param = SiteParam(components, 
     sites, 
@@ -122,7 +122,7 @@ function SiteParam(pairs::Dict{String,SingleParam{Int}},allcomponentsites)
     return SiteParam(components,sites,n_sites,sourcecsvs)
 end
 
-function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=String[])
+function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs=String[])
     components = [first(i) for i ∈ input]
     raw_sites = [last(i) for i ∈ input]
     sites = [first.(sitepairs) for sitepairs ∈ raw_sites]
@@ -130,7 +130,7 @@ function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=St
     return SiteParam(components,sites,n_sites,sourcecsvs)
 end
 
-function SiteParam(components::Vector{String})
+function SiteParam(components)
     n = length(components)
     return SiteParam(
     components,

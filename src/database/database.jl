@@ -177,19 +177,28 @@ incoming group type: fitted
 Note, that the parser will not fail if you pass different parameters with different group types (For example if `a` has `param1` group type and `b` has `fit` group type)
 """
 function getparams(components,
-                    locations::Array{String,1}=String[];
+                    locations=String[];
                     userlocations = String[],
-                    asymmetricparams::Vector{String}=String[],
-                    ignore_missing_singleparams::Vector{String}=String[],
-                    ignore_headers::Vector{String} = IGNORE_HEADERS,
+                    asymmetricparams=String[],
+                    ignore_missing_singleparams=String[],
+                    ignore_headers = IGNORE_HEADERS,
                     verbose::Bool=false,
-                    species_columnreference::String="species",
-                    source_columnreference::String="source",
-                    site_columnreference::String="site",
+                    species_columnreference="species",
+                    source_columnreference="source",
+                    site_columnreference="site",
                     normalisecomponents::Bool=true,
                     return_sites::Bool = true,
-                    component_delimiter::String = "~|~"
+                    component_delimiter = "~|~"
                     )
+    
+    userlocations = normalize_userlocations(userlocations)
+    asymmetricparams = normalize_userlocations(asymmetricparams)
+    ignore_missing_singleparams = String.(ignore_missing_singleparams)
+    ignore_headers = String.(ignore_headers)
+
+    species_columnreference = String(species_columnreference)
+    source_columnreference = String(source_columnreference)
+    site_columnreference = String(site_columnreference)
 
     options = ParamOptions(;userlocations,
                             asymmetricparams,
@@ -211,7 +220,7 @@ function getparams(components,
     return getparams(format_components(components),locations,options)
 end
 
-function getparams(components::Vector{String},locations::Vector{String},options::ParamOptions)
+function getparams(components,locations,options::ParamOptions)
     #generate one string of params
     filepaths = flattenfilepaths(locations,options.userlocations)
     #merge all found params
@@ -295,7 +304,7 @@ function buildsites(components,allparams,allnotfoundparams,options)
     return res
 end
 
-function getparams(groups::GroupParameter, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
+function getparams(groups::GroupParameter, locations=String[],options::ParamOptions=DefaultOptions)
     return getparams(groups.flattenedgroups, locations, options)
 end
 
@@ -310,7 +319,7 @@ function anysites(data,components)
     return false
 end
 
-function findsites(data::Dict,components::Vector;verbose = false)
+function findsites(data::Dict,components;verbose = false)
     sites = Dict(components .=> [Set{String}() for _ ∈ 1:length(components)])
     for raw ∈ values(data)
         if raw.type === assocdata
@@ -337,8 +346,8 @@ can_nt(x::AbstractDict) = true
 can_nt(x::NamedTuple) = true
 
 @nospecialize
-function createparams(components::Vector{String},
-                    filepaths::Vector{String},
+function createparams(components,
+                    filepaths,
                     options::ParamOptions = DefaultOptions,
                     parsegroups = :off)
 
@@ -610,7 +619,7 @@ function findparamsincsv(components,filepath,
 
     verbose && __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype,grouptype)
     #list of all species
-    species_list::Vector{String} = normalisestring.(Tables.getcolumn(df,lookupcolumnindex),normalisecomponents)
+    species_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex),normalisecomponents)
 
     #indices where data could be (they could be missing)
     #on pair and assoc, this is just the first component, we need to reduce the valid indices again
@@ -630,7 +639,7 @@ function findparamsincsv(components,filepath,
         end
 
     elseif csvtype == pairdata && no_parsegroups
-        species2_list::Vector{String} = normalisestring.(Tables.getcolumn(df,lookupcolumnindex2)[found_indices0],normalisecomponents)
+        species2_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex2)[found_indices0],normalisecomponents)
         found_indices2,comp_indices2 = _indexin(components_dict,species2_list,component_delimiter,1:length(species2_list))
         comp_indices1 = comp_indices[found_indices2]
         found_indices2 = found_indices0[found_indices2]
@@ -754,7 +763,7 @@ function _fill_sources!(input,allsources,tofill)
 end
 
 function build_raw_param(name,comps,vals,sources,csv,csvtype,grouptype)
-    s::Vector{Int} = findall(!ismissing,vals)
+    s = findall(!ismissing,vals)
     ls = length(s)
     _vals = Vector{nonmissingtype(eltype(vals))}(undef,ls)
     _sources = Vector{String}(undef,ls)

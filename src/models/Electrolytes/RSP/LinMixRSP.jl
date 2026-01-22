@@ -26,8 +26,11 @@ This function is used to create a Linear Mixing-Rule Relative Static Permittivit
 """
 function LinMixRSP(solvents,ions; userlocations=String[], verbose::Bool=false)
 
-    components = deepcopy(solvents)
-    append!(components,ions)
+    solvents = format_components(solvents)
+    ions = format_components(ions)
+    components = vcat(solvents, ions)
+
+    userlocations = normalize_userlocations(userlocations)
 
     params = getparams(components, ["Electrolytes/RSP/dielectric.csv","SAFT/PCSAFT/ePCSAFTAdv/dielectric.csv"]; userlocations=userlocations, verbose=verbose)
     e_r = params["dielectric"]
