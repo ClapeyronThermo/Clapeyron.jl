@@ -13,7 +13,7 @@ import LogExpFunctions
 using FillArrays: FillArrays
 import SpecialFunctions
 using StaticArrays
-
+using Serialization #FeANNMie
 using DiffResults, ForwardDiff
 import DifferentiationInterface # keep function local
 using Downloads #for bibtex
@@ -270,6 +270,7 @@ include("models/Virial/Virial.jl")
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
 include("models/Potentials/PeTS/PeTS.jl")
+include("models/Potentials/FeANNMie/FeANNMie.jl")
 
 #electrolytes
 include("models/Electrolytes/base.jl")
