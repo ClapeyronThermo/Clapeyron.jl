@@ -108,7 +108,8 @@ function mixing_rule1(model,V,T,z,mixing_model::QCPRRuleModel,α,a,b)
     Tc = model.params.Tc.values[1]
     β = (1 + A/(T + B))^3 / (1 + A/(Tc + B))^3
     b̄ = b[1,1]*β*_1
-    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
+    v = V/sum(z)
+    c̄ = translation2(model,v,T,SA[1.0],model.translation,a,b,α)
     return ā,b̄,c̄
 end
 
