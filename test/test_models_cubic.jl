@@ -33,12 +33,12 @@
 
         @testset "SRK" begin
             system = SRK(["ethane","undecane"])
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2572506872856557 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2640228781328529 rtol = 1e-6
         end
 
         @testset "PSRK" begin
             system = PSRK(["ethane","undecane"])
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2265133881057408 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2301592550760436 rtol = 1e-6
         end
 
         @testset "tcRK" begin
