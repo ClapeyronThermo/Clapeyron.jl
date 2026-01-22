@@ -47,7 +47,7 @@ function PSRK(components;
 
     alpha = SoaveAlpha
     mixing = PSRKRule
-    translation = PenelouxTranslation
+    translation = NoTranslation
 
     return RK(_components;
     idealmodel = idealmodel,

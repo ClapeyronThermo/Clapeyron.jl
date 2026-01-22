@@ -253,11 +253,10 @@ function second_virial_coefficient_impl(model::CubicModel,T,z = SA[1.0])
     return sum(z)*(b - c - a/(Rgas(model)*T))
 end
 
-function lb_volume(model::CubicModel,T,z)
-    V = 1e-5
-    c = @f(translation, model.translation)
+function lb_volume(model::CubicModel,T,z)    
     c̄ = dot(z, c) #result here should also be in m3
     b̄ = cubic_lb_volume(model,T,z,model.mixing)
+    c̄ = translation2(model,b̄,T,z,translation_model,nothing,b̄,nothing)
     return b̄ - c̄
 end
 

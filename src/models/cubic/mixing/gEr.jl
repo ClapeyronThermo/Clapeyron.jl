@@ -114,7 +114,7 @@ function cubic_get_k(model::CubicModel,mixing::gErRuleModel,params)
 end
 
 
-__excess_g_res(model,p,T,z,b,c) = excess_g_res(model,p,T,z)
+__excess_g_res(model,p,T,z,b) = excess_g_res(model,p,T,z)
 function __excess_g_res(model::WilsonModel,p,T,z,b,c)
     V = diagvalues(b) .- c
     return excess_g_res_wilson(model,p,T,z,V)
@@ -125,6 +125,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b)
     #x = z./n
     invn = (one(n)/n)
     invn2 = invn^2
+    c = translation(model,V,T,z,model.translation)
     gᴱᵣ = __excess_g_res(mixing_model.activity,1e5,T,z,b,c)
     b̄ = zero(gᴱᵣ)
     res = zero(T + first(z))
@@ -141,6 +142,6 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b)
     b̄ = b̄*invn2
     Λ = infinite_pressure_gibbs_correction(model,T,z)
     ā = (res + gᴱᵣ/Λ)*b̄*invn
-    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
+    c̄ = dot(c,z)*invn
     return ā,b̄,c̄
 end

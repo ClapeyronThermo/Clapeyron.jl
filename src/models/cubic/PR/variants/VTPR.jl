@@ -38,7 +38,7 @@ function VTPR(components;
 
     _components = activity.groups.components #extract pure component list
 
-    translation = VTPRTranslation
+    translation = PenelouxTranslation
     mixing = VTPRRule
 
     return PR(_components;
