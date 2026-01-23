@@ -356,7 +356,7 @@ end
 
 function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
     check_arraysize(model,z)
-    lb_v = lb_volume(model,T,z)
+    lb_v = lb_volume(model,T,z)*one(T)
     if iszero(p) && is_liquid(phase) #liquid root at zero pressure if available
         vl,_ = zero_pressure_impl(model,T,z)
         return vl
@@ -369,12 +369,32 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
     R̄ = Rgas(model)
     nRTp = sum(z)*R̄*T/p
     B = lb_v*p/(R̄*T)
-
-    if B > 4eps(typeof(B))
+    ε = eps(typeof(B))
+    if B > 4ε
         _poly,c̄ = cubic_poly(model,p,T,z)
+        #this happens when T -> ∞
+        if abs(1/_poly[1]) < ε
+            p_test = pressure(model,lb_v + eps(lb_v),T,z)
+            if p_test < p # the real volume is between lb_v and lb_v + ε
+                return lb_v
+            else
+                z0 = -_poly[1]/_poly[2]
+                f0 = Base.Fix2(evalpoly,_poly)
+                vx = z0*sum(z)*R̄*T/p - c̄
+                if vx <= lb_v
+                    return lb_v
+                else
+                    _dpoly = Solvers.polyder(_poly)
+                    for i in 1:5 #refine
+                        dz = evalpoly(z0,_poly)/evalpoly(z0,_dpoly)
+                        z0 -= dz
+                    end
+                    return z0*sum(z)*R̄*T/p - c̄
+                end
+            end
+        end
         c = c̄*sum(z)
         num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
-
         if num_isreal == 2
             vvl,vvg = nRTp*z1 - c,nRTp*z2 - c
         elseif num_isreal == 3
