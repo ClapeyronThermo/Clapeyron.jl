@@ -18,6 +18,7 @@ Pages = ["single.md"]
 
 ```@docs
 Clapeyron.saturation_pressure
+Clapeyron.saturation_liquid_density
 Clapeyron.saturation_temperature
 Clapeyron.enthalpy_vap
 Clapeyron.crit_pure
@@ -42,4 +43,16 @@ Clapeyron.ChemPotDensitySaturation
 Clapeyron.IsoFugacitySaturation
 Clapeyron.ClapeyronSaturation
 Clapeyron.AntoineSaturation
+Clapeyron.CritExtrapolationSaturation
+Clapeyron.SuperAncSaturation
+Clapeyron.use_superancillaries!
+```
+
+## Widom and CIIC loci
+
+```@docs
+Clapeyron.widom_pressure
+Clapeyron.widom_temperature
+Clapeyron.ciic_pressure
+Clapeyron.ciic_temperature
 ```

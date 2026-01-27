@@ -8,7 +8,7 @@ custom_show(model::EoSModel) = _custom_show(model)
 custom_show(model) = false
 function _custom_show(Base.@nospecialize(model))
     hasfield(typeof(model),:components)
-end 
+end
 
 #function used to customize the first line to your liking
 show_info(io,model) = nothing
@@ -25,7 +25,7 @@ end
 
 function may_show_references(io::IO,model)
     if get(ENV,"CLAPEYRON_SHOW_REFERENCES","FALSE") == "TRUE"
-        show_references(io,model)     
+        show_references(io,model)
     end
 end
 
@@ -33,14 +33,24 @@ function show_references(io::IO,model)
     citations = cite(model)
     iszero(length(citations)) && return nothing #do not do anything if there isnt any citations
     println(io)
-    print(io,"References: ") 
+    print(io,"References: ")
     for (i,doi) in enumerate(cite(model))
         i != 1 && print(io,", ")
-        print(io,doi)   
+        print(io,doi)
     end
 end
 
-function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSModel))   
+"""
+    eosshow(io::IO, model::EoSModel)
+    eosshow(io::IO, ::MIME"text/plain", model::EoSModel)
+
+Custom pretty-printer for `EoSModel` instances.
+
+This is the backend used by `Base.show` for models that opt into the custom
+display. The text/plain variant prints components, parameters, reference state,
+and (optionally) citations when enabled via `ENV["CLAPEYRON_SHOW_REFERENCES"]`.
+"""
+function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSModel))
     print(io, typeof(model))
     if hasfield(typeof(model),:components)
         length(model) == 1 && println(io, " with 1 component:")
@@ -179,7 +189,7 @@ function eos_repr(io::IO,model;inside = false,newlines = true)
         k != nf && print(io,", ")
     end
     print(io,")")
-    
+
 
     return nothing
 end

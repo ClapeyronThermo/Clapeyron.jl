@@ -113,7 +113,9 @@ function structSAFTgammaMie(components;
 end
 
 const sSAFTγMie = structSAFTgammaMie
+@doc (@doc structSAFTgammaMie) sSAFTγMie
 const sSAFTgammaMie = structSAFTgammaMie
+@doc (@doc structSAFTgammaMie) sSAFTgammaMie
 
 export structSAFTgammaMie,sSAFTgammaMie,sSAFTγMie
 

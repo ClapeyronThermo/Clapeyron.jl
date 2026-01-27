@@ -53,6 +53,7 @@ YamadaGunnLiquid
 COSTALD
 GrenkeElliottWater
 HoltenWater
+ZeroLiquid
 ```
 
 # Virial Models

@@ -235,6 +235,16 @@ function has_reference_state_type(::Type{model}) where model
     return false
 end
 
+"""
+    set_reference_state!(model::EoSModel; verbose=false)
+    set_reference_state!(model, new_ref; verbose=false)
+
+Initialize and apply a reference state for `model`.
+
+When a `ReferenceState` is provided, it is initialized (if needed) and then
+applied to the model. For mixtures, this may trigger per-component reference
+state initialization via `split_pure_model`.
+"""
 function set_reference_state!(model::EoSModel;verbose = false)
     ref = reference_state(model)
     return set_reference_state!(model,ref;verbose = false)

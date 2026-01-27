@@ -216,6 +216,7 @@ mw(model::SAFTgammaMieModel) = mw(model.vrmodel)
 molecular_weight(model::SAFTgammaMieModel,z) = molecular_weight(model.vrmodel,z)
 
 const SAFTγMie = SAFTgammaMie
+@doc (@doc SAFTgammaMie) SAFTγMie
 export SAFTgammaMie,SAFTγMie
 
 SAFTVRMie(model::SAFTgammaMieModel) = model.vrmodel
