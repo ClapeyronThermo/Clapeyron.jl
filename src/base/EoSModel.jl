@@ -154,6 +154,15 @@ macro comps()
     end |> esc
 end
 
+"""
+    has_sites(model::EoSModel)
+    has_sites(::Type{<:EoSModel})
+
+Returns `true` when a model type carries site parameters.
+
+This checks whether the model type has a `sites` field with `SiteParam`
+storage and is used to enable site-based logic (e.g. association models).
+"""
 has_sites(::T) where T <: EoSModel = has_sites(T)
 has_sites(::Type{T}) where T <: EoSModel = _has_sites(T)
 
@@ -165,6 +174,15 @@ Base.@assume_effects :foldable function _has_sites(::Type{T}) where T <: EoSMode
     return false
 end
 
+"""
+    has_groups(model::EoSModel)
+    has_groups(::Type{<:EoSModel})
+
+Returns `true` when a model type carries group parameters.
+
+This checks whether the model type has a `groups` field with `GroupParam`
+storage and is used to enable group-contribution logic.
+"""
 has_groups(::T) where T <: EoSModel = has_groups(T)
 has_groups(::Type{T}) where T <: EoSModel = _has_groups(T)
 

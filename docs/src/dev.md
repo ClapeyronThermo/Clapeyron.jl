@@ -19,3 +19,9 @@
 ### Group Parameters
 
 ## `split_model` and `index_reduction`
+
+## Precompilation
+
+```@docs
+Clapeyron.precompile_clapeyron!
+```

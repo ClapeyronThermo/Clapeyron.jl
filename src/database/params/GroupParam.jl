@@ -227,6 +227,15 @@ end
 
 #struct for n_groups_cache
 
+"""
+    MixedGCSegmentParam{T} <: ClapeyronParam
+
+Packed group/segment parameter container used by GC models.
+
+This type stores a compressed representation of group counts and segment
+information to speed up group-combining operations. It is typically created
+from a `GroupParam` via `MixedGCSegmentParam(group, ...)`.
+"""
 struct MixedGCSegmentParam{T} <: ClapeyronParam
     name::String
     components::Array{String,1}

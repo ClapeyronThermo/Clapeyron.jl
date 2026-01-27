@@ -59,6 +59,7 @@ translation = PenelouxTranslation(["neon","hydrogen"];userlocations = (;Vc = [4.
 PenelouxTranslation
 
 const RackettTranslation = PenelouxTranslation
+@doc (@doc PenelouxTranslation) RackettTranslation
 
 export PenelouxTranslation
 export RackettTranslation #for compatibility

@@ -11,8 +11,13 @@ Abstract type corresponding to a container of `ClapeyronParam`s.
 It supposes that all fields are `ClapeyronParam`s.
 """
 abstract type EoSParam end
-abstract type ParametricEoSParam{T} <: EoSParam end
 
+"""
+    ParametricEoSParam{T} <: EoSParam
+
+Abstract type for parameter containers parameterized by element type `T`.
+"""
+abstract type ParametricEoSParam{T} <: EoSParam end
 
 """
     OptionsParam <: ClapeyronParam

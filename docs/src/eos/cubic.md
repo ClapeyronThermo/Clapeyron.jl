@@ -111,8 +111,10 @@ Clapeyron.sCPAAlpha
 Clapeyron.MTAlpha
 Clapeyron.BMAlpha
 Clapeyron.TwuAlpha
+Clapeyron.Twu91Alpha
 Clapeyron.Twu88Alpha
 Clapeyron.PatelTejaAlpha
+Clapeyron.PTVAlpha
 Clapeyron.KUAlpha
 Clapeyron.RKPRAlpha
 Clapeyron.LeiboviciAlpha
@@ -124,7 +126,9 @@ Clapeyron.LeiboviciAlpha
 Clapeyron.translation
 Clapeyron.NoTranslation
 Clapeyron.ConstantTranslation
+Clapeyron.ClausiusTranslation
 Clapeyron.PenelouxTranslation
+Clapeyron.RackettTranslation
 Clapeyron.TVTPRTranslation
 Clapeyron.MTTranslation
 ```
