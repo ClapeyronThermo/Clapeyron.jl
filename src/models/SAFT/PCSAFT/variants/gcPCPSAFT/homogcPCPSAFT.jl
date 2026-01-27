@@ -99,7 +99,7 @@ function HomogcPCPSAFT(groups::GroupParam,params::Dict{String,ClapeyronParam};
     mw = params["Mw"]
     segment = params["segment"]
     _sigma = params["sigma"]
-    _sigma.values .= 1e-10
+    _sigma.values .*= 1e-10
     sigma = sigma_LorentzBerthelot(_sigma)
     epsilon = params["epsilon"] |> epsilon_LorentzBerthelot
     epsilon_assoc = params["epsilon_assoc"]
