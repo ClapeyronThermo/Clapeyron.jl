@@ -65,11 +65,11 @@ struct GroupParam <: GroupParameter
     components::Array{String,1}
     groups::Array{Array{String,1},1}
     grouptype::Symbol
-    n_groups::Array{Array{Int,1},1}
-    n_intergroups::Vector{Matrix{Int}}
-    i_groups::Array{Array{Int,1},1}
+    n_groups::Array{Array{Number,1},1}
+    n_intergroups::Vector{Matrix{Number}}
+    i_groups::Array{Array{Number,1},1}
     flattenedgroups::Array{String,1}
-    n_flattenedgroups::Array{Array{Int,1},1}
+    n_flattenedgroups::Array{Array{Number,1},1}
     sourcecsvs::Array{String,1}
 end
 
