@@ -118,6 +118,7 @@ Clapeyron.PTVAlpha
 Clapeyron.KUAlpha
 Clapeyron.RKPRAlpha
 Clapeyron.LeiboviciAlpha
+Clapeyron.MathiasCopemanAlpha
 ```
 
 ## Volume Translation Models
