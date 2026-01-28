@@ -29,11 +29,15 @@ Clapeyron.iPCSAFT
 
 ```@docs
 Clapeyron.SAFTVRMie
+Clapeyron.SAFTVRMieGV
 Clapeyron.SAFTVRMie15
 Clapeyron.SAFTVRQMie
 Clapeyron.SAFTVRSMie
 Clapeyron.SAFTgammaMie
+Clapeyron.SAFTγMie
 Clapeyron.structSAFTgammaMie
+Clapeyron.sSAFTgammaMie
+Clapeyron.sSAFTγMie
 Clapeyron.SAFTVRSW
 ```
 

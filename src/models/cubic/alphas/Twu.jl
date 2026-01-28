@@ -56,6 +56,7 @@ alpha = TwuAlpha(["neon","hydrogen"];
 TwuAlpha
 
 const Twu91Alpha = TwuAlpha
+@doc (@doc TwuAlpha) Twu91Alpha
 
 """
     Twu88Alpha::TwuAlpha

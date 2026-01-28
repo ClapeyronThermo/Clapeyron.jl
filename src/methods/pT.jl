@@ -933,6 +933,15 @@ function mixing(model::EoSModel, p, T, z, property::ℜ; phase=:unknown, threade
     return mix_prop::TT
 end
 
+"""
+    excess(model::EoSModel, p, T, z, property; phase=:unknown, threaded=true, vol0=nothing)
+
+Returns the excess value of a bulk property relative to its ideal mixing value.
+
+By default this delegates to [`mixing`](@ref). For some properties (e.g.
+`entropy` and `gibbs_free_energy`) specialized implementations are provided to
+use residual contributions.
+"""
 function excess(model::EoSModel, p, T, z, property; phase=:unknown, threaded=true, vol0=nothing)
     mixing(model, p, T, z, property; phase, threaded, vol0)
 end

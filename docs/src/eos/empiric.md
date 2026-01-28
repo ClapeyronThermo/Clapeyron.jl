@@ -88,6 +88,8 @@ Clapeyron.GERG2008
 Clapeyron.EOS_LNG
 Clapeyron.EOS_CG
 Clapeyron.HelmAct
+Clapeyron.TillnerRothFriend
+Clapeyron.TillnerRothModel
 ```
 
 ## Mixing Models

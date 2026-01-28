@@ -31,6 +31,8 @@ Clapeyron.cleartemp!
 ## Parameter types
 
 ```@docs
+Clapeyron.EoSParam
+Clapeyron.ParametricEoSParam
 Clapeyron.SingleParam
 Clapeyron.PairParam
 Clapeyron.AssocParam
@@ -67,12 +69,29 @@ Clapeyron.lambda_LorentzBerthelot!
 Clapeyron.lambda_squarewell!
 ```
 
+## Binary interaction parameters
+
+```@docs
+Clapeyron.get_k
+Clapeyron.get_l
+Clapeyron.set_k!
+Clapeyron.set_l!
+```
+
 ## Group Combining Rules
 
 ```@docs
 Clapeyron.group_sum
+Clapeyron.group_sum!
 Clapeyron.group_pairmean
+Clapeyron.group_pairmean!
 Clapeyron.group_matrix
+```
+
+## Group Segment Cache Types
+
+```@docs
+Clapeyron.MixedGCSegmentParam
 ```
 
 ## Model Splitting
