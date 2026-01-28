@@ -1,30 +1,22 @@
-# v0.6.20
+# v0.6.21
 
 ## New Features
+- `MultiPhaseTPFlash`: support for Gamma-Phi models
+- Cubics: translation now does not allocate in most cases.
+- New model: translated industrial PC-SAFT (`iPCSAFT`)
+- New model VTPR with temperature-dependent translation (`TVTPR`)
+- Electrolyte models: `mean_ionic_activity_coefficient` and `osmotic_coefficient` (and their saturated variants), can now be called directly without specifying salts, if the model forms binary salts. For example, (`osmotic_coefficient(model,p,T,m)`) is equivalent to(`osmotic_coefficient(model,salts,p,T,m)`), where `salts = Clapeyron.auto_binary_salts(model)`
+- `DHModel`: improved numerical stability of `a_dh` when the electrolyte concentrations are small.
+- 
+- association options can now be initialized directly from a symbol: (`PCSAFT(["water","ethanol"],assoc_options = :cr1)`)
 
-- revamp to Fugacity-based bubble/dew solvers. Improved speed of successive substitution iterations and support for Activity models.
-- Activity models: support for second-order Michelsen TP flash. in VLE and LLE equilibria
-- Activity models: support for QP/QT flash
-- Improved implicit differentiation for all solvers.
-- New method: thermodynamic factor (`thermodynamic_factor`)
-- New method: `eos_repr`, to create parseable julia code capable of reproducing a model
-- `BACKSAFT`: support for multicomponent mixtures.
-- `crit_pure`: improved convergence.
-- CoolProp: support for CoolProp 7.2
-- Association: removed small static solvers for sizes 2-5 due to compilation slowdown.
-- Cubics: improved robustness in the volume solver
-- PCSAFT: improved robustness in the volume solver at low temperatures
+## package deprecations
 
-## Method deprecations
-
-- `ActivityDewTemperature` and `ActivityBubbleTemperature` were removed, `FugBubbleTemperature` and `FugDewTemperature` are now the default for activity methods, with proper support for non-condensables/non-volatiles
-- `DETPFlash` now uses another global optimizer, self-adaptive spherical search algorithm, with the main intention of dropping `BlackBoxOptim` as a dependency.
+- JSON3.jl was removed in favour of JSON.jl
 
 ## Bug fixes
+- `AntoineSaturation` now uses SI units
+- fixes in `PenelouxTranslation` (inverted parameters for PR and RK models)
+- Patel-Teja: the correlation for ζc is used first instead of the experimental critical volume
+- Various documentation improvements
 
-- Convergence failure in Michelsen TP flash when `equilibrium = :unknown` and LLE was detected.
-- Fixes on `MultiphaseTPFlash`
-- Various fixes on `saturation_pressure` initial points
-- Fixed an extra `RT` division in `Obj_de_tp_flash`; it now returns the molar reduced Gibbs energy `G/(nRT)`.
-- `__eval_G_DETPFlash(model::EoSModel, p, T, ni, equilibrium)` now returns reduced Gibbs energy, consistent with the `PTFlashWrapper` overload.
-- `gammaphi_gibbs` now handles unnormalized inputs (mole amounts) correctly and always returns a `(g, v)` tuple for empty phases.

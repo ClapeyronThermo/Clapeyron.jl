@@ -15,6 +15,20 @@ function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
     return solve_cubic_eq(tup)
 end
 
+function depress_cubic(coeffs::NTuple{4,T}) where T
+    third = one(T)/3
+    a1  = one(T) / coeffs[4]
+    E1,E2,E3  = -coeffs[3]*a1, coeffs[2]*a1, -coeffs[1]*a1
+    E12 = E1*E1
+    q_poly = (E3,-third*E2,zero(T),T(2/27))
+    q = -evalpoly(E1,q_poly)
+    if true || abs(q) < 10*eps(typeof(q))
+        q = -det_22(2*E1,E12,9*E1,E2)/27 - E3
+    end
+    p = -det_22(E1,E1,3,E2)/3
+    return p,q
+end
+
 function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
     # copied from PolynomialRoots.jl, adapted to be AD friendly
     # Cubic equation solver for complex polynomial (degree=3)
@@ -24,20 +38,10 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
     _1 = one(T)
     third = _1/3
     a1  = one(T) / poly[4]
-    E1  = -poly[3]*a1
-    E2  = poly[2]*a1
-    E3  = -poly[1]*a1
-    s0  = E1
-    E12 = E1*E1
-    Ap = (27*E3,-9*E2,zero(T),T(2))
-    A = evalpoly(E1,Ap) #TODO: compensated arithmetic evalpoly really needed
-
-    if abs(A) < 10*eps(typeof(A))
-        A = det_22(2*E1,E12,9*E1,E2) + 27*E3
-    end
-    #A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
-    B = det_22(E1,E1,3,E2)
-    #B   = E12 - 3*E2                 # = s1 s2
+    E1,E2,E3  = -poly[3]*a1, poly[2]*a1, -poly[1]*a1
+    s0 = E1
+    p,q = depress_cubic(poly)
+    A,B = -27q,-3p
     # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
     Δ2p = (4*E2*E2*E2 + 27*E3*E3,-18*E2*E3,-E2*E2,4*E3)
     Δ2 = 27*evalpoly(E1,Δ2p) #TODO: compensated arithmetic evalpoly really needed
@@ -46,6 +50,7 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
         Δ2 = 27*dot(E1p,Δ2p)
     end
     Δ = Base.sqrt(complex(Δ2))
+    @show Δ
     #Δ = (A*A - 4*B*B*B)^0.5
     if real(A*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
         s10 = 0.5 * (A + Δ)
@@ -54,6 +59,8 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
     end
     r = abs(s10)
     θ = angle(s10)
+    @show θ
+    @show r
     s1 =  cbrt(r) * cis(θ * third)
     if s1 == 0
         s2 = s1
@@ -74,28 +81,21 @@ function solve_real_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
     _1 = one(T)
     third = _1/3
     a1  = one(T) / poly[4]
-    E1  = -poly[3]*a1
-    E2  = poly[2]*a1
-    E3  = -poly[1]*a1
-    s0  = E1
-    E12 = E1*E1
-    Ap = (27*E3,-9*E2,zero(T),T(2))
-    A = evalpoly(E1,Ap)
-
-    if abs(A) < 10*eps(typeof(A))
-        A = det_22(2*E1,E12,9*E1,E2) + 27*E3
-    end
-    #A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
-    B = det_22(E1,E1,3,E2)
-    #B   = E12 - 3*E2                 # = s1 s2
+    E1,E2,E3  = -poly[3]*a1, poly[2]*a1, -poly[1]*a1
+    s0 = E1
+    p,q = depress_cubic(poly)
+    A,B = -27q,-3p
+    @show A,B
     # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
+    #Δ2 = A*A - 4*B*B*B
     Δ2p = (4*E2*E2*E2 + 27*E3*E3,-18*E2*E3,-E2*E2,4*E3)
     Δ2 = 27*evalpoly(E1,Δ2p)
     if Δ2 < 10*eps(typeof(A))
         E1p = (one(E1),E1,E1*E1,E1*E1*E1)
         Δ2 = 27*dot(E1p,Δ2p)
     end
-
+    @show Δ2
+    @show A*A - 4*B*B*B
     if Δ2 > 0 #1 root only
         Δr = sqrt(Δ2)
         if A >= 0
@@ -114,7 +114,9 @@ function solve_real_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
     end
 
     #2 or 3 roots
+    
     Δ = Base.sqrt(complex(Δ2))
+  
     #Δ = (A*A - 4*B*B*B)^0.5
     if real(A*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
         s10 = 0.5 * (A + Δ)
@@ -145,7 +147,7 @@ function solve_real_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
     a  = poly[1]*a1
     b  = poly[2]*a1
     c  = poly[3]*a1
-    
+
     for i in 1:0
         Zmin_old,Zmid_old,Zmax_old = Zmin,Zmid,Zmax
         Zmax = 0.5*Zmax -0.5*a/(Zmin*Zmid)
@@ -153,7 +155,7 @@ function solve_real_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
         Zmin = 0.5*Zmin - 0.5*c - 0.5*(Zmax + Zmid)
         if abs(1 - Zmin_old/Zmin) < 8eps(typeof(Zmin))
             break
-        end  
+        end
     end =#
     return Zmin,Zmid,Zmax
 
@@ -321,3 +323,158 @@ function hermite3_poly(f,x0,x1)
     f1,df1 = f∂f(f,x1)
     return hermite3_poly(x0,x1,f0,f1,df0,df1)
 end
+
+function real_roots2(coeffs)
+    c,b,a = coeffs
+    Δ = det_22(b,b,4*a,c)
+    z0 = -b/(2*a)
+    if Δ <= 0
+        return 1,z0,z0
+    else
+        Δ2 = Base.sqrt(Δ)
+        dz = Δ2/(2*a)
+        if b >= 0
+            x1,x2 = minmax(z0 - dz,2*c/(-b - Δ2))
+            return 2,x1,x2
+        else
+            x1,x2 = minmax(z0 + dz,2*c/(-b + Δ2))
+            return 2,x1,x2
+        end
+    end
+end
+
+function real_roots_qr(poly,static = false)
+    p0,p1,p2,p3 = poly
+    p3_inv = 1/p3
+    d1 = p2*p3_inv
+    d2 = p1*p3_inv
+    d3 = p0*p3_inv
+    M = [-d1 -d2 -d3
+        1.0 0.0 0.0
+        0.0 1.0 0.0]
+    display(M)
+    if static
+        return roots3_static(M)
+    else
+        return eigvals(M)
+    end
+end
+
+function roots3_static(A)
+    #implementation of
+    #NUMERICALLY STABLE EVALUATION OF CLOSED-FORM EXPRESSIONS FOR EIGENVALUES OF 3 × 3 MATRICES
+    #https://arxiv.org/abs/2511.00292
+
+    #I1 invariant
+    I1 = A[1,1] + A[2,2] + A[3,3]
+
+    #I2 invariant
+    d0 = A[1,1] - A[2,2]
+    d1 = A[1,1] - A[3,3]
+    d2 = A[2,2] - A[3,3]
+    offdiag_J2_vec = (A[1,2]*A[2,1],A[1,3]*A[3,1],A[2,3]*A[3,2])
+    offdiag_J2 = sum(offdiag_J2_vec)
+    diag_J2 = (d0^2 + d1^2 + d2^2)/6
+    J2 = offdiag_J2 + diag_J2
+    S = A - (tr(A)/3)*LinearAlgebra.I(3)
+    J22 = 0.5*tr(S*S)
+    @show J2-J22
+    #J3 invariant
+    t1 = d1 + d2
+    t2 = d0 - d2
+    t3 = -d0 - d1
+    offdiag_J3 = A[1,2]*A[2,3]*A[3,1] + A[1,3]*A[2,1]*A[3,2]
+    mixed_J3  =dot(offdiag_J2_vec,(t1,t2,t3))/3
+    diag_J3 = t1*t2*t3/27
+    J3 = offdiag_J3 + mixed_J3 - diag_J3
+    J33 = det(S)
+    #@show J3-J33
+    #discriminant invariant
+    #Δ = 4*J2*J2*J2 - 27*J3*J3
+    #Δ = 4/27B^3 - A*A/27
+    u = eig3_DX2(A)
+    v = eig3_DX2(transpose(A))
+    Δ = zero(J3)
+    w = (9,6,6,6,8,8,8,2,2,2,2,2,2,1)
+
+    for i in 1:14
+        @show u[i]*v[i]*w[i]
+        Δ += u[i]*v[i]*w[i]
+    end
+    #@show Δ
+    #@show 4*J2^3 - 27*J3^2
+    A = J3*27
+    B = J2*3
+    #@show A,B
+    Δ = 4*J2*J2*J2 - 27*J3*J3
+    #@show (A*A - 4*B*B*B)
+    t = sqrt(27*complex(Δ))/(27*J3)
+    ϕ = atan(t)
+    k = 2*sqrt(3*complex(J2))
+    λ1 = I1 + k*cos((ϕ + 2π)/3)
+    λ2 = I1 + k*cos((ϕ + 4π)/3)
+    λ3 = I1 + k*cos(ϕ/3)
+    return [λ1/3,λ2/3,λ3/3]
+end
+
+function eig3_DX2(A)
+    A00,A11,A22 = A[1,1],A[2,2],A[3,3]
+    A01,A02,A12 = A[1,2],A[1,3],A[2,3]
+    A10,A20,A21 = A[2,1],A[3,1],A[2,3]
+    d0 = A00 - A11
+    d1 = A00 - A22
+    d2 = A11 - A22
+    r0 = A01 * A12 * A20 - A02 * A10 * A21
+    r1 = -A01 * A02 * d2 + A01 * A01 * A12 -
+                A02 * A02 * A21
+    r2 = A01 * A21 * d1 - A01 * A01 * A20 +
+                A02 * A21 * A21
+    r3 = A02 * A12 * d0 + A01 * A12 * A12 -
+                A02 * A02 * A10
+    r4 = A01 * A12 * d1 - A01 * A02 * A10 +
+                A02 * A12 * A21
+    r5 = A02 * A21 * d0 - A01 * A02 * A20 +
+                A01 * A12 * A21
+    r6 = -A02 * A10 * d2 + A01 * A10 * A12 -
+                A02 * A12 * A20
+    r7 = A12 * d0 * d1 - A02 * A10 * d1 +
+                A01 * A10 * A12 - A12 * A12 * A21
+    r8 = A12 * d0 * d1 - A02 * A10 * d0 +
+                A02 * A12 * A20 - A12 * A12 * A21
+    r9 = A01 * d1 * d2 + A02 * A21 * d2 +
+                A01 * A02 * A20 - A01 * A01 * A10
+    r10 = A01 * d1 * d2 + A02 * A21 * d1 +
+                A01 * A12 * A21 - A01 * A01 * A10
+    r11 = -A02 * d0 * d2 + A01 * A12 * d0 +
+                A02 * A12 * A21 - A02 * A02 * A20
+    r12 = A02 * d0 * d2 + A01 * A12 * d2 -
+                A01 * A02 * A10 + A02 * A02 * A20
+    r13 = d0 * d1 * d2 - A01 * A10 * d0 + A02 * A20 * d1 -
+                A12 * A21 * d2
+    return (r0,r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13)
+end
+
+function eig3_DX(A)
+    A00,A11,A22 = A[1,1],A[2,2],A[3,3]
+    A01,A02,A12 = A[1,2],A[1,3],A[2,3]
+    A10,A20,A21 = A[2,1],A[3,1],A[2,3]
+    d0 = A00 - A11
+    d1 = A00 - A22
+    d2 = A11 - A22
+    r1 = A01*A12*A20 − A02*A10*A21
+    r2 = −A01*A02*d2 +(A01^2)*A12 −(A02^2)*A21
+    r3 = A01*A21*d1 −(A01^2)*A20 + A02*(A21^2)
+    r4 = A02*A12*d0 + A01*(A12^2) −(A02^2)*A10
+    r5 = A01*A12*d1 − A01*A02*A10 + A02*A12*A21
+    r6 = A02*A21*d0 − A01*A02*A20 + A01*A12*A21
+    r7 = −A02*A10*d2 + A01*A10*A12 − A02*A12*A20
+    r8 = A12*d0*d1 − A02*A10*d1 + A01*A10*A12 −(A12^2)*A21
+    r9 = A12*d0*d1 − A02*A10*d0 + A02*A12*A20 −(A12^2)*A21
+    r10 = A01*d1*d2 − A02*A21*d2 + A01*A02*A20 −(A01^2)*A10
+    r11 = A01*d1*d2 + A02*A21*d1 + A01*A12*A21 −(A01^2)*A10
+    r12 = −A02*d0*d2 + A01*A12*d0 + A02*A12*A21 −(A02^2)*A20
+    r13 = A02*d0*d2 + A01*A12*d2 − A01*A02*A10 +(A02^2)*A20
+    r14 = d0*d1*d2 − A01*A10*d0 + A02*A20*d1 − A12*A21*d2
+    r = (r1,r2,r3,r4,r5,r6,r7,r8,r9,r10,r11,r12,r13,r14)
+    return r
+end 

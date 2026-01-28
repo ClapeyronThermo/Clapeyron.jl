@@ -36,7 +36,6 @@ Clapeyron.VanLaar
 Clapeyron.Wilson
 Clapeyron.tcPRWilsonRes
 Clapeyron.NRTL
-Clapeyron.eNRTL
 Clapeyron.aspenNRTL
 Clapeyron.UNIQUAC
 ```
