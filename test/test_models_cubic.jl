@@ -36,6 +36,12 @@
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2640228781328529 rtol = 1e-6
         end
 
+        @testset "SRK w/ MathiasCopemanAlpha" begin
+            alpha = MathiasCopemanAlpha("perfluorohexane", userlocations=(;c1=[1.108], c2=[-0.408], c3=[1.258]))
+            system = SRK("perfluorohexane"; alpha)
+            @test pressure(system, 0.000228, 300.) ≈ 579083. rtol = 1e-4
+        end
+
         @testset "PSRK" begin
             system = PSRK(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2301592550760436 rtol = 1e-6
