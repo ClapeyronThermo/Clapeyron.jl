@@ -68,7 +68,7 @@ end
 function model500()
 
 #created via eos_repr
-return SAFTgammaMie{BasicIdeal, Float64}(
+return SAFTgammaMie{BasicIdeal, Float64, Int64}(
         ["DIMETHYLAMINE"], 
         GroupParam(["DIMETHYLAMINE"], [["NH", "CH3"]], :unknown, [[1, 2]], [Matrix{Int64}(undef, 0, 0)], [[2, 1]], ["CH3", "NH"], [[2, 1]], String[]), 
         SiteParam(["CH3", "NH"], [String[], ["H", "e1"]], Clapeyron.PackedVofV([1, 1, 3], [1, 1]), [Int64[], [1, 2]], ["H", "e1", "e2"], [[0, 0, 0], [1, 1, 0]], [[0, 0, 0], [1, 2, 0]], String[], nothing), 
