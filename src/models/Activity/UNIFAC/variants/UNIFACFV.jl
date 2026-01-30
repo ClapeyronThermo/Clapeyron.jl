@@ -40,9 +40,9 @@ end
 
 abstract type UNIFACFVModel <: ActivityModel end
 
-struct UNIFACFV{c<:EoSModel} <: UNIFACFVModel
+struct UNIFACFV{c<:EoSModel,G} <: UNIFACFVModel
     components::Array{String,1}
-    groups::GroupParam
+    groups::GroupParam{G}
     params::UNIFACFVParam
     puremodel::EoSVectorParam{c}
     references::Array{String,1}

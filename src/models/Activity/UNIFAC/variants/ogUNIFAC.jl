@@ -6,9 +6,9 @@ end
 
 abstract type ogUNIFACModel <: UNIFACModel end
 
-struct ogUNIFAC{c<:EoSModel} <: ogUNIFACModel
+struct ogUNIFAC{c<:EoSModel,G} <: ogUNIFACModel
     components::Array{String,1}
-    groups::GroupParam
+    groups::GroupParam{G}
     params::ogUNIFACParam
     puremodel::EoSVectorParam{c}
     references::Array{String,1}

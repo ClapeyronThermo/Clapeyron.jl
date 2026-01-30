@@ -8,9 +8,9 @@ end
 
 abstract type UNIFACModel <: ActivityModel end
 
-struct UNIFAC{c<:EoSModel} <: UNIFACModel
+struct UNIFAC{c<:EoSModel,G} <: UNIFACModel
     components::Array{String,1}
-    groups::GroupParam
+    groups::GroupParam{G}
     params::UNIFACParam
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
