@@ -96,14 +96,20 @@ function HomogcPCPSAFT(groups::GroupParam,params::Dict{String,ClapeyronParam};
 
     components = groups.components
     sites = params["sites"]
+    
     mw = params["Mw"]
+    
     segment = params["segment"]
+    
     _sigma = params["sigma"]
     _sigma.values .*= 1e-10
+    
     sigma = sigma_LorentzBerthelot(_sigma)
     epsilon = params["epsilon"] |> epsilon_LorentzBerthelot
+    
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    
     dipole = params["dipole"]
     dipole2 = SingleParam("Dipole squared", groups.flattenedgroups, dipole.^2 ./ k_B*1e-36*(1e-10*1e-3))
 
@@ -136,21 +142,26 @@ function PCPSAFT(groups::GroupParam,
 
     components = groups.components
     mw = group_sum(groups,param.Mw)
+
+    #m(i) = ∑n(ik)*m(ik)
     segment = group_sum(groups,param.segment)
-    gc_sigma3 = param.sigma .^3
-    sigma = SingleParam("sigma",components,group_sum(groups,gc_sigma3))
+    
+    #m(i)*(σ(i))^3 = ∑n(ik)*m(ik)*σ(ik)^3
+    gc_msigma3 = param.sigma .^3 .* param.segment
+    sigma = SingleParam("sigma",components,group_sum(groups,gc_msigma3))
     sigma.values ./= segment.values
     sigma.values .= cbrt.(sigma.values)
     sigma = sigma_LorentzBerthelot(sigma)
 
+    #m(i)*ϵ(i) = ∑n(ik)*m(ik)*ϵ(ik)
     k = group_pairmean2(groups,param.k)
-    gc_epsilon = SingleParam("epsilon",groups.flattenedgroups,diagvalues(param.epsilon))
-    gc_epsilon.values .*= param.segment.values
-    epsilon = group_sum(groups,gc_epsilon)
+    gc_mepsilon = diagvalues(param.epsilon) .* param.segment.values
+    epsilon = SingleParam("epsilon",components,group_sum(groups,gc_mepsilon))
     epsilon.values ./= segment.values
     epsilon = epsilon_LorentzBerthelot(epsilon,k)
 
-    dipole2 = SingleParam("Dipole squared",components, group_sum(groups,param.dipole2 ./ param.segment))
+    _dipole2 = group_sum(groups,param.dipole2.values)
+    dipole2 = SingleParam("Dipole squared",components, _dipole2 ./ segment.values)
     dipole = SingleParam("Dipole",components, sqrt.(dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3)))
 
     comp_sites = gc_to_comp_sites(sites,groups)
@@ -175,14 +186,19 @@ function recombine_impl!(model::HomogcPCPSAFTModel)
     #recombine outer params
     sigma_LorentzBerthelot!(gcparams.sigma)
     epsilon_LorentzBerthelot!(gcparams.epsilon)
+
     gcparams.dipole2 .= gcparams.dipole.^2 ./ k_B*1e-36*(1e-10*1e-3)
-    
+    group_sum!(params.dipole2,groups,gcparams.dipole2)
+    params.dipole2.values ./= params.segment 
+    params.dipole .= sqrt.(params.dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3))
+ 
     #recombine inner PCP model
     mw = group_sum!(params.Mw,groups,gcparams.Mw)
     segment = group_sum!(params.segment,groups,gcparams.segment)
-    gc_sigma3 = gcparams.sigma .^3
+
+    gc_msigma3 = gcparams.sigma .^3 .* gcparams.segment
     sigma_diag = diagvalues(params.sigma)
-    group_sum!(sigma_diag,groups,gc_sigma3)
+    group_sum!(sigma_diag,groups,gc_msigma3)
     sigma_diag ./= segment.values
     sigma_diag .= cbrt.(sigma_diag)
     sigma_LorentzBerthelot!(params.sigma)
@@ -192,7 +208,6 @@ function recombine_impl!(model::HomogcPCPSAFTModel)
     epsilon = group_sum!(params.epsilon,groups,gc_mepsilon)
     diagvalues(epsilon.values) ./= segment.values
     epsilon_LorentzBerthelot!(epsilon,k)
-
 
     group_sum!(params.dipole2,groups,gcparams.dipole2 ./ gcparams.segment)
     params.dipole .= sqrt.(params.dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3))
