@@ -61,19 +61,19 @@ julia> grouplist = [
 ```
 In this case, `SAFTGammaMie` files support the second order group `CH2OH`.
 """
-struct GroupParam <: GroupParameter
+struct GroupParam{T<:Number} <: GroupParameter
     components::Array{String,1}
     groups::Array{Array{String,1},1}
     grouptype::Symbol
-    n_groups::Array{Array{<:Number,1},1}
-    n_intergroups::Vector{Matrix{<:Number}}
-    i_groups::Array{Array{<:Number,1},1}
+    n_groups::Array{Array{T,1},1}
+    n_intergroups::Vector{Matrix{T}}
+    i_groups::Array{Array{Int,1},1}
     flattenedgroups::Array{String,1}
-    n_flattenedgroups::Array{Array{<:Number,1},1}
+    n_flattenedgroups::Array{Array{T,1},1}
     sourcecsvs::Array{String,1}
 end
 
-function GroupParam(input::PARSED_GROUP_VECTOR_TYPE)
+function GroupParam(input::Vector{Tuple{String, Vector{Pair{String,T}}}}) where {T<:Number}
     return GroupParam(input,:unknown,String[])
 end
 
@@ -148,7 +148,7 @@ function recombine!(param::GroupParameter)
     return param
 end
 
-function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype,sourcecsvs::Vector{String},gc_intragroups=nothing)
+function GroupParam(input::Vector{Tuple{String, Vector{Pair{String,T}}}},grouptype,sourcecsvs::Vector{String},gc_intragroups=nothing) where {T<:Number}
     grouptype = Symbol(grouptype)
     components = [first(i) for i ∈ input]
     raw_groups = [last(i) for i ∈ input]
@@ -159,15 +159,20 @@ function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype,sourcecsvs::Vector
     n_flattenedgroups = Vector{Vector{Int}}(undef,0)
     empty_intergroup = fill(0,(0,0)) #0x0 Matrix{Int}
     n_intergroups = fill(empty_intergroup,length(components))
-    param = GroupParam(components,
-    groups,
-    grouptype,
-    n_groups,
-    n_intergroups,
-    i_groups,
-    flattenedgroups,
-    n_flattenedgroups,
-    sourcecsvs)
+
+    _neltype(x) = eltype(eltype(x))     # nested eltype
+    _T = promote_type(_neltype(n_groups), _neltype(n_intergroups), _neltype(i_groups), _neltype(n_flattenedgroups))
+    param = GroupParam{_T}(
+        components,
+        groups,
+        grouptype,
+        n_groups,
+        n_intergroups,
+        i_groups,
+        flattenedgroups,
+        n_flattenedgroups,
+        sourcecsvs
+    )
     n_intergroups
     #do the rest of the work here
     if gc_intragroups != nothing
