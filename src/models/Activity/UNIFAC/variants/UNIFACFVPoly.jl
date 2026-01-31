@@ -9,9 +9,9 @@ end
 
 abstract type UNIFACFVPolyModel <: UNIFACFVModel end
 
-struct UNIFACFVPoly{c<:EoSModel} <: UNIFACFVPolyModel
+struct UNIFACFVPoly{c<:EoSModel,G} <: UNIFACFVPolyModel
     components::Array{String,1}
-    groups::GroupParam
+    groups::GroupParam{G}
     params::UNIFACFVPolyParam
     puremodel::EoSVectorParam{c}
     references::Array{String,1}

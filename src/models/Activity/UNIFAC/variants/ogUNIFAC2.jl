@@ -1,6 +1,6 @@
-struct ogUNIFAC2{c<:EoSModel} <: ogUNIFACModel
+struct ogUNIFAC2{c<:EoSModel,G} <: ogUNIFACModel
     components::Array{String,1}
-    groups::GroupParam
+    groups::GroupParam{G}
     params::ogUNIFACParam
     puremodel::EoSVectorParam{c}
     references::Array{String,1}

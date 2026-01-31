@@ -1,8 +1,8 @@
 abstract type VTPRUNIFACModel <: UNIFACModel end
 
-struct VTPRUNIFAC{c<:EoSModel} <: VTPRUNIFACModel
+struct VTPRUNIFAC{c<:EoSModel,G} <: VTPRUNIFACModel
     components::Array{String,1}
-    groups::GroupParam
+    groups::GroupParam{G}
     params::UNIFACParam
     puremodel::EoSVectorParam{c}
     references::Array{String,1}

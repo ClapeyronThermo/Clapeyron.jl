@@ -5,8 +5,8 @@ struct PPR78Param <: EoSParam
     B::PairParam{Float64}
 end
 
-struct PPR78Rule <: PPR78RuleModel
-    groups::GroupParam
+struct PPR78Rule{G} <: PPR78RuleModel
+    groups::GroupParam{G}
     components::Vector{String}
     params::PPR78Param
     references::Vector{String}

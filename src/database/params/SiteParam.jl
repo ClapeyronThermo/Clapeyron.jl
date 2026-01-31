@@ -122,7 +122,7 @@ function SiteParam(pairs::Dict{String,SingleParam{Int}},allcomponentsites)
     return SiteParam(components,sites,n_sites,sourcecsvs)
 end
 
-function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs=String[])
+function SiteParam(input::Vector{Tuple{String, Vector{Pair{String,T}}}},sourcecsvs=String[]) where {T<:Number}
     components = [first(i) for i ∈ input]
     raw_sites = [last(i) for i ∈ input]
     sites = [first.(sitepairs) for sitepairs ∈ raw_sites]
