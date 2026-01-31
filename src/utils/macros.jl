@@ -144,7 +144,7 @@ function __sum_add_variables(cache,expr::Expr)
     elseif expr.head == :call
         for i in 2:length(expr.args)
             __sum_add_variables(cache,expr.args[i])
-        end     
+        end
     end
 end
 
@@ -302,21 +302,18 @@ function __struct_expr!(name,parent,paramstype;idealmodel = true,sites = true,gr
     return struct_expr
 end
 
-function __newmodel_is_idealmodel(parent)
+function __newmodel_is_idealmodel(parent,mod)
     #MyIdealModel <: IdealModel
-    if parent isa Symbol 
-        res = @eval begin
-            $parent <: IdealModel
-        end
+    return true
+
+    if parent isa Symbol
+        res = getfield(mod,parent) <: Clapeyron.IdealModel
         return !res
     end
-    
+
     #MyIdealModel{T} <: IdealModel
-    if parent isa Expr && parent.head == :curly 
-        parent_raw = parent.args[1]
-        res = @eval begin
-            $parent_raw <: IdealModel
-        end
+    if parent isa Expr && parent.head == :curly
+        res = getfield(mod,parent.args[1]) <: Clapeyron.IdealModel
         return !res
     end
 
@@ -348,7 +345,8 @@ The Struct consists of the following fields:
 See the tutorial or browse the implementations to see how this is used.
 """
 macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = false)
-    idealmodel = __newmodel_is_idealmodel(parent)
+
+    idealmodel = __newmodel_is_idealmodel(parent,__module__)
     struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = idealmodel,groups = true,sites = sitemodel)
     res = if sitemodel
         quote
@@ -436,7 +434,7 @@ end
 ```
 """
 macro newmodel(name, parent, paramstype,sitemodel = true)
-    idealmodel = __newmodel_is_idealmodel(parent)
+    idealmodel = __newmodel_is_idealmodel(parent,__module__)
     struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = idealmodel,groups = false,sites = sitemodel)
 
     res = if sitemodel
@@ -758,14 +756,14 @@ function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,Cl
     end
 
     #build idealmodel, if needed
-    
+
     if hasfield(M,:idealmodel)
         if has_reference_state(idealmodel)
             #=
             we want to execute set_reference_state!(model) only once (ideal models don't have)
             saturation information so some standard states cannot be initialized.
-            
-            To avoid this, we set the input reference state to :no_set, and then we reset it to the 
+
+            To avoid this, we set the input reference state to :no_set, and then we reset it to the
             input value. with this strategy, we can differenciate between standalone ideal models and
             ideal models stored inside a residual model.
             =#
