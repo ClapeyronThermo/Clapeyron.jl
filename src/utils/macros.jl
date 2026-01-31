@@ -232,25 +232,96 @@ function transform_params(M,params,components_or_groups,verbose)
 end
 
 
-function __struct_expr!(name,paramstype,idealmodel = true)
+function __struct_expr!(name,parent,paramstype;idealmodel = true,sites = true,groups = true)
+
+    parametric_param = paramstype isa Expr && paramstype.head == :curly
+
     if idealmodel
-        struct_expr = :($name{I <: IdealModel})
+        struct_head = :($name{I <: IdealModel})
     elseif !idealmodel && paramstype isa Symbol
-        struct_expr = name
+        struct_head = name
     else
-        struct_expr = :($name{XX})
-        popat!(struct_expr.args,length(struct_expr.args))
+        struct_head = :($name{XX})
+        popat!(struct_head.args,length(struct_head.args))
     end
-    if paramstype isa Expr && paramstype.head == :curly
-        append!(struct_expr.args,paramstype.args[2:end])
+
+    if parametric_param
+        append!(struct_head.args,paramstype.args[2:end])
         curly_args = paramstype.args
+        if length(curly_args) == 2
+            PARAM_LETTER = curly_args[2]
+        else
+            PARAM_LETTER = :ERROR
+        end
+
         for i in 1:length(curly_args)
             if curly_args[i] isa Expr && curly_args[i].head == :<:
                 curly_args[i] = curly_args[i].args[1]
             end
         end
+    else
+        PARAM_LETTER = :ERROR
     end
+
+    struct_expr = :(struct $struct_head <: $parent components::Vector{String} end)
+
+
+    struct_fields = struct_expr.args[3].args
+    if groups
+        if parametric_param
+            push!(struct_fields,:(groups::Clapeyron.GroupParam))
+            #=
+            if PARAM_LETTER != :ERROR
+                push!(struct_fields,:(groups::Clapeyron.GroupParam{$PARAM_LETTER}))
+            else
+                throw(error("@newmodel error: cannot get correct parametric param type from expr"))
+            end
+            =#
+            #
+        else
+            push!(struct_fields,:(groups::Clapeyron.GroupParam))
+        end
+    end
+
+    if sites
+        push!(struct_fields,:(sites::Clapeyron.SiteParam))
+    end
+
+    push!(struct_fields,:(params::$paramstype))
+
+    if idealmodel
+        push!(struct_fields,:(idealmodel::I))
+    end
+
+    if sites
+        push!(struct_fields,:(assoc_options::Clapeyron.AssocOptions))
+    end
+
+    push!(struct_fields,:(references::Vector{String}))
+
     return struct_expr
+end
+
+function __newmodel_is_idealmodel(parent)
+    #MyIdealModel <: IdealModel
+    if parent isa Symbol 
+        res = @eval begin
+            $parent <: IdealModel
+        end
+        return !res
+    end
+    
+    #MyIdealModel{T} <: IdealModel
+    if parent isa Expr && parent.head == :curly 
+        parent_raw = parent.args[1]
+        res = @eval begin
+            $parent_raw <: IdealModel
+        end
+        return !res
+    end
+
+    #err on the side of caution
+    return true
 end
 
 """
@@ -277,25 +348,11 @@ The Struct consists of the following fields:
 See the tutorial or browse the implementations to see how this is used.
 """
 macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = false)
-    
-    if use_struct_param
-        grouptype = :StructGroupParam
-    else
-        grouptype = :GroupParam
-    end
-
-    struct_expr = __struct_expr!(name,paramstype)
+    idealmodel = __newmodel_is_idealmodel(parent)
+    struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = idealmodel,groups = true,sites = sitemodel)
     res = if sitemodel
         quote
-            struct $struct_expr <: $parent
-                components::Array{String,1}
-                groups::Clapeyron.$grouptype
-                sites::Clapeyron.SiteParam
-                params::$paramstype
-                idealmodel::I
-                assoc_options::Clapeyron.AssocOptions
-                references::Array{String,1}
-            end
+            $struct_expr
 
             function $name(components;
                 idealmodel = Clapeyron.BasicIdeal,
@@ -321,13 +378,7 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = fa
         end
     else
         quote
-            struct $struct_expr <: $parent
-                components::Array{String,1}
-                groups::Clapeyron.$grouptype
-                params::$paramstype
-                idealmodel::I
-                references::Array{String,1}
-            end
+            $struct_expr
 
             function $name(components;
                 idealmodel = Clapeyron.BasicIdeal,
@@ -385,19 +436,12 @@ end
 ```
 """
 macro newmodel(name, parent, paramstype,sitemodel = true)
-    
-    struct_expr = __struct_expr!(name,paramstype)
+    idealmodel = __newmodel_is_idealmodel(parent)
+    struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = idealmodel,groups = false,sites = sitemodel)
 
     res = if sitemodel
         quote
-            struct $struct_expr <: $parent
-                components::Array{String,1}
-                sites::Clapeyron.SiteParam
-                params::$paramstype
-                idealmodel::I
-                assoc_options::Clapeyron.AssocOptions
-                references::Array{String,1}
-            end
+            $struct_expr
 
             function $name(components;
                 idealmodel = Clapeyron.BasicIdeal,
@@ -422,12 +466,7 @@ macro newmodel(name, parent, paramstype,sitemodel = true)
         end
     else
         quote
-            struct $struct_expr <: $parent
-                components::Array{String,1}
-                params::$paramstype
-                idealmodel::I
-                references::Array{String,1}
-            end
+            $struct_expr
 
             function $name(components;
                 idealmodel = Clapeyron.BasicIdeal,
@@ -460,13 +499,9 @@ Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
 """
 macro newmodelsimple(name, parent, paramstype)
-    struct_expr = __struct_expr!(name,paramstype,false)
+    struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = false,groups = false,sites = false)
     return quote
-        struct $struct_expr <: $parent
-            components::Array{String,1}
-            params::$paramstype
-            references::Array{String,1}
-        end
+        $struct_expr
 
         function $name(components;userlocations = String[],reference_state = nothing,verbose = false)
             Clapeyron.build_eosmodel($name,components,nothing,userlocations,nothing,nothing,verbose,nothing,reference_state)
