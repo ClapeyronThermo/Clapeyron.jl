@@ -344,8 +344,8 @@ The Struct consists of the following fields:
 See the tutorial or browse the implementations to see how this is used.
 """
 macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = false)
-
-    is_idealmodel = __newmodel_is_idealmodel(parent,__module__)
+    mod = __module__
+    is_idealmodel = __newmodel_is_idealmodel(parent,mod)
     struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = !is_idealmodel,groups = true,sites = sitemodel)
     res = if sitemodel
         quote
@@ -433,7 +433,8 @@ end
 ```
 """
 macro newmodel(name, parent, paramstype,sitemodel = true)
-    is_idealmodel = __newmodel_is_idealmodel(parent,__module__)
+    mod = __module__
+    is_idealmodel = __newmodel_is_idealmodel(parent,mod)
     struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = !is_idealmodel,groups = false,sites = sitemodel)
 
     res = if sitemodel
