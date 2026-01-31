@@ -304,17 +304,16 @@ end
 
 function __newmodel_is_idealmodel(parent,mod)
     #MyIdealModel <: IdealModel
-    return true
 
     if parent isa Symbol
         res = getfield(mod,parent) <: Clapeyron.IdealModel
-        return !res
+        return res
     end
 
     #MyIdealModel{T} <: IdealModel
     if parent isa Expr && parent.head == :curly
         res = getfield(mod,parent.args[1]) <: Clapeyron.IdealModel
-        return !res
+        return res
     end
 
     #err on the side of caution
@@ -346,8 +345,8 @@ See the tutorial or browse the implementations to see how this is used.
 """
 macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = false)
 
-    idealmodel = __newmodel_is_idealmodel(parent,__module__)
-    struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = idealmodel,groups = true,sites = sitemodel)
+    is_idealmodel = __newmodel_is_idealmodel(parent,__module__)
+    struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = !is_idealmodel,groups = true,sites = sitemodel)
     res = if sitemodel
         quote
             $struct_expr
@@ -434,8 +433,8 @@ end
 ```
 """
 macro newmodel(name, parent, paramstype,sitemodel = true)
-    idealmodel = __newmodel_is_idealmodel(parent,__module__)
-    struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = idealmodel,groups = false,sites = sitemodel)
+    is_idealmodel = __newmodel_is_idealmodel(parent,__module__)
+    struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = !is_idealmodel,groups = false,sites = sitemodel)
 
     res = if sitemodel
         quote
