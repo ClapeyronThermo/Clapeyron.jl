@@ -1,3 +1,16 @@
+#test structs for #154
+abstract type PCSAFTModel_test <: SAFTModel end
+
+# Defining the parameters used by the model
+struct PCSAFTParam_test <: EoSParam
+    Mw::SingleParam{Float64}
+    segment::SingleParam{Float64}
+    sigma::PairParam{Float64}
+    epsilon::PairParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
+end
+
 @testset "Reported errors" begin
     #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/104
     @testset "#104" begin
@@ -109,19 +122,6 @@
 
     @testset "#154" begin
         #there was a problem when using the @newmodel macros outside the Clapeyron module. this should suffice as a test.
-        abstract type PCSAFTModel_test <: SAFTModel end
-
-        # Defining the parameters used by the model
-        struct PCSAFTParam_test <: EoSParam
-            Mw::SingleParam{Float64}
-            segment::SingleParam{Float64}
-            sigma::PairParam{Float64}
-            epsilon::PairParam{Float64}
-            epsilon_assoc::AssocParam{Float64}
-            bondvol::AssocParam{Float64}
-        end
-        m = @__MODULE__()
-        @show m
         # Creating a model struct called PCSAFT, which is a sub-type of PCSAFTModel, and uses parameters defined in PCSAFTParam
         @newmodel PCSAFT_test PCSAFTModel_test PCSAFTParam_test
         @newmodelsimple PCSAFT_testsimple PCSAFTModel_test PCSAFTParam_test
@@ -132,7 +132,6 @@
         @test PCSAFT_testsimple <: EoSModel #@newmodelsimple
         @test PCSAFT_testgc <: EoSModel #@newmodelgc
     end
-
 
     @testset "#162" begin
         #a longstanding problem, init_model didn't worked with functions.
