@@ -120,7 +120,8 @@
             epsilon_assoc::AssocParam{Float64}
             bondvol::AssocParam{Float64}
         end
-
+        m = @__MODULE__()
+        @show m
         # Creating a model struct called PCSAFT, which is a sub-type of PCSAFTModel, and uses parameters defined in PCSAFTParam
         @newmodel PCSAFT_test PCSAFTModel_test PCSAFTParam_test
         @newmodelsimple PCSAFT_testsimple PCSAFTModel_test PCSAFTParam_test
