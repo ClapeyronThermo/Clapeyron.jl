@@ -1,18 +1,18 @@
-struct UNIFACFVPolyParam <: EoSParam
-    volume::SingleParam{Float64}
-    c::SingleParam{Float64}
-    A::PairParam{Float64}
-    R::SingleParam{Float64}
-    Q::SingleParam{Float64}
-    Mw::SingleParam{Float64}
+struct UNIFACFVPolyParam{T} <: EoSParam
+    volume::SingleParam{T}
+    c::SingleParam{T}
+    A::PairParam{T}
+    R::SingleParam{T}
+    Q::SingleParam{T}
+    Mw::SingleParam{T}
 end
 
 abstract type UNIFACFVPolyModel <: UNIFACFVModel end
 
-struct UNIFACFVPoly{c<:EoSModel,G} <: UNIFACFVPolyModel
+struct UNIFACFVPoly{c<:EoSModel,T} <: UNIFACFVPolyModel
     components::Array{String,1}
-    groups::GroupParam{G}
-    params::UNIFACFVPolyParam
+    groups::GroupParam{T}
+    params::UNIFACFVPolyParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
     UNIFACFV_cache::UNIFACFVCache

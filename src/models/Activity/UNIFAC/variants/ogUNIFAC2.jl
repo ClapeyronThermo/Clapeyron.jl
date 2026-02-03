@@ -1,7 +1,7 @@
-struct ogUNIFAC2{c<:EoSModel,G} <: ogUNIFACModel
+struct ogUNIFAC2{c<:EoSModel,T} <: ogUNIFACModel
     components::Array{String,1}
-    groups::GroupParam{G}
-    params::ogUNIFACParam
+    groups::GroupParam{T}
+    params::ogUNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
     unifac_cache::UNIFACCache

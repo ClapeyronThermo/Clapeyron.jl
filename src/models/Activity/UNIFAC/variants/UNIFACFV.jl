@@ -30,20 +30,20 @@ function recombine_unifac_cache!(cache::UNIFACFVCache,groups,params)
     return cache
 end
 
-struct UNIFACFVParam <: EoSParam
-    volume::SingleParam{Float64}
-    A::PairParam{Float64}
-    R::SingleParam{Float64}
-    Q::SingleParam{Float64}
-    Mw::SingleParam{Float64}
+struct UNIFACFVParam{T} <: EoSParam
+    volume::SingleParam{T}
+    A::PairParam{T}
+    R::SingleParam{T}
+    Q::SingleParam{T}
+    Mw::SingleParam{T}
 end
 
 abstract type UNIFACFVModel <: ActivityModel end
 
-struct UNIFACFV{c<:EoSModel,G} <: UNIFACFVModel
+struct UNIFACFV{c<:EoSModel,T} <: UNIFACFVModel
     components::Array{String,1}
-    groups::GroupParam{G}
-    params::UNIFACFVParam
+    groups::GroupParam{T}
+    params::UNIFACFVParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
     UNIFACFV_cache::UNIFACFVCache

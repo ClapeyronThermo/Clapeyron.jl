@@ -1,17 +1,17 @@
-struct UNIFACParam <: EoSParam
-    A::PairParam{Float64}
-    B::PairParam{Float64}
-    C::PairParam{Float64}
-    R::SingleParam{Float64}
-    Q::SingleParam{Float64}
+struct UNIFACParam{T} <: EoSParam
+    A::PairParam{T}
+    B::PairParam{T}
+    C::PairParam{T}
+    R::SingleParam{T}
+    Q::SingleParam{T}
 end
 
 abstract type UNIFACModel <: ActivityModel end
 
-struct UNIFAC{c<:EoSModel,G} <: UNIFACModel
+struct UNIFAC{c<:EoSModel,T} <: UNIFACModel
     components::Array{String,1}
-    groups::GroupParam{G}
-    params::UNIFACParam
+    groups::GroupParam{T}
+    params::UNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
     unifac_cache::UNIFACCache
