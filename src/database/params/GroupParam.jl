@@ -80,7 +80,7 @@ end
 format_components(g::GroupParameter) = g
 
 #given components, groups, n_groups, reconstitute GroupParam
-function recombine!(param::GroupParameter)
+function recombine!(param::GroupParameter{T}) where T
     components = param.components
     groups = param.groups
     n_groups = param.n_groups
@@ -102,7 +102,7 @@ function recombine!(param::GroupParameter)
     for i in 1:ℂ
         group = groups[i]
         if !isassigned(i_groups,i)
-            i_groups[i] = Int[]
+            i_groups[i] = T[]
         end
         i_group = i_groups[i]
         resize!(i_group,length(group))
@@ -182,6 +182,49 @@ function GroupParam(input::Vector{Tuple{String, Vector{Pair{String,T}}}},groupty
     return param
 end
 
+function GroupParam(components,groups,grouptype,n_groups,n_intergroups,i_groups,flattenedgroups,n_flattenedgroups,sourcecsvs)
+    TT = eltype(eltype(n_groups))
+    return GroupParam{TT}(components,groups,grouptype,n_groups,n_intergroups,i_groups,flattenedgroups,n_flattenedgroups,sourcecsvs)
+end
+
+function Solvers.primalval(param::GroupParam{T}) where T
+    n_groups2 = Solvers.primalval_eager.(param.n_groups)
+    n_intergroups2 = Solvers.primalval_eager.(param.n_intergroups)
+    n_flattenedgroups2 = Solvers.primalval_eager.(param.n_flattenedgroups)
+    T2 = Solvers.primal_eltype(eltype(eltype(n_groups2)))
+    param = GroupParam{T2}(
+        param.components,
+        param.groups,
+        param.grouptype,
+        n_groups2,
+        n_intergroups2,
+        param.i_groups,
+        param.flattenedgroups,
+        n_flattenedgroups2,
+        param.sourcecsvs
+    )
+end
+
+Base.eltype(param::GroupParam{T}) where T = T
+Base.eltype(param::Type{<:GroupParam{T}}) where T = T
+
+function Base.convert(::Type{GroupParam{T1}},param::GroupParam{T2}) where {T1<:Number,T2<:Number}
+    n_groups2 = convert.(Vector{T1},param.n_groups)
+    n_intergroups2 = convert.(Matrix{T1},param.n_intergroups)
+    n_flattenedgroups2 = convert.(Vector{T1},param.n_flattenedgroups)
+    param = GroupParam{T1}(
+        param.components,
+        param.groups,
+        param.grouptype,
+        n_groups2,
+        n_intergroups2,
+        param.i_groups,
+        param.flattenedgroups,
+        n_flattenedgroups2,
+        param.sourcecsvs
+    )
+end
+
 function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
     print(io,string(typeof(param)),"(:",param.grouptype,") ")
     len = length(param.components)
@@ -200,14 +243,14 @@ function Base.show(io::IO, param::GroupParam)
     print(io,"]")
 end
 
-function build_gc_intragroups!(group::GroupParam,gc_intragroups)
+function build_gc_intragroups!(group::GroupParam{T}, gc_intragroups) where T
     groupnames = group.flattenedgroups
     n_gc = length(groupnames)
     n_comps = length(group.components)
-    n_intergroups = [zeros(n_gc,n_gc) for i in 1:n_comps]
+    
     n_intergroups = group.n_intergroups
     for i in 1:n_comps
-        n_intergroups[i] = zeros(Int,n_gc,n_gc)
+        n_intergroups[i] = zeros(T,n_gc,n_gc)
     end
 
     for i in 1:n_comps
