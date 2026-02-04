@@ -160,7 +160,6 @@ auto_binary_salts(model) = auto_binary_salts(model.charge,component_list(model))
 function auto_binary_salts(Z,comps)
     #Z = model.charge
     n_ions = count(!iszero,Z)
-    @show n_ions
     res = Tuple{String,Vector{Pair{String,Int}}}[]
     n_ions == 1 && throw(DomainError("cannot create salts with only one ion"))
     n_ions == 0 && return res

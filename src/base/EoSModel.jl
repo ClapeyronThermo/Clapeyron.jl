@@ -139,8 +139,13 @@ Base.summary(model::EoSModel) = string(parameterless_type(model))
 
 Function that returns a list with the components used in the input `EoSModel`.
 """
-component_list(model) = model.components
-
+function component_list(model::M) where M
+    if hasfield(M,:components)
+        return model.components
+    else
+        return String[]
+    end
+end
 """
     @comps
 

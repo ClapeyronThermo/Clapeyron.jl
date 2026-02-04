@@ -1,6 +1,7 @@
 include("equations.jl")
 
 abstract type ESElectrolyteModel <: ElectrolyteModel end
+abstract type ISElectrolyteModel <: ElectrolyteModel end
 
 struct ESElectrolyte{T<:IdealModel,c<:EoSModel,i<:IonModel} <: ESElectrolyteModel
     components::Array{String,1}
@@ -323,6 +324,4 @@ end
 
 include("stability.jl")
 
-
 export dielectric_constant, ESElectrolyte
-

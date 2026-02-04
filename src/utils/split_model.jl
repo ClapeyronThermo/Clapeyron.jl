@@ -93,7 +93,7 @@ function each_split_model(assoc::Compressed4DMatrix{T},I) where T
 end
 
 function each_split_model(param::ClapeyronParam,group,I_component,I_group)
-    components = param.components
+    components = component_list(param)
     if group === nothing
         return each_split_model(param,I_component)
     elseif components == group.components
