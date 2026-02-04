@@ -76,14 +76,14 @@ function LCVMRule(components; activity = Wilson, userlocations = String[],activi
     return model
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::LCVMRuleModel,α,a,b,c)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::LCVMRuleModel,α,a,b)
     n = sum(z)
     #x = z./n
     invn = (one(n)/n)
     invn2 = invn^2
     g_E = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z) / n
     b̄ = dot(z,Symmetric(b),z) * invn2
-    c̄ = dot(z,c)/n
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     #ᾱ  = a.*sqrt.(α.*α')./(b*R̄*T)
     Σxᾱ  = sum(α[i]*a[i,i]*z[i]/b[i,i] for i ∈ @comps)*invn/(R̄*T)
     λ  = 0.7

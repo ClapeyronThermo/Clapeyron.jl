@@ -11,10 +11,11 @@ using Roots: Roots
 using Scratch
 import LogExpFunctions
 using FillArrays: FillArrays
-import BlackBoxOptim
+import SpecialFunctions
 using StaticArrays
 
 using DiffResults, ForwardDiff
+import DifferentiationInterface # keep function local
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
 #compatibility and raw julia utilities
@@ -64,6 +65,15 @@ struct CompositeModel{𝔽,𝕊} <: EoSModel
     solid_reference_state::ReferenceState
 end
 
+struct PTFlashWrapper{T,T2,R,S} <: EoSModel
+    components::Vector{String}
+    model::T
+    pures::T2
+    sat::Vector{R}
+    fug::Vector{S}
+    equilibrium::Symbol
+end
+
 #recombine options
 include("utils/recombine.jl")
 
@@ -74,7 +84,7 @@ include("database/combiningrules.jl")
 using Tables,CSV
 
 #used for reading multiparameter json files
-using JSON3
+using JSON
 
 #getparams options
 include("database/ParamOptions.jl")
@@ -130,13 +140,14 @@ include("models/ideal/AlyLeeIdeal.jl")
 #Basic utility EoS
 include("models/utility/EoSVectorParam.jl")
 include("models/utility/ZeroResidual.jl")
-include("models/utility/TPFlashWrapper.jl")
+include("models/utility/PTFlashWrapper.jl")
 
 #Empiric Models uses CompositeModel
 include("models/CompositeModel/CompositeModel.jl")
 
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/SingleFluid/SingleFluid.jl")
+include("models/EmpiricHelmholtz/SingleFluid/variants/PseudoPure.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/IAPWS95.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/PropaneRef.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/Ammonia2023.jl")
@@ -182,6 +193,7 @@ include("models/SAFT/PCSAFT/variants/gcPCPSAFT/homogcPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/heterogcPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/gcPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/CPPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/iPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
 include("models/SAFT/CPA/variants/sCPA.jl")
@@ -240,6 +252,7 @@ include("models/cubic/RK/variants/PSRK.jl")
 include("models/cubic/RK/variants/tcRK.jl")
 include("models/cubic/PR/variants/PR78.jl")
 include("models/cubic/PR/variants/VTPR.jl")
+include("models/cubic/PR/variants/TVTPR.jl")
 include("models/cubic/PR/variants/UMRPR.jl")
 include("models/cubic/PR/variants/QCPR.jl")
 include("models/cubic/PR/variants/tcPR.jl")
@@ -256,10 +269,9 @@ include("models/Virial/Virial.jl")
 
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
-include("models/PeTS/PeTS.jl")
+include("models/Potentials/PeTS/PeTS.jl")
 
 #electrolytes
-include("models/Electrolytes/equations.jl")
 include("models/Electrolytes/base.jl")
 include("models/Electrolytes/RSP/ConstRSP.jl")
 include("models/Electrolytes/RSP/ZuoFurst.jl")

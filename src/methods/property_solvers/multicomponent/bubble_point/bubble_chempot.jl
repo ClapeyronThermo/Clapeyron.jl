@@ -68,26 +68,36 @@ function ChemPotBubblePressure(;vol0 = nothing,
 end
 
 function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressure)
-
     volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
     p0,vl,vv,y0 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles)
     is_non_volatile = !isnothing(method.nonvolatiles)
     model_y,_ = index_reduction(model,volatiles)
     y0 = y0[volatiles]
+
     ηl = η_from_v(model, vl, T, x)
     if is_non_volatile
         ηv = η_from_v(model_y, vv, T, y0)
     else
         ηv = η_from_v(model, vv, T, y0)
     end
-    _,idx_max = findmax(y0)
-    v0 = vcat(ηl,ηv,deleteat(y0,idx_max)) #select component with highest fraction as pivot
-    f!(F,z) = Obj_bubble_pressure(model,model_y, F, T, z[1],z[2],x,z[3:end],volatiles,idx_max)
-    r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
+
+    # select component with highest fraction as pivot
+    idx_max = argmax(y0)
+    v0 = Vector{eltype(y0)}(undef, 2 + length(y0) - 1)
+    v0[1],v0[2] = ηl,ηv
+    copy_without_pivot!(view(v0, 3:lastindex(v0)), y0, idx_max)
+    f! = let model = model, model_y = model_y, T=T, x=x, volatiles=volatiles, idx_max=idx_max
+        (F,z) -> Obj_bubble_pressure(model, model_y, F, T, z[1], z[2], x, @view(z[3:end]), volatiles, idx_max)
+    end
+    r = Solvers.nlsolve(f!, v0,
+        LineSearch(Newton2(v0)),
+        NLSolvers.NEqOptions(method),
+        ForwardDiff.Chunk{min(length(v0), 8)}()
+    )
     sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
+    !__check_convergence(r) && (sol .= NaN)
     v_l = v_from_η(model,sol[1],T,x)
-    y_r = FractionVector(sol[3:end],idx_max)
+    y_r = FractionVector(@view(sol[3:end]),idx_max)
     v_v = v_from_η(model,model_y,sol[2],T,y_r)
     y_sol = index_expansion(y_r,volatiles)
     P_sat = pressure(model,v_l,T,x)
@@ -101,7 +111,7 @@ function Obj_bubble_pressure(model::EoSModel, model_y, F, T, ηl, ηv, x, y, _vi
     v_v = v_from_η(model_y,ηv,T,yy)
     v = (v_l,v_v)
     w = (x,yy)
-    if all(_view)
+    if isnothing(_view) || all(_view)
         return μp_equality2(model, nothing, F, Tspec(T), v, w, _view)
     else
         return μp_equality2(model, model_y, F, Tspec(T), v, w, _view)
@@ -110,7 +120,7 @@ end
 
 #used by LLE_pressure
 function Obj_bubble_pressure(model::EoSModel, F, T, ηl, ηv, x, y)
-    return Obj_bubble_pressure(model, nothing, F, T, ηl, ηv, x, y,nothing, length(model))
+    return Obj_bubble_pressure(model, model, F, T, ηl, ηv, x, y, nothing, length(model))
 end
 
 
@@ -183,8 +193,6 @@ function ChemPotBubbleTemperature(;vol0 = nothing,
 end
 
 function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemperature)
-    
-
     is_non_volatile = !isnothing(method.nonvolatiles)
     volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
     model_y,_ = index_reduction(model,volatiles)
@@ -197,14 +205,24 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     else
         ηv = η_from_v(model, vv, T0, y0)
     end
-    _,idx_max = findmax(y0)
-    v0 = vcat(T0,ηl,ηv,deleteat(y0,idx_max)) #select component with highest fraction as pivot
-    f!(F,z) = Obj_bubble_temperature(model,model_y, F, p, z[1], z[2], z[3], x, z[4:end],volatiles,idx_max)
-    r  = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),NLSolvers.NEqOptions(method))
+
+    # select component with highest fraction as pivot
+    idx_max = argmax(y0)
+    v0 = Vector{eltype(y0)}(undef, 3 + length(y0) - 1)
+    v0[1],v0[2],v0[3] = T0,ηl,ηv
+    copy_without_pivot!(view(v0, 4:lastindex(v0)), y0, idx_max)
+    f! = let model = model, model_y = model_y, p=p, x=x, volatiles=volatiles, idx_max=idx_max
+        (F,z) -> Obj_bubble_temperature(model, model_y, F, p, z[1], z[2], z[3], x, @view(z[4:end]), volatiles, idx_max)
+    end
+    r = Solvers.nlsolve(f!, v0,
+        LineSearch(Newton2(v0)), 
+        NLSolvers.NEqOptions(method),
+        ForwardDiff.Chunk{min(length(v0), 8)}()
+    )
     sol = Solvers.x_sol(r)
-    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
+    !__check_convergence(r) && (sol .= NaN)
     T = sol[1]
-    y_r = FractionVector(sol[4:end],idx_max)
+    y_r = FractionVector(@view(sol[4:end]), idx_max)
     v_l = v_from_η(model, sol[2], T, x)
     v_v = v_from_η(model, model_y, sol[3], T, y_r)
     y = index_expansion(y_r,volatiles)
@@ -217,7 +235,7 @@ function Obj_bubble_temperature(model::EoSModel, model_y, F, p, T, ηl, ηv, x, 
     vv = v_from_η(model_y, ηv, T, yy)
     v = (vl,vv)
     w = (x,yy)
-    if all(_view)
+    if isnothing(_view) || all(_view)
         return μp_equality2(model, nothing, F, Pspec(p,T), v, w, _view)
     else
         return μp_equality2(model, model_y, F, Pspec(p,T), v, w, _view)
@@ -226,7 +244,7 @@ end
 
 #used by LLE_temperature
 function Obj_bubble_temperature(model::EoSModel, F, p, T, ηl, ηv, x, y)
-    return Obj_bubble_temperature(model,nothing, F, p, T, ηl, ηv, x, y,nothing,length(model))
+    return Obj_bubble_temperature(model,model, F, p, T, ηl, ηv, x, y,nothing,length(model))
 end
 
 export ChemPotBubblePressure, ChemPotBubbleTemperature

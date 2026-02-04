@@ -20,6 +20,7 @@ Clapeyron.osmotic_coefficient_sat
 ## Helper functions
 
 ```@docs
+Clapeyron.auto_binary_salts
 Clapeyron.molality_to_composition
 ```
 

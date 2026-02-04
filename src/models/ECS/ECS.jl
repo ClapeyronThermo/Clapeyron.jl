@@ -41,6 +41,8 @@ f,h = shape_factors(model::ECS,shape_ref::EoSModel,V,T,z)
 
 .1 Mollerup, J. (1998). Unification of the two-parameter equation of state and the principle of corresponding states. Fluid Phase Equilibria, 148(1–2), 1–19. [doi:10.1016/s0378-3812(98)00230-1](https://doi.org/10.1016/s0378-3812(98)00230-1)
 """
+ECS
+
 const ECS = ExtendedCorrespondingStates
 
 Base.length(model::ECS) = length(model.shape_model)
@@ -99,7 +101,7 @@ fh = a(T)/a₀(T₀)
 !!! info "General Shape Factors?"
     For general EoS, there is no existent publications on how to obtain shape factors. However, we can "map" any EoS to a cubic with:
     ```
-    b ≈ lb_volume(model,z)
+    b ≈ lb_volume(model,T,z)
     a ≈ RT*(b - B)
     B = second_virial_coefficient(model,T)
     ```
@@ -110,7 +112,8 @@ fh = a(T)/a₀(T₀)
 1. Mollerup, J. (1998). Unification of the two-parameter equation of state and the principle of corresponding states. Fluid Phase Equilibria, 148(1–2), 1–19. [doi:10.1016/s0378-3812(98)00230-1](https://doi.org/10.1016/s0378-3812(98)00230-1)
 
 """
-function shape_factors end
+shape_factors
+
 shape_factors(model::ECS,V,T,z=SA[1.0]) = shape_factors(model,model.shape_ref,V,T,z)
 
 function shape_factors(model::ECS,shape_ref::DeltaCubicModel,V,T,z=SA[1.0])
@@ -172,8 +175,8 @@ function x0_volume_gas(model::ECS,p,T,z)
 end
 
 function T_scale(model::ECS,z)
-    lb_v0 = lb_volume(model.model_ref)
-    T0 = T_scale(model.model_ref)
+    T0 = T_scale(model.model_ref,SA[1.0])
+    lb_v0 = lb_volume(model.model_ref,T0,SA[1.0])
     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
     return T0*f
 end

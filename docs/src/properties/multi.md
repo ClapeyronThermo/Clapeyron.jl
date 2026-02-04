@@ -43,11 +43,14 @@ Clapeyron.crit_mix
 Clapeyron.mechanical_critical_point
 Clapeyron.spinodal_pressure
 Clapeyron.spinodal_temperature
+Clapeyron.spinodal_maximum
 Clapeyron.edge_pressure
 Clapeyron.edge_temperature
 Clapeyron.UCEP_mix
 Clapeyron.UCST_pressure
 Clapeyron.UCST_temperature
+Clapeyron.UCST_mix
+Clapeyron.krichevskii_parameter
 ```
 
 ## SLE Equilibria
@@ -67,13 +70,11 @@ Clapeyron.FugBubblePressure
 Clapeyron.ActivityBubblePressure
 Clapeyron.ChemPotBubbleTemperature
 Clapeyron.FugBubbleTemperature
-Clapeyron.ActivityBubbleTemperature
 Clapeyron.ChemPotDewPressure
 Clapeyron.FugDewPressure
 Clapeyron.ActivityDewPressure
 Clapeyron.ChemPotDewTemperature
 Clapeyron.FugDewTemperature
-Clapeyron.ActivityDewTemperature
 ```
 
 ## Consistency and Stability
@@ -109,10 +110,12 @@ Clapeyron.supports_reduction
 Clapeyron.FlashResult
 Clapeyron.FlashData
 Clapeyron.FlashSpecifications
+Clapeyron.RRQXFlash
 Clapeyron.xy_flash
 Clapeyron.GeneralizedXYFlash
 Clapeyron.ph_flash
 Clapeyron.ps_flash
+Clapeyron.uv_flash
 Clapeyron.qt_flash
 Clapeyron.qp_flash
 Clapeyron.ts_flash

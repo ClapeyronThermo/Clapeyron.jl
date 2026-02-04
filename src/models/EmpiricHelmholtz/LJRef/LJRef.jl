@@ -138,7 +138,7 @@ function T_scale(model::LJRef,z)
     return ϵ
 end
 
-function lb_volume(model::LJRef, z)
+function lb_volume(model::LJRef,T,z)
     val = π/6*_v_scale(model,z)
     return val
 end

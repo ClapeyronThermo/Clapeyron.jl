@@ -23,7 +23,7 @@ If you are experiencing issues with our `saturation_pressure` method specificall
 ```julia
 function Clapeyron.x0_sat_pure(model::PCSAFTModel,T,z=SA[1.0])
   # Obtain the volume lower bound for that particular system
-  Vlb = lb_volume(model,z)*one(T)
+  Vlb = lb_volume(model,T,z)*one(T)
 
   # Relative to the lower bound, define your initial guesses.
   return Vlb*1.5,Vlb*100

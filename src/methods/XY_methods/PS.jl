@@ -10,12 +10,12 @@ function PS_property(model,p,s,z,f::F,phase,T0,threaded) where F
     end
 
     if !is_unknown(phase)
-        T,calc_phase = _Tproperty(model,p,h,z,entropy,T0 = T0,phase = phase,threaded = threaded)
+        T,calc_phase = _Tproperty(model,p,s,z,entropy,T0 = T0,phase = phase,threaded = threaded)
         if calc_phase != :eq && calc_phase != :failure
             return f(model,p,T,z;phase = calc_phase)
         elseif calc_phase == :eq
             supports_lever_rule(f) || thow(invalid_property_multiphase_error(f))
-            result = ps_flash(model,p,s,z,T0)
+            result = ps_flash(model,p,s,z,T)
             return f(model,result)
         else
             return f(model,p,T,z;phase = phase)

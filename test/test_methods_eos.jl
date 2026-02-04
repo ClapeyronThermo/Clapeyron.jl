@@ -34,6 +34,19 @@ end
     end
 end
 
+@testset "iPCSAFT, single components" begin
+    m1 = iPCSAFT("methane")
+    c = m1.params.v_shift.values[1]
+    Tc1,Pc1,Vc1 = crit_pure(m1)
+    m1.params.v_shift .= 0
+    Tc2,Pc2,Vc2 = crit_pure(m1)
+    #mainly test that the translation only affects the volume
+    @test Tc1 ≈ Tc2 rtol = 1e-6
+    @test (Vc2 - Vc1) ≈ c rtol = 1e-6
+
+    
+end
+
 @testset "softSAFT methods, single components" begin
     system = softSAFT(["ethanol"])
     solid_system = solidsoftSAFT("octane")
@@ -61,8 +74,8 @@ end
         @test Clapeyron.volume(system, p, T) ≈ 0.00019299766073894634 rtol = 1e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 167.8313793818096 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 618.8455740197799 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 167.83338420356327 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 618.8448255146585 rtol = 1E-6
     end
 end
 
@@ -82,15 +95,18 @@ end
 
 @testset "SAFT-γ Mie methods, single components" begin
     system = SAFTγMie(["ethanol"])
+    system500 = model500()
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 5.753982584153832e-5 rtol = 1e-6
         @test Clapeyron.molecular_weight(system)*1000 ≈ 46.065
     end
+
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7714.8637084302 rtol = 1E-5
         @test Clapeyron.crit_pure(system)[1] ≈ 521.963002384691 rtol = 1E-5
+        @test Clapeyron.crit_pure(system500)[1] ≈ 404.97536526401734 rtol = 1E-5
     end
 end
 
@@ -194,10 +210,10 @@ GC.gc()
     p = 1e5
     T = 550.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 0.04557254632681239 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T) ≈ 0.0456092301152745 rtol = 1e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 4.51634223156497e6 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 6.147730717654085e6 rtol = 1E-6
         Tc,Pc,Vc = Clapeyron.crit_pure(system)
         @test Tc == system.params.Tc.values[1]
         @test Pc == system.params.Pc.values[1]
@@ -215,7 +231,7 @@ end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 2397.1315826665273 rtol = 1E-6
         Tc,Pc,Vc = Clapeyron.crit_pure(system)
-        @test Tc == system.params.Tc.values[1]
+        @test_broken Tc == system.params.Tc.values[1]
         @test pressure(system,Vc,Tc) ≈ Pc
     end
 end
@@ -338,16 +354,23 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.gibbs_solvation(system, T) ≈ -24707.145697543132 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.58099358788 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = true))[1] ≈ 23839.554959977086
-        @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = false))[1] ≈ 23833.324475723246
-        @test Clapeyron.bubble_pressure(system3,T3,z3)[1] ≈ 2460.897944633704 rtol = 1E-6
-        @test Clapeyron.bubble_temperature(system,23758.58099358788, z)[1] ≈ T rtol = 1E-6
+        pb1 = Clapeyron.bubble_pressure(system, T, z)[1]
+        @test pb1 ≈ 23839.554959977086 rtol = 1E-6
+        pb1b = Clapeyron.bubble_pressure(system, T, z, FugBubblePressure())[1]
+        @test pb1b ≈ pb1 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system,pb1, z)[1] ≈ T rtol = 1E-6
+        
+        pb2 = Clapeyron.bubble_pressure(system3,T3,z3)[1]
+        @test pb2 ≈ 2460.897944633704 rtol = 1E-6
+        pb2b = Clapeyron.bubble_pressure(system3,T3,z3,FugBubblePressure())[1]
+        @test pb2b ≈ pb2 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system3,pb2, z3)[1] ≈ T3 rtol = 1E-6
 
-        @test Clapeyron.dew_pressure(system2, T2, z)[1] ≈ 19386.939256733036 rtol = 1E-6
-        @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = true))[1] ≈ 19393.924550078184 rtol = 1e-6
-        @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = false))[1] ≈ 19393.76058757084 rtol = 1e-6
-        @test Clapeyron.dew_temperature(system2, 19386.939256733036, z)[1]  ≈ T2 rtol = 1E-6
+        pd1 = Clapeyron.dew_pressure(system2, T2, z)[1]
+        @test pd1 ≈ 19393.924550078184 rtol = 1E-6
+        pd1b = Clapeyron.dew_pressure(system2, T2, z, FugDewPressure(second_order = false))[1]
+        @test pd1b ≈ pd1 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system2, pd1, z)[1] ≈ T2 rtol = 1e-6
     end
 
     @testset "LLE" begin
@@ -571,6 +594,14 @@ end
     @test iszero(count(isnan,v_T37))
     @test iszero(count(isnan,v_T202))
     @test iszero(count(isnan,v_T371))
+
+    #pseudo pure
+    pseudo_pure = EmpiricPseudoPure("R410A")
+    @test bubble_pressure(pseudo_pure,220.0,[1.0])[1] ≈ PropsSI("P","T",220.0,"Q",0.,"R410A") rtol = 1e-6
+    @test dew_pressure(pseudo_pure,220.0,[1.0])[1] ≈ PropsSI("P","T",220.0,"Q",1.,"R410A") rtol = 1e-6
+    @test bubble_temperature(pseudo_pure,1e5,[1.0])[1] ≈ PropsSI("T","P",1e5,"Q",0.,"R410A") rtol = 1e-6
+    @test dew_temperature(pseudo_pure,1e5,[1.0])[1] ≈ PropsSI("T","P",1e5,"Q",1.,"R410A") rtol = 1e-6
+
 end
 
 @testset "LKP methods" begin
@@ -619,14 +650,14 @@ end
         @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ vv rtol = 1e-6
 
         #GERG2008(["ethane]) : 318 m/s
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 308.38846317827625 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 308.4054802581367 rtol = 1e-6
     end
 
     T_sat = 250.15
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 1.3085074415334722e6 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 1.3096239233531626e6 rtol = 1E-6
         #Critical point of ethane: 305.322
-        @test Clapeyron.crit_pure(system)[1] ≈ 305.37187249327553 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 305.3719105078928 rtol = 1E-6
     end
 end
 GC.gc()

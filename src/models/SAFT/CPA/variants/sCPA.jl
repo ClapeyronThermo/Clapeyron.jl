@@ -55,7 +55,7 @@ The `radial_dist` argument can be used to choose between a Carnahan-Starling for
 """
 function sCPA(components;
             idealmodel = BasicIdeal,
-            radial_dist::Symbol = :KG,
+            radial_dist = :KG,
             cubicmodel = RK,
             alpha = sCPAAlpha,
             mixing = vdW1fRule,
@@ -70,6 +70,8 @@ function sCPA(components;
             reference_state = nothing,
             verbose = false,
             assoc_options = AssocOptions())
+
+    radial_dist = Symbol(radial_dist)
 
     return CPA(components;
         idealmodel = idealmodel,

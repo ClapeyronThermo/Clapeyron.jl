@@ -87,7 +87,7 @@ function COSMOSACdsp(components;
             file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma3/"*dbname[1]*".sigma", IOBuffer())))
             lines = split(file,r"\n")
             meta = lines[1][9:end]
-            json = JSON3.read(meta)
+            json = JSON.parse(meta)
             A[i] = json["area [A^2]"]
             V[i] = json["volume [A^3]"]
             Pnhb[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
@@ -158,8 +158,12 @@ function COSMOSACdsp(components;
     return model
 end
 
-function activity_coefficient(model::COSMOSACdspModel,V,T,z)
-    return exp.(@f(lnγ_comb) .+@f(lnγ_res).+@f(lnγ_dsp))
+function lnγ_impl!(lnγ,model::COSMOSACdspModel,V,T,z)
+    lnγ .= 0
+    lnγ .+= @f(lnγ_res)
+    lnγ .+= @f(lnγ_comb)
+    lnγ .+= @f(lnγ_dsp)
+    return lnγ
 end
 
 function excess_g_res(model::COSMOSACdspModel,V,T,z)

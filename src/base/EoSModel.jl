@@ -139,8 +139,13 @@ Base.summary(model::EoSModel) = string(parameterless_type(model))
 
 Function that returns a list with the components used in the input `EoSModel`.
 """
-component_list(model) = model.components
-
+function component_list(model::M) where M
+    if hasfield(M,:components)
+        return model.components
+    else
+        return String[]
+    end
+end
 """
     @comps
 
@@ -154,6 +159,15 @@ macro comps()
     end |> esc
 end
 
+"""
+    has_sites(model::EoSModel)
+    has_sites(::Type{<:EoSModel})
+
+Returns `true` when a model type carries site parameters.
+
+This checks whether the model type has a `sites` field with `SiteParam`
+storage and is used to enable site-based logic (e.g. association models).
+"""
 has_sites(::T) where T <: EoSModel = has_sites(T)
 has_sites(::Type{T}) where T <: EoSModel = _has_sites(T)
 
@@ -165,6 +179,15 @@ Base.@assume_effects :foldable function _has_sites(::Type{T}) where T <: EoSMode
     return false
 end
 
+"""
+    has_groups(model::EoSModel)
+    has_groups(::Type{<:EoSModel})
+
+Returns `true` when a model type carries group parameters.
+
+This checks whether the model type has a `groups` field with `GroupParam`
+storage and is used to enable group-contribution logic.
+"""
 has_groups(::T) where T <: EoSModel = has_groups(T)
 has_groups(::Type{T}) where T <: EoSModel = _has_groups(T)
 
@@ -192,7 +215,10 @@ has_dual(p::ForwardDiff.Dual) = true
 has_dual(p::AbstractArray{T}) where T= has_dual(T)
 has_dual(model::EoSModel) = has_dual(eltype(model))
 has_dual(x) = false
-
+function has_dual(x::NTuple{N,<:Any}) where N
+    #any_has_dual = ntuple(i -> has_dual(x[i]),Val{N}())
+    return any(has_dual,x)
+end
 """
     doi(model)
 Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. if there isn't a `references` field, it defaults to `default_references(model)`
@@ -284,12 +310,8 @@ function setreferences!(model,references)
     oldrefs .= references
 end
 
-"""
-    Clapeyron∂Tag{X}
+#generic function to support pseudo-pures
+is_pseudo_pure(model) = false
+is_electrolyte(model) = false
 
-Clapeyron's `ForwardDiff.jl` custom tag.
-"""
-struct Clapeyron∂Tag{X} end
-const ∂Tag = Clapeyron∂Tag
-
-export EoSModel, eos, has_groups, has_sites, Rgas, Clapeyron∂Tag
+export EoSModel, eos, has_groups, has_sites, Rgas

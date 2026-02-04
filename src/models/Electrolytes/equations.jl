@@ -1,8 +1,13 @@
 """
+    salt_stoichiometry(model::ElectrolyteModel)
     salt_stoichiometry(model::ElectrolyteModel,salts)
-Obtains the stoichiometry matrix of `salts` made up of ions stored in the `model`. This will also check that the salt is electroneutral and that all ions are involved in the salts.
+
+Obtains the stoichiometry matrix of `salts` made up of ions stored in the `model`. 
+This will also check that the salt is electroneutral and that all ions are involved in the salts.
+If no `salts` argument is specified, it will be created via `Clapeyron.auto_binary_salts(model)`
+
 """
-function salt_stoichiometry(model::ElectrolyteModel,salts)
+function salt_stoichiometry(model::ElectrolyteModel,salts = auto_binary_salts(model))
     iions = model.charge.!=0
     ions = model.components[iions]
     ν = zeros(length(salts),length(ions))
@@ -54,27 +59,53 @@ function salt_stoichiometry(model::ElectrolyteModel,salts::GroupParam)
 end
 
 """
-    molality_to_composition(model::ElectrolyteModel,salts,m,zsolv=[1.])
+    molality_to_composition(model::ElectrolyteModel,salts,m,zsolv = SA[1.0])
+    molality_to_composition(model::ElectrolyteModel,m,zsolv = SA[1.0])
 
 Convert molality (mol/kg) to composition for a given model, salts, molality, and solvent composition.
+If no `salts` argument is specified, it will be created via `Clapeyron.auto_binary_salts(model)`
 """
-function molality_to_composition(model::ElectrolyteModel,salts,m,zsolv=SA[1.],ν = salt_stoichiometry(model,salts))
+function molality_to_composition(model::ElectrolyteModel,salts::Union{AbstractVector,GroupParam},m,zsolv=SA[1.],ν = salt_stoichiometry(model,salts))
     nc = length(model)
     Z = model.charge
     nions = count(!iszero,Z)
     nneutral = nc - nions
     Mw = mw(model.neutralmodel).*1e-3
-    if salts isa GroupParam
-        isalts = 1:length(salts.components)
-    else
-        isalts = 1:length(salts)
-    end
+    nsalts = salts isa GroupParam ? length(salts.components) : length(salts)
+    isalts = 1:nsalts
     iions = 1:nions
     ineutral = 1:nneutral
+    if length(zsolv) != nneutral
+        throw(error("Incorrect length of zsolv vector,expected length(zsolv) = $nneutral, got $zsolv"))
+    end
     ∑mν = sum(m[k]*sum(ν[k,i] for i ∈ iions) for k ∈ isalts)
-    x_solv = zsolv ./ (1+sum(zsolv[j]*Mw[j] for j in ineutral)*∑mν)
-    x_ions = [sum(m[k]*ν[k,l] for k ∈ isalts) / (1/sum(zsolv[j]*Mw[j] for j in ineutral)+∑mν) for l ∈ iions]
-    return vcat(x_solv,x_ions)
+    ∑zsolv = sum(zsolv)
+    TT = Base.promote_eltype(model,m,zsolv)
+    x = zeros(TT,length(model))
+    ∑xsolvMw = sum(zsolv[j]*Mw[j] for j in ineutral)/∑zsolv
+    iion = 0
+    for i in 1:length(model)
+        if iszero(Z[i])
+            x[i] = zsolv[i]/(∑zsolv*(1+∑xsolvMw*∑mν))
+        else
+            iion += 1
+            x[i] = sum(m[k]*ν[k,iion] for k ∈ isalts) / (1/∑xsolvMw+∑mν)
+        end
+    end
+    return x
+    #x_solv = zsolv ./ (1+∑xsolvMw*∑mν) ./ ∑zsolv
+    #x_ions = [sum(m[k]*ν[k,l] for k ∈ isalts) / (1/∑xsolvMw+∑mν) for l ∈ iions]
+
+    #return vcat(x_solv,x_ions)
+end
+
+function molality_to_composition(model::ElectrolyteModel,m,zsolv=SA[1.0],ν = nothing)
+    salts = auto_binary_salts(model)
+    if isnothing(ν)
+        return molality_to_composition(model,salts,m,zsolv)
+    else
+        return molality_to_composition(model,salts,m,zsolv,ν)
+    end
 end
 
 """
@@ -123,4 +154,95 @@ function a_ion(ionmodel, rsp, neutralmodel, V, T, z, neutral_data, ϵ_r)
     return a_ion(ionmodel, V, T, z, ϵ_r)
 end
 
+
+auto_binary_salts(model) = auto_binary_salts(model.charge,component_list(model))
+
+function auto_binary_salts(Z,comps)
+    #Z = model.charge
+    n_ions = count(!iszero,Z)
+    res = Tuple{String,Vector{Pair{String,Int}}}[]
+    n_ions == 1 && throw(DomainError("cannot create salts with only one ion"))
+    n_ions == 0 && return res
+    Z_minus = findall(<(0),Z)
+    Z_plus = findall(>(0),Z)
+    k = 0 #n ions form n-1 independent salts
+    for i in 1:length(Z_plus)
+        Zi = Z[Z_plus[i]]
+        comp_i = comps[Z_plus[i]]
+        k == (n_ions - 1) && break
+        for j in 1:length(Z_minus)
+            k == (n_ions - 1) && break
+            k += 1
+            Zj = Z[Z_minus[j]]
+            comp_j = comps[Z_minus[j]]
+            Zij = lcm(abs(Zi),abs(Zj))
+            ci = div(Zij,abs(Zi))
+            cj = div(Zij,abs(Zj))
+            cci = isone(ci) ? "" : string(ci)
+            ccj = isone(cj) ? "" : string(cj)
+            salt_ij = cci * comp_i * "." *  ccj * comp_j
+            push!(res,(salt_ij,[comp_i => ci,comp_j => cj]))
+        end
+    end
+    return res
+end
+
+"""
+    auto_binary_salts(model)
+    auto_binary_salts(Z, components)
+
+Automatically generate a vector of binary salts from ionic components.
+
+# Arguments
+- `model`: An electrolyte model containing charge information
+- `Z`: Vector of ionic charges for each component
+- `components`: Vector of component names
+
+# Returns
+A vector of tuples, where each tuple contains:
+- `String`: Salt name in the format "n₁Cation.n₂Anion" (e.g., "2Na.SO4" for Na₂SO₄)
+- `Vector{Pair{String,Int}}`: Stoichiometric coefficients as component => count pairs
+
+# Description
+This function generates `n-1` independent binary salts from `n` ions by pairing cations 
+with anions. The stoichiometric coefficients are determined by the least common multiple 
+(LCM) of the absolute charges to ensure electroneutrality.
+
+For a system with multiple cations and anions, salts are created by iterating through 
+cation-anion pairs until `n-1` salts are formed, which is the number of independent 
+salts needed to describe an `n`-ion system.
+
+# Examples
+```julia
+# For a system with Na⁺ (charge = +1) and Cl⁻ (charge = -1)
+Z = [1, -1]
+comps = ["Na", "Cl"]
+Clapeyron.auto_binary_salts(Z, comps)
+# Returns: [("Na.Cl", ["Na" => 1, "Cl" => 1])]
+
+# For a system with Ca²⁺ (charge = +2) and Cl⁻ (charge = -1)
+Z = [2, -1]
+comps = ["Ca", "Cl"]
+Clapeyron.auto_binary_salts(Z, comps)
+# Returns: [("Ca.2Cl", ["Ca" => 1, "Cl" => 2])]  # CaCl₂
+
+# For a system with Na⁺, Ca²⁺, and SO₄²⁻ (3 ions → 2 salts)
+Z = [1, 2, -2]
+comps = ["Na", "Ca", "SO4"]
+Clapeyron.auto_binary_salts(Z, comps)
+# Returns: [("2Na.SO4", ["Na" => 2, "SO4" => 1]),
+#           ("Ca.SO4", ["Ca" => 1, "SO4" => 1])]
+```
+
+# Throws
+- `DomainError`: If only one ion is present (cannot form salts)
+
+# Notes
+- Returns an empty vector if no ions are present (all charges are zero)
+- Stoichiometric coefficients of 1 are omitted from salt names (e.g., "Na.Cl" not "1Na.1Cl")
+"""
+auto_binary_salts
+
+is_electrolyte(model::ElectrolyteModel) = true
+ 
 export molality_to_composition

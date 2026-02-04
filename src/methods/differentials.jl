@@ -211,3 +211,112 @@ function _primalval(model::EoSModel,::Type{T}) where T <: ForwardDiff.Dual
 end
 
 _primalval(model::EoSModel,::T) where T = model
+
+"""
+    __gradients_for_root_finders(x::AbstractVector{T},tups::Tuple,tups_primal::Tuple,f::Function) where T<:Real
+
+Computes the gradients of `x` with respect to the relevant parameters in `tups` under the condition that `x` is implicitly defined through the root finding problem `f(x,tups) = 0`. 
+The function uses the implicit function theorem to compute the gradients efficiently through the reconstruction of Duals.
+
+!!! note 
+    Currently only supports first order AD. Trying to differentiate nested Duals or Duals with different tags will throw an error.
+"""
+function __gradients_for_root_finders(x::AbstractVector{T},tups::T1,tups_primal::T2,f::F) where {T<:Real,T1,T2,F}
+    # check and return primal of no duals
+    !any(has_dual,tups) && return x
+
+    # Checks
+    implicit_ad_check(tups)
+
+    # compute partials
+    ∂f_∂θ_dual = f(x,tups)
+
+    #guard against NaN in input or output
+    if any(isnan,x) || any(isnan,∂f_∂θ_dual)
+        _0 = zero(eltype(∂f_∂θ_dual))
+        nan = _0/_0
+        return nan .* x
+    end
+
+    return __gradients_for_root_finders_solver(f,x,tups_primal,∂f_∂θ_dual)
+end
+
+function __gradients_for_root_finders(x::T,tups::T1,primal_tups::T2,f::F) where {T<:Real,T1,T2,F}
+    x_vec = SVector(x)
+    f_vec(x_vec,tupsx) = SVector(f(x_vec[1],tupsx))
+    x_dual_vec = __gradients_for_root_finders(x_vec,tups,primal_tups,f_vec)
+    return only(x_dual_vec)
+end
+
+__gradients_for_root_finders(::Union{AbstractArray{T},T},_,_,_) where T<:ForwardDiff.Dual = error("Input `x` cannot be a dual")
+
+function __partial_to_svec(x::ForwardDiff.Dual{T,V,N}) where {T,V,N}
+    return SVector{N,V}(ForwardDiff.partials(x))
+end
+
+function __gradients_for_root_finders_solver(f::F,x::AbstractVector{V1},tups_primal,∂f_∂θ_dual::AbstractVector{ForwardDiff.Dual{TAG,V2,Npartials}}) where {F,V1,TAG,V2,Npartials}
+
+    ∂f_∂x = DifferentiationInterface.jacobian(f,DifferentiationInterface.AutoForwardDiff(),x,DifferentiationInterface.Constant(tups_primal))
+    LinearAlgebra.checksquare(∂f_∂x)
+    # get dual
+    ∂f_∂θi = map(__partial_to_svec,∂f_∂θ_dual)
+    ∂f_∂θ = transpose(reduce(hcat,∂f_∂θi))
+
+    # gradient through implicit function theorem
+    dx_dθ = try
+         - ∂f_∂x \ ∂f_∂θ
+    catch
+        _0 = zero(eltype(∂f_∂θ))
+        nan = _0 / _0
+        vec(∂f_∂θ) .* nan
+    end
+
+    to_dual(x1,x2) = ForwardDiff.Dual{TAG,V2,Npartials}(x1,ForwardDiff.Partials(NTuple{Npartials,V2}(x2)))
+    x_dual2 = map(to_dual,x,eachrow(dx_dθ))
+    return x_dual2
+end
+
+function nested_ad_check(a::A) where A
+    AT = eltype(a)
+    if AT <: ForwardDiff.Dual
+        V = ForwardDiff.valtype(AT)
+        V <: ForwardDiff.Dual && throw(NestedADError("Found nested Duals of type $AT. This is currently not supported in implicit differentiation."))
+    end
+    return nothing
+end
+
+nested_ad_check(a::Tuple) = foreach(nested_ad_check,a)
+
+function multiple_tag_ad_check(a::T) where T <: Tuple
+    f(x) = eltype(x) <: ForwardDiff.Dual
+    n_dual = count(f,a)
+    if n_dual == 1
+        return nothing
+    end
+
+    #TODO write as @generated so it does not allocate
+    tag(x) = ForwardDiff.tagtype(eltype(x))
+    duals = findall(map(f,a))
+    tags = map(tag,a)
+    valid_tags = tags[duals]
+    t1 = first(valid_tags)
+    t = Base.tail(valid_tags)
+    for ti in t
+        if t1 != ti
+            msg = "Found multiple Dual tags: $t1 and $ti. This is currently not supported in implicit differentiation."
+            throw(MultipleTagError(msg))
+        end
+    end
+    return nothing
+end
+
+multiple_tag_ad_check(a) = nothing
+
+function implicit_ad_check(a)
+    nested_ad_check(a)
+end
+
+function implicit_ad_check(a::Tuple)
+    nested_ad_check(a)
+    multiple_tag_ad_check(a)
+end

@@ -11,6 +11,59 @@ end
 
 x0_volume_liquid(model,p,T,z) = x0_volume_liquid(model,T,z)
 x0_volume_liquid(model,T) = x0_volume_liquid(model,T,SA[1.0])
+
+##alternative initialization for liquid volume
+
+#defined in volume.jl
+function volume_bracket_refine end
+
+function x0_volume_liquid_lowT(model,p,T,z)
+    B = second_virial_coefficient(model,T,z)*oneunit(p)
+    v0 = -B
+    vmin = lb_volume(model,T,z)*(1 + 1e-6)*oneunit(p)
+    vmax = max(0.5*(v0 + vmin),4*vmin)
+    if isnan(v0)
+        vmax = 5vmin
+    else
+        vmax = max(0.5*(v0 + vmin),4*vmin)
+    end
+    lnvmin,lnvmax = log(vmin),log(vmax)
+    (isnan(lnvmin) || isnan(lnvmax)) && return zero(lnvmax)/zero(lnvmin)
+    lnv = range(lnvmin,lnvmax,8)
+    vl = zero(vmin)/zero(vmin)
+
+    lnvhi = lnv[1]
+    vhi = exp(lnvhi)
+    phi = pressure(model,vhi,T,z)
+    phi < p && return vmin
+    plo = Inf*phi
+    vlo = vhi
+    for i in 1:length(lnv) - 1
+        lnvlo = lnv[i+1]
+        vlo = exp(lnvlo)
+        plo = pressure(model,vlo,T,z)
+        if plo < 0
+            for i in 1:10
+                plo > 0 && break
+                vlo = sqrt(vlo*vhi)
+                plo = pressure(model,vlo,T,z)
+                #@show plo
+                if plo > p
+                    return vlo
+                end
+            end
+        end
+
+        if plo <= p <= phi
+            vl = sqrt(vlo*vhi)
+            break
+        else
+            vl = vlo
+        end
+        phi,lnvhi,vhi = plo,lnvlo,vlo
+    end
+    return vl
+end
 """
     x0_volume_gas(model,p,T,z)
 
@@ -38,7 +91,7 @@ Returns an initial guess to the solid volume, dependent on temperature `T` and c
 """
 function x0_volume_solid(model,T,z)
     if is_solid(model)
-        v_lb = lb_volume(model,z)
+        v_lb = lb_volume(model,T,z)
         return v_lb*1.05
     else
         _0 = zero(T+first(z))
@@ -267,6 +320,10 @@ function x0_sat_pure_virial(model,T)
     =#
 
     a,b = vdw_coefficients(vl,pl0,vv_virial,pv_eos,T)
+    if b < lb_v
+        b = lb_v
+        a = RT*(b - B)
+    end
     T̃ = RT*b/a
     T̃max = 0.2962962962962963 # Ωb/Ωa = 8/27
     T̃min = 0.1*T̃max
@@ -381,10 +438,13 @@ function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B 
     ares = a_res(model, vl0, T, z)
     lnϕ_liq0 = ares - 1 + log(RT/vl0)
     p = exp(lnϕ_liq0)
-    vv = volume_virial(B,p,T)
     pB = -0.25*RT/B
+    vv = volume_virial(B,p,T)
     if refine_vl && pB/p > 10
         vl = volume(model,p,T,z,vol0 = vl0,phase = :l)
+        if vl ≈ vv #refinement failed, stick with vl0
+            vl = vl0*oneunit(vv)
+        end
     else
         vl = vl0*oneunit(vv)
     end
@@ -641,13 +701,19 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
     psl = p(vsl)
     psv = p(vsv)
     pmid = 0.5*max(zero(psl),psl) + 0.5*psv
-
-    if plb <= pmid
+    #=
+    vl = volume(model,pmid,T,phase = :l,vol0 = v_lb)
+    vv = volume(model,pmid,T,phase = :v)
+    return pmid,vl,vv
+    =#
+    #
+    if plb < psv
         vsl_lb = volume(model,psv,T,phase = :l, vol0 = v_lb)
     else
         vsl_lb = one(psl)*v_lb
     end
-    if pub >= pmid
+
+    if pub >= min(pmid,max(psl,zero(psl)))
         vsv_ub = Rgas(model)*T/pmid
     else
         vsv_ub = one(psv)*v_ub
@@ -956,9 +1022,9 @@ function solve_2ph_taylor(v10,v20,a1,da1,d2a1,a2,da2,d2a2,p_scale = 1.0,μ_scale
     end
     x0 = SVector((log(v10),log(v20)))
     x = Solvers.nlsolve2(F0,x0,Solvers.Newton2Var())
-    v1,v2 = exp(x[1]), exp(x[2])
-    p1 = log(v1/v10)*(-v1*d2a1) - da1
-    return v1, v2, p1
+    v1_sol,v2_sol = exp(x[1]), exp(x[2])
+    p1_sol = log(v1_sol/v10)*(-v1_sol*d2a1) - da1
+    return v1_sol, v2_sol, p1_sol
 end
 
 function solve_2ph_taylor(model1::EoSModel,model2::EoSModel,T,v1,v2,p_scale = 1.0,μ_scale = 1.0)
@@ -1050,9 +1116,8 @@ critical_tsat_extrapolation(model,p,crit) = critical_tsat_extrapolation(model,p,
 critical_tsat_extrapolation(model,p,Tc,Vc) = critical_tsat_extrapolation(model,p,Tc,pressure(model,Vc,Tc),Vc)
 
 
-dpdT_saturation(model,v1,v2,T) = dpdT_saturation(model,model,v1,v2,T,SA[1.0],SA[1.0])
-dpdT_saturation(model1,model2,v1,v2,T) = dpdT_saturation(model1,model2,v1,v2,T,SA[1.0],SA[1.0])
-
+dpdT_saturation(model::EoSModel,v1::Number,v2,T) = dpdT_saturation(model,model,v1,v2,T,SA[1.0],SA[1.0])
+dpdT_saturation(model1::EoSModel,model2::EoSModel,v1,v2,T) = dpdT_saturation(model1,model2,v1,v2,T,SA[1.0],SA[1.0])
 function dpdT_saturation(model1::EoSModel,model2::EoSModel,v1,v2,T,w1,w2)
     ∑w1 = sum(w1)
     ∑w2 = sum(w2)

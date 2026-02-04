@@ -156,7 +156,6 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
 
     return FlashResult(comps,βi,volumes,FlashData(p,T,g))
 end
-
 function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(), reduced = false)
 
     equilibrium = method.equilibrium
@@ -205,20 +204,21 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     in_equilibria = @. !non_inx & !non_iny
 
     # Computing the initial guess for the K vector
-    x = similar(z,Base.promote_eltype(model,p,T,z))
-    y = similar(z,Base.promote_eltype(model,p,T,z))
+    TT = Base.promote_eltype(model,p,T,z)
+    x = similar(z,TT)
+    y = similar(z,TT)
     x .= z
     y .= z
     K,lnK = similar(x),similar(x)
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
-    _1 = one(eltype(K))
+    _0,_1 = zero(TT),one(TT)
     if !isnothing(K0)
         K .= K0
         lnK .= log.(K)
         verbose && @info "K0 already provided"
     elseif !isnothing(x0) && !isnothing(y0)
-        x = x0 ./ sum(x0)
-        y = y0 ./ sum(y0)
+        x .= x0 ./ sum(x0)
+        y .= y0 ./ sum(y0)
         lnK .= log.(y ./ x)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(volx,voly),phases,non_inw,dlnϕ_cache)
         K .= exp.(lnK)
@@ -231,9 +231,15 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
             Kmin,Kmax = K_extrema(K,non_inx,non_iny)
-            if Kmin > 1 || Kmax < 1
+            if Kmax < 1 #only try LLE if the VLE K0 suggests only liquid phase
                 verbose && @info "VLE correlation failed, trying LLE initial point."
-                K = K0_lle_init(model,p,T,z)
+                K_lle = K0_lle_init(model,p,T,z)
+                if any(!isone,K_lle) #only use LLE result if actually exists
+                    K .= K_lle
+                end
+                lnK .= log.(K)
+                phasey = :liquid
+                phases = (:liquid,:liquid)
             end
         end
         lnK .= log.(K)
@@ -242,9 +248,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         verbose && @info "K0 calculated via LLE initial point (tpd)"
         K .= K0_lle_init(model,p,T,z)
         lnK .= log.(K)
+        phasey = :liquid
+        phases = (:liquid,:liquid)
     end
     verbose && @info "K0 = $K"
-    _1 = one(eltype(K))
     # Initial guess for phase split
     status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
     status0 = status
@@ -254,9 +261,9 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     if the initial K values generate a single phase result, but we can split the K into two compositions (Kmin < 1 or Kmax > 1)
     then we start at the bubble (or dew conditions)
     =#
-    
+
     if status == RRLiquid
-        β = zero(_1)
+        β = _0
         if maximum(K) >= 1 #liquid phase, but there is posibility to generate a vapour composition
             verbose && @info "suppossing β = 0 (bubble initialization)"
             status = RREq
@@ -270,15 +277,20 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             β -= eps(eltype(β))
         end
     elseif status == RREq
-        β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny,K_tol = K_tol)
+        β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
     else
-        β = zero(_1)/zero(_1)
+        β = _0/_0
     end
 
     verbose && @info "initial vapour fraction = $β"
     
-    verbose && status != RREq && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
-    # Stage 1: Successive Substitution
+    if status != RREq 
+        verbose && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
+        exit_early = true    
+    else
+        exit_early = false
+    end
+        # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
     itacc = 0
@@ -292,14 +304,17 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     end
 
     lnK_old = similar(lnK)
+    β_old = typemax(TT)
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
-    while error_lnK > K_tol && it < itss && status == RREq
+    verbose && @info "iter  status        β      error_lnK            K"
+    while !exit_early && (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status in (RREq,RRLiquid,RRVapour)
         it += 1
         itacc += 1
         lnK_old .= lnK
-        
+        β_old = β
+
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
 
         # Updating K's
@@ -316,7 +331,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             # acceleration using DEM (1 eigenvalues)
             lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3,(ΔlnK1,ΔlnK2))
             K_dem .= exp.(lnK_dem)
-            β_dem = rachfordrice(K_dem, z; β0=β, non_inx=non_inx, non_iny=non_iny)
+            β_dem = rachfordrice(K_dem, z; β0=β, non_inx, non_iny, verbose)
             x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
             lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,z,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
             # only accelerate if the Gibbs energy is reduced
@@ -329,72 +344,63 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             end
         end
         K .= exp.(lnK)
-        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
+        β = rachfordrice(K, z; β0=β, non_inx, non_iny, K_tol, verbose)
+        status = rachfordrice_status(K,z,non_inx,non_iny;K_tol)
 
-        if isnan(β) #try to save K? basically damping
-            if rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol) != RRTrivial
-                K .= 0.5 * K .+ 0.5 * y ./ x
-                β = rachfordrice(K, z; non_inx=non_inx, non_iny=non_iny, K_tol = K_tol)
-            end
+        verbose && @info "$it    $status   $β  $(round(error_lnK,sigdigits=4)) $K"
+
+        if isnan(β) && status != RRTrivial
+            #try to save K? basically damping
+            K .= 0.5 * K .+ 0.5 * y ./ x
+            β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
         end
 
-        status = rachfordrice_status(K,z,non_inx,non_iny;K_tol = K_tol)
-
-        Kmin,Kmax = K_extrema(K,non_inx,non_iny)
-        if status == RRLiquid && Kmin < 1
-            status = RREq
-            β = eps(eltype(β))
-        elseif status == RRVapour && Kmax > 1
-            status = RREq
-            β = 1 - eps(eltype(β))
-        end
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
     end
     
-    if !isnan(β) && it > 0
+    verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
+
+    if it > 0 && !isnan(β)
+        # single composition update with the (possibly projected) β
         x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
     end
     
-    verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
-
     # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
         verbose && @info "$error(lnK) > $K_tol, solving via non-linear system"
-        nx = zeros(nc)
-        ny = zeros(nc)
-        if any(non_inx)
-            ny[non_inx] = @view(z[non_inx])
-            nx[non_inx] .= 0.
-        end
-
-        if any(non_iny)
-            ny[non_iny] .= 0.
-            nx[non_iny] = @view(z[non_iny])
-        end
-
+        
+        nx = similar(K)
+        ny = similar(K)
         ny_var0 = y[in_equilibria] * β
-        fgibbs!(F, G, H, ny_var) = dgibbs_obj!(model, p, T, z, phasex, phasey,
-                                                        nx, ny, vcache, ny_var, in_equilibria, non_inx, non_iny;
-                                                        F=F, G=G, H=H)
-
-        fgibbs!(F, G, ny_var) = fgibbs!(F, G, nothing, ny_var)
-
+        update_nxy!(nx,ny,ny_var0,z,non_inx,non_iny)
+        in_eq = (in_equilibria,non_inx,non_iny)
+        caches = (nx,ny,vcache,dlnϕ_cache,in_eq,phases)
+        flash_obj = michelsen_optimization_obj(model,p,T,z,caches)
+        ub = similar(ny_var0)
+        ub .= @view z[in_equilibria]
+        lb = similar(ny_var0)
+        lb .= 0
+        opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-12,maxiter = 100)
         if second_order
-            sol = Solvers.optimize(Solvers.only_fgh!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton2(ny_var0)))
+            sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.Newton2(ny_var0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         else
-            sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.BFGS()))
+            sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         end
+
+        #= TODO: do something with the values of the optimization procedure
+        if abs(sol.info.fx) <= 4*eps(eltype(K))
+
+        elseif sol.info.fx > sol.info.f0 + 4*eps(eltype(K))
+        
+        end =#
         ny_var = Solvers.x_sol(sol)
-        ny[in_equilibria] .= ny_var
-        nx[in_equilibria] .= @view(z[in_equilibria]) .- @view(ny[in_equilibria])
-        nxsum = sum(nx)
-        nysum = sum(ny)
-        x .= nx ./ nxsum
-        y .= ny ./ nysum
-        β = sum(ny)
+        update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
+        x .= nx ./ sum(nx)
+        y .= ny ./ sum(ny)
         K .= y ./ x
+        β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
     end
     
     verbose && @info "final K values: $K"
@@ -409,13 +415,13 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && status != RREq
         verbose && @info "trivial result but different volumes (maybe azeotrope?)"
         status = RREq
-    elseif status == RRTrivial && it > 0
+    elseif status == RRTrivial
         verbose && @info "procedure converged to trivial K-values, checking initial conditions to see if resulting phase is liquid or vapour."
         status0 == RRLiquid && (status = RRLiquid)
         status0 == RRVapour && (status = RRVapour)
     elseif status == RREq && β <= eps(eltype(β))
         status = RRLiquid
-    elseif status == RREq && β >=  one(β)  - eps(eltype(β))
+    elseif status == RREq && β >= one(β) - eps(eltype(β))
         status = RRVapour
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
         verbose && @info "material balance failed."
@@ -443,6 +449,12 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         vx = vz
         vy = vz
     end
+
+    #activity models don't need volume calculations for the flash calculation.
+    #but we return volumes, so we calculate those at the end.
+
+    iszero(vx) && model isa PTFlashWrapper && is_liquid(phasex) && (vx = oftype(vx,volume(model,p,T,x,phase = phasex)))
+    iszero(vy) && model isa PTFlashWrapper && is_liquid(phasey) && (vy = oftype(vy,volume(model,p,T,y,phase = phasey)))
 
     if !reduced
         x = index_expansion(x,z_nonzero)

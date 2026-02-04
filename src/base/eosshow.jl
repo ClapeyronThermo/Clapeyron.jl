@@ -8,7 +8,7 @@ custom_show(model::EoSModel) = _custom_show(model)
 custom_show(model) = false
 function _custom_show(Base.@nospecialize(model))
     hasfield(typeof(model),:components)
-end 
+end
 
 #function used to customize the first line to your liking
 show_info(io,model) = nothing
@@ -25,7 +25,7 @@ end
 
 function may_show_references(io::IO,model)
     if get(ENV,"CLAPEYRON_SHOW_REFERENCES","FALSE") == "TRUE"
-        show_references(io,model)     
+        show_references(io,model)
     end
 end
 
@@ -33,14 +33,24 @@ function show_references(io::IO,model)
     citations = cite(model)
     iszero(length(citations)) && return nothing #do not do anything if there isnt any citations
     println(io)
-    print(io,"References: ") 
+    print(io,"References: ")
     for (i,doi) in enumerate(cite(model))
         i != 1 && print(io,", ")
-        print(io,doi)   
+        print(io,doi)
     end
 end
 
-function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSModel))   
+"""
+    eosshow(io::IO, model::EoSModel)
+    eosshow(io::IO, ::MIME"text/plain", model::EoSModel)
+
+Custom pretty-printer for `EoSModel` instances.
+
+This is the backend used by `Base.show` for models that opt into the custom
+display. The text/plain variant prints components, parameters, reference state,
+and (optionally) citations when enabled via `ENV["CLAPEYRON_SHOW_REFERENCES"]`.
+"""
+function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSModel))
     print(io, typeof(model))
     if hasfield(typeof(model),:components)
         length(model) == 1 && println(io, " with 1 component:")
@@ -115,4 +125,79 @@ function show_reference_state(io::IO,ref,model::EoSModel,space)
     end
 end
 
-export eosshow
+"""
+    eos_repr(io::IO,model,newlines = true)
+    eos_repr(model;newlines = true)::String
+
+Given a `model::EoSModel`, returns a copy-pastable text representation of that model, designed to be parseable julia code.
+By default, `eos_repr` inserts some newlines for easier human reading of the output, that can be disabled via the `newlines` keyword argument.
+
+## Examples:
+
+```julia-repr
+julia> model = PCSAFT("methane")
+PCSAFT{BasicIdeal, Float64} with 1 component:
+ "methane"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> push!(model.references,"test")
+3-element Vector{String}:
+ "10.1021/ie0003887"
+ "10.1021/ie010954d"
+ "test"
+
+julia> s = eos_repr(model);
+
+julia> model2 = eval(Meta.parse(s)) #exactly the same model
+PCSAFT{BasicIdeal, Float64} with 1 component:
+ "methane"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> model2.references
+3-element Vector{String}:
+ "10.1021/ie0003887"
+ "10.1021/ie010954d"
+ "test"
+```
+"""
+function eos_repr(io::IO,model;inside = false,newlines = true)
+    M = typeof(model)
+    n = fieldnames(M)
+    newlines && print(io,"\n")
+    print(io,M)
+    print(io,"(")
+    if !inside && newlines
+        print(io,"\n")
+    end
+    k = 0
+    nf = length(n)
+    for i in n
+        k += 1
+        f = getfield(model,i)
+        F = typeof(f)
+        if F.name.module == Clapeyron || F isa EoSModel
+            eos_repr(io,f,inside = true)
+        elseif f isa PackedVofV
+            print(io,"Clapeyron.PackedVofV(")
+            show(io,f.p)
+            print(io,", ")
+            show(io,f.v)
+            print(io,")")
+        else
+            show(io,f)
+        end
+        k != nf && print(io,", ")
+    end
+    print(io,")")
+
+
+    return nothing
+end
+
+function eos_repr(model;newlines = false)
+    io = IOBuffer()
+    eos_repr(io,model;newlines)
+    return String(take!(io))
+end
+
+export eosshow, eos_repr

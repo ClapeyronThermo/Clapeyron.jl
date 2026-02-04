@@ -128,20 +128,28 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     y = y/sum(y)
     T = float(T)
     model_r,idx_r = index_reduction(model,y)
-    if length(model_r)==1
+    if length(model_r) == 1 && !is_pseudo_pure(model)
         (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
         return (P_sat,v_l,v_v,y)
     end
     y_r = y[idx_r]
 
+    method_r = index_reduction(method,idx_r)
     if has_a_res(model)
-        dew_pressure_result_primal = dew_pressure_impl(primalval(model_r),primalval(T),primalval(y_r),index_reduction(method,idx_r))
-        dew_pressure_result = dew_pressure_ad(model_r,T,y_r,dew_pressure_result_primal)
+        λmodel,λT,λy = primalval(model_r),primalval(T),primalval(y_r)
+        λresult = dew_pressure_impl(λmodel,λT,λy,method_r)
+        tup = (model_r,T,y_r)
+        if any(has_dual,tup)
+            λtup = (λmodel,λT,λy)
+            result = dew_pressure_ad(λresult,tup,λtup)
+        else
+            result = λresult
+        end
     else
-        dew_pressure_result = dew_pressure_impl(model_r,T,y_r,index_reduction(method,idx_r))
+        result = dew_pressure_impl(model_r,T,y_r,method_r)
     end
 
-    (P_sat, v_l, v_v, x_r) = dew_pressure_result
+    (P_sat, v_l, v_v, x_r) = result
     x = index_expansion(x_r,idx_r)
     converged = bubbledew_check(model,P_sat,T,v_l,v_v,x,y)
     if converged
@@ -303,20 +311,28 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     y = y/sum(y)
     p = float(p)
     model_r,idx_r = index_reduction(model,y)
-    if length(model_r)==1
+    if length(model_r)==1 && !is_pseudo_pure(model)
         (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
         return (T_sat,v_l,v_v,y)
     end
     y_r = y[idx_r]
 
+    method_r = index_reduction(method,idx_r)
     if has_a_res(model)
-        dew_temperature_result_primal =  dew_temperature_impl(primalval(model_r),primalval(p),primalval(y_r),index_reduction(method,idx_r))
-        dew_temperature_result =  dew_temperature_ad(model_r,p,y_r,dew_temperature_result_primal)
+        λmodel,λp,λy = primalval(model_r),primalval(p),primalval(y_r)
+        λresult = dew_temperature_impl(λmodel,λp,λy,method_r)
+        tup = (model_r,p,y_r)
+        if any(has_dual,tup)
+            λtup = (λmodel,λp,λy)
+            result = dew_temperature_ad(λresult,tup,λtup)
+        else
+            result = λresult
+        end
     else
-        dew_temperature_result =  dew_temperature_impl(model_r,p,y_r,index_reduction(method,idx_r))
+        result = dew_temperature_impl(model_r,p,y_r,method_r)
     end
 
-    (T_sat, v_l, v_v, x_r) = dew_temperature_result
+    (T_sat, v_l, v_v, x_r) = result
     x = index_expansion(x_r,idx_r)
     converged = bubbledew_check(model,p,T_sat,v_l,v_v,x,y)
     if converged

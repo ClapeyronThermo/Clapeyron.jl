@@ -151,9 +151,9 @@ test_l(model) = test_kl(model,test_k = false)
 
 function test_repr(val;str = nothing,str_compact = nothing)
     x = repr("text/plain",val)
-    @test x isa String
+    @test !isempty(x)
     x_compact = repr(val)
-    @test x_compact isa String
+    @test !isempty(x_compact)
     if str != nothing
         for s in str
             @test occursin(s,x)
@@ -182,7 +182,7 @@ include_distributed("test_models_others.jl",2)
 include_distributed("test_models_saft_vr.jl",1)
 include_distributed("test_models_electrolytes.jl",1)
 include_distributed("test_methods_eos.jl",4)
-include_distributed("test_methods_eos.jl",5)
+include_distributed("test_methods_eos_pcsaft.jl",5)
 include_distributed("test_methods_api.jl",2)
 include_distributed("test_methods_api_flash.jl",3)
 include_distributed("test_methods_electrolytes.jl",1)

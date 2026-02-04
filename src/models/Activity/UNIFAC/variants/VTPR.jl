@@ -60,7 +60,8 @@ function VTPRUNIFAC(components;
     verbose = false,
     reference_state = nothing)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"];group_userlocations = group_userlocations, verbose = verbose)
+    _components = format_gccomponents(components)
+    groups = GroupParam(_components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"];group_userlocations = group_userlocations, verbose = verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/VTPR/VTPR_like.csv", "Activity/UNIFAC/VTPR/VTPR_unlike.csv"]; userlocations = userlocations,  asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose = verbose)
     A  = params["A"]

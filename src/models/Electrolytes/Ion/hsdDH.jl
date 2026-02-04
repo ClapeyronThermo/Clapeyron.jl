@@ -29,11 +29,16 @@ hsdDH
 export hsdDH
 
 function hsdDH(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
-    components = deepcopy(ions)
-    prepend!(components,solvents)
+    solvents = format_components(solvents)
+    ions = format_components(ions)
+    components = vcat(solvents, ions)
+    _components = format_components(components)
+
+    userlocations = normalize_userlocations(userlocations)
+    RSPmodel_userlocations = normalize_userlocations(RSPmodel_userlocations)
     references = String[]
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
-    model = hsdDH(components, init_RSPmodel,references)
+    model = hsdDH(_components, init_RSPmodel,references)
     return model
 end
 

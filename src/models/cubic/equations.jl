@@ -33,16 +33,55 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model::EoSModel,mixing::MixingRule, k, l)
+"""
+    ab_diagvalues!(a,b,Ωa,Ωb,Tc,Pc,R)
+    ab_diagvalues!(model)
+
+Calculates the diagonal (pure) terms of `a` and `b` in a cubic model, ignoring non-missing entries.
+"""
+function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::Number,Ωb::Number,Tc,Pc,R̄)
+    for i in 1:length(Tc)
+        Tci,Pci = Tc[i],Pc[i]
+        if a.ismissingvalues[i,i]
+            a[i,i] = Ωa*R̄^2*Tci^2/Pci
+        end
+
+        if b.ismissingvalues[i,i]
+            b[i,i] = Ωb*R̄*Tci/Pci
+        end
+    end
+    return nothing
+end
+
+function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::AbstractVector,Ωb::AbstractVector,Tc,Pc,R̄)
+    for i in 1:length(Tc)
+        Tci,Pci = Tc[i],Pc[i]
+        if a.ismissingvalues[i,i]
+            a[i,i] = Ωa[i]*R̄^2*Tci^2/Pci
+        end
+
+        if b.ismissingvalues[i,i]
+            b[i,i] = Ωb[i]*R̄*Tci/Pci
+        end
+    end
+    return nothing
+end
+
+function ab_diagvalues!(model::EoSModel)
     Ωa, Ωb = ab_consts(model)
-    _Tc = model.params.Tc
-    _pc = model.params.Pc
+    Tc = model.params.Tc
+    Pc = model.params.Pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
-    epsilon_LorentzBerthelot!(a,k)
-    sigma_LorentzBerthelot!(b,l)
+    ab_diagvalues!(a,b,Ωa,Ωb,Tc,Pc,Rgas(model))
+end
+
+function ab_premixing(model::EoSModel,mixing::MixingRule, k, l)
+    a = model.params.a
+    b = model.params.b
+    ab_diagvalues!(model)
+    epsilon_LorentzBerthelot!(model.params.a,k)
+    sigma_LorentzBerthelot!(model.params.b,l)
     return a,b
 end
 
@@ -71,21 +110,45 @@ function cubic_ab(model::CubicModel,V,T,z=SA[1.0])
     b = model.params.b.values
     T = T * float(one(T))
     α = @f(α_function, model.alpha)
-    c = @f(translation, model.translation)
+
     if length(z) > 1
-        return @f(mixing_rule, model.mixing, α, a, b, c)
+        return @f(mixing_rule, model.mixing, α, a, b)
     else
-        return @f(mixing_rule1, model.mixing, α, a, b, c)
+        return @f(mixing_rule1, model.mixing, α, a, b)
     end
 end
 
+
+function mixing_rule(model,V,T,z,mixing_model,α,a,b,c)
+    c̄ = dot(z,c)/sum(z)
+    ā,b̄,_ = @f(mixing_rule, model.mixing, α, a, b)
+    return ā,b̄,c̄
+end
+
 #mixing rules: optimization for one-component
-function mixing_rule1(model,V,T,z,mixing_model,α,a,b,c)
+function mixing_rule1(model,V,T,z,mixing_model,α,a,b)
     _1 = oneunit(z[1])
     ā = a[1, 1] * α[1] * _1
     b̄ = b[1, 1] * _1
-    c̄ = c[1] * _1
+    c̄ = translation2(model,V/sum(z),T,SA[1.0],model.translation,ā,b̄,α)
     return ā, b̄, c̄
+end
+
+#For compatibility with earlier versions of Clapeyron, where we used to calculate translation as a vector
+function translation2(model,V,T,z,translation_model,a,b,α)
+    c = translation(model,V,T,z,translation_model)
+    return dot(c,z)
+end
+
+function mixing_rule1(model,V,T,z,mixing_model,α,a,b,c)
+    ā, b̄, _ = @f(mixing_rule1, model.mixing, α, a, b)
+    c̄ = dot(c,z)/sum(z)
+    return ā, b̄, c̄
+end
+
+function mixing_rule(model,V,T,z,mixing_model,α,a,b)
+    c = @f(translation, model.translation)
+    @f(mixing_rule, model.mixing, α, a, b, c)
 end
 
 function data(model::CubicModel, V, T, z)
@@ -190,11 +253,9 @@ function second_virial_coefficient_impl(model::CubicModel,T,z = SA[1.0])
     return sum(z)*(b - c - a/(Rgas(model)*T))
 end
 
-function lb_volume(model::CubicModel,T,z)
-    V = 1e-5
-    c = @f(translation, model.translation)
-    c̄ = dot(z, c) #result here should also be in m3
+function lb_volume(model::CubicModel,T,z)    
     b̄ = cubic_lb_volume(model,T,z,model.mixing)
+    c̄ = translation2(model,b̄,T,z,model.translation,nothing,b̄,nothing) #result here should also be in m3
     return b̄ - c̄
 end
 
@@ -238,6 +299,12 @@ end
 
 function crit_pure(model::DeltaCubicModel)
     single_component_check(crit_pure,model)
+
+    if !has_fast_crit_pure(model)
+        x0c = x0_crit_pure(model,SA[1.0])
+        return crit_pure(model,x0c)
+    end
+
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
     b = cubic_lb_volume(model,Tc,SA[1.0])
@@ -248,7 +315,7 @@ function crit_pure(model::DeltaCubicModel)
     c = translation(model,Vc0,Tc,SA[1.0])
     Vc = Vc0 - c[1]
     #we know that in AB-cubics, the critical point is already determined.
-    model isa ABCubicModel && return (Tc,Pc,Vc)
+    #model isa ABCubicModel && return (Tc,Pc,Vc)
 
     #for a general cubic model, we check if the critical pressure corresponds to the calculated pressure
     a = model.params.a[1,1]
@@ -289,7 +356,7 @@ end
 
 function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
     check_arraysize(model,z)
-    lb_v = lb_volume(model,T,z)
+    lb_v = lb_volume(model,T,z)*one(T)
     if iszero(p) && is_liquid(phase) #liquid root at zero pressure if available
         vl,_ = zero_pressure_impl(model,T,z)
         return vl
@@ -298,18 +365,59 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
         _1 = one(_0)
         return _1/_0
     end
-    nRTp = sum(z)*R̄*T/p
-    _poly,c̄ = cubic_poly(model,p,T,z)
 
-    c = c̄*sum(z)
-    num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
-    if num_isreal == 2
-        vvl,vvg = nRTp*z1 - c,nRTp*z2 - c
-    elseif num_isreal == 3
-        vvl,vvg = nRTp*z1 - c,nRTp*z3 - c
+    R̄ = Rgas(model)
+    nRTp = sum(z)*R̄*T/p
+    B = lb_v*p/(R̄*T)
+    ε = eps(typeof(B))
+    if B > 4ε
+        _poly,c̄ = cubic_poly(model,p,T,z)
+        #this happens when T -> ∞
+        if abs(1/_poly[1]) < ε
+            p_test = pressure(model,lb_v + eps(lb_v),T,z)
+            if p_test < p # the real volume is between lb_v and lb_v + ε
+                return lb_v
+            else
+                z0 = -_poly[1]/_poly[2]
+                f0 = Base.Fix2(evalpoly,_poly)
+                vx = z0*sum(z)*R̄*T/p - c̄
+                if vx <= lb_v
+                    return lb_v
+                else
+                    _dpoly = Solvers.polyder(_poly)
+                    for i in 1:5 #refine
+                        dz = evalpoly(z0,_poly)/evalpoly(z0,_dpoly)
+                        z0 -= dz
+                    end
+                    return z0*sum(z)*R̄*T/p - c̄
+                end
+            end
+        end
+        c = c̄*sum(z)
+        num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
+        if num_isreal == 2
+            vvl,vvg = nRTp*z1 - c,nRTp*z2 - c
+        elseif num_isreal == 3
+            vvl,vvg = nRTp*z1 - c,nRTp*z3 - c
+        else
+            vvl,vvg = nRTp*z1 - c,nRTp*z1 - c
+        end
     else
-        vvl,vvg = nRTp*z1 - c,nRTp*z1 - c
+        if is_liquid(phase)
+            vl0,_ = zero_pressure_impl(model,T,z)
+            vvl = _volume_compress(model,p,T,z,vl0)
+            vvg = vvl
+        elseif is_vapour(phase)
+            vvg = volume_virial(model,p,T,z) #TODO refine (necessary?)
+            vvl = vvg
+        else
+            vl0,_ = zero_pressure_impl(model,T,z)
+            vvl = _volume_compress(model,p,T,z,vl0)
+            vvg = volume_virial(model,p,T,z)
+        end
+        num_isreal = 3
     end
+
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if !isfinite(vvl) && !isfinite(vvg) && phase != :unknown
         V0 = x0_volume(model, p, T, z; phase)
@@ -322,7 +430,7 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
         _vl = vvl
         vl = ifelse(_vl > lb_v, _vl, vg) #catch case where solution is unphysical
     else # 1 real root (or 2 with the second one degenerate)
-        vg = vl = z1 * nRTp - c
+        vg = vl = vvg
     end
 
     function gibbs(v)
@@ -609,12 +717,12 @@ function transform_params(::Type{ABCubicParam},params,components)
     end
 
     a = get!(params,"a") do
-        aa = PairParam("a",components,zeros(Base.promote_eltype(Pc,Tc),n))
+        aa = PairParam("a",components,zeros(Base.promote_eltype(Pc,Tc),n,n),ones(Bool,n,n))
     end
     a isa SingleParam && (params["a"] = PairParam(a))
 
     b = get!(params,"b") do
-        PairParam("b",components,zeros(Base.promote_eltype(Pc,Tc),n))
+        PairParam("b",components,zeros(Base.promote_eltype(Pc,Tc),n,n),ones(Bool,n,n))
     end
     b isa SingleParam && (params["b"] = PairParam(b))
 
@@ -630,11 +738,11 @@ function transform_params(::Type{ABCCubicParam},params,components)
     Tc = params["Tc"]
     Pc = params["Pc"]
     Vc = get!(params,"Vc") do
-        SingleParam("Vc",components,zeros(Base.promote_eltype(Tc,Vc),n),fill(true,n))
+        SingleParam("Vc",components,zeros(Base.promote_eltype(Tc,Pc),n),fill(true,n))
     end
 
     c = get!(params,"c") do
-        PairParam("c",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n))
+        PairParam("c",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n,n),ones(Bool,n,n))
     end
     c isa SingleParam && (params["c"] = PairParam(c))
     return params

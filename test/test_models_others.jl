@@ -326,13 +326,13 @@ end
 @testset "SPUNG models" begin
     @printline
     let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333]; 
-    @testset "SRK" begin
+    @testset "SPUNG (SRK)" begin
         system = SPUNG(["ethane"])
-        @test Clapeyron.shape_factors(system, V, T, z)[1] ≈ 0.8246924617474896 rtol = 1e-6
+        @test Clapeyron.shape_factors(system, V, T, z)[1] ≈ 0.824678830913322 rtol = 1e-6
     end
 
 
-    @testset "PCSAFT" begin
+    @testset "SPUNG (PCSAFT)" begin
         system = SPUNG(["ethane"],PropaneRef(),PCSAFT(["ethane"]),PCSAFT(["propane"]))
         @test Clapeyron.shape_factors(system, V, T, z)[1] ≈ 0.8090183134644525 rtol = 1e-6
     end
@@ -366,7 +366,7 @@ end
         @testset "AntoineSat" begin
             system = AntoineEqSat(["water"])
             p0 = saturation_pressure(system,400.01)[1]
-            @test p0 ≈ 244561.488609 rtol = 1e-6
+            @test p0 ≈ 244930.458389 rtol = 1e-6
             @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
         end
 

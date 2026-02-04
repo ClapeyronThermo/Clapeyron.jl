@@ -87,10 +87,10 @@ function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.
 
     μ1 = μj = similar(F,length(model))
     p1 = pressure(model,v1,T,w1)
-    ∑w1 = sum(w1)
     VT_chemical_potential_res!(μ1,model,v1,T,w1)
-    for j in 1:(n_p - 1)
-        Fj = @inbounds viewn(F,n_c,j)
+    log_v1 = log(v1)
+    @inbounds for j in 1:(n_p - 1)
+        Fj = viewn(F,n_c,j)
         for i in 1:n_c
             Fj[i] = μ1[i]
         end
@@ -100,9 +100,9 @@ function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.
     idx_p_start = n_c*(n_p - 1) + 1
     idx_p_end = n_c*(n_p - 1) + n_p - 1
     Fp = view(F,idx_p_start:idx_p_end)
-    for j in 1:(n_p - 1)
-        vj = @inbounds v[j+1]
-        wj = @inbounds w[j+1]
+    @inbounds for j in 1:(n_p - 1)
+        vj = v[j+1]
+        wj = w[j+1]
         pj = pressure(model,vj,T,wj)
         #pᵣ_res_j = pressure_res(model,vj,T,wj)*RTinv
         #Δp = pᵣ_res_1 - pᵣ_res_j
@@ -111,12 +111,12 @@ function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.
         VT_chemical_potential_res!(μ1,model,vj,T,wj)
         Fj = viewn(F,n_c,j)
 
+        log_v_common = log(vj) - log_v1
         for i in 1:n_c
             μ1i = Fj[i]
             μji = μj[i]
             Δuᵣ = μ1i - μji
-            Δu = Δuᵣ*RTinv + log(vj) + log(w1[i]) - log(v1) - log(wj[i])
-            Fj[i] = Δu
+            Fj[i] = Δuᵣ*RTinv + log_v_common + log(w1[i]) - log(wj[i])
         end
     end
 
@@ -149,25 +149,30 @@ function μp_equality2(models::NTuple{2,M}, F, PT::TPspec, v, w, short_view) whe
     RTinv = 1/(Rgas(model_long)*T)
     μ_long_view = @view(μ_long[short_view])
     x_long_view = @view(x_long[short_view])
-    for i in 1:n_short
+    @inbounds for i in 1:n_short
         F[i] = μ_long_view[i]
     end
     μ_short = resize!(μ_long,n_short)
+    log_v_common = log(v_short/v_long)
     if n_short == 1
         ∑n_short = sum(x_short)
-        p_res = p_short - sum(x_short)*Rgas(model_short)*T/v_short
-        μ_short[1] = (eos_res(model_short,v_short,T,x_short) + p_res*v_short)/∑n_short
+        p_res = p_short - ∑n_short*Rgas(model_short)*T/v_short
+        μ_short_1 = (eos_res(model_short,v_short,T,x_short) + p_res*v_short)/∑n_short
+        μ_long_1 = F[1]
+        Δuᵣ = μ_long_1 - μ_short_1
+        Δμ = Δuᵣ*RTinv + log_v_common + (log(x_long_view[1]) - log(x_short[1]))
+        F[1] = Δμ*RT⁻¹
     else
         VT_chemical_potential_res!(μ_short,model_short,v_short,T,x_short)
+        @inbounds for i in 1:n_short
+            μ_long_i  = F[i]
+            μ_short_i = μ_short[i]
+            Δuᵣ = μ_long_i - μ_short_i
+            Δμ = Δuᵣ*RTinv + log_v_common + (log(x_long_view[i]) - log(x_short[i]))
+            F[i] = Δμ*RT⁻¹
+        end
     end
 
-    for i in 1:n_short
-        μ_long_i = F[i]
-        μ_short_i = μ_short[i]
-        Δuᵣ = (μ_long_i - μ_short_i)
-        Δμ = Δuᵣ*RTinv + log(v_short) + log(x_long_view[i])  - log(v_long) - log(x_short[i])
-        F[i] = Δμ*RT⁻¹
-    end
     F[n_short+1] = (p_long-p_short)*p⁻¹
     if PT.pressure_specified
         F[n_short+2] = (p_long-p)*p⁻¹
@@ -263,95 +268,67 @@ function near_candidate_fractions(n,k = 0.5*minimum(n))
     return x
 end
 
-function bubbledew_pressure_ad(model,T,z,result,_bubble)
-    if has_dual(model) || has_dual(T) || has_dual(z)
-        p_primal,vl_primal,vv_primal,w_primal = result
+function bubbledew_pressure_ad(result,tup,λtup,_bubble)
+    f(x,tups) = begin
+        model,T,z = tups
+        vl = x[1]
+        vv = x[2]
+        w = @view x[3:end]
         if _bubble
-            _x,_y = z,w_primal
+            _x,_y = z,w
         else
-            _x,_y = w_primal,z
+            _x,_y = w,z
         end
-        Δg = eos(model, vv_primal, T, _y) - eos(model,vl_primal, T, _x)  + p_primal*(vv_primal - vl_primal)
-        Δv = vv_primal - vl_primal
-        p = p_primal - Δg/Δv
-        #=
-        for volume, we use a volume update
-        =#
-
-        vl = volume_ad(model,vl_primal,T,_x,p)
-        vv = volume_ad(model,vv_primal,T,_y,p)
-
-        RT = Rgas(model)*T
-
-        #for w, we do an ss update
-        lnϕl = VT_chemical_potential_res(model, vl, T, _x)
-        lnϕl .= lnϕl ./ RT .- log(p*vl/RT/sum(_x))
-        lnϕv = VT_chemical_potential_res(model, vv, T, _y)
-        lnϕv .= lnϕv ./ RT .- log(p*vv/RT/sum(_y))
-        K = exp.(lnϕl .- lnϕv)
-        if _bubble
-            K .= z .* K
-        else
-            K .= z ./ K
-        end
-        w = K
-        w ./= sum(w)
-        return p,vl,vv,w
-    else
-        return result
+        lnfl,pl = lnf(model,vl,T,_x)
+        lnfv,pv = lnf(model,vv,T,_y)
+        
+        F1 = pl - pv
+        F2 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
+        F3 = lnfl - lnfv + log.(_x) - log.(_y)
+        res = vcat(F1,F2,F3) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
+        return res
     end
+    λx = vcat(result[2],result[3],result[4])
+    ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
+    ∂vl,∂vv = ∂x[1],∂x[2]
+    ∂model,∂T,∂z = tup
+    ∂p = _bubble ? pressure(∂model,∂vl,∂T,∂z) : pressure(∂model,∂vv,∂T,∂z)
+    ∂w = ∂x[3:end]
+    return ∂p,∂vl,∂vv,∂w
 end
 
-bubble_pressure_ad(model,T,z,result) = bubbledew_pressure_ad(model,T,z,result,true)
-dew_pressure_ad(model,T,z,result) = bubbledew_pressure_ad(model,T,z,result,false)
+bubble_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,true)
+dew_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,false)
 
-function bubbledew_temperature_ad(model,p,z,result,_bubble)
-    if has_dual(model) || has_dual(p) || has_dual(z)
-        T_primal,vl_primal,vv_primal,w_primal = result
+function bubbledew_temperature_ad(result,tup,λtup,_bubble)
+    f(x,tups) = begin
+        model,p,z = tups
+        T = x[1]
+        vl = x[2]
+        vv = x[3]
+        w = @view x[4:end]
         if _bubble
-            _x,_y = z,w_primal
+            _x,_y = z,w
         else
-            _x,_y = w_primal,z
+            _x,_y = w,z
         end
-
-        p_primal,∂p∂V = p∂p∂V(model,vv_primal,T_primal,_y)
-        vv = vv_primal - (p_primal - p)/∂p∂V
-
-        #for T, we use a dlnpdTinv step, a dpdT step is fine too
-        dpdT = dpdT_saturation(model,vv_primal,vl_primal,T_primal)
-        dTinvdlnp = -p_primal/(dpdT*T_primal*T_primal)
-        Δlnp = log(p/p_primal)
-        Tinv0 = 1/T_primal
-        Tinv = Tinv0 + dTinvdlnp*Δlnp
-        dT = T_primal - 1/Tinv
-        T = 1/Tinv
-        T = T_primal - (p_primal - p)/dpdT
-
-        vl = volume_ad(model,vl_primal,T,_x,p)
-
-        RT = Rgas(model)*T
-
-       #for w, we do an ss update
-       lnϕl = VT_chemical_potential_res(model, vl, T, _x)
-       lnϕl .= lnϕl ./ RT .- log(p*vl/RT/sum(_x))
-       lnϕv = VT_chemical_potential_res(model, vv, T, _y)
-       lnϕv .= lnϕv ./ RT .- log(p*vv/RT/sum(_y))
-       K = exp.(lnϕl .- lnϕv)
-       if _bubble
-           K .= z .* K
-       else
-           K .= z ./ K
-       end
-       w = K
-       w ./= sum(w)
-        return T,vl,vv,w
-    else
-        return result
+        lnfl,pl = lnf(model,vl,T,_x)
+        lnfv,pv = lnf(model,vv,T,_y)
+        F1 = pl - p
+        F2 = pv - p
+        F3 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
+        F4 = lnfl - lnfv + log.(_x) - log.(_y)
+        vcat(F1,F2,F3,F4) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
     end
+    λx = vcat(result[1],result[2],result[3],result[4])
+    ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
+    ∂T,∂vl,∂vv = ∂x[1:3]
+    ∂w = ∂x[4:end]
+    return ∂T,∂vl,∂vv,∂w
 end
 
-bubble_temperature_ad(model,p,z,result) = bubbledew_temperature_ad(model,p,z,result,true)
-dew_temperature_ad(model,p,z,result) = bubbledew_temperature_ad(model,p,z,result,false)
+bubble_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad(result,tup,λtup,true)
+dew_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad(result,tup,λtup,false)
 
 function zero_non_equilibria!(w,in_equilibria)
     for i in eachindex(w)
@@ -361,13 +338,13 @@ function zero_non_equilibria!(w,in_equilibria)
 end
 
 
-function comps_in_equilibria(components,::Nothing)
+function comps_in_equilibria(components,::Nothing)::Vector{Bool}
     return fill(true,length(components))
 end
 
-function comps_in_equilibria(components,not_in_w)
+function comps_in_equilibria(components,not_in_w)::Vector{Bool}
     res = fill(true,length(components))
-    for i in 1:length(components)
+    for i in eachindex(res)
         res[i] = !in(components[i],not_in_w)
     end
     return res
@@ -389,7 +366,6 @@ include("solids/sle_solubility.jl")
 include("solids/slle_solubility.jl")
 include("solids/eutectic_point.jl")
 
-export bubble_pressure_fug, bubble_temperature_fug, dew_temperature_fug, dew_pressure_fug
 export bubble_pressure,    dew_pressure,    LLE_pressure,    azeotrope_pressure, VLLE_pressure
 export bubble_temperature, dew_temperature, LLE_temperature, azeotrope_temperature, VLLE_temperature
 export crit_mix, UCEP_mix, UCST_pressure, UCST_temperature, UCST_mix, mechanical_critical_point

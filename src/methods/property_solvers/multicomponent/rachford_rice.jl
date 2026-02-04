@@ -368,7 +368,7 @@ end
 @enum RachfordRiceStatus RRLiquid RRVapour RREq RRFailure RRTrivial
 
 function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z));K_tol = 4*eps(eltype(K)))
-    status= rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
+    status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
     _1 = one(Base.promote_eltype(K,z))
     _0 = zero(_1)
     nan = _0/_0

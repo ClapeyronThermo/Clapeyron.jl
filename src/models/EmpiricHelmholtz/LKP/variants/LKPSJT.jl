@@ -109,6 +109,7 @@ model = LKPSJT(["neon","hydrogen"];
 """
 LKPSJT
 const enhancedLKP = LKPSJT
+@doc (@doc LKPSJT) enhancedLKP
 
 function LKPSJT(components;
     idealmodel = BasicIdeal,

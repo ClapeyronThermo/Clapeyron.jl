@@ -408,10 +408,10 @@ function J2(model::SAFTVRMieGVModel, V, T, z, type::Symbol, i, j, η = @f(ζ0123
         m̄1 = one(m̄)
         m̄2 = (m̄-1)/m̄
         m̄3 = m̄2*(m̄-2)/m̄
-        m̄i = (m̄1,m̄2,m̄3)
+        m̄i_DD = (m̄1,m̄2,m̄3)
 
-        aij_dd = ntuple(i -> dot(m̄i,DD_consts.corr_a[i]),Val(5))
-        bij_dd = ntuple(i -> dot(m̄i,DD_consts.corr_b[i]),Val(5))
+        aij_dd = ntuple(i -> dot(m̄i_DD,DD_consts.corr_a[i]),Val(5))
+        bij_dd = ntuple(i -> dot(m̄i_DD,DD_consts.corr_b[i]),Val(5))
         cij_dd = aij_dd .+ bij_dd .* ϵT⁻¹
         return evalpoly(η,cij_dd)
     else
@@ -432,8 +432,8 @@ function J3(model::SAFTVRMieGVModel, V, T, z, type::Symbol, i, j, k, η = @f(ζ0
         return evalpoly(η,cijk_dq)
     elseif type == :QQ
         m̄3 = m̄2*(m̄-2)/m̄
-        m̄i = (m̄1,m̄2,m̄3)
-        cijk_qq = ntuple(i -> dot(m̄i,QQ_consts.corr_c[i]),Val(4))
+        m̄i_qq = (m̄1,m̄2,m̄3)
+        cijk_qq = ntuple(i -> dot(m̄i_qq,QQ_consts.corr_c[i]),Val(4))
         return evalpoly(η,cijk_qq)
     else
         # For DD, there is a restriction on the value of m̄

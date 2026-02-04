@@ -205,7 +205,7 @@ Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function internal_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_internal_energy_res_res)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_internal_energy_res)
 end
 
 """
@@ -623,11 +623,15 @@ Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the
 
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
-function identify_phase(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    #TODO: what do we do with composite models here?
-    V = volume(model, p, T, z; phase, threaded, vol0)
+function identify_phase(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, vol = NaN)
+    if isnan(vol)
+        V = volume(model, p, T, z; phase, threaded, vol0)
+    else
+        V = vol*oneunit(Base.promote_eltype(model,p,T,z))
+    end
     return VT_identify_phase(model,V,T,z)
 end
+
 
 """
     fundamental_derivative_of_gas_dynamics(model::EoSModel, p, T, z=SA[1.]; phase=:gas, threaded=true, vol0=nothing)::Symbol
@@ -682,14 +686,16 @@ The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume
 
 If the `μ_ref` keyword argument is not provided, the `reference` keyword is used to specify the reference chemical potential..
 """
-function activity_coefficient(model::EoSModel,p,T,z=SA[1.];
+function activity_coefficient(model::EoSModel,p,T,z = SA[1.0];
                             μ_ref = nothing,
                             reference = :pure,
                             phase=:unknown,
                             threaded=true,
                             vol0=nothing)
-    if model isa ActivityModel
-        return activity_coefficient(model,p,T,z)
+    reference = Symbol(reference)
+    γmodel = __γ_unwrap(model)
+    if γmodel isa ActivityModel
+        return activity_coefficient(γmodel,p,T,z)
     end
     if μ_ref == nothing
         return activity_coefficient_impl(model,p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
@@ -720,19 +726,20 @@ The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume
 
 If the `μ_ref` keyword argument is not provided, the `reference` keyword is used to specify the reference chemical potential..
 """
-function activity(model::EoSModel,p,T,z=SA[1.];
+function activity(model::EoSModel,p,T,z;
                 μ_ref = nothing,
                 reference = :pure,
                 phase=:unknown,
                 threaded=true,
                 vol0=nothing)
+    reference = Symbol(reference)
     if model isa ActivityModel
         return activity(model,p,T,z)
     end
     if μ_ref == nothing
-        return activity_impl(model,p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
+        return activity_impl(__γ_unwrap(model),p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
     else
-        return activity_impl(model,p,T,z,μ_ref,reference,phase,threaded,vol0)
+        return activity_impl(__γ_unwrap(model),p,T,z,μ_ref,reference,phase,threaded,vol0)
     end
 end
 
@@ -804,6 +811,7 @@ Returns a reference chemical potential. Used in calculation of `activity` and ac
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function reference_chemical_potential(model::EoSModel,p,T,reference = reference_chemical_potential_type(model); phase=:unknown, threaded=true, vol0=nothing)
+    reference = Symbol(reference)
     if reference == :pure
         pure = split_pure_model(model)
         return gibbs_free_energy.(pure, p, T; phase, threaded)
@@ -845,6 +853,18 @@ function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown,
     return p*V/(sum(z)*Rgas(model)*T)
 end
 
+"""
+    inversion_temperature(model::EoSModel, p, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
+
+Calculates the inversion temperature `T_inv`, defined as the temperature where the Joule-Thomson coefficient becomes zero, i.e.
+
+```julia
+μⱼₜ(T) = 0
+```
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+
+See also [`joule_thomson_coefficient`](@ref).
+"""
 function inversion_temperature(model::EoSModel, p, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
     T0 = 6.75*T_scale(model,z)
     μⱼₜ(T) = joule_thomson_coefficient(model, p, T, z; phase, threaded, vol0)
@@ -913,6 +933,15 @@ function mixing(model::EoSModel, p, T, z, property::ℜ; phase=:unknown, threade
     return mix_prop::TT
 end
 
+"""
+    excess(model::EoSModel, p, T, z, property; phase=:unknown, threaded=true, vol0=nothing)
+
+Returns the excess value of a bulk property relative to its ideal mixing value.
+
+By default this delegates to [`mixing`](@ref). For some properties (e.g.
+`entropy` and `gibbs_free_energy`) specialized implementations are provided to
+use residual contributions.
+"""
 function excess(model::EoSModel, p, T, z, property; phase=:unknown, threaded=true, vol0=nothing)
     mixing(model, p, T, z, property; phase, threaded, vol0)
 end
@@ -1002,6 +1031,20 @@ function _partial_property(model::EoSModel, V, T, z::AbstractVector, VT_prop::F)
     return ∂x∂nᵢ .- ∂x∂V .* ∂p∂nᵢ ./ ∂p∂V
 end
 
+"""
+    thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Calculates the thermodynamic factor matrix Γᵢⱼ (size: N-1 × N-1) defined as:
+
+```julia
+Γᵢⱼ = δᵢⱼ + xᵢ ∂lnγᵢ/∂xⱼ
+```
+"""
+function thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    length(model) == 1 && return one(T)
+    return PT_property(model,p,T,z,phase,threaded,vol0,VT_thermodynamic_factor)
+end
+
 #first derivative order properties
 export entropy, internal_energy, enthalpy, gibbs_free_energy, helmholtz_free_energy
 export entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
@@ -1021,6 +1064,7 @@ export chemical_potential, activity_coefficient, activity, aqueous_activity, fug
 export chemical_potential_res
 export mixing, excess, gibbs_solvation, partial_property
 export identify_phase
+export thermodynamic_factor
 
 module PT
     import Clapeyron

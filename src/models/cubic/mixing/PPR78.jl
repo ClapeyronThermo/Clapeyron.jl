@@ -47,7 +47,8 @@ function PPR78Rule(components;
     activity_userlocations = String[],
     verbose::Bool=false)
     
-    groups = GroupParam(components,["cubic/EPPR78/EPPR78_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
+    _components = format_gccomponents(components)
+    groups = GroupParam(_components,["cubic/EPPR78/EPPR78_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
     params = getparams(groups, ["cubic/EPPR78/EPPR78_unlike.csv"]; userlocations = userlocations, verbose = verbose, ignore_missing_singleparams=["A","B"])
     pkgparams = PPR78Param(params["A"],params["B"])
     references = ["10.1002/aic.12232","10.1016/j.fluid.2022.113456"]
@@ -57,13 +58,13 @@ end
 
 recombine_impl!(model::PPR78Rule) = model
 
-function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
+function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b)
     n = sum(z)
     invn = 1/n
     invn2 = invn*invn
     T̄ = 298.15/T
     b̄ = dot(z,diagvalues(b)) * invn
-    c̄ = dot(z,c)*invn
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     _0 = zero(T+first(z))
     gᴱ = _0
 

@@ -42,11 +42,13 @@ SingleParam{Float64}("Mw") with 2 components:
  "methanol" => 32.042
 ```
 """
-function ParamTable(type::Symbol,data;
+function ParamTable(type,data;
     location::Union{String,Nothing} = nothing,
     name::Union{String,Nothing} = nothing,
-    grouptype::Symbol = :unknown,
+    grouptype = :unknown,
     options::ParamOptions = DefaultOptions)
+    type = Symbol(type)
+    grouptype = Symbol(grouptype)
     if location === nothing
         location = generate_location!()
     end
@@ -55,7 +57,7 @@ function ParamTable(type::Symbol,data;
         name = repr(rand(UInt))
     end
     csvname = "$(Symbol(table_type))_$(name).csv"
-    headers = String.(Tables.columnnames(data))
+    headers = String.(colnames(data))
     normalised_headers = normalisestring.(headers)
     _,_,_ = col_indices(table_type,normalised_headers,options) #basically to check the schema
     file = joinpath(location,csvname)
@@ -83,4 +85,7 @@ Deletes all files in the temporary Clapeyron scratch space, used to store the cs
 function cleartemp!()
     Scratch.delete_scratch!(PKG_UUID,"ParamTables")
 end
+
+colnames(x) = Tables.columnnames(x)
+
 export ParamTable

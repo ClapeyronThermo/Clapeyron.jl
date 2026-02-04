@@ -148,8 +148,7 @@ function ab_premixing(model::PTVModel,mixing::MixingRule,k,l)
     _Zc = @. _pc.*_Vc./(R̄*_Tc)
     Ωa = @. 0.66121-0.76105*_Zc
     Ωb = @. 0.02207+0.20868*_Zc
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    ab_diagvalues!(a,b,Ωa,Ωb,_Tc,_pc,Rgas(model))
     epsilon_LorentzBerthelot!(a,k)
     sigma_LorentzBerthelot!(b,l)
     return a,b
@@ -166,6 +165,8 @@ function c_premixing(model::PTVModel)
     c = sigma_LorentzBerthelot!(c)
     return c
 end
+
+has_fast_crit_pure(model::PTVModel) = false
 #=
  (-B2-2(B2+B)+A)
  (-B2-2B2-2B+A)

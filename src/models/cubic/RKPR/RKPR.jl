@@ -197,8 +197,12 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
         Δ1 = -δ
         Δ2 = -(1 - δ)/(1 + δ)
         Ωa,Ωb = ab_consts(Δ1,Δ2)
-        a[i] = Ωa*R̄^2*Tci^2/pci
-        b[i] = Ωb*R̄*Tci/pci
+        if a.ismissingvalues[i,i]
+            a[i] = Ωa*R̄^2*Tci^2/pci
+        end
+        if b.ismissingvalues[i,i]
+            b[i] = Ωb*R̄*Tci/pci
+        end
     end
     epsilon_LorentzBerthelot!(a,k)
     sigma_LorentzBerthelot!(b,l)
@@ -242,7 +246,7 @@ function cubic_Δ(model::RKPRModel,z)
         δi = δ[i]
         zi = z[i]
         Δ2 += zi*δi
-        Δ1 += z[i]*((1 - δi)/(1 + δi))
+        Δ1 += zi*((1 - δi)/(1 + δi))
     end
     return  -Δ2*z⁻¹, -Δ1*z⁻¹
 end

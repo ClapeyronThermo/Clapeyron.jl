@@ -57,6 +57,7 @@ alpha = RKPRAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,
 """
 RKPRAlpha
 default_locations(::Type{RKPRAlpha}) = critical_data()
+default_ignore_missing_singleparams(::Type{RKPRAlpha}) = ["Vc"]
 
 function transform_params(::Type{RKPRAlphaParam},params,components)
     n = length(components)

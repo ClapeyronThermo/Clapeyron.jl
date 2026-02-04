@@ -1,19 +1,22 @@
-# v0.6.17
+# v0.6.21
 
 ## New Features
 
-- `Tproperty` and `Pproperty` speed improvements for multicomponent models.
-- New method: `edge_pressure` and `edge_temperature`, that solves the isogibbs criteria for single and multicomponent models. Those functions are equivalent to `saturation_pressure`/`saturation_temperature` for single component models.
-- New method: `mechanical_critical_point`, that calculates the mechanical stability limit for single and multicomponent models. For single component models, this is equivalent to `crit_pure`.
-- New method: `spinodal_maximum`, that returns the maximum temperature and pressure of the diffusive spinodal line ($det(∂₂G) = 0$)
-- `x0_crit_pure` now accepts an optional mol amount composition input.
-- `MichelsenTPFlash`: improvements in rachford-rice identification of K-value types, support for `verbose` keyword argument.
-- Misc documentation improvements.
+- `MultiPhaseTPFlash`: support for Gamma-Phi models
+- Cubics: translation now does not allocate in most cases.
+- New model: translated industrial PC-SAFT (`iPCSAFT`)
+- New model: VTPR with temperature-dependent translation (`TVTPR`)
+- Electrolyte models: `mean_ionic_activity_coefficient` and `osmotic_coefficient` (and their saturated variants), can now be called directly without specifying salts, if the model forms binary salts. For example, (`osmotic_coefficient(model,p,T,m)`) is equivalent to(`osmotic_coefficient(model,salts,p,T,m)`), where `salts = Clapeyron.auto_binary_salts(model)`
+- `DHModel`: improved numerical stability of `a_dh` when the electrolyte concentrations are small.
+- association options can now be initialized directly from a symbol: (`PCSAFT(["water","ethanol"],assoc_options = :cr1)`)
 
-## Bug Fixes
+## package deprecations
 
-- JutulDarcy extension: fixes to allow Clapeyron work with the latest JutulDarcy extension
-- CoolProp extension: fixes in `CoolProp.PropsSI` with Clapeyron models.
-- CoolProp extension: fixes to support JSON parsing with CoolProp v7.
-- Fixes to bubble/dew initial points.
-- `SingleFluid`: Fixes when using Double exponential terms.
+- JSON3.jl was removed in favour of JSON.jl
+
+## Bug fixes
+
+- `AntoineSaturation` now uses SI units
+- fixes in `PenelouxTranslation` (inverted parameters for PR and RK models)
+- Patel-Teja: the correlation for ζc is used first instead of the experimental critical volume
+- Various documentation improvements

@@ -186,12 +186,12 @@ end
 assoc_shape(model::gcsPCSAFTModel) = assoc_shape(model.pcsaftmodel)
 getsites(model::gcsPCSAFTModel) = getsites(model.pcsaftmodel)
 
-function lb_volume(model::gcsPCSAFTModel, z)
-    return lb_volume(model.pcsaftmodel, z)
+function lb_volume(model::gcsPCSAFTModel, T, z)
+    return lb_volume(model.pcsaftmodel, T, z)
 end
 
 function T_scale(model::gcsPCSAFTModel, z)
-    return T_scale(model.pcsaftmodel,z)
+    return T_scale(model.pcsaftmodel, z)
 end
 
 function T_scales(model::gcsPCSAFTModel)

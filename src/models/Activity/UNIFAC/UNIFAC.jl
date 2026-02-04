@@ -174,7 +174,8 @@ function UNIFAC(components;
     verbose = false,
     reference_state = nothing)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
+    _components = format_gccomponents(components)
+    groups = GroupParam(_components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
     params = getparams(groups, default_locations(UNIFAC);
                         userlocations = userlocations,

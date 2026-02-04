@@ -65,7 +65,8 @@ Returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.j
     T = typeof(ForwardDiff.Tag(tag, R))
     out = ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),)))
     _f,_df = f∂f(f,out)
-    fx = ForwardDiff.value(_f)
+    fx = recursive_fd_value(_f)
+    dfx = recursive_fd_value(_df)
     dfx = ForwardDiff.partials(_f).values[1]
     d2fx = ForwardDiff.partials(_df).values[1]
     return (fx,dfx,d2fx)
@@ -229,6 +230,20 @@ function _GradientConfig(hconfig::ForwardDiff.HessianConfig{T,V,N}) where {T,V,N
     seeds = jconf.seeds
     duals = jconf.duals[1]
     return ForwardDiff.GradientConfig{T,V,N,typeof(duals)}(seeds,duals)
+end
+
+function _JacobianConfig(hconfig::ForwardDiff.HessianConfig{T,V,N},yduals = nothing) where {T,V,N}
+    seeds = hconfig.jacobian_config.seeds
+    duals = hconfig.jacobian_config.duals
+    #duals = (xduals,yduals)
+    #@show xduals[1]
+    #@show xduals[2]
+    #@show typeof(xduals)
+    return ForwardDiff.JacobianConfig{T,V,N,typeof(duals)}(seeds,duals)
+end
+
+function _DerivativeConfig(duals::AbstractVector{ForwardDiff.Dual{T,V,1}}) where {T,V}
+    return ForwardDiff.DerivativeConfig{T,typeof(duals)}(duals)
 end
 
 chunksize(::ForwardDiff.Chunk{C}) where {C} = C

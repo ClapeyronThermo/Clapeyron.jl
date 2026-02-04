@@ -16,6 +16,7 @@ struct FloryHuggins{c<:EoSModel} <: FloryHugginsModel
 end
 
 const FH = FloryHuggins
+@doc (@doc FloryHuggins) FH
 export FH, FloryHuggins
 
 """
@@ -86,20 +87,21 @@ function excess_g_res(model::FloryHugginsModel, p, T, z)
     N = model.params.N.values
     v = model.params.v.values
     n = sum(z)
-    
-    x = z ./ n
-    V = sum(x .* v .* N)
-    NT = sum(x .* N)    
+    ninv = 1/n
+    V = @sum(z[i]*v[i]*N[i])/n
+    NT = @sum(z[i]*N[i])/n    
     v0 = V / NT
-    ϕ = x .* v .* N ./ V  # Volume fraction of each component
-    res = 0.0
+    #ϕ = x .* v .* N ./ V  # Volume fraction of each component
+    res = zero(Base.promote_eltype(model,T,z))
     for i ∈ @comps
-        xi = x[i]
-        ϕi = ϕ[i]
+        xi = z[i]*ninv
+        #ϕi = xi .* v .* N ./ V
+        ϕi = xi * v[i] * N[i] / V
         ri = v[i]*N[i]/V
         res += xi * log(ri)
         for j ∈ i+1:length(model.components)
-            ϕj = ϕ[j]
+            xj = z[j]*ninv
+            ϕj = xj * v[j] * N[j] / V
             χij = a[i,j] + b[i,j]/T
             res += ϕi * ϕj * χij * NT
         end

@@ -1,4 +1,7 @@
+include("equations.jl")
+
 abstract type ESElectrolyteModel <: ElectrolyteModel end
+abstract type ISElectrolyteModel <: ElectrolyteModel end
 
 struct ESElectrolyte{T<:IdealModel,c<:EoSModel,i<:IonModel} <: ESElectrolyteModel
     components::Array{String,1}
@@ -9,7 +12,6 @@ struct ESElectrolyte{T<:IdealModel,c<:EoSModel,i<:IonModel} <: ESElectrolyteMode
     references::Array{String,1}
 end
 
-
 """
     ESElectrolyte(solvents::Array{String,1},
         ions::Array{String,1};
@@ -17,7 +19,7 @@ end
         neutralmodel::EoSModel = pharmaPCSAFT,
         ionmodel::IonModel = DH,
         RSPmodel::RSPModel = ConstRSP,
-        charges = String[], 
+        charges = String[],
         ideal_userlocations = String[],
         neutralmodel_userlocations = String[],
         ionmodel_userlocations = String[],
@@ -48,6 +50,9 @@ function ESElectrolyte(solvents,ions;
     assoc_options = AssocOptions(),
     verbose = false,
     reference_state = nothing)
+
+    solvents = format_components(solvents)
+    ions = format_components(ions)
     components = deepcopy(ions)
     prepend!(components,solvents)
 
@@ -87,7 +92,7 @@ We need to know the level at which they are interwined.
 I decided that there are three levels of interwining:
 
 level 1: Electrolyte model provides charges to ion model, the ion model then can call itself
-level 2: Electrolyte models provided  
+level 2: Electrolyte models provided
 
 =#
 
@@ -128,7 +133,7 @@ function get_sigma(ionmodel::IonModel, V, T, z, model, neutral_data = @f(data))
     if has_sigma(ionmodel)
         return ionmodel.params.sigma.values
     end
-    
+
     if model isa CPAModel
         b = model.cubicmodel.params.b.values
         σ = similar(b,length(neutralmodel))
@@ -180,10 +185,6 @@ end
 
 function a_res(ionmodel::IonModel, V, T, z, iondata, neutralmodel, neutral_data)
     return a_res(ionmodel, V, T, z, iondata)
-end
-
-function lb_volume(model::ESElectrolyteModel,z)
-    return lb_volume(model.neutralmodel,z)
 end
 
 function lb_volume(model::ESElectrolyteModel,T,z)
@@ -283,7 +284,7 @@ function show_comps_with_charge(io,components,Z)
     function f(x)
         comp,zi = x
         if iszero(zi)
-            return '"' * comp* '"' 
+            return '"' * comp* '"'
         elseif zi < 0
             return '"' * comp * '"' * low_color(" (-" * string(abs(zi)) * ")")
         else
@@ -309,7 +310,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::ESElectrolyteModel)
         end
     else
         print(io,"()")
-    end    
+    end
     print(io,'\n',"Neutral Model: ",typeof(model.neutralmodel))
     print(io,'\n',"Ion Model: ",typeof(model.ionmodel))
 
@@ -319,5 +320,8 @@ function Base.show(io::IO,mime::MIME"text/plain",model::ESElectrolyteModel)
 
     show_reference_state(io,model;space = true)
 end
+
+
+include("stability.jl")
 
 export dielectric_constant, ESElectrolyte

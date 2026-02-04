@@ -1,10 +1,23 @@
+#test structs for #154
+abstract type PCSAFTModel_test <: SAFTModel end
+
+# Defining the parameters used by the model
+struct PCSAFTParam_test <: EoSParam
+    Mw::SingleParam{Float64}
+    segment::SingleParam{Float64}
+    sigma::PairParam{Float64}
+    epsilon::PairParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
+end
+
 @testset "Reported errors" begin
     #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/104
     @testset "#104" begin
         model = VTPR(["carbon dioxide"])
         p = 1e5
         T = 273.15
-        @test fugacity_coefficient(model, p, T)[1] ≈ 0.9928244080356565 rtol = 1E-6
+        @test fugacity_coefficient(model, p, T)[1] ≈ 0.9930275329424039 rtol = 1E-6
         @test activity_coefficient(model, p, T)[1] ≈ 1.0
     end
     @testset "#112" begin
@@ -109,18 +122,6 @@
 
     @testset "#154" begin
         #there was a problem when using the @newmodel macros outside the Clapeyron module. this should suffice as a test.
-        abstract type PCSAFTModel_test <: SAFTModel end
-
-        # Defining the parameters used by the model
-        struct PCSAFTParam_test <: EoSParam
-            Mw::SingleParam{Float64}
-            segment::SingleParam{Float64}
-            sigma::PairParam{Float64}
-            epsilon::PairParam{Float64}
-            epsilon_assoc::AssocParam{Float64}
-            bondvol::AssocParam{Float64}
-        end
-
         # Creating a model struct called PCSAFT, which is a sub-type of PCSAFTModel, and uses parameters defined in PCSAFTParam
         @newmodel PCSAFT_test PCSAFTModel_test PCSAFTParam_test
         @newmodelsimple PCSAFT_testsimple PCSAFTModel_test PCSAFTParam_test
@@ -131,7 +132,6 @@
         @test PCSAFT_testsimple <: EoSModel #@newmodelsimple
         @test PCSAFT_testgc <: EoSModel #@newmodelgc
     end
-
 
     @testset "#162" begin
         #a longstanding problem, init_model didn't worked with functions.
@@ -377,7 +377,7 @@
         @test bubP1 ≈ bubP1_test rtol = 1e-6
     end
 
-    @testset "416" begin
+    @testset "#416" begin
         #if we build a cubic and only provide critical parameters (without acentric factor), read the database
         #to build the alpha model
         model = PR(["nitrogen"]; userlocations=(;
@@ -385,5 +385,26 @@
            Pc = [1.],
            Mw = [1.]))
         @test !model.alpha.params.acentricfactor.ismissingvalues[1]
+    end
+
+    @testset "#513" begin
+        #=
+        error in x0_sat_pure_spinodal
+        incorrect bounds, causing failure in convergence.
+        =#
+        model = tcRK("R1243zf")
+        Tr = range(0.2,1.0,500)
+        Tc = first(crit_pure(model))
+        psat = first.(saturation_pressure.(model,Tr .* Tc))
+        @test count(isnan,psat[100:end]) == 0
+    end
+
+    @testset "#528" begin
+        #=
+        Cubics: error in not considering if a and b are non-missing before building it 
+        =#
+        model = PR(["MethylLinoleate"];userlocations = (;a = [14.253080968127202], b = [0.0003800760318341279], Tc = [799.0001945392406], Pc = [1.3408208824579124e6], Mw = [294.472], Vc = [0.0012370135229711869] ))
+        @test model.params.a.values[1,1] == 14.253080968127202
+        @test model.params.b.values[1,1] == 0.0003800760318341279
     end
 end

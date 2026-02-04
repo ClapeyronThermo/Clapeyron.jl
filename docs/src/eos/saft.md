@@ -22,17 +22,22 @@ Clapeyron.gcsPCSAFT
 Clapeyron.CPPCSAFT
 Clapeyron.GEPCSAFT
 Clapeyron.ADPCSAFT
+Clapeyron.iPCSAFT
 ```
 
 ## SAFT-VR Models
 
 ```@docs
 Clapeyron.SAFTVRMie
+Clapeyron.SAFTVRMieGV
 Clapeyron.SAFTVRMie15
 Clapeyron.SAFTVRQMie
 Clapeyron.SAFTVRSMie
 Clapeyron.SAFTgammaMie
+Clapeyron.SAFTγMie
 Clapeyron.structSAFTgammaMie
+Clapeyron.sSAFTgammaMie
+Clapeyron.sSAFTγMie
 Clapeyron.SAFTVRSW
 ```
 

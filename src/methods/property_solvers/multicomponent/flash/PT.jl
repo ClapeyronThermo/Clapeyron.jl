@@ -42,7 +42,7 @@ include("../tp_flash/multiphase.jl")
 function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs) 
     if length(kwargs) == 0
         return MichelsenTPFlash()
-    elseif any(x->haskey(kwargs,x),(:v0,:noncondensables,:nonvolatiles,:x0,:y0,:K0,:equilibrium))
+    elseif any(x->haskey(kwargs,x),(:v0,:noncondensables,:nonvolatiles,:x0,:y0,:K0,:equilibrium,:verbose))
         return MichelsenTPFlash(;kwargs...)
     elseif any(x->haskey(kwargs,x),(:numphases,:max_steps,:population_size,:time_limit,:verbose,:logspace))
         return DETPFlash(;kwargs...)
@@ -83,8 +83,11 @@ function tp_flash2(model::EoSModel, p, T, n,method::FlashMethod)
     ∑n = sum(n_r)
     z_r = n_r ./ ∑n
     if has_a_res(model)
-        result_primal = tp_flash_impl(primalval(model_r),primalval(p),primalval(T),primalval(z_r),method_r)
-        result = tp_flash_ad(model_r,p,T,z_r,result_primal)
+        λmodel,λp,λT,λz = primalval(model_r),primalval(p),primalval(T),primalval(z_r)
+        λresult = tp_flash_impl(λmodel,λp,λT,λz,method_r)
+        tup = (model,p,T,z_r)
+        λtup = (model_r,λp,λT,λz)
+        result = xy_flash_ad(λresult,tup,λtup,pressure,temperature)
     else
         result = tp_flash_impl(model_r,p,T,z_r,method_r)
     end

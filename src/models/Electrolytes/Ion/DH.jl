@@ -28,8 +28,12 @@ DH
 export DH
 function DH(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
 
-    components = deepcopy(ions)
-    prepend!(components,solvents)
+    solvents = format_components(solvents)
+    ions = format_components(ions)
+    components = vcat(solvents, ions)
+
+    userlocations = normalize_userlocations(userlocations)
+    RSPmodel_userlocations = normalize_userlocations(RSPmodel_userlocations)
 
     references = String[]
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
@@ -58,11 +62,7 @@ function a_dh(V, T, z, Z, σ, ϵ_r)
         Zi = Z[i]
         if Z[i] != 0 && !iszero(primalval(z[i]))
             count +=1
-            σi = σ[i]
-            yi = σ[i]*κ
-            yip1 = yi + 1
-            #χi = 3/(yi*yi*yi)*(1.5 + log1p(yi) - 2*yip1 + 0.5*yip1*yip1)
-            χi = (log1p(yi) + 0.5*yi*(yi - 2))/(yi*yi*yi)
+            χi = dh_term(σ[i]*κ)
             res +=z[i]*Zi*Zi*χi
         end
     end
@@ -74,4 +74,34 @@ function a_dh(V, T, z, Z, σ, ϵ_r)
     #y = σ*κ
     #χ = @. 3/y^3*(3/2+log1p(y)-2*(1+y)+1/2*(1+y)^2)
     # return -1/3*s*κ*sum(z[i]*Z[i]^2*χ[i] for i ∈ iions)/∑z
+end
+
+function dh_term(x)
+    #=
+    
+    when x is really small, dh_term(x) suffers from catastrofic cancellation
+
+    log(1 + x) = x - 0.5xx + O(x3)
+    log(1 + x) - x + 0.5*x*x = O(x3) !!!
+
+    #solution:
+
+    we replace (log(1 + x) - x + 0.5*x*x)/xxx for their taylor expansion
+    
+    #implementation:
+
+    using RobustPade (https://github.com/mjp98/RobustPade.jl/blob/main/src/RobustPade.jl)
+    n = 10
+    coeffs = 1 ./ (3:(n+2)) .* - cospi.(3:(n+2))
+    p,q = robustpade(coeffs,4,5)
+    =#
+    if primalval(x) <= 1.5
+        p = (0.3333333333333333, 0.7222222222346917, 0.5314393939617089, 0.15151515152716674, 0.013227513229354138)
+        q = (1.0, 2.9166666667040753, 3.181818181913183, 1.5909090909939427, 0.3535353535662185, 0.026515151518857805)
+        return evalpoly(x,p)/evalpoly(x,q)
+    else
+        x2 = x*x
+        x3 = x*x*x
+        return (log(1 + x) - x + 0.5*x2)/x3
+    end
 end

@@ -68,7 +68,7 @@ LJSAFT
 
 export LJSAFT
 
-function lb_volume(model::LJSAFTModel, z)
+function lb_volume(model::LJSAFTModel, T, z)
     seg = model.params.segment.values
     b = model.params.b.values
     val = π/6*sum(z[i]*seg[i]*b[i,i] for i in 1:length(z))
