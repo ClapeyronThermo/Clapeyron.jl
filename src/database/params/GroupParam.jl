@@ -80,7 +80,7 @@ end
 format_components(g::GroupParameter) = g
 
 #given components, groups, n_groups, reconstitute GroupParam
-function recombine!(param::GroupParameter{T}) where T
+function recombine!(param::GroupParam{T}) where T
     components = param.components
     groups = param.groups
     n_groups = param.n_groups
