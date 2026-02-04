@@ -40,7 +40,7 @@ function ESElectrolyte(solvents,ions;
     neutralmodel = pharmaPCSAFT,
     ionmodel = DH,
     RSPmodel = ConstRSP,
-    charges = String[],
+    charge = String[],
     ideal_userlocations = String[],
     neutralmodel_userlocations = String[],
     ionmodel_userlocations = String[],
@@ -51,7 +51,7 @@ function ESElectrolyte(solvents,ions;
     components = deepcopy(ions)
     prepend!(components,solvents)
 
-    params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=charges, verbose=verbose)
+    params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=charge, verbose=verbose)
     charge = params["charge"].values
     #path0 = default_locations(neutralmodel)
     #remove unused datapaths

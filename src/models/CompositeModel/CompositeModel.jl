@@ -483,7 +483,8 @@ function promote_model(::Type{T},model::CompositeModel) where T <: Number
     fluid = promote_model(T,model.fluid)
     solid = promote_model(T,model.solid)
     mapping = model.mapping
-    return CompositeModel(components,fluid,solid,mapping)
+    reference = model.solid_reference_state
+    return CompositeModel(components,fluid,solid,mapping,reference)
 end
 
 function split_pure_solid(model::CompositeModel)
