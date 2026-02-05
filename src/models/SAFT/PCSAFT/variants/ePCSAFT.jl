@@ -85,10 +85,10 @@ function ePCSAFT(solvents,ions;
     init_neutralmodel = neutralmodel(components;userlocations=append!(neutralmodel_userlocations,neutral_path),verbose=verbose,assoc_options=assoc_options)
     init_ionmodel = ionmodel(solvents,ions;RSPmodel=RSPmodel,userlocations=append!(ionmodel_userlocations,neutral_path),verbose=verbose)
 
-
-    for i in ions
+    Z = init_charge
+    for i in @iions
         init_neutralmodel.params.epsilon[i] = 0. #pure ion has ϵi 
-        for j in ions
+        for j in @iions
             if sign(init_charge[i]) == sign(init_charge[j]) #cation-cation and anion-anion interactions are neglected.
                 init_neutralmodel.params.epsilon[i,j] = 0.
             end
