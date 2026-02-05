@@ -40,9 +40,9 @@ function SAFTgammaMieParam(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,e
     return build_parametric_param(SAFTgammaMieParam,segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
 end
 
-struct SAFTgammaMie{I,T} <: SAFTgammaMieModel
+struct SAFTgammaMie{I,T,G} <: SAFTgammaMieModel
     components::Vector{String}
-    groups::GroupParam
+    groups::GroupParam{G}
     sites::SiteParam
     params::SAFTgammaMieParam{T}
     idealmodel::I

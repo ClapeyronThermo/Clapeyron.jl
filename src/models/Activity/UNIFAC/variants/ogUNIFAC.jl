@@ -1,15 +1,15 @@
-struct ogUNIFACParam <: EoSParam
-    A::PairParam{Float64}
-    R::SingleParam{Float64}
-    Q::SingleParam{Float64}
+struct ogUNIFACParam{T} <: EoSParam
+    A::PairParam{T}
+    R::SingleParam{T}
+    Q::SingleParam{T}
 end
 
 abstract type ogUNIFACModel <: UNIFACModel end
 
-struct ogUNIFAC{c<:EoSModel} <: ogUNIFACModel
+struct ogUNIFAC{c<:EoSModel,T} <: ogUNIFACModel
     components::Array{String,1}
-    groups::GroupParam
-    params::ogUNIFACParam
+    groups::GroupParam{T}
+    params::ogUNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
     unifac_cache::UNIFACCache

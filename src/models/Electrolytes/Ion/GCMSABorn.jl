@@ -10,9 +10,9 @@ struct GCMSABornParam <: EoSParam
     charge::SingleParam{Float64}
 end
 
-struct GCMSABorn{ϵ} <: GCMSABornModel
+struct GCMSABorn{ϵ,G} <: GCMSABornModel
     components::Array{String,1}
-    groups::GroupParam
+    groups::GroupParam{G}
     params::GCMSABornParam
     RSPmodel::ϵ
     references::Array{String,1}
