@@ -6,6 +6,9 @@ struct UNIFACCache{T} <: EoSModel
     q_p::Vector{T}
 end
 
+Base.eltype(::Type{UNIFACCache{T}}) where T = T
+Base.eltype(::UNIFACCache{T}) where T = T
+
 UNIFACCache(components,r,q,q_p) = UNIFACCache{eltype(q_p)}(components,r,q,q_p)
 
 UNIFACCache(groups::GroupParam,params) = UNIFACCache(groups,params.Q,params.R)

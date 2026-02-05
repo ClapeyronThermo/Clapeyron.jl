@@ -1,4 +1,4 @@
-struct UNIFACParam{T} <: EoSParam
+struct UNIFACParam{T} <: ParametricEoSParam{T}
     A::PairParam{T}
     B::PairParam{T}
     C::PairParam{T}

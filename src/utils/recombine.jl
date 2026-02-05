@@ -81,7 +81,6 @@ promote_model(::Type{T},param::ClapeyronParam) where T = deepcopy(param)
 promote_model(::Type{T},param::AssocOptions) where T = param
 promote_model(::Type{T},param::ReferenceState) where T = param
 promote_model(::Type{T},param::SpecialComp) where T = param
-promote_model(::Type{T},param::GroupParam) where T = param
 promote_model(::Type{T},param::SiteParam) where T = param
 
 function promote_model(::Type{T},param::GroupParam) where T

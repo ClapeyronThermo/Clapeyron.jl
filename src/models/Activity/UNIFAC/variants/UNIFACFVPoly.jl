@@ -1,4 +1,4 @@
-struct UNIFACFVPolyParam{T} <: EoSParam
+struct UNIFACFVPolyParam{T} <: ParametricEoSParam{T}
     volume::SingleParam{T}
     c::SingleParam{T}
     A::PairParam{T}

@@ -7,7 +7,13 @@ struct UNIFACFVCache{T} <: EoSModel
     Mw::Vector{T}
 end
 
-UNIFACFVCache(components,r,q,q_p) = UNIFACFVCache{eltype(r)}(components,r,q,m,Mw)
+Base.eltype(::Type{UNIFACFVCache{T}}) where T = T
+Base.eltype(::UNIFACFVCache{T}) where T = T
+
+
+UNIFACFVCache(components,r,q,m,Mw) = UNIFACFVCache{eltype(r)}(components,r,q,m,Mw)
+
+UNIFACFVCache(groups,params) = UNIFACFVCache(groups,params.Q,params.R,params.Mw)
 
 function UNIFACFVCache(groups::GroupParam,Q,R,Mw)
     Mw = group_sum(groups,Mw.values)
@@ -29,7 +35,7 @@ function recombine_unifac_cache!(cache::UNIFACFVCache,groups,params)
     return cache
 end
 
-struct UNIFACFVParam{T} <: EoSParam
+struct UNIFACFVParam{T} <: ParametricEoSParam{T}
     volume::SingleParam{T}
     A::PairParam{T}
     R::SingleParam{T}

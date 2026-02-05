@@ -1,4 +1,4 @@
-struct ogUNIFACParam{T} <: EoSParam
+struct ogUNIFACParam{T} <: ParametricEoSParam{T}
     A::PairParam{T}
     R::SingleParam{T}
     Q::SingleParam{T}

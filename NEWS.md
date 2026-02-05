@@ -2,6 +2,7 @@
 
 ## New Features
 
+- `GroupParam` can now store non-integer values.
 - `MultiPhaseTPFlash`: support for Gamma-Phi models
 - Cubics: translation now does not allocate in most cases.
 - New model: translated industrial PC-SAFT (`iPCSAFT`)
