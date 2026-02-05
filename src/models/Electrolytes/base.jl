@@ -19,7 +19,7 @@ end
         neutralmodel::EoSModel = pharmaPCSAFT,
         ionmodel::IonModel = DH,
         RSPmodel::RSPModel = ConstRSP,
-        charges = String[],
+        charge::Vector{Int} = Int[],
         ideal_userlocations = String[],
         neutralmodel_userlocations = String[],
         ionmodel_userlocations = String[],
@@ -42,7 +42,7 @@ function ESElectrolyte(solvents,ions;
     neutralmodel = pharmaPCSAFT,
     ionmodel = DH,
     RSPmodel = ConstRSP,
-    charge = String[],
+    charge = nothing,
     ideal_userlocations = String[],
     neutralmodel_userlocations = String[],
     ionmodel_userlocations = String[],
@@ -54,11 +54,18 @@ function ESElectrolyte(solvents,ions;
     components = deepcopy(ions)
     prepend!(components,solvents)
 
-    
-    
 
-    params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=charge, verbose=verbose)
-    charge = params["charge"].values
+    if isnothing(charge)
+        charge_params = getparams(components, ["Electrolytes/properties/charges.csv"]; verbose=verbose)
+        init_charge = charge_params["charge"].values
+
+    elseif charge isa Vector{String}
+        charge_params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=charge, verbose=verbose)
+        init_charge = charge_params["charge"].values
+    else
+        init_charge = charge
+    end
+
     #path0 = default_locations(neutralmodel)
     #remove unused datapaths
     #neutral_path = joinpath.(DB_PATH,filter(∉(("properties/molarmass.csv","properties/molarmass_groups.csv,properties/critical_csv")),path0))
@@ -75,7 +82,7 @@ function ESElectrolyte(solvents,ions;
     components = init_neutralmodel.components
 
     references = String[]
-    model = ESElectrolyte(components,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    model = ESElectrolyte(components,init_charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
