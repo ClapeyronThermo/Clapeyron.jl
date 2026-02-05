@@ -24,6 +24,12 @@ struct gcsPCSAFT{I,T} <: gcsPCSAFTModel
     references::Array{String,1}
 end
 
+function gcsPCSAFT(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
+    T = eltype(params)
+    I = eltype(idealmodel)
+    return gcsPCSAFT{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
+end
+
 export gcsPCSAFT
 
 """

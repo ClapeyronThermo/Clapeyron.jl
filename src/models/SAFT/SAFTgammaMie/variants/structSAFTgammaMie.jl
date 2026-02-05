@@ -12,6 +12,12 @@ struct structSAFTgammaMie{I,T} <: structSAFTgammaMieModel
     references::Array{String,1}
 end
 
+function structSAFTgammaMie(comps,groups,sites,params,idealmodel,pcsaftmodel,epsilon_mixing,assoc,refs)
+    T = eltype(params)
+    I = eltype(idealmodel)
+    return structSAFTgammaMie{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,epsilon_mixing,assoc,refs)
+end
+
 default_references(::Type{structSAFTgammaMie}) = ["10.1063/1.4851455", "10.1021/je500248h","10.1063/5.0048315", "doi.org/10.1021/acs.iecr.2c00198"]
 
 """

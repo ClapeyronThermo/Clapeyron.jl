@@ -28,6 +28,12 @@ struct HomogcPCPSAFT{I,T} <: HomogcPCPSAFTModel
     references::Array{String,1}
 end
 
+function HomogcPCPSAFT(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
+    T = eltype(params)
+    I = eltype(idealmodel)
+    return HomogcPCPSAFT{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
+end
+
 export HomogcPCPSAFT
 
 """
