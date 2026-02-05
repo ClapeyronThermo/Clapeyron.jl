@@ -26,7 +26,7 @@ end
 
 function gcsPCSAFT(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
     T = eltype(params)
-    I = eltype(idealmodel)
+    I = typeof(idealmodel)
     return gcsPCSAFT{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
 end
 

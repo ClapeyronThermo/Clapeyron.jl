@@ -30,7 +30,7 @@ end
 
 function HomogcPCPSAFT(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
     T = eltype(params)
-    I = eltype(idealmodel)
+    I = typeof(idealmodel)
     return HomogcPCPSAFT{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
 end
 

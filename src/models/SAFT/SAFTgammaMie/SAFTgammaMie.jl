@@ -51,7 +51,7 @@ end
 
 function SAFTgammaMie(comps,groups,sites,params,idealmodel,pcsaftmodel,epsilon_mixing,assoc,refs)
     T = eltype(params)
-    I = eltype(idealmodel)
+    I = typeof(idealmodel)
     return SAFTgammaMie{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,epsilon_mixing,assoc,refs)
 end
 
