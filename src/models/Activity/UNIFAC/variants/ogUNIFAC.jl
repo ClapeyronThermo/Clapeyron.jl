@@ -4,6 +4,8 @@ struct ogUNIFACParam{T} <: EoSParam
     Q::SingleParam{T}
 end
 
+ogUNIFACParam(A,R,Q) = build_parametric_param(ogUNIFACParam,A,R,Q)
+
 abstract type ogUNIFACModel <: UNIFACModel end
 
 struct ogUNIFAC{c<:EoSModel,T} <: ogUNIFACModel
@@ -12,7 +14,13 @@ struct ogUNIFAC{c<:EoSModel,T} <: ogUNIFACModel
     params::ogUNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    unifac_cache::UNIFACCache
+    unifac_cache::UNIFACCache{T}
+end
+
+function ogUNIFAC(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return ogUNIFAC{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 export ogUNIFAC

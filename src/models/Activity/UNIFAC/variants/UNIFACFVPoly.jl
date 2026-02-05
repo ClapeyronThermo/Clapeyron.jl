@@ -7,6 +7,8 @@ struct UNIFACFVPolyParam{T} <: EoSParam
     Mw::SingleParam{T}
 end
 
+UNIFACFVPolyParam(volume,c,A,R,Q,Mw) = build_parametric_param(UNIFACFVPolyParam,volume,c,A,R,Q,Mw)
+
 abstract type UNIFACFVPolyModel <: UNIFACFVModel end
 
 struct UNIFACFVPoly{c<:EoSModel,T} <: UNIFACFVPolyModel
@@ -15,7 +17,13 @@ struct UNIFACFVPoly{c<:EoSModel,T} <: UNIFACFVPolyModel
     params::UNIFACFVPolyParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    UNIFACFV_cache::UNIFACFVCache
+    UNIFACFV_cache::UNIFACFVCache{T}
+end
+
+function UNIFACFVPoly(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return UNIFACFVPoly{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 export UNIFACFVPoly

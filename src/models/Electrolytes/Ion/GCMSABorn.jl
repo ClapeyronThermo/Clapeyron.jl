@@ -1,19 +1,21 @@
 abstract type GCMSABornModel <: IonModel end
 
-struct GCMSABornParam <: EoSParam
-    shapefactor::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::SingleParam{Float64}
-    gc_sigma::SingleParam{Float64}
-    sigma_born::SingleParam{Float64}
-    gc_sigma_born::SingleParam{Float64}
-    charge::SingleParam{Float64}
+struct GCMSABornParam{T} <: EoSParam
+    shapefactor::SingleParam{T}
+    segment::SingleParam{T}
+    sigma::SingleParam{T}
+    gc_sigma::SingleParam{T}
+    sigma_born::SingleParam{T}
+    gc_sigma_born::SingleParam{T}
+    charge::SingleParam{T}
 end
 
-struct GCMSABorn{ϵ,G} <: GCMSABornModel
+GCMSABornParam(s,m,sigma,sigma_born,gc_sigma_born,Z) = build_parametric_param(s,m,sigma,sigma_born,gc_sigma_born,Z)
+
+struct GCMSABorn{ϵ,T} <: GCMSABornModel
     components::Array{String,1}
-    groups::GroupParam{G}
-    params::GCMSABornParam
+    groups::GroupParam{T}
+    params::GCMSABornParam{T}
     RSPmodel::ϵ
     references::Array{String,1}
 end
@@ -82,7 +84,7 @@ function GCMSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[],RSPm
     references = String[]
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
-    model = GCMSABorn(components, groups, packagedparams, init_RSPmodel,references)
+    model = GCMSABorn{eltype(packagedparams)}(components, groups, packagedparams, init_RSPmodel,references)
     return model
 end
 

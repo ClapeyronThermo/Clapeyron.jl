@@ -17,9 +17,9 @@ function HomogcPCPSAFTParam(Mw,segment,sigma,epsilon,k,dipole,dipole2,epsilon_as
     return build_parametric_param(HomogcPCPSAFTParam,Mw,segment,sigma,epsilon,k,dipole,dipole2,epsilon_assoc,bondvol)
 end
 
-struct HomogcPCPSAFT{I,T,G} <: HomogcPCPSAFTModel
+struct HomogcPCPSAFT{I,T} <: HomogcPCPSAFTModel
     components::Vector{String}
-    groups::GroupParam{G}
+    groups::GroupParam{T}
     sites::SiteParam
     params::HomogcPCPSAFTParam{T}
     idealmodel::I

@@ -1,6 +1,4 @@
-
 abstract type SAFTgammaMieModel <: SAFTVRMieModel end
-
 
 struct SAFTgammaMieParam{T} <: ParametricEoSParam{T}
     segment::SingleParam{Int}
@@ -36,13 +34,12 @@ end
 SAFTgammaMieParam(group::GroupParam,sites = nothing) = SAFTgammaMieParam{Float64}(group,sites)
 
 function SAFTgammaMieParam(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
-    t = (segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
     return build_parametric_param(SAFTgammaMieParam,segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
 end
 
-struct SAFTgammaMie{I,T,G} <: SAFTgammaMieModel
+struct SAFTgammaMie{I,T} <: SAFTgammaMieModel
     components::Vector{String}
-    groups::GroupParam{G}
+    groups::GroupParam{T}
     sites::SiteParam
     params::SAFTgammaMieParam{T}
     idealmodel::I

@@ -8,6 +8,12 @@ struct VTPRUNIFAC{c<:EoSModel,T} <: VTPRUNIFACModel
     references::Array{String,1}
 end
 
+function VTPRUNIFAC(components,groups,params,puremodel,references)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return VTPRUNIFAC{c,T}(components,groups,params,puremodel,references)
+end
+
 export VTPRUNIFAC
 
 """

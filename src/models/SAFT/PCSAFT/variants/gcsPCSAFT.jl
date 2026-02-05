@@ -13,9 +13,9 @@ function gcsPCSAFTParam(Mw,m,mσ3,mϵ,ϵijab,β)
     return build_parametric_param(gcsPCSAFTParam,Mw,m,mσ3,mϵ,ϵijab,β)
 end
 
-struct gcsPCSAFT{I,T,G} <: gcsPCSAFTModel
+struct gcsPCSAFT{I,T} <: gcsPCSAFTModel
     components::Vector{String}
-    groups::GroupParam{G}
+    groups::GroupParam{T}
     sites::SiteParam
     params::gcsPCSAFTParam{T}
     idealmodel::I

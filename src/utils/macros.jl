@@ -269,17 +269,15 @@ function __struct_expr!(name,parent,paramstype;idealmodel = true,sites = true,gr
     struct_fields = struct_expr.args[3].args
     if groups
         if parametric_param
-            push!(struct_fields,:(groups::Clapeyron.GroupParam))
-            #=
+            #push!(struct_fields,:(groups::Clapeyron.GroupParam))
+            
             if PARAM_LETTER != :ERROR
                 push!(struct_fields,:(groups::Clapeyron.GroupParam{$PARAM_LETTER}))
             else
                 throw(error("@newmodel error: cannot get correct parametric param type from expr"))
             end
-            =#
-            #
         else
-            push!(struct_fields,:(groups::Clapeyron.GroupParam))
+            push!(struct_fields,:(groups::Clapeyron.GroupParam{Int64}))
         end
     end
 

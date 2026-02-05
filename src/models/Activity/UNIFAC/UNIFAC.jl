@@ -6,6 +6,8 @@ struct UNIFACParam{T} <: EoSParam
     Q::SingleParam{T}
 end
 
+UNIFACParam(A,B,C,R,Q) = build_parametric_param(UNIFACParam,A,B,C,R,Q)
+
 abstract type UNIFACModel <: ActivityModel end
 
 struct UNIFAC{c<:EoSModel,T} <: UNIFACModel
@@ -14,7 +16,13 @@ struct UNIFAC{c<:EoSModel,T} <: UNIFACModel
     params::UNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    unifac_cache::UNIFACCache
+    unifac_cache::UNIFACCache{T}
+end
+
+function UNIFAC(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return UNIFAC{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 default_locations(::Type{UNIFAC}) = ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]
