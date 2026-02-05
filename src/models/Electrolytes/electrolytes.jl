@@ -1,8 +1,11 @@
+abstract type ESElectrolyteModel <: ElectrolyteModel end
+abstract type ISElectrolyteModel <: ElectrolyteModel end
+
 """
     salt_stoichiometry(model::ElectrolyteModel)
     salt_stoichiometry(model::ElectrolyteModel,salts)
 
-Obtains the stoichiometry matrix of `salts` made up of ions stored in the `model`. 
+Obtains the stoichiometry matrix of `salts` made up of ions stored in the `model`.
 This will also check that the salt is electroneutral and that all ions are involved in the salts.
 If no `salts` argument is specified, it will be created via `Clapeyron.auto_binary_salts(model)`
 
@@ -64,6 +67,7 @@ end
 
 Convert molality (mol/kg) to composition for a given model, salts, molality, and solvent composition.
 If no `salts` argument is specified, it will be created via `Clapeyron.auto_binary_salts(model)`
+`zsolv` is the mole fraction of solvent components (in a salt-free basis)
 """
 function molality_to_composition(model::ElectrolyteModel,salts::Union{AbstractVector,GroupParam},m,zsolv=SA[1.],ν = salt_stoichiometry(model,salts))
     nc = length(model)
@@ -204,12 +208,12 @@ A vector of tuples, where each tuple contains:
 - `Vector{Pair{String,Int}}`: Stoichiometric coefficients as component => count pairs
 
 # Description
-This function generates `n-1` independent binary salts from `n` ions by pairing cations 
-with anions. The stoichiometric coefficients are determined by the least common multiple 
+This function generates `n-1` independent binary salts from `n` ions by pairing cations
+with anions. The stoichiometric coefficients are determined by the least common multiple
 (LCM) of the absolute charges to ensure electroneutrality.
 
-For a system with multiple cations and anions, salts are created by iterating through 
-cation-anion pairs until `n-1` salts are formed, which is the number of independent 
+For a system with multiple cations and anions, salts are created by iterating through
+cation-anion pairs until `n-1` salts are formed, which is the number of independent
 salts needed to describe an `n`-ion system.
 
 # Examples
@@ -244,5 +248,179 @@ Clapeyron.auto_binary_salts(Z, comps)
 auto_binary_salts
 
 is_electrolyte(model::ElectrolyteModel) = true
- 
+
+#=
+Taking an inspiration from the broadcast dispatch
+
+Electrolyte models are deeply interwined.
+We need to know the level at which they are interwined.
+
+1. the charge parameter is shared between all models -> we need to pass charge to all inner models
+2. some ion models use the EoS molecular size, some use their own -> we need to dispatch on that
+3. some ion models require rsp, some not -> we need to dispatch on that too
+
+I decided that there are three levels of interwining:
+
+level 1: Electrolyte model provides charges to ion model, the ion model then can call itself
+level 2: Electrolyte models provided
+
+=#
+
+abstract type IonDependency end
+struct IndependentIonModel <: IonDependency end
+struct DependentIonModel{T} <: IonDependency
+    model::T
+end
+
+function IonDependency(model::ESElectrolyteModel)
+    return IonDependency(model.ionmodel)
+end
+
+function IonDependency(model::IonModel)
+    return IonDependency(model.RSPmodel)
+end
+
+IonDependency(model::RSPModel) = IndependentIonModel()
+
+requires_rsp(::Type{T}) where T <: IonModel = _requires_rsp(T)
+requires_rsp(model::IonModel) = _requires_rsp(typeof(model))
+Base.@assume_effects :foldable function _requires_rsp(::Type{T}) where T
+    return hasfield(T,:RSPmodel)
+end
+
+has_sigma(::Type{T}) where T <: IonModel = _has_sigma(T)
+has_sigma(model::IonModel) = _has_sigma(typeof(model))
+Base.@assume_effects :foldable function _has_sigma(::Type{T}) where T
+    if hasfield(T,:params)
+        P = fieldtype(T,:params)
+        return hasfield(P,:sigma)
+    else
+        return false
+    end
+end
+
+function get_sigma(ionmodel::IonModel, V, T, z, model, neutral_data = @f(data))
+    if has_sigma(ionmodel)
+        return ionmodel.params.sigma.values
+    end
+
+    if model isa CPAModel
+        b = model.cubicmodel.params.b.values
+        σ = similar(b,length(neutralmodel))
+        for i in 1:length(neutralmodel)
+            σ[i] = cbrt((3/2/N_A/π)*b[i,i])
+        end
+    else
+        σ = diagvalues(model.params.sigma.values)
+    end
+    return σ
+end
+
+function a_res(model::ESElectrolyteModel, V, T, z)
+    return a_res(model,V,T,z,IonDependency(model))
+end
+
+function iondata(model::ESElectrolyteModel,V,T,z)
+    iondata(model::ESElectrolyteModel,V,T,z,IonDependency(model))
+end
+
+function iondata(model::ESElectrolyteModel, V, T, z, m::IndependentIonModel)
+    neutralmodel = model.neutralmodel
+    ionmodel = model.ionmodel
+    neutral_data = data(neutralmodel,V,T,z)
+    Z = model.charge
+    σ = get_sigma(ionmodel, V, T, z, neutralmodel, neutral_data) #sigma is stored in the ionmodel
+    if requires_rsp(ionmodel)
+        ϵ_r = dielectric_constant(ionmodel, V, T, z, Z, m)
+    else
+        ϵ_r = one(Base.promote_eltype(ionmodel, V, T, z, Z))
+    end
+    return (Z, σ, ϵ_r)
+end
+
+function a_res(model::ESElectrolyteModel, V, T, z, m::IndependentIonModel)
+    neutralmodel = model.neutralmodel
+    ionmodel = model.ionmodel
+    neutral_data = data(neutralmodel,V,T,z)
+    Z = model.charge
+    σ = get_sigma(ionmodel, V, T, z, neutralmodel, neutral_data) #sigma is stored in the ionmodel
+    if requires_rsp(ionmodel)
+        ϵ_r = dielectric_constant(ionmodel, V, T, z, Z, m)
+    else
+        ϵ_r = one(Base.promote_eltype(ionmodel, V, T, z, Z))
+    end
+    iondata = (Z, σ, ϵ_r)
+    return a_res(neutralmodel, V, T, z, neutral_data) + a_res(ionmodel, V, T, z, iondata, neutralmodel, neutral_data)
+end
+
+function a_res(ionmodel::IonModel, V, T, z, iondata, neutralmodel, neutral_data)
+    return a_res(ionmodel, V, T, z, iondata)
+end
+
+function lb_volume(model::ElectrolyteModel,T,z)
+    return lb_volume(model.neutralmodel,T,z)
+end
+
+function x0_volume_liquid(model::ElectrolyteModel,p,T,z)
+    return x0_volume_liquid(model.neutralmodel,p,T,z)*1.15
+end
+
+function x0_volume_gas(model::ElectrolyteModel,p,T,z)
+    return x0_volume_gas(model.neutralmodel,p,T,z)
+end
+
+function mw(model::ElectrolyteModel)
+    return mw(model.neutralmodel)
+end
+
+function p_scale(model::ElectrolyteModel,z)
+    return p_scale(model.neutralmodel,z)
+end
+
+function T_scale(model::ElectrolyteModel,z)
+    return T_scale(model.neutralmodel,z)
+end
+
+
+
+function debye_length(model::ESElectrolyteModel,V,T,z,ϵ_r = @f(dielectric_constant),∑z = sum(z))
+    Z = model.charge
+    return debye_length(V,T,z,ϵ_r,Z)
+end
+
+"""
+    dielectric_constant(model::ElectrolyteModel, V, T, z)
+
+Calculates the dielectric constant (also known as relative static permittivity) for a given electrolyte model.
+
+## Examples
+```julia
+model = ConstRSP()
+εr = dielectric_constant(model, 1.8e-5, 298.15, [1.0])
+```
+"""
+function dielectric_constant end
+
+function dielectric_constant(model::EoSModel,V, T, z)
+    Z = model.charge
+    return dielectric_constant(model, V, T, z, Z, IonDependency(model))
+end
+
+function dielectric_constant(model::ESElectrolyteModel,V, T, z, Z, ::IndependentIonModel)
+    return dielectric_constant(model.ionmodel, V, T, z, Z, IonDependency(model.ionmodel))
+end
+
+function dielectric_constant(model::IonModel, V, T, z, Z, ::IndependentIonModel)
+    return dielectric_constant(model.RSPmodel, V, T, z, Z, IonDependency(model.RSPmodel))
+end
+
+function dielectric_constant(model::RSPModel, V, T, z, Z, ::IndependentIonModel)
+    return dielectric_constant(model, V, T, z, Z)
+end
+
+include("SaltParam.jl")
+include("ESElectrolyte.jl")
+include("ISElectrolyte.jl")
+include("stability.jl")
+
 export molality_to_composition
