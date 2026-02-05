@@ -51,10 +51,11 @@ function ESElectrolyte(solvents,ions;
     verbose = false,
     reference_state = nothing)
 
-    solvents = format_components(solvents)
-    ions = format_components(ions)
     components = deepcopy(ions)
     prepend!(components,solvents)
+
+    
+    
 
     params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=charge, verbose=verbose)
     charge = params["charge"].values
