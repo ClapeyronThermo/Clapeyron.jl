@@ -256,7 +256,7 @@ end
     @test vc_vol/system.params.Vc[1] ≈ 1.168 rtol = 1e-4 #if Zc_exp < 0.29, this should hold, by definition
     @test Vc/system.params.Vc[1] ≈ 1.168 rtol = 1e-4 #if Zc_exp < 0.29, this should hold, by definition
     system2 = RKPR("neon")
-    @test saturation_pressure(model,20.0)[1] ≈ 5401.638502041771 rtol = 1e-6
+    @test saturation_pressure(system2,20.0)[1] ≈ 5401.638502041771 rtol = 1e-6
 end
 
 @testset "EPPR78, single component" begin
