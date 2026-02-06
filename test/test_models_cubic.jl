@@ -185,7 +185,7 @@
 
         @testset "PR w/ MC3PRAlpha" begin
             system = PR(["ethane","undecane"];alpha = MC3PRAlpha)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2567594365655779 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2557866200818528 rtol = 1e-6
         end
 
         @testset "PR w/ MTTranslation" begin

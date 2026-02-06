@@ -10,7 +10,7 @@ struct GCMSABornParam{T} <: EoSParam
     charge::SingleParam{T}
 end
 
-GCMSABornParam(s,m,sigma,sigma_born,gc_sigma_born,Z) = build_parametric_param(s,m,sigma,sigma_born,gc_sigma_born,Z)
+GCMSABornParam(s,m,sigma,gc_sigma,sigma_born,gc_sigma_born,Z) = build_parametric_param(GCMSABornParam,s,m,sigma,gc_sigma,sigma_born,gc_sigma_born,Z)
 
 struct GCMSABorn{ϵ,T} <: GCMSABornModel
     components::Array{String,1}
