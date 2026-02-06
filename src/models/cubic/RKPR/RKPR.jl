@@ -222,7 +222,7 @@ function c_premixing(model::RKPRModel)
             #Roots.find_zero(x -> Clapeyron.__rkpr_f0_δ(sqrt(2) - 1,1.168*x),0.29)
             #0.2897160510687658
             if Zci > 0.2897160510687658
-                δ = sqrt(2) - 1
+                δ = 1 - sqrt(2)
             else
                 Zci_eos = 1.168*Zci
                 δ = Roots.solve(prob,Roots.Order0(),Zci_eos)
