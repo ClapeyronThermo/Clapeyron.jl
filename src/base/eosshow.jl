@@ -80,13 +80,21 @@ function eosshow(io::IO, Base.@nospecialize(model::EoSModel))
 end
 
 #utilities for showing groups
+function __show_group_ij(io,v)
+    if isinteger(v)
+        print(io,Int(v))
+    else
+        print(io,v)
+    end
+end
+
 function __show_group_i(io,val,missingvalue = "")
     keys,vals = val
     #@show val
     if length(vals) == 0 && missingvalue != ""
         print(io,missingvalue)
     else
-        show_pairs(io,keys,vals," => ",pair_separator = ", ")
+        show_pairs(io,keys,vals," => ",pair_separator = ", ",__show_group_ij)
     end
 end
 
