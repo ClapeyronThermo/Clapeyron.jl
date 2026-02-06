@@ -194,7 +194,7 @@ has_groups(::Type{T}) where T <: EoSModel = _has_groups(T)
 Base.@assume_effects :foldable function _has_groups(::Type{T}) where T <: EoSModel
     s1 = hasfield(T,:groups)
     if s1
-       return fieldtype(T,:groups) <: GroupParam
+       return fieldtype(T,:groups) <: GroupParameter
     end
     return false
 end
