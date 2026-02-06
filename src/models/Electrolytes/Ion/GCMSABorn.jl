@@ -1,6 +1,6 @@
 abstract type GCMSABornModel <: IonModel end
 
-struct GCMSABornParam{T} <: EoSParam
+struct GCMSABornParam{T} <: ParametricEoSParam{T}
     shapefactor::SingleParam{T}
     segment::SingleParam{T}
     sigma::SingleParam{T}
@@ -84,8 +84,14 @@ function GCMSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[],RSPm
     references = String[]
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
-    model = GCMSABorn{eltype(packagedparams)}(components, groups, packagedparams, init_RSPmodel, references)
+    model = GCMSABorn(components, groups, packagedparams, init_RSPmodel, references)
     return model
+end
+
+function GCMSABorn(components, groups, packagedparams, init_RSPmodel, references)
+    ϵ = typeof(init_RSPmodel)
+    T = eltype(packagedparams)
+    GCMSABorn{ϵ,T}(components, groups, packagedparams, init_RSPmodel, references)
 end
 
 function recombine_impl!(model::GCMSABornModel)
