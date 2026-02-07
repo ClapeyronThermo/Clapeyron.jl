@@ -18,6 +18,7 @@
 ## Bug fixes
 
 - `AntoineSaturation` now uses SI units
-- fixes in `PenelouxTranslation` (inverted parameters for PR and RK models)
+- Fixes in `PenelouxTranslation` (inverted parameters for PR and RK models)
 - Patel-Teja: the correlation for ζc is used first instead of the experimental critical volume
 - Various documentation improvements
+- Fixed precompilation errors in `ClapeyronSymbolicsExt`
