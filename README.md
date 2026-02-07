@@ -4,7 +4,11 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://clapeyronthermo.github.io/Clapeyron.jl/dev)
 [![project chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl)
 
-![Clapeyron_logo](docs/Clapeyron_logo.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/Clapeyron_logo_dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/Clapeyron_logo.svg">
+  <img src="docs/Clapeyron_logo.svg">
+</picture>
 
 Welcome to Clapeyron! This module provides both a large library of thermodynamic models and a framework for one to easily implement their own models.
 
