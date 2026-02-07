@@ -87,19 +87,3 @@ end
 function moles_positivity(x::T) where T<:Real
     @assert x >= 0 "Moles non-positive values! Contains values $x"
 end
-
-struct NestedADError <: Exception
-    msg::String
-end
-NestedADError() = NestedADError("")
-function Base.showerror(io::IO, e::NestedADError)
-    print(io, "NestedADError: ", e.msg)
-end
-
-struct MultipleTagError <: Exception
-    msg::String
-end
-MultipleTagError() = MultipleTagError("")
-function Base.showerror(io::IO, e::MultipleTagError)
-    print(io, "MultipleTagError: ", e.msg)
-end
