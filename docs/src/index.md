@@ -45,10 +45,17 @@ Clapeyron.jl is licensed under the [MIT license](https://github.com/ClapeyronThe
 
 ## Installation
 
-Clapeyron.jl is a registered package, it can be installed from the general registry by:
+Clapeyron.jl is a registered julia package, it can be installed from the general registry by:
 
 ```julia
 pkg> add Clapeyron
+```
+
+Clapeyron.jl is also available in python via the [pyclapeyron](github.com/ClapeyronThermo/pyclapeyron) package.
+You can install `pyclapeyron` from PyPI:
+
+```sh
+pip install pyclapeyron
 ```
 
 ## Citing `Clapeyron.jl`
