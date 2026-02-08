@@ -35,6 +35,12 @@ julia> using Pkg
 julia> Pkg.update("Clapeyron")
 ```
 
+If you want to use the development version, you need to install the `master` branch of the repository, in the following way:
+
+```julia
+julia> Pkg.add(url="https://github.com/ClapeyronThermo/Clapeyron.jl", rev="master")
+```
+
 ## Recommended packages
 
 In order to fully utilise Clapeyron, users may need certain features not included in the package.
@@ -44,3 +50,18 @@ Here is a list of packages the developers of Clapeyron recommend using:
   However, if users are more-familiar with matplotlib, [PyPlot.jl](https://github.com/JuliaPy/PyPlot.jl) is also available but is trickier to install.
 * Data storage and manipulation: The default packages in Julia are [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl) and [Tables.jl](https://github.com/JuliaData/Tables.jl).
   Both of these make it easy to store values and then export them into various data types.
+
+## Installing Clapeyron in Python
+
+Clapeyron.jl is also available in python via the [pyclapeyron](github.com/ClapeyronThermo/pyclapeyron) package.
+You can install `pyclapeyron` from PyPI via `pip` or `uv`:
+
+```
+pip install pyclapeyron
+```
+
+or
+
+```
+uv add pyclapeyron
+```
