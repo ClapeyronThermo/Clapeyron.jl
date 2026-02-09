@@ -597,16 +597,17 @@ function assoc_matrix_solve_ad(Xsol::X, K::KT, K_primal::KP)::Vector{V2} where {
         TT = promote_type(V1_,V2_)
         _1 = one(TT)
         K_ = tups_[1]
-        itt = (@inbounds begin
-                    ki = @view K_[i,:]
-                    dot(ki,X_) * X_[i] + X_[i] - _1
-                end
-                for i in 1:N_) # Generator for inefficient code below
-        #=tmp = K_ * X_ # K * X, allocates initial Vector{TT} buffer=#
-        #=tmp .*= X_ # (K * X) .* X=#
-        #=tmp .+= X_ # (K * X) .* X .+ X=#
-        #=tmp .-= _1 # (K * X) .* X .+ X .- 1=#
-        SVector{N_,TT}(itt)
+        #itt = (@inbounds begin
+        #            ki = @view K_[i,:]
+        #            dot(ki,X_) * X_[i] + X_[i] - _1
+        #        end
+        #        for i in 1:N_) # Generator for inefficient code below
+        #tmp = SVector{N_,TT}(itt)
+        tmp = K_ * X_ # K * X, allocates initial Vector{TT} buffer=#
+        tmp .*= X_ # (K * X) .* X
+        tmp .+= X_ # (K * X) .* X .+ X
+        tmp .-= _1 # (K * X) .* X .+ X .- 1
+        tmp
     end# (1 + ∑_{jb} K⁽ⁱᵃʲᵇ⁾X⁽ⁱᵃʲᵇ⁾ )⁻¹ = Xⁱᵃ for all iₐ, but rearranged. 
     # f wrt X has polynomial form, which is easier (and more efficient) to differentiate compared to 1 ./ X
     return __gradients_for_root_finders(Xsol,(K,N),(K_primal,N),f) # implicit AD
