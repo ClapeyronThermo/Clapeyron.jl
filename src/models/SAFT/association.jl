@@ -496,9 +496,16 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol ,rtol, max_iters) whe
     #length(X0) == 3 && return __assoc_matrix_solve_static(Val{3}(), K, X0, α, atol ,rtol, max_iters)
     #length(X0) == 4 && return __assoc_matrix_solve_static(Val{4}(), K, X0, α, atol ,rtol, max_iters)
     #length(X0) == 5 && return __assoc_matrix_solve_static(Val{5}(), K, X0, α, atol ,rtol, max_iters)
-    K_primal = nested_pvalue(K) # solve on primalval
-    Xsol = assoc_matrix_solve_general(K_primal, nested_pvalue.(X0), n, α, atol ,rtol, max_iters)
-    return assoc_matrix_solve_ad(Xsol, K, K_primal) # implicit AD
+    
+    #Implicit AD via IFTDuals
+    #K_primal = nested_pvalue(K) # solve on primalval
+    #Xsol = assoc_matrix_solve_general(K_primal, nested_pvalue.(X0), n, α, atol ,rtol, max_iters)
+    #return assoc_matrix_solve_ad(Xsol, K, K_primal) # implicit AD
+
+    #Explicit AD for now
+    return assoc_matrix_solve_general(K, X0, n, α, atol ,rtol, max_iters)
+
+
 end
 
 function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol, max_iters) where T
