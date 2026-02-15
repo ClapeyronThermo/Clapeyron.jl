@@ -1,6 +1,3 @@
-include("equations.jl")
-
-
 
 struct ESElectrolyte{T<:IdealModel,c<:EoSModel,i<:IonModel} <: ESElectrolyteModel
     components::Array{String,1}
@@ -157,8 +154,13 @@ function Base.show(io::IO,mime::MIME"text/plain",model::ESElectrolyteModel)
     show_reference_state(io,model;space = true)
 end
 
-
-include("stability.jl")
+#=
+struct ESElectrolyteWrapper{M} <: ESElectrolyteModel
+    components::Vector{String}
+    charge::Vector{Int64}
+    model::M
+    salt::SaltParam
+end=#
 
 export dielectric_constant, ESElectrolyte
 

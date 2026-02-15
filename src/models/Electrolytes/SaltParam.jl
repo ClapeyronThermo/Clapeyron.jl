@@ -30,7 +30,7 @@ function explicit_salt_param(comps,salts,Z)
         for ion_vals in pairings
             ion_i,ni = first(ion_vals),last(ion_vals)
             ki = findfirst(isequal(ion_i),comps)
-            
+
             if !isnothing(ki)
                 ri[ki] = 1/ni
             else
@@ -63,8 +63,40 @@ function to_salt(m::SaltParam,z)
     return res
 end
 
-function to_ion(m::SaltParam,z)    
-    zz = vcat(z,zero(eltype(z)))
+function to_ion(m::SaltParam,z)
+    if size(m.mat,1) == length(z)
+        zz = similar(z)
+        zz .= z
+    else
+        zz = vcat(z,zero(eltype(z)))
+    end
     ldiv!(m.F,zz)
     return zz
 end
+
+#from a vector of salts, split a SaltParam, returns a salt param and the ion indices
+function IS_each_split_model(salt::SaltParam,I_salt)
+    nions = length(salt.explicit_components)
+    m = salt.mat
+    I_ion_bool = Vector{Bool}(undef,nions)
+    rr = eachrow(m)
+    for i in 1:length(rr)-1
+        if in(i,I_salt)
+            rri = rr[i]
+            for k in 1:nions
+                I_ion_bool[k] = !iszero(rri[k])
+            end
+        end
+    end
+    I_ion_int = findall(I_ion_bool)
+    if length(I_ion_int) == length(I_salt)
+        mm = m[I_salt,I_ion_int]
+    else
+        I_salt_plus_charge = vcat(I_salt,nions)
+        mm = m[I_salt_plus_charge,I_ion_int]
+    end
+    split_salt = SaltParam(false,salt.explicit_components[I_ion_int],salt.implicit_components[I_salt],mm,lu(mm))
+    return split_salt,I_ion_int
+end
+
+export SaltParam
