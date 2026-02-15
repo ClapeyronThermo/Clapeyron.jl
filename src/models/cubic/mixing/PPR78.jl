@@ -1,12 +1,12 @@
 abstract type PPR78RuleModel <: MixingRule end
 
 struct PPR78Param <: EoSParam
-    A::PairParam{Float64}
-    B::PairParam{Float64}
+    A::PairParam
+    B::PairParam
 end
 
 struct PPR78Rule <: PPR78RuleModel
-    groups::GroupParam
+    groups::GroupParam{Int64}
     components::Vector{String}
     params::PPR78Param
     references::Vector{String}

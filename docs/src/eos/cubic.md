@@ -119,6 +119,7 @@ Clapeyron.KUAlpha
 Clapeyron.RKPRAlpha
 Clapeyron.LeiboviciAlpha
 Clapeyron.MathiasCopemanAlpha
+Clapeyron.MC3PRAlpha
 ```
 
 ## Volume Translation Models
@@ -132,6 +133,7 @@ Clapeyron.PenelouxTranslation
 Clapeyron.RackettTranslation
 Clapeyron.TVTPRTranslation
 Clapeyron.MTTranslation
+Clapeyron.BaledTranslation
 ```
 
 ## Mixing Rule Models

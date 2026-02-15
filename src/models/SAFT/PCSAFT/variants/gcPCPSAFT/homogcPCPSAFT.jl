@@ -19,13 +19,19 @@ end
 
 struct HomogcPCPSAFT{I,T} <: HomogcPCPSAFTModel
     components::Vector{String}
-    groups::GroupParam
+    groups::GroupParam{T}
     sites::SiteParam
     params::HomogcPCPSAFTParam{T}
     idealmodel::I
     pcpmodel::PCPSAFT{I,T}
     assoc_options::AssocOptions
     references::Array{String,1}
+end
+
+function HomogcPCPSAFT(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
+    T = eltype(params)
+    I = typeof(idealmodel)
+    return HomogcPCPSAFT{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
 end
 
 export HomogcPCPSAFT

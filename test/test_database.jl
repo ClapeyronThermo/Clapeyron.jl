@@ -361,8 +361,8 @@ using Clapeyron, Test, LinearAlgebra
         components_gc = GroupParam(["test1", "test2", ("test3", ["grp1" => 2, "grp2" => 2, "grp3" => 3,"grp4" => 5])]; group_userlocations=filepath_gc)
 
         #Printing: GroupParam
-        @test repr(components_gc) == "GroupParam[\"test1\" => [\"grp1\" => 1, \"grp2\" => 2], \"test2\" => [\"grp2\" => 1], \"test3\" => [\"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5]]"
-        @test repr("text/plain",components_gc) == "GroupParam(:test) with 3 components:\n \"test1\": \"grp1\" => 1, \"grp2\" => 2\n \"test2\": \"grp2\" => 1\n \"test3\": \"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5"
+        @test repr(components_gc) == "GroupParam{Int64}[\"test1\" => [\"grp1\" => 1, \"grp2\" => 2], \"test2\" => [\"grp2\" => 1], \"test3\" => [\"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5]]"
+        @test repr("text/plain",components_gc) == "GroupParam{Int64}(:test) with 3 components:\n \"test1\": \"grp1\" => 1, \"grp2\" => 2\n \"test2\": \"grp2\" => 1\n \"test3\": \"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5"
         @test components_gc.grouptype == :test
         @test components_gc.components == ["test1", "test2", "test3"]
         @test components_gc.groups == [["grp1","grp2"],["grp2"],["grp1","grp2","grp3","grp4"]]

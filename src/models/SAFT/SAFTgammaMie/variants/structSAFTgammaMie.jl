@@ -2,7 +2,7 @@ abstract type structSAFTgammaMieModel <: SAFTgammaMieModel end
 
 struct structSAFTgammaMie{I,T} <: structSAFTgammaMieModel
     components::Vector{String}
-    groups::GroupParam
+    groups::GroupParam{T}
     sites::SiteParam
     params::SAFTgammaMieParam{T}
     idealmodel::I
@@ -10,6 +10,12 @@ struct structSAFTgammaMie{I,T} <: structSAFTgammaMieModel
     epsilon_mixing::Symbol
     assoc_options::AssocOptions
     references::Array{String,1}
+end
+
+function structSAFTgammaMie(comps,groups,sites,params,idealmodel,pcsaftmodel,epsilon_mixing,assoc,refs)
+    T = eltype(params)
+    I = typeof(idealmodel)
+    return structSAFTgammaMie{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,epsilon_mixing,assoc,refs)
 end
 
 default_references(::Type{structSAFTgammaMie}) = ["10.1063/1.4851455", "10.1021/je500248h","10.1063/5.0048315", "doi.org/10.1021/acs.iecr.2c00198"]

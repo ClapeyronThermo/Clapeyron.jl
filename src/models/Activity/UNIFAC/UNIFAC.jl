@@ -1,20 +1,28 @@
-struct UNIFACParam <: EoSParam
-    A::PairParam{Float64}
-    B::PairParam{Float64}
-    C::PairParam{Float64}
-    R::SingleParam{Float64}
-    Q::SingleParam{Float64}
+struct UNIFACParam{T} <: ParametricEoSParam{T}
+    A::PairParam{T}
+    B::PairParam{T}
+    C::PairParam{T}
+    R::SingleParam{T}
+    Q::SingleParam{T}
 end
+
+UNIFACParam(A,B,C,R,Q) = build_parametric_param(UNIFACParam,A,B,C,R,Q)
 
 abstract type UNIFACModel <: ActivityModel end
 
-struct UNIFAC{c<:EoSModel} <: UNIFACModel
+struct UNIFAC{c<:EoSModel,T} <: UNIFACModel
     components::Array{String,1}
-    groups::GroupParam
-    params::UNIFACParam
+    groups::GroupParam{T}
+    params::UNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    unifac_cache::UNIFACCache
+    unifac_cache::UNIFACCache{T}
+end
+
+function UNIFAC(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return UNIFAC{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 default_locations(::Type{UNIFAC}) = ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]

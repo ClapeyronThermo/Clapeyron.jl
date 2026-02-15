@@ -18,7 +18,7 @@ end
         neutralmodel::EoSModel = pharmaPCSAFT,
         ionmodel::IonModel = DH,
         RSPmodel::RSPModel = ConstRSP,
-        charges = String[],
+        charge::Vector{Int} = Int[],
         ideal_userlocations = String[],
         neutralmodel_userlocations = String[],
         ionmodel_userlocations = String[],
@@ -41,7 +41,7 @@ function ESElectrolyte(solvents,ions;
     neutralmodel = pharmaPCSAFT,
     ionmodel = DH,
     RSPmodel = ConstRSP,
-    charges = String[],
+    charge = nothing,
     ideal_userlocations = String[],
     neutralmodel_userlocations = String[],
     ionmodel_userlocations = String[],
@@ -50,30 +50,37 @@ function ESElectrolyte(solvents,ions;
     verbose = false,
     reference_state = nothing)
 
-    solvents = format_components(solvents)
-    ions = format_components(ions)
-    components = deepcopy(ions)
-    prepend!(components,solvents)
+    raw_components = vcat(solvents,ions)
+    formatted_components = format_components(raw_components)
 
-    params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=charges, verbose=verbose)
-    charge = params["charge"].values
+    if isnothing(charge)
+        charge_params = getparams(formatted_components, ["Electrolytes/properties/charges.csv"]; verbose=verbose)
+        init_charge = charge_params["charge"].values
+
+    elseif charge isa Vector{String}
+        charge_params = getparams(formatted_components, ["Electrolytes/properties/charges.csv"]; userlocations=charge, verbose=verbose)
+        init_charge = charge_params["charge"].values
+    else
+        init_charge = charge
+    end
+
     #path0 = default_locations(neutralmodel)
     #remove unused datapaths
     #neutral_path = joinpath.(DB_PATH,filter(∉(("properties/molarmass.csv","properties/molarmass_groups.csv,properties/critical_csv")),path0))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,raw_components,ideal_userlocations,verbose)
     init_RSP = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations,verbose = verbose)
     if has_sites(neutralmodel)
-        init_neutralmodel = neutralmodel(components;userlocations=neutralmodel_userlocations,verbose,assoc_options)
+        init_neutralmodel = neutralmodel(raw_components;userlocations=neutralmodel_userlocations,verbose,assoc_options)
     else
-        init_neutralmodel = neutralmodel(components;userlocations=neutralmodel_userlocations,verbose)
+        init_neutralmodel = neutralmodel(raw_components;userlocations=neutralmodel_userlocations,verbose)
     end
 
     init_ionmodel = @initmodel ionmodel(solvents,ions;RSPmodel=init_RSP,userlocations=ionmodel_userlocations,verbose=verbose)
 
-    components = init_neutralmodel.components
+    #components = init_neutralmodel.components
 
     references = String[]
-    model = ESElectrolyte(components,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    model = ESElectrolyte(formatted_components,init_charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end

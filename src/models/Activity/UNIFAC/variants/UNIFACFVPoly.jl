@@ -1,21 +1,29 @@
-struct UNIFACFVPolyParam <: EoSParam
-    volume::SingleParam{Float64}
-    c::SingleParam{Float64}
-    A::PairParam{Float64}
-    R::SingleParam{Float64}
-    Q::SingleParam{Float64}
-    Mw::SingleParam{Float64}
+struct UNIFACFVPolyParam{T} <: ParametricEoSParam{T}
+    volume::SingleParam{T}
+    c::SingleParam{T}
+    A::PairParam{T}
+    R::SingleParam{T}
+    Q::SingleParam{T}
+    Mw::SingleParam{T}
 end
+
+UNIFACFVPolyParam(volume,c,A,R,Q,Mw) = build_parametric_param(UNIFACFVPolyParam,volume,c,A,R,Q,Mw)
 
 abstract type UNIFACFVPolyModel <: UNIFACFVModel end
 
-struct UNIFACFVPoly{c<:EoSModel} <: UNIFACFVPolyModel
+struct UNIFACFVPoly{c<:EoSModel,T} <: UNIFACFVPolyModel
     components::Array{String,1}
-    groups::GroupParam
-    params::UNIFACFVPolyParam
+    groups::GroupParam{T}
+    params::UNIFACFVPolyParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    UNIFACFV_cache::UNIFACFVCache
+    UNIFACFV_cache::UNIFACFVCache{T}
+end
+
+function UNIFACFVPoly(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return UNIFACFVPoly{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 export UNIFACFVPoly

@@ -15,7 +15,7 @@ import SpecialFunctions
 using StaticArrays
 
 using DiffResults, ForwardDiff
-import DifferentiationInterface # keep function local
+using IFTDuals
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
 #compatibility and raw julia utilities

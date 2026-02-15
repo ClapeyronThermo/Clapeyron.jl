@@ -1,11 +1,18 @@
-struct PSRKUNIFAC{c<:EoSModel} <: UNIFACModel
+struct PSRKUNIFAC{c<:EoSModel,T} <: UNIFACModel
     components::Array{String,1}
-    groups::GroupParam
-    params::UNIFACParam
+    groups::GroupParam{T}
+    params::UNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    unifac_cache::UNIFACCache
+    unifac_cache::UNIFACCache{T}
 end
+
+function PSRKUNIFAC(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return PSRKUNIFAC{c,T}(components,groups,params,puremodel,references,unifac_cache)
+end
+
 
 default_locations(::Type{PSRKUNIFAC}) = ["Activity/UNIFAC/PSRK/PSRK_like.csv", "Activity/UNIFAC/PSRK/PSRK_unlike.csv"]
 

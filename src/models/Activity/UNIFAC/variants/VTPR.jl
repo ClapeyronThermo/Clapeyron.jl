@@ -1,11 +1,17 @@
 abstract type VTPRUNIFACModel <: UNIFACModel end
 
-struct VTPRUNIFAC{c<:EoSModel} <: VTPRUNIFACModel
+struct VTPRUNIFAC{c<:EoSModel,T} <: VTPRUNIFACModel
     components::Array{String,1}
-    groups::GroupParam
-    params::UNIFACParam
+    groups::GroupParam{T}
+    params::UNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
+end
+
+function VTPRUNIFAC(components,groups,params,puremodel,references)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return VTPRUNIFAC{c,T}(components,groups,params,puremodel,references)
 end
 
 export VTPRUNIFAC

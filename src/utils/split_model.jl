@@ -175,7 +175,7 @@ function create_group_splitter(param::GroupParam,I)
     return Ig
 end
 
-function each_split_model(param::GroupParam,__group,Ic,Ig)
+function each_split_model(param::GroupParam{TT},__group,Ic,Ig) where TT
     grouptype = param.grouptype
     components = param.components[Ic]
     groups = param.groups[Ic]
@@ -185,11 +185,11 @@ function each_split_model(param::GroupParam,__group,Ic,Ig)
 
     flattenedgroups = param.flattenedgroups[Ig]
     i_groups = [[findfirst(isequal(group), flattenedgroups)::Int for group ∈ componentgroups] for componentgroups ∈ groups]
-    n_flattenedgroups = Vector{Vector{Int64}}(undef,length(Ic))
+    n_flattenedgroups = Vector{Vector{TT}}(undef,length(Ic))
 
     #handling for intergroups
-    n_intergroups = Vector{Matrix{Int64}}(undef,length(Ic))
-    empty_intergroup = fill(0,(0,0))
+    n_intergroups = Vector{Matrix{TT}}(undef,length(Ic))
+    empty_intergroup = Matrix{TT}(undef,(0,0))
     for (k,i) in pairs(Ic)
         pii = param.n_flattenedgroups[i]
         n_flattenedgroups[k] = pii[Ig]
@@ -201,7 +201,7 @@ function each_split_model(param::GroupParam,__group,Ic,Ig)
         end
     end
 
-    return GroupParam(
+    return GroupParam{TT}(
         components,
         groups,
         grouptype,

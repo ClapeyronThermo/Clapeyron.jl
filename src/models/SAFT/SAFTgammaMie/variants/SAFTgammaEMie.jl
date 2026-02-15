@@ -44,7 +44,7 @@ function SAFTgammaEMie(solvents,ions;
     neutralmodel = SAFTgammaMie,
     ionmodel = GCMSABorn,
     RSPmodel = Schreckenberg,
-    charges = String[], 
+    charge = String[], 
     ideal_userlocations = String[],
     neutralmodel_userlocations = String[],
     ionmodel_userlocations = String[],
@@ -55,7 +55,7 @@ function SAFTgammaEMie(solvents,ions;
 
     return ESElectrolyte(solvents,ions;
     idealmodel,neutralmodel,ionmodel,RSPmodel,
-    charges,ideal_userlocations,neutralmodel_userlocations,ionmodel_userlocations,RSPmodel_userlocations,assoc_options,reference_state,verbose)
+    charge,ideal_userlocations,neutralmodel_userlocations,ionmodel_userlocations,RSPmodel_userlocations,assoc_options,reference_state,verbose)
     
 end
 

@@ -1,10 +1,16 @@
-struct UNIFAC2{c<:EoSModel} <: UNIFACModel
+struct UNIFAC2{c<:EoSModel,T} <: UNIFACModel
     components::Array{String,1}
-    groups::GroupParam
-    params::UNIFACParam
+    groups::GroupParam{T}
+    params::UNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    unifac_cache::UNIFACCache
+    unifac_cache::UNIFACCache{T}
+end
+
+function UNIFAC2(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return UNIFAC2{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 default_locations(::Type{UNIFAC2}) = ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC2_unlike.csv"]

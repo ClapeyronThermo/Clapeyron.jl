@@ -4,7 +4,13 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://clapeyronthermo.github.io/Clapeyron.jl/dev)
 [![project chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl)
 
-![Clapeyron_logo](docs/Clapeyron_logo.svg)
+<p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/Clapeyron_logo_dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/Clapeyron_logo.svg">
+    <img src="docs/Clapeyron_logo.svg">
+  </picture>
+</p>
 
 Welcome to Clapeyron! This module provides both a large library of thermodynamic models and a framework for one to easily implement their own models.
 
@@ -36,34 +42,53 @@ If you find any issues, feel free to contact us directly on the [Zulip Channel](
 
 # Installing Clapeyron
 
-The minimum supported version is Julia 1.6. To install Clapeyron, launch Julia with
+The minimum supported version is Julia 1.10. To install Clapeyron, launch Julia with
 
-```
+```sh
 > julia
 ```
 
 Hit the ```]``` key to enter Pkg mode, then type
 
-```
+```julia-repl
 Pkg> add Clapeyron
 ```
+
 Or to add the development version:
-```
+
+```julia-repl
 Pkg> add https://github.com/ClapeyronThermo/Clapeyron.jl#master
 ```
+
 Exit Pkg mode by hitting backspace.
 
 Now you may begin using functions from the Clapeyron library by entering the command
 
-```
+```julia
 using Clapeyron
 ```
 
 To remove the package, hit the ```]``` key to enter Pkg mode, then type
 
-```
+```julia-repl
 Pkg> rm Clapeyron
 ```
+
+## Installing Clapeyron in Python
+
+Clapeyron.jl is also available in python via the [pyclapeyron](github.com/ClapeyronThermo/pyclapeyron) package.
+You can install `pyclapeyron` from PyPI via `pip` or `uv`:
+
+```sh
+pip install pyclapeyron
+```
+
+or
+
+```sh
+uv add pyclapeyron
+```
+
 # Citing Clapeyron
 
 If you are using Clapeyron for your research work, please cite the following:

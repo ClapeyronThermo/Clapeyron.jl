@@ -1,19 +1,21 @@
 abstract type GCMSABornModel <: IonModel end
 
-struct GCMSABornParam <: EoSParam
-    shapefactor::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::SingleParam{Float64}
-    gc_sigma::SingleParam{Float64}
-    sigma_born::SingleParam{Float64}
-    gc_sigma_born::SingleParam{Float64}
-    charge::SingleParam{Float64}
+struct GCMSABornParam{T} <: ParametricEoSParam{T}
+    shapefactor::SingleParam{T}
+    segment::SingleParam{T}
+    sigma::SingleParam{T}
+    gc_sigma::SingleParam{T}
+    sigma_born::SingleParam{T}
+    gc_sigma_born::SingleParam{T}
+    charge::SingleParam{T}
 end
 
-struct GCMSABorn{ϵ} <: GCMSABornModel
+GCMSABornParam(s,m,sigma,gc_sigma,sigma_born,gc_sigma_born,Z) = build_parametric_param(GCMSABornParam,s,m,sigma,gc_sigma,sigma_born,gc_sigma_born,Z)
+
+struct GCMSABorn{ϵ,T} <: GCMSABornModel
     components::Array{String,1}
-    groups::GroupParam
-    params::GCMSABornParam
+    groups::GroupParam{T}
+    params::GCMSABornParam{T}
     RSPmodel::ϵ
     references::Array{String,1}
 end
@@ -40,13 +42,13 @@ export GCMSABorn
 This function is used to create a group-contribution Mean Spherical Approximation-Born model used in SAFT-gamma E Mie
 """
 function GCMSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[],RSPmodel_userlocations = String[], verbose=false)
-    solvents = format_components(solvents)
-    ions = format_components(ions)
+    _solvents = format_gccomponents(solvents)
+    _ions = format_gccomponents(ions)
 
     userlocations = normalize_userlocations(userlocations)
     RSPmodel_userlocations = normalize_userlocations(RSPmodel_userlocations)
 
-    groups = GroupParam(cat(solvents,ions,dims=1), ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
+    groups = GroupParam(vcat(_solvents,_ions), ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/"]; userlocations=userlocations,return_sites=false,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     components = groups.components
 
@@ -82,8 +84,14 @@ function GCMSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[],RSPm
     references = String[]
     init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
 
-    model = GCMSABorn(components, groups, packagedparams, init_RSPmodel,references)
+    model = GCMSABorn(components, groups, packagedparams, init_RSPmodel, references)
     return model
+end
+
+function GCMSABorn(components, groups, packagedparams, init_RSPmodel, references)
+    ϵ = typeof(init_RSPmodel)
+    T = eltype(packagedparams)
+    GCMSABorn{ϵ,T}(components, groups, packagedparams, init_RSPmodel, references)
 end
 
 function recombine_impl!(model::GCMSABornModel)

@@ -269,17 +269,14 @@ function __struct_expr!(name,parent,paramstype;idealmodel = true,sites = true,gr
     struct_fields = struct_expr.args[3].args
     if groups
         if parametric_param
-            push!(struct_fields,:(groups::Clapeyron.GroupParam))
-            #=
+            #push!(struct_fields,:(groups::Clapeyron.GroupParam))
             if PARAM_LETTER != :ERROR
                 push!(struct_fields,:(groups::Clapeyron.GroupParam{$PARAM_LETTER}))
             else
-                throw(error("@newmodel error: cannot get correct parametric param type from expr"))
+                throw(error("@newmodelgc error: cannot get correct parametric param type from expr"))
             end
-            =#
-            #
         else
-            push!(struct_fields,:(groups::Clapeyron.GroupParam))
+            push!(struct_fields,:(groups::Clapeyron.GroupParam{Int64}))
         end
     end
 
@@ -780,8 +777,19 @@ function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,Cl
         result[:idealmodel] = init_idealmodel
     end
 
-    #build model
-    model = M((result[k] for k in fieldnames(M))...)
+    #build model, handle parametric group parameters and ideal models.
+    if has_groups(M) && result[:params] isa ParametricEoSParam
+        TT = eltype(result[:params])
+        if M <: IdealModel
+            model = M{TT}((result[k] for k in fieldnames(M))...)
+        else
+            II = typeof(result[:idealmodel])
+            model = M{II,TT}((result[k] for k in fieldnames(M))...)
+        end
+    else
+        model = M((result[k] for k in fieldnames(M))...)
+    end
+    
     #fit reference state
     set_reference_state!(model,verbose = verbose)
     return model

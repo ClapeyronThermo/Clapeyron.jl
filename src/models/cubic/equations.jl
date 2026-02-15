@@ -1,6 +1,8 @@
 abstract type AlphaModel <:EoSModel end
 abstract type TranslationModel <:EoSModel end
 
+Base.eltype(model::CubicModel) = Base.promote_eltype(model.alpha,model.translation,model.mixing,model.params) 
+
 struct ABCubicParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}

@@ -15,13 +15,19 @@ end
 
 struct gcsPCSAFT{I,T} <: gcsPCSAFTModel
     components::Vector{String}
-    groups::GroupParam
+    groups::GroupParam{T}
     sites::SiteParam
     params::gcsPCSAFTParam{T}
     idealmodel::I
     pcsaftmodel::sPCSAFT{I,T}
     assoc_options::AssocOptions
     references::Array{String,1}
+end
+
+function gcsPCSAFT(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
+    T = eltype(params)
+    I = typeof(idealmodel)
+    return gcsPCSAFT{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
 end
 
 export gcsPCSAFT
