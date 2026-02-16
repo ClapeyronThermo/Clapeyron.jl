@@ -1,4 +1,4 @@
-function tp_flash_michelsen(model::ElectrolyteModel, p, T, z, method = MichelsenTPFlash(),reduced = false)
+function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = MichelsenTPFlash(),reduced = false)
 
     equilibrium = method.equilibrium
     K0 = method.K0
@@ -329,7 +329,7 @@ function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill
     end
 end
 
-function michelsen_optimization_of!(g,H,model::ElectrolyteModel,p,T,z,caches,ny_var_and_ψ,gz)
+function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,ny_var_and_ψ,gz)
     ny_var = @view ny_var_and_ψ[1:end-1]
     ψ = ny_var[end]
 

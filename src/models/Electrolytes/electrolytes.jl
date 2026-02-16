@@ -357,31 +357,29 @@ function a_res(ionmodel::IonModel, V, T, z, iondata, neutralmodel, neutral_data)
     return a_res(ionmodel, V, T, z, iondata)
 end
 
-function lb_volume(model::ElectrolyteModel,T,z)
+function lb_volume(model::ESElectrolyteModel,T,z)
     return lb_volume(model.neutralmodel,T,z)
 end
 
-function x0_volume_liquid(model::ElectrolyteModel,p,T,z)
+function x0_volume_liquid(model::ESElectrolyteModel,p,T,z)
     return x0_volume_liquid(model.neutralmodel,p,T,z)*1.15
 end
 
-function x0_volume_gas(model::ElectrolyteModel,p,T,z)
+function x0_volume_gas(model::ESElectrolyteModel,p,T,z)
     return x0_volume_gas(model.neutralmodel,p,T,z)
 end
 
-function mw(model::ElectrolyteModel)
+function mw(model::ESElectrolyteModel)
     return mw(model.neutralmodel)
 end
 
-function p_scale(model::ElectrolyteModel,z)
+function p_scale(model::ESElectrolyteModel,z)
     return p_scale(model.neutralmodel,z)
 end
 
-function T_scale(model::ElectrolyteModel,z)
+function T_scale(model::ESElectrolyteModel,z)
     return T_scale(model.neutralmodel,z)
 end
-
-
 
 function debye_length(model::ESElectrolyteModel,V,T,z,ϵ_r = @f(dielectric_constant),∑z = sum(z))
     Z = model.charge

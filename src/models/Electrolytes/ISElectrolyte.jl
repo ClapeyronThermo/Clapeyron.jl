@@ -53,18 +53,13 @@ Rgas(model::ISElectrolyteIdealWrapper) = Rgas(model.model)
 
 function eos_impl(model::ISElectrolyteWrapper,V,T,z)
     w = to_ion(model.salt,z)
-    ∑z = sum(z)
-    return ∑z*Rgas(model)*T*eos_impl(model,V,T,w)
+    return eos_impl(model.model,V,T,w)
 end
 
 function tp_flash_K0!(K,model::ISElectrolyteModel,p,T,z)
-    neutral = zeros(Bool,length(model))
-    r = eachrow(model.salt.mat)
-    for i in 1:length(model)
-        if count(!iszero,r[i]) == 1
-            neutral[i] = true
-        end
-    end
+    neutral = ones(Bool,length(model))
+    isalts = model.salt.isalts
+    neutral[isalts] .= false
     pures = split_model(model,neutral)
     psat = first.(extended_saturation_pressure.(pures,T))
     K .= 0
@@ -79,3 +74,27 @@ function each_split_model(model::ISElectrolyteWrapper,I_salt)
 end
 
 export ISElectrolyteWrapper
+
+function volume_impl(model::ISElectrolyteWrapper, p, T, z, phase, threaded, vol0)
+    w = to_ion(model.salt,z)
+    return volume(model.model, p, T, w, phase=phase, threaded=threaded, vol0=vol0)
+end
+
+function lb_volume(model::ISElectrolyteWrapper,T,z)
+    w = to_ion(model.salt,z)
+    return lb_volume(model.model,T,w)
+end
+
+function mw(model::ISElectrolyteWrapper)
+    return mw(model.neutralmodel)
+end
+
+function p_scale(model::ISElectrolyteWrapper,z)
+    w = to_ion(model.salt,z)
+    return p_scale(model.model,w)
+end
+
+function T_scale(model::ISElectrolyteWrapper,z)
+    w = to_ion(model.salt,z)
+    return T_scale(model.model,w)
+end

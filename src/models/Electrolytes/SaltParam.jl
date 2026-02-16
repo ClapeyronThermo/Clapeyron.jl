@@ -2,6 +2,7 @@ struct SaltParam <: ClapeyronParam
     explicit_solvent::Bool
     explicit_components::Vector{String} #neutrals + ions
     implicit_components::Vector{String} #neutrals + salts (ion)
+    isalts::Vector{Int} #Indices of the salts
     mat::Matrix{Float64} #used to calculate z(ion) -> z(salt)
     F::LU{Float64, Matrix{Float64}, Vector{Int64}} #used to calculate z(salt) -> z(ion)
 end
@@ -12,6 +13,7 @@ function explicit_salt_param(comps,salts,Z)
     nions = length(Z)
     implicit_components = Vector{String}(undef,nions - 1)
     mat = zeros(nions,nions)
+    isalts = Int[]
     nneutral = count(iszero,Z)
     #we suppose that first there are nneutral neutral components, followed by nions - nneutral ions
     for i in 1:nneutral
@@ -25,6 +27,7 @@ function explicit_salt_param(comps,salts,Z)
         salt = salts[k]
         salt_component = first(salt)
         implicit_components[i] = first(salt)
+        push!(isalts,i)
         pairings = last(salt)
         ri = rr[i]
         for ion_vals in pairings
@@ -40,8 +43,10 @@ function explicit_salt_param(comps,salts,Z)
     ∑ri = count(!iszero,ri)
     ri ./=  ∑ri
     end
-    rr[end] .= Z
-    return SaltParam(explicit_solvent,explicit_components,implicit_components,mat,lu(mat))
+    if nneutral < nions
+        rr[end] .= Z
+    end
+    return SaltParam(explicit_solvent,explicit_components,implicit_components,isalts,mat,lu(mat))
 end
 
 function SaltParam(model::ESElectrolyteModel)
@@ -64,7 +69,7 @@ function to_salt(m::SaltParam,z)
 end
 
 function to_ion(m::SaltParam,z)
-    if size(m.mat,1) == length(z)
+    if length(m.isalts) == 0
         zz = similar(z)
         zz .= z
     else
@@ -95,7 +100,16 @@ function IS_each_split_model(salt::SaltParam,I_salt)
         I_salt_plus_charge = vcat(I_salt,nions)
         mm = m[I_salt_plus_charge,I_ion_int]
     end
-    split_salt = SaltParam(false,salt.explicit_components[I_ion_int],salt.implicit_components[I_salt],mm,lu(mm))
+
+    isalts = Int[]
+    for i in 1:length(salt.isalts)
+        si = salt.isalts[i]
+        if salt.isalts[i] in I_salt
+            push!(isalts,si)
+        end
+    end
+
+    split_salt = SaltParam(false,salt.explicit_components[I_ion_int],salt.implicit_components[I_salt],isalts,mm,lu(mm))
     return split_salt,I_ion_int
 end
 
