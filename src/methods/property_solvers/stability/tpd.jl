@@ -327,7 +327,7 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
 
     #create a list of what test composition strategies we use
     tpd_strategies = tpd_plan(model,z,isliquidz,lle,id_test,K_test,pure_test)
-
+    verbose && @info "bulk composition d(z) vector: $dz"
     for strategy in tpd_strategies
         w,phasew,skip = tpd_test_composition!(strategy,cond,w_test,K,dz,verbose)
         skip && continue
@@ -382,6 +382,8 @@ function tpd_plan(model,z,is_liquidz,lle,id_test,K_test,pure_test)
             end
         end
     end
+
+
     return plan
 end
 
@@ -404,8 +406,8 @@ function tpd_test_composition!(strategy,conds,w_test,K,dz,verbose)
         w_test ./= sum(w_test)
     elseif plan == :pure
         z_pure!(w_test,ix)
-    elseif plan == :electrolyte_balanced
-        z_electrolyte_balanced!(model,w_test,z,ixx)
+    elseif plan == :pereira
+        z_pereira!(w_test,z,ixx)
     elseif is_k_plan && !skip_k
         if all(iszero,K)
             K .= tp_flash_K0(model,p,T,z)
@@ -455,8 +457,8 @@ function tpd_print_strategy(strategy)
 
     elseif plan == :pure
         res = "Strategy: pure initial point, test phase: $phase"
-    elseif plan == :electrolyte_balanced
-        res = "Strategy: electrolyte-constrainted composition"
+    elseif plan == :pereira
+        res = "Strategy: Pereira composition generator"
     else
         res = ""
     end
@@ -504,19 +506,36 @@ function z_pure!(K,i)
     K
 end
 
-function z_electrolyte_balanced!(model,w_test,z,ixx)
-    isolv,ielec,ic = ixx
+function z_pereira!(w,z,ixx)
+    i,b,_ = ixx
+	n = length(z)
+    @assert n != i
 
-    Z = model.charge
-    Zx = Z[ic]
-    w_test .= 0
-    for i in 1:length(model)
-        isolv == i && (w_test[i] = z[i])
-        ielec == i && (w_test[i] = z[i])
+
+	lb = eps(eltype(w))*1e2
+	ub = 1.0 - lb
+
+    for j = 1:n
+        if (j == i)
+            if b > 0
+                w[j] = 0.5*z[i]
+            else
+                w[j] = z[i] + 0.5*(1.0 - z[i])
+            end
+        else
+            if b > 0
+                w[j] = (1.0 - 0.5*z[i])/(n-1)
+            else
+                w[j] = (1.0 - (z[i] + 0.5*(1.0 - z[i])))/(n-1)
+            end
+        end
     end
-    Zw = dot(Z,w_test)
-    w_test[ic] = - Zw/Zx
-    w_test ./= sum(w_test)
+
+    w .= clamp.(w,lb,ub)
+    sumw = sum(w)
+    w ./= sumw
+    return w
+
 end
 
 function z_norm(z,w)
@@ -636,7 +655,6 @@ function K0_lle_init(model::EoSModel, p, T, z)
     end
     return K
 end
-
 
 """
 

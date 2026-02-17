@@ -51,10 +51,11 @@ end
 Rgas(model::ISElectrolyteWrapper) = Rgas(model.model)
 Rgas(model::ISElectrolyteIdealWrapper) = Rgas(model.model)
 
+#=
 function eos_impl(model::ISElectrolyteWrapper,V,T,z)
     w = to_ion(model.salt,z)
     return eos_impl(model.model,V,T,w)
-end
+end=#
 
 function tp_flash_K0!(K,model::ISElectrolyteModel,p,T,z)
     neutral = ones(Bool,length(model))
@@ -72,8 +73,6 @@ function each_split_model(model::ISElectrolyteWrapper,I_salt)
     salt_i,I_ion = IS_each_split_model(model.salt,I_salt)
     return ISElectrolyteWrapper(model.components[I_salt],each_split_model(model.model,I_ion),salt_i)
 end
-
-export ISElectrolyteWrapper
 
 function volume_impl(model::ISElectrolyteWrapper, p, T, z, phase, threaded, vol0)
     w = to_ion(model.salt,z)
@@ -98,3 +97,5 @@ function T_scale(model::ISElectrolyteWrapper,z)
     w = to_ion(model.salt,z)
     return T_scale(model.model,w)
 end
+
+export ISElectrolyteWrapper
