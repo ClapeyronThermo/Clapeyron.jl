@@ -7,7 +7,7 @@ abstract type ISElectrolyteModel <: ElectrolyteModel end
 
 Obtains the stoichiometry matrix of `salts` made up of ions stored in the `model`.
 This will also check that the salt is electroneutral and that all ions are involved in the salts.
-If no `salts` argument is specified, it will be created via `Clapeyron.auto_binary_salts(model)`
+If no `salts` argument is specified, the salt pairings will be created via [`Clapeyron.auto_binary_salts`](@ref).
 
 """
 function salt_stoichiometry(model::ElectrolyteModel,salts = auto_binary_salts(model))
@@ -66,7 +66,7 @@ end
     molality_to_composition(model::ElectrolyteModel,m,zsolv = SA[1.0])
 
 Convert molality (mol/kg) to composition for a given model, salts, molality, and solvent composition.
-If no `salts` argument is specified, it will be created via `Clapeyron.auto_binary_salts(model)`
+If no `salts` argument is specified, the salt pairings will be created via [`Clapeyron.auto_binary_salts`](@ref).
 `zsolv` is the mole fraction of solvent components (in a salt-free basis)
 """
 function molality_to_composition(model::ElectrolyteModel,salts::Union{AbstractVector,GroupParam},m,zsolv=SA[1.],ν = salt_stoichiometry(model,salts))

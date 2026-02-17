@@ -383,7 +383,6 @@ function tpd_plan(model,z,is_liquidz,lle,id_test,K_test,pure_test)
         end
     end
 
-
     return plan
 end
 

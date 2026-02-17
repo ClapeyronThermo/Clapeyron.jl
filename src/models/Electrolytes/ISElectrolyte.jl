@@ -1,15 +1,30 @@
+"""
+    ISElectrolyteWrapper(model::ESElectrolyteModel;salts = nothing)
 
 
+Given en explicit solvent model, returns an implicit solvent model, where are the charged components are paired to form binary salts.
+If no `salts` argument is specified, the salt pairings will be created via [`Clapeyron.auto_binary_salts`](@ref).
+## Example
 
-struct ISElectrolite{T<:IdealModel,c<:EoSModel,i<:IonModel} <: ISElectrolyteModel
-    components::Array{String,1}
-    idealmodel::T
-    neutralmodel::c
-    ionmodel::i
-    references::Array{String,1}
-end
+´´´julia-repl
+julia> system = ePCSAFT(["water","acetonitrile"],["sodium","chloride"])
+Explicit Electrolyte Model with 4 components:
+ "water"
+ "acetonitrile"
+ "sodium" (+1)
+ "chloride" (-1)
+Neutral Model: pharmaPCSAFT{BasicIdeal, Float64}
+Ion Model: hsdDH{ConstRSP}
+RSP Model: ConstRSP
 
+julia> salt_system = ISElectrolyteWrapper(system)
+ISElectrolyteWrapper{ePCSAFT{BasicIdeal, pharmaPCSAFT{BasicIdeal, Float64}, hsdDH{ConstRSP}}} with 3 components:
+ "water"
+ "acetonitrile"
+ "sodium.chloride"
+´´´
 
+"""
 struct ISElectrolyteWrapper{M} <: ISElectrolyteModel
     components::Vector{String}
     model::M
@@ -22,8 +37,8 @@ struct ISElectrolyteIdealWrapper{M} <: IdealModel
     salt::SaltParam
 end
 
-function ISElectrolyteWrapper(model::ESElectrolyteModel)
-    salt = SaltParam(model)
+function ISElectrolyteWrapper(model::ESElectrolyteModel;salts = nothing)
+    salt = SaltParam(model,salts)
     components = salt.implicit_components
     return ISElectrolyteWrapper(components,model,salt)
 end

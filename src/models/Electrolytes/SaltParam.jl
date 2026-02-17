@@ -49,8 +49,14 @@ function explicit_salt_param(comps,salts,Z)
     return SaltParam(explicit_solvent,explicit_components,implicit_components,isalts,mat,lu(mat))
 end
 
-function SaltParam(model::ESElectrolyteModel)
+SaltParam(model::ESElectrolyteModel) = SaltParam(model,nothing)
+
+function SaltParam(model::ESElectrolyteModel,::Nothing)
     explicit_salt_param(component_list(model),auto_binary_salts(model),model.charge)
+end
+
+function SaltParam(model::ESElectrolyteModel,salts)
+    explicit_salt_param(component_list(model),salts,model.charge)
 end
 
 function component_list(m::SaltParam)
