@@ -525,7 +525,7 @@ function bubble_temperature_init(model,p,x,vol0,T0,y0,volatiles)
 end
 
 """
-    bubble_temperature(model::EoSModel, p, x,method::BubblePointMethod = ChemPotBubbleTemperature())
+    bubble_temperature(model::EoSModel, p, x,method::ThermodynamicMethod = ChemPotBubbleTemperature())
 
 Calculates the bubble temperature and properties at a given pressure `p`.
 Returns a tuple, containing:
