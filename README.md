@@ -24,7 +24,7 @@ We support many equations of state and properties. Some examples of figures you 
 
 - Isobaric heat capacity of carbon dioxide at 20 MPa:
 
-  ![CO2_cp](docs/CO2_cp.svg) 
+  ![CO2_cp](docs/CO2_cp.svg)
 
 - Water VLE envelope:
 
@@ -38,7 +38,7 @@ We support many equations of state and properties. Some examples of figures you 
 
 ![CH3OH_CyHx](docs/CH3OH_CyHex.svg)
 
-If you find any issues, feel free to contact us directly on the [Zulip Channel](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl), or open a Github issue. 
+If you find any issues, feel free to contact us directly on the [Zulip Channel](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl), or open a Github issue.
 
 # Installing Clapeyron
 
@@ -93,7 +93,7 @@ uv add pyclapeyron
 
 If you are using Clapeyron for your research work, please cite the following:
 
-```
+```json
 @article{Clapeyron-2022,
     title={Clapeyron.jl: An Extensible, Open-Source Fluid Thermodynamics Toolkit},
     author={Pierre J. Walker, Hon-Wa Yew, and Andrés Riedemann},

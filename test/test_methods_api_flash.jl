@@ -97,6 +97,11 @@
         res3 = Clapeyron.tp_flash2(system3, p, T, z, MultiPhaseTPFlash())
         @test Clapeyron.numphases(res3) == 3
         @test res3.fractions ≈ [0.3126977407489071, 0.3221079660567595, 0.3651942931943334] rtol = 1e-6
+
+        #issue #546
+        system4 = EOS_CG(["carbon dioxide","water"])
+        res4 = Clapeyron.tp_flash2(system4, 1e6, 293.15, [0.5,0.5], MultiPhaseTPFlash())
+        @test res4.fractions ≈ [0.5025679516689612, 0.4974320483310388] rtol = 1e-6
     end
 
     GC.gc()
