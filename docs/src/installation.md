@@ -56,12 +56,12 @@ Here is a list of packages the developers of Clapeyron recommend using:
 Clapeyron.jl is also available in python via the [pyclapeyron](github.com/ClapeyronThermo/pyclapeyron) package.
 You can install `pyclapeyron` from PyPI via `pip` or `uv`:
 
-```
+```sh
 pip install pyclapeyron
 ```
 
 or
 
-```
+```sh
 uv add pyclapeyron
 ```

@@ -229,9 +229,14 @@ function x0_volume_liquid(model::MultiFluid,p,T,z)
     lb_v = lb_volume(model,T,z)
     for (i,pure) in pairs(model.pures)
         if T > pure.properties.Tc
+            lb_i = lb_volume(pure,T,SA[1.0])
             v0 += z[i]*1.01*lb_volume(pure,T,SA[1.0])
         else
-            v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
+            if p > x0_psat(pure,T)
+                v0 += z[i]*1.01*lb_volume(pure,T,SA[1.0])
+            else
+                v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
+            end
         end
     end
     p0 = pressure(model,v0,T,z)

@@ -260,6 +260,10 @@ end
         dep = departure_functions(system)
         @test count(!iszero,dep) == 1
         @test Clapeyron.eos(system,Vx,Tx,zx) ≈ -6020.0044 rtol = 5e-6
+
+        #546
+        system_546 = EOS_CG(["carbon dioxide","water"])
+        @test volume(system_546,1e6,293.15,[0.1742127426126829, 0.8257872573873171]) ≈ 2.080669615020994e-5 rtol = 1e-6
     end
 
     @testset "LKP" begin

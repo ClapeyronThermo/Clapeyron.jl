@@ -485,7 +485,7 @@ function modified_∂lnϕ∂n(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, z, cach
     end
 end
 
-function ∂lnϕ∂n∂P∂T(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂lnϕ_cache(model,p,T,z,Val{true}());
+function ∂lnϕ∂n∂P∂T(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂lnϕ_cache(wrapper,p,T,z,Val{true}());
             phase=:unknown,
             vol0=nothing,
             threaded = true,
@@ -511,7 +511,7 @@ function ∂lnϕ∂n∂P∂T(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂
     end
 end
 
-function ∂lnϕ∂n∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
+function ∂lnϕ∂n∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂lnϕ_cache(wrapper,p,T,z,Val{false}());
             phase=:unknown,
             vol0=nothing,
             threaded = true,
@@ -537,7 +537,7 @@ function ∂lnϕ∂n∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂lnϕ
     end
 end
 
-function ∂lnϕ∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
+function ∂lnϕ∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(wrapper,p,T,z,Val{false}());
             phase=:unknown,
             vol0=nothing,
             threaded = true,
@@ -560,7 +560,7 @@ function ∂lnϕ∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_ca
     end
 end
 
-function ∂lnϕ∂T(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
+function ∂lnϕ∂T(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_cache(wrapper,p,T,z,Val{true}());
             phase=:unknown,
             vol0=nothing,
             threaded = true,

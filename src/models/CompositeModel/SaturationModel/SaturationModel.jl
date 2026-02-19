@@ -35,10 +35,10 @@ function saturation_temperature_impl(model::SaturationModel,p,method::Saturation
     return sol,nan,nan
 end
 
-#this method allows to use a Saturation Model as a whole fluid model. it supposes ideal gas and no info about the liquid phase (NaNLiquid)
+#this method allows to use a Saturation Model as a whole fluid model. it supposes ideal gas and no info about the liquid phase (ZeroLiquid)
 function init_puremodel(model::SaturationModel,components,userlocations,verbose)
     _components = format_components(components)
-    fluid = CompositeModel(_components,gas=BasicIdeal(),liquid=NaNLiquid(),saturation = model)
+    fluid = CompositeModel(_components,gas=BasicIdeal(),liquid=ZeroLiquid(),saturation = model)
     return EoSVectorParam(fluid,_components)
 end 
 

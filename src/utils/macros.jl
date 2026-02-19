@@ -1,19 +1,4 @@
 #const IDEALTYPE = Union{T,Type{T}} where T<:EoSModel
-
-"""
-    arbitraryparam(params)
-
-Returns the first field in the struct that is a subtype of `ClapeyronParam`. Errors if it finds none.
-"""
-function arbitraryparam(params)
-    paramstype = typeof(params)
-    idx = findfirst(z->z <: ClapeyronParam,fieldtypes(paramstype))
-    if isnothing(idx)
-        error("The parameter struct ", paramstype, " must contain at least one ClapeyronParam")
-    end
-     return fieldnames(paramstype)[idx] |> z->getfield(params,z)
-end
-
 """
     @groups
 
@@ -622,6 +607,7 @@ the necessary traits to make the model compatible with Clapeyron routines.
     This macro is a no-op from Clapeyron 0.5 onwards.
 """
 macro registermodel(model)
+    Base.depwarn("`@registermodel` is deprecated, it is a no-op.")
     esc(model)
 end
 

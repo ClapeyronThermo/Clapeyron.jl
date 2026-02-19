@@ -1035,7 +1035,7 @@ function set_idx_vapour!(idx_vapour,model,result)
     v = result.volumes
     β = result.fractions
     x = result.compositions
-    
+
     for i in 1:np
         if is_vapour(identify_phase(model,p,T,x[i],vol = v[i]))
             idx_vapour[] = i
@@ -1171,15 +1171,25 @@ function multi_g_obj(model,p,T,z,_result,ss_cache)
         xnp .= z ./ t
         vnp = vols[np]
         phase_np = __mpflash_phase(idx_vapour[],np)
-        g = modified_gibbs(model,p,T,xnp,phase_np,vnp)[1]
+
         #g = βnp*(eos(model,vnp,T,xnp) + p*vnp)
+        if has_a_res(model)
+            g = βnp*(eos(model,vnp,T,xnp) + p*vnp)
+        else
+            g = βnp*modified_gibbs(model,p,T,xnp,phase_np,vnp)[1]
+        end
+
         for i in 1:np-1
             Ki = viewn(𝕏,nc,i)
             xi .= xnp .* exp.(Ki)
             vi = exp(vols[i])
-            #g += β[i]*(eos(model,vi,T,xi) + p*vi)
             phase_i = __mpflash_phase(idx_vapour[],i)
-            g += modified_gibbs(model,p,T,xi,phase_i,vi)[1]
+            #g += β[i]*(eos(model,vi,T,xi) + p*vi)
+            if has_a_res(model)
+                g += β[i]*(eos(model,vi,T,xi) + p*vi)
+            else
+                g += β[i]*modified_gibbs(model,p,T,xi,phase_i,vi)[1]
+            end
         end
         return g/(Rgas(model)*T)
     end
@@ -1197,7 +1207,7 @@ function initial_beta!(comps,z)
         reconstitute_x!(comps,z,βi,imin)
     end
     βi ./= sum(βi)
-    return βi 
+    return βi
 end
 
 function reconstitute_x!(comps,z,bi,i0)
