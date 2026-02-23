@@ -1,1 +1,1 @@
-test/tpflash/**/*.tex linguist-detectable=false
+test/tpflash/*.tex linguist-generated=true
