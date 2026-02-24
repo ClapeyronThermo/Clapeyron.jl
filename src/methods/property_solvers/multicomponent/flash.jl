@@ -178,7 +178,7 @@ function Base.show(io::IO,mime::MIME"text/plain",obj::FlashResult)
     print(io,", p = ")
     print(compact_io,data.p)
     print(io," with $np phase")
-    if np > 1
+    if np != 1
         print(io,"s")
     end
     println(io,":")

@@ -37,6 +37,9 @@ struct ISElectrolyteIdealWrapper{M} <: IdealModel
     salt::SaltParam
 end
 
+salt_compositions(m::Union{ISElectrolyteIdealWrapper,ISElectrolyteWrapper},z) = salt_compositions(m.salt,z) 
+ion_compositions(m::Union{ISElectrolyteIdealWrapper,ISElectrolyteWrapper},z) = ion_compositions(m.salt,z) 
+
 function ISElectrolyteWrapper(model::ESElectrolyteModel;salts = nothing)
     salt = SaltParam(model,salts)
     components = salt.implicit_components
@@ -44,7 +47,7 @@ function ISElectrolyteWrapper(model::ESElectrolyteModel;salts = nothing)
 end
 
 function a_res(model::ISElectrolyteWrapper, V, T, z)
-    w = to_ion(model.salt,z)
+    w = ion_compositions(model,z)
     return a_res(model.model,V,T,w)
 end
 
@@ -59,7 +62,7 @@ function idealmodel(model::ISElectrolyteWrapper)
 end
 
 function a_ideal(model::ISElectrolyteIdealWrapper,V,T,z)
-    w = to_ion(model.salt,z)
+    w = ion_compositions(model,z)
     return a_ideal(model.model,V,T,w)
 end
 
@@ -68,7 +71,7 @@ Rgas(model::ISElectrolyteIdealWrapper) = Rgas(model.model)
 
 #=
 function eos_impl(model::ISElectrolyteWrapper,V,T,z)
-    w = to_ion(model.salt,z)
+    w = ion_compositions(model,z)
     return eos_impl(model.model,V,T,w)
 end=#
 
@@ -90,12 +93,12 @@ function each_split_model(model::ISElectrolyteWrapper,I_salt)
 end
 
 function volume_impl(model::ISElectrolyteWrapper, p, T, z, phase, threaded, vol0)
-    w = to_ion(model.salt,z)
+    w = ion_compositions(model,z)
     return volume(model.model, p, T, w, phase=phase, threaded=threaded, vol0=vol0)
 end
 
 function lb_volume(model::ISElectrolyteWrapper,T,z)
-    w = to_ion(model.salt,z)
+    w = ion_compositions(model,z)
     return lb_volume(model.model,T,w)
 end
 
@@ -104,12 +107,12 @@ function mw(model::ISElectrolyteWrapper)
 end
 
 function p_scale(model::ISElectrolyteWrapper,z)
-    w = to_ion(model.salt,z)
+    w = ion_compositions(model,z)
     return p_scale(model.model,w)
 end
 
 function T_scale(model::ISElectrolyteWrapper,z)
-    w = to_ion(model.salt,z)
+    w = ion_compositions(model,z)
     return T_scale(model.model,w)
 end
 

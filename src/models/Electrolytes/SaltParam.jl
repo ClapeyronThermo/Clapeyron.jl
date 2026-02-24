@@ -67,14 +67,14 @@ function component_list(m::SaltParam)
     end
 end
 
-function to_salt(m::SaltParam,z)
+function to_salt(m,z::AbstractVector)
     F = m.mat
     res = F*z
     resize!(res,length(res) - 1)
     return res
 end
 
-function to_ion(m::SaltParam,z)
+function to_ion(m,z::AbstractVector)
     if length(m.isalts) == 0
         zz = similar(z)
         zz .= z
@@ -84,6 +84,39 @@ function to_ion(m::SaltParam,z)
     ldiv!(m.F,zz)
     return zz
 end
+
+function to_salt(m,result::FlashResult)
+    n_ions = sum(result.fractions) #n mols of ions
+    z_bulk = sum(b[i]*x[i] for (b,x) in zip(result.fractions,result.compositions))
+    n_salts = sum(salt_compositions(m,z_bulk))
+
+    new_comps = map(Base.Fix1(salt_compositions,m),result.compositions)
+    for i in new_comps
+        xi = new_comps[i]
+        xi ./= sum(xi)
+    end
+    new_fracs = result.fractions .* n_salts ./ n_ions
+    return FlashResult(new_comps,new_fracs,result.volumes,result.data)
+end
+
+function to_ion(m,result::FlashResult)
+    n_salts = sum(result.fractions) #n mols of ions
+    z_bulk = sum(b[i]*x[i] for (b,x) in zip(result.fractions,result.compositions))
+    n_ions = sum(ion_compositions(m,z_bulk))
+
+    new_comps = map(Base.Fix1(ion_compositions,m),result.compositions)
+    for i in new_comps
+        xi = new_comps[i]
+        xi ./= sum(xi)
+    end
+    new_fracs = result.fractions .* n_ions ./ n_salts
+    return FlashResult(new_comps,new_fracs,result.volumes,result.data)
+end
+
+
+salt_compositions(m::SaltParam,x) = to_salt(m,x)
+ion_compositions(m::SaltParam,w) = to_ion(m,w)
+
 
 #from a vector of salts, split a SaltParam, returns a salt param and the ion indices
 function IS_each_split_model(salt::SaltParam,I_salt)
