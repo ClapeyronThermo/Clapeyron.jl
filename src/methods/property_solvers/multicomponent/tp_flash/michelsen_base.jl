@@ -119,8 +119,10 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     update_nxy!(nx,ny,ny_var,z,non_inx,non_iny) #updates nx, ny with ny_var vector
     nxsum = sum(nx)
     nysum = sum(ny)
-    x = nx ./ nxsum
-    y = ny ./ nysum
+    x = nx
+    y = ny
+    nx .= nx ./ nxsum
+    ny .= ny ./ nysum
     f = zero(eltype(ny_var))
     f -= gz
     !isnothing(g) && (g .= 0)
@@ -128,23 +130,23 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         lnϕx, ∂lnϕ∂nx, volx = modified_∂lnϕ∂n(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
         ∂x,∂2x = lnϕx,∂lnϕ∂nx
         ∂2x .-= 1
-        ∂2x ./= sum(nx)
+        ∂2x ./= nxsum
         for i in 1:size(∂2x,1)
-            ∂2x[i,i] += 1/nx[i]
+            ∂2x[i,i] += nxsum/x[i]
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
 
         H .= @view ∂2x[in_equilibria, in_equilibria]
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
-        f += dot(∂x,nx)
+        f += nxsum*dot(∂x,x)
 
         lnϕy, ∂lnϕ∂ny, voly = modified_∂lnϕ∂n(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
         ∂y,∂2y = lnϕy,∂lnϕ∂ny
         ∂2y .-= 1
-        ∂2y ./= sum(ny)
+        ∂2y ./= nysum
         for i in 1:size(∂2y,1)
-            ∂2y[i,i] += 1/ny[i]
+            ∂2y[i,i] += nysum/y[i]
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
         end
@@ -153,7 +155,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         !isnothing(g) && (g .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g .*= -1)
 
-        f += dot(∂y,ny)
+        f += nysum*dot(∂y,y)
     else
         ∂x,volx = modified_lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
         for i in 1:size(∂x,1)
@@ -161,7 +163,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
             non_inx[i] && (∂x[i] = 0)
         end
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
-        f += dot(∂x,nx)
+        f += nxsum*dot(∂x,x)
         ∂y,voly = modified_lnϕ(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
         for i in 1:size(∂y,1)
             ∂y[i] += log(y[i])
@@ -169,7 +171,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         end
         !isnothing(g) && (g .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g .*= -1)
-        f += dot(∂y,ny)
+        f += nysum*dot(∂y,y)
     end
     vcache[] = (volx,voly)
     return f

@@ -213,10 +213,13 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     _0,_1 = zero(TT),one(TT)
     if !isnothing(K0)
+        check_arraysize(model,K0)
         K .= K0
         lnK .= log.(K)
         verbose && @info "K0 already provided"
     elseif !isnothing(x0) && !isnothing(y0)
+        check_arraysize(model,x0)
+        check_arraysize(model,y0)
         x .= x0 ./ sum(x0)
         y .= y0 ./ sum(y0)
         lnK .= log.(y ./ x)
