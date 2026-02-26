@@ -213,9 +213,9 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
         lb .= 0
         lb[end] = -Inf
         ub[end] = Inf
-        opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-8,maxiter = 100)
+        opt_options = OptimizationOptions(f_abstol = 0.0,f_reltol = 0.0,x_abstol = 1e-10,maxiter = 1000)
         if second_order
-            sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, Solvers.LineSearch(Solvers.Newton2(ny_var0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
+            sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, Solvers.LineSearch(Solvers.Newton2(ny_var_and_ψ0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         else
             sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub,)),opt_options)
         end
@@ -359,6 +359,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
     f = zero(eltype(ny_var))
     f -= gz
     !isnothing(g) && (g .= 0)
+    _Z = @view(Z[in_equilibria])
     if second_order
         lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
         ∂x,∂2x = lnϕx,∂lnϕ∂nx
@@ -369,12 +370,19 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
-        H .= @view ∂2x[in_equilibria, in_equilibria]
+        
+        H .= 0
+        _∂2x = @view ∂2x[in_equilibria, in_equilibria]
+        H[1:end-1,1:end-1] .= _∂2x
+        H[end,1:end-1] .= 0.0 .- _Z
+        H[1:end-1,end] .= 0.0 .- _Z
 
         if !isnothing(g)
-            g[1:end-1] .= @view ∂x[in_equilibria]
-            g[1:end-1] .+= @view(Z[in_equilibria]) .* ψ
-            g[end] = nysum*dot(y,Z)
+            gny = @view g[1:end-1]
+            _∂x = @view ∂x[in_equilibria]
+            gny .= _∂x
+            gny .+= _Z .* ψ
+            g[end] = nxsum*dot(x,Z)
         end
 
         f += nxsum*dot(∂x,x)
@@ -388,15 +396,17 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
         end
-
-        H .+= @view ∂2y[in_equilibria, in_equilibria]
+        _∂2y = @view ∂2y[in_equilibria, in_equilibria]
+        H[1:end-1,1:end-1] .+= _∂2y
 
         if !isnothing(g)
-            g[1:end-1] .-= @view ∂y[in_equilibria]
-            g[1:end-1] .*= -1
+            gny = @view g[1:end-1]
+            _∂y = @view ∂x[in_equilibria]
+            gny .-= _∂y
+            gny .*= -1
         end
 
-        f += nysum*dot(∂y,y) + nxsum*dot(x,Z)
+        f += nysum*dot(∂y,y) + ψ*nxsum*dot(x,Z)
     else
         ∂x,volx = lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
         for i in 1:size(∂x,1)
@@ -405,9 +415,11 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
         end
 
         if !isnothing(g)
-            g[1:end-1] .= @view ∂x[in_equilibria]
-            g[1:end-1] .+= @view(Z[in_equilibria]) .* ψ
-            g[end] = nysum*dot(y,Z)
+            gny = @view g[1:end-1]
+            _∂x = @view ∂x[in_equilibria]
+            gny .= _∂x
+            gny .+= _Z .* ψ
+            g[end] = nxsum*dot(x,Z)
         end
 
         f += dot(∂x,nx)
@@ -418,15 +430,24 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
         end
 
         if !isnothing(g)
-            g[1:end-1] .-= @view ∂y[in_equilibria]
-            g[1:end-1] .*= -1
+            gny = @view g[1:end-1]
+            _∂y = @view ∂x[in_equilibria]
+            gny .-= _∂y
+            gny .*= -1
         end
 
-        f += nysum*dot(∂y,y) + nxsum*dot(x,Z)
+        f += nysum*dot(∂y,y) + ψ*nxsum*dot(x,Z)
     end
     vcache[] = (volx,voly)
     return f
 end
+
+#=
+f = phi*Z*(z - ny) = phi*Z*z - phi*Z*ny
+dfdny  = -*Z*phi
+dfdphi = dot(Z,nx) = Z*(z - ny)
+d2fdphidny = -Z
+=#
 
 function michelsen_gibbs_feed(model::ElectrolyteModel,p,T,z,caches)
     nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
