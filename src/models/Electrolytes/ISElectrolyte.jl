@@ -46,6 +46,11 @@ function ISElectrolyteWrapper(model::ESElectrolyteModel;salts = nothing)
     return ISElectrolyteWrapper(components,model,salt)
 end
 
+function PT_property(model::ISElectrolyteWrapper,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+    w = ion_compositions(model,z)
+    PT_property(model.model,p,T,w,phase,threaded,vol0,f,USEP)
+end
+
 function a_res(model::ISElectrolyteWrapper, V, T, z)
     w = ion_compositions(model,z)
     return a_res(model.model,V,T,w)
@@ -61,19 +66,8 @@ function idealmodel(model::ISElectrolyteWrapper)
     return ISElectrolyteIdealWrapper(model.components,idealmodel(model.model),model.salt)
 end
 
-function a_ideal(model::ISElectrolyteIdealWrapper,V,T,z)
-    w = ion_compositions(model,z)
-    return a_ideal(model.model,V,T,w)
-end
-
 Rgas(model::ISElectrolyteWrapper) = Rgas(model.model)
 Rgas(model::ISElectrolyteIdealWrapper) = Rgas(model.model)
-
-#=
-function eos_impl(model::ISElectrolyteWrapper,V,T,z)
-    w = ion_compositions(model,z)
-    return eos_impl(model.model,V,T,w)
-end=#
 
 function tp_flash_K0!(K,model::ISElectrolyteModel,p,T,z)
     neutral = ones(Bool,length(model))
@@ -97,23 +91,25 @@ function volume_impl(model::ISElectrolyteWrapper, p, T, z, phase, threaded, vol0
     return volume(model.model, p, T, w, phase=phase, threaded=threaded, vol0=vol0)
 end
 
-function lb_volume(model::ISElectrolyteWrapper,T,z)
-    w = ion_compositions(model,z)
-    return lb_volume(model.model,T,w)
-end
-
 function mw(model::ISElectrolyteWrapper)
     return mw(model.neutralmodel)
 end
 
-function p_scale(model::ISElectrolyteWrapper,z)
+function ∂lnϕ_cache(model::ISElectrolyteWrapper, p, T, z, BB::Val{B}) where B
     w = ion_compositions(model,z)
-    return p_scale(model.model,w)
+    return ∂lnϕ_cache(model.model, p, T, w, BB)
 end
 
-function T_scale(model::ISElectrolyteWrapper,z)
-    w = ion_compositions(model,z)
-    return T_scale(model.model,w)
+function tpd_lnϕ_and_v!(cache::ISElectrolyteWrapper,wrapper.model,p,T,w,vol0,false,phase,vol)
+    lnϕw,v,overpressure = tpd_lnϕ_and_v!(cache,wrapper.model,p,T,w,vol0,false,phase,vol)
+    if iszero(count(!iszero,wrapper.model.charge))
+        return lnϕw,v,overpressure
+    end
+    lnϕz = similar(lnϕw,length(lnϕw) - 1)
+    for i in 1:length(lnϕz)
+        #TODO
+    end
 end
+
 
 export ISElectrolyteWrapper
