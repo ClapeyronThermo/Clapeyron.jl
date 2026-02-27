@@ -368,7 +368,7 @@ function strong_zero(y::ForwardDiff.Dual{T,V,P},x::ForwardDiff.Dual{T,V,P}) wher
     dx = ForwardDiff.partials(x)
     dy = ForwardDiff.partials(y)
     dy2 = strong_zero(dy,dx)
-    return ForwardDiff.Dual{T,V,P}(x.value,dy2)
+    return ForwardDiff.Dual{T,V,P}(y.value,dy2)
 end
 
 function strong_zero(dy::ForwardDiff.Partials{N,V},dx::ForwardDiff.Partials{N,V}) where {N,V}
