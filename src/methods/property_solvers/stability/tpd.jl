@@ -650,7 +650,7 @@ function add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial = 1e-5)
     push!(values,tpd)
     push!(comps,deepcopy(w))
     push!(phase_w,phasew)
-    push!(volumes,v)
+    push!(volumes,volume(model,p,T,w,phase = phasew))
     return true
 
 end #with those checks, we can be sure that the new tpd is a different composition.

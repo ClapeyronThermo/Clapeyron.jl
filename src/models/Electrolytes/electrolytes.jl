@@ -158,7 +158,6 @@ function a_ion(ionmodel, rsp, neutralmodel, V, T, z, neutral_data, ϵ_r)
     return a_ion(ionmodel, V, T, z, ϵ_r)
 end
 
-
 auto_binary_salts(model) = auto_binary_salts(model.charge,component_list(model))
 
 function auto_binary_salts(Z,comps)
