@@ -4,6 +4,7 @@ struct SaltParam <: ClapeyronParam
     implicit_components::Vector{String} #neutrals + salts (ion)
     isalts::Vector{Int} #Indices of the salts
     mat::Matrix{Float64} #used to calculate z(ion) -> z(salt)
+    E::Matrix{Float64} #stoichiometric matrix
     F::LU{Float64, Matrix{Float64}, Vector{Int64}} #used to calculate z(salt) -> z(ion)
 end
 
@@ -13,14 +14,17 @@ function explicit_salt_param(comps,salts,Z)
     nions = length(Z)
     implicit_components = Vector{String}(undef,nions - 1)
     mat = zeros(nions,nions)
+    E = zeros(nions,nions)
     isalts = Int[]
     nneutral = count(iszero,Z)
     #we suppose that first there are nneutral neutral components, followed by nions - nneutral ions
     for i in 1:nneutral
+        E[i,i] = 1
         mat[i,i] = 1
         implicit_components[i] = explicit_components[i]
     end
     rr = eachrow(mat)
+    ek = eachrow(E)
     k = 0
     for i in (nneutral+1):(nions-1)
         k += 1
@@ -33,8 +37,9 @@ function explicit_salt_param(comps,salts,Z)
         for ion_vals in pairings
             ion_i,ni = first(ion_vals),last(ion_vals)
             ki = findfirst(isequal(ion_i),comps)
-
+            
             if !isnothing(ki)
+                E[ki] = ni
                 ri[ki] = 1/ni
             else
                 throw(error("cannot find ions in the salt $salt_component"))
@@ -46,7 +51,7 @@ function explicit_salt_param(comps,salts,Z)
     if nneutral < nions
         rr[end] .= Z
     end
-    return SaltParam(explicit_solvent,explicit_components,implicit_components,isalts,mat,lu(mat))
+    return SaltParam(explicit_solvent,explicit_components,implicit_components,isalts,mat,E,lu(mat))
 end
 
 SaltParam(model::ESElectrolyteModel) = SaltParam(model,nothing)
@@ -135,9 +140,11 @@ function IS_each_split_model(salt::SaltParam,I_salt)
     I_ion_int = findall(I_ion_bool)
     if length(I_ion_int) == length(I_salt)
         mm = m[I_salt,I_ion_int]
+        EE = salt.E[I_salt,I_ion_int]
     else
         I_salt_plus_charge = vcat(I_salt,nions)
         mm = m[I_salt_plus_charge,I_ion_int]
+        EE = salt.E[I_salt_plus_charge,I_ion_int]
     end
 
     isalts = Int[]
@@ -148,7 +155,7 @@ function IS_each_split_model(salt::SaltParam,I_salt)
         end
     end
 
-    split_salt = SaltParam(false,salt.explicit_components[I_ion_int],salt.implicit_components[I_salt],isalts,mm,lu(mm))
+    split_salt = SaltParam(false,salt.explicit_components[I_ion_int],salt.implicit_components[I_salt],isalts,mm,EE,lu(mm))
     return split_salt,I_ion_int
 end
 

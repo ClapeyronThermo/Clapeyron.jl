@@ -17,7 +17,8 @@ end
 
 function temperature end
 
-VT_pressure(model, V, T, z=SA[1.]) = -∂f∂V(model,V,T,z)
+VT_pressure(model, V, T) = VT_pressure(model, V, T, SA[1.0])
+VT_pressure(model, V, T, z) = -∂f∂V(model,V,T,z)
 VT_temperature(model, V, T, z=SA[1.]) = T
 VT_volume(model, V, T, z=SA[1.]) = V
 
@@ -25,8 +26,8 @@ function pressure_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
     return -Solvers.derivative(fun,V)
 end
-
-VT_pressure_res(model, V, T, z=SA[1.]) = pressure_res(model,V,T,z)
+VT_pressure_res(model, V, T) = VT_pressure_res(model, V, T, SA[1.])
+VT_pressure_res(model, V, T, z) = pressure_res(model,V,T,z)
 
 function VT_entropy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return -∂f∂T(model,V,T,z)
