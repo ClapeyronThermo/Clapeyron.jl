@@ -188,7 +188,7 @@ function tpd_solver(model,p,T,z,w0,
     !converged && break_first && tpd < 0 && !trivial && (return w,tpd,vw)
 
     #did not converge, but the phase is not trivial nor stable
-    if !converged && !stable && !trivial
+    if !converged && !stable && !trivial && !(model isa ESElectrolyteModel)
         vcache[] = vw
         w,tpd,vw = tpd_optimization(model,p,T,z,w,dzz,cache,phasew)
     end
@@ -233,12 +233,11 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
     w .= w0
     w ./= sum(w0)
     tpd,S,S_norm,v = TT(Inf),TT(Inf),TT(Inf),TT(NaN)
+    K_norm = TT(NaN)
     while !done
         iter += 1
         lnϕw,v,liquid_overpressure = tpd_lnϕ_and_v!(Hϕ,model,p,T,w,v,liquid_overpressure,phase)
         S_old = S
-        K_norm,tm,dtm = one(TT),zero(TT),zero(TT)
-
         #simple loop, overloaded for electrolyte models
         #=
         S = 0.0
@@ -248,17 +247,10 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
             S += wi
         end
         =#
-        S = __tpd_ss_update_w_and_S!(w,model,di,lnϕw)
+        S,tpd,K_norm = __tpd_ss_update!(w,model,di,z,lnϕw)
 
         S_norm = abs(S_old - S)
-        w ./=  S
-        tpd = one(TT)
-        for i in eachindex(w)
-            wi,lnϕwi = w[i],lnϕw[i]
-            K_norm += log(wi/z[i])^2
-            tpd += wi*(log(wi) + lnϕwi - di[i] - 1)
-        end
-        #@show w,S_norm,q
+    
         # Two convergence criteria:
         # - Approaching trivial solution (K-values are all 1)
         # - Equilibrium for a small amount of the "other" phase,
@@ -285,14 +277,24 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
     return (w,tpd,v,(stable,trivial,converged))
 end
 
-function __tpd_ss_update_w_and_S!(w,model,d,lnϕw)
+function __tpd_ss_update!(w,model,d,z,lnϕw)
     S = zero(eltype(w))
     for i in eachindex(w)
         wi = exp(d[i]-lnϕw[i])
         w[i] = wi
         S += wi
     end
-    return S
+    
+    zz = sum(z)
+    tpd = oneunit(S)
+    K_norm = zero(S)
+    for i in eachindex(w)
+        wi = w[i]
+        K_norm += log(zz*wi/z[i])^2
+        tpd += wi*(log(wi) + lnϕw[i] - Z[i]*ψ - d[i] - 1)
+    end
+    w ./= S
+    return S,tpd,K_norm
 end
 
 """
@@ -332,7 +334,7 @@ function tpd2(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_f
     model_reduced_cached = __tpflash_cache_model(model_reduced,p,T,z,eq)
 
     result = _tpd(model_reduced_cached,p,T,zr,cache,break_first,lle,tol_trivial,strategy,di,verbose)
-
+    @show result.volumes
     if reduced && length(result.tpd) > 0
         expanded_result = index_expansion(result,idx_reduced)
         return expanded_result
@@ -401,11 +403,15 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     end
 
     if length(result.tpd) > 1
+        @show result.tpd
         if !issorted(result.tpd)
             sort_idx = sortperm(result.tpd)
             result.compositions .= result.compositions[sort_idx]
             result.tpd .= result.tpd[sort_idx]
+            @show result.volumes
+            @show sort_idx
             result.volumes .= result.volumes[sort_idx]
+            @show result.volumes
             result.phases .= result.phases[sort_idx]
         end
     end

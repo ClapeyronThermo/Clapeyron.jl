@@ -131,7 +131,7 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
-    verbose && @info "iter  status        β      error_lnK            K"
+    verbose && @info "iter  status        β      error(lnK̄)            K̄"
     while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status in (RREq,RRLiquid,RRVapour)
         it += 1
         itacc += 1
@@ -188,7 +188,7 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
         error_lnK = dnorm(@view(lnK̄[in_equilibria]),@view(lnK̄_old[in_equilibria]),1)
     end
 
-    verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
+    verbose && it > 0 && @info "$it SS iterations done, error(lnK̄) = $error_lnK"
 
     if it > 0 && !isnan(β)
         # single composition update with the (possibly projected) β
@@ -211,13 +211,14 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
         ub[1:end-1] .= @view z[in_equilibria]
         lb = similar(ny_var_and_ψ0)
         lb .= 0
+        ψmin,ψmax = bound_electrochemical_potential(K,Z)
         lb[end] = -Inf
         ub[end] = Inf
         opt_options = OptimizationOptions(f_abstol = 0.0,f_reltol = 0.0,x_abstol = 1e-10,maxiter = 1000)
         if second_order
             sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, Solvers.LineSearch(Solvers.Newton2(ny_var_and_ψ0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         else
-            sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub,)),opt_options)
+            sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         end
         ny_var_and_ψ = Solvers.x_sol(sol)
         ny_var = @view ny_var_and_ψ[1:end-1]
@@ -229,9 +230,9 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
         β = rachfordrice(K̄, z; non_inx, non_iny, K_tol, verbose)
     end
 
-    verbose && @info "final K values: $K"
-
+    verbose && @info "final K̄ values:        $K̄"
     verbose && @info "final vapour fraction: $β"
+    verbose && @info "final value of ψ:      $ψ"
     #convergence checks (TODO, seems to fail with activity models)
     status = rachfordrice_status(K̄,z,non_inx,non_iny;K_tol = K_tol)
     verbose && status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
@@ -352,10 +353,10 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
     update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
     nxsum = sum(nx)
     nysum = sum(ny)
-    x = nx
-    y = ny
     nx .= nx ./ nxsum
     ny .= ny ./ nysum
+    x = nx
+    y = ny
     f = zero(eltype(ny_var))
     f -= gz
     !isnothing(g) && (g .= 0)
@@ -366,7 +367,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
         ∂2x .-= 1
         ∂2x ./= nxsum
         for i in 1:size(∂2x,1)
-            ∂2x[i,i] += nxsum/x[i]
+            ∂2x[i,i] += 1/(nxsum*x[i])
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
@@ -382,7 +383,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
             _∂x = @view ∂x[in_equilibria]
             gny .= _∂x
             gny .+= _Z .* ψ
-            g[end] = nxsum*dot(x,Z)
+            g[end] = nysum*dot(y,Z)
         end
 
         f += nxsum*dot(∂x,x)
@@ -392,7 +393,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
         ∂2y .-= 1
         ∂2y ./= nysum
         for i in 1:size(∂2y,1)
-            ∂2y[i,i] += nysum/y[i]
+            ∂2y[i,i] += 1/(nysum*y[i])
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
         end
@@ -408,7 +409,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
 
         f += nysum*dot(∂y,y) + ψ*nxsum*dot(x,Z)
     else
-        ∂x,volx = lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
+        ∂x,volx = lnϕ(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
         for i in 1:size(∂x,1)
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
@@ -417,25 +418,25 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
         if !isnothing(g)
             gny = @view g[1:end-1]
             _∂x = @view ∂x[in_equilibria]
-            gny .= _∂x
-            gny .+= _Z .* ψ
+            gny .= 0 .- _∂x
             g[end] = nxsum*dot(x,Z)
         end
 
-        f += dot(∂x,nx)
+        f += nxsum*dot(∂x,x)
         ∂y,voly = lnϕ(model, p, T, y,lnϕ_cache; phase=phasey, vol0=voly)
         for i in 1:size(∂y,1)
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
         end
-
+ 
         if !isnothing(g)
             gny = @view g[1:end-1]
-            _∂y = @view ∂x[in_equilibria]
-            gny .-= _∂y
-            gny .*= -1
+            _∂y = @view ∂y[in_equilibria]
+            gny .+= _∂y
+            gny .-= ψ .* _Z
+            #g[end] = nysum*dot(Z,y)
+            @show g
         end
-
         f += nysum*dot(∂y,y) + ψ*nxsum*dot(x,Z)
     end
     vcache[] = (volx,voly)
@@ -443,8 +444,8 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
 end
 
 #=
-f = phi*Z*(z - ny) = phi*Z*z - phi*Z*ny
-dfdny  = -*Z*phi
+f = phi*sum(Z*(z - ny)) = phi*dot(Z,z) - phi*dot(Z,ny)
+dfdny  = -Z .* phi
 dfdphi = dot(Z,nx) = Z*(z - ny)
 d2fdphidny = -Z
 =#

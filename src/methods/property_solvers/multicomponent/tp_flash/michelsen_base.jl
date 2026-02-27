@@ -132,7 +132,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         ∂2x .-= 1
         ∂2x ./= nxsum
         for i in 1:size(∂2x,1)
-            ∂2x[i,i] += nxsum/x[i]
+            ∂2x[i,i] += 1/(nxsum*x[i])
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
@@ -146,7 +146,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         ∂2y .-= 1
         ∂2y ./= nysum
         for i in 1:size(∂2y,1)
-            ∂2y[i,i] += nysum/y[i]
+            ∂2y[i,i] += 1/(nysum*y[i])
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
         end
