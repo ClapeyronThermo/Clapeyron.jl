@@ -13,6 +13,11 @@ struct TPDData{R,Z}
     phase::Symbol
 end
 
+function TPDData(p::R1,T::R2,z::Z,phase::Symbol) where {R1,R2,Z}
+    pp,TT = promote(p,T)
+    return TPDData(pp,TT,z,phase)
+end
+
 function Base.show(io::IO,mime::MIME"text/plain",obj::TPDResult)
     comps,tpd,volumes,phases,data = obj.compositions,obj.tpd,obj.volumes,obj.phases,obj.data
     np = length(comps)
