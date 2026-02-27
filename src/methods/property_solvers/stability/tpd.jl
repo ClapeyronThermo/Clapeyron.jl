@@ -291,7 +291,7 @@ function __tpd_ss_update!(w,model,d,z,lnϕw)
     for i in eachindex(w)
         wi = w[i]
         K_norm += log(zz*wi/z[i])^2
-        tpd += wi*(log(wi) + lnϕw[i] - Z[i]*ψ - d[i] - 1)
+        tpd += wi*(log(wi) + lnϕw[i] - d[i] - 1)
     end
     w ./= S
     return S,tpd,K_norm
