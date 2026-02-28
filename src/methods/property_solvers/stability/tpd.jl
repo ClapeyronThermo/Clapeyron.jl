@@ -19,7 +19,7 @@ function TPDData(p::R1,T::R2,z::Z,phase::Symbol) where {R1,R2,Z}
 end
 
 function index_expansion(data::TPDData,idx)
-    return TPDData(data.p,data.T,index_expansion(data.z_bulk,idx),phase)
+    return TPDData(data.p,data.T,index_expansion(data.z_bulk,idx),data.phase)
 end
 
 function index_expansion(res::TPDResult,idx)
@@ -53,8 +53,6 @@ end
 temperature(state::TPDResult) = state.data.T
 pressure(state::TPDResult) = state.data.p
 
-
-
 function tpd_cache(model,p,T,z,k0 = z)
     TT = Base.promote_eltype(model,p,T,z,k0)
     x1,x2,x3,x4 = similar(z,TT),similar(z,TT),similar(z,TT),similar(z,TT)
@@ -65,35 +63,35 @@ end
 
 function tpd_obj!(G,H,model,p,T,α,di,phase,cache)
     second_order = !isnothing(H)
-    w,dtpd,_,_,vcache,Hϕ = cache
-    w .= α .* α .* 0.25
-    w ./= sum(w)
+    W,dtpd,_,_,vcache,Hϕ = cache
+    W .= α .* α .* 0.25
     nc = length(di)
     volw0 = vcache[]
     if !second_order
-        lnϕw, volw = modified_lnϕ(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
+        lnϕw, volw = modified_lnϕ(model, p, T, W, Hϕ; phase=phase, vol0=volw0)
     else
-        lnϕw, ∂lnϕ∂nw, volw = modified_∂lnϕ∂n(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
+        lnϕw, ∂lnϕ∂nw, volw = modified_∂lnϕ∂n(model, p, T, W, Hϕ; phase=phase, vol0=volw0)
         #=
         from thermopack:
         We see that ln Wi + lnφ(W) − di will be zero at the solution of the tangent plane minimisation.
         It can therefore be removed from the second derivative, without affecting the convergence properties.
         =#
         for i in 1:nc
-            xi = sqrt(w[i])
+            sqrt_Wi = 0.5*α[i]
             for j in 1:nc
-                xj = sqrt(w[j])
+                sqrt_Wj = 0.5*α[j]
                 δij = Int(i == j)
-                H[i,j] = δij + xi*xj*∂lnϕ∂nw[i,j]# + 0.5*αi*dtpd[i]
+                H[i,j] = δij + sqrt_Wi*sqrt_Wj*∂lnϕ∂nw[i,j]# + 0.5*αi*dtpd[i]
             end
         end
     end
     vcache[] = volw
-    dtpd .= log.(w) .+ lnϕw .- di
+    dtpd .= log.(W) .+ lnϕw .- di
     if !isnothing(G)
-        G .= dtpd .*  sqrt.(w)
+        G .= dtpd .*  α .* 0.5
     end
-    fx = dot(w,dtpd) - sum(w) + 1
+    dtpd .= lnϕw #for later
+    fx = 1.0 + @sum(W[i]*(log(W[i]) + lnϕw[i] - di[i] - 1.0))
     return fx
 end
 
@@ -204,7 +202,7 @@ function tpd_solver(model,p,T,z,w0,
     #did not converge, but the phase is not trivial nor stable
     if !converged && !stable && !trivial && !(model isa ESElectrolyteModel)
         vcache[] = vw
-        w,tpd,vw = tpd_optimization(model,p,T,z,w,dzz,cache,phasew)
+        w,tpd,vw = tpd_optimization(model,p,T,z,w,dzz,cache,phasew)        
     end
 
     return w,tpd,vw
@@ -215,7 +213,7 @@ function tpd_ss!(model,p,T,z,w0,cache = tpd_cache(model,p,T,z,K0);phase = :liqui
 end
 
 function tpd_optimization(model,p,T,z,w0,di,cache = tpd_cache(model,p,T,z,K0),phasew = :liquid)
-    w,_,_,dzz,vcache,Hϕ = cache
+    w,lnϕw_cache,_,dzz,vcache,Hϕ = cache
     α0 = 2 .* sqrt.(w0)
     prob = tpd_obj(model, p, T, dzz, phasew, cache)
     lb,ub = similar(α0),similar(α0)
@@ -225,9 +223,10 @@ function tpd_optimization(model,p,T,z,w0,di,cache = tpd_cache(model,p,T,z,K0),ph
     res = Solvers.optimize(prob, α0, LineSearch(Solvers.Newton2(α0),Solvers.BoundedLineSearch(lb,ub)), opt_options)
     α = Solvers.x_sol(res)
     w .= α .* α .* 0.25
+    S = sum(w)
     w ./= sum(w)
-    tpd = Solvers.x_minimum(res)
-    vw = vcache[]
+    _,tpd,_ = __tpd_ss_update!(w,model,di,z,lnϕw_cache)
+    vw = vcache[]/S
     return w,tpd,vw
 end
 
@@ -293,21 +292,23 @@ end
 
 function __tpd_ss_update!(w,model,d,z,lnϕw)
     S = zero(eltype(w))
+    tpd = zero(S)
     for i in eachindex(w)
-        wi = exp(d[i]-lnϕw[i])
-        w[i] = wi
-        S += wi
+        Wi = exp(d[i]-lnϕw[i])
+        w[i] = Wi
+        S += Wi
     end
     
+    w ./= S
+    
     zz = sum(z)
-    tpd = oneunit(S)
     K_norm = zero(S)
+    
     for i in eachindex(w)
         wi = w[i]
         K_norm += log(zz*wi/z[i])^2
-        tpd += wi*(log(wi) + lnϕw[i] - d[i] - 1)
+        tpd += wi*(log(wi) + lnϕw[i] - d[i])
     end
-    w ./= S
     return S,tpd,K_norm
 end
 
@@ -446,7 +447,6 @@ function tpd_plan(model,z,is_liquidz,lle,id_test,K_test,pure_test)
             push!(plan,(:K,:liquid,(-1,0,0)))
         end
     end
-
     if pure_test
         ids = sortperm(z)
         if is_liquidz

@@ -177,14 +177,46 @@ function pure_chemical_instability(model,V,T)
 end
 
 """
-    tangent_plane_distance(model,V,T,z,phase::Symbol,w)::Float
-Calculates the tangent plane distance for a tangent plane stability test.
+    tangent_plane_distance(model,p,T,z,W,cache = nothing;
+                                    phasew = :unknown,
+                                    phasez = :unknown,
+                                    volw0 = nothing,
+                                    volz0 = nothing,
+                                    modified = false)
+                                    
+                            
+Calculates the tangent plane distance (TPD) between a bulk composition `z` and a trial composition `W`.
+Negative TPD values mean that the that the bulk composition z is unstable and will split into (at least) two phases.
+The arguments `volz0`,`volw0`,`phasew` and `phasez` are passed to the evaluation of their respective fugacity coefficients.
+If the `modified` argument is set to `true`, then the modified formula is used, that uses mol numbers instead of mol fractions for the trial composition.
+If the input amounts sum to one, then the modified TPD and the original TPD expression should give the same result.
+``` 
 """
-function tangent_plane_distance(model,p,T,z,phase,w)
-    w = w./sum(w)
-    V = volume(model, p, T, w;phase=phase)
-    μ(w) = VT_chemical_potential(model,V,T,w)
-    tdp = sum(w.*(μ(w) .- μ(z)))#./(8.314*T)
+function tangent_plane_distance(model,p,T,z,W,cache = nothing;
+                                phasew = :unknown,
+                                phasez = :unknown,
+                                volw0 = nothing,
+                                volz0 = nothing,
+                                modified = false)
+    
+    
+    _lnϕw,_ = modified_lnϕ(model, p, T, W, cache; phase=phasew, vol0=volw0)
+    if cache === nothing
+        lnϕw = _lnϕw
+    else
+        lnϕw = copy(_lnϕw) #copy if a cache is used
+    end
+    lnϕz,_ = modified_lnϕ(model, p, T, z, cache; phase=phasez, vol0=volw0)
+    @show lnϕw
+    RT = Rgas(model)*T
+    ∑z = sum(z)
+    if modified
+        fx = 1.0 + @sum(W[i]*(log(W[i]) + lnϕw[i] - lnϕz[i] - log(z[i]/∑z) - 1.0))
+    else
+        ∑w = sum(W)
+        fx = @sum(W[i]*(log(W[i]/∑w) + lnϕw[i] - lnϕz[i] - log(z[i]/∑z)))/∑w
+    end
+    return fx
 end
 
 export isstable
