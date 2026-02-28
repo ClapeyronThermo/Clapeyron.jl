@@ -19,7 +19,7 @@ function TPDData(p::R1,T::R2,z::Z,phase::Symbol) where {R1,R2,Z}
 end
 
 function index_expansion(data::TPDData,idx)
-    return TPDData(data.p,data.T,index_expansion(data.z_bulk),phase)
+    return TPDData(data.p,data.T,index_expansion(data.z_bulk,idx),phase)
 end
 
 function index_expansion(res::TPDResult,idx)
@@ -348,7 +348,7 @@ function tpd2(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_f
     model_reduced_cached = __tpflash_cache_model(model_reduced,p,T,z,eq)
 
     result = _tpd(model_reduced_cached,p,T,zr,cache,break_first,lle,tol_trivial,strategy,di,verbose)
-    @show result.volumes
+
     if reduced && length(result.tpd) > 0
         expanded_result = index_expansion(result,idx_reduced)
         return expanded_result
@@ -417,15 +417,11 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     end
 
     if length(result.tpd) > 1
-        @show result.tpd
         if !issorted(result.tpd)
             sort_idx = sortperm(result.tpd)
             result.compositions .= result.compositions[sort_idx]
             result.tpd .= result.tpd[sort_idx]
-            @show result.volumes
-            @show sort_idx
             result.volumes .= result.volumes[sort_idx]
-            @show result.volumes
             result.phases .= result.phases[sort_idx]
         end
     end
