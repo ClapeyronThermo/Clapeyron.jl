@@ -18,6 +18,15 @@ function TPDData(p::R1,T::R2,z::Z,phase::Symbol) where {R1,R2,Z}
     return TPDData(pp,TT,z,phase)
 end
 
+function index_expansion(data::TPDData,idx)
+    return TPDData(data.p,data.T,index_expansion(data.z_bulk),phase)
+end
+
+function index_expansion(res::TPDResult,idx)
+    new_comps = map(Base.Fix2(index_expansion,idx),res.compositions)
+    return TPDResult(new_comps,res.tpd,res.volumes,res.phases,index_expansion(res.data,idx))
+end
+
 function Base.show(io::IO,mime::MIME"text/plain",obj::TPDResult)
     comps,tpd,volumes,phases,data = obj.compositions,obj.tpd,obj.volumes,obj.phases,obj.data
     np = length(comps)
