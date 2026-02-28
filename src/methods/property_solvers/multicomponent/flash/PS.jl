@@ -49,7 +49,17 @@ function ps_flash(model,p,s,z,method::FlashMethod)
         return index_expansion(result1r,idx_r)
     end
 
-    result = ps_flash_impl(model_r,p,s,z_r,method_r)
+    #result = ps_flash_impl(model_r,p,s,z_r,method_r)
+    if has_a_res(model)
+        λmodel,λp,λs,λz = primalval(model_r),primalval(p),primalval(s),primalval(z_r)
+        λresult = ps_flash_impl(λmodel,λp,λs,λz,primalval(method_r))
+        tup = (model_r,p,s,z_r)
+        λtup = (λmodel,λp,λs,λz)
+        result = xy_flash_ad(λresult,tup,λtup,pressure,entropy)
+    else
+        result = ps_flash_impl(model_r,p,s,z,method_r)
+    end
+
     if !issorted(result.volumes)
         #this is in case we catch a bad result.
         result = FlashResult(result)
