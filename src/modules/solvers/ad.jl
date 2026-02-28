@@ -299,9 +299,7 @@ end
     names = fieldnames(M)
     Base.typename(M).wrapper
     structtype = Expr(:curly,Base.typename(M).wrapper)
-    
     push!(structtype.args,m.parameters[1])
-    @show structtype
     primalvals = Expr(:call,structtype)
     for name in names
         push!(primalvals.args,:(primalval(x.$name)))
