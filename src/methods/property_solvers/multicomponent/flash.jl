@@ -572,7 +572,7 @@ end
 
 function __xy_flash_ad1_fillβ(orig::SVector{N,T},β::B,ix) where {N,T,B}
     v = ntuple(i -> i == ix ? β : zero(β),Val{N}())
-    return SVector{N,V}(v)
+    return SVector{N,T}(v)
 end
 
 function __xy_flash_ad1_fillβ(orig::AbstractVector{T},β::B,ix) where {T,B}
@@ -591,10 +591,11 @@ function xy_flash_ad1(result,tup,tup_primal,spec1,spec2)
         f2 = spec_to_vt(model0,v0,T0,zbulk,spec2) - _val2
         return SVector(f1,f2)
     end
+    
     i = findfirst(!iszero,result.fractions)
     λT = result.data.T
-    λv = result.volumes[i]
-    λx = SVector(λv,λT)
+    λv = result.volumes[i]*sum(result.fractions)
+    λx = SVector(primalval(λv),primalval(λT))
     ∂x = __gradients_for_root_finders(λx,tup,tup_primal,f)
     ∂v,∂T = ∂x[1],∂x[2]
     model,val1,val2,z = tup
@@ -602,8 +603,7 @@ function xy_flash_ad1(result,tup,tup_primal,spec1,spec2)
     ∂comp1 = z ./ ∂β1
     ∂β = __xy_flash_ad1_fillβ(result.fractions,∂β1,i)
     ∂comps = __xy_flash_ad1_fill1(result.compositions,∂comp1)
-    ∂volumes = __xy_flash_ad1_fill1(result.volumes,∂v)
-
+    ∂volumes = __xy_flash_ad1_fill1(result.volumes,∂v / ∂β1)
     if spec1 == pressure
         ∂p = oftype(∂T,val1)
     elseif spec2 == pressure

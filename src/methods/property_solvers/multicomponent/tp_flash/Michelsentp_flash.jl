@@ -47,6 +47,14 @@ function index_reduction(m::MichelsenTPFlash,idx::AbstractVector)
     return MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles,verbose)
 end
 
+function Solvers.primalval(method::MichelsenTPFlash{T}) where {T}
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end 
+end
+
 numphases(::MichelsenTPFlash) = 2
 
 function MichelsenTPFlash(;equilibrium = :unknown,
