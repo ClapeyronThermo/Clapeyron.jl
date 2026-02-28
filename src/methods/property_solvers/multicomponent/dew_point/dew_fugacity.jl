@@ -35,6 +35,14 @@ struct FugDewPressure{T} <: DewPointMethod
     second_order::Bool
 end
 
+function Solvers.primalval(method::FugDewPressure{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
+end
+
 function FugDewPressure(;vol0 = nothing,
                                 p0 = nothing,
                                 x0 = nothing,
@@ -195,6 +203,14 @@ struct FugDewTemperature{T} <: DewPointMethod
     tol_T::Float64
     tol_of::Float64
     second_order::Bool
+end
+
+function Solvers.primalval(method::FugDewTemperature{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
 end
 
 function FugDewTemperature(;vol0 = nothing,

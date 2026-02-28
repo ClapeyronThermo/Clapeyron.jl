@@ -36,6 +36,14 @@ struct FugBubblePressure{T} <: BubblePointMethod
     second_order::Bool
 end
 
+function Solvers.primalval(method::FugBubblePressure{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
+end
+
 function FugBubblePressure(;vol0 = nothing,
                                 p0 = nothing,
                                 y0 = nothing,
@@ -193,6 +201,14 @@ struct FugBubbleTemperature{T} <: BubblePointMethod
     tol_T::Float64
     tol_of::Float64
     second_order::Bool
+end
+
+function Solvers.primalval(method::FugBubbleTemperature{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
 end
 
 function FugBubbleTemperature(;vol0 = nothing,
