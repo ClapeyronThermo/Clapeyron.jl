@@ -553,7 +553,7 @@ end
     
     #issue #554
     model554 = cPR(["propane","butane"],idealmodel = ReidIdeal)
-    f554(x) = Clapeyron.PH.entropy(model554, x[1]*101325, 55.0, [1.0,1.0])
+    f554(x) = Clapeyron.PH.entropy(model554, x[1]*101325, 500.0, [1.0,1.0])
     dsdp_ad = Clapeyron.Solvers.derivative(f554,1.5)
     dsdp_finite = Clapeyron.derivx(f554,1.5)
     @test dsdp_ad ≈ dsdp_finite rtol = 1e-6
