@@ -397,7 +397,7 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     method_r = index_reduction(method,idx_r)
     if has_a_res(model)
         λmodel,λT,λx = primalval(model_r),primalval(T),primalval(x_r)
-        λresult = bubble_pressure_impl(λmodel,λT,λx,method_r)
+        λresult = bubble_pressure_impl(λmodel,λT,λx,primalval(method_r))
         tup = (model_r,T,x_r)
         if any(has_dual,tup)
             λtup = (λmodel,λT,λx)
@@ -575,7 +575,7 @@ function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
     method_r = index_reduction(method,idx_r)
     if has_a_res(model)
         λmodel,λp,λx = primalval(model_r),primalval(p),primalval(x_r)
-        λresult = bubble_temperature_impl(λmodel,λp,λx,method_r)
+        λresult = bubble_temperature_impl(λmodel,λp,λx,primalval(method_r))
         tup = (model_r,p,x_r)
         if any(has_dual,tup)
             λtup = (λmodel,λp,λx)
@@ -584,7 +584,7 @@ function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
             result = λresult
         end
     else
-        result =  bubble_temperature_impl(model_r,p,x_r,method_r)
+        result = bubble_temperature_impl(model_r,p,x_r,method_r)
     end
 
     (T_sat, v_l, v_v, y_r) = result

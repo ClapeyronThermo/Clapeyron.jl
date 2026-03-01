@@ -1,15 +1,5 @@
 abstract type eSAFTVRMieModel <: ESElectrolyteModel end
 
-struct eSAFTVRMie{T<:IdealModel,c<:EoSModel,i<:IonModel} <: eSAFTVRMieModel
-    components::Array{String,1}
-    icomponents::UnitRange{Int}
-    charge::Vector{Int64}
-    idealmodel::T
-    neutralmodel::c
-    ionmodel::i
-    references::Array{String,1}
-end
-
 """
     eSAFTVRMie(solvents::Array{String,1}, 
         ions::Array{String,1}; 
