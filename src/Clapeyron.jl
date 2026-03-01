@@ -272,7 +272,7 @@ include("models/ECS/variants/SPUNG.jl")
 include("models/Potentials/PeTS/PeTS.jl")
 
 #electrolytes
-include("models/Electrolytes/base.jl")
+include("models/Electrolytes/electrolytes.jl")
 include("models/Electrolytes/RSP/ConstRSP.jl")
 include("models/Electrolytes/RSP/ZuoFurst.jl")
 include("models/Electrolytes/RSP/Schreckenberg.jl")

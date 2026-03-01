@@ -696,6 +696,21 @@ struct GeneralizedXYFlash{P,T} <: FlashMethod
     max_iters::Int
 end
 
+function Solvers.primalval(method::GeneralizedXYFlash{P,T}) where {P,T}
+    if P == Nothing
+        λP = Nothing
+    else
+        λP = Solvers.primal_eltype(P)
+    end
+    
+    if T == Nothing
+        λT = Nothing
+    else
+        λT = Solvers.primal_eltype(P)
+    end
+    return GeneralizedXYFlash{λP,λT}(method.equilibrium,primalval(method.T0),primalval(method.p0),primalval(method.K0),primalval(method.x0),primalval(method.y0),primalval(method.v0),method.atol,method.rtol,method.max_iters)
+end
+
 Base.eltype(method::GeneralizedXYFlash{T}) where T = T
 
 function index_reduction(m::GeneralizedXYFlash,idx::AbstractVector)

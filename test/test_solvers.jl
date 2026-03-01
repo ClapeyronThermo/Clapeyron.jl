@@ -180,8 +180,13 @@ end
         d2 = SOL.grad_at_i(rosenbrock,[2.0,2.0],2)
         d = SOL.gradient(rosenbrock,[2.0,2.0])
         @test [d1,d2] == d
+        
+        fx = SOL.strong_zero(Clapeyron.ForwardDiff.Dual(1.2,0.5)) do x
+            sqrt(x)
+        end
+        @test Clapeyron.primalval(fx) ≈ sqrt(1.2)
     end
-
+ 
     @testset "evalexppoly" begin
         @test Clapeyron.evalexppoly(2,(1,2,3),(3,2,1)) == 22
     end

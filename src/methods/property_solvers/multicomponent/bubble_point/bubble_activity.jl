@@ -24,6 +24,14 @@ struct ActivityBubblePressure{T} <: BubblePointMethod
     rtol_ss::Float64
 end
 
+function Solvers.primalval(method::ActivityBubblePressure{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
+end
+
 function ActivityBubblePressure(;vol0 = nothing,
                                 p0 = nothing,
                                 y0 = nothing,

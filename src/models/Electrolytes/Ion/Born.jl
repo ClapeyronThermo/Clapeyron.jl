@@ -56,7 +56,6 @@ function Born(solvents,ions; RSPmodel = ConstRSP, userlocations=String[], RSPmod
     return model
 end
 
-
 function data(model::BornModel, V, T, z)
     return dielectric_constant(model, V, T, z)
 end
@@ -77,4 +76,8 @@ function a_born(V::Number, T, z, iondata, σ_born)
         return zero(Base.promote_eltype(V, T, z, Z, σ, ϵ_r))
     end
     return s*(1-1/ϵ_r)*sum(z[i]*Z[i]*Z[i]/σ_born[i] for i ∈ @iions)
+end
+
+function a_born(model::ESElectrolyteModel,V,T,z)
+    return a_born(model.ionmodel,V,T,z)
 end

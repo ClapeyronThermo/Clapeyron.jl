@@ -550,6 +550,13 @@ end
     h_out_506 = Clapeyron.PS.enthalpy(fluid506, p_out_506, s_in_506,z_506,phase = phase506)
     s_out_506 = Clapeyron.PH.entropy(fluid506, p_out_506, h_out_506,z_506,phase = phase506)
     @test s_in_506 ≈ s_out_506 rtol = 1e-6
+    
+    #issue #554
+    model554 = cPR(["propane","butane"],idealmodel = ReidIdeal)
+    f554(x) = Clapeyron.PH.entropy(model554, x[1]*101325, 500.0, [1.0,1.0])
+    dsdp_ad = Clapeyron.Solvers.derivative(f554,1.5)
+    dsdp_finite = Clapeyron.derivx(f554,1.5)
+    @test dsdp_ad ≈ dsdp_finite rtol = 1e-6
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)

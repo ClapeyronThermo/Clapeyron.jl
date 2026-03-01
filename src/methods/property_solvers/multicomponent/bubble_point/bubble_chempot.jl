@@ -26,6 +26,14 @@ struct ChemPotBubblePressure{T} <: BubblePointMethod
     ss::Bool
 end
 
+function Solvers.primalval(method::ChemPotBubblePressure{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
+end
+
 function ChemPotBubblePressure(;vol0 = nothing,
                                 p0 = nothing,
                                 y0 = nothing,
@@ -123,19 +131,6 @@ function Obj_bubble_pressure(model::EoSModel, F, T, ηl, ηv, x, y)
     return Obj_bubble_pressure(model, model, F, T, ηl, ηv, x, y, nothing, length(model))
 end
 
-
-struct ChemPotBubbleTemperature{T} <: BubblePointMethod
-    vol0::Union{Nothing,Tuple{T,T}}
-    T0::Union{Nothing,T}
-    y0::Union{Nothing,Vector{T}}
-    nonvolatiles::Union{Nothing,Vector{String}}
-    f_limit::Float64
-    atol::Float64
-    rtol::Float64
-    max_iters::Int
-    ss::Bool
-end
-
 """
     ChemPotBubbleTemperature(kwargs...)
 
@@ -151,6 +146,26 @@ Inputs:
 - `max_iters = 1000`: optional, maximum number of iterations
 - `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
 """
+struct ChemPotBubbleTemperature{T} <: BubblePointMethod
+    vol0::Union{Nothing,Tuple{T,T}}
+    T0::Union{Nothing,T}
+    y0::Union{Nothing,Vector{T}}
+    nonvolatiles::Union{Nothing,Vector{String}}
+    f_limit::Float64
+    atol::Float64
+    rtol::Float64
+    max_iters::Int
+    ss::Bool
+end
+
+function Solvers.primalval(method::ChemPotBubbleTemperature{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
+end
+
 function ChemPotBubbleTemperature(;vol0 = nothing,
     T0 = nothing,
     y0 = nothing,

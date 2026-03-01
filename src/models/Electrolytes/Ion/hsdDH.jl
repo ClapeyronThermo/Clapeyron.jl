@@ -59,6 +59,10 @@ function hard_sphere_diameter(model::SAFTgammaMieModel, V, T, z, _data = @f(data
     return first(vrdata)
 end
 
+function hard_sphere_diameter(model::ESElectrolyteModel, V, T, z)
+    return hard_sphere_diameter(model.neutralmodel, V, T, z)
+end
+
 function hard_sphere_diameter(model::CPAModel, V, T, z, _data = @f(data))
     σ = zeros(Base.promote_eltype(model,T,z),length(model))
     for i in 1:length(model)

@@ -24,6 +24,14 @@ struct ActivityDewPressure{T} <: DewPointMethod
     rtol_ss::Float64
 end
 
+function Solvers.primalval(method::ActivityDewPressure{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
+end
+
 function ActivityDewPressure(;vol0 = nothing,
                                 p0 = nothing,
                                 x0 = nothing,

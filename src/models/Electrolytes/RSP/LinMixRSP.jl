@@ -24,7 +24,7 @@ export LinMixRSP
 ## Description
 This function is used to create a Linear Mixing-Rule Relative Static Permittivity model, for a mixture of solvents, where each solvent has a `dielectric_constant`.
 """
-function LinMixRSP(solvents,ions; userlocations=String[], verbose::Bool=false)
+function LinMixRSP(solvents,ions; userlocations=String[], verbose=false)
 
     solvents = format_components(solvents)
     ions = format_components(ions)
@@ -46,5 +46,3 @@ function dielectric_constant(model::LinMixRSPModel, V, T, z, Z = nothing)
     ϵᵣᵢ = model.params.dielectric_constant.values
     ϵᵣ = dot(ϵᵣᵢ,z)/sum(z)
 end
-
-is_splittable(::LinMixRSP) = true

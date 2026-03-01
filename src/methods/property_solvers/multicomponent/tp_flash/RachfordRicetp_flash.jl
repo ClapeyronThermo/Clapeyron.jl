@@ -34,6 +34,14 @@ struct RRTPFlash{T} <: TPFlashMethod
     verbose::Bool
 end
 
+function Solvers.primalval(method::RRTPFlash{T}) where {T}
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end 
+end
+
 Base.eltype(method::RRTPFlash{T}) where T = T
 
 function index_reduction(m::RRTPFlash,idx::AbstractVector)

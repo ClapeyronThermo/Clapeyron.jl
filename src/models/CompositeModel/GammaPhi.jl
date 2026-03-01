@@ -396,7 +396,7 @@ function tpd_delta_g_vapour(wrapper,p,T,w)
     return res
 end
 
-function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cache = tpd_cache(model,p,T,z,di))
+function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cache = tpd_cache(wrapper,p,T,z,di))
 
     TT = Base.promote_eltype(wrapper.model,p,T,z)
 

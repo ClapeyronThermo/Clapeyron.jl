@@ -283,11 +283,24 @@ primalval(x) = x
 
 #scalar
 primalval(x::ForwardDiff.Dual) = primalval(ForwardDiff.value(x))
+primalval(x::Tuple) = map(primalval,x)
 
 @generated function primalval_struct(x::M) where M
     names = fieldnames(M)
     Base.typename(M).wrapper
     primalvals = Expr(:call,Base.typename(M).wrapper)
+    for name in names
+        push!(primalvals.args,:(primalval(x.$name)))
+    end
+    return primalvals
+end
+
+@generated function primalval_struct(x::M,m::T1) where {T1,M}
+    names = fieldnames(M)
+    Base.typename(M).wrapper
+    structtype = Expr(:curly,Base.typename(M).wrapper)
+    push!(structtype.args,m.parameters[1])
+    primalvals = Expr(:call,structtype)
     for name in names
         push!(primalvals.args,:(primalval(x.$name)))
     end
