@@ -49,6 +49,8 @@ using Clapeyron, Test
 
         x_test =  [0.5522792450346276, 0.012878645399699698, 0.2174210525290201, 0.2174210570366527]
         @test x_test ≈ res0.compositions[1] rtol = 1e-6
+        #@test x_test ≈ res1.compositions[1] rtol = 1e-6
+        #@test x_test ≈ res2.compositions[1] rtol = 1e-6
     end
 
     @printline
