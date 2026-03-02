@@ -43,8 +43,9 @@ end
     #mainly test that the translation only affects the volume
     @test Tc1 ≈ Tc2 rtol = 1e-6
     @test (Vc2 - Vc1) ≈ c rtol = 1e-6
-
     
+    m2 = iPCSAFT("acetone")
+    @test volume(m2,1e9,250.0,phase = :l) ≈ 4.153603938674015e-5 rtol = 1e-6
 end
 
 @testset "softSAFT methods, single components" begin
