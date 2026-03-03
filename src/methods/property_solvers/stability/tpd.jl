@@ -225,7 +225,7 @@ function tpd_optimization(model,p,T,z,w0,di,cache = tpd_cache(model,p,T,z,K0),ph
     w .= α .* α .* 0.25
     S = sum(w)
     w ./= sum(w)
-    _,tpd,_ = __tpd_ss_update!(w,model,di,z,lnϕw_cache)
+    _,tpd,_ = __tpd_ss_update!(w,model,di,z,lnϕw_cache,phasew)
     vw = vcache[]/S
     return w,tpd,vw
 end
@@ -260,7 +260,7 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
             S += wi
         end
         =#
-        S,tpd,K_norm = __tpd_ss_update!(w,model,di,z,lnϕw)
+        S,tpd,K_norm = __tpd_ss_update!(w,model,di,z,lnϕw,phase)
 
         S_norm = abs(S_old - S)
     
@@ -290,7 +290,7 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
     return (w,tpd,v,(stable,trivial,converged))
 end
 
-function __tpd_ss_update!(w,model,d,z,lnϕw)
+function __tpd_ss_update!(w,model,d,z,lnϕw,phasew)
     S = zero(eltype(w))
     tpd = zero(S)
     for i in eachindex(w)

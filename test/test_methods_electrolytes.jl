@@ -29,6 +29,19 @@ using Clapeyron, Test
         @test sle_solubility(system,p,270.,[1,1,1];solute=["water"])[1] ≈ 0.9683019351679348 rtol = 1e-6
         @test sle_solubility(system,p,300.,[1,1,1];solute=["sodium.chloride"],x0=[-1.2])[1] ≈ 0.7570505178871523 rtol = 1e-6
     end
+    
+    @testset "mean ionic approach" begin
+        ionmodel = SAFTVREMie(["water","ethanol"],["sodium","chloride"]; assoc_options=AssocOptions(combining=:elliott))
+        model = MeanIonicApproach(ionmodel)
+        p = 1e5
+        T = 298.15
+        m = [6.]
+        zsolv = [0.5,0.5]
+        z = molality_to_composition(ionmodel, salts, m, zsolv)
+        w = Clapeyron.salt_compositions(model,z)
+        z2 = Clapeyron.ion_compositions(model,w)
+        @test z ≈ z2
+    end
 
     @testset "electrolyte Tp flash" begin
         model = SAFTVREMie(["water","ethanol"],["sodium","chloride"]; assoc_options=AssocOptions(combining=:elliott))
