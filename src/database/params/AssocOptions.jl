@@ -1,7 +1,11 @@
 """
-    AssocOptions(;rtol = 1e-12,atol = 1e-12,max_iters = 1000,dampingfactor = 0.5,combining =:nocombining)
+    AssocOptions(;rtol = 1e-12,atol = 1e-12,max_iters = 1000,dampingfactor = 0.5,combining =:nocombining,implicit_ad = false)
 Struct containing iteration parameters for the solver of association sites.
-the combining option controls the type of combining rule applied to the association strength:
+`max_iters`,`rtol`,`atol` control the convergence criteria.
+`dampingfactor` controls the damping factor applied during the sucessive substitution phase of the solver.
+If the `implicit_ad` is set to `true`, then an implicit differentiation scheme (using `IFTDuals`) is used to solve derivatives of the association problem.
+This could speed up some calculations. 
+The `combining` option controls the type of combining rule applied to the association strength:
 - `nocombining` (default). Does not perform any combination rules.
 - `:cr1`: "combining rule - 1":
     ```
@@ -32,6 +36,7 @@ the combining option controls the type of combining rule applied to the associat
     max_iters::Int = 1000
     dampingfactor::Float64 = 0.5
     combining::Symbol = :nocombining
+    implicit_ad::Bool = false
 end
 
 #allows overloading default assoc_options

@@ -353,7 +353,8 @@ function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions = AssocOp
     rtol = options.rtol
     max_iters = options.max_iters
     α = options.dampingfactor
-    return assoc_matrix_solve(K, α, atol ,rtol, max_iters)
+    implicit_ad = options.implicit_ad
+    return assoc_matrix_solve(K, α, atol ,rtol, max_iters, implicit_ad)
 end
 
 function check_antidiagonal2(x::AbstractMatrix)
@@ -486,7 +487,7 @@ function __assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::Abstra
     return XX0
 end
 
-function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol ,rtol, max_iters) where T
+function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol ,rtol, max_iters, implicit_ad) where T
     n = LinearAlgebra.checksquare(K) #size
     #initialization procedure:
     X0 = Vector{T}(undef,n)
@@ -497,15 +498,14 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol ,rtol, max_iters) whe
     #length(X0) == 4 && return __assoc_matrix_solve_static(Val{4}(), K, X0, α, atol ,rtol, max_iters)
     #length(X0) == 5 && return __assoc_matrix_solve_static(Val{5}(), K, X0, α, atol ,rtol, max_iters)
     
-    #Implicit AD via IFTDuals
-    #K_primal = nested_pvalue(K) # solve on primalval
-    #Xsol = assoc_matrix_solve_general(K_primal, nested_pvalue.(X0), n, α, atol ,rtol, max_iters)
-    #return assoc_matrix_solve_ad(Xsol, K, K_primal) # implicit AD
-
-    #Explicit AD for now
-    return assoc_matrix_solve_general(K, X0, n, α, atol ,rtol, max_iters)
-
-
+    if implicit_ad && K[1] isa ForwardDiff.Dual
+        K_primal = nested_pvalue(K) # solve on primalval
+        Xsol = assoc_matrix_solve_general(K_primal, nested_pvalue.(X0), n, α, atol ,rtol, max_iters)
+        return assoc_matrix_solve_ad(Xsol, K, K_primal) # implicit AD
+    else
+        #Propagate AD through solver
+        return assoc_matrix_solve_general(K, X0, n, α, atol ,rtol, max_iters)
+    end
 end
 
 function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol, max_iters) where T
