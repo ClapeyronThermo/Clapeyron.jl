@@ -435,7 +435,6 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
             gny .+= _∂y
             gny .-= ψ .* _Z
             #g[end] = nysum*dot(Z,y)
-            @show g
         end
         f += nysum*dot(∂y,y) + ψ*nxsum*dot(x,Z)
     end
