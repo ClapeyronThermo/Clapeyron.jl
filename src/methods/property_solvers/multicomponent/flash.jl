@@ -181,11 +181,13 @@ function Base.show(io::IO,mime::MIME"text/plain",obj::FlashResult)
     if np != 1
         print(io,"s")
     end
-    println(io,":")
-    nt = map(comps,β,volumes) do xi,βi,vi
-        (x = xi,β = βi,v = vi)
+    if np > 0
+        println(io,":")
+        nt = map(comps,β,volumes) do xi,βi,vi
+            (x = xi,β = βi,v = vi)
+        end
+        Base.print_matrix(IOContext(io, :compact => true),nt)
     end
-    Base.print_matrix(IOContext(io, :compact => true),nt)
 end
 
 Base.getindex(x::FlashResult,i::Int) = getfield(x,i)

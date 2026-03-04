@@ -23,7 +23,7 @@ function tpd_plan(model::ISElectrolyteModel,z,is_liquidz,lle,id_test,K_test,pure
         end
         if !lle
             for i in 1:nc
-                !iszero(ZZ[i]) && push!(plan,(:pure,:vapour,(ids[i],0,0)))
+                neutral[ids[i]] && push!(plan,(:pure,:vapour,(ids[i],0,0)))
             end
         end
     else

@@ -41,7 +41,7 @@ function Base.show(io::IO,mime::MIME"text/plain",obj::TPDResult)
     if np != 1
         print(compact_io,"s")
     end
-    println(compact_io,":")
+    np > 0 && println(compact_io,":")
     if np > 0
         nt = map(comps,tpd,volumes,phases) do xi,tpdi,vi,phasei
             (x = xi,tpd = tpdi,v = vi,phase = phasei)

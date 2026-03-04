@@ -91,31 +91,35 @@ function to_ion(m,z::AbstractVector)
 end
 
 function to_salt(m,result::FlashResult)
-    n_ions = sum(result.fractions) #n mols of ions
-    z_bulk = sum(b[i]*x[i] for (b,x) in zip(result.fractions,result.compositions))
-    n_salts = sum(salt_compositions(m,z_bulk))
-
-    new_comps = map(Base.Fix1(salt_compositions,m),result.compositions)
-    for i in new_comps
-        xi = new_comps[i]
-        xi ./= sum(xi)
+    new_comps = similar(result.compositions)
+    new_volumes = similar(result.volumes)
+    new_fracs = similar(result.fractions)
+    for i in 1:length(new_comps)
+        xi = result.compositions[i]
+        wi = salt_compositions(m,xi)
+        nwi = sum(wi)
+        wi ./= nwi
+        new_comps[i] = wi
+        new_fracs[i] = result.fractions[i]/nwi
+        new_volumes[i] = result.volumes[i]/nwi
     end
-    new_fracs = result.fractions .* n_salts ./ n_ions
-    return FlashResult(new_comps,new_fracs,result.volumes,result.data)
+    return FlashResult(new_comps,new_fracs,new_volumes,result.data)
 end
 
 function to_ion(m,result::FlashResult)
-    n_salts = sum(result.fractions) #n mols of ions
-    z_bulk = sum(b[i]*x[i] for (b,x) in zip(result.fractions,result.compositions))
-    n_ions = sum(ion_compositions(m,z_bulk))
-
-    new_comps = map(Base.Fix1(ion_compositions,m),result.compositions)
-    for i in new_comps
-        xi = new_comps[i]
-        xi ./= sum(xi)
+    new_comps = similar(result.compositions)
+    new_volumes = similar(result.volumes)
+    new_fracs = similar(result.fractions)
+    for i in 1:length(new_comps)
+        xi = result.compositions[i]
+        wi = ion_compositions(m,xi)
+        nwi = sum(wi)
+        wi ./= nwi
+        new_comps[i] = wi
+        new_fracs[i] = result.fractions[i]/nwi
+        new_volumes[i] = result.volumes[i]/nwi
     end
-    new_fracs = result.fractions .* n_ions ./ n_salts
-    return FlashResult(new_comps,new_fracs,result.volumes,result.data)
+    return FlashResult(new_comps,new_fracs,new_volumes,result.data)
 end
 
 

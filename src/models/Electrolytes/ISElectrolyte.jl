@@ -100,10 +100,15 @@ function ∂lnϕ_cache(model::MeanIonicApproach, p, T, z, BB::Val{B}) where B
 end
 
 function tpd_lnϕ_and_v!(cache,wrapper::MeanIonicApproach,p,T,w,vol0,liquid_overpressure = false,phase = :liquid,_vol = nothing)
-    lnϕw,v,overpressure = tpd_lnϕ_and_v!(cache,wrapper.model,p,T,w,vol0,false,phase,_vol)
-    if iszero(count(!iszero,wrapper.model.charge))
+    ww = ion_compositions(wrapper,w)
+    lnϕw,v,overpressure = tpd_lnϕ_and_v!(cache,wrapper.model,p,T,ww,vol0,false,phase,_vol)
+    Z = wrapper.model.charge
+    iref_or_nothing = findfirst(!iszero,Z)
+    if isnothing(iref_or_nothing)
         return lnϕw,v,overpressure
     end
+    iref = Int(iref_or_nothing)
+    
     lnϕz = similar(lnϕw,length(lnϕw) - 1)
     idx = zeros(Bool,length(lnϕz))
     salt = wrapper.salt
@@ -116,23 +121,28 @@ function tpd_lnϕ_and_v!(cache,wrapper::MeanIonicApproach,p,T,w,vol0,liquid_over
     return lnϕz,v,overpressure
 end
 
-function tpd_input_composition(wrapper::MeanIonicApproach,p,T,z,lle,cache = tpd_cache(wrapper,p,T,z,di))
+function modified_lnϕ(wrapper::MeanIonicApproach, p, T, z, cache; phase = :unknown, vol0 = nothing)
+    lnϕz,v,_ = tpd_lnϕ_and_v!(cache,wrapper,p,T,z,vol0,false,phase,nothing)
+    return lnϕz,v
+end
+
+function tpd_input_composition(wrapper::MeanIonicApproach,p,T,z,lle,cache = tpd_cache(wrapper,p,T,z,z))
     d_l,d_v,_,_,_,Hϕ = cache
     TT = Base.promote_eltype(wrapper.model,p,T,z)
-    w = salt_compositions(wrapper,z)
+    w = ion_compositions(wrapper,z)
     n = sum(w)
-    logsumw = log(w)
-    d,vl = tpd_lnϕ_and_v!(Hϕ,wrapper.model,p,T,w,nothing,false,:liquid)
+    logsumz = log(n)
+    d,vl = tpd_lnϕ_and_v!(Hϕ,wrapper,p,T,z,nothing,false,:liquid)
     d_l .= d
-    d_l .+= log.(w) .- logsumw
-
+    d_l .+= log.(z) .- logsumz
+    
     lle && return copy(d_l),:liquid,vl
-
-    d,vv = tpd_lnϕ_and_v!(Hϕ,wrapper.model,p,T,w,nothing,false,:vapour)
+    d,vv = tpd_lnϕ_and_v!(Hϕ,wrapper,p,T,z,nothing,false,:vapour)
     d_v .= d
-    d_v .+= log.(w) .- logsumw
+    d_v .+= log.(z) .- logsumz
     gr_l = dot(z,d_l)
     gr_v = dot(z,d_v)
+    isnan(gr_v) && (gr_v = Inf*one(gr_v))
     if gr_l < gr_v
         return copy(d_l),:liquid,vl
     else

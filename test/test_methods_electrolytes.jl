@@ -59,7 +59,16 @@ using Clapeyron, Test
         res0 = Clapeyron.tp_flash2(model,p,T,z,method_0th_order)
         res1 = Clapeyron.tp_flash2(model,p,T,z,method_1st_order)
         res2 = Clapeyron.tp_flash2(model,p,T,z,method_2nd_order)
-
+        
+        #conversion between salt and ion base
+        salt_model = MeanIonicApproach(model)
+        res0_salt = Clapeyron.salt_compositions(salt_model,res0)
+        res0_ion = Clapeyron.ion_compositions(salt_model,res0_salt)
+        @test res0_ion.volumes ≈ res0.volumes
+        @test res0_ion.fractions ≈ res0.fractions
+        @test res0_ion.compositions[1] ≈ res0.compositions[1]
+        @test res0_ion.compositions[2] ≈ res0.compositions[2]
+        
         x_test =  [0.5522792450346276, 0.012878645399699698, 0.2174210525290201, 0.2174210570366527]
         @test x_test ≈ res0.compositions[1] rtol = 1e-6
         #@test x_test ≈ res1.compositions[1] rtol = 1e-6
