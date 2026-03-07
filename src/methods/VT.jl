@@ -601,4 +601,6 @@ module VT0
             end
         end
     end
+    chemical_potential(model,V,T,z=Clapeyron.SA[1.0]) = Clapeyron.VT_chemical_potential(model,V,T,z)
+    chemical_potential_res(model,V,T,z = Clapeyron.SA[1.0]) = Clapeyron.VT_chemical_potential_res(model,V,T,z)
 end

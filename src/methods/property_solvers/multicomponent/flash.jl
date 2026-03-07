@@ -329,7 +329,8 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
     #higher :derivative :order :properties
     :fundamental_derivative_of_gas_dynamics,
     #volume :properties
-    :compressibility_factor,:identify_phase]
+    :compressibility_factor,:identify_phase,
+    :chemical_potential,:chemical_potential_res]
     @eval begin
         function $prop(model::EoSModel,state::FlashResult)
             i = assert_only_phase_index(state::FlashResult)
@@ -345,6 +346,7 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
 
         function $prop(model::EoSModel,state::FlashResult, i::Int)
             x,v = state.compositions[i],state.volumes[i]
+            T = state.data.T
             return VT0.$prop(model,v,T,x)
         end
     end

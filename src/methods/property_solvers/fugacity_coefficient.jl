@@ -56,6 +56,14 @@ function lnϕ!(cache::Tuple, model::EoSModel, p, T, z=SA[1.];
     return lnϕ(model,p,T,z,cache;vol)
 end
 
+function lnϕ!(cache::Nothing, model::EoSModel, p, T, z=SA[1.];
+            phase=:unknown,
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+    return lnϕ(model,p,T,z;vol)
+end
+
 function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = nothing;
             phase=:unknown,
             vol0=nothing,
