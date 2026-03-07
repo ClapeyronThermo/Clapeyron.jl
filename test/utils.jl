@@ -99,6 +99,6 @@ return SAFTgammaMie{BasicIdeal, Float64}(
         AssocParam{Float64}("bondvol", ["DIMETHYLAMINE"], 
         Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}([4.532862604822759e-29], [(1, 1)], [(1, 2)], (1, 1), (7, 7)), [["NH/H", "NH/e1"]], nothing, nothing)), 
         BasicIdeal(), 
-        AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining), ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]), :default, 
-        AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining), ["10.1063/1.4851455", "10.1021/je500248h"])
+        AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining, false), ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]), :default, 
+        AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining, false), ["10.1063/1.4851455", "10.1021/je500248h"])
 end
