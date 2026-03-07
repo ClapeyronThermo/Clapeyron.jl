@@ -1,7 +1,7 @@
 name = "Clapeyron"
 uuid = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
-authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pjwalker@caltech.edu>", "Andrés Riedemann <andres.riedemann@gmail.com>"]
 version = "0.6.21"
+authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pjwalker@caltech.edu>", "Andrés Riedemann <andres.riedemann@gmail.com>"]
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
@@ -62,7 +62,7 @@ Downloads = "1"
 EoSSuperancillaries = "1.2.3"
 FillArrays = "^0.12, 0.13, 1"
 ForwardDiff = "0.10.36,1"
-IFTDuals = "0.1.4"
+IFTDuals = "0.1.4, 0.2"
 JSON = "1"
 JutulDarcy = "0.2, 0.3"
 LinearAlgebra = "1"
