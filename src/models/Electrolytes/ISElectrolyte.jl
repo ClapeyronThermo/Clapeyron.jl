@@ -103,21 +103,11 @@ function tpd_lnϕ_and_v!(cache,wrapper::MeanIonicApproach,p,T,w,vol0,liquid_over
     ww = ion_compositions(wrapper,w)
     lnϕw,v,overpressure = tpd_lnϕ_and_v!(cache,wrapper.model,p,T,ww,vol0,false,phase,_vol)
     Z = wrapper.model.charge
-    iref_or_nothing = findfirst(!iszero,Z)
-    if isnothing(iref_or_nothing)
+    salt = wrapper.salt
+    if iszero(length(salt.isalts))
         return lnϕw,v,overpressure
     end
-    iref = Int(iref_or_nothing)
-    
-    lnϕz = similar(lnϕw,length(lnϕw) - 1)
-    idx = zeros(Bool,length(lnϕz))
-    salt = wrapper.salt
-    nions = length(wrapper.model)
-    E = eachrow(salt.E)
-    for i in 1:length(lnϕz)
-        Ei = E[i]
-        lnϕz[i] = dot(Ei,lnϕw)/sum(Ei)
-    end
+    lnϕz = salt_compositions(salt,lnϕw)
     return lnϕz,v,overpressure
 end
 

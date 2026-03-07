@@ -3,55 +3,56 @@ struct SaltParam <: ClapeyronParam
     explicit_components::Vector{String} #neutrals + ions
     implicit_components::Vector{String} #neutrals + salts (ion)
     isalts::Vector{Int} #Indices of the salts
-    mat::Matrix{Float64} #used to calculate z(ion) -> z(salt)
-    E::Matrix{Float64} #stoichiometric matrix
-    F::LU{Float64, Matrix{Float64}, Vector{Int64}} #used to calculate z(salt) -> z(ion)
+    ion_mat::Matrix{Float64} #used to calculate z(ion) -> z(salt)
+    salt_mat::Matrix{Float64} #used to calculate z(salt) -> z(ion)
+    E::Matrix{Bool} #stoichiometric matrix
 end
 
 function explicit_salt_param(comps,salts,Z)
     explicit_solvent = true
     explicit_components = comps
-    nions = length(Z)
-    implicit_components = Vector{String}(undef,nions - 1)
-    mat = zeros(nions,nions)
-    E = zeros(nions,nions)
-    isalts = Int[]
+    ncomps = length(Z)
     nneutral = count(iszero,Z)
+    nions = ncomps - nneutral
+    nsalts = max(nneutral,nneutral + nions - 1)
+    implicit_components = Vector{String}(undef,nsalts)
+    salt_mat = zeros(ncomps,ncomps)
+    E = zeros(Bool,ncomps,nsalts)
+    isalts = Int[]
     #we suppose that first there are nneutral neutral components, followed by nions - nneutral ions
     for i in 1:nneutral
-        E[i,i] = 1
-        mat[i,i] = 1
+        salt_mat[i,i] = 1
+        E[i,i] = true
         implicit_components[i] = explicit_components[i]
     end
-    rr = eachrow(mat)
-    ek = eachrow(E)
+    salt_matk = eachcol(salt_mat)
+    Ek = eachcol(E)
     k = 0
-    for i in (nneutral+1):(nions-1)
+    for i in (nneutral+1):(nsalts)
         k += 1
         salt = salts[k]
         salt_component = first(salt)
         implicit_components[i] = first(salt)
         push!(isalts,i)
         pairings = last(salt)
-        ri = rr[i]
+        salt_mat_i = salt_matk[i]
+        ei = Ek[i]
         for ion_vals in pairings
             ion_i,ni = first(ion_vals),last(ion_vals)
             ki = findfirst(isequal(ion_i),comps)
-            
             if !isnothing(ki)
-                E[ki] = ni
-                ri[ki] = 1/ni
+                ei[ki] = true
+                salt_mat_i[ki] = ni
             else
                 throw(error("cannot find ions in the salt $salt_component"))
             end
         end
-    ∑ri = count(!iszero,ri)
-    ri ./=  ∑ri
     end
-    if nneutral < nions
-        rr[end] .= Z
+    if ncomps != nneutral
+        salt_matk[end] .= Z
     end
-    return SaltParam(explicit_solvent,explicit_components,implicit_components,isalts,mat,E,lu(mat))
+    ion_mat = inv(lu(salt_mat))
+    return SaltParam(explicit_solvent,explicit_components,implicit_components,isalts,ion_mat,salt_mat,E)
 end
 
 SaltParam(model::ESElectrolyteModel) = SaltParam(model,nothing)
@@ -73,21 +74,19 @@ function component_list(m::SaltParam)
 end
 
 function to_salt(m,z::AbstractVector)
-    F = m.mat
-    res = F*z
-    resize!(res,length(res) - 1)
-    return res
+    zz = m.ion_mat*z
+    return deleteat!(zz,length(zz))
 end
 
 function to_ion(m,z::AbstractVector)
-    if length(m.isalts) == 0
+    if length(m.implicit_components) == length(m.explicit_components)
         zz = similar(z)
         zz .= z
+        return zz
     else
-        zz = vcat(z,zero(eltype(z)))
+        S = @view m.salt_mat[:,1:end-1]
+        return S*z
     end
-    ldiv!(m.F,zz)
-    return zz
 end
 
 function to_salt(m,result::FlashResult)
@@ -130,27 +129,28 @@ ion_compositions(m::SaltParam,w) = to_ion(m,w)
 #from a vector of salts, split a SaltParam, returns a salt param and the ion indices
 function IS_each_split_model(salt::SaltParam,I_salt)
     nions = length(salt.explicit_components)
-    m = salt.mat
+    nsalts = length(salt.implicit_components)
     I_ion_bool = Vector{Bool}(undef,nions)
-    rr = eachrow(m)
-    for i in 1:length(rr)-1
+    I_ion_bool .= false
+    E = salt.E
+    EE = eachcol(E)
+    for i in 1:nions
         if in(i,I_salt)
-            rri = rr[i]
+            Ei = EE[i]
             for k in 1:nions
-                I_ion_bool[k] = !iszero(rri[k])
+                I_ion_bool[k] = I_ion_bool[k] | Ei[k]
             end
         end
     end
+    
     I_ion_int = findall(I_ion_bool)
     if length(I_ion_int) == length(I_salt)
-        mm = m[I_salt,I_ion_int]
-        EE = salt.E[I_salt,I_ion_int]
+        salt_mat = salt.salt_mat[I_ion_int,I_salt]
     else
         I_salt_plus_charge = vcat(I_salt,nions)
-        mm = m[I_salt_plus_charge,I_ion_int]
-        EE = salt.E[I_salt_plus_charge,I_ion_int]
+        salt_mat = salt.salt_mat[I_ion_int,I_salt_plus_charge]
     end
-
+    EE = salt.E[I_ion_int,I_salt]
     isalts = Int[]
     for i in 1:length(salt.isalts)
         si = salt.isalts[i]
@@ -158,8 +158,8 @@ function IS_each_split_model(salt::SaltParam,I_salt)
             push!(isalts,si)
         end
     end
-
-    split_salt = SaltParam(false,salt.explicit_components[I_ion_int],salt.implicit_components[I_salt],isalts,mm,EE,lu(mm))
+    ion_mat = inv(lu(salt_mat))
+    split_salt = SaltParam(false,salt.explicit_components[I_ion_int],salt.implicit_components[I_salt],isalts,ion_mat,salt_mat,EE)
     return split_salt,I_ion_int
 end
 

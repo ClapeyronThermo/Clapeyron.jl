@@ -41,6 +41,25 @@ using Clapeyron, Test
         w = Clapeyron.salt_compositions(model,z)
         z2 = Clapeyron.ion_compositions(model,w)
         @test z ≈ z2
+        
+        #mixed salt test
+        ion_comps = ["water","1-but","K+","Cl-","Na+","SO4-2"]
+        tsalts = ["KCl" => ["K+" => 1,"Cl-" => 1],"Na2SO4" => ["Na+" => 2, "SO4-2"=>1],"NaCl" => ["Na+" => 1,"Cl-" => 1]]
+        tcharges = [0,0,1,-1,1,-2]
+        salt_test = Clapeyron.explicit_salt_param(ion_comps,tsalts,tcharges)
+        wsalt = [0.4,0.4,0.11,0.09,0.0]
+        wion = [0.4,0.4,0.11,0.11,0.18,0.09]
+        @test Clapeyron.ion_compositions(salt_test,wsalt) ≈ wion
+        @test Clapeyron.salt_compositions(salt_test,wion) ≈ wsalt
+        
+        #rows are salts, cols are ions
+        salt_mat = [1 0 0 0 0; 
+                    0 1 0 0 0; 
+                    0 0 1 0 0;
+                    0 0 1 0 1; 
+                    0 0 0 2 1; 
+                    0 0 0 1 0]
+        @test salt_test.salt_mat ≈ hcat(salt_mat,tcharges)
     end
 
     @testset "electrolyte Tp flash" begin
