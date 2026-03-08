@@ -25,10 +25,9 @@ function find_alpha_bounds(x, d, lo, hi, alpha0 = one(Base.promote_eltype(x,d,lo
     return alpha
 end
 
-BoundedLineSearch(lb::T,ub::T) where T = BoundedLineSearch(lb,ub,0.99)
+BoundedLineSearch(lb::T,ub::T) where T = BoundedLineSearch(lb,ub,0.99,NLSolvers.Backtracking())
 
-function BoundedLineSearch(lb::T,ub::T,decay::Number) where T
-    ls = NLSolvers.Backtracking()
+function BoundedLineSearch(lb::T,ub::T,decay::Number,ls) where T
     BoundedLineSearch{T,typeof(ls)}(lb,ub,ls,Float64(decay))
 end
 

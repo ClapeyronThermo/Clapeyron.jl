@@ -449,11 +449,4 @@ dfdphi = dot(Z,nx) = Z*(z - ny)
 d2fdphidny = -Z
 =#
 
-function michelsen_gibbs_feed(model::ElectrolyteModel,p,T,z,caches)
-    nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
-    in_equilibria,non_inx,non_iny = in_eq
-    ∂z,volz = lnϕ(model, p, T, z, lnϕ_cache,phase = :l)
-    ∂z  .+= log.(z)
-    gz = dot(@view(z[in_equilibria]),@view(∂z[in_equilibria]))
-    return gz
-end
+

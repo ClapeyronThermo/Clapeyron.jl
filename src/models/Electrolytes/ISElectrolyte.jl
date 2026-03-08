@@ -101,13 +101,39 @@ end
 
 function tpd_lnϕ_and_v!(cache,wrapper::MeanIonicApproach,p,T,w,vol0,liquid_overpressure = false,phase = :liquid,_vol = nothing)
     ww = ion_compositions(wrapper,w)
-    lnϕw,v,overpressure = tpd_lnϕ_and_v!(cache,wrapper.model,p,T,ww,vol0,false,phase,_vol)
-    Z = wrapper.model.charge
+    ∑w = sum(ww)
+    lnϕw,v,overpressure = tpd_lnϕ_and_v!(cache,wrapper.model,p,T,ww,vol0,liquid_overpressure,phase,_vol)
+    
     salt = wrapper.salt
     if iszero(length(salt.isalts))
         return lnϕw,v,overpressure
     end
-    lnϕz = salt_compositions(salt,lnϕw)
+    lnϕw .+= log.(ww)
+    lnϕw .-= log(∑w/sum(w)) #does normalize by sum(w) matter?
+    
+    Z = wrapper.model.charge
+    lnϕz = similar(lnϕw,length(w))
+    E = eachcol(salt.E)
+    for i in 1:length(w)
+        Ei = E[i]
+        if i in salt.isalts
+            iref = findfirst(Ei)
+            lnϕref = lnϕw[iref]
+            lnϕww = @view lnϕw[Ei]
+            ZZ = @view Z[Ei]
+            lnϕ1,lnϕ2 = lnϕww
+            Z1,Z2 = ZZ
+            if Z1 > 0
+                lnϕz[i] = lnϕ1 + Z1/(Z2 - Z1) * (lnϕ1 - lnϕ2)
+            else
+                lnϕz[i] = lnϕ2 + Z2/(Z1 - Z2) * (lnϕ2 - lnϕ1)
+            end
+        else
+            lnϕz[i] = only(@view(lnϕw[Ei]))
+        end
+    end
+    lnϕz -= log.(w)
+
     return lnϕz,v,overpressure
 end
 

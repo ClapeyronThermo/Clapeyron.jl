@@ -62,10 +62,8 @@ function __tpd_ss_update!(w,model::ISElectrolyteModel,d,z,lnϕw,phasew)
             tpd += wi*(log(wi) + lnϕw[i] - d[i])
         end
     end
-
     return S,tpd,K_norm
 end
-
 
 function tpd_ss_ψ(ψ,K,Z)
     res = zero(Base.promote_eltype(ψ,K,Z))
