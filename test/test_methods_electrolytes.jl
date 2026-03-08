@@ -99,13 +99,14 @@ using Clapeyron, Test
         @test res0_ion.compositions[2] ≈ res0.compositions[2]
 
         x_test =  [0.5522792450346276, 0.012878645399699698, 0.2174210525290201, 0.2174210570366527]
+        x_test_salt = [0.7057169738720372, 0.016456672490883215, 0.2778263536370795]
         @test x_test ≈ res0.compositions[1] rtol = 1e-6
         #@test x_test ≈ res1.compositions[1] rtol = 1e-6
         #@test x_test ≈ res2.compositions[1] rtol = 1e-6
 
-        @test x_test ≈ res0_mia.compositions[1] rtol = 1e-6
-        @test x_test ≈ res1_mia.compositions[1] rtol = 1e-6
-        #@test x_test ≈ res2_mia.compositions[1] rtol = 1e-6    
+        @test x_test_salt ≈ res0_mia.compositions[1] rtol = 1e-6
+        @test x_test_salt ≈ res1_mia.compositions[1] rtol = 1e-6
+        #@test x_test ≈ res2_mia.compositions[1] rtol = 1e-6
     end
 
     @printline
