@@ -9,6 +9,7 @@
 - Experimental: New model wrapper for electrolyte wrappers: `MeanIonicApproach` with support for `tp_flash`
 
 ## Bug fixes
+
 - Fixes in `iPCSAFT`
 - Fixes in electrolyte routines
 - Fixes in Multifluid initial volume
