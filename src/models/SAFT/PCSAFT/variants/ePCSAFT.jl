@@ -68,16 +68,7 @@ function ePCSAFT(solvents,ions;
     components = deepcopy(ions)
     prepend!(components,solvents)
 
-    if isnothing(charge)
-        charge_params = getparams(components, ["Electrolytes/properties/charges.csv"]; verbose=verbose)
-        init_charge = charge_params["charge"].values
-
-    elseif charge isa Vector{String}
-        charge_params = getparams(components, ["Electrolytes/properties/charges.csv"]; userlocations=charge, verbose=verbose)
-        init_charge = charge_params["charge"].values
-    else
-        init_charge = charge
-    end
+    init_charge = init_charge(format_components,charge)
 
     neutral_path = DB_PATH.*["/SAFT/PCSAFT","/SAFT/PCSAFT/ePCSAFT","/SAFT/PCSAFT/pharmaPCSAFT"]
 

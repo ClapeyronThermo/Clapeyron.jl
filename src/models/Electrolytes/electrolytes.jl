@@ -415,6 +415,20 @@ function dielectric_constant(model::RSPModel, V, T, z, Z, ::IndependentIonModel)
     return dielectric_constant(model, V, T, z, Z)
 end
 
+function init_charge(formatted_components,raw_charge)
+    if isnothing(raw_charge)
+        charge_params = getparams(formatted_components, ["Electrolytes/properties/charges.csv"]; verbose=verbose)
+        init_charge = charge_params["charge"].values
+
+    elseif raw_charge isa Vector{String}
+        charge_params = getparams(formatted_components, ["Electrolytes/properties/charges.csv"]; userlocations=charge, verbose=verbose)
+        init_charge = charge_params["charge"].values
+    else
+        init_charge = raw_charge
+    end
+    return init_charge
+end
+
 include("SaltParam.jl")
 include("ESElectrolyte.jl")
 include("ISElectrolyte.jl")

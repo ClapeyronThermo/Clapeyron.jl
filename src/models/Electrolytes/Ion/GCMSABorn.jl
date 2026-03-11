@@ -25,6 +25,7 @@ export GCMSABorn
 """
     GCMSABorn(solvents::Array{String,1},
          ions::Array{String,1};
+         charges = nothing,
          RSPmodel=ConstRSP,
          SAFTlocations=String[],
          userlocations=String[],
@@ -41,7 +42,7 @@ export GCMSABorn
 ## Description
 This function is used to create a group-contribution Mean Spherical Approximation-Born model used in SAFT-gamma E Mie
 """
-function GCMSABorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[],RSPmodel_userlocations = String[], verbose=false)
+function GCMSABorn(solvents,ions; charges = nothing, RSPmodel=ConstRSP, userlocations=String[],RSPmodel_userlocations = String[], verbose=false)
     _solvents = format_gccomponents(solvents)
     _ions = format_gccomponents(ions)
 

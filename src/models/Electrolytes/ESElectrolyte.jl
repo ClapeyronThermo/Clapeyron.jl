@@ -50,16 +50,7 @@ function ESElectrolyte(solvents,ions;
     raw_components = vcat(solvents,ions)
     formatted_components = format_components(raw_components)
 
-    if isnothing(charge)
-        charge_params = getparams(formatted_components, ["Electrolytes/properties/charges.csv"]; verbose=verbose)
-        init_charge = charge_params["charge"].values
-
-    elseif charge isa Vector{String}
-        charge_params = getparams(formatted_components, ["Electrolytes/properties/charges.csv"]; userlocations=charge, verbose=verbose)
-        init_charge = charge_params["charge"].values
-    else
-        init_charge = charge
-    end
+    init_charge = init_charge(format_components,charge)
 
     #path0 = default_locations(neutralmodel)
     #remove unused datapaths
