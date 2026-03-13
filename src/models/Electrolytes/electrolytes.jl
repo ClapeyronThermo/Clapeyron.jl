@@ -421,7 +421,7 @@ function init_charge(formatted_components,raw_charge)
         init_charge = charge_params["charge"].values
 
     elseif raw_charge isa Vector{String}
-        charge_params = getparams(formatted_components, ["Electrolytes/properties/charges.csv"]; userlocations=charge, verbose=verbose)
+        charge_params = getparams(formatted_components, ["Electrolytes/properties/charges.csv"]; userlocations=raw_charge, verbose=verbose)
         init_charge = charge_params["charge"].values
     else
         init_charge = raw_charge
