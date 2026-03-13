@@ -178,6 +178,15 @@ end
         system = Clapeyron.idealmodel(system.pures[1])
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 7.932205569922042 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+        
+        #issue 558
+        url_refprop = "https://raw.githubusercontent.com/usnistgov/fastchebpure/50af5c154a113ac27a2c0a1c3538bc4f43a73a66/teqp_REFPROP10/dev/fluids/"
+        names = ["13BUTADIENE"]
+        _comps = Clapeyron.Downloads.download.(url_refprop .* names .* ".json") .|> read .|> String
+        mixing = Clapeyron.init_model(Clapeyron.AsymmetricMixing,names,String[],false)
+        model558 = MultiFluid(_comps; mixing, coolprop_userlocations=false)
+        @test molar_density(model558, 9.259e3, 220.; phase=:liquid) ≈ 13029.070044557742 rtol = 1e-6
+        @test model558.components == names
     end
 
     @testset "Aly-Lee" begin

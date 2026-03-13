@@ -111,6 +111,7 @@ function MultiFluid(components;
         Rgas = Rgas
         )
         for (i,comp) in pairs(_components)]
+    _components = map(x -> first(x.components),pures)
     mixing = init_model(mixing,components,mixing_userlocations,verbose)
     departure = init_model(departure,components,departure_userlocations,verbose)
     params = MultiFluidParam(_components,pures,reference_state)

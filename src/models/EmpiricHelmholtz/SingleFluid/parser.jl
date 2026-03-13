@@ -225,6 +225,11 @@ function SingleFluid(components;
     if data === nothing && estimate_pure
         return XiangDeiters(components;userlocations,verbose = verbose,idealmodel = idealmodel,ideal_userlocations = ideal_userlocations)
     end
+    
+    if first(_components[1]) == '{'
+        _components = [data[:INFO][:NAME]]
+    end
+    
     eos_data = first(data[:EOS])
     #properties
     properties = _parse_properties(data,Rgas,verbose,allow_pseudo_pure)
@@ -253,7 +258,6 @@ function SingleFluid(components;
 
 
     references = [eos_data[:BibTeX_EOS]]
-
     return SingleFluid(_components,properties,init_ancillaries,ideal,residual,references)
 end
 
@@ -305,11 +309,15 @@ function SingleFluidIdeal(components;
     eos_data = first(data[:EOS])
     #properties
     properties = _parse_properties(data,Rgas,verbose)
-
+    
+    if first(_components[1]) == '{'
+        _components = [data[:INFO][:NAME]]
+    end
+    
     if idealmodel === nothing
         ideal_data = eos_data[:alpha0]
     else
-        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
         ideal_data = Clapeyron.idealmodel_to_json_data(init_idealmodel; Tr = properties.Tr, Vr = 1/properties.rhor)
     end
     ideal = _parse_ideal(ideal_data,verbose)
@@ -399,6 +407,8 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false, allow_pseudo_p
     isnan(lb_volume) && (lb_volume = 1/tryparse_units(get(eos_data,:rhomolar_max,NaN),get(eos_data,:rhomolar_max_units,"")))
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
+    lb_volume = max(lb_volume,8.314*10*Tr/(1e10))
+    
     pseudo_pure = get(eos_data,:pseudo_pure,false)
     if pseudo_pure && !allow_pseudo_pure
         throw(error("SingleFluid does not support pseudo-pures, use EmpiricPseudoPure(component;kwargs) instead."))
