@@ -68,7 +68,7 @@ function ePCSAFT(solvents,ions;
     components = deepcopy(ions)
     prepend!(components,solvents)
 
-    init_charge = init_charge(format_components,charge)
+    Z = init_charge(format_components,charge)
 
     neutral_path = DB_PATH.*["/SAFT/PCSAFT","/SAFT/PCSAFT/ePCSAFT","/SAFT/PCSAFT/pharmaPCSAFT"]
 
@@ -76,11 +76,10 @@ function ePCSAFT(solvents,ions;
     init_neutralmodel = neutralmodel(components;userlocations=append!(neutralmodel_userlocations,neutral_path),verbose=verbose,assoc_options=assoc_options)
     init_ionmodel = ionmodel(solvents,ions;RSPmodel=RSPmodel,userlocations=append!(ionmodel_userlocations,neutral_path),verbose=verbose)
 
-    Z = init_charge
     for i in @iions
         init_neutralmodel.params.epsilon[i] = 0. #pure ion has ϵi 
         for j in @iions
-            if sign(init_charge[i]) == sign(init_charge[j]) #cation-cation and anion-anion interactions are neglected.
+            if sign(Z[i]) == sign(Z[j]) #cation-cation and anion-anion interactions are neglected.
                 init_neutralmodel.params.epsilon[i,j] = 0.
             end
         end
@@ -88,7 +87,7 @@ function ePCSAFT(solvents,ions;
 
     references = ["10.1016/j.cherd.2014.05.017"]
     components = format_components(components)
-    model = ePCSAFT(components,init_charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    model = ePCSAFT(components,Z,init_idealmodel,init_neutralmodel,init_ionmodel,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
