@@ -136,6 +136,8 @@ include("models/ideal/PPDSIdeal.jl")
 #AlyLee Ideal uses gerg 2008 terms
 include("models/EmpiricHelmholtz/term_functions.jl")
 include("models/ideal/AlyLeeIdeal.jl")
+include("models/ideal/GCAlyLeeIdeal.jl")
+include("models/ideal/BurkhardtIdeal.jl")
 
 #Basic utility EoS
 include("models/utility/EoSVectorParam.jl")
