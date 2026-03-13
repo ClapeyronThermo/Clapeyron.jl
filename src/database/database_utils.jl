@@ -308,6 +308,20 @@ end
 critical_data() = ["properties/critical.csv"]
 mw_data() = ["properties/molarmass.csv"]
 
+# CAS as identifier
+struct ByCas{T}
+    cas::T
+end
+
+macro cas_str(str)
+    ByCas(str)
+end
+
+export @cas_str
+
+format_components(x::ByCas) = by_cas(x.cas)
+format_component_i(x::ByCas) = first(by_cas(x.cas))
+
 function by_cas(caslist)
     cas = format_components(caslist)
     params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[],ignore_missing_singleparams = String["SMILES","inchikey","species"])
@@ -321,7 +335,7 @@ function by_cas(caslist)
     return species
 end
 
-function standarize_cas(cas)
+function standardize_cas(cas)
     if isdigit(last(cas))
         vx = split(cas,"-")
         if length(vx) != 3
@@ -335,7 +349,7 @@ function standarize_cas(cas)
         return String(cas)
     end
 end
-standarize_cas(cas::Missing) = missing
+standardize_cas(cas::Missing) = missing
 
 
 function cas(components)
@@ -346,15 +360,9 @@ function cas(components)
     return cas_i
 end
 
-function SMILES(components)
-    components = format_components(components)
-    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
-    return params["SMILES"].values
-end
-
 function by_cas2(caslist)
     raw_cas = format_components(caslist)
-    cas = standarize_cas.(raw_cas)
+    cas = standardize_cas.(raw_cas)
     params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[], ignore_missing_singleparams = ["CAS","species","SMILES","inchikey","canonicalsmiles"])
     species = params["species"]
     d = Dict(k => v for (k,v) in zip(species.components,species.values))
@@ -366,6 +374,40 @@ function normalize_components_sym(components)
     _,sp = by_cas2(caslist)
     return sp
 end
+
+# SMILES as identifier
+struct BySmiles{T}
+    smiles::T
+end
+
+macro smiles_str(str)
+    BySmiles(str)
+end
+
+export @smiles_str
+
+format_components(x::BySmiles) = by_smiles(x.smiles)
+format_component_i(x::BySmiles) = first(by_smiles(x.smiles))
+
+function by_smiles(smileslist)
+    cas = format_components(smileslist)
+    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "SMILES",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species", "CAS"])
+    species = params["species"].values
+    for (i,sp) in pairs(species)
+        if occursin("~|~",sp)
+            x,_ = eachsplit(sp,"~|~")
+            species[i] = x
+        end
+    end
+    return species
+end
+
+function SMILES(components)
+    components = format_components(components)
+    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
+    return params["SMILES"].values
+end
+
 #=
 utilities for feos parsing
 function to_groups(x)
