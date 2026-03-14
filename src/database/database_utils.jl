@@ -390,8 +390,8 @@ format_components(x::BySmiles) = by_smiles(x.smiles)
 format_component_i(x::BySmiles) = first(by_smiles(x.smiles))
 
 function by_smiles(smileslist)
-    cas = format_components(smileslist)
-    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "SMILES",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species", "CAS"])
+    smiles = format_components(smileslist)
+    params = getparams(smiles,["properties/identifiers.csv"],species_columnreference = "SMILES",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species", "CAS"])
     species = params["species"].values
     for (i,sp) in pairs(species)
         if occursin("~|~",sp)
