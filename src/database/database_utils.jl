@@ -313,11 +313,18 @@ struct ByCas{T}
     cas::T
 end
 
+"""
+    @cas_str
+
+This macro creates a `ByCas` object and can be used as string literal like `cas"..."`.
+It can be used for model construction. Example:
+```
+model = PCSAFT(cas"71-36-3")
+```
+"""
 macro cas_str(str)
     ByCas(str)
 end
-
-export @cas_str
 
 format_components(x::ByCas) = by_cas(x.cas)
 format_component_i(x::ByCas) = first(by_cas(x.cas))
@@ -351,7 +358,6 @@ function standardize_cas(cas)
 end
 standardize_cas(cas::Missing) = missing
 
-
 function cas(components)
     components = format_components(components)
     params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES","canonicalsmiles","inchikey"],ignore_missing_singleparams = ["CAS"])
@@ -380,11 +386,21 @@ struct BySmiles{T}
     smiles::T
 end
 
+"""
+    @smiles_str
+
+This macro creates a `BySmiles` object and can be used as string literal like `smiles"..."`.
+It can be used for model construction. Example:
+```
+model = PCSAFT(smiles"CCCCO")
+```
+
+!!! info
+    No canonization is applied internally. Consequently, only SMILES contained in the `identifiers.csv` will be found.
+"""
 macro smiles_str(str)
     BySmiles(str)
 end
-
-export @smiles_str
 
 format_components(x::BySmiles) = by_smiles(x.smiles)
 format_component_i(x::BySmiles) = first(by_smiles(x.smiles))
@@ -407,6 +423,8 @@ function SMILES(components)
     params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
     return params["SMILES"].values
 end
+
+export @cas_str, @smiles_str
 
 #=
 utilities for feos parsing
