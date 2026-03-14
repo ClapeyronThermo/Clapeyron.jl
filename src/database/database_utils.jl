@@ -402,17 +402,21 @@ macro smiles_str(str)
     BySmiles(str)
 end
 
-format_components(x::BySmiles) = by_smiles(x.smiles)
+format_components(x::BySmiles) = format_components([x])
 format_component_i(x::BySmiles) = first(by_smiles(x.smiles))
 
-function by_smiles(smileslist)
-    smiles = format_components(smileslist)
-    params = getparams(smiles,["properties/identifiers.csv"],species_columnreference = "SMILES",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species", "CAS"])
-    species = params["species"].values
-    for (i,sp) in pairs(species)
-        if occursin("~|~",sp)
-            x,_ = eachsplit(sp,"~|~")
-            species[i] = x
+_split_species(sp) = occursin("~|~",sp) ? first(eachsplit(sp,"~|~")) : sp
+
+function by_smiles(smiles)
+    _smiles = format_components(smiles)
+    params = getparams(_smiles,["properties/identifiers.csv"],species_columnreference = "SMILES",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species","CAS","canonicalsmiles"])
+    species = Vector{String}(undef,length(_smiles))
+    for (i,s) in enumerate(_smiles)
+        if params["species"][s] isa String
+            species[i] = _split_species(params["species"][s])
+        else
+            params2 = getparams(_smiles,["properties/identifiers.csv"],species_columnreference = "canonicalsmiles",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species","CAS"])
+            species[i] = _split_species(params2["species"][s])
         end
     end
     return species
