@@ -42,7 +42,22 @@ BasicIdeal()
 julia> model2 = ReidIdeal(["carbon dioxide"])
 ReidIdeal with 1 component:
  "carbon dioxide"
-Contains parameters: coeffs
+Contains parameters: a, b, c, d, e, coeffs, reference_state, Mw
+```
+
+Here, the `ReidIdeal` model was constructed using the species name `"carbon dioxide"`.
+Alternatively, also the [CAS](https://commonchemistry.cas.org/) number or the SMILES code can be used for model construction (see [`@cas_str`](@ref) and [`@smiles_str`](@ref))
+
+```julia
+julia> ReidIdeal([cas"124-38-9"])
+ReidIdeal with 1 component:
+ "carbon dioxide"
+Contains parameters: a, b, c, d, e, coeffs, reference_state, Mw
+
+julia> ReidIdeal([smiles"O=C=O"])
+ReidIdeal with 1 component:
+ "carbon dioxide"
+Contains parameters: a, b, c, d, e, coeffs, reference_state, Mw
 ```
 
 The difference between these models is best observed when one considers the isobaric heat capacity:

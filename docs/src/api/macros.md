@@ -42,4 +42,6 @@ Clapeyron.@groups
 Clapeyron.@sites
 Clapeyron.@f
 Clapeyron.@nan
+Clapeyron.@cas_str
+Clapeyron.@smiles_str
 ```
