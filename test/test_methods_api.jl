@@ -394,6 +394,13 @@ GC.gc()
             @test sat_low2[1] ≈ 1.7914820721239496e-9 rtol = 1e-6
             
         end
+
+        @testset "high conditions- Multifluid" begin
+            fluid = MultiFluid(["propane","R134a"])
+            #_,pcrit,_ = crit_mix(fluid,[1.0,1.0])
+            #p = 0.7*pcrit
+            @test dew_temperature(fluid,2.7706485503578815e6,[1.0,1.0])[1] ≈ 335.8362199892292 rtol = 1e-6
+        end
     end
     GC.gc()
 end

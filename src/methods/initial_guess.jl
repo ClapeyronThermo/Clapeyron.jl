@@ -480,7 +480,7 @@ function liquid_pressure_from_virial(model,T,B = second_virial_coefficient(model
 end
 
 function pure_spinodal(model,_T,z = SA[1.0];phase = :l)
-    B = second_virial_coefficient(model,_T)
+    B = second_virial_coefficient(model,_T,z)
     _v_ub = -2*B
     pv_eos = pressure(model,_v_ub,_T,z)
     pl = liquid_pressure_from_virial(model,_T,B,pv_eos)

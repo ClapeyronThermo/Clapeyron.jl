@@ -261,16 +261,39 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
     end
 
     vlx = volume(model,p,T,x,phase = :l)
+    if high_conditions && isnan(vlx)
+        for i in 1:10
+            if FugEnum.is_temperature(method)
+                T *= 0.99
+            else
+                p *= 1.1
+            end
+            vlx = volume(model,p,T,x,phase = :l)
+            !isnan(vlx) && break
+        end
+    end
     μl = VT_chemical_potential_res(model,vlx,T,x)
     RT = Rgas(model) * T
     Zl = p*vlx/RT/sum(x)
-    ϕl = K = similar(μl)
-    ϕl .= exp.(μl ./ RT) ./ Zl
-    ϕv = virial_phi(model,p,T,y) #virial fugacity coefficient, skips volume calculation
+    lnϕl,_ = lnϕ(model,p,T,x,phase = :l,vol = vlx)
+    ϕl = K = lnϕl
+    ϕl .= exp.(lnϕl)
+    if high_conditions
+        lnϕv,_ = lnϕ(model,p,T,y,phase = :v)
+        ϕv = lnϕv
+        ϕv .= exp.(lnϕv)
+    else
+        ϕv = virial_phi(model,p,T,y)
+    end
+     #virial fugacity coefficient, skips volume calculation
+   
     if all(!isnan,@view(ϕv[in_media]))
         K .= ϕl ./ ϕv
     end
     K_r = @view K[in_media]
+    #if all(>(1),K_r) || all(<(1),K_r) #no separation,use defaults
+    #    K .= y ./ x
+    #end
     if FugEnum.is_bubble(method)
         x_r = @view x[in_media]
         y_r = rr_flash_vapor(K_r,x_r,zero(eltype(K)))
@@ -283,11 +306,16 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
         x_r = rr_flash_liquid(K_r,y_r,one(eltype(K)))
         xx = index_expansion(x_r,in_media)
         xx ./= sum(xx)
-        vl = volume(model,p,T,xx,phase = :l)
         vv = volume(model,p,T,y,phase = :v)/sum(y)
+        vl = volume(model,p,T,xx,phase = :l)
+        if high_conditions && isnan(vl)
+            vl = volume(model,p,T,x)
+        end
         return p,T,xx,y,vl,vv
     end
 end
+
+
 
 _virial(model,V,T,z) = second_virial_coefficient(model,T,z)
 
