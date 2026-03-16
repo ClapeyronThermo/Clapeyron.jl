@@ -68,7 +68,7 @@ function ePCSAFT(solvents,ions;
     components = deepcopy(ions)
     prepend!(components,solvents)
 
-    Z = init_charge(format_components,charge)
+    Z = init_charge(components,charge;verbose)
 
     neutral_path = DB_PATH.*["/SAFT/PCSAFT","/SAFT/PCSAFT/ePCSAFT","/SAFT/PCSAFT/pharmaPCSAFT"]
 

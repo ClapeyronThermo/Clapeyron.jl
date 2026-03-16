@@ -50,7 +50,7 @@ function ESElectrolyte(solvents,ions;
     raw_components = vcat(solvents,ions)
     formatted_components = format_components(raw_components)
 
-    init_charge = init_charge(format_components,charge)
+    init_charge = init_charge(formatted_components,charge;verbose)
 
     #path0 = default_locations(neutralmodel)
     #remove unused datapaths

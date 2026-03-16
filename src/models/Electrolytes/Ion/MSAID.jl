@@ -53,7 +53,7 @@ function MSAID(solvents,ions; charges = nothing, userlocations, verbose=false)
     dipole = params["dipole"]
     dipole.values .*= 1/(299792458)*1e-21
 
-    Z = init_charge(components,charge)
+    Z = init_charge(components,charge;verbose)
 
     packagedparams = MSAIDParam(sigma,dipole,SingleParam("charge",components,Z))
 
