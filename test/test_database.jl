@@ -452,5 +452,10 @@ using Clapeyron, Test, LinearAlgebra
 
         c1 = Clapeyron.cas("water")
         @test c1[1] == "7732-18-5"
+
+        model_cas = PCSAFT(cas"7732-18-5")
+        @test model_cas.components == ["water"]
+        model_smiles = PCSAFT(smiles"O")
+        @test model_smiles.components == ["water"]
     end
 end
