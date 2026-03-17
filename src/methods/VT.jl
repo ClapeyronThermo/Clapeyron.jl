@@ -266,7 +266,7 @@ end
 function second_virial_coefficient_impl(model::EoSModel, T, z = SA[1.0])
     TT = one(Base.promote_eltype(model,T,z))
     ϵ = 1/eps(TT)
-    V = sqrt(ϵ)
+    V = sqrt(sum(z)*ϵ)
     return pressure_res(model,V,T,z)*ϵ/(Rgas(model)*T)
 end
 

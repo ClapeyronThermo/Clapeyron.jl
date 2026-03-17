@@ -41,6 +41,8 @@
         @test Clapeyron.isobaric_expansivity(system, p, T) ≈ 0.0010874255138433413 rtol = 1E-6
         @test Clapeyron.joule_thomson_coefficient(system, p, T) ≈ -6.007581864883784e-7 rtol = 1E-6
         @test Clapeyron.second_virial_coefficient(system, T) ≈ -0.004919678119638886  rtol = 1E-6 #exact value calculated by using BigFloat
+        @test Clapeyron.second_virial_coefficient(system, T, Clapeyron.SA[2.0]) ≈ 2*-0.004919678119638886  rtol = 1E-6
+        @test Clapeyron.second_virial_coefficient(system, T, Clapeyron.SA[4.0]) ≈ 4*-0.004919678119638886  rtol = 1E-6
         @test Clapeyron.inversion_temperature(system, 1.1e8) ≈ 824.4137805298458 rtol = 1E-6
         @test Clapeyron.fugacity_coefficient(system, p, T, phase = :l)[1] ≈ 0.07865326632570452 rtol = 1E-6
     end
