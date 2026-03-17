@@ -407,4 +407,20 @@ end
         @test model.params.a.values[1,1] == 14.253080968127202
         @test model.params.b.values[1,1] == 0.0003800760318341279
     end
+
+    @testset "#557" begin
+        #=
+        PCPSAFT: on the specific oxirane case, there were some points where the volume gets stuck between 2 iterations.
+        solved via bracketing scheme in the volume solver.
+        =#
+        model = PCPSAFT(["water", "oxirane", "ethylene glycol"])
+        TT = (85:0.1:100) .+ 273.15
+        p = 17.5*101325
+        v1 = volume.(model,p,TT,Ref([1.0,0.0,0.0]),phase = :l)
+        v2 = volume.(model,p,TT,Ref([0.0,1.0,0.0]),phase = :l)
+        v3 = volume.(model,p,TT,Ref([0.0,0.0,1.0]),phase = :l)
+        @test 0 == count(isnan,v1)
+        @test 0 == count(isnan,v2)
+        @test 0 == count(isnan,v3)
+    end
 end
