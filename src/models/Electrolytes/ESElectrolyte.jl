@@ -50,7 +50,7 @@ function ESElectrolyte(solvents,ions;
     raw_components = vcat(solvents,ions)
     formatted_components = format_components(raw_components)
 
-    init_charge = init_charge(formatted_components,charge;verbose)
+    Z = init_charge(formatted_components,charge;verbose)
 
     #path0 = default_locations(neutralmodel)
     #remove unused datapaths
@@ -68,7 +68,7 @@ function ESElectrolyte(solvents,ions;
     #components = init_neutralmodel.components
 
     references = String[]
-    model = ESElectrolyte(formatted_components,init_charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    model = ESElectrolyte(formatted_components,Z,init_idealmodel,init_neutralmodel,init_ionmodel,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
