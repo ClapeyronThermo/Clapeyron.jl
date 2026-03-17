@@ -58,7 +58,7 @@ function MSAID(solvents,ions; charge = nothing, userlocations, verbose=false)
     packagedparams = MSAIDParam(sigma,dipole,SingleParam("charge",components,Z))
 
     references = String["10.1063/1.1682224"]
-    if count(iszero,charge.values) != 1
+    if count(iszero,Z) != 1
         throw(error("MSAID only supports one neutral solvent."))
     end
     model = MSAID(components, packagedparams, references)
