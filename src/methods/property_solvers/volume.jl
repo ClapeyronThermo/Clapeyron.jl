@@ -57,21 +57,23 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
     log_lb_v = log(lb_volume(model,T,z))
     logVᵢ = logV0
     iszero(p₀) && (V0 == Inf) && return _1/_0 #ideal gas
-    p0ᵢ = _0
-    dp0dVᵢ = _1
-    is_gas = false
-    check_sp = true
+
     nRT = sum(z)*T*Rgas(model)
-    atol = 8*eps(typeof(logV0))
+    
+    Vᵢ = exp(logVᵢ)
+    pᵢ,dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
+    p0ᵢ,dp0dVᵢ = pᵢ,dpdVᵢ
+
+    check_sp = true
+    is_gas = -nRT/Vᵢ/Vᵢ - dpdVᵢ >= _0
+    
+    _logVᵢ,_pᵢ,_dpdVᵢ = logVᵢ,pᵢ,dpdVᵢ
+    logV_new,logV_bisec = _0,_0
+    plo,phi = _0,_0
+    
     for i in 1:max_iters
+
         logVᵢ < log_lb_v && return nan
-        Vᵢ = exp(logVᵢ)
-        pᵢ,dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
-        if i == 1
-            p0ᵢ = pᵢ
-            dp0dVᵢ = dpdVᵢ
-            is_gas = -nRT/Vᵢ/Vᵢ - dpdVᵢ
-        end
 
         dpdVᵢ > 0 && return nan #inline mechanical stability.
         abs(pᵢ-p₀) < 3eps(p₀) && return Vᵢ #this helps convergence near critical points.
@@ -79,12 +81,11 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         #zeroth order check:
         #the pressure slope between initial point and current point, must be negative.
         #a positive slope means we jumped across an spinodal
-        dlnv = (logVᵢ - logV0)
+        dlogv = (logVᵢ - logV0)
         dp = (pᵢ - p0ᵢ)
-        ddp = (dpdVᵢ - dp0dVᵢ)
         m = (pᵢ - p0ᵢ)/(logVᵢ - logV0)
 
-        if m > _0 && i > 1 && sqrt(abs(dlnv/logVᵢ)) > 5e-8 && sqrt(abs(dp/pᵢ)) > 5e-8
+        if m > _0 && i > 1 && sqrt(abs(dlogv/logVᵢ)) > 5e-8 && sqrt(abs(dp/pᵢ)) > 5e-8
             #@warn "zeroth order check failed with $(model) at p = $p, T = $T, z= $z, v0 = $V0"
             #@info "pi = $pᵢ, Vi = $(exp(logVᵢ))"
             return nan
@@ -105,7 +106,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         
         If there is any change in sign, then we can check if there are any spinodals, just to be sure.
         =#
-        is_gas_i = -nRT/Vᵢ/Vᵢ - dpdVᵢ
+        is_gas_i = -nRT/Vᵢ/Vᵢ - dpdVᵢ >= _0
         if i > 1 && is_gas_i != is_gas
             #@warn "first order check failed with $(model) at p = $p, T = $T, z= $z, v0 = $V0"
             if check_sp
@@ -115,11 +116,23 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
             end
         end
         
+        if i > 5 && (p₀-pᵢ)*(p₀-_pᵢ) < 0
+            #bracket found, use bracketing updates instead.
+            _Vᵢ = exp(_logVᵢ)
+            data1 = _Vᵢ,_logVᵢ,_pᵢ,_dpdVᵢ
+            data2 = Vᵢ,logVᵢ,pᵢ,dpdVᵢ
+            return _volume_compress_bisection(model,p₀,T,z,data1,data2,i,max_iters)
+        end
+
+        _logVᵢ,_pᵢ,_dpdVᵢ = logVᵢ,pᵢ,dpdVᵢ
         Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
-        converged,finite = Solvers.convergence(logVᵢ,logVᵢ + Δᵢ,zero(Δᵢ),1e-12)
         logVᵢ = logVᵢ + Δᵢ
+        Vᵢ = exp(logVᵢ)
+        pᵢ,dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
+
+        converged,finite = Solvers.convergence(_logVᵢ,logVᵢ,zero(logVᵢ),1e-12)
         if converged 
-            if finite 
+            if finite
                 return exp(logVᵢ)
             else
                 return nan
@@ -127,6 +140,57 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         end
         end
     return nan
+end
+
+function _volume_compress_bisection(model,p,T,z,data1,data2,i0,max_iters)
+    v1,logv1,p1,dpdv1 = data1
+    v2,logv2,p2,dpdv2 = data2
+    
+    if p1 > p2
+        vhi,vlo = v1,v2
+        logvhi,logvlo = logv1,logv2
+        phi,dpdvhi = p1,dpdv1
+        plo,dpdvlo = p2,dpdv2
+    else
+        vlo,vhi = v1,v2
+        logvlo,logvhi = logv1,logv2
+        phi,dpdvhi = p2,dpdv2
+        plo,dpdvlo = p1,dpdv1
+    end
+
+    Δlo = (p-plo)/(vlo*dpdvlo)
+    Δhi = (p-phi)/(vhi*dpdvhi)
+    
+    _0,_1 = zero(p),oneunit(p)
+    for i in i0:max_iters
+        #δ is the needed to remain inside the bracket
+        δlo = clamp((logvhi - logvlo)/Δlo,_0,_1)
+        δhi = clamp((logvlo - logvhi)/Δhi,_0,_1)
+        iszero(Δhi) && return vhi
+        iszero(Δlo) && return vlo
+
+        #0.95 damping to stop alternating values
+        logv_new_hi = logvhi + 0.95*δhi*Δhi
+        logv_new_lo = logvlo + 0.95*δlo*Δlo
+
+        #mean between the two damped, clamped iterations should be by definition, also inside the pressure bracket.
+        logv_new = 0.5*(logv_new_hi + logv_new_lo)
+        v_new = exp(logv_new)
+        p_new,dpdv_new = p∂p∂V(model,v_new,T,z)
+        if (p_new-p)*(plo - p) < _0
+            vhi,logvhi,phi,dpdvhi = v_new,logv_new,p_new,dpdv_new
+            Δhi = (p-phi)/(vhi*dpdvhi)
+        elseif (p_new - p)*(phi - p) < _0
+            vlo,logvlo,plo,dpdvlo = v_new,logv_new,p_new,dpdv_new
+            Δlo = (p-plo)/(vlo*dpdvlo)
+        else
+            break
+        end
+        logv_tol = abs(logvlo - logvhi)
+        logv_tol < 1e-12 && break
+
+    end
+    return sqrt(vlo*vhi)
 end
 
 function _maybe_spinodal(model,_T,_v_lb,_v_ub,z)
