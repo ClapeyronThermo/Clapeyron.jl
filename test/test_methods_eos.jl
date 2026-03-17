@@ -605,6 +605,11 @@ end
     @test bubble_temperature(pseudo_pure,1e5,[1.0])[1] ≈ PropsSI("T","P",1e5,"Q",0.,"R410A") rtol = 1e-6
     @test dew_temperature(pseudo_pure,1e5,[1.0])[1] ≈ PropsSI("T","P",1e5,"Q",1.,"R410A") rtol = 1e-6
 
+    #test for #559
+    model559 = MultiFluid(["propane","R134a"])
+    s1 = entropy(model559,101325.0,250.0,[0.5,0.5],phase = :v)
+    s2 = entropy(model559,101325.0,250.0,1000*[0.5,0.5],phase = :v)
+    @test s2 ≈ 1000*s1 rtol = 1e-6
 end
 
 @testset "LKP methods" begin
