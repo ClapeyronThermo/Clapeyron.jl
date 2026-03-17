@@ -31,7 +31,7 @@ This function is used to create a Mean Spherical Approximation-Born model. The M
 1. Blum, L. (1974). Solution of a model for the solvent‐electrolyte interactions in the mean spherical approximation, 61, 2129–2133.
 2. Born, M. (1920). Z. Phys. 1, 45.
 """
-function MSABorn(solvents,ions; charges = nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
+function MSABorn(solvents,ions; charge = nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     solvents = format_components(solvents)
     ions = format_components(ions)
     components = vcat(solvents, ions)

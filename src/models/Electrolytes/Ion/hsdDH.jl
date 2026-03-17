@@ -9,7 +9,7 @@ end
 """
     hsdDH(solvents::Array{String,1},
         ions::Array{String,1};
-        charges = nothing,
+        charge = nothing,
         RSPmodel = ConstRSP,
         userlocations = String[],
         RSPmodel_userlocations = String[],
@@ -29,7 +29,7 @@ hsdDH
 
 export hsdDH
 
-function hsdDH(solvents,ions; charges = nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
+function hsdDH(solvents,ions; charge = nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     solvents = format_components(solvents)
     ions = format_components(ions)
     components = vcat(solvents, ions)

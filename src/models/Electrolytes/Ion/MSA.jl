@@ -10,7 +10,7 @@ export MSA
 """
     MSA(solvents::Array{String,1},
         ions::Array{String,1};
-        charges = nothing,
+        charge = nothing,
         RSPmodel = ConstRSP,
         userlocations = String[],
         RSPmodel_userlocations = String[],
@@ -25,7 +25,7 @@ This function is used to create a Mean Spherical Approximation model. The MSA te
 ## References
 1. Blum, L. (1974). Solution of a model for the solvent-electrolyte interactions in the mean spherical approximation. The Journal of Chemical Physics, 61(5), 2129–2133. [doi:10.1063/1.1682224](https://doi.org/10.1063/1.1682224)
 """
-function MSA(solvents,ions; charges = nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
+function MSA(solvents,ions; charge = nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     solvents = format_components(solvents)
     ions = format_components(ions)
     components = vcat(solvents, ions)

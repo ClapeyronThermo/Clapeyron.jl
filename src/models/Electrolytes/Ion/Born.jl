@@ -16,7 +16,7 @@ export Born
 """
     Born(solvents::Array{String,1},
         ions::Array{String,1};
-        charges = nothing,
+        charge = nothing,
         RSPmodel = ConstRSP,
         userlocations = String[],
         RSPmodel_userlocations = String[],
@@ -34,7 +34,7 @@ This function is used to create a Born model. The Born term gives the excess Hel
 ## References
 1. Born, M. (1920). Z. Phys. 1, 45.
 """
-function Born(solvents,ions; charges = nothing, RSPmodel = ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
+function Born(solvents,ions; charge = nothing, RSPmodel = ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
 
     solvents = format_components(solvents)
     ions = format_components(ions)
