@@ -287,6 +287,11 @@ Base.@assume_effects :foldable function _requires_rsp(::Type{T}) where T
     return hasfield(T,:RSPmodel)
 end
 
+Base.eltype(model::ESElectrolyteModel) = Base.promote_eltype(model.neutralmodel,model.ionmodel,model.idealmodel)
+Base.eltype(model::IonModel) = ion_eltype(model,Val(requires_rsp(model)))
+ion_eltype(model,::Val{true}) = Base.promote_eltype(model.params,model.RSPmodel)
+ion_eltype(model,::Val{false}) = eltype(model.params)
+
 has_sigma(::Type{T}) where T <: IonModel = _has_sigma(T)
 has_sigma(model::IonModel) = _has_sigma(typeof(model))
 Base.@assume_effects :foldable function _has_sigma(::Type{T}) where T

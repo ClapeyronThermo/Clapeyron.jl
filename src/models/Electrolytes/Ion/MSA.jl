@@ -73,21 +73,63 @@ function screening_length(model::MSAModel,V,T,z,iondata)
     return screening_length(V, T, z, Z, σ, ϵ_r)
 end
 
+
 function screening_length(V, T, z, Z, σ, ϵ_r)
-    iions = @iions
+    _0 = zero(Base.promote_eltype(V, T, z, Z, σ, ϵ_r))
     ρ = N_A/V
     nc = length(Z)
     Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ 1:nc)
     κ = debye_length(V,T,z,ϵ_r,Z)
     k1 = sqrt(π*e_c^2*ρ/(4π*ϵ_0*ϵ_r*k_B*T))
     Γold = κ*oneunit(k1)
-    _0 = zero(Γold)
     iszero(primalval(Γold)) && return _0
-    
+    Γnew = zero(Γold)
+    for _ in 1:100
+        #Ω = 1+π*ρ/(2*Δ)*sum(z[i]*σ[i]^3/(1+Γold*σ[i]) for i ∈ iions)
+        
+        Ω1 = oneunit(Γold)
+        for i in 1:nc
+            if !iszero(Z[i])
+                Ω1 += z[i]*σ[i]^3/(1+Γold*σ[i])
+            end 
+        end
+        Ω = 1 + π*ρ/(2*Δ)*Ω1
+
+        Pn1 = zero(Γold)
+        for i in 1:nc
+            if !iszero(Z[i])
+                Pn1 += z[i]*σ[i]*Z[i]/(1 + Γold*σ[i])
+            end
+        end
+        Pn = ρ/Ω*Pn1
+
+        #Q = @. (Z-σ^2*Pn*(π/(2Δ)))./(1+Γold*σ)
+        ∑Q2x = zero(Γold)
+
+        for i in 1:nc
+            Zi = Z[i]
+            if !iszero(Zi)
+                Qi = (Zi - σ[i]^2*Pn*(π/(2Δ)))/(1 + Γold*σ[i])
+                ∑Q2x += z[i]*Qi*Qi
+            end
+        end
+
+        Γold = Γnew
+        Γnew = k1*sqrt(∑Q2x)
+        abs(1-Γnew/Γold) > 1e-12 && break
+    end
+    return Γnew
+end
+#=
+k1 = sqrt(π*e_c^2*ρ/(4π*ϵ_0*ϵ_r*k_B*T))
+    Γold = κ*oneunit(k1)
+
+    iszero(primalval(Γold)) && return _0
+
     iter = 1
     tol = oneunit(_0)
-    
-    Γnew = _0*k1
+
+    Γnew = zero(Γold)
     #step 1: bounded SS
     while tol>1e-12 && iter < 100
         Ω = 1+π*ρ/(2*Δ)*sum(z[i]*σ[i]^3/(1+Γold*σ[i]) for i ∈ iions)
@@ -100,8 +142,8 @@ function screening_length(V, T, z, Z, σ, ϵ_r)
         end
         Γnew = k1*sqrt(∑Q2x)
         tol = abs(1-Γnew/Γold)
-        
+
         Γold = Γnew
     end
     return Γnew
-end
+end =#

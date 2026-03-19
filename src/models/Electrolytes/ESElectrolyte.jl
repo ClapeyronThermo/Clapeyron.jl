@@ -57,13 +57,14 @@ function ESElectrolyte(solvents,ions;
     #neutral_path = joinpath.(DB_PATH,filter(∉(("properties/molarmass.csv","properties/molarmass_groups.csv,properties/critical_csv")),path0))
     init_idealmodel = init_model(idealmodel,raw_components,ideal_userlocations,verbose)
     init_RSP = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations,verbose = verbose)
+    
     if has_sites(neutralmodel)
         init_neutralmodel = neutralmodel(raw_components;userlocations=neutralmodel_userlocations,verbose,assoc_options)
     else
         init_neutralmodel = neutralmodel(raw_components;userlocations=neutralmodel_userlocations,verbose)
     end
 
-    init_ionmodel = @initmodel ionmodel(solvents,ions;RSPmodel=init_RSP,userlocations=ionmodel_userlocations,verbose=verbose)
+    init_ionmodel = @initmodel ionmodel(solvents,ions;charge = Z,RSPmodel=init_RSP,userlocations=ionmodel_userlocations,verbose=verbose)
 
     #components = init_neutralmodel.components
 
@@ -72,7 +73,6 @@ function ESElectrolyte(solvents,ions;
     set_reference_state!(model,reference_state;verbose)
     return model
 end
-
 
 function init_preferred_method(method::typeof(bubble_pressure),model::ESElectrolyteModel,kwargs)
     Z = model.charge
