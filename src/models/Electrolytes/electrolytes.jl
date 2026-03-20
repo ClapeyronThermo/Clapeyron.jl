@@ -289,8 +289,8 @@ end
 
 Base.eltype(model::ESElectrolyteModel) = Base.promote_eltype(model.neutralmodel,model.ionmodel,model.idealmodel)
 Base.eltype(model::IonModel) = ion_eltype(model,Val(requires_rsp(model)))
-ion_eltype(model,::Val{true}) = Base.promote_eltype(model.params,model.RSPmodel)
-ion_eltype(model,::Val{false}) = eltype(model.params)
+ion_eltype(model,::Val{true}) = Base.promote_type(__eltype(model),eltype(model.RSPmodel))
+ion_eltype(model,::Val{false}) = __eltype(model)
 
 has_sigma(::Type{T}) where T <: IonModel = _has_sigma(T)
 has_sigma(model::IonModel) = _has_sigma(typeof(model))
