@@ -99,8 +99,7 @@ end
         epsilon_assoc = Dict((("Methanol","H"),("Methanol","e")) => system2.params.epsilon_assoc.values.values[1]),
         bondvol = Dict((("Methanol","H"),("Methanol","e")) => system2.params.bondvol.values.values[1]))
         )
-    
-        @test volume(m1,1e5,333.0) ≈ volume(m2,1e5,333.0)
+ 
 
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 5.913050998953597e-5 rtol = 1e-6

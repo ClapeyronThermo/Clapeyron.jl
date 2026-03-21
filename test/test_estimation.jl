@@ -66,7 +66,13 @@ end
     modelvec = Clapeyron.EoSVectorParam(model)
     @test Clapeyron.promote_model(BigFloat,modelvec) isa Clapeyron.EoSVectorParam
 
-
+     #=
+    #366
+    incorrect conversion of MixedGCSegmentParam.
+    =#
+    bigfloat_model = Clapeyron.promote_model(BigFloat,model)
+    @test model.params.mixed_segment.values.v ≈ bigfloat_model.params.mixed_segment.values.v
+    
     model2 = SAFTgammaMie(["octane"])
     k1 = copy(model2.params.mixed_segment.values.v)
     Clapeyron.recombine!(model2)

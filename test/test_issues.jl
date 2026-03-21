@@ -45,15 +45,6 @@ end
         @test model2 isa Clapeyron.EoSModel
     end
 
-    @testset "##366" begin
-        #=
-        #366
-        incorrect conversion of MixedGCSegmentParam.
-        =#
-        mix_segment_f64 = model.params.mixed_segment
-        mix_segment_bigfloat = convert(Clapeyron.MixedGCSegmentParam{BigFloat},mix_segment_f64)
-        @test mix_segment_f64.values.v ≈ mix_segment_bigfloat.values.v
-    end
 
     @testset "#188" begin
         #=
