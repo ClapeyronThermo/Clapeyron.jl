@@ -84,9 +84,29 @@ end
     system = CPA(["ethanol"])
     p = 1e5
     T = 298.15
+
+    system2 = CPA(["methanol"])
+    
+    system3 = CPA(["Methanol"]; userlocations=(;
+        a = system2.params.a.values[1],
+        b = system2.params.b.values[1],
+        c1 = system2.params.c1.values,
+        Mw = system2.params.Mw.values,
+        Tc = system2.params.Tc.values,
+        Pc = system2.cubicmodel.params.Pc.values,
+        n_H = [1],
+        n_e = [1],
+        epsilon_assoc = Dict((("Methanol","H"),("Methanol","e")) => system2.params.epsilon_assoc.values.values[1]),
+        bondvol = Dict((("Methanol","H"),("Methanol","e")) => system2.params.bondvol.values.values[1]))
+        )
+    
+        @test volume(m1,1e5,333.0) ≈ volume(m2,1e5,333.0)
+
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 5.913050998953597e-5 rtol = 1e-6
         @test volume(CPA("water"), 1e5u"Pa", 303.15u"K") ≈ 1.7915123921401366e-5u"m^3" rtol = 1e-6
+        @test crit_pure(system2)[1] ≈ 538.2329369300235 rtol = 1e-6
+        @test volume(system2,1e5,333.0) ≈ volume(system3,1e5,333.0)
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7923.883649594267 rtol = 1E-6
@@ -682,6 +702,8 @@ GC.gc()
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 6.468653945184592e6 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1]  ≈ 304.21081254005446 rtol = 1E-6
     end
+
+
 end
 
 @testset "PeTS" begin

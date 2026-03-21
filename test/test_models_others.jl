@@ -33,6 +33,13 @@
         system2 = aspenNRTL(nrtl_vanilla)
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5309354738922405 rtol = 1e-6
         @test Clapeyron.activity_coefficient(system2,p,T,z)[1] ≈ 1.5309354738922405 rtol = 1e-6
+        
+        #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/201
+        if hasfield(aspenNRTL,:puremodel)
+            @test aspenNRTL(["water", "acetone", "dichloromethane"],puremodel = PR) isa EoSModel
+        else
+            @test aspenNRTL(["water", "acetone", "dichloromethane"]) isa EoSModel
+        end
     end
 
     @testset "UNIQUAC" begin
@@ -47,6 +54,7 @@
         # system2 = UNIFAC(["methanol","benzene"])
         # prop2 = ()
         # @test Clapeyron.activity_coefficient(system2,1e-4,423.15,[0.,1.])  ≈ [2.0807335111878937,1.0] rtol = 1e-6
+        @test UNIFAC(["water", "acetone", "dichloromethane"]) isa EoSModel
     end
 
     @testset "UNIFAC2" begin

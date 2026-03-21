@@ -9,12 +9,16 @@
         method = RRTPFlash()
         @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.539976318817461 rtol = 1e-6
 
+        #=
+        Test deprecated
+        The PR tests in MichelsenTPFlash (#454) already test this
         #test for initialization when K suggests single phase but it could be solved supposing bubble or dew conditions.
         substances = ["water", "methanol", "propyleneglycol","methyloxirane"]
         pcp_system = PCPSAFT(substances)
         res = Clapeyron.tp_flash2(pcp_system, 25_000.0, 300.15, [1.0, 1.0, 1.0, 1.0], RRTPFlash())
         @test res.data.g ≈ -8.900576759774916 rtol = 1e-6
-
+        
+        =#
         #https://julialang.zulipchat.com/#narrow/channel/265161-Clapeyron.2Ejl/topic/The.20meaning.20of.20subcooled.20liquid.20flash.20results
         z_zulip1 = [0.25, 0.25, 0.25, 0.25]
         p_zulip1 = 1e5
@@ -730,6 +734,11 @@ end
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
+        
+        #140
+        model140 = PCSAFT(["water","carbon dioxide"])
+        res140 = bubble_pressure(model140,280,Clapeyron.FractionVector(0.01),ChemPotBubblePressure(nonvolatiles = ["water"]))
+        @test res140[1] ≈ 4.0772545187410433e6 rtol = 1e-6
         GC.gc()
 
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure())[1] ≈ pres1 rtol = 1E-6

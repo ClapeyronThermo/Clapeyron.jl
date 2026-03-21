@@ -395,7 +395,7 @@ GC.gc()
             
         end
 
-        @testset "high conditions- Multifluid" begin
+        @testset "high conditions - Multifluid" begin
             fluid = MultiFluid(["propane","R134a"])
             #_,pcrit,_ = crit_mix(fluid,[1.0,1.0])
             #p = 0.7*pcrit
@@ -492,7 +492,7 @@ end
     end
 
     Γ_act = thermodynamic_factor(act_model, 1e5, T_act, x_act)
-    Γ_ref = thermodynamic_factor(act_model, 1e5, T_act, x_act)
+    Γ_ref = thermodynamic_factor_nrtl(act_model, 1e5, T_act, x_act)
     @test size(Γ_act) == (2,2)
     @test all((≈).(Γ_act, Γ_ref, rtol=1e-6)) 
 end
