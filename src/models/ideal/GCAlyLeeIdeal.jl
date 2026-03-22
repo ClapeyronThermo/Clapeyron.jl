@@ -13,7 +13,7 @@ abstract type GCAlyLeeModel <: IdealModel end
 @newmodelgc GCAlyLeeIdeal GCAlyLeeModel GCAlyLeeParam false
 default_references(::Type{GCAlyLeeIdeal}) = ["10.1021/acs.jced.5c00573"]
 default_locations(::Type{GCAlyLeeIdeal}) = ["ideal/BurkhardtIdeal/GCAlyLeeIdeal.csv","properties/molarmass_groups.csv"]
-default_gclocations(::Type{GCAlyLeeIdeal}) = ["ideal/BurkhardtIdeal/BurkhardtIdeal_Groups.csv"]
+default_gclocations(::Type{GCAlyLeeIdeal}) = ["ideal/BurkhardtIdeal/BurkhardtIdeal_groups.csv"]
 default_ignore_missing_singleparams(::Type{GCAlyLeeIdeal}) = ["Mw"]
 
 function transform_params(::Type{GCAlyLeeIdeal},params,groups)
