@@ -46,11 +46,11 @@ function recombine_impl!(model::GCAlyLeeIdeal)
     for i in 1:length(model)
         #res +=z[i]*(log(z[i]/V))/Σz
         ni = n[i]
-        _a = (dot(a.values,ni) + 2.35963503)*8.31433/R̄
-        _b = (dot(b.values,ni) - 4.20519291)*8.31433/R̄
-        _c = (dot(c.values,ni) + 500.64232045)
-        _d = (dot(d.values,ni) + 3.44955031)*8.31433/R̄
-        _e = (dot(e.values,ni) + 514.21006282)
+        _a = (dot(a,ni) + 2.35963503)*8.31433/R̄
+        _b = (dot(b,ni) - 4.20519291)*8.31433/R̄
+        _c = (dot(c,ni) + 500.64232045)
+        _d = (dot(d,ni) + 3.44955031)*8.31433/R̄
+        _e = (dot(e,ni) + 514.21006282)
         coeffs[i] = (_a,_b,_c,_d,_e)
     end
     return model
