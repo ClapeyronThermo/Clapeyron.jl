@@ -89,7 +89,11 @@ function eosmodel_is_approx(model1,model2)
             p1 = getfield(params1,i)
             p2 = getfield(params2,i)
             if p1 isa SingleParam || p1 isa PairParam
-                @test p1.values ≈ p2.values
+                if eltype(p1) <: Tuple 
+                    @test stack(p1.values) ≈ stack(p2.values)
+                else
+                    @test p1.values ≈ p2.values
+                end
             elseif p1 isa AssocParam
                 @test p1.values.values ≈ p2.values.values
                 @test p1.values.inner_indices == p2.values.inner_indices
