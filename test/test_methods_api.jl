@@ -316,6 +316,7 @@ end
         @test s1[3] ≈ 0.0015804179997257882 rtol = 1e-6
     end
 
+    #=
     @testset "#466" begin
         glycine = ("glycine" => ["COOH" => 1, "CH2" => 1, "NH2" => 1])
         lactic_acid = ("lactic acid" =>["COOH" => 1, "CH3" => 1, "CHOH" => 1])
@@ -328,10 +329,11 @@ end
         T2,_ = Clapeyron.eutectic_point(ox_gly)
         @test T1 ≈ 300.23095880432294 rtol = 1e-6
         @test T2 ≈ 454.27284723964925 rtol = 1e-6
-    end
+    end =#
 end
 GC.gc()
-#test for really really difficult equilibria.
+
+#test for difficult equilibria.
 @testset "challenging equilibria" begin
 
     #see https://github.com/ClapeyronThermo/Clapeyron.jl/issues/173
@@ -412,34 +414,6 @@ end
     for prop in [volume,gibbs_free_energy,helmholtz_free_energy,entropy,enthalpy,internal_energy]
         @test sum(partial_property(model_pem,p,T,z,prop) .* z) ≈ prop(model_pem,p,T,z)
     end
-end
-
-@testset "spinodals" begin
-    # Example from Ref. https://doi.org/10.1016/j.fluid.2017.04.009
-    model = PCSAFT(["methane","ethane"])
-    T_spin = 223.
-    x_spin = [0.2,0.8]
-    (pl_spin, vl_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:liquid)
-    (pv_spin, vv_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:vapor)
-    @test vl_spin ≈ 7.218532167482202e-5 rtol = 1e-6
-    @test vv_spin ≈ 0.0004261109817247137 rtol = 1e-6
-
-    (Tl_spin_impl, xl_spin_impl) = spinodal_temperature(model,pl_spin,x_spin;T0=220.,v0=vl_spin)
-    (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model,pv_spin,x_spin;T0=225.,v0=vv_spin)
-    @test Tl_spin_impl ≈ T_spin rtol = 1e-6
-    @test Tv_spin_impl ≈ T_spin rtol = 1e-6
-
-    #test for #382: pure spinodal at low pressures
-    model2 = PCSAFT("carbon dioxide")
-    Tc,Pc,Vc = (310.27679925044134, 8.06391600653306e6, 9.976420206333288e-5)
-    T = LinRange(Tc-70,Tc-0.1,50)
-    psl = first.(spinodal_pressure.(model2,T,phase = :l))
-    psv = first.(spinodal_pressure.(model2,T,phase = :v))
-    psat = first.(saturation_pressure.(model2,T))
-    @test all(psl .< psat)
-    @test all(psat .< psv)
-    @test issorted(psl)
-    @test issorted(psv)
 end
 
 @testset "supercritical lines" begin

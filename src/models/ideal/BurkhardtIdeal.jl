@@ -3,14 +3,16 @@ struct BurkhardtIdealParam <: EoSParam
     B::SingleParam{Float64}
     C::SingleParam{Float64}
     D::SingleParam{Float64}
+    Mw::SingleParam{Float64}
     reference_state::ReferenceState
 end
 
 abstract type BurkhardtIdealModel <: IdealModel end
 @newmodelgc BurkhardtIdeal BurkhardtIdealModel BurkhardtIdealParam false
 default_references(::Type{BurkhardtIdeal}) = ["10.1021/acs.jced.5c00573"]
-default_locations(::Type{BurkhardtIdeal}) = ["ideal/BurkhardtIdeal.csv"]
-default_gclocations(::Type{BurkhardtIdeal}) = ["ideal/BurkhardtIdeal_Groups.csv"]
+default_locations(::Type{BurkhardtIdeal}) = ["ideal/BurkhardtIdeal/BurkhardtIdeal.csv","properties/molarmass_groups.csv"]
+default_gclocations(::Type{BurkhardtIdeal}) = ["ideal/BurkhardtIdeal/BurkhardtIdeal_Groups.csv"]
+default_ignore_missing_singleparams(::Type{BurkhardtIdeal}) = ["Mw"]
 
 """
     BurkhardtIdeal <: BurkhardtIdealModel
@@ -38,6 +40,10 @@ Dᵢₖ = Nᵢₖ*(Dₖ + c₄)
 Eᵢₖ = c₅*(Cₖ + c₃)
 c₁,c₂,c₃,c₄,c₅ = -0.350,2.245,8.858,1.487,0.432
 ```
+
+## Group Fragmentation
+
+Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `Burkhardt2025Groups`
 
 ## References
 

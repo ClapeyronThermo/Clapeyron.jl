@@ -211,6 +211,24 @@ end
         @test Cp_system ≈ Cp_gerg rtol = 5e-5
     end
 
+    @testset "GC-AlyLee" begin
+        system = GCAlyLeeIdeal(["hexane"])
+        test_recombine(system)
+        @test Clapeyron.molecular_weight(system)*1000 ≈ 86.178
+        @test Clapeyron.a_ideal(system,V,T,z) ≈ 83.95645996579078 rtol = 1e-6
+        @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+        @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
+    end
+
+    @testset "Burkhardt" begin
+        system = BurkhardtIdeal(["hexane"])
+        test_recombine(system)
+        @test Clapeyron.molecular_weight(system)*1000 ≈ 86.178
+        @test Clapeyron.a_ideal(system,V,T,z) ≈ 150.4776060028185 rtol = 1e-6
+        @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+        @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
+    end
+
     @testset "Cp - LNG - Estimation" begin
         #Mw to obtain γ₀ = 0.708451
         system = CPLNGEstIdeal(["a1"],userlocations = (;Mw = [20.5200706797]))

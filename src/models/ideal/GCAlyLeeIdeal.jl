@@ -4,6 +4,7 @@ struct GCAlyLeeParam <: EoSParam
     C::SingleParam{Float64}
     D::SingleParam{Float64}
     E::SingleParam{Float64}
+    Mw::SingleParam{Float64}
     coeffs::SingleParam{NTuple{5,Float64}}
     reference_state::ReferenceState
 end
@@ -11,8 +12,9 @@ end
 abstract type GCAlyLeeModel <: IdealModel end
 @newmodelgc GCAlyLeeIdeal GCAlyLeeModel GCAlyLeeParam false
 default_references(::Type{GCAlyLeeIdeal}) = ["10.1021/acs.jced.5c00573"]
-default_locations(::Type{GCAlyLeeIdeal}) = ["ideal/GCAlyLeeIdeal.csv"]
-default_gclocations(::Type{GCAlyLeeIdeal}) = ["ideal/BurkhardtIdeal_Groups.csv"]
+default_locations(::Type{GCAlyLeeIdeal}) = ["ideal/BurkhardtIdeal/GCAlyLeeIdeal.csv","properties/molarmass_groups.csv"]
+default_gclocations(::Type{GCAlyLeeIdeal}) = ["ideal/BurkhardtIdeal/BurkhardtIdeal_Groups.csv"]
+default_ignore_missing_singleparams(::Type{GCAlyLeeIdeal}) = ["Mw"]
 
 function transform_params(::Type{GCAlyLeeIdeal},params,groups)
     components = groups.components
@@ -82,6 +84,9 @@ C = ∑Nᵢₖ*(Cᵢₖ + 500.642)
 D = ∑Nᵢₖ*(Dᵢₖ + 3.450)
 E = ∑Nᵢₖ*(Eᵢₖ + 514.210)
 ```
+## Group Fragmentation
+
+Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `Burkhardt2025Groups`
 
 ## References
 

@@ -1,0 +1,23 @@
+Clapeyron Database File,
+Burdhardt Groups [csvtype = groups,grouptype = BurkhardtAlyLee]
+species,groups
+ethane,"[""-CH3"" => 2]"
+propane~|~n-propane,"[""-CH3"" => 2, ""-CH2-"" => 1]"
+butane~|~n-butane,"[""-CH3"" => 2, ""-CH2-"" => 2]"
+pentane~|~n-pentane,"[""-CH3"" => 2, ""-CH2-"" => 3]"
+hexane~|~n-hexane,"[""-CH3"" => 2, ""-CH2-"" => 4]"
+heptane~|~n-heptane,"[""-CH3"" => 2, ""-CH2-"" => 5]"
+octane~|~n-octane,"[""-CH3"" => 2, ""-CH2-"" => 6]"
+nonane~|~n-nonane,"[""-CH3"" => 2, ""-CH2-"" => 7]"
+decane~|~n-decane,"[""-CH3"" => 2, ""-CH2-"" => 8]"
+undecane~|~n-undecane,"[""-CH3"" => 2, ""-CH2-"" => 9]"
+dodecane~|~n-dodecane,"[""-CH3"" => 2, ""-CH2-"" => 10]"
+tridecane~|~n-tridecane,"[""-CH3"" => 2, ""-CH2-"" => 11]"
+tetradecane~|~n-tetradecane,"[""-CH3"" => 2, ""-CH2-"" => 12]"
+pentadecane~|~n-pentadecane,"[""-CH3"" => 2, ""-CH2-"" => 13]"
+hexadecane~|~n-hexadecane,"[""-CH3"" => 2, ""-CH2-"" => 14]"
+heptadecane~|~n-heptadecane,"[""-CH3"" => 2, ""-CH2-"" => 15]"
+octadecane~|~n-octadecane,"[""-CH3"" => 2, ""-CH2-"" => 16]"
+nonadecane~|~n-nonadecane,"[""-CH3"" => 2, ""-CH2-"" => 17]"
+eicosane~|~n-eicosane,"[""-CH3"" => 2, ""-CH2-"" => 18]"
+hydrogen,"[""[2H]"" => 1]"
