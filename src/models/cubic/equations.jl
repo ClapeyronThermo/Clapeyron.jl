@@ -156,7 +156,7 @@ end
 function data(model::CubicModel, V, T, z)
     n = sum(z)
     ā, b̄, c̄ = cubic_ab(model, V, T, z)
-    return n, ā, b̄, c̄
+    return Base.promote(n, ā, b̄, c̄)
 end
 
 get_k(model::CubicModel) = cubic_get_k(model,model.mixing,model.params)

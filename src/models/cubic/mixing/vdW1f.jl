@@ -42,8 +42,8 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b
     invn = (one(n)/n)
     invn2 = invn^2
     #b̄ = dot(z,Symmetric(b),z) * invn2
-    ā = zero(T+first(z))
-    b̄ = zero(first(z))
+    ā = zero(Base.promote_eltype(a,z,α))
+    b̄ = zero(Base.promote_eltype(b,z))
     for i in 1:length(model)
         zi = z[i]
         αi = α[i]

@@ -234,6 +234,11 @@ function polyder(x::NTuple{N,T}) where {N,T}
     return ntuple(i->x[i+1]*i,Val{N-1}())
 end
 
+function polyder(x)
+    xx = @view x[2:end]
+    return map(p -> p[2]*(p[1]),enumerate(xx))
+end
+
 #we suppose that there is a translation: xx = x + x0
 function hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
     #Δx0 = x - x0

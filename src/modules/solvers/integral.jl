@@ -118,3 +118,9 @@ function evalpolyint(x,p)
     p_integral = map(f,enumerate(p))
     return evalpoly(x,p_integral)*x
 end
+
+function evalpolyint(x,p::NTuple{N,T}) where {N,T}
+    f(x) = x[2]/x[1]
+    p_integral = ntuple(i -> p[i]/i,Val{N}())
+    return evalpoly(x,p_integral)*x
+end

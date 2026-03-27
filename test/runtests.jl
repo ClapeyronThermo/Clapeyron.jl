@@ -170,6 +170,24 @@ function test_repr(val;str = nothing,str_compact = nothing)
         end
     end
 end
+
+function test_zero_alloc2(model)
+    z = ones(length(model))/length(model)
+    V = 0.03
+    T = 300.0
+    f(x) = Clapeyron.eos(x,V,T,z)
+    f(model)
+    @test @allocated(f(model)) == 0
+end
+
+function test_zero_alloc1(model)
+    z = SA[1.0]
+    V = 0.03
+    T = 300.0
+    f(x) = Clapeyron.eos(x,V,T,z)
+    f(model)
+    @test @allocated(f(model)) == 0
+end
 #=
 include_distributed distributes the test load among all workers
 =#

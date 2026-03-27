@@ -272,7 +272,6 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
             !isnan(vlx) && break
         end
     end
-    μl = VT_chemical_potential_res(model,vlx,T,x)
     RT = Rgas(model) * T
     Zl = p*vlx/RT/sum(x)
     lnϕl,_ = lnϕ(model,p,T,x,phase = :l,vol = vlx)
@@ -286,7 +285,6 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
         ϕv = virial_phi(model,p,T,y)
     end
      #virial fugacity coefficient, skips volume calculation
-   
     if all(!isnan,@view(ϕv[in_media]))
         K .= ϕl ./ ϕv
     end
@@ -309,7 +307,7 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
         vv = volume(model,p,T,y,phase = :v)/sum(y)
         vl = volume(model,p,T,xx,phase = :l)
         if high_conditions && isnan(vl)
-            vl = volume(model,p,T,x)
+            vl = volume(model,p,T,xx)
         end
         return p,T,xx,y,vl,vv
     end
@@ -322,7 +320,13 @@ _virial(model,V,T,z) = second_virial_coefficient(model,T,z)
 function virial_phi(model,p,T,z)
     pRT = p/(Rgas(model)*T)
     dB = VT_molar_gradient(model,zero(p),T,z,_virial)
-    return exp.(dB .* pRT)
+    if ismutable(dB)
+        dB .= exp.(dB .* pRT)
+        return dB
+    else
+        return exp.(dB .* pRT)
+    end
+    
 end
 
 function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,volatiles),crit = nothing)

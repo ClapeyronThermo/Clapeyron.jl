@@ -5,7 +5,6 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-
     RT = Rgas(model)*T
     logZ = log(p*vol/RT/sum(z))
     nc = length(z)
@@ -30,7 +29,13 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
         end
     else
         μ_res = VT_chemical_potential_res(model, vol, T, z)
-        lnϕ = μ_res/RT .- logZ
+        if ismutable(μ_res)
+            lnϕ = μ_res
+            lnϕ .= μ_res ./ RT .- logZ
+        else
+            lnϕ = μ_res/RT .- logZ
+        end
+        
     end
     return lnϕ, vol
 end
