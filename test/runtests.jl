@@ -160,7 +160,7 @@ function test_repr(val;str = nothing,str_compact = nothing)
     @test !isempty(x)
 
     io_compact = IOBuffer()
-    Base.show(io,val)
+    Base.show(io_compact,val)
     x_compact = String(take!(io_compact))
     @test !isempty(x_compact)
     if str != nothing
