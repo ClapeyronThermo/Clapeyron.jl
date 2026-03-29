@@ -154,9 +154,14 @@ test_k(model) = test_kl(model,test_l = false)
 test_l(model) = test_kl(model,test_k = false)
 
 function test_repr(val;str = nothing,str_compact = nothing)
-    x = repr("text/plain",val)
+    io = IOBuffer()
+    Base.show(io,MIME"text/plain"(),val)
+    x = String(take!(io))
     @test !isempty(x)
-    x_compact = repr(val)
+
+    io_compact = IOBuffer()
+    Base.show(io,val)
+    x_compact = String(take!(io_compact))
     @test !isempty(x_compact)
     if str != nothing
         for s in str

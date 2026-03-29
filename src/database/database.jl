@@ -865,7 +865,8 @@ function __verbose_findparams_found(foundvalues)
     end
 end
 
-const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "association", "group", "groups","intragroup","intragroups"]
+const READCSVTYPE_KEYWORDS  = Set(["like", "single", "unlike", "pair", "assoc", "association", "group", "groups","intragroup","intragroups"])
+
 
 function read_csv_options(filepath::AbstractString)
     return _read_csv_options(getline(String(filepath), 2))
@@ -885,17 +886,24 @@ function _read_csv_options(line::String)
         opts = chop(maybe_opts.match,head = 1,tail = 1)
         return __get_options(opts)
     else
-        keywords = readcsvtype_keywords
+        data = [""]
         words = split(lowercase(strip(line, ',')), ' ')
-        foundkeywords = intersect(words, keywords)
-        _species = intersect(words,["species"])
-        _estimator = intersect(words,["method"])
-        return (csvtype = _readcsvtype(foundkeywords),grouptype = :unknown,estimator = _estimator, species = _species,sep = :comma)
+
+        maybe_csvdata = false
+        for word in words
+            if word in READCSVTYPE_KEYWORDS && maybe_csvdata == false
+                maybe_csvdata = true
+                data[1] = word
+            elseif word in READCSVTYPE_KEYWORDS && maybe_csvdata == true
+                data[1] = ""
+            end
+        end
+        return (csvtype = _readcsvtype(data[1]),grouptype = :unknown, estimator = :no_estimator, species = ["all"], sep = :comma)
     end
 end
 
 const NT_CSV_OPTIONS = (csvtype = namedtupledata,grouptype = :unknown,estimator = :no_estimator, species = ["all"],sep = :comma)
-+
+
 function _readcsvtype(collection)
     length(collection) != 1 && return invaliddata
     key = only(collection)

@@ -6,6 +6,46 @@ using Clapeyron, Test, LinearAlgebra
         #before, it was coo, making a collision on Electrolyte SAFTgammaMie
         @test Clapeyron.normalisestring("COO-") == "coo-"
     end
+
+    @testset "get_header" begin
+        t1,sep1,header1 = Clapeyron.get_header(Clapeyron.DB_PATH * "/properties/molarmass.csv")
+        @test sep1 == ","
+        @test header1.csvtype == Clapeyron.singledata
+
+        t2,sep2,header2 = Clapeyron.get_header(Clapeyron.DB_PATH * "/properties/identifiers.csv")
+        @test sep2 == ";"
+
+        t3,sep3,header3 = Clapeyron.get_header(Clapeyron.DB_PATH * "/ideal/WalkerIdeal.csv")
+        @test header3.grouptype == :Walker
+
+        t4,sep4,header4 = Clapeyron.get_header(Clapeyron.DB_PATH * "/../examples/data/gc_sat_prop.csv")
+        @test header4.estimator == :saturation_p_rhol
+        @test header4.species[1] == "ethane"
+
+        t5,sep5,header5 = Clapeyron.make_header((species = ["a","b"],b = [1,2]))
+        @test sep5 == ","
+        @test header5.csvtype == :like
+
+        t6,sep6,header6 = Clapeyron.make_header((species = ["a,","b"],b = [1,2]))
+        @test sep5 == ";"
+
+        t7,sep7,header7 = Clapeyron.make_header((species1 = ["a","b"],species2 = ["b,","a"],b = [1,2]))
+        @test header5.csvtype == :pair
+
+        t8,sep8,header8 = Clapeyron.make_header((species1 = ["a,","b"],species2 = ["b,","a"],b = [1,2]))
+        @test sep8 == ";"
+
+        t8,sep8,header8 = Clapeyron.make_header((species1 = ["a,","b"],species2 = ["b,","a"],b = [1,2]))
+        @test sep8 == ";"
+
+        t9,sep9,header9 = Clapeyron.make_header((species1 = ["a","b"],species2 = ["b","a"],site1 = ["e","e"], site2 = ["H","H"],b = [1,2]))
+        @test header9.csvtype == :assoc
+
+        t10,sep10,header10 = Clapeyron.make_header((species = ["a,","b"],groups = ["",""],b = [1,2]),"aaa",:test_grouptype)
+        @test header10.csvtype == :group
+        @test header10.grouptype == :test_grouptype
+        @test occursin("aaa",t10)
+    end
      
     # The rest of the test will be conducted with a custom dataset in the test_csvs directory.
     testspecies = ["sp1", "sp2", "sp3", "sp4", "sp5"]
