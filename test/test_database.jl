@@ -27,13 +27,10 @@ using Clapeyron, Test, LinearAlgebra
         @test header5.csvtype == :like
 
         t6,sep6,header6 = Clapeyron.make_header((species = ["a,","b"],b = [1,2]))
-        @test sep5 == ";"
+        @test sep6 == ";"
 
         t7,sep7,header7 = Clapeyron.make_header((species1 = ["a","b"],species2 = ["b,","a"],b = [1,2]))
-        @test header5.csvtype == :pair
-
-        t8,sep8,header8 = Clapeyron.make_header((species1 = ["a,","b"],species2 = ["b,","a"],b = [1,2]))
-        @test sep8 == ";"
+        @test header7.csvtype == :pair
 
         t8,sep8,header8 = Clapeyron.make_header((species1 = ["a,","b"],species2 = ["b,","a"],b = [1,2]))
         @test sep8 == ";"
