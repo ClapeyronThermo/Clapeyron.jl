@@ -176,19 +176,6 @@ function p_scale(model,z)
     Ts = T_scale(model,z)
     sum(z)*Rgas(model)*Ts/lb_volume(model,Ts,z)
 end
-"""
-    antoine_coef(model)
-Should return a 3-Tuple containing reduced Antoine Coefficients. The Coefficients follow the correlation:
-```
-lnp̄ = log(p / p_scale(model))
-T̃ = T/T_scale(model)
-lnp̄ = A - B/(T̄ + C))
-```
-By default returns `nothing`. This is to use alternative methods in case Antoine coefficients aren't available. Used mainly in single and multicomponent temperature calculations.
-"""
-function antoine_coef end
-
-antoine_coef(model) = nothing
 
 """
     saturation_model(model) = model
@@ -863,15 +850,6 @@ function x0_saturation_temperature end
 
 function x0_saturation_temperature(model,p)
     single_component_check(x0_saturation_temperature,model)
-    coeffs = antoine_coef(model)
-    #@show coeffs
-    #if coeffs !== nothing
-    #    return x0_saturation_temperature_antoine_coeff(model,p,coeffs)
-    #end
-    #if obtaining the critical point is cheap, models can opt in by defining:
-    #=
-    x0_saturation_temperature(model::MyModel,p) = x0_saturation_temperature(model,p,crit_pure(model))
-    =#
     if !has_fast_crit_pure(model)
         return x0_saturation_temperature_refine(model,p)
     else
@@ -891,14 +869,6 @@ end
 function x0_saturation_temperature(model::EoSModel,p,crit::Tuple)
     single_component_check(x0_saturation_temperature,model)
     return x0_saturation_temperature_crit(model,p,crit)
-end
-
-#model has knowledge of the Antoine coefficients. use those to create an initial point.
-function x0_saturation_temperature_antoine_coeff(model,p,coeffs)
-    A,B,C = antoine_coef(model)
-    lnp̄ = log(p / p_scale(model))
-    T0 = T_scale(model)*(B/(A-lnp̄)-C)
-    return x0_saturation_temperature_refine(model,p,T0)
 end
 
 function x0_saturation_temperature_crit(model::EoSModel,p,crit)

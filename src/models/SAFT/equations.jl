@@ -172,6 +172,7 @@ function p_scale(model::SAFTModel,z)
     return Rgas(model)*T/V
 end
 
+#=
 function antoine_coef(model::SAFTModel)
     m = model.params.segment.values[1]
     A = 2.3461144513376593+0.27679968565666935*m
@@ -179,6 +180,7 @@ function antoine_coef(model::SAFTModel)
     C = 0.018524160155803788 - 0.19222021003570597*log(m)
     return A,B,C
 end
+=#
 
 #recombine! utilities
 function recombine_saft!(model::SAFTModel,k = nothing,l = nothing)

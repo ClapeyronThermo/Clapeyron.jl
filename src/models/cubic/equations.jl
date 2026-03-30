@@ -704,8 +704,8 @@ function x0_crit_mix(model::CubicModel,z)
     V_c = volume(model,P_c,T_c,z,phase = :v)/∑z
     return (log10(V_c),T_c)
 end
-antoine_coef(model::ABCubicModel) = (6.668322465137264,6.098791871032391,-0.08318016317721941)
 
+#antoine_coef(model::ABCubicModel) = (6.668322465137264,6.098791871032391,-0.08318016317721941)
 
 function transform_params(::Type{ABCubicParam},params,components)
     n = length(components)

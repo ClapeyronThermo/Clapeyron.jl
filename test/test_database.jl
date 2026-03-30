@@ -202,6 +202,8 @@ using Clapeyron, Test, LinearAlgebra
         @test Clapeyron.diagvalues(1.23) == 1.23
          
         assoc_param = params["assocparam"]
+        test_repr(assoc_param,str = "sp3")
+        test_repr(assoc_param.values)
         #diagonal 3-3
         @test assoc_param[("sp3","H"),("sp3","e")] == 2000
         @test assoc_param[("sp3","e"),("sp3","H")] == 2000
@@ -301,6 +303,10 @@ using Clapeyron, Test, LinearAlgebra
         
         floatbool .= exp.(1.1 .+ floatbool)
         @test_throws InexactError convert(SingleParam{Int},floatbool)
+        
+        #copyto!
+        copyto!(floatbool,[2,3])
+        @test floatbool.values == [2,3]
 
         #pair param conversion and broadcasting
         floatbool = PairParam("float to bool",comps,[1.0 0.0;0.0 1.0])
