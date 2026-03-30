@@ -80,10 +80,6 @@ function T_scale(model::LJSAFTModel,z)
     return prod(T̃[i,i]^z[i] for i in 1:length(z))^(1/sum(z))
 end
 
-function T_scales(model::LJSAFTModel)
-    T̃ = diagvalues(model.params.T_tilde)
-end
-
 function p_scale(model::LJSAFTModel,z)
     T̃ = model.params.T_tilde.values
     b = model.params.b.values

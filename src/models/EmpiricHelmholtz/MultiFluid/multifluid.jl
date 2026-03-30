@@ -200,8 +200,6 @@ T_scale(model::MultiFluid,z,∑z) = T_scale(model,z,model.mixing,∑z)
 
 p_scale(model::MultiFluid,z) = dot(z,model.params.Pc.values)/sum(z)
 
-T_scales(model::MultiFluid,z=SA[1.]) = model.params.Tc.values
-
 #single functions, dispatch to pure
 
 function saturation_model(model::MultiFluid)

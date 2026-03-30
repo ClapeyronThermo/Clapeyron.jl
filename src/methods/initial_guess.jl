@@ -947,24 +947,6 @@ function x0_crit_pure(model::EoSModel,z)
     (1.5, log10(lb_v/0.3))
 end
 
-#=
-the following methods are fallbacks,
-that require just the definition of T_scale,p_scale and lb_volume
-respectively. if possible, each eos should define those
-=#
-function T_scales(model)
-    n = length(model)
-    x = zeros(n)
-    res = zeros(n)
-    for i = 1:n
-        x[i] = 1.0
-        res[i] = T_scale(model,x)
-        x[i] = 0.0
-    end
-    return res
-end
-
-T_scales(model,z) = T_scales(model)
 
 """
     solve_2ph_taylor(v10,v20,a1,da1,d2a1,a2,da2,d2a2,p_scale = 1.0,μ_scale = 1.0)

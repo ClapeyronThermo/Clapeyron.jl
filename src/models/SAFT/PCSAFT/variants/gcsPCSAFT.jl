@@ -200,10 +200,6 @@ function T_scale(model::gcsPCSAFTModel, z)
     return T_scale(model.pcsaftmodel, z)
 end
 
-function T_scales(model::gcsPCSAFTModel)
-    return T_scales(model.pcsaftmodel)
-end
-
 function p_scale(model::gcsPCSAFTModel,z)
     return p_scale(model.pcsaftmodel,z)
 end

@@ -54,7 +54,7 @@ Returns a tuple, containing:
 
 """
 function x0_UCEP_mix(model::EoSModel)
-    T0 = 1.5*sum(T_scales(model))/length(model)
+    T0 = 1.5*T_scale(model,FractionVector(0.5))
     x0 = 0.5
     y0 = 0.75
     v0 = x0_bubble_pressure(model,T0,[x0,1-x0])

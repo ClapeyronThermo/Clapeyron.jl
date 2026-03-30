@@ -26,10 +26,6 @@ function T_scale(model::SAFTgammaMieModel,z)
     return T_scale(model.vrmodel,z)
 end
 
-function T_scales(model::SAFTgammaMieModel)
-    return T_scales(model.vrmodel)
-end
-
 function p_scale(model::SAFTgammaMieModel,z)
     V = zero(first(z))
     T = zero(first(z))

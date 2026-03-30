@@ -244,10 +244,6 @@ function T_scale(model::HomogcPCPSAFTModel,z)
     return T_scale(model.pcpmodel,z)
 end
 
-function T_scales(model::HomogcPCPSAFTModel)
-    return T_scales(model.pcpmodel)
-end
-
 function p_scale(model::HomogcPCPSAFTModel,z)
     return p_scale(model.pcpmodel,z)
 end
