@@ -24,7 +24,7 @@
         @test Clapeyron.entropy_res(system,p,T) + Clapeyron.VT_entropy(Clapeyron.idealmodel(system),v,T) ≈ s
         @test Clapeyron.chemical_potential(system, p, T)[1] ≈ -18323.877542682934 rtol = 1E-6
         u = Clapeyron.internal_energy(system, p, T)
-        um = Clapeyorn.mass_internal_energy(system, p, T)
+        um = Clapeyron.mass_internal_energy(system, p, T)
         @test u ≈ -35882.22946560716 rtol = 1E-6
         @test u/um ≈ Mw
         @test Clapeyron.VT_internal_energy_res(system,v,T) + Clapeyron.VT_internal_energy(Clapeyron.idealmodel(system),v,T) ≈ u
