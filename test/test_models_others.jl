@@ -494,6 +494,17 @@ end
                 Cpi_test = Clapeyron.water_cp(system,Ti)
                 @test Cpi ≈ Cpi_test rtol = 1e-6
             end
+
+            Mw = Clapeyron.molecular_weight(system)
+            Cp = Clapeyron.isobaric_heat_capacity(system,p2,T2)
+            Cpm = Clapeyron.mass_isobaric_heat_capacity(system,p2,T2)
+            @test Cp/Cpm ≈ Mw
+
+            Cv = Clapeyron.isochoric_heat_capacity(system,p2,T2)
+            Cvm = Clapeyron.mass_isochoric_heat_capacity(system,p2,T2)
+            @test Cv/Cvm ≈ Mw
+            idx = Clapeyron.adiabatic_index(system,p2,T2)
+            @test idx ≈ Cp/Cv rtol = 1e-12
         end
 
         @testset "Holten Water" begin

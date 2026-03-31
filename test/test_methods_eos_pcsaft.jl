@@ -5,8 +5,10 @@
     T = 298.15
     T2 = 373.15
     v = 5.907908736304141e-5
+    Mw = Clapeyron.molecular_weight(system)
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ v rtol = 1e-6
+        @test Clapeyron.PT.volume(system, p, T)  ≈ v rtol = 1e-6
         @test Clapeyron.volume(system, p, T;phase=:v) ≈ 0.020427920501436134 rtol = 1e-6
         @test Clapeyron.volume(system, p, T;threaded=:false) ≈ v rtol = 1e-6
         @test Clapeyron.pip(system, v, T) ≈ 6.857076349623449 rtol = 1e-6
@@ -15,25 +17,43 @@
         @test Clapeyron.pressure(system, v, T) ≈ p rtol = 1e-6
         @test Clapeyron.pressure(system, 2*v, T, Clapeyron.SA[2.0]) ≈ p rtol = 1e-6
         s = Clapeyron.entropy(system, p, T)
+        sm = Clapeyron.mass_entropy(system,p,T)
         @test s ≈ -58.87118569239617 rtol = 1E-6
+        @test s/sm ≈ Mw
         @test Clapeyron.VT_entropy_res(system,v,T) + Clapeyron.VT_entropy(Clapeyron.idealmodel(system),v,T) ≈ s
+        @test Clapeyron.entropy_res(system,p,T) + Clapeyron.VT_entropy(Clapeyron.idealmodel(system),v,T) ≈ s
         @test Clapeyron.chemical_potential(system, p, T)[1] ≈ -18323.877542682934 rtol = 1E-6
         u = Clapeyron.internal_energy(system, p, T)
+        um = Clapeyorn.mass_internal_energy(system, p, T)
         @test u ≈ -35882.22946560716 rtol = 1E-6
+        @test u/um ≈ Mw
         @test Clapeyron.VT_internal_energy_res(system,v,T) + Clapeyron.VT_internal_energy(Clapeyron.idealmodel(system),v,T) ≈ u
+        @test Clapeyron.internal_energy_res(system,p,T) + Clapeyron.VT_internal_energy(Clapeyron.idealmodel(system),v,T) ≈ u
         h = Clapeyron.enthalpy(system, p, T)
+        hm = Clapeyron.mass_enthalpy(system, p, T)
         @test h ≈ -35876.32155687084 rtol = 1E-6
+        @test h/hm ≈ Mw
         @test Clapeyron.VT_enthalpy_res(system,v,T) + Clapeyron.VT_enthalpy(Clapeyron.idealmodel(system),v,T) ≈ h
         g = Clapeyron.gibbs_free_energy(system, p, T)
+        gm = Clapeyron.mass_gibbs_free_energy(system,p,T)
         @test g ≈ -18323.87754268292 rtol = 1E-6
+        @test g/gm ≈ Mw
         @test Clapeyron.VT_gibbs_free_energy_res(system,v,T) + Clapeyron.VT_gibbs_free_energy(Clapeyron.idealmodel(system),v,T) ≈ g
+        @test Clapeyron.gibbs_free_energy_res(system,p,T) + Clapeyron.VT_gibbs_free_energy(Clapeyron.idealmodel(system),v,T) ≈ g
         a = Clapeyron.helmholtz_free_energy(system, p, T)
+        am = Clapeyron.mass_helmholtz_free_energy(system, p, T)
         @test a ≈ -18329.785451419295 rtol = 1E-6
+        @test a/am ≈ Mw
         @test Clapeyron.VT_helmholtz_free_energy_res(system,v,T) + Clapeyron.VT_helmholtz_free_energy(Clapeyron.idealmodel(system),v,T) ≈ a
+        @test Clapeyron.helmholtz_free_energy_res(system,p,T) + Clapeyron.VT_helmholtz_free_energy(Clapeyron.idealmodel(system),v,T) ≈ a
         @test Clapeyron.isochoric_heat_capacity(system, p, T) ≈ 48.37961296309505 rtol = 1E-6
         @test Clapeyron.isobaric_heat_capacity(system, p, T) ≈ 66.45719988319257 rtol = 1E-6
         Cp = Clapeyron.isobaric_heat_capacity(system, p, T2)
+        Cpm = Clapeyron.mass_isobaric_heat_capacity(system,p,T2)
         Cv = Clapeyron.isochoric_heat_capacity(system, p, T2)
+        Cvm = Clapeyron.mass_isochoric_heat_capacity(system, p, T2)
+        @test Cp/Cpm ≈ Mw
+        @test Cv/Cvm ≈ Mw
         @test Clapeyron.adiabatic_index(system, p, T2) ≈ Cp/Cv rtol = 1E-12
         @test Clapeyron.isothermal_compressibility(system, p, T) ≈ 1.1521981407243432e-9 rtol = 1E-6
         @test Clapeyron.isentropic_compressibility(system, p, T) ≈ 8.387789464951438e-10 rtol = 1E-6
@@ -67,9 +87,13 @@ end
     T2 = 443.15
     z2 = [0.27,0.73]
     @testset "Bulk properties" begin
+        @test Clapeyron.reference_chemical_potential_type(system) == :pure
         @test Clapeyron.volume(system, p, T, z) ≈ 7.779694485714412e-5 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 1087.0303138908864 rtol = 1E-6
         @test Clapeyron.activity_coefficient(system, p, T, z)[1] ≈ 1.794138454452822 rtol = 1E-6
+        @test Clapeyron.activity(system,p, T, z)[1] ≈ 1.794138454452822/0.5
+        @test Clapeyron.reference_chemical_potential(system, p, T, :pure)[1] ≈ -15984.404561327814
+        @test Clapeyron.reference_chemical_potential(system, p, T, :sat_pure_T)[1] ≈ -15987.11712041398
         @test Clapeyron.fugacity_coefficient(system, p, T, z)[1] ≈ 0.5582931304564298 rtol = 1E-6
         @test Clapeyron.mixing(system, p, T, z, Clapeyron.gibbs_free_energy) ≈ -178.10797973342596 rtol = 1E-6
         @test Clapeyron.excess(system, p, T, z, Clapeyron.volume) ≈ 1.004651584989827e-6 rtol = 1E-6

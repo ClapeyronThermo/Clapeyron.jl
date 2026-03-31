@@ -217,6 +217,11 @@
         @test Clapeyron.split_2("a|b",'|') == ("a","b")
     end
 
+    @testset "lever rule" begin
+        @test Clapeyron.supports_lever_rule(Clapeyron.volume) == true
+        @test Clapeyron.supports_lever_rule(Clapeyron.speed_of_sound) == false
+    end
+
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
         @testset "ambiguities" begin
