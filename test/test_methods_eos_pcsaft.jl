@@ -91,7 +91,7 @@ end
         @test Clapeyron.volume(system, p, T, z) ≈ 7.779694485714412e-5 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 1087.0303138908864 rtol = 1E-6
         @test Clapeyron.activity_coefficient(system, p, T, z)[1] ≈ 1.794138454452822 rtol = 1E-6
-        @test Clapeyron.activity(system,p, T, z)[1] ≈ 1.794138454452822/0.5
+        @test Clapeyron.activity(system,p, T, z)[1] ≈ 1.794138454452822*0.5
         @test Clapeyron.reference_chemical_potential(system, p, T, :pure)[1] ≈ -15984.404561327814
         @test Clapeyron.reference_chemical_potential(system, p, T, :sat_pure_T)[1] ≈ -15987.11712041398
         @test Clapeyron.fugacity_coefficient(system, p, T, z)[1] ≈ 0.5582931304564298 rtol = 1E-6
