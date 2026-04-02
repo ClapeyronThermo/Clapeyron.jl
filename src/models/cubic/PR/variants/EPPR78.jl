@@ -66,11 +66,14 @@ Enhanced Predictive Peng Robinson equation of state. It uses the following model
 """
 function EPPR78(components;
     idealmodel = BasicIdeal,
+    alpha = PR78Alpha,
+    translation = NoTranslation,
     userlocations = String[],
     group_userlocations = String[],
     ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    
     translation_userlocations = String[],
     reference_state = nothing,
     verbose = false)
@@ -81,8 +84,6 @@ function EPPR78(components;
             verbose = verbose)
 
     _components = mixing.groups.components
-    alpha = PR78Alpha
-    translation = NoTranslation
 
     return PR(_components;
     idealmodel = idealmodel,
