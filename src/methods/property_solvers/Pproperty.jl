@@ -302,7 +302,7 @@ function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,v
     is_vapour(phase0) && verbose && @info "pressure($property) < saturation pressure"
     return __Pproperty(model,T,x,z,property,rootsolver,phase0,abstol,reltol,threaded,ps)
   else
-    verbose && @warn "$property value in phase change region. Will return pressure at saturation point"
+    verbose && @info "$property between the liquid and vapour edges, in the phase change region"
     return ps,:eq
   end
 end
@@ -321,6 +321,7 @@ function __Pproperty(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,t
 end
 
 __Pproperty(model,T,prop,z,property::F,phase,p0) where F = __Pproperty(model,T,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,true,p0)
+__Pproperty(model,T,prop,z,property::F,phase,p0,verbose::Bool) where F = __Pproperty(model,T,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,verbose,p0)
 
 function Pproperty_impl(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,p0) where F
   if is_unknown(phase)

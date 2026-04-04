@@ -18,22 +18,28 @@ function qp_flash_x0(model::CompositeModel,β,p,z,method::FlashMethod)
 end
 
 function qp_flash_x0(model,β,p,z,method::FlashMethod)
+    verbose = hasfield(typeof(method),:verbose) ? getfield(method,:verbose)::Bool : false
+    ∑z = sum(z)
     if method.T0 == nothing
+        verbose && @info "calculating temperature via Tproperty"
         if 0 <= β <= 0.01
-            x = z ./ sum(z)
+            verbose && @info "vapour fraction below 0.01, using bubble temperature directly"
+            x = z ./ ∑z
             T,vl,vv,y = __x0_bubble_temperature(model,p,x)
             y ./= sum(y)
-            βv = β*sum(z)
-            βl = sum(z) - βv
+            βv = β*∑z
+            βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         elseif 0.99 <= β <= 1.0
-            y = z ./ sum(z)
+            verbose && @info "vapour fraction over 0.99, using dew temperature directly"
+            y = z ./ ∑z
             T,vl,vv,x = __x0_dew_temperature(model,p,y)
             x ./= sum(x)
-            βv = β*sum(z)
-            βl = sum(z) - βv
+            βv = β*∑z
+            βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         else
+            verbose && @info "finding initial temperature via raoult approximation"
             if model isa PTFlashWrapper
                 pures = model.pures
             else
@@ -59,9 +65,12 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
             T = Roots.solve(prob)
         end
     else
+        verbose && @info "temperature already provided"
         T = method.T0
     end
     update_temperature!(model,T)
+    verbose && @info "p = $p, T = $T"
+    verbose && @info "using PT-flash initial point"
     r = pt_flash_x0(model,p,T,z,method)
     return r
 end

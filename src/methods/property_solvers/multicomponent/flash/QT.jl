@@ -12,9 +12,11 @@ function qt_flash_x0(model::CompositeModel,β,T,z,method::FlashMethod)
 end
 
 function qt_flash_x0(model,β,T,z,method::FlashMethod)
+    verbose = hasfield(typeof(method),:verbose) ? getfield(method,:verbose)::Bool : false    
     ∑z = sum(z)
     if method.p0 == nothing
         if 0 <= β <= 0.01
+            verbose && @info "vapour fraction below 0.01, using bubble pressure directly"
             x = z ./ ∑z
             p,vl,vv,y = __x0_bubble_pressure(model,T,x)
             y ./= sum(y)
@@ -22,6 +24,7 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
             βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         elseif 0.99 <= β <= 1.0
+            verbose && @info "vapour fraction over 0.99, using dew pressure directly"
             y = z ./ ∑z
             p,vl,vv,x = __x0_dew_pressure(model,T,y)
             x ./= ∑z
@@ -36,7 +39,7 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
                 pures = split_pure_model(model)
                 sat = extended_saturation_pressure.(pures,T)
             end
-            
+            verbose && @info "finding initial pressure via raoult approximation"
             ps = first.(sat)
             K = similar(ps)
             p_bubble = @sum(ps[i]*z[i])/∑z
@@ -62,6 +65,8 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
     else
         p = method.p0
     end
+    verbose && @info "p = $p, T = $T"
+    verbose && @info "using PT-flash initial point"
     res = pt_flash_x0(model,p,T,z,method)
     return res
 end

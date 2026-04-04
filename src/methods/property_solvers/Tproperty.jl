@@ -274,7 +274,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
   #we are inside equilibria.
   if 0 <= β <= 1
-    verbose && @info "property between the liquid and vapour edges, in the phase change region"
+    verbose && @info "$property between the liquid and vapour edges, in the phase change region"
     return T_edge,:eq
   end
 
@@ -358,7 +358,7 @@ function Tproperty_pure(model,p,x,z,property::F,rootsolver,phase,abstol,reltol,v
       is_vapour(phase0) && verbose && @info "temperature($property) > saturation temperature"
       return __Tproperty(model,p,x,z,property,rootsolver,phase0,abstol,reltol,threaded,Ts)
     else
-      #verbose && @warn "$property value in phase change region. Will return temperature at saturation point"
+      verbose && @info "$property between the liquid and vapour edges, in the phase change region"
       return Ts,:eq
     end
 end
@@ -378,6 +378,7 @@ function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,t
 end
 
 __Tproperty(model,p,prop,z,property::F,phase,T0) where F = __Tproperty(model,p,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,true,T0)
+__Tproperty(model,p,prop,z,property::F,phase,T0,verbose::Bool) where F = __Tproperty(model,p,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,verbose,T0)
 
 function Tproperty_impl(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F
   if is_unknown(phase)
