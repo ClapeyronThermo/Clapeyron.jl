@@ -929,7 +929,7 @@ function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
         p,_phase = x,:eq #we suppose equilibria
     elseif method.p0 === nothing
         verbose && @info "calculating pressure via Pproperty"
-        p,_phase = _Pproperty(model,T,x,z,spec,verbose)
+        p,_phase = _Pproperty(model,T,x,z,spec;verbose)
     else
         verbose && @info "pressure already provided"
         p,_phase = x,:eq #we suppose equilibria  
