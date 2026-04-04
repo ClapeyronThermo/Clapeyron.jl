@@ -510,6 +510,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult
     return xy_flash(model,spec,z,comps0,β0,volumes0,T0;rtol,atol,max_iters,verbose)
 end
 
+#similar to Solvers.positive_linesearch, but it instead clips the gradient
 function positivity_modify_step!(x,s)
     for i in 1:length(x)
         if x[i] + s[i] < 0
@@ -519,7 +520,7 @@ function positivity_modify_step!(x,s)
     end
 end
 
-function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult;rtol = 1e-14,atol = 1e-12,max_iters = 50)
+function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult;rtol = 1e-14,atol = 1e-12,max_iters = 50,verbose = false)
     if numphases(flash) == 1
         throw(ArgumentError("xy_flash cannot use single phase initial points as starting points."))
     end
@@ -527,7 +528,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult
     β0 = flash.fractions
     volumes0 = flash.volumes
     T0 = flash.data.T
-    verbose = method.verbose
     return xy_flash(model,spec,z,comps0,β0,volumes0,T0;rtol,atol,max_iters,verbose)
 end
 
@@ -668,13 +668,13 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
                 iter_type = :BACKTRACKING
             end
         end
-        Fnorm = sqrt(2*Θx)
+        
         spec_norm = norm(viewlast(F,2),Inf)
         snorm_old = snorm
         snorm = α*norm(s,2)
         δs = max(abs(snorm-snorm_old),spec_norm)
-        Fnorm = norm(F,Inf)
         xnorm = Solvers.dnorm(x,x_old,Inf)
+        Fnorm = norm(F,Inf)
         converged = (Fnorm < rtol || δs < rtol || xnorm < atol)
         verbose && __xy_flash_verbose_step(i,model,spec,x,np,nc,z,α,Fnorm,δs,xnorm,iter_type)
         nan_converged = !all(isfinite,x) || !all(isfinite,s)
