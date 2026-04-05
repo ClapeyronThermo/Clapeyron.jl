@@ -59,8 +59,54 @@ function vt_flash(model,V,T,z,method::FlashMethod)
     return index_expansion(result,idx_r)
 end
 
-function vt_flash_impl(model,V,T,z,method::GeneralizedXYFlash)
+function vt_flash_x0(model,V,T,z,method::GeneralizedXYFlash)
     flash0 = tx_flash_x0(model,T,V,z,volume,method)
+    xl,xv = flash0.compositions
+    vl,vv = flash0.volumes
+    nl,nv = flash0.fractions
+    n = sum(z)
+    P0 = xv ./ xl .* flash0.data.p
+    vbulk = V/n
+    K = similar(P0)
+    RT = Rgas(model)*T
+    #=
+    vl + vv = V
+    vv = V - vl(p)
+    v(p) = ng*RT/p = V - Vl(p)
+    
+    (vz - (1 - b)*vl)/RT = b/p
+    (vz - vl + b*vl)/RT = b/p
+    vz/RT - vl/RT + b*vl/RT - b/p = 0
+    (vz - vl)/RT + b(vl/RT - 1/p) = 0
+    (vl - vz)/(vl - RT/p) = b
+    (vz - vl)(RT/p - vl) = b
+    
+    =#
+    function f(p)
+        b = (vbulk - vl)/(RT/p - vl)
+        (1 - b)*vl + b*RT/p - vbulk
+        K .= P0 ./ p
+        return rachfordrice(K,z) - b
+    end
+
+    prob = Roots.ZeroProblem(f,flash0.data.p)
+
+    pp = Roots.solve(prob)
+    K .= P0 ./ pp
+
+    if method.verbose
+        @info "VT-flash: supposing ideal gas + constant liquid, p = $pp"
+    end
+    b = rachfordrice(K,z)
+    rr_flash_vapor!(xv,K,z,b)
+    rr_flash_liquid!(xl,K,z,b)
+    fracs = SVector(n*(1-b),n*b)
+    volumes = SVector(vl,(vbulk - (1-b)*vl)/b)
+    return FlashResult(flash0.compositions,fracs,volumes,FlashData(pp,T))
+end
+
+function vt_flash_impl(model,V,T,z,method::GeneralizedXYFlash)
+    flash0 = vt_flash_x0(model,V,T,z,method)
     isone(numphases(flash0)) && return flash0
     spec = FlashSpecifications(volume,V,temperature,T)
     return xy_flash(model,spec,z,flash0,method)
