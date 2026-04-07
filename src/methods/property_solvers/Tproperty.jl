@@ -294,10 +294,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
   verbose && @info "temperature at edge point:   $T_edge"
 
   β_edge = (prop - prop_l)/(prop_v - prop_l)
-  ww = similar(z,typeof(β))
-  ww .= z
-  #we are inside equilibria.
-  new_phase = :unknown
+
   #we are inside equilibria.
   if 0 <= β_edge <= 1
     verbose && @info "property between the liquid and vapour edges, in the phase change region"

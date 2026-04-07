@@ -562,6 +562,12 @@ end
     dsdp_ad = Clapeyron.Solvers.derivative(f554,1.5)
     dsdp_finite = Clapeyron.derivx(f554,1.5)
     @test dsdp_ad ≈ dsdp_finite rtol = 1e-6
+
+    #issue 563
+    model563 = cPR(["hexane","r134a"],idealmodel = ReidIdeal)
+
+    @test Clapeyron.PH.temperature(model563,3286.398709834417,-28656.72135729674,[1.0,1.0]) ≈ 245.5036274429181 rtol = 1e-6
+    @test Clapeyron.PH.temperature(model563,4518.7856211604485,-16905.103773893403,[1.0,1.0]) ≈ 254.2216177261915 rtol = 1e-6
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)
