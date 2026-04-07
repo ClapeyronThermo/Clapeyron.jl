@@ -296,7 +296,6 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     verbose && @info "property at bubble point:            $prob_bubble"
 
     β_bubble = (prop - prop_edge)/(prob_bubble - prop_edge)
-    @info "bubble = $β_bubble"
     p_interp = exp(β_bubble*log(p_bubble) + (1 - β_bubble)*log(p0x))
     0 < β_bubble < 1 && verbose && @info "pseudo-liquid pressure($property) in phase change region (between edge and bubble point)."
     0 < β_bubble < 1 && return __Pproperty_check((p_interp,:eq),verbose,p0x)
@@ -305,8 +304,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
 
   verbose && @info "$new_phase pressure($property) outside the phase change region"
   res = __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,p0x)
-  _0 = zero(Base.promote_eltype(model,T,prop,z))
-  return __Pproperty_check((_0/_0,:failure),verbose)
+  return __Pproperty_check(res,verbose)
 end
 
 function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,p0) where F

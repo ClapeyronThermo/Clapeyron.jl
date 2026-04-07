@@ -341,6 +341,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     0 < β_dew < 1 && verbose && @info "pseudo-vapour temperature($property) in phase change region (between edge and dew point)."
     T_interp = β_dew*T_dew + (1 - β_dew)*T_edge
     0 < β_dew < 1 && return __Tproperty_check((T_interp,:eq),verbose,T_edge)
+    T0x = T_dew
   end
 
   if is_liquid(new_phase) #check liquid branch
@@ -353,20 +354,15 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     verbose && @info "property at bubble point:     $prob_bubble"
 
     β_bubble = (prop - prop_l)/(prob_bubble - prop_l)
-    
     T_interp = β_bubble*T_bubble + (1 - β_bubble)*T_edge
-    
     0 < β_bubble < 1 && verbose && @info "pseudo-liquid temperature($property) in phase change region (between edge and bubble point)."
     0 < β_bubble < 1 && return __Tproperty_check((T_interp,:eq),verbose,T_edge)
-    
-    verbose && @info "liquid temperature($property) outside the phase change region"
-    return __Tproperty_check(res,verbose)
+    T0x = T_bubble
   end
 
-
-
-  _0 = zero(Base.promote_eltype(model,p,prop,z))
-  return __Tproperty_check((_0/_0,:failure),verbose)
+  verbose && @info "$new_phase temperature($property) outside the phase change region"
+  res = __Tproperty(model,p,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,T0x)
+  return __Tproperty_check(res,verbose)
 end
 
 function Tproperty_pure(model,p,x,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,T0) where F
