@@ -169,7 +169,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     phase_by_puresat = βpuresat > 1 ? :vapour : :liquid
     verbose && @info "temperature($property) outside pure fluid saturation boundaries ($phase_by_puresat)"
     p_by_puresat = βpuresat > 1 ? pmin_sat : pmax_sat
-    res_puresat = __Pproperty(model,p,prop,z,property,rootsolver,phase_by_puresat,abstol,reltol,threaded,p_by_puresat)
+    res_puresat = __Pproperty(model,T,prop,z,property,rootsolver,phase_by_puresat,abstol,reltol,threaded,p_by_puresat)
     return __Pproperty_check(res_puresat,verbose)
   end
 
