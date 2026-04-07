@@ -1,10 +1,7 @@
 
 function qp_f0_T!(K,z,dpdT,p,T,β0)
     for i in 1:length(K)
-        dlnpdTinv,logp0,T0inv = dpdT[i]
-        #dTinvdlnp = -p/(dpdT[i]*T*T)
-        ΔTinv = 1/T - T0inv
-        K[i] = exp(ΔTinv*dlnpdTinv)
+        K[i] = K_from_dpdT(dpdT[i],T)
     end
     return rachfordrice(K,z) - β0
 end

@@ -642,33 +642,19 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
 
         x_old .= x
         #bound positivity
-        positivity_modify_step!(x,s)
-        #α0 = Solvers.positive_linesearch(x,s,decay = 0.8)
+        #positivity_modify_step!(x,s)
+        
+        α0 = Solvers.positive_linesearch(x,s,decay = 0.8)
         #backtrack linesearch, so the next result is strictly better than the last
-        α0 = one(eltype(x))
-        if i == 1
-            x_old .= x
-            α = one(eltype(x)) 
-            x = x .+ α .* s
-            Θx = Θ(F,x)
-        else
-            α,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α0,ignore = slacks)
-        end
+
+        α,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α0,ignore = slacks)
         
-        if i == 1
-            if svd_done
-                iter_type = :DIRECT_SVD
-            else
-                iter_type = :DIRECT
-            end
+        if svd_done
+            iter_type = :BACKTRACKING_SVD
         else
-            if svd_done
-                iter_type = :BACKTRACKING_SVD
-            else
-                iter_type = :BACKTRACKING
-            end
+            iter_type = :BACKTRACKING
         end
-        
+
         spec_norm = norm(viewlast(F,2),Inf)
         snorm_old = snorm
         snorm = α*norm(s,2)
@@ -864,7 +850,7 @@ function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
         T,_phase = method.T0,:eq #we suppose equilibria
     end
 
-    verbose && @info "p = $p, T = $T, equilibrium status = $_phase"
+    verbose && @info "p = $p, T = $T, equilibrium status = :$_phase"
 
     TT = Base.promote_eltype(model,p,x,z,T)
     if _phase != :eq
@@ -935,7 +921,7 @@ function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
         p,_phase = x,:eq #we suppose equilibria  
     end
 
-    verbose && @info "p = $p, T = $T, equilibrium status = $_phase"
+    verbose && @info "p = $p, T = $T, equilibrium status = :$_phase"
 
     TT = Base.promote_eltype(model,T,x,z,T)
     if _phase != :eq

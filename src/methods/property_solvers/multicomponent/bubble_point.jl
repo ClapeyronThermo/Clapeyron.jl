@@ -39,7 +39,6 @@ function extended_saturation_pressure(pure,T,_crit = nothing; crit_retry = true)
     else
         return sat
     end
-
 end
 
 function _extended_saturation_pressure(pure, T, _crit = nothing; crit_retry = true)
@@ -220,6 +219,19 @@ end
 function extended_dpdT_temperature(pure,p,crit = nothing)
     sat,_crit,status = _extended_saturation_temperature(pure,p,crit)
     return  __dlnPdTinvsat(pure,sat,_crit,p,true,status)
+end
+
+function K_from_dpdT(dpdT,T)
+    dlnpdTinv,logp0,T0inv = dpdT
+    #dTinvdlnp = -p/(dpdT[i]*T*T)
+    ΔTinv = 1/T - T0inv
+    return exp(ΔTinv*dlnpdTinv)
+end
+
+function T_from_dpdT(dpdT,p)
+    dlnpdTinv,logp0,T0inv = dpdT
+    Tinv = T0inv + (logp0 - log(p))/dlnpdTinv
+    return 1/Tinv
 end
 
 function improve_bubbledew_suggestion_spinodal(model,p0,T0,x,y,method,in_media)
@@ -499,7 +511,6 @@ function antoine_bubble_solve(dpdt,p_bubble,x,T0 = nothing)
         end
         return p/sum(x) - p_bubble
     end
-
 
     if T0 === nothing
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
