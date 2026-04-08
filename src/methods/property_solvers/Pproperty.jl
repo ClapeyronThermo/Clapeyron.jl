@@ -153,11 +153,11 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
 
   n = sum(z)
   v0_edge,pure_sats = x0_edge_pressure(model,T,z)
-  pmin_sat,pmax_sat = extrema(first,pure_sats)
+  
   #check pure saturation envelopes
+  pmin_sat,pmax_sat = extrema(first,pure_sats)
   prop_puresat_l = property(model,pmax_sat,T,z,phase = :l)
   prop_puresat_v = property(model,pmin_sat,T,z,phase = :v)
-
   βpuresat = (prop - prop_puresat_l)/(prop_puresat_v - prop_puresat_l)
 
   if !(0 <= βpuresat <= 1)  #TODO: check if this is valid

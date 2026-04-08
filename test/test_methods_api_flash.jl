@@ -725,6 +725,13 @@ end
     #@test Clapeyron._Pproperty(model5,450.0,0.00023,[0.5,0.5],volume)[2]  == :eq
     #@test Clapeyron._Pproperty(model5,450.0,0.000222,[0.5,0.5],volume)[2]  == :eq
     #@test Clapeyron._Pproperty(model5,450.0,0.000222,[0.5,0.5],volume)[2]  == :eq
+
+    #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/563#issuecomment-4205986772
+    Tb,Td = 310.8990985869675,317.9907901983071
+    hmid = -24856.311180151133
+    fluid = cPR(["acetone", "isopentane"],idealmodel= ReidIdeal); z = [1.1, 0.9];
+    T0 = Clapeyron.Tproperty(fluid,101225.0,hmid,z,enthalpy)
+    @test Tb < T0 < Td
 end
 
 @testset "bubble/dew point algorithms" begin

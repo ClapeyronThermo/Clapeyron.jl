@@ -213,20 +213,21 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
   n = sum(z)
   v0_edge,dpdT = x0_edge_temperature(model,p,z)
-  Tmin_sat,Tmax_sat = extrema(xx -> T_from_dpdT(xx,p),dpdT)
+  
 
   #check pure saturation envelopes
+  Tmin_sat,Tmax_sat = extrema(xx -> T_from_dpdT(xx,p),dpdT)
   prop_puresat_l = property(model,p,Tmin_sat,z,phase = :l)
   prop_puresat_v = property(model,p,Tmax_sat,z,phase = :v)
-
-  verbose && @info "minimum saturation temperature:         $Tmin_sat"
-  verbose && @info "maximum saturation temperature:         $Tmax_sat"
-  verbose && @info "property at minimum sat point:          $prop_puresat_l"
-  verbose && @info "property at maximum sat point:          $prop_puresat_v"
-   
   βpuresat = (prop - prop_puresat_l)/(prop_puresat_v - prop_puresat_l)
 
   if !(0 <= βpuresat <= 1)  #TODO: check if this is valid
+
+    verbose && @info "minimum saturation temperature:         $Tmin_sat"
+    verbose && @info "maximum saturation temperature:         $Tmax_sat"
+    verbose && @info "property at minimum sat point:          $prop_puresat_l"
+    verbose && @info "property at maximum sat point:          $prop_puresat_v"
+
     phase_by_puresat = βpuresat > 1 ? :vapour : :liquid
     verbose && @info "temperature($property) outside pure fluid saturation boundaries ($phase_by_puresat)"
     T_by_puresat = βpuresat > 1 ? Tmax_sat : Tmin_sat
@@ -246,6 +247,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     we are smooth in the p-v curves,
     but there are still phase separation up until the mixture critical point. =#
     Tc,Pc,Vc = crit
+    
     verbose && @info "mechanical critical pressure:           $Pc"
     verbose && @info "mechanical critical temperature:        $Tc"
     verbose && @info "mechanical critical molar volume        $Vc"
@@ -289,9 +291,9 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
   prop_l = spec_to_vt(model,v_l,T_edge,z,property)
   prop_v = spec_to_vt(model,v_v,T_edge,z,property)
 
-  verbose && @info "property at liquid edge:     $prop_l"
-  verbose && @info "property at vapour edge:     $prop_v"
-  verbose && @info "temperature at edge point:   $T_edge"
+  verbose && @info "property at liquid edge:                $prop_l"
+  verbose && @info "property at vapour edge:                $prop_v"
+  verbose && @info "temperature at edge point:              $T_edge"
 
   β_edge = (prop - prop_l)/(prop_v - prop_l)
 
@@ -334,10 +336,10 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     T_dew,_,v_dew,_ = dew
     prob_dew = spec_to_vt(model,v_dew*n,T_dew,z,property)
 
-    verbose && @info "temperature at dew point:  $T_dew"
-    verbose && @info "property at dew point:     $prob_dew"
+    verbose && @info "temperature at dew point:               $T_dew"
+    verbose && @info "property at dew point:                  $prob_dew"
 
-    β_dew = (prop - prop_l)/(prob_dew - prop_l)
+    β_dew = (prop - prop_edge)/(prob_dew - prop_edge)
     0 < β_dew < 1 && verbose && @info "pseudo-vapour temperature($property) in phase change region (between edge and dew point)."
     T_interp = β_dew*T_dew + (1 - β_dew)*T_edge
     0 < β_dew < 1 && return __Tproperty_check((T_interp,:eq),verbose,T_edge)
@@ -350,10 +352,10 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     T_bubble,v_bubble,_,_ = bubble
     prob_bubble = spec_to_vt(model,v_bubble*n,T_bubble,z,property)
 
-    verbose && @info "temperature at bubble point:  $T_bubble"
-    verbose && @info "property at bubble point:     $prob_bubble"
+    verbose && @info "temperature at bubble point:            $T_bubble"
+    verbose && @info "property at bubble point:               $prob_bubble"
 
-    β_bubble = (prop - prop_l)/(prob_bubble - prop_l)
+    β_bubble = (prop - prop_edge)/(prob_bubble - prop_edge)
     T_interp = β_bubble*T_bubble + (1 - β_bubble)*T_edge
     0 < β_bubble < 1 && verbose && @info "pseudo-liquid temperature($property) in phase change region (between edge and bubble point)."
     0 < β_bubble < 1 && return __Tproperty_check((T_interp,:eq),verbose,T_edge)
