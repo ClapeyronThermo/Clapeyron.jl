@@ -684,6 +684,7 @@ end
     @test Tproperty(model1,p,h_,z,enthalpy) ≈ T
     @test Tproperty(model1,p,s_,z,entropy) ≈ T
     =#
+    p = 101325.0; T = 300.0;z = [0.5,0.5]
     model2 = cPR(["propane"])
     z2 = [1.]
     h2_ = enthalpy(model2,p,T,z2)
