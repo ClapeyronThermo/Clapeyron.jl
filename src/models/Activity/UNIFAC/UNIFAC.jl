@@ -72,6 +72,12 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 Θₖ = QₖXₖ/∑QₖXₖ
 Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
 ```
+
+!!! note "Group Fragmentation"
+
+    Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `UNIFACGroups`
+
+
 ## References
 1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. [doi:10.1021/i260064a004](https://doi.org/10.1021/i260064a004)
 2. Weidlich, U.; Gmehling, J. A modified UNIFAC model. 1. Prediction of VLE, hE, and.gamma..infin. Ind. Eng. Chem. Res. 1987, 26, 1372–1381.

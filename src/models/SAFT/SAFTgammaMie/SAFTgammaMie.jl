@@ -97,9 +97,14 @@ SAFTgammaMie(components;
 
 SAFT-γ-Mie EoS
 
-!!! info
-    You can choose between the Hudsen-McCoubrey combining rule (`√(ϵᵢ*ϵⱼ)*(σᵢ^3 * σⱼ^3)/σᵢⱼ^6`) or the default rule (`√(ϵᵢ*ϵⱼ*(σᵢ^3 * σⱼ^3))/σᵢⱼ^3`) by passing the `epsilon_mixing` argument.
-    with arguments `:default` or `:hudsen_mccoubrey`
+
+You can choose between the Hudsen-McCoubrey combining rule (`√(ϵᵢ*ϵⱼ)*(σᵢ^3 * σⱼ^3)/σᵢⱼ^6`) or the default rule (`√(ϵᵢ*ϵⱼ*(σᵢ^3 * σⱼ^3))/σᵢⱼ^3`) by passing the `epsilon_mixing` argument, with arguments `:default` or `:hudsen_mccoubrey`
+
+
+!!! note "Group Fragmentation"
+
+    Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `SAFTgammaMieGroups`
+
 
 ## References
 1. Papaioannou, V., Lafitte, T., Avendaño, C., Adjiman, C. S., Jackson, G., Müller, E. A., & Galindo, A. (2014). Group contribution methodology based on the statistical associating fluid theory for heteronuclear molecules formed from Mie segments. The Journal of Chemical Physics, 140(5), 054107. [doi:10.1063/1.4851455](https://doi.org/10.1063/1.4851455)

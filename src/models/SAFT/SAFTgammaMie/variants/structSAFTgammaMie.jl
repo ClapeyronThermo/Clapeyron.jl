@@ -62,6 +62,11 @@ default_references(::Type{structSAFTgammaMie}) = ["10.1063/1.4851455", "10.1021/
 
 s-SAFT-γ-Mie EoS
 
+!!! note "Group Fragmentation"
+
+    Molecule fragmentation into functional groups and connectivity information is available in GCIdentifier.jl, using `SAFTgammaMieGroups`.
+
+
 ## References
 1. Shaahmadi,, F., Hurter, R.M., Burger, A.J., Cripwell, J.T. (2021). Improving the SAFT-γ Mie equation of state to account for functional group interactions in a structural (s-SAFT-γ Mie) framework: Linear and branched alkanes. The Journal of Chemical Physics, 154, 244102. [doi:10.1063/5.0048315 ](https://doi.org/10.1063/5.0048315 )
 2. Schulze-Hulbe, A., Shaahmadi, F., Burger, A.J., Cripwell, J.T. (2022). Extending the Structural (s)-SAFT-γ Mie Equation of State to Primary Alcohols. Industrial & Engineering Chemistry Research, 61 (33), 12208-12228. [doi:10.1021/acs.iecr.2c00198](https://doi.org/10.1021/acs.iecr.2c00198)

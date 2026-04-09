@@ -41,9 +41,9 @@ Eᵢₖ = c₅*(Cₖ + c₃)
 c₁,c₂,c₃,c₄,c₅ = -0.350,2.245,8.858,1.487,0.432
 ```
 
-## Group Fragmentation
+!!! note "Group Fragmentation"
 
-Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `Burkhardt2025Groups`
+    Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `Burkhardt2025Groups`
 
 ## References
 
