@@ -17,6 +17,7 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
     return _volume_compress(model,p,T,z,V0,max_iters)
 end
 
+#=
 function _volume_compress_old(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(Base.promote_eltype(model,p,T,z,V0))
     _1 = one(_0)
@@ -46,7 +47,7 @@ function _volume_compress_old(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase
 
     logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters)::XX,nan)
     return exp(logV)
-end
+end =#
 
 function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(Base.promote_eltype(model,p,T,z,V0))

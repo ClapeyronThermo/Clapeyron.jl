@@ -46,12 +46,10 @@ end
 group_Mw(model::EoSModel) = group_Mw(model.params.Mw,model.groups)
 function group_Mw(Mw_gc::SingleParam,groups::GroupParam)
     n = length(groups.components)
-    
     mw_comp = zeros(Base.promote_eltype(Mw_gc,groups),n)
     v = groups.n_flattenedgroups
     mw_gc = Mw_gc.values
     for i in 1:n
-        @show v[i],mw_gc
         mw_comp[i] = dot(mw_gc,v[i])
     end
     return mw_comp
