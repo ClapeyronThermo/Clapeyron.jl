@@ -73,8 +73,24 @@ function α_m_leibovici(model::DeltaCubicModel,i)
     α_m_leibovici(real(u0))
 end
 
+#optimizations for common models
+
+function α_m_leibovici(model::PRModel,i)
+    TT = eltype(model.params.Tc)
+    TT.(0.37887951, 1.4899257, -0.17308303, 0.02245493, -0.00130157)
+end
+
+function α_m_leibovici(model::RKModel,i)
+    TT = eltype(model.params.Tc)
+    TT.(0.47986219, 1.57625793, -0.19430027, 0.0285643, -0.00221708)
+end
+
+function α_m_leibovici(model::vdWModel,i)
+    TT = eltype(model.params.Tc)
+    TT.(0.4999139006762875, 1.5933540719944854, -0.19856505085924195, 0.029806574867261352, -0.0024043636414418958)
+end
+
 function α_m_leibovici(u::Number)
-    _0 = zero(u)
     A = Leibovici_consts
     a0 = evalpoly(u,A[1])
     a1 = evalpoly(u,A[2])
