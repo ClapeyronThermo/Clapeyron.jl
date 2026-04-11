@@ -346,7 +346,7 @@ function standardize_cas(cas)
     if isdigit(last(cas))
         vx = split(cas,"-")
         if length(vx) != 3
-            @show vx
+            @warn "invalid CAS: $vx"
             return String(cas)
         end
         v1,v2,v3 = vx[1],vx[2],vx[3]
