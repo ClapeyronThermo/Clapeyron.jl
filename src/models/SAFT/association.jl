@@ -990,26 +990,33 @@ function X_exact2_denseK!(K,X)
     A1,A3,A2,A4 = K
     a = -A3/A2
     w = 1 + a + 1/(4A4) + a/(4A1)
+    @assert w < 0
     b1 = sqrt(-w/(a*A1))
     b2 = sqrt(w/A4)
     t1 = -0.5/A1
     t2 = -0.5/A4
 
-    function f(et)
-        sinht = (et*et - 1)/(2et)
-        cosht = (et*et + 1)/(2et)
-        x1i = t1 + b1*sinht
-        x2i = t2 + b2*cosht
-        y1 = (1/(A1*x1i + A2*x2i + 1) - t1)/b1
-        return y1 + sqrt(y1*y1 + 1)
+    ymin = -t1/b1
+    y0 = ymin
+    y1 = ymin
+    et = ymin + sqrt(ymin*ymin + 1)
+    ε = 1e-12*one(y1)
+    for i in 1:100
+        x1i = t1 + b1*(et*et - 1)/(2et)
+        x2i = t2 + b2*(et*et + 1)/(2et)
+        y1_new = (1/(A1*x1i + A2*x2i + 1) - t1)/b1
+        if y1_new < ymin
+            y1_new = 0.5*ymin + 0.5*y1
+        end
+        y1 = y1_new
+        et0 =  et
+        et = 0.8*(y1 + sqrt(y1*y1 + 1)) + 0.2*et0
+        abs(et - et0) < ε && break
     end
-    y0 = -t1/b1
-    et0 = y0 + sqrt(y0*y0 + 1)
-    ett = Solvers.fixpoint(f,et0,Solvers.SSFixPoint(0.8))
-    sinhtt = (ett*ett - 1)/(2ett)
-    coshtt = (ett*ett + 1)/(2ett)
-    x1 = t1 + b1*sinhtt
-    x2 = t2 + b2*coshtt
+    #sinhtt = (et*et - 1)/(2et)
+    #coshtt = (et*et + 1)/(2et)
+    x1 = t1 + b1*(et*et - 1)/(2et)
+    x2 = t2 + b2*(et*et + 1)/(2et)
     X[1] = x1
     X[2] = x2
     return X
