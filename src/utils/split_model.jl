@@ -80,16 +80,13 @@ function each_split_model(assoc::Compressed4DMatrix{T},I) where T
     values = assoc.values[idx_bool]
     outer_indices = assoc.outer_indices[idx_bool]
     inner_indices = assoc.inner_indices[idx_bool]
-    out_val = length(I)
-    outer_size = (out_val,out_val)
-    inner_size = assoc.inner_size
-    len2 = length(outer_indices)
-    for i ∈ 1:len2
+    len = length(outer_indices)
+    for i ∈ 1:len
         i1,j1 = outer_indices[i]
         i2,j2 = findfirst(==(i1),I)::Int,findfirst(==(j1),I)::Int
         outer_indices[i] = (i2,j2)
     end
-    return Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
+    return Compressed4DMatrix(values,outer_indices,inner_indices)
 end
 
 function each_split_model(param::ClapeyronParam,group,I_component,I_group)

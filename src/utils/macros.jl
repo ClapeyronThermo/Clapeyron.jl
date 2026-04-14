@@ -700,6 +700,7 @@ function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,Cl
         if !haskey(params_in,"assoc_options")
             AssocOptions!(params_in,assoc_options)
         else
+
             #throw(error("cannot overwrite \"assoc_options\" key, already exists!"))
         end
 
@@ -730,7 +731,7 @@ function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,Cl
             _sites = SiteParam(_components)
         end
         result[:sites] = _sites
-        result[:assoc_options] = assoc_options
+        result[:assoc_options] = AssocOptions!(params_out,assoc_options)
     end
 
     #add references, if needed
