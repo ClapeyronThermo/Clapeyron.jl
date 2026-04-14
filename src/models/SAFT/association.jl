@@ -411,7 +411,7 @@ function assoc_matrix_x0!(K,X)
         #solve each association separately, if one of the diagonal association
         #submatrices is zero, then cross-association does not have any sense.
         success = true
-    else 
+    else
         #general solution, takes longer to compile.
         #_,success = X_exact4!(K,X)
         #success || X_exact2!(K22,@view(X[3:4]))
@@ -509,10 +509,10 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol ,rtol, max_iters, imp
     #length(X0) == 3 && return __assoc_matrix_solve_static(Val{3}(), K, X0, α, atol ,rtol, max_iters)
     #length(X0) == 4 && return __assoc_matrix_solve_static(Val{4}(), K, X0, α, atol ,rtol, max_iters)
     #length(X0) == 5 && return __assoc_matrix_solve_static(Val{5}(), K, X0, α, atol ,rtol, max_iters)
-    
+
     if implicit_ad && K[1] isa ForwardDiff.Dual
         K_primal = nested_pvalue(K) # solve on primalval
-        
+
         Xsol = assoc_matrix_solve_general(K_primal, nested_pvalue.(X0), n, α, atol ,rtol, max_iters)
         return assoc_matrix_solve_ad(Xsol, K, K_primal) # implicit AD
     else
@@ -539,12 +539,12 @@ function compress_assoc_matrix(K)
 
     #step 1: check which rows are the same if we translate the row by one and pad with zeros.
     for i in 1:n
-        !iszero(K[1,i]) && continue
+        !iszero(K[i,1]) && continue
         idx[i] != i && continue #already compressed
-        Ki = @view K[2:end,i]
+        Ki = @view K[i,2:end]
         for j in (i+1):n
-            !iszero(K[end,j]) && continue
-            Kj = @view K[1:end-1,j]
+            !iszero(K[j,end]) && continue
+            Kj = @view K[j,1:end-1]
             if Ki == Kj
                 n_unique -= 1
                 idx[j] = i
@@ -561,17 +561,17 @@ function compress_assoc_matrix(K)
     for i in 1:n
         idx[i] != i && continue #already compressed
         for ii in 2:n
-            Kiii = K[ii,i]
+            Kiii = K[i,ii]
             if iszero(Kiii)
                 for j in (i+1):n
                     if idx[j] == i
-                       can_compress = iszero(K[ii-1,j])
+                       can_compress = iszero(K[j,ii-1])
                     end
                 end
             end
         end
     end
-    
+
     if !can_compress
         idx .= 1:n
         return K,idx
@@ -585,10 +585,10 @@ function compress_assoc_matrix(K)
             ii += 1
             jj = 0
             for j in 1:n
-                Kji = K[j,i]
-                if !iszero(Kji)
+                Kij = K[i,j]
+                if !iszero(Kij)
                     jj += 1
-                    J[jj,ii] = Kji
+                    J[ii,jj] = Kij
                 end
             end
         end
@@ -616,11 +616,11 @@ function __maybe_compress(K)
     n = LinearAlgebra.checksquare(K)
     #step 1: check which rows are the same if we translate the row by one and pad with zeros.
     for i in 1:n
-        !iszero(K[1,i]) && continue
-        Ki = @view K[2:end,i]
+        !iszero(K[i,1]) && continue
+        Ki = @view K[i,2:end]
         for j in (i+1):n
-            !iszero(K[end,j]) && continue
-            Kj = @view K[1:end-1,j]
+            !iszero(K[j,end]) && continue
+            Kj = @view K[j,1:end-1]
             if Ki == Kj
                 return true
             end
@@ -704,7 +704,7 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
                 Xsol[k] = 0.5*(Xk + X0k) #successive substitution step
             else
                 Xsol[k] = X_newton #newton step
-            end   
+            end
         end
         # Xsol .-= dX
         converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
@@ -721,7 +721,7 @@ end
 
 function assoc_matrix_solve_ad(Xsol::X, K::KT, K_primal::KP)::Vector{V2} where {V1,V2,X<:AbstractVector{V1},KT<:AbstractMatrix{V2},KP<:AbstractMatrix{V1}}
     N = Val(length(Xsol))
-    f(X_::XX_,tups_::Tuple{KK_,Val{N_}}) where {V1_,V2_,N_,XX_<:AbstractVector{V1_},KK_<:AbstractMatrix{V2_}} = begin 
+    f(X_::XX_,tups_::Tuple{KK_,Val{N_}}) where {V1_,V2_,N_,XX_<:AbstractVector{V1_},KK_<:AbstractMatrix{V2_}} = begin
         TT = promote_type(V1_,V2_)
         _1 = one(TT)
         K_ = tups_[1]
@@ -736,7 +736,7 @@ function assoc_matrix_solve_ad(Xsol::X, K::KT, K_primal::KP)::Vector{V2} where {
         tmp .+= X_ # (K * X) .* X .+ X
         tmp .-= _1 # (K * X) .* X .+ X .- 1
         tmp
-    end# (1 + ∑_{jb} K⁽ⁱᵃʲᵇ⁾X⁽ⁱᵃʲᵇ⁾ )⁻¹ = Xⁱᵃ for all iₐ, but rearranged. 
+    end# (1 + ∑_{jb} K⁽ⁱᵃʲᵇ⁾X⁽ⁱᵃʲᵇ⁾ )⁻¹ = Xⁱᵃ for all iₐ, but rearranged.
     # f wrt X has polynomial form, which is easier (and more efficient) to differentiate compared to 1 ./ X
     return __gradients_for_root_finders(Xsol,(K,N),(K_primal,N),f) # implicit AD
 end
@@ -990,7 +990,7 @@ function X_exact2_denseK!(K,X)
     a = -A3/A2
     w = 1 + a + 1/(4A4) + a/(4A1)
     invert = w < 0
-    
+
     if invert
         #if the sign of w is negative, than means that x2 has the negative sign in the hyperbola instead of x1
         A1,A4 = A4,A1
@@ -1059,7 +1059,7 @@ function assoc_matrix_solve_pure(K,idx,options)
             res = assoc_matrix_solve(copy(Ki),options)
             Xi .= res
         end
-        
+
     end
     return X
 end
