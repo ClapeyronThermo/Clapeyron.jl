@@ -352,7 +352,6 @@ function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
     else
         Xsol = assoc_matrix_solve(K,options)
     end
-    Xsol = assoc_matrix_solve(K,options)
     return PackedVofV(idxs,Xsol),_Δ
 end
 
@@ -399,7 +398,6 @@ function assoc_matrix_x0!(K,X)
         X_exact2!(K,X)
         init = true
         success = true
-        init = true
     elseif check_antidiagonal22(K)
     #nb-nb association with cross-association
     K11 = @view(K[1:2,1:2])
@@ -423,6 +421,7 @@ function assoc_matrix_x0!(K,X)
     else
         #TODO: add more exact expressions.
     end
+
     if !init
         Kmin,Kmax = nonzero_extrema(K) #look for 0 < Amin < Amax
         if Kmax > 1
@@ -990,12 +989,20 @@ function X_exact2_denseK!(K,X)
     A1,A3,A2,A4 = K
     a = -A3/A2
     w = 1 + a + 1/(4A4) + a/(4A1)
-    @assert w < 0
+    invert = w < 0
+    
+    if invert
+        #if the sign of w is negative, than means that x2 has the negative sign in the hyperbola instead of x1
+        A1,A4 = A4,A1
+        A3,A2 = A2,A3
+        a = -A3/A2
+        w = 1 + a + 1/(4A4) + a/(4A1)
+    end
+
     b1 = sqrt(-w/(a*A1))
     b2 = sqrt(w/A4)
     t1 = -0.5/A1
     t2 = -0.5/A4
-
     ymin = -t1/b1
     y0 = ymin
     y1 = ymin
@@ -1017,6 +1024,9 @@ function X_exact2_denseK!(K,X)
     #coshtt = (et*et + 1)/(2et)
     x1 = t1 + b1*(et*et - 1)/(2et)
     x2 = t2 + b2*(et*et + 1)/(2et)
+    if invert
+        x2,x1 = x1,x2
+    end
     X[1] = x1
     X[2] = x2
     return X
