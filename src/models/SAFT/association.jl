@@ -540,14 +540,15 @@ function compress_assoc_matrix(K)
     #step 1: check which rows are the same if we translate the row by one and pad with zeros.
     for i in 1:n
         !iszero(K[i,1]) && continue
-        idx[i] != i && continue #already compressed
+        abs(idx[i]) != i && continue #already compressed
         Ki = @view K[i,2:end]
         for j in (i+1):n
             !iszero(K[j,end]) && continue
             Kj = @view K[j,1:end-1]
             if Ki == Kj
                 n_unique -= 1
-                idx[j] = i
+                idx[j] = -i
+                idx[i] = -i
             end
         end
     end
@@ -559,42 +560,57 @@ function compress_assoc_matrix(K)
     can_compress = true
     #step 2: check consistency, if we remove n rows, there it at least n-1 (translated) cols of pure zeros:
     for i in 1:n
-        idx[i] != i && continue #already compressed
+        abs(idx[i]) != i && continue #already compressed
         for ii in 2:n
             Kiii = K[i,ii]
             if iszero(Kiii)
                 for j in (i+1):n
-                    if idx[j] == i
-                       can_compress = iszero(K[j,ii-1])
+                    if abs(idx[j]) == i
+                        can_compress = iszero(K[j,ii-1])
+                    end
+                    if !can_compress
+                        idx .= 1:n
+                        return K,idx
                     end
                 end
             end
         end
     end
 
-    if !can_compress
-        idx .= 1:n
-        return K,idx
-    end
 
     #step 3: perform compression
     J = similar(K,(n_unique,n_unique))
     J .= 0
+
     ii = 0
     for i in 1:n
-        if idx[i] == i
+        idx_i = idx[i]
+        if abs(idx_i) == i
             ii += 1
-            jj = 0
-            for j in 1:n
-                if idx[j] != j
-                    jj += 1
-                    J[ii,jj] = K[i,j]
+            if idx_i > 0 #unmodified row, skip zeros
+                Ki = @view K[i,1:end]
+                jj = 0
+                for j in 1:n
+                    if abs(idx[j]) == j
+                        jj += 1
+                        J[ii,jj] = Ki[j]
+                    end
+                end
+            else #repeated,compressed row
+                Ki = @view K[i,2:end]
+                jj = 0
+                for j in 1:n-1
+                    if abs(idx[j]) == j
+                        jj += 1
+                        J[ii,jj] = Ki[j]
+                    end
                 end
             end
         end
     end
 
     #step 4: generate output indices
+    idx .= abs.(idx)
     i_unique = 0
     idx .*= -1
     for i in 1:n
