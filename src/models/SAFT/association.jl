@@ -399,25 +399,25 @@ function assoc_matrix_x0!(K,X)
         init = true
         success = true
     elseif check_antidiagonal22(K)
-    #nb-nb association with cross-association
-    K11 = @view(K[1:2,1:2])
-    K12 = @view(K[1:2,3:4])
-    K21 = @view(K[3:4,1:2])
-    K22 = @view(K[3:4,3:4])
+        #nb-nb association with cross-association
+        K11 = @view(K[1:2,1:2])
+        K12 = @view(K[1:2,3:4])
+        K21 = @view(K[3:4,1:2])
+        K22 = @view(K[3:4,3:4])
 
-    X_exact2!(K11,@view(X[1:2]))
-    X_exact2!(K22,@view(X[3:4]))
-    if (iszero(K12) & iszero(K21))
-        #solve each association separately, if one of the diagonal association
-        #submatrices is zero, then cross-association does not have any sense.
-        success = true
-    else
-        #general solution, takes longer to compile.
-        #_,success = X_exact4!(K,X)
-        #success || X_exact2!(K22,@view(X[3:4]))
-        success = false
-    end
-    init = true
+        X_exact2!(K11,@view(X[1:2]))
+        X_exact2!(K22,@view(X[3:4]))
+        if (iszero(K12) & iszero(K21))
+            #solve each association separately, if one of the diagonal association
+            #submatrices is zero, then cross-association does not have any sense.
+            success = true
+        else
+            #general solution, takes longer to compile.
+            #_,success = X_exact4!(K,X)
+            #success || X_exact2!(K22,@view(X[3:4]))
+            success = false
+        end
+        init = true
     else
         #TODO: add more exact expressions.
     end
@@ -579,16 +579,16 @@ function compress_assoc_matrix(K)
 
     #step 3: perform compression
     J = similar(K,(n_unique,n_unique))
+    J .= 0
     ii = 0
     for i in 1:n
         if idx[i] == i
             ii += 1
             jj = 0
             for j in 1:n
-                Kij = K[i,j]
-                if !iszero(Kij)
+                if idx[j] != j
                     jj += 1
-                    J[ii,jj] = Kij
+                    J[ii,jj] = K[i,j]
                 end
             end
         end
@@ -962,14 +962,13 @@ macro assoc_loop(Xold::Symbol,Xnew::Symbol,expr)
 end
 
 function X_exact2!(K,X)
-    k1 = K[1,2]
-    k2 = K[2,1]
+    _,k2,k1,_ = K
+    #k1 = K[1,2]
+    #k2 = K[2,1]
     #this computation is equivalent to the one done in X_exact1
-    _a = k2
-    _b = 1 - k2 + k1
-    _c = -1
-    denom = _b + sqrt(_b*_b - 4*_a*_c)
-    x1 = -2*_c/denom
+    k = 1 - k2 + k1
+    Δ = k + sqrt(k*k + 4*k2)
+    x1 = 2/Δ
     x1k = k2*x1
     x2 = (1- x1k)/(1 - x1k*x1k)
     X[1] = x1
@@ -987,8 +986,22 @@ function X_exact2_denseK!(K,X)
     Then we solve in exp(t) coordinates
     =#
     A1,A3,A2,A4 = K
+
+
+    if iszero(A1) && iszero(A4)
+        k = 1 - A3 + A2
+        Δ = k + sqrt(k*k + 4*A3)
+        x1 = 2/Δ
+        x1k = A3*x1
+        x2 = (1- x1k)/(1 - x1k*x1k)
+        X[1] = x1
+        X[2] = x2
+        return X
+    end
+
     a = -A3/A2
     w = 1 + a + 1/(4A4) + a/(4A1)
+    
     invert = w < 0
 
     if invert
