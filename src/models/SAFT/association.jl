@@ -68,6 +68,23 @@ julia> Clapeyron.assoc_pair_length(model)
 end
 
 """
+    getsites(model::EoSModel)
+
+Returns the `SiteParam` used in association calculations for the input `model`, if any. Fails if not available. to check if a model has sites, use `has_sites`
+"""
+getsites(model) = model.sites
+
+"""
+    assoc_options(model::EoSModel)
+
+Returns association options used in the association solver.
+
+"""
+@inline function assoc_options(model::EoSModel)
+    return model.assoc_options
+end
+
+"""
     assoc_strength(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
     Δ(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
 Calculates the asssociation strength between component `i` at site `a` and component `j` at site `b`.
@@ -138,6 +155,21 @@ function Δ(model::EoSModel, V, T, z)
     return Δout
 end
 
+function Δ(model::EoSModel, V, T, z, data)
+    Δout = assoc_similar(model,@f(Base.promote_eltype))
+    Δout.values .= false
+    for (idx,(i,j),(a,b)) in indices(Δout)
+        Δout[idx] =@f(Δ,i,j,a,b,data)
+    end
+    return Δout
+end
+
+#=
+################################
+Association Matrix construction
+################################
+=#
+
 """
     delta_assoc(model,V,T,z,data)
 
@@ -156,25 +188,6 @@ function delta_assoc(model,V,T,z,data::M) where M
         elliott_runtime_mix!(delta)
     end
     return delta
-end
-
-"""
-    assoc_options(model::EoSModel)
-
-Returns association options used in the association solver.
-
-"""
-@inline function assoc_options(model::EoSModel)
-    return model.assoc_options
-end
-
-function Δ(model::EoSModel, V, T, z, data)
-    Δout = assoc_similar(model,@f(Base.promote_eltype))
-    Δout.values .= false
-    for (idx,(i,j),(a,b)) in indices(Δout)
-        Δout[idx] =@f(Δ,i,j,a,b,data)
-    end
-    return Δout
 end
 
 function issite(i::Int,a::Int,ij::Tuple{Int,Int},ab::Tuple{Int,Int})::Bool
@@ -355,19 +368,16 @@ function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
     return PackedVofV(idxs,Xsol),_Δ
 end
 
-function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions = AssocOptions()) where T
-    atol = options.atol
-    rtol = options.rtol
-    max_iters = options.max_iters
-    α = options.dampingfactor
-    implicit_ad = options.implicit_ad
-    return assoc_matrix_solve(K, α, atol ,rtol, max_iters, implicit_ad)
-end
+
+#=
+################################
+Initial points for association
+And reduced dimension solvers
+################################
+=#
 
 function assoc_matrix_x0!(K,X)
     #(A*x .* x) + x - 1 = 0
-    success = false
-    init = false
     init1,success1 = X_maybe_exact_pseudodiag!(K,X)
     init1 && (return X,success1)
 
@@ -389,6 +399,12 @@ function assoc_matrix_x0!(K,X)
 end
 
 function X_maybe_exact_pseudodiag!(K,X)
+    #=
+    solver for association matrices that only have one entry per row
+    we try to solve for diagonal elements (including zeros)
+    then we solve for cross terms (twice)
+    if there are values not found after that, fill with ones.
+    =#
     Kr = eachrow(K)
 
     for Kri in Kr
@@ -397,6 +413,10 @@ function X_maybe_exact_pseudodiag!(K,X)
         end
     end
 
+    #step 0: on the output vector, mark the index of the corresponding assoc value:
+    #X[i] = j
+    #Xi = 1/(1 + K[i,j]*Xj)
+    #sign is to differentiate between index (negative) and solution (positive)
     n = LinearAlgebra.checksquare(K)
     X .= 0
     for i in 1:n
@@ -420,6 +440,7 @@ function X_maybe_exact_pseudodiag!(K,X)
         return false,false
     end
 
+    #step 4: fill any non-solved entries with ones
     for i in 1:n
         if X[i] < 0
             X[i] = 1.0
@@ -480,68 +501,142 @@ function X_maybe_exact_pseudodiag_2!(K,X)
     return n_solved
 end
 
-#this function destroys KK and XX0
-function __assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::AbstractVector{T2}, α, atol ,rtol, max_iters) where {N,T1,T2}
-    X0 = SVector{N,T2}(XX0)
-    K = SMatrix{N,N,T1,N*N}(KK)
-    Xsol = X0
-    it_ss = (5*length(Xsol))
-    converged = false
-    for i in 1:it_ss
-        kx = K*X0
-        Xsol = α ./ (1 .+ kx) .+ (1 .- α) .* X0
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
-        if converged
-            if !finite
-                Xsol = NaN .* Xsol
-            end
+function X_exact2_antidiag!(K,X)
+    _,k2,k1,_ = K
+    #k1 = K[1,2]
+    #k2 = K[2,1]
+    #this computation is equivalent to the one done in X_exact1
+    k = 1 - k2 + k1
+    Δ = k + sqrt(k*k + 4*k2)
+    x1 = 2/Δ
+    x1k = k2*x1
+    x2 = (1 -  x1k)/(1 - x1k*x1k)
+    X[1] = x1
+    X[2] = x2
+    return X
+end
 
-            break
+function X_exact2_123!(K,X)
+    A1,A3,A2,A4 = K
+    invert = iszero(A4)
+    if invert
+        A1,A4 = A4,A1
+        A3,A2 = A2,A3
+    end
+    _1 = one(eltype(K))
+    _0 = zero(eltype(K))
+    poly = (-_1,_1 + A3 - A2,A2 + A4,A2*A4)
+    dpoly = (_1 + A3 - A2,2*(A2 + A4),3*A2*A4)
+    xa = _0
+    xb = _1
+    xc = 0.5*_1
+    for i in 1:100
+        xold = xc
+        xnew = xc - evalpoly(xc,poly)/evalpoly(xc,dpoly)
+        if xnew < _0
+            xc = 0.5*(xc)
+        elseif xnew > _1
+            xc = 0.5*(_1 + xc)
+        else
+            xc = xnew
         end
-        X0 = Xsol
+        abs(xc - xold) < 1e-12 && break
+    end
+    x2 = xc
+    x1 = 1/(1 + A2*x2)
+    if invert
+        x1,x2 = x2,x1
+    end
+    X[1] = x1
+    X[2] = x2
+end
+
+function X_exact2!(K,X)
+    #=
+    strategy: reformulate association problem as an hyperbola
+    ((x2 - t2)/b2)^2 - ((x1 - t1)/b1)^2 = 1
+    x2 - t2 = t2 + b2*cosh(t)
+    x1 - t1 = t1 + b1*sinh(t)
+
+    Then we solve in exp(t) coordinates
+    =#
+    A1,A3,A2,A4 = K
+    if iszero(A1) && iszero(A4)
+        X_exact2_antidiag!(K,X)
+        return true,true
     end
 
-    if converged
-        XX0 .= Xsol
-        return XX0
+    if iszero(A1) || iszero(A4)
+        X_exact2_123!(K,X)
+        return true,true
+        
     end
 
-    H = KK
-    g = XX0
-    #TODO: for the next stable release, use MVector
-    piv = zeros(Int,N)
-    for i in (it_ss + 1):max_iters
-        #@show Xsol
-        KX = K*Xsol
-        H .= 0
-        H .= -K
-        for k in 1:size(H,1)
-            H[k,k] -= (1 + KX[k])/Xsol[k]
+    a = -A3/A2
+    w = 1 + a + 1/(4A4) + a/(4A1)
+
+    invert = w < 0
+
+    if invert
+        #if the sign of w is negative, than means that x2 has the negative sign in the hyperbola instead of x1
+        A1,A4 = A4,A1
+        A3,A2 = A2,A3
+        a = -A3/A2
+        w = 1 + a + 1/(4A4) + a/(4A1)
+    end
+
+    b1 = sqrt(-w/(a*A1))
+    b2 = sqrt(w/A4)
+    t1 = -0.5/A1
+    t2 = -0.5/A4
+    ymin = -t1/b1
+    y0 = ymin
+    y1 = ymin
+    et = ymin + sqrt(ymin*ymin + 1)
+    ε = 1e-12*one(y1)
+    for i in 1:100
+        x1i = t1 + b1*(et*et - 1)/(2et)
+        x2i = t2 + b2*(et*et + 1)/(2et)
+        y1_new = (1/(A1*x1i + A2*x2i + 1) - t1)/b1
+        if y1_new < ymin
+            y1_new = 0.5*ymin + 0.5*y1
         end
-        F = Solvers.unsafe_LU!(H,piv)
-        g .= 1 ./ Xsol .- 1 .- KX #gradient
-        ldiv!(F,g)
-        ΔX = SVector{N,T2}(XX0)
-        Xnewton = Xsol - ΔX
-        Xss = 1 ./ (1 .+ KX)
-        X0 = Xsol
-        Xsol = ifelse.(0 .<= Xnewton .<= 1, Xnewton, Xss)
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
-        #@show converged,finite
-        if converged
-            if !finite
-                Xsol = NaN .* Xsol
-            end
-            XX0 .= Xsol
-            break
-        end
+        y1 = y1_new
+        et0 =  et
+        et = 0.8*(y1 + sqrt(y1*y1 + 1)) + 0.2*et0
+        abs(et - et0) < ε && break
+        isnan(et) && break
+        et < 0 && break
     end
 
-    if !converged
-        Xsol = NaN .* Xsol
+    if isnan(et) || et < 0
+        return false,false
     end
-    XX0 .= Xsol
-    return XX0
+    #sinhtt = (et*et - 1)/(2et)
+    #coshtt = (et*et + 1)/(2et)
+    x1 = t1 + b1*(et*et - 1)/(2et)
+    x2 = t2 + b2*(et*et + 1)/(2et)
+    if invert
+        x2,x1 = x1,x2
+    end
+    X[1] = x1
+    X[2] = x2
+    return true,true
+end
+
+#=
+############################
+General association solver
+############################
+=#
+
+function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions = AssocOptions()) where T
+    atol = options.atol
+    rtol = options.rtol
+    max_iters = options.max_iters
+    α = options.dampingfactor
+    implicit_ad = options.implicit_ad
+    return assoc_matrix_solve(K, α, atol ,rtol, max_iters, implicit_ad)
 end
 
 function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol ,rtol, max_iters, implicit_ad) where T
@@ -566,6 +661,131 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol ,rtol, max_iters, imp
     end
 end
 
+
+#this is for playing around and check results, not for direct use
+#in particular, this does not support implicit ad
+function assoc_matrix_solve(K,X0)
+    n = LinearAlgebra.checksquare(K)
+    assoc_matrix_solve_general(K, X0, n, 0.5, 1e-12 ,1e-12, 1000)
+end
+
+function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol, max_iters) where T
+    Xsol = Vector{T}(undef,n)
+    Xsol .= X0
+    #=
+    function to solve
+    find vector x that satisfies:
+    (A*x .* x) + x - 1 = 0
+    solved by reformulating in succesive substitution:
+    x .= 1 ./ (1 .+ A*x)
+
+    #we perform a "partial multiplication". that is, we use the already calculated
+    #values of the next Xi to calculate the current Xi. this seems to accelerate the convergence
+    #by around 50% (check what the ass_matmul! function does)
+
+    note that the damping is done inside the partial multiplication. if is done outside, it causes convergence problems.
+
+    after a number of ss iterations are done, we use newton minimization.
+    the code for the newton optimization is based on sgtpy: https://github.com/gustavochm/sgtpy/blob/336cb2a7581b22492914233e29062f5a364b47da/sgtpy/vrmie_pure/association_aux.py#L33-L57
+
+    some notes:
+    - the linear system is solved via LU decomposition, for that, we need to allocate one (1) Matrix{T} and one (1) Vector{Int}
+    - gauss-seidel does not require an additional matrix allocation, but it is slow. (slower than SS)
+    - julia 1.10 does not have a way to make LU non-allocating, but the code is simple, so it was added as the function unsafe_LU! in the Solvers module.
+    =#
+    fx(kx,x) =  α/(1+kx) + (1-α)*x
+    function f_ss!(out,in)
+        ass_matmul!(fx,out,K,in)
+        return out
+    end
+
+    #successive substitution. 50 iters
+    it_ss = (5*length(Xsol))
+    converged = false
+    for i in 1:it_ss
+        f_ss!(Xsol,X0)
+        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
+        if converged
+            finite || (Xsol .= NaN)
+            return Xsol
+        end
+        X0 .= Xsol
+       # @show Xsol
+    end
+    if converged
+        !finite && (Xsol .= NaN)
+        return Xsol
+    end
+    H = Matrix{T}(undef,n,n)
+    H .= 0
+    piv = zeros(Int,n)
+    dX = copy(Xsol)
+    KX = copy(Xsol)
+    for i in (it_ss + 1):max_iters
+        #@show Xsol
+        KX = mul!(KX,K,Xsol)
+        H .= -K
+        for k in 1:size(H,1)
+            H[k,k] -= (1 + KX[k])/Xsol[k]
+        end
+        #F already contains H and the pivots, because we refreshed H, we need to refresh
+        #the factorization too.
+        F = Solvers.unsafe_LU!(H,piv)
+        dX .= 1 ./ Xsol .- 1 .- KX #gradient
+        ldiv!(F,dX) #we solve H/g, overwriting g
+        X0 .= Xsol
+        for k in 1:length(dX)
+            Xk = Xsol[k]
+            X0k = X0[k]
+            dXk = dX[k]
+            X0[k] = Xk
+            X_newton = Xk - dXk
+            if !(0 <= X_newton <= 1)
+                Xsol[k] = 0.5*(Xk + X0k) #successive substitution step
+            else
+                Xsol[k] = X_newton #newton step
+            end
+        end
+        # Xsol .-= dX
+        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
+        #@show converged,finite
+        if converged
+            finite || (Xsol .= NaN)
+            return Xsol
+        end
+    end
+
+    converged || (Xsol .= NaN)
+    return Xsol
+end
+
+function assoc_matrix_solve_ad(Xsol::X, K::KT, K_primal::KP)::Vector{V2} where {V1,V2,X<:AbstractVector{V1},KT<:AbstractMatrix{V2},KP<:AbstractMatrix{V1}}
+    N = Val(length(Xsol))
+    f(X_::XX_,tups_::Tuple{KK_,Val{N_}}) where {V1_,V2_,N_,XX_<:AbstractVector{V1_},KK_<:AbstractMatrix{V2_}} = begin
+        TT = promote_type(V1_,V2_)
+        _1 = one(TT)
+        K_ = tups_[1]
+        #itt = (@inbounds begin
+        #            ki = @view K_[i,:]
+        #            dot(ki,X_) * X_[i] + X_[i] - _1
+        #        end
+        #        for i in 1:N_) # Generator for inefficient code below
+        #tmp = SVector{N_,TT}(itt)
+        tmp = K_ * X_ # K * X, allocates initial Vector{TT} buffer=#
+        tmp .*= X_ # (K * X) .* X
+        tmp .+= X_ # (K * X) .* X .+ X
+        tmp .-= _1 # (K * X) .* X .+ X .- 1
+        tmp
+    end# (1 + ∑_{jb} K⁽ⁱᵃʲᵇ⁾X⁽ⁱᵃʲᵇ⁾ )⁻¹ = Xⁱᵃ for all iₐ, but rearranged.
+    # f wrt X has polynomial form, which is easier (and more efficient) to differentiate compared to 1 ./ X
+    return __gradients_for_root_finders(Xsol,(K,N),(K_primal,N),f) # implicit AD
+end
+
+#=
+################################
+Association Matrix Compression
+################################
+=#
 """
     J,idx = compress_assoc_matrix(K)
 
@@ -690,120 +910,13 @@ function __maybe_compress(K)
    return false
 end
 
-function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol, max_iters) where T
-    Xsol = Vector{T}(undef,n)
-    Xsol .= X0
-    #=
-    function to solve
-    find vector x that satisfies:
-    (A*x .* x) + x - 1 = 0
-    solved by reformulating in succesive substitution:
-    x .= 1 ./ (1 .+ A*x)
-
-    #we perform a "partial multiplication". that is, we use the already calculated
-    #values of the next Xi to calculate the current Xi. this seems to accelerate the convergence
-    #by around 50% (check what the ass_matmul! function does)
-
-    note that the damping is done inside the partial multiplication. if is done outside, it causes convergence problems.
-
-    after a number of ss iterations are done, we use newton minimization.
-    the code for the newton optimization is based on sgtpy: https://github.com/gustavochm/sgtpy/blob/336cb2a7581b22492914233e29062f5a364b47da/sgtpy/vrmie_pure/association_aux.py#L33-L57
-
-    some notes:
-    - the linear system is solved via LU decomposition, for that, we need to allocate one (1) Matrix{T} and one (1) Vector{Int}
-    - gauss-seidel does not require an additional matrix allocation, but it is slow. (slower than SS)
-    - julia 1.10 does not have a way to make LU non-allocating, but the code is simple, so it was added as the function unsafe_LU! in the Solvers module.
-    =#
-    fx(kx,x) =  α/(1+kx) + (1-α)*x
-    function f_ss!(out,in)
-        ass_matmul!(fx,out,K,in)
-        return out
-    end
-
-    #successive substitution. 50 iters
-    it_ss = (5*length(Xsol))
-    converged = false
-    for i in 1:it_ss
-        f_ss!(Xsol,X0)
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
-        if converged
-            finite || (Xsol .= NaN)
-            return Xsol
-        end
-        X0 .= Xsol
-       # @show Xsol
-    end
-    if converged
-        !finite && (Xsol .= NaN)
-        return Xsol
-    end
-    H = Matrix{T}(undef,n,n)
-    H .= 0
-    piv = zeros(Int,n)
-    dX = copy(Xsol)
-    KX = copy(Xsol)
-    for i in (it_ss + 1):max_iters
-        #@show Xsol
-        KX = mul!(KX,K,Xsol)
-        H .= -K
-        for k in 1:size(H,1)
-            H[k,k] -= (1 + KX[k])/Xsol[k]
-        end
-        #F already contains H and the pivots, because we refreshed H, we need to refresh
-        #the factorization too.
-        F = Solvers.unsafe_LU!(H,piv)
-        dX .= 1 ./ Xsol .- 1 .- KX #gradient
-        ldiv!(F,dX) #we solve H/g, overwriting g
-        X0 .= Xsol
-        for k in 1:length(dX)
-            Xk = Xsol[k]
-            X0k = X0[k]
-            dXk = dX[k]
-            X0[k] = Xk
-            X_newton = Xk - dXk
-            if !(0 <= X_newton <= 1)
-                Xsol[k] = 0.5*(Xk + X0k) #successive substitution step
-            else
-                Xsol[k] = X_newton #newton step
-            end
-        end
-        # Xsol .-= dX
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
-        #@show converged,finite
-        if converged
-            finite || (Xsol .= NaN)
-            return Xsol
-        end
-    end
-
-    converged || (Xsol .= NaN)
-    return Xsol
-end
-
-function assoc_matrix_solve_ad(Xsol::X, K::KT, K_primal::KP)::Vector{V2} where {V1,V2,X<:AbstractVector{V1},KT<:AbstractMatrix{V2},KP<:AbstractMatrix{V1}}
-    N = Val(length(Xsol))
-    f(X_::XX_,tups_::Tuple{KK_,Val{N_}}) where {V1_,V2_,N_,XX_<:AbstractVector{V1_},KK_<:AbstractMatrix{V2_}} = begin
-        TT = promote_type(V1_,V2_)
-        _1 = one(TT)
-        K_ = tups_[1]
-        #itt = (@inbounds begin
-        #            ki = @view K_[i,:]
-        #            dot(ki,X_) * X_[i] + X_[i] - _1
-        #        end
-        #        for i in 1:N_) # Generator for inefficient code below
-        #tmp = SVector{N_,TT}(itt)
-        tmp = K_ * X_ # K * X, allocates initial Vector{TT} buffer=#
-        tmp .*= X_ # (K * X) .* X
-        tmp .+= X_ # (K * X) .* X .+ X
-        tmp .-= _1 # (K * X) .* X .+ X .- 1
-        tmp
-    end# (1 + ∑_{jb} K⁽ⁱᵃʲᵇ⁾X⁽ⁱᵃʲᵇ⁾ )⁻¹ = Xⁱᵃ for all iₐ, but rearranged.
-    # f wrt X has polynomial form, which is easier (and more efficient) to differentiate compared to 1 ./ X
-    return __gradients_for_root_finders(Xsol,(K,N),(K_primal,N),f) # implicit AD
-end
+#=
+####################################################
+Association implementations, once X is calculated
+####################################################
+=#
 
 #exact calculation of site non-bonded fraction when there is only one site
-
 function X_exact1(model,V,T,z,data = nothing)
     xia,xjb,i,j,a,b,n,idxs,Δijab = _X_exact1(model,V,T,z,data)
     pack_X_exact1(xia,xjb,i,j,a,b,n,idxs)
@@ -857,16 +970,6 @@ function pack_X_exact1(xia,xjb,i,j,a,b,n,idxs)
     _X[i][a] = xia
     return _X
 end
-
-#helper function to get the sites. in almost all cases, this is model.sites
-#but SAFTgammaMie uses model.vrmodel.sites instead
-"""
-    getsites(model::EoSModel)
-
-returns the `SiteParam` used in association calculations for the input `model`, if any. Fails if not available. to check if a model has sites, use `has_sites`
-
-"""
-getsites(model) = model.sites
 
 function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
     #=
@@ -1020,129 +1123,6 @@ macro assoc_loop(Xold::Symbol,Xnew::Symbol,expr)
         Xsol = Clapeyron.Solvers.fixpoint(x_assoc_iter!,X0,Clapeyron.Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
         Xsol
     end |> esc
-end
-
-function X_exact2_antidiag!(K,X)
-    _,k2,k1,_ = K
-    #k1 = K[1,2]
-    #k2 = K[2,1]
-    #this computation is equivalent to the one done in X_exact1
-    k = 1 - k2 + k1
-    Δ = k + sqrt(k*k + 4*k2)
-    x1 = 2/Δ
-    x1k = k2*x1
-    x2 = (1 -  x1k)/(1 - x1k*x1k)
-    X[1] = x1
-    X[2] = x2
-    return X
-end
-
-function X_exact2_123!(K,X)
-    A1,A3,A2,A4 = K
-    invert = iszero(A4)
-    if invert
-        A1,A4 = A4,A1
-        A3,A2 = A2,A3
-    end
-    _1 = one(eltype(K))
-    _0 = zero(eltype(K))
-    poly = (-_1,_1 + A3 - A2,A2 + A4,A2*A4)
-    dpoly = (_1 + A3 - A2,2*(A2 + A4),3*A2*A4)
-    xa = _0
-    xb = _1
-    xc = 0.5*_1
-    for i in 1:100
-        xold = xc
-        xnew = xc - evalpoly(xc,poly)/evalpoly(xc,dpoly)
-        if xnew < _0
-            xc = 0.5*(xc)
-        elseif xnew > _1
-            xc = 0.5*(_1 + xc)
-        else
-            xc = xnew
-        end
-        abs(xc - xold) < 1e-12 && break
-    end
-    x2 = xc
-    x1 = 1/(1 + A2*x2)
-    if invert
-        x1,x2 = x2,x1
-    end
-    X[1] = x1
-    X[2] = x2
-end
-
-function X_exact2!(K,X)
-    #=
-    strategy: reformulate association problem as an hyperbola
-    ((x2 - t2)/b2)^2 - ((x1 - t1)/b1)^2 = 1
-    x2 - t2 = t2 + b2*cosh(t)
-    x1 - t1 = t1 + b1*sinh(t)
-
-    Then we solve in exp(t) coordinates
-    =#
-    A1,A3,A2,A4 = K
-    if iszero(A1) && iszero(A4)
-        X_exact2_antidiag!(K,X)
-        return true,true
-    end
-
-    if iszero(A1) || iszero(A4)
-        X_exact2_123!(K,X)
-        return true,true
-        
-    end
-
-    a = -A3/A2
-    w = 1 + a + 1/(4A4) + a/(4A1)
-
-    invert = w < 0
-
-    if invert
-        #if the sign of w is negative, than means that x2 has the negative sign in the hyperbola instead of x1
-        A1,A4 = A4,A1
-        A3,A2 = A2,A3
-        a = -A3/A2
-        w = 1 + a + 1/(4A4) + a/(4A1)
-    end
-
-    b1 = sqrt(-w/(a*A1))
-    b2 = sqrt(w/A4)
-    t1 = -0.5/A1
-    t2 = -0.5/A4
-    ymin = -t1/b1
-    y0 = ymin
-    y1 = ymin
-    et = ymin + sqrt(ymin*ymin + 1)
-    ε = 1e-12*one(y1)
-    for i in 1:100
-        x1i = t1 + b1*(et*et - 1)/(2et)
-        x2i = t2 + b2*(et*et + 1)/(2et)
-        y1_new = (1/(A1*x1i + A2*x2i + 1) - t1)/b1
-        if y1_new < ymin
-            y1_new = 0.5*ymin + 0.5*y1
-        end
-        y1 = y1_new
-        et0 =  et
-        et = 0.8*(y1 + sqrt(y1*y1 + 1)) + 0.2*et0
-        abs(et - et0) < ε && break
-        isnan(et) && break
-        et < 0 && break
-    end
-
-    if isnan(et) || et < 0
-        return false,false
-    end
-    #sinhtt = (et*et - 1)/(2et)
-    #coshtt = (et*et + 1)/(2et)
-    x1 = t1 + b1*(et*et - 1)/(2et)
-    x2 = t2 + b2*(et*et + 1)/(2et)
-    if invert
-        x2,x1 = x1,x2
-    end
-    X[1] = x1
-    X[2] = x2
-    return true,true
 end
 
 recombine_assoc!(model) = recombine_assoc!(model,model.params.sigma)
@@ -1299,4 +1279,72 @@ end
 #Mx = a + b(x,x)
 #Axx + x - 1 = 0
 #x = 1 - Axx
+=#
+
+#=
+#this function destroys KK and XX0
+function __assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::AbstractVector{T2}, α, atol ,rtol, max_iters) where {N,T1,T2}
+    X0 = SVector{N,T2}(XX0)
+    K = SMatrix{N,N,T1,N*N}(KK)
+    Xsol = X0
+    it_ss = (5*length(Xsol))
+    converged = false
+    for i in 1:it_ss
+        kx = K*X0
+        Xsol = α ./ (1 .+ kx) .+ (1 .- α) .* X0
+        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
+        if converged
+            if !finite
+                Xsol = NaN .* Xsol
+            end
+
+            break
+        end
+        X0 = Xsol
+    end
+
+    if converged
+        XX0 .= Xsol
+        return XX0
+    end
+
+    H = KK
+    g = XX0
+    #TODO: for the next stable release, use MVector
+    piv = zeros(Int,N)
+    for i in (it_ss + 1):max_iters
+        #@show Xsol
+        KX = K*Xsol
+        H .= 0
+        H .= -K
+        for k in 1:size(H,1)
+            H[k,k] -= (1 + KX[k])/Xsol[k]
+        end
+        F = Solvers.unsafe_LU!(H,piv)
+        g .= 1 ./ Xsol .- 1 .- KX #gradient
+        ldiv!(F,g)
+        ΔX = SVector{N,T2}(XX0)
+        Xnewton = Xsol - ΔX
+        Xss = 1 ./ (1 .+ KX)
+        X0 = Xsol
+        Xsol = ifelse.(0 .<= Xnewton .<= 1, Xnewton, Xss)
+        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
+        #@show converged,finite
+        if converged
+            if !finite
+                Xsol = NaN .* Xsol
+            end
+            XX0 .= Xsol
+            break
+        end
+    end
+
+    if !converged
+        Xsol = NaN .* Xsol
+    end
+    XX0 .= Xsol
+    return XX0
+end
+
+
 =#
