@@ -74,12 +74,36 @@ end
     fluid = PCSAFT(["water","methanol"]; assoc_options = AssocOptions(combining=:elliott))
     fluid.params.epsilon["water","methanol"] *= (1+0.18)
     v = volume(fluid, 1e5, 160.0, [0.5, 0.5],phase = :l)
+    test_assoc_matrix(fluid,v,160.0,[0.5,0.5])
     @test Clapeyron.X(fluid,v,160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
     #test with bigfloat, we check that all temporary association storage is correctly initialized
     @test Clapeyron.X(fluid,big(v),160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
 
     K = [0.0 244.24071691762867 0.0 3.432863727098509; 244.24071691762867 0.0 3.432863727098509 0.0; 0.0 2.2885758180656732 0.0 0.0; 2.2885758180656732 0.0 0.0 0.0]
     @test Clapeyron.assoc_matrix_solve(K) ≈ [0.0562461981664357, 0.0562461981664357, 0.8859564211875895, 0.8859564211875895]
+    test_assoc_matrix(K)
+    #test some particular 2x2 matrices
+
+    test_assoc_matrix([100.0 200.0; 300.0 400.0])
+
+    test_assoc_matrix([100.0 200.0; 300.0   0.0])
+    test_assoc_matrix([100.0   0.0; 200.0 300.0])
+    test_assoc_matrix([100.0 200.0; 0.0 300.0])
+    test_assoc_matrix([0.0 100.0; 200.0 300.0])
+
+    test_assoc_matrix([0.0 100.0; 200.0 0.0])
+    test_assoc_matrix([1000.0 0.0; 0.0 200.0])
+    test_assoc_matrix([0.0 1000.0; 0.0 200.0])
+    test_assoc_matrix([1000.0 0.0; 200.0 0.0])
+    test_assoc_matrix([0.0 0.0; 100.0 200.0])
+    test_assoc_matrix([1000.0 3000.0; 0.0 0.0])
+
+    test_assoc_matrix([1000.0 0.0; 0.0 0.0])
+    test_assoc_matrix([0.0 1000.0; 0.0 0.0])
+    test_assoc_matrix([0.0 0.0; 1000.0 0.0])
+    test_assoc_matrix([0.0 0.0; 0.0 1000.0])
+
+    test_assoc_matrix([500.0;;])
 end
 
 using EoSSuperancillaries

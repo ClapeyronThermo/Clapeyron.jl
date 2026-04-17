@@ -193,6 +193,22 @@ function test_zero_alloc1(model)
     f(model)
     @test @allocated(f(model)) == 0
 end
+
+function test_assoc_matrix(K,tol = 1e-12)
+    s1,s2 = size(K)
+    @test s1 == s2
+    x0 = ones(eltype(K),s1)
+    
+    x10 = Clapeyron.assoc_matrix_solve(K,x0)
+    x1 = Clapeyron.assoc_matrix_solve(K)
+    dx = x10 - x1
+    @test sqrt(sum(abs2,dx)) < tol
+end
+
+function test_assoc_matrix(model,V,T,z,tol = 1e-12)
+    K = Clapeyron.dense_assoc_site_matrix(model,V,T,z)
+    test_assoc_matrix(K,tol)
+end
 #=
 include_distributed distributes the test load among all workers
 =#

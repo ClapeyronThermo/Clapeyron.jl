@@ -68,6 +68,23 @@ julia> Clapeyron.assoc_pair_length(model)
 end
 
 """
+    getsites(model::EoSModel)
+
+Returns the `SiteParam` used in association calculations for the input `model`, if any. Fails if not available. to check if a model has sites, use `has_sites`
+"""
+getsites(model) = model.sites
+
+"""
+    assoc_options(model::EoSModel)
+
+Returns association options used in the association solver.
+
+"""
+@inline function assoc_options(model::EoSModel)
+    return model.assoc_options
+end
+
+"""
     assoc_strength(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
     Δ(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
 Calculates the asssociation strength between component `i` at site `a` and component `j` at site `b`.
@@ -138,6 +155,21 @@ function Δ(model::EoSModel, V, T, z)
     return Δout
 end
 
+function Δ(model::EoSModel, V, T, z, data)
+    Δout = assoc_similar(model,@f(Base.promote_eltype))
+    Δout.values .= false
+    for (idx,(i,j),(a,b)) in indices(Δout)
+        Δout[idx] =@f(Δ,i,j,a,b,data)
+    end
+    return Δout
+end
+
+#=
+################################
+Association Matrix construction
+################################
+=#
+
 """
     delta_assoc(model,V,T,z,data)
 
@@ -156,25 +188,6 @@ function delta_assoc(model,V,T,z,data::M) where M
         elliott_runtime_mix!(delta)
     end
     return delta
-end
-
-"""
-    assoc_options(model::EoSModel)
-
-Returns association options used in the association solver.
-
-"""
-@inline function assoc_options(model::EoSModel)
-    return model.assoc_options
-end
-
-function Δ(model::EoSModel, V, T, z, data)
-    Δout = assoc_similar(model,@f(Base.promote_eltype))
-    Δout.values .= false
-    for (idx,(i,j),(a,b)) in indices(Δout)
-        Δout[idx] =@f(Δ,i,j,a,b,data)
-    end
-    return Δout
 end
 
 function issite(i::Int,a::Int,ij::Tuple{Int,Int},ab::Tuple{Int,Int})::Bool
@@ -344,9 +357,278 @@ function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
     K = assoc_site_matrix(model,V,T,z,data,_Δ)
     sitesparam = getsites(model)
     idxs = sitesparam.n_sites.p
-    Xsol = assoc_matrix_solve(K,options)
+    compress = __maybe_compress(K)
+    if compress
+        J,J_to_K = compress_assoc_matrix(K)
+        Ysol = assoc_matrix_solve(J,options)
+        Xsol = Ysol[J_to_K]
+    else
+        Xsol = assoc_matrix_solve(K,options)
+    end
     return PackedVofV(idxs,Xsol),_Δ
 end
+
+
+#=
+################################
+Initial points for association
+And reduced dimension solvers
+################################
+=#
+
+function assoc_matrix_x0!(K,X)
+    #(A*x .* x) + x - 1 = 0
+    init1,success1 = X_maybe_exact_pseudodiag!(K,X)
+    init1 && (return X,success1)
+
+    if size(K) == (2,2) #&& all(!iszero,K)
+        init2,success2 = X_exact2!(K,X)
+        init2 && (return X,success2)
+    end
+    
+    #default initialization
+    Kmin,Kmax = nonzero_extrema(K) #look for 0 < Amin < Amax
+    if Kmax > 1
+        f = true/Kmin
+    else
+        f = true-Kmin
+    end
+    fill!(X,min(f,one(f)))
+    
+    return X,false
+end
+
+function X_maybe_exact_pseudodiag!(K,X)
+    #=
+    solver for association matrices that only have one entry per row
+    we try to solve for diagonal elements (including zeros)
+    then we solve for cross terms (twice)
+    if there are values not found after that, fill with ones.
+    =#
+    Kr = eachrow(K)
+
+    for Kri in Kr
+        if count(!iszero,Kri) > 1
+            return false,false
+        end
+    end
+
+    #step 0: on the output vector, mark the index of the corresponding assoc value:
+    #X[i] = j
+    #Xi = 1/(1 + K[i,j]*Xj)
+    #sign is to differentiate between index (negative) and solution (positive)
+    n = LinearAlgebra.checksquare(K)
+    X .= 0
+    for i in 1:n
+        for j in 1:n
+            if !iszero(K[j,i])
+                X[j] = -i
+            end
+        end
+    end
+
+    #step1: solve self-associated sites
+    n_solved = X_maybe_exact_pseudodiag_01!(K,X)
+
+    #step 2: solve site-pairs
+    n_solved += X_maybe_exact_pseudodiag_2!(K,X)
+    n_solved += X_maybe_exact_pseudodiag_2!(K,X) #just to check
+
+    if n_solved == n
+        return true,true
+    elseif n_solved == 0
+        return false,false
+    end
+
+    #step 4: fill any non-solved entries with ones
+    for i in 1:n
+        if X[i] < 0
+            X[i] = 1.0
+        end
+    end
+    return true,false
+    
+end
+
+function X_maybe_exact_pseudodiag_01!(K,X)
+    #step1: solve self-associated sites
+    n_solved = 0
+    n = length(X)
+    for i in 1:n
+        if iszero(X[i])
+            X[i] =  1.0
+            n_solved +=1
+        elseif X[i] == -i
+            k = K[i,i]
+            X[i] = 0.5*(-1 + sqrt(1 + 4k))/k
+            n_solved += 1
+        end
+    end
+    return n_solved
+end
+
+function X_maybe_exact_pseudodiag_2!(K,X)
+    n_solved = 0
+    n = length(X)
+    for i in 1:n
+        xi = primalval(X[i])
+        xi > 0 && continue
+        !isinteger(xi) && continue
+        j1 = -Int(round(xi))
+        xj = X[j1]
+        kj1 = K[i,j1]
+        if xj > 0
+            X[i] = 1/(1 + xj*kj1)
+            n_solved += 1
+        else
+            if isinteger(primalval(xj))
+                j2 = -Int(round(xj))
+                if j2 == i
+                    kj2 = K[j1,i]
+                    A3,A2 = kj1,kj2
+                    k = 1 - A3 + A2
+                    Δ = k + sqrt(k*k + 4*A3)
+                    x1 = 2/Δ
+                    x1k = A3*x1
+                    x2 = (1- x1k)/(1 - x1k*x1k)
+                    X[j1] = x1
+                    X[i] = x2
+                    n_solved += 2
+                end
+            end
+        end
+    end
+    return n_solved
+end
+
+function X_exact2_antidiag!(K,X)
+    _,k2,k1,_ = K
+    #k1 = K[1,2]
+    #k2 = K[2,1]
+    #this computation is equivalent to the one done in X_exact1
+    k = 1 - k2 + k1
+    Δ = k + sqrt(k*k + 4*k2)
+    x1 = 2/Δ
+    x1k = k2*x1
+    x2 = (1 -  x1k)/(1 - x1k*x1k)
+    X[1] = x1
+    X[2] = x2
+    return X
+end
+
+function X_exact2_123!(K,X)
+    A1,A3,A2,A4 = K
+    invert = iszero(A4)
+    if invert
+        A1,A4 = A4,A1
+        A3,A2 = A2,A3
+    end
+    _1 = one(eltype(K))
+    _0 = zero(eltype(K))
+    poly = (-_1,_1 + A3 - A2,A2 + A4,A2*A4)
+    dpoly = (_1 + A3 - A2,2*(A2 + A4),3*A2*A4)
+    xa = _0
+    xb = _1
+    xc = 0.5*_1
+    for i in 1:100
+        xold = xc
+        xnew = xc - evalpoly(xc,poly)/evalpoly(xc,dpoly)
+        if xnew < _0
+            xc = 0.5*(xc)
+        elseif xnew > _1
+            xc = 0.5*(_1 + xc)
+        else
+            xc = xnew
+        end
+        abs(xc - xold) < 1e-12 && break
+    end
+    x2 = xc
+    x1 = 1/(1 + A2*x2)
+    if invert
+        x1,x2 = x2,x1
+    end
+    X[1] = x1
+    X[2] = x2
+end
+
+function X_exact2!(K,X)
+    #=
+    strategy: reformulate association problem as an hyperbola
+    ((x2 - t2)/b2)^2 - ((x1 - t1)/b1)^2 = 1
+    x2 - t2 = t2 + b2*cosh(t)
+    x1 - t1 = t1 + b1*sinh(t)
+
+    Then we solve in exp(t) coordinates
+    =#
+    A1,A3,A2,A4 = K
+    if iszero(A1) && iszero(A4)
+        X_exact2_antidiag!(K,X)
+        return true,true
+    end
+
+    if iszero(A1) || iszero(A4)
+        X_exact2_123!(K,X)
+        return true,true
+        
+    end
+
+    a = -A3/A2
+    w = 1 + a + 1/(4A4) + a/(4A1)
+
+    invert = w < 0
+
+    if invert
+        #if the sign of w is negative, than means that x2 has the negative sign in the hyperbola instead of x1
+        A1,A4 = A4,A1
+        A3,A2 = A2,A3
+        a = -A3/A2
+        w = 1 + a + 1/(4A4) + a/(4A1)
+    end
+
+    b1 = sqrt(-w/(a*A1))
+    b2 = sqrt(w/A4)
+    t1 = -0.5/A1
+    t2 = -0.5/A4
+    ymin = -t1/b1
+    y0 = ymin
+    y1 = ymin
+    et = ymin + sqrt(ymin*ymin + 1)
+    ε = 1e-12*one(y1)
+    for i in 1:100
+        x1i = t1 + b1*(et*et - 1)/(2et)
+        x2i = t2 + b2*(et*et + 1)/(2et)
+        y1_new = (1/(A1*x1i + A2*x2i + 1) - t1)/b1
+        if y1_new < ymin
+            y1_new = 0.5*ymin + 0.5*y1
+        end
+        y1 = y1_new
+        et0 =  et
+        et = 0.8*(y1 + sqrt(y1*y1 + 1)) + 0.2*et0
+        abs(et - et0) < ε && break
+        isnan(et) && break
+        et < 0 && break
+    end
+
+    if isnan(et) || et < 0
+        return false,false
+    end
+    #sinhtt = (et*et - 1)/(2et)
+    #coshtt = (et*et + 1)/(2et)
+    x1 = t1 + b1*(et*et - 1)/(2et)
+    x2 = t2 + b2*(et*et + 1)/(2et)
+    if invert
+        x2,x1 = x1,x2
+    end
+    X[1] = x1
+    X[2] = x2
+    return true,true
+end
+
+#=
+############################
+General association solver
+############################
+=#
 
 function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions = AssocOptions()) where T
     atol = options.atol
@@ -355,136 +637,6 @@ function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions = AssocOp
     α = options.dampingfactor
     implicit_ad = options.implicit_ad
     return assoc_matrix_solve(K, α, atol ,rtol, max_iters, implicit_ad)
-end
-
-function check_antidiagonal2(x::AbstractMatrix)
-    size(x) == (2,2) || return false
-    x11,x22 = x[1,1],x[2,2]
-    x21,x12 = x[2,1],x[1,2]
-    return iszero(x11) & iszero(x22) & (x12 >= 0) & (x21 >= 0)
-end
-
-function check_antidiagonal22(x::AbstractMatrix)
-    size(x) == (4,4) || return false
-    return check_antidiagonal2(@view(x[1:2,1:2])) & check_antidiagonal2(@view(x[1:2,3:4])) &
-    check_antidiagonal2(@view(x[3:4,1:2])) & check_antidiagonal2(@view(x[3:4,3:4]))
-end
-
-function assoc_matrix_x0!(K,X)
-    #(A*x .* x) + x - 1 = 0
-    success = false
-    init = false
-    if size(K) == (1,1)
-        #1-site association
-        k = K[1,1]
-        #axx + x - 1 = 0
-        #-1 +- sqrt(1 + 4a)/2 = 0
-        X[1] = 0.5*(-1 + sqrt(1 + 4k))
-        success = true
-        init = true
-    elseif check_antidiagonal2(K)
-        X_exact2!(K,X)
-        init = true
-        success = true
-        init = true
-    elseif check_antidiagonal22(K)
-    #nb-nb association with cross-association
-    K11 = @view(K[1:2,1:2])
-    K12 = @view(K[1:2,3:4])
-    K21 = @view(K[3:4,1:2])
-    K22 = @view(K[3:4,3:4])
-
-    X_exact2!(K11,@view(X[1:2]))
-    X_exact2!(K22,@view(X[3:4]))
-    if (iszero(K12) & iszero(K21))
-        #solve each association separately, if one of the diagonal association
-        #submatrices is zero, then cross-association does not have any sense.
-        success = true
-    else 
-        #general solution, takes longer to compile.
-        #_,success = X_exact4!(K,X)
-        #success || X_exact2!(K22,@view(X[3:4]))
-        success = false
-    end
-    init = true
-    else
-        #TODO: add more exact expressions.
-    end
-    if !init
-        Kmin,Kmax = nonzero_extrema(K) #look for 0 < Amin < Amax
-        if Kmax > 1
-            f = true/Kmin
-        else
-            f = true-Kmin
-        end
-        fill!(X,min(f,one(f)))
-    end
-    return X,success
-end
-
-
-#this function destroys KK and XX0
-function __assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::AbstractVector{T2}, α, atol ,rtol, max_iters) where {N,T1,T2}
-    X0 = SVector{N,T2}(XX0)
-    K = SMatrix{N,N,T1,N*N}(KK)
-    Xsol = X0
-    it_ss = (5*length(Xsol))
-    converged = false
-    for i in 1:it_ss
-        kx = K*X0
-        Xsol = α ./ (1 .+ kx) .+ (1 .- α) .* X0
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
-        if converged
-            if !finite
-                Xsol = NaN .* Xsol
-            end
-
-            break
-        end
-        X0 = Xsol
-    end
-
-    if converged
-        XX0 .= Xsol
-        return XX0
-    end
-
-    H = KK
-    g = XX0
-    #TODO: for the next stable release, use MVector
-    piv = zeros(Int,N)
-    for i in (it_ss + 1):max_iters
-        #@show Xsol
-        KX = K*Xsol
-        H .= 0
-        H .= -K
-        for k in 1:size(H,1)
-            H[k,k] -= (1 + KX[k])/Xsol[k]
-        end
-        F = Solvers.unsafe_LU!(H,piv)
-        g .= 1 ./ Xsol .- 1 .- KX #gradient
-        ldiv!(F,g)
-        ΔX = SVector{N,T2}(XX0)
-        Xnewton = Xsol - ΔX
-        Xss = 1 ./ (1 .+ KX)
-        X0 = Xsol
-        Xsol = ifelse.(0 .<= Xnewton .<= 1, Xnewton, Xss)
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
-        #@show converged,finite
-        if converged
-            if !finite
-                Xsol = NaN .* Xsol
-            end
-            XX0 .= Xsol
-            break
-        end
-    end
-
-    if !converged
-        Xsol = NaN .* Xsol
-    end
-    XX0 .= Xsol
-    return XX0
 end
 
 function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol ,rtol, max_iters, implicit_ad) where T
@@ -497,15 +649,24 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol ,rtol, max_iters, imp
     #length(X0) == 3 && return __assoc_matrix_solve_static(Val{3}(), K, X0, α, atol ,rtol, max_iters)
     #length(X0) == 4 && return __assoc_matrix_solve_static(Val{4}(), K, X0, α, atol ,rtol, max_iters)
     #length(X0) == 5 && return __assoc_matrix_solve_static(Val{5}(), K, X0, α, atol ,rtol, max_iters)
-    
+
     if implicit_ad && K[1] isa ForwardDiff.Dual
         K_primal = nested_pvalue(K) # solve on primalval
+
         Xsol = assoc_matrix_solve_general(K_primal, nested_pvalue.(X0), n, α, atol ,rtol, max_iters)
         return assoc_matrix_solve_ad(Xsol, K, K_primal) # implicit AD
     else
         #Propagate AD through solver
         return assoc_matrix_solve_general(K, X0, n, α, atol ,rtol, max_iters)
     end
+end
+
+
+#this is for playing around and check results, not for direct use
+#in particular, this does not support implicit ad
+function assoc_matrix_solve(K,X0)
+    n = LinearAlgebra.checksquare(K)
+    assoc_matrix_solve_general(K, X0, n, 0.5, 1e-12 ,1e-12, 1000)
 end
 
 function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol, max_iters) where T
@@ -583,7 +744,7 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
                 Xsol[k] = 0.5*(Xk + X0k) #successive substitution step
             else
                 Xsol[k] = X_newton #newton step
-            end   
+            end
         end
         # Xsol .-= dX
         converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
@@ -600,7 +761,7 @@ end
 
 function assoc_matrix_solve_ad(Xsol::X, K::KT, K_primal::KP)::Vector{V2} where {V1,V2,X<:AbstractVector{V1},KT<:AbstractMatrix{V2},KP<:AbstractMatrix{V1}}
     N = Val(length(Xsol))
-    f(X_::XX_,tups_::Tuple{KK_,Val{N_}}) where {V1_,V2_,N_,XX_<:AbstractVector{V1_},KK_<:AbstractMatrix{V2_}} = begin 
+    f(X_::XX_,tups_::Tuple{KK_,Val{N_}}) where {V1_,V2_,N_,XX_<:AbstractVector{V1_},KK_<:AbstractMatrix{V2_}} = begin
         TT = promote_type(V1_,V2_)
         _1 = one(TT)
         K_ = tups_[1]
@@ -615,13 +776,147 @@ function assoc_matrix_solve_ad(Xsol::X, K::KT, K_primal::KP)::Vector{V2} where {
         tmp .+= X_ # (K * X) .* X .+ X
         tmp .-= _1 # (K * X) .* X .+ X .- 1
         tmp
-    end# (1 + ∑_{jb} K⁽ⁱᵃʲᵇ⁾X⁽ⁱᵃʲᵇ⁾ )⁻¹ = Xⁱᵃ for all iₐ, but rearranged. 
+    end# (1 + ∑_{jb} K⁽ⁱᵃʲᵇ⁾X⁽ⁱᵃʲᵇ⁾ )⁻¹ = Xⁱᵃ for all iₐ, but rearranged.
     # f wrt X has polynomial form, which is easier (and more efficient) to differentiate compared to 1 ./ X
     return __gradients_for_root_finders(Xsol,(K,N),(K_primal,N),f) # implicit AD
 end
 
-#exact calculation of site non-bonded fraction when there is only one site
+#=
+################################
+Association Matrix Compression
+################################
+=#
+"""
+    J,idx = compress_assoc_matrix(K)
 
+Given a matrix generated by `Clapeyron.dense_assoc_site_matrix`, `Clapeyron.compress_assoc_matrix` will check if there is an equivalent, smaller matrix J, that solves the same association system.
+returns the modified matrix and a set of indices such as `assoc_matrix_solve(K) == assoc_matrix_solve(J)[idx]`
+
+The compression strategy works mainly with association systems with donor-aceptor pairs containing the same amount of sites.
+
+If compression fails, it returns unmodified indices and the original matrix.
+"""
+function compress_assoc_matrix(K)
+    n = LinearAlgebra.checksquare(K)
+    idx = zeros(Int,n)
+    idx .= 1:n
+    n_unique = n
+
+    #step 1: check which rows are the same if we translate the row by one and pad with zeros.
+    for i in 1:n
+        !iszero(K[i,1]) && continue
+        abs(idx[i]) != i && continue #already compressed
+        Ki = @view K[i,2:end]
+        for j in (i+1):n
+            !iszero(K[j,end]) && continue
+            Kj = @view K[j,1:end-1]
+            if Ki == Kj
+                n_unique -= 1
+                idx[j] = -i
+                idx[i] = -i
+            end
+        end
+    end
+    #failed to compress
+    if n_unique == n
+        return K,idx
+    end
+
+    can_compress = true
+    #step 2: check consistency, if we remove n rows, there it at least n-1 (translated) cols of pure zeros:
+    for i in 1:n
+        abs(idx[i]) != i && continue #already compressed
+        for ii in 2:n
+            Kiii = K[i,ii]
+            if iszero(Kiii)
+                for j in (i+1):n
+                    if abs(idx[j]) == i
+                        can_compress = iszero(K[j,ii-1])
+                    end
+                    if !can_compress
+                        idx .= 1:n
+                        return K,idx
+                    end
+                end
+            end
+        end
+    end
+
+
+    #step 3: perform compression
+    J = similar(K,(n_unique,n_unique))
+    J .= 0
+
+    ii = 0
+    for i in 1:n
+        idx_i = idx[i]
+        if abs(idx_i) == i
+            ii += 1
+            if idx_i > 0 #unmodified row, skip zeros
+                Ki = @view K[i,1:end]
+                jj = 0
+                for j in 1:n
+                    if abs(idx[j]) == j
+                        jj += 1
+                        J[ii,jj] = Ki[j]
+                    end
+                end
+            else #repeated,compressed row
+                Ki = @view K[i,2:end]
+                jj = 0
+                for j in 1:n-1
+                    if abs(idx[j]) == j
+                        jj += 1
+                        J[ii,jj] = Ki[j]
+                    end
+                end
+            end
+        end
+    end
+
+    #step 4: generate output indices
+    idx .= abs.(idx)
+    i_unique = 0
+    idx .*= -1
+    for i in 1:n
+        ix = idx[i]
+        if ix < 0
+            i_unique += 1
+            idx[i] = i_unique
+            for j in (i+1):n
+                if idx[j] == ix
+                    idx[j] = i_unique
+                end
+            end
+        end
+    end
+    return J,idx
+end
+
+function __maybe_compress(K)
+    n = LinearAlgebra.checksquare(K)
+    #step 1: check which rows are the same if we translate the row by one and pad with zeros.
+    for i in 1:n
+        !iszero(K[i,1]) && continue
+        Ki = @view K[i,2:end]
+        for j in (i+1):n
+            !iszero(K[j,end]) && continue
+            Kj = @view K[j,1:end-1]
+            if Ki == Kj
+                return true
+            end
+        end
+    end
+   return false
+end
+
+#=
+####################################################
+Association implementations, once X is calculated
+####################################################
+=#
+
+#exact calculation of site non-bonded fraction when there is only one site
 function X_exact1(model,V,T,z,data = nothing)
     xia,xjb,i,j,a,b,n,idxs,Δijab = _X_exact1(model,V,T,z,data)
     pack_X_exact1(xia,xjb,i,j,a,b,n,idxs)
@@ -675,16 +970,6 @@ function pack_X_exact1(xia,xjb,i,j,a,b,n,idxs)
     _X[i][a] = xia
     return _X
 end
-
-#helper function to get the sites. in almost all cases, this is model.sites
-#but SAFTgammaMie uses model.vrmodel.sites instead
-"""
-    getsites(model::EoSModel)
-
-returns the `SiteParam` used in association calculations for the input `model`, if any. Fails if not available. to check if a model has sites, use `has_sites`
-
-"""
-getsites(model) = model.sites
 
 function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
     #=
@@ -840,22 +1125,6 @@ macro assoc_loop(Xold::Symbol,Xnew::Symbol,expr)
     end |> esc
 end
 
-function X_exact2!(K,X)
-    k1 = K[1,2]
-    k2 = K[2,1]
-    #this computation is equivalent to the one done in X_exact1
-    _a = k2
-    _b = 1 - k2 + k1
-    _c = -1
-    denom = _b + sqrt(_b*_b - 4*_a*_c)
-    x1 = -2*_c/denom
-    x1k = k2*x1
-    x2 = (1- x1k)/(1 - x1k*x1k)
-    X[1] = x1
-    X[2] = x2
-    return X
-end
-
 recombine_assoc!(model) = recombine_assoc!(model,model.params.sigma)
 
 function recombine_assoc!(model,sigma)
@@ -883,7 +1152,7 @@ function assoc_matrix_solve_pure(K,idx,options)
             res = assoc_matrix_solve(copy(Ki),options)
             Xi .= res
         end
-        
+
     end
     return X
 end
@@ -1010,4 +1279,72 @@ end
 #Mx = a + b(x,x)
 #Axx + x - 1 = 0
 #x = 1 - Axx
+=#
+
+#=
+#this function destroys KK and XX0
+function __assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::AbstractVector{T2}, α, atol ,rtol, max_iters) where {N,T1,T2}
+    X0 = SVector{N,T2}(XX0)
+    K = SMatrix{N,N,T1,N*N}(KK)
+    Xsol = X0
+    it_ss = (5*length(Xsol))
+    converged = false
+    for i in 1:it_ss
+        kx = K*X0
+        Xsol = α ./ (1 .+ kx) .+ (1 .- α) .* X0
+        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
+        if converged
+            if !finite
+                Xsol = NaN .* Xsol
+            end
+
+            break
+        end
+        X0 = Xsol
+    end
+
+    if converged
+        XX0 .= Xsol
+        return XX0
+    end
+
+    H = KK
+    g = XX0
+    #TODO: for the next stable release, use MVector
+    piv = zeros(Int,N)
+    for i in (it_ss + 1):max_iters
+        #@show Xsol
+        KX = K*Xsol
+        H .= 0
+        H .= -K
+        for k in 1:size(H,1)
+            H[k,k] -= (1 + KX[k])/Xsol[k]
+        end
+        F = Solvers.unsafe_LU!(H,piv)
+        g .= 1 ./ Xsol .- 1 .- KX #gradient
+        ldiv!(F,g)
+        ΔX = SVector{N,T2}(XX0)
+        Xnewton = Xsol - ΔX
+        Xss = 1 ./ (1 .+ KX)
+        X0 = Xsol
+        Xsol = ifelse.(0 .<= Xnewton .<= 1, Xnewton, Xss)
+        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
+        #@show converged,finite
+        if converged
+            if !finite
+                Xsol = NaN .* Xsol
+            end
+            XX0 .= Xsol
+            break
+        end
+    end
+
+    if !converged
+        Xsol = NaN .* Xsol
+    end
+    XX0 .= Xsol
+    return XX0
+end
+
+
 =#
