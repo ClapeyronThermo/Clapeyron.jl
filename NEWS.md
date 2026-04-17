@@ -1,12 +1,11 @@
-# v0.6.23
+# v0.6.24
 
 ## New Features
 
-- New ideal models: `GCAlyLee` and `BurkhardtIdeal`
--New string macros: `@cas_str` and `@smiles_str`, that allow searching components by CAS and SMILES respectively.
-- improved initial point for bubble/dew calculations
+- Association: better initial points and faster evaluation via compression of the association matrix.
+- `GeneralizedXYFlash`: added new `verbose` option
+- `Tproperty`/`Pproperty`: better initial points for poins inside the phase change region.
 
 ## Bug fixes
 
-- Fixes and improvements in volume calculation.
-- `SingleFluid`, when passing a JSON directly as a string, now the name stored is extracted and used. before, the whole JSON string was used as a name.
+- Fixes in `split_model` when indices aren't ordered
