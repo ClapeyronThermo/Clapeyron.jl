@@ -79,7 +79,7 @@ function crit_pure_ad(crit,tup,λtup)
             _,F1,F2 = p∂p∂2p(model, Vc, Tc, z)
             return SVector(F1,F2)
         end
-        T_c,V_c = __gradients_for_root_finders(x,tup,λtup,f)
+        T_c,V_c = __gradients_for_root_finders(λx,tup,λtup,f)
         P_c = pressure(model,V_c,T_c,z)
         return (T_c,P_c,V_c)
     else
