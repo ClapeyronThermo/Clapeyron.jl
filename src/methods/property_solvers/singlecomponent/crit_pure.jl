@@ -40,9 +40,12 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     zp = primalval(z)
     primalmodel = primalval(model)
     if x0 === nothing
-        x0 = x0_crit_pure(primalmodel,zp)
+        _x0 = x0_crit_pure(primalmodel,zp)
+    elseif x0 <: Number
+        x0x = x0_crit_pure(primalmodel,zp)
+        _x0 = x0.(x0x)
     end
-    x01,x02 = x0
+    x01,x02 = _x0
     T̄  = T_scale(primalmodel,zp)*one(x01*one(x02))
     Tc0 = x01*T̄
     lbv0 = lb_volume(primalmodel,Tc0,zp)
