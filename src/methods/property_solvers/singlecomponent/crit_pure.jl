@@ -41,9 +41,11 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     primalmodel = primalval(model)
     if x0 === nothing
         _x0 = x0_crit_pure(primalmodel,zp)
-    elseif x0 <: Number
+    elseif x0 isa Type && x0 <: Number
         x0x = x0_crit_pure(primalmodel,zp)
         _x0 = x0.(x0x)
+    else
+        _x0 = x0
     end
     x01,x02 = _x0
     T̄  = T_scale(primalmodel,zp)*one(x01*one(x02))

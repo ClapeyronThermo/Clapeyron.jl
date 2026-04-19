@@ -389,6 +389,14 @@ function volume_impl(model::EoSModel,p,T,z,phase,threaded,vol0)
     return default_volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
+"""
+    x0_volume_region(model,p,T,z)::Symbol
+
+Given a combination of p,T,z inputs, returns a symbol representing the correct volume root(`:liquid`, `:vapour` or `:solid`), or `:unknown` to indicate the volume solver to check all roots.
+
+"""
+x0_volume_region(model,p,T,z) = :unknown
+
 function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
 #Threaded version
     check_arraysize(model,z)
@@ -398,10 +406,16 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
     fluid = fluid_model(model)
     solid = solid_model(model)
 
+    if is_unknown(phase)
+        _phase = x0_volume_region(model,p,T,z)
+    else
+        _phase = Symbol(phase)
+    end
+
     if !isnothing(vol0)
         if !isnan(vol0)
             V0 = vol0
-            if is_solid(phase) #to allow specification of the model.
+            if is_solid(_phase) #to allow specification of the model.
                 return _volume_compress(solid,p,T,z,V0)
             end
             V = _volume_compress(fluid,p,T,z,V0)
@@ -412,9 +426,9 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
         end
     end
 
-    if !is_unknown(phase) && phase != :stable
-        V0 = x0_volume(model,p,T,z,phase=phase)
-        if is_solid(phase)
+    if !is_unknown(_phase) && _phase != :stable
+        V0 = x0_volume(model,p,T,z,phase=_phase)
+        if is_solid(_phase)
             V = _volume_compress(solid,p,T,z,V0)
         else
             V = _volume_compress(fluid,p,T,z,V0)
