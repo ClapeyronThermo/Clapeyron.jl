@@ -313,6 +313,8 @@ function x0_saturation_temperature(model::SingleFluid,p)
     return (T,vl,vv)
 end
 
+x0_crit_pure(model::SingleFluid,z) = (1.0, -log10(model.properties.rhoc))
+
 function crit_pure(model::SingleFluid)
     Tc = model.properties.Tc
     Vc = 1/model.properties.rhoc
