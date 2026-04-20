@@ -199,12 +199,10 @@ function x0_spinodal_temperature(model, p, z = SA[1.0], phase = :unknown)
         Ti = T_scale(model,z)*one(p)
         vi = Ti
         for i in 1:20
-            vi = volume(model,zero(p),Ti,z,phase = :l)
-            if !isnan(v)
-                return vi,Ti
-            else
-                Ti = 0.9*Ti
-            end
+            vi = volume(model,p,Ti,z,phase = :l)
+            !isnan(vi) && (return vi,Ti)
+            Ti = 0.9*Ti
+            
         end
         return nan,nan
     end
