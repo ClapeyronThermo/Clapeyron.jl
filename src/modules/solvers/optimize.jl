@@ -232,7 +232,7 @@ end
 
 quad_interp(x,f) = quad_interp(x[1],x[2],x[3],f[1],f[2],f[3])
 
-function quad_interp(xa,xb,xc,fa,fb,fc)
+function quad_interp(xa::T,xb::T,xc::T,fa::T,fb::T,fc::T) where T
         #f1 = ax12 + bx1 + c
     #f2 = ax22 + bx2 + c
     #f3 = ax32 + bx3 + c
