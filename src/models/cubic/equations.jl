@@ -539,7 +539,8 @@ function zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
     Δ = sqrt(B^2 - 4*A*C)
     vl = (-B - Δ)/(2*A) - c
     vmax = -B/(2*A) - c
-    return real(vl),real(vmax)
+    n = sum(z)
+    return n*real(vl),n*real(vmax)
 end
 
 #Δ1,Δ2 -> Ωa,Ωb infraestructure

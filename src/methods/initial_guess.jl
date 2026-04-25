@@ -327,9 +327,9 @@ function x0_sat_pure_virial(model,T)
         #gas volume over threshold. but not diverged.
         #normally this happens at low temperatures. we could suppose that Vl0 is a
         #"zero-pressure" volume, apply corresponding strategy
-        return x0_sat_pure_near0(model,T,vl;B = B)
+        return x0_sat_pure_near0(model,T,z,vl;B = B)
     else
-        psat,_,vv_B = x0_sat_pure_near0(model,T,vl,B = B,refine_vl = false)
+        psat,_,vv_B = x0_sat_pure_near0(model,T,z,vl,B = B,refine_vl = false)
         if T̃/T̃max > 0.55
             B_vdw = b - a/RT
             vv_vdw_2b = -2*B_vdw
@@ -411,22 +411,22 @@ function x0_sat_pure_lk(model,T,crit,ω)
 end
 
 """
-    p,vl,vv = x0_sat_pure_near0(model,T,vl0 = volume(model,zero(T),T,phase = :l);
-                                B = second_virial_coefficient(model,T),
+    p,vl,vv = x0_sat_pure_near0(model,T,z = SA[1.0], vl0 = volume(model,zero(T),T,z,phase = :l);
+                                B = second_virial_coefficient(model,T,z),
                                 refine_vl = true)
 
 Calculates initial points for pure saturation pressure, using a zero-pressure volume approach.
 If `refine_vl` is set to `true`, then the liquid volume will be recalculated using the calculated saturation pressure, otherwise it will be returned as is.
 """
-function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B = second_virial_coefficient(model,T), refine_vl = true)
+function x0_sat_pure_near0(model, T, z = SA[1.0],vl0 = volume(model,zero(T),T,z,phase = :l);B = second_virial_coefficient(model,T,z), refine_vl = true)
     R̄ = Rgas(model)
-    z = SA[1.0]
     RT = R̄*T
+    n = sum(z)
     ares = a_res(model, vl0, T, z)
-    lnϕ_liq0 = ares - 1 + log(RT/vl0)
+    lnϕ_liq0 = ares - 1 + log(n*RT/vl0)
     p = exp(lnϕ_liq0)
     pB = -0.25*RT/B
-    vv = volume_virial(B,p,T)
+    vv = volume_virial(B,p,T,z)
     if refine_vl && pB/p > 10
         vl = volume(model,p,T,z,vol0 = vl0,phase = :l)
         if vl ≈ vv #refinement failed, stick with vl0
@@ -436,7 +436,7 @@ function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B 
         vl = vl0*oneunit(vv)
     end
     if isnan(vv)
-        vv = RT/p
+        vv = n*RT/p
     end
     return p,vl,vv
 end
@@ -771,6 +771,7 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     Tr = T/Tc
     nan = _0/_0
     RT = Rgas(model)*T
+    z = SA[1.0]
     if Tr == 1
         return Pc,Vc,Vc
     elseif Tr > 1
@@ -785,7 +786,7 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     v_ub = -2B
 
     if v_ub < 0
-        return x0_sat_pure_near0(model,T,B = B)
+        return x0_sat_pure_near0(model,T,z,B = B)
     end
 
     pl0 = liquid_pressure_from_virial(model,T,B)
@@ -794,7 +795,7 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     if 0.8 <= Tr <= 0.99
         return x0_sat_pure_spinodal(model,T,v_lb,v_ub,B,Vc)
     elseif 0 <= Tr < 0.8
-        return x0_sat_pure_near0(model,T,v_lb,B = B)
+        return x0_sat_pure_near0(model,T,z,v_lb,B = B)
     else
         return nan,nan,nan
     end
