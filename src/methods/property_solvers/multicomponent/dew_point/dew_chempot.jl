@@ -12,6 +12,7 @@ Inputs:
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 1000`: optional, maximum number of iterations
 - `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
 """
 struct ChemPotDewPressure{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -41,34 +42,34 @@ function ChemPotDewPressure(;vol0 = nothing,
                                 atol = 1e-8,
                                 rtol = 1e-12,
                                 max_iters = 10^3,
-                                ss = false)
+                                verbose = false)
 
     if p0 == x0 == vol0 == nothing
-        return ChemPotDewPressure{Nothing}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewPressure{Nothing}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif (p0 == x0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return ChemPotDewPressure{typeof(vl)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewPressure{typeof(vl)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif (vol0 == x0 == nothing) && !isnothing(p0)
         p0 = float(p0)
-        return ChemPotDewPressure{typeof(p0)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewPressure{typeof(p0)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif (p0 == vol0 == nothing) && !isnothing(x0)
         T = eltype(x0)
-        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(x0)
         vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(x0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif  !isnothing(p0) && !isnothing(x0)
         p0,_ = promote(p0,first(x0))
         T = eltype(p0)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     else
         throw(error("invalid specification for dew pressure"))
     end
@@ -78,7 +79,7 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
     is_non_condensable = !isnothing(method.noncondensables)
     condensables = comps_in_equilibria(component_list(model),method.noncondensables)
     model_x,_ = index_reduction(model,condensables)
-    p0,vl,vv,x0 = dew_pressure_init(model,T,y,method.vol0,method.p0,method.x0,condensables)
+    p0,vl,vv,x0 = dew_pressure_init(model,T,y,method.vol0,method.p0,method.x0,condensables,method.verbose)
     x0 = x0[condensables]
 
     ηl0 = is_non_condensable ? η_from_v(model_x,vl,T,x0) : η_from_v(model,vl,T,x0)
@@ -133,6 +134,7 @@ Inputs:
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 1000`: optional, maximum number of iterations
 - `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
 """
 struct ChemPotDewTemperature{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -143,7 +145,7 @@ struct ChemPotDewTemperature{T} <: DewPointMethod
     atol::Float64
     rtol::Float64
     max_iters::Int
-    ss::Bool
+    verbose::Bool
 end
 
 function Solvers.primalval(method::ChemPotDewTemperature{T}) where T
@@ -162,34 +164,34 @@ function ChemPotDewTemperature(;vol0 = nothing,
     atol = 1e-8,
     rtol = 1e-12,
     max_iters = 10^3,
-    ss = false)
+    verbose = false)
 
     if T0 == x0 == vol0 == nothing
-        return ChemPotDewTemperature{Nothing}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewTemperature{Nothing}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif (T0 == x0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return ChemPotDewTemperature{typeof(vl)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewTemperature{typeof(vl)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif (vol0 == x0 == nothing) && !isnothing(T0)
         T0 = float(T0)
-        return ChemPotDewTemperature{typeof(T0)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewTemperature{typeof(T0)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif (T0 == vol0 == nothing) && !isnothing(x0)
         T = eltype(x0)
-        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(x0)
         vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(x0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif  !isnothing(T0) && !isnothing(x0)
         T0,_ = promote(T0,first(x0))
         T = eltype(T0)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     else
         throw(error("invalid specification for bubble temperature"))
     end
@@ -199,7 +201,7 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     # is_non_condensable = !isnothing(method.noncondensables)
     condensables = comps_in_equilibria(component_list(model),method.noncondensables)
     model_x,_ = index_reduction(model,condensables)
-    T0,vl,vv,x0 = dew_temperature_init(model,p,y,method.vol0,method.T0,method.x0,condensables)
+    T0,vl,vv,x0 = dew_temperature_init(model,p,y,method.vol0,method.T0,method.x0,condensables,method.verbose)
     x0 = x0[condensables]
     
     # if is_non_condensable

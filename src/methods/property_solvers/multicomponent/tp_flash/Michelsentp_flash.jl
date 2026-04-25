@@ -18,6 +18,7 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via t
 - `noncondensables`: arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase.
 - `nonvolatiles`: arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase.
 - `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
+- `verbose` : if set to `true`, the method will display additional information in the REPL.
 """
 struct MichelsenTPFlash{T} <: TPFlashMethod
     equilibrium::Symbol

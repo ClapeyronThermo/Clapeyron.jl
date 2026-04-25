@@ -300,8 +300,9 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
     aV2 = V + B
     aV2 - V - B = 0
     =#
+    n = sum(z)
     B > _0 && return _0/_0
-    a = p/(R *T*sum(z))
+    a = p/(n*R*T)
     b = -1
     c = -B
     Δ = b*b-4*a*c
