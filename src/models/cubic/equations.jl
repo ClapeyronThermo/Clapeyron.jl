@@ -494,7 +494,7 @@ function pure_spinodal(model::DeltaCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol
     v_bracket = minmax(vx,vm)
     prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket)
     vs = Roots.solve(prob)
-    return vs - c
+    return sum(z)*(vs - c)
 end
 
 function liquid_spinodal_zero_limit(model::DeltaCubicModel,z)
