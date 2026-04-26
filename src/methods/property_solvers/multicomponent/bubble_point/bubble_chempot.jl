@@ -105,6 +105,12 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
         ForwardDiff.Chunk{min(length(v0), 8)}()
     )
     sol = Solvers.x_sol(r)
+
+    if method.verbose
+        r_str = repr("text/plain",r)
+        @info "$r_str"
+    end
+
     !__check_convergence(r) && (sol .= NaN)
     v_l = v_from_η(model,sol[1],T,x)
     y_r = FractionVector(@view(sol[3:end]),idx_max)
@@ -229,15 +235,31 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     v0 = Vector{eltype(y0)}(undef, 3 + length(y0) - 1)
     v0[1],v0[2],v0[3] = T0,ηl,ηv
     copy_without_pivot!(view(v0, 4:lastindex(v0)), y0, idx_max)
+    lb = similar(v0)
+    ub = similar(v0)
+    lb .= -Inf
+    ub .= Inf
+    ub[4:end] .= 1.0
+    lb[1] = 0.0
+    η_ub = log(Rgas(model)*10*T0/p)
+    ub[2:3] .= η_ub
+    ub[1] = 100*T0
     f! = let model = model, model_y = model_y, p=p, x=x, volatiles=volatiles, idx_max=idx_max
         (F,z) -> Obj_bubble_temperature(model, model_y, F, p, z[1], z[2], z[3], x, @view(z[4:end]), volatiles, idx_max)
     end
     r = Solvers.nlsolve(f!, v0,
-        LineSearch(Newton2(v0)), 
+        LineSearch(Newton2(v0),Solvers.BoundedLineSearch(lb,ub)), 
         NLSolvers.NEqOptions(method),
         ForwardDiff.Chunk{min(length(v0), 8)}()
     )
+
     sol = Solvers.x_sol(r)
+
+    if method.verbose
+        r_str = repr("text/plain",r)
+        @info "$r_str"
+    end
+    
     !__check_convergence(r) && (sol .= NaN)
     T = sol[1]
     y_r = FractionVector(@view(sol[4:end]), idx_max)

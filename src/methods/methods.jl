@@ -43,6 +43,14 @@ function mw(model::EoSModel)
     end
 end
 
+function get_verbosity(method::T) where T
+    if hasfield(T,:verbose)
+        return method.verbose
+    else
+        return false
+    end
+end
+
 group_Mw(model::EoSModel) = group_Mw(model.params.Mw,model.groups)
 function group_Mw(Mw_gc::SingleParam,groups::GroupParam)
     n = length(groups.components)

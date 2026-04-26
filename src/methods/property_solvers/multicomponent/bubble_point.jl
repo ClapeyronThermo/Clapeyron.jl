@@ -134,7 +134,7 @@ function _extended_saturation_temperature(pure, p, _crit, crit_retry)
 
     if p < Pc
         sat2::NTuple{3,X} = saturation_temperature(pure,p,crit = crit) #calculate sat_p with crit info
-        if !isnan(first(sat2)) 
+        if !isnan(first(sat2))
             return X.(sat2),crit,:success
         else
             fail3,crit,:fail
@@ -339,7 +339,6 @@ function virial_phi(model,p,T,z)
     else
         return exp.(dB .* pRT)
     end
-    
 end
 
 function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,volatiles),crit = nothing;verbose = false)
@@ -443,6 +442,7 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     moles_positivity(x)
     x = x/sum(x)
     T = float(T)
+    verbose = get_verbosity(method)
     model_r,idx_r = index_reduction(model,x)
     if length(model_r)==1 && !is_pseudo_pure(model)
         (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
@@ -464,9 +464,19 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     else
         result = bubble_pressure_impl(model_r,T,x_r,method_r)
     end
+
     (P_sat, v_l, v_v, y_r) = result
     y = index_expansion(y_r,idx_r)
     converged = bubbledew_check(model,P_sat,T,v_v,v_l,y,x)
+
+verbose && @info "bubble_pressure results:
+p  = $(primalval(P_sat))
+vl = $(primalval(v_l))
+vv = $(primalval(v_v))
+y  = $(primalval(y))"
+
+verbose && !converged && @info "bubble_pressure: convergence checks failed."
+
     if converged
         return (P_sat, v_l, v_v, y)
     else
@@ -480,7 +490,7 @@ end
 
 function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,volatiles),crit = nothing;verbose = false)
     x_r = @view x[volatiles]
-    
+
     if Tx0 !== nothing
         T0 = Tx0
         sat = extended_saturation_pressure.(pure,T0,crit)
@@ -570,7 +580,7 @@ function bubble_temperature_init(model,p,x,vol0,T0,y0,volatiles = FillArrays.Fil
             end
         end
     else
-        
+
         T00,vl0,vv0,y0 = __x0_bubble_temperature(model,p,x,T0,volatiles; verbose = verbose)
         if !isnothing(T0)
             verbose && @info "bubble_temperature: calculating volumes and compositions from provided temperature"
@@ -632,6 +642,7 @@ function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
     moles_positivity(x)
     x = x/sum(x)
     p = float(p)
+    verbose = get_verbosity(method)
     model_r,idx_r = index_reduction(model,x)
     if length(model_r)==1 && !is_pseudo_pure(model)
         (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
@@ -657,6 +668,16 @@ function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
     (T_sat, v_l, v_v, y_r) = result
     y = index_expansion(y_r,idx_r)
     converged = bubbledew_check(model,p,T_sat,v_v,v_l,y,x)
+
+verbose && @info "bubble_temperature results:
+T  = $(primalval(T_sat))
+vl = $(primalval(v_l))
+vv = $(primalval(v_v))
+y  = $(primalval(y))"
+
+verbose && !converged && @info "bubble_temperature: convergence checks failed."
+
+
     if converged
         return (T_sat, v_l, v_v, y)
     else

@@ -347,7 +347,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     x .= z
     y .= z
     K,lnK = similar(z,TT),similar(z,TT)
-    verbose = hasfield(typeof(method),:verbose) ? getfield(method,:verbose)::Bool : false
+    verbose = get_verbosity(method)
     if !isnothing(method.K0)
         K .= _1 * method.K0
         lnK .= log.(K)

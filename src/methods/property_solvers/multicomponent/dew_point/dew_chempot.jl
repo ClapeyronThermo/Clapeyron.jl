@@ -98,6 +98,12 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
             ForwardDiff.Chunk{min(length(v0), 8)}()
         )
     sol = Solvers.x_sol(r)
+
+    if method.verbose
+        r_str = repr("text/plain",r)
+        @info "$r_str"
+    end
+
     !__check_convergence(r) && (sol .= NaN)
     x_r = FractionVector(@view(sol[3:end]),idx_max)
     v_l = v_from_η(model,model_x,sol[1],T,x_r)
@@ -226,6 +232,12 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
             ForwardDiff.Chunk{min(length(v0), 8)}()
         )
     sol = Solvers.x_sol(r)
+
+    if method.verbose
+        r_str = repr("text/plain",r)
+        @info "$r_str"
+    end
+
     !__check_convergence(r) && (sol .= NaN)
     T   = sol[1]
     x_r = FractionVector(@view(sol[4:end]),idx_max)

@@ -9,7 +9,6 @@ Should at least support passing the `x0` keyword, containing an initial vapour p
 """
 abstract type DewPointMethod <: ThermodynamicMethod end
 
-
 function index_reduction(method::DewPointMethod,idx_r)
     if hasfield(typeof(method),:x0)
         if !isnothing(method.x0)
@@ -138,6 +137,7 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     moles_positivity(y)
     y = y/sum(y)
     T = float(T)
+    verbose = get_verbosity(method)
     model_r,idx_r = index_reduction(model,y)
     if length(model_r) == 1 && !is_pseudo_pure(model)
         (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
@@ -163,6 +163,15 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     (P_sat, v_l, v_v, x_r) = result
     x = index_expansion(x_r,idx_r)
     converged = bubbledew_check(model,P_sat,T,v_l,v_v,x,y)
+
+verbose && @info "dew_pressure results:
+p  = $(primalval(P_sat))
+vl = $(primalval(v_l))
+vv = $(primalval(v_v))
+x  = $(primalval(x))"
+
+verbose && !converged && @info "dew_pressure: convergence checks failed."
+
     if converged
         return (P_sat, v_l, v_v, x)
     else
@@ -171,8 +180,6 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
         return (nan,nan,nan,x)
     end
 end
-
-
 
 function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
     y_r = @view y[condensables]
@@ -332,6 +339,7 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     moles_positivity(y)
     y = y/sum(y)
     p = float(p)
+    verbose = get_verbosity(method)
     model_r,idx_r = index_reduction(model,y)
     if length(model_r)==1 && !is_pseudo_pure(model)
         (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
@@ -357,6 +365,15 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     (T_sat, v_l, v_v, x_r) = result
     x = index_expansion(x_r,idx_r)
     converged = bubbledew_check(model,p,T_sat,v_l,v_v,x,y)
+
+verbose && @info "dew_temperature results:
+T  = $(primalval(T_sat))
+vl = $(primalval(v_l))
+vv = $(primalval(v_v))
+x  = $(primalval(x))"
+
+verbose && !converged && @info "dew_temperature: convergence checks failed."
+
     if converged
         return (T_sat, v_l, v_v, x)
     else
