@@ -88,12 +88,20 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
 
     v0 = Vector{eltype(x0)}(undef, 2+length(x0)-1)
     v0[1],v0[2] = ηl0,ηv0
+
+    lb = similar(v0)
+    ub = similar(v0)
+    lb .= -Inf
+    ub .= Inf
+    ub[3:end] .= 1.0
+    lb[3:end] .= 0.0
+
     copy_without_pivot!(view(v0, 3:lastindex(v0)), x0, idx_max) #select component with highest fraction as pivot
     f! = let model=model, model_x=model_x, T=T, y=y, condensables=condensables, idx_max=idx_max
         (F,z) -> Obj_dew_pressure(model, model_x, F, T, z[1], z[2], @view(z[3:end]), y, condensables, idx_max)
     end
     r = Solvers.nlsolve(f!, v0,
-            LineSearch(Newton2(v0)),
+            LineSearch(Newton2(v0),BoundedLineSearch(lb,ub)),
             NLSolvers.NEqOptions(method),
             ForwardDiff.Chunk{min(length(v0), 8)}()
         )
@@ -222,12 +230,24 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
 
     v0 = Vector{eltype(x0)}(undef, 3+length(x0)-1)
     v0[1],v0[2],v0[3] = T0,ηl,ηv
+
+    lb = similar(v0)
+    ub = similar(v0)
+    lb .= -Inf
+    ub .= Inf
+    ub[4:end] .= 1.0
+    lb[4:end] .= 0.0
+    lb[1] = 0.0
+    η_ub = log(Rgas(model)*10*T0/p)
+    ub[2:3] .= η_ub
+    ub[1] = 100*T0
+
     copy_without_pivot!(view(v0, 4:lastindex(v0)), x0, idx_max) #select component with highest fraction as pivot
     f! = let model=model, model_x=model_x, p=p, y=y, condensables=condensables, idx_max=idx_max
         (F,z) -> Obj_dew_temperature(model, model_x, F, p, z[1], z[2], z[3], @view(z[4:end]), y, condensables, idx_max)
     end
     r = Solvers.nlsolve(f!, v0,
-            LineSearch(Newton2(v0)),
+            LineSearch(Newton2(v0),BoundedLineSearch(lb,ub)),
             NLSolvers.NEqOptions(method),
             ForwardDiff.Chunk{min(length(v0), 8)}()
         )

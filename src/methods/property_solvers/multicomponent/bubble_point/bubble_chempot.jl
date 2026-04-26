@@ -95,12 +95,20 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     idx_max = argmax(y0)
     v0 = Vector{eltype(y0)}(undef, 2 + length(y0) - 1)
     v0[1],v0[2] = ηl,ηv
+
+    lb = similar(v0)
+    ub = similar(v0)
+    lb .= -Inf
+    ub .= Inf
+    ub[3:end] .= 1.0
+    lb[3:end] .= 0.0
+
     copy_without_pivot!(view(v0, 3:lastindex(v0)), y0, idx_max)
     f! = let model = model, model_y = model_y, T=T, x=x, volatiles=volatiles, idx_max=idx_max
         (F,z) -> Obj_bubble_pressure(model, model_y, F, T, z[1], z[2], x, @view(z[3:end]), volatiles, idx_max)
     end
     r = Solvers.nlsolve(f!, v0,
-        LineSearch(Newton2(v0)),
+        LineSearch(Newton2(v0),BoundedLineSearch(lb,ub)),
         NLSolvers.NEqOptions(method),
         ForwardDiff.Chunk{min(length(v0), 8)}()
     )
@@ -235,15 +243,18 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     v0 = Vector{eltype(y0)}(undef, 3 + length(y0) - 1)
     v0[1],v0[2],v0[3] = T0,ηl,ηv
     copy_without_pivot!(view(v0, 4:lastindex(v0)), y0, idx_max)
+
     lb = similar(v0)
     ub = similar(v0)
     lb .= -Inf
     ub .= Inf
     ub[4:end] .= 1.0
+    lb[4:end] .= 0.0
     lb[1] = 0.0
     η_ub = log(Rgas(model)*10*T0/p)
     ub[2:3] .= η_ub
     ub[1] = 100*T0
+
     f! = let model = model, model_y = model_y, p=p, x=x, volatiles=volatiles, idx_max=idx_max
         (F,z) -> Obj_bubble_temperature(model, model_y, F, p, z[1], z[2], z[3], x, @view(z[4:end]), volatiles, idx_max)
     end
