@@ -618,9 +618,11 @@ function z_pereira!(w,z,ixx)
 end
 
 function z_norm(z,w)
+    nz = sum(z)
+    nw = sum(w)
     z_norm = zero(Base.promote_eltype(z,w))
     for i in 1:length(z)
-        z_norm += log(w[i]/z[i])^2
+        z_norm += log(w[i]*nz/(z[i]*nw))^2
     end
     return z_norm
 end
@@ -644,7 +646,6 @@ function add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial = 1e-5)
     min_tpd = minimum(values,init = Inf*one(eltype(values))) |> abs
     for i in 1:length(comps)
         dz = z_norm(comps[i],w)
-        dzc = cosine_norm(comps[i],w)
         dz < tol_trivial && return false
         abs(tpd - values[i]) < min_tpd*tol_trivial && return false
     end
