@@ -73,7 +73,6 @@ spec_intensive(::Vfrac) = true
 
 spec_intensive(x) = false
 
-
 function normalize_spec(s::FlashSpecifications,k)
     _1 = oneunit(1/k)
     spec1,spec2,val1,val2 = s.spec1,s.spec2,s.val1,s.val2

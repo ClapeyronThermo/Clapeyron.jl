@@ -12,7 +12,7 @@ function qt_flash_x0(model::CompositeModel,β,T,z,method::FlashMethod)
 end
 
 function qt_flash_x0(model,β,T,z,method::FlashMethod)
-    verbose = hasfield(typeof(method),:verbose) ? getfield(method,:verbose)::Bool : false    
+    verbose = get_verbosity(method)
     ∑z = sum(z)
     if method.p0 == nothing
         if 0 <= β <= 0.01
