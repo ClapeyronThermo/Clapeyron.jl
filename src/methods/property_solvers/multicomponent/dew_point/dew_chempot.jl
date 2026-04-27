@@ -23,7 +23,7 @@ struct ChemPotDewPressure{T} <: DewPointMethod
     atol::Float64
     rtol::Float64
     max_iters::Int
-    ss::Bool
+    verbose::Bool
 end
 
 function Solvers.primalval(method::ChemPotDewPressure{T}) where T
