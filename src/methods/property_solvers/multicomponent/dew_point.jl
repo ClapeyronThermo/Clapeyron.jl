@@ -22,7 +22,7 @@ function index_reduction(method::DewPointMethod,idx_r)
     return method
 end
 
-function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables), crit = nothing)
+function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables), crit = nothing;verbose = false)
     sat = extended_saturation_pressure.(pure,T,crit) #saturation, or approximation via critical point.
     p0inv_r = 1. ./ first.(sat)
     p0inv = index_expansion(p0inv_r,condensables)
@@ -181,7 +181,7 @@ verbose && !converged && @info "dew_pressure: convergence checks failed."
     end
 end
 
-function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
+function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing;verbose = false)
     y_r = @view y[condensables]
 
     if Tx0 !== nothing

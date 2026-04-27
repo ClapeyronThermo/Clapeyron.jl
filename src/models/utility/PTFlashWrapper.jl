@@ -96,7 +96,7 @@ function Base.show(io::IO,mime::MIME"text/plain",wrapper::PTFlashWrapper)
     show_reference_state(io,model;space = true)
 end
 
-function __x0_bubble_pressure(model::PTFlashWrapper,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = nothing,crit = nothing)
+function __x0_bubble_pressure(model::PTFlashWrapper,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = nothing,crit = nothing;verbose = false)
     sat = model.sat #saturation, we do not approximate here.
     p0r = first.(sat)
     p0 = index_expansion(p0r,volatiles)
@@ -112,7 +112,7 @@ function __x0_bubble_pressure(model::PTFlashWrapper,T,x,y0 = nothing,volatiles =
     return p,vl0,vv0,y
 end
 
-function __x0_dew_pressure(model::PTFlashWrapper,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = nothing, crit = nothing)
+function __x0_dew_pressure(model::PTFlashWrapper,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = nothing, crit = nothing;verbose = false)
     sat = model.sat #saturation, we do not approximate here.
     p0inv_r = 1. ./ first.(sat)
     p0inv = index_expansion(p0inv_r,condensables)
@@ -128,7 +128,7 @@ function __x0_dew_pressure(model::PTFlashWrapper,T,y,x0=nothing,condensables = F
     return p,vl0,vv0,x
 end
 
-function __x0_bubble_temperature(model::PTFlashWrapper,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = nothing,crit = nothing)
+function __x0_bubble_temperature(model::PTFlashWrapper,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = nothing,crit = nothing;verbose = false)
     x_r = @view x[volatiles]
     pure = @view model.pures[volatiles]
     sat = @view model.sat[volatiles]
@@ -152,7 +152,7 @@ function __x0_bubble_temperature(model::PTFlashWrapper,p,x,Tx0 = nothing,volatil
     return T,vl0,vv0,y
 end
 
-function __x0_dew_temperature(model::PTFlashWrapper,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
+function __x0_dew_temperature(model::PTFlashWrapper,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing;verbose = false)
     y_r = @view y[condensables]
     pure = @view model.pures[condensables]
     sat = @view model.sat[condensables]
