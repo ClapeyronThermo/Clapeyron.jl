@@ -588,6 +588,39 @@ end
     end =#
 end
 
+@testset "XY flash (activity models)" begin
+    model = UNIFAC(["ethanol","water"], puremodel = PR)
+    x = [0.1, 0.9]
+    T_bub = 360.0
+    p, = bubble_pressure(model, T_bub, x)
+    h_liq = enthalpy(model, p, T_bub, x; phase = :liquid)
+    h_gas = enthalpy(model, p, T_bub, x; phase = :gas)
+
+    # two-phase: enthalpy between bubble and dew enthalpies
+    hmix = (h_liq + h_gas) / 2
+    res_2ph = ph_flash(model, p, hmix, x)
+    @test Clapeyron.numphases(res_2ph) == 2
+    @test enthalpy(model, res_2ph) ≈ hmix rtol = 1e-6
+
+    # single-phase liquid
+    h_sub = enthalpy(model, p, 350.0, x; phase = :liquid)
+    res_liq = ph_flash(model, p, h_sub, x)
+    @test Clapeyron.numphases(res_liq) == 1
+    @test Clapeyron.temperature(res_liq) ≈ 350.0 rtol = 1e-6
+
+    # single-phase gas
+    h_sup = enthalpy(model, p, 380.0, x; phase = :gas)
+    res_gas = ph_flash(model, p, h_sup, x)
+    @test Clapeyron.numphases(res_gas) == 1
+    @test Clapeyron.temperature(res_gas) ≈ 380.0 rtol = 1e-6
+
+    # ps_flash: same T as ph_flash when using consistent s specification
+    s_2ph = entropy(model, p, res_2ph)
+    res_ps = ps_flash(model, p, s_2ph, x)
+    @test Clapeyron.numphases(res_ps) == 2
+    @test Clapeyron.temperature(res_ps) ≈ Clapeyron.temperature(res_2ph) rtol = 1e-6
+end
+
 @testset "Saturation Methods" begin
     model = PR(["water"])
     vdw = vdW(["water"])
