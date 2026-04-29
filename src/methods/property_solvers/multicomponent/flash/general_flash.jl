@@ -836,8 +836,8 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
     return GeneralizedXYFlash{S,TT}(equilibrium,T0,p0,K0,x0,y0,_v0,atol,rtol,max_iters,verbose)
 end
 
-function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
-    verbose = method.verbose
+function px_flash_x0(model,p,x,z,spec::F,method) where F
+    verbose = get_verbosity(method)
     if spec == temperature
         verbose && @info "specification results in a P-T flash, no work is needed to find temperature"
         T,_phase = x,:eq #we suppose equilibria
@@ -907,8 +907,8 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing,verbose = false) where F
     end
 end
 
-function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
-    verbose = method.verbose
+function tx_flash_x0(model,T,x,z,spec::F,method) where F
+    verbose = get_verbosity(method)
     if spec == pressure
         verbose && @info "specification results in a P-T flash, no work is needed to find pressure"
         p,_phase = x,:eq #we suppose equilibria

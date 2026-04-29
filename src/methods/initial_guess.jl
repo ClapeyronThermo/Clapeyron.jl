@@ -296,9 +296,7 @@ function x0_sat_pure_virial(model,T,z = SA[1.0])
     pv_eos = pressure(model,vv_virial,T,z) #eos predicted pressure, gas phase
     #calculate a suitable liquid pressure from the virial coefficient.
     pl0 = liquid_pressure_from_virial(model,T,z,B,pv_eos)
-    @show pl0
     vl = volume(model,pl0,T,z,phase = :l)
-    @show vl
     #=the basis is that p = RT/v-b - a/v2
     we can interpolate a vdW EoS between a liquid and a gas (p,v) point.
     with that, we solve for a and b
