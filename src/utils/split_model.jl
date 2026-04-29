@@ -504,3 +504,12 @@ end
 
 split_pure_model(model,splitter) = split_model(model,splitter)
 export split_model, split_model_binaries
+
+function split_pure_model(model::ActivityModel)
+    if is_splittable(model)
+        splitter = default_splitter(model)
+        return model.puremodel[splitter]
+    else
+        throw(ArgumentError("$model is not splittable, try passing an explicit splitter argument (`split_pure_model(value,splitter)`)"))
+    end
+end

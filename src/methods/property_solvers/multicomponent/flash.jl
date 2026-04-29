@@ -286,6 +286,23 @@ for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
                 res += βi*VT0.$prop(model,vi,T,xi)
                 return res
             end
+
+            function $prop(model::ActivityModel,state::FlashResult)
+                p = state.data.p
+                res = zero(Base.promote_eltype(model,state))
+                for (vi,T,xi,βi) in eachphase(state)
+                    res += βi*$prop(model,p,T,xi)
+                end
+                return res
+            end
+
+            function $prop(model::ActivityModel,state::FlashResult, i::Integer)
+                p = state.data.p
+                res = zero(Base.promote_eltype(model,state))
+                T, xi, βi = state.data.T, state.compositions[i], state.fractions[i]
+                res += βi*$prop(model,p,T,xi)
+                return res
+            end
         end
 end
 
