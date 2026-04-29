@@ -3,6 +3,8 @@ function x0_edge_pressure(model,T,z,pure = split_pure_model(model))
   n = sum(z)
   p_bubble = sum(z[i]*first(sat[i]) for i in 1:length(model))/n
   p_dew = n/sum(z[i]/first(sat[i]) for i in 1:length(model))
+
+
   return (p_bubble,p_dew),sat
 end
 
@@ -16,12 +18,12 @@ Returns a tuple, containing:
 - Liquid volume of edge Point `[m³]`
 - Vapour volume at edge Point `[m³]`
 """
-function edge_pressure(model,T,z,v0 = nothing)
-  edge,crit,status = _edge_pressure(model,T,z,v0)
+function edge_pressure(model,T,z,v0 = nothing;crit_retry = true)
+  edge,crit,status = _edge_pressure(model,T,z,v0,crit_retry)
   return edge
 end
 
-function _edge_pressure(model,T,z,v0 = nothing)
+function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
   if v0 == nothing
     vv0,_ = x0_edge_pressure(model,T,z)
   else
@@ -30,6 +32,13 @@ function _edge_pressure(model,T,z,v0 = nothing)
   p1 = vv0[1]
   p2 = vv0[2]
   pmin,pmax = minmax(p1,p2)
+  
+  if pmax/pmin > 10
+    p_near0,_,_ = x0_sat_pure_near0(model,T,z)
+    pmin = 0.9*p_near0
+    pmax = 10*p_near0
+  end
+
   v_pmin = volume(model,pmin,T,z,phase = :v)
   v_pmax = volume(model,pmax,T,z,phase = :l)
   f(x) = μp_equality1_p(model,exp(x[1]),exp(x[2]),T,z)
@@ -48,7 +57,7 @@ function _edge_pressure(model,T,z,v0 = nothing)
   p_eq = pressure(model,v2,T,z)
   edge = (p_eq,v1,v2)
   check_valid_sat_pure(model,p_eq,v1,v2,T,z) && return edge,fail,:success
-
+  !crit_retry && return fail,fail,:failure
   #fail when calculating edge pressure, this happens near the (mechanical) critical point
   Tr = T/T_scale(model,z)
   vlog = log10(v1)

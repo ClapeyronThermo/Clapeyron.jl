@@ -64,7 +64,6 @@ function _edge_temperature(model,p,z,v0 = nothing)
   _0 = zero(V0[1])
   nan = _0/_0
   fail = (nan,nan,nan)
-
   _is_positive((v_Tmin,v_Tmax,Tmin,Tmax)) || return fail,fail,:failure
 
   sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var())
@@ -74,16 +73,35 @@ function _edge_temperature(model,p,z,v0 = nothing)
   edge = (T_eq,v1,v2)
   check_valid_sat_pure(model,p,v1,v2,T_eq,z) && (return edge,fail,:success)
 
+  if isfinite(T_eq)
+    res2,_,_ = _edge_pressure(model,T_eq,z,(0.9*p,1.1*p),false)
+    p2,v12,v22 = res2
+    dpdT = dpdT_saturation(model,model,v12,v22,T_eq,z,z)
+    dTinvdlnp = -p2/(dpdT*T_eq*T_eq)
+    Δlnp = log(p/p2)
+    Tinv0 = 1/T_eq
+    Tinv = Tinv0 + dTinvdlnp*Δlnp
+    T3 = 1/Tinv
+    resx,_,_ = _edge_pressure(model,T3,z,(0.9*p,1.1*p),false)
+    _,v1_x,v2_x = resx
+    V1 = SVector(promote(log(v1_x),log(v2_x),T3,T3))
+    solx = Solvers.nlsolve2(f,V1,Solvers.Newton2Var())
+    v1x = exp(solx[1])
+    v2x = exp(solx[2])
+    T_eqx = 0.5*(solx[3] + solx[4])
+    edgex = (T_eqx,v1x,v2x)
+    check_valid_sat_pure(model,p,v1x,v2x,T_eqx,z) && (return edgex,fail,:success)
+  end
+
   #fail when calculating edge temperature, this happens near the (mechanical) critical point
   Tr = T_eq/T_scale(model,z)
   vlog = log10(v1)
   crit = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
   Tc,Pc,Vc = crit
-
   !isfinite(Pc) && return fail,fail,:failure
   Pc <= p && return fail,crit,:supercritical
-
   T_extrapolated = critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z/sum(z))
+
   vlc,vvc = critical_vsat_extrapolation(model,T_extrapolated,Tc,Vc,z)
   V1 = SVector(promote(log(vlc),log(vvc),T_extrapolated,T_extrapolated))
   sol1 = Solvers.nlsolve2(f,V1,Solvers.Newton2Var())
@@ -94,6 +112,26 @@ function _edge_temperature(model,p,z,v0 = nothing)
   check_valid_sat_pure(model,p,v3,v4,T_eq2,z) && return edge2,crit,:success
 
   return fail,fail,:failure
+end
+
+function _edge_temperature_refine(model,p,z,Tmin,Tmax)  
+  success = false
+  k = 0
+  for i in 1:10
+    k += 1
+    vl = volume(model,Tmax,p,z,phase = :l)
+    vv = vl
+    if isnan(vl)
+      Tmax = 0.5*(Tmax + Tmin)
+    else
+      vv = volume(model,Tmin,p,z,phase = :v)
+      if isnan(vv)
+        Tmin = 0.5*(Tmax + Tmin)
+      end
+    end
+    success = !isnan(vl) && !isnan(vv)
+  end
+  return Tmin,Tmax
 end
 
 """
