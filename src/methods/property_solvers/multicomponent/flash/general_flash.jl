@@ -1020,7 +1020,7 @@ function xy_flash(model::ActivityModel,spec::FlashSpecifications{typeof(pressure
     property = spec.spec2
     T0 = flash0.data.T
     _method = init_preferred_method(tp_flash,model,(;))
-    has_vapor_phase = !(method.equilibrium != :lle)
+    has_vapor_phase = method.equilibrium != :lle
 
     function res_flash(T)
         res = tp_flash2(model,p,T,z,_method)

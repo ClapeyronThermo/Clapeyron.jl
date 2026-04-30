@@ -615,7 +615,7 @@ end
     @test Clapeyron.temperature(res_gas) ≈ 380.0 rtol = 1e-6
 
     # ps_flash: same T as ph_flash when using consistent s specification
-    s_2ph = entropy(model, p, res_2ph)
+    s_2ph = entropy(model, res_2ph)
     res_ps = ps_flash(model, p, s_2ph, x)
     @test Clapeyron.numphases(res_ps) == 2
     @test Clapeyron.temperature(res_ps) ≈ Clapeyron.temperature(res_2ph) rtol = 1e-6

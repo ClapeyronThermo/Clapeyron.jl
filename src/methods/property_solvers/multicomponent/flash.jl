@@ -291,7 +291,7 @@ for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
                 p = state.data.p
                 np = numphases(state)
                 res = zero(Base.promote_eltype(model,state))
-                has_vapor_phase = !(equilibrium != :lle)
+                has_vapor_phase = equilibrium != :lle
                 for (j,(vi,T,xi,βi)) in enumerate(eachphase(state))
                     phase_j = (j == np && np > 1 && has_vapor_phase) ? :gas : :liquid
                     res += βi*$prop(model,p,T,xi,phase = phase_j)
@@ -303,7 +303,7 @@ for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
                 p = state.data.p
                 np = numphases(state)
                 T, xi, βi = state.data.T, state.compositions[i], state.fractions[i]
-                has_vapor_phase = !(equilibrium != :lle)
+                has_vapor_phase = equilibrium != :lle
                 phase_i = (i == np && np > 1 && has_vapor_phase) ? :gas : :liquid
                 return βi*$prop(model,p,T,xi,phase = phase_i)
             end
