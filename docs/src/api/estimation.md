@@ -22,4 +22,5 @@ Clapeyron.Estimation
 Clapeyron.EstimationData
 Clapeyron.return_model
 Clapeyron.objective_function
+Clapeyron.update_estimation!
 ```

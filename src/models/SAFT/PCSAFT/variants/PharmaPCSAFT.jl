@@ -90,12 +90,7 @@ pharmaPCSAFT
 @inline water08_k(model::PCSAFTModel) = 0
 @inline water08_k(model::pharmaPCSAFTModel) = model.params.water[]
 
-function x0_volume_liquid(model::pharmaPCSAFTModel, T, z)
-    return lb_volume(model,z)*1.7
-end
-
-lb_volume(model::pharmaPCSAFTModel, z) = lb_volume(model,298.15,z)
-
+x0_volume_liquid(model::pharmaPCSAFTModel,p,T,z) = lb_volume(model,T,z)*1.7
 
 function lb_volume(model::pharmaPCSAFTModel,T, z)
     seg = model.params.segment.values

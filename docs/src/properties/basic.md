@@ -23,6 +23,16 @@ Clapeyron.eos
 Clapeyron.eos_res
 Clapeyron.idealmodel
 Clapeyron.a_res
+Clapeyron.eosshow
+```
+
+## Core types and utilities
+
+```@docs
+Clapeyron.EoSModel
+Clapeyron.Rgas
+Clapeyron.has_groups
+Clapeyron.has_sites
 ```
 
 ## Automatic Differentiation functions
@@ -56,4 +66,5 @@ Clapeyron.TPFlashMethod
 Clapeyron.ReferenceState
 Clapeyron.reference_state
 Clapeyron.has_reference_state
+Clapeyron.set_reference_state!
 ```

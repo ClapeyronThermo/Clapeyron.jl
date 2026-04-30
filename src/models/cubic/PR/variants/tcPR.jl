@@ -66,8 +66,8 @@ function tcPR(components;
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",formatted_components,zeros(n))
-    b = PairParam("b",formatted_components,zeros(n))
+    a = PairParam("a",formatted_components,zeros(n,n),ones(Bool,n,n))
+    b = PairParam("b",formatted_components,zeros(n,n),ones(Bool,n,n))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
 
     w = get(params,"acentricfactor",nothing)

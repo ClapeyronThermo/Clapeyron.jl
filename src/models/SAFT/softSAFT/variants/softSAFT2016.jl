@@ -68,7 +68,8 @@ function softSAFT2016(components;
     verbose = false,
     assoc_options = AssocOptions())
 
-    params = getparams(components, ["SAFT/softSAFT","properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose)
+    _components = format_components(components)
+    params = getparams(_components, ["SAFT/softSAFT","properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose)
     sites = params["sites"]
     segment = params["segment"]
     k = get(params,"k",nothing)
@@ -78,10 +79,10 @@ function softSAFT2016(components;
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
     bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options,sites) #combining rules for association
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
     packagedparams = softSAFT2016Param(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1080/002689797170707","10.1063/1.4945000"]
-    model = softSAFT2016(components,sites,packagedparams,init_idealmodel,assoc_options,references, TholLJ())
+    model = softSAFT2016(_components,sites,packagedparams,init_idealmodel,assoc_options,references, TholLJ())
     set_reference_state!(model,reference_state;verbose)
     return model
 end

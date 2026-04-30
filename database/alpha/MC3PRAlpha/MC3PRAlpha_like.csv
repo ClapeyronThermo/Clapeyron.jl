@@ -1,0 +1,7 @@
+Clapeyron Database File
+MC3-PR like parameters [csvtype = like,sep = ;]
+species;c1;c2;c3;source
+methane;0.41169;-0.07105;0.00338;10.1021/acs.iecr.9b00756
+ethane;0.53176;-0.0061;0.05378;10.1021/acs.iecr.9b00756
+nitrogen;0.442126;-0.013903;0.01435;10.1021/acs.iecr.9b00756
+carbon dioxide;0.697746;0.049261;0.08945;10.1021/acs.iecr.9b00756

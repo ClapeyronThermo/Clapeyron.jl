@@ -17,6 +17,7 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
     return _volume_compress(model,p,T,z,V0,max_iters)
 end
 
+#=
 function _volume_compress_old(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(Base.promote_eltype(model,p,T,z,V0))
     _1 = one(_0)
@@ -46,7 +47,7 @@ function _volume_compress_old(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase
 
     logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters)::XX,nan)
     return exp(logV)
-end
+end =#
 
 function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(Base.promote_eltype(model,p,T,z,V0))
@@ -57,21 +58,23 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
     log_lb_v = log(lb_volume(model,T,z))
     logVᵢ = logV0
     iszero(p₀) && (V0 == Inf) && return _1/_0 #ideal gas
-    p0ᵢ = _0
-    dp0dVᵢ = _1
-    is_gas = false
-    check_sp = true
+
     nRT = sum(z)*T*Rgas(model)
-    atol = 8*eps(typeof(logV0))
+    
+    Vᵢ = exp(logVᵢ)
+    pᵢ,dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
+    p0ᵢ,dp0dVᵢ = pᵢ,dpdVᵢ
+
+    check_sp = true
+    is_gas = -nRT/Vᵢ/Vᵢ - dpdVᵢ >= _0
+    
+    _logVᵢ,_pᵢ,_dpdVᵢ = logVᵢ,pᵢ,dpdVᵢ
+    logV_new,logV_bisec = _0,_0
+    plo,phi = _0,_0
+    
     for i in 1:max_iters
+
         logVᵢ < log_lb_v && return nan
-        Vᵢ = exp(logVᵢ)
-        pᵢ,dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
-        if i == 1
-            p0ᵢ = pᵢ
-            dp0dVᵢ = dpdVᵢ
-            is_gas = -nRT/Vᵢ/Vᵢ - dpdVᵢ
-        end
 
         dpdVᵢ > 0 && return nan #inline mechanical stability.
         abs(pᵢ-p₀) < 3eps(p₀) && return Vᵢ #this helps convergence near critical points.
@@ -79,12 +82,11 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         #zeroth order check:
         #the pressure slope between initial point and current point, must be negative.
         #a positive slope means we jumped across an spinodal
-        dlnv = (logVᵢ - logV0)
+        dlogv = (logVᵢ - logV0)
         dp = (pᵢ - p0ᵢ)
-        ddp = (dpdVᵢ - dp0dVᵢ)
         m = (pᵢ - p0ᵢ)/(logVᵢ - logV0)
 
-        if m > _0 && i > 1 && sqrt(abs(dlnv/logVᵢ)) > 5e-8 && sqrt(abs(dp/pᵢ)) > 5e-8
+        if m > _0 && i > 1 && sqrt(abs(dlogv/logVᵢ)) > 5e-8 && sqrt(abs(dp/pᵢ)) > 5e-8
             #@warn "zeroth order check failed with $(model) at p = $p, T = $T, z= $z, v0 = $V0"
             #@info "pi = $pᵢ, Vi = $(exp(logVᵢ))"
             return nan
@@ -105,7 +107,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         
         If there is any change in sign, then we can check if there are any spinodals, just to be sure.
         =#
-        is_gas_i = -nRT/Vᵢ/Vᵢ - dpdVᵢ
+        is_gas_i = -nRT/Vᵢ/Vᵢ - dpdVᵢ >= _0
         if i > 1 && is_gas_i != is_gas
             #@warn "first order check failed with $(model) at p = $p, T = $T, z= $z, v0 = $V0"
             if check_sp
@@ -115,11 +117,23 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
             end
         end
         
+        if i > 5 && (p₀-pᵢ)*(p₀-_pᵢ) < 0
+            #bracket found, use bracketing updates instead.
+            _Vᵢ = exp(_logVᵢ)
+            data1 = _Vᵢ,_logVᵢ,_pᵢ,_dpdVᵢ
+            data2 = Vᵢ,logVᵢ,pᵢ,dpdVᵢ
+            return _volume_compress_bisection(model,p₀,T,z,data1,data2,i,max_iters)
+        end
+
+        _logVᵢ,_pᵢ,_dpdVᵢ = logVᵢ,pᵢ,dpdVᵢ
         Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
-        converged,finite = Solvers.convergence(logVᵢ,logVᵢ + Δᵢ,zero(Δᵢ),1e-12)
         logVᵢ = logVᵢ + Δᵢ
+        Vᵢ = exp(logVᵢ)
+        pᵢ,dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
+
+        converged,finite = Solvers.convergence(_logVᵢ,logVᵢ,zero(logVᵢ),1e-12)
         if converged 
-            if finite 
+            if finite
                 return exp(logVᵢ)
             else
                 return nan
@@ -127,6 +141,57 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         end
         end
     return nan
+end
+
+function _volume_compress_bisection(model,p,T,z,data1,data2,i0,max_iters)
+    v1,logv1,p1,dpdv1 = data1
+    v2,logv2,p2,dpdv2 = data2
+    
+    if p1 > p2
+        vhi,vlo = v1,v2
+        logvhi,logvlo = logv1,logv2
+        phi,dpdvhi = p1,dpdv1
+        plo,dpdvlo = p2,dpdv2
+    else
+        vlo,vhi = v1,v2
+        logvlo,logvhi = logv1,logv2
+        phi,dpdvhi = p2,dpdv2
+        plo,dpdvlo = p1,dpdv1
+    end
+
+    Δlo = (p-plo)/(vlo*dpdvlo)
+    Δhi = (p-phi)/(vhi*dpdvhi)
+    
+    _0,_1 = zero(p),oneunit(p)
+    for i in i0:max_iters
+        #δ is the needed to remain inside the bracket
+        δlo = clamp((logvhi - logvlo)/Δlo,_0,_1)
+        δhi = clamp((logvlo - logvhi)/Δhi,_0,_1)
+        iszero(Δhi) && return vhi
+        iszero(Δlo) && return vlo
+
+        #0.95 damping to stop alternating values
+        logv_new_hi = logvhi + 0.95*δhi*Δhi
+        logv_new_lo = logvlo + 0.95*δlo*Δlo
+
+        #mean between the two damped, clamped iterations should be by definition, also inside the pressure bracket.
+        logv_new = 0.5*(logv_new_hi + logv_new_lo)
+        v_new = exp(logv_new)
+        p_new,dpdv_new = p∂p∂V(model,v_new,T,z)
+        if (p_new-p)*(plo - p) < _0
+            vhi,logvhi,phi,dpdvhi = v_new,logv_new,p_new,dpdv_new
+            Δhi = (p-phi)/(vhi*dpdvhi)
+        elseif (p_new - p)*(phi - p) < _0
+            vlo,logvlo,plo,dpdvlo = v_new,logv_new,p_new,dpdv_new
+            Δlo = (p-plo)/(vlo*dpdvlo)
+        else
+            break
+        end
+        logv_tol = abs(logvlo - logvhi)
+        logv_tol < 1e-12 && break
+
+    end
+    return sqrt(vlo*vhi)
 end
 
 function _maybe_spinodal(model,_T,_v_lb,_v_ub,z)
@@ -235,8 +300,9 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
     aV2 = V + B
     aV2 - V - B = 0
     =#
+    n = sum(z)
     B > _0 && return _0/_0
-    a = p/(R *T*sum(z))
+    a = p/(n*R*T)
     b = -1
     c = -B
     Δ = b*b-4*a*c
@@ -287,26 +353,24 @@ function __symbolic_phase(p,T,z,phase)
 end
 
 function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
-    if has_a_res(model)
-        v = volume_impl(primalval(model),primalval(p),primalval(T),primalval(z),phase,threaded,primalval(vol0))
-        return volume_ad(model,v,T,z,p)
+    if has_a_res(model) && !(model isa IdealModel)
+        λmodel,λp,λT,λz,λvol0 = primalval(model),primalval(p),primalval(T),primalval(z),primalval(vol0)
+        λv = volume_impl(λmodel,λp,λT,λz,phase,threaded,λvol0)
+        tup = (model,p,T,z)
+        λtup = (λmodel,λp,λT,λz)
+        return volume_ad(λv,tup,λtup)
     else
         return volume_impl(model,p,T,z,phase,threaded,primalval(vol0))
     end
 end
 
-function volume_ad(model,v,T,z,p)
-    if has_dual(model) || has_dual(p) || has_dual(T) || has_dual(z)
-        #netwon step to recover derivative information:
-        #V = V - (p(V) - p)/(dpdV(V))
-        #dVdP = -1/dpdV
-        #dVdT = dpdT/dpdV
-        #dVdn = dpdn/dpdV
-        psol,dpdVsol = p∂p∂V(model,v,T,z)
-        return v - (psol - p)/dpdVsol
-    else
-        return v
+function volume_ad(v,tups,tups_primal)
+    f(vx,tups) = begin
+        model,p,T,z = tups
+        pressure(model,vx,T,z) - p
     end
+    v = __gradients_for_root_finders(v,tups,tups_primal,f) # does dual checks internally, else returns v_primal
+    return v
 end
 
 #comprises solid and liquid phases.
@@ -326,6 +390,14 @@ function volume_impl(model::EoSModel,p,T,z,phase,threaded,vol0)
     return default_volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
+"""
+    x0_volume_region(model,p,T,z)::Symbol
+
+Given a combination of p,T,z inputs, returns a symbol representing the correct volume root(`:liquid`, `:vapour` or `:solid`), or `:unknown` to indicate the volume solver to check all roots.
+
+"""
+x0_volume_region(model,p,T,z) = :unknown
+
 function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
 #Threaded version
     check_arraysize(model,z)
@@ -335,10 +407,16 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
     fluid = fluid_model(model)
     solid = solid_model(model)
 
+    if is_unknown(phase)
+        _phase = x0_volume_region(model,p,T,z)
+    else
+        _phase = Symbol(phase)
+    end
+
     if !isnothing(vol0)
         if !isnan(vol0)
             V0 = vol0
-            if is_solid(phase) #to allow specification of the model.
+            if is_solid(_phase) #to allow specification of the model.
                 return _volume_compress(solid,p,T,z,V0)
             end
             V = _volume_compress(fluid,p,T,z,V0)
@@ -349,9 +427,9 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
         end
     end
 
-    if !is_unknown(phase) && phase != :stable
-        V0 = x0_volume(model,p,T,z,phase=phase)
-        if is_solid(phase)
+    if !is_unknown(_phase) && _phase != :stable
+        V0 = x0_volume(model,p,T,z,phase=_phase)
+        if is_solid(_phase)
             V = _volume_compress(solid,p,T,z,V0)
         else
             V = _volume_compress(fluid,p,T,z,V0)

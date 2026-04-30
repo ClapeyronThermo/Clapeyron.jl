@@ -30,6 +30,25 @@ function svec3(x1,x2,x3,opt = true)
     return SVector{3}(V01,V02,V03)
 end
 
+nonzero_extrema(K::SparseArrays.SparseMatrixCSC) = extrema(K.nzval)
+
+function nonzero_extrema(K)
+    _0 = zero(eltype(K))
+    _max = _0
+    _min = _0
+    for k in K
+        _max = max(k,_max)
+        if iszero(_min)
+            _min = k
+        else
+            if !iszero(k)
+            _min = min(_min,k)
+            end
+        end
+    end
+    return _min,_max
+end
+
 """
     _parse_kv(str,dlm)
 
@@ -132,7 +151,17 @@ format_component_i(x::Pair) = first(x)
 
 format_gccomponents(str::Tuple) = [str]
 format_gccomponents(str::Pair) = [str]
-format_gccomponents(str) = str
+format_gccomponents(str::String) = [str]
+format_gccomponents(str::AbstractString) = format_components(String(str))
+format_gccomponents(str::Vector{String}) = str
+format_gccomponents(str::AbstractVector) = Array(str)
+# format_gccomponents(str) = map(format_component_i,str)
+
+normalize_userlocations(loc::Nothing) = loc
+normalize_userlocations(loc::AbstractArray) = String.(loc)
+normalize_userlocations(loc::Tuple) = String.(loc)
+normalize_userlocations(loc::NamedTuple) = loc
+normalize_userlocations(loc) = loc
 
 function mole_to_mass(model, x)
     w = x .* mw(model)
@@ -143,9 +172,6 @@ function mass_to_mole(model, w)
     x = w ./ mw(model)
     return x ./ sum(x)
 end
-format_gccomponents(str::String) = [str]
-format_gccomponents(str::AbstractString) = format_components(String(str))
-format_gccomponents(str::Vector{String}) = str
 
 """
     viewn(x,chunk,i)
@@ -157,6 +183,23 @@ function viewn(x,chunk,i)
     l = length(x)
     l < chunk*i && throw(BoundsError(x,chunk*i))
     @view x[((i - 1)*chunk+1):(i*chunk)]
+end
+
+"""
+    copy_without_pivot!(dst, src, pivot)
+
+Copy all elements from `src` into `dst` except the one at index `pivot`.
+`dst` must have length `length(src) - 1`.
+"""
+@inline function copy_without_pivot!(dst, src, pivot)
+    k = 1
+    @inbounds @simd for i in eachindex(src)
+        if i != pivot
+            dst[k] = src[i]
+            k += 1
+        end
+    end
+    return dst
 end
 
 viewlast(x,i) = @view(x[(end - i + 1):end])

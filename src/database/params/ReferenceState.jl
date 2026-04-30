@@ -68,6 +68,8 @@ julia> entropy(pure[1],101325.0,T)
 ReferenceState
 
 function ReferenceState(symbol = :no_set;T0 = NaN,P0 = NaN,H0 = NaN,S0 = NaN,phase = :unknown, z0 = Float64[])
+    symbol = Symbol(symbol)
+    phase = Symbol(phase)
     
     if H0 isa Number
         if isnan(H0)
@@ -97,7 +99,7 @@ function ReferenceState(symbol = :no_set;T0 = NaN,P0 = NaN,H0 = NaN,S0 = NaN,pha
 end
 
 __init_reference_state_kw(::Nothing) = ReferenceState()
-__init_reference_state_kw(s::Symbol) = ReferenceState(s)
+__init_reference_state_kw(s) = ReferenceState(Symbol(s))
 __init_reference_state_kw(ref::ReferenceState) = deepcopy(ref)
 
 function Base.show(io::IO,::MIME"text/plain",ref::ReferenceState)
@@ -233,6 +235,16 @@ function has_reference_state_type(::Type{model}) where model
     return false
 end
 
+"""
+    set_reference_state!(model::EoSModel; verbose=false)
+    set_reference_state!(model, new_ref; verbose=false)
+
+Initialize and apply a reference state for `model`.
+
+When a `ReferenceState` is provided, it is initialized (if needed) and then
+applied to the model. For mixtures, this may trigger per-component reference
+state initialization via `split_pure_model`.
+"""
 function set_reference_state!(model::EoSModel;verbose = false)
     ref = reference_state(model)
     return set_reference_state!(model,ref;verbose = false)
@@ -277,7 +289,7 @@ end
 
 function set_reference_state!(model::EoSModel,new_ref::ReferenceState;verbose = false)
     #handle cases where we don't need to do anything
-    ref = reference_state(model)
+    
     
     new_ref === nothing && return nothing
     new_ref.std_type == :no_set && return nothing
@@ -285,9 +297,24 @@ function set_reference_state!(model::EoSModel,new_ref::ReferenceState;verbose = 
         @info "Calculating reference states for $model..."
         @info "Reference state type: $(info_color(new_ref.std_type))"
     end
+
+    ref0 = reference_state(model)
+
+    if ref0 === nothing
+        idmodel = idealmodel(model)
+        if reference_state(idmodel) == nothing
+            throw(error("A custom ideal model was passed as an argument, but the ideal model $idmodel does not support setting reference states. 
+       Try using another ideal model, like `ReidIdeal`.
+       If you are developing a model, try defining `Clapeyron.reference_state(model::MyModel)`"))
+        end
+    else
+        ref = ref0
+    end
+
     if ref !== new_ref
         copyto!(ref,new_ref)
     end
+
     #allocate the appropiate caches.
     initialize_reference_state!(model,ref)
     if all(iszero,ref.z0) && length(model) != 1 #pure case, multiple components

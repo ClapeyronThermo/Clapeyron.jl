@@ -33,12 +33,18 @@
 
         @testset "SRK" begin
             system = SRK(["ethane","undecane"])
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2572506872856557 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2640228781328529 rtol = 1e-6
+        end
+
+        @testset "SRK w/ MathiasCopemanAlpha" begin
+            alpha = MathiasCopemanAlpha("perfluorohexane", userlocations=(;c1=[1.108], c2=[-0.408], c3=[1.258]))
+            system = SRK("perfluorohexane"; alpha)
+            @test pressure(system, 0.000228, 300.) ≈ 579083. rtol = 1e-4
         end
 
         @testset "PSRK" begin
             system = PSRK(["ethane","undecane"])
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2265133881057408 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2301592550760436 rtol = 1e-6
         end
 
         @testset "tcRK" begin
@@ -53,7 +59,12 @@
 
         @testset "RK w/ PenelouxTranslation" begin
             system = RK(["ethane","undecane"];translation = PenelouxTranslation)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.9800472116681871 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.9819562816377636 rtol = 1e-6
+        end
+
+        @testset "RK w/ BaledTranslation" begin
+            system = RK(["ethane","undecane"];translation = BaledTranslation)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.9829619090346525 rtol = 1e-6
         end
 
         @testset "RK w/ KayRule" begin
@@ -102,7 +113,12 @@
 
         @testset "VTPR" begin
             system = VTPR(["ethane","undecane"])
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.234012667532541 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2363824487050494 rtol = 1e-6
+        end
+
+        @testset "TVTPR" begin
+            system = TVTPR(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2332185093557617 rtol = 1e-6
         end
 
         @testset "UMRPR" begin
@@ -167,15 +183,20 @@
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2480909069722526 rtol = 1e-6
         end
 
-        @testset "PR w/ RackettTranslation" begin
-            system = PR(["ethane","undecane"];translation = RackettTranslation)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2453853855058576 rtol = 1e-6
+        @testset "PR w/ MC3PRAlpha" begin
+            system = PR(["ethane","undecane"];alpha = MC3PRAlpha)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2557866200818528 rtol = 1e-6
         end
 
         @testset "PR w/ MTTranslation" begin
             system = PR(["ethane","undecane"];translation = MTTranslation)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.243918482158021 rtol = 1e-6
         end
+
+        @testset "PR w/ BaledTranslation" begin
+            system = PR(["ethane","undecane"];translation = BaledTranslation)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.3627565754776112 rtol = 1e-6
+        end        
 
         @testset "PR w/ HVRule" begin
             system = PR(["methanol","benzene"];mixing = HVRule, activity=Wilson)
@@ -211,13 +232,17 @@
 
     @testset "RKPR Models" begin
         system = RKPR(["ethane","undecane"])
-        @test Clapeyron.a_res(system, V, T, z) ≈ -1.2877492838069213 rtol = 1e-6
+        @test Clapeyron.a_res(system, V, T, z) ≈ -1.2651155195427202 rtol = 1e-6
+        d1,d2 = Clapeyron.cubic_Δ(system,[0.0,1.0])
+        d10,d20 = Clapeyron.cubic_Δ(PR)
+        @test d1 ≈ d10
+        @test d2 ≈ d20
     end
 
     @testset "Patel Teja Models" begin
         @testset "Patel Teja" begin
             system = PatelTeja(["ethane","undecane"])
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2284322450064429 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2326465478280517 rtol = 1e-6
             @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
         end
         @testset "PTV" begin

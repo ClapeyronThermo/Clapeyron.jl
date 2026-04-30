@@ -83,7 +83,7 @@ function modWSRule(components; activity = Wilson, userlocations = String[],activ
     return model
 end
 
-function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::modWSRuleModel,α,a,b,c)
+function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::modWSRuleModel,α,a,b)
     λ = WS_λ(mixing_model,model,T,z)
     n = sum(z)
     invn = (one(n)/n)
@@ -109,6 +109,6 @@ function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::modWSRuleModel,�
     Aᴱ = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
     b̄  = B̄/(1 + (Aᴱ/λ - Σab)*RT⁻¹)
     ā = b̄*(Σab-Aᴱ/λ)
-    c̄ = dot(z,c)*invn
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     return ā,b̄,c̄
 end

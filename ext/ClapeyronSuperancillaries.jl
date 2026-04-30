@@ -79,18 +79,24 @@ function C.x0_sat_pure(model::SuperancPCSAFT,T,crit = nothing)
     end
 end
 
-function C.x0_crit_pure(model::SuperancPCSAFT)
-    if !can_superanc(model) 
-        lb_v = C.lb_volume(model)
-        return (2.0*oneunit(lb_v), log10(lb_v/0.3))
+function x0_crit_pure(model::SuperancPCSAFT,z)
+    if can_superanc(model) && length(model) == 1
+        return x0_crit_pure_superanc_saft(model)
     end
+    T = C.T_scale(model,z)
+    lb_v = C.lb_volume(model,T,z)/sum(z)
+    (2.0, log10(lb_v/0.3))
+end
+
+function x0_crit_pure_superanc_saft(model::SuperancPCSAFT)
     m,ϵ,σ = get_pcsaft_consts(model)
     if 1.0 <= m <= 64.0
         Tc = ES.pcsaft_tc(m,ϵ)
         vc = ES.pcsaft_vc(m,σ + Δσ(model,Tc))
         return Tc/ϵ,log10(vc)
     else
-        lb_v = C.lb_volume(model)
+        Ts = T_scale(model,C.SA[1.0])
+        lb_v = C.lb_volume(model,Ts,C.SA[1.0])
         return (2.0*oneunit(lb_v), log10(lb_v/0.3))
     end
 end
@@ -152,7 +158,10 @@ function C.x0_sat_pure(model::SuperancCubic,T,crit = nothing)
     end
     T̃ = T*C.Rgas(model)*b/a
     T̃c = Tc*C.Rgas(model)*bc/ac
-    T̃ < 0.1*T̃c && return C.x0_sat_pure_cubic_ab(model,T)
+    if T̃ < 0.1*T̃c
+        _,vl0,vv0 = C.x0_sat_pure_near0(model,T)
+        return vl0,vv0
+    end
     if model isa C.vdW
         return ES.vdw_vsat(T,a,b) .- c
     elseif model isa C.RK

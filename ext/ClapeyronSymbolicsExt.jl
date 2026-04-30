@@ -159,7 +159,6 @@ end
 
 
 @register_symbolic Clapeyron.∂f∂V(model::EoSModel,V,T,z::AbstractVector)
-@register_symbolic Clapeyron.∂f∂V(model::Clapeyron.SecondVirialModel,V,T,z::AbstractVector) false
 @register_symbolic Clapeyron.∂f∂T(model::EoSModel,V,T,z::AbstractVector)
 
 Symbolics.@register_array_symbolic Clapeyron.f∂fdV(model::EoSModel,p,T,z::AbstractVector) begin

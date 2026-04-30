@@ -88,13 +88,13 @@ end
 MHV2q(::MHV2RuleModel,::PRModel) = (-0.4347,-0.003654)
 MHV2q(::MHV2RuleModel,::RKModel) = (-0.4783,-0.0047)
 
-function mixing_rule(model::Union{PRModel,RKModel},V,T,z,mixing_model::MHV2RuleModel,α,a,b,c)
+function mixing_rule(model::Union{PRModel,RKModel},V,T,z,mixing_model::MHV2RuleModel,α,a,b)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
     g_E = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
     b̄ = dot(z,Symmetric(b),z) * invn2
-    c̄ = dot(z,c)*invn
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     #ᾱ = a.*sqrt.(α.*α')./(b*R̄*T)
     q1,q2 = MHV2q(mixing_model,model)
     Σlogb = zero(first(z))

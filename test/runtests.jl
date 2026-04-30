@@ -89,7 +89,11 @@ function eosmodel_is_approx(model1,model2)
             p1 = getfield(params1,i)
             p2 = getfield(params2,i)
             if p1 isa SingleParam || p1 isa PairParam
-                @test p1.values ≈ p2.values
+                if eltype(p1) <: Tuple 
+                    @test stack(p1.values) ≈ stack(p2.values)
+                else
+                    @test p1.values ≈ p2.values
+                end
             elseif p1 isa AssocParam
                 @test p1.values.values ≈ p2.values.values
                 @test p1.values.inner_indices == p2.values.inner_indices
@@ -150,10 +154,15 @@ test_k(model) = test_kl(model,test_l = false)
 test_l(model) = test_kl(model,test_k = false)
 
 function test_repr(val;str = nothing,str_compact = nothing)
-    x = repr("text/plain",val)
-    @test x isa String
-    x_compact = repr(val)
-    @test x_compact isa String
+    io = IOBuffer()
+    Base.show(io,MIME"text/plain"(),val)
+    x = String(take!(io))
+    @test !isempty(x)
+
+    io_compact = IOBuffer()
+    Base.show(io_compact,val)
+    x_compact = String(take!(io_compact))
+    @test !isempty(x_compact)
     if str != nothing
         for s in str
             @test occursin(s,x)
@@ -165,6 +174,40 @@ function test_repr(val;str = nothing,str_compact = nothing)
             @test occursin(s,x_compact)
         end
     end
+end
+
+function test_zero_alloc2(model)
+    z = ones(length(model))/length(model)
+    V = 0.03
+    T = 300.0
+    f(x) = Clapeyron.eos(x,V,T,z)
+    f(model)
+    @test @allocated(f(model)) == 0
+end
+
+function test_zero_alloc1(model)
+    z = SA[1.0]
+    V = 0.03
+    T = 300.0
+    f(x) = Clapeyron.eos(x,V,T,z)
+    f(model)
+    @test @allocated(f(model)) == 0
+end
+
+function test_assoc_matrix(K,tol = 1e-12)
+    s1,s2 = size(K)
+    @test s1 == s2
+    x0 = ones(eltype(K),s1)
+    
+    x10 = Clapeyron.assoc_matrix_solve(K,x0)
+    x1 = Clapeyron.assoc_matrix_solve(K)
+    dx = x10 - x1
+    @test sqrt(sum(abs2,dx)) < tol
+end
+
+function test_assoc_matrix(model,V,T,z,tol = 1e-12)
+    K = Clapeyron.dense_assoc_site_matrix(model,V,T,z)
+    test_assoc_matrix(K,tol)
 end
 #=
 include_distributed distributes the test load among all workers
@@ -178,14 +221,14 @@ include_distributed("test_misc.jl",4)
 include_distributed("test_models_saft_pc.jl",1)
 include_distributed("test_models_cubic.jl",3)
 include_distributed("test_models_saft_others.jl",3)
-include_distributed("test_models_others.jl",2)
-include_distributed("test_models_saft_vr.jl",1)
+include_distributed("test_models_others.jl",1)
+include_distributed("test_models_saft_vr.jl",2)
 include_distributed("test_models_electrolytes.jl",1)
 include_distributed("test_methods_eos.jl",4)
-include_distributed("test_methods_eos.jl",5)
+include_distributed("test_methods_eos_pcsaft.jl",5)
 include_distributed("test_methods_api.jl",2)
 include_distributed("test_methods_api_flash.jl",3)
 include_distributed("test_methods_electrolytes.jl",1)
-include_distributed("test_estimation.jl",1)
+include_distributed("test_estimation.jl",2)
 include_distributed("test_issues.jl",1)
 

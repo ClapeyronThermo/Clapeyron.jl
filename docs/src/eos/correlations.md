@@ -51,8 +51,9 @@ Most Liquid volume correlations are only defined by a volume equation, but some 
 RackettLiquid
 YamadaGunnLiquid
 COSTALD
-GrenkeElliotWater
+GrenkeElliottWater
 HoltenWater
+ZeroLiquid
 ```
 
 # Virial Models

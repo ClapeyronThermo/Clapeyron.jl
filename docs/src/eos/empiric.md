@@ -67,6 +67,7 @@ Clapeyron.SingleFluid
 Clapeyron.SingleFluidIdeal
 Clapeyron.MultiFluid
 Clapeyron.EmpiricIdeal
+Clapeyron.EmpiricPseudoPure
 ```
 
 ## SingleFluid Models

@@ -24,7 +24,7 @@ end
 function coolprop_handler end
 is_coolprop_loaded() = !isnothing(Base.get_extension(Clapeyron,:ClapeyronCoolPropExt))
 
-function coolprop_csv(component::String,comp = "")
+function coolprop_json_string(component::String,comp = "")
     lib_handler = coolprop_handler()
     if !isnothing(lib_handler)
        #libcoolprop is present.
@@ -35,7 +35,7 @@ function coolprop_csv(component::String,comp = "")
         else
             buffer_length = ccall(maybe_length_handler, Cint, (Cstring, Cstring), component, "JSON") + 1
         end
-        
+
         message_buffer = Vector{UInt8}(undef,buffer_length)
         method_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_fluid_param_string)
         err_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_global_param_string)
@@ -90,14 +90,16 @@ function compare_empiric_names(filename,input)
 end
 
 function get_json_data_coolprop(component,norm_comp1 = normalisestring(component))
-    norm_comp1 = normalisestring(component)
     alternative_comp = get!(COOLPROP_IDENTIFIER_CACHE,norm_comp1) do
         cas(norm_comp1)[1]
     end
-
-    success,json_string = coolprop_csv(alternative_comp,component)
+    if isempty(alternative_comp) && !isempty(norm_comp1)
+        #try with the original name
+        norm_comp1,alternative_comp = alternative_comp,component
+    end
+    success,json_string = coolprop_json_string(alternative_comp,component)
     if success
-        data = JSON3.read(json_string)[1]
+        data = JSON.parse(json_string; dicttype=Dict{Symbol,Any})[1]
         return data
     else
         if length(json_string) == 0
@@ -143,10 +145,10 @@ function get_json_data(components;
         verbose && @info "JSON found: $_path"
 
         json_string = read(_path, String)
-        data = JSON3.read(json_string)
+        data = JSON.parse(json_string; dicttype=Dict{Symbol,Any})
     else
         verbose && @info "parsing supplied JSON data."
-        data = JSON3.read(component)
+        data = JSON.parse(component; dicttype=Dict{Symbol,Any})
     end
     return data
 end
@@ -207,7 +209,8 @@ function SingleFluid(components;
         Rgas = nothing,
         verbose = false,
         idealmodel = nothing,
-        ideal_userlocations = String[])
+        ideal_userlocations = String[],
+        allow_pseudo_pure = false)
 
 
     _components = format_components(components)
@@ -222,9 +225,14 @@ function SingleFluid(components;
     if data === nothing && estimate_pure
         return XiangDeiters(components;userlocations,verbose = verbose,idealmodel = idealmodel,ideal_userlocations = ideal_userlocations)
     end
+
+    if first(_components[1]) == '{'
+        _components = [data[:INFO][:NAME]]
+    end
+
     eos_data = first(data[:EOS])
     #properties
-    properties = _parse_properties(data,Rgas,verbose)
+    properties = _parse_properties(data,Rgas,verbose,allow_pseudo_pure)
     #ideal
     if idealmodel === nothing
         ideal_data = eos_data[:alpha0]
@@ -250,7 +258,6 @@ function SingleFluid(components;
 
 
     references = [eos_data[:BibTeX_EOS]]
-
     return SingleFluid(_components,properties,init_ancillaries,ideal,residual,references)
 end
 
@@ -303,21 +310,25 @@ function SingleFluidIdeal(components;
     #properties
     properties = _parse_properties(data,Rgas,verbose)
 
+    if first(_components[1]) == '{'
+        _components = [data[:INFO][:NAME]]
+    end
+
     if idealmodel === nothing
         ideal_data = eos_data[:alpha0]
     else
-        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
         ideal_data = Clapeyron.idealmodel_to_json_data(init_idealmodel; Tr = properties.Tr, Vr = 1/properties.rhor)
     end
     ideal = _parse_ideal(ideal_data,verbose)
     references = String[]
     if haskey(eos_data,:BibTeX_EOS)
-        push!(references,get(eos_data,:BibTeX_EOS))
+        push!(references,eos_data[:BibTeX_EOS])
     end
     return SingleFluidIdeal(_components,properties,ideal,references)
 end
 
-function _parse_properties(data,Rgas0 = nothing, verbose = false)
+function _parse_properties(data,Rgas0 = nothing, verbose = false, allow_pseudo_pure = false)
     verbose && @info "Starting parsing of properties from JSON."
     #info = data[:INFO]
     eos_data_vec  = data[:EOS]
@@ -344,12 +355,14 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
         crit_anc_meta = superanc_data[:meta]
         T_c = crit_anc_meta[Symbol("Tcrittrue / K")]
         rho_c = crit_anc_meta[Symbol("rhocrittrue / mol/m^3")]
+        pp = identity.(superanc_data[:jexpansions_p][end][:coef])
+        P_c = Solvers.cheb_eval(pp,1.0)
     else
         T_c = tryparse_units(get(crit,:T,NaN),get(crit,:T_units,""))
         rho_c = tryparse_units(get(crit,:rhomolar,NaN),get(crit,:rhomolar_units,""))
-
+        P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
     end
-    P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
+
     if reducing !== nothing
         Tr = tryparse_units(get(reducing,:T,NaN),get(reducing,:T_units,""))
         rhor = tryparse_units(get(reducing,:rhomolar,NaN),get(reducing,:rhomolar_units,""))
@@ -396,8 +409,13 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     isnan(lb_volume) && (lb_volume = 1/tryparse_units(get(eos_data,:rhomolar_max,NaN),get(eos_data,:rhomolar_max_units,"")))
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
+    lb_volume = max(lb_volume,8.314*10*Tr/(1e10))
 
-    return SingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    pseudo_pure = get(eos_data,:pseudo_pure,false)
+    if pseudo_pure && !allow_pseudo_pure
+        throw(error("SingleFluid does not support pseudo-pures, use EmpiricPseudoPure(component;kwargs) instead."))
+    end
+    return SingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas,pseudo_pure)
 end
 
 function _parse_ideal(id_data,verbose = false)
@@ -812,11 +830,20 @@ function _parse_ancillaries(component,anc_data;verbose = false)
         rhov_anc = PolExpVapour(Solvers.ChebyshevRange(rhov_data))
         rhol_anc = PolExpLiquid(Solvers.ChebyshevRange(rhol_data))
     else
-        p_data = anc_data[:pS]
+        if haskey(anc_data,:pS) && !haskey(anc_data,:pL) && !haskey(anc_data,:pV)
+            pl_anc = _parse_ancilliary_func(anc_data[:pS],:T_r,:reducing_value)
+            pv_anc = pl_anc
+        elseif !haskey(anc_data,:pS) && haskey(anc_data,:pL) && haskey(anc_data,:pV)
+            pl_anc = _parse_ancilliary_func(anc_data[:pL],:T_r,:reducing_value)
+            pv_anc = _parse_ancilliary_func(anc_data[:pV],:T_r,:reducing_value)
+        else
+            throw(error("invalid specification for parsing saturation ancillaries. expected pS or (pL,pV)"))
+        end
+
         rhol_data = anc_data[:rhoL]
         rhov_data = anc_data[:rhoV]
 
-        ps_anc = PolExpSat(_parse_ancilliary_func(p_data,:T_r,:reducing_value))
+        ps_anc = PolExpSat(pl_anc,pv_anc)
         rhov_anc = PolExpVapour(_parse_ancilliary_func(rhov_data,:T_r,:reducing_value))
         rhol_anc = PolExpLiquid(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
     end

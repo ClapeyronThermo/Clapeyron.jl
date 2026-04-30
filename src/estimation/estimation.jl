@@ -357,16 +357,16 @@ function objective_function(estimation::Estimation,guesses)
         inputs = data.inputs
         outputs = data.outputs
         weights = data.weights
-        if isempty(inputs)
-            prediction = property(model_r)
+        prediction = if isempty(inputs)
+            property(model_r)
         elseif length(inputs)==1
-            prediction = property.(Ref(model_r),inputs[1])
+            property.(Ref(model_r),inputs[1])
         elseif length(inputs)==2
-            prediction = property.(Ref(model_r),inputs[1],inputs[2])
+            property.(Ref(model_r),inputs[1],inputs[2])
         elseif length(inputs)==3
-            prediction = property.(Ref(model_r),inputs[1],inputs[2],inputs[3])
+            property.(Ref(model_r),inputs[1],inputs[2],inputs[3])
         else
-            prediction = property.(Ref(model_r),inputs...)
+            property.(Ref(model_r),inputs...)
         end
 
         if length(outputs)==1

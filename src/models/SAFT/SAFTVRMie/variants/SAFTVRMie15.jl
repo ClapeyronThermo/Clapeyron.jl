@@ -63,7 +63,7 @@ SAFTVRMie15
 export SAFTVRMie15
 
 function x0_volume_liquid(model::SAFTVRMie15Model,T,z)
-    v_lb = lb_volume(model,z)
+    v_lb = lb_volume(model,T,z)
     return v_lb*1.7
 end
 #=

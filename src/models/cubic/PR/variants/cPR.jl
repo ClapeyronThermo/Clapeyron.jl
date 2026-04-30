@@ -52,11 +52,11 @@ function cPR(components;
     pc = params["Pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
-
+    n = length(formatted_components)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",formatted_components,zeros(length(formatted_components)))
-    b = PairParam("b",formatted_components,zeros(length(formatted_components)))
-    init_idealmodel = init_model(idealmodel,formatted_components,ideal_userlocations,verbose,reference_state)
+    a = PairParam("a",formatted_components,zeros(n,n),ones(Bool,n,n))
+    b = PairParam("b",formatted_components,zeros(n,n),ones(Bool,n,n))
+    init_idealmodel = init_model(idealmodel,formatted_components,ideal_userlocations,verbose)
 
     if alpha !== TwuAlpha
         init_alpha = init_alphamodel(alpha,formatted_components,w,alpha_userlocations,verbose)

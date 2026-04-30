@@ -1,11 +1,17 @@
 abstract type VTPRUNIFACModel <: UNIFACModel end
 
-struct VTPRUNIFAC{c<:EoSModel} <: VTPRUNIFACModel
+struct VTPRUNIFAC{c<:EoSModel,T} <: VTPRUNIFACModel
     components::Array{String,1}
-    groups::GroupParam
-    params::UNIFACParam
+    groups::GroupParam{T}
+    params::UNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
+end
+
+function VTPRUNIFAC(components,groups,params,puremodel,references)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return VTPRUNIFAC{c,T}(components,groups,params,puremodel,references)
 end
 
 export VTPRUNIFAC
@@ -60,7 +66,8 @@ function VTPRUNIFAC(components;
     verbose = false,
     reference_state = nothing)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"];group_userlocations = group_userlocations, verbose = verbose)
+    _components = format_gccomponents(components)
+    groups = GroupParam(_components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"];group_userlocations = group_userlocations, verbose = verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/VTPR/VTPR_like.csv", "Activity/UNIFAC/VTPR/VTPR_unlike.csv"]; userlocations = userlocations,  asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose = verbose)
     A  = params["A"]

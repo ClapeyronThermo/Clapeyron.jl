@@ -35,18 +35,38 @@ function NLSolvers.NEqOptions(method::ThermodynamicMethod)
                     maxiter = method.max_iters)
 end
 
-mw(model::EoSModel) = model.params.Mw.values
+function mw(model::EoSModel) 
+    if has_groups(model)
+        return group_Mw(model)
+    else
+        return model.params.Mw.values
+    end
+end
 
-group_Mw(model::EoSModel) = group_Mw(model.params.Mw.values,model.groups)
+function get_verbosity(method::T) where T
+    if hasfield(T,:verbose)
+        return method.verbose
+    else
+        return false
+    end
+end
+
+group_Mw(model::EoSModel) = group_Mw(model.params.Mw,model.groups)
 function group_Mw(Mw_gc::SingleParam,groups::GroupParam)
     n = length(groups.components)
-    mw_comp = zeros(eltype(Mw_gc.values),n)
+    mw_comp = zeros(Base.promote_eltype(Mw_gc,groups),n)
     v = groups.n_flattenedgroups
     mw_gc = Mw_gc.values
     for i in 1:n
         mw_comp[i] = dot(mw_gc,v[i])
     end
     return mw_comp
+end
+
+function __check_convergence(solver_result)
+    f_abstol = solver_result.options.f_abstol
+    best_residual = solver_result.info.best_residual
+    all(x -> abs(x) < f_abstol,best_residual)
 end
 
 function group_molecular_weight(groups::GroupParameter,mw,z = @SVector [1.])
@@ -66,13 +86,14 @@ molecular_weight(mw::AbstractVector,z) = comp_molecular_weight(mw,z)
 molecular_weight(mw::SingleParam,z) = comp_molecular_weight(mw.values,z)
 
 function __molecular_weight(model,z)
-    MW = mw(model)
     if has_groups(model)
-        return group_molecular_weight(model.groups,MW,z)
+        return group_molecular_weight(model,z)
     else
-        return comp_molecular_weight(MW,z)
+        return comp_molecular_weight(mw(model),z)
     end
 end
+
+group_molecular_weight(model,z) = group_molecular_weight(model.groups,model.params.Mw.values,z)
 
 const LIQUID_STR = (:liquid,:LIQUID,:L,:l)
 

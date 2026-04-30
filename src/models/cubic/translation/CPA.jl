@@ -20,3 +20,7 @@ function translation(model::CubicModel,V,T,z,translation_model::CPATranslation)
     c = translation_model.params.c.values
     return c
 end
+
+function translation2(model::CubicModel,V,T,z,translation_model::CPATranslation,a,b,α)
+    return dot(translation_model.params.c.values.values,z)
+end

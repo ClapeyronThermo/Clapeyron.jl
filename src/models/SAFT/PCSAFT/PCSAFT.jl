@@ -22,6 +22,16 @@ function transform_params(::Type{PCSAFT},params)
     return saft_lorentz_berthelot(params)
 end
 
+function x0_volume_liquid(model::PCSAFTModel,p,T,z)
+    lb_v = lb_volume(model,T,z)
+    Ts = T_scale(model,z)
+    if T > 0.9Ts
+        return 1.25*lb_v
+    else
+        return x0_volume_liquid_lowT(model,p,T,z)
+    end
+end
+
 function get_k(model::PCSAFTModel)
     has_groups(model) && return nothing
     return get_k_geomean(model.params.epsilon)
@@ -262,7 +272,7 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
         κijab = κ[idx]
         if κijab != 0
             gij = @f(g_hs,i,j,_data)
-            Δout[idx] = gij*σ[i,j]^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κ[idx]
+            Δout[idx] = gij*σ[i,j]^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κijab
         end
     end
     return Δout

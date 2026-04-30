@@ -72,6 +72,7 @@ Clapeyron.PR
 Clapeyron.PR78
 Clapeyron.cPR
 Clapeyron.VTPR
+Clapeyron.TVTPR
 Clapeyron.UMRPR
 Clapeyron.tcPR
 Clapeyron.tcPRW
@@ -110,11 +111,15 @@ Clapeyron.sCPAAlpha
 Clapeyron.MTAlpha
 Clapeyron.BMAlpha
 Clapeyron.TwuAlpha
+Clapeyron.Twu91Alpha
 Clapeyron.Twu88Alpha
 Clapeyron.PatelTejaAlpha
+Clapeyron.PTVAlpha
 Clapeyron.KUAlpha
 Clapeyron.RKPRAlpha
 Clapeyron.LeiboviciAlpha
+Clapeyron.MathiasCopemanAlpha
+Clapeyron.MC3PRAlpha
 ```
 
 ## Volume Translation Models
@@ -123,9 +128,12 @@ Clapeyron.LeiboviciAlpha
 Clapeyron.translation
 Clapeyron.NoTranslation
 Clapeyron.ConstantTranslation
-Clapeyron.RackettTranslation
+Clapeyron.ClausiusTranslation
 Clapeyron.PenelouxTranslation
+Clapeyron.RackettTranslation
+Clapeyron.TVTPRTranslation
 Clapeyron.MTTranslation
+Clapeyron.BaledTranslation
 ```
 
 ## Mixing Rule Models

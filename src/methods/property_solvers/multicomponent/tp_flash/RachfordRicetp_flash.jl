@@ -34,6 +34,14 @@ struct RRTPFlash{T} <: TPFlashMethod
     verbose::Bool
 end
 
+function Solvers.primalval(method::RRTPFlash{T}) where {T}
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end 
+end
+
 Base.eltype(method::RRTPFlash{T}) where T = T
 
 function index_reduction(m::RRTPFlash,idx::AbstractVector)
@@ -75,15 +83,19 @@ function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
 
     x,y,β,v = tp_flash_michelsen(model_cached,p,T,z,method,true)
-    n = sum(z)
+    
     volumes = [v[1],v[2]]
-    if has_a_res(model_cached)
+    comps = [x,y]
+    βi = [1-β ,β]
+
+    if isnan(β)
+        g = β
+    elseif has_a_res(model_cached)
         g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium,volumes)
     else
         g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
     end
-    comps = [x,y]
-    βi = [1-β ,β]
+
     return FlashResult(comps,βi,volumes,FlashData(p,T,g))
 end
 

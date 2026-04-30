@@ -80,13 +80,9 @@ function VTPRRule(components; activity = UNIFAC, userlocations = String[],activi
 end
 
 function ab_premixing(model::PRModel,mixing::VTPRRule,k,l)
-    Ωa, Ωb = ab_consts(model)
-    _Tc = model.params.Tc
-    _pc = model.params.Pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    ab_diagvalues!(model)
     epsilon_LorentzBerthelot!(a,k)
     vtpr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,3/4)
     kij_mix!(vtpr_mix,b,l)
@@ -97,13 +93,13 @@ function cubic_get_l(model::CubicModel,mixing::VTPRRuleModel,params)
     return get_k_powmean(params.b.values,3/4)
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::VTPRRuleModel,α,a,b,c)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::VTPRRuleModel,α,a,b)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
     g_E_res = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z) / n
     b̄ = dot(z,b,z) * invn2
-    c̄ = dot(z,c)/n
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     Σab = invn*sum(z[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)
     ā = b̄*R̄*T*(Σab-1/0.53087*(g_E_res/(R̄*T)))
     return ā,b̄,c̄

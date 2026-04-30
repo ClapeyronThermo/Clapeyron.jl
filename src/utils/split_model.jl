@@ -80,20 +80,17 @@ function each_split_model(assoc::Compressed4DMatrix{T},I) where T
     values = assoc.values[idx_bool]
     outer_indices = assoc.outer_indices[idx_bool]
     inner_indices = assoc.inner_indices[idx_bool]
-    out_val = length(I)
-    outer_size = (out_val,out_val)
-    inner_size = assoc.inner_size
-    len2 = length(outer_indices)
-    for i ∈ 1:len2
+    len = length(outer_indices)
+    for i ∈ 1:len
         i1,j1 = outer_indices[i]
         i2,j2 = findfirst(==(i1),I)::Int,findfirst(==(j1),I)::Int
         outer_indices[i] = (i2,j2)
     end
-    return Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
+    return Compressed4DMatrix(values,outer_indices,inner_indices)
 end
 
 function each_split_model(param::ClapeyronParam,group,I_component,I_group)
-    components = param.components
+    components = component_list(param)
     if group === nothing
         return each_split_model(param,I_component)
     elseif components == group.components
@@ -175,7 +172,7 @@ function create_group_splitter(param::GroupParam,I)
     return Ig
 end
 
-function each_split_model(param::GroupParam,__group,Ic,Ig)
+function each_split_model(param::GroupParam{TT},__group,Ic,Ig) where TT
     grouptype = param.grouptype
     components = param.components[Ic]
     groups = param.groups[Ic]
@@ -185,11 +182,11 @@ function each_split_model(param::GroupParam,__group,Ic,Ig)
 
     flattenedgroups = param.flattenedgroups[Ig]
     i_groups = [[findfirst(isequal(group), flattenedgroups)::Int for group ∈ componentgroups] for componentgroups ∈ groups]
-    n_flattenedgroups = Vector{Vector{Int64}}(undef,length(Ic))
+    n_flattenedgroups = Vector{Vector{TT}}(undef,length(Ic))
 
     #handling for intergroups
-    n_intergroups = Vector{Matrix{Int64}}(undef,length(Ic))
-    empty_intergroup = fill(0,(0,0))
+    n_intergroups = Vector{Matrix{TT}}(undef,length(Ic))
+    empty_intergroup = Matrix{TT}(undef,(0,0))
     for (k,i) in pairs(Ic)
         pii = param.n_flattenedgroups[i]
         n_flattenedgroups[k] = pii[Ig]
@@ -201,7 +198,7 @@ function each_split_model(param::GroupParam,__group,Ic,Ig)
         end
     end
 
-    return GroupParam(
+    return GroupParam{TT}(
         components,
         groups,
         grouptype,

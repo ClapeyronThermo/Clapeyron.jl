@@ -16,7 +16,7 @@ end
         neutralmodel::EoSModel = pharmaPCSAFT,
         ionmodel::IonModel = DH,
         RSPmodel::RSPModel = ConstRSP,
-        charges = String[], 
+        charge = String[], 
         ideal_userlocations = String[],
         neutralmodel_userlocations = String[],
         ionmodel_userlocations = String[],
@@ -54,7 +54,7 @@ function ePCSAFT(solvents,ions;
     neutralmodel = pharmaPCSAFT,
     ionmodel = hsdDH,
     RSPmodel = ConstRSP,
-    charges = String[],
+    charge = String[],
     ideal_userlocations = String[],
     neutralmodel_userlocations = String[],
     ionmodel_userlocations = String[],
@@ -62,12 +62,13 @@ function ePCSAFT(solvents,ions;
     assoc_options = AssocOptions(),
     verbose = false,
     reference_state = nothing)
+
+    solvents = format_components(solvents)
+    ions = format_components(ions)
     components = deepcopy(ions)
     prepend!(components,solvents)
 
-    params = getparams(format_components(components), ["Electrolytes/properties/charges.csv"]; userlocations=charges, verbose=verbose)
-    _charge = params["charge"]
-    charge = _charge.values
+    Z = init_charge(components,charge;verbose)
 
     neutral_path = DB_PATH.*["/SAFT/PCSAFT","/SAFT/PCSAFT/ePCSAFT","/SAFT/PCSAFT/pharmaPCSAFT"]
 
@@ -75,11 +76,10 @@ function ePCSAFT(solvents,ions;
     init_neutralmodel = neutralmodel(components;userlocations=append!(neutralmodel_userlocations,neutral_path),verbose=verbose,assoc_options=assoc_options)
     init_ionmodel = ionmodel(solvents,ions;RSPmodel=RSPmodel,userlocations=append!(ionmodel_userlocations,neutral_path),verbose=verbose)
 
-
-    for i in ions
+    for i in @iions
         init_neutralmodel.params.epsilon[i] = 0. #pure ion has ϵi 
-        for j in ions
-            if sign(_charge[i]) == sign(_charge[j]) #cation-cation and anion-anion interactions are neglected.
+        for j in @iions
+            if sign(Z[i]) == sign(Z[j]) #cation-cation and anion-anion interactions are neglected.
                 init_neutralmodel.params.epsilon[i,j] = 0.
             end
         end
@@ -87,7 +87,7 @@ function ePCSAFT(solvents,ions;
 
     references = ["10.1016/j.cherd.2014.05.017"]
     components = format_components(components)
-    model = ePCSAFT(components,charge,init_idealmodel,init_neutralmodel,init_ionmodel,references)
+    model = ePCSAFT(components,Z,init_idealmodel,init_neutralmodel,init_ionmodel,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end

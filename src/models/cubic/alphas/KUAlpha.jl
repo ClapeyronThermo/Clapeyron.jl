@@ -50,6 +50,7 @@ alpha = KUAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0
 """
 KUAlpha
 default_locations(::Type{KUAlpha}) = critical_data()
+default_ignore_missing_singleparams(::Type{KUAlpha}) = ["Vc"]
 
 function taylor_alpha_kumar(Tr,m,n)
     t1 = m*n

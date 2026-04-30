@@ -86,9 +86,9 @@ function sle_solubility(model::CompositeModel{F,S},p,T,z;solute=nothing,x0=nothi
         #TODO: express this in terms of melting_temperature
 
         idx_sol_l = zeros(Bool,length(model.fluid.components))
-        solute_l = mapping[idx_sol_s][1]
-        ν_l = [solute_l[1][i][2] for i in 1:length(solute_l[1])]
-        solute_l = [solute_l[1][i][1] for i in 1:length(solute_l[1])]
+        solute_l1 = mapping[idx_sol_s][1]
+        ν_l = [solute_l1[1][i][2] for i in 1:length(solute_l1[1])]
+        solute_l = [solute_l1[1][i][1] for i in 1:length(solute_l1[1])]
 
 
         for i in solute_l

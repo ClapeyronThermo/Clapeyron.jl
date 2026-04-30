@@ -1,20 +1,28 @@
-struct UNIFACParam <: EoSParam
-    A::PairParam{Float64}
-    B::PairParam{Float64}
-    C::PairParam{Float64}
-    R::SingleParam{Float64}
-    Q::SingleParam{Float64}
+struct UNIFACParam{T} <: ParametricEoSParam{T}
+    A::PairParam{T}
+    B::PairParam{T}
+    C::PairParam{T}
+    R::SingleParam{T}
+    Q::SingleParam{T}
 end
+
+UNIFACParam(A,B,C,R,Q) = build_parametric_param(UNIFACParam,A,B,C,R,Q)
 
 abstract type UNIFACModel <: ActivityModel end
 
-struct UNIFAC{c<:EoSModel} <: UNIFACModel
+struct UNIFAC{c<:EoSModel,T} <: UNIFACModel
     components::Array{String,1}
-    groups::GroupParam
-    params::UNIFACParam
+    groups::GroupParam{T}
+    params::UNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    unifac_cache::UNIFACCache
+    unifac_cache::UNIFACCache{T}
+end
+
+function UNIFAC(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return UNIFAC{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 default_locations(::Type{UNIFAC}) = ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]
@@ -64,6 +72,12 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 Θₖ = QₖXₖ/∑QₖXₖ
 Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
 ```
+
+!!! note "Group Fragmentation"
+
+    Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `UNIFACGroups`
+
+
 ## References
 1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. [doi:10.1021/i260064a004](https://doi.org/10.1021/i260064a004)
 2. Weidlich, U.; Gmehling, J. A modified UNIFAC model. 1. Prediction of VLE, hE, and.gamma..infin. Ind. Eng. Chem. Res. 1987, 26, 1372–1381.
@@ -174,7 +188,8 @@ function UNIFAC(components;
     verbose = false,
     reference_state = nothing)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
+    _components = format_gccomponents(components)
+    groups = GroupParam(_components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
     params = getparams(groups, default_locations(UNIFAC);
                         userlocations = userlocations,

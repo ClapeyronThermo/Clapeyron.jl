@@ -19,3 +19,4 @@ LocalPreferences.toml
 /notebooks
 examples/Playground/*
 .DS_Store
+test/*.csv

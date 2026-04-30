@@ -140,8 +140,8 @@ function KU(components;
     Vc = params["Vc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     n = length(formatted_components)
-    a = PairParam("a",formatted_components,zeros(n))
-    b = PairParam("b",formatted_components,zeros(n))
+    a = PairParam("a",formatted_components,zeros(n,n),ones(Bool,n,n))
+    b = PairParam("b",formatted_components,zeros(n,n),ones(Bool,n,n))
     omega_a = SingleParam("Ωa",formatted_components,zeros(n))
     omega_b = SingleParam("Ωb",formatted_components,zeros(n))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
@@ -169,8 +169,7 @@ function ab_premixing(model::KUModel,mixing::MixingRule,k,l)
     Ωb = @. Zc*α
     model.params.omega_a .= Ωa
     model.params.omega_b .= Ωb
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    ab_diagvalues!(a,b,Ωa,Ωb,_Tc,_pc,Rgas(model))
     a = epsilon_LorentzBerthelot!(a,k)
     b = sigma_LorentzBerthelot!(b,l)
     return a,b

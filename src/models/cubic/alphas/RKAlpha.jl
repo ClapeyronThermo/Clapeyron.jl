@@ -1,6 +1,7 @@
 abstract type RKAlphaModel <: AlphaModel end
 
 @newmodelsingleton RKAlpha RKAlphaModel
+export RKAlpha
 
 """
     RKAlpha <: RKAlphaModel

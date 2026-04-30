@@ -74,6 +74,9 @@ end
     iHmolar_residual
     iSmolar_residual
     iGmolar_residual
+    iHmolar_idealgas
+    iSmolar_idealgas
+    iUmolar_idealgas
     iDmass
     iHmass
     iSmass
@@ -83,6 +86,9 @@ end
     iUmass
     iGmass
     iHelmholtzmass
+    iHmass_idealgas
+    iSmass_idealgas
+    iUmass_idealgas
     iviscosity
     iconductivity
     isurface_tension
@@ -118,6 +124,10 @@ end
     iODP
     iPhase
     iundefined_parameter
+end
+
+function output_is_ideal(param::Parameters)
+    return param in (iHmolar_idealgas,iSmolar_idealgas,iUmolar_idealgas,iHmass_idealgas,iSmass_idealgas,iUmass_idealgas)
 end
 
 # Define InputPairs enum (equivalent to CoolProp's input_pairs)
@@ -290,7 +300,11 @@ function ClapeyronPropsSI(output::AbstractString, name1::AbstractString, value1:
     value2_std,j2 = standarize_value_and_itype(model,z,value2,i2)
     res = generate_update_pair(j1,value1_std,j2,value2_std)
     itype,(x,y) = res
+    
     flash = flash_by_input(model,x,y,z,itype)
+    if output_is_ideal(io) && Clapeyron.numphases(flash) != 1
+        throw(Clapeyron.invalid_property_multiphase_error(io,Clapeyron.numphases(flash),Clapeyron.pressure(flash),Clapeyron.temperature(flash)))
+    end
     flash.fractions ./= sum(flash.fractions) #we move to a 1-mol basis
     fracs = z ./ sum(z)
     return eval_property(model,flash,fracs,io)
@@ -392,6 +406,9 @@ function eval_property(model,result,z,key::Parameters)
     iHmolar_residual == key && return enthalpy_res(model,result)
     iSmolar_residual == key && return entropy_res(model,result)
     iGmolar_residual == key && return gibbs_free_energy_res(model,result)
+    iHmolar_idealgas == key && return enthalpy(Clapeyron.idealmodel(model),result)
+    iSmolar_idealgas == key && return entropy(Clapeyron.idealmodel(model),result)
+    iUmolar_idealgas == key && return internal_energy(Clapeyron.idealmodel(model),result)
     iDmass == key && return mass_density(model,result)
     iHmass == key && return mass_enthalpy(model,result)
     iSmass == key && return mass_entropy(model,result)
@@ -401,6 +418,9 @@ function eval_property(model,result,z,key::Parameters)
     iUmass == key && return mass_internal_energy(model,result)
     iGmass == key && return mass_gibbs_energy(model,result)
     iHelmholtzmass == key && return mass_helmholtz_energy(model,result)
+    iHmass_idealgas == key && return mass_enthalpy(Clapeyron.idealmodel(model),result)
+    iSmass_idealgas == key && return mass_entropy(Clapeyron.idealmodel(model),result)
+    iUmass_idealgas == key && return mass_internal_energy(Clapeyron.idealmodel(model),result)
     iviscosity == key && return property_not_implemented_error(key)
     iconductivity == key && return property_not_implemented_error(key)
     isurface_tension == key && return property_not_implemented_error(key)

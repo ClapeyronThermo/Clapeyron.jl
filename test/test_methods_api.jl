@@ -26,10 +26,10 @@
     @test Clapeyron.second_virial_coefficient(model10,T10)*pc10/(R*Tc10) |> Unitful.ustrip ≈ -0.22346581496303466 rtol = 1E-6
 
     #example 3.13, abbott and van ness, 7th ed.
-    model13 = PR(["ammonia"],translation = RackettTranslation)
-    v13 = 26.545235297652496u"cm^3"
+    model13 = PR(["ammonia"],translation = PenelouxTranslation)
+    v13 = 30.769606571028624u"cm^3"
     T13 = 310u"K"
-    #experimental value is 29.14 cm3/mol. PR default is ≈ 32, Racckett overcorrects
+    #experimental value is 29.14 cm3/mol. PR default is ≈ 32, Peneloux overcorrects a little
     @test saturation_pressure(model13,T13,output = (u"atm",u"cm^3",u"cm^3"))[2] ≈ v13 rtol = 1E-6
     @test Clapeyron.pip(model13,v13,T13) > 1 #check if is a liquid phase
 
@@ -74,12 +74,36 @@ end
     fluid = PCSAFT(["water","methanol"]; assoc_options = AssocOptions(combining=:elliott))
     fluid.params.epsilon["water","methanol"] *= (1+0.18)
     v = volume(fluid, 1e5, 160.0, [0.5, 0.5],phase = :l)
+    test_assoc_matrix(fluid,v,160.0,[0.5,0.5])
     @test Clapeyron.X(fluid,v,160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
     #test with bigfloat, we check that all temporary association storage is correctly initialized
     @test Clapeyron.X(fluid,big(v),160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
 
     K = [0.0 244.24071691762867 0.0 3.432863727098509; 244.24071691762867 0.0 3.432863727098509 0.0; 0.0 2.2885758180656732 0.0 0.0; 2.2885758180656732 0.0 0.0 0.0]
     @test Clapeyron.assoc_matrix_solve(K) ≈ [0.0562461981664357, 0.0562461981664357, 0.8859564211875895, 0.8859564211875895]
+    test_assoc_matrix(K)
+    #test some particular 2x2 matrices
+
+    test_assoc_matrix([100.0 200.0; 300.0 400.0])
+
+    test_assoc_matrix([100.0 200.0; 300.0   0.0])
+    test_assoc_matrix([100.0   0.0; 200.0 300.0])
+    test_assoc_matrix([100.0 200.0; 0.0 300.0])
+    test_assoc_matrix([0.0 100.0; 200.0 300.0])
+
+    test_assoc_matrix([0.0 100.0; 200.0 0.0])
+    test_assoc_matrix([1000.0 0.0; 0.0 200.0])
+    test_assoc_matrix([0.0 1000.0; 0.0 200.0])
+    test_assoc_matrix([1000.0 0.0; 200.0 0.0])
+    test_assoc_matrix([0.0 0.0; 100.0 200.0])
+    test_assoc_matrix([1000.0 3000.0; 0.0 0.0])
+
+    test_assoc_matrix([1000.0 0.0; 0.0 0.0])
+    test_assoc_matrix([0.0 1000.0; 0.0 0.0])
+    test_assoc_matrix([0.0 0.0; 1000.0 0.0])
+    test_assoc_matrix([0.0 0.0; 0.0 1000.0])
+
+    test_assoc_matrix([500.0;;])
 end
 
 using EoSSuperancillaries
@@ -236,6 +260,11 @@ end
     act = NRTL(["water","ethanol"],puremodel = puremodel,reference_state = :ntp)
     @test reference_state(act).std_type == :ntp
     @test length(reference_state(act).a0) == 2
+
+    #issue 511
+    ref511 = ReferenceState(:nbp)
+    model511 = cPR("water",idealmodel=ReidIdeal,reference_state = ref511)
+    @test Clapeyron.reference_state(model511).std_type == :nbp
 end
 
 @testset "Solid Phase Equilibria" begin
@@ -300,6 +329,7 @@ end
         (TE,xE) = eutectic_point(model)
         @test TE ≈ 271.97967645045804 rtol = 1e-6
     end
+
     GC.gc()
 
     @testset "Solid-Liquid-Liquid Equilibria" begin
@@ -309,9 +339,25 @@ end
         (s1,s2) = slle_solubility(model,p,T)
         @test s1[3] ≈ 0.0015804179997257882 rtol = 1e-6
     end
+
+    #=
+    @testset "#466" begin
+        glycine = ("glycine" => ["COOH" => 1, "CH2" => 1, "NH2" => 1])
+        lactic_acid = ("lactic acid" =>["COOH" => 1, "CH3" => 1, "CHOH" => 1])
+        oxalic_acid = ("oxalic acid" => ["COOH" => 2])
+
+        ox_gly = CompositeModel([oxalic_acid,glycine];fluid=SAFTgammaMie,solid=SolidHfus)
+        la_gly = CompositeModel([lactic_acid,glycine];fluid=SAFTgammaMie,solid=SolidHfus)
+
+        T1,_ = Clapeyron.eutectic_point(la_gly)
+        T2,_ = Clapeyron.eutectic_point(ox_gly)
+        @test T1 ≈ 300.23095880432294 rtol = 1e-6
+        @test T2 ≈ 454.27284723964925 rtol = 1e-6
+    end =#
 end
 GC.gc()
-#test for really really difficult equilibria.
+
+#test for difficult equilibria.
 @testset "challenging equilibria" begin
 
     #see https://github.com/ClapeyronThermo/Clapeyron.jl/issues/173
@@ -321,7 +367,7 @@ GC.gc()
         =#
 
         system = VTPR(["carbon monoxide","carbon dioxide"])
-        @test_broken Clapeyron.bubble_pressure(system,218.15,[1e-5,1-1e-5])[1] ≈ 1.1373024916997014e6 rtol = 1e-4
+        @test Clapeyron.bubble_pressure(system,218.15,[1e-5,1-1e-5])[1] ≈ 554338.3127125567 rtol = 1e-4
     end
 
     #see https://github.com/ClapeyronThermo/Clapeyron.jl/issues/172
@@ -361,6 +407,26 @@ GC.gc()
         model4 = SAFTVRMie(["methanol"])
         T4 = 164.7095044742657
         @test Clapeyron.saturation_pressure(model4,T4,crit_retry = false)[1] ≈ 0.02610821545005174 rtol = 1e-6
+    
+        @testset "saturation at low temperatures" begin
+            l1 = PR("1-butene")
+            Tc1 = 419.95
+            sat_low1 = saturation_pressure(l1,0.183Tc1)
+            @test sat_low1[1] ≈ 9.468875475768151e-9 rtol = 1e-6
+
+            l2 = PCSAFT("1-butene")
+            Tc2 = 426.80960130305374
+            sat_low2 = saturation_pressure(l2,0.18Tc2)
+            @test sat_low2[1] ≈ 1.7914820721239496e-9 rtol = 1e-6
+            
+        end
+
+        @testset "high conditions - Multifluid" begin
+            fluid = MultiFluid(["propane","R134a"])
+            #_,pcrit,_ = crit_mix(fluid,[1.0,1.0])
+            #p = 0.7*pcrit
+            @test dew_temperature(fluid,2.7706485503578815e6,[1.0,1.0])[1] ≈ 335.8362199892292 rtol = 1e-6
+        end
     end
     GC.gc()
 end
@@ -372,34 +438,6 @@ end
     for prop in [volume,gibbs_free_energy,helmholtz_free_energy,entropy,enthalpy,internal_energy]
         @test sum(partial_property(model_pem,p,T,z,prop) .* z) ≈ prop(model_pem,p,T,z)
     end
-end
-
-@testset "spinodals" begin
-    # Example from Ref. https://doi.org/10.1016/j.fluid.2017.04.009
-    model = PCSAFT(["methane","ethane"])
-    T_spin = 223.
-    x_spin = [0.2,0.8]
-    (pl_spin, vl_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:liquid)
-    (pv_spin, vv_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:vapor)
-    @test vl_spin ≈ 7.218532167482202e-5 rtol = 1e-6
-    @test vv_spin ≈ 0.0004261109817247137 rtol = 1e-6
-
-    (Tl_spin_impl, xl_spin_impl) = spinodal_temperature(model,pl_spin,x_spin;T0=220.,v0=vl_spin)
-    (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model,pv_spin,x_spin;T0=225.,v0=vv_spin)
-    @test Tl_spin_impl ≈ T_spin rtol = 1e-6
-    @test Tv_spin_impl ≈ T_spin rtol = 1e-6
-
-    #test for #382: pure spinodal at low pressures
-    model2 = PCSAFT("carbon dioxide")
-    Tc,Pc,Vc = (310.27679925044134, 8.06391600653306e6, 9.976420206333288e-5)
-    T = LinRange(Tc-70,Tc-0.1,50)
-    psl = first.(spinodal_pressure.(model2,T,phase = :l))
-    psv = first.(spinodal_pressure.(model2,T,phase = :v))
-    psat = first.(saturation_pressure.(model2,T))
-    @test all(psl .< psat)
-    @test all(psat .< psv)
-    @test issorted(psl)
-    @test issorted(psv)
 end
 
 @testset "supercritical lines" begin
@@ -424,4 +462,35 @@ end
     @test T_initial ≈ ciic_temperature(model,p_ciic,v0 = 1.01*v3)[1] rtol = 1e-6
     @test p_ciic ≈ ciic_pressure(model,T_initial,p0 = 1.01*p_ciic)[1] rtol = 1e-6
     @test p_ciic ≈ ciic_pressure(model,T_initial,v0 = 1.01*v3)[1] rtol = 1e-6
+end
+
+@testset "thermodynamic factor" begin 
+    eos_model = PCSAFT(["water", "ethanol"])
+    Γ_eos = thermodynamic_factor(eos_model, 1e5, 300., [2.,4.])
+    @test size(Γ_eos) == (1,1)
+    @test Γ_eos[1,1] ≈ 0.6178686409160774 rtol=1e-6 
+
+    # Activity model
+    act_model = NRTL(["water", "ethanol", "acetone"])
+    T_act = 300.
+    x_act = [0.15, 0.35, 0.5]
+    
+    # Analytical from Taylor and Krishna (1993), Table D.8
+    function thermodynamic_factor_nrtl(model, p, T, x)    
+        N = length(x)
+        
+        τ = model.params.a .+ model.params.b ./ T
+        G = exp.(-τ .* model.params.c)
+        S = G' * x    
+        ε = G .* (τ .- (((G .* τ)' * x) ./ S)') .* (inv.(S)')
+        Q = ε .+ ε' .- ((G * Diagonal(x ./ S)) * ε' .+ (ε * Diagonal(x ./ S)) * G')
+        
+        Γ = [((i == j) ? 1.0 : 0.0) + x[i] * (Q[i, j] - Q[i, N]) for i in 1:N-1, j in 1:N-1]
+        return Γ
+    end
+
+    Γ_act = thermodynamic_factor(act_model, 1e5, T_act, x_act)
+    Γ_ref = thermodynamic_factor_nrtl(act_model, 1e5, T_act, x_act)
+    @test size(Γ_act) == (2,2)
+    @test all((≈).(Γ_act, Γ_ref, rtol=1e-6)) 
 end

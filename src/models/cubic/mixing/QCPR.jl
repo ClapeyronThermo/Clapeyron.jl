@@ -52,16 +52,9 @@ end
 recombine_impl!(model::QCPRRule) = model
 
 function ab_premixing(model::PRModel,mixing::QCPRRuleModel,kij,lij)
-    Tc = model.params.Tc
-    Pc = model.params.Pc
-    Ωa, Ωb = ab_consts(model)
-    comps = Tc.components
-    n = length(Tc)
     a = model.params.a
     b = model.params.b
-    aii,bii = diagvalues(a),diagvalues(b)
-    @. aii = Ωa*R̄^2*Tc^2/Pc
-    @. bii = Ωb*R̄*Tc/Pc
+    ab_diagvalues!(model)
     epsilon_LorentzBerthelot!(a,kij)
     sigma_LorentzBerthelot!(b)
     if lij !== nothing
@@ -70,7 +63,7 @@ function ab_premixing(model::PRModel,mixing::QCPRRuleModel,kij,lij)
     return a,b
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
@@ -102,12 +95,12 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
     end
     ā *= invn2
     b̄ *= invn2
-    c̄ = dot(z,c)*invn
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     #dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
     return ā,b̄,c̄
 end
 
-function mixing_rule1(model,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
+function mixing_rule1(model,V,T,z,mixing_model::QCPRRuleModel,α,a,b)
     _1 = oneunit(z[1])
     ā = a[1,1]*α[1]*_1
     A = model.mixing.params.A.values[1,1]
@@ -115,7 +108,7 @@ function mixing_rule1(model,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
     Tc = model.params.Tc.values[1]
     β = (1 + A/(T + B))^3 / (1 + A/(Tc + B))^3
     b̄ = b[1,1]*β*_1
-    c̄ = c[1]*_1
+    c̄ = translation2(model,V/sum(z),T,SA[1.0],model.translation,ā,b̄,α)
     return ā,b̄,c̄
 end
 

@@ -9,7 +9,6 @@ Should at least support passing the `x0` keyword, containing an initial vapour p
 """
 abstract type DewPointMethod <: ThermodynamicMethod end
 
-
 function index_reduction(method::DewPointMethod,idx_r)
     if hasfield(typeof(method),:x0)
         if !isnothing(method.x0)
@@ -23,7 +22,7 @@ function index_reduction(method::DewPointMethod,idx_r)
     return method
 end
 
-function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables), crit = nothing)
+function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables), crit = nothing;verbose = false)
     sat = extended_saturation_pressure.(pure,T,crit) #saturation, or approximation via critical point.
     p0inv_r = 1. ./ first.(sat)
     p0inv = index_expansion(p0inv_r,condensables)
@@ -46,36 +45,47 @@ function x0_dew_pressure(model::EoSModel,T,y)
     return x
 end
 
-function dew_pressure_init(model,T,y,vol0,p0,x0,condensables)
+function dew_pressure_init(model,T,y,vol0,p0,x0,condensables = FillArrays.Fill(true,length(model)), verbose = false)
     if !isnothing(x0)
         if !isnothing(p0)
             if !isnothing(vol0)
+                verbose && @info "dew_pressure: pressure,volumes and compositions already provided."
                 vl,vv = vol0
             else
+                verbose && @info "dew_pressure: calculating volumes from provided pressure and compositions."
                 vl = volume(model,p0,T,x0,phase = :l)
                 vv = volume(model,p0,T,y,phase =:v)
             end
         else
             if !isnothing(vol0)
+                verbose && @info "dew_pressure: calculating pressure from provided vapour volume and composition."
                 vl,vv = vol0
                 p0 = pressure(model,vv,T,y)
             else
-                p0,vl0,vv0,_ = __x0_dew_pressure(model,T,y,x0,condensables)
+                verbose && @info "dew_pressure: calculating volumes and pressures from provided vapour composition."
+                p0,vl0,vv0,_ = __x0_dew_pressure(model,T,y,x0,condensables; verbose = verbose)
                 vl = min(vl0,volume(model,p0,T,x0,phase = :l))
                 vv = max(vv0,volume(model,p0,T,y,phase =:v))
             end
         end
     else
-        p00,vl0,vv0,x0 = __x0_dew_pressure(model,T,y,nothing,condensables)
+        p00,vl0,vv0,x0 = __x0_dew_pressure(model,T,y,nothing,condensables; verbose = verbose)
         if !isnothing(p0)
+            verbose && @info "dew_pressure: calculating volumes and compositions from provided pressure"
             vl = min(vl0,volume(model,p0,T,x0,phase = :l))
             vv = max(vv0,volume(model,p0,T,y,phase = :v))
         else
+            verbose && @info "dew_pressure: temperatures, volumes and compositions calculated from Clapeyron.__x0_dew_pressure"
             vl = vl0
             vv = vv0
             p0 = p00
         end
     end
+    verbose && @info "dew_pressure initial points:
+p0: $p0
+vl: $vl
+vv: $vv
+x0: $x0"
     return p0,vl,vv,x0
 end
 
@@ -127,23 +137,41 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     moles_positivity(y)
     y = y/sum(y)
     T = float(T)
+    verbose = get_verbosity(method)
     model_r,idx_r = index_reduction(model,y)
-    if length(model_r)==1
+    if length(model_r) == 1 && !is_pseudo_pure(model)
         (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
         return (P_sat,v_l,v_v,y)
     end
     y_r = y[idx_r]
 
+    method_r = index_reduction(method,idx_r)
     if has_a_res(model)
-        dew_pressure_result_primal = dew_pressure_impl(primalval(model_r),primalval(T),primalval(y_r),index_reduction(method,idx_r))
-        dew_pressure_result = dew_pressure_ad(model_r,T,y_r,dew_pressure_result_primal)
+        λmodel,λT,λy = primalval(model_r),primalval(T),primalval(y_r)
+        λresult = dew_pressure_impl(λmodel,λT,λy,primalval(method_r))
+        tup = (model_r,T,y_r)
+        if any(has_dual,tup)
+            λtup = (λmodel,λT,λy)
+            result = dew_pressure_ad(λresult,tup,λtup)
+        else
+            result = λresult
+        end
     else
-        dew_pressure_result = dew_pressure_impl(model_r,T,y_r,index_reduction(method,idx_r))
+        result = dew_pressure_impl(model_r,T,y_r,method_r)
     end
 
-    (P_sat, v_l, v_v, x_r) = dew_pressure_result
+    (P_sat, v_l, v_v, x_r) = result
     x = index_expansion(x_r,idx_r)
     converged = bubbledew_check(model,P_sat,T,v_l,v_v,x,y)
+
+verbose && @info "dew_pressure results:
+p  = $(primalval(P_sat))
+vl = $(primalval(v_l))
+vv = $(primalval(v_v))
+x  = $(primalval(x))"
+
+verbose && !converged && @info "dew_pressure: convergence checks failed."
+
     if converged
         return (P_sat, v_l, v_v, x)
     else
@@ -153,9 +181,7 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     end
 end
 
-
-
-function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
+function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing;verbose = false)
     y_r = @view y[condensables]
 
     if Tx0 !== nothing
@@ -213,35 +239,46 @@ function x0_dew_temperature(model::EoSModel,p,y,T0 = nothing)
     return vcat(T0,log10(V0_l),log10(V0_v),v0)
 end
 
-function dew_temperature_init(model,p,y,vol0,T0,x0,condensables)
+function dew_temperature_init(model,p,y,vol0,T0,x0,condensables = FillArrays.Fill(true,length(model)), verbose = false)
     if !isnothing(x0)
         if !isnothing(T0)
             if !isnothing(vol0)
+                verbose && @info "dew_temperature: temperature,volumes and compositions already provided."
                 vl,vv = vol0
             else
+                verbose && @info "dew_temperature: calculating volumes from provided temperatures and compositions."
                 vl = volume(model,p,T0,x0,phase = :l)
                 vv = volume(model,p,T0,y,phase = :v)
             end
         else
-            T0,vl0,vv0,_ = __x0_dew_temperature(model,p,y,T0,condensables)
+            T0,vl0,vv0,_ = __x0_dew_temperature(model,p,y,T0,condensables;verbose = verbose)
             if !isnothing(vol0)
+                verbose && @info "dew_temperature: calculating temperatures from provided vapour composition."
                 vl,vv = vol0
             else
+                verbose && @info "dew_temperature: calculating temperatures and volumes from provided vapour composition."
                 vl = min(vl0,volume(model,p,T0,x0,phase = :l))
                 vv = max(vv0,volume(model,p,T0,y,phase =:v))
             end
         end
     else
-        T00,vl0,vv0,x0 = __x0_dew_temperature(model,p,y,T0,condensables)
+        T00,vl0,vv0,x0 = __x0_dew_temperature(model,p,y,T0,condensables;verbose = verbose)
         if !isnothing(T0)
+            verbose && @info "dew_temperature: calculating volumes and compositions from provided temperature"
             vl = min(vl0,volume(model,p,T0,x0,phase = :l))
             vv = max(vv0,volume(model,p,T0,y,phase = :v))
         else
+            verbose && @info "dew_temperature: temperatures, volumes and compositions calculated from Clapeyron.__x0_dew_temperature"
             vl = vl0
             vv = vv0
             T0 = T00
         end
     end
+    verbose && @info "dew_temperature initial points:
+T0: $T0
+vl: $vl
+vv: $vv
+x0: $x0"
     return T0,vl,vv,x0
 end
 
@@ -302,23 +339,41 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     moles_positivity(y)
     y = y/sum(y)
     p = float(p)
+    verbose = get_verbosity(method)
     model_r,idx_r = index_reduction(model,y)
-    if length(model_r)==1
+    if length(model_r)==1 && !is_pseudo_pure(model)
         (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
         return (T_sat,v_l,v_v,y)
     end
     y_r = y[idx_r]
 
+    method_r = index_reduction(method,idx_r)
     if has_a_res(model)
-        dew_temperature_result_primal =  dew_temperature_impl(primalval(model_r),primalval(p),primalval(y_r),index_reduction(method,idx_r))
-        dew_temperature_result =  dew_temperature_ad(model_r,p,y_r,dew_temperature_result_primal)
+        λmodel,λp,λy = primalval(model_r),primalval(p),primalval(y_r)
+        λresult = dew_temperature_impl(λmodel,λp,λy,primalval(method_r))
+        tup = (model_r,p,y_r)
+        if any(has_dual,tup)
+            λtup = (λmodel,λp,λy)
+            result = dew_temperature_ad(λresult,tup,λtup)
+        else
+            result = λresult
+        end
     else
-        dew_temperature_result =  dew_temperature_impl(model_r,p,y_r,index_reduction(method,idx_r))
+        result = dew_temperature_impl(model_r,p,y_r,method_r)
     end
 
-    (T_sat, v_l, v_v, x_r) = dew_temperature_result
+    (T_sat, v_l, v_v, x_r) = result
     x = index_expansion(x_r,idx_r)
     converged = bubbledew_check(model,p,T_sat,v_l,v_v,x,y)
+
+verbose && @info "dew_temperature results:
+T  = $(primalval(T_sat))
+vl = $(primalval(v_l))
+vv = $(primalval(v_v))
+x  = $(primalval(x))"
+
+verbose && !converged && @info "dew_temperature: convergence checks failed."
+
     if converged
         return (T_sat, v_l, v_v, x)
     else

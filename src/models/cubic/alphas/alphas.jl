@@ -72,4 +72,5 @@ include("Twu.jl")
 include("MT.jl")
 include("KUAlpha.jl")
 include("RKPRAlpha.jl")
-
+include("MathiasCopemanAlpha.jl")
+include("MC3PRAlpha.jl")

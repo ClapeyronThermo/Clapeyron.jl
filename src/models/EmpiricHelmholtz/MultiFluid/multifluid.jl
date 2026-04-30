@@ -94,11 +94,11 @@ function MultiFluid(components;
     verbose = false)
 
     _components = format_components(components)
-    if idealmodel === nothing
-        idealmodels = FillArrays.Fill(nothing,length(_components))
+    idealmodels = if idealmodel === nothing
+        fill(nothing,length(_components))
     else
         init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
-        idealmodels = split_model(init_idealmodel,1:length(_components))
+        split_model(init_idealmodel,1:length(_components))
     end
 
     pures = [
@@ -111,18 +111,23 @@ function MultiFluid(components;
         Rgas = Rgas
         )
         for (i,comp) in pairs(_components)]
+    _components = map(x -> first(x.components),pures)
     mixing = init_model(mixing,components,mixing_userlocations,verbose)
     departure = init_model(departure,components,departure_userlocations,verbose)
     params = MultiFluidParam(_components,pures,reference_state)
     references = unique!(reduce(vcat,pure.references for pure in pures))
-    if Rgas == nothing
+    
+    
+    _Rgas = if Rgas == nothing
         if length(pures) != 1
-            Rgas = Clapeyron.Rgas()
+            Clapeyron.Rgas()
         else
-            Rgas = Clapeyron.Rgas(pures[1])
+            Clapeyron.Rgas(pures[1])
         end
+    else
+        Rgas
     end
-    model = MultiFluid(_components,params,pures,mixing,departure,Rgas,references)
+    model = MultiFluid(_components,params,pures,mixing,departure,_Rgas,references)
     recombine_mixing_reduced!(model,model.mixing,estimate_mixing)
     recombine_departure!(model,model.departure)
     set_reference_state!(model,verbose = verbose)
@@ -195,15 +200,13 @@ T_scale(model::MultiFluid,z,∑z) = T_scale(model,z,model.mixing,∑z)
 
 p_scale(model::MultiFluid,z) = dot(z,model.params.Pc.values)/sum(z)
 
-T_scales(model::MultiFluid,z=SA[1.]) = model.params.Tc.values
-
 #single functions, dispatch to pure
 
 function saturation_model(model::MultiFluid)
     return only(model.pures)
 end
 
-function lb_volume(model::MultiFluid,z)
+function lb_volume(model::MultiFluid,T,z)
     return dot(z,model.params.lb_volume.values)
 end
 
@@ -225,9 +228,14 @@ function x0_volume_liquid(model::MultiFluid,p,T,z)
     lb_v = lb_volume(model,T,z)
     for (i,pure) in pairs(model.pures)
         if T > pure.properties.Tc
+            lb_i = lb_volume(pure,T,SA[1.0])
             v0 += z[i]*1.01*lb_volume(pure,T,SA[1.0])
         else
-            v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
+            if p > x0_psat(pure,T)
+                v0 += z[i]*1.01*lb_volume(pure,T,SA[1.0])
+            else
+                v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
+            end
         end
     end
     p0 = pressure(model,v0,T,z)
@@ -251,11 +259,30 @@ function wilson_k_values!(K,model::MultiFluid,p,T,crit)
     for i ∈ 1:n
         pure_i = pure[i]
         Tc,pc = _Tc[i],_Pc[i]
-        ps = first(saturation_pressure(pure_i,0.7*Tc))
-        ω = -log10(ps/pc) - 1.0
+        ω = acentric_factor(pure_i,crit = (Tc,pc,NaN))
         K[i] = exp(log(pc/p)+ 5.3726985503194395*(1+ω)*(1-Tc/T))  #5.37 = log(10)*7/3
     end
     return K
+end
+
+function tp_flash_fast_K0!(K,model::MultiFluid,p,T,z)
+    n = length(model)
+    pure = model.pures
+    _Tc = model.params.Tc.values
+    _Pc = model.params.Pc.values
+    for i ∈ 1:n
+        pure_i = pure[i]
+        Tc,pc = _Tc[i],_Pc[i]
+        if T < Tc
+            ps = x0_psat(pure_i,T)
+            K[i] = ps/p
+        else
+            ps = x0_psat(pure_i,0.7*Tc)
+            ω = -log10(ps/pc) - 1.0
+            K[i] = exp(log(pc/p)+ 5.3726985503194395*(1+ω)*(1-Tc/T))
+        end
+    end
+    return true
 end
 
 function split_pure_model(model::MultiFluid,splitter)

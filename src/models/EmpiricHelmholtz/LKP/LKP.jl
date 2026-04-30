@@ -197,10 +197,6 @@ function x0_psat(model::LKPModel,T)
     return p
 end
 
-function lb_volume(model::LKPModel,z)
-    return lb_volume(model,0.0,z)
-end
-
 function lb_volume(model::LKPModel,T,z)
     V = 0.0
     Tc,Pc,Vc,ω̄ = @f(data)

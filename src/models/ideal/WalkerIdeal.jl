@@ -46,6 +46,10 @@ Walker [1] Group Contribution Ideal Model.
 Cpᵢ(T)/R = (5+NRot)/2 ∑νᵢₖ∑gₖᵥ(θₖᵥ/T)^2*exp(θₖᵥ/T)/(1-exp(θₖᵥ/T)) , v ∈ 1:4 
 ```
 
+!!! note "Group Fragmentation"
+
+    Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `WalkerGroups`
+
 ## References
 
 1. Walker, P. J., & Haslam, A. J. (2020). A new predictive group-contribution ideal-heat-capacity model and its influence on second-derivative properties calculated using a free-energy equation of state. Journal of Chemical and Engineering Data, 65(12), 5809–5829. [doi:10.1021/acs.jced.0c00723](https://doi.org/10.1021/acs.jced.0c00723)

@@ -83,3 +83,7 @@ end
 function moles_positivity(x::AbstractVector{T}) where T<:Real
     @assert all(>=(0), x) "Mole vector contains non-positive values! Contains values $x"
 end
+
+function moles_positivity(x::T) where T<:Real
+    @assert x >= 0 "Moles non-positive values! Contains values $x"
+end

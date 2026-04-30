@@ -62,13 +62,13 @@ function create_departure(x,F = 1.0;verbose = false)
     X = typeof(x)
     if X <: AbstractString
         if first(x) in ('{','[') #inline JSON
-            data = JSON3.read(x)
+            data = JSON.parse(x; dicttype=Dict{Symbol,Any})
             return create_departure(data,F;verbose = verbose)
         else #location
             paths = flattenfilepaths(String[],x)
             length(paths) != 1 && throw(error("multiple files detected for $x"))
             json_string = read(only(path), String)
-            data = JSON3.read(json_string)
+            data = JSON.parse(json_string; dicttype=Dict{Symbol,Any})
             return create_departure(data,F;verbose = verbose)
         end 
     else

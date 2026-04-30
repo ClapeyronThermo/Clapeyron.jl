@@ -1,19 +1,18 @@
-# v0.6.17
+# v0.6.24
 
 ## New Features
 
-- `Tproperty` and `Pproperty` speed improvements for multicomponent models.
-- New method: `edge_pressure` and `edge_temperature`, that solves the isogibbs criteria for single and multicomponent models. Those functions are equivalent to `saturation_pressure`/`saturation_temperature` for single component models.
-- New method: `mechanical_critical_point`, that calculates the mechanical stability limit for single and multicomponent models. For single component models, this is equivalent to `crit_pure`.
-- New method: `spinodal_maximum`, that returns the maximum temperature and pressure of the diffusive spinodal line ($det(∂₂G) = 0$)
+- Association: better initial points and faster evaluation via compression of the association matrix.
+- `GeneralizedXYFlash`: added `verbose` option
+- `ChemPotBubblePressure`: added `verbose` option
+- `ChemPotBubbleTemperature`: added `verbose` option
+- `ChemPotDewPressure`: added `verbose` option
+- `ChemPotDewTemperature`: added `verbose` option
+- `Tproperty`/`Pproperty`: better initial points for poins inside the phase change region.
+- `spinodal_pressure`/`spinodal_temperature`: initial points now use `edge_temperature`/`edge_pressure` instead of bubble/dew calculations, improving speed and stability, especially with conditions near the mixture critical point
+- `EPPR78`: support for passing `alpha` and `translation` submodels
+- stability improvements to `edge_pressure`/`edge_temperature`
 
-- `x0_crit_pure` now accepts an optional mol amount composition input.
-- Misc documentation improvements.
+## Bug fixes
 
-## Bug Fixes
-
-- JutulDarcy extension: fixes to allow Clapeyron work with the latest JutulDarcy extension
-- CoolProp extension: fixes in `CoolProp.PropsSI` with Clapeyron models.
-- CoolProp extension: fixes to support JSON parsing with CoolProp v7.
-- Fixes to bubble/dew initial points.
-- `SingleFluid`: Fixes when using Double exponential terms.
+- Fixes in `split_model` when indices aren't ordered

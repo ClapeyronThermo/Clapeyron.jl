@@ -81,6 +81,21 @@ promote_model(::Type{T},param::ClapeyronParam) where T = deepcopy(param)
 promote_model(::Type{T},param::AssocOptions) where T = param
 promote_model(::Type{T},param::ReferenceState) where T = param
 promote_model(::Type{T},param::SpecialComp) where T = param
-promote_model(::Type{T},param::GroupParam) where T = param
 promote_model(::Type{T},param::SiteParam) where T = param
 
+function promote_model(::Type{T},param::GroupParam) where T
+    n_groups2 = [Vector{T}(xi) for xi in param.n_groups]
+    n_intergroups2 = [Matrix{T}(xi) for xi in param.n_intergroups]
+    n_flattenedgroups2 = [Vector{T}(xi) for xi in param.n_flattenedgroups]
+    param = GroupParam{T}(
+        param.components,
+        param.groups,
+        param.grouptype,
+        n_groups2,
+        n_intergroups2,
+        param.i_groups,
+        param.flattenedgroups,
+        n_flattenedgroups2,
+        param.sourcecsvs
+    )
+end

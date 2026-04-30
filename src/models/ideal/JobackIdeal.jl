@@ -96,8 +96,12 @@ Cpᵢ(T) = aᵢ  + bᵢT + cᵢT^2 + dᵢT^3
 ```
 
 The GC-averaged Reid Model is available by using `ReidIdeal(model::JobackIdeal)`.
-
 The estimated critical point of a single component can be obtained via `crit_pure(model::JobackIdeal)`
+
+!!! note "Group Fragmentation"
+
+    Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `JobackGroups`
+
 ## References
 1. Joback, K. G., & Reid, R. C. (1987). Estimation of pure-component properties from group-contributions. Chemical Engineering Communications, 57(1–6), 233–243. [doi:10.1080/00986448708960487](https://doi.org/10.1080/00986448708960487)
 

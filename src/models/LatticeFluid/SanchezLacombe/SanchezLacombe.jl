@@ -59,6 +59,7 @@ aᵣ = r̄*(- ρ̃ /T̃ + (1/ρ̃  - 1)*log(1 - ρ̃ ) + 1)
 SanchezLacombe
 
 const SL = SanchezLacombe
+@doc (@doc SanchezLacombe) SL
 
 function SanchezLacombe(components;
     idealmodel = BasicIdeal,
@@ -69,18 +70,19 @@ function SanchezLacombe(components;
     reference_state = nothing,
     verbose = false)
 
-    params = getparams(components, ["LatticeFluid/SanchezLacombe","properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose)
+    _components = format_components(components)
+    params = getparams(_components, ["LatticeFluid/SanchezLacombe","properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose)
 
     segment = params["segment"]
     unmixed_epsilon = params["epsilon"]
     unmixed_vol = params["vol"]
     Mw = params["Mw"]
-    mixmodel = init_slmixing(mixing,components,params,mixing_userlocations,verbose)
-    ideal = init_model(idealmodel,components,ideal_userlocations,verbose)
+    mixmodel = init_slmixing(mixing,_components,params,mixing_userlocations,verbose)
+    ideal = init_model(idealmodel,_components,ideal_userlocations,verbose)
     premixed_vol,premixed_epsilon = sl_mix(unmixed_vol,unmixed_epsilon,mixmodel)
     packagedparams = SanchezLacombeParam(Mw, segment, premixed_epsilon, premixed_vol)
     references = ["10.1016/S0378-3812(02)00176-0"]
-    model = SanchezLacombe(components,mixmodel,packagedparams,ideal,references)
+    model = SanchezLacombe(_components,mixmodel,packagedparams,ideal,references)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
@@ -125,7 +127,7 @@ function rmix(model::SanchezLacombe,V,T,z)
     return r̄
 end
 
-function lb_volume(model::SanchezLacombe,z)
+function lb_volume(model::SanchezLacombe,T,z)
     r = model.params.segment.values
     v = model.params.vol.values
     #v_r,ε_r = mix_vε(model,0.0,0.0,z,model.mixing,r̄,Σz)
@@ -151,7 +153,7 @@ function p_scale(model::SanchezLacombe,z)
 end
 
 function x0_volume_liquid(model::SanchezLacombe,T,z)
-    v_lb = lb_volume(model,z)
+    v_lb = lb_volume(model,T,z)
     return v_lb*1.1
 end
 #SL does not work with the virial coefficient

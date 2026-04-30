@@ -69,13 +69,9 @@ function UMRRule(components; activity = UNIFAC, userlocations = String[],activit
 end
 
 function ab_premixing(model::PRModel,mixing::UMRRuleModel, k, l)
-    Ωa, Ωb = ab_consts(model)
-    _Tc = model.params.Tc
-    _pc = model.params.Pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    ab_diagvalues!(model)
     epsilon_LorentzBerthelot!(a)
     umr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,0.5)
     kij_mix!(umr_mix,b,l)
@@ -90,7 +86,7 @@ function UMR_g_E(model::UNIFACModel,V,T,z)
     return g_SG+g_res
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b,c)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b)
     n = sum(z)
     activity = mixing_model.activity
     invn = (one(n)/n)
@@ -99,7 +95,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b,c)
     #b = Diagonal(b).diag
     #b = ((b.^(1/2).+b'.^(1/2))/2).^2
     b̄ = dot(z,Symmetric(b),z) * invn2
-    c̄ = dot(z,c)*invn
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     Σab = sum(z[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)*invn
     ā = b̄*R̄*T*(Σab-1/0.53*g_E/(R̄*T))
     return ā,b̄,c̄

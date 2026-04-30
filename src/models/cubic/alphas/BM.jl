@@ -55,6 +55,7 @@ alpha = BMAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0
 """
 BMAlpha
 default_locations(::Type{BMAlpha}) = critical_data()
+default_ignore_missing_singleparams(::Type{BMAlpha}) = ["Vc"]
 
 function α_function(model::DeltaCubicModel,V,T,z,alpha_model::BMAlphaModel)
     Tc = model.params.Tc.values

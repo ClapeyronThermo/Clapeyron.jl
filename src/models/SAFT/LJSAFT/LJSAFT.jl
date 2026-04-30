@@ -68,7 +68,7 @@ LJSAFT
 
 export LJSAFT
 
-function lb_volume(model::LJSAFTModel, z)
+function lb_volume(model::LJSAFTModel, T, z)
     seg = model.params.segment.values
     b = model.params.b.values
     val = π/6*sum(z[i]*seg[i]*b[i,i] for i in 1:length(z))
@@ -78,10 +78,6 @@ end
 function T_scale(model::LJSAFTModel,z)
     T̃ = model.params.T_tilde.values
     return prod(T̃[i,i]^z[i] for i in 1:length(z))^(1/sum(z))
-end
-
-function T_scales(model::LJSAFTModel)
-    T̃ = diagvalues(model.params.T_tilde)
 end
 
 function p_scale(model::LJSAFTModel,z)
