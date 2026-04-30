@@ -27,10 +27,6 @@ function μp_equality1_T2(model,p,z,x,Ts)
     return SVector(Fμ,Fp1,Fp2,FT)
 end
 
-function μp_equality1_T2(model::ActivityModel,p,z,x,Ts)
-    return μp_equality1_T2(model.puremodel.model,p,z,x,Ts)
-end
-
 """
     edge_temperature(model,p,z,v0 = nothing)
 
