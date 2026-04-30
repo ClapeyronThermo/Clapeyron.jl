@@ -1005,4 +1005,39 @@ function qflash_pure(model,spec::F,x,βv,z) where F
     end
 end
 
+# activity models
+function pt_flash_x0(model::ActivityModel,p,T,n,method,
+                     non_inx = FillArrays.Fill(false,length(model)),
+                     non_iny = FillArrays.Fill(false,length(model)))
+    wrapper = __tpflash_cache_model(model,p,T,n/sum(n),method.equilibrium)
+    return pt_flash_x0(wrapper,p,T,n,method,non_inx,non_iny)
+end
+
+function xy_flash(model::ActivityModel,spec::FlashSpecifications{typeof(pressure)},
+                  z,flash0::FlashResult,method::FlashMethod)
+    p = spec.val1
+    X_spec = spec.val2
+    property = spec.spec2
+    T0 = flash0.data.T
+    _method = init_preferred_method(tp_flash,model,(;))
+    has_vapor_phase = !(method.equilibrium != :lle)
+
+    function res_flash(T)
+        res = tp_flash2(model,p,T,z,_method)
+        np  = numphases(res)
+        X   = zero(T*sum(z))
+        for j in 1:np
+            x_j = res.compositions[j]
+            β_j = res.fractions[j]
+            phase_j = (j == np && np > 1 && has_vapor_phase) ? (:gas) : (:liquid)
+            X += property(model,p,T,x_j .* β_j,phase = phase_j)
+        end
+        return X - X_spec
+    end
+
+    prob  = Roots.ZeroProblem(res_flash,T0)
+    T_eq  = Roots.solve(prob,Roots.Order0(); atol=method.atol, rtol=method.rtol)
+    return tp_flash2(model,p,T_eq,z,_method)
+end
+
 export GeneralizedXYFlash,xy_flash
