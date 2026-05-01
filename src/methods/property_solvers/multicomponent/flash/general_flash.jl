@@ -1019,25 +1019,46 @@ function xy_flash(model::ActivityModel,spec::FlashSpecifications{typeof(pressure
     X_spec = spec.val2
     property = spec.spec2
     T0 = flash0.data.T
-    _method = init_preferred_method(tp_flash,model,(;))
-    has_vapor_phase = method.equilibrium != :lle
+    if method.equilibrium != :lle
+        _method = init_preferred_method(tp_flash,model,(;))
+        prob = Roots.ZeroProblem(_T -> _xy_residual(model, p, _T, z, property, X_spec, _method),T0)
+        T_eq = Roots.solve(prob,Roots.Order0(); atol=method.atol, rtol=method.rtol)
+        return tp_flash2(model,p,T_eq,z,_method)
+    else
+        prob = Roots.ZeroProblem(_T -> _xy_residual_lle(model, p, _T, z, property, X_spec), T0)
+        T_eq = Roots.solve(prob,Roots.Order0(); atol=method.atol, rtol=method.rtol)
+        return FlashResult()
+    end
+end
 
-    function res_flash(T)
-        res = tp_flash2(model,p,T,z,_method)
-        np  = numphases(res)
-        X   = zero(T*sum(z))
-        for j in 1:np
-            x_j = res.compositions[j]
-            β_j = res.fractions[j]
-            phase_j = (j == np && np > 1 && has_vapor_phase) ? (:gas) : (:liquid)
-            X += property(model,p,T,x_j .* β_j,phase = phase_j)
-        end
-        return X - X_spec
+function _xy_residual(model, p, T, z, property, X_spec, _method)
+    _,n,_ = tp_flash(model,p,T,z,_method)
+    np = size(n,1)
+    X = zero(Base.promote_eltype(T,z))
+    for (j,nj) in enumerate(eachrow(n))
+        phase_j = (j == np && np > 1) ? (:gas) : (:liquid)
+        X += property(model,p,T,nj; phase=phase_j)
+    end
+    return X - X_spec
+end
+
+_in_bounds(x, ab) = min(ab) ≤ x ≤ max(ab)
+
+function _xy_residual_lle(model, p, T, z, property, X_spec)
+    ∑z = sum(z)
+    x = z./∑z
+    x1, x2 = LLE(model, T)
+    if all(_in_bounds.(x, zip(x1,x2)))
+        φ1 = mean((x .- x2) ./ (x1 .- x2))
+        z1, z2 = x1 .* φ1 .* ∑z, x2 .* (1-φ1) .* ∑z
+        X = zero(Base.promote_eltype(T,z))
+        X += property(model,p,T,z1; phase=:liquid)
+        X += property(model,p,T,z2; phase=:liquid)
+    else
+        X = property(model, p, T, z)
     end
 
-    prob  = Roots.ZeroProblem(res_flash,T0)
-    T_eq  = Roots.solve(prob,Roots.Order0(); atol=method.atol, rtol=method.rtol)
-    return tp_flash2(model,p,T_eq,z,_method)
+    return X - X_spec
 end
 
 export GeneralizedXYFlash,xy_flash
