@@ -45,7 +45,7 @@ function tcPR(components;
 
     #just read once if allowed.
     tc_userlocations = String[]
-    userlocation_merge!(tc_userlocations,userlocations)
+    userlocation_merge(tc_userlocations,userlocations)
 
     alpha === tcTwuAlpha && userlocation_merge(tc_userlocations,userlocations)
     translation == tcTranslation && userlocation_merge(tc_userlocations,translation_userlocations)
@@ -58,7 +58,7 @@ function tcPR(components;
     _alpha = if alpha == tcTwuAlpha
         alphaparams = transform_params(tcTwuAlpha,params,formatted_components)
         alpha_packagedparams = build_eosparam(tcTwuAlphaParam,alphaparams)
-        init_alpha = TwuAlpha(formatted_components,alpha_packagedparams,default_references(tcTwuAlpha))
+        init_alpha = tcTwuAlpha(formatted_components,alpha_packagedparams,default_references(tcTwuAlpha))
     else
         alpha
     end
@@ -80,7 +80,8 @@ function tcPR(components;
     l = get(params,"l",nothing)
     recombine_cubic!(model,k,l)
     set_reference_state!(model,reference_state;verbose)
-    model.references .= ["10.1016/j.fluid.2016.09.003","10.1021/acs.jced.8b00640","10.1002/aic.17518","10.1021/acs.iecr.1c03003"]
+    references = ["10.1016/j.fluid.2016.09.003","10.1021/acs.jced.8b00640","10.1002/aic.17518","10.1021/acs.iecr.1c03003"]
+    setreferences!(model,references)
     return model
 end
 

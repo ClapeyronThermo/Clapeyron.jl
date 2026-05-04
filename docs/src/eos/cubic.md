@@ -117,7 +117,7 @@ Clapeyron.KU
 | **`TwuAlpha`** / `Twu91Alpha` | Twu | `VTPR`, `TVTPR` | Yes¹ | Yes¹ | Yes¹ |
 | **`tcTwuAlpha`** | Twu | Provides estimation for PR/RK | Yes¹ | Yes¹ | Yes (with custom parameters) |
 | **`RKPRAlpha`** | — | `RKPR` | Yes (estimated)² | Yes (estimated)² | Yes (estimated)², specific correlation for `RKPR`|
-| **`KUAlpha`** | Soave-ish (with extrapolation when T > Tc)  | `KU` | No³ | No³ | No³ |
+| **`KUAlpha`** | Soave-ish (with extrapolation when T > Tc) | `KU` | No³ | No³ | No³ |
 | **`YFRAlpha`** | — | `YFR` | No³ | No³ | specific correlation for `YFR` |
 | **`PTHAlpha`** | — | `PatelTejaHayen` (only) | No³ | No³ | specific correlation for `PatelTejaHayen` |
 | **`MathiasCopemanAlpha`** | Mathias-Copeman | None | Only with custom params | Only with custom params | Only with custom params |

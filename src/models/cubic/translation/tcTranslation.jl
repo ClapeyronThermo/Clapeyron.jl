@@ -83,7 +83,7 @@ end
 function translation!(c,model::PRModel,translation_model::tcTranslation)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
-    ZRA = translation_model.params.ZRA.values
+    ZRA = translation_model.params.ZRA
     w = translation_model.params.acentricfactor
     for i in 1:length(model)
         if c.ismissingvalues[i]       
@@ -104,7 +104,7 @@ end
 function translation!(c,model::RKModel,translation_model::tcTranslation)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
-    ZRA = translation_model.params.ZRA.values
+    ZRA = translation_model.params.ZRA
     w = translation_model.params.acentricfactor
     for i in 1:length(model)
         if c.ismissingvalues[i]       
