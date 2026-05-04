@@ -63,8 +63,6 @@ function recombine_impl!(model::ActivityMixingRule)
     return model
 end
 
-
-
 include("vdW1f.jl")
 include("Kay.jl")
 include("HV.jl")
@@ -73,9 +71,4 @@ include("MHV2.jl")
 include("LCVM.jl")
 include("WS.jl")
 include("modWS.jl")
-include("PSRK.jl")
-include("VTPR.jl")
-include("UMR.jl")
-include("QCPR.jl")
-include("PPR78.jl")
 include("gEr.jl")

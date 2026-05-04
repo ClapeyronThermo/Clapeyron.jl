@@ -178,8 +178,6 @@ include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
 include("models/cubic/KU/KU.jl")
 include("models/cubic/RKPR/RKPR.jl")
-include("models/cubic/PatelTeja/PatelTeja.jl")
-include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 #SAFT models
 include("models/SAFT/association.jl")
@@ -261,6 +259,9 @@ include("models/cubic/PR/variants/tcPR.jl")
 include("models/cubic/PR/variants/tcPRW.jl")
 include("models/cubic/PR/variants/cPR.jl")
 include("models/cubic/PR/variants/EPPR78.jl")
+include("models/cubic/PatelTeja/PatelTeja.jl")
+include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
+include("models/cubic/PatelTeja/variants/PatelTejaHeyen.jl")
 include("models/cubic/PatelTeja/variants/YFR.jl")
 
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
