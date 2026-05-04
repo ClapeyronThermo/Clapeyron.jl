@@ -214,7 +214,7 @@ end
     assoc_similar(param::SiteParam)
     assoc_similar(param::SiteParam,::Type{𝕋}) where 𝕋 <:Number)
 
-returns a `Clapeyron.Compressed4DMatrix` with the smae number of components as the input `AssocParam`, with the same element type as `𝕋`.
+Returns a `Clapeyron.Compressed4DMatrix` with the same number of components as the input `AssocParam`, with the same element type as `𝕋`.
 All site combinations are filled.
 """
 function assoc_similar(param::SiteParam,::Type{𝕋}) where 𝕋 <:Number

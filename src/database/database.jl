@@ -20,7 +20,7 @@ if `return_sites` is set to true, `getparams` will add a "sites" value in the pa
 
 ## Single to Pair promotion
 
-When reading multiple CSVs, if a parameter name appears in a single paramter file and in a pair parameter file, the single parameter values will be promoted to be the diagonal values of the pair interaction matrix:
+When reading multiple CSVs, if a parameter's name appears in a single parameter file and in a pair parameter file, the single parameter values will be promoted to be the diagonal values of the pair interaction matrix:
 
 **`my_parameter_single.csv`**
 ```
@@ -49,7 +49,7 @@ julia> res["a"].values
  1000  875
   875  700
 ```
-This promotion fails only happens in Single-Pair combinations. It fails otherwise.
+This promotion is only supported for Single-Pair combinations. Other CSV type combinations will fail.
 
 ## In-memory CSV parsing
 
@@ -72,20 +72,20 @@ Dict{String, Clapeyron.ClapeyronParam} with 2 entries:
 
 There are some special prefixes that are used by the parser to signal some specific behaviour to be done at parsing time, for one CSV or a group of them:
 - `@DB`: replaces the path by the current Clapeyron default database. When doing `getparams(components,["location"])`, the paths are lowered to `getparams(components,userlocations = ["@DB/location"])`.
-In a way, is a path shortcut used internally by Clapeyron to parse it's own database. you can change the path where `@DB` points to (or add other path shortcuts), via adding a corresponding entry to the `Clapeyron.SHORT_PATHS` Dict.
+In a way, is a path shortcut used internally by Clapeyron to parse it's own database. You can change the path where `@DB` points to (or add other path shortcuts), via adding a corresponding entry to the `Clapeyron.SHORT_PATHS` Dict.
 - `@REPLACE`: Any filepath starting with `@REPLACE` will clear all previous appearances of the parameter names found in the CSV that contains the prefix.
-- `@REMOVEDEFAULTS`: it is used alone, and needs to be passed at the first position of the vector of `userlocations`. it will skip parsing of the default parameters:
+- `@REMOVEDEFAULTS`: it is used alone, and needs to be passed at the first position of the vector of `userlocations`. It will skip parsing of the default parameters:
 
-The effect of the the parser can be summarized by the following examples:
+The effect of the parser can be summarized by the following examples:
 
 ```
 model = PCSAFT(["water"],userlocations = ["@REMOVEDEFAULTS"]) #fails, no parameters found, no CSV parsed
 model = PCSAFT(["water"],userlocations = ["@REPLACE/empty_params.csv"]) #fails, no parameters found, default parameters parsed and then removed
 model = PCSAFT(["water"],userlocations = ["@REPLACE/my_pcsaft_kij.csv"]) #success, default kij parameters replaced by the ones on `my_pcsaft_kij.csv`
-model = PCSAFT(["water"],userlocations = ["@REMOVEDEFAULTS","@DB/SAFT/PCSAFT","@DB/properties/molarmass.csv"]) #sucess. default parameters csv removed, and parsed again, using the @DB prefix to point to the default database.
+model = PCSAFT(["water"],userlocations = ["@REMOVEDEFAULTS","@DB/SAFT/PCSAFT","@DB/properties/molarmass.csv"]) #sucess. Default parameters csv removed, and parsed again, using the @DB prefix to point to the default database.
 ```
 
-You can use the `@REPLACE` keyword in a in-memory CSV by adding it at the start of the string, followed by an space:
+You can use the `@REPLACE` keyword in a in-memory CSV by adding it at the start of the string, followed by a space:
 ```
 #This will replace all previous parsed occurences of `a` and `b`
 x_replace = \"\"\"@REPLACE Clapeyron Database File,
@@ -98,7 +98,7 @@ sp2,700,0.41
 
 ## CSV type detection and group type
 
-The second line of the csv is used for comments and to identify the type of CSV used. for example:
+The second line of the csv is used for comments and to identify the type of CSV used. For example:
 
     ```
 x = \"\"\"Clapeyron Database File
@@ -118,7 +118,7 @@ x = \"\"\"Clapeyron Database File
        sp2,700,0.41
        \"\"\"
 ```
-Additionaly, there are some cases when you want to absolutely sure that your types don't clash with the default values. This is the case with different group parametrizations of UNIFAC (Dormund, VTPR, PSRK):
+Additionaly, there are some cases when you want to be absolutely sure that your types don't clash with the default values. This is the case with different group parametrizations of UNIFAC (Dortmund, VTPR, PSRK):
 
 ```
 julia> model = UNIFAC(["methanol","ethanol"])
@@ -136,7 +136,7 @@ Group Type: PSRK
 Contains parameters: A, B, C, R, Q
 ```
 
-The models are the same (`UNIFAC`), but the group parametrizations are different. this is specified with the `grouptype` keyword. for example, if we see `UNIFAC_groups.csv`, it starts with:
+The models are the same (`UNIFAC`), but the group parametrizations are different. This is specified with the `grouptype` keyword. For example, if we see `UNIFAC_groups.csv`, it starts with:
 
 ```
 Clapeyron Database File,
@@ -152,7 +152,7 @@ For compatibility reasons, if you pass a CSV without grouptype, it will be accep
 
 ```
 x1 = \"\"\"Clapeyron Database File
-       paramterization 1 [csvtype = like,grouptype = param1]
+       parameterization 1 [csvtype = like,grouptype = param1]
        species,a,b
        sp1,1000,0.05
        sp2,700,0.41
@@ -165,7 +165,7 @@ x2 = \"\"\"Clapeyron Database File
        \"\"\"
 ```
 
-If we pass the same parameters, with different group types, the parser will fail
+If we pass the same parameters, with different group types, the parser will fail.
 
 ```julia-repl
 julia> Clapeyron.getparams(["sp1","sp2"],userlocations = [x1,x2])
@@ -425,7 +425,7 @@ function merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams
         allnotfoundparams[kk] = vv
     end
 
-    if _replace #if the paramter is not found, that means that we want to erase that param.
+    if _replace #if the parameter is not found, that means that we want to erase that param.
         for (kk,vv) ∈ pairs(notfoundparams)
             delete!(allparams,kk)
         end

@@ -18,21 +18,21 @@ end
 Parameter used to define a reference state for enthalpy and entropy, normally stored in the ideal model. 
 When set, it calculates a set of `a0` and `a1` values such as the entropy and enthalpy at a specified point are fixed.
 
-the `type` argument accepts the following standalone options:
-- `:no_set`: it returns the current defaults stablished by the equation of state. Leaves the `ReferenceState` struct uninitialized.
-- `:zero`: also returns the current defaults, but initializes the reference state struct, for later modification
-- `:ashrae`: h = s = 0 at -40 °C saturated liquid
-- `:iir`: h = 200.0 kJ·kg⁻¹, s=1.0 kJ·kg⁻¹·K⁻¹ at 0 °C saturated liquid
-- `:nbp`: h = s = 0 at 1 atm saturated liquid
-- `:stp`: h = s = 0 at 1 bar, 0 °C fluid of the most stable phase
-- `:stp_old`: h = s = 0 at 1 atm, 0 °C fluid of the most stable phase
-- `:ntp`: h = s = 0 at 1 atm, 20 °C fluid of the most stable phase
+The `type` argument accepts the following standalone options:
+- `:no_set`: it returns the current defaults established by the equation of state. Leaves the `ReferenceState` struct uninitialized.
+- `:zero`: also returns the current defaults, but initializes the reference state struct, for later modification.
+- `:ashrae`: h = s = 0 at -40 °C, saturated liquid.
+- `:iir`: h = 200.0 kJ·kg⁻¹, s=1.0 kJ·kg⁻¹·K⁻¹ at 0 °C, saturated liquid.
+- `:nbp`: h = s = 0 at 1 atm, saturated liquid.
+- `:stp`: h = s = 0 at 1 bar, 0 °C fluid of the most stable phase.
+- `:stp_old`: h = s = 0 at 1 atm, 0 °C fluid of the most stable phase.
+- `:ntp`: h = s = 0 at 1 atm, 20 °C fluid of the most stable phase.
 
-it also accepts the following options, that require additional specifications:
-- `:volume`: h = H0, s = S0, at T = T0, v = `volume(model,P0,T0,z0,phase = phase)`
-- `:ideal_gas`: h = H0, s = S0, at T = T0, v = `volume(Clapeyron.idealmodel(model),P0,T0,z0)`
-- `:saturation_pressure`: h = H0, s = S0, at T = T0, saturated phase (specified by the `phase` argument)
-- `:saturation_temperature`: h = H0, s = S0, at p = P0, saturated phase (specified by the `phase` argument)
+It also accepts the following options, that require additional specifications:
+- `:volume`: h = H0, s = S0, at T = T0, v = `volume(model,P0,T0,z0,phase = phase)`.
+- `:ideal_gas`: h = H0, s = S0, at T = T0, v = `volume(Clapeyron.idealmodel(model),P0,T0,z0)`.
+- `:saturation_pressure`: h = H0, s = S0, at T = T0, saturated phase (specified by the `phase` argument).
+- `:saturation_temperature`: h = H0, s = S0, at p = P0, saturated phase (specified by the `phase` argument).
 
 If `z0` is not specified, the reference state calculation will be done for each component separately.
 

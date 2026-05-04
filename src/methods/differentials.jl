@@ -7,7 +7,7 @@
 """
     ∂f∂T(model,V,T,z=SA[1.0])
 
-Returns `∂f/∂T` at constant total volume and composition, where `f` is the total Helmholtz energy, given by `eos(model,V,T,z)`.
+Returns `∂f/∂T` at constant total volume `V` and composition `z`, where `f` is the total Helmholtz energy, given by `eos(model,V,T,z)`.
 
 """
 function ∂f∂T(model,V,T,z::AbstractVector)
@@ -88,7 +88,7 @@ end
 """
     p∂p∂V(model,V,T,z=SA[1.0])
 
-Returns `p` and `∂p/∂V` at constant temperature, where `p` is the pressure = `pressure(model,V,T,z)` and `V` is the total volume.
+Returns `p` and `∂p/∂V` at constant temperature `T`, where `p` is the pressure = `pressure(model,V,T,z)` and `V` is the total volume.
 
 """
 function p∂p∂V(model,V,T,z::AbstractVector=SA[1.0])
@@ -129,7 +129,7 @@ end
     ∂2p(model,V,T,z)
 
 Returns zeroth order (value), first order and second order derivative information of the pressure.
-the result is given in three values:
+The result is given in three values:
 
 ```julia
 hess_p,grad_p,pval = ∂2p(model,V,T,z)

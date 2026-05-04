@@ -9,9 +9,9 @@ function x0_edge_pressure(model,T,z,pure = split_pure_model(model))
 end
 
 """
-    edge_pressure(model,p,z,v0 = nothing)
+    edge_pressure(model,T,z,v0 = nothing)
 
-Calculates the pressure at which two fluid phases have the same gibbs and pressure at the specified temperature.
+Calculates the pressure at which two fluid phases have the same Gibbs energy and pressure at the specified temperature `T`.
 
 Returns a tuple, containing:
 - Edge Pressure `[Pa]`

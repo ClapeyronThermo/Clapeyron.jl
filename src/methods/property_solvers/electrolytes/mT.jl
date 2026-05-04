@@ -132,7 +132,7 @@ osmotic_coefficient_sat(model,T,m,zsolv = SA[1.0]) = osmotic_coefficient_sat(mod
 
 """
     osmotic_coefficient(model::ESElectrolyteModel,salts,p,T,m,zsolv = SA[1.0])
-Calculates the osmotic coefficient of selection of solvents at a given pressure, temperature and molality. These are defined as:
+Calculates the osmotic coefficient of selection of solvents at a given pressure `p`, temperature `T` and molality `m`. These are defined as:
 ```
 ϕ = -1/(∑νi*mi*Mw)*log(asolv)
 ```

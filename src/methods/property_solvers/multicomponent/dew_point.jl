@@ -94,7 +94,7 @@ end
     dew_pressure(model::EoSModel, T, y, method = ChemPotDewPressure())
 
 Calculates the dew pressure and properties at a given temperature `T`.
-The default method uses equality of chemical potentials. see [`ChemPotDewPressure`](@ref)
+The default method uses equality of chemical potentials. See [`ChemPotDewPressure`](@ref)
 
 Inputs:
  - T, Temperature `[K]`
@@ -288,7 +288,7 @@ end
     dew_temperature(model::EoSModel, p, y, T0::Number)
 
 Calculates the dew-point temperature and properties at a given pressure `p`.
-The default method uses equality of chemical potentials. see [`ChemPotDewTemperature`](@ref)
+The default method uses equality of chemical potentials. See [`ChemPotDewTemperature`](@ref)
 
 Inputs:
  - p, Pressure `[Pa]`

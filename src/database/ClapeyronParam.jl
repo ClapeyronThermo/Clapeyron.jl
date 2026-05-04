@@ -1,7 +1,7 @@
 """
     ClapeyronParam
 Abstract type corresponding to a Clapeyron parameter.
-It requires to define `Base.eltype`, and specify how it is splitted (via defining the adecuate `each_split_model`  method or by defining `Clapeyron.is_splittable(param) = false` to mark as non-splittable)
+It requires to define `Base.eltype`, and specify how it is splitted (via defining the adecuate `each_split_model`  method or by defining `Clapeyron.is_splittable(param) = false` to mark as non-splittable).
 """
 abstract type ClapeyronParam end
 

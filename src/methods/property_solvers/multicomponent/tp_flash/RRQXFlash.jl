@@ -49,7 +49,7 @@ end
 
 Method to solve non-reactive multicomponent, two-phase flash problem, using a generalized formulation.
 
-Only two phases are supported. if `K0` is `nothing`, it will be calculated via fugacity coefficients at p,T conditions.
+Only two phases are supported. If `K0` is `nothing`, it will be calculated via fugacity coefficients at p,T conditions.
 
 ### Keyword Arguments:
 - `equilibrium` (optional) = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria, `:unknown` if not specified

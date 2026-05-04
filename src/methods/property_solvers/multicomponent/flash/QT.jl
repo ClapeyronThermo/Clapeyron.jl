@@ -75,7 +75,7 @@ end
     result = qt_flash(model, q, T, n, method::FlashMethod = GeneralizedXYFlash())
     result = qt_flash(model, q, T, n; kwargs...)
 
-Routine to solve non-reactive two-phase multicomponent flash problem. with vapour fraction - T specifications.
+Routine to solve non-reactive two-phase multicomponent flash problem. With vapour fraction - T specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
 Inputs:
  - `q`, vapour fraction
