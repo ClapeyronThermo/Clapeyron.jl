@@ -111,7 +111,7 @@ function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::WSRuleModel,α,a
             B̄ += _1mkij*zi*z[j]*((bj-aj*RT⁻¹)+(bi-ai*RT⁻¹))
         end
     end
-    Σλab = Σab*invn
+    Σλab = Σλab*invn
     B̄ = B̄*invn*invn
     Aᴱ = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
     b̄  = B̄/(1 + (Aᴱ - Σλab)/λ * RT⁻¹)
