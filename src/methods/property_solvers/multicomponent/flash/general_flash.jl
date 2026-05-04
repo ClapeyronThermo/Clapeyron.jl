@@ -852,8 +852,11 @@ function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
 
     verbose && @info "p = $p, T = $T, equilibrium status = :$_phase"
 
-    TT = Base.promote_eltype(model,p,x,z,T)
-    if _phase != :eq
+    if is_lle(method) && model isa ActivityModel
+        verbose && @info "using PT-flash LLE initial point"
+        _method = init_preferred_method(tp_flash,model,(; equilibrium = :lle))
+        return tp_flash2(model,p,T,z,_method)
+    elseif _phase != :eq
         verbose && @info "using pure phase initial point"
         return FlashResult(model,p,T,z,phase = _phase)
     end
@@ -1022,42 +1025,17 @@ function xy_flash(model::ActivityModel,spec::FlashSpecifications{typeof(pressure
     if method.equilibrium != :lle
         _method = init_preferred_method(tp_flash,model,(;))
         prob = Roots.ZeroProblem(_T -> _xy_residual(model, p, _T, z, property, X_spec, _method),T0)
-        T_eq = Roots.solve(prob,Roots.Order0(); atol=method.atol, rtol=method.rtol)
-        return tp_flash2(model,p,T_eq,z,_method)
     else
-        prob = Roots.ZeroProblem(_T -> _xy_residual_lle(model, p, _T, z, property, X_spec), T0)
-        T_eq = Roots.solve(prob,Roots.Order0(); atol=method.atol, rtol=method.rtol)
-        return FlashResult()
+        _method = init_preferred_method(tp_flash,model,(; equilibrium = :lle))
+        prob = Roots.ZeroProblem(_T -> _xy_residual(model, p, _T, z, property, X_spec, _method), T0)
     end
+    T_eq = Roots.solve(prob,Roots.Order0(); atol=method.atol, rtol=method.rtol)
+    return tp_flash2(model,p,T_eq,z,_method)
 end
 
 function _xy_residual(model, p, T, z, property, X_spec, _method)
-    _,n,_ = tp_flash(model,p,T,z,_method)
-    np = size(n,1)
-    X = zero(Base.promote_eltype(T,z))
-    for (j,nj) in enumerate(eachrow(n))
-        phase_j = (j == np && np > 1) ? (:gas) : (:liquid)
-        X += property(model,p,T,nj; phase=phase_j)
-    end
-    return X - X_spec
-end
-
-_in_bounds(x, ab) = min(ab) ≤ x ≤ max(ab)
-
-function _xy_residual_lle(model, p, T, z, property, X_spec)
-    ∑z = sum(z)
-    x = z./∑z
-    x1, x2 = LLE(model, T)
-    if all(_in_bounds.(x, zip(x1,x2)))
-        φ1 = mean((x .- x2) ./ (x1 .- x2))
-        z1, z2 = x1 .* φ1 .* ∑z, x2 .* (1-φ1) .* ∑z
-        X = zero(Base.promote_eltype(T,z))
-        X += property(model,p,T,z1; phase=:liquid)
-        X += property(model,p,T,z2; phase=:liquid)
-    else
-        X = property(model, p, T, z)
-    end
-
+    flash = tp_flash2(model,p,T,z,_method)
+    X = property(model, flash; equilibrium=_method.equilibrium)
     return X - X_spec
 end
 

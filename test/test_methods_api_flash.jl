@@ -621,6 +621,28 @@ end
     @test Clapeyron.temperature(res_ps) ≈ Clapeyron.temperature(res_2ph) rtol = 1e-6
 end
 
+@testset "XY flash (activity models, LLE)" begin
+    model = UNIFAC(["water","hexane"])
+    x = [0.5, 0.5]
+    p = 101325.0
+    T_lle = 303.15
+
+    # build a consistent two-phase target from the existing PT LLE flash path
+    flash_lle = Clapeyron.tp_flash2(model, p, T_lle, x, MichelsenTPFlash(equilibrium = :lle))
+    h_2ph = enthalpy(model, flash_lle; equilibrium = :lle)
+
+    res_2ph = ph_flash(model, p, h_2ph, x; equilibrium = :lle)
+    @test Clapeyron.numphases(res_2ph) == 2
+    @test Clapeyron.temperature(res_2ph) ≈ T_lle rtol = 1e-6
+    @test enthalpy(model, res_2ph; equilibrium = :lle) ≈ h_2ph rtol = 1e-6
+
+    # ps_flash with :lle should recover the same T as the two-phase ph_flash
+    s_2ph = entropy(model, res_2ph; equilibrium = :lle)
+    res_ps = ps_flash(model, p, s_2ph, x; equilibrium = :lle)
+    @test Clapeyron.numphases(res_ps) == 2
+    @test Clapeyron.temperature(res_ps) ≈ Clapeyron.temperature(res_2ph) rtol = 1e-6
+end
+
 @testset "Saturation Methods" begin
     model = PR(["water"])
     vdw = vdW(["water"])
