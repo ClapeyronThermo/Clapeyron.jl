@@ -92,7 +92,7 @@ function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::HVRuleModel,α,a
         λi = HV_λ(mixing_model,model,T,FillArrays.OneElement(i,nc))
         ∑λab += λi*z[i]*a[i,i]*α[i]/b[i,i]
     end
-    ∑ab = ∑ab*invn
+    ∑ab = ∑λab*invn
     λmix = HV_λ(mixing_model,model,T,z)
     ā = b̄*(∑λab - gᴱ)/λmix
     return ā,b̄,c̄
