@@ -64,7 +64,7 @@ default_ignore_missing_singleparams(::Type{RackettLiquid}) = ["Vc","Zc","acentri
 function transform_params(::Type{RackettLiquid},params,components)
     Tc = params["Tc"]
     Pc = params["Pc"]
-
+    nc = length(components)
     Zc = get!(params,"Zc") do
         SingleParam("Zc",components,zeros(nc),fill(true,nc))
     end
