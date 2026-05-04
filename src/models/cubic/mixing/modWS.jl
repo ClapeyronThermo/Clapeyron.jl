@@ -89,14 +89,15 @@ function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::modWSRuleModel,�
     invn = (one(n)/n)
     RT⁻¹ = 1/(R̄*T)
     B̄ = zero(T+V+first(z))
-    Σab = B̄
+    Σλab = B̄
     for i in @comps
         zi = z[i]
         αi = α[i]
         ai = a[i,i]*αi
         bi = b[i,i]
         B̄ += zi*zi*(bi-ai*RT⁻¹)
-        Σab += zi*ai/bi
+        λi = WS_λ(mixing_model,model,T,FillArrays.OneElement(i,nc))
+        Σλab += λi*zi*ai/bi
         for j in 1:(i-1)
             αj = α[j]
             bij = b[i,j]
@@ -104,11 +105,11 @@ function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::modWSRuleModel,�
             B̄ += 2*zi*z[j]*(bij-aij*RT⁻¹)
         end
     end
-    Σab = Σab*invn
+    Σλab = Σab*invn
     B̄ = B̄*invn*invn
     Aᴱ = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
-    b̄  = B̄/(1 + (Aᴱ/λ - Σab)*RT⁻¹)
-    ā = b̄*(Σab-Aᴱ/λ)
+    b̄  = B̄/(1 + (Aᴱ - Σλab)/λ * RT⁻¹)
+    ā = b̄*(Σλab - Aᴱ)/λ
     c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     return ā,b̄,c̄
 end

@@ -86,9 +86,14 @@ function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::HVRuleModel,α,a
     b̄ = dot(z,Symmetric(b),z) * invn2
     c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     gᴱ = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
-    ∑ab = sum(z[i]*a[i,i]*α[i]/b[i,i] for i ∈ @comps)*invn
-    _λ = HV_λ(mixing_model,model,T,z)
-    ā = b̄*(∑ab-gᴱ/_λ)
+    ∑λab = zero(gᴱ)
+    for i in 1:length(model)
+        λi = HV_λ(mixing_model,model,T,FillArrays.OneElement(i,nc))
+        ∑λab += λi*z[i]*a[i,i]*α[i]/b[i,i]
+    end
+    ∑ab = ∑ab*invn
+    λmix = HV_λ(mixing_model,model,T,z)
+    ā = b̄*(∑λab - gᴱ)/λmix
     return ā,b̄,c̄
 end
 
