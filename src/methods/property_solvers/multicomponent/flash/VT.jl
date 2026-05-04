@@ -2,7 +2,7 @@
     result = vt_flash(model, v, T, n, method::FlashMethod = GeneralizedXYFlash())
     result = vt_flash(model, v, T, n; kwargs...)
 
-Routine to solve non-reactive two-phase multicomponent flash problem. with V-T specifications.
+Routine to solve non-reactive two-phase multicomponent flash problem. With V-T specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
 Inputs:
  - `v`, volume `[m³]`

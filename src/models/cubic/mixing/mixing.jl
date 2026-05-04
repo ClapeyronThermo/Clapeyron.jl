@@ -3,7 +3,7 @@ abstract type ActivityMixingRule <: MixingRule end
 """
     mixing_rule(model::CubicModel,V,T,z,mixing_model::MixingRule,α,a,b,c)
 
-Interface function used by cubic models. with matrices `a` and `b`, vectors `α` and `c`, a `model::CubicModel` and `mixing_model::MixingRule`, returns
+Interface function used by cubic models. With matrices `a` and `b`, vectors `α` and `c`, a `model::CubicModel` and `mixing_model::MixingRule`, returns
 the scalars `ā`,`b̄` and `c̄`, corresponding to the values mixed by the amount of components and the specifics of the mixing rule.
 
 ## Example

@@ -50,7 +50,7 @@ end
 Initial point for `crit_mix(model,z)`.
 
 Returns a tuple, containing:
-- Base 10 logarithm of initial guess for critical molar Volume `[m³/mol]`
+- Base 10 logarithm of initial guess for critical molar Volume `[m³·mol⁻¹]`
 - Initial guess for critical temperature `[K]`
 """
 function x0_crit_mix(model::EoSModel,z)

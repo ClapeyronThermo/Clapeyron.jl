@@ -2,7 +2,7 @@
 """
     get_header(path)
 
-given a path to a Clapeyron CSV file, `get_header` will return the text of the first 3 columns, the string used as a separator, and a named tuple with all available Clapeyron CSV options.
+Given a path to a Clapeyron CSV file, `get_header` will return the text of the first 3 columns, the string used as a separator, and a named tuple with all available Clapeyron CSV options.
 
 """
 function get_header(path)
@@ -49,14 +49,14 @@ end
 """
     make_header(_database,name = nothing,grouptype = :unknown)
 
-given a database, `make_header` will guess a header based on a set of rules:
+Given a database, `make_header` will guess a header based on a set of rules:
 - If the database only has a `species` column, then the database is considered to store single-component data
 - If the database has `species1` and `species2` column names, then the database is considered to store pair-component data
 - If the database has `species1`, `species2`, `site1` and `site2` then the database is considered to store association data
 - If the database has `species` and `groups` then the database is considered to store group data
 - If the database does not match any of the above, it is considered to store "invalid" data
 
-It returns a string for the first 3 lines of the csv, a string for the separator, and the named tuple of Clapeyron CSV options. it has the same return type as `Clapeyron.get_header(path)`
+It returns a string for the first 3 lines of the csv, a string for the separator, and the named tuple of Clapeyron CSV options. It has the same return type as `Clapeyron.get_header(path)`
 """
 function make_header(_database,name = nothing,grouptype = :unknown)
     io = IOBuffer()

@@ -31,7 +31,7 @@ end
 """
     edge_temperature(model,p,z,v0 = nothing)
 
-Calculates the temperature at which two fluid phases have the same gibbs and temperature at the specified pressure.
+Calculates the temperature at which two fluid phases have the same Gibbs energy and temperature at the specified pressure `p`.
 
 Returns a tuple, containing:
 - Edge Temperature `[K]`

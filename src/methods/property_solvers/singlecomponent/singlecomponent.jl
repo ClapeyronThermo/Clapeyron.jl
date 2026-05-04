@@ -1,9 +1,9 @@
 """
     check_valid_sat_pure(model,P_sat,Vl,Vv,T,z = SA[1.0])
 
-Checks that a saturation method converged correctly. it checks:
-- That both volumes are mechanically stable
-- That both volumes are different, with a difference of at least `ε0` epsilons
+Checks that a saturation method converged correctly. It checks:
+- That both volumes are mechanically stable.
+- That both volumes are different, with a difference of at least `ε0` epsilons.
 """
 function check_valid_sat_pure(model,P_sat,V_l,V_v,T,z = SA[1.0])
    return check_valid_eq2(model,model,P_sat,V_l,V_v,T,z)

@@ -16,7 +16,7 @@ function PSRKUNIFAC end
     verbose = false)
 
 ## Description
-Predictive Soave-Redlich-Kwong equation of state. it uses the following models:
+Predictive Soave-Redlich-Kwong equation of state. It uses the following models:
 
 - Translation Model: [`PenelouxTranslation`](@ref)
 - Alpha Model: [`SoaveAlpha`](@ref)

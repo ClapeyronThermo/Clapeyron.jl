@@ -35,7 +35,7 @@ for Redlich-Kwong:
 for Peng-Robinson:
     λ = 1/(2√(2))log((2+√(2))/(2-√(2))) (0.6232252401402305)
 ```
-`λ` is a coefficient indicating the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. see [1] for more information. it can be customized by defining `HV_λ(::HVRuleModel,::CubicModel,z)`
+`λ` is a coefficient indicating the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. See [1] for more information. It can be customized by defining `HV_λ(::HVRuleModel,::CubicModel,z)`.
 
 ## References
 1. Huron, M.-J., & Vidal, J. (1979). New mixing rules in simple equations of state for representing vapour-liquid equilibria of strongly non-ideal mixtures. Fluid Phase Equilibria, 3(4), 255–271. [doi:10.1016/0378-3812(79)80001-1](https://doi.org/10.1016/0378-3812(79)80001-1)
