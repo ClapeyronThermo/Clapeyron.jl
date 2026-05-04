@@ -97,6 +97,7 @@ function translation!(c,model::PRModel,translation_model::tcTranslation)
                 throw(error("tcTranslation: cannot estimate v_shift: missing acentricfactor or ZRA parameter"))
             end
         end
+    end
     return c
 end
 
@@ -118,6 +119,7 @@ function translation!(c,model::RKModel,translation_model::tcTranslation)
                 throw(error("tcTranslation: cannot estimate v_shift: missing acentricfactor or ZRA parameter"))
             end
         end
+    end
     return c
 end
 

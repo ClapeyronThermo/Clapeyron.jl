@@ -18,10 +18,6 @@ function α_function end
 recombine_impl!(model::AlphaModel) = model
 recombine_alpha!(model::CubicModel,alpha::AlphaModel) = recombine!(alpha)
 
-struct SimpleAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
-
 struct CPAAlphaParam <: EoSParam
     c1::SingleParam{Float64}
 end

@@ -41,9 +41,9 @@ end
 recombine_translation!(model::CubicModel,translation_model) = translation_model
 
 include("NoTranslation.jl")
+include("ConstantTranslation.jl")
 include("Peneloux.jl")
 include("MT.jl")
-include("ConstantTranslation.jl")
 include("Baled.jl")
 include("tcTranslation.jl")
 #include("Clausius.jl")

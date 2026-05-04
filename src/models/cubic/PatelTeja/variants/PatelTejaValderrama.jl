@@ -45,6 +45,8 @@ alpha = PTVAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-
 PTVAlpha
 default_locations(::Type{PTVAlpha}) = critical_data()
 
+abstract type PTVModel <: PatelTejaModel end
+
 @inline function α_m(model::PTVModel,alpha_model::PTVAlphaModel,i)
     Tc = model.params.Tc.values[i]
     Pc = model.params.Pc.values[i]
@@ -54,8 +56,6 @@ default_locations(::Type{PTVAlpha}) = critical_data()
     ω = alpha_model.params.acentricfactor.values[i]
     return evalpoly(ω*Zc,coeff)
 end
-
-abstract type PTVModel <: PatelTejaModel end
 
 const PTVParam = ABCCubicParam
 
