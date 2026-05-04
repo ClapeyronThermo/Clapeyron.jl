@@ -9,7 +9,7 @@
 
 Structure used to contain the result of a flash.
 Contains a list of molar compositions, a list of molar amounts per phase, a list of molar volumes and an auxiliary struct, `FlashData`, containing the pressure, temperature and reduced Gibbs energy.
-when an `EoSModel` is used as an input for a `FlashResult`, the reduced molar Gibbs energy (g = g/NRT) is calculated, if not provided.
+When an `EoSModel` is used as an input for a `FlashResult`, the reduced molar Gibbs energy (g = g/NRT) is calculated, if not provided.
 By default, the phases are sorted by volume, this can be changed by passing the keyword argument `sort = false`
 `FlashResult(model,p,T,z;phase)` constructs a single phase `FlashResult`.
 If the bulk composition `z` is provided, it will be used to scale the fractions, forcing `sum(fractions) == sum(z)`
@@ -483,14 +483,14 @@ end
 
 Abstract type for flash routines.
 
-to add a new method, it is necessary to define the following functions, depending on the type of supported flash:
+To add a new method, it is necessary to define the following functions, depending on the type of supported flash:
 
 - P-T Flash: `tp_flash_impl(model,p,T,n,method)`
 - P-H Flash: `ph_flash_impl(model,p,h,n,method)`
 - P-S Flash: `ps_flash_impl(model,p,s,n,method)`
 
 If the flash method supports more than 2 phases, then it requires defining `numphases(method)`
-If the method accept component-dependent inputs, it should also define `index_reduction(method,nonzero_indices)`
+If the method accepts component-dependent inputs, it should also define `index_reduction(method,nonzero_indices)`
 """
 abstract type FlashMethod <: ThermodynamicMethod end
 

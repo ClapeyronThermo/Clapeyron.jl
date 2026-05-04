@@ -2,7 +2,7 @@
     Compressed4DMatrix{T,V<:AbstractVector{T}}
     Compressed4DMatrix(vals::AbstractVector,ijab::AbstractVector)
     Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
-Struct used to hold association data. as its name says, it is a compressed 4D matrix containing all the non-zero combinations of component-site pairs.
+Struct used to hold association data. As its name says, it is a compressed 4D matrix containing all the non-zero combinations of component-site pairs.
 The component-site pairs `(i,j,a,b)` are sorted lexicographically. The `(i,j)` pairs are stored in the `outer_indices` field, whereas the `(a,b)` pairs are stored in the `inner_indices` field. 
 Let's see an associating model:
 ```julia-repl
@@ -13,7 +13,7 @@ PCSAFT{BasicIdeal} with 3 components:
  "ethane"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
 ```
-We check out the `bondvol` parameter. note how ethane does not appear in the list:
+We check out the `bondvol` parameter. Note how ethane does not appear in the list:
 ```julia-repl
 julia> model.params.bondvol
 AssocParam{Float64}["water", "methanol", "ethane"]) with 4 values:
@@ -61,7 +61,7 @@ julia> issorted(idxs)
 true
 ```
 You can build a `Compressed4DMatrix` in two ways:
-1. you can pass `values` and a list of `(i,j,a,b)::NTuple{4,Int}` indices:
+1. You can pass `values` and a list of `(i,j,a,b)::NTuple{4,Int}` indices:
 ```julia-repl
 julia> ijab, vals = [(1,1,1,2)], [3.0]
 ([(1, 1, 1, 2)], [3.0])
@@ -69,7 +69,7 @@ julia> Clapeyron.Compressed4DMatrix(vals,ijab)
 Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}} with 1 entry:
  (1, 1) >=< (1, 2): 3.0
 ```
-2. Using a list of values, a list of `ij:Tuple{Int,Int}` outer indices and a list of `ab:Tuple{Int,Int}` inner indices. this last form accepts the optional argument `unsafe::Bool`.
+2. Using a list of values, a list of `ij:Tuple{Int,Int}` outer indices and a list of `ab:Tuple{Int,Int}` inner indices. This last form accepts the optional argument `unsafe::Bool`.
 If `unsafe` is true, `ij` and `ab` will be considered sorted, and will build a `Compressed4DMatrix` directly, using the same reference to `vals`, `ij` and `ab`:
 ```julia-repl
 julia> ij, ab, vals = [(1,1)], [(1,2)], [3.0]
@@ -330,7 +330,7 @@ end
 """
     assoc_similar(mat::Compressed4DMatrix)
     assoc_similar(mat::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number)
-Returns a `Clapeyron.Compressed4DMatrix` of the same shape as the input, with the same element type as `𝕋`
+Returns a `Clapeyron.Compressed4DMatrix` of the same shape as the input, with the same element type as `𝕋`.
 """
 function assoc_similar(m::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number
     newvalues = zeros(𝕋,length(m.values))

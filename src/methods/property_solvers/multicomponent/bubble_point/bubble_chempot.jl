@@ -12,7 +12,7 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 1000`: optional, maximum number of iterations
-- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
+- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. Those will be set to zero on the vapour phase.
 - `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
 """
 struct ChemPotBubblePressure{T} <: BubblePointMethod
@@ -160,7 +160,7 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 1000`: optional, maximum number of iterations
-- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
+- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. Those will be set to zero on the vapour phase.
 - `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
 """
 struct ChemPotBubbleTemperature{T} <: BubblePointMethod

@@ -27,7 +27,7 @@ Note: the file name is historical; the original implementation used differential
 
 User must assume a number of phases, `numphases`. If true number of phases is smaller than numphases, model should predict either (a) identical composition in two or more phases, or (b) one phase with negligible total number of moles. If true number of phases is larger than numphases, a thermodynamically unstable solution will be predicted.
 
-The `equilibrium` keyword allows to restrict the search of phases to just liquid-liquid equilibria (`equilibrium = :lle`). the default searches for liquid and gas phases.
+The `equilibrium` keyword allows to restrict the search of phases to just liquid-liquid equilibria (`equilibrium = :lle`). The default searches for liquid and gas phases.
 """
 @kwdef struct DETPFlash <: TPFlashMethod
     numphases::Int = 2
@@ -148,7 +148,7 @@ each species. We then scale these numbers systematically in order to partition
 the species between the phases. Each set of (numphases - 1) numbers
 will result in a unique partition of the species into the numphases
 phases.
-vcache stores the current volumes for each phase
+vcache stores the current volumes for each phase.
 """
 function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace = false,equilibrium = :auto)
     # NOTE: avoid `Base.promote_typeof(p, T, first(n))` here; this function is slow

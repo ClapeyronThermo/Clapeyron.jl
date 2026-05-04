@@ -21,7 +21,7 @@ An initial estimate of the volume `vol0` can be optionally be provided.
     Such a starting point can be found from physical knowledge, or by computing the volume using a different model for example.
 
 !!! warning "Stability checks"
-    The stability check is disabled by default. That means that the volume obtained just follows the the relation `p = pressure(model,V,T,z)`.
+    The stability check is disabled by default. That means that the volume obtained just follows the relation `p = pressure(model,V,T,z)`.
     For single component models, this is alright, but phase splits (with different compositions that the input) can and will occur, meaning that
     the volume solution does not correspond to an existing phase.
     For unknown multicomponent mixtures, it is recommended to use a phase equilibrium procedure (like `tp_flash`) to obtain a list of valid compositions, and then perform a volume calculation over those compositions.

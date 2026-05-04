@@ -2,7 +2,7 @@
     CritExtrapolationSaturation <: SaturationMethod
     CritExtrapolationSaturation(;crit = nothing)
 
-Saturation method that extrapolates the liquid and vapor volumes from the critical point. the extrapolation is defined as:
+Saturation method that extrapolates the liquid and vapor volumes from the critical point. The extrapolation is defined as:
 
 ```
 ρₓ = ρc ± sqrt(6* Tc * (Tc - T)/Tc * ∂²p∂ρ∂T / ∂³p∂ρ³)

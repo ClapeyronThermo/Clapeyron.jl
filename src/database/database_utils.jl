@@ -236,7 +236,7 @@ _iszero(t::AbstractString) = isempty(t)
 
 """
     singletopair(params::Vector,outputmissing=zero(T))
-Generates a square matrix, filled with "zeros" (considering the "zero" of a string, a empty string).
+Generates a square matrix, filled with "zeros" (considering the "zero" of a string, an empty string).
 The generated matrix will have the values of `params` in the diagonal.
 If missing is passed, the matrix will be filled with `missing`.
 """

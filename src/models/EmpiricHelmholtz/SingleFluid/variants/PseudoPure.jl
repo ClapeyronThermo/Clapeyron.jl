@@ -20,7 +20,7 @@ end
 - JSON data (CoolProp and teqp format)
 
 ## Input models
-- `ancillaries`: a model that provides initial guesses for saturation calculations. if `nothing`, then they will be parsed from the input JSON.
+- `ancillaries`: a model that provides initial guesses for saturation calculations. If `nothing`, then they will be parsed from the input JSON.
 
 ## Description
 
