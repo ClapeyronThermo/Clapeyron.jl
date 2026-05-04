@@ -1,4 +1,4 @@
-abstract type PenelouxTranslationModel <: TranslationModel end
+abstract type PenelouxTranslationModel <: ConstantTranslationModel end
 
 struct PenelouxTranslationParam <: EoSParam
     Vc::SingleParam{Float64}
@@ -73,10 +73,6 @@ function transform_params(::Type{PenelouxTranslation},params,components)
     return params
 end
 
-function translation(model::CubicModel,V,T,z,translation_model::PenelouxTranslation)
-    return translation_model.params.v_shift.values
-end
-
 function recombine_translation!(model::CubicModel,translation_model::PenelouxTranslation)
     c = translation_model.params.v_shift
     translation!(c,model,translation_model)
@@ -109,9 +105,4 @@ function translation!(c,model::RKModel,translation_model::PenelouxTranslation)
         c[i] = 0.40768*RT/Pci*(0.29441-Zc)
     end
     return c
-end
-
-function translation2(model::CubicModel,V,T,z,translation_model::PenelouxTranslation,a,b,α)
-    c = translation_model.params.v_shift
-    return dot(c.values,z)
 end
