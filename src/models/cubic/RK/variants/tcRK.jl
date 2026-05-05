@@ -68,7 +68,7 @@ function tcRK(components;
         translation
     end
 
-    model = CubicModel(PR,params,formatted_components;
+    model = CubicModel(RK,params,formatted_components;
                     alpha = _alpha,translation = _translation,idealmodel,mixing,activity,
                     userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
                     reference_state, verbose)

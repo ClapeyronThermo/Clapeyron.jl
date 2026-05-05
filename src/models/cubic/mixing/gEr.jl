@@ -129,7 +129,8 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b)
     gᴱᵣ = __excess_g_res(mixing_model.activity,1e5,T,z,b,c)
     b̄ = zero(gᴱᵣ)
     res = zero(T + first(z))
-    for i in 1:length(model)
+    nc = length(model)
+    for i in 1:nc
         zi,bi = z[i],b[i,i]
         zi2 = zi^2
         b̄ += bi*zi2

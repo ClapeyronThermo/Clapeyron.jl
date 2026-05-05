@@ -131,11 +131,11 @@ function recombine_alpha!(model::RKModel,alpha::tcTwuAlpha)
         end
 
         if L.ismissingvalues[i] && !(w.ismissingvalues[i])
-            L[i] = evalpoly(ω,(0.0544,0.7536,0.0297))
+            L[i] = evalpoly(ω,(0.1359,0.7535,0.0611))
         end
 
         if M.ismissingvalues[i] && !(w.ismissingvalues[i])
-            M[i] = evalpoly(ω,(0.0544,0.7536,0.0297))
+            M[i] = evalpoly(ω,(0.8787,-0.2063,0.1709))
         end       
     end
 end
