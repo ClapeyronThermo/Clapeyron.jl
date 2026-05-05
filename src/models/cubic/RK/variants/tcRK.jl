@@ -8,9 +8,7 @@
     activity_userlocations = String[],
     translation_userlocations = String[],
     reference_state = nothing,
-    verbose = false,
-    estimate_alpha = true,
-    estimate_translation = true)
+    verbose = false)
 
 Translated and consistent Redlich-Kwong equation of state. It uses the following models:
 - Translation Model: [`ConstantTranslation`](@ref)
@@ -19,8 +17,6 @@ Translated and consistent Redlich-Kwong equation of state. It uses the following
 
 If Twu parameters are not provided, they can be estimated from the acentric factor (`acentricfactor`). If translation is not provided, it can be estimated, using Rackett compresibility Factor (`ZRA`) or the acentric factor (`acentricfactor`).
 
-The use of estimates for the alpha function and volume translation can be turned off by passing `estimate_alpha = false` or `estimate_translation = false`.
-
 ## References
 1. Le Guennec, Y., Privat, R., & Jaubert, J.-N. (2016). Development of the translated-consistent tc-PR and tc-RK cubic equations of state for a safe and accurate prediction of volumetric, energetic and saturation properties of pure compounds in the sub- and super-critical domains. Fluid Phase Equilibria, 429, 301–312. [doi:10.1016/j.fluid.2016.09.003](http://dx.doi.org/10.1016/j.fluid.2016.09.003)
 2. Pina-Martinez, A., Le Guennec, Y., Privat, R., Jaubert, J.-N., & Mathias, P. M. (2018). Analysis of the combinations of property data that are suitable for a safe estimation of consistent twu α-function parameters: Updated parameter values for the translated-consistent tc-PR and tc-RK cubic equations of state. Journal of Chemical and Engineering Data, 63(10), 3980–3988. [doi:10.1021/acs.jced.8b00640](http://dx.doi.org/10.1021/acs.jced.8b00640)
@@ -28,22 +24,22 @@ The use of estimates for the alpha function and volume translation can be turned
 """
 function tcRK(components;
     idealmodel = BasicIdeal,
-    alpha = TwuAlpha,
+    alpha = tcTwuAlpha,
     mixing = vdW1fRule,
     activity = nothing,
-    translation = ConstantTranslation,
+    translation = tcTranslation,
     userlocations = String[],
     ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    estimate_alpha = true,
-    estimate_translation = true,
     reference_state = nothing,
     verbose = false)
 
     #just read once if allowed.
+
+    formatted_components = format_components(components)
     tc_userlocations = String[]
     userlocation_merge(tc_userlocations,userlocations)
 

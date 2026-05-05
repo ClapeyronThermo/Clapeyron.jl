@@ -8,9 +8,7 @@
     activity_userlocations = String[],
     translation_userlocations = String[],
     reference_state = nothing,
-    verbose = false,
-    estimate_alpha = true,
-    estimate_translation = true)
+    verbose = false)
 
 Translated and consistent Peng Robinson equation of state. It uses the following models:
 - Translation Model: [`ConstantTranslation`](@ref)
@@ -37,9 +35,7 @@ function tcPR(components;
     activity_userlocations = String[],
     translation_userlocations = String[],
     reference_state = nothing,
-    verbose = false,
-    estimate_alpha = true,
-    estimate_translation = true)
+    verbose = false)
 
     formatted_components = format_components(components)
 
