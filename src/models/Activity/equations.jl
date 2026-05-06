@@ -475,3 +475,15 @@ function thermodynamic_factor(model::ActivityModel, p, T, z)
     Γ = LinearAlgebra.I(N-1) .+  xN1 .* ∂lnγᵢ∂xⱼ
     return Γ
 end
+
+#edge pressure/edge temperature
+
+function _edge_pressure(model::ActivityModel,T,z,v0 = nothing,crit_retry = false)
+    wrapper = PTFlashWrapper(model,oftype(T,NaN),T,z,:vle)
+    return _edge_pressure(wrapper,T,z,v0,crit_retry)
+end
+
+function _edge_temperature(model::ActivityModel,p,z,v0 = nothing)
+    wrapper = PTFlashWrapper(model,p,oftype(p,NaN),z,:vle)
+    return _edge_temperature(wrapper,p,z,v0)
+end

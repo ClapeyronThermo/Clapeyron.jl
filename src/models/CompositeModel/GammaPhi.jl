@@ -95,7 +95,7 @@ function PT_property_gammaphi(model::GammaPhi,p,T,z,f::F,USEP) where F
     end
 end
 
-function gammaphi_f_hess(model,p,T,z)
+function gammaphi_f_hess(model::GammaPhi,p,T,z)
     ∑z = sum(z)
     z1 = SA[∑z]
     _0 = zero(Base.promote_eltype(model,p,T,z))
@@ -117,7 +117,7 @@ function gammaphi_f_hess(model,p,T,z)
     return ∂²A,Vl
 end
 
-function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isobaric_heat_capacity),USEP)
+function PT_property_gammaphi(model,p,T,z,::typeof(VT_isobaric_heat_capacity),USEP)
     d²A,V = gammaphi_f_hess(model,p,T,z)
     ∂²A∂V∂T = d²A[1,2]
     ∂²A∂V² = d²A[1,1]
@@ -125,7 +125,7 @@ function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isobaric_heat_ca
     return -T*(∂²A∂T² - ∂²A∂V∂T^2/∂²A∂V²)
 end
 
-function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_adiabatic_index),USEP)
+function PT_property_gammaphi(model,p,T,z,::typeof(VT_adiabatic_index),USEP)
     d²A,V = gammaphi_f_hess(model,p,T,z)
     ∂²A∂V∂T = d²A[1,2]
     ∂²A∂V² = d²A[1,1]
@@ -133,12 +133,12 @@ function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_adiabatic_index)
     return 1 - ∂²A∂V∂T*∂²A∂V∂T/(∂²A∂V²*∂²A∂T²)
 end
 
-function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isothermal_compressibility),USEP)
+function PT_property_gammaphi(model,p,T,z,::typeof(VT_isothermal_compressibility),USEP)
     d²A,V = gammaphi_f_hess(model,p,T,z)
     return -1/V/d²A[1,1]
 end
 
-function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isentropic_compressibility),USEP)
+function PT_property_gammaphi(model,p,T,z,::typeof(VT_isentropic_compressibility),USEP)
     d²A,V = gammaphi_f_hess(model,p,T,z)
     ∂²A∂V∂T = d²A[1,2]
     ∂²A∂V² = d²A[1,1]
@@ -146,7 +146,7 @@ function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isentropic_compr
     return 1/V/(∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)
 end
 
-function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_speed_of_sound),USEP)
+function PT_property_gammaphi(model,p,T,z,::typeof(VT_speed_of_sound),USEP)
     Mr = molecular_weight(model,z)
     d²A,V = gammaphi_f_hess(model,p,T,z)
     ∂²A∂V∂T = d²A[1,2]
@@ -155,14 +155,14 @@ function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_speed_of_sound),
     return V*sqrt((∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)/Mr)
 end
 
-function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_isobaric_expansivity),USEP)
+function PT_property_gammaphi(model,p,T,z,::typeof(VT_isobaric_expansivity),USEP)
     d²A,V = gammaphi_f_hess(model,p,T,z)
     ∂²A∂V∂T = d²A[1,2]
     ∂²A∂V² = d²A[1,1]
     return -∂²A∂V∂T/(V*∂²A∂V²)
 end
 
-function PT_property_gammaphi(model::GammaPhi,p,T,z,::typeof(VT_joule_thomson_coefficient),USEP)
+function PT_property_gammaphi(model,p,T,z,::typeof(VT_joule_thomson_coefficient),USEP)
     d²A,V = gammaphi_f_hess(model,p,T,z)
     ∂²A∂V∂T = d²A[1,2]
     ∂²A∂V² = d²A[1,1]
@@ -314,16 +314,16 @@ function identify_phase(wrapper::PTFlashWrapper, p::Number, T, w=SA[1.]; phase=:
     TT = Base.promote_eltype(wrapper,p,T,w)
     RT = Rgas(model)*T
     ∑w = sum(w)
-    g_ideal = sum(xlogx,w) - xlogx(∑w)
+    #g_ideal = sum(xlogx,w) - xlogx(∑w)
     vl = zero(TT)
     if isnan(vol)
         vv = volume(gas_model(model),p,T,w,phase = :v,vol0 = vol0)
     else
         vv = TT(vol)
     end
-    ∑zlogϕi,_ = ∑zlogϕ(gas_model(model),p,T,w,phase = :v,vol = vol)
-    gl = excess_gibbs_free_energy(__γ_unwrap(model),p,T,w)/RT + g_ideal
-    gv = ∑zlogϕi + tpd_delta_g_vapour(wrapper,p,T,w) + g_ideal
+    ∑zlogϕi,_ = ∑zlogϕ(gas_model(model),p,T,w,phase = :v,vol = vv)
+    gl = excess_gibbs_free_energy(__γ_unwrap(model),p,T,w)/RT #+ g_ideal
+    gv = ∑zlogϕi + tpd_delta_g_vapour(wrapper,p,T,w) #+g_ideal
     if gl < gv
         return :liquid
     else
@@ -395,6 +395,8 @@ function tpd_delta_g_vapour(wrapper,p,T,w)
     end
     return res
 end
+
+
 
 function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cache = tpd_cache(wrapper,p,T,z,di))
 
@@ -580,6 +582,97 @@ function ∂lnϕ∂T(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_ca
         tpd_∂delta_d∂T_vapour!(∂lnϕ∂Ti,wrapper,p,T)
         return ∂lnϕ∂Ti, V
     end
+end
+
+function x0_edge_pressure(wrapper::PTFlashWrapper,T,z,pure = nothing)
+  sat = wrapper.sat
+  n = sum(z)
+  p_bubble = sum(z[i]*first(sat[i]) for i in 1:length(sat))/n
+  p_dew = n/sum(z[i]/first(sat[i]) for i in 1:length(sat))
+  return (p_bubble,p_dew),sat
+end
+
+function _edge_pressure(wrapper::PTFlashWrapper,T,z,v0 = nothing,crit_retry = true)
+    _1 = one(Base.promote_eltype(wrapper,T,z))
+    if v0 == nothing
+        p00 = _1
+    else
+        p00 = 0.5*(v0[1] + v0[2])*_1
+    end
+    sat = wrapper.sat
+    RT = Rgas(wrapper)*T
+    #=
+    ∑zlogϕi,_ = ∑zlogϕ(gas_model(model),p,T,w,phase = :v)
+    gl = excess_gibbs_free_energy(__γ_unwrap(model),p,T,w)/RT
+    gv = ∑zlogϕi + tpd_delta_g_vapour(wrapper,p,T,w)
+    f(T) = gl(T) - gv(T)
+
+
+    system of eqs:
+    variables: 
+    - vv
+    - p
+
+    gl - ∑zlogϕ(model,V,T,z) - tpd_delta_g_vapour(wrapper,p,T,w) = 0
+    pressure(wrapper,vv,T,z) = p
+    
+    for ideal gas: solution is non-iterative
+    for real gas: use ideal gas as starting point
+    =#
+    model = wrapper.model
+    nc = length(model)
+    gl = excess_gibbs_free_energy(__γ_unwrap(model),pmin,T,z)/RT #should be independent of pressure
+    ∑z = sum(z)
+    ∑zlogps = sum(z[i]*log(first(sat[i])) for i in 1:nc)
+    
+    p0 = exp((gl + ∑zlogps)/∑z)
+    vv = ∑z*RT/p0
+    gasmodel = gas_model(wrapper)
+
+    nan = zero(p0)/zero(p0)
+    fail = (nan,nan,nan)
+
+    if gas_model(wrapper) isa IdealModel
+        result = p0,volume(wrapper,p,T,z,phase = :l),vv
+        return result,fail,:success
+    end
+    if v0 == nothing
+        p = p0
+    else
+        p = v00
+    end
+    p = p0
+    p_lb = minimum(first,sat)
+    p_ub = maximum(first,sat)
+    ∑zlogϕsat = zero(p)
+    ∑zZl = zero(p)
+    ∑zvlRT = zero(p)
+    fug = wrapper.fug
+    for i in 1:nc
+        psi,vli,_ = sat[i]
+        zi = z[i]
+        ∑zlogϕsat += zi*log(fug[i])
+        Zli = vli*psi/RT
+        ∑zZl += zi*Zli
+        ∑zvlRT += zi*vli/RT
+    end
+
+    for i in 1:40
+        vv_old = vv
+        vv = volume(gasmodel,p,T,z,phase = :v,vol0 = vv)
+        ∑zlogϕi,_ = ∑zlogϕ(gasmodel,p,T,z,phase = :v,vol = vv)
+        p_old = p
+        #p*vl/RT - vl*ps/RT + log(ϕsat[i]) + log(ps)
+        p = exp((gl + p*∑zvlRT - ∑zZl + ∑zlogϕsat + ∑zlogps - ∑zlogϕi)/∑z)
+        p < p_lb && (p = 0.5*(p_old + p_lb))
+        p > p_ub && (p = 0.5*(p_old + p_ub))
+        if abs(p - p_old)/p < sqrt(eps(eltype(p)))
+            vl = volume(wrapper,p,T,z,phase = :l)
+            return (p,vl,vv),fail,:success
+        end
+    end
+
+    return fail,fail,:failure
 end
 
 export GammaPhi

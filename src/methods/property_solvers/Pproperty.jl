@@ -3,8 +3,6 @@ function x0_edge_pressure(model,T,z,pure = split_pure_model(model))
   n = sum(z)
   p_bubble = sum(z[i]*first(sat[i]) for i in 1:length(model))/n
   p_dew = n/sum(z[i]/first(sat[i]) for i in 1:length(model))
-
-
   return (p_bubble,p_dew),sat
 end
 
@@ -109,7 +107,9 @@ function Pproperty(model::EoSModel,T,prop,z = SA[1.0],
                   p0 = nothing,
                   verbose = false,
                   threaded = true) where TT
-  p,st = _Pproperty(model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
+
+  cached_model = __tpflash_cache_model(model,oftype(T,NaN),T,z,:vle)
+  p,st = _Pproperty(cached_model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
   return p
 end
 
