@@ -108,7 +108,8 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     end
     best_u, g = Solvers.best(algo)
     # Refresh cache for the best solution (the last evaluated point might not be the best).
-    Obj_de_tp_flash(model, p, T, n, copy(best_u), numphases, x, nvals, volumes, logspace, equilibrium)
+    phase = is_lle(equilibrium) ? :liquid : :unknown
+    Obj_de_tp_flash(model, p, T, n, copy(best_u), numphases, x, nvals, volumes, logspace, phase)
 
     #Initialize arrays xij and nvalsij,
     #where i in 1..numphases, j in 1..numspecies
@@ -150,7 +151,7 @@ will result in a unique partition of the species into the numphases
 phases.
 vcache stores the current volumes for each phase.
 """
-function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace = false,equilibrium = :auto)
+function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace = false,phase = :unknown)
     # NOTE: avoid `Base.promote_typeof(p, T, first(n))` here; this function is slow
     # `x/nvals/volumes` are allocated in `tp_flash_impl` using the promoted type already, so we can reuse the cache eltype.
     TT = eltype(nvals)
@@ -175,7 +176,7 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     G = _0
     for i ∈ 1:numphases
         ni = @view(nvals[i, :])
-        gi_reduced,vi = __eval_G_DETPFlash(model,p,T,ni,equilibrium)
+        gi_reduced,vi = modified_gibbs(model,p,T,ni,phase)
         vcache[i] = vi
         G += gi_reduced
         #calling with PTn calls the internal volume solver
@@ -187,12 +188,6 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     # Per the FlashData definition, return the molar reduced Gibbs energy (g = G/(nRT))
     ∑n = sum(n)
     return ifelse(isnan(G),bignum,G/∑n)
-end
-
-#indirection to allow overloading this evaluation in activity models
-function __eval_G_DETPFlash(model,p,T,ni,equilibrium)
-    phase = is_lle(equilibrium) ? :liquid : :unknown
-    return modified_gibbs(model,p,T,n,phase)
 end
 
 numphases(method::DETPFlash) = method.numphases
