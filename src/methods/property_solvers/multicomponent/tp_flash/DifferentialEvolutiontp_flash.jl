@@ -190,12 +190,9 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
 end
 
 #indirection to allow overloading this evaluation in activity models
-function __eval_G_DETPFlash(model::EoSModel,p,T,ni,equilibrium)
+function __eval_G_DETPFlash(model,p,T,ni,equilibrium)
     phase = is_lle(equilibrium) ? :liquid : :unknown
-    RT = Rgas(model)*T
-    vi = volume(model,p,T,ni;phase = phase)
-    g = VT_gibbs_free_energy(model, vi, T, ni)
-    return g/RT,vi
+    return modified_gibbs(model,p,T,n,phase)
 end
 
 numphases(method::DETPFlash) = method.numphases

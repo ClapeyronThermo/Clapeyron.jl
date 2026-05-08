@@ -71,6 +71,7 @@ function idealmodel(model::FluidCorrelation{V}) where V
 end
 
 gas_model(model::FluidCorrelation) = model.gas
+liquid_model(model::FluidCorrelation) = model.liquid
 
 function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
     if is_unknown(phase) || phase == :stable
@@ -215,10 +216,6 @@ end
 
 function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,eq,vols)
     return NaN*one(T+p+first(x))
-end
-
-function __eval_G_DETPFlash(model::PTFlashWrapper{<:FluidCorrelation},p,T,xi,equilibrium)
-    throw(error("Correlation-Based Composite Model does not support DETPFlash."))
 end
 
 export FluidCorrelation

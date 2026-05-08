@@ -133,10 +133,11 @@ The main problem is that activity models are defined in a P-T basis, while the H
 we circunvent this by using the dispatches on PT_property.
 Activity models are transformed into a GammaPhi wrapper that evaluates the pure and excess parts in a correct way.
 
-=#
 function eos_impl(model::ActivityModel,V,T,z)
     return excess_gibbs_free_energy(model,V,T,z) + reference_state_eval(model,V,T,z)
 end
+=#
+
 
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
