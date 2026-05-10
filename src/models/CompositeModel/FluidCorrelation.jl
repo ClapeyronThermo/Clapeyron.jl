@@ -74,42 +74,36 @@ end
 liquid_model(model::FluidCorrelation) = model.liquid
 
 function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
-    if is_unknown(phase) || phase == :stable
-        #only liquid phase available
-        if model.liquid_cp === nothing && model.gas !== nothing
-            return PT_property(gas_model(model),p,T,z,phase,threaded,vol0,f,USEP)
-        end
+    wrapper = PTFlashWrapper(model,p,T,z,:vle)
+    return PT_property(wrapper,p,T,z,phase,threaded,vol0,USEP)
+end
 
-        #only gas phase available
-        if model.gas === nothing && model.liquid_cp !== nothing
-            return PT_property(model.liquid_cp,p,T,z,phase,threaded,vol0,f,USEP)
-        end
-
-        #single component, both phase models available, use saturation pressure to select
-        if model.gas !== nothing && model.liquid_cp !== nothing && length(model) == 1
-            psat,_,_ = saturation_pressure(model.saturation,T)
-            if isnan(psat)
-                #fluid correlations are only available on subcritical regime, where
-                #we can distinguish a liquid from a vapour.
-                nan = zero(Base.promote_eltype(model,p,T,z))
-                return PT_property(model.gas,nan,nan,z,phase,threaded,vol0,f,USEP)
-            end
-
-            #phase identified, call again with correct phase
-            new_phase = p > psat ? :l : :v
-            return PT_property(model,p,T,z,new_phase,threaded,vol0,f,USEP)
-        end
-        throw(error("multicomponent automatic phase detection not implemented for $(typeof(model))"))
-    end
-
-    if is_liquid(phase)
-        #for bulk properties that arent volume, the liquid_cp model contains a valid helmholtz model
-        return PT_property(model.liquid_cp,p,T,z,phase,threaded,vol0,f,USEP)
-    elseif is_vapour(phase)
-        return PT_property(model.gas,p,T,z,phase,threaded,vol0,f,USEP)
+function saturation_pressure_ad2(result,model::FluidCorrelation,T::ForwardDiff.Dual)
+    p = if has_a_res(model.saturation) #using an EoSModel as saturation provider
+        first(saturation_pressure_ad2(result,model.saturation,T))
     else
-        throw(error("invalid phase specifier for FluidCorrelation: $phase"))
+        first(saturation_pressure(model.saturation,T)) #AD though method, directly
     end
+
+    liq = model.liquid
+    z = SA[1.0]
+    vl = if has_a_res(liq)
+        tup = (liq,p,T,z)
+        λtup = (liq,primalval(p),primalval(T),z)
+        volume_ad(result[2],tup,λtup)
+    else
+        volume(liq,p,T,z,phase = :l)
+    end
+
+    gas = model.gas
+    vv = if gas isa IdealModel
+        Rgas(gas)*T/p
+    else
+        tup = (gas,p,T,z)
+        λtup = (gas,primalval(p),primalval(T),z)
+        volume_ad(result[2],tup,λtup)
+    end
+    return p,vl,vv
 end
 
 __γ_unwrap(model::FluidCorrelation) = IdealLiquidSolution()
@@ -131,11 +125,8 @@ function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
     elseif is_vapour(phase)
         return volume(model.gas, p, T, z; phase, threaded, vol0)
     else
-    TT = Base.promote_eltype(model,p,T,z)
-    RT = Rgas(model)*T
-    ∑z = sum(z)
-    g_ideal = sum(xlogx,z) - xlogx(∑z)
-    vl = zero(TT)
+        wrapper = PTFlashWrapper(model,p,T,z,:vle)
+        return volume(wrapper,p,T,z;phase,threaded,vol0)
     end
 end
 

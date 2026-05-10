@@ -274,34 +274,6 @@ function saturation_pressure_ad2(result,model,T)
     return saturation_pressure_ad(result,(model,T),(model,primalval(T)))
 end
 
-function saturation_pressure_ad2(result,model::FluidCorrelation,T::ForwardDiff.Dual)
-    p = if has_a_res(model.saturation) #using an EoSModel as saturation provider
-        first(saturation_pressure_ad2(result,model.saturation,T))
-    else
-        first(saturation_pressure(model.saturation,T)) #AD though method, directly
-    end
-
-    liq = model.liquid
-    z = SA[1.0]
-    vl = if has_a_res(liq)
-        tup = (liq,p,T,z)
-        λtup = (liq,primalval(p),primalval(T),z)
-        volume_ad(result[2],tup,λtup)
-    else
-        volume(liq,p,T,z,phase = :l)
-    end
-
-    gas = model.gas
-    vv = if gas isa IdealModel
-        Rgas(gas)*T/p
-    else
-        tup = (gas,p,T,z)
-        λtup = (gas,primalval(p),primalval(T),z)
-        volume_ad(result[2],tup,λtup)
-    end
-    return p,vl,vv
-end
-
 function tpd_delta_d_vapour!(d,wrapper,p,T)
     lnϕsat,sat = wrapper.fug,wrapper.sat
     is_ideal = gas_model(wrapper) isa IdealModel
@@ -367,7 +339,7 @@ function tpd_delta_g_vapour(wrapper::PTFlashWrapper,p,T,w)
     for i in eachindex(w)
         pure_i = pure[i]
         ps,vl,vv = saturation_pressure_ad2(sat[i],pure_i,T)
-        lnϕsat_i = lnϕsat[i]*one(res)
+        if T isa ForwardDiff.Dual
             VT_lnϕ_pure(pure_i,vv,T,ps)
         else
             lnϕsat[i]*one(res)
