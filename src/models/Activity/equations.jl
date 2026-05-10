@@ -400,6 +400,9 @@ function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)
     PTFlashWrapper(model,p,T,z,equilibrium)
 end
 
+function fluid_model(model::T) where T <:ActivityModel
+    return fluid_model(__act_to_gammaphi(model,tp_flash,false))
+end
 
 #LLE point. It does not require an input concentration, because it assumes that activities are pressure-independent.
 """
