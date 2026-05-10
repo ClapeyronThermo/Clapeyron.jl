@@ -87,6 +87,12 @@ function PTFlashWrapper(model::GammaPhi,p,T,z,equilibrium)
     return wrapper
 end
 
+function PTFlashWrapper(model::FluidCorrelation,p,T,z,equilibrium)
+    is_lle(equilibrium) && throw(error("FluidCorrelation does not support lle"))
+    compmodel = GammaPhi(model.components,IdealLiquidSolution(),EoSVectorParam(model))
+    return PTFlashWrapper(compmodel,p,T,z,equilibrium)
+end
+
 function __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium)
     PTFlashWrapper(model,p,T,z,equilibrium)
 end
