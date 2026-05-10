@@ -70,7 +70,7 @@ function idealmodel(model::FluidCorrelation{V}) where V
     idealmodel(model.gas)
 end
 
-gas_model(model::FluidCorrelation) = model.gas
+@inline gas_model(model::FluidCorrelation) = model.gas
 liquid_model(model::FluidCorrelation) = model.liquid
 
 function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}

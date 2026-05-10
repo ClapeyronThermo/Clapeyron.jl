@@ -29,7 +29,7 @@ end
 
 fluid_model(model::GammaPhi) = model.fluid.model
 __γ_unwrap(model::GammaPhi) = __γ_unwrap(model.activity)
-gas_model(model::GammaPhi) = gas_model(model.fluid.model)
+@inline gas_model(model::GammaPhi) = gas_model(model.fluid.model)
 Base.eltype(model::GammaPhi) = Base.promote_eltype(__γ_unwrap(model),gas_model(model))
 
 function excess_gibbs_free_energy(model::GammaPhi,p,T,z)
@@ -204,99 +204,16 @@ function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,USEP::Val{Us
     return PT_property(wrapper,p,T,z,phase,threaded,vol0,f,USEP)
 end
 
-#=
-a_res for PTFlashWrapper{<:GammaPhi}
-
-it is only valid for liquid phase calculations.
-approximates the gibbs energy at V,T by the saturated gibbs energy + a poynting factor
-also, the function uses the caches, so the input T must be equal to the temperature at which the PTFlashWrapper object was instantiated or updated.
-=#
-
-function a_res(wrapper::PTFlashWrapper{<:GammaPhi},V,T,z)
-    mixmodel = fluid_model(wrapper)
-    sat = wrapper.sat
-    pure = wrapper.pures
-    lnϕsat = wrapper.fug
-    res = zero(Base.promote_eltype(wrapper,V,T,z))
-    n = sum(z)
+function eos_g(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z)
     RT = Rgas(wrapper)*T
-    g_E = excess_gibbs_free_energy(__γ_unwrap(wrapper),zero(T),T,z)/(n*RT)
-    v = V/n
-
-    if has_a_res(mixmodel) #case 1: activity model + full EoS
-        pr = pressure_res(mixmodel,V,T,z)
-        Zr = pr*v/(RT)
-    elseif mixmodel isa FluidCorrelation && has_a_res(mixmodel.liquid)
-        #we can get a residual pressure from the liquid side, because the liquid EoS has a_res defined.
-        pr = pressure_res(mixmodel.liquid,V,T,z)
-        Zr = pr*v/(RT)
-    else
-        #bail out for now
-        #=
-        if the mixmodel isa FluidCorrelation
-        the liquid has a liquid correlation, technically we need to add that right here.
-        but, for most liquid correlations,the dvdp = 0.
-        some select EoS (at the moment, single component), have dvdp != 0
-        TODO: tackle this when a multicomponent GibbsBasedModel is defined.
-        
-        =#
-        Zr = zero(V+T+first(z))
-        pr = Zr
-        #Z = one(p)
-    end
-    p = pr + RT/v
-    logv = log(v)
-    res += g_E
-    res -= Zr
-    for i in 1:length(wrapper)
-        model_i = pure[i]
-        ps,vl,vv = saturation_pressure_ad2(sat[i],model_i,T)
-        xᵢ = z[i]/n
-        if has_a_res(model_i)
-            if T isa ForwardDiff.Dual
-                μrᵢ = (VT_gibbs_energy_res(model_i,vl,T,Clapeyron.SA[1.0]) + vl*(p - ps))/RT
-            else
-                μrᵢ = wrapper.fug[i] + log(vl*ps/RT) + vl*(p - ps)/RT
-            end
-            res += xᵢ*μrᵢ
-        elseif model_i isa FluidCorrelation && has_a_res(model_i.gas)
-            if T isa ForwardDiff.Dual
-                #instead of checking if the liquid phase has a_res (or a gibbs-based model), we just use the vapour phase
-                #there is a lnZ correction factor. because at equilibria:
-                #=
-                logphil = logphiv 
-                gl_res/RT - log(Zl) = gv_res/RT - log(Zv)
-                gl_res/RT = gv_res/RT - log(Zv) + log(Zl)
-                gl_res/RT = gv_res/RT - log(ps*vv/RT) + log(ps*vl/RT)
-                gl_res/RT = gv_res/RT - log(vv) + log(vl)
-                =#
-                μrᵢ = (VT_gibbs_energy_res(model_i.gas,vv,T,Clapeyron.SA[1.0]) + vl*(p - ps))/RT + log(vl/vv)
-            else
-                μrᵢ = wrapper.fug[i] + log(vl*ps/RT) + vl*(p - ps)/RT
-            end
-            res += xᵢ*μrᵢ
-        end
-        res -= xᵢ*log(vl)
-        res += xᵢ*logv
-    end
-    return res
+    g_E = excess_gibbs_free_energy(__γ_unwrap(wrapper),p,T,z) #excess gibbs
+    dg = -tpd_delta_g_vapour(wrapper,p,T,z)*RT #difference between gas fugacity and liquid activity, summed over z
+    g_ideal = eos_g(idealmodel(wrapper),p,T,z) #ideal gibbs energy
+    g0 = reference_state_eval(wrapper,p,T,z) #reference gibbs energy (equal to reference helmholtz energy)
+    return g0 + g_ideal + g_E + dg
 end
 
 lb_volume(model::PTFlashWrapper{<:GammaPhi},T,z) = lb_volume(fluid_model(model),T,z)
-
-function __PTFlashWrapper_use_a_res(wrapper::PTFlashWrapper{<:GammaPhi})
-    model = fluid_model(wrapper)
-    has_a_res(model) && return true
-    if model isa FluidCorrelation
-        if model.liquid isa ZeroLiquid
-            throw(error("For bulk property calculation, the liquid model in FluidCorrelation should not be ZeroLiquid."))
-        end
-        if has_a_res(model.gas) || has_a_res(model.liquid)
-            return true
-        end
-    end
-    return false
-end
 
 function PT_property(model::PTFlashWrapper{<:GammaPhi},p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
     if phase == :stable || is_unknown(phase)
@@ -310,33 +227,23 @@ function PT_property(model::PTFlashWrapper{<:GammaPhi},p,T,z,phase,threaded,vol0
     end
     #=
     Vapour properties are calculated with the fluid model
-    Liquid properties are calculated via a_res(PTFlashWrapper,V,T,z)
+    Liquid properties are calculated via eos_g(PTFlashWrapper,p,T,z)
     =#
     if is_vapour(phase)
         res = PT_property(gas_model(model),p,T,z,phase,threaded,vol0,f,USEP)
         return res
     elseif is_liquid(phase)
-        if __γ_unwrap(wrapper) isa IdealLiquidSolution
+        if __γ_unwrap(model) isa IdealLiquidSolution
             #liquid phase + no activity: just delegate to the liquid model, whatever that model may be
             #even for saturated liquid volumes, you can get some props
             return PT_property(liquid_model(model),p,T,z,phase,threaded,vol0,f,USEP)
         end
 
-        if __PTFlashWrapper_use_a_res(model)
-        vl = volume(model,p,T,z,phase = :l,vol0 = vol0)
-            if UseP
-                return f(model,vl,T,z,p)
-            else
-                return f(model,vl,T,z)
-            end
-        else
-            throw(error("bulk property calculation not defined for $(model.model.fluid)"))
-        end
+        return PT_property_gibbs(model,p,T,z,f)
         #return PT_property(ActivityModelAresWrapper(model),p,T,z,phase,threaded,vol0,f,USEP)
     else
         throw(error("invalid phase specifier: $phase"))
     end
 end
-
 
 export GammaPhi

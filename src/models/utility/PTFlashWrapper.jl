@@ -9,10 +9,10 @@ struct PTFlashWrapper{T,T2,R,S} <: EoSModel
     equilibrium::Symbol
 end =#
 
-Base.length(model::PTFlashWrapper) = length(model.model)
-Base.eltype(model::PTFlashWrapper) = Base.promote_eltype(model.model,model.fug)
-__γ_unwrap(model::PTFlashWrapper) = __γ_unwrap(model.model)
-gas_model(model::PTFlashWrapper) = gas_model(model.model)
+Base.length(Base.@specialize(model::PTFlashWrapper)) = length(model.model)
+Base.eltype(Base.@specialize(model::PTFlashWrapper)) = Base.promote_eltype(model.model,model.fug)
+__γ_unwrap(Base.@specialize(model::PTFlashWrapper)) = __γ_unwrap(model.model)
+@inline gas_model(Base.@specialize(model::PTFlashWrapper)) = gas_model(model.model)
 
 function tp_flash_K0(wrapper::PTFlashWrapper,p,T,z)
     first.(wrapper.sat) ./ p
@@ -270,40 +270,8 @@ function identify_phase(wrapper::PTFlashWrapper, p::Number, T, w=SA[1.]; phase=:
     end
 end
 
-function tpd_delta_d_vapour!(d,wrapper,p,T)
-    lnϕsat,sat = wrapper.fug,wrapper.sat
-    is_ideal = gas_model(wrapper) isa IdealModel
-    RT = Rgas(gas_model(wrapper))*T
-    for i in eachindex(d)
-        ps,vl,vv = sat[i]
-        Δd = log(ps/p)
-        is_ideal || (Δd += vl*(p - ps)/RT + lnϕsat[i])
-        d[i] = d[i] - Δd
-    end
-    return d
-end
-
-function tpd_∂delta_d∂P_vapour!(d,wrapper,p,T)
-    sat = wrapper.sat
-    pure = wrapper.pures
-    is_ideal = gas_model(wrapper) isa IdealModel
-    RT = Rgas(gas_model(wrapper))*T
-    for i in eachindex(d)
-        ps,vl,vv = sat[i]
-        Δd = -1/p
-        is_ideal || (Δd += vl/RT)
-        d[i] = d[i] - Δd
-    end
-    return d
-end
-
 function saturation_pressure_ad2(result,model,T)
-    if T isa ForwardDiff.Dual
-        return saturation_pressure_ad(result,(model,T),(model,primalval(T)))
-    else
-        T,p,vl,vv = promote(T,result...)
-        return (p,vl,vv)
-    end
+    return saturation_pressure_ad(result,(model,T),(model,primalval(T)))
 end
 
 function saturation_pressure_ad2(result,model::FluidCorrelation,T::ForwardDiff.Dual)
@@ -334,6 +302,33 @@ function saturation_pressure_ad2(result,model::FluidCorrelation,T::ForwardDiff.D
     return p,vl,vv
 end
 
+function tpd_delta_d_vapour!(d,wrapper,p,T)
+    lnϕsat,sat = wrapper.fug,wrapper.sat
+    is_ideal = gas_model(wrapper) isa IdealModel
+    RT = Rgas(gas_model(wrapper))*T
+    for i in eachindex(d)
+        ps,vl,vv = sat[i]
+        Δd = log(ps/p)
+        is_ideal || (Δd += vl*(p - ps)/RT + lnϕsat[i])
+        d[i] = d[i] - Δd
+    end
+    return d
+end
+
+function tpd_∂delta_d∂P_vapour!(d,wrapper,p,T)
+    sat = wrapper.sat
+    pure = wrapper.pures
+    is_ideal = gas_model(wrapper) isa IdealModel
+    RT = Rgas(gas_model(wrapper))*T
+    for i in eachindex(d)
+        ps,vl,vv = sat[i]
+        Δd = -1/p
+        is_ideal || (Δd += vl/RT)
+        d[i] = d[i] - Δd
+    end
+    return d
+end
+
 function tpd_∂delta_d∂T_vapouri(model,sat,p,T)
     is_ideal = gas_model(model) isa IdealModel
     function f(_T)
@@ -360,14 +355,24 @@ function tpd_∂delta_d∂T_vapour!(d,wrapper,p,T)
     return d
 end
 
-function tpd_delta_g_vapour(wrapper,p,T,w)
+function tpd_delta_g_vapour(wrapper::PTFlashWrapper,p,T,w)
     lnϕsat,sat = wrapper.fug,wrapper.sat
-    is_ideal = gas_model(wrapper) isa IdealModel
-    RT = Rgas(gas_model(wrapper))*T
-    res = zero(Base.promote_eltype(gas_model(wrapper),p,T,w))
+    pure = wrapper.pures
+    return zero(p+T+first(w))
+    gasmodel = gas_model(wrapper.model)
+
+    is_ideal = gasmodel isa IdealModel
+    RT = Rgas(gasmodel)*T
+    res = zero(Base.promote_eltype(gasmodel,p,T,w))
     for i in eachindex(w)
-        ps,vl,vv = sat[i]
-        Δd = lnϕsat[i] + log(ps/p)
+        pure_i = pure[i]
+        ps,vl,vv = saturation_pressure_ad2(sat[i],pure_i,T)
+        lnϕsat_i = lnϕsat[i]*one(res)
+            VT_lnϕ_pure(pure_i,vv,T,ps)
+        else
+            lnϕsat[i]*one(res)
+        end
+        Δd = lnϕsat_i + log(ps/p)
         is_ideal || (Δd += vl*(p - ps)/RT)
         res -= w[i]*Δd
     end
