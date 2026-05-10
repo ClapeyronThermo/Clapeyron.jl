@@ -337,7 +337,6 @@ end
 function tpd_delta_g_vapour(wrapper::PTFlashWrapper,p,T,w)
     lnϕsat,sat = wrapper.fug,wrapper.sat
     pure = wrapper.pures
-    return zero(p+T+first(w))
     gasmodel = gas_model(wrapper.model)
 
     is_ideal = gasmodel isa IdealModel
@@ -346,7 +345,7 @@ function tpd_delta_g_vapour(wrapper::PTFlashWrapper,p,T,w)
     for i in eachindex(w)
         pure_i = pure[i]
         ps,vl,vv = saturation_pressure_ad2(sat[i],pure_i,T)
-        if T isa ForwardDiff.Dual
+        lnϕsat_i = if T isa ForwardDiff.Dual
             VT_lnϕ_pure(pure_i,vv,T,ps)
         else
             lnϕsat[i]*one(res)
