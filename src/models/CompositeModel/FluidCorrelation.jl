@@ -70,12 +70,16 @@ function idealmodel(model::FluidCorrelation{V}) where V
     idealmodel(model.gas)
 end
 
-@inline gas_model(model::FluidCorrelation) = model.gas
+@inline gas_model(Base.@specialize(model::FluidCorrelation)) = model.gas
 liquid_model(model::FluidCorrelation) = model.liquid
 
 function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
-    wrapper = PTFlashWrapper(model,p,T,z,:vle)
-    return PT_property(wrapper,p,T,z,phase,threaded,vol0,USEP)
+    if is_vapour(phase)
+        return PT_property(model.gas,p,T,z,phase,threaded,vol0,f,USEP)
+    else #liquid or unknown
+        wrapper = PTFlashWrapper(model,p,T,z,:vle)
+        return PT_property(wrapper,p,T,z,phase,threaded,vol0,USEP)
+    end
 end
 
 function saturation_pressure_ad2(result,model::FluidCorrelation,T::ForwardDiff.Dual)
