@@ -500,4 +500,12 @@ function split_pure_model(model)
 end
 
 split_pure_model(model,splitter) = split_model(model,splitter)
+
+#helper to split models that already have a list of pure models created.
+split_pure_model(model::AbstractVector,splitter) = __get_pure_model_vec(model,splitter)
+__get_pure_model_vec(vec_of_models,splitter) = vec_of_models[only.(splitter)]
+__get_pure_model_vec(vec_of_models,splitter::Int) = [vec_of_models[splitter]]
+__get_pure_model_vec(vec_of_models,splitter::AbstractVector{<:Integer}) = vec_of_models[splitter]
+
+
 export split_model, split_model_binaries

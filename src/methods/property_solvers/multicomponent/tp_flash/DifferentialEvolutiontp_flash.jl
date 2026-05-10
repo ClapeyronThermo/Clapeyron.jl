@@ -100,15 +100,16 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
         throw(DomainError(backend, "unknown DETPFlash backend (expected :sass)"))
     end
     deadline_ns = isfinite(time_limit) ? time_ns() + floor(Int, 1e9time_limit) : typemax(Int)
+    phase = is_lle(equilibrium) ? :liquid : :unknown
     while !Solvers.isdone(algo)
         dividers_flat = Solvers.ask!(algo)
-        y = Obj_de_tp_flash(model, p, T, n, dividers_flat, numphases, x, nvals, volumes, logspace, equilibrium)
+        y = Obj_de_tp_flash(model, p, T, n, dividers_flat, numphases, x, nvals, volumes, logspace, phase)
         Solvers.tell!(algo, y)
         time_ns() >= deadline_ns && break
     end
     best_u, g = Solvers.best(algo)
     # Refresh cache for the best solution (the last evaluated point might not be the best).
-    phase = is_lle(equilibrium) ? :liquid : :unknown
+    
     Obj_de_tp_flash(model, p, T, n, copy(best_u), numphases, x, nvals, volumes, logspace, phase)
 
     #Initialize arrays xij and nvalsij,

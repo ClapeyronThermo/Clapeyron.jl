@@ -41,6 +41,8 @@ function PTFlashWrapper(model,p,T,z,equilibrium)
     return wrapper
 end
 
+split_pure_model(model::PTFlashWrapper,splitter) = model.pures[splitter]
+
 idealmodel(model::PTFlashWrapper) = idealmodel(model.model)
 fluid_model(model::PTFlashWrapper) = fluid_model(model.model)
 
@@ -82,7 +84,12 @@ end
 _update_temperature_with_view!(model1,model2,T,_view) = nothing
 
 function volume_impl(model::PTFlashWrapper, p, T, z, phase, threaded, vol0)
-    volume_impl(model.model, p, T, z, phase, threaded, vol0)
+    if is_unknown(phase) || phase == :stable
+        new_phase = identify_phase(model, p, T, z)
+        return volume_impl(model.model, p, T, z, new_phase, threaded, vol0)
+    else
+        volume_impl(model.model, p, T, z, phase, threaded, vol0)
+    end
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",wrapper::PTFlashWrapper)
@@ -248,7 +255,7 @@ function modified_gibbs(wrapper::PTFlashWrapper,p,T,w,phase,vol)
     end
 end
 
-function identify_phase(wrapper::PTFlashWrapper, p::Number, T, w=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, vol = NaN)
+function identify_phase(wrapper::PTFlashWrapper, p::Number, T, w=SA[1.]; vol0=nothing, vol = NaN)
     model = wrapper.model
     TT = Base.promote_eltype(wrapper,p,T,w)
     RT = Rgas(model)*T

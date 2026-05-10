@@ -372,8 +372,8 @@ function modified_gibbs(model,result::FlashResult;vapour_phase_index = 0)
     for i in 1:np
         phase = __mpflash_phase(vapour_phase_index,i)
         gi,vi = modified_gibbs(model,p,T,x[i],phase,v[i])
-        g += β[i]*vi
-        vx += β[i]*gi
+        g += β[i]*gi
+        vx += β[i]*vi
     end
     return g,vx
 end
