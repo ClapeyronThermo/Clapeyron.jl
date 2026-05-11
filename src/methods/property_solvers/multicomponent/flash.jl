@@ -352,14 +352,6 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
     end
 end
 
-function _multiphase_gibbs(model,result,vapour_phase_index = 0)
-    gibbs_energy(model,result)/Rgas(model)/result.data.T
-end
-
-function _multiphase_gibbs(model::PTFlashWrapper,result,vapour_phase_index = 0)
-    modified_gibbs(model,result;vapour_phase_index)/Rgas(model)/result.data.T
-end
-
 function __mpflash_phase(vapour_phase_index,i) 
     if vapour_phase_index != 0
         phase = vapour_phase_index == i ? :vapour : :liquid
@@ -376,12 +368,14 @@ function modified_gibbs(model,result::FlashResult;vapour_phase_index = 0)
     v = result.volumes
     β = result.fractions
     x = result.compositions
+    vx = zero(g)
     for i in 1:np
         phase = __mpflash_phase(vapour_phase_index,i)
-        gi,_ = modified_gibbs(model,p,T,x[i],phase,v[i])
+        gi,vi = modified_gibbs(model,p,T,x[i],phase,v[i])
         g += β[i]*gi
+        vx += β[i]*vi
     end
-    return g
+    return g,vx
 end
 
 #utilities to add/remove phases from an existing FlashResult

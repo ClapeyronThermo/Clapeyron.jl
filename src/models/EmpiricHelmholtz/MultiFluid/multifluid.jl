@@ -285,14 +285,7 @@ function tp_flash_fast_K0!(K,model::MultiFluid,p,T,z)
     return true
 end
 
-function split_pure_model(model::MultiFluid,splitter)
-    pure_splitter = only.(splitter)
-    model.pures[pure_splitter]
-end
-
-split_pure_model(model::MultiFluid,splitter::Int) = [model.pures[splitter]]
-split_pure_model(model::MultiFluid,splitter::AbstractVector{<:Integer}) = model.pures[splitter]
-
+split_pure_model(model::MultiFluid,splitter) = split_pure_model(model.pures,splitter)
 
 #set reference states:
 reference_state(model::MultiFluid) = model.params.reference_state

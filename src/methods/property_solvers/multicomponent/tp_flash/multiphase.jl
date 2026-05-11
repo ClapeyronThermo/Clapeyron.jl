@@ -262,7 +262,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
 
     #δn_add = _add_phases!(model,p,T,z,_result,cache,options)
     if !δn_add && length(comps) == 1
-        g0 = _multiphase_gibbs(model,result)
+        g0,_ =modified_gibbs(model,result)
         return FlashResult(comps, βi, volumes, FlashData(p,T,g0))
     end
     gmix = NaN*one(eltype(volumes))
@@ -299,7 +299,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
             converged = neq_converged || ss_converged
             no_new_phases = !δn_add && !δn_remove
             converged = converged && no_new_phases
-            converged && ss_converged && (gmix = _multiphase_gibbs(model,result,idx_vapour[]))
+            converged && ss_converged && (gmix = first(modified_gibbs(model,result,vapour_phase_index = idx_vapour[])))
         end
         done = iter > max_iter
         done = done || converged
@@ -313,7 +313,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         verbose && @info("[MPFLASH] final cleanup: removed duplicate/degenerate phases")
     end
     if !isfinite(gmix)
-        gmix = _multiphase_gibbs(model,result)
+        gmix,_ = modified_gibbs(model,result)
     end
     return FlashResult(result.compositions,result.fractions,result.volumes, FlashData(p,T,gmix))
 end
@@ -1157,6 +1157,7 @@ end
 function multi_g_obj(model,p,T,z,_result,ss_cache)
     result_cache,x0,x,xx,f1,f2,f3,dem_cache,Hϕ = ss_cache
     result, idx_vapour = _result
+    RT = Rgas(model)*T
     nc = length(z)
     np = numphases(result)
     function f(𝕏)
@@ -1174,7 +1175,7 @@ function multi_g_obj(model,p,T,z,_result,ss_cache)
 
         #g = βnp*(eos(model,vnp,T,xnp) + p*vnp)
         if has_a_res(model)
-            g = βnp*(eos(model,vnp,T,xnp) + p*vnp)
+            g = βnp*(eos(model,vnp,T,xnp) + p*vnp)/RT
         else
             g = βnp*modified_gibbs(model,p,T,xnp,phase_np,vnp)[1]
         end
@@ -1186,14 +1187,13 @@ function multi_g_obj(model,p,T,z,_result,ss_cache)
             phase_i = __mpflash_phase(idx_vapour[],i)
             #g += β[i]*(eos(model,vi,T,xi) + p*vi)
             if has_a_res(model)
-                g += β[i]*(eos(model,vi,T,xi) + p*vi)
+                g += β[i]*(eos(model,vi,T,xi) + p*vi)/RT
             else
                 g += β[i]*modified_gibbs(model,p,T,xi,phase_i,vi)[1]
             end
         end
-        return g/(Rgas(model)*T)
+        return g
     end
-
     return f
 end
 
