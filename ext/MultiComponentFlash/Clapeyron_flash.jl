@@ -44,7 +44,7 @@ function C.tp_flash_impl(model,p,T,z,method::C.MCFlashJL)
     nRT = n*C.Rgas(model)*T
     vl,vv = Zl*nRT/p,Zv*nRT/p
     volumes = [vl,vv]
-    data = C.FlashData(p,T,zero(βi),2)
+    data = C.FlashData(p,T,zero(β),2)
     comps = [x,y]
     βi = [n*(1-β),n*β]
     return C.FlashResult(comps,βi,volumes,data)
