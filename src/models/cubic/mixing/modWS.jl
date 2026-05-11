@@ -90,7 +90,8 @@ function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::modWSRuleModel,�
     RT⁻¹ = 1/(R̄*T)
     B̄ = zero(T+V+first(z))
     Σλab = B̄
-    for i in @comps
+    nc = length(model)
+    for i in 1:nc
         zi = z[i]
         αi = α[i]
         ai = a[i,i]*αi

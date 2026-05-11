@@ -91,7 +91,7 @@ function FugDewPressure(;vol0 = nothing,
 end
 
 function dew_pressure_impl(model::RestrictedEquilibriaModel,T,y,method::FugDewPressure)
-    wrapper = PTFlashWrapper(model,NaN,T,y,:vle)
+    wrapper = __tpflash_cache_model(model,NaN,T,y,:vle)
     return dew_pressure_impl(wrapper,T,y,method)
 end
 
@@ -260,7 +260,7 @@ function FugDewTemperature(;vol0 = nothing,
 end
 
 function dew_temperature_impl(model::RestrictedEquilibriaModel,p,y,method::FugDewTemperature)
-    wrapper = PTFlashWrapper(model,p,NaN,y,:vle)
+    wrapper = __tpflash_cache_model(model,p,NaN,y,:vle)
     return dew_temperature_impl(wrapper,p,y,method)
 end
 

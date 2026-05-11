@@ -868,7 +868,7 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing,verbose = false) where F
 
     sat,crit,status = _extended_saturation_temperature(model,p)
 
-    if status == :fail
+    if status == :failure
         verbose && @error "TProperty calculation failed"
         return FlashResultInvalid(x1,one(TT))
     end
@@ -939,7 +939,7 @@ function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing,verbose = false) where F
 
     sat,crit,status = _extended_saturation_pressure(model,T)
 
-    if status == :fail
+    if status == :failure
         verbose && @error "PProperty calculation failed"
         return FlashResultInvalid(x1,one(TT))
     end

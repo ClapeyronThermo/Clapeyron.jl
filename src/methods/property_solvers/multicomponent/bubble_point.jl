@@ -56,7 +56,7 @@ function _extended_saturation_pressure(pure, T, _crit, crit_retry)
         sat = saturation_pressure(pure,T,crit_retry = false)
         if isnan(first(sat))
             if !crit_retry
-                return sat,fail3,:fail
+                return sat,fail3,:failure
             end
         else
             return sat,fail3,:success
@@ -115,7 +115,7 @@ function _extended_saturation_temperature(pure, p, _crit, crit_retry)
         sat::NTuple{3,X} = saturation_temperature(pure,p,crit_retry = false)
         if isnan(first(sat))
             if !crit_retry
-                return sat,fail3,:fail #failed
+                return sat,fail3,:failure #failed
             end
         else
             return sat,fail3,:success #sucess
@@ -137,7 +137,7 @@ function _extended_saturation_temperature(pure, p, _crit, crit_retry)
         if !isnan(first(sat2))
             return X.(sat2),crit,:success
         else
-            fail3,crit,:fail
+            fail3,crit,:failure
         end
         return fail3,crit,:supercritical
     end
@@ -204,7 +204,7 @@ function __dlnPdTinvsat(pure,sat,crit,xx,is_sat_temperature,status)
             dpdT = dpdT_saturation(pure,NaN,NaN,T)
         end
         return -dpdT*Tc*Tc/Pc,log(Pc),1/Tc
-    elseif status == :fail
+    elseif status == :failure
         return sat
     else
         throw(error("dPdTsat: invalid status: $status"))

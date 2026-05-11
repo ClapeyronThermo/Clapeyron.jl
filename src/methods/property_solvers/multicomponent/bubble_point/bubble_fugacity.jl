@@ -91,7 +91,7 @@ function FugBubblePressure(;vol0 = nothing,
 end
 
 function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::FugBubblePressure)
-    wrapper = PTFlashWrapper(model,NaN,T,x,:vle)
+    wrapper = __tpflash_cache_model(model,NaN,T,x,:vle)
     return bubble_pressure_impl(wrapper,T,x,method)
 end
 
@@ -258,7 +258,7 @@ function FugBubbleTemperature(;vol0 = nothing,
 end
 
 function bubble_temperature_impl(model::RestrictedEquilibriaModel,p,x,method::FugBubbleTemperature)
-    wrapper = PTFlashWrapper(model,p,NaN,x,:vle)
+    wrapper = __tpflash_cache_model(model,p,NaN,x,:vle)
     return bubble_temperature_impl(wrapper,p,x,method)
 end
 
