@@ -79,24 +79,15 @@ function RRTPFlash(;equilibrium = :unknown,
 end
 
 function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
-
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
-
-    x,y,β,v = tp_flash_michelsen(model_cached,p,T,z,method,true)
-    
+    x,y,β,v,lle = tp_flash_michelsen(model_cached,p,T,z,method,true)
+    vapour_idx = lle ? -1 : 2
     volumes = [v[1],v[2]]
     comps = [x,y]
     βi = [1-β ,β]
-
-    if isnan(β)
-        g = β
-    elseif has_a_res(model_cached)
-        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium,volumes)
-    else
-        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
-    end
-
-    return FlashResult(comps,βi,volumes,FlashData(p,T,g))
+    flash0 = FlashResult(comps,βi,volumes,FlashData(p,T,zero(β),vapour_idx))
+    g = isnan(β) ? β : modified_gibbs(model_cached,flash0)
+    return FlashResult(comps,βi,volumes,FlashData(p,T,g,vapour_idx))
 end
 
 michelsen_itss(method::RRTPFlash) = method.max_iters

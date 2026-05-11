@@ -209,7 +209,9 @@ function qp_flash_impl(model,β,p,z,method::RRQXFlash)
     y ./= sum(y)
     K .*= n
     lnK ./= n
-    return FlashResult(flash0.compositions,K,lnK,FlashData(p,T))
+    lle = is_liquid(phasex) && is_liquid(phasey)
+    vapour_idx = lle ? -1 : 2
+    return FlashResult(flash0.compositions,K,lnK,FlashData(p,T,0.0,vapour_idx))
 end
 
 function qt_flash_impl(model::M,β,T,z,method::RRQXFlash) where M
@@ -266,8 +268,9 @@ function qt_flash_impl(model::M,β,T,z,method::RRQXFlash) where M
             lnK[2] = volume(model,p,T,y,phase = phasey)
         end
     end
-
-    return FlashResult(flash0.compositions,K,lnK,FlashData(p,T))
+    lle = is_liquid(phasex) && is_liquid(phasey)
+    vapour_idx = lle ? -1 : 2
+    return FlashResult(flash0.compositions,K,lnK,FlashData(p,T,0.0,vapour_idx))
 end
 
 function bubble_pressure_impl(model::EoSModel,T,z,method::RRQXFlash)

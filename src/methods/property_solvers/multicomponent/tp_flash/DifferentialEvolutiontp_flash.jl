@@ -124,13 +124,25 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
 
     comps = [vec(x[i,:]) for i in 1:numphases]
     βi = [sum(@view(nvals[i,:])) for i in 1:numphases]
+    vapour_idx = is_lle(equilibrium) ? -1 : 0
+
+    #fill liquid volumes, identify vapour phase
     for i in 1:numphases
-        if iszero(volumes[i]) && model isa PTFlashWrapper
+        voli = volumes[i]
+        if iszero(voli) && model isa PTFlashWrapper
             #we suppose liquid volume, evaluate here
             volumes[i] = volume(model,p,T,comps[i],phase = :l)
+        elseif !iszero(voli) && model isa PTFlashWrapper && is_unknown(phase) && is_zero(vapour_idx)
+            new_phase = identify_phase(model,p,T,comps[i],vol = voli)
+            if is_vapour(new_phase)
+                vapour_idx = i
+            end
         end
     end
-    return FlashResult(comps, βi, volumes, FlashData(p,T,g))
+    if vapour_idx == 0
+        vapour_idx = -1
+    end
+    return FlashResult(comps, βi, volumes, FlashData(p,T,g,vapour_idx))
 end
 """
     Obj_de_tp_flash(model,p,T,z,dividers,numphases,vcache,logspace = false)

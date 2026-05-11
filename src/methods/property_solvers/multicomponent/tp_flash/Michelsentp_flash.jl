@@ -128,43 +128,18 @@ end
 #hook to precalculate things with the activity model.
 __tpflash_cache_model(model::EoSModel,p,T,z,equilibrium) = model
 
-__tpflash_gibbs_reduced(model,p,T,x,y,β,eq) = __tpflash_gibbs_reduced(model,p,T,x,y,β,eq,nothing)
-
-function __tpflash_gibbs_reduced(model,p,T,x,y,β,eq,volumes)
-    RT = Rgas(model)*T
-    if volumes == nothing
-        isone(β) && return gibbs_free_energy(model,p,T,y)/RT
-        iszero(β) && return gibbs_free_energy(model,p,T,x)/RT
-        return (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/RT
-    else
-        vx,vy = volumes
-        isone(β) && return VT_gibbs_free_energy(model,vy,T,y,p)/RT
-        iszero(β) && return VT_gibbs_free_energy(model,vx,T,x,p)/RT
-        return (VT_gibbs_free_energy(model,vx,T,x,p)*(1-β)+VT_gibbs_free_energy(model,vy,T,y,p)*β)/RT
-    end
-end
-
-
 function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
-
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
-
-    x,y,β,v = tp_flash_michelsen(model_cached,p,T,z,method,true)
-
+    x,y,β,v,lle = tp_flash_michelsen(model_cached,p,T,z,method,true)
+    vapour_idx = lle ? -1 : 2
     volumes = [v[1],v[2]]
     comps = [x,y]
     βi = [1-β ,β]
-
-    if isnan(β)
-        g = β
-    elseif has_a_res(model_cached)
-        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium,volumes)
-    else
-        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
-    end
-
-    return FlashResult(comps,βi,volumes,FlashData(p,T,g))
+    flash0 = FlashResult(comps,βi,volumes,FlashData(p,T,zero(β),vapour_idx))
+    g = isnan(β) ? β : modified_gibbs(model_cached,flash0)
+    return FlashResult(comps,βi,volumes,FlashData(p,T,g,vapour_idx))
 end
+
 function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(), reduced = false)
 
     equilibrium = method.equilibrium
@@ -471,7 +446,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
-    return x, y, β, (vx,vy)
+    tp_flash_lle = is_liquid(phasex) && is_liquid(phasey)
+    return x, y, β, (vx,vy), tp_flash_lle
 end
 
 export MichelsenTPFlash

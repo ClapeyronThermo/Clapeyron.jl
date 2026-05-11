@@ -312,10 +312,14 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         removed = _remove_phases!(model,p,T,z,_result,cache,options)
         verbose && @info("[MPFLASH] final cleanup: removed duplicate/degenerate phases")
     end
+
+    idx_vapour_final = iszero(idx_vapour[]) ? -1 : idx_vapour[]
+
     if !isfinite(gmix)
-        gmix,_ = modified_gibbs(model,result)
+        gmix,_ = modified_gibbs(model,result;vapour_phase_index=idx_vapour_final)
     end
-    return FlashResult(result.compositions,result.fractions,result.volumes, FlashData(p,T,gmix))
+
+    return FlashResult(result.compositions,result.fractions,result.volumes, FlashData(p,T,gmix,idx_vapour_final))
 end
 
 function neq_converged(model,p,T,z,result)

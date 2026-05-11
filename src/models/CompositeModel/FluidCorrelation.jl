@@ -209,8 +209,4 @@ function ∂lnϕ_cache(model::PTFlashWrapper{FluidCorrelation{<:IdealModel}}, p,
     return nothing
 end
 
-function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,eq,vols)
-    return NaN*one(T+p+first(x))
-end
-
 export FluidCorrelation

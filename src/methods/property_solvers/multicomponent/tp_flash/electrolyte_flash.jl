@@ -82,7 +82,13 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
             Kmin,Kmax = extrema(K)
             if Kmin > 1 || Kmax < 1
                 verbose && @info "VLE correlation falied, trying LLE initial point."
-                K = K0_lle_init(model,p,T,z)
+                K_lle = K0_lle_init(model,p,T,z)
+                if any(!isone,K_lle) #only use LLE result if actually exists
+                    K .= K_lle
+                end
+                lnK .= log.(K)
+                phasey = :liquid
+                phases = (:liquid,:liquid)
             end
         end
         lnK .= log.(K)
@@ -91,6 +97,8 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
         verbose && @info "K0 calculated via LLE initial point (tpd)"
         K .= K0_lle_init(model,p,T,z)
         lnK .= log.(K)
+        phasey = :liquid
+        phases = (:liquid,:liquid)
     end
     _1 = one(eltype(K))
     # Initial guess for phase split
@@ -282,7 +290,8 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
-    return x, y, β, (vx,vy)
+    tp_flash_lle = is_liquid(phasex) && is_liquid(phasey)
+    return x, y, β, (vx,vy), tp_flash_lle
 end
 
 function bound_electrochemical_potential(K,Z)

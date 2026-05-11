@@ -30,12 +30,13 @@ struct FlashData{R}
     p::R
     T::R
     g::R
+    vapour_idx::Int
 end
 
 Base.show(io::IO,::MIME"text/plain",options::FlashData) = show_as_namedtuple(io,options)
 Base.show(io::IO,options::FlashData) = show_as_namedtuple(io,options)
 
-Solvers.primalval(data::FlashData) = FlashData(primalval(data.p),primalval(data.T),primalval(data.g))
+Solvers.primalval(data::FlashData) = FlashData(primalval(data.p),primalval(data.T),primalval(data.g),data.vapour_idx)
 Solvers.primalval(result::FlashResult) = FlashResult(primalval.(result.compositions),primalval(result.fractions),primalval(result.volumes),primalval(result.data))
 
 function Solvers.recursive_fd_extract_derivative(X::XX,result::FlashResult) where XX
@@ -45,7 +46,7 @@ function Solvers.recursive_fd_extract_derivative(X::XX,result::FlashResult) wher
     T = Solvers.recursive_fd_extract_derivative(X,result.data.T)
     p = Solvers.recursive_fd_extract_derivative(X,result.data.p)
     g = Solvers.recursive_fd_extract_derivative(X,result.data.g)
-    data = FlashData(p,T,g)
+    data = FlashData(p,T,g,result.data.vapour_idx)
     return FlashResult(comps,β,vols,data)
 end
 
@@ -56,7 +57,7 @@ function Solvers.recursive_fd_value(result::FlashResult)
     T = Solvers.recursive_fd_value(result.data.T)
     p = Solvers.recursive_fd_value(result.data.p)
     g = Solvers.recursive_fd_value(result.data.g)
-    data = FlashData(p,T,g)
+    data = FlashData(p,T,g,result.data.vapour_idx)
     return FlashResult(comps,β,vols,data)
 end
 
@@ -74,16 +75,16 @@ end
 
 function FlashData(p::R1,T::R2,g::R3) where{R1,R2,R3}
     if g === nothing
-        FlashData(promote(p,T)...)
+        FlashData(promote(p,T)...,0)
     else
-        return FlashData(promote(p,T,g)...)
+        return FlashData(promote(p,T,g)...,0)
     end
 end
 
-FlashData(p,T) = FlashData(p,T,1.0*zero(p))
+FlashData(p,T) = FlashData(p,T,1.0*zero(p),0)
 
 #mol checker, with gibbs
-function FlashResult(model::EoSModel,p,T,z::Union{Number,AbstractVector{<:Number}},comps,β,volumes,g = nothing;sort = true)
+function FlashResult(model::EoSModel,p,T,z::Union{Number,AbstractVector{<:Number}},comps,β,volumes,g = nothing;sort = true,vapour_phase_index = 0)
     ∑β = sum(β)
     ∑z = sum(z)
     if !isapprox(∑z,∑β)
@@ -91,23 +92,24 @@ function FlashResult(model::EoSModel,p,T,z::Union{Number,AbstractVector{<:Number
     else
         _β = β * one(∑z/∑β)
     end
-    return FlashResult(model,p,T,comps,_β,volumes,g;sort)
+    return FlashResult(model,p,T,comps,_β,volumes,g;sort,vapour_phase_index)
 end
 
 #constructor that fills the Gibbs energy automatically
-function FlashResult(model::EoSModel,p,T,comps,β,volumes,g = nothing;sort = true)
+function FlashResult(model::EoSModel,p,T,comps,β,volumes,g = nothing;sort = true,vapour_phase_index = 0)
     if g == nothing
-        flash = FlashResult(p,T,comps,β,volumes,sort = false)
+        data = FlashData(p,T,zero(p),vapour_phase_index)
+        flash = FlashResult(comps,β,volumes,data)
         Gmix = gibbs_free_energy(model,flash)
         _g = Gmix/(sum(β)*Rgas(model)*T)
     else
         _g = g
     end
-    return FlashResult(p,T,comps,β,volumes,_g;sort)
+    return FlashResult(p,T,comps,β,volumes,_g;sort,vapour_phase_index)
 end
 
 #mol checker, without gibbs
-function FlashResult(p::Number,T::Number,z::Union{Number,AbstractVector{<:Number}},comps,β,volumes,g = nothing;sort = true)
+function FlashResult(p::Number,T::Number,z::Union{Number,AbstractVector{<:Number}},comps,β,volumes,g = nothing;sort = true,vapour_phase_index = 0)
     ∑β = sum(β)
     ∑z = sum(z)
     if !isapprox(∑z,∑β)
@@ -115,12 +117,12 @@ function FlashResult(p::Number,T::Number,z::Union{Number,AbstractVector{<:Number
     else
         _β = β * one(∑z/∑β)
     end
-    return FlashResult(p,T,comps,_β,volumes,g;sort)
+    return FlashResult(p,T,comps,_β,volumes,g;sort,vapour_phase_index)
 end
 
 #constructor that does not fill the gibbs field
-function FlashResult(p::Number,T::Number,comps,β,volumes,g = nothing;sort = true)
-    data = FlashData(p,T,g)
+function FlashResult(p::Number,T::Number,comps,β,volumes,g = nothing;sort = true,vapour_phase_index = 0)
+    data = FlashData(p,T,g,vapour_phase_index)
     if !sort || issorted(volumes)
         return FlashResult(comps,β,volumes,data)
     else
@@ -130,14 +132,14 @@ function FlashResult(p::Number,T::Number,comps,β,volumes,g = nothing;sort = tru
 end
 
 #flash remaker
-function FlashResult(x::FlashResult,g = nothing;sort = true)
+function FlashResult(x::FlashResult,g = nothing;sort = true,vapour_phase_index = 0)
     comps,β,volumes,data = x.compositions,x.fractions,x.volumes,x.data
     if g !== nothing
         _g = g
     else
         _g = data.g
     end
-    return FlashResult(data.p,data.T,comps,β,volumes,_g;sort)
+    return FlashResult(data.p,data.T,comps,β,volumes,_g;sort,vapour_phase_index)
 end
 
 #constructor for single phase
@@ -146,7 +148,14 @@ function FlashResult(model::EoSModel,p::Number,T::Number,z;phase = :unknown)
     comps = [z ./ ∑z]
     volumes = [volume(model,p,T,z;phase = phase)/∑z]
     β = [∑z*one(eltype(volumes))]
-    return FlashResult(model,p,T,comps,β,volumes;sort = false)
+    vapour_phase_index = if is_liquid(phase)
+        -1
+    elseif is_vapour(phase)
+        1
+    else
+        0
+    end
+    return FlashResult(model,p,T,comps,β,volumes;sort = false,vapour_phase_index = vapour_phase_index)
 end
 
 #nan constructor
@@ -352,7 +361,10 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
     end
 end
 
-function __mpflash_phase(vapour_phase_index,i) 
+function __mpflash_phase(vapour_phase_index,i)
+    #phase == 0: phase not identified
+    #phase > 0 : one vapour phase
+    #phase > 0: zero vapour phases
     if vapour_phase_index != 0
         phase = vapour_phase_index == i ? :vapour : :liquid
     else
@@ -361,7 +373,7 @@ function __mpflash_phase(vapour_phase_index,i)
     return phase
 end
 
-function modified_gibbs(model,result::FlashResult;vapour_phase_index = 0)
+function modified_gibbs(model,result::FlashResult;vapour_phase_index = result.data.vapour_idx)
     np = numphases(result)
     g = zero(Base.promote_eltype(result.compositions[1],result.fractions,result.volumes,result.data.p,result.data.T,model))
     p,T = result.data.p,result.data.T

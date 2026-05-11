@@ -355,7 +355,7 @@ function modified_gibbs(model,p,T,w,phase,vol)
         volw = vol
     end
     RT = Rgas(model)*T
-    g =  VT_gibbs_energy(model,volw,T,w,p) #+ eos_g(BasicIdeal(),p,T,w)
+    g =  VT_gibbs_energy(model,volw,T,w,p)
     return g/RT,volw
 end
 
