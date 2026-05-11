@@ -505,12 +505,12 @@ function init_preferred_method(method::typeof(dew_temperature),model::Restricted
 end
 
 function _edge_pressure(model::RestrictedEquilibriaModel,T,z,v0 = nothing,crit_retry = false)
-    wrapper = __tpflash_cache_model(model,oftype(T,NaN),T,z,:vle)
+    wrapper = __tpflash_cache_model(model,NaN,T,z,:vle)
     return _edge_pressure(wrapper,T,z,v0,crit_retry)
 end
 
 function _edge_temperature(model::RestrictedEquilibriaModel,p,z,v0 = nothing)
-    wrapper = __tpflash_cache_model(model,p,oftype(p,NaN),z,:vle)
+    wrapper = __tpflash_cache_model(model,p,NaN,z,:vle)
     return _edge_temperature(wrapper,p,z,v0)
 end
 

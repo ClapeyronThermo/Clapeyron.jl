@@ -195,7 +195,7 @@ function Tproperty(model::EoSModel,p,prop,z = SA[1.0],
                   T0 = nothing,
                   verbose = false,
                   threaded = true) where TT
-  cached_model = __tpflash_cache_model(model,p,oftype(p,NaN),z,:vle)
+  cached_model = __tpflash_cache_model(model,p,NaN,z,:vle)
   T,st = _Tproperty(cached_model,p,prop,z,property;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
   return T
 end
