@@ -983,7 +983,7 @@ function _remove_phases!(model,p,T,z,_result,cache,options)
     #strategy B: remove one phase that does not help in equilibria
     βmin,imin = findmin(β)
     wmin,vmin = comps[imin],volumes[imin]
-    phase_min = __mpflash_phase(idx_vapour[],imin)
+    phase_min = vapour_idx_to_symbol(idx_vapour[],imin)
     gmin,_ = modified_gibbs(model,p,T,wmin,phase_min,vmin)
     wmix = similar(comps[1])
     for i in 1:np
@@ -992,7 +992,7 @@ function _remove_phases!(model,p,T,z,_result,cache,options)
         wmix .= βi .* wi .+ βmin .* wmin
         βmix = βi + βmin
         wmix .= wmix ./ sum(wmix)
-        phasei = __mpflash_phase(idx_vapour[],i)
+        phasei = vapour_idx_to_symbol(idx_vapour[],i)
         #gi = eos(model,vi,T,wi) + vi*p
         gi,_ = modified_gibbs(model,p,T,wi,phasei,vi)
         #gmix = eos(model,vmix,T,wmix) + vmix*p
@@ -1175,7 +1175,7 @@ function multi_g_obj(model,p,T,z,_result,ss_cache)
         βnp = 1 - sum(β)
         xnp .= z ./ t
         vnp = vols[np]
-        phase_np = __mpflash_phase(idx_vapour[],np)
+        phase_np = vapour_idx_to_symbol(idx_vapour[],np)
 
         #g = βnp*(eos(model,vnp,T,xnp) + p*vnp)
         if has_a_res(model)
@@ -1188,7 +1188,7 @@ function multi_g_obj(model,p,T,z,_result,ss_cache)
             Ki = viewn(𝕏,nc,i)
             xi .= xnp .* exp.(Ki)
             vi = exp(vols[i])
-            phase_i = __mpflash_phase(idx_vapour[],i)
+            phase_i = vapour_idx_to_symbol(idx_vapour[],i)
             #g += β[i]*(eos(model,vi,T,xi) + p*vi)
             if has_a_res(model)
                 g += β[i]*(eos(model,vi,T,xi) + p*vi)/RT
