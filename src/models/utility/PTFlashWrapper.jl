@@ -42,9 +42,10 @@ function PTFlashWrapper(model,p,T,z,equilibrium)
 end
 
 split_pure_model(model::PTFlashWrapper,splitter) = model.pures[splitter]
-
 idealmodel(model::PTFlashWrapper) = idealmodel(model.model)
 fluid_model(model::PTFlashWrapper) = fluid_model(model.model)
+molecular_weight(model::PTFlashWrapper,z) = molecular_weight(model.model,z)
+reference_state(model::PTFlashWrapper) = reference_state(model.model)
 
 function update_temperature!(model::PTFlashWrapper,T)
     isnan(T) && return nothing

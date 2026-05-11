@@ -446,6 +446,11 @@ end
 
 __tpflash_cache_model(model::CompositeModel{<:Any,Nothing},p,T,z,equilibrium) = __tpflash_cache_model(model.fluid,p,T,z,equilibrium)
 
+#TODO: for svle equilibria, PTFlashWrapper should also have a solid field.
+function PTFlashWrapper(model::CompositeModel{<:GammaPhi,Nothing},p,T,z,equilibrium)
+    return PTFlashWrapper(model.fluid,p,T,z,equilibrium)
+end
+
 function gibbs_solvation(model::CompositeModel,T)
     binary_component_check(gibbs_solvation,model)
     return gibbs_solvation(model.fluid,T)

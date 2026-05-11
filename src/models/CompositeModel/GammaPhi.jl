@@ -182,10 +182,10 @@ function __lnγ_sat(wrapper::PTFlashWrapper,p,T,w,cache = nothing,vol0 = nothing
     fug = wrapper.fug
     RT = Rgas(model)*T
     for i in 1:length(logγ)
-        ϕᵢ = fug[i]
+        logϕᵢ = fug[i]
         pᵢ,vpureᵢ,_ = sat[i]
 
-        μᵢ_over_RT = log(ϕᵢ) + log(pᵢ*vpureᵢ/RT)
+        μᵢ_over_RT = logϕᵢ + log(pᵢ*vpureᵢ/RT)
         logγ[i] = log(vpureᵢ/vol) + μmix[i]/RT - μᵢ_over_RT -  vpureᵢ*(p - pᵢ)/RT
     end
     return logγ,vol
