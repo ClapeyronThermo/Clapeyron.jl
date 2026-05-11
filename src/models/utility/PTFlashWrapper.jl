@@ -19,7 +19,7 @@ function tp_flash_K0(wrapper::PTFlashWrapper,p,T,z)
 end
 
 function tp_flash_K0!(K,wrapper::PTFlashWrapper,p,T,z)
-    K .=  first.(wrapper.sat) ./ p 
+    K .= first.(wrapper.sat) ./ p
 end
 
 function PTFlashWrapper{TT}(model,equilibrium,pures = split_pure_model(model)) where TT
@@ -316,7 +316,7 @@ function tpd_∂delta_d∂T_vapouri(model,sat,p,T)
         ps,vl,vv = saturation_pressure_ad2(sat,model,_T)
         gasmodel = gas_model(model)
         Δd = log(ps/p)
-        if gasmodel isa IdealModel 
+        if gasmodel isa IdealModel
             Δd += vl*(p - ps)/RT + VT_lnϕ_pure(gas_model(model),vv,_T,ps)
         end
         return Δd
@@ -480,13 +480,13 @@ function _edge_pressure(wrapper::PTFlashWrapper,T,z,v0 = nothing,crit_retry = tr
 
 
     system of eqs:
-    variables: 
+    variables:
     - vv
     - p
 
     gl - ∑zlogϕ(model,V,T,z) - tpd_delta_g_vapour(wrapper,p,T,w) = 0
     pressure(wrapper,vv,T,z) = p
-    
+
     for ideal gas: solution is non-iterative
     for real gas: use ideal gas as starting point
     =#
@@ -495,7 +495,7 @@ function _edge_pressure(wrapper::PTFlashWrapper,T,z,v0 = nothing,crit_retry = tr
     gl = excess_gibbs_free_energy(__γ_unwrap(model),pmin,T,z)/RT #should be independent of pressure
     ∑z = sum(z)
     ∑zlogps = sum(z[i]*log(first(sat[i])) for i in 1:nc)
-    
+
     p0 = exp((gl + ∑zlogps)/∑z)
     vv = ∑z*RT/p0
     gasmodel = gas_model(wrapper)
@@ -546,6 +546,83 @@ function _edge_pressure(wrapper::PTFlashWrapper,T,z,v0 = nothing,crit_retry = tr
     return fail,fail,:failure
 end
 
-#=
-10.04327,1616.76,219.54,335.17,394.54
-=#
+function x0_edge_temperature(wrapper::PTFlashWrapper,p,z,pure = wrapper.pures)
+    dPdTsat = extended_dpdT_temperature.(pure,p)
+    T_bubble = antoine_bubble_solve(dPdTsat,p,z)
+    T_dew = antoine_dew_solve(dPdTsat,p,z)
+    return (T_bubble,T_dew),dPdTsat
+end
+
+function _edge_temperature(model::PTFlashWrapper,p,z,v0 = nothing)
+    if v0 == nothing
+        vv0,_ = x0_edge_temperature(model,p,z)
+    else
+        vv0 = (v0[1],v0[2])
+    end
+
+    Tmin,Tmax = minmax(vv0[1],vv0[2])
+    tau0 = 0.5(1/Tmin + 1/Tmax)
+    T0 = 1/tau0
+    _0 = zero(Base.promote_eltype(model,T0,z))
+    nan = oftype(_0,NaN)
+    fail = (nan,nan,nan)
+
+    γmodel = __γ_unwrap(model)
+    gasmodel = gas_model(model)
+
+    R = Rgas(model)
+    n = sum(z)
+    vv = Ref(n*R*T0/p)
+   
+    function obj(tau)
+        T = 1/tau
+        update_temperature!(model,T)
+        vv0 = max(n*R*T/p,vv[])
+        vvi = volume(gasmodel,p,T,z,phase = :v,vol0 = vv0)
+        ∑zlogϕi,_ = ∑zlogϕ(gasmodel,p,T,z,phase = :v,vol = vvi)
+        gl = excess_gibbs_free_energy(__γ_unwrap(model),p,T,z)/(R*T)
+        gv = ∑zlogϕi + tpd_delta_g_vapour(model,p,T,z)
+        vv[] = vvi
+        return gl-gv
+    end
+
+    prob = Roots.ZeroProblem(obj,tau0)
+    tau_edge = Roots.solve(prob,Roots.Order0())
+    T_edge = 1/tau_edge
+
+    if isfinite(T_edge)
+        vv_edge = vv[]
+        vl_edge = volume(model,p,T_edge,z,phase = :l)
+        return (T_edge,vl_edge,vv_edge),fail,:success
+    end
+
+    return fail,fail,:failure
+end
+
+function bubble_pressure_pproperty_method(model::PTFlashWrapper,p0,T,z,sat)
+  y0 = z .* first.(sat)
+  y0 ./= sum(y0)
+  p,_,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,z,y0,FugEnum.BUBBLE_PRESSURE,FillArrays.Trues(length(z)),false)
+  return FugBubblePressure(vol0 = (vl0,vv0),p0 = p,y0 = y)
+end
+
+function dew_pressure_pproperty_method(model::PTFlashWrapper,p0,T,z,sat)
+  x0 = z ./ first.(sat)
+  x0 ./= sum(x0)
+  p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,x0,z,FugEnum.DEW_PRESSURE,FillArrays.Trues(length(z)),false)
+  return FugDewPressure(vol0 = (vl0,vv0),p0 = p,x0 = x)
+end
+
+function bubble_temperature_tproperty_method(model::PTFlashWrapper,p,T0,z,dPdT)
+  y0 = z .* antoine_pressure.(dPdT,T0)
+  y0 ./= sum(y0)
+  _,T,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,z,y0,FugEnum.BUBBLE_TEMPERATURE,FillArrays.Trues(length(z)),false)
+  return FugBubbleTemperature(vol0 = (vl0,vv0),T0 = T,y0 = y)
+end
+
+function dew_temperature_tproperty_method(model::PTFlashWrapper,p,T0,z,dPdT)
+  x0 = z ./ antoine_pressure.(dPdT,T0)
+  x0 ./= sum(x0)
+  _,T,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x0,z,FugEnum.DEW_TEMPERATURE,FillArrays.Trues(length(z)),false)
+  return FugDewTemperature(vol0 = (vl0,vv0),T0 = T,x0 = x)
+end

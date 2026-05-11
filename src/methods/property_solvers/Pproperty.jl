@@ -139,7 +139,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   end
 
   if length(model) == 1 && length(z) == 1
-    res = Pproperty_pure(model,T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
+    res = Pproperty_pure(fluid_model(model),T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
     return __Pproperty_check(res,verbose)
   end
 
@@ -324,9 +324,9 @@ function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,v
 
   sat,crit,status = _extended_saturation_pressure(model,T)
 
-  if status == :fail
+  if status == :failure
     verbose && @error "PProperty calculation failed"
-    return nan,:failure
+    return nan,status
   end
 
   if status == :supercritical

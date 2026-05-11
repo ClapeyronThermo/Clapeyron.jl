@@ -195,7 +195,8 @@ function Tproperty(model::EoSModel,p,prop,z = SA[1.0],
                   T0 = nothing,
                   verbose = false,
                   threaded = true) where TT
-  T,st = _Tproperty(model,p,prop,z,property;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
+  cached_model = __tpflash_cache_model(model,p,oftype(p,NaN),z,:vle)
+  T,st = _Tproperty(cached_model,p,prop,z,property;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
   return T
 end
 
@@ -228,7 +229,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
   if length(model) == 1 && length(z) == 1
     zz = SA[z[1]]
-    res = Tproperty_pure(model,p,prop,zz,property,rootsolver,phase,abstol,reltol,verbose,threaded,T0)
+    res = Tproperty_pure(fluid_model(model),p,prop,zz,property,rootsolver,phase,abstol,reltol,verbose,threaded,T0)
     return __Tproperty_check(res,verbose)
   end
 
@@ -255,7 +256,10 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
 
   #check pure saturation envelopes
   Tmin_sat,Tmax_sat = extrema(xx -> T_from_dpdT(xx,p),dpdT)
+
+  update_temperature!(model,Tmin_sat)
   prop_puresat_l = property(model,p,Tmin_sat,z,phase = :l)
+  update_temperature!(model,Tmax_sat)
   prop_puresat_v = property(model,p,Tmax_sat,z,phase = :v)
   βpuresat = (prop - prop_puresat_l)/(prop_puresat_v - prop_puresat_l)
 
@@ -326,8 +330,13 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     return __Tproperty_check(res,verbose)
   end
 
-  prop_l = spec_to_vt(model,v_l,T_edge,z,property)
-  prop_v = spec_to_vt(model,v_v,T_edge,z,property)
+  if has_a_res(model)
+    prop_l = spec_to_vt(model,v_l,T_edge,z,property)
+    prop_v = spec_to_vt(model,v_v,T_edge,z,property)
+  else
+    prop_l = property(model,p,T_edge,z,phase = :l)
+    prop_v = property(model,p,T_edge,z,phase = :v,vol0 = v_v)
+  end
 
   verbose && @info "property at liquid edge:                $prop_l"
   verbose && @info "property at vapour edge:                $prop_v"
@@ -352,11 +361,13 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
       T0x = Tbub0
       verbose && @info "property in equilibria, mostly liquid with vapour, checking dew point"
       #we search between the liquid edge and the dew temperature
+      update_temperature!(model,T0x)
       prop_edge,new_phase = property(model,p,Tbub0,z,phase = :l),:vapour
     else
       T0x = Tdew0
       verbose && @info "property in equilibria, mostly vapour with liquid, checking bubble point"
       #we search between the vapour edge and the bubble temperature
+      update_temperature!(model,T0x)
       prop_edge,new_phase = property(model,p,Tdew0,z,phase = :v),:liquid
     end
   else
@@ -372,8 +383,12 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     dew_method = dew_temperature_tproperty_method(model,p,T0_dew,z,dpdT)
     dew = dew_temperature(model,p,z,dew_method)
     T_dew,_,v_dew,_ = dew
-    prob_dew = spec_to_vt(model,v_dew*n,T_dew,z,property)
-
+    update_temperature!(model,T_dew)
+    if has_a_res(model)
+      prob_dew = spec_to_vt(model,v_dew*n,T_dew,z,property)
+    else
+      prob_dew = property(model,p,T_dew,z,phase = :v,vol0 = n*v_dew)
+    end
     verbose && @info "temperature at dew point:               $T_dew"
     verbose && @info "property at dew point:                  $prob_dew"
 
@@ -388,8 +403,12 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
     bubble_method = bubble_temperature_tproperty_method(model,p,T0_bubble,z,dpdT)
     bubble = bubble_temperature(model,p,z,bubble_method)
     T_bubble,v_bubble,_,_ = bubble
-    prob_bubble = spec_to_vt(model,v_bubble*n,T_bubble,z,property)
-
+    update_temperature!(model,T_bubble)
+    if has_a_res(model)
+      prob_bubble = spec_to_vt(model,v_bubble*n,T_bubble,z,property)
+    else
+      prob_bubble = property(model,p,T_bubble,z,phase = :l)
+    end
     verbose && @info "temperature at bubble point:            $T_bubble"
     verbose && @info "property at bubble point:               $prob_bubble"
 
@@ -413,7 +432,7 @@ function Tproperty_pure(model,p,x,z,property::F,rootsolver,phase,abstol,reltol,v
 
     sat,crit,status = _extended_saturation_temperature(model,p)
 
-    if status == :fail
+    if status == :failure
       verbose && @error "TProperty calculation failed"
       return nan,:failure
     end
@@ -430,7 +449,7 @@ function Tproperty_pure(model,p,x,z,property::F,rootsolver,phase,abstol,reltol,v
     end
 
     Ts,vl,vv = TT.(sat)
-
+    
     xl = ∑z*spec_to_vt(model,vl,Ts,x1,property)
     xv = ∑z*spec_to_vt(model,vv,Ts,x1,property)
     βv = (x - xl)/(xv - xl)
@@ -477,7 +496,10 @@ function Tproperty_impl(model,p,prop,z,property::F,rootsolver,phase,abstol,relto
     return __Tproperty(model,p,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,T0)
   end
   _1 = oneunit(typeof(prop))
-  f(t,prop) = _1*property(model,p,t,z,phase = phase,threaded = threaded) - prop
+  function f(t,prop) 
+    update_temperature!(model,t)
+    _1*property(model,p,t,z,phase = phase,threaded = threaded) - prop
+  end
   prob = Roots.ZeroProblem(f,_1*T0)
   T = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
   if !isfinite(T) || T < 0
