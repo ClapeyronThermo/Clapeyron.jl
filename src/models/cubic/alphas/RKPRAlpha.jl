@@ -31,14 +31,14 @@ Cubic alpha `(α(T))` model. Default for [`RKPR`](@ref) EoS.
 
 In the case of RKPR EoS, if no values of `k1` and `k2` are provided, the following correlation is used:
 ```
-k₁ = (12.504Zc -2.7238) + (7.4513*Zc + 1.9681)ωᵢ + (-2.4407*Zc + 0.0017)ωᵢ^2
+k₁ = (12.504*Zc -2.7238) + (7.4513*Zc + 1.9681)*ωᵢ + (-2.4407*Zc + 0.0017)*ωᵢ^2
 Trᵢ = T/Tcᵢ
 k₂ = 2
 ```
-For other cubic EoS, the k is calculated via the Leivobici alpha:
+For other cubic EoS, the k is calculated via the Leibovici alpha:
 ```
 k₂ = 2
-k₁ = log(αᵢ(leivobici,Tr = 0.7))/log(3/2.7)
+k₁ = log(αᵢ(leibovici,Tr = 0.7))/log(3/2.7)
 ```
 ## Model Construction Examples
 ```

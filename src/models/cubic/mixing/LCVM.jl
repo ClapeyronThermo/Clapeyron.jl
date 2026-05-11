@@ -25,7 +25,7 @@ None
 
 ## Description
 
-Linear Combination of Vidal and Michaelsen (LCVM) Mixing Rule
+Linear Combination of Vidal and Michelsen (LCVM) Mixing Rule
 ```
 bᵢⱼ = (1 - lᵢⱼ)(bᵢ + bⱼ)/2
 b̄ = ∑bᵢⱼxᵢxⱼ

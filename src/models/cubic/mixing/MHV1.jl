@@ -25,7 +25,7 @@ None
 
 ## Description
 
-Modified Huron-Vidal Mixing Rule, First Order
+Modified Huron-Vidal Mixing Rule, First Order.
 ```
 bᵢⱼ = (1 - lᵢⱼ)(bᵢ + bⱼ)/2
 b̄ = ∑bᵢⱼxᵢxⱼ
@@ -38,7 +38,7 @@ if the model is Redlich-Kwong:
     q = 0.593
 ```
 
-to use different values for `q`, overload `Clapeyron.MHV1q(::CubicModel,::MHV1Model) = q`
+To use different values for `q`, overload `Clapeyron.MHV1q(::CubicModel,::MHV1Model) = q`
 
 ## Model Construction Examples
 ```

@@ -12,7 +12,7 @@ The keyword arguments have the following meaning:
 - `v`: total volume `[m³]`
 - `p`: pressure `[Pa]`
 - `h`: enthalpy `[J]`
-- `s`: entropy `[J K⁻¹]`
+- `s`: entropy `[J·K⁻¹]`
 - `u`: internal energy `[J]`
 - `q`: vapour fraction
 

@@ -50,7 +50,7 @@ Clausius Equation of state.
 ```
 P = RT/(v-b) + a•α(T)/((v - Δ₀b)^2)
 
-aᵢᵢ =27/64 * (RTcᵢ)²/Pcᵢ
+aᵢᵢ = 27/64 * (RTcᵢ)²/Pcᵢ
 bᵢᵢ = Vcᵢ - 1/4 * RTcᵢ/Pcᵢ
 cᵢ = 3/8 * RTcᵢ/Pcᵢ - Vcᵢ
 

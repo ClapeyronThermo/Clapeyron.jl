@@ -16,11 +16,11 @@ end
 
 ## Input Parameters
 
-- `ZRA`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
+- `ZRA`: Single Parameter (`Float64`) - Rackett compressibility factor 
 
 ## Model Parameters
 
-- `ZRA`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
+- `ZRA`: Single Parameter (`Float64`) - Rackett compressibility factor
 - `v_shift`: Single Parameter (`Float64`) - Volume shift `[m³·mol⁻¹]`
 
 
@@ -111,7 +111,7 @@ function translation!(c,model::RKModel,translation_model::tcTranslation)
             R = Rgas(model)
             RTp = (R*Tc[i]/Pc[i])
             if !ZRA.ismissingvalues[i]
-                c[i] = RTp*(0.2150 - 0.7314*ZRA[i])
+                c[i] = RTp*(0.1487 - 0.5052*ZRA[i])
             
             elseif !w.ismissingvalues[i]
                 c[i] = RTp*(0.0227 + 0.0093*w[i])

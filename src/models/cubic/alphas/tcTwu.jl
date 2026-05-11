@@ -28,12 +28,21 @@ default_ignore_missing_singleparams(::Type{tcTwuAlpha}) = ["N","N","L","acentric
 
 ## Description
 Twu alpha `(α(T))` model, used in the tc-PR and tc-RK models.
+
 ```
 αᵢ = Trᵢ^(N*(M-1))*exp(L*(1-Trᵢ^(N*M))
 Trᵢ = T/Tcᵢ
 ```
 
-for PR, if no Twu parameters are provided:
+For RK, if no Twu parameters are provided:
+
+```
+L(ω) = 
+M(ω) = 
+
+```
+
+For PR, if no Twu parameters are provided:
 ```
 
 
