@@ -73,7 +73,6 @@ spec_intensive(::Vfrac) = true
 
 spec_intensive(x) = false
 
-
 function normalize_spec(s::FlashSpecifications,k)
     _1 = oneunit(1/k)
     spec1,spec2,val1,val2 = s.spec1,s.spec2,s.val1,s.val2
@@ -720,10 +719,10 @@ high level interface:
 
 Method to solve non-reactive multicomponent, two-phase flash problem, using a generalized formulation.
 
-Only two phases are supported. if `K0` is `nothing`, it will be calculated via fugacity coefficients at p,T conditions.
+Only two phases are supported. If `K0` is `nothing`, it will be calculated via fugacity coefficients at p,T conditions.
 
 ### Keyword Arguments:
-- `equilibrium` (optional) = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria, `:unknown` if not specified
+- `equilibrium` (optional) = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria, `:unknown` if not specified.
 - `p0` (optional), initial guess pressure, ignored if pressure is one of the flash specifications.
 - `T0` (optional), initial guess temperature, ignored if temperature is one of the flash specifications.
 - `K0` (optional), initial guess for the K-values.
@@ -732,7 +731,7 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via f
 - `vol0` = optional, initial guesses for phase x and phase y volumes.
 - `atol` = absolute tolerance to stop the calculation.
 - `rtol` = relative tolerance to stop the calculation.
-- `max_iters` = maximum number of iterations
+- `max_iters` = maximum number of iterations.
 - `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
 """
 struct GeneralizedXYFlash{P,T} <: FlashMethod
@@ -837,8 +836,8 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
     return GeneralizedXYFlash{S,TT}(equilibrium,T0,p0,K0,x0,y0,_v0,atol,rtol,max_iters,verbose)
 end
 
-function px_flash_x0(model,p,x,z,spec::F,method::GeneralizedXYFlash) where F
-    verbose = method.verbose
+function px_flash_x0(model,p,x,z,spec::F,method) where F
+    verbose = get_verbosity(method)
     if spec == temperature
         verbose && @info "specification results in a P-T flash, no work is needed to find temperature"
         T,_phase = x,:eq #we suppose equilibria
@@ -872,7 +871,7 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing,verbose = false) where F
 
     sat,crit,status = _extended_saturation_temperature(model,p)
 
-    if status == :fail
+    if status == :failure
         verbose && @error "TProperty calculation failed"
         return FlashResultInvalid(x1,one(TT))
     end
@@ -911,8 +910,8 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing,verbose = false) where F
     end
 end
 
-function tx_flash_x0(model,T,x,z,spec::F,method::GeneralizedXYFlash) where F
-    verbose = method.verbose
+function tx_flash_x0(model,T,x,z,spec::F,method) where F
+    verbose = get_verbosity(method)
     if spec == pressure
         verbose && @info "specification results in a P-T flash, no work is needed to find pressure"
         p,_phase = x,:eq #we suppose equilibria
@@ -943,7 +942,7 @@ function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing,verbose = false) where F
 
     sat,crit,status = _extended_saturation_pressure(model,T)
 
-    if status == :fail
+    if status == :failure
         verbose && @error "PProperty calculation failed"
         return FlashResultInvalid(x1,one(TT))
     end

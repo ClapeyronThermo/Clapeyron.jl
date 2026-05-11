@@ -16,11 +16,11 @@ end
     grouptype = :unknown,
     options = ParamOptions())
 
-Creates a clapeyron CSV file and returns the location of that file. the type determines the table type:
-- `:single` creates a table with single parameters
-- `:pair` creates a table with pair parameters
-- `:assoc` creates a table with association parameters
-- `:group` creates a table with association parameters
+Creates a Clapeyron CSV file and returns the location of that file. The type determines the table type:
+- `:single` creates a table with single parameters.
+- `:pair` creates a table with pair parameters.
+- `:assoc` creates a table with association parameters.
+- `:group` creates a table with group parameters.
 By default, the name is generated randomly, and the table is stored as a temporary scratch space (provided by Scratch.jl).
 You can clean said scratch space by using `Clapeyron.cleartemp!()`.
 

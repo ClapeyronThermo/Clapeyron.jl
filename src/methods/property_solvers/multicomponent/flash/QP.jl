@@ -15,7 +15,7 @@ function qp_flash_x0(model::CompositeModel,β,p,z,method::FlashMethod)
 end
 
 function qp_flash_x0(model,β,p,z,method::FlashMethod)
-    verbose = hasfield(typeof(method),:verbose) ? getfield(method,:verbose)::Bool : false
+    verbose = get_verbosity(method)
     ∑z = sum(z)
     if method.T0 == nothing
         verbose && @info "calculating temperature via Tproperty"
@@ -76,7 +76,7 @@ end
     result = qp_flash(model, q, p, n, method::FlashMethod = GeneralizedXYFlash())
     result = qp_flash(model, q, p, n; kwargs...)
 
-Routine to solve non-reactive two-phase multicomponent flash problem. with vapour fraction - P specifications.
+Routine to solve non-reactive two-phase multicomponent flash problem. With vapour fraction - P specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
 Inputs:
  - `q`, vapour fraction

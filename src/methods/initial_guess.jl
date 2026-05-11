@@ -87,7 +87,7 @@ x0_volume_gas(model,p,T) = x0_volume_gas(model,p,T,SA[1.0])
     x0_volume_solid(model,T,z)
     x0_volume_solid(model,p,T,z)
 
-Returns an initial guess to the solid volume, dependent on temperature `T` and composition `z`. Needs to be defined for EoS that support solid phase. By default returns NaN. Can be overrided if the EoS defines `is_solid(::EoSModel) = true`
+Returns an initial guess to the solid volume, dependent on temperature `T` and composition `z`. Needs to be defined for EoS that support solid phase. By default returns NaN. Can be overrided if the EoS defines `is_solid(::EoSModel) = true`.
 """
 function x0_volume_solid(model,T,z)
     if is_solid(model)
@@ -249,9 +249,8 @@ Calculates initial points for pure saturation pressure using a virial + correspo
 The corresponding states model (a vdW fluid fitted from 2 p-V points) is used to select between zero-pressure or spinodal initial points.
 The points selected to fit the vdW fluid are a function of B(T).
 """
-function x0_sat_pure_virial(model,T)
-    z = SA[1.0]
-    single_component_check(x0_sat_pure,model)
+function x0_sat_pure_virial(model,T,z = SA[1.0])
+    check_arraysize(model,z)
 
     #=theory as follows
     #given T = Teos:
@@ -261,7 +260,7 @@ function x0_sat_pure_virial(model,T)
     with a,b, calculate T̃ = RT*b/a. we use this parameter to determine if we are near the critical point or not.
     and switch to the appropiate strategy.
     =#
-
+    ∑z = sum(z)
     R̄ = Rgas(model)
     RT= R̄*T
     B = second_virial_coefficient(model,T,z)
@@ -276,13 +275,12 @@ function x0_sat_pure_virial(model,T)
     =#
     if isnan(B)
         x0l = 3*lb_v
-        px = pressure(model,x0l,T)
+        px = pressure(model,x0l,T,z)
         if px < 0 #low pressure
-            p = RT/vv
-            return p,vl,vv
+            return x0_sat_pure_near0(model,T,z;B = zero(B))
         else #high pressure?
             vl = 4*lb_v
-            return pressure(model,vl,T),vl,20*lb_v
+            return pressure(model,vl,T,z),vl,20*lb_v
         end
     end
 
@@ -295,9 +293,9 @@ function x0_sat_pure_virial(model,T)
         return (_nan,_nan,_nan)
     end
     vv_virial = -2*B
-    pv_eos = pressure(model,vv_virial,T) #eos predicted pressure, gas phase
+    pv_eos = pressure(model,vv_virial,T,z) #eos predicted pressure, gas phase
     #calculate a suitable liquid pressure from the virial coefficient.
-    pl0 = liquid_pressure_from_virial(model,T,B,pv_eos)
+    pl0 = liquid_pressure_from_virial(model,T,z,B,pv_eos)
     vl = volume(model,pl0,T,z,phase = :l)
     #=the basis is that p = RT/v-b - a/v2
     we can interpolate a vdW EoS between a liquid and a gas (p,v) point.
@@ -306,7 +304,7 @@ function x0_sat_pure_virial(model,T)
     at Tr = 1, T̃max is Ωb/Ωa. we can check T̃/T̃max to see how close (or far) we are to the critical point
     =#
 
-    a,b = vdw_coefficients(vl,pl0,vv_virial,pv_eos,T)
+    a,b = vdw_coefficients(vl/∑z,pl0,vv_virial/∑z,pv_eos,T)
     if b < lb_v
         b = lb_v
         a = RT*(b - B)
@@ -318,23 +316,23 @@ function x0_sat_pure_virial(model,T)
         #fails on two ocassions:
         #near critical point, or too low.
         #return high pressure estimate
-        return pressure(model,4*lb_v,T),4*lb_v,vv_virial + 2*lb_v
+        return pressure(model,4*lb_v,T,z),4*lb_v,vv_virial + 2*lb_v
     elseif T̃ >= T̃max
         x0l = 4*lb_v
         x0v = vv_virial + 2*lb_v
-        return pressure(model,4*lb_v,T),x0l,x0v
+        return pressure(model,4*lb_v,T,z),x0l,x0v
     elseif T̃ < T̃min
         #gas volume over threshold. but not diverged.
         #normally this happens at low temperatures. we could suppose that Vl0 is a
         #"zero-pressure" volume, apply corresponding strategy
-        return x0_sat_pure_near0(model,T,vl;B = B)
+        return x0_sat_pure_near0(model,T,z,vl;B = B)
     else
-        psat,_,vv_B = x0_sat_pure_near0(model,T,vl,B = B,refine_vl = false)
+        psat,_,vv_B = x0_sat_pure_near0(model,T,z,vl,B = B,refine_vl = false)
         if T̃/T̃max > 0.55
-            B_vdw = b - a/RT
+            B_vdw = ∑z*(b - a/RT)
             vv_vdw_2b = -2*B_vdw
             if vv_vdw_2b < vv_B
-                ps,vls,vvs = x0_sat_pure_spinodal(model,T,vl,vv_B,B)
+                ps,vls,vvs = x0_sat_pure_spinodal(model,T,z,vl,vv_B,B)
                 return ps,vls,vvs
             end
         end
@@ -411,22 +409,22 @@ function x0_sat_pure_lk(model,T,crit,ω)
 end
 
 """
-    p,vl,vv = x0_sat_pure_near0(model,T,vl0 = volume(model,zero(T),T,phase = :l);
-                                B = second_virial_coefficient(model,T),
+    p,vl,vv = x0_sat_pure_near0(model,T,z = SA[1.0], vl0 = volume(model,zero(T),T,z,phase = :l);
+                                B = second_virial_coefficient(model,T,z),
                                 refine_vl = true)
 
 Calculates initial points for pure saturation pressure, using a zero-pressure volume approach.
 If `refine_vl` is set to `true`, then the liquid volume will be recalculated using the calculated saturation pressure, otherwise it will be returned as is.
 """
-function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B = second_virial_coefficient(model,T), refine_vl = true)
+function x0_sat_pure_near0(model, T, z = SA[1.0],vl0 = volume(model,zero(T),T,z,phase = :l);B = second_virial_coefficient(model,T,z), refine_vl = true)
     R̄ = Rgas(model)
-    z = SA[1.0]
     RT = R̄*T
+    n = sum(z)
     ares = a_res(model, vl0, T, z)
-    lnϕ_liq0 = ares - 1 + log(RT/vl0)
+    lnϕ_liq0 = ares - 1 + log(n*RT/vl0)
     p = exp(lnϕ_liq0)
     pB = -0.25*RT/B
-    vv = volume_virial(B,p,T)
+    vv = volume_virial(B,p,T,z)
     if refine_vl && pB/p > 10
         vl = volume(model,p,T,z,vol0 = vl0,phase = :l)
         if vl ≈ vv #refinement failed, stick with vl0
@@ -436,12 +434,12 @@ function x0_sat_pure_near0(model, T, vl0 = volume(model,zero(T),T,phase = :l);B 
         vl = vl0*oneunit(vv)
     end
     if isnan(vv)
-        vv = RT/p
+        vv = n*RT/p
     end
     return p,vl,vv
 end
 
-function liquid_pressure_from_virial(model,T,B = second_virial_coefficient(model,T),pv_eos = pressure(model,-2*B,T))
+function liquid_pressure_from_virial(model,T,z =SA[1.0],B = second_virial_coefficient(model,T,z),pv_eos = pressure(model,-2*B,T,z))
     #=
     we define the following functions
     γc = Pc(eos)/P(virial, at v = -2B, B = B(eos,Tc))
@@ -453,9 +451,9 @@ function liquid_pressure_from_virial(model,T,B = second_virial_coefficient(model
     because at near critical pressures, the virial predicted pressure is below the liquid spinodal pressure
     in one sense, γc is a correction factor.
     =#
-
+    n = sum(z)
     vv_virial = -2*B #maximum gas volume predicted by virial equation
-    pv_virial = -0.25*Rgas(model)*T/B #maximum virial predicted pressure
+    pv_virial = -0.25*n*Rgas(model)*T/B #maximum virial predicted pressure
     γT = pv_eos/pv_virial
 
     #this handles pv_eos = NaN and pv_eos < pv_virial, returning an equivalent result to using pv_eos = pv_virial
@@ -470,7 +468,7 @@ function pure_spinodal(model,_T,z = SA[1.0];phase = :l)
     B = second_virial_coefficient(model,_T,z)
     _v_ub = -2*B
     pv_eos = pressure(model,_v_ub,_T,z)
-    pl = liquid_pressure_from_virial(model,_T,B,pv_eos)
+    pl = liquid_pressure_from_virial(model,_T,z,B,pv_eos)
     _v_lb = volume(model,pl,_T,z,phase = :l)
     T,v_lb,v_ub = promote(_T,_v_lb,_v_ub)
     return pure_spinodal(model,T,v_lb,v_ub,phase,true,z)
@@ -642,47 +640,46 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
 end
 
 """
-    p,vl,vv = x0_sat_pure_spinodal(model,T,B = second_virial_coefficient(model,T))
+    p,vl,vv = x0_sat_pure_spinodal(model,T,z =SA[1.0],B = second_virial_coefficient(model,T))
 
 Calculates initial points for pure saturation pressure, using a spinodal approach.
 The saturation pressure is assumed to be `(psl + psv)/2` where `psl` and `psv` are the pressures of the liquid and vapour spinodals.
 """
-function x0_sat_pure_spinodal(model,T,B = second_virial_coefficient(model,T))
-    v_ub = -2*second_virial_coefficient(model,T)
-    pl = liquid_pressure_from_virial(model,T,B)
-    v_lb = volume(model,pl,T,phase = :l)
-    return x0_sat_pure_spinodal(model,T,v_lb,v_ub,B)
+function x0_sat_pure_spinodal(model,T,z = SA[1.0],B = second_virial_coefficient(model,T,z))
+    v_ub = -2*B
+    pl = liquid_pressure_from_virial(model,T,z,B)
+    v_lb = volume(model,pl,T,z,phase = :l)
+    return x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,B)
 end
 
-function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(model,T),Vc = nothing)
+function x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,B = second_virial_coefficient(model,T,z),Vc = nothing)
     if Vc === nothing
         vc = zero(v_lb)/zero(v_ub)
     else
         vc,_,_ = promote(Vc,v_lb,v_ub)
     end
 
-    p(x) = pressure(model,x,T)
+    p(x) = pressure(model,x,T,z)
 
     if isnan(vc)
-        vsl = pure_spinodal(model,T,v_lb,v_ub,:l,true)
+        vsl = pure_spinodal(model,T,v_lb,v_ub,:l,true,z)
     else
-        vsl = pure_spinodal(model,T,v_lb,vc,:l,true)
+        vsl = pure_spinodal(model,T,v_lb,vc,:l,true,z)
     end
 
     psl = p(vsl)
     if isnan(vsl)
-        return pressure(model,v_lb,T),v_lb,v_ub
+        return pressure(model,v_lb,T,z),v_lb,v_ub
     end
     if isnan(vc)
-        vsv = pure_spinodal(model,T,vsl,v_ub,:v,true)
+        vsv = pure_spinodal(model,T,vsl,v_ub,:v,true,z)
     else
-        vsv = pure_spinodal(model,T,vc,v_ub,:v,true)
+        vsv = pure_spinodal(model,T,vc,v_ub,:v,true,z)
     end
 
     if isnan(vsv)
-        return pressure(model,v_lb,T),v_lb,v_ub
+        return pressure(model,v_lb,T,z),v_lb,v_ub
     end
-
     plb = p(v_lb)
     pub = p(v_ub)
     psl = p(vsl)
@@ -695,33 +692,34 @@ function x0_sat_pure_spinodal(model,T,v_lb,v_ub,B = second_virial_coefficient(mo
     =#
     #
     if plb < psv
-        vsl_lb = volume(model,psv,T,phase = :l, vol0 = v_lb)
+        vsl_lb = volume(model,psv,T,z,phase = :l, vol0 = v_lb)
     else
         vsl_lb = one(psl)*v_lb
     end
 
     if pub >= min(pmid,max(psl,zero(psl)))
-        vsv_ub = Rgas(model)*T/pmid
+        vsv_ub = sum(z)*Rgas(model)*T/pmid
     else
         vsv_ub = one(psv)*v_ub
     end
-    return _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B)
+    return _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B,z)
 end
 
-function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B)
-    psl,_,d2psl = p∂p∂2p(model,vsl,T,SA[1.0])
-    psv,_,d2psv = p∂p∂2p(model,vsv,T,SA[1.0])
-    psl_lb,dpsl_lb,d2psl_lb = p∂p∂2p(model,vsl_lb,T,SA[1.0])
+function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B,z)
+    psl,_,d2psl = p∂p∂2p(model,vsl,T,z)
+    psv,_,d2psv = p∂p∂2p(model,vsv,T,z)
+    psl_lb,dpsl_lb,d2psl_lb = p∂p∂2p(model,vsl_lb,T,z)
     dpsl = zero(psl)
     poly_l = Solvers.hermite5_poly(vsl_lb,vsl,psl_lb,psl,dpsl_lb,dpsl,d2psl_lb,d2psl)
     ps_mid = 0.5*(psv + max(psl,zero(psl)))
     vl = volume_from_spinodal(ps_mid,poly_l,vsl_lb,0.5*(vsl_lb + vsl) - vsl_lb)
+    n = sum(z)
     if psl < 0
-        vv = volume_virial(B,ps_mid,T)
-        isnan(vv) && (vv = Rgas(model)*T/ps_mid)
+        vv = volume_virial(B,ps_mid,T,z)
+        isnan(vv) && (vv = n*Rgas(model)*T/ps_mid)
         return ps_mid,vl,vv
     end
-    psv_ub,dpsv_ub,d2psv_ub = p∂p∂2p(model,vsv_ub,T,SA[1.0])
+    psv_ub,dpsv_ub,d2psv_ub = p∂p∂2p(model,vsv_ub,T,z)
     dpsv = zero(psl)
     poly_v = Solvers.hermite5_poly(vsv,vsv_ub,psv,psv_ub,dpsv,dpsv_ub,d2psv,d2psv_ub)
     vv = volume_from_spinodal(ps_mid,poly_v,vsv,(zero(vsv),vsv_ub - vsv))
@@ -771,6 +769,7 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     Tr = T/Tc
     nan = _0/_0
     RT = Rgas(model)*T
+    z = SA[1.0]
     if Tr == 1
         return Pc,Vc,Vc
     elseif Tr > 1
@@ -785,16 +784,16 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     v_ub = -2B
 
     if v_ub < 0
-        return x0_sat_pure_near0(model,T,B = B)
+        return x0_sat_pure_near0(model,T,z,B = B)
     end
 
-    pl0 = liquid_pressure_from_virial(model,T,B)
+    pl0 = liquid_pressure_from_virial(model,T,z,B)
     v_lb = volume(model,pl0,T,phase = :l)
 
     if 0.8 <= Tr <= 0.99
-        return x0_sat_pure_spinodal(model,T,v_lb,v_ub,B,Vc)
+        return x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,B,Vc)
     elseif 0 <= Tr < 0.8
-        return x0_sat_pure_near0(model,T,v_lb,B = B)
+        return x0_sat_pure_near0(model,T,z,v_lb,B = B)
     else
         return nan,nan,nan
     end
@@ -951,7 +950,7 @@ end
 """
     solve_2ph_taylor(v10,v20,a1,da1,d2a1,a2,da2,d2a2,p_scale = 1.0,μ_scale = 1.0)
 
-Solves the 2-phase problem with 1 component, using a 2nd order taylor approx in Helmholtz energy and a isothermal compressibility factor approximation for pressure.
+Solves the 2-phase problem with 1 component, using a 2nd order Taylor approx in Helmholtz energy and an isothermal compressibility factor approximation for pressure.
 """
 function solve_2ph_taylor(v10,v20,a1,da1,d2a1,a2,da2,d2a2,p_scale = 1.0,μ_scale = 1.0)
     function F0(x)

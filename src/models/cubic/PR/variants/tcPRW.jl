@@ -27,10 +27,10 @@ If Twu parameters are not provided, they can be estimated from the acentric fact
 """
 function tcPRW(components;
     idealmodel = BasicIdeal,
-    alpha = TwuAlpha,
+    alpha = tcTwuAlpha,
     mixing = gErRule,
     activity = tcPRWilsonRes,
-    translation = ConstantTranslation,
+    translation = tcTranslation,
     userlocations = String[],
     ideal_userlocations = String[],
     alpha_userlocations = String[],

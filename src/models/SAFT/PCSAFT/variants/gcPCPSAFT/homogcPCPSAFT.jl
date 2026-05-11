@@ -233,8 +233,14 @@ function a_res(model::HomogcPCPSAFTModel,V,T,z)
     return a_res(model.pcpmodel,V,T,z)
 end
 
+data(model::HomogcPCPSAFTModel,V,T,z) = data(model.pcpmodel,V,T,z)
+
 assoc_shape(model::HomogcPCPSAFTModel) = assoc_shape(model.pcpmodel)
 getsites(model::HomogcPCPSAFTModel) = getsites(model.pcpmodel)
+
+function Δ(model::HomogcPCPSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
+    return Δ(model.pcpmodel,V,T,z,i,j,a,b,_data)
+end
 
 function lb_volume(model::HomogcPCPSAFTModel, T, z)
     return lb_volume(model.pcpmodel, T, z)

@@ -345,14 +345,18 @@ function modified_lnϕ(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
     return lnϕz,vz
 end
 
-function modified_gibbs(model,p,T,w,phase = :unknown,vol = NaN)
+modified_gibbs(model,p,T,w) = modified_gibbs(model,p,T,w,:unknown,oftype(zero(Base.promote_eltype(model,p,T,w)),NaN))
+modified_gibbs(model,p,T,w,phase) = modified_gibbs(model,p,T,w,phase,oftype(zero(Base.promote_eltype(model,p,T,w)),NaN))
+
+function modified_gibbs(model,p,T,w,phase,vol)
     if isnan(vol)
         volw = volume(model,p,T,w,phase = phase)
     else
         volw = vol
     end
+    RT = Rgas(model)*T
     g =  VT_gibbs_energy(model,volw,T,w,p) #+ eos_g(BasicIdeal(),p,T,w)
-    return g,volw
+    return g/RT,volw
 end
 
 function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)

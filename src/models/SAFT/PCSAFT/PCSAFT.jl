@@ -272,7 +272,7 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
         κijab = κ[idx]
         if κijab != 0
             gij = @f(g_hs,i,j,_data)
-            Δout[idx] = gij*σ[i,j]^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κ[idx]
+            Δout[idx] = gij*σ[i,j]^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κijab
         end
     end
     return Δout

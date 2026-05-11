@@ -1,7 +1,7 @@
 """
     recombine_mixing_reduced!(model::MultiFluid,mixing::MixingRule)
 
-Calculates missing values, using the parameters stored in `model`. modifies `mixing` implace. this function is called at `MultiFluid` model creation time.
+Calculates missing values, using the parameters stored in `model`. Modifies `mixing` implace. This function is called at `MultiFluid` model creation time.
 
 """
 recombine_mixing_reduced!(model::MultiFluid,mixing,estimate) = nothing

@@ -7,21 +7,21 @@ function x0_edge_pressure(model,T,z,pure = split_pure_model(model))
 end
 
 """
-    edge_pressure(model,p,z,v0 = nothing)
+    edge_pressure(model,T,z,v0 = nothing)
 
-Calculates the pressure at which two fluid phases have the same gibbs and pressure at the specified temperature.
+Calculates the pressure at which two fluid phases have the same Gibbs energy and pressure at the specified temperature `T`.
 
 Returns a tuple, containing:
 - Edge Pressure `[Pa]`
 - Liquid volume of edge Point `[m³]`
 - Vapour volume at edge Point `[m³]`
 """
-function edge_pressure(model,T,z,v0 = nothing)
-  edge,crit,status = _edge_pressure(model,T,z,v0)
+function edge_pressure(model,T,z,v0 = nothing;crit_retry = true)
+  edge,crit,status = _edge_pressure(model,T,z,v0,crit_retry)
   return edge
 end
 
-function _edge_pressure(model,T,z,v0 = nothing)
+function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
   if v0 == nothing
     vv0,_ = x0_edge_pressure(model,T,z)
   else
@@ -30,6 +30,13 @@ function _edge_pressure(model,T,z,v0 = nothing)
   p1 = vv0[1]
   p2 = vv0[2]
   pmin,pmax = minmax(p1,p2)
+  
+  if pmax/pmin > 10
+    p_near0,_,_ = x0_sat_pure_near0(model,T,z)
+    pmin = 0.9*p_near0
+    pmax = 10*p_near0
+  end
+
   v_pmin = volume(model,pmin,T,z,phase = :v)
   v_pmax = volume(model,pmax,T,z,phase = :l)
   f(x) = μp_equality1_p(model,exp(x[1]),exp(x[2]),T,z)
@@ -48,7 +55,7 @@ function _edge_pressure(model,T,z,v0 = nothing)
   p_eq = pressure(model,v2,T,z)
   edge = (p_eq,v1,v2)
   check_valid_sat_pure(model,p_eq,v1,v2,T,z) && return edge,fail,:success
-
+  !crit_retry && return fail,fail,:failure
   #fail when calculating edge pressure, this happens near the (mechanical) critical point
   Tr = T/T_scale(model,z)
   vlog = log10(v1)
@@ -100,7 +107,9 @@ function Pproperty(model::EoSModel,T,prop,z = SA[1.0],
                   p0 = nothing,
                   verbose = false,
                   threaded = true) where TT
-  p,st = _Pproperty(model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
+
+  cached_model = __tpflash_cache_model(model,NaN,T,z,:vle)
+  p,st = _Pproperty(cached_model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
   return p
 end
 
@@ -130,7 +139,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   end
 
   if length(model) == 1 && length(z) == 1
-    res = Pproperty_pure(model,T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
+    res = Pproperty_pure(fluid_model(model),T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
     return __Pproperty_check(res,verbose)
   end
 
@@ -315,9 +324,9 @@ function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,v
 
   sat,crit,status = _extended_saturation_pressure(model,T)
 
-  if status == :fail
+  if status == :failure
     verbose && @error "PProperty calculation failed"
-    return nan,:failure
+    return nan,status
   end
 
   if status == :supercritical

@@ -129,19 +129,21 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b)
     gᴱᵣ = __excess_g_res(mixing_model.activity,1e5,T,z,b,c)
     b̄ = zero(gᴱᵣ)
     res = zero(T + first(z))
-    for i in 1:length(model)
+    nc = length(model)
+    for i in 1:nc
         zi,bi = z[i],b[i,i]
         zi2 = zi^2
         b̄ += bi*zi2
-        res += zi*a[i,i]*α[i]/bi
+        Λi = infinite_pressure_gibbs_correction(model,T,FillArrays.OneElement(i,nc))
+        res += Λi*zi*a[i,i]*α[i]/bi
         for j in 1:(i-1)
             zij = zi*z[j]
             b̄ += 2*b[i,j]*zij
         end
     end
     b̄ = b̄*invn2
-    Λ = infinite_pressure_gibbs_correction(model,T,z)
-    ā = (res + gᴱᵣ/Λ)*b̄*invn
+    Λmix = infinite_pressure_gibbs_correction(model,T,z)
+    ā = (res + gᴱᵣ)*b̄*invn/Λmix
     c̄ = dot(c,z)*invn
     return ā,b̄,c̄
 end

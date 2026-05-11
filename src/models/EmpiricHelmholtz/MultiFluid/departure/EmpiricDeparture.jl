@@ -92,8 +92,8 @@ EmpiricDeparture <: MultiFluidDepartureModel
 
 ## Input parameters
 none
-- `F`: Pair Parameter (`Float64`) - Binary Interaction Parameter (no units)
-- `parameters`: Pair Parameter (`String`) - JSON data containing the departure terms for the binary pair
+- `F`: Pair Parameter (`Float64`) - Binary Interaction Parameter (no units).
+- `parameters`: Pair Parameter (`String`) - JSON data containing the departure terms for the binary pair.
 
 ## Description
 
@@ -172,7 +172,7 @@ end
 """
     departure_functions(model::MultiFluid)
 
-if the model is using a `EmpiricDeparture` departure model, return the matrix of departure functions. you can set a departure in the following way:
+If the model is using a `EmpiricDeparture` departure model, return the matrix of departure functions. You can set a departure in the following way:
 
 ```
 using CoolProp #load CoolProp models

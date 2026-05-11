@@ -49,7 +49,7 @@ end
 
 Method to solve non-reactive multicomponent, two-phase flash problem, using a generalized formulation.
 
-Only two phases are supported. if `K0` is `nothing`, it will be calculated via fugacity coefficients at p,T conditions.
+Only two phases are supported. If `K0` is `nothing`, it will be calculated via fugacity coefficients at p,T conditions.
 
 ### Keyword Arguments:
 - `equilibrium` (optional) = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria, `:unknown` if not specified
@@ -75,6 +75,7 @@ struct RRQXFlash{P,T} <: FlashMethod
     atol::Float64
     rtol::Float64
     max_iters::Int
+    verbose::Bool
 end
 
 function Solvers.primalval(method::RRQXFlash{P,T}) where {P,T}
@@ -89,7 +90,7 @@ function Solvers.primalval(method::RRQXFlash{P,T}) where {P,T}
     else
         λT = Solvers.primal_eltype(P)
     end
-    return RRQXFlash{λP,λT}(method.equilibrium,primalval(method.T0),primalval(method.P0),primalval(method.K0),primalval(method.x0),primalval(method.y0),primalval(method.v0),method.atol,method.rtol,method.max_iters)
+    return RRQXFlash{λP,λT}(method.equilibrium,primalval(method.T0),primalval(method.p0),primalval(method.K0),primalval(method.x0),primalval(method.y0),primalval(method.v0),method.atol,method.rtol,method.max_iters,method.verbose)
 end
 
 Base.eltype(method::RRQXFlash{T}) where T = T
@@ -99,7 +100,7 @@ function index_reduction(m::RRQXFlash,idx::AbstractVector)
     K0 !== nothing && (K0 = K0[idx])
     x0 !== nothing && (x0 = x0[idx])
     y0 !== nothing && (y0 = y0[idx])
-    return RRQXFlash(;equilibrium,T0,p0,K0,x0,y0,v0,atol,rtol,max_iters)
+    return RRQXFlash(;equilibrium,T0,p0,K0,x0,y0,v0,atol,rtol,max_iters,method.verbose)
 end
 
 index_reduction(m::RRQXFlash{Nothing,Nothing},idx::AbstractVector) = m
@@ -116,7 +117,8 @@ function RRQXFlash(;equilibrium = :unknown,
                         rtol = 1e-14,
                         atol = 1e-12,
                         max_iters = 100,
-                        flash_result = nothing)
+                        flash_result = nothing,
+                        verbose = false,)
     !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for RRQXFlash"))
     if flash_result isa FlashResult
         comps,β,volumes = flash_result.compositions,flash_result.fractions,flash_result.volumes
@@ -126,7 +128,7 @@ function RRQXFlash(;equilibrium = :unknown,
         v = (volumes[1],volumes[2])
         P00 = flash_result.data.p
         T00 = flash_result.data.T
-        return RRQXFlash(;equilibrium = equilibrium,T0 = T00,p0 = P00,x0 = w1,y0 = w2,v0 = v,rtol = rtol,atol = atol,max_iters = max_iters)
+        return RRQXFlash(;equilibrium = equilibrium,T0 = T00,p0 = P00,x0 = w1,y0 = w2,v0 = v,rtol = rtol,atol = atol,max_iters = max_iters,verbose = verbose)
     end
 
     if K0 == x0 == y0 === nothing #nothing specified
@@ -160,7 +162,7 @@ function RRQXFlash(;equilibrium = :unknown,
     else
         S = typeof(something(T0,p0))
     end
-    return RRQXFlash{S,TT}(equilibrium,T0,p0,K0,x0,y0,_v0,atol,rtol,max_iters)
+    return RRQXFlash{S,TT}(equilibrium,T0,p0,K0,x0,y0,_v0,atol,rtol,max_iters,verbose)
 end
 
 function qp_flash_impl(model,β,p,z,method::RRQXFlash)

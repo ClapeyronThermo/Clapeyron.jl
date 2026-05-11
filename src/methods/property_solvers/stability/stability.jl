@@ -107,7 +107,7 @@ end
 """
     ideal_consistency(model,V,T,z=[1.0])
 
-Performs a ideal model consistency check:
+Performs an ideal model consistency check:
 ```
 ∂a₀∂V + 1/V ≈ 0
 ```

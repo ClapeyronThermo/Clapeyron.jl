@@ -12,7 +12,7 @@ function qt_flash_x0(model::CompositeModel,β,T,z,method::FlashMethod)
 end
 
 function qt_flash_x0(model,β,T,z,method::FlashMethod)
-    verbose = hasfield(typeof(method),:verbose) ? getfield(method,:verbose)::Bool : false    
+    verbose = get_verbosity(method)
     ∑z = sum(z)
     if method.p0 == nothing
         if 0 <= β <= 0.01
@@ -75,7 +75,7 @@ end
     result = qt_flash(model, q, T, n, method::FlashMethod = GeneralizedXYFlash())
     result = qt_flash(model, q, T, n; kwargs...)
 
-Routine to solve non-reactive two-phase multicomponent flash problem. with vapour fraction - T specifications.
+Routine to solve non-reactive two-phase multicomponent flash problem. With vapour fraction - T specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
 Inputs:
  - `q`, vapour fraction

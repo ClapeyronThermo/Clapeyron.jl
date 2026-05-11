@@ -1,12 +1,8 @@
-# v0.6.23
+# v0.6.25
 
 ## New Features
 
-- New ideal models: `GCAlyLee` and `BurkhardtIdeal`
--New string macros: `@cas_str` and `@smiles_str`, that allow searching components by CAS and SMILES respectively.
-- improved initial point for bubble/dew calculations
-
-## Bug fixes
-
-- Fixes and improvements in volume calculation.
-- `SingleFluid`, when passing a JSON directly as a string, now the name stored is extracted and used. before, the whole JSON string was used as a name.
+- New model: Patel-Teja-Hayen cubic (`PatelTejaHayen`)
+- New alpha model: Twu alpha estimation used in `tcPR` and `tcRK` (`tcTwuAlpha`)
+- New translation model: `tcPR` and `tcRK` translation estimation (`tcTranslation`)
+- cubic mixing rules: support for more cubics. Before, most EoS + GE mixing rules were only correct for cubics with composition-independent coefficients.

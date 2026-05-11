@@ -313,6 +313,22 @@ function x0_saturation_temperature(model::SingleFluid,p)
     return (T,vl,vv)
 end
 
+x0_crit_pure(model::SingleFluid,z) = (1.0, -log10(model.properties.rhoc))
+
+function x0_volume_region(model::SingleFluid,p,T,z)
+    Pc = model.properties.Pc
+    Tc = model.properties.Tc
+    if T >= Tc
+        if p > Pc
+            return :liquid
+        else
+            return :vapour
+        end
+    else
+        return :unknown
+    end
+end
+
 function crit_pure(model::SingleFluid)
     Tc = model.properties.Tc
     Vc = 1/model.properties.rhoc

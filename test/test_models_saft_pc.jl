@@ -35,14 +35,14 @@
     end
     @printline
     @testset "gcPCPSAFT" begin
-        system = gcPCPSAFT(["acetone", "ethane","ethanol"],mixing = :homo)
+        system = gcPCPSAFT(["acetone", "ethane","ethanol"], mixing = :homo)
         test_gibbs_duhem(system,V,T,z3)
         test_recombine(system)
         test_scales(system)
         test_repr(system,str = ["\"acetone\": \"CH3\" => 2, \">C=O\" => 1","Group Type: gcPCPSAFT"])
-        system2 = gcPCPSAFT(["acetone", "ethane","ethanol"],mixing = :hetero)
+        system2 = gcPCPSAFT(["acetone", "ethane", "ethanol"],mixing = :hetero)
         test_scales(system2)
-        @test_throws ArgumentError gcPCPSAFT(["acetone", "ethane","ethanol"],mixing = :none_of_the_above)
+        @test_throws ArgumentError gcPCPSAFT(["acetone", "ethane", "ethanol"],mixing = :none_of_the_above)
         
         #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/534#issuecomment-3799847630
         system3 = HomogcPCPSAFT(["acetone"])

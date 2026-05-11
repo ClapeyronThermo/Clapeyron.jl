@@ -40,9 +40,14 @@ function crit_pure(model::EoSModel,x0,z = SA[1.0];options = NEqOptions())
     zp = primalval(z)
     primalmodel = primalval(model)
     if x0 === nothing
-        x0 = x0_crit_pure(primalmodel,zp)
+        _x0 = x0_crit_pure(primalmodel,zp)
+    elseif x0 isa Type && x0 <: Number
+        x0x = x0_crit_pure(primalmodel,zp)
+        _x0 = x0.(x0x)
+    else
+        _x0 = x0
     end
-    x01,x02 = x0
+    x01,x02 = _x0
     T̄  = T_scale(primalmodel,zp)*one(x01*one(x02))
     Tc0 = x01*T̄
     lbv0 = lb_volume(primalmodel,Tc0,zp)
@@ -79,7 +84,7 @@ function crit_pure_ad(crit,tup,λtup)
             _,F1,F2 = p∂p∂2p(model, Vc, Tc, z)
             return SVector(F1,F2)
         end
-        T_c,V_c = __gradients_for_root_finders(x,tup,λtup,f)
+        T_c,V_c = __gradients_for_root_finders(λx,tup,λtup,f)
         P_c = pressure(model,V_c,T_c,z)
         return (T_c,P_c,V_c)
     else

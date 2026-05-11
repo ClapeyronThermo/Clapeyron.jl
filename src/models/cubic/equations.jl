@@ -21,13 +21,17 @@ struct ABCCubicParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
+struct SimpleAlphaParam <: EoSParam
+    acentricfactor::SingleParam{Float64}
+end
+
 const ONLY_VC = vcat(IGNORE_HEADERS,["Tc","Pc", "w"])
 const ONLY_ACENTRICFACTOR = vcat(IGNORE_HEADERS,["Tc", "Pc", "Vc"])
 """
     ab_premixing(model,mixing,kij = nothing,lij = nothing)
 
 Given a model::CubicModel, that has `a::PairParam`, `b::PairParam`, a mixing::MixingRule and `kij`,`lij` matrices, `ab_premixing` will perform an implace calculation
-to obtain the values of `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the Van der Waals One-Fluid mixing rule. that is:
+to obtain the values of `a` and `b`, containing values aᵢⱼ and bᵢⱼ. By default, it performs the Van der Waals One-Fluid mixing rule. That is:
 ```
 aᵢⱼ = sqrt(aᵢ*aⱼ)*(1-kᵢⱼ)
 bᵢⱼ = (bᵢ + bⱼ)/2
@@ -494,7 +498,7 @@ function pure_spinodal(model::DeltaCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol
     v_bracket = minmax(vx,vm)
     prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket)
     vs = Roots.solve(prob)
-    return vs - c
+    return sum(z)*(vs - c)
 end
 
 function liquid_spinodal_zero_limit(model::DeltaCubicModel,z)
@@ -539,7 +543,8 @@ function zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
     Δ = sqrt(B^2 - 4*A*C)
     vl = (-B - Δ)/(2*A) - c
     vmax = -B/(2*A) - c
-    return real(vl),real(vmax)
+    n = sum(z)
+    return n*real(vl),n*real(vmax)
 end
 
 #Δ1,Δ2 -> Ωa,Ωb infraestructure
@@ -777,7 +782,7 @@ end
 ## Description
 
 Empty Cubic model constructor.
-It requires specifiying all model arguments.
+It requires specifying all model arguments.
 """
 function CubicModel(cubicmodel::Type{T},params,components;
     idealmodel = BasicIdeal,

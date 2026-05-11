@@ -18,10 +18,6 @@ function α_function end
 recombine_impl!(model::AlphaModel) = model
 recombine_alpha!(model::CubicModel,alpha::AlphaModel) = recombine!(alpha)
 
-struct SimpleAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
-
 struct CPAAlphaParam <: EoSParam
     c1::SingleParam{Float64}
 end
@@ -63,14 +59,12 @@ include("soave.jl")
 include("soave2019.jl")
 include("PRAlpha.jl")
 include("Leibovici.jl")
-include("PatelTejaAlpha.jl")
-include("PTVAlpha.jl")
 include("CPAAlpha.jl")
 include("PR78Alpha.jl")
 include("BM.jl")
 include("Twu.jl")
+include("tcTwu.jl")
 include("MT.jl")
-include("KUAlpha.jl")
 include("RKPRAlpha.jl")
 include("MathiasCopemanAlpha.jl")
 include("MC3PRAlpha.jl")

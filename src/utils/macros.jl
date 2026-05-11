@@ -20,7 +20,7 @@ This macro is an alias to
 
     model.groups.i_groups[component]
 
-`i_groups[component]` is an iterator that goes through all groups in relevent to a given component.
+`i_groups[component]` is an iterator that goes through all groups in relevant to a given component.
 """
 macro groups(component)
     return :($(esc(:(model.groups.i_groups[$(component)]::Vector{Int}))))
@@ -308,9 +308,9 @@ end
 This is a data type that contains all the information needed to use an EoS model.
 It also functions as an identifier to ensure that the right functions are called.
 
-You can pass an optional 4th `Bool` argument  indicating if you want to use sites with this model or not. Defaults to `true`.
+You can pass an optional 4th `Bool` argument indicating if you want to use sites with this model or not. Defaults to `true`.
 
-You can also pass another optional 5th `Bool` argument indicating if a second order GroupParam (`StructGroupParam`) is used or not. Defaults to `false`
+You can also pass another optional 5th `Bool` argument indicating if a second order GroupParam (`StructGroupParam`) is used or not. Defaults to `false`.
 
 = Fields =
 The Struct consists of the following fields:
@@ -320,7 +320,7 @@ The Struct consists of the following fields:
 * sites: a [`SiteParam`](@ref) (optional)
 * params: the Struct paramstype that contains all parameters in the model
 * idealmodel: the IdealModel struct that determines which ideal model to use
-* assoc_options: struct containing options for the association solver. see [`AssocOptions`](@ref)
+* assoc_options: struct containing options for the association solver. See [`AssocOptions`](@ref)
 * references: reference for this EoS
 
 See the tutorial or browse the implementations to see how this is used.
@@ -517,7 +517,7 @@ Utility for building simple models. If a model instance is passed, it will retur
 Otherwise, it will build the model from the input components and user locations.
 
 It is normally used for models that don't have additional submodels (like ideal models)
-or when such submodels are not used at all (like the pure model part of an Activity model when used in an Advanced mixing rule Cubic model)
+or when such submodels are not used at all (like the pure model part of an Activity model when used in an Advanced mixing rule Cubic model).
 
 ## Example
 
@@ -700,6 +700,7 @@ function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,Cl
         if !haskey(params_in,"assoc_options")
             AssocOptions!(params_in,assoc_options)
         else
+
             #throw(error("cannot overwrite \"assoc_options\" key, already exists!"))
         end
 
@@ -730,7 +731,7 @@ function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,Cl
             _sites = SiteParam(_components)
         end
         result[:sites] = _sites
-        result[:assoc_options] = assoc_options
+        result[:assoc_options] = AssocOptions!(params_out,assoc_options)
     end
 
     #add references, if needed

@@ -59,7 +59,7 @@ f∂f(f::F) where F = Base.Fix1(f∂f,f)
 """
     f∂f∂2f(f,x)
 
-Returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
+Returns f, ∂f/∂x and ∂²f/∂²x evaluated in `x` using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 @inline function f∂f∂2f(f::F,x::R,tag = f) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(tag, R))

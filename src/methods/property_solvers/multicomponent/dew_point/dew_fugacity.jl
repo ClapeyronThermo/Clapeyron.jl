@@ -2,7 +2,7 @@
     FugDewPressure(kwargs...)
 
 Method to compute [`dew_pressure`](@ref) via fugacity coefficients. First it uses
-successive substitution to update the phase composition and a outer newtown
+successive substitution to update the phase composition and a outer newton
 loop to update the pressure. If no convergence is reached after `itmax_newton`
 iterations, the system is solved using a multidimensional non-linear
 system of equations.
@@ -14,9 +14,9 @@ Inputs:
 - `itmax_newton = 10`: optional, number of iterations to update the pressure using newton's method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
-- `tol_p = 1e-8`: optional, tolerance to stop newton cycle
+- `tol_p = 1e-8`: optional, tolerance to stop newton's cycle
 - `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
-- `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
+- `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. Those will be set to zero on the liquid phase.
 """
 struct FugDewPressure{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -91,7 +91,7 @@ function FugDewPressure(;vol0 = nothing,
 end
 
 function dew_pressure_impl(model::RestrictedEquilibriaModel,T,y,method::FugDewPressure)
-    wrapper = PTFlashWrapper(model,NaN,T,y,:vle)
+    wrapper = __tpflash_cache_model(model,NaN,T,y,:vle)
     return dew_pressure_impl(wrapper,T,y,method)
 end
 
@@ -171,7 +171,7 @@ end
     FugDewTemperature(kwargs...)
 
 Method to compute [`dew_temperature`](@ref) via fugacity coefficients. First it uses
-successive substitution to update the phase composition and a outer newtown
+successive substitution to update the phase composition and an outer newton
 loop to update the temperature. If no convergence is reached after
 `itmax_newton` iterations, the system is solved using a multidimensional
 non-linear system of equations.
@@ -183,9 +183,9 @@ Inputs:
 - `itmax_newton = 10`: optional, number of iterations to update the temperature using newton's method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
-- `tol_T = 1e-8`: optional, tolerance to stop newton cycle
+- `tol_T = 1e-8`: optional, tolerance to stop newton's cycle
 - `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
-- `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
+- `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. Those will be set to zero on the liquid phase.
 
 """
 struct FugDewTemperature{T} <: DewPointMethod
@@ -260,7 +260,7 @@ function FugDewTemperature(;vol0 = nothing,
 end
 
 function dew_temperature_impl(model::RestrictedEquilibriaModel,p,y,method::FugDewTemperature)
-    wrapper = PTFlashWrapper(model,p,NaN,y,:vle)
+    wrapper = __tpflash_cache_model(model,p,NaN,y,:vle)
     return dew_temperature_impl(wrapper,p,y,method)
 end
 
