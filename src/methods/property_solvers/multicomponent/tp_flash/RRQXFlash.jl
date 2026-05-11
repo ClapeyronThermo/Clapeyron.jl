@@ -2,7 +2,7 @@
 update_pressure!(model,p) = nothing
 update_temperature!(model,T) = nothing
 
-function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,spec)
+function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache)
     x,y,z =  w
     K,lnK = vec_cache
     #using cache
@@ -10,12 +10,6 @@ function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,spec)
     v2 = lnK[2]
     phasex,phasey = phases
     non_inx,non_iny = non_inw
-    
-    if spec == pressure #QT flash
-        update_pressure!(model,p)
-    elseif spec == temperature
-        update_temperature!(model,T)   
-    end
 
     lnϕx, volx = modified_lnϕ(model, p, T, x, dlnϕ_cache; phase = phasex)
     lnK .= lnϕx
@@ -35,13 +29,14 @@ end
 function update_K_QT!(logp,params)
     p = exp(logp)
     model,β,T,w,phases,non_inw,vec_cache,dlnϕ_cache = params
-    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,pressure)
+    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache)
 end
 
 function update_K_QP!(Tinv,params)
     T = 1/Tinv
     model,β,p,w,phases,non_inw,vec_cache,dlnϕ_cache = params
-    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,temperature)
+    update_temperature!(model,T)
+    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache)
 end
 
 """

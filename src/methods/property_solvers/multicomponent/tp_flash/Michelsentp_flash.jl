@@ -136,7 +136,7 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
     comps = [x,y]
     βi = [1-β ,β]
     flash0 = FlashResult(comps,βi,volumes,FlashData(p,T,zero(β),vapour_idx))
-    g = isnan(β) ? β : modified_gibbs(model_cached,flash0)
+    g = isnan(β) ? β : first(modified_gibbs(model_cached,flash0))
     return FlashResult(comps,βi,volumes,FlashData(p,T,g,vapour_idx))
 end
 

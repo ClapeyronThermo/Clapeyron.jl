@@ -1012,4 +1012,139 @@ function qflash_pure(model,spec::F,x,βv,z) where F
     end
 end
 
+function fug_ss_xy_flash!(model,p,T,x,y,z,vol0,β0,spec::F,data::FugData,cache) where F
+    volx,voly = vol0
+
+    method = data.method
+    itmax_ss = data.itmax_ss
+    itmax_newton = data.itmax_newton
+    tol_xy = data.tol_xy
+    tol_of = data.tol_of
+    tol_pT = data.tol_pT
+    second_order = data.second_order
+    phasex,phasey = FugEnum.phases(method)
+    verbose = data.verbose
+    converged = false
+    tol_stability = abs2(cbrt(tol_xy))
+    #caches for ∂lnϕ∂n∂P∂T/∂lnϕ∂n∂P
+
+    lnK,K,w,w_old,w_calc,w_restart,_,Hϕx = cache
+
+    OF = NaN*zero(eltype(lnK))
+    βi = oftype(OF,NaN)
+    valid_iter = true
+    T_old,p_old = T,p
+    for j in 1:itmax_newton
+        x_restart .= x
+        y_restart .= y
+        volx_restart,voly_restart = volx,voly
+        valid_iter = true
+        if isnan(volx) || isnan(voly)
+            break
+        end
+        error = Inf*one(eltype(lnK))
+        for i in 1:itmax_ss
+            error < tol_xy && break
+
+            lnK_old .= lnK
+            lnϕx, volx = modified_lnϕ(model, p, T, x, Hϕx, vol0=volx, phase = phasex)
+            if isnan(volx)
+                lnϕx, volx = lnϕ(model, 1.1p, T, x, Hϕx, phase = phasex)
+            end
+            lnK .= lnϕx
+
+            lnϕy, voly = modified_lnϕ(model, p, T, y, Hϕx, vol0=voly, phase = phasey)
+            if isnan(voly)
+                lnϕy, voly = lnϕ(model, p, T, y, Hϕx, phase = phasey)
+            end
+            lnK .-= lnϕy
+
+            if isnan(volx) || isnan(voly)
+                break
+            end
+            K .= exp.(lnK)
+            βi = rachfordrice(K,z)
+
+            for i in 1:length(K)
+                non_inx[i] && (K[i] = Inf)
+                non_iny[i] && (K[i] = 0)
+            end
+            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny,false)
+        
+            error = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
+
+            if dnorm(x,y,Inf) < tol_stability #the interation procedure went wrong. perform a T/P movement first
+                x .= x_restart
+                y .= y_restart
+                valid_iter = false
+                volx,voly = volx_restart,voly_restart
+                K .= y ./ x
+                lnK .= log.(K)
+                break
+            end
+        end
+
+        OF_old = OF
+        OF,∂OF = 1.0,1.0 #TODO
+
+        if _pressure && second_order
+            OF,∂OF = 1.0,1.0 #TODO
+        elseif !_pressure && second_order
+            OF,∂OF = 1.0,1.0 #TODO
+        elseif _pressure && !second_order
+            OF = 1.0
+            if j == 1
+                ∂OF = OF/sqrt(eps(p))
+            else
+                ∂OF = (OF - OF_old)/(p - p_old)
+            end
+        else
+            OF = 1.0
+            if j == 1
+                ∂OF = OF/sqrt(eps(T))
+            else
+                ∂OF = (OF - OF_old)/(T - T_old)
+            end
+        end
+        if isnan(volx) || isnan(voly)
+            break
+        end
+
+        ∂step = OF / ∂OF
+        if valid_iter && abs(∂step) < tol_pT || abs(OF) < tol_of
+            converged = true
+            break
+        end
+        if _pressure
+            ∂step = clamp(∂step,-0.4*p,0.4*p)
+            p_old = p
+            p -= ∂step
+        else
+            ∂step = clamp(∂step,-0.05*T,0.05*T)
+            T_old = T
+            Tinv = 1/T + ∂step/(T*T)
+            T = 1/Tinv
+            #T -= ∂step
+            update_temperature!(model,T)
+        end
+
+        if !isfinite(∂step) #error, fail early, the NaN propagation is handled upstream
+            converged = true
+            break
+        end
+    end
+
+    if !valid_iter
+        w .= NaN
+        lnK .= NaN
+        volx,voly = w[1],w[1]
+        if _pressure
+            p = w[1]
+        else
+            T = w[1]
+        end
+    end
+    return converged,(p,T,_x,_y,(volx,voly))
+end
+
 export GeneralizedXYFlash,xy_flash
