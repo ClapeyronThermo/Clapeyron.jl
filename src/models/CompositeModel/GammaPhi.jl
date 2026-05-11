@@ -187,7 +187,8 @@ end
 
 function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
     if is_vapour(phase)
-        return PT_property(gas_model(model),p,T,z,phase,threaded,vol0,f,USEP)
+        gasmodel = gas_model(model)
+        return PT_property(gasmodel,p,T,z,phase,threaded,vol0,f,USEP) + Δref(model,gasmodel,p,T,z,f)
     else #liquid or unknown
         wrapper = PTFlashWrapper(model,p,T,z,:vle)
         return PT_property(wrapper,p,T,z,phase,threaded,vol0,f,USEP)    

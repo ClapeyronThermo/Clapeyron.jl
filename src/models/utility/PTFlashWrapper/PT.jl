@@ -97,9 +97,10 @@ lb_volume(model::PTFlashWrapper,T,z) = lb_volume(fluid_model(model),T,z)
 
 function PT_property(model::PTFlashWrapper,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
     if length(model) == 1
-        return PT_property(fluid_model(model),p,T,z,phase,threaded,vol0,f,USEP)
+        fluidmodel = fluid_model(model)
+        return PT_property(fluidmodel,p,T,z,phase,threaded,vol0,f,USEP) + Δref(model,fluidmodel,p,T,z,f)
     end
-  
+
     if phase == :stable || is_unknown(phase)
         new_phase = identify_phase(model,p,T,z,vol0 = vol0)
         return PT_property(model,p,T,z,new_phase,threaded,vol0,f,USEP)
@@ -112,7 +113,9 @@ function PT_property(model::PTFlashWrapper,p,T,z,phase,threaded,vol0,f::F,USEP::
     Liquid properties are calculated via eos_g(PTFlashWrapper,p,T,z)
     =#
     if is_vapour(phase)
-        return PT_property(gas_model(model),p,T,z,phase,threaded,vol0,f,USEP)
+        gasmodel = gas_model(model)
+        return PT_property(gasmodel,p,T,z,phase,threaded,vol0,f,USEP) + Δref(model,gasmodel,p,T,z,f)
+
     elseif is_liquid(phase)
         if __γ_unwrap(model) isa IdealLiquidSolution
             #liquid phase + no activity: just delegate to the liquid model, whatever that model may be
