@@ -30,7 +30,7 @@ end
 Initial point for `UCST_pressure(model,T)`.
 
 Returns a tuple, containing:
-- Base 10 logarithm initial guess for liquid composition `[m³]`
+- Base 10 logarithm initial guess for volume `[m³]`
 - Initial guess for molar fractions at UCST Point (default: equimolar)
 """
 function x0_UCST_pressure(model::EoSModel,T)

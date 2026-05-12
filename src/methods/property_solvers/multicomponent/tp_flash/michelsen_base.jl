@@ -339,7 +339,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     else
         phasex,phasey = :unknown,:unknown
     end
-    
+
     non_inw = (non_inx,non_iny)
     nc = length(model)
     _1,_0 = one(TT),zero(TT)
@@ -359,7 +359,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         y .= method.y0 ./ sum(method.y0)
         lnK .= log.(x ./ y)
         volx = zero(_1)
-        voly = zero(_1) 
+        voly = zero(_1)
         if method.v0 == nothing
             lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(nothing,nothing),(phasex,phasey),non_inw)
         else
@@ -378,7 +378,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
             Kmin,Kmax = K_extrema(K,non_inx,non_iny)
             if Kmin > 1 || Kmax < 1
                 verbose && @info "VLE correlation failed, trying LLE initial point."
-                K .= K0_lle_init(model,p,T,z)
+                K .= K0_lle_init(model,p,T,z;reduced = true)
                 lnK .= log.(K)
                 phasex = :liquid
                 phasey = :liquid
@@ -392,10 +392,12 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         voly = zero(_1)
     else
         verbose && @info "K0 calculated via LLE initial point (tpd)"
-        K .= K0_lle_init(model,p,T,z)
+        K .= K0_lle_init(model,p,T,z;reduced = true)
         lnK .= log.(K)
         phasey = :liquid
         phases = (:liquid,:liquid)
+        volx = zero(_1)
+        voly = zero(_1)
     end
 
     verbose && @info "K0 = $K"
@@ -408,7 +410,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     if the initial K values generate a single phase result, but we can split the K into two compositions (Kmin < 1 or Kmax > 1)
     then we start at the bubble (or dew conditions)
     =#
-    
+
     if status == RRLiquid
         β = _0
         if maximum(K) >= 1 #liquid phase, but there is posibility to generate a vapour composition
@@ -444,8 +446,11 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     end
     iszero(volx) && (volx = volume(model,p,T,x,phase = phasex))
     iszero(voly) && (voly = volume(model,p,T,y,phase = phasey))
+    lle = is_liquid(phasex) && is_liquid(phasey)
+    vapour_idx = lle ? -1 : 2
+    data = FlashData(p,T,zero(T),vapour_idx)
     #has_a_res(model) && is_liquid(VT_identify_phase(model,voly,T,y)) && (voly = Rgas(model)*T/p)
-    r = FlashResult(p,T,SA[x,y],SA[βl,βv],SA[volx,voly],sort = false)
+    r = FlashResult(SA[x,y],SA[βl,βv],SA[volx,voly],data)
     return r
 end
 

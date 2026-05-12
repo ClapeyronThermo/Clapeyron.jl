@@ -21,13 +21,17 @@ struct ABCCubicParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
+struct SimpleAlphaParam <: EoSParam
+    acentricfactor::SingleParam{Float64}
+end
+
 const ONLY_VC = vcat(IGNORE_HEADERS,["Tc","Pc", "w"])
 const ONLY_ACENTRICFACTOR = vcat(IGNORE_HEADERS,["Tc", "Pc", "Vc"])
 """
     ab_premixing(model,mixing,kij = nothing,lij = nothing)
 
 Given a model::CubicModel, that has `a::PairParam`, `b::PairParam`, a mixing::MixingRule and `kij`,`lij` matrices, `ab_premixing` will perform an implace calculation
-to obtain the values of `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the Van der Waals One-Fluid mixing rule. that is:
+to obtain the values of `a` and `b`, containing values aᵢⱼ and bᵢⱼ. By default, it performs the Van der Waals One-Fluid mixing rule. That is:
 ```
 aᵢⱼ = sqrt(aᵢ*aⱼ)*(1-kᵢⱼ)
 bᵢⱼ = (bᵢ + bⱼ)/2
@@ -590,7 +594,7 @@ Base.@assume_effects :foldable function ab_consts(Δ1::Number, Δ2::Number)
     return (Ωa, Ωb)
 end
 
-#leivobici constants
+#leibovici constants
 function cubic_K(model,z)
     Δ1,Δ2 = cubic_Δ(model,z)
     u = - Δ1 - Δ2
@@ -778,7 +782,7 @@ end
 ## Description
 
 Empty Cubic model constructor.
-It requires specifiying all model arguments.
+It requires specifying all model arguments.
 """
 function CubicModel(cubicmodel::Type{T},params,components;
     idealmodel = BasicIdeal,

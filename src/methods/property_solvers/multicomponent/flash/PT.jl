@@ -9,7 +9,7 @@ abstract type TPFlashMethod <: FlashMethod end
     tp_flash(model, p, T, n, method::TPFlashMethod = DETPFlash())
 
 Routine to solve non-reactive multicomponent flash problem.
-The default method uses Global Optimization. see [`DETPFlash`](@ref)
+The default method uses Global Optimization. See [`DETPFlash`](@ref)
 
 Inputs:
  - T, Temperature `[K]`
@@ -91,10 +91,12 @@ function tp_flash2(model::EoSModel, p, T, n,method::FlashMethod)
     else
         result = tp_flash_impl(model_r,p,T,z_r,method_r)
     end
+    
     if !issorted(result.volumes)
         #this is in case we catch a bad result.
         result = FlashResult(result)
     end
+
     ∑β = sum(result.fractions)
     result.fractions ./= ∑β
     result.fractions .*= ∑n

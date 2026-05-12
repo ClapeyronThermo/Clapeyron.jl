@@ -2,7 +2,7 @@
     result = ps_flash(model, p, s, n, method::FlashMethod = GeneralizedXYFlash())
     result = ps_flash(model, p, s, n; kwargs...)
 
-Routine to solve non-reactive two-phase multicomponent flash problem. with P-S specifications.
+Routine to solve non-reactive two-phase multicomponent flash problem. With P-S specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
 Inputs:
  - `p`, pressure `[Pa]`

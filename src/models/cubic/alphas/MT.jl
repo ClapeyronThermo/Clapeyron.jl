@@ -17,10 +17,10 @@ export MTAlpha
 
 Magoulas & Tassios Cubic alpha `(α(T))` model. Default for [`UMRPR`](@ref) EoS. Also defined for `vdW` models.
 ```
-αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
+αᵢ = (1+mᵢ(1-√(Trᵢ)))²
 Trᵢ = T/Tcᵢ
-mᵢ = 0.384401 + 1.52276ωᵢ - 0.213808ωᵢ^2 + 0.034616ωᵢ^3 - 0.001976ωᵢ^4 (PR)
-mᵢ = 0.483798 + 1.643232ωᵢ - 0.288718ωᵢ^2 + 0.066013ωᵢ^3 (vdW)
+mᵢ = 0.384401 + 1.52276*ωᵢ - 0.213808ωᵢ² + 0.034616ωᵢ³ - 0.001976ωᵢ⁴ (PR)
+mᵢ = 0.483798 + 1.643232*ωᵢ - 0.288718ωᵢ² + 0.066013ωᵢ³ (vdW)
 ```
 
 ## Model Construction Examples

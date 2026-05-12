@@ -48,7 +48,7 @@ Simplified Cubic Plus Association (s-CPA) EoS. Consists in the addition of a cub
 a_res(model::CPA) = a_res(model::Cubic) + a_assoc(model)
 ```
 
-The `radial_dist` argument can be used to choose between a Carnahan-Starling form (`CS`, default) or the Kontogeorgis (`KG`) term, more widely known as s-CPA. using `sCPA(components, radial_dist =: CS)` is equivalent to using the original CPA
+The `radial_dist` argument can be used to choose between a Carnahan-Starling form (`CS`, default) or the Kontogeorgis (`KG`) term, more widely known as s-CPA. Using `sCPA(components, radial_dist =: CS)` is equivalent to using the original CPA.
 
 ## References
 1. Kontogeorgis, G. M., Michelsen, M. L., Folas, G. K., Derawi, S., von Solms, N., & Stenby, E. H. (2006). Ten years with the CPA (cubic-plus-association) equation of state. Part 1. Pure compounds and self-associating systems. Industrial & Engineering Chemistry Research, 45(14), 4855–4868. [doi:10.1021/ie051305v](https://doi.org/10.1021/ie051305v)

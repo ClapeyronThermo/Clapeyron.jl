@@ -167,7 +167,7 @@ end
 - JSON data (CoolProp and teqp format)
 
 ## Input models
-- `ancillaries`: a model that provides initial guesses for saturation calculations. if `nothing`, then they will be parsed from the input JSON.
+- `ancillaries`: a model that provides initial guesses for saturation calculations. If `nothing`, then they will be parsed from the input JSON.
 
 ## Description
 
@@ -273,7 +273,7 @@ end
 - JSON data (CoolProp and teqp format)
 
 ## Input models
-- `ancillaries`: a model that provides initial guesses for saturation calculations. if `nothing`, then they will be parsed from the input JSON.
+- `ancillaries`: a model that provides initial guesses for saturation calculations. If `nothing`, then they will be parsed from the input JSON.
 
 ## Description
 
@@ -856,7 +856,7 @@ end
 """
     idealmodel_to_json_data(model::EoSModel;Tr = 1.0,T0 = 298.15, Vr = 1.0)
 
-Transforms an `model::IdealModel` into a vector of dictionaries containing valid ideal multiparameter helmholtz terms.
+Transforms an `model::IdealModel` into a vector of dictionaries containing valid ideal multiparameter Helmholtz terms.
 `Tr` is the reducing temperature, `T0` is the reference temperature, `Vr` is the reducing volume.
 ## Example
 ```

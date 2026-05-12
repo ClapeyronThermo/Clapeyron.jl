@@ -1,7 +1,7 @@
 """
     SpecialComp(components,defaults=["water08"])
 
-Auxiliary model that just stores the index of one component. faster than looking for the component string on each iteration. 
+Auxiliary model that just stores the index of one component. Faster than looking for the component string on each iteration. 
 
 Used mainly for applying specific correlations in presence of a certain compound.
 """

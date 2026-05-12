@@ -2,7 +2,7 @@
     result = ts_flash(model, T, s, n, method::FlashMethod = GeneralizedXYFlash())
     result = ts_flash(model, T, s, n; kwargs...)
 
-Routine to solve non-reactive two-phase multicomponent flash problem. with T-S specifications.
+Routine to solve non-reactive two-phase multicomponent flash problem. With T-S specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
 Inputs:
  - `T`, temperature `[K]`

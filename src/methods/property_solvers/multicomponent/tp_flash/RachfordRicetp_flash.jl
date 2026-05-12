@@ -3,17 +3,17 @@
 
 Method to solve non-reactive multicomponent flash problem by Rachford-Rice equation.
 
-Only two phases are supported. if `K0` is `nothing`, it will be calculated via the Wilson correlation.
+Only two phases are supported. If `K0` is `nothing`, it will be calculated via the Wilson correlation.
 
 ### Keyword Arguments:
-- `equilibrium`: `:vle` for liquid vapor equilibria, `:lle` for liquid liquid equilibria, `:unknown` if not specified
+- `equilibrium`: `:vle` for liquid vapor equilibria, `:lle` for liquid liquid equilibria, `:unknown` if not specified.
 - `K0`: initial guess for the K-values.
 - `x0`: initial guess for the composition of phase x.
 - `y0`: initial guess for the composition of phase y.
 - `vol0`: initial guesses for phase x and phase y volumes.
 - `K_tol`: tolerance to stop the calculation.
 - `ss_iters`: number of Successive Substitution iterations to perform.
-- `nacc`: accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
+- `nacc`: accelerate successive substitution method every nacc steps. Should be an integer bigger than 3. Set to 0 for no acceleration.
 - `second_order`: wheter to solve the Gibbs energy minimization using the analytical hessian or not.
 - `noncondensables`: arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase.
 - `nonvolatiles`: arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase.
@@ -79,24 +79,15 @@ function RRTPFlash(;equilibrium = :unknown,
 end
 
 function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
-
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
-
-    x,y,β,v = tp_flash_michelsen(model_cached,p,T,z,method,true)
-    
+    x,y,β,v,lle = tp_flash_michelsen(model_cached,p,T,z,method,true)
+    vapour_idx = lle ? -1 : 2
     volumes = [v[1],v[2]]
     comps = [x,y]
     βi = [1-β ,β]
-
-    if isnan(β)
-        g = β
-    elseif has_a_res(model_cached)
-        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium,volumes)
-    else
-        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
-    end
-
-    return FlashResult(comps,βi,volumes,FlashData(p,T,g))
+    flash0 = FlashResult(comps,βi,volumes,FlashData(p,T,zero(β),vapour_idx))
+    g = isnan(β) ? β : first(modified_gibbs(model_cached,flash0))
+    return FlashResult(comps,βi,volumes,FlashData(p,T,g,vapour_idx))
 end
 
 michelsen_itss(method::RRTPFlash) = method.max_iters

@@ -3,15 +3,13 @@ function x0_edge_pressure(model,T,z,pure = split_pure_model(model))
   n = sum(z)
   p_bubble = sum(z[i]*first(sat[i]) for i in 1:length(model))/n
   p_dew = n/sum(z[i]/first(sat[i]) for i in 1:length(model))
-
-
   return (p_bubble,p_dew),sat
 end
 
 """
-    edge_pressure(model,p,z,v0 = nothing)
+    edge_pressure(model,T,z,v0 = nothing)
 
-Calculates the pressure at which two fluid phases have the same gibbs and pressure at the specified temperature.
+Calculates the pressure at which two fluid phases have the same Gibbs energy and pressure at the specified temperature `T`.
 
 Returns a tuple, containing:
 - Edge Pressure `[Pa]`
@@ -109,7 +107,9 @@ function Pproperty(model::EoSModel,T,prop,z = SA[1.0],
                   p0 = nothing,
                   verbose = false,
                   threaded = true) where TT
-  p,st = _Pproperty(model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
+
+  cached_model = __tpflash_cache_model(model,NaN,T,z,:vle)
+  p,st = _Pproperty(cached_model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
   return p
 end
 
@@ -139,7 +139,7 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
   end
 
   if length(model) == 1 && length(z) == 1
-    res = Pproperty_pure(model,T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
+    res = Pproperty_pure(fluid_model(model),T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
     return __Pproperty_check(res,verbose)
   end
 
@@ -324,9 +324,9 @@ function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,v
 
   sat,crit,status = _extended_saturation_pressure(model,T)
 
-  if status == :fail
+  if status == :failure
     verbose && @error "PProperty calculation failed"
-    return nan,:failure
+    return nan,status
   end
 
   if status == :supercritical

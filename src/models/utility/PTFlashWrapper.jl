@@ -9,23 +9,30 @@ struct PTFlashWrapper{T,T2,R,S} <: EoSModel
     equilibrium::Symbol
 end =#
 
-Base.length(model::PTFlashWrapper) = length(model.model)
-Base.eltype(model::PTFlashWrapper) = Base.promote_eltype(model.model,model.fug)
-__γ_unwrap(model::PTFlashWrapper) = __γ_unwrap(model.model)
-gas_model(model::PTFlashWrapper) = gas_model(model.model)
+Base.length(Base.@specialize(model::PTFlashWrapper)) = length(model.model)
+Base.eltype(Base.@specialize(model::PTFlashWrapper)) = Base.promote_eltype(model.model,model.fug)
+__γ_unwrap(Base.@specialize(model::PTFlashWrapper)) = __γ_unwrap(model.model)
+@inline gas_model(Base.@specialize(model::PTFlashWrapper)) = gas_model(model.model)
 
 function tp_flash_K0(wrapper::PTFlashWrapper,p,T,z)
     first.(wrapper.sat) ./ p
 end
 
 function tp_flash_K0!(K,wrapper::PTFlashWrapper,p,T,z)
-    K .=  first.(wrapper.sat) ./ p 
+    K .= first.(wrapper.sat) ./ p
+end
+
+function K0_lle_init(wrapper::PTFlashWrapper,p,T,z,cache = tpd_cache(wrapper,p,T,z);reduced = true)
+    return K0_lle_init(__γ_unwrap(wrapper),p,T,z,cache;reduced)
 end
 
 function PTFlashWrapper{TT}(model,equilibrium,pures = split_pure_model(model)) where TT
     nc = length(model)
     sat = Vector{Tuple{TT,TT,TT}}(undef,nc)
+    nan = TT(NaN)
+    fill!(sat,(nan,nan,nan))
     ϕpure = Vector{TT}(undef,nc)
+    fill!(ϕpure,nan)
     return PTFlashWrapper(component_list(model),model,pures,sat,ϕpure,equilibrium)
 end
 
@@ -41,26 +48,31 @@ function PTFlashWrapper(model,p,T,z,equilibrium)
     return wrapper
 end
 
+split_pure_model(model::PTFlashWrapper,splitter) = model.pures[splitter]
+idealmodel(model::PTFlashWrapper) = idealmodel(model.model)
+fluid_model(model::PTFlashWrapper) = fluid_model(model.model)
+molecular_weight(model::PTFlashWrapper,z) = molecular_weight(model.model,z)
+reference_state(model::PTFlashWrapper) = reference_state(model.model)
+
 function update_temperature!(model::PTFlashWrapper,T)
     isnan(T) && return nothing
     pures = model.pures
-    ϕ = model.fug
+    lnϕ = model.fug
     sats = model.sat
-    TT = eltype(ϕ)
+    TT = eltype(lnϕ)
     for i in 1:length(model)
         pure = pures[i]
         sat = saturation_pressure(pure,T)
         ps,vl,vv = sat
         sats[i] = sat
         if gas_model(pure) isa IdealModel
-            ϕ[i] = 1.0
+            lnϕ[i] = 0.0
         else
-            ϕ[i] = exp(VT_lnϕ_pure(gas_model(pure),vv,T,ps))
+            lnϕ[i] = VT_lnϕ_pure(gas_model(pure),vv,T,ps)
         end
     end
     return nothing
 end
-
 
 function _update_temperature_with_view!(model1::TT,model2::TT,T,_view) where TT <: PTFlashWrapper
     n1,n2 = length(model1),length(model2)
@@ -78,10 +90,6 @@ end
 
 _update_temperature_with_view!(model1,model2,T,_view) = nothing
 
-function volume_impl(model::PTFlashWrapper, p, T, z, phase, threaded, vol0)
-    volume_impl(model.model, p, T, z, phase, threaded, vol0)
-end
-
 function Base.show(io::IO,mime::MIME"text/plain",wrapper::PTFlashWrapper)
     model = wrapper.model
     pure = wrapper.pures
@@ -96,90 +104,10 @@ function Base.show(io::IO,mime::MIME"text/plain",wrapper::PTFlashWrapper)
     show_reference_state(io,model;space = true)
 end
 
-function __x0_bubble_pressure(model::PTFlashWrapper,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = nothing,crit = nothing;verbose = false)
-    sat = model.sat #saturation, we do not approximate here.
-    p0r = first.(sat)
-    p0 = index_expansion(p0r,volatiles)
-    xipi = p0 .* x ./ sum(x)
-    p0 = sum(xipi)
-    if isnothing(y0)
-        yx = xipi
-        yx ./= p0
-    else
-        yx = y0
-    end
-    p,_,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,x,yx,FugEnum.BUBBLE_PRESSURE,volatiles,false)
-    return p,vl0,vv0,y
+function saturation_pressure_ad2(result,model,T)
+    return saturation_pressure_ad(result,(model,T),(model,primalval(T)))
 end
 
-function __x0_dew_pressure(model::PTFlashWrapper,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = nothing, crit = nothing;verbose = false)
-    sat = model.sat #saturation, we do not approximate here.
-    p0inv_r = 1. ./ first.(sat)
-    p0inv = index_expansion(p0inv_r,condensables)
-    yipi = y .* p0inv ./ sum(y)
-    p0 = 1/sum(yipi)
-    if isnothing(x0)
-        xx = yipi
-        xx .*= p0
-    else
-        xx = x0
-    end
-    p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,xx,y,FugEnum.DEW_PRESSURE,condensables,false)
-    return p,vl0,vv0,x
-end
-
-function __x0_bubble_temperature(model::PTFlashWrapper,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = nothing,crit = nothing;verbose = false)
-    x_r = @view x[volatiles]
-    pure = @view model.pures[volatiles]
-    sat = @view model.sat[volatiles]
-    if Tx0 !== nothing
-        T0 = Tx0
-        for i in 1:length(pure)
-            sat[i] = saturation_pressure(pure[i],T0)
-        end
-        p_i_r = first.(sat)
-    else
-        dPdTsat = extended_dpdT_temperature.(pure,p,crit)
-        T0 = antoine_bubble_solve(dPdTsat,p,x_r)
-        p_i_r = antoine_pressure.(dPdTsat,T0)
-    end
-    xipi_r = y_r = p_i_r .* x_r ./ sum(x_r)
-    p = sum(xipi_r)
-    y_r ./= p
-    y0 = index_expansion(y_r,volatiles)
-    _,T,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x,y0,FugEnum.BUBBLE_TEMPERATURE,volatiles,false)
-    update_temperature!(model,T)
-    return T,vl0,vv0,y
-end
-
-function __x0_dew_temperature(model::PTFlashWrapper,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing;verbose = false)
-    y_r = @view y[condensables]
-    pure = @view model.pures[condensables]
-    sat = @view model.sat[condensables]
-    if Tx0 !== nothing
-        T0 = Tx0
-        for i in 1:length(pure)
-            sat[i] = saturation_pressure(pure[i],T0)
-        end
-        p0inv_r = 1 ./ first.(sat)
-    else
-        dPdTsat = extended_dpdT_temperature.(pure,p,crit)
-        T0 = antoine_bubble_solve(dPdTsat,p,y_r)
-        p0inv_r = 1 ./ antoine_pressure.(dPdTsat,T0)
-    end
-    yipi_r = x_r = y_r .* p0inv_r ./ sum(y_r)
-    p_r = 1/sum(yipi_r)
-    x_r .*= p_r
-    x0 = index_expansion(x_r,condensables)
-    update_temperature!(model,T0)
-    _,T,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x0,y,FugEnum.DEW_TEMPERATURE,condensables,false)
-    return T,vl0,vv0,x
-end
-
-function improve_bubbledew_suggestion(model::PTFlashWrapper,p0,T0,x,y,method,in_media,high_conditions)
-    TT = Base.promote_eltype(model,p0,T0,x,y)
-    p,T = TT(p0),TT(T0)
-    vl = volume(model,p,T,x,phase = :l)/sum(x)
-    vv = volume(model,p,T,y,phase = :v)/sum(y)
-    return p,T,x,y,vl,vv
-end
+include("PTFlashWrapper/PT.jl")
+include("PTFlashWrapper/fugacity.jl")
+include("PTFlashWrapper/bubbledew.jl")

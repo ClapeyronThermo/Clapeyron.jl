@@ -18,21 +18,21 @@ end
 Parameter used to define a reference state for enthalpy and entropy, normally stored in the ideal model. 
 When set, it calculates a set of `a0` and `a1` values such as the entropy and enthalpy at a specified point are fixed.
 
-the `type` argument accepts the following standalone options:
-- `:no_set`: it returns the current defaults stablished by the equation of state. Leaves the `ReferenceState` struct uninitialized.
-- `:zero`: also returns the current defaults, but initializes the reference state struct, for later modification
-- `:ashrae`: h = s = 0 at -40 °C saturated liquid
-- `:iir`: h = 200.0 kJ·kg⁻¹, s=1.0 kJ·kg⁻¹·K⁻¹ at 0 °C saturated liquid
-- `:nbp`: h = s = 0 at 1 atm saturated liquid
-- `:stp`: h = s = 0 at 1 bar, 0 °C fluid of the most stable phase
-- `:stp_old`: h = s = 0 at 1 atm, 0 °C fluid of the most stable phase
-- `:ntp`: h = s = 0 at 1 atm, 20 °C fluid of the most stable phase
+The `type` argument accepts the following standalone options:
+- `:no_set`: it returns the current defaults established by the equation of state. Leaves the `ReferenceState` struct uninitialized.
+- `:zero`: also returns the current defaults, but initializes the reference state struct, for later modification.
+- `:ashrae`: h = s = 0 at -40 °C, saturated liquid.
+- `:iir`: h = 200.0 kJ·kg⁻¹, s=1.0 kJ·kg⁻¹·K⁻¹ at 0 °C, saturated liquid.
+- `:nbp`: h = s = 0 at 1 atm, saturated liquid.
+- `:stp`: h = s = 0 at 1 bar, 0 °C fluid of the most stable phase.
+- `:stp_old`: h = s = 0 at 1 atm, 0 °C fluid of the most stable phase.
+- `:ntp`: h = s = 0 at 1 atm, 20 °C fluid of the most stable phase.
 
-it also accepts the following options, that require additional specifications:
-- `:volume`: h = H0, s = S0, at T = T0, v = `volume(model,P0,T0,z0,phase = phase)`
-- `:ideal_gas`: h = H0, s = S0, at T = T0, v = `volume(Clapeyron.idealmodel(model),P0,T0,z0)`
-- `:saturation_pressure`: h = H0, s = S0, at T = T0, saturated phase (specified by the `phase` argument)
-- `:saturation_temperature`: h = H0, s = S0, at p = P0, saturated phase (specified by the `phase` argument)
+It also accepts the following options, that require additional specifications:
+- `:volume`: h = H0, s = S0, at T = T0, v = `volume(model,P0,T0,z0,phase = phase)`.
+- `:ideal_gas`: h = H0, s = S0, at T = T0, v = `volume(Clapeyron.idealmodel(model),P0,T0,z0)`.
+- `:saturation_pressure`: h = H0, s = S0, at T = T0, saturated phase (specified by the `phase` argument).
+- `:saturation_temperature`: h = H0, s = S0, at p = P0, saturated phase (specified by the `phase` argument).
 
 If `z0` is not specified, the reference state calculation will be done for each component separately.
 
@@ -197,6 +197,33 @@ function reference_state_eval(ref::ReferenceState,V,T,z)
     ā0 = dot(ref.a0,z)
     ā1 = dot(ref.a1,z)
     return ā0 + ā1*T
+end
+
+#PT_property utilities
+function eos_g(ref::ReferenceState,p,T,z)
+    return reference_state_eval(ref,T,T,z)
+end
+#simple wrapper of a ReferenceState + molecular weight
+
+struct ReferenceStateWithMw{T}
+    ref::ReferenceState
+    mw::T
+end
+
+function eos_g(model::ReferenceStateWithMw,p,T,z)
+    return reference_state_eval(model.ref,T,T,z)
+end
+
+molecular_weight(model::ReferenceStateWithMw,z) = model.mw
+
+function Δref(model,model2,p,T,z,f)
+    ref_gas = reference_state(model2)
+    ref_wrap = reference_state(model)
+    _0 = zero(Base.promote_eltype(1.0,T,z))
+    mwz = molecular_weight(model,z)
+    prop_ref_gas = isnothing(ref_gas) ? _0 : PT_property_gibbs(ReferenceStateWithMw(ref_gas,mwz),p,T,z,f)
+    prop_ref_wrap = isnothing(ref_wrap) ? _0 : PT_property_gibbs(ReferenceStateWithMw(ref_wrap,mwz),p,T,z,f)
+    return prop_ref_wrap - prop_ref_gas
 end
 
 """
@@ -383,8 +410,6 @@ function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
     a0 .= _a0
     a1 .= _a1
 end
-
-
 
 function initialize_reference_state!(model::EoSModel,ref = reference_state(model))
     return initialize_reference_state!(component_list(model),ref)

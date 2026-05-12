@@ -21,7 +21,7 @@ An initial estimate of the volume `vol0` can be optionally be provided.
     Such a starting point can be found from physical knowledge, or by computing the volume using a different model for example.
 
 !!! warning "Stability checks"
-    The stability check is disabled by default. That means that the volume obtained just follows the the relation `p = pressure(model,V,T,z)`.
+    The stability check is disabled by default. That means that the volume obtained just follows the relation `p = pressure(model,V,T,z)`.
     For single component models, this is alright, but phase splits (with different compositions that the input) can and will occur, meaning that
     the volume solution does not correspond to an existing phase.
     For unknown multicomponent mixtures, it is recommended to use a phase equilibrium procedure (like `tp_flash`) to obtain a list of valid compositions, and then perform a volume calculation over those compositions.
@@ -33,7 +33,7 @@ An initial estimate of the volume `vol0` can be optionally be provided.
 """
 function volume end
 
-function PT_property(model,p,T,z,phase,threaded,vol0,f::F,::Val{UseP}) where {F,UseP}
+function PT_property(model,p,T,z,phase,threaded,vol0,f::F,vol::VV) where {F,VV}
     
     if f == pressure
         return p
@@ -42,19 +42,21 @@ function PT_property(model,p,T,z,phase,threaded,vol0,f::F,::Val{UseP}) where {F,
     end
 
     if z isa Number
-        return PT_property(model,p,T,SA[z],phase,threaded,vol0,f,Val{UseP}())
+        return PT_property(model,p,T,SA[z],phase,threaded,vol0,f)
     end
-    V = volume(model, p, T, z; phase, threaded, vol0)
-    if UseP
+    if isnothing(vol)
+        V = volume(model, p, T, z; phase, threaded, vol0)
+    else
+        V = one(Base.promote_eltype(model,p,T,z))*vol
+    end
+    if VT_use_p(f)
         return f(model,V,T,z,p)
     else
         return f(model,V,T,z)
     end
 end
 
-function PT_property(model,p,T,z,phase,threaded,vol0,f::F) where F
-    PT_property(model,p,T,z,phase,threaded,vol0,f,Val{false}())
-end
+PT_property(model,p,T,z,phase,threaded,vol0,f::F) where {F} = PT_property(model,p,T,z,phase,threaded,vol0,f,nothing)
 
 """
     entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -280,7 +282,7 @@ Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_gibbs_free_energy,Val{true}())
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_gibbs_free_energy)
 end
 
 """
@@ -301,7 +303,7 @@ Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function mass_gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_gibbs_free_energy,Val{true}())
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_gibbs_free_energy)
 end
 
 """

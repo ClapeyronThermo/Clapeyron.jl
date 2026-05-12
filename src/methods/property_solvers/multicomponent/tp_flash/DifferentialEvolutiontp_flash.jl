@@ -27,7 +27,7 @@ Note: the file name is historical; the original implementation used differential
 
 User must assume a number of phases, `numphases`. If true number of phases is smaller than numphases, model should predict either (a) identical composition in two or more phases, or (b) one phase with negligible total number of moles. If true number of phases is larger than numphases, a thermodynamically unstable solution will be predicted.
 
-The `equilibrium` keyword allows to restrict the search of phases to just liquid-liquid equilibria (`equilibrium = :lle`). the default searches for liquid and gas phases.
+The `equilibrium` keyword allows to restrict the search of phases to just liquid-liquid equilibria (`equilibrium = :lle`). The default searches for liquid and gas phases.
 """
 @kwdef struct DETPFlash <: TPFlashMethod
     numphases::Int = 2
@@ -100,15 +100,17 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
         throw(DomainError(backend, "unknown DETPFlash backend (expected :sass)"))
     end
     deadline_ns = isfinite(time_limit) ? time_ns() + floor(Int, 1e9time_limit) : typemax(Int)
+    phase = is_lle(equilibrium) ? :liquid : :unknown
     while !Solvers.isdone(algo)
         dividers_flat = Solvers.ask!(algo)
-        y = Obj_de_tp_flash(model, p, T, n, dividers_flat, numphases, x, nvals, volumes, logspace, equilibrium)
+        y = Obj_de_tp_flash(model, p, T, n, dividers_flat, numphases, x, nvals, volumes, logspace, phase)
         Solvers.tell!(algo, y)
         time_ns() >= deadline_ns && break
     end
     best_u, g = Solvers.best(algo)
     # Refresh cache for the best solution (the last evaluated point might not be the best).
-    Obj_de_tp_flash(model, p, T, n, copy(best_u), numphases, x, nvals, volumes, logspace, equilibrium)
+    
+    Obj_de_tp_flash(model, p, T, n, copy(best_u), numphases, x, nvals, volumes, logspace, phase)
 
     #Initialize arrays xij and nvalsij,
     #where i in 1..numphases, j in 1..numspecies
@@ -122,13 +124,25 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
 
     comps = [vec(x[i,:]) for i in 1:numphases]
     βi = [sum(@view(nvals[i,:])) for i in 1:numphases]
+    vapour_idx = is_lle(equilibrium) ? -1 : 0
+
+    #fill liquid volumes, identify vapour phase
     for i in 1:numphases
-        if iszero(volumes[i]) && model isa PTFlashWrapper
+        voli = volumes[i]
+        if iszero(voli) && model isa PTFlashWrapper
             #we suppose liquid volume, evaluate here
             volumes[i] = volume(model,p,T,comps[i],phase = :l)
+        elseif !iszero(voli) && model isa PTFlashWrapper && is_unknown(phase) && is_zero(vapour_idx)
+            new_phase = identify_phase(model,p,T,comps[i],vol = voli)
+            if is_vapour(new_phase)
+                vapour_idx = i
+            end
         end
     end
-    return FlashResult(comps, βi, volumes, FlashData(p,T,g))
+    if vapour_idx == 0
+        vapour_idx = -1
+    end
+    return FlashResult(comps, βi, volumes, FlashData(p,T,g,vapour_idx))
 end
 """
     Obj_de_tp_flash(model,p,T,z,dividers,numphases,vcache,logspace = false)
@@ -148,9 +162,9 @@ each species. We then scale these numbers systematically in order to partition
 the species between the phases. Each set of (numphases - 1) numbers
 will result in a unique partition of the species into the numphases
 phases.
-vcache stores the current volumes for each phase
+vcache stores the current volumes for each phase.
 """
-function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace = false,equilibrium = :auto)
+function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace = false,phase = :unknown)
     # NOTE: avoid `Base.promote_typeof(p, T, first(n))` here; this function is slow
     # `x/nvals/volumes` are allocated in `tp_flash_impl` using the promoted type already, so we can reuse the cache eltype.
     TT = eltype(nvals)
@@ -175,7 +189,7 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     G = _0
     for i ∈ 1:numphases
         ni = @view(nvals[i, :])
-        gi_reduced,vi = __eval_G_DETPFlash(model,p,T,ni,equilibrium)
+        gi_reduced,vi = modified_gibbs(model,p,T,ni,phase)
         vcache[i] = vi
         G += gi_reduced
         #calling with PTn calls the internal volume solver
@@ -187,15 +201,6 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     # Per the FlashData definition, return the molar reduced Gibbs energy (g = G/(nRT))
     ∑n = sum(n)
     return ifelse(isnan(G),bignum,G/∑n)
-end
-
-#indirection to allow overloading this evaluation in activity models
-function __eval_G_DETPFlash(model::EoSModel,p,T,ni,equilibrium)
-    phase = is_lle(equilibrium) ? :liquid : :unknown
-    RT = Rgas(model)*T
-    vi = volume(model,p,T,ni;phase = phase)
-    g = VT_gibbs_free_energy(model, vi, T, ni)
-    return g/RT,vi
 end
 
 numphases(method::DETPFlash) = method.numphases

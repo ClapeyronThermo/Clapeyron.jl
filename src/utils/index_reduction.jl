@@ -1,13 +1,13 @@
 """
     index_reduction(model::EoSModel,z,zmin = sum(z)*4*eps(eltype(z)))
     index_reduction(model::EoSModel,bools <: AbstractVector{Bool})
-Removes any component with composition `z[i] < zmin`. returns a reduced model `model_r` and a vector of indices `idx_r`, such as:
+Removes any component with composition `z[i] < zmin`. Returns a reduced model `model_r` and a vector of indices `idx_r`, such as:
 
 ```julia
 model_r,idx_r = index_reduction(model,z)
 eos(model,V,T,z) ≈ eos(model_r,V,T,z[idx_r])
 ```
-if the model does not have empty compositions, it will just return the input model.
+If the model does not have empty compositions, it will just return the input model.
 
 The function will error if the reduction results in an empty model.
 
@@ -95,7 +95,7 @@ end
 
 
 Given an input vector generated from a reduced model and the non zero indices, returns a Vector corresponding to the original model.
-If the sizes of `x` and `idx` are the same, return the original input.
+If the sizes of `x` and `idx` are the same, returns the original input.
 """
 function index_expansion(x::AbstractVector,idr::AbstractVector)
     numspecies = length(idr)

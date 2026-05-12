@@ -1,4 +1,61 @@
+abstract type PTVAlphaModel <: GeneralizedSuaveAlphaModel end
+
+const PTVAlphaParam = SimpleAlphaParam
+
+@newmodelsimple PTVAlpha PTVAlphaModel PTVAlphaParam
+export PTVAlpha
+
+"""
+    PTVAlpha <: PTVAlphaModel
+    
+    PTVAlpha(components;
+    userlocations = String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+
+- `acentricfactor`: Single Parameter (`Float64`)
+
+## Description
+
+Cubic alpha `(α(T))` model. Default for [`PTV`](@ref) EoS.
+```
+αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
+Trᵢ = T/Tcᵢ
+mᵢ = 0.46283 + 3.58230*Zcᵢ*ωᵢ - 8.19417*(Zcᵢ*ωᵢ)²
+```
+
+## Model Construction Examples
+```
+# Using the default database
+alpha = PTVAlpha("water") #single input
+alpha = PTVAlpha(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = PTVAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
+
+# Passing parameters directly
+alpha = PTVAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
+```
+
+"""
+PTVAlpha
+default_locations(::Type{PTVAlpha}) = critical_data()
+
 abstract type PTVModel <: PatelTejaModel end
+
+@inline function α_m(model::PTVModel,alpha_model::PTVAlphaModel,i)
+    Tc = model.params.Tc.values[i]
+    Pc = model.params.Pc.values[i]
+    Vc = model.params.Vc.values[i]
+    Zc = Vc*Pc/(R̄*Tc)
+    coeff = (0.46283,3.58230,8.19417)
+    ω = alpha_model.params.acentricfactor.values[i]
+    return evalpoly(ω*Zc,coeff)
+end
 
 const PTVParam = ABCCubicParam
 
@@ -55,9 +112,9 @@ aᵢᵢ = Ωaᵢ(R²Tcᵢ²/Pcᵢ)
 bᵢᵢ = Ωbᵢ(R²Tcᵢ/Pcᵢ)
 cᵢ = Ωcᵢ(R²Tcᵢ/Pcᵢ)
 Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
-Ωaᵢ = 0.66121 - 0.76105Zcᵢ
-Ωbᵢ = 0.02207 + 0.20868Zcᵢ
-Ωcᵢ = 0.57765 - 1.87080Zcᵢ
+Ωaᵢ = 0.66121 - 0.76105*Zcᵢ
+Ωbᵢ = 0.02207 + 0.20868*Zcᵢ
+Ωcᵢ = 0.57765 - 1.87080*Zcᵢ
 
 γ = ∑cᵢxᵢ/∑bᵢxᵢ
 δ = 1 + 6γ + γ²

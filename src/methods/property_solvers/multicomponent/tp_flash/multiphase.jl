@@ -16,27 +16,27 @@ end
 
 Method to solve non-reactive multiphase (`np` phases), multicomponent (`nc` components) flash problem.
 
-The flash algorithm uses successive stability tests to find new phases [1], and then tries to solve the system via rachford-rice and succesive substitution for `nc * np * ss_iters` iterations.
+The flash algorithm uses successive stability tests to find new phases [1], and then tries to solve the system via Rachford-Rice and succesive substitution for `nc * np * ss_iters` iterations.
 
-If the Rachford-Rice SS fails to converge, it proceeds to solve the system via gibbs minimization in VT-space using lnK-β-ρ as variables [3].
+If the Rachford-Rice SS fails to converge, it proceeds to solve the system via Gibbs minimization in VT-space using lnK-β-ρ as variables [3].
 
-The algorithm finishes when SS or the gibbs minimization converges and all resulting phases are stable.
+The algorithm finishes when SS or the Gibbs minimization converges and all resulting phases are stable.
 
 If the result of the phase equilibria is not stable, then it proceeds to add/remove phases again, for a maximum of `phase_iters` iterations.
 
 ### Keyword Arguments:
 
-- `K0` (optional), initial guess for the constants K
-- `x0` (optional), initial guess for the composition of phase x
-- `y0` (optional), initial guess for the composition of phase y
-- `n0` (optional), initial guess for all compositions. it can be a matrix or a vector of vectors.
-- `K_tol = sqrt(eps(Float64))`, tolerance to stop the calculation (`norm(lnK,1) < K_tol`)
+- `K0` (optional), initial guess for the constants K.
+- `x0` (optional), initial guess for the composition of phase x.
+- `y0` (optional), initial guess for the composition of phase y.
+- `n0` (optional), initial guess for all compositions. It can be a matrix or a vector of vectors.
+- `K_tol = sqrt(eps(Float64))`, tolerance to stop the calculation (`norm(lnK,1) < K_tol`).
 - `ss_iters = 6`, number of Successive Substitution iterations to perform.
-- `nacc = 5`, accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
-- `second_order = true`, whether to solve the Gibbs energy minimization using the analytical hessian or not. If set to `false`, the gibbs minimization will be done using L-BFGS.
+- `nacc = 5`, accelerate successive substitution method every nacc steps. Should be an integer bigger than 3. Set to 0 for no acceleration.
+- `second_order = true`, whether to solve the Gibbs energy minimization using the analytical hessian or not. If set to `false`, the Gibbs minimization will be done using L-BFGS.
 - `full_tpd` = false, whether to start with a simple K-split or using an intensive TPD search first.
-- `max_phases = typemax(Int)`, the algorithm stops if there are more than `min(max_phases,nc)` phases
-- `phase_iters = 20`, the maximum number of solve-add/remove-phase iterations
+- `max_phases = typemax(Int)`, the algorithm stops if there are more than `min(max_phases,nc)` phases.
+- `phase_iters = 20`, the maximum number of solve-add/remove-phase iterations.
 
 ## References
 1. Thermopack - Thermodynamic equilibrium algorithms reimplemented in a new framework. (2020, September 08). https://github.com/thermotools/thermopack. Retrieved May 4, 2024, from https://github.com/thermotools/thermopack/blob/main/docs/memo/flash/flash.pdf
@@ -262,7 +262,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
 
     #δn_add = _add_phases!(model,p,T,z,_result,cache,options)
     if !δn_add && length(comps) == 1
-        g0 = _multiphase_gibbs(model,result)
+        g0,_ =modified_gibbs(model,result)
         return FlashResult(comps, βi, volumes, FlashData(p,T,g0))
     end
     gmix = NaN*one(eltype(volumes))
@@ -299,7 +299,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
             converged = neq_converged || ss_converged
             no_new_phases = !δn_add && !δn_remove
             converged = converged && no_new_phases
-            converged && ss_converged && (gmix = _multiphase_gibbs(model,result,idx_vapour[]))
+            converged && ss_converged && (gmix = first(modified_gibbs(model,result,vapour_phase_index = idx_vapour[])))
         end
         done = iter > max_iter
         done = done || converged
@@ -312,10 +312,14 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         removed = _remove_phases!(model,p,T,z,_result,cache,options)
         verbose && @info("[MPFLASH] final cleanup: removed duplicate/degenerate phases")
     end
+
+    idx_vapour_final = iszero(idx_vapour[]) ? -1 : idx_vapour[]
+
     if !isfinite(gmix)
-        gmix = _multiphase_gibbs(model,result)
+        gmix,_ = modified_gibbs(model,result;vapour_phase_index=idx_vapour_final)
     end
-    return FlashResult(result.compositions,result.fractions,result.volumes, FlashData(p,T,gmix))
+
+    return FlashResult(result.compositions,result.fractions,result.volumes, FlashData(p,T,gmix,idx_vapour_final))
 end
 
 function neq_converged(model,p,T,z,result)
@@ -979,7 +983,7 @@ function _remove_phases!(model,p,T,z,_result,cache,options)
     #strategy B: remove one phase that does not help in equilibria
     βmin,imin = findmin(β)
     wmin,vmin = comps[imin],volumes[imin]
-    phase_min = __mpflash_phase(idx_vapour[],imin)
+    phase_min = vapour_idx_to_symbol(idx_vapour[],imin)
     gmin,_ = modified_gibbs(model,p,T,wmin,phase_min,vmin)
     wmix = similar(comps[1])
     for i in 1:np
@@ -988,7 +992,7 @@ function _remove_phases!(model,p,T,z,_result,cache,options)
         wmix .= βi .* wi .+ βmin .* wmin
         βmix = βi + βmin
         wmix .= wmix ./ sum(wmix)
-        phasei = __mpflash_phase(idx_vapour[],i)
+        phasei = vapour_idx_to_symbol(idx_vapour[],i)
         #gi = eos(model,vi,T,wi) + vi*p
         gi,_ = modified_gibbs(model,p,T,wi,phasei,vi)
         #gmix = eos(model,vmix,T,wmix) + vmix*p
@@ -1157,6 +1161,7 @@ end
 function multi_g_obj(model,p,T,z,_result,ss_cache)
     result_cache,x0,x,xx,f1,f2,f3,dem_cache,Hϕ = ss_cache
     result, idx_vapour = _result
+    RT = Rgas(model)*T
     nc = length(z)
     np = numphases(result)
     function f(𝕏)
@@ -1170,11 +1175,11 @@ function multi_g_obj(model,p,T,z,_result,ss_cache)
         βnp = 1 - sum(β)
         xnp .= z ./ t
         vnp = vols[np]
-        phase_np = __mpflash_phase(idx_vapour[],np)
+        phase_np = vapour_idx_to_symbol(idx_vapour[],np)
 
         #g = βnp*(eos(model,vnp,T,xnp) + p*vnp)
         if has_a_res(model)
-            g = βnp*(eos(model,vnp,T,xnp) + p*vnp)
+            g = βnp*(eos(model,vnp,T,xnp) + p*vnp)/RT
         else
             g = βnp*modified_gibbs(model,p,T,xnp,phase_np,vnp)[1]
         end
@@ -1183,17 +1188,16 @@ function multi_g_obj(model,p,T,z,_result,ss_cache)
             Ki = viewn(𝕏,nc,i)
             xi .= xnp .* exp.(Ki)
             vi = exp(vols[i])
-            phase_i = __mpflash_phase(idx_vapour[],i)
+            phase_i = vapour_idx_to_symbol(idx_vapour[],i)
             #g += β[i]*(eos(model,vi,T,xi) + p*vi)
             if has_a_res(model)
-                g += β[i]*(eos(model,vi,T,xi) + p*vi)
+                g += β[i]*(eos(model,vi,T,xi) + p*vi)/RT
             else
                 g += β[i]*modified_gibbs(model,p,T,xi,phase_i,vi)[1]
             end
         end
-        return g/(Rgas(model)*T)
+        return g
     end
-
     return f
 end
 

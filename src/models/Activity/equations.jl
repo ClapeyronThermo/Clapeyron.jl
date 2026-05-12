@@ -51,7 +51,7 @@ function lnγ_impl!(res,::IdealLiquidSolution,p,T,z)
     return res
 end
 
-K0_lle_init(::IdealLiquidSolution,p,T,z) = throw(error("IdealLiquidSolution() does not support LLE equilibria."))
+K0_lle_init(::IdealLiquidSolution,p,T,z,cache = nothing;reduced = true) = throw(error("IdealLiquidSolution() does not support LLE equilibria."))
 
 function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
     X = gradient_type(model,T,z)
@@ -133,10 +133,11 @@ The main problem is that activity models are defined in a P-T basis, while the H
 we circunvent this by using the dispatches on PT_property.
 Activity models are transformed into a GammaPhi wrapper that evaluates the pure and excess parts in a correct way.
 
-=#
 function eos_impl(model::ActivityModel,V,T,z)
     return excess_gibbs_free_energy(model,V,T,z) + reference_state_eval(model,V,T,z)
 end
+=#
+
 
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
@@ -399,6 +400,9 @@ function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)
     PTFlashWrapper(model,p,T,z,equilibrium)
 end
 
+function fluid_model(model::T) where T <:ActivityModel
+    return fluid_model(__act_to_gammaphi(model,tp_flash,false))
+end
 
 #LLE point. It does not require an input concentration, because it assumes that activities are pressure-independent.
 """
@@ -450,9 +454,9 @@ end
 
 export LLE
 
-function PT_property(model::ActivityModel,p,T,z,phase,threaded,vol0,f::F,v::Val{UseP}) where {F,UseP}
+function PT_property(model::ActivityModel,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
     γϕ = __act_to_gammaphi(model)
-    PT_property(γϕ,p,T,z,phase,threaded,vol0,f,v)
+    PT_property(γϕ,p,T,z,phase,threaded,vol0,f,vol)
 end
 
 function set_reference_state!(model::ActivityModel,reference_state::ReferenceState;verbose = verbose)
@@ -474,4 +478,16 @@ function thermodynamic_factor(model::ActivityModel, p, T, z)
 
     Γ = LinearAlgebra.I(N-1) .+  xN1 .* ∂lnγᵢ∂xⱼ
     return Γ
+end
+
+#edge pressure/edge temperature
+
+function _edge_pressure(model::ActivityModel,T,z,v0 = nothing,crit_retry = false)
+    wrapper = PTFlashWrapper(model,NaN,T,z,:vle)
+    return _edge_pressure(wrapper,T,z,v0,crit_retry)
+end
+
+function _edge_temperature(model::ActivityModel,p,z,v0 = nothing)
+    wrapper = PTFlashWrapper(model,p,NaN,z,:vle)
+    return _edge_temperature(wrapper,p,z,v0)
 end
