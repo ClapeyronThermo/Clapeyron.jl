@@ -661,7 +661,7 @@ However, if one zooms in, we can see the three independent curves:
 
 The final class of binary mixture we'll consider is type-IV/V.
 In these mixtures, we have more than one UCEP.
-Once again, the critical curve is  broken up into two.
+Once again, the critical curve is broken up into two.
 However, this time, both of them reconnect on a UCEP.
 The only difference between type-IV and type-V is that the former has an additional UCEP due to the presence of a UCST curve.
 As we have already shown how to trace this curve in type-II mixtures, we'll focus on type-V mixtures.
