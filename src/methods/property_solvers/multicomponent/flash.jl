@@ -30,12 +30,13 @@ struct FlashData{R}
     p::R
     T::R
     g::R
+    vapour_idx::Int
 end
 
 Base.show(io::IO,::MIME"text/plain",options::FlashData) = show_as_namedtuple(io,options)
 Base.show(io::IO,options::FlashData) = show_as_namedtuple(io,options)
 
-Solvers.primalval(data::FlashData) = FlashData(primalval(data.p),primalval(data.T),primalval(data.g))
+Solvers.primalval(data::FlashData) = FlashData(primalval(data.p),primalval(data.T),primalval(data.g),data.vapour_idx)
 Solvers.primalval(result::FlashResult) = FlashResult(primalval.(result.compositions),primalval(result.fractions),primalval(result.volumes),primalval(result.data))
 
 function Solvers.recursive_fd_extract_derivative(X::XX,result::FlashResult) where XX
@@ -45,7 +46,7 @@ function Solvers.recursive_fd_extract_derivative(X::XX,result::FlashResult) wher
     T = Solvers.recursive_fd_extract_derivative(X,result.data.T)
     p = Solvers.recursive_fd_extract_derivative(X,result.data.p)
     g = Solvers.recursive_fd_extract_derivative(X,result.data.g)
-    data = FlashData(p,T,g)
+    data = FlashData(p,T,g,result.data.vapour_idx)
     return FlashResult(comps,β,vols,data)
 end
 
@@ -56,7 +57,7 @@ function Solvers.recursive_fd_value(result::FlashResult)
     T = Solvers.recursive_fd_value(result.data.T)
     p = Solvers.recursive_fd_value(result.data.p)
     g = Solvers.recursive_fd_value(result.data.g)
-    data = FlashData(p,T,g)
+    data = FlashData(p,T,g,result.data.vapour_idx)
     return FlashResult(comps,β,vols,data)
 end
 
@@ -74,16 +75,24 @@ end
 
 function FlashData(p::R1,T::R2,g::R3) where{R1,R2,R3}
     if g === nothing
-        FlashData(promote(p,T)...)
+        FlashData(promote(p,T)...,0)
     else
-        return FlashData(promote(p,T,g)...)
+        return FlashData(promote(p,T,g)...,0)
     end
 end
 
-FlashData(p,T) = FlashData(p,T,1.0*zero(p))
+function FlashData(p::R1,T::R2,g::R3,i) where{R1,R2,R3}
+    if g === nothing
+        FlashData(promote(p,T)...,i)
+    else
+        return FlashData(promote(p,T,g)...,i)
+    end
+end
+
+FlashData(p,T) = FlashData(p,T,1.0*zero(p),0)
 
 #mol checker, with gibbs
-function FlashResult(model::EoSModel,p,T,z::Union{Number,AbstractVector{<:Number}},comps,β,volumes,g = nothing;sort = true)
+function FlashResult(model::EoSModel,p,T,z::Union{Number,AbstractVector{<:Number}},comps,β,volumes,g = nothing;sort = true,vapour_phase_index = 0)
     ∑β = sum(β)
     ∑z = sum(z)
     if !isapprox(∑z,∑β)
@@ -91,23 +100,24 @@ function FlashResult(model::EoSModel,p,T,z::Union{Number,AbstractVector{<:Number
     else
         _β = β * one(∑z/∑β)
     end
-    return FlashResult(model,p,T,comps,_β,volumes,g;sort)
+    return FlashResult(model,p,T,comps,_β,volumes,g;sort,vapour_phase_index)
 end
 
 #constructor that fills the Gibbs energy automatically
-function FlashResult(model::EoSModel,p,T,comps,β,volumes,g = nothing;sort = true)
+function FlashResult(model::EoSModel,p,T,comps,β,volumes,g = nothing;sort = true,vapour_phase_index = 0)
     if g == nothing
-        flash = FlashResult(p,T,comps,β,volumes,sort = false)
+        data = FlashData(p,T,zero(p),vapour_phase_index)
+        flash = FlashResult(comps,β,volumes,data)
         Gmix = gibbs_free_energy(model,flash)
         _g = Gmix/(sum(β)*Rgas(model)*T)
     else
         _g = g
     end
-    return FlashResult(p,T,comps,β,volumes,_g;sort)
+    return FlashResult(p,T,comps,β,volumes,_g;sort,vapour_phase_index)
 end
 
 #mol checker, without gibbs
-function FlashResult(p::Number,T::Number,z::Union{Number,AbstractVector{<:Number}},comps,β,volumes,g = nothing;sort = true)
+function FlashResult(p::Number,T::Number,z::Union{Number,AbstractVector{<:Number}},comps,β,volumes,g = nothing;sort = true,vapour_phase_index = 0)
     ∑β = sum(β)
     ∑z = sum(z)
     if !isapprox(∑z,∑β)
@@ -115,29 +125,36 @@ function FlashResult(p::Number,T::Number,z::Union{Number,AbstractVector{<:Number
     else
         _β = β * one(∑z/∑β)
     end
-    return FlashResult(p,T,comps,_β,volumes,g;sort)
+    return FlashResult(p,T,comps,_β,volumes,g;sort,vapour_phase_index)
 end
 
 #constructor that does not fill the gibbs field
-function FlashResult(p::Number,T::Number,comps,β,volumes,g = nothing;sort = true)
-    data = FlashData(p,T,g)
+function FlashResult(p::Number,T::Number,comps,β,volumes,g = nothing;sort = true,vapour_phase_index = 0)
+    data = FlashData(p,T,g,vapour_phase_index)
     if !sort || issorted(volumes)
         return FlashResult(comps,β,volumes,data)
     else
         idx = sortperm(volumes)
-        return FlashResult(comps[idx],β[idx],volumes[idx],data)
+        vap_new = 0
+        if vapour_phase_index > 0
+            vap_new = idx[vapour_phase_index]
+        elseif vapour_phase_index == -1
+            vap_new = -1
+        end
+        sorted_data = FlashData(data.p,data.T,data.g,vap_new)
+        return FlashResult(comps[idx],β[idx],volumes[idx],sorted_data)
     end
 end
 
 #flash remaker
-function FlashResult(x::FlashResult,g = nothing;sort = true)
+function FlashResult(x::FlashResult,g = nothing;sort = true,vapour_phase_index = x.data.vapour_idx)
     comps,β,volumes,data = x.compositions,x.fractions,x.volumes,x.data
     if g !== nothing
         _g = g
     else
         _g = data.g
     end
-    return FlashResult(data.p,data.T,comps,β,volumes,_g;sort)
+    return FlashResult(data.p,data.T,comps,β,volumes,_g;sort,vapour_phase_index)
 end
 
 #constructor for single phase
@@ -146,7 +163,14 @@ function FlashResult(model::EoSModel,p::Number,T::Number,z;phase = :unknown)
     comps = [z ./ ∑z]
     volumes = [volume(model,p,T,z;phase = phase)/∑z]
     β = [∑z*one(eltype(volumes))]
-    return FlashResult(model,p,T,comps,β,volumes;sort = false)
+    vapour_phase_index = if is_liquid(phase)
+        -1
+    elseif is_vapour(phase)
+        1
+    else
+        0
+    end
+    return FlashResult(model,p,T,comps,β,volumes;sort = false,vapour_phase_index = vapour_phase_index)
 end
 
 #nan constructor
@@ -255,76 +279,64 @@ function volume(model::EoSModel,state::FlashResult, i::Integer)
     return vi*βi
 end
 
-function gibbs_free_energy(model::EoSModel,state::FlashResult)
+function vapour_idx_to_symbol(vapour_phase_index,i)
+    #phase == 0: phase not identified
+    #phase > 0 : one vapour phase
+    #phase > 0: zero vapour phases
+    if vapour_phase_index != 0
+        phase = vapour_phase_index == i ? :vapour : :liquid
+    else
+        phase = :unknown
+    end
+    return phase
+end
+
+function eval_flashresult_prop(model,state,f::F) where F
     p = pressure(state)
+    T = temperature(state)
+    cached_model = __tpflash_cache_model(model,p,T,state.compositions[1],:vle)
     res = zero(Base.promote_eltype(model,state))
-    for (vi,T,xi,βi) in eachphase(state)
-        res += βi*VT_gibbs_energy(model,vi,T,xi,p)
+    for i in 1:numphases(state)
+        βi = state.fractions[i]
+        xi = state.compositions[i]
+        vi = state.volumes[i]
+        phase = vapour_idx_to_symbol(state.data.vapour_idx,i)
+        res += βi*PT_property(cached_model,p,T,xi,phase,false,nothing,f,vi)
     end
     return res
 end
 
-function gibbs_free_energy(model::EoSModel,state::FlashResult, i)
+function eval_flashresult_prop_i(model,state,f::F,i,mass_prop) where F
     p = pressure(state)
-    vi,T,xi,βi = state.volumes[i],state.data.T,state.compositions[i],state.fractions[i]
-    return βi*VT_gibbs_energy(model,vi,T,xi,p)
+    T = temperature(state)
+    res = zero(Base.promote_eltype(model,state))
+    βi = state.fractions[i]
+    xi = state.compositions[i]
+    vi = state.volumes[i]
+    mm = mass_prop ? one(βi) : βi
+    cached_model = __tpflash_cache_model(model,p,T,state.compositions[1],:vle)
+    phase = vapour_idx_to_symbol(state.data.vapour_idx,i)
+    res += mm*PT_property(cached_model,p,T,xi,phase,false,nothing,f,vi)
+    return res
 end
 
-for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
+for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy,:gibbs_free_energy]
     @eval begin
-            function $prop(model::EoSModel,state::FlashResult)
-                res = zero(Base.promote_eltype(model,state))
-                for (vi,T,xi,βi) in eachphase(state)
-                    res += βi*VT0.$prop(model,vi,T,xi)
-                end
-                return res
-            end
-
-            function $prop(model::EoSModel,state::FlashResult, i::Integer)
-                res = zero(Base.promote_eltype(model,state))
-                vi,T,xi,βi = state.volumes[i],state.data.T,state.compositions[i],state.fractions[i]
-                res += βi*VT0.$prop(model,vi,T,xi)
-                return res
-            end
-
-            function $prop(model::ActivityModel,state::FlashResult; equilibrium=:unknown)
-                p = state.data.p
-                np = numphases(state)
-                res = zero(Base.promote_eltype(model,state))
-                has_vapor_phase = equilibrium != :lle
-                for (j,(vi,T,xi,βi)) in enumerate(eachphase(state))
-                    phase_j = (j == np && np > 1 && has_vapor_phase) ? :gas : :liquid
-                    res += βi*$prop(model,p,T,xi,phase = phase_j)
-                end
-                return res
-            end
-
-            function $prop(model::ActivityModel, state::FlashResult, i::Integer; equilibrium=:unknown)
-                p = state.data.p
-                np = numphases(state)
-                T, xi, βi = state.data.T, state.compositions[i], state.fractions[i]
-                has_vapor_phase = equilibrium != :lle
-                phase_i = (i == np && np > 1 && has_vapor_phase) ? :gas : :liquid
-                return βi*$prop(model,p,T,xi,phase = phase_i)
-            end
-        end
+        $prop(model::EoSModel,state::FlashResult) = eval_flashresult_prop(model,state,PT_to_VT($prop))
+        $prop(model::EoSModel,state::FlashResult, i::Integer)  = eval_flashresult_prop_i(model,state,PT_to_VT($prop),i,false)
+    end
 end
 
 mass_entropy(model::EoSModel,state::FlashResult) = entropy(model,state)/molecular_weight(model,state)
-mass_enthalpy(model::EoSModel,state::FlashResult) = mass_enthalpy(model,state)/molecular_weight(model,state)
-mass_internal_energy(model::EoSModel,state::FlashResult) = mass_internal_energy(model,state)/molecular_weight(model,state)
-mass_gibbs_free_energy(model::EoSModel,state::FlashResult) = mass_gibbs_free_energy(model,state)/molecular_weight(model,state)
-mass_helmholtz_free_energy(model::EoSModel,state::FlashResult) = mass_helmholtz_free_energy(model,state)/molecular_weight(model,state)
+mass_enthalpy(model::EoSModel,state::FlashResult) = enthalpy(model,state)/molecular_weight(model,state)
+mass_internal_energy(model::EoSModel,state::FlashResult) = internal_energy(model,state)/molecular_weight(model,state)
+mass_gibbs_free_energy(model::EoSModel,state::FlashResult) = gibbs_free_energy(model,state)/molecular_weight(model,state)
+mass_helmholtz_free_energy(model::EoSModel,state::FlashResult) = helmholtz_free_energy(model,state)/molecular_weight(model,state)
 
 for prop in [:mass_enthalpy,:mass_entropy,:mass_internal_energy,:mass_helmholtz_free_energy,:mass_gibbs_free_energy]
     @eval begin
-            function $prop(model::EoSModel,state::FlashResult, i::Integer)
-                res = zero(Base.promote_eltype(model,state))
-                vi,T,xi = state.volumes[i],state.data.T,state.compositions[i]
-                res += VT0.$prop(model,vi,T,xi)
-                return res
-            end
-        end
+        $prop(model::EoSModel,state::FlashResult, i::Integer) = eval_flashresult_prop_i(model,state,PT_to_VT($prop),i,true)
+    end
 end
 
 function assert_only_phase_index(state::FlashResult)
@@ -350,51 +362,47 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
     #higher :derivative :order :properties
     :fundamental_derivative_of_gas_dynamics,
     #volume :properties
-    :compressibility_factor,:identify_phase,
+    :identify_phase,
     :chemical_potential,:chemical_potential_res]
+    is_mass = prop == :mass_isochoric_heat_capacity || prop == :mass_isobaric_heat_capacity
     @eval begin
         function $prop(model::EoSModel,state::FlashResult)
-            i = assert_only_phase_index(state::FlashResult)
-            T = temperature(state)
-            p = pressure(state)
-            if iszero(i)
-                invalid_property_multiphase_error($prop,numphases(state),p,T)
-            end
-
-            x,v = state.compositions[i],state.volumes[i]
-            return VT0.$prop(model,v,T,x)
+            i = assert_only_phase_index(state)
+            iszero(i) && invalid_property_multiphase_error($prop,numphases(state),pressure(state),temperature(state))
+           return $prop(model,state,i)
         end
 
-        function $prop(model::EoSModel,state::FlashResult, i::Int)
-            x,v = state.compositions[i],state.volumes[i]
-            T = state.data.T
-            return VT0.$prop(model,v,T,x)
-        end
+        $prop(model::EoSModel,state::FlashResult, i::Int) = eval_flashresult_prop_i(model,state,PT_to_VT($prop),i,$is_mass)
     end
 end
 
-function __mpflash_phase(vapour_phase_index,i) 
-    if vapour_phase_index != 0
-        phase = vapour_phase_index == i ? :vapour : :liquid
-    else
-        phase = :unknown
-    end
-    return phase
+function compressibility_factor(model::EoSModel,state::FlashResult)
+    i = assert_only_phase_index(state)
+    iszero(i) && invalid_property_multiphase_error(compressibility_factor,numphases(state),pressure(state),temperature(state))
+    return compressibility_factor(model,state,i)
 end
 
-function modified_gibbs(model,result::FlashResult;vapour_phase_index = 0)
+function compressibility_factor(model::EoSModel,state::FlashResult,i::Integer)
+    pV = pressure(state)*state.volumes[i]
+    RT = Rgas(model)*temperature(state)
+    return pV/RT
+end
+
+
+function modified_gibbs(model,result::FlashResult;vapour_phase_index = result.data.vapour_idx)
     np = numphases(result)
     g = zero(Base.promote_eltype(result.compositions[1],result.fractions,result.volumes,result.data.p,result.data.T,model))
     p,T = result.data.p,result.data.T
+    cached_model = __tpflash_cache_model(model,p,T,result.compositions[1],:vle)
     v = result.volumes
     β = result.fractions
     x = result.compositions
     vx = zero(g)
     for i in 1:np
-        phase = __mpflash_phase(vapour_phase_index,i)
-        gi,vi = modified_gibbs(model,p,T,x[i],phase,v[i])
+        phase = vapour_idx_to_symbol(vapour_phase_index,i)
+        gi,_ = modified_gibbs(cached_model,p,T,x[i],phase,v[i])
         g += β[i]*gi
-        vx += β[i]*vi
+        vx += β[i]*v[i]
     end
     return g,vx
 end

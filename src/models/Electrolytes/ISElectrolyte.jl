@@ -46,9 +46,9 @@ function MeanIonicApproach(model::ESElectrolyteModel;salts = nothing)
     return MeanIonicApproach(components,model,salt)
 end
 
-function PT_property(model::MeanIonicApproach,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+function PT_property(model::MeanIonicApproach,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
     w = ion_compositions(model,z)
-    PT_property(model.model,p,T,w,phase,threaded,vol0,f,USEP)
+    PT_property(model.model,p,T,w,phase,threaded,vol0,f,vol)
 end
 
 function VT_pressure(model::MeanIonicApproach,V,T,z)

@@ -906,7 +906,7 @@ function px_flash_pure(model,p,x,z,spec::F,T0 = nothing,verbose = false) where F
         return FlashResult(model,p,Tx,SA[∑z*one(p)*one(Tx)],phase = _phase)
     else
         verbose && @info "$property between the liquid and vapour edges, in the phase change region"
-        return FlashResult(model,p,Ts,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false)
+        return FlashResult(model,p,Ts,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false,vapour_phase_index = 2)
     end
 end
 
@@ -956,7 +956,7 @@ function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing,verbose = false) where F
             Pcrit0 = TT(1.001Pc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
         end
         psc,_phase = __Pproperty(model,T,x/∑z,x1,spec,:unknown,Pcrit0,verbose)
-        return FlashResult(model,psc,T,SA[∑z*one(psc)*one(T)])
+        return FlashResult(model,psc,T,SA[∑z*one(psc)*one(T)],phase = _phase)
     end
 
     ps,vl,vv = TT.(sat)
@@ -976,7 +976,7 @@ function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing,verbose = false) where F
         px,_phase = __Pproperty(model,T,x/∑z,x1,spec,phase0,_p0,verbose)
         return FlashResult(model,px,T,SA[∑z*one(px)*one(T)],phase = _phase)
     else
-        return FlashResult(model,ps,T,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false)
+        return FlashResult(model,ps,T,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false,vapour_phase_index = 2)
     end
 end
 
@@ -997,47 +997,157 @@ function qflash_pure(model,spec::F,x,βv,z) where F
     if !isfinite(βv) || !isfinite(p) || !isfinite(T)
         return FlashResultInvalid(x1,βv)
     elseif isone(primalval(βv))
-        return FlashResult([x1],[∑z*oneunit(vv)],[vv],FlashData(p,T))
+        g = modified_gibbs(model,p,T,x1,:vapour,vv)
+        return FlashResult([x1],[∑z*oneunit(vv)],[vv],FlashData(p,T,g,1))
     elseif iszero(primalval(βv))
-        return FlashResult([x1],[∑z*oneunit(vv)],[vl],FlashData(p,T))
+        g = modified_gibbs(model,p,T,x1,:liquid,vl)
+        return FlashResult([x1],[∑z*oneunit(vv)],[vl],FlashData(p,T,g,-1))
     elseif βv < 0 || βv > 1
         throw(error("invalid specification of vapour fraction, it must be between 0 and 1."))
     else
-        return FlashResult(model,p,T,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false)
+        comps = [x1,x1]
+        vols = [vl,vv]
+        fracs = [∑z-∑z*βv,∑z*βv]
+        data = FlashData(p,T,zero(vv),2)
+        flash0 = FlashResult(comps,fracs,vols,data)
+        g = modified_gibbs(model,flash0)
+        return FlashResult(comps,fracs,vols,FlashData(p,T,g,2))
     end
 end
 
-# activity models
-function pt_flash_x0(model::ActivityModel,p,T,n,method,
-                     non_inx = FillArrays.Fill(false,length(model)),
-                     non_iny = FillArrays.Fill(false,length(model)))
-    wrapper = __tpflash_cache_model(model,p,T,n/sum(n),method.equilibrium)
-    return pt_flash_x0(wrapper,p,T,n,method,non_inx,non_iny)
-end
+function fug_ss_xy_flash!(model,p,T,x,y,z,vol0,β0,spec::F,data::FugData,cache) where F
+    volx,voly = vol0
 
-function xy_flash(model::ActivityModel, spec::FlashSpecifications{typeof(pressure)},
-                  z, flash0::FlashResult, method::FlashMethod)
-    p = spec.val1
-    X_spec = spec.val2
-    property = spec.spec2
-    T0 = flash0.data.T
-    wrapper = PTFlashWrapper(model, p, T0, z, method.equilibrium)
-    if method.equilibrium != :lle
-        _method = init_preferred_method(tp_flash,model,(;))
-        prob = Roots.ZeroProblem(_T -> _xy_residual(wrapper, p, _T, z, property, X_spec, _method),T0)
-    else
-        _method = init_preferred_method(tp_flash,model,(; equilibrium = :lle))
-        prob = Roots.ZeroProblem(_T -> _xy_residual(wrapper, p, _T, z, property, X_spec, _method), T0)
+    method = data.method
+    itmax_ss = data.itmax_ss
+    itmax_newton = data.itmax_newton
+    tol_xy = data.tol_xy
+    tol_of = data.tol_of
+    tol_pT = data.tol_pT
+    second_order = data.second_order
+    phasex,phasey = FugEnum.phases(method)
+    verbose = data.verbose
+    converged = false
+    tol_stability = abs2(cbrt(tol_xy))
+    #caches for ∂lnϕ∂n∂P∂T/∂lnϕ∂n∂P
+
+    lnK,K,w,w_old,w_calc,w_restart,_,Hϕx = cache
+
+    OF = NaN*zero(eltype(lnK))
+    βi = oftype(OF,NaN)
+    valid_iter = true
+    T_old,p_old = T,p
+    for j in 1:itmax_newton
+        x_restart .= x
+        y_restart .= y
+        volx_restart,voly_restart = volx,voly
+        valid_iter = true
+        if isnan(volx) || isnan(voly)
+            break
+        end
+        error = Inf*one(eltype(lnK))
+        for i in 1:itmax_ss
+            error < tol_xy && break
+
+            lnK_old .= lnK
+            lnϕx, volx = modified_lnϕ(model, p, T, x, Hϕx, vol0=volx, phase = phasex)
+            if isnan(volx)
+                lnϕx, volx = lnϕ(model, 1.1p, T, x, Hϕx, phase = phasex)
+            end
+            lnK .= lnϕx
+
+            lnϕy, voly = modified_lnϕ(model, p, T, y, Hϕx, vol0=voly, phase = phasey)
+            if isnan(voly)
+                lnϕy, voly = lnϕ(model, p, T, y, Hϕx, phase = phasey)
+            end
+            lnK .-= lnϕy
+
+            if isnan(volx) || isnan(voly)
+                break
+            end
+            K .= exp.(lnK)
+            βi = rachfordrice(K,z)
+
+            for i in 1:length(K)
+                non_inx[i] && (K[i] = Inf)
+                non_iny[i] && (K[i] = 0)
+            end
+            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny,false)
+        
+            error = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
+
+            if dnorm(x,y,Inf) < tol_stability #the interation procedure went wrong. perform a T/P movement first
+                x .= x_restart
+                y .= y_restart
+                valid_iter = false
+                volx,voly = volx_restart,voly_restart
+                K .= y ./ x
+                lnK .= log.(K)
+                break
+            end
+        end
+
+        OF_old = OF
+        OF,∂OF = 1.0,1.0 #TODO
+
+        if _pressure && second_order
+            OF,∂OF = 1.0,1.0 #TODO
+        elseif !_pressure && second_order
+            OF,∂OF = 1.0,1.0 #TODO
+        elseif _pressure && !second_order
+            OF = 1.0
+            if j == 1
+                ∂OF = OF/sqrt(eps(p))
+            else
+                ∂OF = (OF - OF_old)/(p - p_old)
+            end
+        else
+            OF = 1.0
+            if j == 1
+                ∂OF = OF/sqrt(eps(T))
+            else
+                ∂OF = (OF - OF_old)/(T - T_old)
+            end
+        end
+        if isnan(volx) || isnan(voly)
+            break
+        end
+
+        ∂step = OF / ∂OF
+        if valid_iter && abs(∂step) < tol_pT || abs(OF) < tol_of
+            converged = true
+            break
+        end
+        if _pressure
+            ∂step = clamp(∂step,-0.4*p,0.4*p)
+            p_old = p
+            p -= ∂step
+        else
+            ∂step = clamp(∂step,-0.05*T,0.05*T)
+            T_old = T
+            Tinv = 1/T + ∂step/(T*T)
+            T = 1/Tinv
+            #T -= ∂step
+            update_temperature!(model,T)
+        end
+
+        if !isfinite(∂step) #error, fail early, the NaN propagation is handled upstream
+            converged = true
+            break
+        end
     end
-    T_eq = Roots.solve(prob,Roots.Order0(); atol=method.atol, rtol=method.rtol)
-    return tp_flash2(model,p,T_eq,z,_method)
-end
 
-function _xy_residual(wrapper, p, T, z, property, X_spec, _method)
-    update_temperature!(wrapper, T)
-    flash = tp_flash2(wrapper,p,T,z,_method)
-    X = property(wrapper, flash)
-    return X - X_spec
+    if !valid_iter
+        w .= NaN
+        lnK .= NaN
+        volx,voly = w[1],w[1]
+        if _pressure
+            p = w[1]
+        else
+            T = w[1]
+        end
+    end
+    return converged,(p,T,_x,_y,(volx,voly))
 end
 
 export GeneralizedXYFlash,xy_flash

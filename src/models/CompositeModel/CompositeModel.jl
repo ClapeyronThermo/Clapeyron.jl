@@ -383,14 +383,14 @@ function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
 end
 
 #dispatcher for bulk properties
-function PT_property(model::CompositeModel,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+function PT_property(model::CompositeModel,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
     
     if model.solid === nothing || is_liquid(phase) || is_vapour(phase)
-        return PT_property(model.fluid,p,T,z,phase,threaded,vol0,f,USEP)
+        return PT_property(model.fluid,p,T,z,phase,threaded,vol0,f,vol)
     end
 
     if model.fluid === nothing || is_solid(phase)
-        return PT_property(model.solid,p,T,z,phase,threaded,vol0,f,USEP)
+        return PT_property(model.solid,p,T,z,phase,threaded,vol0,f,vol)
     end
 
     if is_unknown(phase) || phase == :stable
