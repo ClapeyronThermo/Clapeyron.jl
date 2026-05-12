@@ -203,13 +203,26 @@ end
 function eos_g(ref::ReferenceState,p,T,z)
     return reference_state_eval(ref,T,T,z)
 end
+#simple wrapper of a ReferenceState + molecular weight
+
+struct ReferenceStateWithMw{T}
+    ref::ReferenceState
+    mw::T
+end
+
+function eos_g(model::ReferenceStateWithMw,p,T,z)
+    return reference_state_eval(model.ref,T,T,z)
+end
+
+molecular_weight(model::ReferenceStateWithMw,z) = model.mw
 
 function Δref(model,model2,p,T,z,f)
     ref_gas = reference_state(model2)
     ref_wrap = reference_state(model)
     _0 = zero(Base.promote_eltype(1.0,T,z))
-    prop_ref_gas = isnothing(ref_gas) ? _0 : PT_property_gibbs(ref_gas,p,T,z,f)
-    prop_ref_wrap = isnothing(ref_wrap) ? _0 : PT_property_gibbs(ref_wrap,p,T,z,f)
+    mwz = molecular_weight(model,z)
+    prop_ref_gas = isnothing(ref_gas) ? _0 : PT_property_gibbs(ReferenceStateWithMw(ref_gas,mwz),p,T,z,f)
+    prop_ref_wrap = isnothing(ref_wrap) ? _0 : PT_property_gibbs(ReferenceStateWithMw(ref_wrap,mwz),p,T,z,f)
     return prop_ref_wrap - prop_ref_gas
 end
 

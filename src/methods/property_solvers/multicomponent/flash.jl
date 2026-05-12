@@ -320,7 +320,7 @@ function eval_flashresult_prop_i(model,state,f::F,i,mass_prop) where F
     return res
 end
 
-for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
+for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy,:gibbs_free_energy]
     @eval begin
         $prop(model::EoSModel,state::FlashResult) = eval_flashresult_prop(model,state,PT_to_VT($prop))
         $prop(model::EoSModel,state::FlashResult, i::Integer)  = eval_flashresult_prop_i(model,state,PT_to_VT($prop),i,false)
