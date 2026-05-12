@@ -1015,26 +1015,28 @@ function pt_flash_x0(model::ActivityModel,p,T,n,method,
     return pt_flash_x0(wrapper,p,T,n,method,non_inx,non_iny)
 end
 
-function xy_flash(model::ActivityModel,spec::FlashSpecifications{typeof(pressure)},
-                  z,flash0::FlashResult,method::FlashMethod)
+function xy_flash(model::ActivityModel, spec::FlashSpecifications{typeof(pressure)},
+                  z, flash0::FlashResult, method::FlashMethod)
     p = spec.val1
     X_spec = spec.val2
     property = spec.spec2
     T0 = flash0.data.T
+    wrapper = PTFlashWrapper(model, p, T0, z, method.equilibrium)
     if method.equilibrium != :lle
         _method = init_preferred_method(tp_flash,model,(;))
-        prob = Roots.ZeroProblem(_T -> _xy_residual(model, p, _T, z, property, X_spec, _method),T0)
+        prob = Roots.ZeroProblem(_T -> _xy_residual(wrapper, p, _T, z, property, X_spec, _method),T0)
     else
         _method = init_preferred_method(tp_flash,model,(; equilibrium = :lle))
-        prob = Roots.ZeroProblem(_T -> _xy_residual(model, p, _T, z, property, X_spec, _method), T0)
+        prob = Roots.ZeroProblem(_T -> _xy_residual(wrapper, p, _T, z, property, X_spec, _method), T0)
     end
     T_eq = Roots.solve(prob,Roots.Order0(); atol=method.atol, rtol=method.rtol)
     return tp_flash2(model,p,T_eq,z,_method)
 end
 
-function _xy_residual(model, p, T, z, property, X_spec, _method)
-    flash = tp_flash2(model,p,T,z,_method)
-    X = property(model, flash; equilibrium=_method.equilibrium)
+function _xy_residual(wrapper, p, T, z, property, X_spec, _method)
+    update_temperature!(wrapper, T)
+    flash = tp_flash2(wrapper,p,T,z,_method)
+    X = property(wrapper, flash)
     return X - X_spec
 end
 
