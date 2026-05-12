@@ -994,10 +994,10 @@ function qflash_pure(model,spec::F,x,βv,z) where F
     if !isfinite(βv) || !isfinite(p) || !isfinite(T)
         return FlashResultInvalid(x1,βv)
     elseif isone(primalval(βv))
-        g = modified_gibbs(model,p,T,x1,:vapour,vv)
+        g,_ = modified_gibbs(model,p,T,x1,:vapour,vv)
         return FlashResult([x1],[∑z*oneunit(vv)],[vv],FlashData(p,T,g,1))
     elseif iszero(primalval(βv))
-        g = modified_gibbs(model,p,T,x1,:liquid,vl)
+        g,_ = modified_gibbs(model,p,T,x1,:liquid,vl)
         return FlashResult([x1],[∑z*oneunit(vv)],[vl],FlashData(p,T,g,-1))
     elseif βv < 0 || βv > 1
         throw(error("invalid specification of vapour fraction, it must be between 0 and 1."))
@@ -1007,7 +1007,7 @@ function qflash_pure(model,spec::F,x,βv,z) where F
         fracs = [∑z-∑z*βv,∑z*βv]
         data = FlashData(p,T,zero(vv),2)
         flash0 = FlashResult(comps,fracs,vols,data)
-        g = modified_gibbs(model,flash0)
+        g,_ = modified_gibbs(model,flash0)
         return FlashResult(comps,fracs,vols,FlashData(p,T,g,2))
     end
 end
