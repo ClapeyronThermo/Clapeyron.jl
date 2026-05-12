@@ -73,12 +73,12 @@ end
 @inline gas_model(Base.@specialize(model::FluidCorrelation)) = model.gas
 liquid_model(model::FluidCorrelation) = model.liquid
 
-function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
     if is_vapour(phase)
-        return PT_property(model.gas,p,T,z,phase,threaded,vol0,f,USEP)
+        return PT_property(model.gas,p,T,z,phase,threaded,vol0,f,vol)
     else #liquid or unknown
         wrapper = PTFlashWrapper(model,p,T,z,:vle)
-        return PT_property(wrapper,p,T,z,phase,threaded,vol0,USEP)
+        return PT_property(wrapper,p,T,z,phase,threaded,vol0,vol)
     end
 end
 

@@ -95,15 +95,15 @@ end
 
 lb_volume(model::PTFlashWrapper,T,z) = lb_volume(fluid_model(model),T,z)
 
-function PT_property(model::PTFlashWrapper,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+function PT_property(model::PTFlashWrapper,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
     if length(model) == 1
         fluidmodel = fluid_model(model)
-        return PT_property(fluidmodel,p,T,z,phase,threaded,vol0,f,USEP) + Δref(model,fluidmodel,p,T,z,f)
+        return PT_property(fluidmodel,p,T,z,phase,threaded,vol0,f,vol) + Δref(model,fluidmodel,p,T,z,f)
     end
 
     if phase == :stable || is_unknown(phase)
         new_phase = identify_phase(model,p,T,z,vol0 = vol0)
-        return PT_property(model,p,T,z,new_phase,threaded,vol0,f,USEP)
+        return PT_property(model,p,T,z,new_phase,threaded,vol0,f,vol)
     end
 
     #shortcut for one-component models:
@@ -114,17 +114,17 @@ function PT_property(model::PTFlashWrapper,p,T,z,phase,threaded,vol0,f::F,USEP::
     =#
     if is_vapour(phase)
         gasmodel = gas_model(model)
-        return PT_property(gasmodel,p,T,z,phase,threaded,vol0,f,USEP) + Δref(model,gasmodel,p,T,z,f)
+        return PT_property(gasmodel,p,T,z,phase,threaded,vol0,f,vol) + Δref(model,gasmodel,p,T,z,f)
 
     elseif is_liquid(phase)
         if __γ_unwrap(model) isa IdealLiquidSolution
             #liquid phase + no activity: just delegate to the liquid model, whatever that model may be
             #even for saturated liquid volumes, you can get some props
-            return PT_property(liquid_model(model),p,T,z,phase,threaded,vol0,f,USEP)
+            return PT_property(liquid_model(model),p,T,z,phase,threaded,vol0,f,vol)
         end
 
         return PT_property_gibbs(model,p,T,z,f)
-        #return PT_property(ActivityModelAresWrapper(model),p,T,z,phase,threaded,vol0,f,USEP)
+        #return PT_property(ActivityModelAresWrapper(model),p,T,z,phase,threaded,vol0,f)
     else
         throw(error("invalid phase specifier: $phase"))
     end

@@ -67,7 +67,7 @@ function ∂²𝕘∂T²(model,p,T,z)
 end
 #property logic
 
-function PT_property(model::GibbsBasedModel,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+function PT_property(model::GibbsBasedModel,p,T,z,phase,threaded,vol0,f::F,vol) where {F}
     z isa Number && return PT_property_gibbs(model,p,T,SVector(z),f)
     return PT_property_gibbs(model,p,T,z,f)
 end

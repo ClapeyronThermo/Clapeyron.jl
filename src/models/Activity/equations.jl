@@ -454,9 +454,9 @@ end
 
 export LLE
 
-function PT_property(model::ActivityModel,p,T,z,phase,threaded,vol0,f::F,v::Val{UseP}) where {F,UseP}
+function PT_property(model::ActivityModel,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
     γϕ = __act_to_gammaphi(model)
-    PT_property(γϕ,p,T,z,phase,threaded,vol0,f,v)
+    PT_property(γϕ,p,T,z,phase,threaded,vol0,f,vol)
 end
 
 function set_reference_state!(model::ActivityModel,reference_state::ReferenceState;verbose = verbose)

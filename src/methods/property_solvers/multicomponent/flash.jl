@@ -279,16 +279,14 @@ end
 function eval_flashresult_prop(model,state,f::F) where F
     p = pressure(state)
     T = temperature(state)
+    cached_model = __tpflash_cache_model(model,p,T,state.compositions[1],:vle)
     res = zero(Base.promote_eltype(model,state))
     for i in 1:numphases(state)
         βi = state.fractions[i]
         xi = state.compositions[i]
         vi = state.volumes[i]
-        if f == gibbs_energy
-            res += βi*VT_gibbs_energy(model,vi,T,xi,p)
-        else
-            res += βi*spec_to_vt(model,vi,T,xi,f)
-        end
+        phase = vapour_idx_to_symbol(state.data.vapour_idx,i)
+        res += βi*PT_property(cached_model,p,T,xi,phase,false,nothing,f,vi)
     end
     return res
 end
@@ -301,18 +299,16 @@ function eval_flashresult_prop_i(model,state,f::F,i,mass_prop) where F
     xi = state.compositions[i]
     vi = state.volumes[i]
     mm = mass_prop ? one(βi) : βi
-    if f == gibbs_energy
-        res += mm*VT_gibbs_energy(model,vi,T,xi,p)
-    else
-        res += mm*spec_to_vt(model,vi,T,xi,f)
-    end
+    cached_model = __tpflash_cache_model(model,p,T,state.compositions[1],:vle)
+    phase = vapour_idx_to_symbol(state.data.vapour_idx,i)
+    res += mm*PT_property(cached_model,p,T,xi,phase,false,nothing,f,vi)
     return res
 end
 
 for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy]
     @eval begin
-        $prop(model::EoSModel,state::FlashResult) = eval_flashresult_prop(model,state,$prop)
-        $prop(model::EoSModel,state::FlashResult, i::Integer)  = eval_flashresult_prop_i(model,state,$prop,i,false)
+        $prop(model::EoSModel,state::FlashResult) = eval_flashresult_prop(model,state,PT_to_VT($prop))
+        $prop(model::EoSModel,state::FlashResult, i::Integer)  = eval_flashresult_prop_i(model,state,PT_to_VT($prop),i,false)
     end
 end
 
@@ -324,7 +320,7 @@ mass_helmholtz_free_energy(model::EoSModel,state::FlashResult) = mass_helmholtz_
 
 for prop in [:mass_enthalpy,:mass_entropy,:mass_internal_energy,:mass_helmholtz_free_energy,:mass_gibbs_free_energy]
     @eval begin
-        $prop(model::EoSModel,state::FlashResult, i::Integer) = eval_flashresult_prop_i(model,state,$prop,i,true)
+        $prop(model::EoSModel,state::FlashResult, i::Integer) = eval_flashresult_prop_i(model,state,PT_to_VT($prop),i,true)
     end
 end
 
@@ -366,7 +362,7 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
            return $prop(model,state,i)
         end
 
-        $prop(model::EoSModel,state::FlashResult, i::Int) = eval_flashresult_prop_i(model,state,$prop,i,is_mass)
+        $prop(model::EoSModel,state::FlashResult, i::Int) = eval_flashresult_prop_i(model,state,PT_to_VT($prop),i,is_mass)
     end
 end
 

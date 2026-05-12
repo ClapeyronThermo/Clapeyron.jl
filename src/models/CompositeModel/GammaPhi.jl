@@ -185,13 +185,13 @@ function modified_∂lnϕ∂n(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, z, cach
     end
 end
 
-function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
     if is_vapour(phase)
         gasmodel = gas_model(model)
-        return PT_property(gasmodel,p,T,z,phase,threaded,vol0,f,USEP) + Δref(model,gasmodel,p,T,z,f)
+        return PT_property(gasmodel,p,T,z,phase,threaded,vol0,f,vol) + Δref(model,gasmodel,p,T,z,f)
     else #liquid or unknown
         wrapper = PTFlashWrapper(model,p,T,z,:vle)
-        return PT_property(wrapper,p,T,z,phase,threaded,vol0,f,USEP)    
+        return PT_property(wrapper,p,T,z,phase,threaded,vol0,f,vol)
     end
 end
 
