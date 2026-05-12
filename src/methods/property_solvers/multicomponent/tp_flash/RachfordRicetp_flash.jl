@@ -81,7 +81,7 @@ end
 function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
     x,y,β,v,lle = tp_flash_michelsen(model_cached,p,T,z,method,true)
-    vapour_idx = 2
+    vapour_idx = lle ? -1 : 2
     volumes = [v[1],v[2]]
     comps = [x,y]
     βi = [1-β ,β]

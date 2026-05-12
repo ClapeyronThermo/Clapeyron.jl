@@ -529,7 +529,9 @@ function material_balance_rr_converged(w,z,β::AbstractVector,n = sum(z),ztol = 
             rk1 +=  Vi
             rk2 += abs(Vi)
         end
-        rk = max(rk,abs(rk1 - zi)/abs(rk2 + zi))
+        if !iszero(zi)
+            rk = max(rk,abs(rk1 - zi)/abs(rk2 + zi))
+        end
     end
     return rk <= ztol
 end

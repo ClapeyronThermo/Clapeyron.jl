@@ -91,10 +91,13 @@ function tp_flash2(model::EoSModel, p, T, n,method::FlashMethod)
     else
         result = tp_flash_impl(model_r,p,T,z_r,method_r)
     end
+    
     if !issorted(result.volumes)
+        @show result.data
         #this is in case we catch a bad result.
         result = FlashResult(result)
     end
+    
     ∑β = sum(result.fractions)
     result.fractions ./= ∑β
     result.fractions .*= ∑n

@@ -22,14 +22,17 @@ function tp_flash_K0!(K,wrapper::PTFlashWrapper,p,T,z)
     K .= first.(wrapper.sat) ./ p
 end
 
-function K0_lle_init(wrapper::PTFlashWrapper,p,T,z)
-    return K0_lle_init(__γ_unwrap(wrapper),p,T,z)
+function K0_lle_init(wrapper::PTFlashWrapper,p,T,z,cache = tpd_cache(wrapper,p,T,z);reduced = true)
+    return K0_lle_init(__γ_unwrap(wrapper),p,T,z,cache;reduced)
 end
 
 function PTFlashWrapper{TT}(model,equilibrium,pures = split_pure_model(model)) where TT
     nc = length(model)
     sat = Vector{Tuple{TT,TT,TT}}(undef,nc)
+    nan = TT(NaN)
+    fill!(sat,(nan,nan,nan))
     ϕpure = Vector{TT}(undef,nc)
+    fill!(ϕpure,nan)
     return PTFlashWrapper(component_list(model),model,pures,sat,ϕpure,equilibrium)
 end
 

@@ -81,6 +81,14 @@ function FlashData(p::R1,T::R2,g::R3) where{R1,R2,R3}
     end
 end
 
+function FlashData(p::R1,T::R2,g::R3,i) where{R1,R2,R3}
+    if g === nothing
+        FlashData(promote(p,T)...,i)
+    else
+        return FlashData(promote(p,T,g)...,i)
+    end
+end
+
 FlashData(p,T) = FlashData(p,T,1.0*zero(p),0)
 
 #mol checker, with gibbs
@@ -127,12 +135,19 @@ function FlashResult(p::Number,T::Number,comps,β,volumes,g = nothing;sort = tru
         return FlashResult(comps,β,volumes,data)
     else
         idx = sortperm(volumes)
-        return FlashResult(comps[idx],β[idx],volumes[idx],data)
+        vap_new = 0
+        if vapour_phase_index > 0
+            vap_new = idx[vapour_phase_index]
+        elseif vapour_phase_index == -1
+            vap_new = -1
+        end
+        sorted_data = FlashData(data.p,data.T,data.g,vap_new)
+        return FlashResult(comps[idx],β[idx],volumes[idx],sorted_data)
     end
 end
 
 #flash remaker
-function FlashResult(x::FlashResult,g = nothing;sort = true,vapour_phase_index = 0)
+function FlashResult(x::FlashResult,g = nothing;sort = true,vapour_phase_index = x.data.vapour_idx)
     comps,β,volumes,data = x.compositions,x.fractions,x.volumes,x.data
     if g !== nothing
         _g = g

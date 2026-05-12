@@ -131,7 +131,7 @@ __tpflash_cache_model(model::EoSModel,p,T,z,equilibrium) = model
 function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
     x,y,β,v,lle = tp_flash_michelsen(model_cached,p,T,z,method,true)
-    vapour_idx = 2
+    vapour_idx = lle ? -1 : 2
     volumes = [v[1],v[2]]
     comps = [x,y]
     βi = [1-β ,β]
@@ -186,6 +186,14 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
 
     # components that are allowed to be in two phases
     in_equilibria = @. !non_inx & !non_iny
+    
+    if reduced && any(iszero,z)
+        for i in 1:length(z)
+            if iszero(z[i])
+                in_equilibria[i] = false
+            end
+        end
+    end
 
     # Computing the initial guess for the K vector
     TT = Base.promote_eltype(model,p,T,z)
@@ -220,7 +228,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
             Kmin,Kmax = K_extrema(K,non_inx,non_iny)
             if Kmax < 1 #only try LLE if the VLE K0 suggests only liquid phase
                 verbose && @info "VLE correlation failed, trying LLE initial point."
-                K_lle = K0_lle_init(model,p,T,z)
+                tpd_cache0 = similar(K),similar(K),similar(K),similar(K),Ref(_0),dlnϕ_cache
+                K_lle = K0_lle_init(model,p,T,z,tpd_cache0;reduced)
                 if any(!isone,K_lle) #only use LLE result if actually exists
                     K .= K_lle
                 end
@@ -233,7 +242,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
        # volx,voly = NaN*_1,NaN*_1
     else
         verbose && @info "K0 calculated via LLE initial point (tpd)"
-        K .= K0_lle_init(model,p,T,z)
+        tpd_cache1 = similar(K),similar(K),similar(K),similar(K),Ref(_0),dlnϕ_cache
+        K .= K0_lle_init(model,p,T,z,tpd_cache1;reduced)
         lnK .= log.(K)
         phasey = :liquid
         phases = (:liquid,:liquid)

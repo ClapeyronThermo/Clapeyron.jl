@@ -378,7 +378,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
             Kmin,Kmax = K_extrema(K,non_inx,non_iny)
             if Kmin > 1 || Kmax < 1
                 verbose && @info "VLE correlation failed, trying LLE initial point."
-                K .= K0_lle_init(model,p,T,z)
+                K .= K0_lle_init(model,p,T,z;reduced = true)
                 lnK .= log.(K)
                 phasex = :liquid
                 phasey = :liquid
@@ -392,7 +392,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         voly = zero(_1)
     else
         verbose && @info "K0 calculated via LLE initial point (tpd)"
-        K .= K0_lle_init(model,p,T,z)
+        K .= K0_lle_init(model,p,T,z;reduced = true)
         lnK .= log.(K)
         phasey = :liquid
         phases = (:liquid,:liquid)

@@ -51,7 +51,7 @@ function lnγ_impl!(res,::IdealLiquidSolution,p,T,z)
     return res
 end
 
-K0_lle_init(::IdealLiquidSolution,p,T,z) = throw(error("IdealLiquidSolution() does not support LLE equilibria."))
+K0_lle_init(::IdealLiquidSolution,p,T,z,cache = nothing;reduced = true) = throw(error("IdealLiquidSolution() does not support LLE equilibria."))
 
 function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
     X = gradient_type(model,T,z)
