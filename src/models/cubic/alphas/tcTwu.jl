@@ -17,14 +17,14 @@ default_ignore_missing_singleparams(::Type{tcTwuAlpha}) = ["N","N","L","acentric
     verbose::Bool=false)
 
 ## Input Parameters
-- `M`: Single Parameter
-- `N`: Single Parameter
-- `L`: Single Parameter
+- `M`: Single Parameter (`Float64`)
+- `N`: Single Parameter (`Float64`)
+- `L`: Single Parameter (`Float64`)
 
 ## Model Parameters
-- `M`: Single Parameter
-- `N`: Single Parameter
-- `L`: Single Parameter
+- `M`: Single Parameter (`Float64`)
+- `N`: Single Parameter (`Float64`)
+- `L`: Single Parameter (`Float64`)
 
 ## Description
 Twu alpha `(α(T))` model, used in the tc-PR and tc-RK models.
@@ -32,6 +32,7 @@ Twu alpha `(α(T))` model, used in the tc-PR and tc-RK models.
 ```
 αᵢ = Trᵢ^(N*(M-1))*exp(L*(1-Trᵢ^(N*M))
 Trᵢ = T/Tcᵢ
+N = 2
 ```
 
 For PR, if no Twu parameters are provided (From the 2022 paper (default), both the 2018 and 2016 versions are also available):
