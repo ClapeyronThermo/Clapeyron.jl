@@ -61,7 +61,7 @@ The statistical–mechanical derivation of the ideal free energy becomes a littl
 
 Here $N_{\mathrm{rot},i}$, $\theta_{\mathrm{rot},i}$ and $N_{\mathrm{vib},i}$ are the number of rotations, the number of vibrations and the rotational temperature of a species $i$, respectively; $g_{i,\mathrm{v}}$ and $\theta_{\mathrm{vib},i,\mathrm{v}}$ represent the degeneracy and vibrational temperature of a vibrational mode $\mathrm{v}$ of species $i$.
 The `WalkerIdeal` model provides the necessary parameters to use such an equation.
-However, the morecommonly used approach is through the use of correlations of the ideal isobaric heat capacity, $C_{p,i}^0$, such as the `ReidIdeal`, `WilhoitIdeal` and `AlyLeeIdeal` models.
+However, the more commonly used approach is through the use of correlations of the ideal isobaric heat capacity, $C_{p,i}^0$, such as the `ReidIdeal`, `WilhoitIdeal` and `AlyLeeIdeal` models.
 From the ideal isobaric heat capacity, it is possible to determine the ideal Helmholtz energy using the following equation:
 
 ``\frac{A_{\mathrm{ideal}}}{Nk_\mathrm{B}T} = \sum_{i=1}^{N_{\mathrm{Component}}} x_i\left[\ln{\frac{\rho_i}{\rho_0}}
@@ -71,7 +71,7 @@ Note that the reference states, $\rho_0$, $H_{0,i}$ and $S_{0,i}$, can typically
 
 ### Cubic equations of state
 
-This is the mostpopular class of equations of state.
+This is the most popular class of equations of state.
 The progenitor of these is the Van der Waals (`vdW`) equation of state, published in 1873, which can be written as:
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2a}{V^2}``
@@ -126,7 +126,7 @@ Although there are many variants, one of the more popular mixing rules is the Va
 
 ``\bar{b}=\sum_i\sum_jx_ix_jb_{ij}``
 
-When $i=j$, $a$ and $b$ are just the normal Van der Waals parameters for the pure.
+When $i=j$, $a$ and $b$ are just the normal Van der Waals parameters for the pure fluid.
 However, when $i\neq j$, these parameter characterise the unlike interactions between $i$ and $j$.
 We typically need to use *combining rules* (not to be confused with *mixing rules*) to determine the unlike parameters.
 Examples of these include:

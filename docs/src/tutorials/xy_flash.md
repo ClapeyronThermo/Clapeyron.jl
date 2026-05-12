@@ -51,7 +51,7 @@ julia> PH.entropy(model,p,h,z)
 ```
 
 
-An example of each remaining flash computation will be done with a a 1:1 molar mixture of isopentane and isobutane, using the Peng-Robinson equation of state with a constistent Twu alpha (`cPR`):
+An example of each remaining flash computation will be done with a 1:1 molar mixture of isopentane and isobutane, using the Peng-Robinson equation of state with a constistent Twu alpha (`cPR`):
 
 ```julia
 julia> model = cPR(["isopentane","isobutane"],idealmodel = ReidIdeal)                                                    
