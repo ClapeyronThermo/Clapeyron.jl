@@ -57,7 +57,7 @@ function PT_property(model,p,T,z,phase,threaded,vol0,f::F,vol::VV) where {F,VV}
 end
 
 PT_property(model,p,T,z,phase,threaded,vol0,f::F) where {F} = PT_property(model,p,T,z,phase,threaded,vol0,f,nothing)
-
+PT_property(model,p,T,z,phase,vol,f::F) where {F} = PT_property(model,p,T,z,phase,false,nothing,f,vol)
 """
     entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 

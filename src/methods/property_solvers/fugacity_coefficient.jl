@@ -349,13 +349,13 @@ modified_gibbs(model,p,T,w) = modified_gibbs(model,p,T,w,:unknown,oftype(zero(Ba
 modified_gibbs(model,p,T,w,phase) = modified_gibbs(model,p,T,w,phase,oftype(zero(Base.promote_eltype(model,p,T,w)),NaN))
 
 function modified_gibbs(model,p,T,w,phase,vol)
-    if isnan(vol)
+    if isnan(vol) || isnothing(vol)
         volw = volume(model,p,T,w,phase = phase)
     else
         volw = vol
     end
     RT = Rgas(model)*T
-    g =  VT_gibbs_energy(model,volw,T,w,p)
+    g =  PT_property(model,p,T,w,phase,volw,VT_gibbs_energy)
     return g/RT,volw
 end
 
