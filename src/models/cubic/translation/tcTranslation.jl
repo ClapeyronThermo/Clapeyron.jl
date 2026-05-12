@@ -96,14 +96,14 @@ From Rackett compressibility  factor (ZRA):
 2018 version :
 
 ```
-cᵢ(ωᵢ) = (R·T_c)/(P_c) * (0.2150 - 0.7314*ZRA)
+cᵢ(ZRA) = (R·T_c)/(P_c) * (0.2150 - 0.7314*ZRA)
 
 ```
 
 2016 version :
 
 ```
-cᵢ(ωᵢ) = (R·T_c)/(P_c) * (0.1487 - 0.5052*ZRA)
+cᵢ(ZRA) = (R·T_c)/(P_c) * (0.1487 - 0.5052*ZRA)
 
 ```
 
@@ -127,6 +127,7 @@ translation = tcTranslation(["neon","hydrogen"];userlocations = (;Vc = [4.25e-5,
 1. Le Guennec, Y., Privat, R., & Jaubert, J.-N. (2016). Development of the translated-consistent tc-PR and tc-RK cubic equations of state for a safe and accurate prediction of volumetric, energetic and saturation properties of pure compounds in the sub- and super-critical domains. Fluid Phase Equilibria, 429, 301–312. [doi:10.1016/j.fluid.2016.09.003](http://dx.doi.org/10.1016/j.fluid.2016.09.003)
 2. Pina-Martinez, A., Le Guennec, Y., Privat, R., Jaubert, J.-N., & Mathias, P. M. (2018). Analysis of the combinations of property data that are suitable for a safe estimation of consistent twu α-function parameters: Updated parameter values for the translated-consistent tc-PR and tc-RK cubic equations of state. Journal of Chemical and Engineering Data, 63(10), 3980–3988. [doi:10.1021/acs.jced.8b00640](http://dx.doi.org/10.1021/acs.jced.8b00640)
 3. Paes, F., de Souza Batalha, G., Citrangolo Destro, F., Fournet, R., Privat, R., Jaubert, J-N., Sirjean, B. (2025). Integrating Solvent Effects into the Prediction of Kinetic Constants Using a COSMO-Based Equation of State. Journal of Chemical Theory and Computation, 21, 3625-3648. [doi:10.1021/acs.jctc.5c00133](https://doi.org/10.1021/acs.jctc.5c00133)
+4. Magoulas, K., & Tassios, D. (1990). Thermophysical properties of n-Alkanes from C1 to C20 and their prediction for higher ones. Fluid Phase Equilibria, 56, 119–140. [doi:10.1016/0378-3812(90)85098-u](https://doi.org/10.1016/0378-3812(90)85098-u)
 
 """
 tcTranslation
