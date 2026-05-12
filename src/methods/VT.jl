@@ -253,6 +253,7 @@ function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.],p = nothing)
         return p*V/(sum(z)*R̄*T)
     end
 end
+VT_use_p(::typeof(VT_compressibility_factor)) = true
 
 """
     second_virial_coefficient(model::EoSModel, T, z=SA[1.])

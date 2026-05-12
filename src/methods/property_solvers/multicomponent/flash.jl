@@ -328,10 +328,10 @@ for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy,:gibbs_f
 end
 
 mass_entropy(model::EoSModel,state::FlashResult) = entropy(model,state)/molecular_weight(model,state)
-mass_enthalpy(model::EoSModel,state::FlashResult) = mass_enthalpy(model,state)/molecular_weight(model,state)
-mass_internal_energy(model::EoSModel,state::FlashResult) = mass_internal_energy(model,state)/molecular_weight(model,state)
-mass_gibbs_free_energy(model::EoSModel,state::FlashResult) = mass_gibbs_free_energy(model,state)/molecular_weight(model,state)
-mass_helmholtz_free_energy(model::EoSModel,state::FlashResult) = mass_helmholtz_free_energy(model,state)/molecular_weight(model,state)
+mass_enthalpy(model::EoSModel,state::FlashResult) = enthalpy(model,state)/molecular_weight(model,state)
+mass_internal_energy(model::EoSModel,state::FlashResult) = internal_energy(model,state)/molecular_weight(model,state)
+mass_gibbs_free_energy(model::EoSModel,state::FlashResult) = gibbs_free_energy(model,state)/molecular_weight(model,state)
+mass_helmholtz_free_energy(model::EoSModel,state::FlashResult) = helmholtz_free_energy(model,state)/molecular_weight(model,state)
 
 for prop in [:mass_enthalpy,:mass_entropy,:mass_internal_energy,:mass_helmholtz_free_energy,:mass_gibbs_free_energy]
     @eval begin
@@ -362,24 +362,32 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
     #higher :derivative :order :properties
     :fundamental_derivative_of_gas_dynamics,
     #volume :properties
-    :compressibility_factor,:identify_phase,
+    :identify_phase,
     :chemical_potential,:chemical_potential_res]
     is_mass = prop == :mass_isochoric_heat_capacity || prop == :mass_isobaric_heat_capacity
     @eval begin
         function $prop(model::EoSModel,state::FlashResult)
-            i = assert_only_phase_index(state::FlashResult)
-            T = temperature(state)
-            p = pressure(state)
-            if iszero(i)
-                invalid_property_multiphase_error($prop,numphases(state),p,T)
-            end
-
+            i = assert_only_phase_index(state)
+            iszero(i) && invalid_property_multiphase_error($prop,numphases(state),pressure(state),temperature(state))
            return $prop(model,state,i)
         end
 
-        $prop(model::EoSModel,state::FlashResult, i::Int) = eval_flashresult_prop_i(model,state,PT_to_VT($prop),i,is_mass)
+        $prop(model::EoSModel,state::FlashResult, i::Int) = eval_flashresult_prop_i(model,state,PT_to_VT($prop),i,$is_mass)
     end
 end
+
+function compressibility_factor(model::EoSModel,state::FlashResult)
+    i = assert_only_phase_index(state)
+    iszero(i) && invalid_property_multiphase_error(compressibility_factor,numphases(state),pressure(state),temperature(state))
+    return compressibility_factor(model,state,i)
+end
+
+function compressibility_factor(model::EoSModel,state::FlashResult,i::Integer)
+    pV = pressure(state)*state.volumes[i]
+    RT = Rgas(model)*temperature(state)
+    return pV/RT
+end
+
 
 function modified_gibbs(model,result::FlashResult;vapour_phase_index = result.data.vapour_idx)
     np = numphases(result)
