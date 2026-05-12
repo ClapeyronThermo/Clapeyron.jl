@@ -56,7 +56,7 @@ Given a database, `make_header` will guess a header based on a set of rules:
 - If the database has `species` and `groups` then the database is considered to store group data
 - If the database does not match any of the above, it is considered to store "invalid" data
 
-It returns a string for the first 3 lines of the csv, a string for the separator, and the named tuple of Clapeyron CSV options. It has the same return type as `Clapeyron.get_header(path)`
+It returns a string for the first 3 lines of the csv, a string for the separator, and the named tuple of Clapeyron CSV options. It has the same return type as `Clapeyron.get_header(path)`.
 """
 function make_header(_database,name = nothing,grouptype = :unknown)
     io = IOBuffer()

@@ -29,8 +29,8 @@ end
 """
     getpaths(location; relativetodatabase=false)
 Returns database paths that is optionally relative to Clapeyron.jl directory.
-If path is a file, then return an Array containing a single path to that file.
-If path is a directory, then return an Array containing paths to all csv files in that directory.
+If path is a file, then returns an Array containing a single path to that file.
+If path is a directory, then returns an Array containing paths to all csv files in that directory.
 # Examples
 ```julia-repl
 julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)

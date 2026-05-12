@@ -85,7 +85,7 @@ model = PCSAFT(["water"],userlocations = ["@REPLACE/my_pcsaft_kij.csv"]) #succes
 model = PCSAFT(["water"],userlocations = ["@REMOVEDEFAULTS","@DB/SAFT/PCSAFT","@DB/properties/molarmass.csv"]) #sucess. Default parameters csv removed, and parsed again, using the @DB prefix to point to the default database.
 ```
 
-You can use the `@REPLACE` keyword in a in-memory CSV by adding it at the start of the string, followed by a space:
+You can use the `@REPLACE` keyword in an in-memory CSV by adding it at the start of the string, followed by a space:
 ```
 #This will replace all previous parsed occurences of `a` and `b`
 x_replace = \"\"\"@REPLACE Clapeyron Database File,
