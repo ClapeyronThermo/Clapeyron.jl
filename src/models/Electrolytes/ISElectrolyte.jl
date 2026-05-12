@@ -2,7 +2,7 @@
     MeanIonicApproach(model::ESElectrolyteModel;salts = nothing)
 
 
-Given en explicit solvent model, returns an implicit solvent model, where are the charged components are paired to form binary salts.
+Given an explicit solvent model, returns an implicit solvent model, where the charged components are paired to form binary salts.
 If no `salts` argument is specified, the salt pairings will be created via [`Clapeyron.auto_binary_salts`](@ref).
 ## Example
 

@@ -1,7 +1,7 @@
 abstract type GroupParameter <: ClapeyronParam end
 """
     GroupParam
-Struct holding group parameters.contains:
+Struct holding group parameters. Contains:
 * `components`: a list of all components
 * `groups`: a list of groups names for each component
 * `grouptype`: used to differenciate between different group models.
@@ -47,7 +47,7 @@ julia> groups.n_flattenedgroups
  [1, 18, 1, 0, 0, 0, 0]
  [3, 0, 0, 1, 1, 1, 4]
 ```
-if you have CSV with group data, you can also pass those, to automatically query the missing groups in your input vector:
+If you have CSV with group data, you can also pass those, to automatically query the missing groups in your input vector:
 ```julia-repl
 julia> grouplist = [
            "ethanol",

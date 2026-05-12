@@ -7,7 +7,7 @@ SingleOrPair_values(x::SingleOrPair) = x.values
 """
     kij_mix!(f,out)
 
-Inplace version of [`kij_mix`](@ref)
+Implace version of [`kij_mix`](@ref)
 """
 function kij_mix!(f::F,out) where F
     return kij_mix!(f,out,nothing)

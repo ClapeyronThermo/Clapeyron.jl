@@ -20,7 +20,7 @@ export LeiboviciAlpha
 ## Description
 
 Leibovici Cubic alpha `(α(T))` model.
-Generalized soave model that works for all common cubic models.
+Generalized Soave model that works for all common cubic models.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
