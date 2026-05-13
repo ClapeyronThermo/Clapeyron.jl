@@ -438,7 +438,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         status = RREq
         β -= eps(eltype(β))
     elseif status == RREq
-        β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
+        β = rachfordrice(K, z; non_inx, non_iny, verbose)
     else
         β = _0/_0
     end
