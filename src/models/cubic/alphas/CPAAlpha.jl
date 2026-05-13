@@ -42,6 +42,10 @@ alpha = CPAAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","cpa/alph
 # Passing parameters directly
 alpha = CPAAlpha(["water","carbon dioxide"];userlocations = (;c1 = [0.67,0.76]))
 ```
+## References
+
+1. Georgios K. Folas, Jostein Gabrielsen, Michael L. Michelsen, Erling H. Stenby, Georgios M. Kontogoergis. Application of the Cubic-Plus-Association (CPA) Equation of State to Cross-Associating Systems. Industrial and Engineering Chemistry Research, 2005, 44, 3823-3833, [doi: 10.1021/ie048832j](https://doi.org/10.1021/ie048832j)
+
 """
 CPAAlpha
 default_locations(::Type{CPAAlpha}) = ["SAFT/CPA/CPA_like.csv"]
@@ -87,7 +91,9 @@ alpha = sCPAAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","scpa/al
 # Passing parameters directly
 alpha = sCPAAlpha(["water","carbon dioxide"];userlocations = (;c1 = [0.67,0.76]))
 ```
+## References
 
+1. Georgios K. Folas, Jostein Gabrielsen, Michael L. Michelsen, Erling H. Stenby, Georgios M. Kontogoergis. Application of the Cubic-Plus-Association (CPA) Equation of State to Cross-Associating Systems. Industrial and Engineering Chemistry Research, 2005, 44, 3823-3833, [doi: 10.1021/ie048832j](https://doi.org/10.1021/ie048832j)
 """
 sCPAAlpha
 default_locations(::Type{sCPAAlpha}) = ["SAFT/CPA/sCPA/sCPA_like.csv"]
