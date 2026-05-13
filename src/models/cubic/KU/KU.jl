@@ -18,7 +18,7 @@ export KUAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for [`KU`](@ref) EoS.
+Kumar Upadhyay cubic alpha `(α(T))` model. Default for [`KU`](@ref) EoS.
 
 For `Tr < 1`
 ```
@@ -27,7 +27,7 @@ Trᵢ = T/Tcᵢ
 mᵢ = 0.37790 + 1.51959ωᵢ - 0.46904ωᵢ^2 + 0.015679ωᵢ^3
 nᵢ = 0.97016 + 0.05495ωᵢ - 0.1293ωᵢ^2 + 0.0172028ωᵢ^3
 ```
-For `Tr > 1` is a 6th order taylor expansion around `T = Tc`.
+For `Tr > 1` is a 6th order Taylor expansion around `T = Tc`.
 
 ## Model Construction Examples
 ```
@@ -173,7 +173,7 @@ end
 - `translation`: Translation Model
 
 ## Description
-Kumar-Upadhyay Cubic Equation of state. `Ωa` and `Ωb` are component-dependent
+Kumar-Upadhyay Cubic Equation of state. `Ωa` and `Ωb` are component-dependent.
 ```
 P = RT/(v-b) + a•κ(T)/((v²-1.6bv - 0.8b²)
 a = Ωa(R²Tcᵢ²/Pcᵢ)

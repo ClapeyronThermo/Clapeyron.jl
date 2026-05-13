@@ -48,7 +48,7 @@ end
 - `L`: Single Parameter
 
 ## Description
-Cubic alpha `(α(T))` model. Default for [`VTPR`](@ref) EoS. Also known as Twu-91 alpha
+Cubic alpha `(α(T))` model. Default for [`VTPR`](@ref) EoS. Also known as Twu-91 alpha.
 ```
 αᵢ = Trᵢ^(N*(M-1))*exp(L*(1-Trᵢ^(N*M))
 Trᵢ = T/Tcᵢ

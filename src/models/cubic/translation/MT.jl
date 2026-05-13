@@ -17,7 +17,7 @@ MTTranslation <: MTTranslationModel
 
 ## Input Parameters
 
-- `acentricfactor`: Single Parameter (`Float64`)
+- `acentricfactor`: Single Parameter (`Float64`).
 
 ## Description
 
@@ -27,9 +27,9 @@ V = V₀ + mixing_rule(cᵢ)
 cᵢ = T₀ᵢ+(T̄cᵢ-T̄₀ᵢ)*exp(β*abs(1-Trᵢ))
 Trᵢ = T/T̄cᵢ
 T̄cᵢ = (RTcᵢ/Pcᵢ)*(0.3074-Zcᵢ)
-T̄₀ᵢ = (RTcᵢ/Pcᵢ)*(-0.014471 + 0.067498ωᵢ - 0.084852ωᵢ^2 + 0.067298ωᵢ^3 - 0.017366ωᵢ^4)
-Zcᵢ = 0.289 - 0.0701ωᵢ - 0.0207ωᵢ^2
-βᵢ  = -10.2447 - 28.6312ωᵢ
+T̄₀ᵢ = (RTcᵢ/Pcᵢ)*(-0.014471 + 0.067498*ωᵢ - 0.084852*ωᵢ² + 0.067298*ωᵢ³ - 0.017366*ωᵢ⁴)
+Zcᵢ = 0.289 - 0.0701*ωᵢ - 0.0207*ωᵢ²
+βᵢ  = -10.2447 - 28.6312*ωᵢ
 ```
 
 ## Model Construction Examples

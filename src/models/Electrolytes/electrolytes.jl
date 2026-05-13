@@ -65,9 +65,9 @@ end
     molality_to_composition(model::ElectrolyteModel,salts,m,zsolv = SA[1.0])
     molality_to_composition(model::ElectrolyteModel,m,zsolv = SA[1.0])
 
-Convert molality (mol/kg) to composition for a given model, salts, molality, and solvent composition.
+Converts molality (mol·kg⁻¹) to composition for a given model, salts, molality, and solvent composition.
 If no `salts` argument is specified, the salt pairings will be created via [`Clapeyron.auto_binary_salts`](@ref).
-`zsolv` is the mole fraction of solvent components (in a salt-free basis)
+`zsolv` is the mole fraction of solvent components (in a salt-free basis).
 """
 function molality_to_composition(model::ElectrolyteModel,salts::Union{AbstractVector,GroupParam},m,zsolv=SA[1.],ν = salt_stoichiometry(model,salts))
     nc = length(model)
@@ -194,7 +194,7 @@ end
     auto_binary_salts(model)
     auto_binary_salts(Z, components)
 
-Automatically generate a vector of binary salts from ionic components.
+Automatically generates a vector of binary salts from ionic components.
 
 # Arguments
 - `model`: An electrolyte model containing charge information

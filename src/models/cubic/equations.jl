@@ -594,7 +594,7 @@ Base.@assume_effects :foldable function ab_consts(Δ1::Number, Δ2::Number)
     return (Ωa, Ωb)
 end
 
-#leivobici constants
+#leibovici constants
 function cubic_K(model,z)
     Δ1,Δ2 = cubic_Δ(model,z)
     u = - Δ1 - Δ2
