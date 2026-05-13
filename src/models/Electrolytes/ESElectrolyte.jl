@@ -86,7 +86,7 @@ function init_preferred_method(method::typeof(bubble_temperature),model::ESElect
     return FugBubbleTemperature(;nonvolatiles = nonvolatiles,kwargs...)
 end
 
-function tp_flash_K0!(K,model::ESElectrolyteModel,p,T,z)
+function tp_flash_K0!(K,model::ESElectrolyteModel,p,T,z,cache)
     Z = model.charge
     neutral = iszero.(Z)
     pures = split_model(model,neutral)

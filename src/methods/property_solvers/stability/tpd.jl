@@ -693,19 +693,17 @@ function __z_test(z)
     z_test = z_test ./ sum(z_test;dims=2)
 end
 
-function suggest_K(model,p,T,z,pure = split_pure_model(model),cache = nothing)
-    lnϕz,v = lnϕ(model,p,T,z,cache,threaded = false)
-    K = similar(lnϕz)
-    di = similar(lnϕz)
+function suggest_K!(K,model,p,T,z,cache = nothing,pure = split_pure_model(model))
+    lnϕz,v = modified_lnϕ(model,p,T,z,cache)
     log∑z = log(sum(z))
-    di .= lnϕz .+ log.(z) .- log∑z
     for i in 1:length(z)
         vl = volume(pure[i],p,T,phase = :liquid)
         vv = volume(pure[i],p,T,phase = :vapour)
+        di = lnϕz + log(z[i]) - log∑z
         lnϕv = VT_lnϕ_pure(pure[i],vv,T,p)
         lnϕl = VT_lnϕ_pure(pure[i],vl,T,p)
-        tpd_v = lnϕv - di[i]
-        tpd_l = lnϕl - di[i]
+        tpd_v = lnϕv - di
+        tpd_l = lnϕl - di
         if vl ≈ vv
             if is_liquid(VT_identify_phase(pure[i],vv,T,SA[1.0])) || isnan(vv)
                 ps,_,_ = saturation_pressure(pure[i],T,crit_retry = false)

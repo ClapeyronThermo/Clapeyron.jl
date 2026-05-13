@@ -14,18 +14,6 @@ Base.eltype(Base.@specialize(model::PTFlashWrapper)) = Base.promote_eltype(model
 __γ_unwrap(Base.@specialize(model::PTFlashWrapper)) = __γ_unwrap(model.model)
 @inline gas_model(Base.@specialize(model::PTFlashWrapper)) = gas_model(model.model)
 
-function tp_flash_K0(wrapper::PTFlashWrapper,p,T,z)
-    first.(wrapper.sat) ./ p
-end
-
-function tp_flash_K0!(K,wrapper::PTFlashWrapper,p,T,z)
-    K .= first.(wrapper.sat) ./ p
-end
-
-function K0_lle_init(wrapper::PTFlashWrapper,p,T,z,cache = tpd_cache(wrapper,p,T,z);reduced = true)
-    return K0_lle_init(__γ_unwrap(wrapper),p,T,z,cache;reduced)
-end
-
 function PTFlashWrapper{TT}(model,equilibrium,pures = split_pure_model(model)) where TT
     nc = length(model)
     sat = Vector{Tuple{TT,TT,TT}}(undef,nc)
@@ -111,3 +99,63 @@ end
 include("PTFlashWrapper/PT.jl")
 include("PTFlashWrapper/fugacity.jl")
 include("PTFlashWrapper/bubbledew.jl")
+
+function modified_lnϕ_pure(wrapper::PTFlashWrapper,p,T,i;phase = :unknown)
+    ps,vl,_ = wrapper.sat[i]
+    lnϕsat = wrapper.fug[i]
+    isnan(ps) && update_temperature!(wrapper,T)
+    isnan(ps) && return ps
+    new_phase = if is_unknown(phase)
+        p > ps ? :l : :v
+    else
+        phase
+    end
+    if is_vapour(phase)
+        RT = Rgas(wrapper)*T
+        gasmodel = gas_model(wrapper.pures[i])
+        vv = volume(gasmodel,p,T,phase = :v)
+        lnϕv = VT_lnϕ_pure(gasmodel,vv,T,p)
+        Δd = log(ps/p)
+        (gas_model isa IdealModel) || (Δd += vl*(p - ps)/RT + lnϕsat)
+        return lnϕv - Δd
+    else
+        return zero(Base.promote_eltype(wrapper,p,T))
+    end
+
+end
+
+function tp_flash_fast_K0!(K,wrapper::PTFlashWrapper,p,T,z)
+    K .= first.(wrapper.sat) ./ p
+    return true
+end
+
+function suggest_K!(K,wrapper::PTFlashWrapper,p,T,z,cache = nothing,pure = wrapper.pures)
+    phase = identify_phase(wrapper,p,T,z)
+    sat = wrapper.sat
+    lnϕsat = wrapper.fug
+    lnϕz,v = modified_lnϕ(wrapper,p,T,z,cache,phase = phase)
+    log∑z = log(sum(z))
+    RT = Rgas(wrapper)*T
+    for i in 1:length(z)
+        ps,vl,_ = sat[i]
+        di = lnϕz[i] + log(z[i]) -  log∑z
+        lnϕv = modified_lnϕ_pure(wrapper,p,T,i,phase = :v)
+        lnϕl = modified_lnϕ_pure(wrapper,p,T,i,phase = :l)
+        tpd_v = lnϕv - di
+        tpd_l = lnϕl - di
+        if tpd_l < 0 && tpd_v < 0
+            K[i] = exp(lnϕl)/exp(lnϕv)
+        elseif tpd_l < 0 && tpd_v >= 0
+            K[i] = exp(lnϕl)/exp(lnϕz[i])
+        elseif tpd_l >= 0 && tpd_v < 0
+            K[i] = exp(lnϕz[i])/exp(lnϕv)
+        else #=tpd_l >= 0 && tpd_v >= 0=#
+            K[i] = ps/p
+        end
+    end
+    return K
+end
+
+function K0_lle_init(wrapper::PTFlashWrapper,p,T,z,cache = tpd_cache(wrapper,p,T,z);reduced = true)
+    return K0_lle_init(__γ_unwrap(wrapper),p,T,z,cache;reduced)
+end

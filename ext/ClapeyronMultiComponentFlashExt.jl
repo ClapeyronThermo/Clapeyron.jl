@@ -46,7 +46,7 @@ module ClapeyronMultiComponentFlashExt
     end
 
     function M.initial_guess_K!(K, eos::C.EoSModel, cond)
-        C.tp_flash_K0!(K, eos, cond.p, cond.T)
+        C.tp_flash_K0!(K, eos, cond.p, cond.T, nothing)
     end
 
     #this is only defined with cubic EoS.

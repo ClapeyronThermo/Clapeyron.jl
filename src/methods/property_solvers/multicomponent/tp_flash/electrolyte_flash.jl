@@ -84,7 +84,7 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # VLE Correlation for K
         verbose && @info "K0 calculated via pure VLE correlation"
-        tp_flash_K0!(K,model,p,T,z)
+        tp_flash_K0!(K,model,p,T,z,dlnϕ_cache)
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
             Kmin,Kmax = extrema(K)

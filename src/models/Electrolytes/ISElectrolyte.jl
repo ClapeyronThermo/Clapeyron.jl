@@ -68,7 +68,7 @@ Rgas(model::ISElectrolyteIdealWrapper) = Rgas(model.model)
 
 reference_state(model::MeanIonicApproach) = reference_state(model.model)
 
-function tp_flash_K0!(K,model::ISElectrolyteModel,p,T,z)
+function tp_flash_K0!(K,model::ISElectrolyteModel,p,T,z,cache)
     neutral = ones(Bool,length(model))
     isalts = model.salt.isalts
     neutral[isalts] .= false

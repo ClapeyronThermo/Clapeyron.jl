@@ -305,11 +305,11 @@ end
 
 function tp_flash_K0(model,p,T,z)
     K = zeros(Base.promote_eltype(model,p,T,z),length(model))
-    tp_flash_K0!(K,model,p,T,z)
+    tp_flash_K0!(K,model,p,T,z,nothing)
     return K
 end
 
-function tp_flash_K0!(K,model,p,T,z)
+function tp_flash_K0!(K,model,p,T,z,cache)
     K_calculated = tp_flash_fast_K0!(K,model,p,T,z)
 
     if K_calculated
@@ -320,7 +320,7 @@ function tp_flash_K0!(K,model,p,T,z)
     end
 
     if !K_calculated
-        K .= suggest_K(model,p,T,z)
+        suggest_K!(K,model,p,T,z,cache)
     end
 end
 
@@ -339,7 +339,6 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     else
         phasex,phasey = :unknown,:unknown
     end
-
     non_inw = (non_inx,non_iny)
     nc = length(model)
     _1,_0 = one(TT),zero(TT)
@@ -371,18 +370,23 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     elseif is_vle(method) || is_unknown(method)
         # VLE correlation for K
         verbose && @info "K0 calculated via pure VLE correlation"
-        tp_flash_K0!(K,model,p,T,z)
-
+        tp_flash_K0!(K,model,p,T,z,nothing)
+        phasex = :liquid
+        phasey = :vapour
+        phases = (:liquid,:vapour)
         #if we can't predict K, we use lle
         if is_unknown(method)
             Kmin,Kmax = K_extrema(K,non_inx,non_iny)
             if Kmin > 1 || Kmax < 1
                 verbose && @info "VLE correlation failed, trying LLE initial point."
-                K .= K0_lle_init(model,p,T,z;reduced = true)
+                K_lle = K0_lle_init(model,p,T,z;reduced = true)
+                if any(!isone,K_lle) #only use LLE result if actually exists
+                    K .= K_lle
+                    phasex = :liquid
+                    phasey = :liquid
+                    phases = (:liquid,:liquid)
+                end
                 lnK .= log.(K)
-                phasex = :liquid
-                phasey = :liquid
-                phases = (:liquid,:liquid)
             else
                 phasex,phasey = :liquid,:vapour
             end
@@ -413,20 +417,28 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
 
     if status == RRLiquid
         β = _0
-        if maximum(K) >= 1 #liquid phase, but there is posibility to generate a vapour composition
-            verbose && @info "suppossing β = 0 (bubble initialization)"
-            status = RREq
-            β += eps(eltype(β))
+        if maximum(K) < 1
+            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
+            K .= y ./ x
+            verbose && @info "maximum(K) < 1: forcing consistency"
+            verbose && @info "forced K: $K"
         end
+        verbose && @info "suppossing β = 0 (bubble initialization)"
+        status = RREq
+        β += eps(eltype(β))
     elseif status == RRVapour
         β = _1
-        if minimum(K) <= 1 #vapour phase, but there is posibility to generate a liquid composition
-            verbose && @info "suppossing β = 1 (dew initialization)"
-            status = RREq
-            β -= eps(eltype(β))
+        if minimum(K) > 1
+            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
+            K .= y ./ x
+            verbose && @info "minimum(K) > 1: forcing consistency"
+            verbose && @info "forced K: $K"
         end
+        verbose && @info "suppossing β = 1 (dew initialization)"
+        status = RREq
+        β -= eps(eltype(β))
     elseif status == RREq
-        β = rachfordrice(K, z; non_inx, non_iny, verbose)
+        β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
     else
         β = _0/_0
     end
@@ -444,6 +456,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         vl0,vv0 = method.v0
         volx,voly = _1*vl0,_1*vv0
     end
+    
     iszero(volx) && (volx = volume(model,p,T,x,phase = phasex))
     iszero(voly) && (voly = volume(model,p,T,y,phase = phasey))
     lle = is_liquid(phasex) && is_liquid(phasey)

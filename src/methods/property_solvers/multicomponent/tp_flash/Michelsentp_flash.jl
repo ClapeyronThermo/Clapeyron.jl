@@ -221,8 +221,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # VLE correlation for K
         verbose && @info "K0 calculated via pure VLE correlation"
-        tp_flash_K0!(K,model,p,T,z)
-
+        tp_flash_K0!(K,model,p,T,z,dlnϕ_cache)
+        phasex = :liquid
+        phasey = :vapour
+        phases = (:liquid,:vapour)
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
             Kmin,Kmax = K_extrema(K,non_inx,non_iny)
@@ -232,10 +234,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
                 K_lle = K0_lle_init(model,p,T,z,tpd_cache0;reduced)
                 if any(!isone,K_lle) #only use LLE result if actually exists
                     K .= K_lle
+                    phasey = :liquid
+                    phases = (:liquid,:liquid)
                 end
                 lnK .= log.(K)
-                phasey = :liquid
-                phases = (:liquid,:liquid)
             end
         end
         lnK .= log.(K)
@@ -261,18 +263,26 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
 
     if status == RRLiquid
         β = _0
-        if maximum(K) >= 1 #liquid phase, but there is posibility to generate a vapour composition
-            verbose && @info "suppossing β = 0 (bubble initialization)"
-            status = RREq
-            β += eps(eltype(β))
+        if maximum(K) < 1
+            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
+            K .= y ./ x
+            verbose && @info "maximum(K) < 1: forcing consistency"
+            verbose && @info "forced K: $K"
         end
+        verbose && @info "suppossing β = 0 (bubble initialization)"
+        status = RREq
+        β += eps(eltype(β))
     elseif status == RRVapour
         β = _1
-        if minimum(K) <= 1 #vapour phase, but there is posibility to generate a liquid composition
-            verbose && @info "suppossing β = 1 (dew initialization)"
-            status = RREq
-            β -= eps(eltype(β))
+        if minimum(K) > 1
+            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
+            K .= y ./ x
+            verbose && @info "minimum(K) > 1: forcing consistency"
+            verbose && @info "forced K: $K"
         end
+        verbose && @info "suppossing β = 1 (dew initialization)"
+        status = RREq
+        β -= eps(eltype(β))
     elseif status == RREq
         β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
     else
