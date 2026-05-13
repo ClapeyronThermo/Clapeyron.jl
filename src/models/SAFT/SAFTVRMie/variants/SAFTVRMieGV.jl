@@ -89,7 +89,7 @@ end
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
-- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy `[K]`
 - `lambda_a`: Pair Parameter (`Float64`) - Attractive range parameter (no units)
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
 - `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`

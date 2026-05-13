@@ -58,7 +58,7 @@ export BACKSAFT
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
-- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy `[K]`
 - `c`: Single Parameter (`Float64`) - Adjustable parameter (no units)
 - `alpha`: Single Parameter (`Float64`) - Non-spherical deviation (no units)
 

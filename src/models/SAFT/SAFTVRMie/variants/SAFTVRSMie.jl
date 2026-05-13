@@ -43,7 +43,7 @@ default_locations(::Type{SAFTVRSMie}) = ["SAFT/SAFTVRMie", "properties/molarmass
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
-- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy `[K]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 
