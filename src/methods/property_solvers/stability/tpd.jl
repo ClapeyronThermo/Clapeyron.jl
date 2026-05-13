@@ -699,7 +699,7 @@ function suggest_K!(K,model,p,T,z,cache = nothing,pure = split_pure_model(model)
     for i in 1:length(z)
         vl = volume(pure[i],p,T,phase = :liquid)
         vv = volume(pure[i],p,T,phase = :vapour)
-        di = lnϕz + log(z[i]) - log∑z
+        di = lnϕz[i] + log(z[i]) - log∑z
         lnϕv = VT_lnϕ_pure(pure[i],vv,T,p)
         lnϕl = VT_lnϕ_pure(pure[i],vl,T,p)
         tpd_v = lnϕv - di
