@@ -1,5 +1,7 @@
 #this is used for some dispatches
 abstract type ActivityMixingRule <: MixingRule end
+
+Base.eltype(model::ActivityMixingRule) = eltype(model.activity)
 """
     mixing_rule(model::CubicModel,V,T,z,mixing_model::MixingRule,α,a,b,c)
 

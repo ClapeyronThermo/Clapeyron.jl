@@ -30,7 +30,7 @@ function tpd_delta_g_vapour(wrapper::PTFlashWrapper,p,T,w)
     return res
 end
 
-function modified_gibbs(wrapper::PTFlashWrapper,p,T,w,phase,vol)
+function modified_gibbs(wrapper::PTFlashWrapper,p::Number,T,w,phase,vol)
     model = wrapper.model
     TT = Base.promote_eltype(wrapper,p,T,w)
     RT = Rgas(model)*T

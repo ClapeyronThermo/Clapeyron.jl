@@ -388,8 +388,7 @@ function compressibility_factor(model::EoSModel,state::FlashResult,i::Integer)
     return pV/RT
 end
 
-
-function modified_gibbs(model,result::FlashResult;vapour_phase_index = result.data.vapour_idx)
+function modified_gibbs(model::EoSModel,result::FlashResult;vapour_phase_index = result.data.vapour_idx)
     np = numphases(result)
     g = zero(Base.promote_eltype(result.compositions[1],result.fractions,result.volumes,result.data.p,result.data.T,model))
     p,T = result.data.p,result.data.T

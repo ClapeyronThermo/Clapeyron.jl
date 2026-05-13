@@ -31,8 +31,12 @@ function promote_model(::Type{T},model::EoSModel) where T <: Number
     return promote_model_struct(T,model)
 end
 
-function promote_model(::Type{T},model::Array) where T <: Number
-    return promote_model.(T,model)
+function promote_model(::Type{T},x::Array{T2,N}) where {T <: Number,T2,N}
+    return map(Base.Fix1(promote_model,T),x)
+end
+
+function promote_model(::Type{T},x::T2) where {T <: Number,T2 <: Number}
+    return convert(T,x)
 end
 
 @generated function promote_model_struct(::Type{T},model::M) where {T,M}

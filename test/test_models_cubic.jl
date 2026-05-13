@@ -45,6 +45,9 @@
         @testset "PSRK" begin
             system = PSRK(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2301592550760436 rtol = 1e-6
+            system_big = Clapeyron.promote_model(BigFloat,system)
+            #issue 576
+            @test eltype(system_big) == BigFloat
         end
 
         @testset "tcRK" begin
