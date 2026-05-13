@@ -133,14 +133,3 @@ function PSRK(components;
     verbose = verbose)
 end
 export PSRK
-
-function set_A(model::EOS, A) where {EOS <: RK}
-    TT = Base.promote_eltype(A)
-    _model = Clapeyron.promote_model(TT, model)
-    _activity = _model.mixing.activity
-    _A = reshape(A,size(model.mixing.activity.params.A.values))
-    _activity.params.A.values .= _A
-    Clapeyron.recombine!(_activity)
-    return _model
-end
-
