@@ -195,6 +195,7 @@ function Tproperty(model::EoSModel,p,prop,z = SA[1.0],
                   T0 = nothing,
                   verbose = false,
                   threaded = true) where TT
+  check_arraysize(model,z)
   cached_model = __tpflash_cache_model(model,p,NaN,z,:vle)
   T,st = _Tproperty(cached_model,p,prop,z,property;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
   return T
@@ -400,7 +401,7 @@ function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],
   end
 
   if is_liquid(new_phase) #check liquid branch
-    bubble_method = bubble_temperature_tproperty_method(model,p,T0_bubble,z,dpdT)
+    bubble_method = bubble_temperature_tproperty_method(model,p,T0_bubble,z,dpdT)    
     bubble = bubble_temperature(model,p,z,bubble_method)
     T_bubble,v_bubble,_,_ = bubble
     update_temperature!(model,T_bubble)

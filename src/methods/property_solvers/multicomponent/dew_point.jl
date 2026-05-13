@@ -242,6 +242,7 @@ end
 function dew_temperature_init(model,p,y,vol0,T0,x0,condensables = FillArrays.Fill(true,length(model)), verbose = false)
     if !isnothing(x0)
         if !isnothing(T0)
+            update_temperature!(model,T0)
             if !isnothing(vol0)
                 verbose && @info "dew_temperature: temperature,volumes and compositions already provided."
                 vl,vv = vol0
@@ -264,6 +265,7 @@ function dew_temperature_init(model,p,y,vol0,T0,x0,condensables = FillArrays.Fil
     else
         T00,vl0,vv0,x0 = __x0_dew_temperature(model,p,y,T0,condensables;verbose = verbose)
         if !isnothing(T0)
+            update_temperature!(model,T0)
             verbose && @info "dew_temperature: calculating volumes and compositions from provided temperature"
             vl = min(vl0,volume(model,p,T0,x0,phase = :l))
             vv = max(vv0,volume(model,p,T0,y,phase = :v))

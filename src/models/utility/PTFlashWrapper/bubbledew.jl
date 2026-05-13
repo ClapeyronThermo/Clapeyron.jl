@@ -230,6 +230,23 @@ function _edge_temperature(model::PTFlashWrapper,p,z,v0 = nothing)
     return fail,fail,:failure
 end
 
+function init_preferred_method(method::typeof(bubble_pressure),model::PTFlashWrapper,kwargs)
+    return ActivityBubblePressure(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(bubble_temperature),model::PTFlashWrapper,kwargs)
+    return FugBubbleTemperature(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_pressure),model::PTFlashWrapper,kwargs)
+    return ActivityDewPressure(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_temperature),model::PTFlashWrapper,kwargs)
+    return FugDewTemperature(;kwargs...)
+end
+
+
 function bubble_pressure_pproperty_method(model::PTFlashWrapper,p0,T,z,sat)
   y0 = z .* first.(sat)
   y0 ./= sum(y0)

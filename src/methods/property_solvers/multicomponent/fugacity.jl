@@ -79,7 +79,6 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,data::FugData,cache)
     converged = false
     tol_stability = abs2(cbrt(tol_xy))
     #caches for ∂lnϕ∂n∂P∂T/∂lnϕ∂n∂P
-
     lnK,K,w,w_old,w_calc,w_restart,_,Hϕx = cache
 
     OF = NaN*zero(eltype(lnK))
@@ -151,7 +150,7 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,data::FugData,cache)
 
         OF_old = OF
         OF = sum(w_calc) - 1.0
-
+  
         if _pressure && second_order
             ∂lnϕ∂Px, volx = ∂lnϕ∂P(model, p, T, _x, Hϕx, phase=phasex, vol0=volx)
             ∂OF = dot(∂lnϕ∂Px,w_calc)
@@ -182,7 +181,6 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,data::FugData,cache)
         if !_bubble && second_order
             ∂OF = -∂OF
         end
-
         ∂step = OF / ∂OF
         if valid_iter && abs(∂step) < tol_pT || abs(OF) < tol_of
             converged = true

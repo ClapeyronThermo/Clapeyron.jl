@@ -560,6 +560,7 @@ end
 function bubble_temperature_init(model,p,x,vol0,T0,y0,volatiles = FillArrays.Fill(true,length(model)),verbose = false)
     if !isnothing(y0)
         if !isnothing(T0)
+            update_temperature!(model,T0)
             if !isnothing(vol0)
                 verbose && @info "bubble_temperature: temperature,volumes and compositions already provided."
                 vl,vv = vol0
@@ -583,6 +584,7 @@ function bubble_temperature_init(model,p,x,vol0,T0,y0,volatiles = FillArrays.Fil
 
         T00,vl0,vv0,y0 = __x0_bubble_temperature(model,p,x,T0,volatiles; verbose = verbose)
         if !isnothing(T0)
+            update_temperature!(model,T0)
             verbose && @info "bubble_temperature: calculating volumes and compositions from provided temperature"
             vl = min(vl0,volume(model,p,T0,x,phase = :l))
             vv = max(vv0,volume(model,p,T0,y0,phase = :v))

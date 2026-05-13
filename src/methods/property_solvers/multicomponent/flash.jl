@@ -300,7 +300,7 @@ function eval_flashresult_prop(model,state,f::F) where F
         βi = state.fractions[i]
         xi = state.compositions[i]
         vi = state.volumes[i]
-        phase = vapour_idx_to_symbol(state.data.vapour_idx,i)
+        phase = identify_phase(state.data.vapour_idx,i)
         res += βi*PT_property(cached_model,p,T,xi,phase,false,nothing,f,vi)
     end
     return res
@@ -315,7 +315,7 @@ function eval_flashresult_prop_i(model,state,f::F,i,mass_prop) where F
     vi = state.volumes[i]
     mm = mass_prop ? one(βi) : βi
     cached_model = __tpflash_cache_model(model,p,T,state.compositions[1],:vle)
-    phase = vapour_idx_to_symbol(state.data.vapour_idx,i)
+    phase = identify_phase(state,i)
     res += mm*PT_property(cached_model,p,T,xi,phase,false,nothing,f,vi)
     return res
 end
@@ -354,6 +354,10 @@ function assert_only_phase_index(state::FlashResult)
         end
     end
 end
+
+@inline identify_phase(state::FlashResult,i::Integer) = vapour_idx_to_symbol(state.data.vapour_idx,i)
+@inline identify_phase(data::FlashData,i::Integer) = vapour_idx_to_symbol(data.vapour_idx,i)
+@inline identify_phase(i0::Integer,i::Integer) = vapour_idx_to_symbol(i0,i)
 
 for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
     :mass_isochoric_heat_capacity, :mass_isobaric_heat_capacity,
@@ -398,7 +402,7 @@ function modified_gibbs(model::EoSModel,result::FlashResult;vapour_phase_index =
     x = result.compositions
     vx = zero(g)
     for i in 1:np
-        phase = vapour_idx_to_symbol(vapour_phase_index,i)
+        phase = identify_phase(vapour_phase_index,i)
         gi,_ = modified_gibbs(cached_model,p,T,x[i],phase,v[i])
         g += β[i]*gi
         vx += β[i]*v[i]

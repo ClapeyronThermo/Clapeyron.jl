@@ -97,7 +97,7 @@ function ∂lnϕ∂n∂P∂T(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂
         lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, ∂lnϕ∂T, V = ∂lnϕ∂n∂P∂T(gas_model(wrapper), p, T, z,cache; vol = _vol)
         tpd_delta_d_vapour!(lnϕ,wrapper,p,T)
         tpd_∂delta_d∂P_vapour!(∂lnϕ∂P,wrapper,p,T)
-        tpd_∂delta_d∂T_vapour!(∂lnϕ∂T,wrapper,p,T)
+        tpd_∂delta_d∂T_vapour!(∂lnϕ∂T,wrapper,p,T)      
         return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, ∂lnϕ∂T, V
     end
 end
