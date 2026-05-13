@@ -19,13 +19,13 @@ export CPAAlpha
 
 ## Input Parameters
 
-- `c1`: Single Parameter (`Float64`)
+- `c₁`: Single Parameter (`Float64`)
 
 ## Description
 
 Cubic alpha `(α(T))` model. Default for `CPA` EoS.
 ```
-αᵢ = (1+c¹ᵢ(1-√(Trᵢ)))^2
+αᵢ = (1+c₁ᵢ(1-√(Trᵢ)))²
 ```
 
 ## Model Construction Examples
@@ -63,13 +63,14 @@ export sCPAAlpha
 
 ## Input Parameters
 
-- `c1`: Single Parameter
+- `c₁`: Single Parameter (`Float64`)
 
 ## Description
 
 Cubic alpha `(α(T))` model. Default for `sCPA` EoS.
+
 ```
-αᵢ = (1+c¹ᵢ(1-√(Trᵢ)))^2
+αᵢ = (1+c₁ᵢ(1-√(Trᵢ)))²
 ```
 
 ## Model Construction Examples

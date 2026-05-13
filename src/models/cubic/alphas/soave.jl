@@ -16,16 +16,15 @@ export SoaveAlpha
 
 ## Input Parameters
 
-
 - `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
 
 Cubic alpha `(α(T))` model. Default for [`SRK`](@ref) EoS.
 ```
-αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
+αᵢ = (1+mᵢ(1-√(Trᵢ)))²
 Trᵢ = T/Tcᵢ
-mᵢ = 0.480 + 1.547ωᵢ - 0.176ωᵢ^2
+mᵢ = 0.480 + 1.547*ωᵢ - 0.176*ωᵢ²
 ```
 To use different polynomial coefficients for `mᵢ`, overload `Clapeyron.α_m(::CubicModel,::SoaveAlphaModel) = (c₁,c₂,...cₙ)`
 

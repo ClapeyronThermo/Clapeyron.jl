@@ -24,9 +24,9 @@ export COSMOSAC02
     reference_state = nothing)
 
 ## Input parameters:
-- `Pi` :Single Parameter{String} 
-- `V`: Single Parameter{Float64}
-- `A`: Single Parameter{Float64}
+- `Pi`: Single Parameter (`String`)
+- `V`: Single Parameter (`Float64`)
+- `A`: Single Parameter (`Float64`)
 
 ## Description
 An activity coefficient model using molecular solvation based on the COSMO-RS method.

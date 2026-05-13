@@ -3,7 +3,7 @@ using Preferences
 """
     precompile_clapeyron!(val = true)
 
-Activates or Deactivates the precompilation workload of the Clapeyron.,jl
+Activates or Deactivates the precompilation workload of the Clapeyron.jl
 
 !!! compat "Julia 1.9"
 This function requires at least Julia 1.9
