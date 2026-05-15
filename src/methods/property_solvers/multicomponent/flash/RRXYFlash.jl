@@ -1,5 +1,5 @@
 """
-    SSXYFlash{T}(;kwargs...)
+    RRXYFlash{T}(;kwargs...)
 
 Method to solve non-reactive multicomponent, two-phase flash problem, using a generalized succesive substitution formulation.
 
@@ -20,7 +20,7 @@ Only two phases are supported. If `K0` is `nothing`, it will be calculated via f
 - `ss_iters` = maximum number of inner sucessive substitution iterations.
 - `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
 """
-struct SSXYFlash{P,T} <: FlashMethod
+struct RRXYFlash{P,T} <: FlashMethod
     equilibrium::Symbol
     T0::Union{P,Nothing}
     p0::Union{P,Nothing}
@@ -36,7 +36,7 @@ struct SSXYFlash{P,T} <: FlashMethod
     verbose::Bool
 end
 
-function Solvers.primalval(method::SSXYFlash{P,T}) where {P,T}
+function Solvers.primalval(method::RRXYFlash{P,T}) where {P,T}
     if P == Nothing
         λP = Nothing
     else
@@ -48,27 +48,27 @@ function Solvers.primalval(method::SSXYFlash{P,T}) where {P,T}
     else
         λT = Solvers.primal_eltype(P)
     end
-    return SSXYFlash{λP,λT}(method.equilibrium,primalval(method.T0),primalval(method.p0),
+    return RRXYFlash{λP,λT}(method.equilibrium,primalval(method.T0),primalval(method.p0),
                     primalval(method.K0),primalval(method.x0),primalval(method.y0),primalval(method.v0),
                     method.tol_xy,method.tol_pT,method.tol_of,
                     method.max_iters,method.ss_iters,method.verbose)
 end
 
-Base.eltype(method::SSXYFlash{T}) where T = T
+Base.eltype(method::RRXYFlash{T}) where T = T
 
-function index_reduction(m::SSXYFlash,idx::AbstractVector)
+function index_reduction(m::RRXYFlash,idx::AbstractVector)
     K0,x0,y0 = method.K0,method.x0,method.y0
     K0 !== nothing && (K0 = K0[idx])
     x0 !== nothing && (x0 = x0[idx])
     y0 !== nothing && (y0 = y0[idx])
-    return SSXYFlash(;equilibrium,m.T0,m.p0,K0,x0,y0,m.v0,m.tol_xy,m.tol_pT,m.tol_of,m.max_iters,m.ss_iters,m.verbose)
+    return RRXYFlash(;equilibrium,m.T0,m.p0,K0,x0,y0,m.v0,m.tol_xy,m.tol_pT,m.tol_of,m.max_iters,m.ss_iters,m.verbose)
 end
 
-index_reduction(m::SSXYFlash{Nothing,Nothing},idx::AbstractVector) = m
+index_reduction(m::RRXYFlash{Nothing,Nothing},idx::AbstractVector) = m
 
-numphases(::SSXYFlash) = 2
+numphases(::RRXYFlash) = 2
 
-function SSXYFlash(;equilibrium = :unknown,
+function RRXYFlash(;equilibrium = :unknown,
                         T0 = nothing,
                         p0 = nothing,
                         K0 = nothing,
@@ -83,16 +83,16 @@ function SSXYFlash(;equilibrium = :unknown,
                         flash_result = nothing,
                         verbose = false)
 
-    !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for SSXYFlash"))
+    !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for RRXYFlash"))
     if flash_result isa FlashResult
         comps,β,volumes = flash_result.compositions,flash_result.fractions,flash_result.volumes
         np = numphases(flash_result)
-        np != 2 && incorrect_np_flash_error(SSXYFlash,flash_result)
+        np != 2 && incorrect_np_flash_error(RRXYFlash,flash_result)
         w1,w2 = comps[1],comps[2]
         v = (volumes[1],volumes[2])
         P00 = flash_result.data.p
         T00 = flash_result.data.T
-        return SSXYFlash(;equilibrium = equilibrium,T0 = T00,p0 = P00,x0 = w1,y0 = w2,v0 = v,
+        return RRXYFlash(;equilibrium = equilibrium,T0 = T00,p0 = P00,x0 = w1,y0 = w2,v0 = v,
                         tol_xy = tol_xy,tol_pT = tol_pT,tol_of = tol_of,
                         max_iters = max_iters,ss_iters = ss_iters,verbose = verbose)
     end
@@ -128,7 +128,7 @@ function SSXYFlash(;equilibrium = :unknown,
     else
         S = typeof(something(T0,p0))
     end
-    return SSXYFlash{S,TT}(equilibrium,T0,p0,K0,x0,y0,_v0,
+    return RRXYFlash{S,TT}(equilibrium,T0,p0,K0,x0,y0,_v0,
                             tol_xy,tol_pT,tol_of,
                             max_iters,ss_iters,verbose)
 end
@@ -138,7 +138,7 @@ function update_volume!(model,result,p = pressure(result),T = temperature(result
     return result
 end
 
-function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResult,method::SSXYFlash)
+function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResult,method::RRXYFlash)
     #we suppose model is already cached
 
     verbose = method.verbose
@@ -445,4 +445,4 @@ verbose &&
     return flash_result
 end
 
-export SSXYFlash
+export RRXYFlash

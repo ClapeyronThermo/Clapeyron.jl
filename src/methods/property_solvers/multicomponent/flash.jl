@@ -558,7 +558,7 @@ is_unknown(method::FlashMethod) = is_unknown(method.equilibrium)
 end
 
 include("flash/general_flash.jl")
-include("flash/SSXYFlash.jl")
+include("flash/RRXYFlash.jl")
 
 function xy_flash_ad(result,tup,tup_primal,spec1,spec2)
     if any(has_dual,tup)

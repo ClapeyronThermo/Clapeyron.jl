@@ -128,7 +128,7 @@ function tp_flash_impl(model,p,T,z,method::GeneralizedXYFlash)
     return xy_flash(model,spec,z,flash0,method)
 end
 
-function tp_flash_impl(model,p,T,z,method::SSXYFlash)
+function tp_flash_impl(model,p,T,z,method::RRXYFlash)
     modelx = __tpflash_cache_model(model,p,T,z,:vle)
     flash0 = pt_flash_x0(modelx,p,T,z,method)
     isone(numphases(flash0)) && return flash0

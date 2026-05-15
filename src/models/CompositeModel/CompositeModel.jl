@@ -509,7 +509,7 @@ for xy in [:ph,:ps,:ts,:vt]
     xyz = Symbol(xy,:_flash)
     @eval begin 
         function init_preferred_method(method::typeof($xyz),model::RestrictedEquilibriaModel,kwargs)
-            return SSXYFlash(;kwargs...)
+            return RRXYFlash(;kwargs...)
         end
     end
 end
