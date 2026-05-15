@@ -216,7 +216,7 @@ function qp_flash_impl(model,β,p,z,method::RRQXFlash)
     Tinv = Roots.solve(prob,Roots.Order1(),params,atol = method.atol,rtol = method.rtol)
     T = 1/Tinv
 
-@info "________________________________________________________________________________________
+    verbose && @info "________________________________________________________________________________________
       Final K values:        $K
       Final temperature:     $T
 

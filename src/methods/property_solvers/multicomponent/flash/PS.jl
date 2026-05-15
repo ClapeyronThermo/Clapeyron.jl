@@ -78,7 +78,7 @@ function ps_flash_impl(model,p,s,z,method::GeneralizedXYFlash)
 end
 
 function ps_flash_impl(model,p,s,z,method::RRXYFlash)
-    modelx = __tpflash_cache_model(modelx,p,NaN,z,:vle)
+    modelx = __tpflash_cache_model(model,p,NaN,z,:vle)
     flash0 = px_flash_x0(modelx,p,s,z,entropy,method)
     isone(numphases(flash0)) && return flash0
     spec = FlashSpecifications(pressure,p,entropy,s)
