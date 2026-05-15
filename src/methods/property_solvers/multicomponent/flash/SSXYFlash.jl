@@ -217,7 +217,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
     iz = 0
     volz = convert(TT,NaN)
 
-    ss_status = RREq #we suppose equilibria here
+    ss_status = RREq #we suppose equilibria, the solver then will see if we are in eq or not.
     outer_status = :working
     #=
     :working
@@ -225,6 +225,8 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
     :trivial
     :maxiter
     =#
+
+
     dlnϕ_cache = ∂lnϕ_cache(model, val1, val2, x, Val{false}())
     max_iters = method.max_iters
     ss_iters = method.ss_iters
@@ -310,10 +312,14 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
                     p -= sqrt(tol_pT)*p
                 end
             else
-                dOF = (OF - OF_old)/(p - p_old) #just secant, maybe another method could be better?
-                p = p - OF/dOF
+
+                lnp = log(p)
+                dOF = (OF - OF_old)/(log(p/p_old)) #just secant, maybe another method could be better?
+                p_old = p
+                lnp = lnp - OF/dOF
+                p = exp(lnp)
             end
-            OF_pT = p - p_old
+            OF_pT = (p - p_old)/p
         else #px    
             if i == 1
                 T_old = T
@@ -324,11 +330,13 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
                     T += sqrt(tol_pT)*T
                 end
             else
-                dOF = (OF - OF_old)/(T - T_old) #just secant, maybe another method could be better?
+                τ = 1/T
+                dOF = (OF - OF_old)/(τ - 1/T_old) #just secant, maybe another method could be better?
                 T_old = T
-                T = T - OF/dOF
+                τ = τ - OF/dOF
+                T = 1/τ
             end
-            OF_pT = T - T_old
+            OF_pT = (T - T_old)/T
             update_temperature!(model,T)
         end
         !isfinite(OF) && (outer_status = :failure)

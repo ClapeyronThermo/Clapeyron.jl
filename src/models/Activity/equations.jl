@@ -500,3 +500,12 @@ for xy in [:ph,:ps,:ts,:vt]
         end
     end
 end
+
+for xy in [:qt,:qp]
+    xyz = Symbol(xy,:_flash)
+    @eval begin 
+        function init_preferred_method(method::typeof($xyz),model::ActivityModel,kwargs)
+            return RRQXFlash(;kwargs...)
+        end
+    end
+end

@@ -2,7 +2,7 @@
 update_pressure!(model,p) = nothing
 update_temperature!(model,T) = nothing
 
-function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache)
+function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,verbose_cache)
     x,y,z =  w
     K,lnK = vec_cache
     #using cache
@@ -14,6 +14,7 @@ function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache)
     lnϕx, volx = modified_lnϕ(model, p, T, x, dlnϕ_cache; phase = phasex)
     lnK .= lnϕx
     lnϕy, voly = modified_lnϕ(model, p, T, y, dlnϕ_cache; phase = phasey)
+
     lnK .-= lnϕy
     K .= exp.(lnK)
     lnK[1] = volx
@@ -23,20 +24,34 @@ function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache)
         non_iny[i] && (K[i] = 0)
     end
     x,y = update_rr!(K,β,z,x,y,non_inx,non_iny,false)
-    return sum(x) - sum(y)
+
+    OF = sum(x) - sum(y)
+    verbose,iter_count,is_temperature = verbose_cache
+    if verbose     
+        iter_count[] += 1
+        iter = iter_count[]
+        if is_temperature
+            X = T
+        else
+            X = p
+        end
+        @info "$(__pad_val(iter,4))    $(__pad_val(X,16))   $(__pad_val(OF,16)) $(repr(K,context = :compact => true))"
+    end
+    return OF
+
 end
 
 function update_K_QT!(logp,params)
     p = exp(logp)
-    model,β,T,w,phases,non_inw,vec_cache,dlnϕ_cache = params
-    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache)
+    model,β,T,w,phases,non_inw,vec_cache,dlnϕ_cache,verbose = params
+    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,verbose)
 end
 
 function update_K_QP!(Tinv,params)
     T = 1/Tinv
-    model,β,p,w,phases,non_inw,vec_cache,dlnϕ_cache = params
+    model,β,p,w,phases,non_inw,vec_cache,dlnϕ_cache,verbose = params
     update_temperature!(model,T)
-    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache)
+    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,verbose)
 end
 
 """
@@ -189,12 +204,23 @@ function qp_flash_impl(model,β,p,z,method::RRQXFlash)
     dlnϕ_cache = ∂lnϕ_cache(model, β, p, x, Val{false}())
     vec_cache = (K,lnK)
     #model,p,T,w,β,Kx,phases,non_inw,vec_cache,dlnϕ_cache,spec
-
-    params = (model,β,p,w,phases,non_inw,vec_cache,dlnϕ_cache)
+    verbose = get_verbosity(method)
+    verbose_cache = (get_verbosity(method),Ref(0),true)
+    params = (model,β,p,w,phases,non_inw,vec_cache,dlnϕ_cache,verbose_cache)
     Tinv0 = 1/temperature(flash0)
     prob = Roots.ZeroProblem(update_K_QP!,Tinv0)
+    
+    verbose && @info "_______________________________________________________
+      iter    T                  OF               K"
+
     Tinv = Roots.solve(prob,Roots.Order1(),params,atol = method.atol,rtol = method.rtol)
     T = 1/Tinv
+
+@info "________________________________________________________________________________________
+      Final K values:        $K
+      Final temperature:     $T
+
+"
     n = sum(z)
     resize!(lnK,2)
     resize!(K,2)
@@ -238,12 +264,22 @@ function qt_flash_impl(model::M,β,T,z,method::RRQXFlash) where M
     dlnϕ_cache = ∂lnϕ_cache(model, β, T, x, Val{false}())
     vec_cache = (K,lnK)
     #model,p,T,w,β,Kx,phases,non_inw,vec_cache,dlnϕ_cache,spec
-
-    params = (model,β,T,w,phases,non_inw,vec_cache,dlnϕ_cache)
+    verbose = get_verbosity(method)
+    verbose_cache = (verbose,Ref(0),false)
+    params = (model,β,T,w,phases,non_inw,vec_cache,dlnϕ_cache,verbose_cache)
     logp0 = log(pressure(flash0))
     prob = Roots.ZeroProblem(update_K_QT!,logp0)
+
+    verbose && @info "_______________________________________________________
+      iter    p                  OF               K"
     logp = Roots.solve(prob,Roots.Order1(),params,atol = method.atol,rtol = method.rtol)
     p = exp(logp)
+
+@info "________________________________________________________________________________________
+      Final K values:        $K
+      Final pressure:        $p
+
+"
     n = sum(z)
     resize!(lnK,2)
     resize!(K,2)
