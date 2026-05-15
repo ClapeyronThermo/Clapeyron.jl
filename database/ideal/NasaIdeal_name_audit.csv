@@ -490,27 +490,27 @@ crminus,crminus,missing_kept_nasa_only
 crn,crn,missing_kept_nasa_only
 cro,cro,missing_kept_nasa_only
 cro2,cro2,missing_kept_nasa_only
-cro3,cro3,missing_kept_nasa_only
+Chromium(VI) oxide~|~Chromium trioxide~|~CrO3,Chromium(VI) oxide~|~Chromium trioxide~|~CrO3,matched
 cro3minus,cro3minus,missing_kept_nasa_only
 carbon sulfide~|~carbon monosulfide~|~carbon monosulphide~|~cs,carbon sulfide~|~carbon monosulfide~|~carbon monosulphide~|~cs,matched
 csplus,csplus,missing_kept_nasa_only
 csminus,csminus,missing_kept_nasa_only
 csbo2,csbo2,missing_kept_nasa_only
-csbr,csbr,missing_kept_nasa_only
-cscl,cscl,missing_kept_nasa_only
+Caesium bromide~|~CsBr,Caesium bromide~|~CsBr,matched
+Caesium chloride~|~CsCl,Caesium chloride~|~CsCl,matched
 csf,csf,missing_kept_nasa_only
 csh,csh,missing_kept_nasa_only
 csi,csi,missing_kept_nasa_only
 csli,csli,missing_kept_nasa_only
-csno2,csno2,missing_kept_nasa_only
-csno3,csno3,missing_kept_nasa_only
+Caesium nitrite~|~CsNO2,Caesium nitrite~|~CsNO2,matched
+Caesium nitrate~|~CsNO3,Caesium nitrate~|~CsNO3,matched
 csna,csna,missing_kept_nasa_only
 cso,cso,missing_kept_nasa_only
-csoh,csoh,missing_kept_nasa_only
-csrb,csrb,missing_kept_nasa_only
+Caesium hydroxide~|~CsOH,Caesium hydroxide~|~CsOH,matched
+CsRb,CsRb,matched
 cs2~|~carbon disulfide~|~carbon disulphide,cs2~|~carbon disulfide~|~carbon disulphide,matched
-cs2br2,cs2br2,missing_kept_nasa_only
-cs2co3,cs2co3,missing_kept_nasa_only
+Dicaesium dibromide~|~Cs2Br2,Dicaesium dibromide~|~Cs2Br2,matched
+Cesium carbonate~|~dicesium carbonate~|~cs2co3,Cesium carbonate~|~dicesium carbonate~|~cs2co3,matched
 cs2cl2,cs2cl2,missing_kept_nasa_only
 cs2f2,cs2f2,missing_kept_nasa_only
 cs2i2,cs2i2,missing_kept_nasa_only
@@ -1019,7 +1019,7 @@ sulfur atom~|~sulphur atom~|~atomic sulfur~|~atomic sulphur~|~s,sulfur atom~|~su
 splus,splus,missing_kept_nasa_only
 sminus,sminus,missing_kept_nasa_only
 scl,scl,missing_kept_nasa_only
-scl2,scl2,missing_kept_nasa_only
+sulfur dichloride~|~scl2,sulfur dichloride~|~scl2,matched
 scl2plus,scl2plus,missing_kept_nasa_only
 sd,sd,missing_kept_nasa_only
 sf,sf,missing_kept_nasa_only

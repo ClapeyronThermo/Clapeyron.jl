@@ -30,6 +30,20 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 12137-74-5;Lead(IV) sulfide~|~PbS2~|~Pbs2~|~pbs2;S=[Pb]=S;KBRXASHFOYJLED-UHFFFAOYSA-N;S=[Pb]=S
 24415-00-7;Germanium dibromide~|~Br2Ge;Br[Ge]Br;DUVPPTXIBVUIKL-UHFFFAOYSA-N;Br[Ge]Br
 7758-02-3;Potassium bromide;[K+].[Br-];IOLCXVTUBQKXJR-UHFFFAOYSA-M;[K+].[Br-]
+7787-69-1;Caesium bromide~|~CsBr~|~csbr;[Cs+].[Br-];LYQFWZFBNBDLEO-UHFFFAOYSA-M;[Cs+].[Br-]
+12409-56-2; Dicaesium dibromide~|~Cs2Br2~|~cs2br2~|~Cs2br2~|~cs2Br2;
+12018-00-7;Chromium(II) oxide~|~Chromium oxide;O=[Cr];XVOFZWCCFLVFRR-UHFFFAOYSA-N;O=[Cr]
+12018-01-8;Chromium(IV) oxide~|~Chromium dioxide;O=[Cr]=O;AYTAKQFHWFYBMA-UHFFFAOYSA-N;O=[Cr]=O
+1333-82-0;Chromium(VI) oxide~|~Chromium trioxide~|~CrO3;O=[Cr](=O)=O;WGLPBDUCMAPZCE-UHFFFAOYSA-N;O=[Cr](=O)=O
+13454-83-6;Caesium nitrite~|~CsNO2~|~csno2;N(=O)[O-].[Cs+];AJAFRMGZWFDZAS-UHFFFAOYSA-M;N(=O)[O-].[Cs+]
+7789-18-6;Caesium nitrate~|~CsNO3~|~csno3;[N+](=O)([O-])[O-].[Cs+];NLSCHDZTHVNDCP-UHFFFAOYSA-N;[N+](=O)([O-])[O-].[Cs+]
+21351-79-1;Caesium hydroxide~|~CsOH~|~csoh;[OH-].[Cs+];HUCVOHYBFXVBRW-UHFFFAOYSA-M;[OH-].[Cs+]
+7647-17-8;Caesium chloride~|~CsCl~|~CsCL~|~cscl~|~CSCL;[Cs+].[Cl-];AIYUHDOJVYHVIT-UHFFFAOYSA-M;[Cs+].[Cl-]
+12331-83-8;CsRb~|~csrb;[Cs][Rb];VTZYVEBKVJCGFY-UHFFFAOYSA-N;[Cs][Rb]
+534-17-8;Cesium carbonate~|~dicesium carbonate~|~cs2co3~|~Cs2CO3;C(=O)([O-])[O-].[Cs+].[Cs+];FJDQFPXHSGXQBY-UHFFFAOYSA-L;C(=O)([O-])[O-].[Cs+].[Cs+]
+10545-99-0;sulfur dichloride~|~Sulfur dichloride~|~Sulfur Dichloride~|~scl2~|~SCl2~|~Cl2S;S(Cl)Cl;FWMUJAIKEJWSSY-UHFFFAOYSA-N;S(Cl)Cl
+13814-25-0;Sulfur difluoride~|~Sulfur difluoride~|~Sulfur Difluoride~|~SF2~|~sf2~|~Sf2~|~sF2;FSF;QTJXVIKNLHZIKL-UHFFFAOYSA-N;FSF
+
 
 
 98-6-6;tert-butylbenzene~|~(1,1-dimethylethyl)benzene;c1(C(C)(C)C)ccccc1;YTZKOQUCBOVLHL-UHFFFAOYSA-N;CC(C)(C)c1ccccc1
@@ -968,7 +982,7 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 75-25-2;r20b3~|~chbr3~|~bromoform~|~tribromomethane;BrC(Br)Br;DIKBFYAXUHHXCS-UHFFFAOYSA-N;BrC(Br)Br
 67-66-3;chcl3~|~chloroform~|~trichloromethane;C(Cl)(Cl)Cl;HEDRZPFGACZZDS-UHFFFAOYSA-N;ClC(Cl)Cl
 75-45-6;r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane;ClC(F)F;VOPWNXZWBYDODV-UHFFFAOYSA-N;FC(F)Cl
-75-43-4;r21~|~chfcl2~|~Halon_112~|~Freon_21~|~dichlorofluoromethane;ClC(F)Cl;UMNKXPULIDJLSU-UHFFFAOYSA-N;FC(Cl)Cl
+75-43-4;r21~|~chfcl2~|~Halon_112~|~Freon_21~|~dichlorofluoromethane~|~CHFCL2;ClC(F)Cl;UMNKXPULIDJLSU-UHFFFAOYSA-N;FC(Cl)Cl
 91-22-5;chinoline~|~quinoline;c1(cccn2)c2cccc1;SMWDFEZZVXVKRB-UHFFFAOYSA-N;c1ccc2ncccc2c1
 107-20-0;chloroacetaldehyde;ClCC(=O);QSKPIOLLBIHNAC-UHFFFAOYSA-N;O=CCCl
 79-11-8;chloroacetic acid~|~chloroethanoic acid;ClCC(=O)O;FOCAUTSVDIKZOP-UHFFFAOYSA-N;O=C(O)CCl
