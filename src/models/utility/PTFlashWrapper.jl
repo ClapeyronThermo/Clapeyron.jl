@@ -169,3 +169,21 @@ function update_volume!(model::PTFlashWrapper,result,p = pressure(result),T = te
     end
     return nothing
 end
+
+for xy in [:ph,:ps,:ts,:vt]
+    xyz = Symbol(xy,:_flash)
+    @eval begin 
+        function init_preferred_method(method::typeof($xyz),model::PTFlashWrapper,kwargs)
+            return RRXYFlash(;kwargs...)
+        end
+    end
+end
+
+for xy in [:qt, :qp]
+    xyz = Symbol(xy,:_flash)
+    @eval begin 
+        function init_preferred_method(method::typeof($xyz),model::PTFlashWrapper,kwargs)
+            return RRQXFlash(;kwargs...)
+        end
+    end
+end
