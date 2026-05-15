@@ -149,7 +149,9 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
-    verbose && @info "iter  status     β                error(lnK̄)       K̄"
+
+    verbose && @info "_____________________________________________________________________________________
+      iter  status     β                error(lnK̄)       K̄"
     while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status in (RREq,RRLiquid,RRVapour)
         it += 1
         itacc += 1
@@ -247,11 +249,14 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
         K̄ .= y ./ x
         β = rachfordrice(K̄, z; non_inx, non_iny, K_tol, verbose)
     end
+verbose &&
+@info "_____________________________________________________________________________________
+      Final K̄ values:        $K̄
+      Final vapour fraction: $β
+      Final value of ψ:      $ψ
 
-    verbose && @info "final K̄ values:        $K̄"
-    verbose && @info "final vapour fraction: $β"
-    verbose && @info "final value of ψ:      $ψ"
-    #convergence checks (TODO, seems to fail with activity models)
+"
+
     status = rachfordrice_status(K̄,z,non_inx,non_iny;K_tol = K_tol)
     verbose && status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
 

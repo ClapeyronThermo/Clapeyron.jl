@@ -228,6 +228,8 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
     dlnϕ_cache = ∂lnϕ_cache(model, val1, val2, x, Val{false}())
     max_iters = method.max_iters
     ss_iters = method.ss_iters
+    total_ss_iters = 0
+    total_outer_iters = 0
     tol_of = convert(TT,method.tol_of)
     tol_pT = convert(TT,method.tol_pT)
     tol_xy = convert(TT,method.tol_xy)
@@ -235,16 +237,20 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
     vapour_idx = lle ? -1 : 2
     flash_result = FlashResult([x,y],[β,β],[volx,voly],FlashData(p,T,zero(TT),vapour_idx))
 
-    verbose && @info "iter  ss_iter  status    p                T                OF_spec          pT_OF"
+
+    verbose && @info "________________________________________________________________________________________
+      iter  ss_iter  status    p                T                OF_spec          pT_OF"
     for i in 1:max_iters
         error_lnK = convert(TT,Inf)
         outer_status == :failure && break
         ss_converged = false
         ss_count = 0
+        total_outer_iters += 1
         for j in 1:ss_iters
             ss_status == RRTrivial && break
             ss_status == RRFailure && break
             ss_count += 1
+            total_ss_iters += 1
             if error_lnK < tol_xy
                 ss_converged = true
                 break
@@ -256,8 +262,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
             K .= exp.(lnK)
 
             ss_status = rachfordrice_status(K,z; K_tol = tol_xy)
-
-            #verbose && @info "$it    $status   $β  $(round(error_lnK,sigdigits=4)) $K"
 
             if isnan(β) && ss_status != RRTrivial
                 #try to save K? basically damping
@@ -339,10 +343,8 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
         if ss_status == RRTrivial && outer_status != :failure
             if is_unknown(phasez) && outer_status != :trivial
                 phasez = identify_phase(model,p,T,z)
-                x .= z
-                y .= z
-                x ./= ∑z
-                y ./= ∑z
+                x .= z ./ ∑z
+                y .= z ./ ∑z
                 vapour_idx = 2
                 if is_liquid(phasez)
                     flash_result.fractions[1] = 0
@@ -364,14 +366,70 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
 
         flash_result = FlashResult(flash_result.compositions,flash_result.fractions,flash_result.volumes,FlashData(p,T,zero(TT),vapour_idx))
     end
+
+verbose &&
+@info "________________________________________________________________________________________
+      Final K values:        $K
+      Final vapour fraction: $β
+      Outer iterations:      $total_outer_iters
+      SS iterations:         $total_ss_iters
+      Final temperature:     $T
+      Final pressure:        $p
+
+"
+
+    ss_status = rachfordrice_status(K,z,K_tol = tol_xy)
+    verbose && ss_status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
+    volx,voly = flash_result.volumes[1],flash_result.volumes[2]
+    #maybe azeotrope, do nothing in this case
+    if abs(volx - voly) > sqrt(max(abs(volx),abs(voly))) && ss_status != RREq
+        verbose && @info "trivial result but different volumes (maybe azeotrope?)"
+        ss_status = RREq
+    elseif ss_status == RREq && β <= eps(eltype(β))
+        ss_status = RRLiquid
+    elseif ss_status == RREq && β >= one(β) - eps(eltype(β))
+        ss_status = RRVapour
+    elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
+        verbose && @info "material balance failed."
+        ss_status = RRFailure
+        outer_status = :failure
+    end
+
+    verbose && ss_status == RRLiquid && @info "procedure converged to a single liquid phase."
+    verbose && ss_status == RRVapour && @info "procedure converged to a single vapour phase."
+
     if outer_status == :failure
         flash_result.compositions[1] .= NaN
         flash_result.compositions[2] .= NaN
         flash_result.volumes .= NaN
         flash_result.fractions .= NaN
-        g = convert(TT,NaN)
-    else
+    end
+
+    if ss_status != RREq && outer_status != :trivial #trivial system detected after the iterations
+        _0 = zero(eltype(x))
+        _1 = one(eltype(x))
+        x .= z ./ ∑z
+        y .= z ./ ∑z
+        if ss_status == RRLiquid
+            β = zero(TT)
+            vz = volume(model,p,T,z,phase = :l)/∑z
+        elseif ss_status == RRVapour
+            β = one(TT)
+            vz = volume(model,p,T,z,phase = :v)/∑z
+        else
+            β = convert(TT,NaN)
+            vz = convert(TT,NaN)
+        end
+        flash_result.volumes[1] = vz
+        flash_result.volumes[2] = vz
+        flash_result.fractions[1] = ∑z*(1-β)
+        flash_result.fractions[2] = ∑z*β
+    end
+
+    if outer_status != :failure
         g,_ = modified_gibbs(model,flash_result)
+    else
+        g = convert(TT,NaN)
     end
 
     flash_result = FlashResult(flash_result.compositions,flash_result.fractions,flash_result.volumes,FlashData(p,T,g,vapour_idx))
