@@ -122,8 +122,16 @@ function tp_flash2_to_tpflash(model,p,T,z,result)
 end
 
 function tp_flash_impl(model,p,T,z,method::GeneralizedXYFlash)
-    flash0 = px_flash_x0(model,p,T,z,temperature,method)
+    flash0 = pt_flash_x0(model,p,T,z,method)
     isone(numphases(flash0)) && return flash0
     spec = FlashSpecifications(pressure,p,temperature,T)
     return xy_flash(model,spec,z,flash0,method)
+end
+
+function tp_flash_impl(model,p,T,z,method::SSXYFlash)
+    modelx = __tpflash_cache_model(model,p,T,z,:vle)
+    flash0 = pt_flash_x0(modelx,p,T,z,method)
+    isone(numphases(flash0)) && return flash0
+    spec = FlashSpecifications(pressure,p,temperature,T)
+    return xy_flash(modelx,spec,z,flash0,method)
 end

@@ -66,4 +66,12 @@ function vt_flash_impl(model,V,T,z,method::GeneralizedXYFlash)
     return xy_flash(model,spec,z,flash0,method)
 end
 
+function vt_flash_impl(model,V,T,z,method::SSXYFlash)
+    modelx = __tpflash_cache_model(model,NaN,T,z,:vle)
+    flash0 = tx_flash_x0(modelx,T,V,z,volume,method)
+    isone(numphases(flash0)) && return flash0
+    spec = FlashSpecifications(volume,V,temperature,T)
+    return xy_flash(modelx,spec,z,flash0,method)
+end
+
 export vt_flash

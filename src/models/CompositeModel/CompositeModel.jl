@@ -407,20 +407,15 @@ saturation_model(model::CompositeModel) = model.fluid
 
 #defer bubbledew eq to the fluid field
 
-function init_preferred_method(method::typeof(bubble_pressure),model::CompositeModel,kwargs)
-    init_preferred_method(method,model.fluid,kwargs)
-end
+for prop in [:bubble_pressure,:bubble_temperature,
+    :dew_pressure,:dew_temperature,
+    :tp_flash,:ph_flash,:vt_flash,:ts_flash,:ps_flash]
 
-function init_preferred_method(method::typeof(bubble_temperature),model::CompositeModel,kwargs)
-    init_preferred_method(method,model.fluid,kwargs)
-end
-
-function init_preferred_method(method::typeof(dew_pressure),model::CompositeModel,kwargs)
-    init_preferred_method(method,model.fluid,kwargs)
-end
-
-function init_preferred_method(method::typeof(dew_temperature),model::CompositeModel,kwargs)
-    init_preferred_method(method,model.fluid,kwargs)
+    @eval begin
+        function init_preferred_method(method::typeof($prop),model::CompositeModel,kwargs)
+            init_preferred_method(method,model.fluid,kwargs)
+        end
+    end
 end
 
 function bubble_pressure(model::CompositeModel, T, x, method::ThermodynamicMethod)
@@ -439,10 +434,6 @@ function dew_temperature(model::CompositeModel, T, x, method::ThermodynamicMetho
     return dew_temperature(model.fluid, T, x, method)
 end
 
-#Michelsen TPFlash and Rachford-Rice TPFlash support
-function init_preferred_method(method::typeof(tp_flash),model::CompositeModel{<:Any,Nothing},kwargs)
-    init_preferred_method(method,model.fluid,kwargs)
-end
 
 __tpflash_cache_model(model::CompositeModel{<:Any,Nothing},p,T,z,equilibrium) = __tpflash_cache_model(model.fluid,p,T,z,equilibrium)
 
@@ -512,6 +503,15 @@ end
 function _edge_temperature(model::RestrictedEquilibriaModel,p,z,v0 = nothing)
     wrapper = __tpflash_cache_model(model,p,NaN,z,:vle)
     return _edge_temperature(wrapper,p,z,v0)
+end
+
+for xy in [:ph,:ps,:ts,:vt]
+    xyz = Symbol(xy,:_flash)
+    @eval begin 
+        function init_preferred_method(method::typeof($xyz),model::RestrictedEquilibriaModel,kwargs)
+            return SSXYFlash(;kwargs...)
+        end
+    end
 end
 
 export CompositeModel

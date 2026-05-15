@@ -66,4 +66,12 @@ function ts_flash_impl(model,T,S,z,method::GeneralizedXYFlash)
     return xy_flash(model,spec,z,flash0,method)
 end
 
+function ts_flash_impl(model,T,S,z,method::SSXYFlash)
+    modelx = __tpflash_cache_model(model,NaN,T,z,:vle)
+    flash0 = tx_flash_x0(modelx,T,S,z,entropy,method)
+    isone(numphases(flash0)) && return flash0
+    spec = FlashSpecifications(entropy,S,temperature,T)
+    return xy_flash(modelx,spec,z,flash0,method)
+end
+
 export ts_flash

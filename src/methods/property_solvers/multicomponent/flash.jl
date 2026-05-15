@@ -307,6 +307,9 @@ function eval_flashresult_prop(model,state,f::F) where F
 end
 
 function eval_flashresult_prop_i(model,state,f::F,i,mass_prop) where F
+    if i == 0
+        return eval_flashresult_prop(model,state,f)
+    end
     p = pressure(state)
     T = temperature(state)
     res = zero(Base.promote_eltype(model,state))
@@ -359,6 +362,12 @@ end
 @inline identify_phase(data::FlashData,i::Integer) = vapour_idx_to_symbol(data.vapour_idx,i)
 @inline identify_phase(i0::Integer,i::Integer) = vapour_idx_to_symbol(i0,i)
 
+function identify_phase(model::EoSModel,state::FlashResult,i::Integer)
+    phase0 = identify_phase(state,i)
+    !is_unknown(phase0) && return phase0
+    return identify_phase(model,pressure(state),temperature(state),state.compositions[i],vol = state.volumes[i])
+end
+
 for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
     :mass_isochoric_heat_capacity, :mass_isobaric_heat_capacity,
     :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
@@ -366,7 +375,6 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
     #higher :derivative :order :properties
     :fundamental_derivative_of_gas_dynamics,
     #volume :properties
-    :identify_phase,
     :chemical_potential,:chemical_potential_res]
     is_mass = prop == :mass_isochoric_heat_capacity || prop == :mass_isobaric_heat_capacity
     @eval begin
@@ -550,6 +558,7 @@ is_unknown(method::FlashMethod) = is_unknown(method.equilibrium)
 end
 
 include("flash/general_flash.jl")
+include("flash/SSXYFlash.jl")
 
 function xy_flash_ad(result,tup,tup_primal,spec1,spec2)
     if any(has_dual,tup)
