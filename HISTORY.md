@@ -931,7 +931,7 @@ saturation_pressure.(transpose(models),T) #produces a 51×3 Matrix{Tuple{Float64
 - new EoS UNIFAC-FV-poly (`UNIFACFVPoly`)
 - `getparams` now supports inline csvs, custom locations and the ability to replace or swap out certain parameters, check `getparams` docs for more information
 - new function: `recombine!` to recalculate combining and mixing rules after one parameter is modified. at the moment, SAFT and activity models have this defined.
-- all quadratic mixing rules have an implace version (`sigma_LorentzBerthelot(sigma,zeta)` ->  `sigma_LorentzBerthelot!(sigma,zeta)`)
+- all quadratic mixing rules have an in-place version (`sigma_LorentzBerthelot(sigma,zeta)` ->  `sigma_LorentzBerthelot!(sigma,zeta)`)
 - `AssocParam` has `getindex`/`setindex!` methods defined.
 - `GroupParam` has a new field, `grouptype`, to differenciate group parametrizations
 -

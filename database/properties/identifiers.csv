@@ -1,6 +1,37 @@
 Clapeyron Database File
 identifiers [csvtype = single,sep = ;]
 CAS;species;SMILES;inchikey;canonicalsmiles
+7440-22-4;silver~|~Silver~|~Ag~|~ag;[Ag];BQCADISMDOOEFD-UHFFFAOYSA-N;[Ag]
+14701-21-4;silver_cation~|~Silver_cation~|~Ag+~|~ag+~|~agplus~|~Agplus~|~ag_plus~|~Ag_plus;[Ag+];FOIXSVOLVBLSDH-UHFFFAOYSA-N;[Ag+]
+7429-90-5;aluminum~|~Al~|~al~|~aluminium~|~Aluminum~|~Aluminium;[Al];XAGFODPZIPBFFR-UHFFFAOYSA-N;[Al]
+14903-36-7;aluminum_cation~|~Al+~|~al+~|~aluminium_cation~|~Aluminum_cation~|~Aluminium_cation~|~Al+~|~al+~|~alplus~|~Alplus~|~al_plus~|~Al_plus;[Al+];KVLCHQHEQROXGN-UHFFFAOYSA-N;[Al+]
+22325-47-9;aluminum_anion~|~Al-~|~al-~|~aluminium_anion~|~Aluminum_anion~|~Aluminium_anion~|~alminus~|~Alminus~|~al_minus~|~Al_minus;[Al-];WVZWSVHLGBNEIG-UHFFFAOYSA-N;[Al-]
+7446-70-0;AlCl3~|~Aluminum chloride~|~Aluminum trichloride~|~alcl3~|~Aluminium chloride~|~Aluminium trichloride~|~Alcl3~|~alCl3;Cl[Al](Cl)Cl;VSCWAEJMTAWNJL-UHFFFAOYSA-K;[Al](Cl)(Cl)Cl
+7440-41-7;beryllium~|~Beryllium;[Be];ATBAMAFKBVZNFJ-UHFFFAOYSA-N;[Be]
+1314-23-4;Zirconium dioxide~|~zirconium dioxide~|~ZrO2~|~zro2~|~Zirconia~|~zirconia~|~dioxozirconium;O=[Zr]=O;MCMNRKCIXSYSNV-UHFFFAOYSA-N;O=[Zr]=O
+2781-85-3;Cyclopropene~|~cyclopropene;C1C=C1;OOXWYYGXTJLWHA-UHFFFAOYSA-N;C1C=C1
+7787-52-2;beryllium hydride~|~Beryllium hydride~|~beh2~|~BeH2~|~Beh2~|~beH2;[BeH2];RWASOQSEFLDYLC-UHFFFAOYSA-N;[H-].[H-].[Be+2]
+7787-53-3;Beryllium iodide~|~beryllium iodide~|~Beryllium Iodide~|~BeI2~|~Bei2~|~bei2;[Be+2].[I-].[I-];JUCWKFHIHJQTFR-UHFFFAOYSA-L;I[Be]I
+7787-49-7;Beryllium fluoride~|~beryllium fluoride~|~Beryllium Fluoride~|~BeF2~|~bef2~|~Bef2~|~beF2~|~;[Be+2].[F-].[F-];JZKFIPKXQBZXMW-UHFFFAOYSA-L;F[Be]F
+353-54-8;Tribromofluoromethane~|~R11B3~|~Halon1103~|~Tribromo(fluoro)methane~|~CBr3F~|~cbr3f~|~Cbr3f~|~CBr3f~|~Cbr3F~|~cBr3F~|~CFBr3;BrC(Br)(Br)F;IHZAEIHJPNTART-UHFFFAOYSA-N;C(F)(Br)(Br)Br
+353-58-2;Bromodichlorofluoromethane~|~Bromo(dichloro)fluoromethane~|~CBrCl2F~|~cbrcl2f~|~Cbrcl2f~|~CBrcl2f~|~CBrCl2f~|~CbrCl2f;C(Br)(Cl)(Cl)F;ARBYBCHKMDUXNE-UHFFFAOYSA-N;C(Br)(Cl)(Cl)F
+353-55-9;Dibromochlorofluoromethane~|~Dibromo(chloro)fluoromethane~|~CBr2ClF~|~CFCLBr2;C(F)(Cl)(Br)Br;HEDKQVNHJZBFQR-UHFFFAOYSA-N;C(F)(Cl)(Br)Br
+373-52-4;Bromofluoromethane~|~Bromo(fluoro)methane~|~CH2BrF~|~ch2brf~|~Ch2brf~|~CH2brf~|~CH2Brf~|~ch2fbr;BrCF;LHMHCLYDBQOYTO-UHFFFAOYSA-N ;C(F)Br
+79-01-6;Trichloroethylene~|~C2HCl3~|~C2HCL3~|~R1120~|~r1120~|~R_1120~|~r_1120~|~c2hcl3;Cl\C=C(/Cl)Cl;XSTXAVWGXDQKEL-UHFFFAOYSA-N;C(=C(Cl)Cl)Cl
+7789-41-5;Calcium bromide~|~CaBr2~|~cabr2;[Ca+2].[Br-].[Br-];WGEFECGEFUFIQW-UHFFFAOYSA-L;Br[Ca]Br
+7789-47-1;mercuric bromide~|~Mercuric Bromide~|~HgBr2~|~hgbr2;Br[Hg]Br;NGYIMTKLQULBOO-UHFFFAOYSA-L;Br[Hg]Br
+7789-48-2;MgBr2~|~magnesium bromide~|~Magnesium bromide~|~Magnesium Bromide~|~mgbr2;[Mg+2].[Br-].[Br-];OTCKOJUMXQWKQG-UHFFFAOYSA-L;[Mg+2].[Br-].[Br-]
+10031-22-8;PbBr2~|~Lead(II) bromide~|~pbbr2;Br[Pb]Br;ZASWJUOMEGBQCQ-UHFFFAOYSA-L;Br[Pb]Br
+13701-91-2;PbBr4~|~Lead tetrabromide~|~pbbr4~|~Lead(IV) bromide;Br[Pb](Br)(Br)Br;HBRQLWCXJABKBQ-UHFFFAOYSA-J;Br[Pb](Br)(Br)Br
+7758-95-4;Lead(II) chloride~|~PbCl2~|~pbcl2~|~PbCL2~|~Lead dichloride;Cl[Pb]Cl;HWSZZLVAJGOAAY-UHFFFAOYSA-L;Cl[Pb]Cl
+13463-30-4;Lead(IV) chloride~|~PbCl4~|~pbcl4~|~PbCL4~|~Lead tetrachloride;Cl[Pb](Cl)(Cl)Cl;PJYXVICYYHGLSW-UHFFFAOYSA-J;Cl[Pb](Cl)(Cl)Cl
+1309-60-0;Lead dioxide~|~PbO2~|~pbo2~|~;O=[Pb]=O;YADSGOSSYOOKMP-UHFFFAOYSA-N;O=[Pb]=O
+1314-87-0;Lead(II) sulfide~|~PbS~|~Pbs~|~pbs;[Pb]=S;XCAUINMIESBTBL-UHFFFAOYSA-N;[Pb]=S
+12137-74-5;Lead(IV) sulfide~|~PbS2~|~Pbs2~|~pbs2;S=[Pb]=S;KBRXASHFOYJLED-UHFFFAOYSA-N;S=[Pb]=S
+24415-00-7;Germanium dibromide~|~Br2Ge;Br[Ge]Br;DUVPPTXIBVUIKL-UHFFFAOYSA-N;Br[Ge]Br
+7758-02-3;Potassium bromide;[K+].[Br-];IOLCXVTUBQKXJR-UHFFFAOYSA-M;[K+].[Br-]
+
+
 98-6-6;tert-butylbenzene~|~(1,1-dimethylethyl)benzene;c1(C(C)(C)C)ccccc1;YTZKOQUCBOVLHL-UHFFFAOYSA-N;CC(C)(C)c1ccccc1
 2039-93-2;2-phenylbutene-1~|~2-phenyl-1-butene~|~(1-methylenepropyl)-benzene;C=C(c1ccccc1)CC;SQHOHKQMTHROSF-UHFFFAOYSA-N;C=C(CC)c1ccccc1
 3875-51-2;isopropylcyclopentane~|~1-methylethylcyclopentane~|~(1-methylethyl)-cyclopentane;C1CCCC1(C(C)C);TVSBRLGQVHJIKT-UHFFFAOYSA-N;CC(C)C1CCCC1
@@ -900,10 +931,10 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 7726-95-6;bromine;BrBr;GDTBXPJZTBHREO-UHFFFAOYSA-N;BrBr
 108-86-1;bromobenzene;c1(Br)ccccc1;QARVLSVVCXYDNA-UHFFFAOYSA-N;Brc1ccccc1
 353-59-3;r12b1~|~bromochlorodifluoromethane;FC(Br)(Cl)F;MEXUFEQDCXZEON-UHFFFAOYSA-N;FC(F)(Cl)Br
-74-96-4;bromoethane~|~ethyl bromide;CCBr;RDHPKYGYEGBMSE-UHFFFAOYSA-N;CCBr
+74-96-4;bromoethane~|~ethyl bromide~|~c2h5br~|~C2H5Br~|~C2h5br~|~c2H5br~|~c2h5Br~|~C2H5br~|~c2H5Br~|~C2h5Br;CCBr;RDHPKYGYEGBMSE-UHFFFAOYSA-N;CCBr
 593-60-2;bromoethene~|~vinyl bromide;C=CBr;INLLPKCGLOXCIV-UHFFFAOYSA-N;C=CBr
 75-62-7;r10b1~|~bromotrichloromethane;BrC(Cl)(Cl)Cl;XNNQFQFUQLJSQT-UHFFFAOYSA-N;ClC(Cl)(Cl)Br
-106-99-0;butadiene~|~1,3-butadiene;C=CC=C;KAKZBPTYRLMSJV-UHFFFAOYSA-N;C=CC=C
+106-99-0;butadiene~|~1,3-butadiene~|~C4H6_butadiene;C=CC=C;KAKZBPTYRLMSJV-UHFFFAOYSA-N;C=CC=C
 431-3-8;diacetyl~|~butadione~|~2,3-butanedione;O=C(C(=O)C)C;QSJXEFYPDANLFS-UHFFFAOYSA-N;CC(=O)C(C)=O
 123-72-8;butanal~|~1-butanal~|~butyraldehyde;CCCC=O;ZTQSAGDEMFDKMZ-UHFFFAOYSA-N;CCCC=O
 106-97-8;butane~|~n-butane;CCCC;IJDNQMDRQITEOD-UHFFFAOYSA-N;CCCC
@@ -937,7 +968,7 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 75-25-2;r20b3~|~chbr3~|~bromoform~|~tribromomethane;BrC(Br)Br;DIKBFYAXUHHXCS-UHFFFAOYSA-N;BrC(Br)Br
 67-66-3;chcl3~|~chloroform~|~trichloromethane;C(Cl)(Cl)Cl;HEDRZPFGACZZDS-UHFFFAOYSA-N;ClC(Cl)Cl
 75-45-6;r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane;ClC(F)F;VOPWNXZWBYDODV-UHFFFAOYSA-N;FC(F)Cl
-75-43-4;r21~|~chfcl2~|~dichlorofluoromethane;ClC(F)Cl;UMNKXPULIDJLSU-UHFFFAOYSA-N;FC(Cl)Cl
+75-43-4;r21~|~chfcl2~|~Halon_112~|~Freon_21~|~dichlorofluoromethane;ClC(F)Cl;UMNKXPULIDJLSU-UHFFFAOYSA-N;FC(Cl)Cl
 91-22-5;chinoline~|~quinoline;c1(cccn2)c2cccc1;SMWDFEZZVXVKRB-UHFFFAOYSA-N;c1ccc2ncccc2c1
 107-20-0;chloroacetaldehyde;ClCC(=O);QSKPIOLLBIHNAC-UHFFFAOYSA-N;O=CCCl
 79-11-8;chloroacetic acid~|~chloroethanoic acid;ClCC(=O)O;FOCAUTSVDIKZOP-UHFFFAOYSA-N;O=C(O)CCl
@@ -1650,7 +1681,7 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 75-10-5;r32~|~difluoromethane;C(F)F;RWRIWBAIICGTTQ-UHFFFAOYSA-N;FCF
 75-37-6;r152a~|~difluoroethane~|~1,1-difluoroethane;FC(F)C;NPNPZTNLOVBDOC-UHFFFAOYSA-N;CC(F)F
 624-72-6;1,2-difluoroethane;C(CF)F;AHFMSNDOYCFEPH-UHFFFAOYSA-N;FCCF
-75-46-7;r23~|~fluoroform~|~trifluoromethane;C(F)(F)F;XPDWGBQVDMORPB-UHFFFAOYSA-N;FC(F)F
+75-46-7;r23~|~Freon23~|~fluoroform~|~trifluoromethane~|~chf3~|~CHF3;C(F)(F)F;XPDWGBQVDMORPB-UHFFFAOYSA-N;FC(F)F
 75-73-0;r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride;C(F)(F)(F)F;TXEYQDLBPFQVAA-UHFFFAOYSA-N;FC(F)(F)F
 421-14-7;re143a~|~hfe143m~|~trifluoromethoxymethane~|~trifluoromethyl methyl ether;COC(F)(F)F;JRHMNRMPVRXNOS-UHFFFAOYSA-N;COC(F)(F)F
 811-97-2;r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane;C(CF)(F)(F)F;LVGUZGTVOIAKKC-UHFFFAOYSA-N;FCC(F)(F)F
@@ -2032,7 +2063,7 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 7439-93-2;lithium;[Li];WHXSMMKQMYFTQS-UHFFFAOYSA-N;[Li]
 10377-51-2;lithium iodide;[Li+].[I-];HSZCZNFXUDYRKD-UHFFFAOYSA-M;[I-].[Li+]
 928-53-0;maleonitrile;N#CC=CC#N;KYPOHTVBFVELTG-UPHRSURJSA-N;N#CC=CC#N
-7439-97-6;mercury;[Hg];QSHDDOUJBYECFT-UHFFFAOYSA-N;[Hg]
+7439-97-6;mercury~|~hg~|~Hg~|~HG~|~Mercury;[Hg];QSHDDOUJBYECFT-UHFFFAOYSA-N;[Hg]
 10025-87-3;phosphoryl chloride~|~phosphorus oxychloride~|~phosphoryl trichloride;O=P(Cl)(Cl)Cl;XHXFXVLFKHQFAL-UHFFFAOYSA-N;O=P(Cl)(Cl)Cl
 7440-9-7;potassium;[K];ZLMJMSJWJFRBEC-UHFFFAOYSA-N;[K]
 10545-99-0;sulfur dichloride;S(Cl)Cl;FWMUJAIKEJWSSY-UHFFFAOYSA-N;ClSCl
@@ -2042,7 +2073,7 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 89-78-1;menthol~|~dl-(1r,2s,5r)-rel-5-methyl-2-(1-methylethyl)cyclohexanol;OC1CC(C)CCC1C(C)C;NOOLISFMXDJSKH-KXUCPTDWSA-N;CC1CCC(C(C)C)C(O)C1
 7783-61-1;tetrafluorosilane~|~silicon tetrafluoride;[Si](F)(F)(F)F;ABTOQLMXBSRXSM-UHFFFAOYSA-N;F[Si](F)(F)F
 85-44-9;phthalic anhydride;O=C1OC(=O)C=2C=CC=CC12;LGRFSURHDFAFJT-UHFFFAOYSA-N;O=C1OC(=O)c2ccccc21
-359-11-5;r1123~|~trifluoroethene~|~trifluoroethylene;C(=C(F)F)F;MIZLGWKEZAPEFJ-UHFFFAOYSA-N;FC=C(F)F
+359-11-5;r1123~|~trifluoroethene~|~trifluoroethylene~|~c2hf3~|~C2HF3;C(=C(F)F)F;MIZLGWKEZAPEFJ-UHFFFAOYSA-N;FC=C(F)F
 116-15-4;r1216~|~perfluoropropene~|~hexafluoropropene~|~perfluoropropylene~|~hexafluoropropylene;FC(F)=C(F)C(F)(F)F;HCDGVLDPFQMKDK-UHFFFAOYSA-N;FC(F)=C(F)C(F)(F)F
 7098-22-8;c44~|~tetratetracontane;CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC;KMXFZRSJMDYPPG-UHFFFAOYSA-N;CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 544-10-5;1-chlorohexane;CCCCCCCl;MLRVZFYXUZQSRU-UHFFFAOYSA-N;CCCCCCCl
@@ -3058,7 +3089,7 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 95-95-4;2,4,5-trichlorophenol;C1=C(C(=CC(=C1Cl)Cl)Cl)O;LHJGJYXLEPZJPM-UHFFFAOYSA-N;Oc1cc(Cl)c(Cl)cc1Cl
 55255-58-8;5,8-dimethyl-1-octyl-1,2,3,4-tetrahydronaphthalene;CCCCCCCCC1CCCC2=C(C=CC(=C12)C)C;YGXXXFDZLBVJPP-UHFFFAOYSA-N;CCCCCCCCC1CCCc2c(C)ccc(C)c21
 529-34-0;1,2,3,4-tetrahydro-1-naphthone;C1CC2=CC=CC=C2C(=O)C1;XHLHPRDBBAGVEG-UHFFFAOYSA-N;O=C1CCCc2ccccc21
-460-12-8;1,3-butadiyne;C#CC#C;LLCSWKVOHICRDD-UHFFFAOYSA-N;C#CC#C
+460-12-8;1,3-butadiyne~|~Butadiyne~|~c4h2~|~C4H2~|~Diacetylene~|~C4H2_butadiyne~|~c4h2_butadiyne~|~c4h2-butadiyne~|~butadiyne~|~diacetylene~|~c4h2_butadiyne~|~c4h2-butadiyne;C#CC#C;LLCSWKVOHICRDD-UHFFFAOYSA-N;C#CC#C
 646-19-5;1,7-diaminoheptane;C(CCCN)CCCN;PWSKHLMYTZNYKO-UHFFFAOYSA-N;NCCCCCCCN
 65954-19-0;(z)-tridec-4-enyl acetate;CCCCCCCC/C=C\CCCOC(=O)C;DUCVQKMNGSZPAV-KHPPLWFESA-N;CCCCCCCC/C=C\CCCOC(C)=O
 597-96-6;3-methyl-3-hexanol;CCCC(C)(CC)O;KYWJZCSJMOILIZ-UHFFFAOYSA-N;CCCC(C)(O)CC
@@ -3587,7 +3618,7 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 616-42-2;dimethylester sulfurous acid;COS(=O)OC;BDUPRNVPXOHWIL-UHFFFAOYSA-N;COS(=O)OC
 1132-39-4;diphenyl selenide;c1ccc([Se]c2ccccc2)cc1;ORQWTLCYLDRDHK-UHFFFAOYSA-N;c1ccc([Se]c2ccccc2)cc1
 542-28-9;tetrahydropyran-2-one;O=C1CCCCO1;OZJPLYNZGCXSJM-UHFFFAOYSA-N;O=C1CCCCO1
-7789-60-8;phosphorus tribromide;BrP(Br)Br;IPNPIHIZVLFAFP-UHFFFAOYSA-N;BrP(Br)Br
+7789-60-8;phosphorus tribromide~|~pbbr3~|~PbBr3~|~pbBr3~|~Pbbr3;BrP(Br)Br;IPNPIHIZVLFAFP-UHFFFAOYSA-N;BrP(Br)Br
 135-2-4;o-anisaldehyde~|~2-methoxybenzaldehyde;COc1ccccc1C=O;PKZJLOCLABXVMC-UHFFFAOYSA-N;COc1ccccc1C=O
 78-8-0;vinyl triethoxy silane;C=C[Si](OCC)(OCC)OCC;FWDBOZPQNFPOLF-UHFFFAOYSA-N;C=C[Si](OCC)(OCC)OCC
 2550-6-3;(3-chloropropyl)trichlorosilane;ClCCC[Si](Cl)(Cl)Cl;OOXSLJBUMMHDKW-UHFFFAOYSA-N;ClCCC[Si](Cl)(Cl)Cl

@@ -43,7 +43,7 @@ If there is no data present, the parameters can be estimated:
 - Linear estimation:
 ```
 βᵛᵢⱼ = βᵛᵢⱼ = 1
-γᵛᵢⱼ = 4*(Vcᵢ + Vcⱼ)/(∛Vcᵢ + ∛Vcⱼ)^3
+γᵛᵢⱼ = 4*(Vcᵢ + Vcⱼ)/(∛Vcᵢ + ∛Vcⱼ)³
 γᵀᵢⱼ = 0.5*(Tcᵢ + Tcⱼ)/√(Tcᵢ*Tcⱼ)
 ```
 

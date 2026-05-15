@@ -174,7 +174,7 @@ end
 With the corresponding phase diagram being:
 ![etoh_hex_Txy](../assets/meoh_cyhex_Txy.png)
 
-!!! tip `azeotrope_X` function
+!!! tip "`azeotrope_X` function"
     Looking through our API docs, one can find the `azeotrope_pressure(model, T)` and `azeotrope_temperature(model, p)` functions.
     These can obtain the exact conditions at which the azeotrope occurs at a given temperature or pressure.
     They are perhaps more useful in the context of *pT*-projections rather than *pxy* and *Txy* diagrams.
