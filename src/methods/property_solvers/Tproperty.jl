@@ -27,7 +27,6 @@ function μp_equality1_T2(model,p,z,x,Ts)
     return SVector(Fμ,Fp1,Fp2,FT)
 end
 
-
 """
     edge_temperature(model,p,z,v0 = nothing)
 
@@ -208,6 +207,57 @@ function __Tproperty_check(res,verbose,Tother = zero(res[1])/zero(res[1]))
     return Tother,st
   end
   return T,st
+end
+
+function _Tproperty(model::ActivityModel,p,prop,z = SA[1.0],
+                  property::TT = enthalpy;
+                  rootsolver = Roots.Order0(),
+                  phase =:unknown,
+                  abstol = 1e-15,
+                  reltol = 1e-15,
+                  T0 = nothing,
+                  verbose = false,
+                  threaded = true) where TT
+
+    norm_prop,norm_property = normalize_property(model,prop,z,property)
+    if norm_property !== property
+        res = _Tproperty(model,p,norm_prop,z,norm_property;rootsolver,phase,abstol,reltol,T0,verbose,threaded)
+        return __Tproperty_check(res,verbose)
+    end
+
+    if T0 !== nothing
+        res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T0)
+        return __Tproperty_check(res,verbose)
+    end
+
+    if is_liquid(phase)
+        T00 = bubble_temperature(model,p,z)[1]
+        res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T00)
+        return __Tproperty_check(res,verbose)
+    end
+
+    if is_vapour(phase)
+        T00 = dew_temperature(model,p,z)[1]
+        res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T00)
+        return __Tproperty_check(res,verbose)
+    end
+
+    T_bub = bubble_temperature(model,p,z)[1]
+    T_dew = dew_temperature(model,p,z)[1]
+    prop_bub = property(model,p,T_bub,z,phase = :liquid,threaded = threaded)
+    prop_dew = property(model,p,T_dew,z,phase = :gas,threaded = threaded)
+    β = (prop - prop_bub) / (prop_dew - prop_bub)
+
+    if β < 0
+        res = __Tproperty(model,p,prop,z,property,rootsolver,:liquid,abstol,reltol,threaded,T_bub)
+        return __Tproperty_check(res,verbose)
+    elseif β > 1
+        res = __Tproperty(model,p,prop,z,property,rootsolver,:gas,abstol,reltol,threaded,T_dew)
+        return __Tproperty_check(res,verbose)
+    else
+        T_interp = T_bub + β*(T_dew - T_bub)
+        return T_interp,:eq
+    end
 end
 
 function _Tproperty(model::EoSModel,p,prop,z = SA[1.0],

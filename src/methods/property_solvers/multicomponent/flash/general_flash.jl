@@ -851,8 +851,11 @@ function px_flash_x0(model,p,x,z,spec::F,method) where F
 
     verbose && @info "p = $p, T = $T, equilibrium status = :$_phase"
 
-    TT = Base.promote_eltype(model,p,x,z,T)
-    if _phase != :eq
+    if is_lle(method) && model isa ActivityModel
+        verbose && @info "using PT-flash LLE initial point"
+        _method = init_preferred_method(tp_flash,model,(; equilibrium = :lle))
+        return tp_flash2(model,p,T,z,_method)
+    elseif _phase != :eq
         verbose && @info "using pure phase initial point"
         return FlashResult(model,p,T,z,phase = _phase)
     end

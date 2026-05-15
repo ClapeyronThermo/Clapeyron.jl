@@ -398,6 +398,8 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         verbose && @info "K0 calculated via LLE initial point (tpd)"
         K .= K0_lle_init(model,p,T,z;reduced = true)
         lnK .= log.(K)
+        volx = zero(_1)
+        voly = zero(_1)
         phasey = :liquid
         phases = (:liquid,:liquid)
         volx = zero(_1)

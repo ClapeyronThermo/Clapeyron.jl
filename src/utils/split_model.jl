@@ -509,3 +509,12 @@ __get_pure_model_vec(vec_of_models,splitter::AbstractVector{<:Integer}) = vec_of
 
 
 export split_model, split_model_binaries
+
+function split_pure_model(model::ActivityModel)
+    if is_splittable(model)
+        splitter = default_splitter(model)
+        return model.puremodel[splitter]
+    else
+        throw(ArgumentError("$model is not splittable, try passing an explicit splitter argument (`split_pure_model(value,splitter)`)"))
+    end
+end
