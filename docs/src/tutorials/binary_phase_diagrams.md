@@ -174,7 +174,7 @@ end
 With the corresponding phase diagram being:
 ![etoh_hex_Txy](../assets/meoh_cyhex_Txy.png)
 
-!!! tip `azeotrope_X` function
+!!! tip "`azeotrope_X` function"
     Looking through our API docs, one can find the `azeotrope_pressure(model, T)` and `azeotrope_temperature(model, p)` functions.
     These can obtain the exact conditions at which the azeotrope occurs at a given temperature or pressure.
     They are perhaps more useful in the context of *pT*-projections rather than *pxy* and *Txy* diagrams.
@@ -279,18 +279,18 @@ A few things to note:
     One easy way to check if a phase split occurs is to use the `Clapeyron.isstable(model, p, T, z)` function.
     If this function returns `false`, then we know the system is unstable as a single phase and must phase split:
 
-        ```julia
-            julia> Clapeyron.isstable(model, 1e5, 298.15, [0.5,0.5])
-            false
-        ```
+    ```julia
+        julia> Clapeyron.isstable(model, 1e5, 298.15, [0.5 0.5])
+        false
+    ```
     
 
 2.  Although we have a more-detailed tutorial going over flash algorithms, one way to quickly speed up the calculations is to specify an initial guess for the partition coefficient of each species. 
     So long as the magnitude of each coefficient is large enough, the flash algorithm should work:
 
-        ```julia
-         julia> tp_flash(model,1e5,288.15,[0.5,0.5],MichelsenTPFlash(equilibrium=:lle,K0=[1e5,1e-4]));
-        ```
+    ```julia
+        julia> tp_flash(model,1e5,288.15,[0.5,0.5],MichelsenTPFlash(equilibrium=:lle,K0=[1e5,1e-4]));
+    ```
 
 To trace the full LLE region, we simply need to iterate in temperature (or pressure) until the LLE region closes at the UCST (or LCST).
 Much like the earlier system with one supercritical component, we don't necessarily know ahead of time where the region closes.
@@ -661,7 +661,7 @@ However, if one zooms in, we can see the three independent curves:
 
 The final class of binary mixture we'll consider is type-IV/V.
 In these mixtures, we have more than one UCEP.
-Once again, the critical curve is  broken up into two.
+Once again, the critical curve is broken up into two.
 However, this time, both of them reconnect on a UCEP.
 The only difference between type-IV and type-V is that the former has an additional UCEP due to the presence of a UCST curve.
 As we have already shown how to trace this curve in type-II mixtures, we'll focus on type-V mixtures.

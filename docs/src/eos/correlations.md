@@ -11,7 +11,7 @@ Pages = ["ideal.md"]
 # Correlation Models
 
 Correlation models are, as their name says, fitted equations that express one property of a compound.
-They meant to be used in conjunction with other models (like Activity models that require a saturated liquid volume), or via a `CompositeModel`.
+They are meant to be used in conjunction with other models (like Activity models that require a saturated liquid volume), or via a `CompositeModel`.
 Because they only overload one property, the way to define a correlation is different than normal `EoSModel`s.
 
 # Saturation Correlations

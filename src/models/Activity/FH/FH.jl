@@ -30,14 +30,16 @@ export FH, FloryHuggins
 ## Input parameters
 - `N`: Single Parameter (`Float64`) - Degree of Polymerization
 - `v`: Single Parameter (`Float64`) - Monomer Volume
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `a`: Pair Parameter (`Float64`, defaults to `0`) - Interaction Parameter
 - `b`: Pair Parameter (`Float64`, defaults to `0`) - Interaction Parameter
 
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties
 ## Description
+
 Flory-Huggins activity coefficient model:
+
 ```
 Gᴱ = nRT·(∑[xᵢlog(rᵢ)]+N∑[ϕᵢϕⱼχᵢⱼ])
 ```

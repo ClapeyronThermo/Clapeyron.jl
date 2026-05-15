@@ -21,7 +21,7 @@ const N_nodes = 96
 """
     load_chembert()
 
-Load ChemBERTa model from HuggingFace (`DeepChem/ChemBERTa-77M-MTR`).
+Loads ChemBERTa model from HuggingFace (`DeepChem/ChemBERTa-77M-MTR`).
 """
 function load_chembert(;name="DeepChem/ChemBERTa-77M-MTR", max_length=512, download=false)
     if download

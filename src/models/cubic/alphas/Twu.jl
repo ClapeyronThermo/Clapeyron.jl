@@ -43,12 +43,12 @@ end
     verbose::Bool=false)
 
 ## Input Parameters
-- `M`: Single Parameter
-- `N`: Single Parameter
-- `L`: Single Parameter
+- `M`: Single Parameter (`Float64`)
+- `N`: Single Parameter (`Float64`)
+- `L`: Single Parameter (`Float64`)
 
 ## Description
-Cubic alpha `(α(T))` model. Default for [`VTPR`](@ref) EoS. Also known as Twu-91 alpha.
+Twu cubic alpha `(α(T))` model. Default for [`VTPR`](@ref) EoS. Also known as Twu-91 alpha.
 ```
 αᵢ = Trᵢ^(N*(M-1))*exp(L*(1-Trᵢ^(N*M))
 Trᵢ = T/Tcᵢ
@@ -96,14 +96,14 @@ default_ignore_missing_singleparams(::Type{Twu88Alpha}) = ["N"]
     verbose::Bool=false)
 
 ## Input Parameters
-- `M`: Single Parameter
-- `N`: Single Parameter (optional)
-- `L`: Single Parameter
+- `M`: Single Parameter (`Float64`)
+- `N`: Single Parameter (optional) (`Float64`)
+- `L`: Single Parameter (`Float64`)
 
 ## Model Parameters
-- `M`: Single Parameter
-- `N`: Single Parameter
-- `L`: Single Parameter
+- `M`: Single Parameter (`Float64`)
+- `N`: Single Parameter (`Float64`)
+- `L`: Single Parameter (`Float64`)
 
 ## Description
 Cubic alpha `(α(T))` model. Also known as Twu-88 alpha.

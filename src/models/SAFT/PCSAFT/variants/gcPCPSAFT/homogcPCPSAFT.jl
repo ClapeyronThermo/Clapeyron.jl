@@ -61,7 +61,7 @@ export HomogcPCPSAFT
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
-- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy `[K]`
 - `k`: Pair Parameter (`Float64`) - Binary Interaction Parameter (no units)
 - `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`

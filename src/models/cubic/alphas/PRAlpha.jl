@@ -17,9 +17,9 @@ export PRAlpha
 ## Description
 Cubic alpha `(α(T))` model. Default for [`PR`](@ref) EoS.
 ```
-αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
+αᵢ = (1+mᵢ(1-√(Trᵢ)))²
 Trᵢ = T/Tcᵢ
-mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
+mᵢ = 0.37464 + 1.54226*ωᵢ - 0.26992*ωᵢ²
 ```
 
 It is equivalent to `SoaveAlpha`.

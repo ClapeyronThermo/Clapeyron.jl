@@ -7,7 +7,7 @@ SingleOrPair_values(x::SingleOrPair) = x.values
 """
     kij_mix!(f,out)
 
-Implace version of [`kij_mix`](@ref)
+In-place version of [`kij_mix`](@ref)
 """
 function kij_mix!(f::F,out) where F
     return kij_mix!(f,out,nothing)
@@ -82,7 +82,7 @@ end
 """
     pair_mix!(f,out,Q)
 
-Inplace version of [`pair_mix`](@ref)
+In-place version of [`pair_mix`](@ref)
 """
 function pair_mix!(f::F,out,Q) where F
     _out = SingleOrPair_values(out)

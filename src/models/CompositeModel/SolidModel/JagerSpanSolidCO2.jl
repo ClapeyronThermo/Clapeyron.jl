@@ -10,7 +10,7 @@ None
 
 ## Description
 
-Jäger and Span gibbs model for solid carbon dioxide.
+Jäger and Span Gibbs model for solid carbon dioxide.
 
 ## References
 

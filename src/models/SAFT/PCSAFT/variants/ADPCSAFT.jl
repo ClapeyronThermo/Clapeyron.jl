@@ -55,7 +55,7 @@ end
 - `c3`: Single Parameter (`Float64`)
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
-- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy `[K]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 - `theta_c`: Association Parameter (`Float64`)
@@ -64,7 +64,7 @@ end
 - `idealmodel`: Ideal Model
 
 ## Description
-modified Perturbed-Chain SAFT (PC-SAFT) with an association dependent hard sphere diameter.Currently only works for water.
+modified Perturbed-Chain SAFT (PC-SAFT) with an association dependent hard sphere diameter. Currently only works for water.
 
 !!! warning "numerically unstable"
     Due to its functional form, DAPT is numerically unstable. Please use `big` Floats for most calculations.

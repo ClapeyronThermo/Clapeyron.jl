@@ -34,16 +34,16 @@ default_locations(::Type{COSMOSACdsp}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv
     reference_state = nothing)
 
 ## Input parameters:
-- `Pnhb` :Single Parameter{String} 
-- `POH` :Single Parameter{String} 
-- `POT` :Single Parameter{String} 
-- `V`: Single Parameter{Float64}
-- `A`: Single Parameter{Float64}
-- `epsilon`: Single Parameter{Float64}
-- `COOH`: Single Parameter{Float64}
-- `water`: Single Parameter{Float64}
-- `hb_acc`: Single Parameter{Float64}
-- `hb_don`: Single Parameter{Float64}
+- `Pnhb`: Single Parameter (`String`)
+- `POH`: Single Parameter (`String`)
+- `POT`: Single Parameter (`String`) 
+- `V`: Single Parameter (`Float64`)
+- `A`: Single Parameter (`Float64`)
+- `epsilon`: Single Parameter (`Float64`)
+- `COOH`: Single Parameter (`Float64`)
+- `water`: Single Parameter (`Float64`)
+- `hb_acc`: Single Parameter (`Float64`)
+- `hb_don`: Single Parameter (`Float64`)
 
 ## Description
 An activity coefficient model using molecular solvation based on the COSMO-RS method. Sigma profiles are now split by non-hydrogen bonding, hydrogen acceptor and hydrogen donor. A dispersive correction is included.

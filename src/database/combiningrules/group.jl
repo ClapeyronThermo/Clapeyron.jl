@@ -246,7 +246,7 @@ end
 """
     mix_segment!(groups::MixedGCSegmentParam,S = ones(length(@groups)),vst = ones(length(@groups)))
 
-Modifies implace the field `n_groups_cache` (`μᵢₖ`) in the `GroupParam`:
+Modifies in-place the field `n_groups_cache` (`μᵢₖ`) in the `GroupParam`:
 ```
 μᵢₖ = νᵢₖ*Sₖ*vstₖ
 ```

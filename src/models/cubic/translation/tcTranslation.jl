@@ -57,7 +57,7 @@ cᵢ(ωᵢ) = (R·T_c)/(P_c) * (-0.0065 + 0.0198*ωᵢ)
 
 ```
 
-From Rackett compressibility  factor (ZRA):
+From Rackett compressibility factor (ZRA):
 
 2018 version :
 
@@ -91,7 +91,7 @@ cᵢ(ωᵢ) = (R·T_c)/(P_c) * (0.0096 + 0.0172*ωᵢ)
 
 ```
 
-From Rackett compressibility  factor (ZRA):
+From Rackett compressibility factor (ZRA):
 
 2018 version :
 
