@@ -53,7 +53,7 @@ function Solvers.primalval(method::MichelsenTPFlash{T}) where {T}
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
-    end 
+    end
 end
 
 numphases(::MichelsenTPFlash) = 2
@@ -186,7 +186,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
 
     # components that are allowed to be in two phases
     in_equilibria = @. !non_inx & !non_iny
-    
+
     if reduced && any(iszero,z)
         for i in 1:length(z)
             if iszero(z[i])
@@ -290,10 +290,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     end
 
     verbose && @info "initial vapour fraction = $β"
-    
-    if status != RREq 
+
+    if status != RREq
         verbose && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
-        exit_early = true    
+        exit_early = true
     else
         exit_early = false
     end
@@ -315,7 +315,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
-    verbose && @info "iter  status        β      error_lnK            K"
+    verbose && @info "iter  status     β                error_lnK        K"
     while !exit_early && (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status in (RREq,RRLiquid,RRVapour)
         it += 1
         itacc += 1
@@ -353,9 +353,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         K .= exp.(lnK)
         β = rachfordrice(K, z; β0=β, non_inx, non_iny, K_tol, verbose)
         status = rachfordrice_status(K,z,non_inx,non_iny;K_tol)
-
-        verbose && @info "$it    $status   $β  $(round(error_lnK,sigdigits=4)) $K"
-
+        verbose && @info "$(__pad_val(it,4))  $(__pad_val(status,10)) $(__pad_val(β,16)) $(__pad_val(error_lnK,16)) $(repr(K,context = :compact => true))"
         if isnan(β) && status != RRTrivial
             #try to save K? basically damping
             K .= 0.5 * K .+ 0.5 * y ./ x
@@ -366,18 +364,18 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(@view(lnK[in_equilibria]),@view(lnK_old[in_equilibria]),1)
     end
-    
+
     verbose && it > 0 && @info "$it SS iterations done, error(lnK) = $error_lnK"
 
     if it > 0 && !isnan(β)
         # single composition update with the (possibly projected) β
         x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
     end
-    
+
     # Stage 2: Minimization of Gibbs energy
     if error_lnK > K_tol && it == itss && status == RREq && use_opt_solver
         verbose && @info "$error(lnK) > $K_tol, solving via non-linear system"
-        
+
         nx = similar(K)
         ny = similar(K)
         ny_var0 = y[in_equilibria] * β
@@ -399,7 +397,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         if abs(sol.info.fx) <= 4*eps(eltype(K))
 
         elseif sol.info.fx > sol.info.f0 + 4*eps(eltype(K))
-        
+
         end =#
         ny_var = Solvers.x_sol(sol)
         update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
@@ -408,7 +406,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         K .= y ./ x
         β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
     end
-    
+
     verbose && @info "final K values: $K"
     verbose && @info "final vapour fraction: $β"
 

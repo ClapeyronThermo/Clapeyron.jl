@@ -281,6 +281,12 @@ end
 low_color(symbol::Symbol) = low_color(":" * string(symbol))
 low_color(x) = low_color(string(x))
 
+function __pad_val(i,imax::Int)
+    s = repr(i,context = :compact => true)
+    ls = length(s)
+    return rpad(s,imax)
+end
+
 function userlocation_merge(loc1,loc2)
     if isempty(loc2)
         return loc1

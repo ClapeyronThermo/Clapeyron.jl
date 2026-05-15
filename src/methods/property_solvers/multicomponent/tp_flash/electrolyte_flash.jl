@@ -149,7 +149,7 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
-    verbose && @info "iter  status        β      error(lnK̄)            K̄"
+    verbose && @info "iter  status     β                error(lnK̄)       K̄"
     while (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status in (RREq,RRLiquid,RRVapour)
         it += 1
         itacc += 1
@@ -199,7 +199,7 @@ function tp_flash_michelsen(model::ESElectrolyteModel, p, T, z, method = Michels
         K̄ = exp.(lnK̄)
         status = rachfordrice_status(K̄,z,non_inx,non_iny;K_tol)
 
-        verbose && @info "$it    $status   $β  $(round(error_lnK,sigdigits=4)) $K̄"
+        verbose && @info "$(__pad_val(it,4))  $(__pad_val(status,10)) $(__pad_val(β,16)) $(__pad_val(error_lnK,16)) $(repr(K̄,context = :compact => true))"
 
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
