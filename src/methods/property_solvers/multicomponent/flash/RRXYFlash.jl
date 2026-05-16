@@ -361,7 +361,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
         !isfinite(T) && (outer_status = :failure)
         !isfinite(p) && (outer_status = :failure)
         ss_status == RRFailure && (outer_status = :failure)
-        ss_converged && i > 3 && (outer_status = :bounded)
+        ss_converged && i > 3 && abs(OF_pT) < sqrt(tol_pT) && (outer_status = :bounded)
         abs(OF) < tol_of && ss_converged && break
         abs(OF_pT) < tol_pT && iter_type != :pt && ss_converged && break
         i == max_iters && (outer_status = :maxiter)
