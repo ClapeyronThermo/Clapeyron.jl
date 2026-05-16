@@ -197,6 +197,11 @@ function Base.show(io::IO,mime::MIME"text/plain",obj::FlashResult)
     comps,β,volumes,data = obj
     np = length(comps)
     compact_io = IOContext(io, :compact => true)
+    if data.vapour_idx == -1
+        print(io,"LLE ")
+    elseif data.vapour_idx > 0
+        print(io,"VLE ")
+    end
     print(io,"Flash result at T = ")
     print(compact_io,data.T)
     print(io,", p = ")
@@ -569,7 +574,7 @@ function xy_flash_ad(result,tup,tup_primal,spec1,spec2)
 
         function f(input,tups)
             model0,_val1,_val2,zbulk = tups
-            TT = Base.promote_eltype(model0,_val1,_val2,zbulk,input)   
+            TT = Base.promote_eltype(model0,_val1,_val2,zbulk,input)
             output = similar(input,TT)
             spec = FlashSpecifications(spec1,_val1,spec2,_val2)
             xy_flash_neq(output,model0,zbulk,np,input,spec,nothing)
@@ -622,7 +627,7 @@ function __xy_flash_ad1_fillβ(orig::AbstractVector{T},β::B,ix) where {T,B}
 end
 
 function xy_flash_ad1(result,tup,tup_primal,spec1,spec2)
-    
+
     function f(input,tups)
         model0,_val1,_val2,zbulk = tups
         v0,T0 = input
@@ -630,7 +635,7 @@ function xy_flash_ad1(result,tup,tup_primal,spec1,spec2)
         f2 = spec_to_vt(model0,v0,T0,zbulk,spec2) - _val2
         return SVector(f1,f2)
     end
-    
+
     i = findfirst(!iszero,result.fractions)
     λT = result.data.T
     λv = result.volumes[i]*sum(result.fractions)
@@ -654,7 +659,7 @@ function xy_flash_ad1(result,tup,tup_primal,spec1,spec2)
     if result.data.g isa Number && !isnan(result.data.g)
         return FlashResult(model,∂p,∂T,∂comps,∂β,∂volumes,sort = false)
     end
-    
+
     return FlashResult(∂comps,∂β,∂volumes,FlashData(∂p,∂T))
 end
 

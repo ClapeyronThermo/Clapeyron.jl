@@ -213,19 +213,27 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
     β = convert(TT,flash0.fractions[2])/sum(flash0.fractions)
     OF_old = convert(TT,NaN)
     OF = convert(TT,NaN)
+    
+    
     phasez = :unknown
     iz = 0
     volz = convert(TT,NaN)
 
+    αK = convert(TT,NaN)
+    outer_lnK_old = similar(z,TT) 
+
     ss_status = RREq #we suppose equilibria, the solver then will see if we are in eq or not.
     outer_status = :working
+
     #=
     :working
     :failure
     :trivial
     :maxiter
+    :bounded
     =#
 
+    OF_state = ((OF,OF,OF),(OF,OF,OF),TT(0.6),:iter0) #rootfinding state
 
     dlnϕ_cache = ∂lnϕ_cache(model, val1, val2, x, Val{false}())
     max_iters = method.max_iters
@@ -248,6 +256,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
         ss_converged = false
         ss_count = 0
         total_outer_iters += 1
+        outer_lnK_old .= lnK
         for j in 1:ss_iters
             ss_status == RRTrivial && break
             ss_status == RRFailure && break
@@ -286,7 +295,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
         ss_status == RRTrivial && break
         ss_status == RRFailure && break
         OF_old = OF
-        
+
         #calculate liquid volumes with PTFlashWrapper
         is_volume && update_volume!(model,result,p,T)
 
@@ -299,11 +308,12 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
         end
         OF = spec_i - spec_obj
         OF_pT = zero(OF)
-
         if iter_type == :pt
             #do nothing
         elseif iter_type == :tx
             if i == 1
+                lnp = log(p)
+                OF_state = Solvers.solve1_update_state(OF_state,lnp,OF)
                 p_old = p
                 #starting point, we just move inside the flash
                 if is_vapour(phasey) && β > 0.5
@@ -312,16 +322,17 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
                     p -= sqrt(tol_pT)*p
                 end
             else
-
-                lnp = log(p)
-                dOF = (OF - OF_old)/(log(p/p_old)) #just secant, maybe another method could be better?
+                lnp_old = log(p_old)
                 p_old = p
-                lnp = lnp - OF/dOF
-                p = exp(lnp)
+                lnp = log(p)
+                lnp_new,OF_state = Solvers.solve1_new_iter(OF_state,lnp,OF,full_iter = ss_converged)
+                p = exp(lnp_new)
+                αK = (lnp_new - lnp_old)/(lnp - lnp_old)
             end
             OF_pT = (p - p_old)/p
-        else #px    
+        else #px
             if i == 1
+                OF_state = Solvers.solve1_update_state(OF_state,1/T,OF)
                 T_old = T
                 #starting point, we just move inside the flash
                 if is_vapour(phasey) && β > 0.5
@@ -330,22 +341,29 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
                     T += sqrt(tol_pT)*T
                 end
             else
+                τ_old = 1/T_old
                 τ = 1/T
-                dOF = (OF - OF_old)/(τ - 1/T_old) #just secant, maybe another method could be better?
                 T_old = T
-                τ = τ - OF/dOF
-                T = 1/τ
+                τ_new,OF_state = Solvers.solve1_new_iter(OF_state,τ,OF,full_iter = ss_converged)
+                T = 1/τ_new
+                αK = (τ_new - τ_old)/(τ - τ_old)
             end
             OF_pT = (T - T_old)/T
             update_temperature!(model,T)
         end
+
+        if outer_status == :bounded
+            α = clamp(αK,zero(αK),one(αK))
+            lnK .= α .* lnK .+ (1 - α) .* outer_lnK_old
+        end
+
         !isfinite(OF) && (outer_status = :failure)
         !isfinite(T) && (outer_status = :failure)
         !isfinite(p) && (outer_status = :failure)
         ss_status == RRFailure && (outer_status = :failure)
-
+        ss_converged && i > 3 && (outer_status = :bounded)
         abs(OF) < tol_of && ss_converged && break
-        max(abs(T - T_old),abs(p - p_old)) < tol_pT && iter_type != :pt && ss_converged && break
+        abs(OF_pT) < tol_pT && iter_type != :pt && ss_converged && break
         i == max_iters && (outer_status = :maxiter)
 
         if ss_status == RRTrivial && outer_status != :failure
