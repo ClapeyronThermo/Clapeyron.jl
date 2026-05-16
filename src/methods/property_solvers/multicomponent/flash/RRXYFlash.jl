@@ -153,7 +153,7 @@ function ss_xy_flash_standardize_specs(specs::FlashSpecifications{typeof(tempera
     end
 end
 
-function ss_xy_flash_standardize_specs(specs::FlashSpecifications{T2,<:Any,T2,<:Any}) where {T1,T2::Union{typeof(pressure),typeof(temperature)}}
+function ss_xy_flash_standardize_specs(specs::FlashSpecifications{T2,<:Any,Union{typeof(pressure),typeof(temperature)},<:Any}) where {T1}
     return ss_xy_flash_standardize_specs(FlashSpecifications(specs.spec2,specs.val2,specs.spec1,specs.val1))
 end
 
