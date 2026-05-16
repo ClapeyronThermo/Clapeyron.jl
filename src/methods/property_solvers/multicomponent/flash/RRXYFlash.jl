@@ -78,8 +78,8 @@ function RRXYFlash(;equilibrium = :unknown,
                         tol_xy = 1e-10,
                         tol_pT = 1e-12,
                         tol_of = 1e-10,
-                        max_iters = 50,
-                        ss_iters = 10,
+                        max_iters = 100,
+                        ss_iters = 5,
                         flash_result = nothing,
                         verbose = false)
 
@@ -133,9 +133,32 @@ function RRXYFlash(;equilibrium = :unknown,
                             max_iters,ss_iters,verbose)
 end
 
-
 function update_volume!(model,result,p = pressure(result),T = temperature(result))
     return result
+end
+
+function ss_xy_flash_standardize_specs(specs::FlashSpecifications{typeof(pressure),<:Any,T2,<:Any}) where T2
+    if specs.spec2 == temperature
+        return :pt,specs
+    else
+        return :px,specs
+    end
+end
+
+function ss_xy_flash_standardize_specs(specs::FlashSpecifications{typeof(temperature),<:Any,T2,<:Any}) where T2
+    if specs.spec2 == pressure
+        return :pt,FlashSpecifications(specs.spec2,specs.val2,specs.spec1,specs.val1)
+    else
+        return :tx,specs
+    end
+end
+
+function ss_xy_flash_standardize_specs(specs::FlashSpecifications{T2,<:Any,T2,<:Any}) where {T1,T2::Union{typeof(pressure),typeof(temperature)}}
+    return ss_xy_flash_standardize_specs(FlashSpecifications(specs.spec2,specs.val2,specs.spec1,specs.val1))
+end
+
+function ss_xy_flash_standardize_specs(specs::FlashSpecifications{T2,<:Any,T2,<:Any}) where {T1,T2}
+    throw(ArgumentError("ss_xy_flash does not support $specs"))
 end
 
 function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResult,method::RRXYFlash)
@@ -144,49 +167,20 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
     verbose = method.verbose
     verbose && @info "start of SS-XY flash with $spec"
     ∑z = sum(z)
-    val1,val2 = spec.val1,spec.val2
-    spec1,spec2 = spec.spec1,spec.spec2
 
-    iter_type = if ((spec1 == temperature) & (spec2 == pressure)) || ((spec2 == temperature) & (spec1 == pressure))
-        :pt #PT-flash
-    elseif ((spec1 == temperature) & (spec2 != temperature)) || ((spec2 == temperature) & (spec1 != temperature))
-        :tx #TX-flash: p is updated
-    elseif ((spec1 == pressure) & (spec2 != pressure)) || ((spec2 == pressure) & (spec1 != pressure))
-        :px #PX-flash: T is updated
-    else
-        throw(ArgumentError("ss_xy_flash does not support $spec"))
-    end
-
-    TT = Base.promote_eltype(model,val1,val2,z,flash0)
-    spec_index = 2
-
+    TT = Base.promote_eltype(model,spec.val1,spec.val2,z,flash0)
+    nan = convert(TT,NaN)
+    iter_type,norm_spec = ss_xy_flash_standardize_specs(spec)
     if iter_type == :pt
-        if spec1 == temperature
-            p,T = convert(TT,val1),convert(TT,val2)
-        else
-            p,T = convert(TT,val2),convert(TT,val1)
-        end
-        spec_obj = zero(TT)
+        p,T = convert(TT,norm_spec.val1),convert(TT,norm_spec.val2)
     elseif iter_type == :tx
-        p = convert(TT,pressure(flash0))
-        if spec1 == temperature
-            T,spec_obj = convert(TT,val1),convert(TT,val2)
-        else
-            T,spec_obj = convert(TT,val2),convert(TT,val1)
-            spec_index = 1
-        end
-    else
-        T = convert(TT,temperature(flash0))
-        if spec1 == pressure
-            p,spec_obj = convert(TT,val1),convert(TT,val2)
-        else
-            p,spec_obj = convert(TT,val2),convert(TT,val1)
-            spec_index = 1
-        end
+        p,T = convert(TT,pressure(flash0)),convert(TT,norm_spec.val1)
+    else #px
+        p,T = convert(TT,norm_spec.val1),convert(TT,temperature(flash0))
     end
 
-    #PTFlashWrapper needs to know this to update the liquid volume
-    is_volume = spec1 == volume || spec2 == volume
+    spec_obj = norm_spec.val2
+    spec_function = norm_spec.spec2
 
     T_old = T
     p_old = p
@@ -198,55 +192,58 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
     y .= flash0.compositions[2]
     volx = convert(TT,flash0.volumes[1])
     voly = convert(TT,flash0.volumes[2])
+
     phasex = identify_phase(model,flash0,1)
     phasey = identify_phase(model,flash0,2)
     non_inx = FillArrays.Fill(false,nc)
     non_inw = (non_inx,non_inx)
     phases = (phasex,phasey)
+
     lnK = similar(z,TT)
     lnK_old = similar(z,TT)
-
     K = similar(z,TT)
     K .= y ./ x
     K_old = similar(K)
+    outer_lnK_old = similar(z,TT)
 
     β = convert(TT,flash0.fractions[2])/sum(flash0.fractions)
-    OF_old = convert(TT,NaN)
-    OF = convert(TT,NaN)
-    
-    
+    OF_old = nan
+    OF = nan
+
+    #used if the phase is trivial
     phasez = :unknown
     iz = 0
-    volz = convert(TT,NaN)
+    volz = nan
 
-    αK = convert(TT,NaN)
-    outer_lnK_old = similar(z,TT) 
+    #we suppose equilibria, the solver then will see if we are in eq or not.
+    ss_status = RREq
 
-    ss_status = RREq #we suppose equilibria, the solver then will see if we are in eq or not.
-    outer_status = :working
-
+    outer_status = :initial
     #=
-    :working
-    :failure
-    :trivial
-    :maxiter
-    :bounded
+    iteration states:
+
+    :initial : initial iterations: dampened secant updates to p/T
+    :failure : NaN appeared
+    :trivial : one phase
+    :maxiter : last iteration
+    :bounded : solver has found bounds, so solution is guaranteed
     =#
 
-    OF_state = ((OF,OF,OF),(OF,OF,OF),TT(0.6),:iter0) #rootfinding state
+    #initial root-finding state
+    OF_state = Solvers.solve1_initial_state(TT)
 
-    dlnϕ_cache = ∂lnϕ_cache(model, val1, val2, x, Val{false}())
+    dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     max_iters = method.max_iters
     ss_iters = method.ss_iters
     total_ss_iters = 0
     total_outer_iters = 0
+
     tol_of = convert(TT,method.tol_of)
     tol_pT = convert(TT,method.tol_pT)
     tol_xy = convert(TT,method.tol_xy)
     lle = is_liquid(phasex) && is_liquid(phasey)
     vapour_idx = lle ? -1 : 2
     flash_result = FlashResult([x,y],[β,β],[volx,voly],FlashData(p,T,zero(TT),vapour_idx))
-
 
     verbose && @info "________________________________________________________________________________________
       iter  ss_iter  status    p                T                OF_spec          pT_OF"
@@ -257,15 +254,18 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
         ss_count = 0
         total_outer_iters += 1
         outer_lnK_old .= lnK
+
+        #inner Rachford-Rice iterations. adapted from MichelsenTPFlash
         for j in 1:ss_iters
             ss_status == RRTrivial && break
             ss_status == RRFailure && break
-            ss_count += 1
-            total_ss_iters += 1
+
             if error_lnK < tol_xy
                 ss_converged = true
                 break
             end
+            ss_count += 1
+            total_ss_iters += 1
 
             lnK_old .= lnK
             lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,β,(volx,voly),phases,non_inw,dlnϕ_cache)
@@ -296,76 +296,63 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
         ss_status == RRFailure && break
         OF_old = OF
 
-        #calculate liquid volumes with PTFlashWrapper
-        is_volume && update_volume!(model,result,p,T)
+        #calculate liquid volumes with PTFlashWrapper, if necessary
+        spec_function === volume && update_volume!(model,result,p,T)
 
-        if spec_index == 1
-            spec_i = spec1(model,flash_result,iz)
-        elseif spec_index == 2
-            spec_i = spec2(model,flash_result,iz)
+        #Objective function
+        OF = spec_function(model,flash_result,iz) - spec_obj
+        α_lnK = zero(OF)
+        w̄,w̄_old,w,w_old,w̄_new = nan,nan,nan,nan,nan
+
+        if iter_type == :tx
+            lnp,lnp_old = log(p),log(p_old)
+            w̄,w̄_old,w,w_old = lnp,lnp_old,p,p_old
+        elseif iter_type == :px
+            τ,τ_old = 1/T,1/T_old
+            w̄,w̄_old,w,w_old = τ,τ_old,T,T_old
+        end
+        p_old,T_old = p,T
+
+        if i == 1
+            #direction to move in first iter. move towards middle of vapour fraction, if possible.
+            #by default, it is defined in pressure terms (high pressure -> less vapour)
+            #we invert it if the temperature is the variable being iterated.
+            _sign = (is_vapour(phasey) && β > 0.5) ? 1 : -1
+            iter_type == :tx && (_sign *= -1)
+            OF_state = Solvers.solve1_update_state(OF_state,w̄,OF)
+            w_new = w + sqrt(tol_pT)*_sign*w
+            w̄_new = w_new #not used here
         else
-            spec_i = zero(OF)
+            w̄_new,OF_state = Solvers.solve1_new_iter(OF_state,w̄,OF,full_iter = ss_converged)
+            α_lnK = (w̄_new - w̄_old)/(w̄ - w̄_old)
         end
-        OF = spec_i - spec_obj
-        OF_pT = zero(OF)
-        if iter_type == :pt
-            #do nothing
-        elseif iter_type == :tx
-            if i == 1
-                lnp = log(p)
-                OF_state = Solvers.solve1_update_state(OF_state,lnp,OF)
-                p_old = p
-                #starting point, we just move inside the flash
-                if is_vapour(phasey) && β > 0.5
-                    p += sqrt(tol_pT)*p
-                else
-                    p -= sqrt(tol_pT)*p
-                end
-            else
-                lnp_old = log(p_old)
-                p_old = p
-                lnp = log(p)
-                lnp_new,OF_state = Solvers.solve1_new_iter(OF_state,lnp,OF,full_iter = ss_converged)
-                p = exp(lnp_new)
-                αK = (lnp_new - lnp_old)/(lnp - lnp_old)
-            end
-            OF_pT = (p - p_old)/p
-        else #px
-            if i == 1
-                OF_state = Solvers.solve1_update_state(OF_state,1/T,OF)
-                T_old = T
-                #starting point, we just move inside the flash
-                if is_vapour(phasey) && β > 0.5
-                    T -= sqrt(tol_pT)*T
-                else
-                    T += sqrt(tol_pT)*T
-                end
-            else
-                τ_old = 1/T_old
-                τ = 1/T
-                T_old = T
-                τ_new,OF_state = Solvers.solve1_new_iter(OF_state,τ,OF,full_iter = ss_converged)
-                T = 1/τ_new
-                αK = (τ_new - τ_old)/(τ - τ_old)
-            end
-            OF_pT = (T - T_old)/T
+
+        if iter_type == :px
+            w_old = T
+            T = w = i == 1 ? w̄_new : 1/w̄_new
             update_temperature!(model,T)
+        elseif iter_type == :tx
+            w_old = p
+            p = w = i == 1 ? w̄_new : exp(w̄_new)
         end
 
+        OF_pT = (w - w_old)/w
+
+        #linear interpolation to suggest new K.
         if outer_status == :bounded
-            α = clamp(αK,zero(αK),one(αK))
-            lnK .= α .* lnK .+ (1 - α) .* outer_lnK_old
+            lnK .= α_lnK .* lnK .+ (1 - α_lnK) .* outer_lnK_old
         end
 
-        !isfinite(OF) && (outer_status = :failure)
-        !isfinite(T) && (outer_status = :failure)
-        !isfinite(p) && (outer_status = :failure)
-        ss_status == RRFailure && (outer_status = :failure)
-        ss_converged && i > 3 && abs(OF_pT) < sqrt(tol_pT) && (outer_status = :bounded)
+        #outer iteration status determination
+        !isfinite(OF) && (outer_status = :failure) #failure in objective
+        !isfinite(w) && (outer_status = :failure) #failure in p/T
+        ss_status == RRFailure && (outer_status = :failure) #failure in SS iteration
+        ss_converged && i > 3  && abs(OF_pT) < sqrt(tol_pT) && (outer_status = :bounded)
         abs(OF) < tol_of && ss_converged && break
         abs(OF_pT) < tol_pT && iter_type != :pt && ss_converged && break
         i == max_iters && (outer_status = :maxiter)
 
+        #if the iteration results in a trivial phase, keep going until the specifications are satisfied.
         if ss_status == RRTrivial && outer_status != :failure
             if is_unknown(phasez) && outer_status != :trivial
                 phasez = identify_phase(model,p,T,z)
@@ -425,10 +412,10 @@ verbose &&
     verbose && ss_status == RRVapour && @info "procedure converged to a single vapour phase."
 
     if outer_status == :failure
-        flash_result.compositions[1] .= NaN
-        flash_result.compositions[2] .= NaN
-        flash_result.volumes .= NaN
-        flash_result.fractions .= NaN
+        flash_result.compositions[1] .= nan
+        flash_result.compositions[2] .= nan
+        flash_result.volumes .= nan
+        flash_result.fractions .= nan
     end
 
     if ss_status != RREq && outer_status != :trivial #trivial system detected after the iterations
@@ -443,8 +430,8 @@ verbose &&
             β = one(TT)
             vz = volume(model,p,T,z,phase = :v)/∑z
         else
-            β = convert(TT,NaN)
-            vz = convert(TT,NaN)
+            β = nan
+            vz = nan
         end
         flash_result.volumes[1] = vz
         flash_result.volumes[2] = vz
@@ -455,7 +442,7 @@ verbose &&
     if outer_status != :failure
         g,_ = modified_gibbs(model,flash_result)
     else
-        g = convert(TT,NaN)
+        g = nan
     end
 
     flash_result = FlashResult(flash_result.compositions,flash_result.fractions,flash_result.volumes,FlashData(p,T,g,vapour_idx))

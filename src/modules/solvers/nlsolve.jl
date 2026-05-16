@@ -209,21 +209,26 @@ end
 
 #iterative solver
 
+function solve1_initial_state(::Type{T},α = convert(T,0.6)) where T
+    nan = convert(T,NaN)
+    return ((nan,nan,nan),(nan,nan,nan),α,:iter0)
+end
+
 function solve1_update_state(state, x, fx; full_iter=true)
-    xs, fxs, damp, status = state
+    xs, fxs, α, status = state
     x1, x2, x3 = xs
     f1, f2, f3 = fxs
 
     if status == :no_init
-        return ((x, x2, x3), (fx, f2, f3), damp, :iter0)
+        return ((x, x2, x3), (fx, f2, f3), α, :iter0)
 
     elseif status == :iter0
-        return ((x, x1, x2), (fx, f1, f2), damp, :iter_initial)
+        return ((x, x1, x2), (fx, f1, f2), α, :iter_initial)
 
     elseif status == :iter_initial
-        new_damp = max(zero(damp), damp - 0.2)
-        new_status = iszero(new_damp) ? :iter_full : :iter_initial
-        return ((x, x1, x2), (fx, f1, f2), new_damp, new_status)
+        new_α = max(zero(α), α - 0.2)
+        new_status = iszero(new_α) ? :iter_full : :iter_initial
+        return ((x, x1, x2), (fx, f1, f2), new_α, new_status)
 
     elseif status == :iter_full
         # Only attempt to establish a bracket when fx is a reliable evaluation
@@ -232,15 +237,15 @@ function solve1_update_state(state, x, fx; full_iter=true)
                 na, nb, nfa, nfb = Roots.sort_smallest(x, x1, fx, f1)
                 # c: best of the two remaining points
                 nc, nfc = abs(f2) <= abs(f3) ? (x2, f2) : (x3, f3)
-                return ((na, nb, nc), (nfa, nfb, nfc), damp, :bounded)
+                return ((na, nb, nc), (nfa, nfb, nfc), α, :bounded)
             elseif fx * f2 < 0
                 na, nb, nfa, nfb = Roots.sort_smallest(x, x2, fx, f2)
                 nc, nfc = abs(f1) <= abs(f3) ? (x1, f1) : (x3, f3)
-                return ((na, nb, nc), (nfa, nfb, nfc), damp, :bounded)
+                return ((na, nb, nc), (nfa, nfb, nfc), α, :bounded)
             elseif fx * f3 < 0
                 na, nb, nfa, nfb = Roots.sort_smallest(x, x3, fx, f3)
                 nc, nfc = abs(f1) <= abs(f2) ? (x1, f1) : (x2, f2)
-                return ((na, nb, nc), (nfa, nfb, nfc), damp, :bounded)
+                return ((na, nb, nc), (nfa, nfb, nfc), α, :bounded)
             end
         end
 
@@ -254,7 +259,7 @@ function solve1_update_state(state, x, fx; full_iter=true)
             ((x1, f1), (x2, f2), (x, fx))
         end
         w1, w2, w3 = sort(keep)
-        return ((w1[1], w2[1], w3[1]), (w1[2], w2[2], w3[2]), damp, :iter_full)
+        return ((w1[1], w2[1], w3[1]), (w1[2], w2[2], w3[2]), α, :iter_full)
 
     elseif status == :bounded
         a, b, c = x1, x2, x3
@@ -265,7 +270,7 @@ function solve1_update_state(state, x, fx; full_iter=true)
             # fx is approximate: don't risk corrupting the bracket.
             # Only update c if the new point is strictly better, otherwise hold.
             if abs(fx) < abs(fc)
-                return ((a, b, x), (fa, fb, fx), damp, :bounded)
+                return ((a, b, x), (fa, fb, fx), α, :bounded)
             else
                 return state
             end
@@ -277,17 +282,17 @@ function solve1_update_state(state, x, fx; full_iter=true)
         if fx * fa < 0
             # New bracket: (x, a). Old b leaves → new c = b.
             na, nb, nfa, nfb = Roots.sort_smallest(x, a, fx, fa)
-            return ((na, nb, b), (nfa, nfb, fb), damp, :bounded)
+            return ((na, nb, b), (nfa, nfb, fb), α, :bounded)
         elseif fx * fb < 0
             # New bracket: (x, b). Old a leaves → new c = a.
             na, nb, nfa, nfb = Roots.sort_smallest(x, b, fx, fb)
-            return ((na, nb, a), (nfa, nfb, fa), damp, :bounded)
+            return ((na, nb, a), (nfa, nfb, fa), α, :bounded)
         else
             # fa*fb < 0 by invariant, so x must bracket with one side.
             # Reaching here means fx ≈ 0 or a noisy evaluation slipped through.
             # Guard: update c only if the new point is better than what we have.
             if abs(fx) < abs(fc)
-                return ((a, b, x), (fa, fb, fx), damp, :bounded)
+                return ((a, b, x), (fa, fb, fx), α, :bounded)
             else
                 return state
             end
