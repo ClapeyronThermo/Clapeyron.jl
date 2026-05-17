@@ -275,7 +275,7 @@ function qt_flash_impl(model::M,β,T,z,method::RRQXFlash) where M
     logp = Roots.solve(prob,Roots.Order1(),params,atol = method.atol,rtol = method.rtol)
     p = exp(logp)
 
-@info "________________________________________________________________________________________
+    verbose && @info "________________________________________________________________________________________
       Final K values:        $K
       Final pressure:        $p
 
