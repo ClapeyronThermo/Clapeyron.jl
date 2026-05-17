@@ -252,11 +252,11 @@ function solve1_update_state(state, x, fx; full_iter=true)
         # No bracket found, or full_iter=false: maintain 3 best points sorted by x.
         _, imax = findmax((abs(f1),abs(f2),abs(f3)))
         keep = if imax == 1
-            ((x2, f2), (x3, f3), (x, fx))
+            SVector((x2, f2), (x3, f3), (x, fx))
         elseif imax == 2
-            ((x1, f1), (x3, f3), (x, fx))
+            SVector((x1, f1), (x3, f3), (x, fx))
         else
-            ((x1, f1), (x2, f2), (x, fx))
+            SVector((x1, f1), (x2, f2), (x, fx))
         end
         w1, w2, w3 = sort(keep)
         return ((w1[1], w2[1], w3[1]), (w1[2], w2[2], w3[2]), α, :iter_full)

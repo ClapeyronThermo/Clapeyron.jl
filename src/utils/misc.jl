@@ -205,14 +205,12 @@ end
 viewlast(x,i) = @view(x[(end - i + 1):end])
 viewfirst(x,i) = @view(x[begin:i])
 viewlast(x,i,n) = viewfirst(viewlast(x,i),n)
-
 linearidx(x::AbstractVector) = LinearIndices(x)
+mid(a,b,c) =  max(min(a,b),min(max(a,b),c))
+deleteat(x,i) = deleteat!(copy(x),i)
 
 if Base.VERSION < v"1.11"
     linearidx(x::AbstractMatrix) = diagind(x,0)
 else
     linearidx(x::AbstractMatrix) = diagind(x,0,IndexStyle(x))
 end
-
-mid(a,b,c) =  max(min(a,b),min(max(a,b),c))
-deleteat(x,i) = deleteat!(copy(x),i)

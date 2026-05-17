@@ -638,7 +638,7 @@ end
     @test enthalpy(model, res_2ph) ≈ h_2ph rtol = 1e-6
 
     # ps_flash with :lle should recover the same T as the two-phase ph_flash
-    s_2ph = entropy(model, res_2ph; equilibrium = :lle)
+    s_2ph = entropy(model, res_2ph)
     res_ps = ps_flash(model, p, s_2ph, x)
     @test Clapeyron.numphases(res_ps) == 2
     @test Clapeyron.temperature(res_ps) ≈ Clapeyron.temperature(res_2ph) rtol = 1e-6
