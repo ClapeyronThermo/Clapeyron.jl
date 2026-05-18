@@ -16,6 +16,7 @@ export MSAID
 """
     MSAID(solvents::Array{String,1},
         ions::Array{String,1};
+        charge = nothing,
         RSPmodel = nothing,
         userlocations = String[],
         RSPmodel_userlocations = nothing,
@@ -23,6 +24,7 @@ export MSAID
 
 ## Input parameters
 - `sigma`: Single Parameter (`Float64`) - Hard-sphere diameter `[m]`
+- 
 - `charge`: Single Parameter (`Float64`) - Charge `[-]`
 
 ## Description
@@ -31,10 +33,14 @@ This function is used to create a Mean Spherical Approximation model. The MSAID 
 ## References
 1. Blum, L. (1974). Solution of a model for the solvent‐electrolyte interactions in the mean spherical approximation, 61, 2129–2133.
 """
-function MSAID(solvents,ions; userlocations, verbose=false)
-    components = deepcopy(ions)
-    prepend!(components,solvents)
-    params = getparams(components, ["Electrolytes/properties/charges.csv","properties/molarmass.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
+function MSAID(solvents,ions; charge = nothing, userlocations, verbose=false)
+    solvents = format_components(solvents)
+    ions = format_components(ions)
+    components = vcat(solvents, ions)
+    
+    userlocations = normalize_userlocations(userlocations)
+
+    params = getparams(components, String[]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     if any(keys(params).=="b")
         params["b"].values .*= 3/2/N_A/π*1e-3
         params["b"].values .^= 1/3
@@ -47,12 +53,12 @@ function MSAID(solvents,ions; userlocations, verbose=false)
     dipole = params["dipole"]
     dipole.values .*= 1/(299792458)*1e-21
 
-    charge = params["charge"]
+    Z = init_charge(components,charge;verbose)
 
-    packagedparams = MSAIDParam(sigma,dipole,charge)
+    packagedparams = MSAIDParam(sigma,dipole,SingleParam("charge",components,Z))
 
     references = String["10.1063/1.1682224"]
-    if count(iszero,charge.values) != 1
+    if count(iszero,Z) != 1
         throw(error("MSAID only supports one neutral solvent."))
     end
     model = MSAID(components, packagedparams, references)
@@ -63,8 +69,8 @@ IonDependency(model::MSAIDModel) = IndependentIonModel()
 
 function data(model::MSAIDModel, V, T, z , iondata = (model.params.charge.values, model.params.sigma.values, 1.0))
     β = 1/(k_B*T)
-    σ = model.params.sigma.values
-    Z = model.params.charge.values
+    #σ = model.params.sigma.values
+    #Z = model.params.charge.values
     Z, σ, _ = iondata
     nc = length(model)
     isolv = findfirst(iszero,Z)

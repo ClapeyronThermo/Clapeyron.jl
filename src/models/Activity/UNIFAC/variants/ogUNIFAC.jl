@@ -1,18 +1,26 @@
-struct ogUNIFACParam <: EoSParam
-    A::PairParam{Float64}
-    R::SingleParam{Float64}
-    Q::SingleParam{Float64}
+struct ogUNIFACParam{T} <: ParametricEoSParam{T}
+    A::PairParam{T}
+    R::SingleParam{T}
+    Q::SingleParam{T}
 end
+
+ogUNIFACParam(A,R,Q) = build_parametric_param(ogUNIFACParam,A,R,Q)
 
 abstract type ogUNIFACModel <: UNIFACModel end
 
-struct ogUNIFAC{c<:EoSModel} <: ogUNIFACModel
+struct ogUNIFAC{c<:EoSModel,T} <: ogUNIFACModel
     components::Array{String,1}
-    groups::GroupParam
-    params::ogUNIFACParam
+    groups::GroupParam{T}
+    params::ogUNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    unifac_cache::UNIFACCache
+    unifac_cache::UNIFACCache{T}
+end
+
+function ogUNIFAC(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return ogUNIFAC{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 export ogUNIFAC
@@ -62,6 +70,12 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 Θₖ = QₖXₖ/∑QₖXₖ
 Ψₖₘ = exp(-(Aₖₘ/T)
 ```
+
+
+!!! note "Group Fragmentation"
+
+    Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `ogUNIFACGroups`
+
 
 ## References
 1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. [doi:10.1021/i260064a004](https://doi.org/10.1021/i260064a004)

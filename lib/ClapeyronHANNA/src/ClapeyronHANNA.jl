@@ -7,7 +7,7 @@ using Clapeyron: EoSParam, ActivityModel, SingleParam, EoSVectorParam
 using Clapeyron: getparams, init_puremodel, Rgas
 import Clapeyron: default_locations
 using Flux, Transformers.HuggingFace, Transformers.TextEncoders
-using CSV, JSON3, JLD2
+using CSV, JSON, JLD2
 using LinearAlgebra
 
 include("HANNA.jl")
@@ -35,12 +35,18 @@ function load_chembert(;name="DeepChem/ChemBERTa-77M-MTR", max_length=512, downl
 end
 
 function load_custom_tokenizer(;max_length)
-    vocab = JSON3.read(read("$DB_PATH/ChemBERTa/vocab.json",String))
+    vocab = JSON.parse(read("$DB_PATH/ChemBERTa/vocab.json",String))
+    max_id = maximum(Int.(values(vocab)))
+    ordered_vocab = fill("", max_id + 1)
+    for (token, id) in vocab
+        ordered_vocab[Int(id) + 1] = token
+    end
+    any(isempty, ordered_vocab) && error("invalid vocab.json: missing token ids")
     startsym = "[CLS]"
     endsym = "[SEP]"
     unksym = "[UNK]"
     padsym = "[PAD]"
-    return TransformerTextEncoder(split_smiles, String.(keys(vocab)); startsym, endsym, unksym, padsym=padsym, trunc=max_length)
+    return TransformerTextEncoder(split_smiles, ordered_vocab; startsym, endsym, unksym, padsym=padsym, trunc=max_length)
 end
 
 function split_smiles(smiles::String)

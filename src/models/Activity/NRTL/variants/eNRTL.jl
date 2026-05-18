@@ -10,12 +10,26 @@ struct eNRTL{T<:IdealModel,c<:EoSModel,i<:IonModel} <: eNRTLModel
     ionmodel::i
     references::Array{String,1}
 end
-function eNRTL(solvents,ions; 
+
+"""
+    eNRTL(solvents, ions;
+        idealmodel = BasicIdeal,
+        neutralmodel = NRTL,
+        ionmodel = PDH,
+        RSPmodel = ConstRSP,
+        userlocations = String[],
+        ideal_userlocations = String[],
+        verbose = false)
+
+Electrolyte NRTL activity model. Builds a combined model for solvent and ion
+components using a neutral NRTL model and a selected ion model.
+"""
+function eNRTL(solvents,ions;
     idealmodel = BasicIdeal,
     neutralmodel = NRTL,
     ionmodel = PDH,
     RSPmodel = ConstRSP,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
      verbose=false)
     components = deepcopy(ions)
@@ -52,13 +66,13 @@ function excess_g_local(model::eNRTLModel, V, T, z)
     n = sum(z)
     invn = 1/n
     invT = 1/(T)
-    res = _0 
+    res = _0
 
 
     isolv = model.icomponents[model.charge.==0]
     icat = model.icomponents[model.charge.>0]
     iani = model.icomponents[model.charge.<0]
-    
+
     Ya = z[iani]
     Ya ./= sum(Ya)
 

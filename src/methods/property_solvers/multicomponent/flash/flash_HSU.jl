@@ -148,12 +148,12 @@ end
     result = uv_flash(model, u, v, n, method::FlashMethod = GeneralizedXYFlash())
     result = uv_flash(model, u, v, n; kwargs...)
 
-Routine to solve non-reactive two-phase multicomponent flash problem. with U-V specifications.
+Routine to solve non-reactive two-phase multicomponent flash problem. With U-V specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
 Inputs:
- - `u`, internal energy
- - `v`, total volume
- - `z`, vector of number of moles of each species
+ - `u`, internal energy `[J]`
+ - `v`, total volume `[m³]`
+ - `z`, vector of number of moles of each species `[mol]`
 
 All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
 

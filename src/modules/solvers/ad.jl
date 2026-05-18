@@ -59,13 +59,14 @@ f∂f(f::F) where F = Base.Fix1(f∂f,f)
 """
     f∂f∂2f(f,x)
 
-Returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
+Returns f, ∂f/∂x and ∂²f/∂²x evaluated in `x` using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 @inline function f∂f∂2f(f::F,x::R,tag = f) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(tag, R))
     out = ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),)))
     _f,_df = f∂f(f,out)
-    fx = ForwardDiff.value(_f)
+    fx = recursive_fd_value(_f)
+    dfx = recursive_fd_value(_df)
     dfx = ForwardDiff.partials(_f).values[1]
     d2fx = ForwardDiff.partials(_df).values[1]
     return (fx,dfx,d2fx)
@@ -282,11 +283,24 @@ primalval(x) = x
 
 #scalar
 primalval(x::ForwardDiff.Dual) = primalval(ForwardDiff.value(x))
+primalval(x::Tuple) = map(primalval,x)
 
 @generated function primalval_struct(x::M) where M
     names = fieldnames(M)
     Base.typename(M).wrapper
     primalvals = Expr(:call,Base.typename(M).wrapper)
+    for name in names
+        push!(primalvals.args,:(primalval(x.$name)))
+    end
+    return primalvals
+end
+
+@generated function primalval_struct(x::M,m::T1) where {T1,M}
+    names = fieldnames(M)
+    Base.typename(M).wrapper
+    structtype = Expr(:curly,Base.typename(M).wrapper)
+    push!(structtype.args,m.parameters[1])
+    primalvals = Expr(:call,structtype)
     for name in names
         push!(primalvals.args,:(primalval(x.$name)))
     end
@@ -367,7 +381,7 @@ function strong_zero(y::ForwardDiff.Dual{T,V,P},x::ForwardDiff.Dual{T,V,P}) wher
     dx = ForwardDiff.partials(x)
     dy = ForwardDiff.partials(y)
     dy2 = strong_zero(dy,dx)
-    return ForwardDiff.Dual{T,V,P}(x.value,dy2)
+    return ForwardDiff.Dual{T,V,P}(y.value,dy2)
 end
 
 function strong_zero(dy::ForwardDiff.Partials{N,V},dx::ForwardDiff.Partials{N,V}) where {N,V}

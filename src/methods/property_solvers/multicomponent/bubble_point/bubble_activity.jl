@@ -4,7 +4,7 @@
 
 Function to compute [`bubble_pressure`](@ref) using Activity Coefficients.
 On activity coefficient models it solves the problem via succesive substitucion.
-On helmholtz-based models, it approximates the activity coefficient using the saturated pure state as reference.
+On Helmholtz-based models, it approximates the activity coefficient using the saturated pure state as reference.
 
 Inputs:
 - `y0 = nothing`: optional, initial guess for the vapor phase composition
@@ -13,7 +13,7 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
-- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
+- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. Those will be set to zero on the vapour phase.
 """
 struct ActivityBubblePressure{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -22,6 +22,14 @@ struct ActivityBubblePressure{T} <: BubblePointMethod
     nonvolatiles::Union{Nothing,Vector{String}}
     itmax_ss::Int64
     rtol_ss::Float64
+end
+
+function Solvers.primalval(method::ActivityBubblePressure{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
 end
 
 function ActivityBubblePressure(;vol0 = nothing,

@@ -20,7 +20,7 @@ if `return_sites` is set to true, `getparams` will add a "sites" value in the pa
 
 ## Single to Pair promotion
 
-When reading multiple CSVs, if a parameter name appears in a single paramter file and in a pair parameter file, the single parameter values will be promoted to be the diagonal values of the pair interaction matrix:
+When reading multiple CSVs, if a parameter's name appears in a single parameter file and in a pair parameter file, the single parameter values will be promoted to be the diagonal values of the pair interaction matrix:
 
 **`my_parameter_single.csv`**
 ```
@@ -49,7 +49,7 @@ julia> res["a"].values
  1000  875
   875  700
 ```
-This promotion fails only happens in Single-Pair combinations. It fails otherwise.
+This promotion is only supported for Single-Pair combinations. Other CSV type combinations will fail.
 
 ## In-memory CSV parsing
 
@@ -72,20 +72,20 @@ Dict{String, Clapeyron.ClapeyronParam} with 2 entries:
 
 There are some special prefixes that are used by the parser to signal some specific behaviour to be done at parsing time, for one CSV or a group of them:
 - `@DB`: replaces the path by the current Clapeyron default database. When doing `getparams(components,["location"])`, the paths are lowered to `getparams(components,userlocations = ["@DB/location"])`.
-In a way, is a path shortcut used internally by Clapeyron to parse it's own database. you can change the path where `@DB` points to (or add other path shortcuts), via adding a corresponding entry to the `Clapeyron.SHORT_PATHS` Dict.
+In a way, is a path shortcut used internally by Clapeyron to parse it's own database. You can change the path where `@DB` points to (or add other path shortcuts), via adding a corresponding entry to the `Clapeyron.SHORT_PATHS` Dict.
 - `@REPLACE`: Any filepath starting with `@REPLACE` will clear all previous appearances of the parameter names found in the CSV that contains the prefix.
-- `@REMOVEDEFAULTS`: it is used alone, and needs to be passed at the first position of the vector of `userlocations`. it will skip parsing of the default parameters:
+- `@REMOVEDEFAULTS`: it is used alone, and needs to be passed at the first position of the vector of `userlocations`. It will skip parsing of the default parameters:
 
-The effect of the the parser can be summarized by the following examples:
+The effect of the parser can be summarized by the following examples:
 
 ```
 model = PCSAFT(["water"],userlocations = ["@REMOVEDEFAULTS"]) #fails, no parameters found, no CSV parsed
 model = PCSAFT(["water"],userlocations = ["@REPLACE/empty_params.csv"]) #fails, no parameters found, default parameters parsed and then removed
 model = PCSAFT(["water"],userlocations = ["@REPLACE/my_pcsaft_kij.csv"]) #success, default kij parameters replaced by the ones on `my_pcsaft_kij.csv`
-model = PCSAFT(["water"],userlocations = ["@REMOVEDEFAULTS","@DB/SAFT/PCSAFT","@DB/properties/molarmass.csv"]) #sucess. default parameters csv removed, and parsed again, using the @DB prefix to point to the default database.
+model = PCSAFT(["water"],userlocations = ["@REMOVEDEFAULTS","@DB/SAFT/PCSAFT","@DB/properties/molarmass.csv"]) #sucess. Default parameters csv removed, and parsed again, using the @DB prefix to point to the default database.
 ```
 
-You can use the `@REPLACE` keyword in a in-memory CSV by adding it at the start of the string, followed by an space:
+You can use the `@REPLACE` keyword in an in-memory CSV by adding it at the start of the string, followed by a space:
 ```
 #This will replace all previous parsed occurences of `a` and `b`
 x_replace = \"\"\"@REPLACE Clapeyron Database File,
@@ -98,7 +98,7 @@ sp2,700,0.41
 
 ## CSV type detection and group type
 
-The second line of the csv is used for comments and to identify the type of CSV used. for example:
+The second line of the csv is used for comments and to identify the type of CSV used. For example:
 
     ```
 x = \"\"\"Clapeyron Database File
@@ -118,7 +118,7 @@ x = \"\"\"Clapeyron Database File
        sp2,700,0.41
        \"\"\"
 ```
-Additionaly, there are some cases when you want to absolutely sure that your types don't clash with the default values. This is the case with different group parametrizations of UNIFAC (Dormund, VTPR, PSRK):
+Additionaly, there are some cases when you want to be absolutely sure that your types don't clash with the default values. This is the case with different group parametrizations of UNIFAC (Dortmund, VTPR, PSRK):
 
 ```
 julia> model = UNIFAC(["methanol","ethanol"])
@@ -136,7 +136,7 @@ Group Type: PSRK
 Contains parameters: A, B, C, R, Q
 ```
 
-The models are the same (`UNIFAC`), but the group parametrizations are different. this is specified with the `grouptype` keyword. for example, if we see `UNIFAC_groups.csv`, it starts with:
+The models are the same (`UNIFAC`), but the group parametrizations are different. This is specified with the `grouptype` keyword. For example, if we see `UNIFAC_groups.csv`, it starts with:
 
 ```
 Clapeyron Database File,
@@ -152,7 +152,7 @@ For compatibility reasons, if you pass a CSV without grouptype, it will be accep
 
 ```
 x1 = \"\"\"Clapeyron Database File
-       paramterization 1 [csvtype = like,grouptype = param1]
+       parameterization 1 [csvtype = like,grouptype = param1]
        species,a,b
        sp1,1000,0.05
        sp2,700,0.41
@@ -165,7 +165,7 @@ x2 = \"\"\"Clapeyron Database File
        \"\"\"
 ```
 
-If we pass the same parameters, with different group types, the parser will fail
+If we pass the same parameters, with different group types, the parser will fail.
 
 ```julia-repl
 julia> Clapeyron.getparams(["sp1","sp2"],userlocations = [x1,x2])
@@ -177,19 +177,28 @@ incoming group type: fitted
 Note, that the parser will not fail if you pass different parameters with different group types (For example if `a` has `param1` group type and `b` has `fit` group type)
 """
 function getparams(components,
-                    locations::Array{String,1}=String[];
+                    locations=String[];
                     userlocations = String[],
-                    asymmetricparams::Vector{String}=String[],
-                    ignore_missing_singleparams::Vector{String}=String[],
-                    ignore_headers::Vector{String} = IGNORE_HEADERS,
+                    asymmetricparams=String[],
+                    ignore_missing_singleparams=String[],
+                    ignore_headers = IGNORE_HEADERS,
                     verbose::Bool=false,
-                    species_columnreference::String="species",
-                    source_columnreference::String="source",
-                    site_columnreference::String="site",
+                    species_columnreference="species",
+                    source_columnreference="source",
+                    site_columnreference="site",
                     normalisecomponents::Bool=true,
                     return_sites::Bool = true,
-                    component_delimiter::String = "~|~"
+                    component_delimiter = "~|~"
                     )
+    
+    userlocations = normalize_userlocations(userlocations)
+    asymmetricparams = normalize_userlocations(asymmetricparams)
+    ignore_missing_singleparams = String.(ignore_missing_singleparams)
+    ignore_headers = String.(ignore_headers)
+
+    species_columnreference = String(species_columnreference)
+    source_columnreference = String(source_columnreference)
+    site_columnreference = String(site_columnreference)
 
     options = ParamOptions(;userlocations,
                             asymmetricparams,
@@ -211,7 +220,7 @@ function getparams(components,
     return getparams(format_components(components),locations,options)
 end
 
-function getparams(components::Vector{String},locations::Vector{String},options::ParamOptions)
+function getparams(components,locations,options::ParamOptions)
     #generate one string of params
     filepaths = flattenfilepaths(locations,options.userlocations)
     #merge all found params
@@ -295,7 +304,7 @@ function buildsites(components,allparams,allnotfoundparams,options)
     return res
 end
 
-function getparams(groups::GroupParameter, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
+function getparams(groups::GroupParameter, locations=String[],options::ParamOptions=DefaultOptions)
     return getparams(groups.flattenedgroups, locations, options)
 end
 
@@ -310,7 +319,7 @@ function anysites(data,components)
     return false
 end
 
-function findsites(data::Dict,components::Vector;verbose = false)
+function findsites(data::Dict,components;verbose = false)
     sites = Dict(components .=> [Set{String}() for _ ∈ 1:length(components)])
     for raw ∈ values(data)
         if raw.type === assocdata
@@ -337,8 +346,8 @@ can_nt(x::AbstractDict) = true
 can_nt(x::NamedTuple) = true
 
 @nospecialize
-function createparams(components::Vector{String},
-                    filepaths::Vector{String},
+function createparams(components,
+                    filepaths,
                     options::ParamOptions = DefaultOptions,
                     parsegroups = :off)
 
@@ -346,6 +355,11 @@ function createparams(components::Vector{String},
     allnotfoundparams = Dict{String,CSVType}()
     #in case of NamedTuple or Dict user-provided params, the filepath string should be empty.
     #but if its not, parse those anyway.
+
+    if isempty(filepaths) && options.verbose
+        @info "No string filepaths in the input."
+    end
+
     for filepath ∈ filepaths
 
         _replace = startswith(filepath,"@REPLACE")
@@ -411,7 +425,7 @@ function merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams
         allnotfoundparams[kk] = vv
     end
 
-    if _replace #if the paramter is not found, that means that we want to erase that param.
+    if _replace #if the parameter is not found, that means that we want to erase that param.
         for (kk,vv) ∈ pairs(notfoundparams)
             delete!(allparams,kk)
         end
@@ -605,7 +619,7 @@ function findparamsincsv(components,filepath,
 
     verbose && __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype,grouptype)
     #list of all species
-    species_list::Vector{String} = normalisestring.(Tables.getcolumn(df,lookupcolumnindex),normalisecomponents)
+    species_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex),normalisecomponents)
 
     #indices where data could be (they could be missing)
     #on pair and assoc, this is just the first component, we need to reduce the valid indices again
@@ -625,7 +639,7 @@ function findparamsincsv(components,filepath,
         end
 
     elseif csvtype == pairdata && no_parsegroups
-        species2_list::Vector{String} = normalisestring.(Tables.getcolumn(df,lookupcolumnindex2)[found_indices0],normalisecomponents)
+        species2_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex2)[found_indices0],normalisecomponents)
         found_indices2,comp_indices2 = _indexin(components_dict,species2_list,component_delimiter,1:length(species2_list))
         comp_indices1 = comp_indices[found_indices2]
         found_indices2 = found_indices0[found_indices2]
@@ -749,7 +763,7 @@ function _fill_sources!(input,allsources,tofill)
 end
 
 function build_raw_param(name,comps,vals,sources,csv,csvtype,grouptype)
-    s::Vector{Int} = findall(!ismissing,vals)
+    s = findall(!ismissing,vals)
     ls = length(s)
     _vals = Vector{nonmissingtype(eltype(vals))}(undef,ls)
     _sources = Vector{String}(undef,ls)
@@ -851,7 +865,8 @@ function __verbose_findparams_found(foundvalues)
     end
 end
 
-const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "association", "group", "groups","intragroup","intragroups"]
+const READCSVTYPE_KEYWORDS  = Set(["like", "single", "unlike", "pair", "assoc", "association", "group", "groups","intragroup","intragroups"])
+
 
 function read_csv_options(filepath::AbstractString)
     return _read_csv_options(getline(String(filepath), 2))
@@ -871,17 +886,24 @@ function _read_csv_options(line::String)
         opts = chop(maybe_opts.match,head = 1,tail = 1)
         return __get_options(opts)
     else
-        keywords = readcsvtype_keywords
+        data = [""]
         words = split(lowercase(strip(line, ',')), ' ')
-        foundkeywords = intersect(words, keywords)
-        _species = intersect(words,["species"])
-        _estimator = intersect(words,["method"])
-        return (csvtype = _readcsvtype(foundkeywords),grouptype = :unknown,estimator = _estimator, species = _species,sep = :comma)
+
+        maybe_csvdata = false
+        for word in words
+            if word in READCSVTYPE_KEYWORDS && maybe_csvdata == false
+                maybe_csvdata = true
+                data[1] = word
+            elseif word in READCSVTYPE_KEYWORDS && maybe_csvdata == true
+                data[1] = ""
+            end
+        end
+        return (csvtype = _readcsvtype(data[1]),grouptype = :unknown, estimator = :no_estimator, species = ["all"], sep = :comma)
     end
 end
 
 const NT_CSV_OPTIONS = (csvtype = namedtupledata,grouptype = :unknown,estimator = :no_estimator, species = ["all"],sep = :comma)
-+
+
 function _readcsvtype(collection)
     length(collection) != 1 && return invaliddata
     key = only(collection)

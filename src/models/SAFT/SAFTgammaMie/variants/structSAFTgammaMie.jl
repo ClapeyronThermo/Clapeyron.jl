@@ -2,7 +2,7 @@ abstract type structSAFTgammaMieModel <: SAFTgammaMieModel end
 
 struct structSAFTgammaMie{I,T} <: structSAFTgammaMieModel
     components::Vector{String}
-    groups::GroupParam
+    groups::GroupParam{T}
     sites::SiteParam
     params::SAFTgammaMieParam{T}
     idealmodel::I
@@ -10,6 +10,12 @@ struct structSAFTgammaMie{I,T} <: structSAFTgammaMieModel
     epsilon_mixing::Symbol
     assoc_options::AssocOptions
     references::Array{String,1}
+end
+
+function structSAFTgammaMie(comps,groups,sites,params,idealmodel,pcsaftmodel,epsilon_mixing,assoc,refs)
+    T = eltype(params)
+    I = typeof(idealmodel)
+    return structSAFTgammaMie{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,epsilon_mixing,assoc,refs)
 end
 
 default_references(::Type{structSAFTgammaMie}) = ["10.1063/1.4851455", "10.1021/je500248h","10.1063/5.0048315", "doi.org/10.1021/acs.iecr.2c00198"]
@@ -56,6 +62,11 @@ default_references(::Type{structSAFTgammaMie}) = ["10.1063/1.4851455", "10.1021/
 
 s-SAFT-γ-Mie EoS
 
+!!! note "Group Fragmentation"
+
+    Molecule fragmentation into functional groups and connectivity information is available in GCIdentifier.jl, using `SAFTgammaMieGroups`.
+
+
 ## References
 1. Shaahmadi,, F., Hurter, R.M., Burger, A.J., Cripwell, J.T. (2021). Improving the SAFT-γ Mie equation of state to account for functional group interactions in a structural (s-SAFT-γ Mie) framework: Linear and branched alkanes. The Journal of Chemical Physics, 154, 244102. [doi:10.1063/5.0048315 ](https://doi.org/10.1063/5.0048315 )
 2. Schulze-Hulbe, A., Shaahmadi, F., Burger, A.J., Cripwell, J.T. (2022). Extending the Structural (s)-SAFT-γ Mie Equation of State to Primary Alcohols. Industrial & Engineering Chemistry Research, 61 (33), 12208-12228. [doi:10.1021/acs.iecr.2c00198](https://doi.org/10.1021/acs.iecr.2c00198)
@@ -71,6 +82,8 @@ function structSAFTgammaMie(components;
     verbose = false,
     epsilon_mixing = :default,
     assoc_options = AssocOptions())
+
+    epsilon_mixing = Symbol(epsilon_mixing)
 
     groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv","SAFT/SAFTgammaMie/structSAFTgammaMie/structSAFTgammaMie_intragroups.csv"])
     params = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
@@ -100,16 +113,20 @@ function structSAFTgammaMie(components;
     bondvol,epsilon_assoc = assoc_mix(bondvol0,epsilon_assoc0,sigma,assoc_options,sites) #combining rules for association
 
     gcparams = SAFTgammaMieParam(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    vrmodel = SAFTVRMie(groups,gcparams,sites,idealmodel = init_idealmodel,assoc_options = assoc_options,epsilon_mixing = epsilon_mixing,verbose = verbose)
-    group_sum!(vrmodel.params.Mw,groups,params["Mw"])
+    Mw_comps = group_sum(groups,params["Mw"])
+    ideal_userlocations_updated = _update_idealuserlocations_for_GC(idealmodel,ideal_userlocations,Mw_comps)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations_updated,verbose)
+    vrmodel = __SAFTVRMie(groups,gcparams,sites,idealmodel = init_idealmodel,assoc_options = assoc_options,epsilon_mixing = epsilon_mixing,verbose = verbose)
+    vrmodel.params.Mw.values .= Mw_comps.values
     model = structSAFTgammaMie(components,groups,sites,gcparams,init_idealmodel,vrmodel,epsilon_mixing,assoc_options,default_references(structSAFTgammaMie))
     set_reference_state!(model,reference_state;verbose)
     return model
 end
 
 const sSAFTγMie = structSAFTgammaMie
+@doc (@doc structSAFTgammaMie) sSAFTγMie
 const sSAFTgammaMie = structSAFTgammaMie
+@doc (@doc structSAFTgammaMie) sSAFTgammaMie
 
 export structSAFTgammaMie,sSAFTgammaMie,sSAFTγMie
 

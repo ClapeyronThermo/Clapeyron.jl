@@ -1,3 +1,125 @@
+# v0.6.24
+
+## New Features
+
+- Association: better initial points and faster evaluation via compression of the association matrix.
+- `GeneralizedXYFlash`: added `verbose` option
+- `ChemPotBubblePressure`: added `verbose` option
+- `ChemPotBubbleTemperature`: added `verbose` option
+- `ChemPotDewPressure`: added `verbose` option
+- `ChemPotDewTemperature`: added `verbose` option
+- `Tproperty`/`Pproperty`: better initial points for poins inside the phase change region.
+- `spinodal_pressure`/`spinodal_temperature`: initial points now use `edge_temperature`/`edge_pressure` instead of bubble/dew calculations, improving speed and stability, especially with conditions near the mixture critical point
+- `EPPR78`: support for passing `alpha` and `translation` submodels
+- stability improvements to `edge_pressure`/`edge_temperature`
+
+## Bug fixes
+
+- Fixes in `split_model` when indices aren't ordered
+
+# v0.6.23
+
+## New Features
+
+- New ideal models: `GCAlyLee` and `BurkhardtIdeal`
+-New string macros: `@cas_str` and `@smiles_str`, that allow searching components by CAS and SMILES respectively.
+- improved initial point for bubble/dew calculations
+
+## Bug fixes
+
+- Fixes and improvements in volume calculation.
+- `SingleFluid`, when passing a JSON directly as a string, now the name stored is extracted and used. before, the whole JSON string was used as a name.
+
+# v0.6.22
+
+## New Features
+
+- Implicit differentiation: the core implicit differentiation routines were replaced by `IFTDuals.ift`.
+- Experimental: `AssocOptions` supports the `implicit_ad` option to calculate derivatives of the association solver via `IFTDuals`
+- Implicit differentiation is now enabled in PH flash and PS flash.
+- Experimental: new tpd function: `Clapeyron.tpd2`, that returns a `TPDResult` struct instead of a tuple of vectors
+- Experimental: New model wrapper for electrolyte wrappers: `MeanIonicApproach` with support for `tp_flash`
+
+## Bug fixes
+
+- Fixes in `iPCSAFT`
+- Fixes in electrolyte routines
+- Fixes in Multifluid initial volume
+- Fixes in `MultiPhaseTPFlash`
+
+# v0.6.21
+
+## New Features
+
+- `GroupParam` can now store non-integer values.
+- `MultiPhaseTPFlash`: support for Gamma-Phi models
+- Cubics: translation now does not allocate in most cases.
+- New model: translated industrial PC-SAFT (`iPCSAFT`)
+- New model: VTPR with temperature-dependent translation (`TVTPR`)
+- Electrolyte models: `mean_ionic_activity_coefficient` and `osmotic_coefficient` (and their saturated variants), can now be called directly without specifying salts, if the model forms binary salts. For example, (`osmotic_coefficient(model,p,T,m)`) is equivalent to(`osmotic_coefficient(model,salts,p,T,m)`), where `salts = Clapeyron.auto_binary_salts(model)`
+- `DHModel`: improved numerical stability of `a_dh` when the electrolyte concentrations are small.
+- association options can now be initialized directly from a symbol: (`PCSAFT(["water","ethanol"],assoc_options = :cr1)`)
+
+## package deprecations
+
+- JSON3.jl was removed in favour of JSON.jl
+
+## Bug fixes
+
+- `AntoineSaturation` now uses SI units
+- Fixes in `PenelouxTranslation` (inverted parameters for PR and RK models)
+- Patel-Teja: the correlation for ζc is used first instead of the experimental critical volume
+- Various documentation improvements
+- Fixed precompilation errors in `ClapeyronSymbolicsExt`
+
+# v0.6.20
+
+## New Features
+
+- revamp to Fugacity-based bubble/dew solvers. Improved speed of successive substitution iterations and support for Activity models.
+- Activity models: support for second-order Michelsen TP flash. in VLE and LLE equilibria
+- Activity models: support for QP/QT flash
+- Improved implicit differentiation for all solvers.
+- New method: thermodynamic factor (`thermodynamic_factor`)
+- New method: `eos_repr`, to create parseable julia code capable of reproducing a model
+- `BACKSAFT`: support for multicomponent mixtures.
+- `crit_pure`: improved convergence.
+- CoolProp: support for CoolProp 7.2
+- Association: removed small static solvers for sizes 2-5 due to compilation slowdown.
+- Cubics: improved robustness in the volume solver
+- PCSAFT: improved robustness in the volume solver at low temperatures
+
+## Method deprecations
+
+- `ActivityDewTemperature` and `ActivityBubbleTemperature` were removed, `FugBubbleTemperature` and `FugDewTemperature` are now the default for activity methods, with proper support for non-condensables/non-volatiles
+- `DETPFlash` now uses another global optimizer, self-adaptive spherical search algorithm, with the main intention of dropping `BlackBoxOptim` as a dependency.
+
+## Bug fixes
+
+- Convergence failure in Michelsen TP flash when `equilibrium = :unknown` and LLE was detected.
+- Fixes on `MultiphaseTPFlash`
+- Various fixes on `saturation_pressure` initial points
+- Fixed an extra `RT` division in `Obj_de_tp_flash`; it now returns the molar reduced Gibbs energy `G/(nRT)`.
+- `__eval_G_DETPFlash(model::EoSModel, p, T, ni, equilibrium)` now returns reduced Gibbs energy, consistent with the `PTFlashWrapper` overload.
+- `gammaphi_gibbs` now handles unnormalized inputs (mole amounts) correctly and always returns a `(g, v)` tuple for empty phases.
+
+# v0.6.19
+
+## New Features
+
+- Activity models: support for second-order Michelsen TP flash. in VLE and LLE equilibria
+- Activity models: support for tpd in VLE and LLE equilibria
+- Activity models: new intrinsic: `lnγ_impl!(out,model,p,T,z)` that allows evaluation of activity coefficients without allocations.
+- Activity model performance improvements due to caching.
+- New model: `EmpiricPseudoPure`: a Clapeyron implementation of CoolProp's pseudo pure models.
+- New method: `RRQXFlash` for `qp_flash` and `qt_flash`.
+- `Clapeyron.tpd`: added ideal gas testing composition.
+
+## Bug fixes
+
+- Convergence failure in Michelsen TP flash when equilibria = :unkwown and LLE was detected.
+- Fixes on `MultiphaseTPFlash`
+
 # v0.6.18
 
 ## New Features

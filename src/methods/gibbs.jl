@@ -67,7 +67,7 @@ function ∂²𝕘∂T²(model,p,T,z)
 end
 #property logic
 
-function PT_property(model::GibbsBasedModel,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+function PT_property(model::GibbsBasedModel,p,T,z,phase,threaded,vol0,f::F,vol) where {F}
     z isa Number && return PT_property_gibbs(model,p,T,SVector(z),f)
     return PT_property_gibbs(model,p,T,z,f)
 end
@@ -194,7 +194,7 @@ end
     type,p,T,W = gibbsmodel_reference_state_consts(model)
     type,p,T,W = gibbsmodel_reference_state_consts(model,other_model)
     
-Returns a equilibrium condition to equilibrate the gibbs energies of two models.
+Returns an equilibrium condition to equilibrate the Gibbs energies of two models.
 Used for solid-fluid equilibria.
 By default, it returns `nothing`. 
 The two-argument method is used to disambiguate between two different models.
@@ -203,7 +203,7 @@ Available options for the type are:
     - :zero: the models are already equilibrated, no additional calculation is necessary (like `IAPWS06` in conjunction with `IAPWS05`)
 
 
-The equilibration corresponds to the calculation of constants `k1` and `k2`, that enforce the gibbs criteria: `gibbs_energy(model,p,T) + k1 + k2*T == gibbs_energy(other_model,p,T)`
+The equilibration corresponds to the calculation of constants `k1` and `k2`, that enforce the Gibbs criteria: `gibbs_energy(model,p,T) + k1 + k2*T == gibbs_energy(other_model,p,T)`
 The constants `k1` and `k2` are calculated by `Clapeyron.calculate_gibbs_reference_state(model,other_model)`
 """
 gibbsmodel_reference_state_consts(model::EoSModel) = nothing
@@ -221,7 +221,7 @@ end
 """
     k1,k2 = calculate_gibbs_reference_state(model,other_model)
     
-Calculates the reference state constants that force the equilibrium conditions specified by `Clapeyron.gibbsmodel_reference_state_consts`
+Calculates the reference state constants that forces the equilibrium conditions specified by `Clapeyron.gibbsmodel_reference_state_consts`.
 """
 function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel,x1 = SA[1.0],x2 = SA[1.0])
 
@@ -232,7 +232,7 @@ function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel,x1 = 
         ref1 = gibbsmodel_reference_state_consts(model1)
         ref2 = gibbsmodel_reference_state_consts(model2)
         if ref1 == nothing && ref2 == nothing
-            throw(error("Empty gibbs reference. for gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model)`"))
+            throw(error("Empty Gibbs reference. For Gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model)`"))
         end
         if ref1 == nothing
             ref = ref2
@@ -242,7 +242,7 @@ function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel,x1 = 
             n = 1
         elseif ref2 != nothing && ref1 != nothing
             
-            isnothing(refx) && throw(error("Empty gibbs reference. for gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model1,model2)`"))
+            isnothing(refx) && throw(error("Empty Gibbs reference. For Gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model1,model2)`"))
         end
     else
         ref = refx
@@ -270,7 +270,7 @@ function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel,x1 = 
     elseif type == :zero
         return _0,_0
     else
-        throw(error("invalid gibbs reference state. Expected :dH, got: $type"))
+        throw(error("invalid Gibbs reference state. Expected :dH, got: $type"))
     end
 end
 

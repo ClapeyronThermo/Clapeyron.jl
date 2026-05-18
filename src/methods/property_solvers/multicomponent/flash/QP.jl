@@ -1,10 +1,7 @@
 
 function qp_f0_T!(K,z,dpdT,p,T,β0)
     for i in 1:length(K)
-        dlnpdTinv,logp0,T0inv = dpdT[i]
-        #dTinvdlnp = -p/(dpdT[i]*T*T)
-        ΔTinv = 1/T - T0inv
-        K[i] = exp(ΔTinv*dlnpdTinv)
+        K[i] = K_from_dpdT(dpdT[i],T)
     end
     return rachfordrice(K,z) - β0
 end
@@ -18,22 +15,28 @@ function qp_flash_x0(model::CompositeModel,β,p,z,method::FlashMethod)
 end
 
 function qp_flash_x0(model,β,p,z,method::FlashMethod)
+    verbose = get_verbosity(method)
+    ∑z = sum(z)
     if method.T0 == nothing
+        verbose && @info "calculating temperature via Tproperty"
         if 0 <= β <= 0.01
-            x = z ./ sum(z)
+            verbose && @info "vapour fraction below 0.01, using bubble temperature directly"
+            x = z ./ ∑z
             T,vl,vv,y = __x0_bubble_temperature(model,p,x)
             y ./= sum(y)
-            βv = β*sum(z)
-            βl = sum(z) - βv
+            βv = β*∑z
+            βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         elseif 0.99 <= β <= 1.0
-            y = z ./ sum(z)
+            verbose && @info "vapour fraction over 0.99, using dew temperature directly"
+            y = z ./ ∑z
             T,vl,vv,x = __x0_dew_temperature(model,p,y)
             x ./= sum(x)
-            βv = β*sum(z)
-            βl = sum(z) - βv
+            βv = β*∑z
+            βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         else
+            verbose && @info "finding initial temperature via raoult approximation"
             if model isa PTFlashWrapper
                 pures = model.pures
             else
@@ -46,8 +49,8 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
             #Tmin,Tmax = extrema(T0)
             #we approximate sat(T) ≈ exp(-dpdT*T*T(1/T - 1/T0)/p)*p
             K = similar(dpdT,typeof(Tmax))
-            x = z ./ sum(z)
-            ft(_T) = qp_f0_T!(K,x,dpdT,p,_T,β)
+            xx = z ./ sum(z)
+            ft(_T) = qp_f0_T!(K,xx,dpdT,p,_T,β)
             #we do a search over Tmin-Tmax domain, finding the minimum value of the objective function
             Tm = β*Tmax + (1 - β)*Tmin
             Tr1 = range(Tmin,Tm,5*length(model))
@@ -59,9 +62,12 @@ function qp_flash_x0(model,β,p,z,method::FlashMethod)
             T = Roots.solve(prob)
         end
     else
+        verbose && @info "temperature already provided"
         T = method.T0
     end
     update_temperature!(model,T)
+    verbose && @info "p = $p, T = $T"
+    verbose && @info "using PT-flash initial point"
     r = pt_flash_x0(model,p,T,z,method)
     return r
 end
@@ -70,7 +76,7 @@ end
     result = qp_flash(model, q, p, n, method::FlashMethod = GeneralizedXYFlash())
     result = qp_flash(model, q, p, n; kwargs...)
 
-Routine to solve non-reactive two-phase multicomponent flash problem. with vapour fraction - P specifications.
+Routine to solve non-reactive two-phase multicomponent flash problem. With vapour fraction - P specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
 Inputs:
  - `q`, vapour fraction

@@ -15,7 +15,7 @@ end
 """
     ToEstimate
     ToEstimate(params_dict)
-## Input parameters: A dictionary with the following potential entries
+## Input parameters: A dictionary with the following potential entries:
 - `params`: The name of the parameter being fitted (`Symbol`)
 - `indices`: The index of the parameter being fitted (`Integer` or `Tuple{Integer,Integer}`)
 - `factor`: Factor to multiply parameter being fitted to have it in the correct units (`Float64`)
@@ -66,7 +66,7 @@ export Estimation
     Estimation
     Estimation(model::EoSModel,toestimate::Dict,filepaths;ignorefield = Vector{String},objective_form = mse(pred,exp) = ((pred-exp)/exp)^2)
 ## Input parameters:
-- ` model`: The initial model containing the species we wish to parameterise
+- `model`: The initial model containing the species we wish to parameterise
 - `toestimate`: The dictionary of parameters being fitted
 - `filepaths` or `filepaths_weights`: The location of the data files used to fit. Can also contain the weights of each dataset
 - `ignorefield`: Specify which EoSModel fields to ignore in the main model
@@ -357,16 +357,16 @@ function objective_function(estimation::Estimation,guesses)
         inputs = data.inputs
         outputs = data.outputs
         weights = data.weights
-        if isempty(inputs)
-            prediction = property(model_r)
+        prediction = if isempty(inputs)
+            property(model_r)
         elseif length(inputs)==1
-            prediction = property.(Ref(model_r),inputs[1])
+            property.(Ref(model_r),inputs[1])
         elseif length(inputs)==2
-            prediction = property.(Ref(model_r),inputs[1],inputs[2])
+            property.(Ref(model_r),inputs[1],inputs[2])
         elseif length(inputs)==3
-            prediction = property.(Ref(model_r),inputs[1],inputs[2],inputs[3])
+            property.(Ref(model_r),inputs[1],inputs[2],inputs[3])
         else
-            prediction = property.(Ref(model_r),inputs...)
+            property.(Ref(model_r),inputs...)
         end
 
         if length(outputs)==1

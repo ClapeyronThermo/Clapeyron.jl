@@ -2,6 +2,7 @@ module Solvers
 
 using LinearAlgebra
 using LinearAlgebra: BlasInt
+using Random
 using NLSolvers,Roots
 using PositiveFactorizations
 using DiffResults, ForwardDiff
@@ -21,7 +22,7 @@ __is_implace(x::StaticArrays.SizedVector) = true
 
 """
     solution(res::NLSolvers.ConvergenceInfo)
-    
+
 Returns the scalar or vector x that solves the system of equations or is the minimizer of an optimization procedure.
 """
 solution(res) = NLSolvers.solution(res)
@@ -45,6 +46,8 @@ include("nlsolve.jl")
 include("fixpoint/fixpoint.jl")
 include("fixpoint/ADNewton.jl")
 include("fixpoint/anderson.jl")
+include("metaheuristics/utils.jl")
+include("metaheuristics/sass_at.jl")
 include("optimize.jl")
 include("integral.jl")
 include("chebyshev.jl")

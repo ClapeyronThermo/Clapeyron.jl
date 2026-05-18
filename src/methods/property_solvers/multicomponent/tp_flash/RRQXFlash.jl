@@ -2,7 +2,7 @@
 update_pressure!(model,p) = nothing
 update_temperature!(model,T) = nothing
 
-function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,spec)
+function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,verbose_cache)
     x,y,z =  w
     K,lnK = vec_cache
     #using cache
@@ -10,16 +10,11 @@ function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,spec)
     v2 = lnK[2]
     phasex,phasey = phases
     non_inx,non_iny = non_inw
-    
-    if spec == pressure #QT flash
-        update_pressure!(model,p)
-    elseif spec == temperature
-        update_temperature!(model,T)   
-    end
 
     lnϕx, volx = modified_lnϕ(model, p, T, x, dlnϕ_cache; phase = phasex)
     lnK .= lnϕx
     lnϕy, voly = modified_lnϕ(model, p, T, y, dlnϕ_cache; phase = phasey)
+
     lnK .-= lnϕy
     K .= exp.(lnK)
     lnK[1] = volx
@@ -29,19 +24,34 @@ function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,spec)
         non_iny[i] && (K[i] = 0)
     end
     x,y = update_rr!(K,β,z,x,y,non_inx,non_iny,false)
-    return sum(x) - sum(y)
+
+    OF = sum(x) - sum(y)
+    verbose,iter_count,is_temperature = verbose_cache
+    if verbose     
+        iter_count[] += 1
+        iter = iter_count[]
+        if is_temperature
+            X = T
+        else
+            X = p
+        end
+        @info "$(__pad_val(iter,4))    $(__pad_val(X,16))   $(__pad_val(OF,16)) $(repr(K,context = :compact => true))"
+    end
+    return OF
+
 end
 
 function update_K_QT!(logp,params)
     p = exp(logp)
-    model,β,T,w,phases,non_inw,vec_cache,dlnϕ_cache = params
-    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,pressure)
+    model,β,T,w,phases,non_inw,vec_cache,dlnϕ_cache,verbose = params
+    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,verbose)
 end
 
 function update_K_QP!(Tinv,params)
     T = 1/Tinv
-    model,β,p,w,phases,non_inw,vec_cache,dlnϕ_cache = params
-    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,temperature)
+    model,β,p,w,phases,non_inw,vec_cache,dlnϕ_cache,verbose = params
+    update_temperature!(model,T)
+    return update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,verbose)
 end
 
 """
@@ -49,7 +59,7 @@ end
 
 Method to solve non-reactive multicomponent, two-phase flash problem, using a generalized formulation.
 
-Only two phases are supported. if `K0` is `nothing`, it will be calculated via fugacity coefficients at p,T conditions.
+Only two phases are supported. If `K0` is `nothing`, it will be calculated via fugacity coefficients at p,T conditions.
 
 ### Keyword Arguments:
 - `equilibrium` (optional) = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria, `:unknown` if not specified
@@ -75,6 +85,22 @@ struct RRQXFlash{P,T} <: FlashMethod
     atol::Float64
     rtol::Float64
     max_iters::Int
+    verbose::Bool
+end
+
+function Solvers.primalval(method::RRQXFlash{P,T}) where {P,T}
+    if P == Nothing
+        λP = Nothing
+    else
+        λP = Solvers.primal_eltype(P)
+    end
+    
+    if T == Nothing
+        λT = Nothing
+    else
+        λT = Solvers.primal_eltype(P)
+    end
+    return RRQXFlash{λP,λT}(method.equilibrium,primalval(method.T0),primalval(method.p0),primalval(method.K0),primalval(method.x0),primalval(method.y0),primalval(method.v0),method.atol,method.rtol,method.max_iters,method.verbose)
 end
 
 Base.eltype(method::RRQXFlash{T}) where T = T
@@ -84,7 +110,7 @@ function index_reduction(m::RRQXFlash,idx::AbstractVector)
     K0 !== nothing && (K0 = K0[idx])
     x0 !== nothing && (x0 = x0[idx])
     y0 !== nothing && (y0 = y0[idx])
-    return RRQXFlash(;equilibrium,T0,p0,K0,x0,y0,v0,atol,rtol,max_iters)
+    return RRQXFlash(;equilibrium,T0,p0,K0,x0,y0,v0,atol,rtol,max_iters,method.verbose)
 end
 
 index_reduction(m::RRQXFlash{Nothing,Nothing},idx::AbstractVector) = m
@@ -101,7 +127,8 @@ function RRQXFlash(;equilibrium = :unknown,
                         rtol = 1e-14,
                         atol = 1e-12,
                         max_iters = 100,
-                        flash_result = nothing)
+                        flash_result = nothing,
+                        verbose = false,)
     !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for RRQXFlash"))
     if flash_result isa FlashResult
         comps,β,volumes = flash_result.compositions,flash_result.fractions,flash_result.volumes
@@ -111,7 +138,7 @@ function RRQXFlash(;equilibrium = :unknown,
         v = (volumes[1],volumes[2])
         P00 = flash_result.data.p
         T00 = flash_result.data.T
-        return RRQXFlash(;equilibrium = equilibrium,T0 = T00,p0 = P00,x0 = w1,y0 = w2,v0 = v,rtol = rtol,atol = atol,max_iters = max_iters)
+        return RRQXFlash(;equilibrium = equilibrium,T0 = T00,p0 = P00,x0 = w1,y0 = w2,v0 = v,rtol = rtol,atol = atol,max_iters = max_iters,verbose = verbose)
     end
 
     if K0 == x0 == y0 === nothing #nothing specified
@@ -145,7 +172,7 @@ function RRQXFlash(;equilibrium = :unknown,
     else
         S = typeof(something(T0,p0))
     end
-    return RRQXFlash{S,TT}(equilibrium,T0,p0,K0,x0,y0,_v0,atol,rtol,max_iters)
+    return RRQXFlash{S,TT}(equilibrium,T0,p0,K0,x0,y0,_v0,atol,rtol,max_iters,verbose)
 end
 
 function qp_flash_impl(model,β,p,z,method::RRQXFlash)
@@ -177,12 +204,23 @@ function qp_flash_impl(model,β,p,z,method::RRQXFlash)
     dlnϕ_cache = ∂lnϕ_cache(model, β, p, x, Val{false}())
     vec_cache = (K,lnK)
     #model,p,T,w,β,Kx,phases,non_inw,vec_cache,dlnϕ_cache,spec
-
-    params = (model,β,p,w,phases,non_inw,vec_cache,dlnϕ_cache)
+    verbose = get_verbosity(method)
+    verbose_cache = (get_verbosity(method),Ref(0),true)
+    params = (model,β,p,w,phases,non_inw,vec_cache,dlnϕ_cache,verbose_cache)
     Tinv0 = 1/temperature(flash0)
     prob = Roots.ZeroProblem(update_K_QP!,Tinv0)
+    
+    verbose && @info "_______________________________________________________
+      iter    T                  OF               K"
+
     Tinv = Roots.solve(prob,Roots.Order1(),params,atol = method.atol,rtol = method.rtol)
     T = 1/Tinv
+
+    verbose && @info "________________________________________________________________________________________
+      Final K values:        $K
+      Final temperature:     $T
+
+"
     n = sum(z)
     resize!(lnK,2)
     resize!(K,2)
@@ -192,7 +230,9 @@ function qp_flash_impl(model,β,p,z,method::RRQXFlash)
     y ./= sum(y)
     K .*= n
     lnK ./= n
-    return FlashResult(flash0.compositions,K,lnK,FlashData(p,T))
+    lle = is_liquid(phasex) && is_liquid(phasey)
+    vapour_idx = lle ? -1 : 2
+    return FlashResult(flash0.compositions,K,lnK,FlashData(p,T,0.0,vapour_idx))
 end
 
 function qt_flash_impl(model::M,β,T,z,method::RRQXFlash) where M
@@ -224,12 +264,22 @@ function qt_flash_impl(model::M,β,T,z,method::RRQXFlash) where M
     dlnϕ_cache = ∂lnϕ_cache(model, β, T, x, Val{false}())
     vec_cache = (K,lnK)
     #model,p,T,w,β,Kx,phases,non_inw,vec_cache,dlnϕ_cache,spec
-
-    params = (model,β,T,w,phases,non_inw,vec_cache,dlnϕ_cache)
+    verbose = get_verbosity(method)
+    verbose_cache = (verbose,Ref(0),false)
+    params = (model,β,T,w,phases,non_inw,vec_cache,dlnϕ_cache,verbose_cache)
     logp0 = log(pressure(flash0))
     prob = Roots.ZeroProblem(update_K_QT!,logp0)
+
+    verbose && @info "_______________________________________________________
+      iter    p                  OF               K"
     logp = Roots.solve(prob,Roots.Order1(),params,atol = method.atol,rtol = method.rtol)
     p = exp(logp)
+
+    verbose && @info "________________________________________________________________________________________
+      Final K values:        $K
+      Final pressure:        $p
+
+"
     n = sum(z)
     resize!(lnK,2)
     resize!(K,2)
@@ -249,8 +299,9 @@ function qt_flash_impl(model::M,β,T,z,method::RRQXFlash) where M
             lnK[2] = volume(model,p,T,y,phase = phasey)
         end
     end
-
-    return FlashResult(flash0.compositions,K,lnK,FlashData(p,T))
+    lle = is_liquid(phasex) && is_liquid(phasey)
+    vapour_idx = lle ? -1 : 2
+    return FlashResult(flash0.compositions,K,lnK,FlashData(p,T,0.0,vapour_idx))
 end
 
 function bubble_pressure_impl(model::EoSModel,T,z,method::RRQXFlash)

@@ -6,6 +6,43 @@ using Clapeyron, Test, LinearAlgebra
         #before, it was coo, making a collision on Electrolyte SAFTgammaMie
         @test Clapeyron.normalisestring("COO-") == "coo-"
     end
+
+    @testset "get_header" begin
+        t1,sep1,header1 = Clapeyron.get_header(Clapeyron.DB_PATH * "/properties/molarmass.csv")
+        @test sep1 == ","
+        @test header1.csvtype == Clapeyron.singledata
+
+        t2,sep2,header2 = Clapeyron.get_header(Clapeyron.DB_PATH * "/properties/identifiers.csv")
+        @test sep2 == ";"
+
+        t3,sep3,header3 = Clapeyron.get_header(Clapeyron.DB_PATH * "/ideal/WalkerIdeal.csv")
+        @test header3.grouptype == :Walker
+
+        t4,sep4,header4 = Clapeyron.get_header(Clapeyron.DB_PATH * "/../examples/data/gc_sat_prop.csv")
+        @test header4.estimator == :saturation_p_rhol
+        @test header4.species[1] == "ethane"
+
+        t5,sep5,header5 = Clapeyron.make_header((species = ["a","b"],b = [1,2]))
+        @test sep5 == ","
+        @test header5.csvtype == :like
+
+        t6,sep6,header6 = Clapeyron.make_header((species = ["a,","b"],b = [1,2]))
+        @test sep6 == ";"
+
+        t7,sep7,header7 = Clapeyron.make_header((species1 = ["a","b"],species2 = ["b,","a"],b = [1,2]))
+        @test header7.csvtype == :pair
+
+        t8,sep8,header8 = Clapeyron.make_header((species1 = ["a,","b"],species2 = ["b,","a"],b = [1,2]))
+        @test sep8 == ";"
+
+        t9,sep9,header9 = Clapeyron.make_header((species1 = ["a","b"],species2 = ["b","a"],site1 = ["e","e"], site2 = ["H","H"],b = [1,2]))
+        @test header9.csvtype == :assoc
+
+        t10,sep10,header10 = Clapeyron.make_header((species = ["a,","b"],groups = ["",""],b = [1,2]),"aaa",:test_grouptype)
+        @test header10.csvtype == :group
+        @test header10.grouptype == :test_grouptype
+        @test occursin("aaa",t10)
+    end
      
     # The rest of the test will be conducted with a custom dataset in the test_csvs directory.
     testspecies = ["sp1", "sp2", "sp3", "sp4", "sp5"]
@@ -165,6 +202,8 @@ using Clapeyron, Test, LinearAlgebra
         @test Clapeyron.diagvalues(1.23) == 1.23
          
         assoc_param = params["assocparam"]
+        test_repr(assoc_param,str = "sp3")
+        test_repr(assoc_param.values)
         #diagonal 3-3
         @test assoc_param[("sp3","H"),("sp3","e")] == 2000
         @test assoc_param[("sp3","e"),("sp3","H")] == 2000
@@ -264,6 +303,10 @@ using Clapeyron, Test, LinearAlgebra
         
         floatbool .= exp.(1.1 .+ floatbool)
         @test_throws InexactError convert(SingleParam{Int},floatbool)
+        
+        #copyto!
+        copyto!(floatbool,[2,3])
+        @test floatbool.values == [2,3]
 
         #pair param conversion and broadcasting
         floatbool = PairParam("float to bool",comps,[1.0 0.0;0.0 1.0])
@@ -361,8 +404,8 @@ using Clapeyron, Test, LinearAlgebra
         components_gc = GroupParam(["test1", "test2", ("test3", ["grp1" => 2, "grp2" => 2, "grp3" => 3,"grp4" => 5])]; group_userlocations=filepath_gc)
 
         #Printing: GroupParam
-        @test repr(components_gc) == "GroupParam[\"test1\" => [\"grp1\" => 1, \"grp2\" => 2], \"test2\" => [\"grp2\" => 1], \"test3\" => [\"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5]]"
-        @test repr("text/plain",components_gc) == "GroupParam(:test) with 3 components:\n \"test1\": \"grp1\" => 1, \"grp2\" => 2\n \"test2\": \"grp2\" => 1\n \"test3\": \"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5"
+        @test repr(components_gc) == "GroupParam{Int64}[\"test1\" => [\"grp1\" => 1, \"grp2\" => 2], \"test2\" => [\"grp2\" => 1], \"test3\" => [\"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5]]"
+        @test repr("text/plain",components_gc) == "GroupParam{Int64}(:test) with 3 components:\n \"test1\": \"grp1\" => 1, \"grp2\" => 2\n \"test2\": \"grp2\" => 1\n \"test3\": \"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5"
         @test components_gc.grouptype == :test
         @test components_gc.components == ["test1", "test2", "test3"]
         @test components_gc.groups == [["grp1","grp2"],["grp2"],["grp1","grp2","grp3","grp4"]]
@@ -452,5 +495,10 @@ using Clapeyron, Test, LinearAlgebra
 
         c1 = Clapeyron.cas("water")
         @test c1[1] == "7732-18-5"
+
+        model_cas = PCSAFT(cas"7732-18-5")
+        @test model_cas.components == ["water"]
+        model_smiles = PCSAFT(smiles"O")
+        @test model_smiles.components == ["water"]
     end
 end

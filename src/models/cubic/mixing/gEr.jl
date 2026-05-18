@@ -77,13 +77,9 @@ function gErRule(components; activity = NRTL, userlocations = String[],activity_
 end
 
 function ab_premixing(model::PRModel,mixing::gErRuleModel, k, l)
-    Ωa, Ωb = ab_consts(model)
-    _Tc = model.params.Tc
-    _pc = model.params.Pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    ab_diagvalues!(model)
     epsilon_LorentzBerthelot!(a)
     gEr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
     kij_mix!(gEr_mix,b,l)
@@ -91,13 +87,9 @@ function ab_premixing(model::PRModel,mixing::gErRuleModel, k, l)
 end
 
 function ab_premixing(model::RKModel,mixing::gErRuleModel, k, l)
-    Ωa, Ωb = ab_consts(model)
-    _Tc = model.params.Tc
-    _pc = model.params.Pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    ab_diagvalues!(model)
     epsilon_LorentzBerthelot!(a) #not used
     gEr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
     kij_mix!(gEr_mix,b,l)
@@ -122,33 +114,36 @@ function cubic_get_k(model::CubicModel,mixing::gErRuleModel,params)
 end
 
 
-__excess_g_res(model,p,T,z,b,c) = excess_g_res(model,p,T,z)
+__excess_g_res(model,p,T,z,b) = excess_g_res(model,p,T,z)
 function __excess_g_res(model::WilsonModel,p,T,z,b,c)
     V = diagvalues(b) .- c
     return excess_g_res_wilson(model,p,T,z,V)
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b,c)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b)
     n = sum(z)
     #x = z./n
     invn = (one(n)/n)
     invn2 = invn^2
+    c = translation(model,V,T,z,model.translation)
     gᴱᵣ = __excess_g_res(mixing_model.activity,1e5,T,z,b,c)
     b̄ = zero(gᴱᵣ)
     res = zero(T + first(z))
-    for i in 1:length(model)
+    nc = length(model)
+    for i in 1:nc
         zi,bi = z[i],b[i,i]
         zi2 = zi^2
         b̄ += bi*zi2
-        res += zi*a[i,i]*α[i]/bi
+        Λi = infinite_pressure_gibbs_correction(model,T,FillArrays.OneElement(i,nc))
+        res += Λi*zi*a[i,i]*α[i]/bi
         for j in 1:(i-1)
             zij = zi*z[j]
             b̄ += 2*b[i,j]*zij
         end
     end
     b̄ = b̄*invn2
-    Λ = infinite_pressure_gibbs_correction(model,T,z)
-    ā = (res + gᴱᵣ/Λ)*b̄*invn
-    c̄ = dot(z,c)*invn
+    Λmix = infinite_pressure_gibbs_correction(model,T,z)
+    ā = (res + gᴱᵣ)*b̄*invn/Λmix
+    c̄ = dot(c,z)*invn
     return ā,b̄,c̄
 end

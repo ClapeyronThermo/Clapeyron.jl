@@ -62,11 +62,12 @@ end
 T_scale(model::MultiFluidModel,z=SA[1.]) = _T_scale(model,z)
 
 p_scale(model::MultiFluidModel,z=SA[1.]) = dot(z,model.properties.pc.values)/sum(z)
- 
+
+#=
 function T_scales(model::MultiFluidModel,z=SA[1.])
     return model.properties.Tc.values
 end
-
+=#
 function _v_scale(model::MultiFluidModel,z=SA[1.],Σz = sum(z))
     vc = model.properties.Vc.values
     #isone(length(z)) && return only(vc) 

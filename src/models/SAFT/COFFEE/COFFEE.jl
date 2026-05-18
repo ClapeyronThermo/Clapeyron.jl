@@ -234,8 +234,8 @@ end
 
 function ∫∫∫Oodξ₁dξ₂dγ12(ρ̄,T̄,μ²,d,_Iμμ,Q)
     I(x) = begin
-        _I = ∫odr(d,x[1],x[2],x[3])
-        return exp(-24/19*μ²/T̄*_Iμμ*_I)*_I
+        Ix = ∫odr(d,x[1],x[2],x[3])
+        return exp(-24/19*μ²/T̄*_Iμμ*Ix)*Ix
     end
 
     _I = ∫∫∫dξ₁dξ₂dγ12(I)
@@ -246,8 +246,8 @@ end
 
 function ∫∫∫OlnOdξ₁dξ₂dγ12(ρ̄,T̄,μ²,d,_Iμμ,Q)
     I(x) = begin
-        _I = -24/19*μ²/T̄*_Iμμ*∫odr(d,x[1],x[2],x[3])
-        return _I*exp(_I)
+        Ix = -24/19*μ²/T̄*_Iμμ*∫odr(d,x[1],x[2],x[3])
+        return Ix*exp(Ix)
     end
 
     _I = ∫∫∫dξ₁dξ₂dγ12(I)

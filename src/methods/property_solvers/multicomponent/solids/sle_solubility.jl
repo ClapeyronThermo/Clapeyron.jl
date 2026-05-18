@@ -1,7 +1,7 @@
 """
     sle_solubility(model::CompositeModel, p, T, z; solute)
 
-Calculates the solubility of each component within a solution of the other components, at a given temperature, pressure and composition.
+Calculates the solubility of each component within a solution of the other components, at a given temperature `T`, pressure `p` and composition `z`.
 Returns a matrix containing the composition of the SLE phase boundary for each component. If `solute` is specified, returns only the solubility of the specified component.
 
 Can only function when solid and fluid models are specified within a CompositeModel.
@@ -31,9 +31,9 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         Tm = model.solid.params.Tm.values[idx_sol_s][1]
 
         idx_sol_l = zeros(Bool,nf)
-        solute_l = mapping[idx_sol_s][1]
-        ν_l = [solute_l[1][i][2] for i in 1:length(solute_l[1])]
-        solute_l = [solute_l[1][i][1] for i in 1:length(solute_l[1])]
+        solute_l1 = mapping[idx_sol_s][1]
+        ν_l = [solute_l1[1][i][2] for i in 1:length(solute_l1[1])]
+        solute_l = [solute_l1[1][i][1] for i in 1:length(solute_l1[1])]
 
 
         for i in solute_l
@@ -152,9 +152,9 @@ function sle_solubility_T(model::CompositeModel,z,p=1e5;solute=nothing,x0=nothin
         Tm = model.solid.params.Tm.values[idx_sol_s][1]
 
         idx_sol_l = zeros(Bool,nf)
-        solute_l = mapping[idx_sol_s][1]
-        ν_l = [solute_l[1][i][2] for i in 1:length(solute_l[1])]
-        solute_l = [solute_l[1][i][1] for i in 1:length(solute_l[1])]
+        solute_l1 = mapping[idx_sol_s][1]
+        ν_l = [solute_l1[1][i][2] for i in 1:length(solute_l1[1])]
+        solute_l = [solute_l1[1][i][1] for i in 1:length(solute_l1[1])]
 
         for i in solute_l
             idx_sol_l[fluid_components .== i] .= true

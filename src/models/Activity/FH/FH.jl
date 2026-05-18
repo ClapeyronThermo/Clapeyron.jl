@@ -16,6 +16,7 @@ struct FloryHuggins{c<:EoSModel} <: FloryHugginsModel
 end
 
 const FH = FloryHuggins
+@doc (@doc FloryHuggins) FH
 export FH, FloryHuggins
 
 """

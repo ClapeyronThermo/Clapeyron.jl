@@ -48,9 +48,9 @@ aʳ₁(δ,τ)  = ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:6
 aʳ₂(δ,τ)  = ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 7:12
 aʳ₃(δ,τ)  = ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 13:23
 ```
-parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
+Parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 !!! warning "Multiple component warning"
-    The original model was done with only one component in mind. to support multiple components, a VDW 1-fluid mixing rule (shown above) is implemented, but it is not tested.
+    The original model was done with only one component in mind. To support multiple components, a VDW 1-fluid mixing rule (shown above) is implemented, but it is not tested.
 ## References
 1. Thol, M., Rutkai, G., Köster, A., Lustig, R., Span, R., & Vrabec, J. (2016). Equation of state for the Lennard-Jones fluid. Journal of physical and chemical reference data, 45(2), 023101. [doi:10.1063/1.4945000](https://doi.org/10.1063/1.4945000)
 """
@@ -138,7 +138,7 @@ function T_scale(model::LJRef,z)
     return ϵ
 end
 
-function lb_volume(model::LJRef, z)
+function lb_volume(model::LJRef,T,z)
     val = π/6*_v_scale(model,z)
     return val
 end
@@ -263,7 +263,7 @@ a⁰(δ,τ,z) = ∑xᵢ(a⁰ᵢ + log(xᵢ))
 
 !!! warning "Mutiple component warning"
 
-    The original model was done with only one component in mind. to support multiple components, a VDW 1-fluid mixing rule (shown above) is implemented, but it is not tested.
+    The original model was done with only one component in mind. To support multiple components, a VDW 1-fluid mixing rule (shown above) is implemented, but it is not tested.
 
 ## References
 

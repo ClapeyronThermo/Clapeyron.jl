@@ -11,10 +11,11 @@ using Roots: Roots
 using Scratch
 import LogExpFunctions
 using FillArrays: FillArrays
-import BlackBoxOptim
+import SpecialFunctions
 using StaticArrays
 
 using DiffResults, ForwardDiff
+using IFTDuals
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
 #compatibility and raw julia utilities
@@ -83,7 +84,7 @@ include("database/combiningrules.jl")
 using Tables,CSV
 
 #used for reading multiparameter json files
-using JSON3
+using JSON
 
 #getparams options
 include("database/ParamOptions.jl")
@@ -135,6 +136,8 @@ include("models/ideal/PPDSIdeal.jl")
 #AlyLee Ideal uses gerg 2008 terms
 include("models/EmpiricHelmholtz/term_functions.jl")
 include("models/ideal/AlyLeeIdeal.jl")
+include("models/ideal/GCAlyLeeIdeal.jl")
+include("models/ideal/BurkhardtIdeal.jl")
 
 #Basic utility EoS
 include("models/utility/EoSVectorParam.jl")
@@ -175,8 +178,6 @@ include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
 include("models/cubic/KU/KU.jl")
 include("models/cubic/RKPR/RKPR.jl")
-include("models/cubic/PatelTeja/PatelTeja.jl")
-include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 #SAFT models
 include("models/SAFT/association.jl")
@@ -192,6 +193,7 @@ include("models/SAFT/PCSAFT/variants/gcPCPSAFT/homogcPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/heterogcPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/gcPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/CPPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/iPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
 include("models/SAFT/CPA/variants/sCPA.jl")
@@ -250,12 +252,16 @@ include("models/cubic/RK/variants/PSRK.jl")
 include("models/cubic/RK/variants/tcRK.jl")
 include("models/cubic/PR/variants/PR78.jl")
 include("models/cubic/PR/variants/VTPR.jl")
+include("models/cubic/PR/variants/TVTPR.jl")
 include("models/cubic/PR/variants/UMRPR.jl")
 include("models/cubic/PR/variants/QCPR.jl")
 include("models/cubic/PR/variants/tcPR.jl")
 include("models/cubic/PR/variants/tcPRW.jl")
 include("models/cubic/PR/variants/cPR.jl")
 include("models/cubic/PR/variants/EPPR78.jl")
+include("models/cubic/PatelTeja/PatelTeja.jl")
+include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
+include("models/cubic/PatelTeja/variants/PatelTejaHeyen.jl")
 include("models/cubic/PatelTeja/variants/YFR.jl")
 
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
@@ -266,10 +272,10 @@ include("models/Virial/Virial.jl")
 
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
-include("models/PeTS/PeTS.jl")
+include("models/Potentials/PeTS/PeTS.jl")
 
 #electrolytes
-include("models/Electrolytes/base.jl")
+include("models/Electrolytes/electrolytes.jl")
 include("models/Electrolytes/RSP/ConstRSP.jl")
 include("models/Electrolytes/RSP/ZuoFurst.jl")
 include("models/Electrolytes/RSP/Schreckenberg.jl")

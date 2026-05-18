@@ -53,7 +53,7 @@ end
 const sCPAAlphaModel = CPAAlphaModel
 
 @newmodelsimple sCPAAlpha CPAAlphaModel CPAAlphaParam
-
+export sCPAAlpha
 """
     sCPAAlpha <: sCPAAlphaModel
     
@@ -91,6 +91,7 @@ alpha = sCPAAlpha(["water","carbon dioxide"];userlocations = (;c1 = [0.67,0.76])
 sCPAAlpha
 default_locations(::Type{sCPAAlpha}) = ["SAFT/CPA/sCPA/sCPA_like.csv"]
 
+#=
 @newmodelsimple eCPAAlpha CPAAlphaModel CPAAlphaParam
 
 """
@@ -129,3 +130,4 @@ alpha = eCPAAlpha(["water","carbon dioxide"];userlocations = (;c1 = [0.67,0.76])
 """
 eCPAAlpha
 default_locations(::Type{eCPAAlpha}) = ["SAFT/CPA/eCPA/eCPA_like.csv"]
+=#

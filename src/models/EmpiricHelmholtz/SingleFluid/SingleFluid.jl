@@ -236,7 +236,7 @@ function x0_volume_liquid_lowT(model::SingleFluid,p,T,z)
         return vᵢ
     elseif Ttp < T
         vᵢ = volume(ancillary,p,Ttp,z,phase = :l)
-        pvi = pressure(model,vᵢ,T)
+        pvi = pressure(model,vᵢ,T,z)
         pp = max(_1*p,pvi)
         Tᵢ = _1*Ttp
         #chill from p,Ttp to p,T
@@ -269,7 +269,7 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
         pc = model.properties.Pc
         Zc = pc*vc/(Rgas(model)*Tc)
         ΔVrm1 = _1*(abs(1 - p/pc))^Zc
-        v_crit_aprox = vc/(ΔVrm1 + 1)
+        v_crit_aprox = sum(z)*vc/(ΔVrm1 + 1)
         vhi =  max(vl_lbv,v_crit_aprox)
         phi = pressure(model,vhi,T,z)
         #we suppose that V < Vc (liquid state), then the volume solver converges really well with this initial guess
@@ -311,6 +311,22 @@ function x0_saturation_temperature(model::SingleFluid,p)
     T = saturation_temperature(model.ancillaries.fluid.saturation,p,SaturationCorrelation())[1]
     vl,vv = x0_sat_pure(model,T)
     return (T,vl,vv)
+end
+
+x0_crit_pure(model::SingleFluid,z) = (1.0, -log10(model.properties.rhoc))
+
+function x0_volume_region(model::SingleFluid,p,T,z)
+    Pc = model.properties.Pc
+    Tc = model.properties.Tc
+    if T >= Tc
+        if p > Pc
+            return :liquid
+        else
+            return :vapour
+        end
+    else
+        return :unknown
+    end
 end
 
 function crit_pure(model::SingleFluid)

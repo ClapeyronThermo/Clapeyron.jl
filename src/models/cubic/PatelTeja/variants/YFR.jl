@@ -12,7 +12,7 @@ function YFR1fRule(components; activity = nothing, userlocations = String[],acti
     YFR1fRule()
 end
 
-function mixing_rule(model::YFRModel,V,T,z,mixing_model::YFR1fRule,α,a,b,c)
+function mixing_rule(model::YFRModel,V,T,z,mixing_model::YFR1fRule,α,a,b)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
@@ -39,12 +39,12 @@ function mixing_rule(model::YFRModel,V,T,z,mixing_model::YFR1fRule,α,a,b,c)
     end
     ā *= invn2
     b̄ *= invn2
-    c̄ = dot(z,c)*invn
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     #dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
     return ā,b̄,c̄
 end
 
-function mixing_rule1(model::YFRModel,V,T,z,mixing_model::YFR1fRule,α,a,b,c)
+function mixing_rule1(model::YFRModel,V,T,z,mixing_model::YFR1fRule,α,a,b)
     Tc = model.params.Tc.values[1]
     Vc = model.params.Vc.values[1]
     Zc = Vc/b[1,1]
@@ -53,7 +53,7 @@ function mixing_rule1(model::YFRModel,V,T,z,mixing_model::YFR1fRule,α,a,b,c)
     Ωa,Ωb = YFR_Ωab(Zc,Tr)
     ā = Ωa*a[1,1]*α[1]*_1
     b̄ = Ωb*b[1,1]*_1
-    c̄ = c[1]*_1
+    c̄ = translation2(model,V/sum(z),T,SA[1.0],model.translation,ā,b̄,α)
     return ā,b̄,c̄
 end
 

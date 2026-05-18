@@ -42,7 +42,7 @@ end
 
 export KayRule
 
-function mixing_rule(model::CubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b,c)
+function mixing_rule(model::CubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
@@ -66,9 +66,10 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b,c
     end    
     b̄ = (b̄*invn2)^3
     ā = sqrt(ab2*invn2)*b̄
-    c̄ = dot(z,c)*invn
+    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     return ā,b̄,c̄
 end
+
 
 function cubic_get_k(model::CubicModel,mixing::KayRuleModel,params)
     return get_k_geomean(params.a.values)

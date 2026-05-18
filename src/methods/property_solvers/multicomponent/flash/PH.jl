@@ -3,7 +3,7 @@
     result = ph_flash(model, p, h, n, method::FlashMethod = GeneralizedXYFlash())
     result = ph_flash(model, p, h, n; kwargs...)
 
-Routine to solve non-reactive two-phase multicomponent flash problem. with P-H specifications.
+Routine to solve non-reactive two-phase multicomponent flash problem. With P-H specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
 Inputs:
  - `p`, pressure `[Pa]`
@@ -52,7 +52,16 @@ function ph_flash(model,p,h,z,method::FlashMethod)
         return index_expansion(result1r,idx_r)
     end
 
-    result = ph_flash_impl(model_r,p,h,z_r,method_r)
+    #result = ph_flash_impl(model_r,p,h,z_r,method_r)
+    if has_a_res(model)
+        λmodel,λp,λh,λz = primalval(model_r),primalval(p),primalval(h),primalval(z_r)
+        λresult = ph_flash_impl(λmodel,λp,λh,λz,primalval(method_r))
+        tup = (model_r,p,h,z_r)
+        λtup = (λmodel,λp,λh,λz)
+        result = xy_flash_ad(λresult,tup,λtup,pressure,enthalpy)
+    else
+        result = ph_flash_impl(model_r,p,h,z,method_r)
+    end
     if !issorted(result.volumes)
         #this is in case we catch a bad result.
         result = FlashResult(result)
@@ -68,6 +77,14 @@ function ph_flash_impl(model,p,h,z,method::GeneralizedXYFlash)
     isone(numphases(flash0)) && return flash0
     spec = FlashSpecifications(pressure,p,enthalpy,h)
     return xy_flash(model,spec,z,flash0,method)
+end
+
+function ph_flash_impl(model,p,h,z,method::RRXYFlash)
+    modelx = __tpflash_cache_model(model,p,NaN,z,:vle)
+    flash0 = px_flash_x0(modelx,p,h,z,enthalpy,method)
+    isone(numphases(flash0)) && return flash0
+    spec = FlashSpecifications(pressure,p,enthalpy,h)
+    return xy_flash(modelx,spec,z,flash0,method)
 end
 
 export ph_flash

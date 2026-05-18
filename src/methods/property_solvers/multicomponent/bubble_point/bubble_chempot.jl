@@ -12,7 +12,8 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 1000`: optional, maximum number of iterations
-- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
+- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. Those will be set to zero on the vapour phase.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
 """
 struct ChemPotBubblePressure{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -23,7 +24,15 @@ struct ChemPotBubblePressure{T} <: BubblePointMethod
     atol::Float64
     rtol::Float64
     max_iters::Int
-    ss::Bool
+    verbose::Bool
+end
+
+function Solvers.primalval(method::ChemPotBubblePressure{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
 end
 
 function ChemPotBubblePressure(;vol0 = nothing,
@@ -33,35 +42,35 @@ function ChemPotBubblePressure(;vol0 = nothing,
                                 f_limit = 0.0,
                                 atol = 1e-8,
                                 rtol = 1e-12,
-                                max_iters = 1000,
-                                ss = false)
+                                max_iters = 10^3,
+                                verbose = false)
 
     if p0 == y0 == vol0 == nothing
-        return ChemPotBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif (p0 == y0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return ChemPotBubblePressure{typeof(vl)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubblePressure{typeof(vl)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif (vol0 == y0 == nothing) && !isnothing(p0)
         p0 = float(p0)
-        return ChemPotBubblePressure{typeof(p0)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubblePressure{typeof(p0)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif (p0 == vol0 == nothing) && !isnothing(y0)
         T = eltype(y0)
-        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(y0)
         vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(y0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif  !isnothing(p0) && !isnothing(y0)
         p0,_ = promote(p0,first(y0))
         T = eltype(p0)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     else
         throw(error("invalid specification for bubble pressure"))
     end
@@ -69,7 +78,8 @@ end
 
 function bubble_pressure_impl(model::EoSModel, T, x, method::ChemPotBubblePressure)
     volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
-    p0,vl0,vv0,y00 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles)
+    verbose = get_verbosity(method)
+    p0,vl,vv,y00 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles,verbose)
     is_non_volatile = !isnothing(method.nonvolatiles)
     model_y,_ = index_reduction(model,volatiles)
     y0 = y00[volatiles]
@@ -122,19 +132,6 @@ function Obj_bubble_pressure(model::EoSModel, F, T, ηl, ηv, x, y)
     return Obj_bubble_pressure(model, model, F, T, ηl, ηv, x, y, nothing, length(model))
 end
 
-
-struct ChemPotBubbleTemperature{T} <: BubblePointMethod
-    vol0::Union{Nothing,Tuple{T,T}}
-    T0::Union{Nothing,T}
-    y0::Union{Nothing,Vector{T}}
-    nonvolatiles::Union{Nothing,Vector{String}}
-    f_limit::Float64
-    atol::Float64
-    rtol::Float64
-    max_iters::Int
-    ss::Bool
-end
-
 """
     ChemPotBubbleTemperature(kwargs...)
 
@@ -148,8 +145,29 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 1000`: optional, maximum number of iterations
-- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
+- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. Those will be set to zero on the vapour phase.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
 """
+struct ChemPotBubbleTemperature{T} <: BubblePointMethod
+    vol0::Union{Nothing,Tuple{T,T}}
+    T0::Union{Nothing,T}
+    y0::Union{Nothing,Vector{T}}
+    nonvolatiles::Union{Nothing,Vector{String}}
+    f_limit::Float64
+    atol::Float64
+    rtol::Float64
+    max_iters::Int
+    verbose::Bool
+end
+
+function Solvers.primalval(method::ChemPotBubbleTemperature{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
+end
+
 function ChemPotBubbleTemperature(;vol0 = nothing,
     T0 = nothing,
     y0 = nothing,
@@ -158,34 +176,34 @@ function ChemPotBubbleTemperature(;vol0 = nothing,
     atol = 1e-8,
     rtol = 1e-12,
     max_iters = 10^3,
-    ss = false)
+    verbose = false)
 
     if T0 == y0 == vol0 == nothing
-        return ChemPotBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif (T0 == y0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return ChemPotBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif (vol0 == y0 == nothing) && !isnothing(T0)
         T0 = float(T0)
-        return ChemPotBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif (T0 == vol0 == nothing) && !isnothing(y0)
         T = eltype(y0)
-        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(y0)
         vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(y0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif  !isnothing(T0) && !isnothing(y0)
         T0,_ = promote(T0,first(y0))
         T = eltype(T0)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
+        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     else
         throw(error("invalid specification for bubble temperature"))
     end
@@ -194,7 +212,8 @@ end
 
 function bubble_temperature_impl(model::EoSModel, p, x, method::ChemPotBubbleTemperature)
     volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
-    T0,vl0,vv0,y00 = bubble_temperature_init(model,p,x,method.vol0,method.T0,method.y0,volatiles)
+    verbose = get_verbosity(method)
+    T0,vl0,vv0,y00 = bubble_temperature_init(model,p,x,method.vol0,method.T0,method.y0,volatiles,verbose)
     is_non_volatile = !isnothing(method.nonvolatiles)
     model_y,_ = index_reduction(model,volatiles)
     y0 = y00[volatiles]

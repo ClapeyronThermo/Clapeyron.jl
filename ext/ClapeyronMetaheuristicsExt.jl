@@ -13,6 +13,8 @@ end
 
 function Metaheuristics.optimize(f::Function,estimator::Estimation{T},method::Metaheuristics.AbstractAlgorithm = Metaheuristics.ECA();verbose=false,logger::Function = (status) -> logger(status)) where T<:EoSModel
     nparams = length(estimator.toestimate.upper)
+    guesses = [estimator.toestimate.guess[i][1] for i ∈ 1:nparams]
+    Metaheuristics.set_user_solutions!(method, guesses, f)
     upper = [estimator.toestimate.upper[i][1] for i ∈ 1:nparams]
     lower = [estimator.toestimate.lower[i][1] for i ∈ 1:nparams]
     bounds  = [lower upper]'

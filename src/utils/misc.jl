@@ -157,6 +157,12 @@ format_gccomponents(str::Vector{String}) = str
 format_gccomponents(str::AbstractVector) = Array(str)
 # format_gccomponents(str) = map(format_component_i,str)
 
+normalize_userlocations(loc::Nothing) = loc
+normalize_userlocations(loc::AbstractArray) = String.(loc)
+normalize_userlocations(loc::Tuple) = String.(loc)
+normalize_userlocations(loc::NamedTuple) = loc
+normalize_userlocations(loc) = loc
+
 function mole_to_mass(model, x)
     w = x .* mw(model)
     return w ./ sum(w)
@@ -199,14 +205,12 @@ end
 viewlast(x,i) = @view(x[(end - i + 1):end])
 viewfirst(x,i) = @view(x[begin:i])
 viewlast(x,i,n) = viewfirst(viewlast(x,i),n)
-
 linearidx(x::AbstractVector) = LinearIndices(x)
+mid(a,b,c) =  max(min(a,b),min(max(a,b),c))
+deleteat(x,i) = deleteat!(copy(x),i)
 
 if Base.VERSION < v"1.11"
     linearidx(x::AbstractMatrix) = diagind(x,0)
 else
     linearidx(x::AbstractMatrix) = diagind(x,0,IndexStyle(x))
 end
-
-mid(a,b,c) =  max(min(a,b),min(max(a,b),c))
-deleteat(x,i) = deleteat!(copy(x),i)

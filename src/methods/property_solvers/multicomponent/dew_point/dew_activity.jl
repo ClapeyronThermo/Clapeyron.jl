@@ -3,7 +3,7 @@
 
 Function to compute [`dew_pressure`](@ref) using Activity Coefficients.
 On activity coefficient models it solves the problem via succesive substitucion.
-On helmholtz-based models, it approximates the activity coefficient using the saturated pure state as reference.
+On Helmholtz-based models, it approximates the activity coefficient using the saturated pure state as reference.
 
 Inputs:
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
@@ -12,7 +12,7 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
-- `noncondensables`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
+- `noncondensables`: optional, Vector of strings containing non condensable compounds. Those will be set to zero on the liquid phase.
 
 """
 struct ActivityDewPressure{T} <: DewPointMethod
@@ -22,6 +22,14 @@ struct ActivityDewPressure{T} <: DewPointMethod
     noncondensables::Union{Nothing,Vector{String}}
     itmax_ss::Int64
     rtol_ss::Float64
+end
+
+function Solvers.primalval(method::ActivityDewPressure{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
 end
 
 function ActivityDewPressure(;vol0 = nothing,

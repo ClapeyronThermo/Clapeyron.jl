@@ -25,7 +25,8 @@ liquid = ZeroLiquid(["water","carbon dioxide"])
 ZeroLiquid
 
 export ZeroLiquid
-const NaNLiquid = ZeroLiquid
+
+@deprecate NaNLiquid(args...;kwargs...) ZeroLiquid(args...;kwargs...)
 
 function volume_impl(model::ZeroLiquidModel,p,T,z,phase,threaded,vol0)
     _0 = zero(first(z))

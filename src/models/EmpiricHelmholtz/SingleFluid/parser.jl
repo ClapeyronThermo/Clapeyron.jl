@@ -35,7 +35,7 @@ function coolprop_json_string(component::String,comp = "")
         else
             buffer_length = ccall(maybe_length_handler, Cint, (Cstring, Cstring), component, "JSON") + 1
         end
-        
+
         message_buffer = Vector{UInt8}(undef,buffer_length)
         method_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_fluid_param_string)
         err_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_global_param_string)
@@ -90,7 +90,6 @@ function compare_empiric_names(filename,input)
 end
 
 function get_json_data_coolprop(component,norm_comp1 = normalisestring(component))
-    norm_comp1 = normalisestring(component)
     alternative_comp = get!(COOLPROP_IDENTIFIER_CACHE,norm_comp1) do
         cas(norm_comp1)[1]
     end
@@ -100,7 +99,7 @@ function get_json_data_coolprop(component,norm_comp1 = normalisestring(component
     end
     success,json_string = coolprop_json_string(alternative_comp,component)
     if success
-        data = JSON3.read(json_string)[1]
+        data = JSON.parse(json_string; dicttype=Dict{Symbol,Any})[1]
         return data
     else
         if length(json_string) == 0
@@ -146,10 +145,10 @@ function get_json_data(components;
         verbose && @info "JSON found: $_path"
 
         json_string = read(_path, String)
-        data = JSON3.read(json_string)
+        data = JSON.parse(json_string; dicttype=Dict{Symbol,Any})
     else
         verbose && @info "parsing supplied JSON data."
-        data = JSON3.read(component)
+        data = JSON.parse(component; dicttype=Dict{Symbol,Any})
     end
     return data
 end
@@ -168,7 +167,7 @@ end
 - JSON data (CoolProp and teqp format)
 
 ## Input models
-- `ancillaries`: a model that provides initial guesses for saturation calculations. if `nothing`, then they will be parsed from the input JSON.
+- `ancillaries`: a model that provides initial guesses for saturation calculations. If `nothing`, then they will be parsed from the input JSON.
 
 ## Description
 
@@ -226,6 +225,11 @@ function SingleFluid(components;
     if data === nothing && estimate_pure
         return XiangDeiters(components;userlocations,verbose = verbose,idealmodel = idealmodel,ideal_userlocations = ideal_userlocations)
     end
+
+    if first(_components[1]) == '{'
+        _components = [data[:INFO][:NAME]]
+    end
+
     eos_data = first(data[:EOS])
     #properties
     properties = _parse_properties(data,Rgas,verbose,allow_pseudo_pure)
@@ -254,7 +258,6 @@ function SingleFluid(components;
 
 
     references = [eos_data[:BibTeX_EOS]]
-
     return SingleFluid(_components,properties,init_ancillaries,ideal,residual,references)
 end
 
@@ -270,7 +273,7 @@ end
 - JSON data (CoolProp and teqp format)
 
 ## Input models
-- `ancillaries`: a model that provides initial guesses for saturation calculations. if `nothing`, then they will be parsed from the input JSON.
+- `ancillaries`: a model that provides initial guesses for saturation calculations. If `nothing`, then they will be parsed from the input JSON.
 
 ## Description
 
@@ -307,16 +310,20 @@ function SingleFluidIdeal(components;
     #properties
     properties = _parse_properties(data,Rgas,verbose)
 
+    if first(_components[1]) == '{'
+        _components = [data[:INFO][:NAME]]
+    end
+
     if idealmodel === nothing
         ideal_data = eos_data[:alpha0]
     else
-        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
         ideal_data = Clapeyron.idealmodel_to_json_data(init_idealmodel; Tr = properties.Tr, Vr = 1/properties.rhor)
     end
     ideal = _parse_ideal(ideal_data,verbose)
     references = String[]
     if haskey(eos_data,:BibTeX_EOS)
-        push!(references,get(eos_data,:BibTeX_EOS))
+        push!(references,eos_data[:BibTeX_EOS])
     end
     return SingleFluidIdeal(_components,properties,ideal,references)
 end
@@ -348,12 +355,14 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false, allow_pseudo_p
         crit_anc_meta = superanc_data[:meta]
         T_c = crit_anc_meta[Symbol("Tcrittrue / K")]
         rho_c = crit_anc_meta[Symbol("rhocrittrue / mol/m^3")]
+        pp = identity.(superanc_data[:jexpansions_p][end][:coef])
+        P_c = Solvers.cheb_eval(pp,1.0)
     else
         T_c = tryparse_units(get(crit,:T,NaN),get(crit,:T_units,""))
         rho_c = tryparse_units(get(crit,:rhomolar,NaN),get(crit,:rhomolar_units,""))
-
+        P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
     end
-    P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
+
     if reducing !== nothing
         Tr = tryparse_units(get(reducing,:T,NaN),get(reducing,:T_units,""))
         rhor = tryparse_units(get(reducing,:rhomolar,NaN),get(reducing,:rhomolar_units,""))
@@ -400,6 +409,8 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false, allow_pseudo_p
     isnan(lb_volume) && (lb_volume = 1/tryparse_units(get(eos_data,:rhomolar_max,NaN),get(eos_data,:rhomolar_max_units,"")))
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
+    lb_volume = max(lb_volume,8.314*10*Tr/(1e10))
+
     pseudo_pure = get(eos_data,:pseudo_pure,false)
     if pseudo_pure && !allow_pseudo_pure
         throw(error("SingleFluid does not support pseudo-pures, use EmpiricPseudoPure(component;kwargs) instead."))
@@ -845,7 +856,7 @@ end
 """
     idealmodel_to_json_data(model::EoSModel;Tr = 1.0,T0 = 298.15, Vr = 1.0)
 
-Transforms an `model::IdealModel` into a vector of dictionaries containing valid ideal multiparameter helmholtz terms.
+Transforms an `model::IdealModel` into a vector of dictionaries containing valid ideal multiparameter Helmholtz terms.
 `Tr` is the reducing temperature, `T0` is the reference temperature, `Vr` is the reducing volume.
 ## Example
 ```

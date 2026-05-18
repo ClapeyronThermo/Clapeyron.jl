@@ -15,7 +15,7 @@
     verbose = false)
 
 ## Description
-Soave-Redlich-Kwong equation of state. it uses the following models:
+Soave-Redlich-Kwong equation of state. It uses the following models:
 
 - Translation Model: [`NoTranslation`](@ref)
 - Alpha Model: [`SoaveAlpha`](@ref)

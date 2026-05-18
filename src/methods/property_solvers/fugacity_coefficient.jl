@@ -5,11 +5,13 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-
     RT = Rgas(model)*T
     logZ = log(p*vol/RT/sum(z))
     nc = length(z)
-    if cache !== nothing
+    
+    if cache isa Vector
+        return lnϕ!(cache, model, p, T, z; vol)
+    elseif cache isa Tuple
         result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
         if nc == 1
             lnϕ[1] = VT_lnϕ_pure(model,vol/sum(z),T,p)
@@ -27,7 +29,13 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
         end
     else
         μ_res = VT_chemical_potential_res(model, vol, T, z)
-        lnϕ = μ_res/RT .- logZ
+        if ismutable(μ_res)
+            lnϕ = μ_res
+            lnϕ .= μ_res ./ RT .- logZ
+        else
+            lnϕ = μ_res/RT .- logZ
+        end
+        
     end
     return lnϕ, vol
 end
@@ -51,6 +59,14 @@ function lnϕ!(cache::Tuple, model::EoSModel, p, T, z=SA[1.];
     model isa IdealModel && return (fill!(cache[3],0.0),vol)
 
     return lnϕ(model,p,T,z,cache;vol)
+end
+
+function lnϕ!(cache::Nothing, model::EoSModel, p, T, z=SA[1.];
+            phase=:unknown,
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+    return lnϕ(model,p,T,z;vol)
 end
 
 function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = nothing;
@@ -147,10 +163,11 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(
     n = sum(z)
     Z = p*V/RT/n
 
+    ncomponents = length(z)
     F_res(model, V, T, z) = eos_res(model, V, T, z) / RT
     fun(aux) = F_res(model, aux[1], T, @view(aux[2:(ncomponents+1)]))
 
-    ncomponents = length(z)
+    
     aux[1] = V
     aux[2:end] = z
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
@@ -326,6 +343,20 @@ function modified_lnϕ(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
         lnϕz,vz = lnϕ(model, p, T, z, cache; phase)
     end
     return lnϕz,vz
+end
+
+modified_gibbs(model,p,T,w) = modified_gibbs(model,p,T,w,:unknown,oftype(zero(Base.promote_eltype(model,p,T,w)),NaN))
+modified_gibbs(model,p,T,w,phase) = modified_gibbs(model,p,T,w,phase,oftype(zero(Base.promote_eltype(model,p,T,w)),NaN))
+
+function modified_gibbs(model,p,T,w,phase,vol)
+    if isnan(vol) || isnothing(vol)
+        volw = volume(model,p,T,w,phase = phase)
+    else
+        volw = vol
+    end
+    RT = Rgas(model)*T
+    g =  PT_property(model,p,T,w,phase,volw,VT_gibbs_energy)
+    return g/RT,volw
 end
 
 function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)

@@ -1,10 +1,16 @@
-struct ogUNIFAC2{c<:EoSModel} <: ogUNIFACModel
+struct ogUNIFAC2{c<:EoSModel,T} <: ogUNIFACModel
     components::Array{String,1}
-    groups::GroupParam
-    params::ogUNIFACParam
+    groups::GroupParam{T}
+    params::ogUNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    unifac_cache::UNIFACCache
+    unifac_cache::UNIFACCache{T}
+end
+
+function ogUNIFAC2(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = eltype(params)
+    return ogUNIFAC2{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 const ogUNIFAC2_0 = ogUNIFAC2

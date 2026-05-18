@@ -63,6 +63,7 @@ Clapeyron.gibbs_free_energy_res
 Clapeyron.entropy
 Clapeyron.entropy_res
 Clapeyron.enthalpy
+Clapeyron.enthalpy_res
 Clapeyron.internal_energy
 Clapeyron.internal_energy_res
 ```
@@ -99,6 +100,7 @@ Clapeyron.reference_chemical_potential_type
 
 ```@docs
 Clapeyron.mixing
+Clapeyron.excess
 Clapeyron.partial_property
 Clapeyron.shape_factors
 Clapeyron.thermodynamic_factor

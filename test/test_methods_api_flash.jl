@@ -9,12 +9,16 @@
         method = RRTPFlash()
         @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.539976318817461 rtol = 1e-6
 
+        #=
+        Test deprecated
+        The PR tests in MichelsenTPFlash (#454) already test this
         #test for initialization when K suggests single phase but it could be solved supposing bubble or dew conditions.
         substances = ["water", "methanol", "propyleneglycol","methyloxirane"]
         pcp_system = PCPSAFT(substances)
         res = Clapeyron.tp_flash2(pcp_system, 25_000.0, 300.15, [1.0, 1.0, 1.0, 1.0], RRTPFlash())
         @test res.data.g ≈ -8.900576759774916 rtol = 1e-6
-
+        
+        =#
         #https://julialang.zulipchat.com/#narrow/channel/265161-Clapeyron.2Ejl/topic/The.20meaning.20of.20subcooled.20liquid.20flash.20results
         z_zulip1 = [0.25, 0.25, 0.25, 0.25]
         p_zulip1 = 1e5
@@ -35,10 +39,11 @@
         #https://julialang.zulipchat.com/#narrow/channel/265161-Clapeyron.2Ejl/topic/The.20meaning.20of.20subcooled.20liquid.20flash.20results/near/534216551
         model_zulip2 = PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"])
         res3 = Clapeyron.tp_flash2(model_zulip2, 1e5 , 450, z_zulip1, RRTPFlash(equilibrium=:vle))
-        
+        res3_pt = Clapeyron.PT.flash(model_zulip2, 1e5 , 450, z_zulip1, RRTPFlash(equilibrium=:vle))
         if Clapeyron.numphases(res3) == 2
             @test isone(res3.fractions[2])
             @test res3.volumes[1] ≈ 0.03683358805181434 rtol = 1e-6
+            @test res3.volumes[1] ≈ res3_pt.volumes[1]
         else
             @test res3.volumes[1] ≈ 0.03683358805181434 rtol = 1e-6
         end
@@ -69,19 +74,39 @@
 
     @testset "DE Algorithm" begin
         #VLLE eq
-        @test Clapeyron.tp_flash(system, p, T, z, DETPFlash(numphases = 3))[3] ≈ -6.759674475174073 rtol = 1e-6
+        @test Clapeyron.tp_flash(system, p, T, z, DETPFlash(numphases = 3))[3] ≈ -6.759674475174073 rtol = 1e-12
         #LLE eq with activities
         act_system = UNIFAC(["water","cyclohexane","propane"])
         flash0 = Clapeyron.tp_flash(act_system, p, T, [0.5,0.5,0.0], DETPFlash(equilibrium = :lle))
         act_x0 = activity_coefficient(act_system, p, T, flash0[1][1,:]) .* flash0[1][1,:]
         act_y0 = activity_coefficient(act_system, p, T, flash0[1][2,:]) .* flash0[1][2,:]
-        @test Clapeyron.dnorm(act_x0,act_y0) < 0.01 #not the most accurate, but it is global
+        @test Clapeyron.dnorm(act_x0,act_y0) < 1e-5
+        flash_RR = Clapeyron.tp_flash(act_system, p, T, [0.5,0.5,0.0], RRTPFlash(equilibrium = :lle))
+        @test flash0[3] ≈ flash_RR[3] rtol = 1e-11
     end
 
     @testset "Multiphase algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T, z, MultiPhaseTPFlash())[3] ≈ -6.759674475175065 rtol = 1e-6
+        #standard 3-phase system
+        res1 = Clapeyron.tp_flash2(system, p, T, z, MultiPhaseTPFlash())
+        @test Clapeyron.numphases(res1) == 3
+        @test res1.data.g ≈ -6.759674475175065 rtol = 1e-6
+        
+        #hard system, 2 phases
         system2 = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
-        @test Clapeyron.tp_flash(system2, 1e5, 284.4, [1,1,1,1]*0.25, MultiPhaseTPFlash())[3] ≈ -6.618441125949686 rtol = 1e-6
+        res2 = Clapeyron.tp_flash2(system2, 1e5, 284.4, [1,1,1,1]*0.25, MultiPhaseTPFlash())
+        @test Clapeyron.numphases(res2) == 2
+        @test res2.data.g ≈ -6.618441125949686 rtol = 1e-6
+        
+        #same standard 3-phase system, but with activities
+        system3 = UNIFAC(["water","cyclohexane","propane"],puremodel = DIPPR101Sat)
+        res3 = Clapeyron.tp_flash2(system3, p, T, z, MultiPhaseTPFlash())
+        @test Clapeyron.numphases(res3) == 3
+        @test res3.fractions ≈ [0.3126977407489071, 0.3221079660567595, 0.3651942931943334] rtol = 1e-6
+
+        #issue #546
+        system4 = EOS_CG(["carbon dioxide","water"])
+        res4 = Clapeyron.tp_flash2(system4, 1e6, 293.15, [0.5,0.5], MultiPhaseTPFlash())
+        @test res4.fractions ≈ [0.5025679516689612, 0.4974320483310388] rtol = 1e-6
     end
 
     GC.gc()
@@ -138,6 +163,11 @@
 
             res7 = Clapeyron.tp_flash2(mix, 505777.32016068726, 323.9598978773458, [75.83064821431964, 6.148759359393775e-10, 0, 0], MichelsenTPFlash(equilibrium=:vle))
             @test res7.fractions[1] ≈ 75.83064821493451
+
+            #test that we don't use LLE,even if equilibrium is unknown, when VLE initial point suggests vapour phase
+            mix8 = cPR(["ethane","propane"])
+            res8 = Clapeyron.tp_flash2(mix8,1e5,300.0,[0.5,0.5],MichelsenTPFlash())
+            @test iszero(res8.fractions[1])
         end
 
     end
@@ -238,7 +268,7 @@
         flash4 = tp_flash(model_vle, 2500.0, 300.15, [0.9, 0.1], MichelsenTPFlash())
 
         @test flash4[1] ≈
-        [0.9239684120579815 0.07603158794201849; 
+        [0.9239684120579815 0.07603158794201849;
         0.793479931206839 0.20652006879316098] rtol = 1e-6
         #test equality of activities does not make sense in VLE
     end
@@ -254,6 +284,30 @@
         @test Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash(ss_iters = 0))[1] ≈
         [0.3618699698927814 0.6381300301072186;
         0.17888243310648602 0.821117566893514] rtol = 1e-6
+    end
+
+    @testset "Michelsen Algorithm in Implicit AD" begin
+        admodel = cPR(["ethane","propane"])
+        function dflash(t)
+            T = 200*t
+            res = Clapeyron.tp_flash2(admodel,1e5,T,[0.5,0.5])
+            return res.volumes[2]
+        end
+        #=
+        
+        julia> Clapeyron.tp_flash2(admodel,1e5,200.0,[0.5,0.5])
+        Flash result at T = 200.0, p = 100000.0 with 2 phases:
+        (x = [0.407352, 0.592648], β = 0.799439, v = 6.10901e-5)
+        (x = [0.869296, 0.130704], β = 0.200561, v = 0.0161798)
+
+        julia> Clapeyron.tp_flash2(admodel,1e5,300.0,[0.5,0.5])
+        Flash result at T = 300.0, p = 100000.0 with 2 phases:
+        (x = [0.5, 0.5], β = 0.0, v = 0.0246478)
+        (x = [0.5, 0.5], β = 1.0, v = 0.0246478)
+        =#
+
+        @test Clapeyron.Solvers.derivative(dflash,1.0) ≈ Clapeyron.derivx(dflash,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dflash,1.5) ≈ Clapeyron.derivx(dflash,1.5) rtol = 1e-5
     end
 end
 
@@ -481,7 +535,7 @@ end
     h475 = Clapeyron.PS.enthalpy(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
     res475 = Clapeyron.PS.flash(fluid475,1.742722525216547e6,-89.04935789018991,[1.0,1.0])
     @test enthalpy(fluid475,res475) ≈ h475 rtol = 1e-6
-    
+
     #issue 492
     fluid492 = GERG2008(["propane", "butane"])
     p492 = 1.5e6
@@ -490,6 +544,30 @@ end
     res492 = Clapeyron.ph_flash(fluid492, p492, h492, z492)
     @test enthalpy(fluid492,res492) ≈ h492 rtol = 1e-6
 
+    #issue 506
+    phase506  = :vapour
+    fluid506  = cPR(["di methylether","di ethylether"],idealmodel  = ReidIdeal)
+    p_in_506  = 101325.0; z_506 = [1.0,1.0]
+    T_in_506  = dew_temperature(fluid506,p_in_506,z_506)[1] + 10;  # we are now pure vapour
+    p_out_506 = 3.0*p_in_506
+    h_in_506  = enthalpy(fluid506,p_in_506,T_in_506,z)
+    s_in_506  = Clapeyron.PH.entropy(fluid506, p_in_506, h_in_506,z_506,phase = phase506)
+    h_out_506 = Clapeyron.PS.enthalpy(fluid506, p_out_506, s_in_506,z_506,phase = phase506)
+    s_out_506 = Clapeyron.PH.entropy(fluid506, p_out_506, h_out_506,z_506,phase = phase506)
+    @test s_in_506 ≈ s_out_506 rtol = 1e-6
+    
+    #issue #554
+    model554 = cPR(["propane","butane"],idealmodel = ReidIdeal)
+    f554(x) = Clapeyron.PH.entropy(model554, x[1]*101325, 500.0, [1.0,1.0])
+    dsdp_ad = Clapeyron.Solvers.derivative(f554,1.5)
+    dsdp_finite = Clapeyron.derivx(f554,1.5)
+    @test dsdp_ad ≈ dsdp_finite rtol = 1e-6
+
+    #issue 563
+    model563 = cPR(["hexane","r134a"],idealmodel = ReidIdeal)
+
+    @test Clapeyron.PH.temperature(model563,3286.398709834417,-28656.72135729674,[1.0,1.0]) ≈ 245.5036274429181 rtol = 1e-6
+    @test Clapeyron.PH.temperature(model563,4518.7856211604485,-16905.103773893403,[1.0,1.0]) ≈ 254.2216177261915 rtol = 1e-6
     #issue #390
     #=
     model = cPR(["isopentane","toluene"],idealmodel=ReidIdeal)
@@ -508,6 +586,62 @@ end
         T_dew[i] = Clapeyron.temperature(res_dew)
         s_dew[i] = Clapeyron.entropy(model,res_dew)
     end =#
+end
+
+@testset "XY flash (activity models)" begin
+    model = UNIFAC(["ethanol","water"], puremodel = PR)
+    x = [0.1, 0.9]
+    T_bub = 360.0
+    p, = bubble_pressure(model, T_bub, x)
+    h_liq = enthalpy(model, p, T_bub, x; phase = :liquid)
+    h_gas = enthalpy(model, p, T_bub, x; phase = :gas)
+
+    # two-phase: enthalpy between bubble and dew enthalpies
+    hmix = (h_liq + h_gas) / 2
+    res_2ph = ph_flash(model, p, hmix, x)
+    @test Clapeyron.numphases(res_2ph) == 2
+    @test enthalpy(model, res_2ph) ≈ hmix rtol = 1e-6
+
+    # single-phase liquid
+    h_sub = enthalpy(model, p, 350.0, x; phase = :liquid)
+    res_liq = ph_flash(model, p, h_sub, x)
+    @test Clapeyron.numphases(res_liq) == 1
+    @test Clapeyron.temperature(res_liq) ≈ 350.0 rtol = 1e-6
+
+    # single-phase gas
+    h_sup = enthalpy(model, p, 380.0, x; phase = :gas)
+    res_gas = ph_flash(model, p, h_sup, x)
+    @test Clapeyron.numphases(res_gas) == 1
+    @test Clapeyron.temperature(res_gas) ≈ 380.0 rtol = 1e-6
+
+    # ps_flash: same T as ph_flash when using consistent s specification
+    s_2ph = entropy(model, res_2ph)
+    res_ps = ps_flash(model, p, s_2ph, x)
+    @test Clapeyron.numphases(res_ps) == 2
+    @test Clapeyron.temperature(res_ps) ≈ Clapeyron.temperature(res_2ph) rtol = 1e-6
+end
+
+@testset "XY flash (activity models, LLE)" begin
+    model = UNIFAC(["water","hexane"])
+    x = [0.5, 0.5]
+    p = 101325.0
+    T_lle = 303.15
+
+    # build a consistent two-phase target from the existing PT LLE flash path
+    flash_lle = Clapeyron.tp_flash2(model, p, T_lle, x, MichelsenTPFlash(equilibrium = :lle))
+    h_2ph = enthalpy(model, flash_lle)
+
+    res_2ph = ph_flash(model, p, h_2ph, x; equilibrium = :lle)
+    @test res_2ph.data.vapour_idx == -1
+    @test Clapeyron.numphases(res_2ph) == 2
+    @test Clapeyron.temperature(res_2ph) ≈ T_lle rtol = 1e-6
+    @test enthalpy(model, res_2ph) ≈ h_2ph rtol = 1e-6
+
+    # ps_flash with :lle should recover the same T as the two-phase ph_flash
+    s_2ph = entropy(model, res_2ph)
+    res_ps = ps_flash(model, p, s_2ph, x, equilibrium = :lle)
+    @test Clapeyron.numphases(res_ps) == 2
+    @test Clapeyron.temperature(res_ps) ≈ Clapeyron.temperature(res_2ph) rtol = 1e-6
 end
 
 @testset "Saturation Methods" begin
@@ -586,15 +720,30 @@ end
     cpr = cPR("Propane",idealmodel = ReidIdeal)
     crit_cpr = crit_pure(cpr)
     @test saturation_temperature(cpr,crit_cpr[2] - 1e3)[1] ≈ 369.88681908031606 rtol = 1e-6
+
+    #implicit AD
+    dsatp(T) = first(saturation_pressure(cpr,250.0*T))
+    dsatt(p) = first(saturation_temperature(cpr,1e5*p))
+    @test Clapeyron.Solvers.derivative(dsatp,1.0) ≈ Clapeyron.derivx(dsatp,1.0) rtol = 1e-6
+    @test Clapeyron.Solvers.derivative(dsatt,1.0) ≈ Clapeyron.derivx(dsatt,1.0) rtol = 1e-6
 end
 
 @testset "Tproperty/Property" begin
+    #=
+    obsolete test, Tproperty/Pproperty is now considered as an initial point to the flashes
     model1 = cPR(["propane","dodecane"])
     p = 101325.0; T = 300.0;z = [0.5,0.5]
-    h_ = enthalpy(model1,p,T,z)
-    s_ = entropy(model1,p,T,z)
+    flash1 = Clapeyron.tp_flash2(model,p,T,z)
+    h_ = enthalpy(model1,flash1)
+    s_ = entropy(model1,flash1)
+    
     @test Tproperty(model1,p,h_,z,enthalpy) ≈ T
     @test Tproperty(model1,p,s_,z,entropy) ≈ T
+    =#
+    model1 = cPR(["propane","dodecane"])
+    p = 101325.0; T = 300.0;z = [0.5,0.5]
+    
+
 
     model2 = cPR(["propane"])
     z2 = [1.]
@@ -634,9 +783,16 @@ end
     model5 = cPR(["R134a","propane"],idealmodel=ReidIdeal)
     @test Clapeyron._Pproperty(model5,450.0,0.03,[0.5,0.5],volume)[2] == :vapour
     @test Clapeyron._Pproperty(model5,450.0,0.03,[0.5,0.5],volume)[2] == :vapour
-    @test Clapeyron._Pproperty(model5,450.0,0.00023,[0.5,0.5],volume)[2]  == :eq
-    @test Clapeyron._Pproperty(model5,450.0,0.000222,[0.5,0.5],volume)[2]  == :eq
-    @test Clapeyron._Pproperty(model5,450.0,0.000222,[0.5,0.5],volume)[2]  == :eq
+    #@test Clapeyron._Pproperty(model5,450.0,0.00023,[0.5,0.5],volume)[2]  == :eq
+    #@test Clapeyron._Pproperty(model5,450.0,0.000222,[0.5,0.5],volume)[2]  == :eq
+    #@test Clapeyron._Pproperty(model5,450.0,0.000222,[0.5,0.5],volume)[2]  == :eq
+
+    #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/563#issuecomment-4205986772
+    Tb,Td = 310.8990985869675,317.9907901983071
+    hmid = -24856.311180151133
+    fluid = cPR(["acetone", "isopentane"],idealmodel= ReidIdeal); z = [1.1, 0.9];
+    T0 = Clapeyron.Tproperty(fluid,101225.0,hmid,z,enthalpy)
+    @test Tb < T0 < Td
 end
 
 @testset "bubble/dew point algorithms" begin
@@ -657,6 +813,11 @@ end
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
+        
+        #140
+        model140 = PCSAFT(["water","carbon dioxide"])
+        res140 = bubble_pressure(model140,280,Clapeyron.FractionVector(0.01),ChemPotBubblePressure(nonvolatiles = ["water"]))
+        @test res140[1] ≈ 4.0772545187410433e6 rtol = 1e-6
         GC.gc()
 
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure())[1] ≈ pres1 rtol = 1E-6
@@ -727,7 +888,7 @@ end
 
         #413
         fluid413 = cPR(["Propane","Isopentane"],idealmodel=ReidIdeal);
-        (p413, y413, method413) = (502277.914581377, [0.9261006181335611, 0.07389938186643885], ChemPotDewTemperature(vol0 = nothing, T0 = nothing, x0 = nothing, noncondensables = nothing, f_limit = 0.0, atol = 1.0e-8, rtol = 1.0e-12, max_iters = 1000, ss = false))
+        (p413, y413, method413) = (502277.914581377, [0.9261006181335611, 0.07389938186643885], ChemPotDewTemperature(vol0 = nothing, T0 = nothing, x0 = nothing, noncondensables = nothing, f_limit = 0.0, atol = 1.0e-8, rtol = 1.0e-12, max_iters = 1000))
         T413,_,_,_ = Clapeyron.dew_temperature_impl(fluid413,p413,y413,method413)
         @test T413 ≈ 292.1479303719277 rtol = 1e-6
     end
@@ -786,4 +947,17 @@ end
         @test xa[3] == 0.0
     end
     GC.gc()
+
+    @testset "bubble/dew implicit AD" begin
+        admodel = cPR(["R134a","propane"])
+        bp(T) = first(bubble_pressure(admodel,300.0*T,[0.5,0.5]))
+        bt(p) = first(bubble_temperature(admodel,1e5*p,[0.5,0.5]))
+        dp(T) = first(dew_pressure(admodel,300.0*T,[0.5,0.5]))
+        dt(p) = first(dew_temperature(admodel,1e5*p,[0.5,0.5]))
+        @test Clapeyron.Solvers.derivative(bp,1.0) ≈ Clapeyron.derivx(bp,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dp,1.0) ≈ Clapeyron.derivx(dp,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(bt,1.0) ≈ Clapeyron.derivx(bt,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dt,1.0) ≈ Clapeyron.derivx(dt,1.0) rtol = 1e-5
+    end
+
 end

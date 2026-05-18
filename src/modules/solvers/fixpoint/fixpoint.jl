@@ -5,8 +5,7 @@ abstract type AbstractFixPoint end
 """
   Solvers.fixpoint(f,x0::Real,method=SSFixPoint())
 Does a fixpoint iteration convergence on a series of real numbers.
-`f` is a function that should 
-the following strategies:
+`f` is a function that should respect the following strategies:
  - `SSFixPoint(dampingfactor = 1.0)`: performs succesive substitutions until convergence is met. 
 α = `dampingfactor` it determines a buffer for each iteration, defined as `x1 = α*f(x1) + (1-α)*x1`
 

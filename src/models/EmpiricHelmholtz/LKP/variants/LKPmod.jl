@@ -22,7 +22,7 @@ abstract type LKPmodModel <: LKPModel end
 ## Description
 Lee-Kesler-Plöker equation of state. Corresponding states using interpolation between a simple, spherical fluid (methane, `∅`)  and a reference fluid (n-octane, `ref`):
 
-Coefficients of the original EoS were modified in [2] guarantee a correct behaviour of the EoS in the liquid phase.
+Coefficients of the original EoS were modified in [2], guarantees a correct behaviour of the EoS in the liquid phase.
 ```
 αᵣ = (1 - ωᵣ)*αᵣ(δr,τ,params(∅)) + ωᵣ*αᵣ(δr,τ,params(ref))
 τ = Tr/T

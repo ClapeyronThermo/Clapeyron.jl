@@ -1,4 +1,4 @@
-function fast_parse_grouptype(filepaths::Vector{String})
+function fast_parse_grouptype(filepaths)
     #only parses grouptype, if present in any CSV, is used. if not, return unknown
     grouptype = :not_set
     for filepath ∈ filepaths
@@ -121,7 +121,15 @@ function __GroupParam(components,found_gcpairs,found_intragcpairs,grouplocations
     componentstolookup = components[to_lookup]
     filepaths = flattenfilepaths(grouplocations,usergrouplocations)
 
-    gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(components))
+    _T = Int64
+    _eltypepair(::Array{Pair{S,T},1}) where {S,T} = T
+    for (i,gcp) in enumerate(found_gcpairs)
+        if !to_lookup[i] 
+            _T = promote_type(_T, _eltypepair(gcp))
+        end
+    end
+
+    gccomponents_parsed = Vector{Tuple{String, Vector{Pair{String,_T}}}}(undef,length(components))
 
     #fill gccomponents_parsed
     for i in 1:length(components)

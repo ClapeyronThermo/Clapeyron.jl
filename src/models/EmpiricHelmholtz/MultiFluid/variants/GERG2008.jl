@@ -6,13 +6,13 @@
             reference_state = nothing,
             verbose = false)
 
-## input Parameters
+## Input Parameters
 
 None
 
 ## Description
 
-The GERG-2008 Wide-Range Equation of State for Natural Gases and Other Mixtures. valid for 21 compounds (`Clapeyron.GERG2008_names`).
+The GERG-2008 Wide-Range Equation of State for Natural Gases and Other Mixtures. Valid for 21 compounds (`Clapeyron.GERG2008_names`).
 ```
 
 a = a⁰ + aʳ

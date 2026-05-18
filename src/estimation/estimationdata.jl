@@ -18,7 +18,7 @@ ERRORTYPES = [:error_abs, :error_rel, :error_std]
 
 # Copied from database.jl; methods that are common should be refactored into
 # separate files.
-function extract_dataerror(df::CSV.File, csvheaders::Vector{String}, extract_headers::Vector{String})
+function extract_dataerror(df::CSV.File, csvheaders, extract_headers)
     data = Vector{Vector{Union{Float64,Missing}}}(undef, length(extract_headers))
     error = Vector{Vector{Union{Float64,Missing}}}(undef, length(extract_headers))
     errortype = Vector{Union{Symbol,Nothing}}(nothing, length(extract_headers))
@@ -54,7 +54,7 @@ An `EstimationData` struct with the following fields:
 ## Description
 For a given input data set, produce an `EstimationData` struct.
 """
-function EstimationData(filepaths::Vector{String})
+function EstimationData(filepaths)
     filepaths = flattenfilepaths(String[],filepaths)
     estimationdata = Vector{EstimationData}()
     for filepath ∈ filepaths 

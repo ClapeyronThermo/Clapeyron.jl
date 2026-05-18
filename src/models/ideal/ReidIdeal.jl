@@ -127,16 +127,16 @@ function a_ideal(model::PolynomialIdealModel, V, T, z)
     #return sum(x[i]*(log(z[i]/V) + 1/(R̄*T)*(sum(polycoeff[k][i]/k*(T^k-298^k) for k in 1:4)) -
     #    1/R̄*((polycoeff[k][1]-R̄)*log(T/298)+sum(polycoeff[k][i]/(k-1)*(T^(k-1)-298^(k-1)) for k in 2:4))) for i in @comps)
     V⁻¹ = 1/V
-    res = zero(V+T+first(z))
+    res = zero(Base.promote_eltype(model,V,T,z))
     Σz = sum(z)
     RT = R̄*T
     R̄⁻¹ = 1/R̄
     RT⁻¹ = 1/RT
-    T0 = 298.
+    T0 = 298.0*one(res)
     lnT0 = log(T0)
     lnT = log(T)
     @inbounds for i in @comps
-        coeffs = polycoeff[i] 
+        coeffs = polycoeff[i]
         H = (eval∫coeff(model,coeffs,T,lnT) - eval∫coeff(model,coeffs,T0,lnT0))*RT⁻¹
         TS = (eval∫coeffT(model,coeffs,T,lnT) - eval∫coeffT(model,coeffs,T0,lnT0))*R̄⁻¹
         α₀ᵢ = H - TS + lnT - lnT0

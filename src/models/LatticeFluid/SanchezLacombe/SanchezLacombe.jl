@@ -59,6 +59,7 @@ aᵣ = r̄*(- ρ̃ /T̃ + (1/ρ̃  - 1)*log(1 - ρ̃ ) + 1)
 SanchezLacombe
 
 const SL = SanchezLacombe
+@doc (@doc SanchezLacombe) SL
 
 function SanchezLacombe(components;
     idealmodel = BasicIdeal,
@@ -126,7 +127,7 @@ function rmix(model::SanchezLacombe,V,T,z)
     return r̄
 end
 
-function lb_volume(model::SanchezLacombe,z)
+function lb_volume(model::SanchezLacombe,T,z)
     r = model.params.segment.values
     v = model.params.vol.values
     #v_r,ε_r = mix_vε(model,0.0,0.0,z,model.mixing,r̄,Σz)
@@ -152,7 +153,7 @@ function p_scale(model::SanchezLacombe,z)
 end
 
 function x0_volume_liquid(model::SanchezLacombe,T,z)
-    v_lb = lb_volume(model,z)
+    v_lb = lb_volume(model,T,z)
     return v_lb*1.1
 end
 #SL does not work with the virial coefficient

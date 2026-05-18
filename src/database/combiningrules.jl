@@ -269,8 +269,8 @@ lambda_squarewell!(lambda, sigma) = pair_mix!(mix_lambda_squarewell,lambda,sigma
 """
     mirror_pair!(param::PairParam,f = identity)
 
-performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. by default, `f = identity` (a symmetric matrix). 
-One key difference is that it sets the `ismissingvalues` field for each modified index to `false`
+Performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. By default, `f = identity` (a symmetric matrix). 
+One key difference is that it sets the `ismissingvalues` field for each modified index to `false`.
 """
 function mirror_pair!(param::PairParameter,f = identity)
     mirror_pair!(param.values,param.ismissingvalues,f)
@@ -280,8 +280,8 @@ end
 """
     mirror_pair(param::PairParam,f = identity)
 
-performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. by default, `f = identity` (a symmetric matrix). 
-One key difference is that it sets the `ismissingvalues` field for each modified index to `false`
+Performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. By default, `f = identity` (a symmetric matrix). 
+One key difference is that it sets the `ismissingvalues` field for each modified index to `false`.
 """
 mirror_pair(param::PairParameter,f = identity) = mirror_pair!(deepcopy(param),f)
 

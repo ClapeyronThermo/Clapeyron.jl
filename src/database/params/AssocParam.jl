@@ -53,7 +53,7 @@ function AssocParam(name,components,vals::Compressed4DMatrix{T}) where T
 end
 
 # If no value is provided, just initialise empty param.
-AssocParam{T}(name,components::Vector{String}) where T <: Number = AssocParam(name,components,Compressed4DMatrix{T}(),nothing)
+AssocParam{T}(name,components) where T <: Number = AssocParam(name,components,Compressed4DMatrix{T}(),nothing)
 
 AssocParam(name,components) = AssocParam{Float64}(name,components)
 

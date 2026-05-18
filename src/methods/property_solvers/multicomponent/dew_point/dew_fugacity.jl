@@ -2,7 +2,7 @@
     FugDewPressure(kwargs...)
 
 Method to compute [`dew_pressure`](@ref) via fugacity coefficients. First it uses
-successive substitution to update the phase composition and a outer newtown
+successive substitution to update the phase composition and an outer Newton's
 loop to update the pressure. If no convergence is reached after `itmax_newton`
 iterations, the system is solved using a multidimensional non-linear
 system of equations.
@@ -11,12 +11,12 @@ Inputs:
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
 - `p0 = nothing`: optional, initial guess for the dew pressure `[Pa]`
 - `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
-- `itmax_newton = 10`: optional, number of iterations to update the pressure using newton's method
+- `itmax_newton = 10`: optional, number of iterations to update the pressure using Newton's method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
-- `tol_p = 1e-8`: optional, tolerance to stop newton cycle
+- `tol_p = 1e-8`: optional, tolerance to stop Newton's cycle
 - `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
-- `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
+- `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. Those will be set to zero on the liquid phase.
 """
 struct FugDewPressure{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -33,6 +33,14 @@ struct FugDewPressure{T} <: DewPointMethod
     tol_p::Float64
     tol_of::Float64
     second_order::Bool
+end
+
+function Solvers.primalval(method::FugDewPressure{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
 end
 
 function FugDewPressure(;vol0 = nothing,
@@ -83,7 +91,7 @@ function FugDewPressure(;vol0 = nothing,
 end
 
 function dew_pressure_impl(model::RestrictedEquilibriaModel,T,y,method::FugDewPressure)
-    wrapper = PTFlashWrapper(model,NaN,T,y,:vle)
+    wrapper = __tpflash_cache_model(model,NaN,T,y,:vle)
     return dew_pressure_impl(wrapper,T,y,method)
 end
 
@@ -122,7 +130,12 @@ function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
     volx,voly = vol
 
     if converged
-        return p,volx,voly,index_expansion(x,condensables)
+        xx = index_expansion(x,condensables)
+        if iszero(volx) && model isa PTFlashWrapper
+            vx = volume(model,p,T,xx,phase = :l)
+            volx = oftype(volx,vx)
+        end
+        return p,volx,voly,xx
     end
 
     lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
@@ -133,12 +146,12 @@ function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
         problem = _fug_OF_neq(model,T,y,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     else
         problem = _fug_OF_neq(model_x,model,T,y,condensables,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     end
 
     lnp = inc[end]
@@ -147,7 +160,10 @@ function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
     x = index_expansion(x_r,condensables)
     p = exp(lnp)
     volx,voly = vol_cache[]
-
+    if iszero(volx) && model isa PTFlashWrapper
+        vx = volume(model,p,T,x,phase = :l)
+        volx = oftype(volx,vx)
+    end
      return p, volx, voly, x
 end
 
@@ -155,7 +171,7 @@ end
     FugDewTemperature(kwargs...)
 
 Method to compute [`dew_temperature`](@ref) via fugacity coefficients. First it uses
-successive substitution to update the phase composition and a outer newtown
+successive substitution to update the phase composition and an outer Newton's
 loop to update the temperature. If no convergence is reached after
 `itmax_newton` iterations, the system is solved using a multidimensional
 non-linear system of equations.
@@ -164,12 +180,12 @@ Inputs:
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
 - `T0 = nothing`: optional, initial guess for the dew temperature `[K]`
 - `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
-- `itmax_newton = 10`: optional, number of iterations to update the temperature using newton's method
+- `itmax_newton = 10`: optional, number of iterations to update the temperature using Newton's method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
-- `tol_T = 1e-8`: optional, tolerance to stop newton cycle
+- `tol_T = 1e-8`: optional, tolerance to stop Newton's cycle
 - `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
-- `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
+- `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. Those will be set to zero on the liquid phase.
 
 """
 struct FugDewTemperature{T} <: DewPointMethod
@@ -187,6 +203,14 @@ struct FugDewTemperature{T} <: DewPointMethod
     tol_T::Float64
     tol_of::Float64
     second_order::Bool
+end
+
+function Solvers.primalval(method::FugDewTemperature{T}) where T
+    if T == Nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
 end
 
 function FugDewTemperature(;vol0 = nothing,
@@ -236,7 +260,7 @@ function FugDewTemperature(;vol0 = nothing,
 end
 
 function dew_temperature_impl(model::RestrictedEquilibriaModel,p,y,method::FugDewTemperature)
-    wrapper = PTFlashWrapper(model,p,NaN,y,:vle)
+    wrapper = __tpflash_cache_model(model,p,NaN,y,:vle)
     return dew_temperature_impl(wrapper,p,y,method)
 end
 
@@ -275,7 +299,12 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
     volx,voly = vol
 
     if converged
-        return T,volx,voly,index_expansion(x,condensables)
+        xx = index_expansion(x,condensables)
+        if iszero(volx) && model isa PTFlashWrapper
+            vx = volume(model,p,T,xx,phase = :l)
+            volx = oftype(volx,vx)
+        end
+        return T,volx,voly,xx
     end
 
     lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
@@ -286,12 +315,12 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
         problem = _fug_OF_neq(model,p,y,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     else
         problem = _fug_OF_neq(model_x,model,p,y,condensables,data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
-        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
+        !__check_convergence(sol) && (inc.= NaN)
     end
 
     lnT = inc[end]
@@ -300,7 +329,10 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
     x = index_expansion(x_r,condensables)
     T = exp(lnT)
     volx,voly = vol_cache[]
-    
+    if iszero(volx) && model isa PTFlashWrapper
+        vx = volume(model,p,T,x,phase = :l)
+        volx = oftype(volx,vx)
+    end    
     return T, volx, voly, x
 end
 

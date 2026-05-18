@@ -29,8 +29,8 @@ end
 """
     getpaths(location; relativetodatabase=false)
 Returns database paths that is optionally relative to Clapeyron.jl directory.
-If path is a file, then return an Array containing a single path to that file.
-If path is a directory, then return an Array containing paths to all csv files in that directory.
+If path is a file, then returns an Array containing a single path to that file.
+If path is a directory, then returns an Array containing paths to all csv files in that directory.
 # Examples
 ```julia-repl
 julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
@@ -40,7 +40,7 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
  "/home/user/.julia/packages/Clapeyron.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_unlike.csv"
 ```
 """
-function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vector{String}
+function getpaths(location::AbstractString; relativetodatabase::Bool=false)
     # We do not use realpath here directly because we want to make the .csv suffix optional.
     is_inline_csv(location) && return [location]
     if startswith(location,"@REPLACE")
@@ -236,7 +236,7 @@ _iszero(t::AbstractString) = isempty(t)
 
 """
     singletopair(params::Vector,outputmissing=zero(T))
-Generates a square matrix, filled with "zeros" (considering the "zero" of a string, a empty string).
+Generates a square matrix, filled with "zeros" (considering the "zero" of a string, an empty string).
 The generated matrix will have the values of `params` in the diagonal.
 If missing is passed, the matrix will be filled with `missing`.
 """
@@ -281,6 +281,12 @@ end
 low_color(symbol::Symbol) = low_color(":" * string(symbol))
 low_color(x) = low_color(string(x))
 
+function __pad_val(i,imax::Int)
+    s = repr(i,context = :compact => true)
+    ls = length(s)
+    return rpad(s,imax)
+end
+
 function userlocation_merge(loc1,loc2)
     if isempty(loc2)
         return loc1
@@ -308,6 +314,27 @@ end
 critical_data() = ["properties/critical.csv"]
 mw_data() = ["properties/molarmass.csv"]
 
+# CAS as identifier
+struct ByCas{T}
+    cas::T
+end
+
+"""
+    @cas_str
+
+This macro creates a `ByCas` object and can be used as string literal like `cas"..."`.
+It can be used for model construction. Example:
+```
+model = PCSAFT(cas"71-36-3")
+```
+"""
+macro cas_str(str)
+    ByCas(str)
+end
+
+format_components(x::ByCas) = by_cas(x.cas)
+format_component_i(x::ByCas) = first(by_cas(x.cas))
+
 function by_cas(caslist)
     cas = format_components(caslist)
     params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[],ignore_missing_singleparams = String["SMILES","inchikey","species"])
@@ -321,11 +348,11 @@ function by_cas(caslist)
     return species
 end
 
-function standarize_cas(cas)
+function standardize_cas(cas)
     if isdigit(last(cas))
         vx = split(cas,"-")
         if length(vx) != 3
-            @show vx
+            @warn "invalid CAS: $vx"
             return String(cas)
         end
         v1,v2,v3 = vx[1],vx[2],vx[3]
@@ -335,8 +362,7 @@ function standarize_cas(cas)
         return String(cas)
     end
 end
-standarize_cas(cas::Missing) = missing
-
+standardize_cas(cas::Missing) = missing
 
 function cas(components)
     components = format_components(components)
@@ -346,15 +372,9 @@ function cas(components)
     return cas_i
 end
 
-function SMILES(components)
-    components = format_components(components)
-    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
-    return params["SMILES"].values
-end
-
 function by_cas2(caslist)
     raw_cas = format_components(caslist)
-    cas = standarize_cas.(raw_cas)
+    cas = standardize_cas.(raw_cas)
     params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[], ignore_missing_singleparams = ["CAS","species","SMILES","inchikey","canonicalsmiles"])
     species = params["species"]
     d = Dict(k => v for (k,v) in zip(species.components,species.values))
@@ -366,6 +386,56 @@ function normalize_components_sym(components)
     _,sp = by_cas2(caslist)
     return sp
 end
+
+# SMILES as identifier
+struct BySmiles{T}
+    smiles::T
+end
+
+"""
+    @smiles_str
+
+This macro creates a `BySmiles` object and can be used as string literal like `smiles"..."`.
+It can be used for model construction. Example:
+```
+model = PCSAFT(smiles"CCCCO")
+```
+
+!!! info
+    No canonization is applied internally. Consequently, only SMILES contained in the `identifiers.csv` will be found.
+"""
+macro smiles_str(str)
+    BySmiles(str)
+end
+
+format_components(x::BySmiles) = format_components([x])
+format_component_i(x::BySmiles) = first(by_smiles(x.smiles))
+
+_split_species(sp) = occursin("~|~",sp) ? first(eachsplit(sp,"~|~")) : sp
+
+function by_smiles(smiles)
+    _smiles = format_components(smiles)
+    params = getparams(_smiles,["properties/identifiers.csv"],species_columnreference = "SMILES",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species","CAS","canonicalsmiles"])
+    species = Vector{String}(undef,length(_smiles))
+    for (i,s) in enumerate(_smiles)
+        if params["species"][s] isa String
+            species[i] = _split_species(params["species"][s])
+        else
+            params2 = getparams(_smiles,["properties/identifiers.csv"],species_columnreference = "canonicalsmiles",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species","CAS"])
+            species[i] = _split_species(params2["species"][s])
+        end
+    end
+    return species
+end
+
+function SMILES(components)
+    components = format_components(components)
+    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
+    return params["SMILES"].values
+end
+
+export @cas_str, @smiles_str
+
 #=
 utilities for feos parsing
 function to_groups(x)

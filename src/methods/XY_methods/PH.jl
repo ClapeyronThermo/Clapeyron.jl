@@ -15,7 +15,7 @@ function PH_property(model,p,h,z,f::F,phase,T0,threaded) where F
             return f(model,p,T,z;phase = calc_phase)
         elseif calc_phase == :eq
             supports_lever_rule(f) || thow(invalid_property_multiphase_error(f))
-            result = ph_flash(model,p,h,z,T0)
+            result = ph_flash(model,p,h,z,T)
             return f(model,result)
         else
             return f(model,p,T,z;phase = phase)

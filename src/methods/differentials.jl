@@ -7,7 +7,7 @@
 """
     ∂f∂T(model,V,T,z=SA[1.0])
 
-Returns `∂f/∂T` at constant total volume and composition, where `f` is the total Helmholtz energy, given by `eos(model,V,T,z)`.
+Returns `∂f/∂T` at constant total volume `V` and composition `z`, where `f` is the total Helmholtz energy, given by `eos(model,V,T,z)`.
 
 """
 function ∂f∂T(model,V,T,z::AbstractVector)
@@ -88,7 +88,7 @@ end
 """
     p∂p∂V(model,V,T,z=SA[1.0])
 
-Returns `p` and `∂p/∂V` at constant temperature, where `p` is the pressure = `pressure(model,V,T,z)` and `V` is the total volume.
+Returns `p` and `∂p/∂V` at constant temperature `T`, where `p` is the pressure = `pressure(model,V,T,z)` and `V` is the total volume.
 
 """
 function p∂p∂V(model,V,T,z::AbstractVector=SA[1.0])
@@ -129,7 +129,7 @@ end
     ∂2p(model,V,T,z)
 
 Returns zeroth order (value), first order and second order derivative information of the pressure.
-the result is given in three values:
+The result is given in three values:
 
 ```julia
 hess_p,grad_p,pval = ∂2p(model,V,T,z)
@@ -211,3 +211,19 @@ function _primalval(model::EoSModel,::Type{T}) where T <: ForwardDiff.Dual
 end
 
 _primalval(model::EoSModel,::T) where T = model
+
+# use IFTDuals: ift for implicit differentiation
+"""
+    __gradients_for_root_finders(x::AbstractVector{T},tups::Tuple,tups_primal::Tuple,f::Function) where T<:Real
+
+Computes the gradients of `x` with respect to the relevant parameters in `tups` under the condition that `x` is implicitly defined through the root finding problem `f(x,tups) = 0`. 
+The function uses the implicit function theorem to compute the gradients efficiently through the reconstruction of Duals. We use the IFTDuals.jl package for this purpose, which has some restrictions, currently mixed nested Duals (i.e. different tags) are not supported. 
+"""
+function __gradients_for_root_finders(x::Union{AbstractArray{T},T},tups,tups_primal,f::Function) where T<:Real # tups not restructed to Tuple
+    if any(isnan,x) # guard against NaN in input, do not need Dual types here?
+        return x 
+    end
+    return ift(x,f,tups,tups_primal) # use IFTDuals package, returns primal if tups has no duals
+end
+
+IFTDuals.promote_my_type(m::EoSModel) = eltype(m)

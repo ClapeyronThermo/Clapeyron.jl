@@ -24,6 +24,13 @@ function _group_sum!(out,groups,param::Number)
     return out
 end
 
+"""
+    group_sum!(out, groups, param)
+
+In-place version of [`group_sum`](@ref). Fills `out` with the component
+values computed from group data. `out` can be a parameter container or a
+plain vector/matrix.
+"""
 function group_sum!(out::Union{SingleParameter,PairParameter},groups,param::SingleParameter)
     _group_sum!(diagvalues(out.values),groups,param)
     v = __get_group_sum_values(groups)
@@ -135,10 +142,10 @@ function group_fractions(groups::MixedGCSegmentParam{T1},z::AbstractVector{T2}) 
     return x
 end
 
-function group_fractions(groups::GroupParam,z)
+function group_fractions(groups::GroupParam{TT},z) where TT
     ng = length(groups.flattenedgroups)
     n_flattenedgroups = groups.n_flattenedgroups
-    x = similar(z,ng)
+    x = similar(z,Base.promote_eltype(TT,z),ng)
     nc = length(z)
     fill!(x,zero(eltype(x)))
     @inbounds for i in 1:nc
@@ -159,8 +166,8 @@ Given a `GroupParam` and a parameter `P` it will return a single parameter `p` o
 pᵢ = ∑νᵢₖ(∑(νᵢₗ*P(i,j))) / ∑νᵢₖ(∑νᵢₗ)
 
 where `νᵢₖ` is the number of groups `k` at component `i` and `P(i,j)` depends on the type of `P`:
-- if `P` is a single paremeter, then `P(i,j) = f(P[i],P[j])`
-- if `P` is a pair paremeter, then `P(i,j) = p[i,j]`
+- if `P` is a single parameter, then `P(i,j) = f(P[i],P[j])`
+- if `P` is a pair parameter, then `P(i,j) = p[i,j]`
 
 """
 function group_pairmean end
@@ -178,6 +185,12 @@ function group_pairmean(f::F,groups,p::AbstractArray) where {F}
     return group_pairmean!(res,f,groups,p)
 end
 
+"""
+    group_pairmean!(res, f, groups, param)
+
+In-place version of [`group_pairmean`](@ref). Writes the component-level
+values into `res`, using the mixing function `f` when `param` is a vector.
+"""
 function group_pairmean!(res,f::F,groups,param::SingleOrPair) where {F}
     return group_pairmean!(res,f,groups,param.values)
 end
@@ -238,7 +251,7 @@ Modifies implace the field `n_groups_cache` (`μᵢₖ`) in the `GroupParam`:
 μᵢₖ = νᵢₖ*Sₖ*vstₖ
 ```
 Where `S` is a shape factor parameter for each group and `vst` is the segment size for each group.
-used mainly for GC models (like `SAFTgammaMie`) in which the group fraction depends on segment size and shape factors.
+Used mainly for GC models (like `SAFTgammaMie`) in which the group fraction depends on segment size and shape factors.
 """
 function mix_segment!(groups,ngroups,s = ones(length(groups.flattenedgroups)),segment = ones(length(groups.flattenedgroups)))
     v = __get_group_sum_values(groups)

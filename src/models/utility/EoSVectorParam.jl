@@ -56,13 +56,8 @@ function recombine_impl!(model::EoSVectorParam)
     return model
 end
 
-function PT_property(model::EoSVectorParam,p,T,z,phase,threaded,vol0,f::F,::Val{UseP}) where {F,UseP}
-    v = volume(model.model,p,T,z;phase,threaded,vol0)
-    if UseP
-        return f(model,v,T,z,p)
-    else
-        return f(model,v,T,z)
-    end
+function PT_property(model::EoSVectorParam,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
+    return PT_property(model.model,p,T,z,phase,threaded,vol0,f,vol)
 end
 
 function reference_state(model::EoSVectorParam)

@@ -4,7 +4,7 @@
 Given a vector of K values and a vector of compositions, calculates the vapor fraction `β`.
 The algorithm is a modification of _(1)_ , with safeguards for extreme cases.
 
-If the algorithm fails to converge, returns `NaN`. if it converges to a value `β ∉ [0,1]`, returns `-Inf` or `Inf`, depending on the case.
+If the algorithm fails to converge, returns `NaN`. If it converges to a value `β ∉ [0,1]`, returns `-Inf` or `Inf`, depending on the case.
 
 ## References
 1. Vassilis Gaganis, "Solution of the Rachford Rice equation using perturbation analysis", Fluid Phase Equilibria, Volume 536,2021,112981
@@ -529,7 +529,9 @@ function material_balance_rr_converged(w,z,β::AbstractVector,n = sum(z),ztol = 
             rk1 +=  Vi
             rk2 += abs(Vi)
         end
-        rk = max(rk,abs(rk1 - zi)/abs(rk2 + zi))
+        if !iszero(zi)
+            rk = max(rk,abs(rk1 - zi)/abs(rk2 + zi))
+        end
     end
     return rk <= ztol
 end

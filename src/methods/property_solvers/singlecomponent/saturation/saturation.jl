@@ -43,8 +43,9 @@ function saturation_pressure(model::EoSModel,T,method::SaturationMethod)
     satmodel = saturation_model(model)
     satmodel !== model && saturation_pressure(satmodel,T,method)
     if has_a_res(model)
-        res = saturation_pressure_impl(primalval(model),primalval(T),method)
-        saturation_pressure_ad(model,T,res)
+        λmodel,λT = primalval(model),primalval(T)
+        λresult = saturation_pressure_impl(λmodel,λT,method)
+        return saturation_pressure_ad(λresult,(model,T),(λmodel,λT))
     else
         return saturation_pressure_impl(model,T,method)
     end
@@ -81,25 +82,21 @@ function saturation_pressure(model::EoSModel,T,V0::Union{Tuple,Vector})
     return saturation_pressure(model,T,method)
 end
 
-function saturation_pressure_ad(model,T,result)
-    if has_dual(model) || has_dual(T)
-        p_primal,vl_primal,vv_primal = result
-
-        #=
-        update step from https://github.com/lucpaoli/SAFT_ML/blob/f22648055bdf4cd244cf427a596fc7b1c03e6383/saftvrmienn.jl#L138-L157
-        =#
-        Δg = eos(model, vv_primal, T) - eos(model,vl_primal, T) + p_primal*(vv_primal - vl_primal)
-        Δv = vv_primal - vl_primal
-        p = p_primal - Δg/Δv
-        #=
-        for volume, we use a volume update
-        =#
-        vl = volume_ad(model,vl_primal,T,SA[1.0],p)
-        vv = volume_ad(model,vv_primal,T,SA[1.0],p)
-        return p,vl,vv
-    else
-        return result
+function saturation_pressure_ad(result,tup,tup_primal)
+    if any(has_dual,tup) # do check here to avoid recomputation of pressure if no AD
+        ff(x,tups) = begin
+            model,T = tups
+            vl,vv = x
+            return μp_equality1_p(model,model,vl,vv,T,1.0,1.0)
+        end
+        λx = SVector(result[2],result[3])
+        ∂v = __gradients_for_root_finders(λx,tup,tup_primal,ff)
+        ∂vl,∂vv = ∂v
+        ∂model,∂T = tup
+        p = pressure(∂model,∂vl,∂T)
+        return p,∂vl,∂vv
     end
+    return result
 end
 
 function derivx(f,i)
@@ -154,10 +151,10 @@ function saturation_temperature(model,p,method::SaturationMethod)
     end
     single_component_check(crit_pure,model)
     p = p*p/p
-
     if has_a_res(model)
-        res = saturation_temperature_impl(primalval(model),primalval(p),method)
-        return saturation_temperature_ad(model,p,res)
+        λmodel,λp = primalval(model),primalval(p)
+        λresult = saturation_temperature_impl(λmodel,λp,method)
+        return saturation_temperature_ad(λresult,(model,p),(λmodel,λp))
     else
         return saturation_temperature_impl(model,p,method)
     end
@@ -174,28 +171,15 @@ function saturation_temperature(model::EoSModel, p, T0::Number)
     saturation_temperature(model,p,method)
 end
 
-function saturation_temperature_ad(model,p,result)
-    if has_dual(model) || has_dual(p)
-        T_primal,vl_primal,vv_primal = result
-        vl = volume_ad(model,vl_primal,T_primal,SA[1.0],p)
-
-        #manual volume_ad for vapour volume, we reuse p_primal for the calculation of the T step.
-        p_primal,∂p∂V = p∂p∂V(model,vv_primal,T_primal,SA[1.0])
-        vv = vv_primal - (p_primal - p)/∂p∂V
-
-        #for T, we use a dlnpdTinv step, a dpdT step is fine too
-        dpdT = dpdT_saturation(model,vv_primal,vl_primal,T_primal)
-        dTinvdlnp = -p_primal/(dpdT*T_primal*T_primal)
-        Δlnp = log(p/p_primal)
-        Tinv0 = 1/T_primal
-        Tinv = Tinv0 + dTinvdlnp*Δlnp
-        dT = T_primal - 1/Tinv
-        T = 1/Tinv
-        T = T_primal - (p_primal - p)/dpdT
-        return T,vl,vv
-    else
-        return result
+function saturation_temperature_ad(result,tup,tup_primal)    
+    f(x,tups) = begin
+        model,p = tups
+        T,vl,vv = x
+        return μp_equality1_T(model,model,vl,vv,p,T,1.0,1.0)
     end
+    λx = SVector(result)
+    ∂T,∂vl,∂vv = __gradients_for_root_finders(λx,tup,tup_primal,f)
+    return ∂T,∂vl,∂vv
 end
 
 include("ChemPotV.jl")

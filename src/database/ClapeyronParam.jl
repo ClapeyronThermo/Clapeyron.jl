@@ -1,7 +1,7 @@
 """
     ClapeyronParam
 Abstract type corresponding to a Clapeyron parameter.
-It requires to define `Base.eltype`, and specify how it is splitted (via defining the adecuate `each_split_model`  method or by defining `Clapeyron.is_splittable(param) = false` to mark as non-splittable)
+It requires to define `Base.eltype`, and specify how it is splitted (via defining the adecuate `each_split_model`  method or by defining `Clapeyron.is_splittable(param) = false` to mark as non-splittable).
 """
 abstract type ClapeyronParam end
 
@@ -11,8 +11,13 @@ Abstract type corresponding to a container of `ClapeyronParam`s.
 It supposes that all fields are `ClapeyronParam`s.
 """
 abstract type EoSParam end
-abstract type ParametricEoSParam{T} <: EoSParam end
 
+"""
+    ParametricEoSParam{T} <: EoSParam
+
+Abstract type for parameter containers parameterized by element type `T`.
+"""
+abstract type ParametricEoSParam{T} <: EoSParam end
 
 """
     OptionsParam <: ClapeyronParam
@@ -94,8 +99,6 @@ end
 
 Base.eltype(p::EoSParam) = Float64
 Base.eltype(p::ParametricEoSParam{T}) where T = T
-
-const PARSED_GROUP_VECTOR_TYPE = Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
 function pack_vectors(x::AbstractVector{<:AbstractVector})
     return PackedVectorsOfVectors.pack(x)
@@ -186,10 +189,10 @@ function diagvalues(x::Number)
     return x
 end
 
-function _get_sources(x::Vector)::Vector{String}
+function _get_sources(x::Vector)
     return collect(Set(r for y ∈ x for r ∈ y.sources))
 end
 
-function _get_sources(x)::Vector{String}
+function _get_sources(x)
     return copy(x.sources)
 end

@@ -42,5 +42,6 @@ function TillnerRothFriend(components = ["water","ammonia"],
 end
 
 const TillnerRothModel = MultiFluid{EmpiricAncillary, TillnerRothFriendMixing, TillnerRothFriendDeparture}
+@doc (@doc TillnerRothFriend) TillnerRothModel
 
 export TillnerRothFriend,TillnerRothModel

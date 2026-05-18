@@ -1,7 +1,7 @@
 """
-    SpecialComp(components::Vector{String},defaults=["water08"])
+    SpecialComp(components,defaults=["water08"])
 
-Auxiliary model that just stores the index of one component. faster than looking for the component string on each iteration. 
+Auxiliary model that just stores the index of one component. Faster than looking for the component string on each iteration. 
 
 Used mainly for applying specific correlations in presence of a certain compound.
 """
@@ -11,7 +11,7 @@ struct SpecialComp <: ClapeyronParam
     defaults::Vector{String}
 end
 
-function SpecialComp(components::Vector{String},defaults=["water08"])
+function SpecialComp(components,defaults=["water08"])
     idx = findfirst(in(defaults),components)
     idx === nothing && (idx = 0)
     return SpecialComp(components,idx,defaults)

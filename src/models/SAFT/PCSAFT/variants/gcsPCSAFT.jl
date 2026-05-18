@@ -15,13 +15,19 @@ end
 
 struct gcsPCSAFT{I,T} <: gcsPCSAFTModel
     components::Vector{String}
-    groups::GroupParam
+    groups::GroupParam{T}
     sites::SiteParam
     params::gcsPCSAFTParam{T}
     idealmodel::I
     pcsaftmodel::sPCSAFT{I,T}
     assoc_options::AssocOptions
     references::Array{String,1}
+end
+
+function gcsPCSAFT(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
+    T = eltype(params)
+    I = typeof(idealmodel)
+    return gcsPCSAFT{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
 end
 
 export gcsPCSAFT
@@ -186,16 +192,12 @@ end
 assoc_shape(model::gcsPCSAFTModel) = assoc_shape(model.pcsaftmodel)
 getsites(model::gcsPCSAFTModel) = getsites(model.pcsaftmodel)
 
-function lb_volume(model::gcsPCSAFTModel, z)
-    return lb_volume(model.pcsaftmodel, z)
+function lb_volume(model::gcsPCSAFTModel, T, z)
+    return lb_volume(model.pcsaftmodel, T, z)
 end
 
 function T_scale(model::gcsPCSAFTModel, z)
-    return T_scale(model.pcsaftmodel,z)
-end
-
-function T_scales(model::gcsPCSAFTModel)
-    return T_scales(model.pcsaftmodel)
+    return T_scale(model.pcsaftmodel, z)
 end
 
 function p_scale(model::gcsPCSAFTModel,z)

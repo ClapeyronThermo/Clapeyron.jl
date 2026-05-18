@@ -1,0 +1,5 @@
+out/
+results/
+results_tmp/
+*.ser
+*.csv

@@ -1,10 +1,15 @@
 #a GC averaged UNIFAC.
-struct UNIFACCache <: EoSModel
+struct UNIFACCache{T} <: EoSModel
     components::Vector{String}
-    r::Vector{Float64}
-    q::Vector{Float64}
-    q_p::Vector{Float64}
+    r::Vector{T}
+    q::Vector{T}
+    q_p::Vector{T}
 end
+
+Base.eltype(::Type{UNIFACCache{T}}) where T = T
+Base.eltype(::UNIFACCache{T}) where T = T
+
+UNIFACCache(components,r,q,q_p) = UNIFACCache{eltype(q_p)}(components,r,q,q_p)
 
 UNIFACCache(groups::GroupParam,params) = UNIFACCache(groups,params.Q,params.R)
 

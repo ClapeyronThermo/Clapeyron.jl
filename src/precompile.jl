@@ -26,12 +26,15 @@ end
         s3 = SAFTVRMie(single)
         s4 = SAFTgammaMie(single)
         s5 = RK(single)
+        s6 = SingleFluid(single)
         p1 = PCSAFT(pair)
         p2 = UNIFAC(pair)
         p3 = NRTL(pair)
         p4 = Wilson(pair)
+        p5 = MultiFluid(["carbon dioxide","water"])
         split_model(p1)
         split_model(p2)
+        #=
         for si in (s1,s2,s3,s4,s5)
             saturation_pressure(si,373.15)
             #crit_pure(si)
@@ -40,7 +43,7 @@ end
         end
         activity_coefficient(p2,100000,320,[0.5,0.5])
         activity_coefficient(p3,100000,320,[0.5,0.5])
-        activity_coefficient(p4,100000,320,[0.5,0.5])
+        activity_coefficient(p4,100000,320,[0.5,0.5])=#
         #bubble_pressure(p1,320.0,[0.5,0.5])
         #bubble_pressure(p2,320.0,[0.5,0.5])
         #bubble_pressure(p1,320.0,Clapeyron.FractionVector(0.5))

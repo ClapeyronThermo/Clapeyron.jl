@@ -15,24 +15,24 @@ end
 """
     ReferenceState(type::Symbol = :no_set;T0 = NaN;P0 = NaN,H0 = NaN,S0 = NaN,phase = :unknown,z0 = Float64[])
 
-Parameter used to define a reference state for enthalpy and entropy, normally stored in the ideal model. 
+Parameter used to define a reference state for enthalpy and entropy, normally stored in the ideal model.
 When set, it calculates a set of `a0` and `a1` values such as the entropy and enthalpy at a specified point are fixed.
 
-the `type` argument accepts the following standalone options:
-- `:no_set`: it returns the current defaults stablished by the equation of state. Leaves the `ReferenceState` struct uninitialized.
-- `:zero`: also returns the current defaults, but initializes the reference state struct, for later modification
-- `:ashrae`: h = s = 0 at -40 °C saturated liquid
-- `:iir`: h = 200.0 kJ·kg⁻¹, s=1.0 kJ·kg⁻¹·K⁻¹ at 0 °C saturated liquid
-- `:nbp`: h = s = 0 at 1 atm saturated liquid
-- `:stp`: h = s = 0 at 1 bar, 0 °C fluid of the most stable phase
-- `:stp_old`: h = s = 0 at 1 atm, 0 °C fluid of the most stable phase
-- `:ntp`: h = s = 0 at 1 atm, 20 °C fluid of the most stable phase
+The `type` argument accepts the following standalone options:
+- `:no_set`: it returns the current defaults established by the equation of state. Leaves the `ReferenceState` struct uninitialized.
+- `:zero`: also returns the current defaults, but initializes the reference state struct, for later modification.
+- `:ashrae`: h = s = 0 at -40 °C, saturated liquid.
+- `:iir`: h = 200.0 kJ·kg⁻¹, s=1.0 kJ·kg⁻¹·K⁻¹ at 0 °C, saturated liquid.
+- `:nbp`: h = s = 0 at 1 atm, saturated liquid.
+- `:stp`: h = s = 0 at 1 bar, 0 °C fluid of the most stable phase.
+- `:stp_old`: h = s = 0 at 1 atm, 0 °C fluid of the most stable phase.
+- `:ntp`: h = s = 0 at 1 atm, 20 °C fluid of the most stable phase.
 
-it also accepts the following options, that require additional specifications:
-- `:volume`: h = H0, s = S0, at T = T0, v = `volume(model,P0,T0,z0,phase = phase)`
-- `:ideal_gas`: h = H0, s = S0, at T = T0, v = `volume(Clapeyron.idealmodel(model),P0,T0,z0)`
-- `:saturation_pressure`: h = H0, s = S0, at T = T0, saturated phase (specified by the `phase` argument)
-- `:saturation_temperature`: h = H0, s = S0, at p = P0, saturated phase (specified by the `phase` argument)
+It also accepts the following options, that require additional specifications:
+- `:volume`: h = H0, s = S0, at T = T0, v = `volume(model,P0,T0,z0,phase = phase)`.
+- `:ideal_gas`: h = H0, s = S0, at T = T0, v = `volume(Clapeyron.idealmodel(model),P0,T0,z0)`.
+- `:saturation_pressure`: h = H0, s = S0, at T = T0, saturated phase (specified by the `phase` argument).
+- `:saturation_temperature`: h = H0, s = S0, at p = P0, saturated phase (specified by the `phase` argument).
 
 If `z0` is not specified, the reference state calculation will be done for each component separately.
 
@@ -68,7 +68,9 @@ julia> entropy(pure[1],101325.0,T)
 ReferenceState
 
 function ReferenceState(symbol = :no_set;T0 = NaN,P0 = NaN,H0 = NaN,S0 = NaN,phase = :unknown, z0 = Float64[])
-    
+    symbol = Symbol(symbol)
+    phase = Symbol(phase)
+
     if H0 isa Number
         if isnan(H0)
             _H0 = Float64[]
@@ -97,7 +99,7 @@ function ReferenceState(symbol = :no_set;T0 = NaN,P0 = NaN,H0 = NaN,S0 = NaN,pha
 end
 
 __init_reference_state_kw(::Nothing) = ReferenceState()
-__init_reference_state_kw(s::Symbol) = ReferenceState(s)
+__init_reference_state_kw(s) = ReferenceState(Symbol(s))
 __init_reference_state_kw(ref::ReferenceState) = deepcopy(ref)
 
 function Base.show(io::IO,::MIME"text/plain",ref::ReferenceState)
@@ -175,15 +177,15 @@ end
         if hasfield(params,:reference_state)
             if fieldtype(params,:reference_state) == ReferenceState
                 return quote model.params.reference_state end
-            end     
+            end
         end
     end
     return quote nothing end
 end
 
 function reference_state_eval(model::EoSModel,V,T,z)
-    _ref = reference_state(model)    
-    reference_state_eval(_ref,V,T,z)    
+    _ref = reference_state(model)
+    reference_state_eval(_ref,V,T,z)
 end
 
 reference_state_eval(ref::Nothing,V,T,z) = zero(1.0*T+first(z))
@@ -195,6 +197,39 @@ function reference_state_eval(ref::ReferenceState,V,T,z)
     ā0 = dot(ref.a0,z)
     ā1 = dot(ref.a1,z)
     return ā0 + ā1*T
+end
+
+#PT_property utilities
+function eos_g(ref::ReferenceState,p,T,z)
+    return reference_state_eval(ref,T,T,z)
+end
+#simple wrapper of a ReferenceState + molecular weight
+
+struct ReferenceStateWithMw{T}
+    ref::ReferenceState
+    mw::T
+end
+
+function eos_g(model::ReferenceStateWithMw,p,T,z)
+    return reference_state_eval(model.ref,T,T,z)
+end
+
+molecular_weight(model::ReferenceStateWithMw,z) = model.mw
+
+function Δref(model,model2,p,T,z,f)
+    ref_gas = reference_state(model2)
+    ref_wrap = reference_state(model)
+    _0 = zero(Base.promote_eltype(1.0,T,z))
+    mwz = molecular_weight(model,z)
+    prop_ref_gas = isnothing(ref_gas) ? _0 : PT_property_gibbs(ReferenceStateWithMw(ref_gas,mwz),p,T,z,f)
+    prop_ref_wrap = isnothing(ref_wrap) ? _0 : PT_property_gibbs(ReferenceStateWithMw(ref_wrap,mwz),p,T,z,f)
+    Δreference = prop_ref_wrap - prop_ref_gas
+    #for example, speed_of_sound returns a NaN value here
+    #for those cases, just return zero
+    if !isfinite(Δreference)
+        return zero(Δreference)
+    end
+    return Δreference
 end
 
 """
@@ -223,7 +258,7 @@ function has_reference_state_type(::Type{model}) where model
         if hasfield(params,:reference_state)
             if fieldtype(params,:reference_state) == ReferenceState
                 return true
-            end     
+            end
         elseif hasfield(model,:idealmodel)
             return has_reference_state_type(fieldtype(model,:idealmodel))
         end
@@ -233,6 +268,16 @@ function has_reference_state_type(::Type{model}) where model
     return false
 end
 
+"""
+    set_reference_state!(model::EoSModel; verbose=false)
+    set_reference_state!(model, new_ref; verbose=false)
+
+Initialize and apply a reference state for `model`.
+
+When a `ReferenceState` is provided, it is initialized (if needed) and then
+applied to the model. For mixtures, this may trigger per-component reference
+state initialization via `split_pure_model`.
+"""
 function set_reference_state!(model::EoSModel;verbose = false)
     ref = reference_state(model)
     return set_reference_state!(model,ref;verbose = false)
@@ -255,7 +300,7 @@ function set_reference_state!(model,new_ref;verbose = false)
             existing_ref.std_type == :no_set && return nothing
         end
     end
-    
+
     ref = __init_reference_state_kw(new_ref)
     return set_reference_state!(model,ref;verbose = false)
 end
@@ -277,17 +322,32 @@ end
 
 function set_reference_state!(model::EoSModel,new_ref::ReferenceState;verbose = false)
     #handle cases where we don't need to do anything
-    ref = reference_state(model)
-    
+
+
     new_ref === nothing && return nothing
     new_ref.std_type == :no_set && return nothing
     if verbose
         @info "Calculating reference states for $model..."
         @info "Reference state type: $(info_color(new_ref.std_type))"
     end
+
+    ref0 = reference_state(model)
+
+    if ref0 === nothing
+        idmodel = idealmodel(model)
+        if reference_state(idmodel) == nothing
+            throw(error("A custom ideal model was passed as an argument, but the ideal model $idmodel does not support setting reference states.
+       Try using another ideal model, like `ReidIdeal`.
+       If you are developing a model, try defining `Clapeyron.reference_state(model::MyModel)`"))
+        end
+    else
+        ref = ref0
+    end
+
     if ref !== new_ref
         copyto!(ref,new_ref)
     end
+
     #allocate the appropiate caches.
     initialize_reference_state!(model,ref)
     if all(iszero,ref.z0) && length(model) != 1 #pure case, multiple components
@@ -308,7 +368,7 @@ function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
     ref === nothing && return nothing
     type = ref.std_type
     type == :no_set && return nothing
-    
+
     T0,P0,H0,S0 = ref.T0,ref.P0,ref.H0,ref.S0
     a0,a1 = ref.a0,ref.a1
     R = Rgas(model)
@@ -321,7 +381,7 @@ function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
         else
             return _set_reference_state!(idmodel,z0,ref)
         end
-        
+
     elseif type == :ashrae
         #ASHRAE: h = 0, s = 0 @ -40C saturated liquid
         single_component_check(set_reference_state!,model)
@@ -356,8 +416,6 @@ function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
     a0 .= _a0
     a1 .= _a1
 end
-
-
 
 function initialize_reference_state!(model::EoSModel,ref = reference_state(model))
     return initialize_reference_state!(component_list(model),ref)
@@ -432,7 +490,7 @@ function calculate_reference_state_consts(model,type,T0,P0,H0,S0,z0,phase)
         p = P0
     elseif type == :ideal_gas
         id_model = idealmodel(model)
-        if id_model == model                                              
+        if id_model == model
             v = volume(id_model,P0,T0,z0,phase = phase)
             T = T0
             p = P0

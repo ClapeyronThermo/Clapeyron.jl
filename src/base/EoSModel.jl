@@ -9,8 +9,8 @@ and must implement their core interface methods.
 
 By default, `EoSModel` subtypes are considered to be helmholtz-based EoS, and as such, they must implement their core interface methods:
 
-- [`a_res`](@ref): An implementation of the reduced residual Helmholtz energy
-- [`lb_volume`](@ref): Lower bound volume for the equation of state
+- [`a_res`](@ref): An implementation of the reduced residual Helmholtz energy.
+- [`lb_volume`](@ref): Lower bound volume for the equation of state.
 - [`T_scale`](@ref): A temperature scaling factor.
 
 Other `EoSModel` subtypes may have other interfaces (like activity models or volume-based models).
@@ -33,7 +33,7 @@ end
 
 Returns the gas constant used by an `EoSModel`.
 
-By default, uses the current 2019 definition: `R̄` = 8.31446261815324 [J⋅K⁻¹⋅mol⁻¹]. you can call `Rgas()` to obtain this value.
+By default, uses the current 2019 definition: `R̄` = 8.31446261815324 [J⋅K⁻¹⋅mol⁻¹]. You can call `Rgas()` to obtain this value.
 
 """
 Rgas(model) = R̄
@@ -139,8 +139,13 @@ Base.summary(model::EoSModel) = string(parameterless_type(model))
 
 Function that returns a list with the components used in the input `EoSModel`.
 """
-component_list(model) = model.components
-
+function component_list(model::M) where M
+    if hasfield(M,:components)
+        return model.components
+    else
+        return String[]
+    end
+end
 """
     @comps
 
@@ -154,6 +159,15 @@ macro comps()
     end |> esc
 end
 
+"""
+    has_sites(model::EoSModel)
+    has_sites(::Type{<:EoSModel})
+
+Returns `true` when a model type carries site parameters.
+
+This checks whether the model type has a `sites` field with `SiteParam`
+storage and is used to enable site-based logic (e.g. association models).
+"""
 has_sites(::T) where T <: EoSModel = has_sites(T)
 has_sites(::Type{T}) where T <: EoSModel = _has_sites(T)
 
@@ -165,13 +179,22 @@ Base.@assume_effects :foldable function _has_sites(::Type{T}) where T <: EoSMode
     return false
 end
 
+"""
+    has_groups(model::EoSModel)
+    has_groups(::Type{<:EoSModel})
+
+Returns `true` when a model type carries group parameters.
+
+This checks whether the model type has a `groups` field with `GroupParam`
+storage and is used to enable group-contribution logic.
+"""
 has_groups(::T) where T <: EoSModel = has_groups(T)
 has_groups(::Type{T}) where T <: EoSModel = _has_groups(T)
 
 Base.@assume_effects :foldable function _has_groups(::Type{T}) where T <: EoSModel
     s1 = hasfield(T,:groups)
     if s1
-       return fieldtype(T,:groups) == GroupParam
+       return fieldtype(T,:groups) <: GroupParameter
     end
     return false
 end
@@ -192,10 +215,13 @@ has_dual(p::ForwardDiff.Dual) = true
 has_dual(p::AbstractArray{T}) where T= has_dual(T)
 has_dual(model::EoSModel) = has_dual(eltype(model))
 has_dual(x) = false
-
+function has_dual(x::NTuple{N,<:Any}) where N
+    #any_has_dual = ntuple(i -> has_dual(x[i]),Val{N}())
+    return any(has_dual,x)
+end
 """
     doi(model)
-Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. if there isn't a `references` field, it defaults to `default_references(model)`
+Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. If there isn't a `references` field, it defaults to `default_references(model)`.
 ```julia-repl
 julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.doi(umr)
 1-element Vector{String}:
@@ -222,7 +248,7 @@ default_references(M) = String[]
 """
     cite(model,out = :doi)
 
-Returns a Vector of strings containing all bibliographic references of the model, in the format indicated by the `out` argument. this includes any nested models.
+Returns a Vector of strings containing all bibliographic references of the model, in the format indicated by the `out` argument. This includes any nested models.
 
 ```julia-repl
 julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #should cite UMRPR, UNIFAC, WalkerIdeal
@@ -232,9 +258,9 @@ julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #shou
  "10.1021/i260064a004"
  "10.1021/acs.jced.0c00723"
 ```
-the `out` argument supports two values:
-- `:doi`: returns the stored values on each EoS. by default those are DOI identifiers.
-- `:bib`: returns BibTeX entries. to use this, an internet connection is required.
+The `out` argument supports two values:
+- `:doi`: returns the stored values on each EoS. By default those are DOI identifiers.
+- `:bib`: returns BibTeX entries. To use this, an internet connection is required.
 
 ```julia-repl
 julia> model = SAFTVRQMie(["helium"])
@@ -248,7 +274,7 @@ julia> Clapeyron.cite(model,:bib)
  "@article{Aasen_2020,\n\tdoi = {10" ⋯ 452 bytes ⋯ "Journal of Chemical Physics}\n}"
 ```
 
-This list will displayed by each `EoSModel` on future versions. you can enable/disable this by setting `ENV["CLAPEYRON_SHOW_REFERENCES"] = "TRUE"/"FALSE"`
+This list will displayed by each `EoSModel` on future versions. You can enable/disable this by setting `ENV["CLAPEYRON_SHOW_REFERENCES"] = "TRUE"/"FALSE"`.
 """
 function cite(model::EoSModel,out = :doi)
     keys = fieldnames(typeof(model))
@@ -286,5 +312,6 @@ end
 
 #generic function to support pseudo-pures
 is_pseudo_pure(model) = false
+is_electrolyte(model) = false
 
 export EoSModel, eos, has_groups, has_sites, Rgas

@@ -16,7 +16,7 @@ MCFlashJL(;
     kwargs....
 )
 
-Uses `MultiComponentFlash.jl` two-phase flash solver. allows passing storage to minimize allocations. That storage can be created by calling
+Uses `MultiComponentFlash.jl` two-phase flash solver. Allows passing storage to minimize allocations. That storage can be created by calling
 `MultiComponentFlash.flash_storage(model,p,T,z,method::MCFlashJL)`
 
 !!! note

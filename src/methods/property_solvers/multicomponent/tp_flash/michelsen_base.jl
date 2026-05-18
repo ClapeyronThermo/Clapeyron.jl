@@ -119,8 +119,10 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     update_nxy!(nx,ny,ny_var,z,non_inx,non_iny) #updates nx, ny with ny_var vector
     nxsum = sum(nx)
     nysum = sum(ny)
-    x = nx ./ nxsum
-    y = ny ./ nysum
+    x = nx
+    y = ny
+    nx .= nx ./ nxsum
+    ny .= ny ./ nysum
     f = zero(eltype(ny_var))
     f -= gz
     !isnothing(g) && (g .= 0)
@@ -128,23 +130,23 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         lnϕx, ∂lnϕ∂nx, volx = modified_∂lnϕ∂n(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
         ∂x,∂2x = lnϕx,∂lnϕ∂nx
         ∂2x .-= 1
-        ∂2x ./= sum(nx)
+        ∂2x ./= nxsum
         for i in 1:size(∂2x,1)
-            ∂2x[i,i] += 1/nx[i]
+            ∂2x[i,i] += 1/(nxsum*x[i])
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
 
         H .= @view ∂2x[in_equilibria, in_equilibria]
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
-        f += dot(∂x,nx)
+        f += nxsum*dot(∂x,x)
 
         lnϕy, ∂lnϕ∂ny, voly = modified_∂lnϕ∂n(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
         ∂y,∂2y = lnϕy,∂lnϕ∂ny
         ∂2y .-= 1
-        ∂2y ./= sum(ny)
+        ∂2y ./= nysum
         for i in 1:size(∂2y,1)
-            ∂2y[i,i] += 1/ny[i]
+            ∂2y[i,i] += 1/(nysum*y[i])
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
         end
@@ -153,7 +155,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         !isnothing(g) && (g .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g .*= -1)
 
-        f += dot(∂y,ny)
+        f += nysum*dot(∂y,y)
     else
         ∂x,volx = modified_lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
         for i in 1:size(∂x,1)
@@ -161,7 +163,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
             non_inx[i] && (∂x[i] = 0)
         end
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
-        f += dot(∂x,nx)
+        f += nxsum*dot(∂x,x)
         ∂y,voly = modified_lnϕ(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
         for i in 1:size(∂y,1)
             ∂y[i] += log(y[i])
@@ -169,7 +171,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         end
         !isnothing(g) && (g .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g .*= -1)
-        f += dot(∂y,ny)
+        f += nysum*dot(∂y,y)
     end
     vcache[] = (volx,voly)
     return f
@@ -303,11 +305,11 @@ end
 
 function tp_flash_K0(model,p,T,z)
     K = zeros(Base.promote_eltype(model,p,T,z),length(model))
-    tp_flash_K0!(K,model,p,T,z)
+    tp_flash_K0!(K,model,p,T,z,nothing)
     return K
 end
 
-function tp_flash_K0!(K,model,p,T,z)
+function tp_flash_K0!(K,model,p,T,z,cache)
     K_calculated = tp_flash_fast_K0!(K,model,p,T,z)
 
     if K_calculated
@@ -318,7 +320,7 @@ function tp_flash_K0!(K,model,p,T,z)
     end
 
     if !K_calculated
-        K .= suggest_K(model,p,T,z)
+        suggest_K!(K,model,p,T,z,cache)
     end
 end
 
@@ -337,7 +339,6 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     else
         phasex,phasey = :unknown,:unknown
     end
-    phases = (phasex,phasey)
     non_inw = (non_inx,non_iny)
     nc = length(model)
     _1,_0 = one(TT),zero(TT)
@@ -345,41 +346,49 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     x .= z
     y .= z
     K,lnK = similar(z,TT),similar(z,TT)
-    verbose = hasfield(typeof(method),:verbose) ? getfield(method,:verbose)::Bool : false
+    verbose = get_verbosity(method)
     if !isnothing(method.K0)
         K .= _1 * method.K0
         lnK .= log.(K)
         volx = zero(_1)
         voly = zero(_1)
         verbose && @info "K0 already provided"
-    elseif !isnothing(method.x0) && !isnothing(method.y0)
+    elseif hasfield(typeof(method),:x0) && hasfield(typeof(method),:y0) && !isnothing(method.x0) && !isnothing(method.y0)
         x .= method.x0 ./ sum(method.x0)
         y .= method.y0 ./ sum(method.y0)
         lnK .= log.(x ./ y)
         volx = zero(_1)
-        voly = zero(_1) 
+        voly = zero(_1)
         if method.v0 == nothing
-            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(nothing,nothing),phases,non_inw)
+            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(nothing,nothing),(phasex,phasey),non_inw)
         else
             vl0,vv0 = method.v0
-            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(vl0,vv0),phases,non_inw)
+            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(vl0,vv0),(phasex,phasey),non_inw)
         end
         K .= exp.(lnK)
         verbose && @info "x0,y0 provided, calculating K0 via Clapeyron.update_K!"
     elseif is_vle(method) || is_unknown(method)
         # VLE correlation for K
         verbose && @info "K0 calculated via pure VLE correlation"
-        tp_flash_K0!(K,model,p,T,z)
-
+        tp_flash_K0!(K,model,p,T,z,nothing)
+        phasex = :liquid
+        phasey = :vapour
+        phases = (:liquid,:vapour)
         #if we can't predict K, we use lle
         if is_unknown(method)
             Kmin,Kmax = K_extrema(K,non_inx,non_iny)
             if Kmin > 1 || Kmax < 1
                 verbose && @info "VLE correlation failed, trying LLE initial point."
-                K .= K0_lle_init(model,p,T,z)
+                K_lle = K0_lle_init(model,p,T,z;reduced = true)
+                if any(!isone,K_lle) #only use LLE result if actually exists
+                    K .= K_lle
+                    phasex = :liquid
+                    phasey = :liquid
+                    phases = (:liquid,:liquid)
+                end
                 lnK .= log.(K)
-                phasey = :liquid
-                phases = (:liquid,:liquid)
+            else
+                phasex,phasey = :liquid,:vapour
             end
         end
         lnK .= log.(K)
@@ -387,10 +396,12 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         voly = zero(_1)
     else
         verbose && @info "K0 calculated via LLE initial point (tpd)"
-        K .= K0_lle_init(model,p,T,z)
+        K .= K0_lle_init(model,p,T,z;reduced = true)
         lnK .= log.(K)
         phasey = :liquid
         phases = (:liquid,:liquid)
+        volx = zero(_1)
+        voly = zero(_1)
     end
 
     verbose && @info "K0 = $K"
@@ -403,21 +414,29 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     if the initial K values generate a single phase result, but we can split the K into two compositions (Kmin < 1 or Kmax > 1)
     then we start at the bubble (or dew conditions)
     =#
-    
+
     if status == RRLiquid
         β = _0
-        if maximum(K) >= 1 #liquid phase, but there is posibility to generate a vapour composition
-            verbose && @info "suppossing β = 0 (bubble initialization)"
-            status = RREq
-            β += eps(eltype(β))
+        if maximum(K) < 1
+            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
+            K .= y ./ x
+            verbose && @info "maximum(K) < 1: forcing consistency"
+            verbose && @info "forced K: $K"
         end
+        verbose && @info "suppossing β = 0 (bubble initialization)"
+        status = RREq
+        β += eps(eltype(β))
     elseif status == RRVapour
         β = _1
-        if minimum(K) <= 1 #vapour phase, but there is posibility to generate a liquid composition
-            verbose && @info "suppossing β = 1 (dew initialization)"
-            status = RREq
-            β -= eps(eltype(β))
+        if minimum(K) > 1
+            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
+            K .= y ./ x
+            verbose && @info "minimum(K) > 1: forcing consistency"
+            verbose && @info "forced K: $K"
         end
+        verbose && @info "suppossing β = 1 (dew initialization)"
+        status = RREq
+        β -= eps(eltype(β))
     elseif status == RREq
         β = rachfordrice(K, z; non_inx, non_iny, verbose)
     else
@@ -433,14 +452,18 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     x ./= sum(x)
     βv = ∑n*β
     βl = ∑n - βv
-    if !isnothing(method.v0) && iszero(volx) && iszero(voly)
+    if hasfield(typeof(method),:v0) && !isnothing(method.v0) && iszero(volx) && iszero(voly)
         vl0,vv0 = method.v0
         volx,voly = _1*vl0,_1*vv0
     end
+    
     iszero(volx) && (volx = volume(model,p,T,x,phase = phasex))
     iszero(voly) && (voly = volume(model,p,T,y,phase = phasey))
-    has_a_res(model) && is_liquid(VT_identify_phase(model,voly,T,y)) && (voly = Rgas(model)*T/p)
-    r = FlashResult(p,T,SA[x,y],SA[βl,βv],SA[volx,voly],sort = false)
+    lle = is_liquid(phasex) && is_liquid(phasey)
+    vapour_idx = lle ? -1 : 2
+    data = FlashData(p,T,zero(T),vapour_idx)
+    #has_a_res(model) && is_liquid(VT_identify_phase(model,voly,T,y)) && (voly = Rgas(model)*T/p)
+    r = FlashResult(SA[x,y],SA[βl,βv],SA[volx,voly],data)
     return r
 end
 

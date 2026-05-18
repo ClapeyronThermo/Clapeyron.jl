@@ -17,16 +17,20 @@ end
 
 function temperature end
 
-VT_pressure(model, V, T, z=SA[1.]) = -∂f∂V(model,V,T,z)
+VT_pressure(model, V, T) = VT_pressure(model, V, T, SA[1.0])
+VT_pressure(model, V, T, z) = -∂f∂V(model,V,T,z)
 VT_temperature(model, V, T, z=SA[1.]) = T
 VT_volume(model, V, T, z=SA[1.]) = V
+
+#helper function to see if a VT method uses pressure as input.
+VT_use_p(f) = false
 
 function pressure_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
     return -Solvers.derivative(fun,V)
 end
-
-VT_pressure_res(model, V, T, z=SA[1.]) = pressure_res(model,V,T,z)
+VT_pressure_res(model, V, T) = VT_pressure_res(model, V, T, SA[1.])
+VT_pressure_res(model, V, T, z) = pressure_res(model,V,T,z)
 
 function VT_entropy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return -∂f∂T(model,V,T,z)
@@ -113,7 +117,11 @@ function VT_gibbs_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p
     end
 end
 
+VT_use_p(::typeof(VT_gibbs_free_energy)) = true
+
 VT_mass_gibbs_free_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0],p = nothing) = VT_gibbs_free_energy(model,V,T,z,p)/molecular_weight(model,z)
+
+VT_use_p(::typeof(VT_mass_gibbs_free_energy)) = true
 
 function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,x,T,z)
@@ -245,6 +253,7 @@ function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.],p = nothing)
         return p*V/(sum(z)*R̄*T)
     end
 end
+VT_use_p(::typeof(VT_compressibility_factor)) = true
 
 """
     second_virial_coefficient(model::EoSModel, T, z=SA[1.])
@@ -265,7 +274,7 @@ end
 function second_virial_coefficient_impl(model::EoSModel, T, z = SA[1.0])
     TT = one(Base.promote_eltype(model,T,z))
     ϵ = 1/eps(TT)
-    V = sqrt(ϵ)
+    V = sqrt(sum(z)*ϵ)
     return pressure_res(model,V,T,z)*ϵ/(Rgas(model)*T)
 end
 
@@ -600,4 +609,6 @@ module VT0
             end
         end
     end
+    chemical_potential(model,V,T,z=Clapeyron.SA[1.0]) = Clapeyron.VT_chemical_potential(model,V,T,z)
+    chemical_potential_res(model,V,T,z = Clapeyron.SA[1.0]) = Clapeyron.VT_chemical_potential_res(model,V,T,z)
 end

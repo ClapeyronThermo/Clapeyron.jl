@@ -1,9 +1,11 @@
 #this is used for some dispatches
 abstract type ActivityMixingRule <: MixingRule end
+
+Base.eltype(model::ActivityMixingRule) = eltype(model.activity)
 """
     mixing_rule(model::CubicModel,V,T,z,mixing_model::MixingRule,α,a,b,c)
 
-Interface function used by cubic models. with matrices `a` and `b`, vectors `α` and `c`, a `model::CubicModel` and `mixing_model::MixingRule`, returns
+Interface function used by cubic models. With matrices `a` and `b`, vectors `α` and `c`, a `model::CubicModel` and `mixing_model::MixingRule`, returns
 the scalars `ā`,`b̄` and `c̄`, corresponding to the values mixed by the amount of components and the specifics of the mixing rule.
 
 ## Example
@@ -27,6 +29,10 @@ function init_model(model::Type{<:MixingRule},components,activity,userlocations,
     if verbose
         @info "Building an instance of $(info_color(string(model))) with components $components"
     end
+    
+    userlocations = normalize_userlocations(userlocations)
+    activity_userlocations = normalize_userlocations(activity_userlocations)
+
     return model(components;activity,userlocations,activity_userlocations,verbose)
 end
 
@@ -59,8 +65,6 @@ function recombine_impl!(model::ActivityMixingRule)
     return model
 end
 
-
-
 include("vdW1f.jl")
 include("Kay.jl")
 include("HV.jl")
@@ -69,9 +73,4 @@ include("MHV2.jl")
 include("LCVM.jl")
 include("WS.jl")
 include("modWS.jl")
-include("PSRK.jl")
-include("VTPR.jl")
-include("UMR.jl")
-include("QCPR.jl")
-include("PPR78.jl")
 include("gEr.jl")

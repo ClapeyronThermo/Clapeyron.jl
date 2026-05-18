@@ -30,6 +30,7 @@ In this case, those potentials are dependent of the pressure, whereas activity m
 
 ```@docs
 Clapeyron.FloryHuggins
+Clapeyron.FH
 Clapeyron.Margules
 Clapeyron.VanLaar
 Clapeyron.Wilson

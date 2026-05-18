@@ -62,13 +62,13 @@ function create_departure(x,F = 1.0;verbose = false)
     X = typeof(x)
     if X <: AbstractString
         if first(x) in ('{','[') #inline JSON
-            data = JSON3.read(x)
+            data = JSON.parse(x; dicttype=Dict{Symbol,Any})
             return create_departure(data,F;verbose = verbose)
         else #location
             paths = flattenfilepaths(String[],x)
             length(paths) != 1 && throw(error("multiple files detected for $x"))
             json_string = read(only(path), String)
-            data = JSON3.read(json_string)
+            data = JSON.parse(json_string; dicttype=Dict{Symbol,Any})
             return create_departure(data,F;verbose = verbose)
         end 
     else
@@ -92,8 +92,8 @@ EmpiricDeparture <: MultiFluidDepartureModel
 
 ## Input parameters
 none
-- `F`: Pair Parameter (`Float64`) - Binary Interaction Parameter (no units)
-- `parameters`: Pair Parameter (`String`) - JSON data containing the departure terms for the binary pair
+- `F`: Pair Parameter (`Float64`) - Binary Interaction Parameter (no units).
+- `parameters`: Pair Parameter (`String`) - JSON data containing the departure terms for the binary pair.
 
 ## Description
 
@@ -172,7 +172,7 @@ end
 """
     departure_functions(model::MultiFluid)
 
-if the model is using a `EmpiricDeparture` departure model, return the matrix of departure functions. you can set a departure in the following way:
+If the model is using a `EmpiricDeparture` departure model, return the matrix of departure functions. You can set a departure in the following way:
 
 ```
 using CoolProp #load CoolProp models

@@ -1,4 +1,6 @@
-function lb_volume(model::SAFTModel, z = SA[1.0])
+lb_volume(model::SAFTModel, T, z) = lb_volume_saft(model, T, z)
+
+function lb_volume_saft(model, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
     m_idx = linearidx(m)
@@ -153,10 +155,6 @@ function T_scale(model::SAFTModel,z)
     return prod(ϵ[i,i]^z[i] for i in 1:length(z))^(1/sum(z))
 end
 
-function T_scales(model::SAFTModel)
-    ϵ =diagvalues(model.params.epsilon)
-end
-
 function p_scale(model::SAFTModel,z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
@@ -170,6 +168,7 @@ function p_scale(model::SAFTModel,z)
     return Rgas(model)*T/V
 end
 
+#=
 function antoine_coef(model::SAFTModel)
     m = model.params.segment.values[1]
     A = 2.3461144513376593+0.27679968565666935*m
@@ -177,6 +176,7 @@ function antoine_coef(model::SAFTModel)
     C = 0.018524160155803788 - 0.19222021003570597*log(m)
     return A,B,C
 end
+=#
 
 #recombine! utilities
 function recombine_saft!(model::SAFTModel,k = nothing,l = nothing)
