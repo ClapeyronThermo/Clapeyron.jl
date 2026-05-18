@@ -850,8 +850,10 @@ function px_flash_x0(model,p,x,z,spec::F,method) where F
     end
 
     verbose && @info "p = $p, T = $T, equilibrium status = :$_phase"
+    if is_lle(method) && is_liquid(_phase) #Tproperty converged to a liquid phase, but we can split it via tpd
+        _phase = :eq
+    end
 
-    TT = Base.promote_eltype(model,p,x,z,T)
     if _phase != :eq
         verbose && @info "using pure phase initial point"
         return FlashResult(model,p,T,z,phase = _phase)

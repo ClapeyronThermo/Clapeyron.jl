@@ -5,6 +5,7 @@ format = Documenter.HTML(
     # Use clean URLs, unless built as a "local" build
     canonical = "https://ClapeyronThermo.github.io/Clapeyron.jl/",
     assets = ["assets/logo.ico"],
+    size_threshold = 300_000,
 ),
 warnonly = Documenter.except(),
     authors = "Pierre J. Walker, Hon Wa Yew and Andrés Riedemann.",

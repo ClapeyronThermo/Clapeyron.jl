@@ -491,3 +491,21 @@ function _edge_temperature(model::ActivityModel,p,z,v0 = nothing)
     wrapper = PTFlashWrapper(model,p,NaN,z,:vle)
     return _edge_temperature(wrapper,p,z,v0)
 end
+
+for xy in [:ph,:ps,:ts,:vt]
+    xyz = Symbol(xy,:_flash)
+    @eval begin 
+        function init_preferred_method(method::typeof($xyz),model::ActivityModel,kwargs)
+            return RRXYFlash(;kwargs...)
+        end
+    end
+end
+
+for xy in [:qt,:qp]
+    xyz = Symbol(xy,:_flash)
+    @eval begin 
+        function init_preferred_method(method::typeof($xyz),model::ActivityModel,kwargs)
+            return RRQXFlash(;kwargs...)
+        end
+    end
+end

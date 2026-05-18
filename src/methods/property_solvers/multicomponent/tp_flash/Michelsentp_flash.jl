@@ -315,7 +315,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     gibbs = one(_1)
     gibbs_dem = one(_1)
     vcache = Ref((_1, _1))
-    verbose && @info "iter  status     β                error_lnK        K"
+    verbose && @info "_____________________________________________________________________________________
+      iter  status     β                error_lnK        K"
     while !exit_early && (error_lnK > K_tol || abs(β_old-β) > 1e-9) && it < itss && status in (RREq,RRLiquid,RRVapour)
         it += 1
         itacc += 1
@@ -406,9 +407,12 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
         K .= y ./ x
         β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
     end
+verbose &&
+@info "_____________________________________________________________________________________
+      Final K values:        $K
+      Final vapour fraction: $β
 
-    verbose && @info "final K values: $K"
-    verbose && @info "final vapour fraction: $β"
+"
 
     #convergence checks (TODO, seems to fail with activity models)
     status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)

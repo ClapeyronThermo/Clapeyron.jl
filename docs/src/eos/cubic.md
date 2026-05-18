@@ -84,7 +84,7 @@ Clapeyron.QCPR
 
 ```@docs
 Clapeyron.PatelTeja
-Clapeyron.PatelTejaHayen
+Clapeyron.PatelTejaHeyen
 Clapeyron.PTV
 Clapeyron.YFR
 ```
@@ -119,7 +119,7 @@ Clapeyron.KU
 | **`RKPRAlpha`** | — | `RKPR` | Yes (estimated)² | Yes (estimated)² | Yes (estimated)², specific correlation for `RKPR`|
 | **`KUAlpha`** | Soave-ish (with extrapolation when T > Tc) | `KU` | No³ | No³ | No³ |
 | **`YFRAlpha`** | — | `YFR` | No³ | No³ | specific correlation for `YFR` |
-| **`PTHAlpha`** | — | `PatelTejaHayen` (only) | No³ | No³ | specific correlation for `PatelTejaHayen` |
+| **`PTHAlpha`** | — | `PatelTejaHeyen` (only) | No³ | No³ | specific correlation for `PatelTejaHeyen` |
 | **`MathiasCopemanAlpha`** | Mathias-Copeman | None | Only with custom params | Only with custom params | Only with custom params |
 | **`MC3PRAlpha`** | Mathias-Copeman | Provides estimation for PR | Yes (estimated) | Only with custom params | Only with custom params |
 | **`CPAAlpha`** / `sCPAAlpha` | Soave | CPA, sCPA | Only with custom params | Only with custom params | Only with custom params |
@@ -130,7 +130,7 @@ Clapeyron.KU
 
 2. **`LeiboviciAlpha`** is a unified Soave-type model that generates the `m(ω)` parameter based on the specific cubic EoS constants `Δ₁` and `Δ₂`. Consequently, it can be used with **any** cubic equation of state without requiring EoS-specific parameter correlations. Because of its generality, this model is used to provide estimation schemes for some alpha functions.
 
-3. **Model-Specific Alphas**: `KUAlpha`, `YFRAlpha`, and `PTHAlpha` are tightly coupled to their respective EoS (`KU`, `YFR`, `PatelTejaHayen`) with unique functional forms and/or parameter correlations. They are not designed or documented for use with PR, RK, or other cubic families.
+3. **Model-Specific Alphas**: `KUAlpha`, `YFRAlpha`, and `PTHAlpha` are tightly coupled to their respective EoS (`KU`, `YFR`, `PatelTejaHeyen`) with unique functional forms and/or parameter correlations. They are not designed or documented for use with PR, RK, or other cubic families.
 
 ```@docs
 Clapeyron.α_function
