@@ -1,3 +1,15 @@
+function __x0_VLLE_pressure(model,T)
+    z = [0.5,0.5]
+    p_edge,_,_ = edge_pressure(model,T)
+    K = tp_flash_K0(model,p,T,z)
+    y = rr_flash_vapor(K,z,zero((eltype(K))))
+    x = rr_flash_liquid(K,z,one(eltype(K)))
+    K_lle = K0_lle_init(model,p,T,x)
+    x1 = rr_flash_vapor(K,x,zero((eltype(K))))
+    x2 = rr_flash_liquid(K,x,one(eltype(K)))
+    return FlashResult()
+end
+
 ## VLLE Solver
 function Obj_VLLE_pressure(model::EoSModel, F, T, η_l, η_ll, η_v, _x, _xx, _y)
     x   = FractionVector(_x)

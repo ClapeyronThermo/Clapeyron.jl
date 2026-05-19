@@ -23,7 +23,6 @@ function index_reduction(method::BubblePointMethod,idx_r)
     return method
 end
 
-
 function extended_saturation_pressure(pure,T,_crit = nothing; crit_retry = true)
     sat,crit,status = _extended_saturation_pressure(pure,T,_crit;crit_retry)
     if status == :supercritical
@@ -690,7 +689,6 @@ verbose && !converged && @info "bubble_temperature: convergence checks failed."
 end
 
 include("bubble_point/bubble_activity.jl")
-include("bubble_point/bubble_chempot.jl")
 include("bubble_point/bubble_fugacity.jl")
 
 

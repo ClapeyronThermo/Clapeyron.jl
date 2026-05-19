@@ -272,7 +272,8 @@ function near_candidate_fractions(n,k = 0.5*minimum(n))
     return x
 end
 
-function bubbledew_pressure_ad(result,tup,λtup,_bubble)
+function bubbledew_pressure_ad(result,tup,λtup,_bubble,lle = false)
+    vl0,vv0 = result[2],result[3]
     f(x,tups) = begin
         model,T,z = tups
         vl = x[1]
@@ -283,56 +284,71 @@ function bubbledew_pressure_ad(result,tup,λtup,_bubble)
         else
             _x,_y = w,z
         end
-        lnfl,pl = lnf(model,vl,T,_x)
-        lnfv,pv = lnf(model,vv,T,_y)
+
+        phasey = lle ? :liquid : :vapour
+
+        lnϕl,_ = modified_lnϕ(model,p,T,_x,phase = :liquid,vol0 = primalval(vl0))
+        lnϕv,_ = modified_lnϕ(model,p,T,_y,phase = phasey, vol0 = primalval(vv0))
         
-        F1 = pl - pv
-        F2 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
-        F3 = lnfl - lnfv + log.(_x) - log.(_y)
-        res = vcat(F1,F2,F3) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
+        F1 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
+        F2 = lnfl - lnfv + log.(_x) - log.(_y)
+        res = vcat(F1,F2) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
         return res
     end
-    λx = vcat(result[2],result[3],result[4])
-    ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
-    ∂vl,∂vv = ∂x[1],∂x[2]
+    λp = result[1]
+    λy = result[4]
+    λmodel,λT,λz = λtup
     ∂model,∂T,∂z = tup
-    ∂p = _bubble ? pressure(∂model,∂vl,∂T,∂z) : pressure(∂model,∂vv,∂T,∂z)
-    ∂w = ∂x[3:end]
+    λx = vcat(λp,λy)
+    ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
+    ∂p = ∂x[1]
+    ∂w = ∂x[2:end]
+    ∂vl = volume_ad(result[2],(∂model,∂p,∂T,∂z),(λmodel,λp,λT,λz))
+    ∂vv = volume_ad(result[3],(∂model,∂p,∂T,∂w),(λmodel,λp,λT,λy))
     return ∂p,∂vl,∂vv,∂w
 end
 
 bubble_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,true)
 dew_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,false)
+lle_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,true,true)
 
-function bubbledew_temperature_ad(result,tup,λtup,_bubble)
+function bubbledew_temperature_ad(result,tup,λtup,_bubble,lle)
+    vl0,vv0 = result[2],result[3]
     f(x,tups) = begin
         model,p,z = tups
         T = x[1]
-        vl = x[2]
-        vv = x[3]
-        w = @view x[4:end]
+        w = @view x[2:end]
         if _bubble
             _x,_y = z,w
         else
             _x,_y = w,z
         end
-        lnfl,pl = lnf(model,vl,T,_x)
-        lnfv,pv = lnf(model,vv,T,_y)
-        F1 = pl - p
-        F2 = pv - p
-        F3 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
-        F4 = lnfl - lnfv + log.(_x) - log.(_y)
-        vcat(F1,F2,F3,F4) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
+
+        phasey = lle ? :liquid : :vapour
+
+        lnϕl,_ = modified_lnϕ(model,p,T,_x,phase = :liquid,vol0 = primalval(vl0))
+        lnϕv,_ = modified_lnϕ(model,p,T,_y,phase = phasey, vol0 = primalval(vv0))
+        F1 = sum(w) - 1.0 # can exclude this restriction, but would then need additional logic to parse w (excluding one component)
+        F2 = lnϕl - lnϕv + log.(_x) - log.(_y)
+        vcat(F1,F2) # can probably be efficient with preallocation and @view but requires the common Dual type between tups and x, otherwise __gradients_for_root_finders will have the incorrect Dual type
     end
-    λx = vcat(result[1],result[2],result[3],result[4])
+
+    λT = result[1]
+    λy = result[4]
+    λmodel,λp,λz = λtup
+    ∂model,∂p,∂z = tup
+    λx = vcat(λT,λy)
     ∂x = __gradients_for_root_finders(λx,tup,λtup,f)
-    ∂T,∂vl,∂vv = ∂x[1:3]
-    ∂w = ∂x[4:end]
+    ∂T = ∂x[1]
+    ∂w = ∂x[2:end]
+    ∂vl = volume_ad(vl0,(∂model,∂p,∂T,∂z),(λmodel,λp,λT,λz))
+    ∂vv = volume_ad(vv0,(∂model,∂p,∂T,∂w),(λmodel,λp,λT,λy))
     return ∂T,∂vl,∂vv,∂w
 end
 
 bubble_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad(result,tup,λtup,true)
 dew_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad(result,tup,λtup,false)
+lle_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad(result,tup,λtup,true,true)
 
 function zero_non_equilibria!(w,in_equilibria)
     for i in eachindex(w)
@@ -340,7 +356,6 @@ function zero_non_equilibria!(w,in_equilibria)
     end
     return w
 end
-
 
 function comps_in_equilibria(components,::Nothing)::Vector{Bool}
     return fill(true,length(components))
