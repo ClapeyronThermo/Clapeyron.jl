@@ -1,3 +1,5 @@
+export NasaIdeal
+
 struct NasaIdealParam <: EoSParam
     coeffs::SingleParam{NTuple{19,Float64}}
     reference_state::ReferenceState
@@ -26,22 +28,22 @@ abstract type NasaIdealModel <: IdealModel end
 All `a*`/`b*` are **dimensionless** (NASA form). Cp is expressed as:
 
 ```
-Cp/R = a1*T^-2 + a2*T^-1 + a3 + a4*T + a5*T^2 + a6*T^3 + a7*T^4
+Cp/R = a₁*T⁻² + a₂*T⁻¹ + a₃ + a₄*T + a₅*T² + a₆*T³ + a₇*T⁴
 ```
 
 and the integrated forms are:
 
 ```
-H/(R*T) = -a1/T^2 + a2*log(T)/T + a3 + a4*T/2 + a5*T^2/3 + a6*T^3/4 + a7*T^4/5 + b1/T
-S/R     = -a1/(2*T^2) - a2/T + a3*log(T) + a4*T + a5*T^2/2 + a6*T^3/3 + a7*T^4/4 + b2
+H/(R*T) = -a₁/T² + a₂*log(T)/T + a₃ + a₄*T/2 + a₅*T²/3 + a₆*T³/4 + a₇*T⁴/5 + b₁/T
+S/R     = -a₁/(2*T²) - a₂/T + a₃*log(T) + a₄*T + a₅*T²/2 + a₆*T³/3 + a₇*T⁴/4 + b2
 ```
 
 These are applied piecewise using the low/high sets with the split at `Tmid` for each component.
+
+## References
+1. McBride B.J., Zehe M.J., and Gordon S. (2002) NASA Glenn Coefficients for Calculating Thermodynamic Properties of Individual Species. NASA report TP-2002-211556
 """
 NasaIdeal
-
-export NasaIdeal
-
 
 default_locations(::Type{NasaIdeal}) = ["ideal/NasaIdeal.csv","properties/molarmass.csv"]
 default_ignore_missing_singleparams(::Type{NasaIdeal}) = ["Mw"]
@@ -88,7 +90,7 @@ end
     return T <= Tmid ? low : high
 end
 
-# Cp(T) in J/mol/K
+# Cp(T) in J·mol⁻¹·K⁻¹
 function evalcoeff(::NasaIdealModel, c::NTuple{19,Float64}, T, lnT = log(T))
     a1,a2,a3,a4,a5,a6,a7, b1,b2 = _pick(c,T)
     Tinv = inv(T)
@@ -96,7 +98,7 @@ function evalcoeff(::NasaIdealModel, c::NTuple{19,Float64}, T, lnT = log(T))
     return R̄*(a1*Tinv2 + a2*Tinv + a3 + a4*T + a5*T*T + a6*T^3 + a7*T^4)
 end
 
-# H = ∫ Cp dT  (J/mol)   [indefinite up to a constant; differences cancel constants]
+# H = ∫ Cp dT in J·mol⁻¹
 function eval∫coeff(::NasaIdealModel, c::NTuple{19,Float64}, T, lnT = log(T))
     a1,a2,a3,a4,a5,a6,a7, b1,b2 = _pick(c,T)
     T2 = T*T
@@ -106,7 +108,7 @@ function eval∫coeff(::NasaIdealModel, c::NTuple{19,Float64}, T, lnT = log(T))
     return R̄*(-a1/T + a2*lnT + a3*T + a4*T2/2 + a5*T3/3 + a6*T4/4 + a7*T5/5 + b1)
 end
 
-# S = ∫ Cp/T dT  (J/mol/K)
+# S = ∫ Cp/T dT in J·mol⁻¹·K⁻¹
 function eval∫coeffT(::NasaIdealModel, c::NTuple{19,Float64}, T, lnT = log(T))
     a1,a2,a3,a4,a5,a6,a7, b1,b2 = _pick(c,T)
     Tinv = inv(T)
