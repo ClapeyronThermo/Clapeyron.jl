@@ -55,6 +55,12 @@ model = VanLaar(["water","ethanol"],
                         Mw = [18.015, 46.069])
                         )
 ```
+
+!!! note "Binary mixtures only !"
+
+    The current formulation of this model is only applicable for binary mixtures.
+
+
 ## References
 [1] J. J. van Laar, Sechs Vorträgen über das thermodynamische Potential. (Six Lectures on the Thermodynamic Potential). Braunschweig, Fried. Vieweg & Sohn, 1906.
 [2] J. J. van Laar, “Über Dampfspannungen von binären Gemischen (The vapor pressure of binary mixtures)”, Z. Physik. Chem., vol. 72, pp. 723-751, May 1910.

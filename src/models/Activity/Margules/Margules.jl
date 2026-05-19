@@ -55,6 +55,11 @@ model = Margules(["water","ethanol"],
                         Mw = [18.015, 46.069])
                         )
 ```
+
+!!! note "Binary mixtures only !"
+
+    The current formulation of this model is only applicable for binary mixtures.
+
 ## References
 1. Max Margules, « Über die Zusammensetzung der gesättigten Dämpfe von Misschungen », Sitzungsberichte der Kaiserliche Akadamie der Wissenschaften Wien Mathematisch-Naturwissenschaftliche Klasse II, vol. 104, 1895, p. 1243–1278
 """
