@@ -17,13 +17,13 @@ end
 
 ## Parameters
 
-- `Gform`: Single Parameter (`Float64`) - Formation Gibbs energy in water at infinite dilution 1 bar and the reference temperature`[J·mol⁻¹]`
-- `Hform`: Single Parameter (`Float64`) -Formation enthalpy in water at infinite dilution 1 bar and the reference temperature`[J·mol⁻¹]`
+- `Gform`: Single Parameter (`Float64`) - Formation Gibbs energy in water at infinite dilution 1 bar and the reference temperature `[J·mol⁻¹]`
+- `Hform`: Single Parameter (`Float64`) -Formation enthalpy in water at infinite dilution 1 bar and the reference temperature `[J·mol⁻¹]`
 - `Tref`: Single Parameter (`Float64`) - Reference temperature `[K]`
 
 ## Description
 
-Approximation of the excess chemical potential in the solid phase, using enthalpies and gibbs energies of formation where the liquid reference is at infinite dilution in water:
+Approximation of the excess chemical potential in the solid phase, using enthalpies and Gibbs energies of formation where the liquid reference is at infinite dilution in water:
 ```
 ln(xᵢγᵢ) = -Gformᵢ*T/Trefᵢ - Hformᵢ*(1 - T/Trefᵢ)
 ```

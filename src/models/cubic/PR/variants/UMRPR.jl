@@ -21,7 +21,9 @@ None
 
 - `activity`: Activity Model
 ## Description
+
 Mixing Rule used by the Universal Mixing Rule Peng-Robinson [`UMRPR`](@ref) equation of state.
+
 ```
 aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
 bᵢⱼ = (1 - lᵢⱼ)((√bᵢ +√bⱼ)/2)^2

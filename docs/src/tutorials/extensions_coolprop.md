@@ -1,6 +1,6 @@
 # Extensions – CoolProp
 
-`Clapeyron.jl` supports using all the single fluid helmholtz models available in [CoolProp](https://github.com/CoolProp/CoolProp), by loading the corresponding JSON data into a [`SingleFluid`](@ref) or [`MultiFluid`](@ref) model.
+`Clapeyron.jl` supports using all the single fluid Helmholtz models available in [CoolProp](https://github.com/CoolProp/CoolProp), by loading the corresponding JSON data into a [`SingleFluid`](@ref) or [`MultiFluid`](@ref) model.
 
 ```julia
 # let's try to load the R134a fluid model available in CoolProp

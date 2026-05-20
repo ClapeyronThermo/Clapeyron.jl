@@ -64,7 +64,7 @@ eos(model::EoSModel, V, T, z::Number) = eos(model, V, T, SA[z])
 """
     idealmodel(model::EoSModel)
 
-Retrieves the ideal model from the input's model. If the model is already an idealmodel, return `nothing`
+Retrieves the ideal model from the input's model. If the model is already an idealmodel, returns `nothing`.
 # Examples:
 ```julia-repl
 julia> pr = PR(["water"],idealmodel = MonomerIdeal)

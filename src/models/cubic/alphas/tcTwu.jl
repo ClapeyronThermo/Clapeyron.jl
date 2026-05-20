@@ -7,7 +7,7 @@ end
 
 @newmodelsimple tcTwuAlpha TwuAlphaModel tcTwuAlphaParam
 default_references(::Type{tcTwuAlpha}) = ["10.1016/0378-3812(80)80003-3","10.1016/j.fluid.2016.09.003","10.1021/acs.jced.8b00640","10.1002/aic.17518","10.1021/acs.iecr.1c03003"]
-default_ignore_missing_singleparams(::Type{tcTwuAlpha}) = ["N","N","L","acentricfactor","Tc","Pc","Vc","ZRA"]
+default_ignore_missing_singleparams(::Type{tcTwuAlpha}) = ["M","N","L","acentricfactor","Tc","Pc","Vc","ZRA"]
 
 """
     tcTwuAlpha::TwuAlpha

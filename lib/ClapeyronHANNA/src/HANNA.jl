@@ -67,8 +67,8 @@ model = HANNA(components,userlocations=(;Mw=Mw, canonicalsmiles=smiles))
 ```
 
 ## References
-1. Specht, T., Nagda, M., Fellenz, S., Mandt, S., Hasse, H., Jirasek, F., HANNA: Hard-Constraint Neural Network for Consistent Activity Coefficient Prediction. Chemical Science 2024. [10.1039/D4SC05115G](https://doi.org/10.1039/D4SC05115G).
-
+1. Specht, T., Nagda, M., Fellenz, S., Mandt, S., Hasse, H., Jirasek, F., HANNA: Hard-Constraint Neural Network for Consistent Activity Coefficient Prediction. Chemical Science 2024. [doi:10.1039/D4SC05115G](https://doi.org/10.1039/D4SC05115G).
+2. Hoffman, M., Specht, T., Göttl, Q., Burger, J., Mandt, S., Hasse, H., Jirasek, F., Thermodynamically consistent machine learning model for excess Gibbs energy. Nature Communications 2026. [doi:10.1038/s41467-026-71430-y](https://doi.org/10.1038/s41467-026-71430-y).
 """
 HANNA
 

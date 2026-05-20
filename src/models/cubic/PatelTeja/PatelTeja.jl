@@ -16,11 +16,11 @@ export PatelTejaAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for [`PatelTeja`](@ref) EoS.
+Patel Teja cubic alpha `(α(T))` model. Default for [`PatelTeja`](@ref) EoS.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
-mᵢ = 0.452413 + 1.30982ωᵢ - 0.295937ωᵢ^2
+mᵢ = 0.452413 + 1.30982*ωᵢ - 0.295937*ωᵢ²
 ```
 
 ## Model Construction Examples
@@ -150,7 +150,7 @@ Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
 if `Vc_fit` is not known, `Zc` can be estimated, using the acentric factor:
 
 ```
-Zc = 0.329032 - 0.076799ω + 0.0211947ω²
+Zc = 0.329032 - 0.076799*ω + 0.0211947*ω²
 ```
 
 ## Model Construction Examples

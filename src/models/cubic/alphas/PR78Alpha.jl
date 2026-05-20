@@ -13,18 +13,19 @@ export PR78Alpha
     verbose::Bool=false)
 
 ## Input Parameters
+
 - `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
 
 Cubic alpha `(α(T))` model. Default for [`PR78`](@ref) and [`EPPR78`](@ref) EoS.
 ```
-αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
+αᵢ = (1+mᵢ(1-√(Trᵢ)))²
 Trᵢ = T/Tcᵢ
 if ωᵢ ≤ 0.491
-    mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
+    mᵢ = 0.37464 + 1.54226*ωᵢ - 0.26992*ωᵢ²
 else
-    mᵢ = 0.379642 + 1.487503ωᵢ - 0.164423ωᵢ^2 - 0.016666ωᵢ^3
+    mᵢ = 0.379642 + 1.487503*ωᵢ - 0.164423*ωᵢ² - 0.016666*ωᵢ³
 ```
 
 ## Model Construction Examples

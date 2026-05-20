@@ -123,7 +123,7 @@ Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
 if `Vc_fit` is not known, `Zc` can be estimated, using the acentric factor:
 
 ```
-Zc = 0.3277 - 0.0537ω - 0.0147ω²
+Zc = 0.3277 - 0.0537*ω - 0.0147*ω²
 ```
 
 ## Model Construction Examples

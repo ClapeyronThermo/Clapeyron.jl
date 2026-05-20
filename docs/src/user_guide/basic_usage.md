@@ -122,7 +122,7 @@ In terms of equations of state available, we have the following default models:
 One can find out more about each of these equations of state within our background documentation.
 Nevertheless, all of these equations are compatible with all methods available in our package.
 
-There a few optional arguments available for these equations which will be explained below.
+There are a few optional arguments available for these equations which will be explained below.
 One of these is specifying the location of the parameter databases, the details of which can be found in our Custom databases documentation.
 
 ## Specifying an ideal term
@@ -176,8 +176,8 @@ We support the following alpha functions:
 - [`Twu88Alpha`](@ref): An earlier version of `TwuAlpha`, that uses 2 parameters instead of 3.
 - [`MTAlpha`](@ref): Proposed by Magoulas and Tassios, this alpha function is essentially like the regular PR alpha function only to a higher order.
   It is used within UMRPR.
-- [`Soave2019Alpha`](@ref): Updated soave correlations for `PR` and (s)`RK` models.
-- [`LeiboviciAlpha`](@ref): generalized soave model for any cubic model. Almost equivalent to `SoaveAlpha` for `PR` and `RK` models, but it can also be used by Patel-Teja, RKPR and Patel-Teja-Valderrama cubics.
+- [`Soave2019Alpha`](@ref): Updated Soave correlations for `PR` and (s)`RK` models.
+- [`LeiboviciAlpha`](@ref): generalized Soave model for any cubic model. Almost equivalent to `SoaveAlpha` for `PR` and `RK` models, but it can also be used by Patel-Teja, RKPR and Patel-Teja-Valderrama cubics.
 
 ## Specifying a mixing rule
 

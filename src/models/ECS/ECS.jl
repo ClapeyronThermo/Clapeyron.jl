@@ -20,7 +20,7 @@ end
 
 ## Description
 
-A Extended Corresponding states method.
+An Extended Corresponding states method.
 
 The idea is to use a "shape model" that provides a corresponding states parameters
 and a "reference model" that implements a Helmholtz energy function, so that:

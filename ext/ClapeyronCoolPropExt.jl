@@ -15,7 +15,7 @@ using Clapeyron: molecular_weight
 
 """
     coolprop_crit_data(components)
-returns a named tuple with critical and molecular weight data extracted from CoolProp.
+Returns a named tuple with critical and molecular weight data extracted from CoolProp.
 """
 function Clapeyron.coolprop_crit_data(components)
     comps = Clapeyron.format_components(components)

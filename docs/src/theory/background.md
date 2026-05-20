@@ -61,7 +61,7 @@ The statistical–mechanical derivation of the ideal free energy becomes a littl
 
 Here $N_{\mathrm{rot},i}$, $\theta_{\mathrm{rot},i}$ and $N_{\mathrm{vib},i}$ are the number of rotations, the number of vibrations and the rotational temperature of a species $i$, respectively; $g_{i,\mathrm{v}}$ and $\theta_{\mathrm{vib},i,\mathrm{v}}$ represent the degeneracy and vibrational temperature of a vibrational mode $\mathrm{v}$ of species $i$.
 The `WalkerIdeal` model provides the necessary parameters to use such an equation.
-However, the morecommonly used approach is through the use of correlations of the ideal isobaric heat capacity, $C_{p,i}^0$, such as the `ReidIdeal`, `WilhoitIdeal` and `AlyLeeIdeal` models.
+However, the more commonly used approach is through the use of correlations of the ideal isobaric heat capacity, $C_{p,i}^0$, such as the `ReidIdeal`, `WilhoitIdeal` and `AlyLeeIdeal` models.
 From the ideal isobaric heat capacity, it is possible to determine the ideal Helmholtz energy using the following equation:
 
 ``\frac{A_{\mathrm{ideal}}}{Nk_\mathrm{B}T} = \sum_{i=1}^{N_{\mathrm{Component}}} x_i\left[\ln{\frac{\rho_i}{\rho_0}}
@@ -71,7 +71,7 @@ Note that the reference states, $\rho_0$, $H_{0,i}$ and $S_{0,i}$, can typically
 
 ### Cubic equations of state
 
-This is the mostpopular class of equations of state.
+This is the most popular class of equations of state.
 The progenitor of these is the Van der Waals (`vdW`) equation of state, published in 1873, which can be written as:
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2a}{V^2}``
@@ -106,7 +106,7 @@ In addition to the inclusion of an $\alpha$ function, Peng and Robinson further 
 
 The SRK and PR equations of state are comparable in performance, although the latter generally provides liquid densities with a greater degree of accuracy, while the former usually provides better fugacities.
 However, when it comes to modelling complex species such as polymers (macromolecules), or associating species, both equations struggle to perform well.
-This is unsurprising, since the underlying molecular model remains, in essence, a "van der Waalsian sphere" – in other words,a hard spherical core surrounded by a region of attraction.
+This is unsurprising, since the underlying molecular model remains, in essence, a "van der Waalsian sphere" – in other words, a hard spherical core surrounded by a region of attraction.
 A more sophisticated molecular model is required to account well for the increased molecular complexities of these species.
 
 Before moving on from cubic equations of state we note that, within `Clapeyron`, the cubic plus association (`CPA`) equation of state is supported.
@@ -126,7 +126,7 @@ Although there are many variants, one of the more popular mixing rules is the Va
 
 ``\bar{b}=\sum_i\sum_jx_ix_jb_{ij}``
 
-When $i=j$, $a$ and $b$ are just the normal Van der Waals parameters for the pure.
+When $i=j$, $a$ and $b$ are just the normal Van der Waals parameters for the pure fluid.
 However, when $i\neq j$, these parameter characterise the unlike interactions between $i$ and $j$.
 We typically need to use *combining rules* (not to be confused with *mixing rules*) to determine the unlike parameters.
 Examples of these include:
@@ -225,7 +225,7 @@ We will next go through each of the variants of the SAFT equation available in `
 #### Original SAFT
 
 Derived by Chapman et al. (1990), this is the first variant of the SAFT equation of state.
-This equation can be seen as a `proof of concept' as not many parameters are available (none for mixtures).
+This equation can be seen as a 'proof of concept' as not many parameters are available (none for mixtures).
 Nevertheless, a noteworthy feature of this equation is the use of a semi-empirical equation to obtain the hard-sphere diameter that depends on the number of segments of a species (in no other SAFT variant is this done).
 The hard-sphere pair distribution is used in the chain term; this has a much simpler analytical form than what is chosen for use in some other SAFT equations.
 The association strength, $\Delta$ is evaluated in a unique way as well:
@@ -291,7 +291,7 @@ Finally, many variants of the PC‑SAFT equation have been developed.
 These include:
 
 * Polar PC‑SAFT (PPC‑SAFT)
-* PC‑Polar SAFT (PCP‑SAFT); yes, these are distinct equations
+* PC‑Polar SAFT (PCP‑SAFT); yes, these are distinct equations.
 * Electrolyte PC‑SAFT (ePC‑SAFT)
 * Electrolyte PPC‑SAFT (ePPC‑SAFT)
 * Polyelectrolyte ePC‑SAFT (epPC‑SAFT)
@@ -370,7 +370,7 @@ This equation has also been extended to electrolytes through SAFT‑$\gamma$E Mi
 ### The problem
 
 The aim of this document is to outline all of the various tools used to obtain the relevant properties from a SAFT-type equation of state.
-In short, SAFT equations of state provide the Helmholtz energy of a system at a given composition $\mathbf{z}$, volume $V$ and temperature $T$:
+In short, SAFT equations of state provide the Helmholtz energy $A$ of a system at a given composition $\mathbf{z}$, volume $V$ and temperature $T$:
 
 ``A=A(\mathbf{z},V,T)``
 

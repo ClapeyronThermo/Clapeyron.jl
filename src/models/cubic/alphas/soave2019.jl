@@ -15,17 +15,17 @@ export Soave2019Alpha
 ## Description
 Cubic alpha `(α(T))` model. Updated m(ω) correlations for `PR` and `SRK` with better results for heavy molecules.
 ```
-αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
+αᵢ = (1+mᵢ(1-√(Trᵢ)))²
 Trᵢ = T/Tcᵢ
-mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
+mᵢ = 0.37464 + 1.54226*ωᵢ - 0.26992*ωᵢ²
 ```
 where, for Peng-robinson:
 ```
-mᵢ = 0.3919 + 1.4996ωᵢ - 0.2721ωᵢ^2 + 0.1063ωᵢ^3
+mᵢ = 0.3919 + 1.4996*ωᵢ - 0.2721*ωᵢ² + 0.1063*ωᵢ³
 ```
 and, for Redlich-Kwong:
 ```
-mᵢ = 0.4810 + 1.5963ωᵢ - 0.2963ωᵢ^2 + 0.1223ωᵢ^3
+mᵢ = 0.4810 + 1.5963*ωᵢ - 0.2963*ωᵢ² + 0.1223*ωᵢ³
 ```
 
 ## Model Construction Examples

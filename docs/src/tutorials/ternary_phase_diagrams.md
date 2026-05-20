@@ -34,6 +34,6 @@ julia> (x,n,G) = tp_flash(model,p,T,z0,MichelsenTPFlash(equilibrium=:lle))
 ([0.9941813349915325 0.005818664997300019 1.1167552809179326e-11; 0.009492840315784318 0.9905071594960436 1.8817198921812175e-10], [0.49523586949546133 0.0028984768852708584 5.5629416193349775e-12; 0.004764130510680909 0.49710152310858685 9.443705837956089e-11], -6.933551486428005)
 ```
 
-The difficulty with tracing the LLE region here is that we would ideally like to follow the Plait
+The difficulty with tracing the LLE region here is that we would ideally like to follow the Plait points.
 
 ## Vapour–Liquid–Liquid Equilibrium

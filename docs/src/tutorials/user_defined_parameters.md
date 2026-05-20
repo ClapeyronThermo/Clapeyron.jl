@@ -83,7 +83,7 @@ file = ParamTable(:single,data,name="water_mw")
 model = PR(["water"],user_locations = [file])
 ```
 
-1. Using raw CSVs: you can literally write the CSV out as a string within the REPL and just substitute this in:
+2. Using raw CSVs: you can literally write the CSV out as a string within the REPL and just substitute this in:
 
 ```julia
 csv_data = """Clapeyron Database File,
@@ -118,7 +118,7 @@ PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule} with 2 components:
 Contains parameters: a, b, Tc, Pc, Mw
 ```
 
-Single-component parametes are specified as vectors and pair parameters are specified as matrices.
+Single-component parameters are specified as vectors and pair parameters are specified as matrices.
 Note that you do still need to specify the submodel parameters separately (in the case of the alpha function above).
 
 As an additional example, let us now consider a similar case in a SAFT-type equation of state:

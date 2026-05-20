@@ -38,7 +38,7 @@ end
 - A *Mixing Rule Model* creates `aᵢⱼ` and `bᵢⱼ` from the critical temperature, critical pressure and a matrix of pair coefficients.
 - An *Alpha Model* creates a vector of `αᵢ(T)` values.
 - A *Translation Model* creates a vector of `cᵢ` values.
-- The same Mixing rule, given `aᵢⱼ`, `bᵢⱼ`, `αᵢ(T)` and `cᵢ` returns the the mixture values of `ā`, `b̄` and `c̄` that are then used by the corresponding cubic model.
+- The same Mixing rule, given `aᵢⱼ`, `bᵢⱼ`, `αᵢ(T)` and `cᵢ` returns the mixture values of `ā`, `b̄` and `c̄` that are then used by the corresponding cubic model.
   A Mixing Rule can contain activity models to participate in the mixing (for example, Huron–Vidal rules).
 
 ## Common Definitions
@@ -48,7 +48,7 @@ Clapeyron.ab_premixing
 Clapeyron.mixing_rule
 ```
 
-## van der Walls Models
+## van der Waals Models
 
 ```@docs
 Clapeyron.vdW
