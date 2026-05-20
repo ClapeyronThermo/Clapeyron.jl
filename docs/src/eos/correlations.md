@@ -31,7 +31,7 @@ function Clapeyron.saturation_pressure_impl(model::MySaturationModel <: Saturati
 end
 ```
 
-## Saturation Models and Types
+## Saturation models and types
 
 ```@docs
 Clapeyron.SaturationModel
@@ -41,11 +41,20 @@ Clapeyron.DIPPR101Sat
 Clapeyron.AntoineEqSat
 ```
 
+### ML-based saturation models
+
+!!! note
+    The following methods are provided by the companion package `MLThermoProperties`.
+
+```@docs ;canonical = false
+MLThermoProperties.GRAPPA
+```
+
 # Liquid Volume Correlations
 
-Liquid Volume Correlations are any `EoSModel` that are subtypes of `LiquidVolumeModel`.
+Liquid volume correlations are any `EoSModel` that are subtypes of `LiquidVolumeModel`.
 
-Most Liquid volume correlations are only defined by a volume equation, but some models are defined in terms of the gibbs free energy.
+Most liquid volume correlations are only defined by a volume equation, but some models are defined in terms of the gibbs free energy.
 
 ```@docs
 RackettLiquid
