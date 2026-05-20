@@ -57,11 +57,11 @@ end
 Base.eltype(method::RRXYFlash{T}) where T = T
 
 function index_reduction(m::RRXYFlash,idx::AbstractVector)
-    K0,x0,y0 = method.K0,method.x0,method.y0
+    K0,x0,y0 = m.K0,m.x0,m.y0
     K0 !== nothing && (K0 = K0[idx])
     x0 !== nothing && (x0 = x0[idx])
     y0 !== nothing && (y0 = y0[idx])
-    return RRXYFlash(;equilibrium,m.T0,m.p0,K0,x0,y0,m.v0,m.tol_xy,m.tol_pT,m.tol_of,m.max_iters,m.ss_iters,m.verbose)
+    return RRXYFlash(;m.equilibrium,m.T0,m.p0,K0,x0,y0,m.v0,m.tol_xy,m.tol_pT,m.tol_of,m.max_iters,m.ss_iters,m.verbose)
 end
 
 index_reduction(m::RRXYFlash{Nothing,Nothing},idx::AbstractVector) = m
