@@ -8,7 +8,7 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
     RT = Rgas(model)*T
     logZ = log(p*vol/RT/sum(z))
     nc = length(z)
-    
+
     if cache isa Vector
         return lnϕ!(cache, model, p, T, z; vol)
     elseif cache isa Tuple
@@ -35,7 +35,7 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
         else
             lnϕ = μ_res/RT .- logZ
         end
-        
+
     end
     return lnϕ, vol
 end
@@ -167,7 +167,7 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(
     F_res(model, V, T, z) = eos_res(model, V, T, z) / RT
     fun(aux) = F_res(model, aux[1], T, @view(aux[2:(ncomponents+1)]))
 
-    
+
     aux[1] = V
     aux[2:end] = z
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
@@ -355,7 +355,7 @@ function modified_gibbs(model,p,T,w,phase,vol)
         volw = vol
     end
     RT = Rgas(model)*T
-    g =  PT_property(model,p,T,w,phase,volw,VT_gibbs_energy)
+    g = PT_property(model,p,T,w,phase,volw,VT_gibbs_energy)
     return g/RT,volw
 end
 
