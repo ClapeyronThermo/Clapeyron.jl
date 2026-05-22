@@ -115,9 +115,10 @@ function VT_∑zlogϕ(model,V,T,z)
     RT = Rgas(model)*T
     n = sum(z)
     A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,V,T,z)
-    PrV = ifelse(iszero(1/V),zero(∂A∂V),- V*∂A∂V)
+    Pr = -∂A∂V
+    PrV = ifelse(iszero(1/V),zero(∂A∂V),Pr*V)
     g_res = A + PrV
-    logZ = log1p(∂A∂V*V/(n*RT))
+    logZ = log1p(Pr*V/(n*RT))
     ∑zlogϕi = g_res/RT - n*logZ
     return ∑zlogϕi
 end
