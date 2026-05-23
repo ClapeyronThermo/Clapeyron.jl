@@ -25,7 +25,7 @@ Two versions of the model are available:
 
 ```@docs
 MLThermoProperties.ogHANNA
-MLThermoProperties.HANNA
+MLThermoProperties.multHANNA
 ```
 
 ## GRAPPA saturation model

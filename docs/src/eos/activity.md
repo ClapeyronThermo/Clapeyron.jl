@@ -68,5 +68,5 @@ Clapeyron.COSMOSACdsp
 
 ```@docs ;canonical = false
 MLThermoProperties.ogHANNA
-MLThermoProperties.HANNA
+MLThermoProperties.multHANNA
 ```
