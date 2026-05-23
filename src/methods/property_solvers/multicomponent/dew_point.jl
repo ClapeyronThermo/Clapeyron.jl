@@ -384,15 +384,3 @@ verbose && !converged && @info "dew_temperature: convergence checks failed."
         return (nan,nan,nan,x)
     end
 end
-
-include("dew_point/dew_chempot.jl")
-include("dew_point/dew_fugacity.jl")
-include("dew_point/dew_activity.jl")
-
-function init_preferred_method(method::typeof(dew_pressure),model::EoSModel,kwargs)
-    return ChemPotDewPressure(;kwargs...)
-end
-
-function init_preferred_method(method::typeof(dew_temperature),model::EoSModel,kwargs)
-    return ChemPotDewTemperature(;kwargs...)
-end

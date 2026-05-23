@@ -39,12 +39,11 @@ Checks if a model is a multiple component model, throws an error otherwise.
 """
 function multiple_component_check(method,model)
     l = length(model)
-    l == 1 && multiple_component_error(method,model)
-    single_component_error(method,model)
+    l > 1 && (return nothing)
+    multiple_component_error(method,model)
 end
 
 function multiple_component_error(method,model)
-    l = length(model)
     msg = string(method," only supports multiple component models, ",model," has only one component.")
     throw(DimensionMismatch(msg))
 end

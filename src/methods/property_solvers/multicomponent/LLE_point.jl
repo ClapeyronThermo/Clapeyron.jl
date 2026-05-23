@@ -7,8 +7,8 @@ function __x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing,cache = nothing)
         p0x = zero(Base.promote_eltype(model,T,x))
         vx = volume(model,p0x,T,x,phase = :l)
     else
-        p0x = p0
-        vx = volume(model,p0x,T,x,phase = :l)
+        p0x,vx,_ = edge_pressure(model,T,x)
+        #vx = volume(model,p0x,T,x,phase = :l)
     end
 
     tpd_result = tpd2(model,p0x,T,x,cache,lle = true, strategy = :pure, break_first = true, reduced = true)
@@ -16,13 +16,13 @@ function __x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing,cache = nothing)
     phases = tpd_result.phases
     if length(comps) == 1
         w = comps[1]
-        vw = tpd_result.phases[1]
+        vw = tpd_result.volumes[1]
     else
         w = similar(x,typeof(T0x))
         w .= NaN
         vw = oftype(T0x,NaN)
     end
-    return p0x,vlx,vlw,w
+    return p0x,vx,vw,w
 end
 
 """
@@ -210,13 +210,13 @@ function LLE_pressure_init(model,T,x,vol0,p0,y0,volatiles = FillArrays.Fill(true
                 end
             else
                 verbose && @info "LLE_pressure: calculating volumes and pressures from provided vapour composition."
-                p0,_,_,_ = __x0_LLE_pressure(model,T,x,y0,volatiles)
+                p0,_,_,_ = __x0_LLE_pressure(model,T,x)
                 vl = volume(model,p0,T,x,phase = :l)
                 vv = volume(model,p0,T,y0,phase = :l)
             end
         end
     else
-        p00,vl0,vv0,y0 = __x0_LLE_pressure(model,T,x,nothing,volatiles)
+        p00,vl0,vv0,y0 = __x0_LLE_pressure(model,T,x,p0)
         if !isnothing(p0)
             verbose && @info "LLE_pressure: calculating volumes and compositions from provided pressure"
             vl = volume(model,p0,T,x,phase = :l)
@@ -236,10 +236,3 @@ w0: $y0"
     return p0,vl,vv,y0
 end
 
-function init_preferred_method(method::typeof(bubble_pressure),model::EoSModel,kwargs)
-    return ChemPotLLEPressure(;kwargs...)
-end
-
-function init_preferred_method(method::typeof(bubble_temperature),model::EoSModel,kwargs)
-    return ChemPotLLETemperature(;kwargs...)
-end

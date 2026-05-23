@@ -25,10 +25,22 @@ function Solvers.primalval(method::FugQX{T}) where T
     end
 end
 
+function index_reduction(method::FugQX,idx_r)
+    if !isnothing(method.w0)
+        method_r = deepcopy(method)
+        w0_new = method.w0[idx_r]
+        resize!(method_r.w0,length(w0_new))
+        method_r.w0 .= w0_new
+        return method_r
+    end
+    return method
+end
+
+
 function FugQX(data;vol0 = nothing,
                     prop0 = nothing,
                     w0 = nothing,
-                    nonvolatiles = nothing,
+                    non_in_w = nothing,
                     f_limit = 0.0,
                     atol = 1e-8,
                     rtol = 1e-12,
@@ -78,7 +90,7 @@ function bdt_flash_impl(model::EoSModel, T, z, method::FugQX)
     in_equilibria = comps_in_equilibria(component_list(model),method.non_in_w)
     verbose = get_verbosity(method)
 
-    if is_bubble(data)
+    if FugEnum.is_bubble(data)
         p0,vz0,vw0,w00 = bubble_pressure_init(model,T,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
     elseif is_lle(data)
         p0,vz0,vw0,w00 = LLE_pressure_init(model,T,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
@@ -100,19 +112,18 @@ function bdt_flash_impl(model::EoSModel, T, z, method::FugQX)
                     method.tol_w,
                     method.tol_of,
                     method.second_order,
-                    false)
+                    method.verbose)
 
-    cache = fug_bubbledew_cache(model,model_y,p0,T,zz,w0,Val{false}())
-
+    cache = fug_bubbledew_cache(model,model_w,p0,T,zz,w0,Val{false}())
     if all(in_equilibria)
-        if is_dew(data)
-            converged,res_ss = _fug_OF_ss(model,p0,T,w00,zz,vol0,method_data,cache)
+        if FugEnum.is_dew(data)
+            converged,res_ss = _fug_OF_ss(model,p0,T,w00,zz,(vw0,vz0),method_data,cache)
         else
-            converged,res_ss = _fug_OF_ss(model,p0,T,zz,w00,vol0,method_data,cache)
+            converged,res_ss = _fug_OF_ss(model,p0,T,zz,w00,(vz0,vw0),method_data,cache)
         end
 
     else
-        if is_dew(data)
+        if FugEnum.is_dew(data)
             converged,res_ss = _fug_OF_ss(model_w,model,p0,T,w00,zz,vol0,in_equilibria,method_data,cache)
         else
             converged,res_ss = _fug_OF_ss(model,model_w,p0,T,zz,w00,vol0,in_equilibria,method_data,cache)
@@ -135,7 +146,7 @@ function bdt_flash_impl(model::EoSModel, T, z, method::FugQX)
             voly_ss = oftype(voly_ss,vy)
         end
 
-        if is_bubble(data) || is_lle(data)
+        if FugEnum.is_bubble(data) || is_lle(data)
             w_ss = index_expansion(y_ss,in_equilibria)
         else
             w_ss = index_expansion(x_ss,in_equilibria)
@@ -143,26 +154,27 @@ function bdt_flash_impl(model::EoSModel, T, z, method::FugQX)
         return p_ss,volx_ss,voly_ss,w_ss
     end
 
-    lnK,K,w,w_old,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
-    inc0 = vcat(lnK, log(p))
+    lnK,K,w,w_r,w_calc,w_restart,vol_cache,Hϕx,Hϕy = cache
+    inc0 = vcat(lnK, log(p_ss))
     vol_cache[] = (volx_ss,voly_ss)
     opts = NLSolvers.NEqOptions(method)
     if all(in_equilibria)
-        problem = _fug_OF_neq(model,T,zz,data,cache)
+        problem = _fug_OF_neq(model,T,zz,method_data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
         !__check_convergence(sol) && (inc.= NaN)
     else
-        problem = _fug_OF_neq(model,model_y,T,zz,in_equilibria,data,cache)
+        problem = _fug_OF_neq(model,model_y,T,zz,in_equilibria,method_data,cache)
         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)),opts)
         inc = Solvers.x_sol(sol)
         !__check_convergence(sol) && (inc.= NaN)
     end
 
-    lnK = @view inc[1:(end-1)]
+    lnK .= @view inc[1:(end-1)]
+    @show lnK
     volx,voly = vol_cache[]
     p = exp(inc[end])
-    if is_dew(data)
+    if FugEnum.is_dew(data)
         w_r .= @view(z[in_equilibria]) ./  exp.(lnK)
     else
         w_r .= exp.(lnK) .* @view(z[in_equilibria])
@@ -177,7 +189,7 @@ function bdp_flash_impl(model::EoSModel, p, z, method::FugQX)
     in_equilibria = comps_in_equilibria(component_list(model),method.non_in_w)
     verbose = get_verbosity(method)
 
-    if is_bubble(data)
+    if FugEnum.is_bubble(data)
         T0,vz0,vw0,w00 = bubble_temperature_init(model,p,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
     elseif is_lle(data)
         T0,vz0,vw0,w00 = LLE_temperature_init(model,p,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
@@ -199,19 +211,19 @@ function bdp_flash_impl(model::EoSModel, p, z, method::FugQX)
                     method.tol_w,
                     method.tol_of,
                     method.second_order,
-                    false)
+                    method.verbose)
 
     cache = fug_bubbledew_cache(model,model_y,p0,T,zz,w0,Val{false}())
 
     if all(in_equilibria)
-        if is_dew(data)
+        if FugEnum.is_dew(data)
             converged,res_ss = _fug_OF_ss(model,p,T0,w00,zz,vol0,method_data,cache)
         else
             converged,res_ss = _fug_OF_ss(model,p,T0,zz,w00,vol0,method_data,cache)
         end
 
     else
-        if is_dew(data)
+        if FugEnum.is_dew(data)
             converged,res_ss = _fug_OF_ss(model_w,model,p,T0,w00,zz,vol0,in_equilibria,method_data,cache)
         else
             converged,res_ss = _fug_OF_ss(model,model_w,p,T0,zz,w00,vol0,in_equilibria,method_data,cache)
@@ -234,7 +246,7 @@ function bdp_flash_impl(model::EoSModel, p, z, method::FugQX)
             voly_ss = oftype(voly_ss,vy)
         end
 
-        if is_bubble(data) || is_lle(data)
+        if FugEnum.is_bubble(data) || is_lle(data)
             w_ss = index_expansion(y_ss,in_equilibria)
         else
             w_ss = index_expansion(x_ss,in_equilibria)
@@ -262,7 +274,7 @@ function bdp_flash_impl(model::EoSModel, p, z, method::FugQX)
     volx,voly = vol_cache[]
     T = exp(inc[end])
     volx,voly = vol_cache[]
-    if is_dew(data)
+    if FugEnum.is_dew(data)
         w_r .= @view(z[in_equilibria]) ./  exp.(lnK)
     else
         w_r .= exp.(lnK) .* @view(z[in_equilibria])

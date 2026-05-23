@@ -297,7 +297,7 @@ function ChemPotQX(data;vol0 = nothing,
     rtol = 1e-12,
     max_iters = 10^3,
     verbose = false)
-    data = FugEnum.BUBBLE_TEMPERATURE
+
     if prop0 == w0 == vol0 == nothing
         return ChemPotQX{Nothing}(data,vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,verbose)
     elseif (prop0 == w0 == nothing) && !isnothing(vol0)
@@ -355,7 +355,7 @@ function bdt_flash_impl(model::EoSModel, T, z, method::ChemPotQX)
     in_equilibria = comps_in_equilibria(component_list(model),method.non_in_w)
     verbose = get_verbosity(method)
 
-    if is_bubble(data)
+    if FugEnum.is_bubble(data)
         p0,vz0,vw0,w00 = bubble_pressure_init(model,T,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
     elseif is_lle(data)
         p0,vz0,vw0,w00 = LLE_pressure_init(model,T,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
@@ -370,7 +370,7 @@ function bdt_flash_impl(model::EoSModel, T, z, method::ChemPotQX)
     w_r,_,_,_,_,_,p_cache,_,_ = cache
     inc0 = similar(w_r,neq+2)
     inc0_view = @view inc0[1:neq]
-    if is_bubble(data) || is_lle(data)
+    if FugEnum.is_bubble(data) || is_lle(data)
         inc0_view .= log.(w0 ./ @view(z[in_equilibria]))
         inc0[neq+1] = log(vz0)
         inc0[neq+2] = log(vw0)
@@ -395,7 +395,7 @@ function bdt_flash_impl(model::EoSModel, T, z, method::ChemPotQX)
     lnK = @view inc[1:neq]
     pz,pw = p_cache[]
     p = 0.5*(pw + pw)
-    if is_dew(data)
+    if FugEnum.is_dew(data)
         w_r .= @view(z[in_equilibria]) ./  exp.(lnK)
         vz = exp(inc[neq+2])
         vw = exp(inc[neq+1])
@@ -405,33 +405,33 @@ function bdt_flash_impl(model::EoSModel, T, z, method::ChemPotQX)
         vw = exp(inc[neq+2])
     end
     w = index_expansion(w_r,in_equilibria)
-    if is_bubble(data) || is_lle(data) #q = 0
+    if FugEnum.is_bubble(data) || is_lle(data) #q = 0
         return (p, vz, vw, w)
     else #q = 1
         return (p, vw, vz, w)
     end
 end
 
-function bdp_flash_impl(model::EoSModel, p, x, method::ChemPotQX)
+function bdp_flash_impl(model::EoSModel, p, z, method::ChemPotQX)
     data = method.data
     in_equilibria = comps_in_equilibria(component_list(model),method.non_in_w)
     verbose = get_verbosity(method)
-    if is_bubble(data)
+    if FugEnum.is_bubble(data)
         T0,vz0,vw0,w00 = bubble_temperature_init(model,p,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
     elseif is_lle(data)
-        T0,vz0,vw0,w00 = dew_temperature_init(model,p,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
+        T0,vz0,vw0,w00 = LLE_temperature_init(model,p,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
     else
-        T0,vw0,vz0,w00 = LLE_temperature_init(model,p,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
+        T0,vw0,vz0,w00 = dew_temperature_init(model,p,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
     end
 
-    model_y,_ = index_reduction(model,in_equilibria)
+    model_w,_ = index_reduction(model,in_equilibria)
     w0 = w00[in_equilibria]
     neq = count(in_equilibria)
     cache = Clapeyron.fug_bubbledew_cache(model,model_w,p,p,z,z,Val{true}())
     w_r,_,_,_,_,_,_,_,_ = cache
     inc0 = similar(w_r,neq+3)
     inc0_view = @view inc0[1:neq]
-    if is_bubble(data) || is_lle(data)
+    if FugEnum.is_bubble(data) || is_lle(data)
         inc0_view .= log.(w0 ./ @view(z[in_equilibria]))
         inc0[neq+1] = log(vz0)
         inc0[neq+2] = log(vw0)
@@ -456,7 +456,7 @@ function bdp_flash_impl(model::EoSModel, p, x, method::ChemPotQX)
     lnK = @view inc[1:neq]
     T = exp(inc[neq+3])
 
-    if is_dew(data)
+    if FugEnum.is_dew(data)
         w_r .= @view(z[in_equilibria]) ./  exp.(lnK)
         vz = exp(inc[neq+2])
         vw = exp(inc[neq+1])
@@ -466,7 +466,7 @@ function bdp_flash_impl(model::EoSModel, p, x, method::ChemPotQX)
         vw = exp(inc[neq+2])
     end
     w = index_expansion(w_r,in_equilibria)
-    if is_bubble(data) || is_lle(data) #q = 0
+    if FugEnum.is_bubble(data) || is_lle(data) #q = 0
         return (T, vz, vw, w)
     else #q = 1
         return (T, vw, vz, w)
@@ -656,7 +656,7 @@ Inputs:
 function ChemPotLLEPressure(;vol0 = nothing,
                                 p0 = nothing,
                                 w0 = nothing,
-                                nonvolatiles = nothing,
+                                non_in_w = nothing,
                                 f_limit = 0.0,
                                 atol = 1e-8,
                                 rtol = 1e-12,
@@ -696,6 +696,33 @@ function ChemPotLLETemperature(;vol0 = nothing,
     prop0 = T0
     return ChemPotQX(FugEnum.LLE_TEMPERATURE;vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,verbose)
 end
+
+#default initializers
+
+function init_preferred_method(method::typeof(bubble_pressure),model::EoSModel,kwargs)
+    return ChemPotBubblePressure(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(bubble_temperature),model::EoSModel,kwargs)
+    return ChemPotBubbleTemperature(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_pressure),model::EoSModel,kwargs)
+    return ChemPotDewPressure(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_temperature),model::EoSModel,kwargs)
+    return ChemPotDewTemperature(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(LLE_pressure),model::EoSModel,kwargs)
+    return ChemPotLLEPressure(;kwargs...)
+end
+
+function init_preferred_method(method::typeof(LLE_temperature),model::EoSModel,kwargs)
+    return ChemPotLLETemperature(;kwargs...)
+end
+
 
 export ChemPotBubblePressure, ChemPotBubbleTemperature
 export ChemPotDewPressure, ChemPotDewTemperature

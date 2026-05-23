@@ -687,14 +687,3 @@ verbose && !converged && @info "bubble_temperature: convergence checks failed."
         return (nan,nan,nan,y)
     end
 end
-
-
-#default initializers
-
-function init_preferred_method(method::typeof(bubble_pressure),model::EoSModel,kwargs)
-    return ChemPotBubblePressure(;kwargs...)
-end
-
-function init_preferred_method(method::typeof(bubble_temperature),model::EoSModel,kwargs)
-    return ChemPotBubbleTemperature(;kwargs...)
-end
