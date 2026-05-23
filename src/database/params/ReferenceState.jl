@@ -218,11 +218,25 @@ molecular_weight(model::ReferenceStateWithMw,z) = model.mw
 
 function Δref(model,model2,p,T,z,f)
     ref_gas = reference_state(model2)
-    ref_wrap = reference_state(model)
-    _0 = zero(Base.promote_eltype(1.0,T,z))
-    mwz = molecular_weight(model,z)
-    prop_ref_gas = isnothing(ref_gas) ? _0 : PT_property_gibbs(ReferenceStateWithMw(ref_gas,mwz),p,T,z,f)
-    prop_ref_wrap = isnothing(ref_wrap) ? _0 : PT_property_gibbs(ReferenceStateWithMw(ref_wrap,mwz),p,T,z,f)
+    ref_wrap = reference_state(model) 
+    _0 = zero(Base.promote_eltype(model,T,z,1.0))
+    prop_ref_gas = _0
+    prop_ref_wrap = _0
+    mwz = _0
+    if !isnothing(ref_gas)
+        if ref_gas.std_type != :no_set
+            iszero(primalval(mwz)) && (mwz += molecular_weight(model,z))
+            prop_ref_gas += PT_property_gibbs(ReferenceStateWithMw(ref_gas,mwz),p,T,z,f)
+        end
+    end
+
+    if !isnothing(ref_wrap)
+        if ref_wrap.std_type != :no_set
+            iszero(primalval(mwz)) && (mwz += molecular_weight(model,z))
+            prop_ref_wrap += PT_property_gibbs(ReferenceStateWithMw(ref_wrap,mwz),p,T,z,f)
+        end
+    end
+
     Δreference = prop_ref_wrap - prop_ref_gas
     #for example, speed_of_sound returns a NaN value here
     #for those cases, just return zero

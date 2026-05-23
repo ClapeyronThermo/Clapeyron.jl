@@ -61,8 +61,12 @@ Clapeyron.COSMOSAC10
 Clapeyron.COSMOSACdsp
 ```
 
-## HANNA Model
+## ML-Based activity models
 
-```@docs
-ClapeyronHANNA.HANNA
+!!! note
+    The following methods are provided by the companion package `MLThermoProperties`.
+
+```@docs ;canonical = false
+MLThermoProperties.ogHANNA
+MLThermoProperties.multHANNA
 ```

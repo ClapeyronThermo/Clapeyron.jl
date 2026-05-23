@@ -43,7 +43,10 @@ function edge_temperature(model,p,z,v0 = nothing)
   return edge
 end
 
-edge_temperature(model,p) = saturation_temperature(model,p)
+function edge_temperature(model,p) 
+  check_arraysize(model,SA[1.0])
+  saturation_temperature(model,p)
+end
 
 function _edge_temperature(model,p,z,v0 = nothing)
   if v0 == nothing

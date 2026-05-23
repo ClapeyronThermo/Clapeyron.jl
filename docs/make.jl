@@ -1,10 +1,10 @@
 push!(LOAD_PATH,"../src/")
-using Documenter,Clapeyron,ClapeyronHANNA
+using Documenter,Clapeyron,MLThermoProperties
 makedocs(sitename = "Clapeyron.jl",
 format = Documenter.HTML(
     # Use clean URLs, unless built as a "local" build
     canonical = "https://ClapeyronThermo.github.io/Clapeyron.jl/",
-    assets = ["assets/logo.ico"],
+    assets = ["assets/logos/logo.ico"],
     size_threshold = 300_000,
 ),
 warnonly = Documenter.except(),
@@ -31,6 +31,7 @@ warnonly = Documenter.except(),
                             "Empiric Helmholtz Models" => "eos/empiric.md"
                             "Electrolyte Models" => "eos/electrolytes.md"
                             "Property Correlations" =>  "eos/correlations.md"
+                            "ML-Based Models" =>  "eos/ml.md"
                             "Other Models" => "eos/misc.md"],
         "Frequently Asked Questions" => "faq.md",
         "Available Properties" => ["Basic Properties" => "properties/basic.md",

@@ -317,6 +317,10 @@ end
     p = 101325.0
     z = [1.2,1.2]
     T = 350.0
+
+    #discovered while looking at https://github.com/se-schmitt/MLThermoProperties.jl/issues/26
+    @test sum(z .* Clapeyron.lnϕ(model,p,T,z)[1]) ≈ Clapeyron.∑zlogϕ(model,p,T,z)[1]
+
     h = enthalpy(model,p,T,z)
     res0 = ph_flash(model,p,h,z)
     @test Clapeyron.temperature(res0) ≈ T rtol = 1e-6
