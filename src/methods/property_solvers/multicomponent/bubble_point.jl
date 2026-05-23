@@ -688,9 +688,6 @@ verbose && !converged && @info "bubble_temperature: convergence checks failed."
     end
 end
 
-include("bubble_point/bubble_activity.jl")
-include("bubble_point/bubble_fugacity.jl")
-
 
 #default initializers
 
