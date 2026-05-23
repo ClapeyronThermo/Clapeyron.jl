@@ -133,13 +133,48 @@ function ActivityQT(data::FugEnum.BubbleDew;vol0 = nothing,
     end
 end
 
+function bubble_pressure_impl(model::EoSModel, T, x, method::ActivityQT)
+    data = method.data
+    @assert data == FugEnum.BUBBLE_PRESSURE
+    if has_a_res(model)
+        cached_model = PTFlashWrapper(model,NaN,T,x,:vle)
+        return bdt_flash_impl(cached_model,T,x,method)
+    else
+        cached_model = __tpflash_cache_model(model,NaN,T,x,:vle)
+        return bdt_flash_impl(model,T,x,method)
+    end
+end
+
+function dew_pressure_impl(model::EoSModel, T, y, method::ActivityQT)
+    data = method.data
+    @assert data == FugEnum.DEW_PRESSURE
+    if has_a_res(model)
+        cached_model = PTFlashWrapper(model,NaN,T,y,:vle)
+        return bdt_flash_impl(cached_model,T,y,method)
+    else
+        cached_model = __tpflash_cache_model(model,NaN,T,y,:vle)
+        return bdt_flash_impl(model,T,y,method)
+    end
+end
+
+function LLE_pressure_impl(model::EoSModel, T, z, method::ActivityQT)
+    data = method.data
+    @assert data == FugEnum.LLE_PRESSURE
+    if has_a_res(model)
+        cached_model = PTFlashWrapper(model,NaN,T,z,:vle)
+        return bdt_flash_impl(cached_model,T,z,method)
+    else
+        cached_model = __tpflash_cache_model(model,NaN,T,z,:lle)
+        return bdt_flash_impl(cached_model,T,z,method)
+    end
+end
 
 ## Bubble pressure solver
 """
     ActivityBubblePressure(kwargs...)
 
 Function to compute [`bubble_pressure`](@ref) using Activity Coefficients.
-On activity coefficient models it solves the problem via succesive substitucion.
+On activity coefficient models it solves the problem via succesive substitution.
 On Helmholtz-based models, it approximates the activity coefficient using the saturated pure state as reference.
 
 Inputs:
@@ -150,6 +185,7 @@ Inputs:
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
 - `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. Those will be set to zero on the vapour phase.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
 """
 function ActivityBubblePressure(;vol0 = nothing,
                                 p0 = nothing,
@@ -168,7 +204,7 @@ end
     ActivityDewPressure(kwargs...)
 
 Function to compute [`dew_pressure`](@ref) using Activity Coefficients.
-On activity coefficient models it solves the problem via succesive substitucion.
+On activity coefficient models it solves the problem via succesive substitution.
 On Helmholtz-based models, it approximates the activity coefficient using the saturated pure state as reference.
 
 Inputs:
@@ -179,7 +215,7 @@ Inputs:
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
 - `noncondensables`: optional, Vector of strings containing non condensable compounds. Those will be set to zero on the liquid phase.
-
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
 """
 function ActivityDewPressure(;vol0 = nothing,
                                 p0 = nothing,
@@ -193,3 +229,36 @@ function ActivityDewPressure(;vol0 = nothing,
     non_in_w = noncondensables
     return ActivityQT(FugEnum.DEW_PRESSURE,vol0,p0,w0,non_in_w,itmax_ss,rtol_ss,verbose)
 end
+
+## Bubble pressure solver
+"""
+    ActivityLLEPressure(kwargs...)
+
+Function to compute [`LLE_pressure`](@ref) using Activity Coefficients.
+On activity coefficient models it solves the problem via succesive substitution.
+On Helmholtz-based models, it approximates the activity coefficient using the saturated pure state as reference.
+
+Inputs:
+- `w0 = nothing`: optional, initial guess for the incipient liquid phase composition
+- `p0 = nothing`: optional, initial guess for the LLE pressure `[Pa]`
+- `vol0 = nothing`: optional, initial guesses for the bulk and incipient liquid phase volumes `[m³]`
+- `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
+- `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
+- `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
+- `non_in_w = nothing`: optional, Vector of strings containing compounds that will be excluded from the incipient phase.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
+"""
+function ActivityLLEPressure(;vol0 = nothing,
+                            p0 = nothing,
+                            w0 = nothing,
+                            non_in_w = nothing,
+                            itmax_ss = 40,
+                            rtol_ss = 1e-8,
+                            verbose = false)
+
+    return ActivityQT(FugEnum.LLE_PRESSURE,vol0,p0,w0,non_in_w,itmax_ss,rtol_ss,verbose)
+end
+
+export ActivityBubblePressure
+export ActivityDewPressure
+export ActivityLLEPressure

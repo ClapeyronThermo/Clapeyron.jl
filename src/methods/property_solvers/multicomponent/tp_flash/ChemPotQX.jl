@@ -638,9 +638,9 @@ function ChemPotDewTemperature(;vol0 = nothing,
 end
 
 """
-    ChemPotBubblePressure(kwargs...)
+    ChemPotLLEPressure(kwargs...)
 
-Function to compute [`bubble_pressure`](@ref) via chemical potentials.
+Function to compute [`LLE_pressure`](@ref) via chemical potentials.
 It directly solves the equality of chemical potentials system of equations.
 
 Inputs:
@@ -668,9 +668,9 @@ function ChemPotLLEPressure(;vol0 = nothing,
 end
 
 """
-    ChemPotBubbleTemperature(kwargs...)
+    ChemPotLLETemperature(kwargs...)
 
-Function to compute [`bubble_temperature`](@ref) via chemical potentials.
+Function to compute [`LLE_temperature`](@ref) via chemical potentials.
 It directly solves the equality of chemical potentials system of equations.
 
 Inputs:

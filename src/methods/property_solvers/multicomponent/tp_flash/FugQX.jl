@@ -357,6 +357,7 @@ Inputs:
 - `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
 - `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. Those will be set to zero on the vapour phase.
 - `second_order`: optional, decide if the algorithm uses second order information when updating the guess estimates. Second order methods are slower, but more reliable.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
 """
 function FugBubblePressure(;vol0 = nothing,
                                 p0 = nothing,
@@ -371,18 +372,20 @@ function FugBubblePressure(;vol0 = nothing,
                                 tol_y = 1e-8,
                                 tol_p = 1e-8,
                                 tol_of = 1e-8,
-                                second_order = true)
+                                second_order = true,
+                                verbose = false)
     w0 = y0
     prop0 = p0
     tol_pT = tol_p
     tol_w = tol_y
+    non_in_w = nonvolatiles
     return FugQX(FugEnum.BUBBLE_PRESSURE;vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_w,tol_pT,tol_of,second_order,verbose)
 end
 
 """
     FugBubbleTemperature(kwargs...)
 
-Function to compute bubble pressure via fugacity coefficients.
+Function to compute [`bubble_temperature`](@ref)  via fugacity coefficients.
 First it uses successive substitution to update the phase composition and an outer Newton's (or secant) loop to update the temperature.
 If no convergence is reached after `itmax_newton` iterations, the system is solved using a multidimensional non-linear system of equations.
 
@@ -398,27 +401,29 @@ Inputs:
 - `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
 - `nonvolatiles`: optional, Vector of strings containing non volatile compounds. Those will be set to zero on the vapour phase.
 - `second_order`: optional, decide if the algorithm uses second order information when updating the guess estimates. Second order methods are slower, but more reliable.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
 """
 function FugBubbleTemperature(;vol0 = nothing,
-    T0 = nothing,
-    y0 = nothing,
-    nonvolatiles = nothing,
-    f_limit = 0.0,
-    atol = 1e-8,
-    rtol = 1e-12,
-    max_iters = 10^4,
-    itmax_newton = 10,
-    itmax_ss = 5,
-    tol_y = 1e-8,
-    tol_T = 1e-8,
-    tol_of = 1e-8,
-    second_order = true,
-    verbose = false)
+                                T0 = nothing,
+                                y0 = nothing,
+                                nonvolatiles = nothing,
+                                f_limit = 0.0,
+                                atol = 1e-8,
+                                rtol = 1e-12,
+                                max_iters = 10^4,
+                                itmax_newton = 10,
+                                itmax_ss = 5,
+                                tol_y = 1e-8,
+                                tol_T = 1e-8,
+                                tol_of = 1e-8,
+                                second_order = true,
+                                verbose = false)
 
     w0 = y0
     prop0 = T0
     tol_pT = tol_T
     tol_w = tol_y
+    non_in_w = nonvolatiles
     return FugQX(FugEnum.BUBBLE_TEMPERATURE;vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_w,tol_pT,tol_of,second_order,verbose)
 end
 
@@ -441,6 +446,8 @@ Inputs:
 - `tol_p = 1e-8`: optional, tolerance to stop Newton's cycle
 - `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
 - `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. Those will be set to zero on the liquid phase.
+- `second_order`: optional, decide if the algorithm uses second order information when updating the guess estimates. Second order methods are slower, but more reliable.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
 """
 function FugDewPressure(;vol0 = nothing,
                                 p0 = nothing,
@@ -455,12 +462,147 @@ function FugDewPressure(;vol0 = nothing,
                                 tol_x = 1e-8,
                                 tol_p = 1e-8,
                                 tol_of = 1e-8,
-                                second_order = true)
+                                second_order = true,
+                                verbose = false)
 
     w0 = x0
     prop0 = p0
     tol_pT = tol_p
     tol_w = tol_x
+    non_in_w = noncondensables
     return FugQX(FugEnum.DEW_PRESSURE;vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_w,tol_pT,tol_of,second_order,verbose)
 end
 
+"""
+    FugDewTemperature(kwargs...)
+
+Method to compute [`dew_temperature`](@ref) via fugacity coefficients. First it uses
+successive substitution to update the phase composition and an outer Newton's
+loop to update the temperature. If no convergence is reached after
+`itmax_newton` iterations, the system is solved using a multidimensional
+non-linear system of equations.
+
+Inputs:
+- `x0 = nothing`: optional, initial guess for the liquid phase composition
+- `T0 = nothing`: optional, initial guess for the dew temperature `[K]`
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
+- `itmax_newton = 10`: optional, number of iterations to update the temperature using Newton's method
+- `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
+- `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
+- `tol_T = 1e-8`: optional, tolerance to stop Newton's cycle
+- `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
+- `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. Those will be set to zero on the liquid phase.
+- `second_order`: optional, decide if the algorithm uses second order information when updating the guess estimates. Second order methods are slower, but more reliable.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
+"""
+function FugDewTemperature(;vol0 = nothing,
+                            T0 = nothing,
+                            x0 = nothing,
+                            noncondensables = nothing,
+                            f_limit = 0.0,
+                            atol = 1e-8,
+                            rtol = 1e-12,
+                            max_iters = 10^4,
+                            itmax_newton = 10,
+                            itmax_ss = 5,
+                            tol_x = 1e-8,
+                            tol_T = 1e-8,
+                            tol_of = 1e-8,
+                            second_order = true,
+                            verbose = false)
+
+    w0 = x0
+    prop0 = T0
+    tol_pT = tol_T
+    tol_w = tol_x
+    non_in_w = noncondensables
+    return FugQX(FugEnum.DEW_TEMPERATURE;vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_w,tol_pT,tol_of,second_order,verbose)
+end
+
+"""
+    FugLLEPressure(kwargs...)
+
+Function to compute [`LLE_pressure`](@ref) via fugacity coefficients. First it uses
+successive substitution to update the phase composition and an outer Newton's
+loop to update the pressure. If no convergence is reached after `itmax_newton`
+iterations, the system is solved using a multidimensional non-linear
+system of equations.
+
+Inputs:
+- `w0 = nothing`: optional, initial guess for the incipent liquid phase composition.
+- `p0 = nothing`: optional, initial guess for the LLE pressure `[Pa]`
+- `vol0 = nothing`: optional, initial guesses for the bulk liquid and incipient phase volumes `[m³]`
+- `itmax_newton = 10`: optional, number of iterations to update the pressure using Newton's method
+- `itmax_ss = 5`: optional, number of iterations to update the bulk liquid phase composition using successive substitution
+- `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
+- `tol_p = 1e-8`: optional, tolerance to stop Newton's cycle
+- `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
+- `non_in_w = nothing`: optional, Vector of strings containing compounds that will be excluded from the incipient phase.
+- `second_order`: optional, decide if the algorithm uses second order information when updating the guess estimates. Second order methods are slower, but more reliable.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
+"""
+function FugLLEPressure(;vol0 = nothing,
+                                p0 = nothing,
+                                w0 = nothing,
+                                non_in_w = nothing,
+                                f_limit = 0.0,
+                                atol = 1e-8,
+                                rtol = 1e-12,
+                                max_iters = 10^4,
+                                itmax_newton = 10,
+                                itmax_ss = 5,
+                                tol_w = 1e-8,
+                                tol_p = 1e-8,
+                                tol_of = 1e-8,
+                                second_order = true,
+                                verbose = false)
+    prop0 = p0
+    tol_pT = tol_p
+    return FugQX(FugEnum.LLE_PRESSURE;vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_w,tol_pT,tol_of,second_order,verbose)
+end
+
+"""
+    FugLLETemperature(kwargs...)
+
+Function to compute [`LLE_temperature`](@ref) via fugacity coefficients.
+First it uses successive substitution to update the phase composition and an outer Newton's (or secant) loop to update the temperature.
+If no convergence is reached after `itmax_newton` iterations, the system is solved using a multidimensional non-linear system of equations.
+
+
+Inputs:
+- `w0 = nothing`: optional, initial guess for the incipent liquid phase composition.
+- `T0 = nothing`: optional, initial guess for the LLE temperature `[K]`.
+- `vol0 = nothing`: optional, initial guesses for the bulk liquid and incipient phase volumes `[m³]`
+- `itmax_newton = 10`: optional, number of iterations to update the pressure using Newton's (or secant) method
+- `itmax_ss = 5`: optional, number of iterations to update the bulk liquid phase composition using successive substitution
+- `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
+- `tol_T = 1e-8`: optional, tolerance to stop Newton's cycle
+- `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
+- `non_in_w = nothing`: optional, Vector of strings containing compounds that will be excluded from the incipient phase.
+- `second_order`: optional, decide if the algorithm uses second order information when updating the guess estimates. Second order methods are slower, but more reliable.
+- `verbose = false`: optional, if set to `true`, the method will display additional information in the REPL.
+"""
+function FugLLETemperature(;vol0 = nothing,
+                                T0 = nothing,
+                                w0 = nothing,
+                                non_in_w = nothing,
+                                f_limit = 0.0,
+                                atol = 1e-8,
+                                rtol = 1e-12,
+                                max_iters = 10^4,
+                                itmax_newton = 10,
+                                itmax_ss = 5,
+                                tol_w = 1e-8,
+                                tol_T = 1e-8,
+                                tol_of = 1e-8,
+                                second_order = true,
+                                verbose = false)
+
+    prop0 = T0
+    tol_pT = tol_T
+    return FugQX(FugEnum.LLE_TEMPERATURE;vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_w,tol_pT,tol_of,second_order,verbose)
+end
+
+export FugBubblePressure, FugBubbleTemperature
+export FugDewPressure, FugDewTemperature
+export FugLLEPressure, FugLLETemperature

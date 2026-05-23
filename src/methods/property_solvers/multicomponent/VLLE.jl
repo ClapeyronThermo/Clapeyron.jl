@@ -1,13 +1,16 @@
-function __x0_VLLE_pressure(model,T)
-    z = [0.5,0.5]
+function __x0_VLLE_pressure(model,T,z = [0.5,0.5])
+    check_arraysize(model,z)
     p_edge,_,_ = edge_pressure(model,T)
-    K = tp_flash_K0(model,p,T,z)
+    K = tp_flash_K0(model,p_edge,T,z)
     y = rr_flash_vapor(K,z,zero((eltype(K))))
     x = rr_flash_liquid(K,z,one(eltype(K)))
-    K_lle = K0_lle_init(model,p,T,x)
+    K_lle = K0_lle_init(model,p_edge,T,x)
     x1 = rr_flash_vapor(K,x,zero((eltype(K))))
     x2 = rr_flash_liquid(K,x,one(eltype(K)))
-    return FlashResult()
+    vy = volume(model,p_edge,T,y,phase = :v)
+    vx1 = volume(model,p_edge,T,x1,phase = :l)
+    vx2 = volume(model,p_edge,T,x2,phase = :l)
+    return FlashResult(SVector(x1,x2,y),SVector(0.,0.,0.),SVector(vx1,vx2,vy),FlashData(p_edge,T)) 
 end
 
 ## VLLE Solver
@@ -69,7 +72,8 @@ function VLLE_pressure(model::EoSModel, T; v0 =nothing)
     return (P_sat, v_l, v_ll, v_v, x, xx, y)
 end
 
-function x0_VLLE_pressure(model::EoSModel, T)
+function x0_VLLE_pressure(model::EoSModel, T, z = [0.5,0.5])
+    #=
     pure = split_pure_model(model)
     sat  = saturation_pressure.(pure,T)
     y0 = Fractions.zeros(length(model))
@@ -79,9 +83,14 @@ function x0_VLLE_pressure(model::EoSModel, T)
     v_vi = last.(sat)
     v_l0  = dot(x0,v_li)
     v_ll0 = dot(xx0,v_li)
-    v_v0  = dot(y0,v_vi)
+    v_v0  = dot(y0,v_vi) =#
+    vlle0 = __x0_VLLE_pressure(model,p,z)
+    vl0,vl10,v_v0 = vlle0.volumes
+    x0,xx0,y0 = vlle0.compositions
+    #T0 = temperature(result)
     return (log10(v_l0),log10(v_ll0),log10(v_v0),x0[1:end-1],xx0[1:end-1],y0[1:end-1])
 end
+
 """
     VLLE_temperature(model::EoSModel, p; T0 = x0_LLE_temperature(model,p))
 
@@ -127,8 +136,23 @@ function VLLE_temperature(model::EoSModel,p;v0=nothing)
     return T, v_l, v_ll, v_v, x, xx, y
 end
 
-function x0_VLLE_temperature(model::EoSModel,p)
-    pure = split_pure_model(model)
+function __x0_VLLE_temperature(model,p,z = [0.5,0.5])
+    check_arraysize(model,z)
+    T_edge,_,_ = edge_temperature(model,p,z)
+    K = tp_flash_K0(model,p,T_edge,z)
+    y = rr_flash_vapor(K,z,zero((eltype(K))))
+    x = rr_flash_liquid(K,z,one(eltype(K)))
+    K_lle = K0_lle_init(model,p,T_edge,x)
+    x1 = rr_flash_vapor(K,x,zero((eltype(K))))
+    x2 = rr_flash_liquid(K,x,one(eltype(K)))
+    vy = volume(model,p,T_edge,y,phase = :v)
+    vx1 = volume(model,p,T_edge,x1,phase = :l)
+    vx2 = volume(model,p,T_edge,x2,phase = :l)
+    return FlashResult(SVector(x1,x2,y),SVector(0.,0.,0.),SVector(vx1,vx2,vy),FlashData(p,T_edge)) 
+end
+
+function x0_VLLE_temperature(model::EoSModel,p,z = [0.5,0.5])
+    #=pure = split_pure_model(model)
     sat  = saturation_temperature.(pure,p)
     y0 = Fractions.zeros(length(model))
     T0 = 0.95*minimum(getindex.(sat,1))
@@ -138,7 +162,11 @@ function x0_VLLE_temperature(model::EoSModel,p)
     v_vi = last.(sat)
     v_l0  = dot(x0,v_li)
     v_ll0 = dot(xx0,v_li)
-    v_v0  = dot(y0,v_vi)
+    v_v0  = dot(y0,v_vi) =#
+    vlle0 = __x0_LLE_temperature(model,p,z)
+    vl0,vl10,v_v0 = vlle0.volumes
+    x0,xx0,y0 = vlle0.compositions
+    T0 = temperature(result)
     return (T0,log10(v_l0),log10(v_ll0),log10(v_v0),x0[1:end-1],xx0[1:end-1],y0[1:end-1])
 end
 

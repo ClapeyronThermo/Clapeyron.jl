@@ -1,5 +1,5 @@
 ## LLE pressure solver
-function x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing,cache = nothing)
+function __x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing,cache = nothing)
     if p0 != nothing
         p0x = p0
         vx = volume(model,p0x,T,x,phase = :l)
@@ -161,7 +161,7 @@ function LLE_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
     end
 end
 
-function x0_LLE_temperature(model::EoSModel,p,x,T0 = nothing)
+function __x0_LLE_temperature(model::EoSModel,p,x,T0 = nothing)
     if model isa PTFlashWrapper
 
         #check if we can actually use this here
