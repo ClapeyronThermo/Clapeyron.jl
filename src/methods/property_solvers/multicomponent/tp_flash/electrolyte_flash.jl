@@ -71,15 +71,15 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
     if !isnothing(K0)
         #K0 should be the same size as the input model
         check_arraysize(model_full,K0)
-        K .=  @view K0[in_equilibria]
+        K .=  @view K0[z_nonzero]
         K .= K0
         lnK .= log.(K)
         verbose && @info "K0 already provided"
     elseif !isnothing(x0) && !isnothing(y0)
         check_arraysize(model_full,x0)
         check_arraysize(model_full,y0)
-        x .= @view(x0[in_equilibria])
-        y .= @view(y0[in_equilibria])
+        x .= @view(x0[z_nonzero])
+        y .= @view(y0[z_nonzero])
         x ./= sum(x)
         y ./= sum(y)
         lnK .= log.(y ./ x)
