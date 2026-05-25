@@ -190,7 +190,7 @@ function getparams(components,
                     return_sites::Bool = true,
                     component_delimiter = "~|~"
                     )
-    
+
     userlocations = normalize_userlocations(userlocations)
     asymmetricparams = normalize_userlocations(asymmetricparams)
     ignore_missing_singleparams = String.(ignore_missing_singleparams)
@@ -243,12 +243,12 @@ function buildsites(components,allparams,allnotfoundparams,options)
 
     #if we are asked to don't build sites, do nothing
     options.return_sites || return nothing
-    
+
     #if there aren't any assoc data files, return empty SiteParam
     assoc_data_found = any(x -> x.type == assocdata,values(allparams))
     assoc_data_notfound = any(x -> x == assocdata,values(allnotfoundparams))
     !assoc_data_found && !assoc_data_notfound && return nothing
-    
+
     #Find if there is any sites in the assoc files, do nothing if data not found
     anysites(allparams,components) || return SiteParam(components)
 
@@ -293,7 +293,7 @@ function buildsites(components,allparams,allnotfoundparams,options)
         if haskey(allparams,ki)
             csv_vi = allparams[ki].csv
             csv_vi != nothing && append!(sourcecsvs,csv_vi)
-            
+
             #remove single params used in sites, those were already consumed
             delete!(allparams,ki)
         end
@@ -877,14 +877,19 @@ function read_csv_options(filepath)
 end=#
 
 function _read_csv_options(line::String)
-    re = r"\[.*\]"
-    maybe_opts = match(re,line)
+    vec_re = r"\[.*\]"
+    maybe_opts_vec = match(vec_re,line)
+    json_re = r"\{.*\}"
+    maybe_opts_json = match(json_re,line)
 
     # Searches for type from second line of CSV.
-    has_csv_options = !isnothing(maybe_opts)
-    if has_csv_options
-        opts = chop(maybe_opts.match,head = 1,tail = 1)
-        return __get_options(opts)
+    has_csv_options_vec = !isnothing(maybe_opts_vec)
+    has_csv_options_json = !isnothing(maybe_opts_json)
+    if has_csv_options_json
+        __get_options(maybe_opts_json.match,:json)
+    elseif has_csv_options_vec
+        opts = chop(maybe_opts_vec.match,head = 1,tail = 1)
+        return __get_options(opts,:vec)
     else
         data = [""]
         words = split(lowercase(strip(line, ',')), ' ')
@@ -924,20 +929,38 @@ function _readcsvtype(key::AbstractString)
     return invaliddata
 end
 
-function __get_options(data)
-    opts = eachsplit(data,',')
-    opts_dict = Dict{String,String}()
-    for opt in opts
-        k,v = _parse_kv(opt,"=")
-        opts_dict[k] = v
+function __get_options(data,type)
+    if type == :vec
+        opts = eachsplit(data,',')
+        opts_dict = Dict{String,String}()
+        for opt in opts
+            k,v = _parse_kv(opt,"=")
+            opts_dict[k] = v
+        end
+        _csvtype = _readcsvtype(get(opts_dict,"csvtype","invalid"))
+        _grouptype = Symbol(get(opts_dict,"grouptype","unknown"))
+        _estimator = Symbol(get(opts_dict,"method","error"))
+        maybe_species = get(opts_dict,"species","all")
+        _species = if maybe_species != "all"
+            _species_sep = get(opts_dict,"species_sep"," ")
+            _species = String.(split(maybe_species,_species_sep))
+        else
+            ["all"]
+        end
+        _sep = Symbol(get(opts_dict,"sep","comma"))
+        return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species, sep = _sep)
+    elseif type == :json
+        json_dict = JSON.parse(data)
+        _csvtype = _readcsvtype(get(json_dict,"csvtype","invalid"))
+        _grouptype = Symbol(get(json_dict,"grouptype","unknown"))
+        _estimator = Symbol(get(json_dict,"method","error"))
+        maybe_species = get(json_dict,"species","all")
+        _species = maybe_species isa AbstractString ? [String(maybe_species)] : String.(maybe_species)
+        _sep = Symbol(get(json_dict,"sep","comma"))
+        return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species, sep = _sep)
+    else
+        throw(error("Clapeyron.__get_options: invalid type. expected :json or :vec, got $type"))
     end
-    _csvtype = _readcsvtype(get(opts_dict,"csvtype","invalid"))
-    _grouptype = Symbol(get(opts_dict,"grouptype","unknown"))
-    _estimator = Symbol(get(opts_dict,"method","error"))
-    _estimator = Symbol(get(opts_dict,"method","error"))
-    _species = String.(split(get(opts_dict,"species","all")," "))
-    _sep = Symbol(get(opts_dict,"sep","comma"))
-    return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species, sep = _sep)
 end
 
 function valid_headerparams(csvheaders, options::ParamOptions = DefaultOptions)

@@ -346,11 +346,10 @@ function objective_function(estimation::Estimation,guesses)
         if estimation.data[i].species == ["all"]
             model_r = model
         else
-            idx_r = zeros(length(model))
-            for i in estimation.data[i].species
-                idx_r += model.components .== i
-            end
-            model_r = index_reduction(model,idx_r)[1]
+            #comps_in_equilibria "excludes components from the list, so we invert
+            idx_r = comps_in_equilibria(component_list(model),estimation.data[i].species)
+            idx_r .= (!).(idx_r)
+            model_r = each_split_model(model,idx_r)
         end
         data = estimation.data[i]
         property = data.method
