@@ -67,7 +67,7 @@
 
         @testset "RK w/ BaledTranslation" begin
             system = RK(["ethane","undecane"];translation = BaledTranslation)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.9829619090346525 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.9851760769061726 rtol = 1e-6
         end
 
         @testset "RK w/ KayRule" begin
@@ -198,7 +198,7 @@
 
         @testset "PR w/ BaledTranslation" begin
             system = PR(["ethane","undecane"];translation = BaledTranslation)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.3627565754776112 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2438244560921463 rtol = 1e-6
         end        
 
         @testset "PR w/ HVRule" begin

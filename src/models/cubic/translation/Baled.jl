@@ -82,7 +82,7 @@ function translation2(model::CubicModel,V,T,z,translation_model::BaledTranslatio
     for i ∈ @comps
         Tci = Tc[i]
         Tri = T/Tci
-        fi = -1/(ω[i]*1000*MW[i])
+        fi = -1/(ω[i]*MW[i])
         A = k0A + kA[1]*exp(fi/kA[2]) + kA[3]*exp(fi/kA[4]) + kA[5]*exp(fi/kA[6])
         B = k0B + kB[1]*exp(fi/kB[2]) + kB[3]*exp(fi/kB[4]) + kB[5]*exp(fi/kB[6])
         c += z[i]*(A + B*Tri)
