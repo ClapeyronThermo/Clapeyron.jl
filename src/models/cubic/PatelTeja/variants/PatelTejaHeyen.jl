@@ -1,6 +1,6 @@
 @newmodelsimple PTHAlpha TwuAlphaModel TwuAlphaParam
 default_locations(::Type{PTHAlpha}) = critical_data()
-default_references(::Type{PTHAlpha}) = ["10.1016/0378-3812(80)80003-3"]
+default_references(::Type{PTHAlpha}) = ["10.1016/0378-3812(80)80003-3,10.1016/j.fluid.2012.12.032"]
 default_ignore_missing_singleparams(::Type{PTHAlpha}) = ["Vc","L","M","N","acentricfactor","Tc","Pc"]
 
 function transform_params(::Type{PTHAlpha},params,components)
@@ -160,7 +160,7 @@ model = PatelTejaHeyen(["neon","hydrogen"];
 ## References
 
 1. Patel, N. C., & Teja, A. S. (1982). A new cubic equation of state for fluids and fluid mixtures. Chemical Engineering Science, 37(3), 463–473. [doi:10.1016/0009-2509(82)80099-7](https://doi.org/10.1016/0009-2509(82)80099-7)
-
+2. Forero G., L. A., & Velásquez J., J. A. (2013). A modified Patel–Teja cubic equation of state: Part I – Generalized model for gases and hydrocarbons. Fluid Phase Equilibria, 342, 8–22. [doi:10.1016/j.fluid.2012.12.032](https://doi.org/10.1016/j.fluid.2012.12.032)
 """
 PatelTejaHeyen
 
@@ -182,7 +182,7 @@ function PatelTejaHeyen(components;
     verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","cubic/PatelTejaHeyen/PatelTeja_Vc_fit.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc_fit","acentricfactor"])
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc_fit","acentricfactor"])
     model = CubicModel(PatelTejaHeyen,params,formatted_components;
                         idealmodel,alpha,mixing,activity,translation,
                         userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
@@ -191,6 +191,7 @@ function PatelTejaHeyen(components;
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     recombine_cubic!(model,k,l)
+    push!(model.references,"10.1016/j.fluid.2012.12.032") 
     set_reference_state!(model,reference_state;verbose)
     return model
 end
