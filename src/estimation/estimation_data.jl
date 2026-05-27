@@ -1,7 +1,8 @@
 using CSV, Tables
 
-struct EstimationData{𝔽}
+struct EstimationData{𝔽,L}
     method::𝔽
+    loss::L
     species::Vector{String}
     inputs_name::Vector{Symbol}
     outputs_name::Vector{Symbol}
@@ -76,6 +77,7 @@ function EstimationData(filepaths)
             estimationdata,
             EstimationData(
                 method,
+                loss,
                 species,
                 Symbol.(inputs_headers),
                 Symbol.(outputs_headers),
@@ -150,4 +152,44 @@ end
 
 function Base.show(io::IO, data::EstimationData)
     print(io, "EstimationData{:" * String(Symbol(data.method)) * "}")
+end
+
+
+function objective_function(data::EstimationData,model)   
+    F = zero(Base.promote_eltype(model))
+    loss = data.objective_form
+    if estimation.data.species == ["all"]
+        model_r = model
+        idx_r = fill(true,length(model))
+    else
+        #comps_in_equilibria "excludes components from the list, so we invert
+        idx_r = comps_in_equilibria(component_list(model),estimation.data[i].species)
+        idx_r .= (!).(idx_r)
+        model_r = each_split_model(model,idx_r)
+    end
+    
+    property = data.method
+    inputs = data.inputs
+    outputs = data.outputs
+    weights = data.weights
+    n_outputs = length(outputs[1])
+    prediction = if isempty(inputs)
+        property(model_r)
+    elseif length(inputs)==1
+        property.(Ref(model_r),inputs[1])
+    elseif length(inputs)==2
+        property.(Ref(model_r),inputs[1],inputs[2])
+    elseif length(inputs)==3
+        property.(Ref(model_r),inputs[1],inputs[2],inputs[3])
+    else
+        property.(Ref(model_r),inputs...)
+    end
+
+    if length(outputs)==1
+        F = sum(loss.(prediction,outputs[1]))/n_outputs*weights[1]
+    else
+        F = sum([sum([loss.(prediction[k][j],outputs[j][k]) for j in 1:length(prediction[k])])*weights[1] for k in 1:length(prediction)])/n_outputs
+    end
+    isnan(F) && (F == 1e100*oneunit(F))
+    return F
 end

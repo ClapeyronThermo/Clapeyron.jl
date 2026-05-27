@@ -14,13 +14,25 @@ Pages = ["estimation.md"]
 Pages = ["estimation.md"]
 ```
 
-## Estimation Tools
+## Estimation objects and modules
 
 ```@docs
-Clapeyron.ToEstimate
-Clapeyron.Estimation
 Clapeyron.EstimationData
-Clapeyron.return_model
-Clapeyron.objective_function
+Clapeyron.ToEstimate
+Clapeyron.EstimationModel
+Clapeyron.EstimationProblem
+Clapeyron.Estimation
+Clapeyron.EstimationUtils
+```
+
+## Estimation methods
+
+```@docs
+Clapeyron.get_eos_parameters
+Clapeyron.set_eos_parameters!
 Clapeyron.update_estimation!
+Clapeyron.EstimationUtils.objective_function
+Clapeyron.EstimationUtils.lower_bounds
+Clapeyron.EstimationUtils.upper_bounds
+Clapeyron.EstimationUtils.initial_guess
 ```
