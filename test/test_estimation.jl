@@ -5,91 +5,135 @@ end
 function ff_582 end
 
 @testset "estimation" begin
-    model = SAFTgammaMie(["ethanol","water"],epsilon_mixing = :hudsen_mccoubrey)
-    
-    toestimate = [Dict(
-        :param => :epsilon,
-        :indices => (1,1),
-        :recombine => true,
-        :lower => 100.,
-        :upper => 300.,
-        :guess => 250.
-    ),
-    Dict(
-        :param => :epsilon,
-        :indices => (2,3),
-        :symmetric => false,
-        :lower => 100.,
-        :upper => 300.,
-        :guess => 250.
-    ),
-    Dict(
-        :param => :sigma,
-        :indices => (1,1),
-        :factor => 1e-10,
-        :lower => 3.2,
-        :upper => 4.0,
-        :guess => 3.7
+    @testset "EstimationModel" begin
+        model1 = PCSAFT("methane")
+        toestimate1 = [
+            Dict(
+                :param => :epsilon,
+                :lower => 100.,
+                :upper => 300.,
+                :guess => 250.
+            ),
+            Dict(
+                :param => :sigma,
+                :factor => 1e-10,
+                :lower => 3.2,
+                :upper => 4.0,
+                :guess => 3.7
+            )
+            ,
+            Dict(
+                :param => :segment,
+                :lower => 0.9,
+                :upper => 1.1,
+                :guess => 1.
+            )
+        ]
+        est_model1 = EstimationModel(model1,toestimate1)
+        est_model1[1] = 150
+        @test est_model[1] == 150
+        est_model1[2] = 4.0
+        @test est_model[2] == 4.0
+        est_model[3] = 1.1
+        @test est_model[3] == 1.1
+
+        v1 = Clapeyron.get_eos_parameters(est_model1)
+        @test v1 == [150.0,4.0,1.1]
+        w1 = [151.0,2.0,1.0]
+        Clapeyron.set_eos_parameters!(est_model1,w1)
+    end
+    @testset "SAFTgammaMie" begin
+        model = SAFTgammaMie(["ethanol","water"],epsilon_mixing = :hudsen_mccoubrey)
+        
+        toestimate = [Dict(
+            :param => :epsilon,
+            :indices => (1,1),
+            :recombine => true,
+            :lower => 100.,
+            :upper => 300.,
+            :guess => 250.
         ),
-    Dict(
-        :param => :epsilon_assoc,
-        :indices => 2,
-        :cross_assoc => true,
-        :lower => 2000.,
-        :upper => 4000.,
-        :guess => 3500.
-        )]
+        Dict(
+            :param => :epsilon,
+            :indices => (2,3),
+            :symmetric => false,
+            :lower => 100.,
+            :upper => 300.,
+            :guess => 250.
+        ),
+        Dict(
+            :param => :sigma,
+            :indices => (1,1),
+            :factor => 1e-10,
+            :lower => 3.2,
+            :upper => 4.0,
+            :guess => 3.7
+            ),
+        Dict(
+            :param => :epsilon_assoc,
+            :indices => 2,
+            :cross_assoc => true,
+            :lower => 2000.,
+            :upper => 4000.,
+            :guess => 3500.
+            )]
 
-    estimator,objective,initial,upper,lower = Estimation(model,toestimate,["../examples/data/bubble_point.csv"],[:vrmodel])
+        estimator,objective,initial,upper,lower = Estimation(model,toestimate,["../examples/data/bubble_point.csv"],[:vrmodel])
 
-    model2 = return_model(estimator,model,initial)
-    @test model2.params.epsilon[1,1] == initial[1] # Test that the parameter was correctly updated
-    @test model2.params.epsilon[1,2] ≈ 251.57862124740765 rtol = 1e-6 # Test that the combining rule was used
-    @test model2.params.epsilon[1,2] == model2.params.epsilon[1,2] # Test that the unlike parameters remain symmetric
+        model2 = return_model(estimator,model,initial)
+        @test model2.params.epsilon[1,1] == initial[1] # Test that the parameter was correctly updated
+        @test model2.params.epsilon[1,2] ≈ 251.57862124740765 rtol = 1e-6 # Test that the combining rule was used
+        @test model2.params.epsilon[1,2] == model2.params.epsilon[1,2] # Test that the unlike parameters remain symmetric
 
-    @test model2.params.epsilon[2,3] == initial[2] # Test that the parameter was updated
-    @test model2.params.epsilon[2,3] != model2.params.epsilon[3,2] # Test that the parameter is no longer symmetric
+        @test model2.params.epsilon[2,3] == initial[2] # Test that the parameter was updated
+        @test model2.params.epsilon[2,3] != model2.params.epsilon[3,2] # Test that the parameter is no longer symmetric
 
-    @test model2.params.sigma[1,1] == initial[3]*1e-10 # Test that the factor was used to update the parameters
+        @test model2.params.sigma[1,1] == initial[3]*1e-10 # Test that the factor was used to update the parameters
 
-    @test model2.params.epsilon[2,3] == initial[2] # Test that the parameter was updated
-    @test model2.params.epsilon[2,3] != model2.params.epsilon[3,2] # Test that the parameter is no longer symmetric
+        @test model2.params.epsilon[2,3] == initial[2] # Test that the parameter was updated
+        @test model2.params.epsilon[2,3] != model2.params.epsilon[3,2] # Test that the parameter is no longer symmetric
 
-    @test model2.params.epsilon_assoc.values.values[2] == initial[4] # Test that the association parameter was updated
-    @test model2.params.epsilon_assoc.values.values[2] == model2.params.epsilon_assoc.values.values[3] # Test that the cross-association parameter was updated
+        @test model2.params.epsilon_assoc.values.values[2] == initial[4] # Test that the association parameter was updated
+        @test model2.params.epsilon_assoc.values.values[2] == model2.params.epsilon_assoc.values.values[3] # Test that the cross-association parameter was updated
 
-    @test objective(initial) ≈ 2.4184631612655836 rtol = 1e-6
+        @test objective(initial) ≈ 2.4184631612655836 rtol = 1e-6
 
-    estimator,objective,initial,upper,lower = Estimation(model,toestimate,[(2.,"../examples/data/bubble_point.csv"),(1.,"../examples/data/bubble_point.csv")],[:vrmodel])
+        estimator,objective,initial,upper,lower = Estimation(model,toestimate,[(2.,"../examples/data/bubble_point.csv"),(1.,"../examples/data/bubble_point.csv")],[:vrmodel])
 
-    @test objective(initial) ≈ 7.255389483796751 rtol = 1e-6
+        @test objective(initial) ≈ 7.255389483796751 rtol = 1e-6
+    end
 
-    #error found during #365
-    modelvec = Clapeyron.EoSVectorParam(model)
-    @test Clapeyron.promote_model(BigFloat,modelvec) isa Clapeyron.EoSVectorParam
+    @testset "#365" begin
+        #error found during #365
+        modelvec = Clapeyron.EoSVectorParam(model)
+        @test Clapeyron.promote_model(BigFloat,modelvec) isa Clapeyron.EoSVectorParam
+    end
 
-     #=
-    #366
-    incorrect conversion of MixedGCSegmentParam.
-    =#
-    bigfloat_model = Clapeyron.promote_model(BigFloat,model)
-    @test model.params.mixed_segment.values.v ≈ bigfloat_model.params.mixed_segment.values.v
-    
-    model2 = SAFTgammaMie(["octane"])
-    k1 = copy(model2.params.mixed_segment.values.v)
-    Clapeyron.recombine!(model2)
-    k2 = model2.params.mixed_segment.values.v
-    @test k1[1] == k2[1] # Test that the first value is unchanged
+    @testset "#366" begin
+        #=
+        #366
+        incorrect conversion of MixedGCSegmentParam.
+        =#
+        bigfloat_model = Clapeyron.promote_model(BigFloat,model)
+        @test model.params.mixed_segment.values.v ≈ bigfloat_model.params.mixed_segment.values.v
+        
+        model2 = SAFTgammaMie(["octane"])
+        k1 = copy(model2.params.mixed_segment.values.v)
+        Clapeyron.recombine!(model2)
+        k2 = model2.params.mixed_segment.values.v
+        @test k1[1] == k2[1] # Test that the first value is unchanged
+    end
 
-    #issue 582
+    @testset "#582" begin
+        #issue 582
 
-    csv1 = """Clapeyron Estimator,,,
-       {"method" : "ff_582","species" : ["acetonitrile","heptane","palmitic acid"]},,
-       T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
+        csv1 = """Clapeyron Estimator,,,
+        {"method" : "ff_582","species" : ["acetonitrile","heptane","palmitic acid"]},,
+        T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
 
-
-    species_582 = Clapeyron.EstimationData([csv1])[1].species
-    @test species_582 == ["acetonitrile","heptane","palmitic acid"]
+        species_582 = Clapeyron.EstimationData([csv1])[1].species
+        @test species_582 == ["acetonitrile","heptane","palmitic acid"]
+    end
 end
 
 

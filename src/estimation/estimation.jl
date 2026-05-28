@@ -55,7 +55,7 @@ function Base.show(io::IO, mime::MIME"text/plain", estimation::EstimationProblem
     show_pairs(io,estimation.toestimate.params,estimation.toestimate.indices," ",val_print,quote_string = false,prekey = "  :")
 end
 
-function Base.show(io::IO, estimation::Estimation)
+function Base.show(io::IO, estimation::EstimationProblem)
     print(io, typeof(estimation))
 end
 
@@ -84,7 +84,7 @@ function Estimation(est_model::EstimationModel,toestimate::Union{EstimationData,
     est = EstimationProblem(model,deepcopy(model),est_model,concrete_toestimate)
 end
 
-function _Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths, objective_form, ignorefield)
+function _Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths, objective_form, ignorefield) 
     est_model = EstimationModel(model,toestimate,ignorefield)
     estimation = EstimationProblem(model, deepcopy(model), est_model, EstimationData(filepaths), objective_form)
     objective = EstimationUtils.objective_function(estimation)
@@ -94,7 +94,38 @@ function _Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, file
     return estimation, objective, x0, upper, lower
 end
 
-function reload_data(estimation::Estimation)
+export return_model
+
+"""
+    return_model
+    return_model(estimation::Estimation,model,params)
+    return_model(model::EstimationModel,params)
+
+
+## Input parameters:
+- `estimation`: The estimator object
+- `model`: The model whose parameters we are varying
+- `params`: The new parameters which we want to change
+## Output:
+- `model`: The new model with the updated parameters
+## Description
+Based on the parameters provided and the estimator, a new model is produced from the input.
+"""
+function return_model(estimation::EstimationProblem,model::EoSModel,values)
+    T = Base.promote_eltype(model,values)
+    return_model!(estimation,promote_model(T,model),values)
+end
+
+function return_model!(
+    estimation::EstimationProblem,
+    model::EoSModel,
+    values)
+    return set_eos_parameters!(model,estimation,values)
+end
+
+@deprecate return_model! set_eos_parameters!
+
+function reload_data(estimation::EstimationProblem)
     estimationdata = EstimationData(estimation.filepaths)
     empty!(estimation.data)
     for i in 1:length(estimation.filepaths)
@@ -105,7 +136,7 @@ end
 export update_estimation!
 
 function update_estimation!(
-        estimation::Estimation,
+        estimation::EstimationProblem,
         params::Vector{Symbol},
         values::Vector{Any})
 
@@ -138,7 +169,7 @@ function update_estimation!(
     end
 end
 
-function update_estimation!(estimation::Estimation, model::EoSModel)
+function update_estimation!(estimation::EstimationProblem, model::EoSModel)
     estimation.model = model
 end
 
@@ -176,4 +207,9 @@ function EstimationUtils.objective_function(estimation::EstimationProblem)
     return Base.Fix1(EstimationUtils.objective_function,estimation)
 end
 
-export Estimation, EstimationModel, EstimationData
+EstimationUtils.lower_bounds(model::EstimationProblem) = EstimationUtils.lower_bounds(model.toestimate)
+EstimationUtils.upper_bounds(model::EstimationProblem) = EstimationUtils.upper_bounds(model.toestimate)
+EstimationUtils.initial_guess(model::EstimationProblem) = EstimationUtils.initial_guess(model.toestimate)
+EstimationUtils.parameter_vector(model::EstimationProblem) = EstimationUtils.parameter_vector(model.toestimate)
+
+export Estimation, EstimationModel, EstimationData, ToEstimate

@@ -155,7 +155,7 @@ function Base.show(io::IO, data::EstimationData)
 end
 
 
-function objective_function(data::EstimationData,model)   
+function EstimationUtils.objective_function(data::EstimationData,model)   
     F = zero(Base.promote_eltype(model))
     loss = data.objective_form
     if estimation.data.species == ["all"]
