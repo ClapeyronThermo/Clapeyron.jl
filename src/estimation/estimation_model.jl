@@ -319,11 +319,16 @@ end
 
 function __modify_param!(current_param::AssocParam,id::NTuple{2,Int},val,f,recomb,sym,cross_assoc)
     k = id[1]
-    current_param.values.values[k] = val*f
     if cross_assoc
         ij = current_param.values.outer_indices[k]
         ab = current_param.values.inner_indices[k]
-        
+        i,j = ij
+        a,b = ab
+        ij_mat = current_param.values[i,j]
+        ij_mat[a,b] = val*f
+        ij_mat[b,a] = val*f
+    else
+        current_param.values.values[k] = val*f
     end
 end
 
@@ -353,7 +358,7 @@ function EstimationUtils.symbol_indices(est_model::EstimationModel,syms::Abstrac
     range_ix = @view est_model.toestimate.range_indices[sym_ix]
     ix = Int[]
     for ri in range_ix
-        append!(res,ri)
+        append!(ix,ri)
     end
     return ix
 end
@@ -453,8 +458,8 @@ function __modify_param!(model,est_model::EstimationModel,val,ijk::NTuple{3,Int}
     return val
 end
 
-function __flatten_data(data,model::ToEstimate,default::Float64)
-    ranges = model.toestimate.range_indices
+function __flatten_data(data,toestimate::ToEstimate,default::Float64)
+    ranges = toestimate.range_indices
     n = sum(length,ranges)
     flattened_data = fill(default,n)
 
@@ -469,12 +474,12 @@ function __flatten_data(data,model::ToEstimate,default::Float64)
             flattened_data_i .= data_i
         end
     end
-    return flattened_data_i
+    return flattened_data
 end
 
 EstimationUtils.lower_bounds(model::ToEstimate) = __flatten_data(model.lower,model,-Inf)
-EstimationUtils.upper_bounds(model::ToEstimate) = __flatten_data(model.upper,model,-Inf)
-EstimationUtils.initial_guess(model::ToEstimate) = __flatten_data(model.upper,model,NaN)
+EstimationUtils.upper_bounds(model::ToEstimate) = __flatten_data(model.upper,model,Inf)
+EstimationUtils.initial_guess(model::ToEstimate) = __flatten_data(model.guess,model,NaN)
 
 function EstimationUtils.initial_guess(est_model::EstimationModel)
     x0 = EstimationUtils.initial_guess(est_model.toestimate)

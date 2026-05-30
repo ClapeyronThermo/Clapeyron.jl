@@ -100,13 +100,13 @@ function EstimationData(table_data, method, loss; output_weights = nothing,data_
     output_arrays = [get_col_vals(h) for h in outputs_name]
 
     input_ismissing_arrays  = [get_missing_vals(h) for h in inputs_name]
-    input_ismissing_arrays = [get_missing_vals(h) for h in outputs_name]
+    output_ismissing_arrays = [get_missing_vals(h) for h in outputs_name]
 
     inputs  = NTuple{N,Float64}[ntuple(k -> Float64(input_arrays[k][i]), Val(N)) for i in 1:nrows]
     outputs = NTuple{M,Float64}[ntuple(k -> Float64(output_arrays[k][i]), Val(M)) for i in 1:nrows]
 
-    inputs_ismissingvalues  = NTuple{N,Float64}[ntuple(k -> Float64(input_ismissing_arrays[k][i]), Val(N)) for i in 1:nrows]
-    outputs_ismissingvalues = NTuple{M,Float64}[ntuple(k -> Float64(input_ismissing_arrays[k][i]), Val(M)) for i in 1:nrows]
+    inputs_ismissingvalues  = NTuple{N,Bool}[ntuple(k -> input_ismissing_arrays[k][i], Val(N)) for i in 1:nrows]
+    outputs_ismissingvalues = NTuple{M,Bool}[ntuple(k -> input_ismissing_arrays[k][i], Val(M)) for i in 1:nrows]
 
     # Initialize errors with NaN
     inputs_error  = fill(ntuple(i -> NaN,Val{N}()),nrows)
@@ -130,13 +130,6 @@ function EstimationData(table_data, method, loss; output_weights = nothing,data_
         error("could not parse output_weights")
     end
 
-    data_w = if data_weights isa Symbol || data_weights isa AbstractString
-        convert(Vector{Float64},get_col_vals(String(data_weights)))
-    elseif isnothing(data_weights)
-        fill(1.0,length(inputs))
-    else
-        convert(Vector{Float64},data_weights)
-    end
 
     valid = [(any(inputs[i]) || any(outputs[i])) for i in 1:nrows]
     _species = isnothing(species) ? ["all"] : String.(species)
@@ -160,12 +153,14 @@ estimationdata_is_error_suffix(s::AbstractString) = any(endswith(s, string("_", 
 estimationdata_is_error_suffix(s::Symbol) = estimationdata_is_error_suffix(string(s))
 
 function estimationdata_fill_errors!(error_vec, error_type_vec, pure_names, ::Val{len_tuple}, colnames, cols) where len_tuple
+    nrows = 
     get_col_vals(h,x) = [ismissing(v) ? x : Float64(v) for v in Tables.getcolumn(cols, h)]
     for (j, var_name) in enumerate(pure_names)
         for etype in ERRORTYPES
             err_header = Symbol(string(var_name) * "_" * string(etype))
             if err_header in colnames
-                err_col = get_col_vals(err_header)
+                err_col = get_col_vals(err_header,0.0)
+                nrows = length(err_col)
                 for i in 1:nrows
                     tup = error_vec[i]
                     error_vec[i] = NTuple{len_tuple, Float64}(
@@ -188,7 +183,7 @@ function Base.show(io::IO, mime::MIME"text/plain", data::EstimationData)
         println(io,Base.basename(data.source))
     end
 
-    n = length(data.input)
+    n = length(data.inputs)
     if n > 0
         print(io," Data point")
         n != 1 && print(io,"s")
@@ -434,7 +429,7 @@ function EstimationData(data::Tuple{<: Any,<:AbstractString},method = nothing, l
     _method = if isnothing(method)
         est = estimationdata_options.method
         if est != Symbol()
-            getfield(Main,estimationdata_options.estimator)
+            getfield(Main,estimationdata_options.method)
         else
             error("no method specified in CSV and no method passed as argument")
         end
@@ -450,7 +445,7 @@ function EstimationData(data::Tuple{<: Any,<:AbstractString},method = nothing, l
             __mse
         end
     else
-        method
+        loss
     end
 
     

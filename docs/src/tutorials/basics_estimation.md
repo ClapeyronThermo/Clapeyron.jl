@@ -49,7 +49,7 @@ import Clapeyron.EstimationUtils
 #if you use `using Clapeyron.EstimationUtils` instead, the functions will be loaded into the project instead
 
 #get a vector of parameters from the model
-theta = EstimationUtils.parameter_vector(est_model)
+theta = EstimationUtils.get_eos_parameters(est_model)
 
 #get initial guess
 theta0 = EstimationUtils.initial_guess(est_model)
@@ -58,12 +58,12 @@ theta0 = EstimationUtils.initial_guess(est_model)
 theta1 = 2 .* theta
 
 #store vector of parameter in EoSModel
-EstimationUtils.set_parameter_vector!(est_model,theta1)
+EstimationUtils.set_eos_parameters!(est_model,theta1)
 
 #or, we can do it using julia broaccasting:
 est_model .= theta1
 
-@assert theta1 == EstimationUtils.parameter_vector(est_model)
+@assert theta1 == EstimationUtils.get_eos_parameters(est_model)
 
 lb,ub = EstimationUtils.lower_bounds(est_model),EstimationUtils.upper_bounds(est_model)
 
@@ -235,9 +235,87 @@ instead of defining everything in code, it is useful to store, along with the da
 Clapeyron Estimator #main header 
 [method = my_method,loss = my_loss,normalize = true,output_weights = 1.0 2.0 3.0,data_weights_col = dw,species = "carbon dioxide" "methane",]
 x,y,z,out_1,out_2,out_3
+```
 
+When reading a CSV, `EstimationData` parses the options line (the second line, enclosed in `[...]`) to extract the method, loss, weights, and other settings. Any option that is also provided as a keyword argument to the constructor takes priority over the value found in the CSV. If neither the CSV nor the keyword argument specifies a loss, the default mean squared relative error ($L(x,y) = (\frac{x - y}{y})^2$) is used. If no method is found, an error is raised.
+
+The `method` and `loss` keys are looked up by name in the `Main` module, so they must be defined there before constructing the `EstimationData`. Species names are parsed as a space-separated list of quoted strings; if not provided, all components of the model are used.
+
+```julia
+#given a CSV file "psat_methane.csv" with a matching method and loss already defined in Main:
+est_data = EstimationData("psat_methane.csv")
+
+#keyword arguments override the CSV options:
+est_data = EstimationData("psat_methane.csv", my_sat_pressure, my_loss; normalize = false)
 ```
 
 ## the `EstimationProblem` struct
 
-With an `EstimationModel` object containing
+With an `EstimationModel` object containing the parameter vector and an `EstimationData` object (or a collection of them) containing the experimental data, we have everything needed to define a full estimation problem. The `EstimationProblem` struct bundles both together and exposes a single `objective_function` that the optimizer can call:
+
+```julia
+#using the est_model and est_data defined earlier
+prob = EstimationProblem(est_model, est_data)
+```
+
+`EstimationProblem` also accepts a vector of `EstimationData` objects when fitting against multiple datasets simultaneously. The total loss is the sum of the individual losses:
+
+```julia
+est_data_psat  = EstimationData(my_sat_pressure, psat_data, my_loss)
+est_data_rhol  = EstimationData(my_den, rhov_data, my_loss)
+
+prob = EstimationProblem(est_model, [est_data_psat, est_data_rhol])
+```
+
+To evaluate the objective function at a given parameter vector `Θ`:
+
+```julia
+import Clapeyron.EstimationUtils
+
+Θ0 = EstimationUtils.initial_guess(prob)
+lb = EstimationUtils.lower_bounds(prob)
+ub = EstimationUtils.upper_bounds(prob)
+
+loss = EstimationUtils.objective_function(prob, Θ0)
+```
+
+Internally, `objective_function(prob, Θ)` calls `set_eos_parameters!(est_model, Θ)` to update the wrapped EoS model, then sums `objective_function(data_i, est_model.model)` over all `EstimationData` objects.
+
+### Running the optimization
+
+Once an `EstimationProblem` is assembled, We can pass it to any optimizer to solve our estimation problem. A common choice is a gradient-free box-constrained method, such as those available in `Optim.jl`:
+
+```julia
+using Optim
+
+Θ0 = EstimationUtils.initial_guess(prob)
+lb = EstimationUtils.lower_bounds(prob)
+ub = EstimationUtils.upper_bounds(prob)
+f = EstimationUtils.objective_function(prob) #equivalent to Θ -> EstimationUtils.objective_function(prob, Θ)
+result = optimize(
+    f,
+    lb, ub, Θ0,
+    Fminbox(NelderMead())
+)
+
+Θ_opt = Optim.minimizer(result)
+```
+
+On the choice of optimizers and julia packages, We have been obtaining good fits with the optimizer methods found in `Metaheuristics.jl`
+
+### Retrieving the solution
+
+After the optimization is complete, you can apply the optimal parameters back to the model and inspect the result:
+
+```julia
+#write the optimal parameters into the EoS model
+EstimationUtils.set_eos_parameters!(est_model, Θ_opt)
+
+#the underlying EoS model now uses the fitted parameters
+fitted_model = EstimationUtils.get_model(est_model)
+
+#compute any property with the fitted model as usual
+p_fit, vl_fit, vv_fit = saturation_pressure(fitted_model, 150.0)
+```
+
+The fitted model is a standard `EoSModel` and can be used everywhere a regular Clapeyron model is accepted, including property calculations, phase diagrams, and further refinement.
