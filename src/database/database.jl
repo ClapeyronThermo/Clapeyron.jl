@@ -1036,7 +1036,7 @@ function _parse_pair(s::AbstractString)
 end
 
 """
-    _parse_vec(s) -> Vector{Substring{String}}
+    _parse_vec(s) -> Vector{SubString{String}}
 
 Convert a string into a vector of strings acording to the following rules:
 - Each quoted value is an individual value, if there are more than 2 quotes present.
@@ -1064,19 +1064,19 @@ function __get_options(data,type)
         opts_dict = parse_bracket_format(data,true)
         a,b,c = "csvtype","grouptype","sep"
         _csvtype = if haskey(opts_dict,a)
-            _readcsvtype(opts_dict[Substring(a)][2])
+            _readcsvtype(opts_dict[SubString(a)][2])
         else
             invaliddata
         end
 
         _grouptype = if haskey(opts_dict,b)
-            Symbol(opts_dict[Substring(b)][2])
+            Symbol(opts_dict[SubString(b)][2])
         else
             :unknown
         end
 
         _sep = if haskey(opts_dict,c)
-            Symbol(opts_dict[Substring(c)][2])
+            Symbol(opts_dict[SubString(c)][2])
         else
             :comma
         end
