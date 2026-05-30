@@ -16,7 +16,7 @@ Concrete implementations are expected to subtype `AbstractEstimationModel` and
 """
 
 module EstimationUtils
-    
+    using Roots: @set
 #mandatory API for AbstractEstimationModel
 
 """
@@ -116,7 +116,7 @@ different EoS instance while reusing the same index/factor metadata.
 The function defaults to setting the `model` field to the new model.
 """
 function set_model(est_model,model)
-    Clapeyron.Roots.@set est_model.model = model
+    @set est_model.model = model
 end
  
 """
