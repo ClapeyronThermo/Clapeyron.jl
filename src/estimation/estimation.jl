@@ -3,6 +3,62 @@ include("estimation_data.jl")
 include("estimation_model.jl")
 
 """
+    EstimationProblem(est_model::AbstractEstimationModel,data;concrete = false)
+
+Core structure used for parameter optimization. 
+It joins estimation models and estimation data to perform parameter optimization.
+It can be created from a `EstimationUtils.AbstractEstimationModel` and a list of `EstimationUtils.AbstractEstimationLoss`.
+If `concrete` is set to `true`, then the list of data will be converted into a tuple before storing it.
+If `concrete` is set to `false`, then the list of data will be stored as an abstract vector, allowing adding data with different losses and methods afer the problem is constructed.
+
+"""
+mutable struct EstimationProblem{T<:EoSModel, M <: EstimationUtils.AbstractEstimationModel{T},D}
+    model::T #this model is an alias of the model stored inside toestimate.
+    initial_model::T #we dont touch this particular model
+    toestimate::M
+    data::D #abstractly typed for easy update
+end
+
+function EstimationProblem(est_model::EstimationUtils.AbstractEstimationModel,data;concrete = true)
+    if concrete
+        new_data = tuple(data...)
+    else
+        new_data = Vector{EstimationUtils.AbstractEstimationLoss}[]
+        resize!(new_data,length(data))
+        new_data .= data
+    end
+
+    model = EstimationUtils.get_model(est_model)
+    model2 = deepcopy(model)
+    est_model2 = EstimationUtils.set_model(est_model,model2)
+    return EstimationProblem(model2,model,est_model2,new_data)
+end
+
+
+# Mutable for now to make it easy to just replace the model
+
+function Base.show(io::IO, mime::MIME"text/plain", estimation::EstimationProblem)
+    print(io, typeof(estimation))
+    println(io, " with data for:")
+    show_pairs(io,(d.method for d in estimation.data),prekey = "  :",quote_string = false)
+    println(io, "\n to estimate:")
+    function val_print(io,val)
+        if val !== nothing
+            print(io, " with indices => ")
+            print('[')
+            show_pairs(io,val,nothing,quote_string = false,pair_separator = ',')
+            print(']')
+        end
+    end
+    show_pairs(io,estimation.toestimate.params,estimation.toestimate.indices," ",val_print,quote_string = false,prekey = "  :")
+end
+
+function Base.show(io::IO, estimation::EstimationProblem)
+    print(io, typeof(estimation))
+end
+
+
+"""
     est,obj,x0,lb,ub = Estimation(model::EoSModel,toestimate::Dict,filepaths;ignorefield = Vector{String},objective_form = mse(pred,exp) = ((pred-exp)/exp)^2)
     est,obj,x0,lb,ub = Estimation(est_model::EstimationModel,to_estimate::Union{Vector{EstimationData},NTuple{N,EstimationData}) where N
     est,obj,x0,lb,ub = Estimation(est_model::EstimationModel,to_estimate::EstimationData)
@@ -30,33 +86,7 @@ include("estimation_model.jl")
 
 Produces the estimator and other useful objects used within parameter estimation
 """
-mutable struct EstimationProblem{T<:EoSModel, M <: EstimationUtils.AbstractEstimationModel{T}}
-    model::T #this model is an alias of the model stored inside toestimate.
-    initial_model::T #we dont touch this particular model
-    toestimate::M
-    data::Vector{EstimationUtils.AbstractEstimationLoss} #abstractly typed for easy update
-end
-# Mutable for now to make it easy to just replace the model
-
-function Base.show(io::IO, mime::MIME"text/plain", estimation::EstimationProblem)
-    print(io, typeof(estimation))
-    println(io, " with data for:")
-    show_pairs(io,(d.method for d in estimation.data),prekey = "  :",quote_string = false)
-    println(io, "\n to estimate:")
-    function val_print(io,val)
-        if val !== nothing
-            print(io, " with indices => ")
-            print('[')
-            show_pairs(io,val,nothing,quote_string = false,pair_separator = ',')
-            print(']')
-        end
-    end
-    show_pairs(io,estimation.toestimate.params,estimation.toestimate.indices," ",val_print,quote_string = false,prekey = "  :")
-end
-
-function Base.show(io::IO, estimation::EstimationProblem)
-    print(io, typeof(estimation))
-end
+function Estimation end
 
 function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}},objective_form::Base.Callable,ignorefield::Union{Symbol,Vector{Symbol}})
     return _Estimation(model, toestimate, filepaths, objective_form, ignorefield)
@@ -74,18 +104,13 @@ function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filep
     return _Estimation(model, toestimate, filepaths, objective_form, ignorefield)
 end
 
-function Estimation(est_model::EstimationModel,toestimate::Union{EstimationData,AbstractVector,Tuple})
-    if toestimate isa AbstractVector || to_estimate isa Tuple
-        @assert all(x -> x isa EstimationData,toestimate)
-    end
-    concrete_toestimate = tuple(toestimate...)
-    model = est_model.model
-    est = EstimationProblem(model,deepcopy(model),est_model,concrete_toestimate)
+function Estimation(est_model::EstimationUtils.AbstractEstimationModel,data)
+    return EstimationProblem(est_model,toestimate)
 end
 
 function _Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths, objective_form, ignorefield) 
     est_model = EstimationModel(model,toestimate,ignorefield)
-    estimation = EstimationProblem(model, deepcopy(model), est_model, estimation_data_from_csvs(filepaths, objective_form))
+    estimation = EstimationProblem(est_model, estimation_data_from_csvs(filepaths, objective_form),concrete = false)
     objective = EstimationUtils.objective_function(estimation)
     x0 = EstimationUtils.initial_guess(estimation)
     upper = EstimationUtils.upper_bounds(estimation)

@@ -37,6 +37,8 @@ Every concrete subtype must implement:
 - [`set_model(estimation_model, new_model)`](@ref): return a new instance of  the estimation model that wraps `new_model` instead of the current one.
 - [`get_model(estimation_model)`](@ref): return the EoS model currently stored inside the estimation wrapper.
 
+`set_model` and `get_model` have default implementations that assume that the model is stored in a `model` field.
+
 # Optional interface
 
 - [`parameter_length(estimation_model)`](@ref): return the amount of parameters that are being manipulated.
@@ -110,13 +112,19 @@ that its wrapped EoS model is replaced by `new_model`.
  
 This is used internally to perform parameter extraction or injection on a
 different EoS instance while reusing the same index/factor metadata.
+
+The function defaults to setting the `model` field to the new model.
 """
-function set_model end
+function set_model(est_model,model)
+    Clapeyron.Roots.@set est_model.model = model
+end
  
 """
     get_model(estimation_model::AbstractEstimationModel{M}) -> M
  
 Return the EoS model currently wrapped by `estimation_model`.
+
+The default implementation just accesses the `model` field.
 """
 function get_model end
 

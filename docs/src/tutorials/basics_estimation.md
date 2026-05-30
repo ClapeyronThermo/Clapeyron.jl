@@ -60,7 +60,7 @@ theta1 = 2 .* theta
 #store vector of parameter in EoSModel
 EstimationUtils.set_eos_parameters!(est_model,theta1)
 
-#or, we can do it using julia broaccasting:
+#or, we can do it using julia broadcasting:
 est_model .= theta1
 
 @assert theta1 == EstimationUtils.get_eos_parameters(est_model)
@@ -126,10 +126,10 @@ Tsat = collect(range(90.99,185.99,step = 5))
 psat = antoine_psat.(Tsat)
 
 #compiled data
-psat_data = (T = Tsat,out_p = p_sat)
+psat_data = (T = Tsat, out_p = psat)
 
 #loss function
-my_loss(y_calc,y_exp) = abs2(y_calc - y_exp) v
+my_loss(y_calc,y_exp) = abs2(y_calc - y_exp)
 
 #function to get evaluated properties:
 my_sat_pressure(model,T) = saturation_pressure(model,T)[1]
@@ -137,7 +137,7 @@ my_sat_pressure(model,T) = saturation_pressure(model,T)[1]
 est_data = EstimationData(my_sat_pressure,psat_data,my_loss)
 ```
 
-We can now use our `EstimatorData` object to evaluate the loss function:
+We can now use our `EstimationData` object to evaluate the loss function:
 
 ```julia
 import Clapeyron.EstimationUtils
@@ -173,7 +173,7 @@ Vlsat = first.(Clapeyron.x0_sat_pure.(truth_model,Tsat)) #we are gonna use the a
 rholsat = 1 ./ Vlsat
 
 #compiled data with both properties
-psat_and_vsat_data = (T = Tsat,out_p = p_sat,out_rholsat = rhovlsat)
+psat_and_rholsat_data = (T = Tsat, out_p = psat, out_rholsat = rholsat)
 
 #our method will be different:
 function psat_and_rhosat(model,T)
@@ -184,7 +184,7 @@ end
 #the loss will be applied to (p_sat - p_exp) and (rhol - rhol_exp)
 my_loss(y_calc,y_exp) = abs2(y_calc - y_exp)
 
-est_data = EstimationData(psat_and_rhosat,psat_and_vsat_data,my_loss)
+est_data = EstimationData(psat_and_rhosat,psat_and_rholsat_data,my_loss)
 ```
 
 On functions with multiple return values, we just sum the losses of each output value with their respective expected data points. While this is ok for some simple properties, we may want to add a weight to each output value; some properties may have more error, or they may be just estimations from correlations.
@@ -192,7 +192,7 @@ On functions with multiple return values, we just sum the losses of each output 
 
 ```julia
 #now, the loss of each data point will be equal to 4*loss(psat - psat_exp) + 1.1*loss(rhol - rhol_exp)
-est_data = EstimationData(psat_and_rhosat,psat_and_vsat_data,my_loss,output_weights = (4.0,1.))
+est_data = EstimationData(psat_and_rhosat,psat_and_rholsat_data,my_loss,output_weights = (4.0,1.1))
 ```
 
 ### Multiple function inputs
@@ -216,8 +216,8 @@ T = last.(ptx)
 truth_model = IAPWS95()
 rhov = mass_density.(truth_model,p,T,phase = :v)
 
-#p first then T
-rhov_data = (p = p,T = T,out_rhov = out_rhov)
+#p first then T, matching the argument order of my_den below
+rhov_data = (p = p, T = T, out_rhov = rhov)
 
 #multiple input parameters, in the same order as the table
 my_den(model,p,T) = mass_density(model,p,T,phase = :v)
