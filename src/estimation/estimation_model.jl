@@ -109,7 +109,7 @@ function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
     return ToEstimate(params, indices, range_indices, full_index, lower, upper, guess, factor, sym, cross_assoc, recombine, ignorefield, Ref(scalar_indices))
 end
 
-mutable struct EstimationModel{M}
+mutable struct EstimationModel{M} <: EstimationUtils.AbstractEstimationModel{M}
     model::M
     toestimate::ToEstimate
 end
@@ -212,14 +212,11 @@ function EstimationModel(model,toestimate::Vector{Dict{Symbol,Any}};ignorefield 
     return EstimationModel(model,ToEstimate(toestimate),ignorefield)
 end
 
-function return_model(estimation::EstimationModel,model::EoSModel,values)
-    T = Base.promote_eltype(model,values)
-    return_model!(estimation,promote_model(T,model),values)
-end
+#EstimationUtils API
 
-set_eos_parameters!(est_model::EstimationModel,values) = set_eos_parameters!(est_model.model,est_model,values)
+EstimationUtils.set_eos_parameters!(est_model::EstimationModel,values) = _set_eos_parameters!(est_model.model,est_model,values)
 
-function set_eos_parameters!(model,est_model::EstimationModel,values)
+function _set_eos_parameters!(model,est_model::EstimationModel,values)
     estimation = est_model.toestimate
     params = estimation.params
     factor = estimation.factor
@@ -247,7 +244,7 @@ function set_eos_parameters!(model,est_model::EstimationModel,values)
     return model
 end
 
-function get_eos_parameters(est_model::EstimationModel)
+function EstimationUtils.get_eos_parameters(est_model::EstimationModel)
     model = est_model.model
     T = eltype(model)
     n = sum(length,est_model.toestimate.range_indices)
@@ -321,10 +318,12 @@ function __modify_param!(current_param::PairParameter,id::NTuple{2,Int},val,f,re
 end
 
 function __modify_param!(current_param::AssocParam,id::NTuple{2,Int},val,f,recomb,sym,cross_assoc)
-    id1 = id[1]
-    current_param.values.values[id1] = val*f
+    k = id[1]
+    current_param.values.values[k] = val*f
     if cross_assoc
-        current_param.values.values[id1+1] = val*f
+        ij = current_param.values.outer_indices[k]
+        ab = current_param.values.inner_indices[k]
+        
     end
 end
 
@@ -347,6 +346,19 @@ end
 function __get_param(current_param::AssocParam,I::NTuple{2,Int})
     return current_param.values.values[I[1]]
 end
+
+function EstimationUtils.symbol_indices(est_model::EstimationModel,syms::AbstractVector{Symbol})
+    params = est_model.toestimate.params
+    sym_ix = indexin(params,syms)
+    range_ix = @view est_model.toestimate.range_indices[sym_ix]
+    ix = Int[]
+    for ri in range_ix
+        append!(res,ri)
+    end
+    return ix
+end
+
+EstimationUtils.parameter_length(est_model::EstimationModel) = reduce(length,est_model.toestimate.range_indices)
 
 #=
 indexing and broadcasting interface
@@ -439,16 +451,6 @@ function __modify_param!(model,est_model::EstimationModel,val,ijk::NTuple{3,Int}
         end
     end
     return val
-end
-
-function Base.copyto!(dest::EstimationModel,src::AbstractArray)
-    set_eos_parameters!(dest.model,dest,src)
-    return dest
-end
-
-function Base.copyto!(dest::EstimationModel,src::Base.Broadcast.Broadcasted)
-    set_eos_parameters!(dest.model,dest,src)
-    return dest
 end
 
 function __flatten_data(data,model::ToEstimate,default::Float64)

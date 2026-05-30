@@ -27,17 +27,16 @@ include("estimation_model.jl")
 - `lb`: Lower bounds for the parameters. They can also be accessed via `Clapeyron.EstimationUtils.upper_bounds(est)`
 
 ## Description
+
 Produces the estimator and other useful objects used within parameter estimation
 """
-mutable struct EstimationProblem{T<:EoSModel,DD}
-    model::T
-    initial_model::T
-    toestimate::EstimationModel{T}
-    data::DD
+mutable struct EstimationProblem{T<:EoSModel, M <: EstimationUtils.AbstractEstimationModel{T}}
+    model::T #this model is an alias of the model stored inside toestimate.
+    initial_model::T #we dont touch this particular model
+    toestimate::M
+    data::Vector{EstimationUtils.AbstractEstimationLoss} #abstractly typed for easy update
 end
 # Mutable for now to make it easy to just replace the model
-
-__mse(pred,exp) = ((pred-exp)/exp)^2
 
 function Base.show(io::IO, mime::MIME"text/plain", estimation::EstimationProblem)
     print(io, typeof(estimation))
@@ -86,7 +85,7 @@ end
 
 function _Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths, objective_form, ignorefield) 
     est_model = EstimationModel(model,toestimate,ignorefield)
-    estimation = EstimationProblem(model, deepcopy(model), est_model, EstimationData(filepaths), objective_form)
+    estimation = EstimationProblem(model, deepcopy(model), est_model, estimation_data_from_csvs(filepaths, objective_form))
     objective = EstimationUtils.objective_function(estimation)
     x0 = EstimationUtils.initial_guess(estimation)
     upper = EstimationUtils.upper_bounds(estimation)
@@ -123,54 +122,42 @@ function return_model!(
     return set_eos_parameters!(model,estimation,values)
 end
 
-@deprecate return_model! set_eos_parameters!
-
 function reload_data(estimation::EstimationProblem)
-    estimationdata = EstimationData(estimation.filepaths)
-    empty!(estimation.data)
-    for i in 1:length(estimation.filepaths)
-        push!(estimation.data, estimationdata[i])
+    for (i,est_data) in enumerate(estimation.data)
+        source = est_data.source
+        _loss = est_data_options.loss == Symbol() ? est_data.loss : nothing
+        _method = est_data_options.method == Symbol() ? est_data.method : nothing
+        _output_weights = est_data_options.output_weights == [1.0] ? est_data.output_weights : 1.0
+        push!(method,EstimationData)
+        estimation.data[i] = EstimationData((_output_weights,source),_method,_loss)
     end
+    return estimation
 end
 
-export update_estimation!
-
-function update_estimation!(
-        estimation::EstimationProblem,
-        params::Vector{Symbol},
-        values::Vector{Any})
-
-    model = estimation.model
-    for (i, param) in enumerate(params)
-        current_param = getfield(model.params, param)
-        if typeof(current_param) <: SingleParameter
-            for (j, value) in enumerate(values[i])
-                current_param.values[j] = value
-            end
-        end
-        if typeof(current_param) <: PairParam
-            for j = 1:length(model.components)
-                for k = 1:length(model.components)
-                    current_param.values[j,k] = values[i][j,k]
-                end
-            end
-        end
-        if typeof(current_param) <: AssocParam
-            if typeof(values[i]) <: Compressed4DMatrix
-                for (j, value) in enumerate(values[i].values)
-                    current_param.values.values[j] = value
-                end
-            else
-                for (j, value) in enumerate(values[i])
-                    current_param.values.values[j] = value
-                end
-            end
-        end
-    end
+#update via Symbols
+function update_estimation!(estimation::EstimationProblem, params::Vector{Symbol},  values) 
+    indices = EstimationUtils.symbol_indices(estimation)
+    @assert length(indices) == length(values)
+    Θ₀ = EstimationUtils.get_eos_parameters(estimation)
+    Θ = @view Θ₀[indices]
+    Θ .= values
+    set_eos_parameters!(estimation,Θ)
+    return estimation
 end
 
+#update model
 function update_estimation!(estimation::EstimationProblem, model::EoSModel)
     estimation.model = model
+    return estimation
+end
+
+#update data
+function update_estimation!(estimation::EstimationProblem, filepaths::Union{AbstractString,AbstractVector{<:AbstractString}})
+    empty!(estimation.data)
+    new_data = estimation_data_from_csvs(filepaths)
+    resize!(estimation_data,length(new_data))
+    estimation.data .= new_data
+    return estimation
 end
 
 """
@@ -193,7 +180,13 @@ function EstimationUtils.objective_function(estimation::EstimationProblem{M,DD},
     F = zero(Base.promote_eltype(Θmodel))
     data = estimation.data
     for i ∈ 1:length(data)
-        F += objective_function(data[i],Θmodel)
+        eval_funcion_i = estimation_data[i]
+        Fi = objective_function(eval_funcion_i,Θmodel)
+        if !isfinite(Fi)
+            F = 1e100*oneunit(F)
+            break
+        end
+        F += Fi
     end
     return F
 end
@@ -210,6 +203,6 @@ end
 EstimationUtils.lower_bounds(model::EstimationProblem) = EstimationUtils.lower_bounds(model.toestimate)
 EstimationUtils.upper_bounds(model::EstimationProblem) = EstimationUtils.upper_bounds(model.toestimate)
 EstimationUtils.initial_guess(model::EstimationProblem) = EstimationUtils.initial_guess(model.toestimate)
-EstimationUtils.parameter_vector(model::EstimationProblem) = EstimationUtils.parameter_vector(model.toestimate)
+EstimationUtils.get_eos_parameters(model::EstimationProblem) = EstimationUtils.get_eos_parameters(model.toestimate)
 
 export Estimation, EstimationModel, EstimationData, ToEstimate

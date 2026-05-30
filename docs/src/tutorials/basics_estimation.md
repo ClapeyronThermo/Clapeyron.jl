@@ -114,19 +114,26 @@ The `EstimationData` object stores the following properties:
 
 The `EstimationData` constructor takes a CSV file or other column-based table (only one file per `EstimationData` object) and it sorts the columns according the following criteria:
 
-- Column names starting with `out_` are considered output values
-- Column names that dont follow any of this criteria are considered input calues
+- Column names starting with `out_` are considered output values.
+- Column names ending in `_error_abs`,`error_rel`,`error_std` are considered error values. Those are not utilized in the parameter estimation procedure, but they are useful for calculating statistical properties of the fitted parameters later.
+- Column names that dont follow any of this criteria are considered input values.
 
 ```julia
+#Experimental Melting and Vapor Pressures of Methane, J. Chem. Thermodyn., 1972, 4, 1, 127-133, https://doi.org/10.1016/S0021-9614(72)80016-8 .
+A,B,C = (3.9895,443.028,-0.49)
+antoine_psat(T) = exp10(A - (B/(T + C)))*1e5
+Tsat = collect(range(90.99,185.99,step = 5))
+psat = antoine_psat.(Tsat)
 
-function my_sat_pressure(model,T)
-    saturation_pressure(model,T)[1]
-end
-
-Tsat = [90.694, 100.69, 110.69, 120.69, 130.69, 140.69, 150.69, 160.69, 170.69, 180.69]
-p_sat = [11696.0, 36936.0, 93451.0, 201010.0, 382860.0, 664510.0, 1.073e6, 1.6369e6, 2.3872e6, 3.361e6]
+#compiled data
 psat_data = (T = Tsat,out_p = p_sat)
-my_loss(x,y) = abs2(x - y)
+
+#loss function
+my_loss(y_calc,y_exp) = abs2(y_calc - y_exp) v
+
+#function to get evaluated properties:
+my_sat_pressure(model,T) = saturation_pressure(model,T)[1]
+
 est_data = EstimationData(my_sat_pressure,psat_data,my_loss)
 ```
 
@@ -141,7 +148,95 @@ loss1 = EstimationUtils.objective_function(est_data,model1)
 loss2 = EstimationUtils.objective_function(est_data,model2)
 ```
 
-###
+### Multiple function returns
+
+Most phase equilibria procedures don't return an unique value. Instead, they return all information necessary to reconstruct the phases.
+For example, `Clapeyron.saturation_pressure(model,T)` returns not only the saturation pressure, but also the liquid and vapour volumes at `(Psat,Tsat)` conditions.
+While performing a parameter estimation procedure, it is common to find that two or more loss functions depend on only one phase equilibria procedure.
+For example,the common parameter estimation procedure for the PC-SAFT EoS for pure, non-associating molecules is to minimize the loss with respect to the saturated liquid density and saturation pressure, but both properties are the same thermodynamic state: pure saturated liquid at (Psat,Tsat), and can be obtained simultaneusly.
+
+The `EstimationData` struct accounts for this automatically. One just needs to provide multiple output values:
+
+```julia
+
+#same temps as before
+A,B,C = (3.9895,443.028,-0.49)
+antoine_psat(T) = exp10(A - (B/(T + C)))*1e5
+Tsat = collect(range(90.99,185.99,step = 5))
+psat = antoine_psat.(Tsat)
+
+#we are gonna extract liquid density values from the reference equation of state for methane
+truth_model = SingleFluid("methane")
+Vlsat = first.(Clapeyron.x0_sat_pure.(truth_model,Tsat)) #we are gonna use the ancillary for the liquid volume values.
+
+#fitting density instead of volume:
+rholsat = 1 ./ Vlsat
+
+#compiled data with both properties
+psat_and_vsat_data = (T = Tsat,out_p = p_sat,out_rholsat = rhovlsat)
+
+#our method will be different:
+function psat_and_rhosat(model,T)
+    p,vl,_ = saturation_pressure(model,T)
+    return p,1/vl
+end
+
+#the loss will be applied to (p_sat - p_exp) and (rhol - rhol_exp)
+my_loss(y_calc,y_exp) = abs2(y_calc - y_exp)
+
+est_data = EstimationData(psat_and_rhosat,psat_and_vsat_data,my_loss)
+```
+
+On functions with multiple return values, we just sum the losses of each output value with their respective expected data points. While this is ok for some simple properties, we may want to add a weight to each output value; some properties may have more error, or they may be just estimations from correlations.
+`EstimationData` supports adding weighting values via the `output_weights` keyword argument. Using the same example as before:
+
+```julia
+#now, the loss of each data point will be equal to 4*loss(psat - psat_exp) + 1.1*loss(rhol - rhol_exp)
+est_data = EstimationData(psat_and_rhosat,psat_and_vsat_data,my_loss,output_weights = (4.0,1.))
+```
+
+### Multiple function inputs
+
+Conversely, in the same way that could be multiple properties per data point, There are properties that require multiple inputs.
+Most single-component data away from saturation depends on the pressure *and* the temperature, multiple component models also depend on the composition of the mixture.
+`EstimationData` handles this situation similar to how its handled with multiple outputs, we just need to pass more input vectors:
+
+```julia
+#fitting density of a gas:
+
+Tx = 400:5:500
+px = 1e4:1e4:1e5
+
+#all combinations of (px,Tx)
+ptx = vec(collect(Iterators.product(px,Tx)))
+p = first.(ptx)
+T = last.(ptx)
+
+#IAPWS-95 as reference data
+truth_model = IAPWS95()
+rhov = mass_density.(truth_model,p,T,phase = :v)
+
+#p first then T
+rhov_data = (p = p,T = T,out_rhov = out_rhov)
+
+#multiple input parameters, in the same order as the table
+my_den(model,p,T) = mass_density(model,p,T,phase = :v)
+
+my_loss(y_calc,y_exp) = abs2(y_calc - y_exp)
+
+est_data = EstimationData(my_den,rhov_data,my_loss)
+```
+
+### Reading from a CSV
+
+instead of defining everything in code, it is useful to store, along with the dataset, the expected loss functions, evaluation methods, among other properties. `EstimationData` is capable of reading a CSV with the following format:
+
+```csv
+Clapeyron Estimator #main header 
+[method = my_method,loss = my_loss,normalize = true,output_weights = 1.0 2.0 3.0,data_weights_col = dw,species = "carbon dioxide" "methane",]
+x,y,z,out_1,out_2,out_3
+
+```
 
 ## the `EstimationProblem` struct
 
