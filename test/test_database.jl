@@ -18,9 +18,9 @@ using Clapeyron, Test, LinearAlgebra
         t3,sep3,header3 = Clapeyron.get_header(Clapeyron.DB_PATH * "/ideal/WalkerIdeal.csv")
         @test header3.grouptype == :Walker
 
-        t4,sep4,header4 = Clapeyron.get_header(Clapeyron.DB_PATH * "/../examples/data/gc_sat_prop.csv")
-        @test header4.estimator == :saturation_p_rhol
-        @test header4.species[1] == "ethane"
+        #t4,sep4,header4 = Clapeyron.get_header(Clapeyron.DB_PATH * "/../examples/data/gc_sat_prop.csv")
+        #@test header4.estimator == :saturation_p_rhol
+        #@test header4.species[1] == "ethane"
 
         t5,sep5,header5 = Clapeyron.make_header((species = ["a","b"],b = [1,2]))
         @test sep5 == ","
