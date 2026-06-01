@@ -74,13 +74,14 @@ function EstimationData(table_data, method, loss; output_weights = nothing,data_
     get_col_vals(h) = [ismissing(v) ? NaN : Float64(v) for v in Tables.getcolumn(cols, h)]
     get_missing_vals(h) = [ismissing(v) for v in Tables.getcolumn(cols, h)]
 
+
     if data_weights isa Symbol && data_weights != Symbol()
         data_weights_col = data_weights
         ix = findfirst(isequal(data_weights),colnames)
         deleteat!(colnames,ix)
         data_w = get_col_vals(data_weights_col)
-    elseif isnothing(data_weights)
-        data_w = fill(1.0,length(inputs))
+    elseif isnothing(data_weights) || data_weights == Symbol()
+        data_w = fill(1.0,nrows)
     else
         data_w = convert(Vector{Float64},data_weights)
     end
@@ -120,20 +121,29 @@ function EstimationData(table_data, method, loss; output_weights = nothing,data_
 
     # output weights
     out_w = if output_weights === nothing
-        ntuple(i -> 1.0,Val{N}())
+        ntuple(i -> 1.0,Val{M}())
     elseif output_weights isa Number
-        @assert N == 1
+        @assert M == 1
         (Float64(output_weights),)
     elseif output_weights isa Tuple || output_weights isa AbstractVector
-        ntuple(i -> output_weights[i],Val{N}())
+        n_out_w = length(output_weights)
+        if n_out_w == 1 && M > 1
+            out_w_only = only(output_weights)
+            ntuple(i -> out_w_only,Val{M}())
+        elseif n_out_w == M
+            ntuple(i -> output_weights[i],Val{M}())
+        else
+            throw(DimensionMismatch("length of output weights is not equal the amount of outputs"))
+        end
     else
         error("could not parse output_weights")
     end
 
 
-    valid = [(any(inputs[i]) || any(outputs[i])) for i in 1:nrows]
+    valid = [!(any(inputs_ismissingvalues[i]) || any(outputs_ismissingvalues[i])) for i in 1:nrows]
     _species = isnothing(species) ? ["all"] : String.(species)
 
+    _source = isnothing(source) ? "" : ifelse(startswith(source,"Clapeyron Estimator"),"",source)
     return EstimationData{typeof(method), typeof(loss), N, M}(
         method, loss, _species,
         inputs_name, outputs_name,
@@ -144,8 +154,7 @@ function EstimationData(table_data, method, loss; output_weights = nothing,data_
         out_w,
         data_w,
         normalize,
-        (isnothing(source) ? "" : source)
-    )
+        _source)
 end
 
 # Distinguish output/input/error columns
@@ -176,21 +185,20 @@ function estimationdata_fill_errors!(error_vec, error_type_vec, pure_names, ::Va
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", data::EstimationData)
-    println(io, typeof(data))
-
-    if data.source != ""
-        print(io," Source: ")
-        println(io,Base.basename(data.source))
-    end
+    print(io, typeof(data))
 
     n = length(data.inputs)
-    if n > 0
-        print(io," Data point")
-        n != 1 && print(io,"s")
-        print(io,": ")
-        println(io,n)
-    end
+    print(io," with ")
+    print(io,n)
+    print(io," data point")
+    n != 1 && print(io,"s")
+    println(io,":")
 
+    print(io, " Method: ")
+    println(io,data.method)
+
+    print(io, " Loss: ")
+    println(io,data.loss)
 
     print(io, " Inputs: ")
     if length(data.inputs_name) == 0
@@ -202,7 +210,12 @@ function Base.show(io::IO, mime::MIME"text/plain", data::EstimationData)
 
     print(io, " Outputs: ")
     show_pairs(io,data.outputs_name,pair_separator = ", ",quote_string = false)
-    println(io)
+    #println(io)
+
+    if data.source != ""
+        print(io," Source: ")
+        println(io,Base.basename(data.source))
+    end
 end
 
 function Base.show(io::IO, data::EstimationData)
@@ -217,8 +230,7 @@ end
 function EstimationUtils.objective_function(data::EstimationData{<:Any, <:Any, N, M}, model) where {N, M}
     # Initialise the objective value (type depends on model, e.g. Float64)
     F = zero(eltype(model))
-   
-    
+
     # Select the appropriate model for the given species
     if data.species == ["all"]
         model_r = model
@@ -237,7 +249,6 @@ function EstimationUtils.objective_function(data::EstimationData{<:Any, <:Any, N
     npoints = length(data.inputs)
     loss = data.loss
     method = data.method
-    
     #valid_eval = false
     for (inp, targ, dw, valid_point) in zip(inputs, targets, dweights, valid)
         # Compute prediction tuple of length M
@@ -360,7 +371,7 @@ function __get_estimationdata_options(data,type)
         end
 
         _method = if haskey(json_dict,b)
-            Symbol(json_dict[b][2])
+            Symbol(json_dict[b])
         else
             Symbol()
         end
@@ -406,14 +417,22 @@ function __get_estimationdata_options(data,type)
             true
         end
 
-        return (loss = _loss, method = _method,output_weights = _output_weights,data_weights_col = _data_weights_col,sep = _sep, species = _species)
+        return (loss = _loss, method = _method,output_weights = _output_weights,data_weights_col = _data_weights_col,sep = _sep, species = _species, normalize = _normalize)
     else
         throw(error("Clapeyron.__get_options: invalid type. expected :json or :vec, got $type"))
     end
 end
 
 function EstimationData(data::AbstractString,method = nothing, loss = nothing)
-    return EstimationData((data,NaN),method,loss)
+    return EstimationData((NaN,data),method,loss)
+end
+
+function EstimationData(data::AbstractVector{<:AbstractString},method = nothing, loss = nothing)
+    return EstimationData(only(data),method,loss)
+end
+
+function EstimationData(data::AbstractVector{Tuple{<: Any,<:AbstractString}},method = nothing, loss = nothing)
+    return EstimationData(only(data),method,loss)
 end
 
 function EstimationData(data::Tuple{<: Any,<:AbstractString},method = nothing, loss = nothing)
@@ -423,7 +442,6 @@ function EstimationData(data::Tuple{<: Any,<:AbstractString},method = nothing, l
     filepath = filepaths[1]
     
     estimationdata_options = read_estimationdata_options(filepath)
-    
     table_data = read_csv(filepath,DefaultOptions,estimationdata_options.sep)
 
     _method = if isnothing(method)

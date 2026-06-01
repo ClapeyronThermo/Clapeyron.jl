@@ -93,7 +93,7 @@ returns the length of the parameter vector `Θ`. Defaults to the length of `get_
 parameter_length(model::AbstractEstimationModel) = length(get_eos_parameters(model))
 
 """
-    symbol_indices(estimation_model::AbstractEstimationModel{M}, syms) -> AbstractVector{Int}
+    symbol_indices(estimation_model::AbstractEstimationModel{M}, syms::Symbol) -> AbstractVector{Int}
  
 Return the integer indices into the flat parameter vector `Θ` that correspond
 to the parameter names in `syms` (a `Symbol` or `AbstractVector{Symbol}`).
@@ -103,7 +103,9 @@ Implementing this function is optional; it enables named indexing via
 """
 function symbol_indices end
 
-
+function symbol_indices(model,syms::AbstractVector{Symbol})
+    mapreduce(Base.Fix1(symbol_indices,model),vcat,syms)
+end
 """
     set_model(estimation_model::AbstractEstimationModel{M}, new_model::M) -> AbstractEstimationModel{M}
  
@@ -126,7 +128,7 @@ Return the EoS model currently wrapped by `estimation_model`.
 
 The default implementation just accesses the `model` field.
 """
-function get_model end
+get_model(est_model) = est_model.model
 
 #indexing interface for #AbstractEstimationModel
 
@@ -146,6 +148,9 @@ function Base.getindex(model::AbstractEstimationModel,i::Int)
     return Θ[i]
 end
 
+Base.BroadcastStyle(::Type{<:T}) where T <: AbstractEstimationModel = Broadcast.Style{T}()
+Base.size(m::AbstractEstimationModel) = (parameter_length(m),) 
+
 function Base.copyto!(model::AbstractEstimationModel,Θ::AbstractVector)
     set_eos_parameters!(model,Θ)
 end
@@ -155,13 +160,13 @@ function Base.copyto!(model::AbstractEstimationModel,Θ::Base.Broadcast.Broadcas
 end
 
 function Base.getindex(model::AbstractEstimationModel,s::Symbol)
-    I = symbol_indices(model)
+    I = symbol_indices(model,s)
     Θ = get_eos_parameters(model)
     return Θ[I]
 end
 
 function Base.getindex(model::AbstractEstimationModel,s::AbstractVector{Symbol})
-    I = symbol_indices(model)
+    I = symbol_indices(model,s)
     Θ = get_eos_parameters(model)
     return Θ[I]
 end
@@ -172,6 +177,25 @@ function Base.setindex!(model::AbstractEstimationModel,Θ_new,i::Int)
     set_eos_parameters!(model,Θ)
     return Θ_new
 end
+
+function Base.setindex!(model::AbstractEstimationModel,Θ_new,s::Symbol)
+    i = symbol_indices(model,s)
+    Θ = get_eos_parameters(model)
+    Θi =  @view Θ[i]
+    Θ[i] .= Θ_new
+    set_eos_parameters!(model,Θ)
+    return Θ_new
+end
+
+function Base.setindex!(model::AbstractEstimationModel,Θ_new,s::AbstractVector{Symbol})
+    i = symbol_indices(model,s)
+    Θ = get_eos_parameters(model)
+    Θi =  @view Θ[i]
+    Θ[i] .= Θ_new
+    set_eos_parameters!(model,Θ)
+    return Θ_new
+end
+
 
 #mandatory API for AbstractEstimationLoss
 """

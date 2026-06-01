@@ -18,6 +18,7 @@ mutable struct EstimationProblem{T<:EoSModel, M <: EstimationUtils.AbstractEstim
     toestimate::M
     data::D #abstractly typed for easy update
 end
+# Mutable for now to make it easy to just replace the model
 
 function EstimationProblem(est_model::EstimationUtils.AbstractEstimationModel,data;concrete = true)
     if concrete
@@ -31,11 +32,35 @@ function EstimationProblem(est_model::EstimationUtils.AbstractEstimationModel,da
     model = EstimationUtils.get_model(est_model)
     model2 = deepcopy(model)
     est_model2 = EstimationUtils.set_model(est_model,model2)
+
+    comps = component_list(model)
+    norm_comps = normalisestring.(comps)
+    for data_i in new_data
+        __estimationdata_fix_species!(model,data_i,comps,norm_comps)
+    end
+
     return EstimationProblem(model2,model,est_model2,new_data)
 end
 
+__estimationdata_fix_species!(data,comps,norm_comps) = nothing
 
-# Mutable for now to make it easy to just replace the model
+function __estimationdata_fix_species!(data::EstimationData,comps,norm_comps)
+    #additional checks
+    species = data.species
+    species[1] == "all" && length(species) == 1 && return nothing
+    for (j,species_j) in enumerate(species)
+        if species_j ∉ comps
+            norm_species_j = normalisestring(species_j)
+            i = findfirt(isequal(norm_species_j),norm_comps)
+            if isnothing(i)
+                throw(error("EstimationData error: species $species_j not found in input model, please check the input `species` field in the CSV."))
+            else
+                #modify species to make it match with the input model
+                species[j] = comps[i]
+            end
+        end
+    end
+end
 
 function Base.show(io::IO, mime::MIME"text/plain", estimation::EstimationProblem)
     print(io, typeof(estimation))

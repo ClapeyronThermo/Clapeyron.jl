@@ -42,7 +42,7 @@ A `ToEstimate` struct
 
 Turns the input parameter dictionary into a `ToEstimate` struct to be used within the parameter estimation.
 """
-function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
+function ToEstimate(params_dict::AbstractVector{<:Dict{Symbol}})
     params = Symbol[]
     indices = Vector{Vector{Tuple{Int64,Int64}}}(undef,0)
     range_indices = Vector{UnitRange{Int64}}(undef,0)
@@ -208,7 +208,7 @@ function EstimationModel(model,pkg_estimate::ToEstimate,ignorefield)
     return est_model
 end
 
-function EstimationModel(model,toestimate::Vector{Dict{Symbol,Any}};ignorefield = nothing)
+function EstimationModel(model,toestimate::AbstractVector{<:Dict{Symbol}};ignorefield = nothing)
     return EstimationModel(model,ToEstimate(toestimate),ignorefield)
 end
 
@@ -237,7 +237,7 @@ function _set_eos_parameters!(model,est_model::EstimationModel,values)
     for paramname ∈ paramnames
         submodel_i = getfield(model,paramname)
         if (submodel_i isa EoSModel) & !(paramname in estimation.ignorefield)
-            set_eos_parameters!(submodel_i,est_model,values)
+            _set_eos_parameters!(submodel_i,est_model,values)
         end
     end
     recombine!(model)
@@ -352,9 +352,13 @@ function __get_param(current_param::AssocParam,I::NTuple{2,Int})
     return current_param.values.values[I[1]]
 end
 
-function EstimationUtils.symbol_indices(est_model::EstimationModel,syms::AbstractVector{Symbol})
+function EstimationUtils.symbol_indices(est_model::EstimationModel,syms::Symbol)
     params = est_model.toestimate.params
-    sym_ix = indexin(params,syms)
+    sym_ix = findall(isequal(syms),params)
+    length(sym_ix) == 0 && throw(error("EstimationUtils.symbol_indices: symbols not found."))
+    if length(sym_ix) == 1
+        return convert(Vector{Int64},est_model.toestimate.range_indices[sym_ix[1]])
+    end
     range_ix = @view est_model.toestimate.range_indices[sym_ix]
     ix = Int[]
     for ri in range_ix
@@ -363,7 +367,7 @@ function EstimationUtils.symbol_indices(est_model::EstimationModel,syms::Abstrac
     return ix
 end
 
-EstimationUtils.parameter_length(est_model::EstimationModel) = reduce(length,est_model.toestimate.range_indices)
+EstimationUtils.parameter_length(est_model::EstimationModel) = sum(length,est_model.toestimate.range_indices)
 
 #=
 indexing and broadcasting interface
@@ -468,7 +472,7 @@ function __flatten_data(data,toestimate::ToEstimate,default::Float64)
         data_i = data[i]
         if length(data_i) == 1
             flattened_data_i .= data_i[1]
-        elseif length(lbi) == 0
+        elseif length(data_i) == 0
             #do nothing
         else
             flattened_data_i .= data_i
