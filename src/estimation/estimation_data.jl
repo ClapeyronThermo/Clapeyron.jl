@@ -161,7 +161,6 @@ estimationdata_is_error_suffix(s::AbstractString) = any(endswith(s, string("_", 
 estimationdata_is_error_suffix(s::Symbol) = estimationdata_is_error_suffix(string(s))
 
 function estimationdata_fill_errors!(error_vec, error_type_vec, pure_names, ::Val{len_tuple}, colnames, cols) where len_tuple
-    nrows = 
     get_col_vals(h,x) = [ismissing(v) ? x : Float64(v) for v in Tables.getcolumn(cols, h)]
     for (j, var_name) in enumerate(pure_names)
         for etype in ERRORTYPES
@@ -244,7 +243,7 @@ function EstimationUtils.objective_function(data::EstimationData{<:Any, <:Any, N
     valid = data.valid
     dweights = data.data_weights                # per‑point weight
     ow = data.output_weights                    # NTuple{M, Float64}
-    
+
     npoints = length(data.inputs)
     loss = data.loss
     method = data.method
@@ -266,11 +265,11 @@ function EstimationUtils.objective_function(data::EstimationData{<:Any, <:Any, N
         F = F / npoints
     end
 
-    
+
     #=
     #TODO: do something if no point is valid
     if !valid_eval
-        
+
     end
     =#
 
@@ -404,7 +403,7 @@ function __get_estimationdata_options(data,type)
                 [String(val)]
             else
                 convert(Vector{String},val)
-                
+
             end
         else
             ["all"]
@@ -439,7 +438,7 @@ function EstimationData(data::Tuple{<: Any,<:AbstractString},method = nothing, l
     filepaths = flattenfilepaths(String[],filepath0)
     @assert length(filepaths) == 1
     filepath = filepaths[1]
-    
+
     estimationdata_options = read_estimationdata_options(filepath)
     table_data = read_csv(filepath,DefaultOptions,estimationdata_options.sep)
 
@@ -465,7 +464,7 @@ function EstimationData(data::Tuple{<: Any,<:AbstractString},method = nothing, l
         loss
     end
 
-    
+
     _output_weights = if isnan(output_weights)
         estimationdata_options.output_weights
     else
@@ -502,7 +501,7 @@ function estimation_data_from_csvs(filepaths_weights::AbstractVector{T}, method 
     end
     res = EstimationData[]
     std_filepath_weigths = collect(zip(weight,filepaths))
-    
+
     for std_filepath_weight in std_filepath_weigths
         push!(res,EstimationData(std_filepath_weight,method,loss))
     end

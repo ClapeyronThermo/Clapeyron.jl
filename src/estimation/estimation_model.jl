@@ -59,7 +59,7 @@ function ToEstimate(params_dict::AbstractVector{<:Dict{Symbol}})
     ignorefield = Symbol[]
     for dict in params_dict
         push!(params,dict[:param])
-    
+
         id = get(dict, :indices, (0,0))
         full_index_i = (id == (0,0))
         push!(full_index,full_index_i)
@@ -160,7 +160,7 @@ function recalculate_flatten_estimationmodel!(est_model::EstimationModel)
             #empty model. get all indices, for single component models, this will be (1,1). for other models, it will be a list of indices.
 
             #check that all available parameters are of the same type and size
-            
+
             all_params = __recursive_getparam(model,paramnames[i],toestimate.ignorefield)
             param_lengths = map(x -> prod(size(x)),all_params)
             param_types = map(parameterless_type,all_params)
@@ -422,7 +422,7 @@ function __try_get_param(est_model::EstimationModel,ijk::NTuple{3,Int})
             end
         end
     end
-    
+
     return zero(T)*NaN,false
 end
 
