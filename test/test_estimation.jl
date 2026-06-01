@@ -259,7 +259,7 @@ end
         #objective_function – non-zero loss on different model
         model2 = PCSAFT("methane")
         F_model2 = EstimationUtils.objective_function(est_data, model2)
-        @test F > 0.0
+        @test F_model2 > 0.0
         @test isfinite(F_model2)
 
         #normalize flag
