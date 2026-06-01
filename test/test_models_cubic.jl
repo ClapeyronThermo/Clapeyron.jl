@@ -266,7 +266,7 @@
         @testset "PTH" begin
             system = PatelTejaHeyen(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.66377850749776 rtol = 1e-6
-            @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, zz) rtol = 1e-6
+            @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
         end
 
     end
