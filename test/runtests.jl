@@ -6,6 +6,7 @@ using Unitful #Unitful ext
 using MultiComponentFlash: MultiComponentFlash
 using Clapeyron.LinearAlgebra
 using Clapeyron.StaticArrays
+using Clapeyron.EstimationUtils
 using Clapeyron: has_sites,has_groups
 using Clapeyron: PH, QT, QP, TS, VT, PT
 #=
