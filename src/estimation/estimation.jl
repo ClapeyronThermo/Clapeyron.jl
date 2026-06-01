@@ -5,7 +5,7 @@ include("estimation_model.jl")
 """
     EstimationProblem(est_model::AbstractEstimationModel,data;concrete = false)
 
-Core structure used for parameter optimization. 
+Core structure used for parameter optimization.
 It joins estimation models and estimation data to perform parameter optimization.
 It can be created from a `EstimationUtils.AbstractEstimationModel` and a list of `EstimationUtils.AbstractEstimationLoss`.
 If `concrete` is set to `true`, then the list of data will be converted into a tuple before storing it.
@@ -36,7 +36,7 @@ function EstimationProblem(est_model::EstimationUtils.AbstractEstimationModel,da
     comps = component_list(model)
     norm_comps = normalisestring.(comps)
     for data_i in new_data
-        __estimationdata_fix_species!(model,data_i,comps,norm_comps)
+        __estimationdata_fix_species!(data_i,comps,norm_comps)
     end
 
     return EstimationProblem(model2,model,est_model2,new_data)
@@ -63,9 +63,32 @@ function __estimationdata_fix_species!(data::EstimationData,comps,norm_comps)
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", estimation::EstimationProblem)
-    print(io, typeof(estimation))
-    println(io, " with data for:")
-    show_pairs(io,(d.method for d in estimation.data),prekey = "  :",quote_string = false)
+
+    est_model = estimation.toestimate
+
+    print(io,"EstimationProblem for ")
+    print(io,EstimationUtils.get_model(est_model))
+    print(io," with ")
+
+    np = EstimationUtils.parameter_length(est_model)
+    ndata = length(estimation.data)
+
+    print(io,ndata)
+    if all(x -> x isa EstimationData,estimation.data)
+        print(io," data set")
+    else
+        print(io," estimation loss")
+        ndata != 1 && print(io,"e")
+    end
+    ndata != 1 && print(io,"s")
+    print(io,", ")
+    print(io,np)
+    print(io," problem parameter")
+    np != 1 && print(io,"s")
+    println(io,":")
+    Base.print_matrix(io,EstimationUtils.get_eos_parameters(est_model))
+    !(est_model isa EstimationModel) && return nothing
+    println(io)
     println(io, "\n to estimate:")
     function val_print(io,val)
         if val !== nothing
@@ -75,6 +98,7 @@ function Base.show(io::IO, mime::MIME"text/plain", estimation::EstimationProblem
             print(']')
         end
     end
+    estimation = estimation.toestimate
     show_pairs(io,estimation.toestimate.params,estimation.toestimate.indices," ",val_print,quote_string = false,prekey = "  :")
 end
 
@@ -133,7 +157,7 @@ function Estimation(est_model::EstimationUtils.AbstractEstimationModel,data)
     return EstimationProblem(est_model,toestimate)
 end
 
-function _Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths, objective_form, ignorefield) 
+function _Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths, objective_form, ignorefield)
     est_model = EstimationModel(model,toestimate,ignorefield)
     estimation = EstimationProblem(est_model, estimation_data_from_csvs(filepaths, objective_form),concrete = false)
     objective = EstimationUtils.objective_function(estimation)
@@ -169,7 +193,7 @@ function return_model!(
     estimation::EstimationProblem,
     model::EoSModel,
     values)
-    return set_eos_parameters!(model,estimation,values)
+    return EstimationUtils.set_eos_parameters!(model,estimation.toestimate,values)
 end
 
 function reload_data(estimation::EstimationProblem)
@@ -185,7 +209,7 @@ function reload_data(estimation::EstimationProblem)
 end
 
 #update via Symbols
-function update_estimation!(estimation::EstimationProblem, params::Vector{Symbol},  values) 
+function update_estimation!(estimation::EstimationProblem, params::Vector{Symbol},  values)
     indices = EstimationUtils.symbol_indices(estimation)
     @assert length(indices) == length(values)
     Θ₀ = EstimationUtils.get_eos_parameters(estimation)
@@ -228,10 +252,10 @@ The objective function used within parameter estimation.
 function EstimationUtils.objective_function(estimation::EstimationProblem{M,DD},Θ) where {M,DD}
     Θmodel = return_model(estimation, estimation.model, Θ)
     F = zero(Base.promote_eltype(Θmodel))
-    data = estimation.data
-    for i ∈ 1:length(data)
+    estimation_data = estimation.data
+    for i ∈ 1:length(estimation_data)
         eval_funcion_i = estimation_data[i]
-        Fi = objective_function(eval_funcion_i,Θmodel)
+        Fi = EstimationUtils.objective_function(eval_funcion_i,Θmodel)
         if !isfinite(Fi)
             F = 1e100*oneunit(F)
             break
@@ -255,4 +279,4 @@ EstimationUtils.upper_bounds(model::EstimationProblem) = EstimationUtils.upper_b
 EstimationUtils.initial_guess(model::EstimationProblem) = EstimationUtils.initial_guess(model.toestimate)
 EstimationUtils.get_eos_parameters(model::EstimationProblem) = EstimationUtils.get_eos_parameters(model.toestimate)
 
-export Estimation, EstimationModel, EstimationData, ToEstimate
+export Estimation, EstimationModel, EstimationData, ToEstimate, EstimationProblem

@@ -361,46 +361,40 @@ end
 
         prob = EstimationProblem(est_model, [est_data])
 
-        @testset "bounds and initial_guess are forwarded" begin
-            @test EstimationUtils.lower_bounds(prob)  == EstimationUtils.lower_bounds(est_model)
-            @test EstimationUtils.upper_bounds(prob)  == EstimationUtils.upper_bounds(est_model)
-            @test EstimationUtils.initial_guess(prob) == EstimationUtils.initial_guess(est_model)
-        end
+        #bounds and initial_guess are forwarded" begin
+        @test EstimationUtils.lower_bounds(prob)  == EstimationUtils.lower_bounds(est_model)
+        @test EstimationUtils.upper_bounds(prob)  == EstimationUtils.upper_bounds(est_model)
+        @test EstimationUtils.initial_guess(prob) == EstimationUtils.initial_guess(est_model)
 
-        @testset "objective_function(prob, Θ)" begin
-            Θ0 = EstimationUtils.initial_guess(prob)
-            F = EstimationUtils.objective_function(prob, Θ0)
-            @test isfinite(F)
-            @test F >= 0.0
-        end
+        #objective_function(prob, Θ)
+        Θ0 = EstimationUtils.initial_guess(prob)
+        F = EstimationUtils.objective_function(prob, Θ0)
+        @test isfinite(F)
+        @test F >= 0.0
 
-        @testset "objective_function(prob) returns a callable" begin
-            f = EstimationUtils.objective_function(prob)
-            @test f isa Function
-            Θ0 = EstimationUtils.initial_guess(prob)
-            @test f(Θ0) ≈ EstimationUtils.objective_function(prob, Θ0)
-        end
+        #objective_function(prob) returns a callable
+        f = EstimationUtils.objective_function(prob)
+        @test f isa Function
+        Θ0 = EstimationUtils.initial_guess(prob)
+        @test f(Θ0) ≈ EstimationUtils.objective_function(prob, Θ0)
 
-        @testset "multiple data objects: total loss is sum" begin
-            # Build a second dataset with the same data; total must be 2× single
-            est_data2 = EstimationData(table, bulk_p, mse_loss)
-            prob1 = EstimationProblem(est_model, [est_data])
-            prob2 = EstimationProblem(est_model, [est_data, est_data2])
-            Θ0 = EstimationUtils.initial_guess(prob1)
-            F1 = EstimationUtils.objective_function(prob1, Θ0)
-            F2 = EstimationUtils.objective_function(prob2, Θ0)
-            @test F2 ≈ 2.0 * F1 rtol = 1e-8
-        end
+        #multiple data objects: total loss is sum
+        # Build a second dataset with the same data; total must be 2× single
+        est_data2 = EstimationData(table, bulk_p, mse_loss)
+        prob1 = EstimationProblem(est_model, [est_data])
+        prob2 = EstimationProblem(est_model, [est_data, est_data2])
+        Θ0 = EstimationUtils.initial_guess(prob1)
+        F1 = EstimationUtils.objective_function(prob1, Θ0)
+        F2 = EstimationUtils.objective_function(prob2, Θ0)
+        @test F2 ≈ 2.0 * F1 rtol = 1e-8
 
-        @testset "parameter update is reflected in underlying model" begin
-            Θ_new = [200., 3.5, 1.0]
-            EstimationUtils.set_eos_parameters!(prob.toestimate, Θ_new)
-            Θ_back = EstimationUtils.get_eos_parameters(prob.toestimate)
-            @test Θ_back ≈ Θ_new rtol = 1e-8
-        end
+        #parameter update is reflected in underlying model
+        Θ_new = [200., 3.5, 1.0]
+        EstimationUtils.set_eos_parameters!(prob.toestimate, Θ_new)
+        Θ_back = EstimationUtils.get_eos_parameters(prob.toestimate)
+        @test Θ_back ≈ Θ_new rtol = 1e-8
     end
 
-    # ------------------------------------------------------------------
     @testset "Custom AbstractEstimationModel – KijEstimationModel" begin
         # Minimal stub matching the interface shown in custom_estimation.md.
         # We use a binary PR model; cubic models have get_k / set_k!.
@@ -426,40 +420,33 @@ end
         model = PR(["carbon dioxide", "methane"])
         est   = KijEstimationModel(model)
 
-        @testset "get_model default" begin
-            @test EstimationUtils.get_model(est) === model
-        end
+        #get_model default
+        @test EstimationUtils.get_model(est) === model
 
-        @testset "initial_guess" begin
-            @test EstimationUtils.initial_guess(est) == [0.0]
-        end
+        #initial_guess
+        @test EstimationUtils.initial_guess(est) == [0.0]
 
-        @testset "set_eos_parameters! / get_eos_parameters round-trip" begin
-            EstimationUtils.set_eos_parameters!(est, [0.1])
-            @test Clapeyron.get_k(model)[1, 2] ≈ 0.1
-            Θ = EstimationUtils.get_eos_parameters(est)
-            @test Θ ≈ [0.1]
-        end
+        #set_eos_parameters! / get_eos_parameters round-trip
+        EstimationUtils.set_eos_parameters!(est, [0.1])
+        @test Clapeyron.get_k(model)[1, 2] ≈ 0.1
+        Θ = EstimationUtils.get_eos_parameters(est)
+        @test Θ ≈ [0.1]
 
-        @testset "bounds" begin
-            @test EstimationUtils.lower_bounds(est) == [-1.0]
-            @test EstimationUtils.upper_bounds(est) == [ 1.0]
-        end
+        #bounds
+        @test EstimationUtils.lower_bounds(est) == [-1.0]
+        @test EstimationUtils.upper_bounds(est) == [ 1.0]
 
-        @testset "parameter_length falls back to length of get_eos_parameters" begin
-            EstimationUtils.set_eos_parameters!(est, [0.0])  # reset
-            @test EstimationUtils.parameter_length(est) == 1
-        end
+        #parameter_length falls back to length of get_eos_parameters
+        EstimationUtils.set_eos_parameters!(est, [0.0])  # reset
+        @test EstimationUtils.parameter_length(est) == 1
 
-        @testset "set_model / get_model" begin
-            model2 = PR(["carbon dioxide", "methane"])
-            est2   = EstimationUtils.set_model(est, model2)
-            @test EstimationUtils.get_model(est2) === model2
-            @test EstimationUtils.get_model(est)  === model
-        end
+        #set_model / get_model
+        model2 = PR(["carbon dioxide", "methane"])
+        est2   = EstimationUtils.set_model(est, model2)
+        @test EstimationUtils.get_model(est2) === model2
+        @test EstimationUtils.get_model(est)  === model
     end
 
-    # ------------------------------------------------------------------
     @testset "Custom AbstractEstimationLoss – bulk property version" begin
         # Stub matching the AbstractEstimationLoss interface from custom_estimation.md.
         # Instead of saturation pressure (phase equilibrium), we use pressure() directly.
@@ -493,31 +480,27 @@ end
         vs = [1e-3, 1.1e-3, 1.2e-3, 1.3e-3]
         loss = BulkPressureLoss(ref_model, Ts, vs)
 
-        @testset "zero loss at reference model" begin
-            F = EstimationUtils.objective_function(loss, ref_model)
-            @test F ≈ 0.0 atol = 1e-10
-        end
+        #zero loss at reference model
+        F = EstimationUtils.objective_function(loss, ref_model)
+        @test F ≈ 0.0 atol = 1e-10
 
-        @testset "positive loss on different model" begin
-            candidate = PCSAFT("methane")
-            F = EstimationUtils.objective_function(loss, candidate)
-            @test F > 0.0
-            @test isfinite(F)
-        end
+        #positive loss on different model
+        candidate = PCSAFT("methane")
+        F = EstimationUtils.objective_function(loss, candidate)
+        @test F > 0.0
+        @test isfinite(F)
 
-        @testset "composes into EstimationProblem" begin
-            model = cPR("methane")
-            toestimate = [Dict(:param => :a, :lower => 0.1, :upper => 1.0)]
-            est_model = EstimationModel(model, toestimate)
-            prob = EstimationProblem(est_model, [loss])
-            Θ0 = EstimationUtils.initial_guess(prob)
-            F = EstimationUtils.objective_function(prob, Θ0)
-            @test isfinite(F)
-            @test F >= 0.0
-        end
+        #composes into EstimationProblem
+        model = cPR("methane")
+        toestimate = [Dict(:param => :a, :lower => 0.1, :upper => 1.0)]
+        est_model = EstimationModel(model, toestimate)
+        prob = EstimationProblem(est_model, [loss])
+        Θ0 = EstimationUtils.initial_guess(prob)
+        F = EstimationUtils.objective_function(prob, Θ0)
+        @test isfinite(F)
+        @test F >= 0.0
     end
 
-    # ------------------------------------------------------------------
     @testset "Composed problem – multiple heterogeneous loss terms" begin
         # Mirrors the pattern shown at the end of custom_estimation.md:
         # one standard EstimationData + one custom AbstractEstimationLoss,

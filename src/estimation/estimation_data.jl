@@ -136,9 +136,8 @@ function EstimationData(table_data, method, loss; output_weights = nothing,data_
             throw(DimensionMismatch("length of output weights is not equal the amount of outputs"))
         end
     else
-        error("could not parse output_weights")
+        throw(error("could not parse output_weights"))
     end
-
 
     valid = [!(any(inputs_ismissingvalues[i]) || any(outputs_ismissingvalues[i])) for i in 1:nrows]
     _species = isnothing(species) ? ["all"] : String.(species)

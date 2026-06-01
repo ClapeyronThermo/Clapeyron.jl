@@ -251,6 +251,19 @@ The default implementation just returns `get_eos_parameters(model)`.
 """
 initial_guess(model::AbstractEstimationModel) = get_eos_parameters(model)
 
+function Base.show(io::IO,::MIME"text/plain",model::AbstractEstimationModel)
+    print(io,typeof(model).name.name)
+    print(io," for ")
+    print(io,get_model(model))
+    np = parameter_length(model)
+    print(io," with ")
+    print(io,np)
+    print(io," parameter")
+    np != 1 && print(io,"s")
+    println(io,":")
+    Base.print_matrix(io,EstimationUtils.get_eos_parameters(model))
+end
+
 export AbstractEstimationLoss,AbstractEstimationModel
 export set_eos_parameters!, get_eos_parameters, get_model, set_model, symbol_indices 
 export lower_bounds, upper_bounds, initial_guess
