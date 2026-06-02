@@ -367,7 +367,6 @@ end
         @test :out_p           in  est_data.outputs_name
         # The error for the single output should be filled in
         @test all(e[1] ≈ 1e2 for e in est_data.outputs_error)
-        end
     end
 
     @testset "EstimationProblem" begin
