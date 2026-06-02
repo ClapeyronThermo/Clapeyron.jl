@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Parameter Estimation Basics · Clapeyron.jl</title><meta name="title" content="Parameter Estimation Basics · Clapeyron.jl"/><meta property="og:title" content="Parameter Estimation Basics · Clapeyron.jl"/><meta property="twitter:title" content="Parameter Estimation Basics · Clapeyron.jl"/><meta name="description" content="Documentation for Clapeyron.jl."/><meta property="og:description" content="Documentation for Clapeyron.jl."/><meta property="twitter:description" content="Documentation for Clapeyron.jl."/><meta property="og:url" content="https://ClapeyronThermo.github.io/Clapeyron.jl/tutorials/basics_estimation/"/><meta property="twitter:url" content="https://ClapeyronThermo.github.io/Clapeyron.jl/tutorials/basics_estimation/"/><link rel="canonical" href="https://ClapeyronThermo.github.io/Clapeyron.jl/tutorials/basics_estimation/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/logos/logo.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="Clapeyron.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Clapeyron.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../installation/">Installation</a></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../basics_model_construction/">Getting Started - Model Construction</a></li><li><a class="tocitem" href="../user_defined_parameters/">User-defined Parameters</a></li><li><a class="tocitem" href="../bulk_properties/">Bulk Properties</a></li><li><a class="tocitem" href="../mixing_functions/">Mixing and Excess Functions</a></li><li><a class="tocitem" href="../pure_saturation_curves/">Pure Saturation Properties</a></li><li><a class="tocitem" href="../binary_phase_diagrams/">Binary Phase Diagrams</a></li><li><a class="tocitem" href="../ternary_phase_diagrams/">Ternary Phase Diagrams</a></li><li><a class="tocitem" href="../sle_phase_diagrams/">SLE Phase Diagrams</a></li><li><a class="tocitem" href="../xy_flash/">Other Flash Computations</a></li><li class="is-active"><a class="tocitem" href>Parameter Estimation Basics</a><ul class="internal"><li><a class="tocitem" href="#the-EstimationModel-struct"><span>the <code>EstimationModel</code> struct</span></a></li><li><a class="tocitem" href="#the-EstimationData-struct"><span>the <code>EstimationData</code> struct</span></a></li><li><a class="tocitem" href="#the-EstimationProblem-struct"><span>the <code>EstimationProblem</code> struct</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../../notebook_examples/">Notebook Examples</a></li><li><span class="tocitem">Available EoS</span><ul><li><a class="tocitem" href="../../eos/ideal/">Ideal Models</a></li><li><a class="tocitem" href="../../eos/cubic/">Cubic Models</a></li><li><a class="tocitem" href="../../eos/activity/">Activity Models</a></li><li><a class="tocitem" href="../../eos/saft/">SAFT and CPA Models</a></li><li><a class="tocitem" href="../../eos/empiric/">Empiric Helmholtz Models</a></li><li><a class="tocitem" href="../../eos/electrolytes/">Electrolyte Models</a></li><li><a class="tocitem" href="../../eos/correlations/">Property Correlations</a></li><li><a class="tocitem" href="../../eos/ml/">ML-Based Models</a></li><li><a class="tocitem" href="../../eos/misc/">Other Models</a></li></ul></li><li><a class="tocitem" href="../../faq/">Frequently Asked Questions</a></li><li><span class="tocitem">Available Properties</span><ul><li><a class="tocitem" href="../../properties/basic/">Basic Properties</a></li><li><a class="tocitem" href="../../properties/bulk/">Bulk Properties</a></li><li><a class="tocitem" href="../../properties/single/">Single phase Properties</a></li><li><a class="tocitem" href="../../properties/multi/">Multiphase Properties</a></li><li><a class="tocitem" href="../../properties/electrolytes/">Electrolyte Properties</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../api/parameters/">Parameters</a></li><li><a class="tocitem" href="../../api/macros/">Macros</a></li><li><a class="tocitem" href="../../api/association/">Association</a></li><li><a class="tocitem" href="../../api/estimation/">Parameter Estimation</a></li></ul></li><li><a class="tocitem" href="../../to-do_list/">To-do list</a></li><li><span class="tocitem">Advanced Topics</span><ul><li><a class="tocitem" href="../../implicit_differentiation/">Implicit differentiation of Properties</a></li><li><a class="tocitem" href="../../custom_estimation/">Custom estimation models and losses</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Parameter Estimation Basics</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Parameter Estimation Basics</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/ClapeyronThermo/Clapeyron.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/ClapeyronThermo/Clapeyron.jl/blob/master/docs/src/tutorials/basics_estimation.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Estimation-basics"><a class="docs-heading-anchor" href="#Estimation-basics">Estimation basics</a><a id="Estimation-basics-1"></a><a class="docs-heading-anchor-permalink" href="#Estimation-basics" title="Permalink"></a></h1><p>To estimate parameters of an equation of state, we need to remember that what we are actually doing is minimizing a loss function <span>$L(\Theta,P) = \sum{L_{i}(\Theta,P_i)}$</span>, where <span>$\Theta$</span> is a list of parameters (in this particular case, used by an equation of state) and <span>$P$</span> is one or more datasets. Once this optimization problem is formulated, we can obtain the optimum list of parameters <span>$\Theta_{opt}$</span> by using any optimizer.</p><p>So, in the particular case of equations of state with Clapeyron.jl (or any other equation of state package), solving an estimation problem requires:</p><ul><li><p class="math-container">\[\Theta\]</p>: a way to switch representations, between a list of arbitrary parameters and an equation of state containing those parameters, in function form, we need <code>Θ(model)</code> and <code>model(Θ)</code>. In practical terms, <span>$\Theta$</span> is treated as as vector of numbers.</li><li><p class="math-container">\[P_i,l_i\]</p>: a way to get the loss of a given dataset. In particular, if instead of using the parameters in the loss function (<span>$L_{i}(\Theta,P_i)$</span>), we directly use the equation of state (<span>$L_{i}(EoS(\Theta),P_i)$</span>) we can separate the representantions of datasets and parameters.</li><li>Misc: initial guesses, lower and upper bounds over the parameters.</li></ul><h2 id="the-EstimationModel-struct"><a class="docs-heading-anchor" href="#the-EstimationModel-struct">the <code>EstimationModel</code> struct</a><a id="the-EstimationModel-struct-1"></a><a class="docs-heading-anchor-permalink" href="#the-EstimationModel-struct" title="Permalink"></a></h2><p>This object provides the necessary infraestructure to transform representations, between an <code>EoSModel</code> and a list of parameters. We can build an <code>EstimationModel</code> object with an existing equation of state, along with additional data:</p><pre><code class="language-julia hljs">model = PCSAFT(&quot;methane&quot;)
+toestimate = [
+    Dict(
+        :param =&gt; :epsilon,
+        :lower =&gt; 100.,
+        :upper =&gt; 300.,
+        :guess =&gt; 250.
+    ),
+    Dict(
+        :param =&gt; :sigma,
+        :factor =&gt; 1e-10,
+        :lower =&gt; 3.2,
+        :upper =&gt; 4.0,
+        :guess =&gt; 3.7
+    )
+    ,
+    Dict(
+        :param =&gt; :segment,
+        :lower =&gt; 0.9,
+        :upper =&gt; 1.1,
+        :guess =&gt; 1.
+    )
+]
+
+est_model = EstimationModel(model,toestimate)</code></pre><p>With the <code>EstimationModel</code> created, we can now interact with the stored equation of state in the following ways:</p><pre><code class="language-julia hljs">import Clapeyron.EstimationUtils
+#if you use `using Clapeyron.EstimationUtils` instead, the functions will be loaded into the project instead
+
+#get a vector of parameters from the model
+theta = EstimationUtils.get_eos_parameters(est_model)
+
+#get initial guess
+theta0 = EstimationUtils.initial_guess(est_model)
+
+#modify vector of parameters
+theta1 = 2 .* theta
+
+#store vector of parameter in EoSModel
+EstimationUtils.set_eos_parameters!(est_model,theta1)
+
+#or, we can do it using julia broadcasting:
+est_model .= theta1
+
+@assert theta1 == EstimationUtils.get_eos_parameters(est_model)
+
+lb,ub = EstimationUtils.lower_bounds(est_model),EstimationUtils.upper_bounds(est_model)
+
+#EstimationModel implements the indexing interface for easy access to the parameters
+theta2 = 0.7 .* theta
+est_model[1] = 0.7*theta[1]
+t2 = est_model[2]</code></pre><p>The information in <code>toestimate</code> indicates how our resulting <code>EstimationModel</code> will be used, how many parameters does it allow, bounds, initial guesses, and how do the input parameters interact with the stored equation of state.</p><h3 id="Indices"><a class="docs-heading-anchor" href="#Indices">Indices</a><a id="Indices-1"></a><a class="docs-heading-anchor-permalink" href="#Indices" title="Permalink"></a></h3><p>When constructing an <code>EstimationModel</code> a mapping is created between the EoS fields and the indices of a parameter vector. For most models, the mapping is 1-to-1, that is, the index <code>2</code> will map to to the model&#39;s only <code>sigma</code> parameter value. We can control how this mapping is created via the <code>indices</code> keyword.</p><p>On single component models, The <code>indices</code> keyword can only be ommited if the EoS parameter has only one value. On multicomponent models, the specification of indices is necessary and useful; we can exploit parameter symmetries to reduce the parameter space, or omit parameters that only depend on single component data. The index type depends on the type of parameter:</p><ul><li>parameters of type <code>Clapeyron.SingleParam</code> are indexed via integers.</li><li>parameters of type <code>Clapeyron.PairParam</code> are indexed in two ways: an integer will get the diagonal value of the pair matrix, whereas a tuple of integers is capable to indexing the entire parameter, including off-diagonal entries. By default, we assume symmetry: any changes of the parameter on the entry <code>(i,j)</code> will also be done on the entry <code>(j,i)</code>. One can turn off this behaviour (on activity models, for example) by passing the keyword <code>:symmetric =&gt; false</code>.</li><li>parameters of type <code>Clapeyron.AssocParam</code> are indexed via integers, in the same way that <code>SingleParam</code>s. one index corresponds to each association pair. Some association pairs could have an associated cross-association value, to modify the cross-association value and the specified value simultaneously, we can use the <code>cross_assoc =&gt; true</code> keyword.</li><li>Some off-diagonal pair parameters are computed as a combination of one or more other EoS parameters that may or may not be used in the current estimation procedure. For example, in the <code>SAFTVRMie</code> EoS both <code>sigma</code> and <code>epsilon</code> are computed via combining rules that depend on both parameters diagonal entries. In particular, <code>Clapeyron.jl</code> has a mechanism to allow specific entries of the pair parameter matrix to be marked as <em>missing</em> and be recalculated each time a change is done in other parameters of the same model, or to be marked as <em>not missing</em>, and be fixed when any recalculation occurs. If one wants to modify diagonal values of a pair parameter that may participate in any recombination procedure, we can use <code>recombine =&gt; true</code> keyword to mark all entries in the same row and column as the diagonal index as missing, allowing their recombination.</li></ul><h3 id="Symbol-indices"><a class="docs-heading-anchor" href="#Symbol-indices">Symbol indices</a><a id="Symbol-indices-1"></a><a class="docs-heading-anchor-permalink" href="#Symbol-indices" title="Permalink"></a></h3><p><code>EstimationModel</code> also supports indexing via <code>Symbol</code>, with the slight caveat that <code>est_model[sym]</code> returns a vector of values instead of a single value:</p><pre><code class="language-julia hljs">sigma = est_model[:sigma]
+@assert sigma isa Vector #true
+est_model[:sigma] = 3 #works
+est_model[[:sigma,:epsilon]] = [3,300] #works
+
+#limitation: this does not work, it will not set the indices.
+est_model[[:sigma,:epsilon]] .= [3,300] </code></pre><h3 id="Multiple-value-indices"><a class="docs-heading-anchor" href="#Multiple-value-indices">Multiple-value indices</a><a id="Multiple-value-indices-1"></a><a class="docs-heading-anchor-permalink" href="#Multiple-value-indices" title="Permalink"></a></h3><p><code>EstimationModel</code> also supports multiple indices per dictionary:</p><pre><code class="language-julia hljs">model = PCSAFT([&quot;water&quot;,&quot;ethanol&quot;])
+
+toestimate = [
+    Dict(
+        :param =&gt; :epsilon,
+        :indices =&gt; [1,2], #default to epsilon[1,1] and epsilon[2,2]
+        :lower =&gt; 100., #defaults to [100,100]
+        :upper =&gt; [300.,400],
+        :guess =&gt; 250. #defaults to [250, 250]
+    ),
+    Dict(
+        :param =&gt; :sigma,
+        :indices =&gt; [(1,1),(1,2)], #pairs of values are also accepted
+        :factor =&gt; 1e-10,
+        :lower =&gt; 3.2,
+        :upper =&gt; 4.0,
+        :guess =&gt; 3.7
+    )
+]
+
+est_model_multiple = EstimationModel(model,toestimate)
+EstimationUtils.parameter_length(est_model_multiple) #4</code></pre><h3 id="Special-multiple-value-indices"><a class="docs-heading-anchor" href="#Special-multiple-value-indices">Special multiple-value indices</a><a id="Special-multiple-value-indices-1"></a><a class="docs-heading-anchor-permalink" href="#Special-multiple-value-indices" title="Permalink"></a></h3><p>There are also some special indices that can be used by passing the corresponding symbol to the <code>indices</code> key:</p><ul><li><code>:pures</code> — includes only the pure-component (diagonal) entries. For <code>PairParam</code> it selects <code>(i,i)</code> for each component <code>i</code>; for <code>AssocParam</code> it selects all association pairs where the two site indices belong to the same component.</li><li><code>:unlike</code> — includes only the cross (off-diagonal) entries. For <code>PairParam</code> these are the entries <code>(i,j)</code> with <code>i ≠ j</code>; for <code>AssocParam</code> these are association pairs that span two different components. On <code>SingleParam</code> this special index will fail.</li><li><code>:all</code> — includes every entry, diagonal and off-diagonal.</li></ul><div class="admonition is-info" id="Note-dd7e64752edc477"><header class="admonition-header">Note<a class="admonition-anchor" href="#Note-dd7e64752edc477" title="Permalink"></a></header><div class="admonition-body"><p>On earlier package versions, if no <code>indices</code> key is specified and the model has more than one component, the default is set to the first index of the respective parameter. This behaviour could change on future versions of <code>Clapeyron.jl</code></p></div></div><h3 id="scaling-factors"><a class="docs-heading-anchor" href="#scaling-factors">scaling factors</a><a id="scaling-factors-1"></a><a class="docs-heading-anchor-permalink" href="#scaling-factors" title="Permalink"></a></h3><p><code>Clapeyron.jl</code> models normally store physically-based parameters in the SI metric system, other model parameters may be stored in arbitrary scales. While the reasons of using one scale or the other depend on the EoS developer, what could be an adequate scale for one application may be not be ideal for other use cases. For example, the <code>sigma</code> parameter on the <code>PCSAFT</code> equation of state (the hard-sphere diameter of the monomer) is stored in meters; just to get a sense of scale used, the hard-sphere diameter of methane (used by the PCSAFT EoS) is around <code>3.7e-10</code> meters. While this specific scale is useful when calculating properties that are in the SI metric system, we may prefer another scale when performing parameter estimation. In particular, we may want to scale all parameters used in the parameter estimation procedure in a way that they all have similar magnitudes, easing the work of the optimizer procedure. For this particular reason, an scaling <code>factor</code> can be specified: When storing a parameter in the equation of state, that parameter is multiplied by the scaling factor; this scaling is reversed when getting a parameter instead, so one can move freely between the scaling used in the estimation procedure and the scaling used by the equation of state.</p><h3 id="Bounds,-guesses"><a class="docs-heading-anchor" href="#Bounds,-guesses">Bounds, guesses</a><a id="Bounds,-guesses-1"></a><a class="docs-heading-anchor-permalink" href="#Bounds,-guesses" title="Permalink"></a></h3><p>In addition to information on how to access and modify an equation of state, most optimizers will require lower and upper bounds for each parameter. Some optimizers will additionally require an initial guess from which start their optimization procedure. Bounds can be provided by the <code>lower</code> and <code>upper</code> keywords, while the initial guess is provided by the <code>guess</code> keyword. The default bounds are the entire real line (<code>(-Inf,Inf)</code>), the initial guess value is simply extracted from the equation of state if not specified.</p><h2 id="the-EstimationData-struct"><a class="docs-heading-anchor" href="#the-EstimationData-struct">the <code>EstimationData</code> struct</a><a id="the-EstimationData-struct-1"></a><a class="docs-heading-anchor-permalink" href="#the-EstimationData-struct" title="Permalink"></a></h2><p>The <code>EstimationData</code> object stores the following properties:</p><ul><li>a set of input data points (and their errors if available)</li><li>a set of output data points (and their errors if available)</li><li>weights for each data point (by default all points have weight equal to <code>1</code>)</li><li>a method <code>f</code> that takes a determinate amount of inputs and returns a determinate amount of outputs.</li><li>a loss function <code>L</code> that takes two terms: the result of <code>f(input)</code> and the expected <code>output</code>.</li></ul><p>The <code>EstimationData</code> constructor takes a CSV file or other column-based table (only one file per <code>EstimationData</code> object) and it sorts the columns according the following criteria:</p><ul><li>Column names starting with <code>out_</code> are considered output values.</li><li>Column names ending in <code>_error_abs</code>,<code>error_rel</code>,<code>error_std</code> are considered error values. Those are not utilized in the parameter estimation procedure, but they are useful for calculating statistical properties of the fitted parameters later.</li><li>Column names that dont follow any of this criteria are considered input values.</li></ul><pre><code class="language-julia hljs">#Experimental Melting and Vapor Pressures of Methane, J. Chem. Thermodyn., 1972, 4, 1, 127-133, https://doi.org/10.1016/S0021-9614(72)80016-8 .
+A,B,C = (3.9895,443.028,-0.49)
+antoine_psat(T) = exp10(A - (B/(T + C)))*1e5
+Tsat = collect(range(90.99,185.99,step = 5))
+psat = antoine_psat.(Tsat)
+
+#compiled data
+psat_data = (T = Tsat, out_p = psat)
+
+#loss function
+my_loss(y_calc,y_exp) = abs2(y_calc - y_exp)
+
+#function to get evaluated properties:
+my_sat_pressure(model,T) = saturation_pressure(model,T)[1]
+
+est_data = EstimationData(my_sat_pressure,psat_data,my_loss)</code></pre><p>We can now use our <code>EstimationData</code> object to evaluate the loss function:</p><pre><code class="language-julia hljs">import Clapeyron.EstimationUtils
+model1 = cPR(&quot;methane&quot;)
+model2 = SingleFluid(&quot;methane&quot;)
+
+loss1 = EstimationUtils.objective_function(est_data,model1)
+loss2 = EstimationUtils.objective_function(est_data,model2)</code></pre><h3 id="Multiple-function-returns"><a class="docs-heading-anchor" href="#Multiple-function-returns">Multiple function returns</a><a id="Multiple-function-returns-1"></a><a class="docs-heading-anchor-permalink" href="#Multiple-function-returns" title="Permalink"></a></h3><p>Most phase equilibria procedures don&#39;t return an unique value. Instead, they return all information necessary to reconstruct the phases. For example, <code>Clapeyron.saturation_pressure(model,T)</code> returns not only the saturation pressure, but also the liquid and vapour volumes at <code>(Psat,Tsat)</code> conditions. While performing a parameter estimation procedure, it is common to find that two or more loss functions depend on only one phase equilibria procedure. For example,the common parameter estimation procedure for the PC-SAFT EoS for pure, non-associating molecules is to minimize the loss with respect to the saturated liquid density and saturation pressure, but both properties are the same thermodynamic state: pure saturated liquid at (Psat,Tsat), and can be obtained simultaneusly.</p><p>The <code>EstimationData</code> struct accounts for this automatically. One just needs to provide multiple output values:</p><pre><code class="language-julia hljs">
+#same temps as before
+A,B,C = (3.9895,443.028,-0.49)
+antoine_psat(T) = exp10(A - (B/(T + C)))*1e5
+Tsat = collect(range(90.99,185.99,step = 5))
+psat = antoine_psat.(Tsat)
+
+#we are gonna extract liquid density values from the reference equation of state for methane
+truth_model = SingleFluid(&quot;methane&quot;)
+Vlsat = first.(Clapeyron.x0_sat_pure.(truth_model,Tsat)) #we are gonna use the ancillary for the liquid volume values.
+
+#fitting density instead of volume:
+rholsat = 1 ./ Vlsat
+
+#compiled data with both properties
+psat_and_rholsat_data = (T = Tsat, out_p = psat, out_rholsat = rholsat)
+
+#our method will be different:
+function psat_and_rhosat(model,T)
+    p,vl,_ = saturation_pressure(model,T)
+    return p,1/vl
+end
+
+#the loss will be applied to (p_sat - p_exp) and (rhol - rhol_exp)
+my_loss(y_calc,y_exp) = abs2(y_calc - y_exp)
+
+est_data = EstimationData(psat_and_rhosat,psat_and_rholsat_data,my_loss)</code></pre><p>On functions with multiple return values, we just sum the losses of each output value with their respective expected data points. While this is ok for some simple properties, we may want to add a weight to each output value; some properties may have more error, or they may be just estimations from correlations. <code>EstimationData</code> supports adding weighting values via the <code>output_weights</code> keyword argument. Using the same example as before:</p><pre><code class="language-julia hljs">#now, the loss of each data point will be equal to 4*loss(psat - psat_exp) + 1.1*loss(rhol - rhol_exp)
+est_data = EstimationData(psat_and_rhosat,psat_and_rholsat_data,my_loss,output_weights = (4.0,1.1))</code></pre><h3 id="Multiple-function-inputs"><a class="docs-heading-anchor" href="#Multiple-function-inputs">Multiple function inputs</a><a id="Multiple-function-inputs-1"></a><a class="docs-heading-anchor-permalink" href="#Multiple-function-inputs" title="Permalink"></a></h3><p>Conversely, in the same way that could be multiple properties per data point, There are properties that require multiple inputs. Most single-component data away from saturation depends on the pressure <em>and</em> the temperature, multiple component models also depend on the composition of the mixture. <code>EstimationData</code> handles this situation similar to how its handled with multiple outputs, we just need to pass more input vectors:</p><pre><code class="language-julia hljs">#fitting density of a gas:
+
+Tx = 400:5:500
+px = 1e4:1e4:1e5
+
+#all combinations of (px,Tx)
+ptx = vec(collect(Iterators.product(px,Tx)))
+p = first.(ptx)
+T = last.(ptx)
+
+#IAPWS-95 as reference data
+truth_model = IAPWS95()
+rhov = mass_density.(truth_model,p,T,phase = :v)
+
+#p first then T, matching the argument order of my_den below
+rhov_data = (p = p, T = T, out_rhov = rhov)
+
+#multiple input parameters, in the same order as the table
+my_den(model,p,T) = mass_density(model,p,T,phase = :v)
+
+my_loss(y_calc,y_exp) = abs2(y_calc - y_exp)
+
+est_data = EstimationData(my_den,rhov_data,my_loss)</code></pre><h3 id="Reading-from-a-CSV"><a class="docs-heading-anchor" href="#Reading-from-a-CSV">Reading from a CSV</a><a id="Reading-from-a-CSV-1"></a><a class="docs-heading-anchor-permalink" href="#Reading-from-a-CSV" title="Permalink"></a></h3><p>instead of defining everything in code, it is useful to store, along with the dataset, the expected loss functions, evaluation methods, among other properties. <code>EstimationData</code> is capable of reading a CSV with the following format:</p><pre><code class="language-csv hljs">Clapeyron Estimator #main header 
+[method = my_method,loss = my_loss,normalize = true,output_weights = 1.0 2.0 3.0,data_weights_col = dw,species = &quot;carbon dioxide&quot; &quot;methane&quot;,]
+x,y,z,out_1,out_2,out_3</code></pre><p>When reading a CSV, <code>EstimationData</code> parses the options line (the second line, enclosed in <code>[...]</code>) to extract the method, loss, weights, and other settings. Any option that is also provided as a keyword argument to the constructor takes priority over the value found in the CSV. If neither the CSV nor the keyword argument specifies a loss, the default mean squared relative error (<span>$L(x,y) = (\frac{x - y}{y})^2$</span>) is used. If no method is found, an error is raised.</p><p>The <code>method</code> and <code>loss</code> keys are looked up by name in the <code>Main</code> module, so they must be defined there before constructing the <code>EstimationData</code>. Species names are parsed as a space-separated list of quoted strings; if not provided, all components of the model are used.</p><pre><code class="language-julia hljs">#given a CSV file &quot;psat_methane.csv&quot; with a matching method and loss already defined in Main:
+est_data = EstimationData(&quot;psat_methane.csv&quot;)
+
+#keyword arguments override the CSV options:
+est_data = EstimationData(&quot;psat_methane.csv&quot;, my_sat_pressure, my_loss; normalize = false)</code></pre><h2 id="the-EstimationProblem-struct"><a class="docs-heading-anchor" href="#the-EstimationProblem-struct">the <code>EstimationProblem</code> struct</a><a id="the-EstimationProblem-struct-1"></a><a class="docs-heading-anchor-permalink" href="#the-EstimationProblem-struct" title="Permalink"></a></h2><p>With an <code>EstimationModel</code> object containing the parameter vector and an <code>EstimationData</code> object (or a collection of them) containing the experimental data, we have everything needed to define a full estimation problem. The <code>EstimationProblem</code> struct bundles both together and exposes a single <code>objective_function</code> that the optimizer can call:</p><pre><code class="language-julia hljs">#using the est_model and est_data defined earlier
+prob = EstimationProblem(est_model, est_data)</code></pre><p><code>EstimationProblem</code> also accepts a vector of <code>EstimationData</code> objects when fitting against multiple datasets simultaneously. The total loss is the sum of the individual losses:</p><pre><code class="language-julia hljs">est_data_psat  = EstimationData(my_sat_pressure, psat_data, my_loss)
+est_data_rhol  = EstimationData(my_den, rhov_data, my_loss)
+
+prob = EstimationProblem(est_model, [est_data_psat, est_data_rhol])</code></pre><p>To evaluate the objective function at a given parameter vector <code>Θ</code>:</p><pre><code class="language-julia hljs">import Clapeyron.EstimationUtils
+
+Θ0 = EstimationUtils.initial_guess(prob)
+lb = EstimationUtils.lower_bounds(prob)
+ub = EstimationUtils.upper_bounds(prob)
+
+loss = EstimationUtils.objective_function(prob, Θ0)</code></pre><p>Internally, <code>objective_function(prob, Θ)</code> calls <code>set_eos_parameters!(est_model, Θ)</code> to update the wrapped EoS model, then sums <code>objective_function(data_i, est_model.model)</code> over all <code>EstimationData</code> objects.</p><h3 id="Running-the-optimization"><a class="docs-heading-anchor" href="#Running-the-optimization">Running the optimization</a><a id="Running-the-optimization-1"></a><a class="docs-heading-anchor-permalink" href="#Running-the-optimization" title="Permalink"></a></h3><p>Once an <code>EstimationProblem</code> is assembled, We can pass it to any optimizer to solve our estimation problem. A common choice is a gradient-free box-constrained method, such as those available in <code>Optim.jl</code>:</p><pre><code class="language-julia hljs">using Optim
+
+Θ0 = EstimationUtils.initial_guess(prob)
+lb = EstimationUtils.lower_bounds(prob)
+ub = EstimationUtils.upper_bounds(prob)
+f = EstimationUtils.objective_function(prob) #equivalent to Θ -&gt; EstimationUtils.objective_function(prob, Θ)
+result = optimize(
+    f,
+    lb, ub, Θ0,
+    Fminbox(NelderMead())
+)
+
+Θ_opt = Optim.minimizer(result)</code></pre><p>On the choice of optimizers and julia packages, We have been obtaining good fits with the optimizer methods found in <code>Metaheuristics.jl</code>. There is also explicit support via package extensions, to pass the <code>EstimationProblem</code> directly to the optimizer:</p><pre><code class="language-julia hljs">using Metaheuristics
+Θ_opt, fitted_model = Metaheuristics.optimize(prob,ECA(;options=Options(iterations=100)))</code></pre><h3 id="Retrieving-the-solution"><a class="docs-heading-anchor" href="#Retrieving-the-solution">Retrieving the solution</a><a id="Retrieving-the-solution-1"></a><a class="docs-heading-anchor-permalink" href="#Retrieving-the-solution" title="Permalink"></a></h3><p>After the optimization is complete, you can apply the optimal parameters back to the model and inspect the result:</p><pre><code class="language-julia hljs">#write the optimal parameters into the EoS model
+EstimationUtils.set_eos_parameters!(est_model, Θ_opt)
+
+#the underlying EoS model now uses the fitted parameters
+fitted_model = EstimationUtils.get_model(est_model)
+
+#compute any property with the fitted model as usual
+p_fit, vl_fit, vv_fit = saturation_pressure(fitted_model, 150.0)</code></pre><p>The fitted model is a standard <code>EoSModel</code> and can be used everywhere a regular Clapeyron model is accepted, including property calculations, phase diagrams, and further refinement.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../xy_flash/">« Other Flash Computations</a><a class="docs-footer-nextpage" href="../../notebook_examples/">Notebook Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 2 June 2026 05:03">Tuesday 2 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
