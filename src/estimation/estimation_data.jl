@@ -123,8 +123,8 @@ function EstimationData(table_data, method, loss; output_weights = nothing,data_
     out_w = if output_weights === nothing
         ntuple(i -> 1.0,Val{M}())
     elseif output_weights isa Number
-        @assert M == 1
-        (Float64(output_weights),)
+        out_w_only = Float64(output_weights)
+        ntuple(i -> out_w_only,Val{M}())
     elseif output_weights isa Tuple || output_weights isa AbstractVector
         n_out_w = length(output_weights)
         if n_out_w == 1 && M > 1

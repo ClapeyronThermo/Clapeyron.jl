@@ -483,7 +483,7 @@ end
             p_ref::Vector{Float64}   # reference pressures pre-computed
         end
 
-        function BulkPressureLoss(ref_model, Ts, vs)
+        function BulkPressureLoss(ref_model::Clapeyron.EoSModel, Ts, vs)
             p_ref = [pressure(ref_model, v, T) for (T, v) in zip(Ts, vs)]
             BulkPressureLoss(Ts, vs, p_ref)
         end
