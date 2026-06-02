@@ -644,6 +644,7 @@ end
 @testset "promote_model" begin
     @testset "#365" begin
         #error found during #365
+        model = SAFTgammaMie(["ethanol","water"],epsilon_mixing = :hudsen_mccoubrey)
         modelvec = Clapeyron.EoSVectorParam(model)
         @test Clapeyron.promote_model(BigFloat,modelvec) isa Clapeyron.EoSVectorParam
     end
@@ -653,6 +654,7 @@ end
         #366
         incorrect conversion of MixedGCSegmentParam.
         =#
+        model = SAFTgammaMie(["ethanol","water"],epsilon_mixing = :hudsen_mccoubrey)
         bigfloat_model = Clapeyron.promote_model(BigFloat,model)
         @test model.params.mixed_segment.values.v ≈ bigfloat_model.params.mixed_segment.values.v
 
