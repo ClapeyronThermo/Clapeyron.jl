@@ -369,6 +369,17 @@ end
         @test all(e[1] ≈ 1e2 for e in est_data.outputs_error)
     end
 
+    @testset "EstimationData - edge cases" begin
+        csv_582 = """Clapeyron Estimator,,,
+[method = sum,species=acetonitrile heptane palmitic acid],,
+T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
+        data = EstimationData(csv_582)
+        model = MonomerIdeal(["acetonitrile","heptane","palmitic acid"])
+        est_model = EstimationModel(model,[Dict(:param => :Mw,:indices => :all)])
+
+        @test_throws "Try wrapping each species name in the list" EstimationProblem(est_model,[data])
+    end
+
     @testset "EstimationProblem" begin
         model = PCSAFT("methane")
         toestimate = [

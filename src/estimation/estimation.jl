@@ -50,16 +50,39 @@ function __estimationdata_fix_species!(data::EstimationData,comps,norm_comps)
     #additional checks
     species = data.species
     species[1] == "all" && length(species) == 1 && return nothing
+    is_error = false
     for (j,species_j) in enumerate(species)
+        is_error && break
         if species_j ∉ comps
             norm_species_j = normalisestring(species_j)
-            i = findfirt(isequal(norm_species_j),norm_comps)
+            i = findfirst(isequal(norm_species_j),norm_comps)
             if isnothing(i)
-                throw(error("EstimationData error: species $species_j not found in input model, please check the input `species` field in the CSV."))
+                is_error = true
+                #582 error
+                ij1 = findfirst(x -> occursin(norm_species_j,x),norm_comps)
+                isnothing(ij1) && break
+                j == length(species) && break
+                species_j1 = normalisestring(species[j+1])
+                ij2 = findfirst(x -> occursin(species_j1,x),norm_comps)
+                isnothing(ij2) && break
+                ij1 != ij2 && break
+
+                sum(x -> count(isspace,x),species) > 0 && break
+                new_comp = norm_species_j * species_j1
+                new_comp_with_spaces = norm_species_j * " " * species_j1
+                if new_comp in norm_comps
+                    throw(error("EstimationData error: species $(error_color(species_j)) not found in input model, but $(info_color(new_comp_with_spaces)) is found. 
+Try wrapping each species name in the list between quotes: `$(low_color('"' * new_comp_with_spaces*'"'))` instead of `$(low_color(new_comp_with_spaces))`"))
+                end
+      
             else
                 #modify species to make it match with the input model
                 species[j] = comps[i]
             end
+        end
+
+        if is_error
+            throw(error("EstimationData error: species $(error_color(species_j)) not found in input model, please check the input `species` field in the CSV."))
         end
     end
 end
