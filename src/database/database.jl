@@ -552,7 +552,7 @@ function read_csv(filepath,options::ParamOptions,sep = :auto)::CSV.File
         _delim = sep
     end
     if is_inline_csv(filepath)
-        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String, delim = _delim, ntasks  = 1,buffer_in_memory = true)
+        df = CSV.File(IOBuffer(filepath); header=3, pool=0,normalizenames=true, silencewarnings=true,drop = _drop, stringtype = String, delim = _delim, ntasks  = 1,buffer_in_memory = true)
     else
         df = CSV.File(filepath; header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String,delim = _delim, ntasks  = 1)
     end
@@ -903,11 +903,11 @@ function _read_csv_options(line::String)
                 data[1] = ""
             end
         end
-        return (csvtype = _readcsvtype(data[1]),grouptype = :unknown, estimator = :no_estimator, species = ["all"], sep = :comma)
+        return (csvtype = _readcsvtype(data[1]),grouptype = :unknown, sep = :comma)
     end
 end
 
-const NT_CSV_OPTIONS = (csvtype = namedtupledata,grouptype = :unknown,estimator = :no_estimator, species = ["all"],sep = :comma)
+const NT_CSV_OPTIONS = (csvtype = namedtupledata,grouptype = :unknown,sep = :comma)
 
 function _readcsvtype(collection)
     length(collection) != 1 && return invaliddata
@@ -929,35 +929,167 @@ function _readcsvtype(key::AbstractString)
     return invaliddata
 end
 
+"""
+    parse_bracket_format(s) -> Dict{SubString{String}, Tuple{Bool,SubString{String}}}
+
+Parse a bracket-encoded key-value string. Used in Clapeyron.jl CSV file headers.
+returns a dictionary of key-value pairs. each value is a tuple of a boolean that indicates if the text is a vector of values
+and the text content. parsing of vectors is optional.
+"""
+function parse_bracket_format(s::AbstractString,brackets_removed = false)
+    if !brackets_removed
+        s = strip(s)
+        m = match(r"^\[(.*)\]$"s, s)          # regex: strip outer []
+        m === nothing && throw(ArgumentError("Input must be enclosed in '[…]': $(repr(s))"))
+        content = strip(m[1])
+    else
+        content = s
+    end
+    isempty(content) && return Dict{String, Union{String, Vector{String}}}()
+
+
+    result = Dict{SubString{String}, Tuple{Bool,SubString{String}}}()
+    seg_start = firstindex(s)
+    done = false
+    while !done
+        add,idx,seg_start,done = _split_pairs(content,seg_start)
+        if add
+            ss = strip(SubString(content,idx))
+            k,v = _parse_pair(ss)
+            result[k] = v
+        end
+    end
+    return result
+end
+
+"""
+    _split_pairs(s) -> Vector{String}
+
+Split the flat content string into individual "key=value" segments, considering quotes and whitespace.
+
+"""
+function _split_pairs(s::AbstractString,seg_start)
+    in_q  = false
+    depth = 0
+    for i in seg_start:lastindex(s)
+        c = s[i]
+        if in_q
+            c == '"' && (in_q = false)
+        else
+            if     c == '"';                in_q  = true
+            elseif c == '(';               depth += 1
+            elseif c == ')';               depth -= 1
+            elseif c == ',' && depth == 0
+                indices0 = seg_start:prevind(s, i)
+                seg = strip(SubString(s,indices0))
+                if !all(isspace,seg)
+                    return true,indices0,nextind(s, i),false
+                end
+            end
+        end
+    end
+
+    indices_end = seg_start:lastindex(s)
+    tail = strip(SubString(s,indices_end))
+    if !all(isspace,tail)
+        return true,indices_end,0,true
+    else
+        return false,indices_end,0,true
+    end
+end
+
+"""
+    _parse_pair(s) -> (key::SubString{String}, Tuple{Bool,SubString{String}})
+
+Split one "key = value" segment at the first '=' that is not inside a quoted
+string or a parenthesised group.
+"""
+function _parse_pair(s::AbstractString)
+    in_q  = false
+    depth = 0
+    eq_i  = nothing
+
+    for i in eachindex(s)
+        c = s[i]
+        if in_q
+            c == '"' && (in_q = false)
+        else
+            if     c == '"';                in_q  = true
+            elseif c == '(';               depth += 1
+            elseif c == ')';               depth -= 1
+            elseif c == '=' && depth == 0; eq_i = i; break
+            end
+        end
+    end
+
+    eq_i === nothing && throw(ArgumentError("No '=' found in segment: $(repr(s))"))
+
+    key = strip(SubString(s,firstindex(s):prevind(s, eq_i)))
+    val = strip(SubString(s,nextind(s, eq_i):lastindex(s)))
+    count_quotes = count(isequal('\"'),val)
+    if startswith(val,'\"') && endswith(val,'\"') && count_quotes == 2
+        val = strip(isequal('\"'),val)
+    end
+    
+    is_vec = count_quotes > 2 || (startswith(val, '(') && endswith(val, ')'))
+    return key, (is_vec,val)
+end
+
+"""
+    _parse_vec(s) -> Vector{SubString{String}}
+
+Convert a string into a vector of strings acording to the following rules:
+- Each quoted value is an individual value, if there are more than 2 quotes present.
+- Text between parentheses is always a vector with one or more quoted strings
+- If no quotes and no parentheses are found, each word separated by whitespace is an individual value.
+"""
+function _parse_vec(s::AbstractString)
+    reg = r"\"([^\"]*)\""
+    # ── parenthesised list ─────────────────────────────────────────────────
+    if startswith(s, '(') && endswith(s, ')')
+        inner = SubString(s,nextind(s, firstindex(s)):prevind(s, lastindex(s)))
+        return [m[1] for m in eachmatch(reg, inner)]
+    end
+    # ── one or more quoted tokens ──────────────────────────────────────────
+    if count(isequal('\"'),s) > 2
+        return [m[1] for m in eachmatch(reg, s)]
+    end
+
+    #split by spaces
+    return split(s)
+end
+
 function __get_options(data,type)
     if type == :vec
-        opts = eachsplit(data,',')
-        opts_dict = Dict{String,String}()
-        for opt in opts
-            k,v = _parse_kv(opt,"=")
-            opts_dict[k] = v
-        end
-        _csvtype = _readcsvtype(get(opts_dict,"csvtype","invalid"))
-        _grouptype = Symbol(get(opts_dict,"grouptype","unknown"))
-        _estimator = Symbol(get(opts_dict,"method","error"))
-        maybe_species = get(opts_dict,"species","all")
-        _species = if maybe_species != "all"
-            _species_sep = get(opts_dict,"species_sep"," ")
-            _species = String.(split(maybe_species,_species_sep))
+        opts_dict = parse_bracket_format(data,true)
+        a,b,c = "csvtype","grouptype","sep"
+        _csvtype = if haskey(opts_dict,a)
+            _readcsvtype(opts_dict[SubString(a)][2])
         else
-            ["all"]
+            invaliddata
         end
-        _sep = Symbol(get(opts_dict,"sep","comma"))
-        return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species, sep = _sep)
+
+        _grouptype = if haskey(opts_dict,b)
+            Symbol(opts_dict[SubString(b)][2])
+        else
+            :unknown
+        end
+
+        _sep = if haskey(opts_dict,c)
+            Symbol(opts_dict[SubString(c)][2])
+        else
+            :comma
+        end
+        return (csvtype = _csvtype,grouptype = _grouptype,sep = _sep)
     elseif type == :json
         json_dict = JSON.parse(data)
         _csvtype = _readcsvtype(get(json_dict,"csvtype","invalid"))
         _grouptype = Symbol(get(json_dict,"grouptype","unknown"))
-        _estimator = Symbol(get(json_dict,"method","error"))
-        maybe_species = get(json_dict,"species","all")
-        _species = maybe_species isa AbstractString ? [String(maybe_species)] : String.(maybe_species)
+        #_estimator = Symbol(get(json_dict,"method","error"))
+        #maybe_species = get(json_dict,"species","all")
+        #_species = maybe_species isa AbstractString ? [String(maybe_species)] : String.(maybe_species)
         _sep = Symbol(get(json_dict,"sep","comma"))
-        return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species, sep = _sep)
+        return (csvtype = _csvtype,grouptype = _grouptype, sep = _sep)
     else
         throw(error("Clapeyron.__get_options: invalid type. expected :json or :vec, got $type"))
     end

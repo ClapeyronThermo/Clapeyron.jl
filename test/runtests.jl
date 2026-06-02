@@ -6,6 +6,7 @@ using Unitful #Unitful ext
 using MultiComponentFlash: MultiComponentFlash
 using Clapeyron.LinearAlgebra
 using Clapeyron.StaticArrays
+using Clapeyron.EstimationUtils
 using Clapeyron: has_sites,has_groups
 using Clapeyron: PH, QT, QP, TS, VT, PT
 #=
@@ -231,4 +232,3 @@ include_distributed("test_methods_api_flash.jl",3)
 include_distributed("test_methods_electrolytes.jl",1)
 include_distributed("test_estimation.jl",2)
 include_distributed("test_issues.jl",1)
-
