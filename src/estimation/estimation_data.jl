@@ -282,13 +282,16 @@ CSV Reading
 
 =#
 
-function read_estimationdata_options(line::String)
+function read_estimationdata_options(filepath::AbstractString)
+    return _read_estimationdata_options(getline(filepath, 2))
+end
+
+function _read_estimationdata_options(line::String)
     vec_re = r"\[.*\]"
     maybe_opts_vec = match(vec_re,line)
     json_re = r"\{.*\}"
     maybe_opts_json = match(json_re,line)
 
-    # Searches for type from second line of CSV.
     has_csv_options_vec = !isnothing(maybe_opts_vec)
     has_csv_options_json = !isnothing(maybe_opts_json)
     if has_csv_options_json
@@ -482,7 +485,6 @@ end
 
 function estimation_data_from_csvs(filepaths::AbstractVector{<:AbstractString}, method = nothing, loss = nothing)
     filepaths = flattenfilepaths(String[],filepaths)
-    @assert length(filepaths) == 1
     res = EstimationData[]
     for filepath in filepaths
         push!(res,EstimationData(filepath,method,loss))

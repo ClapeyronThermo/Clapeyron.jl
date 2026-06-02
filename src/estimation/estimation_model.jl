@@ -2,7 +2,7 @@ struct ToEstimate
     params::Vector{Symbol}
     indices::Vector{Vector{Tuple{Int64,Int64}}}  # if nothing, use all
     range_indices::Vector{UnitRange{Int64}} #for vector parameters, create corresponding views of the input parameter
-    full_index::Vector{Bool} #store all null indices.
+    index_type::Vector{Symbol} #store all index types.
 
     #lower, upper, guess, unflattened. in the case of no indices, we assume all, that is, we recompute those parameters to be of the same size of the model
     lower::Vector{Vector{Float64}}
@@ -46,7 +46,7 @@ function ToEstimate(params_dict::AbstractVector{<:Dict{Symbol}})
     params = Symbol[]
     indices = Vector{Vector{Tuple{Int64,Int64}}}(undef,0)
     range_indices = Vector{UnitRange{Int64}}(undef,0)
-    full_index = Bool[]
+    index_type = Symbol[]
 
     lower = Vector{Float64}[]
     upper = Vector{Float64}[]
@@ -59,15 +59,40 @@ function ToEstimate(params_dict::AbstractVector{<:Dict{Symbol}})
     ignorefield = Symbol[]
     for dict in params_dict
         push!(params,dict[:param])
+        id = get(dict, :indices, :no_specified)
 
-        id = get(dict, :indices, (0,0))
-        full_index_i = (id == (0,0))
-        push!(full_index,full_index_i)
+        if id isa AbstractString
+            id = Symbol(String(id))
+        end
+
+        if id isa AbstractVector && eltype(id) <: Integer
+            id = [(Int(i),Int(i)) for i in id]
+        end
+
+        if id isa Symbol
+            index_type_i = if id == :no_specified
+                :no_specified
+            elseif id in (:pair,:unlike)
+                :unlike
+            elseif id in (:pure,:pures,:diagonal,:like)
+                :pures
+            elseif id == :all
+                :all
+            else
+                error("ToEstimate: cannot determine index type")
+            end
+        else
+            index_type_i = :specified
+        end
+
+        push!(index_type,index_type_i)
 
          #if id is 0,0, we iterate over all parameters.
 
         if id isa Integer
             push!(indices, [(convert(Int,id),0)])
+        elseif id isa Symbol
+            push!(indices,[(0,0)])
         elseif id isa NTuple{2,Int}
             push!(indices, [id])
         else
@@ -77,12 +102,7 @@ function ToEstimate(params_dict::AbstractVector{<:Dict{Symbol}})
         push!(range_indices,1:0)
         n = length(last(indices))
         #numeric optional fields
-        _factor = get(dict, :factor, 1.)
-        if _factor isa Number && n > 1
-            append!(factor,FillArrays.Fill(_factor,n))
-        else
-            append!(factor,_factor)
-        end
+        append!(factor,get(dict, :factor, 1.))
 
         lower_ = get(dict, :lower, Float64[])
         lower_ isa AbstractVector && length(lower_) > 1 &&  id == (0,0) && throw(error("ToEstimate: cannot use vector lower bound with unspecified indices"))
@@ -106,7 +126,7 @@ function ToEstimate(params_dict::AbstractVector{<:Dict{Symbol}})
 
     scalar_indices = all(x -> isone(length(x)),indices)
 
-    return ToEstimate(params, indices, range_indices, full_index, lower, upper, guess, factor, sym, cross_assoc, recombine, ignorefield, Ref(scalar_indices))
+    return ToEstimate(params, indices, range_indices, index_type, lower, upper, guess, factor, sym, cross_assoc, recombine, ignorefield, Ref(scalar_indices))
 end
 
 mutable struct EstimationModel{M} <: EstimationUtils.AbstractEstimationModel{M}
@@ -115,8 +135,8 @@ mutable struct EstimationModel{M} <: EstimationUtils.AbstractEstimationModel{M}
 end
 
 set_ignorefield!(pkg_estimate,::Nothing) = nothing
-set_ignorefield!(pkg_estimate,::Symbol) = push!(pkg_estimate.ignorefield,ignorefield)
-set_ignorefield!(pkg_estimate,::String) = push!(pkg_estimate.ignorefield,Symbol(ignorefield))
+set_ignorefield!(pkg_estimate,ignorefield::Symbol) = push!(pkg_estimate.ignorefield,ignorefield)
+set_ignorefield!(pkg_estimate,ignorefield::String) = push!(pkg_estimate.ignorefield,Symbol(ignorefield))
 
 function set_ignorefield!(pkg_estimate,data::Union{Tuple,AbstractArray})
     for i in data
@@ -149,27 +169,38 @@ function recalculate_flatten_estimationmodel!(est_model::EstimationModel)
     indices = toestimate.indices
 
     range_indices = toestimate.range_indices
-    full_index = toestimate.full_index
+    index_type = toestimate.index_type #stores a vector of symbols indicating each index type
     x0,lb,ub = toestimate.guess,toestimate.lower,toestimate.upper
     paramnames = toestimate.params
     nc = length(model)
     k = 0
+    #=
+    no_specified: on single comp -> (1,1)
+
+    =#
     for i in eachindex(indices)
         #we check all empty indices
-        if (length(indices[i]) == 1 && indices[i][1] == (0,0)) || full_index[i]
+        if index_type[i] != :specified
             #empty model. get all indices, for single component models, this will be (1,1). for other models, it will be a list of indices.
-
             #check that all available parameters are of the same type and size
-
             all_params = __recursive_getparam(model,paramnames[i],toestimate.ignorefield)
             param_lengths = map(x -> prod(size(x)),all_params)
             param_types = map(parameterless_type,all_params)
             @assert allequal(param_lengths)
             @assert allequal(param_types)
+            nparam = first(param_lengths)
 
-            #get all indices and store those
-            id_full = __get_all_indices(first(all_params),toestimate.symmetric[i])
-            indices[i] = id_full
+            flag = index_type[i]
+            if nc == 1 && nparam == 1 #fast path
+                indices[i] = [(1,1)]
+            elseif flag == :no_specified && nparam > 1
+                @info "EstimationModel: param $(paramnames[i]) has length > 1, but indices were not specified. Defaulting to (1,1) (this could change in future versions of Clapeyron)"
+                indices[i] = [(1,1)]
+            else
+                #get all indices and store those
+                id_full = __get_all_indices(first(all_params),flag,toestimate.symmetric[i])
+                indices[i] = id_full
+            end
         end
         id = indices[i]
         nid = length(id)
@@ -181,19 +212,44 @@ function recalculate_flatten_estimationmodel!(est_model::EstimationModel)
     return nothing
 end
 
-__get_all_indices(param::SingleParameter,sym) = [(i,i) for i in 1:length(param.values)]
-__get_all_indices(param::AssocParam) = [(i,0) for i in 1:length(param.values.values)]
+__get_all_indices(param::SingleParameter,flag,sym) = [(i,i) for i in 1:length(param.values)]
+function __get_all_indices(param::AssocParam,flag,sym)
+        flags = (:no_specified,:pures,:all,:unlike)
 
-function __get_all_indices(param::PairParameter,sym)
+    if flag == :pures
+        i_pure =  findall(x -> x[1] == x[2],param.values.outer_indices)
+        return [(i,0) for i in i_pure]
+    elseif flag == :unlike
+        i_unlike =  findall(x -> x[1] != x[2],param.values.outer_indices)
+        return [(i,0) for i in i_unlike]
+    else
+        [(i,0) for i in 1:length(param.values.values)]
+    end
+end
+
+
+function __get_all_indices(param::PairParameter,flag,sym)
     res = Tuple{Int,Int}[]
     n = LinearAlgebra.checksquare(param.values)
+
+    if flag == :pures
+        return [(i,i) for i in 1:n]
+    end
+
     for i = 1:n
-        if !sym
-            for j = 1:i - 1
-                push!(res,(i,j))
+        if sym
+            if flag == :unlike
+                for j = 1:i - 1
+                    push!(res,(i,j))
+                end
+            else
+                for j = 1:i
+                    push!(res,(i,j))
+                end
             end
         else
             for j = 1:n
+                flag == :unlike && (i == j) && continue
                 push!(res,(i,j))
             end
         end
@@ -229,6 +285,7 @@ function _set_eos_parameters!(model,est_model::EstimationModel,values)
         id = idx[i]
         value = @view values[ri]
         param = getparam(model,params[i])
+
         for (k,ik) in enumerate(id)
             __modify_param!(param,ik,value[k],factor[i],recombine[i],sym[i],cross_assoc[i])
         end
@@ -268,7 +325,6 @@ function get_eos_parameters!(values,found,model,estimation::ToEstimate)
             fi = factor[i]
             found_i = @view found[ri]
             values_i = @view values[ri]
-
             for (k,ik) in enumerate(id)
                 if !found_i[k]
                     vik = __get_param(param,ik)

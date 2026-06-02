@@ -88,7 +88,62 @@ The index type depends on the type of parameter:
 - parameters of type `Clapeyron.SingleParam` are indexed via integers.
 - parameters of type `Clapeyron.PairParam` are indexed in two ways: an integer will get the diagonal value of the pair matrix, whereas a tuple of integers is capable to indexing the entire parameter, including off-diagonal entries. By default, we assume symmetry: any changes of the parameter on the entry `(i,j)` will also be done on the entry `(j,i)`. One can turn off this behaviour (on activity models, for example) by passing the keyword `:symmetric => false`.
 - parameters of type `Clapeyron.AssocParam` are indexed via integers, in the same way that `SingleParam`s. one index corresponds to each association pair. Some association pairs could have an associated cross-association value, to modify the cross-association value and the specified value simultaneously, we can use the `cross_assoc => true` keyword.
-- Some off-diagonal pair parameters are computed as a combination of one or more other EoS parameters that may or may not be used in the current estimation procedure. For example, in the `SAFTVRMie` EoS both `sigma` and `epsilon` are computed via combining rules that depend on both parameters diagonal entries. In particular, `Clapeyron.jl` has a mechanism to allow specific entries of the pair parameter matrix to be marked as *missing* and be recalculated each time a change is done in other parameters of the same model, or to be marked as *not missing*, and be fixed when any recalculation occurs.If one wants to modify diagonal values of a pair parameter that may participate in any recombination procedure, we can use `recombine => true` keyword to mark all entries in the same row and column as the diagonal index as missing, allowing their recombination.
+- Some off-diagonal pair parameters are computed as a combination of one or more other EoS parameters that may or may not be used in the current estimation procedure. For example, in the `SAFTVRMie` EoS both `sigma` and `epsilon` are computed via combining rules that depend on both parameters diagonal entries. In particular, `Clapeyron.jl` has a mechanism to allow specific entries of the pair parameter matrix to be marked as *missing* and be recalculated each time a change is done in other parameters of the same model, or to be marked as *not missing*, and be fixed when any recalculation occurs. If one wants to modify diagonal values of a pair parameter that may participate in any recombination procedure, we can use `recombine => true` keyword to mark all entries in the same row and column as the diagonal index as missing, allowing their recombination.
+
+### Symbol indices
+
+`EstimationModel` also supports indexing via `Symbol`, with the slight caveat that `est_model[sym]` returns a vector of values instead of a single value:
+
+```julia
+sigma = est_model[:sigma]
+@assert sigma isa Vector #true
+est_model[:sigma] = 3 #works
+est_model[[:sigma,:epsilon]] = [3,300] #works
+
+#limitation: this does not work, it will not set the indices.
+est_model[[:sigma,:epsilon]] .= [3,300] 
+```
+
+### Multiple-value indices
+
+`EstimationModel` also supports multiple indices per dictionary:
+
+```julia
+model = PCSAFT(["water","ethanol"])
+
+toestimate = [
+    Dict(
+        :param => :epsilon,
+        :indices => [1,2], #default to epsilon[1,1] and epsilon[2,2]
+        :lower => 100., #defaults to [100,100]
+        :upper => [300.,400],
+        :guess => 250. #defaults to [250, 250]
+    ),
+    Dict(
+        :param => :sigma,
+        :indices => [(1,1),(1,2)], #pairs of values are also accepted
+        :factor => 1e-10,
+        :lower => 3.2,
+        :upper => 4.0,
+        :guess => 3.7
+    )
+]
+
+est_model_multiple = EstimationModel(model,toestimate)
+EstimationUtils.parameter_length(est_model_multiple) #4
+```
+
+### Special multiple-value indices
+
+There are also some special indices that can be used by passing the corresponding symbol to the `indices` key:
+
+- `:pures` — includes only the pure-component (diagonal) entries. For `PairParam` it selects `(i,i)` for each component `i`; for `AssocParam` it selects all association pairs where the two site indices belong to the same component.
+- `:unlike` — includes only the cross (off-diagonal) entries. For `PairParam` these are the entries `(i,j)` with `i ≠ j`; for `AssocParam` these are association pairs that span two different components. On `SingleParam` this special index will fail.
+- `:all` — includes every entry, diagonal and off-diagonal.
+
+!!! note
+
+    On earlier package versions, if no `indices` key is specified and the model has more than one component, the default is set to the first index of the respective parameter. This behaviour could change on future versions of `Clapeyron.jl`
 
 ### scaling factors
 
@@ -301,7 +356,12 @@ result = optimize(
 Θ_opt = Optim.minimizer(result)
 ```
 
-On the choice of optimizers and julia packages, We have been obtaining good fits with the optimizer methods found in `Metaheuristics.jl`
+On the choice of optimizers and julia packages, We have been obtaining good fits with the optimizer methods found in `Metaheuristics.jl`. There is also explicit support via package extensions, to pass the `EstimationProblem` directly to the optimizer:
+
+```julia
+using Metaheuristics
+Θ_opt, fitted_model = Metaheuristics.optimize(prob,ECA(;options=Options(iterations=100)))
+```
 
 ### Retrieving the solution
 

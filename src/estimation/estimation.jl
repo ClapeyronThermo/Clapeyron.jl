@@ -24,7 +24,7 @@ function EstimationProblem(est_model::EstimationUtils.AbstractEstimationModel,da
     if concrete
         new_data = tuple(data...)
     else
-        new_data = Vector{EstimationUtils.AbstractEstimationLoss}[]
+        new_data = EstimationUtils.AbstractEstimationLoss[]
         resize!(new_data,length(data))
         new_data .= data
     end
@@ -38,8 +38,10 @@ function EstimationProblem(est_model::EstimationUtils.AbstractEstimationModel,da
     for data_i in new_data
         __estimationdata_fix_species!(data_i,comps,norm_comps)
     end
-
-    return EstimationProblem(model2,model,est_model2,new_data)
+    T = typeof(model)
+    E = typeof(est_model)
+    D = typeof(new_data)
+    return EstimationProblem{T,E,D}(model2,model,est_model2,new_data)
 end
 
 __estimationdata_fix_species!(data,comps,norm_comps) = nothing
@@ -158,8 +160,8 @@ function Estimation(est_model::EstimationUtils.AbstractEstimationModel,data)
 end
 
 function _Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths, objective_form, ignorefield)
-    est_model = EstimationModel(model,toestimate,ignorefield)
-    estimation = EstimationProblem(est_model, estimation_data_from_csvs(filepaths, objective_form),concrete = false)
+    est_model = EstimationModel(model,toestimate;ignorefield)
+    estimation = EstimationProblem(est_model, estimation_data_from_csvs(filepaths, nothing, objective_form),concrete = false)
     objective = EstimationUtils.objective_function(estimation)
     x0 = EstimationUtils.initial_guess(estimation)
     upper = EstimationUtils.upper_bounds(estimation)

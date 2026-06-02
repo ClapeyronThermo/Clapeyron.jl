@@ -226,6 +226,32 @@ end
         @test ap.values.values[1] ≈ val1_before
     end
 
+    @testset "EstimationModel - multiple-value indices" begin
+        model_multiple = PCSAFT(["methane","ethane"])
+
+        toestimate_multiple = [
+            Dict(
+                :param   => :epsilon,
+                :indices => :pures,       # one Θ entry per component: ε₁, ε₂
+            ),
+            Dict(
+                :param     => :epsilon,
+                :indices   => :unlike,    # one Θ entry for the cross term ε₁₂
+                :symmetric => true,       # ε₁₂ == ε₂₁ (default, shown for clarity)
+            ),
+            Dict(
+                :param   => :sigma,
+                :factor  => 1e-10,
+                :indices => :pures,       # σ₁, σ₂
+            ),
+        ]
+        # Θ has 5 elements: [ε₁, ε₂, ε₁₂, σ₁, σ₂]
+        est_model = EstimationModel(model_multiple, toestimate_multiple)
+        @test EstimationUtils.parameter_length(est_model) == 5
+        est_model[3] = 170.0
+        @test model_multiple.params.epsilon[1,2] == 170.0
+    end
+
     @testset "EstimationData – from NamedTuple" begin
         model = cPR("methane")
         Ts = [300., 350., 400.]
@@ -593,7 +619,7 @@ end
         model2 = return_model(estimator,model,initial)
         @test model2.params.epsilon[1,1] == initial[1] # Test that the parameter was correctly updated
         @test model2.params.epsilon[1,2] ≈ 251.57862124740765 rtol = 1e-6 # Test that the combining rule was used
-        @test model2.params.epsilon[1,2] == model2.params.epsilon[1,2] # Test that the unlike parameters remain symmetric
+        @test model2.params.epsilon[1,2] == model2.params.epsilon[2,1] # Test that the unlike parameters remain symmetric
 
         @test model2.params.epsilon[2,3] == initial[2] # Test that the parameter was updated
         @test model2.params.epsilon[2,3] != model2.params.epsilon[3,2] # Test that the parameter is no longer symmetric
@@ -612,7 +638,6 @@ end
 
         @test objective(initial) ≈ 7.255389483796751 rtol = 1e-6
     end
-
 
 end # @testset "estimation"
 
