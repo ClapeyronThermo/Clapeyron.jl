@@ -639,7 +639,7 @@ end
         @test objective(initial) ≈ 7.255389483796751 rtol = 1e-6
     end
 
-end # @testset "estimation"
+end
 
 
 @testset "promote_model" begin
