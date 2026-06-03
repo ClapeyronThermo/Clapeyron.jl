@@ -1,7 +1,7 @@
 name = "Clapeyron"
 uuid = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
 authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pjwalker@caltech.edu>", "Andrés Riedemann <andres.riedemann@gmail.com>"]
-version = "0.6.24"
+version = "0.6.25"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
@@ -66,11 +66,11 @@ IFTDuals = "0.2"
 JSON = "0.21, 1"
 JutulDarcy = "0.2, 0.3"
 LinearAlgebra = "1"
-LogExpFunctions = "^0.3.24"
+LogExpFunctions = "^0.3.24, 1"
 Metaheuristics = "2, 3"
 MultiComponentFlash = "1.1.13"
 NLSolvers = "0.5"
-OrderedCollections = "^1.5"
+OrderedCollections = "^1.5, 2"
 PackedVectorsOfVectors = "^0.1.2"
 PositiveFactorizations = "^0.2"
 PrecompileTools = "1"

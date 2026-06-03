@@ -94,21 +94,18 @@ function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::WSRuleModel,α,a
     B̄ = zero(T+V+first(z))
     Σλab = B̄
     for i in 1:nc
-        zi = z[i]
-        αi = α[i]
-        _ai = a[i,i]
-        ai = _ai*αi
-        bi = b[i,i]
+        zi,αi,a0i,bi = z[i],α[i],a[i,i],b[i,i]
+        ai = a0i*αi
         λi = WS_λ(mixing_model,model,T,FillArrays.OneElement(i,nc))
+        Bi = (bi - ai*RT⁻¹)
         B̄ += zi*zi*(bi-ai*RT⁻¹)
         Σλab += λi*zi*ai/bi
         for j in 1:(i-1)
-            αj = α[j]
-            bj= b[j,j]
-            _aj = a[j,j]
-            _1mkij = a[i,j]^2/(_ai*_aj) #1 - kij
-            aj = a[j,j]*αj
-            B̄ += _1mkij*zi*z[j]*((bj-aj*RT⁻¹)+(bi-ai*RT⁻¹))
+            zj,αj,a0j,bj = z[j],α[j],a[j,j],b[j,j]
+            aj,aij = a0j*αj,a[i,j]
+            k̄ij = aij*aij/(a0i*a0j) #1 - kij
+            Bj = (bj - aj*RT⁻¹)
+            B̄ += k̄ij*zi*zj*(Bi + Bj)
         end
     end
     Σλab = Σλab*invn

@@ -140,7 +140,7 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
     return FlashResult(comps,βi,volumes,FlashData(p,T,g,vapour_idx))
 end
 
-function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(), reduced = false)
+function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = MichelsenTPFlash(), reduced = false)
 
     equilibrium = method.equilibrium
     K0 = method.K0
@@ -157,10 +157,11 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     non_iny_list = method.nonvolatiles
 
     if !reduced
-        model_full,z_full = model,z
-        model,z_nonzero = index_reduction(model_full,z_full)
-        z = z_full[z_nonzero]
+        model,z_nonzero = index_reduction(model_full,z_full)    
+    else
+        model,z_nonzero = model_full,fill(true,length(model_full))
     end
+    z = z_full[z_nonzero]
 
     if is_vle(equilibrium) || is_unknown(equilibrium)
         phasex,phasey = :liquid,:vapour
@@ -205,15 +206,18 @@ function tp_flash_michelsen(model::EoSModel, p, T, z, method = MichelsenTPFlash(
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     _0,_1 = zero(TT),one(TT)
     if !isnothing(K0)
-        check_arraysize(model,K0)
-        K .= K0
+        #K0 should be the same size as the input model
+        check_arraysize(model_full,K0)
+        K .=  @view K0[z_nonzero]
         lnK .= log.(K)
         verbose && @info "K0 already provided"
     elseif !isnothing(x0) && !isnothing(y0)
-        check_arraysize(model,x0)
-        check_arraysize(model,y0)
-        x .= x0 ./ sum(x0)
-        y .= y0 ./ sum(y0)
+        check_arraysize(model_full,x0)
+        check_arraysize(model_full,y0)
+        x .= @view(x0[z_nonzero])
+        y .= @view(y0[z_nonzero])
+        x ./= sum(x)
+        y ./= sum(y)
         lnK .= log.(y ./ x)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(volx,voly),phases,non_inw,dlnϕ_cache)
         K .= exp.(lnK)

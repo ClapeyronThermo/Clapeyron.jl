@@ -274,3 +274,8 @@ function dew_temperature_tproperty_method(model::PTFlashWrapper,p,T0,z,dPdT)
   _,T,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x0,z,FugEnum.DEW_TEMPERATURE,FillArrays.Trues(length(z)),false)
   return FugDewTemperature(vol0 = (vl0,vv0),T0 = T,x0 = x)
 end
+
+bubble_temperature_ad(result,tup::Tuple{<:PTFlashWrapper,<:Any,<:Any},λtup) = bubbledew_temperature_ad_p(result,tup,λtup,true)
+dew_temperature_ad(result,tup::Tuple{<:PTFlashWrapper,<:Any,<:Any},λtup) = bubbledew_temperature_ad_p(result,tup,λtup,false)
+bubble_pressure_ad(result,tup::Tuple{<:PTFlashWrapper,<:Any,<:Any},λtup) = bubbledew_pressure_ad_p(result,tup,λtup,true)
+dew_pressure_ad(result,tup::Tuple{<:PTFlashWrapper,<:Any,<:Any},λtup) = bubbledew_pressure_ad_p(result,tup,λtup,false)

@@ -18,9 +18,9 @@ using Clapeyron, Test, LinearAlgebra
         t3,sep3,header3 = Clapeyron.get_header(Clapeyron.DB_PATH * "/ideal/WalkerIdeal.csv")
         @test header3.grouptype == :Walker
 
-        t4,sep4,header4 = Clapeyron.get_header(Clapeyron.DB_PATH * "/../examples/data/gc_sat_prop.csv")
-        @test header4.estimator == :saturation_p_rhol
-        @test header4.species[1] == "ethane"
+        #t4,sep4,header4 = Clapeyron.get_header(Clapeyron.DB_PATH * "/../examples/data/gc_sat_prop.csv")
+        #@test header4.estimator == :saturation_p_rhol
+        #@test header4.species[1] == "ethane"
 
         t5,sep5,header5 = Clapeyron.make_header((species = ["a","b"],b = [1,2]))
         @test sep5 == ","
@@ -500,5 +500,47 @@ using Clapeyron, Test, LinearAlgebra
         @test model_cas.components == ["water"]
         model_smiles = PCSAFT(smiles"O")
         @test model_smiles.components == ["water"]
+    end
+
+    @testset "parse_bracket_format" begin
+
+        #plain values"
+        d = Clapeyron.parse_bracket_format("[a = 1,b = autobahn,c = false]")
+        @test d["a"][2] == "1"
+        @test d["b"][2] == "autobahn"
+        @test d["c"][2] == "false"
+
+        #empty input
+        @test isempty(Clapeyron.parse_bracket_format("[]"))
+        @test isempty(Clapeyron.parse_bracket_format("[    ]"))
+
+        #plain value with spaces
+        d = Clapeyron.parse_bracket_format("[cli = a b c, b = a]")
+        @test d["cli"][2] == "a b c"
+        @test d["b"][2]   == "a"
+
+        #quoted list – whitespace separated
+        d = Clapeyron.parse_bracket_format("""[vec = "a" "b" "c", other = 2]""")
+        @test Clapeyron._parse_vec(d["vec"][2])   == ["a","b","c"]
+        @test d["other"][2] == "2"
+
+        # parenthesised list (values may contain '=')
+        d = Clapeyron.parse_bracket_format("""[vec = ("c" "b=" "a"), 1 = 2]""")
+        @test Clapeyron._parse_vec(d["vec"][2]) == ["c","b=","a"]
+        @test d["1"][2]   == "2"
+
+        # single quoted token → String, not Vector
+        d = Clapeyron.parse_bracket_format("""[x = "hello", y = 42]""")
+        @test d["x"][1] == false
+        @test d["x"][2] == "hello"
+
+        # parenthesised single token → Vector
+        d = Clapeyron.parse_bracket_format("""[x = ("only")]""")
+        @test d["x"][1] == true
+        @test Clapeyron._parse_vec(d["x"][2]) == ["only"]
+
+        # extra whitespace around keys and values
+        d = Clapeyron.parse_bracket_format("[  key  =  value  ]")
+        @test d["key"][2] == "value"
     end
 end

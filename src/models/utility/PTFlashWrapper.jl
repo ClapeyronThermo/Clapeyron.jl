@@ -42,6 +42,10 @@ fluid_model(model::PTFlashWrapper) = fluid_model(model.model)
 molecular_weight(model::PTFlashWrapper,z) = molecular_weight(model.model,z)
 reference_state(model::PTFlashWrapper) = reference_state(model.model)
 
+function Solvers.primalval(model::PTFlashWrapper{T,T2,R,S}) where {T,T2,R,S}
+    PTFlashWrapper(model.components,primalval(model.model),Solvers.primalval(model.pures),Solvers.primalval.(model.sat),Solvers.primalval.(model.fug),model.equilibrium)
+end
+
 function update_temperature!(model::PTFlashWrapper,T)
     isnan(T) && return nothing
     pures = model.pures
