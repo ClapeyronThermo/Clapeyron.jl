@@ -6,12 +6,18 @@ CurrentModule = Clapeyron
 
 As seen before, the default inputs to compute any bulk property using any `EoSModel` are pressure, temperature, and moles. However, there is also an option to use alternative inputs. The specific combinations are as follows:
 
+1. Pressure and temperature [`tp_flash`](@ref) (`PT` module)
 1. Pressure and enthalpy [`ph_flash`](@ref) (`PH` module)
 1. Pressure and entropy [`ps_flash`](@ref) (`PS` module)
 1. Vapour fraction and pressure [`qp_flash`](@ref) (`QP` module)
 1. Vapour fraction and temperature [`qt_flash`](@ref) (`QT` module)
 1. Temperature and entropy [`ts_flash`](@ref) (`TS` module)
 1. Volume and temperature [`vt_flash`](@ref) (`VT` module)
+
+Those specific combinations also exist:
+
+1. Volume and temperature, direct (`VT0` module): direct evaluation for helmholtz properties.
+1. Pressure and temperature, direct (`PT0` module): only the volume solver is used to get a volume for use with the `VT0` module. Functionally equivalent to the functions exported.
 
 ## Using P-H flash
 

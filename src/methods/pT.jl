@@ -87,8 +87,8 @@ Similarly, `molar_density(model,result::FlashResult,i)` will just call `molar_de
 $VT_STRING
 """
 function molar_density(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true, vol0=nothing)
-     V = volume(model, p, T, z; phase, threaded, vol0)
-     return VT_molar_density(model,V,T,z)
+    V = volume(model, p, T, z; phase, threaded, vol0)
+    return VT_molar_density(model,V,T,z)
 end
 
 """
@@ -128,7 +128,8 @@ Calculates the compressibility factor `Z`, defined as:
 Z = p*V(p)/R*T
 ```
 
-`compressibility_factor(model,result::FlashResult)` will return the compressibility factor of the only phase stored in the `FlashResult` struct, whereas `compressibility_factor(model,result::FlashResult,i::Int)` will return the compressibility factor of the ith phase. 
+`compressibility_factor(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`compressibility_factor(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
 Because molar volumes and pressures are directly stored in the `FlashResult` struct, `compressibility_factor(model,result)` will just call `compressibility_factor(result)` instead.
 Similarly, `compressibility_factor(model,result::FlashResult,i)` will just call `compressibility_factor(result,i)`.
 
@@ -189,6 +190,8 @@ end
 
 """
     mass_entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    mass_entropy(model, result::FlashResult)
+    mass_entropy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·kg⁻¹·K⁻¹]`
 
@@ -209,6 +212,8 @@ end
 
 """
     entropy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    entropy_res(model, result::FlashResult)
+    entropy_res(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·K⁻¹]`
 
@@ -218,7 +223,7 @@ Calculates residual entropy, defined as:
 S = -∂Ares/∂T
 ```
 
-`entropy_res(model,result::FlashResult)` will return the mass entropy of the aggregate of phases stored in the `FlashResult` whereas `mass_entropy(model,result::FlashResult,i::Int)` will return the mass entropy of the ith phase. 
+`entropy_res(model,result::FlashResult)` will return the residual entropy of the aggregate of phases stored in the `FlashResult` whereas `entropy_res(model,result::FlashResult,i::Int)` will return the residual entropy of the ith phase. 
 
 $VT_STRING
 """
@@ -228,6 +233,8 @@ end
 
 """
     chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    chemical_potential(model, result::FlashResult)
+    chemical_potential(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·mol⁻¹]`
 
@@ -236,6 +243,8 @@ Calculates the chemical potential, defined as:
 ```julia
 μᵢ = ∂A/∂nᵢ
 ```
+
+`chemical_potential(model,result::FlashResult)` will return the chemical potential of the aggregate of phases stored in the `FlashResult` whereas `chemical_potential(model,result::FlashResult,i::Int)` will return the chemical potential of the ith phase.
 
 $VT_STRING
 """
@@ -249,6 +258,8 @@ end
 
 """
     chemical_potential_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    chemical_potential_res(model, result::FlashResult)
+    chemical_potential_res(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·mol⁻¹]`
 
@@ -258,6 +269,8 @@ Calculates the residual chemical potential, defined as:
 μresᵢ = ∂Ares/∂nᵢ
 ```
 
+`chemical_potential_res(model,result::FlashResult)` will return the residual chemical potential of the aggregate of phases stored in the `FlashResult` whereas `chemical_potential_res(model,result::FlashResult,i::Int)` will return the residual chemical potential of the ith phase.
+
 $VT_STRING
 """
 function chemical_potential_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -266,6 +279,8 @@ end
 
 """
     internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    internal_energy(model, result::FlashResult)
+    internal_energy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -275,6 +290,8 @@ Calculates the internal energy, defined as:
 U = A - T * ∂A/∂T
 ```
 
+`internal_energy(model,result::FlashResult)` will return the internal energy of the aggregate of phases stored in the `FlashResult` whereas `internal_energy(model,result::FlashResult,i::Int)` will return the internal energy of the ith phase.
+
 $VT_STRING
 """
 function internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -283,15 +300,19 @@ end
 
 """
     mass_internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    mass_internal_energy(model, result::FlashResult)
+    mass_internal_energy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·kg⁻¹]`
 
-Calculates the internal energy, defined as:
+Calculates the internal energy per unit of mass, defined as:
 
 ```julia
 U = (A - T * ∂A/∂T)/Mr
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
+
+`mass_internal_energy(model,result::FlashResult)` will return the mass internal energy of the aggregate of phases stored in the `FlashResult` whereas `mass_internal_energy(model,result::FlashResult,i::Int)` will return the mass internal energy of the ith phase.
 
 $VT_STRING
 """
@@ -301,6 +322,8 @@ end
 
 """
     internal_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    internal_energy_res(model, result::FlashResult)
+    internal_energy_res(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -310,6 +333,8 @@ Calculates the residual internal energy, defined as:
 U = Ar - T * ∂Ar/∂T
 ```
 
+`internal_energy_res(model,result::FlashResult)` will return the residual internal energy of the aggregate of phases stored in the `FlashResult` whereas `internal_energy_res(model,result::FlashResult,i::Int)` will return the residual internal energy of the ith phase.
+
 $VT_STRING
 """
 function internal_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -318,6 +343,8 @@ end
 
 """
     enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    enthalpy(model, result::FlashResult)
+    enthalpy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -327,6 +354,8 @@ Calculates the enthalpy, defined as:
 H = A - T * ∂A/∂T - V * ∂A/∂V
 ```
 
+`enthalpy(model,result::FlashResult)` will return the enthalpy of the aggregate of phases stored in the `FlashResult` whereas `enthalpy(model,result::FlashResult,i::Int)` will return the enthalpy of the ith phase.
+
 $VT_STRING
 """
 function enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -335,15 +364,19 @@ end
 
 """
     mass_enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    mass_enthalpy(model, result::FlashResult)
+    mass_enthalpy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·kg⁻¹]`
 
-Calculates the enthalpy, defined as:
+Calculates the enthalpy per unit of mass, defined as:
 
 ```julia
 H = (A - T * ∂A/∂T - V * ∂A/∂V)/Mr
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
+
+`mass_enthalpy(model,result::FlashResult)` will return the mass enthalpy of the aggregate of phases stored in the `FlashResult` whereas `mass_enthalpy(model,result::FlashResult,i::Int)` will return the mass enthalpy of the ith phase.
 
 $VT_STRING
 """
@@ -353,6 +386,8 @@ end
 
 """
     enthalpy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    enthalpy_res(model, result::FlashResult)
+    enthalpy_res(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -361,6 +396,8 @@ Calculates the residual enthalpy, defined as:
 ```julia
 H = Ar - T * ∂Ar/∂T - V * ∂Ar/∂V
 ```
+
+`enthalpy_res(model,result::FlashResult)` will return the residual enthalpy of the aggregate of phases stored in the `FlashResult` whereas `enthalpy_res(model,result::FlashResult,i::Int)` will return the residual enthalpy of the ith phase.
 
 $VT_STRING
 """
@@ -371,6 +408,8 @@ end
 """
     gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    gibbs_free_energy(model, result::FlashResult)
+    gibbs_free_energy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -379,6 +418,8 @@ Calculates the Gibbs energy, defined as:
 ```julia
 G = A + p*V
 ```
+
+`gibbs_free_energy(model,result::FlashResult)` will return the Gibbs energy of the aggregate of phases stored in the `FlashResult` whereas `gibbs_free_energy(model,result::FlashResult,i::Int)` will return the Gibbs energy of the ith phase.
 
 $VT_STRING
 """
@@ -389,15 +430,19 @@ end
 """
     mass_gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     mass_gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    mass_gibbs_free_energy(model, result::FlashResult)
+    mass_gibbs_free_energy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·kg⁻¹]`
 
-Calculates the Gibbs energy, defined as:
+Calculates the Gibbs energy per unit of mass, defined as:
 
 ```julia
 G = (A + p*V)/Mr
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
+
+`mass_gibbs_free_energy(model,result::FlashResult)` will return the mass Gibbs energy of the aggregate of phases stored in the `FlashResult` whereas `mass_gibbs_free_energy(model,result::FlashResult,i::Int)` will return the mass Gibbs energy of the ith phase.
 
 $VT_STRING
 """
@@ -408,6 +453,8 @@ end
 """
     gibbs_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     gibbs_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    gibbs_free_energy_res(model, result::FlashResult)
+    gibbs_free_energy_res(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -416,6 +463,8 @@ Calculates the residual Gibbs energy, defined as:
 ```julia
 G = Ar - V*∂Ar/∂V
 ```
+
+`gibbs_free_energy_res(model,result::FlashResult)` will return the residual Gibbs energy of the aggregate of phases stored in the `FlashResult` whereas `gibbs_free_energy_res(model,result::FlashResult,i::Int)` will return the residual Gibbs energy of the ith phase.
 
 $VT_STRING
 """
@@ -426,6 +475,8 @@ end
 """
     helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    helmholtz_free_energy(model, result::FlashResult)
+    helmholtz_free_energy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -434,6 +485,8 @@ Calculates the Helmholtz energy, defined as:
 ```julia
 A = eos(model,V(p),T,z)
 ```
+
+`helmholtz_free_energy(model,result::FlashResult)` will return the Helmholtz energy of the aggregate of phases stored in the `FlashResult` whereas `helmholtz_free_energy(model,result::FlashResult,i::Int)` will return the Helmholtz energy of the ith phase.
 
 $VT_STRING
 """
@@ -444,15 +497,19 @@ end
 """
     mass_helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     mass_helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    mass_helmholtz_free_energy(model, result::FlashResult)
+    mass_helmholtz_free_energy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·kg⁻¹]`
 
-Calculates the Helmholtz energy, defined as:
+Calculates the Helmholtz energy per unit of mass, defined as:
 
 ```julia
 A = eos(model,V(p),T,z)/Mr
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
+
+`mass_helmholtz_free_energy(model,result::FlashResult)` will return the mass Helmholtz energy of the aggregate of phases stored in the `FlashResult` whereas `mass_helmholtz_free_energy(model,result::FlashResult,i::Int)` will return the mass Helmholtz energy of the ith phase.
 
 $VT_STRING
 """
@@ -463,6 +520,8 @@ end
 """
     helmholtz_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     helmholtz_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    helmholtz_free_energy_res(model, result::FlashResult)
+    helmholtz_free_energy_res(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -471,6 +530,9 @@ Calculates the residual Helmholtz energy, defined as:
 ```julia
 A = eos_res(model,V(p),T,z)
 ```
+
+`helmholtz_free_energy_res(model,result::FlashResult)` will return the residual Helmholtz energy of the aggregate of phases stored in the `FlashResult` whereas `helmholtz_free_energy_res(model,result::FlashResult,i::Int)` will return the residual Helmholtz energy of the ith phase.
+
 $VT_STRING
 """
 function helmholtz_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -485,6 +547,8 @@ const mass_helmholtz_energy = mass_helmholtz_free_energy
 const mass_gibbs_energy = mass_gibbs_free_energy
 """
     isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    isochoric_heat_capacity(model, result::FlashResult)
+    isochoric_heat_capacity(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·K⁻¹]`
 
@@ -496,6 +560,9 @@ Cv = -T * ∂²A/∂T²
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isochoric_heat_capacity(model,V,T,z)`.
 
+`isochoric_heat_capacity(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`isochoric_heat_capacity(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
+
 $VT_STRING
 
 """
@@ -505,15 +572,20 @@ end
 
 """
     mass_isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    mass_isochoric_heat_capacity(model, result::FlashResult)
+    mass_isochoric_heat_capacity(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·kg⁻¹·K⁻¹]`
 
-Calculates the isochoric heat capacity, defined as:
+Calculates the isochoric heat capacity per unit of mass, defined as:
 
 ```julia
 Cv = -T * ∂²A/∂T² / Mr
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
+
+`mass_isochoric_heat_capacity(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`mass_isochoric_heat_capacity(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
 
 $VT_STRING
 $IDEALMODEL_REQUIRED
@@ -525,6 +597,8 @@ end
 
 """
     isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    isobaric_heat_capacity(model, result::FlashResult)
+    isobaric_heat_capacity(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·K⁻¹]`
 
@@ -533,6 +607,9 @@ Calculates the isobaric heat capacity, defined as:
 ```julia
 Cp = -T*(∂²A/∂T² - (∂²A/∂V∂T)^2 / ∂²A/∂V²)
 ```
+
+`isobaric_heat_capacity(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`isobaric_heat_capacity(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
 
 $VT_STRING
 $IDEALMODEL_REQUIRED
@@ -544,15 +621,20 @@ end
 
 """
     mass_isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    mass_isobaric_heat_capacity(model, result::FlashResult)
+    mass_isobaric_heat_capacity(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·kg⁻¹·K⁻¹]`
 
-Calculates the isobaric heat capacity, defined as:
+Calculates the isobaric heat capacity per unit of mass, defined as:
 
 ```julia
 Cp = (-T*(∂²A/∂T² - (∂²A/∂V∂T)^2 / ∂²A/∂V²))/Mr
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
+
+`mass_isobaric_heat_capacity(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`mass_isobaric_heat_capacity(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
 
 $VT_STRING
 $IDEALMODEL_REQUIRED
@@ -564,12 +646,17 @@ end
 
 """
     adiabatic_index(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    adiabatic_index(model, result::FlashResult)
+    adiabatic_index(model, result::FlashResult, phase_index::Int)
 
 Calculates the adiabatic index, defined as:
 
 ```julia
 γ = Cp/Cv
 ```
+
+`adiabatic_index(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`adiabatic_index(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
 
 $VT_STRING
 $IDEALMODEL_REQUIRED
@@ -581,6 +668,8 @@ end
 
 """
     isothermal_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    isothermal_compressibility(model, result::FlashResult)
+    isothermal_compressibility(model, result::FlashResult, phase_index::Int)
 
 Default units: `[Pa⁻¹]`
 
@@ -589,6 +678,10 @@ Calculates the isothermal compressibility, defined as:
 ```julia
 κₜ = -(V*∂p/∂V)⁻¹
 ```
+
+`isothermal_compressibility(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`isothermal_compressibility(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
+
 $VT_STRING
 $SINGLE_PHASE_PROP
 """
@@ -598,6 +691,8 @@ end
 
 """
     isentropic_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    isentropic_compressibility(model, result::FlashResult)
+    isentropic_compressibility(model, result::FlashResult, phase_index::Int)
 
 Default units: `[Pa⁻¹]`
 
@@ -606,6 +701,10 @@ Calculates the isentropic compressibility, defined as:
 ```julia
 κₛ = (V*( ∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T² ))⁻¹
 ```
+
+`isentropic_compressibility(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`isentropic_compressibility(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
+
 $VT_STRING
 $IDEALMODEL_REQUIRED
 $SINGLE_PHASE_PROP
@@ -616,6 +715,8 @@ end
 
 """
     speed_of_sound(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    speed_of_sound(model, result::FlashResult)
+    speed_of_sound(model, result::FlashResult, phase_index::Int)
 
 Default units: `[m·s⁻¹]`
 
@@ -625,6 +726,9 @@ Calculates the speed of sound, defined as:
 c = V * √(∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T²)/Mr)
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
+
+`speed_of_sound(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`speed_of_sound(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
 
 $VT_STRING
 $IDEALMODEL_REQUIRED
@@ -636,6 +740,8 @@ end
 
 """
     isobaric_expansivity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    isobaric_expansivity(model, result::FlashResult)
+    isobaric_expansivity(model, result::FlashResult, phase_index::Int)
 
 Default units: `[K⁻¹]`
 
@@ -644,6 +750,10 @@ Calculates the isobaric expansivity, defined as:
 ```julia
 α = -∂²A/∂V∂T / (V*∂²A/∂V²)
 ```
+
+`isobaric_expansivity(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`isobaric_expansivity(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
+
 $VT_STRING
 $SINGLE_PHASE_PROP
 """
@@ -653,6 +763,8 @@ end
 
 """
     joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    joule_thomson_coefficient(model, result::FlashResult)
+    joule_thomson_coefficient(model, result::FlashResult, phase_index::Int)
 
 Default units: `[K·Pa⁻¹]`
 
@@ -661,6 +773,10 @@ Calculates the Joule–Thomson coefficient, defined as:
 ```julia
 μⱼₜ = -(∂²A/∂V∂T - ∂²A/∂V² * ((T*∂²A/∂T² + V*∂²A/∂V∂T) / (T*∂²A/∂V∂T + V*∂²A/∂V²)))⁻¹
 ```
+
+`joule_thomson_coefficient(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`joule_thomson_coefficient(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
+
 $VT_STRING
 $IDEALMODEL_REQUIRED
 $SINGLE_PHASE_PROP
@@ -679,6 +795,9 @@ Uses the phase identification parameter criteria from `Clapeyron.pip`.
 
 Returns `:liquid` if the phase is liquid (or liquid-like), `:vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed.
 
+`identify_phase(model,result::FlashResult,i::Int)` will return the phase type of the ith phase stored in the result, if available. 
+`identify_phase(model,result,i)` will try to get the stored result first, and fallback to `identify_phase(model,p,T,xi)` if there is no phase stored.
+
 $VT_STRING
 """
 function identify_phase(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, vol = NaN)
@@ -693,8 +812,13 @@ end
 
 """
     fundamental_derivative_of_gas_dynamics(model::EoSModel, p, T, z=SA[1.]; phase=:gas, threaded=true, vol0=nothing)::Symbol
+    fundamental_derivative_of_gas_dynamics(model, result::FlashResult)
+    fundamental_derivative_of_gas_dynamics(model, result::FlashResult, phase_index::Int)
 
 Calculates the fundamental derivative of gas dynamics.
+
+`fundamental_derivative_of_gas_dynamics(model,result::FlashResult)` will calculate the property only if there is a single phase in the result, and error otherwise.
+`fundamental_derivative_of_gas_dynamics(model,result::FlashResult, i::Int)` will calculate the property at the ith phase of a `FlashResult`.
 
 $VT_STRING
 """
@@ -733,6 +857,7 @@ log(γ*z) = (μ_mixt - μ_ref) / R̄ / T
 ```
 where `μ_mixt` is the chemical potential of the mixture and `μ_ref` is the reference chemical potential for the model at `p`,`T` conditions, calculated via [`Clapeyron.reference_chemical_potential`](@ref).
 If the `μ_ref` keyword argument is not provided, the `reference` keyword is used to specify the reference chemical potential.
+
 $VT_STRING
 
 """
@@ -770,6 +895,7 @@ log(a) = (μ_mixt - μ_ref) / R̄ / T
 ```
 where `μ_mixt` is the chemical potential of the mixture and `μ_ref` is the reference chemical potential for the model at `p`,`T` conditions, calculated via [`Clapeyron.reference_chemical_potential`](@ref).
 If the `μ_ref` keyword argument is not provided, the `reference` keyword is used to specify the reference chemical potential.
+
 $VT_STRING
 """
 function activity(model::EoSModel,p,T,z;
@@ -851,6 +977,7 @@ Returns a reference chemical potential. Used in calculation of `activity` and ac
 - `:aqueous`: the chemical potential of the pure components at specified `T`, `p` and `phase`
 - `:sat_pure_T`:  the reference potential is the pure saturated liquid phase at specified `T`.
 - `:zero`: the reference potential is equal to zero for all components (used for `ActivityModel`)
+
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function reference_chemical_potential(model::EoSModel,p,T,reference = reference_chemical_potential_type(model); phase=:unknown, threaded=true, vol0=nothing)
@@ -1052,12 +1179,78 @@ export mixing, excess, gibbs_solvation, partial_property
 export identify_phase
 export thermodynamic_factor
 
-module PT
+"""
+    PT0
+
+Module that stores Clapeyron properties in (total) volume-temperature basis.
+
+All bulk properties have the following form:
+
+```julia
+property(model,p,T,z,phase=:unknown, threaded=true, vol0=nothing)
+```
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+
+only a volume solver is done to get the volume from the corresponding pressure-temperature pair.
+For a module that does a flash to check if there are more than one phase use the `PT` module instead.
+"""
+module PT0
     import Clapeyron
     for prop in Clapeyron.CLAPEYRON_PROPS
         @eval begin
             function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
                 return Clapeyron.$prop(model,p,T,z;phase,threaded,vol0)
+            end
+        end
+    end
+
+    function flash(model,p,T,z = Clapeyron.SA[1.0],args...;kwargs...)
+        return Clapeyron.tp_flash2(model,p,T,z,args...;kwargs...)
+    end
+end #module
+
+
+function PT_property_withflash(model,p,T,z,phase,f::F) where {F}
+    if f == pressure
+        return p
+    elseif f == temperature
+        return T
+    end
+
+    if z isa Number
+        return PT_property_withflash(model,p,T,SA[z],phase,f)
+    end
+    if !is_unknown(phase)
+        V = volume(model, p, T, z; phase)
+        return PT_property(model,p,T,z,phase,volume(model, p, T, z; phase),f) 
+    else
+        res = tp_flash2(model,p,T,z)
+        ff = PT_to_VT(f)
+        return ff(model,res)
+    end
+end
+
+"""
+    PT
+
+Module that stores Clapeyron properties in pressure-temperature basis.
+
+All bulk properties have the following form:
+
+```julia
+property(model,p,T,z,phase=:unknown)
+```
+
+If no `phase` argument is passed as an input, a pressure-temperature flash is done to check if the input pair corresponds to one or more phases.
+To evaluate the property directly in the P-T base, use the `PT0` module instead.
+"""
+module PT
+    import Clapeyron
+    for prop in Clapeyron.CLAPEYRON_PROPS
+        @eval begin
+            function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown)
+                return PT_property_withflash(model,p,T,z,phase,Clapeyron.$prop)
             end
         end
     end

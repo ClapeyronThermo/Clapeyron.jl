@@ -1,5 +1,6 @@
 """
     pressure(model::EoSModel, V, T, z=SA[1.])
+    pressure(model, result::FlashResult)
 
 Default units: `[Pa]`
 
@@ -10,11 +11,27 @@ p = -∂A/∂V
 ```
 where A is the Helmholtz energy `[J]`,
 V is the volume `[m³]`
+
+`pressure(model, result::FlashResult)` will return the equilibrium pressure stored in the `result` argument.
 """
 function pressure(model::EoSModel, V, T, z=SA[1.])
     return VT_pressure(model, V, T, z)
 end
 
+"""
+    temperature
+    temperature(model, result::FlashResult)
+
+Default units: `[K]`
+
+Returns the temperature of the model at a given condition.
+
+`temperature(model, result::FlashResult)` will return the equilibrium temperature stored in the `result` argument.
+
+!!! note
+    This function does not have any additional methods, and it is mainly defined for API simplicity.
+    The functions `PH.temperature`, `PS.temperature` and `QP.temperature` instead use indirectly `Clapeyron.temperature` to dispatch to their corresponding methods.
+"""
 function temperature end
 
 VT_pressure(model, V, T) = VT_pressure(model, V, T, SA[1.0])
@@ -599,6 +616,26 @@ end
 
 
 #module used to translate between the normal symbol and the VT_symbol.
+
+"""
+    VT0
+
+Module that stores Clapeyron properties in (total) volume-temperature basis.
+
+## Usage
+```julia
+using Clapeyron.VT0
+
+model = PR("water")
+T = 300.0
+V = volume(model,1e5,T,phase = :l)
+VT0.enthalpy(model,V,T)
+```
+
+The functions stored in the `VT0` module do not perform any type of phase stability checking. 
+The user must be sure to give a physically sensible volume value.
+For calculations in volume-temperature basis that check and calculate if there are multiple phases, use the [`VT`] module instead.
+"""
 module VT0
     using Clapeyron: Clapeyron, CLAPEYRON_PROPS
     for prop in Clapeyron.CLAPEYRON_PROPS

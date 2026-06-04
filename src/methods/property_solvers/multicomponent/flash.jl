@@ -378,9 +378,7 @@ for prop in [:isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index
     :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
     :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
     #higher :derivative :order :properties
-    :fundamental_derivative_of_gas_dynamics,
-    #volume :properties
-    :chemical_potential,:chemical_potential_res]
+    :fundamental_derivative_of_gas_dynamics]
     is_mass = prop == :mass_isochoric_heat_capacity || prop == :mass_isobaric_heat_capacity
     @eval begin
         function $prop(model::EoSModel,state::FlashResult)

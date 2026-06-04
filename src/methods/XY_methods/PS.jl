@@ -1,16 +1,16 @@
-function PS_property(model,p,s,z,f::F,phase,T0,threaded) where F
-    z isa Number && return PS_property(model,p,s,SVector(z),f,phase,T0,threaded)
+function PS_property(model,p,s,z,f::F,phase,T0) where F
+    z isa Number && return PS_property(model,p,s,SVector(z),f,phase,T0)
     XX = Base.promote_eltype(model,p,s,z)
     f == entropy && return XX(s)
     f == pressure && return XX(p)
 
     if f == temperature && length(model) == 1
         z1 = SVector(z[1])
-        return Tproperty(model,p,s,z1,entropy,T0 = T0,phase = phase,threaded = threaded)
+        return Tproperty(model,p,s,z1,entropy,T0 = T0,phase = phase,threaded = false)
     end
 
     if !is_unknown(phase)
-        T,calc_phase = _Tproperty(model,p,s,z,entropy,T0 = T0,phase = phase,threaded = threaded)
+        T,calc_phase = _Tproperty(model,p,s,z,entropy,T0 = T0,phase = phase,threaded = false)
         if calc_phase != :eq && calc_phase != :failure
             return f(model,p,T,z;phase = calc_phase)
         elseif calc_phase == :eq
@@ -25,12 +25,27 @@ function PS_property(model,p,s,z,f::F,phase,T0,threaded) where F
     return f(model,res)
 end
 
+"""
+    PS
+
+Module that stores Clapeyron properties in pressure - (total) entropy basis.
+
+All bulk properties have the following form:
+
+```julia
+property(model,p,s,z;phase = :unknown, T0 = nothing)
+```
+
+A pressure-entropy flash is done to check if the input pair corresponds to one or more phases.
+A `T0` argument can be used to provide an initial temperature guess to the P-S flash.
+If a `phase` argument is specified, then it will be used to skip the flash and instead solve for the input conditions instead.
+"""
 module PS
 import Clapeyron
 for f in Clapeyron.CLAPEYRON_PROPS
     @eval begin
-        function $f(model,p,s,z = Clapeyron.SA[1.0];phase = :unknown,T0 = nothing, threaded = true)
-            Clapeyron.PS_property(model,p,s,z,Clapeyron.$f,phase,T0,threaded)
+        function $f(model,p,s,z = Clapeyron.SA[1.0];phase = :unknown,T0 = nothing)
+            Clapeyron.PS_property(model,p,s,z,Clapeyron.$f,phase,T0)
         end
     end
 end
