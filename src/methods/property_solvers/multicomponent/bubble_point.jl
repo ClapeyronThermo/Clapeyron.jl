@@ -442,26 +442,25 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     x = x/sum(x)
     T = float(T)
     verbose = get_verbosity(method)
-    model_r,idx_r = index_reduction(model,x)
+    _model_r,idx_r = index_reduction(model,x)
     if length(model_r)==1 && !is_pseudo_pure(model)
-        (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
+        (P_sat,v_l,v_v) = saturation_pressure(_model_r,T)
         return (P_sat,v_l,v_v,x)
     end
+
+    model_r = __tpflash_cache_model(_model_r,NaN,T,x,:vle)
     x_r = x[idx_r]
 
     method_r = index_reduction(method,idx_r)
-    if has_a_res(model)
-        λmodel,λT,λx = primalval(model_r),primalval(T),primalval(x_r)
-        λresult = bubble_pressure_impl(λmodel,λT,λx,primalval(method_r))
-        tup = (model_r,T,x_r)
-        if any(has_dual,tup)
-            λtup = (λmodel,λT,λx)
-            result = bubble_pressure_ad(λresult,tup,λtup)
-        else
-            result = λresult
-        end
+
+    λmodel,λT,λx = primalval(model_r),primalval(T),primalval(x_r)
+    λresult = bubble_pressure_impl(λmodel,λT,λx,primalval(method_r))
+    tup = (model_r,T,x_r)
+    if any(has_dual,tup)
+        λtup = (λmodel,λT,λx)
+        result = bubble_pressure_ad(λresult,tup,λtup)
     else
-        result = bubble_pressure_impl(model_r,T,x_r,method_r)
+        result = λresult
     end
 
     (P_sat, v_l, v_v, y_r) = result
@@ -633,7 +632,7 @@ function bubble_temperature(model::EoSModel,p,x;kwargs...)
 end
 
 function bubble_temperature(model::EoSModel, p , x, T0::Number)
-   moles_positivity(x)
+    moles_positivity(x)
     kwargs = (;T0)
     method = init_preferred_method(bubble_temperature,model,kwargs)
     return bubble_temperature(model,p,x,method)
@@ -644,26 +643,24 @@ function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
     x = x/sum(x)
     p = float(p)
     verbose = get_verbosity(method)
-    model_r,idx_r = index_reduction(model,x)
-    if length(model_r)==1 && !is_pseudo_pure(model)
-        (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
+    _model_r,idx_r = index_reduction(model,x)
+    
+    if length(_model_r)==1 && !is_pseudo_pure(model)
+        (T_sat,v_l,v_v) = saturation_temperature(_model_r,p)
         return (T_sat,v_l,v_v,x)
     end
     x_r = x[idx_r]
+    model_r = __tpflash_cache_model(_model_r,p,NaN,x,:vle)
 
     method_r = index_reduction(method,idx_r)
-    if has_a_res(model)
-        λmodel,λp,λx = primalval(model_r),primalval(p),primalval(x_r)
-        λresult = bubble_temperature_impl(λmodel,λp,λx,primalval(method_r))
-        tup = (model_r,p,x_r)
-        if any(has_dual,tup)
-            λtup = (λmodel,λp,λx)
-            result = bubble_temperature_ad(λresult,tup,λtup)
-        else
-            result = λresult
-        end
+    λmodel,λp,λx = primalval(model_r),primalval(p),primalval(x_r)
+    λresult = bubble_temperature_impl(λmodel,λp,λx,primalval(method_r))
+    tup = (model_r,p,x_r)
+    if any(has_dual,tup)
+        λtup = (λmodel,λp,λx)
+        result = bubble_temperature_ad(λresult,tup,λtup)
     else
-        result = bubble_temperature_impl(model_r,p,x_r,method_r)
+        result = λresult
     end
 
     (T_sat, v_l, v_v, y_r) = result

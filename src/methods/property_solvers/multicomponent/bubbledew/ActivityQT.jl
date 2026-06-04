@@ -136,37 +136,19 @@ end
 function bubble_pressure_impl(model::EoSModel, T, x, method::ActivityQT)
     data = method.data
     @assert data == FugEnum.BUBBLE_PRESSURE
-    if has_a_res(model)
-        cached_model = PTFlashWrapper(model,NaN,T,x,:vle)
-        return bdt_flash_impl(cached_model,T,x,method)
-    else
-        cached_model = __tpflash_cache_model(model,NaN,T,x,:vle)
-        return bdt_flash_impl(model,T,x,method)
-    end
+    return bdt_flash_impl(model,T,x,method)
 end
 
 function dew_pressure_impl(model::EoSModel, T, y, method::ActivityQT)
     data = method.data
     @assert data == FugEnum.DEW_PRESSURE
-    if has_a_res(model)
-        cached_model = PTFlashWrapper(model,NaN,T,y,:vle)
-        return bdt_flash_impl(cached_model,T,y,method)
-    else
-        cached_model = __tpflash_cache_model(model,NaN,T,y,:vle)
-        return bdt_flash_impl(model,T,y,method)
-    end
+    return bdt_flash_impl(model,T,y,method)
 end
 
 function LLE_pressure_impl(model::EoSModel, T, z, method::ActivityQT)
     data = method.data
     @assert data == FugEnum.LLE_PRESSURE
-    if has_a_res(model)
-        cached_model = PTFlashWrapper(model,NaN,T,z,:vle)
-        return bdt_flash_impl(cached_model,T,z,method)
-    else
-        cached_model = __tpflash_cache_model(model,NaN,T,z,:lle)
-        return bdt_flash_impl(cached_model,T,z,method)
-    end
+    return bdt_flash_impl(model,T,z,method)
 end
 
 ## Bubble pressure solver

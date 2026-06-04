@@ -297,56 +297,31 @@ end
 function dew_pressure_impl(model::EoSModel, T, y, method::FugQX)
     data = method.data
     @assert data == FugEnum.DEW_PRESSURE
-    if has_a_res(model)
-        return bdt_flash_impl(model,T,y,method)
-    else
-        cached_model = __tpflash_cache_model(model,NaN,T,y,:vle)
-        return bdt_flash_impl(model,T,y,method)
-    end
+    return bdt_flash_impl(model,T,y,method)
 end
 
 function bubble_temperature_impl(model::EoSModel, p, x, method::FugQX)
     data = method.data
     @assert data == FugEnum.BUBBLE_TEMPERATURE
-    if has_a_res(model)
-        return bdp_flash_impl(model,p,x,method)
-    else
-        cached_model = __tpflash_cache_model(model,p,NaN,x,:vle)
-        return bdp_flash_impl(cached_model,p,x,method)
-    end
+    return bdp_flash_impl(model,p,x,method)
 end
 
 function dew_temperature_impl(model::EoSModel, p, y, method::FugQX)
     data = method.data
     @assert data == FugEnum.DEW_TEMPERATURE
-    if has_a_res(model)
-        return bdp_flash_impl(model,p,y,method)
-    else
-        cached_model = __tpflash_cache_model(model,p,NaN,y,:vle)
-        return bdp_flash_impl(cached_model,p,y,method)
-    end
+    return bdp_flash_impl(model,p,y,method)
 end
 
 function LLE_pressure_impl(model::EoSModel, T, z, method::FugQX)
     data = method.data
     @assert data == FugEnum.LLE_PRESSURE
-    if has_a_res(model)
-        return bdt_flash_impl(model,T,z,method)
-    else
-        cached_model = __tpflash_cache_model(model,NaN,T,z,:lle)
-        return bdt_flash_impl(cached_model,T,z,method)
-    end
+    return bdt_flash_impl(model,T,z,method)
 end
 
 function LLE_temperature_impl(model::EoSModel, p, z, method::FugQX)
     data = method.data
     @assert data == FugEnum.LLE_TEMPERATURE
-    if has_a_res(model)
-        return bdp_flash_impl(model,p,z,method)
-    else
-        cached_model = __tpflash_cache_model(model,p,NaN,z,:vle)
-        return bdp_flash_impl(cached_model,p,z,method)
-    end
+    return bdp_flash_impl(model,p,z,method)
 end
 
 """
