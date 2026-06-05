@@ -163,7 +163,7 @@ function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
         ∂²A∂V∂T = d²A[1,2]
         ∂²A∂V² = d²A[1,1]
         ∂²A∂T² = d²A[2,2]
-        return -T*(∂²A∂T² - ∂²A∂V∂T^2/∂²A∂V²)
+        return -T*(∂²A∂T² - ∂²A∂V∂T*∂²A∂V∂T/∂²A∂V²)
     end
 end
 
@@ -203,7 +203,7 @@ function VT_isentropic_compressibility(model::EoSModel, V, T, z=SA[1.])
         ∂²A∂V∂T = d²A[1,2]
         ∂²A∂V² = d²A[1,1]
         ∂²A∂T² = d²A[2,2]
-        return 1/V/(∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)
+        return 1/V/(∂²A∂V²-∂²A∂V∂T*∂²A∂V∂T/∂²A∂T²)
     end
 end
 
@@ -217,7 +217,7 @@ function VT_speed_of_sound(model::EoSModel, V, T, z=SA[1.])
         ∂²A∂V∂T = d²A[1,2]
         ∂²A∂V² = d²A[1,1]
         ∂²A∂T² = d²A[2,2]
-        return V*sqrt((∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)/Mr)
+        return V*sqrt((∂²A∂V²-∂²A∂V∂T*∂²A∂V∂T/∂²A∂T²)/Mr)
     end
 end
 
@@ -242,7 +242,8 @@ function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
         ∂²A∂V∂T = d²A[1,2]
         ∂²A∂V² = d²A[1,1]
         ∂²A∂T² = d²A[2,2]
-        return -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))^-1
+        coeff_inv =  -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))
+        return 1/coeff_inv
     end
 end
 
@@ -380,10 +381,9 @@ end
 VT_pip(model::EoSModel, V, T, z=SA[1.0]) = pip(model,V,T,z)
 
 function _pip(model::EoSModel, V, T, z=SA[1.0])
-    _∂2p = ∂2p(model,V,T,z)
-    hess_p, grad_p, _ = _∂2p
-    ∂p∂V = grad_p[1]
-    Π = V*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1])
+    _∂2p = ∂2p_vec(model,V,T,z)
+    _,∂p∂V,∂p∂T,∂2p∂V2,∂2p∂T2,∂2p∂V∂T = _∂2p
+    Π = V*(∂2p∂V∂T/∂p∂T  - ∂2p∂V2/∂p∂V)
     return Π,∂p∂V
 end
 
@@ -393,7 +393,7 @@ function VT_fundamental_derivative_of_gas_dynamics(model::EoSModel, V, T, z=SA[1
     ∂²A∂V∂T = d²A[1,2]
     ∂²A∂V² = d²A[1,1]
     ∂²A∂T² = d²A[2,2]
-    c =  V*sqrt((∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)/Mr)
+    c =  V*sqrt((∂²A∂V²-∂²A∂V∂T*∂²A∂V∂T/∂²A∂T²)/Mr)
     A(x) = eos(model,V,x,z)
     ∂A∂T(x) = Solvers.derivative(A,x)
     ∂²A∂T²(x) = -T*Solvers.derivative(∂A∂T,x)
@@ -404,7 +404,8 @@ function VT_fundamental_derivative_of_gas_dynamics(model::EoSModel, V, T, z=SA[1
     ∂p∂T,∂p∂V = grad_p[2],grad_p[1]
     Γ₁ = ∂²p∂V²
     Γ₂ = (-3*T/Cᵥ)*∂p∂T*∂²p∂V∂T
-    Γ₃ = ((T/Cᵥ)*∂p∂T)^2 * (3*∂²p∂T² + (∂p∂T/T)*(1 - (T/Cᵥ)*∂Cᵥ∂T))
+    xx = ((T/Cᵥ)*∂p∂T)
+    Γ₃ = xx*xx * (3*∂²p∂T² + (∂p∂T/T)*(1 - (T/Cᵥ)*∂Cᵥ∂T))
     return (V*V*V/(2*c*c*Mr))*(Γ₁ + Γ₂ + Γ₃)
 end
 
