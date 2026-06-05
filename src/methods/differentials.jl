@@ -154,7 +154,7 @@ function ∂2p(model,V,T,z)
 end
 
 function ∂2p_vec(model,V,T,z)
-    _f,_∂f,_∂2f = Solvers.∂2p(f,V,T)
+    _f,_∂f,_∂2f = ∂2p(f,V,T)
     return SVector(_f,_∂f[1],_∂f[2],_∂2f[1,1],_∂2f[2,2],_∂2f[1,2])
 end
 
