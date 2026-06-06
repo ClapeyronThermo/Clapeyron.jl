@@ -62,9 +62,24 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 13775-07-0;Uranium pentafluoride~|~UF5~|~F5U~|~Pentafluorouranium;F[U](F)(F)(F)F;JNVYCANIFQDNST-UHFFFAOYSA-I;F[U](F)(F)(F)F
 7783-81-5;Uranium hexafluoride~|~UF6~|~F6U~|~Hexafluorouranium;F[U](F)(F)(F)(F)F;SANRKQGLYCLAFE-UHFFFAOYSA-H;F[U](F)(F)(F)(F)F
 13536-84-0;Uranyl fluoride~|~Uranium(VI) difluoride dioxide~|~Difluorodioxouranium~|~Uranium oxyfluoride~|~Uranyl difluoride~|~UO2F2~|~UF2O2;O=[U+2]=O.[F-].[F-];KCKICANVXIVOLK-UHFFFAOYSA-L;O=[U+2]=O.[F-].[F-]
-
-
-
+13460-51-0;Trihydroxy boroxine~|~H3B3O6~|~2,4,6-trihydroxy-1,3,5,2,4,6-trioxatriborinane~|~B3H3O6~|~Trihydroxyboroxine~|~Trihydroxy_boroxine;B1(OB(OB(O1)O)O)O;AIUDKCYIGXXGIL-UHFFFAOYSA-N;B1(OB(OB(O1)O)O)O
+289-56-5;H3B3O3~|~boroxine~|~1,3,5,2,4,6-Trioxatriborinane~|~B3H3O3~|~cyclotriboroxane;O1BOBOB1;BRTALTYTFFNPAC-UHFFFAOYSA-N;O1BOBOB1
+10043-35-3;Boric Acid~|~H3BO3~|~BH3O3~|~Orthoboric acid~|~Boracic acid~|~Borofax;B(O)(O)O;KGBXLFKZBHKPEV-UHFFFAOYSA-N;B(O)(O)O
+16921-96-3;Iodine(VII) fluoride~|~Iodine heptafluoride~|~IF7~|~F7I~|~heptafluoro-λ7-iodane~|~;FI(F)(F)(F)(F)(F)F;XRURPHMPXJDCOO-UHFFFAOYSA-N;FI(F)(F)(F)(F)(F)F
+14280-53-6;Indium(I) bromide~|~Indium bromide~|~InBr~|~BrIn~|~Indium monobromide;[Br-].[In+];KLRHPHDUDFIRKB-UHFFFAOYSA-M;[Br-].[In+]
+21264-43-7;Indium(II) bromide~|~Indium dibromide~|~InBr2~|~Br2In;Br[In]Br;WKKNZNVQEXCHAK-UHFFFAOYSA-L;Br[In]Br
+13465-09-3;Indium(III) bromide~|~Indium tribromide~|~InBr3~|~Br3In;Br[In](Br)Br;JKNHZOAONLKYQL-UHFFFAOYSA-K;Br[In](Br)Br
+13465-10-6;Chloroindium(I)~|~Indium monochloride~|~Indium(I) chloride~|~InCl~|~ClIn~|~Inindium(1+) chloride;[Cl-].[In+];APHGZSBLRQFRCA-UHFFFAOYSA-M;[Cl-].[In+]
+13465-11-7;Indium(II) chloride~|~Indium dichloride~|~InCl2~|~Cl2In;Cl[In]Cl;VOWMQUBVXQZOCU-UHFFFAOYSA-L;Cl[In]Cl
+10025-82-8;Indium(III) chloride~|~Indium trichloride~|~InCl3~|~Cl3In~|~trichloroindigane;Cl[In](Cl)Cl;PSCMQHVBLHHWTO-UHFFFAOYSA-K;Cl[In](Cl)Cl
+7757-82-6;Sodium sulfate~|~Sodium sulphate~|~Disodium sulfate~|~Na2SO4~|~Na2O4S;[O-]S(=O)(=O)[O-].[Na+].[Na+];PMZURENOXWZQFD-UHFFFAOYSA-L;[O-]S(=O)(=O)[O-].[Na+].[Na+]
+1313-60-6;Sodium peroxide~|~Flocool~|~Solozone~|~Disodium peroxide~|~Na2O2H2~|~ ;[O-][O-].[Na+].[Na+];PFUVRDFDKPNGAV-UHFFFAOYSA-N
+1314-35-8;Tungsten trioxide~|~WO3~|~Tungstic anhydride~|~Tungsten(VI) oxide~|~trioxotungsten;O=[W](=O)=O;ZNOKGRXACCSDPY-UHFFFAOYSA-N;O=[W](=O)=O
+12036-22-5;Tungsten dioxide~|~WO2~|~Tungsten(VI) oxide~|~dioxotungsten;O=[W]=O;DZKDPOPGYFUOGI-UHFFFAOYSA-N;O=[W]=O
+14484-69-6;potassium tetrafluoridoaluminate~|~potassium tetrafluoroaluminate~|~KAlF4~|~Potassium aluminum fluoride;F[Al-](F)(F)F.[K+];SKFYTVYMYJCRET-UHFFFAOYSA-J;F[Al-](F)(F)F.[K+]
+7721-01-9;Tantalum(V) chloride~|~tantalum pentachloride~|~TaCl5~|~pentachlorotantalum;Cl[Ta](Cl)(Cl)(Cl)Cl;OEIMLTQPLAGXMX-UHFFFAOYSA-I;Cl[Ta](Cl)(Cl)(Cl)Cl
+12035-90-4;Tantalum monoxide~|~TaO;[Ta]=O;JMOHEPRYPIIZQU-UHFFFAOYSA-N;[Ta](=O)
+12036-14-5;Tantalum dioxide~|~TaO2~|~dioxotantalum;O=[Ta]=O;DPWBZNOQZSTFQV-UHFFFAOYSA-N;O=[Ta]=O
 
 98-6-6;tert-butylbenzene~|~(1,1-dimethylethyl)benzene;c1(C(C)(C)C)ccccc1;YTZKOQUCBOVLHL-UHFFFAOYSA-N;CC(C)(C)c1ccccc1
 2039-93-2;2-phenylbutene-1~|~2-phenyl-1-butene~|~(1-methylenepropyl)-benzene;C=C(c1ccccc1)CC;SQHOHKQMTHROSF-UHFFFAOYSA-N;C=C(CC)c1ccccc1
@@ -1752,8 +1767,8 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 108-98-5;benzenethiol~|~phenyl mercaptan;C1=CC=C(C=C1)S;RMVRSNDYEFQCLF-UHFFFAOYSA-N;Sc1ccccc1
 1569-69-3;cyclohexanethiol~|~cyclohexyl mercaptan;C1CCC(CC1)S;CMKBCTPCXZNQKX-UHFFFAOYSA-N;SC1CCCCC1
 7782-39-0;deuterium;[2H][2H];UFHFLCQGNIYNRP-VVKOMZTBSA-N;[2H][2H]
-7440-63-3;xenon;[Xe];FHNFHKCVQCLJFQ-UHFFFAOYSA-N;[Xe]
-7440-1-9;neon;[Ne];GKAOGPIIYCISHV-UHFFFAOYSA-N;[Ne]
+7440-63-3;xenon~|~Xe;[Xe];FHNFHKCVQCLJFQ-UHFFFAOYSA-N;[Xe]
+7440-1-9;neon~|~Ne;[Ne];GKAOGPIIYCISHV-UHFFFAOYSA-N;[Ne]
 675-62-7;(3,3,3-trifluoropropyl)methyldichlorosilane;C[Si](CCC(F)(F)F)(Cl)Cl;OHABWQNEJUUFAV-UHFFFAOYSA-N;C[Si](Cl)(Cl)CCC(F)(F)F
 2897-60-1;(3-glycidoxypropyl)methyldiethoxysilane;CCO[Si](C)(CCCOCC1CO1)OCC;OTARVPUIYXHRRB-UHFFFAOYSA-N;CCO[Si](C)(CCCOCC1CO1)OCC
 7351-61-3;(3-methylacryloxypropyl)trichlorosilane~|~2-methyl-2-propenoic acid 3-(trichlorosilyl)propyl ester;O(CCC[Si](Cl)(Cl)Cl)C(C(C)=C)=O;DOGMJCPBZJUYGB-UHFFFAOYSA-N;C=C(C)C(=O)OCCC[Si](Cl)(Cl)Cl
@@ -3762,7 +3777,7 @@ CAS;species;SMILES;inchikey;canonicalsmiles
 102886-19-1;2,4,6-trimethylnonadecane;CCCCCCCCCCCCCC(C)CC(C)CC(C)C;VKZVAVIQYYOAOM-UHFFFAOYSA-N;CCCCCCCCCCCCCC(C)CC(C)CC(C)C
 473-55-2;2,6,6-trimethylbicyclo[3.1.1]heptane;CC1CCC2CC1C2(C)C;XOKSLPVRUOBDEW-UHFFFAOYSA-N;CC1CCC2CC1C2(C)C
 105-70-4;acetic acid 3-acetoxy-2-hydroxypropyl ester;CC(=O)OCC(O)COC(C)=O;MPPODKLDCLFLKT-UHFFFAOYSA-N;CC(=O)OCC(O)COC(C)=O
-7783-66-6;iodine fluoride~|~iodine pentafluoride;FI(F)(F)(F)F;PJIYEPACCBMRLZ-UHFFFAOYSA-N;FI(F)(F)(F)F
+7783-66-6;iodine fluoride~|~iodine(V) fluoride~|~iodine pentafluoride~|~IF5~|~F5I;FI(F)(F)(F)F;PJIYEPACCBMRLZ-UHFFFAOYSA-N;FI(F)(F)(F)F
 7438-5-3;azidooctane;CCCCCCCCN=[N+]=[N-];FZTMAMHIBPYQOC-UHFFFAOYSA-N;CCCCCCCCN=[N+]=[N-]
 616-47-7;n-methylimidazole;Cn1ccnc1;MCTWTZJPVLRJOU-UHFFFAOYSA-N;Cn1ccnc1
 868-30-4;diethylaminoborondichloride;CCN(CC)B(Cl)Cl;YYFUACSSDDWTEK-UHFFFAOYSA-N;CCN(CC)B(Cl)Cl
