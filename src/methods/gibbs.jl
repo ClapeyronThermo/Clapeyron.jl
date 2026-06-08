@@ -50,7 +50,7 @@ end
 function ∂2𝕘(model,p,T,z)
     f(_p,_T) = eos_g(model,_p,_T,z)
     _f,_∂f,_∂2f = Solvers.∂2(f,p,T)
-    return SVector(_f,_∂f[1],_∂f[2],_∂2f[1,1],_∂2f[2,2],_∂f[1,2])
+    return SVector(_f,_∂f[1],_∂f[2],_∂2f[1,1],_∂2f[2,2],_∂2f[1,2])
 end
 
 function 𝕘_hess(model,p,T,z)
