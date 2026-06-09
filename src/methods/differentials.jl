@@ -153,6 +153,11 @@ function ∂2p(model,V,T,z)
     return (_∂2f,_∂f,_f)
 end
 
+function ∂2p_vec(model,V,T,z)
+    _∂2f,_∂f,_f = ∂2p(model,V,T,z)
+    return SVector(_f,_∂f[1],_∂f[2],_∂2f[1,1],_∂2f[2,2],_∂2f[1,2])
+end
+
 """
     f_hess(model,V,T,z)
 
@@ -181,7 +186,7 @@ Returns the pressure `p` and their first and second volume derivatives `∂p/∂
 function p∂p∂2p(model,V,T,z=SA[1.0])
     f(∂V) = pressure(model,∂V,T,z)
     p, ∂²A∂V², ∂³A∂V³ = Solvers.f∂f∂2f(f,V)
-    return p, ∂²A∂V², ∂³A∂V³
+    return SVector(p, ∂²A∂V², ∂³A∂V³)
 end
 
 """

@@ -50,7 +50,7 @@ end
 function ∂2𝕘(model,p,T,z)
     f(_p,_T) = eos_g(model,_p,_T,z)
     _f,_∂f,_∂2f = Solvers.∂2(f,p,T)
-    return (_∂2f,_∂f,_f)
+    return SVector(_f,_∂f[1],_∂f[2],_∂2f[1,1],_∂2f[2,2],_∂2f[1,2])
 end
 
 function 𝕘_hess(model,p,T,z)
@@ -131,21 +131,15 @@ function PT_property_gibbs(model,p,T,z,f::typeof(VT_isobaric_expansivity))
 end
 
 function PT_property_gibbs(model,p,T,z,f::typeof(VT_isentropic_compressibility))
-    ∂²g,∂g,g = ∂2𝕘(model,p,T,z)
-    ∂²g∂T² = ∂²g[2,2]
-    ∂²g∂p² = ∂²g[1,1]
-    ∂²g∂T∂p = ∂²g[1,2]
-    V = ∂g[1]
+    gg = ∂2𝕘(model,p,T,z)
+    _,V,_,∂²g∂p²,∂²g∂T²,∂²g∂T∂p = gg
     return (∂²g∂T∂p*∂²g∂T∂p - ∂²g∂T²*∂²g∂p²)/∂²g∂T²/V
 end
 
 function PT_property_gibbs(model,p,T,z,f::typeof(VT_speed_of_sound))
     Mr = molecular_weight(model,z)
-    ∂²g,∂g,g = ∂2𝕘(model,p,T,z)
-    ∂²g∂T² = ∂²g[2,2]
-    ∂²g∂p² = ∂²g[1,1]
-    ∂²g∂T∂p = ∂²g[1,2]
-    V = ∂g[1]
+    gg = ∂2𝕘(model,p,T,z)
+    _,V,_,∂²g∂p²,∂²g∂T²,∂²g∂T∂p = gg
     βsρ = (∂²g∂T∂p*∂²g∂T∂p - ∂²g∂T²*∂²g∂p²)/∂²g∂T²
     V*sqrt(1/(βsρ*Mr))
 end
