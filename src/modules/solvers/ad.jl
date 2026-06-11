@@ -11,7 +11,6 @@ recursive_fd_extract_derivative(T::TT,x::AbstractArray) where TT = recursive_fd_
 
 @inline function derivative(f::F, x::R, TAG = f) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(TAG, R))
-    @show T
     fx = f(ForwardDiff.Dual{T}(x, one(x)))
     return recursive_fd_extract_derivative(T, fx)
 end

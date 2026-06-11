@@ -26,8 +26,8 @@ VT_volume(model, V, T, z=SA[1.]) = V
 VT_use_p(f) = false
 
 function pressure_res(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos_res(model,x,T,z)
-    return -Solvers.derivative(fun,V)
+    f = @deferred_V(eos_res,pressure_res)
+    return -Solvers.derivative(f,V)
 end
 VT_pressure_res(model, V, T) = VT_pressure_res(model, V, T, SA[1.])
 VT_pressure_res(model, V, T, z) = pressure_res(model,V,T,z)
@@ -40,7 +40,7 @@ VT_mass_entropy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_entropy(
 
 
 function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos_res(model,V,x,z)
+    f = @deferred_T(eos_res,VT_entropy_res)
     return -Solvers.derivative(fun,T)
 end
 
