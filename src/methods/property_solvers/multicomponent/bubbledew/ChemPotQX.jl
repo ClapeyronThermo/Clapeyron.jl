@@ -1,7 +1,6 @@
 function _mu_OF_neq!(F,J,inc,model,prop,z,method,cache)
-    _bubble = FugEnum.is_bubble(method)
+    _bubble = FugEnum.is_bubble(method) || is_lle(method)
     _pressure = FugEnum.is_pressure(method)
-    phasex,phasey = FugEnum.phases(method)
     _,K,w,u,_,_,p_cache,Hϕx = cache
     second_order = !isnothing(J)
     neq = length(inc) - 2 - Int(!_pressure)
@@ -17,7 +16,6 @@ function _mu_OF_neq!(F,J,inc,model,prop,z,method,cache)
         w .= u ./ K
         x,y = w,u
     end
-
     propx = exp(last(inc))
     propy = oftype(propx,prop)
     if _pressure
@@ -69,7 +67,7 @@ function _mu_OF_neq!(F,J,inc,model,prop,z,method,cache)
             Fneq = @view F[1:neq]
             Fneq .+= lnfy
             F[neq + 1] = sum(y)  - sum(x)
-            F[neq + 2] = (py - px)/ps
+            F[neq + 2] = (py - abs(px))/ps
             if !_pressure
                 F[neq + 3] = (py - p)/ps
             end
@@ -81,7 +79,7 @@ function _mu_OF_neq!(F,J,inc,model,prop,z,method,cache)
         lnfy, py = lnf(model, vy, T, y, Hϕx)
         Fneq .+= lnfy
         F[neq + 1] = sum(y)  - sum(x)
-        F[neq + 2] = (py - px)/ps
+        F[neq + 2] = (py - abs(px))/ps
         if !_pressure
             F[neq + 3] = (py - p)/ps
         end
@@ -103,9 +101,8 @@ function copy_view!(out,in,_view)
 end
 
 function _mu_OF_neq!(F,J,inc,modelx,modely,prop,z,_view::V,method,cache) where V
-    _bubble = FugEnum.is_bubble(method)
+    _bubble = FugEnum.is_bubble(method) || is_lle(method)
     _pressure = FugEnum.is_pressure(method)
-    phasex,phasey = FugEnum.phases(method)
     _,K,w,w2,fw1,fw2,p_cache,Hϕx,Hϕy,u = cache
     second_order = !isnothing(J)
     neq = length(_view)
@@ -132,7 +129,6 @@ function _mu_OF_neq!(F,J,inc,modelx,modely,prop,z,_view::V,method,cache) where V
     else
         p,T = propy,propx
     end
-
     ps = p_scale(modelx,z)
     RT = Rgas(modelx)*T
 
@@ -203,7 +199,7 @@ function _mu_OF_neq!(F,J,inc,modelx,modely,prop,z,_view::V,method,cache) where V
             end
 
             F[neq + 1] = sum(y) - sum(x)
-            F[neq + 2] = (py - px) / ps
+            F[neq + 2] = (py - abs(px)) / ps
 
             if !_pressure
                 F[neq + 3] = (py - p) / ps
@@ -223,7 +219,7 @@ function _mu_OF_neq!(F,J,inc,modelx,modely,prop,z,_view::V,method,cache) where V
         end
 
         F[neq + 1] = sum(y) - sum(x)
-        F[neq + 2] = (py - px) / ps
+        F[neq + 2] = (py - abs(px)) / ps
 
         if !_pressure
             F[neq + 3] = (py - p) / ps
@@ -362,7 +358,7 @@ function bdt_flash_impl(model::EoSModel, T, z, method::ChemPotQX)
     else
         p0,vw0,vz0,w00 = dew_pressure_init(model,T,z,method.vol0,method.prop0,method.w0,in_equilibria,verbose)
     end
-
+    @show vw0,vz0
     model_w,_ = index_reduction(model,in_equilibria)
     w0 = w00[in_equilibria]
     neq = count(in_equilibria)
@@ -380,15 +376,34 @@ function bdt_flash_impl(model::EoSModel, T, z, method::ChemPotQX)
         inc0[neq+1] = log(vw0)
     end
 
+    lb = similar(inc0)
+    ub = similar(inc0)
+    lb .= 0
+    ub .= Inf
+    if FugEnum.is_bubble(data) || is_lle(data)
+        lb[neq+2] = log(lb_volume(model,T,z))
+        ub[neq+2] = log(volume(model,0.0,T,z,phase = :l,vol0 = vz0)/sum(z))
+        if FugEnum.is_bubble(data)
+            ub[neq+1] = log(-3*second_virial_coefficient(model_w,T,w0))
+            lb[neq+1] = -Inf
+        else
+            lb[neq+1] = -Inf
+        end
+    else
+        lb[neq+2] = inc0[neq+1]
+        lb[neq+1] = -Inf
+    end
+    @show lb,ub
     opts = NLSolvers.NEqOptions(method)
     if all(in_equilibria)
         problem = _mu_OF_neq(model,T,z,data,cache)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),Static(1.0)),opts)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),BoundedLineSearch(lb,ub)),opts)
+        verbose && display(sol)
         inc = Solvers.x_sol(sol)
         !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
     else
         problem = _mu_OF_neq(model,model_w,T,z,in_equilibria,data,cache)
-        sol_vol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),Static(1.0)),opts)
+        sol_vol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0),BoundedLineSearch(lb,ub)),opts)
         inc = Solvers.x_sol(sol_vol)
         !all(<(sol_vol.options.f_abstol),sol_vol.info.best_residual) && (inc .= NaN)
     end

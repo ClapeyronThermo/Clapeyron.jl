@@ -1,3 +1,34 @@
+function x0_lle_init(model::EoSModel, p, T, z, z0 = nothing)
+    nc = length(model)
+    if z0 == nothing
+        z_test = initial_candidate_fractions(z)
+    else
+        z_test = near_candidate_fractions(z0,0.25)
+    end
+    ntest = length(z_test)
+    TT = Base.promote_eltype(model,p,T,z)
+    lnϕz = Vector{TT}[]
+    vz = TT[]
+    for i in 1:ntest
+        zi = z_test[i]
+        lnϕ,v = modified_lnϕ(model,p,T,zi,nothing,phase = :l)
+        lnϕ .+= log.(zi)
+        push!(lnϕz,lnϕ)
+        push!(vz,v)
+    end
+    lnϕz0,_ = modified_lnϕ(model,p,T,z,nothing,phase = :l)
+    lnϕz0 .+= log.(z ./ sum(z))
+    err = ones(ntest)*Inf
+    for i in 1:ntest
+        dnorm1 = dnorm(exp.(lnϕz0),exp.(lnϕz[i]))
+        dnorm2 = z_norm(z_test[i],z)
+        #divided by norm to penalize points too close of the initial point
+        err[i] = dnorm1/dnorm2
+    end
+    (val, idx) = findmin(err)
+    return z_test[idx],vz[idx]
+end
+
 ## LLE pressure solver
 function __x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing,cache = nothing)
     if p0 != nothing
@@ -18,11 +49,28 @@ function __x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing,cache = nothing)
         w = comps[1]
         vw = tpd_result.volumes[1]
     else
-        w = similar(x,typeof(T0x))
-        w .= NaN
-        vw = oftype(T0x,NaN)
+        w,vw = x0_lle_init(model,p0x,T,x)
     end
-    return p0x,vx,vw,w
+    
+    return 10*p0x,vx,vw,w
+end
+
+
+
+function xlle2(model::EoSModel,T,x,p0 = nothing)
+    pure = split_pure_model(model)
+    sat = saturation_pressure.(pure,T)
+    vi = getindex.(sat,2)
+    vlx = dot(vi,x)
+    if p0 == nothing
+        p0x = pressure(model,vlx,T,x)
+    else
+        p0x = p0
+    end
+    w = x0_lle_init(model,p0x,T,x)
+    w2 = x0_lle_init(model,p0x,T,x,w)
+    vlw = dot(vi,w2)
+    return p0x,vlx,vlw,w2
 end
 
 """
@@ -59,7 +107,7 @@ function LLE_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     verbose = get_verbosity(method)
     _model_r,idx_r = index_reduction(model,x)
     multiple_component_check(method,_model_r)
-    model_r = __tpflash_cache_model(_model_r,p,NaN,x,:lle)
+    model_r = __tpflash_cache_model(_model_r,NaN,T,x,:lle)
     x_r = x[idx_r]
     method_r = index_reduction(method,idx_r)
     λmodel,λT,λx = primalval(model_r),primalval(T),primalval(x_r)

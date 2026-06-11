@@ -79,6 +79,11 @@ function FugQX(data;vol0 = nothing,
         T = eltype(prop0)
         w0 = convert(Vector{T},w0)
         return FugQX{T}(data,vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_w,tol_pT,tol_of,second_order,verbose)
+    elseif  !isnothing(prop0) && !isnothing(vol0)
+        vl,vv,prop0 = promote(vol0[1],vol0[2],prop0)
+        T = eltype(prop0)
+        return FugQX{T}(data,vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_w,tol_pT,tol_of,second_order,verbose)
+    
     else
         invalid_bd_error(data)
     end
@@ -134,7 +139,6 @@ function bdt_flash_impl(model::EoSModel, T, z, method::FugQX)
     p_ss,T_ss,x_ss,y_ss,vol_ss = res_ss
     volx_ss,voly_ss = vol_ss
     phasex,phasey = FugEnum.phases(data)
-
     if converged || isnan(volx_ss) || isnan(voly_ss)
         if iszero(volx_ss) && model isa PTFlashWrapper
             vx = volume(model,p_ss,T,x_ss,phase = phasex)
