@@ -9,6 +9,8 @@ struct ActivityQT{T} <: FlashMethod
     verbose::Bool
 end
 
+is_lle(method::ActivityQT) = is_lle(method.data)
+
 function Solvers.primalval(method::ActivityQT{T}) where T
     if T == Nothing
         return Solvers.primalval_struct(method,T)
@@ -28,37 +30,37 @@ function index_reduction(method::ActivityQT,idx_r)
     return method
 end
 
-function bdt_flash_impl(wrapper::PTFlashWrapper,T,z,method::ActivityQT)
-    model = wrapper.model
-    TT = Base.promote_eltype(wrapper,T,x)
-    in_equilibria = comps_in_equilibria(component_list(wrapper),method.non_in_w)
+function bdt_flash_impl(model,T,z,method::ActivityQT)
+    #model = wrapper.model
+    TT = Base.promote_eltype(model,T,z)
+    in_equilibria = comps_in_equilibria(component_list(model),method.non_in_w)
 
-    if is_lle(method.equilibrium)
+    if is_lle(method)
         phasex,phasey = :liquid,:liquid
-        p,volx,voly,y = LLE_pressure_init(wrapper,T,z,method.vol0,method.p0,method.w0,in_equilibria)
+        p,volx,voly,y = LLE_pressure_init(model,T,z,method.vol0,method.p0,method.w0,in_equilibria)
         x = similar(y)
         x .= z
-    elseif bubble
+    elseif FugEnum.is_bubble(method.data)
         phasex,phasey = :liquid,:vapour
-        p,volx,voly,y = bubble_pressure_init(wrapper,T,z,method.vol0,method.p0,method.w0,in_equilibria)
+        p,volx,voly,y = bubble_pressure_init(model,T,z,method.vol0,method.p0,method.w0,in_equilibria)
         x = similar(y)
         x .= z
     else
         phasex,phasey = :liquid,:vapour
-        p,volx,voly,x = dew_pressure_init(wrapper,T,z,method.vol0,method.p0,method.w0,in_equilibria)
+        p,volx,voly,x = dew_pressure_init(model,T,z,method.vol0,method.p0,method.w0,in_equilibria)
         y = similar(x)
         y .= z
     end
-
+    bubble = FugEnum.is_bubble(method.data) || is_lle(method)
     cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     lnK = similar(x,TT)
     pold = -p
     lnK = similar(x,TT)
     K = similar(x,TT)
     for k in 1:method.itmax_ss
-        lnϕx, volx = modified_lnϕ(wrapper, p, T, x, cache; phase = phasex, vol0 = volx)
+        lnϕx, volx = modified_lnϕ(model, p, T, x, cache; phase = phasex, vol0 = volx)
         lnK .= lnϕx
-        lnϕy, voly = modified_lnϕ(wrapper, p, T, y, cache; phase = phasey, vol0 = voly)
+        lnϕy, voly = modified_lnϕ(model, p, T, y, cache; phase = phasey, vol0 = voly)
         lnK .-= lnϕy
         lnK .+= log(p)
         K .= exp.(lnK)
@@ -79,6 +81,7 @@ function bdt_flash_impl(wrapper::PTFlashWrapper,T,z,method::ActivityQT)
             p = 1/sum(x)
             x .*= p
         end
+        
         err = abs(pold-p)/p
         !isfinite(err) && break
         err < method.rtol_ss && break
