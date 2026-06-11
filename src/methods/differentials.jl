@@ -4,6 +4,34 @@
 #differentiation logic from the property logic allows the differentials
 #to be compiled only once
 
+macro deferred_V(f,tag)
+    quote
+        Deferred((model,T,z),∂Tag{$tag}()) do P
+            _model,_T,_z = P
+            ∂V -> $f(_model,∂V,_T,_z)
+        end
+    end |> esc
+end
+
+macro deferred_T(f,tag)
+    quote
+    Deferred((model,V,z),∂Tag{$tag}()) do P
+        _model,_V,_z = P
+        ∂T -> $f(_model,_V,∂T,_z)
+    end
+    end |> esc
+end
+
+macro deferred_VT(f,tag)
+    quote
+        Deferred((model,z),∂Tag{$tag}()) do P
+            _model,_z = P
+            ∂VT -> $f(_model,∂VT[1],∂VT[2],_z)
+        end
+    end |> esc
+end
+
+
 """
     ∂f∂T(model,V,T,z=SA[1.0])
 
@@ -11,7 +39,7 @@ Returns `∂f/∂T` at constant total volume `V` and composition `z`, where `f` 
 
 """
 function ∂f∂T(model,V,T,z::AbstractVector)
-    f(∂T) = eos(model,V,∂T,z)
+    f = @deferred_T(eos,∂f∂T)
     return Solvers.derivative(f,T)
 end
 
@@ -21,7 +49,7 @@ end
 Returns `∂f/∂V` at constant temperature `T` and composition `z`, where `f` is the total Helmholtz energy, given by `eos(model,V,T,z)`, `V` is the total volume.
 """
 function ∂f∂V(model,V,T,z::AbstractVector)
-    f(∂V) = a_res(model,∂V,T,z)
+    f = @deferred_V(a_res,∂f∂V)
     ∂aᵣ∂V = Solvers.derivative(f,V)
     sum(z)*Rgas(model)*T*(∂aᵣ∂V - 1/V)
 end
@@ -42,14 +70,14 @@ where:
 ```julia
 fval   = f(V,T) = eos(model,V,T,z)
 
-grad_f = [ ∂f/∂V; ∂f/∂T]
+grad_f = [∂f/∂V; ∂f/∂T]
 ```
 
 Where `V` is the total volume, `T` is the temperature and `f` is the total Helmholtz energy.
 """
 function ∂f(model,V,T,z)
-    f(∂V,∂T) = eos(model,∂V,∂T,z)
-    _f,_df = Solvers.fgradf2(f,V,T)
+    f = @deferred_VT(eos,∂f)
+    _f,_df = Solvers.fgradf2(f,(V,T))
     return _df,_f
 end
 
@@ -59,20 +87,20 @@ function ∂f_vec(model,V,T,z::AbstractVector)
 end
 
 function f∂fdV(model,V,T,z::AbstractVector)
-    f(x) = eos(model,x,T,z)
+    f = @deferred_V(eos,f∂fdV)
     A,∂A∂V = Solvers.f∂f(f,V)
     return SVector(A,∂A∂V)
 end
 
 function f∂fdT(model,V,T,z::AbstractVector)
-    f(x) = eos(model,V,x,z)
-    A,∂A∂T = Solvers.f∂f(f,T,)
+    f = @deferred_T(eos,f∂fdT)
+    A,∂A∂T = Solvers.f∂f(f,T)
     return SVector(A,∂A∂T)
 end
 
 function ∂f_res(model,V,T,z)
-    f(∂V,∂T) = eos_res(model,∂V,∂T,z)
-    _f,_df = Solvers.fgradf2(f,V,T)
+    f = @deferred_VT(eos_res,∂f_res)
+    _f,_df = Solvers.fgradf2(f,(V,T))
     return _df,_f
 end
 
@@ -92,10 +120,22 @@ Returns `p` and `∂p/∂V` at constant temperature `T`, where `p` is the pressu
 
 """
 function p∂p∂V(model,V,T,z::AbstractVector=SA[1.0])
-    f(∂V) = pressure(model,∂V,T,z)
+    f = @deferred_V(pressure,p∂p∂V)
     p,∂p∂V = Solvers.f∂f(f,V)
     return SVector(p,∂p∂V)
 end
+
+"""
+    ∂p∂T(model,V,T,z=SA[1.0])
+
+Returns `∂p/∂T` at constant temperature `T`, where `p` is the pressure = `pressure(model,V,T,z)` and `V` is the total volume.
+
+"""
+function ∂p∂T(model,V,T,z::AbstractVector=SA[1.0])
+    f = @deferred_T(pressure,∂p∂T)
+    return Solvers.derivative(f,T)
+end
+
 
 """
     ∂2f(model,V,T,z)
@@ -120,7 +160,7 @@ hess_f = [ ∂²f/∂V²; ∂²f/∂V∂T
 Where `V` is the total volume, `T` is the temperature and `f` is the total Helmholtz energy.
 """
 function ∂2f(model,V,T,z)
-    f(_V,_T) = eos(model,_V,_T,z)
+    f = @deferred_VT(eos,∂2f)
     _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
@@ -148,8 +188,8 @@ hess_p = [ ∂²p/∂V²; ∂²p/∂V∂T
 Where `V` is the total volume, `T` is the temperature and `p` is the pressure.
 """
 function ∂2p(model,V,T,z)
-    f(_V,_T) = pressure(model,_V,_T,z)
-    _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
+    f = @deferred_VT(pressure,∂2p)
+    _f,_∂f,_∂2f = Solvers.∂2(f,(V,T))
     return (_∂2f,_∂f,_f)
 end
 
@@ -171,7 +211,7 @@ Returns the second order volume `V` and temperature `T` derivatives of the total
 Use this instead of the `∂2f` if you only need second order information. `∂2f` also gives zeroth and first order derivative information, but due to a bug in the used AD, it allocates more than necessary.
 """
 function f_hess(model,V,T,z)
-    f(w) = eos(model,first(w),last(w),z)
+    f = @deferred_VT(eos,f_hess)
     V,T = promote(V,T)
     VT_vec = SVector(V,T)
     return Solvers.hessian(f,VT_vec)
@@ -184,7 +224,7 @@ Returns the pressure `p` and their first and second volume derivatives `∂p/∂
 
 """
 function p∂p∂2p(model,V,T,z=SA[1.0])
-    f(∂V) = pressure(model,∂V,T,z)
+    f = @deferred_V(pressure,p∂p∂2p)
     p, ∂²A∂V², ∂³A∂V³ = Solvers.f∂f∂2f(f,V)
     return SVector(p, ∂²A∂V², ∂³A∂V³)
 end
@@ -196,8 +236,8 @@ Returns `∂²A/∂T²` via Autodiff. Used mainly for ideal gas properties. It i
 
 """
 function ∂²f∂T²(model,V,T,z)
-    A(_T) = eos(model,V,_T,z)
-    _,_,∂²A∂T² = Solvers.f∂f∂2f(A,T)
+    f = @deferred_T(eos,∂²f∂T²)
+    _,_,∂²A∂T² = Solvers.f∂f∂2f(f,T)
     return ∂²A∂T²
 end
 

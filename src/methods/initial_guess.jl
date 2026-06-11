@@ -987,6 +987,11 @@ function solve_2ph_taylor(model1::EoSModel,model2::EoSModel,T,v1,v2,p_scale = 1.
     return solve_2ph_taylor(v1,v2,a1,da1,d2a1,a2,da2,d2a2,p_scale,μ_scale)
 end
 
+function ∂p∂rho(model,rho,T,z)
+    _,dpdV = p∂p∂V(model,1/ρ,T,z)
+    return -sum(z)*dpdV*ρ*ρ
+end
+
 """
     critical_vsat_extrapolation(model,T,Tc,Vc)
     critical_vsat_extrapolation(model,T,crit = crit_pure(model))
@@ -1030,8 +1035,7 @@ Given critical information and a temperature, extrapolate the saturation pressur
     This function will not check if the input temperature is over the critical point.
 """
 function critical_psat_extrapolation(model,T,Tc,Pc,Vc)
-    _p(_T) = pressure(model,Vc,_T)
-    dpdT = Solvers.derivative(_p,Tc)
+    dpdT = ∂p∂T(model,Vc,Tc,SA[1.0])
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = (1/T - 1/Tc)/dTinvdlnp
     p = exp(Δlnp)*Pc
@@ -1054,8 +1058,7 @@ Given critical information and a pressure, extrapolate the saturation temperatur
 
 """
 function critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z = SA[1.0])
-    _p(_T) = pressure(model,Vc,_T,z)
-    dpdT = Solvers.derivative(_p,Tc)
+    dpdT = ∂p∂T(model,Vc,Tc,z)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = log(p/Pc)
     Tinv = 1/Tc + dTinvdlnp*Δlnp

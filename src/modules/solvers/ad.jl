@@ -11,7 +11,9 @@ recursive_fd_extract_derivative(T::TT,x::AbstractArray) where TT = recursive_fd_
 
 @inline function derivative(f::F, x::R, TAG = f) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(TAG, R))
-    return recursive_fd_extract_derivative(T, f(ForwardDiff.Dual{T}(x, one(x))))
+    @show T
+    fx = f(ForwardDiff.Dual{T}(x, one(x)))
+    return recursive_fd_extract_derivative(T, fx)
 end
 
 @inline function gradient(f::F, x) where {F}
@@ -40,6 +42,10 @@ end
 function gradient2(f::F,x1::R1,x2::R2,tag = f) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)
     return gradient2(f,y1,y2,tag)
+end
+
+function gradient2(f::F,t::NTuple{2,T},tag = f) where {F,T}
+    return gradient2(f,t[1],t[2],tag)
 end
 
 """
@@ -95,6 +101,10 @@ end
     return ForwardDiff.value(out),SVector(∂out.values)
 end
 
+function fgradf2(f::F,t::NTuple{2,T},tag = f) where {F,T}
+    return fgradf2(f,t[1],t[2],tag)
+end
+
 function ∂2(f::F,x1::R1,x2::R2,tag = f) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)
     return ∂2(f,y1,y2,tag)
@@ -115,6 +125,10 @@ end
           _, d2fdy2 = df2.partials.values
     d2f = SMatrix{2}(d2fdx2,d2fdxdy,d2fdxdy,d2fdy2)
     return (fx,df,d2f)
+end
+
+function ∂2(f::F,t::NTuple{2,T},tag = f) where {F,T}
+    return ∂2(f,t[1],t[2],tag)
 end
 
 #Manual implementation of an hyperdual.

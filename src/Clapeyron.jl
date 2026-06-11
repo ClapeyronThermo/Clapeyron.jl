@@ -24,6 +24,12 @@ include("utils/core_utils.jl")
 #misc functions
 include("utils/misc.jl")
 
+include("modules/StaticForwardDiffTag/StaticForwardDiffTag.jl")
+
+import .StaticForwardDiffTag
+using .StaticForwardDiffTag: ∂Deferred
+const Deferred = ∂Deferred
+import .StaticForwardDiffTag: ∂Tag, StaticTag
 include("modules/solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log, sqrt, log1p, ^, dnorm, primalval, Newton2
