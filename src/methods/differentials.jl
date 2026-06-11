@@ -31,6 +31,14 @@ macro deferred_VT(f,tag)
     end |> esc
 end
 
+macro deferred_VT2(f,tag)
+    quote
+        Deferred((model,z),∂Tag{$tag}()) do P
+            _model,_z = P
+            (∂V,∂T) -> $f(_model,∂V,∂T,_z)
+        end
+    end |> esc
+end
 
 """
     ∂f∂T(model,V,T,z=SA[1.0])
@@ -76,8 +84,8 @@ grad_f = [∂f/∂V; ∂f/∂T]
 Where `V` is the total volume, `T` is the temperature and `f` is the total Helmholtz energy.
 """
 function ∂f(model,V,T,z)
-    f = @deferred_VT(eos,∂f)
-    _f,_df = Solvers.fgradf2(f,(V,T))
+    f = @deferred_VT2(eos,∂f)
+    _f,_df = Solvers.fgradf2(f,V,T)
     return _df,_f
 end
 
@@ -99,8 +107,8 @@ function f∂fdT(model,V,T,z::AbstractVector)
 end
 
 function ∂f_res(model,V,T,z)
-    f = @deferred_VT(eos_res,∂f_res)
-    _f,_df = Solvers.fgradf2(f,(V,T))
+    f = @deferred_VT2(eos_res,∂f_res)
+    _f,_df = Solvers.fgradf2(f,V,T)
     return _df,_f
 end
 
@@ -160,7 +168,7 @@ hess_f = [ ∂²f/∂V²; ∂²f/∂V∂T
 Where `V` is the total volume, `T` is the temperature and `f` is the total Helmholtz energy.
 """
 function ∂2f(model,V,T,z)
-    f = @deferred_VT(eos,∂2f)
+    f = @deferred_VT2(eos,∂2f)
     _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
@@ -188,8 +196,8 @@ hess_p = [ ∂²p/∂V²; ∂²p/∂V∂T
 Where `V` is the total volume, `T` is the temperature and `p` is the pressure.
 """
 function ∂2p(model,V,T,z)
-    f = @deferred_VT(pressure,∂2p)
-    _f,_∂f,_∂2f = Solvers.∂2(f,(V,T))
+    f = @deferred_VT2(pressure,∂2p)
+    _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
 

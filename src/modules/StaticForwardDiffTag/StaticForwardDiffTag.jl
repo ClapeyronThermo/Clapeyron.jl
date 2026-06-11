@@ -11,6 +11,13 @@ A replacement of `ForwardDiff.Tag{F,V}` that supports a faster nested comparison
 """
 struct StaticTag{F,V} end
 
+"""
+    ∂Tag{T}
+
+a static tag type, used with deferred evaluation
+"""
+struct ∂Tag{T} end
+
 function StaticTag(f::F, ::Type{V}) where {F,V}
     tagcount(Tag{F,V}) # trigger generated function, but with the tag type.
     StaticTag{F,V}()
@@ -62,10 +69,15 @@ end
     d1 = tagdepth(T1)
     d2 = tagdepth(T2)
     if d1 != d2
+        #only deferred methods being used: depth is direct indicator of nesting
+        F1 <: ∂Tag && F2 <: ∂Tag && return d1 < d2
         genuinely_nested = d1 > d2 ? contains_tag(T1, T2) : contains_tag(T2, T1)
         genuinely_nested && return d1 < d2   # depth wins ONLY if nesting is real
     end
-    throw(DualMismatchError(T1,T2))
+
+    
+
+    throw(ForwardDiff.DualMismatchError(T1,T2))
 end
 
 
@@ -87,14 +99,6 @@ struct ∂Deferred{T,V,F,P}
     p::P
 end
 
-"""
-    ∂Tag{T}
-
-a static tag type, used with deferred evaluation
-"""
-struct ∂Tag{T} end
-
-
 ∂Deferred(f::F,p::P) where {F,P} = ∂Deferred(f,p,∂Tag{F})
 
 ∂Deferred(f::F,p::V,::T) where {F,V <: Number,T} = ∂Deferred{T,V,F,V}(f,p)
@@ -106,6 +110,7 @@ function ∂Deferred(f::F,p::Tup,::T) where {F,Tup<:Tuple,T}
 end
 
 (∂::∂Deferred{F,P})(x) where {F,P} = ∂.f(∂.p)(x)
+(∂::∂Deferred{F,P})(x,y) where {F,P} = ∂.f(∂.p)(x,y)
 
 function ForwardDiff.Tag(f::∂Deferred{T,V1,F,P},::Type{V2}) where {T,V1,F,P,V2}
     return StaticTag(T,deferred_valtype(V1,V2))

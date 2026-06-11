@@ -41,7 +41,7 @@ VT_mass_entropy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_entropy(
 
 function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
     f = @deferred_T(eos_res,VT_entropy_res)
-    return -Solvers.derivative(fun,T)
+    return -Solvers.derivative(f,T)
 end
 
 function VT_internal_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
