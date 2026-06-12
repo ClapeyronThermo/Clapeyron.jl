@@ -16,6 +16,9 @@ using ForwardDiff: Dual,
 using DiffResults: DiffResult, ImmutableDiffResult, MutableDiffResult
 
 const dualize = ForwardDiffStatic.dualize
+const extract_gradient = ForwardDiffStatic.extract_gradient
+const extract_jacobian = ForwardDiffStatic.extract_jacobian
+
 
 # Gradient
 @inline function ForwardDiff.vector_mode_gradient(f::F, x::StaticArray) where {F <: SDiffFunction}
