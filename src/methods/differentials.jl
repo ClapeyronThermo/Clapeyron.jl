@@ -6,7 +6,7 @@
 
 macro deferred_V(f,tag)
     quote
-        Deferred((model,T,z),∂Tag{$tag}()) do P
+        SDiffFunction((model,T,z),∂Tag{$tag}()) do P
             _model,_T,_z = P
             ∂V -> $f(_model,∂V,_T,_z)
         end
@@ -15,7 +15,7 @@ end
 
 macro deferred_T(f,tag)
     quote
-    Deferred((model,V,z),∂Tag{$tag}()) do P
+    SDiffFunction((model,V,z),∂Tag{$tag}()) do P
         _model,_V,_z = P
         ∂T -> $f(_model,_V,∂T,_z)
     end
@@ -24,7 +24,7 @@ end
 
 macro deferred_VT(f,tag)
     quote
-        Deferred((model,z),∂Tag{$tag}()) do P
+        SDiffFunction((model,z),∂Tag{$tag}()) do P
             _model,_z = P
             ∂VT -> $f(_model,∂VT[1],∂VT[2],_z)
         end
@@ -33,7 +33,7 @@ end
 
 macro deferred_VT2(f,tag)
     quote
-        Deferred((model,z),∂Tag{$tag}()) do P
+        SDiffFunction((model,z),∂Tag{$tag}()) do P
             _model,_z = P
             (∂V,∂T) -> $f(_model,∂V,∂T,_z)
         end

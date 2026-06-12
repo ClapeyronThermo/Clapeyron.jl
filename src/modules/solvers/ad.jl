@@ -9,8 +9,8 @@ recursive_fd_extract_derivative(T::TT,x::Tuple{}) where TT = x
 
 recursive_fd_extract_derivative(T::TT,x::AbstractArray) where TT = recursive_fd_extract_derivative.(T,x)
 
-@inline function derivative(f::F, x::R, TAG = f) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(TAG, R))
+@inline function derivative(f::F, x::R, tag = f) where {F,R<:Real}
+    T = maketagtype(tag,R)
     fx = f(ForwardDiff.Dual{T}(x, one(x)))
     return recursive_fd_extract_derivative(T, fx)
 end
@@ -28,7 +28,7 @@ end
 end
 
 @inline function gradient2(f::F, x1::R,x2::R,tag = f) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(tag, R))
+    T = maketagtype(f,R)
     _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
@@ -53,7 +53,7 @@ end
 Returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 @inline function f∂f(f::F, x::R,tag = f) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(tag, R))
+    T = maketagtype(tag,R)
     out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),))))
     return recursive_fd_value(out),  recursive_fd_extract_derivative(T, out)
 end
@@ -67,7 +67,7 @@ f∂f(f::F) where F = Base.Fix1(f∂f,f)
 Returns f, ∂f/∂x and ∂²f/∂²x evaluated in `x` using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 @inline function f∂f∂2f(f::F,x::R,tag = f) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(tag, R))
+    T = maketagtype(tag,R)
     out = ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),)))
     _f,_df = f∂f(f,out)
     fx = recursive_fd_value(_f)
@@ -90,7 +90,7 @@ function fgradf2(f::F,x1::R1,x2::R2,tag = f) where{F,R1<:Real,R2<:Real}
 end
 
 @inline function fgradf2(f::F,x1::R,x2::R,tag = f) where{F,R<:Real}
-    T = typeof(ForwardDiff.Tag(tag, R))
+    T = maketagtype(tag,R)
     _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
@@ -111,7 +111,7 @@ end
 
 #Manual implementation of an hyperdual.
 @inline function ∂2(f::F,x1::R,x2::R,tag = f) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(tag, R))
+    T = maketagtype(tag,R)
     _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
@@ -132,7 +132,7 @@ end
 
 #Manual implementation of an hyperdual.
 @inline function J2(f::F,x::SVector{2,R},tag = f) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(tag, R))
+    T = maketagtype(tag,R)
     _1 = oneunit(R)
     _0 = zero(R)
     x1,x2 = x
@@ -149,7 +149,7 @@ end
 end
 
 @inline function J3(f::FF,x::SVector{3,R},tag = f) where {FF,R<:Real}
-    T = typeof(ForwardDiff.Tag(tag, R))
+    T = maketagtype(tag,R)
     _1 = oneunit(R)
     _0 = zero(R)
     x1,x2,x3 = x
@@ -185,7 +185,7 @@ end
 
 
 @inline function ∂J2(f::F,x1::R,x2::R,tag = f) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(tag, R))
+    T = maketagtype(tag,R)
     _1 = one(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
@@ -223,7 +223,7 @@ end
 end
 
 function static_fgh(result::DiffResults.ImmutableDiffResult, f::F, x::SVector) where {F}
-    T = typeof(ForwardDiff.Tag(f, eltype(x)))
+    T = maketagtype(f,eltype(x))
     d1 = ForwardDiffStatic.dualize(T, x)
     d2 = ForwardDiffStatic.dualize(T, d1)
     fd2 = f(d2)
@@ -376,7 +376,7 @@ Base.length(x::GradᵢVector) = length(x.vector)
 Base.size(x::GradᵢVector) = size(x.vector)
 
 function grad_at_i(f::F,x::X,i,TT = eltype(x)) where {F,X <: AbstractVector{R}} where R
-    T = typeof(ForwardDiff.Tag(f, TT))
+    T = maketagtype(f, TT)
     xᵢ = TT(x[i])
     ∂xᵢ = ForwardDiff.Dual{T}(xᵢ, oneunit(xᵢ))
     ∂x = GradᵢVector(i,∂xᵢ,x)

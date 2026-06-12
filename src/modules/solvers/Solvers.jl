@@ -9,6 +9,7 @@ using DiffResults, ForwardDiff
 using StaticArrays
 using Roots
 
+using Clapeyron.StaticForwardDiffTags: maketag, maketagtype
 
 export CholeskyNewton,static_linsolve,Newton2
 
