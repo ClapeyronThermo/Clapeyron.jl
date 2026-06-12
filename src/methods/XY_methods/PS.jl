@@ -4,7 +4,8 @@ function PS_property(model,p,s,z,f::F,phase,T0,threaded) where F
     f == entropy && return XX(s)
     f == pressure && return XX(p)
 
-    if f == temperature && length(model) == 1
+    if f == temperature && length(z) == 1
+        length(model) == 1 || throw(DimensionMismatch("model and composition vector sizes are inconsistent"))
         z1 = SVector(z[1])
         return Tproperty(model,p,s,z1,entropy,T0 = T0,phase = phase,threaded = threaded)
     end
