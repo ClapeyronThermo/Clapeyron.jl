@@ -132,188 +132,189 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
           verbose = false,
           threaded = true) where TT
 
-  norm_prop,norm_property = normalize_property(model,prop,z,property)
+    norm_prop,norm_property = normalize_property(model,prop,z,property)
 
-  if norm_property !== property
-    return _Pproperty(model,T,norm_prop,z,norm_property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
-  end
-
-  if length(model) == 1 && length(z) == 1
-    res = Pproperty_pure(fluid_model(model),T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
-    return __Pproperty_check(res,verbose)
-  end
-
-  if p0 !== nothing
-    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p0)
-    return __Pproperty_check(res,verbose)
-  end
-
-  if is_liquid(phase)
-    p00 = bubble_pressure(model,T,z)[1]
-    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p00)
-    return __Pproperty_check(res,verbose)
-  end
-
-  if is_vapour(phase)
-    p00 = dew_pressure(model,T,z)[1]
-    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p00)
-    return __Pproperty_check(res,verbose)
-  end
-
-  n = sum(z)
-  v0_edge,pure_sats = x0_edge_pressure(model,T,z)
-  
-  #check pure saturation envelopes
-  pmin_sat,pmax_sat = extrema(first,pure_sats)
-  prop_puresat_l = property(model,pmax_sat,T,z,phase = :l)
-  prop_puresat_v = property(model,pmin_sat,T,z,phase = :v)
-  βpuresat = (prop - prop_puresat_l)/(prop_puresat_v - prop_puresat_l)
-
-  if !(0 <= βpuresat <= 1)  #TODO: check if this is valid
-    verbose && @info "minimum saturation pressure:         $pmin_sat"
-    verbose && @info "maximum saturation pressure:         $pmax_sat"
-    verbose && @info "property at minimum sat point:       $prop_puresat_v"
-    verbose && @info "property at maximum sat point:       $prop_puresat_l"
-
-    phase_by_puresat = βpuresat > 1 ? :vapour : :liquid
-    verbose && @info "temperature($property) outside pure fluid saturation boundaries ($phase_by_puresat)"
-    p_by_puresat = βpuresat > 1 ? pmin_sat : pmax_sat
-    res_puresat = __Pproperty(model,T,prop,z,property,rootsolver,phase_by_puresat,abstol,reltol,threaded,p_by_puresat)
-    return __Pproperty_check(res_puresat,verbose)
-  end
-
-  p0_bubble,p0_dew = v0_edge
-  edge,crit,status = _edge_pressure(model,T,z,v0_edge)
-  P_edge,v_l,v_v = edge
-
-  if status == :supercritical
-    #=
-    TODO: what to do in this zone?
-    we are smooth in the p-v curves,
-    but there are still phase separation up until the mixture critical point. =#
-    Tc,Pc,Vc = crit
-    verbose && @info "mechanical critical pressure:        $Pc"
-    verbose && @info "mechanical critical temperature:     $Tc"
-    verbose && @info "mechanical critical molar volume     $Vc"
-  
-    res = __Pproperty(model,T,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,Pc)
-    res[2] == :failure && return __Pproperty_check(res,verbose)
-
-    #instead of calculating the mixture critical point, we just suppose
-    #that all volumes between the bubble and dew volumes evaluated at T = Tc (or P = Pc)
-    #are equilibrium ones
-    #TODO: we could calculate dvsatdP (or dvsatdT) and estimate a line instead of a vertical threshold
-
-    px = res[1]
-    Vx = volume(model,px,T,z,vol0 = Vc*n)/n
-
-    if Vx <= Vc
-      bubble_method_crit = bubble_pressure_pproperty_method(model,Pc,Tc,z,pure_sats)
-      Psat,Vsat,_,_ = bubble_pressure(model,Tc,z,bubble_method_crit)
-      satpoint = "bubble"
-      
-      verbose && @info "molar volume at bubble point:        $Vsat"
-    else
-      dew_method_crit = dew_pressure_pproperty_method(model,Pc,Tc,z,pure_sats)
-      Psat,_,Vsat,_ = dew_pressure(model,Tc,z,dew_method_crit)
-      satpoint = "dew"
-      verbose && @info "molar volume at dew point:           $Vsat"
-      
+    if norm_property !== property
+        return _Pproperty(model,T,norm_prop,z,norm_property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
     end
+
+    if length(z) == 1
+        length(model) == 1 || throw(DimensionMismatch("model and composition vector sizes are inconsistent"))
+        res = Pproperty_pure(fluid_model(model),T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
+        return __Pproperty_check(res,verbose)
+    end
+
+    if p0 !== nothing
+        res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p0)
+        return __Pproperty_check(res,verbose)
+    end
+
+    if is_liquid(phase)
+        p00 = bubble_pressure(model,T,z)[1]
+        res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p00)
+        return __Pproperty_check(res,verbose)
+    end
+
+    if is_vapour(phase)
+        p00 = dew_pressure(model,T,z)[1]
+        res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p00)
+        return __Pproperty_check(res,verbose)
+    end
+
+    n = sum(z)
+    v0_edge,pure_sats = x0_edge_pressure(model,T,z)
     
-    verbose && @info "molar volume at pressure(property):  $Vx"
+    #check pure saturation envelopes
+    pmin_sat,pmax_sat = extrema(first,pure_sats)
+    prop_puresat_l = property(model,pmax_sat,T,z,phase = :l)
+    prop_puresat_v = property(model,pmin_sat,T,z,phase = :v)
+    βpuresat = (prop - prop_puresat_l)/(prop_puresat_v - prop_puresat_l)
 
-    βx = (Vx - Vsat)/(Vc - Vsat)
-    0 <= βx <= 1 && verbose && @info "pseudo-critical pressure($property) in phase change region (between critical and $satpoint points)"
-    0 <= βx <= 1 && return px,:eq
-    verbose && @info "pressure(property) in the  critical pseudo-$(string(res[2])) branch, outside the phase change region"
-    return res
-  end
+    if !(0 <= βpuresat <= 1)  #TODO: check if this is valid
+        verbose && @info "minimum saturation pressure:         $pmin_sat"
+        verbose && @info "maximum saturation pressure:         $pmax_sat"
+        verbose && @info "property at minimum sat point:       $prop_puresat_v"
+        verbose && @info "property at maximum sat point:       $prop_puresat_l"
 
-  if status == :failure
-    verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.T_scale(model,z)"
-    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p_scale(model,z))
-    res[2] == :failure && return __Pproperty_check(res,verbose)
+        phase_by_puresat = βpuresat > 1 ? :vapour : :liquid
+        verbose && @info "temperature($property) outside pure fluid saturation boundaries ($phase_by_puresat)"
+        p_by_puresat = βpuresat > 1 ? pmin_sat : pmax_sat
+        res_puresat = __Pproperty(model,T,prop,z,property,rootsolver,phase_by_puresat,abstol,reltol,threaded,p_by_puresat)
+        return __Pproperty_check(res_puresat,verbose)
+    end
+
+    p0_bubble,p0_dew = v0_edge
+    edge,crit,status = _edge_pressure(model,T,z,v0_edge)
+    P_edge,v_l,v_v = edge
+
+    if status == :supercritical
+        #=
+        TODO: what to do in this zone?
+        we are smooth in the p-v curves,
+        but there are still phase separation up until the mixture critical point. =#
+        Tc,Pc,Vc = crit
+        verbose && @info "mechanical critical pressure:        $Pc"
+        verbose && @info "mechanical critical temperature:     $Tc"
+        verbose && @info "mechanical critical molar volume     $Vc"
+    
+        res = __Pproperty(model,T,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,Pc)
+        res[2] == :failure && return __Pproperty_check(res,verbose)
+
+        #instead of calculating the mixture critical point, we just suppose
+        #that all volumes between the bubble and dew volumes evaluated at T = Tc (or P = Pc)
+        #are equilibrium ones
+        #TODO: we could calculate dvsatdP (or dvsatdT) and estimate a line instead of a vertical threshold
+
+        px = res[1]
+        Vx = volume(model,px,T,z,vol0 = Vc*n)/n
+
+        if Vx <= Vc
+        bubble_method_crit = bubble_pressure_pproperty_method(model,Pc,Tc,z,pure_sats)
+        Psat,Vsat,_,_ = bubble_pressure(model,Tc,z,bubble_method_crit)
+        satpoint = "bubble"
+        
+        verbose && @info "molar volume at bubble point:        $Vsat"
+        else
+        dew_method_crit = dew_pressure_pproperty_method(model,Pc,Tc,z,pure_sats)
+        Psat,_,Vsat,_ = dew_pressure(model,Tc,z,dew_method_crit)
+        satpoint = "dew"
+        verbose && @info "molar volume at dew point:           $Vsat"
+        
+        end
+        
+        verbose && @info "molar volume at pressure(property):  $Vx"
+
+        βx = (Vx - Vsat)/(Vc - Vsat)
+        0 <= βx <= 1 && verbose && @info "pseudo-critical pressure($property) in phase change region (between critical and $satpoint points)"
+        0 <= βx <= 1 && return px,:eq
+        verbose && @info "pressure(property) in the  critical pseudo-$(string(res[2])) branch, outside the phase change region"
+        return res
+    end
+
+    if status == :failure
+        verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.T_scale(model,z)"
+        res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p_scale(model,z))
+        res[2] == :failure && return __Pproperty_check(res,verbose)
+        return __Pproperty_check(res,verbose)
+    end
+
+    prop_l = spec_to_vt(model,v_l,T,z,property)
+    prop_v = spec_to_vt(model,v_v,T,z,property)
+
+    verbose && @info "property at liquid edge:             $prop_l"
+    verbose && @info "property at vapour edge:             $prop_v"
+    verbose && @info "pressure at edge point:              $P_edge"
+
+    β_edge = (prop - prop_l)/(prop_v - prop_l)
+
+    #we are inside equilibria.
+    if 0 <= β_edge <= 1
+        verbose && @info "property between the liquid and vapour edges, in the phase change region"
+        Pbub0,Pdew0 = v0_edge
+
+        P_edge_interp = β_edge*Pdew0 + (1 - β_edge)*Pbub0
+        β_P_edge = (P_edge - Pdew0)/(Pbub0 - Pdew0)
+    
+        ϕ = 0.3 #P_edge is in the center of the bubble and dew approximations, return P_edge
+        if ϕ <= β_P_edge <= (1 - ϕ)
+        return P_edge_interp,:eq
+        end
+
+        if β_P_edge < 0.3
+        p0x = Pbub0
+        verbose && @info "property in equilibria, mostly liquid with vapour, checking dew point"
+        #we search between the liquid edge and the dew temperature
+        prop_edge,new_phase = property(model,Pbub0,T,z,phase = :l),:vapour
+        else
+        p0x = Pdew0
+        verbose && @info "property in equilibria, mostly vapour with liquid, checking bubble point"
+        #we search between the vapour edge and the bubble temperature
+        prop_edge,new_phase = property(model,Pdew0,T,z,phase = :v),:liquid
+        end
+    else
+        p0x = P_edge
+        if β_edge > 1
+        prop_edge,new_phase = prop_v,:vapour
+        else
+        prop_edge,new_phase = prop_l,:liquid
+        end
+    end
+
+    if is_vapour(new_phase) #check vapour branch
+        dew_method = dew_pressure_pproperty_method(model,p0_dew,T,z,pure_sats)
+        dew = dew_pressure(model,T,z,dew_method)
+        p_dew,_,v_dew,_ = dew
+        prob_dew = spec_to_vt(model,v_dew*n,T,z,property)
+
+        verbose && @info "pressure at dew point:               $p_dew"
+        verbose && @info "property at dew point:               $prob_dew"
+
+        β_dew = (prop - prop_edge)/(prob_dew - prop_edge)
+        p_interp = exp(β_dew*log(p_dew) + (1 - β_dew)*log(p0x))
+        0 < β_dew < 1 && verbose && @info "pseudo-vapour pressure($property) in phase change region (between edge and dew point)."
+        0 < β_dew < 1 && return __Pproperty_check((p_interp,:eq),verbose,p0x)
+        p0x = p_dew
+    end
+
+    if is_liquid(new_phase) #check liquid branch
+        bubble_method = bubble_pressure_pproperty_method(model,p0_bubble,T,z,pure_sats)
+        bubble = bubble_pressure(model,T,z,bubble_method)
+        p_bubble,v_bubble,_,_ = bubble
+        prob_bubble = spec_to_vt(model,v_bubble*n,T,z,property)
+
+        verbose && @info "pressure at bubble point:            $p_bubble"
+        verbose && @info "property at bubble point:            $prob_bubble"
+
+        β_bubble = (prop - prop_edge)/(prob_bubble - prop_edge)
+        p_interp = exp(β_bubble*log(p_bubble) + (1 - β_bubble)*log(p0x))
+        0 < β_bubble < 1 && verbose && @info "pseudo-liquid pressure($property) in phase change region (between edge and bubble point)."
+        0 < β_bubble < 1 && return __Pproperty_check((p_interp,:eq),verbose,p0x)
+        p0x = p_bubble
+    end
+
+    verbose && @info "$new_phase pressure($property) outside the phase change region"
+    res = __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,p0x)
     return __Pproperty_check(res,verbose)
-  end
-
-  prop_l = spec_to_vt(model,v_l,T,z,property)
-  prop_v = spec_to_vt(model,v_v,T,z,property)
-
-  verbose && @info "property at liquid edge:             $prop_l"
-  verbose && @info "property at vapour edge:             $prop_v"
-  verbose && @info "pressure at edge point:              $P_edge"
-
-  β_edge = (prop - prop_l)/(prop_v - prop_l)
-
-  #we are inside equilibria.
-  if 0 <= β_edge <= 1
-    verbose && @info "property between the liquid and vapour edges, in the phase change region"
-    Pbub0,Pdew0 = v0_edge
-
-    P_edge_interp = β_edge*Pdew0 + (1 - β_edge)*Pbub0
-    β_P_edge = (P_edge - Pdew0)/(Pbub0 - Pdew0)
-  
-    ϕ = 0.3 #P_edge is in the center of the bubble and dew approximations, return P_edge
-    if ϕ <= β_P_edge <= (1 - ϕ)
-      return P_edge_interp,:eq
-    end
-
-    if β_P_edge < 0.3
-      p0x = Pbub0
-      verbose && @info "property in equilibria, mostly liquid with vapour, checking dew point"
-      #we search between the liquid edge and the dew temperature
-      prop_edge,new_phase = property(model,Pbub0,T,z,phase = :l),:vapour
-    else
-      p0x = Pdew0
-      verbose && @info "property in equilibria, mostly vapour with liquid, checking bubble point"
-      #we search between the vapour edge and the bubble temperature
-      prop_edge,new_phase = property(model,Pdew0,T,z,phase = :v),:liquid
-    end
-  else
-    p0x = P_edge
-    if β_edge > 1
-      prop_edge,new_phase = prop_v,:vapour
-    else
-      prop_edge,new_phase = prop_l,:liquid
-    end
-  end
-
-  if is_vapour(new_phase) #check vapour branch
-    dew_method = dew_pressure_pproperty_method(model,p0_dew,T,z,pure_sats)
-    dew = dew_pressure(model,T,z,dew_method)
-    p_dew,_,v_dew,_ = dew
-    prob_dew = spec_to_vt(model,v_dew*n,T,z,property)
-
-    verbose && @info "pressure at dew point:               $p_dew"
-    verbose && @info "property at dew point:               $prob_dew"
-
-    β_dew = (prop - prop_edge)/(prob_dew - prop_edge)
-    p_interp = exp(β_dew*log(p_dew) + (1 - β_dew)*log(p0x))
-    0 < β_dew < 1 && verbose && @info "pseudo-vapour pressure($property) in phase change region (between edge and dew point)."
-    0 < β_dew < 1 && return __Pproperty_check((p_interp,:eq),verbose,p0x)
-    p0x = p_dew
-  end
-
-  if is_liquid(new_phase) #check liquid branch
-    bubble_method = bubble_pressure_pproperty_method(model,p0_bubble,T,z,pure_sats)
-    bubble = bubble_pressure(model,T,z,bubble_method)
-    p_bubble,v_bubble,_,_ = bubble
-    prob_bubble = spec_to_vt(model,v_bubble*n,T,z,property)
-
-    verbose && @info "pressure at bubble point:            $p_bubble"
-    verbose && @info "property at bubble point:            $prob_bubble"
-
-    β_bubble = (prop - prop_edge)/(prob_bubble - prop_edge)
-    p_interp = exp(β_bubble*log(p_bubble) + (1 - β_bubble)*log(p0x))
-    0 < β_bubble < 1 && verbose && @info "pseudo-liquid pressure($property) in phase change region (between edge and bubble point)."
-    0 < β_bubble < 1 && return __Pproperty_check((p_interp,:eq),verbose,p0x)
-    p0x = p_bubble
-  end
-
-  verbose && @info "$new_phase pressure($property) outside the phase change region"
-  res = __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,p0x)
-  return __Pproperty_check(res,verbose)
 end
 
 function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,p0) where F

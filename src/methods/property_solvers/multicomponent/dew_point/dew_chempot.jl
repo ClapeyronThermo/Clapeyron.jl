@@ -45,7 +45,7 @@ function ChemPotDewPressure(;vol0 = nothing,
                                 verbose = false)
 
     if p0 == x0 == vol0 == nothing
-        return ChemPotDewPressure{Nothing}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
+        return ChemPotDewPressure{Float64}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif (p0 == x0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return ChemPotDewPressure{typeof(vl)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
@@ -181,7 +181,7 @@ function ChemPotDewTemperature(;vol0 = nothing,
     verbose = false)
 
     if T0 == x0 == vol0 == nothing
-        return ChemPotDewTemperature{Nothing}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
+        return ChemPotDewTemperature{Float64}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif (T0 == x0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return ChemPotDewTemperature{typeof(vl)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)

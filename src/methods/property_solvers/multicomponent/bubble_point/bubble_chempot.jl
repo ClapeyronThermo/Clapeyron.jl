@@ -47,7 +47,7 @@ function ChemPotBubblePressure(;vol0 = nothing,
                                 verbose = false)
 
     if p0 == y0 == vol0 == nothing
-        return ChemPotBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
+        return ChemPotBubblePressure{Float64}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif (p0 == y0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return ChemPotBubblePressure{typeof(vl)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
@@ -194,7 +194,7 @@ function ChemPotBubbleTemperature(;vol0 = nothing,
     verbose = false)
 
     if T0 == y0 == vol0 == nothing
-        return ChemPotBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
+        return ChemPotBubbleTemperature{Float64}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif (T0 == y0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return ChemPotBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
