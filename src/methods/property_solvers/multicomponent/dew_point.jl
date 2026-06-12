@@ -141,7 +141,8 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     model_r,idx_r = index_reduction(model,y)
     if length(model_r) == 1 && !is_pseudo_pure(model)
         (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
-        return (P_sat,v_l,v_v,y)
+        x = [one(eltype(y))]
+        return (P_sat,v_l,v_v,x)
     end
     y_r = y[idx_r]
 
@@ -170,7 +171,7 @@ vl = $(primalval(v_l))
 vv = $(primalval(v_v))
 x  = $(primalval(x))"
 
-verbose && !converged && @info "dew_pressure: convergence checks failed."
+    verbose && !converged && @info "dew_pressure: convergence checks failed."
 
     if converged
         return (P_sat, v_l, v_v, x)
@@ -343,9 +344,10 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     p = float(p)
     verbose = get_verbosity(method)
     model_r,idx_r = index_reduction(model,y)
-    if length(model_r)==1 && !is_pseudo_pure(model)
+    if length(model_r) == 1 && !is_pseudo_pure(model)
         (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
-        return (T_sat,v_l,v_v,y)
+        x = [one(eltype(y))]
+        return (T_sat,v_l,v_v,x)
     end
     y_r = y[idx_r]
 
@@ -374,7 +376,7 @@ vl = $(primalval(v_l))
 vv = $(primalval(v_v))
 x  = $(primalval(x))"
 
-verbose && !converged && @info "dew_temperature: convergence checks failed."
+    verbose && !converged && @info "dew_temperature: convergence checks failed."
 
     if converged
         return (T_sat, v_l, v_v, x)

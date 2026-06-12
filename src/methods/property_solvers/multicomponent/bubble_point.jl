@@ -446,7 +446,8 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     model_r,idx_r = index_reduction(model,x)
     if length(model_r)==1 && !is_pseudo_pure(model)
         (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
-        return (P_sat,v_l,v_v,x)
+        y = [one(eltype(x))]
+        return (P_sat,v_l,v_v,y)
     end
     x_r = x[idx_r]
 
@@ -475,7 +476,7 @@ vl = $(primalval(v_l))
 vv = $(primalval(v_v))
 y  = $(primalval(y))"
 
-verbose && !converged && @info "bubble_pressure: convergence checks failed."
+    verbose && !converged && @info "bubble_pressure: convergence checks failed."
 
     if converged
         return (P_sat, v_l, v_v, y)
@@ -646,9 +647,10 @@ function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
     p = float(p)
     verbose = get_verbosity(method)
     model_r,idx_r = index_reduction(model,x)
-    if length(model_r)==1 && !is_pseudo_pure(model)
+    if length(model_r) == 1 && !is_pseudo_pure(model)
         (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
-        return (T_sat,v_l,v_v,x)
+        y = [one(eltype(x))]
+        return (T_sat,v_l,v_v,y)
     end
     x_r = x[idx_r]
 
@@ -677,8 +679,7 @@ vl = $(primalval(v_l))
 vv = $(primalval(v_v))
 y  = $(primalval(y))"
 
-verbose && !converged && @info "bubble_temperature: convergence checks failed."
-
+    verbose && !converged && @info "bubble_temperature: convergence checks failed."
 
     if converged
         return (T_sat, v_l, v_v, y)
