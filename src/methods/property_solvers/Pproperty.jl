@@ -40,13 +40,12 @@ function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
   v_pmin = volume(model,pmin,T,z,phase = :v)
   v_pmax = volume(model,pmax,T,z,phase = :l)
   TT = T*one(Base.promote_eltype(model,v_pmin,v_pmax,T))
-  V0 = svec2(log(v_pmax),log(v_pmin),TT)
-  _0 = zero(V0[1])
+  V01,V02,_0  = promote(v_pmax,v_pmin,zero(TT))
   nan = _0/_0
   fail = (nan,nan,nan)
   _is_positive((v_pmin,v_pmax,T)) || return fail,fail,:failure
   ps,mus = equilibria_scale(model,z)
-  edge,valid0 = try_2ph_edge_pressure(model,model,T,V0[1],V0[2],ps,mus,z,nothing)
+  edge,valid0 = try_2ph_edge_pressure(model,model,T,V01,V02,ps,mus,z,nothing)
   p_eq,v1,v2 = edge
   valid0 && return edge,fail,:success 
   !crit_retry && return fail,fail,:failure
@@ -58,8 +57,7 @@ function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
   !isfinite(Tc) && return fail,fail,:failure
   Tc <= T && return fail,crit,:supercritical
   vlc,vvc = critical_vsat_extrapolation(model,T,Tc,Vc,z)
-  V1 = SVector(promote(log(vlc),log(vvc)))
-  edge_crit,valid_crit = try_2ph_edge_pressure(model,model,T,V1[1],V1[2],ps,mus,z,nothing)
+  edge_crit,valid_crit = try_2ph_edge_pressure(model,model,T,vlc,vvc,ps,mus,z,nothing)
   valid_crit && return (edge_crit,crit,:success)
   return fail,fail,:failure
 end
