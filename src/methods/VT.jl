@@ -440,7 +440,7 @@ end
 
 #Vector Properties
 
-ZVar(property,model,V,T) = EoSFixedEval{:z}(property,(model,V,T))
+ZVar(property,model,V,T) = FixedEoSEval{:z}(property,(model,V,T))
 
 function VT_molar_gradient(model::EoSModel,V,T,z::AbstractVector,property::ℜ) where {ℜ}
     fun = ZVar(property,model,V,T)
