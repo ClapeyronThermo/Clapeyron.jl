@@ -1,7 +1,7 @@
 module StaticForwardDiffTags
 
 using ForwardDiff
-using ForwardDiff: Tag, Dual, tagcount, checktag, Chunk
+using ForwardDiff: Tag, Dual, tagcount, checktag, Chunk, Partials
 using ForwardDiff.DiffResults
 import ForwardDiff: ≺
 
@@ -83,15 +83,17 @@ end
     throw(ForwardDiff.DualMismatchError(T1,T2))
 end
 
-ForwardDiff.checktag(::Type{STag{FT,VT}}, f::F, x::AbstractArray{V}) where {FT,VT,F,V} =
-    throw(ForwardDiff.InvalidTagException{Tag{F,V},Tag{FT,VT}}())
+function ForwardDiff.checktag(::Type{STag{FT,VT}}, f::F, x::AbstractArray{V}) where {FT,VT,F,V}
+    tag_compare(STag{FT,VT},typeof(maketag(f,V)))
+end
+
+tag_compare(::Type{STag{F1,V1}},::Type{STag{F2,V2}}) where {F1,V1,F2,V2} = ForwardDiff.InvalidTagException{STag{F1,V1},STag{F2,V2}}()
+tag_compare(::Type{STag{F,V}},::Type{STag{F,V}}) where {F,V} = true
 
 ForwardDiff.checktag(::Type{STag{F,V}}, f::F, x::AbstractArray{V}) where {F,V} = true
 
 # no easy way to check Jacobian tag used with Hessians as multiple functions may be used
 ForwardDiff.checktag(::Type{STag{FT,VT}}, f::F, x::AbstractArray{V}) where {FT<:Tuple,VT,F,V} = true
-
-
 
 struct WithContext{T,V,F}
     obj::F
