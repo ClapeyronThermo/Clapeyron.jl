@@ -1,25 +1,17 @@
 # StaticForwardDiffTags
 
-## Usage
+This package is composed of three related utilities
+
+- `WithContext`: a wrapper over a callable struct that allows ForwardDiff to actually know whats inside
+- `STag{}`: a variant of `ForwardDiff.Tag` that can be compared at compilation time, only generated for `WithContext` callables.
+- `λFn` a simple function type wrapper to mark that functions are "pure", in the sense that they have no inaccessible inner state.
+
+## Usage (proposed)
 
 ```julia
-
 using StaticForwardDiffTags, ForwardDiff
-f(x,p) = sin(p*x) + p
+f(p) = x -> sin(p*x) + p
+fc = auto_context(f) #uses a generated function to recurse over the closure and obtain the number type of the captured state.
 
-#fixed_f(x) = f(p)(x)
-fixed_f = SDiffFunction(x -> Base.Fix2(f,x),2.0)
-ff(p) = SDiffFunction(x -> Base.Fix2(f,x),p)(3.0)
-
-dfdx(x) = ForwardDiff.derivative(fixed_f,x)
-dfdp(x) = ForwardDiff.derivative(ff,x)
-d2f(x) = ForwardDiff.derivative(dfdx,x)
-f2fdxdp(x) = ForwardDiff.derivative(dfdp,x)
-
-fixed_f(1.0) #equivalent to sin(2*x)
-dfdx(1.0) 
-dfdp(1.0)
-d2f(1.0)
-f2fdxdp(1.0)
-
+dfdx(x) = ForwardDiff.derivative(fc(2.0),x)
 ```

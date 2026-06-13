@@ -4,41 +4,63 @@
 #differentiation logic from the property logic allows the differentials
 #to be compiled only once
 
+struct FixedEoSEval{X,F,D}
+    f::F
+    data::D
+end
+
+StaticForwardDiffTags.deferred_valtype(f::FixedEoSEval{X,F,D}) where {X,F,D} = Base.promote_eltype(f.data...)
+StaticForwardDiffTags.inner_function(f::FixedEoSEval{X,F,D}) where {X,F,D} = f.f
+
+
+FixedEoSEval{X}(f::F,data::T) where {X,F,T} = FixedEoSEval{X,F,T}(f,data)
+
+function (obj::FixedEoSEval{:V,F,D})(V) where {F,D}
+    model,T,z = obj.data
+    return obj.f(model,V,T,z)
+end
+
+function (obj::FixedEoSEval{:p,F,D})(p) where {F,D}
+    model,T,z = obj.data
+    return obj.f(model,p,T,z)
+end
+
+function (obj::FixedEoSEval{:T,F,D})(T) where {F,D}
+    model,V,z = obj.data
+    return obj.f(model,V,T,z)
+end
+
+function (obj::FixedEoSEval{:VT,F,D})(VT) where {F,D}
+    V,T = VT
+    model,z = obj.data
+    return obj.f(model,V,T,z)
+end
+
+(obj::FixedEoSEval{:VT,F,D})(V,T) where {F,D} = obj((V,T))
+
+function (obj::FixedEoSEval{:z,F,D})(z) where {F,D}
+    model,V,T = obj.data
+    return obj.f(model,V,T,z)
+end
+
 macro deferred_V(f,tag)
     quote
-        SDiffFunction((model,T,z),∂Tag{$tag}()) do P
-            _model,_T,_z = P
-            ∂V -> $f(_model,∂V,_T,_z)
-        end
+        WithContext(FixedEoSEval{:V}($f,(model,T,z)),∂Tag{$tag}())
     end |> esc
 end
 
 macro deferred_T(f,tag)
     quote
-    SDiffFunction((model,V,z),∂Tag{$tag}()) do P
-        _model,_V,_z = P
-        ∂T -> $f(_model,_V,∂T,_z)
-    end
+        WithContext(FixedEoSEval{:T}($f,(model,V,z)),∂Tag{$tag}())
     end |> esc
 end
 
 macro deferred_VT(f,tag)
     quote
-        SDiffFunction((model,z),∂Tag{$tag}()) do P
-            _model,_z = P
-            ∂VT -> $f(_model,∂VT[1],∂VT[2],_z)
-        end
+        WithContext(FixedEoSEval{:VT}($f,(model,z)),∂Tag{$tag}())
     end |> esc
 end
 
-macro deferred_VT2(f,tag)
-    quote
-        SDiffFunction((model,z),∂Tag{$tag}()) do P
-            _model,_z = P
-            (∂V,∂T) -> $f(_model,∂V,∂T,_z)
-        end
-    end |> esc
-end
 
 """
     ∂f∂T(model,V,T,z=SA[1.0])
@@ -84,7 +106,7 @@ grad_f = [∂f/∂V; ∂f/∂T]
 Where `V` is the total volume, `T` is the temperature and `f` is the total Helmholtz energy.
 """
 function ∂f(model,V,T,z)
-    f = @deferred_VT2(eos,∂f)
+    f = @deferred_VT(eos,∂f)
     _f,_df = Solvers.fgradf2(f,V,T)
     return _df,_f
 end
@@ -107,7 +129,7 @@ function f∂fdT(model,V,T,z::AbstractVector)
 end
 
 function ∂f_res(model,V,T,z)
-    f = @deferred_VT2(eos_res,∂f_res)
+    f = @deferred_VT(eos_res,∂f_res)
     _f,_df = Solvers.fgradf2(f,V,T)
     return _df,_f
 end
@@ -168,7 +190,7 @@ hess_f = [ ∂²f/∂V²; ∂²f/∂V∂T
 Where `V` is the total volume, `T` is the temperature and `f` is the total Helmholtz energy.
 """
 function ∂2f(model,V,T,z)
-    f = @deferred_VT2(eos,∂2f)
+    f = @deferred_VT(eos,∂2f)
     _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
@@ -196,7 +218,7 @@ hess_p = [ ∂²p/∂V²; ∂²p/∂V∂T
 Where `V` is the total volume, `T` is the temperature and `p` is the pressure.
 """
 function ∂2p(model,V,T,z)
-    f = @deferred_VT2(pressure,∂2p)
+    f = @deferred_VT(pressure,∂2p)
     _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
@@ -269,12 +291,12 @@ _primalval(model::EoSModel,::T) where T = model
 """
     __gradients_for_root_finders(x::AbstractVector{T},tups::Tuple,tups_primal::Tuple,f::Function) where T<:Real
 
-Computes the gradients of `x` with respect to the relevant parameters in `tups` under the condition that `x` is implicitly defined through the root finding problem `f(x,tups) = 0`. 
-The function uses the implicit function theorem to compute the gradients efficiently through the reconstruction of Duals. We use the IFTDuals.jl package for this purpose, which has some restrictions, currently mixed nested Duals (i.e. different tags) are not supported. 
+Computes the gradients of `x` with respect to the relevant parameters in `tups` under the condition that `x` is implicitly defined through the root finding problem `f(x,tups) = 0`.
+The function uses the implicit function theorem to compute the gradients efficiently through the reconstruction of Duals. We use the IFTDuals.jl package for this purpose, which has some restrictions, currently mixed nested Duals (i.e. different tags) are not supported.
 """
 function __gradients_for_root_finders(x::Union{AbstractArray{T},T},tups,tups_primal,f::Function) where T<:Real # tups not restructed to Tuple
     if any(isnan,x) # guard against NaN in input, do not need Dual types here?
-        return x 
+        return x
     end
     return ift(x,f,tups,tups_primal) # use IFTDuals package, returns primal if tups has no duals
 end

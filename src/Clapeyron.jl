@@ -27,7 +27,7 @@ include("utils/misc.jl")
 include("../lib/StaticForwardDiffTags/src/StaticForwardDiffTags.jl")
 
 import .StaticForwardDiffTags
-using .StaticForwardDiffTags: SDiffFunction
+using .StaticForwardDiffTags: WithContext
 import .StaticForwardDiffTags: ∂Tag, STag
 
 include("../lib/StaticForwardDiffTags/ext/StaticForwardDiffTagsStaticArraysExt.jl")

@@ -2,7 +2,7 @@ module StaticForwardDiffTagsStaticArraysExt
 
 using StaticArrays
 using ForwardDiff
-using Clapeyron.StaticForwardDiffTags: maketagtype, SDiffFunction
+using Clapeyron.StaticForwardDiffTags: maketagtype, WithContext
 
 const ForwardDiffStatic = Base.get_extension(ForwardDiff,:ForwardDiffStaticArraysExt)
 
@@ -21,23 +21,23 @@ const extract_jacobian = ForwardDiffStatic.extract_jacobian
 
 
 # Gradient
-@inline function ForwardDiff.vector_mode_gradient(f::F, x::StaticArray) where {F <: SDiffFunction}
+@inline function ForwardDiff.vector_mode_gradient(f::F, x::StaticArray) where {F <: WithContext}
     T = maketagtype(f, eltype(x))
     return extract_gradient(T, f(dualize(T, x)), x)
 end
 
-@inline function ForwardDiff.vector_mode_gradient!(result, f::F, x::StaticArray) where {F <: SDiffFunction}
+@inline function ForwardDiff.vector_mode_gradient!(result, f::F, x::StaticArray) where {F <: WithContext}
     T = maketagtype(f, eltype(x))
     return extract_gradient!(T, result, f(dualize(T, x)))
 end
 
 # Jacobian
-@inline function ForwardDiff.vector_mode_jacobian(f::F, x::StaticArray) where {F <: SDiffFunction}
+@inline function ForwardDiff.vector_mode_jacobian(f::F, x::StaticArray) where {F <: WithContext}
     T = maketagtype(f, eltype(x))
     return extract_jacobian(T, f(dualize(T, x)), x)
 end
 
-@inline function ForwardDiff.vector_mode_jacobian!(result, f::F, x::StaticArray) where {F <: SDiffFunction}
+@inline function ForwardDiff.vector_mode_jacobian!(result, f::F, x::StaticArray) where {F <: WithContext}
     T = maketagtype(f, eltype(x))
     ydual = f(dualize(T, x))
     result = extract_jacobian!(T, result, ydual, length(x))
@@ -45,7 +45,7 @@ end
     return result
 end
 
-@inline function ForwardDiff.vector_mode_jacobian!(result::ImmutableDiffResult, f::F, x::StaticArray) where {F <: SDiffFunction}
+@inline function ForwardDiff.vector_mode_jacobian!(result::ImmutableDiffResult, f::F, x::StaticArray) where {F <: WithContext}
     T = maketagtype(f, eltype(x))
     ydual = f(dualize(T, x))
     result = DiffResults.jacobian!(result, extract_jacobian(T, ydual, x))
@@ -54,7 +54,7 @@ end
 end
 
 # Hessian
-function ForwardDiff.hessian!(result::ImmutableDiffResult, f::F, x::StaticArray) where {F <: SDiffFunction}
+function ForwardDiff.hessian!(result::ImmutableDiffResult, f::F, x::StaticArray) where {F <: WithContext}
     T = maketagtype(f, eltype(x))
     d1 = dualize(T, x)
     d2 = dualize(T, d1)

@@ -91,42 +91,29 @@ ForwardDiff.checktag(::Type{STag{F,V}}, f::F, x::AbstractArray{V}) where {F,V} =
 # no easy way to check Jacobian tag used with Hessians as multiple functions may be used
 ForwardDiff.checktag(::Type{STag{FT,VT}}, f::F, x::AbstractArray{V}) where {FT<:Tuple,VT,F,V} = true
 
-"""
-    SDiffFunction{F,P}
 
-A deferred evaluation system to skip the Closure perturbation confusion problem in ForwardDiff.jl.
-"""
-struct SDiffFunction{T,V,F,P}
-    f::F
-    p::P
+
+struct WithContext{T,V,F}
+    obj::F
 end
 
-SDiffFunction(f::F,p::P) where {F,P} = SDiffFunction(f,p,∂Tag{F})
+@inline (context::WithContext{T,V,F})(x) where {T,V,F} = context.obj(x)
+@inline (context::WithContext{T,V,F})(x,y) where {T,V,F} = context.obj(x,y)
 
-SDiffFunction(f::F,p::V,::T) where {F,V <: Number,T} = SDiffFunction{T,V,F,V}(f,p)
-SDiffFunction(f::F,p::AbstractArray{V},::T) where {F,V <: Number,T} = SDiffFunction{T,V,F,typeof(p)}(f,p)
+WithContext(f::F) where {F} = WithContext{∂Tag{inner_function(f)},deferred_valtype(f),F}(f)
+WithContext(f::F,ftag::TT) where {F,TT} = WithContext{TT,deferred_valtype(f),F}(f)
 
-function SDiffFunction(f::F,p::Tup,::T) where {F,Tup<:Tuple,T}
-    V = Base.promote_eltype(p...)
-    return SDiffFunction{T,V,F,Tup}(f,p)
-end
-
-(∂::SDiffFunction{F,P})(x) where {F,P} = ∂.f(∂.p)(x)
-(∂::SDiffFunction{F,P})(x,y) where {F,P} = ∂.f(∂.p)(x,y)
-
-#pure function api
-(∂::SDiffFunction{F,Nothing})(x,y) where {F} = ∂.f(x,y)
-(∂::SDiffFunction{F,Nothing})(x) where {F} = ∂.f(x)
-
-@inline function STag(f::SDiffFunction{T,V1,F,P},::Type{V2}) where {T,V1,F,P,V2}
+@inline function STag(f::WithContext{T,V1,F},::Type{V2}) where {T,V1,F,V2}
     return STag(T,deferred_valtype(V1,V2))
 end
 
-@inline function STag(::Type{SDiffFunction{T,V1,F,P}},::Type{V2}) where {T,V1,F,P,V2}
+@inline function STag(::Type{WithContext{T,V1,F}},::Type{V2}) where {T,V1,F,V2}
     return STag(T,deferred_valtype(V1,V2))
 end
 
 @inline deferred_valtype(::Type{V1},::Type{V2}) where {V1,V2} = promote_type(V1,V2)
+@inline deferred_valtype(::Type{WithContext{T,V}}) where {T,V} = V
+@inline deferred_valtype(f::WithContext{T,V}) where {T,V} = V
 
 """
     maketag(f,v)
@@ -136,11 +123,12 @@ returns a ForwardDiff-Compatible tag type. For generic functions it dispatches t
 """
 maketag(f::F,v::V) where {F,V} = Tag(f,V)
 maketag(f::F,::Type{V}) where {F,V} = Tag(f,V)
-maketag(f::F,v::V) where {F<:SDiffFunction,V} = STag(f,V)
-maketag(f::F,v::Type{V}) where {F<:SDiffFunction,V} = STag(f,V)
+maketag(f::F,v::V) where {F<:WithContext,V} = STag(f,V)
+maketag(f::F,v::Type{V}) where {F<:WithContext,V} = STag(f,V)
 
 @inline maketagtype(f::F,v::V) where {F,V} = typeof(maketag(f,v))
 
+include("with_context.jl") #WithContext utilities
 include("config.jl") #config overloads
 include("derivative.jl") #derivative overloads
 

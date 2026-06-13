@@ -440,14 +440,7 @@ end
 
 #Vector Properties
 
-struct ZVar{P,M,V,T}
-    property::P
-    model::M
-    vol::V
-    temp::T
-end
-
-(fixed::ZVar{P,M,V,T})(z::Z) where {P,M,V,T,Z} = fixed.property(fixed.model,fixed.vol,fixed.temp,z)
+ZVar(property,model,V,T) = EoSFixedEval{:z}(property,(model,V,T))
 
 function VT_molar_gradient(model::EoSModel,V,T,z::AbstractVector,property::ℜ) where {ℜ}
     fun = ZVar(property,model,V,T)

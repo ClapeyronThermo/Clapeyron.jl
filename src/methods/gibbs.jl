@@ -16,7 +16,7 @@ end
 
 function ∂𝕘(model,p,T,z)
     V = p
-    g = @deferred_VT2(eos_g,∂𝕘)
+    g = @deferred_VT(eos_g,∂𝕘)
     _g,_dg = Solvers.fgradf2(g,p,T)
     return _dg,_g
 end
@@ -56,7 +56,7 @@ end
 
 function ∂2𝕘(model,p,T,z)
     V = p
-    g = @deferred_VT2(eos_g,∂2𝕘)
+    g = @deferred_VT(eos_g,∂2𝕘)
     _g,_∂g,_∂2g = Solvers.∂2(g,p,T)
     return SVector(_g,_∂g[1],_∂g[2],_∂2g[1,1],_∂2g[2,2],_∂2g[1,2])
 end
