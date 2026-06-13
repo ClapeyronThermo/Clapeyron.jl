@@ -48,7 +48,7 @@ function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
   ps,mus = equilibria_scale(model,z)
   edge,valid0 = try_2ph_edge_pressure(model,model,T,V0[1],V0[2],ps,mus,z,nothing)
   p_eq,v1,v2 = edge
-  valid && return edge,fail,:success 
+  valid0 && return edge,fail,:success 
   !crit_retry && return fail,fail,:failure
   #fail when calculating edge pressure, this happens near the (mechanical) critical point
   Tr = T/T_scale(model,z)

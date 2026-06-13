@@ -13,7 +13,7 @@ deferred_valtype(x::T) where T <: Number = T
 deferred_valtype(x::AbstractArray{T}) where T <: Number = T
 deferred_valtype(::Type{T}) where T <: Number = T
 deferred_valtype(::Type{AbstractArray{T}}) where T <: Number = T
-
+deferred_valtype(x) = Bool
 #inner_function
 
 inner_function(f) = f
@@ -32,25 +32,29 @@ function auto_context(f::F,tag::TT = ∂Tag{inner_function(f)}(),recursive::Val{
     return WithContext{TT,V,F}(f)
 end
 
-skip_recursive_deferred_valtype(::Type{Nothing}) = true
-skip_recursive_deferred_valtype(::Type{Missing}) = true
-
-
-@generated function recursive_deferred_valtype(f::F,::Val{RECURSIVE}) where {F,RECURSIVE}
-    names = fieldnames(F)
-    types = fieldtypes(F)
+@generated function recursive_deferred_valtype(x, ::Val{RECURSE}) where {RECURSE}
+    # Build a nested promote_type(...) call entirely at specialisation time.
+    T_acc = :(Bool)   # neutral starting point
     deferred_valtype_expr = Expr(:call,:(Base.promote_type))
-    for (name,type) in zip(names,types)
-        skip_recursive_deferred_valtype(type) && continue
-        if RECURSIVE
-            if hasmethod(deferred_valtype,Tuple{type})
-                push!(deferred_valtype_expr.args,:(deferred_valtype(x.$name)))
-            else
-                push!(deferred_valtype_expr.args,:(recursive_deferred_valtype(x.$name,Val{true}())))
-            end
-        else
-            push!(deferred_valtype_expr.args,:(deferred_valtype(x.$name)))
-        end
+    names = fieldnames(x)
+    if length(names) == 0
+        return :(Bool)
     end
-    return deferred_valtype_expr
+    for (fname, ftype) in zip(fieldnames(x), fieldtypes(x))
+        field = :(getfield(x, $(QuoteNode(fname))))
+
+        ft = if ftype <: Number || ftype <: AbstractArray
+            # Scalar numbers and arrays → grab element type
+            :(eltype($field))
+        elseif RECURSE
+            # Recurse into nested structs
+            :(recursive_deferred_valtype($field, Val{$RECURSE}()))
+        else
+            # Flat mode: delegate to the user-supplied hook
+            :(deferred_valtype($field))
+        end
+        push!(deferred_valtype_expr.args,ft)
+    end
+
+    return deferred_valtype_expr   # returns a *type*, not a value
 end
