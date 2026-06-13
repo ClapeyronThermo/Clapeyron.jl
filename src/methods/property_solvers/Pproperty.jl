@@ -39,41 +39,28 @@ function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
 
   v_pmin = volume(model,pmin,T,z,phase = :v)
   v_pmax = volume(model,pmax,T,z,phase = :l)
-  f(x) = μp_equality1_p(model,exp(x[1]),exp(x[2]),T,z)
   TT = T*one(Base.promote_eltype(model,v_pmin,v_pmax,T))
   V0 = svec2(log(v_pmax),log(v_pmin),TT)
-
   _0 = zero(V0[1])
   nan = _0/_0
   fail = (nan,nan,nan)
-
   _is_positive((v_pmin,v_pmax,T)) || return fail,fail,:failure
-
-  sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var())
-  v1 = exp(sol[1])
-  v2 = exp(sol[2])
-  p_eq = pressure(model,v2,T,z)
-  edge = (p_eq,v1,v2)
-  check_valid_sat_pure(model,p_eq,v1,v2,T,z) && return edge,fail,:success
+  ps,mus = equilibria_scale(model,z)
+  edge,valid0 = try_2ph_edge_pressure(model,model,T,V0[1],V0[2],ps,mus,z,nothing)
+  p_eq,v1,v2 = edge
+  valid && return edge,fail,:success 
   !crit_retry && return fail,fail,:failure
   #fail when calculating edge pressure, this happens near the (mechanical) critical point
   Tr = T/T_scale(model,z)
   vlog = log10(v1)
   crit = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
   Tc,Pc,Vc = crit
-
   !isfinite(Tc) && return fail,fail,:failure
   Tc <= T && return fail,crit,:supercritical
-
   vlc,vvc = critical_vsat_extrapolation(model,T,Tc,Vc,z)
   V1 = SVector(promote(log(vlc),log(vvc)))
-  sol1 = Solvers.nlsolve2(f,V1,Solvers.Newton2Var())
-  v3 = exp(sol1[1])
-  v4 = exp(sol1[2])
-  p_eq2 = pressure(model,v2,T,z)
-  edge2 = (v3,v4,p_eq2)
-  check_valid_sat_pure(model,p_eq2,v3,v4,T,z) && return (edge2,crit,:success)
-
+  edge_crit,valid_crit = try_2ph_edge_pressure(model,model,T,V1[1],V1[2],ps,mus,z,nothing)
+  valid_crit && return (edge_crit,crit,:success)
   return fail,fail,:failure
 end
 

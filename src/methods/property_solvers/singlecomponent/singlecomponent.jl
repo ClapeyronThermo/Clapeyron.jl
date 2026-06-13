@@ -35,6 +35,20 @@ function a∂a∂V(model,V,T,z::AbstractVector)
     return SVector(a,∂a∂V)
 end
 
+struct Obj_μp_equality1_p{M1,M2,TT,PS,MUS,Z}
+    model1::M1
+    model2::M2
+    T::TT
+    ps::PS
+    μs::MUS
+    z::Z
+end
+
+function Obj_μp_equality1_p(model,T,z = SA[1.0])
+    ps,μs = equilibria_scale(model,z)
+    return Obj_μp_equality1_p(model1,model2,T,ps,μs,z)
+end
+
 function μp_equality1_p(model1,model2,v1,v2,T,ps,μs,z = SA[1.0])
     RT = Rgas(model1)*T
     A1,Av1 = a∂a∂V(model1,v1,T,z)
@@ -68,23 +82,18 @@ function μp_equality1_T(model,v1,v2,p,T,z = SA[1.0])
     μp_equality1_T(model,model,v1,v2,p,T,ps,μs,z)
 end
 
-function try_2ph_pure_pressure(model,T,v10,v20,ps,mus,method)
-    return try_2ph_pure_pressure(model,model,T,v10,v20,ps,mus,method)
-end
-
-function try_2ph_pure_pressure(model1,model2,T,v10,v20,ps,mus,method)
-    f(x) = μp_equality1_p(model1,model2,exp(x[1]),exp(x[2]),T,ps,mus)
+function try_2ph_edge_pressure(model1,model2,T,v10,v20,ps,mus,z,method)
+    f(x) = μp_equality1_p(model1,model2,exp(x[1]),exp(x[2]),T,ps,mus,z)
     TT = T*oneunit(eltype(model1))*oneunit(eltype(model2))
     V0 = svec2(log(v10),log(v20),TT)
-
     if !_is_positive((v10,v20,T))
         _0 = zero(V0[1])
         nan = _0/_0
         fail = (nan,nan,nan)
         return fail,false
     end
-
-    sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),NEqOptions(method))
+    neq_options = method === nothing ? NEqOptions() : NEqOptions(method)
+    sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),neq_options)
     v1 = exp(sol[1])
     v2 = exp(sol[2])
     p_eq = pressure(model2,v2,T)
@@ -92,7 +101,6 @@ function try_2ph_pure_pressure(model1,model2,T,v10,v20,ps,mus,method)
     valid = check_valid_eq2(model1,model2,p_eq,v1,v2,T)
     return res,valid
 end
-
 
 function try_2ph_pure_temperature(model1,model2,p,T0,v10,v20,ps,mus,method)
     f(x) = μp_equality1_T(model1,model2,exp(x[2]),exp(x[3]),p,x[1],ps,mus)

@@ -1,9 +1,3 @@
-function obj_melting_pressure(model::CompositeModel,T,vs,vl,ps,μs)
-    solid = solid_model(model)
-    fluid = fluid_model(model)
-    return μp_equality1_p(solid,fluid,vs,vl,T,ps,μs)
-end
-
 struct ChemPotMeltingPressure{V} <: ThermodynamicMethod
     v0::V
     check_triple::Bool
@@ -70,7 +64,7 @@ function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPre
     fluid = fluid_model(model)
     solid = solid_model(model)
     ps,μs = equilibria_scale(fluid)
-    result,converged = try_2ph_pure_pressure(solid,fluid,T,vs0,vl0,ps,μs,method)
+    result,converged = try_2ph_edge_pressure(solid,fluid,T,vs0,vl0,ps,μs,SA[1.0],method)
     if converged
         return result
     else
