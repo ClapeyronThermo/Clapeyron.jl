@@ -412,8 +412,7 @@ end
 
 function VT_lnf_pure(model,V,T)
     RT = Rgas(model)*T
-    f(dV) = eos_res(model,dV,T,SA[1.0])
-    F,dFdV = Solvers.f∂f(f,V)
+    F,dFdV = f∂fdV_res(model,V,T,SA[1.0])
     p_res = -dFdV
     μ_res = eos_res(model,V,T,SA[1.0]) + p_res*V
     Zp = V/RT

@@ -122,6 +122,12 @@ function f∂fdV(model,V,T,z::AbstractVector)
     return SVector(A,∂A∂V)
 end
 
+function f∂fdV_res(model,V,T,z::AbstractVector)
+    f = @deferred_V(eos_res,f∂fdV_res)
+    Ar,∂Ar∂V = Solvers.f∂f(f,V)
+    return SVector(Ar,∂Ar∂V)
+end
+
 function f∂fdT(model,V,T,z::AbstractVector)
     f = @deferred_T(eos,f∂fdT)
     A,∂A∂T = Solvers.f∂f(f,T)
