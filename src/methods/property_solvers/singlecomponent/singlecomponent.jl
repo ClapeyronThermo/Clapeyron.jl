@@ -29,12 +29,16 @@ function check_valid_eq2(model1,model2,p,V1,V2,T,z = SA[1.0],ε0 = 5e7)
             _is_positive((p1,p2,V2,V2,T,p)) #positive and finite pressures and volumes
 end
 
+function a∂a∂V(model,V,T,z::AbstractVector)
+    f = @deferred_V(a_res,a∂a∂V)
+    a,∂a∂V = Solvers.f∂f(f,V)
+    return SVector(a,∂a∂V)
+end
+
 function μp_equality1_p(model1,model2,v1,v2,T,ps,μs,z = SA[1.0])
     RT = Rgas(model1)*T
-    f1(V) = a_res(model1,V,T,z)
-    f2(V) = a_res(model2,V,T,z)
-    A1,Av1 = Solvers.f∂f(f1,v1)
-    A2,Av2 =Solvers.f∂f(f2,v2)
+    A1,Av1 = a∂a∂V(model1,V,T,z)
+    A2,Av2 = a∂a∂V(model2,V,T,z)
     p1,p2 = RT*(-Av1 + 1/v1),RT*(-Av2 + 1/v2)
     Δμᵣ = A1 - v1*Av1 - A2 + v2*Av2 + log(v2/v1)
     Fμ = Δμᵣ
@@ -49,10 +53,8 @@ end
 
 function μp_equality1_T(model1,model2,v1,v2,p,T,ps,μs,z = SA[1.0])
     RT = Rgas(model1)*T
-    f1(V) = a_res(model1,V,T,z)
-    f2(V) = a_res(model2,V,T,z)
-    A1,Av1 = Solvers.f∂f(f1,v1)
-    A2,Av2 =Solvers.f∂f(f2,v2)
+    A1,Av1 = a∂a∂V(model1,V,T,z)
+    A2,Av2 = a∂a∂V(model2,V,T,z)
     p1,p2 = RT*(-Av1 + 1/v1),RT*(-Av2 + 1/v2)
     Δμᵣ = A1 - v1*Av1 - A2 + v2*Av2 + log(v2/v1)
     Fμ = Δμᵣ

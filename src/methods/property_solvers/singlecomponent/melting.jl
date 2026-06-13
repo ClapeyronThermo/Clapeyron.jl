@@ -116,12 +116,10 @@ function solve_2ph_gibbs(model,p,T)
     return vs, vl, p
 end
 
-function Obj_Mel_Temp(model::EoSModel, F, T, V_s, V_l,p,p̄,T̄)
+function Obj_Mel_Temp(model::EoSModel, F, T, V_s, V_l, p, p̄, T̄)
     z = SA[1.0]
-    eos_solid(V) = eos(model.solid,V,T,z)
-    eos_fluid(V) = eos(model.fluid,V,T,z)
-    A_l,Av_l = Solvers.f∂f(eos_fluid,V_l)
-    A_s,Av_s =Solvers.f∂f(eos_solid,V_s)
+    A_l,Av_l = f∂fdV(model.fluid,V_l,T,z)
+    A_s,Av_s = f∂fdV(model.solid,V_s,T,z)
     g_l = muladd(-V_l,Av_l,A_l)
     g_s = muladd(-V_s,Av_s,A_s)
     F1 = -(Av_l+p)/p̄
