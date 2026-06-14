@@ -412,7 +412,7 @@ function spinodal_maximum(model::EoSModel,z;v0=nothing)
 end
 
 function obj_spinodal_maximum(model,V,T,z)
-    f(V) = det_∂²A∂ϱᵢ²(model,V,T,z)
+    f = @deferred_V(det_∂²A∂ϱᵢ²,obj_spinodal_maximum)
     fv,dfv = Solvers.f∂f(f,V)
     return SVector(fv,dfv)
 end

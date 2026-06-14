@@ -109,7 +109,7 @@ function ∂2(f::F,x1::R1,x2::R2,tag = f) where{F,R1<:Real,R2<:Real}
     return ∂2(f,y1,y2,tag)
 end
 
-#Manual implementation of an hyperdual.
+#Manual implementation of an hyperdual of a 1-variable function
 @inline function ∂2(f::F,x1::R,x2::R,tag = f) where {F,R<:Real}
     T = maketagtype(tag,R)
     _1 = oneunit(R)
@@ -182,24 +182,6 @@ function FJ_ad(f::F,x::X,tag = f) where {F,X}
     Jx = DiffResults.jacobian(result)
     return Fx,Jx
 end
-
-
-@inline function ∂J2(f::F,x1::R,x2::R,tag = f) where {F,R<:Real}
-    T = maketagtype(tag,R)
-    _1 = one(R)
-    _0 = zero(R)
-    dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
-    dual2 = ForwardDiff.Dual{T,R,2}(x2, ForwardDiff.Partials((_0,_1)))  
-    _f,_df = fgradf2(f,dual1,dual2)
-    fx = ForwardDiff.value(_f)
-    df1,df2 = _df[1],_df[2]
-    df = SVector(df1.value , df2.value)
-    d2fdx2, d2fdxdy = df1.partials.values
-          _, d2fdy2 = df2.partials.values
-    d2f = SMatrix{2}(d2fdx2,d2fdxdy,d2fdxdy,d2fdy2)
-    return (fx,df,d2f)
-end
-
 
 #trying to fix ForwardDiff$720
 
