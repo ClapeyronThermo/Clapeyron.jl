@@ -80,6 +80,7 @@ function μp_equality1_T2(model,p,z,x,Ts)
     FT = (T1 - T2)/Ts
     return SVector(Fμ,Fp1,Fp2,FT)
 end
+
 struct μequality1_obj{TYPE,M1,M2,TT,PS,MUS,Z}
     type::Val{TYPE}
     model1::M1
@@ -89,7 +90,6 @@ struct μequality1_obj{TYPE,M1,M2,TT,PS,MUS,Z}
     μs::MUS
     z::Z
 end
-
 
 function edge_pressure_objective(model1,model2,T,ps,μs,z = SA[1.0])
     return μequality1_obj(Val(:Psat),model1,model2,T,ps,μs,z)
@@ -145,7 +145,7 @@ function try_2ph_edge_pressure(model1,model2,T,v10,v20,ps,μs,z,method)
 end
 
 function try_2ph_pure_temperature(model1,model2,p,T0,v10,v20,ps,μs,method)
-    f = WithContext(edge_temperature_objective(model1,model2,p,ps,μs,z),∂Tag{∂₁f}())
+    f = WithContext(edge_temperature_objective(model1,model2,p,ps,μs,SA[1.0]),∂Tag{∂₁f}())
     pp = p*oneunit(eltype(model1))*oneunit(eltype(model2))
     V0 = svec3(T0,log(v10),log(v20),pp)
 
