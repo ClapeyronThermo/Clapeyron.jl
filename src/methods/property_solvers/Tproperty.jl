@@ -53,7 +53,7 @@ function _edge_temperature(model,p,z,v0 = nothing)
     n = sum(z)
     v_Tmin = volume(model,p,Tmin,z,phase = :l)
     v_Tmax = volume(model,p,Tmax,z,phase = :v)
-    _Ts = 0.5*(T1 + T2)
+    _Ts = 0.5*(_T1 + _T2)
     pp,v10,v20,T10,T20,Ts,_0 = promote(p,v_Tmin,v_Tmax,Tmin,Tmax,_Ts,0.0)
     nan = _0/_0
     fail = (nan,nan,nan)

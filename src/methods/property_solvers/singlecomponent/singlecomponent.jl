@@ -71,8 +71,8 @@ function μp_equality1_T2(model,p,z,x,Ts)
     n = sum(z)
     v1,v2 = exp(lnv1),exp(lnv2)
     RT1,RT2 = n*Rgas(model)*T1,n*Rgas(model)*T2
-    A1,Av1 = a∂a∂V(model,V1,T1,z)
-    A2,Av2 = a∂a∂V(model,V2,T2,z)
+    A1,Av1 = a∂a∂V(model,v1,T1,z)
+    A2,Av2 = a∂a∂V(model,v2,T2,z)
     p1,p2 = RT1*(-Av1 + 1/v1),RT2*(-Av2 + 1/v2)
     Δμᵣ = A1 - v1*Av1 - A2 + v2*Av2 + log(v2/v1)
     Fμ = Δμᵣ
@@ -117,7 +117,7 @@ function (obj::μequality1_obj{:Tsat})(x)
 end
 
 function (obj::μequality1_obj{:Tsat2})(x)
-    return μp_equality1_T2(obj.model,obj.X,obj.z,x,obj.μs)
+    return μp_equality1_T2(obj.model1,obj.X,obj.z,x,obj.μs)
 end
 
 StaticForwardDiffTags.inner_function(f::μequality1_obj{:Psat}) = μp_equality1_p
