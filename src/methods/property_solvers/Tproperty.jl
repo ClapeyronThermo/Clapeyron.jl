@@ -49,7 +49,7 @@ function _edge_temperature(model,p,z,v0 = nothing)
     end
     _T1 = vv0[1]
     _T2 = vv0[2]
-    Tmin,Tmax = minmax(T1,T2)
+    Tmin,Tmax = minmax(_T1,_T2)
     n = sum(z)
     v_Tmin = volume(model,p,Tmin,z,phase = :l)
     v_Tmax = volume(model,p,Tmax,z,phase = :v)
