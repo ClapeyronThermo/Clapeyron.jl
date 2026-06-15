@@ -68,7 +68,7 @@ function Ψ_grad_and_hessian!(result,model,T,ρᵢ)
 end
 
 
-__Psi_res(model,x,T,ρᵢ) = Psi_res(model,T,ρ)
+__Psi_res(model,x,T,ρᵢ) = Psi_res(model,T,ρᵢ)
 
 function Ψ_hessian_res(model,T,ρᵢ)
     z = ρᵢ

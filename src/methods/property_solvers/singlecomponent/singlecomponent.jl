@@ -20,13 +20,14 @@ _is_positive(x::Number) = isfinite(x) && x > zero(x)
 _is_positive(x::Tuple) = all(_is_positive,x)
 
 function check_valid_eq2(model1,model2,p,V1,V2,T,z = SA[1.0],ε0 = 5e7)
+    !_is_positive((V2,V2,T,p)) && return false
     ε = abs(V1-V2)/(eps(typeof(V1-V2)))
     ε <= ε0 && return false
     p1,dpdv1 = _p∂p∂V(model1,V1,T,z,p)
     p2,dpdv2 = _p∂p∂V(model2,V2,T,z,p)
     return  (dpdv1 <= 0)                    && #mechanical stability of phase 1
             (dpdv2 <= 0)                    && #mechanical stability of phase 2
-            _is_positive((p1,p2,V2,V2,T,p)) #positive and finite pressures and volumes
+            _is_positive((p1,p2)) #positive and finite pressures and volumes
 end
 
 function a∂a∂V(model,V,T,z::AbstractVector)
@@ -134,6 +135,7 @@ function try_2ph_edge_pressure(model1,model2,T,v10,v20,ps,μs,z,method)
         fail = (nan,nan,nan)
         return fail,false
     end
+
     neq_options = method === nothing ? NEqOptions() : NEqOptions(method)
     sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),neq_options)
     v1 = exp(sol[1])
@@ -155,15 +157,8 @@ function try_2ph_pure_temperature(model1,model2,p,T0,v10,v20,ps,μs,method)
         fail = (nan,nan,nan)
         return fail,false
     end
-
-    if !isfinite(V0[2]) | !isfinite(V0[2]) | !isfinite(p) | (p < zero(p)) | (T0 < zero(T0))
-        _0 = zero(V0[1])
-        nan = _0/_0
-        fail = (nan,nan,nan)
-        return fail,false
-    end
-
-    sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),NEqOptions(method))
+    neq_options = method === nothing ? NEqOptions() : NEqOptions(method)
+    sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),neq_options)
     T_eq = sol[1]
     v1 = exp(sol[2])
     v2 = exp(sol[3])
