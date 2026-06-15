@@ -74,6 +74,7 @@ function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
             return out
         end
     else
+        V = p
         fun = @deferred_Z(ng_E_reduced,∂₁f)
         if cache isa Tuple
             result,aux,lnγ,∂lnγ∂n,∂lnγ∂T,_,_,hconfig = cache
