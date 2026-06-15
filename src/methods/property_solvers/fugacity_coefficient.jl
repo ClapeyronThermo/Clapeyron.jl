@@ -233,8 +233,10 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
     return ∂lnϕ∂P,vol
 end
 
-function dardT(model,v,T,z)
-    f(_T) = eos_res(model,v,_T,z)/(Rgas(model)*_T)
+na_res(model,V,T,z) = sum(z)*a_res(model,V,T,z)
+
+function dardT(model,V,T,z)
+    f = @deferred_T(na_res,∂₁f)
     return Solvers.derivative(f,T)
 end
 

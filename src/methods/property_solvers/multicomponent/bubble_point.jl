@@ -197,10 +197,8 @@ function __dlnPdTinvsat(pure,sat,crit,xx,is_sat_temperature,status)
     elseif status === :supercritical
         Tc,Pc,Vc = crit
         if has_a_res(pure)
-            _p(_T) = pressure(pure,Vc,_T)
-            dpdT = Solvers.derivative(_p,Tc)
+            dpdT = ∂p∂T(model,Vc,Tc,SA[1.0])
         else
-            f(_T) = first(saturation_pressure(model,_T))
             dpdT = dpdT_saturation(pure,NaN,NaN,T)
         end
         return -dpdT*Tc*Tc/Pc,log(Pc),1/Tc
