@@ -197,7 +197,7 @@ function __dlnPdTinvsat(pure,sat,crit,xx,is_sat_temperature,status)
     elseif status === :supercritical
         Tc,Pc,Vc = crit
         if has_a_res(pure)
-            dpdT = ∂p∂T(model,Vc,Tc,SA[1.0])
+            dpdT = ∂p∂T(pure,Vc,Tc,SA[1.0])
         else
             dpdT = dpdT_saturation(pure,NaN,NaN,T)
         end

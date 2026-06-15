@@ -4,8 +4,6 @@
 #differentiation logic from the property logic allows the differentials
 #to be compiled only once
 
-
-
 struct ∂₁f end
 
 """
