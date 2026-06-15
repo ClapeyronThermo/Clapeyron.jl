@@ -140,7 +140,7 @@ function try_2ph_edge_pressure(model1,model2,T,v10,v20,ps,μs,z,method)
     sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),neq_options)
     v1 = exp(sol[1])
     v2 = exp(sol[2])
-    p_eq = pressure(model2,v2,T)
+    p_eq = pressure(model2,v2,T,z)
     res = (p_eq,v1,v2)
     valid = check_valid_eq2(model1,model2,p_eq,v1,v2,T,z)
     return res,valid
