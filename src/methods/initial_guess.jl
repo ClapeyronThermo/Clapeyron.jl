@@ -775,8 +775,7 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     elseif Tr > 1
         return nan,nan,nan
     elseif 0.99 < Tr < 1.0
-        vl,vv = critical_vsat_extrapolation(model,T,Tc,Vc)
-        p = pressure(model,vl,T)
+        p,vl,vv = x0_sat_pure_crit_info(model,T,(Tc,Pc,Vc))
         return p,vl,vv
     end
 
@@ -797,6 +796,13 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     else
         return nan,nan,nan
     end
+end
+
+function x0_sat_pure_crit_info(model,T,crit,z = SA[1.0])
+    Tc,Pc,Vc = crit
+    vl,vv = critical_vsat_extrapolation(model,T,Tc,Vc)
+    p = pressure(model,vl,T)
+    return p,vl,vv
 end
 
 function equilibria_scale(model,z = SA[1.0])
@@ -1011,10 +1017,6 @@ function critical_vsat_extrapolation(model,T,Tc,Vc,z = SA[1.0])
         return nan,nan
     end
     ρc = 1/Vc
-    function dp(ρ,T)
-        _,dpdV = p∂p∂V(model,1/ρ,T,z)
-        return -sum(z)*dpdV*ρ*ρ
-    end
     #Solvers.derivative(dρ -> pressure(model, 1/dρ, T), ρ)
     _,d2p,d3p = ∂3p_rho(model,ρc,Tc,z)
     ∂²p∂ρ∂T = d2p[2]
