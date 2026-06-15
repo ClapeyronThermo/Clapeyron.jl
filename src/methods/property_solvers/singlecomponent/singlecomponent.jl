@@ -35,20 +35,6 @@ function a∂a∂V(model,V,T,z::AbstractVector)
     return SVector(a,∂a∂V)
 end
 
-struct Obj_μp_equality1_p{M1,M2,TT,PS,MUS,Z}
-    model1::M1
-    model2::M2
-    T::TT
-    ps::PS
-    μs::MUS
-    z::Z
-end
-
-function Obj_μp_equality1_p(model,T,z = SA[1.0])
-    ps,μs = equilibria_scale(model,z)
-    return Obj_μp_equality1_p(model1,model2,T,ps,μs,z)
-end
-
 function μp_equality1_p(model1,model2,v1,v2,T,ps,μs,z = SA[1.0])
     RT = Rgas(model1)*T
     A1,Av1 = a∂a∂V(model1,v1,T,z)
@@ -77,13 +63,69 @@ function μp_equality1_T(model1,model2,v1,v2,p,T,ps,μs,z = SA[1.0])
     return SVector(Fμ,Fp1,Fp2)
 end
 
-function μp_equality1_T(model,v1,v2,p,T,z = SA[1.0]) 
-    ps,μs = equilibria_scale(model,z)
-    μp_equality1_T(model,model,v1,v2,p,T,ps,μs,z)
+#variant used for edge_temperature with multicomponent.
+#somehow is more stable
+function μp_equality1_T2(model,p,z,x,Ts)
+    lnv1,lnv2,T1,T2 = x
+    n = sum(z)
+    v1,v2 = exp(lnv1),exp(lnv2)
+    RT1,RT2 = n*Rgas(model)*T1,n*Rgas(model)*T2
+    A1,Av1 = a∂a∂V(model,V1,T1,z)
+    A2,Av2 = a∂a∂V(model,V2,T2,z)
+    p1,p2 = RT1*(-Av1 + 1/v1),RT2*(-Av2 + 1/v2)
+    Δμᵣ = A1 - v1*Av1 - A2 + v2*Av2 + log(v2/v1)
+    Fμ = Δμᵣ
+    Fp1 = (p1 - p)/p
+    Fp2 = (p2 - p)/p
+    FT = (T1 - T2)/Ts
+    return SVector(Fμ,Fp1,Fp2,FT)
+end
+struct μequality1_obj{TYPE,M1,M2,TT,PS,MUS,Z}
+    type::Val{TYPE}
+    model1::M1
+    model2::M2
+    X::TT
+    ps::PS
+    μs::MUS
+    z::Z
 end
 
-function try_2ph_edge_pressure(model1,model2,T,v10,v20,ps,mus,z,method)
-    f(x) = μp_equality1_p(model1,model2,exp(x[1]),exp(x[2]),T,ps,mus,z)
+
+function edge_pressure_objective(model1,model2,T,ps,μs,z = SA[1.0])
+    return μequality1_obj(Val(:Psat),model1,model2,T,ps,μs,z)
+end
+
+function edge_temperature_objective(model1,model2,T,ps,μs,z = SA[1.0])
+    return μequality1_obj(Val(:Tsat),model1,model2,T,ps,μs,z)
+end
+
+function edge_temperature_objective2(model1,model2,T,ps,μs,z = SA[1.0])
+    return μequality1_obj(Val(:Tsat2),model1,model2,T,ps,μs,z)
+end
+
+function (obj::μequality1_obj{:Psat})(x)
+    lnv1,lnv2 = x
+    v1,v2 = exp(lnv1),exp(lnv2)
+    return μp_equality1_p(obj.model1,obj.model2,v1,v2,obj.X,obj.ps,obj.μs,obj.z)
+end
+
+function (obj::μequality1_obj{:Tsat})(x)
+    T,lnv1,lnv2 = x
+    v1,v2 = exp(lnv1),exp(lnv2)
+    return μp_equality1_T(obj.model1,obj.model2,v1,v2,obj.X,T,obj.ps,obj.μs,obj.z)
+end
+
+function (obj::μequality1_obj{:Tsat2})(x)
+    return μp_equality1_T2(obj.model,obj.X,obj.z,x,obj.μs)
+end
+
+StaticForwardDiffTags.inner_function(f::μequality1_obj{:Psat}) = μp_equality1_p
+StaticForwardDiffTags.inner_function(f::μequality1_obj{:Tsat}) = μp_equality1_T
+StaticForwardDiffTags.inner_function(f::μequality1_obj{:Tsat2}) = μp_equality1_T2
+StaticForwardDiffTags.deferred_valtype(f::μequality1_obj{TYPE,M1,M2,TT,PS,MUS,Z}) where {TYPE,M1,M2,TT,PS,MUS,Z} = Base.promote_eltype(f.model1,f.model2,f.X,f.ps,f.μs,f.z)
+
+function try_2ph_edge_pressure(model1,model2,T,v10,v20,ps,μs,z,method)
+    f = WithContext(edge_pressure_objective(model1,model2,T,ps,μs,z),∂Tag{∂₁f}())
     TT = T*oneunit(eltype(model1))*oneunit(eltype(model2))
     V0 = svec2(log(v10),log(v20),TT)
     if !_is_positive((v10,v20,T))
@@ -102,8 +144,8 @@ function try_2ph_edge_pressure(model1,model2,T,v10,v20,ps,mus,z,method)
     return res,valid
 end
 
-function try_2ph_pure_temperature(model1,model2,p,T0,v10,v20,ps,mus,method)
-    f(x) = μp_equality1_T(model1,model2,exp(x[2]),exp(x[3]),p,x[1],ps,mus)
+function try_2ph_pure_temperature(model1,model2,p,T0,v10,v20,ps,μs,method)
+    f = WithContext(edge_temperature_objective(model1,model2,p,ps,μs,z),∂Tag{∂₁f}())
     pp = p*oneunit(eltype(model1))*oneunit(eltype(model2))
     V0 = svec3(T0,log(v10),log(v20),pp)
 

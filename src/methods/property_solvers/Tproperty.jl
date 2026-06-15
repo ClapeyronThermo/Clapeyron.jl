@@ -9,23 +9,6 @@ function x0_edge_temperature(model,p,z,pure = split_pure_model(model))
     return (T_bubble,T_dew),dPdTsat
 end
 
-function μp_equality1_T2(model,p,z,x,Ts)
-    lnv1,lnv2,T1,T2 = x
-    n = sum(z)
-    v1,v2 = exp(lnv1),exp(lnv2)
-    RT1,RT2 = n*Rgas(model)*T1,n*Rgas(model)*T2
-    A1,Av1 = a∂a∂V(model,V1,T1,z)
-    A2,Av2 = a∂a∂V(model,V2,T2,z)
-    p1,p2 = RT1*(-Av1 + 1/v1),RT2*(-Av2 + 1/v2)
-    Δμᵣ = A1 - v1*Av1 - A2 + v2*Av2 + log(v2/v1)
-    Fμ = Δμᵣ
-    Fp1 = (p1 - p)/p
-    Fp2 = (p2 - p)/p
-    FT = (T1 - T2)/Ts
-    return SVector(Fμ,Fp1,Fp2,FT)
-end
-
-
 """
     edge_temperature(model,p,z,v0 = nothing)
 
@@ -47,7 +30,7 @@ function edge_temperature(model,p)
 end
 
 function try_2ph_edge_temperature2(model,p,z,v10::R,v20::R,T10::R,T20::R,Ts::R) where R
-    f(x) = μp_equality1_T2(model,p,z,x,Ts)
+    f = WithContext(edge_temperature_objective2(model,model,p,Ts,Ts,z),∂Tag{∂₁f}())
     V0 = SVector(log(v10),log(v20),T10,T20)
     sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var())
     v1 = exp(sol[1])

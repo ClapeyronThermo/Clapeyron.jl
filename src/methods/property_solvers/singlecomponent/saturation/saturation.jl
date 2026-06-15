@@ -175,7 +175,7 @@ function saturation_temperature_ad(result,tup,tup_primal)
     f(x,tups) = begin
         model,p = tups
         T,vl,vv = x
-        return μp_equality1_T(model,model,vl,vv,p,T,1.0,1.0)
+        return μp_equality1_T(model,model,vl,vv,p,T,1.0,1.0,SA[1.0])
     end
     λx = SVector(result)
     ∂T,∂vl,∂vv = __gradients_for_root_finders(λx,tup,tup_primal,f)
