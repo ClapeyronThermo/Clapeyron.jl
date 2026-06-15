@@ -58,7 +58,7 @@ function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
     Tc <= T && return fail,crit,:supercritical
     vlc,vvc = critical_vsat_extrapolation(model,T,Tc,Vc,z)
     edge_crit,valid_crit = try_2ph_edge_pressure(model,model,T,vlc,vvc,ps,mus,z,nothing)
-    valid_crit && return (edge_crit,crit,:success)
+    valid_crit && return edge_crit,crit,:success
     return fail,fail,:failure
 end
 

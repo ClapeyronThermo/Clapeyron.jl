@@ -443,10 +443,8 @@ end
 
 #Vector Properties
 
-ZVar(property,model,V,T) = FixedEoSEval{:z}(property,(model,V,T))
-
 function VT_molar_gradient(model::EoSModel,V,T,z::AbstractVector,property::ℜ) where {ℜ}
-    fun = ZVar(property,model,V,T)
+    fun = @deferred_Z(property,∂₁f)
     TT = gradient_type(model,T+V,z)
     return Solvers.gradient(fun,z)::TT
 end
@@ -456,7 +454,7 @@ function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F<
         fx .= NaN
         return fx
     end
-    fun = ZVar(property,model,V,T)
+    fun = @deferred_Z(property,∂₁f)
     return Solvers.gradient!(fx,fun,z)::F
 end
 

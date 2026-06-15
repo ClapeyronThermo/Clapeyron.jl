@@ -407,6 +407,12 @@ macro deferred_VT(f,tag)
     end |> esc
 end
 
+macro deferred_Z(f,tag)
+    quote
+        WithContext(FixedEoSEval{:z}($f,(model,V,T)),∂Tag{$tag}())
+    end |> esc
+end
+
 #initial guesses for most methods
 include("initial_guess.jl")
 

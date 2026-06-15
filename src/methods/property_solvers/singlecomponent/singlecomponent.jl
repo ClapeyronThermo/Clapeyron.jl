@@ -98,7 +98,7 @@ function try_2ph_edge_pressure(model1,model2,T,v10,v20,ps,mus,z,method)
     v2 = exp(sol[2])
     p_eq = pressure(model2,v2,T)
     res = (p_eq,v1,v2)
-    valid = check_valid_eq2(model1,model2,p_eq,v1,v2,T)
+    valid = check_valid_eq2(model1,model2,p_eq,v1,v2,T,z)
     return res,valid
 end
 
