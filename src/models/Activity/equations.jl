@@ -54,6 +54,7 @@ end
 K0_lle_init(::IdealLiquidSolution,p,T,z,cache = nothing;reduced = true) = throw(error("IdealLiquidSolution() does not support LLE equilibria."))
 
 function ng_E_reduced(model,p,T,z)
+    nc = length(model)
     excess_gibbs_free_energy(model,p,T,@view(z[1:nc]))/(Rgas(model)*T)
 end
 
