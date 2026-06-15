@@ -993,11 +993,6 @@ function solve_2ph_taylor(model1::EoSModel,model2::EoSModel,T,v1,v2,p_scale = 1.
     return solve_2ph_taylor(v1,v2,a1,da1,d2a1,a2,da2,d2a2,p_scale,μ_scale)
 end
 
-function ∂p∂rho(model,rho,T,z)
-    _,dpdV = p∂p∂V(model,1/ρ,T,z)
-    return -sum(z)*dpdV*ρ*ρ
-end
-
 function ∂3p_rho(model,rho,T,z)
     V = rho #just to use the macro
     f = @deferred_VT(∂p∂rho,∂3p_rho)
