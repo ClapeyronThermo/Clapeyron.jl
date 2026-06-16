@@ -129,6 +129,7 @@ function try_2ph_edge_pressure(model1,model2,T,v10,v20,ps,μs,z,method)
     f = WithContext(edge_pressure_objective(model1,model2,T,ps,μs,z),∂Tag{∂₁f}())
     TT = T*oneunit(eltype(model1))*oneunit(eltype(model2))
     V0 = svec2(log(v10),log(v20),TT)
+
     if !_is_positive((v10,v20,T))
         _0 = zero(V0[1])
         nan = _0/_0
@@ -157,6 +158,7 @@ function try_2ph_pure_temperature(model1,model2,p,T0,v10,v20,ps,μs,method)
         fail = (nan,nan,nan)
         return fail,false
     end
+
     neq_options = method === nothing ? NEqOptions() : NEqOptions(method)
     sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),neq_options)
     T_eq = sol[1]
