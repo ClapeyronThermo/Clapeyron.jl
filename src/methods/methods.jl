@@ -266,7 +266,7 @@ end =#
 Returns the preferred method for a combination of model and function, with the specified kwargs.
 
 """
-function init_preferred_method(method,model) end
+function init_preferred_method end
 
 """
     get_k(model)::VarArg{Matrix}

@@ -23,6 +23,7 @@ hexylacetate~|~n-hexylacetate~|~hexyl ethanoate,"[""CH3""=>2,""COO""=>1,""CH2""=
 heptyl acetate~|~n-heptyl acetate~|~heptyl ethanoate~|~aceticacidheptylester,"[""CH3""=>2,""COO""=>1,""CH2""=>6]"
 cyclohexane,"[""cCH2"" => 6]"
 methane,"[""CH4""=>1]"
+nitrogen,"[""N2""=>1]"
 carbon dioxide,"[""CO2""=>1]"
 methanol,"[""CH3OH""=>1]"
 ethanol,"[""CH2""=>1,""CH3""=>1,""OH""=>1]"

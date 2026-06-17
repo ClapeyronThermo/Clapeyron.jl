@@ -593,36 +593,34 @@ function z_pure!(K,i)
     K
 end
 
-function z_pereira!(w,z,ixx)
-    i,b,_ = ixx
+#=
+generator for candidate fractions, given an initial composition, method by Pereira et al. (2010).
+it generates 2*(nc - 1) candidate compositions for a given initial point.
+there are nc-1 upper candidates (where the ith component is amplified) 
+and nc-1 lower candidates (where the ith component is diminished)
+=#
+function z_pereira!(w,z,t::NTuple{3,Int})
+    i,k,_ = t
+    amplify_ith_component = k > 0
+    return z_pereira!(w,z,i,amplify_ith_component)
+end
+
+function z_pereira!(w,z,i,amplify_ith_component)
 	n = length(z)
     @assert n != i
-
-
 	lb = eps(eltype(w))*1e2
 	ub = 1.0 - lb
-
-    for j = 1:n
-        if (j == i)
-            if b > 0
-                w[j] = 0.5*z[i]
-            else
-                w[j] = z[i] + 0.5*(1.0 - z[i])
-            end
-        else
-            if b > 0
-                w[j] = (1.0 - 0.5*z[i])/(n-1)
-            else
-                w[j] = (1.0 - (z[i] + 0.5*(1.0 - z[i])))/(n-1)
-            end
-        end
-    end
-
+    zi = z[i]
+    #zi = (z[i] + 1*amplify_ith_component)/2
+    zj = (2 - zi - 1*amplify_ith_component)/(2*n - 2)
+    zii = (zi + 1*amplify_ith_component)/2
+    w .= zj
+    w[i] = zii
+    w[end] = 1 - zii - (n - 2)*zj
     w .= clamp.(w,lb,ub)
     sumw = sum(w)
     w ./= sumw
     return w
-
 end
 
 function z_norm(z,w)
