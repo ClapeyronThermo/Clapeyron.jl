@@ -6,8 +6,8 @@
 
 <p>
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logos/Clapeyron_logo_dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="docs/assets/logos/Clapeyron_logo.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/logos/Clapeyron_logo_dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/src/assets/logos/Clapeyron_logo.svg">
     <img src="docs/assets/logos/Clapeyron_logo.svg">
   </picture>
 </p>
