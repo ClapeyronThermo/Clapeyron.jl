@@ -19,6 +19,9 @@ using IFTDuals
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
 #compatibility and raw julia utilities
+
+using SciMLPublic: @public
+
 include("utils/core_utils.jl")
 
 #misc functions
