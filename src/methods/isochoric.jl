@@ -67,8 +67,13 @@ function Ψ_grad_and_hessian!(result,model,T,ρᵢ)
     return ∇Ψ, HΨ
 end
 
+
+__Psi_res(model,x,T,ρᵢ) = Psi_res(model,T,ρᵢ)
+
 function Ψ_hessian_res(model,T,ρᵢ)
-    Ψ(ρ) = Psi_res(model,T,ρ)
+    z = ρᵢ
+    V = 0.0
+    Ψ = @deferred_Z(__Psi_res,∂₂f)
     HΨ = ForwardDiff.hessian(Ψ,ρᵢ)
     return HΨ
 end

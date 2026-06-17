@@ -550,14 +550,15 @@ function pure_spinodal_newton_bracket(model,T,v,f,dp_scale,z = SA[1.0])
 end
 
 function pure_spinodal_newton(model,T,z,v0,dp_scale = v0*v0/(Rgas(model)*T))
-    function dp(vs) #dpdrho = 0
-        p(rho) = pressure(model,1/rho,T,z)
-        pj,dpj,d2pj = Solvers.f∂f∂2f(p,1/vs)
+    function dp(rhox) #dpdrho = 0
+        pj,dpj,d2pj = p∂p∂2p_rho(model,rhox,T,z)
         return dpj/dp_scale,dpj/d2pj
     end
-
-    prob = Roots.ZeroProblem(dp,1/v0)
-    v = Roots.solve(prob,Roots.Newton())
+    n = sum(z)
+    rho0 = n/v0
+    prob = Roots.ZeroProblem(dp,rho0)
+    rho_sol = Roots.solve(prob,Roots.Newton())
+    vsol = n/rho_sol
 end
 
 function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
@@ -729,7 +730,6 @@ end
 function volume_from_spinodal(p,poly,vshift,v0)
     f(v) = p - evalpoly(v,poly)
 
-
     if length(v0) == 2
         v1,v2 = v0
         f1,f2 = f(v1),f(v2)
@@ -775,8 +775,7 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     elseif Tr > 1
         return nan,nan,nan
     elseif 0.99 < Tr < 1.0
-        vl,vv = critical_vsat_extrapolation(model,T,Tc,Vc)
-        p = pressure(model,vl,T)
+        p,vl,vv = x0_sat_pure_crit_info(model,T,(Tc,Pc,Vc))
         return p,vl,vv
     end
 
@@ -797,6 +796,13 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     else
         return nan,nan,nan
     end
+end
+
+function x0_sat_pure_crit_info(model,T,crit,z = SA[1.0])
+    Tc,Pc,Vc = crit
+    vl,vv = critical_vsat_extrapolation(model,T,Tc,Vc)
+    p = pressure(model,vl,T)
+    return p,vl,vv
 end
 
 function equilibria_scale(model,z = SA[1.0])
@@ -987,6 +993,12 @@ function solve_2ph_taylor(model1::EoSModel,model2::EoSModel,T,v1,v2,p_scale = 1.
     return solve_2ph_taylor(v1,v2,a1,da1,d2a1,a2,da2,d2a2,p_scale,μ_scale)
 end
 
+function ∂3p_rho(model,rho,T,z)
+    V = rho #just to use the macro
+    f = @deferred_VT(∂p∂rho,∂3p_rho)
+    return Solvers.∂2(f,rho,T)
+end
+
 """
     critical_vsat_extrapolation(model,T,Tc,Vc)
     critical_vsat_extrapolation(model,T,crit = crit_pure(model))
@@ -1000,12 +1012,8 @@ function critical_vsat_extrapolation(model,T,Tc,Vc,z = SA[1.0])
         return nan,nan
     end
     ρc = 1/Vc
-    function dp(ρ,T)
-        _,dpdV = p∂p∂V(model,1/ρ,T,z)
-        return -sum(z)*dpdV*ρ*ρ
-    end
     #Solvers.derivative(dρ -> pressure(model, 1/dρ, T), ρ)
-    _,d2p,d3p = Solvers.∂J2(dp,ρc,Tc)
+    _,d2p,d3p = ∂3p_rho(model,ρc,Tc,z)
     ∂²p∂ρ∂T = d2p[2]
     ∂³p∂ρ³ = d3p[1,1]
     Bp = sqrt(6 * Tc * ∂²p∂ρ∂T / ∂³p∂ρ³)
@@ -1030,8 +1038,7 @@ Given critical information and a temperature, extrapolate the saturation pressur
     This function will not check if the input temperature is over the critical point.
 """
 function critical_psat_extrapolation(model,T,Tc,Pc,Vc)
-    _p(_T) = pressure(model,Vc,_T)
-    dpdT = Solvers.derivative(_p,Tc)
+    dpdT = ∂p∂T(model,Vc,Tc,SA[1.0])
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = (1/T - 1/Tc)/dTinvdlnp
     p = exp(Δlnp)*Pc
@@ -1054,8 +1061,7 @@ Given critical information and a pressure, extrapolate the saturation temperatur
 
 """
 function critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z = SA[1.0])
-    _p(_T) = pressure(model,Vc,_T,z)
-    dpdT = Solvers.derivative(_p,Tc)
+    dpdT = ∂p∂T(model,Vc,Tc,z)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = log(p/Pc)
     Tinv = 1/Tc + dTinvdlnp*Δlnp

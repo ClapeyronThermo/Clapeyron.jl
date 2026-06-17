@@ -1,9 +1,9 @@
 function x0_edge_pressure(model,T,z,pure = split_pure_model(model))
-  sat = extended_saturation_pressure.(pure,T)
-  n = sum(z)
-  p_bubble = sum(z[i]*first(sat[i]) for i in 1:length(model))/n
-  p_dew = n/sum(z[i]/first(sat[i]) for i in 1:length(model))
-  return (p_bubble,p_dew),sat
+    sat = extended_saturation_pressure.(pure,T)
+    n = sum(z)
+    p_bubble = sum(z[i]*first(sat[i]) for i in 1:length(model))/n
+    p_dew = n/sum(z[i]/first(sat[i]) for i in 1:length(model))
+    return (p_bubble,p_dew),sat
 end
 
 """
@@ -17,78 +17,63 @@ Returns a tuple, containing:
 - Vapour volume at edge Point `[m³]`
 """
 function edge_pressure(model,T,z,v0 = nothing;crit_retry = true)
-  edge,crit,status = _edge_pressure(model,T,z,v0,crit_retry)
-  return edge
+    edge,crit,status = _edge_pressure(model,T,z,v0,crit_retry)
+    return edge
 end
 
 function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
-  if v0 == nothing
-    vv0,_ = x0_edge_pressure(model,T,z)
-  else
-    vv0 = (v0[1],v0[2])
-  end
-  p1 = vv0[1]
-  p2 = vv0[2]
-  pmin,pmax = minmax(p1,p2)
-  
-  if pmax/pmin > 10
-    p_near0,_,_ = x0_sat_pure_near0(model,T,z)
-    pmin = 0.9*p_near0
-    pmax = 10*p_near0
-  end
+    if v0 == nothing
+        vv0,_ = x0_edge_pressure(model,T,z)
+    else
+        vv0 = (v0[1],v0[2])
+    end
+    p1 = vv0[1]
+    p2 = vv0[2]
+    pmin,pmax = minmax(p1,p2)
 
-  v_pmin = volume(model,pmin,T,z,phase = :v)
-  v_pmax = volume(model,pmax,T,z,phase = :l)
-  f(x) = μp_equality1_p(model,exp(x[1]),exp(x[2]),T,z)
-  TT = T*one(Base.promote_eltype(model,v_pmin,v_pmax,T))
-  V0 = svec2(log(v_pmax),log(v_pmin),TT)
+    if pmax/pmin > 10
+        p_near0,_,_ = x0_sat_pure_near0(model,T,z)
+        pmin = 0.9*p_near0
+        pmax = 10*p_near0
+    end
 
-  _0 = zero(V0[1])
-  nan = _0/_0
-  fail = (nan,nan,nan)
-
-  _is_positive((v_pmin,v_pmax,T)) || return fail,fail,:failure
-
-  sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var())
-  v1 = exp(sol[1])
-  v2 = exp(sol[2])
-  p_eq = pressure(model,v2,T,z)
-  edge = (p_eq,v1,v2)
-  check_valid_sat_pure(model,p_eq,v1,v2,T,z) && return edge,fail,:success
-  !crit_retry && return fail,fail,:failure
-  #fail when calculating edge pressure, this happens near the (mechanical) critical point
-  Tr = T/T_scale(model,z)
-  vlog = log10(v1)
-  crit = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
-  Tc,Pc,Vc = crit
-
-  !isfinite(Tc) && return fail,fail,:failure
-  Tc <= T && return fail,crit,:supercritical
-
-  vlc,vvc = critical_vsat_extrapolation(model,T,Tc,Vc,z)
-  V1 = SVector(promote(log(vlc),log(vvc)))
-  sol1 = Solvers.nlsolve2(f,V1,Solvers.Newton2Var())
-  v3 = exp(sol1[1])
-  v4 = exp(sol1[2])
-  p_eq2 = pressure(model,v2,T,z)
-  edge2 = (v3,v4,p_eq2)
-  check_valid_sat_pure(model,p_eq2,v3,v4,T,z) && return (edge2,crit,:success)
-
-  return fail,fail,:failure
+    v_pmin = volume(model,pmin,T,z,phase = :v)
+    v_pmax = volume(model,pmax,T,z,phase = :l)
+    TT = T*one(Base.promote_eltype(model,v_pmin,v_pmax,T))
+    V01,V02,_0  = promote(v_pmax,v_pmin,zero(TT))
+    nan = _0/_0
+    fail = (nan,nan,nan)
+    _is_positive((v_pmin,v_pmax,T)) || return fail,fail,:failure
+    ps,mus = equilibria_scale(model,z)
+    edge,valid0 = try_2ph_edge_pressure(model,model,T,V01,V02,ps,mus,z,nothing)
+    p_eq,v1,v2 = edge
+    valid0 && return edge,fail,:success 
+    !crit_retry && return fail,fail,:failure
+    #fail when calculating edge pressure, this happens near the (mechanical) critical point
+    Tr = T/T_scale(model,z)
+    vlog = log10(v1)
+    crit = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
+    Tc,Pc,Vc = crit
+    !isfinite(Tc) && return fail,fail,:failure
+    Tc <= T && return fail,crit,:supercritical
+    vlc,vvc = critical_vsat_extrapolation(model,T,Tc,Vc,z)
+    edge_crit,valid_crit = try_2ph_edge_pressure(model,model,T,vlc,vvc,ps,mus,z,nothing)
+    valid_crit && return edge_crit,crit,:success
+    return fail,fail,:failure
 end
 
 function bubble_pressure_pproperty_method(model,p0,T,z,sat)
-  y0 = z .* first.(sat)
-  y0 ./= sum(y0)
-  p,_,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,z,y0,FugEnum.BUBBLE_PRESSURE,FillArrays.Trues(length(z)),false)
-  return ChemPotBubblePressure((vl0,vv0),p,y,nothing,0.0,1e-8,1e-12,1000,false)
+    y0 = z .* first.(sat)
+    y0 ./= sum(y0)
+    p,_,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,z,y0,FugEnum.BUBBLE_PRESSURE,FillArrays.Trues(length(z)),false)
+    return ChemPotBubblePressure((vl0,vv0),p,y,nothing,0.0,1e-8,1e-12,1000,false)
 end
 
 function dew_pressure_pproperty_method(model,p0,T,z,sat)
-  x0 = z ./ first.(sat)
-  x0 ./= sum(x0)
-  p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,x0,z,FugEnum.DEW_PRESSURE,FillArrays.Trues(length(z)),false)
-  return ChemPotDewPressure((vl0,vv0),p,x,nothing,0.0,1e-8,1e-12,1000,false)
+    x0 = z ./ first.(sat)
+    x0 ./= sum(x0)
+    p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,x0,z,FugEnum.DEW_PRESSURE,FillArrays.Trues(length(z)),false)
+    return ChemPotDewPressure((vl0,vv0),p,x,nothing,0.0,1e-8,1e-12,1000,false)
 end
 
 """
@@ -108,29 +93,29 @@ function Pproperty(model::EoSModel,T,prop,z = SA[1.0],
                   verbose = false,
                   threaded = true) where TT
 
-  cached_model = __tpflash_cache_model(model,NaN,T,z,:vle)
-  p,st = _Pproperty(cached_model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
-  return p
+    cached_model = __tpflash_cache_model(model,NaN,T,z,:vle)
+    p,st = _Pproperty(cached_model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
+    return p
 end
 
 function __Pproperty_check(res,verbose,p_other = zero(res[1])/zero(res[1]))
-  p,st = res
-  if verbose && st == :failure
-    @error "PProperty calculation failed"
-    return p_other,st
-  end
-  return p,st
+    p,st = res
+    if verbose && st == :failure
+        @error "PProperty calculation failed"
+        return p_other,st
+    end
+    return p,st
 end
 
 function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
-          property::TT = enthalpy;
-          rootsolver = Roots.Order0(),
-          phase =:unknown,
-          abstol = 1e-15,
-          reltol = 1e-15,
-          p0 = nothing,
-          verbose = false,
-          threaded = true) where TT
+                    property::TT = enthalpy;
+                    rootsolver = Roots.Order0(),
+                    phase =:unknown,
+                    abstol = 1e-15,
+                    reltol = 1e-15,
+                    p0 = nothing,
+                    verbose = false,
+                    threaded = true) where TT
 
     norm_prop,norm_property = normalize_property(model,prop,z,property)
 
@@ -257,26 +242,26 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
     
         ϕ = 0.3 #P_edge is in the center of the bubble and dew approximations, return P_edge
         if ϕ <= β_P_edge <= (1 - ϕ)
-        return P_edge_interp,:eq
+            return P_edge_interp,:eq
         end
 
         if β_P_edge < 0.3
-        p0x = Pbub0
-        verbose && @info "property in equilibria, mostly liquid with vapour, checking dew point"
-        #we search between the liquid edge and the dew temperature
-        prop_edge,new_phase = property(model,Pbub0,T,z,phase = :l),:vapour
+            p0x = Pbub0
+            verbose && @info "property in equilibria, mostly liquid with vapour, checking dew point"
+            #we search between the liquid edge and the dew temperature
+            prop_edge,new_phase = property(model,Pbub0,T,z,phase = :l),:vapour
         else
-        p0x = Pdew0
-        verbose && @info "property in equilibria, mostly vapour with liquid, checking bubble point"
-        #we search between the vapour edge and the bubble temperature
-        prop_edge,new_phase = property(model,Pdew0,T,z,phase = :v),:liquid
+            p0x = Pdew0
+            verbose && @info "property in equilibria, mostly vapour with liquid, checking bubble point"
+            #we search between the vapour edge and the bubble temperature
+            prop_edge,new_phase = property(model,Pdew0,T,z,phase = :v),:liquid
         end
     else
         p0x = P_edge
         if β_edge > 1
-        prop_edge,new_phase = prop_v,:vapour
+            prop_edge,new_phase = prop_v,:vapour
         else
-        prop_edge,new_phase = prop_l,:liquid
+            prop_edge,new_phase = prop_l,:liquid
         end
     end
 
@@ -318,106 +303,105 @@ function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
 end
 
 function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,p0) where F
-  TT = Base.promote_eltype(model,T,x,z)
-  nan = zero(TT)/zero(TT)
-  ∑z = sum(z)
-  x1 = SA[1.0*one(∑z)]
+    TT = Base.promote_eltype(model,T,x,z)
+    nan = zero(TT)/zero(TT)
+    ∑z = sum(z)
+    x1 = SA[1.0*one(∑z)]
 
-  sat,crit,status = _extended_saturation_pressure(model,T)
+    sat,crit,status = _extended_saturation_pressure(model,T)
 
-  if status == :failure
-    verbose && @error "PProperty calculation failed"
-    return nan,status
-  end
-
-  if status == :supercritical
-    verbose && @info "temperature is above critical temperature"
-    Tc,Pc,Vc = crit
-    if P0 !== nothing
-      Pcrit0 = TT(P0)
-    else
-      Pcrit0 = TT(1.001Pc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
+    if status == :failure
+        verbose && @error "PProperty calculation failed"
+        return nan,status
     end
-    return __Pproperty(model,T,x,z,property,rootsolver,phase,abstol,reltol,threaded,Pcrit0)
-  end
 
-  ps,vl,vv = TT.(sat)
+    if status == :supercritical
+        verbose && @info "temperature is above critical temperature"
+        Tc,Pc,Vc = crit
+        if P0 !== nothing
+            Pcrit0 = TT(P0)
+        else
+            Pcrit0 = TT(1.001Pc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
+        end
+        return __Pproperty(model,T,x,z,property,rootsolver,phase,abstol,reltol,threaded,Pcrit0)
+    end
 
-  xl = ∑z*spec_to_vt(model,vl,T,x1,property)
-  xv = ∑z*spec_to_vt(model,vv,T,x1,property)
-  βv = (x - xl)/(xv - xl)
+    ps,vl,vv = TT.(sat)
 
-  if !isfinite(βv)
-    verbose && @error "PProperty calculation failed"
-    return nan,:failure
-  elseif βv < 0 || βv > 1
-    phase0 = βv < 0 ? :liquid : :vapour
-    is_liquid(phase0) && verbose && @info "pressure($property) > saturation pressure"
-    is_vapour(phase0) && verbose && @info "pressure($property) < saturation pressure"
-    return __Pproperty(model,T,x,z,property,rootsolver,phase0,abstol,reltol,threaded,ps)
-  else
-    verbose && @info "$property between the liquid and vapour edges, in the phase change region"
-    return ps,:eq
-  end
+    xl = ∑z*spec_to_vt(model,vl,T,x1,property)
+    xv = ∑z*spec_to_vt(model,vv,T,x1,property)
+    βv = (x - xl)/(xv - xl)
+
+    if !isfinite(βv)
+        verbose && @error "PProperty calculation failed"
+        return nan,:failure
+    elseif βv < 0 || βv > 1
+        phase0 = βv < 0 ? :liquid : :vapour
+        is_liquid(phase0) && verbose && @info "pressure($property) > saturation pressure"
+        is_vapour(phase0) && verbose && @info "pressure($property) < saturation pressure"
+        return __Pproperty(model,T,x,z,property,rootsolver,phase0,abstol,reltol,threaded,ps)
+    else
+        verbose && @info "$property between the liquid and vapour edges, in the phase change region"
+        return ps,:eq
+    end
 end
 
 function __Pproperty(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,p0) where F
-  if has_a_res(model)
-    λmodel,λT,λprop,λz,λp0 = primalval(model),primalval(T),primalval(prop),primalval(z),primalval(p0)
-    λp,phase = Pproperty_impl(λmodel,λT,λprop,λz,property,rootsolver,phase,abstol,reltol,threaded,λp0)
-    tup = (model,T,prop,z)
-    λtup = (λmodel,λT,λprop,λz)
-    p = Pproperty_ad(λp,property,phase,tup,λtup)
-  else
-    p,phase = Pproperty_impl(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,primalval(p0))
-  end
-  return p,phase
+    if has_a_res(model)
+        λmodel,λT,λprop,λz,λp0 = primalval(model),primalval(T),primalval(prop),primalval(z),primalval(p0)
+        λp,phase = Pproperty_impl(λmodel,λT,λprop,λz,property,rootsolver,phase,abstol,reltol,threaded,λp0)
+        tup = (model,T,prop,z)
+        λtup = (λmodel,λT,λprop,λz)
+        p = Pproperty_ad(λp,property,phase,tup,λtup)
+    else
+        p,phase = Pproperty_impl(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,primalval(p0))
+    end
+    return p,phase
 end
 
 __Pproperty(model,T,prop,z,property::F,phase,p0) where F = __Pproperty(model,T,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,true,p0)
 __Pproperty(model,T,prop,z,property::F,phase,p0,verbose::Bool) where F = __Pproperty(model,T,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,verbose,p0)
 
 function Pproperty_impl(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,p0) where F
-  if is_unknown(phase)
-    new_phase = identify_phase(model,p0,T,z)
-    if is_unknown(new_phase) #something really bad happened
-      _0 = zero(Base.promote_eltype(model,T,prop,z))
-      nan = _0/_0
-      return nan,:unknown
+    if is_unknown(phase)
+        new_phase = identify_phase(model,p0,T,z)
+        if is_unknown(new_phase) #something really bad happened
+            _0 = zero(Base.promote_eltype(model,T,prop,z))
+            nan = _0/_0
+            return nan,:unknown
+        end
+        return __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,p0)
     end
-    return __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,p0)
-  end
-  _1 = oneunit(typeof(prop))
+    _1 = oneunit(typeof(prop))
 
-  if property == volume
-    px = pressure(model,prop,T,z)
-    phasex = VT_identify_phase(model,prop,T,z)
-    if is_unknown(phasex)
-      return px,:failure
-    else
-      return px,phasex
+    if property == volume
+        px = pressure(model,prop,T,z)
+        phasex = VT_identify_phase(model,prop,T,z)
+        if is_unknown(phasex)
+            return px,:failure
+        else
+            return px,phasex
+        end
     end
-  end
 
-  f(_lnp,_prop) = _1*property(model,exp(_lnp),T,z,phase = phase,threaded = threaded) - _prop
-  prob = Roots.ZeroProblem(f,_1*log(p0))
+    f(_lnp,_prop) = _1*property(model,exp(_lnp),T,z,phase = phase,threaded = threaded) - _prop
+    prob = Roots.ZeroProblem(f,_1*log(p0))
 
-  logp = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
-  if isnan(logp)
-    return logp,:failure
-  end
-  return exp(logp),phase
+    logp = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
+    if isnan(logp)
+        return logp,:failure
+    end
+    return exp(logp),phase
 end
-
 
 function Pproperty_ad(p_primal,property::F,phase,tups,tups_primal) where F
     f(p,tups) = begin
-      #=
-      we know that p_primal is the solution to
-      property(model,p_primal,t,z,phase = phase,threaded = threaded) - prop = 0
-      =#
-      model,T,prop,z = tups
-      property(model,p,T,z,phase = phase) - prop
+        #=
+        we know that p_primal is the solution to
+        property(model,p_primal,t,z,phase = phase,threaded = threaded) - prop = 0
+        =#
+        model,T,prop,z = tups
+        property(model,p,T,z,phase = phase) - prop
     end
 
     return __gradients_for_root_finders(p_primal,tups,tups_primal,f)

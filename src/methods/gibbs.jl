@@ -3,19 +3,22 @@
 #derivative logic
 
 function ∂𝕘∂T(model,p,T,z::AbstractVector)
-    g(∂T) = eos_g(model,p,∂T,z)
+    V = p
+    g = @deferred_T(eos_g,∂𝕘∂T)
     return Solvers.derivative(g,T)
 end
 
 function ∂𝕘∂p(model,p,T,z::AbstractVector)
-    g(∂p) = eos_g(model,∂p,T,z)
+    V = p
+    g = @deferred_V(eos_g,∂𝕘∂p)
     return Solvers.derivative(g,p)
 end
 
 function ∂𝕘(model,p,T,z)
-    f(∂p,∂T) = eos_g(model,∂p,∂T,z)
-    _f,_df = Solvers.fgradf2(f,p,T)
-    return _df,_f
+    V = p
+    g = @deferred_VT(eos_g,∂𝕘)
+    _g,_dg = Solvers.fgradf2(g,p,T)
+    return _dg,_g
 end
 
 function ∂𝕘_vec(model,p,T,z::AbstractVector)
@@ -24,45 +27,52 @@ function ∂𝕘_vec(model,p,T,z::AbstractVector)
 end
 
 function 𝕘∂𝕘dp(model,p,T,z::AbstractVector)
-    f(x) = eos_g(model,x,T,z)
-    G,∂G∂p = Solvers.f∂f(f,p)
+    V = p
+    g = @deferred_V(eos_g,𝕘∂𝕘dp)
+    G,∂G∂p = Solvers.f∂f(g,p)
     return SVector(G,∂G∂p)
 end
 
 function 𝕘∂𝕘dT(model,p,T,z::AbstractVector)
-    f(x) = eos_g(model,p,x,z)
-    G,∂G∂T = Solvers.f∂f(f,T)
+    V = p
+    g = @deferred_T(eos_g,𝕘∂𝕘dT)
+    G,∂G∂T = Solvers.f∂f(g,T)
     return SVector(G,∂G∂T)
 end
 
 function V∂V∂p(model,p,T,z::AbstractVector=SA[1.0])
-    f(∂p) = ∂𝕘∂p(model,∂p,T,z)
-    V,∂V∂p = Solvers.f∂f(f,p)
-    return SVector(V,∂V∂p)
+    V = p
+    v = @deferred_V(∂𝕘∂p,V∂V∂p)
+    VV,∂V∂p = Solvers.f∂f(v,p)
+    return SVector(VV,∂V∂p)
 end
 
 function V∂V∂T(model,p,T,z::AbstractVector=SA[1.0])
-    f(∂T) = ∂𝕘∂p(model,p,∂T,z)
-    V,∂V∂T = Solvers.f∂f(f,T)
-    return SVector(V,∂V∂T)
+    V = p
+    v = @deferred_T(∂𝕘∂p,V∂V∂T)
+    VV,∂V∂T = Solvers.f∂f(v,T)
+    return SVector(VV,∂V∂T)
 end
 
 function ∂2𝕘(model,p,T,z)
-    f(_p,_T) = eos_g(model,_p,_T,z)
-    _f,_∂f,_∂2f = Solvers.∂2(f,p,T)
-    return SVector(_f,_∂f[1],_∂f[2],_∂2f[1,1],_∂2f[2,2],_∂2f[1,2])
+    V = p
+    g = @deferred_VT(eos_g,∂2𝕘)
+    _g,_∂g,_∂2g = Solvers.∂2(g,p,T)
+    return SVector(_g,_∂g[1],_∂g[2],_∂2g[1,1],_∂2g[2,2],_∂2g[1,2])
 end
 
 function 𝕘_hess(model,p,T,z)
-    f(w) = eos_g(model,first(w),last(w),z)
+    V = p
+    g = @deferred_VT(eos_g,𝕘_hess)
     p,T = promote(p,T)
-    pT_vec = SVector(p,T)
-    return Solvers.hessian(f,pT_vec)
+    pT_vec = SVector(p,T)    
+    return Solvers.hessian(g,pT_vec)
 end
 
 function ∂²𝕘∂T²(model,p,T,z)
-    G(x) = eos_g(model,p,x,z)
-    _,_,∂²G∂T² = Solvers.f∂f∂2f(G,T)
+    V = p
+    g = @deferred_T(eos_g,∂²𝕘∂T²)
+    _,_,∂²G∂T² = Solvers.f∂f∂2f(g,T)
     return ∂²G∂T²
 end
 #property logic
@@ -287,15 +297,23 @@ end
 init of pressure-based iterative methods
 =#
 
-function gibbs2_expansion(model::GibbsBasedModel,p,T)
-    f(_p) = gibbs_energy(model,_p,T)
-    return Solvers.f∂f∂2f(f,p)
+function f∂2V(model,V,T,z)
+    f = @deferred_V(eos,f∂2V)
+    return Solvers.f∂f∂2f(f,V)
 end
 
+function g∂2p(model,p,T,z)
+    V = p
+    g = @deferred_V(gibbs_energy,g∂2p)
+    return Solvers.f∂f∂2f(g,p)
+end
+
+gibbs2_expansion(model::GibbsBasedModel,p,T) = g∂2p(model,p,T,SA[1.0])
+
 function gibbs2_expansion(model,p,T)
-    V = volume(model,p,T)
-    f(_V) = eos(model,_V,T)
-    a,da,d2a = Solvers.f∂f∂2f(f,V)
+    z = SA[1.0]
+    V = volume(model,p,T,z,phase = :l)
+    a,da,d2a = f∂2V(model,V,T,z)
     g = a + p*V
     dg = V
     d2g = -1/d2a

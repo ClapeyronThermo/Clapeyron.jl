@@ -13,6 +13,7 @@ function TS_property(model,T,s,z,f::F,phase,p0,threaded) where F
     if !is_unknown(phase)
         p,calc_phase = _Pproperty(model,T,s,z,p0 = p0,phase = phase,threaded = threaded)
         if calc_phase != :eq && calc_phase != :failure
+            f == pressure && return XX(p)
             return f(model,p,T,z;phase = calc_phase)
         elseif calc_phase == :eq
             supports_lever_rule(f) || thow(invalid_property_multiphase_error(f))
