@@ -138,27 +138,23 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     y = y/sum(y)
     T = float(T)
     verbose = get_verbosity(method)
-    model_r,idx_r = index_reduction(model,y)
-    if length(model_r) == 1 && !is_pseudo_pure(model)
-        (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
+    _model_r,idx_r = index_reduction(model,y)
+    if length(_model_r) == 1 && !is_pseudo_pure(model)
+        (P_sat,v_l,v_v) = saturation_pressure(_model_r,T)
         x = [one(eltype(y))]
         return (P_sat,v_l,v_v,x)
     end
     y_r = y[idx_r]
-
+    model_r = __tpflash_cache_model(_model_r,NaN,T,y,:vle)
     method_r = index_reduction(method,idx_r)
-    if has_a_res(model)
-        λmodel,λT,λy = primalval(model_r),primalval(T),primalval(y_r)
-        λresult = dew_pressure_impl(λmodel,λT,λy,primalval(method_r))
-        tup = (model_r,T,y_r)
-        if any(has_dual,tup)
-            λtup = (λmodel,λT,λy)
-            result = dew_pressure_ad(λresult,tup,λtup)
-        else
-            result = λresult
-        end
+    λmodel,λT,λy = primalval(model_r),primalval(T),primalval(y_r)
+    λresult = dew_pressure_impl(λmodel,λT,λy,primalval(method_r))
+    tup = (model_r,T,y_r)
+    if any(has_dual,tup)
+        λtup = (λmodel,λT,λy)
+        result = dew_pressure_ad(λresult,tup,λtup)
     else
-        result = dew_pressure_impl(model_r,T,y_r,method_r)
+        result = λresult
     end
 
     (P_sat, v_l, v_v, x_r) = result
@@ -343,27 +339,24 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     y = y/sum(y)
     p = float(p)
     verbose = get_verbosity(method)
-    model_r,idx_r = index_reduction(model,y)
-    if length(model_r) == 1 && !is_pseudo_pure(model)
-        (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
+    _model_r,idx_r = index_reduction(model,y)
+    if length(_model_r) == 1 && !is_pseudo_pure(model)
+        (T_sat,v_l,v_v) = saturation_temperature(_model_r,p)
         x = [one(eltype(y))]
         return (T_sat,v_l,v_v,x)
     end
     y_r = y[idx_r]
+    model_r = __tpflash_cache_model(_model_r,p,NaN,y,:vle)
 
     method_r = index_reduction(method,idx_r)
-    if has_a_res(model)
-        λmodel,λp,λy = primalval(model_r),primalval(p),primalval(y_r)
-        λresult = dew_temperature_impl(λmodel,λp,λy,primalval(method_r))
-        tup = (model_r,p,y_r)
-        if any(has_dual,tup)
-            λtup = (λmodel,λp,λy)
-            result = dew_temperature_ad(λresult,tup,λtup)
-        else
-            result = λresult
-        end
+    λmodel,λp,λy = primalval(model_r),primalval(p),primalval(y_r)
+    λresult = dew_temperature_impl(λmodel,λp,λy,primalval(method_r))
+    tup = (model_r,p,y_r)
+    if any(has_dual,tup)
+        λtup = (λmodel,λp,λy)
+        result = dew_temperature_ad(λresult,tup,λtup)
     else
-        result = dew_temperature_impl(model_r,p,y_r,method_r)
+        result = λresult
     end
 
     (T_sat, v_l, v_v, x_r) = result

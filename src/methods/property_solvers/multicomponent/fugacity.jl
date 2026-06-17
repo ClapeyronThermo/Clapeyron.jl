@@ -280,7 +280,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_view,data::F
 
     OF = NaN*zero(eltype(lnK))
 
-    if _bubble
+    if _bubble_or_lle
         w .= y
         u .= x
         _x,_y = u,w
@@ -319,7 +319,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_view,data::F
                 break
             end
 
-            if _bubble
+            if _bubble_or_lle
                 _lnϕx = view(lnϕx,_view)
                 lnK .=_lnϕx .- lnϕy
             else
@@ -331,7 +331,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_view,data::F
 
             w_old .=  w
 
-            if _bubble
+            if _bubble_or_lle
                 __x = view(_x,_view)
                 w .= __x .* K
                 w_calc .= w
@@ -344,7 +344,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_view,data::F
             w ./= sum(w)
             error = dnorm(w,w_old,Inf) #||x-x_old||∞
 
-            if _bubble
+            if _bubble_or_lle
                 tpd_x = view(_x,_view)
                 stability = dnorm(_y,tpd_x,Inf)
             else
@@ -358,7 +358,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_view,data::F
                 w .= w_restart
                 valid_iter = false
                 volx,voly = volx_restart,voly_restart
-                if _bubble
+                if _bubble_or_lle
                     __x = view(_x,_view)
                     K .= y ./ __x
                 else
@@ -376,7 +376,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_view,data::F
         if _pressure && second_order
             ∂lnϕ∂Px, volx = ∂lnϕ∂P(modelx, p, T, _x, Hϕx, phase=:liquid, vol0=volx)
             ∂lnϕ∂Py, voly = ∂lnϕ∂P(modely, p, T, _y, Hϕy, phase=:vapour, vol0=voly)
-            if _bubble
+            if _bubble_or_lle
                 _∂lnϕ∂Px = view(∂lnϕ∂Px, _view)
                 ∂OF = @sum(w[i]*(_∂lnϕ∂Px[i] - ∂lnϕ∂Py[i]))
             else
@@ -386,7 +386,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_view,data::F
         elseif !_pressure && second_order
             ∂lnϕ∂Tx, volx = ∂lnϕ∂T(modelx, p, T, _x, Hϕx, phase=:liquid, vol0=volx)
             ∂lnϕ∂Ty, voly = ∂lnϕ∂T(modely, p, T, _y, Hϕy, phase=:vapour, vol0=voly)
-            if _bubble
+            if _bubble_or_lle
                 _∂lnϕ∂Tx = view(∂lnϕ∂Tx,_view)
                 ∂OF = @sum(w_calc[i]*(_∂lnϕ∂Tx[i] - ∂lnϕ∂Ty[i]))
             else
@@ -411,7 +411,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_view,data::F
             break
         end
 
-        if !_bubble && second_order
+        if !_bubble_or_lle && second_order
             ∂OF = -∂OF
         end
 

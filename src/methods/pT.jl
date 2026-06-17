@@ -1250,7 +1250,7 @@ module PT
     for prop in Clapeyron.CLAPEYRON_PROPS
         @eval begin
             function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown)
-                return PT_property_withflash(model,p,T,z,phase,Clapeyron.$prop)
+                return Clapeyron.PT_property_withflash(model,p,T,z,phase,Clapeyron.$prop)
             end
         end
     end
