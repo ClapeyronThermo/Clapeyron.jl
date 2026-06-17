@@ -54,7 +54,7 @@ function FugQX(data;vol0 = nothing,
                     verbose = false)
 
     if prop0 == w0 == vol0 == nothing
-        return FugQX{Nothing}(data,vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_w,tol_pT,tol_of,second_order,verbose)
+        return FugQX{Float64}(data,vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_w,tol_pT,tol_of,second_order,verbose)
     elseif (prop0 == w0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return FugQX{typeof(vl)}(data,vol0,prop0,w0,non_in_w,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_w,tol_pT,tol_of,second_order,verbose)

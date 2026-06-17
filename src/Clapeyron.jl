@@ -19,10 +19,21 @@ using IFTDuals
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
 #compatibility and raw julia utilities
+
+using SciMLPublic: @public
+
 include("utils/core_utils.jl")
 
 #misc functions
 include("utils/misc.jl")
+
+include("../lib/StaticForwardDiffTags/src/StaticForwardDiffTags.jl")
+
+import .StaticForwardDiffTags
+using .StaticForwardDiffTags: WithContext
+import .StaticForwardDiffTags: ∂Tag, STag
+
+include("../lib/StaticForwardDiffTags/ext/StaticForwardDiffTagsStaticArraysExt.jl")
 
 include("modules/solvers/Solvers.jl")
 using .Solvers

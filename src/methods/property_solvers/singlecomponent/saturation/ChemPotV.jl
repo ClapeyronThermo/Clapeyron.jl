@@ -79,7 +79,7 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
         return fail
     end
     ps,μs = equilibria_scale(model)
-    result,converged = try_2ph_pure_pressure(model,T,vl0,vv0,ps,μs,method)
+    result,converged = try_2ph_edge_pressure(model,model,T,vl0,vv0,ps,μs,SA[1.0],method)
 
     crit = method.crit
     converged && return result #converged result.
@@ -96,7 +96,7 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
     if 0.6*T_c < T < T_c
         x0 = x0_sat_pure(model,T,crit)
         vlc0,vvc0 = x0
-        result,converged = try_2ph_pure_pressure(model,T,vlc0,vvc0,ps,μs,method)
+        result,converged = try_2ph_edge_pressure(model,model,T,vlc0,vvc0,ps,μs,SA[1.0],method)
         if converged
             return result
         end

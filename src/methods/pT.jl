@@ -1138,7 +1138,7 @@ function _partial_property(model::EoSModel, V, T, z::AbstractVector, VT_prop::F)
     #triple product rule:
     #∂x∂nᵢ|p = ∂x∂nᵢ|V - ∂x∂V * ∂p∂nᵢ|V * ∂p∂V^-1
     ∂p∂nᵢ = VT_molar_gradient(model,V,T,z,pressure)
-    xv(∂V) = VT_prop(model,∂V,T,z)
+    xv = @deferred_V(VT_prop,partial_property)
     ∂x∂V = Solvers.derivative(xv,V)
     _,∂p∂V = p∂p∂V(model,V,T,z)
     return ∂x∂nᵢ .- ∂x∂V .* ∂p∂nᵢ ./ ∂p∂V

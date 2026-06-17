@@ -43,8 +43,8 @@ VT_volume(model, V, T, z=SA[1.]) = V
 VT_use_p(f) = false
 
 function pressure_res(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos_res(model,x,T,z)
-    return -Solvers.derivative(fun,V)
+    f = @deferred_V(eos_res,pressure_res)
+    return -Solvers.derivative(f,V)
 end
 VT_pressure_res(model, V, T) = VT_pressure_res(model, V, T, SA[1.])
 VT_pressure_res(model, V, T, z) = pressure_res(model,V,T,z)
@@ -57,8 +57,8 @@ VT_mass_entropy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_entropy(
 
 
 function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos_res(model,V,x,z)
-    return -Solvers.derivative(fun,T)
+    f = @deferred_T(eos_res,VT_entropy_res)
+    return -Solvers.derivative(f,T)
 end
 
 function VT_internal_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
@@ -141,8 +141,7 @@ VT_mass_gibbs_free_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0],p = 
 VT_use_p(::typeof(VT_mass_gibbs_free_energy)) = true
 
 function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos_res(model,x,T,z)
-    Ar,∂A∂Vr = Solvers.f∂f(fun,V)
+    Ar,∂A∂Vr = f∂fdV_res(model,V,T,z)
     PrV = ifelse(iszero(1/V),zero(∂A∂Vr),- V*∂A∂Vr)
     return Ar + PrV
 end
@@ -296,10 +295,14 @@ function second_virial_coefficient_impl(model::EoSModel, T, z = SA[1.0])
     return pressure_res(model,V,T,z)*ϵ/(Rgas(model)*T)
 end
 
+__B(model,V,T,z) = second_virial_coefficient_impl(model,T,z)
+
 function B∂B∂T(model,T,z = SA[1.0])
-    b(T) = second_virial_coefficient(model,T,z)
+    V = Inf
+    b = @deferred_T(__B,B∂B∂T)
     return Solvers.f∂f(b,T)
 end
+
 """
     cross_second_virial(model,T,z)
 
@@ -457,17 +460,8 @@ end
 
 #Vector Properties
 
-struct ZVar{P,M,V,T}
-    property::P
-    model::M
-    vol::V
-    temp::T
-end
-
-(fixed::ZVar{P,M,V,T})(z::Z) where {P,M,V,T,Z} = fixed.property(fixed.model,fixed.vol,fixed.temp,z)
-
 function VT_molar_gradient(model::EoSModel,V,T,z::AbstractVector,property::ℜ) where {ℜ}
-    fun = ZVar(property,model,V,T)
+    fun = @deferred_Z(property,∂₁f)
     TT = gradient_type(model,T+V,z)
     return Solvers.gradient(fun,z)::TT
 end
@@ -477,7 +471,7 @@ function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F<
         fx .= NaN
         return fx
     end
-    fun = ZVar(property,model,V,T)
+    fun = @deferred_Z(property,∂₁f)
     return Solvers.gradient!(fx,fun,z)::F
 end
 
@@ -525,8 +519,7 @@ function _VT_fugacity_coefficient(model::EoSModel,V,T,z)
 end
 
 function _VT_fugacity_coefficient(model::EoSModel,V,T,z::SingleComp)
-    f(_V) = eos_res(model, _V, T,z)
-    A,dAdV = Solvers.f∂f(f,V)
+    A,dAdV = f∂fdV_res(model,V,T,z)
     R̄ = Rgas(model)
     ∑z= sum(z)
     p_ideal = ∑z*R̄*T/V

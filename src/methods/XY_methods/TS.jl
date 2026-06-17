@@ -4,7 +4,8 @@ function TS_property(model,T,s,z,f::F,phase,p0) where F
     f == entropy && return XX(s)
     f == temperature && return XX(T)
 
-    if f == pressure && length(model) == 1
+    if f == pressure && length(z) == 1
+        length(model) == 1 || throw(DimensionMismatch("model and composition vector sizes are inconsistent"))
         z1 = SVector(z[1])
         return Pproperty(model,T,s,z1,entropy,p0 = p0,phase = phase,threaded = false)
     end
@@ -12,6 +13,7 @@ function TS_property(model,T,s,z,f::F,phase,p0) where F
     if !is_unknown(phase)
         p,calc_phase = _Pproperty(model,T,s,z,p0 = p0,phase = phase,threaded = false)
         if calc_phase != :eq && calc_phase != :failure
+            f == pressure && return XX(p)
             return f(model,p,T,z;phase = calc_phase)
         elseif calc_phase == :eq
             supports_lever_rule(f) || thow(invalid_property_multiphase_error(f))

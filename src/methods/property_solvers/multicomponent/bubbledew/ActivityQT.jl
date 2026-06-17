@@ -106,7 +106,7 @@ function ActivityQT(data::FugEnum.BubbleDew;vol0 = nothing,
                                 verbose = false)
 
     if p0 == w0 == vol0 == nothing
-        return ActivityQT{Nothing}(data,vol0,p0,w0,non_in_w,itmax_ss,rtol_ss,verbose)
+        return ActivityQT{Float64}(data,vol0,p0,w0,non_in_w,itmax_ss,rtol_ss,verbose)
     elseif (p0 == w0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return ActivityQT{typeof(vl)}(data,vol0,p0,w0,non_in_w,itmax_ss,rtol_ss,verbose)

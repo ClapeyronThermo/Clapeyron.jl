@@ -141,7 +141,8 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     _model_r,idx_r = index_reduction(model,y)
     if length(_model_r) == 1 && !is_pseudo_pure(model)
         (P_sat,v_l,v_v) = saturation_pressure(_model_r,T)
-        return (P_sat,v_l,v_v,y)
+        x = [one(eltype(y))]
+        return (P_sat,v_l,v_v,x)
     end
 
     model_r = __tpflash_cache_model(_model_r,NaN,T,y,:vle)
@@ -169,7 +170,7 @@ vl = $(primalval(v_l))
 vv = $(primalval(v_v))
 x  = $(primalval(x))"
 
-verbose && !converged && @info "dew_pressure: convergence checks failed."
+    verbose && !converged && @info "dew_pressure: convergence checks failed."
 
     if converged
         return (P_sat, v_l, v_v, x)
@@ -342,9 +343,10 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     p = float(p)
     verbose = get_verbosity(method)
     _model_r,idx_r = index_reduction(model,y)
-    if length(_model_r)==1 && !is_pseudo_pure(model)
+    if length(_model_r) == 1 && !is_pseudo_pure(model)
         (T_sat,v_l,v_v) = saturation_temperature(_model_r,p)
-        return (T_sat,v_l,v_v,y)
+        x = [one(eltype(y))]
+        return (T_sat,v_l,v_v,x)
     end
 
     model_r = __tpflash_cache_model(_model_r,p,NaN,y,:vle)
@@ -371,7 +373,7 @@ vl = $(primalval(v_l))
 vv = $(primalval(v_v))
 x  = $(primalval(x))"
 
-verbose && !converged && @info "dew_temperature: convergence checks failed."
+    verbose && !converged && @info "dew_temperature: convergence checks failed."
 
     if converged
         return (T_sat, v_l, v_v, x)
