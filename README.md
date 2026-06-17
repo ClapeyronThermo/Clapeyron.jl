@@ -6,9 +6,9 @@
 
 <p>
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logos/Clapeyron_logo_dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="docs/assets/logos/Clapeyron_logo.svg">
-    <img src="docs/assets/logos/Clapeyron_logo.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/logos/Clapeyron_logo_dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/src/assets/logos/Clapeyron_logo.svg">
+    <img src="docs/src/assets/logos/Clapeyron_logo.svg">
   </picture>
 </p>
 
@@ -24,19 +24,19 @@ We support many equations of state and properties. Some examples of figures you 
 
 - Isobaric heat capacity of carbon dioxide at 20 MPa:
 
-  ![CO2_cp](docs/assets/CO2_cp.svg)
+  ![CO2_cp](docs/src/assets/readme/CO2_cp.svg)
 
 - Water VLE envelope:
 
-  ![water_VLE](docs/assets/water_VLE.svg)
+  ![water_VLE](docs/src/assets/readme/water_VLE.svg)
 
 - Ethanol+water Pxy diagram at 423.15 K:
 
-  ![ethanol+water](docs/assets/ethanol+water.svg)
+  ![ethanol+water](docs/src/assets/readme/ethanol+water.svg)
 
 - pT-isopleth of methanol+cyclohexane generated using PC-SAFT:
 
-![CH3OH_CyHx](docs/assets/CH3OH_CyHex.svg)
+![CH3OH_CyHx](docs/src/assets/readme/CH3OH_CyHex.svg)
 
 If you find any issues, feel free to contact us directly on the [Zulip Channel](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl), or open a Github issue.
 
