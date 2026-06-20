@@ -16,8 +16,10 @@ Clapeyron.__is_symbolic(x::Type{T}) where T = symbolic_type(T) !== NotSymbolic()
 const NUM = Union{Symbolics.Num,BasicSymbolic{T}} where T
 
 Solvers.log(x::NUM) = Base.log(x)
+Solvers.log(x::Complex{<:NUM}) = Complex(0.5 * log(real(x)^2 + imag(x)^2), atan(imag(x), real(x)))
 Solvers.log1p(x::NUM) = Base.log1p(x)
-Solvers.sqrt(x::NUM) = Base.log1p(x)
+Solvers.log1p(x::Complex{<:NUM}) = Complex(0.5 * log1p(2*real(x) + real(x)^2 + imag(x)^2), atan(imag(x), 1 + real(x)))
+Solvers.sqrt(x::NUM) = Base.sqrt(x)
 EoSFunctions.xlogx(x::NUM,k::Number) = x*Base.log(x*k)
 EoSFunctions.xlogx(x::NUM,k::NUM) = x*Base.log(x*k)
 EoSFunctions.xlogx(x::Number,k::NUM) = x*Base.log(x*k)
@@ -25,6 +27,7 @@ EoSFunctions.xlogx(x::NUM) = x*Base.log(x)
 Solvers.:^(x::NUM,y) = Base.:^(x,y)
 Solvers.:^(x,y::NUM) = Base.:^(x,y)
 Solvers.:^(x::NUM,y::Int) = Base.:^(x,y)
+Solvers.:^(x::NUM,y::Real) = Base.:^(x,y)
 Solvers.:^(x::NUM,y::NUM) = Base.:^(x,y)
 
 function Solvers.derivative(f::F,x::NUM) where {F}
