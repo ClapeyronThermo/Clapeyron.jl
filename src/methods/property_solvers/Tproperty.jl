@@ -61,7 +61,7 @@ function _edge_temperature(model,p,z,v0 = nothing)
 
     res0,valid0 = try_2ph_edge_temperature2(model,pp,z,v10,v20,T10,T20,Ts)
     valid0 && (return res0,fail,:success)
-    T_eq,_,_ = res0
+    T_eq,vl1,_ = res0
 
     if isfinite(T_eq)
         res2,_,_ = _edge_pressure(model,T_eq,z,(0.9*p,1.1*p),false)
@@ -74,14 +74,17 @@ function _edge_temperature(model,p,z,v0 = nothing)
         T3 = 1/Tinv
         resx,_,_ = _edge_pressure(model,T3,z,(0.9*p,1.1*p),false)
         _,v1x,v2x = resx
-        res1,valid1 = try_2ph_edge_temperature(model,pp,z,v1x,v2x,T3,T3,Ts)
+        res1,valid1 = try_2ph_edge_temperature2(model,pp,z,v1x,v2x,T3,T3,Ts)
         valid1 && (return res1,fail,:success)
+        if isfinite(res1[2])
+            vl1 = res1[2]
+        end
     end
 
     #fail when calculating edge temperature, this happens near the (mechanical) critical point
     if isfinite(T_eq)
         Tr = T_eq/T_scale(model,z)
-        vlog = log10(v1)
+        vlog = log10(vl1)
         crit = mechanical_critical_point(model,z,(Tr,vlog))
     else
         crit = mechanical_critical_point(model,z)
@@ -92,7 +95,7 @@ function _edge_temperature(model,p,z,v0 = nothing)
     Pc <= p && return fail,crit,:supercritical
     T_extrapolated = critical_tsat_extrapolation(model,p,Tc,Pc,Vc*sum(z),z)
     _,vlc,vvc = x0_sat_pure_crit_info(model,T_extrapolated,(Tc,Pc,Vc),z)
-    res_crit,valid_crit = try_2ph_edge_temperature(model,pp,z,vlc,vvc,T_extrapolated,T_extrapolated,Tc)
+    res_crit,valid_crit = try_2ph_edge_temperature2(model,pp,z,vlc,vvc,T_extrapolated,T_extrapolated,Tc)
     valid_crit && (return res_crit,fail,:success)
     return fail,fail,:failure
 end
