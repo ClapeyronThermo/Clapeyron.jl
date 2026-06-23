@@ -1156,7 +1156,15 @@ function assoc_matrix_solve_pure(K,idx,options)
     end
     return X
 end
+
+@public @assoc_loop
+@public getsites,assoc_matrix_solve,assoc_site_matrix,Δ,assoc_strength,X
+@public assoc_shape,assoc_pair_length,assoc_similar,assoc_options
+
+
 #=
+
+
 
 =#
 #=

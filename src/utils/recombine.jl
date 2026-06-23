@@ -103,3 +103,5 @@ function promote_model(::Type{T},param::GroupParam) where T
         param.sourcecsvs
     )
 end
+
+@public promote_model,recombine!,recombine_impl!

@@ -441,3 +441,8 @@ include("XY_methods/QX.jl")
 
 export get_k,set_k!
 export get_l,set_l!
+
+@public ThermodynamicMethod
+@public is_vapour, is_liquid, is_solid, is_unknown
+@public is_lle, is_vle
+@public VT0, PT0, PT, VT, PS, PH, VT, TS, QT, QP

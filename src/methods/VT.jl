@@ -581,6 +581,7 @@ const VT_mass_gibbs_energy = VT_mass_gibbs_free_energy
 
 export pressure
 export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
+@public temperature, pip
 
 const CLAPEYRON_PROPS = [:temperature,:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
                     :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,

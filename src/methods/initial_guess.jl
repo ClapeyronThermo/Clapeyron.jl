@@ -1091,3 +1091,5 @@ function dpdT_saturation(model1::EoSModel,model2::EoSModel,v1,v2,T,w1,w2)
     dv = (v1/∑w1 - v2/∑w2)
     return dS/dv
 end
+
+@public lb_volume,p_scale,T_scale,x0_volume_gas,x0_volume_liquid,x0_volume,x0_sat_pure

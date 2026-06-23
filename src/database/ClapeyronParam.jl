@@ -164,9 +164,6 @@ Base.iterate(param::SingleOrPair) = iterate(param.values)
 Base.iterate(param::SingleOrPair,state) = iterate(param.values,state)
 linearidx(param::SingleOrPair) = linearidx(param.values)
 
-export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
-export AssocOptions
-
 """
     diagvalues(x)
 A common function to retrieve the main diagonal values that work on both SingleParam and PairParam.
@@ -196,3 +193,7 @@ end
 function _get_sources(x)
     return copy(x.sources)
 end
+
+export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
+export AssocOptions
+@public diagvalues

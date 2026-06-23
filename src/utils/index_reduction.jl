@@ -110,3 +110,4 @@ function index_expansion(x::AbstractVector,idr::AbstractVector)
 end
 
 export index_reduction
+@public index_expansion

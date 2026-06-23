@@ -783,3 +783,7 @@ function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,Cl
 end
 
 export @newmodel, @f, @newmodelgc, @newmodelsimple, @newmodelsingleton
+
+@public default_asymmetricparams, default_gclocations, default_getparams_arguments, default_ignore_missing_singleparams, default_locations, default_references
+@public @groups, @sites, @comps, @sum
+@public transform_params
