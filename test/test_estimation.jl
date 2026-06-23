@@ -259,7 +259,7 @@ end
         vs = [1e-3, 1.2e-3, 1.4e-3]
         table = make_pv_data(model, Ts, vs)
         est_data = EstimationData(table, bulk_p, mse_loss)
-        rest_repr(est_data)
+        test_repr(est_data)
         #construction
         @test est_data isa EstimationUtils.AbstractEstimationLoss
         @test length(est_data.inputs) == 3
