@@ -49,6 +49,7 @@ import .Fractions
 using .Fractions: FractionVector
 
 #Gas constant, Boltzmann Constant
+include("modules/constants/Constants.jl")
 include("base/constants.jl")
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
@@ -62,7 +63,6 @@ include("models/types.jl")
 
 #show(model<:EoSModel)
 include("base/eosshow.jl")
-
 
 #EoSParam, ClapeyronParam, All Params
 include("database/ClapeyronParam.jl")

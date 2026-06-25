@@ -344,7 +344,7 @@ GammaPhi(model::ActivityModel) = __act_to_gammaphi(model)
 #convert ActivityModel into a RestrictedEquilibriaModel
 function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
     components = component_list(model)
-    if hasfield(typeof(model),:puremodel) && !ignore && model.puremodel.model isa IdealModel
+    if hasfield(typeof(model),:puremodel) && !ignore && is_idealmodel(model.puremodel.model)
         ActivitySaturationError(model,method)
     end
 

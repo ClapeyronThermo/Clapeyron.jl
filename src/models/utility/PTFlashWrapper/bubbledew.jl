@@ -134,7 +134,7 @@ function _edge_pressure(wrapper::PTFlashWrapper,T,z,v0 = nothing,crit_retry = tr
     nan = zero(p0)/zero(p0)
     fail = (nan,nan,nan)
 
-    if gas_model(wrapper) isa IdealModel
+    if is_idealmodel(gas_model(wrapper))
         result = p0,volume(wrapper,p,T,z,phase = :l),vv
         return result,fail,:success
     end

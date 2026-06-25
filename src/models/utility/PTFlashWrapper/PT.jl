@@ -12,7 +12,7 @@ function tpd_delta_g_vapour(wrapper::PTFlashWrapper,p,T,w)
     pure = wrapper.pures
     gasmodel = gas_model(wrapper.model)
 
-    is_ideal = gasmodel isa IdealModel
+    is_ideal = is_idealmodel(gasmodel)
     RT = Rgas(gasmodel)*T
     res = zero(Base.promote_eltype(gasmodel,p,T,w))
     for i in eachindex(w)

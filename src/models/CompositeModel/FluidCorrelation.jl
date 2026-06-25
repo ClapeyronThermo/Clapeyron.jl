@@ -100,7 +100,7 @@ function saturation_pressure_ad2(result,model::FluidCorrelation,T::ForwardDiff.D
     end
 
     gas = model.gas
-    vv = if gas isa IdealModel
+    vv = if is_idealmodel(gas)
         Rgas(gas)*T/p
     else
         tup = (gas,p,T,z)

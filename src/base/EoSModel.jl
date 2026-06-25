@@ -17,16 +17,6 @@ Other `EoSModel` subtypes may have other interfaces (like activity models or vol
 """
 abstract type EoSModel end
 
-function eos_impl(model::EoSModel,V,T,z)
-    return Rgas(model)*sum(z)*T*a_eos(model,V,T,z) + reference_state_eval(model,V,T,z)
-end
-
-function a_eos(model::EoSModel, V, T, z=SA[1.0])
-    maybe_ideal = idealmodel(model)
-    ideal = maybe_ideal !== nothing ? maybe_ideal : model
-    return a_ideal(ideal,V,T,z) + a_res(model,V,T,z)
-end
-
 """
     Rgas(model)
     Rgas()
@@ -36,8 +26,9 @@ Returns the gas constant used by an `EoSModel`.
 By default, uses the current 2019 definition: `R̄` = 8.31446261815324 [J⋅K⁻¹⋅mol⁻¹]. You can call `Rgas()` to obtain this value.
 
 """
-Rgas(model) = R̄
-Rgas() = R̄
+@inline Rgas(model) = Constants.R̄(eltype(model))
+Rgas() = Constants.R̄(Float64)
+
 
 """
     eos(model::EoSModel, V, T, z=SA[1.0])
@@ -61,6 +52,15 @@ end
 
 eos(model::EoSModel, V, T, z::Number) = eos(model, V, T, SA[z])
 
+function eos_impl(model::EoSModel,V,T,z)
+    return Rgas(model)*sum(z)*T*a_eos(model,V,T,z) + reference_state_eval(model,V,T,z)
+end
+
+function a_eos(model::EoSModel, V, T, z=SA[1.0])
+    maybe_ideal = idealmodel(model)
+    ideal = maybe_ideal !== nothing ? maybe_ideal : model
+    return a_ideal(ideal,V,T,z) + a_res(model,V,T,z)
+end
 """
     idealmodel(model::EoSModel)
 
@@ -88,6 +88,14 @@ idealmodel(model::EoSModel) = __idealmodel(model::EoSModel)
         return :(nothing)
     end
 end
+
+"""
+    is_idealmodel(model)::Bool
+
+Returns a boolean, indicating if the input model is considered an ideal model.
+By default, is defined in terms of [`idealmodel`](@ref).
+"""
+@inline is_idealmodel(model::M) where M = idealmodel(model) === nothing
 
 """
     eos_res(model::EoSModel, V, T, z=SA[1.0])

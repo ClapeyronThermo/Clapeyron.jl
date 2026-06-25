@@ -76,7 +76,7 @@ end
 function PTFlashWrapper(model::GammaPhi,p,T,z,equilibrium)
     fluidmodel = model.fluid
     #check that we can actually solve the equilibria
-    if fluidmodel isa IdealModel && !is_lle(equilibrium)
+    if is_idealmodel(fluidmodel) && !is_lle(equilibrium)
         ActivitySaturationError(model.activity,tp_flash)
     end
     TT = Base.promote_eltype(model,p,T,z)

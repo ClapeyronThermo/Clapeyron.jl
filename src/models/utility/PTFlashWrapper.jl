@@ -57,10 +57,11 @@ function update_temperature!(model::PTFlashWrapper,T)
         sat = saturation_pressure(pure,T)
         ps,vl,vv = sat
         sats[i] = sat
-        if gas_model(pure) isa IdealModel
+        gasmodel_i = gas_model(pure)
+        if is_idealmodel(gasmodel_i)
             lnϕ[i] = 0.0
         else
-            lnϕ[i] = VT_lnϕ_pure(gas_model(pure),vv,T,ps)
+            lnϕ[i] = VT_lnϕ_pure(gasmodel_i,vv,T,ps)
         end
     end
     return nothing
@@ -120,7 +121,7 @@ function modified_lnϕ_pure(wrapper::PTFlashWrapper,p,T,i;phase = :unknown)
         vv = volume(gasmodel,p,T,phase = :v)
         lnϕv = VT_lnϕ_pure(gasmodel,vv,T,p)
         Δd = log(ps/p)
-        (gas_model isa IdealModel) || (Δd += vl*(p - ps)/RT + lnϕsat)
+        is_idealmodel(gas_model) || (Δd += vl*(p - ps)/RT + lnϕsat)
         return lnϕv - Δd
     else
         return zero(Base.promote_eltype(wrapper,p,T))

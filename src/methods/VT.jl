@@ -62,7 +62,7 @@ function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_internal_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
-    ideal = model isa IdealModel
+    ideal = is_idealmodel(model)
     if iszero(1/V) && !ideal
         return VT_internal_energy(idealmodel(model),V,T,z)
     end
@@ -86,12 +86,12 @@ function VT_internal_energy_res(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_enthalpy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
-    ideal = model isa IdealModel
+    ideal = is_idealmodel(model)
     if iszero(1/V) && !ideal
         return VT_internal_energy(idealmodel(model),V,T,z)
     end
 
-    if model isa IdealModel
+    if is_idealmodel(model)
         V₀ = oneunit(V) #the volume term gets cancelled out
     else
         V₀ = V
@@ -115,7 +115,7 @@ function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_gibbs_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p = nothing)
-    ideal = model isa IdealModel
+    ideal = is_idealmodel(model)
     if iszero(1/V) && !ideal
         return VT_gibbs_free_energy(idealmodel(model), V, T, z)
     end
@@ -171,7 +171,7 @@ VT_mass_isochoric_heat_capacity(model::EoSModel,V, T, z::AbstractVector = SA[1.0
 
 
 function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
-    if iszero(1/V) || model isa IdealModel
+    if iszero(1/V) || is_idealmodel(model)
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
         return -T*∂²A∂T² + Rgas(model)*sum(z)
     else
@@ -186,7 +186,7 @@ end
 VT_mass_isobaric_heat_capacity(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_isobaric_heat_capacity(model,V,T,z)/molecular_weight(model,z)
 
 function VT_adiabatic_index(model::EoSModel, V, T, z=SA[1.])
-    if iszero(1/V) || model isa IdealModel
+    if iszero(1/V) || is_idealmodel(model)
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
         1 - Rgas(model)*sum(z)/(∂²A∂T²*T)
     else
@@ -199,7 +199,7 @@ function VT_adiabatic_index(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
-    if iszero(1/V) || model isa IdealModel
+    if iszero(1/V) || is_idealmodel(model)
         return V/(sum(z)*Rgas(model)*T)
     else
         _,∂p∂V = p∂p∂V(model,V,T,z)
@@ -208,7 +208,7 @@ function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isentropic_compressibility(model::EoSModel, V, T, z=SA[1.])
-    if iszero(1/V) || model isa IdealModel
+    if iszero(1/V) || is_idealmodel(model)
         ∂²A∂T² = ∂²f∂T²(model,V,T,z)
         R = Rgas(model)
         V_∂²A∂V∂T_2 = R*R/V
@@ -225,7 +225,7 @@ end
 
 function VT_speed_of_sound(model::EoSModel, V, T, z=SA[1.])
     Mr = molecular_weight(model,z)
-    if iszero(1/V) || model isa IdealModel
+    if iszero(1/V) || is_idealmodel(model)
         γ = VT_adiabatic_index(model,V,T,z)
         return sqrt(γ*Rgas(model)*T*sum(z)/Mr)
     else
@@ -238,7 +238,7 @@ function VT_speed_of_sound(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isobaric_expansivity(model::EoSModel, V, T, z=SA[1.])
-    if iszero(1/V)  || model isa IdealModel
+    if iszero(1/V)  || is_idealmodel(model)
         return one(Base.promote_eltype(model,V,T,z))/T
     else
         d²A = f_hess(model,V,T,z)
@@ -249,7 +249,7 @@ function VT_isobaric_expansivity(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
-    if iszero(1/V) || model isa IdealModel
+    if iszero(1/V) || is_idealmodel(model)
         B,∂B∂T = B∂B∂T(model,T,z)
         Cp = VT_isobaric_heat_capacity(model,V,T,z)
         return (T*∂B∂T - B)/Cp
