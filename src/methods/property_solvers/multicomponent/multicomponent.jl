@@ -321,9 +321,6 @@ dew_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad_v(result,tup,λt
 bubble_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad_v(result,tup,λtup,true)
 dew_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad_v(result,tup,λtup,false)
 
-supports_vle_ad(model) = has_a_res(model)
-supports_vle_ad(model::RestrictedEquilibriaModel) = true
-
 function zero_non_equilibria!(w,in_equilibria)
     for i in eachindex(w)
         in_equilibria[i] || (w[i] = 0)
