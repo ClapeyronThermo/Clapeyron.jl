@@ -275,7 +275,84 @@ function dew_temperature_tproperty_method(model::PTFlashWrapper,p,T0,z,dPdT)
   return FugDewTemperature(vol0 = (vl0,vv0),T0 = T,x0 = x)
 end
 
-bubble_temperature_ad(result,tup::Tuple{<:PTFlashWrapper,<:Any,<:Any},λtup) = bubbledew_temperature_ad_p(result,tup,λtup,true)
-dew_temperature_ad(result,tup::Tuple{<:PTFlashWrapper,<:Any,<:Any},λtup) = bubbledew_temperature_ad_p(result,tup,λtup,false)
-bubble_pressure_ad(result,tup::Tuple{<:PTFlashWrapper,<:Any,<:Any},λtup) = bubbledew_pressure_ad_p(result,tup,λtup,true)
-dew_pressure_ad(result,tup::Tuple{<:PTFlashWrapper,<:Any,<:Any},λtup) = bubbledew_pressure_ad_p(result,tup,λtup,false)
+const _RestrictedVLEModel = Union{PTFlashWrapper,RestrictedEquilibriaModel}
+
+function _activity_vle_residual(x, tups, sat0, _bubble, _temperature)
+    wrapper, fixed, z = tups
+    model = wrapper.model
+    γmodel = __γ_unwrap(model)
+    pures = wrapper.pures
+    nc = length(wrapper)
+    if _temperature
+        T = x[1]
+        p = fixed
+    else
+        p = x[1]
+        T = fixed
+    end
+    w = @view x[2:end]
+    if _bubble
+        xliq, yvap = z, w
+    else
+        xliq, yvap = w, z
+    end
+    RT = Rgas(model)*T
+    γ = activity_coefficient(γmodel, p, T, xliq)
+    lnϕv, _ = lnϕ(gas_model(model), p, T, yvap; phase = :vapour)
+
+    # pure reference (saturation pressure, Poynting and saturated fugacity coefficient)
+    Δd = map(1:nc) do i
+        purei = pures[i]
+        gmi = gas_model(purei)
+        psᵢ, vlᵢ, vvᵢ = saturation_pressure_ad2(sat0[i], purei, T)
+        if gmi isa IdealModel
+            log(psᵢ/p)
+        else
+            log(psᵢ/p) + vlᵢ*(p - psᵢ)/RT + VT_lnϕ_pure(gmi, vvᵢ, T, psᵢ)
+        end
+    end
+    F1 = sum(w) - one(eltype(w))
+    F2 = log.(γ) .+ log.(xliq) .+ Δd .- lnϕv .- log.(yvap)
+    return vcat(F1, F2)
+end
+
+function _activity_bubbledew_ad(result, tup, λtup, _bubble, _temperature)
+    model, fixed, z = tup
+    λmodel, λfixed, λz = λtup
+    ξ = result[1]
+    w = result[4]
+    vl0, vv0 = result[2], result[3]
+    Tprimal = _temperature ? primalval(ξ) : primalval(fixed)
+
+    wrapper = __tpflash_cache_model(model, primalval(fixed), NaN, z, :vle)
+    λwrapper = __tpflash_cache_model(λmodel, primalval(fixed), NaN, λz, :vle)
+    update_temperature!(λwrapper, Tprimal)
+    sat0 = λwrapper.sat
+
+    xsol = vcat(ξ, w)
+    _tup = (wrapper, fixed, z)
+    _λtup = (λwrapper, λfixed, λz)
+    f(x, tups) = _activity_vle_residual(x, tups, sat0, _bubble, _temperature)
+    ∂x = __gradients_for_root_finders(xsol, _tup, _λtup, f)
+    ∂ξ = ∂x[1]
+    ∂w = ∂x[2:end]
+
+    if _temperature
+        T_d, p_d = ∂ξ, fixed
+    else
+        p_d, T_d = ∂ξ, fixed
+    end
+    if _bubble
+        xliq_d, yvap_d = z, ∂w
+    else
+        xliq_d, yvap_d = ∂w, z
+    end
+    ∂vl = volume(fluid_model(model), p_d, T_d, xliq_d; phase = :liquid, vol0 = primalval(vl0))
+    ∂vv = volume(gas_model(model), p_d, T_d, yvap_d; phase = :vapour, vol0 = primalval(vv0))
+    return ∂ξ, ∂vl, ∂vv, ∂w
+end
+
+bubble_temperature_ad(result,tup::Tuple{<:_RestrictedVLEModel,<:Any,<:Any},λtup) = _activity_bubbledew_ad(result,tup,λtup,true,true)
+dew_temperature_ad(result,tup::Tuple{<:_RestrictedVLEModel,<:Any,<:Any},λtup) = _activity_bubbledew_ad(result,tup,λtup,false,true)
+bubble_pressure_ad(result,tup::Tuple{<:_RestrictedVLEModel,<:Any,<:Any},λtup) = _activity_bubbledew_ad(result,tup,λtup,true,false)
+dew_pressure_ad(result,tup::Tuple{<:_RestrictedVLEModel,<:Any,<:Any},λtup) = _activity_bubbledew_ad(result,tup,λtup,false,false)
