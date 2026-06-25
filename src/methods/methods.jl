@@ -266,7 +266,7 @@ end =#
 Returns the preferred method for a combination of model and function, with the specified kwargs.
 
 """
-function init_preferred_method(method,model) end
+function init_preferred_method end
 
 """
     get_k(model)::VarArg{Matrix}
@@ -326,6 +326,93 @@ function IGFormReferenceState(_components;userlocations = String[],H0 = nothing,
     return ref
 end
 
+"""
+    FixedEoSEval{X::Symbol}(f,data)
+
+a closure-like object specialized for EoSModels. The `X` parameter is a symbol representing which are the variables:
+
+## Examples
+```
+V = 0.04
+T = 300.0
+z = [0.2,0.8]
+model = BasicIdeal()
+p1 = FixedEoSEval{:V}(pressure,(model,T,z)) 
+p1(V) #pressure depending only on volume
+
+p2 = FixedEoSEval{:T}(pressure,(model,V,z)) 
+p(T) #pressure depending only on temperature
+
+p3 = FixedEoSEval{:VT}(pressure,(model,z))
+p3(V,T) #2-variable dependence
+p3((V,T)) #also a tuple or vector can be used
+
+p4 = FixedEoSEval{:Z}(pressure,(model,V,T))
+p4(z) #pressure depending only on composition
+```
+"""
+struct FixedEoSEval{X,F,D}
+    f::F
+    data::D
+end
+
+StaticForwardDiffTags.deferred_valtype(f::FixedEoSEval{X,F,D}) where {X,F,D} = Base.promote_eltype(f.data...)
+StaticForwardDiffTags.inner_function(f::FixedEoSEval{X,F,D}) where {X,F,D} = f.f
+
+FixedEoSEval{X}(f::F,data::T) where {X,F,T} = FixedEoSEval{X,F,T}(f,data)
+
+function (obj::FixedEoSEval{:V,F,D})(V) where {F,D}
+    model,T,z = obj.data
+    return obj.f(model,V,T,z)
+end
+
+function (obj::FixedEoSEval{:p,F,D})(p) where {F,D}
+    model,T,z = obj.data
+    return obj.f(model,p,T,z)
+end
+
+function (obj::FixedEoSEval{:T,F,D})(T) where {F,D}
+    model,V,z = obj.data
+    return obj.f(model,V,T,z)
+end
+
+function (obj::FixedEoSEval{:VT,F,D})(VT) where {F,D}
+    V,T = VT
+    model,z = obj.data
+    return obj.f(model,V,T,z)
+end
+
+(obj::FixedEoSEval{:VT,F,D})(V,T) where {F,D} = obj((V,T))
+
+function (obj::FixedEoSEval{:z,F,D})(z) where {F,D}
+    model,V,T = obj.data
+    return obj.f(model,V,T,z)
+end
+
+macro deferred_V(f,tag)
+    quote
+        WithContext(FixedEoSEval{:V}($f,(model,T,z)),∂Tag{$tag}())
+    end |> esc
+end
+
+macro deferred_T(f,tag)
+    quote
+        WithContext(FixedEoSEval{:T}($f,(model,V,z)),∂Tag{$tag}())
+    end |> esc
+end
+
+macro deferred_VT(f,tag)
+    quote
+        WithContext(FixedEoSEval{:VT}($f,(model,z)),∂Tag{$tag}())
+    end |> esc
+end
+
+macro deferred_Z(f,tag)
+    quote
+        WithContext(FixedEoSEval{:z}($f,(model,V,T)),∂Tag{$tag}())
+    end |> esc
+end
+
 #initial guesses for most methods
 include("initial_guess.jl")
 
@@ -354,3 +441,8 @@ include("XY_methods/QX.jl")
 
 export get_k,set_k!
 export get_l,set_l!
+
+@public ThermodynamicMethod
+@public is_vapour, is_liquid, is_solid, is_unknown
+@public is_lle, is_vle
+@public VT0, PT0, PT, VT, PS, PH, VT, TS, QT, QP

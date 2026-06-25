@@ -418,7 +418,7 @@ function X_maybe_exact_pseudodiag!(K,X)
     #Xi = 1/(1 + K[i,j]*Xj)
     #sign is to differentiate between index (negative) and solution (positive)
     n = LinearAlgebra.checksquare(K)
-    X .= 0
+    X .= -Inf
     for i in 1:n
         for j in 1:n
             if !iszero(K[j,i])
@@ -429,11 +429,11 @@ function X_maybe_exact_pseudodiag!(K,X)
 
     #step1: solve self-associated sites
     n_solved = X_maybe_exact_pseudodiag_01!(K,X)
-
+    n_solved == n && return (true,true)
     #step 2: solve site-pairs
     n_solved += X_maybe_exact_pseudodiag_2!(K,X)
+    n_solved == n && return (true,true)
     n_solved += X_maybe_exact_pseudodiag_2!(K,X) #just to check
-
     if n_solved == n
         return true,true
     elseif n_solved == 0
@@ -447,7 +447,6 @@ function X_maybe_exact_pseudodiag!(K,X)
         end
     end
     return true,false
-    
 end
 
 function X_maybe_exact_pseudodiag_01!(K,X)
@@ -455,12 +454,12 @@ function X_maybe_exact_pseudodiag_01!(K,X)
     n_solved = 0
     n = length(X)
     for i in 1:n
-        if iszero(X[i])
+        if X[i] == -Inf #means no non-zero values were found in that specific row. X(k = 0.0) = 1.0
             X[i] =  1.0
             n_solved +=1
         elseif X[i] == -i
             k = K[i,i]
-            X[i] = 0.5*(-1 + sqrt(1 + 4k))/k
+            X[i] = 2/(1 + sqrt(1 + 4*k))
             n_solved += 1
         end
     end
@@ -1156,7 +1155,15 @@ function assoc_matrix_solve_pure(K,idx,options)
     end
     return X
 end
+
+@public @assoc_loop
+@public getsites,assoc_matrix_solve,assoc_site_matrix,Δ,assoc_strength,X
+@public assoc_shape,assoc_pair_length,assoc_similar,assoc_options
+
+
 #=
+
+
 
 =#
 #=

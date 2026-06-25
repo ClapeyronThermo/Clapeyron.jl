@@ -71,7 +71,7 @@ function sublimation_pressure_impl(model::CompositeModel,T,method::ChemPotSublim
     fluid = fluid_model(model)
     solid = solid_model(model)
     ps,μs = equilibria_scale(fluid)
-    result,converged = try_2ph_pure_pressure(solid,fluid,T,vs0,vv0,ps,μs,method)
+    result,converged = try_2ph_edge_pressure(solid,fluid,T,vs0,vv0,ps,μs,SA[1.0],method)
     if converged
         return result
     else
@@ -100,7 +100,7 @@ function x0_sublimation_pressure(model,T)
         lnϕ_s0 = ares - 1 + log(R̄*T/vs_at_0)
         P0 = exp(lnϕ_s0)
     end
-    
+
     vv0 = Rgas(fluid)*T/P0
     vs0 = vs_at_0
     return vs0,vv0,P0
@@ -114,10 +114,8 @@ lnphi_s = ln_phi0*V*(p - psub)
 
 function Obj_Sub_Temp(model::EoSModel, F, T, V_s, V_v, p, p̄, T̄)
     z = SA[1.0]
-    eos_solid(V) = eos(model.solid,V,T,z)
-    eos_fluid(V) = eos(model.fluid,V,T,z)
-    A_v,Av_v = Solvers.f∂f(eos_fluid,V_v)
-    A_s,Av_s =Solvers.f∂f(eos_solid,V_s)
+    A_v,Av_v = f∂fdV(model.fluid,V_v,T,z)
+    A_s,Av_s = f∂fdV(model.solid,V_s,T,z)
     g_v = muladd(-V_v,Av_v,A_v)
     g_s = muladd(-V_s,Av_s,A_s)
     F1 = -(Av_v+p)/p̄
@@ -280,7 +278,7 @@ function sublimation_pressure_impl(model::CompositeModel,T,method::IsoGibbsSubli
         lnp = lnp + dlnp
         converged,_ = Solvers.convergence(lnp,lnp + dlnp,method.atol,method.rtol)
         p = exp(lnp)
-        if converged 
+        if converged
             !_is_positive((p,vl,vs)) && break
             return p,vs,vl
         end
@@ -342,7 +340,7 @@ function sublimation_temperature_impl(model::CompositeModel,p,method::IsoGibbsSu
         !isfinite(dT) && break
         T = T + dT
         converged,_ = Solvers.convergence(T,T + dT,method.atol,method.rtol)
-        if converged 
+        if converged
             !_is_positive((T,vs,vl)) && return (nan,nan,nan)
             return T,vs,vl
         end

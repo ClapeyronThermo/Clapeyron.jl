@@ -197,10 +197,8 @@ function __dlnPdTinvsat(pure,sat,crit,xx,is_sat_temperature,status)
     elseif status === :supercritical
         Tc,Pc,Vc = crit
         if has_a_res(pure)
-            _p(_T) = pressure(pure,Vc,_T)
-            dpdT = Solvers.derivative(_p,Tc)
+            dpdT = ∂p∂T(pure,Vc,Tc,SA[1.0])
         else
-            f(_T) = first(saturation_pressure(model,_T))
             dpdT = dpdT_saturation(pure,NaN,NaN,T)
         end
         return -dpdT*Tc*Tc/Pc,log(Pc),1/Tc
@@ -233,7 +231,6 @@ function T_from_dpdT(dpdT,p)
     Tinv = T0inv + (logp0 - log(p))/dlnpdTinv
     return 1/Tinv
 end
-
 
 function improve_bubbledew_suggestion_spinodal(model,p0,T0,x,y,method,in_media)
     #TODO: implement this
@@ -443,27 +440,24 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     x = x/sum(x)
     T = float(T)
     verbose = get_verbosity(method)
-    model_r,idx_r = index_reduction(model,x)
-    if length(model_r)==1 && !is_pseudo_pure(model)
-        (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
+    _model_r,idx_r = index_reduction(model,x)
+    if length(_model_r)==1 && !is_pseudo_pure(model)
+        (P_sat,v_l,v_v) = saturation_pressure(_model_r,T)
         y = [one(eltype(x))]
         return (P_sat,v_l,v_v,y)
     end
     x_r = x[idx_r]
-
+    model_r = __tpflash_cache_model(_model_r,NaN,T,x,:vle)
     method_r = index_reduction(method,idx_r)
-    if supports_vle_ad(model)
-        λmodel,λT,λx = primalval(model_r),primalval(T),primalval(x_r)
-        λresult = bubble_pressure_impl(λmodel,λT,λx,primalval(method_r))
-        tup = (model_r,T,x_r)
-        if any(has_dual,tup)
-            λtup = (λmodel,λT,λx)
-            result = bubble_pressure_ad(λresult,tup,λtup)
-        else
-            result = λresult
-        end
+
+    λmodel,λT,λx = primalval(model_r),primalval(T),primalval(x_r)
+    λresult = bubble_pressure_impl(λmodel,λT,λx,primalval(method_r))
+    tup = (model_r,T,x_r)
+    if any(has_dual,tup)
+        λtup = (λmodel,λT,λx)
+        result = bubble_pressure_ad(λresult,tup,λtup)
     else
-        result = bubble_pressure_impl(model_r,T,x_r,method_r)
+        result = λresult
     end
 
     (P_sat, v_l, v_v, y_r) = result
@@ -634,7 +628,7 @@ function bubble_temperature(model::EoSModel,p,x;kwargs...)
     return bubble_temperature(model,p,x,method)
 end
 
-function bubble_temperature(model::EoSModel, p , x, T0::Number)
+function bubble_temperature(model::EoSModel, p, x, T0::Number)
    moles_positivity(x)
     kwargs = (;T0)
     method = init_preferred_method(bubble_temperature,model,kwargs)
@@ -646,27 +640,24 @@ function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
     x = x/sum(x)
     p = float(p)
     verbose = get_verbosity(method)
-    model_r,idx_r = index_reduction(model,x)
-    if length(model_r) == 1 && !is_pseudo_pure(model)
-        (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
+    _model_r,idx_r = index_reduction(model,x)
+    if length(_model_r) == 1 && !is_pseudo_pure(model)
+        (T_sat,v_l,v_v) = saturation_temperature(_model_r,p)
         y = [one(eltype(x))]
         return (T_sat,v_l,v_v,y)
     end
     x_r = x[idx_r]
+    model_r = __tpflash_cache_model(_model_r,p,NaN,x,:vle)
 
     method_r = index_reduction(method,idx_r)
-    if supports_vle_ad(model)
-        λmodel,λp,λx = primalval(model_r),primalval(p),primalval(x_r)
-        λresult = bubble_temperature_impl(λmodel,λp,λx,primalval(method_r))
-        tup = (model_r,p,x_r)
-        if any(has_dual,tup)
-            λtup = (λmodel,λp,λx)
-            result = bubble_temperature_ad(λresult,tup,λtup)
-        else
-            result = λresult
-        end
+    λmodel,λp,λx = primalval(model_r),primalval(p),primalval(x_r)
+    λresult = bubble_temperature_impl(λmodel,λp,λx,primalval(method_r))
+    tup = (model_r,p,x_r)
+    if any(has_dual,tup)
+        λtup = (λmodel,λp,λx)
+        result = bubble_temperature_ad(λresult,tup,λtup)
     else
-        result = bubble_temperature_impl(model_r,p,x_r,method_r)
+        result = λresult
     end
 
     (T_sat, v_l, v_v, y_r) = result

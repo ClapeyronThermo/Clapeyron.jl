@@ -103,6 +103,14 @@ end
                     bondvol=nothing))
         @test model1 isa CPA
         GC.gc()
+
+        #597
+        T597 = 351.03014827873614
+        y597 = [1.0, 1.0674702898962479e-31, 3.5750339860758175e-31, 5.826495944830307e-32]
+        V597 = 1e-3
+        model597_all =  CPA(["water", "methanol", "ethanol", "benzene"])
+        model597_1 = CPA("water")
+        eos(model597_1,V597,T597) ≈ eos(model597_all,V597,T597,y597) 
     end
 
     @testset "sCPA" begin

@@ -207,7 +207,6 @@ function tangent_plane_distance(model,p,T,z,W,cache = nothing;
         lnϕw = copy(_lnϕw) #copy if a cache is used
     end
     lnϕz,_ = modified_lnϕ(model, p, T, z, cache; phase=phasez, vol0=volw0)
-    @show lnϕw
     RT = Rgas(model)*T
     ∑z = sum(z)
     if modified

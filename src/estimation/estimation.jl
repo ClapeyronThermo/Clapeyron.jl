@@ -305,3 +305,4 @@ EstimationUtils.initial_guess(model::EstimationProblem) = EstimationUtils.initia
 EstimationUtils.get_eos_parameters(model::EstimationProblem) = EstimationUtils.get_eos_parameters(model.toestimate)
 
 export Estimation, EstimationModel, EstimationData, ToEstimate, EstimationProblem
+@public EstimationUtils

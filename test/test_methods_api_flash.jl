@@ -730,6 +730,12 @@ end
     dsatt(p) = first(saturation_temperature(cpr,1e5*p))
     @test Clapeyron.Solvers.derivative(dsatp,1.0) ≈ Clapeyron.derivx(dsatp,1.0) rtol = 1e-6
     @test Clapeyron.Solvers.derivative(dsatt,1.0) ≈ Clapeyron.derivx(dsatt,1.0) rtol = 1e-6
+
+    #edge temperature, #596
+    fluid596 = cPR(["r1233zde","r134a"])
+    (p596, z596) = (3.889866513485533e6, [0.7, 0.3])
+    @test Clapeyron._edge_temperature(fluid596,p596,z596)[3] == :supercritical
+
 end
 
 @testset "Tproperty/Property" begin

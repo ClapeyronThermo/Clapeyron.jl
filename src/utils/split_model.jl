@@ -509,3 +509,4 @@ __get_pure_model_vec(vec_of_models,splitter::AbstractVector{<:Integer}) = vec_of
 
 
 export split_model, split_model_binaries
+@public split_pure_model

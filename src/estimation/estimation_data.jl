@@ -219,7 +219,7 @@ end
 function Base.show(io::IO, data::EstimationData)
     print(io, typeof(data))
     print(io,"(")
-    n = length(data.input)
+    n = length(data.inputs)
     print(io," data point")
     n != 1 && print(io,"s")
     print(io,")")

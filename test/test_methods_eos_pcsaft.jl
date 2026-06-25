@@ -8,7 +8,7 @@
     Mw = Clapeyron.molecular_weight(system)
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ v rtol = 1e-6
-        @test Clapeyron.PT.volume(system, p, T)  ≈ v rtol = 1e-6
+        @test Clapeyron.PT0.volume(system, p, T)  ≈ v rtol = 1e-6
         @test Clapeyron.volume(system, p, T;phase=:v) ≈ 0.020427920501436134 rtol = 1e-6
         @test Clapeyron.volume(system, p, T;threaded=:false) ≈ v rtol = 1e-6
         @test Clapeyron.pip(system, v, T) ≈ 6.857076349623449 rtol = 1e-6

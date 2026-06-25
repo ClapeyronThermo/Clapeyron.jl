@@ -314,4 +314,5 @@ end
 is_pseudo_pure(model) = false
 is_electrolyte(model) = false
 
-export EoSModel, eos, has_groups, has_sites, Rgas
+export EoSModel, eos, has_groups, has_sites, Rgas, eos_res
+@public a_res, component_list

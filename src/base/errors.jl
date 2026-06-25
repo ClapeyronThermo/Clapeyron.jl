@@ -32,6 +32,21 @@ function binary_component_error(method,model)
     throw(DimensionMismatch(msg))
 end
 
+"""
+    multiple_component_check(method,model)
+Checks if a model is a multiple component model, throws an error otherwise.
+"""
+function multiple_component_check(method,model)
+    l = length(model)
+    l > 1 && (return nothing)
+    multiple_component_error(method,model)
+end
+
+function multiple_component_error(method,model)
+    msg = string(method," only supports multiple component models, ",model," has only one component.")
+    throw(DimensionMismatch(msg))
+end
+
 function check_arraysize(model,k::AbstractMatrix)
     n = length(model)
     n2 = LinearAlgebra.checksquare(k)

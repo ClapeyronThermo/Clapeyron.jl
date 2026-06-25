@@ -8,6 +8,20 @@ function QT_property(model,q,T,z,f::F,p0) where F
     return f(model,res)
 end
 
+"""
+    QT
+
+Module that stores Clapeyron properties in (molar) vapour fraction - temperature basis.
+
+All bulk properties have the following form:
+
+```julia
+property(model,q,t,z;p0 = nothing)
+```
+
+A vapour fraction - temperature flash is done to check if the input pair corresponds to one or more phases.
+a `p0` argument can be used to provide an initial pressure guess to the Q-T flash.
+"""
 module QT
 import Clapeyron
 for f in Clapeyron.CLAPEYRON_PROPS
@@ -17,6 +31,7 @@ for f in Clapeyron.CLAPEYRON_PROPS
         end
     end
 end
+
 function flash(model,q,T,z = Clapeyron.SA[1.0],args...;kwargs...)
     return Clapeyron.qt_flash(model,q,T,z,args...;kwargs...)
 end
@@ -32,6 +47,20 @@ function QP_property(model,q,p,z,f::F,T0) where F
     return f(model,res)
 end
 
+"""
+    QP
+
+Module that stores Clapeyron properties in (molar) vapour fraction - pressure basis.
+
+All bulk properties have the following form:
+
+```julia
+property(model,q,p,z;p0 = nothing)
+```
+
+A vapour fraction - pressure flash is done to check if the input pair corresponds to one or more phases.
+a `T0` argument can be used to provide an initial temperature guess to the Q-P flash.
+"""
 module QP
 import Clapeyron
 for f in Clapeyron.CLAPEYRON_PROPS

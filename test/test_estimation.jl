@@ -34,7 +34,8 @@ end
         ]
 
         est = EstimationModel(model, toestimate)
-
+        test_repr(est)
+        test_repr(est.toestimate)
         #construction
         @test est isa EstimationUtils.AbstractEstimationModel
         @test EstimationUtils.get_model(est) === est.model
@@ -258,7 +259,7 @@ end
         vs = [1e-3, 1.2e-3, 1.4e-3]
         table = make_pv_data(model, Ts, vs)
         est_data = EstimationData(table, bulk_p, mse_loss)
-
+        test_repr(est_data)
         #construction
         @test est_data isa EstimationUtils.AbstractEstimationLoss
         @test length(est_data.inputs) == 3
@@ -515,7 +516,7 @@ T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
         Ts = [300., 350., 400., 450.]
         vs = [1e-3, 1.1e-3, 1.2e-3, 1.3e-3]
         loss = BulkPressureLoss(ref_model, Ts, vs)
-
+        test_repr(loss)
         #zero loss at reference model
         F = EstimationUtils.objective_function(loss, ref_model)
         @test F ≈ 0.0 atol = 1e-10
@@ -575,7 +576,8 @@ T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
 
         prob_single = EstimationProblem(est_model, [loss_A])
         prob_double = EstimationProblem(est_model, [loss_A, loss_B])
-
+        test_repr(prob_single)
+        test_repr(prob_double)
         Θ0 = EstimationUtils.initial_guess(prob_single)
 
         FA = EstimationUtils.objective_function(prob_single, Θ0)
