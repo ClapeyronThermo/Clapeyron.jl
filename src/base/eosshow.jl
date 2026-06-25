@@ -40,6 +40,9 @@ function show_references(io::IO,model)
     end
 end
 
+custom_typeof_str(::Type{T}) where T = string(T)
+custom_typeof_str(model) = string(typeof(model))
+
 """
     eosshow(io::IO, model::EoSModel)
     eosshow(io::IO, ::MIME"text/plain", model::EoSModel)
@@ -51,10 +54,13 @@ display. The text/plain variant prints components, parameters, reference state,
 and (optionally) citations when enabled via `ENV["CLAPEYRON_SHOW_REFERENCES"]`.
 """
 function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSModel))
-    print(io, typeof(model))
-    if hasfield(typeof(model),:components)
-        length(model) == 1 && println(io, " with 1 component:")
-        length(model) > 1 && println(io, " with ", length(model), " components:")
+    print(io, custom_typeof_str(model))
+    
+    comps = component_list(model)
+    l = length(comps)
+    if l != 0
+        l == 1 && println(io, " with 1 component:")
+        l > 1 && println(io, " with ", string(l), " components:")
         if has_groups(model)
             groups = model.groups
             show_groups(io,groups)
@@ -73,7 +79,7 @@ function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSMo
 end
 
 function eosshow(io::IO, Base.@nospecialize(model::EoSModel))
-    print(io, typeof(model))
+    print(io, custom_typeof_str(model))
     print(io, "(")
     show_pairs(io,component_list(model),pair_separator = ", ")
     print(io, ")")
