@@ -8,6 +8,7 @@ end
 lb_volume(model::IdealModel,T,z) = zero(eltype(z))
 
 idealmodel(model::IdealModel) = model
+@inline is_idealmodel(model::IdealModel) = true
 
 @newmodelsingleton ZeroIdeal IdealModel
 a_ideal(::ZeroIdeal,V,T,z) = zero(Base.promote_eltype(V,T,z))
