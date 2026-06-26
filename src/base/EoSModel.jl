@@ -64,18 +64,26 @@ end
 """
     idealmodel(model::EoSModel)
 
-Retrieves the ideal model from the input's model. If the model is already an idealmodel, return `nothing`
+Retrieves the ideal model from the input's model. If the model is already an idealmodel, return the same model. If the model has no ideal model stored, return nothing.
 # Examples:
 ```julia-repl
 julia> pr = PR(["water"],idealmodel = MonomerIdeal)
 PR{MonomerIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
  "water"
 Contains parameters: a, b, Tc, Pc, Mw
-julia> ideal = idealmodel(pr)
+
+julia> ideal = Clapeyron.idealmodel(pr)
 MonomerIdeal with 1 component:
  "water"
-Contains parameters: Mw
-julia> idealmodel(ideal) == nothing
+Contains parameters: Mw, reference_state
+
+julia> ideal == Clapeyron.idealmodel(pr)
+true
+
+julia> ideal == Clapeyron.idealmodel(ideal)
+true
+
+julia> Clapeyron.idealmodel(pr.mixing) == nothing
 true
 ```
 """
@@ -95,7 +103,13 @@ end
 Returns a boolean, indicating if the input model is considered an ideal model.
 By default, is defined in terms of [`idealmodel`](@ref).
 """
-@inline is_idealmodel(model::M) where M = idealmodel(model) === nothing
+@inline is_idealmodel(model::M) where M = __is_idealmodel(M,idealmodel(model))
+
+@inline __is_idealmodel(::Type{M1},::Nothing) where {M1} = false
+@inline __is_idealmodel(::Type{M1},::Type{T}) where {M1,T}= false
+@inline __is_idealmodel(::Type{M1},::Type{M1}) where {M1} = true
+@inline __is_idealmodel(::Type{M1},x::T) where {M1,T} = __idealmodel(M1,T) 
+@inline __is_idealmodel(::Type{Nothing},::Type{Nothing}) = false #edge case, but better be sure
 
 """
     eos_res(model::EoSModel, V, T, z=SA[1.0])
