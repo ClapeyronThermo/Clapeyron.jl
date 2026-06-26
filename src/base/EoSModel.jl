@@ -108,7 +108,7 @@ By default, is defined in terms of [`idealmodel`](@ref).
 @inline __is_idealmodel(::Type{M1},::Nothing) where {M1} = false
 @inline __is_idealmodel(::Type{M1},::Type{T}) where {M1,T}= false
 @inline __is_idealmodel(::Type{M1},::Type{M1}) where {M1} = true
-@inline __is_idealmodel(::Type{M1},x::T) where {M1,T} = __idealmodel(M1,T) 
+@inline __is_idealmodel(::Type{M1},x::T) where {M1,T} = __is_idealmodel(M1,T) 
 @inline __is_idealmodel(::Type{Nothing},::Type{Nothing}) = false #edge case, but better be sure
 
 """
