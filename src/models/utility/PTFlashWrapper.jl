@@ -97,7 +97,7 @@ function Base.show(io::IO,mime::MIME"text/plain",wrapper::PTFlashWrapper)
     show_reference_state(io,model;space = true)
 end
 
-function saturation_pressure_ad2(result,model,T)
+function saturation_pressure_ad2(result,model::M,T::TT) where {M,TT}
     return saturation_pressure_ad(result,(model,T),(model,primalval(T)))
 end
 

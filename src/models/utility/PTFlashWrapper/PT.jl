@@ -7,7 +7,7 @@ function volume_impl(model::PTFlashWrapper, p, T, z, phase, threaded, vol0)
     end
 end
 
-function tpd_delta_g_vapour(wrapper::PTFlashWrapper,p,T,w)
+function tpd_delta_g_vapour(wrapper::M,p,T,w) where M <: PTFlashWrapper
     lnϕsat,sat = wrapper.fug,wrapper.sat
     pure = wrapper.pures
     gasmodel = gas_model(wrapper.model)
@@ -18,17 +18,22 @@ function tpd_delta_g_vapour(wrapper::PTFlashWrapper,p,T,w)
     for i in eachindex(w)
         pure_i = pure[i]
         ps,vl,vv = saturation_pressure_ad2(sat[i],pure_i,T)
-        lnϕsat_i = if T isa ForwardDiff.Dual
-            VT_lnϕ_pure(pure_i,vv,T,ps)
-        else
-            lnϕsat[i]*one(res)
-        end
+        lnϕsat_i = __eval_tpd_delta_g_sati(pure_i,T,lnϕsat[i],vv,ps)
         Δd = lnϕsat_i + log(ps/p)
         is_ideal || (Δd += vl*(p - ps)/RT)
         res -= w[i]*Δd
     end
     return res
 end
+
+function __eval_tpd_delta_g_sati(model::M,T::TT,lnϕsat,vv,ps)  where {M,TT}
+    return lnϕsat*one(Base.promote_eltype(vv,ps,T))
+end
+
+function __eval_tpd_delta_g_sati(model::M,T::TT,lnϕsat,vv,ps)  where {M,TT<:ForwardDiff.Dual}
+    return VT_lnϕ_pure(model,vv,T,ps)
+end
+
 
 function modified_gibbs(wrapper::PTFlashWrapper,p::Number,T,w,phase,vol)
     model = wrapper.model
@@ -84,7 +89,7 @@ function identify_phase(wrapper::PTFlashWrapper, p::Number, T, w=SA[1.]; vol0=no
     end
 end
 
-function eos_g(wrapper::PTFlashWrapper,p,T,z)
+function eos_g(wrapper::M,p,T,z) where M <: PTFlashWrapper
     RT = Rgas(wrapper)*T
     g_E = excess_gibbs_free_energy(__γ_unwrap(wrapper),p,T,z) #excess gibbs
     dg = -tpd_delta_g_vapour(wrapper,p,T,z)*RT #difference between gas fugacity and liquid activity, summed over z

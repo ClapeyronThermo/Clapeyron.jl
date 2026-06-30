@@ -82,7 +82,7 @@ function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,vol:
     end
 end
 
-function saturation_pressure_ad2(result,model::FluidCorrelation,T::ForwardDiff.Dual)
+function saturation_pressure_ad2(result,model::M,T::ForwardDiff.Dual) where M <: FluidCorrelation
     p = if has_a_res(model.saturation) #using an EoSModel as saturation provider
         first(saturation_pressure_ad2(result,model.saturation,T))
     else
