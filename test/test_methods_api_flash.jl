@@ -271,6 +271,13 @@
         [0.9239684120579815 0.07603158794201849;
         0.793479931206839 0.20652006879316098] rtol = 1e-6
         #test equality of activities does not make sense in VLE
+
+        #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/599#issuecomment-4828372077
+        m = UNIFAC(["water", "methanol", "ethanol", "benzene"]; puremodel=PR)
+        K = zeros(4)
+        wrapp = Clapeyron.__tpflash_cache_model(m,p,300.0,fill(0.25, 4),:vle)
+        Clapeyron.suggest_K!(K,wrapp,1e5,300.0,fill(0.25, 4))
+        @test maximum(K) < 1
     end
 
     @testset "Michelsen Algorithm, CompositeModel" begin

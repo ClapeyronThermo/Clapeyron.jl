@@ -121,7 +121,7 @@ function modified_lnϕ_pure(wrapper::PTFlashWrapper,p,T,i;phase = :unknown)
         vv = volume(gasmodel,p,T,phase = :v)
         lnϕv = VT_lnϕ_pure(gasmodel,vv,T,p)
         Δd = log(ps/p)
-        is_idealmodel(gas_model) || (Δd += vl*(p - ps)/RT + lnϕsat)
+        is_idealmodel(gasmodel) || (Δd += vl*(p - ps)/RT + lnϕsat)
         return lnϕv - Δd
     else
         return zero(Base.promote_eltype(wrapper,p,T))
