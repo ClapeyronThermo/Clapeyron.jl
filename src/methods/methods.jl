@@ -371,6 +371,12 @@ function (obj::FixedEoSEval{:p,F,D})(p) where {F,D}
     return obj.f(model,p,T,z)
 end
 
+function (obj::FixedEoSEval{:rho,F,D})(rho) where {F,D}
+    model,T,z = obj.data
+    return obj.f(model,rho,T,z)
+end
+
+
 function (obj::FixedEoSEval{:T,F,D})(T) where {F,D}
     model,V,z = obj.data
     return obj.f(model,V,T,z)
@@ -382,7 +388,15 @@ function (obj::FixedEoSEval{:VT,F,D})(VT) where {F,D}
     return obj.f(model,V,T,z)
 end
 
+function (obj::FixedEoSEval{:rhoT,F,D})(VT) where {F,D}
+    rho,T = VT
+    model,z = obj.data
+    return obj.f(model,rho,T,z)
+end
+
 (obj::FixedEoSEval{:VT,F,D})(V,T) where {F,D} = obj((V,T))
+(obj::FixedEoSEval{:rhoT,F,D})(rho,T) where {F,D} = obj((rho,T))
+
 
 function (obj::FixedEoSEval{:z,F,D})(z) where {F,D}
     model,V,T = obj.data

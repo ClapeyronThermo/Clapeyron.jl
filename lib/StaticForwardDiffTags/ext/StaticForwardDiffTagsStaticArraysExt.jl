@@ -1,12 +1,12 @@
 module StaticForwardDiffTagsStaticArraysExt
 
+using StaticForwardDiffTags
 using StaticArrays
-using ForwardDiff
-using Clapeyron.StaticForwardDiffTags: maketagtype, WithContext
+using StaticForwardDiffTags.ForwardDiff
+using StaticForwardDiffTags: maketagtype, WithContext
 
 const ForwardDiffStatic = Base.get_extension(ForwardDiff,:ForwardDiffStaticArraysExt)
 
-using ForwardDiff, StaticArrays
 using ForwardDiff.DiffResults
 using ForwardDiff: Dual,
                    gradient, hessian, jacobian, gradient!, hessian!, jacobian!,

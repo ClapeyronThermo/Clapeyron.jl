@@ -27,13 +27,10 @@ include("utils/core_utils.jl")
 #misc functions
 include("utils/misc.jl")
 
-include("../lib/StaticForwardDiffTags/src/StaticForwardDiffTags.jl")
+import StaticForwardDiffTags
+using StaticForwardDiffTags: WithContext
+import StaticForwardDiffTags: ∂Tag, STag
 
-import .StaticForwardDiffTags
-using .StaticForwardDiffTags: WithContext
-import .StaticForwardDiffTags: ∂Tag, STag
-
-include("../lib/StaticForwardDiffTags/ext/StaticForwardDiffTagsStaticArraysExt.jl")
 
 include("modules/solvers/Solvers.jl")
 using .Solvers
