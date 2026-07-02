@@ -1,9 +1,8 @@
 module StaticForwardDiffTagsStaticArraysExt
 
-using StaticForwardDiffTags
 using StaticArrays
-using StaticForwardDiffTags.ForwardDiff
-using StaticForwardDiffTags: maketagtype, WithContext
+using Clapeyron.StaticForwardDiffTags: maketagtype, WithContext
+using Clapeyron.StaticForwardDiffTags: ForwardDiff
 
 const ForwardDiffStatic = Base.get_extension(ForwardDiff,:ForwardDiffStaticArraysExt)
 
