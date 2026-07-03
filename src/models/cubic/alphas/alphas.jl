@@ -69,4 +69,6 @@ include("RKPRAlpha.jl")
 include("MathiasCopemanAlpha.jl")
 include("MC3PRAlpha.jl")
 
+include("SAlpha")
+
 @public α_function

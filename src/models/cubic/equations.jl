@@ -813,6 +813,7 @@ function transform_params(::Type{ABCCubicParam},params,components)
     return params
 end
 
+function statify_alpha end
 
 """
     CubicModel(cubicmodel::Type{T},params::Dict{String,ClapeyronParam},components;
@@ -871,7 +872,7 @@ function CubicModel(cubicmodel::Type{T},params,components;
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     cubicparams = build_eosparam(PARAM,params)
     references = default_references(cubicmodel)
-    return cubicmodel(_components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,references)
+    return cubicmodel(_components,statify_alpha(init_alpha,length(_components)),init_mixing,init_translation,cubicparams,init_idealmodel,references)
 end
 
 export CubicModel
