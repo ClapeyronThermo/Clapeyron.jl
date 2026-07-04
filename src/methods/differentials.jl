@@ -289,3 +289,8 @@ function __gradients_for_root_finders(x::Union{AbstractArray{T},T},tups,tups_pri
 end
 
 IFTDuals.promote_my_type(m::EoSModel) = eltype(m)
+
+#STag-aware symmetry checks, mirroring IFTDuals' Tag/Tag semantics
+IFTDuals.is_symm(::Type{STag{F1,V1}},::Type{ForwardDiff.Tag{F2,V2}}) where {F1,V1,F2,V2} = false
+IFTDuals.is_symm(::Type{ForwardDiff.Tag{F1,V1}},::Type{STag{F2,V2}}) where {F1,V1,F2,V2} = false
+IFTDuals.is_symm(::Type{STag{F1,V1}},::Type{STag{F2,V2}}) where {F1,V1,F2,V2} = F1 === F2

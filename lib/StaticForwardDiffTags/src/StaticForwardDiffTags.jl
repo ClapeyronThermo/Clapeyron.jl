@@ -37,6 +37,7 @@ end
 # Deliberately does NOT recurse closure type params F.
 @inline contains_tag(::Type, target) = false
 @inline contains_tag(::Type{<:Tag{F,V}}, target) where {F,V} = contains_tag(V, target)
+@inline contains_tag(::Type{STag{F,V}}, target) where {F,V} = contains_tag(V, target)
 @inline contains_tag(::Type{<:Dual{T,V,N}}, target) where {T,V,N} =
     (T === target) || contains_tag(T, target) || contains_tag(V, target)
 
@@ -70,6 +71,9 @@ end
 
 #Static checking of STags
 @inline function ≺(::Type{STag{F1,V1}}, ::Type{STag{F2,V2}}) where {F1,V1,F2,V2}
+    #genuine nesting by tag identity: depths may coincide when a context valtype adds a Dual layer
+    contains_tag(V2, STag{F1,V1}) && return true
+    contains_tag(V1, STag{F2,V2}) && return false
     T1 = Tag{F1,V1}
     T2 = Tag{F2,V2}
     d1 = tagdepth(T1)
