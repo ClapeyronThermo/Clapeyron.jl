@@ -25,12 +25,12 @@ function PTFlashWrapper{TT}(model,equilibrium,pures = split_pure_model(model)) w
 end
 
 function PTFlashWrapper(model,equilibrium,pures = split_pure_model(model))
-    TT = Base.promote_eltype(model,Float64)
+    TT = Solvers.primal_eltype(Base.promote_eltype(model,Float64))
     return PTFlashWrapper{TT}(model,equilibrium,pures)
 end
 
 function PTFlashWrapper(model,p,T,z,equilibrium)
-    TT = Base.promote_eltype(model,p,T,z)
+    TT = Solvers.primal_eltype(Base.promote_eltype(model,p,T,z))
     wrapper = PTFlashWrapper{TT}(model,equilibrium)
     update_temperature!(wrapper,T)
     return wrapper
@@ -48,20 +48,20 @@ end
 
 function update_temperature!(model::PTFlashWrapper,T)
     isnan(T) && return nothing
+    λT = primalval(T)
     pures = model.pures
     lnϕ = model.fug
     sats = model.sat
-    TT = eltype(lnϕ)
     for i in 1:length(model)
-        pure = pures[i]
-        sat = saturation_pressure(pure,T)
+        pure = primalval(pures[i])
+        sat = saturation_pressure(pure,λT)
         ps,vl,vv = sat
         sats[i] = sat
         gasmodel_i = gas_model(pure)
         if is_idealmodel(gasmodel_i)
             lnϕ[i] = 0.0
         else
-            lnϕ[i] = VT_lnϕ_pure(gasmodel_i,vv,T,ps)
+            lnϕ[i] = VT_lnϕ_pure(gasmodel_i,vv,λT,ps)
         end
     end
     return nothing

@@ -25,13 +25,14 @@ end
 
 function tpd_delta_d_vapour!(d,wrapper,p,T)
     lnϕsat,sat = wrapper.fug,wrapper.sat
+    pure = wrapper.pures
     gasmodel = gas_model(wrapper)
     is_ideal = is_idealmodel(gasmodel)
     RT = Rgas(gasmodel)*T
     for i in eachindex(d)
-        ps,vl,vv = sat[i]
+        ps,vl,vv = saturation_pressure_ad2(sat[i],pure[i],T)
         Δd = log(ps/p)
-        is_ideal || (Δd += vl*(p - ps)/RT + lnϕsat[i])
+        is_ideal || (Δd += vl*(p - ps)/RT + __eval_tpd_delta_g_sati(pure[i],T,lnϕsat[i],vv,ps))
         d[i] = d[i] - Δd
     end
     return d

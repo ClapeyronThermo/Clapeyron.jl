@@ -812,6 +812,16 @@ end
     @test Tb < T0 < Td
 end
 
+@testset "PT_property implicit AD (activity models)" begin
+    fluid = NRTL(["butan-1-ol", "propan-2-ol", "water"]; puremodel=PR)
+    fh_p(p) = enthalpy(fluid, p, 300., [1.,1.,1.])
+    fh_T(T) = enthalpy(fluid, 1e5, T, [1.,1.,1.])
+    fh_x(x) = enthalpy(fluid, 1e5, 300., [x,1.,1.])
+    @test Clapeyron.Solvers.derivative(fh_p,1e5) ≈ 0.00014228987244983664 rtol = 1e-6
+    @test Clapeyron.Solvers.derivative(fh_T,300.) ≈ isobaric_heat_capacity(fluid, 1e5, 300., [1.,1.,1.]) rtol = 1e-10
+    @test Clapeyron.Solvers.derivative(fh_x,1.) ≈ -41038.85252193186 rtol = 1e-6
+end
+
 @testset "bubble/dew point algorithms" begin
     system1 = PCSAFT(["methanol","cyclohexane"])
     p = 1e5
