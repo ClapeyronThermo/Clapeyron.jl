@@ -29,7 +29,7 @@ function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <
         end
     end
     αvec = SVector(α0)
-    α = @view(αvec,Base.OneTo(n_dynamic))
+    α = @view(αvec[Base.OneTo(n_dynamic)])
     return α
 end
 
@@ -50,7 +50,7 @@ function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <
         end
     end
     αvec = SVector(α0)
-    α = @view(αvec,Base.OneTo(n_dynamic))
+    α = @view(αvec[Base.OneTo(n_dynamic)])
     return α
 end
 
@@ -68,7 +68,7 @@ function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <
         end
     end
     αvec = SVector(α0)
-    α = @view(αvec,Base.OneTo(n_dynamic))
+    α = @view(αvec[Base.OneTo(n_dynamic)])
     return α
 end
 
@@ -91,7 +91,7 @@ function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <
         end
     end
     αvec = SVector(α0)
-    α = @view(αvec,Base.OneTo(n_dynamic))
+    α = @view(αvec[Base.OneTo(n_dynamic)])
     return α
 end
 
@@ -112,7 +112,7 @@ function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <
         end
     end
     αvec = SVector(α0)
-    α = @view(αvec,Base.OneTo(n_dynamic))
+    α = @view(αvec[Base.OneTo(n_dynamic)])
     return α
 end
 
