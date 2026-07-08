@@ -435,7 +435,9 @@ function bubble_pressure(model::EoSModel,T,x;kwargs...)
     return bubble_pressure(model, T, x, method)
 end
 
-function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
+bubble_pressure(model::EoSModel, T, x::Number, method::ThermodynamicMethod) = bubble_pressure(model, T, [x], method)
+
+function bubble_pressure(model::EoSModel, T, x::AbstractVector, method::ThermodynamicMethod)
     moles_positivity(x)
     x = x/sum(x)
     T = float(T)
@@ -635,7 +637,9 @@ function bubble_temperature(model::EoSModel, p, x, T0::Number)
     return bubble_temperature(model,p,x,method)
 end
 
-function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
+bubble_temperature(model::EoSModel, p, x::Number, method::ThermodynamicMethod) = bubble_temperature(model, p, [x], method)
+
+function bubble_temperature(model::EoSModel, p, x::AbstractVector, method::ThermodynamicMethod)
     moles_positivity(x)
     x = x/sum(x)
     p = float(p)

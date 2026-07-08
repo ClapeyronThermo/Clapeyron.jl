@@ -365,7 +365,7 @@ end
 
 for f in (:bubble_pressure,:bubble_temperature,:dew_pressure,:dew_temperature)
     @eval begin
-        function $f(model::ActivityModel,T,x,method::ThermodynamicMethod)
+        function $f(model::ActivityModel,T,x::AbstractVector,method::ThermodynamicMethod)
             compmodel = __act_to_gammaphi(model,method)
             return $f(compmodel,T,x,method)
         end

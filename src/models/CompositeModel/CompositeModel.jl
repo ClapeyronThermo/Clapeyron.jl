@@ -419,19 +419,19 @@ for prop in [:bubble_pressure,:bubble_temperature,
     end
 end
 
-function bubble_pressure(model::CompositeModel, T, x, method::ThermodynamicMethod)
+function bubble_pressure(model::CompositeModel, T, x::AbstractVector, method::ThermodynamicMethod)
     return bubble_pressure(model.fluid, T, x, method)
 end
 
-function bubble_temperature(model::CompositeModel, T, x, method::ThermodynamicMethod)
+function bubble_temperature(model::CompositeModel, T, x::AbstractVector, method::ThermodynamicMethod)
     return bubble_temperature(model.fluid, T, x, method)
 end
 
-function dew_pressure(model::CompositeModel, T, x, method::ThermodynamicMethod)
+function dew_pressure(model::CompositeModel, T, x::AbstractVector, method::ThermodynamicMethod)
     return dew_pressure(model.fluid, T, x, method)
 end
 
-function dew_temperature(model::CompositeModel, T, x, method::ThermodynamicMethod)
+function dew_temperature(model::CompositeModel, T, x::AbstractVector, method::ThermodynamicMethod)
     return dew_temperature(model.fluid, T, x, method)
 end
 

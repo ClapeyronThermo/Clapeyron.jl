@@ -133,7 +133,9 @@ function dew_pressure(model::EoSModel,T,x;kwargs...)
     return dew_pressure(model, T, x, method)
 end
 
-function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
+dew_pressure(model::EoSModel, T, y::Number, method::ThermodynamicMethod) = dew_pressure(model, T, [y], method)
+
+function dew_pressure(model::EoSModel, T, y::AbstractVector, method::ThermodynamicMethod)
     moles_positivity(y)
     y = y/sum(y)
     T = float(T)
@@ -334,7 +336,9 @@ function dew_temperature(model::EoSModel, p , x, T0::Number)
     return dew_temperature(model,p,x,method)
 end
 
-function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
+dew_temperature(model::EoSModel, p, y::Number, method::ThermodynamicMethod) = dew_temperature(model, p, [y], method)
+
+function dew_temperature(model::EoSModel,p,y::AbstractVector,method::ThermodynamicMethod)
     moles_positivity(y)
     y = y/sum(y)
     p = float(p)
