@@ -860,6 +860,9 @@ end
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ActivityBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ActivityBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
         GC.gc()
+
+        #602
+        @test Clapeyron.bubble_pressure(system1,T,[1.,0.])[4] == [1.,0.]
     end
 
     @testset "bubble temperature" begin
@@ -875,6 +878,9 @@ end
         @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(T0 = 450,y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
         @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(itmax_newton = 1))[1] ≈ Tres1 rtol = 1E-6
         GC.gc()
+
+        #602
+        @test Clapeyron.bubble_temperature(system1,p2,[1.,0.])[4] == [1.,0.]
     end
 
     @testset "dew pressure" begin
@@ -897,6 +903,9 @@ end
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure(p0 = 1.5e6))[1] ≈ pres2 rtol = 1E-3
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure(p0 = 1.5e6,x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-3
         GC.gc()
+
+        #602
+        @test Clapeyron.dew_pressure(system1,T2,[1.,0.])[4] == [1.,0.]
     end
 
     @testset "dew temperature" begin
@@ -912,6 +921,9 @@ end
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(T0 = 450,x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(itmax_newton = 2))[1] ≈ Tres2 rtol = 1E-6
         GC.gc()
+
+        #602
+        @test Clapeyron.dew_temperature(system1,p2,[1.,0.])[4] == [1.,0.]
 
         #413
         fluid413 = cPR(["Propane","Isopentane"],idealmodel=ReidIdeal);
