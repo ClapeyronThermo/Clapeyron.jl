@@ -17,7 +17,7 @@
         pcp_system = PCPSAFT(substances)
         res = Clapeyron.tp_flash2(pcp_system, 25_000.0, 300.15, [1.0, 1.0, 1.0, 1.0], RRTPFlash())
         @test res.data.g ≈ -8.900576759774916 rtol = 1e-6
-        
+
         =#
         #https://julialang.zulipchat.com/#narrow/channel/265161-Clapeyron.2Ejl/topic/The.20meaning.20of.20subcooled.20liquid.20flash.20results
         z_zulip1 = [0.25, 0.25, 0.25, 0.25]
@@ -90,13 +90,13 @@
         res1 = Clapeyron.tp_flash2(system, p, T, z, MultiPhaseTPFlash())
         @test Clapeyron.numphases(res1) == 3
         @test res1.data.g ≈ -6.759674475175065 rtol = 1e-6
-        
+
         #hard system, 2 phases
         system2 = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
         res2 = Clapeyron.tp_flash2(system2, 1e5, 284.4, [1,1,1,1]*0.25, MultiPhaseTPFlash())
         @test Clapeyron.numphases(res2) == 2
         @test res2.data.g ≈ -6.618441125949686 rtol = 1e-6
-        
+
         #same standard 3-phase system, but with activities
         system3 = UNIFAC(["water","cyclohexane","propane"],puremodel = DIPPR101Sat)
         res3 = Clapeyron.tp_flash2(system3, p, T, z, MultiPhaseTPFlash())
@@ -301,7 +301,7 @@
             return res.volumes[2]
         end
         #=
-        
+
         julia> Clapeyron.tp_flash2(admodel,1e5,200.0,[0.5,0.5])
         Flash result at T = 200.0, p = 100000.0 with 2 phases:
         (x = [0.407352, 0.592648], β = 0.799439, v = 6.10901e-5)
@@ -566,7 +566,7 @@ end
     h_out_506 = Clapeyron.PS.enthalpy(fluid506, p_out_506, s_in_506,z_506,phase = phase506)
     s_out_506 = Clapeyron.PH.entropy(fluid506, p_out_506, h_out_506,z_506,phase = phase506)
     @test s_in_506 ≈ s_out_506 rtol = 1e-6
-    
+
     #issue #554
     model554 = cPR(["propane","butane"],idealmodel = ReidIdeal)
     f554(x) = Clapeyron.PH.entropy(model554, x[1]*101325, 500.0, [1.0,1.0])
@@ -753,13 +753,13 @@ end
     flash1 = Clapeyron.tp_flash2(model,p,T,z)
     h_ = enthalpy(model1,flash1)
     s_ = entropy(model1,flash1)
-    
+
     @test Tproperty(model1,p,h_,z,enthalpy) ≈ T
     @test Tproperty(model1,p,s_,z,entropy) ≈ T
     =#
     model1 = cPR(["propane","dodecane"])
     p = 101325.0; T = 300.0;z = [0.5,0.5]
-    
+
 
 
     model2 = cPR(["propane"])
@@ -840,7 +840,7 @@ end
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
-        
+
         #140
         model140 = PCSAFT(["water","carbon dioxide"])
         res140 = bubble_pressure(model140,280,Clapeyron.FractionVector(0.01),ChemPotBubblePressure(nonvolatiles = ["water"]))
@@ -1009,4 +1009,10 @@ end
         @test Clapeyron.Solvers.derivative(dtge,1.0) ≈ Clapeyron.derivx(dtge,1.0) rtol = 1e-5
     end
 
+    @testset "bubble/dew type stability" begin
+        @test @inferred(bubble_pressure(admodel, 300., [0.5, 0.5])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
+        @test @inferred(bubble_temperature(admodel, 300., [1.,0.])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
+        @test @inferred(dew_pressure(admodel, 300., [0.,1.])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
+        @test @inferred(dew_temperature(admodel, 300., [0.5,0.5])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
+    end
 end
