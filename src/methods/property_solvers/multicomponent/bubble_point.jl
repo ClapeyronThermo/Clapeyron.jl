@@ -435,7 +435,9 @@ function bubble_pressure(model::EoSModel,T,x;kwargs...)
     return bubble_pressure(model, T, x, method)
 end
 
-function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
+bubble_pressure(model::EoSModel, T, x::Number, method::ThermodynamicMethod) = bubble_pressure(model, T, [x], method)
+
+function bubble_pressure(model::EoSModel, T, x::AbstractVector, method::ThermodynamicMethod)
     moles_positivity(x)
     x = x/sum(x)
     T = float(T)
@@ -443,8 +445,7 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     _model_r,idx_r = index_reduction(model,x)
     if length(_model_r)==1 && !is_pseudo_pure(model)
         (P_sat,v_l,v_v) = saturation_pressure(_model_r,T)
-        y = [one(eltype(x))]
-        return (P_sat,v_l,v_v,y)
+        return (P_sat,v_l,v_v,Vector{eltype(x)}(x))
     end
     x_r = x[idx_r]
     model_r = __tpflash_cache_model(_model_r,NaN,T,x,:vle)
@@ -635,7 +636,9 @@ function bubble_temperature(model::EoSModel, p, x, T0::Number)
     return bubble_temperature(model,p,x,method)
 end
 
-function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
+bubble_temperature(model::EoSModel, p, x::Number, method::ThermodynamicMethod) = bubble_temperature(model, p, [x], method)
+
+function bubble_temperature(model::EoSModel, p, x::AbstractVector, method::ThermodynamicMethod)
     moles_positivity(x)
     x = x/sum(x)
     p = float(p)
@@ -643,8 +646,7 @@ function bubble_temperature(model::EoSModel, p, x, method::ThermodynamicMethod)
     _model_r,idx_r = index_reduction(model,x)
     if length(_model_r) == 1 && !is_pseudo_pure(model)
         (T_sat,v_l,v_v) = saturation_temperature(_model_r,p)
-        y = [one(eltype(x))]
-        return (T_sat,v_l,v_v,y)
+        return (T_sat,v_l,v_v,Vector{eltype(x)}(x))
     end
     x_r = x[idx_r]
     model_r = __tpflash_cache_model(_model_r,p,NaN,x,:vle)

@@ -79,7 +79,7 @@ function PTFlashWrapper(model::GammaPhi,p,T,z,equilibrium)
     if is_idealmodel(fluidmodel) && !is_lle(equilibrium)
         ActivitySaturationError(model.activity,tp_flash)
     end
-    TT = Base.promote_eltype(model,p,T,z)
+    TT = Solvers.primal_eltype(Base.promote_eltype(model,p,T,z))
     wrapper = PTFlashWrapper{TT}(model,equilibrium,fluidmodel.pure)
     if is_vle(equilibrium) || is_unknown(equilibrium)
         update_temperature!(wrapper,T)
@@ -164,10 +164,11 @@ function __lnγ_sat(wrapper::PTFlashWrapper,p,T,w,cache = nothing,vol0 = nothing
     μmix .= μmix_temp
     sat = wrapper.sat
     fug = wrapper.fug
+    pures = wrapper.pures
     RT = Rgas(model)*T
     for i in 1:length(logγ)
-        logϕᵢ = fug[i]
-        pᵢ,vpureᵢ,_ = sat[i]
+        pᵢ,vpureᵢ,vvᵢ = saturation_pressure_ad2(sat[i],pures[i],T)
+        logϕᵢ = __eval_tpd_delta_g_sati(pures[i],T,fug[i],vvᵢ,pᵢ)
         μᵢ_over_RT = logϕᵢ + log(pᵢ*vpureᵢ/RT)
         logγ[i] = log(vpureᵢ/vol) + μmix[i]/RT - μᵢ_over_RT -  vpureᵢ*(p - pᵢ)/RT
     end

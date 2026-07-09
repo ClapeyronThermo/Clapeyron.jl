@@ -133,7 +133,9 @@ function dew_pressure(model::EoSModel,T,x;kwargs...)
     return dew_pressure(model, T, x, method)
 end
 
-function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
+dew_pressure(model::EoSModel, T, y::Number, method::ThermodynamicMethod) = dew_pressure(model, T, [y], method)
+
+function dew_pressure(model::EoSModel, T, y::AbstractVector, method::ThermodynamicMethod)
     moles_positivity(y)
     y = y/sum(y)
     T = float(T)
@@ -141,8 +143,7 @@ function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     _model_r,idx_r = index_reduction(model,y)
     if length(_model_r) == 1 && !is_pseudo_pure(model)
         (P_sat,v_l,v_v) = saturation_pressure(_model_r,T)
-        x = [one(eltype(y))]
-        return (P_sat,v_l,v_v,x)
+        return (P_sat,v_l,v_v,Vector{eltype(y)}(y))
     end
     y_r = y[idx_r]
     model_r = __tpflash_cache_model(_model_r,NaN,T,y,:vle)
@@ -327,14 +328,16 @@ function dew_temperature(model::EoSModel,p,x;kwargs...)
     return dew_temperature(model,p,x,method)
 end
 
-function dew_temperature(model::EoSModel, p , x, T0::Number)
+function dew_temperature(model::EoSModel, p, x, T0::Number)
     moles_positivity(x)
     kwargs = (;T0)
     method = init_preferred_method(dew_temperature,model,kwargs)
     return dew_temperature(model,p,x,method)
 end
 
-function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
+dew_temperature(model::EoSModel, p, y::Number, method::ThermodynamicMethod) = dew_temperature(model, p, [y], method)
+
+function dew_temperature(model::EoSModel,p,y::AbstractVector,method::ThermodynamicMethod)
     moles_positivity(y)
     y = y/sum(y)
     p = float(p)
@@ -342,8 +345,7 @@ function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     _model_r,idx_r = index_reduction(model,y)
     if length(_model_r) == 1 && !is_pseudo_pure(model)
         (T_sat,v_l,v_v) = saturation_temperature(_model_r,p)
-        x = [one(eltype(y))]
-        return (T_sat,v_l,v_v,x)
+        return (T_sat,v_l,v_v,Vector{eltype(y)}(y))
     end
     y_r = y[idx_r]
     model_r = __tpflash_cache_model(_model_r,p,NaN,y,:vle)
