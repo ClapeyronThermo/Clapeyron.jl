@@ -77,6 +77,24 @@ function ChemPotBubblePressure(;vol0 = nothing,
     end
 end
 
+function _bubbledew_chempot_solve(f!, v0::Vector{T}, lb::Vector{T}, ub::Vector{T}, method, ::Val{N}) where {T,N}
+    # Function barrier to specialize Chunk{N}, keeping Solvers.nlsolve type-stable and preventing the N-dependent result r from escaping into bubble_pressure_impl.
+    r = Solvers.nlsolve(f!, v0,
+        LineSearch(Newton2(v0), BoundedLineSearch(lb, ub)),
+        NLSolvers.NEqOptions(method),
+        ForwardDiff.Chunk{N}()
+    )
+    sol = Solvers.x_sol(r)::Vector{T}
+    converged = __check_convergence(r)::Bool
+
+    if method.verbose
+        r_str = repr("text/plain",r)
+        @info "$r_str"
+    end
+
+    return sol, converged
+end
+
 function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressure)
     volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
     p0,vl,vv,y0 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles,method.verbose)
@@ -107,19 +125,9 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     f! = let model = model, model_y = model_y, T=T, x=x, volatiles=volatiles, idx_max=idx_max
         (F,z) -> Obj_bubble_pressure(model, model_y, F, T, z[1], z[2], x, @view(z[3:end]), volatiles, idx_max)
     end
-    r = Solvers.nlsolve(f!, v0,
-        LineSearch(Newton2(v0),BoundedLineSearch(lb,ub)),
-        NLSolvers.NEqOptions(method),
-        ForwardDiff.Chunk{min(length(v0), 8)}()
-    )
-    sol = Solvers.x_sol(r)
+    sol, converged = _bubbledew_chempot_solve(f!, v0, lb, ub, method, Val(min(length(v0), 8)))
 
-    if method.verbose
-        r_str = repr("text/plain",r)
-        @info "$r_str"
-    end
-
-    !__check_convergence(r) && (sol .= NaN)
+    !converged && (sol .= NaN)
     v_l = v_from_η(model,sol[1],T,x)
     y_r = FractionVector(@view(sol[3:end]),idx_max)
     v_v = v_from_η(model,model_y,sol[2],T,y_r)
@@ -258,20 +266,9 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     f! = let model = model, model_y = model_y, p=p, x=x, volatiles=volatiles, idx_max=idx_max
         (F,z) -> Obj_bubble_temperature(model, model_y, F, p, z[1], z[2], z[3], x, @view(z[4:end]), volatiles, idx_max)
     end
-    r = Solvers.nlsolve(f!, v0,
-        LineSearch(Newton2(v0),Solvers.BoundedLineSearch(lb,ub)), 
-        NLSolvers.NEqOptions(method),
-        ForwardDiff.Chunk{min(length(v0), 8)}()
-    )
+    sol, converged = _bubbledew_chempot_solve(f!, v0, lb, ub, method, Val(min(length(v0), 8)))
 
-    sol = Solvers.x_sol(r)
-
-    if method.verbose
-        r_str = repr("text/plain",r)
-        @info "$r_str"
-    end
-    
-    !__check_convergence(r) && (sol .= NaN)
+    !converged && (sol .= NaN)
     T = sol[1]
     y_r = FractionVector(@view(sol[4:end]), idx_max)
     v_l = v_from_η(model, sol[2], T, x)

@@ -100,19 +100,9 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
     f! = let model=model, model_x=model_x, T=T, y=y, condensables=condensables, idx_max=idx_max
         (F,z) -> Obj_dew_pressure(model, model_x, F, T, z[1], z[2], @view(z[3:end]), y, condensables, idx_max)
     end
-    r = Solvers.nlsolve(f!, v0,
-            LineSearch(Newton2(v0),BoundedLineSearch(lb,ub)),
-            NLSolvers.NEqOptions(method),
-            ForwardDiff.Chunk{min(length(v0), 8)}()
-        )
-    sol = Solvers.x_sol(r)
+    sol, converged = _bubbledew_chempot_solve(f!, v0, lb, ub, method, Val(min(length(v0), 8)))
 
-    if method.verbose
-        r_str = repr("text/plain",r)
-        @info "$r_str"
-    end
-
-    !__check_convergence(r) && (sol .= NaN)
+    !converged && (sol .= NaN)
     x_r = FractionVector(@view(sol[3:end]),idx_max)
     v_l = v_from_η(model,model_x,sol[1],T,x_r)
     v_v = v_from_η(model,sol[2],T,y)
@@ -217,7 +207,7 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     model_x,_ = index_reduction(model,condensables)
     T0,vl,vv,x0 = dew_temperature_init(model,p,y,method.vol0,method.T0,method.x0,condensables,method.verbose)
     x0 = x0[condensables]
-    
+
     # if is_non_condensable
     #     ηl0 = η_from_v(model_x,vl,T0,x0)
     # else
@@ -246,19 +236,9 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     f! = let model=model, model_x=model_x, p=p, y=y, condensables=condensables, idx_max=idx_max
         (F,z) -> Obj_dew_temperature(model, model_x, F, p, z[1], z[2], z[3], @view(z[4:end]), y, condensables, idx_max)
     end
-    r = Solvers.nlsolve(f!, v0,
-            LineSearch(Newton2(v0),BoundedLineSearch(lb,ub)),
-            NLSolvers.NEqOptions(method),
-            ForwardDiff.Chunk{min(length(v0), 8)}()
-        )
-    sol = Solvers.x_sol(r)
+    sol, converged = _bubbledew_chempot_solve(f!, v0, lb, ub, method, Val(min(length(v0), 8)))
 
-    if method.verbose
-        r_str = repr("text/plain",r)
-        @info "$r_str"
-    end
-
-    !__check_convergence(r) && (sol .= NaN)
+    !converged && (sol .= NaN)
     T   = sol[1]
     x_r = FractionVector(@view(sol[4:end]),idx_max)
     v_l = v_from_η(model,model_x,sol[2],T,x_r)
