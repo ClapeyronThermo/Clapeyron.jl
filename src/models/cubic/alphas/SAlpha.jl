@@ -11,7 +11,8 @@ end
 component_list(model::SAlpha) = component_list(model.alpha)
 each_split_model(model::SAlpha{N,A},I) where {N,A} = each_split_model(model.alpha,I)
 
-function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <: MathiasCopemanAlphaModel}) where {NN}
+function Clapeyron.α_function(model::CubicModel,V,T,z,static_alpha_model::SAlpha{NN, <: MathiasCopemanAlphaModel}) where {NN}
+    alpha_model = static_alpha_model.alpha
     Tc = model.params.Tc.values
     c1 = alpha_model.params.c1.values
     c2 = alpha_model.params.c2.values
@@ -33,7 +34,8 @@ function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <
     return α
 end
 
-function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <: SoaveAlphaModel}) where {NN}
+function Clapeyron.α_function(model::CubicModel,V,T,z,static_alpha_model::SAlpha{NN, <: SoaveAlphaModel}) where {NN}
+    alpha_model = static_alpha_model.alpha
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
     coeff = α_m(model,alpha_model)
@@ -54,7 +56,8 @@ function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <
     return α
 end
 
-function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <: GeneralizedSuaveAlphaModel}) where {NN}
+function Clapeyron.α_function(model::CubicModel,V,T,z,static_alpha_model::SAlpha{NN, <: GeneralizedSuaveAlphaModel}) where {NN}
+    alpha_model = static_alpha_model.alpha
     Tc = model.params.Tc.values
     _0 = Base.promote_eltype(model,T)
     n_dynamic = length(model)
@@ -72,7 +75,8 @@ function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <
     return α
 end
 
-function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <: TwuAlphaModel}) where {NN}
+function Clapeyron.α_function(model::CubicModel,V,T,z,static_alpha_model::SAlpha{NN, <: TwuAlphaModel}) where {NN}
+    alpha_model = static_alpha_model.alpha
     Tc = model.params.Tc.values
     _M  = alpha_model.params.M.values
     _N  = alpha_model.params.N.values
@@ -95,7 +99,8 @@ function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <
     return α
 end
 
-function Clapeyron.α_function(model::CubicModel,V,T,z,alpha_model::SAlpha{NN, <: RKPRAlphaModel}) where {NN}
+function Clapeyron.α_function(model::CubicModel,V,T,z,static_alpha_model::SAlpha{NN, <: RKPRAlphaModel}) where {NN}
+    alpha_model = static_alpha_model.alpha
     k1 = alpha_model.params.k1.values
     k2 = alpha_model.params.k2.values
     Tc = model.params.Tc.values
