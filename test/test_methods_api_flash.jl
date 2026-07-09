@@ -987,6 +987,23 @@ end
     end
     GC.gc()
 
+    @testset "bubble/dew type stability" begin
+        admodel = cPR(["R134a","propane"])
+        @test @inferred(bubble_pressure(admodel, 300., [0.5, 0.5])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
+        @test @inferred(bubble_temperature(admodel, 300., [1.,0.])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
+        @test @inferred(dew_pressure(admodel, 300., [0.,1.])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
+        @test @inferred(dew_temperature(admodel, 300., [0.5,0.5])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
+    end
+
+    @testset "pure saturation and bubble-pressure type stability" begin
+        model_r, _ = Clapeyron.index_reduction(system1, [1.0, 0.0])
+        method = Clapeyron.ChemPotVSaturation()
+        T = 313.15
+        @test @inferred(Clapeyron.x0_sat_pure_virial(model_r, T)) isa NTuple{3,Float64}
+        @test @inferred(saturation_pressure(model_r, T, method)) isa NTuple{3,Float64}
+        @test @inferred(bubble_pressure(system1, T, [1.0, 0.0])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
+    end
+
     @testset "bubble/dew implicit AD" begin
         admodel = cPR(["R134a","propane"])
         bp(T) = first(bubble_pressure(admodel,300.0*T,[0.5,0.5]))
@@ -1007,12 +1024,5 @@ end
         @test Clapeyron.Solvers.derivative(dpge,1.0) ≈ Clapeyron.derivx(dpge,1.0) rtol = 1e-5
         @test Clapeyron.Solvers.derivative(btge,1.0) ≈ Clapeyron.derivx(btge,1.0) rtol = 1e-5
         @test Clapeyron.Solvers.derivative(dtge,1.0) ≈ Clapeyron.derivx(dtge,1.0) rtol = 1e-5
-    end
-
-    @testset "bubble/dew type stability" begin
-        @test @inferred(bubble_pressure(admodel, 300., [0.5, 0.5])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
-        @test @inferred(bubble_temperature(admodel, 300., [1.,0.])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
-        @test @inferred(dew_pressure(admodel, 300., [0.,1.])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
-        @test @inferred(dew_temperature(admodel, 300., [0.5,0.5])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
     end
 end

@@ -215,9 +215,10 @@ function x0_sat_pure(model,T)
         return x0_sat_pure(satmodel,T)
     end
     if !has_fast_crit_pure(model)
-    _,vl,vv = x0_sat_pure_virial(model,T)
+        _,vl,vv = x0_sat_pure_virial(model,T)
     else
-    _,vl,vv = x0_sat_pure_crit(model,T)
+        R = Base.promote_eltype(model,T)
+        _,vl,vv = x0_sat_pure_crit(model,T)::NTuple{3,R}
     end
     return vl,vv
 end
@@ -236,7 +237,9 @@ function x0_sat_pure(model,T,crit)
     if isnothing(crit)
         _,vl,vv = x0_sat_pure_virial(model,T)
     else
-        _,vl,vv = x0_sat_pure_crit(model,T,crit)
+        Tc,Pc,Vc = crit
+        R = Base.promote_eltype(model,T,Tc,Pc,Vc)
+        _,vl,vv = x0_sat_pure_crit(model,T,crit)::NTuple{3,R}
     end
     return vl,vv
 end
@@ -327,7 +330,7 @@ function x0_sat_pure_virial(model,T,z = SA[1.0])
         #"zero-pressure" volume, apply corresponding strategy
         return x0_sat_pure_near0(model,T,z,vl;B = B)
     else
-        psat,_,vv_B = x0_sat_pure_near0(model,T,z,vl,B = B,refine_vl = false)
+        psat, _, vv_B = x0_sat_pure_near0(model,T,z,vl,B,false)
         if T̃/T̃max > 0.55
             B_vdw = ∑z*(b - a/RT)
             vv_vdw_2b = -2*B_vdw
@@ -416,7 +419,14 @@ end
 Calculates initial points for pure saturation pressure, using a zero-pressure volume approach.
 If `refine_vl` is set to `true`, then the liquid volume will be recalculated using the calculated saturation pressure, otherwise it will be returned as is.
 """
-function x0_sat_pure_near0(model, T, z = SA[1.0],vl0 = volume(model,zero(T),T,z,phase = :l);B = second_virial_coefficient(model,T,z), refine_vl = true)
+function x0_sat_pure_near0(model, T, z = SA[1.0], vl0 = volume(model,zero(T),T,z,phase=:l);
+    B = second_virial_coefficient(model,T,z),
+    refine_vl = true,
+)
+    return x0_sat_pure_near0(model, T, z, vl0, B, refine_vl)
+end
+
+function x0_sat_pure_near0(model, T, z, vl0, B, refine_vl::Bool)
     R̄ = Rgas(model)
     RT = R̄*T
     n = sum(z)
