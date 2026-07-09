@@ -128,13 +128,13 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,data::FugData,cache)
             ss_count += 1
             lnϕx, volx = modified_lnϕ(model, p, T, _x, Hϕx, vol0=volx, phase = phasex)
             if isnan(volx)
-                lnϕx, volx = lnϕ(model, 1.1p, T, _x, Hϕx, phase = phasex)
+                lnϕx, volx = modified_lnϕ(model, 1.1p, T, _x, Hϕx, phase = phasex)
             end
             lnK .= lnϕx
 
             lnϕy, voly = modified_lnϕ(model, p, T, _y, Hϕx, vol0=voly, phase = phasey)
             if isnan(voly)
-                lnϕy, voly = lnϕ(model, p, T, _y, Hϕx, phase = phasey)
+                lnϕy, voly = modified_lnϕ(model, p, T, _y, Hϕx, phase = phasey)
             end
             lnK .-= lnϕy
 
