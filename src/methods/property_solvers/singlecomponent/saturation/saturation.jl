@@ -149,7 +149,7 @@ end
 function saturation_temperature(model,p,method::SaturationMethod)
     satmodel = saturation_model(model)
     if satmodel !== model
-        return saturation_temperature(satmodel,p;method)
+        return saturation_temperature(satmodel,p,method)
     end
     single_component_check(crit_pure,model)
     p = p*p/p
