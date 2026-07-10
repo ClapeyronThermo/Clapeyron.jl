@@ -330,7 +330,7 @@ function x0_sat_pure_virial(model,T,z = SA[1.0])
         #"zero-pressure" volume, apply corresponding strategy
         return x0_sat_pure_near0(model,T,z,vl;B = B)
     else
-        psat, _, vv_B = x0_sat_pure_near0(model,T,z,vl,B,false)
+        psat, _, vv_B = x0_sat_pure_near0(model,T,z,vl;B=B,refine_vl=false)
         if T̃/T̃max > 0.55
             B_vdw = ∑z*(b - a/RT)
             vv_vdw_2b = -2*B_vdw
@@ -420,13 +420,8 @@ Calculates initial points for pure saturation pressure, using a zero-pressure vo
 If `refine_vl` is set to `true`, then the liquid volume will be recalculated using the calculated saturation pressure, otherwise it will be returned as is.
 """
 function x0_sat_pure_near0(model, T, z = SA[1.0], vl0 = volume(model,zero(T),T,z,phase=:l);
-    B = second_virial_coefficient(model,T,z),
-    refine_vl = true,
+    B = second_virial_coefficient(model,T,z), refine_vl = true
 )
-    return x0_sat_pure_near0(model, T, z, vl0, B, refine_vl)
-end
-
-function x0_sat_pure_near0(model, T, z, vl0, B, refine_vl::Bool)
     R̄ = Rgas(model)
     RT = R̄*T
     n = sum(z)
