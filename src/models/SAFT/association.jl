@@ -246,41 +246,34 @@ function elliott_runtime_mix!(Δ)
     return Δ
 end
 
-function dense_assoc_site_matrix(model,V,T,z,data=nothing,delta = @f(delta_assoc,data))
+function dense_assoc_site_matrix(model, V, T, z, data=nothing, delta = @f(delta_assoc,data))
     sitesparam = getsites(model)
-    _sites = sitesparam.n_sites
-    p = _sites.p
-    ρ = N_A/V
-    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
-    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
-    _idx = 1:length(_ii)
-    Δ = delta.values
-    TT = eltype(Δ)
-    _n = sitesparam.n_sites.v
-    nn = length(_n)
-    K  = zeros(TT,nn,nn)
-    options = assoc_options(model)
-    combining = options.combining
-    runtime_combining = combining ∈ (:elliott_runtime,:esd_runtime)
+    p = sitesparam.n_sites.p          # start index of each component's sites
+    n = sitesparam.n_sites.v          # flattened site multiplicities
+    ρ = N_A / V
+    TT = eltype(delta.values)
+    total_sites = length(n)
+    K = zeros(TT, total_sites, total_sites)
 
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            ia = compute_index(p,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                if issite(i,a,ij,ab)
-                    j = complement_index(i,ij)
-                    b = complement_index(a,ab)
-                    jb = compute_index(p,j,b)
-                    njb = _n[jb]
-                    zj = z[j]
-                    if !iszero(zj)
-                        K[ia,jb]  = ρ*njb*z[j]*Δ[idx]
-                    end
-                end
-            end
+    # Loop over each stored Δ entry (i, j, a, b). 
+    # By construction, the stored orientation has i <= j (and for i==j, a <= b).
+    for (idx, (i, j), (a, b)) in indices(delta)
+        #sitesᵢ = 1:(p[i+1] - p[i])
+        #sitesⱼ = 1:(p[j+1] - p[j])
+        ia = p[i] + a - 1   # global index for site (i, a)
+        jb = p[j] + b - 1   # global index for site (j, b)
+        val = delta.values[idx]
+        iszero(val) && continue
+
+        if ia == jb
+            # Self‑association: only one entry in K (the diagonal)
+            K[ia, ia] = ρ * n[ia] * z[i] * val
+        else
+            # Two off‑diagonal entries, one for each direction.
+            # Note: when i == j but a != b, both assignments use the same z
+            #       but different site multiplicities.
+            K[ia, jb] = ρ * n[jb] * z[j] * val
+            K[jb, ia] = ρ * n[ia] * z[i] * val
         end
     end
     return K::Matrix{TT}
