@@ -237,7 +237,7 @@ function assoc_similar!(x::Compressed4DMatrix,param::SiteParam)
         x.outer_indices[i] = (i,j)
         x.inner_indices[i] = (a,b)
     end
-    return Compressed4DMatrix(values,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
+    return Compressed4DMatrix(values,x.outer_indices,x.inner_indices)
 end
 
 function Compressed4DMatrix(param::SiteParam)

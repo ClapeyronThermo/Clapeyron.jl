@@ -86,8 +86,7 @@ struct Compressed4DMatrix{T,V<:AbstractVector{T}}
     values::V
     outer_indices::Vector{Tuple{Int,Int}} #index of components
     inner_indices::Vector{Tuple{Int,Int}} #index of sites
-    outer_size::Tuple{Int,Int} #size of component matrix
-    inner_size::Tuple{Int,Int} #size of sites matrices
+    mixmap::Vector{Tuple{Int,Int}}
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",m::Compressed4DMatrix{T}) where T
@@ -117,9 +116,8 @@ end
 const MatrixofMatrices{T} = AbstractMatrix{<:AbstractMatrix{T}} where T
 
 function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
-    outer_size = size(x)
     is1, is2 = 0, 0
-    os1, os2 = outer_size
+    os1, os2 = size(x)
     @assert os1 == os2
     for i in eachindex(x)
         _is1,_is2 = size(x[i])
@@ -131,7 +129,7 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     indices = Tuple{Int,Int,Int,Int}[]
 
     if iszero(os1) & iszero(os2)
-        return Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
+        return Compressed4DMatrix(values,outer_indices,inner_indices)
     end
 
     #self association
@@ -142,7 +140,7 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     outer_indices = [(c[1],c[2]) for c ∈ indices]
     inner_indices = [(c[3],c[4]) for c ∈ indices]
     values = values[idx]
-    result = Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
+    result = Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices)
     return dropzeros!(result)
 end
 
@@ -334,7 +332,7 @@ Returns a `Clapeyron.Compressed4DMatrix` of the same shape as the input, with th
 """
 function assoc_similar(m::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number
     newvalues = zeros(𝕋,length(m.values))
-    return Compressed4DMatrix(newvalues,m.outer_indices,m.inner_indices,m.outer_size,m.inner_size)
+    return Compressed4DMatrix(newvalues,m.outer_indices,m.inner_indices)
 end
 
 assoc_similar(mat::Compressed4DMatrix{T}) where T = assoc_similar(mat,T)
@@ -348,13 +346,13 @@ end
 function Solvers.primalval(x::Compressed4DMatrix{T}) where T
     vals = x.values
     vals₀ = Solvers.primalval(vals)
-    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices)
 end
 
 function Solvers.primalval_eager(x::Compressed4DMatrix{T}) where T
     vals = x.values
     vals₀ = Solvers.primalval_eager(vals)
-    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices)
 end
 
 #=
