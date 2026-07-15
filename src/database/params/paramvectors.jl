@@ -100,6 +100,20 @@ function Base.show(io::IO,mime::MIME"text/plain",m::Compressed4DMatrix{T}) where
     end
 end
 
+function mixmap!(mixmap,mat::Compressed4DMatrix)
+    n = length(mat.values)
+    ij = mat.outer_indices
+    ab = mat.inner_indices
+    for idx in 1:n
+        i,j = ij[idx]
+        if i == j
+            mixmap[idx] = (idx,idx)
+        else
+            
+        end
+    end
+end
+
 function Base.show(io::IO,m::Compressed4DMatrix{T}) where T
     print(io,typeof(m))
     print(io,m.values)
@@ -207,7 +221,7 @@ function Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
     _ab_size = maximum((maximum(i) for i ∈ ab),init = 0)
     ij_size = (_ij_size,_ij_size)
     ab_size = (_ab_size,_ab_size)
-    return Compressed4DMatrix(vals,ij,ab,ij_size,ab_size)
+    return Compressed4DMatrix(vals,ij,ab)
 end
 
 function SparseArrays.dropzeros!(mat::Compressed4DMatrix)
