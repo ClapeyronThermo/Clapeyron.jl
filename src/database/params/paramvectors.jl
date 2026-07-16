@@ -243,7 +243,7 @@ function Compressed4DMatrix(vals::AbstractVector,ij::Vector{NTuple{2,Int}},ab::V
     mixmap = fill((0,0),length(ij))
     mat = Compressed4DMatrix(vals,ij,ab,mixmap)
     rebuild_mixmap!(mat)
-    return map
+    return mat
 end
 
 function SparseArrays.dropzeros!(mat::Compressed4DMatrix)
