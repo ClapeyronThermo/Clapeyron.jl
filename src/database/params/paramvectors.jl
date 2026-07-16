@@ -251,7 +251,7 @@ function SparseArrays.dropzeros!(mat::Compressed4DMatrix)
     keepat!(mat.values,nonzero_idx)
     keepat!(mat.outer_indices,nonzero_idx)
     keepat!(mat.inner_indices,nonzero_idx)
-    resize(mat.mixmap,nonzero_idx)
+    resize!(mat.mixmap,length(nonzero_idx))
     rebuild_mixmap!(mat)
     return mat
 end
