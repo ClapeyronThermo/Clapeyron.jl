@@ -196,26 +196,14 @@ function assoc_site_matrix(model,V,T,z,data = nothing,delta = @f(delta_assoc,dat
 end
 
 #this fills the zeros of the Δ vector with the corresponding mixing values
-function elliott_runtime_mix!(Δ)
-    _Δ = Δ.values
-    for (idx1,(i1,i2),(a1,a2)) in indices(Δ)
-        if i1 == i2
-            i = i1
-            Δi = _Δ[idx1]
-            for (idx2,(j1,j2),(b1,b2)) in indices(Δ)
-                if j1 == j2
-                    j = j1
-                    Δj = _Δ[idx2]
-                    Δijab = sqrt(Δi*Δj)
-                    if !iszero(Δijab)
-                        Δij = Δ[i,j]
-                        v_idx1 = validindex(Δij,a1,b2)
-                        v_idx2 = validindex(Δij,a2,b1)
-                        v_idx1 != 0 && iszero(_Δ[v_idx1]) && (_Δ[v_idx1] = Δijab)
-                        v_idx2 != 0 && iszero(_Δ[v_idx2]) && (_Δ[v_idx2] = Δijab)
-                    end
-                end
-            end
+function elliott_runtime_mix!(Δ::Compressed4DMatrix)
+    mixmap = Δ.mixmap
+    isempty(mixmap) && return Δ
+    vals = Δ.values
+    @inbounds for idx in eachindex(vals)
+        if iszero(primalval(vals[idx]))
+            i,j = mixmap[idx]
+            i != j && (vals[idx] = sqrt(vals[i] * vals[j]))
         end
     end
     return Δ
@@ -230,7 +218,7 @@ function dense_assoc_site_matrix(model, V, T, z, data=nothing, delta = @f(delta_
     total_sites = length(n)
     K = zeros(TT, total_sites, total_sites)
 
-    # Loop over each stored Δ entry (i, j, a, b). 
+    # Loop over each stored Δ entry (i, j, a, b).
     # By construction, the stored orientation has i <= j (and for i==j, a <= b).
     for (idx, (i, j), (a, b)) in indices(delta)
         #sitesᵢ = 1:(p[i+1] - p[i])
@@ -245,8 +233,7 @@ function dense_assoc_site_matrix(model, V, T, z, data=nothing, delta = @f(delta_
             K[ia, ia] = ρ * n[ia] * z[i] * val
         else
             # Two off‑diagonal entries, one for each direction.
-            # Note: when i == j but a != b, both assignments use the same z
-            #       but different site multiplicities.
+            # Note: when i == j but a != b, both assignments use the same z but different site multiplicities.
             K[ia, jb] = ρ * n[jb] * z[j] * val
             K[jb, ia] = ρ * n[ia] * z[i] * val
         end
@@ -353,7 +340,7 @@ function assoc_matrix_x0!(K,X)
         init2,success2 = X_exact2!(K,X)
         init2 && (return X,success2)
     end
-    
+
     #default initialization
     Kmin,Kmax = nonzero_extrema(K) #look for 0 < Amin < Amax
     if Kmax > 1
@@ -362,7 +349,7 @@ function assoc_matrix_x0!(K,X)
         f = true-Kmin
     end
     fill!(X,min(f,one(f)))
-    
+
     return X,false
 end
 
@@ -536,7 +523,7 @@ function X_exact2!(K,X)
     if iszero(A1) || iszero(A4)
         X_exact2_123!(K,X)
         return true,true
-        
+
     end
 
     a = -A3/A2
