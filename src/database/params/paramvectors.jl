@@ -114,33 +114,37 @@ function rebuild_mixmap!(mixmap, mat::Compressed4DMatrix)
         i, j = ij[idx]
         if i == j
             mixmap[idx] = (idx, idx)
-        else
-            i != i && (ii,î = searchsorted(ij,(i,i)),i)
-            ii_empty = isempty(ii)
-            ii_empty && (mixmap[idx] = (idx, idx))
-            ii_empty && continue
-            j != ĵ && (jj,ĵ = searchsorted(ij,(j,j)),j)
-            jj_empty = isempty(jj)
-            jj_empty && (mixmap[idx] = (idx, idx))
-            jj_empty && continue
+            continue
+        end
 
-            a, b = ab[idx]
-            found = false
-            for idx_i in ii
-                a1, a2 = ab[idx_i]
-                for idx_j in jj
-                    b1, b2 = ab[idx_j]
-                    if (a == a1 && b == b2) || (a == a2 && b == b1)
-                        mixmap[idx] = (idx_i, idx_j)
-                        found = true
-                        break
-                    end
+        if i != î 
+            ii,î = searchsorted(ij,(i,i)),i
+        end
+        ii_empty = isempty(ii)
+        ii_empty && (mixmap[idx] = (idx, idx))
+        ii_empty && continue
+        if j != ĵ
+            jj,ĵ = searchsorted(ij,(j,j)),j
+        end
+        jj_empty = isempty(jj)
+        jj_empty && (mixmap[idx] = (idx, idx))
+        jj_empty && continue
+        a, b = ab[idx]
+        found = false
+        for idx_i in ii
+            a1, a2 = ab[idx_i]
+            for idx_j in jj
+                b1, b2 = ab[idx_j]
+                if (a == a1 && b == b2) || (a == a2 && b == b1)
+                    mixmap[idx] = (idx_i, idx_j)
+                    found = true
+                    break
                 end
-                found && break
             end
-            if !found
-                mixmap[idx] = (idx, idx)
-            end
+            found && break
+        end
+        if !found
+            mixmap[idx] = (idx, idx)
         end
     end
     return mixmap
@@ -392,6 +396,50 @@ function Solvers.primalval_eager(x::Compressed4DMatrix{T}) where T
     vals₀ = Solvers.primalval_eager(vals)
     return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.mixmap)
 end
+
+#=operations=#
+
+derive_site_offsets(Δ) = derive_site_offsets(Δ,Int[])
+function derive_site_offsets(Δ::Compressed4DMatrix, p)
+    outer = Δ.outer_indices
+    inner = Δ.inner_indices
+    n = length(Δ.values)
+    if n == 0
+        resize!(p, 1)
+        p[1] = 1
+        return p
+    end
+
+    # Find the maximum component index
+    max_comp = maximum(max,outer)
+
+    # Allocate or resize p to hold max_comp+1 entries.
+    resize!(p, max_comp + 1)
+    fill!(p, 0)
+
+    # Use p[1:max_comp] as temporary storage for the maximum site index per component.
+    @inbounds for idx in 1:n
+        i, j = outer[idx]
+        a, b = inner[idx]
+        if a > p[i]
+            p[i] = a
+        end
+        if b > p[j]
+            p[j] = b
+        end
+    end
+
+    cum = 1
+    for i in 1:max_comp+1
+        old = p[i]
+        p[i] = cum
+        cum += old
+    end
+
+    return p
+end
+
+
 
 #=
 """
