@@ -190,31 +190,6 @@ function delta_assoc(model,V,T,z,data::M) where M
     return delta
 end
 
-function issite(i::Int,a::Int,ij::Tuple{Int,Int},ab::Tuple{Int,Int})::Bool
-    ia = (i,a)
-    i1,i2 = ij
-    a1,a2 = ab
-    ia1 = (i1,a1)
-    ia2 = (i2,a2)
-    return (ia == ia1) | (ia == ia2)
-end
-
-function complement_index(i,ij)::Int
-    i1,i2 = ij
-    ifelse(i1 == i,i2,i1)::Int
-end
-
-function compute_index(idxs,i,a)::Int
-    res::Int = idxs[i] + a - 1
-    return res
-end
-
-function inverse_index(idxs,o)
-    i = findfirst(>=(o-1),idxs)::Int
-    a = o + 1 - idxs[i]
-    return i,a
-end
-
 function assoc_site_matrix(model,V,T,z,data = nothing,delta = @f(delta_assoc,data))
     options = assoc_options(model)
     return dense_assoc_site_matrix(model,V,T,z,data,delta)
@@ -1156,10 +1131,31 @@ end
 
 #=
 
+function issite(i::Int,a::Int,ij::Tuple{Int,Int},ab::Tuple{Int,Int})::Bool
+    ia = (i,a)
+    i1,i2 = ij
+    a1,a2 = ab
+    ia1 = (i1,a1)
+    ia2 = (i2,a2)
+    return (ia == ia1) | (ia == ia2)
+end
 
+function complement_index(i,ij)::Int
+    i1,i2 = ij
+    ifelse(i1 == i,i2,i1)::Int
+end
 
-=#
-#=
+function compute_index(idxs,i,a)::Int
+    res::Int = idxs[i] + a - 1
+    return res
+end
+
+function inverse_index(idxs,o)
+    i = findfirst(>=(o-1),idxs)::Int
+    a = o + 1 - idxs[i]
+    return i,a
+end
+
 function AX!(output,input,pack_indices,delta::Compressed4DMatrix{TT,VV} ,modelsites,ρ,z) where {TT,VV}
     _0 = zero(TT)
     p = modelsites.p::Vector{Int}

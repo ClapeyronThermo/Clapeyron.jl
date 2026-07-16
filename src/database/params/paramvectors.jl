@@ -102,23 +102,48 @@ end
 
 rebuild_mixmap!(mat::Compressed4DMatrix) = rebuild_mixmap!(mat.mixmap,mat)
 
-function rebuild_mixmap!(mixmap,mat::Compressed4DMatrix)
+
+function rebuild_mixmap!(mixmap, mat::Compressed4DMatrix)
     n = length(mat.values)
     ij = mat.outer_indices
     ab = mat.inner_indices
-    ii,î = 1:0,0
-    jj,ĵ = 1:0,0
+    ii, î = 1:0, 0
+    jj, ĵ = 1:0, 0
+
     for idx in 1:n
-        i,j = ij[idx]
+        i, j = ij[idx]
         if i == j
-            mixmap[idx] = (idx,idx)
+            mixmap[idx] = (idx, idx)
         else
             i != i && (ii,î = searchsorted(ij,(i,i)),i)
+            ii_empty = isempty(ii)
+            ii_empty && (mixmap[idx] = (idx, idx))
+            ii_empty && continue
             j != ĵ && (jj,ĵ = searchsorted(ij,(j,j)),j)
-           
-            
+            jj_empty = isempty(jj)
+            jj_empty && (mixmap[idx] = (idx, idx))
+            jj_empty && continue
+
+            a, b = ab[idx]
+            found = false
+            for idx_i in ii
+                a1, a2 = ab[idx_i]
+                for idx_j in jj
+                    b1, b2 = ab[idx_j]
+                    if (a == a1 && b == b2) || (a == a2 && b == b1)
+                        mixmap[idx] = (idx_i, idx_j)
+                        found = true
+                        break
+                    end
+                end
+                found && break
+            end
+            if !found
+                mixmap[idx] = (idx, idx)
+            end
         end
     end
+    return mixmap
 end
 
 function Base.show(io::IO,m::Compressed4DMatrix{T}) where T
