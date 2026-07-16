@@ -31,7 +31,7 @@ assoc_shape(model::EoSModel) = assoc_shape(model.params.bondvol)
 assoc_shape(param::AssocParam) = assoc_shape(param.values)
 @inline function assoc_shape(mat::Compressed4DMatrix)
     l = length(mat.values)
-    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l,mat.outer_indices,mat.inner_indices)
+    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l,mat.outer_indices,mat.inner_indices,mat.mixmap)
 end
 
 @inline function assoc_similar(model::EoSModel,::Type{𝕋}) where 𝕋

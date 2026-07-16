@@ -100,15 +100,22 @@ function Base.show(io::IO,mime::MIME"text/plain",m::Compressed4DMatrix{T}) where
     end
 end
 
-function mixmap!(mixmap,mat::Compressed4DMatrix)
+rebuild_mixmap!(mat::Compressed4DMatrix) = rebuild_mixmap!(mat.mixmap,mat)
+
+function rebuild_mixmap!(mixmap,mat::Compressed4DMatrix)
     n = length(mat.values)
     ij = mat.outer_indices
     ab = mat.inner_indices
+    ii,î = 1:0,0
+    jj,ĵ = 1:0,0
     for idx in 1:n
         i,j = ij[idx]
         if i == j
             mixmap[idx] = (idx,idx)
         else
+            i != i && (ii,î = searchsorted(ij,(i,i)),i)
+            j != ĵ && (jj,ĵ = searchsorted(ij,(j,j)),j)
+           
             
         end
     end
@@ -124,28 +131,18 @@ function Base.:(==)(p1::Compressed4DMatrix,p2::Compressed4DMatrix)
 end
 
 function Compressed4DMatrix{T}() where T
-    return Compressed4DMatrix(T[],Tuple{Int,Int}[],Tuple{Int,Int}[],(0,0),(0,0))
+    return Compressed4DMatrix(T[],Tuple{Int,Int}[],Tuple{Int,Int}[],Tuple{Int,Int}[])
 end
 
 const MatrixofMatrices{T} = AbstractMatrix{<:AbstractMatrix{T}} where T
 
 function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
-    is1, is2 = 0, 0
-    os1, os2 = size(x)
-    @assert os1 == os2
-    for i in eachindex(x)
-        _is1,_is2 = size(x[i])
-        is1,is2 = max(_is1,is1),max(_is2,is2)
+    if length(x) == 0
+        return Compressed4DMatrix(values,NTuple{2,Int}[],NTuple{2,Int}[],NTuple{2,Int}[])
     end
-    inner_size = (is1,is2)
-
+    
     values = T[]
     indices = Tuple{Int,Int,Int,Int}[]
-
-    if iszero(os1) & iszero(os2)
-        return Compressed4DMatrix(values,outer_indices,inner_indices)
-    end
-
     #self association
     __set_idx_4d!(x,values,indices)
 
@@ -153,9 +150,11 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     indices = indices[idx]
     outer_indices = [(c[1],c[2]) for c ∈ indices]
     inner_indices = [(c[3],c[4]) for c ∈ indices]
+    mixmap = fill((0,0),length(outer_indices))
     values = values[idx]
-    result = Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices)
-    return dropzeros!(result)
+    result = Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,mixmap)
+    dropzeros!(result)
+    return result
 end
 
 function __getidx_assoc(mat::Matrix,i,j,val)
@@ -211,17 +210,15 @@ function Compressed4DMatrix(vals::AbstractVector,idxs::AbstractVector)
     return Compressed4DMatrix(new_vals,ij,ab,true)
 end
 
-function Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
+function Compressed4DMatrix(vals::AbstractVector,ij::Vector{NTuple{2,Int}},ab::Vector{NTuple{2,Int}},unsafe::Bool = false)
     if !unsafe && !issorted(zip(ij,ab))
         ijab = [(ij...,ab...) for (ij,ab) in zip(ij,ab)]
         return Compressed4DMatrix(vals,ijab)
     end
-
-    _ij_size = maximum((maximum(i) for i ∈ ij),init = 0)
-    _ab_size = maximum((maximum(i) for i ∈ ab),init = 0)
-    ij_size = (_ij_size,_ij_size)
-    ab_size = (_ab_size,_ab_size)
-    return Compressed4DMatrix(vals,ij,ab)
+    mixmap = fill((0,0),length(ij))
+    mat = Compressed4DMatrix(vals,ij,ab,mixmap)
+    rebuild_mixmap!(mat)
+    return map
 end
 
 function SparseArrays.dropzeros!(mat::Compressed4DMatrix)
@@ -229,6 +226,8 @@ function SparseArrays.dropzeros!(mat::Compressed4DMatrix)
     keepat!(mat.values,nonzero_idx)
     keepat!(mat.outer_indices,nonzero_idx)
     keepat!(mat.inner_indices,nonzero_idx)
+    resize(mat.mixmap,nonzero_idx)
+    rebuild_mixmap!(mat)
     return mat
 end
 
@@ -346,7 +345,7 @@ Returns a `Clapeyron.Compressed4DMatrix` of the same shape as the input, with th
 """
 function assoc_similar(m::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number
     newvalues = zeros(𝕋,length(m.values))
-    return Compressed4DMatrix(newvalues,m.outer_indices,m.inner_indices)
+    return Compressed4DMatrix(newvalues,m.outer_indices,m.inner_indices,m.mixmap)
 end
 
 assoc_similar(mat::Compressed4DMatrix{T}) where T = assoc_similar(mat,T)
@@ -360,13 +359,13 @@ end
 function Solvers.primalval(x::Compressed4DMatrix{T}) where T
     vals = x.values
     vals₀ = Solvers.primalval(vals)
-    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.mixmap)
 end
 
 function Solvers.primalval_eager(x::Compressed4DMatrix{T}) where T
     vals = x.values
     vals₀ = Solvers.primalval_eager(vals)
-    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.mixmap)
 end
 
 #=

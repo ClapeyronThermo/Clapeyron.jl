@@ -189,13 +189,13 @@ end
 function Base.convert(::Type{AssocParam{T1}},param::AssocParam{T2}) where {T1<:Number,T2<:Number}
     assoc_values = param.values
     new_assoc_values = convert(Vector{T1},assoc_values.values)
-    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices)
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.mixmap)
     return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{AssocParam{String}},param::AssocParam{<:AbstractString})
     assoc_values = param.values
     new_assoc_values = convert(Vector{String},assoc_values.values)
-    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices)
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.mixmap)
     return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
 end

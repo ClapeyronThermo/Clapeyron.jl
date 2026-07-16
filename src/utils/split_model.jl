@@ -80,13 +80,17 @@ function each_split_model(assoc::Compressed4DMatrix{T},I) where T
     values = assoc.values[idx_bool]
     outer_indices = assoc.outer_indices[idx_bool]
     inner_indices = assoc.inner_indices[idx_bool]
-    len = length(outer_indices)
-    for i ∈ 1:len
+    new_len = length(outer_indices)
+    mixmap = fill((0,0),new_len)
+    
+    for i ∈ 1:new_len
         i1,j1 = outer_indices[i]
         i2,j2 = findfirst(==(i1),I)::Int,findfirst(==(j1),I)::Int
         outer_indices[i] = (i2,j2)
     end
-    return Compressed4DMatrix(values,outer_indices,inner_indices)
+    new_mat = Compressed4DMatrix(values,outer_indices,inner_indices,mixmap)
+    rebuild_mixmap!(new_mat)
+    return new_mat
 end
 
 function each_split_model(param::ClapeyronParam,group,I_component,I_group)

@@ -232,12 +232,16 @@ function assoc_similar!(x::Compressed4DMatrix,param::SiteParam)
     __set_idx_4d!(param.sites,values,_4dindices)
     resize!(x.outer_indices,length(values))
     resize!(x.inner_indices,length(values))
+    resize!(x.inner_indices,length(values))
     for i in 1:length(values)
         i,j,a,b = _4dindices[i]
         x.outer_indices[i] = (i,j)
         x.inner_indices[i] = (a,b)
+        x.mixmap[i] = (0,0)
     end
-    return Compressed4DMatrix(values,x.outer_indices,x.inner_indices)
+    new_mat = Compressed4DMatrix(values,x.outer_indices,x.inner_indices,x.mixmap)
+    rebuild_mixmap!(new_mat)
+    return new_mat
 end
 
 function Compressed4DMatrix(param::SiteParam)
