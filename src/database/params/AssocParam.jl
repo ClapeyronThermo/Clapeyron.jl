@@ -13,12 +13,12 @@ end
 
 #barebones constructor, we provide vals and sites
 function AssocParam(name,components,values::Compressed4DMatrix{T},sites,src,sourcecsv) where T
-    vals_length = maximum(maximum,values.outer_indices)
+    vals_length = Compressed4DMatrices.nblocks(values)
     param_length_check(AssocParam,name,length(components),vals_length)
     AssocParam{T}(name,components,values,sites,src,sourcecsv)
 end
 
-function AssocParam(name,components,values::MatrixofMatrices,sites,src,sourcecsv)
+function AssocParam(name,components,values::AbstractMatrix{<:AbstractMatrix{T}},sites,src,sourcecsv) where T
     return AssocParam(name,components,Compressed4DMatrix(values),sites,src,sourcecsv)
 end
 
@@ -26,7 +26,7 @@ AssocParam(name,components,values,sites,src) = AssocParam(name,components,values
 AssocParam(name,components,values,sites) = AssocParam(name,components,values,sites,nothing,nothing)
 
 #constructor in case we provide just the compressed assoc matrix, we build the sites using only assoc info
-function AssocParam(name, components, values::MatrixofMatrices)
+function AssocParam(name, components, values::AbstractMatrix{<:AbstractMatrix{T}}) where T
     return AssocParam(name, components, Compressed4DMatrix(values))
 end
 
@@ -53,7 +53,9 @@ function AssocParam(name,components,vals::Compressed4DMatrix{T}) where T
 end
 
 # If no value is provided, just initialise empty param.
-AssocParam{T}(name,components) where T <: Number = AssocParam(name,components,Compressed4DMatrix{T}(),nothing)
+function AssocParam{T}(name,components) where T <: Number 
+    AssocParam(name,components,Compressed4DMatrix{T}(),nothing)
+end
 
 AssocParam(name,components) = AssocParam{Float64}(name,components)
 
@@ -189,13 +191,13 @@ end
 function Base.convert(::Type{AssocParam{T1}},param::AssocParam{T2}) where {T1<:Number,T2<:Number}
     assoc_values = param.values
     new_assoc_values = convert(Vector{T1},assoc_values.values)
-    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.mixmap)
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.indices,assoc_values.site_offsets)
     return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{AssocParam{String}},param::AssocParam{<:AbstractString})
     assoc_values = param.values
     new_assoc_values = convert(Vector{String},assoc_values.values)
-    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.mixmap)
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.indices,assoc_values.site_offsets)
     return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
 end

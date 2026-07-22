@@ -72,8 +72,24 @@ function each_split_model(param::PackedVofV,I)
 end
 
 function each_split_model(assoc::Compressed4DMatrix{T},I) where T
+
+    
     len = length(assoc.values)
     iszero(len) && return Compressed4DMatrix{T}()
+    return Compressed4DMatrix{T}()
+
+    #=
+    TODO_NEW
+    offsets = assoc.site_offsets
+    bsizes = Compressed4DMatrices.bsizes_from_offsets!(copy(offsets))[I]
+    new_vals = similar(assoc.values)
+    for (idx,(i,j),(a,b)) in indices(assoc)
+        if (i ∈ I) & (i ∈ I)
+            new_vals[i]
+        else
+        end
+    end
+    
     old_idx = assoc.outer_indices
     idx_bool = findall(x -> (first(x) ∈ I) & (last(x) ∈ I),old_idx)
     iszero(length(idx_bool)) && return Compressed4DMatrix{T}()
@@ -81,16 +97,14 @@ function each_split_model(assoc::Compressed4DMatrix{T},I) where T
     outer_indices = assoc.outer_indices[idx_bool]
     inner_indices = assoc.inner_indices[idx_bool]
     new_len = length(outer_indices)
-    mixmap = fill((0,0),new_len)
     
     for i ∈ 1:new_len
         i1,j1 = outer_indices[i]
         i2,j2 = findfirst(==(i1),I)::Int,findfirst(==(j1),I)::Int
         outer_indices[i] = (i2,j2)
     end
-    new_mat = Compressed4DMatrix(values,outer_indices,inner_indices,mixmap)
-    rebuild_mixmap!(new_mat)
-    return new_mat
+    new_mat = Compressed4DMatrix(values,outer_indices,inner_indices)
+    return new_mat =#
 end
 
 function each_split_model(param::ClapeyronParam,group,I_component,I_group)

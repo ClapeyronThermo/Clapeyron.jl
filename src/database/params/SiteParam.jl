@@ -223,26 +223,9 @@ function assoc_similar(param::SiteParam,::Type{𝕋}) where 𝕋 <:Number
     values = 𝕋[]
     _0 = zero(𝕋)
     __set_idx_4d!(param.sites,values,indices)
-    Compressed4DMatrix(values,indices)
+    Compressed4DMatrices.c4d_from_site_offsets(copy(param.n_sites.p))
 end
 
-function assoc_similar!(x::Compressed4DMatrix,param::SiteParam)
-    resize!(x.values,0)
-    _4dindices = NTuple{4,Int}[]
-    __set_idx_4d!(param.sites,values,_4dindices)
-    resize!(x.outer_indices,length(values))
-    resize!(x.inner_indices,length(values))
-    resize!(x.inner_indices,length(values))
-    for i in 1:length(values)
-        i,j,a,b = _4dindices[i]
-        x.outer_indices[i] = (i,j)
-        x.inner_indices[i] = (a,b)
-        x.mixmap[i] = (0,0)
-    end
-    new_mat = Compressed4DMatrix(values,x.outer_indices,x.inner_indices,x.mixmap)
-    rebuild_mixmap!(new_mat)
-    return new_mat
-end
 
 function Compressed4DMatrix(param::SiteParam)
     return assoc_similar(param,Float64)

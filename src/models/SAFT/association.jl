@@ -31,7 +31,7 @@ assoc_shape(model::EoSModel) = assoc_shape(model.params.bondvol)
 assoc_shape(param::AssocParam) = assoc_shape(param.values)
 @inline function assoc_shape(mat::Compressed4DMatrix)
     l = length(mat.values)
-    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l,mat.outer_indices,mat.inner_indices,mat.mixmap)
+    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l,mat.indices,mat.site_offsets)
 end
 
 @inline function assoc_similar(model::EoSModel,::Type{𝕋}) where 𝕋
@@ -196,14 +196,22 @@ function assoc_site_matrix(model,V,T,z,data = nothing,delta = @f(delta_assoc,dat
 end
 
 #this fills the zeros of the Δ vector with the corresponding mixing values
-function elliott_runtime_mix!(Δ::Compressed4DMatrix)
-    mixmap = Δ.mixmap
-    isempty(mixmap) && return Δ
-    vals = Δ.values
-    @inbounds for idx in eachindex(vals)
-        if iszero(primalval(vals[idx]))
-            i,j = mixmap[idx]
-            i != j && (vals[idx] = sqrt(vals[i] * vals[j]))
+function elliott_runtime_mix!(Δ)
+    _Δ = Δ.values
+    for (idx,(i,j),(a,b)) in indices(Δ)
+        i != j && continue
+        Δijab = @inbounds(Δ[idx])
+        !iszero(primalval(Δijab)) && continue
+        i1 = validindex(Δ,(i,i,a,a))
+        iszero(i1) && continue   
+        i2 = validindex(Δ,(j,j,b,b))
+        iszero(i2) && continue
+        @inbounds begin
+            Δia = Δ[i1]
+            iszero(primalval(Δ1)) && continue
+            Δjb = Δ[i2]
+            iszero(primalval(Δ2)) && continue
+            Δ[idx] = sqrt(Δia*Δjb) 
         end
     end
     return Δ

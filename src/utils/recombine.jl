@@ -67,7 +67,7 @@ end
 function promote_model(::Type{T},param::AssocParam) where T
     v = param.values
     vals = Vector{T}(v.values)
-    values = Compressed4DMatrix(vals,v.outer_indices,v.inner_indices,v.mixmap)
+    values = Compressed4DMatrix(vals,v.indices,v.site_offsets)
     return AssocParam{T}(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
 end
 
