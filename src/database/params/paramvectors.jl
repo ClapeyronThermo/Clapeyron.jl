@@ -161,19 +161,19 @@ end
 
 @inline function idx_to_ijab(ijab::Union{Int64,UInt64})
     bjai_uint = reinterpret(NTuple{4,UInt16},ijab)
-    b,j,a,i = convert(NTuple{4,Int64},bjai_uint)
+    b,a,j,i = map(Int,bjai_uint)
     return (i,j,a,b)
 end
 
 
 @inline function idx_to_ijab(ijab::Union{Int32,UInt32})
     bjai_uint = reinterpret(NTuple{4,UInt8},ijab)
-    b,j,a,i = convert(NTuple{4,Int32},bjai_uint)
+    b,a,j,i = map(Int32,bjai_uint)
     return (i,j,a,b)
 end
 
 function ijab_to_idx(i::T,j::T,a::T,b::T) where T<:Union{Int64,UInt64}
-    bjai_uint = convert(NTuple{4,UInt16},(b,a,j,i))
+    bjai_uint = map(UInt16,(b,a,j,i))
     return reinterpret(Int64,bjai_uint)
 end
 
@@ -363,8 +363,8 @@ end
 @inline function AssocView(m::Compressed4DMatrix,i,j)
     nk = matsize(m)
     @boundscheck begin
-        checkbounds(i,Base.OneTo(nk))
-        checkbounds(j,Base.OneTo(nk))
+        checkbounds(Base.OneTo(nk),i)
+        checkbounds(Base.OneTo(nk),j)
     end
     @inbounds begin
         C = nk
@@ -435,23 +435,23 @@ Base.eltype(m::AssocView{T}) where T = T
     k = ijab_to_idx(i,j,si,sj) #transform to compressed index
     len = length(idxs)
     T = eltype(idxs)
-    w = searchsortedfirst(idxs,k,T(1),T(len),Base.Order.ForwardOrdering()) #search unique compressed index
+    w = searchsortedfirst(idxs,k) #search unique compressed index
     w > len && return T(0)
-    in_idxs = @inbounds(idxs[w]) == ijab
+    in_idxs = @inbounds(idxs[w]) == k
     return ifelse(in_idxs,T(w),T(0))
 end
 
 @inline function validindex(m::Compressed4DMatrix{TT},ijab::NTuple{4,Int}) where TT
-    idxs = m.indices 
+    idxs = m.indices
+    can = canonical_index(ijab)
     k  = ijab_to_idx(canonical_index(ijab))
     len = length(idxs)
     T = eltype(idxs)
     w = searchsortedfirst(idxs,k,T(1),T(len),Base.Order.ForwardOrdering()) #search unique compressed index
     w > len && return T(0)
-    in_idxs = @inbounds(idxs[w]) == ijab
+    in_idxs = @inbounds(idxs[w]) == k
     return ifelse(in_idxs,T(w),T(0))
 end
-
 
 @inline function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
     idx = validindex(m,i,j)
@@ -469,6 +469,30 @@ end
     end
     @inbounds begin 
         vals[idx] = value
+    end
+end
+
+@inline function Base.setindex!(m::Compressed4DMatrix{T},value,ijab::NTuple{4,Int}) where T
+    idx = validindex(m,ijab)
+    vals = m.values
+    @boundscheck begin
+        checkbounds(m.indices,idx)
+    end
+    @inbounds begin 
+        vals[idx] = value
+    end
+end
+
+
+@inline function Base.getindex(m::Compressed4DMatrix{T},ijab::NTuple{4,Int}) where T
+    idx = validindex(m,ijab)
+    vals = m.values
+    iszero(idx) && return zero(T)
+    @boundscheck begin
+        checkbounds(m.indices,idx)
+    end
+    @inbounds begin 
+        return vals[idx]
     end
 end
 
@@ -529,12 +553,10 @@ end
 
 
 function Compressed4DMatrix(vals::AbstractVector{T},ijab::AbstractVector{NTuple{4,Int}},offs::AbstractVector{Int} = infer_site_offsets(ijab)) where {T}
-    m = Compressed4DMatrix{T}(offs)
+    m = c4d_from_site_offsets(offs)
     for (idx,_ijab) in pairs(ijab)
         i,j,a,b = canonical_index(_ijab)
-        @inbounds begin
-            m[i,j][a,b] = vals[idx]
-        end
+        m[(i,j,a,b)] = vals[idx]
     end
     dropzeros!(m)
     return m
@@ -586,6 +608,5 @@ end
 function Solvers.primalval_eager(x::Compressed4DMatrix{T}) where T
     return Compressed4DMatrix(Solvers.primalval_eager(x.values),x.indices,x.site_offsets)
 end
-
 
 #==#

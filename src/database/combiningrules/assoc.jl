@@ -1,7 +1,10 @@
 function assoc_extend(param::AssocParam{T}) where T
-    vals = param.values.
+    vals = param.values
     length(vals.values) == 0 && return param
     extended_vals = Compressed4DMatrices.c4d_from_site_offsets(T,vals.site_offsets)
+    for (idx,(i,j),(a,b)) in indices(vals)
+        extended_vals[(i,j,a,b)] = vals[(i,j,a,b)]
+    end
     return AssocParam(param.name,param.components,extended_vals,param.sites,param.sourcecsvs,param.sources)
 end
 
@@ -17,7 +20,7 @@ function bondvol_mix(bondvol::AssocParam,::Nothing)
         n = nothing
     end
     for (idx,(i,j),(a,b)) in indices(mat)
-        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
+        if iszero(mat.values[idx])
             mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])
         end
     end
@@ -27,12 +30,14 @@ end
 
 function dufal_mix(bondvol::AssocParam,::Nothing)
     length(bondvol.values.values) == 0 && return deepcopy(bondvol)
+
     param = assoc_extend(bondvol)
     mat = param.values
-
     for (idx,(i,j),(a,b)) in indices(mat)
-        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
-            mat.values[idx] = mix_mean3(mat[i,i][a,b],mat[j,j][a,b])
+        i == j && continue
+        dij = mix_mean3(mat[i,i][a,b],mat[j,j][a,b])
+        if iszero(mat.values[idx]) && !iszero(dij)
+            mat[idx] = dij
         end
     end
     dropzeros!(mat)
@@ -42,12 +47,14 @@ end
 
 function epsilon_assoc_mix(epsilon_assoc::AssocParam)
     length(epsilon_assoc.values.values) == 0 && return deepcopy(epsilon_assoc)
-    param = assoc_extend(epsilon_assoc)
 
+    param = assoc_extend(epsilon_assoc)
+    mat = param.values
     for (idx,(i,j),(a,b)) in indices(mat)
-        #check that nia != 0 && njb != 0
-        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
-            mat.values[idx] = (mat[i,i][a,b] + mat[j,j][a,b])/2
+        i == j && continue
+        dij = (mat[i,i][a,b] + mat[j,j][a,b])/2
+        if iszero(mat.values[idx]) && !iszero(dij)
+            mat[idx] = dij
         end
     end
     dropzeros!(mat)
@@ -56,40 +63,34 @@ end
 
 function bondvol_mix(bondvol::AssocParam,σ)
     length(bondvol.values.values) == 0 && return deepcopy(bondvol)
+
     param = assoc_extend(bondvol)
     mat = param.values
-    if sites isa SiteParam
-        n = sites.n_sites
-    else
-        n = nothing
-    end
     for (idx,(i,j),(a,b)) in indices(mat)
-        #check that nia != 0 && njb != 0
-        if iszero(mat.values[idx]) && __valid_site_comb(n,i,j,a,b)
-            mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])*(sqrt(σ[i,i]*σ[j,j])/σ[i,j])^3
+        i == j && continue
+        dij = sqrt(mat[i,i][a,b]*mat[j,j][a,b])*(sqrt(σ[i,i]*σ[j,j])/σ[i,j])^3
+        if !iszero(dij) && iszero(mat[idx])
+            mat[idx] = dij
         end
     end
     dropzeros!(mat)
     return param
 end
 
-function zero_mix(assocparam::AssocParam,sites = nothing)
+function zero_mix(assocparam::AssocParam)
     length(assocparam.values.values) == 0 && return deepcopy(assocparam)
     param = assoc_extend(assocparam)
     mat = param.values
-    if sites isa SiteParam
-        n = sites.n_sites
-    else
-        n = nothing
-    end
+
     #fill with sentinel values
     SENTINEL = -124
     for (idx,(i,j),(a,b)) in indices(mat)
-        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
-            dij = sqrt(mat[i,i][a,b]*mat[j,j][a,b])
-            if !iszero(dij)
-                mat.values[idx] = SENTINEL
-            end
+        i == j && continue
+        di = mat[i,i][a,b]
+        dj = mat[j,j][a,b]
+        dij = max(di*dj,zero(di*dj))
+        if !iszero(dij) && iszero(mat[idx])
+            mat.values[idx] = SENTINEL
         end
     end
     dropzeros!(mat)
@@ -99,6 +100,7 @@ function zero_mix(assocparam::AssocParam,sites = nothing)
             mat[i] = 0
         end
     end
+
     return param
 end
 
