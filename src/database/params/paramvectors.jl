@@ -25,7 +25,6 @@ To avoid storing duplicate entries, only one triangular half is kept:
 
 The storage exploits the block structure: each component `i` has a contiguous range of site indices determined by `site_offsets`. 
 The data is stored as a flat vector `values` and a parallel vector `indices` of encoded integers that uniquely identify each stored `(i,j,a,b)` tuple. 
-The encoding uses a mixed‑radix scheme based on the total number of sites, allowing fast lookups via binary search.
 
 ### External Interface
 
@@ -65,8 +64,7 @@ input forms:
 
 4. **From separate `ij` and `ab` vectors** – for convenience:
    ```
-   Compressed4DMatrix(vals::AbstractVector, ij::Vector{NTuple{2,Int}},
-                      ab::Vector{NTuple{2,Int}})
+   Compressed4DMatrix(vals::AbstractVector, ij::Vector{NTuple{2,Int}}, ab::Vector{NTuple{2,Int}})
    ```
    similar to the constructor from `(i, j, a, b)` indices, but the component and site indices are in different vectors.
 
@@ -78,28 +76,17 @@ input forms:
 """
 struct Compressed4DMatrix{T,V<:AbstractVector{T}}
     values::V #list of values 1:w, plain vector
-    indices::Vector{Int} #global indices, they are calculated as nk*nk*yy .= 0i + j
+    indices::Vector{Int} #global indices, 16x4
     site_offsets::Vector{Int} #start and end position of each block, n + 1, last index is nk, the size of the sum of all blocks.
 end
 
 #indexing:
 #=
-indices stores a "global" index, with values w
+each i,j,a,b is stored in a packed format (16 bits each).
 
-given w, we can obtain "ij" and "ab" indices via divrem
-nk = matsize(m)
-ij, ab = divrem(w,nk*nk)
+Having one indices vector helps simplifying the design.
 
-then, ij and ab are also compressed indices.
-
-i,j = divrem(ij,nblocks(m))
-a,b = divrem(ab,blocksize(m,i))
-
-The main advantage over the last design is that each index is unique. getting i,j,a,b maps to an unique number:
-
-nk*nk*(nblocks(m)*i + j) + blocksize(m,i)*a + b
-
-Also, we move from two Vector{Tuple{Int,Int}} to 2 Vector{Int}, making it easier to design a static version.
+There is also a site_offsets vector that enforces the shape, so bounds checking can now be performed.
 
 The symmetry is enforced at construction time
 - i != j, then i > j, no restrictions on a,b
