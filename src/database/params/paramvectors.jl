@@ -596,4 +596,19 @@ function Solvers.primalval_eager(x::Compressed4DMatrix{T}) where T
     return Compressed4DMatrix(Solvers.primalval_eager(x.values),x.indices,x.site_offsets)
 end
 
-#==#
+#Y = A*X + Y
+function LinearAlgebra.mul!(Y::AbstractVector, A::Compressed4DMatrix, X::AbstractVector, α::Number, β::Number)
+    N = matsize(A)
+    @assert length(Y) == N && length(X) == N
+    Y .*= β
+    @inbounds for (idx, (i, j), (a, b)) in indices(A)
+        v = A.values[idx] * α
+        ia = A.site_offsets[i] + a - 1
+        jb = A.site_offsets[j] + b - 1
+        Y[ia] += v * X[jb]
+        if !(i == j && a == b)   # avoid double‑counting diagonal self‑term
+            Y[jb] += v * X[ia]
+        end
+    end
+    return Y
+end
