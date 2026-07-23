@@ -581,7 +581,7 @@ import .Compressed4DMatrices: Compressed4DMatrix
     
 Returns a `Clapeyron.Compressed4DMatrix` of the same shape as the input, with the same element type as `𝕋`.
 """
-function assoc_similar(mat::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number
+function assoc_similar(m::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number
     newvalues = zeros(𝕋,length(m.values))
     return Compressed4DMatrix(newvalues,m.indices,m.site_offsets)
 end
