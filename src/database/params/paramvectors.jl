@@ -140,9 +140,7 @@ end
     ids = m.indices
     @boundscheck checkbounds(ids,idx)
     @inbounds begin
-        nk = last(offs)
-        ijab = ids[idx]
-        return idx_to_ijab(ijab)
+        return idx_to_ijab(ids[idx])
     end
 end
 
@@ -568,11 +566,24 @@ function Compressed4DMatrix(vals::AbstractVector{T},ij::Vector{NTuple{2,Int}},ab
     return m
 end
 
+assoc_is_pure(m::Compressed4DMatrix,i) = assoc_is_pure(m.indices[i])
+
+function assoc_is_pure(ix)
+    i,j,a,b = idx_to_ijab(ix)
+    return i == j
+end
+
+assoc_self_assoc(m::Compressed4DMatrix,i) = assoc_is_pure(m.indices[i])
+
+function assoc_self_assoc(ix)
+    i,j,a,b = idx_to_ijab(ix)
+    return i == j && a == b
+end
 
 end #module
 
 using .Compressed4DMatrices
-using .Compressed4DMatrices: AssocView, indices, dropzeros!, validindex
+using .Compressed4DMatrices: AssocView, indices, dropzeros!, validindex, idx_to_ijab, ijab_to_idx, assoc_is_pure, assoc_self_assoc
 import .Compressed4DMatrices: Compressed4DMatrix
 
 """

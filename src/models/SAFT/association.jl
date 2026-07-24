@@ -894,8 +894,7 @@ end
 
 function _X_exact1(model,V,T,z,data=nothing)
     κ = assoc_shape(model)
-    i,j = κ.outer_indices[1]
-    a,b = κ.inner_indices[1]
+    i,j,a,b = idx_to_ijab(κ,1)
     if data === nothing
         _Δ = @f(Δ,i,j,a,b)
     else
