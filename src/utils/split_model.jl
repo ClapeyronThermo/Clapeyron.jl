@@ -71,26 +71,24 @@ function each_split_model(param::PackedVofV,I)
     return val
 end
 
-function each_split_model(mat::Compressed4DMatrix{T},I) where T
+function each_split_model(mat::Compressed4DMatrix{T,Vector{T}},I) where T
     len = length(mat.values)
     iszero(len) && return Compressed4DMatrix{T}()
-    return Compressed4DMatrix{T}()
-
-    offsets = copy(assoc.site_offsets)
+    offsets = copy(mat.site_offsets)
 
     bsizes = Compressed4DMatrices.bsizes_from_offsets!(offsets)
-    new_bsizes = bsizes[I]
-    new_offsets = Compressed4DMatrices.offsets_from_bsizes!(bsizes)
+    nc_old = length(bsizes)
 
-    ik = zeros(Compressed4DMatrices.nblocks(mat))
-
-    for i in eachindex(nc)
+    ik = zeros(Int,nc_old)
+    for i in 1:nc_old
         ii = findfirst(==(i),I)
         if !isnothing(ii)
             ik[i] = ii
         end
     end
 
+    new_bsizes = bsizes[I]
+    new_offsets = Compressed4DMatrices.offsets_from_bsizes!(bsizes)
     new_indices = Int[]
     new_vals = T[]
     for (idx,(i,j),(a,b)) in indices(mat)
@@ -104,7 +102,7 @@ function each_split_model(mat::Compressed4DMatrix{T},I) where T
     end
 
     sort_idx = sortperm(new_indices)
-    Compressed4DMatrix{T}(new_vals[sort_idx],new_indices[sort_idx],new_offsets)
+    Compressed4DMatrix(new_vals[sort_idx],new_indices[sort_idx],new_offsets)
 end
 
 function each_split_model(param::ClapeyronParam,group,I_component,I_group)

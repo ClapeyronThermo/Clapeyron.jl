@@ -80,6 +80,8 @@ struct Compressed4DMatrix{T,V<:AbstractVector{T}}
     site_offsets::Vector{Int} #start and end position of each block, n + 1, last index is nk, the size of the sum of all blocks.
 end
 
+Compressed4DMatrix(values::AbstractVector{T},indices::Vector{Int},site_offsets::Vector{Int}) where {T} = Compressed4DMatrix{T,typeof(values)}(values,indices,site_offsets)
+
 #indexing:
 #=
 each i,j,a,b is stored in a packed format (16 bits each).
@@ -272,7 +274,8 @@ end
 
 function Base.show(io::IO,mime::MIME"text/plain",m::Compressed4DMatrix{T}) where T
     nv = length(m.values)
-    println(io,typeof(m)," with ",nv," entr",(nv == 1 ? "y:" : "ies:"))
+    print(io,typeof(m)," with ",nv," entr",(nv == 1 ? "y:" : "ies"))
+    !iszero(nv) && println(io,":")
     for (idx,(i,j),(a,b)) in indices(m)
         if idx != 1
         println(io)
