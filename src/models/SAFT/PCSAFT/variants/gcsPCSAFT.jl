@@ -107,7 +107,7 @@ function gcsPCSAFT(groups::GroupParam, params::Dict{String,ClapeyronParam};
     gc_bondvol = params["bondvol"]
     k = get(params,"k",nothing)
     
-    bondvol,epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,nothing,assoc_options,sites) #combining rules for association
+    bondvol,epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,nothing,assoc_options) #combining rules for association
     gcparams = gcsPCSAFTParam(mw, segment, msigma3, mepsilon, epsilon_assoc, bondvol)
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)

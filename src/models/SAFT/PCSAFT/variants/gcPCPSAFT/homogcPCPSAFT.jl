@@ -222,7 +222,7 @@ function recombine_impl!(model::HomogcPCPSAFTModel)
     comp_bondvol = gc_to_comp_sites(gcparams.bondvol,comp_sites)
     comp_epsilon_assoc = gc_to_comp_sites(gcparams.epsilon_assoc,comp_sites)
 
-    bondvol,epsilon_assoc = assoc_mix(comp_bondvol,comp_epsilon_assoc,params.sigma,assoc_options,comp_sites)
+    bondvol,epsilon_assoc = assoc_mix(comp_bondvol,comp_epsilon_assoc,params.sigma,assoc_options)
     params.bondvol.values.values[:] = bondvol.values.values
     params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
 

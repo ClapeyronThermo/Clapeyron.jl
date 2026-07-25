@@ -203,7 +203,7 @@ function elliott_runtime_mix!(Δ)
         Δijab = @inbounds(Δ[idx])
         !iszero(primalval(Δijab)) && continue
         i1 = validindex(Δ,(i,i,a,a))
-        iszero(i1) && continue   
+        iszero(i1) && continue
         i2 = validindex(Δ,(j,j,b,b))
         iszero(i2) && continue
         @inbounds begin
@@ -211,7 +211,7 @@ function elliott_runtime_mix!(Δ)
             iszero(primalval(Δ1)) && continue
             Δjb = Δ[i2]
             iszero(primalval(Δ2)) && continue
-            Δ[idx] = sqrt(Δia*Δjb) 
+            Δ[idx] = sqrt(Δia*Δjb)
         end
     end
     return Δ
@@ -1093,7 +1093,7 @@ function recombine_assoc!(model,sigma)
     iszero(assoc_pair_length(model)) && return model
     epsilon_assoc = model.params.epsilon_assoc
     bondvol = model.params.bondvol
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,_assoc_options,model.sites) #combining rules for association
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,_assoc_options) #combining rules for association
     copyto!(model.params.epsilon_assoc,epsilon_assoc)
     copyto!(model.params.bondvol,bondvol)
     return model
@@ -1122,219 +1122,130 @@ end
 @public getsites,assoc_matrix_solve,assoc_site_matrix,Δ,assoc_strength,X
 @public assoc_shape,assoc_pair_length,assoc_similar,assoc_options
 
-
-#=
-
-function issite(i::Int,a::Int,ij::Tuple{Int,Int},ab::Tuple{Int,Int})::Bool
-    ia = (i,a)
-    i1,i2 = ij
-    a1,a2 = ab
-    ia1 = (i1,a1)
-    ia2 = (i2,a2)
-    return (ia == ia1) | (ia == ia2)
+struct AssocMap{D,N,Z,A}
+    delta::D
+    sites::N
+    z::Z
+    α::A
 end
 
-function complement_index(i,ij)::Int
-    i1,i2 = ij
-    ifelse(i1 == i,i2,i1)::Int
-end
-
-function compute_index(idxs,i,a)::Int
-    res::Int = idxs[i] + a - 1
-    return res
-end
-
-function inverse_index(idxs,o)
-    i = findfirst(>=(o-1),idxs)::Int
-    a = o + 1 - idxs[i]
-    return i,a
-end
-
-function AX!(output,input,pack_indices,delta::Compressed4DMatrix{TT,VV} ,modelsites,ρ,z) where {TT,VV}
-    _0 = zero(TT)
-    p = modelsites.p::Vector{Int}
-    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
-    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
-    _Δ::VV = delta.values
-    _idx = 1:length(_ii)
-    #n = modelsites
-    _n::Vector{Int} = modelsites.v
-    #pv.p[i]:pv.p[i+1]-1)
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            ∑X = _0
-            ia = compute_index(pack_indices,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                if issite(i,a,ij,ab)
-                    j = complement_index(i,ij)
-                    b = complement_index(a,ab)
-                    jb = compute_index(pack_indices,j,b)
-                    njb = _n[jb]
-                    ∑X += ρ*njb*z[j]*input[jb]*_Δ[idx]
-                end
-            end
-            output[ia] = ∑X
+function LinearAlgebra.mul!(Y::AbstractVector, A::AssocMap{D,NN,Z,AA}, X::AbstractVector, α::Number, β::Number) where {D,NN,Z,AA}
+    n = A.sites
+    z = A.z
+    Δ = A.delta
+    αΔ = A.α
+    N = length(N)
+    @assert length(Y) == N && length(X) == N
+    Y .*= β
+    @inbounds for (idx, (i, j), (a, b)) in indices(Δ)
+        Δijab = Δ.values[idx] * α * αΔ
+        ia = Δ.site_offsets[i] + a - 1
+        jb = Δ.site_offsets[j] + b - 1
+        Y[ia] += Δijab * X[jb] * z[j] * n[jb]
+        if !(i == j && a == b)   # avoid double‑counting diagonal self‑term
+            Y[jb] += Δijab * X[ia] * z[i] * n[ia]
         end
     end
-    return output
+    return Y
 end
-=#
-#res = ∑(z[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)/sum(z)
 
-#=
-on one site:
-Xia = 1/(1+*nb*z[j]*rho*Δ*Xjb)
-Xjb = 1/(1+*na*z[i]*rho*Δ*Xia)
 
-kia = na*z[i]*rho*Δ
-kjb = nb*z[j]*rho*Δ
 
-Xia = 1/(1+kjb*Xjb)
-Xjb = 1/(1+kia*Xia)
+function solve_assoc2(K; tol=1e-12, maxiter=1000)
 
-Xia = 1/(1+kjb*(1/(1+kia*Xia)))
-Xia = 1/(1+kjb/(1+kia*Xia))
-Xia = 1/((1+kia*Xia+kjb)/(1+kia*Xia))
-Xia = (1+kia*Xia)/(1+kia*Xia+kjb)
-Xia*(1+kia*Xia+kjb) = 1+kia*Xia #x = Xia
-x*(1+kia*x+kjb) = 1+kia*x
-x + kia*x*x + kjb*x - 1 - kia*x = 0
-kia*x*x + x(kjb-kia+1) - 1 = 0
-x = - (kjb-kia+1) +
+    # --- Allocate workspaces ---
+    L = similar(K,size(K,1))
+    X    = similar(L); KX   = similar(L); g  = similar(L)
+    d    = similar(L); p    = similar(L); Ap = similar(L)
+    
+    n = length(L)
 
-x = 1/1+kiax
-x(1+kx) - 1 = 0
-kx2 +x - 1 = 0
-end
-=#
+    # --- Initialize bounds ---
+    X .= 1
+    mul!(L,K,X)
+    L .= 1 ./ (1 .+ L) #lower bound. we use 1 as the theoretical upper bound.
+   
+    # --- Initial guess and gradient ---
+    mul!(KX,K,L)
+    X .= 0.5 .* 1 ./ (1 .+ KX) .+ 0.5 .* L
+    mul!(KX, K, X)          # matvec #1
+    
+    Q_new = 0.5 * dot(X, KX)
+    Q_old = Inf*Q_new
+    # --- Main iteration ---
+    for iter in 1:maxiter
+        # Convergence check
+        if norm(g) < tol
+            return X
+        end
 
-#=
-function sparse_assoc_site_matrix(model,V,T,z,data=nothing)
-    if data === nothing
-        delta = @f(Δ)
-    else
-        delta = @f(Δ,data)
-    end
-    _sites = model.sites.n_sites
-    p = _sites.p
-    ρ = N_A/V
-    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
-    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
-    _idx = 1:length(_ii)
-    _Δ= delta.values
-    TT = eltype(_Δ)
-    count = 0
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            #ia = compute_index(pack_indices,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                issite(i,a,ij,ab) && (count += 1)
+        # --- Update bounds using sign of g ---
+        # U is taken as a vector of ones, the upper theoretical bound
+        # If g_i > 0 -> X_i < X*_i -> raise L_i
+        # If g_i < 0 -> X_i > X*_i -> lower U_i
+        #@. L = ifelse(g > 0, max(L, X), L)
+        #@. U = ifelse(g < 0, min(U, X), U)
+
+        # --- Solve H * d = -g using CG (no allocations) ---
+        
+        @. g = KX - 1/X + 1 #calculate g, before it was storing dX
+        KX .= (1 .+ KX) ./ X #calculate 1/X2
+        solve_cg!(d, p, Ap, K, g, KX, 1e-3)
+        # Now d is the Newton direction
+
+        # --- Projected line search ---
+        # 1. Max step to stay inside [L, 1]
+        αmax = 1.0
+        @inbounds for i in 1:n
+            if d[i] > 0
+                αmax = min(αmax, (1.0 - X[i]) / d[i])
+            elseif d[i] < 0
+                αmax = min(αmax, (L[i] - X[i]) / d[i])
             end
         end
-    end
-    c1 = zeros(Int,count)
-    c2 = zeros(Int,count)
-    val = zeros(TT,count)
-    _n = model.sites.n_sites.v
-    count = 0
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            ia = compute_index(p,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                if issite(i,a,ij,ab)
-                    j = complement_index(i,ij)
-                    b = complement_index(a,ab)
-                    jb = compute_index(p,j,b)
-                    njb = _n[jb]
-                    count += 1
-                    c1[count] = ia
-                    c2[count] = jb
-                    val[count] = ρ*njb*z[j]*_Δ[idx]
-                end
-            end
+        α = min(1.0, 0.99 * αmax)  # avoid hitting boundary exactly
+        Q_old = Q_new
+        g .= X
+        X .= X .+ α .* d
+        mul!(KX,K,X)
+        Q_new = 0.5 * dot(X, KX)   # no extra matvec; uses KX
+        
+        #if we achieve reduction, good. if not, use SS inmediately
+        #reduction was not achieved, use successive substitution
+        if Q_new >= Q_old# + 1e-4 * α * dot(g, d)
+            X .= X .- α .* d
+            mul!(KX, K, X)
+            X .= 0.5 .* X .+ 0.5 ./ (1. .+ KX)
+            
         end
+        g .= g .- X
     end
-    K::SparseMatrixCSC{TT,Int} = sparse(c1,c2,val)
-    return K
+    return X
 end
-#Mx = a + b(x,x)
-#Axx + x - 1 = 0
-#x = 1 - Axx
-=#
 
-#=
-#this function destroys KK and XX0
-function __assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::AbstractVector{T2}, α, atol ,rtol, max_iters) where {N,T1,T2}
-    X0 = SVector{N,T2}(XX0)
-    K = SMatrix{N,N,T1,N*N}(KK)
-    Xsol = X0
-    it_ss = (5*length(Xsol))
-    converged = false
-    for i in 1:it_ss
-        kx = K*X0
-        Xsol = α ./ (1 .+ kx) .+ (1 .- α) .* X0
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
-        if converged
-            if !finite
-                Xsol = NaN .* Xsol
-            end
-
+function solve_cg!(d, p, Ap, K, g, KXp1X, tol_cg)
+    n = length(KXp1X)
+    fill!(d, 0.0)
+    r = g
+    r .*= -1
+    #@. r = -g          # initial residual
+    copyto!(p, r)
+    rsold = dot(r, r)
+    rs0 = rsold
+    #return nothing
+    for j in 1:min(n, 50)
+        # Hessian-vector product: H*p = K*p + p ./ X^2, (michelsen: 1 ./ X2 = (1 + KX)/X, improves convergence)
+        mul!(Ap, K, p)             # Ap = K * p
+        @. Ap = Ap + p * KXp1X     # Ap = H * p
+        α = rsold / dot(p, Ap)
+        @. d += α * p
+        @. r -= α * Ap
+        rsnew = dot(r, r)
+        if rsnew < tol_cg * tol_cg * rs0
             break
         end
-        X0 = Xsol
+        β = rsnew / rsold
+        @. p = r + β * p
+        rsold = rsnew
     end
-
-    if converged
-        XX0 .= Xsol
-        return XX0
-    end
-
-    H = KK
-    g = XX0
-    #TODO: for the next stable release, use MVector
-    piv = zeros(Int,N)
-    for i in (it_ss + 1):max_iters
-        #@show Xsol
-        KX = K*Xsol
-        H .= 0
-        H .= -K
-        for k in 1:size(H,1)
-            H[k,k] -= (1 + KX[k])/Xsol[k]
-        end
-        F = Solvers.unsafe_LU!(H,piv)
-        g .= 1 ./ Xsol .- 1 .- KX #gradient
-        ldiv!(F,g)
-        ΔX = SVector{N,T2}(XX0)
-        Xnewton = Xsol - ΔX
-        Xss = 1 ./ (1 .+ KX)
-        X0 = Xsol
-        Xsol = ifelse.(0 .<= Xnewton .<= 1, Xnewton, Xss)
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
-        #@show converged,finite
-        if converged
-            if !finite
-                Xsol = NaN .* Xsol
-            end
-            XX0 .= Xsol
-            break
-        end
-    end
-
-    if !converged
-        Xsol = NaN .* Xsol
-    end
-    XX0 .= Xsol
-    return XX0
 end
-
-
-=#
