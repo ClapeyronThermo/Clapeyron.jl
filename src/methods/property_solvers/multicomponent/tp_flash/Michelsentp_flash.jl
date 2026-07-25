@@ -307,10 +307,10 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
     itacc = 0
 
     if nacc != 0
-        lnK3,lnK4,lnK5,K_dem,lnK_dem,ΔlnK1,ΔlnK2 = similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK)
+        lnK3,lnK4,lnK5,K_dem,lnK_dem = similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK)
         x_dem,y_dem = similar(x),similar(y)
     else
-        lnK3,lnK4,lnK5,K_dem,lnK_dem,ΔlnK1,ΔlnK2 = lnK,lnK,lnK,lnK,lnK,lnK,lnK
+        lnK3,lnK4,lnK5,K_dem,lnK_dem = lnK,lnK,lnK,lnK,lnK
         x_dem,y_dem = x,y
     end
 
@@ -341,7 +341,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
             itacc = 0
             lnK5 .= lnK
             # acceleration using DEM (1 eigenvalues)
-            lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3,(ΔlnK1,ΔlnK2))
+            lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3)
             K_dem .= exp.(lnK_dem)
             β_dem = rachfordrice(K_dem, z; β0=β, non_inx, non_iny, verbose)
             x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)

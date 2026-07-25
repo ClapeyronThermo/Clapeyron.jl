@@ -3,10 +3,9 @@ function dem(xₙ, xₙ₋₁, xₙ₋₂)
     return dem!(similar(xₙ),xₙ, xₙ₋₁, xₙ₋₂)
 end
 
-function dem!(x_dem,xₙ, xₙ₋₁, xₙ₋₂,cache = (similar(x),similar(x)))
-    Δxₙ₋₁,Δxₙ = cache
-    Δxₙ₋₁ .= xₙ₋₁ .- xₙ₋₂
-    Δxₙ .= xₙ .- xₙ₋₁
+function dem!(x_dem,xₙ, xₙ₋₁, xₙ₋₂)
+    Δxₙ₋₁ = Solvers.ΔVector(xₙ₋₁,xₙ₋₂)
+    Δxₙ = Solvers.ΔVector(xₙ ,xₙ₋₁)
     λ = dot(Δxₙ, Δxₙ) / dot(Δxₙ, Δxₙ₋₁)
     x_dem .= xₙ .+ Δxₙ .* λ ./(1. .- λ)
 end

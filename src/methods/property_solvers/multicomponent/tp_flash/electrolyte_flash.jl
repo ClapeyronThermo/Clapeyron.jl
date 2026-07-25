@@ -141,10 +141,10 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
     it = 0
     itacc = 0
     if nacc != 0
-        lnK3,lnK4,lnK5,K_dem,lnK_dem,ΔlnK1,ΔlnK2,K̄_dem = similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK)
+        lnK3,lnK4,lnK5,K_dem,lnK_dem,K̄_dem = similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK),similar(lnK)
         x_dem,y_dem = similar(x),similar(y)
     else
-        lnK3,lnK4,lnK5,K_dem,lnK_dem,ΔlnK1,ΔlnK2,K̄_dem = lnK,lnK,lnK,lnK,lnK,lnK,lnK,lnK
+        lnK3,lnK4,lnK5,K_dem,lnK_dem,K̄_dem = lnK,lnK,lnK,lnK,lnK,lnK
         x_dem,y_dem = x,y
     end
 
@@ -178,7 +178,7 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
             itacc = 0
             lnK5 .= lnK
             # acceleration using DEM (1 eigenvalues)
-            lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3,(ΔlnK1,ΔlnK2))
+            lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3)
             K_dem .= exp.(lnK_dem)
             β_dem,ψ_dem = ion_rachfordrice(K_dem, z, Z, K̄_dem; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny, verbose = verbose)
             K̄_dem .= K_dem .* exp.(Z .* ψ_dem)

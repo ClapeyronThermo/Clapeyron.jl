@@ -142,8 +142,8 @@ function tp_flash_multi_cache(model,p,T,z)
     F_cache2 = similar(F_cache)
     F_cache3 = similar(F_cache)
     f1,f2,f3 = _tpd_cache[1],_tpd_cache[2],_tpd_cache[3]
-    F3,F4,F5,ΔF1,ΔF2,xdem,Fdem = similar(F_cache),similar(F_cache),similar(F_cache),similar(F_cache),similar(F_cache),similar(F_cache),similar(F_cache)
-    dem_cache = (F3,F4,F5,ΔF1,ΔF2,xdem,Fdem)
+    F3,F4,F5,xdem,Fdem = similar(F_cache),similar(F_cache),similar(F_cache),similar(F_cache),similar(F_cache)
+    dem_cache = (F3,F4,F5,xdem,Fdem)
     comps_cache = fill(similar(f1),1)
     found_tpd = fill(similar(f1),0)
     found_tpd_lnphi = fill(similar(f1),0)
@@ -379,7 +379,7 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
     max_iters = ss_iters*np*nc
     itacc = 0
     converged = false
-    F3,F4,F5,ΔF1,ΔF2,xdem,Fdem = dem_cache
+    F3,F4,F5,xdem,Fdem = dem_cache
     xdem .= 0
     for i in 1:max_iters
         itacc += 1
@@ -402,7 +402,7 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
             itacc = 0
             F5 .= x
             # acceleration using DEM (1 eigenvalues)
-            xdem = dem!(xdem, F5, F4, F3,(ΔF1,ΔF2))
+            xdem = dem!(xdem, F5, F4, F3)
             copyto!(flash_result_dem,flash_result)
             fixpoint_multiphase!(Fdem, xdem, model, p, T, z, _result_dem, ss_cache, verbose)
             gibbs = modified_gibbs(model,flash_result;vapour_phase_index=idx_vapour[])

@@ -13,11 +13,7 @@ Base.size(v::ΔVector) = size(v.v1)
 
 Base.@propagate_inbounds function Base.getindex(v::ΔVector{T},i::Int) where T
     v1,v2 = v.v1[i],v.v2[i]
-    if v.log
-        return T(v1/v2 - 1)
-    else
-        return T(v1 - v2)
-    end
+    return ifelse(v.log,T(v1/v2 - one(T)),T(v1 - v2))
 end
 
 """

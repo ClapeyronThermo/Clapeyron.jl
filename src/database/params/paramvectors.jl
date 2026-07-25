@@ -80,8 +80,6 @@ struct Compressed4DMatrix{T,V<:AbstractVector{T}}
     site_offsets::Vector{Int} #start and end position of each block, n + 1, last index is nk, the size of the sum of all blocks.
 end
 
-Compressed4DMatrix(values::AbstractVector{T},indices::Vector{Int},site_offsets::Vector{Int}) where {T} = Compressed4DMatrix{T,typeof(values)}(values,indices,site_offsets)
-
 #indexing:
 #=
 each i,j,a,b is stored in a packed format (16 bits each).
