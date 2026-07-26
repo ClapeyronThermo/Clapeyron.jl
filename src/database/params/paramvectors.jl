@@ -525,7 +525,7 @@ function infer_site_offsets(ij::AbstractVector,ab::AbstractVector,nc = 0)
     else
         _nc = nc
     end
-    bsizes = zeros(Int,nc)
+    bsizes = zeros(Int,_nc)
     for k in 1:length(ij)
         i,j = ij[k]
         a,b = ab[k]
@@ -541,7 +541,7 @@ function infer_site_offsets(ijab,nc = 0)
     else
         _nc = nc
     end
-    bsizes = zeros(Int,nc)
+    bsizes = zeros(Int,_nc)
     for k in 1:length(ijab)
         i,j,a,b = ijab[k]
         bsizes[i] = max(bsizes[i],a)
