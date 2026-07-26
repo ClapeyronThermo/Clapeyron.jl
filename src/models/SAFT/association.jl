@@ -1275,7 +1275,7 @@ function solve_cg!(d, p, Ap, K, g, diagH, tol_cg)
     rs0 = rsold
     #return nothing
     for j in 1:min(n, 50)
-        # Hessian-vector product: H*p = K*p + p ./ X^2, (michelsen: 1 ./ X2 = (1 + KX)/X, improves convergence)
+        # Hessian-vector product: H*p = (K +  1./ X^2)*p = K*p + p ./X^2, (michelsen: 1 ./ X2 = (1 + KX)/X, improves convergence)
         
         @inbounds mul!(Ap, K, p, true, true)  # Ap = K * p + p * diagH, Ap stores p*diagH and 5-arg mul! just adds the matrix-vector mul to Ap
         #Ap .= Ap .+ p .* diagH     # Ap = H * p

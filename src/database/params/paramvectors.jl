@@ -1,6 +1,6 @@
 module Compressed4DMatrices
 
-using Clapeyron: _iszero, _zero
+using Clapeyron: _iszero, _zero, low_color
 using LinearAlgebra
 
 """
@@ -379,8 +379,8 @@ end
 
 
 @inline function Base.size(m::AssocView)
-    i,j,a,b = idx_to_ijab(m.ijab)
-    return ifelse(i >= j,(a,b),(b,a))
+    _,_,a,b = idx_to_ijab(m.ijab)
+    return (a,b)
 end
 
 function Base.summary(io::IO,m::AssocView{T}) where T
@@ -389,11 +389,11 @@ function Base.summary(io::IO,m::AssocView{T}) where T
     print(io," ")
     i,j,a,b = idx_to_ijab(m.ijab)
     if i == j
-        print(io,"symmetric ")
+        print(io,low_color("(symmetric) "))
     end
 
     if i > j
-        print(io,"transposed")
+        print(io,low_color("(transposed) "))
     end
     print(io,typeof(m))
 end
@@ -404,12 +404,11 @@ function Base.print_array(io::IO, m::AssocView{T}) where T
     M .= 0
     for i in 1:s[1]
         for j in 1:s[2]
-            M[i] = m[i,j]
+            M[i,j] = m[i,j]
         end
     end
     Base.print_array(io,M)
 end
-
 
 Base.eltype(m::AssocView{T}) where T = T
 
@@ -418,15 +417,14 @@ Base.eltype(m::AssocView{T}) where T = T
     ijab = m.ijab
     _i,_j,_a,_b = idx_to_ijab(ijab) #unwrap the ijab, where ij is the specified ij, and ab is the size of the block ij
     (iszero(_a) || iszero(_b)) && return zero(eltype(w)) #zero--sized assoc view has no indices
-    if _i > _j
-        k1,k2 = k2,k1 #swap indices if we are in the presence of a transpose position
-    end
     idxs = m.m.indices
+    
     i,j,si,sj = canonical_index(_i,_j,k1,k2) #canonical index: returns the form that we store.
+   _ijab = (i,j,si,sj)
     k = ijab_to_idx(i,j,si,sj) #transform to compressed index
     len = length(idxs)
     T = eltype(idxs)
-    w = searchsortedfirst(idxs,k) #search unique compressed index
+    w = searchsortedfirst(idxs,k,T(1),T(len),Base.Order.ForwardOrdering()) #search unique compressed index
     w > len && return T(0)
     in_idxs = @inbounds(idxs[w]) == k
     return ifelse(in_idxs,T(w),T(0))
@@ -529,7 +527,7 @@ end
 
 function infer_site_offsets(ijab,nc = 0)
     if iszero(nc)
-        _nc = maximum(max,ij)
+        _nc = maximum(k -> max(k[1],k[2]),ijab)
     else
         _nc = nc
         bsizes = zeros(Int,nc)
