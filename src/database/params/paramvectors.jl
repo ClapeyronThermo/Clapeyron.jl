@@ -1,7 +1,17 @@
 module Compressed4DMatrices
 
-using Clapeyron: _iszero, _zero, low_color
+using Clapeyron: _iszero, _zero
 using LinearAlgebra
+
+function low_color(text::AbstractString)
+    colors = Base.text_colors
+    g = colors[:light_black]
+    reset = colors[:normal]
+    return g * text * reset
+end
+
+low_color(symbol::Symbol) = low_color(":" * string(symbol))
+low_color(x) = low_color(string(x))
 
 """
     Compressed4DMatrix{T}
