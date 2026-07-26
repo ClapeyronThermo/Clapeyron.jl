@@ -96,6 +96,22 @@ function show_as_namedtuple(io::IO,x)
     print(io,")")
 end
 
+_zero(t::Number) = zero(t)
+_zero(::String) = ""
+_zero(::Missing) = missing
+function _zero(x::Type{T})  where T<:Number
+    return zero(T)
+end
+_zero(::Type{String}) = ""
+_zero(::Type{Missing}) = missing
+function _zero(::Type{T}) where T <:Union{T1,Missing} where T1
+    return missing
+end
+
+_iszero(t::Number) = iszero(t)
+_iszero(::Missing) = true
+_iszero(t::AbstractString) = isempty(t)
+
 #=
 """
     concrete(x)

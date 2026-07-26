@@ -320,6 +320,7 @@ function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
     K = assoc_site_matrix(model,V,T,z,data,_Δ)
     sitesparam = getsites(model)
     idxs = sitesparam.n_sites.p
+    #K̂ = AssocMap(_Δ,V,z,n_sites)
     compress = __maybe_compress(K)
     if compress
         J,J_to_K = compress_assoc_matrix(K)
