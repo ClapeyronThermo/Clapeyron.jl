@@ -97,8 +97,8 @@ function eosmodel_is_approx(model1,model2)
                 end
             elseif p1 isa AssocParam
                 @test p1.values.values ≈ p2.values.values
-                @test p1.values.inner_indices == p2.values.inner_indices
-                @test p1.values.outer_indices == p2.values.outer_indices
+                @test p1.values.indices == p2.values.indices
+                @test p1.values.site_offsets == p2.values.site_offsets
             elseif p1 isa Clapeyron.MixedGCSegmentParam
                 @test p1.values.v ≈ p2.values.v
             end
