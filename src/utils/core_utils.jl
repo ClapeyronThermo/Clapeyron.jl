@@ -97,16 +97,13 @@ function show_as_namedtuple(io::IO,x)
 end
 
 _zero(t::Number) = zero(t)
-_zero(::String) = ""
-_zero(::Missing) = missing
-function _zero(x::Type{T})  where T<:Number
-    return zero(T)
-end
+_zero(x::T)  where T = _zero(T)
+
 _zero(::Type{String}) = ""
 _zero(::Type{Missing}) = missing
-function _zero(::Type{T}) where T <:Union{T1,Missing} where T1
-    return missing
-end
+_zero(::Type{T}) where T <: AbstractString = T("")
+_zero(::Type{T}) where T <:Union{T1,Missing} where T1 = _zero(T1)
+
 
 _iszero(t::Number) = iszero(t)
 _iszero(::Missing) = true

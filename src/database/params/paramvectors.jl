@@ -122,10 +122,11 @@ function Base.copyto!(dest::Compressed4DMatrix,src::AbstractArray) #general, jus
 end
 
 function Base.copyto!(dest::Compressed4DMatrix,src::Compressed4DMatrix) #specific
-    n = length(src.values)
-    copyto!(resize!(dest.values,n),src.values)
-    copyto!(resize!(dest.indices,n),src.indices)
-    copyto!(resize!(dest.site_offsets,n),src.site_offsets)
+    nv = length(src.values)
+    ns = length(src.site_offsets)
+    copyto!(resize!(dest.values,nv),src.values)
+    copyto!(resize!(dest.indices,nv),src.indices)
+    copyto!(resize!(dest.site_offsets,ns),src.site_offsets)
     return dest
 end
 
@@ -277,7 +278,9 @@ function c4d_from_site_offsets(::Type{T},site_offsets) where T
     end
 
     nv = length(indices)
-    values = fill(_zero(T),nv)
+    values = Vector{T}(undef,nv)
+    _0 = _zero(T)
+    values .= _0
     return Compressed4DMatrix(values, indices, site_offsets)
 end
 

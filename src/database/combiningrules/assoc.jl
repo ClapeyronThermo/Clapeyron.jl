@@ -12,16 +12,13 @@ bondvol_mix(bondvol::AssocParam) = bondvol_mix(bondvol,nothing)
 
 function bondvol_mix(bondvol::AssocParam,::Nothing)
     length(bondvol.values.values) == 0 && return deepcopy(bondvol)
+
     param = assoc_extend(bondvol)
     mat = param.values
-    if sites isa SiteParam
-        n = sites.n_sites
-    else
-        n = nothing
-    end
     for (idx,(i,j),(a,b)) in indices(mat)
-        if iszero(mat.values[idx])
-            mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])
+        dij = qrt(mat[i,i][a,b]*mat[j,j][a,b])
+        if !iszero(dij) && iszero(mat[idx])
+            mat[idx] = dij
         end
     end
     dropzeros!(mat)
@@ -36,7 +33,7 @@ function dufal_mix(bondvol::AssocParam,::Nothing)
     for (idx,(i,j),(a,b)) in indices(mat)
         i == j && continue
         dij = mix_mean3(mat[i,i][a,b],mat[j,j][a,b])
-        if iszero(mat.values[idx]) && !iszero(dij)
+        if !iszero(dij) && iszero(mat[idx])
             mat[idx] = dij
         end
     end
@@ -53,7 +50,7 @@ function epsilon_assoc_mix(epsilon_assoc::AssocParam)
     for (idx,(i,j),(a,b)) in indices(mat)
         i == j && continue
         dij = (mat[i,i][a,b] + mat[j,j][a,b])/2
-        if iszero(mat.values[idx]) && !iszero(dij)
+        if !iszero(dij) && iszero(mat[idx])
             mat[idx] = dij
         end
     end
