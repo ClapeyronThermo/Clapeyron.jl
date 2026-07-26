@@ -98,11 +98,11 @@ end
 
 _zero(t::Number) = zero(t)
 _zero(x::T)  where T = _zero(T)
-
+_zero(::Type{T}) where T <: Number = _zero(T)
 _zero(::Type{String}) = ""
 _zero(::Type{Missing}) = missing
 _zero(::Type{T}) where T <: AbstractString = T("")
-_zero(::Type{T}) where T <:Union{T1,Missing} where T1 = _zero(T1)
+_zero(::Type{T}) where T <:Union{T1,Missing} where T1 = _zero(nonmissingtype(T))
 
 
 _iszero(t::Number) = iszero(t)
