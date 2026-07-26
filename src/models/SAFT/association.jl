@@ -1122,28 +1122,46 @@ end
 @public getsites,assoc_matrix_solve,assoc_site_matrix,Δ,assoc_strength,X
 @public assoc_shape,assoc_pair_length,assoc_similar,assoc_options
 
-struct AssocMap{D,N,Z,A}
-    delta::D
-    sites::N
-    z::Z
-    α::A
+struct AssocMap{T,C4D <: Compressed4DMatrix{T},N} <: AbstractMatrix{T}
+    Δ::C4D
+    d::N
 end
 
-function LinearAlgebra.mul!(Y::AbstractVector, A::AssocMap{D,NN,Z,AA}, X::AbstractVector, α::Number, β::Number) where {D,NN,Z,AA}
-    n = A.sites
-    z = A.z
-    Δ = A.delta
-    αΔ = A.α
-    N = length(N)
-    @assert length(Y) == N && length(X) == N
+@inline function Base.size(m::AssocMap)
+    l = length(m.d)
+    return (l,l)
+end
+
+function AssocMap(delta::Compressed4DMatrix{T},V,z,n) where T
+    d = Vector{T}(undef,matsize(delta))
+    ρ = N_A / V
+    d .= n
+
+    @inbounds for i in 1:length(z)
+        for a in 1:blocksize(delta,i)
+            ia = Δ.site_offsets[i] + a - 1
+            d[ia] *= z[i] * ρ
+        end
+    end
+    return AssocMap(delta,d)
+end
+
+function LinearAlgebra.mul!(Y::AbstractVector, A::AssocMap{D,NN}, X::AbstractVector, α::Number, β::Number) where {D,NN}
+    Δ = A.Δ
+    d = A.d
+    N = length(d)
+    @boundscheck begin
+        checkbounds(Y,N)
+        checkbounds(X,N)
+    end
     Y .*= β
     @inbounds for (idx, (i, j), (a, b)) in indices(Δ)
-        Δijab = Δ.values[idx] * α * αΔ
+        Δijab = Δ.values[idx] * α
         ia = Δ.site_offsets[i] + a - 1
         jb = Δ.site_offsets[j] + b - 1
-        Y[ia] += Δijab * X[jb] * z[j] * n[jb]
-        if !(i == j && a == b)   # avoid double‑counting diagonal self‑term
-            Y[jb] += Δijab * X[ia] * z[i] * n[ia]
+        Y[ia] += Δijab * X[jb] * d[jb]
+        if ia != jb   # avoid double‑counting diagonal self‑term
+            Y[jb] += Δijab * X[ia] * d[ia]
         end
     end
     return Y

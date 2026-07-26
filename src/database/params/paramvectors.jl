@@ -497,11 +497,11 @@ end
 
 function Base.Matrix(m::Compressed4DMatrix{T}) where T
     N = matsize(m)   # total number of sites
-    A = zeros(T, N, N)
+    A = fill(_zero(T), (N, N))
     vals = m.values
     for (w, val) in enumerate(vals)
         @inbounds begin
-            ia, jb = _site_indices(m, w)
+            ia, jb = site_indices(m, w)
             A[ia, jb] = val
             A[jb, ia] = val # symmetry
         end   
@@ -623,7 +623,7 @@ function LinearAlgebra.mul!(Y::AbstractVector, A::Compressed4DMatrix, X::Abstrac
         ia = A.site_offsets[i] + a - 1
         jb = A.site_offsets[j] + b - 1
         Y[ia] += v * X[jb]
-        if !(i == j && a == b)   # avoid double‑counting diagonal self‑term
+        if ia != jb   # avoid double‑counting diagonal self‑term
             Y[jb] += v * X[ia]
         end
     end
