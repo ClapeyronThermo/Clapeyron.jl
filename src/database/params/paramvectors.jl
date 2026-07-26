@@ -1,5 +1,6 @@
 module Compressed4DMatrices
 
+using Clapeyron: _iszero, _zero
 using LinearAlgebra
 
 """
@@ -266,7 +267,7 @@ function c4d_from_site_offsets(::Type{T},site_offsets) where T
     end
 
     nv = length(indices)
-    values = zeros(Float64,nv)
+    values = fill(_zero(T),nv)
     return Compressed4DMatrix(values, indices, site_offsets)
 end
 
@@ -274,11 +275,15 @@ function Base.show(io::IO,mime::MIME"text/plain",m::Compressed4DMatrix{T}) where
     nv = length(m.values)
     print(io,typeof(m)," with ",nv," entr",(nv == 1 ? "y:" : "ies"))
     !iszero(nv) && println(io,":")
+    is_str = T <: AbstractString
     for (idx,(i,j),(a,b)) in indices(m)
         if idx != 1
         println(io)
         end
-        print(io," ",(i,a)," >=< ",(j,b),": ",m.values[idx])
+        v = m.values[idx]
+        print(io," ",(i,a)," >=< ",(j,b),": ")
+        is_str ? print(io,"\"",v,"\"") : print(io,v)
+        
     end
 end
 
@@ -331,7 +336,7 @@ end
 
 function dropzeros!(mat::Compressed4DMatrix)
     #note, while indices were dropped, the actual structure, encoded in site_offsets, is kept intact
-    nonzero_idx = findall(!iszero,mat.values)
+    nonzero_idx = findall(!_iszero,mat.values)
     keepat!(mat.values,nonzero_idx)
     keepat!(mat.indices,nonzero_idx)
     return mat
@@ -441,7 +446,7 @@ end
 
 @inline function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
     idx = validindex(m,i,j)
-    iszero(idx) && return zero(T)
+    iszero(idx) && return _zero(T)
     @inbounds begin
         return m.m.values[idx]
     end
@@ -473,7 +478,7 @@ end
 @inline function Base.getindex(m::Compressed4DMatrix{T},ijab::NTuple{4,Int}) where T
     idx = validindex(m,ijab)
     vals = m.values
-    iszero(idx) && return zero(T)
+    iszero(idx) && return _zero(T)
     @boundscheck begin
         checkbounds(m.indices,idx)
     end
@@ -539,7 +544,7 @@ end
 
 
 function Compressed4DMatrix(vals::AbstractVector{T},ijab::AbstractVector{NTuple{4,Int}},offs::AbstractVector{Int} = infer_site_offsets(ijab)) where {T}
-    m = c4d_from_site_offsets(offs)
+    m = c4d_from_site_offsets(T,offs)
     for (idx,_ijab) in pairs(ijab)
         i,j,a,b = canonical_index(_ijab)
         m[(i,j,a,b)] = vals[idx]

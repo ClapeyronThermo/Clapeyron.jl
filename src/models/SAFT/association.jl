@@ -1149,103 +1149,150 @@ function LinearAlgebra.mul!(Y::AbstractVector, A::AssocMap{D,NN,Z,AA}, X::Abstra
     return Y
 end
 
+@inline function g_and_norm2!(g::V1,KX::V2,X::V3) where {V1,V2,V3}
+    res = zero(eltype(g))
+    @inbounds for k in eachindex(g)
+        gk = KX[k] - 1.0/X[k] + 1.0
+        res += gk*gk
+        g[k] = gk
+    end
+    return res
+end
 
-
-function solve_assoc2(K; tol=1e-12, maxiter=1000)
+solve_assoc2(K;tol=1e-12, maxiter=1000) = solve_assoc2(K,tol,maxiter)
+function solve_assoc2(K, tol, maxiter)
 
     # --- Allocate workspaces ---
-    L = similar(K,size(K,1))
-    X    = similar(L); KX   = similar(L); g  = similar(L)
-    d    = similar(L); p    = similar(L); Ap = similar(L)
-    
-    n = length(L)
+    TT = eltype(K)
+    n = size(K,1)
+    X = Vector{TT}(undef,n)
+    storage = Vector{TT}(undef,6*n)
+    L    = viewn(storage,n,1); KX   = viewn(storage,n,2); g  = viewn(storage,n,3)
+    d    = viewn(storage,n,4); p    = viewn(storage,n,5); Ap = viewn(storage,n,6)
+    #trial values, just aliases
+    KXt = Ap
+    Xt  = p
 
     # --- Initialize bounds ---
     X .= 1
-    mul!(L,K,X)
-    L .= 1 ./ (1 .+ L) #lower bound. we use 1 as the theoretical upper bound.
+    mul!(L,K,X)             # matvec #1
+    @. L = 1 / (1 + L) #lower bound. we use 1 as the theoretical upper bound.
    
     # --- Initial guess and gradient ---
-    mul!(KX,K,L)
-    X .= 0.5 .* 1 ./ (1 .+ KX) .+ 0.5 .* L
-    mul!(KX, K, X)          # matvec #1
-    
-    Q_new = 0.5 * dot(X, KX)
-    Q_old = Inf*Q_new
+    mul!(KX,K,L)            # matvec #2
+    @. X = 0.5  / (1 + KX) + 0.5 * L
+    mul!(KX, K, X)          # matvec #3
+    #g .= KX .- 1.0 ./ X .+ 1.0 #calculate gradient
+
+    g0_norm = sqrt(g_and_norm2!(g,KX,X))
+    norm_g = g0_norm
+
     # --- Main iteration ---
     for iter in 1:maxiter
+
         # Convergence check
-        if norm(g) < tol
-            return X
-        end
-
-        # --- Update bounds using sign of g ---
-        # U is taken as a vector of ones, the upper theoretical bound
-        # If g_i > 0 -> X_i < X*_i -> raise L_i
-        # If g_i < 0 -> X_i > X*_i -> lower U_i
-        #@. L = ifelse(g > 0, max(L, X), L)
-        #@. U = ifelse(g < 0, min(U, X), U)
-
+        norm_g < tol && break
+        !isfinite(norm_g) && break
         # --- Solve H * d = -g using CG (no allocations) ---
-        
-        @. g = KX - 1/X + 1 #calculate g, before it was storing dX
-        KX .= (1 .+ KX) ./ X #calculate 1/X2
+        @.  KX = (1 + KX) / X #diagonal term of the hessian
         solve_cg!(d, p, Ap, K, g, KX, 1e-3)
         # Now d is the Newton direction
 
         # --- Projected line search ---
-        # 1. Max step to stay inside [L, 1]
-        αmax = 1.0
+        # Max step to stay inside [L, 1]
+        αmax = one(eltype(X))
         @inbounds for i in 1:n
-            if d[i] > 0
-                αmax = min(αmax, (1.0 - X[i]) / d[i])
-            elseif d[i] < 0
-                αmax = min(αmax, (L[i] - X[i]) / d[i])
+            di,xi = d[i],X[i]
+            if di > 0
+                αmax = min(αmax, (1.0 - xi) / di)
+            elseif di < 0
+                αmax = min(αmax, (L[i] - xi) / di)
             end
         end
-        α = min(1.0, 0.99 * αmax)  # avoid hitting boundary exactly
-        Q_old = Q_new
-        g .= X
-        X .= X .+ α .* d
-        mul!(KX,K,X)
-        Q_new = 0.5 * dot(X, KX)   # no extra matvec; uses KX
-        
-        #if we achieve reduction, good. if not, use SS inmediately
+        α = min(one(αmax), 0.99 * αmax)  # avoid hitting boundary exactly
+
+        # --- Trial iterate ---
+        @. Xt = X + α * d
+        mul!(KXt,K,Xt)
+        #@. g = KXt - 1.0 / Xt + 1.0
+        norm_g_trial = sqrt(g_and_norm2!(g,KXt,Xt)) 
+
         #reduction was not achieved, use successive substitution
-        if Q_new >= Q_old# + 1e-4 * α * dot(g, d)
-            X .= X .- α .* d
+        if norm_g_trial >= norm_g
+            KX .= KX .* X #recover KX + 1
+            X .= 0.5 .* X .+ 0.5 ./ KX #SS X update, KX stores KX + 1
             mul!(KX, K, X)
-            X .= 0.5 .* X .+ 0.5 ./ (1. .+ KX)
-            
+            #g .= KX .- 1.0 ./ X .+ 1.0 #gradient from SS update
+            norm_g = sqrt(g_and_norm2!(g,KX,X)) 
+        else
+            X .= Xt
+            KX .= KXt
+            norm_g = norm_g_trial
         end
-        g .= g .- X
     end
     return X
 end
 
-function solve_cg!(d, p, Ap, K, g, KXp1X, tol_cg)
-    n = length(KXp1X)
-    fill!(d, 0.0)
+function solve_cg!(d, p, Ap, K, g, diagH, tol_cg)
+    n = length(diagH)
+    
+    rsold = zero(eltype(g))
+    @inbounds for k in eachindex(g)
+        rk = -g[k]
+        pk = rk
+        g[k] = rk
+        d[k] = false
+        p[k] = rk
+        rsold += rk*rk
+        Ap[k] = pk*diagH[k]
+    end
+    #d .= 0.0
     r = g
-    r .*= -1
+    #r .*= -1
     #@. r = -g          # initial residual
-    copyto!(p, r)
-    rsold = dot(r, r)
+    #p .= r
+    #copyto!(p, r)
+    #rsold = unsafe_dot(r, r)
     rs0 = rsold
     #return nothing
     for j in 1:min(n, 50)
         # Hessian-vector product: H*p = K*p + p ./ X^2, (michelsen: 1 ./ X2 = (1 + KX)/X, improves convergence)
-        mul!(Ap, K, p)             # Ap = K * p
-        @. Ap = Ap + p * KXp1X     # Ap = H * p
-        α = rsold / dot(p, Ap)
-        @. d += α * p
-        @. r -= α * Ap
-        rsnew = dot(r, r)
+        
+        @inbounds mul!(Ap, K, p, true, true)  # Ap = K * p + p * diagH, Ap stores p*diagH and 5-arg mul! just adds the matrix-vector mul to Ap
+        #Ap .= Ap .+ p .* diagH     # Ap = H * p
+        pAp = zero(eltype(p))
+        @inbounds for k in eachindex(p)
+            pAp += p[k]*Ap[k]
+        end
+        α = rsold /  
+        rsnew = zero(eltype(α))
+        @inbounds for k in eachindex(p)
+            pk,Apk = p[k],Ap[k]
+            d[k] += α*pk
+            r[k] -= α*Apk
+            rk = r[k]
+            rsnew += rk*rk
+        end
+        #@. d += α * p
+        #@. r -= α * Ap
+        #rsnew = unsafe_dot(r, r)
         if rsnew < tol_cg * tol_cg * rs0
             break
         end
         β = rsnew / rsold
-        @. p = r + β * p
+        @inbounds for k in eachindex(p)
+            pk = β*p[k] + r[k]
+            p[k] = pk
+            Ap[k] = pk*diagH[k]
+        end
+        #@. p = r + β * p
+        #@. Ap = p * diagH
         rsold = rsnew
+    end
+end
+
+function solve_assoc_test(K)
+    for i in 1:10000
+        solve_assoc2(K)
     end
 end

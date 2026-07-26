@@ -218,14 +218,8 @@ Returns a `Clapeyron.Compressed4DMatrix` with the same number of components as t
 All site combinations are filled.
 """
 function assoc_similar(param::SiteParam,::Type{𝕋}) where 𝕋 <:Number
-    comps = 1:length(param.components)
-    indices = NTuple{4,Int}[]
-    values = 𝕋[]
-    _0 = zero(𝕋)
-    __set_idx_4d!(param.sites,values,indices)
-    Compressed4DMatrices.c4d_from_site_offsets(copy(param.n_sites.p))
+    Compressed4DMatrices.c4d_from_site_offsets(𝕋,copy(param.n_sites.p))
 end
-
 
 function Compressed4DMatrix(param::SiteParam)
     return assoc_similar(param,Float64)
