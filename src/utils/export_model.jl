@@ -251,13 +251,15 @@ function export_assoc(model::EoSModel,params,name,location,species,ncomps)
             site1 = Vector{String}()
             site2 = Vector{String}()
             vals = zeros(nassoc)
-            for j in 1:nassoc
-                outer_idx,inner_idx,_,_ = idx_to_ijab(mat,j)
-                push!(spe1,species[outer_idx[1]])
-                push!(spe2,species[outer_idx[2]])
-                push!(site1,site_types[inner_idx[1]])
-                push!(site2,site_types[inner_idx[2]])
-                vals[j] = mat.values[j]
+            for k in 1:nassoc
+                _ijab = idx_to_ijab(mat,k)
+                _i,_j,_a,_b = _ijab
+                ia,jb = Compressed4DMatrices.site_indices(mat,_ijab)
+                push!(spe1,species[_i])
+                push!(spe2,species[_j])
+                push!(site1,site_types[ia])
+                push!(site2,site_types[jb])
+                vals[k] = mat.values[k]
             end
 
             if !any(keys(assoc).==:species1)

@@ -199,18 +199,18 @@ end
 function elliott_runtime_mix!(Δ)
     _Δ = Δ.values
     for (idx,(i,j),(a,b)) in indices(Δ)
-        i != j && continue
-        Δijab = @inbounds(Δ[idx])
-        !iszero(primalval(Δijab)) && continue
-        i1 = validindex(Δ,(i,i,a,a))
-        iszero(i1) && continue
-        i2 = validindex(Δ,(j,j,b,b))
-        iszero(i2) && continue
+        i == j && continue
         @inbounds begin
+            Δijab = Δ[idx]
+            !iszero(primalval(Δijab)) && continue
+            i1 = validindex(Δ,(i,i,a,b))
+            iszero(i1) && continue
+            i2 = validindex(Δ,(j,j,a,b))
+            iszero(i2) && continue
             Δia = Δ[i1]
-            iszero(primalval(Δ1)) && continue
+            iszero(primalval(Δia)) && continue
             Δjb = Δ[i2]
-            iszero(primalval(Δ2)) && continue
+            iszero(primalval(Δjb)) && continue
             Δ[idx] = sqrt(Δia*Δjb)
         end
     end

@@ -495,9 +495,10 @@ end
     end
 end
 
-function site_indices(m::Compressed4DMatrix, w::Int)
-    i,j,a,b = idx_to_ijab(m, w)   # decode (i,j,a,b)
-    # global site index for component i, site a
+site_indices(m::Compressed4DMatrix, w::Int) = site_indices(m,idx_to_ijab(m, w))
+
+@inline function site_indices(m::Compressed4DMatrix,ijab::NTuple{4,Int})
+    i,j,a,b = ijab
     ia = m.site_offsets[i] + a - 1
     jb = m.site_offsets[j] + b - 1
     return ia, jb
