@@ -16,7 +16,7 @@ function bondvol_mix(bondvol::AssocParam,::Nothing)
     param = assoc_extend(bondvol)
     mat = param.values
     for (idx,(i,j),(a,b)) in indices(mat)
-        dij = qrt(mat[i,i][a,b]*mat[j,j][a,b])
+        dij = sqrt(mat[i,i][a,b]*mat[j,j][a,b])
         if !iszero(dij) && iszero(mat[idx])
             mat[idx] = dij
         end

@@ -315,10 +315,6 @@ end
 
 function Compressed4DMatrix(x::AbstractMatrix{<:AbstractMatrix{T}}) where T
 
-    if length(x) == 0
-        return Compressed4DMatrix{T}()
-    end
-
     nc = LinearAlgebra.checksquare(x)
     iszero(nc) && return Compressed4DMatrix{T}()
 
@@ -339,11 +335,12 @@ function Compressed4DMatrix(x::AbstractMatrix{<:AbstractMatrix{T}}) where T
             mat.values[idx] = xij2[b,a]
         elseif iszero(prod(size(xij))) && i == j
             #that means that we stored an empty index, error out
-            error("invalid index (i,j,a,b) = $((i,j,a,b)) inside a CompressedAssocMatrix.")
+            throw(error("invalid index (i,j,a,b) = $((i,j,a,b)) inside a CompressedAssocMatrix."))
         else
             mat.values[idx] = xij[a,b]
         end
     end
+    dropzeros!(mat)
     return mat
 end
 
