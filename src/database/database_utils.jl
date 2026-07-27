@@ -225,11 +225,11 @@ Generates a square matrix, filled with "zeros" (considering the "zero" of a stri
 The generated matrix will have the values of `params` in the diagonal.
 If missing is passed, the matrix will be filled with `missing`.
 """
-function singletopair(params::Vector{T1},::T2 =_zero(T1)) where {T1,T2}
+function singletopair(params::Vector{T1},_0::T2 =_zero(T1)) where {T1,T2}
     len = length(params)
     T = Union{T1,T2}
     output = Matrix{T}(undef,len,len)
-    fill!(output,_zero(T))
+    fill!(output,_0)
     @inbounds  for i in 1:len
         output[i,i] = params[i]
     end
