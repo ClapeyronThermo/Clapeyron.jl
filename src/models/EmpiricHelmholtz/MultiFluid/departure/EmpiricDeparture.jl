@@ -116,7 +116,7 @@ function transform_params(::Type{EmpiricDeparture},params,components,verbose)
     F = params["F"]
     s1,s2 = size(F.values)
     𝕊 = sparse((!).(raw_parameters.ismissingvalues))
-    dropzeros!(𝕊)
+    SparseArrays.dropzeros!(𝕊)
     parsed_parameters = SparseMatrixCSC{EmpiricDepartureValues,Int}(𝕊.m, 𝕊.n, 𝕊.colptr, 𝕊.rowval, similar(𝕊.nzval,EmpiricDepartureValues))
     #parse JSON string to create EmpiricDepartureValues
     for i in 1:s1
