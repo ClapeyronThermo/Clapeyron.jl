@@ -314,6 +314,9 @@ end
 #in this way, we can "change" the index type completely via external functions, like what gc_to_comp_sites does. 
 function __extend!(m::Compressed4DMatrix{T},set_vals::Bool) where T
     nv = length(m.indices)
+    if nv == 0 && set_vals
+        return __extend!(m,false)
+    end
     n = matsize(m)
     nf = div(n*(n+1),2)
     nc = nblocks(m)
@@ -326,13 +329,19 @@ function __extend!(m::Compressed4DMatrix{T},set_vals::Bool) where T
 
     #move values to the end.
     for i in 1:nv
-        values[i+ nf] =  values[i]
-        indices[i+ nf] = indices[i]
+        values[i + nf]  =  values[i]
+        indices[i + nf] = indices[i]
     end
     w = nf + 1
     wf = 0
-    idx = indices[w]
-    val = values[w]
+    _0 = _zero(T)
+    if set_vals
+        idx = indices[w]
+        val = values[w]
+    else
+        idx = one(eltype(indices))
+        val = _0
+    end
     for i in 1:nc
         ni = site_offsets[i]
         ni1 = site_offsets[i+1]
@@ -356,7 +365,7 @@ function __extend!(m::Compressed4DMatrix{T},set_vals::Bool) where T
                         idx = indices[min(ntt,w)]
                         val = values[min(ntt,w)]
                     else
-                        values[wf] = _zero(T)
+                        values[wf] = _0
                     end
                 end
             end
