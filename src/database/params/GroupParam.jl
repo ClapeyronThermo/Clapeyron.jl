@@ -322,7 +322,7 @@ function MixedGCSegmentParam{T}(group::GroupParam,s = ones(T, length(group.flatt
     components = group.components
     nc = length(components)
     ng = length(group.flattenedgroups)
-    values = Clapeyron.PackedVectorsOfVectors.pack([zeros(T, ng) for _ in 1:nc])
+    values = packed_zeros!(Int,fill(ng,nc))# Clapeyron.PackedVectorsOfVectors.pack([zeros(T, ng) for _ in 1:nc])
     n_flattenedgroups = group.n_flattenedgroups
     for i in 1:nc
         val_i = values[i]

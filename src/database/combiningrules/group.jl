@@ -195,12 +195,13 @@ function group_pairmean!(res,f::F,groups,param::SingleOrPair) where {F}
     return group_pairmean!(res,f,groups,param.values)
 end
 
-function group_pairmean!(res,f,groups,p::AbstractMatrix)
+function group_pairmean!(_res,f,groups,p::AbstractMatrix)
+    res = raw_values(_res)
     zz = __get_group_sum_values(groups)
     lgroups = 1:length(zz[1])
     lcomps = 1:length(res)
     _0 = zero(eltype(res))
-    
+    w = linearidx(res)
     for i ∈ lcomps
         ẑ = zz[i]
         ∑ẑinv2 = 1/(sum(ẑ)^2)
@@ -214,15 +215,18 @@ function group_pairmean!(res,f,groups,p::AbstractMatrix)
                 p_i += 2*ẑk*ẑ[l]*p[k,l]
             end
         end
-        res[i] = p_i*∑ẑinv2
+        ii = w[i]
+        res[ii] = p_i*∑ẑinv2
     end
-    return res
+    return _res
 end
 
-function group_pairmean!(res,f::T,groups,p::AbstractVector) where {T}
+function group_pairmean!(_res,f::T,groups,p::AbstractVector) where {T}
+    res = raw_values(_res)
     zz = __get_group_sum_values(group)
     lgroups = 1:length(zz[1])
     lcomps = 1:length(groups.components)
+    w = linearidx(res)
     _0 = zero(eltype(res))
     for i ∈ lcomps
         ẑ = zz[i]
@@ -237,9 +241,10 @@ function group_pairmean!(res,f::T,groups,p::AbstractVector) where {T}
                 p_i += 2*ẑk*ẑ[l]*f(pk,p[l])
             end
         end
-        res[i] = p_i*∑ẑinv2
+        ii = w[i]
+        res[ii] = p_i*∑ẑinv2
     end
-    return res
+    return _res
 end
 
 group_pairmean!(res,groups,p) = group_pairmean!(res,mix_mean,groups,p)

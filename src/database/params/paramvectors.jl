@@ -314,9 +314,7 @@ end
 #in this way, we can "change" the index type completely via external functions, like what gc_to_comp_sites does. 
 function __extend!(m::Compressed4DMatrix{T},set_vals::Bool) where T
     nv = length(m.indices)
-    if nv == 0 && set_vals
-        return __extend!(m,false)
-    end
+    _set_vals = set_vals && nv != 0
     n = matsize(m)
     nf = div(n*(n+1),2)
     nc = nblocks(m)
@@ -335,13 +333,16 @@ function __extend!(m::Compressed4DMatrix{T},set_vals::Bool) where T
     w = nf + 1
     wf = 0
     _0 = _zero(T)
-    if set_vals
+
+    #if we are setting vals, we expect a non-zero entries, with zero entries we just do not set values in the extended matrix.
+    if _set_vals
         idx = indices[w]
         val = values[w]
     else
         idx = one(eltype(indices))
         val = _0
     end
+
     for i in 1:nc
         ni = site_offsets[i]
         ni1 = site_offsets[i+1]
@@ -359,7 +360,7 @@ function __extend!(m::Compressed4DMatrix{T},set_vals::Bool) where T
                     wf += 1
                     ijab_idx = ijab_to_idx(i,j,a,b)
                     indices[wf] = ijab_idx
-                    if ijab_idx == idx && w <= ntt && set_vals
+                    if ijab_idx == idx && w <= ntt && _set_vals
                         values[wf] = val
                         w += 1
                         idx = indices[min(ntt,w)]
@@ -785,4 +786,9 @@ paramtype(::Type{M}) where M <: PackedVectorsOfVectors.PackedVectorOfVectors{K,V
 
 function pack_vectors(x::AbstractVector{<:AbstractVector})
     return PackedVectorsOfVectors.pack(x)
+end
+
+function packed_zeros!(T,bsizes)
+    offsets = Compressed4DMatrices.offsets_from_bsizes!(bsizes)
+    return PackedVofV(offsets,T[])
 end

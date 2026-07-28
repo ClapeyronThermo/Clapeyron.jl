@@ -135,7 +135,7 @@ function SiteParam(components)
     return SiteParam(
     components,
     [String[] for _ ∈ 1:n],
-    PackedVectorsOfVectors.pack([Int[] for _ ∈ 1:n]),
+    packed_zeros!(Int,zeros(Int,n)),#PackedVectorsOfVectors.pack([Int[] for _ ∈ 1:n]),
     [Int[] for _ ∈ 1:n],
     String[],
     [Int[] for _ ∈ 1:n],
@@ -336,6 +336,9 @@ end
 
 gc_to_comp_sites(param::Compressed4DMatrix{T},sites::SiteParam) where T = _gc_to_comp_sites!(Compressed4DMatrix{T}(),param,sites)
 
+#=
+site_translator utilities
+=#
 function get_group_idx(model::EoSModel,i,j,a,b)
     return get_group_idx(model.sites,i,j,a,b)
 end
