@@ -3,8 +3,8 @@ __get_group_sum_values(group::GroupParam) = group.n_flattenedgroups
 __get_group_sum_values(group::MixedGCSegmentParam) = group.values
 
 function _group_sum!(out,groups,param)
-    _out = SingleOrPair_values(out)
-    _param = SingleOrPair_values(param)
+    _out = raw_values(out)
+    _param = raw_values(param)
     out_idx = linearidx(_out)
     vecparam = diagvalues(param)
     v = __get_group_sum_values(groups)
@@ -15,7 +15,7 @@ function _group_sum!(out,groups,param)
 end
 
 function _group_sum!(out,groups,param::Number)
-    _out = SingleOrPair_values(out)
+    _out = raw_values(out)
     v = __get_group_sum_values(groups)
     out_idx = linearidx(out)
     for (i,vi) in pairs(v)
@@ -241,6 +241,8 @@ function group_pairmean!(res,f::T,groups,p::AbstractVector) where {T}
     end
     return res
 end
+
+group_pairmean!(res,groups,p) = group_pairmean!(res,mix_mean,groups,p)
 
 
 """

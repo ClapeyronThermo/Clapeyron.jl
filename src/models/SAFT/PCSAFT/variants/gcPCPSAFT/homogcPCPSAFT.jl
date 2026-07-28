@@ -219,13 +219,9 @@ function recombine_impl!(model::HomogcPCPSAFTModel)
     params.dipole .= sqrt.(params.dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3))
 
     comp_sites = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gcparams.bondvol,comp_sites)
-    comp_epsilon_assoc = gc_to_comp_sites(gcparams.epsilon_assoc,comp_sites)
-
-    bondvol,epsilon_assoc = assoc_mix(comp_bondvol,comp_epsilon_assoc,params.sigma,assoc_options)
-    params.bondvol.values.values[:] = bondvol.values.values
-    params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
-
+    comp_bondvol = gc_to_comp_sites!(params.bondvol,gcparams.bondvol,comp_sites)
+    comp_epsilon_assoc = gc_to_comp_sites!(params.epsilon_assoc,gcparams.epsilon_assoc,comp_sites)
+    bondvol,epsilon_assoc = assoc_mix!(params.bondvol,params.epsilon_assoc,params.sigma,assoc_options)
     return model
 end
 

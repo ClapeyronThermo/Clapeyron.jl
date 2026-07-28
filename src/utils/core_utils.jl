@@ -109,6 +109,29 @@ _iszero(t::Number) = iszero(t)
 _iszero(::Missing) = true
 _iszero(t::AbstractString) = isempty(t)
 
+function raw_values end
+raw_values(x) = x
+
+"""
+    param_from_values(newval,param)
+    param_from_values(f,param)
+
+Given a Clapeyron parameter `param`, returns another Clapeyron parameter with their raw values replaced with `newval`.
+The modification can occur inplace, or allocate a different value structure.
+Also works in function form:
+
+```julia
+x = SingleParam("bb",["a","b"]) #singleparam filled with zeros
+Clapeyron.param_from_values(x) do values
+    values .+= 1
+end
+```
+
+For nested parameters it work until the flat storage. (the storage in `Compressed4DMatrix`, for example)
+
+"""
+param_from_values(f::C,param::P) where {C <: Base.Callable,P} = _param_from_values(f(raw_values(param)),param)
+param_from_values(x,param::P) where P = _param_from_values(x,param)
 #=
 """
     concrete(x)

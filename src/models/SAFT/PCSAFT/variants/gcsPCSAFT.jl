@@ -172,16 +172,12 @@ function recombine_impl!(model::gcsPCSAFTModel)
     diagvalues(epsilon.values) ./= segment.values
     epsilon_LorentzBerthelot!(epsilon,k)
 
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(params.bondvol,params.epsilon_assoc,nothing,assoc_options)
-    params.bondvol.values.values[:] = gc_bondvol.values.values
-    params.epsilon_assoc.values.values[:] = gc_epsilon_assoc.values.values
-
+    gc_bondvol,gc_epsilon_assoc = assoc_mix!(params.bondvol,params.epsilon_assoc,assoc_options)
+    comp_bondvol = pcparams.bondvol
+    comp_epsilon_assoc = pcparams.epsilon_assoc
     comp_sites = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
-    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-
-    pcparams.bondvol.values.values[:] = comp_bondvol.values.values
-    pcparams.epsilon_assoc.values.values[:] = comp_epsilon_assoc.values.values
+    comp_bondvol = gc_to_comp_sites!(comp_bondvol,gc_bondvol,comp_sites)
+    comp_epsilon_assoc = gc_to_comp_sites!(comp_epsilon_assoc,gc_epsilon_assoc,comp_sites)
     return model
 end
 

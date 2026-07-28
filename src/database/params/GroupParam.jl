@@ -290,14 +290,16 @@ struct MixedGCSegmentParam{T} <: ClapeyronParam
     values::PackedVector{T}
 end
 
+_param_from_values(x::PackedVector{T},param::MixedGCSegmentParam) where T = MixedGCSegmentParam(param.name,param.components,x)
+_param_from_values(x::Vector{T},param::MixedGCSegmentParam) where T = MixedGCSegmentParam(param.name,param.components,param_from_values(x,param.values))
+raw_values(param::MixedGCSegmentParam) = param.values.v
+
 MixedGCSegmentParam(name,components) = MixedGCSegmentParam{Float64}(name,components,PackedVofV(Int[],Float64[]))
 
 Base.length(param::MixedGCSegmentParam) = length(param.values)
-
 Base.eltype(param::MixedGCSegmentParam) = eltype(typeof(param))
 Base.eltype(param::Type{MixedGCSegmentParam{T}}) where T = PackedSubVector{T}
 
-paramtype(::MixedGCSegmentParam{T}) where T = T
 paramtype(::Type{MixedGCSegmentParam{T}}) where T = T
 
 Base.getindex(param::MixedGCSegmentParam,i) = param.values[i]
@@ -309,7 +311,7 @@ end
 
 function Base.show(io::IO, ::MIME"text/plain", param::MixedGCSegmentParam)
     len = length(param.values)
-    print(io, "MixedGCSegmentParam{",eltype(param.values.v), "}(\"", param.name)
+    print(io, "MixedGCSegmentParam{",paramtype(param), "}(\"", param.name)
     println(io, "\") with ", len, " component", ifelse(len==1, ":", "s:"))
     separator = " => "
     show_pairs(io,param.components,param.values,separator)
@@ -336,18 +338,7 @@ MixedGCSegmentParam(group::GroupParam,s,segment) = MixedGCSegmentParam{Float64}(
 MixedGCSegmentParam(group::GroupParam,s) = MixedGCSegmentParam{Float64}(group,s)
 MixedGCSegmentParam(group::GroupParam) = MixedGCSegmentParam{Float64}(group)
 
-function Base.convert(::Type{MixedGCSegmentParam{T1}},param::MixedGCSegmentParam{T2}) where {T1<:Number,T2<:Number}
-    p,v1 = param.values.p,param.values.v
-    v = convert(Vector{T1},v1)
-    values = PackedVofV(p,v)
-    return MixedGCSegmentParam{T1}(param.name,param.components,values)
-end
-
-function Solvers.primalval(param::MixedGCSegmentParam)
-    p,v1 = param.values.p,param.values.v
-    v = Solvers.primalval_eager(v1)
-    values = PackedVofV(p,v)
-    return MixedGCSegmentParam(param.name,param.components,values)
-end
+Base.convert(::Type{MixedGCSegmentParam{T1}},param::MixedGCSegmentParam{T2}) where {T1<:Number,T2<:Number} = param_from_values(convert(Vector{T1},raw_values(param)),param)
+Solvers.primalval(param::MixedGCSegmentParam) = param_from_values(Solvers.primalval_eager(param.values),param)
 
 export MixedGCSegmentParam

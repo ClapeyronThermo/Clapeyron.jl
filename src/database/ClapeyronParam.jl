@@ -25,12 +25,12 @@ Abstract type corresponding to a Clapeyron parameter that only contains options.
 It is assumed that this parameter is equal to all components.
 """
 abstract type OptionsParam <: ClapeyronParam end
+
 Base.eltype(param::OptionsParam) = Bool
 is_splittable(::OptionsParam) = false
 
 export EoSParam, ParametricEoSParam
 
-paramtype(m::ClapeyronParam) = eltype(m)
 paramtype(::Type{M}) where M <: ClapeyronParam = eltype(M)
 
 custom_show(param::EoSParam) = _custom_show_param(typeof(param))
@@ -97,12 +97,8 @@ function build_eosparam(::Type{T},data) where T <: ParametricEoSParam
     dyn_build_parametric_param(T,params)
 end
 
-Base.eltype(p::EoSParam) = Float64
-Base.eltype(p::ParametricEoSParam{T}) where T = T
-
-function pack_vectors(x::AbstractVector{<:AbstractVector})
-    return PackedVectorsOfVectors.pack(x)
-end
+Base.eltype(::Type{<:EoSParam}) = Float64
+Base.eltype(::Type{P}) where P <: ParametricEoSParam{T} where T = T
 
 function param_length_check(paramtype,name,comp_length,val_length)
     if comp_length != val_length

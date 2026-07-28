@@ -54,38 +54,18 @@ end
     return expr
 end
 
-function promote_model(::Type{T},param::SingleParam) where T
-    values = Vector{T}(param.values)
-    return SingleParam{T}(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function promote_model(::Type{T},param::PairParam) where T
-    values = Matrix{T}(param.values)
-    return PairParam{T}(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function promote_model(::Type{T},param::AssocParam) where T
-    v = param.values
-    vals = Vector{T}(v.values)
-    values = Compressed4DMatrix(vals,v.indices,v.site_offsets)
-    return AssocParam{T}(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
-end
-
-function promote_model(::Type{T},param::MixedGCSegmentParam) where T
-    vals = param.values
-    p,v = vals.p,vals.v
-    v2 = Vector{T}(v)
-    values = PackedVofV(p,v2)
-    return MixedGCSegmentParam{T}(param.name,param.components,values)
-end
+promote_model(::Type{T},param::SingleParam) where T = param_from_values(Vector{T}(param.values),param)
+promote_model(::Type{T},param::PairParam) where T = param_from_values(Matrix{T}(param.values),param)
+promote_model(::Type{T},param::AssocParam) where T = param_from_values(Vector{T}(raw_values(param)),param)
+promote_model(::Type{T},param::MixedGCSegmentParam) where T = param_from_values(Vector{T}(raw_values(param)),param)
 promote_model(::Type{T},v::AbstractArray{<:AbstractString}) where T = v
-
 promote_model(::Type{T},params::EoSParam) where T = promote_model_struct(T,params)
 promote_model(::Type{T},param::ClapeyronParam) where T = deepcopy(param)
 promote_model(::Type{T},param::AssocOptions) where T = param
 promote_model(::Type{T},param::ReferenceState) where T = param
 promote_model(::Type{T},param::SpecialComp) where T = param
 promote_model(::Type{T},param::SiteParam) where T = param
+promote_model(::Type{T},param::PackedVofV) where T = PackedVofV(param.p,promote_model(T,param.v))
 
 function promote_model(::Type{T},param::GroupParam) where T
     n_groups2 = [Vector{T}(xi) for xi in param.n_groups]

@@ -230,77 +230,56 @@ function AssocParam{T}(name,sites::SiteParam) where T <: Number
     values = assoc_similar(sites,T)
     return AssocParam(name,sites.components,values,sites.sites)
 end
-
 function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
-    #given some groups and some sites calculated over those groups
-    #calculates "flattened" sites
+    #translates association sites defined per-group (sites indexed by (g,s))
+    #into association sites defined per-component (indexed by (c,s)), by
+    #concatenating, for each component, the site lists of its constituent groups.
+    #site_translator[c][s] = (g,s_g) lets an AssocParam computed in GC-space be
+    #looked up in component-space later.
 
-    comps = groups.components #component names
+    comps = groups.components
+    nc = length(comps)
+    site_translator = Vector{Vector{Tuple{Int,Int}}}(undef,nc)
 
-    #each GC/GCsite pair encodes a tuple in GC space
-    #we use this traslator later to convert any assoc param into it's component equivalent
-    site_translator = Vector{Vector{Tuple{Int,Int}}}(undef,length(comps))
-
-    #shortcut for non-assoc case
     if length(sites.n_sites.v) == 0
-        new_sites = SiteParam(groups.components)
-        return new_sites
+        return SiteParam(groups.components)
     end
 
-    sitenames = deepcopy(sites.sites) #group sites
-    gcnames = groups.flattenedgroups #group names
-    gc_groups = groups.groups
-    #with this, each site now has an unique name
-    for i in 1:length(sitenames)
-        gci = gcnames[i]
-        sitei = sitenames[i]
-        for a in 1:length(sitei)
-            sitei[a] = gci * '/' * sitei[a]
-        end
-    end
+    gc_sitenames = sites.sites #site names, indexed by flattened group
+    gc_names = groups.flattenedgroups
+    i_groups_per_comp = groups.i_groups #i_groups_per_comp[i][k] = flattened-group-index of the k-th group in component i
+    n_groups = groups.n_groups #gc_n_groups[i][k] = multiplicity of that group in component i
 
-    #now we fill our new component sites,
-    gc_n_sites = sites.n_sites.v #should be of the same size as flattened_comp_sitenames
-    gc_n_groups = groups.n_groups
-    comp_n_sites = Vector{Vector{Int}}(undef,length(comps))
-    comp_sites = Vector{Vector{String}}(undef,length(comps))
+    comp_n_sites = Vector{Vector{Int}}(undef,nc)
+    comp_sites = Vector{Vector{String}}(undef,nc)
 
-
-    for i in 1:length(comps)
-        n_sites_i = Int[]
-        comp_n_sites[i] = n_sites_i
-
+    for i in 1:nc
         sites_i = String[]
+        n_sites_i = Int[]
+        translator_i = Tuple{Int,Int}[]
         comp_sites[i] = sites_i
-        site_translator_i = NTuple{2,Int}[]
-        site_translator[i] = site_translator_i
-        gc_name_i = gc_groups[i]
-        for k in 1:length(gc_name_i)
-            #=
-            each gc group has it's own amount of sites.
-            to correctly translate those, we need an accumulator for each group
-            
-            =#
-            gc_site_count = 0
-            for (w,comp_gcname) in enumerate(Iterators.flatten(sitenames))
-                gcname_ik = gc_name_i[k]
-                lookup_cgname = gcname_ik * '/'
-                if startswith(comp_gcname,lookup_cgname)
-                    #fill sites, n_sites
-                    push!(sites_i,comp_gcname)
-                    push!(n_sites_i,gc_n_sites[w]*gc_n_groups[i][k])
-                    #fill translation between gc_gcsite combination and original indices for assoc
-                    #we add one to the length of gc_site_count. this accounts for adding the next site.
-                    gc_site_count += 1
-                    gc_ik = findfirst(isequal(gcname_ik),groups.flattenedgroups)::Int
-                    push!(site_translator_i,(gc_ik,gc_site_count))
-                end
+        comp_n_sites[i] = n_sites_i
+        site_translator[i] = translator_i
+
+        i_groups_i = i_groups_per_comp[i]
+        n_groups_i = n_groups[i]
+
+        for k in 1:length(i_groups_i)
+            g = i_groups_i[k] #flattened-group-index
+            n_gc_k = n_groups_i[k] #amount of groups k in component i
+            gname = gc_names[g]
+            g_sitenames = gc_sitenames[g]
+            gc_n_sites = sites.n_sites[g]
+
+            for s in 1:length(g_sitenames)
+                push!(sites_i, gname * '/' * g_sitenames[s])
+                push!(n_sites_i, gc_n_sites[s]*n_gc_k) #amount of sites equal to n_gc * n_sites(gc)
+                push!(translator_i, (g,s))
             end
         end
     end
 
     new_sites = SiteParam(comps,comp_sites,comp_n_sites,sites.sourcecsvs,site_translator)
-
     return new_sites
 end
 
@@ -309,45 +288,51 @@ Utilities to create "group-component" sites
 
 if we re-index the association sites that are present in a GC-based approach, the result is the same.
 =#
-function gc_to_comp_sites(param::AssocParam,sites::SiteParam)
-
-    #shortcut for non-assoc case
+function _gc_to_comp_sites!(m::Compressed4DMatrix{T1},m_gc::Compressed4DMatrix{T2},sites::SiteParam) where {T1,T2} 
+    
     if length(sites.n_sites.v) == 0
-        new_val = Compressed4DMatrix{eltype(param)}()
-        return AssocParam(param.name,sites.components,new_val,sites.sites,param.sourcecsvs,param.sources)
+        resize!(m.values,0)
+        resize!(m.indices,0)
+        resize!(m.site_offsets,1)
+        m.site_offsets[1] = 1
+        return m
     end
+
+    site_offsets = sites.n_sites.p
+    resize!(m.site_offsets,length(site_offsets))
+    m.site_offsets .= site_offsets
+    length(m_gc.values) == 0 && return m
     site_translator = sites.site_translator
-    new_val = assoc_similar(sites,eltype(param))
-    for i in 1:length(sites.components)
-        site_translator_i = site_translator[i]
-        for j in 1:length(sites.components)
-            ij_pair = new_val[i,j]
-            #display(TextDisplay(stdout),MIME"text/plain"(),ij_pair)
-            site_translator_j = site_translator[j]
-            aa,bb = length(site_translator_i),length(site_translator_j)
-            for a in 1:length(site_translator_i)
-                i_gc,a_gc = site_translator_i[a]
-                for b in 1:length(site_translator_j)
-                    j_gc,b_gc = site_translator_j[b]
-                    #absolute index, relative to the Compressed4DMatrix
-                    idx = validindex(ij_pair,a,b)
-                    if idx != 0
-                        ijab1 = param[i_gc,j_gc]
-                        idx_ijab = validindex(ijab1,a_gc,b_gc)
-                        if idx_ijab != 0
-                            ijab_val = ijab1.m.values[idx_ijab]
-                            if !_iszero(ijab_val) #if the value is not zero
-                                ij_pair.m.values[idx] = ijab_val
-                            end
-                        end
-                    end
-                end
-            end
+    Compressed4DMatrices.extend!(m)
+    for (idx,(i,j),(a,b)) in indices(m)
+        igc,jgc,agc,bgc = get_group_ijab(sites,i,j,a,b)    
+        idx_gc = validindex(m_gc,(igc,jgc,agc,bgc))
+        if !iszero(idx_gc)
+            m[idx] = convert(T1,m_gc[idx_gc])
         end
     end
-    dropzeros!(new_val) #clean all zero values
-    return AssocParam(param.name,sites.components,new_val,sites.sites,param.sourcecsvs,param.sources)
+    dropzeros!(m)
+    return m
 end
+
+_gc_to_comp_sites!(m::AssocParam,m_gc::AssocParam,sites::SiteParam) = _gc_to_comp_sites!(m.values,m.values,sites)
+_gc_to_comp_sites!(m::Compressed4DMatrix,m_gc::AssocParam,sites::SiteParam) = _gc_to_comp_sites!(m,m.values,sites)
+_gc_to_comp_sites!(m::AssocParam,m_gc::Compressed4DMatrix,sites::SiteParam) = _gc_to_comp_sites!(m.values,m,sites)
+
+
+gc_to_comp_sites!(out,param::Compressed4DMatrix,sites::SiteParam)= _gc_to_comp_sites!(out,param,sites)
+
+function gc_to_comp_sites!(out,param::AssocParam,sites::SiteParam)
+    m = _gc_to_comp_sites!(out,param,sites)
+    return AssocParam(param.name,sites.components,m,sites.sites,param.sourcecsvs,param.sources)
+end
+
+function gc_to_comp_sites(param::AssocParam{T},sites::SiteParam) where T
+    m = _gc_to_comp_sites!(Compressed4DMatrix{T}(),param,sites)
+    return AssocParam(param.name,sites.components,m,sites.sites,param.sourcecsvs,param.sources)
+end
+
+gc_to_comp_sites(param::Compressed4DMatrix{T},sites::SiteParam) where T = _gc_to_comp_sites!(Compressed4DMatrix{T}(),param,sites)
 
 function get_group_idx(model::EoSModel,i,j,a,b)
     return get_group_idx(model.sites,i,j,a,b)
@@ -360,3 +345,9 @@ function get_group_idx(param::SiteParam,i,j,a,b)
   return k,l
 end
 
+function get_group_ijab(param::SiteParam,i,j,a,b)
+    site_translator::Vector{Vector{NTuple{2,Int}}} = param.site_translator
+    k,s1 = site_translator[i][a]
+    l,s2 = site_translator[j][b]
+    return k,l,s1,s2
+end

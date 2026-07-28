@@ -145,10 +145,15 @@ function a_res end
 
 Base.broadcastable(model::EoSModel) = Ref(model)
 Base.transpose(model::EoSModel) = model
-Base.eltype(model::EoSModel) = __eltype(model)
-Base.@assume_effects :foldable function __eltype(model::T) where T <:EoSModel
+
+paramtype(x::T) where T = paramtype(T)
+paramtype(::Type{T}) where T = eltype(T)
+
+@inline Base.eltype(model::EoSModel) = paramtype(model)
+@inline paramtype(model::EoSModel) = __paramtype(model)
+Base.@assume_effects :foldable function __paramtype(model::T) where T <:EoSModel
     if hasfield(T,:params)
-        return eltype(model.params)
+        return paramtype(model.params)
     else
         return Float64
     end

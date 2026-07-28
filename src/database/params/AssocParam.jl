@@ -30,6 +30,19 @@ function AssocParam(name, components, values::AbstractMatrix{<:AbstractMatrix{T}
     return AssocParam(name, components, Compressed4DMatrix(values))
 end
 
+function _param_from_values(x::X,param::AssocParam) where X <: Compressed4DMatrix
+    T = eltype(X)
+    return AssocParam{T}(param.name,param.components,x,param.sites,param.sourcecsvs,param.sources)
+end
+
+function _param_from_values(x::Vector{T},param::AssocParam) where T
+    param_from_values(param_from_values(x,v),param)
+end
+
+raw_values(param::AssocParam) = param.values.values
+
+Solvers.primalval(x::T) where T <: AssocParam = param_from_values(Solvers.primalval_eager(raw_values(x)),x) 
+
 function AssocParam(name,components,vals::Compressed4DMatrix{T}) where T
     if length(vals.values) != 0
         ss = [String[] for _ in 1:length(components)]
@@ -89,11 +102,6 @@ Base.eltype(param::AssocParam{T}) where T = T
 Base.eltype(param::Type{<:AssocParam{T}}) where T = T
 
 Base.size(param::AssocParam) = size(param.values.values)
-
-#primalval
-function Solvers.primalval(x::AssocParam)
-    return AssocParam(x.name,x.components,Solvers.primalval_eager(x.values),x.sites,x.sourcecsvs,x.sources)
-end
 
 function Base.getindex(param::AssocParam,i::Int)
     Base.checkbounds(param.components,i)
@@ -188,16 +196,5 @@ function Base.show(io::IO, param::AssocParam)
 end
 
 #convert utilities
-function Base.convert(::Type{AssocParam{T1}},param::AssocParam{T2}) where {T1<:Number,T2<:Number}
-    assoc_values = param.values
-    new_assoc_values = convert(Vector{T1},assoc_values.values)
-    values = Compressed4DMatrix(new_assoc_values,assoc_values.indices,assoc_values.site_offsets)
-    return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
-end
-
-function Base.convert(::Type{AssocParam{String}},param::AssocParam{<:AbstractString})
-    assoc_values = param.values
-    new_assoc_values = convert(Vector{String},assoc_values.values)
-    values = Compressed4DMatrix(new_assoc_values,assoc_values.indices,assoc_values.site_offsets)
-    return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
-end
+Base.convert(::Type{AssocParam{T1}},param::AssocParam{T2}) where {T1<:Number,T2<:Number} = param_from_values(convert(Vector{T1},raw_values(param)),param)
+Base.convert(::Type{AssocParam{String}},param::AssocParam{<:AbstractString}) = param_from_values(convert(Vector{String},raw_values(param)),param)

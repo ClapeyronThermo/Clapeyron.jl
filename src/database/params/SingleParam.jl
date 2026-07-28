@@ -91,10 +91,13 @@ function Base.copyto!(dest::SingleParameter,src::SingleParameter) #used to set p
     return dest
 end
 
-#primalval
-function Solvers.primalval(x::SingleParameter)
-    return SingleParameter(x.name,x.components,Solvers.primalval_eager(x.values),x.ismissingvalues,x.sourcecsvs,x.sources)
+function _param_from_values(x::X,param::SingleParameter) where X
+    T = eltype(X)
+    return SingleParameter{T,X}(param.name,param.components,x,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
+
+raw_values(param::SingleParameter) = param.values
+Solvers.primalval(x::T) where T <: SingleParameter = param_from_values(Solvers.primalval_eager(raw_values(x)),x) 
 
 Base.eltype(param::SingleParameter{T}) where T = T
 Base.eltype(param::Type{<:SingleParameter{T}}) where T = T
@@ -171,15 +174,8 @@ function SingleParam(oldparam::SingleParameter, v::Vector)
 end
 
 #convert utilities
-function Base.convert(::Type{SingleParam{T1}},param::SingleParam{T2}) where {T1<:Number,T2<:Number}
-    values = convert(Vector{T1},param.values)
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})
-    values = convert(Vector{String},param.values)
-    return SingleParameter(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
+Base.convert(::Type{SingleParam{T1}},param::SingleParam{T2}) where {T1<:Number,T2<:Number} = param_from_values(convert(Vector{T1},param.values),param)
+Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString}) = param_from_values(convert(Vector{String},param.values),param)
 
 #pack vectors
 const PackedVectorSingleParam{T} = Clapeyron.SingleParameter{PackedSubVector{T}, PackedVector{T}}
