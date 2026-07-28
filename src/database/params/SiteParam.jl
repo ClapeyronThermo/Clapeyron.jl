@@ -221,6 +221,8 @@ function assoc_similar(param::SiteParam,::Type{𝕋}) where 𝕋 <:Number
     Compressed4DMatrices.c4d_from_site_offsets(𝕋,copy(param.n_sites.p))
 end
 
+assoc_similar(m) = assoc_similar(m,paramtype(m))
+
 function Compressed4DMatrix(param::SiteParam)
     return assoc_similar(param,Float64)
 end
@@ -315,9 +317,9 @@ function _gc_to_comp_sites!(m::Compressed4DMatrix{T1},m_gc::Compressed4DMatrix{T
     return m
 end
 
-_gc_to_comp_sites!(m::AssocParam,m_gc::AssocParam,sites::SiteParam) = _gc_to_comp_sites!(m.values,m.values,sites)
-_gc_to_comp_sites!(m::Compressed4DMatrix,m_gc::AssocParam,sites::SiteParam) = _gc_to_comp_sites!(m,m.values,sites)
-_gc_to_comp_sites!(m::AssocParam,m_gc::Compressed4DMatrix,sites::SiteParam) = _gc_to_comp_sites!(m.values,m,sites)
+_gc_to_comp_sites!(m::AssocParam,m_gc::AssocParam,sites::SiteParam) = _gc_to_comp_sites!(m.values,m_gc.values,sites)
+_gc_to_comp_sites!(m::Compressed4DMatrix,m_gc::AssocParam,sites::SiteParam) = _gc_to_comp_sites!(m,m_gc.values,sites)
+_gc_to_comp_sites!(m::AssocParam,m_gc::Compressed4DMatrix,sites::SiteParam) = _gc_to_comp_sites!(m.values,m_gc,sites)
 
 
 gc_to_comp_sites!(out,param::Compressed4DMatrix,sites::SiteParam)= _gc_to_comp_sites!(out,param,sites)

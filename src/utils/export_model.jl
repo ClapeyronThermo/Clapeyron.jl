@@ -254,11 +254,10 @@ function export_assoc(model::EoSModel,params,name,location,species,ncomps)
             for k in 1:nassoc
                 _ijab = idx_to_ijab(mat,k)
                 _i,_j,_a,_b = _ijab
-                ia,jb = Compressed4DMatrices.site_indices(mat,_ijab)
                 push!(spe1,species[_i])
                 push!(spe2,species[_j])
-                push!(site1,site_types[ia])
-                push!(site2,site_types[jb])
+                push!(site1, model.sites.sites[_i][_a])
+                push!(site2, model.sites.sites[_j][_b])
                 vals[k] = mat.values[k]
             end
 

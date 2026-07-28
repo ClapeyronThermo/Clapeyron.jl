@@ -137,6 +137,24 @@ function pair_mix!(f,p::AbstractMatrix,q::AbstractMatrix,B::AbstractMatrix)
     return p
 end
 
+function pair_mix!(f,p::AbstractMatrix,q::AbstractVector,B::AbstractMatrix)
+    N = LinearAlgebra.checksquare(p)
+    for j ∈ 1:N
+        p_j = p[j,j]
+        q_j = q[j]
+        for i ∈ 1:N
+            if B[j,i]
+                p_i = p[i,i]
+                q_i = q[i]
+                q_ji = zero(eltype(q))  # Qᵢⱼ ≡ 0 when Q is a SingleParam/vector, per the pair_mix docstring
+                p_ji = f(p_j,p_i,q_j,q_i,q_ji)
+                p[j,i] = p_ji
+            end
+        end
+    end
+    return p
+end
+
 function mirror_pair!(p::AbstractMatrix,missing_matrix::AbstractMatrix{Bool},f)
     s1,s2 = size(p)
     for i in 1:s2

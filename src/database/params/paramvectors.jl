@@ -253,7 +253,7 @@ function bsizes_from_offsets!(site_offsets::Vector{Int})
 
     # recover bsizes[i] = site_offsets[i+1] - site_offsets[i] + 1
     @inbounds for i in 1:nc
-        site_offsets[i] = site_offsets[i+1] - site_offsets[i] + 1
+        site_offsets[i] = site_offsets[i+1] - site_offsets[i]
     end
 
     resize!(site_offsets, nc)
@@ -366,7 +366,7 @@ function __extend!(m::Compressed4DMatrix{T},set_vals::Bool) where T
 end
 
 function extend!(m::Compressed4DMatrix)
-    m,mf = __extend!(m,true)
+    m,nf,nv = __extend!(m,true)
     resize!(m.values,nf)
     resize!(m.indices,nf)
     return m
@@ -420,7 +420,7 @@ function Compressed4DMatrix(x::AbstractMatrix{<:AbstractMatrix{T}}) where T
         xij = x[i,j]
         if iszero(prod(size(xij))) && i != j #off-diagonal was stored asymetrically, so we only use the non-empty side, whatever that is.
             xij2 = transpose(x[j,i])
-            mat.values[idx] = xij2[b,a]
+            mat.values[idx] = xij2[a,b]
         elseif iszero(prod(size(xij))) && i == j
             #that means that we stored an empty index, error out
             throw(error("invalid index (i,j,a,b) = $((i,j,a,b)) inside a CompressedAssocMatrix."))
@@ -510,8 +510,8 @@ Base.eltype(m::AssocView{T}) where T = T
 @inline function validindex(m::AssocView{TT},k1::Int,k2::Int) where TT
     ijab = m.ijab
     _i,_j,_a,_b = idx_to_ijab(ijab) #unwrap the ijab, where ij is the specified ij, and ab is the size of the block ij
-    (iszero(_a) || iszero(_b)) && return zero(eltype(w)) #zero--sized assoc view has no indices
-    return validindex(m.m.m,(_i,_j,k1,k2))
+    (iszero(_a) || iszero(_b)) && return zero(eltype(ijab)) #zero--sized assoc view has no indices
+    return validindex(m.m.indices,(_i,_j,k1,k2))
 end
 
 @inline validindex(m::Compressed4DMatrix{TT},ijab::NTuple{4,Int}) where TT = validindex(m.indices,ijab)
@@ -572,7 +572,7 @@ end
 @inline function validindex_forced!(m::AssocView{TT},k1::Int,k2::Int) where TT
     ijab = m.ijab
     _i,_j,_a,_b = idx_to_ijab(ijab) #unwrap the ijab, where ij is the specified ij, and ab is the size of the block ij
-    (iszero(_a) || iszero(_b)) && return zero(eltype(w)) #zero--sized assoc view has no indices
+    (iszero(_a) || iszero(_b)) && return zero(eltype(ijab)) #zero--sized assoc view has no indices
     return validindex_forced!(m.m,(_i,_j,k1,k2))
 end
 
