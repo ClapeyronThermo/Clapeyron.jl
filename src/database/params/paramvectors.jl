@@ -227,7 +227,7 @@ end
 indices(m::Compressed4DMatrix) = indices(m.indices)
 
 function indices(m::AbstractVector{T}) where T <: Integer
-    return Iterators.map(IJABIterator,m)
+    return Iterators.map(IJABIterator,enumerate(m))
 end
 
 function offsets_from_bsizes!(bsizes)
