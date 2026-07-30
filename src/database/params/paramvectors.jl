@@ -771,7 +771,7 @@ raw_values(x::Compressed4DMatrix) = x.values
 
 raw_values(x::PackedVofV) = x.v
 
-_param_from_values(x::X,m::Compressed4DMatrix) where X= Compressed4DMatrix{eltype(X)}(x,m.indices,m.site_offsets)
+_param_from_values(x::X,m::Compressed4DMatrix) where X = Compressed4DMatrix{eltype(x)}(x,m.indices,m.site_offsets)
 
 _param_from_values(x::X,m::P) where {X,P <: PackedVofV} = PackedVofV(m.p,x)
 
