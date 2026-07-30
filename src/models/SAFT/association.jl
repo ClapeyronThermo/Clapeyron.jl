@@ -1175,8 +1175,8 @@ end
     return res
 end
 
-solve_assoc2(K;tol=1e-12, maxiter=1000) = solve_assoc2(K,tol,maxiter)
-function solve_assoc2(K, tol, maxiter)
+assoc_solve2(K;tol=1e-12, maxiter=1000) = assoc_solve2(K,tol,maxiter)
+function assoc_solve2(K, tol, maxiter)
 
     # --- Allocate workspaces ---
     TT = eltype(K)
@@ -1202,13 +1202,14 @@ function solve_assoc2(K, tol, maxiter)
 
     g0_norm = sqrt(g_and_norm2!(g,KX,X))
     norm_g = g0_norm
-
+    it = 0
     # --- Main iteration ---
     for iter in 1:maxiter
 
         # Convergence check
         norm_g < tol && break
         !isfinite(norm_g) && break
+        it += 1
         # --- Solve H * d = -g using CG (no allocations) ---
         @.  KX = (1 + KX) / X #diagonal term of the hessian
         solve_cg!(d, p, Ap, K, g, KX, 1e-3)
@@ -1246,7 +1247,7 @@ function solve_assoc2(K, tol, maxiter)
             norm_g = norm_g_trial
         end
     end
-    return X
+    return X,it
 end
 
 function solve_cg!(d, p, Ap, K, g, diagH, tol_cg)
@@ -1280,7 +1281,7 @@ function solve_cg!(d, p, Ap, K, g, diagH, tol_cg)
         @inbounds for k in eachindex(p)
             pAp += p[k]*Ap[k]
         end
-        α = rsold /  
+        α = rsold /  pAp
         rsnew = zero(eltype(α))
         @inbounds for k in eachindex(p)
             pk,Apk = p[k],Ap[k]
@@ -1311,4 +1312,152 @@ function solve_assoc_test(K)
     for i in 1:10000
         solve_assoc2(K)
     end
+end
+
+function assoc_solve_ss(K; max_iters = 10000,term = 1)
+    n = size(K, 1)
+    X = fill(one(eltype(K)), n)
+    KX = similar(X)
+    mul!(KX, K, X)
+    k = copy(KX)
+    k .= 1 ./ 1 .+ KX #L
+    mul!(KX,K,k)
+    #X = 0.5*L + 0.5*U
+    k .= 0.5 ./ k .+ 0.5 .* KX .+ 0.5
+    X .= 1 ./ k 
+    X_old = similar(X)
+    X_old .= 10
+    atol = 1e-12
+    rtol = 1e-12
+    it = 0
+
+    itss = fill(0.0,13)
+    dx = 100.0
+    if term == 99
+        Xs,_,_ = assoc_solve_ss(K)
+        α = best_alpha_damping(K,X)
+        @show α
+    else
+        α = 0.5
+    end
+    k1,k2 = 0.0,0.0
+    for _ in 1:max_iters
+        it += 1
+        X_old .= X
+        #term 0: gauss seidel acceleration, damped SS
+        if term == 4 || term == 0
+            fx(kx,x) =  α/(1 + kx) + (1 - α)*x
+            ass_matmul!(fx,KX,k,K,X)
+            X .= k
+        elseif term == 7 && dx < 1e-5
+            fy(kx,x) = 2*x/(x + sqrt(x * x + 4 * kx * x))
+            ass_matmul!(fy,KX,k,K,X)
+            X .= k
+        else
+            mul!(KX, K, X)
+        end
+        #X = 1/(1 + KX)
+            
+        if term == 1
+            X .= 1 ./ (1 .+ KX) #raw SS
+        elseif term == 2 || (term == 7 && dx > 1e-5)
+            #k .= KX ./ X
+            #X .= 2 ./ (1 .+ sqrt.(1 .+ 4 .* k)) #modified map
+            k .= 0.5*(X .+ sqrt.(X .* X + 4 .* KX .* X))
+            X ./= k
+        elseif term == 3 || term == 99
+            #case 3:damped static SS
+            #case 99: damped SS with optimum alpha
+            X  .= α ./ (1 .+ KX) + (1 - α) .*X
+        elseif term == 3 || term == 4
+            #term 3: damped SS, heuristic alpha
+            #term 4: damped SS, heuristic alpha, gauss seidel acceleration
+            k1 = maximum(z -> z*(1 - z),X)
+            k2 = dot(KX,X)
+            α = 1/(2 + k1) + 1/(2 + k2)
+            X  .= α ./ (1 .+ KX) + (1 .- α) .*X
+        end
+        dx = maximum(abs,1 .- X ./ X_old)
+        for i in 1:13
+            if dx >= exp10(-i)
+                itss[i] = it
+            end
+        end
+        converged,finite = Solvers.convergence(X,X_old,atol,rtol,false,Inf)
+        #@show converged,finite
+        if converged
+            finite || (X .= NaN)
+            break
+        end
+    end
+    return X,it,itss
+end
+
+
+#notes:
+#=
+optimal damping: is 2/(2 - lmin - lmax)
+l = eigvals(Diagonal(-1 .* X .* X)*K)
+=#
+function test_jacobian_estimate(K, X)
+    n = size(K, 1)
+    KX = K * X
+    J = -Diagonal(X.^2) * K
+    eigs = eigvals(J,sortby = nothing)
+    λmin_true = minimum(eigs)
+    λmax_true = maximum(eigs)
+    only_x = max(abs(λmin_true),abs(λmax_true))
+    proxy_fixedpoint = X .* (X .- 1)
+    proxy_current = -X .* KX
+
+    println("true eigvals: min = $λmin_true, max = $λmax_true")
+    println("all eigvals real? ", all(isreal, eigs))
+    println()
+    println("fixed-point proxy (X.*(X.-1)):")
+    println("  min = $(minimum(proxy_fixedpoint)), max = $(maximum(proxy_fixedpoint))")
+    println("current-KX proxy (-X.*KX):")
+    println("  min = $(minimum(proxy_current)), max = $(maximum(proxy_current))")
+    println()
+
+    denom_true = 2 - λmin_true - λmax_true
+    alpha_true = 2 / denom_true
+
+    denom_fp = 2 - minimum(proxy_fixedpoint) - maximum(proxy_fixedpoint)
+    alpha_fp = denom_fp > 0 ? 2 / denom_fp : NaN
+
+    denom_cur = 2 - minimum(proxy_current) - maximum(proxy_current)
+    alpha_cur = denom_cur > 0 ? 2 / denom_cur : NaN
+
+    println("alpha from true eigvals: $alpha_true")
+    println("alpha from fixed-point proxy: $alpha_fp")
+    println("alpha from current-KX proxy: $alpha_cur")
+
+
+    x1 = maximum(abs,proxy_fixedpoint)
+    x2 = maximum(abs,proxy_current)
+    x3 = 0.5*(x1 + x2)
+    alpha2 = 2/(2 + maximum(abs,proxy_fixedpoint))
+    alpha3 = 2/(2 + maximum(abs,proxy_current))
+    a4 = 2/(2 + only_x)
+    a5 = 2/(2 + x3)
+    a6 = 0.5*(alpha2 + alpha3)
+    a7 = sqrt(alpha3*alpha2)
+    println("alpha from true eigvals (only min): $only_x")
+    println("alpha from fixed-point proxy (only min): $alpha2")
+    println("alpha from current-KX proxy (only min): $alpha3")
+    println("mixed alpha (mean of approximate eigenvalues): $a5")
+    println("mixed alpha (mean of alpha): $a6")
+    println("mixed alpha (geomean of alpha): $a7")
+    return (; eigs, proxy_fixedpoint, proxy_current, alpha_true, alpha_fp, alpha_cur)
+end
+
+function best_alpha_damping(K,X)
+    n = size(K, 1)
+    KX = K * X
+    J = -Diagonal(X.^2) * K
+    eigs = eigvals(J,sortby = nothing)
+    λmin_true = minimum(eigs)
+    λmax_true = maximum(eigs)
+    only_x = max(abs(λmin_true),abs(λmax_true))
+    return 2/(2 + only_x)
 end

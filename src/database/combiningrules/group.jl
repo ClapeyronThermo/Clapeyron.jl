@@ -8,7 +8,7 @@ function _group_sum!(out,groups,param)
     out_idx = linearidx(_out)
     vecparam = diagvalues(param)
     v = __get_group_sum_values(groups)
-    for (i,vi) in pairs(v)
+    @inbounds for (i,vi) in pairs(v)
         _out[out_idx[i]] = dot(vi,vecparam)
     end
     return out
@@ -26,10 +26,11 @@ end
 
 """
     group_sum!(out, groups, param)
+    
 
-In-place version of [`group_sum`](@ref). Fills `out` with the component
-values computed from group data. `out` can be a parameter container or a
-plain vector/matrix.
+In-place version of [`group_sum`](@ref). 
+Fills `out` with the component values computed from group data.
+`out` can be a parameter container or a plain vector/matrix.
 """
 function group_sum!(out::Union{SingleParameter,PairParameter},groups,param::SingleParameter)
     _group_sum!(diagvalues(out.values),groups,param)
@@ -174,14 +175,20 @@ function group_pairmean end
 
 group_pairmean(groups,param) = group_pairmean(mix_mean,groups,param)
 
-function group_pairmean(f::T,groups,param::SingleOrPair) where {T}
+function group_pairmean(f::T,groups,param::SingleParameter) where T
     return SingleParam(param.name,groups.components,group_pairmean(f,groups,param.values))
 end
 
-function group_pairmean(f::F,groups,p::AbstractArray) where {F}
+
+function group_pairmean(f::T,groups,param::PairParameter) where T
+    return PairParam(param.name,groups.components,group_pairmean(f,groups,param.values))
+end
+
+function group_pairmean(f::F,groups,p::AbstractArray{P,ND}) where {F,P,ND}
     v = __get_group_sum_values(groups)
     T = Base.promote_eltype(1.0,p,v[1])
-    res = zeros(T, length(groups.components))
+    ng = length(groups.components)
+    res = zeros(T,ntuple(i -> ng,Val(ND)))
     return group_pairmean!(res,f,groups,p)
 end
 
@@ -291,13 +298,17 @@ function group_pairmean2!(out,groups,mat)
     _0 = zero(eltype(mat))
     n = groups.n_flattenedgroups
     for i ∈ 1:l_c
+        ni = n[i]
         for j ∈ 1:l_c
+            nj = n[j]
             res = _0
             sumn = _0
             for k in 1:l_gc
+                nik = ni[k]
                 for l in 1:l_gc
-                    res += n[i][k]*n[j][l]*mat[k,l]
-                    sumn += n[i][k]*n[j][l]
+                    njl = nj[l]
+                    res += nik*njl*mat[k,l]
+                    sumn += nik*njl
                 end
             end
             out[i,j] = res/sumn
