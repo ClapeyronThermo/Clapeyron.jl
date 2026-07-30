@@ -36,6 +36,7 @@ function _param_from_values(x::X,param::AssocParam) where X <: Compressed4DMatri
 end
 
 function _param_from_values(x::Vector{T},param::AssocParam) where T
+    v = param.values
     param_from_values(param_from_values(x,v),param)
 end
 
