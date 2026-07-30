@@ -195,8 +195,9 @@ end
 """
     group_pairmean!(res, f, groups, param)
 
-In-place version of [`group_pairmean`](@ref). Writes the component-level
-values into `res`, using the mixing function `f` when `param` is a vector.
+In-place version of [`group_pairmean`](@ref). 
+Writes the component-level values into `res`, using the mixing function `f` when `param` is a vector.
+If `res` is a matrix, then `group_pairmean!` will write on the diagonal terms instead.
 """
 function group_pairmean!(res,f::F,groups,param::SingleOrPair) where {F}
     return group_pairmean!(res,f,groups,param.values)
@@ -206,9 +207,9 @@ function group_pairmean!(_res,f,groups,p::AbstractMatrix)
     res = raw_values(_res)
     zz = __get_group_sum_values(groups)
     lgroups = 1:length(zz[1])
-    lcomps = 1:length(res)
     _0 = zero(eltype(res))
     w = linearidx(res)
+    lcomps = 1:length(w)
     for i ∈ lcomps
         ẑ = zz[i]
         ∑ẑinv2 = 1/(sum(ẑ)^2)
