@@ -789,6 +789,7 @@ function pack_vectors(x::AbstractVector{<:AbstractVector})
 end
 
 function packed_zeros!(T,bsizes)
+    values = zeros(T,sum(bsizes))
     offsets = Compressed4DMatrices.offsets_from_bsizes!(bsizes)
-    return PackedVofV(offsets,T[])
+    return PackedVofV(offsets,values)
 end
