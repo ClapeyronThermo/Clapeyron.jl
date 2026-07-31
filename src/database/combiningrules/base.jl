@@ -22,7 +22,7 @@ mix_lambda_squarewell(λᵢ,λⱼ,σᵢ,σⱼ,σᵢⱼ) = (σᵢ*λᵢ + σⱼ*�
 
 #for use in ijab_mix
 mix_ijab_elliott(βᵢ,βⱼ,σᵢ,σⱼ,σᵢⱼ) = sqrt(βᵢ * βⱼ * σᵢ^3 * σⱼ^3) / σᵢⱼ^3
-mix_ijab_elliott(βᵢ,βⱼ,σᵢ,σⱼ,σᵢⱼ) = sqrt(βᵢ * βⱼ)
+mix_ijab_elliott(βᵢ,βⱼ) = sqrt(βᵢ * βⱼ)
 
 #throw error if the pair_mix function requires qij, but just a vector is provided.
 __requires_qij(x) = false
