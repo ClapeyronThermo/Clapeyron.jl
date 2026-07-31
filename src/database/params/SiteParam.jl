@@ -143,7 +143,7 @@ function SiteParam(components::Vector{String},sourcecsvs::Vector{String},::Val{S
     sites = [String[] for _ ∈ 1:n]
     n_sites = packed_zeros!(Int,zeros(Int,n))
     sourcecsvs = String[]
-    if SITE_TRANSLATOR
+    if !SITE_TRANSLATOR
         site_translator = nothing
     else
         site_translator = Vector{NTuple{2,Int}}[]
