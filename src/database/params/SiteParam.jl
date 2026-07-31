@@ -135,6 +135,9 @@ function SiteParam(input::Vector{Tuple{String, Vector{Pair{String,T}}}},sourcecs
     return SiteParam(components,sites,n_sites,sourcecsvs)
 end
 
+SiteParam(components) = SiteParam(components,String[],Val(false))
+SiteParam(components::Vector{String},sourcecsvs::Vector{String}) = SiteParam(components,sourcecsvs,Val(false))
+
 function SiteParam(components::Vector{String},sourcecsvs::Vector{String},::Val{SITE_TRANSLATOR}) where SITE_TRANSLATOR
     n = length(components)
     sites = [String[] for _ ∈ 1:n]
