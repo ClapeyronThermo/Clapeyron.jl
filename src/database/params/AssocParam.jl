@@ -30,8 +30,7 @@ function AssocParam(name, components, values::AbstractMatrix{<:AbstractMatrix{T}
     return AssocParam(name, components, Compressed4DMatrix(values))
 end
 
-function _param_from_values(x::X,param::AssocParam) where X <: Compressed4DMatrix
-    T = eltype(X)
+function _param_from_values(x::X,param::AssocParam) where X <: Compressed4DMatrix{T} where T
     return AssocParam{T}(param.name,param.components,x,param.sites,param.sourcecsvs,param.sources)
 end
 

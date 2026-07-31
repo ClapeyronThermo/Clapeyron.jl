@@ -88,7 +88,7 @@ function each_split_model(mat::Compressed4DMatrix{T,Vector{T}},I) where T
     end
 
     new_bsizes = bsizes[I]
-    new_offsets = Compressed4DMatrices.offsets_from_bsizes!(bsizes)
+    new_offsets = Compressed4DMatrices.offsets_from_bsizes!(new_bsizes)
     new_indices = Int[]
     new_vals = T[]
     for (idx,(i,j),(a,b)) in indices(mat)
