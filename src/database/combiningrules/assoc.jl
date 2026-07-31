@@ -121,7 +121,7 @@ Returns a new `AssocParam`/`Compressed4DMatrix` of the same shape as `Δ`, with 
 ijab_mix(f::F,Δ::Compressed4DMatrix) where F = ijab_mix!(f,deepcopy(Δ))
 ijab_mix(f::F,Δ::Compressed4DMatrix,K) where F = ijab_mix!(f,deepcopy(Δ),K)
 ijab_mix(f::F,Δ::AssocParam) where F= param_from_values(ijab_mix(f,Δ.values),Δ)
-ijab_mix(f::F,Δ::AssocParam,K) where F = param_from_values(ijab_mix(f,Δ.values),Δ,K)
+ijab_mix(f::F,Δ::AssocParam,K) where F = param_from_values(ijab_mix(f,Δ.values,K),Δ)
 
 #=
 predefined mixing rules
@@ -240,6 +240,9 @@ function assoc_mix!(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions)
         throw(error("incorrect combining argument ",error_color(string(combining))," passed to AssocOptions."))
     end
 end
+
+assoc_mix(bondvol,epsilon_assoc,assoc_options::AssocOptions) = assoc_mix(bondvol,epsilon_assoc,nothing,assoc_options)
+assoc_mix!(bondvol,epsilon_assoc,assoc_options::AssocOptions) = assoc_mix!(bondvol,epsilon_assoc,nothing,assoc_options)
 
 function assoc_mix!(data,components)
     assoc_options = data["assoc_options"]
