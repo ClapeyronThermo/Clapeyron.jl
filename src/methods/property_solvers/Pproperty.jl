@@ -318,8 +318,8 @@ function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,v
     if status == :supercritical
         verbose && @info "temperature is above critical temperature"
         Tc,Pc,Vc = crit
-        if P0 !== nothing
-            Pcrit0 = TT(P0)
+        if p0 !== nothing
+            Pcrit0 = TT(p0)
         else
             Pcrit0 = TT(1.001Pc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
         end
