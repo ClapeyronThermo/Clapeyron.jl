@@ -288,15 +288,20 @@ function each_split_model(param::SiteParam,group,Ic,Ig)
     end
 
     if group != nothing && site.site_translator != nothing
-        ng = length(group.flattenedgroups)
-        recalculate_site_translator!(site,Ig,ng)
+        if length(site.site_translator) > 0
+            ng = length(group.flattenedgroups)
+            recalculate_site_translator!(site,Ig,ng)
+        end
     end
 
     return site
 end
 
 __split_site_translator(::Nothing,I) = nothing
-__split_site_translator(s::Vector{Vector{NTuple{2,Int}}},I) = s[I]
+function __split_site_translator(s::Vector{Vector{NTuple{2,Int}}},I) 
+    iszero(length(s)) && return s
+    return s[I]
+end
 
 function recalculate_site_translator!(sites::SiteParam,idxi,ng,bool_to_int = Int[])
     site_translator_i = sites.site_translator::Vector{Vector{NTuple{2,Int}}}

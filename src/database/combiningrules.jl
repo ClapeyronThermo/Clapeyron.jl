@@ -298,5 +298,6 @@ export lambda_LorentzBerthelot, lambda_LorentzBerthelot!
 export lambda_squarewell, lambda_squarewell!
 export bondvol_mix,epsilon_assoc_mix,dufal_mix
 export bondvol_mix!,epsilon_assoc_mix!,dufal_mix!
+export izero_mix, ijab_zero_mix!
 export group_sum, group_sum!
 export group_pairmean, group_pairmean!

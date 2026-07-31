@@ -160,7 +160,7 @@ function recombine_impl!(model::gcsPCSAFTModel)
     pcp = model.pcsaftmodel.params
     gc = model.params
 
-    segment = group_sum!(pcp.segment,groups,params.segment)
+    segment = group_sum!(pcp.segment,groups,gc.segment)
 
     sigma = group_sum!(pcp.sigma,groups,gc.msigma3)
     diagvalues(sigma.values) ./= segment.values

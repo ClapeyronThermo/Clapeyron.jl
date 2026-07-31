@@ -205,13 +205,38 @@ See [`epsilon_assoc_mix`](@ref) for the exact formula.
 """
 epsilon_assoc_mix!(bondvol) = ijab_mix!(mix_mean,epsilon_assoc)
 
+"""
+    ijab_zero_mix(x::AssocParam)
+
+Pseudo-combining rule, used by the :elliott_runtime combining rule
+Fills unset cross terms with zero, only if their pure values are different from zero:
+```
+xᵢⱼₐᵦ = 0 if !iszero(xᵢᵢₐᵦ) && !iszero(xⱼⱼₐᵦ)
+```
+
+This is more of an index expansion operation that only adds the necessary indices.
+For example, if no self-association is present in a site, then no self association indices will be added.
+See [`ijab_zero_mix!`](@ref) for the inplace version.
+
+"""
+ijab_zero_mix(epsilon_assoc) = ijab_mix(nothing,epsilon_assoc)
+
+"""
+    ijab_zero_mix!(x::AssocParam)
+
+Inplace version of [`ijab_zero_mix`](@ref). 
+Mutates its argument, filling in unset cross-association energies in place with zeros. 
+See [`epsilon_assoc_mix`](@ref) for the exact formula.
+"""
+ijab_zero_mix!(bondvol) = ijab_mix!(nothing,epsilon_assoc)
+
 function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions)
     combining = assoc_options.combining
     if combining == :nocombining
         return bondvol,epsilon_assoc
     elseif combining in (:elliott_runtime,:esd_runtime)
         #return bondvol,epsilon_assoc
-        return zero_mix(bondvol),zero_mix(epsilon_assoc)
+        return ijab_zero_mix(bondvol),ijab_zero_mix(epsilon_assoc)
     elseif combining in (:elliott,:esd)
         return bondvol_mix(bondvol,sigma),epsilon_assoc_mix(epsilon_assoc)
     elseif combining == :cr1
@@ -229,7 +254,7 @@ function assoc_mix!(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions)
         return bondvol,epsilon_assoc
     elseif combining in (:elliott_runtime,:esd_runtime)
         #return bondvol,epsilon_assoc
-        return zero_mix!(bondvol),zero_mix(epsilon_assoc)
+        return ijab_zero_mix!(bondvol),ijab_zero_mix(epsilon_assoc)
     elseif combining in (:elliott,:esd)
         return bondvol_mix!(bondvol,sigma),epsilon_assoc_mix(epsilon_assoc)
     elseif combining == :cr1
