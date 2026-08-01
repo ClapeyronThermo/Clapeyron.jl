@@ -159,7 +159,7 @@ function recombine_impl!(model::gcsPCSAFTModel)
     assoc_options = model.assoc_options
     pcp = model.pcsaftmodel.params
     gc = model.params
-
+    comp_sites = model.pcsaftmodel.sites
     segment = group_sum!(pcp.segment,groups,gc.segment)
 
     sigma = group_sum!(pcp.sigma,groups,gc.msigma3)
@@ -172,8 +172,8 @@ function recombine_impl!(model::gcsPCSAFTModel)
     diagvalues(epsilon.values) ./= segment.values
     epsilon_LorentzBerthelot!(epsilon,k)
 
-    assoc_mix!(gc.bondvol,gc.epsilon_assoc,gc.sigma,assoc_options)
-    comp_sites = gc_to_comp_sites(sites,groups)
+    assoc_mix!(gc.bondvol,gc.epsilon_assoc,nothing,assoc_options)
+    gc_to_comp_sites!(comp_sites,sites,groups)
     gc_to_comp_sites!(pcp.bondvol,gc.bondvol,comp_sites)
     gc_to_comp_sites!(pcp.epsilon_assoc,gc.epsilon_assoc,comp_sites)
     return model

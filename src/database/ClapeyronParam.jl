@@ -26,7 +26,7 @@ It is assumed that this parameter is equal to all components.
 """
 abstract type OptionsParam <: ClapeyronParam end
 
-Base.eltype(param::OptionsParam) = Bool
+Base.eltype(param::Type{OptionsParam}) = Bool
 is_splittable(::OptionsParam) = false
 
 export EoSParam, ParametricEoSParam

@@ -284,17 +284,11 @@ function recombine_impl!(model::SAFTgammaMieModel)
     assoc_options = model.assoc_options
     vr = model.vrmodel.params
     gc = model.params
-    gc_sigma = model.params.sigma
-    gc_epsilon = model.params.epsilon
-    gc_segment = model.params.segment
     shapefactor = model.params.shapefactor
-    gc_lambda_r = model.params.lambda_r
-    gc_lambda_a = model.params.lambda_a
-    gc_epsilon_assoc = model.params.epsilon_assoc
-    gc_bondvol = model.params.bondvol
     mixed_segment = model.params.mixed_segment
+    comp_sites = model.vrmodel.sites
 
-    mix_segment!(mixed_segment,groups,shapefactor.values,gc_segment.values)
+    mix_segment!(mixed_segment,groups,shapefactor.values,gc.segment.values)
     model.vrmodel.params.segment.values[:] = group_sum(mixed_segment,nothing)
 
     sigma_LorentzBerthelot!(gc.sigma)

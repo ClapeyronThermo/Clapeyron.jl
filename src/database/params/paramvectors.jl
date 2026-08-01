@@ -1,6 +1,6 @@
 module Compressed4DMatrices
 
-using Clapeyron: _iszero, _zero
+using Clapeyron: _iszero, _zero, parameterless_type
 using LinearAlgebra
 
 function low_color(text::AbstractString)
@@ -399,8 +399,9 @@ function Base.show(io::IO,mime::MIME"text/plain",m::Compressed4DMatrix{T}) where
 end
 
 function Base.show(io::IO,m::Compressed4DMatrix{T}) where T
+    print(io,parameterless_type(m))
     if get(io,:Clapeyron_eos_repr,false)
-        print(io,"Compressed4DMatrix(")
+        print(io,'(')
         idxs = idx_to_ijab.(m.indices)
         print(io,m.values)
         print(io,',')
@@ -409,7 +410,7 @@ function Base.show(io::IO,m::Compressed4DMatrix{T}) where T
         print(io,m.site_offsets)
         print(io,')')
     else
-        print(io,"Compressed4DMatrix{")
+        print(io,'{')
         print(io,T)
         print(io,'}')
         print(io,m.values)

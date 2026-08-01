@@ -1,6 +1,6 @@
 abstract type iPCSAFTModel <: PCSAFTModel end
 
-struct iPCSAFTParam{T} <: EoSParam
+struct iPCSAFTParam{T} <: ParametricEoSParam{T}
     Mw::SingleParam{T}
     segment::SingleParam{T}
     v_shift::SingleParam{T}
@@ -13,8 +13,6 @@ end
 function iPCSAFTParam(Mw,segment,c,sigma,epsilon,epsilon_assoc,bondvol)
     return build_parametric_param(iPCSAFTParam,Mw,segment,c,sigma,epsilon,epsilon_assoc,bondvol)
 end
-
-Base.eltype(p::iPCSAFTParam{T}) where T = T
 
 @newmodel iPCSAFT iPCSAFTModel iPCSAFTParam{T}
 

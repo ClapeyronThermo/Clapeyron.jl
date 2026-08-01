@@ -185,43 +185,43 @@ function recombine_impl!(model::HomogcPCPSAFTModel)
     components = model.components
     sites = model.sites
     assoc_options = model.assoc_options
-    gcparams = model.params
+    gc = model.params
     pcpmodel = model.pcpmodel
     params = pcpmodel.params
-
+    comp_sites = pcpmodel.sites
     #recombine outer params
-    sigma_LorentzBerthelot!(gcparams.sigma)
-    epsilon_LorentzBerthelot!(gcparams.epsilon)
+    sigma_LorentzBerthelot!(gc.sigma)
+    epsilon_LorentzBerthelot!(gc.epsilon)
 
-    gcparams.dipole2 .= gcparams.dipole.^2 ./ k_B*1e-36*(1e-10*1e-3)
-    group_sum!(params.dipole2,groups,gcparams.dipole2)
+    gc.dipole2 .= gc.dipole.^2 ./ k_B*1e-36*(1e-10*1e-3)
+    group_sum!(params.dipole2,groups,gc.dipole2)
     params.dipole2.values ./= params.segment 
     params.dipole .= sqrt.(params.dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3))
  
     #recombine inner PCP model
-    mw = group_sum!(params.Mw,groups,gcparams.Mw)
-    segment = group_sum!(params.segment,groups,gcparams.segment)
+    mw = group_sum!(params.Mw,groups,gc.Mw)
+    segment = group_sum!(params.segment,groups,gc.segment)
 
-    gc_msigma3 = gcparams.sigma .^3 .* gcparams.segment
+    gc_msigma3 = gc.sigma .^3 .* gc.segment
     sigma_diag = diagvalues(params.sigma)
     group_sum!(sigma_diag,groups,gc_msigma3)
     sigma_diag ./= segment.values
     sigma_diag .= cbrt.(sigma_diag)
     sigma_LorentzBerthelot!(params.sigma)
 
-    k = group_pairmean2(groups,gcparams.k)
-    gc_mepsilon = diagvalues(gcparams.epsilon.values) .* gcparams.segment.values
+    k = group_pairmean2(groups,gc.k)
+    gc_mepsilon = diagvalues(gc.epsilon.values) .* gc.segment.values
     epsilon = group_sum!(params.epsilon,groups,gc_mepsilon)
     diagvalues(epsilon.values) ./= segment.values
     epsilon_LorentzBerthelot!(epsilon,k)
 
-    group_sum!(params.dipole2,groups,gcparams.dipole2 ./ gcparams.segment)
+    group_sum!(params.dipole2,groups,gc.dipole2 ./ gc.segment)
     params.dipole .= sqrt.(params.dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3))
 
-    comp_sites = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites!(params.bondvol,gcparams.bondvol,comp_sites)
-    comp_epsilon_assoc = gc_to_comp_sites!(params.epsilon_assoc,gcparams.epsilon_assoc,comp_sites)
-    bondvol,epsilon_assoc = assoc_mix!(params.bondvol,params.epsilon_assoc,params.sigma,assoc_options)
+    gc_to_comp_sites!(comp_sites,sites,groups)
+    gc_to_comp_sites!(params.bondvol,gc.bondvol,comp_sites)
+    gc_to_comp_sites!(params.epsilon_assoc,gc.epsilon_assoc,comp_sites)
+    assoc_mix!(params.bondvol,params.epsilon_assoc,params.sigma,assoc_options)
     return model
 end
 
