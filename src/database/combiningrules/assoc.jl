@@ -84,7 +84,7 @@ const IJAB_ZERO_SENTINEL = -124
 
 (::ZeroIJABMix)(iiab,jjab,ki,kj,kij) = ZeroIJABMix()(iiab,jjab)
 function (::ZeroIJABMix)(iiab,jjab)
-    Δ = max(iiab*jjab,zero(iiab*jjabj))
+    Δ = max(iiab*jjab,zero(iiab*jjab))
     if !iszero(primalval(Δ))
         return oftype(Δ,IJAB_ZERO_SENTINEL)
     else
