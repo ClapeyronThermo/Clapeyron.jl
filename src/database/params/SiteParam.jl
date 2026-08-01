@@ -313,7 +313,7 @@ function gc_to_comp_sites!(out::SiteParam,sites::SiteParam,groups::GroupParamete
 
                 for s in 1:length(g_sitenames)
                     push!(sites_i,gname * '/' * g_sitenames[s])
-                    push!(n_sites_i, gc_n_sites[s]*n_gc_k) #amount of sites equal to n_gc * n_sites(gc)
+                    push!(n_sites_v, gc_n_sites[s]*n_gc_k) #amount of sites equal to n_gc * n_sites(gc)
                     push!(translator_i,(g,s))
                     offset += 1
                 end
