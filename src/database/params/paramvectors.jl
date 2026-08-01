@@ -673,7 +673,7 @@ end
 
 function infer_site_offsets(ij::AbstractVector,ab::AbstractVector,nc = 0)
     if iszero(nc)
-        _nc = maximum(max,ij)
+        _nc = maximum(maximum,ij)
     else
         _nc = nc
     end
@@ -749,7 +749,7 @@ end
 end #module
 
 using .Compressed4DMatrices
-using .Compressed4DMatrices: AssocView, indices, dropzeros!, validindex, idx_to_ijab, ijab_to_idx, assoc_is_pure, assoc_self_assoc
+using .Compressed4DMatrices: AssocView, indices, dropzeros!, validindex, idx_to_ijab, ijab_to_idx, assoc_is_pure, assoc_self_assoc, matsize
 import .Compressed4DMatrices: Compressed4DMatrix
 
 """

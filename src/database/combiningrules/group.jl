@@ -204,6 +204,9 @@ function group_pairmean!(res,f::F,groups,param::SingleOrPair) where {F}
 end
 
 function group_pairmean!(_res,f,groups,p::AbstractMatrix)
+    if _res isa SingleOrPair
+        _res.ismissingvalues .= true
+    end
     res = raw_values(_res)
     zz = __get_group_sum_values(groups)
     lgroups = 1:length(zz[1])
@@ -230,6 +233,9 @@ function group_pairmean!(_res,f,groups,p::AbstractMatrix)
 end
 
 function group_pairmean!(_res,f::T,groups,p::AbstractVector) where {T}
+    if _res isa SingleOrPair
+        _res.ismissingvalues .= true
+    end
     res = raw_values(_res)
     zz = __get_group_sum_values(group)
     lgroups = 1:length(zz[1])
