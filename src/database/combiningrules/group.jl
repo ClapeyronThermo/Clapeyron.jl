@@ -176,12 +176,15 @@ function group_pairmean end
 group_pairmean(groups,param) = group_pairmean(mix_mean,groups,param)
 
 function group_pairmean(f::T,groups,param::SingleParameter) where T
-    return SingleParam(param.name,groups.components,group_pairmean(f,groups,param.values))
+    gc = SingleParam(param.name,groups.components,group_pairmean(f,groups,param.values))
+    gc.ismissingvalues .= true
+    return gc
 end
 
-
 function group_pairmean(f::T,groups,param::PairParameter) where T
-    return PairParam(param.name,groups.components,group_pairmean(f,groups,param.values))
+    gc = PairParam(param.name,groups.components,group_pairmean(f,groups,param.values))
+    gc.ismissingvalues .= true
+    return gc
 end
 
 function group_pairmean(f::F,groups,p::AbstractArray{P,ND}) where {F,P,ND}

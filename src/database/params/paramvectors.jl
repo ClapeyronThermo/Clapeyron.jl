@@ -721,8 +721,10 @@ function Compressed4DMatrix(vals::AbstractVector{T},ij::Vector{NTuple{2,Int}},ab
 end
 
 function Compressed4DMatrix(vals::AbstractVector{T},ij::Vector{NTuple{2,Int}},ab::Vector{NTuple{2,Int}},offs::AbstractVector{Int} = infer_site_offsets(ij,ab)) where T
-    m = Compressed4DMatrix{T}(offs)
-    for (idx,(_ij,_ab)) in pairs(zip(ij,ab))
+    m = c4d_from_site_offsets(T,offs)
+    for idx in 1:length(ij)
+        _ij = ij[idx]
+        _ab = ab[idx]
         i,j,a,b = canonical_index(_ij,_ab)
         @inbounds begin
             m[i,j][a,b] = vals[idx]
