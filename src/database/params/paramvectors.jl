@@ -720,7 +720,7 @@ function Compressed4DMatrix(vals::AbstractVector{T},ij::Vector{NTuple{2,Int}},ab
     return Compressed4DMatrix(vals,ij,ab)
 end
 
-function Compressed4DMatrix(vals::AbstractVector{T},ij::Vector{NTuple{2,Int}},ab::Vector{NTuple{2,Int}},offs::AbstractVector{Int} = infer_site_offsets(ijab)) where T
+function Compressed4DMatrix(vals::AbstractVector{T},ij::Vector{NTuple{2,Int}},ab::Vector{NTuple{2,Int}},offs::AbstractVector{Int} = infer_site_offsets(ij,ab)) where T
     m = Compressed4DMatrix{T}(offs)
     for (idx,(_ij,_ab)) in pairs(zip(ij,ab))
         i,j,a,b = canonical_index(_ij,_ab)

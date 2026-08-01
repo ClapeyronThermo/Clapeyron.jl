@@ -294,7 +294,9 @@ _param_from_values(x::PackedVector{T},param::MixedGCSegmentParam) where T = Mixe
 _param_from_values(x::Vector{T},param::MixedGCSegmentParam) where T = MixedGCSegmentParam(param.name,param.components,param_from_values(x,param.values))
 raw_values(param::MixedGCSegmentParam) = param.values.v
 
-MixedGCSegmentParam(name,components) = MixedGCSegmentParam{Float64}(name,components,PackedVofV(Int[],Float64[]))
+MixedGCSegmentParam{T}(name::String,components,ng::Int = 0) where T = MixedGCSegmentParam{T}(name,components,packed_zeros!(T,fill(ng,length(components))))
+MixedGCSegmentParam(name::String,components) = MixedGCSegmentParam{Float64}(name,components)
+MixedGCSegmentParam(name::String,components,ng) = MixedGCSegmentParam{Float64}(name,components,ng)
 
 Base.length(param::MixedGCSegmentParam) = length(param.values)
 Base.eltype(param::MixedGCSegmentParam) = eltype(typeof(param))
