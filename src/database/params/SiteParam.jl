@@ -119,7 +119,10 @@ function SiteParam(pairs::Dict{String,SingleParam{Int}},allcomponentsites)
     ncomps = length(components)
     sourcecsvs = String[]
     for x in values(pairs)
-        append!(sourcecsvs,x.sourcecsvs)
+        xi = x.sourcecsvs
+        if !isnothing(xi)
+            append!(sourcecsvs,x.sourcecsvs)
+        end
     end
     unique!(sourcecsvs)
 
@@ -127,7 +130,7 @@ function SiteParam(pairs::Dict{String,SingleParam{Int}},allcomponentsites)
     return SiteParam(components,sites,n_sites,sourcecsvs)
 end
 
-function SiteParam(input::Vector{Tuple{String, Vector{Pair{String,T}}}},sourcecsvs=String[]) where {T<:Number}
+function SiteParam(input::Vector{Tuple{String, Vector{Pair{String,T}}}},sourcecsvs=nothing) where {T<:Number}
     components = [first(i) for i ∈ input]
     raw_sites = [last(i) for i ∈ input]
     sites = [first.(sitepairs) for sitepairs ∈ raw_sites]
@@ -135,10 +138,10 @@ function SiteParam(input::Vector{Tuple{String, Vector{Pair{String,T}}}},sourcecs
     return SiteParam(components,sites,n_sites,sourcecsvs)
 end
 
-SiteParam(components) = SiteParam(components,String[],Val(false))
-SiteParam(components::Vector{String},sourcecsvs::Vector{String}) = SiteParam(components,sourcecsvs,Val(false))
+SiteParam(components) = SiteParam(components,nothing,Val(false))
+SiteParam(components::Vector{String},sourcecsvs::Union{Vector{String},Nothing}) = SiteParam(components,sourcecsvs,Val(false))
 
-function SiteParam(components::Vector{String},sourcecsvs::Vector{String},::Val{SITE_TRANSLATOR}) where SITE_TRANSLATOR
+function SiteParam(components::Vector{String},sourcecsvs::Union{Vector{String},Nothing},::Val{SITE_TRANSLATOR}) where SITE_TRANSLATOR
     n = length(components)
     sites = [String[] for _ ∈ 1:n]
     n_sites = packed_zeros!(Int,zeros(Int,n))
@@ -273,7 +276,7 @@ function gc_to_comp_sites!(out::SiteParam,sites::SiteParam,groups::GroupParamete
     offset = 1
 
     is_empty = iszero(sites.n_sites.v)
-    if length(sites.sourcecsvs) != 0 && sites.sourcecsvs !== out.sourcecsvs
+    if out.sourcecsvs != nothing && sites.sourcecsvs != nothing && sites.sourcecsvs !== out.sourcecsvs
         resize!(out.sourcecsvs,length(sites.sourcecsvs))
         out.sourcecsvs .= sites.sourcecsvs
     end

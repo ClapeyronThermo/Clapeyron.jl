@@ -225,7 +225,6 @@ function dense_assoc_site_matrix(model, V, T, z, data=nothing, delta = @f(delta_
     TT = eltype(delta.values)
     total_sites = length(n)
     K = zeros(TT, total_sites, total_sites)
-
     # Loop over each stored Δ entry (i, j, a, b).
     # By construction, the stored orientation has i <= j (and for i==j, a <= b).
     for (idx, (i, j), (a, b)) in indices(delta)
@@ -320,7 +319,6 @@ function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
     K = assoc_site_matrix(model,V,T,z,data,_Δ)
     sitesparam = getsites(model)
     idxs = sitesparam.n_sites.p
-    #K̂ = AssocMap(_Δ,V,z,n_sites)
     compress = __maybe_compress(K)
     if compress
         J,J_to_K = compress_assoc_matrix(K)
@@ -339,7 +337,6 @@ Initial points for association
 And reduced dimension solvers
 ################################
 =#
-
 function assoc_matrix_x0!(K,X)
     #(A*x .* x) + x - 1 = 0
     init1,success1 = X_maybe_exact_pseudodiag!(K,X)
@@ -361,6 +358,7 @@ function assoc_matrix_x0!(K,X)
 
     return X,false
 end
+ 
 
 function X_maybe_exact_pseudodiag!(K,X)
     #=
@@ -423,7 +421,7 @@ function X_maybe_exact_pseudodiag_01!(K,X)
             n_solved +=1
         elseif X[i] == -i
             k = K[i,i]
-            X[i] = 2/(1 + sqrt(1 + 4*k))
+            X[i] = _X_exact1(k,k)[1]
             n_solved += 1
         end
     end
@@ -449,11 +447,7 @@ function X_maybe_exact_pseudodiag_2!(K,X)
                 if j2 == i
                     kj2 = K[j1,i]
                     A3,A2 = kj1,kj2
-                    k = 1 - A3 + A2
-                    Δ = k + sqrt(k*k + 4*A3)
-                    x1 = 2/Δ
-                    x1k = A3*x1
-                    x2 = (1- x1k)/(1 - x1k*x1k)
+                    x1,x2 = _X_exact1(A3,A2)
                     X[j1] = x1
                     X[i] = x2
                     n_solved += 2
@@ -462,21 +456,6 @@ function X_maybe_exact_pseudodiag_2!(K,X)
         end
     end
     return n_solved
-end
-
-function X_exact2_antidiag!(K,X)
-    _,k2,k1,_ = K
-    #k1 = K[1,2]
-    #k2 = K[2,1]
-    #this computation is equivalent to the one done in X_exact1
-    k = 1 - k2 + k1
-    Δ = k + sqrt(k*k + 4*k2)
-    x1 = 2/Δ
-    x1k = k2*x1
-    x2 = (1 -  x1k)/(1 - x1k*x1k)
-    X[1] = x1
-    X[2] = x2
-    return X
 end
 
 function X_exact2_123!(K,X)
@@ -525,14 +504,16 @@ function X_exact2!(K,X)
     =#
     A1,A3,A2,A4 = K
     if iszero(A1) && iszero(A4)
-        X_exact2_antidiag!(K,X)
+        x1,x2 =_X_exact1(A3,A2)
+        X[1] = x1
+        X[2] = x2
         return true,true
     end
 
     if iszero(A1) || iszero(A4)
         X_exact2_123!(K,X)
         return true,true
-
+        
     end
 
     a = -A3/A2
@@ -881,16 +862,33 @@ Association implementations, once X is calculated
 
 #exact calculation of site non-bonded fraction when there is only one site
 function X_exact1(model,V,T,z,data = nothing)
-    xia,xjb,i,j,a,b,n,idxs,Δijab = _X_exact1(model,V,T,z,data)
-    pack_X_exact1(xia,xjb,i,j,a,b,n,idxs)
+    xia,xjb,ijab,Δijab = _X_exact1(model,V,T,z,data)
+    pack_X_exact1(xia,xjb,ijab,idxs)
 end
 
 function X_and_Δ_exact1(model,V,T,z,data = nothing)
-    xia,xjb,i,j,a,b,n,idxs,Δijab = _X_exact1(model,V,T,z,data)
-    XX = pack_X_exact1(primalval(xia),primalval(xjb),i,j,a,b,n,idxs)
+    xia,xjb,ijab,Δijab = _X_exact1(model,V,T,z,data)
     Δout = assoc_similar(model,@f(Base.promote_eltype))
+    XX = pack_X_exact1(xia,xjb,ijab,Δout.site_offsets)
     Δout.values[1] = Δijab
     return XX,Δout
+end
+
+@inline function _X_exact1(kia,kjb)
+    _1 = one(kia)
+    if kia == kjb
+        x = 2/(_1 + sqrt(_1 + 4*kia))
+        return x,x
+    end
+    _1 = one(kia)
+    a = kia
+    b = _1 - kia + kjb
+    c = -_1
+    denom = b + sqrt(b*b - 4*a*c)
+    xia = -2*c/denom
+    xk_ia = kia*xia
+    xjb = (1- xk_ia)/(1 - xk_ia*xk_ia)
+    return xia,xjb
 end
 
 function _X_exact1(model,V,T,z,data=nothing)
@@ -902,35 +900,32 @@ function _X_exact1(model,V,T,z,data=nothing)
         _Δ = @f(Δ,i,j,a,b,data)
     end
     _1 = one(eltype(_Δ))
-    sitesparam = getsites(model)
-    idxs = sitesparam.n_sites.p
-    n = length(sitesparam.n_sites.v)
-    ρ = N_A/V
-    zi = z[i]
-    zj = z[j]
-    ni = sitesparam.n_sites[i]
-    na = ni[a]
-    nj = sitesparam.n_sites[j]
-    nb = nj[b]
-    ρ = N_A/V
-    kia = na*zi*ρ*_Δ
-    kjb = nb*zj*ρ*_Δ
-    _a = kia
-    _b = _1 - kia + kjb
-    _c = -_1
-    denom = _b + sqrt(_b*_b - 4*_a*_c)
-    xia = -2*_c/denom
-    xk_ia = kia*xia
-    xjb = (1- xk_ia)/(1 - xk_ia*xk_ia)
-    return xia,xjb,i,j,a,b,n,idxs,_Δ
+
+    sites = getsites(model)
+    site_offsets = sites.n_sites.p
+    n = sites.n_sites.v
+    @inbounds begin
+        ia = site_offsets[i] + a - 1   # global index for site (i, a)
+        jb = site_offsets[j] + b - 1   # global index for site (j, b)
+        nia,njb = n[ia],n[jb]
+        zi,zj = z[i],z[j]
+        ρΔ = _Δ*N_A/V
+        kia = ρΔ*nia*zi
+        kjb = ρΔ*njb*zj
+    end
+    xia,xjb = _X_exact1(kia,kjb)
+    return xia,xjb,(i,j,a,b),_Δ
 end
 
-function pack_X_exact1(xia,xjb,i,j,a,b,n,idxs)
+function pack_X_exact1(xia,xjb,ijab,site_offsets)
+    i,j,a,b = ijab
+    ia = site_offsets[i] + a - 1   # global index for site (i, a)
+    jb = site_offsets[j] + b - 1   # global index for site (j, b)
+    n = site_offsets[end] - 1
     Xsol = fill(one(xia),n)
-    _X = PackedVofV(idxs,Xsol)
-    _X[j][b] = xjb
-    _X[i][a] = xia
-    return _X
+    Xsol[jb] = xjb
+    Xsol[ia] = xia
+    return PackedVofV(site_offsets,Xsol)
 end
 
 function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
@@ -1020,7 +1015,8 @@ end
 #in this case the fraction of non-bonded sites is simply xia and xjb
 #so whe don't need to allocate the X vector
 function a_assoc_exact_1(model::EoSModel,V,T,z,data = nothing)
-    xia,xjb,i,j,a,b,n,idxs = _X_exact1(model,V,T,z,data)
+    xia,xjb,ijab,Δijab = _X_exact1(model,V,T,z,data)
+    i,j,a,b = ijab
     _0 = zero(xia)
     sites = getsites(model)
     nn = sites.n_sites
@@ -1089,11 +1085,11 @@ end
 
 recombine_assoc!(model) = recombine_assoc!(model,model.params.sigma)
 
-function recombine_assoc!(model,σ)
+function recombine_assoc!(model,sigma)
     iszero(assoc_pair_length(model)) && return model
     ε = model.params.epsilon_assoc
     κ = model.params.bondvol
-    assoc_mix!(κ,ε,σ,assoc_options(model)) #combining rules for association
+    assoc_mix!(κ,ε,σ,assoc_options(model))
     return model
 end
 
@@ -1119,345 +1115,3 @@ end
 @public @assoc_loop
 @public getsites,assoc_matrix_solve,assoc_site_matrix,Δ,assoc_strength,X
 @public assoc_shape,assoc_pair_length,assoc_similar,assoc_options
-
-struct AssocMap{T,C4D <: Compressed4DMatrix{T},N} <: AbstractMatrix{T}
-    Δ::C4D
-    d::N
-end
-
-@inline function Base.size(m::AssocMap)
-    l = length(m.d)
-    return (l,l)
-end
-
-function AssocMap(delta::Compressed4DMatrix{T},V,z,n) where T
-    d = Vector{T}(undef,matsize(delta))
-    ρ = N_A / V
-    d .= n
-
-    @inbounds for i in 1:length(z)
-        for a in 1:blocksize(delta,i)
-            ia = Δ.site_offsets[i] + a - 1
-            d[ia] *= z[i] * ρ
-        end
-    end
-    return AssocMap(delta,d)
-end
-
-function LinearAlgebra.mul!(Y::AbstractVector, A::AssocMap{D,NN}, X::AbstractVector, α::Number, β::Number) where {D,NN}
-    Δ = A.Δ
-    d = A.d
-    N = length(d)
-    @boundscheck begin
-        checkbounds(Y,N)
-        checkbounds(X,N)
-    end
-    Y .*= β
-    @inbounds for (idx, (i, j), (a, b)) in indices(Δ)
-        Δijab = Δ.values[idx] * α
-        ia = Δ.site_offsets[i] + a - 1
-        jb = Δ.site_offsets[j] + b - 1
-        Y[ia] += Δijab * X[jb] * d[jb]
-        if ia != jb   # avoid double‑counting diagonal self‑term
-            Y[jb] += Δijab * X[ia] * d[ia]
-        end
-    end
-    return Y
-end
-
-@inline function g_and_norm2!(g::V1,KX::V2,X::V3) where {V1,V2,V3}
-    res = zero(eltype(g))
-    @inbounds for k in eachindex(g)
-        gk = KX[k] - 1.0/X[k] + 1.0
-        res += gk*gk
-        g[k] = gk
-    end
-    return res
-end
-
-assoc_solve2(K;tol=1e-12, maxiter=1000) = assoc_solve2(K,tol,maxiter)
-function assoc_solve2(K, tol, maxiter)
-
-    # --- Allocate workspaces ---
-    TT = eltype(K)
-    n = size(K,1)
-    X = Vector{TT}(undef,n)
-    storage = Vector{TT}(undef,6*n)
-    L    = viewn(storage,n,1); KX   = viewn(storage,n,2); g  = viewn(storage,n,3)
-    d    = viewn(storage,n,4); p    = viewn(storage,n,5); Ap = viewn(storage,n,6)
-    #trial values, just aliases
-    KXt = Ap
-    Xt  = p
-
-    # --- Initialize bounds ---
-    X .= 1
-    mul!(L,K,X)             # matvec #1
-    @. L = 1 / (1 + L) #lower bound. we use 1 as the theoretical upper bound.
-   
-    # --- Initial guess and gradient ---
-    mul!(KX,K,L)            # matvec #2
-    @. X = 0.5  / (1 + KX) + 0.5 * L
-    mul!(KX, K, X)          # matvec #3
-    #g .= KX .- 1.0 ./ X .+ 1.0 #calculate gradient
-
-    g0_norm = sqrt(g_and_norm2!(g,KX,X))
-    norm_g = g0_norm
-    it = 0
-    # --- Main iteration ---
-    for iter in 1:maxiter
-
-        # Convergence check
-        norm_g < tol && break
-        !isfinite(norm_g) && break
-        it += 1
-        # --- Solve H * d = -g using CG (no allocations) ---
-        @.  KX = (1 + KX) / X #diagonal term of the hessian
-        solve_cg!(d, p, Ap, K, g, KX, 1e-3)
-        # Now d is the Newton direction
-
-        # --- Projected line search ---
-        # Max step to stay inside [L, 1]
-        αmax = one(eltype(X))
-        @inbounds for i in 1:n
-            di,xi = d[i],X[i]
-            if di > 0
-                αmax = min(αmax, (1.0 - xi) / di)
-            elseif di < 0
-                αmax = min(αmax, (L[i] - xi) / di)
-            end
-        end
-        α = min(one(αmax), 0.99 * αmax)  # avoid hitting boundary exactly
-
-        # --- Trial iterate ---
-        @. Xt = X + α * d
-        mul!(KXt,K,Xt)
-        #@. g = KXt - 1.0 / Xt + 1.0
-        norm_g_trial = sqrt(g_and_norm2!(g,KXt,Xt)) 
-
-        #reduction was not achieved, use successive substitution
-        if norm_g_trial >= norm_g
-            KX .= KX .* X #recover KX + 1
-            X .= 0.5 .* X .+ 0.5 ./ KX #SS X update, KX stores KX + 1
-            mul!(KX, K, X)
-            #g .= KX .- 1.0 ./ X .+ 1.0 #gradient from SS update
-            norm_g = sqrt(g_and_norm2!(g,KX,X)) 
-        else
-            X .= Xt
-            KX .= KXt
-            norm_g = norm_g_trial
-        end
-    end
-    return X,it
-end
-
-function solve_cg!(d, p, Ap, K, g, diagH, tol_cg)
-    n = length(diagH)
-    
-    rsold = zero(eltype(g))
-    @inbounds for k in eachindex(g)
-        rk = -g[k]
-        pk = rk
-        g[k] = rk
-        d[k] = false
-        p[k] = rk
-        rsold += rk*rk
-        Ap[k] = pk*diagH[k]
-    end
-    #d .= 0.0
-    r = g
-    #r .*= -1
-    #@. r = -g          # initial residual
-    #p .= r
-    #copyto!(p, r)
-    #rsold = unsafe_dot(r, r)
-    rs0 = rsold
-    #return nothing
-    for j in 1:min(n, 50)
-        # Hessian-vector product: H*p = (K +  1./ X^2)*p = K*p + p ./X^2, (michelsen: 1 ./ X2 = (1 + KX)/X, improves convergence)
-        
-        @inbounds mul!(Ap, K, p, true, true)  # Ap = K * p + p * diagH, Ap stores p*diagH and 5-arg mul! just adds the matrix-vector mul to Ap
-        #Ap .= Ap .+ p .* diagH     # Ap = H * p
-        pAp = zero(eltype(p))
-        @inbounds for k in eachindex(p)
-            pAp += p[k]*Ap[k]
-        end
-        α = rsold /  pAp
-        rsnew = zero(eltype(α))
-        @inbounds for k in eachindex(p)
-            pk,Apk = p[k],Ap[k]
-            d[k] += α*pk
-            r[k] -= α*Apk
-            rk = r[k]
-            rsnew += rk*rk
-        end
-        #@. d += α * p
-        #@. r -= α * Ap
-        #rsnew = unsafe_dot(r, r)
-        if rsnew < tol_cg * tol_cg * rs0
-            break
-        end
-        β = rsnew / rsold
-        @inbounds for k in eachindex(p)
-            pk = β*p[k] + r[k]
-            p[k] = pk
-            Ap[k] = pk*diagH[k]
-        end
-        #@. p = r + β * p
-        #@. Ap = p * diagH
-        rsold = rsnew
-    end
-end
-
-function solve_assoc_test(K)
-    for i in 1:10000
-        solve_assoc2(K)
-    end
-end
-
-function assoc_solve_ss(K; max_iters = 10000,term = 1)
-    n = size(K, 1)
-    X = fill(one(eltype(K)), n)
-    KX = similar(X)
-    mul!(KX, K, X)
-    k = copy(KX)
-    k .= 1 ./ 1 .+ KX #L
-    mul!(KX,K,k)
-    #X = 0.5*L + 0.5*U
-    k .= 0.5 ./ k .+ 0.5 .* KX .+ 0.5
-    X .= 1 ./ k 
-    X_old = similar(X)
-    X_old .= 10
-    atol = 1e-12
-    rtol = 1e-12
-    it = 0
-
-    itss = fill(0.0,13)
-    dx = 100.0
-    if term == 99
-        Xs,_,_ = assoc_solve_ss(K)
-        α = best_alpha_damping(K,X)
-        @show α
-    else
-        α = 0.5
-    end
-    k1,k2 = 0.0,0.0
-    for _ in 1:max_iters
-        it += 1
-        X_old .= X
-        #term 0: gauss seidel acceleration, damped SS
-        if term == 4 || term == 0
-            fx(kx,x) =  α/(1 + kx) + (1 - α)*x
-            ass_matmul!(fx,KX,k,K,X)
-            X .= k
-        elseif term == 7 && dx < 1e-5
-            fy(kx,x) = 2*x/(x + sqrt(x * x + 4 * kx * x))
-            ass_matmul!(fy,KX,k,K,X)
-            X .= k
-        else
-            mul!(KX, K, X)
-        end
-        #X = 1/(1 + KX)
-            
-        if term == 1
-            X .= 1 ./ (1 .+ KX) #raw SS
-        elseif term == 2 || (term == 7 && dx > 1e-5)
-            #k .= KX ./ X
-            #X .= 2 ./ (1 .+ sqrt.(1 .+ 4 .* k)) #modified map
-            k .= 0.5*(X .+ sqrt.(X .* X + 4 .* KX .* X))
-            X ./= k
-        elseif term == 3 || term == 99
-            #case 3:damped static SS
-            #case 99: damped SS with optimum alpha
-            X  .= α ./ (1 .+ KX) + (1 - α) .*X
-        elseif term == 3 || term == 4
-            #term 3: damped SS, heuristic alpha
-            #term 4: damped SS, heuristic alpha, gauss seidel acceleration
-            k1 = maximum(z -> z*(1 - z),X)
-            k2 = dot(KX,X)
-            α = 1/(2 + k1) + 1/(2 + k2)
-            X  .= α ./ (1 .+ KX) + (1 .- α) .*X
-        end
-        dx = maximum(abs,1 .- X ./ X_old)
-        for i in 1:13
-            if dx >= exp10(-i)
-                itss[i] = it
-            end
-        end
-        converged,finite = Solvers.convergence(X,X_old,atol,rtol,false,Inf)
-        #@show converged,finite
-        if converged
-            finite || (X .= NaN)
-            break
-        end
-    end
-    return X,it,itss
-end
-
-
-#notes:
-#=
-optimal damping: is 2/(2 - lmin - lmax)
-l = eigvals(Diagonal(-1 .* X .* X)*K)
-=#
-function test_jacobian_estimate(K, X)
-    n = size(K, 1)
-    KX = K * X
-    J = -Diagonal(X.^2) * K
-    eigs = eigvals(J,sortby = nothing)
-    λmin_true = minimum(eigs)
-    λmax_true = maximum(eigs)
-    only_x = max(abs(λmin_true),abs(λmax_true))
-    proxy_fixedpoint = X .* (X .- 1)
-    proxy_current = -X .* KX
-
-    println("true eigvals: min = $λmin_true, max = $λmax_true")
-    println("all eigvals real? ", all(isreal, eigs))
-    println()
-    println("fixed-point proxy (X.*(X.-1)):")
-    println("  min = $(minimum(proxy_fixedpoint)), max = $(maximum(proxy_fixedpoint))")
-    println("current-KX proxy (-X.*KX):")
-    println("  min = $(minimum(proxy_current)), max = $(maximum(proxy_current))")
-    println()
-
-    denom_true = 2 - λmin_true - λmax_true
-    alpha_true = 2 / denom_true
-
-    denom_fp = 2 - minimum(proxy_fixedpoint) - maximum(proxy_fixedpoint)
-    alpha_fp = denom_fp > 0 ? 2 / denom_fp : NaN
-
-    denom_cur = 2 - minimum(proxy_current) - maximum(proxy_current)
-    alpha_cur = denom_cur > 0 ? 2 / denom_cur : NaN
-
-    println("alpha from true eigvals: $alpha_true")
-    println("alpha from fixed-point proxy: $alpha_fp")
-    println("alpha from current-KX proxy: $alpha_cur")
-
-
-    x1 = maximum(abs,proxy_fixedpoint)
-    x2 = maximum(abs,proxy_current)
-    x3 = 0.5*(x1 + x2)
-    alpha2 = 2/(2 + maximum(abs,proxy_fixedpoint))
-    alpha3 = 2/(2 + maximum(abs,proxy_current))
-    a4 = 2/(2 + only_x)
-    a5 = 2/(2 + x3)
-    a6 = 0.5*(alpha2 + alpha3)
-    a7 = sqrt(alpha3*alpha2)
-    println("alpha from true eigvals (only min): $only_x")
-    println("alpha from fixed-point proxy (only min): $alpha2")
-    println("alpha from current-KX proxy (only min): $alpha3")
-    println("mixed alpha (mean of approximate eigenvalues): $a5")
-    println("mixed alpha (mean of alpha): $a6")
-    println("mixed alpha (geomean of alpha): $a7")
-    return (; eigs, proxy_fixedpoint, proxy_current, alpha_true, alpha_fp, alpha_cur)
-end
-
-function best_alpha_damping(K,X)
-    n = size(K, 1)
-    KX = K * X
-    J = -Diagonal(X.^2) * K
-    eigs = eigvals(J,sortby = nothing)
-    λmin_true = minimum(eigs)
-    λmax_true = maximum(eigs)
-    only_x = max(abs(λmin_true),abs(λmax_true))
-    return 2/(2 + only_x)
-end

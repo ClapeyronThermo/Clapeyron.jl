@@ -783,6 +783,7 @@ function LinearAlgebra.mul!(Y::AbstractVector, A::Compressed4DMatrix, X::Abstrac
     end
     return Y
 end
+
 raw_values(x::Compressed4DMatrix) = x.values
 
 raw_values(x::PackedVofV) = x.v

@@ -70,6 +70,7 @@ function joindata!(old::RawParam,new::RawParam)
     if !type_sucess
         error_clashing_headers(old,new)
     end
+
     component_info = append!(old.component_info,new.component_info)
 
     #Handle all the type variability of the data here
