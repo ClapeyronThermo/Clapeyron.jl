@@ -863,7 +863,8 @@ Association implementations, once X is calculated
 #exact calculation of site non-bonded fraction when there is only one site
 function X_exact1(model,V,T,z,data = nothing)
     xia,xjb,ijab,Δijab = _X_exact1(model,V,T,z,data)
-    pack_X_exact1(xia,xjb,ijab,idxs)
+    p = assoc_shape(model)
+    pack_X_exact1(xia,xjb,ijab,p.site_offsets)
 end
 
 function X_and_Δ_exact1(model,V,T,z,data = nothing)
