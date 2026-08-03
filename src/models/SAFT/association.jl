@@ -1085,7 +1085,7 @@ end
 
 recombine_assoc!(model) = recombine_assoc!(model,model.params.sigma)
 
-function recombine_assoc!(model,sigma)
+function recombine_assoc!(model,σ)
     iszero(assoc_pair_length(model)) && return model
     ε = model.params.epsilon_assoc
     κ = model.params.bondvol

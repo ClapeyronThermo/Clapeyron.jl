@@ -742,10 +742,11 @@ function findparamsincsv(_components,filepath,
 
         values = nonmissingvec(values_raw)
 
-        header = headerparams[i]
-        component_info = Vector{NTuple{4,String}}(undef,N_nonmissing)
-        sources = Vector{String}(undef,N_nonmissing)
-        sourcecsvs = fill(filepath,N_nonmissing)
+        header          = headerparams[i]
+        component_info  = Vector{NTuple{4,String}}(undef,N_nonmissing)
+        sources         = Vector{String}(undef,N_nonmissing)
+        sourcecsvs      = Vector{String}(undef,N_nonmissing)
+        sourcecsvs      .= filepath
         j = 0
         for _j in 1:N_found
             vj = values_raw[_j]
@@ -760,9 +761,7 @@ function findparamsincsv(_components,filepath,
                 component_info[j] = (components[c1],components[c2],EMPTY_STR,EMPTY_STR)
             elseif csvtype == assocdata && no_parsegroups
                 c1,c2 = comp1_indices[_j],comp2_indices[_j]
-                site1 = site1_list[jx]
-                site2 = site1_list[jx]
-                component_info[j] = (components[c1],components[c2],site1_list[jx],site1_list[jx])
+                component_info[j] = (components[c1],components[c2],site1_list[jx],site2_list[jx])
             end
             sources[j] = length(all_sources) != 0 ? all_sources[_j] : EMPTY_STR
         end
