@@ -150,29 +150,6 @@ function is_inline_csv(filepath)
     return any(startswith(filepath,kw) for kw in SKIP_GETPATHS)
 end
 
-function _indexin(query,list,separator)
-    querydict = Dict(v => k for (k,v) in pairs(query))
-    return _indexin(querydict,list,separator,keys(list))
-end
-
-function _indexin(query,list,separator,indices)
-    kq = keys(query)
-    res = zeros(Int,0)
-    comp_res = zeros(Int,0)
-    sizehint!(res,2*length(kq))
-    sizehint!(comp_res,2*length(kq))
-    for k in indices
-        list_i = list[k]
-        for val in eachsplit(list_i,separator,keepempty = false)
-            if val in kq
-                push!(res,k)
-                push!(comp_res,query[val])
-            end
-        end
-    end
-    return res,comp_res
-end
-
 function defaultmissing(array::Array{<:Number},defaultvalue = zero(eltype(array)))
     return deepcopy(array),Array(ismissing.(array))
 end

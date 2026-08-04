@@ -30,25 +30,6 @@ function svec3(x1,x2,x3,opt = true)
     return SVector{3}(V01,V02,V03)
 end
 
-nonzero_extrema(K::SparseArrays.SparseMatrixCSC) = extrema(K.nzval)
-
-function nonzero_extrema(K)
-    _0 = zero(eltype(K))
-    _max = _0
-    _min = _0
-    for k in K
-        _max = max(k,_max)
-        if iszero(_min)
-            _min = k
-        else
-            if !iszero(k)
-            _min = min(_min,k)
-            end
-        end
-    end
-    return _min,_max
-end
-
 """
     _parse_kv(str,dlm)
 
@@ -126,17 +107,6 @@ function evalexppoly(x,n,v)
     return res
 end
 
-function cached_indexin(a, b, bdict)
-    inds = keys(b)
-    #bdict = Dict{eltype(b),eltype(inds)}()
-    empty!(bdict)
-    for (val, ind) in zip(b, inds)
-        get!(bdict, val, ind)
-    end
-    return Union{eltype(inds), Nothing}[
-        get(bdict, i, nothing) for i in a
-    ]
-end
 
 format_components(str::String) = [str]
 format_components(str::Tuple) = format_components(first(str))

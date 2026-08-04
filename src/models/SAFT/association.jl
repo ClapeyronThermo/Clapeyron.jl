@@ -347,18 +347,12 @@ function assoc_matrix_x0!(K,X)
         init2 && (return X,success2)
     end
 
-    #default initialization
-    Kmin,Kmax = nonzero_extrema(K) #look for 0 < Amin < Amax
-    if Kmax > 1
-        f = true/Kmin
-    else
-        f = true-Kmin
-    end
-    fill!(X,min(f,one(f)))
-
+    mul!(X,K,X)
+    Kmin,Kmax = extrema(X)
+    f(kx) = 2 / (1 + sqrt(1 + 4*kx))
+    X .= f.(X)
     return X,false
 end
- 
 
 function X_maybe_exact_pseudodiag!(K,X)
     #=
@@ -619,27 +613,89 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
     #=
     function to solve
     find vector x that satisfies:
-    (A*x .* x) + x - 1 = 0
+    F(X) = (A*x .* x) + x - 1 = 0
     solved by reformulating in succesive substitution:
     x .= 1 ./ (1 .+ A*x)
 
-    #we perform a "partial multiplication". that is, we use the already calculated
-    #values of the next Xi to calculate the current Xi. this seems to accelerate the convergence
-    #by around 50% (check what the ass_matmul! function does)
+    notes about SS:
 
-    note that the damping is done inside the partial multiplication. if is done outside, it causes convergence problems.
+    we can formulate SS in various ways, as a map M(X) = X.
 
-    after a number of ss iterations are done, we use newton minimization.
+    - M(X) = 1 / 1 + KX (original)
+    - M(X) = 2*X / (X + sqrt(X*X + 4*KX*X)) (at the solution, KX = K̂ .* X, then we use the approximation K̂ ≈ KX ./ X and solve for that. really fast when problem is diagonally dominant.)
+    - M(X) = X - F(X) ./ G(X), G(X) = 2 .* KX .+ 1 (elementwise newton update) 
+
+    The original formula has some interesting properties:
+    if we do a undamped update and start from a value M(0) > Xsol, then M(1) < M(3) < M(5) <... < M(N) <... < M(4) .. M(2) < M(0). This is known as an antitone map.  
+    In practical terms, if you do have additional vectors on where to store data, two undamped iterations define lower and upper bounds.
+
+    # Damping
+
+    for antitone maps, damping helps, as we can land in an intermediate value that is exactly the solution
+    the optimal damping for the original SS map is 2/(1 - lmin + lmax) where l is abs.(eigvals(Diagonal(Xsol .* Xsol)*K))
+    sadly, for obvious reasons, we don't have this value for each iteration, but we can use approximations.
+
+    We use the blending of two approximations to get a "good" alpha estimate. 
+    It slightly underestimates the real optimum alpha value, but already helps a lot.
+    This is known as adaptative damping. 
+    Approximations for the second form are also available (i have those), 
+    but the advantage of the adaptative damping used by the first form is that it only uses information about the current iterates.
+
+    # Gauss-seidel on SS
+
+    We can apply an staggered update when calculating K*X, but results are mixed.
+    Ideally, you need to separate contributions into groups (like acceptor-donor groups, or graph-coloring the matrix K)
+
+    # K-matrix and graph theory.
+    
+    We can view K as a weighed graph, where the weighted edges are the association strength between two nodes (sites)
+    As a graph, we can do graph operations. One interesting operation is graph coloring.
+    Some association solvers use the acceptor - donor framework. were, instead of weighted edges, the nodes themselves have weight, and the value of the edge is a function of the value at the nodes.
+    if we have one set of sites that only interact with other set of sites, that is known as a bipartite graph. A bipartite graph has two colors. in the A-D framework, the colors are named acceptor and donor.
+    K can have an arbitrary number of colors, but normally, 1, 2 or 3 colors is the usual.
+    For bipartite matrices and staggered updates, ideally you only do an staggered update from an index of one color to the index of other color.
+
+    # DK Matrix
+    
+    The K matrix is equal to ρ*Δ * Diagonal([n[i,a]*z[i] for (i,a) in site_indices(Δ)]) = Δ₀ * D.
+    Δ₀ is a symmetric matrix, D is a diagonal matrix.
+    if we multiply by D again:
+    D * Δ₀ * D = D*K, we have what i call the DK matrix. we can store D̂ = 1 ./ diag(D) and DK instead of K.
+    Some properties:
+    - K*X = DK*X .* D̂ (the KX multiplication requires n2 multiplications. doing it with DK instead uses n2/2 + n multiplications instead.
+     
+    # Newton updates
+
+    After a number of ss iterations are done, we use newton minimization.
+    But you can't beat Newton on iterations. You can beat it in time if the problem is not too complex, but results are mixed.
     the code for the newton optimization is based on sgtpy: https://github.com/gustavochm/sgtpy/blob/336cb2a7581b22492914233e29062f5a364b47da/sgtpy/vrmie_pure/association_aux.py#L33-L57
+    TODO: implement newton-krylov, to avoid allocating another matrix.
 
     some notes:
-    - the linear system is solved via LU decomposition, for that, we need to allocate one (1) Matrix{T} and one (1) Vector{Int}
-    - gauss-seidel does not require an additional matrix allocation, but it is slow. (slower than SS)
+    - you can in fact work with a symmetric matrix, if you 
+    - the linear system is solved via LU decomposition, for that, we need to allocate one (1) Matrix{T} and one (1) Vector{Int}.
     - julia 1.10 does not have a way to make LU non-allocating, but the code is simple, so it was added as the function unsafe_LU! in the Solvers module.
     =#
-    fx(kx,x) =  α/(1+kx) + (1-α)*x
+
     function f_ss!(out,in)
-        ass_matmul!(fx,out,K,in)
+        mul!(out,K,in) #out stores KX
+
+        #adaptative damping
+        k1 = zero(eltype(out))
+        k2 = zero(eltype(out))
+        @inbounds for i in 1:length(in)
+            xi,kxi = in[i],out[i]
+            k1 = max(k1,xi/(1 - xi))
+            k2 += xi*kxi
+        end
+        αx = 1 / (2 + k1) + 1 / (2 + k2)
+
+        #update iterate
+        @inbounds for i in 1:length(in)
+            kx = out[i]
+            x = in[i]
+            out[i] = αx/(1 + kx) + (1 - αx)*x
+        end
         return out
     end
 

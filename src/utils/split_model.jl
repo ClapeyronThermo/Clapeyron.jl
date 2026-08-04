@@ -244,8 +244,8 @@ function each_split_model(param::MixedGCSegmentParam{T},group,Ic,Ig) where T
 
     #reuse vector
     resize!(ncount,ngg*ncc)
-    p = zeros(Int64,length(Ic)+1)
-    p .= 1:ngg:(ncc*ngg + 1)
+    p = fill(ngg,ncc)
+    p = Compressed4DMatrices.offsets_from_bsizes!(fill(ngg,ncc))
     dest = PackedVofV(p,ncount)
 
     for (k,i) in pairs(Ic)
