@@ -150,29 +150,6 @@ function is_inline_csv(filepath)
     return any(startswith(filepath,kw) for kw in SKIP_GETPATHS)
 end
 
-function _indexin(query,list,separator)
-    querydict = Dict(v => k for (k,v) in pairs(query))
-    return _indexin(querydict,list,separator,keys(list))
-end
-
-function _indexin(query,list,separator,indices)
-    kq = keys(query)
-    res = zeros(Int,0)
-    comp_res = zeros(Int,0)
-    sizehint!(res,2*length(kq))
-    sizehint!(comp_res,2*length(kq))
-    for k in indices
-        list_i = list[k]
-        for val in eachsplit(list_i,separator,keepempty = false)
-            if val in kq
-                push!(res,k)
-                push!(comp_res,query[val])
-            end
-        end
-    end
-    return res,comp_res
-end
-
 function defaultmissing(array::Array{<:Number},defaultvalue = zero(eltype(array)))
     return deepcopy(array),Array(ismissing.(array))
 end
@@ -218,21 +195,6 @@ function defaultmissing(array)
     throw("Unsupported array element type  $(typeof(array))")
 end
 
-_zero(t::Number) = zero(t)
-_zero(::String) = ""
-_zero(::Missing) = missing
-function _zero(x::Type{T})  where T<:Number
-    return zero(T)
-end
-_zero(::Type{String}) = ""
-_zero(::Type{Missing}) = missing
-function _zero(::Type{T}) where T <:Union{T1,Missing} where T1
-    return missing
-end
-
-_iszero(t::Number) = iszero(t)
-_iszero(::Missing) = true
-_iszero(t::AbstractString) = isempty(t)
 
 """
     singletopair(params::Vector,outputmissing=zero(T))
@@ -240,11 +202,11 @@ Generates a square matrix, filled with "zeros" (considering the "zero" of a stri
 The generated matrix will have the values of `params` in the diagonal.
 If missing is passed, the matrix will be filled with `missing`.
 """
-function singletopair(params::Vector{T1},::T2 =_zero(T1)) where {T1,T2}
+function singletopair(params::Vector{T1},_0::T2 =_zero(T1)) where {T1,T2}
     len = length(params)
     T = Union{T1,T2}
     output = Matrix{T}(undef,len,len)
-    fill!(output,_zero(T))
+    fill!(output,_0)
     @inbounds  for i in 1:len
         output[i,i] = params[i]
     end

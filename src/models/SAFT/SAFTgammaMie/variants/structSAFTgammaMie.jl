@@ -110,7 +110,7 @@ function structSAFTgammaMie(components;
     #GC to component model in association
     bondvol0 = params["bondvol"]
     epsilon_assoc0 = params["epsilon_assoc"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol0,epsilon_assoc0,sigma,assoc_options,sites) #combining rules for association
+    bondvol,epsilon_assoc = assoc_mix(bondvol0,epsilon_assoc0,sigma,assoc_options) #combining rules for association
 
     gcparams = SAFTgammaMieParam(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
     Mw_comps = group_sum(groups,params["Mw"])

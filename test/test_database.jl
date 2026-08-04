@@ -363,7 +363,7 @@ using Clapeyron, Test, LinearAlgebra
         @test eltype(assoc_float) == Float64
         @test assoc_float[1] == [0.0 1.0; 1.0 0.0]
         @test assoc_float[2] == [0.0 2.0 3.0; 2.0 0.0 0.0; 3.0 0.0 0.0]
-        @test iszero(prod(size(assoc_float[1,2])))
+        @test all(iszero,assoc_float[1,2])
 
         #AssocParam: broadcasting
         assoc_float .= assoc_float .+ 2

@@ -206,10 +206,7 @@ end
         #cross_assoc mirrors value to the symmetric inner entry
         # Retrieve the outer/inner indices that define which pair matrix is touched.
         k     = 2
-        ij    = ap.values.outer_indices[k]
-        ab    = ap.values.inner_indices[k]
-        i, j  = ij
-        a, b  = ab
+        i,j,a,b = Clapeyron.idx_to_ijab(ap.values.indices[k])
 
         ij_mat = ap.values[i, j]
         new_val = 3100.0

@@ -70,6 +70,7 @@ function joindata!(old::RawParam,new::RawParam)
     if !type_sucess
         error_clashing_headers(old,new)
     end
+
     component_info = append!(old.component_info,new.component_info)
 
     #Handle all the type variability of the data here
@@ -271,21 +272,17 @@ function compile_assoc(name,components,raw::RawParam,sites,options)
     sources_csv = fill(EMPTY_STR,l)
     sources = fill(EMPTY_STR,l)
     ijab = similar(_ijab,l)
-    inner_values = similar(raw.data,l)
+    values = similar(raw.data,l)
     for (j,k) ∈ enumerate(raw.component_info)
         i = unique_dict[k]
-        inner_values[i] = raw.data[j]
+        values[i] = raw.data[j]
         ijab[i] = _ijab[j]
         sources[i] = raw.sources[j]
         sources_csv[i] = raw.csv[j]
     end
-
-    idxs = sortperm(ijab) #CompressedAssoc4DMatrix requires lexicographically sorted component-site idxs
-    ijab = ijab[idxs]
-    inner_values = inner_values[idxs]
-    sources = sources[idxs]
-    sources_csv = sources_csv[idxs]
-    values = Compressed4DMatrix(inner_values,ijab)
+    site_sizes = map(length,site_strings)
+    offsets = Compressed4DMatrices.offsets_from_bsizes!(site_sizes)
+    values = Compressed4DMatrix(values,ijab,offsets)
     unique!(sources)
     unique!(sources_csv)
     filter!(!isequal(EMPTY_STR),sources)
@@ -298,7 +295,9 @@ function compile_assoc(name,components,raw::CSVType,sites,options)
     if sites === nothing
         AssocParam(name,components)
     else
-        AssocParam(name,components,Compressed4DMatrix{Float64}(),sites.sites)
+        site_offsets = copy(sites.n_sites.p)
+        val = Compressed4DMatrix(Float64[],Int[],site_offsets)
+        AssocParam(name,components,val,sites.sites)
     end
 end
 

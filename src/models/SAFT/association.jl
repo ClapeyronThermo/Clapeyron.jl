@@ -31,7 +31,7 @@ assoc_shape(model::EoSModel) = assoc_shape(model.params.bondvol)
 assoc_shape(param::AssocParam) = assoc_shape(param.values)
 @inline function assoc_shape(mat::Compressed4DMatrix)
     l = length(mat.values)
-    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l,mat.outer_indices,mat.inner_indices,mat.outer_size,mat.inner_size)
+    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l,mat.indices,mat.site_offsets)
 end
 
 @inline function assoc_similar(model::EoSModel,::Type{𝕋}) where 𝕋
@@ -190,31 +190,6 @@ function delta_assoc(model,V,T,z,data::M) where M
     return delta
 end
 
-function issite(i::Int,a::Int,ij::Tuple{Int,Int},ab::Tuple{Int,Int})::Bool
-    ia = (i,a)
-    i1,i2 = ij
-    a1,a2 = ab
-    ia1 = (i1,a1)
-    ia2 = (i2,a2)
-    return (ia == ia1) | (ia == ia2)
-end
-
-function complement_index(i,ij)::Int
-    i1,i2 = ij
-    ifelse(i1 == i,i2,i1)::Int
-end
-
-function compute_index(idxs,i,a)::Int
-    res::Int = idxs[i] + a - 1
-    return res
-end
-
-function inverse_index(idxs,o)
-    i = findfirst(>=(o-1),idxs)::Int
-    a = o + 1 - idxs[i]
-    return i,a
-end
-
 function assoc_site_matrix(model,V,T,z,data = nothing,delta = @f(delta_assoc,data))
     options = assoc_options(model)
     return dense_assoc_site_matrix(model,V,T,z,data,delta)
@@ -223,64 +198,51 @@ end
 #this fills the zeros of the Δ vector with the corresponding mixing values
 function elliott_runtime_mix!(Δ)
     _Δ = Δ.values
-    for (idx1,(i1,i2),(a1,a2)) in indices(Δ)
-        if i1 == i2
-            i = i1
-            Δi = _Δ[idx1]
-            for (idx2,(j1,j2),(b1,b2)) in indices(Δ)
-                if j1 == j2
-                    j = j1
-                    Δj = _Δ[idx2]
-                    Δijab = sqrt(Δi*Δj)
-                    if !iszero(Δijab)
-                        Δij = Δ[i,j]
-                        v_idx1 = validindex(Δij,a1,b2)
-                        v_idx2 = validindex(Δij,a2,b1)
-                        v_idx1 != 0 && iszero(_Δ[v_idx1]) && (_Δ[v_idx1] = Δijab)
-                        v_idx2 != 0 && iszero(_Δ[v_idx2]) && (_Δ[v_idx2] = Δijab)
-                    end
-                end
-            end
+    for (idx,(i,j),(a,b)) in indices(Δ)
+        i == j && continue
+        @inbounds begin
+            Δijab = Δ[idx]
+            !iszero(primalval(Δijab)) && continue
+            i1 = validindex(Δ,(i,i,a,b))
+            iszero(i1) && continue
+            i2 = validindex(Δ,(j,j,a,b))
+            iszero(i2) && continue
+            Δia = Δ[i1]
+            iszero(primalval(Δia)) && continue
+            Δjb = Δ[i2]
+            iszero(primalval(Δjb)) && continue
+            Δ[idx] = sqrt(Δia*Δjb)
         end
     end
     return Δ
 end
 
-function dense_assoc_site_matrix(model,V,T,z,data=nothing,delta = @f(delta_assoc,data))
+function dense_assoc_site_matrix(model, V, T, z, data=nothing, delta = @f(delta_assoc,data))
     sitesparam = getsites(model)
-    _sites = sitesparam.n_sites
-    p = _sites.p
-    ρ = N_A/V
-    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
-    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
-    _idx = 1:length(_ii)
-    Δ = delta.values
-    TT = eltype(Δ)
-    _n = sitesparam.n_sites.v
-    nn = length(_n)
-    K  = zeros(TT,nn,nn)
-    options = assoc_options(model)
-    combining = options.combining
-    runtime_combining = combining ∈ (:elliott_runtime,:esd_runtime)
+    p = sitesparam.n_sites.p          # start index of each component's sites
+    n = sitesparam.n_sites.v          # flattened site multiplicities
+    ρ = N_A / V
+    TT = eltype(delta.values)
+    total_sites = length(n)
+    K = zeros(TT, total_sites, total_sites)
+    # Loop over each stored Δ entry (i, j, a, b).
+    # By construction, the stored orientation has i <= j (and for i==j, a <= b).
+    for (idx, (i, j), (a, b)) in indices(delta)
+        #sitesᵢ = 1:(p[i+1] - p[i])
+        #sitesⱼ = 1:(p[j+1] - p[j])
+        ia = p[i] + a - 1   # global index for site (i, a)
+        jb = p[j] + b - 1   # global index for site (j, b)
+        val = delta.values[idx]
+        iszero(val) && continue
 
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            ia = compute_index(p,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                if issite(i,a,ij,ab)
-                    j = complement_index(i,ij)
-                    b = complement_index(a,ab)
-                    jb = compute_index(p,j,b)
-                    njb = _n[jb]
-                    zj = z[j]
-                    if !iszero(zj)
-                        K[ia,jb]  = ρ*njb*z[j]*Δ[idx]
-                    end
-                end
-            end
+        if ia == jb
+            # Self‑association: only one entry in K (the diagonal)
+            K[ia, ia] = ρ * n[ia] * z[i] * val
+        else
+            # Two off‑diagonal entries, one for each direction.
+            # Note: when i == j but a != b, both assignments use the same z but different site multiplicities.
+            K[ia, jb] = ρ * n[jb] * z[j] * val
+            K[jb, ia] = ρ * n[ia] * z[i] * val
         end
     end
     return K::Matrix{TT}
@@ -375,7 +337,6 @@ Initial points for association
 And reduced dimension solvers
 ################################
 =#
-
 function assoc_matrix_x0!(K,X)
     #(A*x .* x) + x - 1 = 0
     init1,success1 = X_maybe_exact_pseudodiag!(K,X)
@@ -385,16 +346,11 @@ function assoc_matrix_x0!(K,X)
         init2,success2 = X_exact2!(K,X)
         init2 && (return X,success2)
     end
-    
-    #default initialization
-    Kmin,Kmax = nonzero_extrema(K) #look for 0 < Amin < Amax
-    if Kmax > 1
-        f = true/Kmin
-    else
-        f = true-Kmin
-    end
-    fill!(X,min(f,one(f)))
-    
+
+    mul!(X,K,X)
+    Kmin,Kmax = extrema(X)
+    f(kx) = 2 / (1 + sqrt(1 + 4*kx))
+    X .= f.(X)
     return X,false
 end
 
@@ -459,7 +415,7 @@ function X_maybe_exact_pseudodiag_01!(K,X)
             n_solved +=1
         elseif X[i] == -i
             k = K[i,i]
-            X[i] = 2/(1 + sqrt(1 + 4*k))
+            X[i] = _X_exact1(k,k)[1]
             n_solved += 1
         end
     end
@@ -485,11 +441,7 @@ function X_maybe_exact_pseudodiag_2!(K,X)
                 if j2 == i
                     kj2 = K[j1,i]
                     A3,A2 = kj1,kj2
-                    k = 1 - A3 + A2
-                    Δ = k + sqrt(k*k + 4*A3)
-                    x1 = 2/Δ
-                    x1k = A3*x1
-                    x2 = (1- x1k)/(1 - x1k*x1k)
+                    x1,x2 = _X_exact1(A3,A2)
                     X[j1] = x1
                     X[i] = x2
                     n_solved += 2
@@ -498,21 +450,6 @@ function X_maybe_exact_pseudodiag_2!(K,X)
         end
     end
     return n_solved
-end
-
-function X_exact2_antidiag!(K,X)
-    _,k2,k1,_ = K
-    #k1 = K[1,2]
-    #k2 = K[2,1]
-    #this computation is equivalent to the one done in X_exact1
-    k = 1 - k2 + k1
-    Δ = k + sqrt(k*k + 4*k2)
-    x1 = 2/Δ
-    x1k = k2*x1
-    x2 = (1 -  x1k)/(1 - x1k*x1k)
-    X[1] = x1
-    X[2] = x2
-    return X
 end
 
 function X_exact2_123!(K,X)
@@ -561,7 +498,9 @@ function X_exact2!(K,X)
     =#
     A1,A3,A2,A4 = K
     if iszero(A1) && iszero(A4)
-        X_exact2_antidiag!(K,X)
+        x1,x2 =_X_exact1(A3,A2)
+        X[1] = x1
+        X[2] = x2
         return true,true
     end
 
@@ -674,27 +613,89 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
     #=
     function to solve
     find vector x that satisfies:
-    (A*x .* x) + x - 1 = 0
+    F(X) = (A*x .* x) + x - 1 = 0
     solved by reformulating in succesive substitution:
     x .= 1 ./ (1 .+ A*x)
 
-    #we perform a "partial multiplication". that is, we use the already calculated
-    #values of the next Xi to calculate the current Xi. this seems to accelerate the convergence
-    #by around 50% (check what the ass_matmul! function does)
+    notes about SS:
 
-    note that the damping is done inside the partial multiplication. if is done outside, it causes convergence problems.
+    we can formulate SS in various ways, as a map M(X) = X.
 
-    after a number of ss iterations are done, we use newton minimization.
+    - M(X) = 1 / 1 + KX (original)
+    - M(X) = 2*X / (X + sqrt(X*X + 4*KX*X)) (at the solution, KX = K̂ .* X, then we use the approximation K̂ ≈ KX ./ X and solve for that. really fast when problem is diagonally dominant.)
+    - M(X) = X - F(X) ./ G(X), G(X) = 2 .* KX .+ 1 (elementwise newton update) 
+
+    The original formula has some interesting properties:
+    if we do a undamped update and start from a value M(0) > Xsol, then M(1) < M(3) < M(5) <... < M(N) <... < M(4) .. M(2) < M(0). This is known as an antitone map.  
+    In practical terms, if you do have additional vectors on where to store data, two undamped iterations define lower and upper bounds.
+
+    # Damping
+
+    for antitone maps, damping helps, as we can land in an intermediate value that is exactly the solution
+    the optimal damping for the original SS map is 2/(1 - lmin + lmax) where l is abs.(eigvals(Diagonal(Xsol .* Xsol)*K))
+    sadly, for obvious reasons, we don't have this value for each iteration, but we can use approximations.
+
+    We use the blending of two approximations to get a "good" alpha estimate. 
+    It slightly underestimates the real optimum alpha value, but already helps a lot.
+    This is known as adaptative damping. 
+    Approximations for the second form are also available (i have those), 
+    but the advantage of the adaptative damping used by the first form is that it only uses information about the current iterates.
+
+    # Gauss-seidel on SS
+
+    We can apply an staggered update when calculating K*X, but results are mixed.
+    Ideally, you need to separate contributions into groups (like acceptor-donor groups, or graph-coloring the matrix K)
+
+    # K-matrix and graph theory.
+    
+    We can view K as a weighed graph, where the weighted edges are the association strength between two nodes (sites)
+    As a graph, we can do graph operations. One interesting operation is graph coloring.
+    Some association solvers use the acceptor - donor framework. were, instead of weighted edges, the nodes themselves have weight, and the value of the edge is a function of the value at the nodes.
+    if we have one set of sites that only interact with other set of sites, that is known as a bipartite graph. A bipartite graph has two colors. in the A-D framework, the colors are named acceptor and donor.
+    K can have an arbitrary number of colors, but normally, 1, 2 or 3 colors is the usual.
+    For bipartite matrices and staggered updates, ideally you only do an staggered update from an index of one color to the index of other color.
+
+    # DK Matrix
+    
+    The K matrix is equal to ρ*Δ * Diagonal([n[i,a]*z[i] for (i,a) in site_indices(Δ)]) = Δ₀ * D.
+    Δ₀ is a symmetric matrix, D is a diagonal matrix.
+    if we multiply by D again:
+    D * Δ₀ * D = D*K, we have what i call the DK matrix. we can store D̂ = 1 ./ diag(D) and DK instead of K.
+    Some properties:
+    - K*X = DK*X .* D̂ (the KX multiplication requires n2 multiplications. doing it with DK instead uses n2/2 + n multiplications instead.
+     
+    # Newton updates
+
+    After a number of ss iterations are done, we use newton minimization.
+    But you can't beat Newton on iterations. You can beat it in time if the problem is not too complex, but results are mixed.
     the code for the newton optimization is based on sgtpy: https://github.com/gustavochm/sgtpy/blob/336cb2a7581b22492914233e29062f5a364b47da/sgtpy/vrmie_pure/association_aux.py#L33-L57
+    TODO: implement newton-krylov, to avoid allocating another matrix.
 
     some notes:
-    - the linear system is solved via LU decomposition, for that, we need to allocate one (1) Matrix{T} and one (1) Vector{Int}
-    - gauss-seidel does not require an additional matrix allocation, but it is slow. (slower than SS)
+    - you can in fact work with a symmetric matrix, if you 
+    - the linear system is solved via LU decomposition, for that, we need to allocate one (1) Matrix{T} and one (1) Vector{Int}.
     - julia 1.10 does not have a way to make LU non-allocating, but the code is simple, so it was added as the function unsafe_LU! in the Solvers module.
     =#
-    fx(kx,x) =  α/(1+kx) + (1-α)*x
+
     function f_ss!(out,in)
-        ass_matmul!(fx,out,K,in)
+        mul!(out,K,in) #out stores KX
+
+        #adaptative damping
+        k1 = zero(eltype(out))
+        k2 = zero(eltype(out))
+        @inbounds for i in 1:length(in)
+            xi,kxi = in[i],out[i]
+            k1 = max(k1,xi/(1 - xi))
+            k2 += xi*kxi
+        end
+        αx = 1 / (2 + k1) + 1 / (2 + k2)
+
+        #update iterate
+        @inbounds for i in 1:length(in)
+            kx = out[i]
+            x = in[i]
+            out[i] = αx/(1 + kx) + (1 - αx)*x
+        end
         return out
     end
 
@@ -917,57 +918,71 @@ Association implementations, once X is calculated
 
 #exact calculation of site non-bonded fraction when there is only one site
 function X_exact1(model,V,T,z,data = nothing)
-    xia,xjb,i,j,a,b,n,idxs,Δijab = _X_exact1(model,V,T,z,data)
-    pack_X_exact1(xia,xjb,i,j,a,b,n,idxs)
+    xia,xjb,ijab,Δijab = _X_exact1(model,V,T,z,data)
+    p = assoc_shape(model)
+    pack_X_exact1(xia,xjb,ijab,p.site_offsets)
 end
 
 function X_and_Δ_exact1(model,V,T,z,data = nothing)
-    xia,xjb,i,j,a,b,n,idxs,Δijab = _X_exact1(model,V,T,z,data)
-    XX = pack_X_exact1(primalval(xia),primalval(xjb),i,j,a,b,n,idxs)
+    xia,xjb,ijab,Δijab = _X_exact1(model,V,T,z,data)
     Δout = assoc_similar(model,@f(Base.promote_eltype))
+    XX = pack_X_exact1(xia,xjb,ijab,Δout.site_offsets)
     Δout.values[1] = Δijab
     return XX,Δout
 end
 
+@inline function _X_exact1(kia,kjb)
+    _1 = one(kia)
+    if kia == kjb
+        x = 2/(_1 + sqrt(_1 + 4*kia))
+        return x,x
+    end
+    _1 = one(kia)
+    a = kia
+    b = _1 - kia + kjb
+    c = -_1
+    denom = b + sqrt(b*b - 4*a*c)
+    xia = -2*c/denom
+    xk_ia = kia*xia
+    xjb = (1- xk_ia)/(1 - xk_ia*xk_ia)
+    return xia,xjb
+end
+
 function _X_exact1(model,V,T,z,data=nothing)
     κ = assoc_shape(model)
-    i,j = κ.outer_indices[1]
-    a,b = κ.inner_indices[1]
+    i,j,a,b = idx_to_ijab(κ,1)
     if data === nothing
         _Δ = @f(Δ,i,j,a,b)
     else
         _Δ = @f(Δ,i,j,a,b,data)
     end
     _1 = one(eltype(_Δ))
-    sitesparam = getsites(model)
-    idxs = sitesparam.n_sites.p
-    n = length(sitesparam.n_sites.v)
-    ρ = N_A/V
-    zi = z[i]
-    zj = z[j]
-    ni = sitesparam.n_sites[i]
-    na = ni[a]
-    nj = sitesparam.n_sites[j]
-    nb = nj[b]
-    ρ = N_A/V
-    kia = na*zi*ρ*_Δ
-    kjb = nb*zj*ρ*_Δ
-    _a = kia
-    _b = _1 - kia + kjb
-    _c = -_1
-    denom = _b + sqrt(_b*_b - 4*_a*_c)
-    xia = -2*_c/denom
-    xk_ia = kia*xia
-    xjb = (1- xk_ia)/(1 - xk_ia*xk_ia)
-    return xia,xjb,i,j,a,b,n,idxs,_Δ
+
+    sites = getsites(model)
+    site_offsets = sites.n_sites.p
+    n = sites.n_sites.v
+    @inbounds begin
+        ia = site_offsets[i] + a - 1   # global index for site (i, a)
+        jb = site_offsets[j] + b - 1   # global index for site (j, b)
+        nia,njb = n[ia],n[jb]
+        zi,zj = z[i],z[j]
+        ρΔ = _Δ*N_A/V
+        kia = ρΔ*nia*zi
+        kjb = ρΔ*njb*zj
+    end
+    xia,xjb = _X_exact1(kia,kjb)
+    return xia,xjb,(i,j,a,b),_Δ
 end
 
-function pack_X_exact1(xia,xjb,i,j,a,b,n,idxs)
+function pack_X_exact1(xia,xjb,ijab,site_offsets)
+    i,j,a,b = ijab
+    ia = site_offsets[i] + a - 1   # global index for site (i, a)
+    jb = site_offsets[j] + b - 1   # global index for site (j, b)
+    n = site_offsets[end] - 1
     Xsol = fill(one(xia),n)
-    _X = PackedVofV(idxs,Xsol)
-    _X[j][b] = xjb
-    _X[i][a] = xia
-    return _X
+    Xsol[jb] = xjb
+    Xsol[ia] = xia
+    return PackedVofV(site_offsets,Xsol)
 end
 
 function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
@@ -1057,7 +1072,8 @@ end
 #in this case the fraction of non-bonded sites is simply xia and xjb
 #so whe don't need to allocate the X vector
 function a_assoc_exact_1(model::EoSModel,V,T,z,data = nothing)
-    xia,xjb,i,j,a,b,n,idxs = _X_exact1(model,V,T,z,data)
+    xia,xjb,ijab,Δijab = _X_exact1(model,V,T,z,data)
+    i,j,a,b = ijab
     _0 = zero(xia)
     sites = getsites(model)
     nn = sites.n_sites
@@ -1126,14 +1142,11 @@ end
 
 recombine_assoc!(model) = recombine_assoc!(model,model.params.sigma)
 
-function recombine_assoc!(model,sigma)
-    _assoc_options = assoc_options(model)
+function recombine_assoc!(model,σ)
     iszero(assoc_pair_length(model)) && return model
-    epsilon_assoc = model.params.epsilon_assoc
-    bondvol = model.params.bondvol
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,_assoc_options,model.sites) #combining rules for association
-    copyto!(model.params.epsilon_assoc,epsilon_assoc)
-    copyto!(model.params.bondvol,bondvol)
+    ε = model.params.epsilon_assoc
+    κ = model.params.bondvol
+    assoc_mix!(κ,ε,σ,assoc_options(model))
     return model
 end
 
@@ -1159,199 +1172,3 @@ end
 @public @assoc_loop
 @public getsites,assoc_matrix_solve,assoc_site_matrix,Δ,assoc_strength,X
 @public assoc_shape,assoc_pair_length,assoc_similar,assoc_options
-
-
-#=
-
-
-
-=#
-#=
-function AX!(output,input,pack_indices,delta::Compressed4DMatrix{TT,VV} ,modelsites,ρ,z) where {TT,VV}
-    _0 = zero(TT)
-    p = modelsites.p::Vector{Int}
-    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
-    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
-    _Δ::VV = delta.values
-    _idx = 1:length(_ii)
-    #n = modelsites
-    _n::Vector{Int} = modelsites.v
-    #pv.p[i]:pv.p[i+1]-1)
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            ∑X = _0
-            ia = compute_index(pack_indices,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                if issite(i,a,ij,ab)
-                    j = complement_index(i,ij)
-                    b = complement_index(a,ab)
-                    jb = compute_index(pack_indices,j,b)
-                    njb = _n[jb]
-                    ∑X += ρ*njb*z[j]*input[jb]*_Δ[idx]
-                end
-            end
-            output[ia] = ∑X
-        end
-    end
-    return output
-end
-=#
-#res = ∑(z[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)/sum(z)
-
-#=
-on one site:
-Xia = 1/(1+*nb*z[j]*rho*Δ*Xjb)
-Xjb = 1/(1+*na*z[i]*rho*Δ*Xia)
-
-kia = na*z[i]*rho*Δ
-kjb = nb*z[j]*rho*Δ
-
-Xia = 1/(1+kjb*Xjb)
-Xjb = 1/(1+kia*Xia)
-
-Xia = 1/(1+kjb*(1/(1+kia*Xia)))
-Xia = 1/(1+kjb/(1+kia*Xia))
-Xia = 1/((1+kia*Xia+kjb)/(1+kia*Xia))
-Xia = (1+kia*Xia)/(1+kia*Xia+kjb)
-Xia*(1+kia*Xia+kjb) = 1+kia*Xia #x = Xia
-x*(1+kia*x+kjb) = 1+kia*x
-x + kia*x*x + kjb*x - 1 - kia*x = 0
-kia*x*x + x(kjb-kia+1) - 1 = 0
-x = - (kjb-kia+1) +
-
-x = 1/1+kiax
-x(1+kx) - 1 = 0
-kx2 +x - 1 = 0
-end
-=#
-
-#=
-function sparse_assoc_site_matrix(model,V,T,z,data=nothing)
-    if data === nothing
-        delta = @f(Δ)
-    else
-        delta = @f(Δ,data)
-    end
-    _sites = model.sites.n_sites
-    p = _sites.p
-    ρ = N_A/V
-    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
-    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
-    _idx = 1:length(_ii)
-    _Δ= delta.values
-    TT = eltype(_Δ)
-    count = 0
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            #ia = compute_index(pack_indices,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                issite(i,a,ij,ab) && (count += 1)
-            end
-        end
-    end
-    c1 = zeros(Int,count)
-    c2 = zeros(Int,count)
-    val = zeros(TT,count)
-    _n = model.sites.n_sites.v
-    count = 0
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            ia = compute_index(p,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                if issite(i,a,ij,ab)
-                    j = complement_index(i,ij)
-                    b = complement_index(a,ab)
-                    jb = compute_index(p,j,b)
-                    njb = _n[jb]
-                    count += 1
-                    c1[count] = ia
-                    c2[count] = jb
-                    val[count] = ρ*njb*z[j]*_Δ[idx]
-                end
-            end
-        end
-    end
-    K::SparseMatrixCSC{TT,Int} = sparse(c1,c2,val)
-    return K
-end
-#Mx = a + b(x,x)
-#Axx + x - 1 = 0
-#x = 1 - Axx
-=#
-
-#=
-#this function destroys KK and XX0
-function __assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::AbstractVector{T2}, α, atol ,rtol, max_iters) where {N,T1,T2}
-    X0 = SVector{N,T2}(XX0)
-    K = SMatrix{N,N,T1,N*N}(KK)
-    Xsol = X0
-    it_ss = (5*length(Xsol))
-    converged = false
-    for i in 1:it_ss
-        kx = K*X0
-        Xsol = α ./ (1 .+ kx) .+ (1 .- α) .* X0
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
-        if converged
-            if !finite
-                Xsol = NaN .* Xsol
-            end
-
-            break
-        end
-        X0 = Xsol
-    end
-
-    if converged
-        XX0 .= Xsol
-        return XX0
-    end
-
-    H = KK
-    g = XX0
-    #TODO: for the next stable release, use MVector
-    piv = zeros(Int,N)
-    for i in (it_ss + 1):max_iters
-        #@show Xsol
-        KX = K*Xsol
-        H .= 0
-        H .= -K
-        for k in 1:size(H,1)
-            H[k,k] -= (1 + KX[k])/Xsol[k]
-        end
-        F = Solvers.unsafe_LU!(H,piv)
-        g .= 1 ./ Xsol .- 1 .- KX #gradient
-        ldiv!(F,g)
-        ΔX = SVector{N,T2}(XX0)
-        Xnewton = Xsol - ΔX
-        Xss = 1 ./ (1 .+ KX)
-        X0 = Xsol
-        Xsol = ifelse.(0 .<= Xnewton .<= 1, Xnewton, Xss)
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
-        #@show converged,finite
-        if converged
-            if !finite
-                Xsol = NaN .* Xsol
-            end
-            XX0 .= Xsol
-            break
-        end
-    end
-
-    if !converged
-        Xsol = NaN .* Xsol
-    end
-    XX0 .= Xsol
-    return XX0
-end
-
-
-=#

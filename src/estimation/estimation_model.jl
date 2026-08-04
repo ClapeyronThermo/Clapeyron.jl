@@ -213,14 +213,15 @@ function recalculate_flatten_estimationmodel!(est_model::EstimationModel)
 end
 
 __get_all_indices(param::SingleParameter,flag,sym) = [(i,i) for i in 1:length(param.values)]
+
 function __get_all_indices(param::AssocParam,flag,sym)
         flags = (:no_specified,:pures,:all,:unlike)
 
     if flag == :pures
-        i_pure =  findall(x -> x[1] == x[2],param.values.outer_indices)
+        i_pure =  findall(assoc_is_pure,param.values.indices)
         return [(i,0) for i in i_pure]
     elseif flag == :unlike
-        i_unlike =  findall(x -> x[1] != x[2],param.values.outer_indices)
+        i_unlike =  findall(!assoc_is_pure,param.values.indices)
         return [(i,0) for i in i_unlike]
     else
         [(i,0) for i in 1:length(param.values.values)]
@@ -376,10 +377,7 @@ end
 function __modify_param!(current_param::AssocParam,id::NTuple{2,Int},val,f,recomb,sym,cross_assoc)
     k = id[1]
     if cross_assoc
-        ij = current_param.values.outer_indices[k]
-        ab = current_param.values.inner_indices[k]
-        i,j = ij
-        a,b = ab
+        i,j,a,b = idx_to_ijab(current_param.values,k)
         ij_mat = current_param.values[i,j]
         ij_mat[a,b] = val*f
         ij_mat[b,a] = val*f

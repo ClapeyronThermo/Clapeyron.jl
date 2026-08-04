@@ -107,7 +107,7 @@ function gcsPCSAFT(groups::GroupParam, params::Dict{String,ClapeyronParam};
     gc_bondvol = params["bondvol"]
     k = get(params,"k",nothing)
     
-    bondvol,epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,nothing,assoc_options,sites) #combining rules for association
+    bondvol,epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,nothing,assoc_options) #combining rules for association
     gcparams = gcsPCSAFTParam(mw, segment, msigma3, mepsilon, epsilon_assoc, bondvol)
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
@@ -157,31 +157,25 @@ function recombine_impl!(model::gcsPCSAFTModel)
     components = model.components
     sites = model.sites
     assoc_options = model.assoc_options
-    pcparams = model.pcsaftmodel.params
-    params = model.params
+    pcp = model.pcsaftmodel.params
+    gc = model.params
+    comp_sites = model.pcsaftmodel.sites
+    segment = group_sum!(pcp.segment,groups,gc.segment)
 
-    segment = group_sum!(pcparams.segment,groups,params.segment)
-
-    sigma = group_sum!(pcparams.sigma,groups,params.msigma3)
+    sigma = group_sum!(pcp.sigma,groups,gc.msigma3)
     diagvalues(sigma.values) ./= segment.values
     sigma.values .= cbrt.(sigma.values)
     sigma_LorentzBerthelot!(sigma)
 
     k = get_k(model.pcsaftmodel)
-    epsilon = group_sum!(pcparams.epsilon,groups,params.mepsilon)
+    epsilon = group_sum!(pcp.epsilon,groups,gc.mepsilon)
     diagvalues(epsilon.values) ./= segment.values
     epsilon_LorentzBerthelot!(epsilon,k)
 
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(params.bondvol,params.epsilon_assoc,nothing,assoc_options)
-    params.bondvol.values.values[:] = gc_bondvol.values.values
-    params.epsilon_assoc.values.values[:] = gc_epsilon_assoc.values.values
-
-    comp_sites = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
-    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-
-    pcparams.bondvol.values.values[:] = comp_bondvol.values.values
-    pcparams.epsilon_assoc.values.values[:] = comp_epsilon_assoc.values.values
+    assoc_mix!(gc.bondvol,gc.epsilon_assoc,nothing,assoc_options)
+    gc_to_comp_sites!(comp_sites,sites,groups)
+    gc_to_comp_sites!(pcp.bondvol,gc.bondvol,comp_sites)
+    gc_to_comp_sites!(pcp.epsilon_assoc,gc.epsilon_assoc,comp_sites)
     return model
 end
 

@@ -41,7 +41,7 @@ function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
         a_res₀ = Clapeyron.a_res(model,V,T,z)
         @test a_res₀ ≈ Clapeyron.a_res(model,i*V,T,i*z) rtol = rtol
     end
-    pures = split_model(model)
+    pures = Clapeyron.split_pure_model(model)
     x_pure = zeros(length(model))
     for n in 1:length(model) 
         for i in (2.0,3.0,5.0,7.0,11.0)
@@ -97,8 +97,8 @@ function eosmodel_is_approx(model1,model2)
                 end
             elseif p1 isa AssocParam
                 @test p1.values.values ≈ p2.values.values
-                @test p1.values.inner_indices == p2.values.inner_indices
-                @test p1.values.outer_indices == p2.values.outer_indices
+                @test p1.values.indices == p2.values.indices
+                @test p1.values.site_offsets == p2.values.site_offsets
             elseif p1 isa Clapeyron.MixedGCSegmentParam
                 @test p1.values.v ≈ p2.values.v
             end

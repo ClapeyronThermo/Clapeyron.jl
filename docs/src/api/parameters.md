@@ -46,6 +46,7 @@ Clapeyron.AssocOptions
 ```@docs
 Clapeyron.kij_mix
 Clapeyron.pair_mix
+Clapeyron.ijab_mix
 Clapeyron.mirror_pair
 Clapeyron.sigma_LorentzBerthelot
 Clapeyron.epsilon_LorentzBerthelot
@@ -53,6 +54,9 @@ Clapeyron.epsilon_HudsenMcCoubrey
 Clapeyron.epsilon_HudsenMcCoubreysqrt
 Clapeyron.lambda_LorentzBerthelot
 Clapeyron.lambda_squarewell
+Clapeyron.bondvol_mix
+Clapeyron.epsilon_assoc_mix
+Clapeyron.dufal_mix
 ```
 
 ## Combining Rules, in-place methods
@@ -60,6 +64,7 @@ Clapeyron.lambda_squarewell
 ```@docs
 Clapeyron.kij_mix!
 Clapeyron.pair_mix!
+Clapeyron.ijab_mix!
 Clapeyron.mirror_pair!
 Clapeyron.sigma_LorentzBerthelot!
 Clapeyron.epsilon_LorentzBerthelot!
@@ -67,6 +72,9 @@ Clapeyron.epsilon_HudsenMcCoubrey!
 Clapeyron.epsilon_HudsenMcCoubreysqrt!
 Clapeyron.lambda_LorentzBerthelot!
 Clapeyron.lambda_squarewell!
+Clapeyron.bondvol_mix!
+Clapeyron.epsilon_assoc_mix!
+Clapeyron.dufal_mix!
 ```
 
 ## Binary interaction parameters

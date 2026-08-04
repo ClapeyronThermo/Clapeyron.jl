@@ -1,175 +1,273 @@
-__valid_site_comb(::Nothing,i,j,a,b) = false
-function __valid_site_comb(n,i,j,a,b)
-    ni,nj = n[i],n[j]
-    if length(ni)*length(nj) == 0
-        return false
-    else
-        return !iszero(ni[a]*nj[b])
-    end
+function assoc_extend(param::AssocParam{T}) where T 
+    length(param.values) == 0 && return param
+    extended_vals = deepcopy(param.values)
+    Compressed4DMatrices.extend!(extended_vals)
+    return param_from_values(extended_vals,param)
 end
 
-function assoc_extend(param::AssocParam)
-    length(param.values.values) == 0 && return param
-    _4dmatrix = assoc_extend(param.values,param.sites)
-    return AssocParam(param.name,param.components,_4dmatrix,param.sites,param.sourcecsvs,param.sources)
-end
-
-function assoc_extend(mat::Compressed4DMatrix,sites)
-    length(mat.values) == 0 && return mat
-    #c = length(param)
-    comps = length(sites)
-    vals,c,s = mat.values,mat.outer_indices,mat.inner_indices
-    idx = Vector{NTuple{4,Int}}(undef,0)
-    for i in 1:comps
-        for j in 1:i #include diagonal
-            la = length(sites[i])
-            lb = length(sites[j])
-            if (la != 0) && (lb !=0) #delete empty interactions
-                for a in 1:la
-                    #when i == j, we are in association site pairs of a single component. those are symmetrical.
-                    #the same cannot be said of intercomponent association pairs. that is x[i,j][a,b] could be different that x[j,i][a,b]
-                    start = ifelse(i == j,a,1)
-                    for b in start:lb
-                        push!(idx,(i,j,a,b))
-                    end
-                end
-            end
-        end
-    end
-    sort!(idx)
-    extended_vals = zeros(eltype(vals),length(idx))
-    for (k,(i,j,a,b)) in enumerate(idx)
-        extended_vals[k] = mat[i,j][a,b]
-    end
-    extended_outer_indices = [(c[1],c[2]) for c ∈ idx]
-    extended_inner_indices = [(c[3],c[4]) for c ∈ idx]
-    #unsafe constructor
-    return Compressed4DMatrix(extended_vals,extended_outer_indices,extended_inner_indices,true)
-end
-
-bondvol_mix(bondvol::AssocParam) = bondvol_mix(bondvol,nothing,nothing)
-
-function bondvol_mix(bondvol::AssocParam,::Nothing,sites = nothing)
-    length(bondvol.values.values) == 0 && return deepcopy(bondvol)
-    param = assoc_extend(bondvol)
-    mat = param.values
-    if sites isa SiteParam
-        n = sites.n_sites
-    else
-        n = nothing
-    end
-    for (idx,(i,j),(a,b)) in indices(mat)
-        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
-            mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])
-        end
-    end
-    dropzeros!(mat)
+function assoc_extend!(param::AssocParam)
+    length(param.values) == 0 && return param
+    Compressed4DMatrices.extend!(param.values)
     return param
 end
 
-function dufal_mix(bondvol::AssocParam,::Nothing,sites = nothing)
-    length(bondvol.values.values) == 0 && return deepcopy(bondvol)
-    param = assoc_extend(bondvol)
-    mat = param.values
-    if sites isa SiteParam
-        n = sites.n_sites
-    else
-        n = nothing
-    end
-    for (idx,(i,j),(a,b)) in indices(mat)
-        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
-            mat.values[idx] = mix_mean3(mat[i,i][a,b],mat[j,j][a,b])
-        end
-    end
-    dropzeros!(mat)
-    return param
+function assoc_extend!(mat::Compressed4DMatrix)
+    length(mat) == 0 && return mat
+    Compressed4DMatrices.extend!(mat)
+    return mat
 end
 
+#=
+ijab_mix! infraestructure
+=#
+"""
+    ijab_mix!(f,Δ::AssocParam)
+    ijab_mix!(f,Δ::AssocParam,K::AbstractMatrix)
+    ijab_mix!(f,Δ::Compressed4DMatrix,K = nothing)
+    ijab_mix!(nothing,Δ)
 
-function epsilon_assoc_mix(epsilon_assoc::AssocParam,sites)
-    length(epsilon_assoc.values.values) == 0 && return deepcopy(epsilon_assoc)
-    param = assoc_extend(epsilon_assoc)
-    mat = param.values
-    if sites isa SiteParam
-        n = sites.n_sites
-    else
-        n = nothing
-    end
-    for (idx,(i,j),(a,b)) in indices(mat)
-        #check that nia != 0 && njb != 0
-        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
-            mat.values[idx] = (mat[i,i][a,b] + mat[j,j][a,b])/2
+Inplace combining rule for association (site-site) parameters, such as bond volumes (`κᵢⱼₐᵦ`) or association energies (`εᵢⱼₐᵦ`).
+
+Given the pure-component (diagonal, `i == i`) association values already stored in `Δ`, `ijab_mix!` fills in the *unset* cross-association entries (`i != j`) using a two-body combining rule `f`, and overwrites `Δ` with the result. Only entries that are currently zero (unset) are populated; explicitly-provided cross parameters are left untouched.
+
+For each stored site pair `(a,b)` shared between components `i` and `j`, the new cross term is calculated as:
+```
+Δᵢⱼₐᵦ = f(Δᵢᵢₐᵦ, Δⱼⱼₐᵦ)          # if K === nothing
+Δᵢⱼₐᵦ = f(Δᵢᵢₐᵦ, Δⱼⱼₐᵦ, Kᵢᵢ, Kᵢⱼ, Kᵢⱼ) # if K is a matrix
+```
+Where `f` is a two-argument (or five-argument, when a `K` matrix is supplied) 'combining' function, analogous in spirit to the ones used by [`kij_mix`](@ref)/[`pair_mix`](@ref) but operating on association-site data instead of plain pair data.
+
+If `f == nothing`, `ijab_mix!` will only add the corresponding mixing entries with the value of zero.
+
+Mutates and returns `Δ`. If `Δ` (or its underlying `Compressed4DMatrix`) has no entries, it is returned unchanged.
+
+See also the non-mutating counterpart [`ijab_mix`](@ref).
+"""
+ijab_mix!(f,Δ) = ijab_mix!(f,Δ,nothing)
+
+ijab_mix!(f::F,Δ::AssocParam,::Nothing) where F = param_from_values(ijab_mix!(f,Δ.values,nothing),Δ)
+ijab_mix!(f::F,Δ::AssocParam,K::AbstractMatrix) where F = param_from_values(ijab_mix!(f,Δ.values,K),Δ)
+
+
+function ijab_mix!(f::F,Δ::Compressed4DMatrix,::Nothing) where F
+    length(Δ.values) == 0 && return Δ
+    assoc_extend!(Δ)
+    for (idx,(i,j),(a,b)) in indices(Δ)
+        Δiiab = Δ[i,i][a,b]
+        Δjjab = Δ[j,j][a,b]
+        Δijab = f(Δiiab,Δjjab)
+        if !iszero(Δijab) && iszero(Δ[idx])
+            Δ[idx] = Δijab
         end
     end
-    dropzeros!(mat)
-    return param
+    dropzeros!(Δ)
+    return Δ
 end
 
-function bondvol_mix(bondvol::AssocParam,σ,sites = nothing)
-    length(bondvol.values.values) == 0 && return deepcopy(bondvol)
-    param = assoc_extend(bondvol)
-    mat = param.values
-    if sites isa SiteParam
-        n = sites.n_sites
-    else
-        n = nothing
-    end
-    for (idx,(i,j),(a,b)) in indices(mat)
-        #check that nia != 0 && njb != 0
-        if iszero(mat.values[idx]) && __valid_site_comb(n,i,j,a,b)
-            mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])*(sqrt(σ[i,i]*σ[j,j])/σ[i,j])^3
+function ijab_mix!(f::F,Δ::Compressed4DMatrix,K::AbstractMatrix) where F
+    length(Δ.values) == 0 && return Δ
+    assoc_extend!(Δ)
+    for (idx,(i,j),(a,b)) in indices(Δ)
+        Δiiab = Δ[i,i][a,b]
+        Δjjab = Δ[j,j][a,b]
+        Δijab = f(Δiiab,Δjjab,K[i,i],K[j,j],K[i,j])
+        if !iszero(Δijab) && iszero(Δ[idx])
+            Δ[idx] = Δijab
         end
     end
-    dropzeros!(mat)
-    return param
+    dropzeros!(Δ)
+    return Δ
 end
 
-function zero_mix(assocparam::AssocParam,sites = nothing)
-    length(assocparam.values.values) == 0 && return deepcopy(assocparam)
-    param = assoc_extend(assocparam)
-    mat = param.values
-    if sites isa SiteParam
-        n = sites.n_sites
+struct ZeroIJABMix end
+const IJAB_ZERO_SENTINEL = -124
+
+(::ZeroIJABMix)(iiab,jjab,ki,kj,kij) = ZeroIJABMix()(iiab,jjab)
+function (::ZeroIJABMix)(iiab,jjab)
+    Δ = max(iiab*jjab,zero(iiab*jjab))
+    if !iszero(primalval(Δ))
+        return oftype(Δ,IJAB_ZERO_SENTINEL)
     else
-        n = nothing
+        zero(Δ)
     end
-    #fill with sentinel values
-    SENTINEL = -124
-    for (idx,(i,j),(a,b)) in indices(mat)
-        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
-            dij = sqrt(mat[i,i][a,b]*mat[j,j][a,b])
-            if !iszero(dij)
-                mat.values[idx] = SENTINEL
-            end
-        end
-    end
-    dropzeros!(mat)
-    #refill with zeros.
-    for i in eachindex(mat.values)
-        if mat[i] == SENTINEL
-            mat[i] = 0
-        end
-    end
-    return param
 end
 
-function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions,sites = nothing)
+function ijab_mix!(f::Nothing,Δ::Compressed4DMatrix{T}) where T
+    ijab_mix!(ZeroIJABMix(),Δ)
+    sentinel = T(IJAB_ZERO_SENTINEL)
+    for i in eachindex(Δ.values)
+        if Δ[i] == sentinel
+            Δ[i] = zero(T)
+        end
+    end
+    return Δ
+end
+
+#=
+copying versions
+=#
+
+"""
+    ijab_mix(f,Δ::AssocParam)
+    ijab_mix(f,Δ::AssocParam,K)
+    ijab_mix(f,Δ::Compressed4DMatrix,K = nothing)
+
+Non-mutating version of [`ijab_mix!`](@ref).
+
+Combines the cross-association entries of `Δ` using the two-body (or, with `K`, five-argument) rule `f`, following exactly the same rules and formulas as [`ijab_mix!`](@ref), but operates on a copy of `Δ` (or of its underlying `Compressed4DMatrix`) so that the original parameter is left untouched.
+
+Returns a new `AssocParam`/`Compressed4DMatrix` of the same shape as `Δ`, with previously-unset cross terms populated by `f` and existing entries left as they were.
+"""
+ijab_mix(f::F,Δ::Compressed4DMatrix) where F = ijab_mix!(f,deepcopy(Δ))
+ijab_mix(f::F,Δ::Compressed4DMatrix,K) where F = ijab_mix!(f,deepcopy(Δ),K)
+ijab_mix(f::F,Δ::AssocParam) where F= param_from_values(ijab_mix(f,Δ.values),Δ)
+ijab_mix(f::F,Δ::AssocParam,K) where F = param_from_values(ijab_mix(f,Δ.values,K),Δ)
+
+#=
+predefined mixing rules
+=#
+
+"""
+    bondvol_mix(bondvol::AssocParam)
+    bondvol_mix(bondvol::AssocParam,σ)
+
+Combining rule for cross-association bond volumes (`κᵢⱼₐᵦ`), used by the `:cr1` and `:elliott`/`:esd` combining rules.
+
+- `bondvol_mix(bondvol)` (CR-1 combining rule) fills unset cross terms with the geometric mean of the pure-component bond volumes:
+```
+κᵢⱼₐᵦ = √(κᵢᵢₐᵦ * κⱼⱼₐᵦ)
+```
+
+- `bondvol_mix(bondvol,σ)` (Elliott/ESD-style combining rule) additionally uses the segment/site diameters `σ` to correct the geometric mean for size differences between components:
+```
+κᵢⱼₐᵦ = √(κᵢᵢₐᵦ * κⱼⱼₐᵦ * σᵢ^3 * σⱼ^3) / σᵢⱼ^3
+```
+
+See [`bondvol_mix!`](@ref) for the inplace version.
+"""
+bondvol_mix(bondvol) = ijab_mix(mix_geomean,bondvol)
+bondvol_mix(bondvol,σ) = ijab_mix(mix_ijab_elliott,bondvol,raw_values(σ))
+
+"""
+    bondvol_mix!(bondvol::AssocParam)
+    bondvol_mix!(bondvol::AssocParam,σ)
+
+Inplace version of [`bondvol_mix`](@ref). Mutates `bondvol`, filling in unset cross-association bond volumes in place using either the plain geometric mean, one-argument form) or the size-corrected Elliott/ESD rule, two-argument form using segment diameters `σ`). 
+See [`bondvol_mix`](@ref) for the exact formulas.
+"""
+bondvol_mix!(bondvol) = ijab_mix!(mix_geomean,bondvol)
+bondvol_mix!(bondvol,σ) = ijab_mix!(mix_ijab_elliott,bondvol,raw_values(σ))
+
+"""
+    dufal_mix(bondvol::AssocParam)
+
+Combining rule for cross-association bond volumes (`κᵢⱼₐᵦ`) following the Dufal (SAFT-VR Mie / Mie 15) mixing rule, used by the `:dufal`/`:mie15` combining rules.
+
+Fills unset cross terms with the cubic-mean-radius rule:
+```
+κᵢⱼₐᵦ = (0.5*(∛κᵢᵢₐᵦ + ∛κⱼⱼₐᵦ))^3
+```
+
+See [`dufal_mix!`](@ref) for the inplace version.
+"""
+dufal_mix(bondvol) = ijab_mix(mix_mean3,bondvol)
+
+"""
+    dufal_mix!(bondvol::AssocParam)
+
+Inplace version of [`dufal_mix`](@ref). 
+Mutates `bondvol`, filling in unset cross-association bond volumes in place using the Dufal cubic-mean-radius rule. 
+See [`dufal_mix`](@ref) for the exact formula.
+"""
+dufal_mix!(bondvol) = ijab_mix!(mix_mean3,bondvol)
+
+"""
+    epsilon_assoc_mix(epsilon_assoc::AssocParam)
+
+Combining rule for cross-association energies (`εᵢⱼₐᵦ`), used across all combining rules that mix association energy (`:cr1`, `:elliott`/`:esd`, `:dufal`/`:mie15`.
+
+Fills unset cross terms with the arithmetic mean of the pure-component association energies:
+```
+εᵢⱼₐᵦ = 0.5*(εᵢᵢₐᵦ + εⱼⱼₐᵦ)
+```
+
+See [`epsilon_assoc_mix!`](@ref) for the inplace version.
+
+"""
+epsilon_assoc_mix(epsilon_assoc) = ijab_mix(mix_mean,epsilon_assoc)
+
+"""
+    epsilon_assoc_mix!(epsilon_assoc::AssocParam)
+
+Inplace version of [`epsilon_assoc_mix`](@ref). 
+Mutates its argument, filling in unset cross-association energies in place using the arithmetic mean rule. 
+See [`epsilon_assoc_mix`](@ref) for the exact formula.
+"""
+epsilon_assoc_mix!(bondvol) = ijab_mix!(mix_mean,epsilon_assoc)
+
+"""
+    ijab_zero_mix(x::AssocParam)
+
+Pseudo-combining rule, used by the :elliott_runtime combining rule
+Fills unset cross terms with zero, only if their pure values are different from zero:
+```
+xᵢⱼₐᵦ = 0 if !iszero(xᵢᵢₐᵦ) && !iszero(xⱼⱼₐᵦ)
+```
+
+This is more of an index expansion operation that only adds the necessary indices.
+For example, if no self-association is present in a site, then no self association indices will be added.
+See [`ijab_zero_mix!`](@ref) for the inplace version.
+
+"""
+ijab_zero_mix(epsilon_assoc) = ijab_mix(nothing,epsilon_assoc)
+
+"""
+    ijab_zero_mix!(x::AssocParam)
+
+Inplace version of [`ijab_zero_mix`](@ref). 
+Mutates its argument, filling in unset cross-association energies in place with zeros. 
+See [`epsilon_assoc_mix`](@ref) for the exact formula.
+"""
+ijab_zero_mix!(bondvol) = ijab_mix!(nothing,epsilon_assoc)
+
+function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions)
     combining = assoc_options.combining
     if combining == :nocombining
         return bondvol,epsilon_assoc
     elseif combining in (:elliott_runtime,:esd_runtime)
         #return bondvol,epsilon_assoc
-        return zero_mix(bondvol,sites),zero_mix(epsilon_assoc,sites)
+        return ijab_zero_mix(bondvol),ijab_zero_mix(epsilon_assoc)
     elseif combining in (:elliott,:esd)
-        return bondvol_mix(bondvol,sigma,sites),epsilon_assoc_mix(epsilon_assoc,sites)
+        return bondvol_mix(bondvol,sigma),epsilon_assoc_mix(epsilon_assoc)
     elseif combining == :cr1
-        return bondvol_mix(bondvol,nothing,sites),epsilon_assoc_mix(epsilon_assoc,sites)
+        return bondvol_mix(bondvol),epsilon_assoc_mix(epsilon_assoc)
     elseif combining in (:dufal,:mie15)
-        return dufal_mix(bondvol,nothing,sites),epsilon_assoc_mix(epsilon_assoc,sites)
+        return dufal_mix(bondvol),epsilon_assoc_mix(epsilon_assoc)
     else
         throw(error("incorrect combining argument ",error_color(string(combining))," passed to AssocOptions."))
     end
 end
+
+function assoc_mix!(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions)
+    combining = assoc_options.combining
+    if combining == :nocombining
+        return bondvol,epsilon_assoc
+    elseif combining in (:elliott_runtime,:esd_runtime)
+        #return bondvol,epsilon_assoc
+        return ijab_zero_mix!(bondvol),ijab_zero_mix(epsilon_assoc)
+    elseif combining in (:elliott,:esd)
+        return bondvol_mix!(bondvol,sigma),epsilon_assoc_mix(epsilon_assoc)
+    elseif combining == :cr1
+        return bondvol_mix!(bondvol),epsilon_assoc_mix(epsilon_assoc)
+    elseif combining in (:dufal,:mie15)
+        return dufal_mix!(bondvol),epsilon_assoc_mix(epsilon_assoc)
+    else
+        throw(error("incorrect combining argument ",error_color(string(combining))," passed to AssocOptions."))
+    end
+end
+
+assoc_mix(bondvol,epsilon_assoc,assoc_options::AssocOptions) = assoc_mix(bondvol,epsilon_assoc,nothing,assoc_options)
+assoc_mix!(bondvol,epsilon_assoc,assoc_options::AssocOptions) = assoc_mix!(bondvol,epsilon_assoc,nothing,assoc_options)
 
 function assoc_mix!(data,components)
     assoc_options = data["assoc_options"]
@@ -177,8 +275,7 @@ function assoc_mix!(data,components)
         bondvol = data["bondvol"]
         epsilon_assoc = data["epsilon_assoc"]
         sigma = get(data,"sigma",nothing)
-        sites = data["sites"]
-        bondvol, epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options,sites)
+        bondvol, epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
         data["bondvol"] = bondvol
         data["epsilon_assoc"] = epsilon_assoc
     else

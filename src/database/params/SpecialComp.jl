@@ -27,4 +27,4 @@ end
 
 Base.getindex(model::SpecialComp) = model.idx
 #for compatibility with parametric eos param:
-Base.eltype(model::SpecialComp) = Bool
+Base.eltype(::Type{SpecialComp}) = Bool

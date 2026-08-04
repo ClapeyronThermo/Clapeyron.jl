@@ -205,7 +205,7 @@ function SAFTgammaMie(groups::GroupParam, params::Dict{String,ClapeyronParam}, r
     #GC to component model in association
     bondvol0 = params["bondvol"]
     epsilon_assoc0 = params["epsilon_assoc"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol0,epsilon_assoc0,sigma,assoc_options,sites) #combining rules for association
+    bondvol,epsilon_assoc = assoc_mix(bondvol0,epsilon_assoc0,sigma,assoc_options) #combining rules for association
 
     gcparams = SAFTgammaMieParam(segment, shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
     Mw_comps = group_sum(groups,params["Mw"])
@@ -282,56 +282,46 @@ function recombine_impl!(model::SAFTgammaMieModel)
     components = model.components
     sites = model.sites
     assoc_options = model.assoc_options
-
-    gc_sigma = model.params.sigma
-    gc_epsilon = model.params.epsilon
-    gc_segment = model.params.segment
+    vr = model.vrmodel.params
+    gc = model.params
     shapefactor = model.params.shapefactor
-    gc_lambda_r = model.params.lambda_r
-    gc_lambda_a = model.params.lambda_a
-    gc_epsilon_assoc = model.params.epsilon_assoc
-    gc_bondvol = model.params.bondvol
     mixed_segment = model.params.mixed_segment
+    comp_sites = model.vrmodel.sites
 
-    mix_segment!(mixed_segment,groups,shapefactor.values,gc_segment.values)
+    mix_segment!(mixed_segment,groups,shapefactor.values,gc.segment.values)
     model.vrmodel.params.segment.values[:] = group_sum(mixed_segment,nothing)
 
-    gc_sigma = sigma_LorentzBerthelot!(gc_sigma)
-    gc_sigma3 = PairParam(gc_sigma)
+    sigma_LorentzBerthelot!(gc.sigma)
+    gc_sigma3 = PairParam(gc.sigma)
     gc_sigma3.values .^= 3
-    sigma3 = group_pairmean(mixed_segment,gc_sigma3)
-    sigma3.values .= cbrt.(sigma3.values)
-    comp_sigma = sigma_LorentzBerthelot(sigma3)
-    model.vrmodel.params.sigma.values[:] = comp_sigma.values
+    sigma3 = group_pairmean!(vr.sigma,mixed_segment,gc_sigma3)
+    vr.sigma.values .= cbrt.(vr.sigma.values)
+    sigma_LorentzBerthelot!(vr.sigma.values)
 
-    gc_epsilon = epsilon_HudsenMcCoubrey!(gc_epsilon, gc_sigma)
+    epsilon_HudsenMcCoubrey!(gc.epsilon, gc.sigma)
     if model.epsilon_mixing == :default
-        gc_epsilon = epsilon_HudsenMcCoubreysqrt!(gc_epsilon, gc_sigma)
-        comp_epsilon = epsilon_HudsenMcCoubreysqrt(group_pairmean(mixed_segment,gc_epsilon),model.vrmodel.params.sigma)
+        epsilon_HudsenMcCoubreysqrt!(gc.epsilon, gc.sigma)
+        group_pairmean!(vr.epsilon,mixed_segment,gc.epsilon)
+        epsilon_HudsenMcCoubreysqrt!(vr.epsilon,vr.sigma)
     else
-        gc_epsilon = epsilon_HudsenMcCoubrey!(gc_epsilon, gc_sigma)
-        comp_epsilon = epsilon_HudsenMcCoubrey(group_pairmean(mixed_segment,gc_epsilon),model.vrmodel.params.sigma)
+        epsilon_HudsenMcCoubrey!(gc.epsilon, gc.sigma)
+        group_pairmean!(vr.epsilon,mixed_segment,gc.epsilon)
+        epsilon_HudsenMcCoubreysqrt!(vr.epsilon,vr.sigma)
     end
-    model.vrmodel.params.epsilon.values[:] = comp_epsilon.values
 
-    gc_lambda_a = lambda_LorentzBerthelot!(gc_lambda_a)
-    gc_lambda_r = lambda_LorentzBerthelot!(gc_lambda_r)
+    lambda_LorentzBerthelot!(gc.lambda_a)
+    lambda_LorentzBerthelot!(gc.lambda_r)
+    
+    group_pairmean!(vr.lambda_a,mixed_segment,gc.lambda_a)
+    group_pairmean!(vr.lambda_r,mixed_segment,gc.lambda_r)
+    lambda_LorentzBerthelot!(vr.lambda_a)
+    lambda_LorentzBerthelot!(vr.lambda_r)
 
-    comp_lambda_a = group_pairmean(mixed_segment,gc_lambda_a) |> lambda_LorentzBerthelot
-    model.vrmodel.params.lambda_a.values[:] = comp_lambda_a.values
-    comp_lambda_r = group_pairmean(mixed_segment,gc_lambda_r) |> lambda_LorentzBerthelot
-    model.vrmodel.params.lambda_r.values[:] = comp_lambda_r.values
-
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options,sites)
-    model.params.bondvol.values.values[:] = gc_bondvol.values.values
-    model.params.epsilon_assoc.values.values[:] = gc_epsilon_assoc.values.values
+    assoc_mix!(gc.bondvol,gc.epsilon_assoc,gc.sigma,assoc_options)
 
     comp_sites = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
-    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-
-    model.vrmodel.params.bondvol.values.values[:] = comp_bondvol.values.values
-    model.vrmodel.params.epsilon_assoc.values.values[:] = comp_epsilon_assoc.values.values
+    gc_to_comp_sites!(vr.bondvol,gc.bondvol,comp_sites)
+    gc_to_comp_sites!(vr.epsilon_assoc,gc.epsilon_assoc,comp_sites)
     return model
 end
 

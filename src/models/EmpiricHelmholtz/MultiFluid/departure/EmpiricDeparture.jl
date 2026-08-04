@@ -1,5 +1,3 @@
-const FIJ_TYPE = Clapeyron.PairParameter{Float64, SparseArrays.SparseMatrixCSC{Float64, Int64}}
-
 #= in structs.jl
 struct EmpiricDepartureValues <: MultiParameterParam
     polexpgauss::PolExpGaussTerm
@@ -12,7 +10,7 @@ __type_string(ℙ::Type{EmpiricDepartureValues}) = "Departure"
 Base.zero(x::EmpiricDepartureValues) = zero(typeof(x))
 Base.zero(::Type{EmpiricDepartureValues}) = EmpiricDepartureValues(PolExpGaussTerm(),0.0)
 Base.iszero(x::EmpiricDepartureValues) = iszero(x.F)
-
+ 
 #for deleting a departure model
 Base.convert(::Type{EmpiricDepartureValues},::Nothing) = zero(EmpiricDepartureValues)
 function Base.show(io::IO,x::EmpiricDepartureValues) 
@@ -118,7 +116,7 @@ function transform_params(::Type{EmpiricDeparture},params,components,verbose)
     F = params["F"]
     s1,s2 = size(F.values)
     𝕊 = sparse((!).(raw_parameters.ismissingvalues))
-    dropzeros!(𝕊)
+    SparseArrays.dropzeros!(𝕊)
     parsed_parameters = SparseMatrixCSC{EmpiricDepartureValues,Int}(𝕊.m, 𝕊.n, 𝕊.colptr, 𝕊.rowval, similar(𝕊.nzval,EmpiricDepartureValues))
     #parse JSON string to create EmpiricDepartureValues
     for i in 1:s1

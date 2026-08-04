@@ -174,7 +174,8 @@ julia> model2.references
  "test"
 ```
 """
-function eos_repr(io::IO,model;inside = false,newlines = true)
+function eos_repr(_io::IO,model;inside = false,newlines = true)
+    io = IOContext(_io,:Clapeyron_eos_repr => true)
     M = typeof(model)
     n = fieldnames(M)
     newlines && print(io,"\n")

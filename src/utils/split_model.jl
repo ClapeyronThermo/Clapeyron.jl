@@ -71,22 +71,38 @@ function each_split_model(param::PackedVofV,I)
     return val
 end
 
-function each_split_model(assoc::Compressed4DMatrix{T},I) where T
-    len = length(assoc.values)
+function each_split_model(mat::Compressed4DMatrix{T,Vector{T}},I) where T
+    len = length(mat.values)
     iszero(len) && return Compressed4DMatrix{T}()
-    old_idx = assoc.outer_indices
-    idx_bool = findall(x -> (first(x) ∈ I) & (last(x) ∈ I),old_idx)
-    iszero(length(idx_bool)) && return Compressed4DMatrix{T}()
-    values = assoc.values[idx_bool]
-    outer_indices = assoc.outer_indices[idx_bool]
-    inner_indices = assoc.inner_indices[idx_bool]
-    len = length(outer_indices)
-    for i ∈ 1:len
-        i1,j1 = outer_indices[i]
-        i2,j2 = findfirst(==(i1),I)::Int,findfirst(==(j1),I)::Int
-        outer_indices[i] = (i2,j2)
+    offsets = copy(mat.site_offsets)
+
+    bsizes = Compressed4DMatrices.bsizes_from_offsets!(offsets)
+    nc_old = length(bsizes)
+
+    ik = zeros(Int,nc_old)
+    for i in 1:nc_old
+        ii = findfirst(==(i),I)
+        if !isnothing(ii)
+            ik[i] = ii
+        end
     end
-    return Compressed4DMatrix(values,outer_indices,inner_indices)
+
+    new_bsizes = bsizes[I]
+    new_offsets = Compressed4DMatrices.offsets_from_bsizes!(new_bsizes)
+    new_indices = Int[]
+    new_vals = T[]
+    for (idx,(i,j),(a,b)) in indices(mat)
+        ii = ik[i]
+        jj = ik[j]
+        if  !iszero(ii*jj)
+            ijab = Compressed4DMatrices.canonical_index((ii,jj,a,b))
+            push!(new_indices,Compressed4DMatrices.ijab_to_idx(ijab))
+            push!(new_vals,mat[idx])
+        end
+    end
+
+    sort_idx = sortperm(new_indices)
+    Compressed4DMatrix(new_vals[sort_idx],new_indices[sort_idx],new_offsets)
 end
 
 function each_split_model(param::ClapeyronParam,group,I_component,I_group)
@@ -217,7 +233,7 @@ function each_split_model(param::MixedGCSegmentParam{T},group,Ic,Ig) where T
 
     src = param.values
     ng = length(group.flattenedgroups)
-    
+
     #count unique groups
     ncount = zeros(T,ng)
     for k in Ig
@@ -225,13 +241,13 @@ function each_split_model(param::MixedGCSegmentParam{T},group,Ic,Ig) where T
     end
     ngg = count(!iszero,ncount)
     ncc = length(Ic)
-    
+
     #reuse vector
     resize!(ncount,ngg*ncc)
-    p = zeros(Int64,length(Ic)+1)
-    p .= 1:ngg:(ncc*ngg + 1)
+    p = fill(ngg,ncc)
+    p = Compressed4DMatrices.offsets_from_bsizes!(fill(ngg,ncc))
     dest = PackedVofV(p,ncount)
-    
+
     for (k,i) in pairs(Ic)
         pii = src[i]
         true_n = @view(pii[Ig])
@@ -259,7 +275,7 @@ function each_split_model(param::SiteParam,I)
 end
 
 function each_split_model(param::SiteParam,group,Ic,Ig)
-    
+
     components = param.components
     if group === nothing
         site = each_split_model(param,Ic)
@@ -272,15 +288,20 @@ function each_split_model(param::SiteParam,group,Ic,Ig)
     end
 
     if group != nothing && site.site_translator != nothing
-        ng = length(group.flattenedgroups)
-        recalculate_site_translator!(site,Ig,ng)
+        if length(site.site_translator) > 0
+            ng = length(group.flattenedgroups)
+            recalculate_site_translator!(site,Ig,ng)
+        end
     end
-    
+
     return site
 end
 
 __split_site_translator(::Nothing,I) = nothing
-__split_site_translator(s::Vector{Vector{NTuple{2,Int}}},I) = s[I]
+function __split_site_translator(s::Vector{Vector{NTuple{2,Int}}},I) 
+    iszero(length(s)) && return s
+    return s[I]
+end
 
 function recalculate_site_translator!(sites::SiteParam,idxi,ng,bool_to_int = Int[])
     site_translator_i = sites.site_translator::Vector{Vector{NTuple{2,Int}}}
@@ -363,7 +384,7 @@ julia> split_model(model)
  MonomerIdeal("methane")
  MonomerIdeal("propane")
  MonomerIdeal("butane")
- 
+
 julia> split_model(model,[[1,2],[3,1]])
 2-element Vector{MonomerIdeal}:
  MonomerIdeal("methane", "propane")
@@ -486,7 +507,7 @@ end
 
     split_pure_model(model,splitter)
 
-Similar to `split_model` but promises that the result only has pure models. 
+Similar to `split_model` but promises that the result only has pure models.
 Some EoS models store a list of pure models and this function allows accessing that list.
 
 """
