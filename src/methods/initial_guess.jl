@@ -505,12 +505,12 @@ function _find_vm(dpoly,v_lb::K,v_ub::K) where K
         nr,v1,v2,v3 = Solvers.real_roots3(d2poly)
     end
 
-    if evalpoly(v1,dpoly) > 0 && (lb <= v1 <= ub) && evalpoly(v1,d3poly) < 0
+    if (lb <= v1 <= ub) && evalpoly(v1,dpoly) > 0 && evalpoly(v1,d3poly) < 0
         return v1 + v_lb
-    elseif evalpoly(v2,dpoly) > 0 && (lb <= v2 <= ub) && nr > 1 && evalpoly(v2,d3poly) < 0
-        return v2 + v_lb
-    elseif evalpoly(v2,dpoly) > 0 && (lb <= v3 <= ub) && nr > 2 && evalpoly(v3,d3poly) < 0
+    elseif nr > 1 && (lb <= v3 <= ub) && evalpoly(v3,dpoly) > 0 && evalpoly(v3,d3poly) < 0 #v3 != v1 if nr > 1
         return v3 + v_lb
+    elseif  nr > 2 && (lb <= v2 <= ub) && evalpoly(v2,dpoly) > 0 && evalpoly(v2,d3poly) < 0 #v2 != (v1,v3) if nr > 2
+        return v2 + v_lb
     else
         return zero(K)/zero(K)
     end

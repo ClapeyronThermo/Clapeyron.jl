@@ -10,153 +10,180 @@ function det_22(a,b,c,d)
     return f-e  #ab - cd + cd - cd
 end
 
-function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
-    tup = (poly[1],poly[2],poly[3],poly[4])
-    return solve_cubic_eq(tup)
+
+#=
+cbrt(a + b) + cbrt(a - b)
+
+this is equal to cbrt(a)
+=#
+function stable_cbrt_sum(a, b)
+    if iszero(primalval(a)) || iszero(primalval(b))
+        return cbrt(a+b) + cbrt(a-b)
+    end
+    n = 2 * a
+    c̄ = a + b
+    c̲ = a - b
+    t1 = cbrt(c̄ * c̄)   # (a+b)^(2/3)
+    t2 = cbrt(c̲ * c̄)   # (a^2 - b^2)^(1/3), but computed as product
+    t3 = cbrt(c̲ * c̲)   # (a-b)^(2/3)
+    d = t1 - t2 + t3
+    return n / d
 end
 
-function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
-    # copied from PolynomialRoots.jl, adapted to be AD friendly
-    # Cubic equation solver for complex polynomial (degree=3)
-    # http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
-    # poly = (a,b,c,d) that represents a + bx + cx3 + dx4
+#=base cubic root solver
+returns num_real_roots,r1,r2,r3
+if num_real_roots < 3 then r2 and r3 represent the real and imaginary part of the complex roots:
+    c1 = Complex(r1)
+    c2 = Complex(r3,r2)
+    c3 = Complex(r3,-r2)
 
-    _1 = one(T)
-    third = _1/3
-    a1  = one(T) / poly[4]
-    E1  = -poly[3]*a1
-    E2  = poly[2]*a1
-    E3  = -poly[1]*a1
-    s0  = E1
-    E12 = E1*E1
-    Ap = (27*E3,-9*E2,zero(T),T(2))
-    A = evalpoly(E1,Ap) #TODO: compensated arithmetic evalpoly really needed
+where r2 is the imaginary part and r3 is the real part.
 
-    if abs(A) < 10*eps(typeof(A))
-        A = det_22(2*E1,E12,9*E1,E2) + 27*E3
+if num_real_roots == 2, then r2 can be ignored and you can just take r1 and r3.
+=#
+function __roots3(pol::NTuple{4,T}) where T
+    #x³ + ax² + bx + c
+    x0,x1,x2,x3 = pol
+    a = x2/x3
+    b = x1/x3
+    c = x0/x3
+    _0 = zero(T)
+    I1 = a
+    I1 = -a
+    _3J2 = a*a - 3*b # J2 = = a²/3 - b
+
+    _27J3 = fma(-27.0, c, (((9.0 * b) - ((a + a) * a)) * a))   #J3 = ab/3 - 2a³/27 - c
+    Δ = ((((((a * a) * b) * b) - (4 * b^3)) - ((4.0 * c) * a^3)) - (c * (27 * c))) + (((18 * a) * b) * c) #Δ = a² b² - 4b³ - 4a³ c - 27c² + 18abc
+
+    if !isfinite(Δ)
+        r0 = oftype(Δ,NaN)
+        return 0,r0,r0,r0
     end
-    #A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
-    B = det_22(E1,E1,3,E2)
-    #B   = E12 - 3*E2                 # = s1 s2
-    # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
-    Δ2p = (4*E2*E2*E2 + 27*E3*E3,-18*E2*E3,-E2*E2,4*E3)
-    Δ2 = 27*evalpoly(E1,Δ2p) #TODO: compensated arithmetic evalpoly really needed
-    if Δ2 < 10*eps(typeof(A))
-        E1p = (one(E1),E1,E1*E1,E1*E1*E1)
-        Δ2 = 27*dot(E1p,Δ2p)
-    end
-    Δ = Base.sqrt(complex(Δ2))
-    #Δ = (A*A - 4*B*B*B)^0.5
-    if real(A*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
-        s10 = 0.5 * (A + Δ)
+
+    if Δ >= _0
+        sqrt_3J2 = sqrt(max(_0, _3J2))
+        α = 2 * sqrt_3J2
+        ϕ = atan(sqrt(max(_0, 27 * Δ)), _27J3)  # atan(y,x)
+
+        λ1 = ϕ / 3
+        λ2 = (ϕ + 2π) / 3
+        λ3 = (ϕ + 4π) / 3
+        r1 = (I1 + α * cos(λ1)) / 3
+        r2 = (I1 + α * cos(λ2)) / 3
+        r3 = (I1 + α * cos(λ3)) / 3
+
+        #refine
+        r1,r2,r3 = durand_kerner_refine((r1,r2,r3),(a,b,c))
+
+        #sort
+        r1,r2,r3 = r1,minmax(r2,r3)
+        r1,r2,r3 = minmax(r1,r2),r3
+        r1,r2,r3 = r1,minmax(r2,r3)
+
+        elseif r1 == r2 && r2 == r3
+            r1 = refine_r1(r1)
+            return complex_roots_from_r1(r1)
+        elseif r1 == r2
+            return 2,r3,zero(T),r1
+        elseif r2 == r3
+            return 2,r1,zero(T),r3
+        end
+        r12 = (x1 + x2)/2
+        r23 = (x2 + x3)/2
+        f12 = evalpoly(mid12, pol)
+        f23 = evalpoly(mid23, pol)
+        if abs(f12) <  eps(typeof(f12)) && isapprox(r1,r2)
+            (2, r3, zero(T), r12) # first the single root, then the double root
+        elseif abs(f23) < eps(typeof(f23)) && isapprox(r2,r3)
+            (2, r1, zero(T), r23) # first the single root, then the double root
+        else
+            sign1 = signbit(f12)
+            sign2 = signbit(f23)
+            if sign1 == sign2 # only one root
+                if sign1 ⊻ (pol[4] > 0)
+                    r1 = refine_r1(a,b,c,r1)
+                    return complex_roots_from_r1(r1)
+                else
+                    r3 = refine_r1(a,b,c,r3)
+                    return complex_roots_from_r1(r3)
+                end
+            else # three distinct roots
+                (3, r1, r2, r3)
+            end
+        end
     else
-        s10 = 0.5 * (A - Δ)
+        D = -Δ / 108.0            # D > 0
+        sqrtD = sqrt(D)
+        J3_half = fma(-a, b / -6, fma(-0.5, c, (((a * a) * a) * (-37 // 999))))
+        r1 = refine_r1(a,b,c,r1)
+        r1 = stable_cbrt_sum(J3_half,sqrtD) - a/3
+        return complex_roots_from_r1(a,b,c,r1)
     end
-    r = abs(s10)
-    θ = angle(s10)
-    s1 =  cbrt(r) * cis(θ * third)
-    if s1 == 0
-        s2 = s1
-    else
-        s2 = B / s1
-    end
-    zeta1 = complex(-0.5, sqrt(T(3.0))*0.5)
-    zeta2 = conj(zeta1)
-    return (third*(s0 + s1 + s2), third*(s0 + s1*zeta2 + s2*zeta1), third*(s0 + s1*zeta1 + s2*zeta2))
 end
 
-function solve_real_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
-    # copied from PolynomialRoots.jl, adapted to be AD friendly
-    # Cubic equation solver for complex polynomial (degree=3)
-    # http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
-    # poly = (a,b,c,d) that represents a + bx + cx3 + dx4
+function complex_roots_from_r1(a::T,b::T,c::T,r1::T) where T
+    A2 = a + r1
+    B2 = evalpoly(r1,(b,a,one(T))) #b + a*r1 + r1^2
+    disc2 = fma(x + a, fma(-3.0, x, a), -4.0 * b)
+    real_part = -A2 * 0.5
+    imag_part = sqrt(max(0.0, -disc2)) * 0.5
+    return 1,r1,imag_part,real_part
+end
 
-    _1 = one(T)
-    third = _1/3
-    a1  = one(T) / poly[4]
-    E1  = -poly[3]*a1
-    E2  = poly[2]*a1
-    E3  = -poly[1]*a1
-    s0  = E1
-    E12 = E1*E1
-    Ap = (27*E3,-9*E2,zero(T),T(2))
-    A = evalpoly(E1,Ap)
-
-    if abs(A) < 10*eps(typeof(A))
-        A = det_22(2*E1,E12,9*E1,E2) + 27*E3
-    end
-    #A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
-    B = det_22(E1,E1,3,E2)
-    #B   = E12 - 3*E2                 # = s1 s2
-    # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
-    Δ2p = (4*E2*E2*E2 + 27*E3*E3,-18*E2*E3,-E2*E2,4*E3)
-    Δ2 = 27*evalpoly(E1,Δ2p)
-    if Δ2 < 10*eps(typeof(A))
-        E1p = (one(E1),E1,E1*E1,E1*E1*E1)
-        Δ2 = 27*dot(E1p,Δ2p)
-    end
-
-    if Δ2 > 0 #1 root only
-        Δr = sqrt(Δ2)
-        if A >= 0
-            s10 = 0.5 * (A + Δr)
-        else
-            s10 = 0.5 * (A - Δr)
-        end
-        s1 = cbrt(s10)
-        if iszero(primalval(s1))
-            s2 = s1
-        else
-            s2 = B / s1
-        end
-        z1 = third*(s0 + s1 + s2)
-        return z1,z1,z1
-    end
-
-    #2 or 3 roots
-    Δ = Base.sqrt(complex(Δ2))
-    #Δ = (A*A - 4*B*B*B)^0.5
-    if real(A*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
-        s10 = 0.5 * (A + Δ)
-    else
-        s10 = 0.5 * (A - Δ)
-    end
-    r = abs(s10)
-    θ = angle(s10)
-    s1 = cbrt(r) * cis(θ * third)
-    if s1 == 0
-        s2 = s1
-    else
-        s2 = B / s1
-    end
-    zeta1 = complex(-0.5, sqrt(T(3.0))*0.5)
-    zeta2 = conj(zeta1)
-    k1 = s1*zeta2 + s2*zeta1
-    k2 = s1*zeta1 + s2*zeta2
-    c1 = real(third*(s0 + s1 + s2))
-    c2 = real(third*(s0 + s1*zeta2 + s2*zeta1))
-    c3 = real(third*(s0 + s1*zeta1 + s2*zeta2))
-    Zmin = min(c1,c2,c3)
-    Zmax = max(c1,c2,c3)
-    Zmid = max(min(c1,c2),min(max(c1,c2),c3))
-    #refinement (https://sci-hub.st/10.1021/ie2023004)
-    #=
-    @show Zmin,Zmid,Zmax
-    a  = poly[1]*a1
-    b  = poly[2]*a1
-    c  = poly[3]*a1
-    
-    for i in 1:0
-        Zmin_old,Zmid_old,Zmax_old = Zmin,Zmid,Zmax
-        Zmax = 0.5*Zmax -0.5*a/(Zmin*Zmid)
-        Zmid = 0.5*Zmid + 0.5*(b - Zmax*Zmin)/(Zmax + Zmin)
-        Zmin = 0.5*Zmin - 0.5*c - 0.5*(Zmax + Zmid)
-        if abs(1 - Zmin_old/Zmin) < 8eps(typeof(Zmin))
+function refine_r1(a::T,b::T,c::T,r1::T,bounds::Int) where T
+    lb = T(-Inf)
+    ub = T(-Inf)    
+    poly = (c,b,a,one(T))
+    dpoly = (b,2*a,T(3))
+    x = r1
+    _1 = one(r1)
+    for _ in 1:max_iter
+        f = evalpoly(x,poly)
+        df = evalpoly(x,dpoly)
+        if abs(df) <= 10*eps(eltype(r1)) * max(_1, abs(x))
             break
-        end  
-    end =#
-    return Zmin,Zmid,Zmax
+        end
+        dx = f / df
+        x = x - dx
+        if abs(dx) <= tol * max(_1, abs(x))
+            break
+        end
+    end
+    return x
+end
 
+function durand_kerner_refine(r0::NTuple{3,T}, abc::NTuple{3,T}) where T
+    ω = 0.5
+    r = r0
+    a,b,c = abc
+    pol = (c,b,a,one(T))
+    for iter in 1:20
+        rnew = r
+        @inbounds for i in 1:3
+            x = r[i]
+            # Evaluate p(x)
+            fx = evalpoly(x,pol)
+
+            # Compute denominator product over all j != i
+            denom = one(T)
+            @inbounds for j in 1:3
+                if j != i
+                    denom *= (r[i] - r[j])
+                end
+            end
+
+            # Avoid division by zero for (near‑)multiple roots
+            ri = abs(denom) < 1e-15 ? x : (x - ω * fx / denom : x)
+            rnew = Base.setindex(rnew,ri,i)
+        end
+        dr = rnew .- r
+        max_change = maximum(abs,dr)
+        r = rnew
+        if max_change < 1e-12
+            break
+        end
+    end
+    return r
 end
 
 
@@ -166,12 +193,16 @@ end
 Solves a cubic equation of the form pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3
 """
 function roots3(pol)
-    a,b,c,d = pol[1],pol[2],pol[3],pol[4]
-    return SVector(solve_cubic_eq((a,b,c,d)))
+    _pol = promote(pol[1],pol[2],pol[3],pol[4])
+    nr,r1,r2,r3 = __roots3(_pol)
+    if nr == 3 || nr == 0
+        return Complex(r1),Complex(r2),Complex(r3)
+    end
+    return Complex(r1),Complex(r3,r2),Complex(r3,-r2)
 end
 
 function roots3(a,b,c,d)
-    x = (a,b,c,d)
+    x = promote(a,b,c,d)
     return roots3(x)
 end
 
@@ -179,47 +210,27 @@ end
     real_roots3(pol::NTuple{4,T}) where {T<:Real}
 
 Given a cubic real polynom of the form `pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3`,
-returns `(n, zl, zg)` where `n` is the number of real roots and:
-- if `n == 1`, `zl` and `zg` are equal to the only real root, the other two are complex.
-- if `n == 2`, `zl` is the single real root and `zg` is the double (degenerate) real root.
-- if `n == 3`, `zl` is the lowest real root and `zg` the greatest real root.
+returns `(n, r1, r2, r3)` where `n` is the number of real roots and:
+- if `n == 1`, returns `(r1,r1,r1)`, only the real root.
+- if `n == 2`, returns `(r1,rx,r3)`, sorted. where `rx` will be the value of the double root.
+- if `n == 3`, returns `(r1,r2,r3)`, sorted.
 
 !!! info
     If there is a single root triply degenerate, e.g. with `pol == (1,3,3,1)` corresponding
-    to `(x+1)^3`, this will return `n == 2` and `zl == zg` equal to the root.
+    to `(x+1)^3`, the solver may return `2,(r1,r1,r1)`, where the double and the triple root being equal.
 """
 function real_roots3(pol::NTuple{4,T}) where {T<:Real}
-    x1, x2, x3 = solve_real_cubic_eq(pol)
-    if x1 == x2 == x3
-        return 1,x1,x2,x3
-    elseif x1 == x2 || x2 == x3
-        xmin,xmax = minmax(x1,x3)
-        return 2,xmin,xmax,xmax
-    elseif x1 == x3
-        xmin,xmax = minmax(x1,x2)
-        return 2,xmin,xmax,xmax
+    nr,r1,r2,r3 = __roots3(pol)
+    nr == 1 && (return nr,r1,r1,r1)
+    if nr == 2
+        if r3 < r1
+            return nr,r3,r3,r1
+        else
+            return nr,r1,r3,r3
+        end 
     end
-    mid12 = (x1 + x2)/2
-    mid23 = (x2 + x3)/2
-    between1 = evalpoly(mid12, pol)
-    between2 = evalpoly(mid23, pol)
-    if abs(between1) <  eps(typeof(between1)) && isapprox(x1,x2)
-        (2, x3, mid12, mid12) # first the single root, then the double root
-    elseif abs(between2) < eps(typeof(between2)) && isapprox(x2,x3)
-        (2, x1, mid23, mid23) # first the single root, then the double root
-    else
-        sign1 = signbit(between1)
-        sign2 = signbit(between2)
-        if sign1 == sign2 # only one root
-            if sign1 ⊻ (pol[4] > 0)
-                (1, x1, x1, x1)
-            else
-                (1, x3, x3, x3)
-            end
-        else # three distinct roots
-            (3, x1, x2, x3)
-        end
-    end
+
+    return nr,r1,r2,r3
 end
 
 real_roots3(a,b,c,d) = real_roots3((a,b,c,d))

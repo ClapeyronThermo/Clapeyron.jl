@@ -401,13 +401,7 @@ function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
         end
         c = c̄*sum(z)
         num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
-        if num_isreal == 2
-            vvl,vvg = nRTp*z1 - c,nRTp*z2 - c
-        elseif num_isreal == 3
-            vvl,vvg = nRTp*z1 - c,nRTp*z3 - c
-        else
-            vvl,vvg = nRTp*z1 - c,nRTp*z1 - c
-        end
+        vvl,vvg = nRTp*z1 - c,nRTp*z3 - c
     else
         if is_liquid(phase)
             vl0,_ = zero_pressure_impl(model,T,z)

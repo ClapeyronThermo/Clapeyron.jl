@@ -35,7 +35,7 @@ function NLSolvers.NEqOptions(method::ThermodynamicMethod)
                     maxiter = method.max_iters)
 end
 
-function mw(model::EoSModel) 
+function mw(model::EoSModel)
     if has_groups(model)
         return group_Mw(model)
     else
@@ -200,7 +200,7 @@ Equivalent to `sum(iterator,init=0.0)`.
 
 function is_ad_input(model,V,T,z)
     #model_primal = Solvers.primal_eltype(model)
-    #TODO: do something if the model parameters themselves use ForwardDiff 
+    #TODO: do something if the model parameters themselves use ForwardDiff
     V_primal,T_primal,z_primal = Solvers.primalval(V),Solvers.primalval(T),Solvers.primalval(z)
     type = Base.promote_eltype(V,T,z)
     primal_type = Base.promote_eltype(V_primal,T_primal,z_primal)
@@ -320,7 +320,7 @@ function IGFormReferenceState(_components;userlocations = String[],H0 = nothing,
         params = getparams(components,["properties/formation_ig.csv"];userlocations = userlocations,verbose = verbose)
         _H0 = convert(Vector{Float64},params["H0"].values)
         _S0 = convert(Vector{Float64},params["S0"].values)
-    end 
+    end
     ref = ReferenceState(:ideal_gas,T0 = 298.15,P0 = 1e5,S0 = _S0,H0 = _H0,phase = :vapour)
     #initialize_reference_state!(components,ref)
     return ref
@@ -337,10 +337,10 @@ V = 0.04
 T = 300.0
 z = [0.2,0.8]
 model = BasicIdeal()
-p1 = FixedEoSEval{:V}(pressure,(model,T,z)) 
+p1 = FixedEoSEval{:V}(pressure,(model,T,z))
 p1(V) #pressure depending only on volume
 
-p2 = FixedEoSEval{:T}(pressure,(model,V,z)) 
+p2 = FixedEoSEval{:T}(pressure,(model,V,z))
 p(T) #pressure depending only on temperature
 
 p3 = FixedEoSEval{:VT}(pressure,(model,z))
@@ -425,6 +425,20 @@ macro deferred_Z(f,tag)
     quote
         WithContext(FixedEoSEval{:z}($f,(model,V,T)),∂Tag{$tag}())
     end |> esc
+end
+
+#=1 variable support for Roots.jl=#
+
+function roots_solve_ad(prob::Roots.ZeroProblem{F,X},method,p::P) where {F,X,P}
+    λprob = Roots.ZeroProblem(prob.F,primalval(prob.x₀))
+    λp = primalval(p)
+    λx = Roots.solve(λprob,method,λp)
+    f(_x,_p) = first(prob.F(_x,_p))
+    if isnan(λx) # guard against NaN in input, do not need Dual types here?
+        fx = f(λx,p)
+        return λx*one(fx)
+    end
+    return ift(λx,f,p,λp)
 end
 
 #initial guesses for most methods
