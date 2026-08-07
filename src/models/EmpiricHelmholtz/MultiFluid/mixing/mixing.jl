@@ -1,10 +1,10 @@
 """
-    recombine_mixing!(model::MultiFluid,mixing::MixingRule)
+    recombine_mixing_reduced!(model::MultiFluid,mixing::MixingRule)
 
 Calculates missing values, using the parameters stored in `model`. modifies `mixing` implace. this function is called at `MultiFluid` model creation time.
 
 """
-recombine_mixing!(model::MultiFluid,mixing,estimate) = nothing
+recombine_mixing_reduced!(model::MultiFluid,mixing,estimate) = nothing
 
 function init_multifluid_mixing(model::EoSModel,components,estimate,userlocations = String[],verbose = false)
     return model

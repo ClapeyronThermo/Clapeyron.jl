@@ -9,8 +9,8 @@ Inputs:
 - `gas_fug = true`: if the solver uses gas fugacity coefficients. on `ActivityModel` is set by default to `false`
 - `poynting = true`: if the solver use the poynting correction on the liquid fugacity coefficients. on `ActivityModel` is set by default to `false`
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
-- `p0 = nothing`: optional, initial guess for the dew pressure [`Pa`]
-- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `p0 = nothing`: optional, initial guess for the dew pressure `[Pa]`
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
@@ -69,7 +69,7 @@ end
 
 function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
     R̄ = Rgas(model)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     sat = saturation_pressure.(pure,T)
     vl_pure = getindex.(sat,2)
     p_pure = first.(sat)
@@ -82,7 +82,7 @@ function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
     end
    
     if isnan(vv)
-        return vv,vv,vv,x
+        return vv,vv,vv,y
     end
 
     if isnothing(method.p0)
@@ -184,8 +184,8 @@ Inputs:
 - `gas_fug = true`: if the solver uses gas fugacity coefficients. on `ActivityModel` is set by default to `false`
 - `poynting = true`: if the solver use the poynting correction on the liquid fugacity coefficients. on `ActivityModel` is set by default to `false`
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
-- `T0 = nothing`: optional, initial guess for the dew temperature [`K`]
-- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `T0 = nothing`: optional, initial guess for the dew temperature `[K]`
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations

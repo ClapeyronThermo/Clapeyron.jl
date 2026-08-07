@@ -1,124 +1,123 @@
 Clapeyron Database Parameters
 Asymmetric mixing parameters for EOS-CG 2021 EoS [csvtype = unlike]
-species1,species2,beta_v,gamma_v,beta_T,gamma_T,source
 species1,cas1,species2,cas2,beta_v,gamma_v,beta_T,gamma_T,source
 carbon dioxide,124-38-9,water,7732-18-5,1.021392,0.895156,1.030538,0.828472,10.1007/s10765-023-03263-6
 nitrogen,7727-37-9,carbon dioxide,124-38-9,0.977795,1.047578,1.005895,1.107654,10.1007/s10765-023-03263-6
-carbon dioxide,124-38-9,oxygen,7782-44-7,1,1.08446,1,1.031986,10.1007/s10765-023-03263-6
+carbon dioxide,124-38-9,oxygen,7782-44-7,1.0,1.08446,1.0,1.031986,10.1007/s10765-023-03263-6
 carbon dioxide,124-38-9,argon,7440-37-1,1.003766,1.013833,0.998705,1.039675,10.1007/s10765-023-03263-6
 carbon dioxide,124-38-9,carbon monoxide,630-08-0,1.033802,1.000162,0.989782,1.16213,10.1007/s10765-023-03263-6
 carbon dioxide,124-38-9,hydrogen,1333-74-0,1.198,0.842,0.979,1.961,10.1007/s10765-023-03263-6
 methane,74-82-8,carbon dioxide,124-38-9,0.999518,1.002807,1.022624,0.975665,10.1007/s10765-023-03263-6
 carbon dioxide,124-38-9,hydrogen sulfide,7783-06-4,0.906631,1.024086,1.016035,0.926019,10.1007/s10765-023-03263-6
 carbon dioxide,124-38-9,sulfur dioxide,7446-09-5,0.889865,1.005778,1.020063,1.007975,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,carbon dioxide,124-38-9,1,1,1,1.07,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,carbon dioxide,124-38-9,1,1,1,1,10.1007/s10765-023-03263-6
-hydrogen chloride,7647-01-0,carbon dioxide,124-38-9,1,1,1,1,10.1007/s10765-023-03263-6
-chlorine,7782-50-5,carbon dioxide,124-38-9,1,1,1,1,10.1007/s10765-023-03263-6
-ammonia,7664-41-7,carbon dioxide,124-38-9,1,1,1,1,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,carbon dioxide,124-38-9,1,1,1.081,1.386,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,carbon dioxide,124-38-9,1.0,1.0,1.0,1.07,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,carbon dioxide,124-38-9,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,carbon dioxide,124-38-9,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+cl2~|~chlorine,7782-50-5,carbon dioxide,124-38-9,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+ammonia,7664-41-7,carbon dioxide,124-38-9,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,carbon dioxide,124-38-9,1.0,1.0,1.081,1.386,10.1007/s10765-023-03263-6
 nitrogen,7727-37-9,water,7732-18-5,0.926245,0.733443,1.048054,0.805147,10.1007/s10765-023-03263-6
 oxygen,7782-44-7,water,7732-18-5,1.028197,0.87346,1.25306,0.807842,10.1007/s10765-023-03263-6
 water,7732-18-5,argon,7440-37-1,0.940398,1.050952,0.679104,0.921,10.1007/s10765-023-03263-6
 carbon monoxide,630-08-0,water,7732-18-5,0.940426,0.766756,0.95609,0.823984,10.1007/s10765-023-03263-6
-hydrogen,1333-74-0,water,7732-18-5,1,1,1,1,10.1007/s10765-023-03263-6
+hydrogen,1333-74-0,water,7732-18-5,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 methane,74-82-8,water,7732-18-5,1.176,1.038,1.263,0.748,10.1007/s10765-023-03263-6
 hydrogen sulfide,7783-06-4,water,7732-18-5,0.945818,1.189702,0.960526,0.924026,10.1007/s10765-023-03263-6
 sulfur dioxide,7446-09-5,water,7732-18-5,1.094032,0.962547,1.019562,0.916311,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,water,7732-18-5,1.0076,1.08916,1.004,0.9573,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,water,7732-18-5,1.006,1.123,0.9932,0.9734,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,argon,7440-37-1,1,1,1,1,10.1007/s10765-023-03263-6
-hydrogen chloride,7647-01-0,argon,7440-37-1,1,1.001236,1,1.074563,10.1007/s10765-023-03263-6
-chlorine,7782-50-5,argon,7440-37-1,1,1,1,1,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,water,7732-18-5,1.0076,1.08916,1.004,0.9573,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,water,7732-18-5,1.006,1.123,0.9932,0.9734,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,argon,7440-37-1,1.0,1.001236,1.0,1.074563,10.1007/s10765-023-03263-6
+cl2~|~chlorine,7782-50-5,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 argon,7440-37-1,ammonia,7664-41-7,0.756526,1.041113,1.146326,0.998353,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,argon,7440-37-1,1,1,1,1,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 carbon monoxide,630-08-0,hydrogen,1333-74-0,1.037,1.04,1.078,1.105,10.1007/s10765-023-03263-6
 methane,74-82-8,carbon monoxide,630-08-0,0.997341,1.006103,0.987412,0.987473,10.1007/s10765-023-03263-6
 carbon monoxide,630-08-0,hydrogen sulfide,7783-06-4,0.79566,1.101731,1.025537,1.02275,10.1007/s10765-023-03263-6
-sulfur dioxide,7446-09-5,carbon monoxide,630-08-0,1,1.007241,1,1.177903,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,carbon monoxide,630-08-0,1,1,1,1,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,carbon monoxide,630-08-0,1,1,1,1,10.1007/s10765-023-03263-6
-hydrogen chloride,7647-01-0,carbon monoxide,630-08-0,1,1,1,1,10.1007/s10765-023-03263-6
-chlorine,7782-50-5,carbon monoxide,630-08-0,1,1,1,1,10.1007/s10765-023-03263-6
+sulfur dioxide,7446-09-5,carbon monoxide,630-08-0,1.0,1.007241,1.0,1.177903,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,carbon monoxide,630-08-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,carbon monoxide,630-08-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,carbon monoxide,630-08-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+cl2~|~chlorine,7782-50-5,carbon monoxide,630-08-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 carbon monoxide,630-08-0,ammonia,7664-41-7,0.739937,1.707,1.057512,0.952705,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,carbon monoxide,630-08-0,1,1,1,1,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,carbon monoxide,630-08-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 methane,74-82-8,hydrogen,1333-74-0,1.086,0.804,1.01,1.44,10.1007/s10765-023-03263-6
-hydrogen,1333-74-0,hydrogen sulfide,7783-06-4,1,1,1,1,10.1007/s10765-023-03263-6
-sulfur dioxide,7446-09-5,hydrogen,1333-74-0,1,1.035171,1,1.940852,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,hydrogen,1333-74-0,1,1,1,1,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,hydrogen,1333-74-0,1,1,1,1,10.1007/s10765-023-03263-6
-hydrogen chloride,7647-01-0,hydrogen,1333-74-0,1,1.005948,1,1.724556,10.1007/s10765-023-03263-6
-chlorine,7782-50-5,hydrogen,1333-74-0,1,1.03541,1,1.914078,10.1007/s10765-023-03263-6
+hydrogen,1333-74-0,hydrogen sulfide,7783-06-4,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+sulfur dioxide,7446-09-5,hydrogen,1333-74-0,1.0,1.035171,1.0,1.940852,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,hydrogen,1333-74-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,hydrogen,1333-74-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,hydrogen,1333-74-0,1.0,1.005948,1.0,1.724556,10.1007/s10765-023-03263-6
+cl2~|~chlorine,7782-50-5,hydrogen,1333-74-0,1.0,1.03541,1.0,1.914078,10.1007/s10765-023-03263-6
 hydrogen,1333-74-0,ammonia,7664-41-7,1.0103,0.7298,0.98824,1.1266,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,hydrogen,1333-74-0,1,1,1,1,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,hydrogen,1333-74-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 methane,74-82-8,hydrogen sulfide,7783-06-4,1.012599,1.040161,1.01109,0.961156,10.1007/s10765-023-03263-6
-hydrogen chloride,7647-01-0,water,7732-18-5,1,1,1,1,10.1007/s10765-023-03263-6
-chlorine,7782-50-5,water,7732-18-5,1,1,1,1,10.1007/s10765-023-03263-6
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,water,7732-18-5,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+cl2~|~chlorine,7782-50-5,water,7732-18-5,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 ammonia,7664-41-7,water,7732-18-5,1.044759,1.189754,0.933585,1.015826,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,water,7732-18-5,0.98,1.2687,0.97,1.01,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,water,7732-18-5,0.98,1.2687,0.97,1.01,10.1007/s10765-023-03263-6
 nitrogen,7727-37-9,oxygen,7782-44-7,0.999522,0.997082,0.997191,0.995157,10.1007/s10765-023-03263-6
 nitrogen,7727-37-9,argon,7440-37-1,1.006697,1.001549,0.999442,0.989311,10.1007/s10765-023-03263-6
-nitrogen,7727-37-9,carbon monoxide,630-08-0,1,1.001317,1.002409,0.9941,10.1007/s10765-023-03263-6
+nitrogen,7727-37-9,carbon monoxide,630-08-0,1.0,1.001317,1.002409,0.9941,10.1007/s10765-023-03263-6
 nitrogen,7727-37-9,hydrogen,1333-74-0,0.993,0.773,1.027,1.24,10.1007/s10765-023-03263-6
 methane,74-82-8,nitrogen,7727-37-9,0.998721,1.01395,0.998099,0.979273,10.1007/s10765-023-03263-6
 nitrogen,7727-37-9,hydrogen sulfide,7783-06-4,0.910394,1.256844,1.004692,0.960174,10.1007/s10765-023-03263-6
 sulfur dioxide,7446-09-5,nitrogen,7727-37-9,0.903625,1.215581,1.045874,1.194659,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,nitrogen,7727-37-9,1,1,1,1,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,nitrogen,7727-37-9,1,1,1,1,10.1007/s10765-023-03263-6
-hydrogen chloride,7647-01-0,nitrogen,7727-37-9,1,1,1,1,10.1007/s10765-023-03263-6
-chlorine,7782-50-5,nitrogen,7727-37-9,1,1,1,1,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,nitrogen,7727-37-9,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,nitrogen,7727-37-9,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,nitrogen,7727-37-9,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+cl2~|~chlorine,7782-50-5,nitrogen,7727-37-9,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 nitrogen,7727-37-9,ammonia,7664-41-7,0.739937,1.447261,1.057512,0.952705,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,nitrogen,7727-37-9,1,1,1,1,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,nitrogen,7727-37-9,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 oxygen,7782-44-7,argon,7440-37-1,1.006502,1.001341,0.999039,0.988822,10.1007/s10765-023-03263-6
-oxygen,7782-44-7,carbon monoxide,630-08-0,1,1,1,1,10.1007/s10765-023-03263-6
-hydrogen,1333-74-0,oxygen,7782-44-7,1,1,1,1,10.1007/s10765-023-03263-6
-methane,74-82-8,oxygen,7782-44-7,1,1,1,0.95,10.1007/s10765-023-03263-6
-oxygen,7782-44-7,hydrogen sulfide,7783-06-4,1,1,1,1,10.1007/s10765-023-03263-6
+oxygen,7782-44-7,carbon monoxide,630-08-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+hydrogen,1333-74-0,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+methane,74-82-8,oxygen,7782-44-7,1.0,1.0,1.0,0.95,10.1007/s10765-023-03263-6
+oxygen,7782-44-7,hydrogen sulfide,7783-06-4,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 sulfur dioxide,7446-09-5,oxygen,7782-44-7,1.219246,1.660632,0.927961,1.035878,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,oxygen,7782-44-7,1,1,1,1,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,oxygen,7782-44-7,1,1,1,1,10.1007/s10765-023-03263-6
-hydrogen chloride,7647-01-0,oxygen,7782-44-7,1,1.001592,1,1.069638,10.1007/s10765-023-03263-6
-chlorine,7782-50-5,oxygen,7782-44-7,1,1,1,1,10.1007/s10765-023-03263-6
-ammonia,7664-41-7,oxygen,7782-44-7,1,1.000002,1,1.118566,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,oxygen,7782-44-7,1,1,1,1,10.1007/s10765-023-03263-6
-carbon monoxide,630-08-0,argon,7440-37-1,1,1.159721,1,0.954216,10.1007/s10765-023-03263-6
-hydrogen,1333-74-0,argon,7440-37-1,1,1,1,1,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,oxygen,7782-44-7,1.0,1.001592,1.0,1.069638,10.1007/s10765-023-03263-6
+cl2~|~chlorine,7782-50-5,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+ammonia,7664-41-7,oxygen,7782-44-7,1.0,1.000002,1.0,1.118566,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+carbon monoxide,630-08-0,argon,7440-37-1,1.0,1.159721,1.0,0.954216,10.1007/s10765-023-03263-6
+hydrogen,1333-74-0,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 methane,74-82-8,argon,7440-37-1,1.03463,1.014679,0.990954,0.989843,10.1007/s10765-023-03263-6
-hydrogen sulfide,7783-06-4,argon,7440-37-1,1,1,1,1,10.1007/s10765-023-03263-6
-sulfur dioxide,7446-09-5,argon,7440-37-1,1,1.021291,1,1.14102,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,argon,7440-37-1,1,1,1,1,10.1007/s10765-023-03263-6
+hydrogen sulfide,7783-06-4,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+sulfur dioxide,7446-09-5,argon,7440-37-1,1.0,1.021291,1.0,1.14102,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 sulfur dioxide,7446-09-5,methane,74-82-8,1.315534,1.119543,0.999432,1.115714,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,methane,74-82-8,1,1,1,1,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,methane,74-82-8,1,1,1,1,10.1007/s10765-023-03263-6
-hydrogen chloride,7647-01-0,methane,74-82-8,1,1,1,1,10.1007/s10765-023-03263-6
-chlorine,7782-50-5,methane,74-82-8,1,1,1,1,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,methane,74-82-8,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,methane,74-82-8,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,methane,74-82-8,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+cl2~|~chlorine,7782-50-5,methane,74-82-8,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
 methane,74-82-8,ammonia,7664-41-7,1.006058,1.069834,1.022371,0.940156,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,methane,74-82-8,1.074,1,1,1.625,10.1007/s10765-023-03263-6
-sulfur dioxide,7446-09-5,hydrogen sulfide,7783-06-4,1,1,1,1,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,hydrogen sulfide,7783-06-4,1,1,1,1,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,hydrogen sulfide,7783-06-4,1,1,1,1,10.1007/s10765-023-03263-6
-hydrogen chloride,7647-01-0,hydrogen sulfide,7783-06-4,1,1,1,1,10.1007/s10765-023-03263-6
-chlorine,7782-50-5,hydrogen sulfide,7783-06-4,1,1,1,1,10.1007/s10765-023-03263-6
-ammonia,7664-41-7,hydrogen sulfide,7783-06-4,1,1,1,1,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,hydrogen sulfide,7783-06-4,1,1.1408,1,1.05943,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,sulfur dioxide,7446-09-5,1,1,1.021293,1.200045,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,sulfur dioxide,7446-09-5,1,1,1.021293,1.200045,10.1007/s10765-023-03263-6
-sulfur dioxide,7446-09-5,hydrogen chloride,7647-01-0,1,1,1.002605,1.04838,10.1007/s10765-023-03263-6
-chlorine,7782-50-5,sulfur dioxide,7446-09-5,1.024354,1.016621,1.015678,0.92782,10.1007/s10765-023-03263-6
-ammonia,7664-41-7,sulfur dioxide,7446-09-5,1,1,1,1,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,sulfur dioxide,7446-09-5,1,1.097897,1,1.037046,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,ethanolamine,141-43-5,0.766762,0.852448,1.015703,1.020484,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,hydrogen chloride,7647-01-0,1,1,1,1,10.1007/s10765-023-03263-6
-ethanolamine,141-43-5,chlorine,7782-50-5,1,1,1,1,10.1007/s10765-023-03263-6
-ammonia,7664-41-7,ethanolamine,141-43-5,1,1,1,1,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,ethanolamine,141-43-5,1,1,1,0.805,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,hydrogen chloride,7647-01-0,1,1,1,1,10.1007/s10765-023-03263-6
-diethanolamine,111-42-2,chlorine,7782-50-5,1,1,1,1,10.1007/s10765-023-03263-6
-ammonia,7664-41-7,diethanolamine,111-42-2,1,1,1,1,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,diethanolamine,111-42-2,1,1,1,1,10.1007/s10765-023-03263-6
-chlorine,7782-50-5,hydrogen chloride,7647-01-0,0.9281,0.917288,1.007373,0.968865,10.1007/s10765-023-03263-6
-ammonia,7664-41-7,hydrogen chloride,7647-01-0,1,1,1,1,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,hydrogen chloride,7647-01-0,1,1.173873,1,1.086325,10.1007/s10765-023-03263-6
-ammonia,7664-41-7,chlorine,7782-50-5,1,1,1,1,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,chlorine,7782-50-5,1,1.096224,1,1.041648,10.1007/s10765-023-03263-6
-methyldiethanolamine,105-59-9,ammonia,7664-41-7,1,1.207629,1,1.045755,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,methane,74-82-8,1.074,1.0,1.0,1.625,10.1007/s10765-023-03263-6
+sulfur dioxide,7446-09-5,hydrogen sulfide,7783-06-4,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,hydrogen sulfide,7783-06-4,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,hydrogen sulfide,7783-06-4,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,hydrogen sulfide,7783-06-4,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+cl2~|~chlorine,7782-50-5,hydrogen sulfide,7783-06-4,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+ammonia,7664-41-7,hydrogen sulfide,7783-06-4,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,hydrogen sulfide,7783-06-4,1.0,1.1408,1.0,1.05943,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,sulfur dioxide,7446-09-5,1.0,1.0,1.021293,1.200045,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,sulfur dioxide,7446-09-5,1.0,1.0,1.021293,1.200045,10.1007/s10765-023-03263-6
+sulfur dioxide,7446-09-5,hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,1.0,1.0,1.002605,1.04838,10.1007/s10765-023-03263-6
+cl2~|~chlorine,7782-50-5,sulfur dioxide,7446-09-5,1.024354,1.016621,1.015678,0.92782,10.1007/s10765-023-03263-6
+ammonia,7664-41-7,sulfur dioxide,7446-09-5,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,sulfur dioxide,7446-09-5,1.0,1.097897,1.0,1.037046,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,0.766762,0.852448,1.015703,1.020484,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,cl2~|~chlorine,7782-50-5,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+ammonia,7664-41-7,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,141-43-5,1.0,1.0,1.0,0.805,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,cl2~|~chlorine,7782-50-5,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+ammonia,7664-41-7,"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,"dea~|~diethanolamine~|~2,2'-diethanolamine",111-42-2,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+cl2~|~chlorine,7782-50-5,hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,0.9281,0.917288,1.007373,0.968865,10.1007/s10765-023-03263-6
+ammonia,7664-41-7,hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,1.0,1.173873,1.0,1.086325,10.1007/s10765-023-03263-6
+ammonia,7664-41-7,cl2~|~chlorine,7782-50-5,1.0,1.0,1.0,1.0,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,cl2~|~chlorine,7782-50-5,1.0,1.096224,1.0,1.041648,10.1007/s10765-023-03263-6
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",105-59-9,ammonia,7664-41-7,1.0,1.207629,1.0,1.045755,10.1007/s10765-023-03263-6

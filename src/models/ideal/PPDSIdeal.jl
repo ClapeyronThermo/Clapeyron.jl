@@ -6,6 +6,7 @@ struct PPDSIdealParam <: EoSParam
     E::SingleParam{Float64}
     F::SingleParam{Float64}
     G::SingleParam{Float64}
+    Mw::SingleParam{Float64}
     reference_state::ReferenceState
 end
 
@@ -29,6 +30,7 @@ export PPDSIdeal
 - `E`: Single Parameter (`Float64`) - Model Coefficient
 - `F`: Single Parameter (`Float64`) - Model Coefficient
 - `G`: Single Parameter (`Float64`) - Model Coefficient
+- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
 
 ## Description
 
@@ -69,8 +71,9 @@ idealmodel = PPDSIdeal(["water","carbon dioxide"];
 1. Gmehling, J., Kleiber, M., Kolbe, B., & Rarey, J. (2019). Chemical thermodynamics for process simulation (2nd ed.). Berlin, Germany: Blackwell Verlag.
 """
 PPDSIdeal
-default_locations(::Type{PPDSIdeal}) = ["ideal/PPDSIdeal.csv"]
+default_locations(::Type{PPDSIdeal}) = ["ideal/PPDSIdeal.csv","properties/molarmass.csv"]
 default_references(::Type{PPDSIdeal}) = ["978-3-527-34325-6"] #TODO: find original source of the equation.
+default_ignore_missing_singleparams(::Type{PPDSIdeal}) = ["Mw"]
 
 function a_ideal(model::PPDSIdealModel,V,T,z=SA[1.0])
     #we transform from AlyLee terms to GERG2008 terms.
@@ -85,8 +88,7 @@ function a_ideal(model::PPDSIdealModel,V,T,z=SA[1.0])
 
     Σz = sum(z)
     res = zero(V+T+first(z))
-    ρ = Σz/V
-    lnΣz = log(Σz)
+    ρ = 1/V
     τi = one(T)/T
     Tr = one(T)
     logτi = log(τi)
@@ -115,8 +117,8 @@ function a_ideal(model::PPDSIdealModel,V,T,z=SA[1.0])
             y = Tr/Ā
             coeffs = (zero(λ), 0.5*λ, (λ - D)/6, (G + F)/12, G/20)
             ai += η*evalpoly(y,coeffs)
-            res += xlogx(zi)
-            res += zi*(ai + log(δi) - lnΣz)
+            res += xlogx(zi,δi)
+            res += zi*ai
     end
-    return res/Σz - 1
+    return res/Σz
 end

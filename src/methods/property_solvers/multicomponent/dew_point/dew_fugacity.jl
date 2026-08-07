@@ -11,7 +11,7 @@ Inputs:
 - `modelx`: liquid equation of state model, if any noncondensable compounds are present
 - `modely`: vapour equation of state model
 - `y`: vapour phase composition
-- `T`: temperature [`K`]
+- `T`: temperature `[K]`
 - `vol_cache`: array used to update the phases' volumes
 _ `condensable`: condensable component indices, if any noncondensable compounds are present
 
@@ -20,11 +20,11 @@ Returns: NLSolvers.NEqProblem
 function OF_dewPx! end
 
 function OF_dewPx!(model, y, T, vol_cache)
-    return _fug_OF_neqsystem(model, nothing, y, nothing, T, vol_cache, false, true, (:liquid,:vapor))
+    return _fug_OF_neqsystem(model, nothing, y, nothing, T, vol_cache, FugEnum.DEW_PRESSURE, (:liquid,:vapor))
 end
 
 function OF_dewPx!(modelx,modely, y, T, vol_cache,condensable)
-    return _fug_OF_neqsystem(modelx, modely, nothing, y, nothing, T, vol_cache, false, true, (:liquid,:vapor), condensable)
+    return _fug_OF_neqsystem(modelx, modely, nothing, y, nothing, T, vol_cache, FugEnum.DEW_PRESSURE, (:liquid,:vapor), condensable)
 end
 
 """
@@ -40,10 +40,10 @@ systems of equations.
 
 Inputs:
 - `model`: equation of state model
-- `T`: dew temperature [`K`]
+- `T`: dew temperature `[K]`
 - `y`: vapor phase composition
-- `x0`: initial guess for the liquid phase composition
-- `p0`: initial guess for the dew pressure [`Pa`]
+- `x0`: initial guess for the liquid phase composition `[m³]`
+- `p0`: initial guess for the dew pressure `[Pa]`
 - `vol0`: optional, initial guesses for the liquid and vapor phase volumes
 - `itmax_newton`: optional, number of iterations to update the pressure using newton's method
 - `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
@@ -53,9 +53,9 @@ Inputs:
 - `noncondensables`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
 
 Returns:
-- `p`: dew pressure
-- `volx`: saturared liquid volume
-- `voly`: saturared vapor volume
+- `p`: dew pressure `[Pa]`
+- `volx`: saturared liquid volume `[m³]`
+- `voly`: saturared vapor volume `[m³]`
 - `x`: saturated liquid composition
 """
 function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
@@ -77,7 +77,7 @@ function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
         model_x = nothing
     end
 
-    converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,vol0,false,true,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p, tol_xy = tol_x, tol_of = tol_of)
+    converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,vol0,FugEnum.DEW_PRESSURE,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p, tol_xy = tol_x, tol_of = tol_of)
     p,T,x,y,vol,lnK = res
     volx,voly = vol
     if converged
@@ -86,8 +86,9 @@ function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
         inc0 = vcat(lnK, log(p))
         vol_cache = [volx, voly]
         problem = OF_dewPx!(model_x,model, y, T, vol_cache,condensables)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton()))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
         inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
         lnK = inc[1:(end-1)]
         lnp = inc[end]
 
@@ -110,8 +111,8 @@ system of equations.
 
 Inputs:
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
-- `p0 = nothing`: optional, initial guess for the dew pressure [`Pa`]
-- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `p0 = nothing`: optional, initial guess for the dew pressure `[Pa]`
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `itmax_newton = 10`: optional, number of iterations to update the pressure using newton's method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
@@ -216,7 +217,7 @@ Inputs:
 - `model`: general equation of state model
 - `modelx`: liquid equation of state model, if any noncondensable compounds are present
 - `modely`: vapour equation of state model
-- `P`: pressure [`Pa`]
+- `P`: pressure `[Pa]`
 - `vol_cache`: array used to update the phases' volumes
 _ `condensable`: condensable component indices, if any noncondensable compounds are present
 
@@ -225,11 +226,11 @@ Returns: NLSolvers.NEqProblem
 function OF_dewTx! end
 
 function OF_dewTx!(model, y, p, vol_cache)
-    return _fug_OF_neqsystem(model, nothing, y, p, nothing, vol_cache, false, false, (:liquid,:vapor))
+    return _fug_OF_neqsystem(model, nothing, y, p, nothing, vol_cache, FugEnum.DEW_TEMPERATURE, (:liquid,:vapor))
 end
 
 function OF_dewTx!(model,modely, y, p, vol_cache,condensable)
-    return _fug_OF_neqsystem(model, modely, nothing, y, p, nothing, vol_cache, false, false, (:liquid,:vapor), condensable)
+    return _fug_OF_neqsystem(model, modely, nothing, y, p, nothing, vol_cache, FugEnum.DEW_TEMPERATURE, (:liquid,:vapor), condensable)
 end
 
 """
@@ -245,11 +246,11 @@ non-linear system of equations.
 
 Inputs:
 model: equation of state model
-- `P`: pressure [`Pa`]
+- `P`: pressure `[Pa]`
 - `y`: vapor phase composition
 - `x0`: initial guess for the liquid phase composition
-- `T0`: initial guess for the dew temperature [`K`]
-- `vol0`: optional, initial guesses for the liquid and vapor phase volumes
+- `T0`: initial guess for the dew temperature `[K]`
+- `vol0`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `itmax_newton`: optional, number of iterations to update the temperature using newton's method
 - `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x`: optional, tolerance to stop successive substitution cycle
@@ -258,9 +259,9 @@ model: equation of state model
 - `noncondensables`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
 
 Returns:
-`T`: dew temperature
-`volx`: saturared liquid volume
-`voly`: saturared vapor volume
+`T`: dew temperature `[K]`
+`volx`: saturared liquid volume `[m³]`
+`voly`: saturared vapor volume `[m³]`
 `x`: saturated liquid composition
 """
 function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothing),
@@ -281,7 +282,7 @@ function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothin
         model_x = nothing
     end
 
-    converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,vol0,false,false,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_x, tol_of = tol_of)
+    converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,vol0,FugEnum.DEW_TEMPERATURE,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_x, tol_of = tol_of)
     p,T,x,y,vol,lnK = res
     volx,voly = vol
     if converged
@@ -290,8 +291,9 @@ function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothin
         inc0 = vcat(lnK, log(T))
         vol_cache = [volx, voly]
         problem = OF_dewTx!(model_x,model, y, p, vol_cache,condensables)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton()))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
         inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
         lnK = inc[1:(end-1)]
         lnT = inc[end]
         x_r = y[condensables]./ exp.(lnK)
@@ -313,8 +315,8 @@ non-linear system of equations.
 
 Inputs:
 - `x0 = nothing`: optional, initial guess for the liquid phase composition
-- `T0 = nothing`: optional, initial guess for the dew temperature [`K`]
-- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `T0 = nothing`: optional, initial guess for the dew temperature `[K]`
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `itmax_newton = 10`: optional, number of iterations to update the temperature using newton's method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle

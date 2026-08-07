@@ -25,7 +25,8 @@ end
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
     
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -110,35 +111,24 @@ function PR(components;
         verbose = verbose,
         ignore_missing_singleparams = __ignored_crit_params(alpha))
 
+    model = CubicModel(PR,params,formatted_components;
+                        idealmodel,alpha,mixing,activity,translation,
+                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                        reference_state, verbose)
+
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    pc = params["Pc"]
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    acentricfactor = get(params,"acentricfactor",nothing)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",formatted_components,zeros(length(Tc)))
-    b = PairParam("b",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
-    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = ABCubicParam(a,b,Tc,pc,Mw)
-    references = String["10.1021/I160057A011"]
-    model = PR(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 
-function ab_consts(::Type{<:PRModel})
-    return 0.45723552892138218938,0.077796073903888455972
-end
+default_references(::Type{PR}) = ["10.1021/I160057A011"]
 
-function cubic_Δ(model::PRModel,z)
+@inline function cubic_Δ(::Type{<:PRModel})
     sqrt2 = sqrt(2)
     return (-1+sqrt2,-1-sqrt2)
 end
-
-crit_pure(model::PRModel) = crit_pure_tp(model)
 
 const PR_p = Solvers.ChebyshevRange(
     (0.01701444200703503,0.021799753821513633,0.026585065635992236,0.03615568926494944,0.05529693652286385,0.09357943103869266,0.1701444200703503),

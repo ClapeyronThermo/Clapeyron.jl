@@ -25,7 +25,8 @@ export ogUNIFAC
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
@@ -75,7 +76,8 @@ function ogUNIFAC(components;
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"];group_userlocations = group_userlocations, verbose = verbose)
 
@@ -89,6 +91,7 @@ function ogUNIFAC(components;
     references = String[]
     cache = UNIFACCache(groups,packagedparams)
     model = ogUNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 

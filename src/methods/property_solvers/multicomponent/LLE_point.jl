@@ -27,7 +27,7 @@ end
 ## LLE pressure solver
 
 function x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     sat = saturation_pressure.(pure,T)
     vi = getindex.(sat,2)
     vlx = dot(vi,x)
@@ -46,12 +46,12 @@ end
 """
     LLE_pressure(model::EoSModel, T, x; v0 = x0_LLE_pressure(model,T,x))
 
-calculates the Liquid-Liquid equilibrium pressure and properties at a given temperature.
+Calculates the Liquid-Liquid equilibrium pressure and properties at a given temperature `T`.
 
 Returns a tuple, containing:
 - LLE Pressure `[Pa]`
-- liquid volume of composition `x₁ = x` at LLE Point [`m³`]
-- liquid volume of composition `x₂` at LLE Point  [`m³`]
+- Liquid volume of composition `x₁ = x` at LLE Point `[m³]`
+- Liquid volume of composition `x₂` at LLE Point  `[m³]`
 - Liquid composition `x₂`
 """
 function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
@@ -73,8 +73,9 @@ function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
     f! = (F,z) -> Obj_bubble_pressure(model_r, F, T, z[1], z[2], x_r, z[3:end])
     options = NLSolvers.NEqOptions(maxiter = 1000) #this should converge in very few iters
     #putting the limit here allows to faster bail-out in case of unsucessful iteration
-    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()),options)
+    r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),options)
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
     xx_r = FractionVector(sol[3:end])
     vl = v_from_η(model_r,sol[1],T,x_r)
     vll = v_from_η(model_r,sol[2],T,xx_r)
@@ -86,12 +87,12 @@ end
 """
     LLE_temperature(model::EoSModel, p, x; T0 = x0_LLE_temperature(model,p,x))
 
-calculates the Liquid-Liquid equilibrium temperature and properties at a given pressure.
+Calculates the Liquid-Liquid equilibrium temperature and properties at a given pressure `p`.
 
 Returns a tuple, containing:
 - LLE Pressure `[Pa]`
-- liquid volume of composition `x₁ = x` at LLE Point [`m³`]
-- liquid volume of composition `x₂` at LLE Point  [`m³`]
+- Liquid volume of composition `x₁ = x` at LLE Point `[m³]`
+- Liquid volume of composition `x₂` at LLE Point  `[m³]`
 - Liquid composition `x₂`
 """
 function LLE_temperature(model::EoSModel,p,x;v0=nothing)
@@ -115,8 +116,10 @@ function LLE_temperature(model::EoSModel,p,x;v0=nothing)
     f!(F,z) = Obj_bubble_temperature(model_r, F, p, z[1], z[2], z[3], x_r, z[4:end])
     options = NLSolvers.NEqOptions(maxiter = 1000) #this should converge in very few iters
     #putting the limit here allows to faster bail-out in case of unsucessful iteration
-    r  =Solvers.nlsolve(f!,v0[1:nc+2],LineSearch(Newton2(v0)),options)
+    v00 = v0[1:nc+2]
+    r = Solvers.nlsolve(f!,v00,LineSearch(Newton2(v00)),options)
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
     T = sol[1]
     xx_r = FractionVector(sol[4:end])
     vl = v_from_η(model_r,sol[2],T,x_r)
@@ -127,7 +130,7 @@ end
 
 function x0_LLE_temperature(model::EoSModel,p,x)
     #xx = Fractions.neg(x)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     sat = saturation_temperature.(pure,p)
     T0 = 0.92*minimum(getindex.(sat,1)) #TODO: LLE points cannot be determined by pure data alone
     v0 = x0_LLE_pressure(model,T0,x,p)

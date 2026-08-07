@@ -1,11 +1,11 @@
 """
     azeotrope_pressure(model::EoSModel, T; v0 = x0_azeotrope_pressure(model,T))
 
-calculates the azeotrope pressure and properties at a given temperature.
+Calculates the azeotrope pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Azeotrope Pressure `[Pa]`
-- liquid volume at Azeotrope Point [`m³`]
-- vapour volume at Azeotrope Point [`m³`]
+- Liquid volume at Azeotrope Point `[m³]`
+- Vapour volume at Azeotrope Point `[m³]`
 - Azeotrope composition
 """
 function azeotrope_pressure(model::EoSModel, T; v0 = nothing)
@@ -17,8 +17,9 @@ function azeotrope_pressure(model::EoSModel, T; v0 = nothing)
     ηv = η_from_v(model,vv0,T,v0)
     w0 = vcat(ηl,ηv,v0[1:end-1])
     f! = (F,z) -> Obj_az_pressure(model, F, T, z[1], z[2], z[3:end])
-    r  =Solvers.nlsolve(f!,w0,LineSearch(Newton()))
+    r = Solvers.nlsolve(f!,w0,LineSearch(Newton2(w0)))
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
     y = FractionVector(sol[3:end])
     v_l = v_from_η(model,sol[1],T,y)
     v_v = v_from_η(model,sol[2],T,y)
@@ -31,7 +32,7 @@ end
 
 Initial point for `azeotrope_pressure(model,T)`.
 
-Returns a vector, containing the initial guess azeotrope composition at a given temperature. defaults to equimolar
+Returns a vector, containing the initial guess azeotrope composition at a given temperature `T`. Defaults to equimolar.
 """
 function x0_azeotrope_pressure(model,T)
     n = length(model)
@@ -50,11 +51,11 @@ end
 """
     azeotrope_temperature(model::EoSModel, T; v0 = x0_bubble_pressure(model,T,[0.5,0.5]))
 
-Calculates the azeotrope temperature and properties at a given pressure.
+Calculates the azeotrope temperature and properties at a given pressure `p`.
 Returns a tuple, containing:
 - Azeotrope Temperature `[K]`
-- liquid volume at Azeotrope Point [`m³`]
-- vapour volume at Azeotrope Point [`m³`]
+- Liquid volume at Azeotrope Point `[m³]`
+- Vapour volume at Azeotrope Point `[m³]`
 - Azeotrope composition
 """
 function azeotrope_temperature(model::EoSModel,p;v0=nothing)
@@ -66,8 +67,9 @@ function azeotrope_temperature(model::EoSModel,p;v0=nothing)
     ηv = η_from_v(model,vv0,T0,v0)
     w0 = vcat(T0,ηl,ηv,v0[1:end-1])
     f!(F,z) = Obj_azeotrope_temperature(model, F, p, z[1], z[2], z[3], z[4:end])
-    r  = Solvers.nlsolve(f!,w0,LineSearch(Newton()))
+    r = Solvers.nlsolve(f!,w0,LineSearch(Newton2(w0)))
     sol = Solvers.x_sol(r)
+    !all(<(r.options.f_abstol),r.info.best_residual) && (sol .= NaN)
     T = sol[1]
     x = FractionVector(sol[4:end])
     v_l = v_from_η(model,sol[2],T,x)

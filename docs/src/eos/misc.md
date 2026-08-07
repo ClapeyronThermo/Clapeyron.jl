@@ -17,7 +17,7 @@ Clapeyron.SPUNG
 Clapeyron.LKP
 ```
 
-## Sanchez-Lacombe Model
+## Sanchez–Lacombe Model
 
 ```@docs
 Clapeyron.SanchezLacombe

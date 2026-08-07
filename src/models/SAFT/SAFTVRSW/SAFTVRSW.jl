@@ -77,6 +77,7 @@ function recombine_impl!(model::SAFTVRSWModel)
     sigma = sigma_LorentzBerthelot!(sigma)
     epsilon = epsilon_LorentzBerthelot!(epsilon)
     lambda_squarewell!(lambda,sigma)
+    recombine_assoc!(model)
     return model
 end
 

@@ -89,8 +89,8 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
         μ_vap = muladd(-vol_vap,Av_v,A_v)
         #μ_liq = VT_chemical_potential_res(model, vol_liq, T)[1]
         #μ_vap = VT_chemical_potential_res(model, vol_vap, T)[1]
-        pl = RT/vol_liq -Av_l
-        pv = RT/vol_vap -Av_v
+        #pl = RT/vol_liq -Av_l
+        #pv = RT/vol_vap -Av_v
         Z_liq = P*vol_liq/RT
         Z_vap = P*vol_vap/RT
         if (isnan(vol_liq) | isnan(vol_vap))

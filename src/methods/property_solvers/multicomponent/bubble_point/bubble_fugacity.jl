@@ -10,7 +10,7 @@ Inputs:
 - `modelx`: liquid equation of state model
 - `modely`: vapour equation of state model, if any nonvolatile compounds are present
 - `x`: liquid phase composition
-- `T`: temperature [`K`]
+- `T`: temperature `[K]`
 - `vol_cache`: array used to update the phases' volumes
 _ `volatile`: volatile component indices, if any nonvolatile compounds are present
 
@@ -19,11 +19,11 @@ Returns: NLSolvers.NEqProblem
 function OF_bubblepy! end
 
 function OF_bubblepy!(model, x, T, vol_cache)
-    return _fug_OF_neqsystem(model,x, nothing, nothing, T, vol_cache,true,true,(:liquid,:vapor))
+    return _fug_OF_neqsystem(model,x, nothing, nothing, T, vol_cache, FugEnum.BUBBLE_PRESSURE,(:liquid,:vapor))
 end
 
 function OF_bubblepy!(model,modely, x, T, vol_cache,volatile)
-    return _fug_OF_neqsystem(model, modely, x, nothing, nothing, T, vol_cache, true, true, (:liquid,:vapor), volatile)
+    return _fug_OF_neqsystem(model, modely, x, nothing, nothing, T, vol_cache, FugEnum.BUBBLE_PRESSURE, (:liquid,:vapor), volatile)
 end
 
 """
@@ -39,11 +39,11 @@ systems of equations.
 
 Inputs:
 model: equation of state model
-- `T`: bubble temperature [`K`]
+- `T`: bubble temperature `[K]`
 - `x`: liquid phase composition
 - `y0`: initial guess for the vapor phase composition
-- `p0`: initial guess for the bubble pressure [`Pa`]
-- `vol0`: optional, initial guesses for the liquid and vapor phase volumes
+- `p0`: initial guess for the bubble pressure `[Pa]`
+- `vol0`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `itmax_newton`: optional, number of iterations to update the pressure using newton's method
 - `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x`: optional, tolerance to stop successive substitution cycle
@@ -52,9 +52,9 @@ model: equation of state model
 - `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
 
 Returns:
-`p`: bubble pressure
-`volx`: saturared liquid volume
-`voly`: saturared vapor volume
+`p`: bubble pressure `[Pa]`
+`volx`: saturared liquid volume `[m³]`
+`voly`: saturared vapor volume `[m³]`
 `y`: saturated vapor composition
 """
 function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothing),
@@ -77,7 +77,7 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
         model_y = nothing
     end
 
-    converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,vol0,true,true,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p,tol_xy = tol_y,tol_of=tol_of)
+    converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,vol0,FugEnum.BUBBLE_PRESSURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p,tol_xy = tol_y,tol_of=tol_of)
     p,T,x,y,vol,lnK = res
     volx,voly = vol
     if converged
@@ -88,8 +88,9 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
         inc0 = vcat(lnK, log(p))
         vol_cache = [volx, voly]
         problem = OF_bubblepy!(model,model_y, x, T, vol_cache,volatiles)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton()))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
         inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
         lnp = inc[end]
         lnK = inc[1:(end-1)]
 
@@ -114,8 +115,8 @@ system of equations.
 
 Inputs:
 - `y0 = nothing`: optional, initial guess for the vapor phase composition
-- `p0 = nothing`: optional, initial guess for the bubble pressure [`Pa`]
-- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `p0 = nothing`: optional, initial guess for the bubble pressure `[Pa]`
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `itmax_newton = 10`: optional, number of iterations to update the pressure using newton's method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
@@ -216,7 +217,7 @@ Inputs:
 - `modelx`: liquid equation of state model
 - `modely`: vapour equation of state model, if any nonvolatile compounds are present
 - `x`: liquid phase composition
-- `p`: pressure [`Pa`]
+- `p`: pressure `[Pa]`
 - `vol_cache`: array used to update the phases' volumes
 _ `volatile`: volatile component indices, if any nonvolatile compounds are present
 
@@ -225,11 +226,11 @@ Returns: NLSolvers.NEqProblem
 function OF_bubbleTy! end
 
 function OF_bubbleTy!(model, x, p, vol_cache)
-    return _fug_OF_neqsystem(model,x, nothing, p, nothing, vol_cache, true, false, (:liquid,:vapor))
+    return _fug_OF_neqsystem(model,x, nothing, p, nothing, vol_cache, FugEnum.BUBBLE_TEMPERATURE, (:liquid,:vapor))
 end
 
 function OF_bubbleTy!(model,modely, x, p, vol_cache,volatile)
-    return _fug_OF_neqsystem(model, modely, x, nothing, p, nothing, vol_cache, true, false, (:liquid,:vapor), volatile)
+    return _fug_OF_neqsystem(model, modely, x, nothing, p, nothing, vol_cache, FugEnum.BUBBLE_TEMPERATURE, (:liquid,:vapor), volatile)
 end
 
 """
@@ -245,11 +246,11 @@ non-linear systems of equations.
 
 Inputs:
 - model: equation of state model
-- `P`: pressure [`Pa`]
+- `P`: pressure `[Pa]`
 - `x`: liquid phase composition
 - `y`: initial guess for the vapor phase composition
-- `T0`: initial guess for the bubble temperature [`K`]
-- `vol0`: optional, initial guesses for the liquid and vapor phase volumes
+- `T0`: initial guess for the bubble temperature `[K]`
+- `vol0`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `itmax_newton`: optional, number of iterations to update the temperature using newton's method
 - `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x`: optional, tolerance to stop successive substitution cycle
@@ -258,9 +259,9 @@ Inputs:
 - `nonvolatiles`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
 
 Returns:
-- `T`: bubble temperature
-- `volx`: saturared liquid volume
-- `voly`: saturared vapor volume
+- `T`: bubble temperature `[K]`
+- `volx`: saturared liquid volume `[m³]`
+- `voly`: saturared vapor volume `[m³]`
 - `y`: saturated vapor composition
 """
 function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,nothing),
@@ -283,7 +284,7 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
         model_y = nothing
     end
 
-    converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,vol0,true,false,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_y, tol_of = tol_of)
+    converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,vol0,FugEnum.BUBBLE_TEMPERATURE,volatiles;itmax_ss = itmax_ss, itmax_newton = itmax_newton, tol_pT = tol_T, tol_xy = tol_y, tol_of = tol_of)
     p,T,x,y,vol,lnK = res
     volx,voly = vol
     if converged
@@ -292,8 +293,9 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
         inc0 = vcat(lnK, log(T))
         vol_cache = [volx, voly]
         problem = OF_bubbleTy!(model,model_y, x, p, vol_cache,volatiles)
-        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton()))
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton2(inc0)))
         inc = Solvers.x_sol(sol)
+        !all(<(sol.options.f_abstol),sol.info.best_residual) && (inc .= NaN)
         lnK = inc[1:(end-1)]
         lnT = inc[end]
 
@@ -316,8 +318,8 @@ non-linear system of equations.
 
 Inputs:
 - `y = nothing`: optional, initial guess for the vapor phase composition.
-- `T0 = nothing`: optional, initial guess for the bubble temperature [`K`].
-- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `T0 = nothing`: optional, initial guess for the bubble temperature `[K]`.
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes `[m³]`
 - `itmax_newton = 10`: optional, number of iterations to update the temperature using newton's method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle

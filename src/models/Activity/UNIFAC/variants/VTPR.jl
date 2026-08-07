@@ -17,7 +17,8 @@ export VTPRUNIFAC
     puremodel = BasicIdeal,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
@@ -56,7 +57,8 @@ function VTPRUNIFAC(components;
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     groups = GroupParam(components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"];group_userlocations = group_userlocations, verbose = verbose)
 
@@ -71,6 +73,7 @@ function VTPRUNIFAC(components;
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1016/S0378-3812(01)00626-4"]
     model = VTPRUNIFAC(groups.components,groups,packagedparams,_puremodel,references)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 

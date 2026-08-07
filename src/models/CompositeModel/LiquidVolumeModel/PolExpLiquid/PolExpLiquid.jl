@@ -2,6 +2,8 @@ struct PolExpLiquid <: LiquidVolumeModel
     data::GenericAncEvaluator
 end
 
+PolExpLiquid(anc::Solvers.ChebyshevRange) = PolExpLiquid(GenericAncEvaluator(anc))
+
 function _rho_sat(model::PolExpLiquid,T)
     return _eval_generic_anc(model.data,T)
 end

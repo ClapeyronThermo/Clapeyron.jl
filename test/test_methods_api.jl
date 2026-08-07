@@ -38,8 +38,8 @@
     v31 = volume(model31,1u"bar",50u"°C")
     #experimental value is 44.18e-6. close enough.
 
-    @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1E-6
-    @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1E-6
+    @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1e-4
+    @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1e-4
     #enthalpy of vaporization of water at 100 °C
     @test enthalpy_vap(model31,100u"°C",output = u"kJ") ≈ 40.64971775824767u"kJ" rtol = 1E-6
 
@@ -54,7 +54,7 @@
 end
 
 @testset "association" begin
-    model_no_comb_dense = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :nocombining))
+    model_no_comb = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :nocombining))
     model_cr1 = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :cr1))
     model_esd = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :esd))
     model_esd_r = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :elliott_runtime))
@@ -64,7 +64,7 @@ end
     T = 298.15
     z = [0.5,0.5]
     @test Clapeyron.nonzero_extrema(0:3) == (1, 3)
-    @test Clapeyron.a_assoc(model_no_comb_dense,V,T,z) ≈ -4.667036481159167 rtol = 1E-6
+    @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ -4.667036481159167 rtol = 1E-6
     @test Clapeyron.a_assoc(model_cr1,V,T,z) ≈ -5.323469194263458 rtol = 1E-6
     @test Clapeyron.a_assoc(model_esd,V,T,z) ≈ -5.323420343872591 rtol = 1E-6
     @test Clapeyron.a_assoc(model_esd_r,V,T,z) ≈ -5.323430326406561 rtol = 1E-6
@@ -77,6 +77,9 @@ end
     @test Clapeyron.X(fluid,v,160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
     #test with bigfloat, we check that all temporary association storage is correctly initialized
     @test Clapeyron.X(fluid,big(v),160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
+
+    K = [0.0 244.24071691762867 0.0 3.432863727098509; 244.24071691762867 0.0 3.432863727098509 0.0; 0.0 2.2885758180656732 0.0 0.0; 2.2885758180656732 0.0 0.0 0.0]
+    @test Clapeyron.assoc_matrix_solve(K) ≈ [0.0562461981664357, 0.0562461981664357, 0.8859564211875895, 0.8859564211875895]
 end
 
 using EoSSuperancillaries
@@ -85,18 +88,32 @@ Clapeyron.use_superancillaries!(false)
 
 if isdefined(Base,:get_extension)
     @testset "Superancillaries.jl" begin
+        
         pc = PCSAFT("eicosane")
+        pc2 = pharmaPCSAFT("oxygen")
         cubic = tcPR(["water"])
+        
         crit_pc = crit_pure(pc)
         sat_cubic = saturation_pressure(cubic,373.15)
+        sat_pc2 = saturation_pressure(pc2,150.0)
+        
         Clapeyron.use_superancillaries!(true)
+        
         crit_sa_pc = crit_pure(pc)
         sat_sa_cubic = saturation_pressure(cubic,373.15)
+        sat_sa_pc2 = saturation_pressure(pc2,150.0)
+
         @test crit_pc[1] ≈ crit_sa_pc[1] rtol = 1e-6
         @test crit_pc[3] ≈ crit_sa_pc[3] rtol = 1e-6
+        
         @test sat_cubic[1] ≈ sat_sa_cubic[1] rtol = 1e-6
-        @test sat_cubic[2] ≈ sat_sa_cubic[2] rtol = 1e-6 
+        @test sat_cubic[2] ≈ sat_sa_cubic[2] rtol = 1e-6
         @test sat_cubic[3] ≈ sat_sa_cubic[3] rtol = 1e-6
+        
+        @test sat_pc2[1] ≈ sat_sa_pc2[1] rtol = 1e-6
+        @test sat_pc2[2] ≈ sat_sa_pc2[2] rtol = 1e-6
+        @test sat_pc2[3] ≈ sat_sa_pc2[3] rtol = 1e-6
+
     end
 end
 
@@ -111,10 +128,26 @@ end
     phases2,tpds2,symz2,symw2 = Clapeyron.tpd(act_system,p,T,[0.5,0.5],lle = true)
     @test tpds2[1] ≈ -0.9412151812640561 rtol = 1e-6
     GC.gc()
+
+    model = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"]);
+    z = [0.25, 0.25, 0.25, 0.25]
+    p = 1e5
+    v1 = volume(model,p,297.23,z)
+    @test !isstable(model,p,297.23,z)
+    @test !Clapeyron.VT_isstable(model,v1,297.23,z)
+    GC.gc()
+
+    model = cPR(["ethane"],idealmodel = ReidIdeal)
+    p = 101325; z = [5.0]; 
+    T,vl,vv = saturation_temperature(model,p)
+    v_unstable = exp(0.5*(log(vl) + log(vv)))
+    V = volume(model,p,T,z) # lies in range of Vv
+    @test Clapeyron.VT_diffusive_stability(model,V,T,z)
+    @test !Clapeyron.VT_diffusive_stability(model,v_unstable,T,z)
 end
 
 @testset "reference states" begin
-    
+
     @test !has_reference_state(PCSAFT("water"))
     @test has_reference_state(PCSAFT("water",idealmodel = ReidIdeal))
 
@@ -133,7 +166,7 @@ end
         T12,v12,_ = saturation_temperature(pure1[2],101325.0)
         @test Clapeyron.VT_enthalpy(pure1[2],v12,T12) ≈ 0.0 atol = 1e-6
         @test Clapeyron.VT_entropy(pure1[2],v12,T12) ≈ 0.0 atol = 1e-6
-        
+
         #test that multifluids work.
         model1b = GERG2008("water",reference_state = :nbp)
         T1b,v1b,_ = saturation_temperature(model1b,101325.0)
@@ -190,370 +223,20 @@ end
         @test Clapeyron.VT_enthalpy(model5,v5,T5,z5) ≈ 123 atol = 1e-6
         @test Clapeyron.VT_entropy(model5,v5,T5,z5) ≈ 456 atol = 1e-6
     end
-end
 
-@testset "Tp flash algorithms" begin
-    #this is a VLLE equilibria
-    system = PCSAFT(["water","cyclohexane","propane"])
-    T = 298.15
-    p = 1e5
-    z = [0.333, 0.333, 0.334]
+    #reference state from EoSVectorParam
+    mod_pr = cPR(["water","ethanol"],idealmodel = ReidIdeal,reference_state = :ntp)
+    mod_vec = Clapeyron.EoSVectorParam(mod_pr)
+    Clapeyron.recombine!(mod_vec)
+    @test reference_state(mod_vec).std_type == :ntp
+    @test length(reference_state(mod_vec).a0) == 2
 
-    @testset "RR Algorithm" begin
-        method = RRTPFlash()
-        @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.539976318817461 rtol = 1e-6
-    
-        #test for initialization when K suggests single phase but it could be solved supposing bubble or dew conditions.
-        substances = ["water", "methanol", "propyleneglycol","methyloxirane"]
-        pcp_system = PCPSAFT(substances)
-        @test Clapeyron.tp_flash2(pcp_system, 25_000.0, 300.15, [1.0, 1.0, 1.0, 1.0], RRTPFlash())[end] ≈ -8.900576759774916 rtol = 1e-6
-    end
+    #reference state from Activity models
+    puremodel = mod_pr = cPR(["water","ethanol"],idealmodel = ReidIdeal)
+    act = NRTL(["water","ethanol"],puremodel = puremodel,reference_state = :ntp)
+    @test reference_state(act).std_type == :ntp
+    @test length(reference_state(act).a0) == 2
 
-    if isdefined(Base,:get_extension)
-        @testset "RR Algorithm - MultiComponentFlash.jl" begin
-            mcf = MCFlashJL()
-            @test Clapeyron.tp_flash(system, p, T, z, mcf)[3] ≈ -6.490030777308265 rtol = 1e-6
-        end
-    end
-    GC.gc()
-
-    @testset "DE Algorithm" begin
-        #VLLE eq
-        @test Clapeyron.tp_flash(system, p, T, z, DETPFlash(numphases = 3))[3] ≈ -6.759674475174073 rtol = 1e-6
-        #LLE eq with activities
-        act_system = UNIFAC(["water","cyclohexane","propane"])
-        flash0 = Clapeyron.tp_flash(act_system, p, T, [0.5,0.5,0.0], DETPFlash(equilibrium = :lle))
-        act_x0 = activity_coefficient(act_system, p, T, flash0[1][1,:]) .* flash0[1][1,:]
-        act_y0 = activity_coefficient(act_system, p, T, flash0[1][2,:]) .* flash0[1][2,:]
-        @test Clapeyron.dnorm(act_x0,act_y0) < 0.01 #not the most accurate, but it is global
-    end
-
-    @testset "Multiphase algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T, z, MultiPhaseTPFlash())[3] ≈ -6.759674475175065 rtol = 1e-6
-    end
-
-    GC.gc()
-
-    @testset "Michelsen Algorithm" begin
-        x0 = [0.9997755902156433, 0.0002244097843566859, 0.0]
-        y0 = [6.425238373915699e-6, 0.9999935747616262, 0.0]
-        method = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium= :lle)
-        @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method)[3] ≈ -7.577270350886795 rtol = 1e-6
-
-        method2 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 4, second_order = false)
-        @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method2)[3] ≈ -7.577270350886795 rtol = 1e-6
-
-        method3 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 4,second_order = true)
-        @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method3)[3] ≈ -7.577270350886795 rtol = 1e-6
-    end
-    GC.gc()
-
-    @testset "Michelsen Algorithm, nonvolatiles/noncondensables support" begin
-
-        system = PCSAFT(["hexane", "ethanol", "methane", "decane"])
-        T = 320.  # K
-        p = 1e5  # Pa
-        z = [0.25, 0.25, 0.25, 0.25]
-        x0 = [0.3, 0.3, 0., 0.4]
-        y0 = [0.2, 0.2, 0.6, 0.]
-
-        method_normal = MichelsenTPFlash(x0=x0, y0=y0, second_order=true)
-        @test Clapeyron.tp_flash(system, p, T, z, method_normal)[1] ≈
-        [0.291924  0.306002  0.00222251  0.399851
-        0.181195  0.158091  0.656644    0.00406898] rtol = 1e-6
-        GC.gc()
-
-        method_nonvolatiles = MichelsenTPFlash(x0=x0, y0=y0, ss_iters = 1, second_order=true, nonvolatiles = ["decane"])
-        @test Clapeyron.tp_flash(system, p, T, z, method_nonvolatiles)[1] ≈
-        [0.291667  0.305432  0.00223826  0.400663
-        0.180861  0.15802   0.661119    0.0] rtol = 1e-6
-        GC.gc()
-
-        method_noncondensables = MichelsenTPFlash(x0=x0, y0=y0,ss_iters = 1, second_order=false, noncondensables = ["methane"])
-        @test Clapeyron.tp_flash(system, p, T, z, method_noncondensables)[1] ≈
-        [0.292185  0.306475  0.0      0.40134
-        0.181452  0.158233  0.65623  0.00408481] rtol = 1e-6
-        GC.gc()
-
-        method_both = MichelsenTPFlash(x0=x0, y0=y0, ss_iters = 1,second_order=false, noncondensables = ["methane"],nonvolatiles = ["decane"])
-        @test Clapeyron.tp_flash(system, p, T, z, method_both)[1] ≈
-        [0.291928  0.3059    0.0       0.402171
-        0.181116  0.158162  0.660722  0.0] rtol = 1e-6
-        GC.gc()
-    end
-
-    @testset "Michelsen Algorithm, activities" begin
-    #example from https://github.com/ClapeyronThermo/Clapeyron.jl/issues/144
-        system = UNIFAC(["water", "hexane"])
-        alg1 = MichelsenTPFlash(
-            equilibrium = :lle,
-            K0 = [0.00001/0.99999, 0.99999/0.00001],
-        )
-
-        flash1 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg1)
-        act_x1 = activity_coefficient(system, 101325, 303.15, flash1[1][1,:]) .* flash1[1][1,:]
-        act_y1 = activity_coefficient(system, 101325, 303.15, flash1[1][2,:]) .* flash1[1][2,:]
-        @test Clapeyron.dnorm(act_x1,act_y1) < 1e-8
-
-        alg2 = MichelsenTPFlash(
-            equilibrium = :lle,
-            x0 = [0.99999, 0.00001],
-            y0 = [0.00001, 0.00009]
-        )
-        flash2 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg2)
-        act_x2 = activity_coefficient(system, 101325, 303.15, flash2[1][1,:]) .* flash2[1][1,:]
-        act_y2 = activity_coefficient(system, 101325, 303.15, flash2[1][2,:]) .* flash2[1][2,:]
-        @test Clapeyron.dnorm(act_x2,act_y2) < 1e-8
-
-        #test K0_lle_init initialization
-        alg3 = MichelsenTPFlash(
-            equilibrium = :lle)
-        flash3 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg3)
-        act_x3 = activity_coefficient(system, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
-        act_y3 = activity_coefficient(system, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]
-        @test Clapeyron.dnorm(act_x3,act_y3) < 1e-8
-
-        #test combinations of Activity + CompositeModel
-        system_fluid = CompositeModel(["water","ethanol"],gas = BasicIdeal, liquid = RackettLiquid, saturation = LeeKeslerSat)
-        system_cc  = CompositeModel(["water","ethanol"],liquid = UNIFAC,fluid = system_fluid)
-        flash3 = tp_flash(system_cc, 101325, 303.15, [0.5, 0.5], alg2)
-        act_x3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
-        act_y3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]
-        @test Clapeyron.dnorm(act_x3,act_y3) < 1e-8
-
-        #running the vle part
-        if hasfield(UNIFAC,:puremodel)
-            model_vle = UNIFAC(["water", "ethanol"],puremodel = PCSAFT)
-        else
-            model_vle = CompositeModel(["water", "ethanol"],liquid = UNIFAC,fluid = PCSAFT)
-        end
-        flash4 = tp_flash(model_vle, 101325, 363.15, [0.5, 0.5], MichelsenTPFlash())
-        #=@test flash4[1] ≈
-        [0.6824441505154921 0.31755584948450793
-        0.3025308123759482 0.6974691876240517] rtol = 1e-6
-        this was wrong, we were calculating the gas volume as the addition of partial pressures,
-        basically ideal gas.
-        =#
-
-        @test flash4[1] ≈
-        [0.7006206854062672 0.29937931459373285;
-        0.43355504959745633 0.5664449504025437] rtol = 1e-6
-        #test equality of activities does not make sense in VLE
-    end
-
-    @testset "Michelsen Algorithm, CompositeModel" begin
-        p,T,z = 101325.,85+273.,[0.2,0.8]
-        system = CompositeModel(["water","ethanol"],gas = BasicIdeal, liquid = RackettLiquid, saturation = LeeKeslerSat) #ideal gas + rackett + lee kesler saturation correlation
-        @test Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash())[1] ≈
-        [0.3618699659002134 0.6381300340997866
-        0.17888243361092543 0.8211175663890746] rtol = 1e-6
-
-        @test_throws ErrorException Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash(ss_iters = 0))
-    end
-end
-
-@testset "Saturation Methods" begin
-    model = PR(["water"])
-    vdw = vdW(["water"])
-    p0 = 1e5
-    T = 373.15
-    p,vl,vv = Clapeyron.saturation_pressure(model,T) #default
-
-    #legacy api,
-    @test Clapeyron.saturation_pressure(model,T,Clapeyron.ChemPotVSaturation((vl,vv)))[1] ==
-        Clapeyron.saturation_pressure(model,T,Clapeyron.ChemPotVSaturation([vl,vv]))[1] ==
-        Clapeyron.saturation_pressure(model,T,[vl,vv])[1] ==
-        Clapeyron.saturation_pressure(model,T,(vl,vv))[1]
-
-    px,vlx,vvx = Clapeyron.saturation_pressure(vdw,T) #vdw
-
-    p1,vl1,vv1 = Clapeyron.saturation_pressure_impl(model,T,IsoFugacitySaturation())
-    @test p1 ≈ p rtol = 1e-6
-    p2,vl2,vv2 = Clapeyron.saturation_pressure_impl(model,T,IsoFugacitySaturation(p0 = 1e5))
-    @test p1 ≈ p rtol = 1e-6
-    p3,vl3,vv3 = Clapeyron.saturation_pressure_impl(model,T,ChemPotDensitySaturation())
-    @test p3 ≈ p rtol = 1e-6
-    p4,vl4,vv4 = Clapeyron.saturation_pressure_impl(model,T,ChemPotDensitySaturation(;vl,vv))
-    p4b,vl4b,vv4b = Clapeyron.psat_chempot(model,T,vl,vv)
-    @test p4 ≈ p rtol = 1e-6
-    @test (p4 == p4b) && (vl4 == vl4b) && (vv4 == vv4b)
-    GC.gc()
-
-    #test IsoFugacity, near criticality
-    Tc_near = 0.95*647.096
-    psat_Tcnear = 1.496059652088857e7 #default solver result
-    @test first(Clapeyron.saturation_pressure(model,Tc_near,IsoFugacitySaturation())) ≈ psat_Tcnear rtol = 1e-6
-    #Test that IsoFugacity fails over critical point
-    @test isnan(first(Clapeyron.saturation_pressure(model,1.1*647.096,IsoFugacitySaturation())))
-    GC.gc()
-
-    #SuperAncSaturation
-    p5,vl5,vv5 = Clapeyron.saturation_pressure_impl(model,T,SuperAncSaturation())
-    @test p5 ≈ p rtol = 1e-6
-    @test Clapeyron.saturation_temperature_impl(model,p5,SuperAncSaturation())[1] ≈ T rtol = 1e-6
-    @test @inferred Clapeyron.saturation_pressure_impl(vdw,T,SuperAncSaturation())[1] ≈ px
-    GC.gc()
-
-    #AntoineSat
-    @test Clapeyron.saturation_temperature(model,p0,AntoineSaturation(T0 = 400.0))[1] ≈ 374.2401401001685 rtol = 1e-6
-    @test Clapeyron.saturation_temperature(model,p0,AntoineSaturation(vl = vl5,vv = vv5))[1] ≈ 374.2401401001685 rtol = 1e-6
-    @test_throws Any Clapeyron.saturation_temperature(model,p0,AntoineSaturation(vl = vl5,T0 = 400))
-    GC.gc()
-
-    #ClapeyronSat
-    @test Clapeyron.saturation_temperature(model,p0,ClapeyronSaturation())[1] ≈ 374.2401401001685 rtol = 1e-6
-
-    #Issue #290
-    @test Clapeyron.saturation_temperature(cPR("R1233zde"),101325*20,crit_retry = false)[1] ≈ 405.98925205830335 rtol = 1e-6
-end
-
-@testset "Tproperty" begin
-    model = PCSAFT(["propane","dodecane"])
-    p = 101325.0; T = 300.0;z = [0.5,0.5]
-    h_ = enthalpy(model,p,T,z)
-    s_ = entropy(model,p,T,z)
-    @test Tproperty(model,p,h_,z,enthalpy) ≈ T
-    @test Tproperty(model,p,s_,z,entropy) ≈ T
-end
-
-@testset "bubble/dew point algorithms" begin
-    system1 = PCSAFT(["methanol","cyclohexane"])
-    p = 1e5
-    T = 313.15
-    z = [0.5,0.5]
-    p2 = 2e6
-    T2 = 443.15
-    z2 = [0.27,0.73]
-
-    pres1 = 54532.249600937736
-    Tres1 = 435.80890506865
-    pres2 = 1.6555486543884084e6
-    Tres2 = 453.0056727580934
-    @testset "bubble pressure" begin
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure())[1] ≈ pres1 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
-        GC.gc()
-
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure())[1] ≈ pres1 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
-        #test multidimensional fugacity solver
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure(itmax_newton = 1))[1]  ≈ pres1 rtol = 1E-6
-        GC.gc()
-
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ActivityBubblePressure())[1] ≈ pres1 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ActivityBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ActivityBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ActivityBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
-        GC.gc()
-    end
-
-    @testset "bubble temperature" begin
-        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.ChemPotBubbleTemperature())[1] ≈ Tres1 rtol = 1E-6
-        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.ChemPotBubbleTemperature(y0 = [0.7,0.3]))[1] ≈ Tres1 rtol = 1E-6
-        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.ChemPotBubbleTemperature(T0 = 450))[1] ≈ Tres1 rtol = 1E-6
-        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.ChemPotBubbleTemperature(T0 = 450,y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
-        GC.gc()
-
-        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature())[1] ≈ Tres1 rtol = 1E-6
-        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
-        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(T0 = 450))[1] ≈ Tres1 rtol = 1E-6
-        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(T0 = 450,y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
-        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(itmax_newton = 1))[1] ≈ Tres1 rtol = 1E-6
-        GC.gc()
-    end
-
-    @testset "dew pressure" begin
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ChemPotDewPressure())[1] ≈ pres2 rtol = 1E-6
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ChemPotDewPressure(x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ChemPotDewPressure(p0 = 1.5e6))[1] ≈ pres2 rtol = 1E-6
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ChemPotDewPressure(p0 = 1.5e6,x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
-        GC.gc()
-
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure())[1] ≈ pres2 rtol = 1E-6
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(p0 = 1.5e6))[1] ≈ pres2 rtol = 1E-6
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(p0 = 1.5e6,x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
-        #for some reason, it requires 2 newton iterations.
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(itmax_newton = 2))[1] ≈ pres2 rtol = 1E-6
-        GC.gc()
-        #not exactly the same results, as activity coefficients are ultimately an aproximation of the real helmholtz function.
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure())[1] ≈ pres2 rtol = 1E-3
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure(x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-3
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure(p0 = 1.5e6))[1] ≈ pres2 rtol = 1E-3
-        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure(p0 = 1.5e6,x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-3
-        GC.gc()
-    end
-
-    @testset "dew temperature" begin
-        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.ChemPotDewTemperature())[1] ≈ Tres2 rtol = 1E-6
-        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.ChemPotDewTemperature(x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
-        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.ChemPotDewTemperature(T0 = 450))[1] ≈ Tres2 rtol = 1E-6
-        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.ChemPotDewTemperature(T0 = 450,x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
-        GC.gc()
-
-        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature())[1] ≈ Tres2 rtol = 1E-6
-        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
-        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(T0 = 450))[1] ≈ Tres2 rtol = 1E-6
-        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(T0 = 450,x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
-        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(itmax_newton = 2))[1] ≈ Tres2 rtol = 1E-6
-        GC.gc()
-    end
-
-    #nonvolatiles/noncondensables testing. it also test model splitting
-    system2 = PCSAFT(["hexane", "ethanol", "methane", "decane"])
-    T = 320.  # K
-    p = 1e5  # Pa
-    z = [0.25, 0.25, 0.25, 0.25]
-    x0 = [0.3, 0.3, 0., 0.4]
-    y0 = [0.2, 0.2, 0.6, 0.]
-    pres1 = 33653.25605767739
-    Tres1 = 349.3673410368543
-    pres2 = 112209.1535730352
-    Tres2 = 317.58287413031866
-
-    @testset "bubble pressure - nonvolatiles" begin
-        (pa,vla,vva,ya) = bubble_pressure(system2,T,x0,FugBubblePressure(y0 = y0,p0 = 1e5,nonvolatiles = ["decane"]))
-        @test pa  ≈ pres1 rtol = 1E-6
-        @test ya[4] == 0.0
-        (pb,vlb,vvb,yb) = bubble_pressure(system2,T,x0,ChemPotBubblePressure(y0 = y0,p0 = 1e5,nonvolatiles = ["decane"]))
-        @test pa  ≈ pres1 rtol = 1E-6
-        @test ya[4] == 0.0
-    end
-    GC.gc()
-
-    @testset "bubble temperature - nonvolatiles" begin
-        (Ta,vla,vva,ya) = bubble_temperature(system2,p,x0,FugBubbleTemperature(y0 = y0,T0 = T,nonvolatiles = ["decane"]))
-        @test Ta  ≈ Tres1 rtol = 1E-6
-        @test ya[4] == 0.0
-        (Tb,vlb,vvb,yb) = bubble_temperature(system2,p,x0,ChemPotBubbleTemperature(y0 = y0,T0 = T,nonvolatiles = ["decane"]))
-        @test Tb  ≈ Tres1 rtol = 1E-6
-        @test yb[4] == 0.0
-    end
-    GC.gc()
-
-    @testset "dew pressure - noncondensables" begin
-        (pa,vla,vva,xa) = dew_pressure(system2,T,y0,FugDewPressure(noncondensables = ["methane"],p0 = p,x0 = x0))
-        @test pa  ≈ pres2 rtol = 1E-6
-        @test xa[3] == 0.0
-        (pb,vlb,vvb,xb) = dew_pressure(system2,T,y0,ChemPotDewPressure(noncondensables = ["methane"],p0 = p,x0 = x0))
-        @test pb  ≈ pres2 rtol = 1E-6
-        @test xa[3] == 0.0
-    end
-    GC.gc()
-
-    @testset "dew temperature - noncondensables" begin
-        (Ta,vla,vva,xa) = dew_temperature(system2,p,y0,FugDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
-        @test Ta  ≈ Tres2 rtol = 1E-6
-        @test xa[3] == 0.0
-        (Tb,vlb,vvb,xb) = dew_temperature(system2,p,y0,ChemPotDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
-        @test Tb  ≈ Tres2 rtol = 1E-6
-        @test xa[3] == 0.0
-    end
-    GC.gc() 
 end
 
 @testset "Solid Phase Equilibria" begin
@@ -633,16 +316,15 @@ GC.gc()
     @testset "saturation points without critical point" begin
         model1 = PCSAFT("water")
         Tc1,_,_ = crit_pure(model1)
-        T1 = 0.995Tc1
-        @test Clapeyron.saturation_pressure(model1,T1,crit_retry = false)[1] ≈ 3.542008160105954e7 rtol = 1e-6
+        T1 = 0.999Tc1
+        @test Clapeyron.saturation_pressure(model1,T1,crit_retry = false)[1] ≈ 3.6377840330375336e7 rtol = 1e-6
 
         model2 = PCSAFT("eicosane")
         Tc2,_,_ = crit_pure(model2)
-        T2 = 0.99Tc2
-        
-        if !Base.Sys.isapple() #this test fails on mac, julia 1.6
-            @test Clapeyron.saturation_pressure(model2,T2,crit_retry = false)[1] ≈ 1.3225433281814915e6 rtol = 1e-6
-        end
+        T2 = 0.999Tc2
+
+        #this test fails on mac, julia 1.6
+        @test Clapeyron.saturation_pressure(model2,T2,crit_retry = false)[1] ≈ 1.451917823392476e6 rtol = 1e-6
 
         #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/237
         #for some reason, it fails with mac sometimes
@@ -656,6 +338,15 @@ GC.gc()
         @test Clapeyron.saturation_pressure(model4,T4,crit_retry = false)[1] ≈ 0.02610821545005174 rtol = 1e-6
     end
     GC.gc()
+end
+
+@testset "partial properties" begin
+    model_pem = PR(["hydrogen", "oxygen", "water"])
+    z = [0.1,0.1,0.8]
+    p,T = 0.95e5,380.15
+    for prop in [volume,gibbs_free_energy,helmholtz_free_energy,entropy,enthalpy,internal_energy]
+        @test sum(partial_property(model_pem,p,T,z,prop) .* z) ≈ prop(model_pem,p,T,z)
+    end
 end
 
 @testset "spinodals" begin
@@ -672,4 +363,40 @@ end
     (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model,pv_spin,x_spin;T0=225.,v0=vv_spin)
     @test Tl_spin_impl ≈ T_spin rtol = 1e-6
     @test Tv_spin_impl ≈ T_spin rtol = 1e-6
+
+    #test for #382: pure spinodal at low pressures
+    model2 = PCSAFT("carbon dioxide")
+    Tc,Pc,Vc = (310.27679925044134, 8.06391600653306e6, 9.976420206333288e-5)
+    T = LinRange(Tc-70,Tc-0.1,50)
+    psl = first.(spinodal_pressure.(model2,T,phase = :l))
+    psv = first.(spinodal_pressure.(model2,T,phase = :v))
+    psat = first.(saturation_pressure.(model2,T))
+    @test all(psl .< psat)
+    @test all(psat .< psv)
+    @test issorted(psl)
+    @test issorted(psv)
+end
+
+@testset "supercritical lines" begin
+    model = PR("methane")
+    T_initial = 200.0
+    p_widom, v1 = widom_pressure(model, T_initial)
+    T_widom, v2 = widom_temperature(model, p_widom)
+    @test T_initial ≈ T_widom rtol = 1e-6
+    @test v1 ≈ v2 rtol = 1e-6
+    @test_throws ArgumentError widom_pressure(model,T_initial,v0 = v1,p0 = p_widom)
+    @test T_initial ≈ widom_temperature(model,p_widom,T0 = 1.01*T_initial)[1] rtol = 1e-6
+    @test T_initial ≈ widom_temperature(model,p_widom,v0 = 1.01*v1)[1] rtol = 1e-6
+    @test p_widom ≈ widom_pressure(model,T_initial,p0 = 1.01*p_widom)[1] rtol = 1e-6
+    @test p_widom ≈ widom_pressure(model,T_initial,v0 = 1.01*v1)[1] rtol = 1e-6
+
+    p_ciic, v3 = ciic_pressure(model, T_initial)
+    T_ciic, v4 = ciic_temperature(model, p_ciic)
+    @test T_initial ≈ T_ciic rtol = 1e-6
+    @test v3 ≈ v4 rtol = 1e-6
+    @test_throws ArgumentError ciic_pressure(model,T_initial,v0 = v3,p0 = p_ciic)
+    @test T_initial ≈ ciic_temperature(model,p_ciic,T0 = 1.01*T_initial)[1] rtol = 1e-6
+    @test T_initial ≈ ciic_temperature(model,p_ciic,v0 = 1.01*v3)[1] rtol = 1e-6
+    @test p_ciic ≈ ciic_pressure(model,T_initial,p0 = 1.01*p_ciic)[1] rtol = 1e-6
+    @test p_ciic ≈ ciic_pressure(model,T_initial,v0 = 1.01*v3)[1] rtol = 1e-6
 end

@@ -2,10 +2,11 @@
     rr_vle_vapor_fraction(K,z,α = NaN)
 
 Given a vector of K values and a vector of compositions, calculates the vapor fraction `β`.
-the algorithm is a modification of _(1)_ , with safeguards for extreme cases.
+The algorithm is a modification of _(1)_ , with safeguards for extreme cases.
 
 If the algorithm fails to converge, returns `NaN`. if it converges to a value `β ∉ [0,1]`, returns `-Inf` or `Inf`, depending on the case.
 
+## References
 1. Vassilis Gaganis, "Solution of the Rachford Rice equation using perturbation analysis", Fluid Phase Equilibria, Volume 536,2021,112981
 """
 function rr_vle_vapor_fraction(K,z)
@@ -164,8 +165,10 @@ function rr_find_strongest(K,z)
     _0 = zero(first(K)+first(z))
     n = length(z)
     _1 = one(_0)
+    invsumz = 1/sum(z)
     if  n == 2
-        z1,z2 = z
+        zz1,zz2 = z
+        z1,z2 = zz1*invsumz,zz2*invsumz
         k1,k2 = K
         b1,b2 = 1/(1-k1),1/(1-k2)
         a1 = (z1*b2 + z2*b1)
@@ -173,7 +176,8 @@ function rr_find_strongest(K,z)
         return a1/a0
     elseif n == 3
         #0 = a0 + a1β + a2β^2
-        z1,z2,z3 = z
+        zz1,zz2,zz3 = z
+        z1,z2,z3 = zz1*invsumz,zz2*invsumz,zz3*invsumz
         k1,k2,k3 = K
         b1,b2,b3 = 1/(1-k1),1/(1-k2),1/(1-k3)
         a2 =(z1 + z2 + z3)
@@ -201,7 +205,9 @@ function rr_find_strongest(K,z)
         end
     elseif n == 4
         #0 = a0 + a1β + a2β^2 + a3β^3
-        z1,z2,z3,z4 = z
+        zz1,zz2,zz3,zz4 = z
+        z1,z2,z3,z4 = zz1*invsumz,zz2*invsumz,zz3*invsumz,zz4*invsumz
+
         k1,k2,k3,k4 = K
         b1,b2,b3,b4 = 1/(1-k1),1/(1-k2),1/(1-k3),1/(1-k4)
         a3 =(z1 + z2 + z3 + z4)
@@ -216,7 +222,7 @@ function rr_find_strongest(K,z)
         rsum = r1+r2+r3
         if (r1 ≈ r2) && r1 > 1
             return r3
-        elseif  (r1 ≈ r3) && r1 > 1
+        elseif (r1 ≈ r3) && r1 > 1
             return r2
         elseif (r2 ≈ r3) && r2 > 1
             return r1
@@ -229,20 +235,51 @@ function rr_find_strongest(K,z)
     end
 end
 
-function rr_flash_eval(K,z,β,normalize=true)
-        _0 = zero(first(z)+first(K)+first(β))
-        _1 = one(_0)
-        if normalize
-            sumz = sum(z)
-            invsumz = _1/sumz
+function rr_flash_eval(K,z,β,non_inx = FillArrays.Fill(false,length(z)),non_iny = FillArrays.Fill(false,length(z)))
+    _0 = zero(Base.promote_eltype(K,z,β))
+    _1 = one(_0)
+    sumz = sum(z)
+    invsumz = _1/sumz
+    _0βy = - 1.0 / (1.0 - β)
+    _0βx = 1.0 / β
+    res = _0
+    res_KD2 = _0
+    for i in 1:length(z)
+        Ki = K[i]
+        #we separate (K-1)/(1-βK) into K/(1-βK) and 1/(1-βK) for numerical reasons.
+        #see;
+        #Ks_eps_0 = [1.2566703532018493e-21, 3.3506275205339295, 1.0300675710905643e-23, 1.706258568414198e-39, 1.6382855298440747e-20]
+        #zs_eps_0 = [0.13754371891028325, 0.29845155687154623, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
+        if Ki < eps(one(Ki))
+            detKi0 = 1 - β
+            detKi0 += β*Ki
+            detKi = 1/detKi0
         else
-            invsumz = _1
+            Kim1 = Ki - 1
+            detKi0 = 1 + β*Kim1
+            detKi = 1/detKi0
         end
-        res = _0
-        for i in 1:length(z)
-            Kim1 = K[i] - _1
-            res += invsumz*z[i]*Kim1/(1+β*Kim1)
+        KD1 = Ki*detKi
+        KD2 = -detKi
+        KD = KD1 + KD2
+        # modification for non-in-y components Ki -> 0
+        if non_iny[i] || iszero(Ki)
+            KD = _0βy
+            KD2 = -_1
+            KD1 = _0βy - KD2
         end
+        # modification for non-in-x components Ki -> ∞
+        if non_inx[i] || isinf(Ki)
+            KD = _0βx
+            KD1 = _0βx
+            KD2 = _0
+        end
+        zi = z[i]
+        res += zi*KD1
+        res_KD2 += zi*KD2
+    end
+    res += res_KD2
+    res *= invsumz
     return res
 end
 
@@ -289,88 +326,116 @@ function rr_flash_liquid!(x,k,z,β)
 end
 
 #obtains the minimum and maximum permissible value of β
-function rr_βminmax(K,z)
+function rr_βminmax(K,z,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
     _1 = one(eltype(K))*one(eltype(z))
     βmin = Inf*_1
     βmax = -Inf*_1
     _0 = zero(_1)
     #βmin = max(0., minimum(((K.*z .- 1) ./ (K .-  1.))[K .> 1]))
     #βmax = min(1., maximum(((1 .- z) ./ (1. .- K))[K .< 1]))
-
+    sumz = sum(z)
     for i in eachindex(K)
-        Ki,zi = K[i],z[i]
+        Ki,zi = K[i],z[i]/sumz
+        if non_inx[i] #noncondensables
+            Ki = Inf*one(Ki)
+        end
+
+        if non_iny[i] # #nonvolatiles
+            Ki = zero(Ki)
+        end
         if Ki > 1
-            βmin = min(βmin,(Ki*zi - 1)/(Ki - 1))
+            # modification for non-in-x components Ki -> ∞
+            not_xi = non_inx[i] || isinf(Ki)
+            βmin_i = not_xi ? one(Ki)*zi : (Ki*zi - 1)/(Ki - 1)
+            βmin = min(βmin,βmin_i)
         end
         if Ki < 1
-            βmax = max(βmax,(1 - zi)/(1 - Ki))
+            # modification for non-in-y components Ki -> 0
+            not_yi = non_iny[i] || iszero(Ki)
+            βmax_i = not_yi ? (1 - zi) : (zi - 1)/(Ki - 1)
+            βmax = max(βmax,βmax_i)
         end
     end
-    βmin = max(βmin,_0)
-    βmax = min(βmax,_1)
+    βmin = max(βmin,_0) #comment to enable negative flashes
+    βmax = min(βmax,_1) #comment to enable negative flashes
     return βmin,βmax
 end
 
-function rachfordrice_β0(K,z,β0 = nothing)
-    g0 = dot(z, K) - 1.
-    g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K))
+function rachfordrice_β0(K,z,β0 = nothing,non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)))
+    g0 = Clapeyron.rr_flash_eval(K,z,0,non_inx,non_iny)
+    g1 = Clapeyron.rr_flash_eval(K,z,1,non_inx,non_iny)
+    isnan(g0) && return g0,false,(g0,g0),(g0,g1)
     singlephase = false
     _1 = one(g1)
     _0 = zero(g1)
+
     if g0 < 0
-        β = _0
+        β = _0 #comment to enable negative flashes
         singlephase = true
     elseif g1 > 0
-        β = _1
+        β = _1 #comment to enable negative flashes
         singlephase = true
     end
+    βmin,βmax = rr_βminmax(K,z,non_inx,non_iny)
+    if singlephase
+        βmax = max(zero(βmax),βmax)
+        βmin = min(βmin,oneunit(βmin))
+    end
 
-    βmin,βmax = rr_βminmax(K,z)
     if β0 !== nothing
         β = β0
     else
         β = (βmax + βmin)/2
     end
-    return β,singlephase,(βmin,βmax)
+    return β,singlephase,(βmin,βmax),(g0,g1)
 end
 
 
 #refines a rachford-rice result via Halley iterations
-function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx,limits = rr_βminmax(K,z))
+function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx,limits = rr_βminmax(K,z,non_inx,non_iny))
     βmin,βmax = limits
+
+    if βmin < 0 < 1 < βmax
+        βmin = zero(βmin)
+        βmax = oneunit(βmax)
+    end
+
     _0 = zero(first(z)+first(K)+first(β0))
     _1 = one(_0)
     sumz = sum(z)
     invsumz = _1/sumz
     β = β0
-    function FO(β̄ )
-        _0βy = - 1. / (1. - β̄ )
-        if iszero(β̄ )
-            
-        end
-        _0βx = 1. / β̄ 
+    function FO(β̄)
+        _0βy = - 1. / (1. - β̄)
+        _0βx = 1. / β̄
         res,∂res,∂2res = _0,_0,_0
         res_KD2 = _0
         for i in 1:length(z)
             Ki = K[i]
-            Kim1 = Ki - 1
             #we separate (K-1)/(1-βK) into K/(1-βK) and 1/(1-βK) for numerical reasons.
-            #see;    
-            #Ks_eps_0 = [1.2566703532018493e-21, 3.35062752053393, 1.0300675710905643e-23, 1.706258568414198e-39, 1.6382855298440747e-20]
-            #zs_eps_0 = [0.13754371891028325, 0.2984515568715462, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
-
-            detKi = 1/(1+β̄ *Kim1)
+            #see;
+            #Ks_eps_0 = [1.2566703532018493e-21, 3.3506275205339295, 1.0300675710905643e-23, 1.706258568414198e-39, 1.6382855298440747e-20]
+            #zs_eps_0 = [0.13754371891028325, 0.29845155687154623, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
+            if Ki < eps(one(Ki))
+                detKi0 = 1 - β̄
+                detKi0 += β̄*Ki
+                detKi = 1/detKi0
+            else
+                Kim1 = Ki - 1
+                detKi0 = 1 + β̄*Kim1
+                detKi = 1/detKi0
+            end
             KD1 = Ki*detKi
             KD2 = -detKi
             KD = KD1 + KD2
             # modification for non-in-y components Ki -> 0
-            if non_iny[i]
+            if non_iny[i] || iszero(Ki)
                 KD = _0βy
                 KD2 = -_1
                 KD1 = _0βy - KD2
             end
             # modification for non-in-x components Ki -> ∞
-            if non_inx[i]
+            if non_inx[i]|| isinf(Ki)
                 KD = _0βx
                 KD1 = _0βx
                 KD2 = _0
@@ -386,12 +451,38 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
         ∂res *= invsumz
         ∂2res *= invsumz
 
-
         return res,res/∂res,∂res/∂2res
+    end
+    if !isfinite(β)
+        return β
     end
     prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
     return Roots.solve(prob,Roots.BracketedHalley())
 end
+
+function material_balance_rr_converged(w,z,β::Number,n = sum(z),ztol = sqrt(eps(eltype(β))))
+    βx = SVector(1 - β,β)
+    return material_balance_rr_converged(w,z,βx,n,ztol)
+end
+
+function material_balance_rr_converged(w,z,β::AbstractVector,n = sum(z),ztol = sqrt(eps(eltype(β))))
+    rk = zero(Base.promote_eltype(w[1],z,β))
+    np = length(β)
+    #material balance test from https://github.com/WhitsonAS/Rachford-Rice-Contest
+    for i in 1:length(z)
+        rk1 = zero(rk)
+        rk2 = zero(rk)
+        zi = z[i]/n
+        for j in 1:np
+            Vi = β[j]*w[j][i]
+            rk1 +=  Vi
+            rk2 += abs(Vi)
+        end
+        rk = max(rk,abs(rk1 - zi)/abs(rk2 + zi))
+    end
+    return rk <= ztol
+end
+
 
 #=
 it = 0

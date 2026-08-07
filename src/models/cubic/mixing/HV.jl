@@ -77,9 +77,9 @@ function HVRule(components; activity = Wilson, userlocations = String[],activity
     return model
 end
 
-HV_λ(::HVRuleModel,model::ABCubicModel,z) = infinite_pressure_gibbs_correction(model,z)
+HV_λ(::HVRuleModel,model::DeltaCubicModel,T,z) = infinite_pressure_gibbs_correction(model,T,z)
 
-function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,c)
+function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,c)
     n = sum(z)
     invn = 1/n
     invn2 = invn*invn
@@ -87,7 +87,7 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,
     c̄ = dot(z,c)/n
     gᴱ = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
     ∑ab = sum(z[i]*a[i,i]*α[i]/b[i,i] for i ∈ @comps)*invn
-    _λ = HV_λ(mixing_model,model,z)
+    _λ = HV_λ(mixing_model,model,T,z)
     ā = b̄*(∑ab-gᴱ/_λ)
     return ā,b̄,c̄
 end

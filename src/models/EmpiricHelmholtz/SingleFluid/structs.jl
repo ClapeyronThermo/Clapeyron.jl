@@ -34,92 +34,21 @@ end
 
 is_splittable(::SingleFluidIdealParam) = false
 
-struct GaoBTerm
-    active::Bool
-    n::Vector{Float64}
-    t::Vector{Float64}
-    d::Vector{Float64}
-    eta::Vector{Float64}
-    beta::Vector{Float64}
-    gamma::Vector{Float64}
-    epsilon::Vector{Float64}
-    b::Vector{Float64}
-    function GaoBTerm(n,t,d,eta,beta,gamma,epsilon,b)
-        @assert length(eta) == length(beta) == length(gamma) == length(epsilon) == length(b)
-        @assert length(eta) == length(n) == length(t) == length(d)
-        active = (length(n) != 0)
-        return new(active,n,t,d,eta,beta,gamma,epsilon,b)
-    end
+Base.@kwdef struct SingleFluidResidualParam <: MultiParameterParam
+    polexpgauss::PolExpGaussTerm = PolExpGaussTerm()
+    exp2::DoubleExpTerm = DoubleExpTerm()
+    gao_b::GaoBTerm = GaoBTerm()
+    na::NonAnalyticTerm = NonAnalyticTerm()
+    assoc::Associating2BTerm = Associating2BTerm()
 end
 
-GaoBTerm() = GaoBTerm(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
-
-struct NonAnalyticTerm 
-    active::Bool
-    A::Vector{Float64}
-    B::Vector{Float64}
-    C::Vector{Float64}
-    D::Vector{Float64}
-    a::Vector{Float64}
-    b::Vector{Float64}
-    beta::Vector{Float64}
-    n::Vector{Float64}
-    function NonAnalyticTerm(A,B,C,D,a,b,beta,n)
-        @assert length(A) == length(B) == length(C) == length(D)
-        @assert length(A) == length(a) == length(b) == length(beta)
-        @assert length(beta) == length(n)
-        active = (length(n) != 0)
-        return new(active,A,B,C,D,a,b,beta,n)
-    end
+struct EmpiricDepartureValues <: MultiParameterParam
+    polexpgauss::PolExpGaussTerm
+    F::Float64
 end
 
-NonAnalyticTerm() = NonAnalyticTerm(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
-
-mutable struct Associating2BTerm #mutable because someone would want to fit this?
-    active::Bool
-    epsilonbar::Float64
-    kappabar::Float64
-    a::Float64
-    m::Float64
-    vbarn::Float64
-    function Associating2BTerm(epsilonbar,kappabar,a,m,vbarn)
-        active = (kappabar != 0.0)
-        return new(active,epsilonbar,kappabar,a,m,vbarn)
-    end
-end
-Associating2BTerm() = Associating2BTerm(0.0,0.0,0.0,0.0,0.0)
-
-#we store power, exponential and gaussian terms inline, because those are the most used.
-
-struct SingleFluidResidualParam <: MultiParameterParam
-    iterators::Vector{UnitRange{Int}}
-    n::Vector{Float64}
-    t::Vector{Float64}
-    d::Vector{Float64}
-    l::Vector{Float64}
-    g::Vector{Float64}
-    eta::Vector{Float64}
-    beta::Vector{Float64}
-    gamma::Vector{Float64}
-    epsilon::Vector{Float64}
-    gao_b::GaoBTerm
-    na::NonAnalyticTerm
-    assoc::Associating2BTerm
-    
-    function SingleFluidResidualParam(n,t,d,l = Float64[],g = ones(length(l)),
-        eta = Float64[],beta = Float64[],gamma = Float64[], epsilon = Float64[],
-        ;gao_b = GaoBTerm(),
-        na = NonAnalyticTerm(),
-        assoc = Associating2BTerm())
-
-        param = new(Vector{UnitRange{Int}}(undef,0),n,t,d,l,g,eta,beta,gamma,epsilon,gao_b,na,assoc)
-        _calc_iterators!(param)
-        return param
-    end
-end
-
+_calc_iterators!(m::SingleFluidResidualParam) = _calc_iterators!(m.default)
 is_splittable(::SingleFluidResidualParam) = false
-
 __has_extra_params(x::MultiParameterParam) = __has_extra_params(typeof(x))
 __has_extra_params(x) = false
 __has_extra_params(ℙ::Type{SingleFluidResidualParam}) = true
@@ -134,7 +63,13 @@ function show_multiparameter_coeffs(io,param::MultiParameterParam)
     res = String[]
 
     if hasfield(typeof(param),:a1) && hasfield(typeof(param),:a2) && hasfield(typeof(param),:c0)
-        def_terms = "Lead terms: $(param.a1) + $(param.a2)*τ + $(param.c0)*log(τ)"
+        def_terms1 = "Lead terms: $(param.a1) + $(param.a2)*τ"
+        def_terms2 = "$(abs(param.c0))*log(τ)"
+        if param.c0 > 0
+            def_terms = def_terms1 * " + " * def_terms2
+        else
+            def_terms = def_terms1 * " - " * def_terms2
+        end
         if hasfield(typeof(param),:c1)
             if param.c1 != 0
                 def_terms = def_terms * " + $(param.c1)*τ*log(τ)" 
@@ -164,40 +99,48 @@ function show_multiparameter_coeffs(io,param::MultiParameterParam)
         push!(res,"Fij: $(param.F)")
     end
 
-    if hasfield(typeof(param),:iterators)
-        k_pol,k_exp,k_gauss = param.iterators
-        if length(k_pol) != 0
-            push!(res,"Polynomial power terms: $(length(k_pol))")
-        end
-        if length(k_exp) != 0
-            push!(res,"Exponential terms: $(length(k_exp))")
-        end
-        if length(k_gauss) != 0
-            push!(res,"Gaussian bell-shaped terms: $(length(k_gauss))")
+    if hasfield(typeof(param),:polexpgauss)
+        polexpgauss = param.polexpgauss
+        if active_term(polexpgauss)
+            k_pol,k_exp,k_gauss = polexpgauss.iterators
+            if length(k_pol) != 0
+                push!(res,"Polynomial power terms: $(length(k_pol))")
+            end
+            if length(k_exp) != 0
+                push!(res,"Exponential terms: $(length(k_exp))")
+            end
+            if length(k_gauss) != 0
+                push!(res,"Gaussian bell-shaped terms: $(length(k_gauss))")
+            end
         end
     end
 
-    if !__has_extra_params(param)
-        show_pairs(io,res,quote_string = false)
-        return nothing
-    end
     #special terms
+
+    if hasfield(typeof(param),:exp2)
+        if active_term(param.exp2)
+            push!(res,"Double Exponential terms: $(length(param.exp2.n))")
+        end
+    end
+
     if hasfield(typeof(param),:na)
-        if param.na.active
+        if active_term(param.na)
             push!(res,"Non Analytic terms: $(length(param.na.beta))")
         end
     end
 
     if hasfield(typeof(param),:gao_b)
-        if param.gao_b.active
+        if active_term(param.gao_b)
             push!(res,"Gao-b terms: $(length(param.gao_b.b))")
         end
     end
+
     if hasfield(typeof(param),:assoc)
-        if param.assoc.active
+        if active_term(param.assoc)
             push!(res,"Associating terms: $(length(param.assoc.a))")
         end
     end
+
     show_pairs(io,res,quote_string = false)
 end
 
@@ -225,7 +168,6 @@ function _calc_iterators!(param)
     k_pol = 1:length_pol
     k_exp = (length_pol+1):length_exp
     k_gauss = (length_exp+1):length_gauss
-    resize!(param.iterators,3)
     param.iterators .= (k_pol,k_exp,k_gauss)
     return param
 end
@@ -257,6 +199,8 @@ struct SingleFluidProperties <: EoSParam
 end
 
 is_splittable(::SingleFluidProperties) = false
+Base.show(io::IO,props::SingleFluidProperties) = show_as_namedtuple(io,props)
+Base.show(io::IO,::MIME"text/plain",props::SingleFluidProperties) = show_as_namedtuple(io,props)
 
 const ESFProperties = SingleFluidProperties
 const ESFIdealParam = SingleFluidIdealParam

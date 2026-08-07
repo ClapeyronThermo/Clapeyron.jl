@@ -62,7 +62,7 @@ julia> model3.sites.n_sites
 struct SiteParam <: ClapeyronParam
     components::Array{String,1}
     sites::Array{Array{String,1},1}
-    n_sites::PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int}, Vector{Int}, SubArray{Int, 1, Vector{Int}, Tuple{UnitRange{Int64}}, true}}
+    n_sites::PackedVector{Int}
     i_sites::Array{Array{Int,1},1}
     flattenedsites::Array{String,1}
     n_flattenedsites::Array{Array{Int,1},1}
@@ -70,9 +70,6 @@ struct SiteParam <: ClapeyronParam
     sourcecsvs::Array{String,1}
     site_translator::Union{Nothing,Vector{Vector{NTuple{2,Int}}}}
 end
-
-
-
 
 function SiteParam(components::Vector{String},sites::Array{Array{String,1},1},n_sites::Vector{Vector{Int}},sourcecsvs = String[],site_translator = nothing)
     n_sites = PackedVectorsOfVectors.pack(n_sites)
@@ -229,8 +226,28 @@ function assoc_similar(param::SiteParam,::Type{𝕋}) where 𝕋 <:Number
     Compressed4DMatrix(values,indices)
 end
 
+function assoc_similar!(x::Compressed4DMatrix,param::SiteParam)
+    resize!(x.values,0)
+    _4dindices = NTuple{4,Int}[]
+    __set_idx_4d!(param.sites,values,_4dindices)
+    resize!(x.outer_indices,length(values))
+    resize!(x.inner_indices,length(values))
+    for i in 1:length(values)
+        i,j,a,b = _4dindices[i]
+        x.outer_indices[i] = (i,j)
+        x.inner_indices[i] = (a,b)
+    end
+    return Compressed4DMatrix(values,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
+end
+
 function Compressed4DMatrix(param::SiteParam)
     return assoc_similar(param,Float64)
+end
+
+#build dense assocparam from sites.
+function AssocParam{T}(name,sites::SiteParam) where T <: Number
+    values = assoc_similar(sites,T)
+    return AssocParam(name,sites.components,values,sites.sites)
 end
 
 function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
@@ -322,7 +339,7 @@ function gc_to_comp_sites(param::AssocParam,sites::SiteParam)
     new_val = assoc_similar(sites,eltype(param))
     for i in 1:length(sites.components)
         site_translator_i = site_translator[i]
-        for j in 1:i
+        for j in 1:length(sites.components)
             ij_pair = new_val[i,j]
             #display(TextDisplay(stdout),MIME"text/plain"(),ij_pair)
             site_translator_j = site_translator[j]
@@ -332,11 +349,15 @@ function gc_to_comp_sites(param::AssocParam,sites::SiteParam)
                 for b in 1:length(site_translator_j)
                     j_gc,b_gc = site_translator_j[b]
                     #absolute index, relative to the Compressed4DMatrix
-                    idx = validindex(ij_pair,a,b)
-                    if idx != 0 #if the index is valid
-                        ijab_val = param[i_gc,j_gc][a_gc,b_gc]
-                        if !_iszero(ijab_val) #if the value is not zero
-                            ij_pair.values.values[idx] =ijab_val
+                    idx = validindex(ij_pair,a,b,false)
+                    if idx != 0
+                        ijab1 = param[i_gc,j_gc]
+                        idx_ijab = validindex(ijab1,a_gc,b_gc,false)
+                        if idx_ijab != 0
+                            ijab_val = ijab1.values.values[idx_ijab]
+                            if !_iszero(ijab_val) #if the value is not zero
+                                ij_pair.values.values[idx] =ijab_val
+                            end
                         end
                     end
                 end

@@ -23,22 +23,20 @@ function index_reduction(method::DewPointMethod,idx_r)
     return method
 end
 
-function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model), crit = nothing)
-    pure_vals = extended_saturation_pressure.(pure,T,crit,condensables,false) #saturation, or aproximation via critical point.
-    p0 = first.(pure_vals)
-    vli = getindex.(pure_vals,2)
-    vvi = getindex.(pure_vals,3)
-    yipi = y ./ p0
-    p = 1/sum(yipi)
+function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables), crit = nothing)
+    sat = extended_saturation_pressure.(pure,T,crit) #saturation, or aproximation via critical point.
+    p0inv_r = 1. ./ first.(sat)
+    p0inv = index_expansion(p0inv_r,condensables)
+    yipi = y .* p0inv ./ sum(y)
+    p0 = 1/sum(yipi)
     if isnothing(x0)
-        x = yipi
-        x .*= p
+        xx = yipi
+        xx .*= p0
     else
-        x = x0
+        xx = x0
     end
-    fix_vi!(pure,vvi,p,T,condensables,:v) #calculate volumes if not-condensables present
-    vl0  = dot(vli,x)
-    vv0 = dot(vvi,y)
+    high_conditions = __is_high_pressure_state(pure,sat,T)
+    p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,xx,y,FugEnum.DEW_PRESSURE,condensables,high_conditions)
     return p,vl0,vv0,x
 end
 
@@ -82,13 +80,13 @@ function dew_pressure_init(model,T,y,vol0,p0,x0,condensables)
 end
 
 """
-    dew_pressure(model::EoSModel, T, y,method = ChemPotDewPressure())
+    dew_pressure(model::EoSModel, T, y, method = ChemPotDewPressure())
 
-Calculates the dew pressure and properties at a given temperature.
+Calculates the dew pressure and properties at a given temperature `T`.
 Returns a tuple, containing:
 - Dew Pressure `[Pa]`
-- liquid volume at Dew Point [`m³`]
-- vapour volume at Dew Point [`m³`]
+- Liquid volume at Dew Point `[m³]`
+- Vapour volume at Dew Point `[m³]`
 - Liquid composition at Dew Point
 
 By default, uses equality of chemical potentials, via [`ChemPotDewPressure`](@ref)
@@ -109,7 +107,7 @@ function dew_pressure(model::EoSModel,T,x;kwargs...)
     return dew_pressure(model, T, x, method)
 end
 
-function dew_pressure(model::EoSModel, T, y,method::DewPointMethod)
+function dew_pressure(model::EoSModel, T, y, method::ThermodynamicMethod)
     y = y/sum(y)
     T = float(T)
     model_r,idx_r = index_reduction(model,y)
@@ -118,9 +116,17 @@ function dew_pressure(model::EoSModel, T, y,method::DewPointMethod)
         return (P_sat,v_l,v_v,y)
     end
     y_r = y[idx_r]
-    (P_sat, v_l, v_v, x_r) = dew_pressure_impl(model_r,T,y_r,index_reduction(method,idx_r))
+
+    if has_a_res(model)
+        dew_pressure_result_primal = dew_pressure_impl(primalval(model_r),primalval(T),primalval(y_r),index_reduction(method,idx_r))
+        dew_pressure_result = dew_pressure_ad(model_r,T,y_r,dew_pressure_result_primal)
+    else
+        dew_pressure_result = dew_pressure_impl(model_r,T,y_r,index_reduction(method,idx_r))
+    end
+
+    (P_sat, v_l, v_v, x_r) = dew_pressure_result
     x = index_expansion(x_r,idx_r)
-    converged = bubbledew_check(v_l,v_v,y,x)
+    converged = bubbledew_check(model,P_sat,T,v_l,v_v,x,y)
     if converged
         return (P_sat, v_l, v_v, x)
     else
@@ -132,47 +138,50 @@ end
 
 
 
-function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
-    multi_component_check(x0_dew_temperature,model)
-    sat = extended_saturation_temperature.(pure,p,crit,condensables)
-    if crit === nothing
-        _crit = __crit_pure.(sat,pure,condensables)
-    else
-        _crit = crit
-    end
-    fix_sat_ti!(sat,pure,_crit,p,condensables)
+function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_pure_model(model,condensables),crit = nothing)
+    y_r = @view y[condensables]
+
     if Tx0 !== nothing
         T0 = Tx0
+        sat = extended_saturation_pressure.(pure,T0,crit)
+        p0inv_r = 1.0 ./ first.(sat)
+        high_conditions = __is_high_pressure_state(pure,sat,T0)
     else
-        dPdTsat = __dlnPdTinvsat.(pure,sat,_crit,p,condensables)
-        prob = antoine_dew_problem(dPdTsat,p,y,condensables)
-        T0 = Roots.solve(prob)
+        dPdTsat = extended_dpdT_temperature.(pure,p,crit)
+        T0 = antoine_dew_solve(dPdTsat,p,y_r)
+        p0inv_r = 1.0 ./ antoine_pressure.(dPdTsat,T0)
+        high_conditions = __is_high_temperature_state(pure,dPdTsat,T0)
     end
-    K0 = 
-    K = suggest_K(model,p,T0,y,pure,FillArrays.fill(true,length(model)),_crit)
-    x = rr_flash_liquid(K,y,one(eltype(K)))
-    x ./= sum(x)
-    vl0 = volume(model,p,T0,x,phase = :l)
-    vv0 = volume(model,p,T0,y,phase = :v)
-    #_,vl0,vv0,x = __x0_dew_pressure(model,T0,y,nothing,condensables,pure,crit)
-    return T0,vl0,vv0,x
+    yipi_r = x_r = y_r .* p0inv_r ./ sum(y_r)
+    p = 1/sum(yipi_r)
+    x_r .*= p
+    x0 = index_expansion(x_r,condensables)
+    _,T,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p,T0,x0,y,FugEnum.DEW_TEMPERATURE,condensables,high_conditions)
+    return T,vl0,vv0,x
 end
 
-function antoine_dew_problem(dpdt,p_dew,y,condensables)  
+function antoine_dew_solve(dpdt,p_dew,y)
+    if length(dpdt) == 1
+        #sum(y)/pinv - p_dew
+        #y = 1.0, pinv  = 1/p(T)
+        #p(T) = p_dew
+        dlnpdTinv,logp0,T0inv = dpdt[1]
+        Tinv = (log(p_dew) - logp0)/dlnpdTinv + T0inv
+        return 1/Tinv
+    end
+
     function antoine_f0(T)
         pinv = zero(T+first(y)+first(dpdt)[1])
         for i in 1:length(dpdt)
-            dlnpdTinv,logp0,T0inv = dpdt[i]
-            if condensables[i]
-                pᵢ = exp(logp0 + dlnpdTinv*(1/T - T0inv))
-                pᵢyᵢ = y[i]/pᵢ
-                pinv += pᵢyᵢ
-            end
+            pᵢ = antoine_pressure(dpdt[i],T)
+            pᵢyᵢ = y[i]/pᵢ
+            pinv += pᵢyᵢ
         end
-        return 1/pinv - p_dew
+        return sum(y)/pinv - p_dew
     end
     Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
-    return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+    prob = Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
+    return Roots.solve(prob)
 end
 
 function x0_dew_temperature(model::EoSModel,p,y,T0 = nothing)
@@ -217,11 +226,11 @@ end
 """
     dew_temperature(model::EoSModel, p, y, method = ChemPotDewTemperature())
 
-calculates the dew temperature and properties at a given pressure.
+Calculates the dew temperature and properties at a given pressure `p`.
 Returns a tuple, containing:
 - Dew Temperature `[K]`
-- liquid volume at Dew Point [`m³`]
-- vapour volume at Dew Point [`m³`]
+- Liquid volume at Dew Point `[m³]`
+- Vapour volume at Dew Point `[m³]`
 - Liquid composition at Dew Point
 
 By default, uses equality of chemical potentials, via [`ChemPotDewTemperature`](@ref)
@@ -249,7 +258,7 @@ function dew_temperature(model::EoSModel, p , x, T0::Number)
     return dew_temperature(model,p,x,method)
 end
 
-function dew_temperature(model::EoSModel,p,y,method::DewPointMethod)
+function dew_temperature(model::EoSModel,p,y,method::ThermodynamicMethod)
     y = y/sum(y)
     p = float(p)
     model_r,idx_r = index_reduction(model,y)
@@ -258,9 +267,17 @@ function dew_temperature(model::EoSModel,p,y,method::DewPointMethod)
         return (T_sat,v_l,v_v,y)
     end
     y_r = y[idx_r]
-    (T_sat, v_l, v_v, x_r) = dew_temperature_impl(model_r,p,y_r,index_reduction(method,idx_r))
+
+    if has_a_res(model)
+        dew_temperature_result_primal =  dew_temperature_impl(primalval(model_r),primalval(p),primalval(y_r),index_reduction(method,idx_r))
+        dew_temperature_result =  dew_temperature_ad(model_r,p,y_r,dew_temperature_result_primal)
+    else
+        dew_temperature_result =  dew_temperature_impl(model_r,p,y_r,index_reduction(method,idx_r))
+    end
+
+    (T_sat, v_l, v_v, x_r) = dew_temperature_result
     x = index_expansion(x_r,idx_r)
-    converged = bubbledew_check(v_l,v_v,y,x)
+    converged = bubbledew_check(model,p,T_sat,v_l,v_v,x,y)
     if converged
         return (T_sat, v_l, v_v, x)
     else

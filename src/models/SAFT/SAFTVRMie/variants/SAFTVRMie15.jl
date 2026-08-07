@@ -6,7 +6,7 @@ function transform_params(::Type{SAFTVRMie15},params)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
     sigma = sigma_LorentzBerthelot(sigma)
-    epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
+    epsilon = epsilon_HudsenMcCoubreysqrt(params["epsilon"], sigma)
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
     params["sigma"] = sigma

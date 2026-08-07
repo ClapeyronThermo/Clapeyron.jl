@@ -3,12 +3,12 @@ abstract type GEPCSAFTModel <: SAFTModel end
 
 const GEPCSAFTParam = PCSAFTParam
 
-struct GEPCSAFT{T <: IdealModel,γ} <: GEPCSAFTModel
+struct GEPCSAFT{I <: IdealModel,T,γ} <: GEPCSAFTModel
     components::Array{String,1}
     sites::SiteParam
     activity::γ
-    params::GEPCSAFTParam
-    idealmodel::T
+    params::PCSAFTParam{T}
+    idealmodel::I
     assoc_options::AssocOptions
     references::Array{String,1}
 end
@@ -78,14 +78,19 @@ function GEPCSAFT(components;
 
     packagedparams = GEPCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
 
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     references = String["10.1021/acs.iecr.2c03464"]
     model = GEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 
-function a_res(model::GEPCSAFTModel, V, T, z)
+function _pcsaft(model::GEPCSAFT{I,T}) where {I,T}
+    return PCSAFT{I,T}(model.components,model.sites,model.params,model.idealmodel,model.assoc_options,model.references)
+end
+
+function a_res(model::GEPCSAFTModel, V, T, z)    
     _data = @f(data)
     return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data)
 end
@@ -127,87 +132,56 @@ function a_disp(model::GEPCSAFTModel, V, T, z,_data=@f(data))
     di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
     Σz = sum(z)
     m2ϵσ3₁,m2ϵσ3₂ = @f(m2ϵσ3,_data)
-    return -2*π*N_A*Σz/V*@f(I,1,_data)*m2ϵσ3₁ - π*m̄*N_A*Σz/V*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
+    πNAρ = π*N_A*Σz/V
+    return -2*πNAρ*@f(I,1,_data)*m2ϵσ3₁ - m̄*πNAρ*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
 end
 
-function d(model::GEPCSAFTModel, V, T, z)
-    ϵᵢᵢ = diagvalues(model.params.epsilon)
-    σᵢᵢ = diagvalues(model.params.sigma)
-    return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
-end
+d(model::GEPCSAFTModel, V, T, z) = ck_diameter(model, T, z)
 
-
-function C1(model::GEPCSAFTModel, V, T, z,_data=@f(data))
-    _,_,_,_,η,m̄ = _data
-    return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
+function C1(model::GEPCSAFTModel, V, T, z, _data=@f(data))
+    return C1(_pcsaft(model),V,T,z,_data)
 end
 
 function m2ϵσ3(model::GEPCSAFTModel, V, T, z,_data=@f(data))
-    di,_,_,_,_,m̄ = _data
+    d,_,_,_,_,m̄ = _data
     m = model.params.segment.values
-    ϵ = diagvalues(model.params.epsilon)
-    σ = diagvalues(model.params.sigma)
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
     Σz = sum(z)
-    md³ = dot(z,m.*di.^3)/Σz
-    m²σ³ = dot(z,m.^2 .*σ.^3)/Σz
-    _Ī = @f(Ī,1,_data)
-    Iᵢ = @f(Ii,1,_data)
-    A = 0.
+    _Ī = @f(Ī,1,m̄)
+    #Iᵢ = @f(Ii,1,_data)
+    md³ = zero(Base.promote_eltype(model,V,T,z))
+    m²σ³ = zero(md³)
+    A = zero(md³)
     @inbounds for i ∈ @comps
-        A+= z[i]*m[i]*σ[i]^3/di[i]^3*ϵ[i]/T*Iᵢ[i]
+        mᵢ,dᵢ,σᵢ,ϵᵢ,zᵢ = m[i],d[i],σ[i,i],ϵ[i,i],z[i]
+        σ³ᵢ,d³ᵢ = σᵢ*σᵢ*σᵢ,dᵢ*dᵢ*dᵢ
+        m²σ³ += zᵢ*mᵢ*mᵢ*σ³ᵢ
+        md³ += zᵢ*mᵢ*d³ᵢ
+        A += zᵢ*mᵢ*σ³ᵢ/d³ᵢ*(ϵᵢ/T)*@f(Ī,1,mᵢ)
     end
-
+    m²σ³,md³ = m²σ³/Σz,md³/Σz
     gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T)
-    m2ϵσ3₁ = md³/_Ī*(A-gₑ/12)/Σz
-    m2ϵσ3₂ = (m2ϵσ3₁)^2/m²σ³
+    m2ϵσ3₁ = md³/_Ī*(A - gₑ/12)/Σz
+    m2ϵσ3₂ =  m2ϵσ3₁*m2ϵσ3₁/m²σ³
     return m2ϵσ3₁,m2ϵσ3₂
 end
 
-function I(model::GEPCSAFTModel, V, T, z, n , _data=@f(data))
-    _,_,_,_,η,m̄ = _data
-    if n == 1
-        corr = PCSAFTconsts.corr1
-    elseif n == 2
-        corr = PCSAFTconsts.corr2
-    end
-    res = zero(η)
-    @inbounds for i ∈ 1:7
-        ii = i-1
-        corr1,corr2,corr3 = corr[i]
-        ki = corr1 + (m̄-1)/m̄*corr2 + (m̄-1)/m̄*(m̄-2)/m̄*corr3
-        res +=ki*η^ii
-    end
-    return res
+function I(model::GEPCSAFTModel, V, T, z, n, _data=@f(data))
+    return I(_pcsaft(model),V,T,z,n,_data)
 end
 
-function Ī(model::GEPCSAFTModel, V, T, z, n , _data=@f(data))
-    _,_,_,_,_,m̄ = _data
+function Ī(model::GEPCSAFTModel, V, T, z, n, m)
     if n == 1
         corr = PCSAFTconsts.corr1
     elseif n == 2
         corr = PCSAFTconsts.corr2
     end
-    res = zero(m̄)
+    res = 0.0*m
     @inbounds for i ∈ 1:7
         corr1,corr2,corr3 = corr[i]
-        ki = corr1 + (m̄-1)/m̄*corr2 + (m̄-1)/m̄*(m̄-2)/m̄*corr3
-        res +=ki
-    end
-    return res
-end
-
-function Ii(model::GEPCSAFTModel, V, T, z, n , _data=@f(data))
-    m = model.params.segment.values
-    if n == 1
-        corr = PCSAFTconsts.corr1
-    elseif n == 2
-        corr = PCSAFTconsts.corr2
-    end
-    res = zero(m)
-    @inbounds for i ∈ 1:7
-        corr1,corr2,corr3 = corr[i]
-        ki = @. corr1 + (m-1)/m*corr2 + (m-1)/m*(m-2)/m*corr3
-        res +=ki
+        ki =corr1 + (m-1)/m*corr2 + (m-1)/m*(m-2)/m*corr3
+        res += ki
     end
     return res
 end

@@ -9,6 +9,7 @@ abstract type solidsoftSAFTModel <: softSAFTModel end
 @newmodel solidsoftSAFT solidsoftSAFTModel solidsoftSAFTParam
 default_references(::Type{solidsoftSAFT}) = ["10.1080/002689797170707","10.1080/00268979300100411","10.1080/00268976.2023.2204150"]
 default_locations(::Type{solidsoftSAFT}) = ["SAFT/softSAFT/solidsoftSAFT","properties/molarmass.csv"]
+
 function transform_params(::Type{solidsoftSAFT},params)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
@@ -91,22 +92,6 @@ function a_LJ(model::solidsoftSAFTModel, V, T, z,_data = @f(data))
     B = sum(b[n]/n*ρ̄^n for n ∈ 1:4)
     return m̄*(-23.3450759+ustat/T̄+Uah-3/2*log(T̄)+B)
 end
-
-function ϵ_m(model::solidsoftSAFTModel, V, T, z)
-    comps = @comps
-    ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    m = model.params.segment.values
-    return sum(m[i]*m[j]*z[i]*z[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/sum(m[i]*m[j]*z[i]*z[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)
-end
-
-function σ_m(model::solidsoftSAFTModel, V, T, z)
-    comps = @comps
-    σ = model.params.sigma.values
-    m = model.params.segment.values
-    return (sum(m[i]*m[j]*z[i]*z[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)/sum(m[i]*m[j]*z[i]*z[j] for i ∈ comps for j ∈ comps))^(1/3)
-end
-
 
 function a_chain(model::solidsoftSAFTModel, V, T, z,_data = @f(data))
     σ3,ϵ̄,m̄,ρ̄  = _data

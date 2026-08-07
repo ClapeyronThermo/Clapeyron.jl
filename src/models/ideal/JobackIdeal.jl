@@ -4,6 +4,7 @@
 # - add a database of group Mw
 
 struct JobackIdealParam <: EoSParam
+    Mw_gc::SingleParam{Float64}
     Mw::SingleParam{Float64}
     N_a::SingleParam{Int}
     T_c::SingleParam{Float64}
@@ -36,6 +37,9 @@ function transform_params(::Type{JobackIdeal},params,groups)
     l = length(components)
     i_groups = groups.i_groups
     a,b,c,d = params["a"],params["b"],params["c"],params["d"]
+    Mw_gc = params["Mw"]
+    params["Mw_gc"] = Mw_gc
+    params["Mw"] = SingleParam("Mw",components,group_Mw(Mw_gc,groups))
     _a,_b,_c,_d = zeros(l),zeros(l),zeros(l),zeros(l)
     for i in 1:l
         #res +=z[i]*(log(z[i]/V))/Σz
@@ -143,7 +147,8 @@ The estimated critical point of a single component can be obtained via `crit_pur
 |-S- (ring)|                    |
 """
 JobackIdeal
-
+mw(model::JobackIdeal) = model.params.Mw.values
+molecular_weight(model::JobackIdeal,z) = molecular_weight(model.params.Mw,z)
 function recombine_impl!(model::JobackIdeal)
     coeffs = model.params.coeffs
     i_groups = model.groups.i_groups
@@ -164,7 +169,20 @@ function recombine_impl!(model::JobackIdeal)
     return model
 end
 
-ReidIdeal(model::JobackIdeal) = ReidIdeal(model.components,ReidIdealParam(model.params.coeffs,model.params.reference_state),model.references)
+function ReidIdeal(model::JobackIdeal)
+    comps = model.components
+    coeffs = model.params.coeffs
+    Mw = model.params.Mw
+    a = SingleParam("a",comps,getindex.(coeffs.values,1))
+    b = SingleParam("b",comps,getindex.(coeffs.values,2))
+    c = SingleParam("c",comps,getindex.(coeffs.values,3))
+    d = SingleParam("d",comps,getindex.(coeffs.values,4))
+    e = SingleParam("e",comps,getindex.(coeffs.values,5))
+    reference_state = model.params.reference_state
+    param = ReidIdealParam(a,b,c,d,e,coeffs,reference_state,Mw)
+    ReidIdeal(model.components,param,model.references)
+end
+
 
 """
     JobackGC
@@ -372,7 +390,7 @@ function Visc(model::JobackIdeal,T)
     n = model.groups.n_flattenedgroups
     ηa = model.params.eta_a.values
     ηb = model.params.eta_b.values
-    Mw = model.params.Mw.values
+    Mw = model.params.Mw_gc.values
     result = zeros(Base.promote_eltype(T,Float64),length(model))
     for i in 1:length(model)
         ηai = dot(n[i],ηa)
@@ -386,7 +404,7 @@ end
 end #JobackGC module
 
 function crit_pure(model::JobackIdeal)
-    return (JobackGC.T_c(model),JobackGC.P_c(model),JobackGC.V_c(model))
+    return (JobackGC.T_c(model)[1],JobackGC.P_c(model)[1],JobackGC.V_c(model)[1])
 end
 
 export JobackIdeal, JobackGC

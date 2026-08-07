@@ -45,4 +45,16 @@ function halley(f::F,x0::T;
     return fixpoint(f0,x0;rtol,atol,max_iters)
 end
 
+function to_newton(f,x)
+    f,df = f∂f(f,x)
+    return f,f/df
+end
 
+to_newton(f::F) where F = Base.Fix1(to_newton,f)
+
+function to_halley(f,x)
+    f,df,d2f = f∂f∂2f(f,x)
+    return f,f/df,df/d2f
+end
+
+to_halley(f::F) where F = Base.Fix1(to_halley,f)

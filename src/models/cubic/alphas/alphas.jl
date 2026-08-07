@@ -22,9 +22,15 @@ struct SimpleAlphaParam <: EoSParam
     acentricfactor::SingleParam{Float64}
 end
 
-function can_build_alpha_w(::Type{T}) where T <: AlphaModel
+struct CPAAlphaParam <: EoSParam
+    c1::SingleParam{Float64}
+end
+
+function fast_build_alpha(::Type{T}) where T <: AlphaModel
     if hasfield(T,:params)
         if fieldtype(T,:params) == SimpleAlphaParam
+            return true
+        elseif fieldtype(T,:params) == CPAAlphaParam
             return true
         end
     end
@@ -32,25 +38,28 @@ function can_build_alpha_w(::Type{T}) where T <: AlphaModel
 end
 
 function __ignored_crit_params(alpha)
-    if can_build_alpha_w(alpha)
+    if fast_build_alpha(alpha)
         return ["Vc"]
     else
         return ["Vc","acentricfactor"]
     end
 end
 
-can_build_alpha_w(T) = false
+fast_build_alpha(T) = false
 
-function init_alphamodel(alpha,components,w = nothing,userlocations = String[],verbose = [])
+function init_alphamodel(alpha,components,params,userlocations = String[],verbose = [])
     #Base.Callable = Union{Type,Function}
     if alpha isa Base.Callable && alpha <: AlphaModel
-        if can_build_alpha_w(alpha) && w !== nothing && isempty(userlocations)
-            param = SimpleAlphaParam(w)
-            return alpha(format_components(components),param,default_references(typeof(alpha)))
+        _comps = format_components(components)
+        if fast_build_alpha(alpha) && isempty(userlocations)
+            PARAM = fieldtype(alpha,:params)
+            out_params = transform_params(PARAM,params,_comps)
+            param = build_eosparam(PARAM,out_params)
+            return alpha(_comps,param,default_references(typeof(alpha)))
         end
     end
     return init_model(alpha,components,userlocations,verbose)
-end
+end 
 
 include("NoAlpha.jl")
 include("ClausiusAlpha.jl")
@@ -58,10 +67,10 @@ include("RKAlpha.jl")
 include("soave.jl")
 include("soave2019.jl")
 include("PRAlpha.jl")
+include("Leibovici.jl")
 include("PatelTejaAlpha.jl")
 include("PTVAlpha.jl")
 include("CPAAlpha.jl")
-include("sCPAAlpha.jl")
 include("PR78Alpha.jl")
 include("BM.jl")
 include("Twu.jl")

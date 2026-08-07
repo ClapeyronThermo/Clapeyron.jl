@@ -53,7 +53,21 @@ function MultiPhaseTPFlash(;
     second_order = true,
     full_tpd = false,
     max_phases = typemax(Int),
+    flash_result = nothing,
     phase_iters = 20) #TODO: find a better value for this
+    
+    if flash_result !== nothing
+        comps = flash_result.compositions
+        np = numphases(flash_result)
+        np < 2 && incorrect_np_flash_error(MultiPhaseTPFlash,flash_result)
+        ∑n = sum(flash_result.fractions)
+        n00 = Vector{eltype(comps[1])}[]
+        for i in 1:np
+            push!(n00,collect(comps[i]))
+        end
+        return MultiPhaseTPFlash(;K0 = nothing,x0 = nothing, y0 = nothing,n0 = n00,K_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
+    end
+    
     if K0 == x0 == y0 == n0 == nothing #nothing specified
     #is_lle(equilibrium)
         T = Nothing
@@ -116,7 +130,7 @@ end
 function tpd_cache end
 
 function tp_flash_multi_cache(model,p,T,z)
-    pure = split_model(model)
+    pure = split_pure_model(model)
     _tpd_cache = tpd_cache(model,p,T,z)
 
     F_cache = zeros(Base.promote_eltype(model,p,T,z),length(z))
@@ -180,7 +194,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         volumes = [vx,vy]
         comps = [wx,wy]
         βi = [βx,βy]
-        if is_vapour(volume_label(model,vy,T,wy))
+        if is_vapour(VT_identify_phase(model,vy,T,wy))
             idx_vapour[] = 2
         end
         δn_add = true
@@ -198,7 +212,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
         for i in 1:length(comps)
             volumes[i] = volume(model,p,T,comps[i])
             if idx_vapour[] == 0
-                if is_vapour(volume_label(model,volumes[i],T,comps[i]))
+                if is_vapour(VT_identify_phase(model,volumes[i],T,comps[i]))
                     idx_vapour[] = i
                 end
             end
@@ -247,7 +261,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
     if !δn_add && length(comps) == 1
         v0 = volumes[1]
         g0 = (eos(model,v0,T,z) + p*v0)/(Rgas(model)*T)
-        return comps, βi, volumes,g0
+        return FlashResult(comps, βi, volumes, FlashData(p,T,g0))
     end
     gmix = NaN*one(eltype(volumes))
     #step 2: main loop,iterate flashes until all phases are stable
@@ -285,7 +299,7 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
     if isnan(gmix)
         gmix = _multiphase_gibbs(model,p,T,result)/(Rgas(model)*T)
     end
-    return comps, βi, volumes, gmix
+    return FlashResult(comps, βi, volumes, FlashData(p,T,gmix))
 end
 
 function neq_converged(model,p,T,z,result)
@@ -404,7 +418,6 @@ function RR_t!(t,x,β,np,nc)
     for l in 1:(np - 1)
         Kl = viewn(x,nc,l)
         βl = β[l]
-        fi = zero(βl)
         for i in 1:nc
             #K at phase i
             t[i] += βl*expm1(Kl[i])
@@ -419,6 +432,21 @@ function RR_β_ai!(a,F,i,nc,np)
         a[j] = 1 - Kj[i]
     end
     return a
+end
+
+function ls_restricted(φ::P,λ) where P
+    _d = φ.d
+    _x = φ.z
+    λmax = λ
+    #=
+    x -  λ*d = 0
+    λ = x/d
+    λmax = minimum(xi/di for i in eachindex(x))
+    =#
+    for i in 1:length(_x)
+        λmax = min(λmax,_x[i]/_d[i])
+    end
+    return λmax
 end
 
 #constant K, calculate β
@@ -446,21 +474,6 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
     β0 = copy(βi)
     resize!(β0,np - 1)
 
-    function ls_restricted(φ::P,λ) where P
-        _d = φ.d
-        _x = φ.z
-        λmax = λ
-        #=
-        x -  λ*d = 0
-        λ = x/d
-        λmax = minimum(xi/di for i in eachindex(x))
-        =#
-        for i in 1:length(_x)
-            λmax = min(λmax,_x[i]/_d[i])
-        end
-        return λmax
-    end
-    #ls_restricted(x1,x2) = x2
     ls = RestrictedLineSearch(ls_restricted,Backtracking())
     βsol = similar(β0)
     βresult = Solvers.optimize(f,β0,LineSearch(Newton(linsolve = static_linsolve),ls))
@@ -711,6 +724,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
     np = length(comps)
     nc = length(z)
     δn_add = false
+    np == nc && return false
     max_phases = min(options.max_phases,nc)
     #np >= max_phases && return 0 #we cannot add new phases here
     iter = np
@@ -725,12 +739,26 @@ function _add_phases!(model,p,T,z,result,cache,options)
     for i in 1:iter
         w = comps[i]
         vw = volumes[i]
+
+        if idx_vapour[] == 0
+            phase_wi = VT_identify_phase(model,vw,T,w)
+            if is_vapour(phase_wi)
+                idx_vapour[] == i
+            end
+        else
+            if idx_vapour[] == i
+                phase_wi = :vapour
+            else
+                phase_wi = :liquid
+            end 
+        end
+        
         is_lle = idx_vapour[] != 0 #if we have a vapour phase, we only search for liquid-liquid splits
         tpd_i = tpd(model,p,T,w,tpd_cache,reduced = true,break_first = true, strategy = :pure,lle = is_lle)
         length(tpd_i[1]) == 0 && continue
         already_found = false
         tpd_comps,_ttpd,phases_z,phases_w = tpd_i
-        if is_vapour(phases_z[1]) && idx_vapour[] == 0
+        if is_vapour(phase_wi) && idx_vapour[] == 0
             idx_vapour[] = i
             fill!(phases_comps,:liquid)
             phases_comps[idx_vapour[]] = :vapour
@@ -795,19 +823,36 @@ function _add_phases!(model,p,T,z,result,cache,options)
             #vy = volume(model,p,T,y,phase = phase_y)
             #phase not stable: generate a new one from tpd result
             β1,x1,v1,β2,x2,v2,dgi = split_phase_tpd(model,p,T,w,y,phase_w,phase_y,vw,vy)
-            if !isnan(dgi) && dgi < 0
+            #check that the new generated phase is not equal to one existing composition
+            knew = 0
+            for i in 1:length(comps)
+                if z_norm(comps[i],x1) < 1e-5 && abs(1/v1 - 1/volumes[i]) <= 1e-4
+                    knew = i #the split resulted in a new phase equal to one already existing
+                end
+            end
+            
+            if (!isnan(dgi) && (dgi < 0)) || isone(length(np))
                 β0 = β[jj]
                 β[jj] = β0*β2
                 comps[jj] = x2
                 volumes[jj] = v2
-                push!(comps,x1)
-                push!(volumes,v1)
-                push!(β,β0*β1)
-                is_vapour(VT_identify_phase(model,v1,T,x1))
-                if is_vapour(VT_identify_phase(model,v1,T,x1))
-                    idx_vapour[] = length(comps)
+                if iszero(knew)
+                    push!(comps,x1)
+                    push!(volumes,v1)
+                    push!(β,β0*β1)
+                    if is_vapour(VT_identify_phase(model,v1,T,x1))
+                        idx_vapour[] = length(comps)
+                    end
+                    return true
+                else
+                    wi,wj = x1,comps[jj]
+                    vi,vj = v1,volumes[jj]
+                    βi,βj = β0*β1,β[jj]
+                    volumes[jj] = (βi*vi + βj*vj)/(βi + βj)
+                    β[jj] = (βi + βj)
+                    wj .= (βi .* wi .+ βj .* wj) ./ (βi .+ βj)  
+                    return true
                 end
-                return true
             end
         end
     end
@@ -950,7 +995,6 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
     =#
     β1 = zero(eltype(w))
     β2 = one(eltype(w))
-
     for i in 1:length(z)
         β2 = min(β2,z[i]/w[i])
     end
@@ -960,6 +1004,9 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
     x2 .= (z .-  β2 .* w) ./ (1 .- β2)
     x3 = x2
     phase = phase_w == phase_z ? phase_z : :unknown
+    if is_vapour(phase_w) && is_unknown(phase)
+        phase = :liquid
+    end
     v2 = volume(model,p,T,x2,threaded = false,phase = phase)
     v3 = volume(model,p,T,x3,threaded = false,phase = phase)
     g2 = eos(model,v2,T,x2) + p*v2
@@ -1009,7 +1056,7 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
     return (1-βi),x3,v3,βi,w,vw,dgi
 end
 
-function split_phase_k(model,p,T,z,K = nothing,vz = volume(model,p,T,z),pures = split_model(model))
+function split_phase_k(model,p,T,z,K = nothing,vz = volume(model,p,T,z),pures = split_pure_model(model))
     #split phase via K values.
     if isnothing(K)
         Ki = suggest_K(model,p,T,z,pures)

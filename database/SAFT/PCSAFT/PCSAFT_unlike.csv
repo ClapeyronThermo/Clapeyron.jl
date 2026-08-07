@@ -39,9 +39,7 @@ propanol~|~1-propanol~|~propan-1-ol,CCCO,ethylbenzene,c1ccccc1(CC),0.023,10.1021
 2-propanol~|~propan-2-ol~|~isopropanol,CC(O)C,benzene,c1ccccc1,0.0,10.1021/ie010954d
 butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,CCCCO,butane~|~n-butane,CCCC,0.015,10.1021/ie010954d
 1-pentanol~|~pentan-1-ol,CCCCCO,benzene,c1ccccc1,0.0135,10.1021/ie010954d
-water,O,1-pentanol~|~pentan-1-ol,CCCCCO,0.016,10.1021/ie010954d
-water08,O,1-pentanol~|~pentan-1-ol,CCCCCO,0.016,10.1021/ie010954d
+water~|~water08,O,1-pentanol~|~pentan-1-ol,CCCCCO,0.016,10.1021/ie010954d
 diethyl ether,,ethane,CC,0.0,10.1021/ie0003887
 r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,,butane~|~n-butane,,0.098,
-water,O,ammonia,,-0.25,10.1016/j.fluid.2024.114125
-water08,O,ammonia,,-0.25,10.1016/j.fluid.2024.114125
+water~|~water08,O,ammonia,,-0.25,10.1016/j.fluid.2024.114125

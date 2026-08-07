@@ -9,9 +9,50 @@ end
 
 abstract type SAFTVRQMieModel <: SAFTVRMieModel end
 #SAFT-VRQ-Mie does not have sites.
-@newmodel SAFTVRQMie SAFTVRQMieModel SAFTVRQMieParam false
+
+struct SAFTVRQMie{I} <: SAFTVRQMieModel
+    components::Vector{String}
+    params::SAFTVRQMieParam
+    idealmodel::I
+    fh_order::Symbol
+    references::Array{String,1}
+end
+
+function SAFTVRQMie(components;
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    fh_order = :fh2,
+    verbose = false)
+
+    MODEL,PARAM = SAFTVRQMie,SAFTVRQMieParam
+    locations = default_locations_vrq(fh_order)
+    _components = format_components(components)
+    params_in = getparams(_components, locations)
+    params_out = transform_params(MODEL,params_in)
+    pkgparam = build_eosparam(PARAM,params_out)
+    init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
+    model = SAFTVRQMie(_components,pkgparam,init_idealmodel,fh_order,default_references(MODEL))
+    set_reference_state!(model,reference_state;verbose)
+    return model
+end
+
 default_references(::Type{SAFTVRQMie}) = ["10.1063/1.5111364","10.1063/1.5136079"]
-default_locations(::Type{SAFTVRQMie}) = ["SAFT/SAFTVRQMie"]
+
+default_locations(::Type{SAFTVRQMie}) = default_locations_vrq(:fh2)
+default_locations(model::SAFTVRQMieModel) = default_locations_vrq(model.fh_order)
+
+function default_locations_vrq(fh_order)
+    if fh_order == :fh2
+        locations = ["SAFT/SAFTVRQMie"]
+    elseif fh_order == :fh1
+        locations = ["SAFT/SAFTVRQMie"]
+    else
+        error("Unknown Feynman-Hibbs order: $fh_order")
+    end
+end
+
 function transform_params(::Type{SAFTVRQMie},params)
     Mw = params["Mw"]
     Mw .*= 1E-3
@@ -35,6 +76,16 @@ function transform_params(::Type{SAFTVRQMie},params)
     return params
 end
 
+function show_info(io,model::SAFTVRQMie) 
+    fh = model.fh_order
+    println(io)
+    if fh == :fh1
+        print(io,"Feynman-Hibbs Perturbation: 1st order")
+    elseif fh == :fh2
+        print(io,"Feynman-Hibbs Perturbation: 2nd order")
+    end
+end
+
 """
     SAFTVRQMieModel <: SAFTVRMieModel
 
@@ -43,8 +94,8 @@ end
     userlocations = String[],
     ideal_userlocations = String[],
     reference_state = nothing,
-    verbose = false,
-    assoc_options = AssocOptions())
+    fh_order = :fh2,
+    verbose = false)
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
@@ -67,7 +118,7 @@ end
 
 ## Description
 
-Quantum-Corrected SAFT-VR Mie. In particular, it uses the second order Feynman–Hibbs corrections to the Mie Potential
+Quantum-Corrected SAFT-VR Mie. In particular,The Feynman–Hibbs correction order can be modified by passing the `fh_order` keyword argument. The default is 2nd order (`:fh2`), but 1st order (`:fh1`) is also available.
 
 ## References
 1. Aasen, A., Hammer, M., Ervik, Å., Müller, E. A., & Wilhelmsen, Ø. (2019). Equation of state and force fields for Feynman–Hibbs-corrected Mie fluids. I. Application to pure helium, neon, hydrogen, and deuterium. The Journal of Chemical Physics, 151(6), 064508. [doi:10.1063/1.5111364](https://doi.org/10.1063/1.5111364)

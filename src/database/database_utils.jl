@@ -111,7 +111,7 @@ flattenfilepaths(locations,userlocations::AbstractString) = flattenfilepaths(loc
 
 getpath(location;relativetodatabase = true) = only(getpaths(location; relativetodatabase))
 
-Base.@nospecialize
+Base.@nospecialize #used when there are custom user locations
 function flattenfilepaths(locations,userlocations)
     return String[]
 end
@@ -335,6 +335,16 @@ end
 info_color(symbol::Symbol) = info_color(":" * string(symbol))
 
 
+function low_color(text)
+    colors = Base.text_colors
+    g = colors[:light_black]
+    reset = colors[:normal]
+    return g * text * reset
+end
+
+low_color(symbol::Symbol) = low_color(":" * string(symbol))
+
+
 function userlocation_merge(loc1,loc2)
     if isempty(loc2)
         return loc1
@@ -377,7 +387,7 @@ end
 
 function cas(components)
     components = format_components(components)
-    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES"],ignore_missing_singleparams = ["CAS"])
+    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES","canonicalsmiles","inchikey"],ignore_missing_singleparams = ["CAS"])
     return params["CAS"].values
 end
 

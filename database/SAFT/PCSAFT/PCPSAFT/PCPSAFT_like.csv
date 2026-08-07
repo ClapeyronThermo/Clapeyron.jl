@@ -309,7 +309,7 @@ cumene~|~isopropylbenzene,120.094,3.25816,3.88643,287.70609,0.0,0,0,,NONPOLAR,OK
 2-naphthol~|~2-hydroxynaphthalene,144.058,2.98372,3.9732,368.17562,0.0,1,1,,ASSOCIATIVE,OK
 1-decene,140.157,4.42919,3.86559,248.89256,0.0,0,0,,NONPOLAR,OK
 3-methyl-1-butene,70.078,2.47206,3.7988,230.41994,0.0,0,0,,NONPOLAR,OK
-"(e)-1,3-pentadiene~|~trans-1,3-pentadiene",68.063,2.56843,3.66691,245.81166,0.0,0,0,,NONPOLAR,OK
+"1-trans-3-pentadiene~|~(e)-1,3-pentadiene~|~trans-1,3-pentadiene",68.063,2.56843,3.66691,245.81166,0.0,0,0,,NONPOLAR,OK
 2-methyl-2-pentene,84.094,2.95813,3.75296,241.79835,0.0,0,0,,NONPOLAR,OK
 2-methyl-3-pentanol,102.104,3.96657,3.48877,237.98826,0.0,1,1,,ASSOCIATIVE,OK
 2-methyl-1-hexanol,116.12,3.06366,3.64828,115.06955,0.0,1,1,,ASSOCIATIVE,OK
@@ -382,7 +382,7 @@ dimethyl carbonate~|~carbonic acid dimethyl ester,90.032,3.26747,3.23875,253.775
 isobutene~|~isobutylene~|~2-methylpropene,56.063,2.17683,3.70792,227.5538,0.0,0,0,,NONPOLAR,OK
 ethylene glycol acetate monomethyl ether,118.063,5.00381,3.14689,228.89345,0.0,3,0,,NONPOLAR,OK
 isobutanal~|~2-methylpropanal,72.058,2.88452,3.44627,240.63343,2.5,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
-2-butene,56.063,2.39076,3.55752,225.86263,0.0,0,0,,NONPOLAR,OK
+(z)-2-butene~|~cis-2-butene,56.063,2.39076,3.55752,225.86263,0.0,0,0,,NONPOLAR,OK
 tert-butylamine~|~2-methyl-2-propanamine,73.089,2.30326,3.91087,241.99467,0.0,1,1,,ASSOCIATIVE,OK
 deg~|~diethylene glycol,106.063,3.36723,3.40911,174.98848,0.0,3,2,,ASSOCIATIVE,OK
 3-methylhexane~|~3-methyl-hexane,100.125,3.23144,3.87322,243.83414,0.0,0,0,,NONPOLAR,OK
@@ -579,7 +579,7 @@ guaiacol~|~2-methoxyphenol,124.052,3.87582,3.43228,289.66653,0.0,2,1,,ASSOCIATIV
 n-methylpiperidine,99.105,2.6654,3.93397,287.14191,0.92,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "acetylacetone~|~2,4-pentanedione",100.052,2.14449,4.07412,348.86452,3.0,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "resorcinol~|~1,3-benzenediol~|~1,3-dihydroxybenzene",110.037,2.39189,3.88105,386.93484,0.0,2,2,,ASSOCIATIVE,OK
-methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,88.089,2.94782,3.70393,233.07331,1.36,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
+mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,88.089,2.94782,3.70393,233.07331,1.36,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "1,4-pentadiene",68.063,2.54223,3.68026,233.50921,0.0,0,0,,NONPOLAR,OK
 1-methoxypropane~|~methylpropyl ether~|~methyl-n-propylether~|~methyl n-propyl ether,74.073,2.84575,3.53881,228.63459,1.24,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 methylisopropylether~|~isopropyl methyl ether,74.073,2.825,3.54669,223.17478,1.25,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
@@ -665,7 +665,7 @@ tert-butyl bromide~|~2-bromo-2-methylpropane,135.989,2.55378,3.84461,269.49387,0
 eugenol,164.084,2.58307,4.47169,354.47428,0.0,2,1,,ASSOCIATIVE,OK
 2-ethylpyridine,107.073,3.44995,3.56645,280.89108,0.0,1,0,,NONPOLAR,OK
 r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,87.994,2.19671,3.1292,122.12982,0.0,0,0,,NONPOLAR,OK
-cis-2-octene,112.125,3.31024,3.96513,263.2299,0.0,0,0,,NONPOLAR,OK
+(z)-2-octene~|~cis-2-octene,112.125,3.31024,3.96513,263.2299,0.0,0,0,,NONPOLAR,OK
 cis-3-octene,112.125,3.25207,3.99479,263.47258,0.0,0,0,,NONPOLAR,OK
 (z)-4-octene~|~cis-4-octene,112.125,3.17631,4.02573,266.85123,0.0,0,0,,NONPOLAR,OK
 "squalane~|~2,6,10,15,19,23-hexamethyltetracosane",422.485,10.56751,4.14394,254.15269,0.0,0,0,,NONPOLAR,OK
@@ -786,7 +786,7 @@ r12b1~|~bromochlorodifluoromethane,163.884,2.20487,3.63702,229.87484,0.0,0,0,,NO
 octacosane~|~n-octacosane,394.454,11.85246,3.88288,248.46039,0.0,0,0,,NONPOLAR,OK
 isobutyronitrile~|~2-methylpropanenitrile,69.058,2.86622,3.4857,233.12537,4.29,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "dimethyl adipate~|~dimethyl 1,6-hexanedioate",174.089,6.13667,3.32456,247.1628,0.0,4,0,,NONPOLAR,OK
-pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane,87.105,3.24364,3.64534,237.87493,0.0,1,1,,ASSOCIATIVE,OK
+pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane~|~1-pentylamine,87.105,3.24364,3.64534,237.87493,0.0,1,1,,ASSOCIATIVE,OK
 perdeuteroacetic acid,60.021,3.99328,2.59306,182.30859,0.0,2,1,,ASSOCIATIVE,kappa_ab: higher
 "4-thiaheptane~|~dipropyl sulfide~|~di-n-propyl sulfide~|~1,1'-thiobispropane",118.082,4.10318,3.57885,247.17224,1.6,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 5-thianonane~|~dibutylsulfide~|~di-n-butylsulfide,146.113,3.53849,4.08612,293.65259,1.6,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
@@ -931,7 +931,7 @@ cyclohexanethiol~|~cyclohexyl mercaptan,116.066,2.62873,4.02278,331.99316,0.0,1,
 "m-diisopropylbenzene~|~1,3-diisopropylbenzene~|~1,3-bis(1-methylethyl)-benzene",162.141,4.46773,3.87604,267.29506,0.0,0,0,,NONPOLAR,OK
 "o-terphenyl~|~1,1'-2',1''-terphenyl",230.11,5.41044,3.84384,314.70269,0.0,0,0,,NONPOLAR,OK
 "1,1-dimethylcyclohexane",112.125,3.11858,3.9447,268.76032,0.0,0,0,,NONPOLAR,OK
-"1,2-dimethylcyclohexane~|~trans-1,2-dimethylcyclohexane",112.125,2.75105,4.13827,291.30809,0.0,0,0,,NONPOLAR,OK
+"trans-1,2-dimethylcyclohexane~|~(1r,2r)-1,2-dimethylcyclohexane",112.125,2.75105,4.13827,291.30809,0.0,0,0,,NONPOLAR,OK
 thianthrene,216.007,3.99839,3.96357,392.09778,0.0,2,0,,NONPOLAR,OK
 1-methylindene,130.078,4.74445,3.3795,258.82554,0.0,0,0,,NONPOLAR,OK
 pyrazine,80.037,2.82189,3.31028,239.79933,4.22,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
@@ -1033,7 +1033,7 @@ methylethylether~|~ethyl methyl ether,60.058,2.70452,3.35445,213.00357,1.23,1,0,
 "2,2,3-trimethylpentane",114.141,3.07212,4.0839,261.52779,0.0,0,0,,NONPOLAR,OK
 fluorine,37.997,1.30208,2.93343,99.77277,0.0,1,1,,ASSOCIATIVE,kappa_ab: lower
 "propadiene~|~1,2-propadiene",40.031,1.97921,3.36589,222.99172,0.0,0,0,,NONPOLAR,OK
-amyl formate~|~pentyl methanoate~|~formicacidpentylester,116.084,4.24093,3.44788,237.7671,1.9,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
+amyl formate~|~pentyl formate~|~pentyl methanoate~|~formicacidpentylester,116.084,4.24093,3.44788,237.7671,1.9,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 n-octyl formate~|~octyl methanoate~|~formicacidoctylester,158.131,5.05811,3.64662,249.70825,0.0,2,0,,NONPOLAR,OK
 "5,8,11-trioxapentadecane~|~diethyleneglycoldibutylether~|~diethylene glycol di-n-butyl ether",218.188,4.60277,4.22311,288.04347,0.0,3,0,,NONPOLAR,OK
 "phosphonic acid, dimethyl ester",110.013,3.42999,3.35188,303.80162,0.0,3,0,,NONPOLAR,OK
@@ -1184,7 +1184,7 @@ m-tolualcohol~|~m-methylbenzylalcohol~|~3-methylbenzyl alcohol,122.073,7.43098,2
 5-hexen-2-one~|~1-hexen-5-one,98.073,3.79292,3.44147,253.38943,0.0,1,0,,NONPOLAR,OK
 cinnamic acid~|~trans-cinnamic acid,148.052,2.79469,4.05506,277.62777,0.0,1,1,,ASSOCIATIVE,epsilon_k_ab: higher
 "linolenic acid~|~9,12,15-octadecatrienoic acid",278.225,6.52426,4.11208,304.22167,0.0,1,1,,ASSOCIATIVE,OK
-linoleic acid,280.24,6.33016,4.18378,306.76458,0.0,1,1,,ASSOCIATIVE,OK
+"linoleic acid~|~(z,z)-9,12-octadecadienoic acid",280.24,6.33016,4.18378,306.76458,0.0,1,1,,ASSOCIATIVE,OK
 arachidic acid~|~eicosanoic acid,312.303,8.73436,3.89804,266.93786,0.0,1,1,,ASSOCIATIVE,OK
 ethylmethacrylate,114.068,2.8576,3.89269,283.49464,2.15,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 tert-butylmethacrylate,142.099,3.99873,3.79106,242.92548,1.95,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
@@ -1232,7 +1232,7 @@ tripropylene glycol~|~2-[2-(2-hydroxypropoxy)propoxy]-1-propanol,192.136,6.31493
 3-octanone,128.12,4.24072,3.67612,255.87651,2.44,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 3-nonanone,142.136,4.84869,3.64319,250.16129,2.48,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 ethyl 2-methylbutanoate~|~2-methylbutanoic acid ethyl ester,130.099,4.14141,3.6209,239.35493,0.0,2,0,,NONPOLAR,OK
-"2,6-di-tert-butyl-p-cresol~|~2,6-di-tert.butyl-4-methylphenol~|~2,6-bis(1,1-dimethylethyl)-4-methylphenol",220.183,3.76611,4.5,316.13126,0.0,1,1,,ASSOCIATIVE,sigma: higher
+"butylhydroxytoluene~|~2,6-di-tert-butyl-p-cresol~|~2,6-di-tert.butyl-4-methylphenol~|~2,6-bis(1,1-dimethylethyl)-4-methylphenol",220.183,3.76611,4.5,316.13126,0.0,1,1,,ASSOCIATIVE,sigma: higher
 2-tert-butyl-4-methylphenol,164.12,3.12047,4.24592,257.88316,0.0,1,1,,ASSOCIATIVE,OK
 perfluorodecalin,461.971,4.72481,4.00419,220.63716,0.0,0,0,,NONPOLAR,OK
 "r1243zf~|~3,3,3-trifluoropropene~|~3,3,3-trifluoro-1-propene~|~1,1,1-trifluoro-2-propene~|~3,3,3-trifluoropropylene (r1243zf)",96.019,2.56573,3.44587,177.11097,2.45,0,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
@@ -1402,7 +1402,7 @@ n-aminoethyl ethanolamine~|~n-(2-aminoethyl)ethanolamine~|~2-(2-aminoethyl)amino
 "n,n-dimethyl(2-pentylnonyl)amine~|~n,n-dimethyl-2-pentyl-1-nonanamine",241.277,6.85322,3.93834,246.47036,0.0,1,0,,NONPOLAR,OK
 2-hexyl mercaptan,118.082,2.81312,4.12304,293.20744,0.0,1,1,,ASSOCIATIVE,OK
 1-heptanethiol~|~heptyl mercaptan~|~n-heptyl mercaptan,132.097,2.47315,4.5,309.40705,0.0,1,1,,ASSOCIATIVE,sigma: higher
-"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane",104.066,2.77365,3.92011,273.84587,1.56,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
+"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane~|~methyl-t-butyl sulfide",104.066,2.77365,3.92011,273.84587,1.56,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 1-pentanethiol~|~pentyl mercaptan~|~n-pentyl mercaptan,104.066,2.92309,3.87121,284.25802,0.0,1,1,,ASSOCIATIVE,OK
 "2,4-dimethylpyrrole",95.073,4.57531,3.13061,255.59742,0.0,0,1,,NONPOLAR,OK
 n-methylpiperazine~|~1-methylpiperazine,100.1,1.78424,4.5,365.11248,0.0,2,1,,ASSOCIATIVE,sigma: higher
@@ -1441,7 +1441,7 @@ gallium trichloride,173.832,3.18028,3.32436,274.301,5.1,0,0,10.1021/acs.iecr.3c0
 3-chlorophenyl isocyanate,152.998,3.43927,3.67337,320.61662,0.0,2,0,,NONPOLAR,OK
 dimethylmercury,232.018,1.90774,3.78655,353.19312,0.65,0,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 o-anisaldehyde~|~2-methoxybenzaldehyde,136.052,4.28145,3.41771,309.50905,0.0,2,0,,NONPOLAR,OK
-"cis-1,3-dichloropropene",109.969,2.78101,3.52289,284.90215,1.79,0,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
+"cis-1,3-dichloropropene~|~cis-1,3-dichloro-1-propene",109.969,2.78101,3.52289,284.90215,1.79,0,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "trans-1,3-dichloropropene~|~trans-1,3-dichloro-1-propene",109.969,2.87975,3.48819,285.67713,1.81,0,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "perchlorocyclopentadiene~|~hexachlorocyclopentadiene~|~1,2,3,4,5,5-hexachloro-1,3-cyclopentadiene",269.813,4.23003,3.75166,300.98394,1.05,0,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 vinyl triethoxy silane,190.103,6.34537,3.49229,203.14325,0.0,3,0,,NONPOLAR,OK
@@ -1498,7 +1498,7 @@ methyl chlorosilane~|~chloro(methyl)silane,79.985,2.33529,3.59111,225.73987,1.93
 trifluoroacetyl fluoride,115.989,3.76345,2.87039,134.60067,0.0,1,0,,NONPOLAR,OK
 2-nitrobutane,103.063,3.19131,3.57479,288.14137,0.0,2,0,,NONPOLAR,OK
 n-butyldichloro arsine,201.93,6.35748,3.89488,214.49689,0.0,0,0,,NONPOLAR,OK
-"cis-1,3-dimethylcyclopentane",98.11,2.84978,3.92513,263.71583,0.0,0,0,,NONPOLAR,OK
+"(z)-1,3-dimethylcyclopentane~|~1,cis-3-dimethylcyclopentane~|~cis-1,3-dimethylcyclopentane",98.11,2.84978,3.92513,263.71583,0.0,0,0,,NONPOLAR,OK
 "2,2,5,5-tetramethylhexane",142.172,3.62094,4.16831,252.17979,0.0,0,0,,NONPOLAR,OK
 dichlorodiethylsilane,155.993,3.32894,3.90791,264.23698,2.39,0,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 methyl eicosanoate~|~eicosanoicacidmethylester,326.318,11.74916,3.53438,225.69967,0.0,2,0,,NONPOLAR,OK
@@ -1566,7 +1566,7 @@ cyclobutanecarboxylic acid,100.052,2.59068,3.79229,364.92074,0.0,1,1,,ASSOCIATIV
 "ethyl ester cyclobutanecarboxylic acid~|~cyclobutanecarboxylic acid, ethyl ester",128.084,4.03969,3.54565,257.34034,0.0,2,0,,NONPOLAR,OK
 "1,4-di-tert-butylbenzene~|~1,4-bis(1,1-dimethylethyl)benzene~|~1,4-bis(1,1-dimethylethyl)-benzene",190.172,4.90129,3.95794,271.45198,0.0,0,0,,NONPOLAR,OK
 cyclopentyl formate,114.068,3.50078,3.52972,272.40023,0.0,2,0,,NONPOLAR,OK
-"perfluoro-1,3-dimethylcyclohexane",399.974,4.79141,3.80826,198.24067,0.0,0,0,,NONPOLAR,OK
+"perfluoro-1,3-dimethylcyclohexane~|~1,1,2,2,3,3,4,5,5,6-decafluoro-4,6-bis(trifluoromethyl)cyclohexane",399.974,4.79141,3.80826,198.24067,0.0,0,0,,NONPOLAR,OK
 "5-trifluoromethylperfluoro-3,6-dioxanonane",469.961,5.54404,3.92896,177.33178,0.0,2,0,,NONPOLAR,OK
 "2,5-dimethylfuran",96.058,3.56512,3.39067,239.39843,0.0,1,0,,NONPOLAR,OK
 1-phenyl-1-propanol~|~a-ethylbenzylalcohol,136.089,3.21885,3.95653,311.2734,0.0,1,1,,ASSOCIATIVE,OK
@@ -1605,8 +1605,8 @@ lactonitrile~|~2-hydroxy propionitrile,71.037,1.08926,4.44925,211.0049,0.0,2,1,,
 icosamethylnonasiloxane~|~eicosamethylnonasiloxane,680.221,15.94476,3.9243,182.30841,0.0,8,0,,NONPOLAR,OK
 "1,3-dimethyladamantane~|~1,3-dimethyltricyclo[3.3.1.1(3,7)]decane",164.157,3.02567,4.38288,328.54846,0.0,0,0,,NONPOLAR,OK
 phthaloyl chloride,201.959,3.43154,3.94469,363.88343,0.0,2,0,,NONPOLAR,OK
-cis-2-decene~|~trans-2-decene,140.157,4.37143,3.86282,253.04598,0.0,0,0,,NONPOLAR,OK
-cis-2-decene~|~trans-2-decene,140.157,4.51488,3.81778,248.50777,0.0,0,0,,NONPOLAR,OK
+cis-2-decene,140.157,4.37143,3.86282,253.04598,0.0,0,0,,NONPOLAR,OK
+(e)-2-decene~|~trans-2-decene,140.157,4.51488,3.81778,248.50777,0.0,0,0,,NONPOLAR,OK
 pentaethylbenzene,218.203,5.01572,4.09349,288.23804,0.0,0,0,,NONPOLAR,OK
 1-piperazineethanamine~|~n-(2-aminoethyl)piperazine~|~n-(.beta.-aminoethyl)piperazine),129.127,2.215,4.5,406.06335,0.0,3,2,,ASSOCIATIVE,sigma: higher
 2-hexyne,82.078,3.39085,3.49637,238.34781,0.0,0,0,,NONPOLAR,OK
@@ -1616,7 +1616,7 @@ pentaethylbenzene,218.203,5.01572,4.09349,288.23804,0.0,0,0,,NONPOLAR,OK
 disilane,62.001,1.56359,3.97081,273.14834,0.0,0,0,,NONPOLAR,OK
 trisilane,91.993,2.45181,4.03147,256.38088,0.0,0,0,,NONPOLAR,OK
 3-thiaundecane~|~ethyl octyl sulfide~|~1-(ethylthio)-octane~|~ethyl n-octyl sulfide,174.144,4.834,3.9091,271.75181,0.0,1,0,,NONPOLAR,OK
-1-cis-2-trans-4-trimethylcyclopentane,112.125,2.93534,4.05617,275.52874,0.0,0,0,,NONPOLAR,OK
+"1-cis-2-trans-4-trimethylcyclopentane~|~(1r,2s)-1,2,4-trimethylcyclopentane",112.125,2.93534,4.05617,275.52874,0.0,0,0,,NONPOLAR,OK
 isobutylcyclohexane~|~iso-butylcyclohexane~|~2-methylpropylcyclohexane~|~(2-methylpropyl)-cyclohexane,140.157,3.70494,4.01862,274.48446,0.0,0,0,,NONPOLAR,OK
 2-methylundecane,170.203,4.81946,4.01748,257.96331,0.0,0,0,,NONPOLAR,OK
 2-methyldodecane,184.219,5.383,3.96526,253.72926,0.0,0,0,,NONPOLAR,OK
@@ -1743,7 +1743,7 @@ ethyl-morpholine~|~n-ethylmorpholine~|~4-ethylmorpholine~|~n-ethyl-morpholine,11
 3-methyl-1-hexene,98.11,2.84142,4.01501,256.744,0.0,0,0,,NONPOLAR,OK
 beta-phellandrene~|~3-methylene-6-(1-methylethyl)cyclohexene~|~3-methylene-6-(1-methylethyl)-cyclohexene,136.125,3.61236,3.94385,284.33361,0.0,0,0,,NONPOLAR,OK
 "1,1-diethylcyclohexane",140.157,4.6805,3.67948,248.58161,0.0,0,0,,NONPOLAR,OK
-alpha-phellandrene,136.125,3.65094,3.9279,281.46315,0.0,0,0,,NONPOLAR,OK
+"menthadiene~|~alpha-phellandrene~|~2-methyl-5-(1-methylethyl)-1,3-cyclohexadiene",136.125,3.65094,3.9279,281.46315,0.0,0,0,,NONPOLAR,OK
 p-tert-butylethylbenzene,162.141,4.04781,4.01048,286.77295,0.0,0,0,,NONPOLAR,OK
 2-phenylbutene-1~|~2-phenyl-1-butene~|~(1-methylenepropyl)-benzene,132.094,4.42067,3.56046,260.31433,0.0,0,0,,NONPOLAR,OK
 2-methyl-2-pentenal~|~(z)-2-methyl-2-pentenal,98.073,17.08586,1.98844,139.20819,0.0,1,0,,NONPOLAR,OK
@@ -1794,7 +1794,7 @@ ethyl levulinate~|~4-oxo-pentanoic acid ethyl ester,144.079,4.58228,3.50871,273.
 "syringol~|~2,6-dimethoxyphenol",154.063,2.2492,4.44988,399.51861,0.0,3,1,,ASSOCIATIVE,OK
 "1,1,1-trifluoro-2-(1,1,2-trifluoroethoxy) ethane",182.017,4.86075,3.17084,184.94086,0.0,1,0,,NONPOLAR,OK
 "1,1,2,2-tetrafluoro-2-(2,2-difluoroethoxy)ethane~|~1,1,2,2,-tetrafluoroethyl-2,2-difluoroethyl ether",182.017,4.82846,3.16725,194.11151,0.0,1,0,,NONPOLAR,OK
-"3-bromo-2,4,6-trichlorophenol~|~1,1,1,2,2,-pentafluoro-3-(1,1,2,2-tetrafluoroethoxy) propane",250.004,5.05078,3.38909,180.66796,0.0,1,0,,NONPOLAR,OK
+"1,1,1,2,2,-pentafluoro-3-(1,1,2,2-tetrafluoroethoxy) propane",250.004,5.05078,3.38909,180.66796,0.0,1,0,,NONPOLAR,OK
 "r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene~|~2,3,3,3-tetrafluoroprop-1-ene",114.009,2.88557,3.35657,175.92411,0.0,0,0,,NONPOLAR,OK
 "(z)-1,2,3,3,3-pentafluoropropene",132.0,3.30351,3.22025,170.31726,0.0,0,0,,NONPOLAR,OK
 5-hydroxymethylfurfural~|~5-(hydroxymethyl) furfural~|~5-(hydroxymethyl)furan-2-carbaldehyde,126.032,1.6816,4.5,426.61839,0.0,3,1,,ASSOCIATIVE,"sigma: higher, epsilon_k_ab: higher"

@@ -23,7 +23,8 @@ export NRTL
     puremodel=PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
@@ -77,20 +78,46 @@ default_locations(::Type{NRTL}) = ["properties/molarmass.csv","Activity/NRTL/NRT
 function NRTL(components; puremodel=PR,
     userlocations = String[], 
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(NRTL); userlocations = userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b","Mw"], verbose = verbose)
-    a  = params["a"]
-    b  = params["b"]
-    c  = params["c"]
+    params = getparams(formatted_components, default_locations(NRTL); userlocations = userlocations, asymmetricparams=["a","b","tau","alpha"], ignore_missing_singleparams=["a","b","Mw","tau","alpha"], verbose = verbose)
+    if !__ismissing(params,"tau") && __ismissing(params,"a") && __ismissing(params,"b")
+        a = params["tau"]
+        b = PairParam("b",formatted_components)
+    elseif __ismissing(params,"tau") 
+        a = params["a"]
+        b = params["b"]
+    else
+        throw(ArgumentError("NRTL: tau and (a,b) are mutually exclusive parameters, please provide only one of them"))
+    end
+
+    if !__ismissing(params,"alpha") && __ismissing(params,"c")
+        c = params["alpha"]
+    elseif __ismissing(params,"alpha")
+        c = params["c"]
+    else
+        throw(ArgumentError("NRTL: `alpha` and `c` are mutually exclusive parameters, please provide only one of them"))
+    end
+
     Mw  = get(params,"Mw",SingleParam("Mw",formatted_components))
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = NRTLParam(a,b,c,Mw)
     references = String["10.1002/aic.690140124"]
     model = NRTL(formatted_components,packagedparams,_puremodel,references)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
+end
+
+__ismissing(param) = all(param.ismissingvalues)
+function __ismissing(params,key) 
+    if haskey(params,key)
+        return __ismissing(params[key])
+    else
+        return true
+    end
 end
 
 #=
@@ -111,7 +138,7 @@ function excess_g_res(model::NRTLModel,p,T,z)
     a = model.params.a.values
     b  = model.params.b.values
     c  = model.params.c.values
-    _0 = zero(T+first(z))
+    _0 = zero(Base.promote_eltype(model,p,T,z))
     n = sum(z)
     invn = 1/n
     invT = 1/(T)

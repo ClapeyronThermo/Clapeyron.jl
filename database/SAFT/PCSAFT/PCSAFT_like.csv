@@ -97,7 +97,7 @@ cyclooctane,160,112.21,2.8856,4.0117,307.03,0,0,10.1016/j.fluid.2006.07.006
 isopropylcyclopentane~|~1-methylethylcyclopentane~|~(1-methylethyl)-cyclopentane,115,112.21,3.032,4.0022,278.15,0,0,10.1016/j.fluid.2006.07.006
 propylcyclopentane~|~n-propylcyclopentane,114,112.21,3.2639,3.9042,270.48,0,0,10.1016/j.fluid.2006.07.006
 "cis-1,2-dimethylcyclohexane",142,112.21,2.788,4.1065,294.75,0,0,10.1016/j.fluid.2006.07.006
-"1,2-dimethylcyclohexane~|~trans-1,2-dimethylcyclohexane",143,112.21,2.7483,4.1487,291.38,0,0,10.1016/j.fluid.2006.07.006
+"trans-1,2-dimethylcyclohexane~|~(1r,2r)-1,2-dimethylcyclohexane",143,112.21,2.7483,4.1487,291.38,0,0,10.1016/j.fluid.2006.07.006
 "trans-1,3-dimethylcyclohexane",145,112.21,2.8762,4.0753,285.17,0,0,10.1016/j.fluid.2006.07.006
 "cis-1,3-dimethylcyclohexane",144,112.21,2.8686,4.1003,281.56,0,0,10.1016/j.fluid.2006.07.006
 "cis-1,4-dimethylcyclohexane",146,112.21,2.8645,4.0814,285.61,0,0,10.1016/j.fluid.2006.07.006
@@ -117,11 +117,11 @@ propene~|~propylene,202,42.08,1.9597,3.5356,207.19,0,0,10.1021/ie0003887
 "1,2-butadiene",302,54.09,2.2979,3.5395,239.01,0,0,10.1016/j.fluid.2006.07.006
 "butadiene~|~1,3-butadiene",303,54.09,2.2309,3.5892,228.6,0,0,10.1016/j.fluid.2006.07.006
 butene~|~1-butene,204,56.11,2.2864,3.6431,222.0,0,0,10.1021/ie0003887
-2-butene~|~(z)-2-butene~|~cis-2-butene,206,56.11,2.3842,3.564,226.296,0,0,10.1021/ie034258k
+(z)-2-butene~|~cis-2-butene,206,56.11,2.3842,3.564,226.296,0,0,10.1021/ie034258k
 isobutene~|~isobutylene~|~2-methylpropene,207,56.11,2.2826,3.6442,221.58,0,0,10.1016/j.fluid.2006.07.006
 "isoprene~|~2-methyl-1,3-butadiene",309,68.12,2.3837,3.7501,249.88,0,0,10.1016/j.fluid.2006.07.006
 "1,3-pentadiene~|~(z)-1,3-pentadiene~|~cis-1,3-pentadiene",305,68.12,2.4704,3.707,253.73,0,0,10.1016/j.fluid.2006.07.006
-"(e)-1,3-pentadiene~|~trans-1,3-pentadiene",306,68.12,2.3591,3.7913,258.26,0,0,10.1016/j.fluid.2006.07.006
+"1-trans-3-pentadiene~|~(e)-1,3-pentadiene~|~trans-1,3-pentadiene",306,68.12,2.3591,3.7913,258.26,0,0,10.1016/j.fluid.2006.07.006
 "1,4-pentadiene",307,68.12,2.3128,3.8357,246.23,0,0,10.1016/j.fluid.2006.07.006
 "1,2-pentadiene",304,68.12,2.4867,3.6949,253.5,0,0,10.1016/j.fluid.2006.07.006
 "2,3-pentadiene",308,68.12,2.7682,3.5581,241.21,0,0,10.1016/j.fluid.2006.07.006
@@ -163,7 +163,7 @@ cis-3-heptene,249,98.19,3.1306,3.8852,251.81,0,0,10.1016/j.fluid.2006.07.006
 "2,2,4-trimethyl-2-pentene~|~2,4,4-trimethyl-2-pentene",257,112.21,3.3401,3.9343,247.35,0,0,10.1016/j.fluid.2006.07.006
 2-ethyl-1-hexene~|~3-methyleneheptane,258,112.21,3.4236,3.9141,254.18,0,0,10.1016/j.fluid.2006.07.006
 (e)-2-octene~|~trans-2-octene,251,112.21,3.3323,3.9757,261.12,0,0,10.1016/j.fluid.2006.07.006
-cis-2-octene,276,112.21,3.4103,3.9427,258.1,0,0,10.1016/j.fluid.2006.07.006
+(z)-2-octene~|~cis-2-octene,276,112.21,3.4103,3.9427,258.1,0,0,10.1016/j.fluid.2006.07.006
 (e)-3-octene~|~trans-3-octene,277,112.21,3.3614,3.969,258.69,0,0,10.1016/j.fluid.2006.07.006
 cis-3-octene,280,112.21,3.4131,3.9321,256.24,0,0,10.1016/j.fluid.2006.07.006
 (e)-4-octene~|~trans-4-octene,279,112.21,3.3646,3.9683,257.89,0,0,10.1016/j.fluid.2006.07.006
@@ -467,7 +467,7 @@ cs2~|~carbon disulfide,1938,76.14,1.7072,3.6171,333.44,0,0,10.1016/j.fluid.2006.
 2-thiapentane~|~methylpropyl sulfide~|~1-(methylthio)-propane~|~methyl-n-propyl sulfide~|~methyl n-propyl sulfide,1814,90.19,2.9283,3.6524,267.83,0,0,10.1016/j.fluid.2006.07.006
 "2,3-dithiabutane~|~dimethyldisulfide",1828,94.2,2.643,3.5836,300.67,0,0,10.1016/j.fluid.2006.07.006
 2-thiahexane~|~methylbutyl sulfide~|~1-(methylthio)butane~|~methyl-n-butyl sulfide~|~methyl n-butyl sulfide,2815,104.21,3.2429,3.7186,270.11,0,0,10.1016/j.fluid.2006.07.006
-methyl-t-butyl sulfide,1815,104.21,2.8002,3.909,273.18,0,0,10.1016/j.fluid.2006.07.006
+"methyl t-butyl sulfide~|~3,3-dimethyl-2-thiabutane~|~methyl-tert-butylthioether~|~2-methyl-2-(methylthio)-propane~|~methyl-t-butyl sulfide",1815,104.21,2.8002,3.909,273.18,0,0,10.1016/j.fluid.2006.07.006
 "4-thiaheptane~|~dipropyl sulfide~|~1,1'-thiobispropane~|~di-n-propyl sulfide",1817,118.24,3.5494,3.7766,267.42,0,0,10.1016/j.fluid.2006.07.006
 "ethyl-t-butyl sulfide~|~ethyl t-butyl sulfide~|~2,2-dimethyl-3-thiapentane~|~2-(ethylthio)-2-methylpropane",2816,118.24,3.1483,3.9335,268.45,0,0,10.1016/j.fluid.2006.07.006
 methyl-t-pentyl sulfide~|~methyl t-pentyl sulfide~|~2-methyl-2-(methylthio)-butane,1816,118.24,2.965,4.0306,299.81,0,0,10.1016/j.fluid.2006.07.006
@@ -539,7 +539,6 @@ butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,,74.123,2.7515,3.6139,259.59,1,1,10
 2-propanol~|~propan-2-ol~|~isopropanol,,60.096,3.0929,3.2085,208.42,1,1,10.1021/ie010954d
 2-methyl-2-butanol~|~2-methylbutan-2-ol,,88.15,2.5487,3.9053,266.01,1,1,10.1021/ie010954d
 water,,18.01528,1.0656,3.0007,366.51,1,1,10.1021/ie010954d
-water08,,18.01528,1.2046817736,2.7927,353.9449,1,1,10.1016/j.cep.2007.02.034
 methylamine~|~methanamine,,31.06,2.3967,2.8906,214.94,1,1,10.1021/ie010954d
 ethylamine~|~ethanamine,,45.09,2.7046,3.1343,221.53,1,1,10.1021/ie010954d
 propylamine~|~n-propylamine~|~1-propylamine~|~propan-1-amine,,59.11,2.4539,3.5347,250.52,1,1,10.1021/ie010954d

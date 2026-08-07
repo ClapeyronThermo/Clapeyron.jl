@@ -1,7 +1,7 @@
 function M.flash_storage_internal!(out, eos::C.EoSModel, cond, method; inc_jac = isa(method, M.AbstractNewtonFlash), static_size = false,inc_bypass = false, kwarg...)
     n = M.number_of_components(eos)
     TT = typeof(one(eltype(eos)))
-    splt = C.split_model(eos)
+    splt = C.split_pure_model(eos)
     out[:split_model] = splt
     out[:forces] = nothing
     out[:crit] = C.crit_pure.(splt)

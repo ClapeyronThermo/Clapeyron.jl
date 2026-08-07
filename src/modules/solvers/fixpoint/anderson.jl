@@ -1,3 +1,4 @@
+#=
 struct AndersonFixPoint{T<:Real} <: AbstractFixPoint
     delay::Int64
     memory::Int64
@@ -140,4 +141,4 @@ function _fixpoint(f::F,
     end
     return_last || (x .= NaN)
     return x
-end
+end =#

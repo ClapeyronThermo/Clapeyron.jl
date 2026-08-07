@@ -8,7 +8,7 @@ const SUPERANC_ENABLED = Ref(false)
 """
     use_superancillaries!(val::Bool = true)
 
-Enable the use of cubic and PC-SAFT superancillaries as initial points for `saturation_pressure`. for `PCSAFT` it also enables the use of superancillaries for critical point calculations.
+Enable the use of cubic and PC-SAFT superancillaries as initial points for `saturation_pressure`. For `PCSAFT` it also enables the use of superancillaries for critical point calculations.
 This function requires `EoSSuperancillaries.jl` to be loaded in the current session (`using EoSSuperancillaries`).
 """
 function use_superancillaries!(val::Bool = true)
@@ -20,7 +20,7 @@ end
     SuperAncSaturation <: SaturationMethod
     SuperAncSaturation()
 
-Saturation method for `saturation_pressure`. it uses Chebyshev expansions constructed with extended precision arithmetic to obtain the saturation curves of supported EoS within `Float64` precision. models supported are:
+Saturation method for `saturation_pressure`. It uses Chebyshev expansions constructed with extended precision arithmetic to obtain the saturation curves of supported EoS within `Float64` precision. Models supported are:
  - [vdW](@ref) models and variants
  - [RK](@ref) models and variants
  - [PR](@ref) models and variants

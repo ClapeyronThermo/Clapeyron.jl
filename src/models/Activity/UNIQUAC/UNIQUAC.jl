@@ -24,7 +24,8 @@ export UNIQUAC
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Energy Parameter
@@ -89,7 +90,8 @@ function UNIQUAC(components;
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     formatted_components = format_components(components)
     params = getparams(formatted_components, default_locations(UNIQUAC); userlocations = userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose = verbose)
@@ -103,6 +105,7 @@ function UNIQUAC(components;
     packagedparams = UNIQUACParam(a,r,q,q_p,Mw)
     references = String[]
     model = UNIQUAC(formatted_components,packagedparams,_puremodel,references)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 #=

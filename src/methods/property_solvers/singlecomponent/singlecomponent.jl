@@ -40,6 +40,11 @@ function μp_equality1_p(model1,model2,v1,v2,T,ps,μs)
     return SVector(Fμ,Fp)
 end
 
+function μp_equality1_p(model,v1,v2,T) 
+    ps,μs = equilibria_scale(model)
+    μp_equality1_p(model,model,v1,v2,T,ps,μs)
+end
+
 function μp_equality1_T(model1,model2,v1,v2,p,T,ps,μs)
     z = SA[1.0]
     RT = Rgas(model1)*T
@@ -118,7 +123,10 @@ include("crit_pure.jl")
 include("triple_point.jl")
 include("sublimation.jl")
 include("melting.jl")
+include("widom.jl")
 
 export saturation_pressure, saturation_liquid_density, saturation_temperature
 export crit_pure, enthalpy_vap, acentric_factor
 export triple_point, sublimation_pressure, melting_pressure, sublimation_temperature, melting_temperature
+export widom_pressure, widom_temperature
+export ciic_pressure, ciic_temperature

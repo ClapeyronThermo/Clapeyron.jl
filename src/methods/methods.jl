@@ -25,6 +25,8 @@ bubble_pressure(model,T,z,FugBubblePressure(y0 = = [0.6,0.4], p0 = 5e4)) #using 
 ```
 """
 abstract type ThermodynamicMethod end
+Base.show(io::IO,::MIME"text/plain",x::ThermodynamicMethod) = show_as_namedtuple(io,x)
+Base.show(io::IO,x::ThermodynamicMethod) = show_as_namedtuple(io,x)
 
 function NLSolvers.NEqOptions(method::ThermodynamicMethod)
     return NEqOptions(f_limit = method.f_limit,
@@ -34,6 +36,18 @@ function NLSolvers.NEqOptions(method::ThermodynamicMethod)
 end
 
 mw(model::EoSModel) = model.params.Mw.values
+
+group_Mw(model::EoSModel) = group_Mw(model.params.Mw.values,model.groups)
+function group_Mw(Mw_gc::SingleParam,groups::GroupParam)
+    n = length(groups.components)
+    mw_comp = zeros(eltype(Mw_gc.values),n)
+    v = groups.n_flattenedgroups
+    mw_gc = Mw_gc.values
+    for i in 1:n
+        mw_comp[i] = dot(mw_gc,v[i])
+    end
+    return mw_comp
+end
 
 function group_molecular_weight(groups::GroupParameter,mw,z = @SVector [1.])
     res = zero(first(z))
@@ -45,9 +59,13 @@ function group_molecular_weight(groups::GroupParameter,mw,z = @SVector [1.])
     return 0.001*res/sum(z)
 end
 
-comp_molecular_weight(mw,z = @SVector [1.]) = 0.001*dot(mw,z)
+comp_molecular_weight(mw,z = SA[1.0]) = 0.001*dot(mw,z)
+molecular_weight(model) = molecular_weight(model,SA[1.0])
+molecular_weight(model::EoSModel,z) = __molecular_weight(model,z)
+molecular_weight(mw::AbstractVector,z) = comp_molecular_weight(mw,z)
+molecular_weight(mw::SingleParam,z) = comp_molecular_weight(mw.values,z)
 
-function molecular_weight(model::EoSModel,z=SA[1.0])
+function __molecular_weight(model,z)
     MW = mw(model)
     if has_groups(model)
         return group_molecular_weight(model.groups,MW,z)
@@ -114,7 +132,7 @@ if `x` is an `EoSModel`, it will return if the model is able to contain a solid 
 If a string is passed, it is converted to symbol.
 """
 is_solid(sym::Symbol) = sym in SOLID_STR
-is_solid(str::String) = is_vapour(Symbol(str))
+is_solid(str::String) = is_solid(Symbol(str))
 is_solid(model::EoSModel) = false
 
 
@@ -156,36 +174,8 @@ end
 equivalent to `sum(iterator,init=0.0)`.
 
 """
-function ∑(iterator)
-    len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
-    hastype = (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
-    local _0
-    if hastype
-        _0 = zero(eltype(iterator))
-    else
-        _0 = 0.0
-    end
-    len && iszero(length(iterator)) && return _0
-    !len && return reduce(Base.add_sum,iterator,init=_0)
-    return sum(iterator)
-end
-
-∑(x::AbstractArray) = sum(x)
-∑(f,x::AbstractArray) = sum(f,x)
-
-function ∑(fn,iterator)
-    len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
-    hastype = (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
-    local _0
-    if hastype
-        _0 = zero(eltype(iterator))
-    else
-        _0 = 0.0
-    end
-    len && iszero(length(iterator)) && return _0
-    !len && return mapreduce(fn,Base.add_sum,iterator,init=_0)
-    return sum(fn,iterator)
-end
+∑(x) = sum(x,init = 0.0)
+∑(f,x) = sum(f,x,init = 0.0)
 
 function is_ad_input(model,V,T,z)
     #model_primal = Solvers.primal_eltype(model)
@@ -263,7 +253,6 @@ function init_preferred_method(method,model) end
 Returns a matrix of "k-values" binary interaction parameters used by the input `model`. Returns `nothing` if the model cannot return the k-values matrix.
 In the case of multiple k-values (as is the case in T-dependent values, i.e: k(T) = k1 + k2*T), it will return a tuple of matrices corresponding to each term in the k-value expression.
 Note that some models do not store the k-value matrix directly, but they contain the value in an indirect manner. for example, cubic EoS store `a[i,j] = f(a[i],a[j],k[i,j])`, where `f` depends on the mixing rule.
-
 """
 get_k(model::EoSModel) = nothing
 
@@ -292,7 +281,7 @@ set_k!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have 
 Sets the model "l-values" binary interaction parameter to the input matrix `l`. If the input model requires multiple l-matrices (as is the case for T-dependent values, i.e: l(T) = l1 + l2*T), then you must call `set_l!` with all the matrices as input (`set_l!(model,l1,l2)`).
 
 """
-set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
+set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting l-values"))
 
 export get_k,set_k!
 export get_l,set_l!
@@ -301,11 +290,17 @@ include("initial_guess.jl")
 include("differentials.jl")
 include("VT.jl")
 include("isochoric.jl")
-include("phase.jl")
 include("fugacity_coefficient.jl")
 include("property_solvers/property_solvers.jl")
 include("tpd.jl")
 include("stability.jl")
 include("pT.jl")
 include("property_solvers/Tproperty.jl")
+include("property_solvers/Pproperty.jl")
+include("XY_methods/VT.jl")
+include("XY_methods/PS.jl")
+include("XY_methods/TS.jl")
+include("XY_methods/PH.jl")
+include("XY_methods/QX.jl")
+
 include("property_solvers/spinodal.jl")

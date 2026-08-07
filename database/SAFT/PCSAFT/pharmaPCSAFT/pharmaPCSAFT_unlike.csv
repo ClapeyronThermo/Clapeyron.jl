@@ -1,4 +1,4 @@
-Clapeyron Database File,,,,,
-PCSAFT Unlike Parameters,,,,,
+Clapeyron Database File,
+water T-dependent sigma PCSAFT Unlike Parameters
 species1,SMILES1,species2,SMILES2,k,kT,source
-PEG200,,water08,O,-0.10350,0.23439e-3,
+PEG200,,water08~|~water,O,-0.10350,0.23439e-3,

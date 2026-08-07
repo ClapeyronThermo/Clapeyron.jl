@@ -11,11 +11,11 @@ This function requires at least Julia 1.9
 function precompile_clapeyron! end
 export precompile_clapeyron!
 
-@static if Base.VERSION >= v"1.9" #only precompile with 1.9 onwards
 function precompile_clapeyron!(val = true)
     Preferences.set_preferences!(Clapeyron, "precompile_workload" => val; force=true)
     @info "Clapeyron's precompilation workload has been set to $(info_color(string(val))). this change will take effect on the next julia session."
 end
+
 @setup_workload begin
 
     single = ["water"]
@@ -46,5 +46,4 @@ end
         #bubble_pressure(p1,320.0,Clapeyron.FractionVector(0.5))
         #bubble_pressure(p2,320.0,Clapeyron.FractionVector(0.5))
     end
-end
 end

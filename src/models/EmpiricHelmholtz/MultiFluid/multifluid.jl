@@ -3,6 +3,8 @@ struct MultiFluidParam <: EoSParam
     Tc::SingleParam{Float64}
     Pc::SingleParam{Float64}
     Vc::SingleParam{Float64}
+    Tr::SingleParam{Float64}
+    Vr::SingleParam{Float64}
     acentricfactor::SingleParam{Float64}
     lb_volume::SingleParam{Float64}
     reference_state::ReferenceState
@@ -13,10 +15,12 @@ function MultiFluidParam(components,pures,reference_state = nothing)
     Tc = SingleParam("Tc",components,[pure.properties.Tc for pure in pures])
     Pc = SingleParam("Pc",components,[pure.properties.Pc for pure in pures])
     Vc = SingleParam("Vc",components,1 ./ [pure.properties.rhoc for pure in pures])
+    Tr = SingleParam("Pc",components,[pure.properties.Tr for pure in pures])
+    Vr = SingleParam("Vc",components,1 ./ [pure.properties.rhor for pure in pures])
     acentricfactor = SingleParam("acentric factor",components,[pure.properties.acentricfactor for pure in pures])
     lb_volume = SingleParam("lower bound volume",components,[pure.properties.lb_volume for pure in pures])
     ref = __init_reference_state_kw(reference_state)
-    return MultiFluidParam(Mw,Tc,Pc,Vc,acentricfactor,lb_volume,ref)
+    return MultiFluidParam(Mw,Tc,Pc,Vc,Tr,Vr,acentricfactor,lb_volume,ref)
 end
 
 struct MultiFluid{𝔸,𝕄,ℙ} <: EmpiricHelmholtzModel
@@ -119,7 +123,7 @@ function MultiFluid(components;
         end
     end
     model = MultiFluid(_components,params,pures,mixing,departure,Rgas,references)
-    recombine_mixing!(model,model.mixing,estimate_mixing)
+    recombine_mixing_reduced!(model,model.mixing,estimate_mixing)
     recombine_departure!(model,model.departure)
     set_reference_state!(model,verbose = verbose)
     return model
@@ -143,8 +147,8 @@ function a_ideal(model::MultiFluid,V,T,z,∑z = sum(z))
     res = zero(V+T+first(z))
     m₀ = model.pures
     Tinv = 1/T
-    Tc = model.params.Tc
-    vc = model.params.Vc
+    Tc = model.params.Tr
+    vc = model.params.Vr
     Rinv = 1/Rgas(model)
     for i in 1:length(model)
         m₀ᵢ = m₀[i]
@@ -195,24 +199,9 @@ p_scale(model::MultiFluid,z) = dot(z,model.params.Pc.values)/sum(z)
 T_scales(model::MultiFluid,z=SA[1.]) = model.params.Tc.values
 
 #single functions, dispatch to pure
-function x0_sat_pure(model::MultiFluid,T)
-    single_component_check(x0_sat_pure,model)
-    x0_sat_pure(only(model.pures),T)
-end
 
-function x0_psat(model::MultiFluid,T,crit = nothing)
-    single_component_check(x0_psat,model)
-    x0_psat(only(model.pures),T,crit)
-end
-
-function x0_saturation_temperature(model::MultiFluid,p)
-    single_component_check(x0_saturation_temperature,model)
-    x0_saturation_temperature(only(model.pures),p)
-end
-
-function crit_pure(model::MultiFluid)
-    single_component_check(crit_pure,model)
-    crit_pure(only(model.pures))
+function saturation_model(model::MultiFluid)
+    return only(model.pures)
 end
 
 function lb_volume(model::MultiFluid,z)
@@ -220,23 +209,39 @@ function lb_volume(model::MultiFluid,z)
 end
 
 #use ideal gas
-function x0_volume_gas(model::MultiFluid,p,T,z)
-    V = sum(z)*R̄*T/p
-    return V
-end
+#function x0_volume_gas(model::MultiFluid,p,T,z)
+#    
+#end
+
+has_fast_crit_pure(model::MultiFluid) = true
 
 #use each available pure x0_volume_liquid
 function x0_volume_liquid(model::MultiFluid,p,T,z)
     v0 = zero(Base.promote_eltype(model,p,T,z))
+    lb_v = lb_volume(model,T,z)
     for (i,pure) in pairs(model.pures)
-        v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
+        if T > pure.properties.Tc
+            v0 += z[i]*1.01*lb_volume(pure,T,SA[1.0])
+        else
+            v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
+        end
     end
-    return v0
+    p0 = pressure(model,v0,T,z)
+    for i in 1:10
+        p0 > 0 && break
+        v0 = 0.5v0 + 0.5*1.01*lb_v
+        p0 = pressure(model,v0,T,z)
+    end
+    if p0 >= p
+        return v0
+    else
+        return volume_bracket_refine(model,p,T,z,v0,lb_volume(model,T,z))
+    end
 end
 
-function wilson_k_values!(K,model::MultiFluid,p,T,crit = nothing)
+function wilson_k_values!(K,model::MultiFluid,p,T,crit)
     n = length(model)
-    pure = split_model.(model)
+    pure = model.pures
     _Tc = model.params.Tc.values
     _Pc = model.params.Pc.values
     for i ∈ 1:n
@@ -244,10 +249,19 @@ function wilson_k_values!(K,model::MultiFluid,p,T,crit = nothing)
         Tc,pc = _Tc[i],_Pc[i]
         ps = first(saturation_pressure(pure_i,0.7*Tc))
         ω = -log10(ps/pc) - 1.0
-        K[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
+        K[i] = exp(log(pc/p)+ 5.3726985503194395*(1+ω)*(1-Tc/T))  #5.37 = log(10)*7/3
     end
     return K
 end
+
+function split_pure_model(model::MultiFluid,splitter)
+    pure_splitter = only.(splitter)
+    model.pures[pure_splitter]
+end
+
+split_pure_model(model::MultiFluid,splitter::Int) = [model.pures[splitter]]
+split_pure_model(model::MultiFluid,splitter::AbstractVector{<:Integer}) = model.pures[splitter]
+
 
 #set reference states:
 reference_state(model::MultiFluid) = model.params.reference_state
@@ -267,17 +281,17 @@ function set_reference_state_empiric!(model;verbose = false)
     initialize_reference_state!(model,ref)
     pures = model.pures
     if all(iszero,ref.z0) #pure case
-        pure_refs = split_model(ref,(SA[i] for i ∈ 1:length(model)))
+        pure_refs = split_model(ref,1:length(model))
         _set_reference_state!.(pures,SA[1.0],pure_refs)
         ref.a0 .= only.(getfield.(pure_refs,:a0))
-        ref.a1 .= only.(getfield.(pure_refs,:a1))  
+        ref.a1 .= only.(getfield.(pure_refs,:a1))
     else
         _set_reference_state!(model,ref.z0)
     end
     for (i,pure) in pairs(pures)
         ref_a = pure.ideal.ref_a
         ref_a[1] = pure_refs[i].a0[1]
-        ref_a[2] = pure_refs[i].a1[1] 
+        ref_a[2] = pure_refs[i].a1[1]
     end
     return model
 end

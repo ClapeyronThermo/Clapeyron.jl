@@ -46,3 +46,9 @@ Clapeyron.DAPT
 Clapeyron.CPA
 Clapeyron.sCPA
 ```
+
+## Miscellaneous Models
+
+```@docs
+Clapeyron.COFFEE
+```

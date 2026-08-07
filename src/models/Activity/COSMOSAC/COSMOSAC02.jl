@@ -20,7 +20,8 @@ export COSMOSAC02
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters:
 - `Pi` :Single Parameter{String} 
@@ -43,7 +44,8 @@ function COSMOSAC02(components;
     userlocations = String[],
     pure_userlocations = String[],
     use_nist_database = false,
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
     formatted_components = format_components(components)
 
     if use_nist_database
@@ -79,6 +81,7 @@ function COSMOSAC02(components;
     packagedparams = COSMOSAC02Param(Pi,V,A)
     references = String["10.1021/ie001047w","10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360","10.1021/j100007a062"]
     model = COSMOSAC02(formatted_components,packagedparams,_puremodel,1e-12,references)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 

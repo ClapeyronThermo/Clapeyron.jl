@@ -16,7 +16,8 @@ default_locations(::Type{PSRKUNIFAC}) = ["Activity/UNIFAC/PSRK/PSRK_like.csv", "
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
@@ -43,7 +44,8 @@ function PSRKUNIFAC(components;
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     groups = GroupParam(components, ["Activity/UNIFAC/PSRK/PSRK_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
     params = getparams(groups, default_locations(PSRKUNIFAC);
@@ -62,6 +64,7 @@ function PSRKUNIFAC(components;
     references = String["10.1021/i260064a004","10.1016/j.fluid.2004.11.002"]
     cache = UNIFACCache(groups,packagedparams)
     model = PSRKUNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 

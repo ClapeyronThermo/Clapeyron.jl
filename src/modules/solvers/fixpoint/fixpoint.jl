@@ -33,7 +33,12 @@ function promote_method(method::AitkenFixPoint,T)
     return method
 end
 
-function convergence(xold,xi,atol,rtol,lognorm = false,normorder = Inf)
+function convergence(xold,xi,
+                    atol=zero(eltype(xi)),
+                    rtol=8eps(one(eltype(xi))),
+                    lognorm = false,
+                    normorder = Inf)
+    
     not_finite = any(!isfinite,xi)::Bool
     not_finite && return (true,false) #terminate, with nan
     xi == xold && return (true,true) #terminate, with current number

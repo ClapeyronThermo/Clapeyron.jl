@@ -34,6 +34,9 @@ Base.@kwdef struct ParamOptions{𝕌,𝔾}
     component_delimiter::String = "~|~"
 end
 
+Base.show(io::IO,::MIME"text/plain",options::ParamOptions) = show_as_namedtuple(io,options)
+Base.show(io::IO,options::ParamOptions) = show_as_namedtuple(io,options)
+
 const DefaultOptions = ParamOptions()
 const DefaultGroupOptions = ParamOptions(ignore_missing_singleparams = ["intragroups"])
 

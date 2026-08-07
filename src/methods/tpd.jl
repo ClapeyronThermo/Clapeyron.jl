@@ -125,10 +125,6 @@ function tpd_obj(model, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,d
     optprob = OptimizationProblem(obj = obj,inplace = true)
 end
 
-function tpd_K0(model,p,T)
-    return tp_flash_K0(model,p,T)
-end
-
 struct TPDKSolver end
 struct TPDPureSolver end
 
@@ -424,7 +420,7 @@ function tpd(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_fi
         zr = z[idx_reduced]
     else
         model_reduced = model
-        idx_reduced = z .== z
+        idx_reduced = trues(length(model))
         zr = z
     end
     result = _tpd(model_reduced,p,T,zr,cache,break_first,lle,tol_trivial,strategy,di)
@@ -441,7 +437,7 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     #step 0: initialize values
 
     if strategy == :default || strategy == :wilson
-        K = tpd_K0(model,p,T) #normally wilson
+        K = tp_flash_K0(model,p,T) #normally wilson
     else
         K = zeros(Base.promote_eltype(model,p,T,z),length(z))
     end
@@ -608,11 +604,12 @@ function __z_test(z)
     z_test = z_test ./ sum(z_test;dims=2)
 end
 
-function suggest_K(model,p,T,z,pure = split_model(model),volatiles = FillArrays.fill(true,length(model)),crit = FillArrays.fill(nothing,length(model)))
+function suggest_K(model,p,T,z,pure = split_pure_model(model),volatiles = FillArrays.fill(true,length(model)),crit = FillArrays.fill(nothing,length(model)))
     lnϕz,v = lnϕ(model,p,T,z,threaded = false)
     K = similar(lnϕz)
     di = similar(lnϕz)
-    di .= lnϕz .+ log.(z)
+    log∑z = log(sum(z))
+    di .= lnϕz .+ log.(z) .- log∑z
     for i in 1:length(z)
         if !volatiles[i]
             K[i] = 0
@@ -623,6 +620,17 @@ function suggest_K(model,p,T,z,pure = split_model(model),volatiles = FillArrays.
         lnϕl = VT_lnϕ_pure(pure[i],vl,T,p)
         tpd_v = lnϕv - di[i]
         tpd_l = lnϕl - di[i]
+        if vl ≈ vv
+            if is_liquid(VT_identify_phase(pure[i],vv,T,SA[1.0])) || isnan(vv)
+                ps,_,_ = saturation_pressure(pure[i],T,crit_retry = false)
+                if isnan(ps)
+                    tpd_l = Inf*abs(tpd_l)
+                end
+                tpd_v = Inf*abs(tpd_v)
+            elseif is_vapour(VT_identify_phase(pure[i],vl,T,SA[1.0])) || isnan(vl)
+                tpd_l = Inf*abs(tpd_l)
+            end
+        end
         if tpd_l < 0 && tpd_v < 0
             K[i] = exp(lnϕl[1])/exp(lnϕv[1])
         elseif tpd_l < 0 && tpd_v >= 0

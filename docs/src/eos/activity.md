@@ -1,7 +1,3 @@
-```@meta
-CurrentModule = Clapeyron
-```
-
 ## Index
 
 ```@index
@@ -11,7 +7,8 @@ Pages = ["activity.md"]
 # Activity Models
 
 There are two alternatives on the definition of an activity model:
-- Defining an excess gibbs energy function
+
+- Defining an excess Gibbs energy function
 - Defining an activity coefficient function
 
 those two can be converted between one form to another via:
@@ -26,7 +23,8 @@ Those functions can also be derived from any arbitrary equation of state:
 
 ``\frac{\partial{G^E}}{\partial{n_i}}= \mu_i - \mu^{0}_i``
 
-Where ``\mu_i`` and ``\mu^{0}_i `` are the mixture and pure chemical potentials of component `i`. in this case, those potentials are dependent of the pressure. whereas activity models are usually only temperature and composition dependent.
+Where ``\mu_i`` and ``\mu^{0}_i`` are the mixture and pure chemical potentials of component ``i``.
+In this case, those potentials are dependent of the pressure, whereas activity models are usually only temperature and composition dependent.
 
 ```@docs
 Clapeyron.Wilson
@@ -34,7 +32,9 @@ Clapeyron.NRTL
 Clapeyron.aspenNRTL
 Clapeyron.UNIQUAC
 Clapeyron.ogUNIFAC
+Clapeyron.ogUNIFAC2
 Clapeyron.UNIFAC
+Clapeyron.UNIFAC2
 Clapeyron.PSRKUNIFAC
 Clapeyron.VTPRUNIFAC
 Clapeyron.UNIFACFV
@@ -45,11 +45,3 @@ Clapeyron.COSMOSAC10
 Clapeyron.COSMOSACdsp
 ClapeyronHANNA.HANNA
 ```
-
-
-
-
-
-
-
-

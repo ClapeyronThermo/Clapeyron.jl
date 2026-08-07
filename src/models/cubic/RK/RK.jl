@@ -26,7 +26,8 @@ export RK
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -108,41 +109,28 @@ function RK(components;
     reference_state = nothing,
     verbose = false)
     formatted_components = format_components(components)
+    
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
         userlocations = userlocations,
         verbose = verbose,
         ignore_missing_singleparams = __ignored_crit_params(alpha))
 
+    model = CubicModel(RK,params,formatted_components;
+                        idealmodel,alpha,mixing,activity,translation,
+                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                        reference_state, verbose)
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    pc = params["Pc"]
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    acentricfactor = get(params,"acentricfactor",nothing)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",formatted_components,zeros(length(Tc)))
-    b = PairParam("b",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
-    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = ABCubicParam(a,b,Tc,pc,Mw)
-    references = String["10.1021/cr60137a013"]
-    model = RK(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
 
-function ab_consts(::Type{<:RKModel})
-    Ωa = 1/(9*(2^(1/3)-1))
-    Ωb = (2^(1/3)-1)/3
-    return Ωa,Ωb
-end
+default_references(::Type{RK}) = ["10.1021/cr60137a013"]
 
-function cubic_Δ(model::RKModel,z)
+@inline function cubic_Δ(::Type{<:RKModel})
     return (0.0,-1.0)
 end
-
-crit_pure(model::RKModel) = crit_pure_tp(model)
 
 const RK_p = Solvers.ChebyshevRange{NTuple{7, Float64}, NTuple{6, Vector{Float64}}}(
     (0.020267685653535945,0.02596797224359293,0.03166825883364991,0.04306883201376388,0.06586997837399182,0.1114722710944477,0.20267685653535944),

@@ -24,7 +24,8 @@ export aspenNRTL
     puremodel=PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `a0`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
@@ -83,7 +84,8 @@ default_locations(::Type{aspenNRTL}) = ["Activity/NRTL/aspenNRTL/aspenNRTL_unlik
 function aspenNRTL(components; puremodel=PR,
     userlocations = String[], 
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     formatted_components = format_components(components)
     params = getparams(formatted_components, default_locations(aspenNRTL); userlocations = userlocations, asymmetricparams=["t0","t1","t2","t3"], ignore_missing_singleparams=asymmetricparams=["t0","t1","t2","t3"], verbose = verbose)
@@ -98,6 +100,7 @@ function aspenNRTL(components; puremodel=PR,
     packagedparams = aspenNRTLParam(a0,a1,t0,t1,t2,t3)
     references = String["10.1002/aic.690140124"]
     model = aspenNRTL(formatted_components,packagedparams,_puremodel,references)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 

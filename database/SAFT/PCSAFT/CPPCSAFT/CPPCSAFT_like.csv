@@ -55,24 +55,24 @@ diphenyl ether,5.05014,292.041,3.59124,1.0,10.1002/aic.15715,0,0,2
 benzophenone,3.90064,343.759,3.9904,1.0,10.1002/aic.15715,0,0,2
 indene~|~1h-indene,5.28936,258.041,3.15898,1.0,10.1002/aic.15715,0,0,2
 cis-decalin~|~decahydronaphthalene~|~cis-decahydronaphthalene,3.7163,296.39,3.91085,1.0,10.1002/aic.15715,0,0,2
-hydrogen sulfide,1.2332,3.4229,254.04,1.0,10.1016/j.molliq.2020.113266,0,0,0
-methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,3.548,3.5169,212.91,1.0,10.1016/j.molliq.2020.113266,0,0,0
-etbe~|~tert-butyl ethyl ether~|~ethyl tert-butyl ether~|~2-ethoxy-2-methylpropane~|~2-ethoxy-2-methyl-propane,3.1662,3.8504,227.61,1.0,10.1016/j.molliq.2020.113266,0,0,0
-tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,3.642,3.6582,226.57,1.0,10.1016/j.molliq.2020.113266,0,0,0
-dibutyl ether~|~di-n-butylether,4.4121,3.7415,232.11,1.0,10.1016/j.molliq.2020.113266,0,0,0
-diisopropyl ether~|~di-isopropyl ether,2.7545,4.0622,236.01,1.0,10.1016/j.molliq.2020.113266,0,0,0
-thf~|~tetrahydrofuran,3.0204,3.3063,245.78,1.0,10.1016/j.molliq.2020.113266,0,0,0
-2-pentanone~|~pentan-2-one~|~methyln-propylketone,4.9202,3.0798,215.4,1.0,10.1016/j.molliq.2020.113266,0,0,0
-3-pentanone~|~pentan-3-one~|~diethylketone,4.7427,3.1149,217.82,1.0,10.1016/j.molliq.2020.113266,0,0,0
-2-hexanone,4.8707,3.2657,226.29,1.0,10.1016/j.molliq.2020.113266,0,0,0
-4-heptanone,5.0771,3.3648,228.91,1.0,10.1016/j.molliq.2020.113266,0,0,0
-1-chlorohexane,4.7882,3.4139,230.82,1.0,10.1016/j.molliq.2020.113266,0,0,0
-1-chloroheptane,5.1302,3.4774,235.42,1.0,10.1016/j.molliq.2020.113266,0,0,0
-1-bromopropane~|~propyl bromide,2.7812,3.5481,251.76,1.0,10.1016/j.molliq.2020.113266,0,0,0
-"1,2-dibromopropane",2.6533,3.8281,310.5,1.0,10.1016/j.molliq.2020.113266,0,0,0
-ammonia,2.7888,2.1897,75.641,1.0,10.1016/j.molliq.2020.113266,2,2,0
-methanol,1.8482,3.0542,163.11,1.0,10.1016/j.molliq.2020.113266,1,1,0
-ethanol,2.7827,3.0321,167.35,1.0,10.1016/j.molliq.2020.113266,1,1,0
-[C4mim][MeSO4],8.6403,3.2978,297.49,1.0,10.1016/j.molliq.2020.113266,0,0,0
-[C2mim][EtSO4],7.8688,3.3136,308.11,1.0,10.1016/j.molliq.2020.113266,0,0,0
-[C2mim][MeSO3],6.9844,3.2931,319.71,1.0,10.1016/j.molliq.2020.113266,0,0,0
+hydrogen sulfide,1.2332,254.04,3.4229,1.0,10.1016/j.molliq.2020.113266,0,0,0
+mtbe~|~methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,3.548,212.91,3.5169,1.0,10.1016/j.molliq.2020.113266,0,0,0
+etbe~|~tert-butyl ethyl ether~|~ethyl tert-butyl ether~|~2-ethoxy-2-methylpropane~|~2-ethoxy-2-methyl-propane,3.1662,227.61,3.8504,1.0,10.1016/j.molliq.2020.113266,0,0,0
+tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,3.642,226.57,3.6582,1.0,10.1016/j.molliq.2020.113266,0,0,0
+dibutyl ether~|~di-n-butylether,4.4121,232.11,3.7415,1.0,10.1016/j.molliq.2020.113266,0,0,0
+diisopropyl ether~|~di-isopropyl ether,2.7545,236.01,4.0622,1.0,10.1016/j.molliq.2020.113266,0,0,0
+thf~|~tetrahydrofuran,3.0204,245.78,3.3063,1.0,10.1016/j.molliq.2020.113266,0,0,0
+2-pentanone~|~pentan-2-one~|~methyln-propylketone,4.9202,215.4,3.0798,1.0,10.1016/j.molliq.2020.113266,0,0,0
+3-pentanone~|~pentan-3-one~|~diethylketone,4.7427,217.82,3.1149,1.0,10.1016/j.molliq.2020.113266,0,0,0
+2-hexanone,4.8707,226.29,3.2657,1.0,10.1016/j.molliq.2020.113266,0,0,0
+4-heptanone,5.0771,228.91,3.3648,1.0,10.1016/j.molliq.2020.113266,0,0,0
+1-chlorohexane,4.7882,230.82,3.4139,1.0,10.1016/j.molliq.2020.113266,0,0,0
+1-chloroheptane,5.1302,235.42,3.4774,1.0,10.1016/j.molliq.2020.113266,0,0,0
+1-bromopropane~|~propyl bromide,2.7812,251.76,3.5481,1.0,10.1016/j.molliq.2020.113266,0,0,0
+"1,2-dibromopropane",2.6533,310.5,3.8281,1.0,10.1016/j.molliq.2020.113266,0,0,0
+ammonia,2.7888,75.641,2.1897,1.0,10.1016/j.molliq.2020.113266,2,2,0
+methanol,1.8482,163.11,3.0542,1.0,10.1016/j.molliq.2020.113266,1,1,0
+ethanol,2.7827,167.35,3.0321,1.0,10.1016/j.molliq.2020.113266,1,1,0
+[C4mim][MeSO4],8.6403,297.49,3.2978,1.0,10.1016/j.molliq.2020.113266,0,0,0
+[C2mim][EtSO4],7.8688,308.11,3.3136,1.0,10.1016/j.molliq.2020.113266,0,0,0
+[C2mim][MeSO3],6.9844,319.71,3.2931,1.0,10.1016/j.molliq.2020.113266,0,0,0

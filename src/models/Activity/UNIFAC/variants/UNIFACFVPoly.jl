@@ -59,7 +59,8 @@ export UNIFACFVPoly
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `volume`: Single Parameter (`Float64`)  - specific volume of species `[g/cm^3]`
@@ -88,7 +89,8 @@ function UNIFACFVPoly(components;
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     params_species = getparams(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_like.csv"]; userlocations = userlocations, verbose = verbose)
 
@@ -107,6 +109,7 @@ function UNIFACFVPoly(components;
     references = String["10.1021/i260064a004"]
     cache = UNIFACFVPolyCache(groups,packagedparams)
     model = UNIFACFVPoly(components,groups,packagedparams,_puremodel,references,cache)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 

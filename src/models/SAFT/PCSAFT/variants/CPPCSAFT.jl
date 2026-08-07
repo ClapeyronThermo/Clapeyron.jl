@@ -1,15 +1,18 @@
-struct CPPCSAFTParam <: EoSParam
-    Mw::SingleParam{Float64}
-    segment::PairParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    delta::SingleParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
+struct CPPCSAFTParam{T} <: ParametricEoSParam{T}
+    Mw::SingleParam{T}
+    segment::PairParam{T}
+    sigma::PairParam{T}
+    epsilon::PairParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
+end
+
+function CPPCSAFTParam(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
+    return build_parametric_param(CPPCSAFTParam,Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
 end
 
 abstract type CPPCSAFTModel <: PCSAFTModel end
-@newmodel CPPCSAFT CPPCSAFTModel CPPCSAFTParam
+@newmodel CPPCSAFT CPPCSAFTModel CPPCSAFTParam{T}
 export CPPCSAFT
 
 """
@@ -28,7 +31,6 @@ export CPPCSAFT
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `delta`: Single Parameter (`Float64`) - Critical volume displacement (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
@@ -37,7 +39,6 @@ export CPPCSAFT
 - `segment`: Pair Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
-- `delta`: Single Parameter (`Float64`) - Critical volume displacement (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
 ## Input models
@@ -110,7 +111,11 @@ end
 function a_hs(model::CPPCSAFTModel,V,T,z,_data = @f(data))
     _d,ζ0,ζ1,ζ2,ζ3,m̄,ϵmix,σmix = _data
     θ = CPPCSAFT_theta(T,ϵmix)
-    _a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    if !iszero(ζ3)
+        _a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    else
+        _a_hs = @f(bmcs_hs_zero_v,_d)
+    end
     return _a_hs*sqrt((1 - ζ3) / (1 - ζ3 / θ^3))
 end
 
@@ -188,13 +193,6 @@ function I(model::CPPCSAFTModel, V, T, z, n, _data=@f(data))
         res +=ki*η^ii
     end
     return res
-end
-
-function lb_volume(model::CPPCSAFTModel, z = SA[1.0])
-    m = model.params.segment.values
-    σ = model.params.sigma.values
-    val = π/6*N_A*sum(z[i]*m[i,i]*σ[i,i]^3 for i in 1:length(z))
-    return val
 end
 
 const CPPCSAFTconsts = (

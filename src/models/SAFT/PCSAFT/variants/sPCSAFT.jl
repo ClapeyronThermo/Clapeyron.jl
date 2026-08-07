@@ -1,5 +1,5 @@
 abstract type sPCSAFTModel <: PCSAFTModel end
-@newmodel sPCSAFT sPCSAFTModel PCSAFTParam
+@newmodel sPCSAFT sPCSAFTModel PCSAFTParam{T}
 default_references(::Type{sPCSAFT}) = ["10.1021/ie020753p"]
 default_locations(::Type{sPCSAFT}) = ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]
 function transform_params(::Type{sPCSAFT},params)

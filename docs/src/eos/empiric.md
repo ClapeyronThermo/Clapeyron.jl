@@ -16,13 +16,16 @@ Empiric (or MultiParameter) models in Clapeyron are composed of three different,
 - Mixing volume and temperature
 - Departure model
 
-Pure Fluids are instantiated from CoolProp JSON files, via the [`SingleFluid`](@ref) struct. In theory, any pure fluid should be supported. Furthermore,there is support for using directly the fluids defined in the CoolProp library:
-```
+Pure Fluids are instantiated from CoolProp JSON files, via the [`SingleFluid`](@ref) struct.
+In theory, any pure fluid should be supported.
+Furthermore, there is support for using directly the fluids defined in the CoolProp library:
+
+```julia
 julia> SingleFluid("Ethanol")
 ERROR: cannot found component file R113. Try loading the CoolProp library by loading it.
 Stacktrace:
  ....
-julia> using CoolProp #loads the CoolProp library and allows access to their JSON.
+julia> using CoolProp  # loads the CoolProp library and allows access to their JSON.
 julia> SingleFluid("Ethanol")
 MultiParameter Equation of state for Ethanol:
  Polynomial power terms: 6
@@ -30,9 +33,9 @@ MultiParameter Equation of state for Ethanol:
  Gaussian bell-shaped terms: 9
 ```
 
-Multicomponent models are a collection of `SingleFluid` models + a mixing model + a departure model:
+MultiComponent models are a collection of `SingleFluid` models + a mixing model + a departure model:
 
-```
+```julia
 julia> model = GERG2008(["water","carbon dioxide"])
 MultiFluid{EmpiricAncillary, AsymmetricMixing, EmpiricDeparture} with 2 components:
  "water"
@@ -58,6 +61,7 @@ Contains parameters: F, parameters
 ```
 
 ## Generic Models
+
 ```@docs
 Clapeyron.SingleFluid
 Clapeyron.SingleFluidIdeal
@@ -65,7 +69,8 @@ Clapeyron.MultiFluid
 Clapeyron.EmpiricIdeal
 ```
 
-## SingleFluid Models:
+## SingleFluid Models
+
 ```@docs
 Clapeyron.XiangDeiters
 Clapeyron.IAPWS95
@@ -74,7 +79,8 @@ Clapeyron.TholLJ
 Clapeyron.Ammonia2023
 ```
 
-## MultiComponent models
+## MultiComponent Models
+
 ```@docs
 Clapeyron.LJRef
 Clapeyron.GERG2008
@@ -83,14 +89,16 @@ Clapeyron.EOS_CG
 Clapeyron.HelmAct
 ```
 
-## Mixing models
+## Mixing Models
+
 ```@docs
 Clapeyron.LinearMixing
 Clapeyron.AsymmetricMixing
 Clapeyron.LorentzBerthelotMixing
 ```
 
-## Departure models
+## Departure Models
+
 ```@docs
 Clapeyron.EmpiricDeparture
 Clapeyron.departure_functions

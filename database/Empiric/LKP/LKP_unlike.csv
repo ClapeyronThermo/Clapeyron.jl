@@ -33,7 +33,7 @@ ethane,decane~|~n-decane,-0.237
 ethene~|~ethylene~|~1-ethylene,butane~|~n-butane,0.002
 ethene~|~ethylene~|~1-ethylene,benzene,-0.094
 ethene~|~ethylene~|~1-ethylene,heptane~|~n-heptane,-0.163
-acetylene,ethene~|~ethylene~|~1-ethylene,0.052
+ethine~|~ethyne~|~acetylene,ethene~|~ethylene~|~1-ethylene,0.052
 propane~|~n-propane,propene~|~propylene,0.008
 propane~|~n-propane,butane~|~n-butane,-0.003
 propane~|~n-propane,isobutane~|~2-methylpropane,-0.003

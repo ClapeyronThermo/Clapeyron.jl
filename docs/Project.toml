@@ -2,6 +2,8 @@
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Clapeyron = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
 ClapeyronHANNA = "3f3167c7-7596-4199-a8f8-b0e6cfdc2746"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 
 [compat]
 Documenter = "1"
+Flux = "0.14 - 0.14.22"

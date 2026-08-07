@@ -21,13 +21,13 @@ export LJRef
     userlocations = String[],
     verbose = false)
 ## Input parameters
-- `sigma`: Single Parameter (`Float64`) - particle size [Å]
-- `epsilon`: Single Parameter (`Float64`) - dispersion energy [`K`]
+- `sigma`: Single Parameter (`Float64`) - particle size `[Å]`
+- `epsilon`: Single Parameter (`Float64`) - dispersion energy `[K]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `k`: Pair Parameter (`Float64`) (optional) - `sigma` mixing coefficient
 ## Model Parameters
-- `sigma`: Pair Parameter (`Float64`) - particle size [m]
-- `epsilon`: Pair Parameter (`Float64`) - dispersion energy [`K`]
+- `sigma`: Pair Parameter (`Float64`) - particle size `[m]`
+- `epsilon`: Pair Parameter (`Float64`) - dispersion energy `[K]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 ## Description
 Lennard-Jones Reference equation of state. valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
@@ -241,8 +241,8 @@ end
 
 ## Input parameters
 
-- `sigma`: Single Parameter (`Float64`) - particle size [Å]
-- `epsilon`: Single Parameter (`Float64`) - dispersion energy [`K`]
+- `sigma`: Single Parameter (`Float64`) - particle size `[Å]`
+- `epsilon`: Single Parameter (`Float64`) - dispersion energy `[K]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 
 ## Description

@@ -25,7 +25,8 @@ default_locations(::Type{COSMOSAC10}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv"
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters:
 - `Pnhb` :Single Parameter{String}
@@ -49,7 +50,8 @@ function COSMOSAC10(components;
     userlocations = String[],
     pure_userlocations = String[],
     use_nist_database = false,
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
     formatted_components = format_components(components)
 
@@ -93,6 +95,7 @@ function COSMOSAC10(components;
     packagedparams = COSMOSAC10Param(Pnhb,POH,POT,V,A)
     references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360","10.1021/j100007a062"]
     model = COSMOSAC10(formatted_components,packagedparams,_puremodel,1e-12,references)
+    set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end
 
@@ -108,7 +111,7 @@ function excess_g_res(model::COSMOSAC10Model,V,T,z)
     sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
 
-function lnγ_res(model::COSMOSAC10Model,V,T,z)   
+function lnγ_res(model::COSMOSAC10Model,V,T,z)
     A = model.params.A.values
     Ā = dot(z,A)
     PS = zeros(typeof(Ā),51*3)
@@ -136,7 +139,7 @@ function lnγ_res(model::COSMOSAC10Model,V,T,z)
     lnΓS = @f(lnΓ,PS)
     (lnΓSnhb, lnΓSOH, lnΓSOT)= lnΓS
     lnΓi = Vector{typeof(lnΓS)}(undef,length(model))
-    
+
     PSnhbᵢ, PSOHᵢ, PSOTᵢ = Γ_as_view(PSᵢ,51)
     #lnΓi = [@f(lnΓ,Pnhb[i]./A[i],POH[i]./A[i],POT[i]./A[i]) for i ∈ @comps]
     for i in @comps
@@ -164,11 +167,11 @@ function lnγ_res(model::COSMOSAC10Model,V,T,z)
     end
     return lnγ_res
     #=
-    
+
     lnγ_res = [A[i]/aeff*(sum(Pnhb[i][v]/A[i]*(lnΓSnhb[v]-lnΓi[i][1][v]) for v ∈ 1:51)
                       +sum(POH[i][v]/A[i]*(lnΓSOH[v]-lnΓi[i][2][v]) for v ∈ 1:51)
                       +sum(POT[i][v]/A[i]*(lnΓSOT[v]-lnΓi[i][3][v]) for v ∈ 1:51)) for i ∈ @comps]
-    
+
     return lnγ_res =#
 end
 

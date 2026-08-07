@@ -20,19 +20,9 @@ function unsafe_coolprop_handler()
     end
 end
 
-@static if !isdefined(Base,:get_extension)
-    coolprop_handler() = unsafe_coolprop_handler()
-    function is_coolprop_loaded()
-        handler = coolprop_handler()
-        res = handler !== nothing
-        Base.Libc.Libdl.dlclose(handler)
-        return res
-    end
-else
-    #defined in ClapeyronCoolPropExt
-    function coolprop_handler end
-    is_coolprop_loaded() = !isnothing(Base.get_extension(Clapeyron,:ClapeyronCoolPropExt))
-end
+#defined in ClapeyronCoolPropExt
+function coolprop_handler end
+is_coolprop_loaded() = !isnothing(Base.get_extension(Clapeyron,:ClapeyronCoolPropExt))
 
 function coolprop_csv(component::String,comp = "")
     lib_handler = coolprop_handler()
@@ -43,7 +33,7 @@ function coolprop_csv(component::String,comp = "")
         method_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_fluid_param_string)
         err_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_global_param_string)
         val = 0
-        for i in 1:5
+        for i in 1:10
             val = ccall(method_handler, Clong, (Cstring, Cstring, Ptr{UInt8}, Int), component, "JSON", message_buffer::Array{UInt8, 1}, buffer_length)
             if val == 0
                 ccall(err_handler, Clong, (Cstring, Ptr{UInt8}, Int), "errstring", message_buffer::Array{UInt8, 1}, buffer_length)
@@ -92,14 +82,41 @@ function compare_empiric_names(filename,input)
     return false
 end
 
+function get_json_data_coolprop(component,norm_comp1 = normalisestring(component))
+    norm_comp1 = normalisestring(component)
+    alternative_comp = get!(COOLPROP_IDENTIFIER_CACHE,norm_comp1) do
+        cas(norm_comp1)[1]
+    end
+
+    success,json_string = coolprop_csv(alternative_comp,component)
+    if success
+        data = JSON3.read(json_string)[1]
+        return data
+    else
+        if length(json_string) == 0
+            throw(error("cannot found component file $(component)."))
+        else
+            throw(error("Coolprop: $(json_string)."))
+        end
+    end
+
+end
+
 function get_json_data(components;
     userlocations = String[],
     coolprop_userlocations = true,
     verbose = false,
     )
 
+    coolprop_loaded = is_coolprop_loaded()
     component = get_only_comp(components)
-    if first(component) != '{' #not json
+
+    if coolprop_loaded && userlocations == String[] && coolprop_userlocations && component ∉ ("lj","LJ")
+        #try to get the json from coolprop first.
+        return get_json_data_coolprop(component)
+    end
+
+    if first(component) != '{' #not json &&
         _paths = flattenfilepaths(["Empiric","Empiric/EOS_CG/pures"],userlocations)
         norm_comp1 = normalisestring(component)
         f0 = x -> compare_empiric_names(x,norm_comp1)
@@ -109,25 +126,11 @@ function get_json_data(components;
             verbose && coolprop_userlocations && @info "trying to look JSON for $(info_color(component)) in CoolProp"
             #try to extract from coolprop.
             !coolprop_userlocations && throw(error("cannot found component file $(component)."))
-            alternative_comp = get!(COOLPROP_IDENTIFIER_CACHE,norm_comp1) do
-                cas(norm_comp1)[1]
-            end
-
             #check if CoolProp is loaded. if it is not, error and suggest loading CoolProp.
-            if !is_coolprop_loaded()
+            if !coolprop_loaded
                 throw(error("cannot found component file $(component). Try loading the CoolProp library (`using CoolProp`)."))
             end
-            success,json_string = coolprop_csv(alternative_comp,component)
-            if success
-                data = JSON3.read(json_string)[1]
-                return data
-            else
-                if length(json_string) == 0
-                    throw(error("cannot found component file $(component)."))
-                else
-                    throw(error("Coolprop: $(json_string)."))
-                end
-            end
+            return get_json_data_coolprop(component,norm_comp1)
         end
         _path = last(found_paths)
         verbose && @info "JSON found: $_path"
@@ -228,7 +231,11 @@ function SingleFluid(components;
     residual = _parse_residual(SingleFluidResidualParam,eos_data[:alphar];verbose = verbose)
     #ancillaries
     if ancillaries === nothing
-        init_ancillaries = _parse_ancillaries(_components,data[:ANCILLARIES],verbose,properties)
+        if haskey(eos_data,:SUPERANCILLARY)
+            init_ancillaries = _parse_ancillaries(_components,eos_data[:SUPERANCILLARY];verbose = verbose)
+        else
+            init_ancillaries = _parse_ancillaries(_components,data[:ANCILLARIES];verbose = verbose)
+        end
     else
         init_ancillaries = init_model(ancillaries,components,ancillaries_userlocations,verbose)
     end
@@ -284,7 +291,7 @@ function SingleFluidIdeal(components;
     ideal_userlocations = String[])
     _components = format_components(components)
     single_component_check(SingleFluidIdeal,_components)
-    data = get_json_data(_components;userlocations,coolprop_userlocations,verbose)    
+    data = get_json_data(_components;userlocations,coolprop_userlocations,verbose)
     eos_data = first(data[:EOS])
     #properties
     properties = _parse_properties(data,Rgas,verbose)
@@ -307,7 +314,7 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     verbose && @info "Starting parsing of properties from JSON."
     #info = data[:INFO]
     eos_data_vec  = data[:EOS]
-    eos_data = if eos_data_vec isa AbstractVector 
+    eos_data = if eos_data_vec isa AbstractVector
         #coolprop stores EOS field as a vector. the first one is the multiparameter #EoS
         #i did not see other examples in the CoolProp DB where they use more EoS
         first(eos_data_vec)
@@ -318,13 +325,24 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     st_data = data[:STATES]
     crit = st_data[:critical]
     eos_st_data = eos_data[:STATES]
+    superanc_data = if haskey(eos_data,:SUPERANCILLARY)
+        eos_data[:SUPERANCILLARY]
+    else
+        nothing
+    end
     reducing = get(eos_st_data,:reducing,nothing)
 
     Mw = 1000*tryparse_units(get(eos_data,:molar_mass,NaN),get(eos_data,:molar_mass_units,""))
-    
-    T_c = tryparse_units(get(crit,:T,NaN),get(crit,:T_units,""))
+    if superanc_data !== nothing
+        crit_anc_meta = superanc_data[:meta]
+        T_c = crit_anc_meta[Symbol("Tcrittrue / K")]
+        rho_c = crit_anc_meta[Symbol("rhocrittrue / mol/m^3")]
+    else
+        T_c = tryparse_units(get(crit,:T,NaN),get(crit,:T_units,""))
+        rho_c = tryparse_units(get(crit,:rhomolar,NaN),get(crit,:rhomolar_units,""))
+
+    end
     P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
-    rho_c = tryparse_units(get(crit,:rhomolar,NaN),get(crit,:rhomolar_units,""))
     if reducing !== nothing
         Tr = tryparse_units(get(reducing,:T,NaN),get(reducing,:T_units,""))
         rhor = tryparse_units(get(reducing,:rhomolar,NaN),get(reducing,:rhomolar_units,""))
@@ -333,7 +351,14 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
         rhor = rho_c
     end
     rhov_tp_data = get(st_data,:triple_vapor,nothing)
-    Ttp = tryparse_units(get(eos_data,:Ttriple,NaN),get(eos_data,:Ttriple_units,""))
+
+    if superanc_data !== nothing
+        crit_anc_meta = superanc_data[:meta]
+        Ttp = crit_anc_meta[Symbol("Ttriple / K")]
+    else
+        Ttp = tryparse_units(get(eos_data,:Ttriple,NaN),get(eos_data,:Ttriple_units,""))
+    end
+
     if rhov_tp_data !== nothing
         ptp = tryparse_units(get(rhov_tp_data,:p,NaN),get(rhov_tp_data,:p_units,""))
         rhov_tp = tryparse_units(get(rhov_tp_data,:rhomolar,NaN),get(rhov_tp_data,:rhomolar_units,""))
@@ -448,7 +473,7 @@ function _parse_ideal(id_data,verbose = false)
         elseif id_data_i[:type] == "IdealGasHelmholtzPower"
             t_pj = id_data_i[:t]
             n_pj = id_data_i[:n]
-            for i in 1:length(t)
+            for i in 1:length(t_pj)
                 #workaround 1: it seems that sometinmes, people store lead as power
                 #it is more efficient if we transform from power to lead term, if possible
                 if t_pj[i] == 0
@@ -493,7 +518,6 @@ function _parse_ideal(id_data,verbose = false)
         end
     end
     verbose && __verbose_found_json_terms(id_data)
-
     verbose && @info "Creating SingleFluidIdealParam from JSON."
     return SingleFluidIdealParam(a1,a2,c0,n,t,c,d,np,tp,n_gerg,v_gerg,R0)
 
@@ -501,52 +525,16 @@ end
 
 function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     #polynomial y exp terms, we will separate those later
-    n = Float64[]
-    t = Float64[]
-    d = Float64[]
-    l = Float64[]
-    g = Float64[]
+    pol = PolExpGaussTerm()
+    exp1 = PolExpGaussTerm()
+    gauss = PolExpGaussTerm()
 
-    #gaussian terms
-    n_gauss = Float64[]
-    t_gauss = Float64[]
-    d_gauss = Float64[]
-    eta = Float64[]
-    beta = Float64[]
-    gamma = Float64[]
-    epsilon = Float64[]
-
-
-    #gao association terms
-    n_gao = Float64[]
-    t_gao = Float64[]
-    d_gao = Int[]
-    eta_gao = Float64[]
-    beta_gao = Float64[]
-    gamma_gao = Float64[]
-    epsilon_gao = Float64[]
-    b_gao = Float64[]
-
-    #non-analytic terms for IAPWS95
-    NA_A = Float64[]
-    NA_B = Float64[]
-    NA_C = Float64[]
-    NA_D = Float64[]
-    NA_a = Float64[]
-    NA_b = Float64[]
-    NA_beta = Float64[]
-    NA_n = Float64[]
-
-    #assoc terms
-    assoc_epsilonbar = 0.0
-    assoc_kappabar = 0.0
-    assoc_a = 0.0
-    assoc_m = 0.0
-    assoc_vbarn = 0.0
-    assoc = false
-
-
-    full = __has_extra_params(out)
+    exp2 = DoubleExpTerm()
+    gao_b = GaoBTerm()
+    na = NonAnalyticTerm()
+    assoc = Associating2BTerm()
+    assoc_parsed = false
+    full = (out == SingleFluidResidualParam)
     paramtype = __type_string(out)
     verbose && @info "Starting parsing of $(paramtype) JSON."
 
@@ -554,53 +542,70 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     vec_data = res_data isa AbstractVector ? res_data : (res_data,)
     for res_data_i in vec_data
         if res_data_i[:type] == "ResidualHelmholtzPower" || res_data_i[:type] == "Exponential"
-            append!(n,res_data_i[:n])
-            append!(t,res_data_i[:t])
-            append!(d,res_data_i[:d])
-            append!(l,res_data_i[:l])
-            append!(g,ones(length(res_data_i[:l])))
+            ni,ti,di,li = res_data_i[:n],res_data_i[:t],res_data_i[:d],res_data_i[:l]
+            for i in 1:length(ni)
+                if iszero(li[i])
+                    push!(pol.n,ni[i])
+                    push!(pol.t,ti[i])
+                    push!(pol.d,di[i])
+                else
+                    push!(exp1.n,ni[i])
+                    push!(exp1.t,ti[i])
+                    push!(exp1.d,di[i])
+                    push!(exp1.l,li[i])
+                    push!(exp1.g,1.0)
+                end
+            end
         elseif res_data_i[:type] == "ResidualHelmholtzGaussian"
-            append!(n_gauss,res_data_i[:n])
-            append!(t_gauss,res_data_i[:t])
-            append!(d_gauss,res_data_i[:d])
-            append!(eta,res_data_i[:eta])
-            append!(beta,res_data_i[:beta])
-            append!(gamma,res_data_i[:gamma])
-            append!(epsilon,res_data_i[:epsilon])
+            append!(gauss.n,res_data_i[:n])
+            append!(gauss.t,res_data_i[:t])
+            append!(gauss.d,res_data_i[:d])
+            append!(gauss.eta,res_data_i[:eta])
+            append!(gauss.beta,res_data_i[:beta])
+            append!(gauss.gamma,res_data_i[:gamma])
+            append!(gauss.epsilon,res_data_i[:epsilon])
         elseif res_data_i[:type] == "ResidualHelmholtzGaoB" && full
-            append!(n_gao,res_data_i[:n])
-            append!(t_gao,res_data_i[:t])
-            append!(d_gao,res_data_i[:d])
-            append!(eta_gao,res_data_i[:eta])
-            append!(beta_gao,res_data_i[:beta])
-            append!(gamma_gao,res_data_i[:gamma])
-            append!(epsilon_gao,res_data_i[:epsilon])
-            append!(b_gao,res_data_i[:b])
+            append!(gao_b.n,res_data_i[:n])
+            append!(gao_b.t,res_data_i[:t])
+            append!(gao_b.d,res_data_i[:d])
+            append!(gao_b.eta,res_data_i[:eta])
+            append!(gao_b.beta,res_data_i[:beta])
+            append!(gao_b.gamma,res_data_i[:gamma])
+            append!(gao_b.epsilon,res_data_i[:epsilon])
+            append!(gao_b.b,res_data_i[:b])
         elseif res_data_i[:type] == "ResidualHelmholtzNonAnalytic" && full
-            append!(NA_A,res_data_i[:A])
-            append!(NA_B,res_data_i[:B])
-            append!(NA_C,res_data_i[:C])
-            append!(NA_D,res_data_i[:D])
-            append!(NA_a,res_data_i[:a])
-            append!(NA_b,res_data_i[:b])
-            append!(NA_beta,res_data_i[:beta])
-            append!(NA_n,res_data_i[:n])
+            append!(na.A,res_data_i[:A])
+            append!(na.B,res_data_i[:B])
+            append!(na.C,res_data_i[:C])
+            append!(na.D,res_data_i[:D])
+            append!(na.a,res_data_i[:a])
+            append!(na.b,res_data_i[:b])
+            append!(na.beta,res_data_i[:beta])
+            append!(na.n,res_data_i[:n])
         elseif res_data_i[:type] == "ResidualHelmholtzExponential"
-            append!(n,res_data_i[:n])
-            append!(t,res_data_i[:t])
-            append!(d,res_data_i[:d])
-            append!(l,res_data_i[:l])
-            append!(g,res_data_i[:g])
-        elseif res_data_i[:type] == "ResidualHelmholtzAssociating"  && full
-            if assoc == true
+            append!(exp1.n,res_data_i[:n])
+            append!(exp1.t,res_data_i[:t])
+            append!(exp1.d,res_data_i[:d])
+            append!(exp1.l,res_data_i[:l])
+            append!(exp1.g,res_data_i[:g])
+        elseif res_data_i[:type] == "ResidualHelmholtzDoubleExponential" && full
+            append!(exp2.n,res_data_i[:n])
+            append!(exp2.t,res_data_i[:t])
+            append!(exp2.d,res_data_i[:d])
+            append!(exp2.ld,res_data_i[:ld])
+            append!(exp2.gd,res_data_i[:gd])
+            append!(exp2.lt,res_data_i[:lt])
+            append!(exp2.gt,res_data_i[:gt])
+        elseif res_data_i[:type] == "ResidualHelmholtzAssociating" && full
+            if assoc_parsed == true
                 throw(error("Residual: $(res_data_i[:type]) we only support one Associating term."))
             end
-            assoc = true
-            assoc_epsilonbar += res_data_i[:epsilonbar]
-            assoc_kappabar += res_data_i[:kappabar]
-            assoc_a += res_data_i[:a]
-            assoc_m += res_data_i[:m]
-            assoc_vbarn += res_data_i[:vbarn]
+            assoc_parsed = true
+            assoc.epsilonbar = res_data_i[:epsilonbar]
+            assoc.kappabar = res_data_i[:kappabar]
+            assoc.a = res_data_i[:a]
+            assoc.m = res_data_i[:m]
+            assoc.vbarn = res_data_i[:vbarn]
         elseif res_data_i[:type] == "ResidualHelmholtzGERG2008" || (res_data_i[:type] == "GERG-2008" && vec_data isa Tuple)
             #we do the conversion, as detailed in the EOS-LNG paper
             ng = res_data_i[:n]
@@ -614,11 +619,9 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
             for i in 1:len
                 if iszero(ηg[i]) && iszero(βg[i]) && iszero(γg[i]) && iszero(εg[i])
                     #power terms
-                    push!(n,ng[i])
-                    push!(t,tg[i])
-                    push!(d,dg[i])
-                    push!(l,0)
-                    push!(g,1)
+                    push!(pol.n,ng[i])
+                    push!(pol.t,tg[i])
+                    push!(pol.d,dg[i])
                 else
                     #parse as gaussian + exponential
                     #convert to bigfloat precision, better parsing.
@@ -629,23 +632,23 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
                     ω = βij*γij - ηij*εij*εij
                     if ηg[i] == 0 #simple exponential term
                         ni_new = ng[i]*exp(ω) |> Float64
-                        push!(n,ni_new)
-                        push!(t,tg[i])
-                        push!(d,dg[i])
-                        push!(l,1)
-                        push!(g,βg[i])
+                        push!(exp1.n,ni_new)
+                        push!(exp1.t,tg[i])
+                        push!(exp1.d,dg[i])
+                        push!(exp1.l,1)
+                        push!(exp1.g,βg[i])
                     else #convert to gaussian term
                         ν = 2*ηij*εij - βij
                         ξ = ν/(2*ηij)
                         ξg = ξ |> Float64
                         ni_new = ng[i]*exp(ω + ηij*ξ*ξ) |> Float64
-                        push!(n_gauss,ni_new)
-                        push!(t_gauss,tg[i])
-                        push!(d_gauss,dg[i])
-                        push!(eta,ηg[i])
-                        push!(beta,0)
-                        push!(gamma,0)
-                        push!(epsilon,ξg)
+                        push!(gauss.n,ni_new)
+                        push!(gauss.t,tg[i])
+                        push!(gauss.d,dg[i])
+                        push!(gauss.eta,ηg[i])
+                        push!(gauss.beta,0)
+                        push!(gauss.gamma,0)
+                        push!(gauss.epsilon,ξg)
                     end
                 end
             end
@@ -661,19 +664,25 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
             li = res_data_i[:l]
             for i in 1:len
                 if ηi[i] == βi[i] == γi[i] == εi[i] == 0.0
-                    push!(n,ni[i])
-                    push!(t,ti[i])
-                    push!(d,di[i])
-                    push!(l,li[i])
-                    push!(g,1)
+                    if iszero(li[i])
+                        push!(pol.n,ni[i])
+                        push!(pol.t,ti[i])
+                        push!(pol.d,di[i])
+                    else
+                        push!(exp1.n,ni[i])
+                        push!(exp1.t,ti[i])
+                        push!(exp1.d,di[i])
+                        push!(exp1.l,li[i])
+                        push!(exp1.g,1.0)
+                    end
                 else
-                    push!(n_gauss,ni[i])
-                    push!(t_gauss,ti[i])
-                    push!(d_gauss,di[i])
-                    push!(eta,ηi[i])
-                    push!(beta,βi[i])
-                    push!(gamma,γi[i])
-                    push!(epsilon,εi[i])
+                    push!(gauss.n,ni[i])
+                    push!(gauss.t,ti[i])
+                    push!(gauss.d,di[i])
+                    push!(gauss.eta,ηi[i])
+                    push!(gauss.beta,βi[i])
+                    push!(gauss.gamma,γi[i])
+                    push!(gauss.epsilon,εi[i])
                 end
             end
         else
@@ -684,35 +693,32 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
 
     verbose && __verbose_found_json_terms(vec_data)
 
-    pol_vals = findall(iszero,l)
-    exp_vals = findall(!iszero,l)
-    _n = vcat(n[pol_vals],n[exp_vals],n_gauss)
-    _t = vcat(t[pol_vals],t[exp_vals],t_gauss)
-    _d = vcat(d[pol_vals],d[exp_vals],d_gauss)
-    _l = l[exp_vals]
-    _g = g[exp_vals]
-    _η = eta
-    _β = beta
-    _γ = gamma
-    _ε = epsilon
-
     verbose && @info "Creating $(string(out)) from JSON."
+
+
+    #pol + exp
+    append!(pol.n,exp1.n)
+    append!(pol.t,exp1.t)
+    append!(pol.d,exp1.d)
+    append!(pol.l,exp1.l)
+    append!(pol.g,exp1.g)
+
+    #pol + exp + gauss
+    append!(pol.n,gauss.n)
+    append!(pol.t,gauss.t)
+    append!(pol.d,gauss.d)
+    append!(pol.eta,gauss.eta)
+    append!(pol.beta,gauss.beta)
+    append!(pol.gamma,gauss.gamma)
+    append!(pol.epsilon,gauss.epsilon)
+
+    polexpgauss = pol
+    _calc_iterators!(polexpgauss)
+
     if !full
-        return out(Fij,_n,_t,_d,_l,_g,_η,_β,_γ,_ε)
+        return EmpiricDepartureValues(polexpgauss,Fij)
     end
-
-    #gao_b term
-    gao_b = GaoBTerm(n_gao,t_gao,d_gao,eta_gao,beta_gao,gamma_gao,epsilon_gao,b_gao)
-
-    #non analytical term
-    na = NonAnalyticTerm(NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
-
-    #assoc terms
-    assoc = Associating2BTerm(assoc_epsilonbar,assoc_kappabar,assoc_a,assoc_m,assoc_vbarn)
-
-    #exponential term
-
-   return SingleFluidResidualParam(_n,_t,_d,_l,_g,_η,_β,_γ,_ε;gao_b,na,assoc)
+   return SingleFluidResidualParam(polexpgauss,exp2,gao_b,na,assoc)
 end
 
 function __verbose_found_json_terms(data)
@@ -733,6 +739,14 @@ function __verbose_found_json_terms(data)
             " Converting to lead, LogTau and GERG-2004 terms."
         elseif type == "Gaussian+Exponential"
             " Converting to power, exponential and gaussian bell-shaped terms."
+        elseif type == "ResidualHelmholtzDoubleExponential"
+            " Converting to Double Exponential terms"
+        elseif type == "ResidualHelmholtzNonAnalytic"
+            " Converting to Non-Analytic terms"
+        elseif type == "ResidualHelmholtzGaoB"
+            " Converting to Gao-B terms"
+        elseif type == "ResidualHelmholtzAssociating"
+            " Converting to 2B-Association term"
         else
             ""
         end
@@ -776,20 +790,30 @@ function _parse_ancilliary_func(anc,input_key,output_key)
     return GenericAncEvaluator(n,t,input_r,output_r,type,using_input_r)
 end
 
-function _parse_superancilliary_func end
-
-function _parse_ancillaries(component,anc_data,verbose = false,properties = nothing)
+function _parse_ancillaries(component,anc_data;verbose = false)
     #if SUPERANC_ENABLED[] && !isnothing(Base.get_extension(Clapeyron,:ClapeyronSuperancillaries))
     #    return _parse_superancilliary_func(component,properties,verbose)
     #end
     #saturation pressure
-    p_data = anc_data[:pS]
-    rhol_data = anc_data[:rhoL]
-    rhov_data = anc_data[:rhoV]
 
-    ps_anc = PolExpSat(_parse_ancilliary_func(p_data,:T_r,:reducing_value))
-    rhov_anc = PolExpVapour(_parse_ancilliary_func(rhov_data,:T_r,:reducing_value))
-    rhol_anc = PolExpLiquid(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
+    if haskey(anc_data,:jexpansions_p) && haskey(anc_data,:jexpansions_rhoL) && haskey(anc_data,:jexpansions_rhoV)
+        p_data = anc_data[:jexpansions_p]
+        rhol_data = anc_data[:jexpansions_rhoL]
+        rhov_data = anc_data[:jexpansions_rhoV]
+
+        ps_anc = PolExpSat(Solvers.ChebyshevRange(p_data))
+        rhov_anc = PolExpVapour(Solvers.ChebyshevRange(rhov_data))
+        rhol_anc = PolExpLiquid(Solvers.ChebyshevRange(rhol_data))
+    else
+        p_data = anc_data[:pS]
+        rhol_data = anc_data[:rhoL]
+        rhov_data = anc_data[:rhoV]
+
+        ps_anc = PolExpSat(_parse_ancilliary_func(p_data,:T_r,:reducing_value))
+        rhov_anc = PolExpVapour(_parse_ancilliary_func(rhov_data,:T_r,:reducing_value))
+        rhol_anc = PolExpLiquid(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
+    end
+
     return CompositeModel(component,gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
 end
 

@@ -24,10 +24,18 @@ Return `x * log(k*x)` for `x ≥ 0`, handling ``x = 0`` by taking the downward l
 
 copied from LogExpFunctions.jl
 """
-function xlogx(x::Real,k = one(x))
-    _0 = zero(x)
+function xlogx(x::T,k::T) where T
+    _0 = T(-0.0)
     iszero(x) && return _0
+    iszero(k) && return _0
     ifelse(x > _0,x*Base.log(max(_0,k*x)),_0/_0)
+end
+
+xlogx(x) = xlogx(x,oneunit(x))
+
+function xlogx(x::T1,k::T2) where {T1,T2}
+    _x,_k = Base.promote(x,k)
+    return xlogx(_x,_k)
 end
 
 logabssinh(x) = LogExpFunctions.logabssinh(x)

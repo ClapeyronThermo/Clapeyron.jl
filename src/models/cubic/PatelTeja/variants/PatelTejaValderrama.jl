@@ -25,7 +25,8 @@ end
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose = false)
+    verbose = false,
+    reference_state = nothing)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -119,30 +120,24 @@ function PTV(components;
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
+    reference_state = nothing,
     verbose = false)
     
     formatted_components = format_components(components)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
-    k  = get(params,"k",nothing)
+    model = CubicModel(PTV,params,formatted_components;
+                        idealmodel,alpha,mixing,activity,translation,
+                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
+                        reference_state, verbose)
+
+    k = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    pc = params["Pc"]
-    Vc = params["Vc"]
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    acentricfactor = get(params,"acentricfactor",nothing)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",formatted_components,zeros(length(Tc)))
-    b = PairParam("b",formatted_components,zeros(length(Tc)))
-    c = PairParam("c",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
-    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = PTVParam(a,b,c,Tc,pc,Vc,Mw)
-    references = String["10.1252/jcej.23.87"]
-    model = PTV(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
+    set_reference_state!(model,reference_state;verbose)
     return model
 end
+
+default_references(::Type{PTV}) = ["10.1252/jcej.23.87"]
 
 function ab_premixing(model::PTVModel,mixing::MixingRule,k,l)
     _Tc = model.params.Tc
@@ -166,7 +161,6 @@ function c_premixing(model::PTVModel)
     _Vc = model.params.Vc
     c = model.params.c
     _Zc = @. _pc.*_Vc./(R̄*_Tc)
-
     Ωc = @. 0.57765-1.87080*_Zc
     diagvalues(c) .= Ωc .* R̄ .*_Tc ./ _pc
     c = sigma_LorentzBerthelot!(c)
