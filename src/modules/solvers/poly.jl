@@ -43,17 +43,20 @@ if num_real_roots == 2, then r2 can be ignored and you can just take r1 and r3.
 =#
 function __roots3(pol::NTuple{4,T}) where T
     #x³ + ax² + bx + c
-    x0,x1,x2,x3 = pol
-    a = x2/x3
-    b = x1/x3
-    c = x0/x3
-    _0 = zero(T)
+    pp0,pp1,pp2,pp3 = pol
+    a = pp2/pp3
+    b = pp1/pp3
+    c = pp0/pp3
+    _0 = zero(c)
+    abc = (a,b,c)
+    
+
     I1 = a
     I1 = -a
     _3J2 = a*a - 3*b # J2 = = a²/3 - b
 
-    _27J3 = fma(-27.0, c, (((9.0 * b) - ((a + a) * a)) * a))   #J3 = ab/3 - 2a³/27 - c
-    Δ = ((((((a * a) * b) * b) - (4 * b^3)) - ((4.0 * c) * a^3)) - (c * (27 * c))) + (((18 * a) * b) * c) #Δ = a² b² - 4b³ - 4a³ c - 27c² + 18abc
+    _27J3 = fma(-27, c, (((9 * b) - ((a + a) * a)) * a))   #J3 = ab/3 - 2a³/27 - c
+    Δ = ((((((a * a) * b) * b) - (4 * b^3)) - ((4 * c) * a^3)) - (c * (27 * c))) + (((18 * a) * b) * c) #Δ = a² b² - 4b³ - 4a³ c - 27c² + 18abc
 
     if !isfinite(Δ)
         r0 = oftype(Δ,NaN)
@@ -73,71 +76,75 @@ function __roots3(pol::NTuple{4,T}) where T
         r3 = (I1 + α * cos(λ3)) / 3
 
         #refine
-        r1,r2,r3 = durand_kerner_refine((r1,r2,r3),(a,b,c))
+        r1,r2,r3 = durand_kerner_refine(abc,(r1,r2,r3))
 
         #sort
-        r1,r2,r3 = r1,minmax(r2,r3)
-        r1,r2,r3 = minmax(r1,r2),r3
-        r1,r2,r3 = r1,minmax(r2,r3)
-
-        elseif r1 == r2 && r2 == r3
-            r1 = refine_r1(r1)
-            return complex_roots_from_r1(r1)
+        r1,r2,r3 = (r1,minmax(r2,r3)...)
+        r1,r2,r3 = (minmax(r1,r2)...,r3)
+        r1,r2,r3 = (r1,minmax(r2,r3)...)
+        if r1 == r2 && r2 == r3
+            r1 = refine_r1(abc,r1)
+            return complex_roots_from_r1(abc,r1)
         elseif r1 == r2
-            return 2,r3,zero(T),r1
+            return 2,r3,_0,r1
         elseif r2 == r3
-            return 2,r1,zero(T),r3
+            return 2,r1,_0,r3
         end
-        r12 = (x1 + x2)/2
-        r23 = (x2 + x3)/2
-        f12 = evalpoly(mid12, pol)
-        f23 = evalpoly(mid23, pol)
+
+
+        r12 = (r1 + r2)/2
+        r23 = (r2 + r3)/2
+        f12 = evalpoly(r12, pol)
+        f23 = evalpoly(r23, pol)
         if abs(f12) <  eps(typeof(f12)) && isapprox(r1,r2)
-            (2, r3, zero(T), r12) # first the single root, then the double root
+            (2, r3, _0, r12) # first the single root, then the double root
         elseif abs(f23) < eps(typeof(f23)) && isapprox(r2,r3)
-            (2, r1, zero(T), r23) # first the single root, then the double root
+            (2, r1, _0, r23) # first the single root, then the double root
         else
             sign1 = signbit(f12)
             sign2 = signbit(f23)
             if sign1 == sign2 # only one root
-                if sign1 ⊻ (pol[4] > 0)
-                    r1 = refine_r1(a,b,c,r1)
-                    return complex_roots_from_r1(r1)
+                if sign1 ⊻ (pp3 > 0)
+                    r1 = refine_r1(abc,r1)
+                    return complex_roots_from_r1(abc,r1)
                 else
-                    r3 = refine_r1(a,b,c,r3)
-                    return complex_roots_from_r1(r3)
+                    r3 = refine_r1(abc,r3)
+                    return complex_roots_from_r1(abc,r3)
                 end
             else # three distinct roots
                 (3, r1, r2, r3)
             end
         end
     else
-        D = -Δ / 108.0            # D > 0
+        D = -Δ / 108            # D > 0
         sqrtD = sqrt(D)
         J3_half = fma(-a, b / -6, fma(-0.5, c, (((a * a) * a) * (-37 // 999))))
-        r1 = refine_r1(a,b,c,r1)
         r1 = stable_cbrt_sum(J3_half,sqrtD) - a/3
-        return complex_roots_from_r1(a,b,c,r1)
+        r1 = refine_r1(abc,r1)
+        return complex_roots_from_r1(abc,r1)
     end
 end
 
-function complex_roots_from_r1(a::T,b::T,c::T,r1::T) where T
+function complex_roots_from_r1(abc::NTuple{3,T},r1::T) where T
+    a,b,c = abc
     A2 = a + r1
     B2 = evalpoly(r1,(b,a,one(T))) #b + a*r1 + r1^2
-    disc2 = fma(x + a, fma(-3.0, x, a), -4.0 * b)
+    disc2 = fma(r1 + a, fma(-3.0, r1, a), -4.0 * b)
     real_part = -A2 * 0.5
     imag_part = sqrt(max(0.0, -disc2)) * 0.5
     return 1,r1,imag_part,real_part
 end
 
-function refine_r1(a::T,b::T,c::T,r1::T,bounds::Int) where T
+function refine_r1(abc::NTuple{3,T},r1::T) where T
     lb = T(-Inf)
-    ub = T(-Inf)    
+    ub = T(-Inf) 
+    a,b,c = abc   
     poly = (c,b,a,one(T))
     dpoly = (b,2*a,T(3))
     x = r1
     _1 = one(r1)
-    for _ in 1:max_iter
+    tol = T(1e-14)
+    for _ in 1:100
         f = evalpoly(x,poly)
         df = evalpoly(x,dpoly)
         if abs(df) <= 10*eps(eltype(r1)) * max(_1, abs(x))
@@ -152,9 +159,9 @@ function refine_r1(a::T,b::T,c::T,r1::T,bounds::Int) where T
     return x
 end
 
-function durand_kerner_refine(r0::NTuple{3,T}, abc::NTuple{3,T}) where T
+function durand_kerner_refine(abc::NTuple{3,T},r123::NTuple{3,T}) where T
     ω = 0.5
-    r = r0
+    r = r123
     a,b,c = abc
     pol = (c,b,a,one(T))
     for iter in 1:20
@@ -173,11 +180,12 @@ function durand_kerner_refine(r0::NTuple{3,T}, abc::NTuple{3,T}) where T
             end
 
             # Avoid division by zero for (near‑)multiple roots
-            ri = abs(denom) < 1e-15 ? x : (x - ω * fx / denom : x)
+            ri = abs(denom) < 1e-15 ? x : (x - ω * fx / denom)
             rnew = Base.setindex(rnew,ri,i)
         end
-        dr = rnew .- r
-        max_change = maximum(abs,dr)
+        rn1,rn2,rn3 = rnew
+        rr1,rr2,rr3 = r
+        max_change = max(abs(rn1-rr1),max(abs(rn2-rr2),abs(rn3-rr3)))
         r = rnew
         if max_change < 1e-12
             break
