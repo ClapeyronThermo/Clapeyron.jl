@@ -375,7 +375,7 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     ∅ = oftype(_1,NaN)
     pr = _pr*_1
 
-    iszero(p) && !is_liquid(phase) && return 2,oftype(_1,Inf),oftype(_1,Inf)
+    iszero(p) && !is_liquid(phase) && return 2,oftype(_1,Inf),oftype(_1,Inf) #fast handling of infinite vapour root
 
     #polynomial to calculate roots in η = b/V variable formulation.
     pη3 = fma_evalpoly(b,(_1*a,_1*RT*w,_1*p*w))# a + RT*b*w + p*b^2*w
@@ -393,13 +393,12 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     nr == 0 && return -1,∅,∅
     good_solve = Δ₀ > 1e-12
 
-    st1 = cubic_poly_solver_status(η1,ηc,phase)
-    vx1 = st1 > 0 ? b/η1 : ∅
-
-    good_solve && nr == 1 && (return 0,b/η1,b/η1) #no other root,both liquid an vapour roots converge to the same phase
+    st1,_vx1 = cubic_poly_solver_status(η1,ηc,phase),b/η1 #check status of root 1 (and calculate root 1)
+    vx1 = st1 > 0 ? _vx1 : ∅
+    good_solve && nr == 1 && (return max(0,st1),_vx1,_vx1) #no other root,both liquid an vapour roots converge to the same phase
     good_solve && nr == 2 && (return st1,vx1,vx1) #2 roots, return the single root unless the less stable root is requested
 
-    st2 = cubic_poly_solver_status(ηR,ηc,phase)
+    st2 = cubic_poly_solver_status(ηR,ηc,phase) #check status of root 2. if there are two valid roots, then we asked for it or the gibbs criteria is needed
     vx2 = st2 > 0 ? b/ηR : ∅
 
     good_solve && st1 == -1 && (return st2,vx2,vx2) #if root 2 is requested, return root 2
@@ -426,7 +425,7 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
 
     st11,_,vsol1 = cubic_poly_solver_refine(ηhi,ηc,poly_v,poly_s,pr,b,phase)
     v1 = st11 > 0 ? vsol1 : ∅
-    nr == 1 && (return 0,vsol1,vsol1) #no other root,both liquid an vapour roots converge to the same phase
+    nr == 1 && (return max(0,st11),vsol1,vsol1) #no other root,both liquid an vapour roots converge to the same phase
     nr == 2 && st1l > 0 && return (return st11,v1,v1) #2 roots, return the single root unless the less stable root is requested
 
     st22,_,vsol2 = cubic_poly_solver_refine(ηlo,ηc,poly_v,poly_s,pr,b,phase)
