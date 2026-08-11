@@ -157,6 +157,7 @@ function __roots3(pol::NTuple{4,T}) where T
 
     _27J3 = fma(-27, c, (((9 * b) - ((a + a) * a)) * a))   #J3 = ab/3 - 2a³/27 - c
     #Δ = ((((((a * a) * b) * b) - (4 * b^3)) - ((4 * c) * a^3)) - (c * (27 * c))) + (((18 * a) * b) * c) #Δ = a² b² - 4b³ - 4a³ c - 27c² + 18abc
+    #det22 computes (a*b - c*d)
     Δ = fma(b, 
         (b * det_22(a,a,4,b)), 
         (c * ((-4 * a * a * a) - 
@@ -168,7 +169,11 @@ function __roots3(pol::NTuple{4,T}) where T
     end
     
     _pol = (oftype(Δ,pp0),oftype(Δ,pp1),oftype(Δ,pp2),oftype(Δ,pp3))
-    if Δ >= _0
+
+    #three different roots: durand_kerner_refine
+    #one simple real root, one double real root: refine_poly(p,r1), then derive the double root
+    #for one real root, two complex: refine_poly(p,r1), then calculate complex roots with complex_roots_from_r1
+    if Δ > _0
         sqrt_3J2 = sqrt(max(_0, _3J2))
         α = 2 * sqrt_3J2
         ϕ = atan(sqrt(max(_0, 27 * Δ)), _27J3)  # atan(y,x)
@@ -179,8 +184,7 @@ function __roots3(pol::NTuple{4,T}) where T
         r1 = (I1 + α * cos(λ1)) / 3
         r2 = (I1 + α * cos(λ2)) / 3
         r3 = (I1 + α * cos(λ3)) / 3
-        #refine
-        r1,r2,r3 = durand_kerner_refine(_pol,(r1,r2,r3))    
+          
         #sort
         r1,r2,r3 = (r1,minmax(r2,r3)...)
         r1,r2,r3 = (minmax(r1,r2)...,r3)
@@ -190,8 +194,12 @@ function __roots3(pol::NTuple{4,T}) where T
             r1 = refine_poly(_pol,r1)
             return complex_roots_from_r1(abc,r1,Δ)
         elseif r1 == r2
+            r3 = refine_poly(_pol,r3)
+            r1 = -(a + r3)/2
             return 2,r3,_0,r1,Δ
         elseif r2 == r3
+            r1 = refine_poly(_pol,r1)
+            r3 = -(a + r1)/2
             return 2,r1,_0,r3,Δ
         end
 
@@ -200,8 +208,12 @@ function __roots3(pol::NTuple{4,T}) where T
         f12 = evalpoly(r12, _pol)
         f23 = evalpoly(r23, _pol)
         if abs(f12) <  eps(typeof(f12)) && isapprox(r1,r2)
+            r3 = refine_poly(_pol,r3)
+            r12 = -(a + r3)/2
             return (2, r3, _0, r12, Δ) # first the single root, then the double root
         elseif abs(f23) < eps(typeof(f23)) && isapprox(r2,r3)
+            r1 = refine_poly(_pol,r1)
+            r23 = -(a + r1)/2
             return (2, r1, _0, r23, Δ) # first the single root, then the double root
         else
             sign1 = signbit(f12)
@@ -215,7 +227,8 @@ function __roots3(pol::NTuple{4,T}) where T
                     return complex_roots_from_r1(abc,r3,Δ)
                 end
             else # three distinct roots
-                return (3, r1, r2, r3,Δ)
+                r1,r2,r3 = durand_kerner_refine(_pol,(r1,r2,r3))
+                return (3, r1, r2, r3, Δ)
             end
         end
     else
@@ -249,6 +262,7 @@ function refine_poly(poly::NTuple{4,T},r1::T) where T
         if abs(df) <= 10*eps(eltype(r1)) * max(_1, abs(x))
             break
         end
+        #mult is the multiplicity of the root.
         dx = f / df
         x = x - dx
         if abs(dx) <= tol * max(_1, abs(x))
