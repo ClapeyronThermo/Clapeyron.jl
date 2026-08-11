@@ -387,6 +387,7 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     #WARNING: (this criteria fails with the anomalous second maxwell loop at high T)
 
     nr,η1,ηI,ηR,Δ = Solvers.__roots3(poly_η)
+
     η_norm = maximum(abs,poly_η)
     Δ₀ = abs(Δ)/(η_norm*η_norm*η_norm)
     nr == 0 && return -1,∅,∅
@@ -395,17 +396,18 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     st1 = cubic_poly_solver_status(η1,ηc,phase)
     vx1 = st1 > 0 ? b/η1 : ∅
 
-    good_solve && nr <= 2 && st1 > 0 && (return st1,vx1,vx1)
+    good_solve && nr == 1 && (return 0,b/η1,b/η1) #no other root,both liquid an vapour roots converge to the same phase
+    good_solve && nr == 2 && (return st1,vx1,vx1) #2 roots, return the single root unless the less stable root is requested
 
     st2 = cubic_poly_solver_status(ηR,ηc,phase)
     vx2 = st2 > 0 ? b/ηR : ∅
 
-    good_solve && st1 == -1 && (return st2,vx2,vx2)
-    good_solve && st2 == -1 && (return st1,vx1,vx1)
+    good_solve && st1 == -1 && (return st2,vx2,vx2) #if root 2 is requested, return root 2
+    good_solve && st2 == -1 && (return st1,vx1,vx1) #if root 1 is requested, return root 1
     ηlo,ηhi = minmax(η1,ηR)
     if good_solve
         vl,vv = b/ηhi,b/ηlo
-        return 0,vl,vv
+        return 0,vl,vv #use gibbs criterion to choose root
     end
 
     #polynomial to refine liquid root in volume.
@@ -424,14 +426,15 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
 
     st11,_,vsol1 = cubic_poly_solver_refine(ηhi,ηc,poly_v,poly_s,pr,b,phase)
     v1 = st11 > 0 ? vsol1 : ∅
-    nr <= 2 && st11 > 0 && (return st11,v1,v1)
+    nr == 1 && (return 0,vsol1,vsol1) #no other root,both liquid an vapour roots converge to the same phase
+    nr == 2 && st1l > 0 && return (return st11,v1,v1) #2 roots, return the single root unless the less stable root is requested
 
     st22,_,vsol2 = cubic_poly_solver_refine(ηlo,ηc,poly_v,poly_s,pr,b,phase)
     v2 = st22 > 0 ? vsol2 : ∅
-    st11 == -1 && (return st22,v2,v2)
-    st22 == -1 && (return st11,v1,v1)
+    st11 == -1 && (return st22,v2,v2) #if root 2 is requested, return root 2
+    st22 == -1 && (return st11,v1,v1) #if root 1 is requested, return root 1
     vl,vv = minmax(v1,v2)
-    return 0,vl,vv
+    return 0,vl,vv #use gibbs criterion to choose root
 end
 
 function cubic_poly_solver_status(η,ηc,phase,ignore_bounds = false)
