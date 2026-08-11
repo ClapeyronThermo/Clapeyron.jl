@@ -18,6 +18,14 @@ parameterless_type(x::Type) = __parameterless_type(x)
 split_2(str) = NTuple{2}(eachsplit(str, limit=2))
 split_2(str,dlm) = NTuple{2}(eachsplit(str,dlm, limit=2))
 
+function fma_evalpoly(x::T1,pol::NTuple{N,T2}) where {T1,N,T2}
+    fx = fma(pol[end],x,pol[end - 1])
+    @inbounds for i in 2:(N-1)
+        fx = fma(fx,x,pol[end-i])
+    end
+    return fx
+end
+
 function show_pairs(io,keys,vals=nothing,separator="",f_print = print;quote_string = true,pair_separator = '\n',prekey = ifelse(pair_separator === '\n'," ",""))
     if length(keys) == 0
         return nothing

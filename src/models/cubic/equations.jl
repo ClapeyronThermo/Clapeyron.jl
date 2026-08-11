@@ -1,7 +1,7 @@
 abstract type AlphaModel <:EoSModel end
 abstract type TranslationModel <:EoSModel end
 
-Base.eltype(model::CubicModel) = Base.promote_eltype(model.alpha,model.translation,model.mixing,model.params) 
+Base.eltype(model::CubicModel) = Base.promote_eltype(model.alpha,model.translation,model.mixing,model.params)
 
 struct ABCubicParam <: EoSParam
     a::PairParam{Float64}
@@ -200,21 +200,6 @@ function a_res(model::DeltaCubicModel, V, T, z,_data = data(model,V,T,z))
     end
 end
 
-function cubic_poly(model::DeltaCubicModel,p,T,z)
-    a,b,c = cubic_ab(model,p,T,z)
-    RT⁻¹ = 1/(Rgas(model)*T)
-    A = a*p*RT⁻¹*RT⁻¹
-    B = b*p*RT⁻¹
-    Δ1,Δ2 = cubic_ΔT(model,T,z)
-    ∑Δ = -Δ1 - Δ2
-    Δ1Δ2 = Δ1*Δ2
-    k₀ = real(-B*evalpoly(B,(A,Δ1Δ2,Δ1Δ2)))
-    k₁ = real(evalpoly(B,(A,-∑Δ,Δ1Δ2-∑Δ)))
-    k₂ = real((∑Δ - 1)*B - 1)
-    k₃ = one(A) # important to enable autodiff
-    return (k₀,k₁,k₂,k₃),c
-end
-
 function cubic_p(model::DeltaCubicModel, V, T, z,_data = @f(data),Δ = cubic_ΔT(model,T,z))
     Δ1,Δ2 = Δ
     n,a,b,c = _data
@@ -238,6 +223,7 @@ function cubic_pure_zc(model::CubicModel)
     Pc = model.params.Pc[1]
     return volume(model,Pc,Tc,SA[1.0])
 end
+
 #=
 function cubic_pure_zc(model::ABCubicModel)
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
@@ -259,14 +245,14 @@ function second_virial_coefficient_impl(model::CubicModel,T,z = SA[1.0])
     return sum(z)*(b - c - a/(Rgas(model)*T))
 end
 
-function lb_volume(model::CubicModel,T,z)    
+function lb_volume(model::CubicModel,T,z)
     b̄ = cubic_lb_volume(model,T,z,model.mixing)
     c̄ = translation2(model,b̄,T,z,model.translation,nothing,b̄,nothing) #result here should also be in m3
     return b̄ - c̄
 end
 
 #some cubic mixing rules allow for T-dependent b.
-#the default case is assume T-independency.
+#the default case is assume@s T-independency.
 #the translation is added at the level of lb_volume
 cubic_lb_volume(model,T,z) = cubic_lb_volume(model, T, z, model.mixing)
 
@@ -360,102 +346,126 @@ function __crit_pure_Δ_obj(T,v,R,a,b,Δ1,Δ2)
     return dpdv*dpdv_scale,dpdv/d2pdv2
 end
 
-function volume_impl(model::CubicModel,p,T,z,phase,threaded,vol0)
-    check_arraysize(model,z)
-    lb_v = lb_volume(model,T,z)*one(T)
-    if iszero(p) && is_liquid(phase) #liquid root at zero pressure if available
-        vl,_ = zero_pressure_impl(model,T,z)
-        return vl
-    elseif iszero(p) && is_vapour(phase) #zero pressure, ideal gas limit.
-        _0 = zero(Base.promote_eltype(model,p,T,z))
-        _1 = one(_0)
-        return _1/_0
+function volume_impl(model::DeltaCubicModel,p,T,z,phase,threaded,vol0)
+    n,a,b,c = data(model,p,T,z)
+    u,w = cubic_uwT(model,T,z)
+    st,v1,v2 = cubic_poly_solver(a,b,p,Rgas(model),T,u,w,phase)
+    C = n*c
+    if st > 0 || st == -1
+        vx = st == 1 ? v1 : v2
+        return n*(vx - c)
+    end
+    v1 ≈ v2 && return n*(v1 - c)
+
+    data2 = (n,a,b,zero(c))
+    RT = Rgas(model)*T
+    a1 = a_res(model,n*v1,T,z,data2)
+    a2 = a_res(model,n*v2,T,z,data2)
+    #if we ever add volume-dependent translations, they should be implemented here as -log1p(c̄2/V2)+log1p(c̄1/V1) instead of log(v2/v1)
+    Δg = a1 - a2 + p*(v1 - v2)/RT + log(v2/v1)
+    return Δg > 0 ? n*(v2 - c) : n*(v1 - c)
+end
+
+function cubic_poly_solver(a,b,p,R,T,u,w,phase)
+    RT = R*T
+    _pr = p/RT
+    A = a*_pr/RT
+    B = b*_pr
+    _1 = one(Base.promote_eltype(A,B,u))
+    ∅ = oftype(_1,NaN)
+    pr = _pr*_1
+
+    iszero(p) && !is_liquid(phase) && return 2,oftype(_1,Inf),oftype(_1,Inf)
+
+    #polynomial to calculate roots in η = b/V variable formulation.
+    pη3 = fma_evalpoly(b,(_1*a,_1*RT*w,_1*p*w))# a + RT*b*w + p*b^2*w
+    pη2 = -(a - RT*b*u + p*b^2*(w - u)) #fma_evalpoly(b,(_1*a,))
+    pη1 = RT*b + p*b^2*(1-u)
+    pη0 = -p*b^2
+    poly_η = (pη0,pη1,pη2,pη3)
+    ηc = -pη2/(3*pη3) #critical local η, we can decide if the root is liquid or gas.
+    #WARNING: (this criteria fails with the anomalous second maxwell loop at high T)
+
+    nr,η1,ηI,ηR,Δ = Solvers.__roots3(poly_η)
+    η_norm = maximum(abs,poly_η)
+    Δ₀ = abs(Δ)/(η_norm*η_norm*η_norm)
+    nr == 0 && return -1,∅,∅
+    good_solve = Δ₀ > 1e-12
+
+    st1 = cubic_poly_solver_status(η1,ηc,phase)
+    vx1 = st1 > 0 ? b/η1 : ∅
+
+    good_solve && nr <= 2 && st1 > 0 && (return st1,vx1,vx1)
+
+    st2 = cubic_poly_solver_status(ηR,ηc,phase)
+    vx2 = st2 > 0 ? b/ηR : ∅
+
+    good_solve && st1 == -1 && (return st2,vx2,vx2)
+    good_solve && st2 == -1 && (return st1,vx1,vx1)
+    ηlo,ηhi = minmax(η1,ηR)
+    if good_solve
+        vl,vv = b/ηhi,b/ηlo
+        return 0,vl,vv
     end
 
-    R̄ = Rgas(model)
-    nRTp = sum(z)*R̄*T/p
-    B = lb_v*p/(R̄*T)
-    ε = eps(typeof(B))
-    if B > 4ε
-        _poly,c̄ = cubic_poly(model,p,T,z)
-        #this happens when T -> ∞
-        if abs(1/_poly[1]) < ε
-            p_test = pressure(model,lb_v + eps(lb_v),T,z)
-            if p_test < p # the real volume is between lb_v and lb_v + ε
-                return lb_v
-            else
-                z0 = -_poly[1]/_poly[2]
-                f0 = Base.Fix2(evalpoly,_poly)
-                vx = z0*sum(z)*R̄*T/p - c̄
-                if vx <= lb_v
-                    return lb_v
-                else
-                    _dpoly = Solvers.polyder(_poly)
-                    for i in 1:5 #refine
-                        dz = evalpoly(z0,_poly)/evalpoly(z0,_dpoly)
-                        z0 -= dz
-                    end
-                    return z0*sum(z)*R̄*T/p - c̄
-                end
-            end
-        end
-        c = c̄*sum(z)
-        num_isreal, z1, z2, z3 = Solvers.real_roots3(_poly)
-        vvl,vvg = nRTp*z1 - c,nRTp*z3 - c
+    #polynomial to refine liquid root in volume.
+    pv3 = p
+    pv2 = -(p*(1 - u)*b + RT)
+    pv1 = fma_evalpoly(b,(_1*a,- RT*_1*u,_1*p*(w - u)))
+    pv0 = -b*fma_evalpoly(b,(a*_1,RT*w*_1,_1*p*w))
+    poly_v = (pv0,pv1,pv2,pv3)
+
+    #polynomial to refine liquid root in S = Z - 1
+    ps3 = _1
+    ps2 = 2 + (u - 1)*B
+    ps1 = A + fma_evalpoly(B,(one(u),u - 2,w - u)) #1 + (u - 2)*B + (w - u)*B^2 + A
+    ps0 = A*(1 - B) - B*fma_evalpoly(B,(one(u),u,w)) #A*(1 - B) - B*(1 + u*B + w*B^2)
+    poly_s = (ps0,ps1,ps2,ps3)
+
+    st11,_,vsol1 = cubic_poly_solver_refine(ηhi,ηc,poly_v,poly_s,pr,b,phase)
+    v1 = st11 > 0 ? vsol1 : ∅
+    nr <= 2 && st11 > 0 && (return st11,v1,v1)
+
+    st22,_,vsol2 = cubic_poly_solver_refine(ηlo,ηc,poly_v,poly_s,pr,b,phase)
+    v2 = st22 > 0 ? vsol2 : ∅
+    st11 == -1 && (return st22,v2,v2)
+    st22 == -1 && (return st11,v1,v1)
+    vl,vv = minmax(v1,v2)
+    return 0,vl,vv
+end
+
+function cubic_poly_solver_status(η,ηc,phase,ignore_bounds = false)
+    !isfinite(η) && return -1
+    st0 = η > ηc ? 1 : 2
+    !ignore_bounds && η > 1 && return -1
+    !ignore_bounds && η < 0 && return -1
+    is_liquid(phase) && st0 == 2 && return -1
+    is_vapour(phase) && st0 == 1 && return -1
+    return st0
+end
+
+function cubic_poly_solver_refine(η,ηc,poly_v,poly_s,pr,b,phase)
+    st = cubic_poly_solver_status(η,ηc,phase,true)
+    if st == -1
+        nan = oftype(Y1,NaN)
+        return st,nan,nan
+    end
+    if st == 1
+        fl = Base.Fix2(fma_evalpoly,poly_v)
+        prob_vl = Roots.ZeroProblem(fl,b/η)
+        vx = Roots.solve(prob_vl)
+        ηx = b/vx
     else
-        if is_liquid(phase)
-            vl0,_ = zero_pressure_impl(model,T,z)
-            vvl = _volume_compress(model,p,T,z,vl0)
-            vvg = vvl
-        elseif is_vapour(phase)
-            vvg = volume_virial(model,p,T,z) #TODO refine (necessary?)
-            vvl = vvg
-        else
-            vl0,_ = zero_pressure_impl(model,T,z)
-            vvl = _volume_compress(model,p,T,z,vl0)
-            vvg = volume_virial(model,p,T,z)
-        end
-        num_isreal = 3
+        fl = Base.Fix2(fma_evalpoly,poly_s)
+        v0 = b/η
+        S0 = v0*pr - 1
+        prob_sv = Roots.ZeroProblem(fl,S0)
+        SV = Roots.solve(prob_sv)
+        vx = (SV + 1)/pr
+        ηx = b/vx
     end
-
-    #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
-    if !isfinite(vvl) && !isfinite(vvg) && phase != :unknown
-        V0 = x0_volume(model, p, T, z; phase)
-        v = _volume_compress(model, p, T, z, V0)
-        #isnan(v) && err()
-        return v
-    end
-    if num_isreal == 3 # 3 real roots
-        vg = vvg
-        _vl = vvl
-        vl = ifelse(_vl > lb_v, _vl, vg) #catch case where solution is unphysical
-    else # 1 real root (or 2 with the second one degenerate)
-        vg = vl = vvg
-    end
-
-    function gibbs(v)
-        _df, f = ∂f(model, v, T, z)
-        dv, dt = _df
-        if abs((p + dv) / p) > 0.03
-            return one(dv) / zero(dv)
-        else
-            return f + p * v
-        end
-    end
-    #this catches the supercritical phase as well
-    if vl ≈ vg
-        return vl
-    end
-
-    if is_liquid(phase)
-        return vl
-    elseif is_vapour(phase)
-        return vg
-    else
-        gg = gibbs(vg)
-        gl = gibbs(vl)
-        return ifelse(gg < gl, vg, vl)
-    end
+    new_st = cubic_poly_solver_status(ηx,ηc,phase)
+    return new_st,ηx,vx
 end
 
 function pure_spinodal(model::DeltaCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
@@ -463,16 +473,15 @@ function pure_spinodal(model::DeltaCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol
     Segura, H., & Wisniak, J. (1997). Calculation of pure saturation properties using cubic equations of state. Computers & Chemical Engineering, 21(12), 1339–1347. doi:10.1016/s0098-1354(97)00016-1
     =#
     a,b,c = cubic_ab(model,v_lb,T,z)
-    Δ1,Δ2 = cubic_ΔT(model,T,z)
-    c1_c2 = - Δ1 - Δ2
-    c1c2 = Δ1*Δ2
+    u,w = cubic_uwT(model,T,z)
     RT = Rgas(model)*T
     bRT = b*RT
+
     Q4 = -RT
-    Q3 = 2*(a - bRT*c1_c2) |> real
-    Q2 = b*(a*(c1_c2 - 4) - bRT*(c1_c2*c1_c2 + 2*c1c2)) |> real
-    Q1 = 2*b*b*(a*(1 - c1_c2) - bRT*c1c2*c1_c2) |> real
-    Q0 = b*b*b*(a*c1_c2 - bRT*c1c2*c1c2) |> real
+    Q3 = 2*(a - bRT*u)
+    Q2 = b*(a*(u - 4) - bRT*(u*u + 2*w))
+    Q1 = 2*b*b*(a*(1 - u) - bRT*w*u)
+    Q0 = b*b*b*(a*u - bRT*w*w)
     dpoly = (Q0,Q1,Q2,Q3,Q4)
     #on single component, a good approximate for vm is the critical volume.
     d2poly = (Q1,2*Q2,3*Q3,4*Q4)
@@ -544,7 +553,7 @@ end
 function x0_sat_pure_crit_info(model::ABCubicModel,T,crit,z = SA[1.0])
     #=
     saturation pressure approximation for cubics, near the critical point.
-    
+
     implementation based on:
     Leibovici, C. F. (1993). Variant and invariant properties from cubic equations of state. Fluid Phase Equilibria, 84, 1–8. doi:10.1016/0378-3812(93)85114-2
     Sugie, H., Iwahori, Y., & Lu, B. C.-Y. (1989). On the application of cubic equations of state: Analytical expression for α/Tr and improved liquid density calculations. Fluid Phase Equilibria, 50(1–2), 1–20. doi:10.1016/0378-3812(89)80281-x
@@ -557,10 +566,10 @@ function x0_sat_pure_crit_info(model::ABCubicModel,T,crit,z = SA[1.0])
 
     #=
     We use the Leibovici critical expansion, but we calculate Ψ as a function of Ωa, like sugie proposes.
-    
+
     Sugie:
     α/Tr = 1 - f/(1 - f) * log(Pr/Tr)
-    
+
     Leibovici:
     α/Tr = 1 + (1 - Ψ)/(2 + Ψ) * log(Tr/Pr)
     α/Tr = 1 + f/(1 - f) * log(Tr/Pr) #log(Tr/Pr) = -log(Pr/Tr)
@@ -608,6 +617,21 @@ function cubic_ΔT(model,T,z)
     return complex(Δ1),complex(Δ2)
 end
 
+function cubic_uwT(model,T,z)
+    Δ1,Δ2 = cubic_ΔT(model,T,z)
+    u = real(- Δ1 - Δ2)
+    w = real(Δ1*Δ2)
+    return u,w
+end
+
+#leibovici constants
+function cubic_K(model,z)
+    Δ1,Δ2 = cubic_Δ(model,z)
+    u = - Δ1 - Δ2
+    w = Δ1*Δ2
+    return (1 + u + w)/(u + 2)^2
+end
+
 function cubic_Δ(model,z)
     return cubic_Δ(typeof(model))
 end
@@ -646,14 +670,6 @@ Base.@assume_effects :foldable function ab_consts(Δ1::Number, Δ2::Number)
     return (Ωa, Ωb)
 end
 
-#leibovici constants
-function cubic_K(model,z)
-    Δ1,Δ2 = cubic_Δ(model,z)
-    u = - Δ1 - Δ2
-    w = Δ1*Δ2
-    return (1 + u + w)/(u + 2)^2
-end
-
 has_fast_crit_pure(model::DeltaCubicModel) = true
 
 function x0_saturation_temperature(model::ABCubicModel,p,::Nothing)
@@ -688,7 +704,6 @@ vl = b + sqrt(0.5RTb3/2a)
 on models with translation:
 vl = b + sqrt(0.5RTb3/2a) - c
 =#
-
 
 function wilson_k_values!(K,model::CubicModel, p, T, crit)
     Pc = model.params.Pc.values

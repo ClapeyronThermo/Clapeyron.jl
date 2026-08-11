@@ -365,18 +365,16 @@ function vdw_coefficients(vl,pl,vv,pv,T)
     b^2 -(vl + vv)*b + vl*vv - vvΔβ*vl + vvΔβ*b + vlΔβ*vv - vlΔβ*b = 0
     b^2 + (-vl + -vv + vvΔβ - vlΔβ)*b + (vl*vv - vvβ*vl + vlΔβ*vv) = 0
     =#
-    _c = vl*vv - vvΔβ*vl + vlΔβ*vv
-    _b = -vl + -vv + vvΔβ - vlΔβ
+    k0 = vl*vv - vvΔβ*vl + vlΔβ*vv
+    k1 = -vl + -vv + vvΔβ - vlΔβ
 
     #quadratic solver
-    Δ = Solvers.det_22(_b,_b,4,_c)
-    if isnan(vl) | (Δ < 0)
-        nan = zero(Δ)/zero(Δ)
+    k2 = one(_c)
+    real_sols,b1,b2 = Solvers.real_roots2((k0,k1,k2))
+    if !real_sols
+        nan = zero(_b)/zero(_b)
         return nan,nan
     end
-    Δsqrt = sqrt(Δ)
-    b1 = 0.5*(-_b + Δsqrt)
-    b2 = 0.5*(-_b - Δsqrt)
     if b1 < 0
         b = b2
     elseif b1 > vl

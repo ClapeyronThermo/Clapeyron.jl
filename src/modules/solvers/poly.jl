@@ -11,6 +11,106 @@ function det_22(a,b,c,d)
 end
 
 
+function __roots2_det(a::T, b::T, c::T) where T
+    ā = abs(a)
+    b̄ = abs(b)
+    c̄ = abs(c)
+    sa = a > 0
+    sc = c > 0
+    x = sqrt(ā) * sqrt(c̄)
+    _0 = zero(x)
+    if sa == sc
+        # Case ac > 0: need sqrt(b^2 - ac)
+        # sqrt(b2 - ac) = sqrt(b - sqrt(ac))*sqrt(b + sqrt(ac))
+        # Compute ac/x and its error compensation.
+        if ā > x
+            ax = ā / x
+            ε_ax = (fma(ax, x, -ā)) / x
+            acx = ax * c̄
+            ε_acx = fma(ax, -c̄, acx) + ε_ax * c̄
+        else
+            cx = c̄ / x
+            ε_cx = (fma(cx, x, -c̄)) / x
+            acx = ā * cx
+            ε_acx = fma(-ā, cx, acx) + ε_cx * ā
+        end
+        #d* = |b| - sqrt(ac) - (ac/x - x)/2 with error correction
+        d̄ = b̄ - x - (acx - x - ε_acx) / 2
+
+        if iszero(d̄)
+            return true,_0
+        else
+            d_is_real = d̄ > 0
+            return d_is_real,sqrt(abs(d̄)) * sqrt(b̄ + x)
+        end
+    else
+        # Case ac < 0: need sqrt(b^2 + ac) = sqrt(b^2 + |ac|)
+        # Use hypot‑style ordering to avoid overflow.
+        if b̄ > x
+            z = x / b̄
+            return true,b̄ * hypot(one(_0),z)
+        else
+            z = b̄ / x
+            return true,x * hypot(one(_0),z)
+        end
+    end
+end
+
+function __roots2(pol::NTuple{3,T}) where T
+    c,b,a = pol
+    return __roots2(a,b,c)
+end
+
+function __roots2(a::T, b::T, c::T) where T
+    # Solve a*x^2 + b*x + c = 0, return real roots as a vector.
+    # Corresponds to quadratic-solutions in Racket.
+    
+    # Handle the linear case a == 0
+    if iszero(a)
+        r0 = -c / b
+        return true, r0,r0
+    end
+
+    # Use b/2 for simplification
+    b_half = b / 2.0
+    
+    # Compute discriminant sqrt((b/2)^2 - a*c)
+    if a isa Integer && b isa Integer && c isa Integer
+        d = (b*b)//4 - a*c
+        sqrt_abs_d = sqrt(abs(d))
+        d_is_real = d > 0
+    else
+        d_is_real,sqrt_abs_d = __roots2_det(a, b_half, c)
+    end
+    
+    # Handle double root
+    if iszero(sqrt_abs_d)
+        r0 = -b_half / a
+        return true,r0,r0
+    end
+
+    # Handle complex roots
+    if !d_is_real
+        re0 = -b_half / a
+        im0 = sqrt_d / abs(a)
+        return false,re0,im0
+    end  
+
+    # Use a/c swapping trick to avoid cancellation
+    if b < 0
+        # When b < 0, -b/2 + sqrt_d is more stable
+        r1 = c / (sqrt_abs_d - b_half)
+        r2 = (sqrt_abs_d - b_half) / a
+    else
+        # When b >= 0, use equivalent forms that avoid cancellation
+        r1 = (b_half + sqrt_abs_d) / (-a)
+        r2 = -c / (b_half + sqrt_abs_d)
+    end
+    return true, r1, r2
+end
+
+
+
 #=
 cbrt(a + b) + cbrt(a - b)
 
@@ -57,10 +157,15 @@ function __roots3(pol::NTuple{4,T}) where T
 
     _27J3 = fma(-27, c, (((9 * b) - ((a + a) * a)) * a))   #J3 = ab/3 - 2a³/27 - c
     Δ = ((((((a * a) * b) * b) - (4 * b^3)) - ((4 * c) * a^3)) - (c * (27 * c))) + (((18 * a) * b) * c) #Δ = a² b² - 4b³ - 4a³ c - 27c² + 18abc
-
+    Δ = fma(b, 
+        (b * det_22(a,a,4,b)), 
+        (c * ((-4 * a * a * a) - 
+        9*det_22(3,c,2*a,b)))
+        )
+        
     if !isfinite(Δ)
         r0 = oftype(Δ,NaN)
-        return 0,r0,r0,r0
+        return 0,r0,r0,r0,Δ
     end
 
     if Δ >= _0
@@ -76,43 +181,42 @@ function __roots3(pol::NTuple{4,T}) where T
         r3 = (I1 + α * cos(λ3)) / 3
 
         #refine
-        r1,r2,r3 = durand_kerner_refine(abc,(r1,r2,r3))
-
+        r1,r2,r3 = durand_kerner_refine(pol,(r1,r2,r3))
         #sort
         r1,r2,r3 = (r1,minmax(r2,r3)...)
         r1,r2,r3 = (minmax(r1,r2)...,r3)
         r1,r2,r3 = (r1,minmax(r2,r3)...)
-        if r1 == r2 && r2 == r3
-            r1 = refine_r1(abc,r1)
-            return complex_roots_from_r1(abc,r1)
-        elseif r1 == r2
-            return 2,r3,_0,r1
-        elseif r2 == r3
-            return 2,r1,_0,r3
-        end
 
+        if r1 == r2 && r2 == r3
+            r1 = refine_poly(pol,r1)
+            return complex_roots_from_r1(abc,r1,Δ)
+        elseif r1 == r2
+            return 2,r3,_0,r1,Δ
+        elseif r2 == r3
+            return 2,r1,_0,r3,Δ
+        end
 
         r12 = (r1 + r2)/2
         r23 = (r2 + r3)/2
         f12 = evalpoly(r12, pol)
         f23 = evalpoly(r23, pol)
         if abs(f12) <  eps(typeof(f12)) && isapprox(r1,r2)
-            (2, r3, _0, r12) # first the single root, then the double root
+            return (2, r3, _0, r12, Δ) # first the single root, then the double root
         elseif abs(f23) < eps(typeof(f23)) && isapprox(r2,r3)
-            (2, r1, _0, r23) # first the single root, then the double root
+            return (2, r1, _0, r23, Δ) # first the single root, then the double root
         else
             sign1 = signbit(f12)
             sign2 = signbit(f23)
             if sign1 == sign2 # only one root
                 if sign1 ⊻ (pp3 > 0)
-                    r1 = refine_r1(abc,r1)
-                    return complex_roots_from_r1(abc,r1)
+                    r1 = refine_poly(pol,r1)
+                    return complex_roots_from_r1(abc,r1,Δ)
                 else
-                    r3 = refine_r1(abc,r3)
-                    return complex_roots_from_r1(abc,r3)
+                    r3 = refine_poly(pol,r3)
+                    return complex_roots_from_r1(abc,r3,Δ)
                 end
             else # three distinct roots
-                (3, r1, r2, r3)
+                return (3, r1, r2, r3,Δ)
             end
         end
     else
@@ -120,27 +224,23 @@ function __roots3(pol::NTuple{4,T}) where T
         sqrtD = sqrt(D)
         J3_half = fma(-a, b / -6, fma(-0.5, c, (((a * a) * a) * (-37 // 999))))
         r1 = stable_cbrt_sum(J3_half,sqrtD) - a/3
-        r1 = refine_r1(abc,r1)
-        return complex_roots_from_r1(abc,r1)
+        r1 = refine_poly(pol,r1)
+        return complex_roots_from_r1(abc,r1,Δ)
     end
 end
 
-function complex_roots_from_r1(abc::NTuple{3,T},r1::T) where T
+function complex_roots_from_r1(abc::NTuple{3,T},r1::T,Δ::T) where T
     a,b,c = abc
     A2 = a + r1
     B2 = evalpoly(r1,(b,a,one(T))) #b + a*r1 + r1^2
-    disc2 = fma(r1 + a, fma(-3.0, r1, a), -4.0 * b)
-    real_part = -A2 * 0.5
-    imag_part = sqrt(max(0.0, -disc2)) * 0.5
-    return 1,r1,imag_part,real_part
+    disc2 = fma(r1 + a, fma(-3, r1, a), -4 * b)
+    real_part = -A2 / 2
+    imag_part = sqrt(max(zero(disc2), -disc2)) / 2
+    return 1,r1,imag_part,real_part,Δ
 end
 
-function refine_r1(abc::NTuple{3,T},r1::T) where T
-    lb = T(-Inf)
-    ub = T(-Inf) 
-    a,b,c = abc   
-    poly = (c,b,a,one(T))
-    dpoly = (b,2*a,T(3))
+function refine_poly(poly::NTuple{4,T},r1::T) where T
+    dpoly = polyder(poly)
     x = r1
     _1 = one(r1)
     tol = T(1e-14)
@@ -159,11 +259,9 @@ function refine_r1(abc::NTuple{3,T},r1::T) where T
     return x
 end
 
-function durand_kerner_refine(abc::NTuple{3,T},r123::NTuple{3,T}) where T
+function durand_kerner_refine(pol::NTuple{4,T},r123::NTuple{3,T}) where T
     ω = 0.5
     r = r123
-    a,b,c = abc
-    pol = (c,b,a,one(T))
     for iter in 1:20
         rnew = r
         @inbounds for i in 1:3
@@ -194,7 +292,6 @@ function durand_kerner_refine(abc::NTuple{3,T},r123::NTuple{3,T}) where T
     return r
 end
 
-
 """
     roots3(pol)
 
@@ -202,11 +299,11 @@ Solves a cubic equation of the form pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3
 """
 function roots3(pol)
     _pol = promote(pol[1],pol[2],pol[3],pol[4])
-    nr,r1,r2,r3 = __roots3(_pol)
+    nr,r1,r2,r3,Δ = __roots3(_pol)
     if nr == 3 || nr == 0
-        return Complex(r1),Complex(r2),Complex(r3)
+        return SVector(Complex(r1),Complex(r2),Complex(r3))
     end
-    return Complex(r1),Complex(r3,r2),Complex(r3,-r2)
+    return SVector(Complex(r1),Complex(r3,r2),Complex(r3,-r2))
 end
 
 function roots3(a,b,c,d)
@@ -228,20 +325,35 @@ returns `(n, r1, r2, r3)` where `n` is the number of real roots and:
     to `(x+1)^3`, the solver may return `2,(r1,r1,r1)`, where the double and the triple root being equal.
 """
 function real_roots3(pol::NTuple{4,T}) where {T<:Real}
-    nr,r1,r2,r3 = __roots3(pol)
+    nr,r1,r2,r3,Δ = __roots3(pol)
     nr == 1 && (return nr,r1,r1,r1)
     if nr == 2
         if r3 < r1
             return nr,r3,r3,r1
         else
             return nr,r1,r3,r3
-        end 
+        end
     end
-
     return nr,r1,r2,r3
 end
 
 real_roots3(a,b,c,d) = real_roots3((a,b,c,d))
+
+function real_roots2(a,b,c)
+    return real_roots2(promote(c,b,a))
+end
+
+function real_roots2(pol)
+    _pol = promote(pol[1],pol[2],pol[3])
+    return real_roots2(_pol)
+end
+
+
+function real_roots2(pol::NTuple{3,T}) where T
+    return __roots2(pol)
+end
+
+
 
 """
     polyder(poly)
