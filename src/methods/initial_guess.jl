@@ -367,9 +367,9 @@ function vdw_coefficients(vl,pl,vv,pv,T)
     =#
     k0 = vl*vv - vvΔβ*vl + vlΔβ*vv
     k1 = -vl + -vv + vvΔβ - vlΔβ
+    k2 = one(k0)
 
     #quadratic solver
-    k2 = one(k0)
     real_sols,b1,b2 = Solvers.real_roots2((k0,k1,k2))
     if !real_sols
         nan = zero(k0)/zero(k0)
@@ -502,7 +502,6 @@ function _find_vm(dpoly,v_lb::K,v_ub::K) where K
     else
         nr,v1,v2,v3 = Solvers.real_roots3(d2poly)
     end
-
     if (lb <= v1 <= ub) && evalpoly(v1,dpoly) > 0 && evalpoly(v1,d3poly) < 0
         return v1 + v_lb
     elseif nr > 1 && (lb <= v3 <= ub) && evalpoly(v3,dpoly) > 0 && evalpoly(v3,d3poly) < 0 #v3 != v1 if nr > 1
