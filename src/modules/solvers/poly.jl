@@ -92,7 +92,7 @@ function __roots2(a::T, b::T, c::T) where T
     # Handle complex roots
     if !d_is_real
         re0 = -b_half / a
-        im0 = sqrt_d / abs(a)
+        im0 = sqrt_abs_d / abs(a)
         return false,re0,im0
     end  
 
