@@ -369,10 +369,10 @@ function vdw_coefficients(vl,pl,vv,pv,T)
     k1 = -vl + -vv + vvΔβ - vlΔβ
 
     #quadratic solver
-    k2 = one(_c)
+    k2 = one(k0)
     real_sols,b1,b2 = Solvers.real_roots2((k0,k1,k2))
     if !real_sols
-        nan = zero(_b)/zero(_b)
+        nan = zero(k0)/zero(k0)
         return nan,nan
     end
     if b1 < 0
