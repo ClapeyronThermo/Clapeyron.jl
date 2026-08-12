@@ -173,7 +173,7 @@ function __roots3(pol::NTuple{4,T}) where T
     #three different roots: durand_kerner_refine
     #one simple real root, one double real root: refine_poly(p,r1), then derive the double root
     #for one real root, two complex: refine_poly(p,r1), then calculate complex roots with complex_roots_from_r1
-    if Δ > _0
+    if Δ >= _0
         sqrt_3J2 = sqrt(max(_0, _3J2))
         α = 2 * sqrt_3J2
         ϕ = atan(sqrt(max(_0, 27 * Δ)), _27J3)  # atan(y,x)
@@ -259,7 +259,7 @@ function refine_poly(poly::NTuple{4,T},r1::T) where T
     for _ in 1:100
         f = evalpoly(x,poly)
         df = evalpoly(x,dpoly)
-        if abs(df) <= 10*eps(eltype(r1)) * max(_1, abs(x))
+        if abs(f) <= 10*eps(eltype(r1)) * max(_1, abs(x))
             break
         end
         #mult is the multiplicity of the root.
