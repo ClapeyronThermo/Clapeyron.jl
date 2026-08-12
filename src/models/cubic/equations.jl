@@ -387,6 +387,11 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     #WARNING: (this criteria fails with the anomalous second maxwell loop at high T)
 
     nr,η1,ηI,ηR,Δ = Solvers.__roots3(poly_η)
+    
+    #special case, 3 roots, but both the upper and lower roots are invalid. happens on Clapeyron.volume(EPPR78(["carbon dioxide"]), 3311.0e5, 400.0)
+    if nr == 3 && η1 < 0 && ηR > 1 && (0 <= ηI <= ηR)
+        nr,η1,ηI,ηR,Δ = 1,ηI,zero(ηI),zero(ηI),Δ
+    end
 
     η_norm = maximum(abs,poly_η)
     Δ₀ = abs(Δ)/(η_norm*η_norm*η_norm)
