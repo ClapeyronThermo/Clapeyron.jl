@@ -388,13 +388,9 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     ηc = -pη2/(3*pη3) #critical local η, we can decide if the root is liquid or gas.
     #WARNING: (this criteria fails with the anomalous second maxwell loop at high T)
 
-    #criteria for spurious roots, t1,t2,t3 are booleans, or all booleans are true, or one is true, or all booleans are false
-    #on all falses, return early, on 1 true, select the good root, on 3 trues, proceed normally.
-    t1,t2,t3 = cubic_poly_eta_good_roots(poly_η)
-    nvalid = t1 + t2 + t3
 
-    nvalid == 0 && return -1,∅,∅ #no valid roots beforehand, bailing out
     nr,η1,ηI,ηR,Δ = Solvers.__roots3(poly_η)
+    nr,η1,ηI,ηR = cubic_poly_eta_good_roots(nr,η1,ηI,ηR,poly_η)
     nr == 0 && return -1,∅,∅ #no valid roots from solver, bailing out
 
     #
@@ -468,39 +464,44 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
 end
 
 
-function cubic_poly_eta_good_roots(poly_η)
+function cubic_poly_eta_good_roots(nr,η1,η2,η3,poly_η)
     c0, c1, c2, c3 = poly_η
-    tol = sqrt(eps(float(one(c0))))
     positive_p = c0 < 0
-    positive_p && c3 < 0 && return (false,true,false) #only the middle root is valid
-    if positive_p && iszero(c3)
-        c2 > 0 && return (false, false, true)
-        c2 < 0 && return (true, false, false)
-        return (true, true, true)  #all roots are valid
+    nr == 0 && return 0,η1,η2,η3
+    in_tol(η) = zero(η) <= η <= one(η)
+    if nr == 1
+        if in_tol(η1)
+            return 1,η1,η2,η3
+        else
+            return 0,η1,η2,η3
+        end
     end
 
-    if !positive_p && iszero(c3)
-        c2 <= 0 && return (false,false,false) # c2 < 0 or c2 == 0 cannot have physical roots for p < 0
-        ηv = -c1 / (2*c2)
-        in_tol_v = tol <= ηv <= 1 - tol
-        Pv = evalpoly(ηv, poly_η)
-        in_tol_v && Pv < 0 && return (false, false, true) # two physical roots
-        in_tol_v && abs(Pv) <= tol && return (true, false, false) # spinodal tangent: one physical double root
-    end  
+    if nr == 2
+        t1,t3 = in_tol(η1),in_tol(η3)
+        if t1 && t3
+            positive_p && return 2,η1,η2,η3 #both roots are valid, may be liquid or vapour spinodal
+            ηdensest = max(η1,η3)
+            return 1,ηdensest,ηdensest,ηdensest #on negative pressures, only the liquid spinodal pseudo-stable branch exists
+        end
+        t1 && return 1,η3,η3,η3 #t1 is not valid
+        t3 && return 1,η1,η1,η1
+        return 0,η1,η2,η3
+    end
 
-    is_real, ηlo, ηhi = Solvers.__roots2((c1, 2*c2, 3*c3))
-    !is_real && (return positive_p ? (true,true,true) : (false, false, false))
-    positive_p && ηlo < 0 && evalpoly(ηlo, poly_η) > 0 && (return (false, false, true)) #one root < 0
-    positive_p && ηhi > 1 && evalpoly(ηhi, poly_η) < 0 && (return (true, false, false)) #one root > 1
-    positive_p && return (true, true, true)  #all roots are valid
+    if nr == 3
+        t1,t2,t3 = in_tol(η1),in_tol(η2),in_tol(η3)
+        if t2 && (!t1 && !t3)
+            return 1,η2,η2,η2
+        elseif t1 && (!t3)
+            return 1,η1,η1,η1
+        elseif t3 && (!t1)
+            return 1,η3,η3,η3
+        end
+        return 3,η1,η2,η3
+    end
+    return n3,η1,η2,η3
 
-    #handling for negative pressures
-    ηmin = c3 > 0 ? ηhi : ηlo   # for c3 > 0, the right critical point is a local minimum
-    in_tol =  tol <= ηmin <= 1 - tol
-    Pmin = evalpoly(ηmin, poly_η)
-    in_tol && Pmin < 0 && (return c3 > 0 ? (false, false, true) : (false, true, false)) # one negative spurious root + two physical roots OR two physical roots + one spurious root > 1
-    in_tol && abs(Pmin) <= tol && (return c3 > 0 ? (false, false, true) : (false, false, true)) # spinodal tangent: one physical double root
-    return (false, false, false) # local minimum is positive -> no physical root
 end
 
 function cubic_poly_solver_status(η,ηc,phase,ignore_bounds = false)
@@ -696,9 +697,7 @@ end
 
 #leibovici constants
 function cubic_K(model,z)
-    Δ1,Δ2 = cubic_Δ(model,z)
-    u = - Δ1 - Δ2
-    w = Δ1*Δ2
+    u,w = cubic_uwT(model,T,z)
     return (1 + u + w)/(u + 2)^2
 end
 
