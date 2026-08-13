@@ -393,12 +393,6 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     nr,η1,ηI,ηR = cubic_poly_eta_good_roots(nr,η1,ηI,ηR,poly_η)
     nr == 0 && return -1,∅,∅ #no valid roots from solver, bailing out
 
-    #
-    if nvalid == 1 && nr > 1
-        η1 = t1 ? η1 : ifelse(t2,ηI,ηR)
-        nr,ηI,ηR,Δ = 1,η1,η1,η1,Δ
-    end
-
     v1,v2 = b/η1,b/ηR
     εp = 1e-6*abs(max(p,one(p)))
     good_solve_1 = true
