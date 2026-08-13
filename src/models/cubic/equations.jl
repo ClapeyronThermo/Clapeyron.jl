@@ -355,7 +355,7 @@ function volume_impl(model::DeltaCubicModel,p,T,z,phase,threaded,vol0)
         vx = st == 1 ? v1 : v2
         return n*(vx - c)
     end
-    
+
     v1 ≈ v2 && return n*(v1 - c)
 
     data2 = (n,a,b,zero(c))
@@ -388,45 +388,47 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     ηc = -pη2/(3*pη3) #critical local η, we can decide if the root is liquid or gas.
     #WARNING: (this criteria fails with the anomalous second maxwell loop at high T)
 
+    #criteria for spurious roots, t1,t2,t3 are booleans, or all booleans are true, or one is true, or all booleans are false
+    #on all falses, return early, on 1 true, select the good root, on 3 trues, proceed normally.
+    t1,t2,t3 = cubic_poly_eta_good_roots(poly_η)
+    nvalid = t1 + t2 + t3
+
+    nvalid == 0 && return -1,∅,∅ #no valid roots beforehand, bailing out
     nr,η1,ηI,ηR,Δ = Solvers.__roots3(poly_η)
-    #special case, 3 roots, but both the upper and lower roots are invalid. happens on Clapeyron.volume(EPPR78(["carbon dioxide"]), 3311.0e5, 400.0)
-    if nr == 3 && η1 < -0.1 && ηR > 1.1 && (0 <= ηI <= ηR)
-        nr,η1,ηI,ηR,Δ = 1,ηI,zero(ηI),zero(ηI),Δ
+    nr == 0 && return -1,∅,∅ #no valid roots from solver, bailing out
+
+    #
+    if nvalid == 1 && nr > 1
+        η1 = t1 ? η1 : ifelse(t2,ηI,ηR)
+        nr,ηI,ηR,Δ = 1,η1,η1,η1,Δ
     end
 
-    if nr == 3 && η1 < -0.1 && (0 <= ηI <= 1)
-        nr,η1,ηI,ηR,Δ = 3,ηI,zero(ηI),ηR,Δ
-    end
-    
-    if nr == 3 && ηR > 1.1 && (0 <= ηI <= 1)
-        nr,η1,ηI,ηR,Δ = 3,η1,zero(ηI),ηI,Δ
-    end
-
-    _v1t,_v2t = b/η1,b/ηR
+    v1,v2 = b/η1,b/ηR
     εp = 1e-6*abs(max(p,one(p)))
-    good_solve = true
+    good_solve_1 = true
 
-    p1 = RT/(_v1t-b) - a/(_v1t*_v1t + u*b*_v1t + w*b*b) 
-    abs(p - p1) > εp && (good_solve = false)
+    p1 = RT/(v2-b) - a/(v1*v1 + u*b*v1 + w*b*b)
+    abs(p - p1) > εp && (good_solve_1 = false)
 
-    if nr > 1 && good_solve
-        p2 = RT/(_v2t-b) - a/(_v2t*_v2t + u*b*_v2t + w*b*b)
-        abs(p - p2) > εp && (good_solve = false)
+    good_solve_2 = true
+    if nr > 1
+        p2 = RT/(v2-b) - a/(v2*v2 + u*b*v2 + w*b*b)
+        abs(p - p2) > εp && (good_solve_2 = false)
     end
 
-    nr == 0 && return -1,∅,∅
     st1 = cubic_poly_solver_status(η1,ηc,phase) #check status of root 1 (and calculate root 1)
-    vx1 = st1 > 0 ? _v1t : ∅
-    good_solve && nr == 1 && (return max(0,st1),_v1t,_v1t) #no other root,both liquid an vapour roots converge to the same phase
-    good_solve && nr == 2 && (return st1,vx1,vx1) #2 roots, return the single root unless the less stable root is requested
+    vx1 = st1 > 0 ? v1 : ∅
+    good_solve_1 && nr == 1 && (return max(0,st1),v1,v1) #no other root,both liquid an vapour roots converge to the same phase
+    good_solve_1 && nr == 2 && (return st1,vx1,vx1) #2 roots, return the single root unless the less stable root is requested
 
     st2 = cubic_poly_solver_status(ηR,ηc,phase) #check status of root 2. if there are two valid roots, then we asked for it or the gibbs criteria is needed
-    vx2 = st2 > 0 ? _v2t : ∅
-    good_solve && st1 == -1 && st2 == st_expected && (return st2,vx2,vx2) #if root 2 is requested, return root 2
-    good_solve && st2 == -1 && st1 == st_expected && (return st1,vx1,vx1) #if root 1 is requested, return root 1
+    vx2 = st2 > 0 ? v2 : ∅
+    good_solve_2 && st1 == -1 && st2 == st_expected && (return st2,vx2,vx2) #if root 2 is requested, return root 2
+    good_solve_1 && st2 == -1 && st1 == st_expected && (return st1,vx1,vx1) #if root 1 is requested, return root 1
+    
     ηlo,ηhi = minmax(η1,ηR)
-    if good_solve
-        vl,vv = b/ηhi,b/ηlo
+    if good_solve_1 && good_solve_2    
+        vl,vv = minmax(b/ηhi,b/ηlo)
         return 0,vl,vv #use gibbs criterion to choose root
     end
 
@@ -444,17 +446,61 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     ps0 = A*(1 - B) - B*fma_evalpoly(B,(one(u),u,w)) #A*(1 - B) - B*(1 + u*B + w*B^2)
     poly_s = (ps0,ps1,ps2,ps3)
 
-    st11,_,vsol1 = cubic_poly_solver_refine(ηhi,ηc,poly_v,poly_s,pr,b,phase)
-    v1 = st11 > 0 ? vsol1 : ∅
+    if good_solve_1
+        st11,vsol1 = cubic_poly_solver_refine(ηhi,ηc,poly_v,poly_s,pr,b,phase)
+    else
+        st11,vsol1 = st1,v1
+    end
+    v11 = st11 > 0 ? vsol1 : ∅
     nr == 1 && (return max(0,st11),vsol1,vsol1) #no other root,both liquid an vapour roots converge to the same phase
-    nr == 2 && st1l > 0 && return (return st11,v1,v1) #2 roots, return the single root unless the less stable root is requested
+    nr == 2 && st1l > 0 && return (return st11,v11,v11) #2 roots, return the single root unless the less stable root is requested
 
-    st22,_,vsol2 = cubic_poly_solver_refine(ηlo,ηc,poly_v,poly_s,pr,b,phase)
-    v2 = st22 > 0 ? vsol2 : ∅
-    st11 == -1 && st22 == st_expected && (return st22,v2,v2) #if root 2 is requested, return root 2
-    st22 == -1 && st11 == st_expected && (return st11,v1,v1) #if root 1 is requested, return root 1
-    vl,vv = minmax(v1,v2)
-    return 0,vl,vv #use gibbs criterion to choose root
+    if good_solve_2
+        st22,vsol2 = cubic_poly_solver_refine(ηlo,ηc,poly_v,poly_s,pr,b,phase)
+    else
+        st22,vsol2 = st2,v2
+    end
+    v22 = st22 > 0 ? vsol2 : ∅
+    st11 == -1 && st22 == st_expected && (return st22,v22,v22) #if root 2 is requested, return root 2
+    st22 == -1 && st11 == st_expected && (return st11,v11,v11) #if root 1 is requested, return root 1
+    vll,vvv = minmax(v11,v22)
+    return 0,vll,vvv #use gibbs criterion to choose root
+end
+
+
+function cubic_poly_eta_good_roots(poly_η)
+    c0, c1, c2, c3 = poly_η
+    tol = sqrt(eps(float(one(c0))))
+    positive_p = c0 < 0
+    positive_p && c3 < 0 && return (false,true,false) #only the middle root is valid
+    if positive_p && iszero(c3)
+        c2 > 0 && return (false, false, true)
+        c2 < 0 && return (true, false, false)
+        return (true, true, true)  #all roots are valid
+    end
+
+    if !positive_p && iszero(c3)
+        c2 <= 0 && return (false,false,false) # c2 < 0 or c2 == 0 cannot have physical roots for p < 0
+        ηv = -c1 / (2*c2)
+        in_tol_v = tol <= ηv <= 1 - tol
+        Pv = evalpoly(ηv, poly_η)
+        in_tol_v && Pv < 0 && return (false, false, true) # two physical roots
+        in_tol_v && abs(Pv) <= tol && return (true, false, false) # spinodal tangent: one physical double root
+    end  
+
+    is_real, ηlo, ηhi = Solvers.__roots2((c1, 2*c2, 3*c3))
+    !is_real && (return positive_p ? (true,true,true) : (false, false, false))
+    positive_p && ηlo < 0 && evalpoly(ηlo, poly_η) > 0 && (return (false, false, true)) #one root < 0
+    positive_p && ηhi > 1 && evalpoly(ηhi, poly_η) < 0 && (return (true, false, false)) #one root > 1
+    positive_p && return (true, true, true)  #all roots are valid
+
+    #handling for negative pressures
+    ηmin = c3 > 0 ? ηhi : ηlo   # for c3 > 0, the right critical point is a local minimum
+    in_tol =  tol <= ηmin <= 1 - tol
+    Pmin = evalpoly(ηmin, poly_η)
+    in_tol && Pmin < 0 && (return c3 > 0 ? (false, false, true) : (false, true, false)) # one negative spurious root + two physical roots OR two physical roots + one spurious root > 1
+    in_tol && abs(Pmin) <= tol && (return c3 > 0 ? (false, false, true) : (false, false, true)) # spinodal tangent: one physical double root
+    return (false, false, false) # local minimum is positive -> no physical root
 end
 
 function cubic_poly_solver_status(η,ηc,phase,ignore_bounds = false)
@@ -462,7 +508,7 @@ function cubic_poly_solver_status(η,ηc,phase,ignore_bounds = false)
     valid_ηc = (0 < ηc < 1)
     st0 = valid_ηc ? (η < ηc ? 2 : 1) : 0
     !ignore_bounds && η > 1 && return -1
-    !ignore_bounds && η < 0 && return -1 
+    !ignore_bounds && η < 0 && return -1
     st0 == 2 && is_liquid(phase) && return -1
     st0 == 1 && is_vapour(phase) && return -1
     return st0
@@ -489,7 +535,7 @@ function cubic_poly_solver_refine(η,ηc,poly_v,poly_s,pr,b,phase)
         ηx = b/vx
     end
     new_st = cubic_poly_solver_status(ηx,ηc,phase)
-    return new_st,ηx,vx
+    return new_st,vx
 end
 
 function pure_spinodal(model::DeltaCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K

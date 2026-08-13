@@ -144,6 +144,22 @@ if num_real_roots == 2, then r2 can be ignored and you can just take r1 and r3.
 function __roots3(pol::NTuple{4,T}) where T
     #x³ + ax² + bx + c
     pp0,pp1,pp2,pp3 = pol
+
+    if iszero(pp3)
+        if iszero(pp2)
+            r1 = -pp0/pp1
+            nan = oftype(r1,NaN)
+            return 1,r1,nan,r1,nan
+        end
+        is_real,r1,r2 = __roots2((pp0,pp1,pp2))
+        nan = oftype(r1,NaN)
+        if is_real
+            return 2,r1,nan,r2,nan
+        else
+            return 0,nan,r1,r2,nan
+        end
+    end
+
     a = pp2/pp3
     b = pp1/pp3
     c = pp0/pp3
@@ -323,7 +339,8 @@ Solves a cubic equation of the form pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3
 function roots3(pol)
     _pol = promote(pol[1],pol[2],pol[3],pol[4])
     nr,r1,r2,r3,Δ = __roots3(_pol)
-    if nr == 3 || nr == 0
+
+    if nr == 3 || (nr == 0 && isnan(r2))
         return SVector(Complex(r1),Complex(r2),Complex(r3))
     end
     return SVector(Complex(r1),Complex(r3,r2),Complex(r3,-r2))
