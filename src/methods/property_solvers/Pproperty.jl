@@ -221,7 +221,7 @@ function Pproperty_puresat(model,T,prop,z,property,cache,sol_options,phase)
         end
 
         p_puresat0 = βpuresat > 1 ? pmin_sat : pmax_sat
-        res_puresat = __Pproperty(model,T,prop,z,property,rootsolver,phase_puresat,abstol,reltol,threaded,p_puresat0)
+        res_puresat = __Pproperty(model,T,prop,z,property,rootsolver,phase_puresat,abstol,reltol,false,p_puresat0)
         p_puresat,st_puresat = __Pproperty_check(res_puresat,verbose)
         return p_puresat,st_puresat,(pmin_sat,pmax_sat)
     end

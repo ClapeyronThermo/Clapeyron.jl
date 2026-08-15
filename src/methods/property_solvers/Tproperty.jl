@@ -361,7 +361,7 @@ function Tproperty_puresat(model,p,prop,z,property,cache,sol_options,phase)
             Xproperty_verbose(:puresat_T,phase_puresat,property)
         end
         T_puresat0 = βpuresat > 1 ? Tmax_sat : Tmin_sat
-        res_puresat = __Tproperty(model,p,prop,z,property,rootsolver,phase_puresat,abstol,reltol,threaded,T_puresat0)
+        res_puresat = __Tproperty(model,p,prop,z,property,rootsolver,phase_puresat,abstol,reltol,false,T_puresat0)
         T_puresat,st_puresat = __Tproperty_check(res_puresat,verbose)
         return T_puresat,st_puresat,(Tmin_sat,Tmax_sat)
     end
