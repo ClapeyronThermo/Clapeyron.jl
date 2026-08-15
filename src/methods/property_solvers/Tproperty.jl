@@ -302,7 +302,7 @@ function _Tproperty(model::EoSModel,p,_prop,z = SA[1.0],
         res[2] == :failure && return __Tproperty_check(res,verbose)
         return __Tproperty_check(res,verbose)
     end
-    
+
     T0x,new_phase,prop_edge,success = Tproperty_refine_edge(model,p,prop,z,property,edge_cache,sol_options)
     success && return T0x,new_phase
 
@@ -407,7 +407,7 @@ function Tproperty_supercritical(model,p,prop,z,property,cache,sol_options,phase
         verbose && Xproperty_verbose(:pseudo_critical, satpoint, property)
         return Tx,:eq
     end
-    
+
     if verbose
         if Vx <= Vc
             Xproperty_verbose(:outside_eq_T, :bubble, property)
@@ -573,6 +573,12 @@ function Tproperty_pure(model,p,x,z,property::F,rootsolver,phase,abstol,reltol,v
     xl = ∑z*spec_to_vt(model,vl,Ts,x1,property)
     xv = ∑z*spec_to_vt(model,vv,Ts,x1,property)
     βv = (x - xl)/(xv - xl)
+
+    if verbose
+        Xproperty_verbose(:edge_liq,xl)
+        Xproperty_verbose(:edge_vap,xv)
+        Xproperty_verbose(:edge_T,Ts)
+    end
 
     if !isfinite(βv)
         verbose && Xproperty_verbose(:error_Tprop)

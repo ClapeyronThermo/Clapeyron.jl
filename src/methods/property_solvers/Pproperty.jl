@@ -171,7 +171,7 @@ function _Pproperty(model::EoSModel,T,_prop,z = SA[1.0],
         res[2] == :failure && return __Pproperty_check(res,verbose)
         return __Pproperty_check(res,verbose)
     end
-    
+
     p0x,new_phase,prop_edge,success = Pproperty_refine_edge(model,T,prop,z,property,edge_cache,sol_options)
     success && return p0x,new_phase
 
@@ -383,7 +383,7 @@ function Pproperty_maybe_liquid(model,T,prop,z,property,cache,sol_options,prop_e
     end
 end
 
-Pproperty_pure(model,T,x,z,property::F,phase,p0,verbose) where F = Tproperty_pure(model,T,x,z,property,Roots.Order0(),phase,1e-15,1e-15,verbose,false,p0)
+Pproperty_pure(model,T,x,z,property::F,phase,p0,verbose) where F = Pproperty_pure(model,T,x,z,property,Roots.Order0(),phase,1e-15,1e-15,verbose,false,p0)
 
 function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,p0) where F
     TT = Base.promote_eltype(model,T,x,z)
@@ -420,6 +420,12 @@ function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,v
     xl = ∑z*spec_to_vt(model,vl,T,x1,property)
     xv = ∑z*spec_to_vt(model,vv,T,x1,property)
     βv = (x - xl)/(xv - xl)
+
+    if verbose
+        Xproperty_verbose(:edge_liq,xl)
+        Xproperty_verbose(:edge_vap,xv)
+        Xproperty_verbose(:edge_p,ps)
+    end
 
     if !isfinite(βv)
         verbose && Xproperty_verbose(:error_Pprop)
