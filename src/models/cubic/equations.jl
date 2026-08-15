@@ -418,7 +418,6 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
         st2 == -1 && st1 == st_expected && (return st1,vx1,vx1) #if root 1 is requested, return root 1
     end
 
-    
     if good_solve_1 && good_solve_2
         vl,vv = minmax(b/η1,b/ηR)
         return 0,vl,vv #use gibbs criterion to choose root
