@@ -258,7 +258,7 @@ function _Tproperty(model::EoSModel,p,_prop,z = SA[1.0],
     end
 
     if T0 !== nothing
-        res = __Tproperty(model,p,prop,z,property,rootsolver,phase_T0,abstol,reltol,threaded,T0)
+        res = __Tproperty(model,p,prop,z,property,rootsolver,phase,abstol,reltol,threaded,T0)
         return __Tproperty_check(res,verbose)
     end
 
@@ -337,11 +337,6 @@ function Tproperty_puresat(model,p,prop,z,property,cache,sol_options,phase)
     βpuresat = (prop - prop_puresat_l)/(prop_puresat_v - prop_puresat_l)
 
     if !(0 <= βpuresat <= 1)  #TODO: check if this is valid
-        verbose && Xproperty_verbose(:satmin_T,Tmin_sat)
-        verbose && Xproperty_verbose(:satmax_T,Tmax_sat)
-        verbose && Xproperty_verbose(:satmin_x,prop_puresat_l)
-        verbose && Xproperty_verbose(:satmax_x,prop_puresat_v)
-
         phase_puresat = βpuresat > 1 ? :vapour : :liquid
 
         #specified phase is not equal to estimated phase, bail out.
@@ -608,7 +603,7 @@ function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,t
     _1 = oneunit(typeof(prop))
     function f(t,tup)
         _prop,_model,_p,_z = tup
-        update_temperature!(model,t)
+        update_temperature!(_model,t)
         _1*property(_model,_p,t,_z,phase = new_phase,threaded = _threaded) - _prop
     end
 

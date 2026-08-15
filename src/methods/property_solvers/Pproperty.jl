@@ -127,7 +127,7 @@ function _Pproperty(model::EoSModel,T,_prop,z = SA[1.0],
     end
 
     if p0 !== nothing
-        res = __Pproperty(model,T,prop,z,property,rootsolver,phase_p0,abstol,reltol,threaded,p0)
+        res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p0)
         return __Pproperty_check(res,verbose)
     end
 
