@@ -413,12 +413,14 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
 
     st2 = cubic_poly_solver_status(ηR,ηc,phase) #check status of root 2. if there are two valid roots, then we asked for it or the gibbs criteria is needed
     vx2 = st2 > 0 ? v2 : ∅
-    good_solve_2 && st1 == -1 && st2 == st_expected && (return st2,vx2,vx2) #if root 2 is requested, return root 2
-    good_solve_1 && st2 == -1 && st1 == st_expected && (return st1,vx1,vx1) #if root 1 is requested, return root 1
+    if good_solve_1 && good_solve_2
+        st1 == -1 && st2 == st_expected && (return st2,vx2,vx2) #if root 2 is requested, return root 2
+        st2 == -1 && st1 == st_expected && (return st1,vx1,vx1) #if root 1 is requested, return root 1
+    end
+
     
-    ηlo,ηhi = minmax(η1,ηR)
-    if good_solve_1 && good_solve_2    
-        vl,vv = minmax(b/ηhi,b/ηlo)
+    if good_solve_1 && good_solve_2
+        vl,vv = minmax(b/η1,b/ηR)
         return 0,vl,vv #use gibbs criterion to choose root
     end
 
@@ -437,7 +439,7 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     poly_s = (ps0,ps1,ps2,ps3)
 
     if good_solve_1
-        st11,vsol1 = cubic_poly_solver_refine(ηhi,ηc,poly_v,poly_s,pr,b,phase)
+        st11,vsol1 = cubic_poly_solver_refine(η1,ηc,poly_v,poly_s,pr,b,phase)
     else
         st11,vsol1 = st1,v1
     end
@@ -446,7 +448,7 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     nr == 2 && st1l > 0 && return (return st11,v11,v11) #2 roots, return the single root unless the less stable root is requested
 
     if good_solve_2
-        st22,vsol2 = cubic_poly_solver_refine(ηlo,ηc,poly_v,poly_s,pr,b,phase)
+        st22,vsol2 = cubic_poly_solver_refine(ηR,ηc,poly_v,poly_s,pr,b,phase)
     else
         st22,vsol2 = st2,v2
     end
