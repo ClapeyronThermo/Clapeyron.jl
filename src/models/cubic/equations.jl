@@ -277,7 +277,7 @@ end
 function x0_crit_pure(model::CubicModel,z)
     Tc = T_scale(model,z)
     lb_v = lb_volume(model,Tc,z)/sum(z)
-    (1.0, log10(lb_v / 0.3))
+    (one(Tc), log10(lb_v / 0.3))
 end
 
 #by default, we assume Tc/Pc are fixed, Vc is variable.
@@ -424,17 +424,17 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     end
 
     #polynomial to refine liquid root in volume.
-    pv3 = p
-    pv2 = -(p*(1 - u)*b + RT)
+    pv3 = p*_1
+    pv2 = -(p*(1 - u)*b + RT)*_1
     pv1 = fma_evalpoly(b,(_1*a,- RT*_1*u,_1*p*(w - u)))
     pv0 = -b*fma_evalpoly(b,(a*_1,RT*w*_1,_1*p*w))
     poly_v = (pv0,pv1,pv2,pv3)
 
     #polynomial to refine liquid root in S = Z - 1
     ps3 = _1
-    ps2 = 2 + (u - 1)*B
-    ps1 = A + fma_evalpoly(B,(one(u),u - 2,w - u)) #1 + (u - 2)*B + (w - u)*B^2 + A
-    ps0 = A*(1 - B) - B*fma_evalpoly(B,(one(u),u,w)) #A*(1 - B) - B*(1 + u*B + w*B^2)
+    ps2 = _1*2 + (u - 1)*B
+    ps1 = A + _1*fma_evalpoly(B,(one(u),u - 2,w - u)) #1 + (u - 2)*B + (w - u)*B^2 + A
+    ps0 = A*(_1 - B) - B*fma_evalpoly(B,(one(u),u,w)) #A*(1 - B) - B*(1 + u*B + w*B^2)
     poly_s = (ps0,ps1,ps2,ps3)
 
     if good_solve_1
