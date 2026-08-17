@@ -427,6 +427,21 @@ macro deferred_Z(f,tag)
     end |> esc
 end
 
+#=1 variable support for Roots.jl=#
+
+function roots_solve_ad(prob::Roots.ZeroProblem{F,X},method,p::P;kwargs...) where {F,X,P}
+    any(has_dual,p) && return Roots.solve(prob,method,p;kwargs...)
+    λprob = Roots.ZeroProblem(prob.F,primalval(prob.x₀))
+    λp = primalval(p)
+    λx = Roots.solve(λprob,method,λp;kwargs...)
+    f(_x,_p) = first(prob.F(_x,_p))
+    if isnan(λx) # guard against NaN in input, do not need Dual types here?
+        fx = f(λx,p)
+        return λx*one(fx)
+    end
+    return ift(λx,f,p,λp)
+end
+
 #initial guesses for most methods
 include("initial_guess.jl")
 
