@@ -843,7 +843,8 @@ function px_flash_x0(model,p,x,z,spec::F,method) where F
         T,_phase = x,:eq #we suppose equilibria
     elseif method.T0 === nothing
         verbose && @info "calculating temperature via Tproperty"
-        T,_phase = _Tproperty(model,p,x,z,spec;verbose)
+        T,_phase = _Tproperty(model,p,x,z,spec;verbose = true)
+        @show T,_phase
     else
         verbose && @info "temperature already provided"
         T,_phase = method.T0,:eq #we suppose equilibria
