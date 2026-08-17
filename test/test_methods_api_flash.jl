@@ -787,7 +787,7 @@ end
     s1 = entropy(model4,p1,T1)
     h1 = enthalpy(model4,p1,T1)
     p2 = p_crit + 2*101325
-    T2 =  Tproperty(model4,p2,s1,Clapeyron.SA[1.0],entropy)
+    T2 =  Tproperty(model4,p2,s1,Clapeyron.SA[1.0],entropy,verbose = true)
     s2 = entropy(model4,p2,T2)
     h2 = enthalpy(model4,p2,T2)
     @test s2 ≈ s1
@@ -795,11 +795,15 @@ end
     #issue 409
     fluid409 = cPR(["Propane","R134a"],idealmodel=ReidIdeal);z409 = [1.0,1.0];
     s409 = -104.95768957075641; p409 = 5.910442025416817e6;
-    @test Tproperty(fluid409,p409,s409,z409,entropy) ≈ 406.0506318701147 rtol = 1e-6
+    @test Tproperty(fluid409,p409,s409,z409,entropy,verbose = true) ≈ 406.0506318701147 rtol = 1e-6
+    
 
+    @test Tproperty(fluid409,4.2e6,-145.0,z409,entropy,verbose = true) > 369.0 rtol = 1e-6
+    
+    
     model5 = cPR(["R134a","propane"],idealmodel=ReidIdeal)
-    @test Clapeyron._Pproperty(model5,450.0,0.03,[0.5,0.5],volume)[2] == :vapour
-    @test Clapeyron._Pproperty(model5,450.0,0.03,[0.5,0.5],volume)[2] == :vapour
+    @test Clapeyron._Pproperty(model5,450.0,0.03,[0.5,0.5],volume,verbose = true)[2] == :vapour
+    @test Clapeyron._Pproperty(model5,450.0,0.03,[0.5,0.5],volume,verbose = true)[2] == :vapour
     #@test Clapeyron._Pproperty(model5,450.0,0.00023,[0.5,0.5],volume)[2]  == :eq
     #@test Clapeyron._Pproperty(model5,450.0,0.000222,[0.5,0.5],volume)[2]  == :eq
     #@test Clapeyron._Pproperty(model5,450.0,0.000222,[0.5,0.5],volume)[2]  == :eq
