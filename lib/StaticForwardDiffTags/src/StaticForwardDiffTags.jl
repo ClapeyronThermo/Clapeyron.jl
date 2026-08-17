@@ -103,10 +103,12 @@ struct WithContext{T,V,F}
     obj::F
 end
 
+#WithContext(f::F) where {F} = WithContext{∂Tag{inner_function(f)},deferred_valtype(f),F}(f)
+
 @inline (context::WithContext{T,V,F})(x) where {T,V,F} = context.obj(x)
 @inline (context::WithContext{T,V,F})(x,y) where {T,V,F} = context.obj(x,y)
 
-WithContext(f::F) where {F} = WithContext{∂Tag{inner_function(f)},deferred_valtype(f),F}(f)
+
 WithContext(f::F,ftag::TT) where {F,TT} = WithContext{TT,deferred_valtype(f),F}(f)
 
 @inline function STag(f::WithContext{T,V1,F},::Type{V2}) where {T,V1,F,V2}

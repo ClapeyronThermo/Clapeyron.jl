@@ -854,6 +854,8 @@ function px_flash_x0(model,p,x,z,spec::F,method) where F
         _phase = :eq
     end
 
+    update_temperature!(model,T)
+
     if _phase != :eq
         verbose && @info "using pure phase initial point"
         return FlashResult(model,p,T,z,phase = _phase)

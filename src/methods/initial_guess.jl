@@ -454,13 +454,24 @@ function liquid_pressure_from_virial(model,T,z =SA[1.0],B = second_virial_coeffi
     because at near critical pressures, the virial predicted pressure is below the liquid spinodal pressure
     in one sense, γc is a correction factor.
     =#
+    RT = Rgas(model)*T
     n = sum(z)
     vv_virial = -2*B #maximum gas volume predicted by virial equation
     pv_virial = -0.25*n*Rgas(model)*T/B #maximum virial predicted pressure
     γT = pv_eos/pv_virial
+    
+
 
     #this handles pv_eos = NaN and pv_eos < pv_virial, returning an equivalent result to using pv_eos = pv_virial
     !(pv_eos > pv_virial) && (return 1.12491990759086*pv_virial*oneunit(pv_eos))
+    
+    #measure of how far we are from the critical point. equivalent to B*B/2C, where C is the third virial coefficient, solved from the pressure.
+    #if K < 1, that means the third virial coefficient influence is stronger than the second virial coefficient.
+    K = -4*(1 + 4*B*pv_eos/RT)
+    if K > 1
+        return RT*2/(-K*B)*exp(-1 - 1/K)
+    end
+
     #fitted function, using all coolprop fluids, at Tr = 1
     aγ,bγ,cγ = 1.2442071971165476e-5, -8.695786307570637, 1.0505452946870144
     γc = aγ*exp(-γT*bγ) + cγ
