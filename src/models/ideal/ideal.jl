@@ -52,3 +52,5 @@ end
 
 paramtype(::Type{GlennJL{S,T}}) where {S,T} = Float64
 Rgas(model::GlennJL) = model.Rgas
+
+export GlennJL
