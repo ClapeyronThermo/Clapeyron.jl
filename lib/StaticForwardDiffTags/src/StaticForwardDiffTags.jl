@@ -101,8 +101,9 @@ ForwardDiff.checktag(::Type{STag{FT,VT}}, f::F, x::AbstractArray{V}) where {FT<:
 
 struct WithContext{T,V,F}
     obj::F
-    WithContext(f::F) where {F} = new{∂Tag{inner_function(f)},deferred_valtype(f),F}(f)
 end
+
+#WithContext(f::F) where {F} = WithContext{∂Tag{inner_function(f)},deferred_valtype(f),F}(f)
 
 @inline (context::WithContext{T,V,F})(x) where {T,V,F} = context.obj(x)
 @inline (context::WithContext{T,V,F})(x,y) where {T,V,F} = context.obj(x,y)

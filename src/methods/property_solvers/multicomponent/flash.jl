@@ -88,7 +88,7 @@ function FlashData(p::R1,T::R2,g::R3,i) where{R1,R2,R3}
         return FlashData(promote(p,T,g)...,i)
     end
 end
-
+FlashData(;p, T, g = NaN, vapour_idx = -1) = FlashData(p, T, g, vapour_idx)
 FlashData(p,T) = FlashData(p,T,1.0*zero(p),0)
 
 #mol checker, with gibbs
