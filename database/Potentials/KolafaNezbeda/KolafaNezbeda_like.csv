@@ -1,0 +1,9 @@
+Clapeyron Database File,,,,,
+Kolafa-Nezbeda Like Parameters,,,,,
+species,CAS,Mw,sigma,epsilon,source
+methane,74-82-8,16.043,3.7281,148.55,10.1021/jp012542o
+argon,7440-37-1,39.948,3.3952,116.79,10.1021/jp012542o
+krypton,7439-90-9,83.798,3.6274,162.58,10.1021/jp012542o
+xenon,7440-63-3,131.293,3.9011,227.55,10.1021/jp012542o
+neon,7440-01-9,20.180,2.8010,33.921,10.1021/jp012542o
+hydrogen,1333-74-0,2.016,3.0366,25.84,10.1021/acs.jced.7b00706
