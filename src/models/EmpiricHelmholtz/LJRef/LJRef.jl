@@ -131,6 +131,8 @@ function σϵ_m_vdw1f(ϵ,σ,m,V,T,z)
     return σ_mix/(∑z*∑z), σϵ_mix/σ_mix, m̄
 end
 
+σϵ_m_vdw1f(ϵ,σ,V,T,z) = σϵ_m_vdw1f(ϵ,σ,FillArrays.Fill(one(eltype(σ)),length(z)),V,T,z)
+
 function VT_scale(model,z = SA[1.0])
     σ3, ϵ, m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
     return m̄*N_A*σ3, ϵ, m̄

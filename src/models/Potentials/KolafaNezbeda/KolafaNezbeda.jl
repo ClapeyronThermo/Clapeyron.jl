@@ -1,11 +1,15 @@
-struct KolafaNezbedaParam{T} <: EoSParam
+struct KolafaNezbedaParam{T} <: ParametricEoSParam{T}
     Mw::SingleParam{T}
     sigma::PairParam{T}
     epsilon::PairParam{T}
 end
 
+function KolafaNezbedaParam(Mw,sigma,epsilon)
+    return build_parametric_param(KolafaNezbedaParam,Mw,sigma,epsilon)
+end
+
 abstract type KolafaNezbedaModel <: EoSModel end
-@newmodel KolafaNezbeda KolafaNezbedaModel KolafaNezbedaParam false
+@newmodel KolafaNezbeda KolafaNezbedaModel KolafaNezbedaParam{T} false
 default_locations(::Type{KolafaNezbeda}) = ["Potentials/KolafaNezbeda"]
 default_references(::Type{KolafaNezbeda}) = ["10.1016/0378-3812(94)02573-G"]
 
@@ -67,7 +71,7 @@ end
 
 function data(model::KolafaNezbedaModel,V,T,z)
     ϵ, σ = model.params.epsilon.values, model.params.sigma.values
-    σ3,ϵ̄,_ = σϵ_m_vdw1f(ϵ,σ,ones(length(model)),V,T,z)
+    σ3,ϵ̄,_ = σϵ_m_vdw1f(ϵ,σ,V,T,z)
     T̃ = T/ϵ̄
     ρ̃ = N_A*sum(z)*σ3/V
     d̃ = d_kn(T̃)
@@ -113,7 +117,7 @@ end
 
 function lb_volume(model::KolafaNezbedaModel,T,z)
     ϵ, σ = model.params.epsilon.values, model.params.sigma.values
-    σ3,ϵ̄,_ = σϵ_m_vdw1f(ϵ,σ,ones(length(model)),1.0,1.0,z)
+    σ3,ϵ̄,_ = σϵ_m_vdw1f(ϵ,σ,1.0,1.0,z)
     d̃ = d_kn(T/ϵ̄)
     return sum(z)*N_A*σ3*d̃^3*π/6
 end
@@ -122,19 +126,19 @@ lb_volume(model::KolafaNezbedaModel,z) = lb_volume(model,T_scale(model,z),z)
 
 function T_scale(model::KolafaNezbedaModel,z)
     ϵ, σ = model.params.epsilon.values, model.params.sigma.values
-    σ3,ϵ̄,_ = σϵ_m_vdw1f(ϵ,σ,ones(length(model)),1.0,1.0,z)
+    σ3,ϵ̄,_ = σϵ_m_vdw1f(ϵ,σ,1.0,1.0,z)
     return ϵ̄
 end
 
 function p_scale(model::KolafaNezbedaModel,z)
     ϵ, σ = model.params.epsilon.values, model.params.sigma.values
-    σ3,ϵ̄,_ = σϵ_m_vdw1f(ϵ,σ,ones(length(model)),1.0,1.0,z)
+    σ3,ϵ̄,_ = σϵ_m_vdw1f(ϵ,σ,1.0,1.0,z)
     return R̄*ϵ̄/(N_A*σ3)
 end
 
 function x0_crit_pure(model::KolafaNezbedaModel,z)
     ϵ, σ = model.params.epsilon.values, model.params.sigma.values
-    σ3,ϵ̄,_ = σϵ_m_vdw1f(ϵ,σ,ones(length(model)),1.0,1.0,z)
+    σ3,ϵ̄,_ = σϵ_m_vdw1f(ϵ,σ,1.0,1.0,z)
     return (1.32, log10(N_A*σ3/0.31))
 end
 
