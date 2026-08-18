@@ -735,3 +735,26 @@ end
     @test saturation_pressure(system,T_nearc)[1] ≈ psat_nearc rtol = 1e-6
     @test saturation_pressure(system,T_nearc,IsoFugacitySaturation(;crit))[1] ≈ psat_nearc rtol = 1e-6
 end
+
+@testset "KolafaNezbeda" begin
+    system = KolafaNezbeda(["argon"])   # σ = 3.3952 Å, ϵ = 116.79 K
+    σ, ε = system.params.sigma[1], system.params.epsilon[1]
+
+    # Tc* = 1.3396478, ρc* = 0.3108039, pc* = 0.1405304 (10.1016/j.fluid.2020.112772)
+    Tc,pc,vc = crit_pure(system)
+    @test Tc/ε ≈ 1.339647826460148 rtol = 1e-8
+    @test pc*σ^3/(ε*Clapeyron.k_B) ≈ 0.1405303764858344 rtol = 1e-8
+    @test σ^3*Clapeyron.N_A/vc ≈ 0.31080390096265526 rtol = 1e-8
+
+    # T* = 0.8: p* = 0.0046281073, ρl* = 0.80012251, ρv* = 0.0060751965
+    psat,vl,vv = saturation_pressure(system,0.8*ε)
+    @test psat ≈ 1.9067610763345455e5 rtol = 1e-6
+    @test vl ≈ 2.9457134788241128e-5 rtol = 1e-6
+    @test vv ≈ 3.8795974207135437e-3 rtol = 1e-6
+
+    # mixtures
+    mix = KolafaNezbeda(["argon","methane"])
+    @test Clapeyron.a_res(mix,5e-5,150.0,[0.4,0.6]) ≈ -1.8669348933846823 rtol = 1e-10
+    set_k!(mix, [0.0 0.05; 0.05 0.0])
+    @test Clapeyron.a_res(mix,5e-5,150.0,[0.4,0.6]) ≈ -1.7870541770130663 rtol = 1e-10
+end
