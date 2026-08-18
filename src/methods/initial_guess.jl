@@ -365,18 +365,16 @@ function vdw_coefficients(vl,pl,vv,pv,T)
     b^2 -(vl + vv)*b + vl*vv - vvΔβ*vl + vvΔβ*b + vlΔβ*vv - vlΔβ*b = 0
     b^2 + (-vl + -vv + vvΔβ - vlΔβ)*b + (vl*vv - vvβ*vl + vlΔβ*vv) = 0
     =#
-    _c = vl*vv - vvΔβ*vl + vlΔβ*vv
-    _b = -vl + -vv + vvΔβ - vlΔβ
+    k0 = vl*vv - vvΔβ*vl + vlΔβ*vv
+    k1 = -vl + -vv + vvΔβ - vlΔβ
+    k2 = one(k0)
 
     #quadratic solver
-    Δ = Solvers.det_22(_b,_b,4,_c)
-    if isnan(vl) | (Δ < 0)
-        nan = zero(Δ)/zero(Δ)
+    real_sols,b1,b2 = Solvers.real_roots2((k0,k1,k2))
+    if !real_sols
+        nan = zero(k0)/zero(k0)
         return nan,nan
     end
-    Δsqrt = sqrt(Δ)
-    b1 = 0.5*(-_b + Δsqrt)
-    b2 = 0.5*(-_b - Δsqrt)
     if b1 < 0
         b = b2
     elseif b1 > vl
@@ -456,13 +454,24 @@ function liquid_pressure_from_virial(model,T,z =SA[1.0],B = second_virial_coeffi
     because at near critical pressures, the virial predicted pressure is below the liquid spinodal pressure
     in one sense, γc is a correction factor.
     =#
+    RT = Rgas(model)*T
     n = sum(z)
     vv_virial = -2*B #maximum gas volume predicted by virial equation
     pv_virial = -0.25*n*Rgas(model)*T/B #maximum virial predicted pressure
     γT = pv_eos/pv_virial
+    
+
 
     #this handles pv_eos = NaN and pv_eos < pv_virial, returning an equivalent result to using pv_eos = pv_virial
     !(pv_eos > pv_virial) && (return 1.12491990759086*pv_virial*oneunit(pv_eos))
+    
+    #measure of how far we are from the critical point. equivalent to B*B/2C, where C is the third virial coefficient, solved from the pressure.
+    #if K < 1, that means the third virial coefficient influence is stronger than the second virial coefficient.
+    K = -4*(1 + 4*B*pv_eos/RT)
+    if K > 1
+        return RT*2/(-K*B)*exp(-1 - 1/K)
+    end
+
     #fitted function, using all coolprop fluids, at Tr = 1
     aγ,bγ,cγ = 1.2442071971165476e-5, -8.695786307570637, 1.0505452946870144
     γc = aγ*exp(-γT*bγ) + cγ
@@ -504,13 +513,12 @@ function _find_vm(dpoly,v_lb::K,v_ub::K) where K
     else
         nr,v1,v2,v3 = Solvers.real_roots3(d2poly)
     end
-
-    if evalpoly(v1,dpoly) > 0 && (lb <= v1 <= ub) && evalpoly(v1,d3poly) < 0
+    if (lb <= v1 <= ub) && evalpoly(v1,dpoly) > 0 && evalpoly(v1,d3poly) < 0
         return v1 + v_lb
-    elseif evalpoly(v2,dpoly) > 0 && (lb <= v2 <= ub) && nr > 1 && evalpoly(v2,d3poly) < 0
-        return v2 + v_lb
-    elseif evalpoly(v2,dpoly) > 0 && (lb <= v3 <= ub) && nr > 2 && evalpoly(v3,d3poly) < 0
+    elseif nr > 1 && (lb <= v3 <= ub) && evalpoly(v3,dpoly) > 0 && evalpoly(v3,d3poly) < 0 #v3 != v1 if nr > 1
         return v3 + v_lb
+    elseif  nr > 2 && (lb <= v2 <= ub) && evalpoly(v2,dpoly) > 0 && evalpoly(v2,d3poly) < 0 #v2 != (v1,v3) if nr > 2
+        return v2 + v_lb
     else
         return zero(K)/zero(K)
     end

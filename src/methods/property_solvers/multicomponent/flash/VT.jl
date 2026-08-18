@@ -29,7 +29,7 @@ function vt_flash(model,V,T,z,method::FlashMethod)
     if z isa SingleComp || length(model) == 1
         z1 = SVector(z[1])
         P0 = hasfield(typeof(method),:p0) ? method.p0 : nothing
-        result1r = tx_flash_pure(model,T,V,z1,volume,P0)
+        result1r = tx_flash_pure(model,T,V,z1,volume,P0,get_verbosity(method))
         return result1r
     end
     
@@ -41,10 +41,11 @@ function vt_flash(model,V,T,z,method::FlashMethod)
         model_r,idx_r = model,trues(length(model))
         method_r,z_r = method,z
     end
+
     if length(model_r) == 1
         z1r = SVector(z_r[1])
         P0 = hasfield(typeof(method),:p0) ? method.p0 : nothing
-        result1 = tx_flash_pure(model_r,T,V,z1r,volume,P0)
+        result1 = tx_flash_pure(model_r,T,V,z1r,volume,P0,get_verbosity(method))
         return index_expansion(result1,idx_r)
     end
     

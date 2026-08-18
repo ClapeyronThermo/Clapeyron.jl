@@ -32,7 +32,7 @@ function ph_flash(model,p,h,z,method::FlashMethod)
     if z isa SingleComp || length(model) == 1
         z1 = SVector(z[1])
         T0 = hasfield(typeof(method),:T0) ? method.T0 : nothing
-        result1 = px_flash_pure(model,p,h,z1,enthalpy,T0)
+        result1 = px_flash_pure(model,p,h,z1,enthalpy,T0,get_verbosity(method))
         return result1
     end
 
@@ -48,7 +48,7 @@ function ph_flash(model,p,h,z,method::FlashMethod)
     if length(model_r) == 1
         z1r = SVector(z_r[1])
         T0 = hasfield(typeof(method),:T0) ? method.T0 : nothing
-        result1r = px_flash_pure(model_r,p,h,z1r,enthalpy,T0)
+        result1r = px_flash_pure(model_r,p,h,z1r,enthalpy,T0,get_verbosity(method))
         return index_expansion(result1r,idx_r)
     end
 

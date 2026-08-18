@@ -302,17 +302,15 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
     =#
     n = sum(z)
     B > _0 && return _0/_0
-    a = p/(n*R*T)
-    b = -1
-    c = -B
-    Δ = b*b-4*a*c
-    if Δ <= 0
+    pr = p/(n*R*T)*one(B)
+    is_real,r1,r2 = Solvers.real_roots2((-B,-one(pr),pr))
+    if !is_real
         #virial approximation could not be calculated
         #return value at spinodal
         return -2*B
     end
     #only the left root has physical meaning
-    return (-b + sqrt(Δ))/(2*a)
+    return max(r1,r2)
 end
 
 function pressure_virial(model,V,T,z)

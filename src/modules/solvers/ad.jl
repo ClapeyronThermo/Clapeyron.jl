@@ -315,12 +315,13 @@ end
 #this struct is used to wrap a vector of ForwardDiff.Dual's and just return the primal values, without allocations
 struct PrimalValVector{T,V} <: AbstractVector{T}
     vec::V
+
+    function PrimalValVector(v::V) where V
+        T = primal_eltype(v)
+        new{T,V}(v)
+    end
 end
 
-function PrimalValVector(v::V) where V
-    T = primal_eltype(v)
-    PrimalValVector{T,V}(v)
-end
 
 Base.size(x::PrimalValVector) = Base.size(x.vec)
 Base.length(x::PrimalValVector) = Base.length(x.vec)

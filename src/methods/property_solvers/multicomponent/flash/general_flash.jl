@@ -854,6 +854,8 @@ function px_flash_x0(model,p,x,z,spec::F,method) where F
         _phase = :eq
     end
 
+    update_temperature!(model,T)
+
     if _phase != :eq
         verbose && @info "using pure phase initial point"
         return FlashResult(model,p,T,z,phase = _phase)
@@ -863,52 +865,23 @@ function px_flash_x0(model,p,x,z,spec::F,method) where F
 end
 
 function px_flash_pure(model,p,x,z,spec::F,T0 = nothing,verbose = false) where F
-
+    T,new_phase,data = Tproperty_pure(model,p,x,z,spec,:unknown,T0,verbose)
+    βv,vl,vv = data
     ∑z = sum(z)
     x1 = SVector(1.0*one(∑z))
     TT = Base.promote_eltype(model,p,x,z)
 
-    sat,crit,status = _extended_saturation_temperature(model,p)
-
-    if status == :failure
-        verbose && @error "TProperty calculation failed"
-        return FlashResultInvalid(x1,one(TT))
+    if is_liquid(new_phase) || is_vapour(new_phase)
+        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)],phase = new_phase)
     end
 
-    if status == :supercritical
-        verbose && @info "pressure is above critical pressure"
-        Tc,Pc,Vc = crit
-        if T0 !== nothing
-            Tcrit0 = TT(T0)
-        else
-            Tcrit0 = TT(1.001Tc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
-        end
-        Tsc,_phase = __Tproperty(model,p,x/∑z,x1,spec,:unknown,Tcrit0,verbose)
-        return FlashResult(model,p,Tsc,SA[∑z*one(p)*one(Tsc)],phase = _phase)
+    if new_phase == :eq
+        return FlashResult(model,p,T,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false,vapour_phase_index = 2)
     end
 
-    Ts,vl,vv = sat
-
-    xl = ∑z*spec_to_vt(model,vl,Ts,x1,spec)
-    xv = ∑z*spec_to_vt(model,vv,Ts,x1,spec)
-    βv = (x - xl)/(xv - xl)
-
-    if !isfinite(βv)
-        verbose && @error "TProperty calculation failed"
-        return FlashResultInvalid(x1,βv)
-    elseif βv < 0 || βv > 1
-        phase0 = βv < 0 ? :liquid : :vapour
-        is_liquid(phase0) && verbose && @info "temperature($property) < saturation temperature"
-        is_vapour(phase0) && verbose && @info "temperature($property) > saturation temperature"
-        _T0 = T0 === nothing ? TT(Ts) : TT(primalval(T0))
-        Tx,_phase = __Tproperty(model,p,x/∑z,x1,spec,phase0,_T0,verbose)
-        return FlashResult(model,p,Tx,SA[∑z*one(p)*one(Tx)],phase = _phase)
-    else
-        verbose && @info "$property between the liquid and vapour edges, in the phase change region"
-        return FlashResult(model,p,Ts,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false,vapour_phase_index = 2)
-    end
+    return FlashResultInvalid(x1,one(TT))
 end
-
+ 
 function tx_flash_x0(model,T,x,z,spec::F,method) where F
     verbose = get_verbosity(method)
     if spec == pressure
@@ -934,49 +907,21 @@ function tx_flash_x0(model,T,x,z,spec::F,method) where F
 end
 
 function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing,verbose = false) where F
-
+    p,new_phase,data = Pproperty_pure(model,T,x,z,spec,:unknown,P0,verbose)
+    βv,vl,vv = data
     ∑z = sum(z)
     x1 = SA[1.0*one(∑z)]
     TT = Base.promote_eltype(model,T,x,z)
 
-    sat,crit,status = _extended_saturation_pressure(model,T)
-
-    if status == :failure
-        verbose && @error "PProperty calculation failed"
-        return FlashResultInvalid(x1,one(TT))
+    if is_liquid(new_phase) || is_vapour(new_phase)
+        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)],phase = new_phase)
     end
 
-    if status == :supercritical
-        verbose && @info "temperature is above critical temperature"
-        Tc,Pc,Vc = crit #TODO: maybe use critical extrapolation instead?
-        if P0 !== nothing
-            Pcrit0 = TT(P0)
-        else
-            Pcrit0 = TT(1.001Pc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
-        end
-        psc,_phase = __Pproperty(model,T,x/∑z,x1,spec,:unknown,Pcrit0,verbose)
-        return FlashResult(model,psc,T,SA[∑z*one(psc)*one(T)],phase = _phase)
+    if new_phase == :eq
+        return FlashResult(model,p,T,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false,vapour_phase_index = 2)
     end
 
-    ps,vl,vv = TT.(sat)
-
-    xl = ∑z*spec_to_vt(model,vl,T,x1,spec)
-    xv = ∑z*spec_to_vt(model,vv,T,x1,spec)
-    βv = (x - xl)/(xv - xl)
-
-    if !isfinite(βv)
-        verbose && @error "PProperty calculation failed"
-        return FlashResultInvalid(x1,βv)
-    elseif βv < 0 || βv > 1
-        phase0 = βv < 0 ? :liquid : :vapour
-        is_liquid(phase0) && verbose && @info "pressure($property) > saturation pressure"
-        is_vapour(phase0) && verbose && @info "pressure($property) < saturation pressure"
-        _p0 = P0 === nothing ? TT(ps) : TT(primalval(P0))
-        px,_phase = __Pproperty(model,T,x/∑z,x1,spec,phase0,_p0,verbose)
-        return FlashResult(model,px,T,SA[∑z*one(px)*one(T)],phase = _phase)
-    else
-        return FlashResult(model,ps,T,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false,vapour_phase_index = 2)
-    end
+    return FlashResultInvalid(x1,one(TT))
 end
 
 function qflash_pure(model,spec::F,x,βv,z) where F
