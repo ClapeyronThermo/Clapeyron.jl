@@ -75,7 +75,7 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         data = (μ_ref,idx_sol_l,idx_solv,μsol[1])
         # println(x0)
         f!(F,x) = obj_sle_solubility(F,model,p,T,z[idx_solv],exp10(x[1]),data,ν_l)
-        results = Solvers.nlsolve(f!,x0,LineSearch(Newton()),NEqOptions(),ForwardDiff.Chunk{1}())
+        results = Solvers.nlsolve(f!,x0,LineSearch(Newton(),Backtracking()),NEqOptions(),ForwardDiff.Chunk{1}())
         sol[i,.!(idx_solv)] .= exp10(Solvers.x_sol(results)[1])
         sol[i,idx_solv] = z[idx_solv]
         sol[i,:] ./= sum(sol[i,:])
@@ -188,7 +188,7 @@ function sle_solubility_T(model::CompositeModel,z,p=1e5;solute=nothing,x0=nothin
         data = (idx_sol_l,idx_solv,solid_r,lnKref)
         # println(x0)
         f!(F,x) = obj_sle_solubility_T(F,model,p,x[1],z,data,ν_l)
-        results = Solvers.nlsolve(f!,x0,LineSearch(Newton()),NEqOptions(),ForwardDiff.Chunk{1}())
+        results = Solvers.nlsolve(f!,x0,LineSearch(Newton(),Backtracking()),NEqOptions(),ForwardDiff.Chunk{1}())
         Tsol[i] = Solvers.x_sol(results)[1]
     end
     return maximum(Tsol)

@@ -442,7 +442,7 @@ function LLE(model::ActivityModel,T;v0=nothing)
 
     len = length(vv0)
     f!(F,z) = Obj_LLE(model, F, T, @view(z[1:nc-1]), @view(z[nc:end]))
-    r  = Solvers.nlsolve(f!,vv0,LineSearch(Newton()))
+    r  = Solvers.nlsolve(f!,vv0,LineSearch(Newton(),Backtracking()))
     sol = Solvers.x_sol(r)
     x = FractionVector(sol[1:nc-1]) |> collect
     xx = FractionVector(sol[nc:end]) |> collect

@@ -394,9 +394,9 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
         lb .= 0
         opt_options = OptimizationOptions(f_abstol = 0.0,f_reltol = 0.0,g_reltol = K_tol,maxiter = 100)
         if second_order
-            sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.Newton2(ny_var0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
+            sol = Solvers.optimize(flash_obj, ny_var0, LineSearch(Newton2(ny_var0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         else
-            sol = Solvers.optimize(flash_obj, ny_var0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub,0.75,Static(1.0))),opt_options)
+            sol = Solvers.optimize(flash_obj, ny_var0, LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub,0.75,Static(1.0))),opt_options)
         end
         #= TODO: do something with the values of the optimization procedure
         if abs(sol.info.fx) <= 4*eps(eltype(K))
