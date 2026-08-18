@@ -410,7 +410,6 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     vx1 = st1 > 0 ? v1 : ∅
     good_solve_1 && nr == 1 && (return max(0,st1),v1,v1) #no other root,both liquid an vapour roots converge to the same phase
     good_solve_1 && nr == 2 && (return st1,vx1,vx1) #2 roots, return the single root unless the less stable root is requested
-
     st2 = cubic_poly_solver_status(ηR,ηc,phase) #check status of root 2. if there are two valid roots, then we asked for it or the gibbs criteria is needed
     vx2 = st2 > 0 ? v2 : ∅
     if good_solve_1 && good_solve_2
@@ -437,8 +436,9 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     ps0 = A*(_1 - B) - B*fma_evalpoly(B,(one(u),u,w)) #A*(1 - B) - B*(1 + u*B + w*B^2)
     poly_s = (ps0,ps1,ps2,ps3)
 
-    if good_solve_1
-        st11,vsol1 = cubic_poly_solver_refine(η1,ηc,poly_v,poly_s,pr,b,phase)
+    if !good_solve_1
+        _phase = nr == 1 ? :unknown : phase
+        st11,vsol1 = cubic_poly_solver_refine(η1,ηc,poly_v,poly_s,pr,b,_phase)
     else
         st11,vsol1 = st1,v1
     end
@@ -446,7 +446,7 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     nr == 1 && (return max(0,st11),vsol1,vsol1) #no other root,both liquid an vapour roots converge to the same phase
     nr == 2 && st1l > 0 && return (return st11,v11,v11) #2 roots, return the single root unless the less stable root is requested
 
-    if good_solve_2
+    if !good_solve_2
         st22,vsol2 = cubic_poly_solver_refine(ηR,ηc,poly_v,poly_s,pr,b,phase)
     else
         st22,vsol2 = st2,v2
