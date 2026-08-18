@@ -40,17 +40,4 @@ function _update_idealuserlocations_for_GC(idealmodel::Type{<:IdealModel},ideal_
    return ideal_userlocations
 end
 
-#to be extended on ClapeyronGlennExt
-struct GlennJL{S,T} <: IdealModel
-   components::Vector{String}
-   species_info::Vector{S}
-   intervals::Vector{T}
-   reference_state::ReferenceState
-   Rgas::Float64
-   references::Vector{String}
-end
 
-paramtype(::Type{GlennJL{S,T}}) where {S,T} = Float64
-Rgas(model::GlennJL) = model.Rgas
-
-export GlennJL
