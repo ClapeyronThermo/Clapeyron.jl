@@ -1,4 +1,4 @@
-struct BoundedLineSearch{T,LS} <: NLLineSearcher
+struct BoundedLineSearch{T,LS} <: NLSolvers.LineSearcher
     lo::T
     hi::T
     ls::LS #actual line search
