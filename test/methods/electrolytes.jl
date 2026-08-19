@@ -1,6 +1,6 @@
 using Clapeyron, Test
 
-@testset "Electrolyte methods" begin
+@testset verbose = true "Electrolyte methods" begin
     @printline
     system = SAFTVREMie(["water"],["sodium","chloride"])
     salts = [("sodium chloride",["sodium"=>1,"chloride"=>1])]

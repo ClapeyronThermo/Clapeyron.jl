@@ -1,6 +1,6 @@
 using Clapeyron, Test, LinearAlgebra
 
-@testset "Database Parsing" begin
+@testset verbose = true "Database Parsing and Parameters" begin
 
     @testset "normalisestring" begin
         #before, it was coo, making a collision on Electrolyte SAFTgammaMie

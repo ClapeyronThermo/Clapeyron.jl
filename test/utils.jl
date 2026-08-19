@@ -65,8 +65,18 @@ macro printline()  # useful in hunting for where tests get stuck
     printstyled(">>", file, ":", __source__.line, "\n", color=:light_black)
 end
 
-function model500()
+if DISTRIBUTED_WORKER_5 == 5
+    @eval begin
+        using MultiComponentFlash: MultiComponentFlash
+        using Symbolics
+        using EoSSuperancillaries
+        using PythonCall
+        using Glenn
+        using 
+    end
+end
 
+function model500()
 #created via eos_repr
 return SAFTgammaMie{BasicIdeal, Float64}(
         ["DIMETHYLAMINE"], 

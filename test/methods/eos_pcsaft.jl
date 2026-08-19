@@ -1,4 +1,4 @@
-@testset "SAFT methods, single components" begin
+@testset verbose = true "PCSAFT all methods" begin
     @printline
     system = PCSAFT(["ethanol"])
     p = 1e5
@@ -6,7 +6,7 @@
     T2 = 373.15
     v = 5.907908736304141e-5
     Mw = Clapeyron.molecular_weight(system)
-    @testset "Bulk properties" begin
+    @testset "Single component - bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ v rtol = 1e-6
         @test Clapeyron.PT0.volume(system, p, T)  ≈ v rtol = 1e-6
         @test Clapeyron.volume(system, p, T;phase=:v) ≈ 0.020427920501436134 rtol = 1e-6
@@ -66,7 +66,8 @@
         @test Clapeyron.inversion_temperature(system, 1.1e8) ≈ 824.4137805298458 rtol = 1E-6
         @test Clapeyron.fugacity_coefficient(system, p, T, phase = :l)[1] ≈ 0.07865326632570452 rtol = 1E-6
     end
-    @testset "VLE properties" begin
+    @printline
+    @testset "Single component - equilibrium properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7972.550405922014 rtol = 1E-6
         @test Clapeyron.saturation_temperature(system, p)[1] ≈ 351.32529505096164 rtol = 1E-6
         @test Clapeyron.saturation_temperature(system, p, 350.)[1] ≈ 351.32529505096164 rtol = 1E-6
@@ -75,10 +76,6 @@
         @test Clapeyron.crit_pure(system)[1] ≈ 533.1324329774004 rtol = 1E-6
     end
     @printline
-end
-
-@testset "SAFT methods, multi-components" begin
-    @printline
     system = PCSAFT(["methanol","cyclohexane"])
     p = 1e5
     T = 313.15
@@ -86,7 +83,7 @@ end
     p2 = 2e6
     T2 = 443.15
     z2 = [0.27,0.73]
-    @testset "Bulk properties" begin
+    @testset "Multiple components - bulk properties" begin
         @test Clapeyron.reference_chemical_potential_type(system) == :pure
         @test Clapeyron.volume(system, p, T, z) ≈ 7.779694485714412e-5 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 1087.0303138908864 rtol = 1E-6
@@ -100,7 +97,8 @@ end
         @test Clapeyron.excess(system, p, T, z, Clapeyron.entropy) ≈ -2.832281578281112 rtol = 1E-6
         @test Clapeyron.excess(system, p, T, z, Clapeyron.gibbs_free_energy) ≈ 1626.6212908893858 rtol = 1E-6
     end
-    @testset "Equilibrium properties" begin
+    @printline
+    @testset "Multiple components - equilibrium properties" begin
         #Those are the highest memory-intensive routines. i suspect that this is causing the
         #failures on windows 1.6. testing if adding GC pauses helps the problem
         GC.gc()
@@ -140,33 +138,35 @@ end
         @test Clapeyron.crit_mix(system,z)[1] ≈ 518.0004062881115 rtol = 1E-6
     end
     @printline
+
+    @testset "Multiple components - spinodals" begin
+        # Example from Ref. https://doi.org/10.1016/j.fluid.2017.04.009
+        model = PCSAFT(["methane","ethane"])
+        T_spin = 223.
+        x_spin = [0.2,0.8]
+        (pl_spin, vl_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:liquid)
+        (pv_spin, vv_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:vapor)
+        @test vl_spin ≈ 7.218532167482202e-5 rtol = 1e-6
+        @test vv_spin ≈ 0.0004261109817247137 rtol = 1e-6
+
+        (Tl_spin_impl, xl_spin_impl) = spinodal_temperature(model,pl_spin,x_spin;T0=220.,v0=vl_spin)
+        (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model,pv_spin,x_spin;T0=225.,v0=vv_spin)
+        @test Tl_spin_impl ≈ T_spin rtol = 1e-6
+        @test Tv_spin_impl ≈ T_spin rtol = 1e-6
+
+        #test for #382: pure spinodal at low pressures
+        model2 = PCSAFT("carbon dioxide")
+        Tc,Pc,Vc = (310.27679925044134, 8.06391600653306e6, 9.976420206333288e-5)
+        T = LinRange(Tc-70,Tc-0.1,50)
+        psl = first.(spinodal_pressure.(model2,T,phase = :l))
+        psv = first.(spinodal_pressure.(model2,T,phase = :v))
+        psat = first.(saturation_pressure.(model2,T))
+        @test all(psl .< psat)
+        @test all(psat .< psv)
+        @test issorted(psl)
+        @test issorted(psv)
+    end
 end
+GC.gc()
 
-@testset "spinodals" begin
-    # Example from Ref. https://doi.org/10.1016/j.fluid.2017.04.009
-    model = PCSAFT(["methane","ethane"])
-    T_spin = 223.
-    x_spin = [0.2,0.8]
-    (pl_spin, vl_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:liquid)
-    (pv_spin, vv_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:vapor)
-    @test vl_spin ≈ 7.218532167482202e-5 rtol = 1e-6
-    @test vv_spin ≈ 0.0004261109817247137 rtol = 1e-6
-
-    (Tl_spin_impl, xl_spin_impl) = spinodal_temperature(model,pl_spin,x_spin;T0=220.,v0=vl_spin)
-    (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model,pv_spin,x_spin;T0=225.,v0=vv_spin)
-    @test Tl_spin_impl ≈ T_spin rtol = 1e-6
-    @test Tv_spin_impl ≈ T_spin rtol = 1e-6
-
-    #test for #382: pure spinodal at low pressures
-    model2 = PCSAFT("carbon dioxide")
-    Tc,Pc,Vc = (310.27679925044134, 8.06391600653306e6, 9.976420206333288e-5)
-    T = LinRange(Tc-70,Tc-0.1,50)
-    psl = first.(spinodal_pressure.(model2,T,phase = :l))
-    psv = first.(spinodal_pressure.(model2,T,phase = :v))
-    psat = first.(saturation_pressure.(model2,T))
-    @test all(psl .< psat)
-    @test all(psat .< psv)
-    @test issorted(psl)
-    @test issorted(psv)
-end
 @printline

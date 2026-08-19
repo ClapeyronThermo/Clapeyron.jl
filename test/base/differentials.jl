@@ -27,7 +27,7 @@ end
 ∂3f∂V∂T2_analytical(model::TestModel,V,T,z) = 4*V
 
 
-@testset "differentials" begin
+@testset verbose = true "differentials" begin
     model = TestModel()
     T = 500*rand()
     V = 10*rand()
