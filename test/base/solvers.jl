@@ -1,5 +1,3 @@
-using Clapeyron, Test, NLSolvers, ForwardDiff
-
 const SOL = Clapeyron.Solvers
 @printline
 quadratic(x) = x*x - 4

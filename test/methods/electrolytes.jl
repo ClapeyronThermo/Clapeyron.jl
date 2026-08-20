@@ -1,5 +1,3 @@
-using Clapeyron, Test
-
 @testset verbose = true "Electrolyte methods" begin
     @printline
     system = SAFTVREMie(["water"],["sodium","chloride"])

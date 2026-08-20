@@ -1,5 +1,3 @@
-using Clapeyron, Test, Unitful
-
 @testset "pharmaPCSAFT, single components" begin
     system = pharmaPCSAFT(["water"])
     v1 = Clapeyron.saturation_pressure(system, 280.15)[2]

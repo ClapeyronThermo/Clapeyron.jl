@@ -1,5 +1,3 @@
-using Clapeyron, Test
-
 @printline
 
 struct TestModel <: EoSModel end

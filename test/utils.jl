@@ -13,6 +13,7 @@ using Clapeyron.StaticArrays
 using Clapeyron.EstimationUtils
 using Clapeyron: has_sites,has_groups
 using Clapeyron: PH, QT, QP, TS, VT, PT
+using Aqua
 
 macro printline()  # useful in hunting for where tests get stuck
     file = split(string(__source__.file), Base.Filesystem.path_separator)[end]

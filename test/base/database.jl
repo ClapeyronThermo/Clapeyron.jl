@@ -1,5 +1,3 @@
-using Clapeyron, Test, LinearAlgebra
-
 @testset verbose = true "Database Parsing and Parameters" begin
 
     @testset "normalisestring" begin
