@@ -85,7 +85,6 @@ function ADScalarObjective(f::F,x0::T) where {F,T <: SVector}
     h=h)
 end
 
-
 function ADScalarObjective(f,x0::Number)
     function g(x)
         return derivative(f,x)
@@ -122,26 +121,31 @@ function optimize(f,x0::NTuple{2,T},method=BrentMin(),options=OptimizationOption
 end
 
 #general one, with support for ActiveBox
-function optimize(f,x0,method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
+function optimize(f,x0::Union{Number,AbstractArray},method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
     inplace = __is_implace(x0)
     scalarobj = ADScalarObjective(f,x0)
     optprob = OptimizationProblem(obj = scalarobj,inplace = inplace,bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
-function optimize(optprob::OptimizationProblem,x0,method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
+function optimize(optprob::OptimizationProblem,x0::Union{Number,AbstractArray},method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
 #build scalar objective -> Optimization Problem
-function optimize(scalarobj::ScalarObjective,x0,method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
+function optimize(scalarobj::ScalarObjective,x0::Union{Number,AbstractArray},method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
     inplace = __is_implace(x0)
     optprob = OptimizationProblem(obj = scalarobj,inplace = inplace,bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
-function optimize(f,x0,method::NLSolvers.NelderMead,options=OptimizationOptions();bounds = nothing)
+function optimize(f,x0::Union{Number,AbstractArray},method::NLSolvers.NelderMead,options=OptimizationOptions();bounds = nothing)
     scalarobj = ScalarObjective(f = f)
+    optprob = OptimizationProblem(obj = scalarobj,inplace = false,bounds = bounds)
+    return NLSolvers.solve(optprob,x0,method,options)
+end
+
+function optimize(scalarobj::ScalarObjective,x0::Union{Number,AbstractArray},method::NLSolvers.NelderMead,options=OptimizationOptions();bounds = nothing)
     optprob = OptimizationProblem(obj = scalarobj,inplace = false,bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end

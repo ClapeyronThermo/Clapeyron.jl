@@ -278,7 +278,7 @@ end
     end
 
     #reference state from EoSVectorParam
-    @testset "reference states - misc"
+    @testset "reference states - misc" begin
         mod_pr = cPR(["water","ethanol"],idealmodel = ReidIdeal,reference_state = :ntp)
         mod_vec = Clapeyron.EoSVectorParam(mod_pr)
         Clapeyron.recombine!(mod_vec)
