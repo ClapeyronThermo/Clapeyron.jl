@@ -66,19 +66,16 @@ jobs:
       - name: Build package (instantiate & precompile)
         uses: julia-actions/julia-buildpkg@latest
 
-      # ----- Standard tests: all platforms EXCEPT Ubuntu + Julia 1 -----
+      # ----- Standard tests: all platforms -----
       - name: Run standard test suite
-        if: matrix.os != 'ubuntu-latest' || matrix.version != '1'
         uses: julia-actions/julia-runtest@latest
-        with:
-          project: 'test/gh/standard' # light environment: Clapeyron + CoolProp
 
       # ----- Extension tests: ONLY Ubuntu + Julia 1 -----
       - name: Run extension test suite
         if: matrix.os == 'ubuntu-latest' && matrix.version == '1'
         uses: julia-actions/julia-runtest@latest
         with:
-          project: 'test/gh/extensions' # heavy environment: Clapeyron + integrations
+          project: 'test/extensions' # heavy environment: Clapeyron + integrations
 
       # ----- Coverage (runs on all jobs) -----
       - name: Process coverage data

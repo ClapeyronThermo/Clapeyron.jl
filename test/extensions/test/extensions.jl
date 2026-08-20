@@ -1,5 +1,3 @@
-using EoSSuperancillaries
-#we test this separately, but leaving this on could speed up the test suite?
 Clapeyron.use_superancillaries!(false)
 
 @testset "Superancillaries.jl" begin

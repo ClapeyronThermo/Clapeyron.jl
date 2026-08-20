@@ -1,225 +1,34 @@
-ENV["JULIA_TEST_FAILFAST"] = "false"
 using Test
 t1 = @elapsed using Clapeyron
 using CoolProp #CoolProp ext
-using Unitful #Unitful ext
-using Clapeyron.LinearAlgebra
-using Clapeyron.StaticArrays
-using Clapeyron.EstimationUtils
-using Clapeyron: has_sites,has_groups
-using Clapeyron: PH, QT, QP, TS, VT, PT
-#=
 
-Modify this constant to true to run all tests in all workers
-
-=#
-
-ALL_TESTS = false
-
-include("utils.jl")
+ENV["JULIA_TEST_FAILFAST"] = "false"
+ENV["CLAPEYRON_SHOW_REFERENCES"] = "FALSE" #Disable showing citations
 
 @info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"
 @info "Coolprop: $(Clapeyron.is_coolprop_loaded())"
-#Disable showing citations
-ENV["CLAPEYRON_SHOW_REFERENCES"] = "FALSE"
 
-#fix to current tests
-function GERG2008(components;verbose = false,reference_state = nothing)
-    return MultiFluid(components;
-    mixing = AsymmetricMixing,
-    departure = EmpiricDeparture,
-    pure_userlocations = String["@REMOVEDEFAULTS","@DB/Empiric/GERG2008/pures"],
-    mixing_userlocations  = String["@REMOVEDEFAULTS","@DB/Empiric/GERG2008/mixing/GERG2008_mixing_unlike.csv"],
-    departure_userlocations = String["@REMOVEDEFAULTS","@DB/Empiric/GERG2008/departure/GERG2008_departure_unlike.csv"],
-    reference_state = reference_state,
-    coolprop_userlocations = false,
-    verbose = verbose,
-    Rgas = Clapeyron.R̄)
+if true #by default, we autodetect if we are on CI or not, use `if false` to eliminate CI autodetection 
+    include("ci.jl")
+else
+    __run_test(value) = true
 end
 
-function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
-    for i in (2.0,3.0,5.0,7.0,11.0)
-        a_res₀ = Clapeyron.a_res(model,V,T,z)
-        @test a_res₀ ≈ Clapeyron.a_res(model,i*V,T,i*z) rtol = rtol
-    end
-    pures = Clapeyron.split_pure_model(model)
-    x_pure = zeros(length(model))
-    for n in 1:length(model) 
-        for i in (2.0,3.0,5.0,7.0,11.0)
-            x_pure[n] = i
-            @test Clapeyron.a_res(model,i*V,T,x_pure) ≈ Clapeyron.a_res(pures[n],i*V,T,Clapeyron.SVector(i)) rtol = rtol
-            x_pure .= 0
-        end
+function include_distributed(path,value::Int) #function to distribute workers in CI
+    if __run_test(value)
+        Base.include(@__MODULE__(), path)
     end
 end
 
-function test_volume(model,p,T,z = Clapeyron.SA[1.0];rtol = 1e-8,phase = :unknown)
-    v = volume(model,p,T,z)
-    @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
-end
+#file with test utilities
+include("utils.jl")
 
-function test_scales(model,T0 = 300.0)
-    n = length(model)
-    z = ones(n) ./ n
-    z3 = 3 .* z
-    z7 = 7 .* z
-    @test Clapeyron.lb_volume(model,T0,z3) ≈ 3*Clapeyron.lb_volume(model,T0,z)
-    @test Clapeyron.lb_volume(model,T0,z7) ≈ 7*Clapeyron.lb_volume(model,T0,z)
-    @test Clapeyron.T_scale(model,z3) ≈ Clapeyron.T_scale(model,z)
-    @test Clapeyron.p_scale(model,z3) ≈ Clapeyron.p_scale(model,z)
-end
-
-function test_recombine(model,innermodels = nothing)
-    model1 = deepcopy(model)
-    model2 = deepcopy(model)
-    Clapeyron.recombine!(model1)
-    eosmodel_is_approx(model1,model2)
-    if innermodels != nothing
-        for field in innermodels
-            innermodel = getfield(model1,field)
-            innermodel2 = getfield(model2,field)
-            eosmodel_is_approx(innermodel,innermodel2)
-        end
-    end
-end
-
-function eosmodel_is_approx(model1,model2)
-    if hasfield(typeof(model1),:params)
-        params1 = model1.params
-        params2 = model2.params
-        for i in 1:fieldcount(typeof(params1))
-            p1 = getfield(params1,i)
-            p2 = getfield(params2,i)
-            if p1 isa SingleParam || p1 isa PairParam
-                if eltype(p1) <: Tuple 
-                    @test stack(p1.values) ≈ stack(p2.values)
-                else
-                    @test p1.values ≈ p2.values
-                end
-            elseif p1 isa AssocParam
-                @test p1.values.values ≈ p2.values.values
-                @test p1.values.indices == p2.values.indices
-                @test p1.values.site_offsets == p2.values.site_offsets
-            elseif p1 isa Clapeyron.MixedGCSegmentParam
-                @test p1.values.v ≈ p2.values.v
-            end
-        end
-    end
-end
-
-function test_kl(model; test_k = true, test_l = true)  
-    model2 = deepcopy(model)
-    
-    if test_k
-        k_orig = Clapeyron.get_k(model2)
-        
-        k0 = zeros(size(k_orig))
-        Clapeyron.set_k!(model2,k0)
-        @test k0 ≈ Clapeyron.get_k(model2)
-        
-        k1 = zeros(size(k_orig))
-        s1,s2 = size(k1)
-        for i in 1:s1
-            for j in (i + 1):s2
-                k1[j,i] = 0.01
-            end
-        end
-        Clapeyron.set_k!(model2,k1)
-        @test k1 ≈ Clapeyron.get_k(model2)
-
-        Clapeyron.set_k!(model2,k_orig)
-        @test k_orig ≈ Clapeyron.get_k(model2)
-    end
-
-    if test_l
-        l_orig = Clapeyron.get_l(model2)
-        
-        l0 = zeros(size(l_orig))
-        Clapeyron.set_l!(model2,l0)
-        @test l0 ≈ Clapeyron.get_l(model2)
-        
-        l1 = zeros(size(l_orig))
-        s1,s2 = size(l1)
-        for i in 1:s1
-            for j in (i + 1):s2
-                l1[j,i] = 0.01
-            end
-        end
-        Clapeyron.set_l!(model2,l1)
-        @test l1 ≈ Clapeyron.get_l(model2)
-
-        Clapeyron.set_l!(model2,l_orig)
-        @test l_orig ≈ Clapeyron.get_l(model2)
-    end
-end
-test_k(model) = test_kl(model,test_l = false)
-test_l(model) = test_kl(model,test_k = false)
-
-function test_repr(val;str = nothing,str_compact = nothing)
-    io = IOBuffer()
-    Base.show(io,MIME"text/plain"(),val)
-    x = String(take!(io))
-    @test !isempty(x)
-
-    io_compact = IOBuffer()
-    Base.show(io_compact,val)
-    x_compact = String(take!(io_compact))
-    @test !isempty(x_compact)
-    if str != nothing
-        for s in str
-            @test occursin(s,x)
-        end
-    end
-
-    if str_compact != nothing
-        for s in str_compact
-            @test occursin(s,x_compact)
-        end
-    end
-end
-
-function test_zero_alloc2(model)
-    z = ones(length(model))/length(model)
-    V = 0.03
-    T = 300.0
-    f(x) = Clapeyron.eos(x,V,T,z)
-    f(model)
-    @test @allocated(f(model)) == 0
-end
-
-function test_zero_alloc1(model)
-    z = SA[1.0]
-    V = 0.03
-    T = 300.0
-    f(x) = Clapeyron.eos(x,V,T,z)
-    f(model)
-    @test @allocated(f(model)) == 0
-end
-
-function test_assoc_matrix(K,tol = 1e-12)
-    s1,s2 = size(K)
-    @test s1 == s2
-    x0 = ones(eltype(K),s1)
-    
-    x10 = Clapeyron.assoc_matrix_solve(K,x0)
-    x1 = Clapeyron.assoc_matrix_solve(K)
-    dx = x10 - x1
-    @test sqrt(sum(abs2,dx)) < tol
-end
-
-function test_assoc_matrix(model,V,T,z,tol = 1e-12)
-    K = Clapeyron.dense_assoc_site_matrix(model,V,T,z)
-    test_assoc_matrix(K,tol)
-end
-#=
-include_distributed distributes the test load among all workers
-=#
-display(Test.detect_ambiguities(Clapeyron))
-
+#actual files
 include_distributed("base/database.jl",4)
 include_distributed("base/solvers.jl",4)
 include_distributed("base/differentials.jl",4)
 include_distributed("base/misc.jl",4)
+include_distributed("base/qa.jl",5)
 
 include_distributed("models/saft_pc.jl",1)
 include_distributed("models/cubic.jl",3)
