@@ -1,1 +1,1 @@
-include("../../runtests.jl")
+include("../../../runtests.jl")
