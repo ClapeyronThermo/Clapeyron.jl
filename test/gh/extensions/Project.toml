@@ -1,4 +1,5 @@
 name = "Clapeyron tests - extensions"
+uuid = "73f074b4-2fd7-4260-8743-9b275b5873e6"
 
 [deps]
 Clapeyron = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"

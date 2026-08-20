@@ -1,5 +1,5 @@
 name = "Clapeyron tests - standard"
-
+uuid = "d5f68de3-20ee-4f81-afff-6c2b924b2fb4"
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Clapeyron = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
