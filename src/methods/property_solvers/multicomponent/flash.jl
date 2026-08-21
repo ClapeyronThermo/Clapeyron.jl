@@ -543,7 +543,53 @@ If the method allows it, you can set the number of phases by doing `method(;nump
 function numphases end
 
 numphases(method::FlashMethod) = 2
-numphases(result::FlashResult) = length(result.compositions)
+
+"""
+    is_active_phase(result::FlashResult,i)::Bool
+
+Returns a boolean indicating if the phase stored in `Result` is "active".
+An active phase is defined as:
+- A non-negative volume (some Activity models use zero liquid volume), 
+- A valid composition (at least one positive phase) 
+- A positive fraction.
+- Nonnegative and finite temperatures and pressures.
+
+A single-phase sucessful flash will have one active phase and zero or more inactive phases.
+Inactive phases can still carry relevant information; for example, in a QP flash where Q is 0 (bubble point), the inactive phase stores the gas composition and volume.
+"""
+is_active_phase(result::FlashResult,i)::Bool = _is_active_phase(result.compositions[i],result.volumes[i],result.fractions[i]) && _check_pt(result.data.p,result.data.T)
+_is_active_phase(xi,vi,βi,p,T) = all(>=(0), xi) & (vi >= 0) & (βi > 0)
+function _check_pt(p::X,T::X) where X
+    lo,hi = minmax(p,T)
+    return lo >= zero(X) & isfinite(hi)
+end
+
+"""
+    numphases(result::FlashResult,active::Bool = false)
+
+Return the number of phases stored in a `FlashResult. If `active` is set to `true`, then it will return the number of *active* phases.
+An active phase is a phase with non-zero fraction, nonnegative compositions and nonnegative volumes.
+"""
+numphases(result::FlashResult) = numphases(result,false)
+
+function numphases(result::FlashResult,active::Bool)
+    n_all = length(result.fractions)
+    !active  && return n_all
+    n_active = 0
+    !_check_pt(result.data.p,result.data.T) && return 0
+    for i in 1:n_all
+        n_active += _is_active_phase(result.compositions[i],result.volumes[i],result.fractions[i])
+    end
+    return n_active
+end
+
+"""
+    each_active_phase_index(result::FlashResult)
+
+Lazy iterator returning the indices of each active phase.
+"""
+each_active_phase_index(result::FlashResult) = Iterators.filter(Base.Fix1(is_active_phase,result),1:numphases(result))
+
 """
     supports_reduction(method::FlashMethod)::Bool
 

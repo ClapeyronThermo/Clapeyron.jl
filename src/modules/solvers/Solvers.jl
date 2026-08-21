@@ -12,7 +12,7 @@ using Roots
 using Clapeyron.StaticForwardDiffTags: maketag, maketagtype
 
 export CholeskyNewton,static_linsolve,Newton2
-
+__is_implace(x,method) = __is_implace(x)
 __is_implace(x::Number) = false
 __is_implace(x::Array) = true
 __is_implace(x::MVector) = true

@@ -1,4 +1,4 @@
-@testset "PCSAFT Models" begin
+@testset verbose = true "PCSAFT Models" begin
     @printline
     let T = 298.15, V = 1e-4,z1 = Clapeyron.SA[1.0],z = [0.5,0.5],z3 = [0.333, 0.333,0.333];
     @testset "PCSAFT" begin
@@ -88,7 +88,7 @@
     end
 end
 
-@testset "PCSAFT Models - others" begin
+@testset verbose = true "PCSAFT Models - variants" begin
     @printline
     let T = 298.15, V = 1e-4,z1 = Clapeyron.SA[1.0],z = [0.5,0.5],z3 = [0.333, 0.333,0.333];
     @printline

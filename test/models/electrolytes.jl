@@ -1,4 +1,4 @@
-@testset "Electrolyte models" begin
+@testset verbose = true "Electrolyte models" begin
     @printline
 
     let T = 298.15, V = 1e-3, m = 1, w = [0.99,0.005,0.005],Z = [0,1,-1];
