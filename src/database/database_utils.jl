@@ -162,11 +162,11 @@ function defaultmissing(array::Array{String},defaultvalue = "")
     return deepcopy(array),Array(ismissing.(array))
 end
 
-function defaultmissing(array::Array{Union{Missing, T}},defaultvalue="") where T <:AbstractString
+function defaultmissing(array::Array{<:Union{Missing, AbstractString}},defaultvalue="")
     return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
 end
 
-function defaultmissing(array::Array{Union{Missing, T}},defaultvalue=zero(eltype(array))) where T<:Number
+function defaultmissing(array::Array{<:Union{Missing, Number}},defaultvalue=zero(eltype(array)))
     return coalesce.(array,defaultvalue),Array(ismissing.(array))
 end
 
@@ -180,7 +180,7 @@ function defaultmissing(array::Array{Missing},defaultvalue=0.0)
     return coalesce.(array,defaultvalue),Array(ismissing.(array))
 end
 
-function defaultmissing(array::Array{Union{Missing,T1,T2}},defaultvalue="") where {T1 <:Number,T2<:AbstractString}
+function defaultmissing(array::Array{<:Union{Missing,Number,AbstractString}},defaultvalue="")
     return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
 end
 

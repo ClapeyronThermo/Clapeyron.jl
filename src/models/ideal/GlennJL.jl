@@ -36,7 +36,6 @@ function __glenn_jl end
 ## Description
 
 Ideal model using the NASA-7 polynomial coefficients provided by the `Glenn.jl` package.
-The reference state of the NASA-7 polynomials is set such as the enthalpy at p = 1 atm and T = 298.15 K is equal to the formation enthalpy.
 
 ## Model Construction Examples
 ```
@@ -72,7 +71,7 @@ the model `GlennJL` has the following integrations with `Glenn.jl` package:
 Some notes:
 
 - `get_properties` and `get_properties_range` will return NaN for properties outside their ranges. in particular, `get_properties_range` will return a vector of the same size as the input, with `NaN` on invalid inputs.
-- dimensionless entropy values returned by `calculate_s` are calculated at p = 1 atm.
+- the dimensionless entropy returned by `calculate_s` is at a pressure of 1 bar.
 ```
 """
 function GlennJL(a1,a2;kwargs...)

@@ -27,7 +27,7 @@ end
 
 BoundedLineSearch(lb::T,ub::T) where T = BoundedLineSearch(lb,ub,0.99,NLSolvers.Backtracking())
 
-function BoundedLineSearch(lb::T,ub::T,decay::Number,ls) where T
+function BoundedLineSearch(lb::T,ub::T,decay::Number, ls::NLSolvers.LineSearcher) where T
     BoundedLineSearch{T,typeof(ls)}(lb,ub,ls,Float64(decay))
 end
 

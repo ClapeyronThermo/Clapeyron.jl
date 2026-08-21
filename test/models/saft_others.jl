@@ -1,4 +1,4 @@
-@testset "SAFT models - misc" begin
+@testset verbose = true "SAFT models - misc" begin
     @printline
     let T = 298.15, V = 1e-4,z = [0.5,0.5],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333];
     @testset "ogSAFT" begin
@@ -83,7 +83,7 @@
     end
 end
 
-@testset "CPA" begin
+@testset verbose = true "CPA" begin
     @printline
     let T = 298.15, V = 1e-4,z1 = Clapeyron.SA[1.0],z = [0.5,0.5],z3 = [0.333, 0.333,0.333];
     @testset "CPA" begin

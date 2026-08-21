@@ -214,7 +214,8 @@ function Clapeyron.a_ideal(model::Clapeyron.GlennJL, V, T ,z)
     intervals = model.intervals
     res = zero(Base.promote_eltype(1.0,V,T,z)) #GlennJL only has Float64 data
     logT = log(T)
-    V⁻¹ = Rgas(model)/(V*101325.0)
+    P0 = 100000.0
+    V⁻¹ = Rgas(model)/(V*P0)
     Σz = sum(z)
     f = model.R0
     for i in 1:length(model)
