@@ -1,4 +1,6 @@
 const SOL = Clapeyron.Solvers
+using Clapeyron.ForwardDiff
+
 @printline
 quadratic(x) = x*x - 4
 rosenbrock(x) = (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2

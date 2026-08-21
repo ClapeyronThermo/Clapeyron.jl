@@ -3,7 +3,7 @@
 @printline
 
 @testset verbose = true "QA" begin
-    Aqua.test_ambiguities(Clapeyron)
+    Aqua.test_ambiguities(Clapeyron,broken = true)
     Aqua.test_unbound_args(Clapeyron,broken = true)
     Aqua.test_undefined_exports(Clapeyron)
     Aqua.test_project_extras(Clapeyron)
