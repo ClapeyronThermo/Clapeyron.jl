@@ -723,6 +723,7 @@ end
     
     @testset "saturation - implicit AD" begin
         #implicit AD
+        cpr = cPR("Propane",idealmodel = ReidIdeal)
         dsatp(T) = first(saturation_pressure(cpr,250.0*T))
         dsatt(p) = first(saturation_temperature(cpr,1e5*p))
         @test Clapeyron.Solvers.derivative(dsatp,1.0) ≈ Clapeyron.derivx(dsatp,1.0) rtol = 1e-6
