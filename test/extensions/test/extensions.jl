@@ -29,7 +29,10 @@ Clapeyron.use_superancillaries!(false)
 end
 
 @testset "MultiComponentFlash.jl Algorithm" begin
-
+    system = PCSAFT(["water","cyclohexane","propane"])
+    T = 298.15
+    p = 1e5
+    z = [0.333, 0.333, 0.334]
     #two-phase test, using Clapeyron api
     mcf = MCFlashJL()
     @test Clapeyron.numphases(Clapeyron.tp_flash2(system, p, T, z, mcf)) == 2
