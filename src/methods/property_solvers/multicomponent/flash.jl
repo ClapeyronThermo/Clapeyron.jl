@@ -559,10 +559,10 @@ The function [Clapeyron.each_active_phase_index](@ref) returns an iterator of al
 Inactive phases can still carry relevant information; for example, in a QP flash where Q is 0 (bubble point), the inactive phase stores the gas composition and volume.
 """
 is_active_phase(result::FlashResult,i)::Bool = _is_active_phase(result.compositions[i],result.volumes[i],result.fractions[i]) && _check_pt(result.data.p,result.data.T)
-_is_active_phase(xi,vi,βi,p,T) = all(>=(0), xi) & (vi >= 0) & (βi > 0)
+_is_active_phase(xi,vi,βi) = all(>=(0), xi) & (vi >= 0) & (βi > 0)
 function _check_pt(p::X,T::X) where X
     lo,hi = minmax(p,T)
-    return lo >= zero(X) & isfinite(hi)
+    return (lo >= zero(X)) & isfinite(hi)
 end
 
 """
