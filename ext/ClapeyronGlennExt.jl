@@ -35,15 +35,15 @@ function glenn_sp_info_from_input(calc::Glenn.ThermoDB,input)
     return sp_info
 end
 
+__get_R(calc::Calculator) = hasfield(Calculator,:R_ref) ? calc.R_ref : 8.314510
+
 function Clapeyron.__glenn_jl(calc, input;
                         Rgas = Clapeyron.Rgas(),
-                        R0 = 8.314510,
+                        R0 = __get_R(calc),
                         reference_state = nothing,
                         verbose = false,
                         strict = true)
-
-
-    
+ 
     species_info = glenn_sp_info_from_input(calc,input)
     nc = length(species_info)
     components = map(x -> x.name,species_info)
@@ -101,8 +101,6 @@ function Clapeyron.mw(model::Clapeyron.GlennJL)
     info = model.species_info
     return map(x -> x.molecular_weight,info)
 end
-
-Glenn.get_species_data(calc::Glenn.Calculator, model::Clapeyron.GlennJL, id::Int) = get_species_data(calc.db,model.species_info[i].id)
 
 function in_interval(x::IntervalData,T)
     TT = Float64(Clapeyron.primalval(T))
@@ -164,7 +162,7 @@ function _calculate_hms(c::NASACoefficients, T, logT)
 end
 
 _calculate_cp(data, T) = _calculate_cp(data,T,1/T)
-_calculate_cp(data::IntervalData, T, logT) = _calculate_cp(data.coefficients, T, Tinv)
+_calculate_cp(data::IntervalData, T, Tinv) = _calculate_cp(data.coefficients, T, Tinv)
 function _calculate_cp(c::NASACoefficients, T, Tinv)
     cp0 = evalpoly(Tinv,(zero(c.a1),c.a2,c.a1))
 
@@ -175,7 +173,7 @@ end
 function _calculate_cp(data::Vector{IntervalData},T,Tinv)
     k = get_interval(data,T)
     iszero(k) && return oftype(Tinv*1.0,NaN)
-    _calculate_s(data[k],T,Tinv)
+    _calculate_cp(data[k],T,Tinv)
 end
 
 function __thermocalcerror(T,name,id)
@@ -185,29 +183,6 @@ function __thermocalcerror(T,name,id)
                 "Use get_species_data(model, $id) to check available intervals.",
             ),
         )
-end
-
-function Glenn.calculate_properties(model::Clapeyron.GlennJL, id::Int, T::Number)
-    info = model.species_info[id]
-    intervals = model.intervals[id]
-    k = get_interval(intervals,T)
-    if k == 0
-        __thermocalcerror(T,model.components[id],id)
-    end
-    interval = intervals[k]
-    cp_r = Glenn.ThermoDatabase.calculate_cp(interval.coefficients, T)
-    h_rt = _calculate_h(interval.coefficients, T)
-    s_r = Glenn.ThermoDatabase.calculate_s(interval.coefficients, T)
-    return ThermoProperties(
-        T,
-        cp_r * R0,
-        h_rt * T * R0,
-        s_r * R0,
-        interval.temp_min,
-        interval.temp_max,
-        info.name,
-        info.phase,
-    )
 end
 
 function Clapeyron.a_ideal(model::Clapeyron.GlennJL, V, T ,z)
@@ -235,11 +210,11 @@ function Clapeyron.a_ideal(model::Clapeyron.GlennJL, V, T ,z)
 end
 
 function Clapeyron.∂²f∂T²(model::Clapeyron.GlennJL,V,T,z)
-    coeff = model.params.c.values
     cpr = zero(Base.promote_eltype(1.0,T,z))
     Σz = sum(z)
     Tinv = 1/T
     f = model.R0
+    intervals = model.intervals
     for i in 1:length(model)
         interval_i = intervals[i]
         k = get_interval(interval_i,T)
@@ -291,8 +266,8 @@ function Glenn.calculate_properties(model::GlennJL, T, z = Clapeyron.SA[1.0])
     s_r = calculate_s(model,T,z) |> Clapeyron.primalval |> Float64
     if length(model) == 1
         name = model.species_info[1].name
-        Tmin = model.intervals[begin].temp_min
-        Tmax = model.intervals[begin].temp_max
+        Tmin = model.intervals[1][begin].temp_min
+        Tmax = model.intervals[1][end].temp_max
         state = model.species_info[1].phase
     else
         name = MIXTURE
@@ -301,7 +276,7 @@ function Glenn.calculate_properties(model::GlennJL, T, z = Clapeyron.SA[1.0])
         state = GAS
     end
  
-    ThermoProperties(T,cp,h_rt*R*T,s_r*R,0.0,1000.0,name,state)
+    ThermoProperties(T,cp,h_rt*R*T,s_r*R,Tmin,Tmax,name,state)
 end
 
 function Glenn.calculate_formation_enthalpy(model::GlennJL, z = Clapeyron.SA[1.0])

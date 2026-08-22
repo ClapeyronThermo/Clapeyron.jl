@@ -54,7 +54,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Setup Julia ${{ matrix.version }} on ${{ matrix.arch }}
+      - name: Setup Julia
         uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
@@ -67,11 +67,12 @@ jobs:
         uses: julia-actions/julia-buildpkg@latest
 
       # ----- Standard tests: all platforms -----
-      - name: Run standard test suite
+      - name: Run test suite
+        if: matrix.os != 'ubuntu-latest' || matrix.version != '1'
         uses: julia-actions/julia-runtest@latest
 
       # ----- Extension tests: ONLY Ubuntu + Julia 1 -----
-      - name: Run extension test suite
+      - name: Run test suite (with extensions)
         if: matrix.os == 'ubuntu-latest' && matrix.version == '1'
         uses: julia-actions/julia-runtest@latest
         with:
