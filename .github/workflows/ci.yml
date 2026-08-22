@@ -1,4 +1,5 @@
 name: CI
+
 on:
   pull_request:
     branches:
@@ -10,21 +11,22 @@ on:
     paths-ignore:
       - 'docs/**'
       - 'examples/**'
-# needed to allow julia-actions/cache to delete old caches that it has created
+
 permissions:
-  actions: write
+  actions: write   # needed for julia-actions/cache to delete old caches
   contents: read
+
 concurrency:
-  # Skip intermediate builds: always.
-  # Cancel intermediate builds: always.
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     if: "!contains(github.event.head_commit.message, 'Clapeyron skip ci')"
     timeout-minutes: 150
+
     strategy:
       fail-fast: false
       matrix:
@@ -40,36 +42,48 @@ jobs:
         include:
           - os: macOS-latest
             arch: aarch64
-            version : 'lts'
+            version: 'lts'
           - os: macOS-latest
             arch: aarch64
-            version : '1'
+            version: '1'
           - os: macOS-latest
             arch: aarch64
             version: 'nightly'
+
     steps:
-      - uses: actions/checkout@v7
-      - uses: julia-actions/setup-julia@v3
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Julia
+        uses: julia-actions/setup-julia@v3
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v3
-      - uses: julia-actions/julia-buildpkg@latest      
-      #- name: "Install Dependencies and Run Tests"
-      #  run: |
-      #    import Pkg
-      #    Pkg.Registry.update()
-      #    # Install packages present in subdirectories
-      #    Pkg.instantiate()
-      #    Pkg.test(; coverage="user", julia_args = ["--optimize=2"])
-      #  shell: julia --color=yes --optimize=2 --code-coverage=user --depwarn=yes --project=. {0}
-      - uses: julia-actions/julia-runtest@latest
-      #  with:
-      #    test_args: 'optimize=1'
-      - uses: julia-actions/julia-processcoverage@v1
-      #  if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
-      - uses: codecov/codecov-action@v7
-      #  if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
+
+      - name: Cache Julia artifacts
+        uses: julia-actions/cache@v3
+
+      - name: Build package (instantiate & precompile)
+        uses: julia-actions/julia-buildpkg@latest
+
+      # ----- Standard tests: all platforms -----
+      - name: Run test suite
+        if: matrix.os != 'ubuntu-latest' || matrix.version != '1'
+        uses: julia-actions/julia-runtest@latest
+
+      # ----- Extension tests: ONLY Ubuntu + Julia 1 -----
+      - name: Run test suite (with extensions)
+        if: matrix.os == 'ubuntu-latest' && matrix.version == '1'
+        uses: julia-actions/julia-runtest@latest
+        with:
+          project: 'test/extensions' # heavy environment: Clapeyron + integrations
+
+      # ----- Coverage (runs on all jobs) -----
+      - name: Process coverage data
+        uses: julia-actions/julia-processcoverage@v1
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
         with:
           file: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}

@@ -30,6 +30,7 @@ Clapeyron.AlyLeeIdeal
 Clapeyron.PPDSIdeal
 Clapeyron.ShomateIdeal
 Clapeyron.CPLNGEstIdeal
+Clapeyron.GlennJL
 ```
 
 ## Joback GC Utilities

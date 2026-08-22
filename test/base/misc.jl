@@ -1,4 +1,4 @@
-@testset "misc" begin
+@testset verbose = true "Misc" begin
     @printline
     model2 = PCSAFT(["water","ethanol"])
     model4 = SAFTgammaMie(["methane","butane","isobutane","pentane"])
@@ -220,16 +220,5 @@
     @testset "lever rule" begin
         @test Clapeyron.supports_lever_rule(Clapeyron.volume) == true
         @test Clapeyron.supports_lever_rule(Clapeyron.speed_of_sound) == false
-    end
-
-    @printline
-    if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
-        @testset "ambiguities" begin
-            ambiguities = Test.detect_ambiguities(Clapeyron)
-            if !isempty(ambiguities)
-                foreach(display, ambiguities)
-            end
-            @test length(ambiguities) == 0
-        end
     end
  end

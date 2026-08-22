@@ -36,6 +36,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 CoolProp = "e084ae63-2819-5025-826e-f8e611a84251"
 CoolProp_jll = "3351c21f-4feb-5f29-afb9-f4fcb0e27549"
 EoSSuperancillaries = "c1bf003f-4e47-49d9-bdfd-5a4051db3c04"
+Glenn = "d531567c-0c1c-43c6-9163-287e3bec9c15"
 JutulDarcy = "82210473-ab04-4dce-b31b-11573c4f8e0a"
 Metaheuristics = "bcdb8e00-2c21-11e9-3065-2b553b22f898"
 MultiComponentFlash = "35e5bd01-9722-4017-9deb-64a5d32478ff"
@@ -45,6 +46,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [extensions]
 ClapeyronCoolPropExt = ["CoolProp", "CoolProp_jll"]
+ClapeyronGlennExt = ["Glenn"]
 ClapeyronJutulDarcyExt = "JutulDarcy"
 ClapeyronMetaheuristicsExt = "Metaheuristics"
 ClapeyronMultiComponentFlashExt = "MultiComponentFlash"
@@ -64,13 +66,14 @@ EoSSuperancillaries = "1.2.3"
 FillArrays = "^0.12, 0.13, 1"
 ForwardDiff = "0.10.36,1"
 IFTDuals = "0.2"
+Glenn = "0.4"
 JSON = "0.21, 1"
 JutulDarcy = "0.2, 0.3"
 LinearAlgebra = "1"
 LogExpFunctions = "^0.3.24, 1"
 Metaheuristics = "2, 3"
 MultiComponentFlash = "1.1.13"
- NLSolvers = "0.5"
+NLSolvers = "0.5"
 OrderedCollections = "^1.5, 2"
 PackedVectorsOfVectors = "^0.1.2"
 PositiveFactorizations = "^0.2"
@@ -92,6 +95,7 @@ Unitful = "^1.12"
 julia = "1.10"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 CoolProp = "e084ae63-2819-5025-826e-f8e611a84251"
 EoSSuperancillaries = "c1bf003f-4e47-49d9-bdfd-5a4051db3c04"
 JutulDarcy = "82210473-ab04-4dce-b31b-11573c4f8e0a"
@@ -102,4 +106,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["CoolProp", "EoSSuperancillaries", "MultiComponentFlash", "Test", "Unitful"]
+test = ["Aqua", "CoolProp", "Test", "Unitful"]

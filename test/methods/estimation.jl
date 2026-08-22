@@ -15,7 +15,7 @@ function make_pv_data(model, Ts, vs)
 end
 
 
-@testset "Estimation framework" begin
+@testset verbose = true "Estimation framework" begin
 
     @testset "__mse default loss" begin
         @test Clapeyron.__mse(1.1, 1.0) ≈ abs2((1.1 - 1.0) / 1.0)
@@ -650,7 +650,7 @@ T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
 end #@testset "Estimation Framework"
 
 
-@testset "promote_model" begin
+@testset verbose = true "promote_model" begin
     @testset "#365" begin
         #error found during #365
         model = SAFTgammaMie(["ethanol","water"],epsilon_mixing = :hudsen_mccoubrey)

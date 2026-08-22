@@ -1,7 +1,7 @@
-@testset "Cubic models" begin
+@testset verbose = true "Cubic models" begin
     @printline
     let T = 333.15, V = 1e-3,p = 1e5,z = [0.5,0.5],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333];
-    @testset "vdW Models" begin
+    @testset verbose = true "vdW Models" begin
         @testset "Default vdW" begin
             system = vdW(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.7088380780265725 rtol = 1e-6
@@ -20,7 +20,7 @@
         end
     end
 
-    @testset "RK Models" begin
+    @testset verbose = true "RK Models" begin
         @testset "Default RK" begin
             system = RK(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.9825375012134132 rtol = 1e-6
@@ -101,7 +101,7 @@
         end
     end
 
-    @testset "PR Models" begin
+    @testset verbose = true "PR Models" begin
         @testset "Default PR" begin
             system = PR(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.244774062489359 rtol = 1e-6
@@ -242,7 +242,7 @@
         @test d2 ≈ d20
     end
 
-    @testset "Patel Teja Models" begin
+    @testset verbose = true "Patel Teja Models" begin
         @testset "Patel Teja" begin
             system = PatelTeja(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2326465478280517 rtol = 1e-6
