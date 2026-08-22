@@ -262,6 +262,7 @@ verbose &&
 "
 
     status = rachfordrice_status(K̄,z,non_inx,non_iny;K_tol = K_tol)
+    final_status = status
     verbose && status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
 
     vx,vy = vcache[]
@@ -269,40 +270,51 @@ verbose &&
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && status != RREq
         verbose && @info "trivial result but different volumes (maybe azeotrope?)"
-        status = RREq
+        final_status = RREq
     elseif status == RRTrivial
         verbose && @info "procedure converged to trivial K-values, checking initial conditions to see if resulting phase is liquid or vapour."
-        status0 == RRLiquid && (status = RRLiquid)
-        status0 == RRVapour && (status = RRVapour)
+        status0 == RRLiquid && (final_status = RRLiquid)
+        status0 == RRVapour && (final_status = RRVapour)
     elseif status == RREq && β <= eps(eltype(β))
-        status = RRLiquid
+        final_status = RRLiquid
     elseif status == RREq && β >= one(β) - eps(eltype(β))
-        status = RRVapour
+        final_status = RRVapour
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
         verbose && @info "material balance failed."
-        status = RRFailure
+        final_status = RRFailure
     end
 
-    verbose && status == RRLiquid && @info "procedure converged to a single liquid phase."
-    verbose && status == RRVapour && @info "procedure converged to a single vapour phase."
+    verbose && final_status == RRLiquid && @info "procedure converged to a single liquid phase."
+    verbose && final_status == RRVapour && @info "procedure converged to a single vapour phase."
 
-    if status != RREq
+    if final_status != RREq
         _0 = zero(eltype(x))
         _1 = one(eltype(x))
-        x .= z
-        y .= z
-        if status == RRLiquid
+        if final_status == RRLiquid
             β = _0
-            vz = volume(model,p,T,z,phase = :l)
-        elseif status == RRVapour
+            x .= z
+            vx = volume(model,p,T,z,phase = :liquid, vol0 = vx)
+            if status == RRTrivial
+                y .= z
+                vy = vx
+            end
+        elseif final_status == RRVapour
             β = _1
-            vz = volume(model,p,T,z,phase = :v)
-        else
+            y .= z
+            vy = volume(model,p,T,z,phase = :vapour, vol0 = vy)
+            if status == RRTrivial
+                x .= z
+                vx = vy
+            end
+        elseif final_status == RRFailure
+            #TODO: how do we decide a phase here? couldn't find a combination of EoS + conditions that reach this.
+            #if !_is_positive(@view(K[in_equilibria]))
             β = _0/_0
             vz = _0/_0
+            x .= z
+            y .= z
+            vx,vy = vz,vz
         end
-        vx = vz
-        vy = vz
     end
 
     if !reduced
