@@ -37,8 +37,9 @@ warnonly = Documenter.except(),
         "Frequently Asked Questions" => "faq.md",
         "Available Properties" => ["Basic Properties" => "properties/basic.md",
                                    "Bulk Properties" => "properties/bulk.md",
-                                   "Single phase Properties" => "properties/single.md",
-                                   "Multiphase Properties"  => "properties/multi.md",
+                                   "Single phase Equilibria" => "properties/single.md",
+                                   "Multiphase Equilibria"  => "properties/multi.md",
+                                   "Flash methods" => "properties/flash.md"
                                    "Electrolyte Properties" => "properties/electrolytes.md"],
 
         "API" => ["Parameters" => "api/parameters.md",
