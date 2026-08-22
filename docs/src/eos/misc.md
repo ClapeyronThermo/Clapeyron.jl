@@ -33,6 +33,7 @@ Clapeyron.SLk0k1lMixingRule
 
 ```@docs
 Clapeyron.PeTS
+Clapeyron.KolafaNezbeda
 ```
 
 # Composite and Utility Models

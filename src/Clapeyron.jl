@@ -285,6 +285,7 @@ include("models/Virial/Virial.jl")
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
 include("models/Potentials/PeTS/PeTS.jl")
+include("models/Potentials/KolafaNezbeda/KolafaNezbeda.jl")
 
 #electrolytes
 include("models/Electrolytes/electrolytes.jl")
