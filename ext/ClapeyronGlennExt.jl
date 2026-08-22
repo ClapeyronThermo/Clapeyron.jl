@@ -35,15 +35,13 @@ function glenn_sp_info_from_input(calc::Glenn.ThermoDB,input)
     return sp_info
 end
 
-__get_R(calc::Calculator) = hasfield(Calculator,:R_ref) ? calc.R_ref : 8.314510
-
 function Clapeyron.__glenn_jl(calc, input;
                         Rgas = Clapeyron.Rgas(),
-                        R0 = __get_R(calc),
+                        R0 = calc.R_ref,
                         reference_state = nothing,
                         verbose = false,
                         strict = true)
- 
+
     species_info = glenn_sp_info_from_input(calc,input)
     nc = length(species_info)
     components = map(x -> x.name,species_info)
@@ -51,7 +49,7 @@ function Clapeyron.__glenn_jl(calc, input;
 
     _R0 = Vector{Float64}(undef,nc)
     if R0 isa Number || R0 isa AbstractVector
-        _R0 .= R0 ./ Rgas        
+        _R0 .= R0 ./ Rgas
     else
         _R0 .= 1.0
     end
@@ -74,7 +72,7 @@ function Clapeyron.__glenn_jl(calc, input;
         end
     end
 
-    
+
     ref_set = String[]
     for i in info
         push!(ref_set,coalesce(i["comments"],""))
@@ -275,7 +273,7 @@ function Glenn.calculate_properties(model::GlennJL, T, z = Clapeyron.SA[1.0])
         Tmax = NaN
         state = GAS
     end
- 
+
     ThermoProperties(T,cp,h_rt*R*T,s_r*R,Tmin,Tmax,name,state)
 end
 
