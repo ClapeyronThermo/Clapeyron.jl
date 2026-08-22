@@ -126,11 +126,13 @@ The default flash methods are the following:
 ### Flash API
 
 ```@docs
-Clapeyron.numphases
 Clapeyron.supports_reduction
 Clapeyron.FlashResult
 Clapeyron.FlashData
 Clapeyron.FlashSpecifications
+Clapeyron.numphases
+Clapeyron.is_active_phase
+Clapeyron.each_active_phase_index
 ```
 
 ## Flash functions
