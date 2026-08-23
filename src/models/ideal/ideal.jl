@@ -39,5 +39,3 @@ function _update_idealuserlocations_for_GC(idealmodel::Type{<:IdealModel},ideal_
    end
    return ideal_userlocations
 end
-
-
