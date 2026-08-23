@@ -30,16 +30,16 @@ function transform_params(::Type{PTHAlpha},params,components)
         if N.ismissingvalues[i] && L.ismissingvalues[i] && w.ismissingvalues[i]
             throw(error("PTHAlpha: cannot estimate M and L: missing acentricfactor parameter"))
         end
-        
+
         if N.ismissingvalues[i] && L.ismissingvalues[i] && !(w.ismissingvalues[i])
             #=
             Heyen: alpha = exp(H1*(1 - Tr^H2))
             Twu:   alpha = Tr^(N*(M-1))*exp(L*(1 - Tr^M*N))
-            
+
             we can convert from Heyen to Twu:
             L = H1
             N = H2
-            M = 1 
+            M = 1
             =#
             ω = w[i]
             βc = evalpoly(ω,(1.4563,1.26,−0.3928))
@@ -152,7 +152,7 @@ model = PatelTejaHeyen(["neon","hydrogen"];
                         Pc = [2679000, 1296400],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
-                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        k = [0. 0.18; 0.18 0.], #k,l can be omitted in single-component models.
                         l = [0. 0.01; 0.01 0.])
                     )
 ```
@@ -191,7 +191,7 @@ function PatelTejaHeyen(components;
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     recombine_cubic!(model,k,l)
-    push!(model.references,"10.1016/j.fluid.2012.12.032") 
+    push!(model.references,"10.1016/j.fluid.2012.12.032")
     set_reference_state!(model,reference_state;verbose)
     return model
 end

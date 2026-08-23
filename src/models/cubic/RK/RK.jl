@@ -14,7 +14,7 @@ end
 export RK
 
 """
-    RK(components; 
+    RK(components;
     idealmodel = BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
@@ -70,7 +70,7 @@ model = RK(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced
 # Passing a prebuilt model
 
 my_alpha = SoaveAlpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model = RK(["ethane","butane"],alpha = my_alpha) #this is efectively now an SRK model
+model = RK(["ethane","butane"],alpha = my_alpha) #this is effectively now an SRK model
 
 # User-provided parameters, passing files or folders
 
@@ -84,7 +84,7 @@ model = RK(["neon","hydrogen"];
                         Pc = [2679000, 1296400],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
-                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        k = [0. 0.18; 0.18 0.], #k,l can be omitted in single-component models.
                         l = [0. 0.01; 0.01 0.])
                     )
 ```
@@ -109,7 +109,7 @@ function RK(components;
     reference_state = nothing,
     verbose = false)
     formatted_components = format_components(components)
-    
+
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
         userlocations = userlocations,
         verbose = verbose,

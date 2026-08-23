@@ -86,7 +86,7 @@ model = vdW(["neon","hydrogen"];
                         Pc = [2679000, 1296400],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
-                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        k = [0. 0.18; 0.18 0.], #k,l can be omitted in single-component models.
                         l = [0. 0.01; 0.01 0.])
                     )
 ```
@@ -124,7 +124,7 @@ function vdW(components;
                         idealmodel,alpha,mixing,activity,translation,
                         userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
                         reference_state, verbose)
-    
+
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     recombine_cubic!(model,k,l)

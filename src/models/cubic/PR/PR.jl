@@ -27,7 +27,7 @@ end
     translation_userlocations = String[],
     verbose = false,
     reference_state = nothing)
-    
+
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
@@ -81,7 +81,7 @@ model = PR(["neon","hydrogen"];
                         Pc = [2679000, 1296400],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
-                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        k = [0. 0.18; 0.18 0.], #k,l can be omitted in single-component models.
                         l = [0. 0.01; 0.01 0.])
                     )
 ```

@@ -200,7 +200,7 @@ model = YFR(["neon","hydrogen"];
                         Pc = [2679000, 1296400],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
-                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        k = [0. 0.18; 0.18 0.], #k,l can be omitted in single-component models.
                         l = [0. 0.01; 0.01 0.])
                     )
 ```
@@ -241,7 +241,7 @@ function YFR(components;
                         idealmodel,alpha,mixing,activity,translation,
                         userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
                         reference_state, verbose)
-    
+
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     recombine_cubic!(model,k,l)
@@ -303,7 +303,7 @@ end
 #technically we do dX/dTr = 0 instead of dX/dT = 0, but it is equivalent for eos evaluation purposes
 #this is not correct if you are actually fitting the parameters.
 function YFR_ξc(Zc,_Tr)
-    Tr = primalval(_Tr) 
+    Tr = primalval(_Tr)
     return 0.144894*exp(-Tr^4) − 0.129835*exp(-Tr^3) + 0.957454*Zc + 0.036884
 end
 
