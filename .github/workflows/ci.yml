@@ -81,7 +81,6 @@ jobs:
       # ----- Coverage (runs on all jobs) -----
       - name: Process coverage data
         uses: julia-actions/julia-processcoverage@v1
-        with:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
