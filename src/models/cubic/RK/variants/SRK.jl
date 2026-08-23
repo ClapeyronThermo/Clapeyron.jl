@@ -5,7 +5,7 @@
     mixing = vdW1fRule,
     activity = nothing,
     translation = NoTranslation,
-    userlocations = String[], 
+    userlocations = String[],
     ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -48,7 +48,7 @@ model = SRK(["neon","hydrogen"];
                         Pc = [2679000, 1296400],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
-                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        k = [0. 0.18; 0.18 0.], #k,l can be omitted in single-component models.
                         l = [0. 0.01; 0.01 0.])
                     )
 ```
@@ -63,7 +63,7 @@ function SRK(components;
     mixing = vdW1fRule,
     activity = nothing,
     translation = NoTranslation,
-    userlocations = String[], 
+    userlocations = String[],
     ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -78,7 +78,7 @@ function SRK(components;
     mixing = mixing,
     activity = activity,
     translation = translation,
-    userlocations = userlocations, 
+    userlocations = userlocations,
     ideal_userlocations = ideal_userlocations,
     alpha_userlocations = alpha_userlocations,
     mixing_userlocations = mixing_userlocations,
