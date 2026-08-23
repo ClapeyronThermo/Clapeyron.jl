@@ -240,9 +240,9 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
         ub[end] = Inf
         opt_options = OptimizationOptions(f_abstol = 0.0,f_reltol = 0.0,x_abstol = 1e-10,maxiter = 1000)
         if second_order
-            sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, Solvers.LineSearch(Solvers.Newton2(ny_var_and_ψ0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
+            sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, LineSearch(Newton2(ny_var_and_ψ0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         else
-            sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, Solvers.LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub)),opt_options)
+            sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, LineSearch(Solvers.BFGS(),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         end
         ny_var_and_ψ = Solvers.x_sol(sol)
         ny_var = @view ny_var_and_ψ[1:end-1]

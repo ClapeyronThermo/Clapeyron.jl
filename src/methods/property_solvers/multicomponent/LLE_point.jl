@@ -73,7 +73,7 @@ function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
     f! = (F,z) -> Obj_bubble_pressure(model_r, F, T, z[1], z[2], x_r, z[3:end])
     options = NLSolvers.NEqOptions(maxiter = 1000) #this should converge in very few iters
     #putting the limit here allows to faster bail-out in case of unsucessful iteration
-    r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),options)
+    r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0),Backtracking()),options)
     sol = Solvers.x_sol(r)
     !__check_convergence(r) && (sol .= NaN)
     xx_r = FractionVector(sol[3:end])
@@ -117,7 +117,7 @@ function LLE_temperature(model::EoSModel,p,x;v0=nothing)
     options = NLSolvers.NEqOptions(maxiter = 1000) #this should converge in very few iters
     #putting the limit here allows to faster bail-out in case of unsucessful iteration
     v00 = v0[1:nc+2]
-    r = Solvers.nlsolve(f!,v00,LineSearch(Newton2(v00)),options)
+    r = Solvers.nlsolve(f!,v00,LineSearch(Newton2(v00),Backtracking()),options)
     sol = Solvers.x_sol(r)
     !__check_convergence(r) && (sol .= NaN)
     T = sol[1]

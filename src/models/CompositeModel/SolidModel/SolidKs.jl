@@ -109,7 +109,7 @@ function sle_solubility(model::CompositeModel{F,S},p,T,z;solute=nothing,x0=nothi
             x0 = x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
         end
         f!(F,x) = obj_sle_solubility(F,model,p,T,z,exp10(x[1]),idx_sol_l,idx_sol_s,idx_solv,ν_l)
-        results = Solvers.nlsolve(f!,x0,LineSearch(Newton()),NEqOptions(f_abstol=1e-6,f_reltol=1e-8),ForwardDiff.Chunk{1}())
+        results = Solvers.nlsolve(f!,x0,LineSearch(Newton(),Backtracking()),NEqOptions(f_abstol=1e-6,f_reltol=1e-8),ForwardDiff.Chunk{1}())
         sol[i,.!(idx_solv)] .= exp10(Solvers.x_sol(results)[1]).*ν_l
         sol[i,idx_solv] = z[idx_solv]
         sol[i,:] ./= sum(sol[i,:])

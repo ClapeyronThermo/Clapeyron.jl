@@ -34,7 +34,7 @@ function crit_mix(model::EoSModel,z;v0=nothing)
 
     x0 = [v0[1],v0[2]] #could replace for MVector{2}
     f! = (F,x) -> Obj_crit_mix(model_r, F, z_r, exp10(x[1]), x[2])
-    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton2(x0)))
+    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton2(x0),Backtracking()))
     sol = Solvers.x_sol(r)
     !__check_convergence(r) && (sol .= NaN)
     T_c = sol[2]

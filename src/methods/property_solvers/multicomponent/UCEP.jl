@@ -17,7 +17,7 @@ function UCEP_mix(model::EoSModel;v0=nothing)
         v0 = x0_UCEP_mix(model)
     end
     f! = (F,x) -> Obj_UCEP_mix(model, F, x[1], x[2], exp10(x[3]), exp10(x[4]), x[5])
-    r  = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)))
+    r  = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0),Backtracking()))
     sol = Solvers.x_sol(r)
     !__check_convergence(r) && (sol .= NaN)
     x = FractionVector(sol[1])

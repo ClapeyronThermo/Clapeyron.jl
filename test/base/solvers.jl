@@ -100,8 +100,8 @@ end
     # Finance", p. 51
     #does not converge in NLSolve.jl converges here with NLSolvers.jl
     @testset "nlsolve" begin
-        res = SOL.nlsolve(f_diffmcp!,[0.0],SOL.NLSolvers.TrustRegion(SOL.NLSolvers.Newton()),SOL.NLSolvers.NEqOptions(),ForwardDiff.Chunk{1}())
-        res2 = SOL.nlsolve(f_diffmcp!,[0.0],SOL.NLSolvers.LineSearch(SOL.NLSolvers.Newton()),SOL.NLSolvers.NEqOptions(),ForwardDiff.Chunk{1}())
+        res = SOL.nlsolve(f_diffmcp!,[0.0],TrustRegion(Newton()),SOL.NLSolvers.NEqOptions(),ForwardDiff.Chunk{1}())
+        res2 = SOL.nlsolve(f_diffmcp!,[0.0],LineSearch(Newton(),Backtracking()),SOL.NLSolvers.NEqOptions(),ForwardDiff.Chunk{1}())
         @test SOL.x_sol(res) isa Vector
         @test SOL.x_sol(res2) isa Vector
         solution = SOL.x_sol(res)

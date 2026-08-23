@@ -85,7 +85,7 @@ function tpd_min(model::EoSModel, p, T, di, z, w0, phasez, phasew; volz0=nothing
     # minimizing the TPD by Newton's method
     dftpd!(F, G, H, α) = tpd_obj!(model, p, T, di, α, phasew, vcache, F=F, G=G, H=H)
     #obj = tpd_k_obj(model, p, T, di, is_liquid(phasez))
-    sol = Solvers.optimize(Solvers.only_fgh!(dftpd!), α0,LineSearch(Newton())) #, method=LineSearch(Newton()))#  , Optim.Newton())
+    sol = Solvers.optimize(Solvers.only_fgh!(dftpd!), α0,LineSearch(Newton(),Backtracking())) #, method=LineSearch(Newton(),Backtracking()))#  , Optim.Newton())
     # computing phase composition
     w = sol.info.solution.^2 / 4
     w ./= sum(w)
