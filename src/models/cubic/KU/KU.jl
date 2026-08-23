@@ -7,7 +7,7 @@ export KUAlpha
 
 """
     KUAlpha <: AlphaModel
-    
+
     KUAlpha(components;
     userlocations = String[],
     verbose::Bool=false)
@@ -212,7 +212,7 @@ model = KU(["neon","hydrogen"];
                         Vc = [4.25e-5, 6.43e-5],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
-                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        k = [0. 0.18; 0.18 0.], #k,l can be omitted in single-component models.
                         l = [0. 0.01; 0.01 0.])
                     )
 ```

@@ -34,11 +34,11 @@ function __glenn_jl end
 
 ## Description
 
-Ideal model using the NASA-7 polynomial coefficients provided by the `Glenn.jl` package. the polynomials are standarized to fit specific values of enthalpy and entropy at 1 bar, 298.15K.
+Ideal model using the NASA-7 polynomial coefficients provided by the `Glenn.jl` package. the polynomials are standardized to fit specific values of enthalpy and entropy at 1 bar, 298.15K.
 
 !!! note
 
-    `Clapeyron.GlennJL` requires the package [`Glenn.jl`](https://github.com/ProfLeao/Glenn.jl) to be loaded in the enviroment.
+    `Clapeyron.GlennJL` requires the package [`Glenn.jl`](https://github.com/ProfLeao/Glenn.jl) to be loaded in the environment.
 
 ## Model Construction Examples
 ```
@@ -80,7 +80,7 @@ the model `GlennJL` has the following integrations with `Glenn.jl` package:
 function GlennJL(a1,a2;kwargs...)
     m = Base.get_extension(Clapeyron,:ClapeyronGlennExt)
     if m === nothing
-        error("the `GlennJL` model requires the Package 'Glenn.jl' to be available in the same enviroment as `Clapeyron.jl`. Please add the package if not installed (`]add Glenn`) and then load it in the current enviroment (`using Glenn`).")
+        error("the `GlennJL` model requires the Package 'Glenn.jl' to be available in the same environment as `Clapeyron.jl`. Please add the package if not installed (`]add Glenn`) and then load it in the current environment (`using Glenn`).")
     end
     __glenn_jl(a1,a2;kwargs...)
 end

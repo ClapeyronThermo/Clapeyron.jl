@@ -87,7 +87,7 @@ end
 """
     assoc_strength(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
     Δ(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
-Calculates the asssociation strength between component `i` at site `a` and component `j` at site `b`.
+Calculates the association strength between component `i` at site `a` and component `j` at site `b`.
 
 Any precomputed values can be passed along by calling `Clapeyron.data`.
 
@@ -507,7 +507,7 @@ function X_exact2!(K,X)
     if iszero(A1) || iszero(A4)
         X_exact2_123!(K,X)
         return true,true
-        
+
     end
 
     a = -A3/A2
@@ -623,10 +623,10 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
 
     - M(X) = 1 / 1 + KX (original)
     - M(X) = 2*X / (X + sqrt(X*X + 4*KX*X)) (at the solution, KX = K̂ .* X, then we use the approximation K̂ ≈ KX ./ X and solve for that. really fast when problem is diagonally dominant.)
-    - M(X) = X - F(X) ./ G(X), G(X) = 2 .* KX .+ 1 (elementwise newton update) 
+    - M(X) = X - F(X) ./ G(X), G(X) = 2 .* KX .+ 1 (elementwise newton update)
 
     The original formula has some interesting properties:
-    if we do a undamped update and start from a value M(0) > Xsol, then M(1) < M(3) < M(5) <... < M(N) <... < M(4) .. M(2) < M(0). This is known as an antitone map.  
+    if we do a undamped update and start from a value M(0) > Xsol, then M(1) < M(3) < M(5) <... < M(N) <... < M(4) .. M(2) < M(0). This is known as an antitone map.
     In practical terms, if you do have additional vectors on where to store data, two undamped iterations define lower and upper bounds.
 
     # Damping
@@ -635,10 +635,10 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
     the optimal damping for the original SS map is 2/(1 - lmin + lmax) where l is abs.(eigvals(Diagonal(Xsol .* Xsol)*K))
     sadly, for obvious reasons, we don't have this value for each iteration, but we can use approximations.
 
-    We use the blending of two approximations to get a "good" alpha estimate. 
+    We use the blending of two approximations to get a "good" alpha estimate.
     It slightly underestimates the real optimum alpha value, but already helps a lot.
-    This is known as adaptative damping. 
-    Approximations for the second form are also available (i have those), 
+    This is known as adaptative damping.
+    Approximations for the second form are also available (i have those),
     but the advantage of the adaptative damping used by the first form is that it only uses information about the current iterates.
 
     # Gauss-seidel on SS
@@ -647,7 +647,7 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
     Ideally, you need to separate contributions into groups (like acceptor-donor groups, or graph-coloring the matrix K)
 
     # K-matrix and graph theory.
-    
+
     We can view K as a weighed graph, where the weighted edges are the association strength between two nodes (sites)
     As a graph, we can do graph operations. One interesting operation is graph coloring.
     Some association solvers use the acceptor - donor framework. were, instead of weighted edges, the nodes themselves have weight, and the value of the edge is a function of the value at the nodes.
@@ -656,14 +656,14 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
     For bipartite matrices and staggered updates, ideally you only do an staggered update from an index of one color to the index of other color.
 
     # DK Matrix
-    
+
     The K matrix is equal to ρ*Δ * Diagonal([n[i,a]*z[i] for (i,a) in site_indices(Δ)]) = Δ₀ * D.
     Δ₀ is a symmetric matrix, D is a diagonal matrix.
     if we multiply by D again:
     D * Δ₀ * D = D*K, we have what i call the DK matrix. we can store D̂ = 1 ./ diag(D) and DK instead of K.
     Some properties:
     - K*X = DK*X .* D̂ (the KX multiplication requires n2 multiplications. doing it with DK instead uses n2/2 + n multiplications instead.
-     
+
     # Newton updates
 
     After a number of ss iterations are done, we use newton minimization.
@@ -672,7 +672,7 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
     TODO: implement newton-krylov, to avoid allocating another matrix.
 
     some notes:
-    - you can in fact work with a symmetric matrix, if you 
+    - you can in fact work with a symmetric matrix, if you
     - the linear system is solved via LU decomposition, for that, we need to allocate one (1) Matrix{T} and one (1) Vector{Int}.
     - julia 1.10 does not have a way to make LU non-allocating, but the code is simple, so it was added as the function unsafe_LU! in the Solvers module.
     =#
@@ -1091,7 +1091,7 @@ end
 """
     @assoc_loop(Xold,Xnew,expr)
 Solves an association problem, given an expression for the calculation of the fraction of non-bonded sites `X`.
-The macro takes care of creating the appropiate shaped vectors, and passing the appropiate iteration parameters from `AssocOptions`.
+The macro takes care of creating the appropriate shaped vectors, and passing the appropriate iteration parameters from `AssocOptions`.
 Expects the following variable names in scope:
 - `model` : EoS Model used.
 - `V`,`T`,`z` : Total volume, Temperature, mol amounts.

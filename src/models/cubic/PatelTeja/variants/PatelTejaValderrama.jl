@@ -7,7 +7,7 @@ export PTVAlpha
 
 """
     PTVAlpha <: PTVAlphaModel
-    
+
     PTVAlpha(components;
     userlocations = String[],
     verbose::Bool=false)
@@ -151,7 +151,7 @@ model = PTV(["neon","hydrogen"];
                         Vc = [4.25e-5, 6.43e-5],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
-                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        k = [0. 0.18; 0.18 0.], #k,l can be omitted in single-component models.
                         l = [0. 0.01; 0.01 0.])
                     )
 ```
@@ -179,7 +179,7 @@ function PTV(components;
     translation_userlocations = String[],
     reference_state = nothing,
     verbose = false)
-    
+
     formatted_components = format_components(components)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
     model = CubicModel(PTV,params,formatted_components;

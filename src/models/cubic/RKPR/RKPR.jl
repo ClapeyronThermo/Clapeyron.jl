@@ -129,7 +129,7 @@ model = RKPR(["neon","hydrogen"];
                         Vc = [4.25e-5, 6.43e-5],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
-                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        k = [0. 0.18; 0.18 0.], #k,l can be omitted in single-component models.
                         l = [0. 0.01; 0.01 0.])
                     )
 ```
@@ -153,10 +153,10 @@ function RKPR(components;
     translation_userlocations = String[],
     reference_state = nothing,
     verbose = false)
-    
+
     formatted_components = format_components(components)
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc"])
-    
+
     model = CubicModel(RKPR,params,formatted_components;
                         idealmodel,alpha,mixing,activity,translation,
                         userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
@@ -229,7 +229,7 @@ function c_premixing(model::RKPRModel)
             end
             delta[i] = δ
         elseif !delta.ismissingvalues[i]
-            
+
         else
             throw(MissingException("RKPR: Vc or delta needs to be specified."))
         end

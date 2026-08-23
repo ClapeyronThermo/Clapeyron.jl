@@ -9,7 +9,7 @@ Core structure used for parameter optimization.
 It joins estimation models and estimation data to perform parameter optimization.
 It can be created from a `EstimationUtils.AbstractEstimationModel` and a list of `EstimationUtils.AbstractEstimationLoss`.
 If `concrete` is set to `true`, then the list of data will be converted into a tuple before storing it.
-If `concrete` is set to `false`, then the list of data will be stored as an abstract vector, allowing adding data with different losses and methods afer the problem is constructed.
+If `concrete` is set to `false`, then the list of data will be stored as an abstract vector, allowing adding data with different losses and methods after the problem is constructed.
 
 """
 mutable struct EstimationProblem{T<:EoSModel, M <: EstimationUtils.AbstractEstimationModel{T},D}
@@ -71,10 +71,10 @@ function __estimationdata_fix_species!(data::EstimationData,comps,norm_comps)
                 new_comp = norm_species_j * species_j1
                 new_comp_with_spaces = norm_species_j * " " * species_j1
                 if new_comp in norm_comps
-                    throw(error("EstimationData error: species $(error_color(species_j)) not found in input model, but $(info_color(new_comp_with_spaces)) is found. 
+                    throw(error("EstimationData error: species $(error_color(species_j)) not found in input model, but $(info_color(new_comp_with_spaces)) is found.
 Try wrapping each species name in the list between quotes: `$(low_color('"' * new_comp_with_spaces*'"'))` instead of `$(low_color(new_comp_with_spaces))`"))
                 end
-      
+
             else
                 #modify species to make it match with the input model
                 species[j] = comps[i]
