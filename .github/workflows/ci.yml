@@ -74,14 +74,14 @@ jobs:
       # ----- Extension tests: ONLY Ubuntu + Julia 1 -----
       - name: Run test suite (with extensions)
         if: matrix.os == 'ubuntu-latest' && matrix.version == '1'
-        uses: julia-actions/julia-runtest@latest
-        with:
-          project: 'test/extensions' # heavy environment: Clapeyron + integrations
+        shell: julia --color=yes --depwarn=yes --inline=yes --project=test/extensions {0}
+        run: |
+          import Pkg
+          Pkg.test(coverage = "@" * ENV["GITHUB_WORKSPACE"], julia_args = ["--check-bounds=yes"])
       # ----- Coverage (runs on all jobs) -----
       - name: Process coverage data
         uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src ext ${{ matrix.os == 'ubuntu-latest' && matrix.version == '1' && 'test/extensions/src' || '' }}
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
