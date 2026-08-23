@@ -39,7 +39,7 @@ warnonly = Documenter.except(),
                                    "Bulk Properties" => "properties/bulk.md",
                                    "Single phase Equilibria" => "properties/single.md",
                                    "Multiphase Equilibria"  => "properties/multi.md",
-                                   "Flash methods" => "properties/flash.md"
+                                   "Flash methods" => "properties/flash.md",
                                    "Electrolyte Properties" => "properties/electrolytes.md"],
 
         "API" => ["Parameters" => "api/parameters.md",
