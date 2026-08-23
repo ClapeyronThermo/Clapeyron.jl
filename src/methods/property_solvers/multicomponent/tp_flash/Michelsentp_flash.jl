@@ -5,7 +5,7 @@ Method to solve non-reactive multicomponent flash problem by Michelsen's method.
 
 Only two phases are supported. If `K0` is `nothing`, it will be calculated via the Wilson correlation.
 
-### Keyword Arguments:
+## Keyword Arguments:
 - `equilibrium`: `:vle` for liquid vapor equilibria, `:lle` for liquid liquid equilibria, `:unknown` if not specified.
 - `K0`: initial guess for the K-values.
 - `x0`: initial guess for the composition of phase x.
@@ -19,6 +19,35 @@ Only two phases are supported. If `K0` is `nothing`, it will be calculated via t
 - `nonvolatiles`: arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase.
 - `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
 - `verbose` : if set to `true`, the method will display additional information in the REPL.
+
+## Result values
+
+This flash method will always return two phases, independently of the amount of actual phases in equilibria.
+The phase in the first index is considered the `x` phase (always liquid), whereas the phase on the second index is considered the `y` phase (vapour phase in VLE, liquid phase in LLE).
+In this way, one can recover the converged K value by dividing the compositions in the following way:
+
+```julia
+x,y = result.compositions
+K = y ./ x
+```
+
+On two-phase equilibria, there are two different phases, with non-zero phase fractions and compositions, whereas on one-phase equilibria, one phase will have a zero phase fraction and one phase will have a phase fraction equal to `sum(z_bulk)`.
+We will name the phase with non-zero phase fraction "active phase"; the phase with null phase fraction will be named "incipient" phase.
+A two-phase equilibria result will have two active phases and zero incipient phases, a one-phase equilibria result will have one active phase and one incipient phase.
+We can get the amount of active phases using [`Clapeyron.numphases(result,true)`](@ref Clapeyron.numphases), and check whatever phase is active via [`Clapeyron.is_active_phase`](@ref).
+
+### K-values on results with incipient phases
+
+On a one-phase equilibria result, the K value calculated via `K = y ./ x` is not a valid equilibrium K with respect to the bulk composition.
+This value is still useful, but some care is needed while handling this result. we can identify three cases:
+
+1.  "hard" liquid and "hard" vapour: In those cases, the converged K value has all Kᵢ > 1 (vapour result), or all Kᵢ < 1 (liquid result).
+    Because compositions in a `FlashResult` are normalized, the K obtained via `y ./ x` will have at least one value equal to `1`.
+1.  "soft" liquid and "soft" vapour: In those cases, while K converged, no vapour fraction `β` in the range (0,1) can satisfy `β = Clapeyron.rachfordrice(K,z)`.
+    In this case, `minimum(K) < 1` and `maximum(K) > 1`.
+1.  "trivial" result: No separation could be done, and the flash procedure converged to the trivial result `K .= 1`.
+    The phase is still identified (so the active phase can still be identified as liquid or vapour), no incipient phase could be found.
+    In this case, `all(isone,K) == true`.
 """
 struct MichelsenTPFlash{T} <: TPFlashMethod
     equilibrium::Symbol
@@ -157,7 +186,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
     non_iny_list = method.nonvolatiles
 
     if !reduced
-        model,z_nonzero = index_reduction(model_full,z_full)    
+        model,z_nonzero = index_reduction(model_full,z_full)
     else
         model,z_nonzero = model_full,fill(true,length(model_full))
     end
@@ -420,46 +449,61 @@ verbose &&
 
     #convergence checks (TODO, seems to fail with activity models)
     status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
+    final_status = status
     verbose && status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
     vx,vy = vcache[]
     #@show vx,vy
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && status != RREq
         verbose && @info "trivial result but different volumes (maybe azeotrope?)"
-        status = RREq
+        final_status = RREq
     elseif status == RRTrivial
         verbose && @info "procedure converged to trivial K-values, checking initial conditions to see if resulting phase is liquid or vapour."
-        status0 == RRLiquid && (status = RRLiquid)
-        status0 == RRVapour && (status = RRVapour)
-    elseif status == RREq && β <= eps(eltype(β))
-        status = RRLiquid
-    elseif status == RREq && β >= one(β) - eps(eltype(β))
-        status = RRVapour
-    elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
-        verbose && @info "material balance failed."
-        status = RRFailure
-    end
-
-    verbose && status == RRLiquid && @info "procedure converged to a single liquid phase."
-    verbose && status == RRVapour && @info "procedure converged to a single vapour phase."
-
-    if status != RREq
-        _0 = zero(eltype(x))
-        _1 = one(eltype(x))
+        status0 == RRLiquid && (final_status = RRLiquid)
+        status0 == RRVapour && (final_status = RRVapour)
         x .= z
         y .= z
-        if status == RRLiquid
+    elseif status == RREq && β <= eps(eltype(β))
+        final_status = RRLiquid
+    elseif status == RREq && β >= one(β) - eps(eltype(β))
+        final_status = RRVapour
+    elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
+        @show (model,p,T,z)
+        verbose && @info "material balance failed."
+        final_status = RRFailure
+    end
+
+    verbose && final_status == RRLiquid && @info "procedure converged to a single liquid phase."
+    verbose && final_status == RRVapour && @info "procedure converged to a single vapour phase."
+
+    if final_status != RREq
+        _0 = zero(eltype(x))
+        _1 = one(eltype(x))
+        if final_status == RRLiquid
             β = _0
-            vz = volume(model,p,T,z,phase = :l)
-        elseif status == RRVapour
+            x .= z
+            vx = volume(model,p,T,z,phase = :liquid, vol0 = vx)
+            if status == RRTrivial
+                y .= z
+                vy = vx
+            end
+        elseif final_status == RRVapour
             β = _1
-            vz = volume(model,p,T,z,phase = :v)
-        else
+            y .= z
+            vy = volume(model,p,T,z,phase = :vapour, vol0 = vy)
+            if status == RRTrivial
+                x .= z
+                vx = vy
+            end
+        elseif final_status == RRFailure
+            #TODO: how do we decide a phase here? couldn't find a combination of EoS + conditions that reach this.
+            #if !_is_positive(@view(K[in_equilibria]))
             β = _0/_0
             vz = _0/_0
+            x .= z
+            y .= z
+            vx,vy = vz,vz
         end
-        vx = vz
-        vy = vz
     end
 
     #activity models don't need volume calculations for the flash calculation.

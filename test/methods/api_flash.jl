@@ -26,13 +26,16 @@
         #bubble_temperature(model, p, z) # 282.2827723244425 K
         res1 = Clapeyron.tp_flash2(model_zulip1, p_zulip1, 282.2, z_zulip1, RRTPFlash(equilibrium=:vle))
         res2 = Clapeyron.tp_flash2(model_zulip1, p_zulip1, 282.3, z_zulip1, RRTPFlash(equilibrium=:vle))
+        
         if Clapeyron.numphases(res1) == 2
-            @test iszero(res1.fractions[2])
-            @test res1.volumes[1] ≈ 0.00010665596678830227 rtol = 1e-6
+            @test !is_active_phase(res1,2)
+            @test Clapeyron.numphases(res1,true) == 1
+            @test res1.volumes[1] ≈ 0.00010665596678830227 rtol = 1e-6  
         else
             @test res1.volumes[1] ≈ 0.00010665596678830227 rtol = 1e-6
         end
-
+        @test collect(each_active_phase_index(res1)) == [1]
+        @test collect(each_active_phase_index(res2)) == [1,2]
         @test Clapeyron.numphases(res2) == 2
         @test res2.fractions[1] ≈ 0.9991083897702745 rtol = 1e-6
 
@@ -41,11 +44,11 @@
         res3 = Clapeyron.tp_flash2(model_zulip2, 1e5 , 450, z_zulip1, RRTPFlash(equilibrium=:vle))
         res3_pt = Clapeyron.PT.flash(model_zulip2, 1e5 , 450, z_zulip1, RRTPFlash(equilibrium=:vle))
         if Clapeyron.numphases(res3) == 2
-            @test isone(res3.fractions[2])
-            @test res3.volumes[1] ≈ 0.03683358805181434 rtol = 1e-6
-            @test res3.volumes[1] ≈ res3_pt.volumes[1]
+            @test !is_active_phase(res3,1)
+            @test res3.volumes[2] ≈ 0.03683358805181434 rtol = 1e-6
+            @test res3.volumes[2] ≈ res3_pt.volumes[2]
         else
-            @test res3.volumes[1] ≈ 0.03683358805181434 rtol = 1e-6
+            @test res3.volumes[2] ≈ 0.03683358805181434 rtol = 1e-6
         end
     end
 
@@ -105,7 +108,7 @@
 
         @testset "#454" begin
             mix = PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"];
-                        idealmodel=AlyLeeIdeal,
+                        #idealmodel=AlyLeeIdeal,
                         userlocations=(;
                             Tc             = [425.12, 469.7, 507.6, 540.2],
                             Pc             = [37.96e5, 33.7e5, 30.25e5, 27.4e5],

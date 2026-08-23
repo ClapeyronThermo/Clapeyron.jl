@@ -555,13 +555,14 @@ An active phase is defined as:
 - Nonnegative and finite temperatures and pressures.
 
 A single-phase sucessful flash will have one active phase and zero or more inactive phases.
+The function [Clapeyron.each_active_phase_index](@ref) returns an iterator of all active phase indices.
 Inactive phases can still carry relevant information; for example, in a QP flash where Q is 0 (bubble point), the inactive phase stores the gas composition and volume.
 """
 is_active_phase(result::FlashResult,i)::Bool = _is_active_phase(result.compositions[i],result.volumes[i],result.fractions[i]) && _check_pt(result.data.p,result.data.T)
-_is_active_phase(xi,vi,βi,p,T) = all(>=(0), xi) & (vi >= 0) & (βi > 0)
+_is_active_phase(xi,vi,βi) = all(>=(0), xi) & (vi >= 0) & (βi > 0)
 function _check_pt(p::X,T::X) where X
     lo,hi = minmax(p,T)
-    return lo >= zero(X) & isfinite(hi)
+    return (lo >= zero(X)) & isfinite(hi)
 end
 
 """
@@ -569,6 +570,7 @@ end
 
 Return the number of phases stored in a `FlashResult. If `active` is set to `true`, then it will return the number of *active* phases.
 An active phase is a phase with non-zero fraction, nonnegative compositions and nonnegative volumes.
+If the result has nonfinite temperature or pressure `numphases(result,true)` will return `0`.
 """
 numphases(result::FlashResult) = numphases(result,false)
 
@@ -720,3 +722,4 @@ include("flash/flash_HSU.jl")
 
 
 export FlashResult, FlashData
+export numphases, is_active_phase, each_active_phase_index

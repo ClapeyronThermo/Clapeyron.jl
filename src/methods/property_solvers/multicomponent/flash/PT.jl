@@ -9,7 +9,7 @@ abstract type TPFlashMethod <: FlashMethod end
     tp_flash(model, p, T, n, method::TPFlashMethod = DETPFlash())
 
 Routine to solve non-reactive multicomponent flash problem.
-The default method uses Global Optimization. See [`DETPFlash`](@ref)
+The default method tries to find all phases. See [`MultiPhaseTPFlash`](@ref)
 
 Inputs:
  - T, Temperature `[K]`
@@ -53,9 +53,21 @@ function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs)
     end
 end
 
-export tp_flash
+"""
+    result = tp_flash2(model, p, s, n, method::FlashMethod = GeneralizedXYFlash())
+    result = tp_flash2(model, p, s, n; kwargs...)
 
-#we use tp_flash2 and transform to tp_flash
+Routine to solve non-reactive two-phase multicomponent flash problem. With P-T specifications.
+The default method tries to find all phases. See [`MultiPhaseTPFlash`](@ref)
+
+Inputs:
+ - `p`, pressure `[Pa]`
+ - `T`, temperature `[K]`
+ - `n`, vector of number of moles of each species `[mol]`
+
+ Outputs:
+ - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
+"""
 function tp_flash2(model::EoSModel, p, T, n; kwargs...)
     method = init_preferred_method(tp_flash,model,kwargs)
     return tp_flash2(model,p,T,n,method)
@@ -135,3 +147,6 @@ function tp_flash_impl(model,p,T,z,method::RRXYFlash)
     spec = FlashSpecifications(pressure,p,temperature,T)
     return xy_flash(modelx,spec,z,flash0,method)
 end
+
+export tp_flash
+@public tp_flash2

@@ -24,7 +24,7 @@ The algorithm finishes when SS or the Gibbs minimization converges and all resul
 
 If the result of the phase equilibria is not stable, then it proceeds to add/remove phases again, for a maximum of `phase_iters` iterations.
 
-### Keyword Arguments:
+## Keyword Arguments:
 
 - `K0` (optional), initial guess for the constants K.
 - `x0` (optional), initial guess for the composition of phase x.
