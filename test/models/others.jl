@@ -287,11 +287,11 @@ end
 
     @testset "GERG2008" begin
         system = GERG2008(["water"])
-        @test Clapeyron.a_ideal(system, V, T, z) ≈ 4.500151936577565 rtol = 1e-6
+        @test Clapeyron.a_ideal(system, V, T, z) ≈ 4.5001462034164685 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T, z) ≈ -10.122119572808764 rtol = 1e-6
         z4   = [0.25,0.25,0.25,0.25]
         system = GERG2008(["water","carbon dioxide","hydrogen sulfide","argon"])
-        @test Clapeyron.a_ideal(system, V, T, z4) ≈ 3.1136322215343917 rtol = 1e-6
+        @test Clapeyron.a_ideal(system, V, T, z4) ≈ 3.11362687497496 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system, V, T, z4) ≈ 0.0 rtol = 1e-14
         @test Clapeyron.a_res(system, V, T, z4) ≈ -1.1706377677539772 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z4) ≈ 0.0 atol = 1e-14

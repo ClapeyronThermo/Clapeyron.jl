@@ -406,18 +406,18 @@ GC.gc()
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 1.8067969591040684e-5 rtol = 1e-6
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1484.0034692716843 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T) ≈ 1.806796959197751e-5 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1484.0042866849979 rtol = 1e-6
         #EOS-LNG, table 15
         V1,T1 = 1/27406.6102,100.0
-        @test Clapeyron.pressure(met,V1,T1)  ≈ 1.0e6 rtol = 2e-6
+        @test Clapeyron.pressure(met,V1,T1)  ≈ 1.0e6 rtol = 1e-6
         @test Clapeyron.VT_speed_of_sound(met,V1,T1) ≈ 1464.5158 rtol = 1e-6
-        @test Clapeyron.pressure(met,1/28000,140) ≈ 86.944725e6  rtol = 2e-6
+        @test Clapeyron.pressure(met,1/28000,140) ≈ 86.944725e6  rtol = 1e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3184.83242429761 rtol = 1E-6
-        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3184.83242429761 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 647.0960000000457 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3184.8360179887577 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3184.8360179887577 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 647.096 rtol = 1E-6
     end
 end
 
@@ -425,7 +425,7 @@ end
     @testset "Bulk properties" begin
         #test found in #371
         model2 = GERG2008(["carbon dioxide","nitrogen","water"])
-        @test mass_density(model2,64.0e5,30+273.15,[0.4975080785711593, 0.0049838428576813995, 0.4975080785711593],phase = :l) ≈ 835.3971524715569 rtol = 1e-6
+        @test mass_density(model2,64.0e5,30+273.15,[0.4975080785711593, 0.0049838428576813995, 0.4975080785711593],phase = :l) ≈ 835.3971524715571 rtol = 1e-6
     
         #test found in #395:
 
@@ -440,7 +440,7 @@ end
         system = GERG2008(["carbon dioxide","water"])
         T = 298.15
         z = [0.8,0.2]
-        @test Clapeyron.bubble_pressure(system, T,z)[1] ≈ 5.853909891112583e6 rtol = 1E-5
+        @test Clapeyron.bubble_pressure(system, T,z)[1] ≈ 5.853916496529343e6 rtol = 1E-5
     end
 end
 

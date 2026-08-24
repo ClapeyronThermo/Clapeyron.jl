@@ -57,20 +57,6 @@ return SAFTgammaMie{BasicIdeal, Float64}(
         AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining, false), ["10.1063/1.4851455", "10.1021/je500248h"])
 end
 
-#fix to current tests
-function GERG2008(components;verbose = false,reference_state = nothing)
-    return MultiFluid(components;
-    mixing = AsymmetricMixing,
-    departure = EmpiricDeparture,
-    pure_userlocations = String["@REMOVEDEFAULTS","@DB/Empiric/GERG2008/pures"],
-    mixing_userlocations  = String["@REMOVEDEFAULTS","@DB/Empiric/GERG2008/mixing/GERG2008_mixing_unlike.csv"],
-    departure_userlocations = String["@REMOVEDEFAULTS","@DB/Empiric/GERG2008/departure/GERG2008_departure_unlike.csv"],
-    reference_state = reference_state,
-    coolprop_userlocations = false,
-    verbose = verbose,
-    Rgas = Clapeyron.R̄)
-end
-
 function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
     for i in (2.0,3.0,5.0,7.0,11.0)
         a_res₀ = Clapeyron.a_res(model,V,T,z)

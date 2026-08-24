@@ -3,11 +3,11 @@
     model10 = GERG2008(["butane"])
     #example 3.11 abott van ness, 7th ed.
     #pressure. 189 atm with CS compressibility relation
-    p11 = 185.95465583962599u"atm"
+    p11 = 185.9548656665463u"atm"
     v11 = 2u"ft^3"
     T11 = 122u"°F"
     n11 = 453.59237u"mol" #1 lb-mol
-    z11 = 0.8755772456569365 #t0.89 from CS compressibility relation
+    z11 = 0.8755782336379913 #t0.89 from CS compressibility relation
     @test Clapeyron.pressure(model11,v11,T11,n11,output = u"atm") ≈ p11
     @test Clapeyron.pressure(model11,v11,T11,[n11],output = u"atm") ≈ p11
     @test Clapeyron.compressibility_factor(model11,v11,T11,n11) ≈ z11 rtol = 1E-6
@@ -19,11 +19,11 @@
     T10 = 510u"K"
     Tc10 = 425.75874890467253u"K"
     pc10 = 3.830319495176967e6u"Pa"
-    R = (Clapeyron.R̄)u"J/(K*mol)"
-    v10 = 1478.2681326033257u"cm^3"
+    R = (Clapeyron.Rgas(model10))u"J/(K*mol)"
+    v10 = 1478.2700596623351u"cm^3"
     @test volume(model10,p10,T10,output=u"cm^3") ≈ v10 rtol = 1E-6
     #generalized pitzer CS virial gives -0.220
-    @test Clapeyron.second_virial_coefficient(model10,T10)*pc10/(R*Tc10) |> Unitful.ustrip ≈ -0.22346581496303466 rtol = 1E-6
+    @test Clapeyron.second_virial_coefficient(model10,T10)*pc10/(R*Tc10) |> Unitful.ustrip ≈ -0.2234655628100767 rtol = 1E-6
 
     #example 3.13, abbott and van ness, 7th ed.
     model13 = PR(["ammonia"],translation = PenelouxTranslation)
@@ -41,7 +41,7 @@
     @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1e-4
     @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1e-4
     #enthalpy of vaporization of water at 100 °C
-    @test enthalpy_vap(model31,100u"°C",output = u"kJ") ≈ 40.64971775824767u"kJ" rtol = 1E-6
+    @test enthalpy_vap(model31,100u"°C",output = u"kJ") ≈ pooooooooooooooooou"kJ" rtol = 1E-6
 
     # consistency of the results with/without units
     @test chemical_potential(BasicIdeal(), 1e6u"Pa", 300u"K") == chemical_potential(BasicIdeal(), 1e6, 300)*u"J/mol"
