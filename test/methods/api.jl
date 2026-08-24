@@ -41,7 +41,7 @@
     @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1e-4
     @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1e-4
     #enthalpy of vaporization of water at 100 °C
-    @test enthalpy_vap(model31,100u"°C",output = u"kJ") ≈ pooooooooooooooooou"kJ" rtol = 1E-6
+    @test enthalpy_vap(model31,100u"°C",output = u"kJ") ≈ 40.64971775824767u"kJ" rtol = 1E-6
 
     # consistency of the results with/without units
     @test chemical_potential(BasicIdeal(), 1e6u"Pa", 300u"K") == chemical_potential(BasicIdeal(), 1e6, 300)*u"J/mol"
