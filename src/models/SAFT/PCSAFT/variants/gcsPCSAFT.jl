@@ -133,6 +133,7 @@ function sPCSAFT(groups::GroupParam,
                 verbose = false)
 
     mw = group_sum(groups,param.Mw)
+    update_mw!(idealmodel,mw.values)
     segment = group_sum(groups,param.segment)
 
     sigma = group_sum(groups,param.msigma3)

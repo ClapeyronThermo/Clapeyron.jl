@@ -148,7 +148,7 @@ function PCPSAFT(groups::GroupParam,
 
     components = groups.components
     mw = group_sum(groups,param.Mw)
-
+    update_mw!(idealmodel,mw.values)
     #m(i) = ∑n(ik)*m(ik)
     segment = group_sum(groups,param.segment)
     
@@ -200,6 +200,7 @@ function recombine_impl!(model::HomogcPCPSAFTModel)
  
     #recombine inner PCP model
     mw = group_sum!(params.Mw,groups,gc.Mw)
+    update_mw!(model.idealmodel,params.Mw.values)
     segment = group_sum!(params.segment,groups,gc.segment)
 
     gc_msigma3 = gc.sigma .^3 .* gc.segment

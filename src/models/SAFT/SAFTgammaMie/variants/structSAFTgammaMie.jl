@@ -113,11 +113,11 @@ function structSAFTgammaMie(components;
     bondvol,epsilon_assoc = assoc_mix(bondvol0,epsilon_assoc0,sigma,assoc_options) #combining rules for association
 
     gcparams = SAFTgammaMieParam(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
-    Mw_comps = group_sum(groups,params["Mw"])
-    ideal_userlocations_updated = _update_idealuserlocations_for_GC(idealmodel,ideal_userlocations,Mw_comps)
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations_updated,verbose)
+    Mw_comp = group_sum(groups,params["Mw"].values)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     vrmodel = __SAFTVRMie(groups,gcparams,sites,idealmodel = init_idealmodel,assoc_options = assoc_options,epsilon_mixing = epsilon_mixing,verbose = verbose)
-    vrmodel.params.Mw.values .= Mw_comps.values
+    update_mw!(init_idealmodel,Mw_comp)
+    update_mw!(vrmodel,Mw_comp)
     model = structSAFTgammaMie(components,groups,sites,gcparams,init_idealmodel,vrmodel,epsilon_mixing,assoc_options,default_references(structSAFTgammaMie))
     set_reference_state!(model,reference_state;verbose)
     return model

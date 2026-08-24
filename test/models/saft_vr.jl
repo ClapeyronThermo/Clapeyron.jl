@@ -206,7 +206,7 @@ end
         end
         @printline
 
-        @testset "SAFTgammaMie_custom_name_with_MonomerIdeal" begin
+        @testset "consistent MW" begin
             species = [("test_propane", ["CH3"=>2, "CH2"=>1])]
             system = SAFTgammaMie(species; idealmodel = MonomerIdeal)
             @test !isnothing(system)
