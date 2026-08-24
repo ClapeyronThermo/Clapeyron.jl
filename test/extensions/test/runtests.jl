@@ -4,6 +4,7 @@ using EoSSuperancillaries
 using PythonCall
 using Glenn
 using Aqua
+using Carnot
 
 include("../../utils.jl")
 
@@ -35,3 +36,4 @@ include("../../methods/eos_pcsaft.jl")
 #include_distributed("test_issues.jl",1)
 
 include("extensions.jl")
+include("carnot.jl")

@@ -144,21 +144,17 @@ function _Pproperty(model::EoSModel,T,_prop,z = SA[1.0],
     st_puresat != :failure && return (p_puresat,st_puresat)
     pmin_sat,pmax_sat,_,_ = data_puresat
 
+    if is_liquid(phase) || is_vapour(phase)
+        p0_with_phase = is_liquid(phase) ? pmax_sat : pmin_sat
+        res_with_phase = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,false,p0_with_phase)
+        return __Pproperty_check(res_with_phase,verbose)
+    end
+
     #check isogibbs condition ("edge")
     p0_bubble,p0_dew = v0_edge
     edge,crit,status = _edge_pressure(model,T,z,v0_edge)
     P_edge,v_l,v_v = edge
     edge_cache = (v0_edge,pure_sats,edge)
-
-    if is_liquid(phase) || is_vapour(phase)
-        if status == :supercritical || status == :failure
-            p0_with_phase = is_liquid(phase) ? pmax_sat : pmin_sat
-        else
-            p0_with_phase = is_liquid(phase) ? 0.5*(P_edge + pmax_sat) : 0.5*(P_edge + pmin_sat)
-        end
-        res_with_phase = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,false,p0_with_phase)
-        return __Pproperty_check(res_with_phase,verbose)
-    end
 
     if status == :supercritical
         crit_cache = (v0_edge,pure_sats,crit,data_puresat)

@@ -578,6 +578,13 @@ end
         T_dew[i] = Clapeyron.temperature(res_dew)
         s_dew[i] = Clapeyron.entropy(model,res_dew)
     end =#
+
+    fluidc1 = cPR(["propane","butane"],idealmodel = ReidIdeal)
+    pc1 = 101325.0
+    Tc1 = 267.2612227235462
+    hc1 = -255212.2038296668
+    g(x) = Clapeyron.PH.entropy(fluid,x,h1,z,phase = :liquid)
+    
 end
 
 @testset verbose = true "XY flash (activity models)" begin
