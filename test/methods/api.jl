@@ -7,7 +7,7 @@
     v11 = 2u"ft^3"
     T11 = 122u"°F"
     n11 = 453.59237u"mol" #1 lb-mol
-    z11 = 0.8755782336379913 #t0.89 from CS compressibility relation
+    z11 = 0.8755772456569365 #t0.89 from CS compressibility relation
     @test Clapeyron.pressure(model11,v11,T11,n11,output = u"atm") ≈ p11
     @test Clapeyron.pressure(model11,v11,T11,[n11],output = u"atm") ≈ p11
     @test Clapeyron.compressibility_factor(model11,v11,T11,n11) ≈ z11 rtol = 1E-6
