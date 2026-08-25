@@ -2,6 +2,7 @@ name = "ClapeyronExtensionTests"
 uuid = "73f074b4-2fd7-4260-8743-9b275b5873e6"
 
 [deps]
+Carnot = "28d851de-1e30-436e-90c7-00bd6ee348bb"
 Clapeyron = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
 CoolProp = "e084ae63-2819-5025-826e-f8e611a84251"
 EoSSuperancillaries = "c1bf003f-4e47-49d9-bdfd-5a4051db3c04"
@@ -15,6 +16,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
+Carnot = "0.3"
 Clapeyron = "0.6"
 CoolProp = "0.2"
 EoSSuperancillaries = "1.2.3"
@@ -27,10 +29,12 @@ Symbolics = "7"
 Unitful = "^1.12"
 
 [sources]
+Carnot = {url = "https://github.com/ClapeyronThermo/Carnot.jl"}
 Clapeyron = {path = "../.."}
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Carnot = "28d851de-1e30-436e-90c7-00bd6ee348bb"
 Clapeyron = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
 CoolProp = "e084ae63-2819-5025-826e-f8e611a84251"
 EoSSuperancillaries = "c1bf003f-4e47-49d9-bdfd-5a4051db3c04"
@@ -44,4 +48,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["Aqua", "Clapeyron", "CoolProp", "EoSSuperancillaries", "Glenn", "Metaheuristics", "MultiComponentFlash", "PythonCall", "Symbolics", "Test", "Unitful"]
+test = ["Aqua", "Carnot", "Clapeyron", "CoolProp", "EoSSuperancillaries", "Glenn", "Metaheuristics", "MultiComponentFlash", "PythonCall", "Symbolics", "Test", "Unitful"]
