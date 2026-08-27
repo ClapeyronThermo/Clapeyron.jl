@@ -676,10 +676,10 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
     - the linear system is solved via LU decomposition, for that, we need to allocate one (1) Matrix{T} and one (1) Vector{Int}.
     - julia 1.10 does not have a way to make LU non-allocating, but the code is simple, so it was added as the function unsafe_LU! in the Solvers module.
     =#
-
+    αx = α
     function f_ss!(out,in)
         mul!(out,K,in) #out stores KX
-
+        #=
         #adaptative damping
         k1 = zero(eltype(out))
         k2 = zero(eltype(out))
@@ -688,9 +688,9 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
             k1 = max(k1,xi/(1 - xi))
             k2 += xi*kxi
         end
-        αx = 1 / (2 + k1) + 1 / (2 + k2)
-
+        αx = 1 / (2 + k1) + 1 / (2 + k2) 
         #update iterate
+        =#
         @inbounds for i in 1:length(in)
             kx = out[i]
             x = in[i]

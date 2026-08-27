@@ -74,6 +74,8 @@ end
         test_repr(system,str = ["\"methanol\": \"CH3OH\" => 1"])
         GC.gc()
 
+        system2 = SAFTgammaMie(["water","hexane","ethanol"])
+        @test pressure(system2,5.977099751371017e-5,298.15,[0.3,0.3,0.3]) ≈ 1e5 rtol 1e-5
         
     end
 
