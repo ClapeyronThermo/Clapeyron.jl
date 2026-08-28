@@ -543,8 +543,8 @@ const helmholtz_free_energy = helmholtz_energy
 const helmholtz_free_energy_res = helmholtz_energy_res 
 const gibbs_free_energy = gibbs_energy
 const gibbs_free_energy_res = gibbs_energy_res
-const mass_free_helmholtz_energy = mass_helmholtz_energy
-const mass_free_gibbs_energy = mass_gibbs_energy
+const mass_helmholtz_free_energy = mass_helmholtz_energy
+const mass_gibbs_free_energy = mass_gibbs_energy
 """
     isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     isochoric_heat_capacity(model, result::FlashResult)
