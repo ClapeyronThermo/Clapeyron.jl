@@ -75,17 +75,6 @@ function try_st_linsolve(B,∇f)
     return try_st_linsolve(d,B,∇f)
 end
 
-function cholesky_linsolve(d,B,∇f)
-    d,success = try_st_linsolve(d,B,∇f)
-    success && return d
-    cholesky!(Positive, B)
-    Bchol = Cholesky(B,'L',0)
-    d .=  Bchol\∇f
-end
-
-Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
-CholeskyNewton() = NLSolvers.Newton(linsolve=cholesky_linsolve)
-
 function lup_linsolve(d,B,∇f;check = true)
     F = lu!(B,RowMaximum(),check = check)
     ldiv!(d,F,∇f)

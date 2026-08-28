@@ -141,12 +141,12 @@ end
 #=
 function presents_LLE(model,p,T)
     pure = split_model(model)
-    g_pure = gibbs_free_energy.(pure,p,T)
+    g_pure = gibbs_energy.(pure,p,T)
 
     function mixing_gibbs(x1)
         z = FractionVector(x1)
         log∑z = log(sum(z))
-        g_mix = gibbs_free_energy(model,p,T,z)
+        g_mix = gibbs_energy(model,p,T,z)
         for i in 1:length(z)
             g_mix -= z[i]*(g_pure[i] + R̄*T*(log(z[i]) - log∑z))
         end
