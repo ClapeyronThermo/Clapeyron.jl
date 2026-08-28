@@ -119,7 +119,7 @@ function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liqu
     for (phasez,_) in phasepairs
         if !haskey(di_dict,phasez)
             lnϕz, volz = lnϕ(model, p, T, z; phase=phasez)
-            #g_dict[phasez] = VT_gibbs_free_energy(model,volz,T,z)
+            #g_dict[phasez] = VT_gibbs_energy(model,volz,T,z)
             isnan(volz) && continue
             di = log.(z) + lnϕz
             add_to = true

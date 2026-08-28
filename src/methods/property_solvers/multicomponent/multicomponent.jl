@@ -223,9 +223,9 @@ function bubbledew_check(model,p,T,vw,vz,w,z)
     !all(>=(0),z) && return false
     if has_a_res(model) && !(any(iszero,w)) #the second check is to exclude nonvolatiles/noncondensables. TODO: find a better way to do this.
         #all normal checks are ok, now we check if the origin phase result is really the most stable one
-        gz = VT_gibbs_free_energy(model,vz,T,z)
-        gz_p = gibbs_free_energy(model,p,T,z)
-        gz_w = VT_gibbs_free_energy(model,vw,T,w)
+        gz = VT_gibbs_energy(model,vz,T,z)
+        gz_p = gibbs_energy(model,p,T,z)
+        gz_w = VT_gibbs_energy(model,vw,T,w)
         dg = (gz-gz_p)/gz
         if gz_p < gz && abs(dg) > 0.001
             return false

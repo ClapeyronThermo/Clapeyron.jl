@@ -34,18 +34,18 @@
         @test h ≈ -35876.32155687084 rtol = 1E-6
         @test h/hm ≈ Mw
         @test Clapeyron.VT_enthalpy_res(system,v,T) + Clapeyron.VT_enthalpy(Clapeyron.idealmodel(system),v,T) ≈ h
-        g = Clapeyron.gibbs_free_energy(system, p, T)
-        gm = Clapeyron.mass_gibbs_free_energy(system,p,T)
+        g = Clapeyron.gibbs_energy(system, p, T)
+        gm = Clapeyron.mass_gibbs_energy(system,p,T)
         @test g ≈ -18323.87754268292 rtol = 1E-6
         @test g/gm ≈ Mw
-        @test Clapeyron.VT_gibbs_free_energy_res(system,v,T) + Clapeyron.VT_gibbs_free_energy(Clapeyron.idealmodel(system),v,T) ≈ g
-        @test Clapeyron.gibbs_free_energy_res(system,p,T) + Clapeyron.VT_gibbs_free_energy(Clapeyron.idealmodel(system),v,T) ≈ g
-        a = Clapeyron.helmholtz_free_energy(system, p, T)
-        am = Clapeyron.mass_helmholtz_free_energy(system, p, T)
+        @test Clapeyron.VT_gibbs_energy_res(system,v,T) + Clapeyron.VT_gibbs_energy(Clapeyron.idealmodel(system),v,T) ≈ g
+        @test Clapeyron.gibbs_energy_res(system,p,T) + Clapeyron.VT_gibbs_energy(Clapeyron.idealmodel(system),v,T) ≈ g
+        a = Clapeyron.helmholtz_energy(system, p, T)
+        am = Clapeyron.mass_helmholtz_energy(system, p, T)
         @test a ≈ -18329.785451419295 rtol = 1E-6
         @test a/am ≈ Mw
-        @test Clapeyron.VT_helmholtz_free_energy_res(system,v,T) + Clapeyron.VT_helmholtz_free_energy(Clapeyron.idealmodel(system),v,T) ≈ a
-        @test Clapeyron.helmholtz_free_energy_res(system,p,T) + Clapeyron.VT_helmholtz_free_energy(Clapeyron.idealmodel(system),v,T) ≈ a
+        @test Clapeyron.VT_helmholtz_energy_res(system,v,T) + Clapeyron.VT_helmholtz_energy(Clapeyron.idealmodel(system),v,T) ≈ a
+        @test Clapeyron.helmholtz_energy_res(system,p,T) + Clapeyron.VT_helmholtz_energy(Clapeyron.idealmodel(system),v,T) ≈ a
         @test Clapeyron.isochoric_heat_capacity(system, p, T) ≈ 48.37961296309505 rtol = 1E-6
         @test Clapeyron.isobaric_heat_capacity(system, p, T) ≈ 66.45719988319257 rtol = 1E-6
         Cp = Clapeyron.isobaric_heat_capacity(system, p, T2)
@@ -92,10 +92,10 @@
         @test Clapeyron.reference_chemical_potential(system, p, T, :pure)[1] ≈ -15984.404561327814
         @test Clapeyron.reference_chemical_potential(system, p, T, :sat_pure_T)[1] ≈ -15987.11712041398
         @test Clapeyron.fugacity_coefficient(system, p, T, z)[1] ≈ 0.5582931304564298 rtol = 1E-6
-        @test Clapeyron.mixing(system, p, T, z, Clapeyron.gibbs_free_energy) ≈ -178.10797973342596 rtol = 1E-6
+        @test Clapeyron.mixing(system, p, T, z, Clapeyron.gibbs_energy) ≈ -178.10797973342596 rtol = 1E-6
         @test Clapeyron.excess(system, p, T, z, Clapeyron.volume) ≈ 1.004651584989827e-6 rtol = 1E-6
         @test Clapeyron.excess(system, p, T, z, Clapeyron.entropy) ≈ -2.832281578281112 rtol = 1E-6
-        @test Clapeyron.excess(system, p, T, z, Clapeyron.gibbs_free_energy) ≈ 1626.6212908893858 rtol = 1E-6
+        @test Clapeyron.excess(system, p, T, z, Clapeyron.gibbs_energy) ≈ 1626.6212908893858 rtol = 1E-6
     end
     @printline
     @testset "Multiple components - equilibrium properties" begin
