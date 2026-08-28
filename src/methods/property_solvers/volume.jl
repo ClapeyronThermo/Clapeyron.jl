@@ -328,13 +328,14 @@ end
 volume main function
 
 =#
-function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0=nothing)
-    #this is used for dispatch on symbolic variables
-    if z isa Number
-        return _volume(model,p,T,SA[z],phase,threaded,vol0)
-    else
-        return _volume(model,p,T,z,phase,threaded,vol0)
-    end
+function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0=nothing, output = nothing)
+    
+    p̄,T̄,z̄ = ustrip(T,temperature),ustrip(p,pressure),uzstrip(model,z)
+    v̄0 = uvstrip(model,vol0,z̄)
+    UNIT_TYPE = unit_system(p,T,z,output)
+    #auxiliary function for dispatch on symbolic variables
+    V = _volume(model,p̄,T̄,z̄,phase,threaded,vol0)
+    return with_output_unit(V,(UNIT_TYPE,output),volume)
 end
 
 __is_symbolic(x) = false

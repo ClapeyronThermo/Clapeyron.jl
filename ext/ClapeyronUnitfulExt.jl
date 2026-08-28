@@ -6,6 +6,8 @@ const C = Clapeyron
 
 import Unitful: @u_str
 
+struct UnitfulJL end
+
 Unitful.@derived_dimension __MassDensity Unitful.𝐌/Unitful.𝐋^3
 Unitful.@derived_dimension __MolDensity Unitful.𝐍/Unitful.𝐋^3
 Unitful.@derived_dimension __MassVolume Unitful.𝐋^3/Unitful.𝐌
@@ -14,99 +16,41 @@ Unitful.@derived_dimension __MolAmount Unitful.𝐍
 
 const __VolumeKind = Union{__MassDensity,__MolDensity,__MassVolume,__MolVolume,Unitful.Volume}
 
-struct StdState{XS,TS,ZS}
-    x::XS
-    T::TS
-    z::ZS
+C.unit_system(::Unitful.Units) = UnitfulJL()
+C.solve_unit(::UnitfulJL,output,output_from_f) = uconvert(output,oneunit(output_from_f))
+
+function C.with_output_unit(res,out_units::Tuple{UnitfulJL,Unitful.Quantity})
+    _,output_unit = out_units
+    return res*output_unit
 end
 
-function standardize(model,x,T,z)
-    xs = standardize(x,nothing)
-    ts = standardize(T,1u"K")
-    zs = standardize(model,z,1u"mol")
-    return StdState(xs,ts,zs)
+function C.with_output_unit(res,out_units::Tuple{UnitfulJL,Unitful.Units})
+    _,output_unit = out_units
+    return res*oneunit(output_unit)
 end
 
-function mw(model)
-    if C.has_groups(model)
-        return C.group_Mw(model)
-    else
-        return model.params.Mw.values
-    end
-end
+C.ustrip(::UnitfulJL,x::Unitful.Quantity,typeof(C.pressure)) = ustrip(u"Pa",x)
+C.ustrip(::UnitfulJL,x::Unitful.Quantity,typeof(C.temperature)) = ustrip(u"K",x)
+C.uzstrip(::UnitfulJL,model,z) = __uzstrip(model,z)
 
-#handle pressure/volume/temp
-standardize(x::Number,st::Nothing) = x #default
-standardize(x::Unitful.Pressure,st::Nothing) = ustrip(u"Pa",x)
-standardize(x::__VolumeKind,st::Nothing) = upreferred(x)
-standardize(x::Number,st::Unitful.Temperature) = x #default
-standardize(x::Unitful.Temperature,st::Unitful.Temperature) = ustrip(u"K",x)
+__uzstrip(model,z::AbstractVector{T}) where T <: Unitful.Amount = ustrip.(u"mol",x)
+__uzstrip(model,z::AbstractVector{T}) where T <: Number = x
+__uzstrip(model,z::AbstractVector{T}) where T <: Unitful.Mass = map(y -> 1000*ustrip(u"kg",y[1])/y[2],zip(x,mw(model)))
 
-#handle vector of compounds
-standardize(model,x::Number,st::Unitful.Amount) = C.SA[x]
-standardize(model,x::Unitful.Amount,st::Unitful.Amount) = C.SA[ustrip(u"mol",x)]
-standardize(model,x::AbstractVector{<:Number},st::Unitful.Amount) = x
-standardize(model,x::AbstractVector{<:Unitful.Amount},st::Unitful.Amount) = ustrip.(u"mol",x)
-#mass forms
-standardize(model,x::Unitful.Mass,st::Unitful.Amount) = C.SA[1000*ustrip(u"kg",x)/mw(model)[1]]
-function standardize(model,x::AbstractVector{<:Unitful.Mass},st::Unitful.Amount)
-    return map(y -> 1000*ustrip(u"kg",y[1])/y[2],zip(x,mw(model)))
-end
+C.uvstrip(::UnitfulJL,model,v,z) = __uvstrip(model,v,z)
+__uvstrip(model,x::Number,z) = x
+__uvstrip(model,x::Unitful.Volume,z) = ustrip(x)
+__uvstrip(model,x::__MolVolume,z) = ustrip(x) * C.molecular_weight(model,z)
+__uvstrip(model,x::__MolDensity,z) = C.molecular_weight(model,z) / ustrip(x)
+__uvstrip(model,x::__MassVolume,z) = ustrip(x) * C.molecular_weight(model,z)
+__uvstrip(model,x::__MassDensity,z) = C.molecular_weight(model,z) / ustrip(x)
 
-function mass(model,z)
-    Mw = mw(model)
-    res = zero(first(z)+first(Mw))
-    for i in eachindex(z)
-        res += 0.001*Mw[i]*z[i]
-    end
-    return res
-end
+for (fns,unit) in [
+    ([:chemical_potential,:chemical_potential_res], u"J/mol"),
+    ([:enthalpy,:enthalpy_res,:internal_energy,:internal_energy_res,:gibbs_free_energy,:gibbs_free_energy_res,:helmholtz_free_energy,:helmholtz_free_energy_res], u"J"),
+    ([:enthalpy,:internal_energy,:gibbs_free_energy,:helmholtz_free_energy], u"J"),
+    ([:entropy,:entropy_res], u"J/K"),
 
-#functions to turn any volumekind into total volume
-total_volume(model,x::Number,z) = x
-total_volume(model,x::Unitful.Volume,z) = ustrip(x)
-total_volume(model,x::__MolVolume,z) = ustrip(x) * C.molecular_weight(model,z)
-total_volume(model,x::__MolDensity,z) = C.molecular_weight(model,z) / ustrip(x)
-total_volume(model,x::__MassVolume,z) = ustrip(x) * mass(model,z)
-total_volume(model,x::__MassDensity,z) = mass(model,z) / ustrip(x)
-
-
-function state_to_vt(model,st::StdState)
-    V = total_volume(model,st.x,st.z)
-    T = st.T
-    z = st.z
-    return V,T,z
-end
-
-function state_to_pt(model,st::StdState)
-    p = st.x
-    T = st.T
-    z = st.z
-    return p,T,z
-end
-
-function C.pressure(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=u"Pa")
-    st = standardize(model,v,T,z)
-    _v,_T,_z = state_to_vt(model,st)
-    res = C.pressure(model, _v, _T,_z)*u"Pa"
-    return uconvert(output, res)
-end
-
-for (fn,unit) in [
-    (:chemical_potential, u"J/mol"),
-    (:chemical_potential_res, u"J/mol"),
-    (:compressibility_factor, NoUnits),
-    (:enthalpy, u"J"),
-    (:enthalpy_res, u"J"),
-    (:entropy, u"J/K"),
-    (:entropy_res, u"J/K"),
-    (:fugacity_coefficient, NoUnits),
-    (:gibbs_free_energy, u"J"),
-    (:gibbs_free_energy_res, u"J"),
-    (:helmholtz_free_energy, u"J"),
-    (:helmholtz_free_energy_res, u"J"),
-    (:internal_energy, u"J"),
-    (:internal_energy_res, u"J"),
     (:isentropic_compressibility, u"Pa^-1"),
     (:isobaric_expansivity, u"K^-1"),
     (:isobaric_heat_capacity, u"J/K"),
@@ -118,47 +62,8 @@ for (fn,unit) in [
     (:speed_of_sound, u"m/s"),
     ]
     VT_fn = Symbol(:VT_,fn)
-    @eval begin
-        function C.$fn(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=$unit)
-            st = standardize(model,v,T,z)
-            _v,_T,_z = state_to_vt(model,st)
-            res = C.$VT_fn(model, _v, _T,_z)*$unit
-            return uconvert.(output, res)
-        end
-
-        function C.$fn(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=$unit)
-            st = standardize(model,p,T,z)
-            _p,_T,_z = state_to_pt(model,st)
-            _vol0 = vol0===nothing ? nothing : total_volume(model, vol0, z)
-            res = C.$fn(model, _p, _T, _z; phase, threaded, vol0=_vol0)*($unit)
-            return uconvert.(output, res)
-        end
-    end
 end
 
-function C.volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=u"m^3")
-    st = standardize(model,p,T,z)
-    _p,_T,_z = state_to_pt(model,st)
-    _vol0 = vol0===nothing ? nothing : total_volume(model, vol0, z)
-    res = volume(model, _p, _T, _z; phase, threaded, vol0=_vol0)*u"m^3"
-    return uconvert(output, res)
-end
-
-#second_virial_coefficient
-function C.second_virial_coefficient(model::EoSModel, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
-    st = standardize(model,-1,T,z)
-    _,_T,_z = state_to_pt(model,st)
-    res = second_virial_coefficient(model, _T,_z)*u"m^3"
-    return uconvert(output, res)
-end
-
-#pip
-function C.pip(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.])
-    st = standardize(model,v,T,z)
-    _v,_T,_z = state_to_vt(model,st)
-    res = C.pip(model, _v, _T,_z)
-    return res
-end
 
 #inversion_temperature
 function C.inversion_temperature(model::EoSModel, p::Unitful.Pressure, z=SA[1.]; output=u"K")
@@ -194,154 +99,4 @@ function C.saturation_temperature(model::EoSModel, p::Unitful.Pressure; output=(
     return (_T_sat,_v_l,_v_v)
 end
 
-function C.volume_virial(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
-    st = standardize(model,p,T,z)
-    _p,_T,_z = state_to_pt(model,st)
-    res = C.volume_virial(model, _p, _T, _z)*u"m^3"
-    return uconvert(output, res)
-end
-
-function C.spinodal_pressure(model::EoSModel, T::Unitful.Temperature, x=SA[1.]; v0=nothing, phase=:unknown, output=(u"Pa",u"m^3"))
-    st = standardize(model,-1,T,x)
-    _,_T,_x = state_to_pt(model,st)
-    _v0 = v0===nothing ? nothing : total_volume(model, v0, x)
-    res = spinodal_pressure(model, _T, _x; v0=_v0, phase=phase).*(u"Pa",u"m^3")
-    return uconvert.(output, res)
-end
-
-function C.spinodal_temperature(model::EoSModel, p::Unitful.Pressure, x=SA[1.]; T0=nothing, v0=nothing, phase=:unknown, output=(u"K",u"m^3"))
-    st = standardize(model,p,-1,x)
-    _p,_,_x = state_to_pt(model,st)
-    _T0 = T0===nothing ? nothing : standardize(T0,1u"K")
-    _v0 = v0===nothing ? nothing : total_volume(model, v0, x)
-    res = spinodal_temperature(model, _p, _x; T0=_T0, v0=_v0, phase=phase).*(u"K",u"m^3")
-    return uconvert.(output, res)
-end
-
-# resolve ambiguity
-function C.chemical_potential(model::(C.SolidHfusModel), v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=u"J/mol")
-    st = standardize(model,v,T,z)
-    _v,_T,_z = state_to_vt(model,st)
-    #SolidHfus does not depend on volume or pressure
-    res = C.chemical_potential(model, _v, _T, _z)*u"J/mol"
-    return uconvert.(output, res)
-end
-
-function C.chemical_potential(model::(C.SolidHfusModel), p::Unitful.Pressure, T::Unitful.Temperature, z; output=u"J/mol")
-    st = standardize(model,p,T,z)
-    _p,_T,_z = state_to_pt(model,st)
-    #SolidHfus does not depend on volume or pressure
-    res = C.chemical_potential(model, _p, _T, _z)*u"J/mol"
-    return uconvert.(output, res)
-end
-
-function C.chemical_potential(model::(C.SolidKsModel), v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=u"J/mol")
-    st = standardize(model,v,T,z)
-    _v,_T,_z = state_to_vt(model,st)
-    #SolidHfus does not depend on volume or pressure
-    res = C.chemical_potential(model, _v, _T, _z)*u"J/mol"
-    return uconvert.(output, res)
-end
-
-function C.chemical_potential(model::(C.SolidKsModel), p::Unitful.Pressure, T::Unitful.Temperature, z; output=u"J/mol")
-    st = standardize(model,p,T,z)
-    _p,_T,_z = state_to_pt(model,st)
-    #SolidHfus does not depend on volume or pressure
-    res = C.chemical_potential(model, _p, _T, _z)*u"J/mol"
-    return uconvert.(output, res)
-end
-
-#=
-# x0_psat fallback method
-function C.x0_psat(model::EoSModel, T::Unitful.Temperature, Tc::Unitful.Temperature, Vc::__VolumeKind; output=u"Pa")
-    st = standardize(model, Vc, T, SA[1.])
-    _Vc, _T, _ = state_to_vt(model,st)
-    _Tc = standardize(Tc, 1u"K")
-    res = C.x0_psat(model, _T, _Tc, _Vc)*u"Pa"
-    return uconvert(output, res)
-end
-
-# x0_psat interface
-for modeltype in (:EoSModel, :(C.SingleFluid), :(C.MultiFluid), :(C.CompositeModel),:(C.GammaPhi),:(C.FluidCorrelation))
-    @eval function C.x0_psat(model::($modeltype), T::Unitful.Temperature, crit=nothing; output=u"Pa")
-        uconvert(output, C.x0_psat(model, standardize(T, 1u"K"), crit)*u"Pa")
-    end
-end
-
-# x0_sat_pure
-for modeltype in (:EoSModel, :(C.SingleFluid), :(C.ExtendedCorrespondingStates), :(C.CompositeModel),:(C.GammaPhi),:(C.FluidCorrelation), :(C.MultiFluid), :(C.LJRef), :(C.ActivityModel), :(C.ABCubicModel))
-    @eval function C.x0_sat_pure(model::($modeltype), T::Unitful.Temperature; output=(u"m^3", u"m^3"))
-        v_l, v_v = C.x0_sat_pure(model, standardize(T, 1u"K"))
-        _v_l = uconvert(output[1],v_l*u"m^3")
-        _v_v = uconvert(output[2],v_v*u"m^3")
-        return (_v_l,_v_v)
-    end
-end
-
-# x0_saturation_temperature
-for modeltype in (:EoSModel, :(C.SingleFluid), :(C.MultiFluid))
-    @eval function C.x0_saturation_temperature(model::($modeltype), p::Unitful.Pressure; output=(u"K", u"m^3", u"m^3"))
-        (T_sat, v_l, v_v) = C.x0_saturation_temperature(model, standardize(p, nothing))
-        _T_sat = uconvert(output[1],T_sat*u"K")
-        _v_l = uconvert(output[2],v_l*u"m^3")
-        _v_v = uconvert(output[3],v_v*u"m^3")
-        return (_T_sat,_v_l,_v_v)
-    end
-end
-
-function C.x0_volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=u"m^3")
-    st = standardize(model,p,T,z)
-    _p,_T,_z = state_to_pt(model,st)
-    res = C.x0_volume(model, _p, _T, _z; phase)*u"m^3"
-    return uconvert(output, res)
-end
-
-# x0_volume_gas
-for modeltype in (:EoSModel, :(C.MultiFluid), :(C.SanchezLacombe), :(C.DAPTModel))
-    @eval function C.x0_volume_gas(model::($modeltype), p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
-        st = standardize(model,p,T,z)
-        _p,_T,_z = state_to_pt(model,st)
-        res = C.x0_volume_gas(model, _p, _T, _z)*u"m^3"
-        return uconvert(output, res)
-    end
-end
-
-# x0_volume_liquid with a default value for z
-for modeltype in (:(C.SingleFluid), :(C.ExtendedCorrespondingStates), :(C.ActivityModel), :(C.AnalyticalSLVModel))
-    @eval function C.x0_volume_liquid(model::($modeltype), T::Unitful.Temperature, z= SA[1.]; output=u"m^3")
-        st = standardize(model,-1,T,z)
-        _,_T,_z = state_to_pt(model,st)
-        res = C.x0_volume_liquid(model, _T, _z)*u"m^3"
-        return uconvert(output, res)
-    end
-end
-
-# x0_volume_liquid without a default value for z
-for modeltype in (:EoSModel, :(C.MultiFluid), :(C.SanchezLacombe), :(C.SAFTVRQMieModel),
-                  :(C.softSAFTModel), :(C.PeTSModel), :(C.SAFTgammaMieModel),
-                  :(C.SAFTVRMieModel), :(C.BACKSAFTModel))
-    @eval function C.x0_volume_liquid(model::($modeltype), T::Unitful.Temperature, z = SA[1.0]; output=u"m^3")
-        st = standardize(model,-1,T,z)
-        _,_T,_z = state_to_pt(model,st)
-        res = C.x0_volume_liquid(model, _T, _z)*u"m^3"
-        return uconvert(output, res)
-    end
-end
-
-# x0_volume_solid with a default value for z
-function C.x0_volume_solid(model::C.AnalyticalSLVModel, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
-    st = standardize(model,-1,T,z)
-    _,_T,_z = state_to_pt(model,st)
-    res = C.x0_volume_solid(model, _T, _z)*u"m^3"
-    return uconvert(output, res)
-end
-
-# x0_volume_solid without a default value for z
-function C.x0_volume_solid(model::EoSModel, T::Unitful.Temperature, z; output=u"m^3")
-    st = standardize(model,-1,T,z)
-    _,_T,_z = state_to_pt(model,st)
-    res = C.x0_volume_solid(model, _T, _z)*u"m^3"
-    return uconvert(output, res)
-end
-=#
 end #module

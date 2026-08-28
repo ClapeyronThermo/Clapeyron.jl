@@ -108,7 +108,7 @@ function FlashResult(model::EoSModel,p,T,comps,β,volumes,g = nothing;sort = tru
     if g == nothing
         data = FlashData(p,T,zero(p),vapour_phase_index)
         flash = FlashResult(comps,β,volumes,data)
-        Gmix = gibbs_free_energy(model,flash)
+        Gmix = gibbs_energy(model,flash)
         _g = Gmix/(sum(β)*Rgas(model)*T)
     else
         _g = g

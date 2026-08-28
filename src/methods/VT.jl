@@ -14,8 +14,10 @@ V is the volume `[m³]`
 
 `pressure(model, result::FlashResult)` will return the equilibrium pressure stored in the `result` argument.
 """
-function pressure(model::EoSModel, V, T, z=SA[1.])
-    return VT_pressure(model, V, T, z)
+function pressure(model::EoSModel, V, T, z=SA[1.]; output = nothing)
+    vt_remove_units(model,V,T,z)
+    res = VT_pressure(model, V, T, z)
+    return 
 end
 
 """
@@ -197,6 +199,7 @@ function VT_adiabatic_index(model::EoSModel, V, T, z=SA[1.])
         return 1 - ∂²A∂V∂T*∂²A∂V∂T/(∂²A∂V²*∂²A∂T²)
     end
 end
+has_units(::typeof(VT_adiabatic_index)) = Val(false)
 
 function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
     if iszero(1/V) || is_idealmodel(model)
@@ -271,6 +274,7 @@ function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.],p = nothing)
     end
 end
 VT_use_p(::typeof(VT_compressibility_factor)) = true
+has_units(::typeof(VT_compressibility_factor)) = Val(false)
 
 """
     second_virial_coefficient(model::EoSModel, T, z=SA[1.])
@@ -284,8 +288,11 @@ B = lim(ρ->0)[∂Aᵣ/∂ρ]
 ```
 where `Aᵣ` is the residual Helmholtz energy.
 """
-function second_virial_coefficient(model::EoSModel, T, z=SA[1.])
-   return second_virial_coefficient_impl(model,T,z)
+function second_virial_coefficient(model::EoSModel, T, z=SA[1.]; output = nothing)
+    T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+    UNIT_TYPE = unit_system(T,T,z,output)    
+    B = second_virial_coefficient_impl(model,T̄,z̄)
+    return with_output_unit(B,(UNIT_TYPE,output),volume)
 end
 
 function second_virial_coefficient_impl(model::EoSModel, T, z = SA[1.0])
@@ -394,7 +401,8 @@ Calculated as:
 1.  G. Venkatarathnama, L.R. Oellrich, Identification of the phase of a fluid using partial derivatives of pressure, volume,and temperature without reference to saturation properties: Applications in phase equilibria calculations, Fluid Phase Equilibria 301 (2011) 225–233
 """
 function pip(model::EoSModel, V, T, z=SA[1.0])
-    Π,∂p∂V = _pip(model,V,T,z)
+    T̄,z̄,v̄ = ustrip(T,temperature),uvstrip(p,pressure),uzstrip(model,z),uvstrip(model,V,z̄)
+    Π,∂p∂V = _pip(model,v̄,T̄,z̄)
     return Π
 end
 
@@ -406,6 +414,9 @@ function _pip(model::EoSModel, V, T, z=SA[1.0])
     Π = V*(∂2p∂V∂T/∂p∂T  - ∂2p∂V2/∂p∂V)
     return Π,∂p∂V
 end
+
+has_units(::typeof(VT_pip)) = Val(false)
+has_units(::typeof(pip)) = Val(false)
 
 function VT_fundamental_derivative_of_gas_dynamics(model::EoSModel, V, T, z=SA[1.0])
     Mr = molecular_weight(model,z)
@@ -636,8 +647,12 @@ module VT0
     for prop in Clapeyron.CLAPEYRON_PROPS
         VT_prop = Clapeyron.VT_symbol(prop)
         @eval begin
-            function $prop(model,V,T,z=Clapeyron.SA[1.])
-                return Clapeyron.$VT_prop(model,V,T,z)
+            function $prop(model,V,T,z=Clapeyron.SA[1.];output = nothing)
+                T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+                v̄ = uvstrip(model,V,z̄)
+                UNIT_TYPE = unit_system(V,T,z,output)
+                x = Clapeyron.$VT_prop(model,v̄,T̄,z̄)
+                return with_output_unit(V,(UNIT_TYPE,output),$VT_prop)
             end
         end
     end
