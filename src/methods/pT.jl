@@ -406,10 +406,10 @@ function enthalpy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=
 end
 
 """
-    gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    gibbs_free_energy(model, result::FlashResult)
-    gibbs_free_energy(model, result::FlashResult, phase_index::Int)
+    gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    gibbs_energy(model, result::FlashResult)
+    gibbs_energy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -419,19 +419,19 @@ Calculates the Gibbs energy, defined as:
 G = A + p*V
 ```
 
-`gibbs_free_energy(model,result::FlashResult)` will return the Gibbs energy of the aggregate of phases stored in the `FlashResult` whereas `gibbs_free_energy(model,result::FlashResult,i::Int)` will return the Gibbs energy of the ith phase.
+`gibbs_energy(model,result::FlashResult)` will return the Gibbs energy of the aggregate of phases stored in the `FlashResult` whereas `gibbs_energy(model,result::FlashResult,i::Int)` will return the Gibbs energy of the ith phase.
 
 $VT_STRING
 """
-function gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_gibbs_free_energy)
+function gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_gibbs_energy)
 end
 
 """
-    mass_gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     mass_gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    mass_gibbs_free_energy(model, result::FlashResult)
-    mass_gibbs_free_energy(model, result::FlashResult, phase_index::Int)
+    mass_gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    mass_gibbs_energy(model, result::FlashResult)
+    mass_gibbs_energy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·kg⁻¹]`
 
@@ -442,19 +442,19 @@ G = (A + p*V)/Mr
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
 
-`mass_gibbs_free_energy(model,result::FlashResult)` will return the mass Gibbs energy of the aggregate of phases stored in the `FlashResult` whereas `mass_gibbs_free_energy(model,result::FlashResult,i::Int)` will return the mass Gibbs energy of the ith phase.
+`mass_gibbs_energy(model,result::FlashResult)` will return the mass Gibbs energy of the aggregate of phases stored in the `FlashResult` whereas `mass_gibbs_energy(model,result::FlashResult,i::Int)` will return the mass Gibbs energy of the ith phase.
 
 $VT_STRING
 """
-function mass_gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_gibbs_free_energy)
+function mass_gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_gibbs_energy)
 end
 
 """
-    gibbs_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     gibbs_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    gibbs_free_energy_res(model, result::FlashResult)
-    gibbs_free_energy_res(model, result::FlashResult, phase_index::Int)
+    gibbs_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    gibbs_energy_res(model, result::FlashResult)
+    gibbs_energy_res(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -464,19 +464,19 @@ Calculates the residual Gibbs energy, defined as:
 G = Ar - V*∂Ar/∂V
 ```
 
-`gibbs_free_energy_res(model,result::FlashResult)` will return the residual Gibbs energy of the aggregate of phases stored in the `FlashResult` whereas `gibbs_free_energy_res(model,result::FlashResult,i::Int)` will return the residual Gibbs energy of the ith phase.
+`gibbs_energy_res(model,result::FlashResult)` will return the residual Gibbs energy of the aggregate of phases stored in the `FlashResult` whereas `gibbs_energy_res(model,result::FlashResult,i::Int)` will return the residual Gibbs energy of the ith phase.
 
 $VT_STRING
 """
-function gibbs_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_gibbs_free_energy_res)
+function gibbs_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_gibbs_energy_res)
 end
 
 """
-    helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    helmholtz_free_energy(model, result::FlashResult)
-    helmholtz_free_energy(model, result::FlashResult, phase_index::Int)
+    helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    helmholtz_energy(model, result::FlashResult)
+    helmholtz_energy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -486,19 +486,19 @@ Calculates the Helmholtz energy, defined as:
 A = eos(model,V(p),T,z)
 ```
 
-`helmholtz_free_energy(model,result::FlashResult)` will return the Helmholtz energy of the aggregate of phases stored in the `FlashResult` whereas `helmholtz_free_energy(model,result::FlashResult,i::Int)` will return the Helmholtz energy of the ith phase.
+`helmholtz_energy(model,result::FlashResult)` will return the Helmholtz energy of the aggregate of phases stored in the `FlashResult` whereas `helmholtz_energy(model,result::FlashResult,i::Int)` will return the Helmholtz energy of the ith phase.
 
 $VT_STRING
 """
-function helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_helmholtz_free_energy)
+function helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_helmholtz_energy)
 end
 
 """
-    mass_helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     mass_helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    mass_helmholtz_free_energy(model, result::FlashResult)
-    mass_helmholtz_free_energy(model, result::FlashResult, phase_index::Int)
+    mass_helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    mass_helmholtz_energy(model, result::FlashResult)
+    mass_helmholtz_energy(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J·kg⁻¹]`
 
@@ -509,19 +509,19 @@ A = eos(model,V(p),T,z)/Mr
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
 
-`mass_helmholtz_free_energy(model,result::FlashResult)` will return the mass Helmholtz energy of the aggregate of phases stored in the `FlashResult` whereas `mass_helmholtz_free_energy(model,result::FlashResult,i::Int)` will return the mass Helmholtz energy of the ith phase.
+`mass_helmholtz_energy(model,result::FlashResult)` will return the mass Helmholtz energy of the aggregate of phases stored in the `FlashResult` whereas `mass_helmholtz_energy(model,result::FlashResult,i::Int)` will return the mass Helmholtz energy of the ith phase.
 
 $VT_STRING
 """
-function mass_helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_helmholtz_free_energy)
+function mass_helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_helmholtz_energy)
 end
 
 """
-    helmholtz_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     helmholtz_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    helmholtz_free_energy_res(model, result::FlashResult)
-    helmholtz_free_energy_res(model, result::FlashResult, phase_index::Int)
+    helmholtz_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    helmholtz_energy_res(model, result::FlashResult)
+    helmholtz_energy_res(model, result::FlashResult, phase_index::Int)
 
 Default units: `[J]`
 
@@ -531,20 +531,20 @@ Calculates the residual Helmholtz energy, defined as:
 A = eos_res(model,V(p),T,z)
 ```
 
-`helmholtz_free_energy_res(model,result::FlashResult)` will return the residual Helmholtz energy of the aggregate of phases stored in the `FlashResult` whereas `helmholtz_free_energy_res(model,result::FlashResult,i::Int)` will return the residual Helmholtz energy of the ith phase.
+`helmholtz_energy_res(model,result::FlashResult)` will return the residual Helmholtz energy of the aggregate of phases stored in the `FlashResult` whereas `helmholtz_energy_res(model,result::FlashResult,i::Int)` will return the residual Helmholtz energy of the ith phase.
 
 $VT_STRING
 """
-function helmholtz_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_helmholtz_free_energy_res)
+function helmholtz_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+    PT_property(model,p,T,z,phase,threaded,vol0,VT_helmholtz_energy_res)
 end
 
-const helmholtz_energy = helmholtz_free_energy
-const helmholtz_energy_res = helmholtz_free_energy_res 
-const gibbs_energy = gibbs_free_energy
-const gibbs_energy_res = gibbs_free_energy_res
-const mass_helmholtz_energy = mass_helmholtz_free_energy
-const mass_gibbs_energy = mass_gibbs_free_energy
+const helmholtz_free_energy = helmholtz_energy
+const helmholtz_free_energy_res = helmholtz_energy_res 
+const gibbs_free_energy = gibbs_energy
+const gibbs_free_energy_res = gibbs_energy_res
+const mass_free_helmholtz_energy = mass_helmholtz_energy
+const mass_free_gibbs_energy = mass_gibbs_energy
 """
     isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     isochoric_heat_capacity(model, result::FlashResult)
@@ -984,7 +984,7 @@ function reference_chemical_potential(model::EoSModel,p,T,reference = reference_
     reference = Symbol(reference)
     if reference == :pure
         pure = split_pure_model(model)
-        return gibbs_free_energy.(pure, p, T; phase, threaded)
+        return gibbs_energy.(pure, p, T; phase, threaded)
     elseif reference == :aqueous
         idx_w = find_water_indx(model)
         if idx_w == 0
@@ -998,7 +998,7 @@ function reference_chemical_potential(model::EoSModel,p,T,reference = reference_
         pure = split_pure_model(model)
         sat = saturation_pressure.(pure,T)
         vl_pure = getindex.(sat,2)
-        return VT_gibbs_free_energy.(pure, vl_pure, T)
+        return VT_gibbs_energy.(pure, vl_pure, T)
     elseif reference == :zero
         _0 = Base.promote_eltype(model,p,T)
         return fill(_0,length(model))
@@ -1052,7 +1052,7 @@ end
 Returns the excess value of a bulk property relative to its ideal mixing value.
 
 By default this delegates to [`mixing`](@ref). For some properties (e.g.
-`entropy` and `gibbs_free_energy`) specialized implementations are provided to
+`entropy` and `gibbs_energy`) specialized implementations are provided to
 use residual contributions.
 """
 function excess(model::EoSModel, p, T, z, property; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
@@ -1070,15 +1070,15 @@ function excess(model::EoSModel, p, T, z, ::typeof(entropy); phase=:unknown, thr
     return s_mix::TT
 end
 
-function excess(model::EoSModel, p, T, z, ::typeof(gibbs_free_energy); phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+function excess(model::EoSModel, p, T, z, ::typeof(gibbs_energy); phase=:unknown, threaded=true, vol0=nothing, output=nothing)
     TT = typeof(p+T+first(z))
     pure = split_pure_model(model)
-    g_mix = gibbs_free_energy(model, p, T, z; phase, threaded, vol0)
+    g_mix = gibbs_energy(model, p, T, z; phase, threaded, vol0)
     log∑z = log(sum(z))
     R̄ = Rgas(model)
     for i in 1:length(z)
         lnxi = R̄*T*(log(z[i]) - log∑z)
-        g_mix -= z[i]*(gibbs_free_energy(pure[i], p, T; phase, threaded) + lnxi)
+        g_mix -= z[i]*(gibbs_energy(pure[i], p, T; phase, threaded) + lnxi)
     end
 
     return g_mix::TT
@@ -1129,7 +1129,7 @@ function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(vo
     return -∂p∂nᵢ ./ ∂p∂V
 end
 
-function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(VT_gibbs_free_energy))
+function _partial_property(model::EoSModel, V, T, z::AbstractVector, ::typeof(VT_gibbs_energy))
     return VT_molar_gradient(model,V,T,z,eos)
 end
 

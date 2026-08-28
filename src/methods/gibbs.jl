@@ -86,12 +86,12 @@ PT_property_gibbs(model,p,T,z,f::typeof(pressure)) = p
 PT_property_gibbs(model,p,T,z,f::typeof(temperature)) = T
 PT_property_gibbs(model,p,T,z,f::typeof(volume)) = volume(model,p,T,z)
 PT_property_gibbs(model,p,T,z,f::typeof(VT_entropy)) = -∂𝕘∂T(model,p,T,z)
-PT_property_gibbs(model,p,T,z,f::typeof(VT_gibbs_free_energy)) = eos_g(model,p,T,z)
-PT_property_gibbs(model,p,T,z,f::typeof(VT_helmholtz_free_energy)) = eos_g(model,p,T,z) - p*volume(model,p,T,z)
+PT_property_gibbs(model,p,T,z,f::typeof(VT_gibbs_energy)) = eos_g(model,p,T,z)
+PT_property_gibbs(model,p,T,z,f::typeof(VT_helmholtz_energy)) = eos_g(model,p,T,z) - p*volume(model,p,T,z)
 
 PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_entropy)) = PT_property_gibbs(model,p,T,z,VT_entropy)/molecular_weight(model,z)
-PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_gibbs_free_energy)) = PT_property_gibbs(model,p,T,z,VT_gibbs_free_energy)/molecular_weight(model,z)
-PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_helmholtz_free_energy)) = PT_property_gibbs(model,p,T,z,VT_helmholtz_free_energy)/molecular_weight(model,z)
+PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_gibbs_energy)) = PT_property_gibbs(model,p,T,z,VT_gibbs_energy)/molecular_weight(model,z)
+PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_helmholtz_energy)) = PT_property_gibbs(model,p,T,z,VT_helmholtz_energy)/molecular_weight(model,z)
 PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_isobaric_heat_capacity)) = PT_property_gibbs(model,p,T,z,VT_isobaric_heat_capacity)/molecular_weight(model,z)
 PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_isochoric_heat_capacity)) = PT_property_gibbs(model,p,T,z,VT_isochoric_heat_capacity)/molecular_weight(model,z)
 
@@ -322,7 +322,7 @@ end
 
 function g_and_v(model,p,T,v;phase = :unknown)
     v = volume(model,p,T,SA[1.0],phase = phase,vol0 = v)
-    g = VT_gibbs_free_energy(model,v,T,SA[1.0])
+    g = VT_gibbs_energy(model,v,T,SA[1.0])
     return g,v
 end
 
@@ -332,7 +332,7 @@ end
 
 function g_and_sv(model,p,T,v;phase = :unknown)
     v = volume(model,p,T,SA[1.0],phase = phase,vol0 = v)
-    g = VT_gibbs_free_energy(model,v,T,SA[1.0])
+    g = VT_gibbs_energy(model,v,T,SA[1.0])
     s = VT_entropy(model,v,T,SA[1.0])
     return g,s,v
 end

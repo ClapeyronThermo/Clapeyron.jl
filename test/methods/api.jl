@@ -468,7 +468,7 @@ end
     model_pem = PR(["hydrogen", "oxygen", "water"])
     z = [0.1,0.1,0.8]
     p,T = 0.95e5,380.15
-    for prop in [volume,gibbs_free_energy,helmholtz_free_energy,entropy,enthalpy,internal_energy]
+    for prop in [volume,gibbs_energy,helmholtz_energy,entropy,enthalpy,internal_energy]
         @test sum(partial_property(model_pem,p,T,z,prop) .* z) ≈ prop(model_pem,p,T,z)
     end
 end

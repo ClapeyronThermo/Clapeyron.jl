@@ -114,10 +114,10 @@ function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
     return A + PrV - T*∂A∂T
 end
 
-function VT_gibbs_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p = nothing)
+function VT_gibbs_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p = nothing)
     ideal = is_idealmodel(model)
     if iszero(1/V) && !ideal
-        return VT_gibbs_free_energy(idealmodel(model), V, T, z)
+        return VT_gibbs_energy(idealmodel(model), V, T, z)
     end
 
     if p == nothing
@@ -134,33 +134,33 @@ function VT_gibbs_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p
     end
 end
 
-VT_use_p(::typeof(VT_gibbs_free_energy)) = true
+VT_use_p(::typeof(VT_gibbs_energy)) = true
 
-VT_mass_gibbs_free_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0],p = nothing) = VT_gibbs_free_energy(model,V,T,z,p)/molecular_weight(model,z)
+VT_mass_gibbs_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0],p = nothing) = VT_gibbs_energy(model,V,T,z,p)/molecular_weight(model,z)
 
-VT_use_p(::typeof(VT_mass_gibbs_free_energy)) = true
+VT_use_p(::typeof(VT_mass_gibbs_energy)) = true
 
-function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
+function VT_gibbs_energy_res(model::EoSModel, V, T, z=SA[1.])
     Ar,∂A∂Vr = f∂fdV_res(model,V,T,z)
     PrV = ifelse(iszero(1/V),zero(∂A∂Vr),- V*∂A∂Vr)
     return Ar + PrV
 end
 
-function VT_helmholtz_free_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
+function VT_helmholtz_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.])
     return eos(model,V,T,z)
 end
 
-VT_mass_helmholtz_free_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_helmholtz_free_energy(model,V,T,z)/molecular_weight(model,z)
+VT_mass_helmholtz_energy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_helmholtz_energy(model,V,T,z)/molecular_weight(model,z)
 
 
-function VT_helmholtz_free_energy_res(model::EoSModel, V, T, z=SA[1.])
+function VT_helmholtz_energy_res(model::EoSModel, V, T, z=SA[1.])
     return eos_res(model,V,T,z)
 end
 
-const VT_helmholtz_energy = VT_helmholtz_free_energy
-const VT_helmholtz_energy_res = VT_helmholtz_free_energy_res
-const VT_gibbs_energy = VT_gibbs_free_energy
-const VT_gibbs_energy_res = VT_gibbs_free_energy_res
+const VT_helmholtz_free_energy = VT_helmholtz_energy
+const VT_helmholtz_free_energy_res = VT_helmholtz_energy_res
+const VT_gibbs_free_energy = VT_gibbs_energy
+const VT_gibbs_free_energy_res = VT_gibbs_energy_res
 
 function VT_isochoric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     ∂²A∂T² = ∂²f∂T²(model,V,T,z)
@@ -572,12 +572,6 @@ function VT_thermodynamic_factor(model::EoSModel, V, T, z)
     Γ = xN1 ./ RT .* ∂μᵢ∂xⱼ
     return Γ
 end
-
-const VT_helmholtz_energy = VT_helmholtz_free_energy
-const VT_gibbs_energy = VT_gibbs_free_energy
-const VT_mass_helmholtz_energy = VT_mass_helmholtz_free_energy
-const VT_mass_gibbs_energy = VT_mass_gibbs_free_energy
-
 
 export pressure
 export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial

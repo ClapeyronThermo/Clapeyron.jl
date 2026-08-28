@@ -100,7 +100,7 @@ Returns |∑zᵢμᵢ - G|, ∑zᵢμᵢ and G at the specified conditions.
 """
 function gibbs_duhem(model,V,T,z=SA[1.0])
     μ = dot(z,Clapeyron.VT_chemical_potential(model,V,T,z))
-    g = VT_gibbs_free_energy(model,V,T,z)
+    g = VT_gibbs_energy(model,V,T,z)
     return abs(μ-g),μ,g
 end
 

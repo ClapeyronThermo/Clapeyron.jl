@@ -144,7 +144,7 @@ end
 
 Solvers.∂2(f,V::NUM,T::NUM) = ∂2_sym(f,V,T)
 
-for f in (:eos,:VT_enthalpy,:VT_entropy,:VT_gibbs_free_energy,:VT_helmholtz_free_energy)
+for f in (:eos,:VT_enthalpy,:VT_entropy,:VT_gibbs_energy,:VT_helmholtz_energy)
     @eval begin
         @register_symbolic Clapeyron.$f(model::EoSModel,V,T,z::AbstractVector)
     end
