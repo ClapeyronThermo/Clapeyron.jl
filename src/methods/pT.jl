@@ -1270,11 +1270,11 @@ f(a)/f(b) = (f - f(b))/f(a) - f(b))
 """
 supports_lever_rule(f) = false
 
-for prop in [:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
-    :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
+for prop in [:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_energy, :helmholtz_energy,
+    :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_energy_res, :helmholtz_energy_res,
    #volume :properties
     :mass_density,:molar_density,
-    :mass_enthalpy,:mass_entropy,:mass_internal_energy,:mass_gibbs_free_energy,:mass_helmholtz_free_energy]
+    :mass_enthalpy,:mass_entropy,:mass_internal_energy,:mass_gibbs_energy,:mass_helmholtz_energy]
     @eval begin
         supports_lever_rule(::typeof($prop)) = true
     end
