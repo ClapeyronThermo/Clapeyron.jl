@@ -328,7 +328,7 @@ function eval_flashresult_prop_i(model,state,f::F,i,mass_prop) where F
     return res
 end
 
-for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_free_energy,:gibbs_free_energy]
+for prop in [:enthalpy,:entropy,:internal_energy,:helmholtz_energy,:gibbs_energy]
     @eval begin
         $prop(model::EoSModel,state::FlashResult) = eval_flashresult_prop(model,state,PT_to_VT($prop))
         $prop(model::EoSModel,state::FlashResult, i::Integer)  = eval_flashresult_prop_i(model,state,PT_to_VT($prop),i,false)
@@ -338,10 +338,10 @@ end
 mass_entropy(model::EoSModel,state::FlashResult) = entropy(model,state)/molecular_weight(model,state)
 mass_enthalpy(model::EoSModel,state::FlashResult) = enthalpy(model,state)/molecular_weight(model,state)
 mass_internal_energy(model::EoSModel,state::FlashResult) = internal_energy(model,state)/molecular_weight(model,state)
-mass_gibbs_free_energy(model::EoSModel,state::FlashResult) = gibbs_free_energy(model,state)/molecular_weight(model,state)
-mass_helmholtz_free_energy(model::EoSModel,state::FlashResult) = helmholtz_free_energy(model,state)/molecular_weight(model,state)
+mass_gibbs_energy(model::EoSModel,state::FlashResult) = gibbs_energy(model,state)/molecular_weight(model,state)
+mass_helmholtz_energy(model::EoSModel,state::FlashResult) = helmholtz_energy(model,state)/molecular_weight(model,state)
 
-for prop in [:mass_enthalpy,:mass_entropy,:mass_internal_energy,:mass_helmholtz_free_energy,:mass_gibbs_free_energy]
+for prop in [:mass_enthalpy,:mass_entropy,:mass_internal_energy,:mass_helmholtz_energy,:mass_gibbs_energy]
     @eval begin
         $prop(model::EoSModel,state::FlashResult, i::Integer) = eval_flashresult_prop_i(model,state,PT_to_VT($prop),i,true)
     end

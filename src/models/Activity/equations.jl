@@ -151,7 +151,7 @@ function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     return -dfT*T^2
 end
 
-function mixing(model::ActivityModel,p,T,z,::typeof(gibbs_free_energy))
+function mixing(model::ActivityModel,p,T,z,::typeof(gibbs_energy))
     x = z./sum(z)
     return excess_gibbs_free_energy(model,p,T,z)+dot(z,log.(x))*R̄*T
 end
