@@ -15,9 +15,11 @@ V is the volume `[m³]`
 `pressure(model, result::FlashResult)` will return the equilibrium pressure stored in the `result` argument.
 """
 function pressure(model::EoSModel, V, T, z=SA[1.]; output = nothing)
-    vt_remove_units(model,V,T,z)
-    res = VT_pressure(model, V, T, z)
-    return 
+    T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+    v̄ = uvstrip(model,V,z̄)
+    p = VT_pressure(model, v̄, T̄, z̄)
+    UNIT_TYPE = unit_system(V,T,z,output)
+    return with_output_unit(p,(UNIT_TYPE,output),pressure)
 end
 
 """
@@ -588,7 +590,7 @@ export pressure
 export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
 @public temperature, pip
 
-const CLAPEYRON_PROPS = [:temperature,:volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
+const CLAPEYRON_PROPS = [:temperature, :volume, :pressure, :entropy, :internal_energy, :enthalpy, :gibbs_free_energy, :helmholtz_free_energy,
                     :entropy_res, :internal_energy_res, :enthalpy_res, :gibbs_free_energy_res, :helmholtz_free_energy_res,
                     :helmholtz_energy,:gibbs_energy,
                     #mass properties, first order
@@ -597,7 +599,7 @@ const CLAPEYRON_PROPS = [:temperature,:volume, :pressure, :entropy, :internal_en
                     #second derivative order properties
                     :isochoric_heat_capacity, :isobaric_heat_capacity, :adiabatic_index,
                     :isothermal_compressibility, :isentropic_compressibility, :speed_of_sound,
-                    :isobaric_expansivity, :joule_thomson_coefficient, :inversion_temperature,
+                    :isobaric_expansivity, :joule_thomson_coefficient,
                     #second derivative order, mass properties
                     :mass_isobaric_heat_capacity,:mass_isochoric_heat_capacity,
                     #higher derivative order properties
@@ -641,12 +643,8 @@ module VT0
     for prop in Clapeyron.CLAPEYRON_PROPS
         VT_prop = Clapeyron.VT_symbol(prop)
         @eval begin
-            function $prop(model,V,T,z=Clapeyron.SA[1.];output = nothing)
-                T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
-                v̄ = uvstrip(model,V,z̄)
-                UNIT_TYPE = unit_system(V,T,z,output)
-                x = Clapeyron.$VT_prop(model,v̄,T̄,z̄)
-                return with_output_unit(V,(UNIT_TYPE,output),$VT_prop)
+            function $prop(model,V,T,z=Clapeyron.SA[1.])
+                return Clapeyron.$VT_prop(model,V,T,z)
             end
         end
     end

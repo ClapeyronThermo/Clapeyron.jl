@@ -198,13 +198,16 @@ include("AntoineSat.jl")
 
 Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies at temperature `T` `[K]`, in `[J]`
 """
-function enthalpy_vap(model::EoSModel, T,satmethod = ChemPotVSaturation())
+function enthalpy_vap(model::EoSModel, T, satmethod = ChemPotVSaturation(); output = nothing)
+    T̄ = ustrip(T,temperature)
     single_component_check(enthalpy_vap,model)
-    (P_sat,V_l,V_v) = saturation_pressure(model,T,satmethod)
-    H_v = VT_enthalpy_res(model,V_v,T)
-    H_l = VT_enthalpy_res(model,V_l,T)
+    (P_sat,V_l,V_v) = saturation_pressure(model,T̄,satmethod)
+    H_v = VT_enthalpy_res(model,V_v,T̄)
+    H_l = VT_enthalpy_res(model,V_l,T̄)
     #H_v(res) - H_l(res) = H_l - H_v
     H_vap = H_v - H_l
+    UNIT_TYPE = unit_system(unit_system(T),unit_system(output))    
+    return with_output_unit(H_vap,(UNIT_TYPE,output),enthalpy)
     return H_vap
 end
 

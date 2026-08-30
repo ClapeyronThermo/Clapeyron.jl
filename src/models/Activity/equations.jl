@@ -9,12 +9,14 @@ function lnγ_impl! end
 has_lnγ_impl(model::T) where T = hasmethod(lnγ_impl!,Tuple{Any,T,Any,Any,Any})
 
 function excess_gibbs_free_energy(model::ActivityModel,p,T,z)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    RT = Rgas(model)*T̄
     if has_lnγ_impl(model)
-        lnγx = lnγ(model,p,T,z)
-        return Rgas(model)*T*dot(z,lnγx)
+        lnγx = lnγ(model,p̄,T̄,z̄)
+        return RT*dot(z̄,lnγx)
     else
-        γ = activity_coefficient(model,p,T,z)
-        return Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ @comps)
+        γ = activity_coefficient(modelp̄,T̄,z̄)
+        return RT*sum(z̄[i]*log(γ[i]) for i ∈ @comps)
     end
 end
 
@@ -33,7 +35,8 @@ end
 
 #for use in models that have Gibbs energy defined.
 function activity_coefficient(model::ActivityModel,p,T,z)
-    lnγx = lnγ(model,p,T,z)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    lnγx = lnγ(model,p̄,T̄,z̄)
     if ismutable(lnγx)
         lnγx .= exp.(lnγx)
         return lnγx
@@ -58,7 +61,8 @@ function ng_E_reduced(model,p,T,z)
     excess_gibbs_free_energy(model,p,T,@view(z[1:nc]))/(Rgas(model)*T)
 end
 
-function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
+function lnγ(model::ActivityModel,_p,_T,_z,cache::TT = nothing) where TT
+    T,z = ustrip(_T,temperature),uzstrip(model,_z)
     X = gradient_type(model,T,z)
     nc = length(z)
     if has_lnγ_impl(model)
@@ -75,7 +79,7 @@ function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
             return out
         end
     else
-        V = p
+        V = zero(primalval(T))
         fun = @deferred_Z(ng_E_reduced,∂₁f)
         if cache isa Tuple
             result,aux,lnγ,∂lnγ∂n,∂lnγ∂T,_,_,hconfig = cache
@@ -97,8 +101,9 @@ function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
 end
 
 function activity_coefficient_impl(model::ActivityModel,p,T,z,μ_ref,reference,phase,threaded,vol0)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
     #TODO: what to do if the reference is not pure?
-    return activity_coefficient(model,p,T,z)
+    return activity_coefficient(model,p̄,T̄,z̄)
 end
 
 reference_chemical_potential_type(model::ActivityModel) = :zero

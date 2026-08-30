@@ -87,7 +87,7 @@ Similarly, `molar_density(model,result::FlashResult,i)` will just call `molar_de
 $VT_STRING
 """
 function molar_density(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    p̄,T̄,z̄ = ustrip(T,temperature),ustrip(p,pressure),uzstrip(model,z)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
     v̄0 = uvstrip(model,vol0,z̄)
     UNIT_TYPE = unit_system(p,T,z,output)
     V = volume(model, p̄, T̄, z̄; phase, threaded, vol0 = v̄0)
@@ -115,7 +115,7 @@ Where `Mr` is the molecular weight of the model at the input composition.
 $VT_STRING
 """
 function mass_density(model::EoSModel, p, T, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    p̄,T̄,z̄ = ustrip(T,temperature),ustrip(p,pressure),uzstrip(model,z)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
     v̄0 = uvstrip(model,vol0,z̄)
     UNIT_TYPE = unit_system(p,T,z,output)
     V = volume(model, p̄, T̄, z̄; phase, threaded, vol0 = v̄0)
@@ -145,7 +145,7 @@ $VT_STRING
 $SINGLE_PHASE_PROP
 """
 function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    p̄,T̄,z̄ = ustrip(T,temperature),ustrip(p,pressure),uzstrip(model,z)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
     v̄0 = uzstrip(model,vol0,z̄)
     #this property only depends on the implementation of volume_impl.
     V = volume(model,p̄,T̄,z̄;phase,threaded,vol0 = v̄0)
@@ -178,15 +178,31 @@ end
 PT_property(model,p,T,z,phase, threaded,vol0,f::F) where {F} = PT_property(model,p,T,z,phase, threaded,vol0,f,nothing)
 PT_property(model,p,T,z,phase, vol,f::F) where {F} = PT_property(model,p,T,z,phase,false,nothing,f,vol)
 
+__vt_on_pt_not_supported() = throw(error(lazy"Invalid unit and model combination."))
+
 macro __PT_def(f)
     VT_f = Symbol(:VT_,f)
     quote
         function $f(model, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-            p̄,T̄,z̄ = ustrip(T,temperature),ustrip(p,pressure),uzstrip(model,z)
-            v̄0 = uvstrip(model,vol0,z̄)
-            UNIT_TYPE = unit_system(p,T,z,output)
-            res = PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,$VT_f,v̄)
-            return with_output_unit(res,(UNIT_TYPE,output),VT_entropy)
+            if unitful_is_pressure(p)
+                p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+                v̄0 = uvstrip(model,vol0,z̄)
+                UNIT_TYPE = unit_system(p,T,z,output)
+                res = PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,$VT_f,v̄)
+                return with_output_unit(res,(UNIT_TYPE,output),$VT_f)
+            else
+                has_a_res(model) || __vt_on_pt_not_supported()
+                T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+                v̄ = uvstrip(model,p,z̄)
+                if VT_use_p($VT_f)
+                    p̄ = pressure(model,v̄,T̄,z̄)
+                else
+                    p̄ = oftype(v̄,NaN)
+                end
+                UNIT_TYPE = unit_system(p,T,z,output)
+                res = PT_property(model,p̄,T̄,z̄,phase,threaded,nothing,$VT_f,v̄)
+                return with_output_unit(res,(UNIT_TYPE,output),$VT_f)
+            end
         end
     end |> esc
 end
@@ -271,7 +287,7 @@ Calculates the chemical potential, defined as:
 $VT_STRING
 """
 function chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    p̄,T̄,z̄ = ustrip(T,temperature),ustrip(p,pressure),uzstrip(model,z)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
     v̄0 = uvstrip(model,vol0,z̄)
     UNIT_TYPE = unit_system(p,T,z,output)
     μ = chemical_potential_impl(model,p̄,T̄,z̄,phase,threaded,v̄0)
@@ -300,7 +316,7 @@ Calculates the residual chemical potential, defined as:
 $VT_STRING
 """
 function chemical_potential_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    p̄,T̄,z̄ = ustrip(T,temperature),ustrip(p,pressure),uzstrip(model,z)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
     v̄0 = uvstrip(model,vol0,z̄)
     UNIT_TYPE = unit_system(p,T,z,output)
     μr = PT_property(model,p,T,z,phase,threaded,v̄0,VT_chemical_potential_res)
@@ -856,14 +872,17 @@ Where `μresᵢ` is the vector of residual chemical potentials and `Z` is the co
 
 $VT_STRING
 """
-function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    p̄,T̄,z̄,v̄ = pvt_remove_units(model,p,T,z)
-    res = PT_property(model,p̄,T̄,z̄,phase,threaded,vol0,VT_fugacity_coefficient,v̄)
+function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    v̄0 = uvstrip(model,vol0,z̄)
+    res = PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,VT_fugacity_coefficient)
 end
 
 function fugacity_coefficient!(φ,model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    V = volume(model, p, T, z; phase, threaded, vol0)
-    VT_fugacity_coefficient!(φ,model,V,T,z,p)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    v̄0 = uvstrip(model,vol0,z̄)
+    V = volume(model, p, T, z; phase, threaded, vol0 = v̄0)
+    VT_fugacity_coefficient!(φ,model,V,T̄,z̄,p̄)
 end
 
 """
@@ -886,15 +905,18 @@ function activity_coefficient(model::EoSModel,p,T,z = SA[1.0];
                             phase=:unknown,
                             threaded=true,
                             vol0=nothing)
+
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    v̄0 = uvstrip(model,vol0,z̄)
     reference = Symbol(reference)
     γmodel = __γ_unwrap(model)
     if γmodel isa ActivityModel
-        return activity_coefficient(γmodel,p,T,z)
+        return activity_coefficient(γmodel,p̄,T̄,z̄)
     end
     if μ_ref == nothing
-        return activity_coefficient_impl(model,p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
+        return activity_coefficient_impl(model,p̄,T̄,z̄,reference_chemical_potential(model,p̄,T̄,reference;phase,threaded),reference,phase,threaded,v̄0)
     else
-        return activity_coefficient_impl(model,p,T,z,μ_ref,reference,phase,threaded,vol0)
+        return activity_coefficient_impl(model,p̄,T̄,z̄,μ_ref,reference,phase,threaded,v̄0)
     end
 end
 
