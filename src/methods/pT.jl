@@ -297,11 +297,6 @@ function chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, thr
         has_a_res(model) || __vt_on_pt_not_supported()
         T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
         v̄ = uvstrip(model,p,z̄)
-        if VT_use_p($VT_f)
-            p̄ = pressure(model,v̄,T̄,z̄)
-        else
-            p̄ = oftype(v̄,NaN)
-        end
         UNIT_TYPE = unit_system(p,T,z,output)
         μ = VT_chemical_potential(model,v̄,T̄,z̄)
         return with_output_unit(μ,(UNIT_TYPE,output),chemical_potential)
@@ -340,11 +335,6 @@ function chemical_potential_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown,
         has_a_res(model) || __vt_on_pt_not_supported()
         T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
         v̄ = uvstrip(model,p,z̄)
-        if VT_use_p($VT_f)
-            p̄ = pressure(model,v̄,T̄,z̄)
-        else
-            p̄ = oftype(v̄,NaN)
-        end
         UNIT_TYPE = unit_system(p,T,z,output)
         μr = VT_chemical_potential_res(model,v̄,T̄,z̄)
         return with_output_unit(μr,(UNIT_TYPE,output),chemical_potential)
