@@ -25,6 +25,8 @@ const __EntropyKind = Union{__Entropy,__MassEntropy,__MolEntropy}
 
 C.unit_system(::Unitful.Units) = UnitfulJL()
 C.unit_system(::Unitful.Quantity) = UnitfulJL()
+C.unit_system(::Type{<:Unitful.Units}) = UnitfulJL()
+C.unit_system(::Type{<:Unitful.Quantity}) = UnitfulJL()
 
 function C.solve_unit(::UnitfulJL,output::Unitful.Units,output_from_f::Unitful.Units)
     uconvert(output,1*output_from_f)
@@ -47,8 +49,8 @@ C.ustrip(::UnitfulJL,x::Unitful.Quantity,f::F) where F = ustrip(C.unit_type(Unit
 
 C.uzstrip(::UnitfulJL,model,z) = __uzstrip(model,z)
 
-__uzstrip(model,z::AbstractVector{T}) where T <: Unitful.Amount = ustrip(u"mol",x)
-__uzstrip(model,z::AbstractVector{T}) where T <: Unitful.Mass = map(y -> 1000*ustrip(u"kg",y[1])/y[2],zip(x,C.mw(model)))
+__uzstrip(model,z::AbstractVector{T}) where T <: Unitful.Amount = ustrip.(u"mol",z)
+__uzstrip(model,z::AbstractVector{T}) where T <: Unitful.Mass = map(y -> 1000*ustrip(u"kg",y[1])/y[2],zip(z,C.mw(model)))
 
 C.uvstrip(::UnitfulJL,model,v,z) = __uvstrip(model,v,z)
 __uvstrip(model,x::Unitful.Volume,z) = ustrip(u"m^3",x)

@@ -25,7 +25,7 @@
 function unit_type end #unit_type(us::MyUnitSystem,output)
 function solve_unit end #solve_unit(unit_sys,output1,output2)
 #with_output_unit(res,t::Tuple{X,Y}) where {X,Y}
-
+unit_system(x::AbstractArray{T}) where T = unit_system(T)
 unit_system(x) = nothing
 unit_system(x::T,::Nothing) where T = x
 unit_system(::Nothing,y::T) where T = y

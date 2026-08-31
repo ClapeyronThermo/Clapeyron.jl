@@ -59,7 +59,6 @@ end
 
 VT_mass_entropy(model::EoSModel,V, T, z::AbstractVector = SA[1.0]) = VT_entropy(model,V,T,z)/molecular_weight(model,z)
 
-
 function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
     f = @deferred_T(eos_res,VT_entropy_res)
     return -Solvers.derivative(f,T)
@@ -403,7 +402,8 @@ Calculated as:
 1.  G. Venkatarathnama, L.R. Oellrich, Identification of the phase of a fluid using partial derivatives of pressure, volume,and temperature without reference to saturation properties: Applications in phase equilibria calculations, Fluid Phase Equilibria 301 (2011) 225–233
 """
 function pip(model::EoSModel, V, T, z=SA[1.0])
-    T̄,z̄,v̄ = ustrip(T,temperature),uzstrip(model,z),uvstrip(model,V,z̄)
+    T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+    v̄ = uvstrip(model,V,z̄)
     Π,∂p∂V = _pip(model,v̄,T̄,z̄)
     return Π
 end
