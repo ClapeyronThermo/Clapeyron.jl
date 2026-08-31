@@ -24,10 +24,14 @@ a `p0` argument can be used to provide an initial pressure guess to the Q-T flas
 """
 module QT
 import Clapeyron
+import Clapeyron: ustrip,uzstrip,with_output_unit,unit_system
 for f in Clapeyron.CLAPEYRON_PROPS
+    VT_f = Symbol(:VT_,f)
     @eval begin
-        function $f(model,q,T,z = Clapeyron.SA[1.0],p0 = nothing)
-            Clapeyron.QT_property(model,q,T,z,Clapeyron.$f,p0)
+        function $f(model,q,T,z = Clapeyron.SA[1.0],p0 = nothing, output = nothing)
+            T̄,z̄,p̄0 = ustrip(T,temperature),uzstrip(model,z),ustrip(p0,pressure)
+            prop = Clapeyron.QT_property(model,q,T̄,z̄,Clapeyron.$f,p̄0)
+            return with_output_unit(prop,(unit_system(T,p0,z,output),output),$VT_f)
         end
     end
 end
@@ -63,10 +67,14 @@ a `T0` argument can be used to provide an initial temperature guess to the Q-P f
 """
 module QP
 import Clapeyron
+import Clapeyron: ustrip,uzstrip,with_output_unit,unit_system
 for f in Clapeyron.CLAPEYRON_PROPS
+    VT_f = Symbol(:VT_,f)
     @eval begin
         function $f(model,q,p,z = Clapeyron.SA[1.0],T0 = nothing)
-            Clapeyron.QP_property(model,q,p,z,Clapeyron.$f,T0)
+            T̄0,z̄,p̄ = ustrip(T0,temperature),uzstrip(model,z),ustrip(p,pressure)
+            prop = Clapeyron.QP_property(model,q,p̄,z̄,Clapeyron.$f,T̄0)
+            return with_output_unit(prop,(unit_system(T0,p,z,output),output),$VT_f)
         end
     end
 end

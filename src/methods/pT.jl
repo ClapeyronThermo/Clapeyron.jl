@@ -156,7 +156,7 @@ Similarly, `compressibility_factor(model,result::FlashResult,i)` will just call 
 $VT_STRING
 $SINGLE_PHASE_PROP
 """
-function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing,output = nothing)
     T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
     if unitful_is_pressure(p)
         p̄,v̄0 = ustrip(p,pressure),uvstrip(model,vol0,z̄)
@@ -1224,12 +1224,11 @@ Calculates the thermodynamic factor matrix Γᵢⱼ (size: N-1 × N-1) defined a
 Γᵢⱼ = δᵢⱼ + xᵢ ∂lnγᵢ/∂xⱼ
 ```
 """
-function thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+function thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing,output = nothing)
     T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
     if unitful_is_pressure(p)
         p̄,v̄0 = ustrip(p,pressure),uvstrip(model,vol0,z̄)
         length(model) == 1 && return one(Base.promote_eltype(model,p̄,T̄,z̄))
-        UNIT_TYPE = unit_system(p,T,z,output)
         γmodel = __γ_unwrap(model)
         if γmodel isa ActivityModel
             return γ_thermodynamic_factor(γmodel,p̄,T̄,z̄)
@@ -1238,10 +1237,8 @@ function thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, t
         end
     else
         has_a_res(model) || __vt_on_pt_not_supported()
-
         v̄ = uvstrip(model,p,z̄)
         length(model) == 1 && return one(Base.promote_eltype(model,v̄,T̄,z̄))
-        UNIT_TYPE = unit_system(p,T,z,output)
         return VT_thermodynamic_factor(model,v̄,T̄,z̄)
     end
 end
@@ -1287,8 +1284,8 @@ module PT0
     import Clapeyron
     for prop in Clapeyron.CLAPEYRON_PROPS
         @eval begin
-            function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-                return Clapeyron.$prop(model,p,T,z;phase,threaded,vol0)
+            function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing,output)
+                return Clapeyron.$prop(model,p,T,z;phase,threaded,vol0,output)
             end
         end
     end

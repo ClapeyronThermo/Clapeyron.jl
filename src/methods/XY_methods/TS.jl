@@ -44,10 +44,11 @@ If a `phase` argument is specified, then it will be used to skip the flash and i
 """
 module TS
 import Clapeyron
+import Clapeyron: ustrip,uzstrip,usstrip,with_output_unit,unit_system
 for f in Clapeyron.CLAPEYRON_PROPS
     VT_f = Symbol(:VT_,f)
     @eval begin
-        function $f(model,T,s,z = Clapeyron.SA[1.0];phase = :unknown,p0 = nothing)
+        function $f(model,T,s,z = Clapeyron.SA[1.0];phase = :unknown,p0 = nothing, output = nothing)
             T̄,z̄,p̄0 = ustrip(T,temperature),uzstrip(model,z),ustrip(p0,pressure)
             s̄ = usstrip(model,s,z̄)
             prop = Clapeyron.TS_property(model,T̄,s̄,z̄,Clapeyron.$f,phase,p̄0)

@@ -44,6 +44,7 @@ If a `phase` argument is specified, then it will be used to skip the flash and i
 """
 module PH
 import Clapeyron
+import Clapeyron: ustrip,uzstrip,uhstrip,with_output_unit,unit_system
 for f in Clapeyron.CLAPEYRON_PROPS
     VT_f = Symbol(:VT_,f)
     @eval begin
@@ -56,6 +57,6 @@ for f in Clapeyron.CLAPEYRON_PROPS
     end
 end
 function flash(model,p,h,z = Clapeyron.SA[1.0],args...;kwargs...)
-    return Clapeyron.ph_flash(model,p̄,h̄,z̄,args...;kwargs...)
+    return Clapeyron.ph_flash(model,p,h,z,args...;kwargs...)
 end
 end  #module
