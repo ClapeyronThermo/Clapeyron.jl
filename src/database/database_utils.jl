@@ -164,6 +164,10 @@ function defaultmissing(array::Array, defaultvalue = "")
     return convert.(String,vals),nonmissing
 end
 
+function defaultmissing(array::Array{T}, defaultvalue::T2) where {T2, T<:Union{T2,Missing}}
+    return coalesce.(array, Ref(defaultvalue)), Array(ismissing.(array))
+end
+
 defaultmissing(array) = throw(ArgumentError("Unsupported array element type $(typeof(array))"))
 
 """
