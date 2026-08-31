@@ -206,6 +206,7 @@ macro __PT_def(f)
         end
     end |> esc
 end
+
 """
     entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     entropy(model, result::FlashResult)
@@ -268,7 +269,6 @@ $VT_STRING
 function entropy_res end
 @__PT_def entropy_res
 
-
 """
     chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     chemical_potential(model, result::FlashResult)
@@ -287,11 +287,25 @@ Calculates the chemical potential, defined as:
 $VT_STRING
 """
 function chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
-    v̄0 = uvstrip(model,vol0,z̄)
-    UNIT_TYPE = unit_system(p,T,z,output)
-    μ = chemical_potential_impl(model,p̄,T̄,z̄,phase,threaded,v̄0)
-    return with_output_unit.(μ,(UNIT_TYPE,output),VT_helmholtz_energy)
+    if unitful_is_pressure(p)
+        p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+        v̄0 = uvstrip(model,vol0,z̄)
+        UNIT_TYPE = unit_system(p,T,z,output)
+        μ = chemical_potential_impl(model,p̄,T̄,z̄,phase,threaded,v̄0)
+        return with_output_unit(μ,(UNIT_TYPE,output),chemical_potential)
+    else
+        has_a_res(model) || __vt_on_pt_not_supported()
+        T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+        v̄ = uvstrip(model,p,z̄)
+        if VT_use_p($VT_f)
+            p̄ = pressure(model,v̄,T̄,z̄)
+        else
+            p̄ = oftype(v̄,NaN)
+        end
+        UNIT_TYPE = unit_system(p,T,z,output)
+        μ = VT_chemical_potential(model,v̄,T̄,z̄)
+        return with_output_unit(μ,(UNIT_TYPE,output),chemical_potential)
+    end
 end
 
 function chemical_potential_impl(model,p,T,z,phase,threaded,vol0)
@@ -316,11 +330,25 @@ Calculates the residual chemical potential, defined as:
 $VT_STRING
 """
 function chemical_potential_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
-    v̄0 = uvstrip(model,vol0,z̄)
-    UNIT_TYPE = unit_system(p,T,z,output)
-    μr = PT_property(model,p,T,z,phase,threaded,v̄0,VT_chemical_potential_res)
-    return with_output_unit(μr,(UNIT_TYPE,output),VT_helmholtz_energy)
+    if unitful_is_pressure(p)
+        p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+        v̄0 = uvstrip(model,vol0,z̄)
+        UNIT_TYPE = unit_system(p,T,z,output)
+        μr = PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,VT_chemical_potential_res)
+        return with_output_unit(μr,(UNIT_TYPE,output),chemical_potential)
+    else
+        has_a_res(model) || __vt_on_pt_not_supported()
+        T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+        v̄ = uvstrip(model,p,z̄)
+        if VT_use_p($VT_f)
+            p̄ = pressure(model,v̄,T̄,z̄)
+        else
+            p̄ = oftype(v̄,NaN)
+        end
+        UNIT_TYPE = unit_system(p,T,z,output)
+        μr = VT_chemical_potential_res(model,v̄,T̄,z̄)
+        return with_output_unit(μr,(UNIT_TYPE,output),chemical_potential)
+    end
 end
 
 """

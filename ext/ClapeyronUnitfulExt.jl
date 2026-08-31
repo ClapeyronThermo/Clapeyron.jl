@@ -4,17 +4,25 @@ using Clapeyron: SA
 using Unitful
 const C = Clapeyron
 
-import Unitful: @u_str
+import Unitful: @u_str, @derived_dimension
+import Unitful: 𝐋,𝐌,𝚯,𝐍
 
 struct UnitfulJL end
 
-Unitful.@derived_dimension __MassDensity Unitful.𝐌/Unitful.𝐋^3
-Unitful.@derived_dimension __MolDensity Unitful.𝐍/Unitful.𝐋^3
-Unitful.@derived_dimension __MassVolume Unitful.𝐋^3/Unitful.𝐌
-Unitful.@derived_dimension __MolVolume Unitful.𝐋^3/Unitful.𝐍
-Unitful.@derived_dimension __MolAmount Unitful.𝐍
+
+Unitful.@derived_dimension __MassDensity 𝐌/𝐋^3
+Unitful.@derived_dimension __MolDensity 𝐍/𝐋^3
+Unitful.@derived_dimension __MassVolume 𝐋^3/𝐌
+Unitful.@derived_dimension __MolVolume 𝐋^3/𝐍
+Unitful.@derived_dimension __MolEnergy 𝐌*𝐋^2/𝐓^2/𝐍
+Unitful.@derived_dimension __MassEnergy 𝐋^2/𝐓^2
+Unitful.@derived_dimension __Entropy 𝐌*𝐋^2/𝐓^2/𝚯
+Unitful.@derived_dimension __MassEntropy 𝐋^2/𝐓^2/𝚯
+Unitful.@derived_dimension __MolEntropy 𝐌*𝐋^2/𝐓^2/𝚯/𝐍
 
 const __VolumeKind = Union{__MassDensity,__MolDensity,__MassVolume,__MolVolume,Unitful.Volume}
+const __EnergyKind = Union{Energy,__MassEnergy,__MolEnergy}
+const __EntropyKind = Union{__Entropy,__MassEntropy,__MolEntropy}
 
 C.unit_system(::Unitful.Units) = UnitfulJL()
 C.unit_system(::Unitful.Quantity) = UnitfulJL()
@@ -39,23 +47,32 @@ C.unitful_is_pressure(::Unitful.Pressure) = true
 C.uzstrip(::UnitfulJL,model,z) = __uzstrip(model,z)
 
 __uzstrip(model,z::AbstractVector{T}) where T <: Unitful.Amount = ustrip.(u"mol",x)
-__uzstrip(model,z::AbstractVector{T}) where T <: Number = x
 __uzstrip(model,z::AbstractVector{T}) where T <: Unitful.Mass = map(y -> 1000*ustrip(u"kg",y[1])/y[2],zip(x,C.mw(model)))
 
 C.uvstrip(::UnitfulJL,model,v,z) = __uvstrip(model,v,z)
-__uvstrip(model,x::Number,z) = x
 __uvstrip(model,x::Unitful.Volume,z) = ustrip(upreferred(x))
-__uvstrip(model,x::__MolVolume,z) = ustrip(upreferred(x)) * C.molecular_weight(model,z)
-__uvstrip(model,x::__MolDensity,z) = C.molecular_weight(model,z) / ustrip(x)
+__uvstrip(model,x::__MolVolume,z) = ustrip(upreferred(x)) * sum(z)
+__uvstrip(model,x::__MolDensity,z) = sum(z) / ustrip(upreferred(x))
 __uvstrip(model,x::__MassVolume,z) = ustrip(upreferred(x)) * C.molecular_weight(model,z)
 __uvstrip(model,x::__MassDensity,z) = C.molecular_weight(model,z) / ustrip(upreferred(x))
+
+C.uhstrip(::UnitfulJL,model,h,z) = __uhstrip(model,h,z)
+__uhstrip(model,x::Unitful.Energy,z) = ustrip(upreferred(x))
+__uhstrip(model,x::__MolEnergy,z) = ustrip(upreferred(x)) * sum(z)
+__uhstrip(model,x::__MassEnergy,z) = ustrip(upreferred(x)) * C.molecular_weight(model,z)
+
+C.usstrip(::UnitfulJL,model,h,z) = __uhstrip(model,h,z)
+__uhstrip(model,x::__Entropy,z) = ustrip(upreferred(x))
+__uhstrip(model,x::__MolEntropy,z) = ustrip(upreferred(x)) * sum(z)
+__uhstrip(model,x::__MassEntropy,z) = ustrip(upreferred(x)) * C.molecular_weight(model,z)
 
 #basic unit_type defs
 C.unit_type(::UnitfulJL,::typeof(C.enthalpy)) = u"J"
 C.unit_type(::UnitfulJL,::typeof(C.temperature)) = u"K"
 C.unit_type(::UnitfulJL,::typeof(C.pressure)) = u"Pa"
 C.unit_type(::UnitfulJL,::typeof(C.volume)) = u"m^3"
-C.unit_type(::UnitfulJL,::typeof(C.mass_enthalpy)) = u"J"
+C.unit_type(::UnitfulJL,::typeof(C.mass_enthalpy)) = u"J/kg"
+C.unit_type(::UnitfulJL,::typeof(C.chemical_potential)) = u"J/mol"
 
 for (fns,unit) in [
     ([:enthalpy,:enthalpy_res,:internal_energy,:internal_energy_res,:gibbs_energy,:gibbs_energy_res,:helmholtz_energy,:helmholtz_energy_res], u"J"),
