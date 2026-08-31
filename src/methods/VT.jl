@@ -403,7 +403,7 @@ Calculated as:
 1.  G. Venkatarathnama, L.R. Oellrich, Identification of the phase of a fluid using partial derivatives of pressure, volume,and temperature without reference to saturation properties: Applications in phase equilibria calculations, Fluid Phase Equilibria 301 (2011) 225–233
 """
 function pip(model::EoSModel, V, T, z=SA[1.0])
-    T̄,z̄,v̄ = ustrip(T,temperature),uvstrip(p,pressure),uzstrip(model,z),uvstrip(model,V,z̄)
+    T̄,z̄,v̄ = ustrip(T,temperature),uzstrip(model,z),uvstrip(model,V,z̄)
     Π,∂p∂V = _pip(model,v̄,T̄,z̄)
     return Π
 end

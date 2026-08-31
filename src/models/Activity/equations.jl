@@ -478,9 +478,8 @@ end
 reference_state(model::ActivityModel) = reference_state(model.puremodel)
 
 # Thermodynamic factor
-function thermodynamic_factor(model::ActivityModel, p, T, z)
+function γ_thermodynamic_factor(model::ActivityModel, p, T, z)
     N = length(model)
-    N == 1 && return one(T)
     x = z ./ sum(z)
     xN1 = @view x[1:N-1]
     

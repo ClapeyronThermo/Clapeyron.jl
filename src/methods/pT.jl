@@ -188,7 +188,7 @@ macro __PT_def(f)
                 p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
                 v̄0 = uvstrip(model,vol0,z̄)
                 UNIT_TYPE = unit_system(p,T,z,output)
-                res = PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,$VT_f,v̄)
+                res = PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,$VT_f,nothing)
                 return with_output_unit(res,(UNIT_TYPE,output),$VT_f)
             else
                 has_a_res(model) || __vt_on_pt_not_supported()
@@ -1213,9 +1213,25 @@ Calculates the thermodynamic factor matrix Γᵢⱼ (size: N-1 × N-1) defined a
 ```
 """
 function thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    length(model) == 1 && return one(T)
-    p̄,T̄,z̄,v̄,nothing = pvt_remove_units(model,p,T,z)
-    return PT_property(model,p̄,T̄,z̄,phase,threaded,vol0,VT_thermodynamic_factor,v̄)
+    if unitful_is_pressure(p)
+        p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+        length(model) == 1 && return one(Base.promote_eltype(model,p̄,T̄,z̄))
+        v̄0 = uvstrip(model,vol0,z̄)
+        UNIT_TYPE = unit_system(p,T,z,output)
+        γmodel = __γ_unwrap(model)
+        if γmodel isa ActivityModel
+            return γ_thermodynamic_factor(γmodel,p̄,T̄,z̄)
+        else
+            return PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,VT_thermodynamic_factor,nothing)
+        end
+    else
+        has_a_res(model) || __vt_on_pt_not_supported() 
+        T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+        v̄ = uvstrip(model,p,z̄)
+        length(model) == 1 && return one(Base.promote_eltype(model,v̄,T̄,z̄))
+        UNIT_TYPE = unit_system(p,T,z,output)
+        return VT_thermodynamic_factor(model,v̄,T̄,z̄)
+    end
 end
 
 #first derivative order properties
