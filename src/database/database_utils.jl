@@ -150,51 +150,21 @@ function is_inline_csv(filepath)
     return any(startswith(filepath,kw) for kw in SKIP_GETPATHS)
 end
 
-function defaultmissing(array::Array{<:Number},defaultvalue = zero(eltype(array)))
-    return deepcopy(array),Array(ismissing.(array))
+function defaultmissing(array::Array{<:Union{Missing,Number}}, defaultvalue = zero(nonmissingtype(eltype(array))))
+    return coalesce.(array, defaultvalue), Array(ismissing.(array))
 end
 
-function defaultmissing(array::Array{<:AbstractString},defaultvalue = "")
-    return string.(array),Array(ismissing.(array))
+function defaultmissing(array::Array{Missing}, defaultvalue = 0.0)
+    return coalesce.(array, defaultvalue), Array(ismissing.(array))
 end
 
-function defaultmissing(array::Array{String},defaultvalue = "")
-    return deepcopy(array),Array(ismissing.(array))
+function defaultmissing(array::Array, defaultvalue = "")
+    nonmissing = Array(ismissing.(array))
+    vals = string.(coalesce.(array, defaultvalue)), 
+    return convert.(String,vals),nonmissing
 end
 
-function defaultmissing(array::Array{<:Union{Missing, AbstractString}},defaultvalue="")
-    return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{<:Union{Missing, Number}},defaultvalue=zero(eltype(array)))
-    return coalesce.(array,defaultvalue),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{Union{Missing, Bool}},defaultvalue=zero(eltype(array)))
-    return [coalesce(i,defaultvalue) for i in array],Array(ismissing.(array))
-end
-
-#if an array with only missings is passed, the Resulting ClapeyronParam will be
-#of the type that this function returns
-function defaultmissing(array::Array{Missing},defaultvalue=0.0)
-    return coalesce.(array,defaultvalue),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{<:Union{Missing,Number,AbstractString}},defaultvalue="")
-    return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{Any},defaultvalue="")
-    return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{T},defaultvalue::T2) where T<:Union{T2,Missing} where T2
-    coalesce.(array,Ref(defaultvalue)),Array(ismissing.(array))
-end
-function defaultmissing(array)
-    throw("Unsupported array element type  $(typeof(array))")
-end
-
+defaultmissing(array) = throw(ArgumentError("Unsupported array element type $(typeof(array))"))
 
 """
     singletopair(params::Vector,outputmissing=zero(T))
