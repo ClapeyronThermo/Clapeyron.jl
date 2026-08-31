@@ -26,7 +26,9 @@ function init_preferred_method(method::typeof(ph_flash),model::EoSModel,kwargs)
     GeneralizedXYFlash(;kwargs...)
 end
 
-function ph_flash(model,p,h,z,method::FlashMethod)
+function ph_flash(model,_p,_h,_z,method::FlashMethod)
+    p,z = ustrip(_p,pressure),uzstrip(model,_z)
+    h = uhstrip(model,_h,z)
     check_arraysize(model,z)
 
     if z isa SingleComp || length(model) == 1

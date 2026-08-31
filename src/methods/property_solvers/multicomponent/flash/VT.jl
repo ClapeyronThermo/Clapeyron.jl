@@ -23,7 +23,9 @@ function init_preferred_method(method::typeof(vt_flash),model::EoSModel,kwargs)
     GeneralizedXYFlash(;kwargs...)
 end
 
-function vt_flash(model,V,T,z,method::FlashMethod)
+function vt_flash(model,_V,_T,_z,method::FlashMethod)
+    T,z = ustrip(_T,temperature),uzstrip(model,_z)
+    V = uvstrip(model,_V,z)
     check_arraysize(model,z)
 
     if z isa SingleComp || length(model) == 1
