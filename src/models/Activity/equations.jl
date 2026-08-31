@@ -15,7 +15,7 @@ function excess_gibbs_free_energy(model::ActivityModel,p,T,z)
         lnγx = lnγ(model,p̄,T̄,z̄)
         return RT*dot(z̄,lnγx)
     else
-        γ = activity_coefficient(modelp̄,T̄,z̄)
+        γ = activity_coefficient(model,p̄,T̄,z̄)
         return RT*sum(z̄[i]*log(γ[i]) for i ∈ @comps)
     end
 end
@@ -62,7 +62,7 @@ function ng_E_reduced(model,p,T,z)
 end
 
 function lnγ(model::ActivityModel,_p,_T,_z,cache::TT = nothing) where TT
-    T,z = ustrip(_T,temperature),uzstrip(model,_z)
+    p,T,z = ustrip(_p,pressure),ustrip(_T,temperature),uzstrip(model,_z)
     X = gradient_type(model,T,z)
     nc = length(z)
     if has_lnγ_impl(model)
