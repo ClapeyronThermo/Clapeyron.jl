@@ -91,7 +91,7 @@ Similarly, `molar_density(model,result::FlashResult,i)` will just call `molar_de
 $VT_STRING
 """
 function molar_density(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
     if unitful_is_pressure(p)
         p̄,v̄0 = ustrip(p,pressure),uvstrip(model,vol0,z̄)
         v̄ = volume(model,p̄,T̄,z̄;phase,threaded,vol0 = v̄0)
@@ -123,7 +123,7 @@ Where `Mr` is the molecular weight of the model at the input composition.
 $VT_STRING
 """
 function mass_density(model::EoSModel, p, T, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
     if unitful_is_pressure(p)
         p̄,v̄0 = ustrip(p,pressure),uvstrip(model,vol0,z̄)
         v̄ = volume(model,p̄,T̄,z̄;phase,threaded,vol0 = v̄0)
@@ -157,7 +157,7 @@ $VT_STRING
 $SINGLE_PHASE_PROP
 """
 function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
     if unitful_is_pressure(p)
         p̄,v̄0 = ustrip(p,pressure),uvstrip(model,vol0,z̄)
         V = volume(model,p̄,T̄,z̄;phase,threaded,vol0 = v̄0)
