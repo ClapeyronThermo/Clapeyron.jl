@@ -14,11 +14,11 @@
 @inline uvstrip(::Nothing,model,v,z) = v
 
 #entropy/internal energy: must handle total, molar and mass variants
-@inline uhstrip(model,h,z) = uzstrip(unit_system(h),model,h,z)
+@inline uhstrip(model,h,z) = uhstrip(unit_system(h),model,h,z)
 @inline uhstrip(::Nothing,model,h,z) = h
 
 #entropy: must handle total, molar and mass variants
-@inline usstrip(model,s,z) = uzstrip(unit_system(s),model,s,z)
+@inline usstrip(model,s,z) = usstrip(unit_system(s),model,s,z)
 @inline usstrip(::Nothing,model,s,z) = s
 
 #any units package needs to overload:

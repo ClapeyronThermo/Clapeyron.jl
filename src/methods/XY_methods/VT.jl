@@ -26,9 +26,13 @@ To evaluate the property directly in the V-T base, use the `VT0` module instead.
 module VT
 import Clapeyron
 for f in Clapeyron.CLAPEYRON_PROPS
+    VT_f = Symbol(:VT_,f)
     @eval begin
         function $f(model,V,T,z = Clapeyron.SA[1.0];p0 = nothing)
-            Clapeyron.VT_property(model,V,T,z,Clapeyron.$f,p0)
+            T̄,z̄,p̄0 = ustrip(T,temperature),uzstrip(model,z),ustrip(p0,pressure)
+            v̄ = uvstrip(model,V,z̄)
+            prop = Clapeyron.VT_property(model,v̄,T̄,z̄,Clapeyron.$f,p̄0)
+            return with_output_unit(prop,(unit_system(V,T,z,output),output),$VT_f)
         end
     end
 end
