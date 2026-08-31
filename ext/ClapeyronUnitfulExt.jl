@@ -5,7 +5,7 @@ using Unitful
 const C = Clapeyron
 
 import Unitful: @u_str, @derived_dimension
-import Unitful: 𝐋,𝐌,𝚯,𝐍
+import Unitful: 𝐋,𝐌,𝚯,𝐍,𝐓
 
 struct UnitfulJL end
 
@@ -21,7 +21,7 @@ Unitful.@derived_dimension __MassEntropy 𝐋^2/𝐓^2/𝚯
 Unitful.@derived_dimension __MolEntropy 𝐌*𝐋^2/𝐓^2/𝚯/𝐍
 
 const __VolumeKind = Union{__MassDensity,__MolDensity,__MassVolume,__MolVolume,Unitful.Volume}
-const __EnergyKind = Union{Energy,__MassEnergy,__MolEnergy}
+const __EnergyKind = Union{Unitful.Energy,__MassEnergy,__MolEnergy}
 const __EntropyKind = Union{__Entropy,__MassEntropy,__MolEntropy}
 
 C.unit_system(::Unitful.Units) = UnitfulJL()
