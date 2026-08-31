@@ -4,14 +4,14 @@
 @inline ustrip(x,f::F) where F = ustrip(unit_system(x),x,f)
 @inline ustrip(::Nothing,x,f::F) where F = x
 
+#unit stripping for compositions: must handle total compositions (mass and molar). TODO: how to mark a vector to be with "mass fraction" units?
+@inline uzstrip(model,z::Number) = uzstrip(unit_system(z),model,SA[z])
+@inline uzstrip(model,z) = uzstrip(unit_system(z),model,z)
+@inline uzstrip(::Nothing,model,z) = z
+
 #unit stripping for volume: must handle volume (total, molar, mass) and density (molar, mass)
 @inline uvstrip(model,v,z) = uvstrip(unit_system(v),model,v,z)
 @inline uvstrip(::Nothing,model,v,z) = v
-
-#unit stripping for compositions: must handle total compositions (mass and molar). TODO: how to mark a vector to be with "mass fraction" units?
-@inline uzstrip(model,z::Number) = uzstrip(unit_system(v),model,SA[z])
-@inline uzstrip(model,z) = uzstrip(unit_system(z),model,z)
-@inline uzstrip(::Nothing,model,z) = z
 
 #entropy/internal energy: must handle total, molar and mass variants
 @inline uhstrip(model,h,z) = uzstrip(unit_system(h),model,h,z)
