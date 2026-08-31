@@ -1284,7 +1284,7 @@ module PT0
     import Clapeyron
     for prop in Clapeyron.CLAPEYRON_PROPS
         @eval begin
-            function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing,output)
+            function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing,output = nothing)
                 return Clapeyron.$prop(model,p,T,z;phase,threaded,vol0,output)
             end
         end

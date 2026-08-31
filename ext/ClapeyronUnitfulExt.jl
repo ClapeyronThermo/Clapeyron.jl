@@ -88,7 +88,9 @@ for (fns,unit) in [
     ([:mass_density], u"kg/m^3"),
     ([:molar_density], u"mol/m^3"),
     ([:speed_of_sound], u"m/s"),
-    ]
+    ([:pressure], u"Pa"),
+    ([:volume], u"m^3"),
+    ([:temperature], u"K"),]
     for fn in fns
         VT_fn = Symbol(:VT_,fn)
         @eval begin
