@@ -52,7 +52,7 @@ for f in Clapeyron.CLAPEYRON_PROPS
             p̄,z̄,T̄0 = ustrip(p,pressure),uzstrip(model,z),ustrip(T0,temperature)
             s̄ = usstrip(model,s,z̄)
             prop = Clapeyron.PS_property(model,p̄,s̄,z̄,Clapeyron.$f,phase,T̄0)
-            return with_output_unit(prop,(unit_system(p,s,z,output),output),$VT_f)
+            return with_output_unit(prop,(unit_system(p,s,z,output),output),Clapeyron.$VT_f)
         end
     end
 end
