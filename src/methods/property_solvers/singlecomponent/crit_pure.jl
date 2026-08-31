@@ -10,15 +10,7 @@ Returns a tuple, containing:
 """
 crit_pure
 
-function crit_pure(model::EoSModel)
-    satmodel = saturation_model(model)
-    if satmodel !== model
-        return crit_pure(satmodel)
-    else
-        return crit_pure(model,nothing)
-    end
-end
-
+crit_pure(model::EoSModel) = crit_pure(saturation_model(model),nothing)
 
 function crit_x_to_v(lbv,x)
     lo = 0.001

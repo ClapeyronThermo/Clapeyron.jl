@@ -124,7 +124,7 @@ function test_activity_coefficient(model::ActivityModel,p,T,z)
     return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 
-saturation_model(model::ActivityModel) = __act_to_gammaphi(model,saturation_model)
+@inline saturation_model(model::ActivityModel) = saturation_model(__act_to_gammaphi(model,saturation_model))
 
 function idealmodel(model::T) where T <: ActivityModel
     if hasfield(T,:puremodel)

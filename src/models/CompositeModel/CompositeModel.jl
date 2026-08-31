@@ -404,7 +404,7 @@ __γ_unwrap(model::CompositeModel) = __γ_unwrap(model.fluid)
 
 reference_chemical_potential_type(model::CompositeModel) = reference_chemical_potential_type(model.fluid)
 
-saturation_model(model::CompositeModel) = model.fluid
+@inline saturation_model(model::CompositeModel) = saturation_model(model.fluid)
 
 #defer bubbledew eq to the fluid field
 

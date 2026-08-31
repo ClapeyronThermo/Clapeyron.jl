@@ -202,17 +202,9 @@ p_scale(model::MultiFluid,z) = dot(z,model.params.Pc.values)/sum(z)
 
 #single functions, dispatch to pure
 
-function saturation_model(model::MultiFluid)
-    return only(model.pures)
-end
-
-function lb_volume(model::MultiFluid,T,z)
-    return dot(z,model.params.lb_volume.values)
-end
-
-function x0_crit_pure(model::MultiFluid,z)
-    return (1.0,log10(v_scale(model,z)))
-end
+saturation_model(model::MultiFluid) = only(model.pures)
+lb_volume(model::MultiFluid,T,z) = dot(z,model.params.lb_volume.values)
+x0_crit_pure(model::MultiFluid,z) = (1.0,log10(v_scale(model,z)))
 
 
 #use ideal gas

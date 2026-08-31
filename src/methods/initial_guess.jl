@@ -192,14 +192,9 @@ Used to indicate if a model can calculate their critical point without iterative
 Having a critical point available results in speed ups for saturation calculations.
 By default returns `false`.
 """
-function has_fast_crit_pure(model)::Bool
-    satmodel = saturation_model(model)
-    if satmodel !== model
-        return has_fast_crit_pure(satmodel)
-    else
-        return false
-    end
-end
+has_fast_crit_pure(model) = _has_fast_crit_pure(saturation_model(model))
+_has_fast_crit_pure(model) = false
+
 
 """
     x0_sat_pure(model::EoSModel,T)
@@ -211,35 +206,30 @@ It can be overloaded to provide more accurate estimates if necessary. If an EoS 
 """
 function x0_sat_pure(model,T)
     satmodel = saturation_model(model)
-    if satmodel !== model
-        return x0_sat_pure(satmodel,T)
-    end
-    if !has_fast_crit_pure(model)
-        _,vl,vv = x0_sat_pure_virial(model,T)
+    
+    if !has_fast_crit_pure(satmodel)
+        _,vl,vv = x0_sat_pure_virial(satmodel,T)
     else
-        R = Base.promote_eltype(model,T)
-        _,vl,vv = x0_sat_pure_crit(model,T)::NTuple{3,R}
+        R = Base.promote_eltype(satmodel,T)
+        _,vl,vv = x0_sat_pure_crit(satmodel,T)::NTuple{3,R}
     end
     return vl,vv
 end
 
 function x0_sat_pure(model,T,crit)
     satmodel = saturation_model(model)
-    if satmodel !== model
-        return x0_sat_pure(satmodel,T,crit)
-    end
 
-    if has_fast_crit_pure(model)
+    if has_fast_crit_pure(satmodel)
         #if the model has a custom method here, it will be dispatched to that one.
-        return x0_sat_pure(model,T)
+        return x0_sat_pure(satmodel,T)
     end
 
     if isnothing(crit)
-        _,vl,vv = x0_sat_pure_virial(model,T)
+        _,vl,vv = x0_sat_pure_virial(satmodel,T)
     else
         Tc,Pc,Vc = crit
-        R = Base.promote_eltype(model,T,Tc,Pc,Vc)
-        _,vl,vv = x0_sat_pure_crit(model,T,crit)::NTuple{3,R}
+        R = Base.promote_eltype(satmodel,T,Tc,Pc,Vc)
+        _,vl,vv = x0_sat_pure_crit(satmodel)::NTuple{3,R}
     end
     return vl,vv
 end
@@ -839,23 +829,21 @@ It can be overloaded to provide more accurate estimates if necessary.
 """
 function x0_psat(model,T)
     satmodel = saturation_model(model)
-    satmodel !== model && return x0_psat(satmodel,T)
-    if has_fast_crit_pure(model)
-        p,_,_ = x0_sat_pure_virial(model,T)
+    if has_fast_crit_pure(satmodel)
+        p,_,_ = x0_sat_pure_virial(satmodel,T)
     else
-        p,_,_ = x0_sat_pure_crit(model,T)
+        p,_,_ = x0_sat_pure_crit(satmodel,T)
     end
     return p
 end
 
 function x0_psat(model,T,crit)
     satmodel = saturation_model(model)
-    satmodel !== model && return x0_psat(satmodel,T,crit)
-    has_fast_crit_pure(model) && return x0_psat(model,T)
+    has_fast_crit_pure(satmodel) && return x0_psat(satmodel,T)
     if isnothing(crit)
-        return first(x0_sat_pure_virial(model,T))
+        return first(x0_sat_pure_virial(satmodel,T))
     else
-        return first(x0_sat_pure_crit(model,T,crit))
+        return first(x0_sat_pure_crit(satmodel,T,crit))
     end
 end
 
