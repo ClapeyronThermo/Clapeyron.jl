@@ -44,27 +44,29 @@ end
 C.unitful_is_pressure(::__VolumeKind) = false
 C.unitful_is_pressure(::Unitful.Pressure) = true
 
+C.ustrip(::UnitfulJL,x::Unitful.Quantity,f::F) where F = ustrip(C.unit_type(UnitfulJL(),f),x)
+
 C.uzstrip(::UnitfulJL,model,z) = __uzstrip(model,z)
 
-__uzstrip(model,z::AbstractVector{T}) where T <: Unitful.Amount = ustrip.(u"mol",x)
+__uzstrip(model,z::AbstractVector{T}) where T <: Unitful.Amount = ustrip(u"mol",x)
 __uzstrip(model,z::AbstractVector{T}) where T <: Unitful.Mass = map(y -> 1000*ustrip(u"kg",y[1])/y[2],zip(x,C.mw(model)))
 
 C.uvstrip(::UnitfulJL,model,v,z) = __uvstrip(model,v,z)
-__uvstrip(model,x::Unitful.Volume,z) = ustrip(upreferred(x))
-__uvstrip(model,x::__MolVolume,z) = ustrip(upreferred(x)) * sum(z)
-__uvstrip(model,x::__MolDensity,z) = sum(z) / ustrip(upreferred(x))
-__uvstrip(model,x::__MassVolume,z) = ustrip(upreferred(x)) * C.molecular_weight(model,z)
-__uvstrip(model,x::__MassDensity,z) = C.molecular_weight(model,z) / ustrip(upreferred(x))
+__uvstrip(model,x::Unitful.Volume,z) = ustrip(u"m^3",x)
+__uvstrip(model,x::__MolVolume,z) = ustrip(u"m^3/mol",x) * sum(z)
+__uvstrip(model,x::__MolDensity,z) = sum(z) / ustrip(u"mol/m^3",x)
+__uvstrip(model,x::__MassVolume,z) = ustrip(u"m^3/kg",x) * C.molecular_weight(model,z)
+__uvstrip(model,x::__MassDensity,z) = C.molecular_weight(model,z) / ustrip(u"kg/m^3",x)
 
 C.uhstrip(::UnitfulJL,model,h,z) = __uhstrip(model,h,z)
-__uhstrip(model,x::Unitful.Energy,z) = ustrip(upreferred(x))
-__uhstrip(model,x::__MolEnergy,z) = ustrip(upreferred(x)) * sum(z)
-__uhstrip(model,x::__MassEnergy,z) = ustrip(upreferred(x)) * C.molecular_weight(model,z)
+__uhstrip(model,x::Unitful.Energy,z) = ustrip(u"J",x)
+__uhstrip(model,x::__MolEnergy,z) = ustrip(u"J/mol",x) * sum(z)
+__uhstrip(model,x::__MassEnergy,z) = ustrip(u"J/kg",x) * C.molecular_weight(model,z)
 
-C.usstrip(::UnitfulJL,model,h,z) = __uhstrip(model,h,z)
-__uhstrip(model,x::__Entropy,z) = ustrip(upreferred(x))
-__uhstrip(model,x::__MolEntropy,z) = ustrip(upreferred(x)) * sum(z)
-__uhstrip(model,x::__MassEntropy,z) = ustrip(upreferred(x)) * C.molecular_weight(model,z)
+C.usstrip(::UnitfulJL,model,s,z) = __usstrip(model,s,z)
+__usstrip(model,x::__Entropy,z) = ustrip(u"J/K",x)
+__usstrip(model,x::__MolEntropy,z) = ustrip(u"J/K/mol",x) * sum(z)
+__usstrip(model,x::__MassEntropy,z) = ustrip(u"J/K/kg",x) * C.molecular_weight(model,z)
 
 #basic unit_type defs
 C.unit_type(::UnitfulJL,::typeof(C.enthalpy)) = u"J"
@@ -92,10 +94,6 @@ for (fns,unit) in [
             C.unit_type(::UnitfulJL,::typeof(C.$VT_fn)) = $unit
         end
     end
-end
-
-function C.ustrip(::UnitfulJL,x::Unitful.Quantity,f::F) where F
-    ustrip(uconvert(C.unit_type(UnitfulJL(),f),x))
 end
 
 #=
