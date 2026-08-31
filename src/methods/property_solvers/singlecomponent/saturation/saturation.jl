@@ -208,7 +208,6 @@ function enthalpy_vap(model::EoSModel, T, satmethod = ChemPotVSaturation(); outp
     H_vap = H_v - H_l
     UNIT_TYPE = unit_system(unit_system(T),unit_system(output))    
     return with_output_unit(H_vap,(UNIT_TYPE,output),enthalpy)
-    return H_vap
 end
 
 """
