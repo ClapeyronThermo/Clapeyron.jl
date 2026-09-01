@@ -31,7 +31,7 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - '1.10.11'
+          - 'lts'
           - '1'
           - 'nightly'
         os:
