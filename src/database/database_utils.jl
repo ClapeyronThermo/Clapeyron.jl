@@ -150,25 +150,34 @@ function is_inline_csv(filepath)
     return any(startswith(filepath,kw) for kw in SKIP_GETPATHS)
 end
 
-function defaultmissing(array::Array{<:Union{Missing,Number}}, defaultvalue = zero(nonmissingtype(eltype(array))))
-    return coalesce.(array, defaultvalue), Array(ismissing.(array))
-end
+defaultmissing(array::Array{<:Union{Missing,Number}}) = defaultmissing(array,zero(nonmissingtype(eltype(array))))
+defaultmissing(array::Array{Missing}) = defaultmissing(array,0.0)
+defaultmissing(array) = defaultmissing(array,"")
 
-function defaultmissing(array::Array{Missing}, defaultvalue = 0.0)
-    return coalesce.(array, defaultvalue), Array(ismissing.(array))
+function defaultmissing(array, defaultvalue::T) where T
+    V = eltype(array)
+    nonmissing = Array{Bool}(undef,size(array))
+    if nonmissingtype(V) == V && V != Any #fast shortcut
+        nonmissing .= false
+        return array,nonmissing
+    end
+    #at this point, we have an array with one or more missing values. iterate on each.
+    result = similar(array,T)
+    for i in eachindex(array)
+        is_missing = ismissing(array[i])
+        if is_missing
+            result[i] = defaultvalue
+        else
+            if T == String
+                result[i] = convert(String,string(array[i]))
+            else
+                result[i] = convert(T,array[i])
+            end
+        end
+        nonmissing[i] = is_missing
+    end
+    return result,nonmissing
 end
-
-function defaultmissing(array::Array, defaultvalue = "")
-    nonmissing = Array(ismissing.(array))
-    vals = string.(coalesce.(array, defaultvalue)), 
-    return convert.(String,vals),nonmissing
-end
-
-function defaultmissing(array::Array{T}, defaultvalue::T2) where {T2, T<:Union{T2,Missing}}
-    return coalesce.(array, Ref(defaultvalue)), Array(ismissing.(array))
-end
-
-defaultmissing(array) = throw(ArgumentError("Unsupported array element type $(typeof(array))"))
 
 """
     singletopair(params::Vector,outputmissing=zero(T))
