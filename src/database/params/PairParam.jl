@@ -190,7 +190,7 @@ end
 
 PairParam(name,components) = PairParam{Float64}(name,components)
 
-function PairParam(x::SingleParam{T},name::String= x.name)
+function PairParam(x::SingleParam{T},name::String= x.name) where T
     _values = singletopair(x.values)
     _ismissingvalues = singletopair(x.ismissingvalues,true)
     return PairParam(name, x.components, _values, _ismissingvalues, x.sourcecsvs, x.sources)
