@@ -71,7 +71,7 @@ import Clapeyron: ustrip,uzstrip,with_output_unit,unit_system
 for f in Clapeyron.CLAPEYRON_PROPS
     VT_f = Symbol(:VT_,f)
     @eval begin
-        function $f(model,q,p,z = Clapeyron.SA[1.0],T0 = nothing)
+        function $f(model,q,p,z = Clapeyron.SA[1.0],T0 = nothing,output = nothing)
             T̄0,z̄,p̄ = ustrip(T0,temperature),uzstrip(model,z),ustrip(p,pressure)
             prop = Clapeyron.QP_property(model,q,p̄,z̄,Clapeyron.$f,T̄0)
             return with_output_unit(prop,(unit_system(T0,p,z,output),output),Clapeyron.$VT_f)
