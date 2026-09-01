@@ -4,7 +4,7 @@ using Clapeyron: SA
 using Unitful
 const C = Clapeyron
 
-import Unitful: @u_str, @derived_dimension
+import Unitful: @u_str
 import Unitful: 𝐋,𝐌,𝚯,𝐍,𝐓
 
 struct UnitfulJL end
