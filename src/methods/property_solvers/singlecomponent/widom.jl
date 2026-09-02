@@ -231,7 +231,7 @@ function ciic_temperature(model,p;T0 = nothing,v0 = nothing)
     end
 
     lb_v = lb_volume(model,_T0,SA[1.0])
-    scale = p*p/_T0/lb_volume(model,_T0,SA[1.0])
+    scale = p*p/_T0/lb_v
     #P*P/(T*v)
     function f_ciic_vec(x::AbstractVector)
         v,T = exp(x[1]),x[2]

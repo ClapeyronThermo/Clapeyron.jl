@@ -80,7 +80,7 @@ function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = not
         return lnϕ,vol
     end
 
-    if cache != nothing
+    if cache !== nothing
         lnϕ(model,p,T,z,cache;vol)
         result,aux,lnϕw,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
         vol = aux[1]
@@ -173,11 +173,11 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(
     aux[2:end] = z
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
 
-    F = DiffResults.value(result)
+    #F = DiffResults.value(result)
     ∂F = DiffResults.gradient(result)
     ∂2F = DiffResults.hessian(result)
 
-    ∂F∂V = ∂F[1]
+    #∂F∂V = ∂F[1]
     ∂F∂n = @view ∂F[2:(ncomponents+1)]
 
     ∂2F∂V2 = ∂2F[1, 1]
@@ -309,16 +309,16 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
     fun(aux) = F_res(model, aux[1], aux[2], @view(aux[3:(ncomponents+2)]))
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
 
-    F = DiffResults.value(result)
+    #F = DiffResults.value(result)
     ∂F = DiffResults.gradient(result)
     ∂2F = DiffResults.hessian(result)
-    ∂F∂V = ∂F[1]
-    ∂F∂T = ∂F[2]
+    #∂F∂V = ∂F[1]
+    #∂F∂T = ∂F[2]
     ∂F∂n = @view ∂F[3:(ncomponents+2)]
 
     ∂2F∂V2 = ∂2F[1, 1]
     ∂2F∂n2 = @view ∂2F[3:(ncomponents+2), 3:(ncomponents+2)]
-    ∂2F∂T2 = ∂2F[2, 2]
+    #∂2F∂T2 = ∂2F[2, 2]
     ∂2F∂n∂V = @view ∂2F[1, 3:(ncomponents+2)]
     ∂2F∂n∂T = @view ∂2F[2, 3:(ncomponents+2)]
     ∂2F∂V∂T = ∂2F[1, 2]
@@ -384,7 +384,6 @@ function lnf(model, V, T, z,cache = nothing)
     n = sum(z)
     logZp = log(V/RT/n)
     nc = length(z)
-    TT = Base.promote_eltype(model,V,T,z)
     F_res(_model, _V, _T, _z) = eos_res(_model, _V, _T, _z)
     fun(aux) = F_res(model, aux[1], T, @view(aux[2:nc+1]))
     if cache !== nothing
@@ -416,7 +415,7 @@ function VT_lnf_pure(model,V,T)
     RT = Rgas(model)*T
     F,dFdV = f∂fdV_res(model,V,T,SA[1.0])
     p_res = -dFdV
-    μ_res = eos_res(model,V,T,SA[1.0]) + p_res*V
+    μ_res = F + p_res*V
     Zp = V/RT
     lnf = μ_res/RT - log(Zp)
     p = p_res + RT/V
@@ -439,7 +438,6 @@ function ∂lnf∂n∂V(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{fa
     aux[2:end] = z
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
 
-    F = DiffResults.value(result)
     ∂F = DiffResults.gradient(result)
     ∂2F = DiffResults.hessian(result)
 
@@ -455,7 +453,7 @@ function ∂lnf∂n∂V(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{fa
     lnf .= ∂F∂n .- log(Zp)
 
     for i in 1:ncomponents
-        ∂P∂ni = ∂P∂n[i]
+        #∂P∂ni = ∂P∂n[i]
         ∂lnf∂V[i] = ∂2F∂n∂V[i] - 1/V
         for j in 1:ncomponents
             ∂lnf∂n[i,j] = ∂2F∂n2[i,j] + 1/n
@@ -480,16 +478,16 @@ function ∂lnf∂n∂V∂T(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Va
     fun(aux) = F_res(model, aux[1], aux[2], @view(aux[3:(ncomponents+2)]))
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
 
-    F = DiffResults.value(result)
+    #F = DiffResults.value(result)
     ∂F = DiffResults.gradient(result)
     ∂2F = DiffResults.hessian(result)
     ∂F∂V = ∂F[1]
-    ∂F∂T = ∂F[2]
+    #∂F∂T = ∂F[2]
     ∂F∂n = @view ∂F[3:(ncomponents+2)]
 
     ∂2F∂V2 = ∂2F[1, 1]
     ∂2F∂n2 = @view ∂2F[3:(ncomponents+2), 3:(ncomponents+2)]
-    ∂2F∂T2 = ∂2F[2, 2]
+    #∂2F∂T2 = ∂2F[2, 2]
     ∂2F∂n∂V = @view ∂2F[1, 3:(ncomponents+2)]
     ∂2F∂n∂T = @view ∂2F[2, 3:(ncomponents+2)]
     ∂2F∂V∂T = ∂2F[1, 2]
@@ -500,7 +498,6 @@ function ∂lnf∂n∂V∂T(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Va
     lnf .= ∂F∂n .- log(Zp)
     ∂P∂T = -RT*∂2F∂V∂T + p/T
     for i in 1:ncomponents
-        ∂P∂ni = ∂P∂n[i]
         ∂lnf∂V[i] = ∂2F∂n∂V[i] - 1/V
         ∂lnf∂T[i] = ∂2F∂n∂T[i] + 1/T
         for j in 1:ncomponents
@@ -528,7 +525,7 @@ function ∂lnf∂V(model::EoSModel, V, T, z=SA[1.], cache = ∂lnϕ_cache(model
     ∇pᵣ = @view dresult[1:nc]
     ∂pᵣ∂V = dresult[nc+1]
     ∂p∂V = ∂pᵣ∂V - n*RT/(V*V)
-    ∂V∂p = -1/∂p∂V
+    #∂V∂p = -1/∂p∂V
     ∂lnf∂V .= - ∇pᵣ ./ RT .- 1/V
     ∂P∂n .= ∇pᵣ .+ RT ./ V
     return ∂lnf∂V, ∂P∂n, p, ∂p∂V

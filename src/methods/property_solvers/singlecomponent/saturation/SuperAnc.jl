@@ -70,7 +70,7 @@ function chebyshev_pressure(model::ABCubicModel,T̃,a,b)
 end
 
 function saturation_temperature_impl(model::ABCubicModel,p,method::SuperAncSaturation)
-    Tc = model.params.Tc.values[1]
+    #Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
     nan = zero(p)/zero(p)
     if Pc < p
@@ -89,12 +89,12 @@ function chebyshev_temperature(model::ABCubicModel,p,method::SuperAncSaturation)
     
     function f0(τ)
         T = 1/τ
-        a,b,c = cubic_ab(model,1e-3,T)
+        a,b,_ = cubic_ab(model,1e-3,T)
         T̃ = T*Rgas(model)*b/a
         return chebyshev_pressure(model,T̃,a,b) - p
     end
 
-    Tc,Pc,Vc = crit_pure(model)
+    Tc,Pc,_ = crit_pure(model)
     a07,b07,_ = cubic_ab(model,1e-3,0.7Tc)
     T̃07 = 0.7*Tc*Rgas(model)*b07/a07
     p07 = chebyshev_pressure(model,T̃07,a07,b07)

@@ -38,7 +38,7 @@ function ChemPotVSaturation(;vl = nothing,
 
     if (vl === nothing) && (vv === nothing)
         return ChemPotVSaturation{Nothing,typeof(crit)}(nothing,nothing,crit,crit_retry,f_limit,atol,rtol,max_iters)
-    elseif !(vl === nothing) && !(vv === nothing)
+    elseif (vl !== nothing) && (vv !== nothing)
         T = one(vl)/one(vv)
         vl,vv,_ = promote(vl,vv,T)
         return ChemPotVSaturation(vl,vv,crit,crit_retry,f_limit,atol,rtol,max_iters)

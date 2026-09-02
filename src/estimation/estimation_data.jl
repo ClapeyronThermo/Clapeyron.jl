@@ -107,7 +107,7 @@ function EstimationData(table_data, method, loss; output_weights = nothing,data_
     outputs = NTuple{M,Float64}[ntuple(k -> Float64(output_arrays[k][i]), Val(M)) for i in 1:nrows]
 
     inputs_ismissingvalues  = NTuple{N,Bool}[ntuple(k -> input_ismissing_arrays[k][i], Val(N)) for i in 1:nrows]
-    outputs_ismissingvalues = NTuple{M,Bool}[ntuple(k -> input_ismissing_arrays[k][i], Val(M)) for i in 1:nrows]
+    outputs_ismissingvalues = NTuple{M,Bool}[ntuple(k -> output_ismissing_arrays[k][i], Val(M)) for i in 1:nrows]
 
     # Initialize errors with NaN
     inputs_error  = fill(ntuple(i -> NaN,Val{N}()),nrows)
@@ -199,7 +199,7 @@ function Base.show(io::IO, mime::MIME"text/plain", data::EstimationData)
     println(io,data.loss)
 
     print(io, " Inputs: ")
-    if length(data.inputs_name) == 0
+    if isempty(data.inputs_name)
         println(io,"none")
     else
         show_pairs(io,data.inputs_name,pair_separator = ", ",quote_string = false)

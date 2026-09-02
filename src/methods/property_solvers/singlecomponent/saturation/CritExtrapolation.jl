@@ -19,7 +19,7 @@ struct CritExtrapolationSaturation{T} <: SaturationMethod
 end
 
 function CritExtrapolationSaturation(;crit = nothing)
-    if crit == nothing
+    if crit === nothing
         return CritExtrapolationSaturation{Float64}((0.0,0.0,0.0))
     else
         _crit = promote(crit...)

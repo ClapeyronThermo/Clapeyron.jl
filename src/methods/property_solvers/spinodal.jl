@@ -52,7 +52,7 @@ function x0_spinodal_pressure(model, T, z = SA[1.0], phase = :unknown)
     is_liquid(phase) || is_vapour(phase) || error("phase` has to be specified!")
 
     v0_edge,pure_sats = x0_edge_pressure(model,T,z)
-    p0_bubble,p0_dew = v0_edge
+    #p0_bubble,p0_dew = v0_edge
     pmin_sat,pmax_sat = extrema(first,pure_sats)
     edge,crit,status = _edge_pressure(model,T,z,v0_edge)
     P_edge,v_l,v_v = edge
@@ -209,7 +209,7 @@ function x0_spinodal_temperature(model, p, z = SA[1.0], phase = :unknown)
 
     v0_edge,dpdT = x0_edge_temperature(model,p,z)
     Tmin_sat,Tmax_sat = extrema(xx -> T_from_dpdT(xx,p),dpdT)
-    T0_bubble,T0_dew = v0_edge
+    #T0_bubble,T0_dew = v0_edge
     edge,crit,status = _edge_temperature(model,p,z,v0_edge)
     T_edge,v_l,v_v = edge
 
@@ -373,7 +373,7 @@ function liquid_spinodal_zero_limit(model::EoSModel,z)
     res = Solvers.nlsolve2(F0,SVector(log(vl),T),Solvers.Newton2Var())
     Tw = res[2]
     vw = exp(res[1])
-    pw = pressure(model,vw,Tw,z)
+    #pw = pressure(model,vw,Tw,z)
     return Tw,vw
 end
 

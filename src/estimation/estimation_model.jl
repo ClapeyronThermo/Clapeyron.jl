@@ -100,7 +100,6 @@ function ToEstimate(params_dict::AbstractVector{<:Dict{Symbol}})
         end
 
         push!(range_indices,1:0)
-        n = length(last(indices))
         #numeric optional fields
         append!(factor,get(dict, :factor, 1.))
 
@@ -170,7 +169,6 @@ function recalculate_flatten_estimationmodel!(est_model::EstimationModel)
 
     range_indices = toestimate.range_indices
     index_type = toestimate.index_type #stores a vector of symbols indicating each index type
-    x0,lb,ub = toestimate.guess,toestimate.lower,toestimate.upper
     paramnames = toestimate.params
     nc = length(model)
     k = 0
@@ -215,7 +213,7 @@ end
 __get_all_indices(param::SingleParameter,flag,sym) = [(i,i) for i in 1:length(param.values)]
 
 function __get_all_indices(param::AssocParam,flag,sym)
-        flags = (:no_specified,:pures,:all,:unlike)
+    #flags = (:no_specified,:pures,:all,:unlike)
 
     if flag == :pures
         i_pure =  findall(assoc_is_pure,param.values.indices)
@@ -409,7 +407,7 @@ end
 function EstimationUtils.symbol_indices(est_model::EstimationModel,syms::Symbol)
     params = est_model.toestimate.params
     sym_ix = findall(isequal(syms),params)
-    length(sym_ix) == 0 && throw(error("EstimationUtils.symbol_indices: symbols not found."))
+    isempty(sym_ix) && throw(error("EstimationUtils.symbol_indices: symbols not found."))
     if length(sym_ix) == 1
         return convert(Vector{Int64},est_model.toestimate.range_indices[sym_ix[1]])
     end
@@ -430,7 +428,6 @@ indexing and broadcasting interface
 function __resolve_index(est_model::EstimationModel,ii::Int)
     ranges = est_model.toestimate.range_indices
     indices = est_model.toestimate.indices
-    params = est_model.toestimate.params
 
     if est_model.toestimate.scalar[]
         jk = indices[ii][1]
@@ -438,7 +435,6 @@ function __resolve_index(est_model::EstimationModel,ii::Int)
     end
 
     j = findfirst(x -> ii in x,ranges)
-    paramname = params[ii]
     i = isnothing(j) ? 0 : j
     k = ii - first(ranges[i]) + 1
 
@@ -463,7 +459,7 @@ function __try_get_param(est_model::EstimationModel,ijk::NTuple{3,Int})
     f = estimation.factor[i]
     paramname = estimation.params[i]
     param = getparam(model,paramname)
-    if param != nothing
+    if param !== nothing
         return __get_param(param,(j,k))/f,true
     end
 
@@ -526,7 +522,7 @@ function __flatten_data(data,toestimate::ToEstimate,default::Float64)
         data_i = data[i]
         if length(data_i) == 1
             flattened_data_i .= data_i[1]
-        elseif length(data_i) == 0
+        elseif isempty(data_i)
             #do nothing
         else
             flattened_data_i .= data_i
@@ -545,9 +541,8 @@ function EstimationUtils.initial_guess(est_model::EstimationModel)
     x00 = est_model.toestimate.guess
     ranges = est_model.toestimate.range_indices
     for (i,ri) in enumerate(ranges)
-        if length(x00[i]) == 0
+        if isempty(x00[i])
             x0i = @view x0[ri]
-            param = est_model.toestimate.params[i]
             id_i = est_model.toestimate.indices[i]
             for k in 1:length(ri)
                 jk = id_i[k]

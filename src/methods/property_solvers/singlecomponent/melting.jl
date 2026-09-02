@@ -47,7 +47,7 @@ function melting_pressure(model::CompositeModel,T,method::ThermodynamicMethod)
 end
 
 function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPressure)
-    if method.v0 == nothing
+    if method.v0 === nothing
         v0 = x0_melting_pressure(model,T)
     else
         v0 = method.v0
@@ -176,7 +176,7 @@ function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMelting
     fluid = fluid_model(model)
     T̄ = T_scale(fluid)
     p̄ = p_scale(fluid)
-    if method.v0 == nothing
+    if method.v0 === nothing
         v0 = x0_melting_temperature(model,p)
     else
         v0 = method.v0
@@ -188,7 +188,7 @@ function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMelting
     vs = exp(x[2])
     vl = exp(x[3])
     Tfus = x[1]
-    converged = check_valid_eq2(solid_model(model),fluid_model(model),p,vs,vl,Tfus)
+    converged = check_valid_eq2(solid,fluid,p,vs,vl,Tfus)
     if converged
     return Tfus, vs, vl
     else
@@ -243,7 +243,7 @@ end
 
 function melting_pressure_impl(model::CompositeModel,T,method::IsoGibbsMeltingPressure)
     _1 = one(Base.promote_eltype(model,T))
-    if method.p0 == nothing
+    if method.p0 === nothing
         v0 = x0_melting_pressure(model,T)
         p0 = v0[3]*_1
     else
@@ -309,7 +309,7 @@ end
 
 function melting_temperature_impl(model::CompositeModel,p,method::IsoGibbsMeltingTemperature)
     _1 = one(Base.promote_eltype(model,p))
-    if method.T0 == nothing
+    if method.T0 === nothing
         v0 = x0_melting_temperature(model,p)
         T0 = v0[1]*_1
     else

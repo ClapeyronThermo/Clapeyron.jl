@@ -42,7 +42,7 @@ function saturation_temperature_impl(model::EoSModel,p,method::ClapeyronSaturati
     TT = typeof(T0)
     nan = zero(T0)/zero(T0)
     cache = Ref{Tuple{TT,TT,TT,TT,Bool}}((nan,nan,nan,nan,false))
-    f(T) = Obj_sat_pure_T(model,T,p,cache,method.satmethod)
+    f(T) = Obj_sat_pure_T(model,T,p,cache,satmethod)
     T = Solvers.fixpoint(f,T0)
     _,_,v_l,v_v,_ = cache[]
     return T,v_l,v_v
@@ -55,10 +55,8 @@ function Obj_sat_pure_T(model,T,p,cache,satmethod)
     pii,vli,vvi = sat
     Δp = (p-pii)
     abs(Δp) < 4eps(p) && return T
-    if Told < T
-        if isnan(pii) && !isnan(pold)
-            return (T+Told)/2
-        end
+    if Told < T && isnan(pii) && !isnan(pold)
+        return (T+Told)/2
     end
     cache[] = (T,pii,vli,vvi,false)
     return Ti

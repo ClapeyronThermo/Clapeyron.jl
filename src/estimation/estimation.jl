@@ -278,7 +278,7 @@ function EstimationUtils.objective_function(estimation::EstimationProblem{M,DD},
     Θmodel = return_model(estimation, estimation.model, Θ)
     F = zero(Base.promote_eltype(Θmodel))
     estimation_data = estimation.data
-    for i ∈ 1:length(estimation_data)
+    for i ∈ eachindex(estimation_data)
         eval_funcion_i = estimation_data[i]
         Fi = EstimationUtils.objective_function(eval_funcion_i,Θmodel)
         if !isfinite(Fi)
