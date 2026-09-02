@@ -16,11 +16,11 @@ function salt_stoichiometry(model::ElectrolyteModel,salts = auto_binary_salts(mo
     ν = zeros(length(salts),length(ions))
     charges = model.charge[iions]
 
-    for i ∈ 1:length(salts)
+    for i ∈ eachindex(salts)
         v = salts[i][2]
-        for j in 1:length(v)
+        for j in eachindex(v)
             name,vj = v[j]
-            for k in 1:length(ions)
+            for k in eachindex(ions)
                 if name == ions[k]
                     ν[i,k] = vj
                 end
@@ -46,7 +46,7 @@ function salt_stoichiometry(model::ElectrolyteModel,salts::GroupParam)
     for i ∈ 1:nsalts
         v = salts.n_groups[i]
         salt_names = salts.groups[i]
-        for j in 1:length(v)
+        for j in eachindex(v)
             ν[i,salt_names[j].==ions] .= v[j]
         end
         if dot(@view(ν[i,:]),charges)!==0.
@@ -152,6 +152,7 @@ function debye_length(V,T,z,ϵ_r,Z)
     κ = Solvers.strong_zero(I) do ii
         sqrt(s*N_A/V)*sqrt(ii)
     end
+    return κ
 end
 
 function a_ion(ionmodel, rsp, neutralmodel, V, T, z, neutral_data, ϵ_r)
@@ -169,11 +170,11 @@ function auto_binary_salts(Z,comps)
     Z_minus = findall(<(0),Z)
     Z_plus = findall(>(0),Z)
     k = 0 #n ions form n-1 independent salts
-    for i in 1:length(Z_plus)
+    for i in eachindex(Z_plus)
         Zi = Z[Z_plus[i]]
         comp_i = comps[Z_plus[i]]
         k == (n_ions - 1) && break
-        for j in 1:length(Z_minus)
+        for j in eachindex(Z_minus)
             k == (n_ions - 1) && break
             k += 1
             Zj = Z[Z_minus[j]]

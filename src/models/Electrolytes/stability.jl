@@ -120,7 +120,7 @@ function tpd_plan(model::ESElectrolyteModel,z,is_liquidz,lle,id_test,K_test,pure
     nc = length(model)
     neutral = ones(Bool,length(model))
     Z = model.charge
-    neutral = iszero.(Z)
+    neutral .= iszero.(Z)
 
     if is_liquidz && id_test && !lle && iszero(length(Z))
         push!(plan,(:ideal_gas,:vapour,(0,0,0)))

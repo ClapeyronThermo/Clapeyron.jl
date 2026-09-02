@@ -123,7 +123,7 @@ function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
         return _1*volume_impl(model.gas,p,T,z,phase,threaded,vol0)
     end
 
-    nan = _0/_0
+    #nan = _0/_0
     if is_liquid(phase)
         return volume(model.liquid, p, T, z; phase, threaded, vol0)
     elseif is_vapour(phase)

@@ -58,14 +58,14 @@ end
 function gibbs_solvation(model::GammaPhi,T)
     z = [1.0,1e-30]
     p,v_l,v_v = saturation_pressure(model.fluid[1],T)
-    p2,v_l2,v_v2 = saturation_pressure(model.fluid[2],T)
+    p2,_,_ = saturation_pressure(model.fluid[2],T)
     γ = activity_coefficient(model,p,T,z)
     K = v_v/v_l*γ[2]*p2/p
     return -R̄*T*log(K)
 end
 
 function __calculate_reference_state_consts(model::GammaPhi,v,T,p,z,H0,S0,phase)
-    ∑z = sum(z)
+    #∑z = sum(z)
     S00 = entropy(model,p,T,z,phase = phase)
     a1 = (S00 - S0)#/∑z
     H00 = enthalpy(model,p,T,z,phase = phase)
@@ -98,18 +98,7 @@ function __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium)
 end
 
 function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cache = tpd_cache(wrapper,p,T,z,di))
-
-    TT = Base.promote_eltype(wrapper.model,p,T,z)
-
-    pures = wrapper.model.fluid.pure
-    model = wrapper.model
-    fluidmodel = model.fluid.model
-    RT = R̄*T
-
-    d_l,d_v,_,_,_,Hϕ = cache
-
-    TT = Base.promote_eltype(model,p,T,z)
-
+    d_l,d_v,_,_,_,_ = cache
     n = sum(z)
     logsumz = log(n)
     d,vl = tpd_lnϕ_and_v!(last(cache),wrapper,p,T,z,nothing,false,:liquid)
@@ -132,7 +121,6 @@ end
 
 function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpressure = false,phase = :l,_vol = nothing)
     model = wrapper.model
-    RT = R̄*T
     if is_liquid(phase)
         γmodel = __γ_unwrap(model)
         #=
@@ -166,7 +154,7 @@ function __lnγ_sat(wrapper::PTFlashWrapper,p,T,w,cache = nothing,vol0 = nothing
     fug = wrapper.fug
     pures = wrapper.pures
     RT = Rgas(model)*T
-    for i in 1:length(logγ)
+    for i in eachindex(logγ)
         pᵢ,vpureᵢ,vvᵢ = saturation_pressure_ad2(sat[i],pures[i],T)
         logϕᵢ = __eval_tpd_delta_g_sati(pures[i],T,fug[i],vvᵢ,pᵢ)
         μᵢ_over_RT = logϕᵢ + log(pᵢ*vpureᵢ/RT)

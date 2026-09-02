@@ -46,7 +46,7 @@ function ab_premixing end
 Calculates the diagonal (pure) terms of `a` and `b` in a cubic model, ignoring non-missing entries.
 """
 function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::Number,Ωb::Number,Tc,Pc,R̄)
-    for i in 1:length(Tc)
+    for i in eachindex(Tc)
         Tci,Pci = Tc[i],Pc[i]
         if a.ismissingvalues[i,i]
             a[i,i] = Ωa*R̄^2*Tci^2/Pci
@@ -60,7 +60,7 @@ function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::Number,Ωb::Number,Tc,Pc,
 end
 
 function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::AbstractVector,Ωb::AbstractVector,Tc,Pc,R̄)
-    for i in 1:length(Tc)
+    for i in eachindex(Tc)
         Tci,Pci = Tc[i],Pc[i]
         if a.ismissingvalues[i,i]
             a[i,i] = Ωa[i]*R̄^2*Tci^2/Pci
@@ -257,11 +257,10 @@ end
 cubic_lb_volume(model,T,z) = cubic_lb_volume(model, T, z, model.mixing)
 
 function cubic_lb_volume(model, T, z, mixing)
-    V = 1e-5
     n = sum(z)
     invn = one(n) / n
     b = model.params.b.values
-    b̄ = dot(z, Symmetric(b), z) * invn #b has m3/mol units, result should have m3 units
+    return dot(z, Symmetric(b), z) * invn #b has m3/mol units, result should have m3 units
 end
 #dont use αa, just a, to avoid temperature dependence
 function T_scale(model::CubicModel, z)
@@ -335,22 +334,18 @@ end
 function __crit_pure_Δ_obj(T,v,R,a,b,Δ1,Δ2)
     RT = R*T
     poly = real((v - Δ1*b)*(v - Δ2*b))
-    bb = real(-b*(Δ1 + Δ2))
-    aRT = a/RT
     dpdv_scale = v*v/RT
-    d2pdv2_scale = dpdv_scale*v
     dpoly = real((-b*(Δ1 + Δ2) + 2*v))
     dpdv = -RT/(v - b)^2 + a*dpoly/poly/poly
     d2pdv2 = 2RT/(v - b)^3 - 2a*(dpoly*dpoly/poly - 1)/(poly*poly)
     f = dpdv*dpdv_scale
-    return dpdv*dpdv_scale,dpdv/d2pdv2
+    return f,dpdv/d2pdv2
 end
 
 function volume_impl(model::DeltaCubicModel,p,T,z,phase,threaded,vol0)
     n,a,b,c = data(model,p,T,z)
     u,w = cubic_uwT(model,T,z)
     st,v1,v2 = cubic_poly_solver(a,b,p,Rgas(model),T,u,w,phase)
-    C = n*c
     if st > 0 || st == -1
         vx = st == 1 ? v1 : v2
         return n*(vx - c)
@@ -389,7 +384,7 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     #WARNING: (this criteria fails with the anomalous second maxwell loop at high T)
 
 
-    nr,η1,ηI,ηR,Δ = Solvers.__roots3(poly_η)
+    nr,η1,ηI,ηR,_ = Solvers.__roots3(poly_η)
     nr,η1,ηI,ηR = cubic_poly_eta_good_roots(nr,η1,ηI,ηR,poly_η)
     nr == 0 && return -1,∅,∅ #no valid roots from solver, bailing out
 
@@ -460,7 +455,7 @@ end
 
 
 function cubic_poly_eta_good_roots(nr,η1,η2,η3,poly_η)
-    c0, c1, c2, c3 = poly_η
+    c0 = first(poly_η)
     positive_p = c0 < 0
     nr == 0 && return 0,η1,η2,η3
     in_tol(η) = zero(η) <= η <= one(η)
@@ -772,7 +767,6 @@ vl = b + sqrt(0.5RTb3/2a) - c
 function wilson_k_values!(K,model::CubicModel, p, T, crit)
     Pc = model.params.Pc.values
     Tc = model.params.Tc.values
-    α = typeof(model.alpha)
     w1 = getparam(model,:acentricfactor)
     w2 = getparam(model.alpha,:acentricfactor)
     #we can find stored acentric factor values, so we calculate those
@@ -783,7 +777,7 @@ function wilson_k_values!(K,model::CubicModel, p, T, crit)
     else
         pure = split_pure_model(model)
         ω = zero(Tc)
-        for i in 1:length(Tc)
+        for i in eachindex(Tc)
             ps = first(saturation_pressure(pure[i], 0.7 * Tc[i]))
             ω[i] = -log10(ps / Pc[i]) - 1.0
         end
@@ -796,7 +790,7 @@ end
 function tp_flash_fast_K0!(K,model::CubicModel,p,T,z)
     w1 = getparam(model,:acentricfactor)
     w2 = getparam(model.alpha,:acentricfactor)
-    if w1 == nothing && w2 == nothing
+    if w1 === nothing && w2 === nothing
         return false
     else
         wilson_k_values!(K,model, p, T, nothing)
@@ -809,7 +803,7 @@ function vdw_tv_mix(Tc,Vc,z)
     Vm = zero(eltype(Vc))
     n = sum(z)
     invn2 = (1/n)^2
-    for i in 1:length(z)
+    for i in eachindex(z)
         zi = z[i]
         Vi = Vc[i]
         Ti = Tc[i]
@@ -855,7 +849,7 @@ function transform_params(::Type{ABCubicParam},params,components)
     end
 
     a = get!(params,"a") do
-        aa = PairParam("a",components,zeros(Base.promote_eltype(Pc,Tc),n,n),ones(Bool,n,n))
+        PairParam("a",components,zeros(Base.promote_eltype(Pc,Tc),n,n),ones(Bool,n,n))
     end
     a isa SingleParam && (params["a"] = PairParam(a))
 
@@ -864,7 +858,7 @@ function transform_params(::Type{ABCubicParam},params,components)
     end
     b isa SingleParam && (params["b"] = PairParam(b))
 
-    Mw = get!(params,"Mw") do
+    get!(params,"Mw") do
         SingleParam("Mw",components)
     end
     return params
