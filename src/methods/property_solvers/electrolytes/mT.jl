@@ -38,7 +38,7 @@ These are defined as:
 
 ## Example:
 
-```julia    
+```julia-repl  
 model = ePCSAFT(["water"],["sodium","chloride"])
 
 T = 298.15
@@ -71,7 +71,7 @@ Calculates the mean ionic activity coefficient of selection of salts at a given 
 γ± = φ±/φ±₀ * ∑zsolv/∑z
 ```
 Example:
-```julia    
+```julia-repl    
 model = ePCSAFT(["water"],["sodium","chloride"])
 
 p = 1e5

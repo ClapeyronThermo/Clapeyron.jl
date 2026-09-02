@@ -19,7 +19,6 @@ function vx_flash_pure(model,x,v,z,spec::F,T0) where F
         if !inside
             T = v_HSU_solve1(model,x̄,v̄,spec,_T0)
             p = pressure(model,v̄,T,z1)
-            data = FlashData(p,T)
             return FlashResult([z1],[∑z],[_1*v̄],FlashData(p,T))
         else
             res = v_HSU_solve2(model,x̄,v̄,spec,_T0)
@@ -57,7 +56,7 @@ function v_HSU_T0(model,x,v,spec::F,crit) where F
         end
         xl = spec_to_vt(model,vl,Ti,z1,spec)
         xv = spec_to_vt(model,vv,Ti,z1,spec)
-        βxv = (x - xl)/(xv - xl)
+        #βxv = (x - xl)/(xv - xl)
         if vl <= v <= vv
             #note, that if the energy value is outside, we are sure that it is outside
             #but if the energy value is inside, maybe it is outside at a higher temp

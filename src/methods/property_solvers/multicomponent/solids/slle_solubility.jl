@@ -16,7 +16,7 @@ function slle_solubility(model::CompositeModel,p,T)
     solute = model_components[end]
     idx_sol = solute.==model_components
 
-    solid_r,idx_sol_r = index_reduction(model.solid,idx_sol)
+    solid_r,_ = index_reduction(model.solid,idx_sol)
     μsol = chemical_potential(solid_r,p,T,[1.])
     μ_ref = reference_chemical_potential(model.fluid,p,T,reference_chemical_potential_type(model.fluid))
     x0 = x0_slle_solubility(model,p,T,μsol)
