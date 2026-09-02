@@ -44,7 +44,7 @@ raw_values(param::AssocParam) = param.values.values
 Solvers.primalval(x::T) where T <: AssocParam = param_from_values(Solvers.primalval_eager(raw_values(x)),x) 
 
 function AssocParam(name,components,vals::Compressed4DMatrix{T}) where T
-    if length(vals.values) != 0
+    if !isempty(vals.values)
         ss = [String[] for _ in 1:length(components)]
         for (idx, (i,j), (a,b)) in indices(vals)
             s_i = ss[i]

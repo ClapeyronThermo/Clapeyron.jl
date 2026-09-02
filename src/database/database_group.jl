@@ -1,20 +1,20 @@
 function fast_parse_grouptype(filepaths)
     #only parses grouptype, if present in any CSV, is used. if not, return unknown
     grouptype = :not_set
-    for filepath ∈ filepaths
-        _replace = startswith(filepath,"@REPLACE")
+    for raw_filepath ∈ filepaths
+        _replace = startswith(raw_filepath,"@REPLACE")
         if _replace
-            filepath = chop(filepath,head = 9, tail = 0)
+            filepath = chop(raw_filepath,head = 9, tail = 0)
+        else
+            filepath = raw_filepath
         end
         csv_options = read_csv_options(filepath)
         new_grouptype = csv_options.grouptype
         if grouptype == :not_set
             grouptype = new_grouptype
         else
-            if grouptype !== new_grouptype
-                if new_grouptype != :unknown #for backwards compatibility
-                    error_different_grouptype(grouptype,new_grouptype)
-                end
+            if grouptype !== new_grouptype && new_grouptype != :unknown #for backwards compatibility
+                error_different_grouptype(grouptype,new_grouptype)
             end
         end
     end
@@ -132,7 +132,7 @@ function __GroupParam(components,found_gcpairs,found_intragcpairs,grouplocations
     gccomponents_parsed = Vector{Tuple{String, Vector{Pair{String,_T}}}}(undef,length(components))
 
     #fill gccomponents_parsed
-    for i in 1:length(components)
+    for i in eachindex(components)
         if !to_lookup[i]
             gccomponents_parsed[i] = (components[i],found_gcpairs[i])
         end

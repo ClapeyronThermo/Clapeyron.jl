@@ -9,7 +9,6 @@ function get_header(path)
     io = IOBuffer()
     _sep = Any[1]
     file = open(getpath(path),"r")
-    estimator = false
     local str_options::String
     for (k,i) in enumerate(eachline(file)) 
         if k == 1
