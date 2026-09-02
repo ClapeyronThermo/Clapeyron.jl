@@ -44,7 +44,7 @@ function AntoineSaturation(;T0 = nothing,
     elseif (T0 === nothing) & (vl !== nothing) & (vv !== nothing)
         vl,vv = promote(vl,vv)
         return AntoineSaturation{Nothing,typeof(vl),C}(T0,vl,vv,f_limit,atol,rtol,max_iters,crit,crit_retry)
-    elseif (T0 !== nothing) & !vl !== nothing) & (vv !== nothing)
+    elseif (T0 !== nothing) & (vl !== nothing) & (vv !== nothing)
         T0,vl,vv = promote(T0,vl,vv)
         return AntoineSaturation{typeof(T0),typeof(vl),C}(T0,vl,vv,f_limit,atol,rtol,max_iters,crit,crit_retry)
     else
