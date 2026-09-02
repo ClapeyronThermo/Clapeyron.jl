@@ -261,16 +261,16 @@ function rr_flash_eval(K,z,β,non_inx = FillArrays.Fill(false,length(z)),non_iny
         end
         KD1 = Ki*detKi
         KD2 = -detKi
-        KD = KD1 + KD2
+        #KD = KD1 + KD2
         # modification for non-in-y components Ki -> 0
         if non_iny[i] || iszero(Ki)
-            KD = _0βy
+            #KD = _0βy
             KD2 = -_1
             KD1 = _0βy - KD2
         end
         # modification for non-in-x components Ki -> ∞
         if non_inx[i] || isinf(Ki)
-            KD = _0βx
+            #KD = _0βx
             KD1 = _0βx
             KD2 = _0
         end

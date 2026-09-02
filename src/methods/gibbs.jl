@@ -124,8 +124,8 @@ function PT_property_gibbs(model,p,T,z,f::typeof(VT_adiabatic_index))
     ∂²g∂T² = ∂²g[2,2]
     ∂²g∂p² = ∂²g[1,1]
     ∂²g∂T∂p = ∂²g[1,2]
-    Cv = -T*(∂²g∂T² + ∂²g∂p²/∂²g∂T∂p)
-    Cp = -T*∂²g∂T²
+    #Cv = -T*(∂²g∂T² + ∂²g∂p²/∂²g∂T∂p)
+    #Cp = -T*∂²g∂T²
     return 1/(1 + ∂²g∂p²/(∂²g∂T∂p*∂²g∂T²))
 end
 
@@ -160,7 +160,6 @@ function VT_pressure(model::GibbsBasedModel,V,T,z)
     function fixpoint_p(pᵢ)
         Vᵢ,∂V∂pᵢ = V∂V∂p(model,pᵢ,T,z)
         dp = log(V/Vᵢ)*Vᵢ/∂V∂pᵢ
-        px = pᵢ + dp
         return pᵢ + dp
     end
     return Solvers.fixpoint(fixpoint_p,p0,Solvers.SSFixPoint(),rtol = 1e-12)
@@ -214,9 +213,9 @@ gibbsmodel_reference_state_consts(model1,model2) = nothing
 function _gibbsmodel_reference_state_consts(model1,model2)
     ref1 = gibbsmodel_reference_state_consts(model1,model2)
     ref2 = gibbsmodel_reference_state_consts(model2,model1)
-    ref2 == nothing && ref1 == nothing && return nothing,0
-    ref1 == nothing && return ref2,2
-    ref2 == nothing && return ref1,1
+    ref2 === nothing && ref1 === nothing && return nothing,0
+    ref1 === nothing && return ref2,2
+    ref2 === nothing && return ref1,1
     throw(error("invalid specification for gibbs_reference_state_consts: both model1 and model2 define their own order."))
 end
 
@@ -231,19 +230,19 @@ function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel,x1 = 
     _0 = zero(Base.promote_eltype(model1,model2))
     (model1 isa GibbsBasedModel) || (model2 isa GibbsBasedModel) || return _0,_0 
     refx,nx = _gibbsmodel_reference_state_consts(model1,model2)
-    if refx == nothing
+    if refx === nothing
         ref1 = gibbsmodel_reference_state_consts(model1)
         ref2 = gibbsmodel_reference_state_consts(model2)
-        if ref1 == nothing && ref2 == nothing
+        if ref1 === nothing && ref2 === nothing
             throw(error("Empty Gibbs reference. For Gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model)`"))
         end
-        if ref1 == nothing
+        if ref1 === nothing
             ref = ref2
             n = 2
-        elseif ref2 == nothing
+        elseif ref2 === nothing
             ref = ref1
             n = 1
-        elseif ref2 != nothing && ref1 != nothing
+        elseif ref2 !== nothing && ref1 !== nothing
             
             isnothing(refx) && throw(error("Empty Gibbs reference. For Gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model1,model2)`"))
         end

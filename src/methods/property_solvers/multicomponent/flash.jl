@@ -105,7 +105,7 @@ end
 
 #constructor that fills the Gibbs energy automatically
 function FlashResult(model::EoSModel,p,T,comps,β,volumes,g = nothing;sort = true,vapour_phase_index = 0)
-    if g == nothing
+    if g === nothing
         data = FlashData(p,T,zero(p),vapour_phase_index)
         flash = FlashResult(comps,β,volumes,data)
         Gmix = gibbs_energy(model,flash)
@@ -258,9 +258,9 @@ volume(model::EoSModel,state::FlashResult) = volume(state)
 molar_density(model::EoSModel,state::FlashResult) = molar_density(state)
 
 function __molecular_weight(model,state::FlashResult)
-    comps, β, volumes, data = state
+    comps, β = state.compositions,state.fractions
     ∑mi = zero(eltype(comps[1]))
-    for i in 1:length(comps)
+    for i in eachindex(comps)
         mwi = molecular_weight(model,comps[i])
         ∑mi += β[i]*mwi
     end
@@ -274,13 +274,13 @@ function mass_density(model::EoSModel,state::FlashResult)
 end
 
 function mass_density(model::EoSModel,state::FlashResult, i::Integer)
-    vi,T,xi,βi = state.volumes[i],state.data.T,state.compositions[i],state.fractions[i]
+    vi,xi = state.volumes[i],state.compositions[i]
     molar_weight = molecular_weight(model,xi)
     return molar_weight/vi
 end
 
 function volume(model::EoSModel,state::FlashResult, i::Integer)
-    vi,T,xi,βi = state.volumes[i],state.data.T,state.compositions[i],state.fractions[i]
+    vi,βi = state.volumes[i],state.fractions[i]
     return vi*βi
 end
 
@@ -429,16 +429,11 @@ function split_phase!(result::FlashResult,i::Integer,wj,βj,vj)
     β = result.fractions
     comps = result.compositions
     volumes = result.volumes
-    data = result.data
-    p,T = data.p,data.T
-    n = sum(β)
-
-    wi0,vi0,βi0 = comps[i],volumes[i],β[i]
+    wi0,βi0 = comps[i],β[i]
     _wj = copy(wi0)
     nj = sum(wj)
     _wj .= wj ./ nj
     βj = Solvers.positive_linesearch(wi0,_wj,βj,s = -1,decay = 0.95)
-    βi = (1 - βj/n) * βi0
     β[i] = βi0 - βi0*βj
     #add new phase
 
@@ -478,8 +473,7 @@ function delete_phase!(result::FlashResult,i)
 end
 
 function findfirst_duplicate_phases(comps,β,volumes,ignore_zeros = true)
-    equal_phases = (0,0)
-    for i in 1:length(comps)
+    for i in eachindex(comps)
         xi,vi,βi = comps[i],volumes[i],β[i]
         iszero(βi) && ignore_zeros && continue
         for j in (i+1):length(comps)
@@ -506,7 +500,7 @@ end
 
 function merge_duplicate_phases!(result::FlashResult;ignore_zeros = true)
     nc = numphases(result)
-    for i in 1:(nc*nc)
+    for _ in 1:(nc*nc)
         i,j = findfirst_duplicate_phases(result,ignore_zeros)
         if i == j == 0
             break

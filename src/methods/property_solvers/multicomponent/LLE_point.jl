@@ -2,7 +2,7 @@
 
 function x0_lle_init(model::EoSModel, p, T, z, z0 = nothing)
     nc = length(model)
-    if z0 == nothing
+    if z0 === nothing
         z_test = initial_candidate_fractions(z)
     else
         z_test = near_candidate_fractions(z0,0.25)
@@ -20,7 +20,7 @@ function x0_lle_init(model::EoSModel, p, T, z, z0 = nothing)
         #divided by norm to penalize points too close of the initial point
         err[i] = dnorm1/dnorm2
     end
-    (val, idx) = findmin(err)
+    (_, idx) = findmin(err)
     return z_test[idx]
 end
 
@@ -31,7 +31,7 @@ function x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing)
     sat = saturation_pressure.(pure,T)
     vi = getindex.(sat,2)
     vlx = dot(vi,x)
-    if p0 == nothing
+    if p0 === nothing
         p0x = pressure(model,vlx,T,x)
     else
         p0x = p0

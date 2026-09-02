@@ -43,7 +43,7 @@ function x0_volume_liquid_lowT(model,p,T,z)
         vlo = exp(lnvlo)
         plo = pressure(model,vlo,T,z)
         if plo < 0
-            for i in 1:10
+            for _ in 1:10
                 plo > 0 && break
                 vlo = sqrt(vlo*vhi)
                 plo = pressure(model,vlo,T,z)
@@ -446,7 +446,7 @@ function liquid_pressure_from_virial(model,T,z =SA[1.0],B = second_virial_coeffi
     =#
     RT = Rgas(model)*T
     n = sum(z)
-    vv_virial = -2*B #maximum gas volume predicted by virial equation
+    #vv_virial = -2*B #maximum gas volume predicted by virial equation
     pv_virial = -0.25*n*Rgas(model)*T/B #maximum virial predicted pressure
     γT = pv_eos/pv_virial
     
@@ -562,6 +562,7 @@ function pure_spinodal_newton(model,T,z,v0,dp_scale = v0*v0/(Rgas(model)*T))
     prob = Roots.ZeroProblem(dp,rho0)
     rho_sol = Roots.solve(prob,Roots.Newton())
     vsol = n/rho_sol
+    return vsol
 end
 
 function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
@@ -771,7 +772,6 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     _,T,Tc,Pc,Vc = promote(_1,_T,_Tc,_Pc,_Vc)
     Tr = T/Tc
     nan = _0/_0
-    RT = Rgas(model)*T
     z = SA[1.0]
     if Tr == 1
         return Pc,Vc,Vc
@@ -1043,6 +1043,7 @@ function critical_psat_extrapolation(model,T,Tc,Pc,Vc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = (1/T - 1/Tc)/dTinvdlnp
     p = exp(Δlnp)*Pc
+    return p
 end
 
 critical_psat_extrapolation(model,T) = critical_psat_extrapolation(model,T,crit_pure(model))
@@ -1067,6 +1068,7 @@ function critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z = SA[1.0])
     Δlnp = log(p/Pc)
     Tinv = 1/Tc + dTinvdlnp*Δlnp
     T = 1/Tinv
+    return T
 end
 
 critical_tsat_extrapolation(model,p) = critical_tsat_extrapolation(model,p,crit_pure(model))

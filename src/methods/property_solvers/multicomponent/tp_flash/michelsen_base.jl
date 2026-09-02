@@ -38,7 +38,7 @@ end
 function K_extrema(K::AbstractVector{T},non_inx,non_iny) where T
     Kmax = T(-Inf)
     Kmin = T(Inf)
-    for i in 1:length(K)
+    for i in eachindex(K)
         if non_inx[i]
             Ki = T(Inf)
         elseif non_iny[i]
@@ -131,7 +131,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         ∂x,∂2x = lnϕx,∂lnϕ∂nx
         ∂2x .-= 1
         ∂2x ./= nxsum
-        for i in 1:size(∂2x,1)
+        for i in axes(∂2x,1)
             ∂2x[i,i] += 1/(nxsum*x[i])
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
@@ -145,7 +145,7 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         ∂y,∂2y = lnϕy,∂lnϕ∂ny
         ∂2y .-= 1
         ∂2y ./= nysum
-        for i in 1:size(∂2y,1)
+        for i in axes(∂2y,1)
             ∂2y[i,i] += 1/(nysum*y[i])
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
@@ -158,14 +158,14 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         f += nysum*dot(∂y,y)
     else
         ∂x,volx = modified_lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
-        for i in 1:size(∂x,1)
+        for i in axes(∂x,1)
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
         f += nxsum*dot(∂x,x)
         ∂y,voly = modified_lnϕ(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
-        for i in 1:size(∂y,1)
+        for i in axes(∂y,1)
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
         end
@@ -194,11 +194,11 @@ function michelsen_optimization_obj(model,p,T,z,caches)
     gz = michelsen_gibbs_feed(model,p,T,z,caches)
 
     function objective_ip(x)
-        fx = michelsen_optimization_of!(nothing,nothing,model,p,T,z,caches,x,gz)
+        return michelsen_optimization_of!(nothing,nothing,model,p,T,z,caches,x,gz)
     end
 
     function gradient_ip(∇f, x)
-        fx = michelsen_optimization_of!(∇f,nothing,model,p,T,z,caches,x,gz)
+        michelsen_optimization_of!(∇f,nothing,model,p,T,z,caches,x,gz)
         return ∇f
     end
 
@@ -207,7 +207,7 @@ function michelsen_optimization_obj(model,p,T,z,caches)
         return fx,∇f
     end
     function hessian_ip(∇²f, x)
-        fx = michelsen_optimization_of!(nothing,∇²f,model,p,T,z,caches,x,gz)
+        michelsen_optimization_of!(nothing,∇²f,model,p,T,z,caches,x,gz)
         return ∇²f
     end
     function objective_gradient_hessian_ip(∇f, ∇²f, x)
@@ -220,6 +220,7 @@ function michelsen_optimization_obj(model,p,T,z,caches)
                                 fg=objective_gradient_ip,
                                 fgh=objective_gradient_hessian_ip,
                                 h=hessian_ip)
+    return scalarobj_ip
     #optprob_ip = NLSolvers.OptimizationProblem(scalarobj_ip; inplace=true)
 end
 
@@ -340,7 +341,6 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         phasex,phasey = :unknown,:unknown
     end
     non_inw = (non_inx,non_iny)
-    nc = length(model)
     _1,_0 = one(TT),zero(TT)
     x,y = similar(z,TT),similar(z,TT)
     x .= z
@@ -359,7 +359,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         lnK .= log.(x ./ y)
         volx = zero(_1)
         voly = zero(_1)
-        if method.v0 == nothing
+        if method.v0 === nothing
             lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(nothing,nothing),(phasex,phasey),non_inw)
         else
             vl0,vv0 = method.v0
@@ -373,7 +373,6 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         tp_flash_K0!(K,model,p,T,z,nothing)
         phasex = :liquid
         phasey = :vapour
-        phases = (:liquid,:vapour)
         #if we can't predict K, we use lle
         if is_unknown(method)
             Kmin,Kmax = K_extrema(K,non_inx,non_iny)
@@ -384,7 +383,6 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
                     K .= K_lle
                     phasex = :liquid
                     phasey = :liquid
-                    phases = (:liquid,:liquid)
                 end
                 lnK .= log.(K)
             else
@@ -399,7 +397,6 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         K .= K0_lle_init(model,p,T,z;reduced = true)
         lnK .= log.(K)
         phasey = :liquid
-        phases = (:liquid,:liquid)
         volx = zero(_1)
         voly = zero(_1)
     end

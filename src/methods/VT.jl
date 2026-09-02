@@ -123,7 +123,7 @@ function VT_gibbs_energy(model::EoSModel, V, T, z::AbstractVector=SA[1.], p = no
         return VT_gibbs_energy(idealmodel(model), V, T, z)
     end
 
-    if p == nothing
+    if p === nothing
         A,∂A∂V = f∂fdV(model,V,T,z)
     else
         A = eos(model,V,T,z)
@@ -429,7 +429,7 @@ function VT_fundamental_derivative_of_gas_dynamics(model::EoSModel, V, T, z=SA[1
     c =  V*sqrt((∂²A∂V²-∂²A∂V∂T*∂²A∂V∂T/∂²A∂T²)/Mr)
     A(x) = eos(model,V,x,z)
     ∂A∂T(x) = Solvers.derivative(A,x)
-    ∂²A∂T²(x) = -T*Solvers.derivative(∂A∂T,x)
+    #∂²A∂T²(x) = -T*Solvers.derivative(∂A∂T,x)
     Cᵥ,∂Cᵥ∂T = Solvers.f∂f(∂²A∂T²,T)
     _∂2p = ∂2p(model,V,T,z)
     hess_p, grad_p, _ = _∂2p
@@ -639,7 +639,7 @@ The user must be sure to give a physically sensible volume value.
 For calculations in volume-temperature basis that check and calculate if there are multiple phases, use the [`VT`] module instead.
 """
 module VT0
-    using Clapeyron: Clapeyron, CLAPEYRON_PROPS
+    using Clapeyron: Clapeyron
     for prop in Clapeyron.CLAPEYRON_PROPS
         VT_prop = Clapeyron.VT_symbol(prop)
         @eval begin

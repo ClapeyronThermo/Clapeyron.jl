@@ -71,7 +71,6 @@ function UCST_temperature(model::EoSModel,p;v0 = nothing)
         T,logvol0,w0 = v0
     end
     vol0 = exp10(logvol0)
-    imax,_ = findmax(w0)
     ηw = η_from_v(model, vol0, T, w0)
     _,idx_max = findmax(w0)
     x0 = vcat(log(T),ηw,deleteat(w0,idx_max)) #select component with highest fraction as pivot
@@ -82,7 +81,7 @@ function UCST_temperature(model::EoSModel,p;v0 = nothing)
     T_c = exp(sol[1])
     z_c = FractionVector(sol[3:end],idx_max)
     V_c = v_from_η(model,sol[2],T_c,z_c)
-    p_c = pressure(model, V_c, T, z_c)
+    #p_c = pressure(model, V_c, T, z_c)
     return (T_c, V_c, z_c)
 end
 
