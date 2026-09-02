@@ -46,7 +46,7 @@ function ab_premixing end
 Calculates the diagonal (pure) terms of `a` and `b` in a cubic model, ignoring non-missing entries.
 """
 function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::Number,Ωb::Number,Tc,Pc,R̄)
-    for i in eachindex(Tc)
+    for i in 1:length(Tc)
         Tci,Pci = Tc[i],Pc[i]
         if a.ismissingvalues[i,i]
             a[i,i] = Ωa*R̄^2*Tci^2/Pci
@@ -60,7 +60,7 @@ function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::Number,Ωb::Number,Tc,Pc,
 end
 
 function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::AbstractVector,Ωb::AbstractVector,Tc,Pc,R̄)
-    for i in eachindex(Tc)
+    for i in 1:length(Tc)
         Tci,Pci = Tc[i],Pc[i]
         if a.ismissingvalues[i,i]
             a[i,i] = Ωa[i]*R̄^2*Tci^2/Pci
