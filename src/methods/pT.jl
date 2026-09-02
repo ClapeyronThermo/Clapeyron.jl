@@ -1,4 +1,4 @@
-const VT_STRING = 
+const VT_STRING =
 """
 
 For Helmholtz-based models, it calls [`Clapeyron.volume`](@ref) to obtain `V` and evaluate the property in a volume-temperature (VT) basis.
@@ -9,13 +9,13 @@ Gibbs-based models are instead evaluated directly in the pressure-temperature ba
 
 """
 
-const IDEALMODEL_REQUIRED = 
+const IDEALMODEL_REQUIRED =
 """
 !!! warning "Accurate ideal model required"
     This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel = ReidIdeal)`).
 """
 
-const SINGLE_PHASE_PROP = 
+const SINGLE_PHASE_PROP =
 """
 !!! note "single phase property"
     This property is not defined for more than one phase. Calling this property with two-phase states will result in an error.
@@ -43,7 +43,7 @@ The calculation of both volume roots can be calculated in serial (`threaded=fals
 
 An initial estimate of the volume `vol0` can be optionally be provided.
 
-`volume(result::FlashResult)` will return the volume of the aggregate of phases stored in the `FlashResult` whereas `volume(result::FlashResult,phase_index)` will return the volume of the ith phase. 
+`volume(result::FlashResult)` will return the volume of the aggregate of phases stored in the `FlashResult` whereas `volume(result::FlashResult,phase_index)` will return the volume of the ith phase.
 Because molar volumes are directly stored in the `FlashResult` struct, `volume(model,result)` will just call `volume(result)` instead.
 Similarly, `volume(model,result::FlashResult,i)` will just call `volume(result,i)`.
 
@@ -65,6 +65,10 @@ Similarly, `volume(model,result::FlashResult,i)` will just call `volume(result,i
 """
 function volume end
 
+#=
+note: mass_density, molar_density, and compressibility_factor do not pass through the PT_property machinery. they only depend on a correct implementation of volume.
+=#
+
 """
     molar_density(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     molar_density(result::FlashResult)
@@ -80,15 +84,23 @@ Calculates the molar density, defined as:
 ρₙ = ∑nᵢ/V
 ```
 
-`molar_density(model,result::FlashResult)` will return the molar density of the aggregate of phases stored in the `FlashResult` whereas `molar_density(model,result::FlashResult,i::Int)` will return the molar density of the ith phase. 
+`molar_density(model,result::FlashResult)` will return the molar density of the aggregate of phases stored in the `FlashResult` whereas `molar_density(model,result::FlashResult,i::Int)` will return the molar density of the ith phase.
 Because molar volumes are directly stored in the `FlashResult` struct, `molar_density(model,result)` will just call `molar_density(result)` instead.
 Similarly, `molar_density(model,result::FlashResult,i)` will just call `molar_density(result,i)`.
 
 $VT_STRING
 """
 function molar_density(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    V = volume(model, p, T, z; phase, threaded, vol0)
-    return VT_molar_density(model,V,T,z)
+    T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+    if unitful_is_pressure(p)
+        p̄,v̄0 = ustrip(p,pressure),uvstrip(model,vol0,z̄)
+        v̄ = volume(model,p̄,T̄,z̄;phase,threaded,vol0 = v̄0)
+    else
+        v̄ = uvstrip(model,p,z̄)
+    end
+    res = VT_molar_density(model,v̄,T̄,z̄)
+    UNIT_TYPE = unit_system(p,T,z,output)
+    return with_output_unit(res,(UNIT_TYPE,output),VT_molar_density)
 end
 
 """
@@ -105,14 +117,22 @@ Calculates the mass density, defined as:
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
 
-`mass_density(model,result::FlashResult)` will return the mass density of the aggregate of phases stored in the `FlashResult` whereas `mass_density(model,result::FlashResult,i::Int)` will return the mass density of the ith phase. 
+`mass_density(model,result::FlashResult)` will return the mass density of the aggregate of phases stored in the `FlashResult` whereas `mass_density(model,result::FlashResult,i::Int)` will return the mass density of the ith phase.
 
 
 $VT_STRING
 """
 function mass_density(model::EoSModel, p, T, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    V = volume(model, p, T, z; phase, threaded, vol0)
-    return VT_mass_density(model,V,T,z)
+    T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+    if unitful_is_pressure(p)
+        p̄,v̄0 = ustrip(p,pressure),uvstrip(model,vol0,z̄)
+        v̄ = volume(model,p̄,T̄,z̄;phase,threaded,vol0 = v̄0)
+    else
+        v̄ = uvstrip(model,p,z̄)
+    end
+    res = VT_mass_density(model,v̄,T̄,z̄)
+    UNIT_TYPE = unit_system(p,T,z,output)
+    return with_output_unit(res,(UNIT_TYPE,output),VT_mass_density)
 end
 
 """
@@ -136,14 +156,21 @@ Similarly, `compressibility_factor(model,result::FlashResult,i)` will just call 
 $VT_STRING
 $SINGLE_PHASE_PROP
 """
-function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    #this property only depends on the implementation of volume_impl.
-    V = volume(model,p,T,z;phase,threaded,vol0)
-    return p*V/(sum(z)*Rgas(model)*T)
+function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing,output = nothing)
+    T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+    if unitful_is_pressure(p)
+        p̄,v̄0 = ustrip(p,pressure),uvstrip(model,vol0,z̄)
+        V = volume(model,p̄,T̄,z̄;phase,threaded,vol0 = v̄0)
+        return p̄*V/(sum(z̄)*Rgas(model)*T̄)
+    else
+        has_a_res(model) || __vt_on_pt_not_supported()
+        v̄ = uvstrip(model,p,z̄)
+        return pressure(model,v̄,T̄,z̄)*v̄/(sum(z̄)*Rgas(model)*T̄)
+    end
 end
 
-function PT_property(model,p,T,z,phase,threaded,vol0,f::F,vol::VV) where {F,VV}
-    
+function PT_property(model,p,T,z,phase ,threaded,vol0,f::F,vol::VV) where {F,VV}
+
     if f == pressure
         return p
     elseif f == temperature
@@ -165,8 +192,33 @@ function PT_property(model,p,T,z,phase,threaded,vol0,f::F,vol::VV) where {F,VV}
     end
 end
 
-PT_property(model,p,T,z,phase,threaded,vol0,f::F) where {F} = PT_property(model,p,T,z,phase,threaded,vol0,f,nothing)
-PT_property(model,p,T,z,phase,vol,f::F) where {F} = PT_property(model,p,T,z,phase,false,nothing,f,vol)
+PT_property(model,p,T,z,phase, threaded,vol0,f::F) where {F} = PT_property(model,p,T,z,phase, threaded,vol0,f,nothing)
+PT_property(model,p,T,z,phase, vol,f::F) where {F} = PT_property(model,p,T,z,phase,false,nothing,f,vol)
+
+__vt_on_pt_not_supported() = throw(error(lazy"Invalid unit and model combination."))
+
+macro __PT_def(f)
+    VT_f = Symbol(:VT_,f)
+    quote
+        function $f(model, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+            T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+            if unitful_is_pressure(p)
+                p̄,v̄0 = ustrip(p,pressure),uvstrip(model,vol0,z̄)
+                UNIT_TYPE = unit_system(p,T,z,output)
+                res = PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,$VT_f,nothing)
+                return with_output_unit(res,(UNIT_TYPE,output),$VT_f)
+            else
+                has_a_res(model) || __vt_on_pt_not_supported()
+                v̄ = uvstrip(model,p,z̄)
+                p̄ = VT_use_p($VT_f) ? pressure(model,v̄,T̄,z̄) : oftype(zero(Base.promote_eltype(model,v̄,T̄,z̄)))
+                UNIT_TYPE = unit_system(p,T,z,output)
+                res = PT_property(model,p̄,T̄,z̄,phase,threaded,nothing,$VT_f,v̄)
+                return with_output_unit(res,(UNIT_TYPE,output),$VT_f)
+            end
+        end
+    end |> esc
+end
+
 """
     entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     entropy(model, result::FlashResult)
@@ -180,13 +232,12 @@ Calculates entropy, defined as:
 S = -∂A/∂T
 ```
 
-`entropy(model,result::FlashResult)` will return the entropy of the aggregate of phases stored in the `FlashResult` whereas `entropy(model,result::FlashResult,i::Int)` will return the entropy of the ith phase. 
+`entropy(model,result::FlashResult)` will return the entropy of the aggregate of phases stored in the `FlashResult` whereas `entropy(model,result::FlashResult,i::Int)` will return the entropy of the ith phase.
 
 $VT_STRING
 """
-function entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    return PT_property(model,p,T,z,phase,threaded,vol0,VT_entropy)
-end
+function entropy end
+@__PT_def entropy
 
 """
     mass_entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -202,13 +253,13 @@ S = -∂A/∂T/Mr
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
 
-`mass_entropy(model,result::FlashResult)` will return the mass entropy of the aggregate of phases stored in the `FlashResult` whereas `mass_entropy(model,result::FlashResult,i::Int)` will return the mass entropy of the ith phase. 
+`mass_entropy(model,result::FlashResult)` will return the mass entropy of the aggregate of phases stored in the `FlashResult` whereas `mass_entropy(model,result::FlashResult,i::Int)` will return the mass entropy of the ith phase.
 
 $VT_STRING
 """
-function mass_entropy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    return PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_entropy)
-end
+function mass_entropy end
+@__PT_def mass_entropy
+
 
 """
     entropy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -223,13 +274,12 @@ Calculates residual entropy, defined as:
 S = -∂Ares/∂T
 ```
 
-`entropy_res(model,result::FlashResult)` will return the residual entropy of the aggregate of phases stored in the `FlashResult` whereas `entropy_res(model,result::FlashResult,i::Int)` will return the residual entropy of the ith phase. 
+`entropy_res(model,result::FlashResult)` will return the residual entropy of the aggregate of phases stored in the `FlashResult` whereas `entropy_res(model,result::FlashResult,i::Int)` will return the residual entropy of the ith phase.
 
 $VT_STRING
 """
-function entropy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    return PT_property(model,p,T,z,phase,threaded,vol0,VT_entropy_res)
-end
+function entropy_res end
+@__PT_def entropy_res
 
 """
     chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -249,7 +299,20 @@ Calculates the chemical potential, defined as:
 $VT_STRING
 """
 function chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    μ = chemical_potential_impl(model,p,T,z,phase,threaded,vol0)
+    if unitful_is_pressure(p)
+        p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+        v̄0 = uvstrip(model,vol0,z̄)
+        UNIT_TYPE = unit_system(p,T,z,output)
+        μ = chemical_potential_impl(model,p̄,T̄,z̄,phase,threaded,v̄0)
+        return with_output_unit(μ,(UNIT_TYPE,output),chemical_potential)
+    else
+        has_a_res(model) || __vt_on_pt_not_supported()
+        T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+        v̄ = uvstrip(model,p,z̄)
+        UNIT_TYPE = unit_system(p,T,z,output)
+        μ = VT_chemical_potential(model,v̄,T̄,z̄)
+        return with_output_unit(μ,(UNIT_TYPE,output),chemical_potential)
+    end
 end
 
 function chemical_potential_impl(model,p,T,z,phase,threaded,vol0)
@@ -274,7 +337,20 @@ Calculates the residual chemical potential, defined as:
 $VT_STRING
 """
 function chemical_potential_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_chemical_potential_res)
+    if unitful_is_pressure(p)
+        p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+        v̄0 = uvstrip(model,vol0,z̄)
+        UNIT_TYPE = unit_system(p,T,z,output)
+        μr = PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,VT_chemical_potential_res)
+        return with_output_unit(μr,(UNIT_TYPE,output),chemical_potential)
+    else
+        has_a_res(model) || __vt_on_pt_not_supported()
+        T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+        v̄ = uvstrip(model,p,z̄)
+        UNIT_TYPE = unit_system(p,T,z,output)
+        μr = VT_chemical_potential_res(model,v̄,T̄,z̄)
+        return with_output_unit(μr,(UNIT_TYPE,output),chemical_potential)
+    end
 end
 
 """
@@ -294,9 +370,8 @@ U = A - T * ∂A/∂T
 
 $VT_STRING
 """
-function internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_internal_energy)
-end
+function internal_energy end
+@__PT_def internal_energy
 
 """
     mass_internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -316,9 +391,9 @@ Where `Mr` is the molecular weight of the model at the input composition.
 
 $VT_STRING
 """
-function mass_internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_internal_energy)
-end
+function mass_internal_energy end
+@__PT_def mass_internal_energy
+
 
 """
     internal_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -337,9 +412,9 @@ U = Ar - T * ∂Ar/∂T
 
 $VT_STRING
 """
-function internal_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_internal_energy_res)
-end
+function internal_energy_res end
+@__PT_def internal_energy_res
+
 
 """
     enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -358,9 +433,9 @@ H = A - T * ∂A/∂T - V * ∂A/∂V
 
 $VT_STRING
 """
-function enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_enthalpy)
-end
+function enthalpy end
+@__PT_def enthalpy
+
 
 """
     mass_enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -380,9 +455,8 @@ Where `Mr` is the molecular weight of the model at the input composition.
 
 $VT_STRING
 """
-function mass_enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_enthalpy)
-end
+function mass_enthalpy end
+@__PT_def mass_enthalpy
 
 """
     enthalpy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -401,9 +475,9 @@ H = Ar - T * ∂Ar/∂T - V * ∂Ar/∂V
 
 $VT_STRING
 """
-function enthalpy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_enthalpy_res)
-end
+function enthalpy_res end
+@__PT_def enthalpy_res
+
 
 """
     gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -423,9 +497,9 @@ G = A + p*V
 
 $VT_STRING
 """
-function gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_gibbs_energy)
-end
+function gibbs_energy end
+@__PT_def gibbs_energy
+
 
 """
     mass_gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -446,9 +520,9 @@ Where `Mr` is the molecular weight of the model at the input composition.
 
 $VT_STRING
 """
-function mass_gibbs_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_gibbs_energy)
-end
+function mass_gibbs_energy end
+@__PT_def mass_gibbs_energy
+
 
 """
     gibbs_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -468,9 +542,9 @@ G = Ar - V*∂Ar/∂V
 
 $VT_STRING
 """
-function gibbs_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_gibbs_energy_res)
-end
+function gibbs_energy_res end
+@__PT_def gibbs_energy_res
+
 
 """
     helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -490,9 +564,9 @@ A = eos(model,V(p),T,z)
 
 $VT_STRING
 """
-function helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_helmholtz_energy)
-end
+function helmholtz_energy end
+@__PT_def helmholtz_energy
+
 
 """
     mass_helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -513,9 +587,9 @@ Where `Mr` is the molecular weight of the model at the input composition.
 
 $VT_STRING
 """
-function mass_helmholtz_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_helmholtz_energy)
-end
+function mass_helmholtz_energy end
+@__PT_def mass_helmholtz_energy
+
 
 """
     helmholtz_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -535,12 +609,12 @@ A = eos_res(model,V(p),T,z)
 
 $VT_STRING
 """
-function helmholtz_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_helmholtz_energy_res)
-end
+function helmholtz_energy_res end
+@__PT_def helmholtz_energy_res
+
 
 const helmholtz_free_energy = helmholtz_energy
-const helmholtz_free_energy_res = helmholtz_energy_res 
+const helmholtz_free_energy_res = helmholtz_energy_res
 const gibbs_free_energy = gibbs_energy
 const gibbs_free_energy_res = gibbs_energy_res
 const mass_helmholtz_free_energy = mass_helmholtz_energy
@@ -566,9 +640,9 @@ calculates the property via `VT_isochoric_heat_capacity(model,V,T,z)`.
 $VT_STRING
 
 """
-function isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_isochoric_heat_capacity)
-end
+function isochoric_heat_capacity end
+@__PT_def isochoric_heat_capacity
+
 
 """
     mass_isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -591,9 +665,8 @@ $VT_STRING
 $IDEALMODEL_REQUIRED
 $SINGLE_PHASE_PROP
 """
-function mass_isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_isochoric_heat_capacity)
-end
+function mass_isochoric_heat_capacity end
+@__PT_def mass_isochoric_heat_capacity
 
 """
     isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -615,9 +688,8 @@ $VT_STRING
 $IDEALMODEL_REQUIRED
 $SINGLE_PHASE_PROP
 """
-function isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_isobaric_heat_capacity)
-end
+function isobaric_heat_capacity end
+@__PT_def isobaric_heat_capacity
 
 """
     mass_isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -640,9 +712,8 @@ $VT_STRING
 $IDEALMODEL_REQUIRED
 $SINGLE_PHASE_PROP
 """
-function mass_isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_mass_isobaric_heat_capacity)
-end
+function mass_isobaric_heat_capacity end
+@__PT_def mass_isobaric_heat_capacity
 
 """
     adiabatic_index(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -662,9 +733,8 @@ $VT_STRING
 $IDEALMODEL_REQUIRED
 $SINGLE_PHASE_PROP
 """
-function adiabatic_index(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_adiabatic_index)
-end
+function adiabatic_index end
+@__PT_def adiabatic_index
 
 """
     isothermal_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -685,9 +755,8 @@ Calculates the isothermal compressibility, defined as:
 $VT_STRING
 $SINGLE_PHASE_PROP
 """
-function isothermal_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_isothermal_compressibility)
-end
+function isothermal_compressibility end
+@__PT_def isothermal_compressibility
 
 """
     isentropic_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -709,9 +778,8 @@ $VT_STRING
 $IDEALMODEL_REQUIRED
 $SINGLE_PHASE_PROP
 """
-function isentropic_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_isentropic_compressibility)
-end
+function isentropic_compressibility end
+@__PT_def isentropic_compressibility
 
 """
     speed_of_sound(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -734,9 +802,8 @@ $VT_STRING
 $IDEALMODEL_REQUIRED
 $SINGLE_PHASE_PROP
 """
-function speed_of_sound(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_speed_of_sound)
-end
+function speed_of_sound end
+@__PT_def speed_of_sound
 
 """
     isobaric_expansivity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -757,9 +824,8 @@ Calculates the isobaric expansivity, defined as:
 $VT_STRING
 $SINGLE_PHASE_PROP
 """
-function isobaric_expansivity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_isobaric_expansivity)
-end
+function isobaric_expansivity end
+@__PT_def isobaric_expansivity
 
 """
     joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -781,9 +847,8 @@ $VT_STRING
 $IDEALMODEL_REQUIRED
 $SINGLE_PHASE_PROP
 """
-function joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_joule_thomson_coefficient)
-end
+function joule_thomson_coefficient end
+@__PT_def joule_thomson_coefficient
 
 """
     identify_phase(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)::Symbol
@@ -795,7 +860,7 @@ Uses the phase identification parameter criteria from `Clapeyron.pip`.
 
 Returns `:liquid` if the phase is liquid (or liquid-like), `:vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed.
 
-`identify_phase(model,result::FlashResult,i::Int)` will return the phase type of the ith phase stored in the result, if available. 
+`identify_phase(model,result::FlashResult,i::Int)` will return the phase type of the ith phase stored in the result, if available.
 `identify_phase(model,result,i)` will try to get the stored result first, and fallback to `identify_phase(model,p,T,xi)` if there is no phase stored.
 
 $VT_STRING
@@ -822,9 +887,8 @@ Calculates the fundamental derivative of gas dynamics.
 
 $VT_STRING
 """
-function fundamental_derivative_of_gas_dynamics(model::EoSModel, p, T, z=SA[1.]; phase=:gas, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_fundamental_derivative_of_gas_dynamics)
-end
+function fundamental_derivative_of_gas_dynamics end
+@__PT_def fundamental_derivative_of_gas_dynamics
 
 """
     fugacity_coefficient(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -838,13 +902,17 @@ Where `μresᵢ` is the vector of residual chemical potentials and `Z` is the co
 
 $VT_STRING
 """
-function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    PT_property(model,p,T,z,phase,threaded,vol0,VT_fugacity_coefficient)
+function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    v̄0 = uvstrip(model,vol0,z̄)
+    res = PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,VT_fugacity_coefficient)
 end
 
 function fugacity_coefficient!(φ,model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    V = volume(model, p, T, z; phase, threaded, vol0)
-    VT_fugacity_coefficient!(φ,model,V,T,z,p)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    v̄0 = uvstrip(model,vol0,z̄)
+    V = volume(model, p, T, z; phase, threaded, vol0 = v̄0)
+    VT_fugacity_coefficient!(φ,model,V,T̄,z̄,p̄)
 end
 
 """
@@ -867,15 +935,18 @@ function activity_coefficient(model::EoSModel,p,T,z = SA[1.0];
                             phase=:unknown,
                             threaded=true,
                             vol0=nothing)
+
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    v̄0 = uvstrip(model,vol0,z̄)
     reference = Symbol(reference)
     γmodel = __γ_unwrap(model)
     if γmodel isa ActivityModel
-        return activity_coefficient(γmodel,p,T,z)
+        return activity_coefficient(γmodel,p̄,T̄,z̄)
     end
     if μ_ref == nothing
-        return activity_coefficient_impl(model,p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
+        return activity_coefficient_impl(model,p̄,T̄,z̄,reference_chemical_potential(model,p̄,T̄,reference;phase,threaded),reference,phase,threaded,v̄0)
     else
-        return activity_coefficient_impl(model,p,T,z,μ_ref,reference,phase,threaded,vol0)
+        return activity_coefficient_impl(model,p̄,T̄,z̄,μ_ref,reference,phase,threaded,v̄0)
     end
 end
 
@@ -951,7 +1022,7 @@ where `μ_mixt` is the chemical potential of the mixture and `μ_inf` is the che
 
 $VT_STRING
 """
-function aqueous_activity(model::EoSModel,p,T,z=SA[1.];                            
+function aqueous_activity(model::EoSModel,p,T,z=SA[1.];
                         μ_ref = nothing,
                         reference = :aqueous,
                         phase=:unknown,
@@ -1115,7 +1186,7 @@ end
 
 Calculates the partial molar property of a mixture at specified temperature, pressure, mol amounts, and extensive property of interest.
 The equality `sum(z .* partial_property(model,p,T,z,property) - property(model,p,T,z))` should hold.
-    
+
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function partial_property(model::EoSModel, p, T, z, property::ℜ; phase=:unknown, threaded=true, vol0=nothing, output=nothing) where {ℜ}
@@ -1153,9 +1224,23 @@ Calculates the thermodynamic factor matrix Γᵢⱼ (size: N-1 × N-1) defined a
 Γᵢⱼ = δᵢⱼ + xᵢ ∂lnγᵢ/∂xⱼ
 ```
 """
-function thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-    length(model) == 1 && return one(T)
-    return PT_property(model,p,T,z,phase,threaded,vol0,VT_thermodynamic_factor)
+function thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing,output = nothing)
+    T̄,z̄ = ustrip(T,temperature),uzstrip(model,z)
+    if unitful_is_pressure(p)
+        p̄,v̄0 = ustrip(p,pressure),uvstrip(model,vol0,z̄)
+        length(model) == 1 && return one(Base.promote_eltype(model,p̄,T̄,z̄))
+        γmodel = __γ_unwrap(model)
+        if γmodel isa ActivityModel
+            return γ_thermodynamic_factor(γmodel,p̄,T̄,z̄)
+        else
+            return PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,VT_thermodynamic_factor,nothing)
+        end
+    else
+        has_a_res(model) || __vt_on_pt_not_supported()
+        v̄ = uvstrip(model,p,z̄)
+        length(model) == 1 && return one(Base.promote_eltype(model,v̄,T̄,z̄))
+        return VT_thermodynamic_factor(model,v̄,T̄,z̄)
+    end
 end
 
 #first derivative order properties
@@ -1199,8 +1284,8 @@ module PT0
     import Clapeyron
     for prop in Clapeyron.CLAPEYRON_PROPS
         @eval begin
-            function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
-                return Clapeyron.$prop(model,p,T,z;phase,threaded,vol0)
+            function $prop(model, p, T, z = Clapeyron.SA[1.]; phase=:unknown, threaded=true, vol0=nothing,output = nothing)
+                return Clapeyron.$prop(model,p,T,z;phase,threaded,vol0,output)
             end
         end
     end
@@ -1223,7 +1308,7 @@ function PT_property_withflash(model,p,T,z,phase,f::F) where {F}
     end
     if !is_unknown(phase)
         V = volume(model, p, T, z; phase)
-        return PT_property(model,p,T,z,phase,volume(model, p, T, z; phase),f) 
+        return PT_property(model,p,T,z,phase,volume(model, p, T, z; phase),f)
     else
         res = tp_flash2(model,p,T,z)
         ff = PT_to_VT(f)

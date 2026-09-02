@@ -104,7 +104,8 @@ function init_preferred_method(method::typeof(qp_flash),model::EoSModel,kwargs)
     GeneralizedXYFlash(;kwargs...)
 end
 
-function qp_flash(model,β,p,z,method::FlashMethod)
+function qp_flash(model,β,_p,_z,method::FlashMethod)
+    p,z = ustrip(_p,pressure),uzstrip(model,_z)
     check_arraysize(model,z)
 
     if z isa SingleComp || length(model) == 1

@@ -14,22 +14,24 @@ All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
  Outputs:
  - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
 """
-function ts_flash(model::EoSModel,T,S,z = SA[1.0];kwargs...)
+function ts_flash(model::EoSModel,T,s,z = SA[1.0];kwargs...)
     method = init_preferred_method(ts_flash,model,kwargs)
-    return ts_flash(model,T,S,z,method)
+    return ts_flash(model,T,s,z,method)
 end
 
 function init_preferred_method(method::typeof(ts_flash),model::EoSModel,kwargs) 
     GeneralizedXYFlash(;kwargs...)
 end
 
-function ts_flash(model,T,S,z,method::FlashMethod)
+function ts_flash(model,_T,_s,_z,method::FlashMethod)
+    T,z = ustrip(_T,temperature),uzstrip(model,_z)
+    s = usstrip(model,_s,z)
     check_arraysize(model,z)
     
     if z isa SingleComp || length(model) == 1
         z1 = SVector(z[1])
         P0 = hasfield(typeof(method),:p0) ? method.p0 : nothing
-        result1r = tx_flash_pure(model,T,S,z1,entropy,P0,get_verbosity(method))
+        result1r = tx_flash_pure(model,T,s,z1,entropy,P0,get_verbosity(method))
         return result1r
     end
     
@@ -45,11 +47,11 @@ function ts_flash(model,T,S,z,method::FlashMethod)
     if length(model_r) == 1
         z1r = SVector(z_r[1])
         P0 = hasfield(typeof(method),:p0) ? method.p0 : nothing
-        result1 = tx_flash_pure(model_r,T,S,z1r,entropy,P0,get_verbosity(method))
+        result1 = tx_flash_pure(model_r,T,s,z1r,entropy,P0,get_verbosity(method))
         return index_expansion(result1,idx_r)
     end
 
-    result = ts_flash_impl(model_r,T,S,z_r,method_r)
+    result = ts_flash_impl(model_r,T,s,z_r,method_r)
     if !issorted(result.volumes)
         #this is in case we catch a bad result.
         result = FlashResult(result)
@@ -60,18 +62,18 @@ function ts_flash(model,T,S,z,method::FlashMethod)
     return index_expansion(result,idx_r)
 end
 
-function ts_flash_impl(model,T,S,z,method::GeneralizedXYFlash)
-    flash0 = tx_flash_x0(model,T,S,z,entropy,method)
+function ts_flash_impl(model,T,s,z,method::GeneralizedXYFlash)
+    flash0 = tx_flash_x0(model,T,s,z,entropy,method)
     isone(numphases(flash0)) && return flash0
-    spec = FlashSpecifications(entropy,S,temperature,T)
+    spec = FlashSpecifications(entropy,s,temperature,T)
     return xy_flash(model,spec,z,flash0,method)
 end
 
-function ts_flash_impl(model,T,S,z,method::RRXYFlash)
+function ts_flash_impl(model,T,s,z,method::RRXYFlash)
     modelx = __tpflash_cache_model(model,NaN,T,z,:vle)
-    flash0 = tx_flash_x0(modelx,T,S,z,entropy,method)
+    flash0 = tx_flash_x0(modelx,T,s,z,entropy,method)
     isone(numphases(flash0)) && return flash0
-    spec = FlashSpecifications(entropy,S,temperature,T)
+    spec = FlashSpecifications(entropy,s,temperature,T)
     return xy_flash(modelx,spec,z,flash0,method)
 end
 

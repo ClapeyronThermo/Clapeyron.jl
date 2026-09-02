@@ -442,6 +442,9 @@ function roots_solve_ad(prob::Roots.ZeroProblem{F,X},method,p::P;kwargs...) wher
     return ift(λx,f,p,λp)
 end
 
+#unit handling
+include("XY_methods/units.jl")
+
 #initial guesses for most methods
 include("initial_guess.jl")
 

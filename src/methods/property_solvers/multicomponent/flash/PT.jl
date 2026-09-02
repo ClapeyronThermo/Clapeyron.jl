@@ -73,9 +73,11 @@ function tp_flash2(model::EoSModel, p, T, n; kwargs...)
     return tp_flash2(model,p,T,n,method)
 end
 
-function tp_flash2(model::EoSModel, p, T, n,method::FlashMethod)
+function tp_flash2(model::EoSModel, _p, _T, _n, method::FlashMethod)
+    p,n = ustrip(_p,pressure),uzstrip(model,_n)
+    T = ustrip(_T,temperature)
     check_arraysize(model,n)
-    
+
     if n isa SingleComp || length(model) == 1
         return FlashResult(model,p,T,SVector(n[1]))
     end

@@ -103,7 +103,8 @@ function init_preferred_method(method::typeof(qt_flash),model::EoSModel,kwargs)
     GeneralizedXYFlash(;kwargs...)
 end
 
-function qt_flash(model,β,T,z,method::FlashMethod)
+function qt_flash(model,β,_T,_z,method::FlashMethod)
+    T,z = ustrip(_T,temperature),uzstrip(model,_z)
     check_arraysize(model,z)
 
     if z isa SingleComp || length(model) == 1

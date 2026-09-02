@@ -84,7 +84,6 @@ end
 
 PT_property_gibbs(model,p,T,z,f::typeof(pressure)) = p
 PT_property_gibbs(model,p,T,z,f::typeof(temperature)) = T
-PT_property_gibbs(model,p,T,z,f::typeof(volume)) = volume(model,p,T,z)
 PT_property_gibbs(model,p,T,z,f::typeof(VT_entropy)) = -∂𝕘∂T(model,p,T,z)
 PT_property_gibbs(model,p,T,z,f::typeof(VT_gibbs_energy)) = eos_g(model,p,T,z)
 PT_property_gibbs(model,p,T,z,f::typeof(VT_helmholtz_energy)) = eos_g(model,p,T,z) - p*volume(model,p,T,z)

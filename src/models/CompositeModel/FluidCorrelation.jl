@@ -157,18 +157,6 @@ function saturation_pressure(model::FluidCorrelation,T,method::SaturationMethod)
     end
 end
 
-function x0_sat_pure(model::FluidCorrelation,T,crit = nothing)
-    p = x0_psat(model,T,crit)
-    vl = volume(model.liquid,p,T,phase=:l)
-    vv = volume(model.gas,p,T,phase=:v)
-    return vl,vv
-end
-
-function x0_psat(model::FluidCorrelation,T,crit = nothing)
-    ps,_,_ = saturation_pressure(model.saturation,T)
-    return ps
-end
-
 function crit_pure(model::FluidCorrelation)
     single_component_check(crit_pure,model)
     return crit_pure(model.saturation)
