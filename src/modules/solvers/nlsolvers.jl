@@ -32,8 +32,6 @@ function BoundedLineSearch(lb::T,ub::T,decay::Number, ls::NLSolvers.LineSearcher
 end
 
 function NLSolvers.find_steplength(mstyle, ls::BoundedLineSearch{F,LS}, φ, λ::T) where {F,LS,T}
-    d = φ.d
-    x = φ.x
     λr = find_alpha_bounds(φ.x, φ.d, ls.lo, ls.hi, λ, ls.decay)
     if ls.ls isa NLSolvers.Static
         λx = T(λr*ls.ls.α)

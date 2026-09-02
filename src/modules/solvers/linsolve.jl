@@ -31,25 +31,25 @@ function dnorm(x::Number,y::Number,p = 2)
 end
 
 function st_solve(B,∇f,::Val{1})
-    ∇f̄ = SVector(∇f[1])
+    #∇f̄ = SVector(∇f[1])
     B̄ = SMatrix{1,1}((B[1,1],))
     return B̄\∇f
 end
 
 function st_solve(B,∇f,::Val{2})
-    ∇f̄ = SVector(∇f[1],∇f[2])
+    #∇f̄ = SVector(∇f[1],∇f[2])
     B̄ = SMatrix{2,2}((B[1,1],B[2,1],B[1,2],B[2,2]))
     return inv(B̄)*∇f
 end
 
 function st_solve(B,∇f,::Val{3})
-    ∇f̄ = SVector(∇f[1],∇f[2],∇f[3])
+    #∇f̄ = SVector(∇f[1],∇f[2],∇f[3])
     B̄ = SMatrix{3,3}((B[1,1],B[2,1],B[3,1],B[1,2],B[2,2],B[3,2],B[1,3],B[2,3],B[3,3]))
     return inv(B̄)*∇f
 end
 
 function st_solve(B,∇f,::Val{4})
-    ∇f̄ = SVector(∇f[1],∇f[2],∇f[3],∇f[4])
+    #∇f̄ = SVector(∇f[1],∇f[2],∇f[3],∇f[4])
     B̄ =  SMatrix{4,4}((B[1,1],B[2,1],B[3,1],B[4,1],B[1,2],B[2,2],B[3,2],B[4,2],B[1,3],B[2,3],B[3,3],B[4,3],B[1,4],B[2,4],B[3,4],B[4,4]))
     return inv(B̄)*∇f
 end

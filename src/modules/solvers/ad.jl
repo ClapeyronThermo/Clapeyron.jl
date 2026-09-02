@@ -221,7 +221,7 @@ end
 #obtaining GradientConfig from HessianConfig
 
 function _GradientConfig(hconfig::ForwardDiff.HessianConfig{T,V,N}) where {T,V,N}
-    gconf,jconf = hconfig.gradient_config,hconfig.jacobian_config
+    _,jconf = hconfig.gradient_config,hconfig.jacobian_config
     seeds = jconf.seeds
     duals = jconf.duals[1]
     return ForwardDiff.GradientConfig{T,V,N,typeof(duals)}(seeds,duals)
@@ -308,7 +308,7 @@ primal_eltype(::Type{T}) where T = T
 primalval_eager(x) = primalval(x)
 function primalval_eager(x::AbstractArray{T}) where T <: ForwardDiff.Dual 
     res = similar(x,primal_eltype(T))
-    length(res) == 0 && return res
+    isempty(res) && return res
     return map!(primalval,res,x)
 end
 
