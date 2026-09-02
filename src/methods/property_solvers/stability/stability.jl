@@ -176,7 +176,7 @@ Performs a chemical stability check using the tangent plane distance criterion, 
 """
 function chemical_stability(model,_p,_T,_z)
     T,z = ustrip(_T,temperature),uzstrip(model,_z)
-    if unitful_is_pressure(p)
+    if unitful_is_pressure(_p)
         p = ustrip(_p,pressure)
         length(model) == 1 && return true #there aren't other combinations of composition.
         comps,_,_,_ = tpd(model,p,T,z,break_first = true)
