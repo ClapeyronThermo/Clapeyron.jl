@@ -10,7 +10,6 @@ Note that it will export all submodel parameters (e.g. Alpha function parameters
 """
 function export_model(model::EoSModel,name="";location=".")
     M = typeof(model)
-    model_name = summary(model)
 
     if hasfield(M,:groups)
         species = model.groups.flattenedgroups
@@ -41,14 +40,13 @@ end
 export export_model
 
 function export_like(model::EoSModel,params,name,location,species,ncomps)
-    M = typeof(model)
     P = typeof(model.params)
     model_name = summary(model)
 
     like = OrderedDict{Symbol,AbstractVector}()
     like[:species] = species
 
-    for i in 1:length(params)
+    for i in eachindex(params)
         paramtype = fieldtype(P,i)
         paramname = params[i]
         paramvalue = getfield(model.params,params[i])
@@ -67,7 +65,7 @@ function export_like(model::EoSModel,params,name,location,species,ncomps)
         sites = getsites(model)
         site_types = sites.flattenedsites
         n_flatsites = sites.n_flattenedsites
-        for i in 1:length(site_types)
+        for i in eachindex(site_types)
             nsites = [n_flatsites[j][i] for j in 1:ncomps]
             like[Symbol("n_"*site_types[i])] = nsites
         end
@@ -85,8 +83,6 @@ function export_like(model::EoSModel,params,name,location,species,ncomps)
 end
 
 function export_unlike(model::EoSModel,params,name,location,species,ncomps)
-    M = typeof(model)
-    P = typeof(params)
     model_name = summary(model)
 
     species1 = Vector{String}()
@@ -101,8 +97,7 @@ function export_unlike(model::EoSModel,params,name,location,species,ncomps)
     unlike[:species1] = species1
     unlike[:species2] = species2
 
-    for i in 1:length(params)
-        paramtype = fieldtype(P,i)
+    for i in eachindex(params)
         paramname = params[i]
         paramvalue = getfield(model.params,params[i])
 
@@ -133,8 +128,6 @@ function export_unlike(model::EoSModel,params,name,location,species,ncomps)
 end
 
 function export_unlike(model::ActivityModel,params,name,location,species,ncomps)
-    M = typeof(model)
-    P = typeof(model.params)
     model_name = summary(model)
 
     species1 = Vector{String}()
@@ -153,7 +146,7 @@ function export_unlike(model::ActivityModel,params,name,location,species,ncomps)
     unlike[:species1] = species1
     unlike[:species2] = species2
 
-    for i in 1:length(params)
+    for i in eachindex(params)
         paramname = params[i]
         paramvalue = getfield(model.params,params[i])
         if paramvalue isa PairParameter
@@ -177,8 +170,6 @@ function export_unlike(model::ActivityModel,params,name,location,species,ncomps)
 end
 
 function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
-    M = typeof(model)
-    P = typeof(model.params)
     model_name = summary(model)
 
     species1 = Vector{String}()
@@ -193,8 +184,7 @@ function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
     unlike[:species1] = species1
     unlike[:species2] = species2
 
-    for i in 1:length(params)
-        paramname = params[i]
+    for i in eachindex(params)
         paramvalue = getfield(model.params,params[i])
         if paramvalue isa PairParameter
             if params[i] == :a
@@ -233,17 +223,14 @@ function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
 end
 
 function export_assoc(model::EoSModel,params,name,location,species,ncomps)
-    M = typeof(model)
-    P = typeof(model.params)
     model_name = summary(model)
 
     assoc = OrderedDict{Symbol,AbstractVector}()
 
-    for i in 1:length(params)
+    for i in eachindex(params)
         paramname = params[i]
         paramvalue = getfield(model.params,params[i])
         if paramvalue isa AssocParam
-            site_types = model.sites.flattenedsites
             mat = paramvalue.values
             nassoc = length(mat.values)
             spe1 = Vector{String}()

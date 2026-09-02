@@ -101,7 +101,7 @@ Returns ∑nᵢx^vᵢ.
 function evalexppoly(x,n,v)
     res = zero(x*first(n)*first(v))
     logx = log(x)
-    for i in 1:length(n)
+    for i in eachindex(n)
         res += n[i]*exp(logx*v[i])
     end
     return res
