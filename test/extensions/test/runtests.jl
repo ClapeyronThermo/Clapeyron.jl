@@ -29,6 +29,7 @@ include("../../base/qa.jl")
 include("../../methods/eos_pcsaft.jl")
 
 #include_distributed("methods/api.jl",2)
+include("../../methods/mass_fractions.jl")
 #include_distributed("methods/api_flash.jl",3)
 #include_distributed("methods/electrolytes.jl",1)
 #include_distributed("methods/estimation.jl",2)

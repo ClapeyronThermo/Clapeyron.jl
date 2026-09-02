@@ -4,8 +4,19 @@
 @inline ustrip(x,f::F) where F = ustrip(unit_system(x),x,f)
 @inline ustrip(::Nothing,x,f::F) where F = x
 
-#unit stripping for compositions: must handle total compositions (mass and molar). TODO: how to mark a vector to be with "mass fraction" units?
+#unit stripping for compositions: must handle total compositions (mass and molar).
+"""
+    MassFractions(values)
+
+Mark a vector of mass fractions for conversion to molar amounts when it is used
+as a composition input.
+"""
+struct MassFractions{T<:AbstractVector}
+    values::T
+end
+
 @inline uzstrip(model,z::Number) = uzstrip(unit_system(z),model,SA[z])
+@inline uzstrip(model,z::MassFractions) = map((zi,Mwi) -> 1000*zi/Mwi,z.values,mw(model))
 @inline uzstrip(model,z) = uzstrip(unit_system(z),model,z)
 @inline uzstrip(::Nothing,model,z) = z
 
@@ -76,3 +87,5 @@ with_output_unit(::Val{true},res::Symbol,t::Tuple{X,Y},f::F) where {F,X,Y} = res
 
 #differentiate p-T input from V-T input
 unitful_is_pressure(p) = true
+
+export MassFractions
