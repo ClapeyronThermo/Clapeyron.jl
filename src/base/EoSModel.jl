@@ -83,7 +83,7 @@ true
 julia> ideal == Clapeyron.idealmodel(ideal)
 true
 
-julia> Clapeyron.idealmodel(pr.mixing) == nothing
+julia> Clapeyron.idealmodel(pr.mixing) === nothing
 true
 ```
 """

@@ -36,7 +36,7 @@ function __x0_bubble_temperature(model::PTFlashWrapper,p,x,Tx0 = nothing,volatil
     sat = @view model.sat[volatiles]
     if Tx0 !== nothing
         T0 = Tx0
-        for i in 1:length(pure)
+        for i in eachindex(pure)
             sat[i] = saturation_pressure(pure[i],T0)
         end
         p_i_r = first.(sat)
@@ -60,7 +60,7 @@ function __x0_dew_temperature(model::PTFlashWrapper,p,y,Tx0 = nothing,condensabl
     sat = @view model.sat[condensables]
     if Tx0 !== nothing
         T0 = Tx0
-        for i in 1:length(pure)
+        for i in eachindex(pure)
             sat[i] = saturation_pressure(pure[i],T0)
         end
         p0inv_r = 1 ./ first.(sat)
@@ -89,18 +89,13 @@ end
 function x0_edge_pressure(wrapper::PTFlashWrapper,T,z,pure = nothing)
   sat = wrapper.sat
   n = sum(z)
-  p_bubble = sum(z[i]*first(sat[i]) for i in 1:length(sat))/n
-  p_dew = n/sum(z[i]/first(sat[i]) for i in 1:length(sat))
+  p_bubble = sum(z[i]*first(sat[i]) for i in eachindex(sat))/n
+  p_dew = n/sum(z[i]/first(sat[i]) for i in eachindex(sat))
   return (p_bubble,p_dew),sat
 end
 
 function _edge_pressure(wrapper::PTFlashWrapper,T,z,v0 = nothing,crit_retry = true)
     _1 = one(Base.promote_eltype(wrapper,T,z))
-    if v0 == nothing
-        p00 = _1
-    else
-        p00 = 0.5*(v0[1] + v0[2])*_1
-    end
     sat = wrapper.sat
     RT = Rgas(wrapper)*T
     #=
@@ -138,7 +133,7 @@ function _edge_pressure(wrapper::PTFlashWrapper,T,z,v0 = nothing,crit_retry = tr
         result = p0,volume(wrapper,p,T,z,phase = :l),vv
         return result,fail,:success
     end
-    if v0 == nothing
+    if v0 === nothing
         p = p0
     else
         p = v00
@@ -160,7 +155,6 @@ function _edge_pressure(wrapper::PTFlashWrapper,T,z,v0 = nothing,crit_retry = tr
     end
 
     for i in 1:40
-        vv_old = vv
         vv = volume(gasmodel,p,T,z,phase = :v,vol0 = vv)
         ∑zlogϕi,_ = ∑zlogϕ(gasmodel,p,T,z,phase = :v,vol = vv)
         p_old = p
@@ -185,7 +179,7 @@ function x0_edge_temperature(wrapper::PTFlashWrapper,p,z,pure = wrapper.pures)
 end
 
 function _edge_temperature(model::PTFlashWrapper,p,z,v0 = nothing)
-    if v0 == nothing
+    if v0 === nothing
         vv0,_ = x0_edge_temperature(model,p,z)
     else
         vv0 = (v0[1],v0[2])
@@ -211,7 +205,7 @@ function _edge_temperature(model::PTFlashWrapper,p,z,v0 = nothing)
         vv0 = max(n*R*T/p,vv[])
         vvi = volume(gasmodel,p,T,z,phase = :v,vol0 = vv0)
         ∑zlogϕi,_ = ∑zlogϕ(gasmodel,p,T,z,phase = :v,vol = vvi)
-        gl = excess_gibbs_free_energy(__γ_unwrap(model),p,T,z)/(R*T)
+        gl = excess_gibbs_free_energy(γmodel,p,T,z)/(R*T)
         gv = ∑zlogϕi + tpd_delta_g_vapour(model,p,T,z)
         vv[] = vvi
         return gl-gv

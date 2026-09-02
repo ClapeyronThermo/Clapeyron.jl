@@ -225,7 +225,7 @@ function michelsen_optimization_obj(model,p,T,z,caches)
 end
 
 
-#updates lnK, returns lnK,volx,voly, gibbs if β != nothing
+#updates lnK, returns lnK,volx,voly, gibbs if β !== nothing
 function update_K!(lnK,model,p,T,x,y,z,β,vols,phases,non_inw,dlnϕ_cache = nothing)
     volx,voly = vols
     phasex,phasey = phases

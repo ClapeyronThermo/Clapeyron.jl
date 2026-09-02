@@ -67,7 +67,7 @@ end
 
 function tpd_ss_ψ(ψ,K,Z)
     res = zero(Base.promote_eltype(ψ,K,Z))
-    for i in 1:length(K)
+    for i in eachindex(K)
       wi = K[i]*exp(Z[i]*ψ)
       res += Z[i]*wi 
     end
@@ -88,7 +88,7 @@ function __tpd_ss_update!(w,model::ESElectrolyteModel,d,z,lnϕw,phasew)
     w .= exp.(d .- lnϕw) #K is stored in w
     Z = model.charge
     if is_vapour(phasew)
-        for i in 1:length(w)
+        for i in eachindex(w)
             Z[i] != 0 && (w[i] = 0)
         end
         ψ = zero(eltype(w))

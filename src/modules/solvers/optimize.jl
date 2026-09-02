@@ -149,11 +149,11 @@ end
 function fg!(F,G,x)
   # do common computations here
   # ...
-  if G != nothing
+  if G !== nothing
     # code to compute gradient here
     # writing the result to the vector G
   end
-  if F != nothing
+  if F !== nothing
     # value = ... code to compute objective function
     return value
   end
@@ -183,9 +183,9 @@ end
 
 #= only_fgh!: Optim.jl legacy form:
 function fgh!(F,G,H,x)
-  G == nothing || # compute gradient and store in G
-  H == nothing || # compute Hessian and store in H
-  F == nothing || return f(x)
+  G === nothing || # compute gradient and store in G
+  H === nothing || # compute Hessian and store in H
+  F === nothing || return f(x)
   nothing
 end
 =#

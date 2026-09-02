@@ -55,7 +55,7 @@ function update_temperature!(model::PTFlashWrapper,T)
     for i in 1:length(model)
         pure = primalval(pures[i])
         sat = saturation_pressure(pure,λT)
-        ps,vl,vv = sat
+        ps,_,vv = sat
         sats[i] = sat
         gasmodel_i = gas_model(pure)
         if is_idealmodel(gasmodel_i)
@@ -110,11 +110,7 @@ function modified_lnϕ_pure(wrapper::PTFlashWrapper,p,T,i;phase = :unknown)
     lnϕsat = wrapper.fug[i]
     isnan(ps) && update_temperature!(wrapper,T)
     isnan(ps) && return ps
-    new_phase = if is_unknown(phase)
-        p > ps ? :l : :v
-    else
-        phase
-    end
+    #new_phase = is_unknown(phase) ? ifelse(p > ps,:liquid,:vapour) : phase
     if is_vapour(phase)
         RT = Rgas(wrapper)*T
         gasmodel = gas_model(wrapper.pures[i])
@@ -137,12 +133,10 @@ end
 function suggest_K!(K,wrapper::PTFlashWrapper,p,T,z,cache = nothing,pure = wrapper.pures)
     phase = identify_phase(wrapper,p,T,z)
     sat = wrapper.sat
-    lnϕsat = wrapper.fug
-    lnϕz,v = modified_lnϕ(wrapper,p,T,z,cache,phase = phase)
+    lnϕz,_ = modified_lnϕ(wrapper,p,T,z,cache,phase = phase)
     log∑z = log(sum(z))
-    RT = Rgas(wrapper)*T
-    for i in 1:length(z)
-        ps,vl,_ = sat[i]
+    for i in eachindex(z)
+        ps,_,_ = sat[i]
         di = lnϕz[i] + log(z[i]) -  log∑z
         lnϕv = modified_lnϕ_pure(wrapper,p,T,i,phase = :v)
         lnϕl = modified_lnϕ_pure(wrapper,p,T,i,phase = :l)

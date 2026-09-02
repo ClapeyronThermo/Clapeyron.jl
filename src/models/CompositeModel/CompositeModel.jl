@@ -181,7 +181,7 @@ function CompositeModel(components ;
     _components = format_components(components)
 
     #take care of the solid phase first
-    if melting == sublimation == nothing
+    if melting == sublimation === nothing
         init_solid = init_model(solid,components,solid_userlocations,verbose)
     else
         init_solid_phase = init_model(solid,components,solid_userlocations,verbose)
@@ -191,7 +191,7 @@ function CompositeModel(components ;
     end
 
     _fluid = init_model(fluid,components,fluid_userlocations,verbose)
-    if _fluid isa EoSModel && liquid == gas == saturation == nothing
+    if _fluid isa EoSModel && liquid == gas == saturation === nothing
         #case 1: fluid isa EoSModel. no other model is specified
         if !(_fluid isa ActivityModel)
             init_fluid = _fluid
@@ -204,7 +204,7 @@ function CompositeModel(components ;
         init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
         init_sat = init_model(saturation,components,saturation_userlocations,verbose)
         init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat,nothing)
-    elseif !isnothing(_fluid) && !isnothing(liquid) && (gas == saturation == nothing)
+    elseif !isnothing(_fluid) && !isnothing(liquid) && (gas == saturation === nothing)
         #case 3: liquid activity and a model for the fluid.
         init_liquid = init_model_act(liquid,components,liquid_userlocations,verbose)
         if init_liquid isa ActivityModel
@@ -221,7 +221,7 @@ function CompositeModel(components ;
             init_sat = _fluid
             init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat,nothing)
         end
-    elseif !isnothing(liquid) && (fluid == gas == saturation == nothing)
+    elseif !isnothing(liquid) && (fluid == gas == saturation === nothing)
     #legacy case, maybe we are constructing an activity that has a puremodel
     init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
         if init_liquid isa ActivityModel

@@ -37,7 +37,7 @@ struct FugBubblePressure{T} <: BubblePointMethod
 end
 
 function Solvers.primalval(method::FugBubblePressure{T}) where T
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
@@ -59,15 +59,15 @@ function FugBubblePressure(;vol0 = nothing,
                                 tol_of = 1e-8,
                                 second_order = true)
 
-    if p0 == y0 == vol0 == nothing
+    if p0 == y0 == vol0 === nothing
         return FugBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order)
-    elseif (p0 == y0 == nothing) && !isnothing(vol0)
+    elseif (p0 == y0 === nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return FugBubblePressure{typeof(vl)}((vl,vv),p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order)
-    elseif (vol0 == y0 == nothing) && !isnothing(p0)
+    elseif (vol0 == y0 === nothing) && !isnothing(p0)
         p0 = float(p0)
         return FugBubblePressure{typeof(p0)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order)
-    elseif (p0 == vol0 == nothing) && !isnothing(y0)
+    elseif (p0 == vol0 === nothing) && !isnothing(y0)
         T = eltype(y0)
         return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,second_order)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(y0)
@@ -204,7 +204,7 @@ struct FugBubbleTemperature{T} <: BubblePointMethod
 end
 
 function Solvers.primalval(method::FugBubbleTemperature{T}) where T
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
@@ -226,15 +226,15 @@ function FugBubbleTemperature(;vol0 = nothing,
     tol_of = 1e-8,
     second_order = true)
 
-    if T0 == y0 == vol0 == nothing
+    if T0 == y0 == vol0 === nothing
         return FugBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order)
-    elseif (T0 == y0 == nothing) && !isnothing(vol0)
+    elseif (T0 == y0 === nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return FugBubbleTemperature{typeof(vl)}((vl,vv),T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order)
-    elseif (vol0 == y0 == nothing) && !isnothing(T0)
+    elseif (vol0 == y0 === nothing) && !isnothing(T0)
         T0 = float(T0)
         return FugBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order)
-    elseif (T0 == vol0 == nothing) && !isnothing(y0)
+    elseif (T0 == vol0 === nothing) && !isnothing(y0)
         T = eltype(y0)
         return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,second_order)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(y0)

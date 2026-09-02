@@ -25,7 +25,7 @@ struct ActivityDewPressure{T} <: DewPointMethod
 end
 
 function Solvers.primalval(method::ActivityDewPressure{T}) where T
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
@@ -39,15 +39,15 @@ function ActivityDewPressure(;vol0 = nothing,
                                 itmax_ss = 40,
                                 rtol_ss = 1e-8)
 
-    if p0 == x0 == vol0 == nothing
+    if p0 == x0 == vol0 === nothing
         return ActivityDewPressure{Nothing}(vol0,p0,x0,noncondensables,itmax_ss,rtol_ss)
-    elseif (p0 == x0 == nothing) && !isnothing(vol0)
+    elseif (p0 == x0 === nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return ActivityDewPressure{typeof(vl)}((vl,vv),p0,x0,noncondensables,itmax_ss,rtol_ss)
-    elseif (vol0 == x0 == nothing) && !isnothing(p0)
+    elseif (vol0 == x0 === nothing) && !isnothing(p0)
         p0 = float(p0)
         return ActivityDewPressure{typeof(p0)}(vol0,p0,x0,noncondensables,itmax_ss,rtol_ss)
-    elseif (p0 == vol0 == nothing) && !isnothing(x0)
+    elseif (p0 == vol0 === nothing) && !isnothing(x0)
         T = eltype(x0)
         return ActivityDewPressure{T}(vol0,p0,x0,noncondensables,itmax_ss,rtol_ss)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(x0)

@@ -118,7 +118,7 @@ function MultiFluid(components;
     references = unique!(reduce(vcat,pure.references for pure in pures))
     
     
-    _Rgas = if Rgas == nothing
+    _Rgas = if Rgas === nothing
         if length(pures) != 1
             Clapeyron.Rgas()
         else

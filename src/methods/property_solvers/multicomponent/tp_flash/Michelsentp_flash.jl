@@ -78,7 +78,7 @@ function index_reduction(m::MichelsenTPFlash,idx::AbstractVector)
 end
 
 function Solvers.primalval(method::MichelsenTPFlash{T}) where {T}
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
@@ -140,7 +140,7 @@ function MichelsenTPFlash(;equilibrium = :unknown,
         throw(error("incorrect specification for nacc"))
     end
 
-    if T == Nothing && v0 !== nothing
+    if T === nothing && v0 !== nothing
         TT = Base.promote_eltype(v0[1],v0[2])
         _v0 = (v0[1],v0[2])
     elseif T !== nothing && v0 !== nothing

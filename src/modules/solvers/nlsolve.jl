@@ -59,10 +59,10 @@ function only_fj!(F, J, x)
     # shared calculations begin
     # ...
     # shared calculation end
-    if !(F == nothing)
+    if !(F === nothing)
         # mutating calculations specific to f! goes here
     end
-    if !(J == nothing)
+    if !(J === nothing)
         # mutating calculations specific to j! goes
     end
 end

@@ -27,7 +27,7 @@ struct ChemPotDewPressure{T} <: DewPointMethod
 end
 
 function Solvers.primalval(method::ChemPotDewPressure{T}) where T
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
@@ -44,15 +44,15 @@ function ChemPotDewPressure(;vol0 = nothing,
                                 max_iters = 10^3,
                                 verbose = false)
 
-    if p0 == x0 == vol0 == nothing
+    if p0 == x0 == vol0 === nothing
         return ChemPotDewPressure{Float64}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
-    elseif (p0 == x0 == nothing) && !isnothing(vol0)
+    elseif (p0 == x0 === nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return ChemPotDewPressure{typeof(vl)}((vl,vv),p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
-    elseif (vol0 == x0 == nothing) && !isnothing(p0)
+    elseif (vol0 == x0 === nothing) && !isnothing(p0)
         p0 = float(p0)
         return ChemPotDewPressure{typeof(p0)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
-    elseif (p0 == vol0 == nothing) && !isnothing(x0)
+    elseif (p0 == vol0 === nothing) && !isnothing(x0)
         T = eltype(x0)
         return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(x0)
@@ -153,7 +153,7 @@ struct ChemPotDewTemperature{T} <: DewPointMethod
 end
 
 function Solvers.primalval(method::ChemPotDewTemperature{T}) where T
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
@@ -170,15 +170,15 @@ function ChemPotDewTemperature(;vol0 = nothing,
     max_iters = 10^3,
     verbose = false)
 
-    if T0 == x0 == vol0 == nothing
+    if T0 == x0 == vol0 === nothing
         return ChemPotDewTemperature{Float64}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
-    elseif (T0 == x0 == nothing) && !isnothing(vol0)
+    elseif (T0 == x0 === nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return ChemPotDewTemperature{typeof(vl)}((vl,vv),T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
-    elseif (vol0 == x0 == nothing) && !isnothing(T0)
+    elseif (vol0 == x0 === nothing) && !isnothing(T0)
         T0 = float(T0)
         return ChemPotDewTemperature{typeof(T0)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
-    elseif (T0 == vol0 == nothing) && !isnothing(x0)
+    elseif (T0 == vol0 === nothing) && !isnothing(x0)
         T = eltype(x0)
         return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(x0)

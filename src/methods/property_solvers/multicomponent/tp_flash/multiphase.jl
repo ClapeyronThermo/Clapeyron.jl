@@ -70,7 +70,7 @@ function MultiPhaseTPFlash(;
         return MultiPhaseTPFlash(;K0 = nothing,x0 = nothing, y0 = nothing,n0 = n00,K_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
     end
 
-    if K0 == x0 == y0 == n0 == nothing #nothing specified
+    if K0 == x0 == y0 == n0 === nothing #nothing specified
     #is_lle(equilibrium)
         T = Nothing
         n00 = nothing

@@ -63,7 +63,7 @@ struct RRTPFlash{T} <: TPFlashMethod
 end
 
 function Solvers.primalval(method::RRTPFlash{T}) where {T}
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))

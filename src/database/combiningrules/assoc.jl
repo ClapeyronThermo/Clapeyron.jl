@@ -37,7 +37,7 @@ For each stored site pair `(a,b)` shared between components `i` and `j`, the new
 ```
 Where `f` is a two-argument (or five-argument, when a `K` matrix is supplied) 'combining' function, analogous in spirit to the ones used by [`kij_mix`](@ref)/[`pair_mix`](@ref) but operating on association-site data instead of plain pair data.
 
-If `f == nothing`, `ijab_mix!` will only add the corresponding mixing entries with the value of zero.
+If `f === nothing`, `ijab_mix!` will only add the corresponding mixing entries with the value of zero.
 
 Mutates and returns `Δ`. If `Δ` (or its underlying `Compressed4DMatrix`) has no entries, it is returned unchanged.
 

@@ -37,13 +37,13 @@ struct RRXYFlash{P,T} <: FlashMethod
 end
 
 function Solvers.primalval(method::RRXYFlash{P,T}) where {P,T}
-    if P == Nothing
+    if P === nothing
         λP = Nothing
     else
         λP = Solvers.primal_eltype(P)
     end
 
-    if T == Nothing
+    if T === nothing
         λT = Nothing
     else
         λT = Solvers.primal_eltype(P)
@@ -110,7 +110,7 @@ function RRXYFlash(;equilibrium = :unknown,
         end
     end
 
-    if T == Nothing && v0 !== nothing
+    if T === nothing && v0 !== nothing
         TT = Base.promote_eltype(v0[1],v0[2])
         _v0 = (v0[1],v0[2])
     elseif T !== nothing && v0 !== nothing

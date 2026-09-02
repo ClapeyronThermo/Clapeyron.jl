@@ -28,7 +28,7 @@ struct ChemPotBubblePressure{T} <: BubblePointMethod
 end
 
 function Solvers.primalval(method::ChemPotBubblePressure{T}) where T
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
@@ -46,15 +46,15 @@ function ChemPotBubblePressure(;vol0 = nothing,
                                 ss = false,
                                 verbose = false)
 
-    if p0 == y0 == vol0 == nothing
+    if p0 == y0 == vol0 === nothing
         return ChemPotBubblePressure{Float64}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
-    elseif (p0 == y0 == nothing) && !isnothing(vol0)
+    elseif (p0 == y0 === nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return ChemPotBubblePressure{typeof(vl)}((vl,vv),p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
-    elseif (vol0 == y0 == nothing) && !isnothing(p0)
+    elseif (vol0 == y0 === nothing) && !isnothing(p0)
         p0 = float(p0)
         return ChemPotBubblePressure{typeof(p0)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
-    elseif (p0 == vol0 == nothing) && !isnothing(y0)
+    elseif (p0 == vol0 === nothing) && !isnothing(y0)
         T = eltype(y0)
         return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(y0)
@@ -184,7 +184,7 @@ struct ChemPotBubbleTemperature{T} <: BubblePointMethod
 end
 
 function Solvers.primalval(method::ChemPotBubbleTemperature{T}) where T
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
@@ -201,15 +201,15 @@ function ChemPotBubbleTemperature(;vol0 = nothing,
     max_iters = 10^3,
     verbose = false)
 
-    if T0 == y0 == vol0 == nothing
+    if T0 == y0 == vol0 === nothing
         return ChemPotBubbleTemperature{Float64}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
-    elseif (T0 == y0 == nothing) && !isnothing(vol0)
+    elseif (T0 == y0 === nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
         return ChemPotBubbleTemperature{typeof(vl)}((vl,vv),T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
-    elseif (vol0 == y0 == nothing) && !isnothing(T0)
+    elseif (vol0 == y0 === nothing) && !isnothing(T0)
         T0 = float(T0)
         return ChemPotBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
-    elseif (T0 == vol0 == nothing) && !isnothing(y0)
+    elseif (T0 == vol0 === nothing) && !isnothing(y0)
         T = eltype(y0)
         return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,verbose)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(y0)
