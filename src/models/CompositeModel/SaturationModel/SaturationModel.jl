@@ -40,13 +40,14 @@ end
 
 function saturation_temperature_corr_x0(model,p)
     Tc,Pc,_ = crit_pure(model)
-    nan = zero(p)/zero(p)
-    p > Pc && return (nan,nan,nan)
+    _1 = one(Base.promote_eltype(model,p))
+    nan = zero(_1)/zero(_1)
+    p > Pc && return nan
     #critical interpolation
     T_07 = 0.7*Tc
     p_07,_,_ = saturation_pressure_impl(model,T_07,SaturationCorrelation())
     h = 2.3333333333333335*log(Pc/p_07)
-    T0 = 1/(1-log(p/Pc)/h)*Tc
+    T0 = _1/(1-log(p/Pc)/h)*Tc
     return T0
 end
 
