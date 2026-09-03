@@ -11,7 +11,7 @@ Checks, in order of complexity:
 For checking (V,T,z) pairs, use `Clapeyron.VT_isstable(model,V,T,z)` instead.
 """
 function isstable(model,p,T,z = SA[1.0])
-    pp,TT,zz = ustrip(pp,pressure),ustrip(T,temperature),uzstrip(model,z)
+    pp,TT,zz = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
     V = volume(model,pp,TT,zz)
     return VT_isstable(model,V,TT,zz,false)
 end

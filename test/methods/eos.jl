@@ -41,7 +41,7 @@ end
     #mainly test that the translation only affects the volume
     @test Tc1 ≈ Tc2 rtol = 1e-6
     @test (Vc2 - Vc1) ≈ c rtol = 1e-6
-    
+
     m2 = iPCSAFT("acetone")
     @test volume(m2,1e9,250.0,phase = :l) ≈ 4.153603938674015e-5 rtol = 1e-6
 end
@@ -84,7 +84,7 @@ end
     T = 298.15
 
     system2 = CPA(["methanol"])
-    
+
     system3 = CPA(["Methanol"]; userlocations=(;
         a = system2.params.a.values[1],
         b = system2.params.b.values[1],
@@ -97,7 +97,7 @@ end
         epsilon_assoc = Dict((("Methanol","H"),("Methanol","e")) => system2.params.epsilon_assoc.values.values[1]),
         bondvol = Dict((("Methanol","H"),("Methanol","e")) => system2.params.bondvol.values.values[1]))
         )
- 
+
 
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 5.913050998953597e-5 rtol = 1e-6
@@ -173,7 +173,7 @@ end
     for mi in idealmodels
         mxd = XiangDeiters(comp, idealmodel = mi)
         id_mxd = Clapeyron.idealmodel(mxd)
-       
+
         #parsed and reconstituted idealmodel
         cp1 = Clapeyron.VT_isobaric_heat_capacity(id_mxd,V0,T0)
         #original
@@ -336,7 +336,7 @@ end
 
 @testset "Activity methods, multi-components" begin
     com = CompositeModel(["water","methanol"],liquid = DIPPR105Liquid,saturation = DIPPR101Sat,gas = PR)
-    
+
     system = Wilson(["methanol","benzene"])
     comp_system = CompositeModel(["methanol","benzene"]; fluid = PR, liquid = Wilson,reference_state = :ashrae)
 
@@ -379,7 +379,7 @@ end
         pb1b = Clapeyron.bubble_pressure(system, T, z, FugBubblePressure())[1]
         @test pb1b ≈ pb1 rtol = 1E-6
         @test Clapeyron.bubble_temperature(system,pb1, z)[1] ≈ T rtol = 1E-6
-        
+
         pb2 = Clapeyron.bubble_pressure(system3,T3,z3)[1]
         @test pb2 ≈ 2460.897944633704 rtol = 1E-6
         pb2b = Clapeyron.bubble_pressure(system3,T3,z3,FugBubblePressure())[1]
@@ -426,7 +426,7 @@ end
         #test found in #371
         model2 = GERG2008(["carbon dioxide","nitrogen","water"])
         @test mass_density(model2,64.0e5,30+273.15,[0.4975080785711593, 0.0049838428576813995, 0.4975080785711593],phase = :l) ≈ 835.3971524715571 rtol = 1e-6
-    
+
         #test found in #395:
 
         p395 = range(log(3.12e6),log(1e8),1000)
@@ -547,7 +547,7 @@ end
     #methanol, uses double exponential term
     #before, it used the association term, but now no model uses it
     @test saturation_pressure(SingleFluid("methanol"),300.15)[1] ≈ PropsSI("P","T",300.15,"Q",1.,"methanol") rtol = 1e-6
-    
+
     r134 = SingleFluid("r134a")
     r1342 = MultiFluid("r134a")
     @test Clapeyron.eos(r134,0.03,373.15,Clapeyron.SA[1.0]) ≈ PropsSI("HELMHOLTZMOLAR","Dmolar",1/0.03,"T",373.15,"R134a")
