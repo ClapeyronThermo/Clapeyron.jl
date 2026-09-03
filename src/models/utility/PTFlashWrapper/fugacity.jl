@@ -84,7 +84,7 @@ function ∂lnϕ∂n∂P∂T(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂
             vol = nothing)
 
     if is_liquid(phase)
-        ∂lnγ∂P = cache[end-1]
+        ∂lnγ∂P = cache[7]
         g_E,lnγ,∂lnγ∂ni,∂lnγ∂T = ∂lnγ∂n∂T(__γ_unwrap(wrapper), p, T, z,cache)
         ∂lnγ∂P .= 0
         V = zero(typeof(g_E))
@@ -111,7 +111,7 @@ function ∂lnϕ∂n∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂lnϕ
 
 
     if is_liquid(phase)
-        ∂lnγ∂P = cache[end-1]
+        ∂lnγ∂P = cache[7]
         g_E,lnγ,∂lnγ∂ni = ∂lnγ∂n(__γ_unwrap(wrapper), p, T, z,cache)
         ∂lnγ∂P .= 0
         V = zero(typeof(g_E))
@@ -136,7 +136,7 @@ function ∂lnϕ∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_ca
             vol = volume(wrapper,p,T,z;phase,vol0,threaded))
 
     if is_liquid(phase)
-        ∂lnγ∂P = cache[end-1]
+        ∂lnγ∂P = cache[7]
         ∂lnγ∂P .= 0
         V = zero(eltype(∂lnγ∂P))
         return ∂lnγ∂P,V
