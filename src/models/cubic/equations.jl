@@ -529,7 +529,7 @@ function cubic_poly_solver_refine(η,ηc,poly_v,poly_s,pr,b,phase)
     return new_st,vx
 end
 
-function pure_spinodal(model::DeltaCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
+function pure_spinodal_impl(model::DeltaCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,retry::Bool,z) where K
     #=
     Segura, H., & Wisniak, J. (1997). Calculation of pure saturation properties using cubic equations of state. Computers & Chemical Engineering, 21(12), 1339–1347. doi:10.1016/s0098-1354(97)00016-1
     =#

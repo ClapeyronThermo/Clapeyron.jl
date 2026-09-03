@@ -40,7 +40,7 @@ julia> p,vl,vv = saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)
 function saturation_pressure(model::EoSModel,_T,method::SaturationMethod;output = (nothing,nothing,nothing))
     satmodel = saturation_model(model)
     single_component_check(saturation_pressure,satmodel)
-    T = ustrip(_T,temperature)*1.0f0
+    T = ustrip(_T,temperature)*primalval(oneunit(eltype(model)))
     
     if has_a_res(satmodel)
         λmodel,λT = primalval(satmodel),primalval(T)
@@ -142,7 +142,7 @@ end
 function saturation_temperature(model,_p,method::SaturationMethod;output = (nothing,nothing,nothing))
     satmodel = saturation_model(model)
     single_component_check(crit_pure,satmodel)
-    p = ustrip(_p,pressure)*1.0f0
+    p = ustrip(_p,pressure)*primalval(oneunit(eltype(model)))
     if has_a_res(satmodel)
         λmodel,λp = primalval(satmodel),primalval(p)
         λresult = saturation_temperature_impl(λmodel,λp,method)
