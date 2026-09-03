@@ -659,9 +659,9 @@ end
 
 function x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,B = second_virial_coefficient(model,T,z),Vc = nothing)
     if Vc === nothing
-        _vc = zero(v_lb)/zero(v_ub)
+        _vc = zero(_v_lb)/zero(_v_ub)
     else
-        _vc,_,_ = promote(Vc,v_lb,v_ub)
+        _vc,_,_ = promote(Vc,_v_lb,_v_ub)
     end
     T,v_lb,v_ub,vc = promote(_T,_v_lb,_v_ub,_vc)
     p(x) = pressure(model,x,T,z)

@@ -1,6 +1,5 @@
 module ClapeyronUnitfulExt
 using Clapeyron
-using Clapeyron: SA
 using Unitful
 const C = Clapeyron
 

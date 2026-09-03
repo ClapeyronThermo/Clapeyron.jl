@@ -88,7 +88,7 @@ function Clapeyron.molecular_weight(model::Clapeyron.GlennJL,z)
     Clapeyron.check_arraysize(model,z)
     info = model.species_info
     res = zero(Base.promote_eltype(1.0,z))
-    for i in 1:length(z)
+    for i in eachindex(z)
         mw = info[i].molecular_weight
         res += mw*z[i]
     end
@@ -104,7 +104,7 @@ function in_interval(x::IntervalData,T)
     TT = Float64(Clapeyron.primalval(T))
     Tmin = x.temp_min
     Tmax = x.temp_max
-    return Tmin <= T <= Tmax
+    return Tmin <= TT <= Tmax
 end
 
 function get_interval(intervals::Vector{IntervalData},T)
@@ -245,7 +245,7 @@ for f in (:calculate_h,:calculate_s,:calculate_cp)
             Clapeyron.check_arraysize(model,z)
             r = model.R0
             res = zero(Base.promote_eltype(1.0,T,z))
-            for i in 1:length(z)
+            for i in eachindex(z)
                 res += $f2(model.intervals[i],T)*z[i]*r[i]
             end
             return res/sum(z)
@@ -280,7 +280,7 @@ end
 function Glenn.calculate_formation_enthalpy(model::GlennJL, z = Clapeyron.SA[1.0])
     res = zero(Base.promote_eltype(1.0,z))
     info = model.species_info
-    for i in 1:length(z)
+    for i in eachindex(z)
         info_i = info[i]
         res += info_i.heat_of_formation_298K * z[i]
     end

@@ -29,7 +29,7 @@ module ClapeyronMultiComponentFlashExt
         return res
     end
     function C.to_nt(x::M.GenericCubicEOS)
-        res = C.to_nt(x.mixture)
+        return C.to_nt(x.mixture)
         #TODO:check that volume shift
     end
 
