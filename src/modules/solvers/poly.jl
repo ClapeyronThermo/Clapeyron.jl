@@ -258,9 +258,9 @@ function __roots3(pol::NTuple{4,T}) where T
 end
 
 function complex_roots_from_r1(abc::NTuple{3,T},r1::T,Δ::T) where T
-    a,b,c = abc
+    a,b,_ = abc
     A2 = a + r1
-    B2 = evalpoly(r1,(b,a,one(T))) #b + a*r1 + r1^2
+    #B2 = evalpoly(r1,(b,a,one(T))) #b + a*r1 + r1^2
     disc2 = fma(r1 + a, fma(-3, r1, a), -4 * b)
     real_part = -A2 / 2
     imag_part = sqrt(max(zero(disc2), -disc2)) / 2
@@ -338,7 +338,7 @@ Solves a cubic equation of the form pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3
 """
 function roots3(pol)
     _pol = promote(pol[1],pol[2],pol[3],pol[4])
-    nr,r1,r2,r3,Δ = __roots3(_pol)
+    nr,r1,r2,r3,_ = __roots3(_pol)
 
     if nr == 3 || (nr == 0 && isnan(r2))
         return SVector(Complex(r1),Complex(r2),Complex(r3))
@@ -365,7 +365,7 @@ returns `(n, r1, r2, r3)` where `n` is the number of real roots and:
     to `(x+1)^3`, the solver may return `2,(r1,r1,r1)`, where the double and the triple root being equal.
 """
 function real_roots3(pol::NTuple{4,T}) where {T<:Real}
-    nr,r1,r2,r3,Δ = __roots3(pol)
+    nr,r1,r2,r3,_ = __roots3(pol)
     nr == 1 && (return nr,r1,r1,r1)
     if nr == 2
         if r3 < r1

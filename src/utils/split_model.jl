@@ -46,7 +46,6 @@ end
 each_split_model(param::ReferenceState,group,I_component,I_group) = each_split_model(param,I_component)
 
 function each_split_model(param::ReferenceState,I)
-    sym = param.std_type
     if length(param.a1) == 0
         return deepcopy(param)
     else
@@ -179,7 +178,7 @@ function create_group_splitter(param::GroupParam,I)
     Ig = zeros(Int,len_groups)
     for i in I
         group_i = param.groups[i]
-        for k in 1:length(group_i)
+        for k in eachindex(group_i)
             j = findfirst(==(group_i[k]),flattenedgroups)::Int
             Ig[j] = j
         end
@@ -194,7 +193,6 @@ function each_split_model(param::GroupParam{TT},__group,Ic,Ig) where TT
     groups = param.groups[Ic]
     n_groups = param.n_groups[Ic]
     sourcecsvs = param.sourcecsvs
-    len_groups = length(param.flattenedgroups)
 
     flattenedgroups = param.flattenedgroups[Ig]
     i_groups = [[findfirst(isequal(group), flattenedgroups)::Int for group ∈ componentgroups] for componentgroups ∈ groups]
@@ -287,12 +285,10 @@ function each_split_model(param::SiteParam,group,Ic,Ig)
         __each_split_model_ambiguous_comps("sites",SiteParam)
     end
 
-    if group != nothing && site.site_translator != nothing
-        if length(site.site_translator) > 0
+    if group !== nothing && site.site_translator !== nothing && length(site.site_translator) > 0
             ng = length(group.flattenedgroups)
             recalculate_site_translator!(site,Ig,ng)
         end
-    end
 
     return site
 end
@@ -321,7 +317,7 @@ function recalculate_site_translator!(sites::SiteParam,idxi,ng,bool_to_int = Int
     for (l,s0) in pairs(site_translator_i)
         si = copy(s0)
         iszero(length(si)) && continue
-        for a in 1:length(si)
+        for a in eachindex(si)
             ki,_ = si[a]
             ki_new = bool_to_int[ki] #splitted group new index, if not zero
             si[a] = (ki_new,0)

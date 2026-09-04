@@ -40,12 +40,11 @@ end
 
 function tpd_∂delta_d∂P_vapour!(d,wrapper,p,T)
     sat = wrapper.sat
-    pure = wrapper.pures
     gasmodel = gas_model(wrapper)
     is_ideal = is_idealmodel(gasmodel)
     RT = Rgas(gasmodel)*T
     for i in eachindex(d)
-        ps,vl,vv = sat[i]
+        _,vl,_ = sat[i]
         Δd = -1/p
         is_ideal || (Δd += vl/RT)
         d[i] = d[i] - Δd
@@ -85,7 +84,7 @@ function ∂lnϕ∂n∂P∂T(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂
             vol = nothing)
 
     if is_liquid(phase)
-        result,aux,logγ,A1,x1,x2,∂lnγ∂P,hconfig = cache
+        ∂lnγ∂P = cache[7]
         g_E,lnγ,∂lnγ∂ni,∂lnγ∂T = ∂lnγ∂n∂T(__γ_unwrap(wrapper), p, T, z,cache)
         ∂lnγ∂P .= 0
         V = zero(typeof(g_E))
@@ -112,7 +111,7 @@ function ∂lnϕ∂n∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.],cache = ∂lnϕ
 
 
     if is_liquid(phase)
-        result,aux,logγ,A1,x1,x2,∂lnγ∂P,hconfig = cache
+        ∂lnγ∂P = cache[7]
         g_E,lnγ,∂lnγ∂ni = ∂lnγ∂n(__γ_unwrap(wrapper), p, T, z,cache)
         ∂lnγ∂P .= 0
         V = zero(typeof(g_E))
@@ -137,10 +136,10 @@ function ∂lnϕ∂P(wrapper::PTFlashWrapper, p, T, z=SA[1.], cache = ∂lnϕ_ca
             vol = volume(wrapper,p,T,z;phase,vol0,threaded))
 
     if is_liquid(phase)
-        result,aux,logγ,A1,x1,x2,∂lnγ∂Pi,hconfig = cache
-        ∂lnγ∂Pi .= 0
-        V = zero(eltype(∂lnγ∂Pi))
-        return ∂lnγ∂Pi,V
+        ∂lnγ∂P = cache[7]
+        ∂lnγ∂P .= 0
+        V = zero(eltype(∂lnγ∂P))
+        return ∂lnγ∂P,V
     else
         if vol === nothing
             _vol = volume(gas_model(wrapper),p,T,z;phase,vol0,threaded)

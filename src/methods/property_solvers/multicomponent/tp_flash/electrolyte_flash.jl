@@ -16,7 +16,7 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
 
     Z = model_full.charge
     model_components = component_list(model_full)
-    ions = model_components[Z.!=0]
+    #ions = model_components[Z.!=0]
 
     if !reduced
         model,z_nonzero = index_reduction(model_full,z_full)    
@@ -35,7 +35,6 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
     vol0 === nothing && (vol0 = (nothing,nothing))
     volx, voly = vol0
 
-    nc = length(model)
     # constructing non-in-x list
     model_components = component_list(model)
     non_inx = comps_in_equilibria(model_components,non_inx_list)
@@ -51,7 +50,7 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
     in_equilibria = @. !non_inx & !non_iny
 
     if reduced && any(iszero,z)
-        for i in 1:length(z)
+        for i in eachindex(z)
             if iszero(z[i])
                 in_equilibria[i] = false
             end
@@ -116,7 +115,7 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
     end
     _1 = one(eltype(K))
     # Initial guess for phase split
-    ψ = -sum(Z.*lnK)/sum(abs.(Z))
+    ψ = -dot(Z,lnK)/sum(abs, Z)
 
     #=
     notation:
@@ -235,7 +234,7 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
         ub[1:end-1] .= @view z[in_equilibria]
         lb = similar(ny_var_and_ψ0)
         lb .= 0
-        ψmin,ψmax = bound_electrochemical_potential(K,Z)
+        #ψmin,ψmax = bound_electrochemical_potential(K,Z)
         lb[end] = -Inf
         ub[end] = Inf
         opt_options = OptimizationOptions(f_abstol = 0.0,f_reltol = 0.0,x_abstol = 1e-10,maxiter = 1000)
@@ -328,7 +327,7 @@ end
 function bound_electrochemical_potential(K,Z)
     TT = eltype(K)
     ψmin,ψmax = TT(Inf),TT(-Inf)
-    for i in 1:length(K)
+    for i in eachindex(K)
         Zi = Z[i]
         ψ = -log(K[i])/Zi
         if ψ <= ψmin && Zi != 0
@@ -348,7 +347,7 @@ function rachford_rice_donnan(x,K,z,Z)
     ψ = x[2]
     F1 = zero(Base.promote_eltype(K,z))
     F2 = zero(Base.promote_eltype(K,z))
-    for i in 1:length(Z)
+    for i in eachindex(Z)
         Zi,zi = Z[i],z[i]
         K̄i =  K[i]*exp(Zi*ψ)
         F1 += zi*(1 - K̄i)/(1 + β*(K̄i - 1)) #rachford rice
@@ -388,7 +387,6 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
     in_equilibria,non_inx,non_iny = in_eq
     phasex,phasey = phases
     volx,voly = vcache[]
-    iv = 0
     Z = model.charge
     update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
     nxsum = sum(nx)
@@ -406,7 +404,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
         ∂x,∂2x = lnϕx,∂lnϕ∂nx
         ∂2x .-= 1
         ∂2x ./= nxsum
-        for i in 1:size(∂2x,1)
+        for i in axes(∂2x,1)
             ∂2x[i,i] += 1/(nxsum*x[i])
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
@@ -432,7 +430,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
         ∂y,∂2y = lnϕy,∂lnϕ∂ny
         ∂2y .-= 1
         ∂2y ./= nysum
-        for i in 1:size(∂2y,1)
+        for i in axes(∂2y,1)
             ∂2y[i,i] += 1/(nysum*y[i])
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
@@ -450,7 +448,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
         f += nysum*dot(∂y,y) + ψ*nxsum*dot(x,Z)
     else
         ∂x,volx = lnϕ(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
-        for i in 1:size(∂x,1)
+        for i in axes(∂x,1)
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
@@ -464,7 +462,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
 
         f += nxsum*dot(∂x,x)
         ∂y,voly = lnϕ(model, p, T, y,lnϕ_cache; phase=phasey, vol0=voly)
-        for i in 1:size(∂y,1)
+        for i in axes(∂y,1)
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
         end

@@ -144,6 +144,7 @@ end
         n0 = offs[i]
         n1 = offs[i+1]
         dn = n1 - n0
+        return dn
     end
 end
 
@@ -189,7 +190,6 @@ end
 
 @inline function canonical_index(_i,_j,_a,_b)
     is_symmetric = _i == _j
-    is_transpose = _i > _j
     i,j   = minmax(_i,_j)
     a,b = ifelse(is_symmetric,minmax(_a,_b),ifelse(_i != i,(_b,_a),(_a,_b)))
     return i,j,a,b
@@ -264,7 +264,6 @@ end
 #Constructs a ``Compressed4DMatrix` from a list of nc site sizes.
 
 function Compressed4DMatrix{T}(bsizes::AbstractVector{Int}) where T
-    nc = length(bsizes)
     #this field is exacly the same as the one stored in SiteParam.n_sites.p
     site_offsets = offsets_from_bsizes!(copy(bsizes))
     return c4d_from_site_offsets(T,site_offsets)
@@ -275,8 +274,6 @@ Compressed4DMatrix(bsizes::AbstractVector{Int}) = Compressed4DMatrix{Float64}(bs
 c4d_from_site_offsets(site_offsets) = c4d_from_site_offsets(Float64,site_offsets)
 function c4d_from_site_offsets(::Type{T},site_offsets) where T
     nc = length(site_offsets) - 1
-    nk = site_offsets[end]
-    C = nk + 1  #compression base
     indices = Int[]
 
     for i in 1:nc
@@ -376,7 +373,7 @@ function __extend!(m::Compressed4DMatrix{T},set_vals::Bool) where T
 end
 
 function extend!(m::Compressed4DMatrix)
-    m,nf,nv = __extend!(m,true)
+    m,nf,_ = __extend!(m,true)
     resize!(m.values,nf)
     resize!(m.indices,nf)
     return m
@@ -505,7 +502,7 @@ function Base.summary(io::IO,m::AssocView{T}) where T
     s1,s2 = size(m)
     print(io,s1,"×",s2)
     print(io," ")
-    i,j,a,b = idx_to_ijab(m.ijab)
+    i,j,_,_ = idx_to_ijab(m.ijab)
     if i == j
         print(io,low_color("(symmetric) "))
     end
@@ -541,7 +538,6 @@ end
 @inline validindex(m::Compressed4DMatrix{TT},ijab::NTuple{4,Int}) where TT = validindex(m.indices,ijab)
 
 @inline function validindex(idxs::AbstractVector{T},ijab::NTuple{4,Int}) where T <: Integer
-    can = canonical_index(ijab)
     k  = ijab_to_idx(canonical_index(ijab))
     len = length(idxs)
     w = searchsortedfirst(idxs,k,T(1),T(len),Base.Order.ForwardOrdering()) #search unique compressed index
@@ -602,7 +598,6 @@ end
 
 @inline function validindex_forced!(m::Compressed4DMatrix{TT},ijab::NTuple{4,Int}) where TT
     idxs = m.indices
-    can = canonical_index(ijab)
     k  = ijab_to_idx(canonical_index(ijab))
     len = length(idxs)
     T = eltype(idxs)
@@ -678,7 +673,7 @@ function infer_site_offsets(ij::AbstractVector,ab::AbstractVector,nc = 0)
         _nc = nc
     end
     bsizes = zeros(Int,_nc)
-    for k in 1:length(ij)
+    for k in eachindex(ij)
         i,j = ij[k]
         a,b = ab[k]
         bsizes[i] = max(bsizes[i],a)
@@ -694,7 +689,7 @@ function infer_site_offsets(ijab,nc = 0)
         _nc = nc
     end
     bsizes = zeros(Int,_nc)
-    for k in 1:length(ijab)
+    for k in eachindex(ijab)
         i,j,a,b = ijab[k]
         bsizes[i] = max(bsizes[i],a)
         bsizes[j] = max(bsizes[j],b)
@@ -722,7 +717,7 @@ end
 
 function Compressed4DMatrix(vals::AbstractVector{T},ij::Vector{NTuple{2,Int}},ab::Vector{NTuple{2,Int}},offs::AbstractVector{Int} = infer_site_offsets(ij,ab)) where T
     m = c4d_from_site_offsets(T,offs)
-    for idx in 1:length(ij)
+    for idx in eachindex(ij)
         _ij = ij[idx]
         _ab = ab[idx]
         i,j,a,b = canonical_index(_ij,_ab)
@@ -737,7 +732,7 @@ end
 assoc_is_pure(m::Compressed4DMatrix,i) = assoc_is_pure(m.indices[i])
 
 function assoc_is_pure(ix)
-    i,j,a,b = idx_to_ijab(ix)
+    i,j,_,_ = idx_to_ijab(ix)
     return i == j
 end
 

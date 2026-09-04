@@ -193,7 +193,7 @@ end
 function x0_sat_pure(model::ECS,T,crit = nothing)
     f,h = shape_factors(model,zero(T),T)
     T0 = T/f
-    if crit == nothing
+    if crit === nothing
         v0l,v0v = x0_sat_pure(model.model_ref,T0)
     else
         Tc,Vc,Pc = crit

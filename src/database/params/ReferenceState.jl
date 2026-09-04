@@ -174,10 +174,8 @@ end
 @generated function __reference_state(model)
     if hasfield(model,:params)
         params = fieldtype(model,:params)
-        if hasfield(params,:reference_state)
-            if fieldtype(params,:reference_state) == ReferenceState
-                return quote model.params.reference_state end
-            end
+        if hasfield(params,:reference_state) && fieldtype(params,:reference_state) == ReferenceState
+            return quote model.params.reference_state end
         end
     end
     return quote nothing end
@@ -223,18 +221,14 @@ function Δref(model,model2,p,T,z,f)
     prop_ref_gas = _0
     prop_ref_wrap = _0
     mwz = _0
-    if !isnothing(ref_gas)
-        if ref_gas.std_type != :no_set
-            iszero(primalval(mwz)) && (mwz += molecular_weight(model,z))
-            prop_ref_gas += PT_property_gibbs(ReferenceStateWithMw(ref_gas,mwz),p,T,z,f)
-        end
+    if !isnothing(ref_gas) && ref_gas.std_type != :no_set
+        iszero(primalval(mwz)) && (mwz += molecular_weight(model,z))
+        prop_ref_gas += PT_property_gibbs(ReferenceStateWithMw(ref_gas,mwz),p,T,z,f)
     end
 
-    if !isnothing(ref_wrap)
-        if ref_wrap.std_type != :no_set
-            iszero(primalval(mwz)) && (mwz += molecular_weight(model,z))
-            prop_ref_wrap += PT_property_gibbs(ReferenceStateWithMw(ref_wrap,mwz),p,T,z,f)
-        end
+    if !isnothing(ref_wrap) && ref_wrap.std_type != :no_set
+        iszero(primalval(mwz)) && (mwz += molecular_weight(model,z))
+        prop_ref_wrap += PT_property_gibbs(ReferenceStateWithMw(ref_wrap,mwz),p,T,z,f)
     end
 
     Δreference = prop_ref_wrap - prop_ref_gas
@@ -299,8 +293,8 @@ end
 
 function set_reference_state!(model,new_ref;verbose = false)
     existing_ref = reference_state(model)
-    if existing_ref == nothing && verbose && new_ref !== existing_ref
-        if new_ref != nothing || new_ref != :no_set
+    if existing_ref === nothing && verbose && new_ref !== existing_ref
+        if new_ref !== nothing || new_ref != :no_set
             @warn "cannot set reference state $new_ref for $model"
         elseif new_ref isa ReferenceState
             if new_ref.std_type != :no_set
@@ -309,10 +303,8 @@ function set_reference_state!(model,new_ref;verbose = false)
         end
     end
     reference_state(model) === nothing && return nothing
-    if new_ref == nothing || new_ref == :no_set
-        if existing_ref != nothing
-            existing_ref.std_type == :no_set && return nothing
-        end
+    if (new_ref === nothing || new_ref == :no_set) && existing_ref !== nothing
+        existing_ref.std_type == :no_set && return nothing
     end
 
     ref = __init_reference_state_kw(new_ref)
@@ -349,7 +341,7 @@ function set_reference_state!(model::EoSModel,new_ref::ReferenceState;verbose = 
 
     if ref0 === nothing
         idmodel = idealmodel(model)
-        if reference_state(idmodel) == nothing
+        if reference_state(idmodel) === nothing
             throw(error("A custom ideal model was passed as an argument, but the ideal model $idmodel does not support setting reference states.
        Try using another ideal model, like `ReidIdeal`.
        If you are developing a model, try defining `Clapeyron.reference_state(model::MyModel)`"))
@@ -385,7 +377,6 @@ function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
 
     T0,P0,H0,S0 = ref.T0,ref.P0,ref.H0,ref.S0
     a0,a1 = ref.a0,ref.a1
-    R = Rgas(model)
     if type == :zero
         _a0,_a1 = 0.0,0.0
     elseif type == :ideal_gas
@@ -436,17 +427,17 @@ function initialize_reference_state!(model::EoSModel,ref = reference_state(model
 end
 
 function initialize_reference_state!(model_comps,ref = reference_state(model))
-    comps,T0,P0,H0,S0 = ref.components,ref.T0,ref.P0,ref.H0,ref.S0
+    comps,_,_,H0,S0 = ref.components,ref.T0,ref.P0,ref.H0,ref.S0
     z0 = ref.z0
     len = length(model_comps)
-    pure_check = length(z0) == 0
+    pure_check = isempty(z0)
 
     if pure_check
         resize!(z0,len)
         z0 .= 0
     end
 
-    if length(comps) == 0
+    if isempty(comps)
         resize!(comps,len)
         comps .= model_comps
     else
@@ -454,7 +445,7 @@ function initialize_reference_state!(model_comps,ref = reference_state(model))
         check_arraysize(model_comps,comps)
     end
 
-    if length(H0) == 0
+    if isempty(H0)
         resize!(H0,len)
         H0 .= 0
     elseif length(H0) == 1
@@ -463,7 +454,7 @@ function initialize_reference_state!(model_comps,ref = reference_state(model))
         H0 .= h0
     end
 
-    if length(S0) == 0
+    if isempty(S0)
         resize!(S0,len)
         S0 .= 0
     elseif length(S0) == 1

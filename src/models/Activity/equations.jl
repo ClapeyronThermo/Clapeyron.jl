@@ -129,7 +129,7 @@ end
 function idealmodel(model::T) where T <: ActivityModel
     if hasfield(T,:puremodel)
         puremodel = model.puremodel.model
-        return idealmodel(model.puremodel.model)
+        return idealmodel(puremodel)
     else
         return BasicIdeal()
     end
@@ -194,13 +194,12 @@ end
 function ∂lnγ∂n(model,p,T,z,cache = nothing)
     nc = length(z)
     RT = Rgas(model)*T
-    n = sum(z)
     fun_g(w) = excess_gibbs_free_energy(model,p,T,@view(w[1:nc]))/RT
     function fun_lnγ(out,w)
         Clapeyron.lnγ(model,p,T,@view(w[1:nc]),@view(out[1:nc]))
         return out
     end
-    if cache == nothing
+    if cache === nothing
         if has_lnγ_impl(model)
             lnγ = zeros(Base.promote_eltype(model,p,T,z),nc)
             ∂lnγ∂ni = ForwardDiff.jacobian!(lnγ,fun_lnγ,z)
@@ -243,13 +242,12 @@ end
 function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
     nc = length(z)
     RT = Rgas(model)*T
-    n = sum(z)
     fun_g(w) = excess_gibbs_free_energy(model,p,w[nc+1],@view(w[1:nc]))/(Rgas(model)*w[nc + 1])
     function fun_lnγ(out,w)
         Clapeyron.lnγ(model,p,w[1:nc+1],@view(w[1:nc]),@view(out[1:nc]))
         return out
     end
-    if cache == nothing
+    if cache === nothing
         if has_lnγ_impl(model)
             lnγ = zeros(Base.promote_eltype(model,p,T,z),nc)
             aux = similar(lnγ,nc+1)
@@ -311,10 +309,8 @@ end
 
 function ∂lnγ∂T(model,p,T,z,cache = nothing)
     nc = length(z)
-    RT = Rgas(model)*T
-    n = sum(z)
     dgEdt(w) = dG_EdT(model,p,T,@view(w[1:nc]))
-    if cache == nothing
+    if cache === nothing
         if has_lnγ_impl(model)
             out = zeros(Base.promote_eltype(model,p,T,z))
             ∂lnγ∂T = ForwardDiff.derivative!(out,lnγ_impl!,T)
@@ -366,6 +362,7 @@ function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
         end
     end
     γϕmodel = GammaPhi(components,model,pure)
+    return γϕmodel
 end
 
 for f in (:bubble_pressure,:bubble_temperature,:dew_pressure,:dew_temperature)
@@ -445,7 +442,6 @@ function LLE(model::ActivityModel,T;v0=nothing)
         end
     end
 
-    len = length(vv0)
     f!(F,z) = Obj_LLE(model, F, T, @view(z[1:nc-1]), @view(z[nc:end]))
     r  = Solvers.nlsolve(f!,vv0,LineSearch(Newton(),Backtracking()))
     sol = Solvers.x_sol(r)

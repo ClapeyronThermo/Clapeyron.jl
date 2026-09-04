@@ -79,7 +79,7 @@ function sle_solubility(model::CompositeModel{F,S},p,T,z;solute=nothing,x0=nothi
     idxs = convert(Vector{Int},indexin(solute,model.solid.components))
     idx_sol = zeros(Bool,length(model.solid.components))
     idx_sol[idxs] .= true
-    for i in 1:length(solute)
+    for i in eachindex(solute)
         idx_sol_s = zeros(Bool,length(model.solid.components))
         idx_sol_s[model.solid.components .==solute[i]] .= true
 
@@ -91,8 +91,8 @@ function sle_solubility(model::CompositeModel{F,S},p,T,z;solute=nothing,x0=nothi
         solute_l = [solute_l1[1][i][1] for i in 1:length(solute_l1[1])]
 
 
-        for i in solute_l
-            idx_sol_l[model.fluid.components .== i] .= true
+        for k in solute_l
+            idx_sol_l[model.fluid.components .== k] .= true
         end
         idx_solv = zeros(Bool,length(model.fluid.components))
         if length(solute_l) == length(model)
@@ -101,7 +101,7 @@ function sle_solubility(model::CompositeModel{F,S},p,T,z;solute=nothing,x0=nothi
             idx_solv[.!(idx_sol_l)] .= true
         end
 
-        solid_r,idx_sol_r = index_reduction(model.solid,idx_sol_s)
+        solid_r,_ = index_reduction(model.solid,idx_sol_s)
         μsol = chemical_potential(solid_r,p,T,[1.])
         # println(μsol)
 
@@ -151,7 +151,7 @@ function obj_sle_solubility(F,model::CompositeModel{L,S},p,T,zsolv,solu,idx_sol_
         μliq = (μ_mixt - μ_ref)[idx_sol_l]
     end
 
-    solid_r,idx_sol_r = index_reduction(model.solid,idx_sol_s)
+    solid_r,_ = index_reduction(model.solid,idx_sol_s)
     μsol = chemical_potential(solid_r,p,T,[1.])
 
     μliq = sum(μliq.*ν_l)

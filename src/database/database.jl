@@ -55,7 +55,7 @@ This promotion is only supported for Single-Pair combinations. Other CSV type co
 
 If you pass any string starting with `Clapeyron Database File`, it will be parsed as a CSV instead of being used as a filepath:
 
-```julia
+```julia-repl
 julia> x = \"\"\"Clapeyron Database File,
        in memory like parameters
        species,a,b
@@ -303,7 +303,7 @@ function buildsites(components, allparams, allnotfoundparams, options)
     for i in 1:nc
         ni = n_sites[i]
         si = allcomponentsites[i]
-        for a in 1:length(ni)
+        for a in eachindex(ni)
             sia = si[a]
             ni[a] = n_sites_dict[sia][i]
         end
@@ -357,11 +357,13 @@ function createparams(components,
     components_dict = Dict(v => k for (k,v) ∈ pairs(normalised_components))
     components_data = (components,components_dict,normalised_components)
 
-    for filepath ∈ filepaths
+    for raw_filepath ∈ filepaths
 
-        _replace = startswith(filepath,"@REPLACE")
+        _replace = startswith(raw_filepath,"@REPLACE")
         if _replace
-            filepath = chop(filepath,head = 9, tail = 0)
+            filepath = chop(raw_filepath,head = 9, tail = 0)
+        else
+            filepath = raw_filepath
         end
         csv_options = read_csv_options(filepath)
         csvtype = csv_options.csvtype
@@ -408,16 +410,20 @@ function merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams
         #we merge if the filepath is not set to replace the current values
         if haskey(allparams,kk) && !_replace
             vv2 = allparams[kk]
-            vv = joindata!(vv2,vv)
+            vvx = joindata!(vv2,vv)
+        else
+            vvx = vv
         end
-        allparams[kk] = vv
+        allparams[kk] = vvx
     end
     #Merge not found data
     for (kk,vv) ∈ pairs(notfoundparams)
         if haskey(allnotfoundparams,kk)
             vv2 = allnotfoundparams[kk]
-            vv, success = joindata!(vv2,vv)
-            !success && error_clashing_headers(vv2,vv,kk) #Clashing headers error
+            vvx, success = joindata!(vv2,vv)
+            !success && error_clashing_headers(vv2,vvx,kk) #Clashing headers error
+        else
+            vvx = vv
         end
         allnotfoundparams[kk] = vv
     end
@@ -456,7 +462,7 @@ function compile_params(components,allparams,allnotfoundparams,sites,options)
         end
     end
 
-    if sites != nothing && options.return_sites
+    if sites !== nothing && options.return_sites
         haskey(result,"sites") && throw(error("cannot overwrite \"sites\" key, already exists!"))
         result["sites"] = sites
     end
@@ -481,7 +487,7 @@ function valid_headerparams_indices(csvheaders, options::ParamOptions = DefaultO
     map!(normalisestring,ignorelist,ignorelist)
 
     v = Int[]
-    for i in 1:length(csvheaders)
+    for i in eachindex(csvheaders)
         header = csvheaders[i]
         filter_header = normalisestring(header; tofilter=r"[ \-\_\d]") ∉ ignorelist
         if filter_header
@@ -521,16 +527,14 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
     idx_sites2 = 0
     idx_source = 0
 
-    for i in 1:length(headernames)
+    for i in eachindex(headernames)
         
         header = headernames[i]
 
-        if (csvtype === singledata || csvtype == groupdata) && idx_species == 0
-            if headernames[i] == species
+        if (csvtype === singledata || csvtype == groupdata) && idx_species == 0 && headernames[i] == species
                 idx_species = i
                 continue
             end
-        end
         
         if idx_species1 == 0 && header == comp1
             idx_species1 = i
@@ -674,7 +678,6 @@ function findparamsincsv(_components,filepath,
     normalised_csvheaders = normalisestring.(csvheaders)
     headerparams_indices = valid_headerparams_indices(normalised_csvheaders,options) #removes all ignored header params
     headerparams = view(csvheaders,headerparams_indices)
-    normalised_headerparams = view(normalised_csvheaders,headerparams_indices)
 
     verbose && __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype,grouptype)
 
@@ -783,7 +786,6 @@ function findparamsinnt(components,
     parsegroups = :off,
     csv_file_options = NT_CSV_OPTIONS) #default options
 
-    verbose = options.verbose
     nt = to_nt(options.userlocations)
     foundvalues = Vector{RawParam}(undef,0)
     notfoundvalues = Dict{String,CSVType}()
@@ -834,7 +836,7 @@ end
 function nonmissingvec(X::AbstractVector{T}) where T
     Y = Vector{nonmissingtype(T)}(undef,length(X))
     k = 0
-    for i in 1:length(X)
+    for i in eachindex(X)
         if !ismissing(X[i])
             k += 1
             Y[k] = X[i]
@@ -965,10 +967,10 @@ function _read_csv_options(line::String)
 
         maybe_csvdata = false
         for word in words
-            if word in READCSVTYPE_KEYWORDS && maybe_csvdata == false
+            if word in READCSVTYPE_KEYWORDS && !maybe_csvdata
                 maybe_csvdata = true
                 data[1] = word
-            elseif word in READCSVTYPE_KEYWORDS && maybe_csvdata == true
+            elseif word in READCSVTYPE_KEYWORDS && maybe_csvdata
                 data[1] = ""
             end
         end

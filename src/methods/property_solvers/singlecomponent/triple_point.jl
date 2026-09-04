@@ -88,7 +88,6 @@ function triple_point(model::CompositeModel;v0 = x0_triple_point(model))
     else
         return triple_point_helmholtz(model,v0)
     end
-    return (Tp,pp,vs,vl,vv)
 end
 
 function triple_point_helmholtz(model,v0)

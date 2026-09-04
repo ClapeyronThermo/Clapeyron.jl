@@ -67,7 +67,7 @@ end
 
 function tpd_ss_ψ(ψ,K,Z)
     res = zero(Base.promote_eltype(ψ,K,Z))
-    for i in 1:length(K)
+    for i in eachindex(K)
       wi = K[i]*exp(Z[i]*ψ)
       res += Z[i]*wi 
     end
@@ -88,7 +88,7 @@ function __tpd_ss_update!(w,model::ESElectrolyteModel,d,z,lnϕw,phasew)
     w .= exp.(d .- lnϕw) #K is stored in w
     Z = model.charge
     if is_vapour(phasew)
-        for i in 1:length(w)
+        for i in eachindex(w)
             Z[i] != 0 && (w[i] = 0)
         end
         ψ = zero(eltype(w))
@@ -120,7 +120,7 @@ function tpd_plan(model::ESElectrolyteModel,z,is_liquidz,lle,id_test,K_test,pure
     nc = length(model)
     neutral = ones(Bool,length(model))
     Z = model.charge
-    neutral = iszero.(Z)
+    neutral .= iszero.(Z)
 
     if is_liquidz && id_test && !lle && iszero(length(Z))
         push!(plan,(:ideal_gas,:vapour,(0,0,0)))

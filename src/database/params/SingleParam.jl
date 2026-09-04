@@ -134,7 +134,7 @@ SingleParam(name,components,values,missingvals) = SingleParam(name,components,va
 
 #constructor in case we provide a normal vector
 function SingleParam(name, components, values_or_missing::AbstractVector{T}) where T
-    if nonmissingtype(T) != T && T != Any
+    if nonmissingtype(T) != T || T == Any
         values,ismissingvalues = defaultmissing(values_or_missing)
     else
         values,ismissingvalues = values_or_missing,fill(false, length(values_or_missing))
@@ -158,7 +158,7 @@ function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     println(io, "\") with ", len, " component", ifelse(len==1, ":", "s:"))
     separator = " => "
     vals = string.(param.values)
-    for i in 1:length(vals)
+    for i in eachindex(vals)
         if param.ismissingvalues[i]
             vals[i] = vals[i] * low_color(" (missing)") 
         end
@@ -192,7 +192,7 @@ function pack_vectors(params::Vararg{SingleParameter{T},N}) where {T<:Number,N}
     len = length(params)
     vals = [zeros(len) for _ in params]
 
-    for i in 1:length(vals)
+    for i in eachindex(vals)
         vali = vals[i]
         for (k,par) in pairs(params)
             vali[k] = par.values[i]

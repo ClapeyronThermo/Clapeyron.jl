@@ -150,8 +150,8 @@ _mapping_fractions(model::CompositeModel) = _mapping_fractions(model,model.mappi
 _mapping_fractions(model::CompositeModel,::Nothing) =  [[1.0] for i in 1:length(model)]
 
 function _mapping_fractions(model::CompositeModel,mapping)
-    idx = _mapping_split(model,mapping)
-    comps = component_list(model)
+    #idx = _mapping_split(model,mapping)
+    #comps = component_list(model)
     n_fluids = map.(last,first.(mapping))
     n_solids = map(last,last.(mapping))
     return n_fluids .* inv.(n_solids)
@@ -181,7 +181,7 @@ function CompositeModel(components ;
     _components = format_components(components)
 
     #take care of the solid phase first
-    if melting == sublimation == nothing
+    if melting == sublimation === nothing
         init_solid = init_model(solid,components,solid_userlocations,verbose)
     else
         init_solid_phase = init_model(solid,components,solid_userlocations,verbose)
@@ -191,20 +191,20 @@ function CompositeModel(components ;
     end
 
     _fluid = init_model(fluid,components,fluid_userlocations,verbose)
-    if _fluid isa EoSModel && liquid == gas == saturation == nothing
+    if _fluid isa EoSModel && liquid == gas == saturation === nothing
         #case 1: fluid isa EoSModel. no other model is specified
         if !(_fluid isa ActivityModel)
             init_fluid = _fluid
         else
             error("Activity models only represent the liquid phase. Please specify a fluid phase model.")
         end
-    elseif fluid == nothing && !isnothing(liquid) && !isnothing(gas) && !isnothing(saturation)
+    elseif fluid === nothing && !isnothing(liquid) && !isnothing(gas) && !isnothing(saturation)
         #case 2: fluid not specified, V,L,sat specified, use FluidCorrelation struct
         init_gas = init_model(gas,components,gas_userlocations,verbose)
         init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
         init_sat = init_model(saturation,components,saturation_userlocations,verbose)
         init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat,nothing)
-    elseif !isnothing(_fluid) && !isnothing(liquid) && (gas == saturation == nothing)
+    elseif !isnothing(_fluid) && !isnothing(liquid) && (gas == saturation === nothing)
         #case 3: liquid activity and a model for the fluid.
         init_liquid = init_model_act(liquid,components,liquid_userlocations,verbose)
         if init_liquid isa ActivityModel
@@ -221,7 +221,7 @@ function CompositeModel(components ;
             init_sat = _fluid
             init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat,nothing)
         end
-    elseif !isnothing(liquid) && (fluid == gas == saturation == nothing)
+    elseif !isnothing(liquid) && (fluid == gas == saturation === nothing)
     #legacy case, maybe we are constructing an activity that has a puremodel
     init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
         if init_liquid isa ActivityModel
@@ -293,7 +293,7 @@ end
 reference_state(model::CompositeModel) = reference_state(model.fluid)
 
 function __calculate_reference_state_consts(model::CompositeModel,v,T,p,z,H0,S0,phase)
-    ∑z = sum(z)
+    #∑z = sum(z)
     S00 = entropy(model,p,T,z,phase = phase)
     a1 = (S00 - S0)#/∑z
     H00 = enthalpy(model,p,T,z,phase = phase)
@@ -306,9 +306,9 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
     solid = model.solid
 
     print(io,"Composite Model")
-    if fluid isa GammaPhi && solid == nothing
+    if fluid isa GammaPhi && solid === nothing
         print(io," (γ-ϕ)")
-    elseif fluid isa FluidCorrelation && solid == nothing
+    elseif fluid isa FluidCorrelation && solid === nothing
         print(io," (Correlation-Based)")
     end
     length(model) == 1 && print(io, " with 1 component:")
@@ -354,9 +354,9 @@ molecular_weight(model::CompositeModel,z) = molecular_weight(model.fluid,z)
 idealmodel(model::M) where M <: CompositeModel = idealmodel(model.fluid)
 
 function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
-    if model.solid == nothing
+    if model.solid === nothing
         return volume_impl(model.fluid,p,T,z,phase,threaded,vol0)
-    elseif model.fluid == nothing
+    elseif model.fluid === nothing
         return volume_impl(model.solid,p,T,z,phase,threaded,vol0)
     end
     

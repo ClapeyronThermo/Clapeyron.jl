@@ -182,7 +182,7 @@ function Base.setindex!(model::AbstractEstimationModel,Θ_new,s::Symbol)
     i = symbol_indices(model,s)
     Θ = get_eos_parameters(model)
     Θi =  @view Θ[i]
-    Θ[i] .= Θ_new
+    Θi .= Θ_new
     set_eos_parameters!(model,Θ)
     return Θ_new
 end
@@ -191,7 +191,7 @@ function Base.setindex!(model::AbstractEstimationModel,Θ_new,s::AbstractVector{
     i = symbol_indices(model,s)
     Θ = get_eos_parameters(model)
     Θi =  @view Θ[i]
-    Θ[i] .= Θ_new
+    Θi .= Θ_new
     set_eos_parameters!(model,Θ)
     return Θ_new
 end

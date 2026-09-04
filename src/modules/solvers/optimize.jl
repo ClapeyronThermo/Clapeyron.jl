@@ -149,11 +149,11 @@ end
 function fg!(F,G,x)
   # do common computations here
   # ...
-  if G != nothing
+  if G !== nothing
     # code to compute gradient here
     # writing the result to the vector G
   end
-  if F != nothing
+  if F !== nothing
     # value = ... code to compute objective function
     return value
   end
@@ -183,9 +183,9 @@ end
 
 #= only_fgh!: Optim.jl legacy form:
 function fgh!(F,G,H,x)
-  G == nothing || # compute gradient and store in G
-  H == nothing || # compute Hessian and store in H
-  F == nothing || return f(x)
+  G === nothing || # compute gradient and store in G
+  H === nothing || # compute Hessian and store in H
+  F === nothing || return f(x)
   nothing
 end
 =#
@@ -258,7 +258,6 @@ function _1var_optimize_quad(f,x0,options)
     f1 = f(x1)
     f2 = f(x2)
     f3 = f(x3)
-    f30 = f3
     fx = NaN*f1
     xx = NaN*f1
     iter_x = 0
@@ -267,15 +266,13 @@ function _1var_optimize_quad(f,x0,options)
         iter_x += 1
         iter_x == options.maxiter && break
         not_improved == 2 && break
-        a,b,c = quad_interp(x1,x2,x3,f1,f2,f3)
+        a,b,_ = quad_interp(x1,x2,x3,f1,f2,f3)
         xlo,xhi = extrema((x1, x2, x3))
-        df = f30 - fx
         if a <= 0 || abs(xlo - xhi) < options.x_abstol
             # Parabola opens downward or is linear, use best current point
             fvals = SVector((f1, f2, f3))
             xvals = (x1, x2, x3)
             f_best,idx = findmin(fvals)
-            minidx = argmin(fvals)
             x_best = xvals[idx]
             xx = x_best
             fx = f_best

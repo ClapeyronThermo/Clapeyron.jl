@@ -20,7 +20,7 @@ Returns a tuple, containing:
 - Vapour volume at edge Point `[m³]`
 """
 function edge_temperature(model,p,z,v0 = nothing)
-    edge,crit,status = _edge_temperature(model,p,z,v0)
+    edge,_,_ = _edge_temperature(model,p,z,v0)
     return edge
 end
 
@@ -42,7 +42,7 @@ function try_2ph_edge_temperature2(model,p,z,v10::R,v20::R,T10::R,T20::R,Ts::R) 
 end
 
 function _edge_temperature(model,p,z,v0 = nothing)
-    if v0 == nothing
+    if v0 === nothing
         vv0,_ = x0_edge_temperature(model,p,z)
     else
         vv0 = (v0[1],v0[2])
@@ -50,7 +50,6 @@ function _edge_temperature(model,p,z,v0 = nothing)
     _T1 = vv0[1]
     _T2 = vv0[2]
     Tmin,Tmax = minmax(_T1,_T2)
-    n = sum(z)
     v_Tmin = volume(model,p,Tmin,z,phase = :l)
     v_Tmax = volume(model,p,Tmax,z,phase = :v)
     _Ts = 0.5*(_T1 + _T2)
@@ -233,7 +232,7 @@ function Tproperty(model::EoSModel,p,prop,z = SA[1.0],
                     threaded = true) where TT
     check_arraysize(model,z)
     cached_model = __tpflash_cache_model(model,p,NaN,z,:vle)
-    T,st = _Tproperty(cached_model,p,prop,z,property;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
+    T,_ = _Tproperty(cached_model,p,prop,z,property;rootsolver,phase,abstol,reltol,verbose,threaded,T0)
     return T
 end
 
@@ -270,7 +269,6 @@ function _Tproperty(model::EoSModel,p,_prop,z = SA[1.0],
         return __Tproperty_check(res,verbose)
     end
 
-    n = sum(z)
     v0_edge,dpdT = x0_edge_temperature(model,p,z)
     sol_options = (abstol,reltol,rootsolver,verbose)
 
@@ -290,9 +288,9 @@ function _Tproperty(model::EoSModel,p,_prop,z = SA[1.0],
     end
 
     #check isogibbs condition ("edge")
-    T0_bubble,T0_dew = v0_edge
+    #T0_bubble,T0_dew = v0_edge
     edge,crit,status = _edge_temperature(model,p,z,v0_edge)
-    T_edge,v_l,v_v = edge
+    #T_edge,v_l,v_v = edge
     edge_cache = (v0_edge,dpdT,edge)
 
     if status == :supercritical
@@ -329,7 +327,7 @@ end
 
 #we check if the property lies outside the extended bound defined by the extrema of saturation temperatures.
 function Tproperty_puresat(model,p,prop,z,property,cache,sol_options,phase)
-    v0_edge,dpdT = cache
+    _,dpdT = cache
     abstol,reltol,rootsolver,verbose = sol_options
     Tmin_sat,Tmax_sat = extrema(xx -> T_from_dpdT(xx,p),dpdT)
 
@@ -367,9 +365,8 @@ function Tproperty_puresat(model,p,prop,z,property,cache,sol_options,phase)
 end
 
 function Tproperty_supercritical(model,p,prop,z,property,cache,sol_options)
-    v0_edge,dpdT,crit,data_puresat = cache
+    _,dpdT,crit,data_puresat = cache
     abstol,reltol,rootsolver,verbose = sol_options
-    T0_bubble,T0_dew = v0_edge
     Tmin_sat,Tmax_sat,prop_puresat_l,prop_puresat_v = data_puresat
     Tc,Pc,Vc = crit
     n = sum(z)
@@ -447,8 +444,8 @@ function Tproperty_supercritical(model,p,prop,z,property,cache,sol_options)
 end
 
 function Tproperty_refine_edge(model,p,prop,z,property,cache,sol_options)
-    v0_edge,dpdT,edge = cache
-    abstol,reltol,rootsolver,verbose = sol_options
+    v0_edge,_,edge = cache
+    verbose = last(sol_options)
     T0_bubble,T0_dew = v0_edge
     T_edge,v_l,v_v = edge
 
@@ -506,8 +503,8 @@ end
 
 function Tproperty_maybe_vapour(model,p,prop,z,property,cache,sol_options,prop_edge)
     v0_edge,dpdT,edge = cache
-    abstol,reltol,rootsolver,verbose = sol_options
-    T0_bubble,T0_dew = v0_edge
+    verbose = last(sol_options)
+    _,T0_dew = v0_edge
     T_edge,_,_ = edge
     n = sum(z)
 
@@ -537,8 +534,8 @@ end
 
 function Tproperty_maybe_liquid(model,p,prop,z,property,cache,sol_options,prop_edge)
     v0_edge,dpdT,edge = cache
-    abstol,reltol,rootsolver,verbose = sol_options
-    T0_bubble,T0_dew = v0_edge
+    verbose = last(sol_options)
+    T0_bubble,_ = v0_edge
     T_edge,_,_ = edge
     n = sum(z)
 
@@ -589,7 +586,7 @@ function Tproperty_pure(model,p,x,z,property::F,rootsolver,phase,abstol,reltol,v
 
     if status == :supercritical
         verbose && Xproperty_verbose(:out_purecrit_T)
-        Tc,Pc,Vc = crit
+        Tc,_,_ = crit
         Tcrit0 = TT(1.001Tc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
         Tsc,st_sc = __Tproperty(model,p,x,z,property,rootsolver,:liquid,abstol,reltol,false,Tcrit0)
         return Tsc,st_sc,(nan,nan,nan)

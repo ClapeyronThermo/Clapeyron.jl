@@ -183,7 +183,6 @@ function __crit_pure(sat0,pure)
 end
 
 function __dlnPdTinvsat(pure,sat,crit,xx,is_sat_temperature,status)
-    successful_saturation = status == :success
     yy,vl,vv = sat
     if is_sat_temperature
         p,T = xx,yy
@@ -282,8 +281,6 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
             !isnan(vlx) && break
         end
     end
-    RT = Rgas(model) * T
-    Zl = p*vlx/RT/sum(x)
     lnϕl,_ = lnϕ(model,p,T,x,phase = :l,vol = vlx)
     ϕl = K = lnϕl
     ϕl .= exp.(lnϕl)

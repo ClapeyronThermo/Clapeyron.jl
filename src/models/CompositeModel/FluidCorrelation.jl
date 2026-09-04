@@ -82,8 +82,25 @@ function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,vol:
     end
 end
 
+struct FluidCorrelationSaturation{M} <: SaturationMethod
+    method::M
+end
+
+function init_preferred_method(method::typeof(saturation_pressure),model::FluidCorrelation,kwargs)
+    inner = init_preferred_method(method,model.saturation,kwargs)
+    return FluidCorrelationSaturation(inner)
+end
+
+function init_preferred_method(method::typeof(saturation_temperature),model::FluidCorrelation,kwargs)
+    inner = init_preferred_method(method,model.saturation,kwargs)
+    return FluidCorrelationSaturation(inner)
+end
+
 function saturation_pressure_ad2(result,model::M,T::ForwardDiff.Dual) where M <: FluidCorrelation
     p = if has_a_res(model.saturation) #using an EoSModel as saturation provider
+        #NOTE: we are using the volumes of the correlations instead of the volumes calculated via saturation_pressure of the helmholtz saturation model.
+        #i don't know how correct is this, if you find an error on derivatives while calculating bulk properties of composite models and read this,
+        #open a issue.
         first(saturation_pressure_ad2(result,model.saturation,T))
     else
         first(saturation_pressure(model.saturation,T)) #AD though method, directly
@@ -105,9 +122,87 @@ function saturation_pressure_ad2(result,model::M,T::ForwardDiff.Dual) where M <:
     else
         tup = (gas,p,T,z)
         λtup = (gas,primalval(p),primalval(T),z)
-        volume_ad(result[2],tup,λtup)
+        volume_ad(result[3],tup,λtup)
     end
     return p,vl,vv
+end
+
+function saturation_pressure_ad(__model::M,result::RES,tup::TUP1,tup_primal::TUP2) where {M <: FluidCorrelation,RES,TUP1,TUP2}
+    dm,∂T = tup
+    m0,λT = tup_primal
+    λp,λvl,λvv = result
+    if any(has_dual,tup) # do check here to avoid recomputation of pressure if no AD
+        if has_a_res(__model.saturation) #using an EoSModel as saturation provider
+            vl0 = volume(m0.saturation,λp,λT,phase = :l)
+            vv0 = volume(m0.saturation,λp,λT,phase = :v)
+            ∂p = saturation_pressure_ad(__model.saturation,(λp,vl0,vv0),(dm.saturation,∂T),(m0.saturation,λT))
+        else
+            ∂p = first(saturation_pressure(dm.saturation,λT)) #AD though method, directly
+        end
+
+        ∂liq = dm.liquid
+        λliq = m0.liquid
+        z = SA[1.0]
+        ∂vl = if has_a_res(λliq)
+            tup_l = (λliq,∂p,∂T,z)
+            λtup_l = (∂liq,λp,λT,z)
+            volume_ad(λvl,tup_l,λtup_l)
+        else
+            volume(∂liq,∂p,∂T,z,phase = :l)
+        end
+
+        ∂gas = dm.gas
+        λgas = m0.gas
+        ∂vv = if is_idealmodel(λgas)
+            Rgas(λgas)*∂T/∂p
+        else
+            tup_v = (∂gas,∂p,∂T,z)
+            λtup_v = (gas,λp,λT,z)
+            volume_ad(λvv,tup_v,λtup_v)
+        end
+    
+        return ∂p,∂vl,∂vv
+    end
+    return result
+end
+
+function saturation_temperature_ad(__model::M,result,tup,tup_primal) where M <: FluidCorrelation
+    dm,∂p = tup
+    m0,λp = tup_primal
+    λT,λvl,λvv = result
+    if any(has_dual,tup) # do check here to avoid recomputation of pressure if no AD
+        if has_a_res(__model.saturation) #using an EoSModel as saturation provider
+            vl0 = volume(m0.saturation,λp,λT,phase = :l)
+            vv0 = volume(m0.saturation,λp,λT,phase = :v)
+            ∂p = saturation_temperature_ad(__model.saturation,(λT,vl0,vv0),(dm.saturation,∂p),(m0.saturation,λp))
+        else
+            ∂p = saturation_temperature_corr_ad(λp,(dm.saturation,∂p),(m0.saturation,λp))
+        end
+
+        ∂liq = dm.liquid
+        λliq = m0.liquid
+        z = SA[1.0]
+        ∂vl = if has_a_res(λliq)
+            tup_l = (λliq,∂p,∂T,z)
+            λtup_l = (∂liq,λp,λT,z)
+            volume_ad(λvl,tup_l,λtup_l)
+        else
+            volume(∂liq,∂p,∂T,z,phase = :l)
+        end
+
+        ∂gas = dm.gas
+        λgas = m0.gas
+        ∂vv = if is_idealmodel(λgas)
+            Rgas(λgas)*∂T/∂p
+        else
+            tup_v = (∂gas,∂p,∂T,z)
+            λtup_v = (gas,λp,λT,z)
+            volume_ad(λvv,tup_v,λtup_v)
+        end
+    
+        return ∂T,∂vl,∂vv
+    end
+    return result
 end
 
 __γ_unwrap(model::FluidCorrelation) = IdealLiquidSolution()
@@ -123,7 +218,7 @@ function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
         return _1*volume_impl(model.gas,p,T,z,phase,threaded,vol0)
     end
 
-    nan = _0/_0
+    #nan = _0/_0
     if is_liquid(phase)
         return volume(model.liquid, p, T, z; phase, threaded, vol0)
     elseif is_vapour(phase)
@@ -134,27 +229,21 @@ function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
     end
 end
 
-function init_preferred_method(method::typeof(saturation_pressure),model::FluidCorrelation,kwargs)
-    return init_preferred_method(method,model.saturation,kwargs)
-end
-
-function init_preferred_method(method::typeof(saturation_temperature),model::FluidCorrelation,kwargs)
-    return init_preferred_method(method,model.saturation,kwargs)
-end
-
-function saturation_pressure(model::FluidCorrelation,T,method::SaturationMethod)
+function saturation_pressure_impl(model::FluidCorrelation,T,methodwrapper::FluidCorrelationSaturation{M}) where M
+    method = methodwrapper.method
     nan = zero(T)/zero(T)
     psat,_,_ = saturation_pressure(model.saturation,T,method)
     if !isnan(psat)
         vl = volume(model.liquid,psat,T,phase=:l)
         vv = volume(model.gas,psat,T,phase=:v)
-        return psat,vl,vv
+        sat = psat,vl,vv
     #if psat fails, there are two options:
     #1- over critical point -> nan nan nan
     #2- saturation failed -> nan nan nan
     else
-        return nan,nan,nan
+        sat = nan,nan,nan
     end
+    return sat
 end
 
 function crit_pure(model::FluidCorrelation)
@@ -162,19 +251,21 @@ function crit_pure(model::FluidCorrelation)
     return crit_pure(model.saturation)
 end
 
-function saturation_temperature(model::FluidCorrelation,p,method::SaturationMethod)
+function saturation_temperature_impl(model::FluidCorrelation,p,methodwrapper::FluidCorrelationSaturation{M}) where M
+    method = methodwrapper.method
     nan = zero(p)/zero(p)
     Tsat,_,_ = saturation_temperature(model.saturation,p,method)
     if !isnan(Tsat)
         vl = volume(model.liquid,p,Tsat,phase=:l)
         vv = volume(model.gas,p,Tsat,phase=:v)
-        return Tsat,vl,vv
+        sat = Tsat,vl,vv
     #if psat fails, there are two options:
     #1- over critical point -> nan nan nan
     #2- saturation failed -> nan nan nan
     else
-        return nan,nan,nan
+        sat = nan,nan,nan
     end
+    return sat
 end
 
 function dpdT_saturation(model::FluidCorrelation,v1::Number,v2,T)

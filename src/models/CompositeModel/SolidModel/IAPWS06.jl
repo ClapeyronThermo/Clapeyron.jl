@@ -156,8 +156,6 @@ end
 
 function x0_sublimation_pressure(model::CompositeModel{<:EoSModel,IAPWS06},T)
     solid = solid_model(model)
-    liquid = fluid_model(model)
-    z = SA[1.0]
     p  = x0_iapws06_sub(T)
     vs = volume(solid,p,T)
     vv = Rgas(fluid)*T/p

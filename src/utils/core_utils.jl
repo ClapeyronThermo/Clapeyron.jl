@@ -27,7 +27,7 @@ function fma_evalpoly(x::T1,pol::NTuple{N,T2}) where {T1,N,T2}
 end
 
 function show_pairs(io,keys,vals=nothing,separator="",f_print = print;quote_string = true,pair_separator = '\n',prekey = ifelse(pair_separator === '\n'," ",""))
-    if length(keys) == 0
+    if isempty(keys)
         return nothing
     end
     if vals === nothing #useful for printing only keys

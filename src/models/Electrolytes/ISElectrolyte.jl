@@ -53,7 +53,7 @@ end
 
 function VT_pressure(model::MeanIonicApproach,V,T,z)
     w = ion_compositions(model,z)
-    return VT_pressure(model.model,V,T,z)
+    return VT_pressure(model.model,V,T,w)
 end
 
 #=
@@ -117,8 +117,6 @@ function tpd_lnϕ_and_v!(cache,wrapper::MeanIonicApproach,p,T,w,vol0,liquid_over
     for i in 1:length(w)
         Ei = E[i]
         if i in salt.isalts
-            iref = findfirst(Ei)
-            lnϕref = lnϕw[iref]
             lnϕww = @view lnϕw[Ei]
             ZZ = @view Z[Ei]
             lnϕ1,lnϕ2 = lnϕww
@@ -144,7 +142,6 @@ end
 
 function tpd_input_composition(wrapper::MeanIonicApproach,p,T,z,lle,cache = tpd_cache(wrapper,p,T,z,z))
     d_l,d_v,_,_,_,Hϕ = cache
-    TT = Base.promote_eltype(wrapper.model,p,T,z)
     w = ion_compositions(wrapper,z)
     n = sum(w)
     logsumz = log(n)
@@ -174,7 +171,7 @@ function ∂lnϕ∂P(wrapper::MeanIonicApproach, p, T, z=SA[1.], cache = ∂lnϕ
 
     ∂lnϕ∂Pi = ∂lnϕ∂P(wrapper.model,p,T,w,cache;phase,vol0,threaded,vol)
     E = eachrow(wrapper.salt.E)
-    for i in 1:length(∂lnϕ∂Pi)
+    for i in eachindex(∂lnϕ∂Pi)
         Ei = E[i]
         ∂lnϕ∂Pi[i] = dot(Ei,∂lnϕ∂Pi)/sum(Ei)
     end
@@ -190,7 +187,7 @@ function ∂lnϕ∂T(wrapper::MeanIonicApproach, p, T, z=SA[1.], cache = ∂lnϕ
 
     ∂lnϕ∂Ti = ∂lnϕ∂Ti(wrapper.model,p,T,w,cache;phase,vol0,threaded,vol)
     E = eachrow(wrapper.salt.E)
-    for i in 1:length(∂lnϕ∂Ti)
+    for i in eachindex(∂lnϕ∂Ti)
         Ei = E[i]
         ∂lnϕ∂Ti[i] = dot(Ei,∂lnϕ∂Ti)/sum(Ei)
     end

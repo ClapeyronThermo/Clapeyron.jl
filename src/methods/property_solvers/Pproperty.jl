@@ -17,12 +17,12 @@ Returns a tuple, containing:
 - Vapour volume at edge Point `[m³]`
 """
 function edge_pressure(model,T,z,v0 = nothing;crit_retry = true)
-    edge,crit,status = _edge_pressure(model,T,z,v0,crit_retry)
+    edge,_,_ = _edge_pressure(model,T,z,v0,crit_retry)
     return edge
 end
 
 function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
-    if v0 == nothing
+    if v0 === nothing
         vv0,_ = x0_edge_pressure(model,T,z)
     else
         vv0 = (v0[1],v0[2])
@@ -46,14 +46,14 @@ function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
     _is_positive((v_pmin,v_pmax,T)) || return fail,fail,:failure
     ps,mus = equilibria_scale(model,z)
     edge,valid0 = try_2ph_edge_pressure(model,model,T,V01,V02,ps,mus,z,nothing)
-    p_eq,v1,v2 = edge
+    _,v1,_ = edge
     valid0 && return edge,fail,:success
     !crit_retry && return fail,fail,:failure
     #fail when calculating edge pressure, this happens near the (mechanical) critical point
     Tr = T/T_scale(model,z)
     vlog = log10(v1)
     crit = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
-    Tc,Pc,Vc = crit
+    Tc,_,_ = crit
     !isfinite(Tc) && return fail,fail,:failure
     Tc <= T && return fail,crit,:supercritical
     vlc,vvc = critical_vsat_extrapolation(model,T,Tc,Vc,z)
@@ -94,7 +94,7 @@ function Pproperty(model::EoSModel,T,prop,z = SA[1.0],
                   threaded = true) where TT
 
     cached_model = __tpflash_cache_model(model,NaN,T,z,:vle)
-    p,st = _Pproperty(cached_model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
+    p,_ = _Pproperty(cached_model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
     return p
 end
 
@@ -131,7 +131,6 @@ function _Pproperty(model::EoSModel,T,_prop,z = SA[1.0],
         return __Pproperty_check(res,verbose)
     end
 
-    n = sum(z)
     v0_edge,pure_sats = x0_edge_pressure(model,T,z)
     sol_options = (abstol,reltol,rootsolver,verbose)
 
@@ -151,9 +150,9 @@ function _Pproperty(model::EoSModel,T,_prop,z = SA[1.0],
     end
 
     #check isogibbs condition ("edge")
-    p0_bubble,p0_dew = v0_edge
+    #p0_bubble,p0_dew = v0_edge
     edge,crit,status = _edge_pressure(model,T,z,v0_edge)
-    P_edge,v_l,v_v = edge
+    #P_edge,v_l,v_v = edge
     edge_cache = (v0_edge,pure_sats,edge)
 
     if status == :supercritical
@@ -190,7 +189,7 @@ end
 
 #we check if the property lies outside the extended bound defined by the extrema of saturation pressures.
 function Pproperty_puresat(model,T,prop,z,property,cache,sol_options,phase)
-    v0_edge,pure_sats = cache
+    _,pure_sats = cache
     abstol,reltol,rootsolver,verbose = sol_options
     pmin_sat,pmax_sat = extrema(first,pure_sats)
     prop_puresat_l = property(model,pmax_sat,T,z,phase = :l)
@@ -225,9 +224,8 @@ function Pproperty_puresat(model,T,prop,z,property,cache,sol_options,phase)
 end
 
 function Pproperty_supercritical(model,T,prop,z,property,cache,sol_options,phase)
-    v0_edge,pure_sats,crit = cache
+    _,pure_sats,crit = cache
     abstol,reltol,rootsolver,verbose = sol_options
-    p0_bubble,p0_dew = v0_edge
     pmin_sat,pmax_sat,prop_puresat_l,prop_puresat_v = data_puresat
     Tc,Pc,Vc = crit
     n = sum(z)
@@ -305,8 +303,8 @@ function Pproperty_supercritical(model,T,prop,z,property,cache,sol_options,phase
 end
 
 function Pproperty_refine_edge(model,T,prop,z,property,cache,sol_options)
-    v0_edge,pure_sats,edge = cache
-    abstol,reltol,rootsolver,verbose = sol_options
+    v0_edge,_,edge = cache
+    verbose = last(sol_options)
     p0_bubble,p0_dew = v0_edge
     P_edge,v_l,v_v = edge
 
@@ -355,8 +353,8 @@ end
 
 function Pproperty_maybe_vapour(model,T,prop,z,property,cache,sol_options,prop_edge)
     v0_edge,pure_sats,edge = cache
-    abstol,reltol,rootsolver,verbose = sol_options
-    p0_bubble,p0_dew = v0_edge
+    verbose = last(sol_options)
+    _,p0_dew = v0_edge
     P_edge,_,_ = edge
     n = sum(z)
 
@@ -382,8 +380,8 @@ end
 
 function Pproperty_maybe_liquid(model,T,prop,z,property,cache,sol_options,prop_edge)
     v0_edge,pure_sats,edge = cache
-    abstol,reltol,rootsolver,verbose = sol_options
-    p0_bubble,p0_dew = v0_edge
+    verbose = last(sol_options)
+    p0_bubble,_ = v0_edge
     P_edge,_,_ = edge
     n = sum(z)
 
@@ -429,7 +427,7 @@ function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,v
 
     if status == :supercritical
         verbose && Xproperty_verbose(:out_purecrit_p)
-        Tc,Pc,Vc = crit
+        _,Pc,_ = crit
         if p0 !== nothing
             Pcrit0 = TT(p0)
         else

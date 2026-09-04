@@ -193,7 +193,7 @@ function PT_property(model,p,T,z,phase ,threaded,vol0,f::F,vol::VV) where {F,VV}
 end
 
 PT_property(model,p,T,z,phase, threaded,vol0,f::F) where {F} = PT_property(model,p,T,z,phase, threaded,vol0,f,nothing)
-PT_property(model,p,T,z,phase, vol,f::F) where {F} = PT_property(model,p,T,z,phase,false,nothing,f,vol)
+PT_property(model,p,T,z,phase,vol,f::F) where {F} = PT_property(model,p,T,z,phase,false,nothing,f,vol)
 
 __vt_on_pt_not_supported() = throw(error(lazy"Invalid unit and model combination."))
 
@@ -905,7 +905,7 @@ $VT_STRING
 function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
     v̄0 = uvstrip(model,vol0,z̄)
-    res = PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,VT_fugacity_coefficient)
+    return PT_property(model,p̄,T̄,z̄,phase,threaded,v̄0,VT_fugacity_coefficient)
 end
 
 function fugacity_coefficient!(φ,model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -943,7 +943,7 @@ function activity_coefficient(model::EoSModel,p,T,z = SA[1.0];
     if γmodel isa ActivityModel
         return activity_coefficient(γmodel,p̄,T̄,z̄)
     end
-    if μ_ref == nothing
+    if μ_ref === nothing
         return activity_coefficient_impl(model,p̄,T̄,z̄,reference_chemical_potential(model,p̄,T̄,reference;phase,threaded),reference,phase,threaded,v̄0)
     else
         return activity_coefficient_impl(model,p̄,T̄,z̄,μ_ref,reference,phase,threaded,v̄0)
@@ -979,7 +979,7 @@ function activity(model::EoSModel,p,T,z;
     if model isa ActivityModel
         return activity(model,p,T,z)
     end
-    if μ_ref == nothing
+    if μ_ref === nothing
         return activity_impl(__γ_unwrap(model),p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
     else
         return activity_impl(__γ_unwrap(model),p,T,z,μ_ref,reference,phase,threaded,vol0)
@@ -994,19 +994,19 @@ end
 
 function find_hydronium_index(model)
     idx = findfirst(isequal("hydronium"),component_list(model))
-    idx == nothing && return 0
+    idx === nothing && return 0
     return idx
 end
 
 function find_hydroxide_index(model)
     idx = findfirst(isequal("hydroxide"),component_list(model))
-    idx == nothing && return 0
+    idx === nothing && return 0
     return idx
 end
 
 function find_water_indx(model)
     idx = findfirst(isequal("water"),component_list(model))
-    idx == nothing && return 0
+    idx === nothing && return 0
     return idx
 end
 
@@ -1221,7 +1221,7 @@ end
 Calculates the thermodynamic factor matrix Γᵢⱼ (size: N-1 × N-1) defined as:
 
 ```julia
-Γᵢⱼ = δᵢⱼ + xᵢ ∂lnγᵢ/∂xⱼ
+Γᵢⱼ = δᵢⱼ + xᵢ * ∂lnγᵢ/∂xⱼ
 ```
 """
 function thermodynamic_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing,output = nothing)
@@ -1308,7 +1308,7 @@ function PT_property_withflash(model,p,T,z,phase,f::F) where {F}
     end
     if !is_unknown(phase)
         V = volume(model, p, T, z; phase)
-        return PT_property(model,p,T,z,phase,volume(model, p, T, z; phase),f)
+        return PT_property(model,p,T,z,phase,V,f)
     else
         res = tp_flash2(model,p,T,z)
         ff = PT_to_VT(f)

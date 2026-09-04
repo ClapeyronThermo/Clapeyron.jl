@@ -97,7 +97,7 @@ end
 function __show_group_i(io,val,missingvalue = "")
     keys,vals = val
     #@show val
-    if length(vals) == 0 && missingvalue != ""
+    if isempty(vals) && missingvalue != ""
         print(io,missingvalue)
     else
         show_pairs(io,keys,vals," => ",pair_separator = ", ",__show_group_ij)

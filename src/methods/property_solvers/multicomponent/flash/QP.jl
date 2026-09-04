@@ -17,7 +17,7 @@ end
 function qp_flash_x0(model,β,p,z,method::FlashMethod)
     verbose = get_verbosity(method)
     ∑z = sum(z)
-    if method.T0 == nothing
+    if method.T0 === nothing
         verbose && @info "calculating temperature via Tproperty"
         if 0 <= β <= 0.01
             verbose && @info "vapour fraction below 0.01, using bubble temperature directly"

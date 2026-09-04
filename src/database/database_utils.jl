@@ -21,7 +21,7 @@ julia> getfileextension("~/Desktop/text.txt")
 ```
 """
 function getfileextension(filepath::AbstractString)
-    path,ext = splitext(filepath)
+    _,ext = splitext(filepath)
     return String(chop(ext,head=1,tail=0))
 end
 
@@ -94,7 +94,7 @@ end
 flattenfilepaths(locations) = flattenfilepaths(locations,String[])
 
 function flattenfilepaths(locations,userlocations::Vector{String})
-    if length(locations) == 0 && length(userlocations) == 0
+    if isempty(locations) && isempty(userlocations)
         return String[]
     end
     defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
@@ -228,7 +228,6 @@ low_color(x) = low_color(string(x))
 
 function __pad_val(i,imax::Int)
     s = repr(i,context = :compact => true)
-    ls = length(s)
     return rpad(s,imax)
 end
 
@@ -239,7 +238,7 @@ function userlocation_merge(loc1,loc2)
         return loc2
     elseif loc1 isa Vector{String} && loc2 isa Vector{String}
         return append!(loc1,loc2)
-    elseif loc1 isa Vector{String} && length(loc1) == 0
+    elseif loc1 isa Vector{String} && isempty(loc1)
         return loc2
     elseif loc1 isa Vector{String} && can_nt(loc2)
         return loc2

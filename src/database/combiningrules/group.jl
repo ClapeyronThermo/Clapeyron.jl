@@ -45,7 +45,7 @@ function group_sum!(out::Union{SingleParameter,PairParameter},groups,param::Sing
         is_missing_i = false
         vi = v[i]
         for j in 1:gc
-            if v[i] != 0 #if the group count is nonzero, then reduce the ismissing values
+            if vi != 0 #if the group count is nonzero, then reduce the ismissing values
                 is_missing_i = is_missing_i | missingvals_gc[j]
             end
         end

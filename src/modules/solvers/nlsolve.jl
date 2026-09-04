@@ -59,10 +59,10 @@ function only_fj!(F, J, x)
     # shared calculations begin
     # ...
     # shared calculation end
-    if !(F == nothing)
+    if !(F === nothing)
         # mutating calculations specific to f! goes here
     end
-    if !(J == nothing)
+    if !(J === nothing)
         # mutating calculations specific to j! goes
     end
 end
@@ -108,10 +108,9 @@ function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions(
         return FJ_ad(f,_z)
     end
     Fx, Jx = FJ(x)
-    z = x
     T = eltype(Fx)
     stoptol = T(options.f_abstol)
-    ρF0, ρ2F0 = norm(Fx, Inf), norm(Fx, 2)
+    ρF0, _ = norm(Fx, Inf), norm(Fx, 2)
     nan = T(NaN)
     ρs = nan
     #@show ρF0
@@ -190,21 +189,25 @@ function roots_nlsolve(f::F,x0,method::Roots.AbstractBracketingMethod,options) w
     else
         sol = Roots.solve(prob,method)
     end
+    return sol
 end
 
 function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNonBracketingMethod ,options) where F
     prob = Roots.ZeroProblem(f,x0)
     sol = Roots.solve(prob,method)
+    return sol
 end
 
 function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNewtonLikeMethod ,options) where F
     prob = Roots.ZeroProblem(to_newton(f),x0)
     sol = Roots.solve(prob,method)
+    return sol
 end
 
 function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractHalleyLikeMethod,options) where F
     prob = Roots.ZeroProblem(to_halley(f),x0)
     sol = Roots.solve(prob,method)
+    return sol
 end
 
 #iterative solver
@@ -262,7 +265,7 @@ function solve1_update_state(state, x, fx; full_iter=true)
         return ((w1[1], w2[1], w3[1]), (w1[2], w2[2], w3[2]), α, :iter_full)
 
     elseif status == :bounded
-        a, b, c = x1, x2, x3
+        a, b, _ = x1, x2, x3
         fa, fb, fc = f1, f2, f3
         # Invariant: fa*fb < 0, |fa| <= |fb|, c is the previously displaced endpoint.
 
@@ -305,11 +308,11 @@ end
 
 
 function solve1_new_iter(old_state,x,fx,dfx = nothing;full_iter = true)
-    ∂fx = dfx == nothing ? fx : oftype(fx,dfx)
+    ∂fx = dfx === nothing ? fx : oftype(fx,dfx)
     state = solve1_update_state(old_state,x,fx;full_iter)
     xx,fxx,α,status = state
     if status == :iter0
-        if dfx == nothing
+        if dfx === nothing
             x0 = x
         else
             x0 = (x - (1 - α)*f/∂fx)
@@ -318,7 +321,7 @@ function solve1_new_iter(old_state,x,fx,dfx = nothing;full_iter = true)
     elseif status == :iter_initial
         xa,xb,_ = xx
         fa,fb,_ = fxx
-        dfdx = dfx == nothing ? ((fb - fa)/(xb - xa)) : ∂fx   
+        dfdx = dfx === nothing ? ((fb - fa)/(xb - xa)) : ∂fx   
         xnew = (xa - (1 - α)*fa/dfdx)
         return xnew,state
     elseif status == :iter_full
@@ -329,20 +332,16 @@ function solve1_new_iter(old_state,x,fx,dfx = nothing;full_iter = true)
             xlo, xhi = extrema((x1,x2,x3))
             span = xhi - xlo
             if !(xlo - span < xnew < xhi + span)
-                dfdx = dfx == nothing ? ((f2 - f1) / (x2 - x1)) : ∂fx
+                dfdx = dfx === nothing ? ((f2 - f1) / (x2 - x1)) : ∂fx
                 xnew = x1 - f1 / dfdx
             end
         else
-            dfdx = dfx == nothing ? ((f2 - f1) / (x2 - x1)) : ∂fx
+            dfdx = dfx === nothing ? ((f2 - f1) / (x2 - x1)) : ∂fx
             xnew = x1 - f1 / dfdx
         end
 
         if f1*f2 < 0
-            if x1 < x2
-                xlo,xhi,flo,fhi = x1,x2,f1,f2
-            else
-                xlo,xhi,flo,fhi = x2,x1,f2,f1
-            end
+            xlo,xhi = minmax(x1,x2)
             if !(xlo <= xnew <= xhi)
                 xm = 0.5*(xlo + xhi)
                 xrf = (fb * a - fa * b) / (fb - fa)
@@ -401,8 +400,6 @@ function solve1_new_iter(old_state,x,fx,dfx = nothing;full_iter = true)
             end
         end
         return xnew, state
-    else
-        return first(xx)*NaN,state
     end
     return first(xx)*NaN,state
 end

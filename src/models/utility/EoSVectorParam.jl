@@ -62,7 +62,7 @@ end
 
 function reference_state(model::EoSVectorParam)
     original_ref = reference_state(model.model)
-    if original_ref == nothing
+    if original_ref === nothing
         return model.reference_state
     else
         return original_ref

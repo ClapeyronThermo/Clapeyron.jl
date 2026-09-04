@@ -36,7 +36,7 @@ struct FugDewPressure{T} <: DewPointMethod
 end
 
 function Solvers.primalval(method::FugDewPressure{T}) where T
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
@@ -59,27 +59,27 @@ function FugDewPressure(;vol0 = nothing,
                                 second_order = true)
 
 
-    if p0 == x0 == vol0 == nothing
+    if p0 == x0 == vol0 === nothing
         return FugDewPressure{Nothing}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,second_order)
-    elseif (p0 == x0 == nothing) && !isnothing(vol0)
+    elseif (p0 == x0 === nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return FugDewPressure{typeof(vl)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,second_order)
-    elseif (vol0 == x0 == nothing) && !isnothing(p0)
+        return FugDewPressure{typeof(vl)}((vl,vv),p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,second_order)
+    elseif (vol0 == x0 === nothing) && !isnothing(p0)
         p0 = float(p0)
         return FugDewPressure{typeof(p0)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,second_order)
-    elseif (p0 == vol0 == nothing) && !isnothing(x0)
+    elseif (p0 == vol0 === nothing) && !isnothing(x0)
         T = eltype(x0)
         return FugDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,second_order)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(x0)
         vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return FugDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,second_order)
+        return FugDewPressure{T}((vl,vv),p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,second_order)
     elseif !isnothing(vol0) && !isnothing(x0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return FugDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,second_order)
+        return FugDewPressure{T}((vl,vv),p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,second_order)
     elseif  !isnothing(p0) && !isnothing(x0)
         p0,_ = promote(p0,first(x0))
         T = eltype(p0)
@@ -206,7 +206,7 @@ struct FugDewTemperature{T} <: DewPointMethod
 end
 
 function Solvers.primalval(method::FugDewTemperature{T}) where T
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
@@ -228,27 +228,27 @@ function FugDewTemperature(;vol0 = nothing,
     tol_of = 1e-8,
     second_order = true)
 
-    if T0 == x0 == vol0 == nothing
+    if T0 == x0 == vol0 === nothing
         return FugDewTemperature{Nothing}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,second_order)
-    elseif (T0 == x0 == nothing) && !isnothing(vol0)
+    elseif (T0 == x0 === nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return FugDewTemperature{typeof(vl)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,second_order)
-    elseif (vol0 == x0 == nothing) && !isnothing(T0)
+        return FugDewTemperature{typeof(vl)}((vl,vv),T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,second_order)
+    elseif (vol0 == x0 === nothing) && !isnothing(T0)
         T0 = float(T0)
         return FugDewTemperature{typeof(T0)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,second_order)
-    elseif (T0 == vol0 == nothing) && !isnothing(x0)
+    elseif (T0 == vol0 === nothing) && !isnothing(x0)
         T = eltype(x0)
         return FugDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,second_order)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(x0)
         vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return FugDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,second_order)
+        return FugDewTemperature{T}((vl,vv),T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,second_order)
     elseif !isnothing(vol0) && !isnothing(x0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return FugDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,second_order)
+        return FugDewTemperature{T}((vl,vv),T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,second_order)
     elseif  !isnothing(T0) && !isnothing(x0)
         T0,_ = promote(T0,first(x0))
         T = eltype(T0)

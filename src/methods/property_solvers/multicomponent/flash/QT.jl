@@ -14,7 +14,7 @@ end
 function qt_flash_x0(model,β,T,z,method::FlashMethod)
     verbose = get_verbosity(method)
     ∑z = sum(z)
-    if method.p0 == nothing
+    if method.p0 === nothing
         if 0 <= β <= 0.01
             verbose && @info "vapour fraction below 0.01, using bubble pressure directly"
             x = z ./ ∑z

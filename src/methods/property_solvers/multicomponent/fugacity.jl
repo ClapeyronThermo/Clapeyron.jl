@@ -269,13 +269,6 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_view,data::F
     _pressure = FugEnum.is_pressure(method)
     tol_stability = abs2(cbrt(tol_xy))
 
-    if _bubble_or_lle
-        n = length(modely)
-    else
-        n = length(modelx)
-    end
-
-
     lnK,K,w,w_old,w_calc,w_restart,_,Hϕx,Hϕy,u = cache
 
     OF = NaN*zero(eltype(lnK))
@@ -635,12 +628,12 @@ function _fug_OF_neq(model,prop,z,data,cache)
     end
 
     function j!(J, α)
-        fx = _fug_OF_neq!(nothing,J,x,model,prop,z,data,cache)
+        _fug_OF_neq!(nothing,J,x,model,prop,z,data,cache)
         return ∇f
     end
 
     obj = NLSolvers.VectorObjective(f!,j!,fj!,nothing)
-    prob = NEqProblem(obj, inplace = true)
+    return NEqProblem(obj, inplace = true)
 end
 
 function _fug_OF_neq(modelx,modely,prop,z,_view,data,cache)
@@ -655,10 +648,10 @@ function _fug_OF_neq(modelx,modely,prop,z,_view,data,cache)
     end
 
     function j!(J, α)
-        fx = _fug_OF_neq!(nothing,J,x,modelx,modely,prop,z,_view,data,cache)
+        _fug_OF_neq!(nothing,J,x,modelx,modely,prop,z,_view,data,cache)
         return ∇f
     end
 
     obj = NLSolvers.VectorObjective(f!,j!,fj!,nothing)
-    prob = NEqProblem(obj, inplace = true)
+    return NEqProblem(obj, inplace = true)
 end

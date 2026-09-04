@@ -54,7 +54,7 @@ function sublimation_pressure(model,T,method::ThermodynamicMethod)
 end
 
 function sublimation_pressure_impl(model::CompositeModel,T,method::ChemPotSublimationPressure)
-    if method.v0 == nothing
+    if method.v0 === nothing
         v0 = x0_sublimation_pressure(model,T)
     else
         v0 = method.v0
@@ -179,7 +179,7 @@ function sublimation_temperature_impl(model::CompositeModel,p,method::ChemPotSub
     fluid = fluid_model(model)
     T̄ = T_scale(fluid)
     p̄ = p_scale(fluid)
-    if method.v0 == nothing
+    if method.v0 === nothing
         v0 = x0_sublimation_temperature(model,p)
     else
         v0 = method.v0
@@ -215,8 +215,8 @@ function x0_sublimation_temperature(model::CompositeModel,p)
     #log(P/Ptriple) = K0 * (1/T - 1/Ttriple)
     Tinv = log(p/pt)/K0 + 1/Tt
     T0 =  1/Tinv
-    vs = volume(model,p,T0,phase = :s)
-    vs = volume(model,p,T0,phase = :v)
+    vs0 = volume(model,p,T0,phase = :s)
+    vv0 = volume(model,p,T0,phase = :v)
     return T0,vs0,vv0
 end
 
@@ -249,7 +249,7 @@ end
 
 function sublimation_pressure_impl(model::CompositeModel,T,method::IsoGibbsSublimationPressure)
     _1 = one(Base.promote_eltype(model,T))
-    if method.p0 == nothing
+    if method.p0 === nothing
         v0 = x0_sublimation_pressure(model,T)
         p0 = v0[3]*_1
     else
@@ -316,7 +316,7 @@ end
 
 function sublimation_temperature_impl(model::CompositeModel,p,method::IsoGibbsSublimationTemperature)
     _1 = one(Base.promote_eltype(model,p))
-    if method.T0 == nothing
+    if method.T0 === nothing
         v0 = x0_sublimation_temperature(model,p)
         T0 = v0[1]*_1
     else

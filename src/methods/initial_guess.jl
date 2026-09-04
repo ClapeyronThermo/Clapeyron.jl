@@ -43,7 +43,7 @@ function x0_volume_liquid_lowT(model,p,T,z)
         vlo = exp(lnvlo)
         plo = pressure(model,vlo,T,z)
         if plo < 0
-            for i in 1:10
+            for _ in 1:10
                 plo > 0 && break
                 vlo = sqrt(vlo*vhi)
                 plo = pressure(model,vlo,T,z)
@@ -446,7 +446,7 @@ function liquid_pressure_from_virial(model,T,z =SA[1.0],B = second_virial_coeffi
     =#
     RT = Rgas(model)*T
     n = sum(z)
-    vv_virial = -2*B #maximum gas volume predicted by virial equation
+    #vv_virial = -2*B #maximum gas volume predicted by virial equation
     pv_virial = -0.25*n*Rgas(model)*T/B #maximum virial predicted pressure
     γT = pv_eos/pv_virial
     
@@ -475,7 +475,7 @@ function pure_spinodal(model,_T,z = SA[1.0];phase = :l)
     pl = liquid_pressure_from_virial(model,_T,z,B,pv_eos)
     _v_lb = volume(model,pl,_T,z,phase = :l)
     T,v_lb,v_ub = promote(_T,_v_lb,_v_ub)
-    return pure_spinodal(model,T,v_lb,v_ub,phase,true,z)
+    return pure_spinodal_impl(model,T,v_lb,v_ub,phase,true,z)
 end
 
 #given an hermite polynomial that interpolates the spinodals
@@ -562,9 +562,10 @@ function pure_spinodal_newton(model,T,z,v0,dp_scale = v0*v0/(Rgas(model)*T))
     prob = Roots.ZeroProblem(dp,rho0)
     rho_sol = Roots.solve(prob,Roots.Newton())
     vsol = n/rho_sol
+    return vsol
 end
 
-function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0]) where K
+function pure_spinodal_impl(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z) where K
     fl,dfl,d2fl = p∂p∂2p(model,v_lb,T,z)
     fv,dfv,d2fv = p∂p∂2p(model,v_ub,T,z)
     dfx = ifelse(is_liquid(phase),dfl,dfv)
@@ -617,7 +618,7 @@ function pure_spinodal(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z = SA[1.0
             v_lb_new = vh
         end
 
-        return pure_spinodal(model,T,v_lb_new,v_ub_new,phase,false,z)
+        return pure_spinodal_impl(model,T,v_lb_new,v_ub_new,phase,false,z)
     end
 
     if dfx*dfh <= 0
@@ -656,19 +657,19 @@ function x0_sat_pure_spinodal(model,T,z = SA[1.0],B = second_virial_coefficient(
     return x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,B)
 end
 
-function x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,B = second_virial_coefficient(model,T,z),Vc = nothing)
+function x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,B = second_virial_coefficient(model,T,z),Vc = nothing)
     if Vc === nothing
-        vc = zero(v_lb)/zero(v_ub)
+        _vc = zero(_v_lb)/zero(_v_ub)
     else
-        vc,_,_ = promote(Vc,v_lb,v_ub)
+        _vc,_,_ = promote(Vc,_v_lb,_v_ub)
     end
-
+    T,v_lb,v_ub,vc = promote(_T,_v_lb,_v_ub,_vc)
     p(x) = pressure(model,x,T,z)
 
     if isnan(vc)
-        vsl = pure_spinodal(model,T,v_lb,v_ub,:l,true,z)
+        vsl = pure_spinodal_impl(model,_T,_v_lb,_v_ub,:l,true,z)
     else
-        vsl = pure_spinodal(model,T,v_lb,vc,:l,true,z)
+        vsl = pure_spinodal_impl(model,T,v_lb,vc,:l,true,z)
     end
 
     psl = p(vsl)
@@ -676,9 +677,9 @@ function x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,B = second_virial_coefficient(
         return pressure(model,v_lb,T,z),v_lb,v_ub
     end
     if isnan(vc)
-        vsv = pure_spinodal(model,T,vsl,v_ub,:v,true,z)
+        vsv = pure_spinodal_impl(model,T,vsl,v_ub,:v,true,z)
     else
-        vsv = pure_spinodal(model,T,vc,v_ub,:v,true,z)
+        vsv = pure_spinodal_impl(model,T,vc,v_ub,:v,true,z)
     end
 
     if isnan(vsv)
@@ -771,7 +772,6 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     _,T,Tc,Pc,Vc = promote(_1,_T,_Tc,_Pc,_Vc)
     Tr = T/Tc
     nan = _0/_0
-    RT = Rgas(model)*T
     z = SA[1.0]
     if Tr == 1
         return Pc,Vc,Vc
@@ -1043,6 +1043,7 @@ function critical_psat_extrapolation(model,T,Tc,Pc,Vc)
     dTinvdlnp = -Pc/(dpdT*Tc*Tc)
     Δlnp = (1/T - 1/Tc)/dTinvdlnp
     p = exp(Δlnp)*Pc
+    return p
 end
 
 critical_psat_extrapolation(model,T) = critical_psat_extrapolation(model,T,crit_pure(model))
@@ -1067,6 +1068,7 @@ function critical_tsat_extrapolation(model,p,Tc,Pc,Vc,z = SA[1.0])
     Δlnp = log(p/Pc)
     Tinv = 1/Tc + dTinvdlnp*Δlnp
     T = 1/Tinv
+    return T
 end
 
 critical_tsat_extrapolation(model,p) = critical_tsat_extrapolation(model,p,crit_pure(model))

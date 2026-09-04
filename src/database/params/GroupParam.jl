@@ -85,7 +85,6 @@ function recombine!(param::GroupParam{T}) where T
     groups = param.groups
     n_groups = param.n_groups
     ℂ = length(components)
-    𝔾 = length(groups)
     #initialization of flattenedgroups
     #flattenedgroups = unique!(reduce(vcat,groups))
     
@@ -175,7 +174,7 @@ function GroupParam(input::Vector{Tuple{String, Vector{Pair{String,T}}}},groupty
     )
     n_intergroups
     #do the rest of the work here
-    if gc_intragroups != nothing
+    if gc_intragroups !== nothing
         build_gc_intragroups!(param,gc_intragroups)
     end
     recombine!(param)

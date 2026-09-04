@@ -156,7 +156,7 @@ PairParam(name,components,values,missingvals) = PairParam(name,components,values
 
 #constructor in case we provide a normal vector
 function PairParam(name, components, values_or_missing::AbstractMatrix{T}) where T
-    if nonmissingtype(T) != T && T != Any
+    if nonmissingtype(T) != T || T == Any
         values,ismissingvalues = defaultmissing(values_or_missing)
     else
         values,ismissingvalues = values_or_missing,fill(false, size(values_or_missing))
@@ -165,9 +165,9 @@ function PairParam(name, components, values_or_missing::AbstractMatrix{T}) where
 end
 
 function PairParam(name, components, values_or_missing::AbstractVector{T}) where T 
-    if nonmissingtype(T) != T && T != Any
+    if nonmissingtype(T) != T || T == Any
         vec_values,vec_ismissingvalues = defaultmissing(values_or_missing)
-        pairvalues = singletopair(vec_values)
+        values = singletopair(vec_values)
         ismissingvalues = singletopair(vec_ismissingvalues,true)
     else
         values = singletopair(values_or_missing)

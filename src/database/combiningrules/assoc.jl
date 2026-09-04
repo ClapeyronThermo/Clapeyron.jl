@@ -1,18 +1,18 @@
 function assoc_extend(param::AssocParam{T}) where T 
-    length(param.values) == 0 && return param
+    isempty(param.values.values) && return param
     extended_vals = deepcopy(param.values)
     Compressed4DMatrices.extend!(extended_vals)
     return param_from_values(extended_vals,param)
 end
 
 function assoc_extend!(param::AssocParam)
-    length(param.values) == 0 && return param
+    isempty(param.values.values) && return param
     Compressed4DMatrices.extend!(param.values)
     return param
 end
 
 function assoc_extend!(mat::Compressed4DMatrix)
-    length(mat) == 0 && return mat
+    isempty(mat.values) && return mat
     Compressed4DMatrices.extend!(mat)
     return mat
 end
@@ -37,7 +37,7 @@ For each stored site pair `(a,b)` shared between components `i` and `j`, the new
 ```
 Where `f` is a two-argument (or five-argument, when a `K` matrix is supplied) 'combining' function, analogous in spirit to the ones used by [`kij_mix`](@ref)/[`pair_mix`](@ref) but operating on association-site data instead of plain pair data.
 
-If `f == nothing`, `ijab_mix!` will only add the corresponding mixing entries with the value of zero.
+If `f === nothing`, `ijab_mix!` will only add the corresponding mixing entries with the value of zero.
 
 Mutates and returns `Δ`. If `Δ` (or its underlying `Compressed4DMatrix`) has no entries, it is returned unchanged.
 
@@ -50,7 +50,7 @@ ijab_mix!(f::F,Δ::AssocParam,K::AbstractMatrix) where F = param_from_values(ija
 
 
 function ijab_mix!(f::F,Δ::Compressed4DMatrix,::Nothing) where F
-    length(Δ.values) == 0 && return Δ
+    isempty(Δ.values) && return Δ
     assoc_extend!(Δ)
     for (idx,(i,j),(a,b)) in indices(Δ)
         Δiiab = Δ[i,i][a,b]
@@ -65,7 +65,7 @@ function ijab_mix!(f::F,Δ::Compressed4DMatrix,::Nothing) where F
 end
 
 function ijab_mix!(f::F,Δ::Compressed4DMatrix,K::AbstractMatrix) where F
-    length(Δ.values) == 0 && return Δ
+    isempty(Δ.values) && return Δ
     assoc_extend!(Δ)
     for (idx,(i,j),(a,b)) in indices(Δ)
         Δiiab = Δ[i,i][a,b]
@@ -279,10 +279,10 @@ function assoc_mix!(data,components)
         data["bondvol"] = bondvol
         data["epsilon_assoc"] = epsilon_assoc
     else
-        x1 = get!(data,"bondvol") do
+        get!(data,"bondvol") do
             AssocParam("bondvol",components)
         end
-        x2 = get!(data,"epsilon_assoc") do
+        get!(data,"epsilon_assoc") do
             AssocParam("epsilon_assoc",components)
         end
     end

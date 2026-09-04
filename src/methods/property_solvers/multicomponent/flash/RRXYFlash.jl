@@ -37,13 +37,13 @@ struct RRXYFlash{P,T} <: FlashMethod
 end
 
 function Solvers.primalval(method::RRXYFlash{P,T}) where {P,T}
-    if P == Nothing
+    if P === nothing
         λP = Nothing
     else
         λP = Solvers.primal_eltype(P)
     end
 
-    if T == Nothing
+    if T === nothing
         λT = Nothing
     else
         λT = Solvers.primal_eltype(P)
@@ -85,7 +85,7 @@ function RRXYFlash(;equilibrium = :unknown,
 
     !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for RRXYFlash"))
     if flash_result isa FlashResult
-        comps,β,volumes = flash_result.compositions,flash_result.fractions,flash_result.volumes
+        comps,volumes = flash_result.compositions,flash_result.volumes
         np = numphases(flash_result)
         np != 2 && incorrect_np_flash_error(RRXYFlash,flash_result)
         w1,w2 = comps[1],comps[2]
@@ -110,10 +110,10 @@ function RRXYFlash(;equilibrium = :unknown,
         end
     end
 
-    if T == Nothing && v0 !== nothing
+    if T === nothing && v0 !== nothing
         TT = Base.promote_eltype(v0[1],v0[2])
         _v0 = (v0[1],v0[2])
-    elseif T != nothing && v0 !== nothing
+    elseif T !== nothing && v0 !== nothing
         TT = Base.promote_eltype(one(T),v0[1],v0[2])
         _v0 = (v0[1],v0[2])
     else
@@ -203,7 +203,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
     outer_lnK_old = similar(z,TT)
 
     β = convert(TT,flash0.fractions[2])/sum(flash0.fractions)
-    OF_old = nan
     OF = nan
 
     #used if the phase is trivial
@@ -276,7 +275,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
                 K .= exp.(lnK)
             end
 
-            β_old = β
             β = rachfordrice(K, z; β0 = β, K_tol = tol_xy, verbose)
             x,y = update_rr!(K,β,z,x,y)
 
@@ -290,7 +288,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
 
         ss_status == RRTrivial && break
         ss_status == RRFailure && break
-        OF_old = OF
 
         #calculate liquid volumes with PTFlashWrapper, if necessary
         spec_function === volume && update_volume!(model,result,p,T)
@@ -369,7 +366,6 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
         end
 
         if verbose
-            bb = flash_result.fractions[2]/sum(flash_result.fractions)
             @info "$(__pad_val(i,4))  $(__pad_val(ss_count,4))     $outer_status   $(__pad_val(p,16)) $(__pad_val(T,16)) $(__pad_val(OF,16)) $(__pad_val(OF_pT,16))"
         end
 

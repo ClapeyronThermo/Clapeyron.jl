@@ -11,7 +11,7 @@ It has the following fields:
 * `n_flattenedsites`: the site multiplicities corresponding to each site in `flattenedsites`
 * `i_flattenedsites`: an iterator that goes through the indices for each flattened site
 Let's explore the sites in a 3-component `SAFTGammaMie` model:
-```julia
+```julia-repl
 julia> model3 = SAFTgammaMie([
                 "ethanol",
                 ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),
@@ -276,7 +276,7 @@ function gc_to_comp_sites!(out::SiteParam,sites::SiteParam,groups::GroupParamete
     offset = 1
 
     is_empty = iszero(sites.n_sites.v)
-    if out.sourcecsvs != nothing && sites.sourcecsvs != nothing && sites.sourcecsvs !== out.sourcecsvs
+    if out.sourcecsvs !== nothing && sites.sourcecsvs !== nothing && sites.sourcecsvs !== out.sourcecsvs
         resize!(out.sourcecsvs,length(sites.sourcecsvs))
         out.sourcecsvs .= sites.sourcecsvs
     end
@@ -307,14 +307,14 @@ function gc_to_comp_sites!(out::SiteParam,sites::SiteParam,groups::GroupParamete
             i_groups_i = i_groups_per_comp[i]
             n_groups_i = n_groups[i]
 
-            for k in 1:length(i_groups_i)
+            for k in eachindex(i_groups_i)
                 g = i_groups_i[k] #flattened-group-index
                 n_gc_k = n_groups_i[k] #amount of groups k in component i
                 gname = gc_names[g]
                 g_sitenames = gc_sitenames[g]
                 gc_n_sites = sites.n_sites[g]
 
-                for s in 1:length(g_sitenames)
+                for s in eachindex(g_sitenames)
                     push!(sites_i,gname * '/' * g_sitenames[s])
                     push!(n_sites_v, gc_n_sites[s]*n_gc_k) #amount of sites equal to n_gc * n_sites(gc)
                     push!(translator_i,(g,s))
@@ -332,7 +332,7 @@ end
 
 function _gc_to_comp_sites!(m::Compressed4DMatrix{T1},m_gc::Compressed4DMatrix{T2},sites::SiteParam) where {T1,T2}
 
-    if length(sites.n_sites.v) == 0
+    if isempty(sites.n_sites.v)
         resize!(m.values,0)
         resize!(m.indices,0)
         resize!(m.site_offsets,1)
@@ -343,8 +343,7 @@ function _gc_to_comp_sites!(m::Compressed4DMatrix{T1},m_gc::Compressed4DMatrix{T
     site_offsets = sites.n_sites.p
     resize!(m.site_offsets,length(site_offsets))
     m.site_offsets .= site_offsets
-    length(m_gc.values) == 0 && return m
-    site_translator = sites.site_translator
+    isempty(m_gc.values) && return m
     Compressed4DMatrices.extend!(m)
     for (idx,(i,j),(a,b)) in indices(m)
         igc,jgc,agc,bgc = get_group_ijab(sites,i,j,a,b)

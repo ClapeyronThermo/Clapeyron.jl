@@ -61,10 +61,8 @@ end
 
 function joindata!(old::RawParam,new::RawParam)
     tnew,type_sucess = joindata!(old.type,new.type)
-    if old.grouptype !== new.grouptype
-        if old.grouptype != :unknown && new.grouptype != :unknown #for backwards compatibility
-            error_different_grouptype(old,new,old.name)
-        end
+    if old.grouptype !== new.grouptype && old.grouptype != :unknown && new.grouptype != :unknown #for backwards compatibility
+        error_different_grouptype(old,new,old.name)
     end
 
     if !type_sucess
@@ -191,7 +189,7 @@ function compile_single_vec(components,raw::RawParam)
     else
         values = fill("",l)
     end
-    if raw.component_info == nothing #named tuple input
+    if raw.component_info === nothing #named tuple input
         return raw.data
     end
     
@@ -261,7 +259,7 @@ end
 end
 
 function compile_assoc(name,components,raw::RawParam,sites,options)
-    if isnothing(sites) && length(raw.component_info) > 0
+    if isnothing(sites) && !isempty(raw.component_info)
         __compile_assoc_missing_site_error(name)
     end
     site_strings = sites.sites
@@ -304,7 +302,6 @@ end
 #Sort site tape, so that components are sorted by the input.
 function standardize_comp_info(component_info,components,site_strings)
     ijab = Vector{Tuple{Int,Int,Int,Int}}(undef,length(component_info))
-    l = length(components)
     for (i,val) ∈ pairs(component_info)
         c1,c2,s1,s2 = val
         idx1 = findfirst(isequal(c1), components)::Int
@@ -357,7 +354,6 @@ function SingleMissingError(param::SingleParameter;all = false)
     if all
         throw(MissingException("cannot found values of " * error_color(param.name) * " for all input components."))
     else
-        missingvals = param.ismissingvalues
         idx = findall(param.ismissingvalues)
         comps = param.components[idx]
         throw(MissingException(string("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")))

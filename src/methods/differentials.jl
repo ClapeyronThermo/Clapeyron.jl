@@ -112,7 +112,6 @@ function p∂p∂rho(model, rho, T, z=SA[1.0])
     V   = n / rho
     p, dpdV = p∂p∂V(model, V, T, z)
     dVdρ    = -V / rho
-    d2Vdρ2  =  2 * V / (rho*rho)
     dpdrho   = dpdV * dVdρ
     return SVector(p, dpdrho)
 end

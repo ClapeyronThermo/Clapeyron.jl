@@ -96,7 +96,7 @@ macro sum(expr)
     end
     iterator = unique!(iterator)
     length(iterator) != 1 && error("@sum: only one iterator index is allowed")
-    length(length_indicator) == 0 && error("@sum: no length indicator found")
+    isempty(length_indicator) && error("@sum: no length indicator found")
     idx = iterator[1]
     len = length_indicator[1]
     res_expr = Expr(:call,:(Base.promote_eltype))
@@ -239,7 +239,7 @@ function __struct_expr!(name,parent,paramstype;idealmodel = true,sites = true,gr
             PARAM_LETTER = :ERROR
         end
 
-        for i in 1:length(curly_args)
+        for i in eachindex(curly_args)
             if curly_args[i] isa Expr && curly_args[i].head == :<:
                 curly_args[i] = curly_args[i].args[1]
             end

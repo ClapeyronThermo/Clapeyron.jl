@@ -8,7 +8,7 @@ All methods used in this way subtype `ThermodynamicMethod`.
 
 ## Examples
 Saturation pressure:
-```julia
+```julia-repl
 model = PR(["water"])
 Tsat = 373.15
 saturation_pressure(model,Tsat) #using default method (chemical potential with volume base)
@@ -16,7 +16,7 @@ saturation_pressure(model,Tsat,SuperAncSaturation()) #solve using cubic superanc
 ```
 
 Bubble point pressure
-```julia
+```julia-repl
 model = PCSAFT(["methanol","cyclohexane"])
 T = 313.15
 z = [0.5,0.5]
@@ -312,7 +312,7 @@ Returns a [`ReferenceState`](@ref) storing the ideal gas formation entropies and
 """
 function IGFormReferenceState(_components;userlocations = String[],H0 = nothing,S0 = nothing,verbose = false)
     components = format_components(_components)
-    if H0 != nothing && S0 != nothing
+    if H0 !== nothing && S0 !== nothing
         _H0 = convert(Vector{Float64},H0)
         _S0 = convert(Vector{Float64},S0)
     else

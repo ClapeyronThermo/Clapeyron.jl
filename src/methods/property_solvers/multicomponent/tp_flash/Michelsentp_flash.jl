@@ -78,7 +78,7 @@ function index_reduction(m::MichelsenTPFlash,idx::AbstractVector)
 end
 
 function Solvers.primalval(method::MichelsenTPFlash{T}) where {T}
-    if T == Nothing
+    if T === nothing
         return Solvers.primalval_struct(method,T)
     else
         return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
@@ -111,7 +111,7 @@ function MichelsenTPFlash(;equilibrium = :unknown,
         return MichelsenTPFlash(;equilibrium,x0 = w1,y0 = w2,v0 = v,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles,verbose)
     end
 
-    if K0 == x0 == y0 == nothing #nothing specified
+    if K0 == x0 == y0 === nothing #nothing specified
         #is_lle(equilibrium)
         T = Nothing
     else
@@ -140,10 +140,10 @@ function MichelsenTPFlash(;equilibrium = :unknown,
         throw(error("incorrect specification for nacc"))
     end
 
-    if T == Nothing && v0 != nothing
+    if T === nothing && v0 !== nothing
         TT = Base.promote_eltype(v0[1],v0[2])
         _v0 = (v0[1],v0[2])
-    elseif T != nothing && v0 != nothing
+    elseif T !== nothing && v0 !== nothing
         TT = Base.promote_eltype(one(T),v0[1],v0[2])
         _v0 = (v0[1],v0[2])
     else
@@ -202,7 +202,6 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
     vol0 === nothing && (vol0 = (nothing,nothing))
     volx, voly = vol0
 
-    nc = length(model)
     # constructing non-in-x list
     model_components = component_list(model)
     non_inx = comps_in_equilibria(model_components,non_inx_list)
@@ -468,7 +467,6 @@ verbose &&
     elseif status == RREq && β >= one(β) - eps(eltype(β))
         final_status = RRVapour
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
-        @show (model,p,T,z)
         verbose && @info "material balance failed."
         final_status = RRFailure
     end

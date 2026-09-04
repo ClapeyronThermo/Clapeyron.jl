@@ -5,12 +5,12 @@ update_temperature!(model,T) = nothing
 function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,verbose_cache)
     x,y,z =  w
     K,lnK = vec_cache
-    #using cache
-    v1 = lnK[1]
-    v2 = lnK[2]
+   
     phasex,phasey = phases
     non_inx,non_iny = non_inw
 
+    #v1 = lnK[1]
+    #v2 = lnK[2]
     lnϕx, volx = modified_lnϕ(model, p, T, x, dlnϕ_cache; phase = phasex)
     lnK .= lnϕx
     lnϕy, voly = modified_lnϕ(model, p, T, y, dlnϕ_cache; phase = phasey)
@@ -19,7 +19,7 @@ function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,verbos
     K .= exp.(lnK)
     lnK[1] = volx
     lnK[2] = voly
-    for i in 1:length(K)
+    for i in eachindex(K)
         non_inx[i] && (K[i] = Inf)
         non_iny[i] && (K[i] = 0)
     end
@@ -89,13 +89,13 @@ struct RRQXFlash{P,T} <: FlashMethod
 end
 
 function Solvers.primalval(method::RRQXFlash{P,T}) where {P,T}
-    if P == Nothing
+    if P === nothing
         λP = Nothing
     else
         λP = Solvers.primal_eltype(P)
     end
     
-    if T == Nothing
+    if T === nothing
         λT = Nothing
     else
         λT = Solvers.primal_eltype(P)
@@ -131,7 +131,7 @@ function RRQXFlash(;equilibrium = :unknown,
                         verbose = false,)
     !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for RRQXFlash"))
     if flash_result isa FlashResult
-        comps,β,volumes = flash_result.compositions,flash_result.fractions,flash_result.volumes
+        comps,volumes = flash_result.compositions,flash_result.volumes
         np = numphases(flash_result)
         np != 2 && incorrect_np_flash_error(RRQXFlash,flash_result)
         w1,w2 = comps[1],comps[2]
@@ -154,10 +154,10 @@ function RRQXFlash(;equilibrium = :unknown,
         end
     end
 
-    if T == Nothing && v0 !== nothing
+    if T === nothing && v0 !== nothing
         TT = Base.promote_eltype(v0[1],v0[2])
         _v0 = (v0[1],v0[2])
-    elseif T != nothing && v0 !== nothing
+    elseif T !== nothing && v0 !== nothing
         TT = Base.promote_eltype(one(T),v0[1],v0[2])
         _v0 = (v0[1],v0[2])
     else
