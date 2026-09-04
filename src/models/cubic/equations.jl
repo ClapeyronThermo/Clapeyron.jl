@@ -468,42 +468,36 @@ end
 
 
 function cubic_poly_eta_good_roots(nr,η1,η2,η3,poly_η)
+    nr == 0 && return 0,η1,η2,η3
     c0 = first(poly_η)
     positive_p = c0 < 0
-    nr == 0 && return 0,η1,η2,η3
     in_tol(η) = zero(η) <= η <= one(η)
-    if nr == 1
-        if in_tol(η1)
-            return 1,η1,η2,η3
-        else
-            return 0,η1,η2,η3
-        end
-    end
 
-    if nr == 2
-        t1,t3 = in_tol(η1),in_tol(η3)
+    t1 = in_tol(η1)
+    nr == 1 && (return Int(t1),η1,η2,η3)
+
+    t3 = in_tol(η3)
+    if nr == 2   
         if t1 && t3
             positive_p && return 2,η1,η2,η3 #both roots are valid, may be liquid or vapour spinodal
             ηdensest = max(η1,η3)
             return 1,ηdensest,ηdensest,ηdensest #on negative pressures, only the liquid spinodal pseudo-stable branch exists
         end
-        t1 && return 1,η3,η3,η3 #t1 is not valid
-        t3 && return 1,η1,η1,η1
+        t3 && return 1,η3,η3,η3
+        t1 && return 1,η1,η1,η1
         return 0,η1,η2,η3
     end
 
-    if nr == 3
-        t1,t2,t3 = in_tol(η1),in_tol(η2),in_tol(η3)
-        if t2 && (!t1 && !t3)
-            return 1,η2,η2,η2
-        elseif t1 && (!t3)
-            return 1,η1,η1,η1
-        elseif t3 && (!t1)
-            return 1,η3,η3,η3
-        end
-        return 3,η1,η2,η3
+    t2 = in_tol(η2)
+    if t2 && (!t1 && !t3)
+        return 1,η2,η2,η2
+    elseif t1 && (!t3)
+        return 1,η1,η1,η1
+    elseif t3 && (!t1)
+        return 1,η3,η3,η3
     end
-    return n3,η1,η2,η3
+
+    return 3,η1,η2,η3
 end
 
 function cubic_poly_solver_status(η,ηc,st_expected,ignore_bounds = false)
