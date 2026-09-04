@@ -467,7 +467,6 @@ verbose &&
     elseif status == RREq && β >= one(β) - eps(eltype(β))
         final_status = RRVapour
     elseif !material_balance_rr_converged((x,y),z,β) #material balance failed
-        @show (model,p,T,z)
         verbose && @info "material balance failed."
         final_status = RRFailure
     end

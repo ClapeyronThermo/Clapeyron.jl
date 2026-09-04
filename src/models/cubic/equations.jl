@@ -375,26 +375,24 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     iszero(p) && !is_liquid(phase) && return 2,oftype(_1,Inf),oftype(_1,Inf) #fast handling of infinite vapour root
 
     #polynomial to calculate roots in η = b/V variable formulation.
-    pη3 = fma_evalpoly(b,(_1*a,_1*RT*w,_1*p*w))# a + RT*b*w + p*b^2*w
-    pη2 = -(a - RT*b*u + p*b^2*(w - u)) #fma_evalpoly(b,(_1*a,))
-    pη1 = RT*b + p*b^2*(1-u)
-    pη0 = -p*b^2
+    
+    pb2 = _1*p*b^2
+    rtbpb2 = _1*b*(RT + p*b)
+    pη3 = a + w*rtbpb2 #fma_evalpoly(b,(_1*a,_1*RT*w,_1*p*w)) # a + RT*b*w + p*b^2*w
+    pη2 = -(a - rtbpb2*u + pb2*w)     #-(a - RT*b*u + p*b^2*(w - u)) 
+    pη1 = rtbpb2 - u*pb2
+    pη0 = -pb2
     poly_η = (pη0,pη1,pη2,pη3)
+
     ηc = -pη2/(3*pη3) #critical local η, we can decide if the root is liquid or gas.
     #WARNING: (this criteria fails with the anomalous second maxwell loop at high T)
-
+    if !(0 <= ηc <= 1) && p > 0
+        ηc = ifelse(p > 0,0.5*one(ηc),one(ηc))
+    end
 
     nr,η1,ηI,ηR,_ = Solvers.__roots3(poly_η)
     nr,η1,ηI,ηR = cubic_poly_eta_good_roots(nr,η1,ηI,ηR,poly_η)
     nr == 0 && return -1,∅,∅ #no valid roots from solver, bailing out
-
-    if nr == 1 && st_expected == 99
-        if p < 0 #negative pressures, always liquid root
-            st_expected = 1
-        else #positive pressures, liquid or gas at normal conditions where ηc exists, assume gas otherwise
-            st_expected = (0 < ηc < 1) ? (η < ηc ? 2 : 1) : 2
-        end
-    end
 
     #if we have three roots, but we want one, then we can discard the other.
     if nr == 3 && st_expected != 99
@@ -402,12 +400,18 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
         nr,η1,ηI,ηR = 1,ηx,ηx,ηx
     end
 
-    v1,v2 = b/η1,b/ηR
-    εp = 1e-6*abs(max(p,one(p)))
-    good_solve_1 = true
+    if nr == 1 && st_expected == 99
+        st_expected = ifelse(η1 < ηc,2,1)
+    end
 
+    v1 = b/η1
+    v2 = b/ηR
+    εp = 1e-6*abs(max(p,one(p)))
+
+    good_solve_1 = true
     p1 = RT/(v1-b) - a/(v1*v1 + u*b*v1 + w*b*b)
     abs(p - p1) > εp && (good_solve_1 = false)
+    good_solve_1 && nr == 1 && (return 1,v1,v1) #no other root,both liquid an vapour roots converge to the same phase
 
     good_solve_2 = true
     if nr > 1
@@ -415,19 +419,14 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
         abs(p - p2) > εp && (good_solve_2 = false)
     end
 
-    st1 = cubic_poly_solver_status(η1,ηc,phase) #check status of root 1 (and calculate root 1)
-    vx1 = st1 > 0 ? v1 : ∅
-    good_solve_1 && nr == 1 && (return max(0,st1),v1,v1) #no other root,both liquid an vapour roots converge to the same phase
-    good_solve_1 && nr == 2 && (return st1,vx1,vx1) #2 roots, return the single root unless the less stable root is requested
-    st2 = cubic_poly_solver_status(ηR,ηc,phase) #check status of root 2. if there are two valid roots, then we asked for it or the gibbs criteria is needed
-    vx2 = st2 > 0 ? v2 : ∅
+    st1 = cubic_poly_solver_status(η1,ηc,st_expected) #check status of root 1 (and calculate root 1)
+    vx1 = ifelse(st1 > 0,v1,∅)
+    st2 = cubic_poly_solver_status(ηR,ηc,st_expected) #check status of root 2. if there are two valid roots, then we asked for it or the gibbs criteria is needed
+    vx2 = ifelse(st2 > 0,v2,∅)
     if good_solve_1 && good_solve_2
         st1 == -1 && st2 == st_expected && (return st2,vx2,vx2) #if root 2 is requested, return root 2
         st2 == -1 && st1 == st_expected && (return st1,vx1,vx1) #if root 1 is requested, return root 1
-    end
-
-    if good_solve_1 && good_solve_2
-        vl,vv = minmax(b/η1,b/ηR)
+        vl,vv = minmax(v1,v2)
         return 0,vl,vv #use gibbs criterion to choose root
     end
 
@@ -446,21 +445,21 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     poly_s = (ps0,ps1,ps2,ps3)
 
     if !good_solve_1
-        _phase = nr == 1 ? :unknown : phase
-        st11,vsol1 = cubic_poly_solver_refine(η1,ηc,poly_v,poly_s,pr,b,_phase)
+        _st_expected = ifelse(nr == 1,99,st_expected)
+        st11,vsol1 = cubic_poly_solver_refine(η1,ηc,poly_v,poly_s,pr,b,_st_expected)
     else
         st11,vsol1 = st1,v1
     end
-    v11 = st11 > 0 ? vsol1 : ∅
+    v11 = ifelse(st11 > 0,vsol1,∅)
     nr == 1 && (return max(0,st11),vsol1,vsol1) #no other root,both liquid an vapour roots converge to the same phase
     nr == 2 && st1l > 0 && return (return st11,v11,v11) #2 roots, return the single root unless the less stable root is requested
 
     if !good_solve_2
-        st22,vsol2 = cubic_poly_solver_refine(ηR,ηc,poly_v,poly_s,pr,b,phase)
+        st22,vsol2 = cubic_poly_solver_refine(ηR,ηc,poly_v,poly_s,pr,b,st_expected)
     else
         st22,vsol2 = st2,v2
     end
-    v22 = st22 > 0 ? vsol2 : ∅
+    v22 = ifelse(st22 > 0,vsol2,∅)
     st11 == -1 && st22 == st_expected && (return st22,v22,v22) #if root 2 is requested, return root 2
     st22 == -1 && st11 == st_expected && (return st11,v11,v11) #if root 1 is requested, return root 1
     vll,vvv = minmax(v11,v22)
@@ -505,22 +504,22 @@ function cubic_poly_eta_good_roots(nr,η1,η2,η3,poly_η)
         return 3,η1,η2,η3
     end
     return n3,η1,η2,η3
-
 end
 
-function cubic_poly_solver_status(η,ηc,phase,ignore_bounds = false)
+function cubic_poly_solver_status(η,ηc,st_expected,ignore_bounds = false)
     !isfinite(η) && return -1
     valid_ηc = (0 < ηc < 1)
     st0 = valid_ηc ? (η < ηc ? 2 : 1) : 0
     !ignore_bounds && η > 1 && return -1
     !ignore_bounds && η < 0 && return -1
-    st0 == 2 && is_liquid(phase) && return -1
-    st0 == 1 && is_vapour(phase) && return -1
+    if st_expected == 1 || st_expected == 2
+        st_expected != st0 && (return -1)
+    end
     return st0
 end
 
-function cubic_poly_solver_refine(η,ηc,poly_v,poly_s,pr,b,phase)
-    st = cubic_poly_solver_status(η,ηc,phase,true)
+function cubic_poly_solver_refine(η,ηc,poly_v,poly_s,pr,b,st_expected)
+    st = cubic_poly_solver_status(η,ηc,st_expected,true)
     if st == -1
         nan = oftype(η,NaN)
         return st,nan,nan
@@ -539,7 +538,7 @@ function cubic_poly_solver_refine(η,ηc,poly_v,poly_s,pr,b,phase)
         vx = (SV + 1)/pr
         ηx = b/vx
     end
-    new_st = cubic_poly_solver_status(ηx,ηc,phase)
+    new_st = cubic_poly_solver_status(ηx,ηc,st_expected)
     return new_st,vx
 end
 
