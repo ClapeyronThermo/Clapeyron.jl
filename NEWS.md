@@ -5,6 +5,7 @@
 - `Unitful.jl` extension: support for missing bulk methods
 - `Unitful.jl` extension: support for `PH`, `PS`, `VT`, `QT`, `QP`, `TS` basis
 - `Unitful.jl` extension: support for all flashes
+- Experimental: `Clapeyron.MassFractions` wrapper to indicate that the vector of compositions is a mass composition vector.
 
 ## Bug fixes
 
