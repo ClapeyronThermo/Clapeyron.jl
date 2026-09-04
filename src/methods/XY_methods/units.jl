@@ -5,18 +5,7 @@
 @inline ustrip(::Nothing,x,f::F) where F = x
 
 #unit stripping for compositions: must handle total compositions (mass and molar).
-"""
-    MassFractions(values)
-
-Mark a vector of mass fractions for conversion to molar amounts when it is used
-as a composition input.
-"""
-struct MassFractions{T<:AbstractVector}
-    values::T
-end
-
 @inline uzstrip(model,z::Number) = uzstrip(unit_system(z),model,SA[z])
-@inline uzstrip(model,z::MassFractions) = map((zi,Mwi) -> 1000*zi/Mwi,z.values,mw(model))
 @inline uzstrip(model,z) = uzstrip(unit_system(z),model,z)
 @inline uzstrip(::Nothing,model,z) = z
 
@@ -88,4 +77,41 @@ with_output_unit(::Val{true},res::Symbol,t::Tuple{X,Y},f::F) where {F,X,Y} = res
 #differentiate p-T input from V-T input
 unitful_is_pressure(p) = true
 
-export MassFractions
+
+"""
+    MassFractions(values;molar_basis = true) <: AbstractVector
+
+
+Vector wrapper; marks a vector of mass fractions for conversion to molar amounts when it is used as a composition input.
+The vector is always normalized, so the sum of mass fractions is always one.
+
+By default, `MassFractions` is transformed into return a set of molar amounts that sum to one `mol` of substance.
+By setting `molar_basis` to `false`, `MassFractions` will return a set of molar amounts that sum to one `kg` of mass instead. 
+"""
+struct MassFractions{T,V} <: AbstractVector{T}
+    values::V
+    mol::Bool
+    function MassFractions(x::V;molar_basis = true) where V <: AbstractVector{T} where T
+        n = sum(x)
+        w = x ./ n
+        TT = eltype(w)
+        VV = typeof(w)
+        return new{TT,VV}(w,molar_basis)
+    end
+end
+
+Base.length(z::MassFractions) = length(z.values)
+Base.size(z::MassFractions) =  size(z.values)
+@inline Base.getindex(z::MassFractions,i::Int) = z.values[i] 
+
+@inline function uzstrip(model,z::MassFractions)
+    Mw = mw(model)
+    w = z.values
+    if z.molar_basis
+        n = @sum(1000*w[i]/Mw[i])
+    else
+        n = one(w[1]/Mw[1])
+    end
+    x = map((wi,Mwi) -> 1000*wi/(n*Mwi),w,Mw)
+    return x
+end

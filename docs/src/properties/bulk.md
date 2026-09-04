@@ -197,7 +197,6 @@ Clapeyron.QT
 Clapeyron.QP
 ```
 
-
 ## Old aliases
 
 The following functions were renamed to get rid of the `_free` naming. They still can be used, but they are considered deprecated.
@@ -210,4 +209,3 @@ Clapeyron.helmholtz_free_energy_res
 Clapeyron.mass_gibbs_free_energy
 Clapeyron.mass_helmholtz_free_energy
 ```
-
