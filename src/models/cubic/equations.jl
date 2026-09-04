@@ -388,11 +388,25 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     nr,η1,ηI,ηR = cubic_poly_eta_good_roots(nr,η1,ηI,ηR,poly_η)
     nr == 0 && return -1,∅,∅ #no valid roots from solver, bailing out
 
+    if nr == 1 && st_expected == 99
+        if p < 0 #negative pressures, always liquid root
+            st_expected = 1
+        else #positive pressures, liquid or gas at normal conditions where ηc exists, assume gas otherwise
+            st_expected = (0 < ηc < 1) ? (η < ηc ? 2 : 1) : 2
+        end
+    end
+
+    #if we have three roots, but we want one, then we can discard the other.
+    if nr == 3 && st_expected != 99
+        ηx = ifelse(st_expected == 1,ηR,η1)
+        nr,η1,ηI,ηR = 1,ηx,ηx,ηx
+    end
+
     v1,v2 = b/η1,b/ηR
     εp = 1e-6*abs(max(p,one(p)))
     good_solve_1 = true
 
-    p1 = RT/(v2-b) - a/(v1*v1 + u*b*v1 + w*b*b)
+    p1 = RT/(v1-b) - a/(v1*v1 + u*b*v1 + w*b*b)
     abs(p - p1) > εp && (good_solve_1 = false)
 
     good_solve_2 = true
