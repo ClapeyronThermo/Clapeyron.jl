@@ -1,25 +1,23 @@
 @testset verbose = true "Misc" begin
     @printline
-    model2 = PCSAFT(["water","ethanol"])
-    model4 = SAFTgammaMie(["methane","butane","isobutane","pentane"])
-    gc3 = UNIFAC(["propane","butane","isobutane"])
-    gc2 = SAFTgammaMie([
-        "ethanol",
-        ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])])
+    model2 = PCSAFT(["water", "ethanol"])
+    model4 = SAFTgammaMie(["methane", "butane", "isobutane", "pentane"])
+    gc3 = UNIFAC(["propane", "butane", "isobutane"])
+    gc2 = SAFTgammaMie(["ethanol", ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])])
 
     ideal1 = WalkerIdeal(["hexane"])
     noparam1 = gc3.puremodel[1].translation
     simple1 = gc3.puremodel[1].alpha
-    model_structgc = structSAFTgammaMie(["ethanol","octane"])
+    model_structgc = structSAFTgammaMie(["ethanol", "octane"])
     @testset "split_model" begin
         models2 = split_model(model2)
         @info "The following 2 error messages are expected:"
         @test_throws ArgumentError split_model(noparam1)
-        @test_throws MethodError split_model(model2,missing)
+        @test_throws MethodError split_model(model2, missing)
         @test models2[1].components[1] == model2.components[1]
         @test models2[2].components[1] == model2.components[2]
 
-        model2_unsplit = only(split_model(model2,[[1,2]]))
+        model2_unsplit = only(split_model(model2, [[1, 2]]))
         @test model2_unsplit.components == model2.components
 
         model4_split = Clapeyron.split_model(model4)
@@ -35,59 +33,58 @@
         @test structgc_split[1].groups.n_intergroups[1] == [0 1; 1 0]
         @test structgc_split[2].groups.n_intergroups[1] == [0 2; 2 5]
 
-        noparam1_split = split_model(noparam1,1:5)
+        noparam1_split = split_model(noparam1, 1:5)
         @test length(noparam1_split) == 5
         @test noparam1_split[1] == noparam1
 
         #splitting parameters
         @test split_model(model2.params.segment)[1][1] == model2.params.segment[1]
-        @test split_model(model2.params.sigma)[1][1,1] == model2.params.sigma[1,1]
+        @test split_model(model2.params.sigma)[1][1, 1] == model2.params.sigma[1, 1]
 
         #from notebooks, #173
-        nb_test = SAFTgammaMie(["methane","nitrogen","carbon dioxide","ethane","propane","butane","isobutane",
-        "pentane","isopentane","hexane","heptane","octane"])
+        nb_test = SAFTgammaMie(["methane", "nitrogen", "carbon dioxide", "ethane", "propane", "butane", "isobutane", "pentane", "isopentane", "hexane", "heptane", "octane"])
         @test length(split_model(nb_test)) == 12
 
         #weird error found on splitting groups
         model0 = SAFTgammaMie(["ethane"])
-        model0_split = SAFTgammaMie(["methane","ethane"]) |> split_model |> last
-        @test model0.params.epsilon.values[1,1] == model0_split.params.epsilon.values[1,1]
+        model0_split = SAFTgammaMie(["methane", "ethane"]) |> split_model |> last
+        @test model0.params.epsilon.values[1, 1] == model0_split.params.epsilon.values[1, 1]
 
         #error on spliting assoc models without sites
-        model_nosites = PCSAFT(["a"],userlocations = (Mw = 1.0,segment = 1.0,sigma = 1.0,epsilon = 1.0))
-        @test split_model(model_nosites)[1] isa PCSAFT 
-        
+        model_nosites = PCSAFT(["a"], userlocations=(Mw=1.0, segment=1.0, sigma=1.0, epsilon=1.0))
+        @test split_model(model_nosites)[1] isa PCSAFT
+
         #error on splitting models with ReferenceState
-        model_reference_state = JobackIdeal(["propane","hexane"])
+        model_reference_state = JobackIdeal(["propane", "hexane"])
         @test split_model(model_reference_state)[1] isa JobackIdeal
 
         #index reduction testing
         #https://discourse.julialang.org/t/mtk-solve-weird-error-message/131638
-        model_idx = PCSAFT(["ethane","propane","methane"])
-        @test length(Clapeyron.index_reduction(model_idx,[1.,0.,0.])[1]) == 1
-        @test length(Clapeyron.index_reduction(model_idx,[1.,0.,1.])[1]) == 2
-        @test length(Clapeyron.index_reduction(model_idx,[1.,1.,1.])[1]) == 3
-        @test length(Clapeyron.index_reduction(model_idx,[1.,-5e-16,1.])[1]) == 2
-        @test_throws ErrorException Clapeyron.index_reduction(model_idx,[0.,-5e-16,0.])
-        @test_throws ErrorException Clapeyron.index_reduction(model_idx,[0.,0.0,0.])
-        @test_throws BoundsError Clapeyron.index_reduction(model_idx,[0.,-5e-16,0.,0.0])
-        @test_throws BoundsError Clapeyron.index_reduction(model_idx,[0.,-5e-16])
-        @test_throws BoundsError Clapeyron.index_reduction(model_idx,[true,true])
-        @test_throws BoundsError Clapeyron.index_reduction(model_idx,[true,true,true,true])
-        @test_throws ErrorException Clapeyron.index_reduction(model_idx,[false,false,false])
-        @test_throws ErrorException Clapeyron.index_reduction(model_idx,[0.,0.0,0.])
+        model_idx = PCSAFT(["ethane", "propane", "methane"])
+        @test length(Clapeyron.index_reduction(model_idx, [1.0, 0.0, 0.0])[1]) == 1
+        @test length(Clapeyron.index_reduction(model_idx, [1.0, 0.0, 1.0])[1]) == 2
+        @test length(Clapeyron.index_reduction(model_idx, [1.0, 1.0, 1.0])[1]) == 3
+        @test length(Clapeyron.index_reduction(model_idx, [1.0, -5e-16, 1.0])[1]) == 2
+        @test_throws ErrorException Clapeyron.index_reduction(model_idx, [0.0, -5e-16, 0.0])
+        @test_throws ErrorException Clapeyron.index_reduction(model_idx, [0.0, 0.0, 0.0])
+        @test_throws BoundsError Clapeyron.index_reduction(model_idx, [0.0, -5e-16, 0.0, 0.0])
+        @test_throws BoundsError Clapeyron.index_reduction(model_idx, [0.0, -5e-16])
+        @test_throws BoundsError Clapeyron.index_reduction(model_idx, [true, true])
+        @test_throws BoundsError Clapeyron.index_reduction(model_idx, [true, true, true, true])
+        @test_throws ErrorException Clapeyron.index_reduction(model_idx, [false, false, false])
+        @test_throws ErrorException Clapeyron.index_reduction(model_idx, [0.0, 0.0, 0.0])
     end
 
     @testset "export_model" begin
         @testset "SAFT Model" begin
-            model_og = PCSAFT(["water","ethanol"])
+            model_og = PCSAFT(["water", "ethanol"])
             export_model(model_og)
-            model_ex = PCSAFT(["water","ethanol"]; userlocations = ["singledata_PCSAFT.csv","pairdata_PCSAFT.csv","assocdata_PCSAFT.csv"])
+            model_ex = PCSAFT(["water", "ethanol"]; userlocations=["singledata_PCSAFT.csv", "pairdata_PCSAFT.csv", "assocdata_PCSAFT.csv"])
 
             @test model_og.params.segment.values == model_ex.params.segment.values
             @test model_og.params.epsilon.values == model_ex.params.epsilon.values
             @test model_og.params.epsilon_assoc.values.values == model_ex.params.epsilon_assoc.values.values
-        
+
             model_repr = eval(Meta.parse(Clapeyron.eos_repr(model_og)))
             @test model_og.params.segment.values == model_repr.params.segment.values
             @test model_og.params.epsilon.values == model_repr.params.epsilon.values
@@ -95,57 +92,54 @@
         end
 
         @testset "Cubic Model" begin
-            model_og = PR(["water","ethanol"])
+            model_og = PR(["water", "ethanol"])
             export_model(model_og)
-            model_ex = PR(["water","ethanol"]; userlocations = ["singledata_PR.csv","pairdata_PR.csv"],
-                                       alpha_userlocations = ["singledata_PRAlpha.csv"])
+            model_ex = PR(["water", "ethanol"]; userlocations=["singledata_PR.csv", "pairdata_PR.csv"], alpha_userlocations=["singledata_PRAlpha.csv"])
 
             @test model_og.params.a.values == model_ex.params.a.values
             @test model_og.alpha.params.acentricfactor.values == model_ex.alpha.params.acentricfactor.values
         end
 
         @testset "Activity & GC Model" begin
-            model_og = UNIFAC(["water","ethanol"])
+            model_og = UNIFAC(["water", "ethanol"])
             export_model(model_og)
-            model_ex = UNIFAC(["water","ethanol"]; userlocations = ["singledata_UNIFAC.csv","pairdata_UNIFAC.csv"])
+            model_ex = UNIFAC(["water", "ethanol"]; userlocations=["singledata_UNIFAC.csv", "pairdata_UNIFAC.csv"])
 
             @test model_og.params.Q.values == model_ex.params.Q.values
             @test model_og.params.A.values == model_ex.params.A.values
         end
-
     end
 
     @testset "single component error" begin
-        model = PCSAFT(["water","methane"])
-        @test_throws DimensionMismatch saturation_pressure(model,300.15)
+        model = PCSAFT(["water", "methane"])
+        @test_throws DimensionMismatch saturation_pressure(model, 300.15)
         @test_throws DimensionMismatch crit_pure(model)
-        @test_throws DimensionMismatch saturation_temperature(model,1e5)
+        @test_throws DimensionMismatch saturation_temperature(model, 1e5)
         @test_throws DimensionMismatch acentric_factor(model)
-        @test_throws DimensionMismatch enthalpy_vap(model,300.15)
-        @test_throws DimensionMismatch Clapeyron.x0_sat_pure(model,300.15)
-        @test_throws DimensionMismatch saturation_liquid_density(model,300.15)
+        @test_throws DimensionMismatch enthalpy_vap(model, 300.15)
+        @test_throws DimensionMismatch Clapeyron.x0_sat_pure(model, 300.15)
+        @test_throws DimensionMismatch saturation_liquid_density(model, 300.15)
     end
 
     @testset "macros" begin
         comps(model) = Clapeyron.@comps
         groups(model) = Clapeyron.@groups
-        groups(model,i) = Clapeyron.@groups(i)
-        sites(model,i) = Clapeyron.@sites(i)
-        f_eos(model,V,T,z,c) = 2 + c
+        groups(model, i) = Clapeyron.@groups(i)
+        sites(model, i) = Clapeyron.@sites(i)
+        f_eos(model, V, T, z, c) = 2 + c
         model = V = T = z = nothing
 
         @test groups(gc2) == 1:6
         @test comps(gc2) == 1:2
-        @test groups(gc2,2) == [2,3,4,5,6]
-        @test groups(gc3,1) == groups(gc3,2) #propane and butane has the same amount of groups
-        @test sites(gc2.vrmodel,2) == [3,4,5]
-        @test sites(model2,1) == [1,2]
-        @test Clapeyron.@f(f_eos,pi) == 2+pi
-        @test Clapeyron.@nan(Base.log(-1),3) == 3
-        @test_throws MethodError Clapeyron.@nan(Base.log("s"),3)
+        @test groups(gc2, 2) == [2, 3, 4, 5, 6]
+        @test groups(gc3, 1) == groups(gc3, 2) #propane and butane has the same amount of groups
+        @test sites(gc2.vrmodel, 2) == [3, 4, 5]
+        @test sites(model2, 1) == [1, 2]
+        @test Clapeyron.@f(f_eos, pi) == 2+pi
+        @test Clapeyron.@nan(Base.log(-1), 3) == 3
+        @test_throws MethodError Clapeyron.@nan(Base.log("s"), 3)
     end
 
-    
     @testset "has_sites-has_groups" begin
         @test has_sites(typeof(gc3)) == false
         @test has_sites(typeof(model2)) == has_sites(typeof(model4)) == has_sites(typeof(gc2)) == true
@@ -156,20 +150,20 @@
     @testset "eosshow" begin
         #@newmodelgc
         @test repr(ideal1) == "WalkerIdeal(\"hexane\")"
-        @test repr("text/plain",ideal1) == "WalkerIdeal with 1 component:\n \"hexane\": \"CH3\" => 2, \"CH2\" => 4\nGroup Type: Walker\nContains parameters: Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4, reference_state"
+        @test repr("text/plain", ideal1) == "WalkerIdeal with 1 component:\n \"hexane\": \"CH3\" => 2, \"CH2\" => 4\nGroup Type: Walker\nContains parameters: Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4, reference_state"
         #@newmodel
         @test repr(model2) == "PCSAFT{BasicIdeal, Float64}(\"water\", \"ethanol\")"
-        @test repr("text/plain",model2) == "PCSAFT{BasicIdeal, Float64} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
+        @test repr("text/plain", model2) == "PCSAFT{BasicIdeal, Float64} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
         #@newmodelsimple
         @test repr(noparam1) == "NoTranslation()"
-        @test repr("text/plain",noparam1) == "NoTranslation()"
+        @test repr("text/plain", noparam1) == "NoTranslation()"
         @test repr(simple1) == "PRAlpha(\"propane\")"
-        @test repr("text/plain",simple1) == "PRAlpha with 1 component:\n \"propane\"\nContains parameters: acentricfactor"
+        @test repr("text/plain", simple1) == "PRAlpha with 1 component:\n \"propane\"\nContains parameters: acentricfactor"
     end
 
     @testset "Clapeyron Param show" begin
         @test repr(model2.params) == "Clapeyron.PCSAFTParam{Float64}"
-        @test repr("text/plain",model2.params) == "Clapeyron.PCSAFTParam{Float64} for [\"water\", \"ethanol\"] with 6 params:\n Mw::SingleParam{Float64}\n segment::SingleParam{Float64}\n sigma::PairParam{Float64}\n epsilon::PairParam{Float64}\n epsilon_assoc::AssocParam{Float64}\n bondvol::AssocParam{Float64}"
+        @test repr("text/plain", model2.params) == "Clapeyron.PCSAFTParam{Float64} for [\"water\", \"ethanol\"] with 6 params:\n Mw::SingleParam{Float64}\n segment::SingleParam{Float64}\n sigma::PairParam{Float64}\n epsilon::PairParam{Float64}\n epsilon_assoc::AssocParam{Float64}\n bondvol::AssocParam{Float64}"
     end
 
     @testset "phase symbols" begin
@@ -179,7 +173,7 @@
     end
 
     @testset "citing" begin
-        umr = UMRPR(["water"],idealmodel = WalkerIdeal)
+        umr = UMRPR(["water"], idealmodel=WalkerIdeal)
         #citations = ["10.1021/I160057A011", "10.1021/ie049580p", "10.1021/i260064a004", "10.1021/acs.jced.0c00723"] |> Set
         citation_full = Clapeyron.cite(umr) |> Set
         citation_top = Clapeyron.doi(umr) |> Set
@@ -191,18 +185,17 @@
         @test citation_mixing ⊆ citation_full
         @test citation_translation ⊆ citation_full
         _io = Base.IOBuffer()
-        Clapeyron.show_references(_io,umr)
+        Clapeyron.show_references(_io, umr)
         citation_show = String(take!(_io))
         @test citation_show == "\nReferences: 10.1021/I160057A011, 10.1021/ie049580p, 10.1021/i260064a004, 10.1021/acs.jced.0c00723"
-        @test startswith(Clapeyron.doi2bib("10.1021/I160057A011"),"@article{Peng_1976")
-
+        @test startswith(Clapeyron.doi2bib("10.1021/I160057A011"), "@article{Peng_1976")
     end
 
     @testset "alternative input" begin
-        @test PCSAFT("water" => ["H2O"=>1],idealmodel = WalkerIdeal) isa EoSModel
-        @test PCSAFT(["water" => ["H2O"=>1]],idealmodel = WalkerIdeal) isa EoSModel
+        @test PCSAFT("water" => ["H2O"=>1], idealmodel=WalkerIdeal) isa EoSModel
+        @test PCSAFT(["water" => ["H2O"=>1]], idealmodel=WalkerIdeal) isa EoSModel
         @test PCSAFT("water") isa EoSModel
-        @test JobackIdeal("hexane") isa EoSModel 
+        @test JobackIdeal("hexane") isa EoSModel
         @test PCSAFT(["water" => ["H2O"=>1]]) isa EoSModel
     end
 
@@ -210,15 +203,15 @@
 
     @testset "core utils" begin
         @test Clapeyron.parameterless_type(typeof(rand(5))) === Array
-        @test Clapeyron._vecparser("1 2 3") == [1,2,3]
-        @test Clapeyron._vecparser("1 2 3.5") == [1,2,3.5]
+        @test Clapeyron._vecparser("1 2 3") == [1, 2, 3]
+        @test Clapeyron._vecparser("1 2 3.5") == [1, 2, 3.5]
         @test_throws ErrorException Clapeyron._vecparser("not numbers")
-        @test Clapeyron.split_2("a b") == ("a","b")
-        @test Clapeyron.split_2("a|b",'|') == ("a","b")
+        @test Clapeyron.split_2("a b") == ("a", "b")
+        @test Clapeyron.split_2("a|b", '|') == ("a", "b")
     end
 
     @testset "lever rule" begin
         @test Clapeyron.supports_lever_rule(Clapeyron.volume) == true
         @test Clapeyron.supports_lever_rule(Clapeyron.speed_of_sound) == false
     end
- end
+end

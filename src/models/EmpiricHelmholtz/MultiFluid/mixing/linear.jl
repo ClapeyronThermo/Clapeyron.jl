@@ -8,9 +8,11 @@
     verbose = false)
 
 ## Input parameters
+
 none
 
 ## Description
+
 Linear mixing rule for MultiParameter EoS models:
 
 ```
@@ -21,6 +23,7 @@ T̄ = ∑xᵢTcᵢ
 ```
 
 ## Model Construction Examples
+
 ```
 # Because this model does not have parameters, all those constructors are equivalent:
 mixing = LinearMixing()
@@ -30,14 +33,14 @@ mixing = LinearMixing(["water","carbon dioxide"])
 """
 LinearMixing
 
-function v_scale(model::MultiFluid,z,mixing::LinearMixing,∑z)
+function v_scale(model::MultiFluid, z, mixing::LinearMixing, ∑z)
     Vc = model.params.Vr.values
-    dot(Vc,z)/∑z
+    dot(Vc, z)/∑z
 end
 
-function T_scale(model::MultiFluid,z,mixing::LinearMixing,∑z)
+function T_scale(model::MultiFluid, z, mixing::LinearMixing, ∑z)
     Tc = model.params.Tr.values
-    return dot(Tc,z)/∑z
+    return dot(Tc, z)/∑z
 end
 
 export LinearMixing

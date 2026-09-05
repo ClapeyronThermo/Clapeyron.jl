@@ -5,16 +5,19 @@
 
 """
     volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+
 Main routine to calculate a volume, given a pressure `p`, temperature `T`, composition `z` and initial volume guess. Each step is taken by locally aproximating the EoS as an isothermal compressibility process.
 The new volume is calculated by the following recurrence formula:
+
 ```julia
-v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
+v[i + 1] = v[i]*exp(β[i]*(p-p(v[i])))
 ```
+
 In the liquid root region, the iterations follow `v0 < v[i] < v[i+1] < v(p)`, allowing the calculation of the liquid root without entering the metastable region.
 """
-function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    p,T,V0 = promote(p,T,V0)
-    return _volume_compress(model,p,T,z,V0,max_iters)
+function volume_compress(model, p, T, z=SA[1.0]; V0=x0_volume(model, p, T, z, phase=:liquid), max_iters=100)
+    p, T, V0 = promote(p, T, V0)
+    return _volume_compress(model, p, T, z, V0, max_iters)
 end
 
 #=
@@ -49,31 +52,30 @@ function _volume_compress_old(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase
     return exp(logV)
 end =#
 
-function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    _0 = zero(Base.promote_eltype(model,p,T,z,V0))
-    _1,nan = one(_0),_0/_0
+function _volume_compress(model, p, T, z=SA[1.0], V0=x0_volume(model, p, T, z, phase=:liquid), max_iters=100)
+    _0 = zero(Base.promote_eltype(model, p, T, z, V0))
+    _1, nan = one(_0), _0/_0
     isnan(V0) && return nan
     p₀ = _1*p
     logV0 = log(V0)*_1
-    log_lb_v = log(lb_volume(model,T,z))
+    log_lb_v = log(lb_volume(model, T, z))
     logVᵢ = logV0
     iszero(p₀) && (V0 == Inf) && return _1/_0 #ideal gas
 
     nRT = sum(z)*T*Rgas(model)
-    
+
     Vᵢ = exp(logVᵢ)
-    pᵢ,dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
-    p0ᵢ,dp0dVᵢ = pᵢ,dpdVᵢ
+    pᵢ, dpdVᵢ = p∂p∂V(model, Vᵢ, T, z)
+    p0ᵢ, dp0dVᵢ = pᵢ, dpdVᵢ
 
     check_sp = true
     is_gas = -nRT/Vᵢ/Vᵢ - dpdVᵢ >= _0
-    
-    _logVᵢ,_pᵢ,_dpdVᵢ = logVᵢ,pᵢ,dpdVᵢ
-    logV_new,logV_bisec = _0,_0
-    plo,phi = _0,_0
-    
-    for i in 1:max_iters
 
+    _logVᵢ, _pᵢ, _dpdVᵢ = logVᵢ, pᵢ, dpdVᵢ
+    logV_new, logV_bisec = _0, _0
+    plo, phi = _0, _0
+
+    for i in 1:max_iters
         logVᵢ < log_lb_v && return nan
 
         dpdVᵢ > 0 && return nan #inline mechanical stability.
@@ -91,7 +93,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
             #@info "pi = $pᵢ, Vi = $(exp(logVᵢ))"
             return nan
         end
-       
+
         #=
         ∂p∂V heuristic:
         at the ideal gas, ∂p∂V = -RT/V^2
@@ -111,62 +113,62 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         if i > 1 && is_gas_i != is_gas
             #@warn "first order check failed with $(model) at p = $p, T = $T, z= $z, v0 = $V0"
             if check_sp
-                v_lb,v_ub = minmax(Vᵢ,exp(logV0))
-                _maybe_spinodal(model,T,v_lb,v_ub,z) && return nan
+                v_lb, v_ub = minmax(Vᵢ, exp(logV0))
+                _maybe_spinodal(model, T, v_lb, v_ub, z) && return nan
                 check_sp = false
             end
         end
-        
+
         if i > 5 && (p₀-pᵢ)*(p₀-_pᵢ) < 0
             #bracket found, use bracketing updates instead.
             _Vᵢ = exp(_logVᵢ)
-            data1 = _Vᵢ,_logVᵢ,_pᵢ,_dpdVᵢ
-            data2 = Vᵢ,logVᵢ,pᵢ,dpdVᵢ
-            return _volume_compress_bisection(model,p₀,T,z,data1,data2,i,max_iters)
+            data1 = _Vᵢ, _logVᵢ, _pᵢ, _dpdVᵢ
+            data2 = Vᵢ, logVᵢ, pᵢ, dpdVᵢ
+            return _volume_compress_bisection(model, p₀, T, z, data1, data2, i, max_iters)
         end
 
-        _logVᵢ,_pᵢ,_dpdVᵢ = logVᵢ,pᵢ,dpdVᵢ
+        _logVᵢ, _pᵢ, _dpdVᵢ = logVᵢ, pᵢ, dpdVᵢ
         Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
         logVᵢ = logVᵢ + Δᵢ
         Vᵢ = exp(logVᵢ)
-        pᵢ,dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
+        pᵢ, dpdVᵢ = p∂p∂V(model, Vᵢ, T, z)
 
-        converged,finite = Solvers.convergence(_logVᵢ,logVᵢ,zero(logVᵢ),1e-12)
-        if converged 
+        converged, finite = Solvers.convergence(_logVᵢ, logVᵢ, zero(logVᵢ), 1e-12)
+        if converged
             if finite
                 return exp(logVᵢ)
             else
                 return nan
             end
         end
-        end
+    end
     return nan
 end
 
-function _volume_compress_bisection(model,p,T,z,data1,data2,i0,max_iters)
-    v1,logv1,p1,dpdv1 = data1
-    v2,logv2,p2,dpdv2 = data2
-    
+function _volume_compress_bisection(model, p, T, z, data1, data2, i0, max_iters)
+    v1, logv1, p1, dpdv1 = data1
+    v2, logv2, p2, dpdv2 = data2
+
     if p1 > p2
-        vhi,vlo = v1,v2
-        logvhi,logvlo = logv1,logv2
-        phi,dpdvhi = p1,dpdv1
-        plo,dpdvlo = p2,dpdv2
+        vhi, vlo = v1, v2
+        logvhi, logvlo = logv1, logv2
+        phi, dpdvhi = p1, dpdv1
+        plo, dpdvlo = p2, dpdv2
     else
-        vlo,vhi = v1,v2
-        logvlo,logvhi = logv1,logv2
-        phi,dpdvhi = p2,dpdv2
-        plo,dpdvlo = p1,dpdv1
+        vlo, vhi = v1, v2
+        logvlo, logvhi = logv1, logv2
+        phi, dpdvhi = p2, dpdv2
+        plo, dpdvlo = p1, dpdv1
     end
 
     Δlo = (p-plo)/(vlo*dpdvlo)
     Δhi = (p-phi)/(vhi*dpdvhi)
-    
-    _0,_1 = zero(p),oneunit(p)
+
+    _0, _1 = zero(p), oneunit(p)
     for i in i0:max_iters
         #δ is the needed to remain inside the bracket
-        δlo = clamp((logvhi - logvlo)/Δlo,_0,_1)
-        δhi = clamp((logvlo - logvhi)/Δhi,_0,_1)
+        δlo = clamp((logvhi - logvlo)/Δlo, _0, _1)
+        δhi = clamp((logvlo - logvhi)/Δhi, _0, _1)
         iszero(Δhi) && return vhi
         iszero(Δlo) && return vlo
 
@@ -177,73 +179,72 @@ function _volume_compress_bisection(model,p,T,z,data1,data2,i0,max_iters)
         #mean between the two damped, clamped iterations should be by definition, also inside the pressure bracket.
         logv_new = 0.5*(logv_new_hi + logv_new_lo)
         v_new = exp(logv_new)
-        p_new,dpdv_new = p∂p∂V(model,v_new,T,z)
+        p_new, dpdv_new = p∂p∂V(model, v_new, T, z)
         if (p_new-p)*(plo - p) < _0
-            vhi,logvhi,phi,dpdvhi = v_new,logv_new,p_new,dpdv_new
+            vhi, logvhi, phi, dpdvhi = v_new, logv_new, p_new, dpdv_new
             Δhi = (p-phi)/(vhi*dpdvhi)
         elseif (p_new - p)*(phi - p) < _0
-            vlo,logvlo,plo,dpdvlo = v_new,logv_new,p_new,dpdv_new
+            vlo, logvlo, plo, dpdvlo = v_new, logv_new, p_new, dpdv_new
             Δlo = (p-plo)/(vlo*dpdvlo)
         else
             break
         end
         logv_tol = abs(logvlo - logvhi)
         logv_tol < 1e-12 && break
-
     end
     return sqrt(vlo*vhi)
 end
 
-function _maybe_spinodal(model,_T,_v_lb,_v_ub,z)
-    T,v_lb,v_ub = promote(_T,_v_lb,_v_ub)
+function _maybe_spinodal(model, _T, _v_lb, _v_ub, z)
+    T, v_lb, v_ub = promote(_T, _v_lb, _v_ub)
     isnan(v_lb) && return true
     isnan(v_ub) && return true
-    p(x) = pressure(model,x,T,z)
-    fl,dfl,d2fl = p∂p∂2p(model,v_lb,T,z)
-    fv,dfv,d2fv = p∂p∂2p(model,v_ub,T,z)
+    p(x) = pressure(model, x, T, z)
+    fl, dfl, d2fl = p∂p∂2p(model, v_lb, T, z)
+    fv, dfv, d2fv = p∂p∂2p(model, v_ub, T, z)
     nan = zero(fl)/zero(fl)
     _0 = zero(nan)
-    poly = Solvers.hermite5_poly(v_lb,v_ub,fl,fv,dfl,dfv,d2fl,d2fv)
+    poly = Solvers.hermite5_poly(v_lb, v_ub, fl, fv, dfl, dfv, d2fl, d2fv)
     dpoly = Solvers.polyder(poly)
 
     #we already have a bracket.
     dfl*dfv < 0 && return true
 
     #find the middle point between the liquid and vapour spinodals.
-    vm = _find_vm(dpoly,v_lb,v_ub)
-    fm,dfm = p∂p∂V(model,vm,T,z)
+    vm = _find_vm(dpoly, v_lb, v_ub)
+    fm, dfm = p∂p∂V(model, vm, T, z)
     dfm > 0 && return true
     #find the liquid of gas spinodal using the quintic hermite interpolation.
-    v_bracket_1 = minmax(_0,vm - v_lb)
-    v_bracket_2 = minmax(v_ub - v_lb,vm - v_lb)
+    v_bracket_1 = minmax(_0, vm - v_lb)
+    v_bracket_2 = minmax(v_ub - v_lb, vm - v_lb)
 
-    no_hermite_bracket_1 = !(evalpoly(_0,dpoly)*evalpoly(vm - v_lb,dpoly) < 0)
-    no_hermite_bracket_2 = !(evalpoly(v_ub - v_lb,dpoly)*evalpoly(vm - v_lb,dpoly) < 0)
-    
+    no_hermite_bracket_1 = !(evalpoly(_0, dpoly)*evalpoly(vm - v_lb, dpoly) < 0)
+    no_hermite_bracket_2 = !(evalpoly(v_ub - v_lb, dpoly)*evalpoly(vm - v_lb, dpoly) < 0)
+
     no_hermite_bracket_1 && no_hermite_bracket_2 && return false
 
-    v1_hermite_prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket_1)
-    v2_hermite_prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket_2)
-    vh1 = Roots.solve(v1_hermite_prob,xrtol = 1e-5) + v_lb
-    vh2 = Roots.solve(v2_hermite_prob,xrtol = 1e-5) + v_lb
+    v1_hermite_prob = Roots.ZeroProblem(Base.Fix2(evalpoly, dpoly), v_bracket_1)
+    v2_hermite_prob = Roots.ZeroProblem(Base.Fix2(evalpoly, dpoly), v_bracket_2)
+    vh1 = Roots.solve(v1_hermite_prob, xrtol=1e-5) + v_lb
+    vh2 = Roots.solve(v2_hermite_prob, xrtol=1e-5) + v_lb
 
-    fh1,dfh1 = p∂p∂V(model,vh1,T,z)
-    fh2,dfh2 = p∂p∂V(model,vh2,T,z)
+    fh1, dfh1 = p∂p∂V(model, vh1, T, z)
+    fh2, dfh2 = p∂p∂V(model, vh2, T, z)
 
     return (dfh1 > 0) | (dfh2 > 0)
 end
 
 #"chills" a state from T0,p to T,p, starting at v = v0
-function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
-    _1 = one(Base.promote_eltype(model,p,T,z))
+function volume_chill(model::EoSModel, p, T, z, v0, T0, Ttol=0.01, max_iters=100)
+    _1 = one(Base.promote_eltype(model, p, T, z))
     vᵢ = _1*v0
     Tᵢ = _1*T0
     count_invalid_iters = 0
     for i in 1:100
-        d²A,dA,_ = ∂2f(model,vᵢ,Tᵢ,z)
-        ∂²A∂V∂T = d²A[1,2]
-        ∂²A∂V² = d²A[1,1]
-        ∂²A∂T² = d²A[2,2]
+        d²A, dA, _ = ∂2f(model, vᵢ, Tᵢ, z)
+        ∂²A∂V∂T = d²A[1, 2]
+        ∂²A∂V² = d²A[1, 1]
+        ∂²A∂T² = d²A[2, 2]
         pᵢ = -dA[1]
         dvdt = -∂²A∂V∂T/∂²A∂V²
         dvdp = -1/∂²A∂V²
@@ -262,7 +263,7 @@ function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
             vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
             count_invalid_iters = 0
         else
-            count_invalid_iters +=1
+            count_invalid_iters += 1
         end
         if count_invalid_iters >= 10
             vᵢ = zero(vᵢ)/zero(vᵢ)
@@ -277,22 +278,25 @@ end
 """
     volume_virial(model::EoSModel,p,T,z=SA[1.0])
     volume_virial(B::Real,p,T,z=SA[1.0])
+
 Calculates an approximation to the gas volume at specified pressure `p`, temperature `T` and composition `z`, by aproximating:
+
 ```julia
 Z(v) ≈ 1 + B(T)/v
 ```
+
 where `Z` is the compressibility factor and `B` is the second virial coefficient.
 If `B>0`, (over the inversion temperature) returns `NaN`. If the solution to the problem is complex (`Z = 1 + B/v` implies solving a quadratic polynomial), returns `-2*B`.
 If you pass an `EoSModel` as the first argument, `B` will be calculated from the EoS at the input temperature `T`. You can provide your own second virial coefficient instead of a model.
 """
 function volume_virial end
 
-function volume_virial(model::EoSModel,p,T,z=SA[1.0])
-    B = second_virial_coefficient(model,T,z)
-    return volume_virial(B,p,T,z,R = Rgas(model))
+function volume_virial(model::EoSModel, p, T, z=SA[1.0])
+    B = second_virial_coefficient(model, T, z)
+    return volume_virial(B, p, T, z, R=Rgas(model))
 end
 
-function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
+function volume_virial(B::Real, p, T, z=SA[1.0]; R=R̄)
     _0 = zero(B)
 
     #=
@@ -303,22 +307,22 @@ function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
     n = sum(z)
     B > _0 && return _0/_0
     pr = p/(n*R*T)*one(B)
-    is_real,r1,r2 = Solvers.real_roots2((-B,-one(pr),pr))
+    is_real, r1, r2 = Solvers.real_roots2((-B, -one(pr), pr))
     if !is_real
         #virial approximation could not be calculated
         #return value at spinodal
         return -2*B
     end
     #only the left root has physical meaning
-    return max(r1,r2)
+    return max(r1, r2)
 end
 
-function pressure_virial(model,V,T,z)
-    B = second_virial_coefficient(model,T,z)
-    return pressure_virial(B,V,T,z,Rgas(model))
+function pressure_virial(model, V, T, z)
+    B = second_virial_coefficient(model, T, z)
+    return pressure_virial(B, V, T, z, Rgas(model))
 end
 
-function pressure_virial(B::Real,V,T,z,R = R̄)
+function pressure_virial(B::Real, V, T, z, R=R̄)
     Z = 1 + B/V
     return Z*sum(z)*R*T/V
 end
@@ -328,36 +332,36 @@ end
 volume main function
 
 =#
-function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0=nothing, output = nothing)  
-    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
-    v̄0 = uvstrip(model,vol0,z̄)
-    UNIT_TYPE = unit_system(p,T,z,output)
+function volume(model::EoSModel, p, T, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+    p̄, T̄, z̄ = ustrip(p, pressure), ustrip(T, temperature), uzstrip(model, z)
+    v̄0 = uvstrip(model, vol0, z̄)
+    UNIT_TYPE = unit_system(p, T, z, output)
     #auxiliary function for dispatch on symbolic variables
-    V = _volume(model,p̄,T̄,z̄,phase,threaded,vol0)
-    return with_output_unit(V,(UNIT_TYPE,output),volume)
+    V = _volume(model, p̄, T̄, z̄, phase, threaded, vol0)
+    return with_output_unit(V, (UNIT_TYPE, output), volume)
 end
 
 __is_symbolic(x) = false
 __is_symbolic(x::AbstractArray{T}) where T = __is_symbolic(T)
 
-function _volume(model::EoSModel,p,T,z::AbstractVector=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
+function _volume(model::EoSModel, p, T, z::AbstractVector=SA[1.0], phase=:unknown, threaded=true, vol0=nothing)
     if has_a_res(model) && !(is_idealmodel(model))
-        λmodel,λp,λT,λz,λvol0 = primalval(model),primalval(p),primalval(T),primalval(z),primalval(vol0)
-        λv = volume_impl(λmodel,λp,λT,λz,phase,threaded,λvol0)
-        tup = (model,p,T,z)
-        λtup = (λmodel,λp,λT,λz)
-        return volume_ad(λv,tup,λtup)
+        λmodel, λp, λT, λz, λvol0 = primalval(model), primalval(p), primalval(T), primalval(z), primalval(vol0)
+        λv = volume_impl(λmodel, λp, λT, λz, phase, threaded, λvol0)
+        tup = (model, p, T, z)
+        λtup = (λmodel, λp, λT, λz)
+        return volume_ad(λv, tup, λtup)
     else
-        return volume_impl(model,p,T,z,phase,threaded,primalval(vol0))
+        return volume_impl(model, p, T, z, phase, threaded, primalval(vol0))
     end
 end
 
-function volume_ad(v,tups,tups_primal)
-    f(vx,tups) = begin
-        model,p,T,z = tups
-        pressure(model,vx,T,z) - p
+function volume_ad(v, tups, tups_primal)
+    f(vx, tups) = begin
+        model, p, T, z = tups
+        pressure(model, vx, T, z) - p
     end
-    v = __gradients_for_root_finders(v,tups,tups_primal,f) # does dual checks internally, else returns v_primal
+    v = __gradients_for_root_finders(v, tups, tups_primal, f) # does dual checks internally, else returns v_primal
     return v
 end
 
@@ -369,34 +373,33 @@ solid_model(model) = model
 liquid_model(model) = fluid_model(model)
 gas_model(model) = fluid_model(model)
 
-volume_impl(model,p,T) = volume_impl(model,p,T,SA[1.0],:unknown,true,nothing)
-volume_impl(model,p,T,z) = volume_impl(model,p,T,z,:unknown,true,nothing)
-volume_impl(model,p,T,z,phase) = volume_impl(model,p,T,z,phase,true,nothing)
-volume_impl(model,p,T,z,phase,threaded) = volume_impl(model,p,T,z,phase,threaded,nothing)
+volume_impl(model, p, T) = volume_impl(model, p, T, SA[1.0], :unknown, true, nothing)
+volume_impl(model, p, T, z) = volume_impl(model, p, T, z, :unknown, true, nothing)
+volume_impl(model, p, T, z, phase) = volume_impl(model, p, T, z, phase, true, nothing)
+volume_impl(model, p, T, z, phase, threaded) = volume_impl(model, p, T, z, phase, threaded, nothing)
 
-function volume_impl(model::EoSModel,p,T,z,phase,threaded,vol0)
-    return default_volume_impl(model,p,T,z,phase,threaded,vol0)
+function volume_impl(model::EoSModel, p, T, z, phase, threaded, vol0)
+    return default_volume_impl(model, p, T, z, phase, threaded, vol0)
 end
 
 """
     x0_volume_region(model,p,T,z)::Symbol
 
 Given a combination of p,T,z inputs, returns a symbol representing the correct volume root(`:liquid`, `:vapour` or `:solid`), or `:unknown` to indicate the volume solver to check all roots.
-
 """
-x0_volume_region(model,p,T,z) = :unknown
+x0_volume_region(model, p, T, z) = :unknown
 
-function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
-#Threaded version
-    check_arraysize(model,z)
-    TYPE = Base.promote_eltype(model,p,T,z)
+function default_volume_impl(model::EoSModel, p, T, z=SA[1.0], phase=:unknown, threaded=true, vol0=nothing)
+    #Threaded version
+    check_arraysize(model, z)
+    TYPE = Base.promote_eltype(model, p, T, z)
     nan = zero(TYPE)/zero(TYPE)
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     fluid = fluid_model(model)
     solid = solid_model(model)
 
     if is_unknown(phase)
-        _phase = x0_volume_region(model,p,T,z)
+        _phase = x0_volume_region(model, p, T, z)
     else
         _phase = Symbol(phase)
     end
@@ -405,22 +408,22 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
         if !isnan(vol0)
             V0 = vol0
             if is_solid(_phase) #to allow specification of the model.
-                return _volume_compress(solid,p,T,z,V0)
+                return _volume_compress(solid, p, T, z, V0)
             end
-            V = _volume_compress(fluid,p,T,z,V0)
+            V = _volume_compress(fluid, p, T, z, V0)
             if solid !== fluid && isnan(V)
-                return _volume_compress(solid,p,T,z,V0)
+                return _volume_compress(solid, p, T, z, V0)
             end
             return V
         end
     end
 
     if !is_unknown(_phase) && _phase != :stable
-        V0 = x0_volume(model,p,T,z,phase=_phase)
+        V0 = x0_volume(model, p, T, z, phase=_phase)
         if is_solid(_phase)
-            V = _volume_compress(solid,p,T,z,V0)
+            V = _volume_compress(solid, p, T, z, V0)
         else
-            V = _volume_compress(fluid,p,T,z,V0)
+            V = _volume_compress(fluid, p, T, z, V0)
         end
         return V
     end
@@ -431,10 +434,10 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
         return one(TYPE)/zero(TYPE)
     end
 
-    Vg0 = x0_volume(fluid,p,T,z,phase=:v)
-    Vl0 = x0_volume(fluid,p,T,z,phase=:l)
-    Vs0 = x0_volume_solid(solid,T,z) #Needs to be const-propagated.
-    volumes0 = (Vg0,Vl0,Vs0)
+    Vg0 = x0_volume(fluid, p, T, z, phase=:v)
+    Vl0 = x0_volume(fluid, p, T, z, phase=:l)
+    Vs0 = x0_volume_solid(solid, T, z) #Needs to be const-propagated.
+    volumes0 = (Vg0, Vl0, Vs0)
     if threaded
         #=
         ch = Channel{TYPE}(3) do ys
@@ -447,111 +450,111 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
         v3::TYPE = take!(ch)
         volumes = (v1,v2,v3)
         =#
-        _Vg = StableTasks.@spawn _volume_compress($fluid,$p,$T,$z,$Vg0)
-        _Vl = StableTasks.@spawn _volume_compress($fluid,$p,$T,$z,$Vl0)
+        _Vg = StableTasks.@spawn _volume_compress($fluid, $p, $T, $z, $Vg0)
+        _Vl = StableTasks.@spawn _volume_compress($fluid, $p, $T, $z, $Vl0)
         if !isnan(Vs0)
-            _Vs = StableTasks.@spawn _volume_compress($solid,$p,$T,$z,$Vs0)
+            _Vs = StableTasks.@spawn _volume_compress($solid, $p, $T, $z, $Vs0)
         else
             _Vs = nan
         end
         Vg = fetch(_Vg)::TYPE
         Vl = fetch(_Vl)::TYPE
         Vs = fetch(_Vs)::TYPE
-        volumes = (Vg,Vl,Vs)
+        volumes = (Vg, Vl, Vs)
     else
-        Vg = _volume_compress(fluid,p,T,z,Vg0)
-        Vl = _volume_compress(fluid,p,T,z,Vl0)
-        Vs = _volume_compress(solid,p,T,z,Vs0)
-        volumes = (Vg,Vl,Vs)
+        Vg = _volume_compress(fluid, p, T, z, Vg0)
+        Vl = _volume_compress(fluid, p, T, z, Vl0)
+        Vs = _volume_compress(solid, p, T, z, Vs0)
+        volumes = (Vg, Vl, Vs)
     end
-    idx,v,g = volume_label((fluid,fluid,solid),p,T,z,volumes)
+    idx, v, g = volume_label((fluid, fluid, solid), p, T, z, volumes)
     if phase == :stable
-        !VT_isstable(model,v,T,z,false) && return nan
+        !VT_isstable(model, v, T, z, false) && return nan
     end
     return v
 end
 
-function volume_label(models::F,p,T,z,vols) where F
-    function gibbs(model,fV)
+function volume_label(models::F, p, T, z, vols) where F
+    function gibbs(model, fV)
         isnan(fV) && return one(fV)/zero(fV)
-        f(V) = eos(model,V,T,z)
-        _f,_dV = f∂fdV(model,fV,T,z)
+        f(V) = eos(model, V, T, z)
+        _f, _dV = f∂fdV(model, fV, T, z)
         #for the ideal gas case, p*V == 0, so the result reduces to eos(model,V,T,z)
         fV == Inf && iszero(_dV) && return _f
-        return ifelse(abs((p+_dV)/p) > 0.03,one(fV)/zero(fV),_f + p*fV)
+        return ifelse(abs((p+_dV)/p) > 0.03, one(fV)/zero(fV), _f + p*fV)
     end
     idx = 0
-    _0 = zero(Base.promote_eltype(models[1],p,T,z))
+    _0 = zero(Base.promote_eltype(models[1], p, T, z))
     g = one(_0)/_0
     v = _0/_0
-    for (i,vi) in pairs(vols)
-        gi = gibbs(models[i],vi)
+    for (i, vi) in pairs(vols)
+        gi = gibbs(models[i], vi)
         if gi < g
             g = gi
             idx = i
             v = vi
         end
     end
-    return idx,v,g
+    return idx, v, g
 end
 
 #=
 used by MultiComponentFlash.jl extension
 =#
-function _label_and_volumes(model::EoSModel,cond)
+function _label_and_volumes(model::EoSModel, cond)
     #gibbs comparison, the phase with the least amount of Gibbs energy is the most stable.
-    p,T,z = cond.p,cond.T,cond.z
-    _0 = zero(Base.promote_eltype(model,p,T,z))
+    p, T, z = cond.p, cond.T, cond.z
+    _0 = zero(Base.promote_eltype(model, p, T, z))
     _1 = one(_0)
-    Vl = volume(model,p,T,z,phase =:l)
-    Vv = volume(model,p,T,z,phase =:v)
+    Vl = volume(model, p, T, z, phase=:l)
+    Vv = volume(model, p, T, z, phase=:v)
     function gibbs(fV)
         isnan(fV) && return one(fV)/zero(fV)
-        _df,_f = ∂f(model,fV,T,z)
-        dV,_ = _df
+        _df, _f = ∂f(model, fV, T, z)
+        dV, _ = _df
         #for the ideal gas case, p*V == 0, so the result reduces to eos(model,V,T,z)
         fV == Inf && iszero(dV) && return _f
-        return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
+        return ifelse(abs((p+dV)/p) > 0.03, zero(dV)/one(dV), _f + p*fV)
     end
-    isnan(Vl) && return _1,Vv,Vv #could not converge on gas volume, assuming stable liquid phase
-    isnan(Vv) && return _0,Vl,Vl #could not converge on liquid volume, assuming stable gas phase
+    isnan(Vl) && return _1, Vv, Vv #could not converge on gas volume, assuming stable liquid phase
+    isnan(Vv) && return _0, Vl, Vl #could not converge on liquid volume, assuming stable gas phase
     if Vl == Vv
-        phase = VT_identify_phase(model,Vl,T,z)
+        phase = VT_identify_phase(model, Vl, T, z)
         if is_liquid(phase)
-            return _0,Vl,Vl
+            return _0, Vl, Vl
         else
-            return _1,Vl,Vl
+            return _1, Vl, Vl
         end
     end
-    gl,gv = gibbs(Vl),gibbs(Vv)
+    gl, gv = gibbs(Vl), gibbs(Vv)
     if gl < gv
         V = zero(gl+gv)
     else
         V = one(gl+gv)
     end
-    return V,Vl,Vv
+    return V, Vl, Vv
 end
 
-function volume_bracket_refine(model,p,T,z,v1,v2)
-    p1,dpdv1 = p∂p∂V(model,v1,T,z)
-    p2,dpdv2 = p∂p∂V(model,v2,T,z)
+function volume_bracket_refine(model, p, T, z, v1, v2)
+    p1, dpdv1 = p∂p∂V(model, v1, T, z)
+    p2, dpdv2 = p∂p∂V(model, v2, T, z)
     if p1 > p2
-        vhi,vlo = v1,v2
-        phi,dpdvhi = p1,dpdv1
-        plo,dpdvlo = p2,dpdv2
+        vhi, vlo = v1, v2
+        phi, dpdvhi = p1, dpdv1
+        plo, dpdvlo = p2, dpdv2
     else
-        vlo,vhi = v1,v2
-        phi,dpdvhi = p2,dpdv2
-        plo,dpdvlo = p1,dpdv1
+        vlo, vhi = v1, v2
+        phi, dpdvhi = p2, dpdv2
+        plo, dpdvlo = p1, dpdv1
     end
     if plo <= p <= phi
-        logvhi,logvlo = log(vhi),log(vlo)
+        logvhi, logvlo = log(vhi), log(vlo)
         #we use p/phi
         bhi = 1/(vhi*dpdvhi*phi)
         blo = 1/(vlo*dpdvlo*phi)
-        poly_p = Solvers.hermite3_poly(plo/phi,phi/phi,logvlo,logvhi,blo,bhi)
+        poly_p = Solvers.hermite3_poly(plo/phi, phi/phi, logvlo, logvhi, blo, bhi)
         Δp = (p - plo)/phi
-        vx = exp(evalpoly(Δp,poly_p))
+        vx = exp(evalpoly(Δp, poly_p))
         if vhi <= vx <= vlo
             return vx
         else
@@ -570,6 +573,6 @@ end
 
 #circunvent volume machinery.
 #gibbs models do not need iterative calculations for volume
-simple_volume(model,p,T,z) = volume_impl(model,p,T,z,:unknown,false,nothing)
+simple_volume(model, p, T, z) = volume_impl(model, p, T, z, :unknown, false, nothing)
 
 export volume

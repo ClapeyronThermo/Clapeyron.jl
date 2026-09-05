@@ -28,15 +28,15 @@ Where `g₀₁`and `g₀₂` are reference state constants, calculated to match 
 
 ## References
 
-1. Grenke, J. H., & Elliott, J. A. W. (2025). Analytic correlation for the thermodynamic properties of water at low temperatures (200-300 K) and high pressures (0.1-400 MPa). The Journal of Physical Chemistry. B, 129(7), 1997–2012. [doi:10.1021/acs.jpcb.4c03909](https://doi.org/10.1021/acs.jpcb.4c03909)
+ 1. Grenke, J. H., & Elliott, J. A. W. (2025). Analytic correlation for the thermodynamic properties of water at low temperatures (200-300 K) and high pressures (0.1-400 MPa). The Journal of Physical Chemistry. B, 129(7), 1997–2012. [doi:10.1021/acs.jpcb.4c03909](https://doi.org/10.1021/acs.jpcb.4c03909)
 """
 GrenkeElliottWater
 
-molecular_weight(model::GrenkeElliottModel,z) = 0.0180153*sum(z)
+molecular_weight(model::GrenkeElliottModel, z) = 0.0180153*sum(z)
 
 component_list(::GrenkeElliottWater) = ["water"]
 
-function v0_water(model::GrenkeElliottModel,T)
+function v0_water(model::GrenkeElliottModel, T)
     a1 = 68.4089 #±24.0366 #[m3/kg]
     a2 = −0.0611145# ±0.0015535 #[1/K]
     a3 = 2.26928e-8# ±1.45185 × 10−8 #[m3/kg]
@@ -47,7 +47,7 @@ end
 
 Base.length(model::GrenkeElliottModel) = 1
 
-function B_water(model::GrenkeElliottModel,T)
+function B_water(model::GrenkeElliottModel, T)
     b1 = 3.1520397 #±1.0495712 [Pa]
     b2 = 203.8085375 #±96.2898756 [K]
     b3 = −11.1985548 #±4.6162330
@@ -55,7 +55,7 @@ function B_water(model::GrenkeElliottModel,T)
     return 1e8*(b1/(1 + (T/b2)^b3)^b4)
 end
 
-function C_water(model::GrenkeElliottModel,T)
+function C_water(model::GrenkeElliottModel, T)
     c1 = 0.0790029 #±0.0949956
     c2 = 237.9009619 #±42.5843445 #[K]
     c3 = −14.8806681 #±12.8489102
@@ -64,12 +64,12 @@ function C_water(model::GrenkeElliottModel,T)
     return c1/((1 + (T/c2)^c3)^c4) + c5
 end
 
-function volume_impl(model::GrenkeElliottModel,p,T,z,phase,threaded,vol0)
+function volume_impl(model::GrenkeElliottModel, p, T, z, phase, threaded, vol0)
     #Tait-Taumann model
-    mw = molecular_weight(model,z)
-    v0 = v0_water(model,T)*mw
-    B = B_water(model,T)
-    C = C_water(model,T)
+    mw = molecular_weight(model, z)
+    v0 = v0_water(model, T)*mw
+    B = B_water(model, T)
+    C = C_water(model, T)
     p0 = 101325.0
     K1 = (B + p0)*exp(1/C)
     K2 = v0*C
@@ -77,12 +77,12 @@ function volume_impl(model::GrenkeElliottModel,p,T,z,phase,threaded,vol0)
     return v0*(1 - C*lnBp)
 end
 
-function x0_pressure(model::GrenkeElliottModel,V,T,z)
+function x0_pressure(model::GrenkeElliottModel, V, T, z)
     v = V/sum(z)
     mw = molecular_weight(model)
-    v0 = v0_water(model,T)*mw
-    B = B_water(model,T)
-    C = C_water(model,T)
+    v0 = v0_water(model, T)*mw
+    B = B_water(model, T)
+    C = C_water(model, T)
     p0 = 101325.0
     #=
     v = v0*(1 - C*lnBp)
@@ -93,17 +93,17 @@ function x0_pressure(model::GrenkeElliottModel,V,T,z)
     return p
 end
 
-function eos_g(model::GrenkeElliottModel,p,T,z)
-    mw = molecular_weight(model,z)
-    v0 = v0_water(model,T)*mw
-    B = B_water(model,T)
-    C = C_water(model,T)
+function eos_g(model::GrenkeElliottModel, p, T, z)
+    mw = molecular_weight(model, z)
+    v0 = v0_water(model, T)*mw
+    B = B_water(model, T)
+    C = C_water(model, T)
     p0 = 101325.0
     K1 = (B + p0)*exp(1/C)
     K2 = v0*C
     lnBp = log1p(p/B) - log1p(p0/B)
 
-    gT = water_g0(model,T)*mw #T-dependent
+    gT = water_g0(model, T)*mw #T-dependent
     gpTx = v0*(- C*(B + p)*lnBp + C*p + p) #p-T-dependent
     gpT0 = v0*(C*p0 + p0)
     gpT = gpTx - gpT0
@@ -143,14 +143,14 @@ function eos_g(model::GrenkeElliottModel,p,T,z)
     return gT + gpT + gref
 end
 
-function water_cp(model::GrenkeElliottModel,T)
+function water_cp(model::GrenkeElliottModel, T)
     d1 = 4.44575e12 #± 3.00530e12 [J/kgK]
     d2 = −0.0928377 #± 0.0028242 [1/K]
     d3 = 4172.09 #± 8.06 [J/kgK]
     return d1*exp(d2*T) + d3
 end
 
-function water_g0(model::GrenkeElliottModel,T)
+function water_g0(model::GrenkeElliottModel, T)
     #=
     for an expression of Cp = exp(k1*T), we solve:
         -T*d2gdT = exp(k*T)
@@ -170,12 +170,12 @@ function water_g0(model::GrenkeElliottModel,T)
     return d1*exp_part + d3*c_part
 end
 
-T_scale(model::GrenkeElliottModel,z) = 273.15
-p_scale(model::GrenkeElliottModel,z) = 101325.0
+T_scale(model::GrenkeElliottModel, z) = 273.15
+p_scale(model::GrenkeElliottModel, z) = 101325.0
 
-function gibbsmodel_reference_state_consts(ice::IAPWS06,water::GrenkeElliottModel)
+function gibbsmodel_reference_state_consts(ice::IAPWS06, water::GrenkeElliottModel)
     #return :dH,101325,273.15,6010.0
-    return :zero,0.,0.,0.
+    return :zero, 0.0, 0.0, 0.0
 end
 
 export GrenkeElliottWater

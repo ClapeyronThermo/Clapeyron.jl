@@ -14,12 +14,12 @@ export PTVAlpha
 
 ## Input Parameters
 
-
-- `acentricfactor`: Single Parameter (`Float64`)
+  - `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
 
 Cubic alpha `(α(T))` model. Default for [`PTV`](@ref) EoS.
+
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
@@ -27,6 +27,7 @@ mᵢ = 0.46283 + 3.58230Zcᵢ*ωᵢ - 8.19417(Zcᵢ*ωᵢ)^2
 ```
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 alpha = PTVAlpha("water") #single input
@@ -40,26 +41,25 @@ alpha = PTVAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical
 # Passing parameters directly
 alpha = PTVAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
 ```
-
 """
 PTVAlpha
 default_locations(::Type{PTVAlpha}) = critical_data()
 
 abstract type PTVModel <: PatelTejaModel end
 
-@inline function α_m(model::PTVModel,alpha_model::PTVAlphaModel,i)
+@inline function α_m(model::PTVModel, alpha_model::PTVAlphaModel, i)
     Tc = model.params.Tc.values[i]
     Pc = model.params.Pc.values[i]
     Vc = model.params.Vc.values[i]
     Zc = Vc*Pc/(R̄*Tc)
-    coeff = (0.46283,3.58230,8.19417)
+    coeff = (0.46283, 3.58230, 8.19417)
     ω = alpha_model.params.acentricfactor.values[i]
-    return evalpoly(ω*Zc,coeff)
+    return evalpoly(ω*Zc, coeff)
 end
 
 const PTVParam = ABCCubicParam
 
-struct PTV{T <: IdealModel,α,c,γ} <:PTVModel
+struct PTV{T<:IdealModel,α,c,γ} <: PTVModel
     components::Array{String,1}
     alpha::α
     mixing::γ
@@ -86,21 +86,23 @@ end
     reference_state = nothing)
 
 ## Input parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `k`: Pair Parameter (`Float64`) (optional)
-- `l`: Pair Parameter (`Float64`) (optional)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `k`: Pair Parameter (`Float64`) (optional)
+  - `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `a`: Pair Parameter (`Float64`)
-- `b`: Pair Parameter (`Float64`)
-- `c`: Pair Parameter (`Float64`)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `a`: Pair Parameter (`Float64`)
+  - `b`: Pair Parameter (`Float64`)
+  - `c`: Pair Parameter (`Float64`)
 
 ## Description
 
@@ -125,6 +127,7 @@ Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
 ```
 
 ## Model Construction Examples
+
 ```julia
 # Using the default database
 model = PTV("water") #single input
@@ -156,59 +159,40 @@ model = PTV(["neon","hydrogen"];
                     )
 ```
 
-
 ## References
 
-1. Valderrama, J. O. (1990). A generalized Patel-Teja equation of state for polar and nonpolar fluids and their mixtures. Journal of Chemical Engineering of Japan, 23(1), 87–91. [doi:10.1252/jcej.23.87](https://doi.org/10.1252/jcej.23.87)
-
+ 1. Valderrama, J. O. (1990). A generalized Patel-Teja equation of state for polar and nonpolar fluids and their mixtures. Journal of Chemical Engineering of Japan, 23(1), 87–91. [doi:10.1252/jcej.23.87](https://doi.org/10.1252/jcej.23.87)
 """
 PTV
 
 export PTV
-function PTV(components;
-    idealmodel = BasicIdeal,
-    alpha = PTVAlpha,
-    mixing = vdW1fRule,
-    activity = nothing,
-    translation = NoTranslation,
-    userlocations = String[],
-    ideal_userlocations = String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    reference_state = nothing,
-    verbose = false)
-
+function PTV(components; idealmodel=BasicIdeal, alpha=PTVAlpha, mixing=vdW1fRule, activity=nothing, translation=NoTranslation, userlocations=String[], ideal_userlocations=String[], alpha_userlocations=String[], mixing_userlocations=String[], activity_userlocations=String[], translation_userlocations=String[], reference_state=nothing, verbose=false)
     formatted_components = format_components(components)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
-    model = CubicModel(PTV,params,formatted_components;
-                        idealmodel,alpha,mixing,activity,translation,
-                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
-                        reference_state, verbose)
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv", "SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    model = CubicModel(PTV, params, formatted_components; idealmodel, alpha, mixing, activity, translation, userlocations, ideal_userlocations, alpha_userlocations, activity_userlocations, mixing_userlocations, translation_userlocations, reference_state, verbose)
 
-    k = get(params,"k",nothing)
-    l = get(params,"l",nothing)
-    recombine_cubic!(model,k,l)
-    set_reference_state!(model,reference_state;verbose)
+    k = get(params, "k", nothing)
+    l = get(params, "l", nothing)
+    recombine_cubic!(model, k, l)
+    set_reference_state!(model, reference_state; verbose)
     return model
 end
 
 default_references(::Type{PTV}) = ["10.1252/jcej.23.87"]
 
-function ab_premixing(model::PTVModel,mixing::MixingRule,k,l)
+function ab_premixing(model::PTVModel, mixing::MixingRule, k, l)
     _Tc = model.params.Tc
     _pc = model.params.Pc
     _Vc = model.params.Vc
     a = model.params.a
     b = model.params.b
-    _Zc = @. _pc.*_Vc./(R̄*_Tc)
+    _Zc = @. _pc .* _Vc ./ (R̄*_Tc)
     Ωa = @. 0.66121-0.76105*_Zc
     Ωb = @. 0.02207+0.20868*_Zc
-    ab_diagvalues!(a,b,Ωa,Ωb,_Tc,_pc,Rgas(model))
-    epsilon_LorentzBerthelot!(a,k)
-    sigma_LorentzBerthelot!(b,l)
-    return a,b
+    ab_diagvalues!(a, b, Ωa, Ωb, _Tc, _pc, Rgas(model))
+    epsilon_LorentzBerthelot!(a, k)
+    sigma_LorentzBerthelot!(b, l)
+    return a, b
 end
 
 function c_premixing(model::PTVModel)
@@ -216,9 +200,9 @@ function c_premixing(model::PTVModel)
     _pc = model.params.Pc
     _Vc = model.params.Vc
     c = model.params.c
-    _Zc = @. _pc.*_Vc./(R̄*_Tc)
+    _Zc = @. _pc .* _Vc ./ (R̄*_Tc)
     Ωc = @. 0.57765-1.87080*_Zc
-    diagvalues(c) .= Ωc .* R̄ .*_Tc ./ _pc
+    diagvalues(c) .= Ωc .* R̄ .* _Tc ./ _pc
     c = sigma_LorentzBerthelot!(c)
     return c
 end

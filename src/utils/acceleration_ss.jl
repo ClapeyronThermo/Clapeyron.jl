@@ -1,47 +1,47 @@
 # Function to accelerate Succesive Substitution by DEM method (1 eigenvalue)
 function dem(xₙ, xₙ₋₁, xₙ₋₂)
-    return dem!(similar(xₙ),xₙ, xₙ₋₁, xₙ₋₂)
+    return dem!(similar(xₙ), xₙ, xₙ₋₁, xₙ₋₂)
 end
 
-function dem!(x_dem,xₙ, xₙ₋₁, xₙ₋₂)
-    Δxₙ₋₁ = Solvers.ΔVector(xₙ₋₁,xₙ₋₂)
-    Δxₙ = Solvers.ΔVector(xₙ ,xₙ₋₁)
+function dem!(x_dem, xₙ, xₙ₋₁, xₙ₋₂)
+    Δxₙ₋₁ = Solvers.ΔVector(xₙ₋₁, xₙ₋₂)
+    Δxₙ = Solvers.ΔVector(xₙ, xₙ₋₁)
     λ = dot(Δxₙ, Δxₙ) / dot(Δxₙ, Δxₙ₋₁)
-    x_dem .= xₙ .+ Δxₙ .* λ ./(1. .- λ)
+    x_dem .= xₙ .+ Δxₙ .* λ ./ (1.0 .- λ)
 end
 
-function ass_matmul!(f::F,out,K,x) where F
+function ass_matmul!(f::F, out, K, x) where F
     n = length(x)
     i_solved = 0
     for i in 1:n
         kxi = zero(eltype(x))
         #strategy 3
-        Ki = @view K[i,:]
+        Ki = @view K[i, :]
         @inbounds for j in 1:i_solved
             kxi += out[j]*Ki[j]
         end
-        @inbounds for j in (i_solved+1):n
+        @inbounds for j in (i_solved + 1):n
             kxi += x[j]*Ki[j]
         end
-        out[i] = f(kxi,x[i])
+        out[i] = f(kxi, x[i])
         i_solved += 1
     end
 end
 
-function ass_matmul!(f::F,outKX,outX,K,x) where F
+function ass_matmul!(f::F, outKX, outX, K, x) where F
     n = length(x)
     i_solved = 0
     for i in 1:n
         kxi = zero(eltype(x))
         #strategy 3
-        Ki = @view K[i,:]
+        Ki = @view K[i, :]
         @inbounds for j in 1:i_solved
             kxi += outX[j]*Ki[j]
         end
-        @inbounds for j in (i_solved+1):n
+        @inbounds for j in (i_solved + 1):n
             kxi += x[j]*Ki[j]
         end
-        outX[i] = f(kxi,x[i])
+        outX[i] = f(kxi, x[i])
         outKX[i] = kxi
         i_solved += 1
     end

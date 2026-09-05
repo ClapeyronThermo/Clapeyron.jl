@@ -5,70 +5,71 @@
 Calculates the eutectic point of a binary mixture at a given pressure `p`.
 
 # Arguments
-- `model`: A `CompositeModel` (with solid and liquid models specified) or a `SolidHFusModel`
-- `p`: Pressure in `[Pa]` (default: `1e5`)
-- `x0`: Initial guess as a vector or tuple `[T, x₁]` containing the temperature (`[K]`) and mole fraction of the first component (default: `x0_eutectic_point(model, p)`)
+
+  - `model`: A `CompositeModel` (with solid and liquid models specified) or a `SolidHFusModel`
+  - `p`: Pressure in `[Pa]` (default: `1e5`)
+  - `x0`: Initial guess as a vector or tuple `[T, x₁]` containing the temperature (`[K]`) and mole fraction of the first component (default: `x0_eutectic_point(model, p)`)
 
 # Returns
-A tuple `(T_eutectic, x_eutectic)` containing:
-- Eutectic temperature in `[K]`
-- Liquid composition at the eutectic point as a vector `[x₁, x₂]`
 
+A tuple `(T_eutectic, x_eutectic)` containing:
+
+  - Eutectic temperature in `[K]`
+  - Liquid composition at the eutectic point as a vector `[x₁, x₂]`
 """
-function eutectic_point(model::CompositeModel,p=1e5; x0=nothing)
+function eutectic_point(model::CompositeModel, p=1e5; x0=nothing)
     p = p*one(eltype(model))
-    binary_component_check(eutectic_point,model)
+    binary_component_check(eutectic_point, model)
     solid = solid_model(model)
     fluid = fluid_model(model)
-    f(x) = obj_eutectic_point(solid,fluid,p,1/x[1],FractionVector(exp(x[2])))
+    f(x) = obj_eutectic_point(solid, fluid, p, 1/x[1], FractionVector(exp(x[2])))
     if x0 === nothing
-        T0,x10 = x0_eutectic_point(model,p)
+        T0, x10 = x0_eutectic_point(model, p)
     else
-        T0,x10 = x0
+        T0, x10 = x0
     end
-    _1 = Base.promote_eltype(fluid_model(model),p) |> one
-    v0 = svec2(1/T0,log(x10),_1)
-    sol  = Solvers.nlsolve2(f,v0,Solvers.Newton2Var())
+    _1 = Base.promote_eltype(fluid_model(model), p) |> one
+    v0 = svec2(1/T0, log(x10), _1)
+    sol = Solvers.nlsolve2(f, v0, Solvers.Newton2Var())
     #sol = Solvers.x_sol(r)
     #!__check_convergence(r) && (sol .= NaN)
     T = 1/sol[1]
     x = FractionVector(exp(sol[2]))
-    return T,x
+    return T, x
 end
 
-function obj_eutectic_point(solid,liquid,p,T,x)
-    μsol = chemical_potential(solid,p,T,x)
-    γliq = activity_coefficient(liquid,p,T,x; phase=:l)
+function obj_eutectic_point(solid, liquid, p, T, x)
+    μsol = chemical_potential(solid, p, T, x)
+    γliq = activity_coefficient(liquid, p, T, x; phase=:l)
     RT = Rgas()*T
     dμ1 = log(γliq[1]*x[1]) - μsol[1]/RT
     dμ2 = log(γliq[2]*x[2]) - μsol[2]/RT
-    return SVector(dμ1,dμ2)
+    return SVector(dμ1, dμ2)
     #F[2] = dμ2
     #F[1:2] = μliq .- μsol
     #return F
 end
 
-function x0_eutectic_point(model::CompositeModel,p)
+function x0_eutectic_point(model::CompositeModel, p)
     solid = solid_model(model)
     fluid = fluid_model(model)
     R = Rgas(fluid)
-    _1 = one(Base.promote_eltype(fluid,p))
+    _1 = one(Base.promote_eltype(fluid, p))
 
     if solid isa SolidHfusModel
-        Tm,Hfus = solid.params.Tm.values,solid.params.Hfus.values
-        T1,T2 = Tm[1]*_1,Tm[2]*_1
-        K1,K2 = -_1*Hfus[1]/R,-_1*Hfus[2]/R
+        Tm, Hfus = solid.params.Tm.values, solid.params.Hfus.values
+        T1, T2 = Tm[1]*_1, Tm[2]*_1
+        K1, K2 = -_1*Hfus[1]/R, -_1*Hfus[2]/R
     else
         pure = split_pure_model(model)
-        m1,m2 = pure[1],pure[2]
-        T1,vs1,vl1 = melting_temperature(m1,p)
-        T2,vs2,vl2 = melting_temperature(m2,p)
-        K1 = -dpdT_saturation(m1,solid,vl1,vs1,T1)*T1*T1/p
-        K2 = -dpdT_saturation(m2,solid,vl2,vs2,T2)*T2*T2/p
+        m1, m2 = pure[1], pure[2]
+        T1, vs1, vl1 = melting_temperature(m1, p)
+        T2, vs2, vl2 = melting_temperature(m2, p)
+        K1 = -dpdT_saturation(m1, solid, vl1, vs1, T1)*T1*T1/p
+        K2 = -dpdT_saturation(m2, solid, vl2, vs2, T2)*T2*T2/p
     end
 
-
-    Te,x1e = ideal_eutectic_solver(K1,K2,T1,T2)
+    Te, x1e = ideal_eutectic_solver(K1, K2, T1, T2)
 
     #=
     successive substitution method with bounds in T
@@ -89,12 +90,10 @@ function x0_eutectic_point(model::CompositeModel,p)
     For SolidHfus, this is equivalent to the 2d eutectic solver
     =#
 
-
-
-    γ1,γ2 = activity_coefficient(fluid,p,Te,FractionVector(x1e,2); phase=:l)
+    γ1, γ2 = activity_coefficient(fluid, p, Te, FractionVector(x1e, 2); phase=:l)
     τe = 1/Te
-    τ1,τ2 = 1/T1,1/T2
-    τmin = max(τ1,τ2)*one(τe+γ1)
+    τ1, τ2 = 1/T1, 1/T2
+    τmin = max(τ1, τ2)*one(τe+γ1)
     τmax = Inf*one(τe+γ1)
     fτ = 1 - exp(K1*(τe - τ1))/γ1 - exp(K2*(τe - τ2))/γ2
     if fτ > 0
@@ -117,7 +116,7 @@ function x0_eutectic_point(model::CompositeModel,p)
 
         x1e = exp(K1*(τe - τ1))/γ1
         Te = 1/τe
-        γ1,γ2 = activity_coefficient(fluid,p,Te,FractionVector(x1e,2); phase=:l)
+        γ1, γ2 = activity_coefficient(fluid, p, Te, FractionVector(x1e, 2); phase=:l)
         fτ = 1 - exp(K1*(τe - τ1))/γ1 - exp(K2*(τe - τ2))/γ2
         if fτ > 0
             τmax = τe
@@ -127,12 +126,12 @@ function x0_eutectic_point(model::CompositeModel,p)
         abs(τmax-τmin)/τe < 1e-4 && break
     end
 
-    return Te,x1e
+    return Te, x1e
 end
 
-ideal_eutectic_solver(K1,K2,T1,T2) = ideal_eutectic_solver(promote(K1,K2,T1,T2)...)
+ideal_eutectic_solver(K1, K2, T1, T2) = ideal_eutectic_solver(promote(K1, K2, T1, T2)...)
 
-function ideal_eutectic_solver(K1::T,K2::T,T1::T,T2::T) where T
+function ideal_eutectic_solver(K1::T, K2::T, T1::T, T2::T) where T
     #solves the problem:
     #=
     log(x1) = K1*(τ - τ1)
@@ -142,18 +141,18 @@ function ideal_eutectic_solver(K1::T,K2::T,T1::T,T2::T) where T
 
     for ideal eutectic models, K = -Hfus/R
     =#
-    τ1,τ2 = 1/T1,1/T2
+    τ1, τ2 = 1/T1, 1/T2
     f(τ) = 1 - exp(K1*(τ - τ1)) - exp(K2*(τ - τ2))
-    τmin = max(τ1,τ2)
+    τmin = max(τ1, τ2)
     τmax = 2*τmin
     for i in 1:100
         fx = f(τmax)
         fx > 0 && break
         τmax *= 2
     end
-    prob = Roots.ZeroProblem(f,(τmin,τmax))
+    prob = Roots.ZeroProblem(f, (τmin, τmax))
     τ = Roots.solve(prob)
     T0 = 1/τ
     x0 = exp(K1*(τ-τ1))
-    return (T0,x0)
+    return (T0, x0)
 end

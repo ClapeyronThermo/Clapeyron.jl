@@ -6,18 +6,19 @@ Method to solve non-reactive multicomponent flash problem by Rachford-Rice equat
 Only two phases are supported. If `K0` is `nothing`, it will be calculated via the Wilson correlation.
 
 ## Keyword Arguments:
-- `equilibrium`: `:vle` for liquid vapor equilibria, `:lle` for liquid liquid equilibria, `:unknown` if not specified.
-- `K0`: initial guess for the K-values.
-- `x0`: initial guess for the composition of phase x.
-- `y0`: initial guess for the composition of phase y.
-- `vol0`: initial guesses for phase x and phase y volumes.
-- `K_tol`: tolerance to stop the calculation.
-- `ss_iters`: number of Successive Substitution iterations to perform.
-- `nacc`: accelerate successive substitution method every nacc steps. Should be an integer bigger than 3. Set to 0 for no acceleration.
-- `second_order`: wheter to solve the Gibbs energy minimization using the analytical hessian or not.
-- `noncondensables`: arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase.
-- `nonvolatiles`: arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase.
-- `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
+
+  - `equilibrium`: `:vle` for liquid vapor equilibria, `:lle` for liquid liquid equilibria, `:unknown` if not specified.
+  - `K0`: initial guess for the K-values.
+  - `x0`: initial guess for the composition of phase x.
+  - `y0`: initial guess for the composition of phase y.
+  - `vol0`: initial guesses for phase x and phase y volumes.
+  - `K_tol`: tolerance to stop the calculation.
+  - `ss_iters`: number of Successive Substitution iterations to perform.
+  - `nacc`: accelerate successive substitution method every nacc steps. Should be an integer bigger than 3. Set to 0 for no acceleration.
+  - `second_order`: wheter to solve the Gibbs energy minimization using the analytical hessian or not.
+  - `noncondensables`: arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase.
+  - `nonvolatiles`: arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase.
+  - `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
 
 ## Result values
 
@@ -26,7 +27,7 @@ The phase in the first index is considered the `x` phase (always liquid), wherea
 In this way, one can recover the converged K value by dividing the compositions in the following way:
 
 ```julia
-x,y = result.compositions
+x, y = result.compositions
 K = y ./ x
 ```
 
@@ -40,11 +41,11 @@ We can get the amount of active phases using [`Clapeyron.numphases(result,true)`
 On a one-phase equilibria result, the K value calculated via `K = y ./ x` is not a valid equilibrium K with respect to the bulk composition.
 This value is still useful, but some care is needed while handling this result. we can identify three cases:
 
-1.  "hard" liquid and "hard" vapour: In those cases, the converged K value has all Kᵢ > 1 (vapour result), or all Kᵢ < 1 (liquid result).
+ 1. "hard" liquid and "hard" vapour: In those cases, the converged K value has all Kᵢ > 1 (vapour result), or all Kᵢ < 1 (liquid result).
     Because compositions in a `FlashResult` are normalized, the K obtained via `y ./ x` will have at least one value equal to `1`.
-1.  "soft" liquid and "soft" vapour: In those cases, while K converged, no vapour fraction `β` in the range (0,1) can satisfy `β = Clapeyron.rachfordrice(K,z)`.
+ 2. "soft" liquid and "soft" vapour: In those cases, while K converged, no vapour fraction `β` in the range (0,1) can satisfy `β = Clapeyron.rachfordrice(K,z)`.
     In this case, `minimum(K) < 1` and `maximum(K) > 1`.
-1.  "trivial" result: No separation could be done, and the flash procedure converged to the trivial result `K .= 1`.
+ 3. "trivial" result: No separation could be done, and the flash procedure converged to the trivial result `K .= 1`.
     The phase is still identified (so the active phase can still be identified as liquid or vapour), no incipient phase could be found.
     In this case, `all(isone,K) == true`.
 """
@@ -64,58 +65,47 @@ end
 
 function Solvers.primalval(method::RRTPFlash{T}) where {T}
     if T === nothing
-        return Solvers.primalval_struct(method,T)
+        return Solvers.primalval_struct(method, T)
     else
-        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+        return Solvers.primalval_struct(method, Solvers.primal_eltype(T))
     end
 end
 
 Base.eltype(method::RRTPFlash{T}) where T = T
 
-function index_reduction(m::RRTPFlash,idx::AbstractVector)
-    equilibrium,K0,x0,y0,v0,K_tol,max_iters,nacc,noncondensables,nonvolatiles,verbose = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.max_iters,m.nacc,m.noncondensables,m.nonvolatiles,m.verbose
+function index_reduction(m::RRTPFlash, idx::AbstractVector)
+    equilibrium, K0, x0, y0, v0, K_tol, max_iters, nacc, noncondensables, nonvolatiles, verbose = m.equilibrium, m.K0, m.x0, m.y0, m.v0, m.K_tol, m.max_iters, m.nacc, m.noncondensables, m.nonvolatiles, m.verbose
     K0 !== nothing && (K0 = K0[idx])
     x0 !== nothing && (x0 = x0[idx])
     y0 !== nothing && (y0 = y0[idx])
-    return RRTPFlash{eltype(m)}(equilibrium,K0,x0,y0,v0,K_tol,max_iters,nacc,noncondensables,nonvolatiles,verbose)
+    return RRTPFlash{eltype(m)}(equilibrium, K0, x0, y0, v0, K_tol, max_iters, nacc, noncondensables, nonvolatiles, verbose)
 end
 
-function RRTPFlash(;equilibrium = :unknown,
-    K0 = nothing,
-    x0 = nothing,
-    y0 = nothing,
-    v0 = nothing,
-    K_tol = 1e-10,
-    max_iters = 100,
-    nacc = 5,
-    noncondensables = nothing,
-    nonvolatiles = nothing,
-    flash_result = nothing,
-    verbose = false)
+function RRTPFlash(; equilibrium=:unknown, K0=nothing, x0=nothing, y0=nothing, v0=nothing, K_tol=1e-10, max_iters=100, nacc=5, noncondensables=nothing, nonvolatiles=nothing, flash_result=nothing, verbose=false)
     ss_iters = max_iters
     if flash_result isa FlashResult
         np = numphases(flash_result)
-        np != 2 && incorrect_np_flash_error(RRTPFlash,flash_result)
+        np != 2 && incorrect_np_flash_error(RRTPFlash, flash_result)
     end
 
     nonvolatiles isa String && (nonvolatiles = [nonvolatiles])
     noncondensables isa String && (noncondensables = [noncondensables])
 
     #we call Michelsen to check if the arguments are correct.
-    m = MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,noncondensables,nonvolatiles,flash_result,verbose)
-    return RRTPFlash{eltype(m)}(m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,max_iters,m.nacc,m.noncondensables,m.nonvolatiles,m.verbose)
+    m = MichelsenTPFlash(; equilibrium, K0, x0, y0, v0, K_tol, ss_iters, nacc, noncondensables, nonvolatiles, flash_result, verbose)
+    return RRTPFlash{eltype(m)}(m.equilibrium, m.K0, m.x0, m.y0, m.v0, m.K_tol, max_iters, m.nacc, m.noncondensables, m.nonvolatiles, m.verbose)
 end
 
 function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
-    model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
-    x,y,β,v,lle = tp_flash_michelsen(model_cached,p,T,z,method,true)
+    model_cached = __tpflash_cache_model(model, p, T, z, method.equilibrium)
+    x, y, β, v, lle = tp_flash_michelsen(model_cached, p, T, z, method, true)
     vapour_idx = lle ? -1 : 2
-    volumes = [v[1],v[2]]
-    comps = [x,y]
-    βi = [1-β ,β]
-    flash0 = FlashResult(comps,βi,volumes,FlashData(p,T,zero(β),vapour_idx))
-    g = isnan(β) ? β : first(modified_gibbs(model_cached,flash0))
-    return FlashResult(comps,βi,volumes,FlashData(p,T,g,vapour_idx))
+    volumes = [v[1], v[2]]
+    comps = [x, y]
+    βi = [1-β, β]
+    flash0 = FlashResult(comps, βi, volumes, FlashData(p, T, zero(β), vapour_idx))
+    g = isnan(β) ? β : first(modified_gibbs(model_cached, flash0))
+    return FlashResult(comps, βi, volumes, FlashData(p, T, g, vapour_idx))
 end
 
 michelsen_itss(method::RRTPFlash) = method.max_iters

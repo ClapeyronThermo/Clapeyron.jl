@@ -4,24 +4,25 @@
 Performs stability tests for a (p,T,z) pair, and warn if any tests fail. Returns `true/false`.
 
 Checks, in order of complexity:
- - mechanical stability: isothermal compressibility is not negative.
- - diffusive stability: all eigenvalues of `∂²A/∂n²` are positive.
- - chemical stability: there isn't any other combinations of compositions at p(V,T),T that are more stable than the input composition.
+
+  - mechanical stability: isothermal compressibility is not negative.
+  - diffusive stability: all eigenvalues of `∂²A/∂n²` are positive.
+  - chemical stability: there isn't any other combinations of compositions at p(V,T),T that are more stable than the input composition.
 
 For checking (V,T,z) pairs, use `Clapeyron.VT_isstable(model,V,T,z)` instead.
 """
-function isstable(model,p,T,z = SA[1.0])
-    pp,TT,zz = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
-    V = volume(model,pp,TT,zz)
-    return VT_isstable(model,V,TT,zz,false)
+function isstable(model, p, T, z=SA[1.0])
+    pp, TT, zz = ustrip(p, pressure), ustrip(T, temperature), uzstrip(model, z)
+    V = volume(model, pp, TT, zz)
+    return VT_isstable(model, V, TT, zz, false)
 end
 
-function VT_isstable(model,V,T,z = SA[1.0],check_v = true)
-    TT,zz = ustrip(T,temperature),uzstrip(model,z)
-    vv = uvstrip(model,V,z)
-    VT_mechanical_stability(model,vv,TT,zz) || return false
-    VT_diffusive_stability(model,vv,TT,zz) || return false
-    VT_chemical_stability(model,vv,TT,zz,check_v) || return false
+function VT_isstable(model, V, T, z=SA[1.0], check_v=true)
+    TT, zz = ustrip(T, temperature), uzstrip(model, z)
+    vv = uvstrip(model, V, z)
+    VT_mechanical_stability(model, vv, TT, zz) || return false
+    VT_diffusive_stability(model, vv, TT, zz) || return false
+    VT_chemical_stability(model, vv, TT, zz, check_v) || return false
     return true
 end
 
@@ -31,14 +32,14 @@ end
 Performs a mechanical stability for a (V,T,z) pair, returns `true/false`.
 Checks if isothermal compressibility is not negative.
 
-
 !!! note
+
     This function does not have a `p`,`T` counterpart, because if we calculate the volume via `volume(model,p,T,z)`, it will be, by definition, a mechanically stable phase.
 """
-function VT_mechanical_stability(model,_V,_T,_z = SA[1.0])
-    T,z = ustrip(_T,temperature),uzstrip(model,_z)
-    V = uvstrip(model,_V,z)
-    return VT_isothermal_compressibility(model,V,T,z) >= 0
+function VT_mechanical_stability(model, _V, _T, _z=SA[1.0])
+    T, z = ustrip(_T, temperature), uzstrip(model, _z)
+    V = uvstrip(model, _V, z)
+    return VT_isothermal_compressibility(model, V, T, z) >= 0
 end
 
 """
@@ -48,33 +49,33 @@ Performs a diffusive stability for a (V,T,z) pair, returns `true/false`.
 Checks if all eigenvalues of `∂²A/∂n²` are positive.
 Returns `false` if the eos calculation failed. This normally occurs when evaluating on densities lower than the maximum density (given by `Clapeyron.lb_volume(model,T,z)`).
 """
-function VT_diffusive_stability(model,_V,_T,_z = SA[1.0])
-    T,z = ustrip(_T,temperature),uzstrip(model,_z)
-    V = uvstrip(model,_V,z)
-    ρᵢ = similar(z,Base.promote_eltype(V,z))
+function VT_diffusive_stability(model, _V, _T, _z=SA[1.0])
+    T, z = ustrip(_T, temperature), uzstrip(model, _z)
+    V = uvstrip(model, _V, z)
+    ρᵢ = similar(z, Base.promote_eltype(V, z))
     ρᵢ .= z ./ V
-    HΨ = Ψ_hessian(model,T,ρᵢ)
-    if any(!isfinite,HΨ)
+    HΨ = Ψ_hessian(model, T, ρᵢ)
+    if any(!isfinite, HΨ)
         return false
     end
     if length(model) == 1
-        return HΨ[1,1] > 0
+        return HΨ[1, 1] > 0
     end
     λ = eigmin(Hermitian(HΨ)) # calculating just minimum eigenvalue more efficient than calculating all & finding min
     return λ > 0
 end
 
-function VT_diffusive_eigvalue(model,_V,_T,_z = SA[1.0])
-    T,z = ustrip(_T,temperature),uzstrip(model,_z)
-    V = uvstrip(model,_V,z)
-    ρᵢ = similar(z,Base.promote_eltype(V,z))
+function VT_diffusive_eigvalue(model, _V, _T, _z=SA[1.0])
+    T, z = ustrip(_T, temperature), uzstrip(model, _z)
+    V = uvstrip(model, _V, z)
+    ρᵢ = similar(z, Base.promote_eltype(V, z))
     ρᵢ .= z ./ V
-    HΨ = Ψ_hessian(model,T,ρᵢ)
-    if any(!isfinite,HΨ)
+    HΨ = Ψ_hessian(model, T, ρᵢ)
+    if any(!isfinite, HΨ)
         return zero(eltype(HΨ))/zero(eltype(HΨ))
     end
     if length(model) == 1
-        return HΨ[1,1]
+        return HΨ[1, 1]
     end
     return eigmin(Hermitian(HΨ)) # calculating just minimum eigenvalue more efficient than calculating all & finding min
 end
@@ -87,18 +88,17 @@ Performs a diffusive stability for a (V,T,z) pair, returns `true/false`.
     Checks if all eigenvalues of `∂²A/∂n²` are positive.
 
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
-
 """
-function diffusive_stability(model,_p,_T,_z = SA[1.0];phase = :unknown,threaded = true,vol0 = nothing)
-    T,z = ustrip(_T,temperature),uzstrip(model,_z)
-    if unitful.is_pressure(p)   
-        _vol0 = uvstrip(model,vol0,z)
-        p = ustrip(_p,pressure)
-        V = volume(model,p,T,z;phase,threaded,vol0 = _vol0)
+function diffusive_stability(model, _p, _T, _z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
+    T, z = ustrip(_T, temperature), uzstrip(model, _z)
+    if unitful.is_pressure(p)
+        _vol0 = uvstrip(model, vol0, z)
+        p = ustrip(_p, pressure)
+        V = volume(model, p, T, z; phase, threaded, vol0=_vol0)
     else
-        V = uvstrip(model,_p,z)
+        V = uvstrip(model, _p, z)
     end
-    return VT_diffusive_stability(model,V,T,z)
+    return VT_diffusive_stability(model, V, T, z)
 end
 
 """
@@ -109,16 +109,17 @@ Performs a Gibbs-Duhem check on the input conditions:
 ```
 ∑zᵢμᵢ - G ≈ 0
 ```
+
 Where `G` is the total Gibbs energy `[J]`. It can help diagnose if a user-defined eos is consistent.
 
 Returns |∑zᵢμᵢ - G|, ∑zᵢμᵢ and G at the specified conditions.
 """
-function gibbs_duhem(model,_V,_T,_z=SA[1.0])
-    T,z = ustrip(_T,temperature),uzstrip(model,_z)
-    V = uvstrip(model,_V,z)
-    μ = dot(z,Clapeyron.VT_chemical_potential(model,V,T,z))
-    g = VT_gibbs_energy(model,V,T,z)
-    return abs(μ-g),μ,g
+function gibbs_duhem(model, _V, _T, _z=SA[1.0])
+    T, z = ustrip(_T, temperature), uzstrip(model, _z)
+    V = uvstrip(model, _V, z)
+    μ = dot(z, Clapeyron.VT_chemical_potential(model, V, T, z))
+    g = VT_gibbs_energy(model, V, T, z)
+    return abs(μ-g), μ, g
 end
 
 """
@@ -135,14 +136,14 @@ Return |∂a₀∂V + 1/V| at the specified conditions of volume `V`, of tempera
 If the model is not an `IdealModel`, then `Clapeyron.idealmodel(model)` will be called to obtain the respective ideal model.
 """
 
-function ideal_consistency(model,V,T,z =SA[1.0])
+function ideal_consistency(model, V, T, z=SA[1.0])
     id = idealmodel(model)
     if id === nothing || id === model
-        f(∂V) = a_ideal(model,∂V,T,z)
-        ∂f0∂V = Solvers.derivative(f,V)
+        f(∂V) = a_ideal(model, ∂V, T, z)
+        ∂f0∂V = Solvers.derivative(f, V)
         return abs(∂f0∂V + 1/V)
     else
-        return ideal_consistency(id,V,T,z)
+        return ideal_consistency(id, V, T, z)
     end
 end
 
@@ -151,22 +152,22 @@ end
 
 Performs a chemical stability check using the tangent plane distance criterion, using the [tpd](@ref) function.
 """
-function VT_chemical_stability(model::EoSModel,_V,_T,_z,check_vol = true)
-    T,z = ustrip(_T,temperature),uzstrip(model,_z)
-    V = uvstrip(model,_V,z)
+function VT_chemical_stability(model::EoSModel, _V, _T, _z, check_vol=true)
+    T, z = ustrip(_T, temperature), uzstrip(model, _z)
+    V = uvstrip(model, _V, z)
     if isone(length(z))
-        return pure_chemical_instability(model,V/sum(z),T)
+        return pure_chemical_instability(model, V/sum(z), T)
     end
-    p = pressure(model,V,T,z)
+    p = pressure(model, V, T, z)
     if check_vol
-        Vx = volume(model,p,T,z)
+        Vx = volume(model, p, T, z)
         #we check first if the phase itself is stable, maybe there is another phase
         #with the same composition, but with a different volume, that is more stable.
         V ≈ Vx || return false
     end
     #the input volume corresponds to the most stable phase at that compsition.
     #proceed to tpd
-    return chemical_stability(model,p,T,z)
+    return chemical_stability(model, p, T, z)
 end
 
 """
@@ -174,25 +175,25 @@ end
 
 Performs a chemical stability check using the tangent plane distance criterion, using the [tpd](@ref) function.
 """
-function chemical_stability(model,_p,_T,_z)
-    T,z = ustrip(_T,temperature),uzstrip(model,_z)
+function chemical_stability(model, _p, _T, _z)
+    T, z = ustrip(_T, temperature), uzstrip(model, _z)
     if unitful_is_pressure(_p)
-        p = ustrip(_p,pressure)
+        p = ustrip(_p, pressure)
         length(model) == 1 && return true #there aren't other combinations of composition.
-        comps,_,_,_ = tpd(model,p,T,z,break_first = true)
+        comps, _, _, _ = tpd(model, p, T, z, break_first=true)
         return iszero(length(comps))
     else
-        V = uvstrip(model,_p,z)
-        return VT_chemical_stability(model,V,T,z,true)
+        V = uvstrip(model, _p, z)
+        return VT_chemical_stability(model, V, T, z, true)
     end
 end
 
-function pure_chemical_instability(model,_V,_T)
-    T = ustrip(_T,temperature)
-    V = uvstrip(model,_V,SA[1.0])
-    Tc,_,_ = crit_pure(model)
+function pure_chemical_instability(model, _V, _T)
+    T = ustrip(_T, temperature)
+    V = uvstrip(model, _V, SA[1.0])
+    Tc, _, _ = crit_pure(model)
     T >= Tc && return true
-    psat,vl,vv = saturation_pressure(model,T)
+    psat, vl, vv = saturation_pressure(model, T)
     if isnan(psat)
         return false
     end
@@ -210,30 +211,24 @@ end
                                     volw0 = nothing,
                                     volz0 = nothing,
                                     modified = false)
-                                    
-                            
+
 Calculates the tangent plane distance (TPD) between a bulk composition `z` and a trial composition `W`.
 Negative TPD values mean that the that the bulk composition z is unstable and will split into (at least) two phases.
 The arguments `volz0`,`volw0`,`phasew` and `phasez` are passed to the evaluation of their respective fugacity coefficients.
 If the `modified` argument is set to `true`, then the modified formula is used, that uses mol numbers instead of mol fractions for the trial composition.
 If the input amounts sum to one, then the modified TPD and the original TPD expression should give the same result.
-``` 
+
+```
+```
 """
-function tangent_plane_distance(model,p,T,z,W,cache = nothing;
-                                phasew = :unknown,
-                                phasez = :unknown,
-                                volw0 = nothing,
-                                volz0 = nothing,
-                                modified = false)
-    
-    
-    _lnϕw,_ = modified_lnϕ(model, p, T, W, cache; phase=phasew, vol0=volw0)
+function tangent_plane_distance(model, p, T, z, W, cache=nothing; phasew=:unknown, phasez=:unknown, volw0=nothing, volz0=nothing, modified=false)
+    _lnϕw, _ = modified_lnϕ(model, p, T, W, cache; phase=phasew, vol0=volw0)
     if cache === nothing
         lnϕw = _lnϕw
     else
         lnϕw = copy(_lnϕw) #copy if a cache is used
     end
-    lnϕz,_ = modified_lnϕ(model, p, T, z, cache; phase=phasez, vol0=volw0)
+    lnϕz, _ = modified_lnϕ(model, p, T, z, cache; phase=phasez, vol0=volw0)
     ∑z = sum(z)
     if modified
         fx = 1.0 + @sum(W[i]*(log(W[i]) + lnϕw[i] - lnϕz[i] - log(z[i]/∑z) - 1.0))
@@ -245,6 +240,6 @@ function tangent_plane_distance(model,p,T,z,W,cache = nothing;
 end
 
 export isstable
-export VT_mechanical_stability, VT_diffusive_stability,VT_chemical_stability
+export VT_mechanical_stability, VT_diffusive_stability, VT_chemical_stability
 export diffusive_stability, chemical_stability
 export gibbs_duhem

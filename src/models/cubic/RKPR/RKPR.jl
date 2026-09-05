@@ -10,19 +10,19 @@ struct RKPRParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-function transform_params(::Type{RKPRParam},params,components)
+function transform_params(::Type{RKPRParam}, params, components)
     n = length(components)
-    transform_params(ABCubicParam,params,components)
+    transform_params(ABCubicParam, params, components)
     Tc = params["Tc"]
     Pc = params["Pc"]
-    Vc = get(params,"Vc",1.0)
-    delta = get!(params,"delta") do
-        SingleParam("delta",components,zeros(Base.promote_eltype(Pc,Tc,Vc),n),fill(true,n))
+    Vc = get(params, "Vc", 1.0)
+    delta = get!(params, "delta") do
+        SingleParam("delta", components, zeros(Base.promote_eltype(Pc, Tc, Vc), n), fill(true, n))
     end
     return params
 end
 
-struct RKPR{T <: IdealModel,α,c,M} <: RKPRModel
+struct RKPR{T<:IdealModel,α,c,M} <: RKPRModel
     components::Array{String,1}
     alpha::α
     mixing::M
@@ -51,32 +51,37 @@ export RKPR
     verbose = false)
 
 ## Input parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) (optional) - Critical Volume `[m³·mol⁻¹]`
-- `delta`: Single Parameter (`Float64`) (optional) - constant parameter (no units)
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `k`: Pair Parameter (`Float64`) (optional)
-- `l`: Pair Parameter (`Float64`) (optional)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Vc`: Single Parameter (`Float64`) (optional) - Critical Volume `[m³·mol⁻¹]`
+  - `delta`: Single Parameter (`Float64`) (optional) - constant parameter (no units)
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `k`: Pair Parameter (`Float64`) (optional)
+  - `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `a`: Pair Parameter (`Float64`)
-- `b`: Pair Parameter (`Float64`)
-- `delta`: Single Parameter (`Float64`) - constant parameter (no units)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `a`: Pair Parameter (`Float64`)
+  - `b`: Pair Parameter (`Float64`)
+  - `delta`: Single Parameter (`Float64`) - constant parameter (no units)
 
 ## Input models
-- `idealmodel`: Ideal Model
-- `alpha`: Alpha model
-- `mixing`: Mixing model
-- `activity`: Activity Model, used in the creation of the mixing model.
-- `translation`: Translation Model
+
+  - `idealmodel`: Ideal Model
+  - `alpha`: Alpha model
+  - `mixing`: Mixing model
+  - `activity`: Activity Model, used in the creation of the mixing model.
+  - `translation`: Translation Model
 
 ## Description
+
 Redlich-Kwong-Peng-Robinson Equation of state.
+
 ```
 P = RT/(v-b) + a•α(T)/((v + Δ₁b)*(v + Δ₂b))
 Δ₁ = δ
@@ -103,6 +108,7 @@ else
 ```
 
 ## Model Construction Examples
+
 ```julia
 # Using the default database
 model = RKPR("water") #single input
@@ -133,45 +139,30 @@ model = RKPR(["neon","hydrogen"];
                         l = [0. 0.01; 0.01 0.])
                     )
 ```
+
 ## References
-1. Cismondi, M., & Mollerup, J. (2005). Development and application of a three-parameter RK–PR equation of state. Fluid Phase Equilibria, 232(1–2), 74–89. [doi:10.1016/j.fluid.2005.03.020](https://doi.org/10.1016/j.fluid.2005.03.020)
-2. Tassin, N. G., Mascietti, V. A., & Cismondi, M. (2019). Phase behavior of multicomponent alkane mixtures and evaluation of predictive capacity for the PR and RKPR EoS’s. Fluid Phase Equilibria, 480, 53–65. [doi:10.1016/j.fluid.2018.10.005](https://doi.org/10.1016/j.fluid.2018.10.005)
+
+ 1. Cismondi, M., & Mollerup, J. (2005). Development and application of a three-parameter RK–PR equation of state. Fluid Phase Equilibria, 232(1–2), 74–89. [doi:10.1016/j.fluid.2005.03.020](https://doi.org/10.1016/j.fluid.2005.03.020)
+ 2. Tassin, N. G., Mascietti, V. A., & Cismondi, M. (2019). Phase behavior of multicomponent alkane mixtures and evaluation of predictive capacity for the PR and RKPR EoS’s. Fluid Phase Equilibria, 480, 53–65. [doi:10.1016/j.fluid.2018.10.005](https://doi.org/10.1016/j.fluid.2018.10.005)
 """
 RKPR
 
-function RKPR(components;
-    idealmodel = BasicIdeal,
-    alpha = RKPRAlpha,
-    mixing = vdW1fRule,
-    activity = nothing,
-    translation = NoTranslation,
-    userlocations = String[],
-    ideal_userlocations = String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    reference_state = nothing,
-    verbose = false)
-
+function RKPR(components; idealmodel=BasicIdeal, alpha=RKPRAlpha, mixing=vdW1fRule, activity=nothing, translation=NoTranslation, userlocations=String[], ideal_userlocations=String[], alpha_userlocations=String[], mixing_userlocations=String[], activity_userlocations=String[], translation_userlocations=String[], reference_state=nothing, verbose=false)
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc"])
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv", "SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose, ignore_missing_singleparams=["Vc"])
 
-    model = CubicModel(RKPR,params,formatted_components;
-                        idealmodel,alpha,mixing,activity,translation,
-                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
-                        reference_state, verbose)
+    model = CubicModel(RKPR, params, formatted_components; idealmodel, alpha, mixing, activity, translation, userlocations, ideal_userlocations, alpha_userlocations, activity_userlocations, mixing_userlocations, translation_userlocations, reference_state, verbose)
 
-    k = get(params,"k",nothing)
-    l = get(params,"l",nothing)
-    recombine_cubic!(model,k,l)
-    set_reference_state!(model,reference_state;verbose)
+    k = get(params, "k", nothing)
+    l = get(params, "l", nothing)
+    recombine_cubic!(model, k, l)
+    set_reference_state!(model, reference_state; verbose)
     return model
 end
 
-default_references(::Type{RKPR}) = ["10.1016/j.fluid.2005.03.020","10.1016/j.fluid.2018.10.005"]
+default_references(::Type{RKPR}) = ["10.1016/j.fluid.2005.03.020", "10.1016/j.fluid.2018.10.005"]
 
-function __rkpr_f0_δ(δ,Zc)
+function __rkpr_f0_δ(δ, Zc)
     δ2 = δ*δ
     d1 = (1 + δ2)/(1 + δ)
     y = 1 + cbrt(2*(1+δ)) + cbrt(4/(1+δ))
@@ -181,10 +172,10 @@ end
 function rkpr(δ)
     Δ1 = -δ
     Δ2 = -(1 - δ)/(1 + δ)
-    return cubic_pure_zc(Δ1,Δ2)
+    return cubic_pure_zc(Δ1, Δ2)
 end
 
-function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
+function ab_premixing(model::RKPRModel, mixing::MixingRule, k, l)
     _Tc = model.params.Tc
     _pc = model.params.Pc
     _Vc = model.params.Vc
@@ -192,21 +183,21 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k, l)
     b = model.params.b
     delta = model.params.delta
     for i in @comps
-        pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
+        pci, Tci, Vci = _pc[i], _Tc[i], _Vc[i]
         δ = delta[i]
         Δ1 = -δ
         Δ2 = -(1 - δ)/(1 + δ)
-        Ωa,Ωb = ab_consts(Δ1,Δ2)
-        if a.ismissingvalues[i,i]
+        Ωa, Ωb = ab_consts(Δ1, Δ2)
+        if a.ismissingvalues[i, i]
             a[i] = Ωa*R̄^2*Tci^2/pci
         end
-        if b.ismissingvalues[i,i]
+        if b.ismissingvalues[i, i]
             b[i] = Ωb*R̄*Tci/pci
         end
     end
-    epsilon_LorentzBerthelot!(a,k)
-    sigma_LorentzBerthelot!(b,l)
-    return a,b
+    epsilon_LorentzBerthelot!(a, k)
+    sigma_LorentzBerthelot!(b, l)
+    return a, b
 end
 
 function c_premixing(model::RKPRModel)
@@ -214,9 +205,9 @@ function c_premixing(model::RKPRModel)
     _pc = model.params.Pc
     _Vc = model.params.Vc
     delta = model.params.delta
-    prob = Roots.ZeroProblem(__rkpr_f0_δ,0.41*oneunit(eltype(delta))) #TODO: find a more stable way to solve this
+    prob = Roots.ZeroProblem(__rkpr_f0_δ, 0.41*oneunit(eltype(delta))) #TODO: find a more stable way to solve this
     for i in @comps
-        pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
+        pci, Tci, Vci = _pc[i], _Tc[i], _Vc[i]
         if !_Vc.ismissingvalues[i] && delta.ismissingvalues[i]
             Zci = pci * Vci / (R̄ * Tci)
             #Roots.find_zero(x -> Clapeyron.__rkpr_f0_δ(sqrt(2) - 1,1.168*x),0.29)
@@ -225,7 +216,7 @@ function c_premixing(model::RKPRModel)
                 δ = 1 - sqrt(2)
             else
                 Zci_eos = 1.168*Zci
-                δ = Roots.solve(prob,Roots.Order0(),Zci_eos)
+                δ = Roots.solve(prob, Roots.Order0(), Zci_eos)
             end
             delta[i] = δ
         elseif !delta.ismissingvalues[i]
@@ -237,7 +228,7 @@ function c_premixing(model::RKPRModel)
     return delta
 end
 
-function cubic_Δ(model::RKPRModel,z)
+function cubic_Δ(model::RKPRModel, z)
     δ = diagvalues(model.params.delta)
     z⁻¹ = sum(z)^-1
     Δ1 = zero(eltype(z))
@@ -248,5 +239,5 @@ function cubic_Δ(model::RKPRModel,z)
         Δ2 += zi*δi
         Δ1 += zi*((1 - δi)/(1 + δi))
     end
-    return  -Δ2*z⁻¹, -Δ1*z⁻¹
+    return -Δ2*z⁻¹, -Δ1*z⁻¹
 end
