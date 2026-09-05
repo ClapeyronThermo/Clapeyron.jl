@@ -90,7 +90,7 @@ By setting `molar_basis` to `false`, `MassFractions` will return a set of molar 
 """
 struct MassFractions{T,V} <: AbstractVector{T}
     values::V
-    mol::Bool
+    molar_basis::Bool
     function MassFractions(x::V;molar_basis = true) where V <: AbstractVector{T} where T
         n = sum(x)
         w = x ./ n
