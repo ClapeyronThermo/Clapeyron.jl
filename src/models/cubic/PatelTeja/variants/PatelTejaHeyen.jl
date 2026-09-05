@@ -1,23 +1,23 @@
 @newmodelsimple PTHAlpha TwuAlphaModel TwuAlphaParam
 default_locations(::Type{PTHAlpha}) = critical_data()
 default_references(::Type{PTHAlpha}) = ["10.1016/0378-3812(80)80003-3,10.1016/j.fluid.2012.12.032"]
-default_ignore_missing_singleparams(::Type{PTHAlpha}) = ["Vc","L","M","N","acentricfactor","Tc","Pc"]
+default_ignore_missing_singleparams(::Type{PTHAlpha}) = ["Vc", "L", "M", "N", "acentricfactor", "Tc", "Pc"]
 
-function transform_params(::Type{PTHAlpha},params,components)
+function transform_params(::Type{PTHAlpha}, params, components)
     nc = length(components)
-    M = get!(params,"M") do
-        SingleParam("M",components,zeros(nc),fill(true,nc))
+    M = get!(params, "M") do
+        SingleParam("M", components, zeros(nc), fill(true, nc))
     end
-    w = get!(params,"acentricfactor") do
-        SingleParam("acentricfactor",components,zeros(nc),fill(true,nc))
-    end
-
-    N = get!(params,"N") do
-        SingleParam("N",components,zeros(nc),fill(true,nc))
+    w = get!(params, "acentricfactor") do
+        SingleParam("acentricfactor", components, zeros(nc), fill(true, nc))
     end
 
-    L = get!(params,"M") do
-        SingleParam("M",components,zeros(nc),fill(true,nc))
+    N = get!(params, "N") do
+        SingleParam("N", components, zeros(nc), fill(true, nc))
+    end
+
+    L = get!(params, "M") do
+        SingleParam("M", components, zeros(nc), fill(true, nc))
     end
 
     for i in 1:nc
@@ -42,8 +42,8 @@ function transform_params(::Type{PTHAlpha},params,components)
             M = 1
             =#
             ω = w[i]
-            βc = evalpoly(ω,(1.4563,1.26,−0.3928))
-            γc = evalpoly(ω,(−0.2981,−1.9574,0.1789))
+            βc = evalpoly(ω, (1.4563, 1.26, −0.3928))
+            γc = evalpoly(ω, (−0.2981, −1.9574, 0.1789))
             H2 = γc/(βc - 1) + βc
             H1 = (βc - 1)/H2
             L[i] = H1
@@ -54,7 +54,7 @@ function transform_params(::Type{PTHAlpha},params,components)
     return params
 end
 
-struct PatelTejaHeyen{T <: IdealModel,α,c,γ} <:PatelTejaModel
+struct PatelTejaHeyen{T<:IdealModel,α,c,γ} <: PatelTejaModel
     components::Array{String,1}
     alpha::α
     mixing::γ
@@ -81,28 +81,30 @@ end
     verbose = false)
 
 ## Input parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc_fit`: Single Parameter (`Float64`) - Fitted Critical Volume `[m³·mol⁻¹]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `k`: Pair Parameter (`Float64`) (optional)
-- `l`: Pair Parameter (`Float64`) (optional)
-- `acentricfactor`: Single Parameter (`Float64`) (optional) - acentric factor, used to fit the critical volume if no value is provided.
 
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Vc_fit`: Single Parameter (`Float64`) - Fitted Critical Volume `[m³·mol⁻¹]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `k`: Pair Parameter (`Float64`) (optional)
+  - `l`: Pair Parameter (`Float64`) (optional)
+  - `acentricfactor`: Single Parameter (`Float64`) (optional) - acentric factor, used to fit the critical volume if no value is provided.
 
 ## Model Parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc_fit`: Single Parameter (`Float64`) - Fitted Critical Volume `[m³·mol⁻¹]`
-- `acentricfactor`: Single Parameter (`Float64`)
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `a`: Pair Parameter (`Float64`)
-- `b`: Pair Parameter (`Float64`)
-- `c`: Pair Parameter (`Float64`)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Vc_fit`: Single Parameter (`Float64`) - Fitted Critical Volume `[m³·mol⁻¹]`
+  - `acentricfactor`: Single Parameter (`Float64`)
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `a`: Pair Parameter (`Float64`)
+  - `b`: Pair Parameter (`Float64`)
+  - `c`: Pair Parameter (`Float64`)
 
 ## Description
 
 Patel-Teja-Heyen Equation of state.
+
 ```
 P = RT/(v-b) + a•α(T)/((v - Δ₁b)*(v - Δ₂b))
 aᵢᵢ = Ωaᵢ(R²Tcᵢ²/Pcᵢ)
@@ -120,6 +122,7 @@ Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
 Δ₁ = -(ϵ + √δ)/2
 Δ₂ = -(ϵ - √δ)/2
 ```
+
 if `Vc_fit` is not known, `Zc` can be estimated, using the acentric factor:
 
 ```
@@ -127,6 +130,7 @@ Zc = 0.3277 - 0.0537ω - 0.0147ω²
 ```
 
 ## Model Construction Examples
+
 ```julia
 # Using the default database
 model = PatelTejaHeyen("water") #single input
@@ -159,40 +163,23 @@ model = PatelTejaHeyen(["neon","hydrogen"];
 
 ## References
 
-1. Patel, N. C., & Teja, A. S. (1982). A new cubic equation of state for fluids and fluid mixtures. Chemical Engineering Science, 37(3), 463–473. [doi:10.1016/0009-2509(82)80099-7](https://doi.org/10.1016/0009-2509(82)80099-7)
-2. Forero G., L. A., & Velásquez J., J. A. (2013). A modified Patel–Teja cubic equation of state: Part I – Generalized model for gases and hydrocarbons. Fluid Phase Equilibria, 342, 8–22. [doi:10.1016/j.fluid.2012.12.032](https://doi.org/10.1016/j.fluid.2012.12.032)
+ 1. Patel, N. C., & Teja, A. S. (1982). A new cubic equation of state for fluids and fluid mixtures. Chemical Engineering Science, 37(3), 463–473. [doi:10.1016/0009-2509(82)80099-7](https://doi.org/10.1016/0009-2509(82)80099-7)
+ 2. Forero G., L. A., & Velásquez J., J. A. (2013). A modified Patel–Teja cubic equation of state: Part I – Generalized model for gases and hydrocarbons. Fluid Phase Equilibria, 342, 8–22. [doi:10.1016/j.fluid.2012.12.032](https://doi.org/10.1016/j.fluid.2012.12.032)
 """
 PatelTejaHeyen
 
 export PatelTejaHeyen
 
-function PatelTejaHeyen(components;
-    idealmodel = BasicIdeal,
-    alpha = PTHAlpha,
-    mixing = vdW1fRule,
-    activity = nothing,
-    translation = NoTranslation,
-    userlocations = String[],
-    ideal_userlocations = String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    reference_state = nothing,
-    verbose = false)
-
+function PatelTejaHeyen(components; idealmodel=BasicIdeal, alpha=PTHAlpha, mixing=vdW1fRule, activity=nothing, translation=NoTranslation, userlocations=String[], ideal_userlocations=String[], alpha_userlocations=String[], mixing_userlocations=String[], activity_userlocations=String[], translation_userlocations=String[], reference_state=nothing, verbose=false)
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc_fit","acentricfactor"])
-    model = CubicModel(PatelTejaHeyen,params,formatted_components;
-                        idealmodel,alpha,mixing,activity,translation,
-                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
-                        reference_state, verbose)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose, ignore_missing_singleparams=["Vc_fit", "acentricfactor"])
+    model = CubicModel(PatelTejaHeyen, params, formatted_components; idealmodel, alpha, mixing, activity, translation, userlocations, ideal_userlocations, alpha_userlocations, activity_userlocations, mixing_userlocations, translation_userlocations, reference_state, verbose)
 
-    k = get(params,"k",nothing)
-    l = get(params,"l",nothing)
-    recombine_cubic!(model,k,l)
-    push!(model.references,"10.1016/j.fluid.2012.12.032")
-    set_reference_state!(model,reference_state;verbose)
+    k = get(params, "k", nothing)
+    l = get(params, "l", nothing)
+    recombine_cubic!(model, k, l)
+    push!(model.references, "10.1016/j.fluid.2012.12.032")
+    set_reference_state!(model, reference_state; verbose)
     return model
 end
 
@@ -204,10 +191,10 @@ function c_premixing(model::PatelTejaHeyen)
     c = model.params.c
 
     for i in 1:length(model)
-        Tc,Pc = _Tc[i],_pc[i]
+        Tc, Pc = _Tc[i], _pc[i]
         if _Vc.ismissingvalues[i]
             ω.ismissingvalues[i] && throw(MissingException("PatelTeja: cannot estimate Vc: missing acentricfactor parameter."))
-            ζc = evalpoly(ω[i],(0.3277,-0.0537,-0.0147))
+            ζc = evalpoly(ω[i], (0.3277, -0.0537, -0.0147))
             _Vc[i] = ζc * R̄ * Tc / Pc
         end
         Zc = Pc*_Vc[i]/(R̄*Tc)

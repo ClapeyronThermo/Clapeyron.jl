@@ -1,4 +1,4 @@
-IS_GH = get(ENV,"GITHUB_ACTIONS",false) in ("true", "1", "yes",true,"TRUE")
+IS_GH = get(ENV, "GITHUB_ACTIONS", false) in ("true", "1", "yes", true, "TRUE")
 IS_LOCAL = !IS_GH
 IS_STABLE = v"1.10" <= Base.VERSION < v"1.11"
 IS_LATEST = v"1.12" <= Base.VERSION < v"1.12.9999"
@@ -22,7 +22,6 @@ const DISTRIBUTED_WORKER_5 = L_LATEST
 
 const OTHER_WORKER = !DISTRIBUTED_WORKER_1 && !DISTRIBUTED_WORKER_2 && !DISTRIBUTED_WORKER_3 && !DISTRIBUTED_WORKER_4 && !DISTRIBUTED_WORKER_5
 
-
 const DISTRIBUTED_NUMBER = if DISTRIBUTED_WORKER_1
     1
 elseif DISTRIBUTED_WORKER_2
@@ -37,7 +36,6 @@ else
     0
 end
 
-
 """
     CI_ALL_TESTS
 
@@ -49,7 +47,7 @@ function __run_test(value::Int)
     return (DISTRIBUTED_NUMBER == value) || IS_LOCAL || OTHER_WORKER || CI_ALL_TESTS
 end
 
-local_str = "Running in " * ifelse(IS_LOCAL,"local","CI") * " mode. " * ifelse(iszero(DISTRIBUTED_NUMBER),"","Distributed worker number: $DISTRIBUTED_NUMBER")
+local_str = "Running in " * ifelse(IS_LOCAL, "local", "CI") * " mode. " * ifelse(iszero(DISTRIBUTED_NUMBER), "", "Distributed worker number: $DISTRIBUTED_NUMBER")
 
 println("""
 ___________________

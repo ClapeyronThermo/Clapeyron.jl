@@ -23,7 +23,7 @@ end
 
 export COSMOSACdsp
 
-default_locations(::Type{COSMOSACdsp}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv","Activity/COSMOSAC/COSMOSACdsp_like.csv"]
+default_locations(::Type{COSMOSACdsp}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv", "Activity/COSMOSAC/COSMOSACdsp_like.csv"]
 
 """
     COSMOSACdsp(components;
@@ -34,36 +34,32 @@ default_locations(::Type{COSMOSACdsp}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv
     reference_state = nothing)
 
 ## Input parameters:
-- `Pnhb` :Single Parameter{String} 
-- `POH` :Single Parameter{String} 
-- `POT` :Single Parameter{String} 
-- `V`: Single Parameter{Float64}
-- `A`: Single Parameter{Float64}
-- `epsilon`: Single Parameter{Float64}
-- `COOH`: Single Parameter{Float64}
-- `water`: Single Parameter{Float64}
-- `hb_acc`: Single Parameter{Float64}
-- `hb_don`: Single Parameter{Float64}
+
+  - `Pnhb` :Single Parameter{String}
+  - `POH` :Single Parameter{String}
+  - `POT` :Single Parameter{String}
+  - `V`: Single Parameter{Float64}
+  - `A`: Single Parameter{Float64}
+  - `epsilon`: Single Parameter{Float64}
+  - `COOH`: Single Parameter{Float64}
+  - `water`: Single Parameter{Float64}
+  - `hb_acc`: Single Parameter{Float64}
+  - `hb_don`: Single Parameter{Float64}
 
 ## Description
+
 An activity coefficient model using molecular solvation based on the COSMO-RS method. Sigma profiles are now split by non-hydrogen bonding, hydrogen acceptor and hydrogen donor. A dispersive correction is included.
 
 ## References
-1. Klamt, A. (1995). Conductor-like screening model for real solvents: A new approach to the quantitative calculation of solvation phenomena. Journal of Physical Chemistry, 99(7), 2224–2235. [doi:10.1021/j100007a062](https://doi.org/10.1021/j100007a062)
-2. Lin, S-T. & Sandler, S.I. (2002). A priori phase equilibrium prediction from a segment contribution solvation model. Industrial & Engineering Chemistry Research, 41(5), 899–913. [doi:10.1021/ie001047w](https://doi.org/10.1021/ie001047w)
-3. Hsieh, C-H., Sandler, S.I., & Lin, S-T. (2010). Improvements of COSMO-SAC for vapor–liquid and liquid–liquid equilibrium predictions. Fluid Phase Equilibria, 297(1), 90-97. [doi:10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011)
-4. Hsieh, C-H., Lin, S-T. & Vrabec, J. (2014). Considering the dispersive interactions in the COSMO-SAC model for more accurate predictions of fluid phase behavior. Fluid Phase Equilibria, 367, 109-116. [doi:10.1016/j.fluid.2014.01.032](https://doi.org/10.1016/j.fluid.2014.01.032)
+
+ 1. Klamt, A. (1995). Conductor-like screening model for real solvents: A new approach to the quantitative calculation of solvation phenomena. Journal of Physical Chemistry, 99(7), 2224–2235. [doi:10.1021/j100007a062](https://doi.org/10.1021/j100007a062)
+ 2. Lin, S-T. & Sandler, S.I. (2002). A priori phase equilibrium prediction from a segment contribution solvation model. Industrial & Engineering Chemistry Research, 41(5), 899–913. [doi:10.1021/ie001047w](https://doi.org/10.1021/ie001047w)
+ 3. Hsieh, C-H., Sandler, S.I., & Lin, S-T. (2010). Improvements of COSMO-SAC for vapor–liquid and liquid–liquid equilibrium predictions. Fluid Phase Equilibria, 297(1), 90-97. [doi:10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011)
+ 4. Hsieh, C-H., Lin, S-T. & Vrabec, J. (2014). Considering the dispersive interactions in the COSMO-SAC model for more accurate predictions of fluid phase behavior. Fluid Phase Equilibria, 367, 109-116. [doi:10.1016/j.fluid.2014.01.032](https://doi.org/10.1016/j.fluid.2014.01.032)
 """
 COSMOSACdsp
 
-function COSMOSACdsp(components;
-    puremodel = PR,
-    userlocations = String[],
-    pure_userlocations = String[],
-    use_nist_database = false,
-    verbose = false,
-    reference_state = nothing)
-
+function COSMOSACdsp(components; puremodel=PR, userlocations=String[], pure_userlocations=String[], use_nist_database=false, verbose=false, reference_state=nothing)
     formatted_components = format_components(components)
 
     if use_nist_database
@@ -79,20 +75,20 @@ function COSMOSACdsp(components;
         Pnhb = [zeros(51) for i in 1:length(components)]
         POH = [zeros(51) for i in 1:length(components)]
         POT = [zeros(51) for i in 1:length(components)]
-        
+
         for i in 1:length(components)
             id = cas(formatted_components[i])
-            ids = CAS.==uppercase(id[1])
+            ids = CAS .== uppercase(id[1])
             dbname = INCHIKEY[ids]
             file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma3/"*dbname[1]*".sigma", IOBuffer())))
-            lines = split(file,r"\n")
+            lines = split(file, r"\n")
             meta = lines[1][9:end]
             json = JSON.parse(meta)
             A[i] = json["area [A^2]"]
             V[i] = json["volume [A^3]"]
-            Pnhb[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
-            POH[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 55:105]
-            POT[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 106:156]
+            Pnhb[i] = [parse(Float64, split(lines[i], " ")[2]) for i in 4:54]
+            POH[i] = [parse(Float64, split(lines[i], " ")[2]) for i in 55:105]
+            POT[i] = [parse(Float64, split(lines[i], " ")[2]) for i in 106:156]
             epsilon[i] = json["disp. e/kB [K]"]
             if json["disp. flag"] == "NHB"
                 COOH[i] = 0
@@ -126,39 +122,39 @@ function COSMOSACdsp(components;
                 water[i] = 1
             end
         end
-        A = SingleParam("A",formatted_components,A)
-        V = SingleParam("V",formatted_components,V)
-        Pnhb = SingleParam("Pnhb",formatted_components,Pnhb)
-        POH = SingleParam("POH",formatted_components,POH)
-        POT = SingleParam("POT",formatted_components,POT)
-        epsilon = SingleParam("epsilon",formatted_components,epsilon)
-        COOH = SingleParam("COOH",formatted_components,COOH)
-        hb_acc = SingleParam("hb_acc",formatted_components,hb_acc)
-        hb_don = SingleParam("hb_don",formatted_components,hb_don)
-        water = SingleParam("water",formatted_components,water)
+        A = SingleParam("A", formatted_components, A)
+        V = SingleParam("V", formatted_components, V)
+        Pnhb = SingleParam("Pnhb", formatted_components, Pnhb)
+        POH = SingleParam("POH", formatted_components, POH)
+        POT = SingleParam("POT", formatted_components, POT)
+        epsilon = SingleParam("epsilon", formatted_components, epsilon)
+        COOH = SingleParam("COOH", formatted_components, COOH)
+        hb_acc = SingleParam("hb_acc", formatted_components, hb_acc)
+        hb_don = SingleParam("hb_don", formatted_components, hb_don)
+        water = SingleParam("water", formatted_components, water)
     else
-        params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations = userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V","epsilon","water","COOH","hb_acc","hb_don"], verbose = verbose)
-        Pnhb  = COSMO_parse_Pi(params["Pnhb"])
-        POH  = COSMO_parse_Pi(params["POH"])
-        POT  = COSMO_parse_Pi(params["POT"])
-        A  = params["A"]
-        V  = params["V"]
-        epsilon  = params["epsilon"]
+        params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations=userlocations, ignore_missing_singleparams=["Pnhb", "POH", "POT", "A", "V", "epsilon", "water", "COOH", "hb_acc", "hb_don"], verbose=verbose)
+        Pnhb = COSMO_parse_Pi(params["Pnhb"])
+        POH = COSMO_parse_Pi(params["POH"])
+        POT = COSMO_parse_Pi(params["POT"])
+        A = params["A"]
+        V = params["V"]
+        epsilon = params["epsilon"]
         water = params["water"]
         COOH = params["COOH"]
         hb_acc = params["hb_acc"]
         hb_don = params["hb_don"]
     end
 
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    packagedparams = COSMOSACdspParam(Pnhb,POH,POT,epsilon,V,A,water,COOH,hb_acc,hb_don)
-    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360","10.1021/j100007a062"]
-    model = COSMOSACdsp(formatted_components,packagedparams,_puremodel,1e-12,references)
-    set_reference_state!(model,reference_state,verbose = verbose)
+    _puremodel = init_puremodel(puremodel, components, pure_userlocations, verbose)
+    packagedparams = COSMOSACdspParam(Pnhb, POH, POT, epsilon, V, A, water, COOH, hb_acc, hb_don)
+    references = ["10.1021/acs.jctc.9b01016", "10.1021/acs.iecr.7b01360", "10.1021/j100007a062"]
+    model = COSMOSACdsp(formatted_components, packagedparams, _puremodel, 1e-12, references)
+    set_reference_state!(model, reference_state, verbose=verbose)
     return model
 end
 
-function lnγ_impl!(lnγ,model::COSMOSACdspModel,V,T,z)
+function lnγ_impl!(lnγ, model::COSMOSACdspModel, V, T, z)
     lnγ .= 0
     lnγ .+= @f(lnγ_res)
     lnγ .+= @f(lnγ_comb)
@@ -166,13 +162,13 @@ function lnγ_impl!(lnγ,model::COSMOSACdspModel,V,T,z)
     return lnγ
 end
 
-function excess_g_res(model::COSMOSACdspModel,V,T,z)
+function excess_g_res(model::COSMOSACdspModel, V, T, z)
     lnγ = @f(lnγ_res) .+ @f(lnγ_dsp)
     sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
 
-function lnγ_dsp(model::COSMOSACdspModel,V,T,z)
-    x = z./sum(z)
+function lnγ_dsp(model::COSMOSACdspModel, V, T, z)
+    x = z ./ sum(z)
     if model.params.water.values[1]==1 && model.params.hb_acc.values[2]==1 && model.params.hb_don.values[2]==0
         w = -0.27027
     elseif model.params.water.values[2]==1 && model.params.hb_acc.values[1]==1 && model.params.hb_don.values[1]==0
@@ -190,6 +186,6 @@ function lnγ_dsp(model::COSMOSACdspModel,V,T,z)
     ϵ = model.params.epsilon.values
 
     A = w*(0.5*(ϵ[1]+ϵ[2])-sqrt(ϵ[1]*ϵ[2]))
-    return A*(1 .-x).^2
+    return A*(1 .- x) .^ 2
 end
 #fcosmo(system::COSMOSACdsp) = Clapeyron.activity_coefficient(system,1e5, 333.15,[0.5,0.5])[1] - 1.4398951117248127
