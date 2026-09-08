@@ -323,9 +323,6 @@ function ∂lnγ∂T(model,p,T,z,cache = nothing)
         end
     else
         result,aux,lnγ,∂lnγ∂ni,∂lnγ∂T,_,_,hconfig,jcache,∂lnγ∂T_out = cache
-        aux .= 0
-        aux[1:nc] .= z
-        aux[nc+1] = T
         if has_lnγ_impl(model)
             Dconfig = Solvers._DerivativeConfig(∂lnγ∂T_out)
             ForwardDiff.derivative!(∂lnγ∂T,_ft_lnγ_impl!,lnγ,T,Dconfig,Val{false}())
@@ -333,6 +330,7 @@ function ∂lnγ∂T(model,p,T,z,cache = nothing)
         else
             aux .= 0
             aux[1:nc] = z
+            aux[nc+1] = T
             gconfig = Solvers._GradientConfig(hconfig)
             _result = ForwardDiff.gradient!(result, dgEdt, aux, gconfig, Val{false}())
             dresult = DiffResults.gradient(_result)
