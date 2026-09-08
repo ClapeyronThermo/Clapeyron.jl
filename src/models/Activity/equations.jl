@@ -310,10 +310,12 @@ end
 function ∂lnγ∂T(model,p,T,z,cache = nothing)
     nc = length(z)
     dgEdt(w) = dG_EdT(model,p,T,@view(w[1:nc]))
+    _ft_lnγ_impl!(_lnγ, _T) = lnγ_impl!(_lnγ, model, p, _T, z)
     if cache === nothing
         if has_lnγ_impl(model)
-            out = zeros(Base.promote_eltype(model,p,T,z))
-            ∂lnγ∂T = ForwardDiff.derivative!(out,lnγ_impl!,T)
+            ∂lnγ∂T = zeros(Base.promote_eltype(model,p,T,z),nc)
+            lnγ = similar(∂lnγ∂T)
+            ForwardDiff.derivative!(∂lnγ∂T,_ft_lnγ_impl!,lnγ,T)
             return ∂lnγ∂T
         else
             ∂lnγ∂T = ForwardDiff.gradient(dgEdt,z)
@@ -326,7 +328,7 @@ function ∂lnγ∂T(model,p,T,z,cache = nothing)
         aux[nc+1] = T
         if has_lnγ_impl(model)
             Dconfig = Solvers._DerivativeConfig(∂lnγ∂T_out)
-            ForwardDiff.derivative!(∂lnγ∂T,lnγ_impl!,lnγ,T,Dconfig,Val{false}())
+            ForwardDiff.derivative!(∂lnγ∂T,_ft_lnγ_impl!,lnγ,T,Dconfig,Val{false}())
             return ∂lnγ∂T
         else
             aux .= 0
