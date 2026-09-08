@@ -65,15 +65,9 @@ function coolprop_json_string(component::String,comp = "")
     end
 end
 
-function tryparse_units(val,unit)
-    result = try
-        unit_parsed = Unitful.uparse(unit)
-        ThermoState.normalize_units(val*unit_parsed)
-    catch
-        val
-    end
-    return result
-end
+#todo: do something here
+tryparse_units(val,unit) = val
+
 
 get_only_comp(x::Vector{String}) = only(x)
 get_only_comp(x::String) = x
@@ -407,9 +401,41 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false, allow_pseudo_p
 
     lb_volume = 1/tryparse_units(get(crit,:rhomolar_max,NaN),get(crit,:rhomolar_max_units,""))
     isnan(lb_volume) && (lb_volume = 1/tryparse_units(get(eos_data,:rhomolar_max,NaN),get(eos_data,:rhomolar_max_units,"")))
-    isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
-    isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
-    lb_volume = max(lb_volume,8.314*10*Tr/(1e10))
+    if isnan(lb_volume)
+        #fallback
+        lb_volume_e10 = 8.314*10*Tr/(1e10)
+
+        #different situations:
+        #=
+        rhol_tp = NaN (not available)
+        rhol_tp != NaN but is set to a sentinel value (999999999) (#558)
+
+        of the available lb_volumes, we choose the lowest one. (#631)
+        =#
+        
+        if !isnan(rhol_tp) && 0 < rhol_tp < 1e8
+            lb_volume_tp = 1/(1.25*rhol_tp)
+        else
+            lb_volume_tp = Inf
+        end
+
+        if !isnan(rho_c) && 0 < rho_c < 1e8
+            pmax = tryparse_units(get(crit,:p_max,1e10),get(crit,:p_max_units,""))
+            Zc = P_c/(Rgas*T_c*rho_c)
+            dv = (abs(pmax/P_c - 1)^Zc - 1)*rho_c
+            lb_volume_crit1 = 1/dv
+            lb_volume_crit2 = 0.07779607390388846*Rgas*T_c/P_c
+            lb_volume_crit = min(lb_volume_crit1,lb_volume_crit2)
+        else
+            lb_volume_crit = Inf
+        end
+        
+         #this is in case no information about triple point is provided
+        lb_volume = min(lb_volume_tp,lb_volume_crit)
+        if isinf(lb_volume)
+            lb_volume = lb_volume_e10
+        end
+    end
 
     pseudo_pure = get(eos_data,:pseudo_pure,false)
     if pseudo_pure && !allow_pseudo_pure
