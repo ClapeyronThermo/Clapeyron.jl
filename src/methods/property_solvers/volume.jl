@@ -251,6 +251,7 @@ end
 function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
     _1 = one(Base.promote_eltype(model,p,T,z))
     vᵢ = _1*v0
+    vtol = sqrt(eps(vᵢ))
     Tᵢ = _1*T0
     _0 = zero(vᵢ)
     nan = _0/_0
@@ -278,6 +279,7 @@ function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
         Δv = dvdp*(p - pᵢ) + dvdt*ΔT_applied
         Tnew_applied = Tᵢ + ΔT_applied
         vnew = vᵢ + Δv
+        
         v_lb = lb_volume(model,Tnew_applied,z)
         if isfinite(vnew) && vnew > v_lb
             vᵢ = vnew
@@ -289,6 +291,7 @@ function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
             scale = scale/2 #backtrack: retry with a smaller step from the same, still-valid point
         end
         count_invalid_iters >= 10 && return nan
+        abs(Δv) < vtol && break
         abs(T - Tᵢ) < Ttol*abs(T) && break
     end
     return vᵢ
