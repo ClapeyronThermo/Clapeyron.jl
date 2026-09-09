@@ -257,7 +257,7 @@ function _Tproperty(model::EoSModel,p,_prop,z = SA[1.0],
 
     prop,property = normalize_property(model,_prop,z,_property)
 
-    if length(z) == 1
+    if length(z) == 1 && !is_idealmodel(model)
         check_arraysize(model,z)
         zz = SA[z[1]]
         Tnc1,stnc1,_ = Tproperty_pure(fluid_model(model),p,prop,zz,property,rootsolver,phase,abstol,reltol,verbose,threaded,T0)
@@ -269,8 +269,14 @@ function _Tproperty(model::EoSModel,p,_prop,z = SA[1.0],
         return __Tproperty_check(res,verbose)
     end
 
-    v0_edge,dpdT = x0_edge_temperature(model,p,z)
     sol_options = (abstol,reltol,rootsolver,verbose)
+
+    if is_idealmodel(model)
+        res = Tproperty_ideal(model,p,prop,z,property,sol_options)
+        return __Tproperty_check(res,verbose)
+    end
+
+    v0_edge,dpdT = x0_edge_temperature(model,p,z)
 
     if !isfinite(v0_edge[1]) || !isfinite(v0_edge[2]) || !isfinite(prop)
         return __Tproperty_check((NaN*v0_edge[1]*prop,:failure),verbose)
@@ -617,6 +623,11 @@ function Tproperty_pure(model,p,x,z,property::F,rootsolver,phase,abstol,reltol,v
         verbose && Xproperty_verbose(:in_edge,property)
         return Ts,:eq,(βv,vl,vv)
     end
+end
+
+function Tproperty_ideal(model::IdealModel,p,x,z,property::F,sol_options) where F
+    abstol,reltol,rootsolver,_ = sol_options
+    return __Tproperty(model,p,x,z,property,rootsolver,:vapour,abstol,reltol,false,300.0)
 end
 
 function __Tproperty(model,p,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,T0) where F

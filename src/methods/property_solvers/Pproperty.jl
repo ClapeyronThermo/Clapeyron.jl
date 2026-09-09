@@ -119,7 +119,7 @@ function _Pproperty(model::EoSModel,T,_prop,z = SA[1.0],
 
     prop,property = normalize_property(model,_prop,z,_property)
 
-    if length(z) == 1
+    if length(z) == 1 && !is_idealmodel(model)
         check_arraysize(model,z)
         zz = SA[z[1]]
         pnc1,ptnc1,_ = Pproperty_pure(fluid_model(model),T,prop,zz,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
@@ -131,8 +131,15 @@ function _Pproperty(model::EoSModel,T,_prop,z = SA[1.0],
         return __Pproperty_check(res,verbose)
     end
 
-    v0_edge,pure_sats = x0_edge_pressure(model,T,z)
     sol_options = (abstol,reltol,rootsolver,verbose)
+
+    if is_idealmodel(model)
+        res = Pproperty_ideal(model,T,prop,z,property,sol_options)
+        return __Pproperty_check(res,verbose)
+    end
+
+    v0_edge,pure_sats = x0_edge_pressure(model,T,z)
+    
 
     if !isfinite(v0_edge[1]) || !isfinite(v0_edge[2]) || !isfinite(prop)
         return __Pproperty_check((NaN*v0_edge[1]*prop,:failure),verbose)
@@ -464,6 +471,11 @@ function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,v
     end
 end
 
+function Pproperty_ideal(model::IdealModel,T,x,z,property::F,sol_options) where F
+    abstol,reltol,rootsolver,_ = sol_options
+    return __Pproperty(model,T,x,z,property,rootsolver,:vapour,abstol,reltol,false,1e5)
+end
+
 function __Pproperty(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,p0) where F
     new_phase = is_unknown(phase) ? identify_phase(model,p0,T,z) : phase
 
@@ -485,7 +497,7 @@ function __Pproperty(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,t
     end
 
     _threaded = length(z) == 1 ? false : threaded
-    _1 = oneunit(typeof(prop))
+    _1 = primalval(oneunit(typeof(prop)))
     function f(lnp,tup)
         _prop,_model,_T,_z = tup
         _1*property(_model,exp(lnp),_T,_z,phase = new_phase,threaded = _threaded) - _prop
