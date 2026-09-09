@@ -374,7 +374,8 @@ end
 
         #issue 631
         model631 = SingleFluid("helium")
-        volume(model631,10e6,5.195300013635951) ≈ 1.9475072054583694e-5
+        @test volume(model631,10e6,5.195300013635951) ≈ 1.9475072054583694e-5 rtol = 1e-6
+        @test volume(model631,20e6,5.195300013635951) ≈ 1.7145534637196815e-5 rtol = 1e-6
     end
 
 
