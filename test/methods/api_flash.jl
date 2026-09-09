@@ -813,6 +813,14 @@ end
     fluid = cPR(["acetone", "isopentane"],idealmodel= ReidIdeal); z = [1.1, 0.9];
     T0 = Clapeyron.Tproperty(fluid,101225.0,hmid,z,enthalpy)
     @test Tb < T0 < Td
+
+    #idealmodel
+    model0 = ReidIdeal(["ethane","propane"])
+    T0 = Clapeyron.Tproperty(model0,1e5,120.0,[0.3,0.7],entropy)
+    @test entropy(model0,1e5,T0,[0.3,0.7]) ≈ 120.0 rtol = 1e-6
+
+    P0 = Clapeyron.Pproperty(model0,300.0,120.0,[0.3,0.7],entropy)
+    @test entropy(model0,P0,300.0,[0.3,0.7]) ≈ 120.0 rtol = 1e-6
 end
 
 @testset verbose = true "PT_property implicit AD (activity models)" begin
