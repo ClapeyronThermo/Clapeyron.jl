@@ -214,7 +214,7 @@ function x0_sat_pure(model::SingleFluid,T)
         ΔTinv = 1/T - 1/Ttp
         psat = exp(ΔTinv/dTinvdlnp)*ptp
         vv = Rgas(model)*T/psat
-        vl = x0_volume_liquid(model,psat,T)
+        vl = x0_volume_liquid_lowT(model,psat,T,SA[1.0])
         return vl,vv
     end
 end
@@ -227,19 +227,18 @@ function x0_volume_liquid_lowT(model::SingleFluid,p,T,z)
     Tc = model.properties.Tc
     Ttp = model.properties.Ttp
 
-    if Ttp < T < Tc
+    if Ttp < T < Tc #normal path
         vᵢ = volume(ancillary,p,T,z,phase = :l)
         for i in 1:15
             pressure(model,vᵢ,T,z) > p && break
             vᵢ = 0.9*vᵢ + 0.1*vl_lbv
         end
         return vᵢ
-    elseif Ttp < T
+    elseif T < Ttp
         vᵢ = volume(ancillary,p,Ttp,z,phase = :l)
         pvi = pressure(model,vᵢ,T,z)
         pp = max(_1*p,pvi)
         Tᵢ = _1*Ttp
-        #chill from p,Ttp to p,T
         return volume_chill(model,pp,T,z,vᵢ,Tᵢ)
     else #T > Tc and p < pc, this is gas-like supercritical fluid
         #this is always a gas volume, so starting from the lowest volume does not hurt
