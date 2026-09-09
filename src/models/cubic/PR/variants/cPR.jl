@@ -37,9 +37,9 @@ function cPR(components;
     #just read once if allowed.
 
     userlocations_cpr = String[]
-    append!(userlocations_cpr,userlocations)
+    userlocations_cpr = userlocation_merge(userlocations_cpr,userlocations)
     if alpha === TwuAlpha
-        userlocations_cpr = userlocation_merge(userlocations_cpr,userlocations)
+        userlocations_cpr = userlocation_merge(userlocations_cpr,alpha_userlocations)
     end
 
     params = getparams(formatted_components, ["cubic/cPR/cPR_single.csv"];
