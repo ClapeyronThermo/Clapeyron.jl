@@ -27,56 +27,59 @@ export FH, FloryHuggins
     pure_userlocations = String[],
     verbose = false,
     reference_state = nothing)
+
 ## Input parameters
-- `N`: Single Parameter (`Float64`) - Degree of Polymerization
-- `v`: Single Parameter (`Float64`) - Monomer Volume
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight
-- `a`: Pair Parameter (`Float64`, defaults to `0`) - Interaction Parameter
-- `b`: Pair Parameter (`Float64`, defaults to `0`) - Interaction Parameter
+
+  - `N`: Single Parameter (`Float64`) - Degree of Polymerization
+  - `v`: Single Parameter (`Float64`) - Monomer Volume
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight
+  - `a`: Pair Parameter (`Float64`, defaults to `0`) - Interaction Parameter
+  - `b`: Pair Parameter (`Float64`, defaults to `0`) - Interaction Parameter
 
 ## Input models
-- `puremodel`: model to calculate pure pressure-dependent properties
+
+  - `puremodel`: model to calculate pure pressure-dependent properties
+
 ## Description
+
 Flory-Huggins activity coefficient model:
+
 ```
 Gᴱ = nRT·(∑[xᵢlog(rᵢ)]+N∑[ϕᵢϕⱼχᵢⱼ])
 ```
+
 ## References
-1. Flory, P. J. (1953). "Principles of Polymer Chemistry". Cornell University Press.
-2. Huggins, M. L. (1941). "Solutions of Long-Chain Compounds". Journal of Chemical Physics, 9(5), 440-440.
+
+ 1. Flory, P. J. (1953). "Principles of Polymer Chemistry". Cornell University Press.
+ 2. Huggins, M. L. (1941). "Solutions of Long-Chain Compounds". Journal of Chemical Physics, 9(5), 440-440.
 """
 FloryHuggins
-default_locations(::Type{FloryHuggins}) = ["properties/molarmass.csv","Activity/FH/FH_unlike.csv","Activity/FH/FH_like.csv"]
+default_locations(::Type{FloryHuggins}) = ["properties/molarmass.csv", "Activity/FH/FH_unlike.csv", "Activity/FH/FH_like.csv"]
 
-function FloryHuggins(components, N; puremodel=BasicIdeal,
-    userlocations = String[], 
-    pure_userlocations = String[],
-    verbose = false,
-    reference_state = nothing)
-
+function FloryHuggins(components, N; puremodel=BasicIdeal, userlocations=String[], pure_userlocations=String[], verbose=false, reference_state=nothing)
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(FloryHuggins); userlocations = userlocations, ignore_missing_singleparams=["a","b","v","N"], verbose = verbose)
+    params = getparams(formatted_components, default_locations(FloryHuggins); userlocations=userlocations, ignore_missing_singleparams=["a", "b", "v", "N"], verbose=verbose)
 
-    a = params["a"]
-    b = params["b"]
-    Mw  = get(params,"Mw",SingleParam("Mw",formatted_components))
-    N   = SingleParam("N", formatted_components, N)
+    a  = params["a"]
+    b  = params["b"]
+    Mw = get(params, "Mw", SingleParam("Mw", formatted_components))
+    N  = SingleParam("N", formatted_components, N)
 
     # Handle missing monomer volumes: set all to one if missing
     if haskey(params, "v") && !__ismissing(params["v"])
         v = params["v"]
-        v.values .*= 1 ./Mw.values
+        v.values .*= 1 ./ Mw.values
     else
         v = SingleParam("v", formatted_components, fill(1.0, length(formatted_components)))
     end
 
     Mw.values .*= N.values
 
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    packagedparams = FloryHugginsParam(a,b,Mw,N,v)
+    _puremodel = init_puremodel(puremodel, components, pure_userlocations, verbose)
+    packagedparams = FloryHugginsParam(a, b, Mw, N, v)
     references = String["10.1063/1.1723621"]
-    model = FloryHuggins(formatted_components,packagedparams,_puremodel,references)
-    set_reference_state!(model,reference_state,verbose = verbose)
+    model = FloryHuggins(formatted_components, packagedparams, _puremodel, references)
+    set_reference_state!(model, reference_state, verbose=verbose)
     return model
 end
 
@@ -89,20 +92,20 @@ function excess_g_res(model::FloryHugginsModel, p, T, z)
     n = sum(z)
     ninv = 1/n
     V = @sum(z[i]*v[i]*N[i])/n
-    NT = @sum(z[i]*N[i])/n    
+    NT = @sum(z[i]*N[i])/n
     v0 = V / NT
     #ϕ = x .* v .* N ./ V  # Volume fraction of each component
-    res = zero(Base.promote_eltype(model,T,z))
+    res = zero(Base.promote_eltype(model, T, z))
     for i ∈ @comps
         xi = z[i]*ninv
         #ϕi = xi .* v .* N ./ V
         ϕi = xi * v[i] * N[i] / V
         ri = v[i]*N[i]/V
         res += xi * log(ri)
-        for j ∈ i+1:length(model.components)
+        for j ∈ (i + 1):length(model.components)
             xj = z[j]*ninv
             ϕj = xj * v[j] * N[j] / V
-            χij = a[i,j] + b[i,j]/T
+            χij = a[i, j] + b[i, j]/T
             res += ϕi * ϕj * χij * NT
         end
     end

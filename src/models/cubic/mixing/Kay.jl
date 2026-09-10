@@ -5,7 +5,7 @@ struct KayRule <: KayRuleModel end
 
 """
     KayRule <: KayRuleModel
-    
+
     KayRule(components;
     userlocations = String[],
     verbose::Bool=false)
@@ -27,6 +27,7 @@ c̄ = ∑cᵢxᵢ
 ```
 
 ## Model Construction Examples
+
 ```
 # Because this model does not have parameters, all those constructors are equivalent:
 mixing = KayRule()
@@ -36,13 +37,13 @@ mixing = KayRule(["water","carbon dioxide"])
 """
 KayRule
 
-function KayRule(components; activity = nothing, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)
+function KayRule(components; activity=nothing, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
     KayRule()
 end
 
 export KayRule
 
-function mixing_rule(model::CubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b)
+function mixing_rule(model::CubicModel, V, T, z, mixing_model::KayRuleModel, α, a, b)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
@@ -54,28 +55,27 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b)
         zi = z[i]
         zi2 = zi*zi
         αi = α[i]
-        b̄ += cbrt(b[i,i])*zi2
-        abij2 = (a[i,i]*αi/b[i,i])^2
+        b̄ += cbrt(b[i, i])*zi2
+        abij2 = (a[i, i]*αi/b[i, i])^2
         ab2 += abij2*zi2
-        for j in 1:(i-1)
-            zij =zi*z[j]
-            abij2 = (a[i,j]*sqrt(αi*α[j])/b[i,j])^2
+        for j in 1:(i - 1)
+            zij = zi*z[j]
+            abij2 = (a[i, j]*sqrt(αi*α[j])/b[i, j])^2
             ab2 += 2*abij2*zij
-            b̄ += 2*cbrt(b[i,j])*zij
+            b̄ += 2*cbrt(b[i, j])*zij
         end
-    end    
+    end
     b̄ = (b̄*invn2)^3
     ā = sqrt(ab2*invn2)*b̄
-    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
-    return ā,b̄,c̄
+    c̄ = translation2(model, V, T, z, model.translation, a, b, α)*invn
+    return ā, b̄, c̄
 end
 
-
-function cubic_get_k(model::CubicModel,mixing::KayRuleModel,params)
+function cubic_get_k(model::CubicModel, mixing::KayRuleModel, params)
     return get_k_geomean(params.a.values)
 end
 
-function cubic_get_l(model::CubicModel,mixing::KayRuleModel,params)
+function cubic_get_l(model::CubicModel, mixing::KayRuleModel, params)
     return get_k_mean(params.b.values)
 end
 

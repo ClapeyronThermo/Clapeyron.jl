@@ -1,11 +1,9 @@
 
-
 is_rootsjl_method(method) = false
 
 #nlsolve functionality
 """
     function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()), options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
-
 
 Given a function `f!(result,x)` that returns a system of equations,
 `nlsolve(f!,x0)` returns a `NLSolvers.ConvergenceInfo` struct that contains the results of the non-linear solving procedure.
@@ -16,42 +14,42 @@ To obtain the underlying solution vector, use [`solution`](@ref).
 
 To see available solvers and options, check `NLSolvers.jl`.
 """
-function nlsolve(f!,x0,method = TrustRegion(Newton(), Dogleg()),options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
+function nlsolve(f!, x0, method=TrustRegion(Newton(), Dogleg()), options=NEqOptions(), chunk=ForwardDiff.Chunk{2}())
     if is_rootsjl_method(method)
-        return roots_nlsolve(f!,x0,method,options)
+        return roots_nlsolve(f!, x0, method, options)
     end
-    vector_objective = ADVectorObjective(f!,x0,chunk)
-    nl_problem = NEqProblem(vector_objective; inplace = __is_implace(x0))
-    return nlsolve(nl_problem, x0,method, options)
+    vector_objective = ADVectorObjective(f!, x0, chunk)
+    nl_problem = NEqProblem(vector_objective; inplace=__is_implace(x0))
+    return nlsolve(nl_problem, x0, method, options)
 end
 
-function nlsolve(nl_problem::NEqProblem,x0,method = TrustRegion(Newton(), Dogleg()),options=NEqOptions())
-    return NLSolvers.solve(nl_problem, x0,method, options)
+function nlsolve(nl_problem::NEqProblem, x0, method=TrustRegion(Newton(), Dogleg()), options=NEqOptions())
+    return NLSolvers.solve(nl_problem, x0, method, options)
 end
 
-function ADVectorObjective(f!,x0,chunk)
+function ADVectorObjective(f!, x0, chunk)
     FF = similar(x0)
-    jconfig = ForwardDiff.JacobianConfig(f!,FF,x0,chunk)
-    function j!(J,x)
-        ForwardDiff.jacobian!(J,f!,FF,x,jconfig)
+    jconfig = ForwardDiff.JacobianConfig(f!, FF, x0, chunk)
+    function j!(J, x)
+        ForwardDiff.jacobian!(J, f!, FF, x, jconfig)
         J
     end
-    function fj!(F,J,x)
-        ForwardDiff.jacobian!(J,f!,F,x,jconfig)
-        F,J
+    function fj!(F, J, x)
+        ForwardDiff.jacobian!(J, f!, F, x, jconfig)
+        F, J
     end
-    return NLSolvers.VectorObjective(f!,j!,fj!,nothing)
+    return NLSolvers.VectorObjective(f!, j!, fj!, nothing)
 end
 
-function ADVectorObjective(f!,x0::StaticArrays.SVector,chunk)
-    f̄ = Base.Fix1(f!,nothing)
-    f(F,x) = f!(nothing,x) #we assume that the F argument is unused in static arrays
-    j(J,x) = ForwardDiff.jacobian(f̄,x)
-    fj(F,J,x) = FJ_ad(f̄,x)
-    return NLSolvers.VectorObjective(f,j,fj,nothing)
+function ADVectorObjective(f!, x0::StaticArrays.SVector, chunk)
+    f̄ = Base.Fix1(f!, nothing)
+    f(F, x) = f!(nothing, x) #we assume that the F argument is unused in static arrays
+    j(J, x) = ForwardDiff.jacobian(f̄, x)
+    fj(F, J, x) = FJ_ad(f̄, x)
+    return NLSolvers.VectorObjective(f, j, fj, nothing)
 end
 
-ADVectorObjective(f!,x0::StaticArrays.SVector) = ADVectorObjective(f!,x0,nothing)
+ADVectorObjective(f!, x0::StaticArrays.SVector) = ADVectorObjective(f!, x0, nothing)
 
 #= only_fj!: NLsolve.jl legacy form:
 
@@ -68,21 +66,21 @@ function only_fj!(F, J, x)
 end
 =#
 function only_fj!(fj!::T) where T
-    function _f!(F,x)
-        fj!(F,nothing,x)
+    function _f!(F, x)
+        fj!(F, nothing, x)
         F
     end
 
-    function _fj!(F,J,x)
-        fj!(F,J,x)
-        F,J
+    function _fj!(F, J, x)
+        fj!(F, J, x)
+        F, J
     end
 
-    function _j!(J,x)
-        fj!(nothing,J,x)
+    function _j!(J, x)
+        fj!(nothing, J, x)
         J
     end
-    return NLSolvers.VectorObjective(_f!,_j!,_fj!,nothing) |> NEqProblem
+    return NLSolvers.VectorObjective(_f!, _j!, _fj!, nothing) |> NEqProblem
     # return NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> NEqProblem
 end
 
@@ -103,9 +101,9 @@ end
 
 struct Newton2Var end
 
-function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions(),tag = f;bounds = nothing) where {FF,NN,TT}
+function nlsolve2(f::FF, x::SVector{NN,TT}, method::Newton2Var, options=NEqOptions(), tag=f; bounds=nothing) where {FF,NN,TT}
     function FJ(_z)
-        return FJ_ad(f,_z)
+        return FJ_ad(f, _z)
     end
     Fx, Jx = FJ(x)
     T = eltype(Fx)
@@ -122,9 +120,9 @@ function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions(
     while iter ≤ options.maxiter
         d = Jx \ -Fx
         #@show Jx, Fx
-        x = __new_x_newton2var(x,d,bounds)
+        x = __new_x_newton2var(x, d, bounds)
         Fx, Jx = FJ(x)
-        in_bounds = __newton2var_in_bounds(x,d,bounds)
+        in_bounds = __newton2var_in_bounds(x, d, bounds)
         ρF = bounded_norm(Fx, Inf, in_bounds)
         ρs = bounded_norm(Fx, Inf, in_bounds)
         #@show ρF, ρs
@@ -133,39 +131,37 @@ function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions(
             break
         end
 
-        if !all(isfinite,x)
+        if !all(isfinite, x)
             converged = false
             break
         end
         iter += 1
     end
     if !converged
-        x  = nan .* x
+        x = nan .* x
     end
     return x
 end
 
+bounded_norm(x, nn, in_bounds) = norm(x .* in_bounds, nn)
+bounded_norm(x, nn, ::Nothing) = norm(x, nn)
 
-
-bounded_norm(x,nn,in_bounds) = norm(x .* in_bounds,nn)
-bounded_norm(x,nn,::Nothing) = norm(x,nn)
-
-__newton2var_in_bounds(x,d,::Nothing) = nothing
-function __newton2var_in_bounds(x,d,bounds)
-    lb,ub = bounds
-    return (lb .<= (x + d) .<= ub) 
+__newton2var_in_bounds(x, d, ::Nothing) = nothing
+function __newton2var_in_bounds(x, d, bounds)
+    lb, ub = bounds
+    return (lb .<= (x + d) .<= ub)
 end
 
-function __new_x_newton2var(x::A,d::B,::Nothing) where {A,B}
+function __new_x_newton2var(x::A, d::B, ::Nothing) where {A,B}
     return x + d
 end
 
-function __new_x_newton2var(x::A,d::B,bounds) where {A,B}
-    lb,ub = bounds
-    return bound_1d.(x,d,lb,ub)
+function __new_x_newton2var(x::A, d::B, bounds) where {A,B}
+    lb, ub = bounds
+    return bound_1d.(x, d, lb, ub)
 end
 
-function bound_1d(x,d,lb,ub)
+function bound_1d(x, d, lb, ub)
     y = x + d
     if y < lb
         return 0.5*(x + lb)
@@ -181,40 +177,40 @@ Roots.jl extension
 
 is_rootsjl_method(method::Roots.AbstractUnivariateZeroMethod) = true
 
-function roots_nlsolve(f::F,x0,method::Roots.AbstractBracketingMethod,options) where F
-    prob = Roots.ZeroProblem(f,x0)
+function roots_nlsolve(f::F, x0, method::Roots.AbstractBracketingMethod, options) where F
+    prob = Roots.ZeroProblem(f, x0)
     brk = f(x0[1])*f(x0[2])
     if brk > 0
         sol = zero(brk)/zero(brk)
     else
-        sol = Roots.solve(prob,method)
+        sol = Roots.solve(prob, method)
     end
     return sol
 end
 
-function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNonBracketingMethod ,options) where F
-    prob = Roots.ZeroProblem(f,x0)
-    sol = Roots.solve(prob,method)
+function roots_nlsolve(f::F, x0::Number, method::Roots.AbstractNonBracketingMethod, options) where F
+    prob = Roots.ZeroProblem(f, x0)
+    sol = Roots.solve(prob, method)
     return sol
 end
 
-function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractNewtonLikeMethod ,options) where F
-    prob = Roots.ZeroProblem(to_newton(f),x0)
-    sol = Roots.solve(prob,method)
+function roots_nlsolve(f::F, x0::Number, method::Roots.AbstractNewtonLikeMethod, options) where F
+    prob = Roots.ZeroProblem(to_newton(f), x0)
+    sol = Roots.solve(prob, method)
     return sol
 end
 
-function roots_nlsolve(f::F,x0::Number,method::Roots.AbstractHalleyLikeMethod,options) where F
-    prob = Roots.ZeroProblem(to_halley(f),x0)
-    sol = Roots.solve(prob,method)
+function roots_nlsolve(f::F, x0::Number, method::Roots.AbstractHalleyLikeMethod, options) where F
+    prob = Roots.ZeroProblem(to_halley(f), x0)
+    sol = Roots.solve(prob, method)
     return sol
 end
 
 #iterative solver
 
-function solve1_initial_state(::Type{T},α = convert(T,0.6)) where T
-    nan = convert(T,NaN)
-    return ((nan,nan,nan),(nan,nan,nan),α,:iter0)
+function solve1_initial_state(::Type{T}, α=convert(T, 0.6)) where T
+    nan = convert(T, NaN)
+    return ((nan, nan, nan), (nan, nan, nan), α, :iter0)
 end
 
 function solve1_update_state(state, x, fx; full_iter=true)
@@ -253,7 +249,7 @@ function solve1_update_state(state, x, fx; full_iter=true)
         end
 
         # No bracket found, or full_iter=false: maintain 3 best points sorted by x.
-        _, imax = findmax((abs(f1),abs(f2),abs(f3)))
+        _, imax = findmax((abs(f1), abs(f2), abs(f3)))
         keep = if imax == 1
             SVector((x2, f2), (x3, f3), (x, fx))
         elseif imax == 2
@@ -306,30 +302,29 @@ function solve1_update_state(state, x, fx; full_iter=true)
     end
 end
 
-
-function solve1_new_iter(old_state,x,fx,dfx = nothing;full_iter = true)
-    ∂fx = dfx === nothing ? fx : oftype(fx,dfx)
-    state = solve1_update_state(old_state,x,fx;full_iter)
-    xx,fxx,α,status = state
+function solve1_new_iter(old_state, x, fx, dfx=nothing; full_iter=true)
+    ∂fx = dfx === nothing ? fx : oftype(fx, dfx)
+    state = solve1_update_state(old_state, x, fx; full_iter)
+    xx, fxx, α, status = state
     if status == :iter0
         if dfx === nothing
             x0 = x
         else
             x0 = (x - (1 - α)*f/∂fx)
         end
-        return x0,state
+        return x0, state
     elseif status == :iter_initial
-        xa,xb,_ = xx
-        fa,fb,_ = fxx
-        dfdx = dfx === nothing ? ((fb - fa)/(xb - xa)) : ∂fx   
+        xa, xb, _ = xx
+        fa, fb, _ = fxx
+        dfdx = dfx === nothing ? ((fb - fa)/(xb - xa)) : ∂fx
         xnew = (xa - (1 - α)*fa/dfdx)
-        return xnew,state
+        return xnew, state
     elseif status == :iter_full
         x1, x2, x3 = xx
         f1, f2, f3 = fxx
         if full_iter
             xnew = Roots.inverse_quadratic_step(x1, x2, x3, f1, f2, f3)
-            xlo, xhi = extrema((x1,x2,x3))
+            xlo, xhi = extrema((x1, x2, x3))
             span = xhi - xlo
             if !(xlo - span < xnew < xhi + span)
                 dfdx = dfx === nothing ? ((f2 - f1) / (x2 - x1)) : ∂fx
@@ -341,20 +336,20 @@ function solve1_new_iter(old_state,x,fx,dfx = nothing;full_iter = true)
         end
 
         if f1*f2 < 0
-            xlo,xhi = minmax(x1,x2)
+            xlo, xhi = minmax(x1, x2)
             if !(xlo <= xnew <= xhi)
                 xm = 0.5*(xlo + xhi)
                 xrf = (fb * a - fa * b) / (fb - fa)
 
-            if xlo < xrf < xhi
-                # Check Illinois adjustment: if regula falsi keeps one side fixed,
-                # the Illinois half-weight step can do better.
-                fa_ill = fa / 2
-                xill = ((fb) * a - fa_ill * b) / (fb - fa_ill)
-                xnew = (xlo < xill < xhi) ? xill : xrf
-            else
-                xnew = xm  # regula falsi left the bracket, bisect
-            end
+                if xlo < xrf < xhi
+                    # Check Illinois adjustment: if regula falsi keeps one side fixed,
+                    # the Illinois half-weight step can do better.
+                    fa_ill = fa / 2
+                    xill = ((fb) * a - fa_ill * b) / (fb - fa_ill)
+                    xnew = (xlo < xill < xhi) ? xill : xrf
+                else
+                    xnew = xm  # regula falsi left the bracket, bisect
+                end
             end
         end
 
@@ -401,5 +396,5 @@ function solve1_new_iter(old_state,x,fx,dfx = nothing;full_iter = true)
         end
         return xnew, state
     end
-    return first(xx)*NaN,state
+    return first(xx)*NaN, state
 end

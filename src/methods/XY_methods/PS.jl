@@ -1,30 +1,30 @@
-function PS_property(model,p,s,z,f::F,phase,T0) where F
-    z isa Number && return PS_property(model,p,s,SVector(z),f,phase,T0)
-    XX = Base.promote_eltype(model,p,s,z)
+function PS_property(model, p, s, z, f::F, phase, T0) where F
+    z isa Number && return PS_property(model, p, s, SVector(z), f, phase, T0)
+    XX = Base.promote_eltype(model, p, s, z)
     f == entropy && return XX(s)
     f == pressure && return XX(p)
 
     if f == temperature && length(z) == 1
         length(model) == 1 || throw(DimensionMismatch("model and composition vector sizes are inconsistent"))
         z1 = SVector(z[1])
-        return Tproperty(model,p,s,z1,entropy,T0 = T0,phase = phase,threaded = false)
+        return Tproperty(model, p, s, z1, entropy, T0=T0, phase=phase, threaded=false)
     end
 
     if !is_unknown(phase)
-        T,calc_phase = _Tproperty(model,p,s,z,entropy,T0 = T0,phase = phase,threaded = false)
+        T, calc_phase = _Tproperty(model, p, s, z, entropy, T0=T0, phase=phase, threaded=false)
         if calc_phase != :eq && calc_phase != :failure
             f == temperature && return XX(T)
-            return f(model,p,T,z;phase = calc_phase)
+            return f(model, p, T, z; phase=calc_phase)
         elseif calc_phase == :eq
             supports_lever_rule(f) || thow(invalid_property_multiphase_error(f))
-            result = ps_flash(model,p,s,z,T)
-            return f(model,result)
+            result = ps_flash(model, p, s, z, T)
+            return f(model, result)
         else
-            return f(model,p,T,z;phase = phase)
+            return f(model, p, T, z; phase=phase)
         end
     end
-    res = ps_flash(model,p,s,z,T0 = T0)
-    return f(model,res)
+    res = ps_flash(model, p, s, z, T0=T0)
+    return f(model, res)
 end
 
 """
@@ -35,7 +35,7 @@ Module that stores Clapeyron properties in pressure - (total) entropy basis.
 All bulk properties have the following form:
 
 ```julia
-property(model,p,s,z;phase = :unknown, T0 = nothing)
+property(model, p, s, z; phase=:unknown, T0=nothing)
 ```
 
 A pressure-entropy flash is done to check if the input pair corresponds to one or more phases.
@@ -44,19 +44,19 @@ If a `phase` argument is specified, then it will be used to skip the flash and i
 """
 module PS
 import Clapeyron
-import Clapeyron: ustrip,uzstrip,usstrip,with_output_unit,unit_system
+import Clapeyron: ustrip, uzstrip, usstrip, with_output_unit, unit_system
 for f in Clapeyron.CLAPEYRON_PROPS
-    VT_f = Symbol(:VT_,f)
+    VT_f = Symbol(:VT_, f)
     @eval begin
-        function $f(model,p,s,z = Clapeyron.SA[1.0];phase = :unknown,T0 = nothing, output = nothing)
-            p̄,z̄,T̄0 = ustrip(p,pressure),uzstrip(model,z),ustrip(T0,temperature)
-            s̄ = usstrip(model,s,z̄)
-            prop = Clapeyron.PS_property(model,p̄,s̄,z̄,Clapeyron.$f,phase,T̄0)
-            return with_output_unit(prop,(unit_system(p,s,z,output),output),Clapeyron.$VT_f)
+        function $f(model, p, s, z=Clapeyron.SA[1.0]; phase=:unknown, T0=nothing, output=nothing)
+            p̄, z̄, T̄0 = ustrip(p, pressure), uzstrip(model, z), ustrip(T0, temperature)
+            s̄ = usstrip(model, s, z̄)
+            prop = Clapeyron.PS_property(model, p̄, s̄, z̄, Clapeyron.$f, phase, T̄0)
+            return with_output_unit(prop, (unit_system(p, s, z, output), output), Clapeyron.$VT_f)
         end
     end
 end
-function flash(model,p,s,z = Clapeyron.SA[1.0],args...;kwargs...)
-    return Clapeyron.ps_flash(model,p,s,z,args...;kwargs...)
+function flash(model, p, s, z=Clapeyron.SA[1.0], args...; kwargs...)
+    return Clapeyron.ps_flash(model, p, s, z, args...; kwargs...)
 end
 end #module

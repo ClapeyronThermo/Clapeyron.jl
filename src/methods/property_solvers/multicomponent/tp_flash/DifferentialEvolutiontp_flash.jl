@@ -43,10 +43,10 @@ The `equilibrium` keyword allows to restrict the search of phases to just liquid
     equilibrium::Symbol = :auto
 end
 
-index_reduction(flash::DETPFlash,z) = flash
+index_reduction(flash::DETPFlash, z) = flash
 
 #z is the original feed composition, x is a matrix with molar fractions, n is a matrix with molar amounts
-function partition!(dividers,n,x,nvals)
+function partition!(dividers, n, x, nvals)
     numphases, numspecies = size(x)
     @inbounds for j = 1:numspecies
         nj = n[j]
@@ -77,7 +77,7 @@ end
 
 function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     (; numphases, max_steps, population_size, time_limit, seed, stagnation_evals, stagnation_tol, backend, verbose, logspace, equilibrium) = method
-    model = __tpflash_cache_model(model,p,T,n,equilibrium)
+    model = __tpflash_cache_model(model, p, T, n, equilibrium)
     numspecies = length(model)
     TT = Base.promote_typeof(p, T, first(n))
     x = zeros(TT, numphases, numspecies)
@@ -109,7 +109,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     end
     best_u, g = Solvers.best(algo)
     # Refresh cache for the best solution (the last evaluated point might not be the best).
-    
+
     Obj_de_tp_flash(model, p, T, n, copy(best_u), numphases, x, nvals, volumes, logspace, phase)
 
     #Initialize arrays xij and nvalsij,
@@ -120,10 +120,10 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     if logspace
         dividers .= exp.(dividers)
     end
-    partition!(dividers,n,x,nvals)
+    partition!(dividers, n, x, nvals)
 
-    comps = [vec(x[i,:]) for i in 1:numphases]
-    βi = [sum(@view(nvals[i,:])) for i in 1:numphases]
+    comps = [vec(x[i, :]) for i in 1:numphases]
+    βi = [sum(@view(nvals[i, :])) for i in 1:numphases]
     vapour_idx = is_lle(equilibrium) ? -1 : 0
 
     #fill liquid volumes, identify vapour phase
@@ -131,9 +131,9 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
         voli = volumes[i]
         if iszero(voli) && model isa PTFlashWrapper
             #we suppose liquid volume, evaluate here
-            volumes[i] = volume(model,p,T,comps[i],phase = :l)
+            volumes[i] = volume(model, p, T, comps[i], phase=:l)
         elseif !iszero(voli) && model isa PTFlashWrapper && is_unknown(phase) && is_zero(vapour_idx)
-            new_phase = identify_phase(model,p,T,comps[i],vol = voli)
+            new_phase = identify_phase(model, p, T, comps[i], vol=voli)
             if is_vapour(new_phase)
                 vapour_idx = i
             end
@@ -142,7 +142,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     if vapour_idx == 0
         vapour_idx = -1
     end
-    return FlashResult(comps, βi, volumes, FlashData(p,T,g,vapour_idx))
+    return FlashResult(comps, βi, volumes, FlashData(p, T, g, vapour_idx))
 end
 """
     Obj_de_tp_flash(model,p,T,z,dividers,numphases,vcache,logspace = false)
@@ -164,7 +164,7 @@ will result in a unique partition of the species into the numphases
 phases.
 vcache stores the current volumes for each phase.
 """
-function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace = false,phase = :unknown)
+function Obj_de_tp_flash(model, p, T, n, dividers, numphases, x, nvals, vcache, logspace=false, phase=:unknown)
     # NOTE: avoid `Base.promote_typeof(p, T, first(n))` here; this function is slow
     # `x/nvals/volumes` are allocated in `tp_flash_impl` using the promoted type already, so we can reuse the cache eltype.
     TT = eltype(nvals)
@@ -182,14 +182,14 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     #x = zeros(TT,numphases, numspecies)
     #nvals = zeros(TT,numphases, numspecies)
     #Calculate partition of species into phases
-    partition!(dividers,n,x,nvals)
+    partition!(dividers, n, x, nvals)
     #Accumulate total reduced Gibbs energy, G/(RT)
     #If any errors are encountered, return a big number, ensuring point is discarded
     #by DE Algorithm
     G = _0
     for i ∈ 1:numphases
         ni = @view(nvals[i, :])
-        gi_reduced,vi = modified_gibbs(model,p,T,ni,phase)
+        gi_reduced, vi = modified_gibbs(model, p, T, ni, phase)
         vcache[i] = vi
         G += gi_reduced
         #calling with PTn calls the internal volume solver
@@ -200,7 +200,7 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     end
     # Per the FlashData definition, return the molar reduced Gibbs energy (g = G/(nRT))
     ∑n = sum(n)
-    return ifelse(isnan(G),bignum,G/∑n)
+    return ifelse(isnan(G), bignum, G/∑n)
 end
 
 numphases(method::DETPFlash) = method.numphases

@@ -1,18 +1,18 @@
-function positive_linesearch(v, δ, α0 = 1.0 ; τ = 1.0, decay = 0.5, tol = 1e-10, s = 1.0)
+function positive_linesearch(v, δ, α0=1.0; τ=1.0, decay=0.5, tol=1e-10, s=1.0)
     l = length(v)
     α = α0*oneunit(Base.promote_eltype(v, δ, τ, s))
 
     iszero(l) && return α
-        for i in eachindex(v)
-            vi,δi = v[i],δ[i]
-            if vi + α * s * δi < (1 - τ) * vi
-                α = min(α*decay,(-τ*vi)/(s*δi))
-            end
+    for i in eachindex(v)
+        vi, δi = v[i], δ[i]
+        if vi + α * s * δi < (1 - τ) * vi
+            α = min(α*decay, (-τ*vi)/(s*δi))
         end
+    end
     return α*decay
 end
 
-function backtracking_linesearch!(Θ,F,X,d,Θ0,Xnew,α = 1.0;tol = 1e-10, decay = 0.5, ignore = nothing)
+function backtracking_linesearch!(Θ, F, X, d, Θ0, Xnew, α=1.0; tol=1e-10, decay=0.5, ignore=nothing)
     done = false
     Θx = Θ0
     while !done
@@ -25,40 +25,40 @@ function backtracking_linesearch!(Θ,F,X,d,Θ0,Xnew,α = 1.0;tol = 1e-10, decay 
                 end
             end
         end
-        Θx = Θ(F,Xnew)
+        Θx = Θ(F, Xnew)
         if Θx <= Θ0
             done = true
         elseif abs(Θx - Θ0) < tol
             done = true
         else
             if α < tol || !isfinite(Θx)
-                return zero(α)/zero(α),Θx
+                return zero(α)/zero(α), Θx
             end
             α *= decay
         end
     end
-    return α,Θx,Θx <= Θ0
+    return α, Θx, Θx <= Θ0
 end
 
-function remove_slacks!(F,J,slacks::AbstractVector{Bool})
+function remove_slacks!(F, J, slacks::AbstractVector{Bool})
     for i in eachindex(slacks)
         if slacks[i]
-            remove_slacks!(F,J,i)
+            remove_slacks!(F, J, i)
         end
     end
 end
 
-function remove_slacks!(F,J,i::Int)
+function remove_slacks!(F, J, i::Int)
     if F !== nothing
         F[i] = 0
     end
 
     if J !== nothing
-        J1 = @view(J[i,:])
-        J2 = @view(J[:,i])
+        J1 = @view(J[i, :])
+        J2 = @view(J[:, i])
         J1 .= 0
         J2 .= 0
-        J[i,i] = 1
+        J[i, i] = 1
     end
 end
 #=
