@@ -4,7 +4,7 @@ struct ogUNIFACParam{T} <: ParametricEoSParam{T}
     Q::SingleParam{T}
 end
 
-ogUNIFACParam(A,R,Q) = build_parametric_param(ogUNIFACParam,A,R,Q)
+ogUNIFACParam(A, R, Q) = build_parametric_param(ogUNIFACParam, A, R, Q)
 
 abstract type ogUNIFACModel <: UNIFACModel end
 
@@ -17,10 +17,10 @@ struct ogUNIFAC{c<:EoSModel,T} <: ogUNIFACModel
     unifac_cache::UNIFACCache{T}
 end
 
-function ogUNIFAC(components,groups,params,puremodel,references,unifac_cache)
+function ogUNIFAC(components, groups, params, puremodel, references, unifac_cache)
     c = eltype(puremodel)
     T = eltype(params)
-    return ogUNIFAC{c,T}(components,groups,params,puremodel,references,unifac_cache)
+    return ogUNIFAC{c,T}(components, groups, params, puremodel, references, unifac_cache)
 end
 
 export ogUNIFAC
@@ -37,12 +37,14 @@ export ogUNIFAC
     reference_state = nothing)
 
 ## Input parameters
-- `R`: Single Parameter (`Float64`)  - Normalized group Van der Waals volume
-- `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
-- `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
+
+  - `R`: Single Parameter (`Float64`)  - Normalized group Van der Waals volume
+  - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
+  - `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
 
 ## Input models
-- `puremodel`: model to calculate pure pressure-dependent properties
+
+  - `puremodel`: model to calculate pure pressure-dependent properties
 
 UNIFAC (UNIQUAC Functional-group Activity Coefficients) activity model.
 
@@ -55,6 +57,7 @@ Gᴱ = nRT(gᴱ(comb) + gᴱ(res))
 ```
 
 Combinatorial part:
+
 ```
 gᴱ(comb) = ∑[xᵢlog(Φᵢ/xᵢ) + 5qᵢxᵢlog(θᵢ/Φᵢ)]
 θᵢ = qᵢxᵢ/∑qᵢxᵢ
@@ -62,7 +65,9 @@ gᴱ(comb) = ∑[xᵢlog(Φᵢ/xᵢ) + 5qᵢxᵢlog(θᵢ/Φᵢ)]
 rᵢ = ∑Rₖνᵢₖ for k ∈ groups
 qᵢ = ∑Qₖνᵢₖ for k ∈ groups
 ```
+
 Residual Part:
+
 ```
 gᴱ(residual) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
 v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
@@ -71,47 +76,38 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 Ψₖₘ = exp(-(Aₖₘ/T)
 ```
 
-
 !!! note "Group Fragmentation"
 
     Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `ogUNIFACGroups`
 
-
 ## References
-1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. [doi:10.1021/i260064a004](https://doi.org/10.1021/i260064a004)
 
+ 1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. [doi:10.1021/i260064a004](https://doi.org/10.1021/i260064a004)
 """
 ogUNIFAC
 
 default_locations(::Type{ogUNIFAC}) = ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC_unlike.csv"]
 
-function ogUNIFAC(components;
-    puremodel = PR,
-    userlocations = String[],
-    group_userlocations = String[],
-    pure_userlocations = String[],
-    verbose = false,
-    reference_state = nothing)
+function ogUNIFAC(components; puremodel=PR, userlocations=String[], group_userlocations=String[], pure_userlocations=String[], verbose=false, reference_state=nothing)
+    groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"]; group_userlocations=group_userlocations, verbose=verbose)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"];group_userlocations = group_userlocations, verbose = verbose)
+    params = getparams(groups, default_locations(ogUNIFAC); userlocations=userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose=verbose)
+    A = params["A"]
+    R = params["R"]
+    Q = params["Q"]
 
-    params = getparams(groups, default_locations(ogUNIFAC); userlocations = userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose = verbose)
-    A  = params["A"]
-    R  = params["R"]
-    Q  = params["Q"]
-    
-    _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
-    packagedparams = ogUNIFACParam(A,R,Q)
+    _puremodel = init_puremodel(puremodel, groups.components, pure_userlocations, verbose)
+    packagedparams = ogUNIFACParam(A, R, Q)
     references = String[]
-    cache = UNIFACCache(groups,packagedparams)
-    model = ogUNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
-    set_reference_state!(model,reference_state,verbose = verbose)
+    cache = UNIFACCache(groups, packagedparams)
+    model = ogUNIFAC(groups.components, groups, packagedparams, _puremodel, references, cache)
+    set_reference_state!(model, reference_state, verbose=verbose)
     return model
 end
 
-excess_g_comb(model::ogUNIFACModel,p,T,z=SA[1.0]) = excess_g_comb_original(model,p,T,z)
+excess_g_comb(model::ogUNIFACModel, p, T, z=SA[1.0]) = excess_g_comb_original(model, p, T, z)
 
-function Ψ(model::ogUNIFACModel,V,T,z)
+function Ψ(model::ogUNIFACModel, V, T, z)
     A = model.params.A.values
     return @. exp(-A/T)
 end

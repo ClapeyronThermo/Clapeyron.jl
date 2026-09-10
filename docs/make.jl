@@ -1,56 +1,50 @@
-push!(LOAD_PATH,"../src/")
-using Documenter,Clapeyron,MLThermoProperties
-makedocs(sitename = "Clapeyron.jl",
-format = Documenter.HTML(
-    # Use clean URLs, unless built as a "local" build
-    canonical = "https://ClapeyronThermo.github.io/Clapeyron.jl/",
-    assets = ["assets/logos/logo.ico"],
-    size_threshold = 300_000,
-),
-warnonly = Documenter.except(),
-    authors = "Pierre J. Walker, Hon Wa Yew and Andrés Riedemann.",
-    pages = [
+push!(LOAD_PATH, "../src/")
+using Documenter, Clapeyron, MLThermoProperties
+makedocs(
+    sitename="Clapeyron.jl",
+    format=Documenter.HTML(
+        # Use clean URLs, unless built as a "local" build
+        canonical="https://ClapeyronThermo.github.io/Clapeyron.jl/",
+        assets=["assets/logos/logo.ico"],
+        size_threshold=300_000,
+    ),
+    warnonly=Documenter.except(),
+    authors="Pierre J. Walker, Hon Wa Yew and Andrés Riedemann.",
+    pages=[
         "Home" => "index.md",
         "Installation"=>"installation.md",
-        "Tutorials" => ["Getting Started - Model Construction"=>"tutorials/basics_model_construction.md",
-                        "User-defined Parameters"=>"tutorials/user_defined_parameters.md",
-                        "Bulk Properties"=>"tutorials/bulk_properties.md",
-                        "Mixing and Excess Functions"=>"tutorials/mixing_functions.md",
-                        "Pure Saturation Properties"=>"tutorials/pure_saturation_curves.md",
-                        "Binary Phase Diagrams"=>"tutorials/binary_phase_diagrams.md",
-                        "Ternary Phase Diagrams"=>"tutorials/ternary_phase_diagrams.md",
-                        "SLE Phase Diagrams"=>"tutorials/sle_phase_diagrams.md",
-                        "Other Flash Computations"=>"tutorials/xy_flash.md",
-                        "Parameter Estimation Basics"=>"tutorials/basics_estimation.md",],
+        "Tutorials" => [
+            "Getting Started - Model Construction"=>"tutorials/basics_model_construction.md",
+            "User-defined Parameters"=>"tutorials/user_defined_parameters.md",
+            "Bulk Properties"=>"tutorials/bulk_properties.md",
+            "Mixing and Excess Functions"=>"tutorials/mixing_functions.md",
+            "Pure Saturation Properties"=>"tutorials/pure_saturation_curves.md",
+            "Binary Phase Diagrams"=>"tutorials/binary_phase_diagrams.md",
+            "Ternary Phase Diagrams"=>"tutorials/ternary_phase_diagrams.md",
+            "SLE Phase Diagrams"=>"tutorials/sle_phase_diagrams.md",
+            "Other Flash Computations"=>"tutorials/xy_flash.md",
+            "Parameter Estimation Basics"=>"tutorials/basics_estimation.md",
+        ],
         # "How-to Guides" => ["Implement your own Methods"=>"user_guide/custom_methods.md",
         #                     "Implement your own Models"=>"user_guide/custom_model.md"],
         "Notebook Examples" => "notebook_examples.md",
-        "Available EoS" => ["Ideal Models" => "eos/ideal.md"
-                            "Cubic Models" => "eos/cubic.md"
-                            "Activity Models" => "eos/activity.md"
-                            "SAFT and CPA Models"  => "eos/saft.md"
-                            "Empiric Helmholtz Models" => "eos/empiric.md"
-                            "Electrolyte Models" => "eos/electrolytes.md"
-                            "Property Correlations" =>  "eos/correlations.md"
-                            "ML-Based Models" =>  "eos/ml.md"
-                            "Other Models" => "eos/misc.md"],
+        "Available EoS" => [
+            "Ideal Models" => "eos/ideal.md"
+            "Cubic Models" => "eos/cubic.md"
+            "Activity Models" => "eos/activity.md"
+            "SAFT and CPA Models" => "eos/saft.md"
+            "Empiric Helmholtz Models" => "eos/empiric.md"
+            "Electrolyte Models" => "eos/electrolytes.md"
+            "Property Correlations" => "eos/correlations.md"
+            "ML-Based Models" => "eos/ml.md"
+            "Other Models" => "eos/misc.md"
+        ],
         "Frequently Asked Questions" => "faq.md",
-        "Available Properties" => ["Basic Properties" => "properties/basic.md",
-                                   "Bulk Properties" => "properties/bulk.md",
-                                   "Single phase Equilibria" => "properties/single.md",
-                                   "Multiphase Equilibria"  => "properties/multi.md",
-                                   "Flash methods" => "properties/flash.md",
-                                   "Electrolyte Properties" => "properties/electrolytes.md"],
-
-        "API" => ["Parameters" => "api/parameters.md",
-                  "Macros" => "api/macros.md",
-                  "Association" => "api/association.md",
-                  "Parameter Estimation" => "api/estimation.md"],
+        "Available Properties" => ["Basic Properties" => "properties/basic.md", "Bulk Properties" => "properties/bulk.md", "Single phase Equilibria" => "properties/single.md", "Multiphase Equilibria" => "properties/multi.md", "Flash methods" => "properties/flash.md", "Electrolyte Properties" => "properties/electrolytes.md"],
+        "API" => ["Parameters" => "api/parameters.md", "Macros" => "api/macros.md", "Association" => "api/association.md", "Parameter Estimation" => "api/estimation.md"],
         "To-do list" => "to-do_list.md",
-        "Advanced Topics" => ["Implicit differentiation of Properties"=>"implicit_differentiation.md",
-                                "Custom estimation models and losses"=>"custom_estimation.md"]
-                  ])
-
-        deploydocs(;
-    repo="github.com/ClapeyronThermo/Clapeyron.jl.git",
+        "Advanced Topics" => ["Implicit differentiation of Properties"=>"implicit_differentiation.md", "Custom estimation models and losses"=>"custom_estimation.md"],
+    ],
 )
+
+deploydocs(; repo="github.com/ClapeyronThermo/Clapeyron.jl.git")

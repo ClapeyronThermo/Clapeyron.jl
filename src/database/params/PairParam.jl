@@ -8,40 +8,47 @@ struct PairParameter{T,V<:AbstractMatrix{T}} <: ClapeyronParam
 end
 
 #methods to fill missing sources/sourcescsvs
-PairParameter(name,components,values,ismissingvalues) = PairParameter(name,components,values,ismissingvalues,nothing,nothing)
-PairParameter(name,components,values,ismissingvalues,src) = PairParameter(name,components,values,ismissingvalues,src,nothing)
+PairParameter(name, components, values, ismissingvalues) = PairParameter(name, components, values, ismissingvalues, nothing, nothing)
+PairParameter(name, components, values, ismissingvalues, src) = PairParameter(name, components, values, ismissingvalues, src, nothing)
 
 """
     PairParam{T}
+
 Struct designed to contain pair data. Used a matrix as underlying data storage.
+
 ## Creation:
+
 ```julia-repl
-julia> kij = PairParam("interaction params",["water","ammonia"],[0.1 0.0;0.1 0.0])
+julia> kij = PairParam(\"interaction params\", [\"water\", \"ammonia\"], [0.1 0.0; 0.1 0.0])
 PairParam{Float64}(["water", "ammonia"]) with values:
 2×2 Matrix{Float64}:
  0.1  0.0
  0.1  0.0
+
 julia> kij.values
 2×2 Matrix{Float64}:
  0.1  0.0
  0.1  0.0
+
 julia> diagvalues(kij)
 2-element view(::Vector{Float64}, 
 1:3:4) with eltype Float64:
  0.1
  0.0
 ```
+
 ## Example usage in models:
+
 ```julia
 #lets compute ∑xᵢxⱼkᵢⱼ
-function alpha(model,x)
+function alpha(model, x)
     kij = model.params.kij.values
     ki = diagvalues(model.params.kij)
     res = zero(eltype(molarfrac))
-    for i in @comps 
+    for i in @comps
         @show ki[i] #diagonal values
-        for j in @comps 
-            res += x[i]*x[j]*kij[i,j]
+        for j in @comps
+            res += x[i]*x[j]*kij[i, j]
         end
     end
     return res
@@ -49,38 +56,38 @@ end
 ```
 """
 const PairParam{T} = PairParameter{T,Matrix{T}} where T
-PairParam(name,components,vals,missingvals,srccsv,src) = PairParameter(name,components,vals,missingvals,srccsv,src)
+PairParam(name, components, vals, missingvals, srccsv, src) = PairParameter(name, components, vals, missingvals, srccsv, src)
 
 #indexing
-Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int) where T = param.values[i,i]
-Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int,j::Int) where T = param.values[i,j]
+Base.@propagate_inbounds Base.getindex(param::PairParameter{T}, i::Int) where T = param.values[i, i]
+Base.@propagate_inbounds Base.getindex(param::PairParameter{T}, i::Int, j::Int) where T = param.values[i, j]
 
-function Base.getindex(param::PairParameter{T},i::AbstractString) where T
-    idx = _str_to_idx(param,i)
+function Base.getindex(param::PairParameter{T}, i::AbstractString) where T
+    idx = _str_to_idx(param, i)
     return param[idx]
 end
 
-function Base.getindex(param::PairParameter{T},i::AbstractString,j::AbstractString) where T
-    idx_i,idx_j = _str_to_idx(param,i,j)
-    return param[idx_i,idx_j]
+function Base.getindex(param::PairParameter{T}, i::AbstractString, j::AbstractString) where T
+    idx_i, idx_j = _str_to_idx(param, i, j)
+    return param[idx_i, idx_j]
 end
 
-Base.setindex!(param::PairParameter,val,i) = setindex!(param,val,i,i,false)
+Base.setindex!(param::PairParameter, val, i) = setindex!(param, val, i, i, false)
 
-function Base.setindex!(param::PairParameter,val,i,j,symmetric = true) 
-    setindex!(param.values,val,i,j)
-    symmetric && setindex!(param.values,val,j,i)
+function Base.setindex!(param::PairParameter, val, i, j, symmetric=true)
+    setindex!(param.values, val, i, j)
+    symmetric && setindex!(param.values, val, j, i)
 end
 
-function Base.setindex!(param::PairParameter,val,i::AbstractString,j::AbstractString,symmetric = true) 
-    idx_i,idx_j = _str_to_idx(param,i,j)
-    setindex!(param.values,val,idx_i,idx_j)
-    symmetric && setindex!(param,val,idx_j,idx_i)
+function Base.setindex!(param::PairParameter, val, i::AbstractString, j::AbstractString, symmetric=true)
+    idx_i, idx_j = _str_to_idx(param, i, j)
+    setindex!(param.values, val, idx_i, idx_j)
+    symmetric && setindex!(param, val, idx_j, idx_i)
 end
 
-function Base.setindex!(param::PairParameter,val,i::AbstractString)
-    idx = _str_to_idx(param,i)
-    setindex!(param,val,idx::Int)
+function Base.setindex!(param::PairParameter, val, i::AbstractString)
+    idx = _str_to_idx(param, i)
+    setindex!(param, val, idx::Int)
 end
 
 #Broadcasting
@@ -90,20 +97,20 @@ Base.BroadcastStyle(::Type{<:PairParameter}) = Broadcast.Style{PairParameter}()
 
 #copyto!
 
-function Base.copyto!(dest::PairParameter,src::Base.Broadcast.Broadcasted)
-    Base.copyto!(dest.values,src)
+function Base.copyto!(dest::PairParameter, src::Base.Broadcast.Broadcasted)
+    Base.copyto!(dest.values, src)
     return dest
 end
 
-function Base.copyto!(dest::PairParameter,src::AbstractArray)
-    Base.copyto!(dest.values,src)
+function Base.copyto!(dest::PairParameter, src::AbstractArray)
+    Base.copyto!(dest.values, src)
     return dest
 end
 
-function Base.copyto!(dest::PairParameter,src::PairParameter) #used to set params
+function Base.copyto!(dest::PairParameter, src::PairParameter) #used to set params
     #key check
     dest.components == src.components || throw(DimensionMismatch("components of source and destination pair parameters are not the same for $dest"))
-    
+
     #=
     TODO: it does not check that dest.symmetric = src.symmetric, the only solution i see at the moment 
     is to make the Single, Pair and Assoc Params, mutable structs, but i don't really know the performance
@@ -111,7 +118,7 @@ function Base.copyto!(dest::PairParameter,src::PairParameter) #used to set param
     supposedly, this copyto! is only used internally, and both src and dest params are already the same. but it would
     be good to enforce that.
     =#
-    copyto!(dest.values,src.values)
+    copyto!(dest.values, src.values)
     dest.ismissingvalues .= src.ismissingvalues
     return dest
 end
@@ -121,96 +128,95 @@ Base.size(param::PairParameter) = size(param.values)
 Base.eltype(param::PairParameter{T}) where T = T
 Base.eltype(param::Type{<:PairParameter{T}}) where T = T
 
-function _param_from_values(x::X,param::PairParameter) where X
+function _param_from_values(x::X, param::PairParameter) where X
     T = eltype(X)
-    return PairParameter{T,X}(param.name,param.components,x,param.ismissingvalues,param.sourcecsvs,param.sources)
+    return PairParameter{T,X}(param.name, param.components, x, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
 
-Solvers.primalval(x::T) where T <: PairParameter = param_from_values(Solvers.primalval_eager(raw_values(x)),x) 
+Solvers.primalval(x::T) where T<:PairParameter = param_from_values(Solvers.primalval_eager(raw_values(x)), x)
 raw_values(param::PairParameter) = param.values
 
 #barebones constructor, we provide vals and missing vals
-function PairParam(name,components,values::Matrix{T},missingvals,src,sourcecsv) where T 
+function PairParam(name, components, values::Matrix{T}, missingvals, src, sourcecsv) where T
     val_length = LinearAlgebra.checksquare(values)
-    param_length_check(PairParam,name,length(components),val_length)
-    PairParameter{T,Matrix{T}}(name,components,values,missingvals,src,sourcecsv)
+    param_length_check(PairParam, name, length(components), val_length)
+    PairParameter{T,Matrix{T}}(name, components, values, missingvals, src, sourcecsv)
 end
 
-function PairParam(name,components,values::Vector{T},missingvals::Vector,src,sourcecsv) where T 
+function PairParam(name, components, values::Vector{T}, missingvals::Vector, src, sourcecsv) where T
     n = length(values)
-    mat_values = zeros(T,(n,n))
-    mat_missing = ones(Bool,(n,n))
+    mat_values = zeros(T, (n, n))
+    mat_missing = ones(Bool, (n, n))
     for i in 1:n
-        mat_values[i,i] = values[i]
-        mat_missing[i,i] = false
+        mat_values[i, i] = values[i]
+        mat_missing[i, i] = false
     end
-    PairParam(name,components,mat_values,mat_missing,src,sourcecsv)
+    PairParam(name, components, mat_values, mat_missing, src, sourcecsv)
 end
 
-function PairParam(name,components,values::AbstractMatrix{T},missingvals,src,sourcecsv) where T 
-    return PairParam(name,components,convert(Matrix{T},values),missingvals,src,sourcecsv)
+function PairParam(name, components, values::AbstractMatrix{T}, missingvals, src, sourcecsv) where T
+    return PairParam(name, components, convert(Matrix{T}, values), missingvals, src, sourcecsv)
 end
 
-PairParam(name,components,values,missingvals,src) = PairParam(name,components,values,missingvals,src,nothing)
-PairParam(name,components,values,missingvals) = PairParam(name,components,values,missingvals,nothing,nothing)
+PairParam(name, components, values, missingvals, src) = PairParam(name, components, values, missingvals, src, nothing)
+PairParam(name, components, values, missingvals) = PairParam(name, components, values, missingvals, nothing, nothing)
 
 #constructor in case we provide a normal vector
 function PairParam(name, components, values_or_missing::AbstractMatrix{T}) where T
     if nonmissingtype(T) != T || T == Any
-        values,ismissingvalues = defaultmissing(values_or_missing)
+        values, ismissingvalues = defaultmissing(values_or_missing)
     else
-        values,ismissingvalues = values_or_missing,fill(false, size(values_or_missing))
+        values, ismissingvalues = values_or_missing, fill(false, size(values_or_missing))
     end
     return PairParam(name, components, values, ismissingvalues)
 end
 
-function PairParam(name, components, values_or_missing::AbstractVector{T}) where T 
+function PairParam(name, components, values_or_missing::AbstractVector{T}) where T
     if nonmissingtype(T) != T || T == Any
-        vec_values,vec_ismissingvalues = defaultmissing(values_or_missing)
+        vec_values, vec_ismissingvalues = defaultmissing(values_or_missing)
         values = singletopair(vec_values)
-        ismissingvalues = singletopair(vec_ismissingvalues,true)
+        ismissingvalues = singletopair(vec_ismissingvalues, true)
     else
         values = singletopair(values_or_missing)
-        ismissingvalues = fill(true,size(values))
+        ismissingvalues = fill(true, size(values))
         for i in 1:length(values_or_missing)
-            ismissingvalues[i,i] = false
+            ismissingvalues[i, i] = false
         end
     end
-   
+
     return PairParam(name, components, values, ismissingvalues)
 end
 
 # If no value is provided, just initialise empty param.
-function PairParam{T}(name,components) where T <: Number
+function PairParam{T}(name, components) where T<:Number
     nc = length(components)
-    values = fill(zero(T), (nc,nc))
-    ismissingvalues = fill(true,(nc,nc))
+    values = fill(zero(T), (nc, nc))
+    ismissingvalues = fill(true, (nc, nc))
     return PairParam(name, components, values, ismissingvalues)
 end
 
-PairParam(name,components) = PairParam{Float64}(name,components)
+PairParam(name, components) = PairParam{Float64}(name, components)
 
-function PairParam(x::SingleParam{T},name::String= x.name) where T
+function PairParam(x::SingleParam{T}, name::String=x.name) where T
     _values = singletopair(x.values)
-    _ismissingvalues = singletopair(x.ismissingvalues,true)
+    _ismissingvalues = singletopair(x.ismissingvalues, true)
     return PairParam(name, x.components, _values, _ismissingvalues, x.sourcecsvs, x.sources)
 end
 
-function PairParam(x::PairParam,name::String = x.name)
+function PairParam(x::PairParam, name::String=x.name)
     return PairParam(name, x.components, deepcopy(x.values), deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
 end
 
-function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter) 
+function Base.show(io::IO, mime::MIME"text/plain", param::PairParameter)
     #sym = param.symmetric ? "Symmetric " : ""
     sym = ""
     _size = size(param)
     _size_str = string(_size[1]) * "×" * string(_size[2]) * " "
-    print(io,sym,_size_str,"PairParam{",eltype(param.values),"}(")
-    show(io,param.components)
-    println(io,") with values:")
-    Base.print_matrix(IOContext(io, :compact => true),param.values)
+    print(io, sym, _size_str, "PairParam{", eltype(param.values), "}(")
+    show(io, param.components)
+    println(io, ") with values:")
+    Base.print_matrix(IOContext(io, :compact => true), param.values)
 end
 
 #convert utilities
-Base.convert(::Type{PairParam{T1}},param::PairParam{T2}) where {T1<:Number,T2<:Number} = param_from_values(convert(Matrix{T1},param.values),param)
-
+Base.convert(::Type{PairParam{T1}}, param::PairParam{T2}) where {T1<:Number,T2<:Number} = param_from_values(convert(Matrix{T1}, param.values), param)

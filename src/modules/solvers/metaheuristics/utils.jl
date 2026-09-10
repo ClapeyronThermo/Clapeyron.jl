@@ -1,4 +1,4 @@
-function get_population!(x::AbstractMatrix, lb::AbstractVector, ub::AbstractVector, rng::AbstractRNG = Random.GLOBAL_RNG)
+function get_population!(x::AbstractMatrix, lb::AbstractVector, ub::AbstractVector, rng::AbstractRNG=Random.GLOBAL_RNG)
     dim, npop = size(x)
     length(lb) == dim || throw(DimensionMismatch("lb length must match size(x, 1)"))
     length(ub) == dim || throw(DimensionMismatch("ub length must match size(x, 1)"))
@@ -8,11 +8,9 @@ function get_population!(x::AbstractMatrix, lb::AbstractVector, ub::AbstractVect
     return x
 end
 
-get_population(dims::Tuple{Int,Int}, lb::AbstractVector, ub::AbstractVector, rng::AbstractRNG = Random.GLOBAL_RNG) =
-    get_population!(Matrix{Float64}(undef, dims...), lb, ub, rng)
+get_population(dims::Tuple{Int,Int}, lb::AbstractVector, ub::AbstractVector, rng::AbstractRNG=Random.GLOBAL_RNG) = get_population!(Matrix{Float64}(undef, dims...), lb, ub, rng)
 
-function confine!(s::AbstractMatrix{T}, x::AbstractMatrix{T}, lb::AbstractVector{T},
-    ub::AbstractVector{T}, factor::T) where {T}
+function confine!(s::AbstractMatrix{T}, x::AbstractMatrix{T}, lb::AbstractVector{T}, ub::AbstractVector{T}, factor::T) where {T}
     @inbounds for j in axes(x, 2)
         @simd for i in axes(x, 1)
             tmp = x[i, j] + s[i, j]

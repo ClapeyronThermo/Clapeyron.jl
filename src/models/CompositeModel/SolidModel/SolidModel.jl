@@ -1,11 +1,10 @@
 abstract type CaloricSolidModel <: GibbsBasedModel end
 
-
 #dulong-petit model: Cp = 3R
 
 @newmodelsingleton DulongPetit CaloricSolidModel
 
-function gibbs_cp_integral(model::DulongPetit,T,z,T0)
+function gibbs_cp_integral(model::DulongPetit, T, z, T0)
     Cp = 3*Rgas()
     return sum(z)*Cp*(T-T0 - T*log(T/T0))
 end

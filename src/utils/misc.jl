@@ -1,33 +1,34 @@
 """
     vec2(x1,x2,opt=true)
+
 Generates a correct 2-length static array `[x1,x2]`, with support for non-isbits types
 """
-function vec2(x1,x2,opt = true)
-    V01,V02,_ = promote(x1,x2,opt)
+function vec2(x1, x2, opt=true)
+    V01, V02, _ = promote(x1, x2, opt)
     if V01 isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
-        return MVector((V01,V02))
+        return MVector((V01, V02))
     else
-        return SizedVector{2,typeof(V01)}((V01,V02))
+        return SizedVector{2,typeof(V01)}((V01, V02))
     end
 end
 
-function vec3(x1,x2,x3,opt = true)
-    V01,V02,V03,_ = promote(x1,x2,x3,opt)
+function vec3(x1, x2, x3, opt=true)
+    V01, V02, V03, _ = promote(x1, x2, x3, opt)
     if V01 isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
-        return MVector(V01,V02,V03)
+        return MVector(V01, V02, V03)
     else
-        return SizedVector{2,typeof(V01)}((V01,V02,V03))
+        return SizedVector{2,typeof(V01)}((V01, V02, V03))
     end
 end
 
-function svec2(x1,x2,opt = true)
-    V01,V02,_ = promote(x1,x2,opt)
-    return SVector{2}(V01,V02)
+function svec2(x1, x2, opt=true)
+    V01, V02, _ = promote(x1, x2, opt)
+    return SVector{2}(V01, V02)
 end
 
-function svec3(x1,x2,x3,opt = true)
-    V01,V02,V03,_ = promote(x1,x2,x3,opt)
-    return SVector{3}(V01,V02,V03)
+function svec3(x1, x2, x3, opt=true)
+    V01, V02, V03, _ = promote(x1, x2, x3, opt)
+    return SVector{3}(V01, V02, V03)
 end
 
 """
@@ -36,15 +37,15 @@ end
 Parses a key-value pair from a string, returns the key and the value:
 
 ## Example
+
 ```
 julia> Clapeyron._parse_kv("  a = b  ",'=')
 ("a", "b")
 ```
-
 """
-function _parse_kv(str,dlm)
-    _k,_v = split_2(str,dlm)
-    return strip(_k),strip(_v)
+function _parse_kv(str, dlm)
+    _k, _v = split_2(str, dlm)
+    return strip(_k), strip(_v)
 end
 
 DOI2BIB_CACHE = Dict{String,String}()
@@ -57,27 +58,22 @@ Given a DOI identifier, returns a BibTeX entry. Requires an internet connection.
 ## Example
 
 ```julia-repl
-julia> Clapeyron.doi2bib("10.1063/1.5136079")
+julia> Clapeyron.doi2bib(\"10.1063/1.5136079\")
 "@article{Aasen_2020,\n\tdoi = {10.1063/1.5136079},\n\turl = {https://doi.org/10.1063%2F1.5136079},\n\tyear = 2020,\n\tmonth = {feb},\n\tpublisher = {{AIP} Publishing},\n\tvolume = {152},\n\tnumber = {7},\n\tpages = {074507},\n\tauthor = {Ailo Aasen and Morten Hammer and Erich A. Müller and {\\O}ivind Wilhelmsen},\n\ttitle = {Equation of state and force fields for Feynman{\\textendash}Hibbs-corrected Mie fluids. {II}. Application to mixtures of helium, neon, hydrogen, and deuterium},\n\tjournal = {The Journal of Chemical Physics}\n}"
 ```
-
-
 """
 function doi2bib(doi::String)
-
-    if haskey(DOI2BIB_CACHE,doi)
+    if haskey(DOI2BIB_CACHE, doi)
         return DOI2BIB_CACHE[doi] #caching requests
     end
 
-    headers = ["Accept"=>"application/x-bibtex",
-                "charset" => "utf-8",
-                "User-Agent" => "https://github.com/ClapeyronThermo/Clapeyron.jl"]
+    headers = ["Accept"=>"application/x-bibtex", "charset" => "utf-8", "User-Agent" => "https://github.com/ClapeyronThermo/Clapeyron.jl"]
 
     url = "https://api.crossref.org/v1/works/" * doi * "/transform"
     out = IOBuffer()
     try
         r = Base.CoreLogging.with_logger(Base.CoreLogging.NullLogger()) do
-            Downloads.request(url, output = out, method = "GET",headers = headers)
+            Downloads.request(url, output=out, method="GET", headers=headers)
         end
         if r.status == 200
             res = strip(String(take!(out)))
@@ -98,7 +94,7 @@ end
 
 Returns ∑nᵢx^vᵢ.
 """
-function evalexppoly(x,n,v)
+function evalexppoly(x, n, v)
     res = zero(x*first(n)*first(v))
     logx = log(x)
     for i in eachindex(n)
@@ -107,13 +103,12 @@ function evalexppoly(x,n,v)
     return res
 end
 
-
 format_components(str::String) = [str]
 format_components(str::Tuple) = format_components(first(str))
 format_components(str::Pair) = format_components(first(str))
 format_components(str::AbstractString) = format_components(String(str))
 format_components(str::Vector{String}) = str
-format_components(str) = map(format_component_i,str)
+format_components(str) = map(format_component_i, str)
 format_component_i(str::AbstractString) = String(str)
 format_component_i(str::String) = str
 format_component_i(x::Tuple) = first(x)
@@ -147,12 +142,11 @@ end
     viewn(x,chunk,i)
 
 Returns the ith view of x, of size `chunk`.
-
 """
-function viewn(x,chunk,i)
+function viewn(x, chunk, i)
     l = length(x)
-    l < chunk*i && throw(BoundsError(x,chunk*i))
-    @view x[((i - 1)*chunk+1):(i*chunk)]
+    l < chunk*i && throw(BoundsError(x, chunk*i))
+    @view x[((i - 1) * chunk + 1):(i * chunk)]
 end
 
 """
@@ -172,15 +166,15 @@ Copy all elements from `src` into `dst` except the one at index `pivot`.
     return dst
 end
 
-viewlast(x,i) = @view(x[(end - i + 1):end])
-viewfirst(x,i) = @view(x[begin:i])
-viewlast(x,i,n) = viewfirst(viewlast(x,i),n)
+viewlast(x, i) = @view(x[(end - i + 1):end])
+viewfirst(x, i) = @view(x[begin:i])
+viewlast(x, i, n) = viewfirst(viewlast(x, i), n)
 linearidx(x::AbstractVector) = LinearIndices(x)
-mid(a,b,c) =  max(min(a,b),min(max(a,b),c))
-deleteat(x,i) = deleteat!(copy(x),i)
+mid(a, b, c) = max(min(a, b), min(max(a, b), c))
+deleteat(x, i) = deleteat!(copy(x), i)
 
 if Base.VERSION < v"1.11"
-    linearidx(x::AbstractMatrix) = diagind(x,0)
+    linearidx(x::AbstractMatrix) = diagind(x, 0)
 else
-    linearidx(x::AbstractMatrix) = diagind(x,0,IndexStyle(x))
+    linearidx(x::AbstractMatrix) = diagind(x, 0, IndexStyle(x))
 end

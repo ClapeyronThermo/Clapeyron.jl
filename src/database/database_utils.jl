@@ -1,39 +1,44 @@
-const NumberOrString = Union{Union{T1,Missing},Union{T2,Missing}} where {T1 <: AbstractString, T2 <: Number}
+const NumberOrString = Union{Union{T1,Missing},Union{T2,Missing}} where {T1<:AbstractString,T2<:Number}
 
-const DB_PATH = normpath(Base.pkgdir(Clapeyron),"database")
+const DB_PATH = normpath(Base.pkgdir(Clapeyron), "database")
 
-const SHORT_PATHS = Dict{String,String}(
-    "DB" => DB_PATH
-)
+const SHORT_PATHS = Dict{String,String}("DB" => DB_PATH)
 
 const SPECIAL_IDENTIFIERS = ["@REPLACE"]
 
-const SKIP_GETPATHS =  ("Clapeyron Database File", #a raw CSV file
-                        "Clapeyron Estimator")
+const SKIP_GETPATHS = (
+    "Clapeyron Database File", #a raw CSV file
+    "Clapeyron Estimator",
+)
 
 """
     getfileextension(filepath)
+
 A quick helper to get the file extension of any given path (without the dot).
+
 # Examples
+
 ```julia-repl
-julia> getfileextension("~/Desktop/text.txt")
+julia> getfileextension(\"~/Desktop/text.txt\")
 "txt"
 ```
 """
 function getfileextension(filepath::AbstractString)
-    _,ext = splitext(filepath)
-    return String(chop(ext,head=1,tail=0))
+    _, ext = splitext(filepath)
+    return String(chop(ext, head=1, tail=0))
 end
-
 
 """
     getpaths(location; relativetodatabase=false)
+
 Returns database paths that is optionally relative to Clapeyron.jl directory.
 If path is a file, then returns an Array containing a single path to that file.
 If path is a directory, then returns an Array containing paths to all csv files in that directory.
+
 # Examples
+
 ```julia-repl
-julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
+julia> getpaths(\"SAFT/PCSAFT\"; relativetodatabase=true)
 3-element Array{String,1}:
  "/home/user/.julia/packages/Clapeyron.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_assoc.csv"
  "/home/user/.julia/packages/Clapeyron.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_like.csv"
@@ -43,88 +48,88 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 function getpaths(location::AbstractString; relativetodatabase::Bool=false)
     # We do not use realpath here directly because we want to make the .csv suffix optional.
     is_inline_csv(location) && return [location]
-    if startswith(location,"@REPLACE")
-        filepath = chop(location,head = 9, tail = 0)
+    if startswith(location, "@REPLACE")
+        filepath = chop(location, head=9, tail=0)
         result = getpaths(filepath)
         rr = ["@REPLACE" * Base.Filesystem.path_separator * res for res in result]
         return rr
     end
     if relativetodatabase
-        new_loc = normpath("@DB",location) #we suppose that the database is never at the root of a windows drive
+        new_loc = normpath("@DB", location) #we suppose that the database is never at the root of a windows drive
     else
         new_loc = location
     end
     return _getpaths(new_loc)
 end
 
-function _getpaths(location,special_parse = true)
+function _getpaths(location, special_parse=true)
     location == "@REMOVEDEFAULTS" && return [location]
-    if special_parse && startswith(location,'@')
+    if special_parse && startswith(location, '@')
         locs = splitpath(location)
         first_identifier = locs[1]
-        if startswith(first_identifier,'@')
-            raw_first_identifier = chop(first_identifier,head = 1,tail = 0)
-            if haskey(SHORT_PATHS,raw_first_identifier)
+        if startswith(first_identifier, '@')
+            raw_first_identifier = chop(first_identifier, head=1, tail=0)
+            if haskey(SHORT_PATHS, raw_first_identifier)
                 locs[1] = SHORT_PATHS[raw_first_identifier]
-                return _getpaths(join(locs,Base.Filesystem.path_separator))
+                return _getpaths(join(locs, Base.Filesystem.path_separator))
             else
-                return _getpaths(location,false)
+                return _getpaths(location, false)
             end
         end
     end
     filepath = location
     isfile(filepath) && return [realpath(filepath)]
-    
+
     #if we want to parse jsons, this is ambiguous.
     #isfile(filepath * ".csv") && return [realpath(filepath * ".csv")]
-    
+
     #=
     this should fail at the CSV reader stage
     if !isdir(filepath)
         relativetodatabase ? error("The path ", location, " does not exist in the Clapeyron database.") :
             error("The path ", location, " does not exist.")
     end =#
-    files = readdir(filepath,join = true) #this returns the full (non-normalized) path
-    filter!(isfile,files) #remove folders, the reader is not recursive
-    filter!(f -> getfileextension(f) in ("csv","json"),files)
-    map!(realpath,files,files)
+    files = readdir(filepath, join=true) #this returns the full (non-normalized) path
+    filter!(isfile, files) #remove folders, the reader is not recursive
+    filter!(f -> getfileextension(f) in ("csv", "json"), files)
+    map!(realpath, files, files)
     return files
 end
 
-flattenfilepaths(locations) = flattenfilepaths(locations,String[])
+flattenfilepaths(locations) = flattenfilepaths(locations, String[])
 
-function flattenfilepaths(locations,userlocations::Vector{String})
+function flattenfilepaths(locations, userlocations::Vector{String})
     if isempty(locations) && isempty(userlocations)
         return String[]
     end
-    defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
-    userpaths = reduce(vcat,getpaths.(userlocations),init = String[])
-    idx = findfirst(isequal("@REMOVEDEFAULTS"),userpaths)
+    defaultpaths = reduce(vcat, getpaths.(locations; relativetodatabase=true), init=String[])
+    userpaths = reduce(vcat, getpaths.(userlocations), init=String[])
+    idx = findfirst(isequal("@REMOVEDEFAULTS"), userpaths)
     if !isnothing(idx)
         defaultpaths = String[]
-        popat!(userpaths,idx)
+        popat!(userpaths, idx)
     end
-    return vcat(defaultpaths,userpaths,String[])
+    return vcat(defaultpaths, userpaths, String[])
 end
 
-flattenfilepaths(locations,userlocations::AbstractString) = flattenfilepaths(locations,[userlocations])
+flattenfilepaths(locations, userlocations::AbstractString) = flattenfilepaths(locations, [userlocations])
 
-getpath(location;relativetodatabase = true) = only(getpaths(location; relativetodatabase))
+getpath(location; relativetodatabase=true) = only(getpaths(location; relativetodatabase))
 
 Base.@nospecialize #used when there are custom user locations
-function flattenfilepaths(locations,userlocations)
+function flattenfilepaths(locations, userlocations)
     return String[]
 end
 Base.@specialize
 
 function getline(filepath::AbstractString, selectedline::Int)
-    is_inline_csv(filepath) && return getline(IOBuffer(filepath),selectedline)
-    open(filepath,"r";lock = true) do file
-       _getline(file,selectedline)
+    is_inline_csv(filepath) && return getline(IOBuffer(filepath), selectedline)
+    open(filepath, "r"; lock=true) do file
+        _getline(file, selectedline)
     end
 end
 
-getline(file::IO,selectedline::Int) = _getline(file,selectedline)
+getline(file::IO, selectedline::Int) = _getline(file, selectedline)
 
 function _getline(file, selectedline::Int)
     # Simple function to return text from filepath at selectedline.
@@ -136,62 +141,63 @@ function _getline(file, selectedline::Int)
     error("Selected line number exceeds number of lines in file")
 end
 
-function normalisestring(str, isactivated::Bool=true; tofilter = ' ')
+function normalisestring(str, isactivated::Bool=true; tofilter=(' '))
     ismissing(str) && return ""
     if !isactivated
         str isa String && return str::String
         return string(str)::String
     end
-    res = Base.Unicode.normalize(str,casefold=true,stripmark=true)
+    res = Base.Unicode.normalize(str, casefold=true, stripmark=true)
     return replace(res, tofilter => "")
 end
 
 function is_inline_csv(filepath)
-    return any(startswith(filepath,kw) for kw in SKIP_GETPATHS)
+    return any(startswith(filepath, kw) for kw in SKIP_GETPATHS)
 end
 
-defaultmissing(array::Array{<:Union{Missing,Number}}) = defaultmissing(array,zero(nonmissingtype(eltype(array))))
-defaultmissing(array::Array{Missing}) = defaultmissing(array,0.0)
-defaultmissing(array) = defaultmissing(array,"")
+defaultmissing(array::Array{<:Union{Missing,Number}}) = defaultmissing(array, zero(nonmissingtype(eltype(array))))
+defaultmissing(array::Array{Missing}) = defaultmissing(array, 0.0)
+defaultmissing(array) = defaultmissing(array, "")
 
 function defaultmissing(array, defaultvalue::T) where T
     V = eltype(array)
-    nonmissing = Array{Bool}(undef,size(array))
+    nonmissing = Array{Bool}(undef, size(array))
     if nonmissingtype(V) == V && V != Any #fast shortcut
         nonmissing .= false
-        return array,nonmissing
+        return array, nonmissing
     end
     #at this point, we have an array with one or more missing values. iterate on each.
-    result = similar(array,T)
+    result = similar(array, T)
     for i in eachindex(array)
         is_missing = ismissing(array[i])
         if is_missing
             result[i] = defaultvalue
         else
             if T == String
-                result[i] = convert(String,string(array[i]))
+                result[i] = convert(String, string(array[i]))
             else
-                result[i] = convert(T,array[i])
+                result[i] = convert(T, array[i])
             end
         end
         nonmissing[i] = is_missing
     end
-    return result,nonmissing
+    return result, nonmissing
 end
 
 """
     singletopair(params::Vector,outputmissing=zero(T))
+
 Generates a square matrix, filled with "zeros" (considering the "zero" of a string, an empty string).
 The generated matrix will have the values of `params` in the diagonal.
 If missing is passed, the matrix will be filled with `missing`.
 """
-function singletopair(params::Vector{T1},_0::T2 =_zero(T1)) where {T1,T2}
+function singletopair(params::Vector{T1}, _0::T2=_zero(T1)) where {T1,T2}
     len = length(params)
     T = Union{T1,T2}
-    output = Matrix{T}(undef,len,len)
-    fill!(output,_0)
-    @inbounds  for i in 1:len
-        output[i,i] = params[i]
+    output = Matrix{T}(undef, len, len)
+    fill!(output, _0)
+    @inbounds for i in 1:len
+        output[i, i] = params[i]
     end
     return output
 end
@@ -226,18 +232,18 @@ end
 low_color(symbol::Symbol) = low_color(":" * string(symbol))
 low_color(x) = low_color(string(x))
 
-function __pad_val(i,imax::Int)
-    s = repr(i,context = :compact => true)
-    return rpad(s,imax)
+function __pad_val(i, imax::Int)
+    s = repr(i, context=:compact => true)
+    return rpad(s, imax)
 end
 
-function userlocation_merge(loc1,loc2)
+function userlocation_merge(loc1, loc2)
     if isempty(loc2)
         return loc1
     elseif isempty(loc1)
         return loc2
     elseif loc1 isa Vector{String} && loc2 isa Vector{String}
-        return append!(loc1,loc2)
+        return append!(loc1, loc2)
     elseif loc1 isa Vector{String} && isempty(loc1)
         return loc2
     elseif loc1 isa Vector{String} && can_nt(loc2)
@@ -268,6 +274,7 @@ end
 
 This macro creates a `ByCas` object and can be used as string literal like `cas"..."`.
 It can be used for model construction. Example:
+
 ```
 model = PCSAFT(cas"71-36-3")
 ```
@@ -281,11 +288,11 @@ format_component_i(x::ByCas) = first(by_cas(x.cas))
 
 function by_cas(caslist)
     cas = format_components(caslist)
-    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[],ignore_missing_singleparams = String["SMILES","inchikey","species"])
+    params = getparams(cas, ["properties/identifiers.csv"], species_columnreference="CAS", ignore_headers=String[], ignore_missing_singleparams=String["SMILES", "inchikey", "species"])
     species = params["species"].values
-    for (i,sp) in pairs(species)
-        if occursin("~|~",sp)
-            x,_ = eachsplit(sp,"~|~")
+    for (i, sp) in pairs(species)
+        if occursin("~|~", sp)
+            x, _ = eachsplit(sp, "~|~")
             species[i] = x
         end
     end
@@ -294,14 +301,14 @@ end
 
 function standardize_cas(cas)
     if isdigit(last(cas))
-        vx = split(cas,"-")
+        vx = split(cas, "-")
         if length(vx) != 3
             @warn "invalid CAS: $vx"
             return String(cas)
         end
-        v1,v2,v3 = vx[1],vx[2],vx[3]
-        val1,val2,val3 = parse(Int64,v1),parse(Int64,v2),parse(Int64,v3)
-        return string(val1) * '-' * string(val2) * '-' * string(val3) 
+        v1, v2, v3 = vx[1], vx[2], vx[3]
+        val1, val2, val3 = parse(Int64, v1), parse(Int64, v2), parse(Int64, v3)
+        return string(val1) * '-' * string(val2) * '-' * string(val3)
     else
         return String(cas)
     end
@@ -310,7 +317,7 @@ standardize_cas(cas::Missing) = missing
 
 function cas(components)
     components = format_components(components)
-    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES","canonicalsmiles","inchikey"],ignore_missing_singleparams = ["CAS"])
+    params = getparams(components, ["properties/identifiers.csv"], ignore_headers=String["SMILES", "canonicalsmiles", "inchikey"], ignore_missing_singleparams=["CAS"])
     cas_i = params["CAS"].values
     _iszero(cas_i[1]) && return [""]
     return cas_i
@@ -319,15 +326,15 @@ end
 function by_cas2(caslist)
     raw_cas = format_components(caslist)
     cas = standardize_cas.(raw_cas)
-    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[], ignore_missing_singleparams = ["CAS","species","SMILES","inchikey","canonicalsmiles"])
+    params = getparams(cas, ["properties/identifiers.csv"], species_columnreference="CAS", ignore_headers=String[], ignore_missing_singleparams=["CAS", "species", "SMILES", "inchikey", "canonicalsmiles"])
     species = params["species"]
-    d = Dict(k => v for (k,v) in zip(species.components,species.values))
-    return d,species.values
+    d = Dict(k => v for (k, v) in zip(species.components, species.values))
+    return d, species.values
 end
 
 function normalize_components_sym(components)
     caslist = cas(components)
-    _,sp = by_cas2(caslist)
+    _, sp = by_cas2(caslist)
     return sp
 end
 
@@ -341,11 +348,13 @@ end
 
 This macro creates a `BySmiles` object and can be used as string literal like `smiles"..."`.
 It can be used for model construction. Example:
+
 ```
 model = PCSAFT(smiles"CCCCO")
 ```
 
 !!! info
+
     No canonization is applied internally. Consequently, only SMILES contained in the `identifiers.csv` will be found.
 """
 macro smiles_str(str)
@@ -355,17 +364,17 @@ end
 format_components(x::BySmiles) = format_components([x])
 format_component_i(x::BySmiles) = first(by_smiles(x.smiles))
 
-_split_species(sp) = occursin("~|~",sp) ? first(eachsplit(sp,"~|~")) : sp
+_split_species(sp) = occursin("~|~", sp) ? first(eachsplit(sp, "~|~")) : sp
 
 function by_smiles(smiles)
     _smiles = format_components(smiles)
-    params = getparams(_smiles,["properties/identifiers.csv"],species_columnreference = "SMILES",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species","CAS","canonicalsmiles"])
-    species = Vector{String}(undef,length(_smiles))
-    for (i,s) in enumerate(_smiles)
+    params = getparams(_smiles, ["properties/identifiers.csv"], species_columnreference="SMILES", ignore_headers=String[], ignore_missing_singleparams=String["inchikey", "species", "CAS", "canonicalsmiles"])
+    species = Vector{String}(undef, length(_smiles))
+    for (i, s) in enumerate(_smiles)
         if params["species"][s] isa String
             species[i] = _split_species(params["species"][s])
         else
-            params2 = getparams(_smiles,["properties/identifiers.csv"],species_columnreference = "canonicalsmiles",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species","CAS"])
+            params2 = getparams(_smiles, ["properties/identifiers.csv"], species_columnreference="canonicalsmiles", ignore_headers=String[], ignore_missing_singleparams=String["inchikey", "species", "CAS"])
             species[i] = _split_species(params2["species"][s])
         end
     end
@@ -374,7 +383,7 @@ end
 
 function SMILES(components)
     components = format_components(components)
-    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
+    params = getparams(components, ["properties/identifiers.csv"], ignore_headers=String["CAS"])
     return params["SMILES"].values
 end
 

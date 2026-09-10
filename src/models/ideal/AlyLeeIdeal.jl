@@ -25,16 +25,16 @@ abstract type AlyLeeIdealModel <: IdealModel end
 
 ## Input parameters
 
-- `A`: Single Parameter (`Float64`) - Model Coefficient
-- `B`: Single Parameter (`Float64`) - Model Coefficient
-- `C`: Single Parameter (`Float64`) - Model Coefficient
-- `D`: Single Parameter (`Float64`) - Model Coefficient
-- `E`: Single Parameter (`Float64`) - Model Coefficient
-- `F`: Single Parameter (`Float64`) - Model Coefficient
-- `G`: Single Parameter (`Float64`) - Model Coefficient
-- `H`: Single Parameter (`Float64`) - Model Coefficient
-- `I`: Single Parameter (`Float64`) - Model Coefficient
-- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
+  - `A`: Single Parameter (`Float64`) - Model Coefficient
+  - `B`: Single Parameter (`Float64`) - Model Coefficient
+  - `C`: Single Parameter (`Float64`) - Model Coefficient
+  - `D`: Single Parameter (`Float64`) - Model Coefficient
+  - `E`: Single Parameter (`Float64`) - Model Coefficient
+  - `F`: Single Parameter (`Float64`) - Model Coefficient
+  - `G`: Single Parameter (`Float64`) - Model Coefficient
+  - `H`: Single Parameter (`Float64`) - Model Coefficient
+  - `I`: Single Parameter (`Float64`) - Model Coefficient
+  - `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
 
 ## Description
 
@@ -45,6 +45,7 @@ Cpᵢ(T)/R = A + B(CT⁻¹/sinh(CT⁻¹))² + D(ET⁻¹/cosh(ET⁻¹))² + F(GT�
 ```
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 idealmodel = AlyLeeIdeal("water") #single input
@@ -71,14 +72,14 @@ idealmodel = AlyLeeIdeal(["water","carbon dioxide"];
 
 ## References
 
-1. Aly, F. A., & Lee, L. L. (1981). Self-consistent equations for calculating the ideal gas heat capacity, enthalpy, and entropy. Fluid Phase Equilibria, 6(3–4), 169–179. [doi:10.1016/0378-3812(81)85002-9](https://doi.org/10.1016/0378-3812(81)85002-9)
+ 1. Aly, F. A., & Lee, L. L. (1981). Self-consistent equations for calculating the ideal gas heat capacity, enthalpy, and entropy. Fluid Phase Equilibria, 6(3–4), 169–179. [doi:10.1016/0378-3812(81)85002-9](https://doi.org/10.1016/0378-3812(81)85002-9)
 """
 AlyLeeIdeal
-default_locations(::Type{AlyLeeIdeal}) = ["ideal/AlyLeeIdeal.csv","properties/molarmass.csv"]
+default_locations(::Type{AlyLeeIdeal}) = ["ideal/AlyLeeIdeal.csv", "properties/molarmass.csv"]
 default_references(::Type{AlyLeeIdeal}) = ["10.1016/0378-3812(81)85002-9"]
 default_ignore_missing_singleparams(::Type{AlyLeeIdeal}) = ["Mw"]
 
-function a_ideal(model::AlyLeeIdealModel,V,T,z=SA[1.0])
+function a_ideal(model::AlyLeeIdealModel, V, T, z=SA[1.0])
     #we transform from AlyLee terms to GERG2008 terms.
 
     A = model.params.A.values
@@ -90,7 +91,7 @@ function a_ideal(model::AlyLeeIdealModel,V,T,z=SA[1.0])
     G = model.params.G.values
     H = model.params.H.values
     I = model.params.I.values
-    
+
     Σz = sum(z)
     res = zero(V+T+first(z))
     ρ = 1/V
@@ -100,19 +101,19 @@ function a_ideal(model::AlyLeeIdealModel,V,T,z=SA[1.0])
     @inbounds for i ∈ @comps
         #we suppose ρc = Tc = 1
         δi = ρ
-        Ai,Bi,Ci,Di,Ei,Fi,Gi,Hi,Ii = A[i],B[i],C[i],D[i],E[i],F[i],G[i],H[i],I[i]
+        Ai, Bi, Ci, Di, Ei, Fi, Gi, Hi, Ii = A[i], B[i], C[i], D[i], E[i], F[i], G[i], H[i], I[i]
         #integrate constant:
         #Tc,T0 = 1.0,298.15
-        a₁,a₂,c₀ = _Cp0_constant_parse(Ai,1.0,298.15)
+        a₁, a₂, c₀ = _Cp0_constant_parse(Ai, 1.0, 298.15)
         #a₁ = Ai*-4.697596715569115 #(1 - log(τ0))
         #a₂ = -Ai*298.15 #T0/Tc
         c₀ -= 1
         ai = a₁ + a₂*τi + c₀*logτi
         zi = z[i]
-        ni = (Bi,Di,Fi,Hi)
-        vi = (Ci,Ei,Gi,Ii)
-        ai += term_a0_gerg2008(τi,logτi,zero(τi),ni,vi)
-        res += xlogx(zi,δi)
+        ni = (Bi, Di, Fi, Hi)
+        vi = (Ci, Ei, Gi, Ii)
+        ai += term_a0_gerg2008(τi, logτi, zero(τi), ni, vi)
+        res += xlogx(zi, δi)
         res += zi*ai
     end
     return res/Σz - 1

@@ -9,19 +9,19 @@ end
 
 abstract type ogSAFTModel <: SAFTModel end
 @newmodel ogSAFT ogSAFTModel ogSAFTParam
-default_references(::Type{ogSAFT}) = ["10.1021/ie00104a021","10.1016/0378-3812(89)80308-5"]
-default_locations(::Type{ogSAFT}) = ["SAFT/ogSAFT","properties/molarmass.csv"]
-function transform_params(::Type{ogSAFT},params)
+default_references(::Type{ogSAFT}) = ["10.1021/ie00104a021", "10.1016/0378-3812(89)80308-5"]
+default_locations(::Type{ogSAFT}) = ["SAFT/ogSAFT", "properties/molarmass.csv"]
+function transform_params(::Type{ogSAFT}, params)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
     return saft_lorentz_berthelot(params)
 end
 
-function get_k(model::ogSAFT)   
+function get_k(model::ogSAFT)
     return get_k_geomean(model.params.epsilon)
 end
 
-function get_l(model::ogSAFT)   
+function get_l(model::ogSAFT)
     return get_k_mean(model.params.sigma)
 end
 
@@ -37,32 +37,36 @@ end
     assoc_options = AssocOptions())
 
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
-- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
-- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
+
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+  - `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
+  - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
+  - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
+  - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+  - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 
 ## Model Parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
-- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
+
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+  - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+  - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+  - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+  - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 
 ## Input models
-- `idealmodel`: Ideal Model
+
+  - `idealmodel`: Ideal Model
 
 ## Description
 
 (original) Statistical Associating Fluid Theory (og-SAFT) Equation of State
 
 ## References
-1. Chapman, W. G., Gubbins, K. E., Jackson, G., & Radosz, M. (1989). SAFT: Equation-of-state solution model for associating fluids. Fluid Phase Equilibria, 52, 31–38. [doi:10.1016/0378-3812(89)80308-5](https://doi.org/10.1016/0378-3812(89)80308-5)
-2. Chapman, W. G., Gubbins, K. E., Jackson, G., & Radosz, M. (1990). New reference equation of state for associating liquids. Industrial & Engineering Chemistry Research, 29(8), 1709–1721. [doi:10.1021/ie00104a021](https://doi.org/10.1021/ie00104a021)
+
+ 1. Chapman, W. G., Gubbins, K. E., Jackson, G., & Radosz, M. (1989). SAFT: Equation-of-state solution model for associating fluids. Fluid Phase Equilibria, 52, 31–38. [doi:10.1016/0378-3812(89)80308-5](https://doi.org/10.1016/0378-3812(89)80308-5)
+ 2. Chapman, W. G., Gubbins, K. E., Jackson, G., & Radosz, M. (1990). New reference equation of state for associating liquids. Industrial & Engineering Chemistry Research, 29(8), 1709–1721. [doi:10.1021/ie00104a021](https://doi.org/10.1021/ie00104a021)
 """
 ogSAFT
 
@@ -71,33 +75,33 @@ export ogSAFT
 recombine_impl!(model::ogSAFTModel) = recombine_saft!(model)
 
 function data(model::ogSAFTModel, V, T, z)
-    _d = d(model,V,T,z)
-    m̄ = dot(z,model.params.segment.values)
-    ζi = ζ0123(model,V,T,z,_d)
+    _d = d(model, V, T, z)
+    m̄ = dot(z, model.params.segment.values)
+    ζi = ζ0123(model, V, T, z, _d)
     return _d, m̄, ζi
 end
 
-function a_res(model::ogSAFTModel, V, T, z, _data = @f(data))
-    return @f(a_seg,_data) + @f(a_chain,_data) + @f(a_assoc,_data)
+function a_res(model::ogSAFTModel, V, T, z, _data=@f(data))
+    return @f(a_seg, _data) + @f(a_chain, _data) + @f(a_assoc, _data)
 end
 
-function a_seg(model::ogSAFTModel, V, T, z,_data = @f(data))
+function a_seg(model::ogSAFTModel, V, T, z, _data=@f(data))
     _d, m̄, ζi = _data
-    return m̄*(@f(a_hs,_data)+@f(a_disp,_data))/sum(z)
+    return m̄*(@f(a_hs, _data)+@f(a_disp, _data))/sum(z)
 end
 
-function a_chain(model::ogSAFTModel, V, T, z,_data = @f(data))
+function a_chain(model::ogSAFTModel, V, T, z, _data=@f(data))
     #x = z/∑(z)
     m = model.params.segment.values
-    return sum(z[i]*(1-m[i])*log(@f(g_hs, i, i,_data)) for i ∈ @comps)/sum(z)
+    return sum(z[i]*(1-m[i])*log(@f(g_hs, i, i, _data)) for i ∈ @comps)/sum(z)
 end
 
 function d(model::ogSAFTModel, V, T, z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    di = zeros(eltype(T+one(eltype(model))),length(model))
+    di = zeros(eltype(T+one(eltype(model))), length(model))
     for i in 1:length(model)
-        di[i] = σ[i,i]*@f(f_d,ϵ[i,i])
+        di[i] = σ[i, i]*@f(f_d, ϵ[i, i])
     end
     return di
 end
@@ -105,10 +109,10 @@ end
 function d(model::ogSAFT, V, T, z::SingleComp)
     ϵ = only(model.params.epsilon.values)
     σ = only(model.params.sigma.values)
-    return SA[σ*@f(f_d,ϵ)]
+    return SA[σ * @f(f_d, ϵ)]
 end
 
-function f_d(model::ogSAFTModel, V, T, z,ϵ = model.params.epsilon.values[i,i])
+function f_d(model::ogSAFTModel, V, T, z, ϵ=model.params.epsilon.values[i, i])
     fm = 0.0010477#+0.025337*(m[i]-1)/m[i]
     τ = T/ϵ
     f = (1+0.2977τ)/(1+0.33163τ+fm*τ^2)
@@ -138,10 +142,10 @@ end
 #     return N_A*∑z*π/6/V*@f(dx)^3*m̄
 # end
 
-function g_hs(model::ogSAFTModel, V, T, z, i, j,_data = @f(data))
+function g_hs(model::ogSAFTModel, V, T, z, i, j, _data=@f(data))
     _d, m̄, ζi = _data
-    ζ0,ζ1,ζ2,ζ3 = ζi
-    return g_hs_ij(_d,ζ2,ζ3,i,j)
+    ζ0, ζ1, ζ2, ζ3 = ζi
+    return g_hs_ij(_d, ζ2, ζ3, i, j)
 end
 
 # function a_hs(model::ogSAFTModel, V, T, z)
@@ -149,20 +153,20 @@ end
 #     return (4ηx-3ηx^2)/(1-ηx)^2
 # end
 
-function a_hs(model::ogSAFTModel, V, T, z,_data = @f(data))
+function a_hs(model::ogSAFTModel, V, T, z, _data=@f(data))
     _d, m̄, ζi = _data
-    ζ0,ζ1,ζ2,ζ3 = ζi
+    ζ0, ζ1, ζ2, ζ3 = ζi
     if !iszero(ζ3)
-        _a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+        _a_hs = bmcs_hs(ζ0, ζ1, ζ2, ζ3)
     else
-        _a_hs = @f(bmcs_hs_zero_v,_d)
+        _a_hs = @f(bmcs_hs_zero_v, _d)
     end
     return _a_hs
 end
 
-function a_disp(model::ogSAFTModel, V, T, z,_data = @f(data))
+function a_disp(model::ogSAFTModel, V, T, z, _data=@f(data))
     _d, m̄, ζi = _data
-    ζ0,ζ1,ζ2,ζ3 = ζi
+    ζ0, ζ1, ζ2, ζ3 = ζi
 
     m = model.params.segment.values
     σ = model.params.sigma.values
@@ -170,12 +174,12 @@ function a_disp(model::ogSAFTModel, V, T, z,_data = @f(data))
     mσϵ3 = zero(first(z)+one(eltype(model)))
     mσ3 = zero(first(z)+one(eltype(model)))
     for i in @comps
-        zi,ϵi,σi,mi = z[i],ϵ[i,i],σ[i,i],m[i]
+        zi, ϵi, σi, mi = z[i], ϵ[i, i], σ[i, i], m[i]
         mσ3ii = zi*zi*mi*mi*σi*σi*σi
         mσ3 += mσ3ii
         mσϵ3 += mσ3ii*ϵi
-        for j in 1:(i-1)
-            zj,ϵij,σij,mj = z[j],ϵ[i,j],σ[i,j],m[j]
+        for j in 1:(i - 1)
+            zj, ϵij, σij, mj = z[j], ϵ[i, j], σ[i, j], m[j]
             mσ3ij = zi*zj*mi*mj*σij*σij*σij
             mσ3 += 2*mσ3ij
             mσϵ3 += 2*mσ3ij*ϵij
@@ -184,8 +188,8 @@ function a_disp(model::ogSAFTModel, V, T, z,_data = @f(data))
     ϵx = mσϵ3/mσ3
     ρR = (6/sqrt(2)/π)*ζ3
     TR = T/ϵx
-    a_seg1 = ρR*evalpoly(ρR,(-8.5959,-4.5424,-2.1268,10.285))
-    a_seg2 = ρR*evalpoly(ρR,(-1.9075,9.9724,-22.216,+15.904))
+    a_seg1 = ρR*evalpoly(ρR, (-8.5959, -4.5424, -2.1268, 10.285))
+    a_seg2 = ρR*evalpoly(ρR, (-1.9075, 9.9724, -22.216, +15.904))
     return 1/TR*(a_seg1+a_seg2/TR)
 end
 
@@ -223,13 +227,12 @@ end
 #     return mx*(a_res)
 # end
 
-function Δ(model::ogSAFTModel, V, T, z, i, j, a, b,_data = @f(data))
+function Δ(model::ogSAFTModel, V, T, z, i, j, a, b, _data=@f(data))
     _d, m̄, ζi = _data
-    ζ0,ζ1,ζ2,ζ3 = ζi
+    ζ0, ζ1, ζ2, ζ3 = ζi
     κ = model.params.bondvol.values
-    kijab =κ[i,j][a,b]
+    kijab = κ[i, j][a, b]
     ϵ_assoc = model.params.epsilon_assoc.values
-    g = @f(g_hs,i,j)
-    return (_d[i]+_d[j])^3/2^3*g*(expm1(ϵ_assoc[i,j][a,b]/T))*kijab
+    g = @f(g_hs, i, j)
+    return (_d[i]+_d[j])^3/2^3*g*(expm1(ϵ_assoc[i, j][a, b]/T))*kijab
 end
-
