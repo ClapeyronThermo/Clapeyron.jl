@@ -495,14 +495,7 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
 end
 
 function volume_label(models::F,p,T,z,vols) where F
-    function gibbs(model,fV)
-        isnan(fV) && return one(fV)/zero(fV)
-        f(V) = eos(model,V,T,z)
-        _f,_dV = f∂fdV(model,fV,T,z)
-        #for the ideal gas case, p*V == 0, so the result reduces to eos(model,V,T,z)
-        fV == Inf && iszero(_dV) && return _f
-        return ifelse(abs((p+_dV)/p) > 0.03,one(fV)/zero(fV),_f + p*fV)
-    end
+    f(_V) = VT_∑zlogϕ(model,_V,T,z,p)
     idx = 0
     _0 = zero(Base.promote_eltype(models[1],p,T,z))
     g = one(_0)/_0
