@@ -61,7 +61,7 @@ function update_temperature!(model::PTFlashWrapper,T)
         if is_idealmodel(gasmodel_i)
             lnϕ[i] = 0.0
         else
-            lnϕ[i] = VT_lnϕ_pure(gasmodel_i,vv,λT,ps)
+            lnϕ[i] = VT_∑zlogϕ(gasmodel_i,vv,λT,SA[1.0],ps)
         end
     end
     return nothing
@@ -115,7 +115,7 @@ function modified_lnϕ_pure(wrapper::PTFlashWrapper,p,T,i;phase = :unknown)
         RT = Rgas(wrapper)*T
         gasmodel = gas_model(wrapper.pures[i])
         vv = volume(gasmodel,p,T,phase = :v)
-        lnϕv = VT_lnϕ_pure(gasmodel,vv,T,p)
+        lnϕv = VT_∑zlogϕ(gasmodel,vv,T,SA[1.0],p)
         Δd = log(ps/p)
         is_idealmodel(gasmodel) || (Δd += vl*(p - ps)/RT + lnϕsat)
         return lnϕv - Δd

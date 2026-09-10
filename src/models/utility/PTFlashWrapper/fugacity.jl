@@ -59,7 +59,7 @@ function tpd_∂delta_d∂T_vapouri(model,sat,p,T)
         gasmodel = gas_model(model)
         Δd = log(ps/p)
         if is_idealmodel(gasmodel)
-            Δd += vl*(p - ps)/RT + VT_lnϕ_pure(gas_model(model),vv,_T,ps)
+            Δd += vl*(p - ps)/RT + VT_∑zlogϕ(gas_model(model),vv,_T,SA[1.0],ps)
         end
         return Δd
     end

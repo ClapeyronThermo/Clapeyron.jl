@@ -31,7 +31,7 @@ function __eval_tpd_delta_g_sati(model::M,T::TT,lnϕsat,vv,ps)  where {M,TT}
 end
 
 function __eval_tpd_delta_g_sati(model::M,T::TT,lnϕsat,vv,ps)  where {M,TT<:ForwardDiff.Dual}
-    return VT_lnϕ_pure(model,vv,T,ps)
+    return VT_∑zlogϕ(model,vv,T,SA[1.0],ps)
 end
 
 
