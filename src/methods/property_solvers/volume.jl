@@ -495,13 +495,20 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
 end
 
 function volume_label(models::F,p,T,z,vols) where F
-    f(_V) = VT_∑zlogϕ(model,_V,T,z,p)
+
+    function gibbs(x,data)
+        _model,_V = x
+        _T,_z,_p = data
+        return VT_∑zlogϕ(_model,_V,_T,_z,_p)
+    end
+
+    _data = (T,z,p)
     idx = 0
     _0 = zero(Base.promote_eltype(models[1],p,T,z))
     g = one(_0)/_0
     v = _0/_0
     for (i,vi) in pairs(vols)
-        gi = gibbs(models[i],vi)
+        gi = gibbs((models[i],vi),_data)
         if gi < g
             g = gi
             idx = i
