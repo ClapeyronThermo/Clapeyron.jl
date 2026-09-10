@@ -95,7 +95,7 @@ function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = not
 end
 
 function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
-    return VT_∑zlogϕ(model,vol,T,SA[1.0],p)
+    return VT_∑zlogϕ(model,V,T,SA[1.0],p)
 end
 
 function ∑zlogϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
