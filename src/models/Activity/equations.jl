@@ -244,7 +244,7 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
     RT = Rgas(model)*T
     fun_g(w) = excess_gibbs_free_energy(model,p,w[nc+1],@view(w[1:nc]))/(Rgas(model)*w[nc + 1])
     function fun_lnγ(out,w)
-        Clapeyron.lnγ(model,p,w[1:nc+1],@view(w[1:nc]),@view(out[1:nc]))
+        Clapeyron.lnγ(model,p,w[nc+1],@view(w[1:nc]),@view(out[1:nc]))
         return out
     end
     if cache === nothing
