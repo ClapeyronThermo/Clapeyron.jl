@@ -23,9 +23,9 @@ GC.gc()
         #635
         zdry=[0.7808,0.2095,0.0093,0.0004]
         zwater=0.05
-        z1 = append!(zdry*(1-zwater),zwater)
+        z_with_water = append!(zdry*(1-zwater),zwater)
         Vᵢ = Clapeyron.R̄*T/p
-        pᵢ1,dpdVᵢ1 = Clapeyron.p∂p∂V(model1,Vᵢ,T,z1)
+        pᵢ1,dpdVᵢ1 = Clapeyron.p∂p∂V(model1,Vᵢ,T,z_with_water)
         @test pᵢ1 ≈ 149791.1289385962 rtol = 1e-3
         @test dpdVᵢ1 ≈ -9.205619473175893e6 rtol = 1e-3
     end
