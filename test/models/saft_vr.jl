@@ -14,6 +14,20 @@ GC.gc()
         test_gibbs_duhem(system,V,T,z)
         test_recombine(system)
         GC.gc()
+
+        components = ["nitrogen","oxygen","argon","carbon dioxide","water"]
+        model1 = SAFTVRMie(components; assoc_options=AssocOptions(combining=:elliott))
+        p = 1.5e5
+        T = 20+273.15
+
+        #635
+        zdry=[0.7808,0.2095,0.0093,0.0004]
+        zwater=0.05
+        z1 = append!(zdry*(1-zwater),zwater)
+        Vᵢ = Clapeyron.R̄*T/p
+        pᵢ1,dpdVᵢ1 = Clapeyron.p∂p∂V(model1,Vᵢ,T,z1)
+        @test pᵢ1 ≈ 149791.1289385962 rtol = 1e-3
+        @test dpdVᵢ1 ≈ -9.205619473175893e6 rtol = 1e-3
     end
 
     @testset "SAFTVRMieGV" begin

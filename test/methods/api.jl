@@ -464,8 +464,8 @@ GC.gc()
             T_edge,vl0,vv0 = Clapeyron.edge_temperature(fluid,p_edge,z)
 
             v0,_ = Clapeyron.x0_edge_pressure(fluid,349.7,z)
-            @test min(v0) < p_edge
-            @test max(v0) > p_edge
+            @test minimum(v0) < p_edge
+            @test maximum(v0) > p_edge
             p_edge2,_,_ = Clapeyron.edge_pressure(fluid,T_edge,z)
             @test p_edge ≈ p_edge2 rtol = 1e-6
         end
