@@ -195,15 +195,6 @@ end
         test_zero_alloc1(system)
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 7.932205569922042 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
-        
-        #issue 558
-        url_refprop = "https://raw.githubusercontent.com/usnistgov/fastchebpure/50af5c154a113ac27a2c0a1c3538bc4f43a73a66/teqp_REFPROP10/dev/fluids/"
-        names = ["13BUTADIENE"]
-        _comps = Clapeyron.Downloads.download.(url_refprop .* names .* ".json") .|> read .|> String
-        mixing = Clapeyron.init_model(Clapeyron.AsymmetricMixing,names,String[],false)
-        model558 = MultiFluid(_comps; mixing, coolprop_userlocations=false)
-        @test molar_density(model558, 9.259e3, 220.; phase=:liquid) ≈ 13029.070044557742 rtol = 1e-6
-        @test model558.components == names
     end
 
     @testset "Aly-Lee" begin
@@ -371,6 +362,21 @@ end
         @test Clapeyron.a_res(model4,V,T,z1) ≈ -0.017855323645451636 rtol = 1e-6
         model5 = SingleFluid("water",Rgas = 10.0)
         @test Rgas(model5) == 10.0
+
+        
+        #issue 558
+        url_refprop = "https://raw.githubusercontent.com/usnistgov/fastchebpure/50af5c154a113ac27a2c0a1c3538bc4f43a73a66/teqp_REFPROP10/dev/fluids/"
+        names = ["13BUTADIENE"]
+        _comps = Clapeyron.Downloads.download.(url_refprop .* names .* ".json") .|> read .|> String
+        mixing = Clapeyron.init_model(Clapeyron.AsymmetricMixing,names,String[],false)
+        model558 = MultiFluid(_comps; mixing, coolprop_userlocations=false)
+        @test molar_density(model558, 9.259e3, 220.; phase=:liquid) ≈ 13029.070044557742 rtol = 1e-6
+        @test model558.components == names
+
+        #issue 631
+        model631 = SingleFluid("helium")
+        @test volume(model631,10e6,5.195300013635951) ≈ 1.9475072054583694e-5 rtol = 1e-6
+        @test volume(model631,20e6,5.195300013635951) ≈ 1.7145534637196815e-5 rtol = 1e-6
     end
     @printline
     end

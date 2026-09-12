@@ -65,15 +65,8 @@ function coolprop_json_string(component::String,comp = "")
     end
 end
 
-function tryparse_units(val,unit)
-    result = try
-        unit_parsed = Unitful.uparse(unit)
-        ThermoState.normalize_units(val*unit_parsed)
-    catch
-        val
-    end
-    return result
-end
+#todo: do something here
+tryparse_units(val,unit) = val
 
 get_only_comp(x::Vector{String}) = only(x)
 get_only_comp(x::String) = x

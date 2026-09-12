@@ -457,10 +457,10 @@ function liquid_pressure_from_virial(model,T,z =SA[1.0],B = second_virial_coeffi
     
     #measure of how far we are from the critical point. equivalent to B*B/2C, where C is the third virial coefficient, solved from the pressure.
     #if K < 1, that means the third virial coefficient influence is stronger than the second virial coefficient.
-    K = -4*(1 + 4*B*pv_eos/RT)
-    if K > 1
-        return RT*2/(-K*B)*exp(-1 - 1/K)
-    end
+    #K = -4*(1 + 4*B*pv_eos/RT)
+    #if K > 1
+    #    return RT*2/(-K*B)*exp(-1 - 1/K)
+    #end
 
     #fitted function, using all coolprop fluids, at Tr = 1
     aγ,bγ,cγ = 1.2442071971165476e-5, -8.695786307570637, 1.0505452946870144
@@ -803,8 +803,8 @@ end
 
 function x0_sat_pure_crit_info(model,T,crit,z = SA[1.0])
     Tc,Pc,Vc = crit
-    vl,vv = critical_vsat_extrapolation(model,T,Tc,Vc)
-    p = pressure(model,vl,T)
+    vl,vv = critical_vsat_extrapolation(model,T,Tc,Vc,z)
+    p = pressure(model,vl,T,z)
     return p,vl,vv
 end
 

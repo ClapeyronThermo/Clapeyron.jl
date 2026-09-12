@@ -5,8 +5,9 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
+    ∑z = sum(z)
     RT = Rgas(model)*T
-    logZ = log(p*vol/RT/sum(z))
+    logZ = log(p*vol/RT/∑z)
     nc = length(z)
 
     if cache isa Vector
@@ -14,7 +15,7 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
     elseif cache isa Tuple
         result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
         if nc == 1
-            lnϕ[1] = VT_lnϕ_pure(model,vol/sum(z),T,p)
+            lnϕ[1] = zlogϕ(model,vol/∑z,T,SA[1.0],p)
         else
             aux .= 0
             aux[1] = vol
@@ -94,33 +95,13 @@ function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = not
     return lnϕ, vol
 end
 
-function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
-    RT = Rgas(model)*T
-    p_res = p - RT/V
-    μ_res = eos_res(model,V,T) + p_res*V
-    Z = p*V/RT
-    return μ_res/RT - log(Z)
-end
-
 function ∑zlogϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
             phase=:unknown,
             vol0=nothing,
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-    return VT_∑zlogϕ(model,vol,T,z),vol
-end
-
-function VT_∑zlogϕ(model,V,T,z)
-    RT = Rgas(model)*T
-    n = sum(z)
-    A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,V,T,z)
-    Pr = -∂A∂V
-    PrV = ifelse(iszero(1/V),zero(∂A∂V),Pr*V)
-    g_res = A + PrV
-    logZ = log1p(Pr*V/(n*RT))
-    ∑zlogϕi = g_res/RT - n*logZ
-    return ∑zlogϕi
+    return VT_∑zlogϕ(model,vol,T,z,p),vol
 end
 
 struct ∂lnϕTag end

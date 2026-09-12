@@ -234,42 +234,63 @@ function _maybe_spinodal(model,_T,_v_lb,_v_ub,z)
 end
 
 #"chills" a state from T0,p to T,p, starting at v = v0
+
+#
+
+#Follows the isobar p(V,T) = p as a curve while marching the temperature from T0 to T.
+#At each point, the local Hessian of the Helmholtz energy gives:
+#   (∂V/∂T)_p = -∂²A/∂V∂T / ∂²A/∂V²   (isobar slope, predictor)
+#   (∂V/∂p)_T = -1/∂²A/∂V²           (residual pressure correction)
+#   (∂T/∂p)_V = -1/∂²A/∂V∂T          (raw Newton step, at fixed V, to zero the pressure residual)
+
+#A step never crosses the target temperature T: if the raw Newton step would do so, it is
+#damped to the midpoint between the current and target temperature instead. If a step would
+#produce a non-physical volume, it is rejected and retried with a halved step (backtracking).
 function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
     _1 = one(Base.promote_eltype(model,p,T,z))
     vᵢ = _1*v0
+    vtol = sqrt(eps(vᵢ))
     Tᵢ = _1*T0
+    _0 = zero(vᵢ)
+    nan = _0/_0
     count_invalid_iters = 0
-    for i in 1:100
+    scale = _1
+    for i in 1:max_iters
         d²A,dA,_ = ∂2f(model,vᵢ,Tᵢ,z)
         ∂²A∂V∂T = d²A[1,2]
         ∂²A∂V² = d²A[1,1]
-        ∂²A∂T² = d²A[2,2]
         pᵢ = -dA[1]
+        #mechanical stability check (same criterion as volume_compress: ∂p/∂V = -∂²A/∂V² must be < 0)
+        ∂²A∂V² <= 0 && return nan
         dvdt = -∂²A∂V∂T/∂²A∂V²
         dvdp = -1/∂²A∂V²
         dtdp = -1/∂²A∂V∂T
         ΔT = dtdp*(p - pᵢ)
-        Tnew = Tᵢ + dtdp*(p - pᵢ)
-        if Tnew < T
-            Tᵢ = (Tᵢ + T)/2
-            vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        Tnew = Tᵢ + ΔT
+        #never let a single step cross the target temperature; damp to the midpoint instead.
+        if (Tnew - T)*(Tᵢ - T) <= 0
+            ΔT_applied = scale*(T - Tᵢ)/2
         else
-            Tᵢ = Tᵢ + dtdp*(p - pᵢ)
+            ΔT_applied = scale*ΔT
         end
-        Δv = dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        #predicted volume at Tᵢ + ΔT_applied, linearizing p(V,T) around the current point
+        Δv = dvdp*(p - pᵢ) + dvdt*ΔT_applied
+        Tnew_applied = Tᵢ + ΔT_applied
         vnew = vᵢ + Δv
-        if vnew > 0
-            vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        
+        v_lb = lb_volume(model,Tnew_applied,z)
+        if isfinite(vnew) && vnew > v_lb
+            vᵢ = vnew
+            Tᵢ = Tnew_applied
             count_invalid_iters = 0
+            scale = _1
         else
-            count_invalid_iters +=1
+            count_invalid_iters += 1
+            scale = scale/2 #backtrack: retry with a smaller step from the same, still-valid point
         end
-        if count_invalid_iters >= 10
-            vᵢ = zero(vᵢ)/zero(vᵢ)
-            break
-        end
-        abs(ΔT) < Ttol*T && vnew > 0 && break
-        !isfinite(vᵢ) && break
+        count_invalid_iters >= 10 && return nan
+        abs(Δv) < vtol && break
+        abs(T - Tᵢ) < Ttol*abs(T) && break
     end
     return vᵢ
 end

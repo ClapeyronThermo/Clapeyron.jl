@@ -458,7 +458,16 @@ GC.gc()
             fluid = MultiFluid(["propane","R134a"])
             #_,pcrit,_ = crit_mix(fluid,[1.0,1.0])
             #p = 0.7*pcrit
-            @test dew_temperature(fluid,2.7706485503578815e6,[1.0,1.0])[1] ≈ 335.8362199892292 rtol = 1e-6
+            z = [1.0,1.0]
+            @test dew_temperature(fluid,2.7706485503578815e6,z)[1] ≈ 335.8362199892292 rtol = 1e-6
+            p_edge = 3.7e6
+            T_edge,vl0,vv0 = Clapeyron.edge_temperature(fluid,p_edge,z)
+
+            v0,_ = Clapeyron.x0_edge_pressure(fluid,349.7,z)
+            @test min(v0) < p_edge
+            @test max(v0) > p_edge
+            p_edge2,_,_ = Clapeyron.edge_pressure(fluid,T_edge,z)
+            @test p_edge ≈ p_edge2 rtol = 1e-6
         end
     end
     GC.gc()
