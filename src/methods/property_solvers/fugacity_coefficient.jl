@@ -15,7 +15,7 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
     elseif cache isa Tuple
         result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
         if nc == 1
-            lnϕ[1] = zlogϕ(model,vol/∑z,T,SA[1.0],p)
+            lnϕ[1] = VT_∑zlogϕ(model,vol/∑z,T,SA[1.0],p)
         else
             aux .= 0
             aux[1] = vol
