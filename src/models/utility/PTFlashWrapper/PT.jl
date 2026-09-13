@@ -34,7 +34,6 @@ function __eval_tpd_delta_g_sati(model::M,T::TT,lnϕsat,vv,ps)  where {M,TT<:For
     return VT_∑zlogϕ(model,vv,T,SA[1.0],ps)
 end
 
-
 function modified_gibbs(wrapper::PTFlashWrapper,p::Number,T,w,phase,vol)
     model = wrapper.model
     TT = Base.promote_eltype(wrapper,p,T,w)

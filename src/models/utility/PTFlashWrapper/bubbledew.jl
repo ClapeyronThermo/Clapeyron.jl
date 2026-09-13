@@ -291,7 +291,7 @@ function _activity_vle_residual(x, tups, sat0, _bubble, _temperature)
         xliq, yvap = w, z
     end
     RT = Rgas(model)*T
-    γ = activity_coefficient(γmodel, p, T, xliq)
+    logγ = lnγ(γmodel, p, T, xliq)
     lnϕv, _ = lnϕ(gas_model(model), p, T, yvap; phase = :vapour)
 
     # pure reference (saturation pressure, Poynting and saturated fugacity coefficient)
@@ -302,11 +302,11 @@ function _activity_vle_residual(x, tups, sat0, _bubble, _temperature)
         if gmi isa IdealModel
             log(psᵢ/p)
         else
-            log(psᵢ/p) + vlᵢ*(p - psᵢ)/RT + VT_∑zlogϕ(gmi, vvᵢ, T, SA[1.0],psᵢ)
+            log(psᵢ/p) + vlᵢ*(p - psᵢ)/RT + VT_∑zlogϕ(gmi, vvᵢ, T, SA[1.0], psᵢ)
         end
     end
     F1 = sum(w) - one(eltype(w))
-    F2 = log.(γ) .+ log.(xliq) .+ Δd .- lnϕv .- log.(yvap)
+    F2 = logγ .+ log.(xliq) .+ Δd .- lnϕv .- log.(yvap)
     return vcat(F1, F2)
 end
 

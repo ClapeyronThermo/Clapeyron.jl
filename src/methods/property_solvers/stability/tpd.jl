@@ -692,22 +692,21 @@ end
 function suggest_K!(K,model,p,T,z,cache = nothing,pure = split_pure_model(model))
     lnϕz,_ = modified_lnϕ(model,p,T,z,cache)
     log∑z = log(sum(z))
+    z1 = SA[1.0]
     for i in eachindex(z)
-        vl = volume(pure[i],p,T,phase = :liquid)
-        vv = volume(pure[i],p,T,phase = :vapour)
         di = lnϕz[i] + log(z[i]) - log∑z
-        lnϕv = VT_∑zlogϕ(pure[i],vv,T,SA[1.0],p)
-        lnϕl = VT_∑zlogϕ(pure[i],vl,T,SA[1.0],p)
+        lnϕv,vv = ∑zlogϕ(pure[i],p,T,z1,phase = :vapour)
+        lnϕl,vl = ∑zlogϕ(pure[i],p,T,z1,phase = :liquid)
         tpd_v = lnϕv - di
         tpd_l = lnϕl - di
         if vl ≈ vv
-            if is_liquid(VT_identify_phase(pure[i],vv,T,SA[1.0])) || isnan(vv)
+            if is_liquid(VT_identify_phase(pure[i],vv,T,z1)) || isnan(vv)
                 ps,_,_ = saturation_pressure(pure[i],T,crit_retry = false)
                 if isnan(ps)
                     tpd_l = Inf*abs(tpd_l)
                 end
                 tpd_v = Inf*abs(tpd_v)
-            elseif is_vapour(VT_identify_phase(pure[i],vl,T,SA[1.0])) || isnan(vl)
+            elseif is_vapour(VT_identify_phase(pure[i],vl,T,z1)) || isnan(vl)
                 tpd_l = Inf*abs(tpd_l)
             end
         end
