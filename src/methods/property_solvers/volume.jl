@@ -422,8 +422,7 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
         _phase = Symbol(phase)
     end
 
-    if !isnothing(vol0)
-        if !isnan(vol0)
+    if !isnothing(vol0) && !isnan(vol0)
             V0 = vol0
             if is_solid(_phase) #to allow specification of the model.
                 return _volume_compress(solid,p,T,z,V0)
@@ -434,7 +433,6 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
             end
             return V
         end
-    end
 
     if !is_unknown(_phase) && _phase != :stable
         V0 = x0_volume(model,p,T,z,phase=_phase)
@@ -455,7 +453,7 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
     Vg0 = x0_volume(fluid,p,T,z,phase=:v)
     Vl0 = x0_volume(fluid,p,T,z,phase=:l)
     Vs0 = x0_volume_solid(solid,T,z) #Needs to be const-propagated.
-    volumes0 = (Vg0,Vl0,Vs0)
+    #volumes0 = (Vg0,Vl0,Vs0)
     if threaded
         #=
         ch = Channel{TYPE}(3) do ys
@@ -493,6 +491,7 @@ function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threa
 end
 
 function volume_label(models::F,p,T,z,vols) where F
+    #=
     function gibbs(model,fV)
         isnan(fV) && return one(fV)/zero(fV)
         f(V) = eos(model,V,T,z)
@@ -500,7 +499,9 @@ function volume_label(models::F,p,T,z,vols) where F
         #for the ideal gas case, p*V == 0, so the result reduces to eos(model,V,T,z)
         fV == Inf && iszero(_dV) && return _f
         return ifelse(abs((p+_dV)/p) > 0.03,one(fV)/zero(fV),_f + p*fV)
-    end
+    end =#
+
+    gibbs(_model,_V) = VT_∑zlogϕ(_model,_V,T,z,p)
     idx = 0
     _0 = zero(Base.promote_eltype(models[1],p,T,z))
     g = one(_0)/_0
