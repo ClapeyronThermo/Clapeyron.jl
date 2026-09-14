@@ -233,3 +233,32 @@ return SAFTgammaMie{BasicIdeal, Float64}(
         AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining, false), ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]), :default, 
         AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining, false), ["10.1063/1.4851455", "10.1021/je500248h"])
 end
+
+struct VanLaar_GE <: Clapeyron.ActivityModel
+    A12::Float64
+    A21::Float64
+end
+
+function Clapeyron.excess_gibbs_free_energy(model::VanLaar_GE,p,T,z)
+    A12 = model.A12 + 1e-5/T
+    A21 = model.A21 + 2e-5/T
+    ge = (A12*A21*z[1]*z[2]) / (A12*z[1] + A21*z[2])
+    return Clapeyron.Rgas()*T*ge
+end
+
+struct VanLaar_lngamma <: Clapeyron.ActivityModel
+    A12::Float64
+    A21::Float64
+end
+
+function Clapeyron.lnγ_impl!(lnγ,model::VanLaar_lngamma,V,T,z)
+    A12 = model.A12 + 1e-5/T
+    A21 = model.A21 + 2e-5/T
+    ax = A12*z[1] + A21*z[2]
+    lnγ[1] = A12*(A21*z[2]/ax)^2
+    lnγ[2] = A21*(A12*z[1]/ax)^2
+    return lnγ
+end
+
+Base.length(::VanLaar_GE) = 2
+Base.length(::VanLaar_lngamma) = 2

@@ -240,6 +240,8 @@ function ∂lnγ∂n(model,p,T,z,cache = nothing)
     end
 end
 
+@noinline ∂lnγ∂T_mismatch_error() = throw(DimensionMismatch(lazy"lnγ: derivative cache was built for a model with has_lnγ_impl(model) == false, but used on a model with has_lnγ_impl(model) == true; rebuild the cache with the correct model"))
+
 function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
     nc = length(z)
     RT = Rgas(model)*T
@@ -274,11 +276,13 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
         end
     else
-        result,aux,lnγ,∂lnγ∂ni,_,_,∂lnγ∂T,hconfig,jcache = cache
+        #result,aux,lnγ,∂lnγ∂ni,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache
+        result,aux,lnγ,∂lnγ∂ni,_,∂lnγ∂T,_,hconfig,jcache = cache
         aux .= 0
         aux[1:nc] .= z
         aux[nc+1] = T
         if has_lnγ_impl(model)
+            jcache === aux && ∂lnγ∂T_mismatch_error()
             jconfig = Solvers._JacobianConfig(hconfig)
             jresult = ForwardDiff.DiffResults.MutableDiffResult(result.derivs[1],(result.derivs[2],))
             _result = ForwardDiff.jacobian!(jresult,fun_lnγ,jcache,aux,jconfig,Val{false}())
@@ -307,6 +311,7 @@ function dG_EdT(model::ActivityModel,p,T,z)
     return Solvers.derivative(f,T)
 end
 
+
 function ∂lnγ∂T(model,p,T,z,cache = nothing)
     nc = length(z)
     dgEdt(w) = dG_EdT(model,p,T,@view(w[1:nc]))
@@ -324,6 +329,7 @@ function ∂lnγ∂T(model,p,T,z,cache = nothing)
     else
         result,aux,lnγ,∂lnγ∂ni,_,_,∂lnγ∂T,hconfig,jcache,∂lnγ∂T_out = cache
         if has_lnγ_impl(model)
+            isempty(∂lnγ∂T_out) && ∂lnγ∂T_mismatch_error()    
             Dconfig = Solvers._DerivativeConfig(∂lnγ∂T_out)
             ForwardDiff.derivative!(∂lnγ∂T,_ft_lnγ_impl!,lnγ,T,Dconfig,Val{false}())
             return ∂lnγ∂T
