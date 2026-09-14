@@ -116,8 +116,7 @@ function VanLaar(components;
     return v
 end
 
-function excess_g_vanlaar(m::VanLaarModel, p, T, z)
-    n = sum(z)
+function excess_g_vanlaar(model::VanLaarModel, p, T, z)
     A12 = m.params.A12.values[1]
     A21 = m.params.A21.values[1]
     ge = (A12*A21*z[1]*z[2]) / (A12*z[1] + A21*z[2])

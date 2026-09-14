@@ -41,7 +41,7 @@ function activity_coefficient(model::ActivityModel,p,T,z)
         lnγx .= exp.(lnγx)
         return lnγx
     else
-        return exp.(lnγ)
+        return exp.(lnγx)
     end
 end
 
@@ -67,7 +67,7 @@ function lnγ(model::ActivityModel,_p,_T,_z,cache::TT = nothing) where TT
     nc = length(z)
     if has_lnγ_impl(model)
         if cache isa Tuple
-            result,aux,lnγ,∂lnγ∂n,∂lnγ∂T,_,_,hconfig = cache
+            _,_,lnγ,_,_,_,_,_ = cache
             lnγ_impl!(lnγ,model,p,T,z)
             return lnγ
         elseif cache isa AbstractVector
@@ -82,7 +82,7 @@ function lnγ(model::ActivityModel,_p,_T,_z,cache::TT = nothing) where TT
         V = zero(primalval(T))
         fun = @deferred_Z(ng_E_reduced,∂₁f)
         if cache isa Tuple
-            result,aux,lnγ,∂lnγ∂n,∂lnγ∂T,_,_,hconfig = cache
+            result,aux,lnγ,_,_,_,_,hconfig = cache
             aux .= 0
             aux[1:nc] = z
             gconfig = Solvers._GradientConfig(hconfig)
@@ -178,7 +178,8 @@ function lb_volume(model::ActivityModel,T,z)
 end
 
 function T_scale(model::ActivityModel,z)
-    prod(T_scale(model.puremodel[i])^1/z[i] for i in @comps)^(sum(z))
+    ∑z = sum(z)
+    prod(T_scale(model.puremodel[i])^(z[i]/∑z) for i in @comps)
 end
 
 function p_scale(model::ActivityModel,z)
@@ -202,7 +203,7 @@ function ∂lnγ∂n(model,p,T,z,cache = nothing)
     if cache === nothing
         if has_lnγ_impl(model)
             lnγ = zeros(Base.promote_eltype(model,p,T,z),nc)
-            ∂lnγ∂ni = ForwardDiff.jacobian!(lnγ,fun_lnγ,z)
+            ∂lnγ∂ni = ForwardDiff.jacobian(fun_lnγ,lnγ,z)
             g_E = dot(z,lnγ)*RT
             return g_E,lnγ,∂lnγ∂ni
         else
@@ -253,10 +254,9 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             aux = similar(lnγ,nc+1)
             aux[1:nc] = z
             aux[nc+1] = T
-            ∂g_E = ForwardDiff.jacobian!(lnγ,fun_lnγ,aux)
+            ∂g_E = ForwardDiff.jacobian(fun_lnγ,lnγ,aux)
             ∂lnγ∂ni = ∂g_E[1:nc,1:nc]
-            ∂lnγ∂T = resize!(aux,nc)
-            ∂lnγ∂T .= @view ∂g_E[:,nc + 1]
+            ∂lnγ∂T = ∂g_E[1:nc,nc + 1]
             g_E = dot(z,lnγ)*RT
             return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
         else
@@ -274,7 +274,7 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
         end
     else
-        result,aux,lnγ,∂lnγ∂ni,∂lnγ∂T,_,_,hconfig,jcache = cache
+        result,aux,lnγ,∂lnγ∂ni,_,_,∂lnγ∂T,hconfig,jcache = cache
         aux .= 0
         aux[1:nc] .= z
         aux[nc+1] = T
@@ -284,7 +284,7 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             _result = ForwardDiff.jacobian!(jresult,fun_lnγ,jcache,aux,jconfig,Val{false}())
             ∂lnγ = DiffResults.jacobian(_result)
             ∂lnγ∂ni .=  @view ∂lnγ[1:nc,1:nc]
-            ∂lnγ∂T .= @view ∂lnγ[:,nc + 1]
+            ∂lnγ∂T .= @view ∂lnγ[1:nc,nc + 1]
             ∂g_E = DiffResults.value(_result)
             lnγ .= @view ∂g_E[1:nc]
             g_E = dot(z,lnγ)*RT
@@ -322,7 +322,7 @@ function ∂lnγ∂T(model,p,T,z,cache = nothing)
             return ∂lnγ∂T
         end
     else
-        result,aux,lnγ,∂lnγ∂ni,∂lnγ∂T,_,_,hconfig,jcache,∂lnγ∂T_out = cache
+        result,aux,lnγ,∂lnγ∂ni,_,_,∂lnγ∂T,hconfig,jcache,∂lnγ∂T_out = cache
         if has_lnγ_impl(model)
             Dconfig = Solvers._DerivativeConfig(∂lnγ∂T_out)
             ForwardDiff.derivative!(∂lnγ∂T,_ft_lnγ_impl!,lnγ,T,Dconfig,Val{false}())
