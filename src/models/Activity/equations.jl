@@ -277,6 +277,9 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
         end
     else
         #result,aux,lnγ,∂lnγ∂ni,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache
+
+        # NOTE: intentionally bind ∂lnγ∂T to the ∂P∂n slot (unused by GE models), not ∂lnϕ∂T,
+        # since ∂lnϕ∂T aliases lnγ when the cache was built with Val(false).
         result,aux,lnγ,∂lnγ∂ni,_,∂lnγ∂T,_,hconfig,jcache = cache
         aux .= 0
         aux[1:nc] .= z
