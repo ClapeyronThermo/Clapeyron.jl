@@ -88,9 +88,9 @@ function excess_g_res(model::FloryHugginsModel, p, T, z)
     v = model.params.v.values
     n = sum(z)
     ninv = 1/n
-    V = @sum(z[i]*v[i]*N[i])/n
-    NT = @sum(z[i]*N[i])/n    
-    v0 = V / NT
+    V = @sum(z[i]*v[i]*N[i])*ninv
+    NT = @sum(z[i]*N[i])*ninv   
+    #v0 = V / NT
     #ϕ = x .* v .* N ./ V  # Volume fraction of each component
     res = zero(Base.promote_eltype(model,T,z))
     for i ∈ @comps
@@ -106,7 +106,7 @@ function excess_g_res(model::FloryHugginsModel, p, T, z)
             res += ϕi * ϕj * χij * NT
         end
     end
-    return R̄ * T * res * n
+    return Rgas(model) * T * res * n
 end
 
 excess_gibbs_free_energy(model::FloryHugginsModel, p, T, z) = excess_g_res(model, p, T, z)
