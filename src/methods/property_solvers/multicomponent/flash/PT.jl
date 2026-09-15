@@ -12,23 +12,25 @@ Routine to solve non-reactive multicomponent flash problem.
 The default method tries to find all phases. See [`MultiPhaseTPFlash`](@ref)
 
 Inputs:
- - T, Temperature `[K]`
- - p, Pressure `[Pa]`
- - n, vector of number of moles of each species `[mol]`
+
+  - T, Temperature `[K]`
+  - p, Pressure `[Pa]`
+  - n, vector of number of moles of each species `[mol]`
 
 Outputs - Tuple containing:
- - xᵢⱼ, Array of mole fractions of species j in phase i
- - nᵢⱼ, Array of mole numbers of species j in phase i, `[mol]`
- - G, Gibbs energy of Equilibrium Mixture `[J]`
+
+  - xᵢⱼ, Array of mole fractions of species j in phase i
+  - nᵢⱼ, Array of mole numbers of species j in phase i, `[mol]`
+  - G, Gibbs energy of Equilibrium Mixture `[J]`
 """
-function tp_flash(model::EoSModel, p, T, n = SA[1.0]; kwargs...)
-    method = init_preferred_method(tp_flash,model,kwargs)
+function tp_flash(model::EoSModel, p, T, n=SA[1.0]; kwargs...)
+    method = init_preferred_method(tp_flash, model, kwargs)
     return tp_flash(model, p, T, n, method)
 end
 
 function tp_flash(model::EoSModel, p, T, n, method::FlashMethod)
-    result = tp_flash2(model, p, T, n,method)
-    return tp_flash2_to_tpflash(model,p,T,n,result)
+    result = tp_flash2(model, p, T, n, method)
+    return tp_flash2_to_tpflash(model, p, T, n, result)
 end
 
 #default
@@ -39,17 +41,17 @@ include("../tp_flash/RachfordRicetp_flash.jl")
 include("../tp_flash/MCFlashJL.jl")
 include("../tp_flash/multiphase.jl")
 
-function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs) 
+function init_preferred_method(method::typeof(tp_flash), model::EoSModel, kwargs)
     if length(kwargs) == 0
         return MichelsenTPFlash()
-    elseif any(x->haskey(kwargs,x),(:v0,:noncondensables,:nonvolatiles,:x0,:y0,:K0,:equilibrium,:verbose))
-        return MichelsenTPFlash(;kwargs...)
-    elseif any(x->haskey(kwargs,x),(:numphases,:max_steps,:population_size,:time_limit,:verbose,:logspace))
-        return DETPFlash(;kwargs...)
-    elseif any(x->haskey(kwargs,x),(:n0,:full_tpd,:max_phases,:phase_iters))
-        return MultiPhaseTPFlash(;kwargs...)
+    elseif any(x->haskey(kwargs, x), (:v0, :noncondensables, :nonvolatiles, :x0, :y0, :K0, :equilibrium, :verbose))
+        return MichelsenTPFlash(; kwargs...)
+    elseif any(x->haskey(kwargs, x), (:numphases, :max_steps, :population_size, :time_limit, :verbose, :logspace))
+        return DETPFlash(; kwargs...)
+    elseif any(x->haskey(kwargs, x), (:n0, :full_tpd, :max_phases, :phase_iters))
+        return MultiPhaseTPFlash(; kwargs...)
     else
-        MultiPhaseTPFlash(;kwargs...)
+        MultiPhaseTPFlash(; kwargs...)
     end
 end
 
@@ -61,51 +63,53 @@ Routine to solve non-reactive two-phase multicomponent flash problem. With P-T s
 The default method tries to find all phases. See [`MultiPhaseTPFlash`](@ref)
 
 Inputs:
- - `p`, pressure `[Pa]`
- - `T`, temperature `[K]`
- - `n`, vector of number of moles of each species `[mol]`
 
- Outputs:
- - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
+  - `p`, pressure `[Pa]`
+  - `T`, temperature `[K]`
+  - `n`, vector of number of moles of each species `[mol]`
+
+Outputs:
+
+  - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
 """
 function tp_flash2(model::EoSModel, p, T, n; kwargs...)
-    method = init_preferred_method(tp_flash,model,kwargs)
-    return tp_flash2(model,p,T,n,method)
+    method = init_preferred_method(tp_flash, model, kwargs)
+    return tp_flash2(model, p, T, n, method)
 end
 
 function tp_flash2(model::EoSModel, _p, _T, _n, method::FlashMethod)
-    p,n = ustrip(_p,pressure),uzstrip(model,_n)
-    T = ustrip(_T,temperature)
-    check_arraysize(model,n)
+    p, n = ustrip(_p, pressure), uzstrip(model, _n)
+    T = ustrip(_T, temperature)
+    check_arraysize(model, n)
 
     if n isa SingleComp || length(model) == 1
-        return FlashResult(model,p,T,SVector(n[1]))
+        return FlashResult(model, p, T, SVector(n[1]))
     end
-    
+
     if supports_reduction(method)
-        model_r,idx_r = index_reduction(model,n)
+        model_r, idx_r = index_reduction(model, n)
         n_r = n[idx_r]
-        method_r = index_reduction(method,idx_r)
+        method_r = index_reduction(method, idx_r)
     else
-        model_r,idx_r = model,trues(length(model))
-        method_r,n_r = method,n
+        model_r, idx_r = model, trues(length(model))
+        method_r, n_r = method, n
     end
-    
+
     if length(model_r) == 1 || numphases(method) == 1
-        return FlashResult(model_r,p,T,n_r)
+        return FlashResult(model_r, p, T, n_r)
     end
     ∑n = sum(n_r)
     z_r = n_r ./ ∑n
     if has_a_res(model)
-        λmodel,λp,λT,λz = primalval(model_r),primalval(p),primalval(T),primalval(z_r)
-        λresult = tp_flash_impl(λmodel,λp,λT,λz,method_r)
-        tup = (model_r,p,T,z_r)
-        λtup = (λmodel,λp,λT,λz)
-        result = xy_flash_ad(λresult,tup,λtup,pressure,temperature)
+        λmodel, λp, λT, λz = primalval(model_r), primalval(p), primalval(T), primalval(z_r)
+        λresult = tp_flash_impl(λmodel, λp, λT, λz, method_r)
+        tup = (model_r, p, T, z_r)
+        λtup = (λmodel, λp, λT, λz)
+        result = xy_flash_ad(λresult, tup, λtup, pressure, temperature)
     else
-        result = tp_flash_impl(model_r,p,T,z_r,method_r)
+        result = tp_flash_impl(model_r, p, T, z_r, method_r)
     end
-    
+
     if !issorted(result.volumes)
         #this is in case we catch a bad result.
         result = FlashResult(result)
@@ -114,40 +118,40 @@ function tp_flash2(model::EoSModel, _p, _T, _n, method::FlashMethod)
     ∑β = sum(result.fractions)
     result.fractions ./= ∑β
     result.fractions .*= ∑n
-    return index_expansion(result,idx_r)
+    return index_expansion(result, idx_r)
 end
 
-function tp_flash2_to_tpflash(model,p,T,z,result)
+function tp_flash2_to_tpflash(model, p, T, z, result)
     comps, β, volumes, data = result
     nc = length(z)
     np = length(comps)
     g = data.g
-    x = similar(comps[1],(np,nc))
+    x = similar(comps[1], (np, nc))
     n = similar(x)
     for i in 1:np
         xi = comps[i]
         βi = β[i]
         for j in 1:nc
-            x[i,j] = xi[j]
-            n[i,j] = xi[j]*βi
+            x[i, j] = xi[j]
+            n[i, j] = xi[j]*βi
         end
     end
-    return x,n,g
+    return x, n, g
 end
 
-function tp_flash_impl(model,p,T,z,method::GeneralizedXYFlash)
-    flash0 = pt_flash_x0(model,p,T,z,method)
+function tp_flash_impl(model, p, T, z, method::GeneralizedXYFlash)
+    flash0 = pt_flash_x0(model, p, T, z, method)
     isone(numphases(flash0)) && return flash0
-    spec = FlashSpecifications(pressure,p,temperature,T)
-    return xy_flash(model,spec,z,flash0,method)
+    spec = FlashSpecifications(pressure, p, temperature, T)
+    return xy_flash(model, spec, z, flash0, method)
 end
 
-function tp_flash_impl(model,p,T,z,method::RRXYFlash)
-    modelx = __tpflash_cache_model(model,p,T,z,:vle)
-    flash0 = pt_flash_x0(modelx,p,T,z,method)
+function tp_flash_impl(model, p, T, z, method::RRXYFlash)
+    modelx = __tpflash_cache_model(model, p, T, z, :vle)
+    flash0 = pt_flash_x0(modelx, p, T, z, method)
     isone(numphases(flash0)) && return flash0
-    spec = FlashSpecifications(pressure,p,temperature,T)
-    return xy_flash(modelx,spec,z,flash0,method)
+    spec = FlashSpecifications(pressure, p, temperature, T)
+    return xy_flash(modelx, spec, z, flash0, method)
 end
 
 export tp_flash

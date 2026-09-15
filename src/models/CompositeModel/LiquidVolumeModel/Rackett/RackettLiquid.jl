@@ -1,6 +1,5 @@
 abstract type RackettLiquidModel <: LiquidVolumeModel end
 
-
 struct RackettLiquidParam <: EoSParam
     Tc::SingleParam{Float64}
     Pc::SingleParam{Float64}
@@ -16,68 +15,67 @@ end
 
 ## Input parameters
 
-- `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (Float64) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
+  - `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (Float64) - Critical Pressure `[Pa]`
+  - `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³·mol⁻¹]`
 
 ## Model Parameters
 
-- `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (Float64) - Critical Pressure `[Pa]`
-- `Zc`: Single Parameter (Float64) - Critical Compressibility Factor
+  - `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (Float64) - Critical Pressure `[Pa]`
+  - `Zc`: Single Parameter (Float64) - Critical Compressibility Factor
 
 ## Description
 
 Rackett Equation of State for saturated liquids. It is independent of the pressure.
+
 ```
 Tr = T/Tc
 V = (R̄Tc/Pc)Zc^(1+(1-Tr)^(2/7))
 ```
 
 ## Model Construction Examples
+
 ```julia
 # Using the default database
-model = RackettLiquid("water") #single input
-model = RackettLiquid(["water","ethanol"]) #multiple components
+model = RackettLiquid(\"water\") #single input
+model = RackettLiquid([\"water\", \"ethanol\"]) #multiple components
 
 # User-provided parameters, passing files or folders
-model = RackettLiquid(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical.csv"])
+model = RackettLiquid([\"neon\", \"hydrogen\"]; userlocations=[\"path/to/my/db\", \"critical.csv\"])
 
 # User-provided parameters, passing parameters directly
 
-model = RackettLiquid(["neon","hydrogen"];
-        userlocations = (;Tc = [44.492,33.19],
-                        Vc = [4.25e-5, 6.43e-5],
-                        Pc = [2679000, 1296400])
-                    )
+model = RackettLiquid([\"neon\", \"hydrogen\"]; userlocations=(; Tc=[44.492, 33.19], Vc=[4.25e-5, 6.43e-5], Pc=[2679000, 1296400]))
 ```
 
 ## References
-- Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
+
+  - Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
 """
 RackettLiquid
 
 default_locations(::Type{RackettLiquid}) = critical_data()
 default_references(::Type{RackettLiquid}) = ["10.1021/je60047a012"]
-default_ignore_missing_singleparams(::Type{RackettLiquid}) = ["Vc","Zc","acentricfactor","Tc","Pc"]
+default_ignore_missing_singleparams(::Type{RackettLiquid}) = ["Vc", "Zc", "acentricfactor", "Tc", "Pc"]
 
-function transform_params(::Type{RackettLiquid},params,components)
+function transform_params(::Type{RackettLiquid}, params, components)
     Tc = params["Tc"]
     Pc = params["Pc"]
     nc = length(components)
-    Zc = get!(params,"Zc") do
-        SingleParam("Zc",components,zeros(nc),fill(true,nc))
+    Zc = get!(params, "Zc") do
+        SingleParam("Zc", components, zeros(nc), fill(true, nc))
     end
 
-    Vc = get!(params,"Vc") do
-        SingleParam("Vc",components,zeros(nc),fill(true,nc))
+    Vc = get!(params, "Vc") do
+        SingleParam("Vc", components, zeros(nc), fill(true, nc))
     end
 
     for i in 1:nc
         if Zc.ismissingvalues[i] && Vc.ismissingvalues[i]
             throw(error("RackettLiquid: cannot estimate Zc: missing Vc parameter"))
         end
-        
+
         if Zc.ismissingvalues[i] && !(Vc.ismissingvalues[i])
             Zc[i] = Pc[i]*Vc[i]/(R̄*Tc[i])
         end
@@ -85,7 +83,7 @@ function transform_params(::Type{RackettLiquid},params,components)
     return params
 end
 
-function volume_impl(model::RackettLiquidModel,p,T,z,phase,threaded,vol0)
+function volume_impl(model::RackettLiquidModel, p, T, z, phase, threaded, vol0)
     tci = model.params.Tc.values
     pci = model.params.Pc.values
     zci = model.params.Zc.values
@@ -93,7 +91,7 @@ function volume_impl(model::RackettLiquidModel,p,T,z,phase,threaded,vol0)
     a = zero(eltype(z))
     b = zero(eltype(z))
     ∑z = sum(z)
-    checkbounds(tci,length(z))
+    checkbounds(tci, length(z))
     for i ∈ @comps
         zi = z[i]
         Tcᵢ = tci[i]
@@ -104,7 +102,7 @@ function volume_impl(model::RackettLiquidModel,p,T,z,phase,threaded,vol0)
         a += zii*ai
         b += zii*bi
         Zcm += z[i]*zci[i]
-        for j in 1:(i-1)
+        for j in 1:(i - 1)
             zj = z[j]
             Tcⱼ = tci[i]
             Pcⱼ = pci[i]
@@ -124,7 +122,7 @@ function volume_impl(model::RackettLiquidModel,p,T,z,phase,threaded,vol0)
     return ∑z*R̄*Tcm*Pcm_inv*Zcm^(1+(1-Tr)^(2/7))
 end
 
-function volume_impl(model::RackettLiquidModel,p,T,z::SingleComp,phase,threaded,vol0)
+function volume_impl(model::RackettLiquidModel, p, T, z::SingleComp, phase, threaded, vol0)
     Tc = only(model.params.Tc.values)
     Pc = only(model.params.Pc.values)
     Pc_inv = 1/Pc
@@ -143,26 +141,26 @@ end
 
 @newmodelsimple YamadaGunnLiquid RackettLiquidModel YamadaGunnLiquidParam
 default_locations(::Type{YamadaGunnLiquid}) = critical_data()
-default_references(::Type{YamadaGunnLiquid}) = ["10.1021/je60047a012","10.1002/aic.690170613"]
-default_ignore_missing_singleparams(::Type{YamadaGunnLiquid}) = ["Vc","Zc","acentricfactor","Tc","Pc"]
+default_references(::Type{YamadaGunnLiquid}) = ["10.1021/je60047a012", "10.1002/aic.690170613"]
+default_ignore_missing_singleparams(::Type{YamadaGunnLiquid}) = ["Vc", "Zc", "acentricfactor", "Tc", "Pc"]
 
-function transform_params(::Type{YamadaGunnLiquid},params,components)
+function transform_params(::Type{YamadaGunnLiquid}, params, components)
     nc = length(components)
     Tc = params["Tc"]
     Pc = params["Pc"]
-    Zc = get!(params,"Zc") do
-        SingleParam("Zc",components,zeros(nc),fill(true,nc))
+    Zc = get!(params, "Zc") do
+        SingleParam("Zc", components, zeros(nc), fill(true, nc))
     end
 
-    w = get!(params,"acentricfactor") do
-        SingleParam("acentricfactor",components,zeros(nc),fill(true,nc))
+    w = get!(params, "acentricfactor") do
+        SingleParam("acentricfactor", components, zeros(nc), fill(true, nc))
     end
 
     for i in 1:nc
         if Zc.ismissingvalues[i] && w.ismissingvalues[i]
             throw(error("YamadaGunnLiquid: cannot estimate Zc: missing acentricfactor parameter"))
         end
-        
+
         if Zc.ismissingvalues[i] && !(w.ismissingvalues[i])
             Zc[i] = 0.29056 - 0.08775w[i]
         end
@@ -177,48 +175,48 @@ end
 
 ## Input parameters
 
-- `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (Float64) - Critical Pressure `[Pa]`
-- `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor
+  - `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (Float64) - Critical Pressure `[Pa]`
+  - `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor
 
 ## Model Parameters
 
-- `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (Float64) - Critical Pressure `[Pa]`
-- `acentricfactor`: Single Parameter (Float64) - Critical Compressibility Factor
+  - `Tc`: Single Parameter (Float64) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (Float64) - Critical Pressure `[Pa]`
+  - `acentricfactor`: Single Parameter (Float64) - Critical Compressibility Factor
 
 ## Description
 
 The Yamada-Gunn equation of state is a modification of the Rackett equation of state that uses a different approach to calculate the compressibility factor `Zc`:
+
 ```
 Tr = T/Tc
 Zc = 0.29056 - 0.08775ω
 V = (R̄Tc/Pc)Zc^(1+(1-Tr)^(2/7))
 ```
+
 It can be used as a substitute of `RackettLiquid` when `Vc` is not known.
 
 ## Model Construction Examples
+
 ```julia
 # Using the default database
-model = YamadaGunnLiquid("water") #single input
-model = YamadaGunnLiquid(["water","ethanol"]) #multiple components
+model = YamadaGunnLiquid(\"water\") #single input
+model = YamadaGunnLiquid([\"water\", \"ethanol\"]) #multiple components
 
 # User-provided parameters, passing files or folders
-model = YamadaGunnLiquid(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical.csv"])
+model = YamadaGunnLiquid([\"neon\", \"hydrogen\"]; userlocations=[\"path/to/my/db\", \"critical.csv\"])
 
 # User-provided parameters, passing parameters directly
 
-model = YamadaGunnLiquid(["neon","hydrogen"];
-        userlocations = (;Tc = [44.492,33.19],
-                        Pc = [2679000, 1296400],
-                        acentricfactor = [-0.03,-0.21])
-                    )
+model = YamadaGunnLiquid([\"neon\", \"hydrogen\"]; userlocations=(; Tc=[44.492, 33.19], Pc=[2679000, 1296400], acentricfactor=[-0.03, -0.21]))
 ```
 
 ## References
-- Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
-- Gunn, R. D., & Yamada, T. (1971). A corresponding states correlation of saturated liquid volumes. AIChE Journal. American Institute of Chemical Engineers, 17(6), 1341–1345. [doi:10.1002/aic.690170613](https://doi.org/10.1002/aic.690170613)
+
+  - Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
+  - Gunn, R. D., & Yamada, T. (1971). A corresponding states correlation of saturated liquid volumes. AIChE Journal. American Institute of Chemical Engineers, 17(6), 1341–1345. [doi:10.1002/aic.690170613](https://doi.org/10.1002/aic.690170613)
 """
 YamadaGunnLiquid
 
-export YamadaGunnLiquid,RackettLiquid
+export YamadaGunnLiquid, RackettLiquid
