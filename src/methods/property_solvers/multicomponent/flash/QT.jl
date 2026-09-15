@@ -1,65 +1,65 @@
-function qt_f0_p!(K,z,p,ps,β0)
+function qt_f0_p!(K, z, p, ps, β0)
     K .= ps ./ p
-    return rachfordrice(K,z) - β0
+    return rachfordrice(K, z) - β0
 end
 
-function qt_flash_x0(model::RestrictedEquilibriaModel,β,T,z,method::FlashMethod)
-    qt_flash_x0(__tpflash_cache_model(model,NaN,T,z,:vle),β,T,z,method)
+function qt_flash_x0(model::RestrictedEquilibriaModel, β, T, z, method::FlashMethod)
+    qt_flash_x0(__tpflash_cache_model(model, NaN, T, z, :vle), β, T, z, method)
 end
 
-function qt_flash_x0(model::CompositeModel,β,T,z,method::FlashMethod)
-    qt_flash_x0(model.fluid,β,T,z,method)
+function qt_flash_x0(model::CompositeModel, β, T, z, method::FlashMethod)
+    qt_flash_x0(model.fluid, β, T, z, method)
 end
 
-function qt_flash_x0(model,β,T,z,method::FlashMethod)
+function qt_flash_x0(model, β, T, z, method::FlashMethod)
     verbose = get_verbosity(method)
     ∑z = sum(z)
     if method.p0 === nothing
         if 0 <= β <= 0.01
             verbose && @info "vapour fraction below 0.01, using bubble pressure directly"
             x = z ./ ∑z
-            p,vl,vv,y = __x0_bubble_pressure(model,T,x)
+            p, vl, vv, y = __x0_bubble_pressure(model, T, x)
             y ./= sum(y)
             βv = β*∑z
             βl = ∑z - βv
-            return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
+            return FlashResult(p, T, SA[x, y], SA[βl, βv], SA[vl, vv], sort=false)
         elseif 0.99 <= β <= 1.0
             verbose && @info "vapour fraction over 0.99, using dew pressure directly"
             y = z ./ ∑z
-            p,vl,vv,x = __x0_dew_pressure(model,T,y)
+            p, vl, vv, x = __x0_dew_pressure(model, T, y)
             x ./= ∑z
             βv = β*∑z
             βl = ∑z - βv
-            return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
+            return FlashResult(p, T, SA[x, y], SA[βl, βv], SA[vl, vv], sort=false)
         else
             if model isa PTFlashWrapper
                 pures = model.pures
                 sat = model.sat
             else
                 pures = split_pure_model(model)
-                sat = extended_saturation_pressure.(pures,T)
+                sat = extended_saturation_pressure.(pures, T)
             end
             verbose && @info "finding initial pressure via raoult approximation"
             ps = first.(sat)
             K = similar(ps)
             p_bubble = @sum(ps[i]*z[i])/∑z
             p_dew = ∑z/@sum(z[i]/ps[i])
-            pmin,pmax = p_dew,p_bubble
+            pmin, pmax = p_dew, p_bubble
             xx = z ./ sum(z)
-            fp(p) = qt_f0_p!(K,xx,p,ps,β)
+            fp(p) = qt_f0_p!(K, xx, p, ps, β)
             pm = β*pmin + (1-β)*pmax
-            pr1 = range(pmin,pm,5*length(model))
-            pr2 = range(pm,pmax,5*length(model))
+            pr1 = range(pmin, pm, 5*length(model))
+            pr2 = range(pm, pmax, 5*length(model))
             δβ1 = abs.(fp.(pr1))
             δβ2 = abs.(fp.(pr2))
-            δβ1_min,i1 = findmin(δβ1)
-            δβ2_min,i2 = findmin(δβ2)
+            δβ1_min, i1 = findmin(δβ1)
+            δβ2_min, i2 = findmin(δβ2)
             if δβ1_min < δβ2_min
                 p00 = pr1[i1]
             else
                 p00 = pr2[i2]
             end
-            prob = Roots.ZeroProblem(fp,p00)
+            prob = Roots.ZeroProblem(fp, p00)
             p = Roots.solve(prob)
         end
     else
@@ -67,7 +67,7 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
     end
     verbose && @info "p = $p, T = $T"
     verbose && @info "using PT-flash initial point"
-    res = pt_flash_x0(model,p,T,z,method)
+    res = pt_flash_x0(model, p, T, z, method)
     return res
 end
 
@@ -76,58 +76,61 @@ end
     result = qt_flash(model, q, T, n; kwargs...)
 
 Routine to solve non-reactive two-phase multicomponent flash problem. With vapour fraction - T specifications.
-Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
+Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
 Inputs:
- - `q`, vapour fraction
- - `T`, temperature `[K]`
- - `n`, vector of number of moles of each species `[mol]`
+
+  - `q`, vapour fraction
+  - `T`, temperature `[K]`
+  - `n`, vector of number of moles of each species `[mol]`
 
 All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
 
- Outputs:
- - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
+Outputs:
+
+  - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
 
 !!! note
+
     Using `qt_flash` with q = 0 or q = 1 is equivalent to calculating bubble or dew pressures.
     Passing `GeneralizedXYFlash` as a method to [`bubble_pressure`](@ref) of [`dew_pressure`](@ref) will use `qt_flash` to calculate the bubble/dew point.
 """
-function qt_flash(model::EoSModel,β,T,z = SA[1.0];kwargs...)
+function qt_flash(model::EoSModel, β, T, z=SA[1.0]; kwargs...)
     if !(0 <= β <= 1)
-        throw(DomainError(β,"vapour fractions should be between 0 and 1"))
+        throw(DomainError(β, "vapour fractions should be between 0 and 1"))
     end
-    method = init_preferred_method(qt_flash,model,kwargs)
-    return qt_flash(model,β,T,z,method)
+    method = init_preferred_method(qt_flash, model, kwargs)
+    return qt_flash(model, β, T, z, method)
 end
 
-function init_preferred_method(method::typeof(qt_flash),model::EoSModel,kwargs)
-    GeneralizedXYFlash(;kwargs...)
+function init_preferred_method(method::typeof(qt_flash), model::EoSModel, kwargs)
+    GeneralizedXYFlash(; kwargs...)
 end
 
-function qt_flash(model,β,_T,_z,method::FlashMethod)
-    T,z = ustrip(_T,temperature),uzstrip(model,_z)
-    check_arraysize(model,z)
+function qt_flash(model, β, _T, _z, method::FlashMethod)
+    T, z = ustrip(_T, temperature), uzstrip(model, _z)
+    check_arraysize(model, z)
 
     if z isa SingleComp || length(model) == 1
         z1 = SVector(z[1])
-        result1 = qflash_pure(model,temperature,T,β,z1)
+        result1 = qflash_pure(model, temperature, T, β, z1)
         return result1
     end
 
     if supports_reduction(method)
-        model_r,idx_r = index_reduction(model,z)
+        model_r, idx_r = index_reduction(model, z)
         z_r = z[idx_r]
-        method_r = index_reduction(method,idx_r)
+        method_r = index_reduction(method, idx_r)
     else
-        model_r,idx_r = model,trues(length(model))
-        method_r,z_r = method,z
+        model_r, idx_r = model, trues(length(model))
+        method_r, z_r = method, z
     end
 
     if length(model_r) == 1
-        result1 = qflash_pure(model_r,temperature,T,β,z_r)
-        return index_expansion(result1,idx_r)
+        result1 = qflash_pure(model_r, temperature, T, β, z_r)
+        return index_expansion(result1, idx_r)
     end
 
-    result = qt_flash_impl(model_r,β,T,z_r,method_r)
+    result = qt_flash_impl(model_r, β, T, z_r, method_r)
     if !issorted(result.volumes)
         #this is in case we catch a bad result.
         result = FlashResult(result)
@@ -135,40 +138,40 @@ function qt_flash(model,β,_T,_z,method::FlashMethod)
     ∑β = sum(result.fractions)
     result.fractions ./= ∑β
     result.fractions .*= sum(z)
-    return index_expansion(result,idx_r)
+    return index_expansion(result, idx_r)
 end
 
-function qt_flash_impl(model,β,T,z,method::GeneralizedXYFlash)
-    flash0 = qt_flash_x0(model,β,T,z,method)
+function qt_flash_impl(model, β, T, z, method::GeneralizedXYFlash)
+    flash0 = qt_flash_x0(model, β, T, z, method)
     isone(numphases(flash0)) && return flash0
-    spec = FlashSpecifications(Vfrac(2),β,temperature,T)
-    return xy_flash(model,spec,z,flash0,method)
+    spec = FlashSpecifications(Vfrac(2), β, temperature, T)
+    return xy_flash(model, spec, z, flash0, method)
 end
 
-function qt_to_bubbledew(model,T,z,method,bubble)
+function qt_to_bubbledew(model, T, z, method, bubble)
     β = bubble ? 0 : 1
-    result = Clapeyron.qt_flash(model,β,T,z,method)
-    x1,x2 = result.compositions
-    v1,v2 = result.volumes
+    result = Clapeyron.qt_flash(model, β, T, z, method)
+    x1, x2 = result.compositions
+    v1, v2 = result.volumes
     if x1 ≈ z
         y = x2
-        vl,vv = v1,v2
+        vl, vv = v1, v2
     else
         y = x1
-        vl,vv = v2,v1
+        vl, vv = v2, v1
     end
-    return pressure(result),vl,vv,y
+    return pressure(result), vl, vv, y
 end
 
-qt_to_bubblet(model,T,z,method) = qt_to_bubbledew(model,T,z,method,true)
-qt_to_dewt(model,T,z,method) = qt_to_bubbledew(model,T,z,method,false)
+qt_to_bubblet(model, T, z, method) = qt_to_bubbledew(model, T, z, method, true)
+qt_to_dewt(model, T, z, method) = qt_to_bubbledew(model, T, z, method, false)
 
-function bubble_pressure_impl(model::EoSModel,T,z,method::GeneralizedXYFlash)
-    return qt_to_bubblet(model,T,z,method)
+function bubble_pressure_impl(model::EoSModel, T, z, method::GeneralizedXYFlash)
+    return qt_to_bubblet(model, T, z, method)
 end
 
-function dew_pressure_impl(model::EoSModel,T,z,method::GeneralizedXYFlash)
-    return qt_to_dewt(model,T,z,method)
+function dew_pressure_impl(model::EoSModel, T, z, method::GeneralizedXYFlash)
+    return qt_to_dewt(model, T, z, method)
 end
 
 export qt_flash

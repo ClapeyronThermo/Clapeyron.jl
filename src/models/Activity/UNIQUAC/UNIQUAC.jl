@@ -28,15 +28,16 @@ export UNIQUAC
     reference_state = nothing)
 
 ## Input parameters
-- `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Energy Parameter
-- `r`: Single Parameter (`Float64`)  - Normalized Van der Waals volume
-- `q`: Single Parameter (`Float64`) - Normalized Surface Area
-- `q_p`: Single Parameter (`Float64`) - Modified Normalized Surface Area 
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 
+  - `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Energy Parameter
+  - `r`: Single Parameter (`Float64`)  - Normalized Van der Waals volume
+  - `q`: Single Parameter (`Float64`) - Normalized Surface Area
+  - `q_p`: Single Parameter (`Float64`) - Modified Normalized Surface Area
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 
 ## Input models
-- `puremodel`: model to calculate pure pressure-dependent properties
+
+  - `puremodel`: model to calculate pure pressure-dependent properties
 
 UNIQUAC (Universal QuasiChemical Activity Coefficients) activity model:
 
@@ -51,6 +52,7 @@ gᴱ(res) = -∑xᵢqᵖᵢlog(∑θᵖⱼτⱼᵢ)
 ```
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 model = UNIQUAC(["water","ethanol"]) #Default pure model: PR
@@ -79,33 +81,26 @@ model = UNIQUAC(["water","ethanol"],
 
 ## References
 
-1. Abrams, D. S., & Prausnitz, J. M. (1975). Statistical thermodynamics of liquid mixtures: A new expression for the excess Gibbs energy of partly or completely miscible systems. AIChE journal. American Institute of Chemical Engineers, 21(1), 116–128. [doi:10.1002/aic.690210115](https://doi.org/10.1002/aic.690210115)
-
+ 1. Abrams, D. S., & Prausnitz, J. M. (1975). Statistical thermodynamics of liquid mixtures: A new expression for the excess Gibbs energy of partly or completely miscible systems. AIChE journal. American Institute of Chemical Engineers, 21(1), 116–128. [doi:10.1002/aic.690210115](https://doi.org/10.1002/aic.690210115)
 """
 UNIQUAC
 
-default_locations(::Type{UNIQUAC}) = ["Activity/UNIQUAC/UNIQUAC_like.csv", "properties/molarmass.csv","Activity/UNIQUAC/UNIQUAC_unlike.csv"]
+default_locations(::Type{UNIQUAC}) = ["Activity/UNIQUAC/UNIQUAC_like.csv", "properties/molarmass.csv", "Activity/UNIQUAC/UNIQUAC_unlike.csv"]
 
-function UNIQUAC(components;
-    puremodel = PR,
-    userlocations = String[], 
-    pure_userlocations = String[],
-    verbose = false,
-    reference_state = nothing)
-
+function UNIQUAC(components; puremodel=PR, userlocations=String[], pure_userlocations=String[], verbose=false, reference_state=nothing)
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(UNIQUAC); userlocations = userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose = verbose)
-    a  = params["a"]
-    r  = params["r"]
-    q  = params["q"]
+    params = getparams(formatted_components, default_locations(UNIQUAC); userlocations=userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose=verbose)
+    a = params["a"]
+    r = params["r"]
+    q = params["q"]
     q_p = params["q_p"]
-    Mw  = params["Mw"]
-    
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    packagedparams = UNIQUACParam(a,r,q,q_p,Mw)
+    Mw = params["Mw"]
+
+    _puremodel = init_puremodel(puremodel, components, pure_userlocations, verbose)
+    packagedparams = UNIQUACParam(a, r, q, q_p, Mw)
     references = String[]
-    model = UNIQUAC(formatted_components,packagedparams,_puremodel,references)
-    set_reference_state!(model,reference_state,verbose = verbose)
+    model = UNIQUAC(formatted_components, packagedparams, _puremodel, references)
+    set_reference_state!(model, reference_state, verbose=verbose)
     return model
 end
 #=
@@ -126,15 +121,15 @@ function activity_coefficient(model::UNIQUACModel,p,T,z)
 end
 =#
 
-function excess_g_comb(model::UNIQUACModel,p,T,z=SA[1.0])
+function excess_g_comb(model::UNIQUACModel, p, T, z=SA[1.0])
     _0 = zero(eltype(z))
     r = model.params.r.values
     q = model.params.q.values
-    
+
     n = sum(z)
     invn = 1/n
-    Φm = dot(r,z)*invn
-    θm = dot(q,z)*invn
+    Φm = dot(r, z)*invn
+    θm = dot(q, z)*invn
     G_comp = _0
     for i ∈ @comps
         xi = z[i]*invn
@@ -145,14 +140,14 @@ function excess_g_comb(model::UNIQUACModel,p,T,z=SA[1.0])
     return n*G_comp
 end
 
-function excess_g_res(model::UNIQUACModel,p,T,z=SA[1.0])
+function excess_g_res(model::UNIQUACModel, p, T, z=SA[1.0])
     _0 = zero(T+first(z))
     q_p = model.params.q_p.values
     a = model.params.a.values
     n = sum(z)
     invn = 1/n
     invT = 1/T
-    θpm = dot(q_p,z)*invn
+    θpm = dot(q_p, z)*invn
     G_res = _0
     for i ∈ @comps
         q_pi = q_p[i]
@@ -160,7 +155,7 @@ function excess_g_res(model::UNIQUACModel,p,T,z=SA[1.0])
         ∑θpτ = _0
         for j ∈ @comps
             θpj = q_p[j]*z[j]/θpm*invn
-            τji = exp(-a[j,i]*invT)
+            τji = exp(-a[j, i]*invT)
             ∑θpτ += θpj*τji
         end
         G_res += q_pi*xi*log(∑θpτ)
@@ -168,8 +163,8 @@ function excess_g_res(model::UNIQUACModel,p,T,z=SA[1.0])
     return -n*G_res
 end
 
-function excess_gibbs_free_energy(model::UNIQUACModel,p,T,z)
-    g_comp = excess_g_comb(model,p,T,z)
-    g_res = excess_g_res(model,p,T,z)
-    return (g_comp+g_res)*R̄*T 
+function excess_gibbs_free_energy(model::UNIQUACModel, p, T, z)
+    g_comp = excess_g_comb(model, p, T, z)
+    g_res = excess_g_res(model, p, T, z)
+    return (g_comp+g_res)*R̄*T
 end

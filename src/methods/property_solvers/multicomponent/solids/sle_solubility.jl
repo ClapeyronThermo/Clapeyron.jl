@@ -6,7 +6,7 @@ Returns a matrix containing the composition of the SLE phase boundary for each c
 
 Can only function when solid and fluid models are specified within a CompositeModel.
 """
-function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
+function sle_solubility(model::CompositeModel, p, T, z; solute=nothing, x0=nothing)
     mapping = model.mapping
     solid_components = component_list(model.solid)
     fluid_components = component_list(model.fluid)
@@ -14,32 +14,31 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
     if isnothing(solute)
         solute = solid_components
     end
-    
+
     ns = length(model.solid)
     nf = length(model.fluid)
     p = p*one(eltype(model))
     T = T*one(eltype(model))
-    sol = zeros(length(solute),nf)
-    idxs = convert(Vector{Int},indexin(solute,solid_components))
-    idx_sol = zeros(Bool,ns)
+    sol = zeros(length(solute), nf)
+    idxs = convert(Vector{Int}, indexin(solute, solid_components))
+    idx_sol = zeros(Bool, ns)
     idx_sol[idxs] .= true
     for i in eachindex(solute)
-        idx_sol_s = zeros(Bool,ns)
-        idx_sol_s[solid_components .==solute[i]] .= true
+        idx_sol_s = zeros(Bool, ns)
+        idx_sol_s[solid_components .== solute[i]] .= true
 
         #TODO: express this in terms of melting_temperature
         Tm = model.solid.params.Tm.values[idx_sol_s][1]
 
-        idx_sol_l = zeros(Bool,nf)
+        idx_sol_l = zeros(Bool, nf)
         solute_l1 = mapping[idx_sol_s][1]
         ν_l = [solute_l1[1][i][2] for i in 1:length(solute_l1[1])]
         solute_l = [solute_l1[1][i][1] for i in 1:length(solute_l1[1])]
 
-
         for k in solute_l
             idx_sol_l[fluid_components .== k] .= true
         end
-        idx_solv = zeros(Bool,nf)
+        idx_solv = zeros(Bool, nf)
         if length(solute_l) == length(model.fluid)
             idx_solv[findfirst(idx_sol_l)] = true
         else
@@ -50,13 +49,13 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
             error("Temperature above melting point of $(solute[i])")
         end
 
-        solid_r,_ = index_reduction(model.solid,idx_sol_s)
-        μsol = chemical_potential(solid_r,p,T,[1.])
+        solid_r, _ = index_reduction(model.solid, idx_sol_s)
+        μsol = chemical_potential(solid_r, p, T, [1.0])
 
         zref = 1.0 .* ν_l
         zref ./= sum(zref)
-        fluid_r,_ = index_reduction(model.fluid,idx_sol_l)
-        γref = activity_coefficient(fluid_r,p,Tm,zref; phase=:l)
+        fluid_r, _ = index_reduction(model.fluid, idx_sol_l)
+        γref = activity_coefficient(fluid_r, p, Tm, zref; phase=:l)
         Kref = one(eltype(γref))
         for k in eachindex(γref)
             Kref *= (zref[k]*γref[k])^ν_l[k]
@@ -66,36 +65,34 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         # println(idx_solv)
         # println(idx_sol_l)
 
-
-
         if isnothing(x0)
-            x0 = x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
+            x0 = x0_sle_solubility(model, p, T, z, idx_solv, idx_sol_l, ν_l, μsol)
         end
-        μ_ref = reference_chemical_potential(model.fluid,p,T,reference_chemical_potential_type(model.fluid); phase=:l)
-        data = (μ_ref,idx_sol_l,idx_solv,μsol[1])
+        μ_ref = reference_chemical_potential(model.fluid, p, T, reference_chemical_potential_type(model.fluid); phase=:l)
+        data = (μ_ref, idx_sol_l, idx_solv, μsol[1])
         # println(x0)
-        f!(F,x) = obj_sle_solubility(F,model,p,T,z[idx_solv],exp10(x[1]),data,ν_l)
-        results = Solvers.nlsolve(f!,x0,LineSearch(Newton(),Backtracking()),NEqOptions(),ForwardDiff.Chunk{1}())
-        sol[i,.!(idx_solv)] .= exp10(Solvers.x_sol(results)[1])
-        sol[i,idx_solv] = z[idx_solv]
-        sol[i,:] ./= sum(sol[i,:])
+        f!(F, x) = obj_sle_solubility(F, model, p, T, z[idx_solv], exp10(x[1]), data, ν_l)
+        results = Solvers.nlsolve(f!, x0, LineSearch(Newton(), Backtracking()), NEqOptions(), ForwardDiff.Chunk{1}())
+        sol[i, .!(idx_solv)] .= exp10(Solvers.x_sol(results)[1])
+        sol[i, idx_solv] = z[idx_solv]
+        sol[i, :] ./= sum(sol[i, :])
     end
     if length(solute) == 1
-        return sol[1,:]
+        return sol[1, :]
     else
         return sol
     end
 end
 
-function obj_sle_solubility(F,model,p,T,zsolv,solu,data,ν_l)
-    μ_ref,idx_sol_l,idx_solv,μsol = data
-    z = zeros(typeof(solu),length(model.fluid))
+function obj_sle_solubility(F, model, p, T, zsolv, solu, data, ν_l)
+    μ_ref, idx_sol_l, idx_solv, μsol = data
+    z = zeros(typeof(solu), length(model.fluid))
     z[.!(idx_solv)] .= solu
     z[idx_solv] .= zsolv
     z ./= sum(z)
     R = Rgas(model.fluid)
     ∑z = sum(z)
-    γliq = activity_coefficient(model.fluid,p,T,z/∑z,μ_ref = μ_ref; phase=:l)
+    γliq = activity_coefficient(model.fluid, p, T, z/∑z, μ_ref=μ_ref; phase=:l)
     γl = @view(γliq[idx_sol_l])
     zl = @view(z[idx_sol_l])
     μliq = zero(eltype(γliq))
@@ -107,13 +104,13 @@ function obj_sle_solubility(F,model,p,T,zsolv,solu,data,ν_l)
     F[1] = μliq - μsol
     return F
 end
-function x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
+function x0_sle_solubility(model, p, T, z, idx_solv, idx_sol_l, ν_l, μsol)
     z∞ = zeros(length(z))
     z∞[idx_solv] .= z[idx_solv]
     z∞[.!(idx_solv)] .= 1e-10
     z∞ ./= sum(z∞)
-    γ∞ = activity_coefficient(model.fluid,p,T,z∞; phase=:l)[idx_sol_l]
-    γ∞ = prod(γ∞.^ν_l)
+    γ∞ = activity_coefficient(model.fluid, p, T, z∞; phase=:l)[idx_sol_l]
+    γ∞ = prod(γ∞ .^ ν_l)
     x0 = [1/sum(ν_l)*log10(exp(μsol[1]/(Rgas()*T)-log(γ∞)))]
     # println(x0)
 
@@ -130,7 +127,7 @@ Calculates the solid-liquid coexistence temperature at composition z. Returns th
 
 Can only function when solid and fluid models are specified within a CompositeModel.
 """
-function sle_solubility_T(model::CompositeModel,z,p=1e5;solute=nothing,x0=nothing)
+function sle_solubility_T(model::CompositeModel, z, p=1e5; solute=nothing, x0=nothing)
     mapping = model.mapping
     if isnothing(solute)
         solute = model.solid.components
@@ -140,18 +137,18 @@ function sle_solubility_T(model::CompositeModel,z,p=1e5;solute=nothing,x0=nothin
     solid_components = component_list(model.solid)
     fluid_components = component_list(model.fluid)
     p = p*one(eltype(model))
-    Tsol = zeros(length(solute),length(model.fluid))
-    idxs = convert(Vector{Int},indexin(solute,solid_components))
-    idx_sol = zeros(Bool,ns)
+    Tsol = zeros(length(solute), length(model.fluid))
+    idxs = convert(Vector{Int}, indexin(solute, solid_components))
+    idx_sol = zeros(Bool, ns)
     idx_sol[idxs] .= true
     for i in eachindex(solute)
-        idx_sol_s = zeros(Bool,ns)
-        idx_sol_s[solid_components .==solute[i]] .= true
+        idx_sol_s = zeros(Bool, ns)
+        idx_sol_s[solid_components .== solute[i]] .= true
 
         #TODO: express this in terms of melting_temperature
         Tm = model.solid.params.Tm.values[idx_sol_s][1]
 
-        idx_sol_l = zeros(Bool,nf)
+        idx_sol_l = zeros(Bool, nf)
         solute_l1 = mapping[idx_sol_s][1]
         ν_l = [solute_l1[1][i][2] for i in 1:length(solute_l1[1])]
         solute_l = [solute_l1[1][i][1] for i in 1:length(solute_l1[1])]
@@ -159,51 +156,49 @@ function sle_solubility_T(model::CompositeModel,z,p=1e5;solute=nothing,x0=nothin
         for k in solute_l
             idx_sol_l[fluid_components .== k] .= true
         end
-        idx_solv = zeros(Bool,nf)
+        idx_solv = zeros(Bool, nf)
         if length(solute_l) == length(model.fluid)
             idx_solv[findlast(idx_sol_l)] = true
         else
             idx_solv[.!(idx_sol_l)] .= true
         end
 
-        solid_r,_ = index_reduction(model.solid,idx_sol_s)
+        solid_r, _ = index_reduction(model.solid, idx_sol_s)
 
         zref = 1.0 .* ν_l
         zref ./= sum(zref)
-        fluid_r,_ = index_reduction(model.fluid,idx_sol_l)
+        fluid_r, _ = index_reduction(model.fluid, idx_sol_l)
 
-        γref = activity_coefficient(fluid_r,p,Tm,zref)
+        γref = activity_coefficient(fluid_r, p, Tm, zref)
         Kref = one(eltype(γref))
         for k in eachindex(γref)
             Kref *= (zref[k]*γref[k])^ν_l[k]
         end
         lnKref = log(Kref)
 
-
         if isnothing(x0)
             x0 = model.solid.params.Tm.values[idx_sol_s]
         end
-        
 
-        data = (idx_sol_l,idx_solv,solid_r,lnKref)
+        data = (idx_sol_l, idx_solv, solid_r, lnKref)
         # println(x0)
-        f!(F,x) = obj_sle_solubility_T(F,model,p,x[1],z,data,ν_l)
-        results = Solvers.nlsolve(f!,x0,LineSearch(Newton(),Backtracking()),NEqOptions(),ForwardDiff.Chunk{1}())
+        f!(F, x) = obj_sle_solubility_T(F, model, p, x[1], z, data, ν_l)
+        results = Solvers.nlsolve(f!, x0, LineSearch(Newton(), Backtracking()), NEqOptions(), ForwardDiff.Chunk{1}())
         Tsol[i] = Solvers.x_sol(results)[1]
     end
     return maximum(Tsol)
 end
 
-function obj_sle_solubility_T(F,model,p,T,z,data,ν_l)
-    idx_sol_l,_,solid_r,lnKref = data
-    μsol = chemical_potential(solid_r,p,T,[1.])[1]
+function obj_sle_solubility_T(F, model, p, T, z, data, ν_l)
+    idx_sol_l, _, solid_r, lnKref = data
+    μsol = chemical_potential(solid_r, p, T, [1.0])[1]
     μsol += lnKref*Rgas(model.fluid)*T
 
     #μ_ref = reference_chemical_potential(model.fluid,p,T,reference_chemical_potential_type(model.fluid); phase=:l)
 
     R = Rgas(model.fluid)
     ∑z = sum(z)
-    γliq = activity_coefficient(model.fluid,p,T,z; phase=:l)
+    γliq = activity_coefficient(model.fluid, p, T, z; phase=:l)
     γl = @view(γliq[idx_sol_l])
     zl = @view(z[idx_sol_l])
     μliq = zero(eltype(γliq))

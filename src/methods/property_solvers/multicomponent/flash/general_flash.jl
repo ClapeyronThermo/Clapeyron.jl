@@ -8,15 +8,16 @@ end
 Struct that holds two specifications for a general flash.
 The keyword arguments have the following meaning:
 
-- `T`: temperature `[K]`
-- `v`: total volume `[m³]`
-- `p`: pressure `[Pa]`
-- `h`: enthalpy `[J]`
-- `s`: entropy `[J·K⁻¹]`
-- `u`: internal energy `[J]`
-- `q`: vapour fraction
+  - `T`: temperature `[K]`
+  - `v`: total volume `[m³]`
+  - `p`: pressure `[Pa]`
+  - `h`: enthalpy `[J]`
+  - `s`: entropy `[J·K⁻¹]`
+  - `u`: internal energy `[J]`
+  - `q`: vapour fraction
 
 ## Examples:
+
 ```
 specs = FlashSpecifications(p = 101325,T = 298.15) #PT flash
 specs = FlashSpecifications(Clapeyron.pressure,101325,Clapeyron.temperature,298.15) #equivalent
@@ -28,43 +29,35 @@ struct FlashSpecifications{S1,V1,S2,V2}
     spec2::S2
     val2::V2
 
-    function FlashSpecifications(spec1::S1,val1::V1,spec2::S2,val2::V2) where {S1,V1,S2,V2}
+    function FlashSpecifications(spec1::S1, val1::V1, spec2::S2, val2::V2) where {S1,V1,S2,V2}
         @assert spec1 == volume || spec1 == temperature || spec1 == entropy || spec1 == enthalpy || spec1 == internal_energy || spec1 == pressure || spec1 isa Vfrac
         @assert spec2 == volume || spec2 == temperature || spec2 == entropy || spec2 == enthalpy || spec2 == internal_energy || spec2 == pressure || spec2 isa Vfrac
         @assert spec1 !== spec2
-        return new{S1,V1,S2,V2}(spec1,val1,spec2,val2)
+        return new{S1,V1,S2,V2}(spec1, val1, spec2, val2)
     end
 end
 
-const FLASH_SPECS_FN = (
-    volume,
-    pressure,
-    temperature,
-    enthalpy,
-    entropy,
-    internal_energy,
-    Vfrac(2),
-)
+const FLASH_SPECS_FN = (volume, pressure, temperature, enthalpy, entropy, internal_energy, Vfrac(2))
 
-function FlashSpecifications(;v = nothing,T = nothing,p = nothing,h = nothing,s = nothing,u = nothing,q = nothing)
-    values = (v,p,T,h,s,u,q)
+function FlashSpecifications(; v=nothing, T=nothing, p=nothing, h=nothing, s=nothing, u=nothing, q=nothing)
+    values = (v, p, T, h, s, u, q)
     nothing_values = isnothing.(values) .|> !
     if count(nothing_values) != 2
         throw(ArgumentError("invalid FlashSpecifications input argument, you need to specify exactly two specifications"))
     end
-    i1,i2 = findfirst(nothing_values),findlast(nothing_values)
-    val1,val2 = values[i1],values[i2]
-    spec1,spec2 = FLASH_SPECS_FN[i1],FLASH_SPECS_FN[i2]
-    return FlashSpecifications(spec1,val1,spec2,val2)
+    i1, i2 = findfirst(nothing_values), findlast(nothing_values)
+    val1, val2 = values[i1], values[i2]
+    spec1, spec2 = FLASH_SPECS_FN[i1], FLASH_SPECS_FN[i2]
+    return FlashSpecifications(spec1, val1, spec2, val2)
 end
 
 export FlashSpecifications
 
-function Base.show(io::IO,x::FlashSpecifications)
-    spec1,spec2,val1,val2 = x.spec1,x.spec2,x.val1,x.val2
-    print(io,"FlashSpecifications(")
-    print(io,spec1," => ",val1,", ")
-    print(io,spec2," => ",val2,")")
+function Base.show(io::IO, x::FlashSpecifications)
+    spec1, spec2, val1, val2 = x.spec1, x.spec2, x.val1, x.val2
+    print(io, "FlashSpecifications(")
+    print(io, spec1, " => ", val1, ", ")
+    print(io, spec2, " => ", val2, ")")
 end
 
 spec_intensive(::typeof(pressure)) = true
@@ -73,9 +66,9 @@ spec_intensive(::Vfrac) = true
 
 spec_intensive(x) = false
 
-function normalize_spec(s::FlashSpecifications,k)
+function normalize_spec(s::FlashSpecifications, k)
     _1 = oneunit(1/k)
-    spec1,spec2,val1,val2 = s.spec1,s.spec2,s.val1,s.val2
+    spec1, spec2, val1, val2 = s.spec1, s.spec2, s.val1, s.val2
     if spec_intensive(spec1)
         newval1 = val1*_1
     else
@@ -88,20 +81,20 @@ function normalize_spec(s::FlashSpecifications,k)
         newval2 = val2/k
     end
 
-    return FlashSpecifications(spec1,newval1,spec2,newval2)
+    return FlashSpecifications(spec1, newval1, spec2, newval2)
 end
 
-function set_vfrac(s::FlashSpecifications,i)
+function set_vfrac(s::FlashSpecifications, i)
     if s.spec1 isa Vfrac
-        return FlashSpecifications(Vfrac(i[s.spec1.k]),s.val1,s.spec2,s.val2)
+        return FlashSpecifications(Vfrac(i[s.spec1.k]), s.val1, s.spec2, s.val2)
     elseif s.spec2 isa Vfrac
-        return FlashSpecifications(s.spec1,s.val1,Vfrac(s.spec2.k),s.val2)
+        return FlashSpecifications(s.spec1, s.val1, Vfrac(s.spec2.k), s.val2)
     else
         return s
     end
 end
 
-function xy_input_to_flash_vars(input,np,nc,comps_offset = 0)
+function xy_input_to_flash_vars(input, np, nc, comps_offset=0)
     idx_comps_end = np*(nc-comps_offset)
 
     idx_comps = 1:idx_comps_end
@@ -112,16 +105,16 @@ function xy_input_to_flash_vars(input,np,nc,comps_offset = 0)
     volumes = @view input[idx_volumes]
     β = @view input[idx_β]
 
-    return comps,β,volumes
+    return comps, β, volumes
 end
 
-function xy_input_to_result(spec,input,np,nc,z)
-    compsx,βx,volumes = xy_input_to_flash_vars(input,np,nc)
+function xy_input_to_result(spec, input, np, nc, z)
+    compsx, βx, volumes = xy_input_to_flash_vars(input, np, nc)
     TT = eltype(input)
-    comps = Vector{Vector{TT}}(undef,np)
-    β = Vector{TT}(undef,np)
+    comps = Vector{Vector{TT}}(undef, np)
+    β = Vector{TT}(undef, np)
     for j in 1:np
-        compsi = viewn(compsx,nc,j)
+        compsi = viewn(compsx, nc, j)
         ∑ξ = sum(compsi)
         comps[j] = collect(compsi)
         comps[j] ./= ∑ξ
@@ -139,7 +132,7 @@ function xy_input_to_result(spec,input,np,nc,z)
     end
     #we return in order of increasing molar volumes
     idx = sortperm(volumes)
-    return comps[idx],β[idx],volumes[idx],T
+    return comps[idx], β[idx], volumes[idx], T
 end
 
 #s = dadt
@@ -181,7 +174,7 @@ requires_pv(x::FlashSpecifications) = requires_pv(x.spec1) | requires_pv(x.spec2
 requires_st(x::FlashSpecifications) = requires_st(x.spec1) | requires_st(x.spec2)
 requires_a(x::FlashSpecifications) = requires_a(x.spec1) | requires_a(x.spec2)
 
-function __min(x,y)
+function __min(x, y)
     if x < y
         return x
     elseif y < x
@@ -193,7 +186,7 @@ end
 
 struct XYFlashTag end
 
-function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
+function xy_flash_neq(output, model, zbulk, np, input, state::F, μconfig) where F
     #=
 
     inspired in teqp and Ben Gharbia (2016)
@@ -252,35 +245,35 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     T = input[end]
     nc = length(model)
 
-    flash_vars = xy_input_to_flash_vars(input,np,nc)
-    ξ,β,volumes = flash_vars
+    flash_vars = xy_input_to_flash_vars(input, np, nc)
+    ξ, β, volumes = flash_vars
     #create fractions
     frac = similar(ξ)
     for j in 1:np
-        xj,ξj = viewn(frac,nc,j),viewn(ξ,nc,j)
+        xj, ξj = viewn(frac, nc, j), viewn(ξ, nc, j)
         xj .= ξj
         xj ./= sum(xj)
     end
     #@show primalval(ξ)
     #@show primalval(β)
     #@show primalval(volumes)
-    β_end,j_end = β[np],np
+    β_end, j_end = β[np], np
     #w_end = viewn(ξ,nc,j_end)
-    x_end = viewn(frac,nc,j_end)
+    x_end = viewn(frac, nc, j_end)
     v_end = volumes[j_end]
     needs_a = requires_a(state)
     needs_st = requires_st(state)
     needs_pv = requires_pv(state)
 
     if needs_st
-        a_end,dadv_end,dadT_end = ∂f_vec(model,v_end,T,x_end)
-        p_end,s_end = -dadv_end,-dadT_end
+        a_end, dadv_end, dadT_end = ∂f_vec(model, v_end, T, x_end)
+        p_end, s_end = -dadv_end, -dadT_end
     elseif needs_a && !needs_st
-        a_end,dadv_end = f∂fdV(model,v_end,T,x_end)
-        p_end,s_end = -dadv_end,zero(a_end)
+        a_end, dadv_end = f∂fdV(model, v_end, T, x_end)
+        p_end, s_end = -dadv_end, zero(a_end)
     else
-        p_end = pressure(model,v_end,T,x_end)
-        s_end,a_end = zero(p_end),zero(p_end)
+        p_end = pressure(model, v_end, T, x_end)
+        s_end, a_end = zero(p_end), zero(p_end)
     end
     #@show primalval(p_end)
     #@show primalval(pressure(model,v_end,T,w_end))
@@ -289,13 +282,13 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     ∑s = β_end*s_end
     ∑v = needs_pv ? β_end*v_end : zero(∑a)
 
-    ps = p_scale(model,zbulk)
+    ps = p_scale(model, zbulk)
     R = Rgas(model)
     RT = R*T
     RTinv = 1/RT
 
     #fill pressure constraints:
-    idx_p_constraints = 1:(np-1)
+    idx_p_constraints = 1:(np - 1)
     p_constraints = @view output[idx_p_constraints]
     jj = 0
     for j in 1:np
@@ -303,21 +296,21 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         jj += 1
         βj = β[j]
         # = viewn(ξ,nc,jj)
-        xj = viewn(frac,nc,jj)
+        xj = viewn(frac, nc, jj)
         vj = volumes[j]
         if needs_pv
             ∑v += βj*vj
         end
 
         if needs_st
-            aj,dadvj,dadTj = ∂f_vec(model,vj,T,xj)
-            pj,sj = -dadvj,-dadTj
+            aj, dadvj, dadTj = ∂f_vec(model, vj, T, xj)
+            pj, sj = -dadvj, -dadTj
         elseif needs_a && !needs_st
-            aj,dadvj = f∂fdV(model,vj,T,xj)
-            pj,sj = -dadvj,zero(aj)
+            aj, dadvj = f∂fdV(model, vj, T, xj)
+            pj, sj = -dadvj, zero(aj)
         else
-            pj = pressure(model,vj,T,xj)
-            sj,aj = zero(pj),zero(pj)
+            pj = pressure(model, vj, T, xj)
+            sj, aj = zero(pj), zero(pj)
         end
         #@show primalval(pj)
         ∑a += βj*aj
@@ -326,17 +319,17 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     end
     #fill chemical potential equalities:
 
-    idx_μ_constraints = (1:((np-1)*nc)) .+ (idx_p_constraints[end])
+    idx_μ_constraints = (1:((np - 1) * nc)) .+ (idx_p_constraints[end])
     μ_constraints = @view output[idx_μ_constraints]
-    μ_end = similar(output,nc)
+    μ_end = similar(output, nc)
 
-    VT_chemical_potential_res!(μ_end,model,v_end,T,x_end)
+    VT_chemical_potential_res!(μ_end, model, v_end, T, x_end)
 
     jj = 0
     for j in 1:np
         j == j_end && continue
         jj += 1
-        Fj = @inbounds viewn(μ_constraints,nc,jj)
+        Fj = @inbounds viewn(μ_constraints, nc, jj)
         for i in 1:nc
             #Fj[i] = exp(μ_end[i]*RTinv)*w_end[i]*vs/v_end
             Fj[i] = μ_end[i]
@@ -348,9 +341,9 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         jj += 1
         vj = @inbounds volumes[j]
         #wj = viewn(ξ,nc,j)
-        xj = viewn(frac,nc,j)
-        VT_chemical_potential_res!(μ_end,model,vj,T,xj)
-        Fj = viewn(μ_constraints,nc,jj)
+        xj = viewn(frac, nc, j)
+        VT_chemical_potential_res!(μ_end, model, vj, T, xj)
+        Fj = viewn(μ_constraints, nc, jj)
         for i in 1:nc
             μ1i = Fj[i]
             μji = μ_end[i]
@@ -369,10 +362,10 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
 
     ξ_constraints .= zbulk
 
-    val1,spec1,val2,spec2 = state.val1,state.spec1,state.val2,state.spec2
+    val1, spec1, val2, spec2 = state.val1, state.spec1, state.val2, state.spec2
 
     for j in 1:np
-        ξj = viewn(ξ,nc,j)
+        ξj = viewn(ξ, nc, j)
         βj = β[j]
         ∑ξj = sum(ξj)
         #TODO: using min(a,b) in conjunction with AD seems to be equivalent in the Newton-min method, a way to solve MCP.
@@ -380,7 +373,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         #ben-gharbia uses a Non-Parametric-Interior-Point method (npipm)
         #there is also MixedComplementarityProblems.jl
         #@show primalval(βj),primalval(1 - ∑ξj)
-        β_constraints[j] = __min(βj,1 - ∑ξj)
+        β_constraints[j] = __min(βj, 1 - ∑ξj)
 
         for i in 1:nc
             ξ_constraints[i] -= βj*ξj[i]
@@ -388,21 +381,21 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     end
 
     #fill specification constraints
-    val1,spec1,val2,spec2 = state.val1,state.spec1,state.val2,state.spec2
+    val1, spec1, val2, spec2 = state.val1, state.spec1, state.val2, state.spec2
 
     if spec1 == temperature
-        output[end-1] = (T - val1)/val1
+        output[end - 1] = (T - val1)/val1
     elseif spec1 == pressure
-        output[end-1] = (p_end - val1)/ps
+        output[end - 1] = (p_end - val1)/ps
     elseif spec1 == volume
         #output[end-1] = (∑v - val1)/vs
-        output[end-1] = log(∑v/val1)  #this was the best residual for volume
-        #output[end-1] = vs/∑v - vs/val1
+        output[end - 1] = log(∑v/val1)  #this was the best residual for volume
+    #output[end-1] = vs/∑v - vs/val1
     elseif spec1 isa Vfrac
         i_spec = spec1.k
-        output[end-1] = β[i_spec] - val1
+        output[end - 1] = β[i_spec] - val1
     else #general caloric term, valid for enthalpy , entropy, internal energy, gibbs, helmholtz
-        output[end-1] = (val1 - ∑a - p_end*∑v - T*∑s)*RTinv
+        output[end - 1] = (val1 - ∑a - p_end*∑v - T*∑s)*RTinv
     end
     if spec2 == temperature
         output[end] = (T - val2)/val2
@@ -411,10 +404,10 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     elseif spec2 == volume
         #output[end] = (∑v - val2)/vs
         output[end] = log(∑v/val2) #this was the best residual for volume
-        #output[end] = vs/∑v - vs/val2
+    #output[end] = vs/∑v - vs/val2
     elseif spec2 isa Vfrac
         i_spec = spec2.k
-        output[end-1] = β[i_spec] - val2
+        output[end - 1] = β[i_spec] - val2
     else
         output[end] = (val2 - ∑a - p_end*∑v - T*∑s)*RTinv
     end
@@ -422,8 +415,8 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
 end
 
 #the idea is to not update the x at specification values
-function detect_and_set_slack_variables!(x,spec::FlashSpecifications,np,nc,comps_offset = 0)
-    slack = similar(x,Bool)
+function detect_and_set_slack_variables!(x, spec::FlashSpecifications, np, nc, comps_offset=0)
+    slack = similar(x, Bool)
     slack .= false
     if spec.spec1 == temperature
         slack[end] = true
@@ -456,7 +449,6 @@ end
 
 #we set the value of F[slack] = 0, J[slack_i,slack_i] = 1,  J[:,slack_i] = 0, J[slack_i,:] = 0
 
-
 """
     xy_flash(model,spec::FlashSpecifications,z,w0::FlashResult,method::GeneralizedXYFlash)
     xy_flash(model,spec::FlashSpecifications,z,w0::FlashResult;rtol = 1e-12,atol = 1e-10,max_iters = 50)
@@ -467,6 +459,7 @@ The two necessary specifications are taken from `specs`, the initial point is ob
 Returns a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
 
 ## Examples
+
 ```
 spec = FlashSpecifications(p = 101325.0, T = 200.15) #p-T flash
 model = cPR(["ethane","propane"],idealmodel=ReidIdeal)
@@ -484,7 +477,7 @@ result = xy_flash(model,spec,z,result0) #perform the flash
 """
 function xy_flash end
 
-function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult,method::FlashMethod)
+function xy_flash(model::EoSModel, spec::FlashSpecifications, z, flash::FlashResult, method::FlashMethod)
     if numphases(flash) == 1
         throw(ArgumentError("xy_flash cannot use single phase initial points as starting points."))
     end
@@ -497,11 +490,11 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult
     atol = method.atol
     max_iters = method.max_iters
     verbose = method.verbose
-    return xy_flash(model,spec,z,comps0,β0,volumes0,T0;rtol,atol,max_iters,verbose)
+    return xy_flash(model, spec, z, comps0, β0, volumes0, T0; rtol, atol, max_iters, verbose)
 end
 
 #similar to Solvers.positive_linesearch, but it instead clips the gradient
-function positivity_modify_step!(x,s)
+function positivity_modify_step!(x, s)
     for i in eachindex(x)
         if x[i] + s[i] < 0
             s[i] = -0.5*x[i]
@@ -509,7 +502,7 @@ function positivity_modify_step!(x,s)
     end
 end
 
-function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult;rtol = 1e-14,atol = 1e-12,max_iters = 50,verbose = false)
+function xy_flash(model::EoSModel, spec::FlashSpecifications, z, flash::FlashResult; rtol=1e-14, atol=1e-12, max_iters=50, verbose=false)
     if numphases(flash) == 1
         throw(ArgumentError("xy_flash cannot use single phase initial points as starting points."))
     end
@@ -517,39 +510,39 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash::FlashResult
     β0 = flash.fractions
     volumes0 = flash.volumes
     T0 = flash.data.T
-    return xy_flash(model,spec,z,comps0,β0,volumes0,T0;rtol,atol,max_iters,verbose)
+    return xy_flash(model, spec, z, comps0, β0, volumes0, T0; rtol, atol, max_iters, verbose)
 end
 
-function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes0,T0;rtol = 1e-12,atol = 1e-10,max_iters = 50, verbose = false)
+function xy_flash(model::EoSModel, spec::FlashSpecifications, z, comps0, β0, volumes0, T0; rtol=1e-12, atol=1e-10, max_iters=50, verbose=false)
     if length(comps0) == 1
         throw(ArgumentError("xy_flash cannot use single phase initial points as starting points."))
     end
 
     verbose && @info "start of XY flash with $spec"
     ∑z = sum(z)
-    val1,val2 = spec.val1,spec.val2
+    val1, val2 = spec.val1, spec.val2
     np = length(volumes0)
     nc = length(model)
     l = np*nc + 2*np + 1
-    input = fill(zero(Base.promote_eltype(model,val1,val2,z)),l)
+    input = fill(zero(Base.promote_eltype(model, val1, val2, z)), l)
 
     #which inputs follow 0 < xi < 1
-    input_0_1 = fill(false,l)
-    idx_comps = 1:(nc*np)
-    idx_volumes = 1:np .+ idx_comps[end]
-    idx_β = 1:(np) .+ idx_volumes[end]
+    input_0_1 = fill(false, l)
+    idx_comps = 1:(nc * np)
+    idx_volumes = 1:(np .+ idx_comps[end])
+    idx_β = 1:((np) .+ idx_volumes[end])
     input_0_1[idx_β] .= true
     input_0_1[idx_comps] .= true
     #we want to select the anchor phase with biggest fraction
     idx = sortperm(β0)
     snorm = Inf*one(eltype(input))
-    flash_vars = xy_input_to_flash_vars(input,np,nc)
-    compsx,βx,volumesx = flash_vars
+    flash_vars = xy_input_to_flash_vars(input, np, nc)
+    compsx, βx, volumesx = flash_vars
     for j in 1:np
         k = idx[j]
         volumesx[j] = volumes0[k]
         βx[j] = β0[k]
-        wxj = viewn(compsx,nc,j)
+        wxj = viewn(compsx, nc, j)
         wj0 = comps0[k]
         for i in 1:nc
             wxj[i] = wj0[i]
@@ -560,52 +553,52 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     βx ./= sum(βx)
     _1 = one(eltype(input))
     #normalize to 1 mol base
-    new_spec = normalize_spec(set_vfrac(spec,idx),∑z*_1)
+    new_spec = normalize_spec(set_vfrac(spec, idx), ∑z*_1)
     #variables already set by the specifications
-    slacks = detect_and_set_slack_variables!(input,spec,np,nc)
+    slacks = detect_and_set_slack_variables!(input, spec, np, nc)
     is_temperature_updated = !slacks[end]
     is_temperature_updated && (input[end] = T0)
     zz = z * (1/∑z*_1)
 
-    J = similar(input,(l,l))
+    J = similar(input, (l, l))
     J .= 0
     Jcache = similar(J)
-    piv = zeros(Int,l)
+    piv = zeros(Int, l)
     x = input
     x_old = copy(input)
     F = copy(input)
     s = copy(input)
     #config,μconfig = xy_flash_config(model,input)
-    f!(output,input) = xy_flash_neq(output,model,zz,np,input,new_spec,nothing)
-    function Θ(_f,_z)
-        f!(_f,_z)
+    f!(output, input) = xy_flash_neq(output, model, zz, np, input, new_spec, nothing)
+    function Θ(_f, _z)
+        f!(_f, _z)
         _f[slacks] .= 0
-        0.5*dot(_f,_f)
+        0.5*dot(_f, _f)
     end
-    config = ForwardDiff.JacobianConfig(f!,F,x)
+    config = ForwardDiff.JacobianConfig(f!, F, x)
     #ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
-    Θx = Θ(F,x)
+    Θx = Θ(F, x)
     Fnorm = sqrt(2*Θx)
-    spec_norm = norm(viewlast(F,2),Inf)
+    spec_norm = norm(viewlast(F, 2), Inf)
     converged = Fnorm < rtol
-    nan_converged = !all(isfinite,x)
+    nan_converged = !all(isfinite, x)
     max_iters_reached = false
     for i in 1:max_iters
         converged && break
         nan_converged && break
         max_iters_reached && break
-        ForwardDiff.jacobian!(J,f!,F,x,config,Val{false}())
+        ForwardDiff.jacobian!(J, f!, F, x, config, Val{false}())
         #TODO: fix volumes when they enter an unstable state. do it right here, were we have jacobian info.
         #do not iterate on slack variables
-        Solvers.remove_slacks!(F,J,slacks)
+        Solvers.remove_slacks!(F, J, slacks)
         Jcache .= J
         #try to do LU, if it does not work, use modified SVD
-        finite_J = all(isfinite,J)
-        lu = Solvers.unsafe_LU!(J,piv)
+        finite_J = all(isfinite, J)
+        lu = Solvers.unsafe_LU!(J, piv)
         s .= -F
         svd_done = false
-        ldiv!(lu,s)
-        finite_s = all(isfinite,s)
+        ldiv!(lu, s)
+        finite_s = all(isfinite, s)
         if !finite_s && finite_J
             svd_done = true
             JJ = svd(Jcache)
@@ -616,23 +609,23 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
                 end
             end
             s .= -F
-            ldiv!(JJ,s)
+            ldiv!(JJ, s)
             s .= JJ\-F
         end
 
         for j in eachindex(s)
             sj = s[j]
-            abs(sj) < eps(eltype(s)) && sj < 0 &&  (s[j] = 0)
+            abs(sj) < eps(eltype(s)) && sj < 0 && (s[j] = 0)
         end
 
         x_old .= x
         #bound positivity
         #positivity_modify_step!(x,s)
 
-        α0 = Solvers.positive_linesearch(x,s,decay = 0.8)
+        α0 = Solvers.positive_linesearch(x, s, decay=0.8)
         #backtrack linesearch, so the next result is strictly better than the last
 
-        α,Θx = Solvers.backtracking_linesearch!(Θ,F,x_old,s,Θx,x,α0,ignore = slacks)
+        α, Θx = Solvers.backtracking_linesearch!(Θ, F, x_old, s, Θx, x, α0, ignore=slacks)
 
         if svd_done
             iter_type = :BACKTRACKING_SVD
@@ -640,15 +633,15 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
             iter_type = :BACKTRACKING
         end
 
-        spec_norm = norm(viewlast(F,2),Inf)
+        spec_norm = norm(viewlast(F, 2), Inf)
         snorm_old = snorm
-        snorm = α*norm(s,2)
-        δs = max(abs(snorm-snorm_old),spec_norm)
-        xnorm = Solvers.dnorm(x,x_old,Inf)
-        Fnorm = norm(F,Inf)
+        snorm = α*norm(s, 2)
+        δs = max(abs(snorm-snorm_old), spec_norm)
+        xnorm = Solvers.dnorm(x, x_old, Inf)
+        Fnorm = norm(F, Inf)
         converged = (Fnorm < rtol || δs < rtol || xnorm < atol)
-        verbose && __xy_flash_verbose_step(i,model,spec,x,np,nc,z,α,Fnorm,δs,xnorm,iter_type)
-        nan_converged = !all(isfinite,x) || !all(isfinite,s)
+        verbose && __xy_flash_verbose_step(i, model, spec, x, np, nc, z, α, Fnorm, δs, xnorm, iter_type)
+        nan_converged = !all(isfinite, x) || !all(isfinite, s)
 
         isnan(δs) && (nan_converged = true)
         i == max_iters && (max_iters_reached = true)
@@ -657,33 +650,33 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
         x .= NaN
     end
 
-    comps_result,β_result,volumes_result,T_result = xy_input_to_result(spec,x,np,nc,z)
-    sp1,sp2 = spec.spec1,spec.spec2
+    comps_result, β_result, volumes_result, T_result = xy_input_to_result(spec, x, np, nc, z)
+    sp1, sp2 = spec.spec1, spec.spec2
     if sp1 == pressure
         p_result = spec.val1
     elseif sp2 == pressure
         p_result = spec.val2
     else
-        p_result = pressure(model,volumes_result[end],T_result,comps_result[end])
+        p_result = pressure(model, volumes_result[end], T_result, comps_result[end])
     end
     β_result .*= ∑z
-    flash_result = FlashResult(model,p_result,T_result,comps_result,β_result,volumes_result)
+    flash_result = FlashResult(model, p_result, T_result, comps_result, β_result, volumes_result)
     return merge_duplicate_phases!(flash_result)
 end
 
-function __xy_flash_verbose_step(i,model,spec,x,np,nc,z,α,Fnorm,δs,xnorm,iter_type)
-    comps_result,β_result,volumes_result,T_result = xy_input_to_result(spec,x,np,nc,z)
-    sp1,sp2 = spec.spec1,spec.spec2
+function __xy_flash_verbose_step(i, model, spec, x, np, nc, z, α, Fnorm, δs, xnorm, iter_type)
+    comps_result, β_result, volumes_result, T_result = xy_input_to_result(spec, x, np, nc, z)
+    sp1, sp2 = spec.spec1, spec.spec2
     if sp1 == pressure
         p_result = spec.val1
     elseif sp2 == pressure
         p_result = spec.val2
     else
-        p_result = pressure(model,volumes_result[end],T_result,comps_result[end])
+        p_result = pressure(model, volumes_result[end], T_result, comps_result[end])
     end
     β_result .*= sum(z)
-    flash_result = FlashResult(model,p_result,T_result,comps_result,β_result,volumes_result)
-    flash_result_text = repr("text/plain",flash_result)
+    flash_result = FlashResult(model, p_result, T_result, comps_result, β_result, volumes_result)
+    flash_result_text = repr("text/plain", flash_result)
     @info """iteration = $i
 
     $flash_result_text
@@ -708,17 +701,18 @@ Method to solve non-reactive multicomponent, two-phase flash problem, using a ge
 Only two phases are supported. If `K0` is `nothing`, it will be calculated via fugacity coefficients at p,T conditions.
 
 ## Keyword Arguments:
-- `equilibrium` (optional) = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria, `:unknown` if not specified.
-- `p0` (optional), initial guess pressure, ignored if pressure is one of the flash specifications.
-- `T0` (optional), initial guess temperature, ignored if temperature is one of the flash specifications.
-- `K0` (optional), initial guess for the K-values.
-- `x0` (optional), initial guess for the composition of phase x.
-- `y0` = optional, initial guess for the composition of phase y.
-- `vol0` = optional, initial guesses for phase x and phase y volumes.
-- `atol` = absolute tolerance to stop the calculation.
-- `rtol` = relative tolerance to stop the calculation.
-- `max_iters` = maximum number of iterations.
-- `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
+
+  - `equilibrium` (optional) = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria, `:unknown` if not specified.
+  - `p0` (optional), initial guess pressure, ignored if pressure is one of the flash specifications.
+  - `T0` (optional), initial guess temperature, ignored if temperature is one of the flash specifications.
+  - `K0` (optional), initial guess for the K-values.
+  - `x0` (optional), initial guess for the composition of phase x.
+  - `y0` = optional, initial guess for the composition of phase y.
+  - `vol0` = optional, initial guesses for phase x and phase y volumes.
+  - `atol` = absolute tolerance to stop the calculation.
+  - `rtol` = relative tolerance to stop the calculation.
+  - `max_iters` = maximum number of iterations.
+  - `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
 """
 struct GeneralizedXYFlash{P,T} <: FlashMethod
     equilibrium::Symbol
@@ -746,46 +740,34 @@ function Solvers.primalval(method::GeneralizedXYFlash{P,T}) where {P,T}
     else
         λT = Solvers.primal_eltype(P)
     end
-    return GeneralizedXYFlash{λP,λT}(method.equilibrium,primalval(method.T0),primalval(method.p0),primalval(method.K0),primalval(method.x0),primalval(method.y0),primalval(method.v0),method.atol,method.rtol,method.max_iters,method.verbose)
+    return GeneralizedXYFlash{λP,λT}(method.equilibrium, primalval(method.T0), primalval(method.p0), primalval(method.K0), primalval(method.x0), primalval(method.y0), primalval(method.v0), method.atol, method.rtol, method.max_iters, method.verbose)
 end
 
 Base.eltype(method::GeneralizedXYFlash{T}) where T = T
 
-function index_reduction(m::GeneralizedXYFlash,idx::AbstractVector)
-    equilibrium,T0,p0,K0,x0,y0,v0,atol,rtol,max_iters = m.equilibrium,m.T0,m.p0,m.K0,m.x0,m.y0,m.v0,m.atol,m.rtol,m.max_iters
+function index_reduction(m::GeneralizedXYFlash, idx::AbstractVector)
+    equilibrium, T0, p0, K0, x0, y0, v0, atol, rtol, max_iters = m.equilibrium, m.T0, m.p0, m.K0, m.x0, m.y0, m.v0, m.atol, m.rtol, m.max_iters
     K0 !== nothing && (K0 = K0[idx])
     x0 !== nothing && (x0 = x0[idx])
     y0 !== nothing && (y0 = y0[idx])
-    return GeneralizedXYFlash(;equilibrium,T0,p0,K0,x0,y0,v0,atol,rtol,max_iters,m.verbose)
+    return GeneralizedXYFlash(; equilibrium, T0, p0, K0, x0, y0, v0, atol, rtol, max_iters, m.verbose)
 end
 
-index_reduction(m::GeneralizedXYFlash{Nothing,Nothing},idx::AbstractVector) = m
+index_reduction(m::GeneralizedXYFlash{Nothing,Nothing}, idx::AbstractVector) = m
 
 numphases(::GeneralizedXYFlash) = 2
 
-function GeneralizedXYFlash(;equilibrium = :unknown,
-                        T0 = nothing,
-                        p0 = nothing,
-                        K0 = nothing,
-                        x0 = nothing,
-                        y0 = nothing,
-                        v0 = nothing,
-                        rtol = 1e-14,
-                        atol = 1e-12,
-                        max_iters = 100,
-                        flash_result = nothing,
-                        verbose = false)
-
-    !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for GeneralizedXYFlash"))
+function GeneralizedXYFlash(; equilibrium=:unknown, T0=nothing, p0=nothing, K0=nothing, x0=nothing, y0=nothing, v0=nothing, rtol=1e-14, atol=1e-12, max_iters=100, flash_result=nothing, verbose=false)
+    !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium)) && throw(error("invalid equilibrium specification for GeneralizedXYFlash"))
     if flash_result isa FlashResult
-        comps,volumes = flash_result.compositions,flash_result.volumes
+        comps, volumes = flash_result.compositions, flash_result.volumes
         np = numphases(flash_result)
-        np != 2 && incorrect_np_flash_error(GeneralizedXYFlash,flash_result)
-        w1,w2 = comps[1],comps[2]
-        v = (volumes[1],volumes[2])
+        np != 2 && incorrect_np_flash_error(GeneralizedXYFlash, flash_result)
+        w1, w2 = comps[1], comps[2]
+        v = (volumes[1], volumes[2])
         P00 = flash_result.data.p
         T00 = flash_result.data.T
-        return GeneralizedXYFlash(;equilibrium = equilibrium,T0 = T00,p0 = P00,x0 = w1,y0 = w2,v0 = v,rtol = rtol,atol = atol,max_iters = max_iters,verbose = verbose)
+        return GeneralizedXYFlash(; equilibrium=equilibrium, T0=T00, p0=P00, x0=w1, y0=w2, v0=v, rtol=rtol, atol=atol, max_iters=max_iters, verbose=verbose)
     end
 
     if K0 == x0 == y0 === nothing #nothing specified
@@ -802,11 +784,11 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
     end
 
     if T === nothing && v0 !== nothing
-        TT = Base.promote_eltype(v0[1],v0[2])
-        _v0 = (v0[1],v0[2])
+        TT = Base.promote_eltype(v0[1], v0[2])
+        _v0 = (v0[1], v0[2])
     elseif T !== nothing && v0 !== nothing
-        TT = Base.promote_eltype(one(T),v0[1],v0[2])
-        _v0 = (v0[1],v0[2])
+        TT = Base.promote_eltype(one(T), v0[1], v0[2])
+        _v0 = (v0[1], v0[2])
     else
         TT = T
         _v0 = v0
@@ -817,22 +799,22 @@ function GeneralizedXYFlash(;equilibrium = :unknown,
     elseif T0 !== nothing && p0 !== nothing
         S = typeof(T0*p0)
     else
-        S = typeof(something(T0,p0))
+        S = typeof(something(T0, p0))
     end
-    return GeneralizedXYFlash{S,TT}(equilibrium,T0,p0,K0,x0,y0,_v0,atol,rtol,max_iters,verbose)
+    return GeneralizedXYFlash{S,TT}(equilibrium, T0, p0, K0, x0, y0, _v0, atol, rtol, max_iters, verbose)
 end
 
-function px_flash_x0(model,p,x,z,spec::F,method) where F
+function px_flash_x0(model, p, x, z, spec::F, method) where F
     verbose = get_verbosity(method)
     if spec == temperature
         verbose && @info "specification results in a P-T flash, no work is needed to find temperature"
-        T,_phase = x,:eq #we suppose equilibria
+        T, _phase = x, :eq #we suppose equilibria
     elseif method.T0 === nothing
         verbose && @info "calculating temperature via Tproperty"
-        T,_phase = _Tproperty(model,p,x,z,spec;verbose)
+        T, _phase = _Tproperty(model, p, x, z, spec; verbose)
     else
         verbose && @info "temperature already provided"
-        T,_phase = method.T0,:eq #we suppose equilibria
+        T, _phase = method.T0, :eq #we suppose equilibria
     end
 
     verbose && @info "p = $p, T = $T, equilibrium status = :$_phase"
@@ -840,81 +822,81 @@ function px_flash_x0(model,p,x,z,spec::F,method) where F
         _phase = :eq
     end
 
-    update_temperature!(model,T)
+    update_temperature!(model, T)
 
     if _phase != :eq
         verbose && @info "using pure phase initial point"
-        return FlashResult(model,p,T,z,phase = _phase)
+        return FlashResult(model, p, T, z, phase=_phase)
     end
     verbose && @info "using PT-flash 2-phase initial point"
-    return pt_flash_x0(model,p,T,z,method)
+    return pt_flash_x0(model, p, T, z, method)
 end
 
-function px_flash_pure(model,p,x,z,spec::F,T0 = nothing,verbose = false) where F
-    T,new_phase,data = Tproperty_pure(model,p,x,z,spec,:unknown,T0,verbose)
-    βv,vl,vv = data
+function px_flash_pure(model, p, x, z, spec::F, T0=nothing, verbose=false) where F
+    T, new_phase, data = Tproperty_pure(model, p, x, z, spec, :unknown, T0, verbose)
+    βv, vl, vv = data
     ∑z = sum(z)
     x1 = SVector(1.0*one(∑z))
-    TT = Base.promote_eltype(model,p,x,z)
+    TT = Base.promote_eltype(model, p, x, z)
 
     if is_liquid(new_phase) || is_vapour(new_phase)
-        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)],phase = new_phase)
+        return FlashResult(model, p, T, SA[∑z * one(p) * one(T)], phase=new_phase)
     end
 
     if new_phase == :eq
-        return FlashResult(model,p,T,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false,vapour_phase_index = 2)
+        return FlashResult(model, p, T, [x1, x1], [∑z-∑z*βv, ∑z*βv], [vl, vv]; sort=false, vapour_phase_index=2)
     end
 
-    return FlashResultInvalid(x1,one(TT))
+    return FlashResultInvalid(x1, one(TT))
 end
 
-function tx_flash_x0(model,T,x,z,spec::F,method) where F
+function tx_flash_x0(model, T, x, z, spec::F, method) where F
     verbose = get_verbosity(method)
     if spec == pressure
         verbose && @info "specification results in a P-T flash, no work is needed to find pressure"
-        p,_phase = x,:eq #we suppose equilibria
+        p, _phase = x, :eq #we suppose equilibria
     elseif method.p0 === nothing
         verbose && @info "calculating pressure via Pproperty"
-        p,_phase = _Pproperty(model,T,x,z,spec;verbose)
+        p, _phase = _Pproperty(model, T, x, z, spec; verbose)
     else
         verbose && @info "pressure already provided"
-        p,_phase = x,:eq #we suppose equilibria
+        p, _phase = x, :eq #we suppose equilibria
     end
 
     verbose && @info "p = $p, T = $T, equilibrium status = :$_phase"
 
     if _phase != :eq
         verbose && @info "using pure phase initial point"
-        return FlashResult(model,p,T,z,phase = _phase)
+        return FlashResult(model, p, T, z, phase=_phase)
     end
     verbose && @info "using PT-flash 2-phase initial point"
-    return pt_flash_x0(model,p,T,z,method)
+    return pt_flash_x0(model, p, T, z, method)
 end
 
-function tx_flash_pure(model,T,x,z,spec::F,P0 = nothing,verbose = false) where F
-    p,new_phase,data = Pproperty_pure(model,T,x,z,spec,:unknown,P0,verbose)
-    βv,vl,vv = data
+function tx_flash_pure(model, T, x, z, spec::F, P0=nothing, verbose=false) where F
+    p, new_phase, data = Pproperty_pure(model, T, x, z, spec, :unknown, P0, verbose)
+    βv, vl, vv = data
     ∑z = sum(z)
-    x1 = SA[1.0*one(∑z)]
-    TT = Base.promote_eltype(model,T,x,z)
+    x1 = SA[1.0 * one(∑z)]
+    TT = Base.promote_eltype(model, T, x, z)
 
     if is_liquid(new_phase) || is_vapour(new_phase)
-        return FlashResult(model,p,T,SA[∑z*one(p)*one(T)],phase = new_phase)
+        return FlashResult(model, p, T, SA[∑z * one(p) * one(T)], phase=new_phase)
     end
 
     if new_phase == :eq
-        return FlashResult(model,p,T,[x1,x1],[∑z-∑z*βv,∑z*βv],[vl,vv];sort = false,vapour_phase_index = 2)
+        return FlashResult(model, p, T, [x1, x1], [∑z-∑z*βv, ∑z*βv], [vl, vv]; sort=false, vapour_phase_index=2)
     end
 
-    return FlashResultInvalid(x1,one(TT))
+    return FlashResultInvalid(x1, one(TT))
 end
 
-function qflash_pure(model,spec::F,x,βv,z) where F
+function qflash_pure(model, spec::F, x, βv, z) where F
     if spec == pressure
-        T,vl,vv = saturation_temperature(model,x)
+        T, vl, vv = saturation_temperature(model, x)
         p = x
     elseif spec == temperature
-        p,vl,vv = saturation_pressure(model,x)
+        p, vl, vv = saturation_pressure(model, x)
         T = x
     else
         throw(ArgumentError("invalid specification for qflash_pure: $spec"))
@@ -924,23 +906,23 @@ function qflash_pure(model,spec::F,x,βv,z) where F
 
     #over critical point, or bad input
     if !isfinite(βv) || !isfinite(p) || !isfinite(T)
-        return FlashResultInvalid(x1,βv)
+        return FlashResultInvalid(x1, βv)
     elseif isone(primalval(βv))
-        g,_ = modified_gibbs(model,p,T,x1,:vapour,vv)
-        return FlashResult([x1],[∑z*oneunit(vv)],[vv],FlashData(p,T,g,1))
+        g, _ = modified_gibbs(model, p, T, x1, :vapour, vv)
+        return FlashResult([x1], [∑z*oneunit(vv)], [vv], FlashData(p, T, g, 1))
     elseif iszero(primalval(βv))
-        g,_ = modified_gibbs(model,p,T,x1,:liquid,vl)
-        return FlashResult([x1],[∑z*oneunit(vv)],[vl],FlashData(p,T,g,-1))
+        g, _ = modified_gibbs(model, p, T, x1, :liquid, vl)
+        return FlashResult([x1], [∑z*oneunit(vv)], [vl], FlashData(p, T, g, -1))
     elseif βv < 0 || βv > 1
         throw(error("invalid specification of vapour fraction, it must be between 0 and 1."))
     else
-        comps = [x1,x1]
-        vols = [vl,vv]
-        fracs = [∑z-∑z*βv,∑z*βv]
-        data = FlashData(p,T,zero(vv),2)
-        flash0 = FlashResult(comps,fracs,vols,data)
-        g,_ = modified_gibbs(model,flash0)
-        return FlashResult(comps,fracs,vols,FlashData(p,T,g,2))
+        comps = [x1, x1]
+        vols = [vl, vv]
+        fracs = [∑z-∑z*βv, ∑z*βv]
+        data = FlashData(p, T, zero(vv), 2)
+        flash0 = FlashResult(comps, fracs, vols, data)
+        g, _ = modified_gibbs(model, flash0)
+        return FlashResult(comps, fracs, vols, FlashData(p, T, g, 2))
     end
 end
 
