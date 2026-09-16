@@ -234,6 +234,16 @@ return SAFTgammaMie{BasicIdeal, Float64}(
         AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining, false), ["10.1063/1.4851455", "10.1021/je500248h"])
 end
 
+function test_excess_gibbs_free_energy(model::ActivityModel,p,T,z)
+    γ = Clapeyron.activity_coefficient(model,p,T,z)
+    return Clapeyron.Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ eachindex(z))
+end
+
+function test_activity_coefficient(model::ActivityModel,p,T,z)
+    X = Clapeyron.gradient_type(model,T+p,z)
+    return exp.(Solvers.gradient(x->Clapeyron.excess_gibbs_free_energy(model,p,T,x),z)/(Clapeyron.Rgas(model)*T))::X
+end
+
 struct VanLaar_GE <: Clapeyron.ActivityModel
     A12::Float64
     A21::Float64
