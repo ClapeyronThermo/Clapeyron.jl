@@ -50,6 +50,7 @@
     @testset "UNIFAC" begin
         system = UNIFAC(["methanol","benzene"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5322232657797463 rtol = 1e-6
+        @test Clapeyron.excess(system,p,T,z,enthalpy) ≈ -T*T*Clapeyron.Solvers.derivative(_T -> Clapeyron.excess_gibbs_free_energy(system,p,_T,z)/_T, T) rtol = 1e-6
         #when fast UNIFAC works, it should pass this test.
         # system2 = UNIFAC(["methanol","benzene"])
         # prop2 = ()
