@@ -78,7 +78,7 @@ function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,vol:
         return PT_property(model.gas,p,T,z,phase,threaded,vol0,f,vol)
     else #liquid or unknown
         wrapper = PTFlashWrapper(model,p,T,z,:vle)
-        return PT_property(wrapper,p,T,z,phase,threaded,vol0,vol)
+        return PT_property(wrapper,p,T,z,phase,threaded,vol0,f,vol)
     end
 end
 
