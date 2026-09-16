@@ -139,7 +139,8 @@ end
             @test Clapeyron.a_nf(system, V, T, z) ≈ -0.7418363729609996 rtol = 1e-6
 
             test_gibbs_duhem(system, V, T, z)
-            GC.gc()
         end
     end
 end
+GC.gc()
+@printline
