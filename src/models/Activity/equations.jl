@@ -558,7 +558,7 @@ function gE_rt_SG(z,r,q,coord = 5)
     θm = dot(q,z)*invn
     G_comb = zero(Base.promote_eltype(z,r,q,coord))
     @inbounds for i in eachindex(z)
-        qi,zi = q[i],zi
+        qi,zi = q[i],z[i]
         Φi = r[i]/Φm    #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
         θi = qi/θm      #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
         G_comb += coord*qi*zi*log(θi/Φi)
