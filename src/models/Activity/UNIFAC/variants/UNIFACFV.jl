@@ -156,7 +156,6 @@ function excess_g_FV(model::UNIFACFVModel,V,T,z,c)
         r̃ += r[i]*zi
     end
 
-
     #=
     The original free volume activity term proposed by Oishi and Prausnitz is not a consistent activity coefficient term (assumes that `∂v̄ₘ∂zᵢ == 0`).
     This assumption creates an inconsistent activity coefficient model (the jacobian of the activity coefficients is not symmetric.)
@@ -183,7 +182,8 @@ end
 function excess_g_res(model::UNIFACFVModel,p,T,z)
     Ψij = Ψ(model,p,T,z)
     Q = model.params.Q.values
-    return Rgas(model)*T*excess_g_res_unifac(model.groups,Q,Ψij,z)
+    ∑vikQk = model.unifac_cache.q
+    return Rgas(model)*T*excess_g_res_unifac(model.groups,Q,Ψij,z,∑vikQk)
 end
 
 function excess_gibbs_free_energy(model::UNIFACFVModel,p,T,z)

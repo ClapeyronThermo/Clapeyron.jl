@@ -228,17 +228,20 @@ end
 function excess_g_res(model::UNIFACModel,p,T,z)
     Ψij = Ψ(model,p,T,z)
     Q = model.params.Q.values
-    return Rgas(model)*T*excess_g_res_unifac(model.groups,Q,Ψij,z)
+    groups = model.groups
+    #∑vikQk = [dot(Q,vi) for vi in groups.n_flattenedgroups]
+    ∑vikQk = model.unifac_cache.q
+    return Rgas(model)*T*excess_g_res_unifac(groups,Q,Ψij,z,∑vikQk)
 end
 
 # https://github.com/thermotools/thermopack/blob/main/doc/memo/UNIFAC/unifac.pdf
-function excess_g_res_unifac(groups,Q,Ψ,z)
+function excess_g_res_unifac(groups,Q,Ψ,z,∑vikQk = group_sum(groups,Q))
 
     nc = length(z)
     ng = length(groups.flattenedgroups)
 
     v = groups.n_flattenedgroups
-    ∑vikQk = [dot(Q,vi) for vi in v]
+    #∑vikQk = [dot(Q,vi) for vi in v]
     #calculate Θ with the least amount of allocs possible
     X = group_fractions(groups,z)
     ∑XQ⁻¹ = 1/dot(X,Q)
