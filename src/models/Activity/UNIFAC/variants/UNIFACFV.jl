@@ -58,7 +58,7 @@ end
 
 function UNIFACFV(components,groups,params,puremodel,references,unifac_cache)
     c = eltype(puremodel)
-    T = eltype(params)
+    T = Base.promote_eltype(unifac_cache,groups,params)
     return UNIFACFV{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 

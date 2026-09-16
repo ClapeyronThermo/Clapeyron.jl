@@ -8,7 +8,7 @@ Base.eltype(::VTPRUNIFACCache{T}) where T = T
 
 VTPRUNIFACCache(components,q) = VTPRUNIFACCache{eltype(q)}(components,q)
 
-VTPRUNIFACCache(groups::GroupParam,params) = VTPRUNIFACCache(groups,params.Q)
+VTPRUNIFACCache(groups::GroupParam,params::EoSParam) = VTPRUNIFACCache(groups,params.Q)
 
 VTPRUNIFACCache(groups::GroupParam,Q::SingleParameter) = VTPRUNIFACCache(groups.components,group_sum(groups,Q.values))
 
@@ -30,10 +30,10 @@ struct VTPRUNIFAC{c<:EoSModel,T} <: VTPRUNIFACModel
     unifac_cache::VTPRUNIFACCache{T}
 end
 
-function VTPRUNIFAC(components,groups,params,puremodel,references)
+function VTPRUNIFAC(components,groups,params,puremodel,references,unifac_cache)
     c = eltype(puremodel)
-    T = eltype(params)
-    return VTPRUNIFAC{c,T}(components,groups,params,puremodel,references)
+    T = Base.promote_eltype(unifac_cache,groups,params)
+    return VTPRUNIFAC{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 export VTPRUNIFAC

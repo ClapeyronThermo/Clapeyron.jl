@@ -19,7 +19,7 @@ end
 
 function ogUNIFAC(components,groups,params,puremodel,references,unifac_cache)
     c = eltype(puremodel)
-    T = eltype(params)
+    TT = Base.promote_eltype(unifac_cache,groups,params)
     return ogUNIFAC{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
