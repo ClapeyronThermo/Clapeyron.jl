@@ -123,23 +123,15 @@ function activity_coefficient_wilson(model::WilsonModel,p,T,z,Vi = wilson_volume
 end
 =#
 
-function excess_gibbs_free_energy(model::WilsonModel,p,T,z)
-    excess_g_wilson(model::WilsonModel,p,T,z)
-end
+excess_gibbs_free_energy(model::WilsonModel,p,T,z) = excess_g_wilson(model::WilsonModel,p,T,z)
 
-function excess_g_res(model::WilsonModel,p,T,z)
-    excess_g_res_wilson(model,p,T,z)
-end
+excess_g_res(model::WilsonModel,p,T,z) = excess_g_res_wilson(model,p,T,z)
+excess_g_comb(model::WilsonModel,p,T,z) = excess_g_comb(model,p,T,z,wilson_volume(model,T))
+excess_g_comb(model::WilsonModel,p,T,z,V) = Rgas(model)*T*gE_rt_FH(z,V)
 
 function excess_g_res_wilson(model::WilsonModel,p,T,z,V = wilson_volume(model,T))
     g_E = excess_g_wilson(model,p,T,z,V)
-    g_comb = zero(g_E)
-    zV = dot(z,V)
-    zVinv = 1/zV
-    for i in 1:length(model)
-        g_comb += z[i]*(log(V[i]*zVinv))
-    end
-    g_comb = g_comb*Rgas(model)*T
+    g_comb = excess_g_comb(model,p,T,z,V)
     return g_E - g_comb
 end
 

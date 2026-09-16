@@ -127,22 +127,9 @@ end
 =#
 
 function excess_g_comb(model::UNIQUACModel,p,T,z=SA[1.0])
-    _0 = zero(eltype(z))
     r = model.params.r.values
     q = model.params.q.values
-    
-    n = sum(z)
-    invn = 1/n
-    Φm = dot(r,z)*invn
-    θm = dot(q,z)*invn
-    G_comp = _0
-    for i ∈ @comps
-        xi = z[i]*invn
-        Φi = r[i]/Φm
-        θi = q[i]/θm
-        G_comp += xi*log(Φi) + 5*q[i]*xi*log(θi/Φi)
-    end
-    return n*G_comp
+    return Rgas(model)*T*gE_rt_UNIQUAC(z,r,q)
 end
 
 function excess_g_res(model::UNIQUACModel,p,T,z=SA[1.0])
@@ -165,11 +152,9 @@ function excess_g_res(model::UNIQUACModel,p,T,z=SA[1.0])
         end
         G_res += q_pi*xi*log(∑θpτ)
     end
-    return -n*G_res
+    return -n*G_res*R̄*T
 end
 
 function excess_gibbs_free_energy(model::UNIQUACModel,p,T,z)
-    g_comp = excess_g_comb(model,p,T,z)
-    g_res = excess_g_res(model,p,T,z)
-    return (g_comp+g_res)*R̄*T 
+    return excess_g_comb(model,p,T,z) + excess_g_res(model,p,T,z)
 end

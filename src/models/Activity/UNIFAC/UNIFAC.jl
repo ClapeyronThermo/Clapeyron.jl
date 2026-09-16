@@ -225,93 +225,43 @@ function Ψ(model::UNIFACModel,V,T,z)
     return @. exp(-(A+B*T+C*T^2)/T)
 end
 
-excess_g_comb(model::UNIFACModel,p,T,z=SA[1.0]) = excess_g_comb_dormund(model,p,T,z)
-
-#flory-huggins(FH) + Staverman-Guggenheim (SG) contributions
-function excess_g_comb_dormund(model::UNIFACModel,p,T,z=SA[1.0])
-    _0 = zero(eltype(z))
-    r =model.unifac_cache.r
-    q =model.unifac_cache.q
-    q_p = model.unifac_cache.q_p
-    n = sum(z)
-    invn = 1/n
-    Φm = dot(r,z)*invn
-    θm = dot(q,z)*invn
-    Φpm = dot(q_p,z)*invn
-    G_comb = _0
-    for i ∈ @comps
-        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
-        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
-        Φpi = q_p[i]/Φpm #technically xi[i]q_p[i]/θpm, but it gets cancelled out (log(Φpi/xi))
-        zi = z[i]
-        G_comb += zi*log(Φpi) + 5*q[i]*zi*log(θi/Φi)
-    end
-    return G_comb*R̄*T
-end
-
-function excess_g_comb_original(model::UNIFACModel,p,T,z=SA[1.0])
-    _0 = zero(eltype(z))
-    r =model.unifac_cache.r
-    q =model.unifac_cache.q
-    n = sum(z)
-    invn = 1/n
-    Φm = dot(r,z)*invn
-    θm = dot(q,z)*invn
-    G_comb = _0
-    for i ∈ @comps
-        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
-        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
-        zi = z[i]
-        G_comb += zi*log(Φi) + 5*q[i]*zi*log(θi/Φi)
-    end
-    return G_comb*R̄*T
-end
-
-
-#just Staverman-Guggenheim (SG) contribution, used for UMR
-function excess_g_SG(model::UNIFACModel,p,T,z)
-    _0 = zero(eltype(z))
-    r = model.unifac_cache.r
-    q = model.unifac_cache.q
-    n = sum(z)
-    invn = 1/n
-    Φm = dot(r,z)*invn
-    θm = dot(q,z)*invn
-    G_SG = _0
-    for i ∈ @comps
-        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
-        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
-        G_SG += 5*q[i]*z[i]*log(θi/Φi)
-    end
-    return G_SG*R̄*T
+function excess_g_res(model::UNIFACModel,p,T,z)
+    Ψij = Ψ(model,p,T,z)
+    Q = model.params.Q.values
+    return Rgas(model)*T*excess_g_res_unifac(model.groups,Q,Ψij,z)
 end
 
 # https://github.com/thermotools/thermopack/blob/main/doc/memo/UNIFAC/unifac.pdf
-function excess_g_res(model::UNIFACModel,p,T,z)
-    _0 = zero(T + first(z))
-    G_res = _0
-    V = _0
-    Ẽ = @f(Ψ)
-    v = model.groups.n_flattenedgroups
-    Q = model.params.Q.values
+function excess_g_res_unifac(groups,Q,Ψ,z)
+
+    nc = length(z)
+    ng = length(groups.flattenedgroups)
+
+    v = groups.n_flattenedgroups
     ∑vikQk = [dot(Q,vi) for vi in v]
     #calculate Θ with the least amount of allocs possible
-    X = group_fractions(model.groups,z)
+    X = group_fractions(groups,z)
     ∑XQ⁻¹ = 1/dot(X,Q)
-    X .*= Q
-    X .*= ∑XQ⁻¹
+
+    @inbounds for i in 1:ng
+        X[i] *= Q[i]*∑XQ⁻¹
+    end
+
     Θ = X
-    for i in @comps
+
+    _0 = zero(Base.promote_eltype(groups,Q,Ψ,z))
+    G_res = _0
+    for i in 1:nc
         ∑QkΔΛk = _0
         vi = v[i]
         ∑vikQk⁻¹ = 1/∑vikQk[i] # 1/(sum(vik * Qk for k in groups))
         zi = z[i]
         #iszero(zi) && continue #causes problems with AD
-        for k in @groups
+        for k in 1:ng
             Λk = _0
             Λki = _0
-            for j in @groups
-                Ẽjk = Ẽ[j,k]
+            for j in 1:ng
+                Ẽjk = Ψ[j,k]
                 Λk += Ẽjk*Θ[j]
                 Θij = Q[j]*vi[j]
                 Λki += Ẽjk*Θij
@@ -321,9 +271,9 @@ function excess_g_res(model::UNIFACModel,p,T,z)
             Λki = log(Λki)
             ∑QkΔΛk += vi[k]*Q[k]*(Λk - Λki)
         end
-        G_res +=zi*∑QkΔΛk
+        G_res -=zi*∑QkΔΛk
     end
-    return -G_res*R̄*T
+    return G_res
 end
 
 function excess_gibbs_free_energy(model::UNIFACModel,p,T,z)
@@ -332,74 +282,9 @@ function excess_gibbs_free_energy(model::UNIFACModel,p,T,z)
     return g_comb+g_res
 end
 
-#=
-function activity_coefficient(model::UNIFACModel,V,T,z)
-    return exp.(@f(lnγ_comb)+ @f(lnγ_res))
-end
-
-function lnγ_comb(model::UNIFACModel,V,T,z)
-    x = z ./ sum(z)
-    r =model.unifac_cache.r
-    q =model.unifac_cache.q
-    q_p = model.unifac_cache.q_p
-    Φ = r/dot(x,r)
-    Φ_p = q_p/dot(x,q_p)
-    θ = q/dot(x,q)
-    lnγ_comb = @. log(Φ_p)+(1-Φ_p)-5*q*(log(Φ/θ)+(1-Φ/θ))
-    return lnγ_comb
-end
-
 function excess_g_comb(model::UNIFACModel,p,T,z)
-    lnγ = lnγ_comb(model,p,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
-end
-
-function lnγ_SG(model::UNIFACModel,V,T,z)
-    x = z ./ sum(z)
     r =model.unifac_cache.r
     q =model.unifac_cache.q
-    Φ = r/dot(x,r)
-    θ = q/dot(x,q)
-    lnγ_SG = @. -5*q*(log(Φ/θ)+(1-Φ/θ))
-    return lnγ_SG
+    qp = model.unifac_cache.q_p
+    return Rgas(model)*T*gE_rt_dormund(z,qp,r,q)
 end
-
-function lnγ_res(model::UNIFACModel,V,T,z)
-    v  = model.groups.n_flattenedgroups
-    _ψ = @f(Ψ)
-    lnΓ_ = @f(lnΓ,_ψ)
-    lnΓi_ = @f(lnΓi,_ψ)
-    lnγ_res_ = [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
-    return lnγ_res_
-end
-
-function lnΓ(model::UNIFACModel,V,T,z,ψ = @f(ψ))
-    Q = model.params.Q.values
-    v  = model.groups.n_flattenedgroups
-    x = z ./ sum(z)
-    X = sum(v[i][:]*x[i] for i ∈ @comps) ./ sum(sum(v[i][k]*x[i] for k ∈ @groups) for i ∈ @comps)
-    θ = X.*Q / dot(X,Q)
-    lnΓ_ = Q.*(1 .-log.(sum(θ[m]*ψ[m,:] for m ∈ @groups)) .- sum(θ[m]*ψ[:,m]./sum(θ[n]*ψ[n,m] for n ∈ @groups) for m ∈ @groups))
-    return lnΓ_
-end
-
-function lnΓi(model::UNIFACModel,V,T,z,ψ = @f(ψ))
-    Q = model.params.Q.values
-    v  = model.groups.n_flattenedgroups
-    ψ = @f(Ψ)
-    X = [v[i][:] ./ sum(v[i][k] for k ∈ @groups) for i ∈ @comps]
-    θ = [X[i][:].*Q ./ sum(X[i][n]*Q[n] for n ∈ @groups) for i ∈ @comps]
-    lnΓi_ = [Q.*(1 .-log.(sum(θ[i][m]*ψ[m,:] for m ∈ @groups)) .- sum(θ[i][m]*ψ[:,m]./sum(θ[i][n]*ψ[n,m] for n ∈ @groups) for m ∈ @groups)) for i ∈ @comps]
-    return lnΓi_
-end
-
-function excess_g_res(model::UNIFACModel,p,T,z)
-    lnγ = lnγ_res(model,p,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ 1:length(model))
-end
-
-function excess_g_SG(model::UNIFACModel,p,T,z)
-    lnγ = lnγ_SG(model,p,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
-end
-=#

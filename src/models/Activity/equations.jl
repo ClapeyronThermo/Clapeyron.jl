@@ -282,7 +282,7 @@ function ∂lnγ∂T(model,p,T,z,cache = nothing)
     else
         result,aux,lnγ,∂lnγ∂ni,_,_,∂lnγ∂T,hconfig,jcache,∂lnγ∂T_out = cache
         if has_lnγ_impl(model)
-            isempty(∂lnγ∂T_out) && ∂lnγ∂T_mismatch_error()    
+            isempty(∂lnγ∂T_out) && ∂lnγ∂T_mismatch_error()
             Dconfig = Solvers._DerivativeConfig(∂lnγ∂T_out)
             ForwardDiff.derivative!(∂lnγ∂T,_ft_lnγ_impl!,lnγ,T,Dconfig,Val{false}())
             return ∂lnγ∂T
@@ -436,7 +436,7 @@ function γ_thermodynamic_factor(model::ActivityModel, p, T, z)
     N = length(model)
     x = z ./ sum(z)
     xN1 = @view x[1:N-1]
-    
+
     _, _, J = ∂lnγ∂n(model, p, T, x)
     ∂lnγᵢ∂xⱼ = J[1:N-1, 1:N-1] .- J[1:N-1, N]
 
@@ -458,7 +458,7 @@ end
 
 for xy in [:ph,:ps,:ts,:vt]
     xyz = Symbol(xy,:_flash)
-    @eval begin 
+    @eval begin
         function init_preferred_method(method::typeof($xyz),model::ActivityModel,kwargs)
             return RRXYFlash(;kwargs...)
         end
@@ -467,7 +467,7 @@ end
 
 for xy in [:qt,:qp]
     xyz = Symbol(xy,:_flash)
-    @eval begin 
+    @eval begin
         function init_preferred_method(method::typeof($xyz),model::ActivityModel,kwargs)
             return RRQXFlash(;kwargs...)
         end
@@ -475,31 +475,27 @@ for xy in [:qt,:qp]
 end
 
 function gE_rt_UNIQUAC(z,r,q,coord = 5)
-    _0 = zero(eltype(z))
-    n = sum(z)
-    invn = 1/n
+    invn = 1/sum(z)
     Φm = dot(r,z)*invn
     θm = dot(q,z)*invn
-    G_comp = _0
+    G_comb = zero(Base.promote_eltype(z,r,q,coord))
     for i ∈ eachindex(z)
-        xi = z[i]*invn
+        zi = z[i]
         Φi = r[i]/Φm
         θi = q[i]/θm
-        G_comp += xi*log(Φi) + coord*q[i]*xi*log(θi/Φi)
+        G_comb += zi*log(Φi) + coord*q[i]*zi*log(θi/Φi)
     end
-    return G_comp
+    return G_comb
 end
 
 function gE_rt_dormund(z,qp,r,q,coord = 5)
-    _0 = zero(eltype(z))
-    n = sum(z)
-    invn = 1/n
+    invn = 1/sum(z)
     Φm = dot(r,z)*invn
     θm = dot(q,z)*invn
     Φpm = dot(qp,z)*invn
-    G_comb = _0
+    G_comb = zero(Base.promote_eltype(z,qp,r,q,coord))
     @inbounds for i in eachindex(z)
-        qi,zi = q[i],zi
+        qi,zi = q[i],z[i]
         Φi = r[i]/Φm    #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
         θi = qi/θm      #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
         Φpi = qp[i]/Φpm #technically xi[i]q_p[i]/θpm, but it gets cancelled out (log(Φpi/xi))
@@ -509,12 +505,10 @@ function gE_rt_dormund(z,qp,r,q,coord = 5)
 end
 
 function gE_rt_SG(z,r,q,coord = 5)
-    _0 = zero(eltype(z))
-    n = sum(z)
-    invn = 1/n
+    invn = 1/sum(z)
     Φm = dot(r,z)*invn
     θm = dot(q,z)*invn
-    G_comb = _0
+    G_comb = zero(Base.promote_eltype(z,r,q,coord))
     @inbounds for i in eachindex(z)
         qi,zi = q[i],zi
         Φi = r[i]/Φm    #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))

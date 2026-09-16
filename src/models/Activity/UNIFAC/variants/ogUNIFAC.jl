@@ -109,7 +109,11 @@ function ogUNIFAC(components;
     return model
 end
 
-excess_g_comb(model::ogUNIFACModel,p,T,z=SA[1.0]) = excess_g_comb_original(model,p,T,z)
+function excess_g_comb(model::ogUNIFACModel,p,T,z)
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    return Rgas(model)*T*gE_rt_UNIQUAC(z,r,q)
+end
 
 function Ψ(model::ogUNIFACModel,V,T,z)
     A = model.params.A.values
