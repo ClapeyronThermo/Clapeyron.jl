@@ -272,3 +272,12 @@ end
 
 Base.length(::VanLaar_GE) = 2
 Base.length(::VanLaar_lngamma) = 2
+
+#used to reproduce old values of UNIFACFV and UNIFACFVPoly models
+function activity_old_unifacfv(model::Clapeyron.UNIFACFVModel, p, T, z)
+    RT = Rgas(model)*T
+    lnγ_comb = Clapeyron.lnγ_comb_old(model, p, T, z)
+    lnγ_res  = Clapeyron.ForwardDiff.gradient(n -> Clapeyron.excess_g_res(model, p, T, n), z) ./ RT
+    lnγ_FV   = Clapeyron.ForwardDiff.gradient(n -> Clapeyron.excess_g_FV(model, p, T, n), z) ./ RT
+    return exp.(lnγ_comb .+ lnγ_res .+ lnγ_FV)
+end

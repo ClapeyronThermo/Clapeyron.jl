@@ -59,7 +59,7 @@
 
     @testset "UNIFAC2" begin
         system = UNIFAC2([("acetaldehyde", ["CH3" => 1, "HCO" => 1]),("acetonitrile", ["CH3CN" => 1])]; puremodel=BasicIdeal())
-        @test log(Clapeyron.activity_coefficient(system, NaN, 323.15, [0.5,0.5])[1]) ≈ 0.029527741236233 rtol = 1e-6
+        @test Clapeyron.lnγ(system, NaN, 323.15, [0.5,0.5])[1] ≈ 0.029527741236233 rtol = 1e-6
     end
 
     @testset "ogUNIFAC" begin
@@ -69,17 +69,22 @@
 
     @testset "ogUNIFAC2" begin
         system = ogUNIFAC2([("R22",["HCCLF2" => 1]),("carbon disulfide",["CS2" => 1])], puremodel=BasicIdeal())
-        @test log(Clapeyron.activity_coefficient(system, NaN, 298.15, [0.3693,0.6307])[1]) ≈ 0.613323250984226 rtol = 1e-6
+        @test Clapeyron.lnγ(system, NaN, 298.15, [0.3693,0.6307])[1] ≈ 0.613323250984226 rtol = 1e-6
     end
 
+    #on 0.6.28 and before, there was a bug in UNIFAC-FV combinatorial term
+    #there was a missing division by x in the activity coefficient, making the combinatorial term non-consistent (a symmetric mixture had non-zero combinatorial gibbs energy)
+    #0.6.29 fixes this, but it changes the results of the tests
     @testset "UNIFAC-FV" begin
         system = UNIFACFV(["PMMA","PS"])
-        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 8.63962025235759 rtol = 1e-6
+        @test activity_old_unifacfv(system,p,T,z)[1] ≈ 8.63962025235759 rtol = 1e-6
+        @test activity_coefficient(system,p,T,z)[1] ≈ 4.091459375206823 rtol = 1e-6
     end
 
     @testset "UNIFAC-FV-poly" begin
         system = UNIFACFVPoly(["PMMA","PS"])
-        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 4.8275769947121985 rtol = 1e-6
+        @test activity_old_unifacfv(system,p,T,z)[1] ≈ 4.8275769947121985 rtol = 1e-6
+        @test activity_coefficient(system,p,T,z)[1] ≈ 2.3608811667620424 rtol = 1e-6
     end
 
     @testset "FH" begin

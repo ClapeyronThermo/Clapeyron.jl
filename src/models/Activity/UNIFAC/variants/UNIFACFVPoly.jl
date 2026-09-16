@@ -17,7 +17,7 @@ struct UNIFACFVPoly{c<:EoSModel,T} <: UNIFACFVPolyModel
     params::UNIFACFVPolyParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    UNIFACFV_cache::UNIFACFVCache{T}
+    unifac_cache::UNIFACFVCache{T}
 end
 
 function UNIFACFVPoly(components,groups,params,puremodel,references,unifac_cache)
@@ -52,7 +52,7 @@ export UNIFACFVPoly
 ## Description
 UNIFAC-FV (polymer) (UNIFAC Free Volume) activity model. Specialized for polymer blends.
 
-The Combinatorial part corresponds to an GC-averaged modified [`UNIQUAC`](@ref) model.
+The Combinatorial part corresponds to an GC-averaged Flory-Huggings contribution.
 
 ```
 Gᴱ = nRT(gᴱ(comb) + gᴱ(res) + gᴱ(FV))
@@ -79,7 +79,6 @@ function UNIFACFVPoly(components;
     Mw = params["Mw"]
     volume  = params_species["volume"]
     c  = params_species["c"]
-    icomponents = 1:length(components)
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIFACFVPolyParam(volume,c,A,R,Q,Mw)
     references = String["10.1021/i260064a004"]
@@ -89,21 +88,20 @@ function UNIFACFVPoly(components;
     return model
 end
 
+excess_g_FV(model::UNIFACFVPolyModel,V,T,z) = excess_g_FV(model,V,T,z,model.params.c.values)
 
-function data(model::UNIFACFVPolyModel,V,T,z)
-    Mw = model.UNIFACFV_cache.Mw
-    zmw = dot(z,Mw)
-    x = z ./ sum(z)
-    w = z .* Mw / zmw
-    c = model.params.c.values
-    return w,x,c
+function excess_g_comb(model::UNIFACFVPolyModel,V,T,z)
+    qp = model.unifac_cache.qp
+    return Rgas(model)*T*gE_rt_FH(z,qp)
 end
 
-function lnγ_comb(model::UNIFACFVPolyModel,V,T,z,_data=@f(data))
-    w,x = _data
-    Mw = model.UNIFACFV_cache.Mw
-    r =model.UNIFACFV_cache.r
-    q =model.UNIFACFV_cache.q
+#old, buggy inconsistent version of the combinatorial excess gibbs energy for UNIFACFVPoly
+function lnγ_comb_old(model::UNIFACFVPolyModel,V,T,z)
+    Mw  = model.unifac_cache.Mw
+    zmw = dot(z, Mw)
+    w   = z .* Mw ./ zmw
+    x   = z ./ sum(z)
+    r   = model.unifac_cache.r ./ Mw
     wr = @sum(w[i]*r[i]^(3/4))
     Φ = w.*r.^(3/4)/wr
     lnγ_comb = @. log(Φ/x)+(1-Φ)
