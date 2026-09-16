@@ -10,7 +10,7 @@ VTPRUNIFACCache(components,q) = VTPRUNIFACCache{eltype(q)}(components,q)
 
 VTPRUNIFACCache(groups::GroupParam,params) = VTPRUNIFACCache(groups,params.Q)
 
-VTPRUNIFACCache(groups::GroupParam,Q) = VTPRUNIFACCache(groups.components,group_sum(groups,Q.values))
+VTPRUNIFACCache(groups::GroupParam,Q::SingleParameter) = VTPRUNIFACCache(groups.components,group_sum(groups,Q.values))
 
 
 function recombine_unifac_cache!(cache::VTPRUNIFACCache,groups,params)
