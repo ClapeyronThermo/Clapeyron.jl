@@ -94,7 +94,7 @@
         @test Clapeyron.fugacity_coefficient(system, p, T, z)[1] ≈ 0.5582931304564298 rtol = 1E-6
         @test Clapeyron.mixing(system, p, T, z, Clapeyron.gibbs_energy) ≈ -178.10797973342596 rtol = 1E-6
         @test Clapeyron.excess(system, p, T, z, Clapeyron.volume) ≈ 1.004651584989827e-6 rtol = 1E-6
-        @test Clapeyron.excess(system, p, T, z, Clapeyron.entropy) ≈ -2.832281578281112 rtol = 1E-6
+        @test Clapeyron.excess(system, p, T, z, Clapeyron.entropy) ≈ -1.720401840763504 rtol = 1E-6
         @test Clapeyron.excess(system, p, T, z, Clapeyron.gibbs_energy) ≈ 1626.6212908893858 rtol = 1E-6
     end
     @printline

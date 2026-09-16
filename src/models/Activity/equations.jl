@@ -138,6 +138,54 @@ function mixing(model::ActivityModel,p,T,z,::typeof(entropy))
     return -dg*T-g
 end
 
+# excess properties for activity models, obtained from derivatives of the excess gibbs energy
+function excess(model::ActivityModel, p, T, z, property::ℜ; phase=:unknown, threaded=true, vol0=nothing, output=nothing) where {ℜ}
+    return __excess_activity(model,p,T,z,property)
+end
+
+for f in (:entropy,:gibbs_energy,:helmholtz_energy)
+    @eval function excess(model::ActivityModel, p, T, z, property::typeof($f); phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+        return __excess_activity(model,p,T,z,property)
+    end
+end
+
+__excess_activity(model,p,T,z,::typeof(gibbs_energy)) = excess_gibbs_free_energy(model,p,T,z)
+
+function __excess_activity(model,p,T,z,::typeof(entropy))
+    f(x) = excess_gibbs_free_energy(model,p,x,z)
+    return -Solvers.derivative(f,T)
+end
+
+function __excess_activity(model,p,T,z,::typeof(enthalpy))
+    f(x) = excess_gibbs_free_energy(model,p,x,z)/x
+    return -Solvers.derivative(f,T)*T*T
+end
+
+function __excess_activity(model,p,T,z,::typeof(volume))
+    f(x) = excess_gibbs_free_energy(model,x,T,z)
+    return Solvers.derivative(f,p)
+end
+
+function __excess_activity(model,p,T,z,::typeof(helmholtz_energy))
+    gE = excess_gibbs_free_energy(model,p,T,z)
+    return gE - p*__excess_activity(model,p,T,z,volume)
+end
+
+function __excess_activity(model,p,T,z,::typeof(internal_energy))
+    hE = __excess_activity(model,p,T,z,enthalpy)
+    return hE - p*__excess_activity(model,p,T,z,volume)
+end
+
+function __excess_activity(model,p,T,z,::typeof(isobaric_heat_capacity))
+    f(x) = excess_gibbs_free_energy(model,p,x,z)
+    _,_,d2f = Solvers.f∂f∂2f(f,T)
+    return -T*d2f
+end
+
+function __excess_activity(model,p,T,z,property)
+    throw(ArgumentError("excess $property is not available for activity models."))
+end
+
 function gibbs_solvation(model::ActivityModel,T)
     binary_component_check(gibbs_solvation,model)
     return gibbs_solvation(__act_to_gammaphi(model,gibbs_solvation),T)
