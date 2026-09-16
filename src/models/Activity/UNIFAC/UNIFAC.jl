@@ -291,3 +291,10 @@ function excess_g_comb(model::UNIFACModel,p,T,z)
     qp = model.unifac_cache.q_p
     return Rgas(model)*T*gE_rt_dormund(z,qp,r,q)
 end
+
+#just Staverman-Guggenheim (SG) contribution, used for UMR
+function excess_g_SG(model::UNIFACModel,p,T,z)
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    return Rgas(model)*T*gE_rt_SG(z,r,q)
+end

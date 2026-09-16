@@ -37,6 +37,13 @@ function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
     end
 end
 
+function test_gibbs_duhem(model::Clapeyron.ActivityModel,V,T,z;rtol = 1e-14)
+    for i in (2.0,3.0,5.0,7.0,11.0)
+        gE₀ = Clapeyron.excess_gibbs_free_energy(model,V,T,z)
+        @test i*gE₀ ≈ Clapeyron.excess_gibbs_free_energy(model,V,T,i*z) rtol = rtol
+    end
+end
+
 function test_volume(model,p,T,z = Clapeyron.SA[1.0];rtol = 1e-8,phase = :unknown)
     v = volume(model,p,T,z)
     @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
@@ -241,7 +248,7 @@ end
 
 function test_activity_coefficient(model::Clapeyron.ActivityModel,p,T,z)
     X = Clapeyron.gradient_type(model,T+p,z)
-    return exp.(Solvers.gradient(x->Clapeyron.excess_gibbs_free_energy(model,p,T,x),z)/(Clapeyron.Rgas(model)*T))::X
+    return exp.(Clapeyron.Solvers.gradient(x->Clapeyron.excess_gibbs_free_energy(model,p,T,x),z)/(Clapeyron.Rgas(model)*T))::X
 end
 
 struct VanLaar_GE <: Clapeyron.ActivityModel
