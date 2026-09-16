@@ -941,7 +941,13 @@ function activity_coefficient(model::EoSModel,p,T,z = SA[1.0];
     reference = Symbol(reference)
     γmodel = __γ_unwrap(model)
     if γmodel isa ActivityModel
-        return activity_coefficient(γmodel,p̄,T̄,z̄)
+        logγ = lnγ(γmodel,p,T,z)
+        if ismutable(logγ)
+            logγ .= exp.(logγ)
+            return logγ
+        else
+            return exp.(logγ)
+        end
     end
     if μ_ref === nothing
         return activity_coefficient_impl(model,p̄,T̄,z̄,reference_chemical_potential(model,p̄,T̄,reference;phase,threaded),reference,phase,threaded,v̄0)
@@ -977,7 +983,14 @@ function activity(model::EoSModel,p,T,z;
                 vol0=nothing)
     reference = Symbol(reference)
     if model isa ActivityModel
-        return activity(model,p,T,z)
+        logγ = lnγ(γmodel,p,T,z)
+        ∑z = sum(z)
+        if ismutable(logγ)
+            logγ .= exp.(logγ) .* z ./ ∑z
+            return logγ
+        else
+            return exp.(logγ) .* z ./ ∑z
+        end
     end
     if μ_ref === nothing
         return activity_impl(__γ_unwrap(model),p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)

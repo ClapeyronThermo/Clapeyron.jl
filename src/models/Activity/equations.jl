@@ -20,11 +20,6 @@ function excess_gibbs_free_energy(model::ActivityModel,p,T,z)
     end
 end
 
-function test_excess_gibbs_free_energy(model::ActivityModel,p,T,z)
-    γ = activity_coefficient(model,p,T,z)
-    return Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ @comps)
-end
-
 function volume_impl(model::ActivityModel, p, T, z, phase, threaded, vol0)
     if hasfield(typeof(model),:puremodel)
         return volume(model.puremodel.model, p, T, z, phase=phase, threaded=threaded, vol0=vol0)
@@ -100,29 +95,7 @@ function lnγ(model::ActivityModel,_p,_T,_z,cache::TT = nothing) where TT
     end
 end
 
-function activity_coefficient_impl(model::ActivityModel,p,T,z,μ_ref,reference,phase,threaded,vol0)
-    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
-    #TODO: what to do if the reference is not pure?
-    return activity_coefficient(model,p̄,T̄,z̄)
-end
-
 reference_chemical_potential_type(model::ActivityModel) = :zero
-
-function activity(model::ActivityModel,p,T,z)
-    γ = activity_coefficient(model,p,T,z)
-    ∑z = sum(z)
-    return γ .* z ./ ∑z
-end
-
-function activity_impl(model::ActivityModel,p,T,z,μ_ref,reference,phase,threaded,vol0)
-    #TODO: what to do if the reference is not pure?
-    return activity(model,p,T,z)
-end
-
-function test_activity_coefficient(model::ActivityModel,p,T,z)
-    X = gradient_type(model,T+p,z)
-    return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
-end
 
 @inline saturation_model(model::ActivityModel) = saturation_model(__act_to_gammaphi(model,saturation_model))
 
@@ -136,7 +109,6 @@ function idealmodel(model::T) where T <: ActivityModel
 end
 
 #=
-
 this is technically wrong on the strict sense of helmholtz residual energy,
 but allows us to evaluate the excess terms of an activity model with ease.
 
@@ -148,7 +120,6 @@ function eos_impl(model::ActivityModel,V,T,z)
     return excess_gibbs_free_energy(model,V,T,z) + reference_state_eval(model,V,T,z)
 end
 =#
-
 
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
@@ -170,26 +141,6 @@ end
 function gibbs_solvation(model::ActivityModel,T)
     binary_component_check(gibbs_solvation,model)
     return gibbs_solvation(__act_to_gammaphi(model,gibbs_solvation),T)
-end
-
-function lb_volume(model::ActivityModel,T,z)
-    b = sum(lb_volume(model.puremodel[i],T,SA[1.0])*z[i] for i in @comps)
-    return b
-end
-
-function T_scale(model::ActivityModel,z)
-    ∑z = sum(z)
-    prod(T_scale(model.puremodel[i])^(z[i]/∑z) for i in @comps)
-end
-
-function p_scale(model::ActivityModel,z)
-    T = T_scale(model,z)
-    0.33*R̄*T/lb_volume(model,T,z)
-end
-
-function x0_volume_liquid(model::ActivityModel,p,T,z)
-    pures = model.puremodel
-    return sum(z[i]*x0_volume_liquid(pures[i],p,T,SA[1.0]) for i ∈ @comps)
 end
 
 function ∂lnγ∂n(model,p,T,z,cache = nothing)
@@ -314,7 +265,6 @@ function dG_EdT(model::ActivityModel,p,T,z)
     return Solvers.derivative(f,T)
 end
 
-
 function ∂lnγ∂T(model,p,T,z,cache = nothing)
     nc = length(z)
     dgEdt(w) = dG_EdT(model,p,T,@view(w[1:nc]))
@@ -351,6 +301,7 @@ end
 
 __act_to_gammaphi(model::ActivityModel) = __act_to_gammaphi(model,nothing,true)
 GammaPhi(model::ActivityModel) = __act_to_gammaphi(model)
+
 #convert ActivityModel into a RestrictedEquilibriaModel
 function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
     components = component_list(model)
@@ -468,8 +419,6 @@ function Obj_LLE(model::ActivityModel, F, T, x, xx)
     return F
 end
 
-export LLE
-
 function PT_property(model::ActivityModel,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
     γϕ = __act_to_gammaphi(model)
     PT_property(γϕ,p,T,z,phase,threaded,vol0,f,vol)
@@ -524,3 +473,61 @@ for xy in [:qt,:qp]
         end
     end
 end
+
+function gE_rt_UNIQUAC(z,r,q,coord = 5)
+    _0 = zero(eltype(z))
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    G_comp = _0
+    for i ∈ eachindex(z)
+        xi = z[i]*invn
+        Φi = r[i]/Φm
+        θi = q[i]/θm
+        G_comp += xi*log(Φi) + coord*q[i]*xi*log(θi/Φi)
+    end
+    return G_comp
+end
+
+function gE_rt_dormund(z,qp,r,q,coord = 5)
+    _0 = zero(eltype(z))
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    Φpm = dot(qp,z)*invn
+    G_comb = _0
+    @inbounds for i in eachindex(z)
+        qi,zi = q[i],zi
+        Φi = r[i]/Φm    #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = qi/θm      #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        Φpi = qp[i]/Φpm #technically xi[i]q_p[i]/θpm, but it gets cancelled out (log(Φpi/xi))
+        G_comb += zi*log(Φpi) + coord*qi*zi*log(θi/Φi)
+    end
+    return G_comb
+end
+
+function gE_rt_SG(z,r,q,coord = 5)
+    _0 = zero(eltype(z))
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    G_comb = _0
+    @inbounds for i in eachindex(z)
+        qi,zi = q[i],zi
+        Φi = r[i]/Φm    #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = qi/θm      #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        G_comb += coord*qi*zi*log(θi/Φi)
+    end
+    return G_comb
+end
+
+#Flory-Huggins (FH)
+function gE_rt_FH(z,qp)
+    Φpm = dot(qp,z)/sum(z)
+    return @sum(z[i]*log(qp[i]/Φpm))
+end
+
+export LLE
