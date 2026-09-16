@@ -1122,37 +1122,31 @@ end
 
 Returns the excess value of a bulk property relative to its ideal mixing value.
 
-By default this delegates to [`mixing`](@ref). For some properties (e.g.
-`entropy` and `gibbs_energy`) specialized implementations are provided to
-use residual contributions.
+By default this delegates to [`mixing`](@ref). For properties with a non-zero
+ideal mixing contribution (`gibbs_energy`, `helmholtz_energy` and `entropy`),
+that contribution is subtracted as well.
 """
 function excess(model::EoSModel, p, T, z, property; phase=:unknown, threaded=true, vol0=nothing, output=nothing)
     mixing(model, p, T, z, property; phase, threaded, vol0, output)
 end
 
-function excess(model::EoSModel, p, T, z, ::typeof(entropy); phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    TT = typeof(p+T+first(z))
-    pure = split_pure_model(model)
-    s_mix = entropy_res(model, p, T, z; phase, threaded, vol0)
-    for i in 1:length(z)
-        s_mix -= z[i]*entropy_res(pure[i], p, T; phase, threaded)
-    end
-    #s_pure = entropy_res.(pure,p,T)
-    return s_mix::TT
-end
+# excess = mixing - ideal mixing. the ideal mixing term is R̄*T*∑z*log(x) for g and a, -R̄*∑z*log(x) for s
+for (prop,fac) in ((:gibbs_energy,:T),(:helmholtz_energy,:T),(:entropy,:(-one(T))))
+    @eval begin
+        function excess(model::EoSModel, p, T, z, ::typeof($prop); phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+            TT = typeof(p+T+first(z))
+            pure = split_pure_model(model)
+            y_mix = $prop(model, p, T, z; phase, threaded, vol0)
+            log∑z = log(sum(z))
+            R̄ = Rgas(model)
+            for i in 1:length(z)
+                lnxi = R̄*$fac*(log(z[i]) - log∑z)
+                y_mix -= z[i]*($prop(pure[i], p, T; phase, threaded) + lnxi)
+            end
 
-function excess(model::EoSModel, p, T, z, ::typeof(gibbs_energy); phase=:unknown, threaded=true, vol0=nothing, output=nothing)
-    TT = typeof(p+T+first(z))
-    pure = split_pure_model(model)
-    g_mix = gibbs_energy(model, p, T, z; phase, threaded, vol0)
-    log∑z = log(sum(z))
-    R̄ = Rgas(model)
-    for i in 1:length(z)
-        lnxi = R̄*T*(log(z[i]) - log∑z)
-        g_mix -= z[i]*(gibbs_energy(pure[i], p, T; phase, threaded) + lnxi)
+            return y_mix::TT
+        end
     end
-
-    return g_mix::TT
 end
 
 
