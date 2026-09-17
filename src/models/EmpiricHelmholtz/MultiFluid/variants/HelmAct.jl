@@ -12,10 +12,11 @@
 
 ## input Parameters
 
-- CoolProp JSON pure fluid files
+  - CoolProp JSON pure fluid files
 
 ## Input Models
-- `activity`: activity model.
+
+  - `activity`: activity model.
 
 ## Description
 
@@ -33,41 +34,18 @@ b = 1/1.17ρref
 where `gᴱᵣ` is the residual part of the excess Gibbs energy obtained from an activity model.
 
 ## References
-1. Jäger, A., Breitkopf, C., & Richter, M. (2021). The representation of cross second virial coefficients by multifluid mixture models and other equations of state. Industrial & Engineering Chemistry Research, 60(25), 9286–9295. [doi:10.1021/acs.iecr.1c01186](https://doi.org/10.1021/acs.iecr.1c01186)
 
-
+ 1. Jäger, A., Breitkopf, C., & Richter, M. (2021). The representation of cross second virial coefficients by multifluid mixture models and other equations of state. Industrial & Engineering Chemistry Research, 60(25), 9286–9295. [doi:10.1021/acs.iecr.1c01186](https://doi.org/10.1021/acs.iecr.1c01186)
 """
-function HelmAct(components;
-    pure_userlocations = String[],
-    activity = PSRKUNIFAC,
-    activity_userlocations = String[],
-    idealmodel = nothing,
-    ideal_userlocations = String[],
-    estimate_pure = false,
-    coolprop_userlocations = true,
-    Rgas = R̄,
-    reference_state = nothing,
-    verbose = false)
-
-    init_activity = init_model(activity,components,activity_userlocations,verbose)
+function HelmAct(components; pure_userlocations     = String[], activity               = PSRKUNIFAC, activity_userlocations = String[], idealmodel             = nothing, ideal_userlocations    = String[], estimate_pure          = false, coolprop_userlocations = true, Rgas                   = R̄, reference_state        = nothing, verbose                = false)
+    init_activity = init_model(activity, components, activity_userlocations, verbose)
     if has_groups(init_activity)
         components = init_activity.groups.components
     else
         components = init_activity.components
     end
     departure = GEDeparture(init_activity)
-    return MultiFluid(components;
-        pure_userlocations = pure_userlocations,
-        departure = departure,
-        mixing = LinearMixing(),
-        estimate_pure = estimate_pure,
-        coolprop_userlocations = coolprop_userlocations,
-        Rgas = Rgas,
-        reference_state = reference_state,
-        verbose = verbose,
-        idealmodel = idealmodel,
-        ideal_userlocations = ideal_userlocations,
-        )
+    return MultiFluid(components; pure_userlocations=pure_userlocations, departure=departure, mixing=LinearMixing(), estimate_pure=estimate_pure, coolprop_userlocations=coolprop_userlocations, Rgas=Rgas, reference_state=reference_state, verbose=verbose, idealmodel=idealmodel, ideal_userlocations=ideal_userlocations)
 end
 
 export HelmAct

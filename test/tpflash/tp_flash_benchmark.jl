@@ -68,27 +68,11 @@ end
 
 const _PERMS_1 = ((1,),)
 const _PERMS_2 = ((1, 2), (2, 1))
-const _PERMS_3 = (
-    (1, 2, 3),
-    (1, 3, 2),
-    (2, 1, 3),
-    (2, 3, 1),
-    (3, 1, 2),
-    (3, 2, 1),
-)
+const _PERMS_3 = ((1, 2, 3), (1, 3, 2), (2, 1, 3), (2, 3, 1), (3, 1, 2), (3, 2, 1))
 
-_perms(k::Int) = k == 1 ? _PERMS_1 :
-                 k == 2 ? _PERMS_2 :
-                 k == 3 ? _PERMS_3 :
-                 error("phase matching only implemented for k <= 3 (got k=$k)")
+_perms(k::Int) = k == 1 ? _PERMS_1 : k == 2 ? _PERMS_2 : k == 3 ? _PERMS_3 : error("phase matching only implemented for k <= 3 (got k=$k)")
 
-function _phase_match_errors(
-    x::AbstractMatrix{<:Real},
-    beta::AbstractVector{<:Real},
-    xref::AbstractMatrix{<:Real},
-    betaref::AbstractVector{<:Real};
-    beta_min::Float64,
-)
+function _phase_match_errors(x::AbstractMatrix{<:Real}, beta::AbstractVector{<:Real}, xref::AbstractMatrix{<:Real}, betaref::AbstractVector{<:Real}; beta_min::Float64)
     k = size(x, 1)
     size(xref, 1) == k || error("phase count mismatch (x has $k, xref has $(size(xref, 1)))")
     length(beta) == k || error("beta length mismatch")
@@ -121,14 +105,7 @@ function _phase_match_errors(
     return best_perm, best_e_x, best_e_beta
 end
 
-function _validity_gate(
-    g::Float64,
-    x::AbstractMatrix{<:Real},
-    beta::AbstractVector{<:Real};
-    tau_x::Float64,
-    tau_beta::Float64,
-    beta_min::Float64,
-)
+function _validity_gate(g::Float64, x::AbstractMatrix{<:Real}, beta::AbstractVector{<:Real}; tau_x::Float64, tau_beta::Float64, beta_min::Float64)
     if !isfinite(g)
         return false, :NUMERIC_FAIL
     end
@@ -219,8 +196,7 @@ function run_case_with_optimizer(case, ref::TPFlashReference, seed::Int, cfg::TP
         eval_count[] += 1
         u_eval = case.logspace ? copy(u) : u
         y = try
-            Clapeyron.Obj_de_tp_flash(model, case.p, case.T, case.n, u_eval, numphases,
-                x_cache, nvals_cache, volumes_cache, case.logspace, case.equilibrium)
+            Clapeyron.Obj_de_tp_flash(model, case.p, case.T, case.n, u_eval, numphases, x_cache, nvals_cache, volumes_cache, case.logspace, case.equilibrium)
         catch
             Inf
         end
@@ -234,18 +210,7 @@ function run_case_with_optimizer(case, ref::TPFlashReference, seed::Int, cfg::TP
         return y
     end
 
-    best_u, best_g = tpflash_optimize(objective;
-        backend=cfg.backend,
-        population_size=cfg.population_size,
-        fe_max=fe_max,
-        lb=lb,
-        ub=ub,
-        seed=seed,
-        time_limit=cfg.time_limit,
-        stagnation_evals=cfg.stagnation_evals,
-        stagnation_tol=cfg.stagnation_tol,
-        verbose=false,
-    )
+    best_u, best_g = tpflash_optimize(objective; backend=cfg.backend, population_size=cfg.population_size, fe_max=fe_max, lb=lb, ub=ub, seed=seed, time_limit=cfg.time_limit, stagnation_evals=cfg.stagnation_evals, stagnation_tol=cfg.stagnation_tol, verbose=false)
     nfes = eval_count[]
     fe_star = fe_star_ref[]
 
@@ -286,7 +251,7 @@ function _avg_rank!(ranks::Vector{Float64}, sorted_keys)
     i = 1
     while i <= n
         j = i
-        while j < n && sorted_keys[j+1] == sorted_keys[i]
+        while j < n && sorted_keys[j + 1] == sorted_keys[i]
             j += 1
         end
         avg = (i + j) / 2
@@ -301,9 +266,9 @@ end
 """
 Compute per-run ranks (1..N, where N is best) using the protocol:
 
-- Any success outranks any failure
-- Success vs success: smaller Δ_final (or g_best) is better; FE* breaks ties
-- Failure vs failure: smaller Δ_final is better
+  - Any success outranks any failure
+  - Success vs success: smaller Δ_final (or g_best) is better; FE* breaks ties
+  - Failure vs failure: smaller Δ_final is better
 
 Returns ranks aligned with `runs` order.
 """

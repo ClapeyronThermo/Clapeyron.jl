@@ -12,29 +12,29 @@ struct SAFTgammaMieParam{T} <: ParametricEoSParam{T}
     mixed_segment::MixedGCSegmentParam{T}
 end
 
-function SAFTgammaMieParam{T}(group::GroupParam,sites = nothing) where T <: Number
+function SAFTgammaMieParam{T}(group::GroupParam, sites=nothing) where T<:Number
     gc = group.flattenedgroups
-    segment = SingleParam{Int}("segment",gc)
-    shapefactor = SingleParam{T}("shapefactor",gc)
-    lambda_a = PairParam{T}("lambda_a",gc)
-    lambda_r = PairParam{T}("lambda_r",gc)
-    sigma = PairParam{T}("sigma",gc)
-    epsilon = PairParam{T}("epsilon",gc)
+    segment = SingleParam{Int}("segment", gc)
+    shapefactor = SingleParam{T}("shapefactor", gc)
+    lambda_a = PairParam{T}("lambda_a", gc)
+    lambda_r = PairParam{T}("lambda_r", gc)
+    sigma = PairParam{T}("sigma", gc)
+    epsilon = PairParam{T}("epsilon", gc)
     if sites isa SiteParam
-        epsilon_assoc = AssocParam{T}("epsilon",sites)
-        bondvol = AssocParam{T}("epsilon",sites)
+        epsilon_assoc = AssocParam{T}("epsilon", sites)
+        bondvol = AssocParam{T}("epsilon", sites)
     else
-        epsilon_assoc = AssocParam{T}("epsilon",gc)
-        bondvol = AssocParam{T}("epsilon",gc)
+        epsilon_assoc = AssocParam{T}("epsilon", gc)
+        bondvol = AssocParam{T}("epsilon", gc)
     end
-    mixed_segment = MixedGCSegmentParam(group,shapefactor.values,segment.values)
-    return SAFTgammaMieParam{T}(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
+    mixed_segment = MixedGCSegmentParam(group, shapefactor.values, segment.values)
+    return SAFTgammaMieParam{T}(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol, mixed_segment)
 end
 
-SAFTgammaMieParam(group::GroupParam,sites = nothing) = SAFTgammaMieParam{Float64}(group,sites)
+SAFTgammaMieParam(group::GroupParam, sites=nothing) = SAFTgammaMieParam{Float64}(group, sites)
 
-function SAFTgammaMieParam(segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
-    return build_parametric_param(SAFTgammaMieParam,segment,shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
+function SAFTgammaMieParam(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol, mixed_segment)
+    return build_parametric_param(SAFTgammaMieParam, segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol, mixed_segment)
 end
 
 struct SAFTgammaMie{I,T} <: SAFTgammaMieModel
@@ -49,189 +49,164 @@ struct SAFTgammaMie{I,T} <: SAFTgammaMieModel
     references::Array{String,1}
 end
 
-function SAFTgammaMie(comps,groups,sites,params,idealmodel,pcsaftmodel,epsilon_mixing,assoc,refs)
+function SAFTgammaMie(comps, groups, sites, params, idealmodel, pcsaftmodel, epsilon_mixing, assoc, refs)
     T = eltype(params)
     I = typeof(idealmodel)
-    return SAFTgammaMie{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,epsilon_mixing,assoc,refs)
+    return SAFTgammaMie{I,T}(comps, groups, sites, params, idealmodel, pcsaftmodel, epsilon_mixing, assoc, refs)
 end
 
 """
     SAFTgammaMie <: SAFTModel
 
 SAFTgammaMie(components;
-    idealmodel = BasicIdeal,
-    userlocations = String[],
-    group_userlocations = String[],
-    ideal_userlocations = String[],
-    epsilon_mixing = :default,
-    reference_state = nothing,
-    verbose = false,
-    assoc_options = AssocOptions())
+idealmodel = BasicIdeal,
+userlocations = String[],
+group_userlocations = String[],
+ideal_userlocations = String[],
+epsilon_mixing = :default,
+reference_state = nothing,
+verbose = false,
+assoc_options = AssocOptions())
 
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `vst`: Single Parameter (`Float64`) - Number of segments (no units)
-- `S`: Single Parameter (`Float64`) - Shape factor for segment (no units)
-- `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
-- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
-- `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
-- `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume
+
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `vst`: Single Parameter (`Float64`) - Number of segments (no units)
+  - `S`: Single Parameter (`Float64`) - Shape factor for segment (no units)
+  - `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
+  - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
+  - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
+  - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
+  - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+  - `bondvol`: Association Parameter (`Float64`) - Association Volume
 
 ## Model Parameters
-- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `shapefactor`: Single Parameter (`Float64`) - Shape factor for segment (no units)
-- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
-- `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
-- `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
-- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
-- `mixed_segment`: Mixed Group Contribution Parameter: ∑nᵢₖνₖmₖ
+
+  - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+  - `shapefactor`: Single Parameter (`Float64`) - Shape factor for segment (no units)
+  - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+  - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
+  - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
+  - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+  - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+  - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
+  - `mixed_segment`: Mixed Group Contribution Parameter: ∑nᵢₖνₖmₖ
 
 ## Input models
-- `idealmodel`: Ideal Model
+
+  - `idealmodel`: Ideal Model
 
 ## Description
 
 SAFT-γ-Mie EoS
 
-
 You can choose between the Hudsen-McCoubrey combining rule (`√(ϵᵢ*ϵⱼ)*(σᵢ^3 * σⱼ^3)/σᵢⱼ^6`) or the default rule (`√(ϵᵢ*ϵⱼ*(σᵢ^3 * σⱼ^3))/σᵢⱼ^3`) by passing the `epsilon_mixing` argument, with arguments `:default` or `:hudsen_mccoubrey`
-
 
 !!! note "Group Fragmentation"
 
     Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `SAFTgammaMieGroups`
 
-
 ## References
-1. Papaioannou, V., Lafitte, T., Avendaño, C., Adjiman, C. S., Jackson, G., Müller, E. A., & Galindo, A. (2014). Group contribution methodology based on the statistical associating fluid theory for heteronuclear molecules formed from Mie segments. The Journal of Chemical Physics, 140(5), 054107. [doi:10.1063/1.4851455](https://doi.org/10.1063/1.4851455)
-2. Dufal, S., Papaioannou, V., Sadeqzadeh, M., Pogiatzis, T., Chremos, A., Adjiman, C. S., … Galindo, A. (2014). Prediction of thermodynamic properties and phase behavior of fluids and mixtures with the SAFT-γ Mie group-contribution equation of state. Journal of Chemical and Engineering Data, 59(10), 3272–3288. [doi:10.1021/je500248h](https://doi.org/10.1021/je500248h)
+
+ 1. Papaioannou, V., Lafitte, T., Avendaño, C., Adjiman, C. S., Jackson, G., Müller, E. A., & Galindo, A. (2014). Group contribution methodology based on the statistical associating fluid theory for heteronuclear molecules formed from Mie segments. The Journal of Chemical Physics, 140(5), 054107. [doi:10.1063/1.4851455](https://doi.org/10.1063/1.4851455)
+ 2. Dufal, S., Papaioannou, V., Sadeqzadeh, M., Pogiatzis, T., Chremos, A., Adjiman, C. S., … Galindo, A. (2014). Prediction of thermodynamic properties and phase behavior of fluids and mixtures with the SAFT-γ Mie group-contribution equation of state. Journal of Chemical and Engineering Data, 59(10), 3272–3288. [doi:10.1021/je500248h](https://doi.org/10.1021/je500248h)
 
 ## List of available groups
-|Name    |Description         |
-|--------|--------------------|
-|CH3     |Methyl              |
-|CH2     |Methylene           |
-|CH      |                    |
-|C       |                    |
-|aCH     |Aromatic CH         |
-|aCCH2   |                    |
-|aCCH    |                    |
-|CH2=    |Alkene group        |
-|CH=     |                    |
-|cCH2    |Cyclic alkane group |
-|COOH    |Carboxylic acid group|
-|COO     |Ester group         |
-|OH      |Hydroxyl            |
-|CH2OH   |Methylene hydroxyl group|
-|CHOH    |                    |
-|NH2     |Amine group         |
-|NH      |                    |
-|N       |                    |
-|cNH     |                    |
-|cN      |                    |
-|CH=     |                    |
-|aCCH3   |                    |
-|aCOH    |                    |
-|cCH     |                    |
-|cCHNH   |                    |
-|cCHN    |                    |
-|aCCOaC  |                    |
-|aCCOOH  |                    |
-|aCNHaC  |                    |
-|CH3CO   |                    |
-|eO      |End ether oxygen    |
-|cO      |Center ether oxygen |
+
+| Name   | Description              |
+|:------ |:------------------------ |
+| CH3    | Methyl                   |
+| CH2    | Methylene                |
+| CH     |                          |
+| C      |                          |
+| aCH    | Aromatic CH              |
+| aCCH2  |                          |
+| aCCH   |                          |
+| CH2=   | Alkene group             |
+| CH=    |                          |
+| cCH2   | Cyclic alkane group      |
+| COOH   | Carboxylic acid group    |
+| COO    | Ester group              |
+| OH     | Hydroxyl                 |
+| CH2OH  | Methylene hydroxyl group |
+| CHOH   |                          |
+| NH2    | Amine group              |
+| NH     |                          |
+| N      |                          |
+| cNH    |                          |
+| cN     |                          |
+| CH=    |                          |
+| aCCH3  |                          |
+| aCOH   |                          |
+| cCH    |                          |
+| cCHNH  |                          |
+| cCHN   |                          |
+| aCCOaC |                          |
+| aCCOOH |                          |
+| aCNHaC |                          |
+| CH3CO  |                          |
+| eO     | End ether oxygen         |
+| cO     | Center ether oxygen      |
 """
 SAFTgammaMie
 
-function SAFTgammaMie(components;
-    idealmodel = BasicIdeal,
-    userlocations = String[],
-    group_userlocations = String[],
-    ideal_userlocations = String[],
-    reference_state = nothing,
-    verbose = false,
-    epsilon_mixing = :default,
-    assoc_options = AssocOptions())
-
+function SAFTgammaMie(components; idealmodel          = BasicIdeal, userlocations       = String[], group_userlocations = String[], ideal_userlocations = String[], reference_state     = nothing, verbose             = false, epsilon_mixing      = :default, assoc_options       = AssocOptions())
     _components = format_gccomponents(components)
-    groups = GroupParam(_components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
-    params = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
+    groups = GroupParam(_components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations=group_userlocations, verbose=verbose)
+    params = getparams(groups, ["SAFT/SAFTgammaMie", "properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
 
-    return SAFTgammaMie(groups, params, components;
-                        idealmodel = idealmodel,
-                        ideal_userlocations = ideal_userlocations,
-                        reference_state = reference_state,
-                        verbose = verbose,
-                        epsilon_mixing = epsilon_mixing,
-                        assoc_options = assoc_options)
+    return SAFTgammaMie(groups, params, components; idealmodel=idealmodel, ideal_userlocations=ideal_userlocations, reference_state=reference_state, verbose=verbose, epsilon_mixing=epsilon_mixing, assoc_options=assoc_options)
 end
 
-function SAFTgammaMie(groups::GroupParam, params::Dict{String,ClapeyronParam}, raw_components = groups.components;
-    idealmodel = BasicIdeal,
-    ideal_userlocations = String[],
-    reference_state = nothing,
-    verbose = false,
-    epsilon_mixing = :default,
-    assoc_options = AssocOptions())
-
-    
+function SAFTgammaMie(groups::GroupParam, params::Dict{String,ClapeyronParam}, raw_components=groups.components; idealmodel=BasicIdeal, ideal_userlocations=String[], reference_state=nothing, verbose=false, epsilon_mixing=:default, assoc_options=AssocOptions())
     sites = params["sites"]
     components = groups.components
-    
+
     segment = params["vst"]
     shapefactor = params["S"]
-    mixed_segment = MixedGCSegmentParam{Base.eltype(shapefactor)}(groups,shapefactor.values,segment.values)
+    mixed_segment = MixedGCSegmentParam{Base.eltype(shapefactor)}(groups, shapefactor.values, segment.values)
     sigma = sigma_LorentzBerthelot(params["sigma"])
     sigma.values .*= 1E-10
     sigma3 = PairParam(sigma)
     sigma3.values .^= 3
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
-    
+
     epsilon_mixing = Symbol(epsilon_mixing)
     if epsilon_mixing == :default
         epsilon = epsilon_HudsenMcCoubreysqrt(params["epsilon"], sigma)
     elseif epsilon_mixing == :hudsen_mccoubrey
         epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
     else
-        throw(error("invalid specification of ",error_color(epsilon_mixing),". available values are :default and :hudsen_mccoubrey"))
+        throw(error("invalid specification of ", error_color(epsilon_mixing), ". available values are :default and :hudsen_mccoubrey"))
     end
 
     #GC to component model in association
     bondvol0 = params["bondvol"]
     epsilon_assoc0 = params["epsilon_assoc"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol0,epsilon_assoc0,sigma,assoc_options) #combining rules for association
+    bondvol, epsilon_assoc = assoc_mix(bondvol0, epsilon_assoc0, sigma, assoc_options) #combining rules for association
 
-    gcparams = SAFTgammaMieParam(segment, shapefactor,lambda_a,lambda_r,sigma,epsilon,epsilon_assoc,bondvol,mixed_segment)
-    Mw_comp = group_sum(groups,params["Mw"].values)
-    init_idealmodel = init_model(idealmodel,raw_components,ideal_userlocations,verbose)
-    vrmodel = __SAFTVRMie(groups,gcparams,sites,idealmodel = init_idealmodel,assoc_options = assoc_options,epsilon_mixing = epsilon_mixing,verbose = verbose)
-    update_mw!(init_idealmodel,Mw_comp)
-    update_mw!(vrmodel,Mw_comp)
-    model = SAFTgammaMie(components,groups,sites,gcparams,init_idealmodel,vrmodel,epsilon_mixing,assoc_options,default_references(SAFTgammaMie))
-    set_reference_state!(model,reference_state;verbose)
+    gcparams = SAFTgammaMieParam(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol, mixed_segment)
+    Mw_comp = group_sum(groups, params["Mw"].values)
+    init_idealmodel = init_model(idealmodel, raw_components, ideal_userlocations, verbose)
+    vrmodel = __SAFTVRMie(groups, gcparams, sites, idealmodel=init_idealmodel, assoc_options=assoc_options, epsilon_mixing=epsilon_mixing, verbose=verbose)
+    update_mw!(init_idealmodel, Mw_comp)
+    update_mw!(vrmodel, Mw_comp)
+    model = SAFTgammaMie(components, groups, sites, gcparams, init_idealmodel, vrmodel, epsilon_mixing, assoc_options, default_references(SAFTgammaMie))
+    set_reference_state!(model, reference_state; verbose)
     return model
 end
 
 mw(model::SAFTgammaMieModel) = mw(model.vrmodel)
-molecular_weight(model::SAFTgammaMieModel,z) = molecular_weight(model.vrmodel,z)
+molecular_weight(model::SAFTgammaMieModel, z) = molecular_weight(model.vrmodel, z)
 
 const SAFTγMie = SAFTgammaMie
 @doc (@doc SAFTgammaMie) SAFTγMie
-export SAFTgammaMie,SAFTγMie
+export SAFTgammaMie, SAFTγMie
 
 SAFTVRMie(model::SAFTgammaMieModel) = model.vrmodel
 
-function __SAFTVRMie(groups::GroupParam,param::SAFTgammaMieParam,sites::SiteParam = SiteParam(groups.flattenedgroups);
-    idealmodel = BasicIdeal(),assoc_options = AssocOptions(),
-    epsilon_mixing = :default,
-    verbose = false)
-
+function __SAFTVRMie(groups::GroupParam, param::SAFTgammaMieParam, sites::SiteParam=SiteParam(groups.flattenedgroups); idealmodel=BasicIdeal(), assoc_options=AssocOptions(), epsilon_mixing=:default, verbose=false)
     verbose && @info("SAFTγ-Mie: creating SAFTVRMie model from SAFTγ-Mie parameters.")
     components = groups.components
     mixed_segment = param.mixed_segment
@@ -245,34 +220,34 @@ function __SAFTVRMie(groups::GroupParam,param::SAFTgammaMieParam,sites::SitePara
     gc_epsilon_assoc = param.epsilon_assoc
 
     #segment
-    segment = SingleParam("segment",components,group_sum(mixed_segment,nothing))
+    segment = SingleParam("segment", components, group_sum(mixed_segment, nothing))
 
     #sigma
     gc_sigma3 = PairParam(gc_sigma)
     gc_sigma3.values .^= 3
-    sigma3 = group_pairmean(mixed_segment,gc_sigma3)
+    sigma3 = group_pairmean(mixed_segment, gc_sigma3)
     sigma3.values .= cbrt.(sigma3.values)
     sigma = sigma_LorentzBerthelot(sigma3)
 
     #epsilon
     epsilon_mixing = Symbol(epsilon_mixing)
     if epsilon_mixing == :default
-        epsilon = epsilon_HudsenMcCoubreysqrt(group_pairmean(mixed_segment,gc_epsilon),sigma)
+        epsilon = epsilon_HudsenMcCoubreysqrt(group_pairmean(mixed_segment, gc_epsilon), sigma)
     elseif epsilon_mixing == :hudsen_mccoubrey
-        epsilon = epsilon_HudsenMcCoubrey(group_pairmean(mixed_segment,gc_epsilon),sigma)
+        epsilon = epsilon_HudsenMcCoubrey(group_pairmean(mixed_segment, gc_epsilon), sigma)
     else
-        throw(error("invalid specification of ",error_color(epsilon_mixing),". available values are :default and :hudsen_mccoubrey"))
+        throw(error("invalid specification of ", error_color(epsilon_mixing), ". available values are :default and :hudsen_mccoubrey"))
     end
     #lambda
-    lambda_a = group_pairmean(mixed_segment,gc_lambda_a) |> lambda_LorentzBerthelot
-    lambda_r = group_pairmean(mixed_segment,gc_lambda_r) |> lambda_LorentzBerthelot
+    lambda_a = group_pairmean(mixed_segment, gc_lambda_a) |> lambda_LorentzBerthelot
+    lambda_r = group_pairmean(mixed_segment, gc_lambda_r) |> lambda_LorentzBerthelot
 
-    comp_sites = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
-    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-    Mw = SingleParam("Mw",components, zeros(eltype(shapefactor), length(groups.components)))
-    vrparams = SAFTVRMieParam(Mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
-    return SAFTVRMie(components,comp_sites,vrparams,idealmodel,assoc_options,default_references(SAFTVRMie))
+    comp_sites = gc_to_comp_sites(sites, groups)
+    comp_bondvol = gc_to_comp_sites(gc_bondvol, comp_sites)
+    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc, comp_sites)
+    Mw = SingleParam("Mw", components, zeros(eltype(shapefactor), length(groups.components)))
+    vrparams = SAFTVRMieParam(Mw, segment, sigma, lambda_a, lambda_r, epsilon, comp_epsilon_assoc, comp_bondvol)
+    return SAFTVRMie(components, comp_sites, vrparams, idealmodel, assoc_options, default_references(SAFTVRMie))
 end
 
 include("equations.jl")
@@ -288,40 +263,40 @@ function recombine_impl!(model::SAFTgammaMieModel)
     mixed_segment = model.params.mixed_segment
     comp_sites = model.vrmodel.sites
 
-    mix_segment!(mixed_segment,groups,shapefactor.values,gc.segment.values)
-    model.vrmodel.params.segment.values[:] = group_sum(mixed_segment,nothing)
+    mix_segment!(mixed_segment, groups, shapefactor.values, gc.segment.values)
+    model.vrmodel.params.segment.values[:] = group_sum(mixed_segment, nothing)
 
     sigma_LorentzBerthelot!(gc.sigma)
     gc_sigma3 = PairParam(gc.sigma)
     gc_sigma3.values .^= 3
-    sigma3 = group_pairmean!(vr.sigma,mixed_segment,gc_sigma3)
+    sigma3 = group_pairmean!(vr.sigma, mixed_segment, gc_sigma3)
     vr.sigma.values .= cbrt.(vr.sigma.values)
     sigma_LorentzBerthelot!(vr.sigma.values)
 
     epsilon_HudsenMcCoubrey!(gc.epsilon, gc.sigma)
     if model.epsilon_mixing == :default
         epsilon_HudsenMcCoubreysqrt!(gc.epsilon, gc.sigma)
-        group_pairmean!(vr.epsilon,mixed_segment,gc.epsilon)
-        epsilon_HudsenMcCoubreysqrt!(vr.epsilon,vr.sigma)
+        group_pairmean!(vr.epsilon, mixed_segment, gc.epsilon)
+        epsilon_HudsenMcCoubreysqrt!(vr.epsilon, vr.sigma)
     else
         epsilon_HudsenMcCoubrey!(gc.epsilon, gc.sigma)
-        group_pairmean!(vr.epsilon,mixed_segment,gc.epsilon)
-        epsilon_HudsenMcCoubreysqrt!(vr.epsilon,vr.sigma)
+        group_pairmean!(vr.epsilon, mixed_segment, gc.epsilon)
+        epsilon_HudsenMcCoubreysqrt!(vr.epsilon, vr.sigma)
     end
 
     lambda_LorentzBerthelot!(gc.lambda_a)
     lambda_LorentzBerthelot!(gc.lambda_r)
-    
-    group_pairmean!(vr.lambda_a,mixed_segment,gc.lambda_a)
-    group_pairmean!(vr.lambda_r,mixed_segment,gc.lambda_r)
+
+    group_pairmean!(vr.lambda_a, mixed_segment, gc.lambda_a)
+    group_pairmean!(vr.lambda_r, mixed_segment, gc.lambda_r)
     lambda_LorentzBerthelot!(vr.lambda_a)
     lambda_LorentzBerthelot!(vr.lambda_r)
 
-    assoc_mix!(gc.bondvol,gc.epsilon_assoc,gc.sigma,assoc_options)
+    assoc_mix!(gc.bondvol, gc.epsilon_assoc, gc.sigma, assoc_options)
 
-    comp_sites = gc_to_comp_sites(sites,groups)
-    gc_to_comp_sites!(vr.bondvol,gc.bondvol,comp_sites)
-    gc_to_comp_sites!(vr.epsilon_assoc,gc.epsilon_assoc,comp_sites)
+    comp_sites = gc_to_comp_sites(sites, groups)
+    gc_to_comp_sites!(vr.bondvol, gc.bondvol, comp_sites)
+    gc_to_comp_sites!(vr.epsilon_assoc, gc.epsilon_assoc, comp_sites)
     return model
 end
 
