@@ -2,6 +2,7 @@ const DEFAULT_N_SITES = Dict{String,String}()
 
 const IGNORE_HEADERS = ["dipprnumber", "smiles", "cas"]
 
+const CSV_V1 = isdefined(CSV,:LazyFile)
 """
     ParamOptions(;kwargs...)
 Struct containing all the options related to parameter parsing:

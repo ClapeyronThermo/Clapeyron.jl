@@ -56,7 +56,7 @@ ClapeyronSymbolicsExt = "Symbolics"
 ClapeyronUnitfulExt = "Unitful"
 
 [compat]
-CSV = "0.10"
+CSV = "0.10, 1"
 CoolProp = "0.2"
 CoolProp_jll = "7.2.0, 8"
 DiffResults = "^1.1"
