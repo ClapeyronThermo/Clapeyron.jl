@@ -342,6 +342,11 @@ end
         @test Clapeyron.a_res(system, V, T)  ≈ -34.16747927719535 rtol = 1e-6
     end
 
+    @testset "Tillner-Roth-Friend" begin
+        system = TillnerRothFriend()
+        @test Clapeyron.a_res(system, 3e-2, 298.15, [0.4,0.6]) ≈ -0.018556794949535844 rtol = 1e-6
+    end
+
     @testset "multiparameter misc" begin
         T = 300.0
         V = 1/200

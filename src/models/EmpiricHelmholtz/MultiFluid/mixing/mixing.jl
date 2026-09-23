@@ -27,7 +27,7 @@ end
 include("Asymmetric.jl")
 include("LB.jl")
 include("linear.jl")
-include("TL.jl")
+include("TRFMixing.jl")
 
 v_scale(model::MultiFluid,z,mixing::Nothing,∑z) = v_scale(model,z,LinearMixing(),∑z)
 T_scale(model::MultiFluid,z,mixing::Nothing,∑z) = T_scale(model,z,LinearMixing(),∑z)
