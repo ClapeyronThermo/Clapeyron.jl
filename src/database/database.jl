@@ -603,11 +603,11 @@ if CSV_V1
         end
 
         if is_inline_csv(filepath)
-            lf = CSV.lazy(IOBuffer(filepath); header=3,normalizenames=true, on_error=:collect,delim = _delim)   # reads the header and builds the structural index once
+            lf = CSV.lazy(IOBuffer(filepath); header=3,normalizenames=true,delim = _delim)   # reads the header and builds the structural index once
             mask = [_drop(i, nm) for (i, nm) in enumerate(Tables.columnnames(lf))]
             df = CSV.File(IOBuffer(filepath); header=3,normalizenames=true, on_error=:collect,drop = mask, delim = _delim,buffer_in_memory = true)
         else
-            lf = CSV.lazy(filepath; header=3,normalizenames=true, on_error=:collect,delim = _delim)   # reads the header and builds the structural index once
+            lf = CSV.lazy(filepath; header=3,normalizenames=true,delim = _delim)   # reads the header and builds the structural index once
             mask = [_drop(i, nm) for (i, nm) in enumerate(Tables.columnnames(lf))]
             df = CSV.File(filepath; header=3,on_error=:collect, drop = mask,delim = _delim)
         end
