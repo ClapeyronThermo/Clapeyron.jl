@@ -399,10 +399,34 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false, allow_pseudo_p
     #TODO: in the future, maybe max_density could be in the files?
 
     lb_volume = 1/tryparse_units(get(crit,:rhomolar_max,NaN),get(crit,:rhomolar_max_units,""))
-    isnan(lb_volume) && (lb_volume = 1/tryparse_units(get(eos_data,:rhomolar_max,NaN),get(eos_data,:rhomolar_max_units,"")))
-    isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
-    isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
-    lb_volume = max(lb_volume,8.314*10*Tr/(1e10))
+        if isnan(lb_volume)
+        #fallback
+        lb_volume_e10 = 8.314*10*Tr/(1e10)
+
+        #different situations:
+        #=
+        rhol_tp = NaN (not available)
+        rhol_tp != NaN but is set to a sentinel value (999999999) (#558)
+        of the available lb_volumes, we choose the lowest one. (#631)
+        =#
+
+        if !isnan(rhol_tp) && 0 < rhol_tp < 1e8
+            lb_volume_tp = 1/(1.25*rhol_tp)
+        else
+            lb_volume_tp = Inf
+        end
+
+        if !isnan(rhor) && 0 < rhor < 1e8
+            lb_volume_crit = 1/(4*rhor)
+        else
+            lb_volume_crit = Inf
+        end
+        #this is in case no information about triple point is provided
+        lb_volume = min(lb_volume_tp,lb_volume_crit)
+        if isinf(lb_volume)
+            lb_volume = lb_volume_e10
+        end
+    end
 
     pseudo_pure = get(eos_data,:pseudo_pure,false)
     if pseudo_pure && !allow_pseudo_pure

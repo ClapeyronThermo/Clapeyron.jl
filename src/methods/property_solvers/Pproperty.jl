@@ -1,9 +1,13 @@
 function x0_edge_pressure(model,T,z,pure = split_pure_model(model))
     sat = extended_saturation_pressure.(pure,T)
+    vl = sum(x[2]*zi for (x,zi) in zip(sat,z))
+    vv = sum(x[3]*zi for (x,zi) in zip(sat,z))
+    p_vl = pressure(model,vl,T,z)
+    p_vv = pressure(model,vv,T,z)
     n = sum(z)
     p_bubble = sum(z[i]*first(sat[i]) for i in 1:length(model))/n
     p_dew = n/sum(z[i]/first(sat[i]) for i in 1:length(model))
-    return (p_bubble,p_dew),sat
+    return (max(p_vl,p_bubble),min(p_dew,p_vv)),sat
 end
 
 """

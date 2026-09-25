@@ -23,7 +23,6 @@ function index_reduction(method::BubblePointMethod,idx_r)
     return method
 end
 
-
 function extended_saturation_pressure(pure,T,_crit = nothing; crit_retry = true)
     sat,crit,status = _extended_saturation_pressure(pure,T,_crit;crit_retry)
     if status == :supercritical
@@ -270,7 +269,7 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
     end
 
     vlx = volume(model,p,T,x,phase = :l)
-    if high_conditions && isnan(vlx)
+    if high_conditions || isnan(vlx)
         for i in 1:10
             if FugEnum.is_temperature(method)
                 T *= 0.99
@@ -319,8 +318,6 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
         return p,T,xx,y,vl,vv
     end
 end
-
-
 
 _virial(model,V,T,z) = second_virial_coefficient(model,T,z)
 
