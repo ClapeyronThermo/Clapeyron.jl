@@ -1,4 +1,4 @@
-mutable struct DoubleExpTerm  <: MultiParameterTerm
+mutable struct DoubleExpTerm <: MultiParameterTerm
     n::Vector{Float64}
     t::Vector{Float64}
     d::Vector{Float64}
@@ -6,15 +6,15 @@ mutable struct DoubleExpTerm  <: MultiParameterTerm
     lt::Vector{Float64}
     gd::Vector{Float64}
     ld::Vector{Float64}
-    function DoubleExpTerm(n,t,d,gt,lt,gd,ld)
+    function DoubleExpTerm(n, t, d, gt, lt, gd, ld)
         @assert length(n) == length(t) == length(d) == length(lt)
         @assert length(lt) == length(ld) == length(gt) == length(gd)
-        return new(n,t,d,gt,lt,gd,ld)
+        return new(n, t, d, gt, lt, gd, ld)
         return param
     end
 end
 
-DoubleExpTerm() = DoubleExpTerm(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
+DoubleExpTerm() = DoubleExpTerm(Float64[], Float64[], Float64[], Float64[], Float64[], Float64[], Float64[])
 
 active_term(term::DoubleExpTerm) = !iszero(length(term.n))
 
@@ -29,7 +29,7 @@ function Base.empty!(term::DoubleExpTerm)
     return term
 end
 
-function a_term(term::DoubleExpTerm,δ,τ,lnδ,lnτ,_0)
+function a_term(term::DoubleExpTerm, δ, τ, lnδ, lnτ, _0)
     if active_term(term)
         n = term.n
         t = term.t
@@ -38,7 +38,7 @@ function a_term(term::DoubleExpTerm,δ,τ,lnδ,lnτ,_0)
         gd = term.gd
         lt = term.lt
         gt = term.gt
-        αᵣ = term_ar_exp2(δ,τ,lnδ,lnτ,_0,n,t,d,ld,gd,lt,gt)
+        αᵣ = term_ar_exp2(δ, τ, lnδ, lnτ, _0, n, t, d, ld, gd, lt, gt)
     else
         αᵣ = _0
     end

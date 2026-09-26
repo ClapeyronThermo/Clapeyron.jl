@@ -1,4 +1,4 @@
-mutable struct Associating2BTerm  <: MultiParameterTerm
+mutable struct Associating2BTerm <: MultiParameterTerm
     epsilonbar::Float64
     kappabar::Float64
     a::Float64
@@ -6,7 +6,7 @@ mutable struct Associating2BTerm  <: MultiParameterTerm
     vbarn::Float64
 end
 
-Associating2BTerm() = Associating2BTerm(0.0,0.0,0.0,0.0,0.0)
+Associating2BTerm() = Associating2BTerm(0.0, 0.0, 0.0, 0.0, 0.0)
 
 active_term(term::Associating2BTerm) = !iszero(term.kappabar)
 
@@ -19,19 +19,16 @@ function Base.empty!(term::Associating2BTerm)
     return term
 end
 
-function a_term(term::Associating2BTerm,δ,τ,lnδ,lnτ,_0)
+function a_term(term::Associating2BTerm, δ, τ, lnδ, lnτ, _0)
     if active_term(term)
         ε̄ = term.epsilonbar
         κ̄ = term.kappabar
         a = term.a
         m = term.m
         v̄ₙ = term.vbarn
-        αᵣ = term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε̄,κ̄,a,m,v̄ₙ)
+        αᵣ = term_ar_assoc2b(δ, τ, lnδ, lnτ, _0, ε̄, κ̄, a, m, v̄ₙ)
     else
         αᵣ = _0
     end
     return αᵣ
 end
-
-    
-

@@ -7,14 +7,14 @@ struct GaoBTerm <: MultiParameterTerm
     gamma::Vector{Float64}
     epsilon::Vector{Float64}
     b::Vector{Float64}
-    function GaoBTerm(n,t,d,eta,beta,gamma,epsilon,b)
+    function GaoBTerm(n, t, d, eta, beta, gamma, epsilon, b)
         @assert length(eta) == length(beta) == length(gamma) == length(epsilon) == length(b)
         @assert length(eta) == length(n) == length(t) == length(d)
-        return new(n,t,d,eta,beta,gamma,epsilon,b)
+        return new(n, t, d, eta, beta, gamma, epsilon, b)
     end
 end
 
-GaoBTerm() = GaoBTerm(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
+GaoBTerm() = GaoBTerm(Float64[], Float64[], Float64[], Float64[], Float64[], Float64[], Float64[], Float64[])
 
 active_term(term::GaoBTerm) = !iszero(length(term.n))
 
@@ -29,7 +29,7 @@ function Base.empty!(term::GaoBTerm)
     Base.empty!(term.b)
 end
 
-function a_term(term::GaoBTerm,δ,τ,lnδ,lnτ,_0)
+function a_term(term::GaoBTerm, δ, τ, lnδ, lnτ, _0)
     if active_term(term)
         n = term.n
         t = term.t
@@ -39,7 +39,7 @@ function a_term(term::GaoBTerm,δ,τ,lnδ,lnτ,_0)
         γ = term.gamma
         ε = term.epsilon
         b = term.b
-        αᵣ = term_ar_gaob(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε,b)
+        αᵣ = term_ar_gaob(δ, τ, lnδ, lnτ, _0, n, t, d, η, β, γ, ε, b)
     else
         αᵣ = _0
     end

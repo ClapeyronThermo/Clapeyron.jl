@@ -85,15 +85,7 @@ mutable struct SASS
     buffers :: SASSWorkspace
 end
 
-function SASS(
-    max_npop::Integer,
-    max_nfes::Integer,
-    lb::AbstractVector,
-    ub::AbstractVector;
-    seed::Integer = 1,
-    stagnation_evals::Integer = 0,
-    stagnation_tol::Real = 0.0,
-)
+function SASS(max_npop::Integer, max_nfes::Integer, lb::AbstractVector, ub::AbstractVector; seed::Integer=1, stagnation_evals::Integer=0, stagnation_tol::Real=0.0)
     min_npop = 4
     pbestratio = 0.11
     rd0 = 0.9
@@ -109,8 +101,7 @@ function SASS(
     stagnation_evals >= 0 || throw(DomainError(stagnation_evals, "stagnation_evals must be >= 0 (0 disables early stopping)"))
     stagnation_tol >= 0.0 || throw(DomainError(stagnation_tol, "stagnation_tol must be >= 0"))
 
-    cfg = SASSConfig(max_npop, min_npop, max_nfes, stagnation_evals, stagnation_tol,
-        pbestratio, Ar, Ms, dim, collect(Float64, lb), collect(Float64, ub), Int(seed))
+    cfg = SASSConfig(max_npop, min_npop, max_nfes, stagnation_evals, stagnation_tol, pbestratio, Ar, Ms, dim, collect(Float64, lb), collect(Float64, ub), Int(seed))
 
     npop = max_npop
     gen = 1
@@ -134,11 +125,7 @@ function SASS(
     mem_rd = fill(rd0, Ms)
     mem_c̄ = fill(c̄0, Ms)
 
-    state = SASSState(gen, npop, nfes, stagnation_count, rng,
-        x, x_new, x_shadow, y, curr_y2,
-        arch, ci, rd, mem_c̄, mem_rd,
-        best_x, best_y, best_y_trace,
-        false, 1, Vector{Float64}(undef, dim), 1)
+    state = SASSState(gen, npop, nfes, stagnation_count, rng, x, x_new, x_shadow, y, curr_y2, arch, ci, rd, mem_c̄, mem_rd, best_x, best_y, best_y_trace, false, 1, Vector{Float64}(undef, dim), 1)
 
     buffers = SASSWorkspace(zeros(Int, npop))
     return SASS(cfg, state, buffers)
@@ -176,15 +163,17 @@ end
     return r1, r2, r3
 end
 
-"Orthogonal matrix approx"
+"""
+Orthogonal matrix approx
+"""
 function rand_orth_mat(rng::AbstractRNG, n::Integer, t::Real)
     R = Matrix{Float64}(I, n, n)
     l = randperm(rng, n)
-    for i = 1:2:n-1
+    for i = 1:2:(n - 1)
         R[l[i], l[i]] = sin(t)
-        R[l[i+1], l[i+1]] = sin(t)
-        R[l[i], l[i+1]] = cos(t)
-        R[l[i+1], l[i]] = -cos(t)
+        R[l[i + 1], l[i + 1]] = sin(t)
+        R[l[i], l[i + 1]] = cos(t)
+        R[l[i + 1], l[i]] = -cos(t)
     end
     return R
 end
@@ -267,7 +256,7 @@ function _finalize_generation!(sa::SASS)
         plan_popSize = max(plan_popSize, c.min_npop)
         if npop > plan_popSize
             sorted_indices = sortperm!(b.perm_buf, s.y)
-            to_remove = sort!(view(sorted_indices, plan_popSize+1:npop))
+            to_remove = sort!(view(sorted_indices, (plan_popSize + 1):npop))
             deleteat!(s.y, to_remove)
             resize!(b.perm_buf, plan_popSize)
             survivors = sort!(b.perm_buf)
@@ -289,7 +278,7 @@ function _finalize_generation!(sa::SASS)
     MUci = s.mem_c̄[mem_rand_index]
     MUrd = s.mem_rd[mem_rand_index]
     s.rd = 0.1randn(rng) .+ MUrd
-    s.rd[MUrd.==-1] .= 0
+    s.rd[MUrd .== -1] .= 0
     clamp!(s.rd, 0, 1)
     r_ci = rand(rng, s.npop)
     s.ci = @. MUci + 0.1 * tan(π * (r_ci - 0.5))
