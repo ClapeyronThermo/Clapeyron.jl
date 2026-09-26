@@ -420,7 +420,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
         ub .= @view z[in_equilibria]
         lb = similar(ny_var0)
         lb .= 0
-        opt_options = OptimizationOptions(f_abstol = 0.0,f_reltol = 0.0,g_reltol = K_tol,maxiter = 100)
+        opt_options = OptimizationOptions(f_abstol = 0.0,f_reltol = 0.0,g_reltol = K_tol,g_abstol = 1e-8,maxiter = 100)
         if second_order
             sol = Solvers.optimize(flash_obj, ny_var0, LineSearch(Newton2(ny_var0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         else

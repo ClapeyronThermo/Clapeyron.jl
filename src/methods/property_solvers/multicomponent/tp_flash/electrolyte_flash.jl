@@ -237,7 +237,7 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
         #ψmin,ψmax = bound_electrochemical_potential(K,Z)
         lb[end] = -Inf
         ub[end] = Inf
-        opt_options = OptimizationOptions(f_abstol = 0.0,f_reltol = 0.0,x_abstol = 1e-10,maxiter = 1000)
+        opt_options = OptimizationOptions(f_abstol = 0.0,f_reltol = 0.0,x_abstol = 1e-10,x_reltol = 0.0,g_abstol = 1e-8, g_reltol = K_tol,maxiter = 100)
         if second_order
             sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, LineSearch(Newton2(ny_var_and_ψ0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         else
