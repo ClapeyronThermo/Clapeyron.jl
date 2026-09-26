@@ -383,14 +383,6 @@ end
         model558 = MultiFluid(_comps; mixing, coolprop_userlocations=false)
         @test molar_density(model558, 9.259e3, 220.; phase=:liquid) ≈ 13029.070044557742 rtol = 1e-6
         @test model558.components == names
-
-        #issue 631
-        model631 = SingleFluid("helium")
-        @test volume(model631,10e6,5.195300013635951) ≈ 1.9475072054583694e-5 rtol = 1e-6
-        @test volume(model631,20e6,5.195300013635951) ≈ 1.7145534637196815e-5 rtol = 1e-6
-        @test mass_density(model631,4.132881978467486e7, 44.42037005484798) ≈ 191.5340695301078 rtol = 1e-6
-        @test mass_density(model631,4.13268752731072e7, 36.13092956665322) ≈ 206.67609534992914 rtol = 1e-6
-        @test mass_density(model631,4e7, 44.0) ≈ 189.56072902040492 rtol = 1e-6
     end
     @printline
     end

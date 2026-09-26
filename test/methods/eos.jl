@@ -585,6 +585,14 @@ end
     test_volume(fluid6,2e2*fluid6.properties.Pc,0.25*fluid6.properties.Tc)
     test_volume(fluid6,2e2*fluid6.properties.Pc,1.2*fluid6.properties.Tc)
 
+    #issue 631
+    fluid631 = SingleFluid("helium")
+    test_volume(fluid631,10e6,5.195300013635951)
+    test_volume(fluid631,20e6,5.195300013635951)
+    test_volume(fluid631,4.132881978467486e7, 44.42037005484798)
+    test_volume(fluid631,4.13268752731072e7, 36.13092956665322)
+    test_volume(fluid631,4e7,44.0)
+
     #CoolProp fluid predicting negative fundamental derivative of gas dynamics
     #10.1021/acs.iecr.9b00608, figure 17
     model = SingleFluid("MD4M")
