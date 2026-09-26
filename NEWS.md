@@ -1,15 +1,15 @@
-# v0.6.28
+# v0.6.29
 
 ## New Features
 
-- `Unitful.jl` extension: support for missing bulk methods
-- `Unitful.jl` extension: support for `PH`, `PS`, `VT`, `QT`, `QP`, `TS` basis
-- `Unitful.jl` extension: support for all flashes
-- Experimental: `Clapeyron.MassFractions` wrapper to indicate that the vector of compositions is a mass composition vector.
+- XY flashes: support for ideal models
+- New model: Tillner-Roth-Friend for water-ammonia mixtures (`TillnerRothFriend`)
 
 ## Bug fixes
 
-- fix in cubic solver
-- fix in AD with `TProperty`/`Pproperty`
-- removed extra `show` in `MichelsenTPFlash` when material balance failed.
-- removed extra gibbs evaluation when checking bubble/dew consistency
+- `volume`: faster evaluation of gibbs energy difference
+- Multiparameter: improved lower bound volume suggestion
+- misc equilibria fixes
+- `cPR`: fixed constructor function
+- activity models: fixed excess functions
+- `UNIFACFV`/`UNIFACFVPoly`: fixed inconsistency in the combinatorial term. Results may change between the old and new version, with the new version being the correct one.
