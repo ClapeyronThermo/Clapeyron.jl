@@ -9,17 +9,17 @@ abstract type ABCubicModel <: DeltaCubicModel end #cubics where the critical poi
 abstract type ABCCubicModel <: DeltaCubicModel end #cubics with a "c" variable parameter, like Clausius and patel-teja
 abstract type GibbsBasedModel <: EoSModel end
 
-abstract type MixingRule <:EoSModel end #mixing rules for cubics (and empiric Helmholtz models)
+abstract type MixingRule <: EoSModel end #mixing rules for cubics (and empiric Helmholtz models)
 abstract type ActivityModel <: EoSModel end
 abstract type IdealModel <: EoSModel end
 abstract type EmpiricHelmholtzModel <: EoSModel end
 abstract type SatPureAproximation <: EoSModel end
-abstract type AlphaModel <:EoSModel end
+abstract type AlphaModel <: EoSModel end
 abstract type ElectrolyteModel <: EoSModel end
 abstract type IonModel <: ElectrolyteModel end
 abstract type RSPModel <: ElectrolyteModel end
 abstract type RestrictedEquilibriaModel <: EoSModel end
 
-export SAFTModel,CubicModel,EmpiricHelmholtzModel
+export SAFTModel, CubicModel, EmpiricHelmholtzModel
 export IdealModel
 export AlphaModel

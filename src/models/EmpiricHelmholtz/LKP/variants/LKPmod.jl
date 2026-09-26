@@ -9,20 +9,24 @@ abstract type LKPmodModel <: LKPModel end
         verbose=false)
 
 ## Input parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) (optional) - Critical Volume `[m³]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor (no units)
-- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Vc`: Single Parameter (`Float64`) (optional) - Critical Volume `[m³]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor (no units)
+  - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 
 ## Input models
-- `idealmodel`: Ideal Model
+
+  - `idealmodel`: Ideal Model
 
 ## Description
+
 Lee-Kesler-Plöker equation of state. Corresponding states using interpolation between a simple, spherical fluid (methane, `∅`)  and a reference fluid (n-octane, `ref`):
 
 Coefficients of the original EoS were modified in [2], guarantees a correct behaviour of the EoS in the liquid phase.
+
 ```
 αᵣ = (1 - ωᵣ)*αᵣ(δr,τ,params(∅)) + ωᵣ*αᵣ(δr,τ,params(ref))
 τ = Tr/T
@@ -39,6 +43,7 @@ Vcᵢⱼ = 0.125*(∛Vcᵢ + ∛Vcⱼ)^3
 ```
 
 ## Model Construction Examples
+
 ```julia
 # Using the default database
 model = LKPmod("water") #single input
@@ -66,31 +71,32 @@ model = LKPmod(["neon","hydrogen"];
 ```
 
 ## References
-1. Plöcker, U., Knapp, H., & Prausnitz, J. (1978). Calculation of high-pressure vapor-liquid equilibria from a corresponding-states correlation with emphasis on asymmetric mixtures. Industrial & Engineering Chemistry Process Design and Development, 17(3), 324–332. [doi:10.1021/i260067a020](https://doi.org/10.1021/i260067a020)
-2. Sabozin, F., Jäger, A., & Thol, M. (2024). Enhancement of the Lee–Kesler–Plöcker equation of state for calculating thermodynamic properties of long-chain alkanes. International Journal of Thermophysics, 45(5). [doi:10.1007/s10765-024-03360-0](https://doi.org/10.1007/s10765-024-03360-0)
+
+ 1. Plöcker, U., Knapp, H., & Prausnitz, J. (1978). Calculation of high-pressure vapor-liquid equilibria from a corresponding-states correlation with emphasis on asymmetric mixtures. Industrial & Engineering Chemistry Process Design and Development, 17(3), 324–332. [doi:10.1021/i260067a020](https://doi.org/10.1021/i260067a020)
+ 2. Sabozin, F., Jäger, A., & Thol, M. (2024). Enhancement of the Lee–Kesler–Plöcker equation of state for calculating thermodynamic properties of long-chain alkanes. International Journal of Thermophysics, 45(5). [doi:10.1007/s10765-024-03360-0](https://doi.org/10.1007/s10765-024-03360-0)
 """
 LKPmod
 
 export LKPmod
 
-default_references(::Type{LKPmod}) = ["10.1021/i260067a020","10.1007/s10765-024-03360-0"]
-default_locations(::Type{LKPmod}) = ["properties/critical.csv","properties/molarmass.csv"]
+default_references(::Type{LKPmod}) = ["10.1021/i260067a020", "10.1007/s10765-024-03360-0"]
+default_locations(::Type{LKPmod}) = ["properties/critical.csv", "properties/molarmass.csv"]
 default_ignore_missing_singleparams(::Type{LKPmod}) = ["Vc"]
 
-function transform_params(::Type{LKPmod},params,components)
-    k = get(params,"k",nothing)
+function transform_params(::Type{LKPmod}, params, components)
+    k = get(params, "k", nothing)
     if k === nothing
         nc = length(components)
-        params["k"] = PairParam("k",components)
+        params["k"] = PairParam("k", components)
     end
-    _Vc = get(params,"Vc",nothing)
+    _Vc = get(params, "Vc", nothing)
     if _Vc === nothing
-        Vc = SingleParam("Vc",components)
+        Vc = SingleParam("Vc", components)
         params["Vc"] = Vc
     else
         Vc = _Vc
     end
-    Tc,Pc,ω = params["Tc"],params["Pc"],params["acentricfactor"]
+    Tc, Pc, ω = params["Tc"], params["Pc"], params["acentricfactor"]
     for i in 1:length(Vc.values)
         if Vc.ismissingvalues[i]
             Vc.values[i] = (0.2905 - 0.085*ω[i])*Rgas()*Tc[i]/Pc[i]

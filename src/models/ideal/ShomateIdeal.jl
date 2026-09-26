@@ -1,5 +1,4 @@
 
-
 abstract type ShomateIdealModel <: ReidIdealModel end
 @newmodelsimple ShomateIdeal ShomateIdealModel ReidIdealParam
 
@@ -13,22 +12,22 @@ abstract type ShomateIdealModel <: ReidIdealModel end
 
 ## Input parameters
 
-- `a`: Single Parameter (`Float64`) - polynomial coefficient
-- `b`: Single Parameter (`Float64`) - polynomial coefficient
-- `c`: Single Parameter (`Float64`) - polynomial coefficient
-- `d`: Single Parameter (`Float64`) - polynomial coefficient
-- `e`: Single Parameter (optional) (`Float64`)  - polynomial coefficient for 1/T^2
-- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
+  - `a`: Single Parameter (`Float64`) - polynomial coefficient
+  - `b`: Single Parameter (`Float64`) - polynomial coefficient
+  - `c`: Single Parameter (`Float64`) - polynomial coefficient
+  - `d`: Single Parameter (`Float64`) - polynomial coefficient
+  - `e`: Single Parameter (optional) (`Float64`)  - polynomial coefficient for 1/T^2
+  - `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
 
 ## Model parameters
 
-- `a`: Single Parameter (`Float64`) - polynomial coefficient
-- `b`: Single Parameter (`Float64`) - polynomial coefficient
-- `c`: Single Parameter (`Float64`) - polynomial coefficient
-- `d`: Single Parameter (`Float64`) - polynomial coefficient
-- `e`: Single Parameter (optional) (`Float64`)  - polynomial coefficient for 1/T^2
-- `coeffs`: Single Parameter (`NTuple{5,Float64}`)
-- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
+  - `a`: Single Parameter (`Float64`) - polynomial coefficient
+  - `b`: Single Parameter (`Float64`) - polynomial coefficient
+  - `c`: Single Parameter (`Float64`) - polynomial coefficient
+  - `d`: Single Parameter (`Float64`) - polynomial coefficient
+  - `e`: Single Parameter (optional) (`Float64`)  - polynomial coefficient for 1/T^2
+  - `coeffs`: Single Parameter (`NTuple{5,Float64}`)
+  - `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
 
 ## Description
 
@@ -40,6 +39,7 @@ Cp(T) = ∑Cpᵢxᵢ
 ```
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 idealmodel = ShomateIdeal("water") #single input
@@ -59,37 +59,35 @@ idealmodel = ShomateIdeal(["water","butane"];
                         Mw = [18.01, 58.12])
                         ) #e is not used
 ```
-
 """
 ShomateIdeal
 export ShomateIdeal
 
-default_locations(::Type{ShomateIdeal}) = ["ideal/ShomateIdeal.csv","properties/molarmass.csv"]
-default_ignore_missing_singleparams(::Type{ShomateIdeal}) = ["e","Mw"]
-function transform_params(::Type{ShomateIdeal},params,components)
-    a,b,c,d = params["a"],params["b"],params["c"],params["d"]
-    e = get(params,"e") do
-        SingleParam("e",components)
+default_locations(::Type{ShomateIdeal}) = ["ideal/ShomateIdeal.csv", "properties/molarmass.csv"]
+default_ignore_missing_singleparams(::Type{ShomateIdeal}) = ["e", "Mw"]
+function transform_params(::Type{ShomateIdeal}, params, components)
+    a, b, c, d = params["a"], params["b"], params["c"], params["d"]
+    e = get(params, "e") do
+        SingleParam("e", components)
     end
-    params["coeffs"] = reid_coeffs(a,b,c,d,e,components)
+    params["coeffs"] = reid_coeffs(a, b, c, d, e, components)
     return params
 end
 
-function evalcoeff(::ShomateIdealModel,coeffs,T,lnT = log(T))
-    A,B,C,D,E = coeffs
-    poly = (A,B,C,D)
-    return evalpoly(T,poly) + E/(T*T)
+function evalcoeff(::ShomateIdealModel, coeffs, T, lnT=log(T))
+    A, B, C, D, E = coeffs
+    poly = (A, B, C, D)
+    return evalpoly(T, poly) + E/(T*T)
 end
 
-function eval∫coeff(::ShomateIdealModel,coeffs,T,lnT = log(T))
-    A,B,C,D,E = coeffs
-    ∫poly = (A,B/2,C/3,D/4)
-    return evalpoly(T,∫poly)*T - E/T
+function eval∫coeff(::ShomateIdealModel, coeffs, T, lnT=log(T))
+    A, B, C, D, E = coeffs
+    ∫poly = (A, B/2, C/3, D/4)
+    return evalpoly(T, ∫poly)*T - E/T
 end
 
-function eval∫coeffT(::ShomateIdealModel,coeffs,T,lnT = log(T))
-    A,B,C,D,E = coeffs
-    ∫polyT = (B,C/2,D/3)
-    return A*lnT + evalpoly(T,∫polyT)*T - E/(2*T*T)
+function eval∫coeffT(::ShomateIdealModel, coeffs, T, lnT=log(T))
+    A, B, C, D, E = coeffs
+    ∫polyT = (B, C/2, D/3)
+    return A*lnT + evalpoly(T, ∫polyT)*T - E/(2*T*T)
 end
-
