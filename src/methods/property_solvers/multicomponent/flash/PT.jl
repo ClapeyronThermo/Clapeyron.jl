@@ -92,8 +92,10 @@ function tp_flash2(model::EoSModel, _p, _T, _n, method::FlashMethod)
     end
     
     if length(model_r) == 1 || numphases(method) == 1
-        return FlashResult(model_r,p,T,n_r)
+        result_1 = tp_flash_pure(model_r,p,T,n_r,method)
+        return index_expansion(result_1,idx_r)
     end
+
     ∑n = sum(n_r)
     z_r = n_r ./ ∑n
     if has_a_res(model)
@@ -116,6 +118,8 @@ function tp_flash2(model::EoSModel, _p, _T, _n, method::FlashMethod)
     result.fractions .*= ∑n
     return index_expansion(result,idx_r)
 end
+
+tp_flash_pure(model,p,T,z,method) = FlashResult(model,p,T,z)
 
 function tp_flash2_to_tpflash(model,p,T,z,result)
     comps, β, volumes, data = result
