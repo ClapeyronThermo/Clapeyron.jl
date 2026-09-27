@@ -49,12 +49,12 @@ module ClapeyronMultiComponentFlashExt
         C.tp_flash_K0!(K, eos, cond.p, cond.T,cond.z, nothing)
     end
 
-    function M.wilson_estimate!(K, eos::EoSModel, p, T)
+    function M.wilson_estimate!(K, eos::C.EoSModel, p, T)
         return C.wilson_k_values!(K,eos,p,T)
     end
 
     
-    function M.wilson_estimate(eos::EoSModel, p, T)
+    function M.wilson_estimate(eos::C.EoSModel, p, T)
         return C.wilson_k_values(eos,p,T)
     end
 
