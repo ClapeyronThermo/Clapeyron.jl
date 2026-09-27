@@ -13,3 +13,9 @@
 - `cPR`: fixed constructor function
 - activity models: fixed excess functions
 - `UNIFACFV`/`UNIFACFVPoly`: fixed inconsistency in the combinatorial term. Results may change between the old and new version, with the new version being the correct one.
+
+## Misc
+
+- `CSV`: support for v1
+- `NLSolvers`: support for v6
+- `MultiComponentFlash`: minimum version supported bumped to v2
