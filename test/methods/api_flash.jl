@@ -39,6 +39,11 @@
         @test Clapeyron.numphases(res2) == 2
         @test res2.fractions[1] ≈ 0.9991083897702745 rtol = 1e-6
 
+        #test that index reduction returns a model with the correct number of components
+        respure = Clapeyron.tp_flash2(model_zulip1, p_zulip1, 282.3, [1.0,0.0,0.0,0.0], RRTPFlash(equilibrium=:vle))
+        @test collect(each_active_phase_index(respure)) == [1]
+        @test respure.compositions[1] ≈ [1.0,0.0,0.0,0.0]
+
         #https://julialang.zulipchat.com/#narrow/channel/265161-Clapeyron.2Ejl/topic/The.20meaning.20of.20subcooled.20liquid.20flash.20results/near/534216551
         model_zulip2 = PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"])
         res3 = Clapeyron.tp_flash2(model_zulip2, 1e5 , 450, z_zulip1, RRTPFlash(equilibrium=:vle))

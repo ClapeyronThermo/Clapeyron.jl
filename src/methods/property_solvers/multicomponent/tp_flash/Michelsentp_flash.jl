@@ -85,6 +85,30 @@ function Solvers.primalval(method::MichelsenTPFlash{T}) where {T}
     end
 end
 
+function tp_flash_pure_michelsen(model,p,T,z)
+    ps,_,_ = extended_saturation_pressure(model,T)
+    _1 = one(Base.promote_eltype(model,p,T,z))
+    _0 = zero(_1)
+    n = sum(z)
+    if ps > p
+        βi = [_0,_1*n]
+        vv = volume(model,p,T,z,phase = :v)
+        vl = vv
+    else
+        βi = [_1*n,_0]
+        vl = volume(model,p,T,z,phase = :l)
+        vv = vl
+    end
+    vapour_idx = 2
+    volumes = [vl,vv]
+    comps = [[1.0],[1.0]]
+    flash0 = FlashResult(comps,βi,volumes,FlashData(p,T,_0,vapour_idx))
+    g = first(modified_gibbs(model,flash0))
+    return FlashResult(comps,βi,volumes,FlashData(p,T,g,vapour_idx))
+end
+
+tp_flash_pure(model,p,T,z,method::MichelsenTPFlash) = tp_flash_pure_michelsen(model,p,T,z)
+
 numphases(::MichelsenTPFlash) = 2
 
 function MichelsenTPFlash(;equilibrium = :unknown,

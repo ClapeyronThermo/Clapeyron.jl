@@ -46,9 +46,19 @@ module ClapeyronMultiComponentFlashExt
     end
 
     function M.initial_guess_K!(K, eos::C.EoSModel, cond)
-        C.tp_flash_K0!(K, eos, cond.p, cond.T, nothing)
+        C.tp_flash_K0!(K, eos, cond.p, cond.T,cond.z, nothing)
     end
 
+    function M.wilson_estimate!(K, eos::C.EoSModel, p, T)
+        return C.wilson_k_values!(K,eos,p,T)
+    end
+
+    
+    function M.wilson_estimate(eos::C.EoSModel, p, T)
+        return C.wilson_k_values(eos,p,T)
+    end
+
+    M.forces_per_phase(eos::C.EoSModel) = false
     #this is only defined with cubic EoS.
     M.force_coefficients(eos::C.EoSModel, cond;static_size = false) = nothing
     M.force_scalars(eos::C.EoSModel, cond, forces) = nothing
@@ -92,6 +102,7 @@ module ClapeyronMultiComponentFlashExt
     if isdefined(M,:component_names)
         M.component_names(model::C.EoSModel) = C.component_list(model)
     end
+
     include("MultiComponentFlash/stability.jl")
     include("MultiComponentFlash/flash.jl")
     include("MultiComponentFlash/flow_coupler.jl")
