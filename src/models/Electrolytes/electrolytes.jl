@@ -249,6 +249,18 @@ auto_binary_salts
 
 is_electrolyte(model::ElectrolyteModel) = true
 
+"""
+    component_charges(model::ElectrolyteModel)
+
+Net charge carried by one molecule of each *component* (length
+`length(model)`). The generic fallback assumes `model.charge` is already
+per-component (true for any electrolyte model whose components are real,
+individually-named ionic species, e.g. `ESElectrolyte`). A group-
+contribution model whose own `.charge` is per-*group* instead (one entry
+per `model.groups.flattenedgroups`, e.g. `LS`) must override this directly.
+"""
+component_charges(model::ElectrolyteModel) = model.charge
+
 #=
 Taking an inspiration from the broadcast dispatch
 
@@ -441,3 +453,4 @@ include("ISElectrolyte.jl")
 include("stability.jl")
 
 export molality_to_composition
+export component_charges

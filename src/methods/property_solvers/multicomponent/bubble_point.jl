@@ -680,6 +680,7 @@ end
 include("bubble_point/bubble_activity.jl")
 include("bubble_point/bubble_chempot.jl")
 include("bubble_point/bubble_fugacity.jl")
+include("bubble_point/bubble_donnan.jl")
 
 
 #default initializers

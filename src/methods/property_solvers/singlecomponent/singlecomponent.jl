@@ -175,6 +175,7 @@ end
 
 include("saturation/saturation.jl")
 include("crit_pure.jl")
+include("x0_crit_bisection.jl")
 include("triple_point.jl")
 include("sublimation.jl")
 include("melting.jl")
