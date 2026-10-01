@@ -311,9 +311,6 @@ include("models/SAFT/SAFTVRMie/variants/eSAFTVRMie.jl")
 include("models/SAFT/PCSAFT/variants/ePCSAFT.jl")
 include("models/SAFT/CPA/variants/eCPA.jl")
 
-
-include("methods/property_solvers/electrolytes/electrolytes.jl")
-include("methods/property_solvers/multicomponent/tp_flash/electrolyte_flash.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
 
 include("estimation/estimation.jl")

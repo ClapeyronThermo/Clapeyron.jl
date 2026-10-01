@@ -7,6 +7,9 @@ include("fugacity_coefficient.jl")
 #single component properties and solvers
 include("singlecomponent/singlecomponent.jl")
 
+#electrolyte solvers, basic
+include("electrolytes/electrolytes/donnan.jl")
+
 #multiple component properties and solvers
 include("multicomponent/multicomponent.jl")
 
@@ -21,3 +24,5 @@ include("Pproperty.jl")
 #spinodal solvers
 include("spinodal.jl")
 
+#electrolyte solvers, complete
+include("electrolytes/electrolytes.jl")
