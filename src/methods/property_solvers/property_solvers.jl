@@ -8,7 +8,7 @@ include("fugacity_coefficient.jl")
 include("singlecomponent/singlecomponent.jl")
 
 #electrolyte solvers, basic
-include("electrolytes/electrolytes/donnan.jl")
+include("electrolytes/donnan.jl")
 
 #multiple component properties and solvers
 include("multicomponent/multicomponent.jl")
