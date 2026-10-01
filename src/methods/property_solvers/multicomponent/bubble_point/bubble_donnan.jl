@@ -57,7 +57,7 @@ _donnan_mole_fractions_from_free(free::AbstractVector) = vcat(free, 1 - sum(free
 function donnan_bubble_residual!(F::AbstractVector, u::AbstractVector, model::ElectrolyteModel, T, x_dense::AbstractVector, Z::AbstractVector{<:Integer})
     N = length(Z)
     Vd, Vl = u[1], u[2]
-    y = _donnan_mole_fractions_from_free(view(u, 3:1+N))
+    y = FractionVector(view(u, 3:1+N))
     Ψ = u[end]
 
     F[1] = pressure(model, Vd, T, x_dense) - pressure(model, Vl, T, y)
@@ -73,7 +73,7 @@ end
 
 function donnan_bubble_residual_psi_zero!(F::AbstractVector, u::AbstractVector, model::ElectrolyteModel, T, x_dense::AbstractVector, N::Int)
     Vd, Vl = u[1], u[2]
-    y = _donnan_mole_fractions_from_free(view(u, 3:1+N))
+    y = FractionVector(view(u, 3:1+N))
 
     F[1] = pressure(model, Vd, T, x_dense) - pressure(model, Vl, T, y)
     μd = VT_chemical_potential(model, Vd, T, x_dense)
@@ -109,53 +109,14 @@ function _default_donnan_u0(model::ElectrolyteModel, T::Real, x_dense::AbstractV
     return vcat(Vd0, Vl0, x_dense[1:N-1], 0.0)
 end
 
-"""
-    donnan_psi_bulk(model::ElectrolyteModel, T, ρbulk_dense::AbstractVector, ρbulk_dilute::AbstractVector)
-
-Read off the Donnan potential `Ψ` (dense-minus-dilute convention, matching
-`donnan_bubble_residual!`'s own `μᵢ(dense) - μᵢ(dilute) = Zᵢ·Rgas·T·Ψ`)
-between two ALREADY-KNOWN coexisting bulk states, given directly as
-per-component densities rather than `(V,x)` pairs -- since chemical
-potential only depends on density (`VT_chemical_potential(model,1,T,ρ)` and
-`VT_chemical_potential(model,V,T,ρ*V)` agree for any `V`, confirmed
-directly), no volume/mole-fraction bookkeeping is needed from the caller.
-
-No iterative solve: unlike `bubble_pressure(...,DonnanBubblePressure())`,
-which solves the FULL coupled equilibrium (`Ψ` along with both phases'
-volumes/composition), this is a direct readout for a caller that already
-has a converged coexisting pair of bulk states in hand (e.g. a DFT solver's
-own `structure.ρbulk`/`structure.topology.ρbulk2`, built earlier from a
-`bubble_pressure` result) and only needs `Ψ` itself, not to re-solve the
-equilibrium that produced it. Averaged over every charged component
-(`Zᵢ≠0`) for numerical robustness -- at a genuine coexistence point these
-should all agree; returns exactly `0.0` if `model` has no charged
-components (nothing to average).
-"""
-function donnan_psi_bulk(model::ElectrolyteModel, T, ρbulk_dense::AbstractVector, ρbulk_dilute::AbstractVector)
-    Z = component_charges(model)
-    charged = findall(!iszero, Z)
-    isempty(charged) && return 0.0
-    μd = VT_chemical_potential(model, 1.0, T, ρbulk_dense)
-    μl = VT_chemical_potential(model, 1.0, T, ρbulk_dilute)
-    RT = Rgas(model) * T
-    return sum(i -> (μd[i] - μl[i]) / (RT * Z[i]), charged) / length(charged)
-end
-
-"""
-    bubble_pressure(model::ElectrolyteModel, T, x, method::DonnanBubblePressure=DonnanBubblePressure())
-
-Donnan-equilibrium-augmented bubble pressure: given `T` and one phase's
-full electroneutral composition `x`, returns `(P, V_dense, V_dilute, y, Ψ)`.
-With `method.psi_zero=true`, solves the reduced `Ψ=0` system instead (see
-`DonnanBubblePressure`'s docstring).
-"""
-function bubble_pressure(model::ElectrolyteModel, T, x::AbstractVector, method::DonnanBubblePressure=DonnanBubblePressure())
+function bubble_pressure_impl(model::ElectrolyteModel, T, nn::AbstractVector, method::DonnanBubblePressure)
+    x = nn ./ sum(nn)
     Z = component_charges(model)
     N = length(Z)
     length(x) == N || throw(ArgumentError("x must have length $N (one entry per component), got $(length(x))"))
-    isapprox(sum(x), 1.0; atol=1e-8) || throw(ArgumentError("x must sum to 1 (mole fractions), got sum=$(sum(x))"))
-    isapprox(dot(Z, x), 0.0; atol=1e-6) || throw(ArgumentError("x must be electroneutral (Σ Zᵢxᵢ=0); got $(dot(Z, x))"))
 
+    electroneutral_check(@view(ν[i,:]),charges)
+    nan = Base.promote_eltype(model,T,x)
     if method.psi_zero
         u0_full = method.u0 === nothing ? _default_donnan_u0(model, T, x, Z) : copy(method.u0)
         u0 = length(u0_full) == N + 1 ? u0_full : u0_full[1:N+1]  # drop Ψ if a full-length guess was supplied
@@ -167,12 +128,13 @@ function bubble_pressure(model::ElectrolyteModel, T, x::AbstractVector, method::
         converged || (u .= NaN)
 
         Vd, Vl = u[1], u[2]
-        y = _donnan_mole_fractions_from_free(view(u, 3:1+N))
+        yn = view(u, 3:1+N)
+        y = vcat(yn,1 - sum(yn))
         if converged && !isapprox(dot(Z, y), 0.0; atol=1e-6)
             @warn "DonnanBubblePressure(psi_zero=true): converged y is not electroneutral (Σ Zᵢyᵢ=$(dot(Z, y))) -- Ψ=0 was likely not a valid assumption for this model/composition; use psi_zero=false."
         end
-        P = converged ? pressure(model, Vd, T, x) : NaN
-        return (P=P, V_dense=Vd, V_dilute=Vl, y=y, Ψ=0.0)
+        P = converged ? pressure(model, Vd, T, x) : nan
+        return P,Vl,Vd,y
     end
 
     u0 = method.u0 === nothing ? _default_donnan_u0(model, T, x, Z) : copy(method.u0)
@@ -188,59 +150,10 @@ function bubble_pressure(model::ElectrolyteModel, T, x::AbstractVector, method::
     converged || (u .= NaN)
 
     Vd, Vl, Ψ = u[1], u[2], u[end]
-    y = _donnan_mole_fractions_from_free(view(u, 3:1+N))
-    P = converged ? pressure(model, Vd, T, x) : NaN
-    return (P=P, V_dense=Vd, V_dilute=Vl, y=y, Ψ=Ψ)
-end
-
-"""
-    find_critical_salt_fraction(model::EoSModel, T; s_lo=0.01, s_hi=0.999, max_iters=60)
-
-Critical salt fraction `s_c` for a net-neutral species + symmetric 1:1 salt
-system (`x(s) = [1-s, s/2, s/2]`, `s` the total salt mole fraction) at a
-FIXED temperature `T` -- the composition-space analogue of a critical
-*temperature* at fixed composition, with the roles of `T` and composition
-swapped: here `T` is held fixed and the composition ray `x(s)` is what's
-bisected on.
-
-Bisects `s` on whether `crit_mix(model,x(s))`'s own critical temperature
-`Tc_mix(s)` is above or below the target `T` -- `crit_mix` solves the full
-multicomponent critical-point condition (stability against both density and
-composition perturbations), which is the physically-relevant criterion for
-whether `x(s)` itself sits at a genuine multicomponent critical composition
-at `T`. `Tc_mix(s) > T` means still unstable (coexistence exists somewhere
-reachable from `x(s)` at this `T`); `Tc_mix(s) < T` means stable. `crit_mix`
-becomes numerically fragile very close to `s→1` (pure salt, a genuinely
-degenerate limit) -- a `NaN` return during bisection is treated as "still
-unstable" (the fragility is on the far side of where `s_c` is expected for
-any solvent/polymer-containing system).
-
-Returns `(s_c, V_c, P_c)`.
-"""
-function find_critical_salt_fraction(model::EoSModel, T::Real; s_lo::Float64=0.01, s_hi::Float64=0.999, max_iters::Int=60)
-    xs(s) = [1 - s, s / 2, s / 2]
-
-    crit_mix_at(s) = crit_mix(model, xs(s))
-
-    Tc_lo, = crit_mix_at(s_lo)
-    Tc_hi, = crit_mix_at(s_hi)
-    isnan(Tc_lo) || Tc_lo > T || throw(ArgumentError("no coexistence found even at s_lo=$s_lo (crit_mix Tc=$Tc_lo < T=$T); lower it"))
-    isnan(Tc_hi) || Tc_hi < T || throw(ArgumentError("still coexisting at s_hi=$s_hi (crit_mix Tc=$Tc_hi > T=$T); raise it"))
-
-    lo, hi = s_lo, s_hi
-    sc, Pc, Vc = NaN, NaN, NaN
-    for _ in 1:max_iters
-        mid = 0.5 * (lo + hi)
-        Tc_mid, Pc_mid, Vc_mid = crit_mix_at(mid)
-        if isnan(Tc_mid) || Tc_mid < T
-            hi = mid
-        else
-            lo = mid
-        end
-        sc, Pc, Vc = mid, Pc_mid, Vc_mid
-    end
-    return (s_c=sc, V_c=Vc, P_c=Pc)
+    yn = view(u, 3:1+N)
+    y = vcat(yn,1 - sum(yn))
+    P = converged ? pressure(model, Vd, T, x) : nan
+    return P,Vd,Vl,y
 end
 
 export DonnanBubblePressure, donnan_bubble_residual!, donnan_bubble_residual_psi_zero!
-export find_critical_salt_fraction, donnan_psi_bulk
