@@ -102,3 +102,18 @@ end
 function moles_positivity(x::T) where T<:Real
     @assert x >= 0 "Moles non-positive values! Contains values $x"
 end
+
+function electroneutral_check(Z,x;atol = 1e-6)
+    zx = dot(Z, x)
+    is_electroneutral = isapprox(zx, zero(zx); atol=1e-6) 
+    if !is_electroneutral
+        throw(ElectroneutralityError(zx))
+    end
+    return nothing
+end
+
+@noinline function ElectroneutralityError(zx)
+    throw(ArgumentError(lazy"x must be electroneutral (ΣZᵢxᵢ ≈ 0); got $(zx)"))
+end
+
+

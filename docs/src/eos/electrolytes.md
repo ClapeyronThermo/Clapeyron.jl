@@ -47,6 +47,7 @@ Clapeyron.ePCSAFT
 Clapeyron.eSAFTVRMie
 Clapeyron.SAFTVREMie
 Clapeyron.SAFTgammaEMie
+Clapeyron.LS
 ```
 
 ## Relative Static Permittivity Models

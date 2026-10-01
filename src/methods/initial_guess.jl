@@ -229,7 +229,7 @@ function x0_sat_pure(model,T,crit)
     else
         Tc,Pc,Vc = crit
         R = Base.promote_eltype(satmodel,T,Tc,Pc,Vc)
-        _,vl,vv = x0_sat_pure_crit(satmodel)::NTuple{3,R}
+        _,vl,vv = x0_sat_pure_crit(satmodel,T,crit)::NTuple{3,R}
     end
     return vl,vv
 end

@@ -1,6 +1,3 @@
-abstract type ESElectrolyteModel <: ElectrolyteModel end
-abstract type ISElectrolyteModel <: ElectrolyteModel end
-
 """
     salt_stoichiometry(model::ElectrolyteModel)
     salt_stoichiometry(model::ElectrolyteModel,salts)
@@ -11,10 +8,11 @@ If no `salts` argument is specified, the salt pairings will be created via [`Cla
 
 """
 function salt_stoichiometry(model::ElectrolyteModel,salts = auto_binary_salts(model))
-    iions = model.charge.!=0
+    Z = component_charges(model)
+    iions = Z.!=0
     ions = model.components[iions]
     ν = zeros(length(salts),length(ions))
-    charges = model.charge[iions]
+    charges = Z[iions]
 
     for i ∈ eachindex(salts)
         v = salts[i][2]
@@ -26,9 +24,8 @@ function salt_stoichiometry(model::ElectrolyteModel,salts = auto_binary_salts(mo
                 end
             end
         end
-        if dot(@view(ν[i,:]),charges)!==0.
-            throw(ArgumentError("The salt $i is not electroneutral"))
-        end
+        electroneutral_check(@view(ν[i,:]),charges,atol = 0.0)
+    
     end
     for νi in eachcol(ν)
         if iszero(sum(νi))
@@ -39,19 +36,19 @@ function salt_stoichiometry(model::ElectrolyteModel,salts = auto_binary_salts(mo
 end
 
 function salt_stoichiometry(model::ElectrolyteModel,salts::GroupParam)
-    ions = model.components[model.charge.!=0]
+    Z = component_charges(model)
+    ions = model.components[Z.!=0]
     nsalts = length(salts.components)
     ν = zeros(nsalts,length(ions))
-    charges = model.charge[model.charge.!=0]
+    charges = Z[Z.!=0]
     for i ∈ 1:nsalts
         v = salts.n_groups[i]
         salt_names = salts.groups[i]
         for j in eachindex(v)
             ν[i,salt_names[j].==ions] .= v[j]
         end
-        if dot(@view(ν[i,:]),charges)!==0.
-            throw(ArgumentError("The salt $i is not electroneutral"))
-        end
+        electroneutral_check(@view(ν[i,:]),charges,atol = 0.0)
+
     end
     for νi in eachcol(ν)
         if iszero(sum(νi))
@@ -71,7 +68,7 @@ If no `salts` argument is specified, the salt pairings will be created via [`Cla
 """
 function molality_to_composition(model::ElectrolyteModel,salts::Union{AbstractVector,GroupParam},m,zsolv=SA[1.],ν = salt_stoichiometry(model,salts))
     nc = length(model)
-    Z = model.charge
+    Z = component_charges(model)
     nions = count(!iszero,Z)
     nneutral = nc - nions
     Mw = mw(model.neutralmodel).*1e-3
@@ -159,10 +156,10 @@ function a_ion(ionmodel, rsp, neutralmodel, V, T, z, neutral_data, ϵ_r)
     return a_ion(ionmodel, V, T, z, ϵ_r)
 end
 
-auto_binary_salts(model) = auto_binary_salts(model.charge,component_list(model))
+auto_binary_salts(model) = auto_binary_salts(component_charges(model),component_list(model))
 
 function auto_binary_salts(Z,comps)
-    #Z = model.charge
+    #Z = component_charges(model)
     n_ions = count(!iszero,Z)
     res = Tuple{String,Vector{Pair{String,Int}}}[]
     n_ions == 1 && throw(DomainError("cannot create salts with only one ion"))
@@ -208,13 +205,10 @@ A vector of tuples, where each tuple contains:
 - `Vector{Pair{String,Int}}`: Stoichiometric coefficients as component => count pairs
 
 # Description
-This function generates `n-1` independent binary salts from `n` ions by pairing cations
-with anions. The stoichiometric coefficients are determined by the least common multiple
-(LCM) of the absolute charges to ensure electroneutrality.
+This function generates `n-1` independent binary salts from `n` ions by pairing cations with anions. 
+The stoichiometric coefficients are determined by the least common multiple (LCM) of the absolute charges to ensure electroneutrality.
 
-For a system with multiple cations and anions, salts are created by iterating through
-cation-anion pairs until `n-1` salts are formed, which is the number of independent
-salts needed to describe an `n`-ion system.
+For a system with multiple cations and anions, salts are created by iterating through cation-anion pairs until `n-1` salts are formed, which is the number of independent salts needed to describe an `n`-ion system.
 
 # Examples
 ```julia
@@ -248,6 +242,15 @@ Clapeyron.auto_binary_salts(Z, comps)
 auto_binary_salts
 
 is_electrolyte(model::ElectrolyteModel) = true
+
+"""
+    component_charges(model::ElectrolyteModel)
+
+Net charge carried by one molecule of each *component* (length`length(model)`). 
+The generic fallback assumes `model.charge` is already per-component (true for any electrolyte model whose components are real,individually-named ionic species, e.g. `ESElectrolyte`). 
+A group-contribution model whose own `.charge` is per-*group* instead must override this directly.
+"""
+component_charges(model::ElectrolyteModel) = model.charge
 
 #=
 Taking an inspiration from the broadcast dispatch
@@ -333,7 +336,7 @@ function iondata(model::ESElectrolyteModel, V, T, z, m::IndependentIonModel)
     neutralmodel = model.neutralmodel
     ionmodel = model.ionmodel
     neutral_data = data(neutralmodel,V,T,z)
-    Z = model.charge
+    Z = component_charges(model)
     σ = get_sigma(ionmodel, V, T, z, neutralmodel, neutral_data) #sigma is stored in the ionmodel
     if requires_rsp(ionmodel)
         ϵ_r = dielectric_constant(ionmodel, V, T, z, Z, m)
@@ -347,7 +350,7 @@ function a_res(model::ESElectrolyteModel, V, T, z, m::IndependentIonModel)
     neutralmodel = model.neutralmodel
     ionmodel = model.ionmodel
     neutral_data = data(neutralmodel,V,T,z)
-    Z = model.charge
+    Z = component_charges(model)
     σ = get_sigma(ionmodel, V, T, z, neutralmodel, neutral_data) #sigma is stored in the ionmodel
     if requires_rsp(ionmodel)
         ϵ_r = dielectric_constant(ionmodel, V, T, z, Z, m)
@@ -387,7 +390,7 @@ function T_scale(model::ESElectrolyteModel,z)
 end
 
 function debye_length(model::ESElectrolyteModel,V,T,z,ϵ_r = @f(dielectric_constant),∑z = sum(z))
-    Z = model.charge
+    Z = component_charges(model)
     return debye_length(V,T,z,ϵ_r,Z)
 end
 
@@ -405,7 +408,7 @@ model = ConstRSP()
 function dielectric_constant end
 
 function dielectric_constant(model::EoSModel,V, T, z)
-    Z = model.charge
+    Z = component_charges(model)
     return dielectric_constant(model, V, T, z, Z, IonDependency(model))
 end
 
@@ -441,3 +444,4 @@ include("ISElectrolyte.jl")
 include("stability.jl")
 
 export molality_to_composition
+export component_charges

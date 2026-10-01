@@ -3,15 +3,16 @@
     result = vt_flash(model, v, T, n; kwargs...)
 
 Routine to solve non-reactive two-phase multicomponent flash problem. With V-T specifications.
-Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
-Inputs:
+Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
+
+## Inputs:
  - `v`, volume `[m³]`
  - `T`, temperature `[K]`
  - `n`, vector of number of moles of each species `[mol]`
 
 All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
 
- Outputs:
+## Outputs:
  - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
 """
 function vt_flash(model::EoSModel,V,T,z = SA[1.0];kwargs...)

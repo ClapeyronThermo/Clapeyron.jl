@@ -63,3 +63,26 @@ function x0_crit_mix(model::EoSModel,z)
     T_c  = prod(tci[i]^(z[i]/∑z) for i ∈ 1:length(model))
     return (log10(V_c),T_c)
 end
+
+"""
+    x0_crit_mix_bisection(model::EoSModel, z; kwargs...)
+
+`x0_crit_mix`-shaped warm start (`(log10(Vc0), Tc0)`), built from
+[`x0_crit_bisection_TV`](@ref) (a fixed-ray bisection along `z`, not a
+per-component split). For models whose generic `x0_crit_mix` default fails
+-- e.g. `split_pure_model` has no `is_splittable`/`default_splitter` method
+for one of the model's components -- define
+`x0_crit_mix(model::MyModel,z) = x0_crit_mix_bisection(model,z)` instead.
+
+This finds the fixed-ray pseudo-pure critical point along `z`, which is
+generally NOT the same point `crit_mix`'s own multicomponent stability
+criterion converges to (that criterion also allows composition
+perturbations, so its `Tc` can sit above where a pressure loop still
+exists along the fixed ray) -- it is only intended as an initial guess.
+"""
+function x0_crit_mix_bisection(model::EoSModel, z; kwargs...)
+    Tc0, Vc0 = x0_crit_bisection_TV(model, z; kwargs...)
+    return (log10(Vc0), Tc0)
+end
+
+export x0_crit_mix_bisection
