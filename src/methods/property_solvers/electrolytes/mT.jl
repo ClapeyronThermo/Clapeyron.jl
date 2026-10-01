@@ -1,7 +1,8 @@
 function __electrolyte_fugacities(model,salts,p,T,m,zsolv = SA[1.0];sat = false)
     icomponents = 1:length(model)
-    isolvent = icomponents[model.charge.==0]
-    iions = icomponents[model.charge.!=0]
+    Z = component_charges(model)
+    isolvent = icomponents[Z.==0]
+    iions = icomponents[Z.!=0]
     
     ν = salt_stoichiometry(model,salts)
     z0 = molality_to_composition(model,salts,ones(length(m)).*1e-20,zsolv,ν)

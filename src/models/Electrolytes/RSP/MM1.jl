@@ -90,7 +90,7 @@ function a_res(model::ESElectrolyteModel,V,T,z,dep::DependentIonModel{MM1})
     neutralmodel = model.neutralmodel
     ionmodel = model.ionmodel
     neutral_data = data(neutralmodel,V0,T,z)
-    Z = model.charge
+    Z = component_charges(model)
     X,Δ = _X_and_Δ(neutralmodel,V,T,z,neutral_data)
     a_neutral = a_res_minus_assoc(neutralmodel,V,T,z,neutral_data) + a_assoc_impl(model,V,T,z,X)
     ϵ_r = __dielectric_constant(model, V, T, z, rsp, X, Δ)
@@ -116,7 +116,7 @@ function __dielectric_constant(model::ESElectrolyteModel, V, T, z, RSPmodel::MM1
     θ = RSPmodel.params.theta.values
     α = RSPmodel.params.polarizability.values
     z̄ = RSPmodel.params.coordz.values
-    Z = model.charge
+    Z = component_charges(model)
     n_neutral = count(iszero,Z)
     model_sites = getsites(assocmodel)
     sites = model_sites.i_sites

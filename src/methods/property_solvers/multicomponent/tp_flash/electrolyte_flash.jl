@@ -387,7 +387,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
     in_equilibria,non_inx,non_iny = in_eq
     phasex,phasey = phases
     volx,voly = vcache[]
-    Z = model.charge
+    Z = component_charges(model)
     update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
     nxsum = sum(nx)
     nysum = sum(ny)

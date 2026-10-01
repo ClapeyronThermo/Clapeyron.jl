@@ -58,11 +58,11 @@ end
 SaltParam(model::ESElectrolyteModel) = SaltParam(model,nothing)
 
 function SaltParam(model::ESElectrolyteModel,::Nothing)
-    explicit_salt_param(component_list(model),auto_binary_salts(model),model.charge)
+    explicit_salt_param(component_list(model),auto_binary_salts(model),component_charges(model))
 end
 
 function SaltParam(model::ESElectrolyteModel,salts)
-    explicit_salt_param(component_list(model),salts,model.charge)
+    explicit_salt_param(component_list(model),salts,component_charges(model))
 end
 
 function component_list(m::SaltParam)
