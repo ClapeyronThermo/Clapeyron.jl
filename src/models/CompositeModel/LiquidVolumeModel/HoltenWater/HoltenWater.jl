@@ -31,31 +31,31 @@ Where x is the fraction of water molecules in with low-density structure.
 
 ## References
 
-1. Holten, V., Sengers, J. V., & Anisimov, M. A. (2014). Equation of state for supercooled water at pressures up to 400 MPa. Journal of Physical and Chemical Reference Data, 43(4), 043101. [doi:10.1063/1.4895593](https://doi.org/10.1063/1.4895593)
+ 1. Holten, V., Sengers, J. V., & Anisimov, M. A. (2014). Equation of state for supercooled water at pressures up to 400 MPa. Journal of Physical and Chemical Reference Data, 43(4), 043101. [doi:10.1063/1.4895593](https://doi.org/10.1063/1.4895593)
 """
 HoltenWater
 
-function eos_g(model::HoltenWaterModel,p,T,z)
+function eos_g(model::HoltenWaterModel, p, T, z)
     Tc = 228.2
     Rm = 461.523087
     ρ0 = 1081.6482
     𝕡 = p/(Rm*Tc*ρ0)
-    L = water_L(model,𝕡,T)
+    L = water_L(model, 𝕡, T)
     ω = 2 + 0.5212269*𝕡
-    x = water_x_frac(model,L,ω)
-    
+    x = water_x_frac(model, L, ω)
+
     T̂ = T/Tc
-    ĝᴬ = water_eos_g_a(model,p,T)
+    ĝᴬ = water_eos_g_a(model, p, T)
     ĝ = ĝᴬ + T̂*(x*L + xlogx(x) + xlogx(1-x) + ω*x*(1-x))
-    g = ĝ*Rm*Tc*molecular_weight(model,z)
+    g = ĝ*Rm*Tc*molecular_weight(model, z)
     return g
 end
 
-molecular_weight(model::HoltenWaterModel,z) = 0.0180153*sum(z)
+molecular_weight(model::HoltenWaterModel, z) = 0.0180153*sum(z)
 default_references(::Type{HoltenWater}) = ["10.1063/1.4895593"]
 component_list(::HoltenWater) = ["water"]
 
-function water_L(model::HoltenWaterModel,p,T)
+function water_L(model::HoltenWaterModel, p, T)
     L0 = 0.76317954
     k0 = 0.072158686
     k₁ = -0.31569232
@@ -67,11 +67,10 @@ function water_L(model::HoltenWaterModel,p,T)
     L = L0*K₂*(1 + k0*k₂ + k₁*(p + k₂*t) - K₁)/(2*k₁*k₂)
 end
 
-function water_x_frac(model::HoltenWaterModel,L,ω)
-    
+function water_x_frac(model::HoltenWaterModel, L, ω)
     k0 = exp(-L - ω)
     function f(x)
-            
+
         #fx = L + log(x) - log(1 - x) + ω*(1 - 2*x)
         #dfx = 1/x + 1/(1 - x) - 2*x*ω
         #d2fx = -1/(x*x) - 1/((1 - x)*(1 - x)) - 2*ω
@@ -81,13 +80,13 @@ function water_x_frac(model::HoltenWaterModel,L,ω)
         xx = k/(1 + k)
         fx = xx - x
         dfx = 2*ω*xx/(1 + k) - 1
-        return fx,fx/dfx
+        return fx, fx/dfx
     end
-    prob = Roots.ZeroProblem(f,k0)
-    return Roots.solve(prob,Roots.Newton())
+    prob = Roots.ZeroProblem(f, k0)
+    return Roots.solve(prob, Roots.Newton())
 end
 
-function water_eos_g_a(model::HoltenWaterModel,p,T)
+function water_eos_g_a(model::HoltenWaterModel, p, T)
     c = HoltenWaterConsts.c
     a = HoltenWaterConsts.a
     b = HoltenWaterConsts.b
@@ -99,8 +98,8 @@ function water_eos_g_a(model::HoltenWaterModel,p,T)
     Rm = 461.523087
     τ = T/Tc
     _π = (p - p0)/(Rm*Tc*ρ0)
-    lnπ,lnτ = log(_π), log(τ)
-    ĝᴬ = zero(Base.promote_eltype(lnπ,lnτ))
+    lnπ, lnτ = log(_π), log(τ)
+    ĝᴬ = zero(Base.promote_eltype(lnπ, lnτ))
 
     for k in eachindex(c)
         ĝᴬ += c[k]*exp(lnπ*b[k] + lnτ*a[k] - _π*d[k])
@@ -109,11 +108,11 @@ function water_eos_g_a(model::HoltenWaterModel,p,T)
     return ĝᴬ
 end
 
-p_scale(model::HoltenWaterModel,z) = 101325.0
-T_scale(model::HoltenWaterModel,z) = 228.2
+p_scale(model::HoltenWaterModel, z) = 101325.0
+T_scale(model::HoltenWaterModel, z) = 228.2
 
-function gibbsmodel_reference_state_consts(ice::IAPWS06,water::HoltenWaterModel)
-    return :zero,0.0,0.0,0.0
+function gibbsmodel_reference_state_consts(ice::IAPWS06, water::HoltenWaterModel)
+    return :zero, 0.0, 0.0, 0.0
 end
 
 const HoltenWaterConsts = (

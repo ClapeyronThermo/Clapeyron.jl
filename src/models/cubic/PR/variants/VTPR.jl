@@ -21,7 +21,7 @@ None
 
 ## Input models
 
-- `activity`: Activity Model
+  - `activity`: Activity Model
 
 ## Description
 
@@ -39,6 +39,7 @@ ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - gᴱᵣₑₛ/(0.53087RT))
 ```
 
 ## Model Construction Examples
+
 ```
 # Note: this model was meant to be used exclusively with the VTPRUNIFAC activity model.
 
@@ -67,42 +68,43 @@ mixing = VTPRRule(["water","ethanol"];
 ```
 
 ## References
-1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. [doi:10.1016/s0378-3812(01)00626-4](https://doi.org/10.1016/s0378-3812(01)00626-4)
+
+ 1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. [doi:10.1016/s0378-3812(01)00626-4](https://doi.org/10.1016/s0378-3812(01)00626-4)
 """
 VTPRRule
 
 export VTPRRule
-function VTPRRule(components; activity = UNIFAC, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)
-    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
+function VTPRRule(components; activity=UNIFAC, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
+    _activity = init_mixing_act(activity, components, activity_userlocations, verbose)
     references = ["10.1016/S0378-3812(01)00626-4"]
-    model = VTPRRule(format_components(components), _activity,references)
+    model = VTPRRule(format_components(components), _activity, references)
     return model
 end
 
-function ab_premixing(model::PRModel,mixing::VTPRRule,k,l)
+function ab_premixing(model::PRModel, mixing::VTPRRule, k, l)
     a = model.params.a
     b = model.params.b
     ab_diagvalues!(model)
-    epsilon_LorentzBerthelot!(a,k)
-    vtpr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,3/4)
-    kij_mix!(vtpr_mix,b,l)
-    return a,b
+    epsilon_LorentzBerthelot!(a, k)
+    vtpr_mix(bi, bj, lij) = mix_powmean(bi, bj, lij, 3/4)
+    kij_mix!(vtpr_mix, b, l)
+    return a, b
 end
 
-function cubic_get_l(model::CubicModel,mixing::VTPRRuleModel,params)
-    return get_k_powmean(params.b.values,3/4)
+function cubic_get_l(model::CubicModel, mixing::VTPRRuleModel, params)
+    return get_k_powmean(params.b.values, 3/4)
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::VTPRRuleModel,α,a,b)
+function mixing_rule(model::PRModel, V, T, z, mixing_model::VTPRRuleModel, α, a, b)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
-    g_E_res = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z) / n
-    b̄ = dot(z,b,z) * invn2
-    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
-    Σab = invn*sum(z[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)
+    g_E_res = excess_gibbs_free_energy(mixing_model.activity, 1e5, T, z) / n
+    b̄ = dot(z, b, z) * invn2
+    c̄ = translation2(model, V, T, z, model.translation, a, b, α)*invn
+    Σab = invn*sum(z[i]*a[i, i]*α[i]/b[i, i]/(R̄*T) for i ∈ @comps)
     ā = b̄*R̄*T*(Σab-1/0.53087*(g_E_res/(R̄*T)))
-    return ā,b̄,c̄
+    return ā, b̄, c̄
 end
 
 """
@@ -119,47 +121,36 @@ end
     verbose = false)
 
 Volume-translated Peng Robinson equation of state. It uses the following models:
-- Translation Model: [`PenelouxTranslation`](@ref)
-- Alpha Model: [`TwuAlpha`](@ref)
-- Mixing Rule Model: [`VTPRRule`](@ref) with [`VTPRUNIFAC`](@ref) activity
-## References
-1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. [doi:10.1016/s0378-3812(01)00626-4](https://doi.org/10.1016/s0378-3812(01)00626-4)
-"""
-function VTPR(components;
-    idealmodel = BasicIdeal,
-    alpha = TwuAlpha, #here just for compatibility with the notebooks.
-    userlocations = String[], 
-    group_userlocations = String[],
-    ideal_userlocations = String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    reference_state = nothing,
-    verbose = false)
 
-    activity = VTPRUNIFAC(components,
-            userlocations = activity_userlocations,
-            group_userlocations = group_userlocations,
-            verbose = verbose)
+  - Translation Model: [`PenelouxTranslation`](@ref)
+  - Alpha Model: [`TwuAlpha`](@ref)
+  - Mixing Rule Model: [`VTPRRule`](@ref) with [`VTPRUNIFAC`](@ref) activity
+
+## References
+
+ 1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. [doi:10.1016/s0378-3812(01)00626-4](https://doi.org/10.1016/s0378-3812(01)00626-4)
+"""
+function VTPR(
+    components;
+    idealmodel=BasicIdeal,
+    alpha=TwuAlpha, #here just for compatibility with the notebooks.
+    userlocations=String[],
+    group_userlocations=String[],
+    ideal_userlocations=String[],
+    alpha_userlocations=String[],
+    mixing_userlocations=String[],
+    activity_userlocations=String[],
+    translation_userlocations=String[],
+    reference_state=nothing,
+    verbose=false,
+)
+    activity = VTPRUNIFAC(components, userlocations=activity_userlocations, group_userlocations=group_userlocations, verbose=verbose)
 
     _components = activity.groups.components #extract pure component list
 
     translation = PenelouxTranslation
     mixing = VTPRRule
 
-    return PR(_components;
-    idealmodel = idealmodel,
-    alpha = alpha,
-    mixing = mixing,
-    activity = activity,
-    translation = translation,
-    userlocations = userlocations,
-    ideal_userlocations = ideal_userlocations,
-    alpha_userlocations = alpha_userlocations,
-    mixing_userlocations = mixing_userlocations,
-    translation_userlocations = translation_userlocations,
-    reference_state = reference_state,
-    verbose = verbose)
+    return PR(_components; idealmodel=idealmodel, alpha=alpha, mixing=mixing, activity=activity, translation=translation, userlocations=userlocations, ideal_userlocations=ideal_userlocations, alpha_userlocations=alpha_userlocations, mixing_userlocations=mixing_userlocations, translation_userlocations=translation_userlocations, reference_state=reference_state, verbose=verbose)
 end
 export VTPR

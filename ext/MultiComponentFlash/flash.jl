@@ -1,4 +1,4 @@
-function M.flash_storage_internal!(out, eos::C.EoSModel, cond, method; inc_jac = isa(method, M.AbstractNewtonFlash), static_size = false,inc_bypass = false, kwarg...)
+function M.flash_storage_internal!(out, eos::C.EoSModel, cond, method; inc_jac=isa(method, M.AbstractNewtonFlash), static_size=false, inc_bypass=false, kwarg...)
     n = M.number_of_components(eos)
     TT = typeof(one(eltype(eos)))
     splt = C.split_pure_model(eos)
@@ -6,20 +6,20 @@ function M.flash_storage_internal!(out, eos::C.EoSModel, cond, method; inc_jac =
     out[:forces] = nothing
     out[:crit] = C.crit_pure.(splt)
     if static_size
-        alloc_vec = () -> C.StaticArrays.@MVector zeros(TT,n)
+        alloc_vec = () -> C.StaticArrays.@MVector zeros(TT, n)
     else
-        alloc_vec = () -> zeros(TT,n)
+        alloc_vec = () -> zeros(TT, n)
     end
     out[:x] = alloc_vec()
     out[:y] = alloc_vec()
     out[:buffer1] = alloc_vec()
     out[:buffer2] = alloc_vec()
     if inc_jac
-        M.flash_storage_internal_newton!(out, eos, cond, method, static_size = static_size; kwarg...)
+        M.flash_storage_internal_newton!(out, eos, cond, method, static_size=static_size; kwarg...)
     end
 
     if inc_bypass
-        out[:bypass] = michelsen_critical_point_measure_storage(eos, static_size = static_size)
+        out[:bypass] = michelsen_critical_point_measure_storage(eos, static_size=static_size)
     end
 
     return out
@@ -33,29 +33,29 @@ function M.flash_update!(K, storage, type::M.SSIFlash, eos::C.EoSModel, cond, fo
     y = M.vapor_mole_fraction!(y, x, K)
     phi_l = storage.buffer1
     phi_v = storage.buffer2
-    liquid = (p = p, T = T, z = x,phase = :liquid)
-    vapor = (p = p, T = T, z = y,phase = :vapor)
+    liquid = (p=p, T=T, z=x, phase=:liquid)
+    vapor = (p=p, T=T, z=y, phase=:vapor)
     ϵ = zero(F)
     M.mixture_fugacities!(phi_l, eos, liquid, forces)
     M.mixture_fugacities!(phi_v, eos, vapor, forces)
     r = phi_l
     r ./= phi_v
     K .*= r
-    ϵ = mapreduce(ri -> abs(1-ri), max ,r)
+    ϵ = mapreduce(ri -> abs(1-ri), max, r)
     V = C.rachfordrice(K, z; β0=V)
-    return (V, ϵ)::Tuple{F, F}
+    return (V, ϵ)::Tuple{F,F}
 end
 
 function M.update_flash_jacobian!(J, r, eos::C.EoSModel, p, T, z, x, y, V, forces)
     has_r = !isnothing(r)
     n = M.number_of_components(eos)
-    liquid = (p = p, T = T, z = x)
-    vapor = (p = p, T = T, z = y)
+    liquid = (p=p, T=T, z=x)
+    vapor = (p=p, T=T, z=y)
 
     #those 3 lines are the only difference. we need an overload here
-    Z_l = C.compressibility_factor(eos,p,T,x,phase = :l)
-    Z_v = C.compressibility_factor(eos,p,T,y,phase = :v)
-    s_l,s_v = nothing,nothing
+    Z_l = C.compressibility_factor(eos, p, T, x, phase=:l)
+    Z_v = C.compressibility_factor(eos, p, T, y, phase=:v)
+    s_l, s_v = nothing, nothing
 
     if isa(V, ForwardDiff.Dual)
         np = length(V.partials)
@@ -69,10 +69,10 @@ function M.update_flash_jacobian!(J, r, eos::C.EoSModel, p, T, z, x, y, V, force
         f_v = M.component_fugacity(eos, vapor, c, Z_v, forces, s_v)
         Δf = f_l - f_v
         if has_r
-            @inbounds r[c+n] = Δf.value
+            @inbounds r[c + n] = Δf.value
         end
         for i = 1:np
-            @inbounds J[c+n, i] = Δf.partials[i]
+            @inbounds J[c + n, i] = Δf.partials[i]
         end
     end
     # x_i*(1-V) - V*y_i - z_i = 0 ∀ i

@@ -3,10 +3,10 @@ using Dates
 
 include(joinpath(@__DIR__, "tp_flash_benchmark.jl"))
 
-function _argval(key::String; default = nothing)
+function _argval(key::String; default=nothing)
     prefix = "--$key="
     for a in ARGS
-        startswith(a, prefix) && return a[length(prefix) + 1:end]
+        startswith(a, prefix) && return a[(length(prefix) + 1):end]
     end
     return default
 end
@@ -35,16 +35,11 @@ function _write_csv(path::AbstractString, header::Vector{String}, rows::Vector{V
     end
 end
 
-function tpflash_benchmark_stage2(;
-    indir::AbstractString = joinpath(@__DIR__, "results"),
-    outdir::AbstractString = String(indir),
-    files::Union{Nothing, Vector{String}} = nothing,
-    verbose::Bool = true,
-)
+function tpflash_benchmark_stage2(; indir::AbstractString=joinpath(@__DIR__, "results"), outdir::AbstractString=String(indir), files::Union{Nothing,Vector{String}}=nothing, verbose::Bool=true)
     mkpath(outdir)
 
     local_files = if files === nothing
-        fs = filter(f -> endswith(lowercase(f), ".ser"), readdir(indir; join = true))
+        fs = filter(f -> endswith(lowercase(f), ".ser"), readdir(indir; join=true))
         fs
     else
         [isabspath(f) ? f : joinpath(indir, f) for f in files]
@@ -100,7 +95,7 @@ function tpflash_benchmark_stage2(;
     summary_total = Dict(a => 0 for a in algos)
 
     for case_id in case_ids
-        runs_by_algo = Dict{String, Vector{TPFlashRun}}()
+        runs_by_algo = Dict{String,Vector{TPFlashRun}}()
         for a in algos
             runs_by_algo[a] = algo_by_name[a].case_runs[case_id]
         end
@@ -113,13 +108,7 @@ function tpflash_benchmark_stage2(;
             summary_success[a] += count(r -> r.success, rs)
             summary_total[a] += length(rs)
 
-            per_case_rows_push = Any[
-                case_id,
-                a,
-                u_norm,
-                res.u[a],
-                count(r -> r.success, rs) / length(rs),
-            ]
+            per_case_rows_push = Any[case_id, a, u_norm, res.u[a], count(r -> r.success, rs) / length(rs)]
             push!(per_case_rows, per_case_rows_push)
         end
     end
@@ -131,23 +120,15 @@ function tpflash_benchmark_stage2(;
         sr = summary_total[a] == 0 ? 0.0 : summary_success[a] / summary_total[a]
         push!(summary_rows, Any[a, mean_u_norm, sr, summary_success[a], summary_total[a]])
     end
-    sort!(summary_rows; by = r -> r[2], rev = true)
+    sort!(summary_rows; by=r -> r[2], rev=true)
 
     stamp = Dates.format(now(), "yyyy-mm-dd_HHMMSS")
     out_base = _sanitize_filename("tpflash_benchmark_" * stamp)
     per_case_path = joinpath(outdir, out_base * "_per_case.csv")
     summary_path = joinpath(outdir, out_base * "_summary.csv")
 
-    _write_csv(
-        per_case_path,
-        ["case_id", "algo", "u_norm", "u", "success_rate"],
-        per_case_rows,
-    )
-    _write_csv(
-        summary_path,
-        ["algo", "mean_u_norm", "overall_success_rate", "successes", "runs"],
-        summary_rows,
-    )
+    _write_csv(per_case_path, ["case_id", "algo", "u_norm", "u", "success_rate"], per_case_rows)
+    _write_csv(summary_path, ["algo", "mean_u_norm", "overall_success_rate", "successes", "runs"], summary_rows)
 
     if verbose
         println()
@@ -160,9 +141,9 @@ function tpflash_benchmark_stage2(;
 end
 
 function main()
-    indir = _argval("indir"; default = joinpath(@__DIR__, "results"))
-    outdir = _argval("outdir"; default = indir)
-    tpflash_benchmark_stage2(; indir = indir, outdir = outdir, verbose = true)
+    indir = _argval("indir"; default=joinpath(@__DIR__, "results"))
+    outdir = _argval("outdir"; default=indir)
+    tpflash_benchmark_stage2(; indir=indir, outdir=outdir, verbose=true)
     return nothing
 end
 

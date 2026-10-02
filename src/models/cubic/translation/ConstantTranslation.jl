@@ -11,19 +11,24 @@ end
     ConstantTranslation(components;
     userlocations = String[],
     verbose::Bool=false)
+
 ## Input Parameters
 
-- `v_shift`: Single Parameter (`Float64`) - Volume shift `[m³·mol⁻¹]`
+  - `v_shift`: Single Parameter (`Float64`) - Volume shift `[m³·mol⁻¹]`
 
 ## Description
+
 Constant Translation model for cubics:
+
 ```
 V = V₀ + mixing_rule(cᵢ)
 ```
-where `cᵢ` is constant. 
+
+where `cᵢ` is constant.
 It does not have parameters by default, the volume shifts must be user-supplied.
 
 ## Model Construction Examples
+
 ```
 # Using user-provided parameters
 
@@ -38,10 +43,10 @@ ConstantTranslation
 
 export ConstantTranslation
 
-function translation(model::CubicModel,V,T,z,translation_model::ConstantTranslationModel)
+function translation(model::CubicModel, V, T, z, translation_model::ConstantTranslationModel)
     return translation_model.params.v_shift.values
 end
 
-function translation2(model::CubicModel,V,T,z,translation_model::ConstantTranslationModel,a,b,α)
-    return dot(translation_model.params.v_shift.values,z)
+function translation2(model::CubicModel, V, T, z, translation_model::ConstantTranslationModel, a, b, α)
+    return dot(translation_model.params.v_shift.values, z)
 end

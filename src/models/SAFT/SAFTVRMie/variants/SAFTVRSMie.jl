@@ -14,7 +14,6 @@ abstract type SAFTVRSMieModel <: SAFTModel end
 default_references(::Type{SAFTVRSMie}) = ["TODO"]
 default_locations(::Type{SAFTVRSMie}) = ["SAFT/SAFTVRMie", "properties/molarmass.csv"]
 
-
 """
     SAFTVRSMieModel <: SAFTModel
 
@@ -27,41 +26,45 @@ default_locations(::Type{SAFTVRSMie}) = ["SAFT/SAFTVRMie", "properties/molarmass
     assoc_options = AssocOptions())
 
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
-- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
-- `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
-- `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
-- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume
+
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+  - `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
+  - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
+  - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
+  - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
+  - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
+  - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+  - `bondvol`: Association Parameter (`Float64`) - Association Volume
 
 ## Model Parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
-- `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
-- `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
-- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
+
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+  - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+  - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
+  - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
+  - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+  - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+  - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
 
 ## Input models
-- `idealmodel`: Ideal Model
+
+  - `idealmodel`: Ideal Model
 
 ## Description
 
 SAFT-VR with Mie potential for the solid phase using WCA perturbation theory.
 
 ## References
-1. Jalani, Y., Ramrattana, N., Walker, P.J., Riedemann, A., Galindo, A., Mater, O. K., & Müller, E. A. (2024). SAFT-VR Mie Equation of State for the Solid and Fluid Phases. (in preparation)
+
+ 1. Jalani, Y., Ramrattana, N., Walker, P.J., Riedemann, A., Galindo, A., Mater, O. K., & Müller, E. A. (2024). SAFT-VR Mie Equation of State for the Solid and Fluid Phases. (in preparation)
 """
 SAFTVRSMie
 
 export SAFTVRSMie
 
-function transform_params(::Type{SAFTVRSMie},params)
+function transform_params(::Type{SAFTVRSMie}, params)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
     sigma = sigma_LorentzBerthelot(sigma)
@@ -77,16 +80,16 @@ end
 
 is_solid(model::SAFTVRSMieModel) = true
 
-function a_res(model::SAFTVRSMieModel,V,T,z)
+function a_res(model::SAFTVRSMieModel, V, T, z)
     _data = @f(data)
-    return @f(a_mono,_data) + @f(a_chain,_data)
+    return @f(a_mono, _data) + @f(a_chain, _data)
 end
 
-function ζ3(model::SAFTVRSMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params.segment.values))
+function ζ3(model::SAFTVRSMieModel, V, T, z, _d=@f(d), m̄=dot(z, model.params.segment.values))
     m = model.params.segment
     ζ3 = zero(V+T+first(z)+one(eltype(model)))
     for i ∈ 1:length(z)
-        di =_d[i]
+        di = _d[i]
         xS = z[i]*m[i]/m̄
         ζ3 += xS*di*di*di
     end
@@ -95,31 +98,31 @@ function ζ3(model::SAFTVRSMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params.s
     return ζ3
 end
 
-function data(model::SAFTVRSMieModel,V,T,z)
+function data(model::SAFTVRSMieModel, V, T, z)
     ∑z = sum(z)
-    m̄ = dot(model.params.segment.values,z)
-    _d = d(model,V,T,z)
-    η = ζ3(model,V,T,z,_d,m̄)
+    m̄ = dot(model.params.segment.values, z)
+    _d = d(model, V, T, z)
+    η = ζ3(model, V, T, z, _d, m̄)
     ρS = m̄*N_A/V #is this ok?
     ηc = 0.740480489693061
-    d̄ = dot(z,_d)/sum(z)
+    d̄ = dot(z, _d)/sum(z)
     ρ0 = 6*ηc/(π*d̄*d̄*d̄)
     γ = 4*(1 - ρS/ρ0)
     α = ρ0/ρS - 1
-    Z = Zhs_hall(γ,α)
-    J̄ = J(model,V,T,z,_d,η,Z)
-    return m̄,_d,η,ρS,ρ0,Z,J̄
+    Z = Zhs_hall(γ, α)
+    J̄ = J(model, V, T, z, _d, η, Z)
+    return m̄, _d, η, ρS, ρ0, Z, J̄
 end
 
-function a_mono(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
-    m̄,d,η,ρS,ρ0,Z,J̄ = _data
-    ahs = @f(a_hs,_data)
-    a1 = @f(a_1,_data)
+function a_mono(model::SAFTVRSMieModel, V, T, z, _data=@f(data))
+    m̄, d, η, ρS, ρ0, Z, J̄ = _data
+    ahs = @f(a_hs, _data)
+    a1 = @f(a_1, _data)
     return m̄*(ahs + a1)/sum(z)
 end
 
-function a_hs(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
-    m̄,d,η,ρS,ρ0,Z,J̄ = _data
+function a_hs(model::SAFTVRSMieModel, V, T, z, _data=@f(data))
+    m̄, d, η, ρS, ρ0, Z, J̄ = _data
     ρ0ρs = ρ0/ρS
     γ = 4*(1 - ρS/ρ0)
     α = ρ0ρs - 1
@@ -135,7 +138,7 @@ function a_hs(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
     p_int = (561.609,140.371,35.0487,9.02549,1.55172,1.11841)
     = evalpoly(x,p_int) +  2245.99/(x - 4)
     =#
-    p_int = (2.557696-3,0.1253077,0.1762393,-1.053308,2.818621,-2.921934,1.11841)
+    p_int = (2.557696-3, 0.1253077, 0.1762393, -1.053308, 2.818621, -2.921934, 1.11841)
 
     ∫Z = zero(V+T+first(z))
     ∫Z += (log(1-γ/4))*p_int[1]
@@ -148,17 +151,17 @@ function a_hs(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
     return res + ∫Z
 end
 
-function Zhs_hall(γ,α) #eq 5
-    return 3/α + evalpoly(γ,(2.557696,0.1253077,0.1762393,-1.053308,2.818621,-2.921934,1.118413))
+function Zhs_hall(γ, α) #eq 5
+    return 3/α + evalpoly(γ, (2.557696, 0.1253077, 0.1762393, -1.053308, 2.818621, -2.921934, 1.118413))
 end
 
-function g_hs(model::SAFTVRSMieModel,η,d,r,J,r₁d = r1_d(η),k₁ = K1(model,η),k₂ = K2(model,η),k = K(model,η)) #eq 11
-    g_hs₁ = g_hs_1(model,η,d,r,J,r₁d,k₁,k₂)
-    g_hsᵢ = g_hs_i(model,η,d,r,k)
+function g_hs(model::SAFTVRSMieModel, η, d, r, J, r₁d=r1_d(η), k₁=K1(model, η), k₂=K2(model, η), k=K(model, η)) #eq 11
+    g_hs₁ = g_hs_1(model, η, d, r, J, r₁d, k₁, k₂)
+    g_hsᵢ = g_hs_i(model, η, d, r, k)
     return g_hs₁ + g_hsᵢ
 end
 
-function g_hs_fdf(model::SAFTVRSMieModel,V,T,z,d,r,i::Int) #eq 11, used in the context of the evaluation of d
+function g_hs_fdf(model::SAFTVRSMieModel, V, T, z, d, r, i::Int) #eq 11, used in the context of the evaluation of d
     mᵢ = model.params.segment.values[i]
     η = (π/6*N_A*mᵢ*z[i]/V)*d*d*d
     ηc = 0.740480489693061
@@ -166,14 +169,14 @@ function g_hs_fdf(model::SAFTVRSMieModel,V,T,z,d,r,i::Int) #eq 11, used in the c
     ρ0 = 6*ηc/(π*d*d*d)
     γ = 4*(1 - ρs/ρ0)
     α = ρ0/ρs - 1
-    Z = Zhs_hall(γ,α)
+    Z = Zhs_hall(γ, α)
     r₁d = r1_d(η)
-    k₁ = K1(model,η)
-    k₂ = K2(model,η)
-    k = K(model,η)
-    J = g_hs_Ji(model,d,η,Z,k₁,k₂,r₁d,k)
-    g_hs₁,∂g_hs₁ = g_hs_1_fdf(model,η,d,r,J,r₁d,k₁,k₂)
-    g_hsᵢ,∂g_hsᵢ = g_hs_i_fdf(model,η,d,r,k)
+    k₁ = K1(model, η)
+    k₂ = K2(model, η)
+    k = K(model, η)
+    J = g_hs_Ji(model, d, η, Z, k₁, k₂, r₁d, k)
+    g_hs₁, ∂g_hs₁ = g_hs_1_fdf(model, η, d, r, J, r₁d, k₁, k₂)
+    g_hsᵢ, ∂g_hsᵢ = g_hs_i_fdf(model, η, d, r, k)
 
     # @show Z
     # @show k₁,k₂,k
@@ -184,7 +187,7 @@ function g_hs_fdf(model::SAFTVRSMieModel,V,T,z,d,r,i::Int) #eq 11, used in the c
 end
 
 #eq 12
-function g_hs_1(model::SAFTVRSMieModel,η,d,r,J,r1d = r1_d(η),k₁ = K1(model,η),k₂ = K2(model,η)) 
+function g_hs_1(model::SAFTVRSMieModel, η, d, r, J, r1d=r1_d(η), k₁=K1(model, η), k₂=K2(model, η))
     rd = r/d
     _k12 = -(k₁*(rd-r1d))^2
     _k24 = -(k₂*(rd-r1d))^4
@@ -192,7 +195,7 @@ function g_hs_1(model::SAFTVRSMieModel,η,d,r,J,r1d = r1_d(η),k₁ = K1(model,�
 end
 
 #eq 12 + derivative, used in calculation of d
-function g_hs_1_fdf(model::SAFTVRSMieModel,η,d,r,J,r1d = r1_d(η),k₁ = K1(model,η),k₂ = K2(model,η))
+function g_hs_1_fdf(model::SAFTVRSMieModel, η, d, r, J, r1d=r1_d(η), k₁=K1(model, η), k₂=K2(model, η))
     rd = r/d
     dr = d/r
     δr = (rd-r1d)
@@ -201,10 +204,10 @@ function g_hs_1_fdf(model::SAFTVRSMieModel,η,d,r,J,r1d = r1_d(η),k₁ = K1(mod
     _exp = exp(_k12+_k24)
     g = (J*d/r)*_exp
     ∂g = -g*dr*(dr+4*k₂^4*δr^3+2*k₁^2*δr)
-    return g,∂g
+    return g, ∂g
 end
 
-function g_hs_i(model::SAFTVRSMieModel,η,d,r,k = K(model::SAFTVRSMieModel,η)) #eq 13
+function g_hs_i(model::SAFTVRSMieModel, η, d, r, k=K(model::SAFTVRSMieModel, η)) #eq 13
     n = SAFTVRSMieConsts.r_fcc::Vector{Int}
     g = zero(η+d+r+k)
     rd = r/d
@@ -224,7 +227,7 @@ function g_hs_i(model::SAFTVRSMieModel,η,d,r,k = K(model::SAFTVRSMieModel,η)) 
     return g
 end
 
-function g_hs_i_fdf(model::SAFTVRSMieModel,η,d,r,k = K(model::SAFTVRSMieModel,η)) #eq 13
+function g_hs_i_fdf(model::SAFTVRSMieModel, η, d, r, k=K(model::SAFTVRSMieModel, η)) #eq 13
     n = SAFTVRSMieConsts.r_fcc::Vector{Int}
     g = zero(η+d+r+k)
     ∂g = zero(g)
@@ -243,18 +246,18 @@ function g_hs_i_fdf(model::SAFTVRSMieModel,η,d,r,k = K(model::SAFTVRSMieModel,�
             ∂g += -g*(dr + 2*k*k*δr)*dr
         end
     end
-    return g,∂g
+    return g, ∂g
 end
 
 function r1_d(η) #SA, eq 1
     ηc = 0.740480489693061
     η✷ = ηc - η
-    num = evalpoly(η✷,(1.0,-8.0521,18.003))
-    denom = evalpoly(η✷,(1.0,-8.2973,20.546,-13.828,103.95,-582.74,1245.7))
+    num = evalpoly(η✷, (1.0, -8.0521, 18.003))
+    denom = evalpoly(η✷, (1.0, -8.2973, 20.546, -13.828, 103.95, -582.74, 1245.7))
     return num/denom
 end
 
-function J(model::SAFTVRSMieModel,V,T,z,_d = @f(d),η = @f(ζ3,_d),Z = @f(Zhs_hall))
+function J(model::SAFTVRSMieModel, V, T, z, _d=@f(d), η=@f(ζ3, _d), Z=@f(Zhs_hall))
     #=
     g_hs(1,η) = (z-1)/(4*η)
     g_hs_1(1,η) + g_hs_i(1,η) = (z-1)/(4*η)
@@ -262,28 +265,28 @@ function J(model::SAFTVRSMieModel,V,T,z,_d = @f(d),η = @f(ζ3,_d),Z = @f(Zhs_ha
     J*ghs_1_divJ(1,η) = (z-1)/(4*η) - g_hs_i(1,η)
     J = 
     =#
-    J̄ = fill(zero(V+T+first(z)+one(eltype(model))),length(model))
+    J̄ = fill(zero(V+T+first(z)+one(eltype(model))), length(model))
     for i in @comps
         r1d = r1_d(η)
-        k₁ = K1(model,η)
-        k₂ = K2(model,η)
-        k = K(model,η)
-        J̄[i] = g_hs_Ji(model,_d[i],η,Z,k₁,k₂,r1d,k)
+        k₁ = K1(model, η)
+        k₂ = K2(model, η)
+        k = K(model, η)
+        J̄[i] = g_hs_Ji(model, _d[i], η, Z, k₁, k₂, r1d, k)
     end
     return J̄
 end
 
 #specialization for single component, one less allocation
-function J(model::SAFTVRSMieModel,V,T,z::SingleComp,_d = @f(d),η = @f(ζ3,_d),Z = @f(Zhs_hall))
+function J(model::SAFTVRSMieModel, V, T, z::SingleComp, _d=@f(d), η=@f(ζ3, _d), Z=@f(Zhs_hall))
     r1d = r1_d(η)
-    k₁ = K1(model,η)
-    k₂ = K2(model,η)
-    k = K(model,η)
-    return SA[g_hs_Ji(model,_d[1],η,Z,k₁,k₂,r1d,k)]
+    k₁ = K1(model, η)
+    k₂ = K2(model, η)
+    k = K(model, η)
+    return SA[g_hs_Ji(model, _d[1], η, Z, k₁, k₂, r1d, k)]
 end
 
-function g_hs_Ji(model::SAFTVRSMieModel,di,η,Z,k₁,k₂,r1d,k)
-    ghs_at_1 = g_hs_i(model,η,di,di,k)
+function g_hs_Ji(model::SAFTVRSMieModel, di, η, Z, k₁, k₂, r1d, k)
+    ghs_at_1 = g_hs_i(model, η, di, di, k)
     _k12 = -(k₁*(1-r1d))^2
     _k24 = -(k₂*(1-r1d))^4
     ghs_1_divJ = exp(_k12+_k24)
@@ -292,32 +295,32 @@ function g_hs_Ji(model::SAFTVRSMieModel,di,η,Z,k₁,k₂,r1d,k)
     return ((Z-1)/(4*η) - ghs_at_1)/ghs_1_divJ
 end
 
-function K1(model::SAFTVRSMieModel,η)   #eq 15
+function K1(model::SAFTVRSMieModel, η)   #eq 15
     ηc = 0.740480489693061
     η✷ = ηc - η
-    return 1.5338/η✷ - 0.37687*exp(-989.6*(η - 0.52)^2) + evalpoly(η✷,(-2.5146,-1.3574,-8.5038))
+    return 1.5338/η✷ - 0.37687*exp(-989.6*(η - 0.52)^2) + evalpoly(η✷, (-2.5146, -1.3574, -8.5038))
 end
 
-function K2(model::SAFTVRSMieModel,η)  #eq 16
+function K2(model::SAFTVRSMieModel, η)  #eq 16
     ηc = 0.740480489693061
     η✷ = ηc - η
     return 0.80313/η✷ - 1.208*exp(5.6128*η✷) + 67.808*η✷*η✷ - 67.918*η✷*η✷*η✷
 end
 
-function K(model::SAFTVRSMieModel,η)  #eq 17
+function K(model::SAFTVRSMieModel, η)  #eq 17
     ηc = 0.740480489693061
     η✷ = ηc - η
-    return 1.9881/η✷ + evalpoly(η✷,(-3.5276,6.9762,-26.205))
+    return 1.9881/η✷ + evalpoly(η✷, (-3.5276, 6.9762, -26.205))
 end
 
-function ∫ghsW(model::SAFTVRSMieModel,V,T,z,i,j,_data = @f(data),r₁d = r1_d(_data[3]),k₁ = K1(model,_data[3]) ,k₂ = K2(model,_data[3]),k = K(model,_data[3]))
-    m̄,d,η,ρS,ρ0,Z,J̄ = _data
+function ∫ghsW(model::SAFTVRSMieModel, V, T, z, i, j, _data=@f(data), r₁d=r1_d(_data[3]), k₁=K1(model, _data[3]), k₂=K2(model, _data[3]), k=K(model, _data[3]))
+    m̄, d, η, ρS, ρ0, Z, J̄ = _data
     m̄inv = 1/m̄
     m = model.params.segment.values
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
-    σᵢⱼ = σ[i,j]
-    ϵ̄ = ϵ[i,j]/T
+    σᵢⱼ = σ[i, j]
+    ϵ̄ = ϵ[i, j]/T
     λa = model.params.lambda_a.values
     λr = model.params.lambda_r.values
     ρSi = z[i]*m[i]*N_A/V
@@ -327,34 +330,39 @@ function ∫ghsW(model::SAFTVRSMieModel,V,T,z,i,j,_data = @f(data),r₁d = r1_d(
     dSij = 0.5*(dSi + dSj)
     ρSᵢⱼ = dSij^-3 #TODO: look up correct mixing rule
     λ = cbrt(sqrt(2)/ρSᵢⱼ)*one(T)
-    λ̄ = λ/σ[i,j]
-    dᵢ = d[i]/σ[i,i]
-    dⱼ = d[j]/σ[j,j]
+    λ̄ = λ/σ[i, j]
+    dᵢ = d[i]/σ[i, i]
+    dⱼ = d[j]/σ[j, j]
     dᵢⱼ = 0.5*(dᵢ + dⱼ)
-    λaᵢⱼ = λa[i,j]
-    λrᵢⱼ = λr[i,j]
+    λaᵢⱼ = λa[i, j]
+    λrᵢⱼ = λr[i, j]
     Cᵢⱼ = Cλ_mie(λaᵢⱼ, λrᵢⱼ)
-    u(r) = Cᵢⱼ*ϵ̄*(r^-λrᵢⱼ -r^-λaᵢⱼ)
-    du(r) = -Cᵢⱼ*ϵ̄*(λrᵢⱼ*r^-(λrᵢⱼ+1) -λaᵢⱼ*r^-(λaᵢⱼ+1))
+    u(r) = Cᵢⱼ*ϵ̄*(r^-λrᵢⱼ - r^-λaᵢⱼ)
+    du(r) = -Cᵢⱼ*ϵ̄*(λrᵢⱼ*r^-(λrᵢⱼ+1) - λaᵢⱼ*r^-(λaᵢⱼ+1))
     uλ = u(λ̄)
     duλ = du(λ̄)
-    W(r) = if (r >= λ̄) u(r) else (uλ - duλ*(λ̄ - r)) end
+    W(r) =
+        if (r >= λ̄)
+            u(r)
+        else
+            (uλ - duλ*(λ̄ - r))
+        end
     J̄ᵢⱼ = if i == j
         J̄[i]
     else
-       one(J̄[i])*g_hs_Ji(model,dᵢⱼ,η,Z,k₁,k₂,r₁d,k)
+        one(J̄[i])*g_hs_Ji(model, dᵢⱼ, η, Z, k₁, k₂, r₁d, k)
     end
-    ghsWr(r) = g_hs(model,η,dᵢⱼ*σᵢⱼ,r*σᵢⱼ,J̄ᵢⱼ,r₁d,k₁,k₂,k)*r*r*W(r)
+    ghsWr(r) = g_hs(model, η, dᵢⱼ*σᵢⱼ, r*σᵢⱼ, J̄ᵢⱼ, r₁d, k₁, k₂, k)*r*r*W(r)
     Wr(r) = r*r*W(r)
     #we separate the integration between [d,3.3d] and [3.3d,∞]
     #the second part can be solved more efficiently. TODO: actually do that.
-    ∫ = Solvers.integral64(ghsWr,dᵢⱼ,3.3*dᵢⱼ)*σᵢⱼ^3
-    ∫ += Solvers.integral64(Wr,3.3dᵢⱼ,10*dᵢⱼ)*σᵢⱼ^3
+    ∫ = Solvers.integral64(ghsWr, dᵢⱼ, 3.3*dᵢⱼ)*σᵢⱼ^3
+    ∫ += Solvers.integral64(Wr, 3.3dᵢⱼ, 10*dᵢⱼ)*σᵢⱼ^3
     return ∫
 end
 
-function a_1(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
-    m̄,d,η,ρS,ρ0,Z,J̄ = _data
+function a_1(model::SAFTVRSMieModel, V, T, z, _data=@f(data))
+    m̄, d, η, ρS, ρ0, Z, J̄ = _data
     m̄inv = 1/m̄
     m = model.params.segment.values
     σ = model.params.sigma.values
@@ -363,25 +371,24 @@ function a_1(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
     ϵ = model.params.epsilon.values
     a₁ = zero(V+T+first(z)+one(eltype(model)))
     r₁d = r1_d(η)
-    k₁ = K1(model,η)
-    k₂ = K2(model,η)
-    k = K(model,η)
+    k₁ = K1(model, η)
+    k₂ = K2(model, η)
+    k = K(model, η)
     for i ∈ @comps
-        xsᵢ= z[i]*m[i]*m̄inv
-        a₁ += xsᵢ*xsᵢ*@f(∫ghsW,i,i,_data,r₁d,k₁,k₂,k)
-        for j ∈ 1:(i-1)
+        xsᵢ = z[i]*m[i]*m̄inv
+        a₁ += xsᵢ*xsᵢ*@f(∫ghsW, i, i, _data, r₁d, k₁, k₂, k)
+        for j ∈ 1:(i - 1)
             xsⱼ = z[i]*m[i]*m̄inv
             dᵢⱼ = 0.5*(dᵢᵢ+d[j])
-            a₁ᵢⱼ = @f(∫ghsW,i,j,_data,r₁d,k₁,k₂,k)
+            a₁ᵢⱼ = @f(∫ghsW, i, j, _data, r₁d, k₁, k₂, k)
             a₁ += 2*a₁ᵢⱼ*xsᵢ*xsⱼ
         end
     end
     return 2*π*ρS*a₁
 end
 
-
-function a_chain(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
-    m̄,d,η,ρS,ρ0,Z,J̄ = _data
+function a_chain(model::SAFTVRSMieModel, V, T, z, _data=@f(data))
+    m̄, d, η, ρS, ρ0, Z, J̄ = _data
     β = 1/T #our epsilon is already divided by kᵦ
     σ = model.params.sigma
     λa = model.params.lambda_a
@@ -392,16 +399,16 @@ function a_chain(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
     # eq 8, using linear mixing (from SAFTVRMie)
     λ = cbrt(sqrt(2)/ρS)*one(T)
     for i in 1:length(model)
-        σᵢ,λaᵢ,λrᵢ,ϵᵢ,dᵢ = σ[i],λa[i],λr[i],ϵ[i],d[i]
+        σᵢ, λaᵢ, λrᵢ, ϵᵢ, dᵢ = σ[i], λa[i], λr[i], ϵ[i], d[i]
         Cᵢ = Cλ_mie(λaᵢ, λrᵢ)
         λ̄ = λ/σᵢ
         ϵ̄ = β*ϵᵢ
-        uλ = Cᵢ*ϵ̄*(λ̄^-λrᵢ -λ̄^-λaᵢ)
-        duλ = -Cᵢ*ϵ̄*(λrᵢ*λ̄^-(λrᵢ+1) -λaᵢ*λ̄^-(λaᵢ+1))
-        
-        g_hsᵢ = g_hs(model,η,dᵢ,σᵢ,J̄[i])
+        uλ = Cᵢ*ϵ̄*(λ̄^-λrᵢ - λ̄^-λaᵢ)
+        duλ = -Cᵢ*ϵ̄*(λrᵢ*λ̄^-(λrᵢ+1) - λaᵢ*λ̄^-(λaᵢ+1))
+
+        g_hsᵢ = g_hs(model, η, dᵢ, σᵢ, J̄[i])
         βV₀ᵢ = - uλ + duλ*(λ̄ - 1)
-        
+
         y_hsᵢ = g_hsᵢ
         g_Mieᵢ = y_hsᵢ*exp(-βV₀ᵢ)
         achain -= z[i]*(log(g_Mieᵢ)*(m[i] - 1))
@@ -409,37 +416,37 @@ function a_chain(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
     return achain/sum(z)
 end
 
-function d(model::SAFTVRSMieModel,V,T,z)
+function d(model::SAFTVRSMieModel, V, T, z)
     n = length(z)
 
-    _d = fill(zero(V+T+first(z)+one(eltype(model))),n)
+    _d = fill(zero(V+T+first(z)+one(eltype(model))), n)
     for k ∈ 1:n
-        _d[k] = d_vrs(model,V,T,z,k)
+        _d[k] = d_vrs(model, V, T, z, k)
     end
     return _d
 end
 
-function d(model::SAFTVRSMieModel,V,T,z::SingleComp)
-    return SA[d_vrs(model::SAFTVRSMieModel,V,T,z,1)]
+function d(model::SAFTVRSMieModel, V, T, z::SingleComp)
+    return SA[d_vrs(model::SAFTVRSMieModel, V, T, z, 1)]
 end
 
 #TODO: this is a sketch
-function d_vrs(model::SAFTVRSMieModel,V,T,z,i::Int)
+function d_vrs(model::SAFTVRSMieModel, V, T, z, i::Int)
     _0 = zero(T+first(z))
     mᵢ = model.params.segment.values[i]
     ρS = z[i]*mᵢ*N_A/V
     λ = cbrt(sqrt(2)/ρS)*one(T)
-    σᵢ = model.params.sigma.values[i,i]
+    σᵢ = model.params.sigma.values[i, i]
     λ̄ = λ/σᵢ
 
-    λa,λr = model.params.lambda_a[i],model.params.lambda_r[i]
+    λa, λr = model.params.lambda_a[i], model.params.lambda_r[i]
     Cᵢ = Cλ_mie(λa, λr)
     β = 1/T
     ϵ = model.params.epsilon[i]
     ϵ̄ = ϵ/T
 
-    u(r) = Cᵢ*ϵ̄*(r^-λr -r^-λa)
-    du(r) = -Cᵢ*ϵ̄*(λr*r^-(λr+1) -λa*r^-(λa+1))
+    u(r) = Cᵢ*ϵ̄*(r^-λr - r^-λa)
+    du(r) = -Cᵢ*ϵ̄*(λr*r^-(λr+1) - λa*r^-(λa+1))
 
     function V₀(r)
         if r > λ̄
@@ -462,26 +469,24 @@ function d_vrs(model::SAFTVRSMieModel,V,T,z,i::Int)
     end
 
     dB_f(r) = -expm1(-V₀(r))
-    dB = Solvers.integral64(dB_f,_0,λ̄)
+    dB = Solvers.integral64(dB_f, _0, λ̄)
     # dB *= σᵢ
     #TODO: derivate this
-    δ_f(r)  = -dV₀(r)*exp(-V₀(r))*(r/dB -1)^2
-    δ = Solvers.integral64(δ_f,_0,λ̄)
+    δ_f(r) = -dV₀(r)*exp(-V₀(r))*(r/dB - 1)^2
+    δ = Solvers.integral64(δ_f, _0, λ̄)
     #iteration 0: d = dB
     d = dB
     d0 = one(d)
     function f0(dj)
-        g_hs,∂g_hs = g_hs_fdf(model,V,T,z,dj*σᵢ,dj*σᵢ,i)
+        g_hs, ∂g_hs = g_hs_fdf(model, V, T, z, dj*σᵢ, dj*σᵢ, i)
         σ₀ = g_hs
         σ₁ = 2*σ₀ + ∂g_hs
         return dB*(1 + δ*σ₁/(2*σ₀))
     end
-    return Solvers.fixpoint(f0,d0)*σᵢ
+    return Solvers.fixpoint(f0, d0)*σᵢ
 end
 
 #SA, Table 1
 #note: idx = [14,30,46,56,62] are missing.
 #for purposes of wiping out an MVE, those values are replaced with 1
-SAFTVRSMieConsts = (;
-    r_fcc = [12, 6, 24, 12, 24, 8, 48, 6, 36, 24, 24, 24, 72, 0, 48, 12, 48, 30, 72, 24, 48, 24, 48, 8, 84, 24, 96, 48, 24, 0, 96, 6, 96, 48, 48, 36, 120, 24, 48, 24, 48, 48, 120, 24, 120, 0, 96, 24, 108, 30, 48, 72, 72, 32, 144, 0, 96, 72, 72, 48, 120, 0, 144, 12, 48],
-    )
+SAFTVRSMieConsts = (; r_fcc=[12, 6, 24, 12, 24, 8, 48, 6, 36, 24, 24, 24, 72, 0, 48, 12, 48, 30, 72, 24, 48, 24, 48, 8, 84, 24, 96, 48, 24, 0, 96, 6, 96, 48, 48, 36, 120, 24, 48, 24, 48, 48, 120, 24, 120, 0, 96, 24, 108, 30, 48, 72, 72, 32, 144, 0, 96, 72, 72, 48, 120, 0, 144, 12, 48],)

@@ -5,61 +5,63 @@
 Routine to solve non-reactive two-phase multicomponent flash problem. With P-S specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
 Inputs:
- - `p`, pressure `[Pa]`
- - `s`, entropy `[J·K⁻¹]`
- - `n`, vector of number of moles of each species `[mol]`
+
+  - `p`, pressure `[Pa]`
+  - `s`, entropy `[J·K⁻¹]`
+  - `n`, vector of number of moles of each species `[mol]`
 
 All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
 
- Outputs:
- - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
+Outputs:
+
+  - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
 """
-function ps_flash(model::EoSModel,p,s,z = SA[1.0];kwargs...)
-    method = init_preferred_method(ps_flash,model,kwargs)
-    return ps_flash(model,p,s,z,method)
+function ps_flash(model::EoSModel, p, s, z=SA[1.0]; kwargs...)
+    method = init_preferred_method(ps_flash, model, kwargs)
+    return ps_flash(model, p, s, z, method)
 end
 
-function init_preferred_method(method::typeof(ps_flash),model::EoSModel,kwargs)
-    GeneralizedXYFlash(;kwargs...)
+function init_preferred_method(method::typeof(ps_flash), model::EoSModel, kwargs)
+    GeneralizedXYFlash(; kwargs...)
 end
 
-function ps_flash(model,_p,_s,_z,method::FlashMethod)
-    p,z = ustrip(_p,pressure),uzstrip(model,_z)
-    s = usstrip(model,_s,z)
-    check_arraysize(model,z)
+function ps_flash(model, _p, _s, _z, method::FlashMethod)
+    p, z = ustrip(_p, pressure), uzstrip(model, _z)
+    s = usstrip(model, _s, z)
+    check_arraysize(model, z)
 
     if z isa SingleComp || length(model) == 1
         z1 = SVector(z[1])
-        T0 = hasfield(typeof(method),:T0) ? method.T0 : nothing
-        result1 = px_flash_pure(model,p,s,z1,entropy,T0,get_verbosity(method))
+        T0 = hasfield(typeof(method), :T0) ? method.T0 : nothing
+        result1 = px_flash_pure(model, p, s, z1, entropy, T0, get_verbosity(method))
         return result1
     end
 
     if supports_reduction(method)
-        model_r,idx_r = index_reduction(model,z)
+        model_r, idx_r = index_reduction(model, z)
         z_r = z[idx_r]
-        method_r = index_reduction(method,idx_r)
+        method_r = index_reduction(method, idx_r)
     else
-        model_r,idx_r = model,trues(length(model))
-        method_r,z_r = method,z
+        model_r, idx_r = model, trues(length(model))
+        method_r, z_r = method, z
     end
 
     if length(model_r) == 1
         z1r = SVector(z_r[1])
-        T0 = hasfield(typeof(method),:T0) ? method.T0 : nothing
-        result1r = px_flash_pure(model_r,p,s,z1r,entropy,T0,get_verbosity(method))
-        return index_expansion(result1r,idx_r)
+        T0 = hasfield(typeof(method), :T0) ? method.T0 : nothing
+        result1r = px_flash_pure(model_r, p, s, z1r, entropy, T0, get_verbosity(method))
+        return index_expansion(result1r, idx_r)
     end
 
     #result = ps_flash_impl(model_r,p,s,z_r,method_r)
     if has_a_res(model)
-        λmodel,λp,λs,λz = primalval(model_r),primalval(p),primalval(s),primalval(z_r)
-        λresult = ps_flash_impl(λmodel,λp,λs,λz,primalval(method_r))
-        tup = (model_r,p,s,z_r)
-        λtup = (λmodel,λp,λs,λz)
-        result = xy_flash_ad(λresult,tup,λtup,pressure,entropy)
+        λmodel, λp, λs, λz = primalval(model_r), primalval(p), primalval(s), primalval(z_r)
+        λresult = ps_flash_impl(λmodel, λp, λs, λz, primalval(method_r))
+        tup = (model_r, p, s, z_r)
+        λtup = (λmodel, λp, λs, λz)
+        result = xy_flash_ad(λresult, tup, λtup, pressure, entropy)
     else
-        result = ps_flash_impl(model_r,p,s,z,method_r)
+        result = ps_flash_impl(model_r, p, s, z, method_r)
     end
 
     if !issorted(result.volumes)
@@ -69,22 +71,22 @@ function ps_flash(model,_p,_s,_z,method::FlashMethod)
     ∑β = sum(result.fractions)
     result.fractions ./= ∑β
     result.fractions .*= sum(z)
-    return index_expansion(result,idx_r)
+    return index_expansion(result, idx_r)
 end
 
-function ps_flash_impl(model,p,s,z,method::GeneralizedXYFlash)
-    flash0 = px_flash_x0(model,p,s,z,entropy,method)
+function ps_flash_impl(model, p, s, z, method::GeneralizedXYFlash)
+    flash0 = px_flash_x0(model, p, s, z, entropy, method)
     isone(numphases(flash0)) && return flash0
-    spec = FlashSpecifications(pressure,p,entropy,s)
-    return xy_flash(model,spec,z,flash0,method)
+    spec = FlashSpecifications(pressure, p, entropy, s)
+    return xy_flash(model, spec, z, flash0, method)
 end
 
-function ps_flash_impl(model,p,s,z,method::RRXYFlash)
-    modelx = __tpflash_cache_model(model,p,NaN,z,:vle)
-    flash0 = px_flash_x0(modelx,p,s,z,entropy,method)
+function ps_flash_impl(model, p, s, z, method::RRXYFlash)
+    modelx = __tpflash_cache_model(model, p, NaN, z, :vle)
+    flash0 = px_flash_x0(modelx, p, s, z, entropy, method)
     isone(numphases(flash0)) && return flash0
-    spec = FlashSpecifications(pressure,p,entropy,s)
-    return xy_flash(modelx,spec,z,flash0,method)
+    spec = FlashSpecifications(pressure, p, entropy, s)
+    return xy_flash(modelx, spec, z, flash0, method)
 end
 
 export ps_flash

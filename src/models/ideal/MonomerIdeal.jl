@@ -16,7 +16,7 @@ abstract type MonomerIdealModel <: IdealModel end
 
 ## Input parameters
 
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 
 ## Model Parameters
 
@@ -25,12 +25,14 @@ None
 ## Description
 
 Monomer Ideal Model, result obtained from statistical mechanics `Λ`
+
 ```
     Λᵢ = h/√(kᵦTMwᵢ/Nₐ)    
     a₀ = A₀/nRT = ∑xᵢlog(ρᵢΛᵢ^3)
 ```
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 idealmodel = MonomerIdeal("water") #single input
@@ -53,9 +55,9 @@ default_locations(::Type{MonomerIdeal}) = mw_data()
 recombine_impl!(model::MonomerIdealModel) = model
 default_ignore_missing_singleparams(::Type{MonomerIdeal}) = ["Mw"]
 
-function transform_params(::Type{MonomerIdeal},params,groups)
-    mw = get!(params,"Mw") do
-        SingleParam("Mw",components)
+function transform_params(::Type{MonomerIdeal}, params, groups)
+    mw = get!(params, "Mw") do
+        SingleParam("Mw", components)
     end
     return params
 end
@@ -66,7 +68,7 @@ function a_ideal(model::MonomerIdealModel, V, T, z)
     for i in @comps
         Mwᵢ = Mw[i]*0.001
         Λᵢ = h/sqrt(k_B*T*Mwᵢ/N_A)
-        res += xlogx(z[i],N_A/V*Λᵢ^3)
+        res += xlogx(z[i], N_A/V*Λᵢ^3)
     end
     return res/sum(z) - 1
 end

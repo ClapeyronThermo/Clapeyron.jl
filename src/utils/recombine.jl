@@ -3,16 +3,16 @@ function recombine!(model::EoSModel)
     if !is_splittable(model)
         return model
     end
-    
+
     if has_sites(model)
         recombine!(getsites(model))
     end
-    
+
     if has_groups(model)
         recombine!(model.groups)
     end
 
-    if hasfield(typeof(model),:idealmodel)
+    if hasfield(typeof(model), :idealmodel)
         ideal = idealmodel(model)
         if ideal !== nothing
             recombine!(ideal)
@@ -27,61 +27,51 @@ function recombine_impl!(model::EoSModel)
     return model
 end
 
-function promote_model(::Type{T},model::EoSModel) where T <: Number
-    return promote_model_struct(T,model)
+function promote_model(::Type{T}, model::EoSModel) where T<:Number
+    return promote_model_struct(T, model)
 end
 
-function promote_model(::Type{T},x::Array{T2,N}) where {T <: Number,T2,N}
-    return map(Base.Fix1(promote_model,T),x)
+function promote_model(::Type{T}, x::Array{T2,N}) where {T<:Number,T2,N}
+    return map(Base.Fix1(promote_model, T), x)
 end
 
-function promote_model(::Type{T},x::T2) where {T <: Number,T2 <: Number}
-    return convert(T,x)
+function promote_model(::Type{T}, x::T2) where {T<:Number,T2<:Number}
+    return convert(T, x)
 end
 
-@generated function promote_model_struct(::Type{T},model::M) where {T,M}
+@generated function promote_model_struct(::Type{T}, model::M) where {T,M}
     names = fieldnames(M)
     Base.typename(M).wrapper
-    expr = Expr(:call,Base.typename(M).wrapper)
+    expr = Expr(:call, Base.typename(M).wrapper)
     M̄ = parameterless_type(M)
     for name in names
-        if isconcretetype(fieldtype(M̄,name))
-            push!(expr.args,:(deepcopy(model.$name))) #TODO: this should only copy in some particular cases.
+        if isconcretetype(fieldtype(M̄, name))
+            push!(expr.args, :(deepcopy(model.$name))) #TODO: this should only copy in some particular cases.
         else
-            push!(expr.args,:(promote_model($T,model.$name)))
+            push!(expr.args, :(promote_model($T, model.$name)))
         end
     end
     return expr
 end
 
-promote_model(::Type{T},param::SingleParam) where T = param_from_values(Vector{T}(param.values),param)
-promote_model(::Type{T},param::PairParam) where T = param_from_values(Matrix{T}(param.values),param)
-promote_model(::Type{T},param::AssocParam) where T = param_from_values(Vector{T}(raw_values(param)),param)
-promote_model(::Type{T},param::MixedGCSegmentParam) where T = param_from_values(Vector{T}(raw_values(param)),param)
-promote_model(::Type{T},v::AbstractArray{<:AbstractString}) where T = v
-promote_model(::Type{T},params::EoSParam) where T = promote_model_struct(T,params)
-promote_model(::Type{T},param::ClapeyronParam) where T = deepcopy(param)
-promote_model(::Type{T},param::AssocOptions) where T = param
-promote_model(::Type{T},param::ReferenceState) where T = param
-promote_model(::Type{T},param::SpecialComp) where T = param
-promote_model(::Type{T},param::SiteParam) where T = param
-promote_model(::Type{T},param::PackedVofV) where T = PackedVofV(param.p,promote_model(T,param.v))
+promote_model(::Type{T}, param::SingleParam) where T = param_from_values(Vector{T}(param.values), param)
+promote_model(::Type{T}, param::PairParam) where T = param_from_values(Matrix{T}(param.values), param)
+promote_model(::Type{T}, param::AssocParam) where T = param_from_values(Vector{T}(raw_values(param)), param)
+promote_model(::Type{T}, param::MixedGCSegmentParam) where T = param_from_values(Vector{T}(raw_values(param)), param)
+promote_model(::Type{T}, v::AbstractArray{<:AbstractString}) where T = v
+promote_model(::Type{T}, params::EoSParam) where T = promote_model_struct(T, params)
+promote_model(::Type{T}, param::ClapeyronParam) where T = deepcopy(param)
+promote_model(::Type{T}, param::AssocOptions) where T = param
+promote_model(::Type{T}, param::ReferenceState) where T = param
+promote_model(::Type{T}, param::SpecialComp) where T = param
+promote_model(::Type{T}, param::SiteParam) where T = param
+promote_model(::Type{T}, param::PackedVofV) where T = PackedVofV(param.p, promote_model(T, param.v))
 
-function promote_model(::Type{T},param::GroupParam) where T
+function promote_model(::Type{T}, param::GroupParam) where T
     n_groups2 = [Vector{T}(xi) for xi in param.n_groups]
     n_intergroups2 = [Matrix{T}(xi) for xi in param.n_intergroups]
     n_flattenedgroups2 = [Vector{T}(xi) for xi in param.n_flattenedgroups]
-    param = GroupParam{T}(
-        param.components,
-        param.groups,
-        param.grouptype,
-        n_groups2,
-        n_intergroups2,
-        param.i_groups,
-        param.flattenedgroups,
-        n_flattenedgroups2,
-        param.sourcecsvs
-    )
+    param = GroupParam{T}(param.components, param.groups, param.grouptype, n_groups2, n_intergroups2, param.i_groups, param.flattenedgroups, n_flattenedgroups2, param.sourcecsvs)
 end
 
-@public promote_model,recombine!,recombine_impl!
+@public promote_model, recombine!, recombine_impl!

@@ -16,19 +16,21 @@ end
         verbose = false)
 
 ## Input models
-- `RSPmodel`: Relative Static Permittivity Model
+
+  - `RSPmodel`: Relative Static Permittivity Model
 
 ## Description
+
 This function is used to create a Debye-Hückel model. The Debye-Hückel term gives the excess Helmholtz energy to account for the electrostatic interactions between ions in solution.
 
 ## References
-1. Debye, P., Huckel, E. (1923). Phys. Z. 24, 185.
+
+ 1. Debye, P., Huckel, E. (1923). Phys. Z. 24, 185.
 """
 DH
 
 export DH
-function DH(solvents,ions; charge = nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
-
+function DH(solvents, ions; charge=nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     solvents = format_components(solvents)
     ions = format_components(ions)
     components = vcat(solvents, ions)
@@ -37,14 +39,14 @@ function DH(solvents,ions; charge = nothing, RSPmodel=ConstRSP, userlocations=St
     RSPmodel_userlocations = normalize_userlocations(RSPmodel_userlocations)
 
     references = String[]
-    init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
+    init_RSPmodel = @initmodel RSPmodel(solvents, ions, userlocations=RSPmodel_userlocations, verbose=verbose)
 
-    model = DH(components, init_RSPmodel,references)
+    model = DH(components, init_RSPmodel, references)
     return model
 end
 
 function a_res(model::DHModel, V, T, z, iondata)
-    return @f(a_dh,iondata)
+    return @f(a_dh, iondata)
 end
 
 function a_dh(ionmodel::DHModel, V, T, z, iondata)
@@ -55,19 +57,19 @@ end
 function a_dh(V, T, z, Z, σ, ϵ_r)
     nc = length(Z)
     ∑z = sum(z)
-    
-    κ = debye_length(V,T,z,ϵ_r,Z)
-    res = zero(Base.promote_eltype(κ,σ))
+
+    κ = debye_length(V, T, z, ϵ_r, Z)
+    res = zero(Base.promote_eltype(κ, σ))
     count = 0
     for i in 1:nc
         Zi = Z[i]
         if Z[i] != 0 && !iszero(primalval(z[i]))
-            count +=1
+            count += 1
             χi = dh_term(σ[i]*κ)
-            res +=z[i]*Zi*Zi*χi
+            res += z[i]*Zi*Zi*χi
         end
     end
-    s = e_c*e_c/(4π*ϵ_0*ϵ_r*k_B*T) 
+    s = e_c*e_c/(4π*ϵ_0*ϵ_r*k_B*T)
     if iszero(count)
         return -1*s*res/∑z
     end
@@ -99,7 +101,7 @@ function dh_term(x)
     if primalval(x) <= 1.5
         p = (0.3333333333333333, 0.7222222222346917, 0.5314393939617089, 0.15151515152716674, 0.013227513229354138)
         q = (1.0, 2.9166666667040753, 3.181818181913183, 1.5909090909939427, 0.3535353535662185, 0.026515151518857805)
-        return evalpoly(x,p)/evalpoly(x,q)
+        return evalpoly(x, p)/evalpoly(x, q)
     else
         x2 = x*x
         x3 = x*x*x

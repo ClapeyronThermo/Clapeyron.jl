@@ -21,11 +21,12 @@ None
 
 ## Input models
 
-- `activity`: Activity Model
+  - `activity`: Activity Model
 
 ## Description
 
 Modified Huron-Vidal Mixing Rule, Second Order.
+
 ```
 bᵢⱼ = (1 - lᵢⱼ)(bᵢ + bⱼ)/2
 b̄ = ∑bᵢⱼxᵢxⱼ
@@ -44,6 +45,7 @@ if the model is Redlich-Kwong:
 To use different values for `q₁` and `q₂`, overload `Clapeyron.MHV1q(::CubicModel,::MHV2Model) = (q₁,q₂)`
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 mixing = MHV2Rule(["water","carbon dioxide"]) #default: Wilson Activity Coefficient.
@@ -70,51 +72,50 @@ mixing = MHV1Rule(["water","ethanol"];
 ```
 
 ## References
-1. Michelsen, M. L. (1990). A modified Huron-Vidal mixing rule for cubic equations of state. Fluid Phase Equilibria, 60(1–2), 213–219. [doi:10.1016/0378-3812(90)85053-d](https://doi.org/10.1016/0378-3812(90)85053-d)
 
+ 1. Michelsen, M. L. (1990). A modified Huron-Vidal mixing rule for cubic equations of state. Fluid Phase Equilibria, 60(1–2), 213–219. [doi:10.1016/0378-3812(90)85053-d](https://doi.org/10.1016/0378-3812(90)85053-d)
 """
 MHV2Rule
 
-
 export MHV2Rule
-function MHV2Rule(components; activity = Wilson, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)
-    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
+function MHV2Rule(components; activity=Wilson, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
+    _activity = init_mixing_act(activity, components, activity_userlocations, verbose)
 
     references = ["10.1016/0378-3812(90)85053-D"]
-    model = MHV2Rule(format_components(components), _activity,references)
+    model = MHV2Rule(format_components(components), _activity, references)
     return model
 end
 
-MHV2q(::MHV2RuleModel,::PRModel) = (-0.4347,-0.003654)
-MHV2q(::MHV2RuleModel,::RKModel) = (-0.4783,-0.0047)
+MHV2q(::MHV2RuleModel, ::PRModel) = (-0.4347, -0.003654)
+MHV2q(::MHV2RuleModel, ::RKModel) = (-0.4783, -0.0047)
 
-function mixing_rule(model::Union{PRModel,RKModel},V,T,z,mixing_model::MHV2RuleModel,α,a,b)
+function mixing_rule(model::Union{PRModel,RKModel}, V, T, z, mixing_model::MHV2RuleModel, α, a, b)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
-    g_E = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
-    b̄ = dot(z,Symmetric(b),z) * invn2
-    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
+    g_E = excess_gibbs_free_energy(mixing_model.activity, 1e5, T, z)*invn
+    b̄ = dot(z, Symmetric(b), z) * invn2
+    c̄ = translation2(model, V, T, z, model.translation, a, b, α)*invn
     #ᾱ = a.*sqrt.(α.*α')./(b*R̄*T)
-    q1,q2 = MHV2q(mixing_model,model)
+    q1, q2 = MHV2q(mixing_model, model)
     Σlogb = zero(first(z))
     Σab = zero(T+first(z))
     Σab2 = Σab
     for i ∈ @comps
-        ᾱ  = a[i,i]*α[i]/(b[i,i]*R̄*T)
+        ᾱ = a[i, i]*α[i]/(b[i, i]*R̄*T)
         zia = z[i]*ᾱ
         Σab += zia
         Σab2 += zia*ᾱ
-        Σlogb += z[i]*log(b̄/b[i,i])
+        Σlogb += z[i]*log(b̄/b[i, i])
     end
     Σab *= invn
     Σab2 *= invn
     Σlogb *= invn
-    c  = -q1*Σab-q2*Σab2-g_E/(R̄*T)-Σlogb
+    c = -q1*Σab-q2*Σab2-g_E/(R̄*T)-Σlogb
     ā = b̄*R̄*T*(-q1-sqrt(q1^2-4*q2*c))/(2*q2)
-    return ā,b̄,c̄
+    return ā, b̄, c̄
 end
 
-function cubic_get_l(model::CubicModel,mixing::MHV2RuleModel,params)
+function cubic_get_l(model::CubicModel, mixing::MHV2RuleModel, params)
     return get_k_mean(params.b.values)
 end
