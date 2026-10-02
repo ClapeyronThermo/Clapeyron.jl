@@ -6,18 +6,19 @@ using Preferences
 Activates or Deactivates the precompilation workload of the Clapeyron.,jl
 
 !!! compat "Julia 1.9"
+
+
 This function requires at least Julia 1.9
 """
 function precompile_clapeyron! end
 export precompile_clapeyron!
 
-function precompile_clapeyron!(val = true)
+function precompile_clapeyron!(val=true)
     Preferences.set_preferences!(Clapeyron, "precompile_workload" => val; force=true)
     @info "Clapeyron's precompilation workload has been set to $(info_color(string(val))). this change will take effect on the next julia session."
 end
 
 @setup_workload begin
-
     single = ["water"]
     pair = ["water", "ethanol"]
     @compile_workload begin
@@ -31,7 +32,7 @@ end
         p2 = UNIFAC(pair)
         p3 = NRTL(pair)
         p4 = Wilson(pair)
-        p5 = MultiFluid(["carbon dioxide","water"])
+        p5 = MultiFluid(["carbon dioxide", "water"])
         split_model(p1)
         split_model(p2)
         #=

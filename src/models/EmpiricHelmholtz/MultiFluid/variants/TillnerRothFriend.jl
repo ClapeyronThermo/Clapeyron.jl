@@ -7,6 +7,7 @@
     reference_state = nothing)
 
 ## Input parameters
+
 none
 
 ##Description
@@ -14,29 +15,25 @@ none
 Tillner-Roth and Friend model for water-ammonia mixtures.
 
 ## References
-1. IAPWS G4-01 (2001). Guideline on the IAPWS Formulation 2001 for the Thermodynamic Properties of Ammonia-Water Mixtures
 
+ 1. IAPWS G4-01 (2001). Guideline on the IAPWS Formulation 2001 for the Thermodynamic Properties of Ammonia-Water Mixtures
 """
-function TillnerRothFriend(components = ["water","ammonia"],
-                            Rgas = 8.314471,
-                            reference_state = nothing,
-                            verbose = false)
-
-    water = findfirst(isequal("water"),components)
+function TillnerRothFriend(components=["water", "ammonia"], Rgas=8.314471, reference_state=nothing, verbose=false)
+    water = findfirst(isequal("water"), components)
     watermodel = IAPWS95()
-    ammoniamodel = SingleFluid("ammonia",userlocations = ["@DB/Empiric/TLF/ammonia.json"],coolprop_userlocations = false)
+    ammoniamodel = SingleFluid("ammonia", userlocations=["@DB/Empiric/TLF/ammonia.json"], coolprop_userlocations=false)
 
     if water == 1
-        pures = [watermodel,ammoniamodel]
+        pures = [watermodel, ammoniamodel]
     else
-        pures = [ammoniamodel,watermodel]
+        pures = [ammoniamodel, watermodel]
     end
     mixing = TillnerRothFriendMixing()
     departure = TillnerRothFriendDeparture()
-    params = MultiFluidParam(components,pures,reference_state)
+    params = MultiFluidParam(components, pures, reference_state)
     references = ["IAPWS G4-01"]
-    model = MultiFluid(components,params,pures,mixing,departure,Rgas,references)
-    set_reference_state!(model,verbose = verbose)
+    model = MultiFluid(components, params, pures, mixing, departure, Rgas, references)
+    set_reference_state!(model, verbose=verbose)
     return model
 end
 

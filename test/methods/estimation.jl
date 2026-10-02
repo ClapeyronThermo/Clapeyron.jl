@@ -1,6 +1,6 @@
 
-function bubble_point(model::EoSModel,T,x)
-    return 1,1
+function bubble_point(model::EoSModel, T, x)
+    return 1, 1
 end
 
 function ff_582 end
@@ -11,12 +11,10 @@ mse_loss(y_calc, y_exp) = abs2(y_calc - y_exp)
 # Tiny in-memory dataset (single output)
 function make_pv_data(model, Ts, vs)
     ps = [pressure(model, v, T) for (T, v) in zip(Ts, vs)]
-    (T = Ts, v = vs, out_p = ps)
+    (T=Ts, v=vs, out_p=ps)
 end
 
-
 @testset verbose = true "Estimation framework" begin
-
     @testset "__mse default loss" begin
         @test Clapeyron.__mse(1.1, 1.0) ≈ abs2((1.1 - 1.0) / 1.0)
         @test Clapeyron.__mse(1.0, 1.0) == 0.0
@@ -27,11 +25,7 @@ end
     @testset "EstimationModel" begin
         model = PCSAFT("methane")
 
-        toestimate = [
-            Dict(:param => :epsilon, :lower => 100., :upper => 300., :guess => 250.),
-            Dict(:param => :sigma,   :factor => 1e-10, :lower => 3.2, :upper => 4.0, :guess => 3.7),
-            Dict(:param => :segment, :lower => 0.9, :upper => 1.1, :guess => 1.),
-        ]
+        toestimate = [Dict(:param => :epsilon, :lower => 100.0, :upper => 300.0, :guess => 250.0), Dict(:param => :sigma, :factor => 1e-10, :lower => 3.2, :upper => 4.0, :guess => 3.7), Dict(:param => :segment, :lower => 0.9, :upper => 1.1, :guess => 1.0)]
 
         est = EstimationModel(model, toestimate)
         test_repr(est)
@@ -48,9 +42,9 @@ end
         ub = EstimationUtils.upper_bounds(est)
         x0 = EstimationUtils.initial_guess(est)
 
-        @test lb == [100., 3.2, 0.9]
-        @test ub == [300., 4.0, 1.1]
-        @test x0 == [250., 3.7, 1.0]
+        @test lb == [100.0, 3.2, 0.9]
+        @test ub == [300.0, 4.0, 1.1]
+        @test x0 == [250.0, 3.7, 1.0]
         @test length(lb) == length(ub) == length(x0) == 3
 
         #get_eos_parameters / set_eos_parameters! round-trip
@@ -63,7 +57,6 @@ end
         EstimationUtils.set_eos_parameters!(est, Θ_new)
         Θ_back = EstimationUtils.get_eos_parameters(est)
         @test Θ_back[1] ≈ 200.0
-
 
         # Modify the sigma value (index 2, factor = 1e-10)
         # The value exposed to the optimizer is in Å (÷ 1e-10)
@@ -100,13 +93,13 @@ end
         est[:epsilon] = 312
         m = EstimationUtils.get_model(est)
         @test m.params.epsilon[1] ≈ 312
-        
-        est[[:sigma,:epsilon]] = (2.5,313)
+
+        est[[:sigma, :epsilon]] = (2.5, 313)
         @test est[:sigma] ≈ [2.5]
         @test est[:epsilon] ≈ [313]
-        
+
         #set_model / get_model defaults
-        
+
         model2 = PCSAFT("methane")
         est2 = EstimationUtils.set_model(est, model2)
         @test EstimationUtils.get_model(est2) === model2
@@ -121,7 +114,7 @@ end
         @test all(ub .== +Inf)
 
         #initial_guess falls back to model value when :guess omitted
-        toestimate_noguess = [Dict(:param => :epsilon, :lower => 100., :upper => 300.)]
+        toestimate_noguess = [Dict(:param => :epsilon, :lower => 100.0, :upper => 300.0)]
         est_ng = EstimationModel(model, toestimate_noguess)
         x0 = EstimationUtils.initial_guess(est_ng)
         # Should equal the epsilon currently stored in the model
@@ -129,69 +122,33 @@ end
     end
 
     @testset "EstimationModel – symmetric" begin
-        model = NRTL(["ethanol", "methanol"],puremodel = BasicIdeal)
+        model = NRTL(["ethanol", "methanol"], puremodel=BasicIdeal)
 
-        toestimate = [
-            Dict(
-                :param   => :a,
-                :indices => (1, 2),
-                :symmetric => true,
-                :lower   => 100,
-                :upper   =>  500,
-                :guess   =>  200,
-            )
-        ]
+        toestimate = [Dict(:param => :a, :indices => (1, 2), :symmetric => true, :lower => 100, :upper => 500, :guess => 200)]
 
-        toestimate2 = [
-            Dict(
-                :param   => :a,
-                :indices => (1, 2),
-                :symmetric => false,
-                :lower   => 100,
-                :upper   =>  500,
-                :guess   =>  200,
-            )
-        ]
+        toestimate2 = [Dict(:param => :a, :indices => (1, 2), :symmetric => false, :lower => 100, :upper => 500, :guess => 200)]
         sym_est = EstimationModel(model, toestimate)
         asym_est = EstimationModel(model, toestimate2)
         #set then get round-trip for off-diagonal pair
         EstimationUtils.set_eos_parameters!(sym_est, [250.0])
-        @test model.params.a.values[1,2] == 250.0
-        @test model.params.a.values[2,1] == 250.0
+        @test model.params.a.values[1, 2] == 250.0
+        @test model.params.a.values[2, 1] == 250.0
 
         EstimationUtils.set_eos_parameters!(asym_est, [350.0])
-        @test model.params.a.values[1,2] == 350.0
-        @test model.params.a.values[2,1] == 250.0
+        @test model.params.a.values[1, 2] == 350.0
+        @test model.params.a.values[2, 1] == 250.0
     end
 
     @testset "EstimationModel – cross_assoc" begin
-        model = SAFTVRMie(["ethanol", "water"],assoc_options = :cr1)
+        model = SAFTVRMie(["ethanol", "water"], assoc_options=:cr1)
         ap = model.params.epsilon_assoc   # AssocParam
-        
+
         # Snapshot values we must not touch
         val1_before = ap.values.values[1]
 
-        toestimate = [
-            Dict(
-                :param      => :epsilon_assoc,
-                :indices    => 2,
-                :cross_assoc => true,
-                :lower      => 2000.,
-                :upper      => 4000.,
-                :guess      => 3500.,
-            )
-        ]
+        toestimate = [Dict(:param => :epsilon_assoc, :indices => 2, :cross_assoc => true, :lower => 2000.0, :upper => 4000.0, :guess => 3500.0)]
 
-        toestimate2 = [
-            Dict(
-                :param      => :epsilon_assoc,
-                :indices    => 2,
-                :cross_assoc => false,
-                :lower      => 2000.,
-                :upper      => 4000.,
-                :guess      => 3500.,
-            )
-        ]
+        toestimate2 = [Dict(:param => :epsilon_assoc, :indices => 2, :cross_assoc => false, :lower => 2000.0, :upper => 4000.0, :guess => 3500.0)]
 
         assoc_est = EstimationModel(model, toestimate)
         assoc_est2 = EstimationModel(model, toestimate2)
@@ -205,8 +162,8 @@ end
 
         #cross_assoc mirrors value to the symmetric inner entry
         # Retrieve the outer/inner indices that define which pair matrix is touched.
-        k     = 2
-        i,j,a,b = Clapeyron.idx_to_ijab(ap.values.indices[k])
+        k = 2
+        i, j, a, b = Clapeyron.idx_to_ijab(ap.values.indices[k])
 
         ij_mat = ap.values[i, j]
         new_val = 3100.0
@@ -225,34 +182,30 @@ end
     end
 
     @testset "EstimationModel - multiple-value indices" begin
-        model_multiple = PCSAFT(["methane","ethane"])
+        model_multiple = PCSAFT(["methane", "ethane"])
 
-        toestimate_multiple = [
-            Dict(
-                :param   => :epsilon,
-                :indices => :pures,       # one Θ entry per component: ε₁, ε₂
-            ),
-            Dict(
-                :param     => :epsilon,
-                :indices   => :unlike,    # one Θ entry for the cross term ε₁₂
-                :symmetric => true,       # ε₁₂ == ε₂₁ (default, shown for clarity)
-            ),
-            Dict(
-                :param   => :sigma,
-                :factor  => 1e-10,
-                :indices => :pures,       # σ₁, σ₂
-            ),
-        ]
+        toestimate_multiple = [Dict(
+            :param   => :epsilon,
+            :indices => :pures,       # one Θ entry per component: ε₁, ε₂
+        ), Dict(
+            :param     => :epsilon,
+            :indices   => :unlike,    # one Θ entry for the cross term ε₁₂
+            :symmetric => true,       # ε₁₂ == ε₂₁ (default, shown for clarity)
+        ), Dict(
+            :param   => :sigma,
+            :factor  => 1e-10,
+            :indices => :pures,       # σ₁, σ₂
+        )]
         # Θ has 5 elements: [ε₁, ε₂, ε₁₂, σ₁, σ₂]
         est_model = EstimationModel(model_multiple, toestimate_multiple)
         @test EstimationUtils.parameter_length(est_model) == 5
         est_model[3] = 170.0
-        @test model_multiple.params.epsilon[1,2] == 170.0
+        @test model_multiple.params.epsilon[1, 2] == 170.0
     end
 
     @testset "EstimationData – from NamedTuple" begin
         model = cPR("methane")
-        Ts = [300., 350., 400.]
+        Ts = [300.0, 350.0, 400.0]
         vs = [1e-3, 1.2e-3, 1.4e-3]
         table = make_pv_data(model, Ts, vs)
         est_data = EstimationData(table, bulk_p, mse_loss)
@@ -263,17 +216,17 @@ end
         @test length(est_data.outputs) == 3
         @test est_data.inputs_name == [:T, :v]
         @test est_data.outputs_name == [:out_p]
-        @test est_data.valid == [true,true,true]
+        @test est_data.valid == [true, true, true]
 
         #zero-inputs
-        est_data_0 = EstimationData((Tc = [1.0],Vc = [1.0]),bulk_p,mse_loss)
+        est_data_0 = EstimationData((Tc=[1.0], Vc=[1.0]), bulk_p, mse_loss)
         @test est_data_0.valid == [true]
 
         #missing values
-        est_data_missing = EstimationData((a = [1.0,missing,1.0],b = [1.0,1.0,missing],out_c = [1.0,1.0,1.0]),bulk_p,mse_loss)
-        @test est_data_missing.valid == [true,false,false]
-        @test isequal(est_data_missing.inputs,[(1.0,1.0),(NaN,1.0),(1.0,NaN)])
-        @test est_data_missing.inputs_ismissingvalues == [(false,false),(true,false),(false,true)]
+        est_data_missing = EstimationData((a=[1.0, missing, 1.0], b=[1.0, 1.0, missing], out_c=[1.0, 1.0, 1.0]), bulk_p, mse_loss)
+        @test est_data_missing.valid == [true, false, false]
+        @test isequal(est_data_missing.inputs, [(1.0, 1.0), (NaN, 1.0), (1.0, NaN)])
+        @test est_data_missing.inputs_ismissingvalues == [(false, false), (true, false), (false, true)]
 
         #objective_function – zero loss at reference model
         # model produced the data so the loss must be zero
@@ -288,44 +241,44 @@ end
 
         #normalize flag
         # With normalize = true (default) the result is divided by npoints
-        est_norm   = EstimationData(table, bulk_p, mse_loss; normalize = true)
-        est_nonorm = EstimationData(table, bulk_p, mse_loss; normalize = false)
+        est_norm = EstimationData(table, bulk_p, mse_loss; normalize=true)
+        est_nonorm = EstimationData(table, bulk_p, mse_loss; normalize=false)
         model2 = PCSAFT("methane")
-        F_norm   = EstimationUtils.objective_function(est_norm,   model2)
+        F_norm = EstimationUtils.objective_function(est_norm, model2)
         F_nonorm = EstimationUtils.objective_function(est_nonorm, model2)
         @test F_nonorm ≈ F_norm * length(est_norm.inputs) rtol = 1e-8
 
         #data_weights – scalar multiplication
         w = 2.0
         data_w = fill(w, length(Ts))
-        est_w  = EstimationData(table, bulk_p, mse_loss; data_weights = data_w, normalize = false)
-        est_uw = EstimationData(table, bulk_p, mse_loss; normalize = false)
+        est_w = EstimationData(table, bulk_p, mse_loss; data_weights=data_w, normalize=false)
+        est_uw = EstimationData(table, bulk_p, mse_loss; normalize=false)
         model2 = PCSAFT("methane")
-        Fw  = EstimationUtils.objective_function(est_w,  model2)
+        Fw = EstimationUtils.objective_function(est_w, model2)
         Fuw = EstimationUtils.objective_function(est_uw, model2)
         @test Fw ≈ w * Fuw rtol = 1e-8
     end
 
     @testset "EstimationData – multiple outputs" begin
         model = cPR("methane")
-        Ts = [300., 350., 400.]
+        Ts = [300.0, 350.0, 400.0]
         vs = [1e-3, 1.2e-3, 1.4e-3]
 
         ps = [pressure(model, v, T) for (T, v) in zip(Ts, vs)]
         mws = fill(Clapeyron.molecular_weight(model) / 1e-3, 3)   # constant, known value
 
-        table = (T = Ts, v = vs, out_p = ps, out_mw = mws)
+        table = (T=Ts, v=vs, out_p=ps, out_mw=mws)
         est_data = EstimationData(table, two_props, mse_loss)
 
         @test length(est_data.outputs_name) == 2
-        @test :out_p  in est_data.outputs_name
+        @test :out_p in est_data.outputs_name
         @test :out_mw in est_data.outputs_name
 
         F = EstimationUtils.objective_function(est_data, model)
         @test F ≈ 0.0 atol = 1e-10
 
-        est_w1 = EstimationData(table, two_props, mse_loss; output_weights = (1.0, 1.0), normalize = false)
-        est_w2 = EstimationData(table, two_props, mse_loss; output_weights = (2.0, 2.0), normalize = false)
+        est_w1 = EstimationData(table, two_props, mse_loss; output_weights=(1.0, 1.0), normalize=false)
+        est_w2 = EstimationData(table, two_props, mse_loss; output_weights=(2.0, 2.0), normalize=false)
         model2 = PCSAFT("methane")
         F1 = EstimationUtils.objective_function(est_w1, model2)
         F2 = EstimationUtils.objective_function(est_w2, model2)
@@ -354,15 +307,15 @@ end
         # Columns ending in _error_abs, _error_rel, _error_std should NOT be
         # treated as inputs or outputs.
         model = cPR("methane")
-        Ts = [300., 350.]
+        Ts = [300.0, 350.0]
         vs = [1e-3, 1.1e-3]
         ps = [pressure(model, v, T) for (T, v) in zip(Ts, vs)]
         p_err = [1e2, 1e2]
 
-        table = (T = Ts, v = vs, out_p = ps, out_p_error_abs = p_err)
+        table = (T=Ts, v=vs, out_p=ps, out_p_error_abs=p_err)
         est_data = EstimationData(table, bulk_p, mse_loss)
         @test :out_p_error_abs ∉ est_data.outputs_name
-        @test :out_p           in  est_data.outputs_name
+        @test :out_p in est_data.outputs_name
         # The error for the single output should be filled in
         @test all(e[1] ≈ 1e2 for e in est_data.outputs_error)
     end
@@ -372,23 +325,19 @@ end
 [method = sum,species=acetonitrile heptane palmitic acid],,
 T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
         data = EstimationData(csv_582)
-        model = MonomerIdeal(["acetonitrile","heptane","palmitic acid"])
-        est_model = EstimationModel(model,[Dict(:param => :Mw,:indices => :all)])
+        model = MonomerIdeal(["acetonitrile", "heptane", "palmitic acid"])
+        est_model = EstimationModel(model, [Dict(:param => :Mw, :indices => :all)])
 
-        @test_throws "Try wrapping each species name in the list" EstimationProblem(est_model,[data])
+        @test_throws "Try wrapping each species name in the list" EstimationProblem(est_model, [data])
     end
 
     @testset "EstimationProblem" begin
         model = PCSAFT("methane")
-        toestimate = [
-            Dict(:param => :epsilon, :lower => 100., :upper => 300., :guess => 250.),
-            Dict(:param => :sigma,   :factor => 1e-10, :lower => 3.2, :upper => 4.0, :guess => 3.7),
-            Dict(:param => :segment, :lower => 0.9, :upper => 1.1, :guess => 1.),
-        ]
+        toestimate = [Dict(:param => :epsilon, :lower => 100.0, :upper => 300.0, :guess => 250.0), Dict(:param => :sigma, :factor => 1e-10, :lower => 3.2, :upper => 4.0, :guess => 3.7), Dict(:param => :segment, :lower => 0.9, :upper => 1.1, :guess => 1.0)]
         est_model = EstimationModel(model, toestimate)
 
         ref_model = cPR("methane")
-        Ts = [300., 350., 400.]
+        Ts = [300.0, 350.0, 400.0]
         vs = [1e-3, 1.2e-3, 1.4e-3]
         table = make_pv_data(ref_model, Ts, vs)
         est_data = EstimationData(table, bulk_p, mse_loss)
@@ -396,8 +345,8 @@ T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
         prob = EstimationProblem(est_model, [est_data])
 
         #bounds and initial_guess are forwarded" begin
-        @test EstimationUtils.lower_bounds(prob)  == EstimationUtils.lower_bounds(est_model)
-        @test EstimationUtils.upper_bounds(prob)  == EstimationUtils.upper_bounds(est_model)
+        @test EstimationUtils.lower_bounds(prob) == EstimationUtils.lower_bounds(est_model)
+        @test EstimationUtils.upper_bounds(prob) == EstimationUtils.upper_bounds(est_model)
         @test EstimationUtils.initial_guess(prob) == EstimationUtils.initial_guess(est_model)
 
         #objective_function(prob, Θ)
@@ -423,7 +372,7 @@ T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
         @test F2 ≈ 2.0 * F1 rtol = 1e-8
 
         #parameter update is reflected in underlying model
-        Θ_new = [200., 3.5, 1.0]
+        Θ_new = [200.0, 3.5, 1.0]
         EstimationUtils.set_eos_parameters!(prob.toestimate, Θ_new)
         Θ_back = EstimationUtils.get_eos_parameters(prob.toestimate)
         @test Θ_back ≈ Θ_new rtol = 1e-8
@@ -444,12 +393,12 @@ T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
         function EstimationUtils.set_eos_parameters!(est::KijEstimationModel, k12_vec)
             k12 = only(k12_vec)
             # build symmetric 2×2 matrix
-            Clapeyron.set_k!(est.model, [0. k12; k12 0.])
+            Clapeyron.set_k!(est.model, [0.0 k12; k12 0.0])
         end
 
         EstimationUtils.initial_guess(est::KijEstimationModel) = [0.0]
         EstimationUtils.lower_bounds(est::KijEstimationModel)  = [-1.0]
-        EstimationUtils.upper_bounds(est::KijEstimationModel)  = [ 1.0]
+        EstimationUtils.upper_bounds(est::KijEstimationModel)  = [1.0]
 
         model = PR(["carbon dioxide", "methane"])
         est   = KijEstimationModel(model)
@@ -468,7 +417,7 @@ T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
 
         #bounds
         @test EstimationUtils.lower_bounds(est) == [-1.0]
-        @test EstimationUtils.upper_bounds(est) == [ 1.0]
+        @test EstimationUtils.upper_bounds(est) == [1.0]
 
         #parameter_length falls back to length of get_eos_parameters
         EstimationUtils.set_eos_parameters!(est, [0.0])  # reset
@@ -478,7 +427,7 @@ T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
         model2 = PR(["carbon dioxide", "methane"])
         est2   = EstimationUtils.set_model(est, model2)
         @test EstimationUtils.get_model(est2) === model2
-        @test EstimationUtils.get_model(est)  === model
+        @test EstimationUtils.get_model(est) === model
     end
 
     @testset "Custom AbstractEstimationLoss – bulk property version" begin
@@ -510,7 +459,7 @@ T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
         end
 
         ref_model = cPR("methane")
-        Ts = [300., 350., 400., 450.]
+        Ts = [300.0, 350.0, 400.0, 450.0]
         vs = [1e-3, 1.1e-3, 1.2e-3, 1.3e-3]
         loss = BulkPressureLoss(ref_model, Ts, vs)
         test_repr(loss)
@@ -541,13 +490,11 @@ T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
         # both minimised simultaneously.
 
         model = PCSAFT("methane")
-        toestimate = [
-            Dict(:param => :epsilon, :lower => 100., :upper => 400., :guess => 200.),
-        ]
+        toestimate = [Dict(:param => :epsilon, :lower => 100.0, :upper => 400.0, :guess => 200.0)]
         est_model = EstimationModel(model, toestimate)
 
         ref = cPR("methane")
-        Ts = [300., 350.]
+        Ts = [300.0, 350.0]
         vs = [1e-3, 1.1e-3]
         table = make_pv_data(ref, Ts, vs)
 
@@ -588,74 +535,42 @@ T,z1,z2,z3,out_x1,out_x2,out_x3,out_y1,out_y2,out_y3"""
     end
 
     @testset "Estimation - SAFTgammaMie" begin
-        model = SAFTgammaMie(["ethanol","water"],epsilon_mixing = :hudsen_mccoubrey)
+        model = SAFTgammaMie(["ethanol", "water"], epsilon_mixing=:hudsen_mccoubrey)
 
-        toestimate = [Dict(
-            :param => :epsilon,
-            :indices => (1,1),
-            :recombine => true,
-            :lower => 100.,
-            :upper => 300.,
-            :guess => 250.
-        ),
-        Dict(
-            :param => :epsilon,
-            :indices => (2,3),
-            :symmetric => false,
-            :lower => 100.,
-            :upper => 300.,
-            :guess => 250.
-        ),
-        Dict(
-            :param => :sigma,
-            :indices => (1,1),
-            :factor => 1e-10,
-            :lower => 3.2,
-            :upper => 4.0,
-            :guess => 3.7
-            ),
-        Dict(
-            :param => :epsilon_assoc,
-            :indices => 2,
-            :cross_assoc => true,
-            :lower => 2000.,
-            :upper => 4000.,
-            :guess => 3500.
-            )]
+        toestimate = [Dict(:param => :epsilon, :indices => (1, 1), :recombine => true, :lower => 100.0, :upper => 300.0, :guess => 250.0), Dict(:param => :epsilon, :indices => (2, 3), :symmetric => false, :lower => 100.0, :upper => 300.0, :guess => 250.0), Dict(:param => :sigma, :indices => (1, 1), :factor => 1e-10, :lower => 3.2, :upper => 4.0, :guess => 3.7), Dict(:param => :epsilon_assoc, :indices => 2, :cross_assoc => true, :lower => 2000.0, :upper => 4000.0, :guess => 3500.0)]
 
-        estimator,objective,initial,upper,lower = Estimation(model,toestimate,["../examples/data/bubble_point.csv"],[:vrmodel])
+        estimator, objective, initial, upper, lower = Estimation(model, toestimate, ["../examples/data/bubble_point.csv"], [:vrmodel])
 
-        model2 = return_model(estimator,model,initial)
-        @test model2.params.epsilon[1,1] == initial[1] # Test that the parameter was correctly updated
-        @test model2.params.epsilon[1,2] ≈ 251.57862124740765 rtol = 1e-6 # Test that the combining rule was used
-        @test model2.params.epsilon[1,2] == model2.params.epsilon[2,1] # Test that the unlike parameters remain symmetric
+        model2 = return_model(estimator, model, initial)
+        @test model2.params.epsilon[1, 1] == initial[1] # Test that the parameter was correctly updated
+        @test model2.params.epsilon[1, 2] ≈ 251.57862124740765 rtol = 1e-6 # Test that the combining rule was used
+        @test model2.params.epsilon[1, 2] == model2.params.epsilon[2, 1] # Test that the unlike parameters remain symmetric
 
-        @test model2.params.epsilon[2,3] == initial[2] # Test that the parameter was updated
-        @test model2.params.epsilon[2,3] != model2.params.epsilon[3,2] # Test that the parameter is no longer symmetric
+        @test model2.params.epsilon[2, 3] == initial[2] # Test that the parameter was updated
+        @test model2.params.epsilon[2, 3] != model2.params.epsilon[3, 2] # Test that the parameter is no longer symmetric
 
-        @test model2.params.sigma[1,1] == initial[3]*1e-10 # Test that the factor was used to update the parameters
+        @test model2.params.sigma[1, 1] == initial[3]*1e-10 # Test that the factor was used to update the parameters
 
-        @test model2.params.epsilon[2,3] == initial[2] # Test that the parameter was updated
-        @test model2.params.epsilon[2,3] != model2.params.epsilon[3,2] # Test that the parameter is no longer symmetric
+        @test model2.params.epsilon[2, 3] == initial[2] # Test that the parameter was updated
+        @test model2.params.epsilon[2, 3] != model2.params.epsilon[3, 2] # Test that the parameter is no longer symmetric
 
         @test model2.params.epsilon_assoc.values.values[2] == initial[4] # Test that the association parameter was updated
         @test model2.params.epsilon_assoc.values.values[2] == model2.params.epsilon_assoc.values.values[3] # Test that the cross-association parameter was updated
 
         @test objective(initial) ≈ 2.4184631612655836 rtol = 1e-6
 
-        estimator,objective,initial,upper,lower = Estimation(model,toestimate,[(2.,"../examples/data/bubble_point.csv"),(1.,"../examples/data/bubble_point.csv")],[:vrmodel])
+        estimator, objective, initial, upper, lower = Estimation(model, toestimate, [(2.0, "../examples/data/bubble_point.csv"), (1.0, "../examples/data/bubble_point.csv")], [:vrmodel])
 
         @test objective(initial) ≈ 7.255389483796751 rtol = 1e-6
     end
 end #@testset "Estimation Framework"
 
-
 @testset verbose = true "promote_model" begin
     @testset "#365" begin
         #error found during #365
-        model = SAFTgammaMie(["ethanol","water"],epsilon_mixing = :hudsen_mccoubrey)
+        model = SAFTgammaMie(["ethanol", "water"], epsilon_mixing=:hudsen_mccoubrey)
         modelvec = Clapeyron.EoSVectorParam(model)
-        @test Clapeyron.promote_model(BigFloat,modelvec) isa Clapeyron.EoSVectorParam
+        @test Clapeyron.promote_model(BigFloat, modelvec) isa Clapeyron.EoSVectorParam
     end
 
     @testset "#366" begin
@@ -663,8 +578,8 @@ end #@testset "Estimation Framework"
         #366
         incorrect conversion of MixedGCSegmentParam.
         =#
-        model = SAFTgammaMie(["ethanol","water"],epsilon_mixing = :hudsen_mccoubrey)
-        bigfloat_model = Clapeyron.promote_model(BigFloat,model)
+        model = SAFTgammaMie(["ethanol", "water"], epsilon_mixing=:hudsen_mccoubrey)
+        bigfloat_model = Clapeyron.promote_model(BigFloat, model)
         @test model.params.mixed_segment.values.v ≈ bigfloat_model.params.mixed_segment.values.v
 
         model2 = SAFTgammaMie(["octane"])

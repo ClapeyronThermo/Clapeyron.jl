@@ -3,7 +3,7 @@ module Solvers
 using LinearAlgebra
 using LinearAlgebra: BlasInt
 using Random
-using NLSolvers,Roots
+using NLSolvers, Roots
 using PositiveFactorizations
 using DiffResults, ForwardDiff
 using StaticArrays
@@ -11,8 +11,8 @@ using Roots
 
 using Clapeyron.StaticForwardDiffTags: maketag, maketagtype
 
-export static_linsolve,Newton2
-__is_implace(x,method) = __is_implace(x)
+export static_linsolve, Newton2
+__is_implace(x, method) = __is_implace(x)
 __is_implace(x::Number) = false
 __is_implace(x::Array) = true
 __is_implace(x::MVector) = true
@@ -36,7 +36,6 @@ const x_sol = solution
 x_minimum(res::NLSolvers.ConvergenceInfo) = res.info.minimum
 #for BrentMin (should be fixed at NLSolvers 0.3)
 x_minimum(res::Tuple{<:Number,<:Number}) = last(res)
-
 
 include("linsolve.jl")
 include("nlsolvers.jl")

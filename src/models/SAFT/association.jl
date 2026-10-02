@@ -1,12 +1,12 @@
-function a_assoc(model::EoSModel, V, T, z,data=nothing)
+function a_assoc(model::EoSModel, V, T, z, data=nothing)
     _0 = zero(V+T+first(z))
     nn = assoc_pair_length(model)
     iszero(nn) && return _0
-    isone(nn) && return a_assoc_exact_1(model,V,T,z,data)
+    isone(nn) && return a_assoc_exact_1(model, V, T, z, data)
     #_X,_Δ = @f(X_and_Δ,data)
     #return @f(a_assoc_impl,_X,_Δ)
-    _X = @f(X,data)
-    return @f(a_assoc_impl,_X)
+    _X = @f(X, data)
+    return @f(a_assoc_impl, _X)
 end
 
 """
@@ -14,10 +14,11 @@ end
 
 Returns a `Clapeyron.Compressed4DMatrix` that has the same shape as the association sites used by the model.
 By default, it has the same shape as `model.params.bondvol`.
+
 ## Example:
 
 ```julia-repl
-julia> model = PCSAFT(["water"])
+julia> model = PCSAFT([\"water\"])
 PCSAFT{BasicIdeal} with 1 component:
  "water"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
@@ -31,14 +32,14 @@ assoc_shape(model::EoSModel) = assoc_shape(model.params.bondvol)
 assoc_shape(param::AssocParam) = assoc_shape(param.values)
 @inline function assoc_shape(mat::Compressed4DMatrix)
     l = length(mat.values)
-    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l,mat.indices,mat.site_offsets)
+    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l, mat.indices, mat.site_offsets)
 end
 
-@inline function assoc_similar(model::EoSModel,::Type{𝕋}) where 𝕋
-    assoc_similar(assoc_shape(model),𝕋)
+@inline function assoc_similar(model::EoSModel, ::Type{𝕋}) where 𝕋
+    assoc_similar(assoc_shape(model), 𝕋)
 end
 
-assoc_similar(model::EoSModel) = assoc_similar(model,eltype(model))
+assoc_similar(model::EoSModel) = assoc_similar(model, eltype(model))
 
 """
     assoc_pair_length(model::EoSModel)
@@ -49,7 +50,7 @@ By default uses `length(assoc_shape(model).values)`.
 ## Example:
 
 ```julia-repl
-julia> model = PCSAFT(["water"])
+julia> model = PCSAFT([\"water\"])
 PCSAFT{BasicIdeal} with 1 component:
  "water"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
@@ -78,7 +79,6 @@ getsites(model) = model.sites
     assoc_options(model::EoSModel)
 
 Returns association options used in the association solver.
-
 """
 @inline function assoc_options(model::EoSModel)
     return model.assoc_options
@@ -87,13 +87,15 @@ end
 """
     assoc_strength(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
     Δ(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
+
 Calculates the association strength between component `i` at site `a` and component `j` at site `b`.
 
 Any precomputed values can be passed along by calling `Clapeyron.data`.
 
 ## Example
+
 ```julia-repl
-julia> model = PCSAFT(["water"])
+julia> model = PCSAFT([\"water\"])
 PCSAFT{BasicIdeal} with 1 component:
  "water"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
@@ -102,14 +104,15 @@ julia> model.params.bondvol.values
 Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}} with 1 entry:
  (1, 1) >=< (1, 2): 0.034868
 
-julia> Clapeyron.assoc_strength(model,2.5e-5,298.15,[1.0],1,1,1,2) #you can also use Clapeyron.Δ
+julia> Clapeyron.assoc_strength(model, 2.5e-5, 298.15, [1.0], 1, 1, 1, 2) #you can also use Clapeyron.Δ
 1.293144062056963e-26
 
 #PCSAFT precomputed data: (d,ζ₀,ζ₁,ζ₂,ζ₃,m̄)
-julia> _data = Clapeyron.data(model,2.5e-5,298.15,[1.0])
+
+julia> _data = Clapeyron.data(model, 2.5e-5, 298.15, [1.0])
 ([2.991688553098391e-10], 1.3440137996322956e28, 4.020870699566213e18, 1.2029192845380957e9, 0.3598759853853927, 1.0656)
 
-julia> Clapeyron.Δ(model,2.5e-5,298.15,[1.0],1,1,1,2,_data)
+julia> Clapeyron.Δ(model, 2.5e-5, 298.15, [1.0], 1, 1, 1, 2, _data)
 1.293144062056963e-26
 ```
 """
@@ -126,8 +129,9 @@ Returns a list of all combinations of non-zero association strength, calculated 
 By default, it calls `assoc_similar(model,𝕋)` (where 𝕋 is the promoted type of all the arguments) and fills the list using `Δ(model,V,T,z,i,j,a,b,data)`.
 
 ## Example
+
 ```julia-repl
-julia> model = PCSAFT(["water"])
+julia> model = PCSAFT([\"water\"])
 PCSAFT{BasicIdeal} with 1 component:
  "water"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
@@ -136,30 +140,31 @@ julia> model.params.bondvol
 AssocParam{Float64}["water"]) with 1 value:
 ("water", "e") >=< ("water", "H"): 0.034868
 
-julia> Clapeyron.assoc_strength(model,2.5e-5,298.15,[1.0],1,1,1,2) #you can also use Clapeyron.Δ
+julia> Clapeyron.assoc_strength(model, 2.5e-5, 298.15, [1.0], 1, 1, 1, 2) #you can also use Clapeyron.Δ
 1.293144062056963e-26
 
 #PCSAFT precomputed data: (d,ζ₀,ζ₁,ζ₂,ζ₃,m̄)
-julia> _data = Clapeyron.data(model,2.5e-5,298.15,[1.0])
+
+julia> _data = Clapeyron.data(model, 2.5e-5, 298.15, [1.0])
 ([2.991688553098391e-10], 1.3440137996322956e28, 4.020870699566213e18, 1.2029192845380957e9, 0.3598759853853927, 1.0656)
 
-julia> Clapeyron.Δ(model,2.5e-5,298.15,[1.0],1,1,1,2,_data)
+julia> Clapeyron.Δ(model, 2.5e-5, 298.15, [1.0], 1, 1, 1, 2, _data)
 1.293144062056963e-26
 ```
 """
 function Δ(model::EoSModel, V, T, z)
-    Δout = assoc_similar(model,typeof(V+T+first(z)))
-    for (idx,(i,j),(a,b)) in indices(Δout)
-        Δout[idx] =@f(Δ,i,j,a,b)
+    Δout = assoc_similar(model, typeof(V+T+first(z)))
+    for (idx, (i, j), (a, b)) in indices(Δout)
+        Δout[idx] = @f(Δ, i, j, a, b)
     end
     return Δout
 end
 
 function Δ(model::EoSModel, V, T, z, data)
-    Δout = assoc_similar(model,@f(Base.promote_eltype))
+    Δout = assoc_similar(model, @f(Base.promote_eltype))
     Δout.values .= false
-    for (idx,(i,j),(a,b)) in indices(Δout)
-        Δout[idx] =@f(Δ,i,j,a,b,data)
+    for (idx, (i, j), (a, b)) in indices(Δout)
+        Δout[idx] = @f(Δ, i, j, a, b, data)
     end
     return Δout
 end
@@ -174,38 +179,37 @@ Association Matrix construction
     delta_assoc(model,V,T,z,data)
 
 Equivalent to `Δ(model,V,T,z)`, but additionally, performs runtime mixing of `Δ[i,j][a,b]` values if specified via `assoc_options`.
-
 """
-function delta_assoc(model,V,T,z,data::M) where M
+function delta_assoc(model, V, T, z, data::M) where M
     if data === nothing
-        delta = Δ(model,V,T,z)
+        delta = Δ(model, V, T, z)
     else
-        delta = Δ(model,V,T,z,data)
+        delta = Δ(model, V, T, z, data)
     end
     options = assoc_options(model)
     combining = options.combining
-    if combining in (:elliott_runtime,:esd_runtime)
+    if combining in (:elliott_runtime, :esd_runtime)
         elliott_runtime_mix!(delta)
     end
     return delta
 end
 
-function assoc_site_matrix(model,V,T,z,data = nothing,delta = @f(delta_assoc,data))
+function assoc_site_matrix(model, V, T, z, data=nothing, delta=@f(delta_assoc, data))
     options = assoc_options(model)
-    return dense_assoc_site_matrix(model,V,T,z,data,delta)
+    return dense_assoc_site_matrix(model, V, T, z, data, delta)
 end
 
 #this fills the zeros of the Δ vector with the corresponding mixing values
 function elliott_runtime_mix!(Δ)
     _Δ = Δ.values
-    for (idx,(i,j),(a,b)) in indices(Δ)
+    for (idx, (i, j), (a, b)) in indices(Δ)
         i == j && continue
         @inbounds begin
             Δijab = Δ[idx]
             !iszero(primalval(Δijab)) && continue
-            i1 = validindex(Δ,(i,i,a,b))
+            i1 = validindex(Δ, (i, i, a, b))
             iszero(i1) && continue
-            i2 = validindex(Δ,(j,j,a,b))
+            i2 = validindex(Δ, (j, j, a, b))
             iszero(i2) && continue
             Δia = Δ[i1]
             iszero(primalval(Δia)) && continue
@@ -217,7 +221,7 @@ function elliott_runtime_mix!(Δ)
     return Δ
 end
 
-function dense_assoc_site_matrix(model, V, T, z, data=nothing, delta = @f(delta_assoc,data))
+function dense_assoc_site_matrix(model, V, T, z, data=nothing, delta=@f(delta_assoc, data))
     sitesparam = getsites(model)
     p = sitesparam.n_sites.p          # start index of each component's sites
     n = sitesparam.n_sites.v          # flattened site multiplicities
@@ -256,6 +260,7 @@ const assoc_fractions = X
 
 Returns the solution for the association site fractions. Used internally by all models that require association.
 The result is of type `PackedVectorsOfVectors.PackedVectorOfVectors`, with `length = length(model)`, and `x[i][a]` representing the empty fraction of the site `a` at component `i`.
+
 ## Example:
 
 ```
@@ -273,11 +278,11 @@ julia> x = Clapeyron.assoc_fractions(model,2.6e-5,300.15,[0.3,0.3,0.4]) #you can
  0-element view(::Vector{Float64}, 5:4) with eltype Float64
 ```
 """
-function X(model::EoSModel, V, T, z,data = nothing)
+function X(model::EoSModel, V, T, z, data=nothing)
     #we return X with derivative information
     nn = assoc_pair_length(model)
-    isone(nn) && return X_exact1(model,V,T,z,data)
-    X,Δ = X_and_Δ(model,V,T,z,data)
+    isone(nn) && return X_exact1(model, V, T, z, data)
+    X, Δ = X_and_Δ(model, V, T, z, data)
     return X
     #for some reason, this fails on infinite dilution derivatives
     #=
@@ -310,26 +315,25 @@ function X(model::EoSModel, V, T, z,data = nothing)
     return PackedVofV(X.p,X̃) =#
 end
 
-function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
+function X_and_Δ(model::EoSModel, V, T, z, data=nothing)
     nn = assoc_pair_length(model)
-    isone(nn) && return X_and_Δ_exact1(model,V,T,z,data)
+    isone(nn) && return X_and_Δ_exact1(model, V, T, z, data)
     options = assoc_options(model)::AssocOptions
-    _Δ = delta_assoc(model,V,T,z,data)
+    _Δ = delta_assoc(model, V, T, z, data)
     #K = assoc_site_matrix(model,primalval(V),T,primalval(z),data,primalval(_Δ))
-    K = assoc_site_matrix(model,V,T,z,data,_Δ)
+    K = assoc_site_matrix(model, V, T, z, data, _Δ)
     sitesparam = getsites(model)
     idxs = sitesparam.n_sites.p
     compress = __maybe_compress(K)
     if compress
-        J,J_to_K = compress_assoc_matrix(K)
-        Ysol = assoc_matrix_solve(J,options)
+        J, J_to_K = compress_assoc_matrix(K)
+        Ysol = assoc_matrix_solve(J, options)
         Xsol = Ysol[J_to_K]
     else
-        Xsol = assoc_matrix_solve(K,options)
+        Xsol = assoc_matrix_solve(K, options)
     end
-    return PackedVofV(idxs,Xsol),_Δ
+    return PackedVofV(idxs, Xsol), _Δ
 end
-
 
 #=
 ################################
@@ -337,24 +341,24 @@ Initial points for association
 And reduced dimension solvers
 ################################
 =#
-function assoc_matrix_x0!(K,X)
+function assoc_matrix_x0!(K, X)
     #(A*x .* x) + x - 1 = 0
-    init1,success1 = X_maybe_exact_pseudodiag!(K,X)
-    init1 && (return X,success1)
+    init1, success1 = X_maybe_exact_pseudodiag!(K, X)
+    init1 && (return X, success1)
 
-    if size(K) == (2,2) #&& all(!iszero,K)
-        init2,success2 = X_exact2!(K,X)
-        init2 && (return X,success2)
+    if size(K) == (2, 2) #&& all(!iszero,K)
+        init2, success2 = X_exact2!(K, X)
+        init2 && (return X, success2)
     end
 
-    mul!(X,K,X)
-    Kmin,Kmax = extrema(X)
+    mul!(X, K, X)
+    Kmin, Kmax = extrema(X)
     f(kx) = 2 / (1 + sqrt(1 + 4*kx))
     X .= f.(X)
-    return X,false
+    return X, false
 end
 
-function X_maybe_exact_pseudodiag!(K,X)
+function X_maybe_exact_pseudodiag!(K, X)
     #=
     solver for association matrices that only have one entry per row
     we try to solve for diagonal elements (including zeros)
@@ -364,8 +368,8 @@ function X_maybe_exact_pseudodiag!(K,X)
     Kr = eachrow(K)
 
     for Kri in Kr
-        if count(!iszero,Kri) > 1
-            return false,false
+        if count(!iszero, Kri) > 1
+            return false, false
         end
     end
 
@@ -377,23 +381,23 @@ function X_maybe_exact_pseudodiag!(K,X)
     X .= -Inf
     for i in 1:n
         for j in 1:n
-            if !iszero(K[j,i])
+            if !iszero(K[j, i])
                 X[j] = -i
             end
         end
     end
 
     #step1: solve self-associated sites
-    n_solved = X_maybe_exact_pseudodiag_01!(K,X)
-    n_solved == n && return (true,true)
+    n_solved = X_maybe_exact_pseudodiag_01!(K, X)
+    n_solved == n && return (true, true)
     #step 2: solve site-pairs
-    n_solved += X_maybe_exact_pseudodiag_2!(K,X)
-    n_solved == n && return (true,true)
-    n_solved += X_maybe_exact_pseudodiag_2!(K,X) #just to check
+    n_solved += X_maybe_exact_pseudodiag_2!(K, X)
+    n_solved == n && return (true, true)
+    n_solved += X_maybe_exact_pseudodiag_2!(K, X) #just to check
     if n_solved == n
-        return true,true
+        return true, true
     elseif n_solved == 0
-        return false,false
+        return false, false
     end
 
     #step 4: fill any non-solved entries with ones
@@ -402,27 +406,27 @@ function X_maybe_exact_pseudodiag!(K,X)
             X[i] = 1.0
         end
     end
-    return true,false
+    return true, false
 end
 
-function X_maybe_exact_pseudodiag_01!(K,X)
+function X_maybe_exact_pseudodiag_01!(K, X)
     #step1: solve self-associated sites
     n_solved = 0
     n = length(X)
     for i in 1:n
         if X[i] == -Inf #means no non-zero values were found in that specific row. X(k = 0.0) = 1.0
-            X[i] =  1.0
-            n_solved +=1
+            X[i] = 1.0
+            n_solved += 1
         elseif X[i] == -i
-            k = K[i,i]
-            X[i] = _X_exact1(k,k)[1]
+            k = K[i, i]
+            X[i] = _X_exact1(k, k)[1]
             n_solved += 1
         end
     end
     return n_solved
 end
 
-function X_maybe_exact_pseudodiag_2!(K,X)
+function X_maybe_exact_pseudodiag_2!(K, X)
     n_solved = 0
     n = length(X)
     for i in 1:n
@@ -431,7 +435,7 @@ function X_maybe_exact_pseudodiag_2!(K,X)
         !isinteger(xi) && continue
         j1 = -Int(round(xi))
         xj = X[j1]
-        kj1 = K[i,j1]
+        kj1 = K[i, j1]
         if xj > 0
             X[i] = 1/(1 + xj*kj1)
             n_solved += 1
@@ -439,9 +443,9 @@ function X_maybe_exact_pseudodiag_2!(K,X)
             if isinteger(primalval(xj))
                 j2 = -Int(round(xj))
                 if j2 == i
-                    kj2 = K[j1,i]
-                    A3,A2 = kj1,kj2
-                    x1,x2 = _X_exact1(A3,A2)
+                    kj2 = K[j1, i]
+                    A3, A2 = kj1, kj2
+                    x1, x2 = _X_exact1(A3, A2)
                     X[j1] = x1
                     X[i] = x2
                     n_solved += 2
@@ -452,23 +456,23 @@ function X_maybe_exact_pseudodiag_2!(K,X)
     return n_solved
 end
 
-function X_exact2_123!(K,X)
-    A1,A3,A2,A4 = K
+function X_exact2_123!(K, X)
+    A1, A3, A2, A4 = K
     invert = iszero(A4)
     if invert
-        A1,A4 = A4,A1
-        A3,A2 = A2,A3
+        A1, A4 = A4, A1
+        A3, A2 = A2, A3
     end
     _1 = one(eltype(K))
     _0 = zero(eltype(K))
-    poly = (-_1,_1 + A3 - A2,A2 + A4,A2*A4)
-    dpoly = (_1 + A3 - A2,2*(A2 + A4),3*A2*A4)
+    poly = (-_1, _1 + A3 - A2, A2 + A4, A2*A4)
+    dpoly = (_1 + A3 - A2, 2*(A2 + A4), 3*A2*A4)
     xa = _0
     xb = _1
     xc = 0.5*_1
     for i in 1:100
         xold = xc
-        xnew = xc - evalpoly(xc,poly)/evalpoly(xc,dpoly)
+        xnew = xc - evalpoly(xc, poly)/evalpoly(xc, dpoly)
         if xnew < _0
             xc = 0.5*(xc)
         elseif xnew > _1
@@ -481,13 +485,13 @@ function X_exact2_123!(K,X)
     x2 = xc
     x1 = 1/(1 + A2*x2)
     if invert
-        x1,x2 = x2,x1
+        x1, x2 = x2, x1
     end
     X[1] = x1
     X[2] = x2
 end
 
-function X_exact2!(K,X)
+function X_exact2!(K, X)
     #=
     strategy: reformulate association problem as an hyperbola
     ((x2 - t2)/b2)^2 - ((x1 - t1)/b1)^2 = 1
@@ -496,18 +500,17 @@ function X_exact2!(K,X)
 
     Then we solve in exp(t) coordinates
     =#
-    A1,A3,A2,A4 = K
+    A1, A3, A2, A4 = K
     if iszero(A1) && iszero(A4)
-        x1,x2 =_X_exact1(A3,A2)
+        x1, x2 = _X_exact1(A3, A2)
         X[1] = x1
         X[2] = x2
-        return true,true
+        return true, true
     end
 
     if iszero(A1) || iszero(A4)
-        X_exact2_123!(K,X)
-        return true,true
-
+        X_exact2_123!(K, X)
+        return true, true
     end
 
     a = -A3/A2
@@ -517,8 +520,8 @@ function X_exact2!(K,X)
 
     if invert
         #if the sign of w is negative, than means that x2 has the negative sign in the hyperbola instead of x1
-        A1,A4 = A4,A1
-        A3,A2 = A2,A3
+        A1, A4 = A4, A1
+        A3, A2 = A2, A3
         a = -A3/A2
         w = 1 + a + 1/(4A4) + a/(4A1)
     end
@@ -540,7 +543,7 @@ function X_exact2!(K,X)
             y1_new = 0.5*ymin + 0.5*y1
         end
         y1 = y1_new
-        et0 =  et
+        et0 = et
         et = 0.8*(y1 + sqrt(y1*y1 + 1)) + 0.2*et0
         abs(et - et0) < ε && break
         isnan(et) && break
@@ -548,18 +551,18 @@ function X_exact2!(K,X)
     end
 
     if isnan(et) || et < 0
-        return false,false
+        return false, false
     end
     #sinhtt = (et*et - 1)/(2et)
     #coshtt = (et*et + 1)/(2et)
     x1 = t1 + b1*(et*et - 1)/(2et)
     x2 = t2 + b2*(et*et + 1)/(2et)
     if invert
-        x2,x1 = x1,x2
+        x2, x1 = x1, x2
     end
     X[1] = x1
     X[2] = x2
-    return true,true
+    return true, true
 end
 
 #=
@@ -568,20 +571,20 @@ General association solver
 ############################
 =#
 
-function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions = AssocOptions()) where T
+function assoc_matrix_solve(K::AbstractMatrix{T}, options::AssocOptions=AssocOptions()) where T
     atol = options.atol
     rtol = options.rtol
     max_iters = options.max_iters
     α = options.dampingfactor
     implicit_ad = options.implicit_ad
-    return assoc_matrix_solve(K, α, atol ,rtol, max_iters, implicit_ad)
+    return assoc_matrix_solve(K, α, atol, rtol, max_iters, implicit_ad)
 end
 
-function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol ,rtol, max_iters, implicit_ad) where T
+function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol, rtol, max_iters, implicit_ad) where T
     n = LinearAlgebra.checksquare(K) #size
     #initialization procedure:
-    X0 = Vector{T}(undef,n)
-    X0,success = assoc_matrix_x0!(K,X0)
+    X0 = Vector{T}(undef, n)
+    X0, success = assoc_matrix_x0!(K, X0)
     success && return X0
     #static versions to improve speed, but they cost too much compilation time
     #length(X0) == 3 && return __assoc_matrix_solve_static(Val{3}(), K, X0, α, atol ,rtol, max_iters)
@@ -591,24 +594,23 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α, atol ,rtol, max_iters, imp
     if implicit_ad && K[1] isa ForwardDiff.Dual
         K_primal = nested_pvalue(K) # solve on primalval
 
-        Xsol = assoc_matrix_solve_general(K_primal, nested_pvalue.(X0), n, α, atol ,rtol, max_iters)
+        Xsol = assoc_matrix_solve_general(K_primal, nested_pvalue.(X0), n, α, atol, rtol, max_iters)
         return assoc_matrix_solve_ad(Xsol, K, K_primal) # implicit AD
     else
         #Propagate AD through solver
-        return assoc_matrix_solve_general(K, X0, n, α, atol ,rtol, max_iters)
+        return assoc_matrix_solve_general(K, X0, n, α, atol, rtol, max_iters)
     end
 end
 
-
 #this is for playing around and check results, not for direct use
 #in particular, this does not support implicit ad
-function assoc_matrix_solve(K,X0)
+function assoc_matrix_solve(K, X0)
     n = LinearAlgebra.checksquare(K)
-    assoc_matrix_solve_general(K, X0, n, 0.5, 1e-12 ,1e-12, 1000)
+    assoc_matrix_solve_general(K, X0, n, 0.5, 1e-12, 1e-12, 1000)
 end
 
-function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol, max_iters) where T
-    Xsol = Vector{T}(undef,n)
+function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol, rtol, max_iters) where T
+    Xsol = Vector{T}(undef, n)
     Xsol .= X0
     #=
     function to solve
@@ -677,8 +679,8 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
     - julia 1.10 does not have a way to make LU non-allocating, but the code is simple, so it was added as the function unsafe_LU! in the Solvers module.
     =#
     αx = α
-    function f_ss!(out,in)
-        mul!(out,K,in) #out stores KX
+    function f_ss!(out, in)
+        mul!(out, K, in) #out stores KX
         #=
         #adaptative damping
         k1 = zero(eltype(out))
@@ -703,36 +705,36 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
     it_ss = (5*length(Xsol))
     converged = false
     for i in 1:it_ss
-        f_ss!(Xsol,X0)
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
+        f_ss!(Xsol, X0)
+        converged, finite = Solvers.convergence(Xsol, X0, atol, rtol)
         if converged
             finite || (Xsol .= NaN)
             return Xsol
         end
         X0 .= Xsol
-       # @show Xsol
+        # @show Xsol
     end
     if converged
         !finite && (Xsol .= NaN)
         return Xsol
     end
-    H = Matrix{T}(undef,n,n)
+    H = Matrix{T}(undef, n, n)
     H .= 0
-    piv = zeros(Int,n)
+    piv = zeros(Int, n)
     dX = copy(Xsol)
     KX = copy(Xsol)
     for i in (it_ss + 1):max_iters
         #@show Xsol
-        KX = mul!(KX,K,Xsol)
+        KX = mul!(KX, K, Xsol)
         H .= -K
-        for k in 1:size(H,1)
-            H[k,k] -= (1 + KX[k])/Xsol[k]
+        for k in 1:size(H, 1)
+            H[k, k] -= (1 + KX[k])/Xsol[k]
         end
         #F already contains H and the pivots, because we refreshed H, we need to refresh
         #the factorization too.
-        F = Solvers.unsafe_LU!(H,piv)
+        F = Solvers.unsafe_LU!(H, piv)
         dX .= 1 ./ Xsol .- 1 .- KX #gradient
-        ldiv!(F,dX) #we solve H/g, overwriting g
+        ldiv!(F, dX) #we solve H/g, overwriting g
         X0 .= Xsol
         for k in 1:length(dX)
             Xk = Xsol[k]
@@ -747,7 +749,7 @@ function assoc_matrix_solve_general(K::AbstractMatrix{T}, X0, n, α, atol ,rtol,
             end
         end
         # Xsol .-= dX
-        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
+        converged, finite = Solvers.convergence(Xsol, X0, atol, rtol, false, Inf)
         #@show converged,finite
         if converged
             finite || (Xsol .= NaN)
@@ -761,8 +763,8 @@ end
 
 function assoc_matrix_solve_ad(Xsol::X, K::KT, K_primal::KP)::Vector{V2} where {V1,V2,X<:AbstractVector{V1},KT<:AbstractMatrix{V2},KP<:AbstractMatrix{V1}}
     N = Val(length(Xsol))
-    f(X_::XX_,tups_::Tuple{KK_,Val{N_}}) where {V1_,V2_,N_,XX_<:AbstractVector{V1_},KK_<:AbstractMatrix{V2_}} = begin
-        TT = promote_type(V1_,V2_)
+    f(X_::XX_, tups_::Tuple{KK_,Val{N_}}) where {V1_,V2_,N_,XX_<:AbstractVector{V1_},KK_<:AbstractMatrix{V2_}} = begin
+        TT = promote_type(V1_, V2_)
         _1 = one(TT)
         K_ = tups_[1]
         #itt = (@inbounds begin
@@ -778,7 +780,7 @@ function assoc_matrix_solve_ad(Xsol::X, K::KT, K_primal::KP)::Vector{V2} where {
         tmp
     end# (1 + ∑_{jb} K⁽ⁱᵃʲᵇ⁾X⁽ⁱᵃʲᵇ⁾ )⁻¹ = Xⁱᵃ for all iₐ, but rearranged.
     # f wrt X has polynomial form, which is easier (and more efficient) to differentiate compared to 1 ./ X
-    return __gradients_for_root_finders(Xsol,(K,N),(K_primal,N),f) # implicit AD
+    return __gradients_for_root_finders(Xsol, (K, N), (K_primal, N), f) # implicit AD
 end
 
 #=
@@ -798,18 +800,18 @@ If compression fails, it returns unmodified indices and the original matrix.
 """
 function compress_assoc_matrix(K)
     n = LinearAlgebra.checksquare(K)
-    idx = zeros(Int,n)
+    idx = zeros(Int, n)
     idx .= 1:n
     n_unique = n
 
     #step 1: check which rows are the same if we translate the row by one and pad with zeros.
     for i in 1:n
-        !iszero(K[i,1]) && continue
+        !iszero(K[i, 1]) && continue
         abs(idx[i]) != i && continue #already compressed
-        Ki = @view K[i,2:end]
-        for j in (i+1):n
-            !iszero(K[j,end]) && continue
-            Kj = @view K[j,1:end-1]
+        Ki = @view K[i, 2:end]
+        for j in (i + 1):n
+            !iszero(K[j, end]) && continue
+            Kj = @view K[j, 1:(end - 1)]
             if Ki == Kj
                 n_unique -= 1
                 idx[j] = -i
@@ -819,7 +821,7 @@ function compress_assoc_matrix(K)
     end
     #failed to compress
     if n_unique == n
-        return K,idx
+        return K, idx
     end
 
     can_compress = true
@@ -827,24 +829,23 @@ function compress_assoc_matrix(K)
     for i in 1:n
         abs(idx[i]) != i && continue #already compressed
         for ii in 2:n
-            Kiii = K[i,ii]
+            Kiii = K[i, ii]
             if iszero(Kiii)
-                for j in (i+1):n
+                for j in (i + 1):n
                     if abs(idx[j]) == i
-                        can_compress = iszero(K[j,ii-1])
+                        can_compress = iszero(K[j, ii - 1])
                     end
                     if !can_compress
                         idx .= 1:n
-                        return K,idx
+                        return K, idx
                     end
                 end
             end
         end
     end
 
-
     #step 3: perform compression
-    J = similar(K,(n_unique,n_unique))
+    J = similar(K, (n_unique, n_unique))
     J .= 0
 
     ii = 0
@@ -853,21 +854,21 @@ function compress_assoc_matrix(K)
         if abs(idx_i) == i
             ii += 1
             if idx_i > 0 #unmodified row, skip zeros
-                Ki = @view K[i,1:end]
+                Ki = @view K[i, 1:end]
                 jj = 0
                 for j in 1:n
                     if abs(idx[j]) == j
                         jj += 1
-                        J[ii,jj] = Ki[j]
+                        J[ii, jj] = Ki[j]
                     end
                 end
             else #repeated,compressed row
-                Ki = @view K[i,2:end]
+                Ki = @view K[i, 2:end]
                 jj = 0
-                for j in 1:n-1
+                for j in 1:(n - 1)
                     if abs(idx[j]) == j
                         jj += 1
-                        J[ii,jj] = Ki[j]
+                        J[ii, jj] = Ki[j]
                     end
                 end
             end
@@ -883,31 +884,31 @@ function compress_assoc_matrix(K)
         if ix < 0
             i_unique += 1
             idx[i] = i_unique
-            for j in (i+1):n
+            for j in (i + 1):n
                 if idx[j] == ix
                     idx[j] = i_unique
                 end
             end
         end
     end
-    return J,idx
+    return J, idx
 end
 
 function __maybe_compress(K)
     n = LinearAlgebra.checksquare(K)
     #step 1: check which rows are the same if we translate the row by one and pad with zeros.
     for i in 1:n
-        !iszero(K[i,1]) && continue
-        Ki = @view K[i,2:end]
-        for j in (i+1):n
-            !iszero(K[j,end]) && continue
-            Kj = @view K[j,1:end-1]
+        !iszero(K[i, 1]) && continue
+        Ki = @view K[i, 2:end]
+        for j in (i + 1):n
+            !iszero(K[j, end]) && continue
+            Kj = @view K[j, 1:(end - 1)]
             if Ki == Kj
                 return true
             end
         end
     end
-   return false
+    return false
 end
 
 #=
@@ -917,25 +918,25 @@ Association implementations, once X is calculated
 =#
 
 #exact calculation of site non-bonded fraction when there is only one site
-function X_exact1(model,V,T,z,data = nothing)
-    xia,xjb,ijab,Δijab = _X_exact1(model,V,T,z,data)
+function X_exact1(model, V, T, z, data=nothing)
+    xia, xjb, ijab, Δijab = _X_exact1(model, V, T, z, data)
     p = assoc_shape(model)
-    pack_X_exact1(xia,xjb,ijab,p.site_offsets)
+    pack_X_exact1(xia, xjb, ijab, p.site_offsets)
 end
 
-function X_and_Δ_exact1(model,V,T,z,data = nothing)
-    xia,xjb,ijab,Δijab = _X_exact1(model,V,T,z,data)
-    Δout = assoc_similar(model,@f(Base.promote_eltype))
-    XX = pack_X_exact1(xia,xjb,ijab,Δout.site_offsets)
+function X_and_Δ_exact1(model, V, T, z, data=nothing)
+    xia, xjb, ijab, Δijab = _X_exact1(model, V, T, z, data)
+    Δout = assoc_similar(model, @f(Base.promote_eltype))
+    XX = pack_X_exact1(xia, xjb, ijab, Δout.site_offsets)
     Δout.values[1] = Δijab
-    return XX,Δout
+    return XX, Δout
 end
 
-@inline function _X_exact1(kia,kjb)
+@inline function _X_exact1(kia, kjb)
     _1 = one(kia)
     if kia == kjb
         x = 2/(_1 + sqrt(_1 + 4*kia))
-        return x,x
+        return x, x
     end
     _1 = one(kia)
     a = kia
@@ -944,17 +945,17 @@ end
     denom = b + sqrt(b*b - 4*a*c)
     xia = -2*c/denom
     xk_ia = kia*xia
-    xjb = (1- xk_ia)/(1 - xk_ia*xk_ia)
-    return xia,xjb
+    xjb = (1 - xk_ia)/(1 - xk_ia*xk_ia)
+    return xia, xjb
 end
 
-function _X_exact1(model,V,T,z,data=nothing)
+function _X_exact1(model, V, T, z, data=nothing)
     κ = assoc_shape(model)
-    i,j,a,b = idx_to_ijab(κ,1)
+    i, j, a, b = idx_to_ijab(κ, 1)
     if data === nothing
-        _Δ = @f(Δ,i,j,a,b)
+        _Δ = @f(Δ, i, j, a, b)
     else
-        _Δ = @f(Δ,i,j,a,b,data)
+        _Δ = @f(Δ, i, j, a, b, data)
     end
     _1 = one(eltype(_Δ))
 
@@ -964,25 +965,25 @@ function _X_exact1(model,V,T,z,data=nothing)
     @inbounds begin
         ia = site_offsets[i] + a - 1   # global index for site (i, a)
         jb = site_offsets[j] + b - 1   # global index for site (j, b)
-        nia,njb = n[ia],n[jb]
-        zi,zj = z[i],z[j]
+        nia, njb = n[ia], n[jb]
+        zi, zj = z[i], z[j]
         ρΔ = _Δ*N_A/V
         kia = ρΔ*nia*zi
         kjb = ρΔ*njb*zj
     end
-    xia,xjb = _X_exact1(kia,kjb)
-    return xia,xjb,(i,j,a,b),_Δ
+    xia, xjb = _X_exact1(kia, kjb)
+    return xia, xjb, (i, j, a, b), _Δ
 end
 
-function pack_X_exact1(xia,xjb,ijab,site_offsets)
-    i,j,a,b = ijab
+function pack_X_exact1(xia, xjb, ijab, site_offsets)
+    i, j, a, b = ijab
     ia = site_offsets[i] + a - 1   # global index for site (i, a)
     jb = site_offsets[j] + b - 1   # global index for site (j, b)
     n = site_offsets[end] - 1
-    Xsol = fill(one(xia),n)
+    Xsol = fill(one(xia), n)
     Xsol[jb] = xjb
     Xsol[ia] = xia
-    return PackedVofV(site_offsets,Xsol)
+    return PackedVofV(site_offsets, Xsol)
 end
 
 function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
@@ -1012,7 +1013,7 @@ function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
         iszero(zi) && continue
         Xᵢ = X[i]
         resᵢₐ = zero(Q2)
-        for (a,nᵢₐ) ∈ pairs(ni)
+        for (a, nᵢₐ) ∈ pairs(ni)
             Xᵢₐ = primalval(Xᵢ[a])
             resᵢₐ += nᵢₐ * (log(Xᵢₐ) + 1 - Xᵢₐ)
         end
@@ -1022,10 +1023,10 @@ function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
     Q1 = zero(eltype(Δ.values))
     Vinv = 1/V
     if !iszero(Vinv)
-        for (idx,(i,j),(a,b)) in indices(Δ)
-            Xia,nia = primalval(X[i][a]),n[i][a]
-            Xjb,njb = primalval(X[j][b]),n[j][b]
-            zi,zj = z[i],z[j]
+        for (idx, (i, j), (a, b)) in indices(Δ)
+            Xia, nia = primalval(X[i][a]), n[i][a]
+            Xjb, njb = primalval(X[j][b]), n[j][b]
+            zi, zj = z[i], z[j]
             if !iszero(zi) && !iszero(zj)
                 Q1 -= z[i]*z[j]*nia*njb*Xia*Xjb*(Δ.values[idx]*N_A)
             end
@@ -1059,9 +1060,9 @@ function a_assoc_impl(model::EoSModel, V, T, z, X)
 
         Xᵢ = X[i]
         resᵢₐ = _0
-        for (a,nᵢₐ) ∈ pairs(ni)
+        for (a, nᵢₐ) ∈ pairs(ni)
             Xᵢₐ = Xᵢ[a]
-            resᵢₐ +=  nᵢₐ * (log(Xᵢₐ) - Xᵢₐ*0.5 + 0.5)
+            resᵢₐ += nᵢₐ * (log(Xᵢₐ) - Xᵢₐ*0.5 + 0.5)
         end
         res += resᵢₐ*zi
     end
@@ -1071,9 +1072,9 @@ end
 #exact calculation of a_assoc when there is only one site pair
 #in this case the fraction of non-bonded sites is simply xia and xjb
 #so whe don't need to allocate the X vector
-function a_assoc_exact_1(model::EoSModel,V,T,z,data = nothing)
-    xia,xjb,ijab,Δijab = _X_exact1(model,V,T,z,data)
-    i,j,a,b = ijab
+function a_assoc_exact_1(model::EoSModel, V, T, z, data=nothing)
+    xia, xjb, ijab, Δijab = _X_exact1(model, V, T, z, data)
+    i, j, a, b = ijab
     _0 = zero(xia)
     sites = getsites(model)
     nn = sites.n_sites
@@ -1090,41 +1091,45 @@ end
 
 """
     @assoc_loop(Xold,Xnew,expr)
+
 Solves an association problem, given an expression for the calculation of the fraction of non-bonded sites `X`.
 The macro takes care of creating the appropriate shaped vectors, and passing the appropriate iteration parameters from `AssocOptions`.
 Expects the following variable names in scope:
-- `model` : EoS Model used.
-- `V`,`T`,`z` : Total volume, Temperature, mol amounts.
-`Xold` and `Xnew` are Vectors of Vectors, that can be indexed by component and site (`X[i][a]`).
+
+  - `model` : EoS Model used.
+  - `V`,`T`,`z` : Total volume, Temperature, mol amounts.
+    `Xold` and `Xnew` are Vectors of Vectors, that can be indexed by component and site (`X[i][a]`).
+
 ## Example
+
 ```julia
 function X(model::DAPTModel, V, T, z)
     _1 = one(V+T+first(z))
     σ = model.params.sigma.values[1][1]
-    θ_c = model.params.theta_c.values[1,1][2,1]
+    θ_c = model.params.theta_c.values[1, 1][2, 1]
     κ = (1 - cos(θ_c*π/180))^2/4
-    ε_as = model.params.epsilon_assoc.values[1,1][2,1]
+    ε_as = model.params.epsilon_assoc.values[1, 1][2, 1]
     f = exp(ε_as/(T))-1
     ρ = N_A*∑(z)/V
     Irc = @f(I)
     Xsol = @association_loop X_old X_new for i ∈ @comps, a ∈ @sites(i)
-            X4 = (1-X_old[i][a])^4
-            c_A = 8*π*κ*σ^3*f*(ρ*X_old[i][a]*(Irc*(1-X4) + X4/(π*ρ*σ^3)) + 2*ρ*(X_old[i][a]^2)*((1 - X_old[i][a])^3)*(Irc - 1/(π*ρ*σ^3)) )
-            X_new[i][a] =1/(1+c_A)
+        X4 = (1-X_old[i][a])^4
+        c_A = 8*π*κ*σ^3*f*(ρ*X_old[i][a]*(Irc*(1-X4) + X4/(π*ρ*σ^3)) + 2*ρ*(X_old[i][a]^2)*((1 - X_old[i][a])^3)*(Irc - 1/(π*ρ*σ^3)))
+        X_new[i][a] = 1/(1+c_A)
     end
     return Xsol
 end
 ```
 """
-macro assoc_loop(Xold::Symbol,Xnew::Symbol,expr)
+macro assoc_loop(Xold::Symbol, Xnew::Symbol, expr)
     return quote
         __sites = Clapeyron.getsites(model)
         idxs = __sites.n_sites.p
-        X0 = fill(one(Base.promote_eltype(model,V,T,z)),length(__sites.n_sites.v))
+        X0 = fill(one(Base.promote_eltype(model, V, T, z)), length(__sites.n_sites.v))
 
-        function x_assoc_iter!(__X_new_i,__X_old_i)
-            $Xold = Clapeyron.PackedVofV(idxs,__X_old_i)
-            $Xnew = Clapeyron.PackedVofV(idxs,__X_new_i)
+        function x_assoc_iter!(__X_new_i, __X_old_i)
+            $Xold = Clapeyron.PackedVofV(idxs, __X_old_i)
+            $Xnew = Clapeyron.PackedVofV(idxs, __X_new_i)
             $expr
             return __X_new_i
         end
@@ -1135,40 +1140,39 @@ macro assoc_loop(Xold::Symbol,Xnew::Symbol,expr)
         max_iters = options.max_iters
         α = options.dampingfactor
 
-        Xsol = Clapeyron.Solvers.fixpoint(x_assoc_iter!,X0,Clapeyron.Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
+        Xsol = Clapeyron.Solvers.fixpoint(x_assoc_iter!, X0, Clapeyron.Solvers.SSFixPoint(α), atol=atol, rtol=rtol, max_iters=max_iters)
         Xsol
     end |> esc
 end
 
-recombine_assoc!(model) = recombine_assoc!(model,model.params.sigma)
+recombine_assoc!(model) = recombine_assoc!(model, model.params.sigma)
 
-function recombine_assoc!(model,σ)
+function recombine_assoc!(model, σ)
     iszero(assoc_pair_length(model)) && return model
     ε = model.params.epsilon_assoc
     κ = model.params.bondvol
-    assoc_mix!(κ,ε,σ,assoc_options(model))
+    assoc_mix!(κ, ε, σ, assoc_options(model))
     return model
 end
 
-function assoc_matrix_solve_pure(K,idx,options)
+function assoc_matrix_solve_pure(K, idx, options)
     n = LinearAlgebra.checksquare(K) #size
     #initialization procedure:
     j = length(idx) - 1
-    X = Vector{T}(undef,n)
+    X = Vector{T}(undef, n)
     for i in 1:j
-        v = idx[i]:idx[i+1]-1
+        v = idx[i]:(idx[i + 1] - 1)
         Xi = @view X[v]
-        Ki = @view K[v,v]
-        _,success = assoc_matrix_x0!(Ki,Xi)
+        Ki = @view K[v, v]
+        _, success = assoc_matrix_x0!(Ki, Xi)
         if !success
-            res = assoc_matrix_solve(copy(Ki),options)
+            res = assoc_matrix_solve(copy(Ki), options)
             Xi .= res
         end
-
     end
     return X
 end
 
 @public @assoc_loop
-@public getsites,assoc_matrix_solve,assoc_site_matrix,Δ,assoc_strength,X
-@public assoc_shape,assoc_pair_length,assoc_similar,assoc_options
+@public getsites, assoc_matrix_solve, assoc_site_matrix, Δ, assoc_strength, X
+@public assoc_shape, assoc_pair_length, assoc_similar, assoc_options

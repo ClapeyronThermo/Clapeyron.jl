@@ -1,36 +1,39 @@
 """
     AssocOptions(;rtol = 1e-12,atol = 1e-12,max_iters = 1000,dampingfactor = 0.5,combining =:nocombining,implicit_ad = false)
+
 Struct containing iteration parameters for the solver of association sites.
 `max_iters`,`rtol`,`atol` control the convergence criteria.
 `dampingfactor` controls the damping factor applied during the sucessive substitution phase of the solver.
 If the `implicit_ad` is set to `true`, then an implicit differentiation scheme (using `IFTDuals`) is used to solve derivatives of the association problem.
-This could speed up some calculations. 
+This could speed up some calculations.
 The `combining` option controls the type of combining rule applied to the association strength:
-- `nocombining` (default). Does not perform any combination rules.
-- `:cr1`: "combining rule - 1":
+
+  - `nocombining` (default). Does not perform any combination rules.
+  - `:cr1`: "combining rule - 1":
     ```
     ε[i,j][a,b] = (ε[i,i][a,b] + ε[j,j][a,b])/2
     β[i,j][a,b] = √(β[i,i][a,b] * β[j,j][a,b])
     ```
-- `:esd`,`:elliott`: Elliott–Suresh–Donohue combining rule:
+  - `:esd`,`:elliott`: Elliott–Suresh–Donohue combining rule:
     ```
     ε[i,j][a,b] = (ε[i,i][a,b] + ε[j,j][a,b])/2
     β[i,j][a,b] = √(β[i,i][a,b] * β[j,j][a,b]) * (σ[i]*σ[j]/σ[i,j])^3
     ```
-- `:esd_runtime`,`:elliott_runtime`: combining rule, performed at runtime:
+  - `:esd_runtime`,`:elliott_runtime`: combining rule, performed at runtime:
     ```
     Δ[i,j][a,b] = √(Δ[i,i][a,b] * Δ[j,j][a,b]) 
     ```
-- `:dufal`,`mie15`: combining rule used for `SAFTVRMie15`
+  - `:dufal`,`mie15`: combining rule used for `SAFTVRMie15`
     ```
     ε[i,j][a,b] = (ε[i,i][a,b] + ε[j,j][a,b])/2
     β[i,j][a,b] = (∛β[i,i][a,b] + ∛β[j,j][a,b])^3 / 8
     ```
 
 !!! info "Association Scheme matters"
+
     All combining rules implicitly requires that both `Δ(i,i,a,b)` and  `Δ(j,j,a,b)` are non-zero, that means that components that don't self associate will not be combined.
 """
-@Base.kwdef struct AssocOptions <: ClapeyronParam
+Base.@kwdef struct AssocOptions <: ClapeyronParam
     rtol::Float64 = 1e-12
     atol::Float64 = 1e-12
     max_iters::Int = 1000
@@ -43,11 +46,11 @@ end
 default_assoc_options(m::EoSModel) = default_assoc_options(parameterless_type(m))
 default_assoc_options(m) = AssocOptions()
 
-Base.show(io::IO,::MIME"text/plain",options::AssocOptions) = show_as_namedtuple(io,options)
-Base.show(io::IO,options::AssocOptions) = show_as_namedtuple(io,options)
+Base.show(io::IO, ::MIME"text/plain", options::AssocOptions) = show_as_namedtuple(io, options)
+Base.show(io::IO, options::AssocOptions) = show_as_namedtuple(io, options)
 
 is_splittable(::AssocOptions) = false
 
 __init_assoc_options_kw(::Nothing) = AssocOptions()
-__init_assoc_options_kw(s) = AssocOptions(combining = Symbol(s))
+__init_assoc_options_kw(s) = AssocOptions(combining=Symbol(s))
 __init_assoc_options_kw(ref::AssocOptions) = ref

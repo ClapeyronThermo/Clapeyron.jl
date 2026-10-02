@@ -5,17 +5,19 @@ export PRAlpha
 
 """
     PRAlpha <: SoaveAlphaModel
-    
+
     PRAlpha(components;
     userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters
 
-- `acentricfactor`: Single Parameter (`Float64`)
+  - `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
+
 Cubic alpha `(α(T))` model. Default for [`PR`](@ref) EoS.
+
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
@@ -25,6 +27,7 @@ mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
 It is equivalent to `SoaveAlpha`.
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 alpha = PRAlpha("water") #single input
@@ -38,9 +41,8 @@ alpha = PRAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/
 # Passing parameters directly
 alpha = PRAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
 ```
-
 """
 PRAlpha
 default_locations(::Type{PRAlpha}) = critical_data()
 
-@inline α_m(model,::PRAlpha) = (0.37464,1.54226,-0.26992)
+@inline α_m(model, ::PRAlpha) = (0.37464, 1.54226, -0.26992)

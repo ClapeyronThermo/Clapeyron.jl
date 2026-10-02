@@ -4,8 +4,8 @@ using SparseArrays
 #for the assoc solver and the sparse packed VofV
 import PackedVectorsOfVectors
 const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
-const PackedVector{T} = PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}} where T
-const PackedSubVector{T} = SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true} where T
+const PackedVector{T} = PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64},Vector{T},SubArray{T,1,Vector{T},Tuple{UnitRange{Int64}},true}} where T
+const PackedSubVector{T} = SubArray{T,1,Vector{T},Tuple{UnitRange{Int64}},true} where T
 #for non allocating vectors of zeros and ones
 using Roots: Roots
 using Scratch
@@ -92,7 +92,7 @@ include("utils/recombine.jl")
 include("database/combiningrules.jl")
 
 #general DB files
-using Tables,CSV
+using Tables, CSV
 
 #used for reading multiparameter json files
 using JSON
@@ -103,8 +103,6 @@ include("database/ParamOptions.jl")
 include("database/database.jl")
 #transform Tables.jl tables to Clapeyron csv files
 include("database/UserReader.jl")
-
-
 
 #macros, used for defining models
 include("utils/macros.jl")
@@ -124,7 +122,6 @@ include("utils/acceleration_ss.jl")
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")
 
-
 #=
 the dependency chain is the following:
 base --> database(params)  -|-> split_model --> methods -|-> models
@@ -132,7 +129,6 @@ base --> database(params)  -|-> split_model --> methods -|-> models
 =#
 
 #Clapeyron EoS collection
-
 
 include("models/ideal/ideal.jl")
 include("models/ideal/BasicIdeal.jl")
@@ -310,14 +306,11 @@ include("models/SAFT/SAFTVRMie/variants/eSAFTVRMie.jl")
 include("models/SAFT/PCSAFT/variants/ePCSAFT.jl")
 include("models/SAFT/CPA/variants/eCPA.jl")
 
-
 include("methods/property_solvers/electrolytes/electrolytes.jl")
 include("methods/property_solvers/multicomponent/tp_flash/electrolyte_flash.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
 
 include("estimation/estimation.jl")
-
-
 
 #precompile workload. should be loaded at the end
 #include("precompile.jl")

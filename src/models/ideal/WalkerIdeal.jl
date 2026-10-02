@@ -28,20 +28,21 @@ default_gclocations(::Type{WalkerIdeal}) = ["ideal/WalkerIdeal_Groups.csv"]
 
 ## Input parameters
 
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `Nrot`: Single Parameter (`Int`)
-- `theta1`: Single Parameter (`Float64`)
-- `theta2`: Single Parameter (`Float64`)
-- `theta3`: Single Parameter (`Float64`)
-- `theta4`: Single Parameter (`Float64`)
-- `deg1`: Single Parameter (`Int`)
-- `deg2`: Single Parameter (`Int`)
-- `deg3`: Single Parameter (`Int`)
-- `deg4`: Single Parameter (`Int`)
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `Nrot`: Single Parameter (`Int`)
+  - `theta1`: Single Parameter (`Float64`)
+  - `theta2`: Single Parameter (`Float64`)
+  - `theta3`: Single Parameter (`Float64`)
+  - `theta4`: Single Parameter (`Float64`)
+  - `deg1`: Single Parameter (`Int`)
+  - `deg2`: Single Parameter (`Int`)
+  - `deg3`: Single Parameter (`Int`)
+  - `deg4`: Single Parameter (`Int`)
 
 ## Description
 
 Walker [1] Group Contribution Ideal Model.
+
 ```
 Cpᵢ(T)/R = (5+NRot)/2 ∑νᵢₖ∑gₖᵥ(θₖᵥ/T)^2*exp(θₖᵥ/T)/(1-exp(θₖᵥ/T)) , v ∈ 1:4 
 ```
@@ -52,14 +53,13 @@ Cpᵢ(T)/R = (5+NRot)/2 ∑νᵢₖ∑gₖᵥ(θₖᵥ/T)^2*exp(θₖᵥ/T)/(1-e
 
 ## References
 
-1. Walker, P. J., & Haslam, A. J. (2020). A new predictive group-contribution ideal-heat-capacity model and its influence on second-derivative properties calculated using a free-energy equation of state. Journal of Chemical and Engineering Data, 65(12), 5809–5829. [doi:10.1021/acs.jced.0c00723](https://doi.org/10.1021/acs.jced.0c00723)
-
+ 1. Walker, P. J., & Haslam, A. J. (2020). A new predictive group-contribution ideal-heat-capacity model and its influence on second-derivative properties calculated using a free-energy equation of state. Journal of Chemical and Engineering Data, 65(12), 5809–5829. [doi:10.1021/acs.jced.0c00723](https://doi.org/10.1021/acs.jced.0c00723)
 """
 WalkerIdeal
 
 export WalkerIdeal
 
-function __walker_fi(θ,T)
+function __walker_fi(θ, T)
     if !iszero(primalval(θ))
         log(1-exp(-θ/T)) + θ/(2*T)
     else
@@ -67,7 +67,7 @@ function __walker_fi(θ,T)
     end
 end
 
-function a_ideal(model::WalkerIdealModel,V,T,z)
+function a_ideal(model::WalkerIdealModel, V, T, z)
     Mw = model.params.Mw.values
     Nrot = model.params.Nrot.values
     θ1 = model.params.theta1.values
@@ -84,13 +84,13 @@ function a_ideal(model::WalkerIdealModel,V,T,z)
     res = zero(V+T+first(z))
     Σz = sum(z)
     @inbounds for i in @comps
-        ni,zi = n[i],z[i]
-        Mwi = dot(ni,Mw)
-        Nroti = dot(ni,Nrot)/sum(ni)
+        ni, zi = n[i], z[i]
+        Mwi = dot(ni, Mw)
+        Nroti = dot(ni, Nrot)/sum(ni)
         Λ = h/sqrt(k_B*T*Mwi/N_A)
-        res += xlogx(zi,N_A/V*Λ^3)
+        res += xlogx(zi, N_A/V*Λ^3)
         res += zi*(-Nroti/2*log(T))
-        res += zi*(sum(ni[k]*sum(g_vib[v][k]*(__walker_fi(θ_vib[v][k],T)) for v in 1:4) for k in @groups(i)))
+        res += zi*(sum(ni[k]*sum(g_vib[v][k]*(__walker_fi(θ_vib[v][k], T)) for v in 1:4) for k in @groups(i)))
     end
-    return res/Σz - 1.
+    return res/Σz - 1.0
 end
