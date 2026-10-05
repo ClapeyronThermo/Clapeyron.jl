@@ -1,6 +1,8 @@
 #volume calculations
 include("volume.jl")
 
+include("isotherm_coexistence.jl")
+
 #lnϕ calculations
 include("fugacity_coefficient.jl")
 

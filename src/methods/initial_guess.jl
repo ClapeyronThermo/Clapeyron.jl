@@ -206,7 +206,7 @@ It can be overloaded to provide more accurate estimates if necessary. If an EoS 
 """
 function x0_sat_pure(model,T)
     satmodel = saturation_model(model)
-    
+
     if !has_fast_crit_pure(satmodel)
         _,vl,vv = x0_sat_pure_virial(satmodel,T)
     else
@@ -325,7 +325,7 @@ function x0_sat_pure_virial(model,T,z = SA[1.0])
             B_vdw = ∑z*(b - a/RT)
             vv_vdw_2b = -2*B_vdw
             if vv_vdw_2b < vv_B
-                ps,vls,vvs = x0_sat_pure_spinodal(model,T,z,vl,vv_B,B)
+                ps,vls,vvs = x0_sat_pure_spinodal(model,T,z,vl,vv_B)
                 return ps,vls,vvs
             end
         end
@@ -449,12 +449,12 @@ function liquid_pressure_from_virial(model,T,z =SA[1.0],B = second_virial_coeffi
     #vv_virial = -2*B #maximum gas volume predicted by virial equation
     pv_virial = -0.25*n*Rgas(model)*T/B #maximum virial predicted pressure
     γT = pv_eos/pv_virial
-    
+
 
 
     #this handles pv_eos = NaN and pv_eos < pv_virial, returning an equivalent result to using pv_eos = pv_virial
     !(pv_eos > pv_virial) && (return 1.12491990759086*pv_virial*oneunit(pv_eos))
-    
+
     #measure of how far we are from the critical point. equivalent to B*B/2C, where C is the third virial coefficient, solved from the pressure.
     #if K < 1, that means the third virial coefficient influence is stronger than the second virial coefficient.
     #K = -4*(1 + 4*B*pv_eos/RT)
@@ -468,293 +468,65 @@ function liquid_pressure_from_virial(model,T,z =SA[1.0],B = second_virial_coeffi
     return γc*pv_virial #pressure of which we are (almost) sure there exists a liquid root
 end
 
-function pure_spinodal(model,_T,z = SA[1.0];phase = :l)
-    B = second_virial_coefficient(model,_T,z)
-    _v_ub = -2*B
-    pv_eos = pressure(model,_v_ub,_T,z)
-    pl = liquid_pressure_from_virial(model,_T,z,B,pv_eos)
-    _v_lb = volume(model,pl,_T,z,phase = :l)
-    T,v_lb,v_ub = promote(_T,_v_lb,_v_ub)
-    return pure_spinodal_impl(model,T,v_lb,v_ub,phase,true,z)
-end
+
 
 #given an hermite polynomial that interpolates the spinodals
 #find the intermediate point where d2pdv2 = 0 and d3pdv3 < 0
 #this point is in between the liquid and vapour spinodals.
-function _find_vm(dpoly,v_lb::K,v_ub::K) where K
-    d2poly = Solvers.polyder(dpoly)
-    d3poly = Solvers.polyder(d2poly)
-    lb = zero(v_lb)
-    ub = v_ub - v_lb
-    if iszero(last(d2poly))
-        c,b,a,_ = d2poly
-        if iszero(a)
-            #bx + c = 0
-            v = -c/b
-            nr,v1,v2,v3 = 1,v,v,v
-        else
-            dd = sqrt(b*b - 4*a*c)
-            isnan(dd) && return zero(K)/zero(K)
-            v1 = (-b + dd)/(2*a)
-            v2 = (-b - dd)/(2*a)
-            v3 = zero(K)/zero(K)
-            nr = 2
-        end
-    else
-        nr,v1,v2,v3 = Solvers.real_roots3(d2poly)
-    end
-    if (lb <= v1 <= ub) && evalpoly(v1,dpoly) > 0 && evalpoly(v1,d3poly) < 0
-        return v1 + v_lb
-    elseif nr > 1 && (lb <= v3 <= ub) && evalpoly(v3,dpoly) > 0 && evalpoly(v3,d3poly) < 0 #v3 != v1 if nr > 1
-        return v3 + v_lb
-    elseif  nr > 2 && (lb <= v2 <= ub) && evalpoly(v2,dpoly) > 0 && evalpoly(v2,d3poly) < 0 #v2 != (v1,v3) if nr > 2
-        return v2 + v_lb
-    else
-        return zero(K)/zero(K)
-    end
-end
 
-function pure_spinodal_newton_bracket(model,T,v,f,dp_scale,z = SA[1.0])
-    vlo,vhi = v
-    flo,fhi = f
-    vs = 0.5*(vlo + vhi)
-    atol = 1e-8
-    vs_old = vs*Inf
-    for j in 1:25
-        pj,dpj,d2pj = p∂p∂2p(model,vs,T,z)
-        Δ = dpj/d2pj
-        vs_newton = vs - Δ
-        fs = dpj
-        if fs*flo < 0
-            vhi = vs
-            fhi = fs
-        elseif fs*fhi < 0
-            vlo = vs
-            flo = fs
-        else
-            return vs
-        end
-
-        if vlo <= vs_newton <= vhi || abs(Δ)/vs < 0.01
-            vs_old = vs
-            vs = vs_newton
-        else
-            Δ = vs_old - 0.5*(vlo + vhi)
-            vs_old = vs
-            vs = 0.5*(vlo + vhi)
-
-        end
-        if abs(Δ) < atol || abs(dp_scale*fs) < atol
-            return vs
-        end
-    end
-
-    return zero(vs)/zero(vs)
-end
-
-function pure_spinodal_newton(model,T,z,v0,dp_scale = v0*v0/(Rgas(model)*T))
-    function dp(rhox) #dpdrho = 0
-        pj,dpj,d2pj = p∂p∂2p_rho(model,rhox,T,z)
-        return dpj/dp_scale,dpj/d2pj
-    end
-    n = sum(z)
-    rho0 = n/v0
-    prob = Roots.ZeroProblem(dp,rho0)
-    rho_sol = Roots.solve(prob,Roots.Newton())
-    vsol = n/rho_sol
-    return vsol
-end
-
-function pure_spinodal_impl(model,T::K,v_lb::K,v_ub::K,phase::Symbol,retry,z) where K
-    fl,dfl,d2fl = p∂p∂2p(model,v_lb,T,z)
-    fv,dfv,d2fv = p∂p∂2p(model,v_ub,T,z)
-    dfx = ifelse(is_liquid(phase),dfl,dfv)
-    vx = ifelse(is_liquid(phase),v_lb,v_ub)
-    nan = zero(fl)/zero(fl)
-    isnan(vx) && return nan
-    poly = Solvers.hermite5_poly(v_lb,v_ub,fl,fv,dfl,dfv,d2fl,d2fv)
-    dpoly = Solvers.polyder(poly)
-
-    dp_scale = evalpoly(vx - v_lb,dpoly)
-    #we already have a bracket.
-    if dfl*dfv < 0
-        return pure_spinodal_newton_bracket(model,T,(v_lb,v_ub),(dfl,dfv),dp_scale,z)
-    end
-
-    #find the middle point between the liquid and vapour spinodals.
-    vm = _find_vm(dpoly,v_lb,v_ub)
-    fm,dfm,d2fm = p∂p∂2p(model,vm,T,z)
-    #find the liquid of gas spinodal using the quintic hermite interpolation.
-    v_bracket_hermite = minmax(vx - v_lb,vm - v_lb)
-    !(evalpoly(vx - v_lb,dpoly)*evalpoly(vm - v_lb,dpoly) < 0) && return nan
-    v_spinodal_hermite_prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket_hermite)
-    vh = Roots.solve(v_spinodal_hermite_prob,xrtol = 1e-5) + v_lb
-    fh,dfh,d2fh = p∂p∂2p(model,vh,T,z)
-    unstable_not_found = dfx < 0 && dfm < 0 && dfh < 0
-
-    if unstable_not_found
-        if !retry
-            return nan
-        end
-
-        v_ub_new = v_ub
-        v_lb_new = v_lb - dfl/d2fl
-        if dfm < 0 && d2fm < 0 && vm < v_ub_new
-            v_ub_new = vm
-        end
-
-        if dfh < 0 && d2fh < 0 && vh < v_ub_new
-            v_ub_new = vh
-        end
-
-        phase_h = VT_identify_phase(model,vh,T,z)
-
-        if is_vapour(phase_h) && is_liquid(phase) && d2fh > 0 && d2fm > 0
-            #v_lb_new = v_lb - dfl/d2fl
-            v_ub_new = vh
-        end
-
-        if is_liquid(phase_h) && is_liquid(phase) && vh > v_lb_new
-            v_lb_new = vh
-        end
-
-        return pure_spinodal_impl(model,T,v_lb_new,v_ub_new,phase,false,z)
-    end
-
-    if dfx*dfh <= 0
-        if vx < vh
-            v_bracket = (vx,vh)
-            dp_bracket = (dfx,dfh)
-        else
-            v_bracket = (vh,vx)
-            dp_bracket = (dfh,dfx)
-        end
-        return pure_spinodal_newton_bracket(model,T,v_bracket,dp_bracket,dp_scale,z)
-    elseif dfx*dfm <= 0
-        if vx < vm
-            v_bracket = (vx,vm)
-            dp_bracket = (dfx,dfm)
-        else
-            v_bracket = (vm,vx)
-            dp_bracket = (dfm,dfx)
-        end
-        return pure_spinodal_newton_bracket(model,T,v_bracket,dp_bracket,dp_scale,z)
-    else
-        throw(error("Cannot determine spinodal bracket for $(typeof(model)) at phase = :$phase. input volume values are: ($v_lb,$v_ub)"))
-    end
-end
 
 """
-    p,vl,vv = x0_sat_pure_spinodal(model,T,z =SA[1.0],B = second_virial_coefficient(model,T))
+    p,vl,vv = x0_sat_pure_spinodal(model,T,z = SA[1.0])
 
 Calculates initial points for pure saturation pressure, using a spinodal approach.
 The saturation pressure is assumed to be `(psl + psv)/2` where `psl` and `psv` are the pressures of the liquid and vapour spinodals.
 """
-function x0_sat_pure_spinodal(model,T,z = SA[1.0],B = second_virial_coefficient(model,T,z))
+function x0_sat_pure_spinodal(model,T,z = SA[1.0],B = nothing)
     v_ub = -2*B
     pl = liquid_pressure_from_virial(model,T,z,B)
     v_lb = volume(model,pl,T,z,phase = :l)
     return x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,B)
 end
 
-function x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,B = second_virial_coefficient(model,T,z),Vc = nothing)
-    if Vc === nothing
-        _vc = zero(_v_lb)/zero(_v_ub)
-    else
-        _vc,_,_ = promote(Vc,_v_lb,_v_ub)
-    end
-    T,v_lb,v_ub,vc = promote(_T,_v_lb,_v_ub,_vc)
-    p(x) = pressure(model,x,T,z)
+function x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,vm = nothing,B = nothing)
 
-    if isnan(vc)
-        vsl = pure_spinodal_impl(model,_T,_v_lb,_v_ub,:l,true,z)
-    else
-        vsl = pure_spinodal_impl(model,T,v_lb,vc,:l,true,z)
+    #1: find a bracket that contains an additional unstable point
+    s0l,s0v,s0m,status = coexistence_volumes_bracketed(model,_T,z,_v_lb,_v_ub,vm,branches = :all)
+
+    #no coexistence
+    if status === :failure
+        xx = s0m.v
+        nan = zero(xx)/zero(xx)
+        return nan,nan,nan
     end
 
-    psl = p(vsl)
-    if isnan(vsl)
-        return pressure(model,v_lb,T,z),v_lb,v_ub
-    end
-    if isnan(vc)
-        vsv = pure_spinodal_impl(model,T,vsl,v_ub,:v,true,z)
-    else
-        vsv = pure_spinodal_impl(model,T,vc,v_ub,:v,true,z)
-    end
+    #2. refine brackets, find, at each branch, a pair of points that contains the equilibria
+    coexistence_result = coexistence_get_good_bracket(model,_T,z,s0l,s0v,s0m)
 
-    if isnan(vsv)
-        return pressure(model,v_lb,T,z),v_lb,v_ub
-    end
-    plb = p(v_lb)
-    pub = p(v_ub)
-    psl = p(vsl)
-    psv = p(vsv)
-    pmid = 0.5*max(zero(psl),psl) + 0.5*psv
-    #=
-    vl = volume(model,pmid,T,phase = :l,vol0 = v_lb)
-    vv = volume(model,pmid,T,phase = :v)
-    return pmid,vl,vv
-    =#
-    #
-    if plb < psv
-        vsl_lb = volume(model,psv,T,z,phase = :l, vol0 = v_lb)
-    else
-        vsl_lb = one(psl)*v_lb
-    end
-
-    if pub >= min(pmid,max(psl,zero(psl)))
-        vsv_ub = sum(z)*Rgas(model)*T/pmid
-    else
-        vsv_ub = one(psv)*v_ub
-    end
-    return _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B,z)
+    return __x0_sat_pure_spinodal(model,_T,z,coexistence_result,B)
 end
 
-function _x0_sat_pure_spinodal(model,T,vsl_lb,vsv_ub,vsl,vsv,B,z)
-    psl,_,d2psl = p∂p∂2p(model,vsl,T,z)
-    psv,_,d2psv = p∂p∂2p(model,vsv,T,z)
-    psl_lb,dpsl_lb,d2psl_lb = p∂p∂2p(model,vsl_lb,T,z)
-    dpsl = zero(psl)
-    poly_l = Solvers.hermite5_poly(vsl_lb,vsl,psl_lb,psl,dpsl_lb,dpsl,d2psl_lb,d2psl)
-    ps_mid = 0.5*(psv + max(psl,zero(psl)))
-    vl = volume_from_spinodal(ps_mid,poly_l,vsl_lb,0.5*(vsl_lb + vsl) - vsl_lb)
-    n = sum(z)
-    if psl < 0
-        vv = volume_virial(B,ps_mid,T,z)
-        isnan(vv) && (vv = n*Rgas(model)*T/ps_mid)
-        return ps_mid,vl,vv
+function __x0_sat_pure_spinodal(model,T,z,coexistence_result,B)
+    sl,sv,_,p̄s = coexistence_result
+    sl_lo,sl_hi = sl
+    sv_lo,sv_hi = sv
+    p̄l,p̄v = p̄s
+   @show sl_lo
+   @show sl_hi
+   @show sv_lo
+   @show sv_hi
+    if p̄l < 0 || sl_hi.p < 0
+        psat = sv_hi.p
+        vv = sv_hi.v
+    else
+        pl = min(sl_hi.p,p̄l)
+        pv = max(sv_lo.p,p̄v)
+        psat = 0.5*(pv + pl)
+        vv = coexistence_interpolate_volume(sv_lo,sv_hi,psat,false)
     end
-    psv_ub,dpsv_ub,d2psv_ub = p∂p∂2p(model,vsv_ub,T,z)
-    dpsv = zero(psl)
-    poly_v = Solvers.hermite5_poly(vsv,vsv_ub,psv,psv_ub,dpsv,dpsv_ub,d2psv,d2psv_ub)
-    vv = volume_from_spinodal(ps_mid,poly_v,vsv,(zero(vsv),vsv_ub - vsv))
-    return ps_mid,vl,vv
-end
 
-function volume_from_spinodal(p,poly,vshift,v0)
-    f(v) = p - evalpoly(v,poly)
-
-    if length(v0) == 2
-        v1,v2 = v0
-        f1,f2 = f(v1),f(v2)
-        if f1*f2 < 0
-            prob = Roots.ZeroProblem(f,v0)
-            return Roots.solve(prob) + vshift
-        else
-            #something really wrong happened with the bracketing,
-            #hopefully the hermite polynomial should reproduce the EoS in a vicinity of the
-            #interpolated region.
-            if abs(f1) < abs(f2)
-                prob = Roots.ZeroProblem(f,v1)
-                return Roots.solve(prob) + vshift
-            else
-                prob = Roots.ZeroProblem(f,v2)
-                return Roots.solve(prob) + vshift
-            end
-        end
-    end
-    prob = Roots.ZeroProblem(f,v0)
-    return Roots.solve(prob) + vshift
+    vl = coexistence_interpolate_volume(sl_lo,sl_hi,psat,true)
+    return psat,vl,vv
 end
 
 x0_sat_pure_crit(model,T) = x0_sat_pure_crit(model,T,crit_pure(model))
@@ -1078,6 +850,7 @@ critical_tsat_extrapolation(model,p,Tc,Vc) = critical_tsat_extrapolation(model,p
 
 dpdT_saturation(model::EoSModel,v1::Number,v2,T) = dpdT_saturation(model,model,v1,v2,T,SA[1.0],SA[1.0])
 dpdT_saturation(model1::EoSModel,model2::EoSModel,v1,v2,T) = dpdT_saturation(model1,model2,v1,v2,T,SA[1.0],SA[1.0])
+
 function dpdT_saturation(model1::EoSModel,model2::EoSModel,v1,v2,T,w1,w2)
     ∑w1 = sum(w1)
     ∑w2 = sum(w2)

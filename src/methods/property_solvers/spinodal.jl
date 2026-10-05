@@ -1,4 +1,89 @@
 
+function pure_spinodal(model,_T,z = SA[1.0];phase = :l)
+    B = second_virial_coefficient(model,_T,z)
+    _v_ub = -2*B
+    pv_eos = pressure(model,_v_ub,_T,z)
+    pl = liquid_pressure_from_virial(model,_T,z,B,pv_eos)
+    _v_lb = volume(model,pl,_T,z,phase = :l)
+    T,v_lb,v_ub = promote(_T,_v_lb,_v_ub)
+    return pure_spinodal_impl(model,T,v_lb,v_ub,phase,z)
+end
+
+function pure_spinodal_newton_bracket(model, T, v, f, z = SA[1.0])
+    vlo, vhi = v
+    flo, fhi = f
+    rtol = 1e-8
+    # Natural scale of dp/dv in the initial bracket (units of dp/dv).
+    # Since flo and fhi have opposite signs, this is well-defined.
+    fscale = max(abs(flo), abs(fhi))
+    vs = 0.5*(vlo + vhi)
+    for j in 1:25
+        pj, dpj, d2pj = p∂p∂2p(model, vs, T, z)
+        fs = dpj
+        Δ = dpj/d2pj
+        vs_newton = vs - Δ
+
+        # Convergence: either the residual is small compared to the bracket
+        # scale, or the bracket itself has collapsed. Both are dimensionless.
+        if abs(fs) <= rtol*fscale || abs(vhi - vlo) <= rtol*max(abs(vlo), abs(vhi))
+            return vs
+        end
+
+        # Update the bracket
+        if fs*flo <= 0
+            vhi = vs
+            fhi = fs
+        else
+            vlo = vs
+            flo = fs
+        end
+
+        # Safeguarded Newton step
+        if vlo <= vs_newton <= vhi || abs(Δ)/vs < 0.01
+            vs = vs_newton
+        else
+            vs = 0.5*(vlo + vhi)
+        end
+    end
+    return zero(vs)/zero(vs)
+end
+
+#=
+function pure_spinodal_newton(model,T,z,v0,dp_scale = v0*v0/(Rgas(model)*T))
+    function dp(rhox) #dpdrho = 0
+        pj,dpj,d2pj = p∂p∂2p_rho(model,rhox,T,z)
+        return dpj/dp_scale,dpj/d2pj
+    end
+    n = sum(z)
+    rho0 = n/v0
+    prob = Roots.ZeroProblem(dp,rho0)
+    rho_sol = Roots.solve(prob,Roots.Newton())
+    vsol = n/rho_sol
+    return vsol
+end =#
+
+function pure_spinodal_impl(model,T::K,z,v_lb::K,v_ub::K,phase::Symbol) where K
+    sl,sv,sm,status = coexistence_volumes_bracketed(model, T, z, v_lb, v_ub; branches = phase)
+
+    if status === :failure
+        xx = sm.v
+        nan = zero(xx)/zero(xx)
+        return nan,nan
+    end
+
+    if is_liquid(phase)
+        v = (sl.v,sm.v)
+        f = (sl.dpdv,sm.dpdv)
+    else
+        v = (sm.v,sv.v)
+        f = (sm.dpdv,sv.dpdv)
+    end
+
+    return pure_spinodal_newton_bracket(model,T,v,f,z)
+end
+
+
+
 """
     spinodal_pressure(model::EoSModel, T, z; v0, phase)
 

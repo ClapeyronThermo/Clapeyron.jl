@@ -362,6 +362,8 @@ function volume_impl(model::DeltaCubicModel,p,T,z,phase,threaded,vol0)
     return Δg > 0 ? n*(v2 - c) : n*(v1 - c)
 end
 
+volume_approx(model::DeltaCubicModel,T,z,p_hard,p_soft,phase,vol0) = volume_impl(model,p_hard,T,z,phase,false,vol0)
+
 function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     RT = R*T
     _pr = p/RT
@@ -536,7 +538,7 @@ function cubic_poly_solver_refine(η,ηc,poly_v,poly_s,pr,b,st_expected)
     return new_st,vx
 end
 
-function pure_spinodal_impl(model::DeltaCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,retry::Bool,z) where K
+function pure_spinodal_impl(model::DeltaCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,z) where K
     #=
     Segura, H., & Wisniak, J. (1997). Calculation of pure saturation properties using cubic equations of state. Computers & Chemical Engineering, 21(12), 1339–1347. doi:10.1016/s0098-1354(97)00016-1
     =#

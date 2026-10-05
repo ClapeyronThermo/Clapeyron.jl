@@ -12,9 +12,10 @@ v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
 ```
 In the liquid root region, the iterations follow `v0 < v[i] < v[i+1] < v(p)`, allowing the calculation of the liquid root without entering the metastable region.
 """
-function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    p,T,V0 = promote(p,T,V0)
-    return _volume_compress(model,p,T,z,V0,max_iters)
+function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100,ps = p)
+    p,T,V0,ps0 = promote(p,T,V0,ps)
+    
+    return _volume_compress(model,p,T,z,V0,max_iters,ps0)
 end
 
 #=
@@ -49,11 +50,12 @@ function _volume_compress_old(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase
     return exp(logV)
 end =#
 
-function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100,ps = p)
     _0 = zero(Base.promote_eltype(model,p,T,z,V0))
     _1,nan = one(_0),_0/_0
     isnan(V0) && return nan
     p₀ = _1*p
+    plo,phi = minmax(p₀,_1*ps) #if ps is different than p, then they constitute a bound. we can stop the solver when p enters the bound.
     logV0 = log(V0)*_1
     log_lb_v = log(lb_volume(model,T,z))
     logVᵢ = logV0
@@ -78,6 +80,9 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
 
         dpdVᵢ > 0 && return nan #inline mechanical stability.
         abs(pᵢ-p₀) < 3eps(p₀) && return Vᵢ #this helps convergence near critical points.
+
+        #our iteration is inside the bounds.
+        plo <= pᵢ <=  phi && return Vᵢ
 
         #zeroth order check:
         #the pressure slope between initial point and current point, must be negative.
@@ -108,13 +113,11 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         If there is any change in sign, then we can check if there are any spinodals, just to be sure.
         =#
         is_gas_i = -nRT/Vᵢ/Vᵢ - dpdVᵢ >= _0
-        if i > 1 && is_gas_i != is_gas
+        if i > 1 && is_gas_i != is_gas && check_sp
             #@warn "first order check failed with $(model) at p = $p, T = $T, z= $z, v0 = $V0"
-            if check_sp
-                v_lb,v_ub = minmax(Vᵢ,exp(logV0))
-                _maybe_spinodal(model,T,v_lb,v_ub,z) && return nan
-                check_sp = false
-            end
+            v_lb,v_ub = minmax(Vᵢ,exp(logV0))
+            _maybe_spinodal(model,T,v_lb,v_ub,z) && return nan
+            check_sp = false
         end
 
         if i > 5 && (p₀-pᵢ)*(p₀-_pᵢ) < 0
@@ -242,7 +245,7 @@ function _maybe_spinodal(model,_T,_v_lb,_v_ub,z)
     dfl*dfv < 0 && return true
 
     #find the middle point between the liquid and vapour spinodals.
-    vm = _find_vm(dpoly,v_lb,v_ub)
+    vm = _find_vm(dpoly,v_lb,v_ub,-v_lb)
     fm,dfm = p∂p∂V(model,vm,T,z)
     dfm > 0 && return true
     #find the liquid of gas spinodal using the quintic hermite interpolation.
@@ -621,6 +624,21 @@ function volume_bracket_refine(model,p,T,z,v1,v2)
         return zero(phi)/zero(plo)
     end
 end
+
+
+function volume_approx(model,T,z,p_hard,p_soft,phase,vol0)
+    if !is_liquid(phase) || !is_vapour(phase)
+        throw(error("Clapeyron.volume_approx: a phase is needed."))
+    end
+    if vol0 === nothing
+        v0 = x0_volume(model,p,T,z;phase)
+    else
+        v0 = vol0
+    end
+    return _volume_compress(model,p_hard,T,z,v0,100,p_soft)
+end
+
+volume_approx(model,T,z,p_hard,p_soft,phase) = volume_approx(model,T,z,p_hard,p_soft,phase,nothing)
 
 #circunvent volume machinery.
 #gibbs models do not need iterative calculations for volume
