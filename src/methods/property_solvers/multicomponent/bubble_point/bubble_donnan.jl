@@ -52,8 +52,6 @@ function DonnanBubblePressure(; u0=nothing, xtol::Float64=1e-10, max_iters::Int=
     return DonnanBubblePressure(u0, xtol, max_iters, verbose, psi_zero)
 end
 
-_donnan_mole_fractions_from_free(free::AbstractVector) = vcat(free, 1 - sum(free))
-
 function donnan_bubble_residual!(F::AbstractVector, u::AbstractVector, model::ElectrolyteModel, T, x_dense::AbstractVector, Z::AbstractVector{<:Integer})
     N = length(Z)
     Vd, Vl = u[1], u[2]
@@ -85,27 +83,11 @@ function donnan_bubble_residual_psi_zero!(F::AbstractVector, u::AbstractVector, 
     return F
 end
 
-function _donnan_bracket_coexistence_volumes(model::ElectrolyteModel, T::Real, x::AbstractVector; nV::Int=400, Vmax_factor::Float64=1e6)
-    lbv = lb_volume(model, x)
-    Vs = exp.(range(log(lbv * 1.01), log(lbv * Vmax_factor), length=nV))
-    Ps = [pressure(model, V, T, x) for V in Vs]
-    i = 2
-    while i <= nV && Ps[i] < Ps[i-1]
-        i += 1
-    end
-    i > nV && throw(ErrorException("pressure strictly decreasing over the whole scanned range: no loop found at T=$T for this composition (not below the fixed-ray critical point, or Vmax_factor too small)"))
-    i_min = i - 1
-    while i <= nV && Ps[i] > Ps[i-1]
-        i += 1
-    end
-    i > nV && throw(ErrorException("pressure never resumed decreasing after the loop's rise at T=$T: scan range too narrow, increase Vmax_factor"))
-    i_max = i - 1
-    return Vs[i_min] * 0.5, Vs[i_max] * 2.0
-end
-
 function _default_donnan_u0(model::ElectrolyteModel, T::Real, x_dense::AbstractVector, Z::AbstractVector{<:Integer})
     N = length(Z)
-    Vd0, Vl0 = _donnan_bracket_coexistence_volumes(model, T, x_dense)
+    #x0_sat_pure_spinodal also works with multicomponent models.
+    _,Vd0,Vl0 = x0_sat_pure_spinodal(model,T,x_dense)
+    isnan(Vd0) && throw(ErrorException(lazy"Clapeyron._default_donnan_u0: never no coexistence loop found."))
     return vcat(Vd0, Vl0, x_dense[1:N-1], 0.0)
 end
 
@@ -156,4 +138,5 @@ function bubble_pressure_impl(model::ElectrolyteModel, T, nn::AbstractVector, me
     return P,Vd,Vl,y
 end
 
-export DonnanBubblePressure, donnan_bubble_residual!, donnan_bubble_residual_psi_zero!
+export DonnanBubblePressure
+#export donnan_bubble_residual!, donnan_bubble_residual_psi_zero!

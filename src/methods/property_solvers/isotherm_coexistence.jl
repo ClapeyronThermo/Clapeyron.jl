@@ -246,6 +246,12 @@ The function is split in small pieces, each one is a top level function without 
    - _good_bracket_close: end of one side: newton fallback if degenerate, final spinodal pressure otherwise.
  - _good_bracket_outer: step 2, outer brackets (liquid extension, zero pressure approximation, vapour ideal gas point and post-check).
 =#
+
+function coexistence_get_good_bracket(model,T,z;max_iters_hermite = 15,rtol_spinodal = 1e-8)
+    s0l,s0v,s0m,status =  coexistence_volumes_bracketed(model,T,z)
+    return coexistence_get_good_bracket(model,T,z,s0l,s0v,s0m,max_iters_hermite,rtol_spinodal)
+end
+
 function coexistence_get_good_bracket(model,T,z,s0l,s0v,s0m,max_iters_hermite = 15,rtol_spinodal = 1e-8)
     TT = Base.promote_eltype(model,T,z,s0l.v,s0v.v,s0m.v)
     ∑z = TT(sum(z))
