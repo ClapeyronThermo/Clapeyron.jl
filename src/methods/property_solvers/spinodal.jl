@@ -9,44 +9,6 @@ function pure_spinodal(model,_T,z = SA[1.0];phase = :l)
     return pure_spinodal_impl(model,T,v_lb,v_ub,phase,z)
 end
 
-function pure_spinodal_newton_bracket(model, T, v, f, z = SA[1.0])
-    vlo, vhi = v
-    flo, fhi = f
-    rtol = 1e-8
-    # Natural scale of dp/dv in the initial bracket (units of dp/dv).
-    # Since flo and fhi have opposite signs, this is well-defined.
-    fscale = max(abs(flo), abs(fhi))
-    vs = 0.5*(vlo + vhi)
-    for j in 1:25
-        pj, dpj, d2pj = p∂p∂2p(model, vs, T, z)
-        fs = dpj
-        Δ = dpj/d2pj
-        vs_newton = vs - Δ
-
-        # Convergence: either the residual is small compared to the bracket
-        # scale, or the bracket itself has collapsed. Both are dimensionless.
-        if abs(fs) <= rtol*fscale || abs(vhi - vlo) <= rtol*max(abs(vlo), abs(vhi))
-            return vs
-        end
-
-        # Update the bracket
-        if fs*flo <= 0
-            vhi = vs
-            fhi = fs
-        else
-            vlo = vs
-            flo = fs
-        end
-
-        # Safeguarded Newton step
-        if vlo <= vs_newton <= vhi || abs(Δ)/vs < 0.01
-            vs = vs_newton
-        else
-            vs = 0.5*(vlo + vhi)
-        end
-    end
-    return zero(vs)/zero(vs)
-end
 
 #=
 function pure_spinodal_newton(model,T,z,v0,dp_scale = v0*v0/(Rgas(model)*T))
@@ -72,14 +34,13 @@ function pure_spinodal_impl(model,T::K,z,v_lb::K,v_ub::K,phase::Symbol) where K
     end
 
     if is_liquid(phase)
-        v = (sl.v,sm.v)
-        f = (sl.dpdv,sm.dpdv)
+        sa,sb = sl,sm
     else
-        v = (sm.v,sv.v)
-        f = (sm.dpdv,sv.dpdv)
+        sa,sb = sm,sv
     end
 
-    return pure_spinodal_newton_bracket(model,T,v,f,z)
+    _,_,ss = pure_spinodal_newton_bracket(model, T, z, sa, sb)
+    return ss.v,ss.p
 end
 
 
@@ -100,8 +61,7 @@ function spinodal_pressure(model::EoSModel,T,z=SA[1.];v0=nothing,phase=:unknown)
 
     ∑z = sum(z)
     if isnothing(v0) && !is_unknown(phase) && length(model) == 1
-        V_spin = pure_spinodal(model,T;phase)
-        return pressure(model,V_spin,T),V_spin*∑z
+        return pure_spinodal(model,T;phase)
     end
 
     model, idx_r = index_reduction(model,z)

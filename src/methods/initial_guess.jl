@@ -206,14 +206,13 @@ It can be overloaded to provide more accurate estimates if necessary. If an EoS 
 """
 function x0_sat_pure(model,T)
     satmodel = saturation_model(model)
-
+    R = Base.promote_eltype(satmodel,T)
     if !has_fast_crit_pure(satmodel)
         _,vl,vv = x0_sat_pure_virial(satmodel,T)
     else
-        R = Base.promote_eltype(satmodel,T)
-        _,vl,vv = x0_sat_pure_crit(satmodel,T)::NTuple{3,R}
+        _,vl,vv = x0_sat_pure_crit(satmodel,T)
     end
-    return vl,vv
+    return R(vl),R(vv)
 end
 
 function x0_sat_pure(model,T,crit)
@@ -482,17 +481,21 @@ Calculates initial points for pure saturation pressure, using a spinodal approac
 The saturation pressure is assumed to be `(psl + psv)/2` where `psl` and `psv` are the pressures of the liquid and vapour spinodals.
 """
 function x0_sat_pure_spinodal(model,T,z = SA[1.0],B = nothing)
-    v_ub = -2*B
-    pl = liquid_pressure_from_virial(model,T,z,B)
+    if B === nothing
+        _B = second_virial_coefficient(model,T,z)
+    else
+        _B = B
+    end
+
+    v_ub = -2*_B
+    pl = liquid_pressure_from_virial(model,T,z,_B)
     v_lb = volume(model,pl,T,z,phase = :l)
-    return x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,B)
+    return x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,nothing,_B)
 end
 
 function x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,vm = nothing,B = nothing)
-
     #1: find a bracket that contains an additional unstable point
     s0l,s0v,s0m,status = coexistence_volumes_bracketed(model,_T,z,_v_lb,_v_ub,vm,branches = :all)
-
     #no coexistence
     if status === :failure
         xx = s0m.v
@@ -511,10 +514,7 @@ function __x0_sat_pure_spinodal(model,T,z,coexistence_result,B)
     sl_lo,sl_hi = sl
     sv_lo,sv_hi = sv
     p̄l,p̄v = p̄s
-   @show sl_lo
-   @show sl_hi
-   @show sv_lo
-   @show sv_hi
+
     if p̄l < 0 || sl_hi.p < 0
         psat = sv_hi.p
         vv = sv_hi.v
@@ -522,10 +522,10 @@ function __x0_sat_pure_spinodal(model,T,z,coexistence_result,B)
         pl = min(sl_hi.p,p̄l)
         pv = max(sv_lo.p,p̄v)
         psat = 0.5*(pv + pl)
-        vv = coexistence_interpolate_volume(sv_lo,sv_hi,psat,false)
+        vv = coexistence_interpolate_volume(sv_lo,sv_hi,psat)
     end
 
-    vl = coexistence_interpolate_volume(sl_lo,sl_hi,psat,true)
+    vl = coexistence_interpolate_volume(sl_lo,sl_hi,psat)
     return psat,vl,vv
 end
 
@@ -565,7 +565,7 @@ function x0_sat_pure_crit(model,_T,crit::NTuple{3,Any})
     v_lb = volume(model,pl0,T,phase = :l)
 
     if 0.8 <= Tr <= 0.99
-        return x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,B,Vc)
+        return x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,Vc,B)
     elseif 0 <= Tr < 0.8
         return x0_sat_pure_near0(model,T,z,v_lb,B = B)
     else

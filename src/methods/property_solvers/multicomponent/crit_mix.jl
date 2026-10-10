@@ -52,37 +52,20 @@ Initial point for `crit_mix(model,z)`.
 Returns a tuple, containing:
 - Base 10 logarithm of initial guess for critical molar Volume `[m³·mol⁻¹]`
 - Initial guess for critical temperature `[K]`
+
+If the model is not splittable or is it an electrolyte model (where the ions or salts cannot be considered as standalone components), then a mechanical critical point approximation is calculated first via [`mechanical_crit_bracket`](@ref) 
 """
 function x0_crit_mix(model::EoSModel,z)
-    pure = split_pure_model(model)
-    crit = crit_pure.(pure)
-    vci = getindex.(crit,3)
-    tci = getindex.(crit,1)
-    ∑z = sum(z)
-    V_c = dot(z,vci)/∑z
-    T_c  = prod(tci[i]^(z[i]/∑z) for i ∈ 1:length(model))
-    return (log10(V_c),T_c)
+    if isplittable(model) || !(model isa ElectrolyteModel)
+        pure = split_pure_model(model)
+        crit = crit_pure.(pure)
+        vci = getindex.(crit,3)
+        tci = getindex.(crit,1)
+        ∑z = sum(z)
+        V_c = dot(z,vci)/∑z
+        T_c  = prod(tci[i]^(z[i]/∑z) for i ∈ 1:length(model))
+        return (log10(V_c),T_c)
+    else
+        return x0_crit_bisection(model,z)
+    end
 end
-
-"""
-    x0_crit_mix_bisection(model::EoSModel, z; kwargs...)
-
-`x0_crit_mix`-shaped warm start (`(log10(Vc0), Tc0)`), built from
-[`x0_crit_bisection_TV`](@ref) (a fixed-ray bisection along `z`, not a
-per-component split). For models whose generic `x0_crit_mix` default fails
--- e.g. `split_pure_model` has no `is_splittable`/`default_splitter` method
-for one of the model's components -- define
-`x0_crit_mix(model::MyModel,z) = x0_crit_mix_bisection(model,z)` instead.
-
-This finds the fixed-ray pseudo-pure critical point along `z`, which is
-generally NOT the same point `crit_mix`'s own multicomponent stability
-criterion converges to (that criterion also allows composition
-perturbations, so its `Tc` can sit above where a pressure loop still
-exists along the fixed ray) -- it is only intended as an initial guess.
-"""
-function x0_crit_mix_bisection(model::EoSModel, z; kwargs...)
-    Tc0, Vc0 = x0_crit_bisection_TV(model, z; kwargs...)
-    return (log10(Vc0), Tc0)
-end
-
-export x0_crit_mix_bisection
