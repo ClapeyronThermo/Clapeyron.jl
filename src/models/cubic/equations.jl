@@ -546,14 +546,15 @@ function cubic_all_spinodals(model::DeltaCubicModel, T, z, branch::Symbol = :all
     # a, b, c don't depend on V for a pure cubic; V is only a placeholder argument
     a, b, c = cubic_ab(model, one(T), T, z)
     u, w = cubic_uwT(model, T, z)
-    return cubic_all_spinodals(a,b,c,R,T,u,w,branch)
+    n = sum(z)
+    v1,v2,p1,p2 = cubic_all_spinodals(a,b,R,T,u,w,branch)
+    return n*(v1 - c),n*(v2 - c),p1,p2
 end
 
-function cubic_all_spinodals(a,b,c,R,T,u,w,branch)
+function cubic_all_spinodals(a,b,R,T,u,w,branch)
     #=
     Segura, H., & Wisniak, J. (1997). Calculation of pure saturation properties using cubic equations of state. Computers & Chemical Engineering, 21(12), 1339–1347. doi:10.1016/s0098-1354(97)00016-1
     =#
-    n = sum(z)
     RT = R*T
 
     # dimensionless form: x = v/b, α = a/(b RT)
@@ -596,10 +597,10 @@ function cubic_all_spinodals(a,b,c,R,T,u,w,branch)
 
     # molar pressure of the (untranslated) cubic; volume translation doesn't change p
     p(x) = RT/(b*(x - 1)) - a/(b*b*(x*x + u*x + w))
-    vol(x) = n*(b*x - c)
 
-    vsl = isnan(xl) ? nan : vol(xl)
-    vsv = isnan(xv) ? nan : vol(xv)
+    #unstranslated, molar volumes
+    vsl = isnan(xl) ? nan : b*xl
+    vsv = isnan(xv) ? nan : b*xv
     psl = isnan(xl) ? nan : p(xl)
     psv = isnan(xv) ? nan : p(xv)
     return vsl, vsv, psl, psv
@@ -613,7 +614,7 @@ function x0_sat_pure_spinodal(model::DeltaCubicModel,T,z,v_lb,v_ub,Vc,B)
     R = Rgas(model)
     a, b, c = cubic_ab(model, one(T), T, z)
     u, w = cubic_uwT(model, T, z)
-    _, _, psl, psv = cubic_all_spinodals(a,b,c,R,T,u,w,:all)
+    _, _, psl, psv = cubic_all_spinodals(a,b,R,T,u,w,:all)
     psat = 0.5*(max(psl,zero(psl)),psv)
     isnan(psat) && return (psat,psat,psat)
     #solve both volume roots at once.
