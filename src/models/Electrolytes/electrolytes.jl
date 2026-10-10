@@ -149,10 +149,7 @@ end
 function debye_length(V,T,z,ϵ_r,Z)
     s = e_c*e_c/(ϵ_0*ϵ_r*k_B*T)
     I = @sum(z[i]*Z[i]*Z[i])
-    κ = Solvers.strong_zero(I) do ii
-        sqrt(s*N_A/V)*sqrt(ii)
-    end
-    return κ
+    return sqrt(s*N_A/V)*Solvers.strong_zero(sqrt,I)
 end
 
 function a_ion(ionmodel, rsp, neutralmodel, V, T, z, neutral_data, ϵ_r)

@@ -288,3 +288,35 @@ function activity_old_unifacfv(model::Clapeyron.UNIFACFVModel, p, T, z)
     lnγ_FV   = Clapeyron.ForwardDiff.gradient(n -> Clapeyron.excess_g_FV(model, p, T, n), z) ./ RT
     return exp.(lnγ_comb .+ lnγ_res .+ lnγ_FV)
 end
+
+function testutils_fd_derivative(f,i)
+    h = sqrt(eps(i))
+    return (1*f(i-2h)-8*f(i-1h)+0*f(i)+8*f(i+1h)-1*f(i+2h))/(12*h)
+end
+
+function testutils_fd_gradient(f, x::AbstractVector; method =:central, eps  =1e-6)
+    n = length(x)
+    g = similar(x, float(eltype(x)))
+    if method == :central
+        for i in 1:n
+            xp = copy(x); xp[i] += eps
+            xm = copy(x); xm[i] -= eps
+            g[i] = (f(xp) - f(xm)) / (2eps)
+        end
+    elseif method == :forward
+        f0 = f(x)
+        for i in 1:n
+            xp = copy(x); xp[i] += eps
+            g[i] = (f(xp) - f0) / eps
+        end
+    elseif method == :backward
+        f0 = f(x)
+        for i in 1:n
+            xm = copy(x); xm[i] -= eps
+            g[i] = (f0 - f(xm)) / eps
+        end
+    else
+        error("method must be :central, :forward, or :backward")
+    end
+    return g
+end
