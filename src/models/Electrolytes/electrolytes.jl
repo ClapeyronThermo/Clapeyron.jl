@@ -444,4 +444,4 @@ include("ISElectrolyte.jl")
 include("stability.jl")
 
 export molality_to_composition
-export component_charges
+@public component_charges

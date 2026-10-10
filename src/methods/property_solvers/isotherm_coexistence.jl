@@ -95,6 +95,7 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
     strikes = 0
     status = :failure
     niter = 0
+    vapour_updated = false #true if the last update was on the vapour side. if so, the next middle point is generated in density variables.
      verbose && @info "Clapeyron.coexistence_volumes_bracketed: entering hermite loop" v_l=sl.v v_v=sv.v dpdv_l=sl.dpdv dpdv_v=sv.dpdv
 
     for i in 1:max_iters
@@ -103,13 +104,27 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         lnv_converged,_ = Solvers.convergence(log(sl.v),log(sv.v),zero(TT),tol_v)
         lnv_converged && break
 
-        # Hermite interpolant on the current bounds
-        poly = hermite_from_state(sl,sv)
-        c = - sl.v #translation of the hermite poly. v(eos) + c = v(hermite)
-        dpoly = Solvers.polyder(poly)
+        if vapour_updated
+            #density formulation: the vapour is the lower density bound, the liquid the upper one.
+            #we interpolate q = -p, so that the unstable region has dqdρ > 0, with a maximum of dqdρ
+            #at the inflexion point, the same sign convention that _find_vm expects for volumes.
+            ρl,ρv = ∑z/sl.v,∑z/sv.v
+            dqdρl,dqdρv = sl.dpdv*sl.v*sl.v/∑z,sv.dpdv*sv.v*sv.v/∑z
+            d2qdρ2l = -sl.v*sl.v*sl.v*(sl.v*sl.d2pdv2 + 2*sl.dpdv)/(∑z*∑z)
+            d2qdρ2v = -sv.v*sv.v*sv.v*(sv.v*sv.d2pdv2 + 2*sv.dpdv)/(∑z*∑z)
+            poly = Solvers.hermite5_poly(ρv, ρl, -sv.p, -sl.p, dqdρv, dqdρl, d2qdρ2v, d2qdρ2l)
+            dpoly = Solvers.polyder(poly)
+            ρm = _find_vm(dpoly, ρv, ρl, -ρv) #polynomial is in (ρ - ρv)
+            vm = ∑z/ρm #NaN if ρm is NaN, vm < 0 if ρm < 0
+        else
+            # Hermite interpolant on the current bounds, volume formulation
+            poly = hermite_from_state(sl,sv)
+            c = - sl.v #translation of the hermite poly. v(eos) + c = v(hermite)
+            dpoly = Solvers.polyder(poly)
 
-        #get vm = d2pdv2 = 0 via hermite polynomials
-        vm = _find_vm(dpoly, sl.v, sv.v,c)
+            #get vm = d2pdv2 = 0 via hermite polynomials
+            vm = _find_vm(dpoly, sl.v, sv.v,c)
+        end
 
         #of hermite interpolant failed, fall back to bisection.
         #if _find_vm failed, then the interpolant failed to generate a proper maxwell loop
@@ -150,7 +165,10 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
                 break
             end
             sv = sm
+            vapour_updated = true
+            continue
         end
+        vapour_updated = false
     end
 
     verbose && @info "Clapeyron.coexistence_volumes_bracketed: end" status=status iterations=niter strikes=strikes v_l=sl.v v_v=sv.v v_m=sm.v

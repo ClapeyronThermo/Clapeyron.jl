@@ -399,7 +399,7 @@ end
 LS's critical point is electrostatically driven with a much lower critical packing fraction (~0.005-0.02) than the generic `x0_crit_pure` default (~0.3) assumes, 
 which converges to a spurious point here -- delegate to the general bisection-based warm start instead (see `x0_crit_pure_bisection`).
 =#
-x0_crit_pure(model::LS, z=SA[1.0]) = x0_crit_pure_bisection(model, z)
+x0_crit_pure(model::LS, z=SA[1.0]) = x0_crit_bisection(model, z)
 
 #=
 
@@ -407,7 +407,7 @@ The generic `x0_crit_mix` default calls `split_pure_model(model)` then `crit_pur
 no `is_splittable`/`default_splitter` method is defined, so that throws a `BoundsError`. 
 Delegate to the general fixed-ray bisection instead (see `x0_crit_mix_bisection`).
 =#
-x0_crit_mix(model::LS, z) = x0_crit_mix_bisection(model, z)
+x0_crit_mix(model::LS, z) = x0_crit_bisection(model, z)
 
 
 function component_charges(model::LS)
@@ -415,4 +415,4 @@ function component_charges(model::LS)
 end
 
 export LS, LSNeutral, LSIon
-export component_charges
+

@@ -475,25 +475,29 @@ end
 
 
 """
-    p,vl,vv = x0_sat_pure_spinodal(model,T,z = SA[1.0])
+    p,vl,vv = x0_sat_pure_spinodal(model,T,z = SA[1.0], B = nothing)
 
 Calculates initial points for pure saturation pressure, using a spinodal approach.
 The saturation pressure is assumed to be `(psl + psv)/2` where `psl` and `psv` are the pressures of the liquid and vapour spinodals.
 """
-function x0_sat_pure_spinodal(model,T,z = SA[1.0],B = nothing)
+function x0_sat_pure_spinodal(model,T,z,B)
     if B === nothing
         _B = second_virial_coefficient(model,T,z)
     else
         _B = B
     end
-
     v_ub = -2*_B
     pl = liquid_pressure_from_virial(model,T,z,_B)
     v_lb = volume(model,pl,T,z,phase = :l)
     return x0_sat_pure_spinodal(model,T,z,v_lb,v_ub,nothing,_B)
 end
 
-function x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,vm = nothing,B = nothing)
+x0_sat_pure_spinodal(model,T) = x0_sat_pure_spinodal(model,T,SA[1.0],nothing)
+x0_sat_pure_spinodal(model,T,z) = x0_sat_pure_spinodal(model,T,z,nothing)
+x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub) = x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,nothing,nothing)
+x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,vm) = x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,vm,nothing)
+
+function x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,vm,B)
     #1: find a bracket that contains an additional unstable point
     s0l,s0v,s0m,status = coexistence_volumes_bracketed(model,_T,z,_v_lb,_v_ub,vm,branches = :all)
     #no coexistence

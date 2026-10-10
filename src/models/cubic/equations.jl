@@ -538,40 +538,100 @@ function cubic_poly_solver_refine(η,ηc,poly_v,poly_s,pr,b,st_expected)
     return new_st,vx
 end
 
-function pure_spinodal_impl(model::DeltaCubicModel,T::K,v_lb::K,v_ub::K,phase::Symbol,z) where K
+function cubic_all_spinodals(model::DeltaCubicModel, T, z, branch::Symbol = :all)
+    if !is_liquid(branch) || !is_vapour(branch) || !(branch == :all)
+        throw(ArgumentError(lazy"Clapeyron.cubic_all_spinodals: invalid branch argument."))
+    end
+    R = Rgas(model)
+    # a, b, c don't depend on V for a pure cubic; V is only a placeholder argument
+    a, b, c = cubic_ab(model, one(T), T, z)
+    u, w = cubic_uwT(model, T, z)
+    return cubic_all_spinodals(a,b,c,R,T,u,w,branch)
+end
+
+function cubic_all_spinodals(a,b,c,R,T,u,w,branch)
     #=
     Segura, H., & Wisniak, J. (1997). Calculation of pure saturation properties using cubic equations of state. Computers & Chemical Engineering, 21(12), 1339–1347. doi:10.1016/s0098-1354(97)00016-1
     =#
-    a,b,c = cubic_ab(model,v_lb,T,z)
-    u,w = cubic_uwT(model,T,z)
-    RT = Rgas(model)*T
-    bRT = b*RT
+    n = sum(z)
+    RT = R*T
 
-    Q4 = -RT
-    Q3 = 2*(a - bRT*u)
-    Q2 = b*(a*(u - 4) - bRT*(u*u + 2*w))
-    Q1 = 2*b*b*(a*(1 - u) - bRT*w*u)
-    Q0 = b*b*b*(a*u - bRT*w*w)
-    dpoly = (Q0,Q1,Q2,Q3,Q4)
-    #on single component, a good approximate for vm is the critical volume.
-    d2poly = (Q1,2*Q2,3*Q3,4*Q4)
-    f = Base.Fix2(evalpoly,dpoly)
-    nr,v1,v2,v3 = Solvers.real_roots3(d2poly)
-    vroots = (v1,v2,v3)
-    vm0 = nr == 1 ? nr : findfirst(y -> (f(y) > 0 && y > b),vroots)
-    if isnothing(vm0)
-       return zero(v1)/zero(v1)
+    # dimensionless form: x = v/b, α = a/(b RT)
+    # p'(v) = 0  <=>  g(x) = α(2x+u)(x-1)^2 - (x^2 + u x + w)^2 = 0
+    α  = a/(b*RT)
+    c0 = α*u - w*w
+    c1 = 2*(α*(1 - u) - u*w)
+    c2 = α*(u - 4) - (u*u + 2*w)
+    c3 = 2*(α - u)
+    gpoly = (c0, c1, c2, c3, -one(α))
+    g(x) = evalpoly(x, gpoly)
+
+    nan = zero(α)/zero(α)
+
+    # the maximum of g on x > 1 separates the liquid and vapour roots.
+    # If g_max <= 0 there are no spinodals (T >= Tc).
+    nr, r1, r2, r3 = Solvers.real_roots3((c1, 2*c2, 3*c3, -4*one(α)))
+    xm, gm = nan, zero(α)
+    for (i, r) in enumerate((r1, r3, r2))
+        i > nr && break
+        if r > 1
+            gr = g(r)
+            if gr > gm
+                xm, gm = r, gr
+            end
+        end
     end
-    vm = vroots[vm0]
-    B = b - a/RT
-    if vm < b
-        return zero(v1)/zero(v1)
+    isnan(xm) && return nan, nan, nan, nan
+
+    xl = xv = nan
+    if !is_vapour(branch)
+        # g(1) = -(1+u+w)^2 < 0 and g(xm) > 0: guaranteed bracket
+        xl = Roots.solve(Roots.ZeroProblem(g, (one(xm), xm)))
     end
-    vx = ifelse(is_liquid(phase),b,-10B)
-    v_bracket = minmax(vx,vm)
-    prob = Roots.ZeroProblem(Base.Fix2(evalpoly,dpoly),v_bracket)
-    vs = Roots.solve(prob)
-    return sum(z)*(vs - c)
+    if !is_liquid(branch)
+        # Cauchy bound (leading coeff = -1): g < 0 for every x beyond it
+        xup = 1 + max(abs(c0), abs(c1), abs(c2), abs(c3))
+        xv = Roots.solve(Roots.ZeroProblem(g, (xm, xup)))
+    end
+
+    # molar pressure of the (untranslated) cubic; volume translation doesn't change p
+    p(x) = RT/(b*(x - 1)) - a/(b*b*(x*x + u*x + w))
+    vol(x) = n*(b*x - c)
+
+    vsl = isnan(xl) ? nan : vol(xl)
+    vsv = isnan(xv) ? nan : vol(xv)
+    psl = isnan(xl) ? nan : p(xl)
+    psv = isnan(xv) ? nan : p(xv)
+    return vsl, vsv, psl, psv
+end
+
+function x0_sat_pure_spinodal(model,T,z,B)
+    return x0_sat_pure_spinodal(model::DeltaCubicModel,T,z,nothing,nothing,nothing,nothing)
+end
+
+function x0_sat_pure_spinodal(model::DeltaCubicModel,T,z,v_lb,v_ub,Vc,B)
+    R = Rgas(model)
+    a, b, c = cubic_ab(model, one(T), T, z)
+    u, w = cubic_uwT(model, T, z)
+    _, _, psl, psv = cubic_all_spinodals(a,b,c,R,T,u,w,:all)
+    psat = 0.5*(max(psl,zero(psl)),psv)
+    isnan(psat) && return (psat,psat,psat)
+    #solve both volume roots at once.
+    _,v1,v2 = cubic_poly_solver(a,b,psat,R,T,u,w,:unknown)
+    vlo,vhi = minmax(v1,v2)
+    n = sum(z)
+    vl = n*(vlo - c)
+    vv = n*(vhi - c)
+    return psat,vl,vv
+end
+
+function pure_spinodal_impl(model::DeltaCubicModel,T::K,z,v_lb::K,v_ub::K,phase::Symbol) where K
+    vsl, vsv, psl, psv = cubic_all_spinodals(model,T,z,phase)
+    if is_liquid(phase)
+        return vsl, psl
+    else
+        return vsv, psv
+    end
 end
 
 function liquid_spinodal_zero_limit(model::DeltaCubicModel,z)
