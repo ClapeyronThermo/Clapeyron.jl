@@ -307,7 +307,7 @@ Clapeyron.x0_crit_pure(model::MyModel,z) = Clapeyron.x0_crit_bisection(model,z)
 Clapeyron.x0_crit_mix(model::MyModel,z)  = Clapeyron.x0_crit_bisection(model,z)
 ```
 """
-function x0_crit_bisection(model::EoSModel, z=SA[1.0] T0 = nothing; kwargs...)
+function x0_crit_bisection(model::EoSModel, z=SA[1.0], T0 = nothing; kwargs...)
     Ts = T_scale(model, z)
     if T0 === nothing
         TT, _, v_best = mechanical_crit_bracket(model, z; kwargs...)

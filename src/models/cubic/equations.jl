@@ -605,8 +605,8 @@ function cubic_all_spinodals(a,b,c,R,T,u,w,branch)
     return vsl, vsv, psl, psv
 end
 
-function x0_sat_pure_spinodal(model,T,z,B)
-    return x0_sat_pure_spinodal(model::DeltaCubicModel,T,z,nothing,nothing,nothing,nothing)
+function x0_sat_pure_spinodal(model::DeltaCubicModel,T,z,B)
+    return x0_sat_pure_spinodal(model,T,z,nothing,nothing,nothing,nothing)
 end
 
 function x0_sat_pure_spinodal(model::DeltaCubicModel,T,z,v_lb,v_ub,Vc,B)
