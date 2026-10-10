@@ -302,8 +302,8 @@
         (x = [0.5, 0.5], β = 1.0, v = 0.0246478)
         =#
 
-        @test Clapeyron.Solvers.derivative(dflash,1.0) ≈ Clapeyron.derivx(dflash,1.0) rtol = 1e-5
-        @test Clapeyron.Solvers.derivative(dflash,1.5) ≈ Clapeyron.derivx(dflash,1.5) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dflash,1.0) ≈ testutils_fd_derivative(dflash,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dflash,1.5) ≈ testutils_fd_derivative(dflash,1.5) rtol = 1e-5
     end
 end
 
@@ -560,7 +560,7 @@ end
     model554 = cPR(["propane","butane"],idealmodel = ReidIdeal)
     f554(x) = Clapeyron.PH.entropy(model554, x[1]*101325, 500.0, [1.0,1.0])
     dsdp_ad = Clapeyron.Solvers.derivative(f554,1.5)
-    dsdp_finite = Clapeyron.derivx(f554,1.5)
+    dsdp_finite = testutils_fd_derivative(f554,1.5)
     @test dsdp_ad ≈ dsdp_finite rtol = 1e-6
 
     #issue 563
@@ -743,8 +743,8 @@ end
         cpr = cPR("Propane",idealmodel = ReidIdeal)
         dsatp(T) = first(saturation_pressure(cpr,250.0*T))
         dsatt(p) = first(saturation_temperature(cpr,1e5*p))
-        @test Clapeyron.Solvers.derivative(dsatp,1.0) ≈ Clapeyron.derivx(dsatp,1.0) rtol = 1e-6
-        @test Clapeyron.Solvers.derivative(dsatt,1.0) ≈ Clapeyron.derivx(dsatt,1.0) rtol = 1e-6
+        @test Clapeyron.Solvers.derivative(dsatp,1.0) ≈ testutils_fd_derivative(dsatp,1.0) rtol = 1e-6
+        @test Clapeyron.Solvers.derivative(dsatt,1.0) ≈ testutils_fd_derivative(dsatt,1.0) rtol = 1e-6
 
         #edge temperature, #596
         fluid596 = cPR(["r1233zde","r134a"])
@@ -1011,20 +1011,20 @@ end
         bt(p) = first(bubble_temperature(admodel,1e5*p,[0.5,0.5]))
         dp(T) = first(dew_pressure(admodel,300.0*T,[0.5,0.5]))
         dt(p) = first(dew_temperature(admodel,1e5*p,[0.5,0.5]))
-        @test Clapeyron.Solvers.derivative(bp,1.0) ≈ Clapeyron.derivx(bp,1.0) rtol = 1e-5
-        @test Clapeyron.Solvers.derivative(dp,1.0) ≈ Clapeyron.derivx(dp,1.0) rtol = 1e-5
-        @test Clapeyron.Solvers.derivative(bt,1.0) ≈ Clapeyron.derivx(bt,1.0) rtol = 1e-5
-        @test Clapeyron.Solvers.derivative(dt,1.0) ≈ Clapeyron.derivx(dt,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(bp,1.0) ≈ testutils_fd_derivative(bp,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dp,1.0) ≈ testutils_fd_derivative(dp,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(bt,1.0) ≈ testutils_fd_derivative(bt,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dt,1.0) ≈ testutils_fd_derivative(dt,1.0) rtol = 1e-5
 
         adgemodel = NRTL(["ethanol", "hexane"]; puremodel=AntoineEqSat)
         bpge(T) = first(bubble_pressure(adgemodel,320.0*T,[0.5,0.5]))
         btge(p) = first(bubble_temperature(adgemodel,1e5*p,[0.5,0.5]))
         dpge(T) = first(dew_pressure(adgemodel,320.0*T,[0.5,0.5]))
         dtge(p) = first(dew_temperature(adgemodel,1e5*p,[0.5,0.5]))
-        @test Clapeyron.Solvers.derivative(bpge,1.0) ≈ Clapeyron.derivx(bpge,1.0) rtol = 1e-5
-        @test Clapeyron.Solvers.derivative(dpge,1.0) ≈ Clapeyron.derivx(dpge,1.0) rtol = 1e-5
-        @test Clapeyron.Solvers.derivative(btge,1.0) ≈ Clapeyron.derivx(btge,1.0) rtol = 1e-5
-        @test Clapeyron.Solvers.derivative(dtge,1.0) ≈ Clapeyron.derivx(dtge,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(bpge,1.0) ≈ testutils_fd_derivative(bpge,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dpge,1.0) ≈ testutils_fd_derivative(dpge,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(btge,1.0) ≈ testutils_fd_derivative(btge,1.0) rtol = 1e-5
+        @test Clapeyron.Solvers.derivative(dtge,1.0) ≈ testutils_fd_derivative(dtge,1.0) rtol = 1e-5
     end
 
     @testset "bubble/dew type stability" begin
