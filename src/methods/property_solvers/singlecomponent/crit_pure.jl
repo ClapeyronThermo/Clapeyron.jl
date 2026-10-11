@@ -164,8 +164,7 @@ Convergence is declared when the temperature bracket has collapsed (`tol`, relat
 
 - `tol`             : Relative tolerance on `τ = 1/T`.
 - `max_iters`       : Maximum iterations of the algorithm. If convergence is not reached but there is a valid bracket, then the function will return the tightest bracket calculated.
-- `max_widen`       : if `T0` does not contain a coexistence loop, then a list of temperatures `Ti < T0` of length `max_widen` is tried in descending order up until a temperature is a proper lower bound.
-                      If no `Tmin` is found, this method throws an error.
+- `max_widen`       : if `T0` does not contain a coexistence loop, then `Clapeyron.probe_subcritical` is called with `max_iters == max_widen`.
 
 ## Outputs
 
@@ -181,7 +180,7 @@ Convergence is declared when the temperature bracket has collapsed (`tol`, relat
 function mechanical_crit_bracket(model::EoSModel, z=SA[1.0], T0 = T_scale(model, z);
                                 tol_T::Float64      = 1e-2,
                                 max_iters::Int      = 60,
-                                max_widen::Int      = 5)
+                                max_widen::Int      = 60)
 
 
 
@@ -190,39 +189,14 @@ function mechanical_crit_bracket(model::EoSModel, z=SA[1.0], T0 = T_scale(model,
 
     sl0,sv0,sm0,status0 = coexistence_volumes_bracketed(model,T0,z)
     TT = Base.promote_eltype(model, T0, z ,sl0.v, sv0.v,sm0.v)
+
     if status0 === :failure
-        Thi = TT(T0)
-        Tlo = Thi
+        T0_bounds, sl0, sv0, sm0 = probe_subcritical(model, sm0.v, T0, z, max_iters = max_widen) #solver to get a subcritical point
+        Tlo,Thi = TT(T0_bounds[1]),TT(T0_bounds[2])
     else
-        Tlo = T0
+        Tlo = TT(T0)
         Thi = TT(Inf)
     end
-
-    if status0 == :failure
-        T_test = TT[]
-        T_geom = Tlo
-        #generate a lot of different spacing temperatures, so the descent is more graceful
-        Trange_linear0 = range(TT(0),Tlo,max_widen +  2)
-        Trange_linear = Trange_linear0[2:end-1]
-        Trange_inv = range(1/Trange_linear[end],1/TT(Trange_linear[1]),max_widen)
-        Trange_log = range(log2(Trange_linear[1]),log2(Trange_linear[end]),max_widen)
-        for i in 1:max_widen
-            push!(T_test,Trange_linear[i])
-            push!(T_test,1/Trange_inv[i])
-            push!(T_test,exp2(Trange_log[i]))
-            T_geom /= 3
-            push!(T_test,T_geom)
-        end
-        sort!(T_test,rev = true)
-
-        for Ti in T_test
-            sl0,sv0,sm0,status0 = coexistence_volumes_bracketed(model,Ti,z)
-            Tlo = Ti
-            status0 !== :failure && break
-        end
-    end
-
-    status0 == :failure && throw(ArgumentError(lazy"mechanical_crit_bracket: no coexistence found even at Tlo=$Tlo; increase `max_widen` keyword argument"))
 
     sm_old = (v = TT(NaN),p = TT(NaN),dpdv = TT(NaN),d2pdv2 = TT(NaN))
     Told = TT(NaN)
@@ -318,5 +292,47 @@ function x0_crit_bisection(model::EoSModel, z=SA[1.0], T0 = nothing; kwargs...)
     T0 = 0.5*(Tlo + Thi)
     return (T0 / Ts, log10(v_best))
 end
+
+function probe_subcritical(model::EoSModel, v0, T0, z = SA[1.0]; max_iters::Int = 40)
+    TT = Base.promote_eltype(model, v0, T0, z)
+    T  = TT(T0)
+    v  = TT(v0)
+    R  = Rgas(model)
+    g  = TT(NaN)
+    δlo, δhi = TT(1.01748), TT(2.0)        # static bounds on the tau growth factor
+    Tlo, Thi = T, TT(Inf)              # Inf: a loop at T0 means T0 is a valid lower bound
+
+    for i in 1:max_iters
+        lb = lb_volume(model, Tlo, z)
+        # confirmation + seeds for the main loop
+        sl, sv, sm, status = coexistence_volumes_bracketed(model, Tlo, z, sqrt(lb*v), 10*v, v)
+        if status !== :failure && sm.dpdv > 0
+            return (Tlo, Thi), sl, sv, sm
+        end
+        Thi = Tlo
+
+        # hill-climb v toward the best probe (ignore NaN dpdv)
+        sx = (sl, sv, sm)
+        g_new, idx = findmax(w -> isnan(w.dpdv) ? TT(-Inf) : w.dpdv, sx)
+        if isfinite(g_new) && (isnan(g) || g_new > g)
+            v = sx[idx].v
+            g = g_new
+        end
+
+        # descend T: translated-ideal-gas proxy, with the step bounded in tau
+        τ = 1/Tlo
+        if isnan(g)
+            τnew = δlo*τ                       # no usable g yet: forced descent
+        else
+            ΔT       = g*(v - lb)^2/R          # g <= 0 here, so ΔT <= 0
+            τ_update = 1/(Tlo + ΔT)            # negative if Tlo + ΔT <= 0: falls in the floor branch
+            τnew     = clamp(τ_update, δlo*τ, δhi*τ)
+        end
+        Tlo = 1/τnew
+    end
+
+    throw(ArgumentError(lazy"probe_subcritical: no unstable point found in $max_iters iterations (last T = $Tlo)"))
+end
+
 
 @public x0_crit_bisection,mechanical_crit_bracket

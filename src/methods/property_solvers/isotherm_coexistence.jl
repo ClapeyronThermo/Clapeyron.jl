@@ -17,6 +17,7 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         tol_v    = 1e-12,
         max_iters  = 100,
         branches = :all,
+        strikes = 3,
         verbose  = false)
 
     TT = Base.promote_eltype(model,T,z,_v_lb,_v_ub)
@@ -92,7 +93,7 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
             sm = s0
         end
     end
-    strikes = 0
+    strike_count = 0
     status = :failure
     niter = 0
     vapour_updated = false #true if the last update was on the vapour side. if so, the next middle point is generated in density variables.
@@ -132,13 +133,13 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         #for that, we use a strike system. 4 strikes and you are out
         hermite_failed = isnan(vm) || vm < 0
         if hermite_failed
-            strikes += 1
+            strike_count += 1
             vm = sqrt(sl.v*sv.v)
         end
 
         verbose && @info "Clapeyron.coexistence_volumes_bracketed: iteration" i=i v_l=sl.v v_v=sv.v vm=vm hermite_failed=hermite_failed strikes=strikes
 
-        strikes >= 4 && break
+        strike_count >= strikes && break
 
         sm = p_state(vm)
     
