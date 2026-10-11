@@ -362,7 +362,6 @@ function volume_impl(model::DeltaCubicModel,p,T,z,phase,threaded,vol0)
     return Δg > 0 ? n*(v2 - c) : n*(v1 - c)
 end
 
-volume_approx(model::DeltaCubicModel,T,z,p_hard,p_soft,phase,vol0) = volume_impl(model,p_hard,T,z,phase,false,vol0)
 
 function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     RT = R*T

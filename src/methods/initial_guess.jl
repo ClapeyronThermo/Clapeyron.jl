@@ -278,10 +278,10 @@ function x0_sat_pure_virial(model,T,z = SA[1.0])
 
 
     _0 = zero(B)
+    _nan = _0/_0
     #virial volume below lower bound volume.
     #that means that we are way over the critical point
     if -2B < lb_v
-        _nan = _0/_0
         return (_nan,_nan,_nan)
     end
     vv_virial = -2*B
@@ -309,27 +309,32 @@ function x0_sat_pure_virial(model,T,z = SA[1.0])
         #near critical point, or too low.
         #return high pressure estimate
         return pressure(model,4*lb_v,T,z),4*lb_v,vv_virial + 2*lb_v
-    elseif T̃ >= T̃max
+    end
+
+    if T̃ >= T̃max
         x0l = 4*lb_v
         x0v = vv_virial + 2*lb_v
         return pressure(model,4*lb_v,T,z),x0l,x0v
-    elseif T̃ < T̃min
+    end
+
+    if T̃ < T̃min
         #gas volume over threshold. but not diverged.
         #normally this happens at low temperatures. we could suppose that Vl0 is a
         #"zero-pressure" volume, apply corresponding strategy
         return x0_sat_pure_near0(model,T,z,vl;B = B)
-    else
-        psat, _, vv_B = x0_sat_pure_near0(model,T,z,vl;B=B,refine_vl=false)
-        if T̃/T̃max > 0.55
-            B_vdw = ∑z*(b - a/RT)
-            vv_vdw_2b = -2*B_vdw
-            if vv_vdw_2b < vv_B
-                ps,vls,vvs = x0_sat_pure_spinodal(model,T,z,vl,vv_B)
-                return ps,vls,vvs
-            end
-        end
-        return psat,vl,vv_B
     end
+
+    psat, vl0_B, vv_B = x0_sat_pure_near0(model,T,z,vl;B = B)
+
+    if T̃ > 0.55*T̃max
+        B_vdw = ∑z*(b - a/RT)
+        vv_vdw_2b = -2*B_vdw
+        if vv_vdw_2b < vv_B
+            ps,vls,vvs = x0_sat_pure_spinodal(model,T,z,vl,vv_B)
+            return ps,vls,vvs
+        end
+    end
+    return psat,vl0_B,vv_B
 end
 
 function vdw_coefficients(vl,pl,vv,pv,T)
@@ -406,30 +411,26 @@ end
 Calculates initial points for pure saturation pressure, using a zero-pressure volume approach.
 If `refine_vl` is set to `true`, then the liquid volume will be recalculated using the calculated saturation pressure, otherwise it will be returned as is.
 """
-function x0_sat_pure_near0(model, T, z = SA[1.0], vl0 = volume(model,zero(T),T,z,phase=:l);
-    B = second_virial_coefficient(model,T,z), refine_vl = true
-)
-    R̄ = Rgas(model)
-    RT = R̄*T
-    n = sum(z)
+function x0_sat_pure_near0(model, T, z = SA[1.0], vl0 = volume(model, zero(T), T, z, phase = :l);
+                            B = second_virial_coefficient(model, T, z),
+                            refine_vl::Bool = true)
+
+    T,vl0,B = Base.promote(T,vl0,B)
+    TT = Base.promote_eltype(model,T,z)
+    RT = Rgas(model)*T
+    n  = sum(z)
     ares = a_res(model, vl0, T, z)
-    lnϕ_liq0 = ares - 1 + log(n*RT/vl0)
-    p = exp(lnϕ_liq0)
-    pB = -0.25*RT/B
-    vv = volume_virial(B,p,T,z)
-    if refine_vl && pB/p > 10
-        vl = volume(model,p,T,z,vol0 = vl0,phase = :l)
-        if vl ≈ vv #refinement failed, stick with vl0
-            vl = vl0*oneunit(vv)
-        end
-    else
-        vl = vl0*oneunit(vv)
-    end
-    if isnan(vv)
-        vv = n*RT/p
-    end
-    return p,vl,vv
+    p    = exp(ares - 1 + log(n*RT/vl0))
+    pB   = -0.25*RT/B
+    vv_raw = volume_virial(B, p, T, z)
+    vv     = isnan(vv_raw) ? TT(n*RT/p) : vv_raw
+    vl_guess = TT(vl0)
+    refine = refine_vl && (pB/p > 10)
+    vl_try = refine ? TT(volume(model, p, T, z, vol0 = vl_guess, phase = :l)) : vl_guess
+    vl     = (refine && vl_try ≈ vv) ? vl_guess : vl_try
+    return p, vl, vv
 end
+
 
 function liquid_pressure_from_virial(model,T,z =SA[1.0],B = second_virial_coefficient(model,T,z),pv_eos = pressure(model,-2*B,T,z))
     #=
@@ -500,9 +501,10 @@ x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,vm) = x0_sat_pure_spinodal(model,_T,
 function x0_sat_pure_spinodal(model,_T,z,_v_lb,_v_ub,vm,B)
     #1: find a bracket that contains an additional unstable point
     s0l,s0v,s0m,status = coexistence_volumes_bracketed(model,_T,z,_v_lb,_v_ub,vm,branches = :all)
+
     #no coexistence
     if status === :failure
-        xx = s0m.v
+        xx = Base.promote_eltype(model,_T,z,_v_lb,_v_ub)
         nan = zero(xx)/zero(xx)
         return nan,nan,nan
     end
