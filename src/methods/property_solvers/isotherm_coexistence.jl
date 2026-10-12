@@ -15,10 +15,10 @@ end
 
 function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         tol_v    = 1e-12,
-        max_iters  = 100,
-        branches = :all,
-        strikes = 3,
-        verbose  = false)
+        max_iters::Int  = 100,
+        branches::Symbol = :all,
+        strikes::Int = 3,
+        verbose::Bool  = false)
 
     TT = Base.promote_eltype(model,T,z,_v_lb,_v_ub)
     v_lb,v_ub = minmax(TT(_v_lb),TT(_v_ub))
