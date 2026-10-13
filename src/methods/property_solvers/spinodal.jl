@@ -6,7 +6,7 @@ function pure_spinodal(model,_T,z = SA[1.0];phase = :l)
     pl = liquid_pressure_from_virial(model,_T,z,B,pv_eos)
     _v_lb = volume(model,pl,_T,z,phase = :l)
     T,v_lb,v_ub = promote(_T,_v_lb,_v_ub)
-    return pure_spinodal_impl(model,T,v_lb,v_ub,phase,z)
+    return pure_spinodal_impl(model,T,z,v_lb,v_ub,phase)
 end
 
 
