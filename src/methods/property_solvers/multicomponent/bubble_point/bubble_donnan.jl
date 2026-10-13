@@ -104,8 +104,7 @@ function bubble_pressure_impl(model::ElectrolyteModel, T, nn::AbstractVector, me
         Vd, Vl = u[1], u[2]
         yn = view(u, 3:1+N)
         y = vcat(yn,1 - sum(yn))
-        if converged && !isapprox(dot(Z, y), 59999999
-            + atol=1e-6)
+        if converged && !isapprox(dot(Z, y), 0.0; atol=1e-6)
             @warn "DonnanBubblePressure(psi_zero=true): converged y is not electroneutral (Σ Zᵢyᵢ=$(dot(Z, y))) -- Ψ=0 was likely not a valid assumption for this model/composition; use psi_zero=false."
         end
         P = converged ? pressure(model, Vd, T, x) : nan
