@@ -29,6 +29,8 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         return (v = TT(xx),p = TT(_f),dpdv = TT(_df),d2pdv2 = TT(_d2f))
     end
 
+    d2pdrho2(s) = s.v * s.v * s.v *(s.v * s.d2pdv2 + 2 * s.dpdv) / (∑z*∑z)
+
     hermite_from_state(sa,sb) = Solvers.hermite5_poly(sa.v, sb.v, sa.p, sb.p, sa.dpdv, sb.dpdv, sa.d2pdv2, sb.d2pdv2)
     s0 = (v = TT(NaN),p = TT(NaN),dpdv = TT(NaN),d2pdv2 = TT(NaN))
     sl,sv = p_state(v_lb),p_state(v_ub)
@@ -83,7 +85,7 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         if !isnan(vm0)
             sm = p_state(TT(vm0))
             sm.dpdv > 0 && (return sl,sv,sm,:eq)
-            d2pdrho2_m0 = sm.v * sm.v * sm.v *(sm.v * sm.d2pdv2 + 2 * sm.dpdv) / (∑z*∑z)
+            d2pdrho2_m0 = d2pdrho2(sm)
             if d2pdrho2_m0 > zero(TT)
                 sl = sm
             else
@@ -104,15 +106,16 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
 
         lnv_converged,_ = Solvers.convergence(log(sl.v),log(sv.v),zero(TT),tol_v)
         lnv_converged && break
-
+        d2pdρ2l = d2pdrho2(sl)
+        d2pdρ2v = d2pdrho2(sv)
         if vapour_updated
             #density formulation: the vapour is the lower density bound, the liquid the upper one.
             #we interpolate q = -p, so that the unstable region has dqdρ > 0, with a maximum of dqdρ
             #at the inflexion point, the same sign convention that _find_vm expects for volumes.
             ρl,ρv = ∑z/sl.v,∑z/sv.v
             dqdρl,dqdρv = sl.dpdv*sl.v*sl.v/∑z,sv.dpdv*sv.v*sv.v/∑z
-            d2qdρ2l = -sl.v*sl.v*sl.v*(sl.v*sl.d2pdv2 + 2*sl.dpdv)/(∑z*∑z)
-            d2qdρ2v = -sv.v*sv.v*sv.v*(sv.v*sv.d2pdv2 + 2*sv.dpdv)/(∑z*∑z)
+            d2qdρ2l = -d2pdρ2l
+            d2qdρ2v = -d2pdρ2v
             poly = Solvers.hermite5_poly(ρv, ρl, -sv.p, -sl.p, dqdρv, dqdρl, d2qdρ2v, d2qdρ2l)
             dpoly = Solvers.polyder(poly)
             ρm = _find_vm(dpoly, ρv, ρl, -ρv) #polynomial is in (ρ - ρv)
@@ -153,7 +156,7 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         #update bounds
         #Anderson and Prausnitz criteria to distinguish between liquid and gas, good enough here
         #for an stricter criteria, pip was used, but it requires evaluating the EoS again.
-        d2pdrho2_m = sm.v * sm.v * sm.v *(sm.v * sm.d2pdv2 + 2 * sm.dpdv) / (∑z*∑z)
+        d2pdrho2_m = d2pdrho2(sm)
 
         verbose && @info "Clapeyron.coexistence_volumes_bracketed: stable middle point" i=i vm=sm.v dpdv=sm.dpdv d2pdrho2=d2pdrho2_m moves=(d2pdrho2_m > zero(TT) ? :sl : :sv)
 
