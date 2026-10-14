@@ -13,6 +13,8 @@ function coexistence_volumes_bracketed(model, T, z; kwargs...)
     return coexistence_volumes_bracketed(model,T,z,vl,vhi;kwargs...)
 end
 
+const CVB_NT{TT} = NamedTuple{(:v, :p, :dpdv, :d2pdv2), NTuple{4, TT}} where TT
+
 function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         tol_v    = 1e-12,
         max_iters::Int  = 100,
@@ -21,10 +23,11 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         verbose::Bool  = false)
 
     TT = Base.promote_eltype(model,T,z,_v_lb,_v_ub)
+    SS = CVB_NT{TT}
     v_lb,v_ub = minmax(TT(_v_lb),TT(_v_ub))
     ∑z = TT(sum(z))
 
-    function p_state(xx)
+    function p_state(xx)::SS
         _f, _df, _d2f = p∂p∂2p(model, xx, T, z)
         return (v = TT(xx),p = TT(_f),dpdv = TT(_df),d2pdv2 = TT(_d2f))
     end
@@ -32,7 +35,7 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
     d2pdrho2(s) = s.v * s.v * s.v *(s.v * s.d2pdv2 + 2 * s.dpdv) / (∑z*∑z)
 
     hermite_from_state(sa,sb) = Solvers.hermite5_poly(sa.v, sb.v, sa.p, sb.p, sa.dpdv, sb.dpdv, sa.d2pdv2, sb.d2pdv2)
-    s0 = (v = TT(NaN),p = TT(NaN),dpdv = TT(NaN),d2pdv2 = TT(NaN))
+    s0::SS = (v = TT(NaN),p = TT(NaN),dpdv = TT(NaN),d2pdv2 = TT(NaN))
     sl,sv = p_state(v_lb),p_state(v_ub)
     
 
