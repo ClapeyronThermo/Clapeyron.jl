@@ -6,14 +6,24 @@ Their main use is to bracket a range where there exists a maxwell loop.
 
 =#
 
+const BracketState{T} = NamedTuple{(:v,:p,:dpdv,:d2pdv2),NTuple{4,T}}
+
+@inline function d2pdv2_state(model,xx,T,z,::Type{TT}) where TT
+    _f, _df, _d2f = p∂p∂2p(model, xx, T, z)
+    return BracketState{TT}((TT(xx),TT(_f),TT(_df),TT(_d2f)))
+end
+
+@noinline function coexistence_volumes_bracketed_bracket_log(msg::String,data)
+    @info msg data
+    return nothing
+end
+
 function coexistence_volumes_bracketed(model, T, z; kwargs...)
     lbv = lb_volume(model,T,z)
     vl = 1.001*lbv
     vhi = 1e5*lbv
     return coexistence_volumes_bracketed(model,T,z,vl,vhi;kwargs...)
 end
-
-const CVB_NT{TT} = NamedTuple{(:v, :p, :dpdv, :d2pdv2), NTuple{4, TT}} where TT
 
 function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         tol_v    = 1e-12,
@@ -22,24 +32,26 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         strikes::Int = 3,
         verbose::Bool  = false)
 
-    TT = Base.promote_eltype(model,T,z,_v_lb,_v_ub)
-    SS = CVB_NT{TT}
+    TT = promote_type(Base.promote_eltype(model,T,z),Base.promote_eltype(_v_lb,_v_ub))
     v_lb,v_ub = minmax(TT(_v_lb),TT(_v_ub))
+    #function barrier: the implementation is specialized on TT.
+    return _coexistence_volumes_bracketed(model,T,z,v_lb,v_ub,vm0,TT,
+                                          tol_v,max_iters,branches,strikes,verbose)
+end
+
+function _coexistence_volumes_bracketed(model,T,z,v_lb::TT,v_ub::TT,vm0,::Type{TT},
+        tol_v,max_iters::Int,branches::Symbol,strikes::Int,verbose::Bool)::Tuple{BracketState{TT},BracketState{TT},BracketState{TT},Symbol} where TT
+
     ∑z = TT(sum(z))
+    nan = TT(NaN)
+    s0 = BracketState{TT}((nan,nan,nan,nan))
+    sl,sv = d2pdv2_state(model,v_lb,T,z,TT),d2pdv2_state(model,v_ub,T,z,TT)
 
-    function p_state(xx)::SS
-        _f, _df, _d2f = p∂p∂2p(model, xx, T, z)
-        return (v = TT(xx),p = TT(_f),dpdv = TT(_df),d2pdv2 = TT(_d2f))
-    end
+    _bracket_hermite(sa,sb) = Solvers.hermite5_poly(sa.v, sb.v, sa.p, sb.p, sa.dpdv, sb.dpdv, sa.d2pdv2, sb.d2pdv2)
+    d2pdrho2(s,∑z) = s.v * s.v * s.v *(s.v * s.d2pdv2 + 2 * s.dpdv) / (∑z*∑z)
 
-    d2pdrho2(s) = s.v * s.v * s.v *(s.v * s.d2pdv2 + 2 * s.dpdv) / (∑z*∑z)
-
-    hermite_from_state(sa,sb) = Solvers.hermite5_poly(sa.v, sb.v, sa.p, sb.p, sa.dpdv, sb.dpdv, sa.d2pdv2, sb.d2pdv2)
-    s0::SS = (v = TT(NaN),p = TT(NaN),dpdv = TT(NaN),d2pdv2 = TT(NaN))
-    sl,sv = p_state(v_lb),p_state(v_ub)
-    
-
-    verbose && @info "Clapeyron.coexistence_volumes_bracketed: start" T=T v_lb=sl.v p_lb=sl.p dpdv_lb=sl.dpdv v_ub=sv.v p_ub=sv.p dpdv_ub=sv.dpdv vm0=vm0 branches=branches
+    verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: start",
+        (T=T, v_lb=sl.v, p_lb=sl.p, dpdv_lb=sl.dpdv, v_ub=sv.v, p_ub=sv.p, dpdv_ub=sv.dpdv, vm0=vm0, branches=branches))
     #non finite pressures (e.g. volume below the co-volume), or non-positive vapour pressure.
     if !isfinite(sl.p) || !isfinite(sv.p) || sv.p <= 0 || sl.v < 0 || sv.v < 0
         return sl,sv,s0,:failure
@@ -47,35 +59,37 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
 
     # sl is unstable, sv is stable
     if sl.dpdv > 0 && sv.dpdv < 0
-        verbose && @info "Clapeyron.coexistence_volumes_bracketed: case sl unstable, sv stable"
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: case sl unstable, sv stable",(;))
         is_vapour(branches) && (return s0,sv,sl,:vapour)
-        vl_new = coexistence_expand_volume_bracket(model,T,z,sl.v,:liquid)
-        verbose && @info "Clapeyron.coexistence_volumes_bracketed: expanded liquid bracket" v_old=sl.v v_new=vl_new
+        #NOTE (type stability): the TT(...) conversion keeps vl_new concrete.
+        vl_new = TT(coexistence_expand_volume_bracket(model,T,z,sl.v,:liquid))
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: expanded liquid bracket",(v_old=sl.v, v_new=vl_new))
         isnan(vl_new) && (return sl,sv,sl,:failure)
-        sl_new = p_state(vl_new)
+        sl_new = d2pdv2_state(model,vl_new,T,z,TT)
         return sl_new,sv,sl,:eq
     end
 
     # sl is stable, sv is unstable
     if sv.dpdv > 0 && sl.dpdv < 0
-        verbose && @info "Clapeyron.coexistence_volumes_bracketed: case sl stable, sv unstable"
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: case sl stable, sv unstable",(;))
         is_liquid(branches) && (return sl,s0,sv,:liquid)
-        vv_new = coexistence_expand_volume_bracket(model,T,z,sv.v,:vapour)
-        verbose && @info "Clapeyron.coexistence_volumes_bracketed: expanded vapour bracket" v_old=sv.v v_new=vv_new
+        vv_new = TT(coexistence_expand_volume_bracket(model,T,z,sv.v,:vapour))
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: expanded vapour bracket",(v_old=sv.v, v_new=vv_new))
         isnan(vv_new) && (return sl,sv,sv,:failure)
-        sv_new = p_state(vv_new)
+        sv_new = d2pdv2_state(model,vv_new,T,z,TT)
         return sl,sv_new,sv,:eq
     end
 
     # sl is unstable, sv is unstable (??)
     if sv.dpdv > 0 && sl.dpdv > 0
-        verbose && @info "Clapeyron.coexistence_volumes_bracketed: case sl and sv unstable"
-        vv_new = coexistence_expand_volume_bracket(model,T,z,sv.v,:vapour)
-        vl_new = coexistence_expand_volume_bracket(model,T,z,sl.v,:liquid)
-        verbose && @info "Clapeyron.coexistence_volumes_bracketed: expanded both brackets" vl_old=sl.v vl_new=vl_new vv_old=sv.v vv_new=vv_new
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: case sl and sv unstable",(;))
+        vv_new = TT(coexistence_expand_volume_bracket(model,T,z,sv.v,:vapour))
+        vl_new = TT(coexistence_expand_volume_bracket(model,T,z,sl.v,:liquid))
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: expanded both brackets",
+            (vl_old=sl.v, vl_new=vl_new, vv_old=sv.v, vv_new=vv_new))
         (isnan(vv_new) || isnan(vl_new)) && (return sl,sv,s0,:failure)
-        sv_new = p_state(vv_new)
-        sl_new = p_state(vl_new)
+        sv_new = d2pdv2_state(model,vv_new,T,z,TT)
+        sl_new = d2pdv2_state(model,vl_new,T,z,TT)
         #pick the unstable point closer to the inflection of dpdv (d2pdv2 = 0).
         #v*d2pdv2/dpdv is dimensionless, so both sides are comparable.
         smid = ifelse(abs(sl.v*sl.d2pdv2/sl.dpdv) < abs(sv.v*sv.d2pdv2/sv.dpdv),sl,sv)
@@ -85,10 +99,12 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
     if vm0 === nothing
         sm = s0
     else
-        if !isnan(vm0)
-            sm = p_state(TT(vm0))
+        #NOTE (type stability): vm0 is converted to TT before use.
+        vm0_TT = TT(vm0)
+        if !isnan(vm0_TT)
+            sm = d2pdv2_state(model,vm0_TT,T,z,TT)
             sm.dpdv > 0 && (return sl,sv,sm,:eq)
-            d2pdrho2_m0 = d2pdrho2(sm)
+            d2pdrho2_m0 = d2pdrho2(sm,∑z)
             if d2pdrho2_m0 > zero(TT)
                 sl = sm
             else
@@ -102,15 +118,18 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
     status = :failure
     niter = 0
     vapour_updated = false #true if the last update was on the vapour side. if so, the next middle point is generated in density variables.
-     verbose && @info "Clapeyron.coexistence_volumes_bracketed: entering hermite loop" v_l=sl.v v_v=sv.v dpdv_l=sl.dpdv dpdv_v=sv.dpdv
+    verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: entering hermite loop",
+        (v_l=sl.v, v_v=sv.v, dpdv_l=sl.dpdv, dpdv_v=sv.dpdv))
 
     for i in 1:max_iters
         niter = i
 
         lnv_converged,_ = Solvers.convergence(log(sl.v),log(sv.v),zero(TT),tol_v)
         lnv_converged && break
-        d2pdρ2l = d2pdrho2(sl)
-        d2pdρ2v = d2pdrho2(sv)
+        d2pdρ2l = d2pdrho2(sl,∑z)
+        d2pdρ2v = d2pdrho2(sv,∑z)
+        #NOTE (type stability): vm is declared as TT, so it is concrete in both branches.
+        local vm::TT
         if vapour_updated
             #density formulation: the vapour is the lower density bound, the liquid the upper one.
             #we interpolate q = -p, so that the unstable region has dqdρ > 0, with a maximum of dqdρ
@@ -121,16 +140,16 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
             d2qdρ2v = -d2pdρ2v
             poly = Solvers.hermite5_poly(ρv, ρl, -sv.p, -sl.p, dqdρv, dqdρl, d2qdρ2v, d2qdρ2l)
             dpoly = Solvers.polyder(poly)
-            ρm = _find_vm(dpoly, ρv, ρl, -ρv) #polynomial is in (ρ - ρv)
+            ρm = TT(_find_vm(dpoly, ρv, ρl, -ρv)) #polynomial is in (ρ - ρv)
             vm = ∑z/ρm #NaN if ρm is NaN, vm < 0 if ρm < 0
         else
             # Hermite interpolant on the current bounds, volume formulation
-            poly = hermite_from_state(sl,sv)
+            poly = _bracket_hermite(sl,sv)
             c = - sl.v #translation of the hermite poly. v(eos) + c = v(hermite)
             dpoly = Solvers.polyder(poly)
 
             #get vm = d2pdv2 = 0 via hermite polynomials
-            vm = _find_vm(dpoly, sl.v, sv.v,c)
+            vm = TT(_find_vm(dpoly, sl.v, sv.v,c))
         end
 
         #of hermite interpolant failed, fall back to bisection.
@@ -143,27 +162,29 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
             vm = sqrt(sl.v*sv.v)
         end
 
-        verbose && @info "Clapeyron.coexistence_volumes_bracketed: iteration" i=i v_l=sl.v v_v=sv.v vm=vm hermite_failed=hermite_failed strikes=strikes
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: iteration",
+            (i=i, v_l=sl.v, v_v=sv.v, vm=vm, hermite_failed=hermite_failed, strikes=strikes))
 
         strike_count >= strikes && break
 
-        sm = p_state(vm)
-    
+        sm = d2pdv2_state(model,vm,T,z,TT)
+
         #return if we found our middle point.
         if sm.dpdv > 0
             status = :eq
-            verbose && @info "Clapeyron.coexistence_volumes_bracketed: found unstable middle point" i=i vm=sm.v dpdv=sm.dpdv p=sm.p
+            verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: found unstable middle point",
+                (i=i, vm=sm.v, dpdv=sm.dpdv, p=sm.p))
             break
         end
 
         #update bounds
         #Anderson and Prausnitz criteria to distinguish between liquid and gas, good enough here
         #for an stricter criteria, pip was used, but it requires evaluating the EoS again.
-        d2pdrho2_m = d2pdrho2(sm)
+        d2pdrho2_m = d2pdrho2(sm,∑z)
 
-        verbose && @info "Clapeyron.coexistence_volumes_bracketed: stable middle point" i=i vm=sm.v dpdv=sm.dpdv d2pdrho2=d2pdrho2_m moves=(d2pdrho2_m > zero(TT) ? :sl : :sv)
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: stable middle point",
+            (i=i, vm=sm.v, dpdv=sm.dpdv, d2pdrho2=d2pdrho2_m, moves=(d2pdrho2_m > zero(TT) ? :sl : :sv)))
 
-        
         if d2pdrho2_m > zero(TT)
             sl = sm
         else
@@ -178,7 +199,8 @@ function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
         vapour_updated = false
     end
 
-    verbose && @info "Clapeyron.coexistence_volumes_bracketed: end" status=status iterations=niter strikes=strikes v_l=sl.v v_v=sv.v v_m=sm.v
+    verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: end",
+        (status=status, iterations=niter, strikes=strikes, v_l=sl.v, v_v=sv.v, v_m=sm.v))
 
     return sl,sv,sm,status
 end
