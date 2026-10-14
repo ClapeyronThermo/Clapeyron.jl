@@ -97,10 +97,6 @@ function saturation_pressure_ad(__model::M,result::RES,tup::TUP1,tup_primal::TUP
     return result
 end
 
-function derivx(f,i)
-    h = sqrt(eps(i))
-    return (1*f(i-2h)-8*f(i-1h)+0*f(i)+8*f(i+1h)-1*f(i+2h))/(12*h)
-end
 
 """
     saturation_temperature(model::EoSModel, p, kwargs...)

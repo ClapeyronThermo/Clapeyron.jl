@@ -1,4 +1,18 @@
+#issue #649
+eps_r_649(z) = (78.4 * z[1] + 8.0 * (z[2] + z[3])) / sum(z) # any composition-dependent permittivity
+kappa_649(z) = Clapeyron.debye_length(1.8e-5, 298.15, z, eps_r_649(z), [0.0, 1.0, -1.0])
+
 @testset verbose = true "Electrolyte methods" begin
+
+    @testset "debye length" begin
+        #issue #649
+        z_649 = [0.9, 0.05, 0.05]
+        h = 1e-6
+        dk_ad = Clapeyron.ForwardDiff.gradient(kappa_649,z_649)
+        dk_fd = testutils_fd_gradient(kappa_649,z_649)
+        @test dk_ad ≈ dk_fd rtol = 1e-6
+    end
+
     @printline
     system = SAFTVREMie(["water"],["sodium","chloride"])
     salts = [("sodium chloride",["sodium"=>1,"chloride"=>1])]
