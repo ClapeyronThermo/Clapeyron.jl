@@ -8,7 +8,7 @@
         @test @inferred(Clapeyron.second_virial_coefficient(model_r,T)) isa Float64
         @test @inferred(Clapeyron.liquid_pressure_from_virial(model_r,T,z,B)) isa Float64
         @test @inferred(Clapeyron.x0_sat_pure_near0(model_r,T,z,B = B)) isa NTuple{3,Float64}
-        @test @inferred(Clapeyron.coexistence_volumes_bracketed(model,T,z,1.01*lb_volume(model_r,T,z),-2B,nothing))[1].v isa Float64
+        @test @inferred(Clapeyron.coexistence_volumes_bracketed(model_r,T,z,1.01*lb_volume(model_r,T,z),-2B,nothing))[1].v isa Float64
         @test @inferred(Clapeyron.x0_sat_pure_virial(model_r, T)) isa NTuple{3,Float64}
         @test @inferred(saturation_pressure(model_r, T, method)) isa NTuple{3,Float64}
     end
