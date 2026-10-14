@@ -87,6 +87,13 @@
         model = SAFTgammaEMie(["water"],["calcium","chloride"]) #issue 349
         @test model isa EoSModel
     end
+
+    @testset "Liquid State Theory" begin
+        model = LS([("polymer", ["+"=>10, "-"=>10], [("+","-")=>1, ("+","+")=>4, ("-","-")=>4]),
+                   ("counterion", ["-"=>1], [])])
+        @test Clapeyron.a_res(model,0.03,300.0,[0.5,0.5]) ≈ -1.5683657474962023 rtol = 1e-6
+    end
+
     @printline
 end
 end

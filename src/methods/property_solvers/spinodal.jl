@@ -1,4 +1,50 @@
 
+function pure_spinodal(model,_T,z = SA[1.0];phase = :l)
+    B = second_virial_coefficient(model,_T,z)
+    _v_ub = -2*B
+    pv_eos = pressure(model,_v_ub,_T,z)
+    pl = liquid_pressure_from_virial(model,_T,z,B,pv_eos)
+    _v_lb = volume(model,pl,_T,z,phase = :l)
+    T,v_lb,v_ub = promote(_T,_v_lb,_v_ub)
+    return pure_spinodal_impl(model,T,z,v_lb,v_ub,phase)
+end
+
+
+#=
+function pure_spinodal_newton(model,T,z,v0,dp_scale = v0*v0/(Rgas(model)*T))
+    function dp(rhox) #dpdrho = 0
+        pj,dpj,d2pj = p∂p∂2p_rho(model,rhox,T,z)
+        return dpj/dp_scale,dpj/d2pj
+    end
+    n = sum(z)
+    rho0 = n/v0
+    prob = Roots.ZeroProblem(dp,rho0)
+    rho_sol = Roots.solve(prob,Roots.Newton())
+    vsol = n/rho_sol
+    return vsol
+end =#
+
+function pure_spinodal_impl(model,T::K,z,v_lb::K,v_ub::K,phase::Symbol) where K
+    sl,sv,sm,status = coexistence_volumes_bracketed(model, T, z, v_lb, v_ub; branches = phase)
+
+    if status === :failure
+        xx = sm.v
+        nan = zero(xx)/zero(xx)
+        return nan,nan
+    end
+
+    if is_liquid(phase)
+        sa,sb = sl,sm
+    else
+        sa,sb = sm,sv
+    end
+
+    _,_,ss = pure_spinodal_newton_bracket(model, T, z, sa, sb)
+    return ss.p,ss.v
+end
+
+
+
 """
     spinodal_pressure(model::EoSModel, T, z; v0, phase)
 
@@ -15,8 +61,7 @@ function spinodal_pressure(model::EoSModel,T,z=SA[1.];v0=nothing,phase=:unknown)
 
     ∑z = sum(z)
     if isnothing(v0) && !is_unknown(phase) && length(model) == 1
-        V_spin = pure_spinodal(model,T;phase)
-        return pressure(model,V_spin,T),V_spin*∑z
+        return pure_spinodal(model,T;phase)
     end
 
     model, idx_r = index_reduction(model,z)

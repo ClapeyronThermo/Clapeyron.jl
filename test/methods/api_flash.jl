@@ -1,3 +1,19 @@
+    @testset "pure saturation type stability" begin
+        model_r = PCSAFT("methanol")
+        method = Clapeyron.ChemPotVSaturation()
+        T = 313.15
+        z = Clapeyron.SA[1.0]
+        B = Clapeyron.second_virial_coefficient(model_r,T,z)
+
+        @test @inferred(Clapeyron.second_virial_coefficient(model_r,T)) isa Float64
+        @test @inferred(Clapeyron.liquid_pressure_from_virial(model_r,T,z,B)) isa Float64
+        @test @inferred(Clapeyron.x0_sat_pure_near0(model_r,T,z,B = B)) isa NTuple{3,Float64}
+        @test @inferred(Clapeyron.coexistence_volumes_bracketed(model_r,T,z,1.01*Clapeyron.lb_volume(model_r,T,z),-2B,nothing))[1].v isa Float64
+        @test @inferred(Clapeyron.x0_sat_pure_virial(model_r, T)) isa NTuple{3,Float64}
+        @test @inferred(saturation_pressure(model_r, T, method)) isa NTuple{3,Float64}
+    end
+
+
 @testset verbose = true "Tp flash algorithms" begin
     #this is a VLLE equilibria
     system = PCSAFT(["water","cyclohexane","propane"])
@@ -1035,14 +1051,8 @@ end
         @test @inferred(bubble_temperature(admodel, 300., [1.,0.])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
         @test @inferred(dew_pressure(admodel, 300., [0.,1.])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
         @test @inferred(dew_temperature(admodel, 300., [0.5,0.5])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
-    end
-
-    @testset "pure saturation and bubble-pressure type stability" begin
-        model_r, _ = Clapeyron.index_reduction(system1, [1.0, 0.0])
-        method = Clapeyron.ChemPotVSaturation()
         T = 313.15
-        @test @inferred(Clapeyron.x0_sat_pure_virial(model_r, T)) isa NTuple{3,Float64}
-        @test @inferred(saturation_pressure(model_r, T, method)) isa NTuple{3,Float64}
         @test @inferred(bubble_pressure(system1, T, [1.0, 0.0])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
+
     end
 end

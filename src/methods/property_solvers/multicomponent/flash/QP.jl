@@ -78,14 +78,15 @@ end
 
 Routine to solve non-reactive two-phase multicomponent flash problem. With vapour fraction - P specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations.
-Inputs:
+
+## Inputs:
  - `q`, vapour fraction
  - `p`, pressure `[Pa]`
  - `n`, vector of number of moles of each species `[mol]`
 
 All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
 
- Outputs:
+## Outputs:
  - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
 
 !!! note

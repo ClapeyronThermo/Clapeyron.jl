@@ -11,12 +11,12 @@ abstract type TPFlashMethod <: FlashMethod end
 Routine to solve non-reactive multicomponent flash problem.
 The default method tries to find all phases. See [`MultiPhaseTPFlash`](@ref)
 
-Inputs:
+## Inputs:
  - T, Temperature `[K]`
  - p, Pressure `[Pa]`
  - n, vector of number of moles of each species `[mol]`
 
-Outputs - Tuple containing:
+## Outputs - Tuple containing:
  - xᵢⱼ, Array of mole fractions of species j in phase i
  - nᵢⱼ, Array of mole numbers of species j in phase i, `[mol]`
  - G, Gibbs energy of Equilibrium Mixture `[J]`
@@ -38,6 +38,7 @@ include("../tp_flash/Michelsentp_flash.jl")
 include("../tp_flash/RachfordRicetp_flash.jl")
 include("../tp_flash/MCFlashJL.jl")
 include("../tp_flash/multiphase.jl")
+include("../tp_flash/electrolyte_flash.jl")
 
 function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs) 
     if length(kwargs) == 0
@@ -60,12 +61,12 @@ end
 Routine to solve non-reactive two-phase multicomponent flash problem. With P-T specifications.
 The default method tries to find all phases. See [`MultiPhaseTPFlash`](@ref)
 
-Inputs:
+## Inputs:
  - `p`, pressure `[Pa]`
  - `T`, temperature `[K]`
  - `n`, vector of number of moles of each species `[mol]`
 
- Outputs:
+## Outputs:
  - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
 """
 function tp_flash2(model::EoSModel, p, T, n; kwargs...)

@@ -75,19 +75,19 @@ function ESElectrolyte(solvents,ions;
 end
 
 function init_preferred_method(method::typeof(bubble_pressure),model::ESElectrolyteModel,kwargs)
-    Z = model.charge
+    Z = component_charges(model)
     nonvolatiles = [model.components[i] for i in @iions]
     return FugBubblePressure(;nonvolatiles = nonvolatiles,kwargs...)
 end
 
 function init_preferred_method(method::typeof(bubble_temperature),model::ESElectrolyteModel,kwargs)
-    Z = model.charge
+    Z = component_charges(model)
     nonvolatiles = [model.components[i] for i in @iions]
     return FugBubbleTemperature(;nonvolatiles = nonvolatiles,kwargs...)
 end
 
 function tp_flash_K0!(K,model::ESElectrolyteModel,p,T,z,cache)
-    Z = model.charge
+    Z = component_charges(model)
     neutral = iszero.(Z)
     pures = split_model(model,neutral)
     psat = first.(extended_saturation_pressure.(pures,T))
@@ -130,7 +130,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::ESElectrolyteModel)
             #println(io)
             #print(io,"Group Type: ",groups.grouptype)
         else
-            show_comps_with_charge(io,neutralmodel.components,model.charge)
+            show_comps_with_charge(io,neutralmodel.components,component_charges(model))
         end
     else
         print(io,"()")

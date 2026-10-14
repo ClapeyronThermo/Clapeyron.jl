@@ -29,6 +29,13 @@ kappa_649(z) = Clapeyron.debye_length(1.8e-5, 298.15, z, eps_r_649(z), [0.0, 1.0
         @test osmotic_coefficient_sat(system,salts,T,m)[1] ≈ 0.9300995995153606 rtol = 1e-5
     end
 
+    @testset "critical points" begin
+        model = LS([("polymer", ["+"=>10, "-"=>10], [("+","-")=>1, ("+","+")=>4, ("-","-")=>4]),
+                   ("counterion", ["-"=>1], [])])
+        @test Clapeyron.mechanical_critical_point(model,[0.11,0.89])[1] ≈ 200.5532703978757 rtol = 1e-6
+        
+    end
+
     fluid = SAFTVREMie(["water"],["sodium","chloride"])
     solid = SolidKs(["water","sodium.chloride","sodium.chloride.2water"])
     mapping = [(("water",1),)=>(("water",1)),
