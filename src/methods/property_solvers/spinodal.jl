@@ -40,7 +40,7 @@ function pure_spinodal_impl(model,T::K,z,v_lb::K,v_ub::K,phase::Symbol) where K
     end
 
     _,_,ss = pure_spinodal_newton_bracket(model, T, z, sa, sb)
-    return ss.v,ss.p
+    return ss.p,ss.v
 end
 
 

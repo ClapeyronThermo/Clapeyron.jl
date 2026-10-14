@@ -630,9 +630,9 @@ end
 function pure_spinodal_impl(model::DeltaCubicModel,T::K,z,v_lb::K,v_ub::K,phase::Symbol) where K
     vsl, vsv, psl, psv = cubic_all_spinodals(model,T,z,phase)
     if is_liquid(phase)
-        return vsl, psl
+        return psl, vsl
     else
-        return vsv, psv
+        return psv, vsv
     end
 end
 

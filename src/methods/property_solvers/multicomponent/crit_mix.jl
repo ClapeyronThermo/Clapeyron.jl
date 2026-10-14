@@ -56,7 +56,7 @@ Returns a tuple, containing:
 If the model is not splittable or is it an electrolyte model (where the ions or salts cannot be considered as standalone components), then a mechanical critical point approximation is calculated first via [`mechanical_crit_bracket`](@ref) 
 """
 function x0_crit_mix(model::EoSModel,z)
-    if isplittable(model)
+    if is_splittable(model)
         pure = split_pure_model(model)
         crit = crit_pure.(pure)
         vci = getindex.(crit,3)
