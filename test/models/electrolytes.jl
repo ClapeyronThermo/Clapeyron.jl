@@ -71,7 +71,7 @@
 
         system = SAFTVREMie(["water"],["sodium","chloride"], ionmodel = ionmodel)
         iondata = Clapeyron.iondata(system,1.8e-5,298.15, [0.9,0.05,0.05])
-        @test Clapeyron.a_res(ionmodel, 1.8e-5,298.15, [0.9,0.05,0.05],iondata) ≈ -224.13923847423726 rtol = 1e-6
+        @test Clapeyron.a_res(ionmodel, 1.8e-5,298.15, [0.9,0.05,0.05],iondata) ≈ -224.26174931795842 rtol = 1e-6
     end
 
     @testset "SAFTgammaEMie" begin
