@@ -106,10 +106,10 @@ function volume_impl(model::RackettLiquidModel,p,T,z,phase,threaded,vol0)
         Zcm += z[i]*zci[i]
         for j in 1:(i-1)
             zj = z[j]
-            Tcⱼ = tci[i]
-            Pcⱼ = pci[i]
+            Tcⱼ = tci[j]
+            Pcⱼ = pci[j]
             bj = (R̄*Tcⱼ)/Pcⱼ
-            aj = (R̄*Tcⱼ)*bi
+            aj = (R̄*Tcⱼ)*bj
             aij = sqrt(ai*aj)
             bij = 0.5*(bi+bj)
             zij = zi*zj
