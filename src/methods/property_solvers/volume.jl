@@ -335,7 +335,7 @@ Calculates an approximation to the gas volume at specified pressure `p`, tempera
 Z(v) ≈ 1 + B(T)/v
 ```
 where `Z` is the compressibility factor and `B` is the second virial coefficient.
-If `B>0`, (over the inversion temperature) returns `NaN`. If the solution to the problem is complex (`Z = 1 + B/v` implies solving a quadratic polynomial), returns `-2*B`.
+If the solution to the problem is complex (`Z = 1 + B/v` implies solving a quadratic polynomial), returns `-2*B`.
 If you pass an `EoSModel` as the first argument, `B` will be calculated from the EoS at the input temperature `T`. You can provide your own second virial coefficient instead of a model.
 """
 function volume_virial end
@@ -346,15 +346,12 @@ function volume_virial(model::EoSModel,p,T,z=SA[1.0])
 end
 
 function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
-    _0 = zero(B)
-
     #=
     PV/RT∑z = 1 + B/V // a = P/RT∑z, .*= V
     aV2 = V + B
     aV2 - V - B = 0
     =#
     n = sum(z)
-    B > _0 && return _0/_0
     pr = p/(n*R*T)*one(B)
     is_real,r1,r2 = Solvers.real_roots2((-B,-one(pr),pr))
     if !is_real

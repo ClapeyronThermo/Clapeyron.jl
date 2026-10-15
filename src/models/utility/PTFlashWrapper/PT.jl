@@ -31,7 +31,7 @@ function __eval_tpd_delta_g_sati(model::M,T::TT,lnϕsat,vv,ps)  where {M,TT}
 end
 
 function __eval_tpd_delta_g_sati(model::M,T::TT,lnϕsat,vv,ps)  where {M,TT<:ForwardDiff.Dual}
-    return VT_∑zlogϕ(model,vv,T,SA[1.0],ps)
+    return VT_∑zlogϕ(gas_model(model),vv,T,SA[1.0],ps)
 end
 
 function modified_gibbs(wrapper::PTFlashWrapper,p::Number,T,w,phase,vol)
@@ -100,8 +100,8 @@ end
 lb_volume(model::PTFlashWrapper,T,z) = lb_volume(fluid_model(model),T,z)
 
 function PT_property(model::PTFlashWrapper,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
-    if length(model) == 1
-        fluidmodel = fluid_model(model)
+    fluidmodel = fluid_model(model)
+    if length(model) == 1 && has_a_res(fluidmodel)
         return PT_property(fluidmodel,p,T,z,phase,threaded,vol0,f,vol) + Δref(model,fluidmodel,p,T,z,f)
     end
 
@@ -121,7 +121,7 @@ function PT_property(model::PTFlashWrapper,p,T,z,phase,threaded,vol0,f::F,vol::V
         return PT_property(gasmodel,p,T,z,phase,threaded,vol0,f,vol) + Δref(model,gasmodel,p,T,z,f)
 
     elseif is_liquid(phase)
-        if __γ_unwrap(model) isa IdealLiquidSolution
+        if __γ_unwrap(model) isa IdealLiquidSolution && has_a_res(fluidmodel)
             #liquid phase + no activity: just delegate to the liquid model, whatever that model may be
             #even for saturated liquid volumes, you can get some props
             return PT_property(liquid_model(model),p,T,z,phase,threaded,vol0,f,vol)
