@@ -477,15 +477,16 @@ end
             system = RackettLiquid(["water"])
             @test volume(system,1e5,300.15) ≈ 1.6837207241594103e-5 rtol = 1e-6
             system2 = RackettLiquid(["water","methanol"])
-            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.2516352601748416e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 2.7210033083465674e-5 rtol = 1e-6
             @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.6837207241594103e-5 rtol = 1e-6
+            @test volume(RackettLiquid(["methanol","water"]),1e5,300.15,[0.3,0.7]) ≈ volume(system2,1e5,300.15,[0.7,0.3])
         end
 
         @testset "YamadaGunnLiquid" begin
             system = YamadaGunnLiquid(["water"])
             @test volume(system,1e5,300.15) ≈ 2.0757546189420953e-5 rtol = 1e-6
             system2 = YamadaGunnLiquid(["water","methanol"])
-            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.825994563177142e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.204023979260683e-5 rtol = 1e-6
             @test volume(system2,1e5,300.15,[1.,0.]) ≈ 2.0757546189420953e-5 rtol = 1e-6
         end
 
@@ -552,6 +553,17 @@ end
                 @test L ≈ verification_data[i,9] rtol = 1e-6
             end
         end
+    end
+
+    @testset "FluidCorrelation" begin
+        system = CompositeModel(["water"],saturation = DIPPR101Sat,liquid = RackettLiquid,gas = ReidIdeal)
+        p0 = saturation_pressure(system,300.15)[1]
+        Δh = enthalpy(system,p0,300.15,phase = :v) - enthalpy(system,p0,300.15,phase = :l)
+        @test enthalpy_vap(system,300.15) ≈ Δh rtol = 1e-3
+        @test mass_density(system,1e5,300.15,phase = :l) ≈ Clapeyron.molecular_weight(system)/volume(system,1e5,300.15,phase = :l)
+        fluid2 = CompositeModel(["water","methanol"],saturation = DIPPR101Sat,liquid = RackettLiquid,gas = BasicIdeal)
+        system2 = CompositeModel(["water","methanol"],liquid = NRTL,fluid = fluid2)
+        @test isfinite(enthalpy(system2,1e5,300.15,[0.5,0.5],phase = :l))
     end
 
     @testset verbose = true "Virial Coeff" begin
