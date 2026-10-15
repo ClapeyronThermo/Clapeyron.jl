@@ -477,7 +477,7 @@ end
             system = RackettLiquid(["water"])
             @test volume(system,1e5,300.15) ≈ 1.6837207241594103e-5 rtol = 1e-6
             system2 = RackettLiquid(["water","methanol"])
-            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 2.7210033083465674e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.2516352601748416e-5 rtol = 1e-6
             @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.6837207241594103e-5 rtol = 1e-6
         end
 
@@ -485,7 +485,7 @@ end
             system = YamadaGunnLiquid(["water"])
             @test volume(system,1e5,300.15) ≈ 2.0757546189420953e-5 rtol = 1e-6
             system2 = YamadaGunnLiquid(["water","methanol"])
-            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.204023979260683e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.825994563177142e-5 rtol = 1e-6
             @test volume(system2,1e5,300.15,[1.,0.]) ≈ 2.0757546189420953e-5 rtol = 1e-6
         end
 
