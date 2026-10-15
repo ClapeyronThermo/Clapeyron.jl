@@ -121,10 +121,12 @@ This macro is a non-allocating equivalent to the following code:
 `@iions` is an iterator that goes through all charged components in an electrolyte model.
 """
 macro iions()
-    quote
-        Iterators.filter(!iszero ∘ Base.Fix1(Base.getindex,Z), 1:length(Z))
+    #all the x_iterator functions are in utils/misc.jl
+    return quote
+        iions_iterator(Z)
     end |> esc
 end
+
 
 """
     @ineutral()
@@ -138,8 +140,9 @@ This macro is a non-allocating equivalent to the following code:
 `@iions` is an iterator that goes through all non charged components in an electrolyte model.
 """
 macro ineutral()
-    quote
-        Iterators.filter(iszero ∘ Base.Fix1(Base.getindex,Z), 1:length(Z))
+    #all the x_iterator functions are in utils/misc.jl
+    return quote
+        ineutral_iterator(Z)
     end |> esc
 end
 
@@ -238,15 +241,6 @@ Clapeyron.auto_binary_salts(Z, comps)
 """
 auto_binary_salts
 
-is_electrolyte(model::ElectrolyteModel) = true
-
-"""
-    component_charges(model::ElectrolyteModel)
-
-Net charge carried by one molecule of each *component* (length`length(model)`). 
-The generic fallback assumes `model.charge` is already per-component (true for any electrolyte model whose components are real,individually-named ionic species, e.g. `ESElectrolyte`). 
-A group-contribution model whose own `.charge` is per-*group* instead must override this directly.
-"""
 component_charges(model::ElectrolyteModel) = model.charge
 
 #=
@@ -441,4 +435,3 @@ include("ISElectrolyte.jl")
 include("stability.jl")
 
 export molality_to_composition
-@public component_charges

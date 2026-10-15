@@ -8,10 +8,12 @@ This macro is an alias to
 
 """
 macro groups()
+    #all the x_iterator functions are in utils/misc.jl
     return quote
-            (1:length(model.groups.flattenedgroups))::UnitRange{Int64}
+        groups_iterator(model)
     end |> esc
 end
+
 
 """
     @groups(component)
@@ -23,7 +25,10 @@ This macro is an alias to
 `i_groups[component]` is an iterator that goes through all groups in relevant to a given component.
 """
 macro groups(component)
-    return :($(esc(:(model.groups.i_groups[$(component)]::Vector{Int}))))
+        #all the x_iterator functions are in utils/misc.jl
+    return quote
+        groups_iterator(model,$component)
+    end |> esc
 end
 
 """
@@ -37,7 +42,10 @@ This macro is an alias to
 each group in a GC model, and to each main component in a non-GC model.
 """
 macro sites(component)
-    return :($(esc(:(model.sites.i_sites[$(component)]::Vector{Int}))))
+    #all the x_iterator functions are in utils/misc.jl
+    return quote
+        sites_iterator(model,$component)
+    end |> esc
 end
 
 """

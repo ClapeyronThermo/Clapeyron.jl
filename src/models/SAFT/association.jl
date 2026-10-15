@@ -1,3 +1,5 @@
+getsites(model::AssociationModel) = model.sites
+
 function a_assoc(model::EoSModel, V, T, z,data=nothing)
     _0 = zero(V+T+first(z))
     nn = assoc_pair_length(model)
@@ -67,12 +69,7 @@ julia> Clapeyron.assoc_pair_length(model)
     return length(val.values)
 end
 
-"""
-    getsites(model::EoSModel)
 
-Returns the `SiteParam` used in association calculations for the input `model`, if any. Fails if not available. To check if a model has sites, use `has_sites`.
-"""
-getsites(model) = model.sites
 
 """
     assoc_options(model::EoSModel)

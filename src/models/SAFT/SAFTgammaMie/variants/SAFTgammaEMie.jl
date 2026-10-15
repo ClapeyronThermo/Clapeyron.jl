@@ -11,10 +11,10 @@
         verbose::Bool = false)
 
 ## Description
-This function is used to create an SAFT-gammaE Mie model which is a combination of the SAFT-gamma Mie, MSA and Born models.
+This function is used to create an SAFT-gamma-E Mie model which is a combination of the SAFT-gamma Mie, MSA and Born models.
 
 ## Input parameters
-### SAFT-VR Mie Parameters
+### SAFT-gamma-Mie Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `vst`: Single Parameter (`Float64`) - Number of segments (no units)
 - `S`: Single Parameter (`Float64`) - Shape factor for segment (no units)

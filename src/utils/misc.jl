@@ -184,3 +184,22 @@ if Base.VERSION < v"1.11"
 else
     linearidx(x::AbstractMatrix) = diagind(x,0,IndexStyle(x))
 end
+
+#iterator functions used by iterator macros
+@inline comps_iterator(nc::Int) = Base.OneTo(nc)
+
+@inline iions_iterator(Z) = Iterators.filter(!iszero ∘ Base.Fix1(Base.getindex,Z), 1:length(Z))
+
+@inline ineutral_iterator(Z) = Iterators.filter(iszero ∘ Base.Fix1(Base.getindex,Z), 1:length(Z))
+
+#=
+@inline comps_iterator(model::EoSModel) = comps_iterator(length(model))
+@inline iions_iterator(model::EoSModel) = iions_iterator(component_charges(model))
+@inline ineutral_iterator(model::EoSModel) = ineutral_iterator(component_charges(model))
+@inline groups_iterator(model::EoSModel) = groups_iterator(model.groups)
+@inline groups_iterator(groups::GroupParam) = comps_iterator(length(groups.flattenedgroups))
+@inline sites_iterator(model::EoSModel,i) = sites_iterator(getsites(model),Int64(i))
+@inline sites_iterator(sites::SiteParam,i) = sites.i_sites[i]
+@inline groups_iterator(model::EoSModel,i::Integer) = groups_iterator(model.groups,Int64(i))
+@inline groups_iterator(groups::GroupParam,i::Int) = groups.i_groups[i]
+=#
