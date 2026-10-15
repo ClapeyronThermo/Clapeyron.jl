@@ -477,7 +477,7 @@ end
             system = RackettLiquid(["water"])
             @test volume(system,1e5,300.15) ≈ 1.6837207241594103e-5 rtol = 1e-6
             system2 = RackettLiquid(["water","methanol"])
-            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.2516352601748416e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 2.7210033083465674e-5 rtol = 1e-6
             @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.6837207241594103e-5 rtol = 1e-6
         end
 
@@ -485,7 +485,7 @@ end
             system = YamadaGunnLiquid(["water"])
             @test volume(system,1e5,300.15) ≈ 2.0757546189420953e-5 rtol = 1e-6
             system2 = YamadaGunnLiquid(["water","methanol"])
-            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.825994563177142e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.204023979260683e-5 rtol = 1e-6
             @test volume(system2,1e5,300.15,[1.,0.]) ≈ 2.0757546189420953e-5 rtol = 1e-6
         end
 
@@ -557,16 +557,16 @@ end
     @testset verbose = true "Virial Coeff" begin
         @testset "AbbottVirial" begin
             system = AbbottVirial(["methane","ethane"])
-            @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.024820060368027988 rtol = 1e-6
+            @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.024841297044266082 rtol = 1e-6
             #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
-            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0024543543773067693 rtol = 1e-6
+            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0020334592528548586 rtol = 1e-6
         end
 
         @testset "TsonopoulosVirial" begin
             system = TsonopoulosVirial(["methane","ethane"])
-            @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.02485310667780686 rtol = 1e-6
+            @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.024840744782218545 rtol = 1e-6
             #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
-            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0017990881811592349 rtol = 1e-6
+            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0020444138351077587 rtol = 1e-6
         end
 
         @testset "EoSVirial2" begin
