@@ -10,7 +10,7 @@ This macro is an alias to
 macro groups()
     #all the x_iterator functions are in utils/misc.jl
     return quote
-        groups_iterator(model)
+        Clapeyron.groups_iterator(model)
     end |> esc
 end
 
@@ -27,7 +27,7 @@ This macro is an alias to
 macro groups(component)
         #all the x_iterator functions are in utils/misc.jl
     return quote
-        groups_iterator(model,$component)
+        Clapeyron.groups_iterator(model,$component)
     end |> esc
 end
 
@@ -44,7 +44,7 @@ each group in a GC model, and to each main component in a non-GC model.
 macro sites(component)
     #all the x_iterator functions are in utils/misc.jl
     return quote
-        sites_iterator(model,$component)
+        Clapeyron.sites_iterator(model,$component)
     end |> esc
 end
 

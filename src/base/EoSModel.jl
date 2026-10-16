@@ -183,7 +183,7 @@ The caveat is that `model` has to exist in the local namespace.
 macro comps()
     #all the x_iterator functions are in utils/misc.jl
     return quote
-        comps_iterator(model)
+        Clapeyron.comps_iterator(model)
     end |> esc
 end
 

@@ -13,6 +13,7 @@ struct MSAID <: MSAIDModel
 end
 
 export MSAID
+
 """
     MSAID(solvents::Array{String,1},
         ions::Array{String,1};
@@ -23,17 +24,47 @@ export MSAID
         verbose = false)
 
 ## Input parameters
-- `sigma`: Single Parameter (`Float64`) - Hard-sphere diameter `[m]`
-- 
-- `charge`: Single Parameter (`Float64`) - Charge `[-]`
 
-## Description
-This function is used to create a Mean Spherical Approximation model. The MSAID term gives the excess Helmholtz energy to account for the electrostatic interactions between ions in solution.
+- `sigma`: Single Parameter (`Float64`) — Hard-sphere diameter `[m]`
+- `dipole`: Single Parameter (`Float64`) — Permanent dipole moment of the solvent `[C·m]`
+- `charge`: Single Parameter (`Float64`) — Charge number `[-]`
+
+## Description 
+
+Mean Spherical Approximation (MSA) ion–dipole model for electrolyte solutions.
+
+The MSAID term adds the electrostatic contribution to the residual Helmholtz energy of a mixture of charged hard spheres (ions) and hard dipoles (solvent), all interacting through the MSA closure. 
+The model is built from two species types:
+
+- one neutral solvent with a permanent point dipole `dipole` and hard-sphere diameter `sigma`,
+- any number of ions with hard-sphere diameter `sigma` and charge number `charge` (in units of the elementary charge).
+
+Three internal parameters carry the whole electrostatic response:
+
+- `Γ`  — ionic screening parameter (MSA analogue of the Debye `κ`),
+- `B`  — ion–dipole coupling parameter,
+- `b₂` — dipole–dipole coupling parameter.
+
+They are obtained by solving a closed system of three algebraic equations (Blum 1974 for equal diameters; Blum & Wei 1987 for the general-size case).
+All thermodynamic properties are then expressed as closed-form functions of `(Γ, B, b₂)`.
+
+## Model construction
+
+- Exactly one neutral solvent is required; the model errors otherwise.
+- `dipole` is only read for the neutral component.
+- If a `b` (covolume) parameter is present instead of `sigma`, the hard-sphere diameter is recovered from `b = (3/2) N_A σ³` before the MSA equations are built.
+
+!!! note "unequal ion diameters"
+    The Blum–Wei (1987) general-size solution requires solving a coupled inner system before the outer closures in `(Γ, B, b₂)` can be evaluated. 
+    This implementation replaces that inner system with an approximation that behaves correctly on the dilute limit.
+    The approximation implemented is exact for equal size ion diameters; accuracy is expected to be good for small size spreads, degrading as the ionic diameter spread widens.
 
 ## References
-1. Blum, L. (1974). Solution of a model for the solvent‐electrolyte interactions in the mean spherical approximation, 61, 2129–2133.
+
+1. Blum, L. (1974). Solution of a model for the solvent-electrolyte interactions in the mean spherical approximation. The Journal of Chemical Physics, 61(5), 2129–2133. [doi:10.1063/1.1682224](https://doi.org/10.1063/1.1682224)
+1. Blum, L., & Wei, D. Q. (1987). Analytical solution of the mean spherical approximation for an arbitrary mixture of ions in a dipolar solvent. The Journal of Chemical Physics, 87(1), 555–565. [doi:10.1063/1.453604](https://doi.org/10.1063/1.453604)
 """
-function MSAID(solvents,ions; charge = nothing, userlocations, verbose=false)
+function MSAID(solvents,ions; charge = nothing, userlocations, verbose=false, RSPmodel = nothing, RSPmodel_userlocations = nothing)
     solvents = format_components(solvents)
     ions = format_components(ions)
     components = vcat(solvents, ions)

@@ -123,7 +123,7 @@ This macro is a non-allocating equivalent to the following code:
 macro iions()
     #all the x_iterator functions are in utils/misc.jl
     return quote
-        iions_iterator(Z)
+        Clapeyron.iions_iterator(Z)
     end |> esc
 end
 
@@ -142,7 +142,7 @@ This macro is a non-allocating equivalent to the following code:
 macro ineutral()
     #all the x_iterator functions are in utils/misc.jl
     return quote
-        ineutral_iterator(Z)
+        Clapeyron.ineutral_iterator(Z)
     end |> esc
 end
 
