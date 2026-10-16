@@ -124,7 +124,7 @@ end
 export CPA
 function CPA(components;
     idealmodel = BasicIdeal,
-    radial_dist::Symbol = :CS,
+    radial_dist = :CS,
     cubicmodel = RK,
     alpha = CPAAlpha,
     mixing = vdW1fRule,
@@ -139,6 +139,8 @@ function CPA(components;
     reference_state = nothing,
     verbose = false,
     assoc_options = AssocOptions())
+
+    radial_dist = Symbol(radial_dist)
 
     locs = if radial_dist == :CS
         ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]

@@ -3,22 +3,50 @@
 
 Method to solve non-reactive multicomponent flash problem by Rachford-Rice equation.
 
-Only two phases are supported. if `K0` is `nothing`, it will be calculated via the Wilson correlation.
+Only two phases are supported. If `K0` is `nothing`, it will be calculated via the Wilson correlation.
 
-### Keyword Arguments:
-- `equilibrium`: `:vle` for liquid vapor equilibria, `:lle` for liquid liquid equilibria, `:unknown` if not specified
+## Keyword Arguments:
+- `equilibrium`: `:vle` for liquid vapor equilibria, `:lle` for liquid liquid equilibria, `:unknown` if not specified.
 - `K0`: initial guess for the K-values.
 - `x0`: initial guess for the composition of phase x.
 - `y0`: initial guess for the composition of phase y.
 - `vol0`: initial guesses for phase x and phase y volumes.
 - `K_tol`: tolerance to stop the calculation.
 - `ss_iters`: number of Successive Substitution iterations to perform.
-- `nacc`: accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
+- `nacc`: accelerate successive substitution method every nacc steps. Should be an integer bigger than 3. Set to 0 for no acceleration.
 - `second_order`: wheter to solve the Gibbs energy minimization using the analytical hessian or not.
 - `noncondensables`: arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase.
 - `nonvolatiles`: arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase.
 - `flash_result::FlashResult`: can be provided instead of `x0`,`y0` and `vol0` for initial guesses.
 
+## Result values
+
+This flash method will always return two phases, independently of the amount of actual phases in equilibria.
+The phase in the first index is considered the `x` phase (always liquid), whereas the phase on the second index is considered the `y` phase (vapour phase in VLE, liquid phase in LLE).
+In this way, one can recover the converged K value by dividing the compositions in the following way:
+
+```julia
+x,y = result.compositions
+K = y ./ x
+```
+
+On two-phase equilibria, there are two different phases, with non-zero phase fractions and compositions, whereas on one-phase equilibria, one phase will have a zero phase fraction and one phase will have a phase fraction equal to `sum(z_bulk)`.
+We will name the phase with non-zero phase fraction "active phase"; the phase with null phase fraction will be named "incipient" phase.
+A two-phase equilibria result will have two active phases and zero incipient phases, a one-phase equilibria result will have one active phase and one incipient phase.
+We can get the amount of active phases using [`Clapeyron.numphases(result,true)`](@ref Clapeyron.numphases), and check whatever phase is active via [`Clapeyron.is_active_phase`](@ref).
+
+### K-values on results with incipient phases
+
+On a one-phase equilibria result, the K value calculated via `K = y ./ x` is not a valid equilibrium K with respect to the bulk composition.
+This value is still useful, but some care is needed while handling this result. we can identify three cases:
+
+1.  "hard" liquid and "hard" vapour: In those cases, the converged K value has all Kᵢ > 1 (vapour result), or all Kᵢ < 1 (liquid result).
+    Because compositions in a `FlashResult` are normalized, the K obtained via `y ./ x` will have at least one value equal to `1`.
+1.  "soft" liquid and "soft" vapour: In those cases, while K converged, no vapour fraction `β` in the range (0,1) can satisfy `β = Clapeyron.rachfordrice(K,z)`.
+    In this case, `minimum(K) < 1` and `maximum(K) > 1`.
+1.  "trivial" result: No separation could be done, and the flash procedure converged to the trivial result `K .= 1`.
+    The phase is still identified (so the active phase can still be identified as liquid or vapour), no incipient phase could be found.
+    In this case, `all(isone,K) == true`.
 """
 struct RRTPFlash{T} <: TPFlashMethod
     equilibrium::Symbol
@@ -32,6 +60,14 @@ struct RRTPFlash{T} <: TPFlashMethod
     noncondensables::Union{Nothing,Vector{String}}
     nonvolatiles::Union{Nothing,Vector{String}}
     verbose::Bool
+end
+
+function Solvers.primalval(method::RRTPFlash{T}) where {T}
+    if T === nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
 end
 
 Base.eltype(method::RRTPFlash{T}) where T = T
@@ -61,7 +97,7 @@ function RRTPFlash(;equilibrium = :unknown,
         np = numphases(flash_result)
         np != 2 && incorrect_np_flash_error(RRTPFlash,flash_result)
     end
-    
+
     nonvolatiles isa String && (nonvolatiles = [nonvolatiles])
     noncondensables isa String && (noncondensables = [noncondensables])
 
@@ -71,25 +107,18 @@ function RRTPFlash(;equilibrium = :unknown,
 end
 
 function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
-
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
-
-    x,y,β,v = tp_flash_michelsen(model_cached,p,T,z,method,true)
-    
+    x,y,β,v,lle = tp_flash_michelsen(model_cached,p,T,z,method,true)
+    vapour_idx = lle ? -1 : 2
     volumes = [v[1],v[2]]
     comps = [x,y]
     βi = [1-β ,β]
-
-    if isnan(β)
-        g = β
-    elseif has_a_res(model_cached)
-        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium,volumes)
-    else
-        g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
-    end
-
-    return FlashResult(comps,βi,volumes,FlashData(p,T,g))
+    flash0 = FlashResult(comps,βi,volumes,FlashData(p,T,zero(β),vapour_idx))
+    g = isnan(β) ? β : first(modified_gibbs(model_cached,flash0))
+    return FlashResult(comps,βi,volumes,FlashData(p,T,g,vapour_idx))
 end
+
+tp_flash_pure(model,p,T,z,method::RRTPFlash) = tp_flash_pure_michelsen(model,p,T,z)
 
 michelsen_itss(method::RRTPFlash) = method.max_iters
 michelsen_use_opt_solver(::RRTPFlash) = false

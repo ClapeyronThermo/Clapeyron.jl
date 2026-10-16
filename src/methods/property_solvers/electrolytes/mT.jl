@@ -1,7 +1,8 @@
 function __electrolyte_fugacities(model,salts,p,T,m,zsolv = SA[1.0];sat = false)
     icomponents = 1:length(model)
-    isolvent = icomponents[model.charge.==0]
-    iions = icomponents[model.charge.!=0]
+    Z = component_charges(model)
+    isolvent = icomponents[Z.==0]
+    iions = icomponents[Z.!=0]
     
     ν = salt_stoichiometry(model,salts)
     z0 = molality_to_composition(model,salts,ones(length(m)).*1e-20,zsolv,ν)
@@ -38,7 +39,7 @@ These are defined as:
 
 ## Example:
 
-```julia    
+```julia-repl  
 model = ePCSAFT(["water"],["sodium","chloride"])
 
 T = 298.15
@@ -71,7 +72,7 @@ Calculates the mean ionic activity coefficient of selection of salts at a given 
 γ± = φ±/φ±₀ * ∑zsolv/∑z
 ```
 Example:
-```julia    
+```julia-repl    
 model = ePCSAFT(["water"],["sodium","chloride"])
 
 p = 1e5
@@ -132,7 +133,7 @@ osmotic_coefficient_sat(model,T,m,zsolv = SA[1.0]) = osmotic_coefficient_sat(mod
 
 """
     osmotic_coefficient(model::ESElectrolyteModel,salts,p,T,m,zsolv = SA[1.0])
-Calculates the osmotic coefficient of selection of solvents at a given pressure, temperature and molality. These are defined as:
+Calculates the osmotic coefficient of selection of solvents at a given pressure `p`, temperature `T` and molality `m`. These are defined as:
 ```
 ϕ = -1/(∑νi*mi*Mw)*log(asolv)
 ```

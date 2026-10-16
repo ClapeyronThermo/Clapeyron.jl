@@ -1,19 +1,4 @@
 #const IDEALTYPE = Union{T,Type{T}} where T<:EoSModel
-
-"""
-    arbitraryparam(params)
-
-Returns the first field in the struct that is a subtype of `ClapeyronParam`. Errors if it finds none.
-"""
-function arbitraryparam(params)
-    paramstype = typeof(params)
-    idx = findfirst(z->z <: ClapeyronParam,fieldtypes(paramstype))
-    if isnothing(idx)
-        error("The parameter struct ", paramstype, " must contain at least one ClapeyronParam")
-    end
-     return fieldnames(paramstype)[idx] |> z->getfield(params,z)
-end
-
 """
     @groups
 
@@ -23,10 +8,12 @@ This macro is an alias to
 
 """
 macro groups()
+    #all the x_iterator functions are in utils/misc.jl
     return quote
-            (1:length(model.groups.flattenedgroups))::UnitRange{Int64}
+        Clapeyron.groups_iterator(model)
     end |> esc
 end
+
 
 """
     @groups(component)
@@ -35,10 +22,13 @@ This macro is an alias to
 
     model.groups.i_groups[component]
 
-`i_groups[component]` is an iterator that goes through all groups in relevent to a given component.
+`i_groups[component]` is an iterator that goes through all groups in relevant to a given component.
 """
 macro groups(component)
-    return :($(esc(:(model.groups.i_groups[$(component)]::Vector{Int}))))
+        #all the x_iterator functions are in utils/misc.jl
+    return quote
+        Clapeyron.groups_iterator(model,$component)
+    end |> esc
 end
 
 """
@@ -52,7 +42,10 @@ This macro is an alias to
 each group in a GC model, and to each main component in a non-GC model.
 """
 macro sites(component)
-    return :($(esc(:(model.sites.i_sites[$(component)]::Vector{Int}))))
+    #all the x_iterator functions are in utils/misc.jl
+    return quote
+        Clapeyron.sites_iterator(model,$component)
+    end |> esc
 end
 
 """
@@ -111,7 +104,7 @@ macro sum(expr)
     end
     iterator = unique!(iterator)
     length(iterator) != 1 && error("@sum: only one iterator index is allowed")
-    length(length_indicator) == 0 && error("@sum: no length indicator found")
+    isempty(length_indicator) && error("@sum: no length indicator found")
     idx = iterator[1]
     len = length_indicator[1]
     res_expr = Expr(:call,:(Base.promote_eltype))
@@ -144,7 +137,7 @@ function __sum_add_variables(cache,expr::Expr)
     elseif expr.head == :call
         for i in 2:length(expr.args)
             __sum_add_variables(cache,expr.args[i])
-        end     
+        end
     end
 end
 
@@ -232,25 +225,89 @@ function transform_params(M,params,components_or_groups,verbose)
 end
 
 
-function __struct_expr!(name,paramstype,idealmodel = true)
+function __struct_expr!(name,parent,paramstype;idealmodel = true,sites = true,groups = true)
+
+    parametric_param = paramstype isa Expr && paramstype.head == :curly
+
     if idealmodel
-        struct_expr = :($name{I <: IdealModel})
+        struct_head = :($name{I <: IdealModel})
     elseif !idealmodel && paramstype isa Symbol
-        struct_expr = name
+        struct_head = name
     else
-        struct_expr = :($name{XX})
-        popat!(struct_expr.args,length(struct_expr.args))
+        struct_head = :($name{XX})
+        popat!(struct_head.args,length(struct_head.args))
     end
-    if paramstype isa Expr && paramstype.head == :curly
-        append!(struct_expr.args,paramstype.args[2:end])
+
+    if parametric_param
+        append!(struct_head.args,paramstype.args[2:end])
         curly_args = paramstype.args
-        for i in 1:length(curly_args)
+        if length(curly_args) == 2
+            PARAM_LETTER = curly_args[2]
+        else
+            PARAM_LETTER = :ERROR
+        end
+
+        for i in eachindex(curly_args)
             if curly_args[i] isa Expr && curly_args[i].head == :<:
                 curly_args[i] = curly_args[i].args[1]
             end
         end
+    else
+        PARAM_LETTER = :ERROR
     end
+
+    struct_expr = :(struct $struct_head <: $parent components::Vector{String} end)
+
+
+    struct_fields = struct_expr.args[3].args
+    if groups
+        if parametric_param
+            #push!(struct_fields,:(groups::Clapeyron.GroupParam))
+            if PARAM_LETTER != :ERROR
+                push!(struct_fields,:(groups::Clapeyron.GroupParam{$PARAM_LETTER}))
+            else
+                throw(error("@newmodelgc error: cannot get correct parametric param type from expr"))
+            end
+        else
+            push!(struct_fields,:(groups::Clapeyron.GroupParam{Int64}))
+        end
+    end
+
+    if sites
+        push!(struct_fields,:(sites::Clapeyron.SiteParam))
+    end
+
+    push!(struct_fields,:(params::$paramstype))
+
+    if idealmodel
+        push!(struct_fields,:(idealmodel::I))
+    end
+
+    if sites
+        push!(struct_fields,:(assoc_options::Clapeyron.AssocOptions))
+    end
+
+    push!(struct_fields,:(references::Vector{String}))
+
     return struct_expr
+end
+
+function __newmodel_is_idealmodel(parent,mod)
+    #MyIdealModel <: IdealModel
+
+    if parent isa Symbol
+        res = getfield(mod,parent) <: Clapeyron.IdealModel
+        return res
+    end
+
+    #MyIdealModel{T} <: IdealModel
+    if parent isa Expr && parent.head == :curly
+        res = getfield(mod,parent.args[1]) <: Clapeyron.IdealModel
+        return res
+    end
+
+    #err on the side of caution
+    return true
 end
 
 """
@@ -259,9 +316,9 @@ end
 This is a data type that contains all the information needed to use an EoS model.
 It also functions as an identifier to ensure that the right functions are called.
 
-You can pass an optional 4th `Bool` argument  indicating if you want to use sites with this model or not. Defaults to `true`.
+You can pass an optional 4th `Bool` argument indicating if you want to use sites with this model or not. Defaults to `true`.
 
-You can also pass another optional 5th `Bool` argument indicating if a second order GroupParam (`StructGroupParam`) is used or not. Defaults to `false`
+You can also pass another optional 5th `Bool` argument indicating if a second order GroupParam (`StructGroupParam`) is used or not. Defaults to `false`.
 
 = Fields =
 The Struct consists of the following fields:
@@ -271,31 +328,18 @@ The Struct consists of the following fields:
 * sites: a [`SiteParam`](@ref) (optional)
 * params: the Struct paramstype that contains all parameters in the model
 * idealmodel: the IdealModel struct that determines which ideal model to use
-* assoc_options: struct containing options for the association solver. see [`AssocOptions`](@ref)
+* assoc_options: struct containing options for the association solver. See [`AssocOptions`](@ref)
 * references: reference for this EoS
 
 See the tutorial or browse the implementations to see how this is used.
 """
 macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = false)
-    
-    if use_struct_param
-        grouptype = :StructGroupParam
-    else
-        grouptype = :GroupParam
-    end
-
-    struct_expr = __struct_expr!(name,paramstype)
+    mod = __module__
+    is_idealmodel = __newmodel_is_idealmodel(parent,mod)
+    struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = !is_idealmodel,groups = true,sites = sitemodel)
     res = if sitemodel
         quote
-            struct $struct_expr <: $parent
-                components::Array{String,1}
-                groups::Clapeyron.$grouptype
-                sites::Clapeyron.SiteParam
-                params::$paramstype
-                idealmodel::I
-                assoc_options::Clapeyron.AssocOptions
-                references::Array{String,1}
-            end
+            $struct_expr
 
             function $name(components;
                 idealmodel = Clapeyron.BasicIdeal,
@@ -321,13 +365,7 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = fa
         end
     else
         quote
-            struct $struct_expr <: $parent
-                components::Array{String,1}
-                groups::Clapeyron.$grouptype
-                params::$paramstype
-                idealmodel::I
-                references::Array{String,1}
-            end
+            $struct_expr
 
             function $name(components;
                 idealmodel = Clapeyron.BasicIdeal,
@@ -385,19 +423,13 @@ end
 ```
 """
 macro newmodel(name, parent, paramstype,sitemodel = true)
-    
-    struct_expr = __struct_expr!(name,paramstype)
+    mod = __module__
+    is_idealmodel = __newmodel_is_idealmodel(parent,mod)
+    struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = !is_idealmodel,groups = false,sites = sitemodel)
 
     res = if sitemodel
         quote
-            struct $struct_expr <: $parent
-                components::Array{String,1}
-                sites::Clapeyron.SiteParam
-                params::$paramstype
-                idealmodel::I
-                assoc_options::Clapeyron.AssocOptions
-                references::Array{String,1}
-            end
+            $struct_expr
 
             function $name(components;
                 idealmodel = Clapeyron.BasicIdeal,
@@ -422,12 +454,7 @@ macro newmodel(name, parent, paramstype,sitemodel = true)
         end
     else
         quote
-            struct $struct_expr <: $parent
-                components::Array{String,1}
-                params::$paramstype
-                idealmodel::I
-                references::Array{String,1}
-            end
+            $struct_expr
 
             function $name(components;
                 idealmodel = Clapeyron.BasicIdeal,
@@ -460,13 +487,9 @@ Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
 """
 macro newmodelsimple(name, parent, paramstype)
-    struct_expr = __struct_expr!(name,paramstype,false)
+    struct_expr = __struct_expr!(name,parent,paramstype;idealmodel = false,groups = false,sites = false)
     return quote
-        struct $struct_expr <: $parent
-            components::Array{String,1}
-            params::$paramstype
-            references::Array{String,1}
-        end
+        $struct_expr
 
         function $name(components;userlocations = String[],reference_state = nothing,verbose = false)
             Clapeyron.build_eosmodel($name,components,nothing,userlocations,nothing,nothing,verbose,nothing,reference_state)
@@ -502,7 +525,7 @@ Utility for building simple models. If a model instance is passed, it will retur
 Otherwise, it will build the model from the input components and user locations.
 
 It is normally used for models that don't have additional submodels (like ideal models)
-or when such submodels are not used at all (like the pure model part of an Activity model when used in an Advanced mixing rule Cubic model)
+or when such submodels are not used at all (like the pure model part of an Activity model when used in an Advanced mixing rule Cubic model).
 
 ## Example
 
@@ -544,6 +567,7 @@ function init_model(::Nothing,components,userlocations = String[],verbose = fals
 end
 
 function init_model(::Type{𝕄},components,userlocations = String[],verbose = false,reference_state = nothing) where  𝕄 <: EoSModel
+    userlocations = normalize_userlocations(userlocations)
     if verbose
         @info "Building an instance of $(info_color(string(𝕄))) with components $components"
     end
@@ -555,6 +579,7 @@ function init_model(::Type{𝕄},components,userlocations = String[],verbose = f
 end
 
 function init_model(f::Function,components,userlocations = String[],verbose = false,reference_state = nothing)
+    userlocations = normalize_userlocations(userlocations)
     if verbose
         @info "building an EoS model, using function $(info_color(string(f))) with components $components"
     end
@@ -590,6 +615,7 @@ the necessary traits to make the model compatible with Clapeyron routines.
     This macro is a no-op from Clapeyron 0.5 onwards.
 """
 macro registermodel(model)
+    Base.depwarn("`@registermodel` is deprecated, it is a no-op.")
     esc(model)
 end
 
@@ -615,6 +641,10 @@ end
 
 function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options = nothing,reference_state = nothing) where M <: EoSModel
 
+    userlocations = normalize_userlocations(userlocations)
+    group_userlocations = normalize_userlocations(group_userlocations)
+    ideal_userlocations = normalize_userlocations(ideal_userlocations)
+
     paramtype = fieldtype(M,:params)
 
     #non-splittable
@@ -639,6 +669,8 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
 end
 
 function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,ClapeyronParam},idealmodel,ideal_userlocations,verbose,assoc_options = nothing,reference_state = nothing) where M <: EoSModel
+
+    ideal_userlocations = normalize_userlocations(ideal_userlocations)
 
     #all fields of the model.
     result = Dict{Symbol,Any}()
@@ -676,6 +708,7 @@ function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,Cl
         if !haskey(params_in,"assoc_options")
             AssocOptions!(params_in,assoc_options)
         else
+
             #throw(error("cannot overwrite \"assoc_options\" key, already exists!"))
         end
 
@@ -706,7 +739,7 @@ function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,Cl
             _sites = SiteParam(_components)
         end
         result[:sites] = _sites
-        result[:assoc_options] = assoc_options
+        result[:assoc_options] = AssocOptions!(params_out,assoc_options)
     end
 
     #add references, if needed
@@ -715,14 +748,14 @@ function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,Cl
     end
 
     #build idealmodel, if needed
-    
+
     if hasfield(M,:idealmodel)
         if has_reference_state(idealmodel)
             #=
             we want to execute set_reference_state!(model) only once (ideal models don't have)
             saturation information so some standard states cannot be initialized.
-            
-            To avoid this, we set the input reference state to :no_set, and then we reset it to the 
+
+            To avoid this, we set the input reference state to :no_set, and then we reset it to the
             input value. with this strategy, we can differenciate between standalone ideal models and
             ideal models stored inside a residual model.
             =#
@@ -739,11 +772,26 @@ function build_eosmodel(::Type{M},components_or_groups,params_in::Dict{String,Cl
         result[:idealmodel] = init_idealmodel
     end
 
-    #build model
-    model = M((result[k] for k in fieldnames(M))...)
+    #build model, handle parametric group parameters and ideal models.
+    if has_groups(M) && result[:params] isa ParametricEoSParam
+        TT = eltype(result[:params])
+        if M <: IdealModel
+            model = M{TT}((result[k] for k in fieldnames(M))...)
+        else
+            II = typeof(result[:idealmodel])
+            model = M{II,TT}((result[k] for k in fieldnames(M))...)
+        end
+    else
+        model = M((result[k] for k in fieldnames(M))...)
+    end
+    
     #fit reference state
     set_reference_state!(model,verbose = verbose)
     return model
 end
 
 export @newmodel, @f, @newmodelgc, @newmodelsimple, @newmodelsingleton
+
+@public default_asymmetricparams, default_gclocations, default_getparams_arguments, default_ignore_missing_singleparams, default_locations, default_references
+@public @groups, @sites, @comps, @sum
+@public transform_params

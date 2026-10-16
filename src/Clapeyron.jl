@@ -15,14 +15,25 @@ import SpecialFunctions
 using StaticArrays
 using Serialization #FeANNMie
 using DiffResults, ForwardDiff
-import DifferentiationInterface # keep function local
+using IFTDuals
 using Downloads #for bibtex
 using StableTasks #for multithreaded volume
 #compatibility and raw julia utilities
+
+using SciMLPublic: @public
+
 include("utils/core_utils.jl")
 
 #misc functions
 include("utils/misc.jl")
+
+include("../lib/StaticForwardDiffTags/src/StaticForwardDiffTags.jl")
+
+import .StaticForwardDiffTags
+using .StaticForwardDiffTags: WithContext
+import .StaticForwardDiffTags: ∂Tag, STag
+
+include("../lib/StaticForwardDiffTags/ext/StaticForwardDiffTagsStaticArraysExt.jl")
 
 include("modules/solvers/Solvers.jl")
 using .Solvers
@@ -38,6 +49,7 @@ import .Fractions
 using .Fractions: FractionVector
 
 #Gas constant, Boltzmann Constant
+include("modules/constants/Constants.jl")
 include("base/constants.jl")
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
@@ -51,7 +63,6 @@ include("models/types.jl")
 
 #show(model<:EoSModel)
 include("base/eosshow.jl")
-
 
 #EoSParam, ClapeyronParam, All Params
 include("database/ClapeyronParam.jl")
@@ -132,10 +143,13 @@ include("models/ideal/JobackIdeal.jl")
 include("models/ideal/CPLNGEstIdeal.jl")
 include("models/ideal/ShomateIdeal.jl")
 include("models/ideal/PPDSIdeal.jl")
+include("models/ideal/GlennJL.jl")
 
 #AlyLee Ideal uses gerg 2008 terms
 include("models/EmpiricHelmholtz/term_functions.jl")
 include("models/ideal/AlyLeeIdeal.jl")
+include("models/ideal/GCAlyLeeIdeal.jl")
+include("models/ideal/BurkhardtIdeal.jl")
 
 #Basic utility EoS
 include("models/utility/EoSVectorParam.jl")
@@ -176,8 +190,6 @@ include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
 include("models/cubic/KU/KU.jl")
 include("models/cubic/RKPR/RKPR.jl")
-include("models/cubic/PatelTeja/PatelTeja.jl")
-include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 #SAFT models
 include("models/SAFT/association.jl")
@@ -259,6 +271,9 @@ include("models/cubic/PR/variants/tcPR.jl")
 include("models/cubic/PR/variants/tcPRW.jl")
 include("models/cubic/PR/variants/cPR.jl")
 include("models/cubic/PR/variants/EPPR78.jl")
+include("models/cubic/PatelTeja/PatelTeja.jl")
+include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
+include("models/cubic/PatelTeja/variants/PatelTejaHeyen.jl")
 include("models/cubic/PatelTeja/variants/YFR.jl")
 
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
@@ -271,9 +286,10 @@ include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
 include("models/Potentials/PeTS/PeTS.jl")
 include("models/Potentials/FeANNMie/FeANNMie.jl")
+include("models/Potentials/KolafaNezbeda/KolafaNezbeda.jl")
 
 #electrolytes
-include("models/Electrolytes/base.jl")
+include("models/Electrolytes/electrolytes.jl")
 include("models/Electrolytes/RSP/ConstRSP.jl")
 include("models/Electrolytes/RSP/ZuoFurst.jl")
 include("models/Electrolytes/RSP/Schreckenberg.jl")
@@ -288,6 +304,7 @@ include("models/Electrolytes/Ion/MSABorn.jl")
 include("models/Electrolytes/Ion/GCMSABorn.jl")
 include("models/Electrolytes/Ion/MSAID.jl")
 include("models/Electrolytes/RSP/MM1.jl")
+include("models/Electrolytes/LS.jl")
 
 include("models/SAFT/SAFTgammaMie/variants/SAFTgammaEMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVREMie.jl")
@@ -295,9 +312,6 @@ include("models/SAFT/SAFTVRMie/variants/eSAFTVRMie.jl")
 include("models/SAFT/PCSAFT/variants/ePCSAFT.jl")
 include("models/SAFT/CPA/variants/eCPA.jl")
 
-
-include("methods/property_solvers/electrolytes/electrolytes.jl")
-include("methods/property_solvers/multicomponent/tp_flash/electrolyte_flash.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
 
 include("estimation/estimation.jl")

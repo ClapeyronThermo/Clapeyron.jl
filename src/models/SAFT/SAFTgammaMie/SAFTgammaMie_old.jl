@@ -14,6 +14,7 @@ abstract type SAFTgammaMieModel <: GCSAFTModel end
 @newmodelgc SAFTgammaMie SAFTgammaMieModel SAFTgammaMieParam
 
 const SAFTγMie = SAFTgammaMie
+@doc (@doc SAFTgammaMie) SAFTγMie
 export SAFTgammaMie,SAFTγMie
 function SAFTgammaMie(components;
     idealmodel = BasicIdeal, userlocations = String[], ideal_userlocations = String[], verbose = false)

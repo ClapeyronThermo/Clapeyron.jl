@@ -8,7 +8,7 @@ custom_show(model::EoSModel) = _custom_show(model)
 custom_show(model) = false
 function _custom_show(Base.@nospecialize(model))
     hasfield(typeof(model),:components)
-end 
+end
 
 #function used to customize the first line to your liking
 show_info(io,model) = nothing
@@ -25,7 +25,7 @@ end
 
 function may_show_references(io::IO,model)
     if get(ENV,"CLAPEYRON_SHOW_REFERENCES","FALSE") == "TRUE"
-        show_references(io,model)     
+        show_references(io,model)
     end
 end
 
@@ -33,18 +33,34 @@ function show_references(io::IO,model)
     citations = cite(model)
     iszero(length(citations)) && return nothing #do not do anything if there isnt any citations
     println(io)
-    print(io,"References: ") 
+    print(io,"References: ")
     for (i,doi) in enumerate(cite(model))
         i != 1 && print(io,", ")
-        print(io,doi)   
+        print(io,doi)
     end
 end
 
-function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSModel))   
-    print(io, typeof(model))
-    if hasfield(typeof(model),:components)
-        length(model) == 1 && println(io, " with 1 component:")
-        length(model) > 1 && println(io, " with ", length(model), " components:")
+custom_typeof_str(::Type{T}) where T = string(T)
+custom_typeof_str(model) = string(typeof(model))
+
+"""
+    eosshow(io::IO, model::EoSModel)
+    eosshow(io::IO, ::MIME"text/plain", model::EoSModel)
+
+Custom pretty-printer for `EoSModel` instances.
+
+This is the backend used by `Base.show` for models that opt into the custom
+display. The text/plain variant prints components, parameters, reference state,
+and (optionally) citations when enabled via `ENV["CLAPEYRON_SHOW_REFERENCES"]`.
+"""
+function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSModel))
+    print(io, custom_typeof_str(model))
+    
+    comps = component_list(model)
+    l = length(comps)
+    if l != 0
+        l == 1 && println(io, " with 1 component:")
+        l > 1 && println(io, " with ", string(l), " components:")
         if has_groups(model)
             groups = model.groups
             show_groups(io,groups)
@@ -63,20 +79,28 @@ function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSMo
 end
 
 function eosshow(io::IO, Base.@nospecialize(model::EoSModel))
-    print(io, typeof(model))
+    print(io, custom_typeof_str(model))
     print(io, "(")
     show_pairs(io,component_list(model),pair_separator = ", ")
     print(io, ")")
 end
 
 #utilities for showing groups
+function __show_group_ij(io,v)
+    if isinteger(v)
+        print(io,Int(v))
+    else
+        print(io,v)
+    end
+end
+
 function __show_group_i(io,val,missingvalue = "")
     keys,vals = val
     #@show val
-    if length(vals) == 0 && missingvalue != ""
+    if isempty(vals) && missingvalue != ""
         print(io,missingvalue)
     else
-        show_pairs(io,keys,vals," => ",pair_separator = ", ")
+        show_pairs(io,keys,vals," => ",pair_separator = ", ",__show_group_ij)
     end
 end
 
@@ -150,7 +174,8 @@ julia> model2.references
  "test"
 ```
 """
-function eos_repr(io::IO,model;inside = false,newlines = true)
+function eos_repr(_io::IO,model;inside = false,newlines = true)
+    io = IOContext(_io,:Clapeyron_eos_repr => true)
     M = typeof(model)
     n = fieldnames(M)
     newlines && print(io,"\n")
@@ -179,7 +204,7 @@ function eos_repr(io::IO,model;inside = false,newlines = true)
         k != nf && print(io,", ")
     end
     print(io,")")
-    
+
 
     return nothing
 end

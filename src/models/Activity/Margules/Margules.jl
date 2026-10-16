@@ -114,13 +114,12 @@ function Margules(components;
     return m
 end
 
-function excess_g_margules(m::MargulesModel, p, T, z)
+function excess_g_margules(model::MargulesModel, p, T, z)
     n = sum(z)
-    x = z ./ n
-    A12 = m.params.A12.values[1]
-    A21 = m.params.A21.values[1]
-    ge = x[1]*x[2]*(A21*x[1] + A12*x[2])
-    return n*R̄*T*ge
+    A12 = model.params.A12.values[1]
+    A21 = model.params.A21.values[1]
+    ge = z[1]*z[2]*(A21*z[1] + A12*z[2])
+    return Rgas(model)*T*ge/(n*n)
 end
 
 excess_gibbs_free_energy(model::MargulesModel,p,T,z) = excess_g_margules(model,p,T,z)

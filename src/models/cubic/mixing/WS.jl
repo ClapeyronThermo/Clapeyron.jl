@@ -88,32 +88,31 @@ WS_λ(::WSRuleModel,model::DeltaCubicModel,T,z) = infinite_pressure_gibbs_correc
 function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::WSRuleModel,α,a,b)
     λ = WS_λ(mixing_model,model,T,z)
     n = sum(z)
+    nc = length(model)
     invn = (one(n)/n)
     RT⁻¹ = 1/(R̄*T)
     B̄ = zero(T+V+first(z))
-    Σab = B̄
-    for i in @comps
-        zi = z[i]
-        αi = α[i]
-        _ai = a[i,i]
-        ai = _ai*αi
-        bi = b[i,i]
+    Σλab = B̄
+    for i in 1:nc
+        zi,αi,a0i,bi = z[i],α[i],a[i,i],b[i,i]
+        ai = a0i*αi
+        λi = WS_λ(mixing_model,model,T,FillArrays.OneElement(i,nc))
+        Bi = (bi - ai*RT⁻¹)
         B̄ += zi*zi*(bi-ai*RT⁻¹)
-        Σab += zi*ai/bi
+        Σλab += λi*zi*ai/bi
         for j in 1:(i-1)
-            αj = α[j]
-            bj= b[j,j]
-            _aj = a[j,j]
-            _1mkij = a[i,j]^2/(_ai*_aj) #1 - kij
-            aj = a[j,j]*αj
-            B̄ += _1mkij*zi*z[j]*((bj-aj*RT⁻¹)+(bi-ai*RT⁻¹))
+            zj,αj,a0j,bj = z[j],α[j],a[j,j],b[j,j]
+            aj,aij = a0j*αj,a[i,j]
+            k̄ij = aij*aij/(a0i*a0j) #1 - kij
+            Bj = (bj - aj*RT⁻¹)
+            B̄ += k̄ij*zi*zj*(Bi + Bj)
         end
     end
-    Σab = Σab*invn
+    Σλab = Σλab*invn
     B̄ = B̄*invn*invn
     Aᴱ = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
-    b̄  = B̄/(1 + (Aᴱ/λ - Σab)*RT⁻¹)
-    ā = b̄*(Σab-Aᴱ/λ)
+    b̄  = B̄/(1 + (Aᴱ - Σλab)/λ * RT⁻¹)
+    ā = b̄*(Σλab-Aᴱ)/λ
     c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     return ā,b̄,c̄
 end

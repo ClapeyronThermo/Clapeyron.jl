@@ -5,17 +5,17 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-
+    ∑z = sum(z)
     RT = Rgas(model)*T
-    logZ = log(p*vol/RT/sum(z))
+    logZ = log(p*vol/RT/∑z)
     nc = length(z)
-    
+
     if cache isa Vector
         return lnϕ!(cache, model, p, T, z; vol)
     elseif cache isa Tuple
         result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
         if nc == 1
-            lnϕ[1] = VT_lnϕ_pure(model,vol/sum(z),T,p)
+            lnϕ[1] = VT_∑zlogϕ(model,vol/∑z,T,SA[1.0],p)
         else
             aux .= 0
             aux[1] = vol
@@ -30,7 +30,13 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
         end
     else
         μ_res = VT_chemical_potential_res(model, vol, T, z)
-        lnϕ = μ_res/RT .- logZ
+        if ismutable(μ_res)
+            lnϕ = μ_res
+            lnϕ .= μ_res ./ RT .- logZ
+        else
+            lnϕ = μ_res/RT .- logZ
+        end
+
     end
     return lnϕ, vol
 end
@@ -51,9 +57,17 @@ function lnϕ!(cache::Tuple, model::EoSModel, p, T, z=SA[1.];
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-    model isa IdealModel && return (fill!(cache[3],0.0),vol)
+    is_idealmodel(model) && return (fill!(cache[3],0.0),vol)
 
     return lnϕ(model,p,T,z,cache;vol)
+end
+
+function lnϕ!(cache::Nothing, model::EoSModel, p, T, z=SA[1.];
+            phase=:unknown,
+            vol0=nothing,
+            threaded = true,
+            vol = volume(model,p,T,z;phase,vol0,threaded))
+    return lnϕ(model,p,T,z;vol)
 end
 
 function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = nothing;
@@ -62,12 +76,12 @@ function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = not
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-    if model isa IdealModel
+    if is_idealmodel(model)
         lnϕ .= 0
         return lnϕ,vol
     end
 
-    if cache != nothing
+    if cache !== nothing
         lnϕ(model,p,T,z,cache;vol)
         result,aux,lnϕw,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
         vol = aux[1]
@@ -81,32 +95,13 @@ function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = not
     return lnϕ, vol
 end
 
-function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
-    RT = Rgas(model)*T
-    p_res = p - RT/V
-    μ_res = eos_res(model,V,T) + p_res*V
-    Z = p*V/RT
-    return μ_res/RT - log(Z)
-end
-
 function ∑zlogϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
             phase=:unknown,
             vol0=nothing,
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-    return VT_∑zlogϕ(model,vol,T,z),vol
-end
-
-function VT_∑zlogϕ(model,V,T,z)
-    RT = Rgas(model)*T
-    n = sum(z)
-    A, ∂A∂V, ∂A∂T = ∂f_res_vec(model,V,T,z)
-    PrV = ifelse(iszero(1/V),zero(∂A∂V),- V*∂A∂V)
-    g_res = A + PrV
-    logZ = log1p(∂A∂V*V/(n*RT))
-    ∑zlogϕi = g_res/RT - n*logZ
-    return ∑zlogϕi
+    return VT_∑zlogϕ(model,vol,T,z,p),vol
 end
 
 struct ∂lnϕTag end
@@ -154,16 +149,16 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(
     F_res(model, V, T, z) = eos_res(model, V, T, z) / RT
     fun(aux) = F_res(model, aux[1], T, @view(aux[2:(ncomponents+1)]))
 
-    
+
     aux[1] = V
     aux[2:end] = z
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
 
-    F = DiffResults.value(result)
+    #F = DiffResults.value(result)
     ∂F = DiffResults.gradient(result)
     ∂2F = DiffResults.hessian(result)
 
-    ∂F∂V = ∂F[1]
+    #∂F∂V = ∂F[1]
     ∂F∂n = @view ∂F[2:(ncomponents+1)]
 
     ∂2F∂V2 = ∂2F[1, 1]
@@ -219,8 +214,10 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
     return ∂lnϕ∂P,vol
 end
 
-function dardT(model,v,T,z)
-    f(_T) = eos_res(model,v,_T,z)/(Rgas(model)*_T)
+na_res(model,V,T,z) = sum(z)*a_res(model,V,T,z)
+
+function dardT(model,V,T,z)
+    f = @deferred_T(na_res,∂₁f)
     return Solvers.derivative(f,T)
 end
 
@@ -293,16 +290,16 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
     fun(aux) = F_res(model, aux[1], aux[2], @view(aux[3:(ncomponents+2)]))
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
 
-    F = DiffResults.value(result)
+    #F = DiffResults.value(result)
     ∂F = DiffResults.gradient(result)
     ∂2F = DiffResults.hessian(result)
-    ∂F∂V = ∂F[1]
-    ∂F∂T = ∂F[2]
+    #∂F∂V = ∂F[1]
+    #∂F∂T = ∂F[2]
     ∂F∂n = @view ∂F[3:(ncomponents+2)]
 
     ∂2F∂V2 = ∂2F[1, 1]
     ∂2F∂n2 = @view ∂2F[3:(ncomponents+2), 3:(ncomponents+2)]
-    ∂2F∂T2 = ∂2F[2, 2]
+    #∂2F∂T2 = ∂2F[2, 2]
     ∂2F∂n∂V = @view ∂2F[1, 3:(ncomponents+2)]
     ∂2F∂n∂T = @view ∂2F[2, 3:(ncomponents+2)]
     ∂2F∂V∂T = ∂2F[1, 2]
@@ -332,14 +329,18 @@ function modified_lnϕ(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
     return lnϕz,vz
 end
 
-function modified_gibbs(model,p,T,w,phase = :unknown,vol = NaN)
-    if isnan(vol)
+modified_gibbs(model,p,T,w) = modified_gibbs(model,p,T,w,:unknown,oftype(zero(Base.promote_eltype(model,p,T,w)),NaN))
+modified_gibbs(model,p,T,w,phase) = modified_gibbs(model,p,T,w,phase,oftype(zero(Base.promote_eltype(model,p,T,w)),NaN))
+
+function modified_gibbs(model,p,T,w,phase,vol)
+    if isnan(vol) || isnothing(vol)
         volw = volume(model,p,T,w,phase = phase)
     else
         volw = vol
     end
-    g =  VT_gibbs_energy(model,volw,T,w,p) #+ eos_g(BasicIdeal(),p,T,w)
-    return g,volw
+    RT = Rgas(model)*T
+    g = PT_property(model,p,T,w,phase,volw,VT_gibbs_energy)
+    return g/RT,volw
 end
 
 function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
@@ -364,7 +365,6 @@ function lnf(model, V, T, z,cache = nothing)
     n = sum(z)
     logZp = log(V/RT/n)
     nc = length(z)
-    TT = Base.promote_eltype(model,V,T,z)
     F_res(_model, _V, _T, _z) = eos_res(_model, _V, _T, _z)
     fun(aux) = F_res(model, aux[1], T, @view(aux[2:nc+1]))
     if cache !== nothing
@@ -394,10 +394,9 @@ end
 
 function VT_lnf_pure(model,V,T)
     RT = Rgas(model)*T
-    f(dV) = eos_res(model,dV,T,SA[1.0])
-    F,dFdV = Solvers.f∂f(f,V)
+    F,dFdV = f∂fdV_res(model,V,T,SA[1.0])
     p_res = -dFdV
-    μ_res = eos_res(model,V,T,SA[1.0]) + p_res*V
+    μ_res = F + p_res*V
     Zp = V/RT
     lnf = μ_res/RT - log(Zp)
     p = p_res + RT/V
@@ -420,7 +419,6 @@ function ∂lnf∂n∂V(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{fa
     aux[2:end] = z
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
 
-    F = DiffResults.value(result)
     ∂F = DiffResults.gradient(result)
     ∂2F = DiffResults.hessian(result)
 
@@ -436,7 +434,7 @@ function ∂lnf∂n∂V(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{fa
     lnf .= ∂F∂n .- log(Zp)
 
     for i in 1:ncomponents
-        ∂P∂ni = ∂P∂n[i]
+        #∂P∂ni = ∂P∂n[i]
         ∂lnf∂V[i] = ∂2F∂n∂V[i] - 1/V
         for j in 1:ncomponents
             ∂lnf∂n[i,j] = ∂2F∂n2[i,j] + 1/n
@@ -461,16 +459,16 @@ function ∂lnf∂n∂V∂T(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Va
     fun(aux) = F_res(model, aux[1], aux[2], @view(aux[3:(ncomponents+2)]))
     result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
 
-    F = DiffResults.value(result)
+    #F = DiffResults.value(result)
     ∂F = DiffResults.gradient(result)
     ∂2F = DiffResults.hessian(result)
     ∂F∂V = ∂F[1]
-    ∂F∂T = ∂F[2]
+    #∂F∂T = ∂F[2]
     ∂F∂n = @view ∂F[3:(ncomponents+2)]
 
     ∂2F∂V2 = ∂2F[1, 1]
     ∂2F∂n2 = @view ∂2F[3:(ncomponents+2), 3:(ncomponents+2)]
-    ∂2F∂T2 = ∂2F[2, 2]
+    #∂2F∂T2 = ∂2F[2, 2]
     ∂2F∂n∂V = @view ∂2F[1, 3:(ncomponents+2)]
     ∂2F∂n∂T = @view ∂2F[2, 3:(ncomponents+2)]
     ∂2F∂V∂T = ∂2F[1, 2]
@@ -481,7 +479,6 @@ function ∂lnf∂n∂V∂T(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Va
     lnf .= ∂F∂n .- log(Zp)
     ∂P∂T = -RT*∂2F∂V∂T + p/T
     for i in 1:ncomponents
-        ∂P∂ni = ∂P∂n[i]
         ∂lnf∂V[i] = ∂2F∂n∂V[i] - 1/V
         ∂lnf∂T[i] = ∂2F∂n∂T[i] + 1/T
         for j in 1:ncomponents
@@ -509,7 +506,7 @@ function ∂lnf∂V(model::EoSModel, V, T, z=SA[1.], cache = ∂lnϕ_cache(model
     ∇pᵣ = @view dresult[1:nc]
     ∂pᵣ∂V = dresult[nc+1]
     ∂p∂V = ∂pᵣ∂V - n*RT/(V*V)
-    ∂V∂p = -1/∂p∂V
+    #∂V∂p = -1/∂p∂V
     ∂lnf∂V .= - ∇pᵣ ./ RT .- 1/V
     ∂P∂n .= ∇pᵣ .+ RT ./ V
     return ∂lnf∂V, ∂P∂n, p, ∂p∂V

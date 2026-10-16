@@ -2,7 +2,7 @@
     eutectic_point(model::CompositeModel, p = 1e5; x0 = x0_eutectic_point(model,p))
     eutectic_point(model::SolidHFus, p = 1e5; x0 = x0_eutectic_point(model,p))
 
-Calculates the eutectic point of a binary mixture at a given pressure.
+Calculates the eutectic point of a binary mixture at a given pressure `p`.
 
 # Arguments
 - `model`: A `CompositeModel` (with solid and liquid models specified) or a `SolidHFusModel`

@@ -30,6 +30,7 @@ In this case, those potentials are dependent of the pressure, whereas activity m
 
 ```@docs
 Clapeyron.FloryHuggins
+Clapeyron.FH
 Clapeyron.Margules
 Clapeyron.VanLaar
 Clapeyron.Wilson
@@ -60,8 +61,12 @@ Clapeyron.COSMOSAC10
 Clapeyron.COSMOSACdsp
 ```
 
-## HANNA Model
+## ML-Based activity models
 
-```@docs
-ClapeyronHANNA.HANNA
+!!! note
+    The following methods are provided by the companion package `MLThermoProperties`.
+
+```@docs ;canonical = false
+MLThermoProperties.ogHANNA
+MLThermoProperties.multHANNA
 ```

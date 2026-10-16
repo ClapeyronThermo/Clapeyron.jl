@@ -32,6 +32,21 @@ function binary_component_error(method,model)
     throw(DimensionMismatch(msg))
 end
 
+"""
+    multiple_component_check(method,model)
+Checks if a model is a multiple component model, throws an error otherwise.
+"""
+function multiple_component_check(method,model)
+    l = length(model)
+    l > 1 && (return nothing)
+    multiple_component_error(method,model)
+end
+
+function multiple_component_error(method,model)
+    msg = string(method," only supports multiple component models, ",model," has only one component.")
+    throw(DimensionMismatch(msg))
+end
+
 function check_arraysize(model,k::AbstractMatrix)
     n = length(model)
     n2 = LinearAlgebra.checksquare(k)
@@ -88,18 +103,17 @@ function moles_positivity(x::T) where T<:Real
     @assert x >= 0 "Moles non-positive values! Contains values $x"
 end
 
-struct NestedADError <: Exception
-    msg::String
-end
-NestedADError() = NestedADError("")
-function Base.showerror(io::IO, e::NestedADError)
-    print(io, "NestedADError: ", e.msg)
+function electroneutral_check(Z,x;atol = 1e-6)
+    zx = dot(Z, x)
+    is_electroneutral = isapprox(zx, zero(zx); atol=1e-6) 
+    if !is_electroneutral
+        throw(ElectroneutralityError(zx))
+    end
+    return nothing
 end
 
-struct MultipleTagError <: Exception
-    msg::String
+@noinline function ElectroneutralityError(zx)
+    throw(ArgumentError(lazy"x must be electroneutral (ΣZᵢxᵢ ≈ 0); got $(zx)"))
 end
-MultipleTagError() = MultipleTagError("")
-function Base.showerror(io::IO, e::MultipleTagError)
-    print(io, "MultipleTagError: ", e.msg)
-end
+
+

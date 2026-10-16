@@ -27,7 +27,7 @@ end
     translation_userlocations = String[],
     verbose = false,
     reference_state = nothing)
-    
+
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
@@ -81,7 +81,7 @@ model = PR(["neon","hydrogen"];
                         Pc = [2679000, 1296400],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
-                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        k = [0. 0.18; 0.18 0.], #k,l can be omitted in single-component models.
                         l = [0. 0.01; 0.01 0.])
                     )
 ```
@@ -129,6 +129,8 @@ default_references(::Type{PR}) = ["10.1021/I160057A011"]
     sqrt2 = sqrt(2)
     return (-1+sqrt2,-1-sqrt2)
 end
+
+#! format: off
 
 const PR_p = Solvers.ChebyshevRange(
     (0.01701444200703503,0.021799753821513633,0.026585065635992236,0.03615568926494944,0.05529693652286385,0.09357943103869266,0.1701444200703503),

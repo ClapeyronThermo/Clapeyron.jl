@@ -34,7 +34,7 @@ function crit_mix(model::EoSModel,z;v0=nothing)
 
     x0 = [v0[1],v0[2]] #could replace for MVector{2}
     f! = (F,x) -> Obj_crit_mix(model_r, F, z_r, exp10(x[1]), x[2])
-    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton2(x0)))
+    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton2(x0),Backtracking()))
     sol = Solvers.x_sol(r)
     !__check_convergence(r) && (sol .= NaN)
     T_c = sol[2]
@@ -50,16 +50,22 @@ end
 Initial point for `crit_mix(model,z)`.
 
 Returns a tuple, containing:
-- Base 10 logarithm of initial guess for critical molar Volume `[m³/mol]`
+- Base 10 logarithm of initial guess for critical molar Volume `[m³·mol⁻¹]`
 - Initial guess for critical temperature `[K]`
+
+If the model is not splittable or is it an electrolyte model (where the ions or salts cannot be considered as standalone components), then a mechanical critical point approximation is calculated first via [`mechanical_crit_bracket`](@ref) 
 """
 function x0_crit_mix(model::EoSModel,z)
-    pure = split_pure_model(model)
-    crit = crit_pure.(pure)
-    vci = getindex.(crit,3)
-    tci = getindex.(crit,1)
-    ∑z = sum(z)
-    V_c = dot(z,vci)/∑z
-    T_c  = prod(tci[i]^(z[i]/∑z) for i ∈ 1:length(model))
-    return (log10(V_c),T_c)
+    if is_splittable(model)
+        pure = split_pure_model(model)
+        crit = crit_pure.(pure)
+        vci = getindex.(crit,3)
+        tci = getindex.(crit,1)
+        ∑z = sum(z)
+        V_c = dot(z,vci)/∑z
+        T_c  = prod(tci[i]^(z[i]/∑z) for i ∈ 1:length(model))
+        return (log10(V_c),T_c)
+    else
+        return x0_crit_bisection(model,z)
+    end
 end

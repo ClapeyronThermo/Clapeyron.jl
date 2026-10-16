@@ -1,76 +1,214 @@
-IS_GH = get(ENV,"GITHUB_ACTIONS",false) in ("true", "1", "yes",true,"TRUE")
-IS_LOCAL = !IS_GH
-IS_STABLE = v"1.10" <= Base.VERSION < v"1.11"
-IS_LATEST = v"1.12" <= Base.VERSION < v"1.12.9999"
-IS_OTHER = !IS_STABLE && !IS_LATEST
-const W_STABLE = IS_STABLE && (Base.Sys.iswindows())
-const W_LATEST = IS_LATEST && (Base.Sys.iswindows())
-const W_NIGHTLY = IS_OTHER && (Base.Sys.iswindows())
-const L_STABLE = IS_STABLE && (Base.Sys.islinux())
-const L_LATEST = IS_LATEST && (Base.Sys.islinux())
-const L_NIGHTLY = IS_OTHER && (Base.Sys.islinux())
-const A_STABLE = IS_STABLE && (Base.Sys.isapple())
-const A_LATEST = IS_LATEST && (Base.Sys.isapple())
-const A_NIGHTLY = IS_OTHER && (Base.Sys.isapple())
-#ordered by priority
-const DISTRIBUTED_WORKER_1 = L_NIGHTLY || W_LATEST
-const DISTRIBUTED_WORKER_2 = L_STABLE || A_LATEST
-const DISTRIBUTED_WORKER_3 = W_NIGHTLY || A_STABLE
-const DISTRIBUTED_WORKER_4 = W_STABLE || A_NIGHTLY
-const DISTRIBUTED_WORKER_5 = L_LATEST
+#=
+utils.jl
 
-const OTHER_WORKER = !DISTRIBUTED_WORKER_1 && !DISTRIBUTED_WORKER_2 && !DISTRIBUTED_WORKER_3 && !DISTRIBUTED_WORKER_4 && !DISTRIBUTED_WORKER_5
+each test file can be run by their own if you include this file first.
+=#
 
-DISTRIBUTED_NUMBER = if DISTRIBUTED_WORKER_1
-    1
-elseif DISTRIBUTED_WORKER_2
-    2
-elseif DISTRIBUTED_WORKER_3
-    3
-elseif DISTRIBUTED_WORKER_4
-    4
-elseif DISTRIBUTED_WORKER_5
-    5
-else
-    0
-end
-
-local_str = "Running in " * ifelse(IS_LOCAL,"local","CI") * " mode. " * ifelse(iszero(DISTRIBUTED_NUMBER),"","Distributed worker number: $DISTRIBUTED_NUMBER")
-
-println("""
-___________________
-
-Clapeyron.jl tests
-
-$local_str
-Running all tests in all workers = $ALL_TESTS
-____________________
-
-""")
-
-function include_distributed(path,value::Int)
-    workers = (DISTRIBUTED_WORKER_1,DISTRIBUTED_WORKER_2,DISTRIBUTED_WORKER_3,DISTRIBUTED_WORKER_4,DISTRIBUTED_WORKER_5)
-    if value in 1:5
-        worker = workers[value]
-    else
-        worker = false
-    end
-    if worker || IS_LOCAL || OTHER_WORKER || ALL_TESTS
-        Base.include(@__MODULE__(), path)
-    end
-end
+using Test
+using Clapeyron
+using CoolProp
+using Unitful
+using Clapeyron.LinearAlgebra
+using Clapeyron.StaticArrays
+using Clapeyron.EstimationUtils
+using Clapeyron: has_sites,has_groups
+using Clapeyron: PH, QT, QP, TS, VT, PT
+using Aqua
 
 macro printline()  # useful in hunting for where tests get stuck
     file = split(string(__source__.file), Base.Filesystem.path_separator)[end]
     printstyled(">>", file, ":", __source__.line, "\n", color=:light_black)
 end
 
-function model500()
 
+function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
+    for i in (2.0,3.0,5.0,7.0,11.0)
+        a_res₀ = Clapeyron.a_res(model,V,T,z)
+        @test a_res₀ ≈ Clapeyron.a_res(model,i*V,T,i*z) rtol = rtol
+    end
+    pures = Clapeyron.split_pure_model(model)
+    x_pure = zeros(length(model))
+    for n in 1:length(model) 
+        for i in (2.0,3.0,5.0,7.0,11.0)
+            x_pure[n] = i
+            @test Clapeyron.a_res(model,i*V,T,x_pure) ≈ Clapeyron.a_res(pures[n],i*V,T,Clapeyron.SVector(i)) rtol = rtol
+            x_pure .= 0
+        end
+    end
+end
+
+function test_gibbs_duhem(model::Clapeyron.ActivityModel,V,T,z;rtol = 1e-14)
+    for i in (2.0,3.0,5.0,7.0,11.0)
+        gE₀ = Clapeyron.excess_gibbs_free_energy(model,V,T,z)
+        @test i*gE₀ ≈ Clapeyron.excess_gibbs_free_energy(model,V,T,i*z) rtol = rtol
+    end
+end
+
+function test_volume(model,p,T,z = Clapeyron.SA[1.0];rtol = 1e-8,phase = :unknown)
+    v = volume(model,p,T,z)
+    @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
+end
+
+function test_scales(model,T0 = 300.0)
+    n = length(model)
+    z = ones(n) ./ n
+    z3 = 3 .* z
+    z7 = 7 .* z
+    @test Clapeyron.lb_volume(model,T0,z3) ≈ 3*Clapeyron.lb_volume(model,T0,z)
+    @test Clapeyron.lb_volume(model,T0,z7) ≈ 7*Clapeyron.lb_volume(model,T0,z)
+    @test Clapeyron.T_scale(model,z3) ≈ Clapeyron.T_scale(model,z)
+    @test Clapeyron.p_scale(model,z3) ≈ Clapeyron.p_scale(model,z)
+end
+
+function test_recombine(model,innermodels = nothing)
+    model1 = deepcopy(model)
+    model2 = deepcopy(model)
+    Clapeyron.recombine!(model1)
+    eosmodel_is_approx(model1,model2)
+    if innermodels != nothing
+        for field in innermodels
+            innermodel = getfield(model1,field)
+            innermodel2 = getfield(model2,field)
+            eosmodel_is_approx(innermodel,innermodel2)
+        end
+    end
+end
+
+function eosmodel_is_approx(model1,model2)
+    if hasfield(typeof(model1),:params)
+        params1 = model1.params
+        params2 = model2.params
+        for i in 1:fieldcount(typeof(params1))
+            p1 = getfield(params1,i)
+            p2 = getfield(params2,i)
+            if p1 isa SingleParam || p1 isa PairParam
+                if eltype(p1) <: Tuple 
+                    @test stack(p1.values) ≈ stack(p2.values)
+                else
+                    @test p1.values ≈ p2.values
+                end
+            elseif p1 isa AssocParam
+                @test p1.values.values ≈ p2.values.values
+                @test p1.values.indices == p2.values.indices
+                @test p1.values.site_offsets == p2.values.site_offsets
+            elseif p1 isa Clapeyron.MixedGCSegmentParam
+                @test p1.values.v ≈ p2.values.v
+            end
+        end
+    end
+end
+
+function test_kl(model; test_k = true, test_l = true)  
+    model2 = deepcopy(model)
+    
+    if test_k
+        k_orig = Clapeyron.get_k(model2)
+        
+        k0 = zeros(size(k_orig))
+        Clapeyron.set_k!(model2,k0)
+        @test k0 ≈ Clapeyron.get_k(model2)
+        
+        k1 = zeros(size(k_orig))
+        s1,s2 = size(k1)
+        for i in 1:s1
+            for j in (i + 1):s2
+                k1[j,i] = 0.01
+            end
+        end
+        Clapeyron.set_k!(model2,k1)
+        @test k1 ≈ Clapeyron.get_k(model2)
+
+        Clapeyron.set_k!(model2,k_orig)
+        @test k_orig ≈ Clapeyron.get_k(model2)
+    end
+
+    if test_l
+        l_orig = Clapeyron.get_l(model2)
+        
+        l0 = zeros(size(l_orig))
+        Clapeyron.set_l!(model2,l0)
+        @test l0 ≈ Clapeyron.get_l(model2)
+        
+        l1 = zeros(size(l_orig))
+        s1,s2 = size(l1)
+        for i in 1:s1
+            for j in (i + 1):s2
+                l1[j,i] = 0.01
+            end
+        end
+        Clapeyron.set_l!(model2,l1)
+        @test l1 ≈ Clapeyron.get_l(model2)
+
+        Clapeyron.set_l!(model2,l_orig)
+        @test l_orig ≈ Clapeyron.get_l(model2)
+    end
+end
+test_k(model) = test_kl(model,test_l = false)
+test_l(model) = test_kl(model,test_k = false)
+
+function test_repr(val;str = nothing,str_compact = nothing)
+    io = IOBuffer()
+    Base.show(io,MIME"text/plain"(),val)
+    x = String(take!(io))
+    @test !isempty(x)
+
+    io_compact = IOBuffer()
+    Base.show(io_compact,val)
+    x_compact = String(take!(io_compact))
+    @test !isempty(x_compact)
+    if str != nothing
+        for s in str
+            @test occursin(s,x)
+        end
+    end
+
+    if str_compact != nothing
+        for s in str_compact
+            @test occursin(s,x_compact)
+        end
+    end
+end
+
+function test_zero_alloc2(model)
+    z = ones(length(model))/length(model)
+    V = 0.03
+    T = 300.0
+    f(x) = Clapeyron.eos(x,V,T,z)
+    f(model)
+    @test @allocated(f(model)) == 0
+end
+
+function test_zero_alloc1(model)
+    z = SA[1.0]
+    V = 0.03
+    T = 300.0
+    f(x) = Clapeyron.eos(x,V,T,z)
+    f(model)
+    @test @allocated(f(model)) == 0
+end
+
+function test_assoc_matrix(K,tol = 1e-12)
+    s1,s2 = size(K)
+    @test s1 == s2
+    x0 = ones(eltype(K),s1)
+    
+    x10 = Clapeyron.assoc_matrix_solve(K,x0)
+    x1 = Clapeyron.assoc_matrix_solve(K)
+    dx = x10 - x1
+    @test sqrt(sum(abs2,dx)) < tol
+end
+
+function test_assoc_matrix(model,V,T,z,tol = 1e-12)
+    K = Clapeyron.dense_assoc_site_matrix(model,V,T,z)
+    test_assoc_matrix(K,tol)
+end
+
+#! format: off
+function model500()
 #created via eos_repr
 return SAFTgammaMie{BasicIdeal, Float64}(
         ["DIMETHYLAMINE"], 
-        GroupParam(["DIMETHYLAMINE"], [["NH", "CH3"]], :unknown, [[1, 2]], [Matrix{Int64}(undef, 0, 0)], [[2, 1]], ["CH3", "NH"], [[2, 1]], String[]), 
+        GroupParam{Float64}(["DIMETHYLAMINE"], [["NH", "CH3"]], :unknown, [[1.0, 2.0]], [Matrix{Float64}(undef, 0, 0)], [[2, 1]], ["CH3", "NH"], [[2.0, 1.0]], String[]), 
         SiteParam(["CH3", "NH"], [String[], ["H", "e1"]], Clapeyron.PackedVofV([1, 1, 3], [1, 1]), [Int64[], [1, 2]], ["H", "e1", "e2"], [[0, 0, 0], [1, 1, 0]], [[0, 0, 0], [1, 2, 0]], String[], nothing), 
         Clapeyron.SAFTgammaMieParam{Float64}(
         SingleParam{Int64}("vst", ["CH3", "NH"], [1, 1], Bool[0, 0], ["/home/22796002/PhD/Smarts/SAFTgammaMie_like_Clapeyron.csv"], String[]), 
@@ -80,9 +218,9 @@ return SAFTgammaMie{BasicIdeal, Float64}(
         PairParam{Float64}("sigma", ["CH3", "NH"], [5.245968421264455e-10 4.0342843067136425e-10; 4.0342843067136425e-10 2.822600192162831e-10], Bool[0 1; 1 0], nothing, nothing), 
         PairParam{Float64}("epsilon", ["CH3", "NH"], [467.0612223874854 268.98688435945206; 268.98688435945206 374.46738001552916], Bool[0 0; 0 0], nothing, nothing), 
         AssocParam{Float64}("epsilon_assoc", ["CH3", "NH"], 
-        Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}([1693.6574275348516], [(2, 2)], [(1, 2)], (2, 2), (3, 3)), [String[], ["H", "e1"]], nothing, nothing), 
+        Clapeyron.Compressed4DMatrix([1693.6574275348516], [(2, 2)], [(1, 2)]), [String[], ["H", "e1"]], nothing, nothing), 
         AssocParam{Float64}("bondvol", ["CH3", "NH"], 
-        Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}([4.532862604822759e-29], [(2, 2)], [(1, 2)], (2, 2), (3, 3)), [String[], ["H", "e1"]], nothing, nothing), 
+        Clapeyron.Compressed4DMatrix([4.532862604822759e-29], [(2, 2)], [(1, 2)]), [String[], ["H", "e1"]], nothing, nothing), 
         MixedGCSegmentParam{Float64}("mixed segment", ["DIMETHYLAMINE"], Clapeyron.PackedVofV([1, 3], [0.6339323035345299, 0.15785492572578758]))), 
         BasicIdeal(), 
         SAFTVRMie{BasicIdeal, Float64}(["DIMETHYLAMINE"], 
@@ -95,10 +233,90 @@ return SAFTgammaMie{BasicIdeal, Float64}(
         PairParam{Float64}("lambda_r", ["DIMETHYLAMINE"], [23.41048565515027;;], Bool[0;;], nothing, nothing), 
         PairParam{Float64}("epsilon", ["DIMETHYLAMINE"], [400.14816241181626;;], Bool[0;;], nothing, nothing), 
         AssocParam{Float64}("epsilon_assoc", ["DIMETHYLAMINE"], 
-        Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}([1693.6574275348516], [(1, 1)], [(1, 2)], (1, 1), (7, 7)), [["NH/H", "NH/e1"]], nothing, nothing), 
+        Clapeyron.Compressed4DMatrix([1693.6574275348516], [(1, 1)], [(1, 2)]), [["NH/H", "NH/e1"]], nothing, nothing), 
         AssocParam{Float64}("bondvol", ["DIMETHYLAMINE"], 
-        Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}([4.532862604822759e-29], [(1, 1)], [(1, 2)], (1, 1), (7, 7)), [["NH/H", "NH/e1"]], nothing, nothing)), 
+        Clapeyron.Compressed4DMatrix([4.532862604822759e-29], [(1, 1)], [(1, 2)]), [["NH/H", "NH/e1"]], nothing, nothing)), 
         BasicIdeal(), 
-        AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining), ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]), :default, 
-        AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining), ["10.1063/1.4851455", "10.1021/je500248h"])
+        AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining, false), ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]), :default, 
+        AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining, false), ["10.1063/1.4851455", "10.1021/je500248h"])
+end
+
+function test_excess_gibbs_free_energy(model::Clapeyron.ActivityModel,p,T,z)
+    γ = Clapeyron.activity_coefficient(model,p,T,z)
+    return Clapeyron.Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ eachindex(z))
+end
+
+function test_activity_coefficient(model::Clapeyron.ActivityModel,p,T,z)
+    X = Clapeyron.gradient_type(model,T+p,z)
+    return exp.(Clapeyron.Solvers.gradient(x->Clapeyron.excess_gibbs_free_energy(model,p,T,x),z)/(Clapeyron.Rgas(model)*T))::X
+end
+
+struct VanLaar_GE <: Clapeyron.ActivityModel
+    A12::Float64
+    A21::Float64
+end
+
+function Clapeyron.excess_gibbs_free_energy(model::VanLaar_GE,p,T,z)
+    A12 = model.A12 + 1e-5/T
+    A21 = model.A21 + 2e-5/T
+    ge = (A12*A21*z[1]*z[2]) / (A12*z[1] + A21*z[2])
+    return Clapeyron.Rgas()*T*ge
+end
+
+struct VanLaar_lngamma <: Clapeyron.ActivityModel
+    A12::Float64
+    A21::Float64
+end
+
+function Clapeyron.lnγ_impl!(lnγ,model::VanLaar_lngamma,V,T,z)
+    A12 = model.A12 + 1e-5/T
+    A21 = model.A21 + 2e-5/T
+    ax = A12*z[1] + A21*z[2]
+    lnγ[1] = A12*(A21*z[2]/ax)^2
+    lnγ[2] = A21*(A12*z[1]/ax)^2
+    return lnγ
+end
+
+Base.length(::VanLaar_GE) = 2
+Base.length(::VanLaar_lngamma) = 2
+
+#used to reproduce old values of UNIFACFV and UNIFACFVPoly models
+function activity_old_unifacfv(model::Clapeyron.UNIFACFVModel, p, T, z)
+    RT = Rgas(model)*T
+    lnγ_comb = Clapeyron.lnγ_comb_old(model, p, T, z)
+    lnγ_res  = Clapeyron.ForwardDiff.gradient(n -> Clapeyron.excess_g_res(model, p, T, n), z) ./ RT
+    lnγ_FV   = Clapeyron.ForwardDiff.gradient(n -> Clapeyron.excess_g_FV(model, p, T, n), z) ./ RT
+    return exp.(lnγ_comb .+ lnγ_res .+ lnγ_FV)
+end
+
+function testutils_fd_derivative(f,i)
+    h = sqrt(eps(i))
+    return (1*f(i-2h)-8*f(i-1h)+0*f(i)+8*f(i+1h)-1*f(i+2h))/(12*h)
+end
+
+function testutils_fd_gradient(f, x::AbstractVector; method =:central, eps  =1e-6)
+    n = length(x)
+    g = similar(x, float(eltype(x)))
+    if method == :central
+        for i in 1:n
+            xp = copy(x); xp[i] += eps
+            xm = copy(x); xm[i] -= eps
+            g[i] = (f(xp) - f(xm)) / (2eps)
+        end
+    elseif method == :forward
+        f0 = f(x)
+        for i in 1:n
+            xp = copy(x); xp[i] += eps
+            g[i] = (f(xp) - f0) / eps
+        end
+    elseif method == :backward
+        f0 = f(x)
+        for i in 1:n
+            xm = copy(x); xm[i] -= eps
+            g[i] = (f0 - f(xm)) / eps
+        end
+    else
+        error("method must be :central, :forward, or :backward")
+    end
+    return g
 end

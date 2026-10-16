@@ -15,7 +15,7 @@ function UCST_pressure(model::EoSModel,T; v0=nothing)
     end
     x0 = vcat(v0[1],v0[2][1:end-1])
     f! = (F,x) -> Obj_UCST_mix(model, F, x[2:end], exp10(x[1]), T)
-    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton2(x0)))
+    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton2(x0),Backtracking()))
     sol = Solvers.x_sol(r)
     !__check_convergence(r) && (sol .= NaN)
     z_c = FractionVector(sol[2:end])
@@ -30,7 +30,7 @@ end
 Initial point for `UCST_pressure(model,T)`.
 
 Returns a tuple, containing:
-- Base 10 logarithm initial guess for liquid composition `[m³]`
+- Base 10 logarithm initial guess for volume `[m³]`
 - Initial guess for molar fractions at UCST Point (default: equimolar)
 """
 function x0_UCST_pressure(model::EoSModel,T)
@@ -71,18 +71,17 @@ function UCST_temperature(model::EoSModel,p;v0 = nothing)
         T,logvol0,w0 = v0
     end
     vol0 = exp10(logvol0)
-    imax,_ = findmax(w0)
     ηw = η_from_v(model, vol0, T, w0)
     _,idx_max = findmax(w0)
     x0 = vcat(log(T),ηw,deleteat(w0,idx_max)) #select component with highest fraction as pivot
     f! = (F,x) -> Obj_UCST_temperature(model, F, x, p, idx_max)
-    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton2(x0)))
+    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton2(x0),Backtracking()))
     sol = Solvers.x_sol(r)
     !__check_convergence(r) && (sol .= NaN)
     T_c = exp(sol[1])
     z_c = FractionVector(sol[3:end],idx_max)
     V_c = v_from_η(model,sol[2],T_c,z_c)
-    p_c = pressure(model, V_c, T, z_c)
+    #p_c = pressure(model, V_c, T, z_c)
     return (T_c, V_c, z_c)
 end
 

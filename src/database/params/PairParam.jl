@@ -121,10 +121,13 @@ Base.size(param::PairParameter) = size(param.values)
 Base.eltype(param::PairParameter{T}) where T = T
 Base.eltype(param::Type{<:PairParameter{T}}) where T = T
 
-#primalval
-function Solvers.primalval(x::PairParameter)
-    return PairParameter(x.name,x.components,Solvers.primalval_eager(x.values),x.ismissingvalues,x.sourcecsvs,x.sources)
+function _param_from_values(x::X,param::PairParameter) where X
+    T = eltype(X)
+    return PairParameter{T,X}(param.name,param.components,x,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
+
+Solvers.primalval(x::T) where T <: PairParameter = param_from_values(Solvers.primalval_eager(raw_values(x)),x) 
+raw_values(param::PairParameter) = param.values
 
 #barebones constructor, we provide vals and missing vals
 function PairParam(name,components,values::Matrix{T},missingvals,src,sourcecsv) where T 
@@ -153,7 +156,7 @@ PairParam(name,components,values,missingvals) = PairParam(name,components,values
 
 #constructor in case we provide a normal vector
 function PairParam(name, components, values_or_missing::AbstractMatrix{T}) where T
-    if nonmissingtype(T) != T
+    if nonmissingtype(T) != T || T == Any
         values,ismissingvalues = defaultmissing(values_or_missing)
     else
         values,ismissingvalues = values_or_missing,fill(false, size(values_or_missing))
@@ -162,15 +165,10 @@ function PairParam(name, components, values_or_missing::AbstractMatrix{T}) where
 end
 
 function PairParam(name, components, values_or_missing::AbstractVector{T}) where T 
-    if nonmissingtype(T) != T
-        vec_values,ismissingvalues = defaultmissing(values_or_missing)
-        pairvalues = singletopair(vec_values,missing)
-        for i in 1:length(vec_values)
-            if vec_ismissingvalues[i]
-                pairvalues[i,i] = missing
-            end
-        end
-        values,ismissingvalues = defaultmissing(pairvalues)
+    if nonmissingtype(T) != T || T == Any
+        vec_values,vec_ismissingvalues = defaultmissing(values_or_missing)
+        values = singletopair(vec_values)
+        ismissingvalues = singletopair(vec_ismissingvalues,true)
     else
         values = singletopair(values_or_missing)
         ismissingvalues = fill(true,size(values))
@@ -192,14 +190,9 @@ end
 
 PairParam(name,components) = PairParam{Float64}(name,components)
 
-function PairParam(x::SingleParam,name::String=x.name)
-    pairvalues = singletopair(x.values,missing)
-    for i in 1:length(x.values)
-        if x.ismissingvalues[i]
-            pairvalues[i,i] = missing
-        end
-    end
-    _values,_ismissingvalues = defaultmissing(pairvalues)
+function PairParam(x::SingleParam{T},name::String= x.name) where T
+    _values = singletopair(x.values)
+    _ismissingvalues = singletopair(x.ismissingvalues,true)
     return PairParam(name, x.components, _values, _ismissingvalues, x.sourcecsvs, x.sources)
 end
 
@@ -219,7 +212,5 @@ function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter)
 end
 
 #convert utilities
-function Base.convert(::Type{PairParam{T1}},param::PairParam{T2}) where {T1<:Number,T2<:Number}
-    values = convert(Matrix{T1},param.values)
-    return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
+Base.convert(::Type{PairParam{T1}},param::PairParam{T2}) where {T1<:Number,T2<:Number} = param_from_values(convert(Matrix{T1},param.values),param)
+

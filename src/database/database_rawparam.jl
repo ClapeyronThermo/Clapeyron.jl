@@ -61,15 +61,14 @@ end
 
 function joindata!(old::RawParam,new::RawParam)
     tnew,type_sucess = joindata!(old.type,new.type)
-    if old.grouptype !== new.grouptype
-        if old.grouptype != :unknown && new.grouptype != :unknown #for backwards compatibility
-            error_different_grouptype(old,new,old.name)
-        end
+    if old.grouptype !== new.grouptype && old.grouptype != :unknown && new.grouptype != :unknown #for backwards compatibility
+        error_different_grouptype(old,new,old.name)
     end
 
     if !type_sucess
         error_clashing_headers(old,new)
     end
+
     component_info = append!(old.component_info,new.component_info)
 
     #Handle all the type variability of the data here
@@ -190,7 +189,7 @@ function compile_single_vec(components,raw::RawParam)
     else
         values = fill("",l)
     end
-    if raw.component_info == nothing #named tuple input
+    if raw.component_info === nothing #named tuple input
         return raw.data
     end
     
@@ -260,7 +259,7 @@ end
 end
 
 function compile_assoc(name,components,raw::RawParam,sites,options)
-    if isnothing(sites) && length(raw.component_info) > 0
+    if isnothing(sites) && !isempty(raw.component_info)
         __compile_assoc_missing_site_error(name)
     end
     site_strings = sites.sites
@@ -271,21 +270,17 @@ function compile_assoc(name,components,raw::RawParam,sites,options)
     sources_csv = fill(EMPTY_STR,l)
     sources = fill(EMPTY_STR,l)
     ijab = similar(_ijab,l)
-    inner_values = similar(raw.data,l)
+    values = similar(raw.data,l)
     for (j,k) ∈ enumerate(raw.component_info)
         i = unique_dict[k]
-        inner_values[i] = raw.data[j]
+        values[i] = raw.data[j]
         ijab[i] = _ijab[j]
         sources[i] = raw.sources[j]
         sources_csv[i] = raw.csv[j]
     end
-
-    idxs = sortperm(ijab) #CompressedAssoc4DMatrix requires lexicographically sorted component-site idxs
-    ijab = ijab[idxs]
-    inner_values = inner_values[idxs]
-    sources = sources[idxs]
-    sources_csv = sources_csv[idxs]
-    values = Compressed4DMatrix(inner_values,ijab)
+    site_sizes = map(length,site_strings)
+    offsets = Compressed4DMatrices.offsets_from_bsizes!(site_sizes)
+    values = Compressed4DMatrix(values,ijab,offsets)
     unique!(sources)
     unique!(sources_csv)
     filter!(!isequal(EMPTY_STR),sources)
@@ -298,14 +293,15 @@ function compile_assoc(name,components,raw::CSVType,sites,options)
     if sites === nothing
         AssocParam(name,components)
     else
-        AssocParam(name,components,Compressed4DMatrix{Float64}(),sites.sites)
+        site_offsets = copy(sites.n_sites.p)
+        val = Compressed4DMatrix(Float64[],Int[],site_offsets)
+        AssocParam(name,components,val,sites.sites)
     end
 end
 
 #Sort site tape, so that components are sorted by the input.
 function standardize_comp_info(component_info,components,site_strings)
     ijab = Vector{Tuple{Int,Int,Int,Int}}(undef,length(component_info))
-    l = length(components)
     for (i,val) ∈ pairs(component_info)
         c1,c2,s1,s2 = val
         idx1 = findfirst(isequal(c1), components)::Int
@@ -358,7 +354,6 @@ function SingleMissingError(param::SingleParameter;all = false)
     if all
         throw(MissingException("cannot found values of " * error_color(param.name) * " for all input components."))
     else
-        missingvals = param.ismissingvalues
         idx = findall(param.ismissingvalues)
         comps = param.components[idx]
         throw(MissingException(string("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")))

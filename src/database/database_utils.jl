@@ -21,7 +21,7 @@ julia> getfileextension("~/Desktop/text.txt")
 ```
 """
 function getfileextension(filepath::AbstractString)
-    path,ext = splitext(filepath)
+    _,ext = splitext(filepath)
     return String(chop(ext,head=1,tail=0))
 end
 
@@ -29,8 +29,8 @@ end
 """
     getpaths(location; relativetodatabase=false)
 Returns database paths that is optionally relative to Clapeyron.jl directory.
-If path is a file, then return an Array containing a single path to that file.
-If path is a directory, then return an Array containing paths to all csv files in that directory.
+If path is a file, then returns an Array containing a single path to that file.
+If path is a directory, then returns an Array containing paths to all csv files in that directory.
 # Examples
 ```julia-repl
 julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
@@ -40,7 +40,7 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
  "/home/user/.julia/packages/Clapeyron.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_unlike.csv"
 ```
 """
-function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vector{String}
+function getpaths(location::AbstractString; relativetodatabase::Bool=false)
     # We do not use realpath here directly because we want to make the .csv suffix optional.
     is_inline_csv(location) && return [location]
     if startswith(location,"@REPLACE")
@@ -94,7 +94,7 @@ end
 flattenfilepaths(locations) = flattenfilepaths(locations,String[])
 
 function flattenfilepaths(locations,userlocations::Vector{String})
-    if length(locations) == 0 && length(userlocations) == 0
+    if isempty(locations) && isempty(userlocations)
         return String[]
     end
     defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
@@ -150,101 +150,46 @@ function is_inline_csv(filepath)
     return any(startswith(filepath,kw) for kw in SKIP_GETPATHS)
 end
 
-function _indexin(query,list,separator)
-    querydict = Dict(v => k for (k,v) in pairs(query))
-    return _indexin(querydict,list,separator,keys(list))
-end
+defaultmissing(array::Array{<:Union{Missing,Number}}) = defaultmissing(array,zero(nonmissingtype(eltype(array))))
+defaultmissing(array::Array{Missing}) = defaultmissing(array,0.0)
+defaultmissing(array) = defaultmissing(array,"")
 
-function _indexin(query,list,separator,indices)
-    kq = keys(query)
-    res = zeros(Int,0)
-    comp_res = zeros(Int,0)
-    sizehint!(res,2*length(kq))
-    sizehint!(comp_res,2*length(kq))
-    for k in indices
-        list_i = list[k]
-        for val in eachsplit(list_i,separator,keepempty = false)
-            if val in kq
-                push!(res,k)
-                push!(comp_res,query[val])
+function defaultmissing(array, defaultvalue::T) where T
+    V = eltype(array)
+    nonmissing = Array{Bool}(undef,size(array))
+    if nonmissingtype(V) == V && V != Any #fast shortcut
+        nonmissing .= false
+        return array,nonmissing
+    end
+    #at this point, we have an array with one or more missing values. iterate on each.
+    result = similar(array,T)
+    for i in eachindex(array)
+        is_missing = ismissing(array[i])
+        if is_missing
+            result[i] = defaultvalue
+        else
+            if T == String
+                result[i] = convert(String,string(array[i]))
+            else
+                result[i] = convert(T,array[i])
             end
         end
+        nonmissing[i] = is_missing
     end
-    return res,comp_res
+    return result,nonmissing
 end
-
-function defaultmissing(array::Array{<:Number},defaultvalue = zero(eltype(array)))
-    return deepcopy(array),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{<:AbstractString},defaultvalue = "")
-    return string.(array),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{String},defaultvalue = "")
-    return deepcopy(array),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{Union{Missing, T}},defaultvalue="") where T <:AbstractString
-    return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{Union{Missing, T}},defaultvalue=zero(eltype(array))) where T<:Number
-    return coalesce.(array,defaultvalue),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{Union{Missing, Bool}},defaultvalue=zero(eltype(array)))
-    return [coalesce(i,defaultvalue) for i in array],Array(ismissing.(array))
-end
-
-#if an array with only missings is passed, the Resulting ClapeyronParam will be
-#of the type that this function returns
-function defaultmissing(array::Array{Missing},defaultvalue=0.0)
-    return coalesce.(array,defaultvalue),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{Union{Missing,T1,T2}},defaultvalue="") where {T1 <:Number,T2<:AbstractString}
-    return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{Any},defaultvalue="")
-    return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{T},defaultvalue::T2) where T<:Union{T2,Missing} where T2
-    coalesce.(array,Ref(defaultvalue)),Array(ismissing.(array))
-end
-function defaultmissing(array)
-    throw("Unsupported array element type  $(typeof(array))")
-end
-
-_zero(t::Number) = zero(t)
-_zero(::String) = ""
-_zero(::Missing) = missing
-function _zero(x::Type{T})  where T<:Number
-    return zero(T)
-end
-_zero(::Type{String}) = ""
-_zero(::Type{Missing}) = missing
-function _zero(::Type{T}) where T <:Union{T1,Missing} where T1
-    return missing
-end
-
-_iszero(t::Number) = iszero(t)
-_iszero(::Missing) = true
-_iszero(t::AbstractString) = isempty(t)
 
 """
     singletopair(params::Vector,outputmissing=zero(T))
-Generates a square matrix, filled with "zeros" (considering the "zero" of a string, a empty string).
+Generates a square matrix, filled with "zeros" (considering the "zero" of a string, an empty string).
 The generated matrix will have the values of `params` in the diagonal.
 If missing is passed, the matrix will be filled with `missing`.
 """
-function singletopair(params::Vector{T1},::T2 =_zero(T1)) where {T1,T2}
+function singletopair(params::Vector{T1},_0::T2 =_zero(T1)) where {T1,T2}
     len = length(params)
     T = Union{T1,T2}
     output = Matrix{T}(undef,len,len)
-    fill!(output,_zero(T))
+    fill!(output,_0)
     @inbounds  for i in 1:len
         output[i,i] = params[i]
     end
@@ -281,6 +226,11 @@ end
 low_color(symbol::Symbol) = low_color(":" * string(symbol))
 low_color(x) = low_color(string(x))
 
+function __pad_val(i,imax::Int)
+    s = repr(i,context = :compact => true)
+    return rpad(s,imax)
+end
+
 function userlocation_merge(loc1,loc2)
     if isempty(loc2)
         return loc1
@@ -288,7 +238,7 @@ function userlocation_merge(loc1,loc2)
         return loc2
     elseif loc1 isa Vector{String} && loc2 isa Vector{String}
         return append!(loc1,loc2)
-    elseif loc1 isa Vector{String} && length(loc1) == 0
+    elseif loc1 isa Vector{String} && isempty(loc1)
         return loc2
     elseif loc1 isa Vector{String} && can_nt(loc2)
         return loc2
@@ -308,6 +258,27 @@ end
 critical_data() = ["properties/critical.csv"]
 mw_data() = ["properties/molarmass.csv"]
 
+# CAS as identifier
+struct ByCas{T}
+    cas::T
+end
+
+"""
+    @cas_str
+
+This macro creates a `ByCas` object and can be used as string literal like `cas"..."`.
+It can be used for model construction. Example:
+```
+model = PCSAFT(cas"71-36-3")
+```
+"""
+macro cas_str(str)
+    ByCas(str)
+end
+
+format_components(x::ByCas) = by_cas(x.cas)
+format_component_i(x::ByCas) = first(by_cas(x.cas))
+
 function by_cas(caslist)
     cas = format_components(caslist)
     params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[],ignore_missing_singleparams = String["SMILES","inchikey","species"])
@@ -321,11 +292,11 @@ function by_cas(caslist)
     return species
 end
 
-function standarize_cas(cas)
+function standardize_cas(cas)
     if isdigit(last(cas))
         vx = split(cas,"-")
         if length(vx) != 3
-            @show vx
+            @warn "invalid CAS: $vx"
             return String(cas)
         end
         v1,v2,v3 = vx[1],vx[2],vx[3]
@@ -335,8 +306,7 @@ function standarize_cas(cas)
         return String(cas)
     end
 end
-standarize_cas(cas::Missing) = missing
-
+standardize_cas(cas::Missing) = missing
 
 function cas(components)
     components = format_components(components)
@@ -346,15 +316,9 @@ function cas(components)
     return cas_i
 end
 
-function SMILES(components)
-    components = format_components(components)
-    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
-    return params["SMILES"].values
-end
-
 function by_cas2(caslist)
     raw_cas = format_components(caslist)
-    cas = standarize_cas.(raw_cas)
+    cas = standardize_cas.(raw_cas)
     params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[], ignore_missing_singleparams = ["CAS","species","SMILES","inchikey","canonicalsmiles"])
     species = params["species"]
     d = Dict(k => v for (k,v) in zip(species.components,species.values))
@@ -366,6 +330,56 @@ function normalize_components_sym(components)
     _,sp = by_cas2(caslist)
     return sp
 end
+
+# SMILES as identifier
+struct BySmiles{T}
+    smiles::T
+end
+
+"""
+    @smiles_str
+
+This macro creates a `BySmiles` object and can be used as string literal like `smiles"..."`.
+It can be used for model construction. Example:
+```
+model = PCSAFT(smiles"CCCCO")
+```
+
+!!! info
+    No canonization is applied internally. Consequently, only SMILES contained in the `identifiers.csv` will be found.
+"""
+macro smiles_str(str)
+    BySmiles(str)
+end
+
+format_components(x::BySmiles) = format_components([x])
+format_component_i(x::BySmiles) = first(by_smiles(x.smiles))
+
+_split_species(sp) = occursin("~|~",sp) ? first(eachsplit(sp,"~|~")) : sp
+
+function by_smiles(smiles)
+    _smiles = format_components(smiles)
+    params = getparams(_smiles,["properties/identifiers.csv"],species_columnreference = "SMILES",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species","CAS","canonicalsmiles"])
+    species = Vector{String}(undef,length(_smiles))
+    for (i,s) in enumerate(_smiles)
+        if params["species"][s] isa String
+            species[i] = _split_species(params["species"][s])
+        else
+            params2 = getparams(_smiles,["properties/identifiers.csv"],species_columnreference = "canonicalsmiles",ignore_headers = String[], ignore_missing_singleparams = String["inchikey","species","CAS"])
+            species[i] = _split_species(params2["species"][s])
+        end
+    end
+    return species
+end
+
+function SMILES(components)
+    components = format_components(components)
+    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
+    return params["SMILES"].values
+end
+
+export @cas_str, @smiles_str
+
 #=
 utilities for feos parsing
 function to_groups(x)

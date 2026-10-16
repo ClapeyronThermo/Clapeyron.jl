@@ -37,52 +37,50 @@ julia> p,vl,vv = saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)
 (96099.38979351871, 2.2674781912892933e-5, 0.03201681565699547)
 ```
 """
-function saturation_pressure(model::EoSModel,T,method::SaturationMethod)
-    single_component_check(saturation_pressure,model)
-    T = T*(T/T)*oneunit(eltype(model))
+function saturation_pressure(model::EoSModel,_T,method::SaturationMethod;output = (nothing,nothing,nothing))
     satmodel = saturation_model(model)
-    satmodel !== model && saturation_pressure(satmodel,T,method)
-    if has_a_res(model)
-        λmodel,λT = primalval(model),primalval(T)
+    single_component_check(saturation_pressure,satmodel)
+    T = ustrip(_T,temperature)*primalval(oneunit(eltype(model)))
+    
+    if has_a_res(satmodel)
+        λmodel,λT = primalval(satmodel),primalval(T)
         λresult = saturation_pressure_impl(λmodel,λT,method)
-        return saturation_pressure_ad(λresult,(model,T),(λmodel,λT))
+        sat = saturation_pressure_ad(model,λresult,(satmodel,T),(λmodel,λT))
     else
-        return saturation_pressure_impl(model,T,method)
+        sat = saturation_pressure_impl(satmodel,T,method)
     end
+    o1,o2,o3 = output
+    UNIT_TYPE = unit_system(T,o1,o2,o3)    
+    s1,s2,s3 = sat
+    return with_output_unit(s1,(UNIT_TYPE,o1),pressure),with_output_unit(s2,(UNIT_TYPE,o2),volume),with_output_unit(s3,(UNIT_TYPE,o3),volume)
 end
 
-function saturation_pressure(model::EoSModel,T;kwargs...)
+function saturation_pressure(model::EoSModel,T;output = (nothing,nothing,nothing),kwargs...)
     satmodel = saturation_model(model)
-    if satmodel !== model
-        return saturation_pressure(satmodel,T;kwargs...)
-    end
     if keys(kwargs) == (:v0,)
         nt_kwargs = NamedTuple(kwargs)
         v0 = nt_kwargs.v0
         vl = first(v0)
         vv = last(v0)
         _kwargs = (;vl,vv)
-        method = init_preferred_method(saturation_pressure,model,_kwargs)
+        method = init_preferred_method(saturation_pressure,satmodel,_kwargs)
     else
-        method = init_preferred_method(saturation_pressure,model,kwargs)
+        method = init_preferred_method(saturation_pressure,satmodel,kwargs)
     end
-    return saturation_pressure(model,T,method)
+    return saturation_pressure(satmodel,T,method;output)
 end
 
 function saturation_pressure(model::EoSModel,T,V0::Union{Tuple,Vector})
     satmodel = saturation_model(model)
-    if satmodel !== model
-        return saturation_pressure(satmodel,T,V0)
-    end
-    single_component_check(saturation_pressure,model)
+    single_component_check(saturation_pressure,satmodel)
     vl = first(V0)
     vv = last(V0)
     kwargs = (;vl,vv)
-    method = init_preferred_method(saturation_pressure,model,kwargs)
-    return saturation_pressure(model,T,method)
+    method = init_preferred_method(saturation_pressure,satmodel,kwargs)
+    return saturation_pressure(satmodel,T,method)
 end
 
-function saturation_pressure_ad(result,tup,tup_primal)
+function saturation_pressure_ad(__model::M,result::RES,tup::TUP1,tup_primal::TUP2) where {M,RES,TUP1,TUP2}
     if any(has_dual,tup) # do check here to avoid recomputation of pressure if no AD
         ff(x,tups) = begin
             model,T = tups
@@ -99,10 +97,6 @@ function saturation_pressure_ad(result,tup,tup_primal)
     return result
 end
 
-function derivx(f,i)
-    h = sqrt(eps(i))
-    return (1*f(i-2h)-8*f(i-1h)+0*f(i)+8*f(i+1h)-1*f(i+2h))/(12*h)
-end
 
 """
     saturation_temperature(model::EoSModel, p, kwargs...)
@@ -135,47 +129,43 @@ julia> saturation_pressure(pr,Ts)
 (100000.00004314569, 2.269760164804427e-5, 0.03084938795785433)
 ```
 """
-function saturation_temperature(model,p;kwargs...)
+function saturation_temperature(model,p;output = (nothing,nothing,nothing),kwargs...)
     satmodel = saturation_model(model)
-    if satmodel !== model
-        return saturation_temperature(satmodel,p;kwargs...)
-    end
-    method = init_preferred_method(saturation_temperature,model,kwargs)
-    return saturation_temperature(model,p,method)
+    method = init_preferred_method(saturation_temperature,satmodel,kwargs)
+    return saturation_temperature(satmodel,p,method;output)
 end
 
-function saturation_temperature(model,p,method::SaturationMethod)
+function saturation_temperature(model,_p,method::SaturationMethod;output = (nothing,nothing,nothing))
     satmodel = saturation_model(model)
-    if satmodel !== model
-        return saturation_temperature(satmodel,p;method)
-    end
-    single_component_check(crit_pure,model)
-    p = p*p/p
-    if has_a_res(model)
-        λmodel,λp = primalval(model),primalval(p)
+    single_component_check(crit_pure,satmodel)
+    p = ustrip(_p,pressure)*primalval(oneunit(eltype(model)))
+    if has_a_res(satmodel)
+        λmodel,λp = primalval(satmodel),primalval(p)
         λresult = saturation_temperature_impl(λmodel,λp,method)
-        return saturation_temperature_ad(λresult,(model,p),(λmodel,λp))
+        sat = saturation_temperature_ad(model,λresult,(satmodel,p),(λmodel,λp))
     else
-        return saturation_temperature_impl(model,p,method)
+        sat = saturation_temperature_impl(satmodel,p,method)
     end
+
+    o1, o2,o3 = output
+    UNIT_TYPE = unit_system(p,o1,o2,o3)    
+    s1,s2,s3 = sat
+    return with_output_unit(s1,(UNIT_TYPE,o1),temperature),with_output_unit(s2,(UNIT_TYPE,o2),volume),with_output_unit(s3,(UNIT_TYPE,o3),volume)
 end
 
 #if a number is provided as initial point, it will instead proceed to solve directly
 function saturation_temperature(model::EoSModel, p, T0::Number)
     satmodel = saturation_model(model)
-    if satmodel !== model
-        return saturation_temperature(satmodel,p,T0)
-    end
     kwargs = (;T0)
-    method = init_preferred_method(saturation_temperature,model,kwargs)
-    saturation_temperature(model,p,method)
+    method = init_preferred_method(saturation_temperature,satmodel,kwargs)
+    saturation_temperature(satmodel,p,method)
 end
 
-function saturation_temperature_ad(result,tup,tup_primal)    
+function saturation_temperature_ad(__model,result,tup,tup_primal)
     f(x,tups) = begin
         model,p = tups
         T,vl,vv = x
-        return μp_equality1_T(model,model,vl,vv,p,T,1.0,1.0)
+        return μp_equality1_T(model,model,vl,vv,p,T,1.0,1.0,SA[1.0])
     end
     λx = SVector(result)
     ∂T,∂vl,∂vv = __gradients_for_root_finders(λx,tup,tup_primal,f)
@@ -196,14 +186,23 @@ include("AntoineSat.jl")
 
 Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies at temperature `T` `[K]`, in `[J]`
 """
-function enthalpy_vap(model::EoSModel, T,satmethod = ChemPotVSaturation())
+function enthalpy_vap(model::EoSModel, T, satmethod = ChemPotVSaturation(); output = nothing)
+    T̄ = ustrip(T,temperature)
     single_component_check(enthalpy_vap,model)
-    (P_sat,V_l,V_v) = saturation_pressure(model,T,satmethod)
-    H_v = VT_enthalpy_res(model,V_v,T)
-    H_l = VT_enthalpy_res(model,V_l,T)
-    #H_v(res) - H_l(res) = H_l - H_v
-    H_vap = H_v - H_l
-    return H_vap
+    if has_a_res(model)
+        (_,V_l,V_v) = saturation_pressure(model,T̄,satmethod)
+        H_v = VT_enthalpy_res(model,V_v,T̄)
+        H_l = VT_enthalpy_res(model,V_l,T̄)
+        #H_v(res) - H_l(res) = H_l - H_v
+        H_vap = H_v - H_l
+    else
+        #Clapeyron equation
+        satmodel = saturation_model(model)
+        (_,V_l,V_v) = saturation_pressure(satmodel,T̄)
+        H_vap = T̄*(V_v - V_l)*dpdT_saturation(satmodel,V_l,V_v,T̄)
+    end
+    UNIT_TYPE = unit_system(unit_system(T),unit_system(output))    
+    return with_output_unit(H_vap,(UNIT_TYPE,output),enthalpy)
 end
 
 """

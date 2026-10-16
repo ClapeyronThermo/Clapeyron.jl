@@ -43,11 +43,14 @@ Clapeyron.crit_mix
 Clapeyron.mechanical_critical_point
 Clapeyron.spinodal_pressure
 Clapeyron.spinodal_temperature
+Clapeyron.spinodal_maximum
 Clapeyron.edge_pressure
 Clapeyron.edge_temperature
 Clapeyron.UCEP_mix
 Clapeyron.UCST_pressure
 Clapeyron.UCST_temperature
+Clapeyron.UCST_mix
+Clapeyron.krichevskii_parameter
 ```
 
 ## SLE Equilibria
@@ -64,6 +67,7 @@ Clapeyron.eutectic_point
 ```@docs
 Clapeyron.ChemPotBubblePressure
 Clapeyron.FugBubblePressure
+Clapeyron.DonnanBubblePressure
 Clapeyron.ActivityBubblePressure
 Clapeyron.ChemPotBubbleTemperature
 Clapeyron.FugBubbleTemperature
@@ -85,34 +89,4 @@ Clapeyron.VT_chemical_stability
 Clapeyron.diffusive_stability
 Clapeyron.chemical_stability
 Clapeyron.tpd
-```
-
-
-## TP Flash
-
-```@docs
-Clapeyron.tp_flash
-Clapeyron.DETPFlash
-Clapeyron.RRTPFlash
-Clapeyron.MichelsenTPFlash
-Clapeyron.MultiPhaseTPFlash
-Clapeyron.MCFlashJL
-Clapeyron.numphases
-Clapeyron.supports_reduction
-```
-
-## General Flash
-
-```@docs
-Clapeyron.FlashResult
-Clapeyron.FlashData
-Clapeyron.FlashSpecifications
-Clapeyron.xy_flash
-Clapeyron.GeneralizedXYFlash
-Clapeyron.ph_flash
-Clapeyron.ps_flash
-Clapeyron.qt_flash
-Clapeyron.qp_flash
-Clapeyron.ts_flash
-Clapeyron.vt_flash
 ```

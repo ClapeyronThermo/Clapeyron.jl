@@ -269,8 +269,8 @@ lambda_squarewell!(lambda, sigma) = pair_mix!(mix_lambda_squarewell,lambda,sigma
 """
     mirror_pair!(param::PairParam,f = identity)
 
-performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. by default, `f = identity` (a symmetric matrix). 
-One key difference is that it sets the `ismissingvalues` field for each modified index to `false`
+Performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. By default, `f = identity` (a symmetric matrix). 
+One key difference is that it sets the `ismissingvalues` field for each modified index to `false`.
 """
 function mirror_pair!(param::PairParameter,f = identity)
     mirror_pair!(param.values,param.ismissingvalues,f)
@@ -280,18 +280,24 @@ end
 """
     mirror_pair(param::PairParam,f = identity)
 
-performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. by default, `f = identity` (a symmetric matrix). 
-One key difference is that it sets the `ismissingvalues` field for each modified index to `false`
+Performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. By default, `f = identity` (a symmetric matrix). 
+One key difference is that it sets the `ismissingvalues` field for each modified index to `false`.
 """
 mirror_pair(param::PairParameter,f = identity) = mirror_pair!(deepcopy(param),f)
 
+
+
 export kij_mix, kij_mix!
 export pair_mix, pair_mix!
+export ijab_mix,ijab_mix!
 export sigma_LorentzBerthelot, sigma_LorentzBerthelot!
 export epsilon_LorentzBerthelot, epsilon_LorentzBerthelot!
 export epsilon_HudsenMcCoubrey, epsilon_HudsenMcCoubrey!
 export epsilon_HudsenMcCoubreysqrt, epsilon_HudsenMcCoubreysqrt!
 export lambda_LorentzBerthelot, lambda_LorentzBerthelot!
 export lambda_squarewell, lambda_squarewell!
+export bondvol_mix,epsilon_assoc_mix,dufal_mix
+export bondvol_mix!,epsilon_assoc_mix!,dufal_mix!
+export ijab_zero_mix, ijab_zero_mix!
 export group_sum, group_sum!
 export group_pairmean, group_pairmean!

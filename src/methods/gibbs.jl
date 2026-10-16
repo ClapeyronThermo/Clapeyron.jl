@@ -3,19 +3,22 @@
 #derivative logic
 
 function ∂𝕘∂T(model,p,T,z::AbstractVector)
-    g(∂T) = eos_g(model,p,∂T,z)
+    V = p
+    g = @deferred_T(eos_g,∂𝕘∂T)
     return Solvers.derivative(g,T)
 end
 
 function ∂𝕘∂p(model,p,T,z::AbstractVector)
-    g(∂p) = eos_g(model,∂p,T,z)
+    V = p
+    g = @deferred_V(eos_g,∂𝕘∂p)
     return Solvers.derivative(g,p)
 end
 
 function ∂𝕘(model,p,T,z)
-    f(∂p,∂T) = eos_g(model,∂p,∂T,z)
-    _f,_df = Solvers.fgradf2(f,p,T)
-    return _df,_f
+    V = p
+    g = @deferred_VT(eos_g,∂𝕘)
+    _g,_dg = Solvers.fgradf2(g,p,T)
+    return _dg,_g
 end
 
 function ∂𝕘_vec(model,p,T,z::AbstractVector)
@@ -24,64 +27,70 @@ function ∂𝕘_vec(model,p,T,z::AbstractVector)
 end
 
 function 𝕘∂𝕘dp(model,p,T,z::AbstractVector)
-    f(x) = eos_g(model,x,T,z)
-    G,∂G∂p = Solvers.f∂f(f,p)
+    V = p
+    g = @deferred_V(eos_g,𝕘∂𝕘dp)
+    G,∂G∂p = Solvers.f∂f(g,p)
     return SVector(G,∂G∂p)
 end
 
 function 𝕘∂𝕘dT(model,p,T,z::AbstractVector)
-    f(x) = eos_g(model,p,x,z)
-    G,∂G∂T = Solvers.f∂f(f,T)
+    V = p
+    g = @deferred_T(eos_g,𝕘∂𝕘dT)
+    G,∂G∂T = Solvers.f∂f(g,T)
     return SVector(G,∂G∂T)
 end
 
 function V∂V∂p(model,p,T,z::AbstractVector=SA[1.0])
-    f(∂p) = ∂𝕘∂p(model,∂p,T,z)
-    V,∂V∂p = Solvers.f∂f(f,p)
-    return SVector(V,∂V∂p)
+    V = p
+    v = @deferred_V(∂𝕘∂p,V∂V∂p)
+    VV,∂V∂p = Solvers.f∂f(v,p)
+    return SVector(VV,∂V∂p)
 end
 
 function V∂V∂T(model,p,T,z::AbstractVector=SA[1.0])
-    f(∂T) = ∂𝕘∂p(model,p,∂T,z)
-    V,∂V∂T = Solvers.f∂f(f,T)
-    return SVector(V,∂V∂T)
+    V = p
+    v = @deferred_T(∂𝕘∂p,V∂V∂T)
+    VV,∂V∂T = Solvers.f∂f(v,T)
+    return SVector(VV,∂V∂T)
 end
 
 function ∂2𝕘(model,p,T,z)
-    f(_p,_T) = eos_g(model,_p,_T,z)
-    _f,_∂f,_∂2f = Solvers.∂2(f,p,T)
-    return (_∂2f,_∂f,_f)
+    V = p
+    g = @deferred_VT(eos_g,∂2𝕘)
+    _g,_∂g,_∂2g = Solvers.∂2(g,p,T)
+    return SVector(_g,_∂g[1],_∂g[2],_∂2g[1,1],_∂2g[2,2],_∂2g[1,2])
 end
 
 function 𝕘_hess(model,p,T,z)
-    f(w) = eos_g(model,first(w),last(w),z)
+    V = p
+    g = @deferred_VT(eos_g,𝕘_hess)
     p,T = promote(p,T)
-    pT_vec = SVector(p,T)
-    return Solvers.hessian(f,pT_vec)
+    pT_vec = SVector(p,T)    
+    return Solvers.hessian(g,pT_vec)
 end
 
 function ∂²𝕘∂T²(model,p,T,z)
-    G(x) = eos_g(model,p,x,z)
-    _,_,∂²G∂T² = Solvers.f∂f∂2f(G,T)
+    V = p
+    g = @deferred_T(eos_g,∂²𝕘∂T²)
+    _,_,∂²G∂T² = Solvers.f∂f∂2f(g,T)
     return ∂²G∂T²
 end
 #property logic
 
-function PT_property(model::GibbsBasedModel,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
+function PT_property(model::GibbsBasedModel,p,T,z,phase,threaded,vol0,f::F,vol) where {F}
     z isa Number && return PT_property_gibbs(model,p,T,SVector(z),f)
     return PT_property_gibbs(model,p,T,z,f)
 end
 
 PT_property_gibbs(model,p,T,z,f::typeof(pressure)) = p
 PT_property_gibbs(model,p,T,z,f::typeof(temperature)) = T
-PT_property_gibbs(model,p,T,z,f::typeof(volume)) = volume(model,p,T,z)
 PT_property_gibbs(model,p,T,z,f::typeof(VT_entropy)) = -∂𝕘∂T(model,p,T,z)
-PT_property_gibbs(model,p,T,z,f::typeof(VT_gibbs_free_energy)) = eos_g(model,p,T,z)
-PT_property_gibbs(model,p,T,z,f::typeof(VT_helmholtz_free_energy)) = eos_g(model,p,T,z) - p*volume(model,p,T,z)
+PT_property_gibbs(model,p,T,z,f::typeof(VT_gibbs_energy)) = eos_g(model,p,T,z)
+PT_property_gibbs(model,p,T,z,f::typeof(VT_helmholtz_energy)) = eos_g(model,p,T,z) - p*volume(model,p,T,z)
 
 PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_entropy)) = PT_property_gibbs(model,p,T,z,VT_entropy)/molecular_weight(model,z)
-PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_gibbs_free_energy)) = PT_property_gibbs(model,p,T,z,VT_gibbs_free_energy)/molecular_weight(model,z)
-PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_helmholtz_free_energy)) = PT_property_gibbs(model,p,T,z,VT_helmholtz_free_energy)/molecular_weight(model,z)
+PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_gibbs_energy)) = PT_property_gibbs(model,p,T,z,VT_gibbs_energy)/molecular_weight(model,z)
+PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_helmholtz_energy)) = PT_property_gibbs(model,p,T,z,VT_helmholtz_energy)/molecular_weight(model,z)
 PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_isobaric_heat_capacity)) = PT_property_gibbs(model,p,T,z,VT_isobaric_heat_capacity)/molecular_weight(model,z)
 PT_property_gibbs(model,p,T,z,f::typeof(VT_mass_isochoric_heat_capacity)) = PT_property_gibbs(model,p,T,z,VT_isochoric_heat_capacity)/molecular_weight(model,z)
 
@@ -115,8 +124,8 @@ function PT_property_gibbs(model,p,T,z,f::typeof(VT_adiabatic_index))
     ∂²g∂T² = ∂²g[2,2]
     ∂²g∂p² = ∂²g[1,1]
     ∂²g∂T∂p = ∂²g[1,2]
-    Cv = -T*(∂²g∂T² + ∂²g∂p²/∂²g∂T∂p)
-    Cp = -T*∂²g∂T²
+    #Cv = -T*(∂²g∂T² + ∂²g∂p²/∂²g∂T∂p)
+    #Cp = -T*∂²g∂T²
     return 1/(1 + ∂²g∂p²/(∂²g∂T∂p*∂²g∂T²))
 end
 
@@ -131,21 +140,15 @@ function PT_property_gibbs(model,p,T,z,f::typeof(VT_isobaric_expansivity))
 end
 
 function PT_property_gibbs(model,p,T,z,f::typeof(VT_isentropic_compressibility))
-    ∂²g,∂g,g = ∂2𝕘(model,p,T,z)
-    ∂²g∂T² = ∂²g[2,2]
-    ∂²g∂p² = ∂²g[1,1]
-    ∂²g∂T∂p = ∂²g[1,2]
-    V = ∂g[1]
+    gg = ∂2𝕘(model,p,T,z)
+    _,V,_,∂²g∂p²,∂²g∂T²,∂²g∂T∂p = gg
     return (∂²g∂T∂p*∂²g∂T∂p - ∂²g∂T²*∂²g∂p²)/∂²g∂T²/V
 end
 
 function PT_property_gibbs(model,p,T,z,f::typeof(VT_speed_of_sound))
     Mr = molecular_weight(model,z)
-    ∂²g,∂g,g = ∂2𝕘(model,p,T,z)
-    ∂²g∂T² = ∂²g[2,2]
-    ∂²g∂p² = ∂²g[1,1]
-    ∂²g∂T∂p = ∂²g[1,2]
-    V = ∂g[1]
+    gg = ∂2𝕘(model,p,T,z)
+    _,V,_,∂²g∂p²,∂²g∂T²,∂²g∂T∂p = gg
     βsρ = (∂²g∂T∂p*∂²g∂T∂p - ∂²g∂T²*∂²g∂p²)/∂²g∂T²
     V*sqrt(1/(βsρ*Mr))
 end
@@ -157,7 +160,6 @@ function VT_pressure(model::GibbsBasedModel,V,T,z)
     function fixpoint_p(pᵢ)
         Vᵢ,∂V∂pᵢ = V∂V∂p(model,pᵢ,T,z)
         dp = log(V/Vᵢ)*Vᵢ/∂V∂pᵢ
-        px = pᵢ + dp
         return pᵢ + dp
     end
     return Solvers.fixpoint(fixpoint_p,p0,Solvers.SSFixPoint(),rtol = 1e-12)
@@ -194,7 +196,7 @@ end
     type,p,T,W = gibbsmodel_reference_state_consts(model)
     type,p,T,W = gibbsmodel_reference_state_consts(model,other_model)
     
-Returns a equilibrium condition to equilibrate the gibbs energies of two models.
+Returns an equilibrium condition to equilibrate the Gibbs energies of two models.
 Used for solid-fluid equilibria.
 By default, it returns `nothing`. 
 The two-argument method is used to disambiguate between two different models.
@@ -203,7 +205,7 @@ Available options for the type are:
     - :zero: the models are already equilibrated, no additional calculation is necessary (like `IAPWS06` in conjunction with `IAPWS05`)
 
 
-The equilibration corresponds to the calculation of constants `k1` and `k2`, that enforce the gibbs criteria: `gibbs_energy(model,p,T) + k1 + k2*T == gibbs_energy(other_model,p,T)`
+The equilibration corresponds to the calculation of constants `k1` and `k2`, that enforce the Gibbs criteria: `gibbs_energy(model,p,T) + k1 + k2*T == gibbs_energy(other_model,p,T)`
 The constants `k1` and `k2` are calculated by `Clapeyron.calculate_gibbs_reference_state(model,other_model)`
 """
 gibbsmodel_reference_state_consts(model::EoSModel) = nothing
@@ -211,9 +213,9 @@ gibbsmodel_reference_state_consts(model1,model2) = nothing
 function _gibbsmodel_reference_state_consts(model1,model2)
     ref1 = gibbsmodel_reference_state_consts(model1,model2)
     ref2 = gibbsmodel_reference_state_consts(model2,model1)
-    ref2 == nothing && ref1 == nothing && return nothing,0
-    ref1 == nothing && return ref2,2
-    ref2 == nothing && return ref1,1
+    ref2 === nothing && ref1 === nothing && return nothing,0
+    ref1 === nothing && return ref2,2
+    ref2 === nothing && return ref1,1
     throw(error("invalid specification for gibbs_reference_state_consts: both model1 and model2 define their own order."))
 end
 
@@ -221,28 +223,28 @@ end
 """
     k1,k2 = calculate_gibbs_reference_state(model,other_model)
     
-Calculates the reference state constants that force the equilibrium conditions specified by `Clapeyron.gibbsmodel_reference_state_consts`
+Calculates the reference state constants that forces the equilibrium conditions specified by `Clapeyron.gibbsmodel_reference_state_consts`.
 """
 function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel,x1 = SA[1.0],x2 = SA[1.0])
 
     _0 = zero(Base.promote_eltype(model1,model2))
     (model1 isa GibbsBasedModel) || (model2 isa GibbsBasedModel) || return _0,_0 
     refx,nx = _gibbsmodel_reference_state_consts(model1,model2)
-    if refx == nothing
+    if refx === nothing
         ref1 = gibbsmodel_reference_state_consts(model1)
         ref2 = gibbsmodel_reference_state_consts(model2)
-        if ref1 == nothing && ref2 == nothing
-            throw(error("Empty gibbs reference. for gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model)`"))
+        if ref1 === nothing && ref2 === nothing
+            throw(error("Empty Gibbs reference. For Gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model)`"))
         end
-        if ref1 == nothing
+        if ref1 === nothing
             ref = ref2
             n = 2
-        elseif ref2 == nothing
+        elseif ref2 === nothing
             ref = ref1
             n = 1
-        elseif ref2 != nothing && ref1 != nothing
+        elseif ref2 !== nothing && ref1 !== nothing
             
-            isnothing(refx) && throw(error("Empty gibbs reference. for gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model1,model2)`"))
+            isnothing(refx) && throw(error("Empty Gibbs reference. For Gibbs models, define `Clapeyron.gibbsmodel_reference_state_consts(model1,model2)`"))
         end
     else
         ref = refx
@@ -270,7 +272,7 @@ function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel,x1 = 
     elseif type == :zero
         return _0,_0
     else
-        throw(error("invalid gibbs reference state. Expected :dH, got: $type"))
+        throw(error("invalid Gibbs reference state. Expected :dH, got: $type"))
     end
 end
 
@@ -293,15 +295,23 @@ end
 init of pressure-based iterative methods
 =#
 
-function gibbs2_expansion(model::GibbsBasedModel,p,T)
-    f(_p) = gibbs_energy(model,_p,T)
-    return Solvers.f∂f∂2f(f,p)
+function f∂2V(model,V,T,z)
+    f = @deferred_V(eos,f∂2V)
+    return Solvers.f∂f∂2f(f,V)
 end
 
+function g∂2p(model,p,T,z)
+    V = p
+    g = @deferred_V(gibbs_energy,g∂2p)
+    return Solvers.f∂f∂2f(g,p)
+end
+
+gibbs2_expansion(model::GibbsBasedModel,p,T) = g∂2p(model,p,T,SA[1.0])
+
 function gibbs2_expansion(model,p,T)
-    V = volume(model,p,T)
-    f(_V) = eos(model,_V,T)
-    a,da,d2a = Solvers.f∂f∂2f(f,V)
+    z = SA[1.0]
+    V = volume(model,p,T,z,phase = :l)
+    a,da,d2a = f∂2V(model,V,T,z)
     g = a + p*V
     dg = V
     d2g = -1/d2a
@@ -310,7 +320,7 @@ end
 
 function g_and_v(model,p,T,v;phase = :unknown)
     v = volume(model,p,T,SA[1.0],phase = phase,vol0 = v)
-    g = VT_gibbs_free_energy(model,v,T,SA[1.0])
+    g = VT_gibbs_energy(model,v,T,SA[1.0])
     return g,v
 end
 
@@ -320,7 +330,7 @@ end
 
 function g_and_sv(model,p,T,v;phase = :unknown)
     v = volume(model,p,T,SA[1.0],phase = phase,vol0 = v)
-    g = VT_gibbs_free_energy(model,v,T,SA[1.0])
+    g = VT_gibbs_energy(model,v,T,SA[1.0])
     s = VT_entropy(model,v,T,SA[1.0])
     return g,s,v
 end

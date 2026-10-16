@@ -41,7 +41,7 @@ if the model is Redlich-Kwong:
     (-0.4783,-0.0047)
 ```
 
-to use different values for `q₁` and `q₂`, overload `Clapeyron.MHV1q(::CubicModel,::MHV2Model) = (q₁,q₂)`
+To use different values for `q₁` and `q₂`, overload `Clapeyron.MHV1q(::CubicModel,::MHV2Model) = (q₁,q₂)`
 
 ## Model Construction Examples
 ```

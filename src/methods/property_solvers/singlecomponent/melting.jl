@@ -1,9 +1,3 @@
-function obj_melting_pressure(model::CompositeModel,T,vs,vl,ps,μs)
-    solid = solid_model(model)
-    fluid = fluid_model(model)
-    return μp_equality1_p(solid,fluid,vs,vl,T,ps,μs)
-end
-
 struct ChemPotMeltingPressure{V} <: ThermodynamicMethod
     v0::V
     check_triple::Bool
@@ -53,7 +47,7 @@ function melting_pressure(model::CompositeModel,T,method::ThermodynamicMethod)
 end
 
 function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPressure)
-    if method.v0 == nothing
+    if method.v0 === nothing
         v0 = x0_melting_pressure(model,T)
     else
         v0 = method.v0
@@ -70,7 +64,7 @@ function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPre
     fluid = fluid_model(model)
     solid = solid_model(model)
     ps,μs = equilibria_scale(fluid)
-    result,converged = try_2ph_pure_pressure(solid,fluid,T,vs0,vl0,ps,μs,method)
+    result,converged = try_2ph_edge_pressure(solid,fluid,T,vs0,vl0,ps,μs,SA[1.0],method)
     if converged
         return result
     else
@@ -116,12 +110,10 @@ function solve_2ph_gibbs(model,p,T)
     return vs, vl, p
 end
 
-function Obj_Mel_Temp(model::EoSModel, F, T, V_s, V_l,p,p̄,T̄)
+function Obj_Mel_Temp(model::EoSModel, F, T, V_s, V_l, p, p̄, T̄)
     z = SA[1.0]
-    eos_solid(V) = eos(model.solid,V,T,z)
-    eos_fluid(V) = eos(model.fluid,V,T,z)
-    A_l,Av_l = Solvers.f∂f(eos_fluid,V_l)
-    A_s,Av_s =Solvers.f∂f(eos_solid,V_s)
+    A_l,Av_l = f∂fdV(model.fluid,V_l,T,z)
+    A_s,Av_s = f∂fdV(model.solid,V_s,T,z)
     g_l = muladd(-V_l,Av_l,A_l)
     g_s = muladd(-V_s,Av_s,A_s)
     F1 = -(Av_l+p)/p̄
@@ -184,7 +176,7 @@ function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMelting
     fluid = fluid_model(model)
     T̄ = T_scale(fluid)
     p̄ = p_scale(fluid)
-    if method.v0 == nothing
+    if method.v0 === nothing
         v0 = x0_melting_temperature(model,p)
     else
         v0 = method.v0
@@ -196,7 +188,7 @@ function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMelting
     vs = exp(x[2])
     vl = exp(x[3])
     Tfus = x[1]
-    converged = check_valid_eq2(solid_model(model),fluid_model(model),p,vs,vl,Tfus)
+    converged = check_valid_eq2(solid,fluid,p,vs,vl,Tfus)
     if converged
     return Tfus, vs, vl
     else
@@ -251,7 +243,7 @@ end
 
 function melting_pressure_impl(model::CompositeModel,T,method::IsoGibbsMeltingPressure)
     _1 = one(Base.promote_eltype(model,T))
-    if method.p0 == nothing
+    if method.p0 === nothing
         v0 = x0_melting_pressure(model,T)
         p0 = v0[3]*_1
     else
@@ -317,7 +309,7 @@ end
 
 function melting_temperature_impl(model::CompositeModel,p,method::IsoGibbsMeltingTemperature)
     _1 = one(Base.promote_eltype(model,p))
-    if method.T0 == nothing
+    if method.T0 === nothing
         v0 = x0_melting_temperature(model,p)
         T0 = v0[1]*_1
     else

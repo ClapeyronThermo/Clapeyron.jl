@@ -1,4 +1,4 @@
-abstract type PenelouxTranslationModel <: TranslationModel end
+abstract type PenelouxTranslationModel <: ConstantTranslationModel end
 
 struct PenelouxTranslationParam <: EoSParam
     Vc::SingleParam{Float64}
@@ -59,6 +59,7 @@ translation = PenelouxTranslation(["neon","hydrogen"];userlocations = (;Vc = [4.
 PenelouxTranslation
 
 const RackettTranslation = PenelouxTranslation
+@doc (@doc PenelouxTranslation) RackettTranslation
 
 export PenelouxTranslation
 export RackettTranslation #for compatibility
@@ -70,10 +71,6 @@ function transform_params(::Type{PenelouxTranslation},params,components)
     v_shift.ismissingvalues .= true
     params["v_shift"] = v_shift
     return params
-end
-
-function translation(model::CubicModel,V,T,z,translation_model::PenelouxTranslation)
-    return translation_model.params.v_shift.values
 end
 
 function recombine_translation!(model::CubicModel,translation_model::PenelouxTranslation)
@@ -108,14 +105,4 @@ function translation!(c,model::RKModel,translation_model::PenelouxTranslation)
         c[i] = 0.40768*RT/Pci*(0.29441-Zc)
     end
     return c
-end
-
-function translation2(model::CubicModel,V,T,z,translation_model::PenelouxTranslation,a,b,α)
-    c = translation_model.params.v_shift
-    cmissing = c.ismissingvalues
-    if any(cmissing)
-        translation!(model,V,T,z,translation_model,c)
-    end
-
-    return dot(c.values,z)
 end

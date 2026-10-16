@@ -1,10 +1,16 @@
-[![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4059342.svg)](https://doi.org/10.5281/zenodo.4059342)
 [![Build Status](https://github.com/ClapeyronThermo/Clapeyron.jl/workflows/CI/badge.svg)](https://github.com/ClapeyronThermo/Clapeyron.jl/actions)
 [![codecov](https://codecov.io/gh/ClapeyronThermo/Clapeyron.jl/branch/master/graph/badge.svg?token=ZVGGR4AAFB)](https://codecov.io/gh/ClapeyronThermo/Clapeyron.jl)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://clapeyronthermo.github.io/Clapeyron.jl/dev)
 [![project chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl)
 
-![Clapeyron_logo](docs/Clapeyron_logo.svg)
+<p>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/logos/Clapeyron_logo_dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="docs/src/assets/logos/Clapeyron_logo.svg">
+    <img src="docs/src/assets/logos/Clapeyron_logo.svg">
+  </picture>
+</p>
 
 Welcome to Clapeyron! This module provides both a large library of thermodynamic models and a framework for one to easily implement their own models.
 
@@ -18,57 +24,76 @@ We support many equations of state and properties. Some examples of figures you 
 
 - Isobaric heat capacity of carbon dioxide at 20 MPa:
 
-  ![CO2_cp](docs/CO2_cp.svg) 
+  ![CO2_cp](docs/src/assets/readme/CO2_cp.svg)
 
 - Water VLE envelope:
 
-  ![water_VLE](docs/water_VLE.svg)
+  ![water_VLE](docs/src/assets/readme/water_VLE.svg)
 
 - Ethanol+water Pxy diagram at 423.15 K:
 
-  ![ethanol+water](docs/ethanol+water.svg)
+  ![ethanol+water](docs/src/assets/readme/ethanol+water.svg)
 
 - pT-isopleth of methanol+cyclohexane generated using PC-SAFT:
 
-![CH3OH_CyHx](docs/CH3OH_CyHex.svg)
+![CH3OH_CyHx](docs/src/assets/readme/CH3OH_CyHex.svg)
 
-If you find any issues, feel free to contact us directly on the [Zulip Channel](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl), or open a Github issue. 
+If you find any issues, feel free to contact us directly on the [Zulip Channel](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl), or open a Github issue.
 
 # Installing Clapeyron
 
-The minimum supported version is Julia 1.6. To install Clapeyron, launch Julia with
+The minimum supported version is Julia 1.10. To install Clapeyron, launch Julia with
 
-```
+```sh
 > julia
 ```
 
 Hit the ```]``` key to enter Pkg mode, then type
 
-```
+```julia-repl
 Pkg> add Clapeyron
 ```
+
 Or to add the development version:
-```
+
+```julia-repl
 Pkg> add https://github.com/ClapeyronThermo/Clapeyron.jl#master
 ```
+
 Exit Pkg mode by hitting backspace.
 
 Now you may begin using functions from the Clapeyron library by entering the command
 
-```
+```julia
 using Clapeyron
 ```
 
 To remove the package, hit the ```]``` key to enter Pkg mode, then type
 
-```
+```julia-repl
 Pkg> rm Clapeyron
 ```
+
+## Installing Clapeyron in Python
+
+Clapeyron.jl is also available in python via the [pyclapeyron](github.com/ClapeyronThermo/pyclapeyron) package.
+You can install `pyclapeyron` from PyPI via `pip` or `uv`:
+
+```sh
+pip install pyclapeyron
+```
+
+or
+
+```sh
+uv add pyclapeyron
+```
+
 # Citing Clapeyron
 
 If you are using Clapeyron for your research work, please cite the following:
 
-```
+```json
 @article{Clapeyron-2022,
     title={Clapeyron.jl: An Extensible, Open-Source Fluid Thermodynamics Toolkit},
     author={Pierre J. Walker, Hon-Wa Yew, and Andrés Riedemann},

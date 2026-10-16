@@ -52,7 +52,7 @@ idealmodel = CPLNGEstIdeal(["neon","hydrogen"];userlocations = (;Mw = [20.17, 2.
 ```
 
 ## References
-1. Kareem, L. A., Iwalewa, T. M., & Omeke, J. E. (2014). Isobaric specific heat capacity of natural gas as a function of specific gravity, pressure and temperature. Journal of Natural Gas Science and Engineering, 19, 74–83. [doi:10.1016/j.jngse.2014.04.011]("http://doi.org/10.1016/j.jngse.2014.04.011")
+1. Kareem, L. A., Iwalewa, T. M., & Omeke, J. E. (2014). Isobaric specific heat capacity of natural gas as a function of specific gravity, pressure and temperature. Journal of Natural Gas Science and Engineering, 19, 74–83. [doi:10.1016/j.jngse.2014.04.011](http://doi.org/10.1016/j.jngse.2014.04.011)
 """
 CPLNGEstIdeal
 

@@ -11,7 +11,7 @@ function COSMO_parse_Pi(param::SingleParam{String})
             push!(Vec,default)
         end
     end
-    SingleParam(param.name,param.components,Vec,param.ismissingvalues,param.sourcecsvs,param.sources)
+    param_from_values(Vec,param)
 end
 
 function get_cosmo_comps()

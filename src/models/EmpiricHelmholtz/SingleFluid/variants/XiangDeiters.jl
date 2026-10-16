@@ -35,7 +35,7 @@ end
 
 ## Description
 
-Xiang-Deiters model. estimates a single component Empiric EoS Model from critical values and the acentric factor.
+Xiang-Deiters model. Estimates a single component Empiric EoS Model from critical values and the acentric factor.
 ```
 Zc = PcVc/RTc
 θ = (Zc - 0.29)^2

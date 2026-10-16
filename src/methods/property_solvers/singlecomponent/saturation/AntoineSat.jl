@@ -39,12 +39,12 @@ function AntoineSaturation(;T0 = nothing,
     C = typeof(crit)
     if T0 === vl === vv === nothing
         AntoineSaturation{Nothing,Nothing,C}(nothing,nothing,nothing,f_limit,atol,rtol,max_iters,crit,crit_retry)
-    elseif !(T0 === nothing) & (vl === vv === nothing)
+    elseif (T0 !== nothing) & (vl === vv === nothing)
         return AntoineSaturation{typeof(T0),Nothing,C}(T0,vl,vv,f_limit,atol,rtol,max_iters,crit,crit_retry)
-    elseif (T0 === nothing) & !(vl === nothing) & !(vv === nothing)
+    elseif (T0 === nothing) & (vl !== nothing) & (vv !== nothing)
         vl,vv = promote(vl,vv)
         return AntoineSaturation{Nothing,typeof(vl),C}(T0,vl,vv,f_limit,atol,rtol,max_iters,crit,crit_retry)
-    elseif !(T0 === nothing) & !(vl === nothing) & !(vv === nothing)
+    elseif (T0 !== nothing) & (vl !== nothing) & (vv !== nothing)
         T0,vl,vv = promote(T0,vl,vv)
         return AntoineSaturation{typeof(T0),typeof(vl),C}(T0,vl,vv,f_limit,atol,rtol,max_iters,crit,crit_retry)
     else
@@ -53,7 +53,6 @@ function AntoineSaturation(;T0 = nothing,
 end
 
 function saturation_temperature_impl(model,p,method::AntoineSaturation{TT,VV,CC}) where {TT,VV,CC}
-    R̄ = Rgas(model)
     ps,μs = equilibria_scale(model)
     if isnothing(method.T0)
         T0,Vl,Vv = x0_saturation_temperature(model,p)
@@ -106,7 +105,7 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation{TT,VV,CC}
     if isnothing(crit)
         crit = crit_pure(model)
     end
-    Tc,pc,vc = crit
+    Tc,pc,_ = crit
     p > pc && return fail
     if 0.9 < p/pc < 1.0
         #you could still perform another iteration from a better initial point

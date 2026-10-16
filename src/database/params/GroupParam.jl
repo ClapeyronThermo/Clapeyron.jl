@@ -1,7 +1,7 @@
 abstract type GroupParameter <: ClapeyronParam end
 """
     GroupParam
-Struct holding group parameters.contains:
+Struct holding group parameters. Contains:
 * `components`: a list of all components
 * `groups`: a list of groups names for each component
 * `grouptype`: used to differenciate between different group models.
@@ -47,7 +47,7 @@ julia> groups.n_flattenedgroups
  [1, 18, 1, 0, 0, 0, 0]
  [3, 0, 0, 1, 1, 1, 4]
 ```
-if you have CSV with group data, you can also pass those, to automatically query the missing groups in your input vector:
+If you have CSV with group data, you can also pass those, to automatically query the missing groups in your input vector:
 ```julia-repl
 julia> grouplist = [
            "ethanol",
@@ -61,31 +61,30 @@ julia> grouplist = [
 ```
 In this case, `SAFTGammaMie` files support the second order group `CH2OH`.
 """
-struct GroupParam <: GroupParameter
+struct GroupParam{T<:Number} <: GroupParameter
     components::Array{String,1}
     groups::Array{Array{String,1},1}
     grouptype::Symbol
-    n_groups::Array{Array{Int,1},1}
-    n_intergroups::Vector{Matrix{Int}}
+    n_groups::Array{Array{T,1},1}
+    n_intergroups::Vector{Matrix{T}}
     i_groups::Array{Array{Int,1},1}
     flattenedgroups::Array{String,1}
-    n_flattenedgroups::Array{Array{Int,1},1}
+    n_flattenedgroups::Array{Array{T,1},1}
     sourcecsvs::Array{String,1}
 end
 
-function GroupParam(input::PARSED_GROUP_VECTOR_TYPE)
+function GroupParam(input::Vector{Tuple{String, Vector{Pair{String,T}}}}) where {T<:Number}
     return GroupParam(input,:unknown,String[])
 end
 
 format_components(g::GroupParameter) = g
 
 #given components, groups, n_groups, reconstitute GroupParam
-function recombine!(param::GroupParameter)
+function recombine!(param::GroupParam{T}) where T
     components = param.components
     groups = param.groups
     n_groups = param.n_groups
     ℂ = length(components)
-    𝔾 = length(groups)
     #initialization of flattenedgroups
     #flattenedgroups = unique!(reduce(vcat,groups))
     
@@ -102,7 +101,7 @@ function recombine!(param::GroupParameter)
     for i in 1:ℂ
         group = groups[i]
         if !isassigned(i_groups,i)
-            i_groups[i] = Int[]
+            i_groups[i] = T[]
         end
         i_group = i_groups[i]
         resize!(i_group,length(group))
@@ -148,11 +147,8 @@ function recombine!(param::GroupParameter)
     return param
 end
 
-function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs::Vector{String})
-    return GroupParam(input,grouptype,sourcecsvs,nothing)
-end
-
-function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs::Vector{String},gc_intragroups)
+function GroupParam(input::Vector{Tuple{String, Vector{Pair{String,T}}}},grouptype,sourcecsvs::Vector{String},gc_intragroups=nothing) where {T<:Number}
+    grouptype = Symbol(grouptype)
     components = [first(i) for i ∈ input]
     raw_groups = [last(i) for i ∈ input]
     groups = [first.(grouppairs) for grouppairs ∈ raw_groups]
@@ -162,22 +158,75 @@ function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs
     n_flattenedgroups = Vector{Vector{Int}}(undef,0)
     empty_intergroup = fill(0,(0,0)) #0x0 Matrix{Int}
     n_intergroups = fill(empty_intergroup,length(components))
-    param = GroupParam(components,
-    groups,
-    grouptype,
-    n_groups,
-    n_intergroups,
-    i_groups,
-    flattenedgroups,
-    n_flattenedgroups,
-    sourcecsvs)
+
+    _neltype(x) = eltype(eltype(x))     # nested eltype
+    _T = promote_type(_neltype(n_groups), _neltype(n_intergroups), _neltype(i_groups), _neltype(n_flattenedgroups))
+    param = GroupParam{_T}(
+        components,
+        groups,
+        grouptype,
+        n_groups,
+        n_intergroups,
+        i_groups,
+        flattenedgroups,
+        n_flattenedgroups,
+        sourcecsvs
+    )
     n_intergroups
     #do the rest of the work here
-    if gc_intragroups != nothing
+    if gc_intragroups !== nothing
         build_gc_intragroups!(param,gc_intragroups)
     end
     recombine!(param)
     return param
+end
+
+function GroupParam(components,groups,grouptype,n_groups,n_intergroups,i_groups,flattenedgroups,n_flattenedgroups,sourcecsvs)
+    TT = eltype(eltype(n_groups))
+    return GroupParam{TT}(components,groups,grouptype,n_groups,n_intergroups,i_groups,flattenedgroups,n_flattenedgroups,sourcecsvs)
+end
+
+function Solvers.primalval(param::GroupParam{T}) where T
+    n_groups2 = Solvers.primalval_eager.(param.n_groups)
+    n_intergroups2 = Solvers.primalval_eager.(param.n_intergroups)
+    n_flattenedgroups2 = Solvers.primalval_eager.(param.n_flattenedgroups)
+    T2 = Solvers.primal_eltype(eltype(eltype(n_groups2)))
+    param = GroupParam{T2}(
+        param.components,
+        param.groups,
+        param.grouptype,
+        n_groups2,
+        n_intergroups2,
+        param.i_groups,
+        param.flattenedgroups,
+        n_flattenedgroups2,
+        param.sourcecsvs
+    )
+end
+
+Base.eltype(param::GroupParam{T}) where T = T
+Base.eltype(param::Type{<:GroupParam{T}}) where T = T
+
+#iterator functions used by iterator macros: GroupParam dispatch
+
+@inline groups_iterator(groups::GroupParam) = comps_iterator(length(groups.flattenedgroups))
+@inline groups_iterator(groups::GroupParam,i::Int) = groups.i_groups[i]
+
+function Base.convert(::Type{GroupParam{T1}},param::GroupParam{T2}) where {T1<:Number,T2<:Number}
+    n_groups2 = convert.(Vector{T1},param.n_groups)
+    n_intergroups2 = convert.(Matrix{T1},param.n_intergroups)
+    n_flattenedgroups2 = convert.(Vector{T1},param.n_flattenedgroups)
+    param = GroupParam{T1}(
+        param.components,
+        param.groups,
+        param.grouptype,
+        n_groups2,
+        n_intergroups2,
+        param.i_groups,
+        param.flattenedgroups,
+        n_flattenedgroups2,
+        param.sourcecsvs
+    )
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
@@ -198,14 +247,14 @@ function Base.show(io::IO, param::GroupParam)
     print(io,"]")
 end
 
-function build_gc_intragroups!(group::GroupParam,gc_intragroups)
+function build_gc_intragroups!(group::GroupParam{T}, gc_intragroups) where T
     groupnames = group.flattenedgroups
     n_gc = length(groupnames)
     n_comps = length(group.components)
-    n_intergroups = [zeros(n_gc,n_gc) for i in 1:n_comps]
+    
     n_intergroups = group.n_intergroups
     for i in 1:n_comps
-        n_intergroups[i] = zeros(Int,n_gc,n_gc)
+        n_intergroups[i] = zeros(T,n_gc,n_gc)
     end
 
     for i in 1:n_comps
@@ -230,20 +279,33 @@ end
 
 #struct for n_groups_cache
 
+"""
+    MixedGCSegmentParam{T} <: ClapeyronParam
+
+Packed group/segment parameter container used by GC models.
+
+This type stores a compressed representation of group counts and segment
+information to speed up group-combining operations. It is typically created
+from a `GroupParam` via `MixedGCSegmentParam(group, ...)`.
+"""
 struct MixedGCSegmentParam{T} <: ClapeyronParam
     name::String
     components::Array{String,1}
     values::PackedVector{T}
 end
 
-MixedGCSegmentParam(name,components) = MixedGCSegmentParam{Float64}(name,components,PackedVofV(Int[],Float64[]))
+_param_from_values(x::PackedVector{T},param::MixedGCSegmentParam) where T = MixedGCSegmentParam(param.name,param.components,x)
+_param_from_values(x::Vector{T},param::MixedGCSegmentParam) where T = MixedGCSegmentParam(param.name,param.components,param_from_values(x,param.values))
+raw_values(param::MixedGCSegmentParam) = param.values.v
+
+MixedGCSegmentParam{T}(name::String,components,ng::Int = 0) where T = MixedGCSegmentParam{T}(name,components,packed_zeros!(T,fill(ng,length(components))))
+MixedGCSegmentParam(name::String,components) = MixedGCSegmentParam{Float64}(name,components)
+MixedGCSegmentParam(name::String,components,ng) = MixedGCSegmentParam{Float64}(name,components,ng)
 
 Base.length(param::MixedGCSegmentParam) = length(param.values)
-
 Base.eltype(param::MixedGCSegmentParam) = eltype(typeof(param))
 Base.eltype(param::Type{MixedGCSegmentParam{T}}) where T = PackedSubVector{T}
 
-paramtype(::MixedGCSegmentParam{T}) where T = T
 paramtype(::Type{MixedGCSegmentParam{T}}) where T = T
 
 Base.getindex(param::MixedGCSegmentParam,i) = param.values[i]
@@ -255,7 +317,7 @@ end
 
 function Base.show(io::IO, ::MIME"text/plain", param::MixedGCSegmentParam)
     len = length(param.values)
-    print(io, "MixedGCSegmentParam{",eltype(param.values.v), "}(\"", param.name)
+    print(io, "MixedGCSegmentParam{",paramtype(param), "}(\"", param.name)
     println(io, "\") with ", len, " component", ifelse(len==1, ":", "s:"))
     separator = " => "
     show_pairs(io,param.components,param.values,separator)
@@ -266,7 +328,7 @@ function MixedGCSegmentParam{T}(group::GroupParam,s = ones(T, length(group.flatt
     components = group.components
     nc = length(components)
     ng = length(group.flattenedgroups)
-    values = Clapeyron.PackedVectorsOfVectors.pack([zeros(T, ng) for _ in 1:nc])
+    values = packed_zeros!(T,fill(ng,nc))# Clapeyron.PackedVectorsOfVectors.pack([zeros(T, ng) for _ in 1:nc])
     n_flattenedgroups = group.n_flattenedgroups
     for i in 1:nc
         val_i = values[i]
@@ -282,18 +344,7 @@ MixedGCSegmentParam(group::GroupParam,s,segment) = MixedGCSegmentParam{Float64}(
 MixedGCSegmentParam(group::GroupParam,s) = MixedGCSegmentParam{Float64}(group,s)
 MixedGCSegmentParam(group::GroupParam) = MixedGCSegmentParam{Float64}(group)
 
-function Base.convert(::Type{MixedGCSegmentParam{T1}},param::MixedGCSegmentParam{T2}) where {T1<:Number,T2<:Number}
-    p,v1 = param.values.p,param.values.v
-    v = convert(Vector{T1},v1)
-    values = PackedVofV(p,v)
-    return MixedGCSegmentParam{T1}(param.name,param.components,values)
-end
-
-function Solvers.primalval(param::MixedGCSegmentParam)
-    p,v1 = param.values.p,param.values.v
-    v = Solvers.primalval_eager(v1)
-    values = PackedVofV(p,v)
-    return MixedGCSegmentParam(param.name,param.components,values)
-end
+Base.convert(::Type{MixedGCSegmentParam{T1}},param::MixedGCSegmentParam{T2}) where {T1<:Number,T2<:Number} = param_from_values(convert(Vector{T1},raw_values(param)),param)
+Solvers.primalval(param::MixedGCSegmentParam) = param_from_values(Solvers.primalval_eager(param.values),param)
 
 export MixedGCSegmentParam

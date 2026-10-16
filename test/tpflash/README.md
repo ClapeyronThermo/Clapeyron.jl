@@ -1,6 +1,6 @@
 ## TP flash benchmark (two-stage)
 
-This folder implements the two-stage workflow described in `test/tpflash/tp_flash_definitions_and_eval_criteria.tex`:
+This folder implements the two-stage workflow described in the benchmark documentation attached to [PR #516](https://github.com/ClapeyronThermo/Clapeyron.jl/pull/516).
 
 1. **Stage 1** (per algorithm): run one optimizer on all cases and save raw run logs (`.ser`).
 2. **Stage 2** (after all algorithms): load all logs, compute per-case ranks and U-scores, and write CSV summaries.

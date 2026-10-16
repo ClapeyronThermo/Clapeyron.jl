@@ -59,6 +59,7 @@ aᵣ = r̄*(- ρ̃ /T̃ + (1/ρ̃  - 1)*log(1 - ρ̃ ) + 1)
 SanchezLacombe
 
 const SL = SanchezLacombe
+@doc (@doc SanchezLacombe) SL
 
 function SanchezLacombe(components;
     idealmodel = BasicIdeal,

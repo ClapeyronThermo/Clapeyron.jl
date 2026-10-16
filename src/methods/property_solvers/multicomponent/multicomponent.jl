@@ -45,10 +45,11 @@ function v_from_η(model::EoSModel, η, T, z)
     #v = exp(η) + lb
    lb = lb_volume(model,T,z)
    V = exp(η) + lb/sum(z)
+   return V
 end
 
 function v_from_η(model, model_r, η, T, z)
-    if model_r == nothing
+    if model_r === nothing
         return v_from_η(model, η, T, z)
     else
         return v_from_η(model_r, η, T, z)
@@ -212,16 +213,20 @@ function wilson_k_values!(K,model::EoSModel,p,T,crit)
 end
 
 function bubbledew_check(model,p,T,vw,vz,w,z)
-    (isapprox(vw,vz) && z_norm(z,w) < 1e-5) && return false
+    vmin,vmax = minmax(vw,vz)
+    dv = (vmax - vmin)/vmax
+    dz = z_norm(z,w)
+    dz < 1e-5 && dv < 1e-3 && return false
+    dv < 1e-5 && dz < 1e-3 && return false
     !all(isfinite,w) && return false
     !isfinite(vw) && return false
     !all(>=(0),w) && return false
     !all(>=(0),z) && return false
     if has_a_res(model) && !(any(iszero,w)) #the second check is to exclude nonvolatiles/noncondensables. TODO: find a better way to do this.
         #all normal checks are ok, now we check if the origin phase result is really the most stable one
-        gz = VT_gibbs_free_energy(model,vz,T,z)
-        gz_p = gibbs_free_energy(model,p,T,z)
-        gz_w = VT_gibbs_free_energy(model,vw,T,w)
+        gz = VT_gibbs_energy(model,vz,T,z,p)
+        gz_p = gibbs_energy(model,p,T,z)
+        #gz_w = VT_gibbs_energy(model,vw,T,w)
         dg = (gz-gz_p)/gz
         if gz_p < gz && abs(dg) > 0.001
             return false
@@ -230,28 +235,16 @@ function bubbledew_check(model,p,T,vw,vz,w,z)
     return true
 end
 
-#generator for candidate fractions, given an initial composition, method by Pereira et al. (2010).
-function initial_candidate_fractions(n)
-
+function initial_candidate_fractions(n::AbstractVector{TT}) where TT
+    x = Vector{TT}[]
     nc = length(n)
-    x̂ = [zeros(nc) for i in 1:nc-1]
-    x̄ = [zeros(nc) for i in 1:nc-1]
 
-    for i ∈ 1:nc-1
-        x̂i = x̂[i]
-        x̄i = x̄[i]
-        x̂i[i] = n[i]/2
-        x̄i[i] = (1+n[i])/2
-        for k ∈ 1:nc-1
-            if k != i
-                x̂i[k] = (1-x̂i[i])/(nc-1)
-                x̄i[k] = (1-x̄i[i])/(nc-1)
-            end
-        end
-        x̂i[nc] = 1 - sum(x̂i)
-        x̄i[nc] = 1 - sum(x̄i)
+    for i in 1:nc-1
+        push!(x,z_pereira!(similar(n),n,i,true))
     end
-    x = vcat(x̂,x̄)
+    for i in 1:nc-1
+        push!(x,z_pereira!(similar(n),n,i,false))
+    end
     return x
 end
 
@@ -268,7 +261,7 @@ function near_candidate_fractions(n,k = 0.5*minimum(n))
     return x
 end
 
-function bubbledew_pressure_ad(result,tup,λtup,_bubble)
+function bubbledew_pressure_ad_v(result,tup,λtup,_bubble)
     f(x,tups) = begin
         model,T,z = tups
         vl = x[1]
@@ -297,10 +290,7 @@ function bubbledew_pressure_ad(result,tup,λtup,_bubble)
     return ∂p,∂vl,∂vv,∂w
 end
 
-bubble_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,true)
-dew_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad(result,tup,λtup,false)
-
-function bubbledew_temperature_ad(result,tup,λtup,_bubble)
+function bubbledew_temperature_ad_v(result,tup,λtup,_bubble)
     f(x,tups) = begin
         model,p,z = tups
         T = x[1]
@@ -326,9 +316,11 @@ function bubbledew_temperature_ad(result,tup,λtup,_bubble)
     ∂w = ∂x[4:end]
     return ∂T,∂vl,∂vv,∂w
 end
-
-bubble_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad(result,tup,λtup,true)
-dew_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad(result,tup,λtup,false)
+ 
+bubble_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad_v(result,tup,λtup,true)
+dew_temperature_ad(result,tup,λtup) = bubbledew_temperature_ad_v(result,tup,λtup,false)
+bubble_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad_v(result,tup,λtup,true)
+dew_pressure_ad(result,tup,λtup) = bubbledew_pressure_ad_v(result,tup,λtup,false)
 
 function zero_non_equilibria!(w,in_equilibria)
     for i in eachindex(w)
@@ -336,7 +328,6 @@ function zero_non_equilibria!(w,in_equilibria)
     end
     return w
 end
-
 
 function comps_in_equilibria(components,::Nothing)::Vector{Bool}
     return fill(true,length(components))
@@ -354,13 +345,18 @@ include("fugacity.jl")
 include("rachford_rice.jl")
 include("bubble_point.jl")
 include("dew_point.jl")
-include("azeotrope_point.jl")
 include("LLE_point.jl")
+include("azeotrope_point.jl")
 include("VLLE.jl")
 include("crit_mix.jl")
 include("UCEP.jl")
 include("UCST_mix.jl")
 include("flash.jl")
+
+#include("bubbledew/ChemPotQX.jl")
+#include("bubbledew/FugQX.jl")
+#include("bubbledew/ActivityQT.jl")
+
 include("krichevskii_parameter.jl")
 include("solids/sle_solubility.jl")
 include("solids/slle_solubility.jl")

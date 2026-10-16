@@ -1,60 +1,158 @@
-function tpd_plan(model::ElectrolyteModel,z,is_liquidz,lle,id_test,K_test,pure_test)
+function tpd_plan(model::ISElectrolyteModel,z,is_liquidz,lle,id_test,K_test,pure_test)
     plan = Tuple{Symbol,Symbol,NTuple{3,Int}}[]
+    nc = length(model)
+    neutral = ones(Bool,length(model))
+    isalts = model.salt.isalts
+    neutral[isalts] .= false
 
-    if is_liquidz && id_test && !lle
-        push!(plan,(:ideal_gas,:vapour,0))
+    if is_liquidz && id_test && !lle && iszero(length(isalts))
+        push!(plan,(:ideal_gas,:vapour,(0,0,0)))
     end
 
-    #=
-    if K_test
-        if is_liquidz
-            lle || push!(plan,(:K,:vapour,1))
-            push!(plan,(:K,:liquid,1))
-            push!(plan,(:K,:liquid,-1))
-            lle || push!(plan,(:K,:vapour,-1))
-        else
-            push!(plan,(:K,:liquid,1))
-            push!(plan,(:K,:liquid,-1))
+    ids = sortperm(z)
+    if is_liquidz
+        for i in 1:nc
+            #idx_solvent = ids[i]
+            #if neutral[idx_solvent]
+            #    push!(plan,(:pure,:liquid,(idx_solvent,0,0)))
+            #end
+            if i != nc
+                push!(plan,(:pereira,:liquid,(i,-1,0)))
+                push!(plan,(:pereira,:liquid,(i,1,0)))
+            end
         end
-    end =#
-    Z = model.charge
-    _,i_elec_pivot = findmax(Z)
-    if pure_test
-        ids = sortperm(z)
-        ZZ = @view Z[ids]
-        if is_liquidz
-            for i in 1:length(z)
-                if iszero(ZZ[i])
-                    idx_solvent = ids[i]
-                    push!(plan,(:pure,:liquid,(idx_solvent,0,0)))
-                    for j in 1:length(z)
-                        if !iszero(ZZ[j])
-                            idx_elec = ids[j]
-                            xx = (idx_solvent,idx_elec,i_elec_pivot)
-                            i_elec_pivot != idx_elec && push!(plan,(:electrolyte_balanced,:liquid,xx))
+        if !lle
+            for i in 1:nc
+                neutral[ids[i]] && push!(plan,(:pure,:vapour,(ids[i],0,0)))
+            end
+        end
+    else
+        for i in 1:nc
+            #idx_solvent = ids[i]
+            #if neutral[idx_solvent]          
+            #    push!(plan,(:pure,:liquid,(idx_solvent,0,0)))
+            #end
 
-                        end
-                    end
-                end
+            if i != nc
+                push!(plan,(:pereira,:liquid,(i,-1,0)))
+                push!(plan,(:pereira,:liquid,(i,1,0)))
             end
-            if !lle
-                for i in 1:length(z)
-                    !iszero(ZZ[i]) && push!(plan,(:pure,:vapour,ids[i]))
-                end
+        end
+    end
+    return plan
+end
+
+function __tpd_ss_update!(w,model::ISElectrolyteModel,d,z,lnϕw,phasew)
+    w .= exp.(d .- lnϕw)
+    if is_vapour(phasew) #force zero comp in salts
+        isalts = model.salt.isalts
+        wsalts = @view w[isalts]
+        wsalts .= 0
+    end
+
+    S = sum(w)
+    zz = sum(z)
+    tpd = zero(S)
+    K_norm = zero(S)
+    w ./= S
+    for i in eachindex(w)
+        wi = w[i]
+        K_norm += log(zz*wi/z[i])^2
+        if !iszero(wi)
+            tpd += wi*(log(wi) + lnϕw[i] - d[i])
+        end
+    end
+    return S,tpd,K_norm
+end
+
+function tpd_ss_ψ(ψ,K,Z)
+    res = zero(Base.promote_eltype(ψ,K,Z))
+    for i in eachindex(K)
+      wi = K[i]*exp(Z[i]*ψ)
+      res += Z[i]*wi 
+    end
+    
+    #=
+    # log(w) - log(z) = lnphi(z) - lnphi(w) + Z*ψ
+    # log(w) + logphi(w) - logphi(z) - log(z) - Z*ψ = 0
+    # 
+    # =#
+    return res
+end
+
+function __tpd_ss_update!(w,model::ESElectrolyteModel,d,z,lnϕw,phasew)
+    #= dz = logphiz + log(z)
+    w = exp(logphiz - logphiw + log(z))
+    w = z*log(K)
+    =#
+    w .= exp.(d .- lnϕw) #K is stored in w
+    Z = component_charges(model)
+    if is_vapour(phasew)
+        for i in eachindex(w)
+            Z[i] != 0 && (w[i] = 0)
+        end
+        ψ = zero(eltype(w))
+    else
+        f(x) = tpd_ss_ψ(x,w,Z)
+        prob = Roots.ZeroProblem(f,zero(Base.promote_eltype(w,d)))
+        ψ = Roots.solve(prob)
+        w .= exp.(d .- lnϕw .+ ψ .* Z)
+    end
+  
+    S = sum(w)
+    zz = sum(z)
+    tpd = zero(S)
+    K_norm = zero(S)
+    w ./= S
+    for i in eachindex(w)
+        wi = w[i]
+        K_norm += log(zz*wi/z[i])^2
+        if !iszero(wi)
+            tpd += wi*(log(wi) + lnϕw[i] - d[i] - Z[i]*ψ)
+        end
+    end
+
+    return S,tpd,K_norm
+end
+
+function tpd_plan(model::ESElectrolyteModel,z,is_liquidz,lle,id_test,K_test,pure_test)
+    plan = Tuple{Symbol,Symbol,NTuple{3,Int}}[]
+    nc = length(model)
+    neutral = ones(Bool,length(model))
+    Z = component_charges(model)
+    neutral .= iszero.(Z)
+
+    if is_liquidz && id_test && !lle && iszero(length(Z))
+        push!(plan,(:ideal_gas,:vapour,(0,0,0)))
+    end
+
+    ids = sortperm(z)
+    if is_liquidz
+        for i in 1:nc
+            #idx_solvent = ids[i]
+            #if neutral[idx_solvent]
+            #    push!(plan,(:pure,:liquid,(idx_solvent,0,0)))
+            #end
+            if i != nc
+                push!(plan,(:pereira,:liquid,(i,-1,0)))
+                push!(plan,(:pereira,:liquid,(i,1,0)))
             end
-        else
-            for i in 1:length(z)
-                if iszero(ZZ[i])
-                    idx_solvent = ids[i]
-                    push!(plan,(:pure,:liquid,(idx_solvent,0,0)))
-                    for j in 1:length(z)
-                        if !iszero(ZZ[j])
-                            idx_elec = ids[j]
-                            xx = (idx_solvent,idx_elec,i_elec_pivot)
-                            i_elec_pivot != idx_elec && push!(plan,(:electrolyte_balanced,:liquid,xx))
-                        end
-                    end
-                end
+        end
+        if !lle
+            for i in 1:nc
+                !iszero(Z[i]) && push!(plan,(:pure,:vapour,(ids[i],0,0)))
+            end
+        end
+    else
+        for i in 1:nc
+            #idx_solvent = ids[i]
+            #if neutral[idx_solvent]          
+            #    push!(plan,(:pure,:liquid,(idx_solvent,0,0)))
+            #end
+
+            if i != nc
+                push!(plan,(:pereira,:liquid,(i,-1,0)))
+                push!(plan,(:pereira,:liquid,(i,1,0)))
             end
         end
     end

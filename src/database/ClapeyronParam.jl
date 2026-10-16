@@ -1,7 +1,7 @@
 """
     ClapeyronParam
 Abstract type corresponding to a Clapeyron parameter.
-It requires to define `Base.eltype`, and specify how it is splitted (via defining the adecuate `each_split_model`  method or by defining `Clapeyron.is_splittable(param) = false` to mark as non-splittable)
+It requires to define `Base.eltype`, and specify how it is splitted (via defining the adecuate `each_split_model`  method or by defining `Clapeyron.is_splittable(param) = false` to mark as non-splittable).
 """
 abstract type ClapeyronParam end
 
@@ -11,8 +11,13 @@ Abstract type corresponding to a container of `ClapeyronParam`s.
 It supposes that all fields are `ClapeyronParam`s.
 """
 abstract type EoSParam end
-abstract type ParametricEoSParam{T} <: EoSParam end
 
+"""
+    ParametricEoSParam{T} <: EoSParam
+
+Abstract type for parameter containers parameterized by element type `T`.
+"""
+abstract type ParametricEoSParam{T} <: EoSParam end
 
 """
     OptionsParam <: ClapeyronParam
@@ -20,12 +25,12 @@ Abstract type corresponding to a Clapeyron parameter that only contains options.
 It is assumed that this parameter is equal to all components.
 """
 abstract type OptionsParam <: ClapeyronParam end
-Base.eltype(param::OptionsParam) = Bool
+
+Base.eltype(param::Type{OptionsParam}) = Bool
 is_splittable(::OptionsParam) = false
 
 export EoSParam, ParametricEoSParam
 
-paramtype(m::ClapeyronParam) = eltype(m)
 paramtype(::Type{M}) where M <: ClapeyronParam = eltype(M)
 
 custom_show(param::EoSParam) = _custom_show_param(typeof(param))
@@ -92,14 +97,8 @@ function build_eosparam(::Type{T},data) where T <: ParametricEoSParam
     dyn_build_parametric_param(T,params)
 end
 
-Base.eltype(p::EoSParam) = Float64
-Base.eltype(p::ParametricEoSParam{T}) where T = T
-
-const PARSED_GROUP_VECTOR_TYPE = Vector{Tuple{String, Vector{Pair{String, Int64}}}}
-
-function pack_vectors(x::AbstractVector{<:AbstractVector})
-    return PackedVectorsOfVectors.pack(x)
-end
+Base.eltype(::Type{<:EoSParam}) = Float64
+Base.eltype(::Type{P}) where P <: ParametricEoSParam{T} where T = T
 
 function param_length_check(paramtype,name,comp_length,val_length)
     if comp_length != val_length
@@ -161,9 +160,6 @@ Base.iterate(param::SingleOrPair) = iterate(param.values)
 Base.iterate(param::SingleOrPair,state) = iterate(param.values,state)
 linearidx(param::SingleOrPair) = linearidx(param.values)
 
-export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
-export AssocOptions
-
 """
     diagvalues(x)
 A common function to retrieve the main diagonal values that work on both SingleParam and PairParam.
@@ -186,10 +182,14 @@ function diagvalues(x::Number)
     return x
 end
 
-function _get_sources(x::Vector)::Vector{String}
+function _get_sources(x::Vector)
     return collect(Set(r for y ∈ x for r ∈ y.sources))
 end
 
-function _get_sources(x)::Vector{String}
+function _get_sources(x)
     return copy(x.sources)
 end
+
+export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
+export AssocOptions
+@public diagvalues

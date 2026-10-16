@@ -1,6 +1,6 @@
 abstract type iPCSAFTModel <: PCSAFTModel end
 
-struct iPCSAFTParam{T} <: EoSParam
+struct iPCSAFTParam{T} <: ParametricEoSParam{T}
     Mw::SingleParam{T}
     segment::SingleParam{T}
     v_shift::SingleParam{T}
@@ -13,8 +13,6 @@ end
 function iPCSAFTParam(Mw,segment,c,sigma,epsilon,epsilon_assoc,bondvol)
     return build_parametric_param(iPCSAFTParam,Mw,segment,c,sigma,epsilon,epsilon_assoc,bondvol)
 end
-
-Base.eltype(p::iPCSAFTParam{T}) where T = T
 
 @newmodel iPCSAFT iPCSAFTModel iPCSAFTParam{T}
 
@@ -68,7 +66,7 @@ function lb_volume(model::iPCSAFTModel, T, z)
     c = model.params.v_shift.values
     c̄ = dot(z, c)
     lb_v0 = lb_volume_saft(model, T, z)
-    return lb_v0 + c̄
+    return lb_v0 - c̄
 end
 
 function x0_volume_liquid(model::iPCSAFTModel,p,T,z)

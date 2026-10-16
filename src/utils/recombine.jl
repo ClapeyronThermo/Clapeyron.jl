@@ -31,8 +31,12 @@ function promote_model(::Type{T},model::EoSModel) where T <: Number
     return promote_model_struct(T,model)
 end
 
-function promote_model(::Type{T},model::Array) where T <: Number
-    return promote_model.(T,model)
+function promote_model(::Type{T},x::Array{T2,N}) where {T <: Number,T2,N}
+    return map(Base.Fix1(promote_model,T),x)
+end
+
+function promote_model(::Type{T},x::T2) where {T <: Number,T2 <: Number}
+    return convert(T,x)
 end
 
 @generated function promote_model_struct(::Type{T},model::M) where {T,M}
@@ -50,37 +54,34 @@ end
     return expr
 end
 
-function promote_model(::Type{T},param::SingleParam) where T
-    values = Vector{T}(param.values)
-    return SingleParam{T}(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function promote_model(::Type{T},param::PairParam) where T
-    values = Matrix{T}(param.values)
-    return PairParam{T}(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function promote_model(::Type{T},param::AssocParam) where T
-    v = param.values
-    vals = Vector{T}(v.values)
-    values = Compressed4DMatrix(vals,v.outer_indices,v.inner_indices,v.outer_size,v.inner_size)
-    return AssocParam{T}(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
-end
-
-function promote_model(::Type{T},param::MixedGCSegmentParam) where T
-    vals = param.values
-    p,v = vals.p,vals.v
-    v2 = Vector{T}(v)
-    values = PackedVofV(p,v2)
-    return MixedGCSegmentParam{T}(param.name,param.components,values)
-end
+promote_model(::Type{T},param::SingleParam) where T = param_from_values(Vector{T}(param.values),param)
+promote_model(::Type{T},param::PairParam) where T = param_from_values(Matrix{T}(param.values),param)
+promote_model(::Type{T},param::AssocParam) where T = param_from_values(Vector{T}(raw_values(param)),param)
+promote_model(::Type{T},param::MixedGCSegmentParam) where T = param_from_values(Vector{T}(raw_values(param)),param)
 promote_model(::Type{T},v::AbstractArray{<:AbstractString}) where T = v
-
 promote_model(::Type{T},params::EoSParam) where T = promote_model_struct(T,params)
 promote_model(::Type{T},param::ClapeyronParam) where T = deepcopy(param)
 promote_model(::Type{T},param::AssocOptions) where T = param
 promote_model(::Type{T},param::ReferenceState) where T = param
 promote_model(::Type{T},param::SpecialComp) where T = param
-promote_model(::Type{T},param::GroupParam) where T = param
 promote_model(::Type{T},param::SiteParam) where T = param
+promote_model(::Type{T},param::PackedVofV) where T = PackedVofV(param.p,promote_model(T,param.v))
 
+function promote_model(::Type{T},param::GroupParam) where T
+    n_groups2 = [Vector{T}(xi) for xi in param.n_groups]
+    n_intergroups2 = [Matrix{T}(xi) for xi in param.n_intergroups]
+    n_flattenedgroups2 = [Vector{T}(xi) for xi in param.n_flattenedgroups]
+    param = GroupParam{T}(
+        param.components,
+        param.groups,
+        param.grouptype,
+        n_groups2,
+        n_intergroups2,
+        param.i_groups,
+        param.flattenedgroups,
+        n_flattenedgroups2,
+        param.sourcecsvs
+    )
+end
+
+@public promote_model,recombine!,recombine_impl!

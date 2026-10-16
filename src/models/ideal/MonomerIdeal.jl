@@ -51,6 +51,14 @@ export MonomerIdeal
 default_locations(::Type{MonomerIdeal}) = mw_data()
 
 recombine_impl!(model::MonomerIdealModel) = model
+default_ignore_missing_singleparams(::Type{MonomerIdeal}) = ["Mw"]
+
+function transform_params(::Type{MonomerIdeal},params,groups)
+    mw = get!(params,"Mw") do
+        SingleParam("Mw",components)
+    end
+    return params
+end
 
 function a_ideal(model::MonomerIdealModel, V, T, z)
     Mw = model.params.Mw.values

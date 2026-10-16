@@ -14,7 +14,7 @@ end
 export RK
 
 """
-    RK(components; 
+    RK(components;
     idealmodel = BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
@@ -70,7 +70,7 @@ model = RK(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced
 # Passing a prebuilt model
 
 my_alpha = SoaveAlpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model = RK(["ethane","butane"],alpha = my_alpha) #this is efectively now an SRK model
+model = RK(["ethane","butane"],alpha = my_alpha) #this is effectively now an SRK model
 
 # User-provided parameters, passing files or folders
 
@@ -84,7 +84,7 @@ model = RK(["neon","hydrogen"];
                         Pc = [2679000, 1296400],
                         Mw = [20.17, 2.],
                         acentricfactor = [-0.03,-0.21]
-                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        k = [0. 0.18; 0.18 0.], #k,l can be omitted in single-component models.
                         l = [0. 0.01; 0.01 0.])
                     )
 ```
@@ -109,7 +109,7 @@ function RK(components;
     reference_state = nothing,
     verbose = false)
     formatted_components = format_components(components)
-    
+
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
         userlocations = userlocations,
         verbose = verbose,
@@ -131,6 +131,8 @@ default_references(::Type{RK}) = ["10.1021/cr60137a013"]
 @inline function cubic_Δ(::Type{<:RKModel})
     return (0.0,-1.0)
 end
+
+#! format: off
 
 const RK_p = Solvers.ChebyshevRange{NTuple{7, Float64}, NTuple{6, Vector{Float64}}}(
     (0.020267685653535945,0.02596797224359293,0.03166825883364991,0.04306883201376388,0.06586997837399182,0.1114722710944477,0.20267685653535944),

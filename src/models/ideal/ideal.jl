@@ -21,21 +21,19 @@ function eos_g(model::IdealModel,p,T,z)
     return n*RT*(a_ideal(model,V,T,z) + 1)
 end
 
-function _update_idealuserlocations_for_GC(idealmodel::IdealModel,ideal_userlocations,Mw::SingleParam)
-   type_idealmodel = typeof(idealmodel)
-   return _update_idealuserlocations_for_GC(type_idealmodel,ideal_userlocations,Mw)
-end
 
-function _update_idealuserlocations_for_GC(idealmodel::Type{<:IdealModel},ideal_userlocations,Mw::SingleParam)
-   if isempty(ideal_userlocations)
-      if hasfield(idealmodel,:params)
-         paramtype = fieldtype(idealmodel,:params)
-         ref_state = hasfield(paramtype,:reference_state)
-         nparams = length(fieldnames(paramtype))
-         if hasfield(paramtype,:Mw) && nparams - ref_state == 1 # only models with Mw and reference state or just Mw
-            ideal_userlocations = (;Mw=Mw.values)
-         end
+"""
+   update_mw!(model,mw)
+
+updates the `Mw` field from the ideal model.
+Used on GC models that calculate the molecular weight as sums of contributions instead of looking for it in a database.
+"""
+function update_mw!(model::M,mw) where M
+   if hasfield(M,:params)
+      params = model.params
+      if hasfield(typeof(params),:Mw)
+         Mw = params.Mw.values
+         Mw .= mw
       end
    end
-   return ideal_userlocations
 end

@@ -70,7 +70,7 @@ function chebyshev_pressure(model::ABCubicModel,T̃,a,b)
 end
 
 function saturation_temperature_impl(model::ABCubicModel,p,method::SuperAncSaturation)
-    Tc = model.params.Tc.values[1]
+    #Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
     nan = zero(p)/zero(p)
     if Pc < p
@@ -86,16 +86,22 @@ function saturation_temperature_impl(model::ABCubicModel,p,method::SuperAncSatur
 end
 
 function chebyshev_temperature(model::ABCubicModel,p,method::SuperAncSaturation)
-    function f0(T)
-        a,b,c = cubic_ab(model,1e-3,T)
+    
+    function f0(τ)
+        T = 1/τ
+        a,b,_ = cubic_ab(model,1e-3,T)
         T̃ = T*Rgas(model)*b/a
         return chebyshev_pressure(model,T̃,a,b) - p
     end
-    A,B,C = antoine_coef(model)
-    lnp̄ = log(p / p_scale(model))
-    T0 = T_scale(model)*(B/(A-lnp̄)-C)
-    prob = Roots.ZeroProblem(f0,T0)
-    T = Roots.solve(prob)
+
+    Tc,Pc,_ = crit_pure(model)
+    a07,b07,_ = cubic_ab(model,1e-3,0.7Tc)
+    T̃07 = 0.7*Tc*Rgas(model)*b07/a07
+    p07 = chebyshev_pressure(model,T̃07,a07,b07)
+    ω = -log10(p07/Pc) - 1.0
+    T0 = Tc/(1 - log(p/Pc)/(5.3726985503194395*(1+ω)))
+    prob = Roots.ZeroProblem(f0,1/T0)
+    T = 1/Roots.solve(prob)
 end
 
 export SuperAncSaturation, use_superancillaries!

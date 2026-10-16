@@ -4,14 +4,16 @@
 #differentiation logic from the property logic allows the differentials
 #to be compiled only once
 
+struct ∂₁f end
+
 """
     ∂f∂T(model,V,T,z=SA[1.0])
 
-Returns `∂f/∂T` at constant total volume and composition, where `f` is the total Helmholtz energy, given by `eos(model,V,T,z)`.
+Returns `∂f/∂T` at constant total volume `V` and composition `z`, where `f` is the total Helmholtz energy, given by `eos(model,V,T,z)`.
 
 """
 function ∂f∂T(model,V,T,z::AbstractVector)
-    f(∂T) = eos(model,V,∂T,z)
+    f = @deferred_T(eos,∂₁f)
     return Solvers.derivative(f,T)
 end
 
@@ -21,7 +23,7 @@ end
 Returns `∂f/∂V` at constant temperature `T` and composition `z`, where `f` is the total Helmholtz energy, given by `eos(model,V,T,z)`, `V` is the total volume.
 """
 function ∂f∂V(model,V,T,z::AbstractVector)
-    f(∂V) = a_res(model,∂V,T,z)
+    f = @deferred_V(a_res,∂₁f)
     ∂aᵣ∂V = Solvers.derivative(f,V)
     sum(z)*Rgas(model)*T*(∂aᵣ∂V - 1/V)
 end
@@ -42,13 +44,13 @@ where:
 ```julia
 fval   = f(V,T) = eos(model,V,T,z)
 
-grad_f = [ ∂f/∂V; ∂f/∂T]
+grad_f = [∂f/∂V; ∂f/∂T]
 ```
 
 Where `V` is the total volume, `T` is the temperature and `f` is the total Helmholtz energy.
 """
 function ∂f(model,V,T,z)
-    f(∂V,∂T) = eos(model,∂V,∂T,z)
+    f = @deferred_VT(eos,∂₁f)
     _f,_df = Solvers.fgradf2(f,V,T)
     return _df,_f
 end
@@ -59,19 +61,25 @@ function ∂f_vec(model,V,T,z::AbstractVector)
 end
 
 function f∂fdV(model,V,T,z::AbstractVector)
-    f(x) = eos(model,x,T,z)
+    f = @deferred_V(eos,∂₁f)
     A,∂A∂V = Solvers.f∂f(f,V)
     return SVector(A,∂A∂V)
 end
 
+function f∂fdV_res(model,V,T,z::AbstractVector)
+    f = @deferred_V(eos_res,∂₁f)
+    Ar,∂Ar∂V = Solvers.f∂f(f,V)
+    return SVector(Ar,∂Ar∂V)
+end
+
 function f∂fdT(model,V,T,z::AbstractVector)
-    f(x) = eos(model,V,x,z)
-    A,∂A∂T = Solvers.f∂f(f,T,)
+    f = @deferred_T(eos,∂₁f)
+    A,∂A∂T = Solvers.f∂f(f,T)
     return SVector(A,∂A∂T)
 end
 
 function ∂f_res(model,V,T,z)
-    f(∂V,∂T) = eos_res(model,∂V,∂T,z)
+    f = @deferred_VT(eos_res,∂₁f)
     _f,_df = Solvers.fgradf2(f,V,T)
     return _df,_f
 end
@@ -85,18 +93,47 @@ end
 #it doesnt do a pass over temperature, so its
 #faster that d2f when only requiring d2fdV2
 
+struct ∂₁p end
+
 """
     p∂p∂V(model,V,T,z=SA[1.0])
 
-Returns `p` and `∂p/∂V` at constant temperature, where `p` is the pressure = `pressure(model,V,T,z)` and `V` is the total volume.
+Returns `p` and `∂p/∂V` at constant temperature `T`, where `p` is the pressure = `pressure(model,V,T,z)` and `V` is the total volume.
 
 """
 function p∂p∂V(model,V,T,z::AbstractVector=SA[1.0])
-    f(∂V) = pressure(model,∂V,T,z)
+    f = @deferred_V(pressure,∂₁p)
     p,∂p∂V = Solvers.f∂f(f,V)
     return SVector(p,∂p∂V)
 end
 
+function p∂p∂rho(model, rho, T, z=SA[1.0])
+    n   = sum(z)
+    V   = n / rho
+    p, dpdV = p∂p∂V(model, V, T, z)
+    dVdρ    = -V / rho
+    dpdrho   = dpdV * dVdρ
+    return SVector(p, dpdrho)
+end
+
+function ∂p∂rho(model, rho, T, z=SA[1.0])
+    _,dpdrho = p∂p∂rho(model,rho,T,z)
+    return dpdrho
+end
+
+
+"""
+    ∂p∂T(model,V,T,z=SA[1.0])
+
+Returns `∂p/∂T` at constant temperature `T`, where `p` is the pressure = `pressure(model,V,T,z)` and `V` is the total volume.
+
+"""
+function ∂p∂T(model,V,T,z::AbstractVector=SA[1.0])
+    f = @deferred_T(pressure,∂₁p)
+    return Solvers.derivative(f,T)
+end
+
+struct ∂₂f end
 """
     ∂2f(model,V,T,z)
 
@@ -120,16 +157,49 @@ hess_f = [ ∂²f/∂V²; ∂²f/∂V∂T
 Where `V` is the total volume, `T` is the temperature and `f` is the total Helmholtz energy.
 """
 function ∂2f(model,V,T,z)
-    f(_V,_T) = eos(model,_V,_T,z)
+    f = @deferred_VT(eos,∂₂f)
     _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
 
 """
+    f_hess(model,V,T,z)
+
+Returns the second order volume `V` and temperature `T` derivatives of the total Helmholtz energy `f` (given by `eos(model,V,T,z)`). The result is given in a 2x2 `SMatrix`, in the form:
+
+```julia
+[ ∂²f/∂V²  ∂²f/∂V∂T
+ ∂²f/∂V∂T  ∂²f/∂T²]
+```
+
+Use this instead of the `∂2f` if you only need second order information. `∂2f` also gives zeroth and first order derivative information, but due to a bug in the used AD, it allocates more than necessary.
+"""
+function f_hess(model,V,T,z)
+    f = @deferred_VT(eos,∂₂f)
+    V,T = promote(V,T)
+    VT_vec = SVector(V,T)
+    return Solvers.hessian(f,VT_vec)
+end
+
+"""
+    ∂²f∂T²(model,V,T,z=SA[1.0])
+
+Returns `∂²A/∂T²` via Autodiff. Used mainly for ideal gas properties. It is recommended to overload this function for ideal models, as is equivalent to -Cv(T)/T.
+
+"""
+function ∂²f∂T²(model,V,T,z)
+    f = @deferred_T(eos,∂₂f)
+    _,_,∂²A∂T² = Solvers.f∂f∂2f(f,T)
+    return ∂²A∂T²
+end
+
+struct ∂₂p end
+
+"""
     ∂2p(model,V,T,z)
 
 Returns zeroth order (value), first order and second order derivative information of the pressure.
-the result is given in three values:
+The result is given in three values:
 
 ```julia
 hess_p,grad_p,pval = ∂2p(model,V,T,z)
@@ -148,28 +218,14 @@ hess_p = [ ∂²p/∂V²; ∂²p/∂V∂T
 Where `V` is the total volume, `T` is the temperature and `p` is the pressure.
 """
 function ∂2p(model,V,T,z)
-    f(_V,_T) = pressure(model,_V,_T,z)
+    f = @deferred_VT(pressure,∂₂p)
     _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
 
-"""
-    f_hess(model,V,T,z)
-
-Returns the second order volume `V` and temperature `T` derivatives of the total Helmholtz energy `f` (given by `eos(model,V,T,z)`). The result is given in a 2x2 `SMatrix`, in the form:
-
-```julia
-[ ∂²f/∂V²  ∂²f/∂V∂T
- ∂²f/∂V∂T  ∂²f/∂T²]
-```
-
-Use this instead of the `∂2f` if you only need second order information. `∂2f` also gives zeroth and first order derivative information, but due to a bug in the used AD, it allocates more than necessary.
-"""
-function f_hess(model,V,T,z)
-    f(w) = eos(model,first(w),last(w),z)
-    V,T = promote(V,T)
-    VT_vec = SVector(V,T)
-    return Solvers.hessian(f,VT_vec)
+function ∂2p_vec(model,V,T,z)
+    _∂2f,_∂f,_f = ∂2p(model,V,T,z)
+    return SVector(_f,_∂f[1],_∂f[2],_∂2f[1,1],_∂2f[2,2],_∂2f[1,2])
 end
 
 """
@@ -179,24 +235,29 @@ Returns the pressure `p` and their first and second volume derivatives `∂p/∂
 
 """
 function p∂p∂2p(model,V,T,z=SA[1.0])
-    f(∂V) = pressure(model,∂V,T,z)
+    f = @deferred_V(pressure,∂₂p)
     p, ∂²A∂V², ∂³A∂V³ = Solvers.f∂f∂2f(f,V)
-    return p, ∂²A∂V², ∂³A∂V³
+    return SVector(p, ∂²A∂V², ∂³A∂V³)
 end
 
-"""
-    ∂²f∂T²(model,V,T,z=SA[1.0])
+function p∂p∂2p_rho(model, rho, T, z=SA[1.0])
+    n   = sum(z)
+    V   = n / rho
+    #rho = n / V, 1/rho = V/n
+    p, dpdV, d2pdV2 = p∂p∂2p(model, V, T, z)
 
-Returns `∂²A/∂T²` via Autodiff. Used mainly for ideal gas properties. It is recommended to overload this function for ideal models, as is equivalent to -Cv(T)/T.
-
-"""
-function ∂²f∂T²(model,V,T,z)
-    A(_T) = eos(model,V,_T,z)
-    _,_,∂²A∂T² = Solvers.f∂f∂2f(A,T)
-    return ∂²A∂T²
+    # ρ = n/V  →  V = n/ρ
+    # dV/dρ   = -V²/n
+    # d²V/dρ² =  2V³/n²
+    dVdρ    = -V / rho
+    d2Vdρ2  =  2 * V / (rho*rho)
+    # Chain rule
+    dpdrho   = dpdV * dVdρ
+    d2pdrho2 = d2pdV2 * dVdρ*dVdρ + dpdV * d2Vdρ2
+    return SVector(p, dpdrho, d2pdrho2)
 end
 
-#derivarive logic: model Dual numbers:
+#derivative logic: model Dual numbers:
 
 #as of Clapeyron 0.6.10, there is limited support for using models with dual numbers
 #PCSAFT, sPCSAFT, SAFTVRMie, SAFTVRMie15 support using dual numbers, (and any other number type)
@@ -212,111 +273,23 @@ end
 
 _primalval(model::EoSModel,::T) where T = model
 
+# use IFTDuals: ift for implicit differentiation
 """
     __gradients_for_root_finders(x::AbstractVector{T},tups::Tuple,tups_primal::Tuple,f::Function) where T<:Real
 
-Computes the gradients of `x` with respect to the relevant parameters in `tups` under the condition that `x` is implicitly defined through the root finding problem `f(x,tups) = 0`. 
-The function uses the implicit function theorem to compute the gradients efficiently through the reconstruction of Duals.
-
-!!! note 
-    Currently only supports first order AD. Trying to differentiate nested Duals or Duals with different tags will throw an error.
+Computes the gradients of `x` with respect to the relevant parameters in `tups` under the condition that `x` is implicitly defined through the root finding problem `f(x,tups) = 0`.
+The function uses the implicit function theorem to compute the gradients efficiently through the reconstruction of Duals. We use the IFTDuals.jl package for this purpose, which has some restrictions, currently mixed nested Duals (i.e. different tags) are not supported.
 """
-function __gradients_for_root_finders(x::AbstractVector{T},tups::T1,tups_primal::T2,f::F) where {T<:Real,T1,T2,F}
-    # check and return primal of no duals
-    !any(has_dual,tups) && return x
-
-    # Checks
-    implicit_ad_check(tups)
-
-    # compute partials
-    ∂f_∂θ_dual = f(x,tups)
-
-    #guard against NaN in input or output
-    if any(isnan,x) || any(isnan,∂f_∂θ_dual)
-        _0 = zero(eltype(∂f_∂θ_dual))
-        nan = _0/_0
-        return nan .* x
+function __gradients_for_root_finders(x::Union{AbstractArray{T},T},tups,tups_primal,f::Function) where T<:Real # tups not restructed to Tuple
+    if any(isnan,x) # guard against NaN in input, do not need Dual types here?
+        return x
     end
-
-    return __gradients_for_root_finders_solver(f,x,tups_primal,∂f_∂θ_dual)
+    return ift(x,f,tups,tups_primal) # use IFTDuals package, returns primal if tups has no duals
 end
 
-function __gradients_for_root_finders(x::T,tups::T1,primal_tups::T2,f::F) where {T<:Real,T1,T2,F}
-    x_vec = SVector(x)
-    f_vec(x_vec,tupsx) = SVector(f(x_vec[1],tupsx))
-    x_dual_vec = __gradients_for_root_finders(x_vec,tups,primal_tups,f_vec)
-    return only(x_dual_vec)
-end
+IFTDuals.promote_my_type(m::EoSModel) = eltype(m)
 
-__gradients_for_root_finders(::Union{AbstractArray{T},T},_,_,_) where T<:ForwardDiff.Dual = error("Input `x` cannot be a dual")
-
-function __partial_to_svec(x::ForwardDiff.Dual{T,V,N}) where {T,V,N}
-    return SVector{N,V}(ForwardDiff.partials(x))
-end
-
-function __gradients_for_root_finders_solver(f::F,x::AbstractVector{V1},tups_primal,∂f_∂θ_dual::AbstractVector{ForwardDiff.Dual{TAG,V2,Npartials}}) where {F,V1,TAG,V2,Npartials}
-
-    ∂f_∂x = DifferentiationInterface.jacobian(f,DifferentiationInterface.AutoForwardDiff(),x,DifferentiationInterface.Constant(tups_primal))
-    LinearAlgebra.checksquare(∂f_∂x)
-    # get dual
-    ∂f_∂θi = map(__partial_to_svec,∂f_∂θ_dual)
-    ∂f_∂θ = transpose(reduce(hcat,∂f_∂θi))
-
-    # gradient through implicit function theorem
-    dx_dθ = try
-         - ∂f_∂x \ ∂f_∂θ
-    catch
-        _0 = zero(eltype(∂f_∂θ))
-        nan = _0 / _0
-        vec(∂f_∂θ) .* nan
-    end
-
-    to_dual(x1,x2) = ForwardDiff.Dual{TAG,V2,Npartials}(x1,ForwardDiff.Partials(NTuple{Npartials,V2}(x2)))
-    x_dual2 = map(to_dual,x,eachrow(dx_dθ))
-    return x_dual2
-end
-
-function nested_ad_check(a::A) where A
-    AT = eltype(a)
-    if AT <: ForwardDiff.Dual
-        V = ForwardDiff.valtype(AT)
-        V <: ForwardDiff.Dual && throw(NestedADError("Found nested Duals of type $AT. This is currently not supported in implicit differentiation."))
-    end
-    return nothing
-end
-
-nested_ad_check(a::Tuple) = foreach(nested_ad_check,a)
-
-function multiple_tag_ad_check(a::T) where T <: Tuple
-    f(x) = eltype(x) <: ForwardDiff.Dual
-    n_dual = count(f,a)
-    if n_dual == 1
-        return nothing
-    end
-
-    #TODO write as @generated so it does not allocate
-    tag(x) = ForwardDiff.tagtype(eltype(x))
-    duals = findall(map(f,a))
-    tags = map(tag,a)
-    valid_tags = tags[duals]
-    t1 = first(valid_tags)
-    t = Base.tail(valid_tags)
-    for ti in t
-        if t1 != ti
-            msg = "Found multiple Dual tags: $t1 and $ti. This is currently not supported in implicit differentiation."
-            throw(MultipleTagError(msg))
-        end
-    end
-    return nothing
-end
-
-multiple_tag_ad_check(a) = nothing
-
-function implicit_ad_check(a)
-    nested_ad_check(a)
-end
-
-function implicit_ad_check(a::Tuple)
-    nested_ad_check(a)
-    multiple_tag_ad_check(a)
-end
+#STag-aware symmetry checks, mirroring IFTDuals' Tag/Tag semantics
+IFTDuals.is_symm(::Type{STag{F1,V1}},::Type{ForwardDiff.Tag{F2,V2}}) where {F1,V1,F2,V2} = false
+IFTDuals.is_symm(::Type{ForwardDiff.Tag{F1,V1}},::Type{STag{F2,V2}}) where {F1,V1,F2,V2} = false
+IFTDuals.is_symm(::Type{STag{F1,V1}},::Type{STag{F2,V2}}) where {F1,V1,F2,V2} = F1 === F2

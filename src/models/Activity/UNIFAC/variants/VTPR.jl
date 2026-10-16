@@ -1,11 +1,39 @@
+struct VTPRUNIFACCache{T} <: EoSModel
+    components::Vector{String}
+    q::Vector{T}
+end
+
+Base.eltype(::Type{VTPRUNIFACCache{T}}) where T = T
+Base.eltype(::VTPRUNIFACCache{T}) where T = T
+
+VTPRUNIFACCache(components,q) = VTPRUNIFACCache{eltype(q)}(components,q)
+
+VTPRUNIFACCache(groups::GroupParam,params::EoSParam) = VTPRUNIFACCache(groups,params.Q)
+
+VTPRUNIFACCache(groups::GroupParam,Q::SingleParameter) = VTPRUNIFACCache(groups.components,group_sum(groups,Q.values))
+
+
+function recombine_unifac_cache!(cache::VTPRUNIFACCache,groups,params)
+    Q = params.Q
+    group_sum!(cache.q,groups,Q.values)
+    return cache
+end
+
 abstract type VTPRUNIFACModel <: UNIFACModel end
 
-struct VTPRUNIFAC{c<:EoSModel} <: VTPRUNIFACModel
+struct VTPRUNIFAC{c<:EoSModel,T} <: VTPRUNIFACModel
     components::Array{String,1}
-    groups::GroupParam
-    params::UNIFACParam
+    groups::GroupParam{T}
+    params::UNIFACParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
+    unifac_cache::VTPRUNIFACCache{T}
+end
+
+function VTPRUNIFAC(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = Base.promote_eltype(unifac_cache,groups,params)
+    return VTPRUNIFAC{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 export VTPRUNIFAC
@@ -73,7 +101,8 @@ function VTPRUNIFAC(components;
     _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1016/S0378-3812(01)00626-4"]
-    model = VTPRUNIFAC(groups.components,groups,packagedparams,_puremodel,references)
+    cache = VTPRUNIFACCache(groups,packagedparams)
+    model = VTPRUNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
     set_reference_state!(model,reference_state,verbose = verbose)
     return model
 end

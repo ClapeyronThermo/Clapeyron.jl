@@ -19,13 +19,19 @@ end
 
 struct HomogcPCPSAFT{I,T} <: HomogcPCPSAFTModel
     components::Vector{String}
-    groups::GroupParam
+    groups::GroupParam{T}
     sites::SiteParam
     params::HomogcPCPSAFTParam{T}
     idealmodel::I
     pcpmodel::PCPSAFT{I,T}
     assoc_options::AssocOptions
     references::Array{String,1}
+end
+
+function HomogcPCPSAFT(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
+    T = eltype(params)
+    I = typeof(idealmodel)
+    return HomogcPCPSAFT{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
 end
 
 export HomogcPCPSAFT
@@ -96,14 +102,20 @@ function HomogcPCPSAFT(groups::GroupParam,params::Dict{String,ClapeyronParam};
 
     components = groups.components
     sites = params["sites"]
+    
     mw = params["Mw"]
+    
     segment = params["segment"]
+    
     _sigma = params["sigma"]
-    _sigma.values .= 1e-10
+    _sigma.values .*= 1e-10
+    
     sigma = sigma_LorentzBerthelot(_sigma)
     epsilon = params["epsilon"] |> epsilon_LorentzBerthelot
+    
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    
     dipole = params["dipole"]
     dipole2 = SingleParam("Dipole squared", groups.flattenedgroups, dipole.^2 ./ k_B*1e-36*(1e-10*1e-3))
 
@@ -136,21 +148,26 @@ function PCPSAFT(groups::GroupParam,
 
     components = groups.components
     mw = group_sum(groups,param.Mw)
+    update_mw!(idealmodel,mw.values)
+    #m(i) = ∑n(ik)*m(ik)
     segment = group_sum(groups,param.segment)
-    gc_sigma3 = param.sigma .^3
-    sigma = SingleParam("sigma",components,group_sum(groups,gc_sigma3))
+    
+    #m(i)*(σ(i))^3 = ∑n(ik)*m(ik)*σ(ik)^3
+    gc_msigma3 = param.sigma .^3 .* param.segment
+    sigma = SingleParam("sigma",components,group_sum(groups,gc_msigma3))
     sigma.values ./= segment.values
     sigma.values .= cbrt.(sigma.values)
     sigma = sigma_LorentzBerthelot(sigma)
 
+    #m(i)*ϵ(i) = ∑n(ik)*m(ik)*ϵ(ik)
     k = group_pairmean2(groups,param.k)
-    gc_epsilon = SingleParam("epsilon",groups.flattenedgroups,diagvalues(param.epsilon))
-    gc_epsilon.values .*= param.segment.values
-    epsilon = group_sum(groups,gc_epsilon)
+    gc_mepsilon = diagvalues(param.epsilon) .* param.segment.values
+    epsilon = SingleParam("epsilon",components,group_sum(groups,gc_mepsilon))
     epsilon.values ./= segment.values
     epsilon = epsilon_LorentzBerthelot(epsilon,k)
 
-    dipole2 = SingleParam("Dipole squared",components, group_sum(groups,param.dipole2 ./ param.segment))
+    _dipole2 = group_sum(groups,param.dipole2.values)
+    dipole2 = SingleParam("Dipole squared",components, _dipole2 ./ segment.values)
     dipole = SingleParam("Dipole",components, sqrt.(dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3)))
 
     comp_sites = gc_to_comp_sites(sites,groups)
@@ -168,43 +185,44 @@ function recombine_impl!(model::HomogcPCPSAFTModel)
     components = model.components
     sites = model.sites
     assoc_options = model.assoc_options
-    gcparams = model.params
+    gc = model.params
     pcpmodel = model.pcpmodel
     params = pcpmodel.params
-
+    comp_sites = pcpmodel.sites
     #recombine outer params
-    sigma_LorentzBerthelot!(gcparams.sigma)
-    epsilon_LorentzBerthelot!(gcparams.epsilon)
-    gcparams.dipole2 .= gcparams.dipole.^2 ./ k_B*1e-36*(1e-10*1e-3)
-    
+    sigma_LorentzBerthelot!(gc.sigma)
+    epsilon_LorentzBerthelot!(gc.epsilon)
+
+    gc.dipole2 .= gc.dipole.^2 ./ k_B*1e-36*(1e-10*1e-3)
+    group_sum!(params.dipole2,groups,gc.dipole2)
+    params.dipole2.values ./= params.segment 
+    params.dipole .= sqrt.(params.dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3))
+ 
     #recombine inner PCP model
-    mw = group_sum!(params.Mw,groups,gcparams.Mw)
-    segment = group_sum!(params.segment,groups,gcparams.segment)
-    gc_sigma3 = gcparams.sigma .^3
+    mw = group_sum!(params.Mw,groups,gc.Mw)
+    update_mw!(model.idealmodel,params.Mw.values)
+    segment = group_sum!(params.segment,groups,gc.segment)
+
+    gc_msigma3 = gc.sigma .^3 .* gc.segment
     sigma_diag = diagvalues(params.sigma)
-    group_sum!(sigma_diag,groups,gc_sigma3)
+    group_sum!(sigma_diag,groups,gc_msigma3)
     sigma_diag ./= segment.values
     sigma_diag .= cbrt.(sigma_diag)
     sigma_LorentzBerthelot!(params.sigma)
 
-    k = group_pairmean2(groups,gcparams.k)
-    gc_mepsilon = diagvalues(gcparams.epsilon.values) .* gcparams.segment.values
+    k = group_pairmean2(groups,gc.k)
+    gc_mepsilon = diagvalues(gc.epsilon.values) .* gc.segment.values
     epsilon = group_sum!(params.epsilon,groups,gc_mepsilon)
     diagvalues(epsilon.values) ./= segment.values
     epsilon_LorentzBerthelot!(epsilon,k)
 
-
-    group_sum!(params.dipole2,groups,gcparams.dipole2 ./ gcparams.segment)
+    group_sum!(params.dipole2,groups,gc.dipole2 ./ gc.segment)
     params.dipole .= sqrt.(params.dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3))
 
-    comp_sites = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gcparams.bondvol,comp_sites)
-    comp_epsilon_assoc = gc_to_comp_sites(gcparams.epsilon_assoc,comp_sites)
-
-    bondvol,epsilon_assoc = assoc_mix(comp_bondvol,comp_epsilon_assoc,params.sigma,assoc_options,comp_sites)
-    params.bondvol.values.values[:] = bondvol.values.values
-    params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
-
+    gc_to_comp_sites!(comp_sites,sites,groups)
+    gc_to_comp_sites!(params.bondvol,gc.bondvol,comp_sites)
+    gc_to_comp_sites!(params.epsilon_assoc,gc.epsilon_assoc,comp_sites)
+    assoc_mix!(params.bondvol,params.epsilon_assoc,params.sigma,assoc_options)
     return model
 end
 
@@ -212,8 +230,14 @@ function a_res(model::HomogcPCPSAFTModel,V,T,z)
     return a_res(model.pcpmodel,V,T,z)
 end
 
+data(model::HomogcPCPSAFTModel,V,T,z) = data(model.pcpmodel,V,T,z)
+
 assoc_shape(model::HomogcPCPSAFTModel) = assoc_shape(model.pcpmodel)
 getsites(model::HomogcPCPSAFTModel) = getsites(model.pcpmodel)
+
+function Δ(model::HomogcPCPSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
+    return Δ(model.pcpmodel,V,T,z,i,j,a,b,_data)
+end
 
 function lb_volume(model::HomogcPCPSAFTModel, T, z)
     return lb_volume(model.pcpmodel, T, z)
@@ -221,10 +245,6 @@ end
 
 function T_scale(model::HomogcPCPSAFTModel,z)
     return T_scale(model.pcpmodel,z)
-end
-
-function T_scales(model::HomogcPCPSAFTModel)
-    return T_scales(model.pcpmodel)
 end
 
 function p_scale(model::HomogcPCPSAFTModel,z)

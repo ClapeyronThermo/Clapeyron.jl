@@ -4,7 +4,7 @@
 Given a vector of K values and a vector of compositions, calculates the vapor fraction `β`.
 The algorithm is a modification of _(1)_ , with safeguards for extreme cases.
 
-If the algorithm fails to converge, returns `NaN`. if it converges to a value `β ∉ [0,1]`, returns `-Inf` or `Inf`, depending on the case.
+If the algorithm fails to converge, returns `NaN`. If it converges to a value `β ∉ [0,1]`, returns `-Inf` or `Inf`, depending on the case.
 
 ## References
 1. Vassilis Gaganis, "Solution of the Rachford Rice equation using perturbation analysis", Fluid Phase Equilibria, Volume 536,2021,112981
@@ -261,16 +261,16 @@ function rr_flash_eval(K,z,β,non_inx = FillArrays.Fill(false,length(z)),non_iny
         end
         KD1 = Ki*detKi
         KD2 = -detKi
-        KD = KD1 + KD2
+        #KD = KD1 + KD2
         # modification for non-in-y components Ki -> 0
         if non_iny[i] || iszero(Ki)
-            KD = _0βy
+            #KD = _0βy
             KD2 = -_1
             KD1 = _0βy - KD2
         end
         # modification for non-in-x components Ki -> ∞
         if non_inx[i] || isinf(Ki)
-            KD = _0βx
+            #KD = _0βx
             KD1 = _0βx
             KD2 = _0
         end
@@ -529,7 +529,9 @@ function material_balance_rr_converged(w,z,β::AbstractVector,n = sum(z),ztol = 
             rk1 +=  Vi
             rk2 += abs(Vi)
         end
-        rk = max(rk,abs(rk1 - zi)/abs(rk2 + zi))
+        if !iszero(zi)
+            rk = max(rk,abs(rk1 - zi)/abs(rk2 + zi))
+        end
     end
     return rk <= ztol
 end

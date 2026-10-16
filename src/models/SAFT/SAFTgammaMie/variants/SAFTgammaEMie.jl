@@ -11,10 +11,10 @@
         verbose::Bool = false)
 
 ## Description
-This function is used to create an SAFT-gammaE Mie model which is a combination of the SAFT-gamma Mie, MSA and Born models.
+This function is used to create an SAFT-gamma-E Mie model which is a combination of the SAFT-gamma Mie, MSA and Born models.
 
 ## Input parameters
-### SAFT-VR Mie Parameters
+### SAFT-gamma-Mie Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `vst`: Single Parameter (`Float64`) - Number of segments (no units)
 - `S`: Single Parameter (`Float64`) - Shape factor for segment (no units)
@@ -44,7 +44,7 @@ function SAFTgammaEMie(solvents,ions;
     neutralmodel = SAFTgammaMie,
     ionmodel = GCMSABorn,
     RSPmodel = Schreckenberg,
-    charges = String[], 
+    charge = String[], 
     ideal_userlocations = String[],
     neutralmodel_userlocations = String[],
     ionmodel_userlocations = String[],
@@ -55,7 +55,7 @@ function SAFTgammaEMie(solvents,ions;
 
     return ESElectrolyte(solvents,ions;
     idealmodel,neutralmodel,ionmodel,RSPmodel,
-    charges,ideal_userlocations,neutralmodel_userlocations,ionmodel_userlocations,RSPmodel_userlocations,assoc_options,reference_state,verbose)
+    charge,ideal_userlocations,neutralmodel_userlocations,ionmodel_userlocations,RSPmodel_userlocations,assoc_options,reference_state,verbose)
     
 end
 

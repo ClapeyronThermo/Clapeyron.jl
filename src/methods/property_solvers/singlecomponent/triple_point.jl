@@ -3,11 +3,9 @@ function obj_triple_point(model::CompositeModel,F,T,vs,vl,vv,p_scale,T_scale)
     solid = solid_model(model)
     z = SA[1.0]
     RT = Rgas(fluid)*T
-    f_solid(V) = a_res(solid,V,T,z)
-    f_fluid(V) = a_res(fluid,V,T,z)
-    As,Avs = Solvers.f∂f(f_solid,vs)
-    Al,Avl = Solvers.f∂f(f_fluid,vl)
-    Av,Avv = Solvers.f∂f(f_fluid,vv)
+    As,Avs = a∂a∂V(solid,vs,T,z)
+    Al,Avl = a∂a∂V(fluid,vl,T,z)
+    Av,Avv = a∂a∂V(fluid,vv,T,z)
     ps,pl,pv = RT*(-Avs + 1/vs),RT*(-Avl + 1/vl),RT*(-Avv + 1/vv)
     F[1] = As - vs*Avs - Av + vv*Avv + log(vv/vs)
     F[2] = Al - vl*Avl - Av + vv*Avv + log(vv/vl)
@@ -90,7 +88,6 @@ function triple_point(model::CompositeModel;v0 = x0_triple_point(model))
     else
         return triple_point_helmholtz(model,v0)
     end
-    return (Tp,pp,vs,vl,vv)
 end
 
 function triple_point_helmholtz(model,v0)

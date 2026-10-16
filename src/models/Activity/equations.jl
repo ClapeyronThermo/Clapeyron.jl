@@ -9,18 +9,15 @@ function lnγ_impl! end
 has_lnγ_impl(model::T) where T = hasmethod(lnγ_impl!,Tuple{Any,T,Any,Any,Any})
 
 function excess_gibbs_free_energy(model::ActivityModel,p,T,z)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    RT = Rgas(model)*T̄
     if has_lnγ_impl(model)
-        lnγx = lnγ(model,p,T,z)
-        return Rgas(model)*T*dot(z,lnγx)
+        lnγx = lnγ(model,p̄,T̄,z̄)
+        return RT*dot(z̄,lnγx)
     else
-        γ = activity_coefficient(model,p,T,z)
-        return Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ @comps)
+        γ = activity_coefficient(model,p̄,T̄,z̄)
+        return RT*sum(z̄[i]*log(γ[i]) for i ∈ @comps)
     end
-end
-
-function test_excess_gibbs_free_energy(model::ActivityModel,p,T,z)
-    γ = activity_coefficient(model,p,T,z)
-    return Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ @comps)
 end
 
 function volume_impl(model::ActivityModel, p, T, z, phase, threaded, vol0)
@@ -33,12 +30,13 @@ end
 
 #for use in models that have Gibbs energy defined.
 function activity_coefficient(model::ActivityModel,p,T,z)
-    lnγx = lnγ(model,p,T,z)
+    p̄,T̄,z̄ = ustrip(p,pressure),ustrip(T,temperature),uzstrip(model,z)
+    lnγx = lnγ(model,p̄,T̄,z̄)
     if ismutable(lnγx)
         lnγx .= exp.(lnγx)
         return lnγx
     else
-        return exp.(lnγ)
+        return exp.(lnγx)
     end
 end
 
@@ -51,14 +49,20 @@ function lnγ_impl!(res,::IdealLiquidSolution,p,T,z)
     return res
 end
 
-K0_lle_init(::IdealLiquidSolution,p,T,z) = throw(error("IdealLiquidSolution() does not support LLE equilibria."))
+K0_lle_init(::IdealLiquidSolution,p,T,z,cache = nothing;reduced = true) = throw(error("IdealLiquidSolution() does not support LLE equilibria."))
 
-function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
+function ng_E_reduced(model,p,T,z)
+    nc = length(model)
+    excess_gibbs_free_energy(model,p,T,@view(z[1:nc]))/(Rgas(model)*T)
+end
+
+function lnγ(model::ActivityModel,_p,_T,_z,cache::TT = nothing) where TT
+    p,T,z = ustrip(_p,pressure),ustrip(_T,temperature),uzstrip(model,_z)
     X = gradient_type(model,T,z)
     nc = length(z)
     if has_lnγ_impl(model)
         if cache isa Tuple
-            result,aux,lnγ,∂lnγ∂n,∂lnγ∂T,_,_,hconfig = cache
+            _,_,lnγ,_,_,_,_,_ = cache
             lnγ_impl!(lnγ,model,p,T,z)
             return lnγ
         elseif cache isa AbstractVector
@@ -70,9 +74,10 @@ function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
             return out
         end
     else
-        fun(x) = excess_gibbs_free_energy(model,p,T,@view(x[1:nc]))/(Rgas(model)*T)
+        V = zero(primalval(T))
+        fun = @deferred_Z(ng_E_reduced,∂₁f)
         if cache isa Tuple
-            result,aux,lnγ,∂lnγ∂n,∂lnγ∂T,_,_,hconfig = cache
+            result,aux,lnγ,_,_,_,_,hconfig = cache
             aux .= 0
             aux[1:nc] = z
             gconfig = Solvers._GradientConfig(hconfig)
@@ -90,42 +95,20 @@ function lnγ(model::ActivityModel,p,T,z,cache::TT = nothing) where TT
     end
 end
 
-function activity_coefficient_impl(model::ActivityModel,p,T,z,μ_ref,reference,phase,threaded,vol0)
-    #TODO: what to do if the reference is not pure?
-    return activity_coefficient(model,p,T,z)
-end
-
 reference_chemical_potential_type(model::ActivityModel) = :zero
 
-function activity(model::ActivityModel,p,T,z)
-    γ = activity_coefficient(model,p,T,z)
-    ∑z = sum(z)
-    return γ .* z ./ ∑z
-end
-
-function activity_impl(model::ActivityModel,p,T,z,μ_ref,reference,phase,threaded,vol0)
-    #TODO: what to do if the reference is not pure?
-    return activity(model,p,T,z)
-end
-
-function test_activity_coefficient(model::ActivityModel,p,T,z)
-    X = gradient_type(model,T+p,z)
-    return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
-end
-
-saturation_model(model::ActivityModel) = __act_to_gammaphi(model,saturation_model)
+@inline saturation_model(model::ActivityModel) = saturation_model(__act_to_gammaphi(model,saturation_model))
 
 function idealmodel(model::T) where T <: ActivityModel
     if hasfield(T,:puremodel)
         puremodel = model.puremodel.model
-        return idealmodel(model.puremodel.model)
+        return idealmodel(puremodel)
     else
         return BasicIdeal()
     end
 end
 
 #=
-
 this is technically wrong on the strict sense of helmholtz residual energy,
 but allows us to evaluate the excess terms of an activity model with ease.
 
@@ -133,10 +116,10 @@ The main problem is that activity models are defined in a P-T basis, while the H
 we circunvent this by using the dispatches on PT_property.
 Activity models are transformed into a GammaPhi wrapper that evaluates the pure and excess parts in a correct way.
 
-=#
 function eos_impl(model::ActivityModel,V,T,z)
     return excess_gibbs_free_energy(model,V,T,z) + reference_state_eval(model,V,T,z)
 end
+=#
 
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
@@ -144,7 +127,7 @@ function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     return -dfT*T^2
 end
 
-function mixing(model::ActivityModel,p,T,z,::typeof(gibbs_free_energy))
+function mixing(model::ActivityModel,p,T,z,::typeof(gibbs_energy))
     x = z./sum(z)
     return excess_gibbs_free_energy(model,p,T,z)+dot(z,log.(x))*R̄*T
 end
@@ -155,43 +138,71 @@ function mixing(model::ActivityModel,p,T,z,::typeof(entropy))
     return -dg*T-g
 end
 
+# excess properties for activity models, obtained from derivatives of the excess gibbs energy
+function excess(model::ActivityModel, p, T, z, property::ℜ; phase=:unknown, threaded=true, vol0=nothing, output=nothing) where {ℜ}
+    return __excess_activity(model,p,T,z,property)
+end
+
+for f in (:entropy,:gibbs_energy,:helmholtz_energy)
+    @eval function excess(model::ActivityModel, p, T, z, property::typeof($f); phase=:unknown, threaded=true, vol0=nothing, output=nothing)
+        return __excess_activity(model,p,T,z,property)
+    end
+end
+
+__excess_activity(model,p,T,z,::typeof(gibbs_energy)) = excess_gibbs_free_energy(model,p,T,z)
+
+function __excess_activity(model,p,T,z,::typeof(entropy))
+    f(x) = excess_gibbs_free_energy(model,p,x,z)
+    return -Solvers.derivative(f,T)
+end
+
+function __excess_activity(model,p,T,z,::typeof(enthalpy))
+    f(x) = excess_gibbs_free_energy(model,p,x,z)/x
+    return -Solvers.derivative(f,T)*T*T
+end
+
+function __excess_activity(model,p,T,z,::typeof(volume))
+    f(x) = excess_gibbs_free_energy(model,x,T,z)
+    return Solvers.derivative(f,p)
+end
+
+function __excess_activity(model,p,T,z,::typeof(helmholtz_energy))
+    gE = excess_gibbs_free_energy(model,p,T,z)
+    return gE - p*__excess_activity(model,p,T,z,volume)
+end
+
+function __excess_activity(model,p,T,z,::typeof(internal_energy))
+    hE = __excess_activity(model,p,T,z,enthalpy)
+    return hE - p*__excess_activity(model,p,T,z,volume)
+end
+
+function __excess_activity(model,p,T,z,::typeof(isobaric_heat_capacity))
+    f(x) = excess_gibbs_free_energy(model,p,x,z)
+    _,_,d2f = Solvers.f∂f∂2f(f,T)
+    return -T*d2f
+end
+
+function __excess_activity(model,p,T,z,property)
+    throw(ArgumentError("excess $property is not available for activity models."))
+end
+
 function gibbs_solvation(model::ActivityModel,T)
     binary_component_check(gibbs_solvation,model)
     return gibbs_solvation(__act_to_gammaphi(model,gibbs_solvation),T)
 end
 
-function lb_volume(model::ActivityModel,T,z)
-    b = sum(lb_volume(model.puremodel[i],T,SA[1.0])*z[i] for i in @comps)
-    return b
-end
-
-function T_scale(model::ActivityModel,z)
-    prod(T_scale(model.puremodel[i])^1/z[i] for i in @comps)^(sum(z))
-end
-
-function p_scale(model::ActivityModel,z)
-    T = T_scale(model,z)
-    0.33*R̄*T/lb_volume(model,T,z)
-end
-
-function x0_volume_liquid(model::ActivityModel,p,T,z)
-    pures = model.puremodel
-    return sum(z[i]*x0_volume_liquid(pures[i],p,T,SA[1.0]) for i ∈ @comps)
-end
-
 function ∂lnγ∂n(model,p,T,z,cache = nothing)
     nc = length(z)
     RT = Rgas(model)*T
-    n = sum(z)
     fun_g(w) = excess_gibbs_free_energy(model,p,T,@view(w[1:nc]))/RT
     function fun_lnγ(out,w)
         Clapeyron.lnγ(model,p,T,@view(w[1:nc]),@view(out[1:nc]))
         return out
     end
-    if cache == nothing
+    if cache === nothing
         if has_lnγ_impl(model)
             lnγ = zeros(Base.promote_eltype(model,p,T,z),nc)
-            ∂lnγ∂ni = ForwardDiff.jacobian!(lnγ,fun_lnγ,z)
+            ∂lnγ∂ni = ForwardDiff.jacobian(fun_lnγ,lnγ,z)
             g_E = dot(z,lnγ)*RT
             return g_E,lnγ,∂lnγ∂ni
         else
@@ -228,25 +239,25 @@ function ∂lnγ∂n(model,p,T,z,cache = nothing)
     end
 end
 
+@noinline ∂lnγ∂T_mismatch_error() = throw(DimensionMismatch(lazy"lnγ: derivative cache was built for a model with has_lnγ_impl(model) == false, but used on a model with has_lnγ_impl(model) == true; rebuild the cache with the correct model"))
+
 function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
     nc = length(z)
     RT = Rgas(model)*T
-    n = sum(z)
     fun_g(w) = excess_gibbs_free_energy(model,p,w[nc+1],@view(w[1:nc]))/(Rgas(model)*w[nc + 1])
     function fun_lnγ(out,w)
-        Clapeyron.lnγ(model,p,w[1:nc+1],@view(w[1:nc]),@view(out[1:nc]))
+        Clapeyron.lnγ(model,p,w[nc+1],@view(w[1:nc]),@view(out[1:nc]))
         return out
     end
-    if cache == nothing
+    if cache === nothing
         if has_lnγ_impl(model)
             lnγ = zeros(Base.promote_eltype(model,p,T,z),nc)
             aux = similar(lnγ,nc+1)
             aux[1:nc] = z
             aux[nc+1] = T
-            ∂g_E = ForwardDiff.jacobian!(lnγ,fun_lnγ,aux)
+            ∂g_E = ForwardDiff.jacobian(fun_lnγ,lnγ,aux)
             ∂lnγ∂ni = ∂g_E[1:nc,1:nc]
-            ∂lnγ∂T = resize!(aux,nc)
-            ∂lnγ∂T .= @view ∂g_E[:,nc + 1]
+            ∂lnγ∂T = ∂g_E[1:nc,nc + 1]
             g_E = dot(z,lnγ)*RT
             return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
         else
@@ -264,17 +275,22 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
         end
     else
-        result,aux,lnγ,∂lnγ∂ni,∂lnγ∂T,_,_,hconfig,jcache = cache
+        #result,aux,lnγ,∂lnγ∂ni,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache
+
+        # NOTE: intentionally bind ∂lnγ∂T to the ∂P∂n slot (unused by GE models), not ∂lnϕ∂T,
+        # since ∂lnϕ∂T aliases lnγ when the cache was built with Val(false).
+        result,aux,lnγ,∂lnγ∂ni,_,∂lnγ∂T,_,hconfig,jcache = cache
         aux .= 0
         aux[1:nc] .= z
         aux[nc+1] = T
         if has_lnγ_impl(model)
+            jcache === aux && ∂lnγ∂T_mismatch_error()
             jconfig = Solvers._JacobianConfig(hconfig)
             jresult = ForwardDiff.DiffResults.MutableDiffResult(result.derivs[1],(result.derivs[2],))
             _result = ForwardDiff.jacobian!(jresult,fun_lnγ,jcache,aux,jconfig,Val{false}())
             ∂lnγ = DiffResults.jacobian(_result)
             ∂lnγ∂ni .=  @view ∂lnγ[1:nc,1:nc]
-            ∂lnγ∂T .= @view ∂lnγ[:,nc + 1]
+            ∂lnγ∂T .= @view ∂lnγ[1:nc,nc + 1]
             ∂g_E = DiffResults.value(_result)
             lnγ .= @view ∂g_E[1:nc]
             g_E = dot(z,lnγ)*RT
@@ -299,30 +315,29 @@ end
 
 function ∂lnγ∂T(model,p,T,z,cache = nothing)
     nc = length(z)
-    RT = Rgas(model)*T
-    n = sum(z)
     dgEdt(w) = dG_EdT(model,p,T,@view(w[1:nc]))
-    if cache == nothing
+    _ft_lnγ_impl!(_lnγ, _T) = lnγ_impl!(_lnγ, model, p, _T, z)
+    if cache === nothing
         if has_lnγ_impl(model)
-            out = zeros(Base.promote_eltype(model,p,T,z))
-            ∂lnγ∂T = ForwardDiff.derivative!(out,lnγ_impl!,T)
+            ∂lnγ∂T = zeros(Base.promote_eltype(model,p,T,z),nc)
+            lnγ = similar(∂lnγ∂T)
+            ForwardDiff.derivative!(∂lnγ∂T,_ft_lnγ_impl!,lnγ,T)
             return ∂lnγ∂T
         else
             ∂lnγ∂T = ForwardDiff.gradient(dgEdt,z)
             return ∂lnγ∂T
         end
     else
-        result,aux,lnγ,∂lnγ∂ni,∂lnγ∂T,_,_,hconfig,jcache,∂lnγ∂T_out = cache
-        aux .= 0
-        aux[1:nc] .= z
-        aux[nc+1] = T
+        result,aux,lnγ,∂lnγ∂ni,_,_,∂lnγ∂T,hconfig,jcache,∂lnγ∂T_out = cache
         if has_lnγ_impl(model)
+            isempty(∂lnγ∂T_out) && ∂lnγ∂T_mismatch_error()
             Dconfig = Solvers._DerivativeConfig(∂lnγ∂T_out)
-            ForwardDiff.derivative!(∂lnγ∂T,lnγ_impl!,lnγ,T,Dconfig,Val{false}())
+            ForwardDiff.derivative!(∂lnγ∂T,_ft_lnγ_impl!,lnγ,T,Dconfig,Val{false}())
             return ∂lnγ∂T
         else
             aux .= 0
             aux[1:nc] = z
+            aux[nc+1] = T
             gconfig = Solvers._GradientConfig(hconfig)
             _result = ForwardDiff.gradient!(result, dgEdt, aux, gconfig, Val{false}())
             dresult = DiffResults.gradient(_result)
@@ -334,10 +349,11 @@ end
 
 __act_to_gammaphi(model::ActivityModel) = __act_to_gammaphi(model,nothing,true)
 GammaPhi(model::ActivityModel) = __act_to_gammaphi(model)
+
 #convert ActivityModel into a RestrictedEquilibriaModel
 function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
     components = component_list(model)
-    if hasfield(typeof(model),:puremodel) && !ignore && model.puremodel.model isa IdealModel
+    if hasfield(typeof(model),:puremodel) && !ignore && is_idealmodel(model.puremodel.model)
         ActivitySaturationError(model,method)
     end
 
@@ -354,11 +370,12 @@ function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
         end
     end
     γϕmodel = GammaPhi(components,model,pure)
+    return γϕmodel
 end
 
 for f in (:bubble_pressure,:bubble_temperature,:dew_pressure,:dew_temperature)
     @eval begin
-        function $f(model::ActivityModel,T,x,method::ThermodynamicMethod)
+        function $f(model::ActivityModel,T,x::AbstractVector,method::ThermodynamicMethod)
             compmodel = __act_to_gammaphi(model,method)
             return $f(compmodel,T,x,method)
         end
@@ -399,6 +416,9 @@ function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)
     PTFlashWrapper(model,p,T,z,equilibrium)
 end
 
+function fluid_model(model::T) where T <:ActivityModel
+    return fluid_model(__act_to_gammaphi(model,tp_flash,false))
+end
 
 #LLE point. It does not require an input concentration, because it assumes that activities are pressure-independent.
 """
@@ -430,9 +450,8 @@ function LLE(model::ActivityModel,T;v0=nothing)
         end
     end
 
-    len = length(vv0)
     f!(F,z) = Obj_LLE(model, F, T, @view(z[1:nc-1]), @view(z[nc:end]))
-    r  = Solvers.nlsolve(f!,vv0,LineSearch(Newton()))
+    r  = Solvers.nlsolve(f!,vv0,LineSearch(Newton(),Backtracking()))
     sol = Solvers.x_sol(r)
     x = FractionVector(sol[1:nc-1]) |> collect
     xx = FractionVector(sol[nc:end]) |> collect
@@ -448,11 +467,9 @@ function Obj_LLE(model::ActivityModel, F, T, x, xx)
     return F
 end
 
-export LLE
-
-function PT_property(model::ActivityModel,p,T,z,phase,threaded,vol0,f::F,v::Val{UseP}) where {F,UseP}
+function PT_property(model::ActivityModel,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
     γϕ = __act_to_gammaphi(model)
-    PT_property(γϕ,p,T,z,phase,threaded,vol0,f,v)
+    PT_property(γϕ,p,T,z,phase,threaded,vol0,f,vol)
 end
 
 function set_reference_state!(model::ActivityModel,reference_state::ReferenceState;verbose = verbose)
@@ -463,15 +480,96 @@ end
 reference_state(model::ActivityModel) = reference_state(model.puremodel)
 
 # Thermodynamic factor
-function thermodynamic_factor(model::ActivityModel, p, T, z)
+function γ_thermodynamic_factor(model::ActivityModel, p, T, z)
     N = length(model)
-    N == 1 && return one(T)
     x = z ./ sum(z)
     xN1 = @view x[1:N-1]
-    
+
     _, _, J = ∂lnγ∂n(model, p, T, x)
     ∂lnγᵢ∂xⱼ = J[1:N-1, 1:N-1] .- J[1:N-1, N]
 
     Γ = LinearAlgebra.I(N-1) .+  xN1 .* ∂lnγᵢ∂xⱼ
     return Γ
 end
+
+#edge pressure/edge temperature
+
+function _edge_pressure(model::ActivityModel,T,z,v0 = nothing,crit_retry = false)
+    wrapper = PTFlashWrapper(model,NaN,T,z,:vle)
+    return _edge_pressure(wrapper,T,z,v0,crit_retry)
+end
+
+function _edge_temperature(model::ActivityModel,p,z,v0 = nothing)
+    wrapper = PTFlashWrapper(model,p,NaN,z,:vle)
+    return _edge_temperature(wrapper,p,z,v0)
+end
+
+for xy in [:ph,:ps,:ts,:vt]
+    xyz = Symbol(xy,:_flash)
+    @eval begin
+        function init_preferred_method(method::typeof($xyz),model::ActivityModel,kwargs)
+            return RRXYFlash(;kwargs...)
+        end
+    end
+end
+
+for xy in [:qt,:qp]
+    xyz = Symbol(xy,:_flash)
+    @eval begin
+        function init_preferred_method(method::typeof($xyz),model::ActivityModel,kwargs)
+            return RRQXFlash(;kwargs...)
+        end
+    end
+end
+
+function gE_rt_UNIQUAC(z,r,q,coord = 5)
+    invn = 1/sum(z)
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    G_comb = zero(Base.promote_eltype(z,r,q,coord))
+    for i ∈ eachindex(z)
+        zi = z[i]
+        Φi = r[i]/Φm
+        θi = q[i]/θm
+        G_comb += zi*log(Φi) + coord*q[i]*zi*log(θi/Φi)
+    end
+    return G_comb
+end
+
+function gE_rt_dormund(z,qp,r,q,coord = 5)
+    invn = 1/sum(z)
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    Φpm = dot(qp,z)*invn
+    G_comb = zero(Base.promote_eltype(z,qp,r,q,coord))
+    @inbounds for i in eachindex(z)
+        qi,zi = q[i],z[i]
+        Φi = r[i]/Φm    #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = qi/θm      #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        Φpi = qp[i]/Φpm #technically xi[i]q_p[i]/θpm, but it gets cancelled out (log(Φpi/xi))
+        G_comb += zi*log(Φpi) + coord*qi*zi*log(θi/Φi)
+    end
+    return G_comb
+end
+
+function gE_rt_SG(z,r,q,coord = 5)
+    invn = 1/sum(z)
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    G_comb = zero(Base.promote_eltype(z,r,q,coord))
+    @inbounds for i in eachindex(z)
+        qi,zi = q[i],z[i]
+        Φi = r[i]/Φm    #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = qi/θm      #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        G_comb += coord*qi*zi*log(θi/Φi)
+    end
+    return G_comb
+end
+
+#Flory-Huggins (FH)
+function gE_rt_FH(z,qp)
+    Φpm = dot(qp,z)/sum(z)
+    return @sum(z[i]*log(qp[i]/Φpm))
+end
+
+export LLE

@@ -28,4 +28,13 @@ Clapeyron.WalkerIdeal
 Clapeyron.LJRefIdeal
 Clapeyron.AlyLeeIdeal
 Clapeyron.PPDSIdeal
+Clapeyron.ShomateIdeal
+Clapeyron.CPLNGEstIdeal
+Clapeyron.GlennJL
+```
+
+## Joback GC Utilities
+
+```@docs
+Clapeyron.JobackGC
 ```

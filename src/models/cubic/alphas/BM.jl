@@ -27,9 +27,9 @@ else
 
 Trᵢ = T/Tcᵢ
 
-for PR models, RK, vdW models:
+For PR models, RK, vdW models:
     mᵢ = m(Soave)
-other cubic models:
+Other cubic models:
     mᵢ = m(Leivobici)
 ```
 
@@ -50,7 +50,7 @@ alpha = BMAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0
 
 ## References
 
-1. .M. Boston, P.M. Mathias, Proceedings of the 2nd International Conference on Phase Equilibria and Fluid Properties in the Chemical Process Industries, West Berlin, March, 1980, pp. 823–849
+1. J.F. Boston, P.M. Mathias, Proceedings of the 2nd International Conference on Phase Equilibria and Fluid Properties in the Chemical Process Industries, West Berlin, March, 1980, pp. 823–849
 
 """
 BMAlpha

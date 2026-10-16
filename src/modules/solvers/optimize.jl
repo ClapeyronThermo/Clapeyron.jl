@@ -1,4 +1,5 @@
-
+ADScalarObjective(f,x0,method) = ADScalarObjective(f,x0)
+ADScalarObjective(f,x0,::NLSolvers.NelderMead) = ScalarObjective(f = f)
 
 function ADScalarObjective(f,x0::T) where T <: AbstractArray
     Hresult = DiffResults.HessianResult(x0)
@@ -85,7 +86,6 @@ function ADScalarObjective(f::F,x0::T) where {F,T <: SVector}
     h=h)
 end
 
-
 function ADScalarObjective(f,x0::Number)
     function g(x)
         return derivative(f,x)
@@ -115,47 +115,45 @@ end
 
 #uses brent, the same default that Optim.jl uses
 function optimize(f,x0::NTuple{2,T},method=BrentMin(),options=OptimizationOptions()) where T<:Real
-    scalarobj = ADScalarObjective(f,first(x0))
+    scalarobj = ADScalarObjective(f,first(x0),method)
     optprob = OptimizationProblem(obj = scalarobj,bounds = x0, inplace=false)
     res = NLSolvers.solve(optprob,method,options)
     return res
 end
 
 #general one, with support for ActiveBox
-function optimize(f,x0,method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
-    inplace = __is_implace(x0)
-    scalarobj = ADScalarObjective(f,x0)
+
+__is_implace(x0,::Solvers.NelderMead) = false
+
+function optimize(f,x0::Union{Number,AbstractArray},method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
+    inplace = __is_implace(x0,method)
+    scalarobj = ADScalarObjective(f,x0,method)
     optprob = OptimizationProblem(obj = scalarobj,inplace = inplace,bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
-function optimize(optprob::OptimizationProblem,x0,method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
+function optimize(optprob::OptimizationProblem,x0::Union{Number,AbstractArray},method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
 #build scalar objective -> Optimization Problem
-function optimize(scalarobj::ScalarObjective,x0,method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
-    inplace = __is_implace(x0)
+function optimize(scalarobj::ScalarObjective,x0::Union{Number,AbstractArray},method=LineSearch(Newton2(x0),NLSolvers.Static(1.0)),options=OptimizationOptions();bounds = nothing)
+    inplace = __is_implace(x0,method)
     optprob = OptimizationProblem(obj = scalarobj,inplace = inplace,bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
-function optimize(f,x0,method::NLSolvers.NelderMead,options=OptimizationOptions();bounds = nothing)
-    scalarobj = ScalarObjective(f = f)
-    optprob = OptimizationProblem(obj = scalarobj,inplace = false,bounds = bounds)
-    return NLSolvers.solve(optprob,x0,method,options)
-end
 
 
 #= only_fg!: Optim.jl legacy form:
 function fg!(F,G,x)
   # do common computations here
   # ...
-  if G != nothing
+  if G !== nothing
     # code to compute gradient here
     # writing the result to the vector G
   end
-  if F != nothing
+  if F !== nothing
     # value = ... code to compute objective function
     return value
   end
@@ -185,9 +183,9 @@ end
 
 #= only_fgh!: Optim.jl legacy form:
 function fgh!(F,G,H,x)
-  G == nothing || # compute gradient and store in G
-  H == nothing || # compute Hessian and store in H
-  F == nothing || return f(x)
+  G === nothing || # compute gradient and store in G
+  H === nothing || # compute Hessian and store in H
+  F === nothing || return f(x)
   nothing
 end
 =#
@@ -232,7 +230,7 @@ end
 
 quad_interp(x,f) = quad_interp(x[1],x[2],x[3],f[1],f[2],f[3])
 
-function quad_interp(xa,xb,xc,fa,fb,fc)
+function quad_interp(xa::T,xb::T,xc::T,fa::T,fb::T,fc::T) where T
         #f1 = ax12 + bx1 + c
     #f2 = ax22 + bx2 + c
     #f3 = ax32 + bx3 + c
@@ -260,7 +258,6 @@ function _1var_optimize_quad(f,x0,options)
     f1 = f(x1)
     f2 = f(x2)
     f3 = f(x3)
-    f30 = f3
     fx = NaN*f1
     xx = NaN*f1
     iter_x = 0
@@ -269,15 +266,13 @@ function _1var_optimize_quad(f,x0,options)
         iter_x += 1
         iter_x == options.maxiter && break
         not_improved == 2 && break
-        a,b,c = quad_interp(x1,x2,x3,f1,f2,f3)
+        a,b,_ = quad_interp(x1,x2,x3,f1,f2,f3)
         xlo,xhi = extrema((x1, x2, x3))
-        df = f30 - fx
         if a <= 0 || abs(xlo - xhi) < options.x_abstol
             # Parabola opens downward or is linear, use best current point
             fvals = SVector((f1, f2, f3))
             xvals = (x1, x2, x3)
             f_best,idx = findmin(fvals)
-            minidx = argmin(fvals)
             x_best = xvals[idx]
             xx = x_best
             fx = f_best

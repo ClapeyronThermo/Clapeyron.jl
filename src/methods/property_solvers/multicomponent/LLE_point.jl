@@ -2,7 +2,7 @@
 
 function x0_lle_init(model::EoSModel, p, T, z, z0 = nothing)
     nc = length(model)
-    if z0 == nothing
+    if z0 === nothing
         z_test = initial_candidate_fractions(z)
     else
         z_test = near_candidate_fractions(z0,0.25)
@@ -20,7 +20,7 @@ function x0_lle_init(model::EoSModel, p, T, z, z0 = nothing)
         #divided by norm to penalize points too close of the initial point
         err[i] = dnorm1/dnorm2
     end
-    (val, idx) = findmin(err)
+    (_, idx) = findmin(err)
     return z_test[idx]
 end
 
@@ -31,7 +31,7 @@ function x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing)
     sat = saturation_pressure.(pure,T)
     vi = getindex.(sat,2)
     vlx = dot(vi,x)
-    if p0 == nothing
+    if p0 === nothing
         p0x = pressure(model,vlx,T,x)
     else
         p0x = p0
@@ -73,7 +73,7 @@ function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
     f! = (F,z) -> Obj_bubble_pressure(model_r, F, T, z[1], z[2], x_r, z[3:end])
     options = NLSolvers.NEqOptions(maxiter = 1000) #this should converge in very few iters
     #putting the limit here allows to faster bail-out in case of unsucessful iteration
-    r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0)),options)
+    r = Solvers.nlsolve(f!,v0,LineSearch(Newton2(v0),Backtracking()),options)
     sol = Solvers.x_sol(r)
     !__check_convergence(r) && (sol .= NaN)
     xx_r = FractionVector(sol[3:end])
@@ -117,7 +117,7 @@ function LLE_temperature(model::EoSModel,p,x;v0=nothing)
     options = NLSolvers.NEqOptions(maxiter = 1000) #this should converge in very few iters
     #putting the limit here allows to faster bail-out in case of unsucessful iteration
     v00 = v0[1:nc+2]
-    r = Solvers.nlsolve(f!,v00,LineSearch(Newton2(v00)),options)
+    r = Solvers.nlsolve(f!,v00,LineSearch(Newton2(v00),Backtracking()),options)
     sol = Solvers.x_sol(r)
     !__check_convergence(r) && (sol .= NaN)
     T = sol[1]
@@ -141,12 +141,12 @@ end
 #=
 function presents_LLE(model,p,T)
     pure = split_model(model)
-    g_pure = gibbs_free_energy.(pure,p,T)
+    g_pure = gibbs_energy.(pure,p,T)
 
     function mixing_gibbs(x1)
         z = FractionVector(x1)
         log∑z = log(sum(z))
-        g_mix = gibbs_free_energy(model,p,T,z)
+        g_mix = gibbs_energy(model,p,T,z)
         for i in 1:length(z)
             g_mix -= z[i]*(g_pure[i] + R̄*T*(log(z[i]) - log∑z))
         end

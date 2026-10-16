@@ -36,7 +36,7 @@ This is only really relevant in the case of excess Gibbs free energies or excess
 The process to obtain these functions is identical to the `mixing` function mentioned previously where we now have an `excess(model, p, T, n, property)` function, as demonstrated below for the excess Gibbs energy (also in the case of water and ethanol):
 
 ```julia
-julia> excess(model, 1e5, 298.15, [0.5,0.5], gibbs_free_energy)
+julia> excess(model, 1e5, 298.15, [0.5,0.5], gibbs_energy)
 1100.6568199629164
 ```
 

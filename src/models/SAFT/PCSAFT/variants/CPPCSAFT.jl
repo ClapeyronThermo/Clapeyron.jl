@@ -73,6 +73,7 @@ function recombine_impl!(model::CPPCSAFTModel)
     sigma = sigma_LorentzBerthelot!(sigma)
     segment = sigma_LorentzBerthelot!(segment)
     epsilon = epsilon_LorentzBerthelot!(epsilon)
+    recombine_assoc!(model)
     return model
 end
 

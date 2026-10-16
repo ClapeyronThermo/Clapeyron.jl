@@ -26,6 +26,8 @@ function SAFTVRQMie(components;
     fh_order = :fh2,
     verbose = false)
 
+    fh_order = Symbol(fh_order)
+
     MODEL,PARAM = SAFTVRQMie,SAFTVRQMieParam
     locations = default_locations_vrq(fh_order)
     _components = format_components(components)

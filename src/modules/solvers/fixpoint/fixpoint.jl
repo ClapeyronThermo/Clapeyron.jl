@@ -5,9 +5,8 @@ abstract type AbstractFixPoint end
 """
   Solvers.fixpoint(f,x0::Real,method=SSFixPoint())
 Does a fixpoint iteration convergence on a series of real numbers.
-`f` is a function that should 
-the following strategies:
- - `SSFixPoint(dampingfactor = 1.0)`: performs succesive substitutions until convergence is met. 
+`f` is a function that should respect the following strategies:
+ - `SSFixPoint(dampingfactor = 1.0)`: performs successive substitutions until convergence is met.
 α = `dampingfactor` it determines a buffer for each iteration, defined as `x1 = α*f(x1) + (1-α)*x1`
 
 - `Aitken()`: uses Aitken's delta-squared process to accelerate convergence of the series. Recommended for harmonic iterates.
@@ -15,7 +14,7 @@ the following strategies:
 """
 function fixpoint end
 
-struct SSFixPoint{T<:Real} <: AbstractFixPoint 
+struct SSFixPoint{T<:Real} <: AbstractFixPoint
     dampingfactor::T
     lognorm::Bool
     normorder::Float64
@@ -38,7 +37,7 @@ function convergence(xold,xi,
                     rtol=8eps(one(eltype(xi))),
                     lognorm = false,
                     normorder = Inf)
-    
+
     not_finite = any(!isfinite,xi)::Bool
     not_finite && return (true,false) #terminate, with nan
     xi == xold && return (true,true) #terminate, with current number
@@ -68,7 +67,7 @@ end
 function fixpoint(f,x0,
     method::AbstractFixPoint = SSFixPoint();
     atol=zero(eltype(x0)),
-    rtol=8eps(one(eltype(x0))), 
+    rtol=8eps(one(eltype(x0))),
     max_iters=100,
     return_last = false)
     _,atol,rtol = promote(one(eltype(x0)),atol,rtol)
@@ -83,7 +82,7 @@ function _fixpoint(f::F,
     rtol::T =8*eps(T),
     max_iters=100,
     return_last = false) where {F,T<:Real}
-    
+
     nan = (0*atol)/(0*atol)
     xi = f(x0)
     α = method.dampingfactor
@@ -94,9 +93,9 @@ function _fixpoint(f::F,
     itercount = 1
     xold = x0
     while itercount < max_iters
-        xi = α*f(xi) + (1-α)*xi  
+        xi = α*f(xi) + (1-α)*xi
         converged,finite = convergence(xold,xi,atol,rtol,lognorm,ℕ)
-        converged && return ifelse(finite,xi,nan)    
+        converged && return ifelse(finite,xi,nan)
         itercount +=1
         xold = xi
     end
@@ -116,7 +115,7 @@ function _fixpoint(f::F,
     x3 = x00
     x1 = f(x3)
     converged,finite = convergence(x3,x1,atol,rtol)
-    converged && return ifelse(finite,x1,nan)  
+    converged && return ifelse(finite,x1,nan)
     x2 = f(x1)
     converged,finite = convergence(x1,x2,atol,rtol)
     converged && return ifelse(finite,x2,nan)
@@ -128,12 +127,12 @@ function _fixpoint(f::F,
         x3 = x2 + dx
         converged,finite = convergence(x2,x3,atol,rtol)
         converged && return ifelse(finite,x3,nan)
-        
+
         itercount += 1
         x1 = f(x3)
         converged,finite = convergence(x3,x1,atol,rtol)
         converged && return ifelse(finite,x1,nan)
-        
+
         itercount += 1
         x2 = f(x1)
         converged,finite = convergence(x1,x2,atol,rtol)
@@ -149,7 +148,7 @@ function _fixpoint(f!::F,
     rtol::T =8*eps(T),
     max_iters=100,
     return_last = false) where {F,T<:Real}
-    
+
     nan = (0*atol)/(0*atol)
     xi = copy(x0)
     xi = f!(xi,x0)
@@ -162,7 +161,7 @@ function _fixpoint(f!::F,
             return xi
         else
             xi .= nan
-            return xi 
+            return xi
         end
     end
     itercount = 1
@@ -177,7 +176,7 @@ function _fixpoint(f!::F,
                 return xi
             else
                 xi .= nan
-                return xi 
+                return xi
             end
         end
         itercount +=1

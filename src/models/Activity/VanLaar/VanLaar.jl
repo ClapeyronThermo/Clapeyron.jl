@@ -116,13 +116,11 @@ function VanLaar(components;
     return v
 end
 
-function excess_g_vanlaar(m::VanLaarModel, p, T, z)
-    n = sum(z)
-    x = z ./ n
-    A12 = m.params.A12.values[1]
-    A21 = m.params.A21.values[1]
-    ge = (A12*A21*x[1]*x[2]) / (A12*x[1] + A21*x[2])
-    return n*R̄*T*ge
+function excess_g_vanlaar(model::VanLaarModel, p, T, z)
+    A12 = model.params.A12.values[1]
+    A21 = model.params.A21.values[1]
+    ge = (A12*A21*z[1]*z[2]) / (A12*z[1] + A21*z[2])
+    return Rgas(model)*T*ge
 end
 
 excess_gibbs_free_energy(model::VanLaarModel,p,T,z) = excess_g_vanlaar(model,p,T,z)

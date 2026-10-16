@@ -15,7 +15,7 @@
         # Update fugacities for current conditions used in both tests
         M.mixture_fugacities!(f_z, eos, c, forces)
         #props = eos.mixture.properties
-        
+
         if check_vapor
             C.wilson_k_values!(K,eos,p,T,storage.crit)
             vv = M.michelsen_test!(vapor, f_z, f_xy, vapor.z, z, K, eos, c, forces, Val(true); kwarg...)

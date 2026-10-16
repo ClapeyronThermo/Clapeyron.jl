@@ -1,87 +1,83 @@
 function x0_edge_pressure(model,T,z,pure = split_pure_model(model))
-  sat = extended_saturation_pressure.(pure,T)
-  n = sum(z)
-  p_bubble = sum(z[i]*first(sat[i]) for i in 1:length(model))/n
-  p_dew = n/sum(z[i]/first(sat[i]) for i in 1:length(model))
-  return (p_bubble,p_dew),sat
+    sat = extended_saturation_pressure.(pure,T)
+    vl = sum(x[2]*zi for (x,zi) in zip(sat,z))
+    vv = sum(x[3]*zi for (x,zi) in zip(sat,z))
+    p_vl = pressure(model,vl,T,z)
+    p_vv = pressure(model,vv,T,z)
+    n = sum(z)
+    p_bubble = sum(z[i]*first(sat[i]) for i in 1:length(model))/n
+    p_dew = n/sum(z[i]/first(sat[i]) for i in 1:length(model))
+    return (max(p_vl,p_bubble),min(p_dew,p_vv)),sat
 end
 
 """
-    edge_pressure(model,p,z,v0 = nothing)
+    edge_pressure(model,T,z,v0 = nothing)
 
-Calculates the pressure at which two fluid phases have the same gibbs and pressure at the specified temperature.
+Calculates the pressure at which two fluid phases have the same Gibbs energy and pressure at the specified temperature `T`.
 
 Returns a tuple, containing:
 - Edge Pressure `[Pa]`
 - Liquid volume of edge Point `[m³]`
 - Vapour volume at edge Point `[m³]`
 """
-function edge_pressure(model,T,z,v0 = nothing)
-  edge,crit,status = _edge_pressure(model,T,z,v0)
-  return edge
+function edge_pressure(model,T,z,v0 = nothing;crit_retry = true)
+    edge,_,_ = _edge_pressure(model,T,z,v0,crit_retry)
+    return edge
 end
 
-function _edge_pressure(model,T,z,v0 = nothing)
-  if v0 == nothing
-    vv0,_ = x0_edge_pressure(model,T,z)
-  else
-    vv0 = (v0[1],v0[2])
-  end
-  p1 = vv0[1]
-  p2 = vv0[2]
-  pmin,pmax = minmax(p1,p2)
-  v_pmin = volume(model,pmin,T,z,phase = :v)
-  v_pmax = volume(model,pmax,T,z,phase = :l)
-  f(x) = μp_equality1_p(model,exp(x[1]),exp(x[2]),T,z)
-  TT = T*one(Base.promote_eltype(model,v_pmin,v_pmax,T))
-  V0 = svec2(log(v_pmax),log(v_pmin),TT)
+function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
+    if v0 === nothing
+        vv0,_ = x0_edge_pressure(model,T,z)
+    else
+        vv0 = (v0[1],v0[2])
+    end
+    p1 = vv0[1]
+    p2 = vv0[2]
+    pmin,pmax = minmax(p1,p2)
 
-  _0 = zero(V0[1])
-  nan = _0/_0
-  fail = (nan,nan,nan)
+    if pmax/pmin > 10
+        p_near0,_,_ = x0_sat_pure_near0(model,T,z)
+        pmin = 0.9*p_near0
+        pmax = 10*p_near0
+    end
 
-  _is_positive((v_pmin,v_pmax,T)) || return fail,fail,:failure
-
-  sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var())
-  v1 = exp(sol[1])
-  v2 = exp(sol[2])
-  p_eq = pressure(model,v2,T,z)
-  edge = (p_eq,v1,v2)
-  check_valid_sat_pure(model,p_eq,v1,v2,T,z) && return edge,fail,:success
-
-  #fail when calculating edge pressure, this happens near the (mechanical) critical point
-  Tr = T/T_scale(model,z)
-  vlog = log10(v1)
-  crit = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
-  Tc,Pc,Vc = crit
-
-  !isfinite(Tc) && return fail,fail,:failure
-  Tc <= T && return fail,crit,:supercritical
-
-  vlc,vvc = critical_vsat_extrapolation(model,T,Tc,Vc,z)
-  V1 = SVector(promote(log(vlc),log(vvc)))
-  sol1 = Solvers.nlsolve2(f,V1,Solvers.Newton2Var())
-  v3 = exp(sol1[1])
-  v4 = exp(sol1[2])
-  p_eq2 = pressure(model,v2,T,z)
-  edge2 = (v3,v4,p_eq2)
-  check_valid_sat_pure(model,p_eq2,v3,v4,T,z) && return (edge2,crit,:success)
-
-  return fail,fail,:failure
+    v_pmin = volume(model,pmin,T,z,phase = :v)
+    v_pmax = volume(model,pmax,T,z,phase = :l)
+    TT = T*one(Base.promote_eltype(model,v_pmin,v_pmax,T))
+    V01,V02,_0  = promote(v_pmax,v_pmin,zero(TT))
+    nan = _0/_0
+    fail = (nan,nan,nan)
+    _is_positive((v_pmin,v_pmax,T)) || return fail,fail,:failure
+    ps,mus = equilibria_scale(model,z)
+    edge,valid0 = try_2ph_edge_pressure(model,model,T,V01,V02,ps,mus,z,nothing)
+    _,v1,_ = edge
+    valid0 && return edge,fail,:success
+    !crit_retry && return fail,fail,:failure
+    #fail when calculating edge pressure, this happens near the (mechanical) critical point
+    Tr = T/T_scale(model,z)
+    vlog = log10(v1)
+    crit = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
+    Tc,_,_ = crit
+    !isfinite(Tc) && return fail,fail,:failure
+    Tc <= T && return fail,crit,:supercritical
+    vlc,vvc = critical_vsat_extrapolation(model,T,Tc,Vc,z)
+    edge_crit,valid_crit = try_2ph_edge_pressure(model,model,T,vlc,vvc,ps,mus,z,nothing)
+    valid_crit && return edge_crit,crit,:success
+    return fail,fail,:failure
 end
 
 function bubble_pressure_pproperty_method(model,p0,T,z,sat)
-  y0 = z .* first.(sat)
-  y0 ./= sum(y0)
-  p,_,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,z,y0,FugEnum.BUBBLE_PRESSURE,FillArrays.Trues(length(z)),false)
-  return ChemPotBubblePressure((vl0,vv0),p,y,nothing,0.0,1e-8,1e-12,1000,false)
+    y0 = z .* first.(sat)
+    y0 ./= sum(y0)
+    p,_,_,y,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,z,y0,FugEnum.BUBBLE_PRESSURE,FillArrays.Trues(length(z)),false)
+    return ChemPotBubblePressure((vl0,vv0),p,y,nothing,0.0,1e-8,1e-12,1000,false)
 end
 
 function dew_pressure_pproperty_method(model,p0,T,z,sat)
-  x0 = z ./ first.(sat)
-  x0 ./= sum(x0)
-  p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,x0,z,FugEnum.DEW_PRESSURE,FillArrays.Trues(length(z)),false)
-  return ChemPotDewPressure((vl0,vv0),p,x,nothing,0.0,1e-8,1e-12,1000,false)
+    x0 = z ./ first.(sat)
+    x0 ./= sum(x0)
+    p,_,x,_,vl0,vv0 = improve_bubbledew_suggestion(model,p0,T,x0,z,FugEnum.DEW_PRESSURE,FillArrays.Trues(length(z)),false)
+    return ChemPotDewPressure((vl0,vv0),p,x,nothing,0.0,1e-8,1e-12,1000,false)
 end
 
 """
@@ -100,273 +96,424 @@ function Pproperty(model::EoSModel,T,prop,z = SA[1.0],
                   p0 = nothing,
                   verbose = false,
                   threaded = true) where TT
-  p,st = _Pproperty(model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
-  return p
+
+    cached_model = __tpflash_cache_model(model,NaN,T,z,:vle)
+    p,_ = _Pproperty(cached_model,T,prop,z,property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
+    return p
 end
 
 function __Pproperty_check(res,verbose,p_other = zero(res[1])/zero(res[1]))
-  p,st = res
-  if verbose && st == :failure
-    @error "PProperty calculation failed"
-    return p_other,st
-  end
-  return p,st
+    p,st = res
+    if st == :failure
+        verbose && Xproperty_verbose(:error_p)
+        return p_other,st
+    end
+    return p,st
 end
 
-function _Pproperty(model::EoSModel,T,prop,z = SA[1.0],
-          property::TT = enthalpy;
-          rootsolver = Roots.Order0(),
-          phase =:unknown,
-          abstol = 1e-15,
-          reltol = 1e-15,
-          p0 = nothing,
-          verbose = false,
-          threaded = true) where TT
+function _Pproperty(model::EoSModel,T,_prop,z = SA[1.0],
+                    _property::TT = enthalpy;
+                    rootsolver = Roots.Order0(),
+                    phase =:unknown,
+                    abstol = 1e-15,
+                    reltol = 1e-15,
+                    p0 = nothing,
+                    verbose = false,
+                    threaded = true) where TT
 
-  norm_prop,norm_property = normalize_property(model,prop,z,property)
+    prop,property = normalize_property(model,_prop,z,_property)
 
-  if norm_property !== property
-    return _Pproperty(model,T,norm_prop,z,norm_property;rootsolver,phase,abstol,reltol,p0,verbose,threaded)
-  end
-
-  if length(model) == 1 && length(z) == 1
-    res = Pproperty_pure(model,T,prop,z,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
-    return __Pproperty_check(res,verbose)
-  end
-
-  if p0 !== nothing
-    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p0)
-    return __Pproperty_check(res,verbose)
-  end
-
-  if is_liquid(phase)
-    p00 = bubble_pressure(model,T,z)[1]
-    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p00)
-    return __Pproperty_check(res,verbose)
-  end
-
-  if is_vapour(phase)
-    p00 = dew_pressure(model,T,z)[1]
-    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p00)
-    return __Pproperty_check(res,verbose)
-  end
-
-  n = sum(z)
-  v0_edge,pure_sats = x0_edge_pressure(model,T,z)
-  p0_bubble,p0_dew = v0_edge
-  edge,crit,status = _edge_pressure(model,T,z,v0_edge)
-  P_edge,v_l,v_v = edge
-
-  if status == :supercritical
-    #=
-    TODO: what to do in this zone?
-    we are smooth in the p-v curves,
-    but there are still phase separation up until the mixture critical point. =#
-    Tc,Pc,Vc = crit
-    verbose && @info "mechanical critical pressure:        $Pc"
-    verbose && @info "mechanical critical temperature:     $Tc"
-    verbose && @info "mechanical critical molar volume     $Vc"
-    res = __Pproperty(model,T,prop,z,property,rootsolver,:vapour,abstol,reltol,threaded,Pc)
-    res[2] == :failure && return __Pproperty_check(res,verbose)
-
-    #instead of calculating the mixture critical point, we just suppose
-    #that all volumes between the bubble and dew volumes evaluated at T = Tc (or P = Pc)
-    #are equilibrium ones
-    #TODO: we could calculate dvsatdP (or dvsatdT) and estimate a line instead of a vertical threshold
-
-    px = res[1]
-    Vx = volume(model,px,T,z,vol0 = Vc*n)/n
-
-    if Vx <= Vc
-      bubble_method_crit = bubble_pressure_pproperty_method(model,Pc,Tc,z,pure_sats)
-      Psat,Vsat,_,_ = bubble_pressure(model,Tc,z,bubble_method_crit)
-      satpoint = "bubble"
-      verbose && @info "molar volume at bubble point:        $Vsat"
-    else
-      dew_method_crit = dew_pressure_pproperty_method(model,Pc,Tc,z,pure_sats)
-      Psat,_,Vsat,_ = dew_pressure(model,Tc,z,dew_method_crit)
-      satpoint = "dew"
-      verbose && @info "molar volume at dew point:           $Vsat"
+    if length(z) == 1 && !is_idealmodel(model)
+        check_arraysize(model,z)
+        zz = SA[z[1]]
+        pnc1,ptnc1,_ = Pproperty_pure(fluid_model(model),T,prop,zz,property,rootsolver,phase,abstol,reltol,verbose,threaded,p0)
+        return __Pproperty_check((pnc1,ptnc1),verbose)
     end
 
-    verbose && @info "molar volume at pressure(property):  $Vx"
+    if p0 !== nothing
+        res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p0)
+        return __Pproperty_check(res,verbose)
+    end
 
-    βx = (Vx - Vsat)/(Vc - Vsat)
-    0 <= βx <= 1 && verbose && @info "pseudo-critical pressure($property) in phase change region (between critical and $satpoint points)"
-    0 <= βx <= 1 && return px,:eq
-    verbose && @info "pressure(property) in the  critical pseudo-$(string(res[2])) branch, outside the phase change region"
-    return res
-  end
+    sol_options = (abstol,reltol,rootsolver,verbose)
 
-  if status == :failure
-    verbose && @warn "failure to calculate edge point, trying to solve using Clapeyron.T_scale(model,z)"
-    res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p_scale(model,z))
-    res[2] == :failure && return __Pproperty_check(res,verbose)
+    if is_idealmodel(model)
+        res = Pproperty_ideal(model,T,prop,z,property,sol_options)
+        return __Pproperty_check(res,verbose)
+    end
+
+    v0_edge,pure_sats = x0_edge_pressure(model,T,z)
+    
+
+    if !isfinite(v0_edge[1]) || !isfinite(v0_edge[2]) || !isfinite(prop)
+        return __Pproperty_check((NaN*v0_edge[1]*prop,:failure),verbose)
+    end
+
+    #check pure saturation envelopes
+    p_puresat,st_puresat,data_puresat = Pproperty_puresat(model,T,prop,z,property,(v0_edge,pure_sats),sol_options,phase)
+    st_puresat != :failure && return (p_puresat,st_puresat)
+    pmin_sat,pmax_sat,_,_ = data_puresat
+
+    if is_liquid(phase) || is_vapour(phase)
+        p0_with_phase = is_liquid(phase) ? pmax_sat : pmin_sat
+        res_with_phase = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,false,p0_with_phase)
+        return __Pproperty_check(res_with_phase,verbose)
+    end
+
+    #check isogibbs condition ("edge")
+    #p0_bubble,p0_dew = v0_edge
+    edge,crit,status = _edge_pressure(model,T,z,v0_edge)
+    #P_edge,v_l,v_v = edge
+    edge_cache = (v0_edge,pure_sats,edge)
+
+    if status == :supercritical
+        crit_cache = (v0_edge,pure_sats,crit,data_puresat)
+        return Pproperty_supercritical(model,T,prop,z,property,crit_cache,sol_options,phase)
+    end
+
+    if status == :failure
+        verbose && Xproperty_verbose(:edge_fail_p)
+        res = __Pproperty(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,p_scale(model,z))
+        res[2] == :failure && return __Pproperty_check(res,verbose)
+        return __Pproperty_check(res,verbose)
+    end
+
+    p0x,new_phase,prop_edge,success = Pproperty_refine_edge(model,T,prop,z,property,edge_cache,sol_options)
+    success && return p0x,new_phase
+
+    if is_vapour(new_phase)
+        psx,stx,success = Pproperty_maybe_vapour(model,T,prop,z,property,edge_cache,sol_options,prop_edge)
+        success && return psx,stx
+        p0x = psx
+    end
+
+    if is_liquid(new_phase)
+        psx,stx,success = Pproperty_maybe_liquid(model,T,prop,z,property,edge_cache,sol_options,prop_edge)
+        success && return psx,stx
+        p0x = psx
+    end
+
+    verbose && Xproperty_verbose(:out_p, new_phase, property)
+    res = __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,p0x)
     return __Pproperty_check(res,verbose)
-  end
+end
 
-  prop_l = spec_to_vt(model,v_l,T,z,property)
-  prop_v = spec_to_vt(model,v_v,T,z,property)
+#we check if the property lies outside the extended bound defined by the extrema of saturation pressures.
+function Pproperty_puresat(model,T,prop,z,property,cache,sol_options,phase)
+    _,pure_sats = cache
+    abstol,reltol,rootsolver,verbose = sol_options
+    pmin_sat,pmax_sat = extrema(first,pure_sats)
+    prop_puresat_l = property(model,pmax_sat,T,z,phase = :l)
+    prop_puresat_v = property(model,pmin_sat,T,z,phase = :v)
+    βpuresat = (prop - prop_puresat_l)/(prop_puresat_v - prop_puresat_l)
 
-  verbose && @info "property at liquid edge:     $prop_l"
-  verbose && @info "property at vapour edge:     $prop_v"
-  verbose && @info "pressure at edge point:      $P_edge"
+    if !(0 <= βpuresat <= 1)  #TODO: check if this is valid
+        phase_puresat = βpuresat > 1 ? :vapour : :liquid
+        if verbose
+            verbose && Xproperty_verbose(:satmin_p,pmin_sat)
+            verbose && Xproperty_verbose(:satmax_p,pmax_sat)
+            verbose && Xproperty_verbose(:satmin_x,prop_puresat_l)
+            verbose && Xproperty_verbose(:satmax_x,prop_puresat_v)
+            verbose && Xproperty_verbose(:out_puresat_p, phase_puresat, property)
+        end
 
-  β = (prop - prop_l)/(prop_v - prop_l)
+        #specified phase is not equal to estimated phase, bail out.
+        if is_liquid(phase) && is_vapour(phase_puresat)
+            pmin_sat,:failure,(pmin_sat,pmax_sat)
+        end
 
-  #we are inside equilibria.
-  if 0 <= β <= 1
-    verbose && @info "property between the liquid and vapour edges, in the phase change region"
-    return P_edge,:eq
-  end
+        if is_vapour(phase) && is_liquid(phase_puresat)
+            pmin_sat,:failure,(pmin_sat,pmax_sat)
+        end
 
-  new_phase = β > 1 ? :vapour : :liquid
+        p_puresat0 = βpuresat > 1 ? pmin_sat : pmax_sat
+        res_puresat = __Pproperty(model,T,prop,z,property,rootsolver,phase_puresat,abstol,reltol,false,p_puresat0)
+        p_puresat,st_puresat = __Pproperty_check(res_puresat,verbose)
+        return p_puresat,st_puresat,(pmin_sat,pmax_sat,prop_puresat_l,prop_puresat_v)
+    end
+    return pmin_sat,:failure,(pmin_sat,pmax_sat,prop_puresat_l,prop_puresat_v)
+end
 
-  res = __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,P_edge)
-  res[2] == :failure && return __Pproperty_check(res,verbose,P_edge)
+function Pproperty_supercritical(model,T,prop,z,property,cache,sol_options,phase)
+    _,pure_sats,crit = cache
+    abstol,reltol,rootsolver,verbose = sol_options
+    pmin_sat,pmax_sat,prop_puresat_l,prop_puresat_v = data_puresat
+    Tc,Pc,Vc = crit
+    n = sum(z)
 
-  if β > 1 #check vapour branch
+    res = __Pproperty(model,T,prop,z,property,rootsolver,:vapour,abstol,reltol,false,Pc)
+    res[2] == :failure && return __Pproperty_check(res,verbose)
+
+    #=
+    strategy:
+
+    over the mechanical critical point, there is one pseudo-phase
+    that does not mean that equilibria does not exist, but it does mean that we can get a pseudo-pure result.
+    we obtain the pseudo-pure result, and compare the volume against the mechanical critical point volume
+    the comparison gives us a way to bound the region:
+    - if V < Vc, then we are in a liquid regime, we can use the bubble (least stable liquid) and the pure_sat liquid (most stable liquid) as bounds
+    - if V > Vc, then we are in a liquid regime, we can use the dew (least stable vapour) and the pure_sat vapour (most stable vapour) as bounds
+    This is an heuristic, as we don't want to calculate both bubble and dew.
+    =#
+    Px = res[1]
+    Vx = volume(model,Px,T,z,vol0 = Vc)/n
+
+    if verbose
+        Xproperty_verbose(:Tc,Tc)
+        Xproperty_verbose(:Pc,Pc)
+        Xproperty_verbose(:Vc,Vc)
+        Xproperty_verbose(:Vcx_p,Vx,property)
+    end
+
+    is_bubble = Vx <= Vc
+    if is_bubble
+        bubble_method_crit = bubble_pressure_pproperty_method(model,Pc,Tc,z,pure_sats)
+        Psat,Vsat,_,_ = bubble_pressure(model,Tc,z,bubble_method_crit)
+        if has_a_res(model)
+            prop_sat = spec_to_vt(model,Vsat*n,T,z,property)
+        else
+            prop_sat = property(model,Psat,T,z,phase = :liquid,vol0 = n*Vsat)
+        end
+        prop_extreme = prop_puresat_l
+        if verbose
+            Xproperty_verbose(:bubblev,Vsat)
+            Xproperty_verbose(:bubblep,Psat)
+            Xproperty_verbose(:satmax_p,pmax_sat)
+            Xproperty_verbose(:bubblex,prop_sat)
+            Xproperty_verbose(:satmax_x,prop_puresat_l)
+        end
+    else
+        dew_method_crit = dew_pressure_pproperty_method(model,Pc,Tc,z,pure_sats)
+        Psat,_,Vsat,_ = dew_pressure(model,Tc,z,dew_method_crit)
+        if has_a_res(model)
+            prop_sat = spec_to_vt(model,Vsat*n,T,z,property)
+        else
+            prop_sat = property(model,Psat,T,z,phase = :vapour,vol0 = n*Vsat)
+        end
+        prop_extreme = prop_puresat_v
+        if verbose
+            Xproperty_verbose(:dewv,Vsat)
+            Xproperty_verbose(:dewp,Psat)
+            Xproperty_verbose(:satmin_p,pmin_sat)
+            Xproperty_verbose(:dewx,prop_sat)
+            Xproperty_verbose(:satmin_p,prop_puresat_v)
+        end
+    end
+
+    βx = (prop - prop_sat)/(prop_extreme - prop_sat)
+
+    if 0 <= βx <= 1
+        verbose && Xproperty_verbose(:in_crit_p, is_bubble ? :bubble : :dew, property)
+        #TODO: explore interpolation here
+        return Px,:eq
+    end
+
+    verbose && Xproperty_verbose(:out_p, property, is_bubble ? :bubble : :dew)
+
+    return res
+end
+
+function Pproperty_refine_edge(model,T,prop,z,property,cache,sol_options)
+    v0_edge,_,edge = cache
+    verbose = last(sol_options)
+    p0_bubble,p0_dew = v0_edge
+    P_edge,v_l,v_v = edge
+
+    prop_l = spec_to_vt(model,v_l,T,z,property)
+    prop_v = spec_to_vt(model,v_v,T,z,property)
+
+    verbose && Xproperty_verbose(:edge_liq,prop_l)
+    verbose && Xproperty_verbose(:edge_vap,prop_v)
+    verbose && Xproperty_verbose(:edge_p,P_edge)
+
+    β_edge = (prop - prop_l)/(prop_v - prop_l)
+
+    #we are inside equilibria.
+    if 0 <= β_edge <= 1
+        verbose && Xproperty_verbose(:in_edge,property)
+        P_edge_interp = β_edge*p0_dew + (1 - β_edge)*p0_bubble
+        β_P_edge = (P_edge - p0_dew)/(p0_bubble - p0_dew)
+
+        ϕ = 0.3 #P_edge is in the center of the bubble and dew approximations, return P_edge
+        if ϕ <= β_P_edge <= (1 - ϕ)
+            return P_edge_interp,:eq,one(β_edge)*prop,true
+        end
+
+        if β_P_edge < 0.3
+            p0x = p0_bubble
+            verbose && Xproperty_verbose(:may_vap)
+            #we search between the liquid edge and the dew pressure
+            prop_edge,new_phase = property(model,p0_bubble,T,z,phase = :l),:vapour
+        else
+            p0x = p0_dew
+            verbose && Xproperty_verbose(:may_liq)
+            #we search between the vapour edge and the bubble pressure
+            prop_edge,new_phase = property(model,p0_dew,T,z,phase = :v),:liquid
+        end
+    else
+        p0x = P_edge
+        if β_edge > 1
+            prop_edge,new_phase = prop_v,:vapour
+        else
+            prop_edge,new_phase = prop_l,:liquid
+        end
+    end
+
+    return p0x,new_phase,prop_edge,false
+end
+
+function Pproperty_maybe_vapour(model,T,prop,z,property,cache,sol_options,prop_edge)
+    v0_edge,pure_sats,edge = cache
+    verbose = last(sol_options)
+    _,p0_dew = v0_edge
+    P_edge,_,_ = edge
+    n = sum(z)
+
     dew_method = dew_pressure_pproperty_method(model,p0_dew,T,z,pure_sats)
     dew = dew_pressure(model,T,z,dew_method)
     p_dew,_,v_dew,_ = dew
     prob_dew = spec_to_vt(model,v_dew*n,T,z,property)
 
-    verbose && @info "pressure at dew point:       $p_dew"
-    verbose && @info "property at dew point:       $prob_dew"
+    verbose && Xproperty_verbose(:dewp,p_dew)
+    verbose && Xproperty_verbose(:dewx,prob_dew)
 
-    β_dew = (prop - prop_l)/(prob_dew - prop_l)
+    β_dew = (prop - prop_edge)/(prob_dew - prop_edge)
+    p_interp = exp(β_dew*log(p_dew) + (1 - β_dew)*log(P_edge))
 
-    0 < β_dew < 1 && verbose && @info "pseudo-vapour pressure($property) in phase change region (between edge and dew point)."
-    0 < β_dew < 1 && return __Pproperty_check((res[1],:eq),verbose,P_edge)
-    verbose && @info "vapour pressure($property) outside the phase change region"
-    return __Pproperty_check(res,verbose)
-  end
+    if 0 < β_dew < 1
+        verbose && Xproperty_verbose(:in_pseudovap_p, property)
+        p1,st1 = __Pproperty_check((p_interp,:eq),verbose,P_edge)
+        return p1,st1,true
+    else
+        return p_dew,:vapour,false
+    end
+end
 
-  if β < 0  #check liquid branch
+function Pproperty_maybe_liquid(model,T,prop,z,property,cache,sol_options,prop_edge)
+    v0_edge,pure_sats,edge = cache
+    verbose = last(sol_options)
+    p0_bubble,_ = v0_edge
+    P_edge,_,_ = edge
+    n = sum(z)
+
     bubble_method = bubble_pressure_pproperty_method(model,p0_bubble,T,z,pure_sats)
     bubble = bubble_pressure(model,T,z,bubble_method)
     p_bubble,v_bubble,_,_ = bubble
     prob_bubble = spec_to_vt(model,v_bubble*n,T,z,property)
 
-    verbose && @info "pressure at bubble point:    $p_bubble"
-    verbose && @info "property at bubble point:    $prob_bubble"
+    verbose && Xproperty_verbose(:bubblep,p_bubble)
+    verbose && Xproperty_verbose(:bubblex,prob_bubble)
 
-    β_bubble = (prop - prop_l)/(prob_bubble - prop_l)
+    β_bubble = (prop - prop_edge)/(prob_bubble - prop_edge)
+    p_interp = exp(β_bubble*log(p_bubble) + (1 - β_bubble)*log(P_edge))
 
-    0 < β_bubble < 1 && verbose && @info "pseudo-liquid pressure($property) in phase change region (between edge and bubble point)."
-    0 < β_bubble < 1 && return __Pproperty_check((res[1],:eq),verbose,P_edge)
-    verbose && @info "liquid pressure($property) outside the phase change region"
-    return __Pproperty_check(res,verbose)
-  end
-
-  _0 = zero(Base.promote_eltype(model,T,prop,z))
-  return __Pproperty_check((_0/_0,:failure),verbose)
+    if 0 < β_bubble < 1
+        verbose && Xproperty_verbose(:in_pseudoliq_p, property)
+        p1,st1 = __Pproperty_check((p_interp,:eq),verbose,P_edge)
+        return p1,st1,true
+    else
+        return p_bubble,:liquid,false
+    end
 end
 
+Pproperty_pure(model,T,x,z,property::F,phase,p0,verbose) where F = Pproperty_pure(model,T,x,z,property,Roots.Order0(),phase,1e-15,1e-15,verbose,false,p0)
+
 function Pproperty_pure(model,T,x,z,property::F,rootsolver,phase,abstol,reltol,verbose,threaded,p0) where F
-  TT = Base.promote_eltype(model,T,x,z)
-  nan = zero(TT)/zero(TT)
-  ∑z = sum(z)
-  x1 = SA[1.0*one(∑z)]
+    TT = Base.promote_eltype(model,T,x,z)
+    nan = zero(TT)/zero(TT)
+    ∑z = sum(z)
+    x1 = SA[1.0*one(∑z)]
 
-  sat,crit,status = _extended_saturation_pressure(model,T)
-
-  if status == :fail
-    verbose && @error "PProperty calculation failed"
-    return nan,:failure
-  end
-
-  if status == :supercritical
-    verbose && @info "temperature is above critical temperature"
-    Tc,Pc,Vc = crit
-    if P0 !== nothing
-      Pcrit0 = TT(P0)
-    else
-      Pcrit0 = TT(1.001Pc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
+    if !isnothing(p0)
+        p_init,phase_p0 = __Pproperty(model,T,x,z,property,rootsolver,phase,abstol,reltol,false,p0)
+        return p_init,phase_p0,(nan,nan,nan)
     end
-    return __Pproperty(model,T,x,z,property,rootsolver,phase,abstol,reltol,threaded,Pcrit0)
-  end
 
-  ps,vl,vv = TT.(sat)
+    sat,crit,status = _extended_saturation_pressure(model,T)
 
-  xl = ∑z*spec_to_vt(model,vl,T,x1,property)
-  xv = ∑z*spec_to_vt(model,vv,T,x1,property)
-  βv = (x - xl)/(xv - xl)
+    if status == :failure
+        verbose && Xproperty_verbose(:error_p)
+        return nan,status,(nan,nan,nan)
+    end
 
-  if !isfinite(βv)
-    verbose && @error "PProperty calculation failed"
-    return nan,:failure
-  elseif βv < 0 || βv > 1
-    phase0 = βv < 0 ? :liquid : :vapour
-    is_liquid(phase0) && verbose && @info "pressure($property) > saturation pressure"
-    is_vapour(phase0) && verbose && @info "pressure($property) < saturation pressure"
-    return __Pproperty(model,T,x,z,property,rootsolver,phase0,abstol,reltol,threaded,ps)
-  else
-    verbose && @warn "$property value in phase change region. Will return pressure at saturation point"
-    return ps,:eq
-  end
+    if status == :supercritical
+        verbose && Xproperty_verbose(:out_purecrit_p)
+        _,Pc,_ = crit
+        if p0 !== nothing
+            Pcrit0 = TT(p0)
+        else
+            Pcrit0 = TT(1.001Pc) #some eos have problems at exactly the critical point (SingleFluid("R123"))
+        end
+        psc,st_sc = __Pproperty(model,T,x,z,property,rootsolver,:liquid,abstol,reltol,false,Pcrit0)
+        return psc,st_sc,(nan,nan,nan)
+    end
+
+    ps,vl,vv = TT.(sat)
+
+    xl = ∑z*spec_to_vt(model,vl,T,x1,property)
+    xv = ∑z*spec_to_vt(model,vv,T,x1,property)
+    βv = (x - xl)/(xv - xl)
+
+    if verbose
+        Xproperty_verbose(:sat_liq,xl)
+        Xproperty_verbose(:sat_vap,xv)
+        Xproperty_verbose(:sat_p,ps)
+    end
+
+    if !isfinite(βv)
+        verbose && Xproperty_verbose(:error_p)
+        return nan,:failure,(nan,nan,nan)
+    elseif βv < 0 || βv > 1
+        phase0 = βv < 0 ? :liquid : :vapour
+        is_liquid(phase0) && verbose && Xproperty_verbose(:out_puresat_p, :liquid, property)
+        is_vapour(phase0) && verbose && Xproperty_verbose(:out_puresat_p, :vapour, property)
+        p1ph,st1ph = __Pproperty(model,T,x,z,property,rootsolver,phase0,abstol,reltol,threaded,ps)
+        return p1ph,st1ph,(nan,nan,nan)
+    else
+        verbose && Xproperty_verbose(:in_edge,property)
+        return ps,:eq,(βv,vl,vv)
+    end
+end
+
+function Pproperty_ideal(model::IdealModel,T,x,z,property::F,sol_options) where F
+    abstol,reltol,rootsolver,_ = sol_options
+    return __Pproperty(model,T,x,z,property,rootsolver,:vapour,abstol,reltol,false,1e5)
 end
 
 function __Pproperty(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,p0) where F
-  if has_a_res(model)
-    λmodel,λT,λprop,λz,λp0 = primalval(model),primalval(T),primalval(prop),primalval(z),primalval(p0)
-    λp,phase = Pproperty_impl(λmodel,λT,λprop,λz,property,rootsolver,phase,abstol,reltol,threaded,λp0)
-    tup = (model,T,prop,z)
-    λtup = (λmodel,λT,λprop,λz)
-    p = Pproperty_ad(λp,property,phase,tup,λtup)
-  else
-    p,phase = Pproperty_impl(model,T,prop,z,property,rootsolver,phase,abstol,reltol,threaded,primalval(p0))
-  end
-  return p,phase
-end
+    new_phase = is_unknown(phase) ? identify_phase(model,p0,T,z) : phase
 
-__Pproperty(model,T,prop,z,property::F,phase,p0) where F = __Pproperty(model,T,prop,z,property,Roots.Order0(),phase,1e-15,1e-15,true,p0)
-
-function Pproperty_impl(model,T,prop,z,property::F,rootsolver,phase,abstol,reltol,threaded,p0) where F
-  if is_unknown(phase)
-    new_phase = identify_phase(model,p0,T,z)
     if is_unknown(new_phase) #something really bad happened
-      _0 = zero(Base.promote_eltype(model,T,prop,z))
-      nan = _0/_0
-      return nan,:unknown
+        _0 = zero(Base.promote_eltype(model,T,prop,z))
+        nan = _0/_0
+        return nan,:unknown
     end
-    return __Pproperty(model,T,prop,z,property,rootsolver,new_phase,abstol,reltol,threaded,p0)
-  end
-  _1 = oneunit(typeof(prop))
 
-  if property == volume
-    px = pressure(model,prop,T,z)
-    phasex = VT_identify_phase(model,prop,T,z)
-    if is_unknown(phasex)
-      return px,:failure
-    else
-      return px,phasex
+    # special case: if property is volume, we can solve pressure directly without root finding
+    if property == volume
+        px = pressure(model,prop,T,z)
+        phasex = VT_identify_phase(model,prop,T,z)
+        if is_unknown(phasex)
+            return px,:failure
+        else
+            return px,phasex
+        end
     end
-  end
 
-  f(_lnp,_prop) = _1*property(model,exp(_lnp),T,z,phase = phase,threaded = threaded) - _prop
-  prob = Roots.ZeroProblem(f,_1*log(p0))
+    _threaded = length(z) == 1 ? false : threaded
+    _1 = primalval(oneunit(typeof(prop)))
+    function f(lnp,tup)
+        _prop,_model,_T,_z = tup
+        _1*property(_model,exp(lnp),_T,_z,phase = new_phase,threaded = _threaded) - _prop
+    end
 
-  logp = Roots.solve(prob,rootsolver,p = prop,atol = abstol,rtol = reltol)
-  if isnan(logp)
-    return logp,:failure
-  end
-  return exp(logp),phase
+    prob_params = (prop,model,T,z)
+
+    prob = Roots.ZeroProblem(f, _1*log(p0))
+    logp = roots_solve_ad(prob,rootsolver,prob_params,atol = abstol,rtol = reltol)
+    return exp(logp),new_phase
 end
 
-
-function Pproperty_ad(p_primal,property::F,phase,tups,tups_primal) where F
-    f(p,tups) = begin
-      #=
-      we know that p_primal is the solution to
-      property(model,p_primal,t,z,phase = phase,threaded = threaded) - prop = 0
-      =#
-      model,T,prop,z = tups
-      property(model,p,T,z,phase = phase) - prop
-    end
-
-    return __gradients_for_root_finders(p_primal,tups,tups_primal,f)
-end
 #=
 model = PCSAFT(["propane","dodecane"])
 p = 3*101325; T = 300;

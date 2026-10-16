@@ -1,3 +1,58 @@
+struct TPDResult{C,B,V,P<:AbstractVector{Symbol},D}
+    compositions::C
+    tpd::B
+    volumes::V
+    phases::P
+    data::D
+end
+
+struct TPDData{R,Z}
+    p::R
+    T::R
+    z_bulk::Z
+    phase::Symbol
+end
+
+function TPDData(p::R1,T::R2,z::Z,phase::Symbol) where {R1,R2,Z}
+    pp,TT = promote(p,T)
+    return TPDData(pp,TT,z,phase)
+end
+
+function index_expansion(data::TPDData,idx)
+    return TPDData(data.p,data.T,index_expansion(data.z_bulk,idx),data.phase)
+end
+
+function index_expansion(res::TPDResult,idx)
+    new_comps = map(Base.Fix2(index_expansion,idx),res.compositions)
+    return TPDResult(new_comps,res.tpd,res.volumes,res.phases,index_expansion(res.data,idx))
+end
+
+function Base.show(io::IO,mime::MIME"text/plain",obj::TPDResult)
+    comps,tpd,volumes,phases,data = obj.compositions,obj.tpd,obj.volumes,obj.phases,obj.data
+    np = length(comps)
+    compact_io = IOContext(io, :compact => true)
+    print(io,"TPDresult(T = ")
+    print(compact_io,data.T)
+    print(io,", p = ")
+    print(compact_io,data.p)
+    print(io,", bulk phase = :")
+    print(compact_io,data.phase)
+    print(io,") with $np phase")
+    if np != 1
+        print(compact_io,"s")
+    end
+    np > 0 && println(compact_io,":")
+    if np > 0
+        nt = map(comps,tpd,volumes,phases) do xi,tpdi,vi,phasei
+            (x = xi,tpd = tpdi,v = vi,phase = phasei)
+        end
+        Base.print_matrix(compact_io,nt)
+    end
+end
+
+temperature(state::TPDResult) = state.data.T
+pressure(state::TPDResult) = state.data.p
+
 function tpd_cache(model,p,T,z,k0 = z)
     TT = Base.promote_eltype(model,p,T,z,k0)
     x1,x2,x3,x4 = similar(z,TT),similar(z,TT),similar(z,TT),similar(z,TT)
@@ -8,45 +63,45 @@ end
 
 function tpd_obj!(G,H,model,p,T,α,di,phase,cache)
     second_order = !isnothing(H)
-    w,dtpd,_,_,vcache,Hϕ = cache
-    w .= α .* α .* 0.25
-    w ./= sum(w)
+    W,dtpd,_,_,vcache,Hϕ = cache
+    W .= α .* α .* 0.25
     nc = length(di)
     volw0 = vcache[]
     if !second_order
-        lnϕw, volw = modified_lnϕ(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
+        lnϕw, volw = modified_lnϕ(model, p, T, W, Hϕ; phase=phase, vol0=volw0)
     else
-        lnϕw, ∂lnϕ∂nw, volw = modified_∂lnϕ∂n(model, p, T, w, Hϕ; phase=phase, vol0=volw0)
+        lnϕw, ∂lnϕ∂nw, volw = modified_∂lnϕ∂n(model, p, T, W, Hϕ; phase=phase, vol0=volw0)
         #=
         from thermopack:
         We see that ln Wi + lnφ(W) − di will be zero at the solution of the tangent plane minimisation.
         It can therefore be removed from the second derivative, without affecting the convergence properties.
         =#
         for i in 1:nc
-            xi = sqrt(w[i])
+            sqrt_Wi = 0.5*α[i]
             for j in 1:nc
-                xj = sqrt(w[j])
+                sqrt_Wj = 0.5*α[j]
                 δij = Int(i == j)
-                H[i,j] = δij + xi*xj*∂lnϕ∂nw[i,j]# + 0.5*αi*dtpd[i]
+                H[i,j] = δij + sqrt_Wi*sqrt_Wj*∂lnϕ∂nw[i,j]# + 0.5*αi*dtpd[i]
             end
         end
     end
     vcache[] = volw
-    dtpd .= log.(w) .+ lnϕw .- di
+    dtpd .= log.(W) .+ lnϕw .- di
     if !isnothing(G)
-        G .= dtpd .*  sqrt.(w)
+        G .= dtpd .*  α .* 0.5
     end
-    fx = dot(w,dtpd) - sum(w) + 1
+    dtpd .= lnϕw #for later
+    fx = 1.0 + @sum(W[i]*(log(W[i]) + lnϕw[i] - di[i] - 1.0))
     return fx
 end
 
 function tpd_obj(model, p, T, di, phase, cache = tpd_cache(model,p,T,di), break_first = false)
     function f(α)
-        fx = tpd_obj!(nothing,nothing,model,p,T,α,di,phase,cache)
+        return tpd_obj!(nothing,nothing,model,p,T,α,di,phase,cache)
     end
 
     function g(∇f, α)
-        fx = tpd_obj!(∇f,nothing,model,p,T,α,di,phase,cache)
+        tpd_obj!(∇f,nothing,model,p,T,α,di,phase,cache)
         return ∇f
     end
 
@@ -55,7 +110,7 @@ function tpd_obj(model, p, T, di, phase, cache = tpd_cache(model,p,T,di), break_
         return fx,∇f
     end
     function h(∇²f, α)
-        fx = tpd_obj!(nothing,∇²f,model,p,T,α,di,phase,cache)
+        tpd_obj!(nothing,∇²f,model,p,T,α,di,phase,cache)
         return ∇²f
     end
     function fgh(∇f, ∇²f, α)
@@ -65,6 +120,7 @@ function tpd_obj(model, p, T, di, phase, cache = tpd_cache(model,p,T,di), break_
 
     obj = NLSolvers.ScalarObjective(f=f,g=g,fg=fg,fgh=fgh,h=h)
     optprob = OptimizationProblem(obj = obj, inplace = true)
+    return optprob
 end
 
 function _tpd_sum!(cache,model,p,T,w,di,v)
@@ -115,9 +171,9 @@ function tpd_solver(model,p,T,z,w0,
     tol_equil = 1e-10,
     it_ss = 30,lle = false)
 
-    w,_,_,dzz,vcache,Hϕ = cache
+    w,_,_,dzz,vcache,_ = cache
 
-    if dz == nothing
+    if dz === nothing
         dz_temp,_,_ = tpd_input_composition(model,p,T,z,lle,cache)
         dzz .= dz_temp
     else
@@ -133,26 +189,23 @@ function tpd_solver(model,p,T,z,w0,
     #do initial sucessive substitutions
     maxiter = it_ss
     w,tpd,vw,status = tpd_ss!(model,p,T,z,w0,cache;tol_trivial,tol_equil,maxiter,phase)
-    stable,trivial = status
-    if trivial
-        w .= NaN
-        tpd = NaN*tpd
-    end
+    stable,trivial,converged = status
 
-    keep_going = !trivial && stable
+    #early return, failed iteration
+    !isfinite(tpd) && return w,tpd,vw
 
-    if !stable
-        tpd < 0 && break_first && return w,tpd,vw
-    end
+    #early return, SS converged
+    converged && (return w,tpd,vw)
 
+    #early return, did not converge, but reached tpd < 0
+    !converged && break_first && tpd < 0 && !trivial && (return w,tpd,vw)
 
-    vcache[] = vw
-
-    if keep_going
+    #did not converge, but the phase is not trivial nor stable
+    if !converged && !stable && !trivial && !(model isa ESElectrolyteModel)
+        vcache[] = vw
         w,tpd,vw = tpd_optimization(model,p,T,z,w,dzz,cache,phasew)
     end
-    #success,tpd_v_proposed = assert_correct_volume(fxy,model,p,T,wv,vv,:vapour,di)
-    #!success && (tpd_v = tpd_v_proposed)
+
     return w,tpd,vw
 end
 
@@ -161,19 +214,20 @@ function tpd_ss!(model,p,T,z,w0,cache = tpd_cache(model,p,T,z,K0);phase = :liqui
 end
 
 function tpd_optimization(model,p,T,z,w0,di,cache = tpd_cache(model,p,T,z,K0),phasew = :liquid)
-    w,_,_,dzz,vcache,Hϕ = cache
+    w,lnϕw_cache,_,dzz,vcache,_ = cache
     α0 = 2 .* sqrt.(w0)
     prob = tpd_obj(model, p, T, dzz, phasew, cache)
     lb,ub = similar(α0),similar(α0)
     lb .= 0
     ub .= Inf
     opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-10,maxiter = 100)
-    res = Solvers.optimize(prob, α0, LineSearch(Solvers.Newton2(α0),Solvers.BoundedLineSearch(lb,ub)), opt_options)
+    res = Solvers.optimize(prob, α0, LineSearch(Newton2(α0),Solvers.BoundedLineSearch(lb,ub)), opt_options)
     α = Solvers.x_sol(res)
     w .= α .* α .* 0.25
+    S = sum(w)
     w ./= sum(w)
-    tpd = Solvers.x_minimum(res)
-    vw = vcache[]
+    _,tpd,_ = __tpd_ss_update!(w,model,di,z,lnϕw_cache,phasew)
+    vw = vcache[]/S
     return w,tpd,vw
 end
 
@@ -184,20 +238,20 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
     #is this a trivial solution?
     trivial = false
     stable = true
+    converged = false
     iter = 0
     done = false
     liquid_overpressure = false
-    w,_,fz,di,vcache,Hϕ = cache
+    w,_,fz,di,_,Hϕ = cache
     fz .= exp.(di) .* p
     w .= w0
     w ./= sum(w0)
     tpd,S,S_norm,v = TT(Inf),TT(Inf),TT(Inf),TT(NaN)
+    K_norm = TT(NaN)
     while !done
         iter += 1
         lnϕw,v,liquid_overpressure = tpd_lnϕ_and_v!(Hϕ,model,p,T,w,v,liquid_overpressure,phase)
         S_old = S
-        K_norm,tm,dtm = one(TT),zero(TT),zero(TT)
-
         #simple loop, overloaded for electrolyte models
         #=
         S = 0.0
@@ -207,17 +261,9 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
             S += wi
         end
         =#
-        S = __tpd_ss_update_w_and_S!(w,model,di,lnϕw)
+        S,tpd,K_norm = __tpd_ss_update!(w,model,di,z,lnϕw,phase)
 
         S_norm = abs(S_old - S)
-        w ./=  S
-        tpd = one(TT)
-        for i in eachindex(w)
-            wi,lnϕwi = w[i],lnϕw[i]
-            K_norm += log(wi/z[i])^2
-            tpd += wi*(log(wi) + lnϕwi - di[i] - 1)
-        end
-        #@show w,S_norm,q
         # Two convergence criteria:
         # - Approaching trivial solution (K-values are all 1)
         # - Equilibrium for a small amount of the "other" phase,
@@ -229,23 +275,40 @@ function _tpd_ss!(model,p,T,z,w0,phase,cache,tol_equil,tol_trivial,maxiter)
         ok = trivial || converged
         done = ok || iter == maxiter
         done = done && iter > 1
-        if done && !ok
-            trivial = true #we need to keep iterating
+
+        if !isfinite(K_norm)
+            done = true
+            trivial = true
         end
     end
     #@show S,iter,S_norm
-    stable = trivial || S <= 1 + tol_trivial
-    return (w,tpd,v,(stable,trivial))
+    if isfinite(S)
+        stable = trivial || S <= 1 + tol_trivial
+    else
+        stable = true
+    end
+    return (w,tpd,v,(stable,trivial,converged))
 end
 
-function __tpd_ss_update_w_and_S!(w,model,d,lnϕw)
+function __tpd_ss_update!(w,model,d,z,lnϕw,phasew)
     S = zero(eltype(w))
+    tpd = zero(S)
     for i in eachindex(w)
-        wi = exp(d[i]-lnϕw[i])
-        w[i] = wi
-        S += wi
+        Wi = exp(d[i]-lnϕw[i])
+        w[i] = Wi
+        S += Wi
     end
-    return S
+    w ./= S
+    zz = sum(z)
+    K_norm = zero(S)
+    for i in eachindex(w)
+        wi = w[i]
+        if wi > 0
+            K_norm += log(zz*wi/z[i])^2
+            tpd += wi*(log(wi) + lnϕw[i] - d[i])
+        end
+    end
+    return S,tpd,K_norm
 end
 
 """
@@ -263,28 +326,47 @@ It iterates over each two-phase combination, starting from pure trial compositio
 If the vectors are empty, then the procedure couldn't find a negative `tpd`. That is an indication that the phase is (almost) surely stable.
 
 """
-function tpd(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing, verbose = false)
+function tpd(model,p,T,n,cache = nothing;reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing, verbose = false)
+    result = tpd2(model,p,T,n,cache;reduced,break_first,lle,tol_trivial,strategy,di,verbose)
+    values,comps,phase_w = result.tpd,result.compositions,result.phases
+    phase_z = fill(result.data.phase,length(values))
+    return comps, values, phase_z, phase_w
+end
+
+function tpd2(model,_p,_T,_n,cache = nothing;reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing, verbose = false)
+    T,n = ustrip(_T,temperature),uzstrip(model,_n)
+    p = ustrip(_p,pressure)
     z = n ./ sum(n)
     check_arraysize(model,z)
+    if cache !== nothing
+        x1 = first(cache)
+        n_cache = length(x1)
+    else
+        n_cache = 0
+    end
 
-    if !reduced
+    if !reduced && (n_cache != length(model))
         model_reduced,idx_reduced = index_reduction(model,n)
     else
         model_reduced,idx_reduced = model,fill(true,length(model))
     end
 
+    if n_cache > 0 && n_cache != length(model_reduced)
+        check_arraysize(model_reduced,n_cache)
+    end
+
     zr = z[idx_reduced]
     eq = lle ? :lle : :vle
+    _cache = cache === nothing ? tpd_cache(model_reduced,p,T,zr) : cache
     model_reduced_cached = __tpflash_cache_model(model_reduced,p,T,z,eq)
+    result = _tpd(model_reduced_cached,p,T,zr,_cache,break_first,lle,tol_trivial,strategy,di,verbose)
 
-    result = _tpd(model_reduced_cached,p,T,zr,cache,break_first,lle,tol_trivial,strategy,di,verbose)
-    values,comps,phase_z,phase_w = result
-    idx_by_tpd = sortperm(values)
-    for i in idx_by_tpd
-        comps[i] = index_expansion(comps[i],idx_reduced)
+    if reduced && !isempty(result.tpd)
+        expanded_result = index_expansion(result,idx_reduced)
+        return expanded_result
     end
-    return comps,values[idx_by_tpd], phase_z[idx_by_tpd], phase_w[idx_by_tpd]
-    #do index expansion and sorting here
+
+    return result
 end
 
 function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing,verbose = false)
@@ -292,7 +374,7 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
 
     cond = (model,p,T,z)
 
-    if di != nothing
+    if di !== nothing
         WW = Base.promote_eltype(model,p,T,z,di)
         dz = similar(di,WW)
         dz .= di
@@ -307,12 +389,12 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     K .= 0
     w_test = similar(K)
     isliquidz = is_liquid(phasez)
-    vle = !lle
     values = zeros(TT,0)
+    volumes = zeros(TT,0)
     comps = fill(dz,0)
-    phase_z = Symbol[]
+    tpd_data = TPDData(p,T,z ./ sum(z),phasez)
     phase_w = Symbol[]
-    result = values,comps,phase_z,phase_w
+    result = TPDResult(comps,values,volumes,phase_w,tpd_data)
     isnan(v) && return result
 
     #we asked for lle, but the input phase itself is a vapour.
@@ -327,24 +409,31 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
 
     #create a list of what test composition strategies we use
     tpd_strategies = tpd_plan(model,z,isliquidz,lle,id_test,K_test,pure_test)
-
+    verbose && @info "bulk composition d(z) vector: $dz"
     for strategy in tpd_strategies
         w,phasew,skip = tpd_test_composition!(strategy,cond,w_test,K,dz,verbose)
         skip && continue
         lle_yet && is_vapour(phasew) && continue
         proposed = tpd_solver(model,p,T,z,w,dz,cache;break_first,tol_trivial,phasew)
-        added = add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial)
+        added,status_code = add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial)
         verbose && @info """
         $(tpd_print_strategy(strategy))
               Test composition:    $w_test
               Final composition:   $(proposed[1])
               Final tpd:           $(proposed[2])
-              Added to solution:   $added
+              status code:         $(status_code)
         """
         added && break_first && return result
         is_vapour(phasew) && (lle_yet = lle_yet | any(is_vapour,phase_w))
     end
 
+    if length(result.tpd) > 1 && !issorted(result.tpd)
+        sort_idx = sortperm(result.tpd)
+        result.compositions .= result.compositions[sort_idx]
+        result.tpd .= result.tpd[sort_idx]
+        result.volumes .= result.volumes[sort_idx]
+        result.phases .= result.phases[sort_idx]
+    end
     return result
 end
 
@@ -366,7 +455,6 @@ function tpd_plan(model,z,is_liquidz,lle,id_test,K_test,pure_test)
             push!(plan,(:K,:liquid,(-1,0,0)))
         end
     end
-
     if pure_test
         ids = sortperm(z)
         if is_liquidz
@@ -382,6 +470,7 @@ function tpd_plan(model,z,is_liquidz,lle,id_test,K_test,pure_test)
             end
         end
     end
+
     return plan
 end
 
@@ -389,7 +478,7 @@ tpd_test_composition!(strategy,conds,w_test) = tpd_test_composition!(strategy,co
 
 function tpd_test_composition!(strategy,conds,w_test,K,dz,verbose)
     plan,phase,ixx = strategy
-    ix,ix2,ix3 = ixx
+    ix,_,_ = ixx
     model,p,T,z = conds
     skip = false
     skip_k = all(==(-1),K)
@@ -404,8 +493,8 @@ function tpd_test_composition!(strategy,conds,w_test,K,dz,verbose)
         w_test ./= sum(w_test)
     elseif plan == :pure
         z_pure!(w_test,ix)
-    elseif plan == :electrolyte_balanced
-        z_electrolyte_balanced!(model,w_test,z,ixx)
+    elseif plan == :pereira
+        z_pereira!(w_test,z,ixx)
     elseif is_k_plan && !skip_k
         if all(iszero,K)
             K .= tp_flash_K0(model,p,T,z)
@@ -441,7 +530,7 @@ end
 
 function tpd_print_strategy(strategy)
     plan,phase,ixx = strategy
-    ix,ix2,ix3 = ixx
+    ix,_,_ = ixx
     if plan == :ideal_gas
         res = "Strategy: ideal gas, test phase: $phase"
     elseif plan == :K
@@ -455,15 +544,15 @@ function tpd_print_strategy(strategy)
 
     elseif plan == :pure
         res = "Strategy: pure initial point, test phase: $phase"
-    elseif plan == :electrolyte_balanced
-        res = "Strategy: electrolyte-constrainted composition"
+    elseif plan == :pereira
+        res = "Strategy: Pereira composition generator"
     else
         res = ""
     end
+    return res
 end
 
 function tpd_input_composition(model,p,T,z,lle,cache = tpd_cache(model,p,T,z,di))
-    TT = Base.promote_eltype(model,p,T,z)
     vl = volume(model,p,T,z,phase = :liquid)
     vv = volume(model,p,T,z,phase = :vapour)
 
@@ -504,25 +593,44 @@ function z_pure!(K,i)
     K
 end
 
-function z_electrolyte_balanced!(model,w_test,z,ixx)
-    isolv,ielec,ic = ixx
+#=
+generator for candidate fractions, given an initial composition, method by Pereira et al. (2010).
+it generates 2*(nc - 1) candidate compositions for a given initial point.
+there are nc-1 upper candidates (where the ith component is amplified) 
+and nc-1 lower candidates (where the ith component is diminished)
+=#
+function z_pereira!(w,z,t::NTuple{3,Int})
+    i,k,_ = t
+    amplify_ith_component = k > 0
+    return z_pereira!(w,z,i,amplify_ith_component)
+end
 
-    Z = model.charge
-    Zx = Z[ic]
-    w_test .= 0
-    for i in 1:length(model)
-        isolv == i && (w_test[i] = z[i])
-        ielec == i && (w_test[i] = z[i])
-    end
-    Zw = dot(Z,w_test)
-    w_test[ic] = - Zw/Zx
-    w_test ./= sum(w_test)
+function z_pereira!(w,z,i,amplify_ith_component)
+	n = length(z)
+    @assert n != i
+	lb = eps(eltype(w))*1e2
+	ub = 1.0 - lb
+    zi = z[i]
+    #zi = (z[i] + 1*amplify_ith_component)/2
+    zj = (2 - zi - 1*amplify_ith_component)/(2*n - 2)
+    zii = (zi + 1*amplify_ith_component)/2
+    w .= zj
+    w[i] = zii
+    w[end] = 1 - zii - (n - 2)*zj
+    w .= clamp.(w,lb,ub)
+    sumw = sum(w)
+    w ./= sumw
+    return w
 end
 
 function z_norm(z,w)
+    nz = sum(z)
+    nw = sum(w)
     z_norm = zero(Base.promote_eltype(z,w))
-    for i in 1:length(z)
-        z_norm += log(w[i]/z[i])^2
+    for i in eachindex(z)
+        if !iszero(w[i]) && !iszero(z[i]) 
+            z_norm += log(w[i]*nz/(z[i]*nw))^2
+        end
     end
     return z_norm
 end
@@ -536,25 +644,30 @@ end
 
 function add_to_tpd!(result,cond,proposed,phasez,phasew,tol_trivial = 1e-5)
     w,tpd,v = proposed
-    values,comps,phase_z,phase_w = result
-    model,T,p,z = cond
-    isnan(tpd) && return false
-    any(isnan,w) && return false
-    tpd >= 0 && return false
-    maximum(w) < 0 && return false
-    z_norm(z,w) < tol_trivial && return false
+    comps,values,volumes,phase_w = result.compositions,result.tpd,result.volumes,result.phases
+    model,p,T,z = cond
+    isnan(tpd) && return false,:nan_tpd
+    any(isnan,w) && return false,:nan_w
+    tpd >= 0 && return false,:positive_tpd
+    maximum(w) < 0 && return false,:negative_w
+    z_norm(z,w) < tol_trivial && return false,:trivial_w
     min_tpd = minimum(values,init = Inf*one(eltype(values))) |> abs
-    for i in 1:length(comps)
+    for i in eachindex(comps)
         dz = z_norm(comps[i],w)
-        dzc = cosine_norm(comps[i],w)
-        dz < tol_trivial && return false
-        abs(tpd - values[i]) < min_tpd*tol_trivial && return false
+        dz < tol_trivial && return false,:similar_to_existing_tpd
+        abs(tpd - values[i]) < min_tpd*tol_trivial && return false,:similar_to_existing_tpd
     end
+    #suggested volume seems to be vapour, but a liquid phase was required.
+    if v > 0.5*volume(BasicIdeal(),p,T,w) && is_liquid(phasew) && has_a_res(model)
+        phase_calc = VT_identify_phase(model,v,T,w)
+        !is_liquid(phase_calc) && return false,:wrong_phase
+    end
+
     push!(values,tpd)
     push!(comps,deepcopy(w))
     push!(phase_w,phasew)
-    push!(phase_z,phasez)
-    return true
+    push!(volumes,volume(model,p,T,w,phase = phasew))
+    return true,:success
 
 end #with those checks, we can be sure that the new tpd is a different composition.
 
@@ -576,27 +689,24 @@ function __z_test(z)
     z_test = z_test ./ sum(z_test;dims=2)
 end
 
-function suggest_K(model,p,T,z,pure = split_pure_model(model),cache = nothing)
-    lnϕz,v = lnϕ(model,p,T,z,cache,threaded = false)
-    K = similar(lnϕz)
-    di = similar(lnϕz)
+function suggest_K!(K,model,p,T,z,cache = nothing,pure = split_pure_model(model))
+    lnϕz,_ = modified_lnϕ(model,p,T,z,cache)
     log∑z = log(sum(z))
-    di .= lnϕz .+ log.(z) .- log∑z
-    for i in 1:length(z)
-        vl = volume(pure[i],p,T,phase = :liquid)
-        vv = volume(pure[i],p,T,phase = :vapour)
-        lnϕv = VT_lnϕ_pure(pure[i],vv,T,p)
-        lnϕl = VT_lnϕ_pure(pure[i],vl,T,p)
-        tpd_v = lnϕv - di[i]
-        tpd_l = lnϕl - di[i]
+    z1 = SA[1.0]
+    for i in eachindex(z)
+        di = lnϕz[i] + log(z[i]) - log∑z
+        lnϕv,vv = ∑zlogϕ(pure[i],p,T,z1,phase = :vapour)
+        lnϕl,vl = ∑zlogϕ(pure[i],p,T,z1,phase = :liquid)
+        tpd_v = lnϕv - di
+        tpd_l = lnϕl - di
         if vl ≈ vv
-            if is_liquid(VT_identify_phase(pure[i],vv,T,SA[1.0])) || isnan(vv)
+            if is_liquid(VT_identify_phase(pure[i],vv,T,z1)) || isnan(vv)
                 ps,_,_ = saturation_pressure(pure[i],T,crit_retry = false)
                 if isnan(ps)
                     tpd_l = Inf*abs(tpd_l)
                 end
                 tpd_v = Inf*abs(tpd_v)
-            elseif is_vapour(VT_identify_phase(pure[i],vl,T,SA[1.0])) || isnan(vl)
+            elseif is_vapour(VT_identify_phase(pure[i],vl,T,z1)) || isnan(vl)
                 tpd_l = Inf*abs(tpd_l)
             end
         end
@@ -619,24 +729,29 @@ function suggest_K(model,p,T,z,pure = split_pure_model(model),cache = nothing)
     return K
 end
 
-function K0_lle_init(model::EoSModel, p, T, z)
-    comps,tpds,_,_ = tpd(model,p,T,z,lle = true, strategy = :pure, break_first = true)
+function K0_lle_init(model::EoSModel, p, T, z, cache = tpd_cache(model,p,T,z); reduced = true)
+    tpd_result = tpd2(model,p,T,z,cache,lle = true, strategy = :pure, break_first = true, reduced = reduced)
+    comps = tpd_result.compositions
+
     if length(comps) == 1
-        w = comps[1]
+        w = comps[1]    
         β = one(eltype(w))
-        for i in 1:length(z)
-            β = min(β,z[i]/w[i])
-        end
-        β = 0.5*β
+        for i in eachindex(z)
+            if !iszero(z[i])
+                β = min(β,z[i]/w[i])
+            end
+        end   
+        β = 0.5β
         w2 = (z .- β .*w)/(1 .- β)
         w2 ./= sum(w2)
+        w .+= eps()
+        w2 .+= eps()
         K = w ./ w2
     else
         K = ones(eltype(eltype(comps)),length(z))
     end
     return K
 end
-
 
 """
 
@@ -651,8 +766,7 @@ function double_tangency_points(model,p,T,z)
         end
     end
     binaries =  split_model(model,idx)
-    V = p
-    F = @f(Base.promote_eltype)
+    F = Base.promote_eltype(model,p,T,z)
     comps = Vector{F}[]
     ijpairs = Tuple{Int,Int}[]
     cache = tpd_cache(binaries[1],p,T,[0.5,0.5])
@@ -668,7 +782,7 @@ function double_tangency_points(model,p,T,z)
         zij ./= sum(zij)
 
         compsij,_,phasezij,phasewij = tpd(modelij,p,T,zij,cache,strategy = :pure,break_first = true)
-        if length(compsij) != 0
+        if !isempty(compsij)
             append!(comps,compsij)
             for i in 1:length(compsij)
                 push!(phasez,phasezij[1])

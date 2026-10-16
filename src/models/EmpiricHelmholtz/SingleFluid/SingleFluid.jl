@@ -208,7 +208,6 @@ function x0_sat_pure(model::SingleFluid,T)
         vvtp = volume(gas_ancillary,0.0,Ttp,z)
         vltp = volume(liquid_ancillary,0.0,Ttp,z)
         ptp = pressure(model,vvtp,Ttp)
-        R = Rgas(model)
         dpdT = dpdT_saturation(model,vvtp,vltp,Ttp)
         dTinvdlnp = -ptp/(dpdT*T*T)
         ΔTinv = 1/T - 1/Ttp
@@ -225,26 +224,39 @@ function x0_volume_liquid_lowT(model::SingleFluid,p,T,z)
     vl_lbv = 1.01*lb_v
     ancillary = model.ancillaries
     Tc = model.properties.Tc
-    Ttp = model.properties.Ttp
+
+    if !isfinite(model.properties.Ttp) #we have triple point information:
+        Ttp = model.properties.Ttp
+    else #we suppose triple point = 0.4 Tc
+        Ttp = 0.4*model.properties.Tc
+    end
+
+    isnan(T+p) && return zero(_1)/zero(_1)
+    T > Tc && return vl_lbv
+
+    Tx = max(T,Ttp*one(T))
+
+    vᵢ = volume(ancillary,p,Tx,z,phase = :l)
+    isnan(vᵢ) && return vl_lbv
 
     if Ttp < T < Tc
-        vᵢ = volume(ancillary,p,T,z,phase = :l)
         for i in 1:15
             pressure(model,vᵢ,T,z) > p && break
             vᵢ = 0.9*vᵢ + 0.1*vl_lbv
         end
         return vᵢ
-    elseif Ttp < T
-        vᵢ = volume(ancillary,p,Ttp,z,phase = :l)
-        pvi = pressure(model,vᵢ,T)
+    end
+
+    if T < Ttp
+        pvi = pressure(model,vᵢ,T,z)
         pp = max(_1*p,pvi)
         Tᵢ = _1*Ttp
         #chill from p,Ttp to p,T
         return volume_chill(model,pp,T,z,vᵢ,Tᵢ)
-    else #T > Tc and p < pc, this is gas-like supercritical fluid
-        #this is always a gas volume, so starting from the lowest volume does not hurt
-        return vl_lbv
     end
+
+    #this should be unreachable
+    return vl_lbv
 end
 
 function x0_volume_liquid(model::SingleFluid,p,T,z)
@@ -269,7 +281,7 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
         pc = model.properties.Pc
         Zc = pc*vc/(Rgas(model)*Tc)
         ΔVrm1 = _1*(abs(1 - p/pc))^Zc
-        v_crit_aprox = vc/(ΔVrm1 + 1)
+        v_crit_aprox = sum(z)*vc/(ΔVrm1 + 1)
         vhi =  max(vl_lbv,v_crit_aprox)
         phi = pressure(model,vhi,T,z)
         #we suppose that V < Vc (liquid state), then the volume solver converges really well with this initial guess
@@ -311,6 +323,22 @@ function x0_saturation_temperature(model::SingleFluid,p)
     T = saturation_temperature(model.ancillaries.fluid.saturation,p,SaturationCorrelation())[1]
     vl,vv = x0_sat_pure(model,T)
     return (T,vl,vv)
+end
+
+x0_crit_pure(model::SingleFluid,z) = (1.0, -log10(model.properties.rhoc))
+
+function x0_volume_region(model::SingleFluid,p,T,z)
+    Pc = model.properties.Pc
+    Tc = model.properties.Tc
+    if T >= Tc
+        if p > Pc
+            return :liquid
+        else
+            return :vapour
+        end
+    else
+        return :unknown
+    end
 end
 
 function crit_pure(model::SingleFluid)

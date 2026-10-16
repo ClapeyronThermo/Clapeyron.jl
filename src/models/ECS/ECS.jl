@@ -39,7 +39,7 @@ f,h = shape_factors(model::ECS,shape_ref::EoSModel,V,T,z)
 
 ## References
 
-.1 Mollerup, J. (1998). Unification of the two-parameter equation of state and the principle of corresponding states. Fluid Phase Equilibria, 148(1–2), 1–19. [doi:10.1016/s0378-3812(98)00230-1](https://doi.org/10.1016/s0378-3812(98)00230-1)
+1. Mollerup, J. (1998). Unification of the two-parameter equation of state and the principle of corresponding states. Fluid Phase Equilibria, 148(1–2), 1–19. [doi:10.1016/s0378-3812(98)00230-1](https://doi.org/10.1016/s0378-3812(98)00230-1)
 """
 ECS
 
@@ -193,7 +193,7 @@ end
 function x0_sat_pure(model::ECS,T,crit = nothing)
     f,h = shape_factors(model,zero(T),T)
     T0 = T/f
-    if crit == nothing
+    if crit === nothing
         v0l,v0v = x0_sat_pure(model.model_ref,T0)
     else
         Tc,Vc,Pc = crit

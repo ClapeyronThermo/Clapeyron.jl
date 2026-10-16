@@ -9,23 +9,13 @@ and must implement their core interface methods.
 
 By default, `EoSModel` subtypes are considered to be helmholtz-based EoS, and as such, they must implement their core interface methods:
 
-- [`a_res`](@ref): An implementation of the reduced residual Helmholtz energy
-- [`lb_volume`](@ref): Lower bound volume for the equation of state
+- [`a_res`](@ref): An implementation of the reduced residual Helmholtz energy.
+- [`lb_volume`](@ref): Lower bound volume for the equation of state.
 - [`T_scale`](@ref): A temperature scaling factor.
 
 Other `EoSModel` subtypes may have other interfaces (like activity models or volume-based models).
 """
 abstract type EoSModel end
-
-function eos_impl(model::EoSModel,V,T,z)
-    return Rgas(model)*sum(z)*T*a_eos(model,V,T,z) + reference_state_eval(model,V,T,z)
-end
-
-function a_eos(model::EoSModel, V, T, z=SA[1.0])
-    maybe_ideal = idealmodel(model)
-    ideal = maybe_ideal !== nothing ? maybe_ideal : model
-    return a_ideal(ideal,V,T,z) + a_res(model,V,T,z)
-end
 
 """
     Rgas(model)
@@ -33,11 +23,12 @@ end
 
 Returns the gas constant used by an `EoSModel`.
 
-By default, uses the current 2019 definition: `R̄` = 8.31446261815324 [J⋅K⁻¹⋅mol⁻¹]. you can call `Rgas()` to obtain this value.
+By default, uses the current 2019 definition: `R̄` = 8.31446261815324 [J⋅K⁻¹⋅mol⁻¹]. You can call `Rgas()` to obtain this value.
 
 """
-Rgas(model) = R̄
-Rgas() = R̄
+@inline Rgas(model) = Constants.R̄(eltype(model))
+Rgas() = Constants.R̄(Float64)
+
 
 """
     eos(model::EoSModel, V, T, z=SA[1.0])
@@ -61,21 +52,38 @@ end
 
 eos(model::EoSModel, V, T, z::Number) = eos(model, V, T, SA[z])
 
+function eos_impl(model::EoSModel,V,T,z)
+    return Rgas(model)*sum(z)*T*a_eos(model,V,T,z) + reference_state_eval(model,V,T,z)
+end
+
+function a_eos(model::EoSModel, V, T, z=SA[1.0])
+    maybe_ideal = idealmodel(model)
+    ideal = maybe_ideal !== nothing ? maybe_ideal : model
+    return a_ideal(ideal,V,T,z) + a_res(model,V,T,z)
+end
 """
     idealmodel(model::EoSModel)
 
-Retrieves the ideal model from the input's model. If the model is already an idealmodel, return `nothing`
+Retrieves the ideal model from the input's model. If the model is already an idealmodel, return the same model. If the model has no ideal model stored, return nothing.
 # Examples:
 ```julia-repl
 julia> pr = PR(["water"],idealmodel = MonomerIdeal)
 PR{MonomerIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
  "water"
 Contains parameters: a, b, Tc, Pc, Mw
-julia> ideal = idealmodel(pr)
+
+julia> ideal = Clapeyron.idealmodel(pr)
 MonomerIdeal with 1 component:
  "water"
-Contains parameters: Mw
-julia> idealmodel(ideal) == nothing
+Contains parameters: Mw, reference_state
+
+julia> ideal == Clapeyron.idealmodel(pr)
+true
+
+julia> ideal == Clapeyron.idealmodel(ideal)
+true
+
+julia> Clapeyron.idealmodel(pr.mixing) === nothing
 true
 ```
 """
@@ -88,6 +96,20 @@ idealmodel(model::EoSModel) = __idealmodel(model::EoSModel)
         return :(nothing)
     end
 end
+
+"""
+    is_idealmodel(model)::Bool
+
+Returns a boolean, indicating if the input model is considered an ideal model.
+By default, is defined in terms of [`idealmodel`](@ref).
+"""
+@inline is_idealmodel(model::M) where M = __is_idealmodel(M,idealmodel(model))
+
+@inline __is_idealmodel(::Type{M1},::Nothing) where {M1} = false
+@inline __is_idealmodel(::Type{M1},::Type{T}) where {M1,T}= false
+@inline __is_idealmodel(::Type{M1},::Type{M1}) where {M1} = true
+@inline __is_idealmodel(::Type{M1},x::T) where {M1,T} = __is_idealmodel(M1,T) 
+@inline __is_idealmodel(::Type{Nothing},::Type{Nothing}) = false #edge case, but better be sure
 
 """
     eos_res(model::EoSModel, V, T, z=SA[1.0])
@@ -123,10 +145,15 @@ function a_res end
 
 Base.broadcastable(model::EoSModel) = Ref(model)
 Base.transpose(model::EoSModel) = model
-Base.eltype(model::EoSModel) = __eltype(model)
-Base.@assume_effects :foldable function __eltype(model::T) where T <:EoSModel
+
+paramtype(x::T) where T = paramtype(T)
+paramtype(::Type{T}) where T = eltype(T)
+
+@inline Base.eltype(model::EoSModel) = paramtype(model)
+@inline paramtype(model::EoSModel) = __paramtype(model)
+Base.@assume_effects :foldable function __paramtype(model::T) where T <:EoSModel
     if hasfield(T,:params)
-        return eltype(model.params)
+        return paramtype(model.params)
     else
         return Float64
     end
@@ -139,8 +166,13 @@ Base.summary(model::EoSModel) = string(parameterless_type(model))
 
 Function that returns a list with the components used in the input `EoSModel`.
 """
-component_list(model) = model.components
-
+function component_list(model::M) where M
+    if hasfield(M,:components)
+        return model.components
+    else
+        return String[]
+    end
+end
 """
     @comps
 
@@ -149,32 +181,53 @@ The caveat is that `model` has to exist in the local namespace.
 `model` is expected to any struct that has length defined in terms of the amount of components.
 """
 macro comps()
+    #all the x_iterator functions are in utils/misc.jl
     return quote
-        1:length(model)
+        Clapeyron.comps_iterator(model)
     end |> esc
 end
 
+"""
+    has_sites(model::EoSModel)
+    has_sites(::Type{<:EoSModel})
+
+Returns `true` when a model type carries site parameters.
+
+This checks whether the model type has has a definition of `getsites`.
+"""
 has_sites(::T) where T <: EoSModel = has_sites(T)
 has_sites(::Type{T}) where T <: EoSModel = _has_sites(T)
 
 Base.@assume_effects :foldable function _has_sites(::Type{T}) where T <: EoSModel
-    s1 = hasfield(T,:sites)
-    if s1
-       return fieldtype(T,:sites) == SiteParam
-    end
-    return false
+    return hasmethod(getsites,Tuple{T})
 end
 
+"""
+    has_groups(model::EoSModel)
+    has_groups(::Type{<:EoSModel})
+
+Returns `true` when a model type carries group parameters.
+
+This checks whether the model type has a `groups` field with `GroupParam`
+storage and is used to enable group-contribution logic.
+"""
 has_groups(::T) where T <: EoSModel = has_groups(T)
 has_groups(::Type{T}) where T <: EoSModel = _has_groups(T)
 
 Base.@assume_effects :foldable function _has_groups(::Type{T}) where T <: EoSModel
     s1 = hasfield(T,:groups)
     if s1
-       return fieldtype(T,:groups) == GroupParam
+       return fieldtype(T,:groups) <: GroupParameter
     end
     return false
 end
+
+"""
+    getsites(model)
+
+Returns the `SiteParam` used in association calculations for the input `model`, if any. Fails if not available. To check if a model has sites, use `has_sites`.
+"""
+function getsites end
 
 Base.length(model::T) where T <:EoSModel = _eos_length(model,Val(has_groups(model)))
 
@@ -198,7 +251,7 @@ function has_dual(x::NTuple{N,<:Any}) where N
 end
 """
     doi(model)
-Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. if there isn't a `references` field, it defaults to `default_references(model)`
+Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. If there isn't a `references` field, it defaults to `default_references(model)`.
 ```julia-repl
 julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.doi(umr)
 1-element Vector{String}:
@@ -225,7 +278,7 @@ default_references(M) = String[]
 """
     cite(model,out = :doi)
 
-Returns a Vector of strings containing all bibliographic references of the model, in the format indicated by the `out` argument. this includes any nested models.
+Returns a Vector of strings containing all bibliographic references of the model, in the format indicated by the `out` argument. This includes any nested models.
 
 ```julia-repl
 julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #should cite UMRPR, UNIFAC, WalkerIdeal
@@ -235,9 +288,9 @@ julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #shou
  "10.1021/i260064a004"
  "10.1021/acs.jced.0c00723"
 ```
-the `out` argument supports two values:
-- `:doi`: returns the stored values on each EoS. by default those are DOI identifiers.
-- `:bib`: returns BibTeX entries. to use this, an internet connection is required.
+The `out` argument supports two values:
+- `:doi`: returns the stored values on each EoS. By default those are DOI identifiers.
+- `:bib`: returns BibTeX entries. To use this, an internet connection is required.
 
 ```julia-repl
 julia> model = SAFTVRQMie(["helium"])
@@ -251,7 +304,7 @@ julia> Clapeyron.cite(model,:bib)
  "@article{Aasen_2020,\n\tdoi = {10" ⋯ 452 bytes ⋯ "Journal of Chemical Physics}\n}"
 ```
 
-This list will displayed by each `EoSModel` on future versions. you can enable/disable this by setting `ENV["CLAPEYRON_SHOW_REFERENCES"] = "TRUE"/"FALSE"`
+This list will displayed by each `EoSModel` on future versions. You can enable/disable this by setting `ENV["CLAPEYRON_SHOW_REFERENCES"] = "TRUE"/"FALSE"`.
 """
 function cite(model::EoSModel,out = :doi)
     keys = fieldnames(typeof(model))
@@ -289,6 +342,35 @@ end
 
 #generic function to support pseudo-pures
 is_pseudo_pure(model) = false
-is_electrolyte(model) = false
 
-export EoSModel, eos, has_groups, has_sites, Rgas
+"""
+    component_charges(model)
+
+Net charge carried by one molecule of each *component*. 
+Non-electrolyte models do not have a definition of component_charges, so one can check if a model is an electrolyte model if there is it has a `component_charges` method.
+The generic fallback for `ElectrolyteModel` assumes that the charges are stored in `model.charge`. 
+A group-contribution model whose own charges are defined per-*group* instead must override this method to provide charges per component instead.
+"""
+function component_charges end
+
+is_electrolyte(model) = _is_electrolyte(model)
+function _is_electrolyte(model::T) where T
+    return hasmethod(component_charges,Tuple{T})
+end
+
+#iterator functions used by iterator macros: EoSModel dispatch
+
+@inline comps_iterator(model::EoSModel) = comps_iterator(length(model))
+@inline iions_iterator(model::EoSModel) = iions_iterator(component_charges(model))
+@inline ineutral_iterator(model::EoSModel) = ineutral_iterator(component_charges(model))
+@inline groups_iterator(model::EoSModel) = groups_iterator(model.groups)
+#@inline groups_iterator(groups::GroupParam) = comps_iterator(length(groups.flattenedgroups))
+#@inline sites_iterator(model::EoSModel,i) = sites_iterator(getsites(model),Int64(i))
+#@inline sites_iterator(sites::SiteParam,i) = sites.i_sites[i]
+@inline groups_iterator(model::EoSModel,i::Integer) = groups_iterator(model.groups,Int64(i))
+#@inline groups_iterator(groups::GroupParam,i::Int) = groups.i_groups[i]
+
+
+
+export EoSModel, eos, has_groups, has_sites, Rgas, eos_res
+@public a_res, component_list, is_idealmodel, component_charges

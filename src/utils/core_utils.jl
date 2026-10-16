@@ -18,8 +18,16 @@ parameterless_type(x::Type) = __parameterless_type(x)
 split_2(str) = NTuple{2}(eachsplit(str, limit=2))
 split_2(str,dlm) = NTuple{2}(eachsplit(str,dlm, limit=2))
 
+function fma_evalpoly(x::T1,pol::NTuple{N,T2}) where {T1,N,T2}
+    fx = fma(pol[end],x,pol[end - 1])
+    @inbounds for i in 2:(N-1)
+        fx = fma(fx,x,pol[end-i])
+    end
+    return fx
+end
+
 function show_pairs(io,keys,vals=nothing,separator="",f_print = print;quote_string = true,pair_separator = '\n',prekey = ifelse(pair_separator === '\n'," ",""))
-    if length(keys) == 0
+    if isempty(keys)
         return nothing
     end
     if vals === nothing #useful for printing only keys
@@ -96,6 +104,42 @@ function show_as_namedtuple(io::IO,x)
     print(io,")")
 end
 
+_zero(t::Number) = zero(t)
+_zero(x::T)  where T = _zero(T)
+_zero(::Type{T}) where T <: Number = zero(T)
+_zero(::Type{String}) = ""
+_zero(::Type{Missing}) = missing
+_zero(::Type{T}) where T <: AbstractString = T("")
+_zero(::Type{T}) where T <:Union{Any,Missing} = _zero(nonmissingtype(T))
+
+
+_iszero(t::Number) = iszero(t)
+_iszero(::Missing) = true
+_iszero(t::AbstractString) = isempty(t)
+
+function raw_values end
+raw_values(x) = x
+
+"""
+    param_from_values(newval,param)
+    param_from_values(f,param)
+
+Given a Clapeyron parameter `param`, returns another Clapeyron parameter with their raw values replaced with `newval`.
+The modification can occur inplace, or allocate a different value structure.
+Also works in function form:
+
+```julia
+x = SingleParam("bb",["a","b"]) #singleparam filled with zeros
+Clapeyron.param_from_values(x) do values
+    values .+= 1
+end
+```
+
+For nested parameters it work until the flat storage. (the storage in `Compressed4DMatrix`, for example)
+
+"""
+param_from_values(f::C,param::P) where {C <: Base.Callable,P} = _param_from_values(f(raw_values(param)),param)
+param_from_values(x,param::P) where P = _param_from_values(x,param)
 #=
 """
     concrete(x)

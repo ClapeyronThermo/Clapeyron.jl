@@ -30,25 +30,6 @@ function svec3(x1,x2,x3,opt = true)
     return SVector{3}(V01,V02,V03)
 end
 
-nonzero_extrema(K::SparseArrays.SparseMatrixCSC) = extrema(K.nzval)
-
-function nonzero_extrema(K)
-    _0 = zero(eltype(K))
-    _max = _0
-    _min = _0
-    for k in K
-        _max = max(k,_max)
-        if iszero(_min)
-            _min = k
-        else
-            if !iszero(k)
-            _min = min(_min,k)
-            end
-        end
-    end
-    return _min,_max
-end
-
 """
     _parse_kv(str,dlm)
 
@@ -120,23 +101,12 @@ Returns ∑nᵢx^vᵢ.
 function evalexppoly(x,n,v)
     res = zero(x*first(n)*first(v))
     logx = log(x)
-    for i in 1:length(n)
+    for i in eachindex(n)
         res += n[i]*exp(logx*v[i])
     end
     return res
 end
 
-function cached_indexin(a, b, bdict)
-    inds = keys(b)
-    #bdict = Dict{eltype(b),eltype(inds)}()
-    empty!(bdict)
-    for (val, ind) in zip(b, inds)
-        get!(bdict, val, ind)
-    end
-    return Union{eltype(inds), Nothing}[
-        get(bdict, i, nothing) for i in a
-    ]
-end
 
 format_components(str::String) = [str]
 format_components(str::Tuple) = format_components(first(str))
@@ -156,6 +126,12 @@ format_gccomponents(str::AbstractString) = format_components(String(str))
 format_gccomponents(str::Vector{String}) = str
 format_gccomponents(str::AbstractVector) = Array(str)
 # format_gccomponents(str) = map(format_component_i,str)
+
+normalize_userlocations(loc::Nothing) = loc
+normalize_userlocations(loc::AbstractArray) = String.(loc)
+normalize_userlocations(loc::Tuple) = String.(loc)
+normalize_userlocations(loc::NamedTuple) = loc
+normalize_userlocations(loc) = loc
 
 function mole_to_mass(model, x)
     w = x .* mw(model)
@@ -199,8 +175,9 @@ end
 viewlast(x,i) = @view(x[(end - i + 1):end])
 viewfirst(x,i) = @view(x[begin:i])
 viewlast(x,i,n) = viewfirst(viewlast(x,i),n)
-
 linearidx(x::AbstractVector) = LinearIndices(x)
+mid(a,b,c) =  max(min(a,b),min(max(a,b),c))
+deleteat(x,i) = deleteat!(copy(x),i)
 
 if Base.VERSION < v"1.11"
     linearidx(x::AbstractMatrix) = diagind(x,0)
@@ -208,78 +185,21 @@ else
     linearidx(x::AbstractMatrix) = diagind(x,0,IndexStyle(x))
 end
 
-mid(a,b,c) =  max(min(a,b),min(max(a,b),c))
-deleteat(x,i) = deleteat!(copy(x),i)
+#iterator functions used by iterator macros
+@inline comps_iterator(nc::Int) = Base.OneTo(nc)
 
-function atoms_from_smiles(smiles::String)
-    atom_counts = Dict{String, Int}()
-    i = 1
-    while i <= length(smiles)
-        c = smiles[i]
+@inline iions_iterator(Z) = Iterators.filter(!iszero ∘ Base.Fix1(Base.getindex,Z), 1:length(Z))
 
-        # Skip bonds, branches, and ring numbers
-        if c in ['=', '#', '-', '(', ')', '/', '\\'] || isdigit(c)
-            i += 1
-            continue
-        end
+@inline ineutral_iterator(Z) = Iterators.filter(iszero ∘ Base.Fix1(Base.getindex,Z), 1:length(Z))
 
-        # Handle bracketed atoms like [NH2], [O-], [13C], etc.
-        if c == '['
-            i += 1
-            atom = ""
-
-            # Skip isotope numbers
-            while i <= length(smiles) && isdigit(smiles[i])
-                i += 1
-            end
-
-            # Get the atom symbol (1 or 2 characters)
-            if i <= length(smiles) && isuppercase(smiles[i])
-                atom *= smiles[i]
-                i += 1
-
-                # Check for second lowercase letter
-                if i <= length(smiles) && islowercase(smiles[i])
-                    atom *= smiles[i]
-                    i += 1
-                end
-            end
-
-            # Skip the rest until closing bracket
-            while i <= length(smiles) && smiles[i] != ']'
-                i += 1
-            end
-
-            if atom != ""
-                atom_counts[atom] = get(atom_counts, atom, 0) + 1
-            end
-
-            i += 1  # Skip the ']'
-
-        # Handle regular atoms (uppercase, possibly followed by lowercase)
-        elseif isuppercase(c)
-            atom = string(c)
-
-            # Check if next character is lowercase (for 2-letter elements)
-            if i + 1 <= length(smiles) && islowercase(smiles[i + 1])
-                atom *= smiles[i + 1]
-                i += 2
-            else
-                i += 1
-            end
-
-            atom_counts[atom] = get(atom_counts, atom, 0) + 1
-
-        # Handle aromatic atoms (lowercase single letters like c, n, o)
-        elseif islowercase(c)
-            atom = uppercase(string(c))
-            atom_counts[atom] = get(atom_counts, atom, 0) + 1
-            i += 1
-        else
-            i += 1
-        end
-    end
-
-    # Sort by atom symbol for consistent output
-    return sort(collect(atom_counts))
-end
+#=
+@inline comps_iterator(model::EoSModel) = comps_iterator(length(model))
+@inline iions_iterator(model::EoSModel) = iions_iterator(component_charges(model))
+@inline ineutral_iterator(model::EoSModel) = ineutral_iterator(component_charges(model))
+@inline groups_iterator(model::EoSModel) = groups_iterator(model.groups)
+@inline groups_iterator(groups::GroupParam) = comps_iterator(length(groups.flattenedgroups))
+@inline sites_iterator(model::EoSModel,i) = sites_iterator(getsites(model),Int64(i))
+@inline sites_iterator(sites::SiteParam,i) = sites.i_sites[i]
+@inline groups_iterator(model::EoSModel,i::Integer) = groups_iterator(model.groups,Int64(i))
+@inline groups_iterator(groups::GroupParam,i::Int) = groups.i_groups[i]
+=#

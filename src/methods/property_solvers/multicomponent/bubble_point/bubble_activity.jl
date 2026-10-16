@@ -4,7 +4,7 @@
 
 Function to compute [`bubble_pressure`](@ref) using Activity Coefficients.
 On activity coefficient models it solves the problem via succesive substitucion.
-On helmholtz-based models, it approximates the activity coefficient using the saturated pure state as reference.
+On Helmholtz-based models, it approximates the activity coefficient using the saturated pure state as reference.
 
 Inputs:
 - `y0 = nothing`: optional, initial guess for the vapor phase composition
@@ -13,7 +13,7 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
-- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
+- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. Those will be set to zero on the vapour phase.
 """
 struct ActivityBubblePressure{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -24,6 +24,14 @@ struct ActivityBubblePressure{T} <: BubblePointMethod
     rtol_ss::Float64
 end
 
+function Solvers.primalval(method::ActivityBubblePressure{T}) where T
+    if T === nothing
+        return Solvers.primalval_struct(method,T)
+    else
+        return Solvers.primalval_struct(method,Solvers.primal_eltype(T))
+    end
+end
+
 function ActivityBubblePressure(;vol0 = nothing,
                                 p0 = nothing,
                                 y0 = nothing,
@@ -31,27 +39,27 @@ function ActivityBubblePressure(;vol0 = nothing,
                                 itmax_ss = 40,
                                 rtol_ss = 1e-8)
 
-    if p0 == y0 == vol0 == nothing
+    if p0 == y0 == vol0 === nothing
         return ActivityBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
-    elseif (p0 == y0 == nothing) && !isnothing(vol0)
+    elseif (p0 == y0 === nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return ActivityBubblePressure{typeof(vl)}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
-    elseif (vol0 == y0 == nothing) && !isnothing(p0)
+        return ActivityBubblePressure{typeof(vl)}((vl,vv),p0,y0,nonvolatiles,itmax_ss,rtol_ss)
+    elseif (vol0 == y0 === nothing) && !isnothing(p0)
         p0 = float(p0)
         return ActivityBubblePressure{typeof(p0)}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
-    elseif (p0 == vol0 == nothing) && !isnothing(y0)
+    elseif (p0 == vol0 === nothing) && !isnothing(y0)
         T = eltype(y0)
         return ActivityBubblePressure{T}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(y0)
         vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ActivityBubblePressure{T}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubblePressure{T}((vl,vv),p0,y0,nonvolatiles,itmax_ss,rtol_ss)
     elseif !isnothing(vol0) && !isnothing(y0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ActivityBubblePressure{T}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubblePressure{T}((vl,vv),p0,y0,nonvolatiles,itmax_ss,rtol_ss)
     elseif  !isnothing(p0) && !isnothing(y0)
         p0,_ = promote(p0,first(y0))
         T = eltype(p0)

@@ -1,3 +1,179 @@
+# v0.6.28
+
+## New Features
+
+- `Unitful.jl` extension: support for missing bulk methods
+- `Unitful.jl` extension: support for `PH`, `PS`, `VT`, `QT`, `QP`, `TS` basis
+- `Unitful.jl` extension: support for all flashes
+- Experimental: `Clapeyron.MassFractions` wrapper to indicate that the vector of compositions is a mass composition vector.
+
+## Bug fixes
+
+- fix in cubic solver
+- fix in AD with `TProperty`/`Pproperty`
+- removed extra `show` in `MichelsenTPFlash` when material balance failed.
+- removed extra gibbs evaluation when checking bubble/dew consistency
+
+# v0.6.27
+
+## New Features
+
+- New potential EoS: Kolafa-Nezbeda LJ potential (`KolafaNezbeda`)
+- New ideal EoS: `GlennJL`, that uses the NASA-Glenn coefficients provided by the package [`Glenn.jl`](https://github.com/ProfLeao/Glenn.jl)
+- Cubic solver: speed and stability improvements, the function `cubic_poly` (cubic polynomial in $Z$) was replaced by a routine that uses first a cubic polynomial in $\eta = \frac{b}{V}$ first, and then refines the result (with a polynomial in $V$ for liquid an a polynomial in $Z - 1$ for the gas branch) if the error between the objective pressure and the current pressure is above a threshold.
+- Association: general mixing rules can now be implemented by using `Clapeyron.ijab_mix(f,Δijab,Kij)`/ `Clapeyron.ijab_mix!(f,Δijab,Kij)`
+- Association: the following association mixing functions are now public API: `bondvol_mix`,`epsilon_assoc_mix`,`dufal_mix`, `ijab_zero_mix`. Inplace versions are also implemented ( `!bondvol_mix`,`!epsilon_assoc_mix`,`!dufal_mix`, `!ijab_zero_mix`).
+- `recombine!`: speed improvements in the case of GC models and association models.
+- Flash methods: speed and handling improvements to `Tproperty`/`Pproperty`.
+- Flash methods: new utility functions: `is_active_phase(result::FlashResult,i)`, `each_active_phase_index(result::FlashResult)`, to filter inactive (zero fraction or invalid phases)
+- Flash methods: new method, `numphase(result::FlashResult,true)`, that returns the number of active phases.
+- Flash methods: `RRTPFlash` and `MichelsenTPFlash` now return the unconverged K value in an indirect way (via the composition of the inactive phase).
+- Flash methods: `tp_flash2` is now marked as public.
+- SAFTgammaMie: misc database improvements
+- ogUNIFAC: misc database improvements
+- Speed improvements in database loading
+
+# v0.6.26
+
+## New Features
+
+- Automatic Differentiation: custom tag types are now used on most bulk properties, allowing a reduction in precompile times, specially when using multiple models at once.
+- New method: `is_idealmodel`, that checks if a model is a model of an ideal gas or not.
+- Most methods expected to be used and extended by users of Clapeyron.jl are now marked as `public`. Methods not marked as public are considered internal.
+
+## Bug Fixes
+
+- Symbolics extension bug fixes.
+- Misc stability improvements
+
+# v0.6.25
+
+## New Features
+
+- Estimation framework: revamped internals, what was previously `Estimation` was renamed `EstimationProblem`, and there are two new structs: `EstimationModel`, a wrapper over a model and `ToEstimate` that allows indexing models as if they are the vector of parameters described by `ToEstimate`; and `EstimationData`, that is a reimplementation of the old `EstimationData` struct that additionally stores the loss and the estimator method, allowing multiple loss functions per estimation problem, along with standalone, model-independent evaluations of the objective function. Current estimation workflows that used the documented API are not affected, apart from performance improvements.
+To see a full list of the changes, we recomend checking the new estimation basics tutorial.
+- Activity models: a consistent gibbs bulk property model for the liquid phase was defined, based on the incompressible approximation already used on Clapeyron equilibria solvers. The gas phase is still evaluated in the helmholtz framework.
+- New flash method: `RRXYFlash`, a X-(T or P) flash with support for activity and composite models.
+- Flash: activity and composite models can now get properties via `property(model,result::FlashResult)`
+- Flash: `FlashResult` now stores the index of vapour phase. it can be accessed via `identify_phase(result,i)`
+- Activity models: support for `Tproperty`/`Pproperty`/`edge_pressure`/`edge_temperature`
+- New model: Patel-Teja-Hayen cubic (`PatelTejaHayen`)
+- New alpha model: Twu alpha estimation used in `tcPR` and `tcRK` (`tcTwuAlpha`)
+- New translation model: `tcPR` and `tcRK` translation estimation (`tcTranslation`)
+- Cubic mixing rules: support for more cubics. Before, most EoS + GE mixing rules were only correct for cubics with composition-independent coefficients.
+- CSV parsing: options can now be provided via an inline JSON file: `[csvtype = single]` is equivalent to `{"csvtype" : "single"}`
+- Flash methods: added `verbose` option to `RRQXFlash`, improved `verbose` display for `RRTPFlash`/`MichelsenTPFlash`
+- Various bug fixes and stability improvements.
+
+## Other Changes
+
+- `ClapeyronHANNA` was deprecated. the new version just uses the implementation on `MLThermoProperties` instead.
+
+# v0.6.24
+
+## New Features
+
+- Association: better initial points and faster evaluation via compression of the association matrix.
+- `GeneralizedXYFlash`: added `verbose` option
+- `ChemPotBubblePressure`: added `verbose` option
+- `ChemPotBubbleTemperature`: added `verbose` option
+- `ChemPotDewPressure`: added `verbose` option
+- `ChemPotDewTemperature`: added `verbose` option
+- `Tproperty`/`Pproperty`: better initial points for poins inside the phase change region.
+- `spinodal_pressure`/`spinodal_temperature`: initial points now use `edge_temperature`/`edge_pressure` instead of bubble/dew calculations, improving speed and stability, especially with conditions near the mixture critical point
+- `EPPR78`: support for passing `alpha` and `translation` submodels
+- stability improvements to `edge_pressure`/`edge_temperature`
+
+## Bug fixes
+
+- Fixes in `split_model` when indices aren't ordered
+
+# v0.6.23
+
+## New Features
+
+- New ideal models: `GCAlyLee` and `BurkhardtIdeal`
+-New string macros: `@cas_str` and `@smiles_str`, that allow searching components by CAS and SMILES respectively.
+- improved initial point for bubble/dew calculations
+
+## Bug fixes
+
+- Fixes and improvements in volume calculation.
+- `SingleFluid`, when passing a JSON directly as a string, now the name stored is extracted and used. before, the whole JSON string was used as a name.
+
+# v0.6.22
+
+## New Features
+
+- Implicit differentiation: the core implicit differentiation routines were replaced by `IFTDuals.ift`.
+- Experimental: `AssocOptions` supports the `implicit_ad` option to calculate derivatives of the association solver via `IFTDuals`
+- Implicit differentiation is now enabled in PH flash and PS flash.
+- Experimental: new tpd function: `Clapeyron.tpd2`, that returns a `TPDResult` struct instead of a tuple of vectors
+- Experimental: New model wrapper for electrolyte wrappers: `MeanIonicApproach` with support for `tp_flash`
+
+## Bug fixes
+
+- Fixes in `iPCSAFT`
+- Fixes in electrolyte routines
+- Fixes in Multifluid initial volume
+- Fixes in `MultiPhaseTPFlash`
+
+# v0.6.21
+
+## New Features
+
+- `GroupParam` can now store non-integer values.
+- `MultiPhaseTPFlash`: support for Gamma-Phi models
+- Cubics: translation now does not allocate in most cases.
+- New model: translated industrial PC-SAFT (`iPCSAFT`)
+- New model: VTPR with temperature-dependent translation (`TVTPR`)
+- Electrolyte models: `mean_ionic_activity_coefficient` and `osmotic_coefficient` (and their saturated variants), can now be called directly without specifying salts, if the model forms binary salts. For example, (`osmotic_coefficient(model,p,T,m)`) is equivalent to(`osmotic_coefficient(model,salts,p,T,m)`), where `salts = Clapeyron.auto_binary_salts(model)`
+- `DHModel`: improved numerical stability of `a_dh` when the electrolyte concentrations are small.
+- association options can now be initialized directly from a symbol: (`PCSAFT(["water","ethanol"],assoc_options = :cr1)`)
+
+## package deprecations
+
+- JSON3.jl was removed in favour of JSON.jl
+
+## Bug fixes
+
+- `AntoineSaturation` now uses SI units
+- Fixes in `PenelouxTranslation` (inverted parameters for PR and RK models)
+- Patel-Teja: the correlation for ζc is used first instead of the experimental critical volume
+- Various documentation improvements
+- Fixed precompilation errors in `ClapeyronSymbolicsExt`
+
+# v0.6.20
+
+## New Features
+
+- revamp to Fugacity-based bubble/dew solvers. Improved speed of successive substitution iterations and support for Activity models.
+- Activity models: support for second-order Michelsen TP flash. in VLE and LLE equilibria
+- Activity models: support for QP/QT flash
+- Improved implicit differentiation for all solvers.
+- New method: thermodynamic factor (`thermodynamic_factor`)
+- New method: `eos_repr`, to create parseable julia code capable of reproducing a model
+- `BACKSAFT`: support for multicomponent mixtures.
+- `crit_pure`: improved convergence.
+- CoolProp: support for CoolProp 7.2
+- Association: removed small static solvers for sizes 2-5 due to compilation slowdown.
+- Cubics: improved robustness in the volume solver
+- PCSAFT: improved robustness in the volume solver at low temperatures
+
+## Method deprecations
+
+- `ActivityDewTemperature` and `ActivityBubbleTemperature` were removed, `FugBubbleTemperature` and `FugDewTemperature` are now the default for activity methods, with proper support for non-condensables/non-volatiles
+- `DETPFlash` now uses another global optimizer, self-adaptive spherical search algorithm, with the main intention of dropping `BlackBoxOptim` as a dependency.
+
+## Bug fixes
+
+- Convergence failure in Michelsen TP flash when `equilibrium = :unknown` and LLE was detected.
+- Fixes on `MultiphaseTPFlash`
+- Various fixes on `saturation_pressure` initial points
+- Fixed an extra `RT` division in `Obj_de_tp_flash`; it now returns the molar reduced Gibbs energy `G/(nRT)`.
+- `__eval_G_DETPFlash(model::EoSModel, p, T, ni, equilibrium)` now returns reduced Gibbs energy, consistent with the `PTFlashWrapper` overload.
+- `gammaphi_gibbs` now handles unnormalized inputs (mole amounts) correctly and always returns a `(g, v)` tuple for empty phases.
+
 # v0.6.19
 
 ## New Features

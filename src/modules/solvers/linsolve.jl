@@ -13,11 +13,7 @@ Base.size(v::ΔVector) = size(v.v1)
 
 Base.@propagate_inbounds function Base.getindex(v::ΔVector{T},i::Int) where T
     v1,v2 = v.v1[i],v.v2[i]
-    if v.log
-        return T(v1/v2 - 1)
-    else
-        return T(v1 - v2)
-    end
+    return ifelse(v.log,T(v1/v2 - one(T)),T(v1 - v2))
 end
 
 """
@@ -35,25 +31,25 @@ function dnorm(x::Number,y::Number,p = 2)
 end
 
 function st_solve(B,∇f,::Val{1})
-    ∇f̄ = SVector(∇f[1])
+    #∇f̄ = SVector(∇f[1])
     B̄ = SMatrix{1,1}((B[1,1],))
     return B̄\∇f
 end
 
 function st_solve(B,∇f,::Val{2})
-    ∇f̄ = SVector(∇f[1],∇f[2])
+    #∇f̄ = SVector(∇f[1],∇f[2])
     B̄ = SMatrix{2,2}((B[1,1],B[2,1],B[1,2],B[2,2]))
     return inv(B̄)*∇f
 end
 
 function st_solve(B,∇f,::Val{3})
-    ∇f̄ = SVector(∇f[1],∇f[2],∇f[3])
+    #∇f̄ = SVector(∇f[1],∇f[2],∇f[3])
     B̄ = SMatrix{3,3}((B[1,1],B[2,1],B[3,1],B[1,2],B[2,2],B[3,2],B[1,3],B[2,3],B[3,3]))
     return inv(B̄)*∇f
 end
 
 function st_solve(B,∇f,::Val{4})
-    ∇f̄ = SVector(∇f[1],∇f[2],∇f[3],∇f[4])
+    #∇f̄ = SVector(∇f[1],∇f[2],∇f[3],∇f[4])
     B̄ =  SMatrix{4,4}((B[1,1],B[2,1],B[3,1],B[4,1],B[1,2],B[2,2],B[3,2],B[4,2],B[1,3],B[2,3],B[3,3],B[4,3],B[1,4],B[2,4],B[3,4],B[4,4]))
     return inv(B̄)*∇f
 end
@@ -78,17 +74,6 @@ function try_st_linsolve(B,∇f)
     d = similar(∇f)
     return try_st_linsolve(d,B,∇f)
 end
-
-function cholesky_linsolve(d,B,∇f)
-    d,success = try_st_linsolve(d,B,∇f)
-    success && return d
-    cholesky!(Positive, B)
-    Bchol = Cholesky(B,'L',0)
-    d .=  Bchol\∇f
-end
-
-Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
-CholeskyNewton() = NLSolvers.Newton(linsolve=cholesky_linsolve)
 
 function lup_linsolve(d,B,∇f;check = true)
     F = lu!(B,RowMaximum(),check = check)

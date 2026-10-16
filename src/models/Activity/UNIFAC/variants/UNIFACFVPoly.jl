@@ -1,21 +1,29 @@
-struct UNIFACFVPolyParam <: EoSParam
-    volume::SingleParam{Float64}
-    c::SingleParam{Float64}
-    A::PairParam{Float64}
-    R::SingleParam{Float64}
-    Q::SingleParam{Float64}
-    Mw::SingleParam{Float64}
+struct UNIFACFVPolyParam{T} <: ParametricEoSParam{T}
+    volume::SingleParam{T}
+    c::SingleParam{T}
+    A::PairParam{T}
+    R::SingleParam{T}
+    Q::SingleParam{T}
+    Mw::SingleParam{T}
 end
+
+UNIFACFVPolyParam(volume,c,A,R,Q,Mw) = build_parametric_param(UNIFACFVPolyParam,volume,c,A,R,Q,Mw)
 
 abstract type UNIFACFVPolyModel <: UNIFACFVModel end
 
-struct UNIFACFVPoly{c<:EoSModel} <: UNIFACFVPolyModel
+struct UNIFACFVPoly{c<:EoSModel,T} <: UNIFACFVPolyModel
     components::Array{String,1}
-    groups::GroupParam
-    params::UNIFACFVPolyParam
+    groups::GroupParam{T}
+    params::UNIFACFVPolyParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    UNIFACFV_cache::UNIFACFVCache
+    unifac_cache::UNIFACFVCache{T}
+end
+
+function UNIFACFVPoly(components,groups,params,puremodel,references,unifac_cache)
+    c = eltype(puremodel)
+    T = Base.promote_eltype(unifac_cache,groups,params)
+    return UNIFACFVPoly{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
 export UNIFACFVPoly
@@ -31,7 +39,7 @@ export UNIFACFVPoly
     reference_state = nothing)
 
 ## Input parameters
-- `volume`: Single Parameter (`Float64`)  - specific volume of species `[g/cm^3]`
+- `volume`: Single Parameter (`Float64`)  - specific volume of species `[g·cm⁻³]`
 - `c` Single Parameter  (`Float64`)  - number of external degrees of freedom per solvent molecule
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Waals volume
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
@@ -42,9 +50,9 @@ export UNIFACFVPoly
 - `puremodel`: model to calculate pure pressure-dependent properties
 
 ## Description
-UNIFAC-FV (polymer) (UNIFAC Free Volume) activity model. specialized for polymer blends
+UNIFAC-FV (polymer) (UNIFAC Free Volume) activity model. Specialized for polymer blends.
 
-The Combinatorial part corresponds to an GC-averaged modified [`UNIQUAC`](@ref) model.
+The Combinatorial part corresponds to an GC-averaged Flory-Huggings contribution.
 
 ```
 Gᴱ = nRT(gᴱ(comb) + gᴱ(res) + gᴱ(FV))
@@ -71,7 +79,6 @@ function UNIFACFVPoly(components;
     Mw = params["Mw"]
     volume  = params_species["volume"]
     c  = params_species["c"]
-    icomponents = 1:length(components)
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIFACFVPolyParam(volume,c,A,R,Q,Mw)
     references = String["10.1021/i260064a004"]
@@ -81,21 +88,20 @@ function UNIFACFVPoly(components;
     return model
 end
 
+excess_g_FV(model::UNIFACFVPolyModel,V,T,z) = excess_g_FV(model,V,T,z,model.params.c.values)
 
-function data(model::UNIFACFVPolyModel,V,T,z)
-    Mw = model.UNIFACFV_cache.Mw
-    zmw = dot(z,Mw)
-    x = z ./ sum(z)
-    w = z .* Mw / zmw
-    c = model.params.c.values
-    return w,x,c
+function excess_g_comb(model::UNIFACFVPolyModel,V,T,z)
+    qp = model.unifac_cache.qp
+    return Rgas(model)*T*gE_rt_FH(z,qp)
 end
 
-function lnγ_comb(model::UNIFACFVPolyModel,V,T,z,_data=@f(data))
-    w,x = _data
-    Mw = model.UNIFACFV_cache.Mw
-    r =model.UNIFACFV_cache.r
-    q =model.UNIFACFV_cache.q
+#old, buggy inconsistent version of the combinatorial excess gibbs energy for UNIFACFVPoly
+function lnγ_comb_old(model::UNIFACFVPolyModel,V,T,z)
+    Mw  = model.unifac_cache.Mw
+    zmw = dot(z, Mw)
+    w   = z .* Mw ./ zmw
+    x   = z ./ sum(z)
+    r   = model.unifac_cache.r ./ Mw
     wr = @sum(w[i]*r[i]^(3/4))
     Φ = w.*r.^(3/4)/wr
     lnγ_comb = @. log(Φ/x)+(1-Φ)

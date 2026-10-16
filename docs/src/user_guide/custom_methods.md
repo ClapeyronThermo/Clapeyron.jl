@@ -102,11 +102,11 @@ end
 function Clapeyron.tp_flash_impl(model::EoSModel,p,T,z,method::MyRachfordRice)
   # perform Rachford–Rice,returns x, y, α₀
   # ...
-  X = vcat(x',y')
-  n = X.*[1-α₀
-                α₀]  .* sum(z)
-  g = (gibbs_free_energy(model,p,T,x)*(1-α₀)+gibbs_free_energy(model,p,T,y)*α₀)/R̄/T
-  return X,n,g
+
+  #empty volumes for now.
+  vx = 0.0
+  vy = 0.0
+  return Clapeyron.FlashResult([x,y],[1 - α₀,α₀],[vx,vy],Clapeyron.FlashData(p,T))
 end
 ```
 

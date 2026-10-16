@@ -48,9 +48,9 @@ aʳ₁(δ,τ)  = ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:6
 aʳ₂(δ,τ)  = ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 7:12
 aʳ₃(δ,τ)  = ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 13:23
 ```
-parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
+Parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 !!! warning "Multiple component warning"
-    The original model was done with only one component in mind. to support multiple components, a VDW 1-fluid mixing rule (shown above) is implemented, but it is not tested.
+    The original model was done with only one component in mind. To support multiple components, a VDW 1-fluid mixing rule (shown above) is implemented, but it is not tested.
 ## References
 1. Thol, M., Rutkai, G., Köster, A., Lustig, R., Span, R., & Vrabec, J. (2016). Equation of state for the Lennard-Jones fluid. Journal of physical and chemical reference data, 45(2), 023101. [doi:10.1063/1.4945000](https://doi.org/10.1063/1.4945000)
 """
@@ -101,14 +101,17 @@ function _v_scale(model::LJRef,z=SA[1.0])
     return m̄*N_A*σ_mix/(∑z*∑z)
 end
 
-function σϵ_m_vdw1f(model,V,T,z)
+function σϵ_m_vdw1f(model::EoSModel,V,T,z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
     m = model.params.segment.values
+    return σϵ_m_vdw1f(ϵ,σ,m,V,T,z)
+end
 
+function σϵ_m_vdw1f(ϵ,σ,m,V,T,z)
     σϵ_mix = zero(eltype(z))
     σ_mix = zero(eltype(z))
-    comps = length(model)
+    comps = length(z)
     ∑z = sum(z)
     m̄ = dot(m,z)/∑z
     m̄inv = 1/m̄
@@ -127,6 +130,8 @@ function σϵ_m_vdw1f(model,V,T,z)
     end
     return σ_mix/(∑z*∑z), σϵ_mix/σ_mix, m̄
 end
+
+σϵ_m_vdw1f(ϵ,σ,V,T,z) = σϵ_m_vdw1f(ϵ,σ,FillArrays.Fill(one(eltype(σ)),length(z)),V,T,z)
 
 function VT_scale(model,z = SA[1.0])
     σ3, ϵ, m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
@@ -263,7 +268,7 @@ a⁰(δ,τ,z) = ∑xᵢ(a⁰ᵢ + log(xᵢ))
 
 !!! warning "Mutiple component warning"
 
-    The original model was done with only one component in mind. to support multiple components, a VDW 1-fluid mixing rule (shown above) is implemented, but it is not tested.
+    The original model was done with only one component in mind. To support multiple components, a VDW 1-fluid mixing rule (shown above) is implemented, but it is not tested.
 
 ## References
 

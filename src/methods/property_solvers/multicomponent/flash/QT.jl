@@ -12,9 +12,11 @@ function qt_flash_x0(model::CompositeModel,β,T,z,method::FlashMethod)
 end
 
 function qt_flash_x0(model,β,T,z,method::FlashMethod)
+    verbose = get_verbosity(method)
     ∑z = sum(z)
-    if method.p0 == nothing
+    if method.p0 === nothing
         if 0 <= β <= 0.01
+            verbose && @info "vapour fraction below 0.01, using bubble pressure directly"
             x = z ./ ∑z
             p,vl,vv,y = __x0_bubble_pressure(model,T,x)
             y ./= sum(y)
@@ -22,6 +24,7 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
             βl = ∑z - βv
             return FlashResult(p,T,SA[x,y],SA[βl,βv],SA[vl,vv],sort = false)
         elseif 0.99 <= β <= 1.0
+            verbose && @info "vapour fraction over 0.99, using dew pressure directly"
             y = z ./ ∑z
             p,vl,vv,x = __x0_dew_pressure(model,T,y)
             x ./= ∑z
@@ -36,7 +39,7 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
                 pures = split_pure_model(model)
                 sat = extended_saturation_pressure.(pures,T)
             end
-            
+            verbose && @info "finding initial pressure via raoult approximation"
             ps = first.(sat)
             K = similar(ps)
             p_bubble = @sum(ps[i]*z[i])/∑z
@@ -62,6 +65,8 @@ function qt_flash_x0(model,β,T,z,method::FlashMethod)
     else
         p = method.p0
     end
+    verbose && @info "p = $p, T = $T"
+    verbose && @info "using PT-flash initial point"
     res = pt_flash_x0(model,p,T,z,method)
     return res
 end
@@ -70,16 +75,17 @@ end
     result = qt_flash(model, q, T, n, method::FlashMethod = GeneralizedXYFlash())
     result = qt_flash(model, q, T, n; kwargs...)
 
-Routine to solve non-reactive two-phase multicomponent flash problem. with vapour fraction - T specifications.
+Routine to solve non-reactive two-phase multicomponent flash problem. With vapour fraction - T specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
-Inputs:
+
+## Inputs:
  - `q`, vapour fraction
  - `T`, temperature `[K]`
  - `n`, vector of number of moles of each species `[mol]`
 
 All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
 
- Outputs:
+## Outputs:
  - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
 
 !!! note
@@ -98,7 +104,8 @@ function init_preferred_method(method::typeof(qt_flash),model::EoSModel,kwargs)
     GeneralizedXYFlash(;kwargs...)
 end
 
-function qt_flash(model,β,T,z,method::FlashMethod)
+function qt_flash(model,β,_T,_z,method::FlashMethod)
+    T,z = ustrip(_T,temperature),uzstrip(model,_z)
     check_arraysize(model,z)
 
     if z isa SingleComp || length(model) == 1

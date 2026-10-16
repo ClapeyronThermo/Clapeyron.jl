@@ -15,7 +15,7 @@ export ClausiusAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for [`Clausius`](@ref)  and [`Berthelot`]
+Clausius cubic alpha `(α(T))` model. Default for [`Clausius`](@ref)  and [`Berthelot`]
 ```
 αᵢ = 1/Trᵢ
 Trᵢ = T/Tcᵢ

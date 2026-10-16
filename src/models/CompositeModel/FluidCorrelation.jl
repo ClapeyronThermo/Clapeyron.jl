@@ -70,45 +70,140 @@ function idealmodel(model::FluidCorrelation{V}) where V
     idealmodel(model.gas)
 end
 
-gas_model(model::FluidCorrelation) = model.gas
+@inline gas_model(Base.@specialize(model::FluidCorrelation)) = model.gas
+liquid_model(model::FluidCorrelation) = model.liquid
+mw(model::FluidCorrelation) = mw(model.gas)
 
-function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,USEP::Val{UseP}) where {F,UseP}
-    if is_unknown(phase) || phase == :stable
-        #only liquid phase available
-        if model.liquid_cp === nothing && model.gas !== nothing
-            return PT_property(gas_model(model),p,T,z,phase,threaded,vol0,f,USEP)
-        end
-
-        #only gas phase available
-        if model.gas === nothing && model.liquid_cp !== nothing
-            return PT_property(model.liquid_cp,p,T,z,phase,threaded,vol0,f,USEP)
-        end
-
-        #single component, both phase models available, use saturation pressure to select
-        if model.gas !== nothing && model.liquid_cp !== nothing && length(model) == 1
-            psat,_,_ = saturation_pressure(model.saturation,T)
-            if isnan(psat)
-                #fluid correlations are only available on subcritical regime, where
-                #we can distinguish a liquid from a vapour.
-                nan = zero(Base.promote_eltype(model,p,T,z))
-                return PT_property(model.gas,nan,nan,z,phase,threaded,vol0,f,USEP)
-            end
-
-            #phase identified, call again with correct phase
-            new_phase = p > psat ? :l : :v
-            return PT_property(model,p,T,z,new_phase,threaded,vol0,f,USEP)
-        end
-        throw(error("multicomponent automatic phase detection not implemented for $(typeof(model))"))
+function PT_property(model::FluidCorrelation,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
+    if is_vapour(phase)
+        return PT_property(model.gas,p,T,z,phase,threaded,vol0,f,vol)
+    else #liquid or unknown
+        wrapper = PTFlashWrapper(model,p,T,z,:vle)
+        return PT_property(wrapper,p,T,z,phase,threaded,vol0,f,vol)
     end
+end
 
-    if is_liquid(phase)
-        #for bulk properties that arent volume, the liquid_cp model contains a valid helmholtz model
-        return PT_property(model.liquid_cp,p,T,z,phase,threaded,vol0,f,USEP)
-    elseif is_vapour(phase)
-        return PT_property(model.gas,p,T,z,phase,threaded,vol0,f,USEP)
+struct FluidCorrelationSaturation{M} <: SaturationMethod
+    method::M
+end
+
+function init_preferred_method(method::typeof(saturation_pressure),model::FluidCorrelation,kwargs)
+    inner = init_preferred_method(method,model.saturation,kwargs)
+    return FluidCorrelationSaturation(inner)
+end
+
+function init_preferred_method(method::typeof(saturation_temperature),model::FluidCorrelation,kwargs)
+    inner = init_preferred_method(method,model.saturation,kwargs)
+    return FluidCorrelationSaturation(inner)
+end
+
+function saturation_pressure_ad2(result,model::M,T::ForwardDiff.Dual) where M <: FluidCorrelation
+    p = if has_a_res(model.saturation) #using an EoSModel as saturation provider
+        #NOTE: we are using the volumes of the correlations instead of the volumes calculated via saturation_pressure of the helmholtz saturation model.
+        #i don't know how correct is this, if you find an error on derivatives while calculating bulk properties of composite models and read this,
+        #open a issue.
+        first(saturation_pressure_ad2(result,model.saturation,T))
     else
-        throw(error("invalid phase specifier for FluidCorrelation: $phase"))
+        first(saturation_pressure(model.saturation,T)) #AD though method, directly
     end
+
+    liq = model.liquid
+    z = SA[1.0]
+    vl = if has_a_res(liq)
+        tup = (liq,p,T,z)
+        λtup = (liq,primalval(p),primalval(T),z)
+        volume_ad(result[2],tup,λtup)
+    else
+        volume(liq,p,T,z,phase = :l)
+    end
+
+    gas = model.gas
+    vv = if is_idealmodel(gas)
+        Rgas(gas)*T/p
+    else
+        tup = (gas,p,T,z)
+        λtup = (gas,primalval(p),primalval(T),z)
+        volume_ad(result[3],tup,λtup)
+    end
+    return p,vl,vv
+end
+
+function saturation_pressure_ad(__model::M,result::RES,tup::TUP1,tup_primal::TUP2) where {M <: FluidCorrelation,RES,TUP1,TUP2}
+    dm,∂T = tup
+    m0,λT = tup_primal
+    λp,λvl,λvv = result
+    if any(has_dual,tup) # do check here to avoid recomputation of pressure if no AD
+        if has_a_res(__model.saturation) #using an EoSModel as saturation provider
+            vl0 = volume(m0.saturation,λp,λT,phase = :l)
+            vv0 = volume(m0.saturation,λp,λT,phase = :v)
+            ∂p = saturation_pressure_ad(__model.saturation,(λp,vl0,vv0),(dm.saturation,∂T),(m0.saturation,λT))
+        else
+            ∂p = first(saturation_pressure(dm.saturation,λT)) #AD though method, directly
+        end
+
+        ∂liq = dm.liquid
+        λliq = m0.liquid
+        z = SA[1.0]
+        ∂vl = if has_a_res(λliq)
+            tup_l = (λliq,∂p,∂T,z)
+            λtup_l = (∂liq,λp,λT,z)
+            volume_ad(λvl,tup_l,λtup_l)
+        else
+            volume(∂liq,∂p,∂T,z,phase = :l)
+        end
+
+        ∂gas = dm.gas
+        λgas = m0.gas
+        ∂vv = if is_idealmodel(λgas)
+            Rgas(λgas)*∂T/∂p
+        else
+            tup_v = (∂gas,∂p,∂T,z)
+            λtup_v = (gas,λp,λT,z)
+            volume_ad(λvv,tup_v,λtup_v)
+        end
+    
+        return ∂p,∂vl,∂vv
+    end
+    return result
+end
+
+function saturation_temperature_ad(__model::M,result,tup,tup_primal) where M <: FluidCorrelation
+    dm,∂p = tup
+    m0,λp = tup_primal
+    λT,λvl,λvv = result
+    if any(has_dual,tup) # do check here to avoid recomputation of pressure if no AD
+        if has_a_res(__model.saturation) #using an EoSModel as saturation provider
+            vl0 = volume(m0.saturation,λp,λT,phase = :l)
+            vv0 = volume(m0.saturation,λp,λT,phase = :v)
+            ∂p = saturation_temperature_ad(__model.saturation,(λT,vl0,vv0),(dm.saturation,∂p),(m0.saturation,λp))
+        else
+            ∂p = saturation_temperature_corr_ad(λp,(dm.saturation,∂p),(m0.saturation,λp))
+        end
+
+        ∂liq = dm.liquid
+        λliq = m0.liquid
+        z = SA[1.0]
+        ∂vl = if has_a_res(λliq)
+            tup_l = (λliq,∂p,∂T,z)
+            λtup_l = (∂liq,λp,λT,z)
+            volume_ad(λvl,tup_l,λtup_l)
+        else
+            volume(∂liq,∂p,∂T,z,phase = :l)
+        end
+
+        ∂gas = dm.gas
+        λgas = m0.gas
+        ∂vv = if is_idealmodel(λgas)
+            Rgas(λgas)*∂T/∂p
+        else
+            tup_v = (∂gas,∂p,∂T,z)
+            λtup_v = (gas,λp,λT,z)
+            volume_ad(λvv,tup_v,λtup_v)
+        end
+    
+        return ∂T,∂vl,∂vv
+    end
+    return result
 end
 
 __γ_unwrap(model::FluidCorrelation) = IdealLiquidSolution()
@@ -124,53 +219,32 @@ function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
         return _1*volume_impl(model.gas,p,T,z,phase,threaded,vol0)
     end
 
-    nan = _0/_0
+    #nan = _0/_0
     if is_liquid(phase)
         return volume(model.liquid, p, T, z; phase, threaded, vol0)
     elseif is_vapour(phase)
         return volume(model.gas, p, T, z; phase, threaded, vol0)
     else
-    TT = Base.promote_eltype(model,p,T,z)
-    RT = Rgas(model)*T
-    ∑z = sum(z)
-    g_ideal = sum(xlogx,z) - xlogx(∑z)
-    vl = zero(TT)
+        wrapper = PTFlashWrapper(model,p,T,z,:vle)
+        return volume(wrapper,p,T,z;phase,threaded,vol0)
     end
 end
 
-function init_preferred_method(method::typeof(saturation_pressure),model::FluidCorrelation,kwargs)
-    return init_preferred_method(method,model.saturation,kwargs)
-end
-
-function init_preferred_method(method::typeof(saturation_temperature),model::FluidCorrelation,kwargs)
-    return init_preferred_method(method,model.saturation,kwargs)
-end
-
-function saturation_pressure(model::FluidCorrelation,T,method::SaturationMethod)
+function saturation_pressure_impl(model::FluidCorrelation,T,methodwrapper::FluidCorrelationSaturation{M}) where M
+    method = methodwrapper.method
     nan = zero(T)/zero(T)
     psat,_,_ = saturation_pressure(model.saturation,T,method)
     if !isnan(psat)
         vl = volume(model.liquid,psat,T,phase=:l)
         vv = volume(model.gas,psat,T,phase=:v)
-        return psat,vl,vv
+        sat = psat,vl,vv
     #if psat fails, there are two options:
     #1- over critical point -> nan nan nan
     #2- saturation failed -> nan nan nan
     else
-        return nan,nan,nan
+        sat = nan,nan,nan
     end
-end
-
-function x0_sat_pure(model::FluidCorrelation,T,crit = nothing)
-    p = x0_psat(model,T,crit)
-    vl = volume(model.liquid,p,T,phase=:l)
-    vv = volume(model.gas,p,T,phase=:v)
-    return vl,vv
-end
-
-function x0_psat(model::FluidCorrelation,T,crit = nothing)
-    ps,_,_ = saturation_pressure(model.saturation,T)
-    return ps
+    return sat
 end
 
 function crit_pure(model::FluidCorrelation)
@@ -178,19 +252,21 @@ function crit_pure(model::FluidCorrelation)
     return crit_pure(model.saturation)
 end
 
-function saturation_temperature(model::FluidCorrelation,p,method::SaturationMethod)
+function saturation_temperature_impl(model::FluidCorrelation,p,methodwrapper::FluidCorrelationSaturation{M}) where M
+    method = methodwrapper.method
     nan = zero(p)/zero(p)
     Tsat,_,_ = saturation_temperature(model.saturation,p,method)
     if !isnan(Tsat)
         vl = volume(model.liquid,p,Tsat,phase=:l)
         vv = volume(model.gas,p,Tsat,phase=:v)
-        return Tsat,vl,vv
+        sat = Tsat,vl,vv
     #if psat fails, there are two options:
     #1- over critical point -> nan nan nan
     #2- saturation failed -> nan nan nan
     else
-        return nan,nan,nan
+        sat = nan,nan,nan
     end
+    return sat
 end
 
 function dpdT_saturation(model::FluidCorrelation,v1::Number,v2,T)
@@ -211,14 +287,6 @@ end
 
 function ∂lnϕ_cache(model::PTFlashWrapper{FluidCorrelation{<:IdealModel}}, p, T, z, dt::Val{B}) where B
     return nothing
-end
-
-function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,β,eq,vols)
-    return NaN*one(T+p+first(x))
-end
-
-function __eval_G_DETPFlash(model::PTFlashWrapper{<:FluidCorrelation},p,T,xi,equilibrium)
-    throw(error("Correlation-Based Composite Model does not support DETPFlash."))
 end
 
 export FluidCorrelation

@@ -3,19 +3,19 @@ __get_group_sum_values(group::GroupParam) = group.n_flattenedgroups
 __get_group_sum_values(group::MixedGCSegmentParam) = group.values
 
 function _group_sum!(out,groups,param)
-    _out = SingleOrPair_values(out)
-    _param = SingleOrPair_values(param)
+    _out = raw_values(out)
+    _param = raw_values(param)
     out_idx = linearidx(_out)
     vecparam = diagvalues(param)
     v = __get_group_sum_values(groups)
-    for (i,vi) in pairs(v)
+    @inbounds for (i,vi) in pairs(v)
         _out[out_idx[i]] = dot(vi,vecparam)
     end
     return out
 end
 
 function _group_sum!(out,groups,param::Number)
-    _out = SingleOrPair_values(out)
+    _out = raw_values(out)
     v = __get_group_sum_values(groups)
     out_idx = linearidx(out)
     for (i,vi) in pairs(v)
@@ -24,6 +24,14 @@ function _group_sum!(out,groups,param::Number)
     return out
 end
 
+"""
+    group_sum!(out, groups, param)
+    
+
+In-place version of [`group_sum`](@ref). 
+Fills `out` with the component values computed from group data.
+`out` can be a parameter container or a plain vector/matrix.
+"""
 function group_sum!(out::Union{SingleParameter,PairParameter},groups,param::SingleParameter)
     _group_sum!(diagvalues(out.values),groups,param)
     v = __get_group_sum_values(groups)
@@ -37,7 +45,7 @@ function group_sum!(out::Union{SingleParameter,PairParameter},groups,param::Sing
         is_missing_i = false
         vi = v[i]
         for j in 1:gc
-            if v[i] != 0 #if the group count is nonzero, then reduce the ismissing values
+            if vi != 0 #if the group count is nonzero, then reduce the ismissing values
                 is_missing_i = is_missing_i | missingvals_gc[j]
             end
         end
@@ -135,10 +143,10 @@ function group_fractions(groups::MixedGCSegmentParam{T1},z::AbstractVector{T2}) 
     return x
 end
 
-function group_fractions(groups::GroupParam,z)
+function group_fractions(groups::GroupParam{TT},z) where TT
     ng = length(groups.flattenedgroups)
     n_flattenedgroups = groups.n_flattenedgroups
-    x = similar(z,ng)
+    x = similar(z,Base.promote_eltype(TT,z),ng)
     nc = length(z)
     fill!(x,zero(eltype(x)))
     @inbounds for i in 1:nc
@@ -159,35 +167,55 @@ Given a `GroupParam` and a parameter `P` it will return a single parameter `p` o
 pᵢ = ∑νᵢₖ(∑(νᵢₗ*P(i,j))) / ∑νᵢₖ(∑νᵢₗ)
 
 where `νᵢₖ` is the number of groups `k` at component `i` and `P(i,j)` depends on the type of `P`:
-- if `P` is a single paremeter, then `P(i,j) = f(P[i],P[j])`
-- if `P` is a pair paremeter, then `P(i,j) = p[i,j]`
+- if `P` is a single parameter, then `P(i,j) = f(P[i],P[j])`
+- if `P` is a pair parameter, then `P(i,j) = p[i,j]`
 
 """
 function group_pairmean end
 
 group_pairmean(groups,param) = group_pairmean(mix_mean,groups,param)
 
-function group_pairmean(f::T,groups,param::SingleOrPair) where {T}
-    return SingleParam(param.name,groups.components,group_pairmean(f,groups,param.values))
+function group_pairmean(f::T,groups,param::SingleParameter) where T
+    gc = SingleParam(param.name,groups.components,group_pairmean(f,groups,param.values))
+    gc.ismissingvalues .= true
+    return gc
 end
 
-function group_pairmean(f::F,groups,p::AbstractArray) where {F}
+function group_pairmean(f::T,groups,param::PairParameter) where T
+    gc = PairParam(param.name,groups.components,group_pairmean(f,groups,param.values))
+    gc.ismissingvalues .= true
+    return gc
+end
+
+function group_pairmean(f::F,groups,p::AbstractArray{P,ND}) where {F,P,ND}
     v = __get_group_sum_values(groups)
     T = Base.promote_eltype(1.0,p,v[1])
-    res = zeros(T, length(groups.components))
+    ng = length(groups.components)
+    res = zeros(T,ntuple(i -> ng,Val(ND)))
     return group_pairmean!(res,f,groups,p)
 end
 
+"""
+    group_pairmean!(res, f, groups, param)
+
+In-place version of [`group_pairmean`](@ref). 
+Writes the component-level values into `res`, using the mixing function `f` when `param` is a vector.
+If `res` is a matrix, then `group_pairmean!` will write on the diagonal terms instead.
+"""
 function group_pairmean!(res,f::F,groups,param::SingleOrPair) where {F}
     return group_pairmean!(res,f,groups,param.values)
 end
 
-function group_pairmean!(res,f,groups,p::AbstractMatrix)
+function group_pairmean!(_res,f,groups,p::AbstractMatrix)
+    if _res isa SingleOrPair
+        _res.ismissingvalues .= true
+    end
+    res = raw_values(_res)
     zz = __get_group_sum_values(groups)
     lgroups = 1:length(zz[1])
-    lcomps = 1:length(res)
     _0 = zero(eltype(res))
-    
+    w = linearidx(res)
+    lcomps = 1:length(w)
     for i ∈ lcomps
         ẑ = zz[i]
         ∑ẑinv2 = 1/(sum(ẑ)^2)
@@ -201,15 +229,21 @@ function group_pairmean!(res,f,groups,p::AbstractMatrix)
                 p_i += 2*ẑk*ẑ[l]*p[k,l]
             end
         end
-        res[i] = p_i*∑ẑinv2
+        ii = w[i]
+        res[ii] = p_i*∑ẑinv2
     end
-    return res
+    return _res
 end
 
-function group_pairmean!(res,f::T,groups,p::AbstractVector) where {T}
+function group_pairmean!(_res,f::T,groups,p::AbstractVector) where {T}
+    if _res isa SingleOrPair
+        _res.ismissingvalues .= true
+    end
+    res = raw_values(_res)
     zz = __get_group_sum_values(group)
     lgroups = 1:length(zz[1])
     lcomps = 1:length(groups.components)
+    w = linearidx(res)
     _0 = zero(eltype(res))
     for i ∈ lcomps
         ẑ = zz[i]
@@ -224,10 +258,13 @@ function group_pairmean!(res,f::T,groups,p::AbstractVector) where {T}
                 p_i += 2*ẑk*ẑ[l]*f(pk,p[l])
             end
         end
-        res[i] = p_i*∑ẑinv2
+        ii = w[i]
+        res[ii] = p_i*∑ẑinv2
     end
-    return res
+    return _res
 end
+
+group_pairmean!(res,groups,p) = group_pairmean!(res,mix_mean,groups,p)
 
 
 """
@@ -238,7 +275,7 @@ Modifies implace the field `n_groups_cache` (`μᵢₖ`) in the `GroupParam`:
 μᵢₖ = νᵢₖ*Sₖ*vstₖ
 ```
 Where `S` is a shape factor parameter for each group and `vst` is the segment size for each group.
-used mainly for GC models (like `SAFTgammaMie`) in which the group fraction depends on segment size and shape factors.
+Used mainly for GC models (like `SAFTgammaMie`) in which the group fraction depends on segment size and shape factors.
 """
 function mix_segment!(groups,ngroups,s = ones(length(groups.flattenedgroups)),segment = ones(length(groups.flattenedgroups)))
     v = __get_group_sum_values(groups)
@@ -271,13 +308,17 @@ function group_pairmean2!(out,groups,mat)
     _0 = zero(eltype(mat))
     n = groups.n_flattenedgroups
     for i ∈ 1:l_c
+        ni = n[i]
         for j ∈ 1:l_c
+            nj = n[j]
             res = _0
             sumn = _0
             for k in 1:l_gc
+                nik = ni[k]
                 for l in 1:l_gc
-                    res += n[i][k]*n[j][l]*mat[k,l]
-                    sumn += n[i][k]*n[j][l]
+                    njl = nj[l]
+                    res += nik*njl*mat[k,l]
+                    sumn += nik*njl
                 end
             end
             out[i,j] = res/sumn

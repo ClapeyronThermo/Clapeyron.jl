@@ -25,16 +25,13 @@ function find_alpha_bounds(x, d, lo, hi, alpha0 = one(Base.promote_eltype(x,d,lo
     return alpha
 end
 
-BoundedLineSearch(lb::T,ub::T) where T = BoundedLineSearch(lb,ub,0.99)
+BoundedLineSearch(lb::T,ub::T) where T = BoundedLineSearch(lb,ub,0.99,NLSolvers.Backtracking())
 
-function BoundedLineSearch(lb::T,ub::T,decay::Number) where T
-    ls = NLSolvers.Backtracking()
+function BoundedLineSearch(lb::T,ub::T,decay::Number, ls::NLSolvers.LineSearcher) where T
     BoundedLineSearch{T,typeof(ls)}(lb,ub,ls,Float64(decay))
 end
 
 function NLSolvers.find_steplength(mstyle, ls::BoundedLineSearch{F,LS}, φ, λ::T) where {F,LS,T}
-    d = φ.d
-    x = φ.x
     λr = find_alpha_bounds(φ.x, φ.d, ls.lo, ls.hi, λ, ls.decay)
     if ls.ls isa NLSolvers.Static
         λx = T(λr*ls.ls.α)

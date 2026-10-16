@@ -10,12 +10,26 @@ struct eNRTL{T<:IdealModel,c<:EoSModel,i<:IonModel} <: eNRTLModel
     ionmodel::i
     references::Array{String,1}
 end
-function eNRTL(solvents,ions; 
+
+"""
+    eNRTL(solvents, ions;
+        idealmodel = BasicIdeal,
+        neutralmodel = NRTL,
+        ionmodel = PDH,
+        RSPmodel = ConstRSP,
+        userlocations = String[],
+        ideal_userlocations = String[],
+        verbose = false)
+
+Electrolyte NRTL activity model. Builds a combined model for solvent and ion
+components using a neutral NRTL model and a selected ion model.
+"""
+function eNRTL(solvents,ions;
     idealmodel = BasicIdeal,
     neutralmodel = NRTL,
     ionmodel = PDH,
     RSPmodel = ConstRSP,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
      verbose=false)
     components = deepcopy(ions)
@@ -52,13 +66,13 @@ function excess_g_local(model::eNRTLModel, V, T, z)
     n = sum(z)
     invn = 1/n
     invT = 1/(T)
-    res = _0 
+    res = _0
 
+    Z = component_charges(model)
+    isolv = model.icomponents[Z.==0]
+    icat = model.icomponents[Z.>0]
+    iani = model.icomponents[Z.<0]
 
-    isolv = model.icomponents[model.charge.==0]
-    icat = model.icomponents[model.charge.>0]
-    iani = model.icomponents[model.charge.<0]
-    
     Ya = z[iani]
     Ya ./= sum(Ya)
 
@@ -80,11 +94,12 @@ function excess_g_local(model::eNRTLModel, V, T, z)
         res += xm*∑τGx/∑Gx
     end
 
+    ZZ = component_charges(model)
     for c in icat
         ∑τGx = _0
         ∑Gx = _0
         xc = z[c]*invn
-        Zc = abs(model.charge[c])
+        Zc = abs(ZZ[c])
         for j in @comps
             xj = z[j]*invn
             τjc = τ[j,c] + b[j,c]*invT
@@ -100,7 +115,7 @@ function excess_g_local(model::eNRTLModel, V, T, z)
         ∑τGx = _0
         ∑Gx = _0
         xa = z[a]*invn
-        Za = abs(model.charge[a])
+        Za = abs(ZZ[a])
         for j in @comps
             xj = z[j]*invn
             τja = τ[j,a] + b[j,a]*invT
@@ -115,7 +130,8 @@ function excess_g_local(model::eNRTLModel, V, T, z)
 end
 
 function activity_coefficient(model::eNRTLModel,p,T,z)
-    ion = model.charge.!=0
+    ZZ = component_charges(model)
+    ion = ZZ.!=0
 
     X = gradient_type(p,T,z)
     lnγres = (Solvers.gradient(x->excess_g_local(model,p,T,x),z)/(R̄*T))::X
