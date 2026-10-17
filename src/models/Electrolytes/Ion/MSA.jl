@@ -17,15 +17,18 @@ export MSA
         verbose = false)
 
 ## Input models
-- `RSPmodel`: Relative Static Permittivity Model
+
+  - `RSPmodel`: Relative Static Permittivity Model
 
 ## Description
+
 This function is used to create a Mean Spherical Approximation model. The MSA term gives the excess Helmholtz energy to account for the electrostatic interactions between ions in solution.
 
 ## References
-1. Blum, L. (1974). Solution of a model for the solvent-electrolyte interactions in the mean spherical approximation. The Journal of Chemical Physics, 61(5), 2129–2133. [doi:10.1063/1.1682224](https://doi.org/10.1063/1.1682224)
+
+ 1. Blum, L. (1974). Solution of a model for the solvent-electrolyte interactions in the mean spherical approximation. The Journal of Chemical Physics, 61(5), 2129–2133. [doi:10.1063/1.1682224](https://doi.org/10.1063/1.1682224)
 """
-function MSA(solvents,ions; charge = nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
+function MSA(solvents, ions; charge=nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     solvents = format_components(solvents)
     ions = format_components(ions)
     components = vcat(solvents, ions)
@@ -35,7 +38,7 @@ function MSA(solvents,ions; charge = nothing, RSPmodel=ConstRSP, userlocations=S
 
     references = default_references(MSA)
 
-    init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
+    init_RSPmodel = @initmodel RSPmodel(solvents, ions, userlocations=RSPmodel_userlocations, verbose=verbose)
 
     model = MSA(components, init_RSPmodel, references)
     return model
@@ -44,7 +47,7 @@ end
 default_references(::Type{MSA}) = ["10.1063/1.1682224"]
 
 function a_res(model::MSAModel, V, T, z, iondata)
-    return @f(a_MSA,iondata)
+    return @f(a_MSA, iondata)
 end
 
 function a_MSA(ionmodel::MSAModel, V, T, z, iondata)
@@ -55,7 +58,7 @@ end
 function a_MSA(V::Number, T, z, Z, σ, ϵ_r)
     nc = length(Z)
     iions = @iions
-    if all(iszero,Z)
+    if all(iszero, Z)
         return zero(Base.promote_eltype(V, T, z, Z, σ, ϵ_r))
     end
     ∑z = sum(z)
@@ -68,7 +71,7 @@ function a_MSA(V::Number, T, z, Z, σ, ϵ_r)
     return (U_MSA+Γ^3*k_B*T*V/(3π))/(N_A*k_B*T*sum(z))
 end
 
-function screening_length(model::MSAModel,V,T,z,iondata)
+function screening_length(model::MSAModel, V, T, z, iondata)
     Z, σ, ϵ_r = iondata
     return screening_length(V, T, z, Z, σ, ϵ_r)
 end
@@ -78,7 +81,7 @@ function screening_length(V, T, z, Z, σ, ϵ_r)
     ρ = N_A/V
     nc = length(Z)
     Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ 1:nc)
-    κ = debye_length(V,T,z,ϵ_r,Z)
+    κ = debye_length(V, T, z, ϵ_r, Z)
     k1 = sqrt(π*e_c^2*ρ/(4π*ϵ_0*ϵ_r*k_B*T))
     Γnew = κ*oneunit(k1)
     Γold = Γnew
@@ -91,7 +94,7 @@ function screening_length(V, T, z, Z, σ, ϵ_r)
         for i in 1:nc
             if !iszero(Z[i])
                 Ω1 += z[i]*σ[i]^3/(1+Γold*σ[i])
-            end 
+            end
         end
         Ω = 1 + π*ρ/(2*Δ)*Ω1
 
@@ -115,7 +118,6 @@ function screening_length(V, T, z, Z, σ, ϵ_r)
             end
         end
 
-        
         Γnew = k1*sqrt(∑Q2x)
         abs(1-Γnew/Γold) <= 1e-12 && break
     end

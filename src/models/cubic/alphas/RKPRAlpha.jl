@@ -11,36 +11,42 @@ export RKPRAlpha
 
 """
     RKPRAlpha <: RKPRAlphaModel
-    
+
     RKPRAlpha(components;
     userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters
 
-- `k₁`: Single Parameter (`Float64`).
-- `k₂`: Single Parameter (`Float64`).
-- `acentricfactor`: Single Parameter (`Float64`) (optional), acentric factor. Used to estimate the value of `k₁` and `k₂` when not provided.
+  - `k₁`: Single Parameter (`Float64`).
+  - `k₂`: Single Parameter (`Float64`).
+  - `acentricfactor`: Single Parameter (`Float64`) (optional), acentric factor. Used to estimate the value of `k₁` and `k₂` when not provided.
 
 ## Description
 
 Cubic alpha `(α(T))` model. Default for [`RKPR`](@ref) EoS.
+
 ```
 αᵢ = ((k₂ᵢ + 1)/(k₂ᵢ + Trᵢ))^k₁ᵢ
 ```
 
 In the case of RKPR EoS, if no values of `k₁` and `k₂` are provided, the following correlation is used:
+
 ```
 k₁ = (12.504*Zc -2.7238) + (7.4513*Zc + 1.9681)*ωᵢ + (-2.4407*Zc + 0.0017)*ωᵢ²
 Trᵢ = T/Tcᵢ
 k₂ = 2
 ```
+
 For other cubic EoS, the k₁ is calculated via the Leibovici alpha:
+
 ```
 k₂ = 2
 k₁ = log(αᵢ(leibovici,Tr = 0.7))/log(3/2.7)
 ```
+
 ## Model Construction Examples
+
 ```
 # Using the default database
 alpha = RKPRAlpha("water") #single input
@@ -59,27 +65,27 @@ RKPRAlpha
 default_locations(::Type{RKPRAlpha}) = critical_data()
 default_ignore_missing_singleparams(::Type{RKPRAlpha}) = ["Vc"]
 
-function transform_params(::Type{RKPRAlphaParam},params,components)
+function transform_params(::Type{RKPRAlphaParam}, params, components)
     n = length(components)
-    k1 = get!(params,"k1") do
-        SingleParam("k1",components,zeros(n),fill(true,n))
+    k1 = get!(params, "k1") do
+        SingleParam("k1", components, zeros(n), fill(true, n))
     end
 
-    k2 = get!(params,"k2") do
-        SingleParam("k2",components,zeros(n),fill(true,n))
+    k2 = get!(params, "k2") do
+        SingleParam("k2", components, zeros(n), fill(true, n))
     end
     return params
 end
 
-function fast_build_alpha(::Type{RKPRAlpha},params)
-    return haskey(params,"acentricfactor")
+function fast_build_alpha(::Type{RKPRAlpha}, params)
+    return haskey(params, "acentricfactor")
 end
 
-function α_function(model::CubicModel,V,T,z,alpha_model::RKPRAlphaModel)
+function α_function(model::CubicModel, V, T, z, alpha_model::RKPRAlphaModel)
     k1 = alpha_model.params.k1.values
     k2 = alpha_model.params.k2.values
     Tc = model.params.Tc.values
-    α = zeros(typeof(1.0*T),length(Tc))
+    α = zeros(typeof(1.0*T), length(Tc))
     for i in @comps
         Tr = T/Tc[i]
         k2i = k2[i]
@@ -89,7 +95,7 @@ function α_function(model::CubicModel,V,T,z,alpha_model::RKPRAlphaModel)
     return α
 end
 
-function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::RKPRAlphaModel)
+function α_function(model::CubicModel, V, T, z::SingleComp, alpha_model::RKPRAlphaModel)
     k1 = alpha_model.params.k1.values[1]
     k2 = alpha_model.params.k2.values[1]
     Tc = model.params.Tc.values[1]
@@ -98,7 +104,7 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::RKPRAlphaM
     return SA[α]
 end
 
-function recombine_alpha!(model::DeltaCubicModel,alpha::RKPRAlphaModel)
+function recombine_alpha!(model::DeltaCubicModel, alpha::RKPRAlphaModel)
     ω = alpha.params.acentricfactor.values
     ω = alpha.params.acentricfactor.values
     k1 = alpha.params.k1
@@ -112,15 +118,15 @@ function recombine_alpha!(model::DeltaCubicModel,alpha::RKPRAlphaModel)
         end
 
         if k1.ismissingvalues[i]
-            poly = α_m_leibovici(model,i)
-            mi = evalpoly(ω[i],poly)
+            poly = α_m_leibovici(model, i)
+            mi = evalpoly(ω[i], poly)
             αi = (1+mi*(1-sqrt(0.7)))^2
             k1[i] = log(αi)/log((k2i + 1)/(k2i + 0.7))
         end
     end
 end
 
-function recombine_alpha!(model::RKPRModel,alpha::RKPRAlphaModel)
+function recombine_alpha!(model::RKPRModel, alpha::RKPRAlphaModel)
     Pc = model.params.Pc.values
     Tc = model.params.Tc.values
     ω = alpha.params.acentricfactor.values
@@ -136,15 +142,15 @@ function recombine_alpha!(model::RKPRModel,alpha::RKPRAlphaModel)
 
         if k1.ismissingvalues[i] && k2i == 2.0
             z = FillArrays.OneElement(i, length(model))
-            Δ1,Δ2 = cubic_Δ(model,z)
-            b = lb_volume(model,Tc[i],z)
-            Δ1,Δ2 = cubic_Δ(model,z)
+            Δ1, Δ2 = cubic_Δ(model, z)
+            b = lb_volume(model, Tc[i], z)
+            Δ1, Δ2 = cubic_Δ(model, z)
             B = b*Pc[i]/(Rgas(model)*Tc[i])
             Zc = (1 + (Δ1 + Δ2 + 1)*B)/3 #Pc
-            k1[i] = evalpoly(ω[i],(12.504*Zc -2.7238,7.4513*Zc + 1.9681,-2.4407*Zc + 0.0017))
+            k1[i] = evalpoly(ω[i], (12.504*Zc - 2.7238, 7.4513*Zc + 1.9681, -2.4407*Zc + 0.0017))
         elseif k1.ismissingvalues[i] && k2i != 2.0
-            poly = α_m_leibovici(model,i)
-            mi = evalpoly(ω[i],poly)
+            poly = α_m_leibovici(model, i)
+            mi = evalpoly(ω[i], poly)
             αi = (1+mi*(1-sqrt(0.7)))^2
             k1[i] = log(αi)/log((k2i + 1)/(k2i + 0.7))
         end

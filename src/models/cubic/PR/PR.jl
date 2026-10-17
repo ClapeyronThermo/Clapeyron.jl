@@ -2,7 +2,7 @@ abstract type PRModel <: ABCubicModel end
 
 const PRParam = ABCubicParam
 
-struct PR{T <: IdealModel,α,c,γ} <:PRModel
+struct PR{T<:IdealModel,α,c,γ} <: PRModel
     components::Array{String,1}
     alpha::α
     mixing::γ
@@ -29,26 +29,33 @@ end
     reference_state = nothing)
 
 ## Input parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `k`: Pair Parameter (`Float64`) (optional)
-- `l`: Pair Parameter (`Float64`) (optional)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `k`: Pair Parameter (`Float64`) (optional)
+  - `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `a`: Pair Parameter (`Float64`)
-- `b`: Pair Parameter (`Float64`)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `a`: Pair Parameter (`Float64`)
+  - `b`: Pair Parameter (`Float64`)
+
 ## Input models
-- `idealmodel`: Ideal Model
-- `alpha`: Alpha model
-- `mixing`: Mixing model
-- `activity`: Activity Model, used in the creation of the mixing model.
-- `translation`: Translation Model
+
+  - `idealmodel`: Ideal Model
+  - `alpha`: Alpha model
+  - `mixing`: Mixing model
+  - `activity`: Activity Model, used in the creation of the mixing model.
+  - `translation`: Translation Model
+
 ## Description
+
 Peng-Robinson Equation of state.
+
 ```
 P = RT/(V-Nb) + a•α(T)/(V-Nb₁)(V-Nb₂)
 b₁ = (1 + √2)b
@@ -56,6 +63,7 @@ b₂ = (1 - √2)b
 ```
 
 ## Model Construction Examples
+
 ```julia
 # Using the default database
 model = PR("water") #single input
@@ -85,41 +93,24 @@ model = PR(["neon","hydrogen"];
                         l = [0. 0.01; 0.01 0.])
                     )
 ```
+
 ## References
-1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. [doi:10.1021/I160057A011](https://doi.org/10.1021/I160057A011)
+
+ 1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. [doi:10.1021/I160057A011](https://doi.org/10.1021/I160057A011)
 """
 PR
 export PR
 
-function PR(components;
-    idealmodel = BasicIdeal,
-    alpha = PRAlpha,
-    mixing = vdW1fRule,
-    activity = nothing,
-    translation = NoTranslation,
-    userlocations = String[],
-    ideal_userlocations = String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    reference_state = nothing,
-    verbose = false)
+function PR(components; idealmodel=BasicIdeal, alpha=PRAlpha, mixing=vdW1fRule, activity=nothing, translation=NoTranslation, userlocations=String[], ideal_userlocations=String[], alpha_userlocations=String[], mixing_userlocations=String[], activity_userlocations=String[], translation_userlocations=String[], reference_state=nothing, verbose=false)
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
-        userlocations = userlocations,
-        verbose = verbose,
-        ignore_missing_singleparams = ["Vc","acentricfactor"])
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv", "SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose, ignore_missing_singleparams=["Vc", "acentricfactor"])
 
-    model = CubicModel(PR,params,formatted_components;
-                        idealmodel,alpha,mixing,activity,translation,
-                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
-                        reference_state, verbose)
+    model = CubicModel(PR, params, formatted_components; idealmodel, alpha, mixing, activity, translation, userlocations, ideal_userlocations, alpha_userlocations, activity_userlocations, mixing_userlocations, translation_userlocations, reference_state, verbose)
 
-    k = get(params,"k",nothing)
-    l = get(params,"l",nothing)
-    recombine_cubic!(model,k,l)
-    set_reference_state!(model,reference_state;verbose)
+    k = get(params, "k", nothing)
+    l = get(params, "l", nothing)
+    recombine_cubic!(model, k, l)
+    set_reference_state!(model, reference_state; verbose)
     return model
 end
 
@@ -127,7 +118,7 @@ default_references(::Type{PR}) = ["10.1021/I160057A011"]
 
 @inline function cubic_Δ(::Type{<:PRModel})
     sqrt2 = sqrt(2)
-    return (-1+sqrt2,-1-sqrt2)
+    return (-1+sqrt2, -1-sqrt2)
 end
 
 #! format: off

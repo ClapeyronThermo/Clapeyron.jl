@@ -1,4 +1,4 @@
-function M.FlashedMixture2Phase(eos::C.EoSModel, T = Float64, T_num = Float64)
+function M.FlashedMixture2Phase(eos::C.EoSModel, T=Float64, T_num=Float64)
     n = M.number_of_components(eos)
     V = zero(T)
     # K values are always doubles
@@ -8,21 +8,21 @@ function M.FlashedMixture2Phase(eos::C.EoSModel, T = Float64, T_num = Float64)
     return M.FlashedMixture2Phase(M.unknown_phase_state_lv, K, V, liquid, vapor)
 end
 
-function M.single_phase_label(model::C.EoSModel,cond)
-    V,_,_ = C._label_and_volumes(model,cond)
+function M.single_phase_label(model::C.EoSModel, cond)
+    V, _, _ = C._label_and_volumes(model, cond)
     return V
 end
 
-function M.flashed_mixture_2ph(eos::C.EoSModel, cond, _K = nothing; method = M.SSIFlash(), kwarg...)
+function M.flashed_mixture_2ph(eos::C.EoSModel, cond, _K=nothing; method=M.SSIFlash(), kwarg...)
     # Convenience function for getting flashed phases
-    S = M.flash_storage(eos, cond, method = method)
-    p,T,z = cond.p,cond.T,cond.z
-    K = _K === nothing ? C.wilson_k_values!(zeros(typeof(p+T+one(eltype(eos))),length(eos)),eos,p,T,S.crit) : _K
-    return M.flashed_mixture_2ph!(S, eos, cond, K; method = method, kwarg...)
+    S = M.flash_storage(eos, cond, method=method)
+    p, T, z = cond.p, cond.T, cond.z
+    K = _K === nothing ? C.wilson_k_values!(zeros(typeof(p+T+one(eltype(eos))), length(eos)), eos, p, T, S.crit) : _K
+    return M.flashed_mixture_2ph!(S, eos, cond, K; method=method, kwarg...)
 end
 
 function M.flashed_mixture_2ph!(storage, eos::C.EoSModel, conditions, K; kwarg...)
-    V, K, rep = M.flash_2ph!(storage, K, eos, conditions; kwarg..., extra_out = true)
+    V, K, rep = M.flash_2ph!(storage, K, eos, conditions; kwarg..., extra_out=true)
     p = conditions.p
     T = conditions.T
     z = conditions.z
@@ -32,8 +32,8 @@ function M.flashed_mixture_2ph!(storage, eos::C.EoSModel, conditions, K; kwarg..
         #=
         instead of Li correlation, we just check the gibbs energies of the mixtures.
         we do this anyway in the volume calculation, so it better to be more explicit.
-        =#  
-        V,Vl,Vv = C._label_and_volumes(eos, conditions)
+        =#
+        V, Vl, Vv = C._label_and_volumes(eos, conditions)
         n = sum(z)
         nRT = C.Rgas(eos)*T*n
         if V == 0
@@ -43,15 +43,15 @@ function M.flashed_mixture_2ph!(storage, eos::C.EoSModel, conditions, K; kwarg..
             state = M.single_phase_v
             Zx = Vv*p/nRT
         end
-        Z_L,Z_V = Zx,Zx
+        Z_L, Z_V = Zx, Zx
         x .= z ./ n
         y .= z ./ n
     else
         @. x = M.liquid_mole_fraction(z, K, V)
         @. y = M.vapor_mole_fraction(x, K)
         state = M.two_phase_lv
-        Z_L = C.compressibility_factor(eos, p, T, x, phase = :l)
-        Z_V = C.compressibility_factor(eos, p, T, y, phase = :v)
+        Z_L = C.compressibility_factor(eos, p, T, x, phase=:l)
+        Z_V = C.compressibility_factor(eos, p, T, y, phase=:v)
     end
     nan = zero(V)/zero(V)
     return M.FlashedMixture2Phase(state, K, V, x, y, Z_L, Z_V, nan, conditions, rep.stability)
@@ -77,13 +77,13 @@ end
 
 function M.molar_volume(model::C.EoSModel, p, T, ph::M.FlashedPhase{X}) where X
     Z = ph.Z
-    v = convert(X,Z*C.Rgas(model)*T/p)
+    v = convert(X, Z*C.Rgas(model)*T/p)
     return v
 end
 
 function M.mass_density(model::C.EoSModel, p, T, ph::M.FlashedPhase{X}) where X
     Z = ph.Z
     v = Z*C.Rgas(model)*T/p
-    molar_weight = C.molecular_weight(model,ph.mole_fractions)
-    return convert(X,molar_weight/v)
+    molar_weight = C.molecular_weight(model, ph.mole_fractions)
+    return convert(X, molar_weight/v)
 end
