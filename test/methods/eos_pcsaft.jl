@@ -8,48 +8,48 @@
     Mw = Clapeyron.molecular_weight(system)
     @testset "Single component - bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ v rtol = 1e-6
-        @test Clapeyron.PT0.volume(system, p, T)  ≈ v rtol = 1e-6
-        @test Clapeyron.volume(system, p, T;phase=:v) ≈ 0.020427920501436134 rtol = 1e-6
-        @test Clapeyron.volume(system, p, T;threaded=:false) ≈ v rtol = 1e-6
+        @test Clapeyron.PT0.volume(system, p, T) ≈ v rtol = 1e-6
+        @test Clapeyron.volume(system, p, T; phase=:v) ≈ 0.020427920501436134 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T; threaded=:false) ≈ v rtol = 1e-6
         @test Clapeyron.pip(system, v, T) ≈ 6.857076349623449 rtol = 1e-6
         @test Clapeyron.is_liquid(Clapeyron.VT_identify_phase(system, v, T))
         @test Clapeyron.compressibility_factor(system, p, T) ≈ 0.002383223535444557 rtol = 1e-6
         @test Clapeyron.pressure(system, v, T) ≈ p rtol = 1e-6
         @test Clapeyron.pressure(system, 2*v, T, Clapeyron.SA[2.0]) ≈ p rtol = 1e-6
         s = Clapeyron.entropy(system, p, T)
-        sm = Clapeyron.mass_entropy(system,p,T)
+        sm = Clapeyron.mass_entropy(system, p, T)
         @test s ≈ -58.87118569239617 rtol = 1E-6
         @test s/sm ≈ Mw
-        @test Clapeyron.VT_entropy_res(system,v,T) + Clapeyron.VT_entropy(Clapeyron.idealmodel(system),v,T) ≈ s
-        @test Clapeyron.entropy_res(system,p,T) + Clapeyron.VT_entropy(Clapeyron.idealmodel(system),v,T) ≈ s
+        @test Clapeyron.VT_entropy_res(system, v, T) + Clapeyron.VT_entropy(Clapeyron.idealmodel(system), v, T) ≈ s
+        @test Clapeyron.entropy_res(system, p, T) + Clapeyron.VT_entropy(Clapeyron.idealmodel(system), v, T) ≈ s
         @test Clapeyron.chemical_potential(system, p, T)[1] ≈ -18323.877542682934 rtol = 1E-6
         u = Clapeyron.internal_energy(system, p, T)
         um = Clapeyron.mass_internal_energy(system, p, T)
         @test u ≈ -35882.22946560716 rtol = 1E-6
         @test u/um ≈ Mw
-        @test Clapeyron.VT_internal_energy_res(system,v,T) + Clapeyron.VT_internal_energy(Clapeyron.idealmodel(system),v,T) ≈ u
-        @test Clapeyron.internal_energy_res(system,p,T) + Clapeyron.VT_internal_energy(Clapeyron.idealmodel(system),v,T) ≈ u
+        @test Clapeyron.VT_internal_energy_res(system, v, T) + Clapeyron.VT_internal_energy(Clapeyron.idealmodel(system), v, T) ≈ u
+        @test Clapeyron.internal_energy_res(system, p, T) + Clapeyron.VT_internal_energy(Clapeyron.idealmodel(system), v, T) ≈ u
         h = Clapeyron.enthalpy(system, p, T)
         hm = Clapeyron.mass_enthalpy(system, p, T)
         @test h ≈ -35876.32155687084 rtol = 1E-6
         @test h/hm ≈ Mw
-        @test Clapeyron.VT_enthalpy_res(system,v,T) + Clapeyron.VT_enthalpy(Clapeyron.idealmodel(system),v,T) ≈ h
+        @test Clapeyron.VT_enthalpy_res(system, v, T) + Clapeyron.VT_enthalpy(Clapeyron.idealmodel(system), v, T) ≈ h
         g = Clapeyron.gibbs_energy(system, p, T)
-        gm = Clapeyron.mass_gibbs_energy(system,p,T)
+        gm = Clapeyron.mass_gibbs_energy(system, p, T)
         @test g ≈ -18323.87754268292 rtol = 1E-6
         @test g/gm ≈ Mw
-        @test Clapeyron.VT_gibbs_energy_res(system,v,T) + Clapeyron.VT_gibbs_energy(Clapeyron.idealmodel(system),v,T) ≈ g
-        @test Clapeyron.gibbs_energy_res(system,p,T) + Clapeyron.VT_gibbs_energy(Clapeyron.idealmodel(system),v,T) ≈ g
+        @test Clapeyron.VT_gibbs_energy_res(system, v, T) + Clapeyron.VT_gibbs_energy(Clapeyron.idealmodel(system), v, T) ≈ g
+        @test Clapeyron.gibbs_energy_res(system, p, T) + Clapeyron.VT_gibbs_energy(Clapeyron.idealmodel(system), v, T) ≈ g
         a = Clapeyron.helmholtz_energy(system, p, T)
         am = Clapeyron.mass_helmholtz_energy(system, p, T)
         @test a ≈ -18329.785451419295 rtol = 1E-6
         @test a/am ≈ Mw
-        @test Clapeyron.VT_helmholtz_energy_res(system,v,T) + Clapeyron.VT_helmholtz_energy(Clapeyron.idealmodel(system),v,T) ≈ a
-        @test Clapeyron.helmholtz_energy_res(system,p,T) + Clapeyron.VT_helmholtz_energy(Clapeyron.idealmodel(system),v,T) ≈ a
+        @test Clapeyron.VT_helmholtz_energy_res(system, v, T) + Clapeyron.VT_helmholtz_energy(Clapeyron.idealmodel(system), v, T) ≈ a
+        @test Clapeyron.helmholtz_energy_res(system, p, T) + Clapeyron.VT_helmholtz_energy(Clapeyron.idealmodel(system), v, T) ≈ a
         @test Clapeyron.isochoric_heat_capacity(system, p, T) ≈ 48.37961296309505 rtol = 1E-6
         @test Clapeyron.isobaric_heat_capacity(system, p, T) ≈ 66.45719988319257 rtol = 1E-6
         Cp = Clapeyron.isobaric_heat_capacity(system, p, T2)
-        Cpm = Clapeyron.mass_isobaric_heat_capacity(system,p,T2)
+        Cpm = Clapeyron.mass_isobaric_heat_capacity(system, p, T2)
         Cv = Clapeyron.isochoric_heat_capacity(system, p, T2)
         Cvm = Clapeyron.mass_isochoric_heat_capacity(system, p, T2)
         @test Cp/Cpm ≈ Mw
@@ -60,35 +60,35 @@
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1236.4846683094133 rtol = 1E-6 #requires that the model has Mr
         @test Clapeyron.isobaric_expansivity(system, p, T) ≈ 0.0010874255138433413 rtol = 1E-6
         @test Clapeyron.joule_thomson_coefficient(system, p, T) ≈ -6.007581864883784e-7 rtol = 1E-6
-        @test Clapeyron.second_virial_coefficient(system, T) ≈ -0.004919678119638886  rtol = 1E-6 #exact value calculated by using BigFloat
-        @test Clapeyron.second_virial_coefficient(system, T, Clapeyron.SA[2.0]) ≈ 2*-0.004919678119638886  rtol = 1E-6
-        @test Clapeyron.second_virial_coefficient(system, T, Clapeyron.SA[4.0]) ≈ 4*-0.004919678119638886  rtol = 1E-6
+        @test Clapeyron.second_virial_coefficient(system, T) ≈ -0.004919678119638886 rtol = 1E-6 #exact value calculated by using BigFloat
+        @test Clapeyron.second_virial_coefficient(system, T, Clapeyron.SA[2.0]) ≈ 2*-0.004919678119638886 rtol = 1E-6
+        @test Clapeyron.second_virial_coefficient(system, T, Clapeyron.SA[4.0]) ≈ 4*-0.004919678119638886 rtol = 1E-6
         @test Clapeyron.inversion_temperature(system, 1.1e8) ≈ 824.4137805298458 rtol = 1E-6
-        @test Clapeyron.fugacity_coefficient(system, p, T, phase = :l)[1] ≈ 0.07865326632570452 rtol = 1E-6
+        @test Clapeyron.fugacity_coefficient(system, p, T, phase=:l)[1] ≈ 0.07865326632570452 rtol = 1E-6
     end
     @printline
     @testset "Single component - equilibrium properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7972.550405922014 rtol = 1E-6
         @test Clapeyron.saturation_temperature(system, p)[1] ≈ 351.32529505096164 rtol = 1E-6
-        @test Clapeyron.saturation_temperature(system, p, 350.)[1] ≈ 351.32529505096164 rtol = 1E-6
+        @test Clapeyron.saturation_temperature(system, p, 350.0)[1] ≈ 351.32529505096164 rtol = 1E-6
         @test Clapeyron.enthalpy_vap(system, T) ≈ 41712.78521121877 rtol = 1E-6
         @test Clapeyron.acentric_factor(system) ≈ 0.5730309964718605 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 533.1324329774004 rtol = 1E-6
     end
     @printline
-    system = PCSAFT(["methanol","cyclohexane"])
+    system = PCSAFT(["methanol", "cyclohexane"])
     p = 1e5
     T = 313.15
-    z = [0.5,0.5]
+    z = [0.5, 0.5]
     p2 = 2e6
     T2 = 443.15
-    z2 = [0.27,0.73]
+    z2 = [0.27, 0.73]
     @testset "Multiple components - bulk properties" begin
         @test Clapeyron.reference_chemical_potential_type(system) == :pure
         @test Clapeyron.volume(system, p, T, z) ≈ 7.779694485714412e-5 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 1087.0303138908864 rtol = 1E-6
         @test Clapeyron.activity_coefficient(system, p, T, z)[1] ≈ 1.794138454452822 rtol = 1E-6
-        @test Clapeyron.activity(system,p, T, z)[1] ≈ 1.794138454452822*0.5
+        @test Clapeyron.activity(system, p, T, z)[1] ≈ 1.794138454452822*0.5
         @test Clapeyron.reference_chemical_potential(system, p, T, :pure)[1] ≈ -15984.404561327814
         @test Clapeyron.reference_chemical_potential(system, p, T, :sat_pure_T)[1] ≈ -15987.11712041398
         @test Clapeyron.fugacity_coefficient(system, p, T, z)[1] ≈ 0.5582931304564298 rtol = 1E-6
@@ -102,65 +102,65 @@
         #Those are the highest memory-intensive routines. i suspect that this is causing the
         #failures on windows 1.6. testing if adding GC pauses helps the problem
         GC.gc()
-        @test Clapeyron.gibbs_solvation(system,T) ≈ -13131.087644740426 rtol = 1E-6
+        @test Clapeyron.gibbs_solvation(system, T) ≈ -13131.087644740426 rtol = 1E-6
         GC.gc()
         @test Clapeyron.UCEP_mix(system)[1] ≈ 319.36877456397684 rtol = 1E-6
         GC.gc()
-        @test Clapeyron.bubble_pressure(system,T,z)[1] ≈ 54532.249600937736 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 54532.249600937736 rtol = 1E-6
         GC.gc()
-        @test Clapeyron.bubble_temperature(system,p2,z)[1] ≈ 435.80890506865 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system, p2, z)[1] ≈ 435.80890506865 rtol = 1E-6
         GC.gc()
-        @test Clapeyron.dew_pressure(system,T2,z)[1] ≈ 1.6555486543884084e6 rtol = 1E-6
+        @test Clapeyron.dew_pressure(system, T2, z)[1] ≈ 1.6555486543884084e6 rtol = 1E-6
         GC.gc()
-        @test Clapeyron.dew_temperature(system,p2,z)[1] ≈ 453.0056727580934 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system, p2, z)[1] ≈ 453.0056727580934 rtol = 1E-6
         GC.gc()
-        res_LLE_p = Clapeyron.LLE_pressure(system,T,z2)
+        res_LLE_p = Clapeyron.LLE_pressure(system, T, z2)
         @test res_LLE_p[1] ≈ 737971.7522006684 rtol = 1E-6
-        @test Clapeyron.pressure(system,res_LLE_p[2],T,z2) ≈ Clapeyron.pressure(system,res_LLE_p[3],T,res_LLE_p[end]) rtol = 1E-6
-        @test Clapeyron.pressure(system,res_LLE_p[2],T,z2) ≈ res_LLE_p[1] rtol = 1E-6
+        @test Clapeyron.pressure(system, res_LLE_p[2], T, z2) ≈ Clapeyron.pressure(system, res_LLE_p[3], T, res_LLE_p[end]) rtol = 1E-6
+        @test Clapeyron.pressure(system, res_LLE_p[2], T, z2) ≈ res_LLE_p[1] rtol = 1E-6
         GC.gc()
-        res_LLE_T = Clapeyron.LLE_temperature(system,p,z2)
+        res_LLE_T = Clapeyron.LLE_temperature(system, p, z2)
         T_LLE = res_LLE_T[1]
-        @test res_LLE_T[1] ≈ 312.9523684945214  rtol = 1E-6
-        @test Clapeyron.pressure(system,res_LLE_T[2],T_LLE,z2) ≈ Clapeyron.pressure(system,res_LLE_T[3],T_LLE,res_LLE_T[end]) rtol = 1E-6
-        @test Clapeyron.pressure(system,res_LLE_T[2],T_LLE,z2) ≈ p rtol = 1E-6
+        @test res_LLE_T[1] ≈ 312.9523684945214 rtol = 1E-6
+        @test Clapeyron.pressure(system, res_LLE_T[2], T_LLE, z2) ≈ Clapeyron.pressure(system, res_LLE_T[3], T_LLE, res_LLE_T[end]) rtol = 1E-6
+        @test Clapeyron.pressure(system, res_LLE_T[2], T_LLE, z2) ≈ p rtol = 1E-6
         GC.gc()
-        @test Clapeyron.azeotrope_pressure(system,T2)[1] ≈ 2.4435462800998255e6 rtol = 1E-6
+        @test Clapeyron.azeotrope_pressure(system, T2)[1] ≈ 2.4435462800998255e6 rtol = 1E-6
         GC.gc()
-        @test Clapeyron.azeotrope_temperature(system,p)[1] ≈ 328.2431049077264 rtol = 1E-6
+        @test Clapeyron.azeotrope_temperature(system, p)[1] ≈ 328.2431049077264 rtol = 1E-6
         GC.gc()
-        @test Clapeyron.UCST_mix(system,T2)[1] ≈ 1.0211532467788119e9 rtol = 1E-6
+        @test Clapeyron.UCST_mix(system, T2)[1] ≈ 1.0211532467788119e9 rtol = 1E-6
         GC.gc()
         @test Clapeyron.VLLE_pressure(system, T)[1] ≈ 54504.079665621306 rtol = 1E-6
         GC.gc()
         @test Clapeyron.VLLE_temperature(system, 54504.079665621306)[1] ≈ 313.1499860368554 rtol = 1E-6
         GC.gc()
-        @test Clapeyron.crit_mix(system,z)[1] ≈ 518.0004062881115 rtol = 1E-6
+        @test Clapeyron.crit_mix(system, z)[1] ≈ 518.0004062881115 rtol = 1E-6
     end
     @printline
 
     @testset "Multiple components - spinodals" begin
         # Example from Ref. https://doi.org/10.1016/j.fluid.2017.04.009
-        model = PCSAFT(["methane","ethane"])
-        T_spin = 223.
-        x_spin = [0.2,0.8]
-        (pl_spin, vl_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:liquid)
-        (pv_spin, vv_spin) = spinodal_pressure(model,T_spin,x_spin;phase=:vapor)
+        model = PCSAFT(["methane", "ethane"])
+        T_spin = 223.0
+        x_spin = [0.2, 0.8]
+        (pl_spin, vl_spin) = spinodal_pressure(model, T_spin, x_spin; phase=:liquid)
+        (pv_spin, vv_spin) = spinodal_pressure(model, T_spin, x_spin; phase=:vapor)
         @test vl_spin ≈ 7.218532167482202e-5 rtol = 1e-6
         @test vv_spin ≈ 0.0004261109817247137 rtol = 1e-6
 
-        (Tl_spin_impl, xl_spin_impl) = spinodal_temperature(model,pl_spin,x_spin;T0=220.,v0=vl_spin)
-        (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model,pv_spin,x_spin;T0=225.,v0=vv_spin)
+        (Tl_spin_impl, xl_spin_impl) = spinodal_temperature(model, pl_spin, x_spin; T0=220.0, v0=vl_spin)
+        (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model, pv_spin, x_spin; T0=225.0, v0=vv_spin)
         @test Tl_spin_impl ≈ T_spin rtol = 1e-6
         @test Tv_spin_impl ≈ T_spin rtol = 1e-6
 
         #test for #382: pure spinodal at low pressures
         model2 = PCSAFT("carbon dioxide")
-        Tc,Pc,Vc = (310.27679925044134, 8.06391600653306e6, 9.976420206333288e-5)
-        T = LinRange(Tc-70,Tc-0.1,50)
-        psl = first.(spinodal_pressure.(model2,T,phase = :l))
-        psv = first.(spinodal_pressure.(model2,T,phase = :v))
-        psat = first.(saturation_pressure.(model2,T))
+        Tc, Pc, Vc = (310.27679925044134, 8.06391600653306e6, 9.976420206333288e-5)
+        T = LinRange(Tc-70, Tc-0.1, 50)
+        psl = first.(spinodal_pressure.(model2, T, phase=:l))
+        psv = first.(spinodal_pressure.(model2, T, phase=:v))
+        psat = first.(saturation_pressure.(model2, T))
         @test all(psl .< psat)
         @test all(psat .< psv)
         @test issorted(psl)

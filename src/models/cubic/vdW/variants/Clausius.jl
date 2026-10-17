@@ -2,7 +2,7 @@ abstract type ClausiusModel <: ABCCubicModel end
 
 const ClausiusParam = ABCCubicParam
 
-struct Clausius{T <: IdealModel,α,c,γ} <:ClausiusModel
+struct Clausius{T<:IdealModel,α,c,γ} <: ClausiusModel
     components::Array{String,1}
     alpha::α
     mixing::γ
@@ -29,24 +29,27 @@ end
     verbose = false)
 
 ## Input parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) - Molar Volume `[m³·mol⁻¹]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `k`: Pair Parameter (`Float64`) (optional)
-- `l`: Pair Parameter (`Float64`) (optional)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Vc`: Single Parameter (`Float64`) - Molar Volume `[m³·mol⁻¹]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `k`: Pair Parameter (`Float64`) (optional)
+  - `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Vc`: Single Parameter (`Float64`) - Molar Volume `[m³·mol⁻¹]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `a`: Pair Parameter (`Float64`)
-- `b`: Pair Parameter (`Float64`)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Vc`: Single Parameter (`Float64`) - Molar Volume `[m³·mol⁻¹]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `a`: Pair Parameter (`Float64`)
+  - `b`: Pair Parameter (`Float64`)
 
 ## Description
 
 Clausius Equation of state.
+
 ```
 P = RT/(v-b) + a•α(T)/((v - Δ₀b)^2)
 
@@ -60,44 +63,26 @@ cᵢ = 3/8 * RTcᵢ/Pcᵢ - Vcᵢ
 
 ## References
 
-1. Clausius, R. (1880). Ueber das Verhalten der Kohlensäure in Bezug auf Druck, Volumen und Temperatur. Annalen der Physik, 245(3), 337–357. [doi:10.1002/andp.18802450302](https://doi.org/10.1002/andp.18802450302)
-
+ 1. Clausius, R. (1880). Ueber das Verhalten der Kohlensäure in Bezug auf Druck, Volumen und Temperatur. Annalen der Physik, 245(3), 337–357. [doi:10.1002/andp.18802450302](https://doi.org/10.1002/andp.18802450302)
 """
 Clausius
 
 export Clausius
-function Clausius(components;
-    idealmodel = BasicIdeal,
-    alpha = ClausiusAlpha,
-    mixing = vdW1fRule,
-    activity = nothing,
-    translation = NoTranslation,
-    userlocations = String[],
-    ideal_userlocations = String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    reference_state = nothing,
-    verbose = false)
-
+function Clausius(components; idealmodel=BasicIdeal, alpha=ClausiusAlpha, mixing=vdW1fRule, activity=nothing, translation=NoTranslation, userlocations=String[], ideal_userlocations=String[], alpha_userlocations=String[], mixing_userlocations=String[], activity_userlocations=String[], translation_userlocations=String[], reference_state=nothing, verbose=false)
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
-    model = CubicModel(Clausius,params,formatted_components;
-                        idealmodel,alpha,mixing,activity,translation,
-                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
-                        reference_state, verbose)
-    
-    k = get(params,"k",nothing)
-    l = get(params,"l",nothing)
-    recombine_cubic!(model,k,l)
-    set_reference_state!(model,reference_state;verbose)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv", "SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    model = CubicModel(Clausius, params, formatted_components; idealmodel, alpha, mixing, activity, translation, userlocations, ideal_userlocations, alpha_userlocations, activity_userlocations, mixing_userlocations, translation_userlocations, reference_state, verbose)
+
+    k = get(params, "k", nothing)
+    l = get(params, "l", nothing)
+    recombine_cubic!(model, k, l)
+    set_reference_state!(model, reference_state; verbose)
     return model
 end
 
 default_references(::Type{Clausius}) = ["10.1002/andp.18802450302"]
 
-function ab_premixing(model::ClausiusModel,mixing::MixingRule,k,l)
+function ab_premixing(model::ClausiusModel, mixing::MixingRule, k, l)
     _Tc = model.params.Tc
     _pc = model.params.Pc
     _Vc = model.params.Vc
@@ -106,11 +91,11 @@ function ab_premixing(model::ClausiusModel,mixing::MixingRule,k,l)
 
     diagvalues(a) .= @. 27*R̄^2*_Tc^2/_pc/64
     diagvalues(b) .= @. _Vc-1/4*R̄*_Tc/_pc
-    epsilon_LorentzBerthelot!(a,k)
-    sigma_LorentzBerthelot!(b,l)
+    epsilon_LorentzBerthelot!(a, k)
+    sigma_LorentzBerthelot!(b, l)
     #a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     #b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
-    return a,b
+    return a, b
 end
 
 function c_premixing(model::ClausiusModel)
@@ -118,18 +103,18 @@ function c_premixing(model::ClausiusModel)
     _Vc = model.params.Vc
     _pc = model.params.Pc
     c = model.params.c
-    diagvalues(c) .=  @. 3/8*R̄*_Tc/_pc-_Vc
+    diagvalues(c) .= @. 3/8*R̄*_Tc/_pc-_Vc
     sigma_LorentzBerthelot!(c)
     #a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     #b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
     return c
 end
 
-function cubic_Δ(model::ClausiusModel,z)
+function cubic_Δ(model::ClausiusModel, z)
     b = diagvalues(model.params.b)
     c = diagvalues(model.params.c)
     z⁻¹ = sum(z)^-1
-    b̄ = dot(b,z)*z⁻¹
-    c̄ = dot(c,z)*z⁻¹
-    return (-c̄/b̄,-c̄/b̄)
+    b̄ = dot(b, z)*z⁻¹
+    c̄ = dot(c, z)*z⁻¹
+    return (-c̄/b̄, -c̄/b̄)
 end

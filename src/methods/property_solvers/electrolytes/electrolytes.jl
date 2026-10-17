@@ -8,25 +8,27 @@ Critical salt fraction `s_c` for a net-neutral species + symmetric 1:1 salt syst
 The critical salt fraction is found by doing bisection over [`crit_mix(model,x(s))`](@ref Clapeyron.crit_mix) until `T_c ≈ T`.
 
 ## Inputs:
- - `model`, electrolyte model
- - `T`, temperature `[K]`
- - `s_lo`, minimum molar salt fraction
- - `s_hi`, maximum molar salt fraction
- - `max_iters`, maximum iterations
+
+  - `model`, electrolyte model
+  - `T`, temperature `[K]`
+  - `s_lo`, minimum molar salt fraction
+  - `s_hi`, maximum molar salt fraction
+  - `max_iters`, maximum iterations
 
 ## Outputs:
- - `s_c`, critical salt fraction (molar fraction of the salt)
- - `P_c`, pressure at the critical salt fraction point `[Pa]`
- - `V_c`, volume at the critical salt fraction point `[m³]`
+
+  - `s_c`, critical salt fraction (molar fraction of the salt)
+  - `P_c`, pressure at the critical salt fraction point `[Pa]`
+  - `V_c`, volume at the critical salt fraction point `[m³]`
 """
 function critical_salt_fraction(model::EoSModel, T::Real; s_lo::Float64=0.01, s_hi::Float64=0.999, max_iters::Int=60)
-    _1 = Base.promote_eltype(model,T,s_lo,s_hi)
-    
+    _1 = Base.promote_eltype(model, T, s_lo, s_hi)
+
     crit_mix_at(s) = crit_mix(model, [1 - s, s / 2, s / 2])
 
     Tc_lo, = crit_mix_at(s_lo)
     Tc_hi, = crit_mix_at(s_hi)
-    
+
     _is_positive(Tc_lo) || Tc_lo > T || throw(ArgumentError("no coexistence found even at s_lo=$s_lo (crit_mix Tc=$Tc_lo < T=$T); lower it"))
     _is_positive(Tc_hi) || Tc_hi < T || throw(ArgumentError("still coexisting at s_hi=$s_hi (crit_mix Tc=$Tc_hi > T=$T); raise it"))
 

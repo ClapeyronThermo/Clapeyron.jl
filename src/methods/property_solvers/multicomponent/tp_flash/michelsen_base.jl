@@ -1,7 +1,7 @@
-function rachfordrice(K, z; β0=nothing, K_tol=4*eps(eltype(K)), non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)), verbose=false)
+function rachfordrice(K, z; β0=nothing, K_tol=4*eps(eltype(K)), non_inx=FillArrays.Fill(false, length(z)), non_iny=FillArrays.Fill(false, length(z)), verbose=false)
     # Function to solve Rachdord-Rice mass balance
-    β,status,limits = rachfordrice_β0(K,z,β0,non_inx,non_iny;K_tol = K_tol)
-    _0,_1 = zero(β),one(β)
+    β, status, limits = rachfordrice_β0(K, z, β0, non_inx, non_iny; K_tol=K_tol)
+    _0, _1 = zero(β), one(β)
     # single-phase shortcuts
     if status == RRLiquid
         return _0
@@ -11,31 +11,31 @@ function rachfordrice(K, z; β0=nothing, K_tol=4*eps(eltype(K)), non_inx=FillArr
         return _0/_0
     end
 
-    if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny)
-        βx = rr_vle_vapor_fraction_exact(K,z)
+    if length(z) <= 3 && all(Base.Fix2(>, 0), z) && all(!, non_inx) && all(!, non_iny)
+        βx = rr_vle_vapor_fraction_exact(K, z)
     else
         βx = rr_flash_refine(K, z, β, non_inx, non_iny, limits) # bracketed Halley when possible
     end
-    βx = clamp(βx,_0,_1)
+    βx = clamp(βx, _0, _1)
 
     # near-boundary stabilization: if βx is within gate of 0 or 1 and K spans unity,
     # use rr_margin_check to project to boundary.
-    Kmin,Kmax = K_extrema(K,non_inx,non_iny)
+    Kmin, Kmax = K_extrema(K, non_inx, non_iny)
     if (Kmin < one(eltype(K)) && Kmax > one(eltype(K)))
-        β_margin = min(βx,_1-βx)
+        β_margin = min(βx, _1-βx)
         gate = cbrt(K_tol)
         if β_margin <= gate
-            status_p,βb = rr_margin_check(K,z,non_inx,non_iny;K_tol,verbose)
+            status_p, βb = rr_margin_check(K, z, non_inx, non_iny; K_tol, verbose)
             if status_p != RREq
                 verbose && @info "rachfordrice boundary project" βx βb β_margin gate status_p
-                return clamp(βb,_0,_1)
+                return clamp(βb, _0, _1)
             end
         end
     end
     return βx
 end
 
-function K_extrema(K::AbstractVector{T},non_inx,non_iny) where T
+function K_extrema(K::AbstractVector{T}, non_inx, non_iny) where T
     Kmax = T(-Inf)
     Kmin = T(Inf)
     for i in eachindex(K)
@@ -46,13 +46,13 @@ function K_extrema(K::AbstractVector{T},non_inx,non_iny) where T
         else
             Ki = K[i]
         end
-        Kmax = max(Ki,Kmax)
-        Kmin = min(Ki,Kmin)
+        Kmax = max(Ki, Kmax)
+        Kmin = min(Ki, Kmin)
     end
-    return Kmin,Kmax
+    return Kmin, Kmax
 end
 
-function rr_margin_check(K,z,non_inx = FillArrays.Fill(false,length(K)),non_iny = FillArrays.Fill(false,length(K));K_tol = sqrt(eps(eltype(K))),verbose = false)
+function rr_margin_check(K, z, non_inx=FillArrays.Fill(false, length(K)), non_iny=FillArrays.Fill(false, length(K)); K_tol=sqrt(eps(eltype(K))), verbose=false)
     Ktype = eltype(K)
     _0 = zero(Ktype)
     _1 = one(Ktype)
@@ -84,8 +84,8 @@ function rr_margin_check(K,z,non_inx = FillArrays.Fill(false,length(K)),non_iny 
         verbose && @info "boundary projection applied: β→1 (dew), status=RRVapour"
     elseif cond0 && cond1
         # choose the boundary with smaller linearized step δβ = |F|/|F'|
-        Fp0,Fp1 = _0,_0
-        @inbounds for i in eachindex(K,z)
+        Fp0, Fp1 = _0, _0
+        @inbounds for i in eachindex(K, z)
             Δ   = K[i]-_1
             zi  = z[i]
             Fp0 -= zi*(Δ*Δ)
@@ -107,16 +107,16 @@ function rr_margin_check(K,z,non_inx = FillArrays.Fill(false,length(K)),non_iny 
         status = RREq
         β = _0/_0
     end
-    return status,β
+    return status, β
 end
 
-function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
+function michelsen_optimization_of!(g, H, model, p, T, z, caches, ny_var, gz)
     second_order = !isnothing(H)
-    nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
-    in_equilibria,non_inx,non_iny = in_eq
-    phasex,phasey = phases
-    volx,voly = vcache[]
-    update_nxy!(nx,ny,ny_var,z,non_inx,non_iny) #updates nx, ny with ny_var vector
+    nx, ny, vcache, lnϕ_cache, in_eq, phases = caches
+    in_equilibria, non_inx, non_iny = in_eq
+    phasex, phasey = phases
+    volx, voly = vcache[]
+    update_nxy!(nx, ny, ny_var, z, non_inx, non_iny) #updates nx, ny with ny_var vector
     nxsum = sum(nx)
     nysum = sum(ny)
     x = nx
@@ -128,25 +128,25 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     !isnothing(g) && (g .= 0)
     if second_order
         lnϕx, ∂lnϕ∂nx, volx = modified_∂lnϕ∂n(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
-        ∂x,∂2x = lnϕx,∂lnϕ∂nx
+        ∂x, ∂2x = lnϕx, ∂lnϕ∂nx
         ∂2x .-= 1
         ∂2x ./= nxsum
-        for i in axes(∂2x,1)
-            ∂2x[i,i] += 1/(nxsum*x[i])
+        for i in axes(∂2x, 1)
+            ∂2x[i, i] += 1/(nxsum*x[i])
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
 
         H .= @view ∂2x[in_equilibria, in_equilibria]
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
-        f += nxsum*dot(∂x,x)
+        f += nxsum*dot(∂x, x)
 
         lnϕy, ∂lnϕ∂ny, voly = modified_∂lnϕ∂n(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
-        ∂y,∂2y = lnϕy,∂lnϕ∂ny
+        ∂y, ∂2y = lnϕy, ∂lnϕ∂ny
         ∂2y .-= 1
         ∂2y ./= nysum
-        for i in axes(∂2y,1)
-            ∂2y[i,i] += 1/(nysum*y[i])
+        for i in axes(∂2y, 1)
+            ∂2y[i, i] += 1/(nysum*y[i])
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
         end
@@ -155,96 +155,91 @@ function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
         !isnothing(g) && (g .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g .*= -1)
 
-        f += nysum*dot(∂y,y)
+        f += nysum*dot(∂y, y)
     else
-        ∂x,volx = modified_lnϕ(model, p, T, x,lnϕ_cache; phase=phasex, vol0=volx)
-        for i in axes(∂x,1)
+        ∂x, volx = modified_lnϕ(model, p, T, x, lnϕ_cache; phase=phasex, vol0=volx)
+        for i in axes(∂x, 1)
             ∂x[i] += log(x[i])
             non_inx[i] && (∂x[i] = 0)
         end
         !isnothing(g) && (g .= @view ∂x[in_equilibria])
-        f += nxsum*dot(∂x,x)
-        ∂y,voly = modified_lnϕ(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
-        for i in axes(∂y,1)
+        f += nxsum*dot(∂x, x)
+        ∂y, voly = modified_lnϕ(model, p, T, y, lnϕ_cache; phase=phasey, vol0=voly)
+        for i in axes(∂y, 1)
             ∂y[i] += log(y[i])
             non_iny[i] && (∂y[i] = 0)
         end
         !isnothing(g) && (g .-= @view ∂y[in_equilibria])
         !isnothing(g) && (g .*= -1)
-        f += nysum*dot(∂y,y)
+        f += nysum*dot(∂y, y)
     end
-    vcache[] = (volx,voly)
+    vcache[] = (volx, voly)
     return f
 end
 
-function michelsen_gibbs_feed(model,p,T,z,caches)
-    nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
-    in_equilibria,non_inx,non_iny = in_eq
+function michelsen_gibbs_feed(model, p, T, z, caches)
+    nx, ny, vcache, lnϕ_cache, in_eq, phases = caches
+    in_equilibria, non_inx, non_iny = in_eq
     if all(in_equilibria) && has_a_res(model)
-        ∂z,volz = modified_lnϕ(model, p, T, z, lnϕ_cache)
+        ∂z, volz = modified_lnϕ(model, p, T, z, lnϕ_cache)
         ∂z .+= log.(z)
-        gz = dot(@view(z[in_equilibria]),@view(∂z[in_equilibria]))
+        gz = dot(@view(z[in_equilibria]), @view(∂z[in_equilibria]))
     else
-        gz = zero(Base.promote_eltype(model,p,T,z))
+        gz = zero(Base.promote_eltype(model, p, T, z))
     end
     return gz
 end
 
-function michelsen_optimization_obj(model,p,T,z,caches)
-    gz = michelsen_gibbs_feed(model,p,T,z,caches)
+function michelsen_optimization_obj(model, p, T, z, caches)
+    gz = michelsen_gibbs_feed(model, p, T, z, caches)
 
     function objective_ip(x)
-        return michelsen_optimization_of!(nothing,nothing,model,p,T,z,caches,x,gz)
+        return michelsen_optimization_of!(nothing, nothing, model, p, T, z, caches, x, gz)
     end
 
     function gradient_ip(∇f, x)
-        michelsen_optimization_of!(∇f,nothing,model,p,T,z,caches,x,gz)
+        michelsen_optimization_of!(∇f, nothing, model, p, T, z, caches, x, gz)
         return ∇f
     end
 
     function objective_gradient_ip(∇f, x)
-        fx = michelsen_optimization_of!(∇f,nothing,model,p,T,z,caches,x,gz)
-        return fx,∇f
+        fx = michelsen_optimization_of!(∇f, nothing, model, p, T, z, caches, x, gz)
+        return fx, ∇f
     end
     function hessian_ip(∇²f, x)
-        michelsen_optimization_of!(nothing,∇²f,model,p,T,z,caches,x,gz)
+        michelsen_optimization_of!(nothing, ∇²f, model, p, T, z, caches, x, gz)
         return ∇²f
     end
     function objective_gradient_hessian_ip(∇f, ∇²f, x)
-        fx = michelsen_optimization_of!(∇f,∇²f,model,p,T,z,caches,x,gz)
+        fx = michelsen_optimization_of!(∇f, ∇²f, model, p, T, z, caches, x, gz)
         return fx, ∇f, ∇²f
     end
 
-    scalarobj_ip = NLSolvers.ScalarObjective(f=objective_ip,
-                                g=gradient_ip,
-                                fg=objective_gradient_ip,
-                                fgh=objective_gradient_hessian_ip,
-                                h=hessian_ip)
+    scalarobj_ip = NLSolvers.ScalarObjective(f=objective_ip, g=gradient_ip, fg=objective_gradient_ip, fgh=objective_gradient_hessian_ip, h=hessian_ip)
     return scalarobj_ip
     #optprob_ip = NLSolvers.OptimizationProblem(scalarobj_ip; inplace=true)
 end
 
-
 #updates lnK, returns lnK,volx,voly, gibbs if β !== nothing
-function update_K!(lnK,model,p,T,x,y,z,β,vols,phases,non_inw,dlnϕ_cache = nothing)
-    volx,voly = vols
-    phasex,phasey = phases
-    non_inx,non_iny = non_inw
-    lnϕx, volx = modified_lnϕ(model, p, T, x, dlnϕ_cache; phase = phasex, vol0=volx)
+function update_K!(lnK, model, p, T, x, y, z, β, vols, phases, non_inw, dlnϕ_cache=nothing)
+    volx, voly = vols
+    phasex, phasey = phases
+    non_inx, non_iny = non_inw
+    lnϕx, volx = modified_lnϕ(model, p, T, x, dlnϕ_cache; phase=phasex, vol0=volx)
 
     lnK .= lnϕx
     gibbs = zero(eltype(lnK))
     if β !== nothing
         for i in eachindex(y)
             if !non_inx[i] || isinf(lnK[i])
-                 gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i])
+                gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i])
             end
         end
     else
         gibbs = gibbs/gibbs
     end
 
-    lnϕy, voly = modified_lnϕ(model, p, T, y, dlnϕ_cache; phase = phasey, vol0=voly)
+    lnϕy, voly = modified_lnϕ(model, p, T, y, dlnϕ_cache; phase=phasey, vol0=voly)
     lnK .-= lnϕy
     if β !== nothing
         for i in eachindex(y)
@@ -256,25 +251,22 @@ function update_K!(lnK,model,p,T,x,y,z,β,vols,phases,non_inw,dlnϕ_cache = noth
         gibbs = gibbs/gibbs
     end
 
-    return lnK,volx,voly,gibbs
+    return lnK, volx, voly, gibbs
 end
 
 #updates x,y after a sucessful rachford rice procedure
-function update_rr!(K,β,z,x,y,
-                    non_inx=FillArrays.Fill(false,length(z)),
-                    non_iny=FillArrays.Fill(false,length(z)),normalize = true)
-
-    x = rr_flash_liquid!(x,K,z,β)
+function update_rr!(K, β, z, x, y, non_inx=FillArrays.Fill(false, length(z)), non_iny=FillArrays.Fill(false, length(z)), normalize=true)
+    x = rr_flash_liquid!(x, K, z, β)
     y .= x .* K
     for i in eachindex(z)
         # modification for non-in-y components Ki -> 0
         if non_iny[i] || iszero(K[i])
-            x[i] = z[i] / (1. - β)
-            y[i] = 0.
+            x[i] = z[i] / (1.0 - β)
+            y[i] = 0.0
         end
         # modification for non-in-x components Ki -> ∞
         if non_inx[i] || isinf(K[i])
-            x[i] = 0.
+            x[i] = 0.0
             y[i] = z[i] / β
         end
     end
@@ -282,10 +274,10 @@ function update_rr!(K,β,z,x,y,
         x ./= sum(x)
         y ./= sum(y)
     end
-    return x,y
+    return x, y
 end
 
-function update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
+function update_nxy!(nx, ny, ny_var, z, non_inx, non_iny)
     ii = 0
     for i in eachindex(z)
         if non_inx[i]
@@ -301,51 +293,51 @@ function update_nxy!(nx,ny,ny_var,z,non_inx,non_iny)
             nx[i] = z[i] - nyi
         end
     end
-    return nx,ny
+    return nx, ny
 end
 
-function tp_flash_K0(model,p,T,z)
-    K = zeros(Base.promote_eltype(model,p,T,z),length(model))
-    tp_flash_K0!(K,model,p,T,z,nothing)
+function tp_flash_K0(model, p, T, z)
+    K = zeros(Base.promote_eltype(model, p, T, z), length(model))
+    tp_flash_K0!(K, model, p, T, z, nothing)
     return K
 end
 
-function tp_flash_K0!(K,model,p,T,z,cache)
-    K_calculated = tp_flash_fast_K0!(K,model,p,T,z)
+function tp_flash_K0!(K, model, p, T, z, cache)
+    K_calculated = tp_flash_fast_K0!(K, model, p, T, z)
 
     if K_calculated
-        Kmin,Kmax = extrema(K)
+        Kmin, Kmax = extrema(K)
         if Kmin >= 1 || Kmax <= 1
             K_calculated = false
         end
     end
 
     if !K_calculated
-        suggest_K!(K,model,p,T,z,cache)
+        suggest_K!(K, model, p, T, z, cache)
     end
 end
 
-function tp_flash_fast_K0!(K,model,p,T,z)
+function tp_flash_fast_K0!(K, model, p, T, z)
     return false
 end
 
-function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArrays.Fill(false,length(model)),non_iny = FillArrays.Fill(false,length(model)))
+function pt_flash_x0(model, p, T, n, method=GeneralizedXYFlash(), non_inx=FillArrays.Fill(false, length(model)), non_iny=FillArrays.Fill(false, length(model)))
     ∑n = sum(n)
     z = n/∑n
-    TT = Base.promote_eltype(model,p,T,n)
+    TT = Base.promote_eltype(model, p, T, n)
     if is_vle(method)
-        phasex,phasey = :liquid,:vapour
+        phasex, phasey = :liquid, :vapour
     elseif is_lle(method)
-        phasex,phasey = :liquid,:liquid
+        phasex, phasey = :liquid, :liquid
     else
-        phasex,phasey = :unknown,:unknown
+        phasex, phasey = :unknown, :unknown
     end
-    non_inw = (non_inx,non_iny)
-    _1,_0 = one(TT),zero(TT)
-    x,y = similar(z,TT),similar(z,TT)
+    non_inw = (non_inx, non_iny)
+    _1, _0 = one(TT), zero(TT)
+    x, y = similar(z, TT), similar(z, TT)
     x .= z
     y .= z
-    K,lnK = similar(z,TT),similar(z,TT)
+    K, lnK = similar(z, TT), similar(z, TT)
     verbose = get_verbosity(method)
     if !isnothing(method.K0)
         K .= _1 * method.K0
@@ -353,40 +345,40 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         volx = zero(_1)
         voly = zero(_1)
         verbose && @info "K0 already provided"
-    elseif hasfield(typeof(method),:x0) && hasfield(typeof(method),:y0) && !isnothing(method.x0) && !isnothing(method.y0)
+    elseif hasfield(typeof(method), :x0) && hasfield(typeof(method), :y0) && !isnothing(method.x0) && !isnothing(method.y0)
         x .= method.x0 ./ sum(method.x0)
         y .= method.y0 ./ sum(method.y0)
         lnK .= log.(x ./ y)
         volx = zero(_1)
         voly = zero(_1)
         if method.v0 === nothing
-            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(nothing,nothing),(phasex,phasey),non_inw)
+            lnK, volx, voly, _ = update_K!(lnK, model, p, T, x, y, z, nothing, (nothing, nothing), (phasex, phasey), non_inw)
         else
-            vl0,vv0 = method.v0
-            lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,z,nothing,(vl0,vv0),(phasex,phasey),non_inw)
+            vl0, vv0 = method.v0
+            lnK, volx, voly, _ = update_K!(lnK, model, p, T, x, y, z, nothing, (vl0, vv0), (phasex, phasey), non_inw)
         end
         K .= exp.(lnK)
         verbose && @info "x0,y0 provided, calculating K0 via Clapeyron.update_K!"
     elseif is_vle(method) || is_unknown(method)
         # VLE correlation for K
         verbose && @info "K0 calculated via pure VLE correlation"
-        tp_flash_K0!(K,model,p,T,z,nothing)
+        tp_flash_K0!(K, model, p, T, z, nothing)
         phasex = :liquid
         phasey = :vapour
         #if we can't predict K, we use lle
         if is_unknown(method)
-            Kmin,Kmax = K_extrema(K,non_inx,non_iny)
+            Kmin, Kmax = K_extrema(K, non_inx, non_iny)
             if Kmin > 1 || Kmax < 1
                 verbose && @info "VLE correlation failed, trying LLE initial point."
-                K_lle = K0_lle_init(model,p,T,z;reduced = true)
-                if any(!isone,K_lle) #only use LLE result if actually exists
+                K_lle = K0_lle_init(model, p, T, z; reduced=true)
+                if any(!isone, K_lle) #only use LLE result if actually exists
                     K .= K_lle
                     phasex = :liquid
                     phasey = :liquid
                 end
                 lnK .= log.(K)
             else
-                phasex,phasey = :liquid,:vapour
+                phasex, phasey = :liquid, :vapour
             end
         end
         lnK .= log.(K)
@@ -394,7 +386,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         voly = zero(_1)
     else
         verbose && @info "K0 calculated via LLE initial point (tpd)"
-        K .= K0_lle_init(model,p,T,z;reduced = true)
+        K .= K0_lle_init(model, p, T, z; reduced=true)
         lnK .= log.(K)
         phasey = :liquid
         volx = zero(_1)
@@ -403,9 +395,9 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
 
     verbose && @info "K0 = $K"
     # Initial guess for phase split
-    status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = 1e-10)
+    status = rachfordrice_status(K, z, non_inx, non_iny, K_tol=1e-10)
 
-#=
+    #=
     TREND bubble/dew initialization
     Maybe initial K values overshoot the actual phase split.
     if the initial K values generate a single phase result, but we can split the K into two compositions (Kmin < 1 or Kmax > 1)
@@ -415,7 +407,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     if status == RRLiquid
         β = _0
         if maximum(K) < 1
-            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
+            x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
             K .= y ./ x
             verbose && @info "maximum(K) < 1: forcing consistency"
             verbose && @info "forced K: $K"
@@ -426,7 +418,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     elseif status == RRVapour
         β = _1
         if minimum(K) > 1
-            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
+            x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
             K .= y ./ x
             verbose && @info "minimum(K) > 1: forcing consistency"
             verbose && @info "forced K: $K"
@@ -443,24 +435,24 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     verbose && @info "initial vapour fraction = $β"
     #verbose && status != RREq && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
 
-    y = rr_flash_vapor!(y,K,z,β)
+    y = rr_flash_vapor!(y, K, z, β)
     y ./= sum(y)
-    x = rr_flash_liquid!(x,K,z,β)
+    x = rr_flash_liquid!(x, K, z, β)
     x ./= sum(x)
     βv = ∑n*β
     βl = ∑n - βv
-    if hasfield(typeof(method),:v0) && !isnothing(method.v0) && iszero(volx) && iszero(voly)
-        vl0,vv0 = method.v0
-        volx,voly = _1*vl0,_1*vv0
+    if hasfield(typeof(method), :v0) && !isnothing(method.v0) && iszero(volx) && iszero(voly)
+        vl0, vv0 = method.v0
+        volx, voly = _1*vl0, _1*vv0
     end
-    
-    iszero(volx) && (volx = volume(model,p,T,x,phase = phasex))
-    iszero(voly) && (voly = volume(model,p,T,y,phase = phasey))
+
+    iszero(volx) && (volx = volume(model, p, T, x, phase=phasex))
+    iszero(voly) && (voly = volume(model, p, T, y, phase=phasey))
     lle = is_liquid(phasex) && is_liquid(phasey)
     vapour_idx = lle ? -1 : 2
-    data = FlashData(p,T,zero(T),vapour_idx)
+    data = FlashData(p, T, zero(T), vapour_idx)
     #has_a_res(model) && is_liquid(VT_identify_phase(model,voly,T,y)) && (voly = Rgas(model)*T/p)
-    r = FlashResult(SA[x,y],SA[βl,βv],SA[volx,voly],data)
+    r = FlashResult(SA[x, y], SA[βl, βv], SA[volx, voly], data)
     return r
 end
 
