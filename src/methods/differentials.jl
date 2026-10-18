@@ -108,7 +108,7 @@ function p∂p∂V(model,V,T,z::AbstractVector=SA[1.0])
 end
 
 function ∂p(model,V,T,z)
-    f = @deferred_VT(presure,∂₁p)
+    f = @deferred_VT(pressure,∂₁p)
     _f,_df = Solvers.fgradf2(f,V,T)
     return _df,_f
 end
