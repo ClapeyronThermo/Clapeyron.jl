@@ -288,7 +288,9 @@ function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
     count_invalid_iters = 0
     scale = _1
     for i in 1:max_iters
-        pᵢ,∂²A∂V²,∂²A∂V∂T = ∂p_vec(model,vᵢ,Tᵢ,z)
+        pᵢ,∂pᵢ∂V,∂pᵢ∂T = ∂p_vec(model,vᵢ,Tᵢ,z)
+        ∂²A∂V²  = -∂pᵢ∂V
+        ∂²A∂V∂T = -∂pᵢ∂T
         #mechanical stability check (same criterion as volume_compress: ∂p/∂V = -∂²A/∂V² must be < 0)
         ∂²A∂V² <= 0 && return nan
         dvdt = -∂²A∂V∂T/∂²A∂V²
