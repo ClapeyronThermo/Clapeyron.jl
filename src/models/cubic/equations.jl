@@ -59,7 +59,7 @@ function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::Number,Ωb::Number,Tc,Pc,
     return nothing
 end
 
-function ab_diagvalues!(a::PairParam,b::PairParam,Ωa::AbstractVector,Ωb::AbstractVector,Tc,Pc,R̄)
+function ab_diagvalues!(a::PairParam,b::PairParam,Ωa,Ωb,Tc,Pc,R̄)
     for i in 1:length(Tc)
         Tci,Pci = Tc[i],Pc[i]
         if a.ismissingvalues[i,i]
