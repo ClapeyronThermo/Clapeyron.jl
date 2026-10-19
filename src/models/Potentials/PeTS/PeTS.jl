@@ -1,19 +1,13 @@
-struct PeTSParam <: EoSParam
-    Mw::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-end
 
-abstract type PeTSModel <: EoSModel end
-@newmodel PeTS PeTSModel PeTSParam false
+
+
+abstract type PeTSModel <: CorrespondingStatesModel end
+@newmodel PeTS PeTSModel ChainLJScalingParam{T} false
+
 default_locations(::Type{PeTS}) = ["SAFT/PCSAFT","properties/molarmass.csv"]
 default_references(::Type{PeTS}) = ["10.1080/00268976.2018.1447153"]
-function transform_params(::Type{PeTS},params)
-    sigma = params["sigma"]
-    sigma.values .*= 1E-10
-    return saft_lorentz_berthelot(params)
-end
+transform_params(::Type{PeTS},params) = transform_params_lj(params)
+
 """
     PeTSModel <: EoSModel
 
@@ -51,25 +45,34 @@ PeTS
 
 export PeTS
 
-function a_res(model::PeTSModel, V, T, z)
-    _data = @f(data)
-    return @f(a_ref,_data) + @f(a_pert,_data) 
+struct PeTSLJ <: LJPotentialModel end
+
+reference_model(::PeTSModel) = PeTSLJ()
+scaling_model(model::PeTSModel) = ChainLJScaling(model.params)
+
+function a_res_ecs(refmodel::PeTSLJ,scalingmodel::ChainLJScaling,V,T,z)
+    f,h = shape_factors(scalingmodel,refmodel,T,z)
+    T0 = T/f
+    n = sum(z)
+    rho0 = n*h/V
+    m̄ = dot(scalingmodel.params.segment.values,z)/n
+    return m̄*a_potential(refmodel,rho0,T0,z,nothing)
 end
 
-function data(model::PeTSModel,V,T,z)
-    σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,V,T,z)
-    T̃ = T/ϵ̄
-    N  = N_A*sum(z)
-    ρS = N/V*m̄
-    ρ̃  = ρS*σ3
+function a_potential(::PeTSLJ,V,T,ecs_data)
+    z = SA[1.0]
+    _data = @f(data)
+    return @f(a_ref,_data) + @f(a_pert,_data)
+end
+
+function data(::PeTSLJ,V,T,z)
     d̃ = d_pets(T̃)
     η = π*ρ̃ *d̃^3 / 6
     return (η,ρ̃ ,T̃,m̄)
 end
 
-
-function d(model::PeTSModel, V, T, z,_data=@f(data))
-    η,ρ̃ ,T̃ = _data
+function d(model::PeTSLJ, V, T, z,_data=@f(data))
+    η,ρ̃ ,T̃,_ = _data
     return d_pets(T̃)
 end
 
@@ -79,20 +82,29 @@ function d_pets(T̃)
     return -expm1(-3.052785558/T̃ - 2.0626824117148774)
 end
 
-a_hs(model::PeTSModel,V,T,z,_data=@f(data)) = a_ref(model,V,T,z,_data) 
+a_hs(model::PeTSLJ,V,T,z,_data=@f(data)) = a_ref(model,V,T,z,_data) 
 
-function a_ref(model::PeTSModel, V, T, z,_data=@f(data))
+function a_ref(model::PeTSLJ, V, T, z,_data=@f(data))
     η,ρ̃ ,T̃,_ = _data
     return η*(4-3η)/(1-η)^2
 end
 
-function a_pert(model::PeTSModel, V, T, z,_data=@f(data))
+function a_pert(model::PeTSLJ, V, T, z,_data=@f(data))
     η,ρ̃ ,T̃,_ = _data
     I1 = evalpoly(η,PeTS_A)
     I2 = evalpoly(η,PeTS_B)
     ã1 = -2*π*ρ̃ *I1/ T̃
     ã2 = -π*ρ̃ *I2*(1 + 2*η*(4 - η)/(1 - η)^4)^-1 / T̃^2
     return (ã1 + ã2)
+end
+
+function lb_volume(model::PeTSLJ,T,z)
+    d̃ = d_pets(T)
+    return sum(z)* d̃^3 *π/6
+end
+
+function x0_crit_pure(model::PeTSLJ,z)
+    (1.08, log10(lb_v/0.32))
 end
 
 const PeTS_A = (
@@ -112,30 +124,3 @@ const PeTS_B = (
     30.17506222,
     209.3942909,
     -353.2743581)
-
-function lb_volume(model::PeTSModel,T,z)
-    σ3,_,m̄ = σϵ_m_vdw1f(model,1.0,T,z)
-    return sum(z)*m̄*N_A*σ3*π/6
-end
-
-function x0_volume_liquid(model::PeTSModel,T,z)
-    v_lb = lb_volume(model,T,z)
-    return v_lb*1.8
-end
-
-function p_scale(model::PeTSModel,z)
-    σ3,ϵ,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
-    v = m̄*N_A*σ3
-    return R̄*ϵ/v
-end
-
-function T_scale(model::PeTSModel,z)
-    σ3,ϵ,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
-    return ϵ
-end
-
-function x0_crit_pure(model::PeTSModel,z)
-    σ3,ϵ,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
-    lb_v = m̄*N_A*σ3*π/6
-    (1.08, log10(lb_v/0.32))
-end

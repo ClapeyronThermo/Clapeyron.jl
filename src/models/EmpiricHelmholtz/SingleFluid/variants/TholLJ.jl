@@ -1,4 +1,4 @@
-function TholLJ()
+function TholLJ_constructor()
     components = ["Leonard-Jones Fluid (unscaled)"]
     Mw = 1. #g·mol-1
     T_c = 1.32    #K
@@ -58,6 +58,7 @@ end
 
 """
     TholLJ()
+    TholLJ2016()
 
 Lennard-Jones Reference equation of state. Valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
 ```
@@ -71,3 +72,4 @@ aʳ₂(δ,τ)  = ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 7:12
 aʳ₃(δ,τ)  = ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 13:23
 """
 TholLJ
+

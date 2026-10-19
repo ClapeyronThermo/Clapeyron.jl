@@ -60,13 +60,11 @@ function load_fe_ann_mie_consts(solid::Bool)
     )
 end
 
-struct FeANNMie{T,S} <: EoSModel
+struct FeANNMie{T,S} <: MiePotentialModel
     lambda_r::T
     lambda_a::T
     weights::S
 end
-
-is_splittable(::FeANNMie) = false
 
 """
 
@@ -118,13 +116,16 @@ function mie_α_const(λa, λr)
     return α
 end
 
+ecs_data(refmodel::FeANNMie,scalingmodel::NoECSScaling,V,T,z) =  model.lambda_a,model.lambda_r
+
 mie_α_const(model::FeANNMie) = mie_α_const(model.lambda_a,model.lambda_r)
-function a_res(model::FeANNMie,V,T,z)
-    ρ⃰ = sum(z)/V
+
+function a_potential(model::FeANNMie,V,T,ecs_data)
+    ρ⃰ = 1/V
     T⃰ = T
-    λa, λr = model.lambda_a,model.lambda_r
+    λa, λr = ecs_data
     α = mie_α_const(λa, λr)
-    x1 = zeros(Base.promote_eltype(model,V,T,z),30)
+    x1 = zeros(Base.promote_eltype(λa, λr, V, T, 1.0),30)
     x2 = similar(x1)
     cache = (x1,x2)
     weights = model.weights
@@ -219,14 +220,10 @@ function galliero_acentric_factor(ms, α)
     return ω
 end
 
-T_scale(::FeANNMie,z) = 1.0
-Base.length(::FeANNMie) = 1
 paramtype(::FeANNMie{T}) where T = T
 paramtype(::Type{FeANNMie{T}}) where T = T
 component_list(model::FeANNMie) = ["Mie ($(model.lambda_r)-$(model.lambda_a)) fluid"]
-lb_volume(::FeANNMie,T,z) = 1/1.25
-Rgas(::FeANNMie) = 1.0
-idealmodel(::FeANNMie) = BasicIdeal()
+lb_volume(::FeANNMie,T,z) = π/6 #TODO: improve for solids
 
 function x0_volume_liquid(model::FeANNMie,p,T,z)
     α = mie_α_const(model)
