@@ -31,7 +31,7 @@ function SAFTVRQMie(components;
     MODEL,PARAM = SAFTVRQMie,SAFTVRQMieParam
     locations = default_locations_vrq(fh_order)
     _components = format_components(components)
-    params_in = getparams(_components, locations)
+    params_in = getparams(_components, locations,return_sites = false)
     params_out = transform_params(MODEL,params_in)
     pkgparam = build_eosparam(PARAM,params_out)
     init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
@@ -156,25 +156,6 @@ function data(model::SAFTVRQMieModel, V, T, z)
     return (_σeff,_ϵff,vrdata)
 end
 
-function x0_volume_liquid(model::SAFTVRQMieModel,T,z)
-    m = model.params.segment.values
-    m̄ = dot(z, m)
-    m̄inv = 1/m̄
-    comps = @comps
-    V = 0.0
-    _σ = @f(σeff)
-    ηmax = 0.55 #maximum CS
-    σ3 = zero(V+T+first(z))
-    for i ∈ comps
-        x_Si = z[i]*m[i]*m̄inv
-        σ3 += x_Si*x_Si*(_σ[i,i]^3)
-        for j ∈ 1:i-1
-            x_Sj = z[j]*m[j]*m̄inv
-            σ3 += 2*x_Si*x_Sj*(_σ[i,j]^3)
-        end
-    end
-    return N_A/ηmax*m̄ * σ3 * π/6
-end
 
 function ζ_X(model::SAFTVRQMieModel, V, T, z,_d = @f(d))
     m = model.params.segment.values
@@ -243,7 +224,7 @@ function d(model::SAFTVRQMieModel, V, T, z,_σeff = @f(σeff))
     _σ = model.params.sigma.values
     _λr = model.params.lambda_r.values
     _λa = model.params.lambda_a.values
-    _Mwij = model.params.Mw.values
+    _Mw = model.params.Mw.values
     n = length(model)
     _d = zeros(Base.promote_eltype(model,T,1.0),n,n)
     is_second_order_fh = model.fh_order == :fh2
@@ -381,7 +362,7 @@ function ϵeff(model::SAFTVRQMieModel, V, T, z)
             λaij,λrij,σij,Mwij = _λa[i,j],_λr[i,j],_σ[i,j],_Mw[i,j]
             Q1λrij,Q1λaij,Q2λrij,Q2λaij = @f(Q1,λrij),@f(Q1,λaij),@f(Q2,λrij),@f(Q2,λaij)
             Dij = ħ^2/(12*k_B*T*Mwij/N_A*σij^2)
-            Cij = @f(Cλ,_λa,_λr)
+            Cij = @f(Cλ,λaij,λrij)
             β = Cij #not used, but defined to make the tuple complete.
             params_ij = (Q1λrij,Q1λaij,Q2λrij,Q2λaij,Dij,λrij,λaij,Cij,β,is_second_order_fh)
             x0_ij = (λrij/λaij)^(1/(λrij-λaij))
@@ -418,54 +399,69 @@ function ϵeff(model::SAFTVRQMieModel, V, T, z::SingleComp)
     return SA[ϵeff_ij;;]
 end
 
-function a_hs_eff(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
-    _σeff,_ϵff,vrdata= _data
-    _d,_ρ_S,ζi,ζₓ,_ζst,_,m̄  = vrdata
-    d_na = zero(eltype(_d))
-    ∑z = sum(z)
-    for i in @comps
-        d_na += z[i]*_d[i,i]^3
-    end
-    d_na = cbrt(d_na/∑z)
-    η_na = N_A*∑z*(π*d_na^3)/V/6
+#=
+Hard-sphere reference of SAFT-VRQ Mie for mixtures: non-additive hard spheres, Santos, López de Haro & Yuste
+(J. Chem. Phys. 122, 024514 (2005)), as used in Aasen et al., J. Chem. Phys. 152, 074507 (2020), eqs. 14-24:
 
-    #B̄₂
-    B̄₂ = zero(eltype(_σeff))
-    for i in @comps
-        for j in @comps
-            B̄₂ += z[i]*z[j]*_d[i,j]^3
-            #m3 units
+    d_na³ = Σ x_i d_ii³,   η_na = π ρ d_na³ / 6
+    B̄2 = 4 Σ_ij x_i x_j d_ij³                          (exact B2 of the non-additive mixture)
+    B̄3 = Σ_ijk x_i x_j x_k B̄_ijk,  B̄_ijk = 4/3 (c_k;ij d_ij³ + c_j;ik d_ik³ + c_i;jk d_jk³)
+    c_k;ij = δ_k;ij³ + 3/2 δ_k;ij² δ_i;jk δ_j;ik / d_ij,   δ_k;ij = max(d_ik + d_jk - d_ij, 0)
+    A1 = (10 d_na³ B̄2 - 4 B̄3)/(6 d_na⁶),   A2 = (B̄3 - d_na³ B̄2)/(6 d_na⁶)
+    a_HS = -ln(1-η_na) A1 + a_CS(η_na) A2                (per particle/segment)
+
+Sums use segment fractions x_S,i = z_i m_i / Σ z_j m_j (= mole fractions when m_i = 1, as in the paper);
+the result is per mole of mixture (× m̄/Σz), consistent with a_disp.
+=#
+function a_hs_eff(model::SAFTVRQMieModel, V, T, z, _data = @f(data))
+    _σeff, _ϵff, vrdata = _data
+    _d, _ρ_S, _, _, _, _, m̄ = vrdata          # m̄ = Σ z_i m_i (not normalised)
+    m    = model.params.segment.values
+    nc   = length(z)
+    Σz   = sum(z)
+    m̄inv = 1/m̄
+    _0   = zero(V + T + first(z))
+    xS   = [z[i]*m[i]*m̄inv for i in 1:nc]
+
+    d3_na = _0
+    for i in 1:nc
+        xSi = z[i]*m[i]
+        d3_na += xSi*_d[i,i]^3
+    end
+    η_na = _ρ_S*(π/6)*d3_na
+
+    B̄₂ = _0
+    for i in 1:nc
+        xSi = z[i]*m[i]
+        B̄₂ += xSi*xSi*_d[i,i]^3
+        for j in 1:(i-1)
+            xSj = z[j]*m[j]
+            B̄₂ += 2*xSi*xSj*_d[i,j]^3
         end
-    end
+    end    
+    B̄₂ *= 4/(m̄*m̄)
 
-    B̄₂ = 4*B̄₂/∑z/∑z
-
-    #B̄₃
-    B̄₃ = zero(eltype(_σeff))
-    _0 = zero(eltype(_σeff))
-    for i in @comps
-        for j in @comps
-            for k in @comps
-                dij = _d[i,j] # j
-                dik = _d[i,k] # k
-                djk = _d[j,k] # i
-                δ_kij = max(dik + djk - dij,_0) #m units
-                δ_ijk = max(djk + dij - dik,_0)
-                δ_jik = max(dij + djk - djk,_0)
-                c_kij = δ_kij^3 + 1.5*δ_kij*δ_kij/dij * δ_ijk * δ_jik #m3
-                c_ijk = δ_ijk^3 + 1.5*δ_ijk*δ_ijk/djk * δ_kij * δ_jik
-                c_jik = δ_jik^3 + 1.5*δ_jik*δ_jik/dik * δ_kij * δ_ijk
-                B̄_ijk = (c_kij*dij^3 + c_ijk*djk^3 + c_jik*dik^3) #m6
-                B̄₃ += z[i]*z[j]*z[k]*B̄_ijk
-            end
-        end
+    B̄₃ = _0
+    for i in 1:nc, j in i:nc, k in j:nc
+        xSi,xSj,xSk = z[i]*m[i],z[j]*m[j],z[k]*m[k]
+        dij, dik, djk = _d[i,j], _d[i,k], _d[j,k]
+        δk = max(dik + djk - dij, _0)      # δ_k;ij
+        δi = max(dij + dik - djk, _0)      # δ_i;jk
+        δj = max(dij + djk - dik, _0)      # δ_j;ik
+        c_kij = δk^3 + 1.5*δk*δk*δi*δj/dij
+        c_ijk = δi^3 + 1.5*δi*δi*δj*δk/djk
+        c_jik = δj^3 + 1.5*δj*δj*δi*δk/dik
+        mult = (i == j == k) ? 1 : ((i == j || j == k) ? 3 : 6)
+        B̄₃ += mult*xSi*xSj*xSk*(c_kij*dij^3 + c_ijk*djk^3 + c_jik*dik^3)
     end
-    B̄₃ = 4*B̄₃/(∑z*∑z*∑z)/3
-    A1 = (10*d_na^3 * B̄₂ - 4*B̄₃)/(6*d_na^6)
-    A2 = (B̄₃ - d_na^3 * B̄₂)/(6*d_na^6)
-    apure = (4*η_na - 3*η_na^2)/(1-η_na)^2
-    ahs = -log(1 - η_na)*A1 + apure*A2
-    return ahs
+    B̄₃ *= 4/(3*m̄*m̄*m̄)
+
+    A1 = (10*d3_na*B̄₂ - 4*B̄₃)/(6*d3_na^2)
+    A2 = (B̄₃ - d3_na*B̄₂)/(6*d3_na^2)
+    a_CS = η_na*(4 - 3*η_na)/(1 - η_na)^2
+    a_seg = -log1p(-η_na)*A1 + a_CS*A2
+
+    return a_seg*m̄/Σz
 end
 #=
 function a_1(model::SAFTVRQMieModel, V, T, z, i, j,_data = @f(data))
@@ -676,4 +672,24 @@ end
     η5 = η4*η
     η8 = η4*η4
     f1*η + f2*η5 + f3*η8
+end
+
+function x0_volume_liquid(model::SAFTVRQMieModel,T,z)
+    m = model.params.segment.values
+    m̄ = dot(z, m)
+    m̄inv = 1/m̄
+    comps = @comps
+    V = 0.0
+    _σ = @f(σeff)
+    ηmax = 0.55 #maximum CS
+    σ3 = zero(V+T+first(z))
+    for i ∈ comps
+        x_Si = z[i]*m[i]*m̄inv
+        σ3 += x_Si*x_Si*(_σ[i,i]^3)
+        for j ∈ 1:i-1
+            x_Sj = z[j]*m[j]*m̄inv
+            σ3 += 2*x_Si*x_Sj*(_σ[i,j]^3)
+        end
+    end
+    return N_A/ηmax*m̄ * σ3 * π/6
 end
