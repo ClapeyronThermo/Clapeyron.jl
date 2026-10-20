@@ -419,15 +419,14 @@ function a_hs_eff(model::SAFTVRQMieModel, V, T, z, _data = @f(data))
     m    = model.params.segment.values
     nc   = length(z)
     Σz   = sum(z)
-    m̄inv = 1/m̄
     _0   = zero(V + T + first(z))
-    xS   = [z[i]*m[i]*m̄inv for i in 1:nc]
 
     d3_na = _0
     for i in 1:nc
         xSi = z[i]*m[i]
         d3_na += xSi*_d[i,i]^3
     end
+    d3_na /= m̄
     η_na = _ρ_S*(π/6)*d3_na
 
     B̄₂ = _0
