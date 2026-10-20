@@ -265,20 +265,65 @@ function KU(components;
     return model
 end
 
+"""
+    ab_consts_variable_Zc(u::Number, w::Number, ζc::Number)
+
+Given `u`,`v` and `ζc`, calculate `Ωa`, `Ωb` such that at the critical point, Zc == ζc.
+"""
+function ab_consts_variable_Zc(u::Number, w::Number, ζc::Number)
+    # cubic in α = b/vc:
+    #   c3·α³ + c2·α² + c1·α + c0 = 0
+    c0 = 2ζc - 1
+    c1 = (u - 4) * ζc + 2
+    c2 = (2 - 2u) * ζc + u + w
+    c3 = u * ζc
+    nr, α1, α2, α3 = Solvers.real_roots3(promote(c0, c1, c2, c3))
+
+    
+    # Unique real root in (0,1) — guaranteed for u=1.6, w=-0.8 if
+    # ζc ∈ (0.0595, 0.8293) (paper §2.2).
+    α = oftype(α1,NaN)
+    n = 0
+    if 0 < α1 < 1
+        α = α1
+        n += 1
+    end
+
+    if nr > 1 && 0 < α3 < 1
+        α = α3
+        n += 1
+    end
+
+    if nr > 2 && 0 < α2 < 1
+        α = α2
+        n += 1
+    end
+
+    n == 1 || error(
+        "ab_consts_variable_Zc: expected exactly one α ∈ (0,1); got $n. " *
+        "u=$u, w=$w, ζc=$ζc")
+
+    Ωb = ζc * α
+    Ωa = ζc * (1 + u*α + w*α^2)^2 / ((1 - α)^2 * (2 + u*α))
+    return Ωa, Ωb
+end
+
 function ab_premixing(model::KUModel,mixing::MixingRule,k,l)
     _Tc = model.params.Tc
     _pc = model.params.Pc
     _vc = model.params.Vc
     a = model.params.a
     b = model.params.b
-    Zc = _pc .* _vc ./ (R̄ .* _Tc)
-    χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Zc -20)/(32*sqrt(3)*Zc^2)
-    - (729*Zc^3 - 216*Zc + 8)/(1728*Zc^3))
-    α  = @. (χ + (81*Zc^2 - 72*Zc + 4)/(144*χ*Zc^2) + (3*Zc - 2)/(12*Zc))
-    Ωa = @. Zc*(1 + 1.6*α - 0.8*α^2)^2/(1 - α)^2/(2 + 1.6*α)
-    Ωb = @. Zc*α
-    model.params.omega_a .= Ωa
-    model.params.omega_b .= Ωb
+
+    Ωa = model.params.omega_a
+    Ωb = model.params.omega_b
+    for i in 1:length(_Tc)
+        Zci = _pc[i] * _vc[i] / (R̄ * _Tc[i])
+        Ωai, Ωbi = ab_consts_variable_Zc(1.6, -0.8, Zci)
+        Ωa[i] = Ωai
+        Ωb[i] = Ωbi
+    end
+
     ab_diagvalues!(a,b,Ωa,Ωb,_Tc,_pc,Rgas(model))
     a = epsilon_LorentzBerthelot!(a,k)
     b = sigma_LorentzBerthelot!(b,l)
@@ -311,3 +356,5 @@ end
 function x0_crit_pure(model::KUModel,z)
     (1.1, log10(dot(model.params.Vc.values,z)/sum(z)))
 end
+
+has_fast_crit_pure(model::KUModel) = false

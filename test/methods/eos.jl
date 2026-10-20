@@ -263,6 +263,13 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 2574.7348636211996 rtol = 1E-6
+
+        #issue #654
+        fluid_ku = KU("propane")
+        Tcrit,pcrit,_ = crit_pure(fluid_ku)
+        satp = saturation_temperature(fluid_ku,pcrit - 101325)
+        @test satp[1] < Tcrit
+        @test satp[1] ≈ 369.85707785461955 rtol = 1E-6
     end
 end
 

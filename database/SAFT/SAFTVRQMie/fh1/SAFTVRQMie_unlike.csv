@@ -1,0 +1,9 @@
+Clapeyron Database File
+SAFTVRMie (1st order FH perturbation) unlike Parameters
+species1,species2,k,l
+hydrogen,deuterium,-0.04,0.0
+helium~|~helium-4,deuterium,0.0,-0.05
+helium~|~helium-4,hydrogen,0.08,-0.05
+neon,deuterium,0.13,0.0
+neon,hydrogen,0.105,0.0
+neon,helium~|~helium-4,-0.22,0.0

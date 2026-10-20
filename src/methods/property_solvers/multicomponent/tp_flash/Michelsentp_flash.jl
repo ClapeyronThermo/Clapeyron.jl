@@ -69,12 +69,9 @@ michelsen_itss(method::MichelsenTPFlash) = method.ss_iters
 
 Base.eltype(method::MichelsenTPFlash{T}) where T = T
 
-function index_reduction(m::MichelsenTPFlash,idx::AbstractVector)
-    equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles,verbose = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.ss_iters,m.nacc,m.second_order,m.noncondensables,m.nonvolatiles,m.verbose
-    K0 !== nothing && (K0 = K0[idx])
-    x0 !== nothing && (x0 = x0[idx])
-    y0 !== nothing && (y0 = y0[idx])
-    return MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles,verbose)
+function index_reduction(m::MichelsenTPFlash{T},idx::AbstractVector) where T
+    K0,x0,y0 = index_reduction(m.K0,idx),index_reduction(m.x0,idx),index_reduction(m.y0,idx)
+    return MichelsenTPFlash{T}(m.equilibrium,K0,x0,y0,m.v0,m.K_tol,m.ss_iters,m.nacc,m.second_order,m.noncondensables,m.nonvolatiles,m.verbose)
 end
 
 function Solvers.primalval(method::MichelsenTPFlash{T}) where {T}
@@ -164,10 +161,10 @@ function MichelsenTPFlash(;equilibrium = :unknown,
         throw(error("incorrect specification for nacc"))
     end
 
-    if T === nothing && v0 !== nothing
+    if T === Nothing && v0 !== nothing
         TT = Base.promote_eltype(v0[1],v0[2])
         _v0 = (v0[1],v0[2])
-    elseif T !== nothing && v0 !== nothing
+    elseif T !== Nothing && v0 !== nothing
         TT = Base.promote_eltype(one(T),v0[1],v0[2])
         _v0 = (v0[1],v0[2])
     else
