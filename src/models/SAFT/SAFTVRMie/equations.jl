@@ -54,7 +54,7 @@ KHS(ζₓ) = (1-ζₓ)^4/evalpoly(ζₓ,(1,4,4,-4,1))
 
 const _ϕ = SAFTVRMieconsts.ϕ
 const _ϕnum = ntuple(m -> (_ϕ[1][m], _ϕ[2][m], _ϕ[3][m], _ϕ[4][m]), Val(6))
-const _ϕden = ntuple(m -> (1 + _ϕ[5][m], _ϕ[6][m], _ϕ[7][m]), Val(6))
+const _ϕden = ntuple(m -> (one(_ϕ[5][m]), _ϕ[5][m], _ϕ[6][m], _ϕ[7][m]), Val(6))
 
 @inline f123456(α) = ntuple(m -> evalpoly(α, _ϕnum[m]) / evalpoly(α, _ϕden[m]), Val(6))
 

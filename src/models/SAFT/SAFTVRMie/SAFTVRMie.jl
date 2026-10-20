@@ -245,7 +245,7 @@ function Cλ(model::SAFTVRMieModel, V, T, z, λa, λr)
     return Cλ_mie(λa, λr)
 end
 
-Cλ_mie(λa, λr) = (λr(λr-λa))*(λr/λa)^(λa/(λr-λa))
+Cλ_mie(λa, λr) = (λr/(λr-λa))*(λr/λa)^(λa/(λr-λa))
 
 function ζ_X(model::SAFTVRMieModel, V, T, z,_d = @f(d))
     _ζ_X,σ3x = @f(ζ_X_σ3,_d)
