@@ -77,6 +77,8 @@ SAFTVRMie
 
 export SAFTVRMie
 
+include("equations.jl")
+
 function recombine_impl!(model::SAFTVRMieModel)
     sigma = model.params.sigma
     epsilon = model.params.epsilon
@@ -279,52 +281,17 @@ function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d),m̄ = dot(z,model.pa
     return _ζ_X,σ3_x
 end
 
-function aS_1(model::SAFTVRMieModel, V, T, z, λ,ζ_X_= @f(ζ_X))
-    ζeff_ = @f(ζeff,λ,ζ_X_)
-    return -1/(λ-3)*(1-ζeff_/2)/(1-ζeff_)^3
-end
+aS_1(model::SAFTVRMieModel, V, T, z, λ,ζ_X_= @f(ζ_X)) = SAFTVRMieUtils.aS1(λ,ζ_X_)
 
-function ζeff(model::SAFTVRMieModel, V, T, z, λ,ζ_X_= @f(ζ_X))
-    A = SAFTγMieconsts.A
-    λ⁻¹ = one(λ)/λ
-    Aλ⁻¹ = A * SA[one(λ); λ⁻¹; λ⁻¹*λ⁻¹; λ⁻¹*λ⁻¹*λ⁻¹]
-    return dot(Aλ⁻¹,SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4])
-end
+ζeff(model::SAFTVRMieModel, V, T, z, λ,ζ_X_= @f(ζ_X)) = SAFTVRMieUtils.ζeff(λ,ζ_X_)
 
-function B(model::SAFTVRMieModel, V, T, z, λ, x_0,ζ_X_ = @f(ζ_X))
-    x_0_3λ = x_0^(3-λ)
-    ζ_X_m13 = (1-ζ_X_)^3
-    I = (1-x_0_3λ)/(λ-3)
-    J = (1-(λ-3)*x_0^(4-λ)+(λ-4)*x_0_3λ)/((λ-3)*(λ-4))
-    return I*(1-ζ_X_/2)/ζ_X_m13-9*J*ζ_X_*(ζ_X_+1)/(2*ζ_X_m13)
-end
+B(model::SAFTVRMieModel, V, T, z, λ, x_0,ζ_X_ = @f(ζ_X)) = SAFTVRMieUtils.B(λ, x_0, ζ_X_)
 
-function KHS(model::SAFTVRMieModel, V, T, z,ζ_X_ = @f(ζ_X),ρS=@f(ρ_S))
-    return (1-ζ_X_)^4/(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4)
-end
+KHS(model::SAFTVRMieModel, V, T, z,ζ_X_ = @f(ζ_X),ρS = nothing) = SAFTVRMieUtils.KHS(ζ_X_)
 
-function f123456(model::SAFTVRMieModel, V, T, z, α)
-    ϕ = SAFTVRMieconsts.ϕ
-    _0 = zero(α)
-    fa = (_0,_0,_0,_0,_0,_0)
-    fb = (_0,_0,_0,_0,_0,_0)
-    @inbounds for i ∈ 1:4
-        ϕi = ϕ[i]::NTuple{6,Float64}
-        ii = i-1
-        αi = α^ii
-        fa = fa .+ ϕi .*αi
-    end
-    @inbounds for i ∈ 5:7
-        ϕi = ϕ[i]::NTuple{6,Float64}
-        ii = i-4
-        αi = α^ii
-        fb = fb .+ ϕi .*αi
-    end
-    return  fa ./ (one(_0) .+ fb)
-    #return sum(ϕ[i+1][m]*α^i for i ∈ 0:3)/(1+∑(ϕ[i+1][m]*α^(i-3) for i ∈ 4:6))
-end
+f123456(model::SAFTVRMieModel, V, T, z, α) = SAFTVRMieUtils.f123456(α)
 
-function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
+function ζst(model::SAFTVRMieModel, V, T, z, _σ = model.params.sigma.values)
     m = model.params.segment.values
     m̄ = dot(z, m)
     m̄inv = 1/m̄
@@ -344,17 +311,7 @@ function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
     return _ζst*ρS* π/6
 end
 
-function g_HS(model::SAFTVRMieModel, V, T, z, x_0ij,ζ_X_ = @f(ζ_X))
-    ζX3 = (1-ζ_X_)^3
-    #evalpoly(ζ_X_,(0,42,-39,9,-2)) = (42ζ_X_-39ζ_X_^2+9ζ_X_^3-2ζ_X_^4)
-    k_0 = -log(1-ζ_X_)+evalpoly(ζ_X_,(0,42,-39,9,-2))/(6*ζX3)
-    #evalpoly(ζ_X_,(0,-12,6,0,1)) = (ζ_X_^4+6*ζ_X_^2-12*ζ_X_)
-    k_1 = evalpoly(ζ_X_,(0,-12,6,0,1))/(2*ζX3)
-    k_2 = -3*ζ_X_^2/(8*(1-ζ_X_)^2)
-    #(-ζ_X_^4+3*ζ_X_^2+3*ζ_X_) = evalpoly(ζ_X_,(0,3,3,0,-1))
-    k_3 = evalpoly(ζ_X_,(0,3,3,0,-1))/(6*ζX3)
-    return exp(evalpoly(x_0ij,(k_0,k_1,k_2,k_3)))
-end
+g_HS(model::SAFTVRMieModel, V, T, z, x_0ij,ζ_X_ = @f(ζ_X)) = SAFTVRMieUtils.g_HS(x_0ij,ζ_X_)
 
 function ζeff_fdf(model::SAFTVRMieModel, V, T, z, λ,ζ_X_,ρ_S_)
     A = SAFTγMieconsts.A
@@ -458,13 +415,11 @@ function I(model::SAFTVRMieModel, V, T, z, i, j, _data = @f(data))
 end
 
 function Δ(model::SAFTVRMieModel, V, T, z, i, j, a, b,_data = @f(data))
-    ϵ = model.params.epsilon.values
     K = model.params.bondvol.values
     Kijab = K[i,j][a,b]
     if iszero(Kijab)
         return zero(@f(Base.promote_eltype))
     end
-    Tr = T/ϵ[i,j]
     _I = @f(I,i,j,_data)
     ϵ_assoc = model.params.epsilon_assoc.values
     F = expm1(ϵ_assoc[i,j][a,b]/T)
