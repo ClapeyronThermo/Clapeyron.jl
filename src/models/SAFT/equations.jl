@@ -107,10 +107,7 @@ function bmcs_hs_zero_v(model,V,T,z,_d = @f(d),m = model.params.segment.values)
     ζ2,ζ3 = ρ*ζ2V,ρ*ζ3V
     Δζ3 = 1.0 - ζ3
     logΔζ3 = log(Δζ3)
-    return  3.0*D1/D0*ζ2/Δζ3
-            + D2*D2*ζ2/(D3*D0*Δζ3*Δζ3)
-            - logΔζ3
-            + (D2*D2*D2)/(D3*D3*D0)*logΔζ3
+    return  3.0*D1/D0*ζ2/Δζ3 + D2*D2*ζ2/(D3*D0*Δζ3*Δζ3) - logΔζ3 + (D2*D2*D2)/(D3*D3*D0)*logΔζ3
 end
 
 """

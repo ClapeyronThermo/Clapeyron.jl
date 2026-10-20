@@ -60,15 +60,7 @@ const KN_C4 = (-13.37031968, 65.38059570, -115.09233113, 88.91973082, -25.620998
 
 @newmodelsingleton KolafaNezbedaLJ LJPotentialModel
 
-function a_res(model::KolafaNezbedaModel, V, T, z)
-    refmodel = KolafaNezbedaLJ()
-    f,h = shape_factors(model.params,refmodel,T,z)
-    V0 = V/(h*sum(z))
-    T0 = T/f
-    return a_potential(refmodel, V0, T0, nothing)
-end
-
-function a_potential(model::KolafaNezbedaLJ, V, T, ecs_data)
+function a_potential(model::KolafaNezbedaLJ, V, T)
     z = SA[1.0]
     _data = @f(data)
     return @f(a_hs,_data) + @f(a_pert,_data)
@@ -93,8 +85,6 @@ function ΔB2_kn(T̃)
 end
 
 #hard sphere term, associated to the Boublik-Nezbeda hard sphere EoS
-
-
 function a_hs(model::KolafaNezbedaLJ, V, T, z,_data = @f(data))
     η,ρ̃,T̃,d̃ = _data
     return 5/3*log1p(-η) + η*(34 - 33*η + 4*η*η)/(6*(1-η)^2)
@@ -122,10 +112,6 @@ end
 function lb_volume(model::KolafaNezbedaLJ,T,z)
     d̃ = d_kn(T)
     return sum(z)* d̃^3 *π/6
-end
-
-function x0_crit_pure(model::KolafaNezbedaLJ,z)
-    return (1.32, -log10(0.31))
 end
 
 function set_k!(model::KolafaNezbedaLJ,k)

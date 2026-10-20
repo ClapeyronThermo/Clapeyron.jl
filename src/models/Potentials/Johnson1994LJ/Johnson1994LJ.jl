@@ -1,6 +1,6 @@
 struct Johnson1994LJ <: JLPotentialModel end
 
-function a_potential(model::Johnson1994LJ, V, T̄, _)
+function a_potential(model::Johnson1994LJ, V, T̄)
     ρ̄  = 1/V
     γ = 3
     F = exp(-γ*ρ̄*ρ̄)
@@ -55,4 +55,20 @@ const Johnson1994LJConstants = (0.8623085097507421, 2.976218765822098,-8.4022301
       -1.131607632802822e2,-8.867771540418822e3,-3.986982844450543e1,-4.689270299917261e3,
       2.593535277438717e2,-2.694523589434903e3,-7.218487631550215e2, 1.721802063863269e2)
 
+
+function lb_volume(::Johnson1994LJ,T,z)
+    return sum(z)/0.9 #maximum density was 0.9
+end
+
+"""
+    Johnson1994LJ <: LJPotentialModel
+    Johnson1994LJ()
+
+## Description
+
+Johnson equation of state for the Lennard-Jones fluid.
+
+## References
+1. Johnson, J. K., Zollweg, J. A., & Gubbins, K. E. (1993). The Lennard-Jones equation of state revisited. Molecular physics, 78(3), 591–618. [doi:10.1080/00268979300100411](https://doi.org/10.1080/00268979300100411)
+"""
 export Johnson1994LJ

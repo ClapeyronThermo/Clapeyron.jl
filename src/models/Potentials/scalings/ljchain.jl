@@ -23,3 +23,9 @@ function shape_factors(scaling::ChainLJScaling,ref,T,z)
     h = m̄*N_A*σ3
     return f,h
 end
+
+function transform_params(::Type{ChainLJScaling},params)
+    sigma = params["sigma"]
+    sigma.values .*= 1E-10
+    return saft_lorentz_berthelot(params)
+end

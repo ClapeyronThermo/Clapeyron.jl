@@ -167,7 +167,6 @@ include("models/EmpiricHelmholtz/SingleFluid/variants/PropaneRef.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/Ammonia2023.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/TholLJ.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/XiangDeiters.jl")
-include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
 
 #multifluid models
 include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
@@ -211,8 +210,6 @@ include("models/SAFT/CPA/CPA.jl")
 include("models/SAFT/CPA/variants/sCPA.jl")
 include("models/SAFT/SAFTVRSW/SAFTVRSW.jl")
 include("models/SAFT/LJSAFT/LJSAFT.jl")
-include("models/SAFT/softSAFT/softSAFT.jl")
-include("models/SAFT/softSAFT/variants/softSAFT2016.jl")
 include("models/SAFT/softSAFT/variants/solidsoftSAFT.jl")
 include("models/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
@@ -282,11 +279,19 @@ include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
 include("models/Virial/Virial.jl")
 
+#Corresponding states models and potential models
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
 include("models/Potentials/PeTS/PeTS.jl")
+include("models/Potentials/Thol2016LJ/Thol2016LJ.jl")
+include("models/Potentials/Johnson1994LJ/Johnson1994LJ.jl")
 include("models/Potentials/FeANNMie/FeANNMie.jl")
 include("models/Potentials/KolafaNezbeda/KolafaNezbeda.jl")
+include("models/Potentials/LJRef/LJRef.jl")
+
+#soft-SAFT: requires potentials to be loaded
+include("models/SAFT/softSAFT/softSAFT.jl")
+include("models/SAFT/softSAFT/variants/softSAFT2016.jl")
 
 #electrolytes
 include("models/Electrolytes/electrolytes.jl")

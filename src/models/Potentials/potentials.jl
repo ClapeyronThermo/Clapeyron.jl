@@ -1,16 +1,15 @@
 
-#a_potential(smodel,ρ,T̄,data)
+#a_potential(smodel,V,T̄)
 abstract type PotentialModel end
 abstract type LJPotentialModel <: PotentialModel end
-abstract type MiePotentialModel <: PotentialModel end
-
+abstract type LJTSPotentialModel <: LJPotentialModel end
+abstract type MiePotentialModel <: LJPotentialModel end
 
 function a_res_ecs(refmodel::PotentialModel,scalingmodel,V,T,z)
     f,h = shape_factors(scalingmodel,refmodel,T,z)
     T0 = T/f
-    rho0 = sum(z)*h/V
-    data = ecs_data(refmodel,scalingmodel,V,T,z)
-    return a_potential(refmodel,rho0,T0,z,data)
+    V0 = V/(sum(z)*h)
+    return a_potential(refmodel,V0,T0)
 end
 
 function a_res(model::PotentialModel,V,T,z)
@@ -18,13 +17,17 @@ function a_res(model::PotentialModel,V,T,z)
     return a_res_ecs(model,scaling,V,T,z)
 end
 
+#default
 Rgas(::PotentialModel) = 1.0
 T_scale(::PotentialModel,z) = 1.0
-
-#default
-ecs_data(refmodel,scalingmodel,V,T,z) = nothing 
-a_potential(model,rho,T) = a_potential(model,rho,T,nothing)
 is_splittable(::PotentialModel) = false
-idealmodel(::PotentialModel) = BasicIdeal()
+idealmodel(::PotentialModel) = BasicIdeal(1.0) #basic ideal with R = 1
+
+#defaults for LJ model
+
+function x0_crit_pure(model::LJPotentialModel,z)
+    return (1.32, -log10(0.31))
+end
 
 include("scalings/scalings.jl")
+

@@ -120,10 +120,10 @@ ecs_data(refmodel::FeANNMie,scalingmodel::NoECSScaling,V,T,z) =  model.lambda_a,
 
 mie_α_const(model::FeANNMie) = mie_α_const(model.lambda_a,model.lambda_r)
 
-function a_potential(model::FeANNMie,V,T,ecs_data)
+function a_potential(model::FeANNMie,V,T)
     ρ⃰ = 1/V
     T⃰ = T
-    λa, λr = ecs_data
+    λa, λr = model.lambda_a,model.lambda_r
     α = mie_α_const(λa, λr)
     x1 = zeros(Base.promote_eltype(λa, λr, V, T, 1.0),30)
     x2 = similar(x1)

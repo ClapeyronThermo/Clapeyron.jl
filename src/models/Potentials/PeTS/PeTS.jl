@@ -50,16 +50,7 @@ struct PeTSLJ <: LJPotentialModel end
 reference_model(::PeTSModel) = PeTSLJ()
 scaling_model(model::PeTSModel) = ChainLJScaling(model.params)
 
-function a_res_ecs(refmodel::PeTSLJ,scalingmodel::ChainLJScaling,V,T,z)
-    f,h = shape_factors(scalingmodel,refmodel,T,z)
-    T0 = T/f
-    n = sum(z)
-    rho0 = n*h/V
-    m̄ = dot(scalingmodel.params.segment.values,z)/n
-    return m̄*a_potential(refmodel,rho0,T0,z,nothing)
-end
-
-function a_potential(::PeTSLJ,V,T,ecs_data)
+function a_potential(::PeTSLJ,V,T)
     z = SA[1.0]
     _data = @f(data)
     return @f(a_ref,_data) + @f(a_pert,_data)

@@ -62,3 +62,9 @@ function shape_factors(scaling::LJScalingModel,ref,T,z)
     h = N_A*σ3
     return f,h
 end
+
+function transform_params(::Type{LJScaling},params)
+    sigma = params["sigma"]
+    sigma.values .*= 1E-10
+    return saft_lorentz_berthelot(params)
+end

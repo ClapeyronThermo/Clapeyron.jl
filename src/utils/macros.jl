@@ -510,7 +510,7 @@ macro newmodelsingleton(name,parent)
     quote
     struct $name <: $parent end
     Clapeyron.is_splittable(::$name) = false
-    function $name(components;userlocations = String[],verbose = false,reference_state = nothing)
+    function $name(components;userlocations = nothing,verbose = false,reference_state = nothing)
         reference_state_checkempty($name,reference_state)
         return $name()
     end
