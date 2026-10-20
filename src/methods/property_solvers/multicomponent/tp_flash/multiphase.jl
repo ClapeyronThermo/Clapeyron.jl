@@ -88,7 +88,7 @@ function MultiPhaseTPFlash(;
                 T = Base.promote_eltype(n0, 1.0)
                 n00 = Vector{T}[]
                 for i in 1:size(n0,1)
-                    push!(n00,convert(Vector{T},@view(n0[1,:])))
+                    push!(n00,convert(Vector{T},@view(n0[i,:])))
                 end
             elseif n0 isa AbstractVector && eltype(n0) <: AbstractVector && !isempty(n0)
                 T = Base.promote_eltype(n0[1], 1.0)
