@@ -57,7 +57,7 @@ function _edge_pressure(model,T,z,v0 = nothing,crit_retry = true)
     Tr = T/T_scale(model,z)
     vlog = log10(v1)
     crit = mechanical_critical_point(model,z,(Tr,vlog)) #mechanical critical point
-    Tc,_,_ = crit
+    Tc,_,Vc = crit
     !isfinite(Tc) && return fail,fail,:failure
     Tc <= T && return fail,crit,:supercritical
     vlc,vvc = critical_vsat_extrapolation(model,T,Tc,Vc,z)
