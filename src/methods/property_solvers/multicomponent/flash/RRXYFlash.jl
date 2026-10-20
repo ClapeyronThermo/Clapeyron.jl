@@ -110,10 +110,10 @@ function RRXYFlash(;equilibrium = :unknown,
         end
     end
 
-    if T === nothing && v0 !== nothing
+    if T === Nothing && v0 !== nothing
         TT = Base.promote_eltype(v0[1],v0[2])
         _v0 = (v0[1],v0[2])
-    elseif T !== nothing && v0 !== nothing
+    elseif T !== Nothing && v0 !== nothing
         TT = Base.promote_eltype(one(T),v0[1],v0[2])
         _v0 = (v0[1],v0[2])
     else

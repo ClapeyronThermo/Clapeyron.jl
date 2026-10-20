@@ -88,7 +88,7 @@ function MultiPhaseTPFlash(;
                 T = Base.promote_eltype(n0, 1.0)
                 n00 = Vector{T}[]
                 for i in 1:size(n0,1)
-                    push!(n00,convert(Vector{T},@view(n0[1,:])))
+                    push!(n00,convert(Vector{T},@view(n0[i,:])))
                 end
             elseif n0 isa AbstractVector && eltype(n0) <: AbstractVector && !isempty(n0)
                 T = Base.promote_eltype(n0[1], 1.0)
@@ -120,17 +120,10 @@ is_unknown(::MultiPhaseTPFlash) = true
 
 export MultiPhaseTPFlash
 
-function index_reduction(m::MultiPhaseTPFlash,idx::AbstractVector)
-    K0,n0,K_tol,ss_iters,nacc,second_order,full_tpd,max_phases,phase_iters,verbose = m.K0,m.n0,m.K_tol,m.ss_iters,m.nacc,m.second_order,m.full_tpd,m.max_phases,m.phase_iters,m.verbose
-    K0 !== nothing && (K0 = K0[idx])
-    if n0 !== nothing
-        for i in eachindex(n0)
-            n0i = n0[i]
-            n0[i] = n0i[idx]
-        end
-    end
-    # Delegate type resolution to keyword constructor to avoid eltype(K0) on nothing
-    return MultiPhaseTPFlash(;K0,n0,K_tol,ss_iters,nacc,second_order,full_tpd,max_phases,phase_iters,verbose)
+function index_reduction(m::MultiPhaseTPFlash{T},idx::AbstractVector) where T
+    n0 = m.n0
+    n0 !== nothing && (n0 = [n0i[idx] for n0i in n0])
+    return MultiPhaseTPFlash{T}(index_reduction(m.K0,idx),n0,m.K_tol,m.ss_iters,m.nacc,m.second_order,m.full_tpd,m.max_phases,m.phase_iters,m.verbose)
 end
 
 function tpd_cache end
