@@ -20,27 +20,89 @@ macro printline()  # useful in hunting for where tests get stuck
     printstyled(">>", file, ":", __source__.line, "\n", color=:light_black)
 end
 
+function fit_scaling(vals, is; exponents = (-3, -2, -1, 0, 1, 2, 3))
+    length(vals) == length(is) ||
+        throw(ArgumentError("vals and is must have the same length"))
+    B  = reduce(hcat, (is.^m for m in exponents))
+    cn = sqrt.(sum(abs2, B, dims = 1))
+    c  = (B ./ cn) \ vals ./ cn
+    contrib = abs.(c) .* vec(cn)
+    [(m = exponents[k], c = c[k]) for k in sortperm(contrib, rev = true)]
+end
 
-function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
-    for i in (2.0,3.0,5.0,7.0,11.0)
-        a_res₀ = Clapeyron.a_res(model,V,T,z)
-        @test a_res₀ ≈ Clapeyron.a_res(model,i*V,T,i*z) rtol = rtol
+function test_gibbs_duhem(model, V, T, z; rtol = 1e-14, atol = 1e-15)
+    is   = exp.(range(log(2), log(20); length=15))
+    name = string(Clapeyron.parameterless_type(typeof(model)))
+
+    @testset "a_res intensivity ($name)" begin
+        a0   = Clapeyron.a_res(model, V, T, z)
+        vals = [Clapeyron.a_res(model, i*V, T, i*z) for i in is]
+        a_res_intensive   = all(abs.(vals .- a0) .≤ rtol * abs(a0) + atol)
+        @test a_res_intensive
+        a_res_intensive || @info "a_res scaling" fit_scaling(vals, is)
     end
+
     pures = Clapeyron.split_pure_model(model)
-    x_pure = zeros(length(model))
-    for n in 1:length(model) 
-        for i in (2.0,3.0,5.0,7.0,11.0)
-            x_pure[n] = i
-            @test Clapeyron.a_res(model,i*V,T,x_pure) ≈ Clapeyron.a_res(pures[n],i*V,T,Clapeyron.SVector(i)) rtol = rtol
-            x_pure .= 0
+
+    # SVector{1} (SingleComp) must give the same result as Vector{Float64}
+    singlecomp_dispatch_test = true
+    @testset "SingleComp vs Vector dispatch ($name)" begin
+        bad = Tuple{Int64,Float64,Float64,Float64}[]
+        for n in eachindex(pures), i in is
+            a_sc = Clapeyron.a_res(pures[n], i*V, T, Clapeyron.SVector(i))
+            a_v  = Clapeyron.a_res(pures[n], i*V, T, [i])
+            abs(a_sc - a_v) ≤ rtol * max(abs(a_sc), abs(a_v)) + atol ||
+                push!(bad, (n, i, a_sc, a_v))
         end
+        singlecomp_dispatch_test = isempty(bad)
+        @test singlecomp_dispatch_test
+        singlecomp_dispatch_test || @info "SingleComp dispatch mismatch ($name)" bad
+    end
+
+    !singlecomp_dispatch_test && (return nothing)
+
+    @testset "pure limits ($name)" begin
+        pure_limit_test = true
+        for n in eachindex(pures)
+            x = zeros(length(model)); x[n] = 1.0
+            for i in is
+                a_mix  = Clapeyron.a_res(model,    i*V, T, i*x)
+                a_pure = Clapeyron.a_res(pures[n], i*V, T, Clapeyron.SVector(i))
+                abs(a_mix - a_pure) ≤ rtol * max(abs(a_mix), abs(a_pure)) + atol ||
+                    (pure_limit_test = false; break)
+            end
+        end
+        @test pure_limit_test
     end
 end
 
-function test_gibbs_duhem(model::Clapeyron.ActivityModel,V,T,z;rtol = 1e-14)
-    for i in (2.0,3.0,5.0,7.0,11.0)
-        gE₀ = Clapeyron.excess_gibbs_free_energy(model,V,T,z)
-        @test i*gE₀ ≈ Clapeyron.excess_gibbs_free_energy(model,V,T,i*z) rtol = rtol
+
+function test_gibbs_duhem(model::Clapeyron.ActivityModel, V, T, z; rtol = 1e-14, atol = 1e-15)
+    is   = exp.(range(log(2), log(20); length=15))
+    name = string(Clapeyron.parameterless_type(typeof(model)))
+
+    @testset "excess gibbs energy extensivity ($name)" begin
+        GE0   = Clapeyron.excess_gibbs_free_energy(model, V, T, z)
+        Gvals = [Clapeyron.excess_gibbs_free_energy(model, i*V, T, i*z) for i in is]
+        GEi   = is .* GE0
+        GE_extensive    = all(abs.(Gvals .- GEi) .≤ rtol .* abs.(GEi) .+ atol)
+        @test GE_extensive
+        GE_extensive || @info "GE scaling" fit_scaling(Gvals, is)
+    end
+
+    @testset "pure-limit GE = 0 ($name)" begin
+        n   = length(model)
+        bad = Tuple{Int64,Float64,Float64}[]
+        for k in 1:n
+            xk = zeros(n); xk[k] = 1.0
+            for i in is
+                g = Clapeyron.excess_gibbs_free_energy(model, i*V, T, i*xk)
+                abs(g) ≤ atol || push!(bad, (k, i, g))
+            end
+        end
+        pure_limit_GE_test = isempty(bad)
+        @test pure_limit_GE_test
+        pure_limit_GE_test || @info "nonzero pure-limit GE ($name)" bad
     end
 end
 
@@ -49,15 +111,30 @@ function test_volume(model,p,T,z = Clapeyron.SA[1.0];rtol = 1e-8,phase = :unknow
     @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
 end
 
-function test_scales(model,T0 = 300.0)
-    n = length(model)
-    z = ones(n) ./ n
-    z3 = 3 .* z
-    z7 = 7 .* z
-    @test Clapeyron.lb_volume(model,T0,z3) ≈ 3*Clapeyron.lb_volume(model,T0,z)
-    @test Clapeyron.lb_volume(model,T0,z7) ≈ 7*Clapeyron.lb_volume(model,T0,z)
-    @test Clapeyron.T_scale(model,z3) ≈ Clapeyron.T_scale(model,z)
-    @test Clapeyron.p_scale(model,z3) ≈ Clapeyron.p_scale(model,z)
+function test_scales(model, T0 = 300.0; rtol = 1e-14, atol = 1e-15)
+    is   = exp.(range(log(2), log(20); length=15))
+    n    = length(model)
+    z    = ones(n) ./ n
+    name = Clapeyron.parameterless_type(typeof(model))
+
+    @testset "lb_volume extensivity ($name)" begin
+        v0   = Clapeyron.lb_volume(model, T0, z)
+        vals = [Clapeyron.lb_volume(model, T0, i*z) for i in is]
+        vi   = is .* v0
+        ok   = all(abs.(vals .- vi) .≤ rtol .* abs.(vi) .+ atol)
+        @test ok
+        ok || @info "lb_volume scaling" fit_scaling(vals, is)
+    end
+
+    for (f, label) in ((Clapeyron.T_scale, "T_scale"), (Clapeyron.p_scale, "p_scale"))
+        @testset "$label intensivity ($name)" begin
+            s0   = f(model, z)
+            vals = [f(model, i*z) for i in is]
+            ok   = all(abs.(vals .- s0) .≤ rtol * abs(s0) + atol)
+            @test ok
+            ok || @info "$label scaling" fit_scaling(vals, is)
+        end
+    end
 end
 
 function test_recombine(model,innermodels = nothing)

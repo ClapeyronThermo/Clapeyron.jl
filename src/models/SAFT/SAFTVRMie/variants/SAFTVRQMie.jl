@@ -387,7 +387,7 @@ function ϵeff(model::SAFTVRQMieModel, V, T, z::SingleComp)
     _Mw = model.params.Mw[1]
     D   = ħ^2/(12*k_B*T*_Mw/N_A*_σ^2)
     is_second_order_fh = model.fh_order == :fh2
-    C = @f(Cλ,_λr, _λa)
+    C = @f(Cλ,_λa, _λr)
     params = (@f(Q1,_λr), @f(Q1,_λa), @f(Q2,_λr), @f(Q2,_λa),
               D, _λr, _λa, C, C, is_second_order_fh)
 
@@ -419,17 +419,16 @@ function a_hs_eff(model::SAFTVRQMieModel, V, T, z, _data = @f(data))
     m    = model.params.segment.values
     nc   = length(z)
     Σz   = sum(z)
-    m̄inv = 1/m̄
     _0   = zero(V + T + first(z))
-    xS   = [z[i]*m[i]*m̄inv for i in 1:nc]
 
     d3_na = _0
     for i in 1:nc
         xSi = z[i]*m[i]
         d3_na += xSi*_d[i,i]^3
     end
+    d3_na /= m̄
     η_na = _ρ_S*(π/6)*d3_na
-
+    #N_A/V*m̄
     B̄₂ = _0
     for i in 1:nc
         xSi = z[i]*m[i]
