@@ -111,15 +111,30 @@ function test_volume(model,p,T,z = Clapeyron.SA[1.0];rtol = 1e-8,phase = :unknow
     @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
 end
 
-function test_scales(model,T0 = 300.0)
-    n = length(model)
-    z = ones(n) ./ n
-    z3 = 3 .* z
-    z7 = 7 .* z
-    @test Clapeyron.lb_volume(model,T0,z3) ≈ 3*Clapeyron.lb_volume(model,T0,z)
-    @test Clapeyron.lb_volume(model,T0,z7) ≈ 7*Clapeyron.lb_volume(model,T0,z)
-    @test Clapeyron.T_scale(model,z3) ≈ Clapeyron.T_scale(model,z)
-    @test Clapeyron.p_scale(model,z3) ≈ Clapeyron.p_scale(model,z)
+function test_scales(model, T0 = 300.0; rtol = 1e-14, atol = 1e-15)
+    is   = exp.(range(log(2), log(20); length=15))
+    n    = length(model)
+    z    = ones(n) ./ n
+    name = Clapeyron.parameterless_type(typeof(model))
+
+    @testset "lb_volume extensivity ($name)" begin
+        v0   = Clapeyron.lb_volume(model, T0, z)
+        vals = [Clapeyron.lb_volume(model, T0, i*z) for i in is]
+        vi   = is .* v0
+        ok   = all(abs.(vals .- vi) .≤ rtol .* abs.(vi) .+ atol)
+        @test ok
+        ok || @info "lb_volume scaling" fit_scaling(vals, is)
+    end
+
+    for (f, label) in ((Clapeyron.T_scale, "T_scale"), (Clapeyron.p_scale, "p_scale"))
+        @testset "$label intensivity ($name)" begin
+            s0   = f(model, z)
+            vals = [f(model, i*z) for i in is]
+            ok   = all(abs.(vals .- s0) .≤ rtol * abs(s0) + atol)
+            @test ok
+            ok || @info "$label scaling" fit_scaling(vals, is)
+        end
+    end
 end
 
 function test_recombine(model,innermodels = nothing)
