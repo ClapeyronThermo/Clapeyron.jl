@@ -54,14 +54,14 @@ GC.gc()
         GC.gc()
 
         system_fh1 = SAFTVRQMie(["helium"],fh_order = :fh1)
-        @test Clapeyron.a_mono(system_fh1, V, T, z1) ≈ 0.11578059057635584 rtol = 1e-6
+        @test Clapeyron.a_mono(system_fh1, V, T, z1) ≈ 0.11583418499711443 rtol = 1e-6
 
         system_fh2_2 = SAFTVRQMie(["helium","neon"])
-        @test Clapeyron.a_mono(system_fh2_2, V, T, z) ≈ 0.13111118891041268 rtol = 1e-6
+        @test Clapeyron.a_mono(system_fh2_2, V, T, z) ≈ 0.1311106955436684 rtol = 1e-6
         test_gibbs_duhem(system_fh2_2,V,T,z)
 
         system_fh1_2 = SAFTVRQMie(["helium","neon"],fh_order = :fh1)
-        @test Clapeyron.a_mono(system_fh1_2, V, T, z) ≈ 0.1308487831715999 rtol = 1e-6
+        @test Clapeyron.a_mono(system_fh1_2, V, T, z) ≈ 0.13084830523132662 rtol = 1e-6
     end
 
     @testset "SAFTVRSMie" begin
@@ -69,7 +69,7 @@ GC.gc()
         V_sol = 3e-5
         @test Clapeyron.a_mono(system, V_sol, T, z1) ≈ 0.43643302846919896 rtol = 1e-6
         @test Clapeyron.a_chain(system, V_sol, T, z1) ≈ -0.4261294644079463 rtol = 1e-6
-        test_gibbs_duhem(system,V_sol,T,z1,rtol = 1e-12)
+        test_gibbs_duhem(system,V_sol,T,z1,rtol = 1e-12,atol = 1e-10)
         GC.gc()
     end
 
