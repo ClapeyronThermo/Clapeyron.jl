@@ -1,7 +1,7 @@
 const RKParam = ABCubicParam
 abstract type RKModel <: ABCubicModel end
 
-struct RK{T <: IdealModel,α,c,M} <: RKModel
+struct RK{T<:IdealModel,α,c,M} <: RKModel
     components::Array{String,1}
     alpha::α
     mixing::M
@@ -30,33 +30,39 @@ export RK
     reference_state = nothing)
 
 ## Input parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `k`: Pair Parameter (`Float64`) (optional)
-- `l`: Pair Parameter (`Float64`) (optional)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `k`: Pair Parameter (`Float64`) (optional)
+  - `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `a`: Pair Parameter (`Float64`)
-- `b`: Pair Parameter (`Float64`)
+
+  - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+  - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `a`: Pair Parameter (`Float64`)
+  - `b`: Pair Parameter (`Float64`)
 
 ## Input models
-- `idealmodel`: Ideal Model
-- `alpha`: Alpha model
-- `mixing`: Mixing model
-- `activity`: Activity Model, used in the creation of the mixing model.
-- `translation`: Translation Model
+
+  - `idealmodel`: Ideal Model
+  - `alpha`: Alpha model
+  - `mixing`: Mixing model
+  - `activity`: Activity Model, used in the creation of the mixing model.
+  - `translation`: Translation Model
 
 ## Description
+
 Redlich-Kwong Equation of state.
+
 ```
 P = RT/(V-Nb) + a•α(T)/(V(V+Nb))
 ```
 
 ## Model Construction Examples
+
 ```julia
 # Using the default database
 model = RK("water") #single input
@@ -90,46 +96,28 @@ model = RK(["neon","hydrogen"];
 ```
 
 ## References
-1. Redlich, O., & Kwong, J. N. S. (1949). On the thermodynamics of solutions; an equation of state; fugacities of gaseous solutions. Chemical Reviews, 44(1), 233–244. [doi:10.1021/cr60137a013](https://doi.org/10.1021/cr60137a013)
+
+ 1. Redlich, O., & Kwong, J. N. S. (1949). On the thermodynamics of solutions; an equation of state; fugacities of gaseous solutions. Chemical Reviews, 44(1), 233–244. [doi:10.1021/cr60137a013](https://doi.org/10.1021/cr60137a013)
 """
 RK
 
-function RK(components;
-    idealmodel = BasicIdeal,
-    alpha = RKAlpha,
-    mixing = vdW1fRule,
-    activity = nothing,
-    translation = NoTranslation,
-    userlocations = String[],
-    ideal_userlocations = String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    reference_state = nothing,
-    verbose = false)
+function RK(components; idealmodel=BasicIdeal, alpha=RKAlpha, mixing=vdW1fRule, activity=nothing, translation=NoTranslation, userlocations=String[], ideal_userlocations=String[], alpha_userlocations=String[], mixing_userlocations=String[], activity_userlocations=String[], translation_userlocations=String[], reference_state=nothing, verbose=false)
     formatted_components = format_components(components)
 
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
-        userlocations = userlocations,
-        verbose = verbose,
-        ignore_missing_singleparams = ["Vc","acentricfactor"])
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv", "SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose, ignore_missing_singleparams=["Vc", "acentricfactor"])
 
-    model = CubicModel(RK,params,formatted_components;
-                        idealmodel,alpha,mixing,activity,translation,
-                        userlocations,ideal_userlocations,alpha_userlocations,activity_userlocations,mixing_userlocations,translation_userlocations,
-                        reference_state, verbose)
-    k = get(params,"k",nothing)
-    l = get(params,"l",nothing)
-    recombine_cubic!(model,k,l)
-    set_reference_state!(model,reference_state;verbose)
+    model = CubicModel(RK, params, formatted_components; idealmodel, alpha, mixing, activity, translation, userlocations, ideal_userlocations, alpha_userlocations, activity_userlocations, mixing_userlocations, translation_userlocations, reference_state, verbose)
+    k = get(params, "k", nothing)
+    l = get(params, "l", nothing)
+    recombine_cubic!(model, k, l)
+    set_reference_state!(model, reference_state; verbose)
     return model
 end
 
 default_references(::Type{RK}) = ["10.1021/cr60137a013"]
 
 @inline function cubic_Δ(::Type{<:RKModel})
-    return (0.0,-1.0)
+    return (0.0, -1.0)
 end
 
 #! format: off

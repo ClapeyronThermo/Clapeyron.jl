@@ -25,57 +25,58 @@ export MSAID
 
 ## Input parameters
 
-- `sigma`: Single Parameter (`Float64`) — Hard-sphere diameter `[m]`
-- `dipole`: Single Parameter (`Float64`) — Permanent dipole moment of the solvent `[C·m]`
-- `charge`: Single Parameter (`Float64`) — Charge number `[-]`
+  - `sigma`: Single Parameter (`Float64`) — Hard-sphere diameter `[m]`
+  - `dipole`: Single Parameter (`Float64`) — Permanent dipole moment of the solvent `[C·m]`
+  - `charge`: Single Parameter (`Float64`) — Charge number `[-]`
 
-## Description 
+## Description
 
 Mean Spherical Approximation (MSA) ion–dipole model for electrolyte solutions.
 
-The MSAID term adds the electrostatic contribution to the residual Helmholtz energy of a mixture of charged hard spheres (ions) and hard dipoles (solvent), all interacting through the MSA closure. 
+The MSAID term adds the electrostatic contribution to the residual Helmholtz energy of a mixture of charged hard spheres (ions) and hard dipoles (solvent), all interacting through the MSA closure.
 The model is built from two species types:
 
-- one neutral solvent with a permanent point dipole `dipole` and hard-sphere diameter `sigma`,
-- any number of ions with hard-sphere diameter `sigma` and charge number `charge` (in units of the elementary charge).
+  - one neutral solvent with a permanent point dipole `dipole` and hard-sphere diameter `sigma`,
+  - any number of ions with hard-sphere diameter `sigma` and charge number `charge` (in units of the elementary charge).
 
 Three internal parameters carry the whole electrostatic response:
 
-- `Γ`  — ionic screening parameter (MSA analogue of the Debye `κ`),
-- `B`  — ion–dipole coupling parameter,
-- `b₂` — dipole–dipole coupling parameter.
+  - `Γ`  — ionic screening parameter (MSA analogue of the Debye `κ`),
+  - `B`  — ion–dipole coupling parameter,
+  - `b₂` — dipole–dipole coupling parameter.
 
 They are obtained by solving a closed system of three algebraic equations (Blum 1974 for equal diameters; Blum & Wei 1987 for the general-size case).
 All thermodynamic properties are then expressed as closed-form functions of `(Γ, B, b₂)`.
 
 ## Model construction
 
-- Exactly one neutral solvent is required; the model errors otherwise.
-- `dipole` is only read for the neutral component.
-- If a `b` (covolume) parameter is present instead of `sigma`, the hard-sphere diameter is recovered from `b = (3/2) N_A σ³` before the MSA equations are built.
+  - Exactly one neutral solvent is required; the model errors otherwise.
+  - `dipole` is only read for the neutral component.
+  - If a `b` (covolume) parameter is present instead of `sigma`, the hard-sphere diameter is recovered from `b = (3/2) N_A σ³` before the MSA equations are built.
 
 !!! note "unequal ion diameters"
-    The Blum–Wei (1987) general-size solution requires solving a coupled inner system before the outer closures in `(Γ, B, b₂)` can be evaluated. 
+
+    The Blum–Wei (1987) general-size solution requires solving a coupled inner system before the outer closures in `(Γ, B, b₂)` can be evaluated.
     This implementation replaces that inner system with an approximation that behaves correctly on the dilute limit.
     The approximation implemented is exact for equal size ion diameters; accuracy is expected to be good for small size spreads, degrading as the ionic diameter spread widens.
 
 ## References
 
-1. Blum, L. (1974). Solution of a model for the solvent-electrolyte interactions in the mean spherical approximation. The Journal of Chemical Physics, 61(5), 2129–2133. [doi:10.1063/1.1682224](https://doi.org/10.1063/1.1682224)
-1. Blum, L., & Wei, D. Q. (1987). Analytical solution of the mean spherical approximation for an arbitrary mixture of ions in a dipolar solvent. The Journal of Chemical Physics, 87(1), 555–565. [doi:10.1063/1.453604](https://doi.org/10.1063/1.453604)
+ 1. Blum, L. (1974). Solution of a model for the solvent-electrolyte interactions in the mean spherical approximation. The Journal of Chemical Physics, 61(5), 2129–2133. [doi:10.1063/1.1682224](https://doi.org/10.1063/1.1682224)
+ 2. Blum, L., & Wei, D. Q. (1987). Analytical solution of the mean spherical approximation for an arbitrary mixture of ions in a dipolar solvent. The Journal of Chemical Physics, 87(1), 555–565. [doi:10.1063/1.453604](https://doi.org/10.1063/1.453604)
 """
-function MSAID(solvents,ions; charge = nothing, userlocations, verbose=false, RSPmodel = nothing, RSPmodel_userlocations = nothing)
+function MSAID(solvents, ions; charge=nothing, userlocations, verbose=false, RSPmodel=nothing, RSPmodel_userlocations=nothing)
     solvents = format_components(solvents)
     ions = format_components(ions)
     components = vcat(solvents, ions)
-    
+
     userlocations = normalize_userlocations(userlocations)
 
-    params = getparams(components, String[]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
-    if any(keys(params).=="b")
+    params = getparams(components, String[]; userlocations=userlocations, ignore_missing_singleparams=["sigma_born", "charge"], verbose=verbose)
+    if any(keys(params) .== "b")
         params["b"].values .*= 3/2/N_A/π*1e-3
         params["b"].values .^= 1/3
-        sigma = SingleParam("sigma",components,params["b"].values)
+        sigma = SingleParam("sigma", components, params["b"].values)
     else
         params["sigma"].values .*= 1E-10
         sigma = params["sigma"]
@@ -84,12 +85,12 @@ function MSAID(solvents,ions; charge = nothing, userlocations, verbose=false, RS
     dipole = params["dipole"]
     dipole.values .*= 1/(𝕔)*1e-21
 
-    Z = init_charge(components,charge;verbose)
+    Z = init_charge(components, charge; verbose)
 
-    packagedparams = MSAIDParam(sigma,dipole,SingleParam("charge",components,Z))
+    packagedparams = MSAIDParam(sigma, dipole, SingleParam("charge", components, Z))
 
     references = String["10.1063/1.1682224"]
-    nsolv = count(iszero,Z)
+    nsolv = count(iszero, Z)
     if !isone(nsolv)
         throw(error("MSAID only supports one neutral solvent."))
     end
@@ -99,12 +100,12 @@ end
 
 IonDependency(model::MSAIDModel) = IndependentIonModel()
 
-function data(model::MSAIDModel, V, T, z , iondata = (model.params.charge.values, model.params.sigma.values, 1.0))
+function data(model::MSAIDModel, V, T, z, iondata=(model.params.charge.values, model.params.sigma.values, 1.0))
     β = 1/(k_B*T)
     σ = model.params.sigma.values
     #Z = model.params.charge.values
     Z, _, _ = iondata
-    isolv = findfirst(iszero,Z)::Int
+    isolv = findfirst(iszero, Z)::Int
     μ = model.params.dipole.values[isolv]
     ∑z = sum(z)
     ρ = N_A*∑z/V
@@ -113,15 +114,14 @@ function data(model::MSAIDModel, V, T, z , iondata = (model.params.charge.values
     ρₙ = ρ*xₙ
     α₀ = e_c*sqrt(β/ϵ_0) # Checked
     α₂ = μ*sqrt(β/3/ϵ_0) # Checked
-    _data = (α₀,α₂,σₙ,ρₙ,ρ,σ,Z,z,∑z)
+    _data = (α₀, α₂, σₙ, ρₙ, ρ, σ, Z, z, ∑z)
     return _data
 end
 
-obj_MSAID(x,_data) = obj_MSAID(x[1],x[2],x[3],_data)
+obj_MSAID(x, _data) = obj_MSAID(x[1], x[2], x[3], _data)
 
-function obj_MSAID(Γ,B,b₂,_data)
-    
-    (α₀,α₂,σₙ,ρₙ,ρ,σ,Z,z,∑z) = _data
+function obj_MSAID(Γ, B, b₂, _data)
+    (α₀, α₂, σₙ, ρₙ, ρ, σ, Z, z, ∑z) = _data
     iions = iions_iterator(Z)
 
     β₆ = 1-b₂/6 # Checked
@@ -132,14 +132,13 @@ function obj_MSAID(Γ,B,b₂,_data)
     W₂ = 1/2*ρₙ*ρ*σₙ^2*B*sum(z[i]*σ[i]^2*Z[i]^2/(2*β₆*(σₙ+σ[i]*λ)*(1+σ[i]*Γ))^2 for i ∈ iions)/∑z # Checked
     Vη = (-W₁/2+sqrt((W₁/2)^2+2B*W₂/β₆^2))/(W₂) # Checked
 
-
     #[ΔΓ] - > [Dᶠ] -> (D,Dac,Ω) ->  ([Γₛ],[a⁰],a¹)
 
     D = oneunit(Γ + B + b₂)
-    Dac,Ω = zero(D),zero(D)
+    Dac, Ω = zero(D), zero(D)
     D_prefactor = Vη^2*ρₙ*ρ*σₙ^2
     for i ∈ iions
-        σᵢ,Zᵢ,zᵢ = σ[i],Z[i],z[i]
+        σᵢ, Zᵢ, zᵢ = σ[i], Z[i], z[i]
         xᵢ = zᵢ/∑z
         ΔΓᵢ = Vη*ρₙ*σₙ*σₙ*σᵢ*σᵢ*B/(8*β₆*(σₙ + λ*σᵢ))
         Dᶠᵢ = Zᵢ*β₆/(2*(1 + σᵢ*Γ - ΔΓᵢ))
@@ -148,7 +147,7 @@ function obj_MSAID(Γ,B,b₂,_data)
         Ω += xᵢ*σᵢ*Dᶠᵢ*Dᶠᵢ/(σₙ + λ*σᵢ)
     end
 
-    Ω *= Vη*ρ
+    Ω   *= Vη*ρ
     Dac *= ρ
     a¹  = D*β₆*(σₙ*B/2 + Ω*λ/(D*β₆))/(2*Dac) # Checked
     K¹¹ = (1-(λ+ρₙ*σₙ^2*Ω*a¹/(2*β₆^2))/(D*β₆)-ρₙ*σₙ^3*B*a¹/(12*β₆))/ρₙ # Checked
@@ -160,9 +159,9 @@ function obj_MSAID(Γ,B,b₂,_data)
     #Dac = ρ*sum(x[i]*Dᶠ[i]^2 for i in iions) # Checked
     #Ω   = Vη*ρ*sum(x[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i in iions) # Checked
 
-    ∑1,∑2,∑3 = zero(D),zero(D),zero(D)
+    ∑1, ∑2, ∑3 = zero(D), zero(D), zero(D)
     for i ∈ iions
-        σᵢ,Zᵢ,zᵢ = σ[i],Z[i],z[i]
+        σᵢ, Zᵢ, zᵢ = σ[i], Z[i], z[i]
         xᵢ = zᵢ/∑z
         ΔΓᵢ = Vη*ρₙ*σₙ*σₙ*σᵢ*σᵢ*B/(8*β₆*(σₙ + λ*σᵢ))
         Dᶠᵢ = Zᵢ*β₆/(2*(1 + σᵢ*Γ - ΔΓᵢ))
@@ -178,7 +177,7 @@ function obj_MSAID(Γ,B,b₂,_data)
     F2 = (-ρ*∑2 + a¹*(1-ρₙ*K¹¹))/(α₀*α₂) - 1
     F3 = ((1-ρₙ*K¹¹)^2+ρₙ*ρ*∑3 - y₁^2)/(ρₙ*α₂^2) - 1
 
-    return SVector((F1,F2,F3))
+    return SVector((F1, F2, F3))
     #Γₛ  = @. ((1+σ*Γ-ΔΓ)*D-1)/σ # Checked
     #a⁰  = @. β₆*Γₛ*Dᶠ/Dac # Checked
     #K¹⁰ = @. -(σₙ^2*Dᶠ*(Vη/(σₙ+λ*σ)+Ω*Γₛ/Dac)/(2*D*β₆^2) + σₙ^3*B*a⁰/(12*β₆)) # Checked
@@ -194,18 +193,17 @@ function obj_MSAID(Γ,B,b₂,_data)
     #return F, m, N, ϵr
 end
 
+function a_res(model::MSAIDModel, V, T, z, iondata=(model.params.charge.values, model.params.sigma.values), _data=@f(data, iondata))
+    (α₀, α₂, σₙ, ρₙ, ρ, σ, Z, z, ∑z) = _data
 
-function a_res(model::MSAIDModel, V, T, z, iondata = (model.params.charge.values, model.params.sigma.values) , _data = @f(data,iondata))
-    (α₀,α₂,σₙ,ρₙ,ρ,σ,Z,z,∑z) = _data
-
-    isolv1 = findfirst(iszero,Z)
+    isolv1 = findfirst(iszero, Z)
     nc = length(model)
-    isolv = isolv1:isolv1    
+    isolv = isolv1:isolv1
     iions = iions_iterator(Z)
 
     Γ, B, b₂ = @f(solve_MSAID, _data)
 
-    Δ = 1 - π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ 1:nc)/∑z
+    Δ  = 1 - π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ 1:nc)/∑z
     ξ₂ = ρ*sum(z[i]*σ[i]^2 for i ∈ 1:nc)/∑z
     β₆ = 1-b₂/6 # Checked
     λ  = (1+b₂/3)/β₆ # Checked
@@ -224,13 +222,13 @@ function a_res(model::MSAIDModel, V, T, z, iondata = (model.params.charge.values
     Ω   = Vη*ρ*sum(z[i]*σ[i]*Dᶠ[i]^2/(σₙ+λ*σ[i]) for i ∈ iions)/∑z # Checked
 
     Γₛ = ΔΓ # in-place reuse of ΔΓ buffer; ΔΓ not used after this
-    Γₛ  .= @. ((1+σ*Γ-ΔΓ)*D-1)/σ # Checked
-    a¹  = D*β₆*(σₙ*B/2 + Ω*λ/(D*β₆))/(2*Dac) # Checked
+    Γₛ .= @. ((1+σ*Γ-ΔΓ)*D-1)/σ # Checked
+    a¹ = D*β₆*(σₙ*B/2 + Ω*λ/(D*β₆))/(2*Dac) # Checked
 
-    Jp = zero(Base.promote_eltype(model,V,T,z))
+    Jp = zero(Base.promote_eltype(model, V, T, z))
 
     for i ∈ iions
-        σi,zi,Dᶠi,Γₛi = σ[i],z[i],Dᶠ[i],Γₛ[i]
+        σi, zi, Dᶠi, Γₛi = σ[i], z[i], Dᶠ[i], Γₛ[i]
         for j ∈ iions
             σij = (σi+σ[j])/2
             Q00 = 2π/Δ*(σij+π*σi*σ[j]*ξ₂/(4Δ)) - 1/2*Dᶠi*Dᶠ[j]*(ρₙ*σₙ^2*Vη^2/(D*β₆^2*(σₙ+λ*σi)*(σₙ+λ*σ[j])) + 4*Γₛi*Γₛ[j]/(D*Dac))
@@ -249,7 +247,7 @@ function a_res(model::MSAIDModel, V, T, z, iondata = (model.params.charge.values
     end
 
     for i ∈ isolv
-        σi,zi = σ[i],z[i]
+        σi, zi = σ[i], z[i]
         for j ∈ isolv
             σij = (σi+σ[j])/2
             #this was bugged before: extra line was independent expression
@@ -266,7 +264,7 @@ function a_res(model::MSAIDModel, V, T, z, iondata = (model.params.charge.values
     Jp *= ρ/(3π)/∑z/∑z
     ∑xZN = zero(Jp)
     for i ∈ iions
-        σi,Zi,zi = σ[i],Z[i],z[i]
+        σi, Zi, zi = σ[i], Z[i], z[i]
         Ni = 2*Dᶠ[i]/(β₆*σi)*(1+Vη*ρₙ*σₙ^3*B*σi/(24*(σₙ+λ*σi))) - Zi/σi
         ∑xZN += zi*Zi*Ni
     end
@@ -275,30 +273,30 @@ function a_res(model::MSAIDModel, V, T, z, iondata = (model.params.charge.values
     return (α₀^2*∑xZN - ρₙ/ρ*α₀*B*α₂)/(6π) - Jp
 end
 
-solve_MSAID(model::MSAIDModel,V,T,z,_data) = solve_MSAID(_data)
-solve_MSAID(model::MSAIDModel,V,T,z) = solve_MSAID(data(model,V,T,z))
+solve_MSAID(model::MSAIDModel, V, T, z, _data) = solve_MSAID(_data)
+solve_MSAID(model::MSAIDModel, V, T, z) = solve_MSAID(data(model, V, T, z))
 
 function solve_MSAID(_data)
-    if any(has_dual,_data)
-        λdata = primalval(_data)
+    if any(has_dual, _data)
+        λdata   = primalval(_data)
         λresult = solve_MSAID_impl(λdata)
-        result  = solve_MSAID_ad(λresult,_data,λdata)
+        result  = solve_MSAID_ad(λresult, _data, λdata)
     else
         result = solve_MSAID_impl(_data)
     end
     return result
 end
 
-function solve_MSAID_ad(result::RES,∂data::TUP1,λdata::TUP2) where {RES,TUP1,TUP2}
-    if any(has_dual,∂data) # do check here to avoid recomputation if no AD
-        ∂result = __gradients_for_root_finders(result,∂data,λdata,obj_MSAID)
+function solve_MSAID_ad(result::RES, ∂data::TUP1, λdata::TUP2) where {RES,TUP1,TUP2}
+    if any(has_dual, ∂data) # do check here to avoid recomputation if no AD
+        ∂result = __gradients_for_root_finders(result, ∂data, λdata, obj_MSAID)
         return ∂result
     end
     return result
 end
 
 function solve_MSAID_impl(_data)
-    (α₀,α₂,σₙ,ρₙ,ρ,σ,Z,z,∑z) = _data
+    (α₀, α₂, σₙ, ρₙ, ρ, σ, Z, z, ∑z) = _data
     iions = iions_iterator(Z)
 
     # ------------------------------------------------------------------
@@ -321,7 +319,7 @@ function solve_MSAID_impl(_data)
     #     Γ0_si² = α₀² · ρ · Σ(zᵢ Zᵢ²)/Σz / εw0
     # ------------------------------------------------------------------
     I_ion   = sum(z[i]*Z[i]^2 for i ∈ iions) / ∑z
-    Γ0_si   = α₀ * sqrt( ρ * I_ion / εw0 )
+    Γ0_si   = α₀ * sqrt(ρ * I_ion / εw0)
     Γ0_star = Γ0_si * σₙ
 
     # ------------------------------------------------------------------
@@ -329,8 +327,7 @@ function solve_MSAID_impl(_data)
     #     All factors already in _data; no explicit T either.
     # ------------------------------------------------------------------
     σ̄ = sum(z[i]*σ[i] for i ∈ iions) / sum(z[i] for i ∈ iions)
-    B0_si = Γ0_si^2 * sqrt(εw0) * (α₂/α₀) * β₁₂0^2 * β₆0 /
-            ( (β₆0 + σ̄ * β₃0 / σₙ) * σₙ )
+    B0_si = Γ0_si^2 * sqrt(εw0) * (α₂/α₀) * β₁₂0^2 * β₆0 / ((β₆0 + σ̄ * β₃0 / σₙ) * σₙ)
     B0_star = B0_si * σₙ^2
 
     # ------------------------------------------------------------------
@@ -342,10 +339,12 @@ function solve_MSAID_impl(_data)
     # ------------------------------------------------------------------
     # (6) residual in dimensionless coordinates
     # ------------------------------------------------------------------
-    f(x) = obj_MSAID(x[1] / σₙ,          # Γ SI
-                     x[2] / σₙ^2,        # B SI
-                     x[3],               # b₂
-                     _data)
+    f(x) = obj_MSAID(
+        x[1] / σₙ,          # Γ SI
+        x[2] / σₙ^2,        # B SI
+        x[3],               # b₂
+        _data,
+    )
 
     # ------------------------------------------------------------------
     # (7) bounds
@@ -353,19 +352,18 @@ function solve_MSAID_impl(_data)
     lb = (zero(TT), zero(TT), zero(TT))
     ub = (TT(1.0e4), TT(1.0e3), TT(3.0))
 
-    _x = Solvers.nlsolve2(f, x0, Solvers.Newton2Var();
-                          bounds = (lb, ub))
+    _x = Solvers.nlsolve2(f, x0, Solvers.Newton2Var(); bounds=(lb, ub))
 
     Γ  = _x[1] / σₙ       # SI, m⁻¹
     B  = _x[2] / σₙ^2     # SI, m⁻²
     b₂ = _x[3]
     return SVector((Γ, B, b₂))
 end
-function dielectric_constant(model::MSAIDModel, V, T, z, _data = @f(data))
-    (α₀,α₂,σₙ,ρₙ,ρ,σ,Z,z,∑z) = _data
+function dielectric_constant(model::MSAIDModel, V, T, z, _data=@f(data))
+    (α₀, α₂, σₙ, ρₙ, ρ, σ, Z, z, ∑z) = _data
     Γ, B, b₂ = @f(solve_MSAID, _data)
     β₆ = 1-b₂/6 # Checked
-    λ  = (1+b₂/3)/β₆ # Checked
-    ϵr = 1 + ρₙ*α₂^2 * β₆^2*(1 + λ)^4 / 16
+    λ = (1+b₂/3)/β₆ # Checked
+    ϵr = 1 + ρₙ * α₂^2 * β₆^2 * (1 + λ)^4 / 16
     return ϵr
 end

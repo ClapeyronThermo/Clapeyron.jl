@@ -21,7 +21,7 @@ None
 
 ## Input models
 
-- `activity`: Activity Model
+  - `activity`: Activity Model
 
 ## Description
 
@@ -43,6 +43,7 @@ for Peng-Robinson:
 `λ` is a coefficient indicating the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. See [1] for more information. It can be customized by defining `WS_λ(::WSRuleModel,::CubicModel,z)`
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 mixing = modWSRule(["water","carbon dioxide"]) #default: Wilson Activity Coefficient.
@@ -70,21 +71,21 @@ mixing = modWSRule(["water","ethanol"];
 
 ## References
 
-1. Wong, D. S. H., & Sandler, S. I. (1992). A theoretically correct mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 38(5), 671–680. [doi:10.1002/aic.690380505](https://doi.org/10.1002/aic.690380505)
-2. Orbey, H., & Sandler, S. I. (1995). Reformulation of Wong-Sandler mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 41(3), 683–690. [doi:10.1002/aic.690410325](https://doi.org/10.1002/aic.690410325)
+ 1. Wong, D. S. H., & Sandler, S. I. (1992). A theoretically correct mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 38(5), 671–680. [doi:10.1002/aic.690380505](https://doi.org/10.1002/aic.690380505)
+ 2. Orbey, H., & Sandler, S. I. (1995). Reformulation of Wong-Sandler mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 41(3), 683–690. [doi:10.1002/aic.690410325](https://doi.org/10.1002/aic.690410325)
 """
 modWSRule
 
 export modWSRule
-function modWSRule(components; activity = Wilson, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)
-    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
-    references = ["10.1002/aic.690380505","10.1002/aic.690410325"]
-    model = modWSRule(format_components(components), _activity,references)
+function modWSRule(components; activity=Wilson, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
+    _activity = init_mixing_act(activity, components, activity_userlocations, verbose)
+    references = ["10.1002/aic.690380505", "10.1002/aic.690410325"]
+    model = modWSRule(format_components(components), _activity, references)
     return model
 end
 
-function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::modWSRuleModel,α,a,b)
-    λ = WS_λ(mixing_model,model,T,z)
+function mixing_rule(model::DeltaCubicModel, V, T, z, mixing_model::modWSRuleModel, α, a, b)
+    λ = WS_λ(mixing_model, model, T, z)
     n = sum(z)
     invn = (one(n)/n)
     RT⁻¹ = 1/(R̄*T)
@@ -94,23 +95,23 @@ function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::modWSRuleModel,�
     for i in 1:nc
         zi = z[i]
         αi = α[i]
-        ai = a[i,i]*αi
-        bi = b[i,i]
+        ai = a[i, i]*αi
+        bi = b[i, i]
         B̄ += zi*zi*(bi-ai*RT⁻¹)
-        λi = WS_λ(mixing_model,model,T,FillArrays.OneElement(i,nc))
+        λi = WS_λ(mixing_model, model, T, FillArrays.OneElement(i, nc))
         Σλab += λi*zi*ai/bi
-        for j in 1:(i-1)
+        for j in 1:(i - 1)
             αj = α[j]
-            bij = b[i,j]
-            aij = a[i,j]*sqrt(αi*αj)
+            bij = b[i, j]
+            aij = a[i, j]*sqrt(αi*αj)
             B̄ += 2*zi*z[j]*(bij-aij*RT⁻¹)
         end
     end
     Σλab = Σλab*invn
     B̄ = B̄*invn*invn
-    Aᴱ = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
-    b̄  = B̄/(1 + (Aᴱ - Σλab)/λ * RT⁻¹)
+    Aᴱ = excess_gibbs_free_energy(mixing_model.activity, 1e5, T, z)*invn
+    b̄ = B̄/(1 + (Aᴱ - Σλab)/λ * RT⁻¹)
     ā = b̄*(Σλab - Aᴱ)/λ
-    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
-    return ā,b̄,c̄
+    c̄ = translation2(model, V, T, z, model.translation, a, b, α)*invn
+    return ā, b̄, c̄
 end

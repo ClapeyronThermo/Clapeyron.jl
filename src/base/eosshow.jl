@@ -2,41 +2,40 @@
 custom_show(::Type{T})::Bool
 
 Trait used to determine if an EoSModel can use the default custom `show` methods defined for EoSModels in the package.
-
 """
 custom_show(model::EoSModel) = _custom_show(model)
 custom_show(model) = false
 function _custom_show(Base.@nospecialize(model))
-    hasfield(typeof(model),:components)
+    hasfield(typeof(model), :components)
 end
 
 #function used to customize the first line to your liking
-show_info(io,model) = nothing
+show_info(io, model) = nothing
 
-function show_params(io,model)
-    hasfield(typeof(model),:params) || return nothing
+function show_params(io, model)
+    hasfield(typeof(model), :params) || return nothing
     iszero(fieldcount(typeof(model.params))) && return nothing
     println(io)
     paramnames = fieldnames(typeof(model.params))
     len_params = length(paramnames)
-    !iszero(len_params) && print(io,"Contains parameters: ")
-    show_pairs(io,paramnames,pair_separator = ", ",quote_string = false)
+    !iszero(len_params) && print(io, "Contains parameters: ")
+    show_pairs(io, paramnames, pair_separator=", ", quote_string=false)
 end
 
-function may_show_references(io::IO,model)
-    if get(ENV,"CLAPEYRON_SHOW_REFERENCES","FALSE") == "TRUE"
-        show_references(io,model)
+function may_show_references(io::IO, model)
+    if get(ENV, "CLAPEYRON_SHOW_REFERENCES", "FALSE") == "TRUE"
+        show_references(io, model)
     end
 end
 
-function show_references(io::IO,model)
+function show_references(io::IO, model)
     citations = cite(model)
     iszero(length(citations)) && return nothing #do not do anything if there isnt any citations
     println(io)
-    print(io,"References: ")
-    for (i,doi) in enumerate(cite(model))
-        i != 1 && print(io,", ")
-        print(io,doi)
+    print(io, "References: ")
+    for (i, doi) in enumerate(cite(model))
+        i != 1 && print(io, ", ")
+        print(io, doi)
     end
 end
 
@@ -55,7 +54,7 @@ and (optionally) citations when enabled via `ENV["CLAPEYRON_SHOW_REFERENCES"]`.
 """
 function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSModel))
     print(io, custom_typeof_str(model))
-    
+
     comps = component_list(model)
     l = length(comps)
     if l != 0
@@ -63,79 +62,79 @@ function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSMo
         l > 1 && println(io, " with ", string(l), " components:")
         if has_groups(model)
             groups = model.groups
-            show_groups(io,groups)
+            show_groups(io, groups)
             println(io)
-            print(io,"Group Type: ",groups.grouptype)
+            print(io, "Group Type: ", groups.grouptype)
         else
-            show_pairs(io,component_list(model))
+            show_pairs(io, component_list(model))
         end
     else
-        print(io,"()")
+        print(io, "()")
     end
-    show_info(io,model)
-    show_params(io,model)
-    show_reference_state(io,model)
-    may_show_references(io,model)
+    show_info(io, model)
+    show_params(io, model)
+    show_reference_state(io, model)
+    may_show_references(io, model)
 end
 
 function eosshow(io::IO, Base.@nospecialize(model::EoSModel))
     print(io, custom_typeof_str(model))
     print(io, "(")
-    show_pairs(io,component_list(model),pair_separator = ", ")
+    show_pairs(io, component_list(model), pair_separator=", ")
     print(io, ")")
 end
 
 #utilities for showing groups
-function __show_group_ij(io,v)
+function __show_group_ij(io, v)
     if isinteger(v)
-        print(io,Int(v))
+        print(io, Int(v))
     else
-        print(io,v)
+        print(io, v)
     end
 end
 
-function __show_group_i(io,val,missingvalue = "")
-    keys,vals = val
+function __show_group_i(io, val, missingvalue="")
+    keys, vals = val
     #@show val
     if isempty(vals) && missingvalue != ""
-        print(io,missingvalue)
+        print(io, missingvalue)
     else
-        show_pairs(io,keys,vals," => ",pair_separator = ", ",__show_group_ij)
+        show_pairs(io, keys, vals, " => ", pair_separator=", ", __show_group_ij)
     end
 end
 
-show_groups(io,gc) = show_pairs(io,gc.components,zip(gc.groups,gc.n_groups),": ",__show_group_i)
+show_groups(io, gc) = show_pairs(io, gc.components, zip(gc.groups, gc.n_groups), ": ", __show_group_i)
 
 #overload of Base.show here
-function Base.show(io::IO,mime::MIME"text/plain",model::EoSModel)
+function Base.show(io::IO, mime::MIME"text/plain", model::EoSModel)
     if custom_show(model)
-        eosshow(io,mime,model)
+        eosshow(io, mime, model)
     else
-        show_default(io,mime,model)
+        show_default(io, mime, model)
     end
 end
 
-function Base.show(io::IO,model::EoSModel)
+function Base.show(io::IO, model::EoSModel)
     if custom_show(model)
-        eosshow(io,model)
+        eosshow(io, model)
     else
-        show_default(io,model)
+        show_default(io, model)
     end
 end
 
-function show_reference_state(io::IO,model::EoSModel;space = false)
-    return show_reference_state(io,reference_state(model),model,space)
+function show_reference_state(io::IO, model::EoSModel; space=false)
+    return show_reference_state(io, reference_state(model), model, space)
 end
 
-show_reference_state(io::IO,ref::Nothing,model::EoSModel,space) = nothing
+show_reference_state(io::IO, ref::Nothing, model::EoSModel, space) = nothing
 
-function show_reference_state(io::IO,ref,model::EoSModel,space)
+function show_reference_state(io::IO, ref, model::EoSModel, space)
     type = ref.std_type
     if type != :no_set
         println(io)
-        space && print(io," ")
-        print(io,"Reference state: ")
-        print(io,type)
+        space && print(io, " ")
+        print(io, "Reference state: ")
+        print(io, type)
     end
 end
 
@@ -149,12 +148,12 @@ By default, `eos_repr` inserts some newlines for easier human reading of the out
 ## Examples:
 
 ```julia-repr
-julia> model = PCSAFT("methane")
+julia> model = PCSAFT(\"methane\")
 PCSAFT{BasicIdeal, Float64} with 1 component:
  "methane"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
 
-julia> push!(model.references,"test")
+julia> push!(model.references, \"test\")
 3-element Vector{String}:
  "10.1021/ie0003887"
  "10.1021/ie010954d"
@@ -174,44 +173,43 @@ julia> model2.references
  "test"
 ```
 """
-function eos_repr(_io::IO,model;inside = false,newlines = true)
-    io = IOContext(_io,:Clapeyron_eos_repr => true)
+function eos_repr(_io::IO, model; inside=false, newlines=true)
+    io = IOContext(_io, :Clapeyron_eos_repr => true)
     M = typeof(model)
     n = fieldnames(M)
-    newlines && print(io,"\n")
-    print(io,M)
-    print(io,"(")
+    newlines && print(io, "\n")
+    print(io, M)
+    print(io, "(")
     if !inside && newlines
-        print(io,"\n")
+        print(io, "\n")
     end
     k = 0
     nf = length(n)
     for i in n
         k += 1
-        f = getfield(model,i)
+        f = getfield(model, i)
         F = typeof(f)
         if F.name.module == Clapeyron || F isa EoSModel
-            eos_repr(io,f,inside = true)
+            eos_repr(io, f, inside=true)
         elseif f isa PackedVofV
-            print(io,"Clapeyron.PackedVofV(")
-            show(io,f.p)
-            print(io,", ")
-            show(io,f.v)
-            print(io,")")
+            print(io, "Clapeyron.PackedVofV(")
+            show(io, f.p)
+            print(io, ", ")
+            show(io, f.v)
+            print(io, ")")
         else
-            show(io,f)
+            show(io, f)
         end
-        k != nf && print(io,", ")
+        k != nf && print(io, ", ")
     end
-    print(io,")")
-
+    print(io, ")")
 
     return nothing
 end
 
-function eos_repr(model;newlines = false)
+function eos_repr(model; newlines=false)
     io = IOBuffer()
-    eos_repr(io,model;newlines)
+    eos_repr(io, model; newlines)
     return String(take!(io))
 end
 
