@@ -12,6 +12,7 @@ end
 
 reference_model(::KolafaNezbedaModel) = KolafaNezbedaLJ()
 scaling_model(model::KolafaNezbedaModel) = LJScaling(model.params)
+default_ignore_missing_singleparams(model::KolafaNezbedaModel) =  ["segment"]
 
 """
     KolafaNezbedaModel <: EoSModel
@@ -39,7 +40,7 @@ scaling_model(model::KolafaNezbedaModel) = LJScaling(model.params)
 
 ## Description
 
-Kolafa-Nezbeda equation of state for the Lennard-Jones fluid.
+Kolafa-Nezbeda equation of state for the Lennard-Jones fluid. Scaled via [`LJScaling`](@ref)
 
 ## References
 1. Kolafa, J., & Nezbeda, I. (1994). The Lennard-Jones fluid: An accurate analytic and theoretically-based equation of state. Fluid Phase Equilibria, 100, 1–34. [doi:10.1016/0378-3812(94)02573-G](https://doi.org/10.1016/0378-3812(94)02573-G)

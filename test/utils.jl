@@ -134,7 +134,7 @@ function test_recombine(model,innermodels = nothing)
     model2 = deepcopy(model)
     Clapeyron.recombine!(model1)
     eosmodel_is_approx(model1,model2)
-    if innermodels != nothing
+    if innermodels !== nothing
         for field in innermodels
             innermodel = getfield(model1,field)
             innermodel2 = getfield(model2,field)
@@ -225,13 +225,13 @@ function test_repr(val;str = nothing,str_compact = nothing)
     Base.show(io_compact,val)
     x_compact = String(take!(io_compact))
     @test !isempty(x_compact)
-    if str != nothing
+    if str !== nothing
         for s in str
             @test occursin(s,x)
         end
     end
 
-    if str_compact != nothing
+    if str_compact !== nothing
         for s in str_compact
             @test occursin(s,x_compact)
         end

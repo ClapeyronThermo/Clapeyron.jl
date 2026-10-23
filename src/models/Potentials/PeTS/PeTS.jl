@@ -36,19 +36,29 @@ transform_params(::Type{PeTS},params) = transform_params_lj(params)
 
 ## Description
 
-Perturbed, Truncated and Shifted (PeTS) Equation of State.
+Perturbed, Truncated and Shifted (PeTS) Equation of State. Scaled via [`LJScaling`](@ref)
 
 ## References
 1. Heier, M., Stephan, S., Liu, J., Chapman, W. G., Hasse, H., & Langenbach, K. (2018). Equation of state for the Lennard-Jones truncated and shifted fluid with a cut-off radius of 2.5 σ based on perturbation theory and its applications to interfacial thermodynamics. Molecular Physics, 116(15–16), 2083–2094. [doi:10.1080/00268976.2018.1447153](https://doi.org/10.1080/00268976.2018.1447153)
 """
 PeTS
 
-export PeTS
+"""
+    PeTSLJ <: LJPotentialModel
+    PeTSLJ()
 
+## Description
+
+Perturbed, Truncated and Shifted (PeTS) Equation of State. Unscaled model.
+
+## References
+1. Heier, M., Stephan, S., Liu, J., Chapman, W. G., Hasse, H., & Langenbach, K. (2018). Equation of state for the Lennard-Jones truncated and shifted fluid with a cut-off radius of 2.5 σ based on perturbation theory and its applications to interfacial thermodynamics. Molecular Physics, 116(15–16), 2083–2094. [doi:10.1080/00268976.2018.1447153](https://doi.org/10.1080/00268976.2018.1447153)
+"""
 struct PeTSLJ <: LJPotentialModel end
 
 reference_model(::PeTSModel) = PeTSLJ()
 scaling_model(model::PeTSModel) = ChainLJScaling(model.params)
+default_ignore_missing_singleparams(model::PeTSModel) =  ["segment"]
 
 function a_potential(::PeTSLJ,V,T)
     z = SA[1.0]
@@ -115,3 +125,5 @@ const PeTS_B = (
     30.17506222,
     209.3942909,
     -353.2743581)
+
+export PeTS, PeTSLJ

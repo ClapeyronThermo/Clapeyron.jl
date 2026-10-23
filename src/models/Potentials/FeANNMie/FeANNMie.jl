@@ -116,9 +116,8 @@ function mie_α_const(λa, λr)
     return α
 end
 
-ecs_data(refmodel::FeANNMie,scalingmodel::NoECSScaling,V,T,z) =  model.lambda_a,model.lambda_r
-
 mie_α_const(model::FeANNMie) = mie_α_const(model.lambda_a,model.lambda_r)
+default_references(::FeANNMie) = ["10.1063/5.0146634","s42005-024-01892-3","10.1039/d5me00048c"]
 
 function a_potential(model::FeANNMie,V,T)
     ρ⃰ = 1/V

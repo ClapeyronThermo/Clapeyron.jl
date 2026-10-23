@@ -6,17 +6,17 @@ const Pohl2023Mie6consts = (
     c2_pol = SA[ 0.26021,  -5.525,    8.329,  -19.492, 25.8,   -3.8133],
     c2_exp = SA[-5.05,      2.7842,  -9.523,  -30.383, 17.902,  2.2264],
     c2_gbs = SA[48.445,    -5.506,  -11.643, -24.36                   ],
-    t_pol  = SA[1.0,   0.236, 0.872, 0.313, 0.407, 0.703]
-    t_exp  = SA[1.78,  2.99,  2.866, 1.20,  3.06,  1.073]
-    t_gbs  = SA[1.50,  1.03,  4.02,  1.57 ]
-    d_pol  = SA[4.0,   1.0,   1.0,   2.0,   2.0,   3.0  ]
-    d_exp  = SA[1.0,   1.0,   3.0,   2.0,   2.0,   5.0  ]
-    d_gbs  = SA[2.0,   3.0,   2.0,   2.0                ]
-    l      = SA[1.0,   2.0,   2.0,   1.0,   2.0,   1.0  ]
-    η      = SA[0.362, 0.313, 1.17,  0.957              ]
-    β      = SA[0.0761, 0.143, 0.63, 1.32               ]
-    γ      = SA[1.55,  -0.0826, 1.505, 1.07             ]
-    ε      = SA[-1.0,  -1.0,   -0.195, -0.287           ]
+    t_pol  = SA[1.0,   0.236, 0.872, 0.313, 0.407, 0.703],
+    t_exp  = SA[1.78,  2.99,  2.866, 1.20,  3.06,  1.073],
+    t_gbs  = SA[1.50,  1.03,  4.02,  1.57 ],
+    d_pol  = SA[4.0,   1.0,   1.0,   2.0,   2.0,   3.0  ],
+    d_exp  = SA[1.0,   1.0,   3.0,   2.0,   2.0,   5.0  ],
+    d_gbs  = SA[2.0,   3.0,   2.0,   2.0                ],
+    l      = SA[1.0,   2.0,   2.0,   1.0,   2.0,   1.0  ],
+    η      = SA[0.362, 0.313, 1.17,  0.957              ],
+    β      = SA[0.0761, 0.143, 0.63, 1.32               ],
+    γ      = SA[1.55,  -0.0826, 1.505, 1.07             ],
+    ε      = SA[-1.0,  -1.0,   -0.195, -0.287           ],
 )
 
 function PohlMie_constructor(λ)
@@ -146,3 +146,35 @@ function reduced_a_res_pohl(model::Pohl2023Mie6,δ,τ,λrinv)
     return αᵣ
 end
 
+lb_volume(model::Pohl2023Mie6,T,z) = sum(z)/0.6
+
+function pohl_vt_crit(model::Pohl2023Mie6)
+    λr = model.lambda_r
+    λrinv = 1/λr
+    Tr   = 0.668 + λrinv*(6.84 + 145*λrinv*λrinv)
+    rhor = 0.2516 + 0.049*log10(λr)
+    return Tr,rhor
+end
+
+function x0_crit_pure(model::Pohl2023Mie6,z)
+    Tr,rhor = pohl_vt_crit(model)
+    return Tr,-log10(rhor)
+end
+
+default_references(::Pohl2023Mie6) = ["10.1080/00268979300100411"]
+
+"""
+    Pohl2023Mie6 <: MiePotentialModel
+    Pohl2023Mie6(λr)
+
+## Description
+
+Multiparameter Equation of state for the ν-6 Mie fluid, with ν (c) between 11 and 13.
+
+
+## References
+Pohl, S., Fingerhut, R., Thol, M., Vrabec, J., & Span, R. (2023). Equation of state for the Mie (λr,6) fluid with a repulsive exponent from 11 to 13. The Journal of Chemical Physics, 158(8), 084506. [doi:10.1063/5.0133412](https://doi.org/10.1063/5.0133412)
+"""
+Pohl2023Mie6
+
+export Pohl2023Mie6

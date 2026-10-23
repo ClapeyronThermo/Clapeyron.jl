@@ -658,9 +658,6 @@ end
 
 @testset "LJRef methods" begin
     system = LJRef(["methane"])
-    T = 1.051*Clapeyron.T_scale(system)
-    p = 0.035*Clapeyron.p_scale(system)
-    v = Clapeyron._v_scale(system)/0.673
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ v rtol = 1e-5
     end

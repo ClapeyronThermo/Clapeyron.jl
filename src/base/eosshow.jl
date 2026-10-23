@@ -13,26 +13,29 @@ end
 #function used to customize the first line to your liking
 show_info(io,model) = nothing
 
-function show_params(io,model)
+function show_params(io,model;space = false)
     hasfield(typeof(model),:params) || return nothing
     iszero(fieldcount(typeof(model.params))) && return nothing
     println(io)
     paramnames = fieldnames(typeof(model.params))
     len_params = length(paramnames)
-    !iszero(len_params) && print(io,"Contains parameters: ")
+    iszero(len_params) && return nothing
+    space && print(io," ")
+    print(io,"Contains parameters: ")
     show_pairs(io,paramnames,pair_separator = ", ",quote_string = false)
 end
 
-function may_show_references(io::IO,model)
+function may_show_references(io::IO,model;space = true)
     if get(ENV,"CLAPEYRON_SHOW_REFERENCES","FALSE") == "TRUE"
-        show_references(io,model)
+        show_references(io,model;space)
     end
 end
 
-function show_references(io::IO,model)
+function show_references(io::IO,model;space = true)
     citations = cite(model)
     iszero(length(citations)) && return nothing #do not do anything if there isnt any citations
     println(io)
+    space && print(io, " ")
     print(io,"References: ")
     for (i,doi) in enumerate(cite(model))
         i != 1 && print(io,", ")

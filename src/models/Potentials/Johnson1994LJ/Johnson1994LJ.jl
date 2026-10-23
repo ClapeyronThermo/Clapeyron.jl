@@ -1,10 +1,10 @@
-struct Johnson1994LJ <: JLPotentialModel end
+struct Johnson1993LJ <: LJPotentialModel end
 
-function a_potential(model::Johnson1994LJ, V, T̄)
+function a_potential(model::Johnson1993LJ, V, T̄)
     ρ̄  = 1/V
     γ = 3
     F = exp(-γ*ρ̄*ρ̄)
-    x = Johnson1994LJConstants
+    x = Johnson1993LJConstants
     T2 = T̄*T̄
     T3 = T2*T̄
     T4 = T2*T2
@@ -46,7 +46,7 @@ function a_potential(model::Johnson1994LJ, V, T̄)
     return (evalpoly(ρ̄,ā)*ρ̄ + bG)*T_inv
 end
 
-const Johnson1994LJConstants = (0.8623085097507421, 2.976218765822098,-8.402230115796038,0.1054136629203555,
+const Johnson1993LJConstants = (0.8623085097507421, 2.976218765822098,-8.402230115796038,0.1054136629203555,
       -0.8564583828174598, 1.582759470107601,0.7639421948305453, 1.753173414312048,
       2.798291772190376e3,-4.8394220260857657e-2,0.9963265197721935,-3.698000291272493e1,
       2.084012299434647e1, 8.305402124717285e1,-9.574799715203068e2,-1.477746229234994e2,
@@ -56,19 +56,21 @@ const Johnson1994LJConstants = (0.8623085097507421, 2.976218765822098,-8.4022301
       2.593535277438717e2,-2.694523589434903e3,-7.218487631550215e2, 1.721802063863269e2)
 
 
-function lb_volume(::Johnson1994LJ,T,z)
+function lb_volume(::Johnson1993LJ,T,z)
     return sum(z)/0.9 #maximum density was 0.9
 end
 
 """
-    Johnson1994LJ <: LJPotentialModel
-    Johnson1994LJ()
+    Johnson1993LJ <: LJPotentialModel
+    Johnson1993LJ()
 
 ## Description
 
-Johnson equation of state for the Lennard-Jones fluid.
+Johnson equation of state for the Lennard-Jones fluid. Default reference LJ model for [`softSAFT`](@ref)
 
 ## References
 1. Johnson, J. K., Zollweg, J. A., & Gubbins, K. E. (1993). The Lennard-Jones equation of state revisited. Molecular physics, 78(3), 591–618. [doi:10.1080/00268979300100411](https://doi.org/10.1080/00268979300100411)
 """
-export Johnson1994LJ
+Johnson1993LJ
+
+export Johnson1993LJ

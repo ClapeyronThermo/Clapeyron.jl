@@ -149,7 +149,14 @@ end
 
 function T_scale(model::SAFTModel,z)
     ϵ = model.params.epsilon.values
-    return prod(ϵ[i,i]^z[i] for i in 1:length(z))^(1/sum(z))
+    ϵm = zero(Base.promote_eltype(ϵ,z))
+    for i in eachindex(z)
+        ϵi = ϵ[i,i]
+        if ϵi > 0
+            ϵm += log2(ϵi)*z[i]
+        end
+    end
+    return exp2(ϵm/sum(z))
 end
 
 function p_scale(model::SAFTModel,z)

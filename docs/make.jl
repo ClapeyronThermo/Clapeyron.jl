@@ -31,6 +31,7 @@ warnonly = Documenter.except(),
                             "SAFT and CPA Models"  => "eos/saft.md"
                             "Empiric Helmholtz Models" => "eos/empiric.md"
                             "Electrolyte Models" => "eos/electrolytes.md"
+                            "Potential, corresponding states Models" => "eos/ecs.md"
                             "Property Correlations" =>  "eos/correlations.md"
                             "ML-Based Models" =>  "eos/ml.md"
                             "Other Models" => "eos/misc.md"],

@@ -12,7 +12,7 @@ abstract type softSAFTModel <: SAFTModel end
 struct softSAFT{T,LJ} <: softSAFTModel
     components::Array{String,1}
     sites::SiteParam
-    params::softSAFT2016Param
+    params::softSAFTParam
     idealmodel::T
     assoc_options::AssocOptions
     references::Array{String,1}
@@ -71,7 +71,7 @@ end
 ## Description
 
 Soft SAFT, with an LJ potential model.
-By default, it uses the Lennard-Jones function from Johnson et al. (1993) (`Johnson1994LJ`)[@ref]
+By default, it uses the Lennard-Jones function from Johnson et al. (1993) (`Johnson1993LJ`)[@ref]
 
 ## References
 1. Johnson, J. K., Zollweg, J. A., & Gubbins, K. E. (1993). The Lennard-Jones equation of state revisited. Molecular physics, 78(3), 591–618. [doi:10.1080/00268979300100411](https://doi.org/10.1080/00268979300100411)
@@ -79,7 +79,7 @@ By default, it uses the Lennard-Jones function from Johnson et al. (1993) (`John
 """
 function softSAFT(components;
     idealmodel = BasicIdeal,
-    ljmodel::EoSModel = Johnson1994LJ()
+    ljmodel::EoSModel = Johnson1993LJ(),
     userlocations = String[],
     ideal_userlocations = String[],
     reference_state = nothing,
@@ -128,7 +128,7 @@ function a_res(model::softSAFTModel, V, T, z)
     return @f(a_LJ,_data) + @f(a_chain) + @f(a_assoc)
 end
 
-function a_LJ(model::softSAFT2016Model,V,T,z,_data = @f(data))
+function a_LJ(model::softSAFTModel,V,T,z,_data = @f(data))
     σ3,ϵ,m̄,_ = _data
     h = m̄*N_A*σ3
     V0 = V/(sum(z)*h)

@@ -19,27 +19,23 @@ Base.eltype(model::LJRef) = Base.promote_eltype(model.idealmodel,model.ljmodel,m
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
 - `k`: Pair Parameter (`Float64`) (optional)
 
-- `sigma` mixing coefficient
-
 ## Model Parameters
 - `sigma`: Pair Parameter (`Float64`) - particle size `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - dispersion energy `[K]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `segment`: 
 
 ## Description
 
-vdW-1 fluid scaling applied to a generic leonard jones model:
+vdW-1 fluid scaling applied to a generic leonard jones model.
 
 ```julia
 a_res(model,V,T,z) = a_res(reference_model(model),V/h,T/f)
 ```
-
 """
 LJRef
 
 function LJRef(components;
-    ljmodel = Thol2016LJ(),
+    ljmodel::EoSModel = Thol2016LJ(),
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
@@ -55,3 +51,5 @@ function LJRef(components;
     return model
 end
 
+reference_model(model::LJRef) = model.ljmodel
+scaling_model(model::LJRef) = ChainLJScaling(model.params)

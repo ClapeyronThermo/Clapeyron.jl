@@ -56,7 +56,7 @@ export RKPR
 - `Vc`: Single Parameter (`Float64`) (optional) - Critical Volume `[m³·mol⁻¹]`
 - `delta`: Single Parameter (`Float64`) (optional) - constant parameter (no units)
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `k`: Pair Parameter (`Float64`) (optional)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 - `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters

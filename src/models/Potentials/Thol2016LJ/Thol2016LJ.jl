@@ -38,14 +38,3 @@ aʳ₃(δ,τ)  = ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)
 Thol2016LJ
 
 
-struct LJRef{T,I,LJ} <: CorrespondingStatesModel
-    components::Vector{String}
-    params::ChainLJScalingParam{T}
-    idealmodel::I
-    ljmodel::LJ
-end
-
-
-reference_model(model::LJRef) = model.ljmodel
-scaling_model(model::LJRef) = ChainLJScaling(model.params)
-

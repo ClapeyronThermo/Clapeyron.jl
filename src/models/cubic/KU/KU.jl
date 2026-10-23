@@ -152,7 +152,7 @@ end
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `k`: Pair Parameter (`Float64`) (optional)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 - `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
