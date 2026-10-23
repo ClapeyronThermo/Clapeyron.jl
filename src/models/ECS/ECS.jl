@@ -14,9 +14,9 @@ end
 
 ## Input Models
 
-- `shape_model`: shape model
-- `shape_ref`:  shape reference. Is the same type of EoS that `shape_model`.
-- `model_ref`: Reference model
+  - `shape_model`: shape model
+  - `shape_ref`:  shape reference. Is the same type of EoS that `shape_model`.
+  - `model_ref`: Reference model
 
 ## Description
 
@@ -30,16 +30,18 @@ eos(shape_model,v,T,x)/RT = eos(model_ref,v₀,T₀)/RT₀
 ```
 
 where:
+
 ```
 T₀ = T/f
 v₀ = v/h
 f,h = shape_factors(model::ECS,shape_ref::EoSModel,V,T,z)
 ```
+
 [`shape_factors`](@ref) can be used to create custom Extended Corresponding state models.
 
 ## References
 
-1. Mollerup, J. (1998). Unification of the two-parameter equation of state and the principle of corresponding states. Fluid Phase Equilibria, 148(1–2), 1–19. [doi:10.1016/s0378-3812(98)00230-1](https://doi.org/10.1016/s0378-3812(98)00230-1)
+ 1. Mollerup, J. (1998). Unification of the two-parameter equation of state and the principle of corresponding states. Fluid Phase Equilibria, 148(1–2), 1–19. [doi:10.1016/s0378-3812(98)00230-1](https://doi.org/10.1016/s0378-3812(98)00230-1)
 """
 ECS
 
@@ -47,15 +49,14 @@ const ECS = ExtendedCorrespondingStates
 
 Base.length(model::ECS) = length(model.shape_model)
 
-
-function eos_impl(model::ECS,V,T,z)
-    f,h = shape_factors(model,V,T,z)
+function eos_impl(model::ECS, V, T, z)
+    f, h = shape_factors(model, V, T, z)
     n = sum(z)
     T0 = T/f
     V0 = V/h/n
     #eos(V,T)/RT = eos0(V0,T0)/RT0
     #eos(V,T) = eos0(V0,T0)*T/T0
-    return n*eos(model.model_ref,V0,T0)*f
+    return n*eos(model.model_ref, V0, T0)*f
 end
 
 #=
@@ -67,11 +68,11 @@ function eos_res(model::ECS,V,T,z=SA[1.0])
     return n*eos_res(model.model_ref,V0,T0)*f
 end =#
 
-function a_res(model::ECS,V,T,z=SA[1.0])
-    f,h = shape_factors(model,V,T,z)
+function a_res(model::ECS, V, T, z=SA[1.0])
+    f, h = shape_factors(model, V, T, z)
     T0 = T/f
     V0 = V/h
-    return a_res(model.model_ref,V0,T0,z)
+    return a_res(model.model_ref, V0, T0, z)
 end
 
 """
@@ -80,11 +81,13 @@ end
     shape_factors(model::ECS,shape_ref::EoSModel,V,T,z=SA[1.0])
 
 Returns `f` and `h` scaling factors, used by the [`ECS`](@ref) Equation of state.
+
 ```
 eos(shape_model,v,T,x)/RT = eos(model_ref,v₀,T₀)/RT₀
 ```
 
 where:
+
 ```
 T₀ = T/f
 v₀ = v/h
@@ -99,116 +102,117 @@ fh = a(T)/a₀(T₀)
 ```
 
 !!! info "General Shape Factors?"
+
     For general EoS, there is no existent publications on how to obtain shape factors. However, we can "map" any EoS to a cubic with:
+
     ```
     b ≈ lb_volume(model,T,z)
     a ≈ RT*(b - B)
     B = second_virial_coefficient(model,T)
     ```
+
     This is not tested extensively and it is considered an Experimental feature, subject to future changes.
 
 ## References
 
-1. Mollerup, J. (1998). Unification of the two-parameter equation of state and the principle of corresponding states. Fluid Phase Equilibria, 148(1–2), 1–19. [doi:10.1016/s0378-3812(98)00230-1](https://doi.org/10.1016/s0378-3812(98)00230-1)
-
+ 1. Mollerup, J. (1998). Unification of the two-parameter equation of state and the principle of corresponding states. Fluid Phase Equilibria, 148(1–2), 1–19. [doi:10.1016/s0378-3812(98)00230-1](https://doi.org/10.1016/s0378-3812(98)00230-1)
 """
 shape_factors
 
-shape_factors(model::ECS,V,T,z=SA[1.0]) = shape_factors(model,model.shape_ref,V,T,z)
+shape_factors(model::ECS, V, T, z=SA[1.0]) = shape_factors(model, model.shape_ref, V, T, z)
 
-function shape_factors(model::ECS,shape_ref::DeltaCubicModel,V,T,z=SA[1.0])
-    a,b = cubic_ab(model.shape_model,V,T,z)
+function shape_factors(model::ECS, shape_ref::DeltaCubicModel, V, T, z=SA[1.0])
+    a, b = cubic_ab(model.shape_model, V, T, z)
     n = sum(z)
     v = V/n
     # initial point
-    amix = dot(z,model.shape_model.params.a.values,z)/(n*n)
-    a00 = shape_ref.params.a.values[1,1]
-    b00 = shape_ref.params.b.values[1,1]
+    amix = dot(z, model.shape_model.params.a.values, z)/(n*n)
+    a00 = shape_ref.params.a.values[1, 1]
+    b00 = shape_ref.params.b.values[1, 1]
 
     fT0 = one(T)*b00*amix/a00/b
     function f_0(f)
-        a0f,b0f = cubic_ab(shape_ref,v,T/f)
+        a0f, b0f = cubic_ab(shape_ref, v, T/f)
         return f*b/b0f - a/a0f
     end
 
-    prob = Roots.ZeroProblem(f_0,fT0)
+    prob = Roots.ZeroProblem(f_0, fT0)
     f = Roots.solve(prob)
-    _,b0 = cubic_ab(shape_ref,v,T/f)
+    _, b0 = cubic_ab(shape_ref, v, T/f)
     h = b/b0
-    return f,h
+    return f, h
 end
 Rgas(model::ECS) = Rgas(model.model_ref) #is this ok?
 mw(model::ECS) = mw(model.shape_model)
-molecular_weight(model::ECS,z) = molecular_weight(model.shape_model,z)
+molecular_weight(model::ECS, z) = molecular_weight(model.shape_model, z)
 
-function Base.show(io::IO,mime::MIME"text/plain",model::ECS)
-    println(io,"Extended Corresponding States model")
-    println(io," reference model: ",model.model_ref)
-    print(io," shape model: ",model.shape_model)
+function Base.show(io::IO, mime::MIME"text/plain", model::ECS)
+    println(io, "Extended Corresponding States model")
+    println(io, " reference model: ", model.model_ref)
+    print(io, " shape model: ", model.shape_model)
 end
 
-function Base.show(io::IO,model::ECS)
-    print(io,string(typeof(model)),model.shape_model.components)
+function Base.show(io::IO, model::ECS)
+    print(io, string(typeof(model)), model.shape_model.components)
 end
 
-function lb_volume(model::ECS,T,z)
-    lb_v0 = lb_volume(model.model_ref,T,z)
-    f,h = shape_factors(model,lb_v0,T,z) #h normaly should be independent of temperature
+function lb_volume(model::ECS, T, z)
+    lb_v0 = lb_volume(model.model_ref, T, z)
+    f, h = shape_factors(model, lb_v0, T, z) #h normaly should be independent of temperature
     return lb_v0*h
 end
 
-
-function x0_volume_liquid(model::ECS,p,T,z)
-    lb_v0 = lb_volume(model.model_ref,T,z)
-    f,h = shape_factors(model,lb_v0,T,z)
+function x0_volume_liquid(model::ECS, p, T, z)
+    lb_v0 = lb_volume(model.model_ref, T, z)
+    f, h = shape_factors(model, lb_v0, T, z)
     T0 = T/f
-    v0l = x0_volume_liquid(model.model_ref,p,T0,z)
+    v0l = x0_volume_liquid(model.model_ref, p, T0, z)
     return v0l*h
 end
 
-function x0_volume_gas(model::ECS,p,T,z)
-    lb_v0 = lb_volume(model.model_ref,T,z)
-    f,h = shape_factors(model,lb_v0,T,z)
+function x0_volume_gas(model::ECS, p, T, z)
+    lb_v0 = lb_volume(model.model_ref, T, z)
+    f, h = shape_factors(model, lb_v0, T, z)
     T0 = T/f
-    v0v = x0_volume_gas(model.model_ref,p,T0,z)
+    v0v = x0_volume_gas(model.model_ref, p, T0, z)
     return v0v*h
 end
 
-function T_scale(model::ECS,z)
-    T0 = T_scale(model.model_ref,SA[1.0])
-    lb_v0 = lb_volume(model.model_ref,T0,SA[1.0])
-    f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
+function T_scale(model::ECS, z)
+    T0 = T_scale(model.model_ref, SA[1.0])
+    lb_v0 = lb_volume(model.model_ref, T0, SA[1.0])
+    f, h = shape_factors(model, lb_v0, T0, z) #h normaly should be independent of temperature
     return T0*f
 end
 
-function p_scale(model::ECS,z)
-     lb_v0 = lb_volume(model.model_ref)
-     T0 = T_scale(model.model_ref)
-     p0 = p_scale(model.model_ref)
-     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
-     ps = p0*f/h
-     return ps
+function p_scale(model::ECS, z)
+    lb_v0 = lb_volume(model.model_ref)
+    T0 = T_scale(model.model_ref)
+    p0 = p_scale(model.model_ref)
+    f, h = shape_factors(model, lb_v0, T0, z) #h normaly should be independent of temperature
+    ps = p0*f/h
+    return ps
 end
 
-function x0_sat_pure(model::ECS,T,crit = nothing)
-    f,h = shape_factors(model,zero(T),T)
+function x0_sat_pure(model::ECS, T, crit=nothing)
+    f, h = shape_factors(model, zero(T), T)
     T0 = T/f
     if crit === nothing
-        v0l,v0v = x0_sat_pure(model.model_ref,T0)
+        v0l, v0v = x0_sat_pure(model.model_ref, T0)
     else
-        Tc,Vc,Pc = crit
-        Tc0,Vc0 = Tc/f,Vc/h
-        Pc0 = pressure(model.model_ref,Vc0,Pc0)
-        crit0 = (Tc0,Pc0,Vc0)
-        v0l,v0v = x0_sat_pure(model.model_ref,T0,crit0)
+        Tc, Vc, Pc = crit
+        Tc0, Vc0 = Tc/f, Vc/h
+        Pc0 = pressure(model.model_ref, Vc0, Pc0)
+        crit0 = (Tc0, Pc0, Vc0)
+        v0l, v0v = x0_sat_pure(model.model_ref, T0, crit0)
     end
-    return (v0l*h,v0v*h)
+    return (v0l*h, v0v*h)
 end
 
-function each_split_model(model::ECS,I)
-    shape_model = each_split_model(model.shape_model,I)
-    shape_ref,model_ref = model.shape_ref, model.model_ref
-    ECS(shape_model,shape_ref,model_ref)
+function each_split_model(model::ECS, I)
+    shape_model = each_split_model(model.shape_model, I)
+    shape_ref, model_ref = model.shape_ref, model.model_ref
+    ECS(shape_model, shape_ref, model_ref)
 end
 
 #==
@@ -220,16 +224,16 @@ f*h = a(T)/a0(T0)
 where h = lb_volume(model)/lb_volume(model0)
 a(T) = RT*(b-B(T))
 ==#
-function shape_factors(model::ECS,shape_ref::EoSModel,V,T,z=SA[1.0])
+function shape_factors(model::ECS, shape_ref::EoSModel, V, T, z=SA[1.0])
     n = sum(z)
     shape_ref = model.shape_ref
     RT = R̄*T
-    b = lb_volume(model.shape_model,T,z)
-    b0 = lb_volume(shape_ref,T,SA[1.0])
+    b = lb_volume(model.shape_model, T, z)
+    b0 = lb_volume(shape_ref, T, SA[1.0])
     n = sum(z)
     v = V/n
-    B = second_virial_coefficient(model.shape_model,T,z)
-    B00 = second_virial_coefficient(shape_ref,T)
+    B = second_virial_coefficient(model.shape_model, T, z)
+    B00 = second_virial_coefficient(shape_ref, T)
     #B = b-a/RT
     #a/RT = b-B
     a = R̄*T*(b-B)
@@ -238,13 +242,13 @@ function shape_factors(model::ECS,shape_ref::EoSModel,V,T,z=SA[1.0])
     fT0 = one(T)*b0*a/a00/b
     function f_0(f)
         T0 = T/f
-        B0f = second_virial_coefficient(shape_ref,T0)
+        B0f = second_virial_coefficient(shape_ref, T0)
         a0f = R̄*T0*(b0-B0f)
         return f*h - a/a0f
     end
-    prob = Roots.ZeroProblem(f_0,fT0)
+    prob = Roots.ZeroProblem(f_0, fT0)
     f = Roots.solve(prob)
-    return f,h
+    return f, h
 end
 
 export ExtendedCorrespondingStates

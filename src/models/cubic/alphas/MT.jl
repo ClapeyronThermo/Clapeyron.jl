@@ -4,18 +4,19 @@ export MTAlpha
 
 """
     MTAlpha <: MTAlphaModel
-    
+
     MTAlpha(components;
     userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters
 
-- `acentricfactor`: Single Parameter (`Float64`)
+  - `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
 
 Magoulas & Tassios Cubic alpha `(α(T))` model. Default for [`UMRPR`](@ref) EoS. Also defined for `vdW` models.
+
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))²
 Trᵢ = T/Tcᵢ
@@ -24,6 +25,7 @@ mᵢ = 0.483798 + 1.643232*ωᵢ - 0.288718ωᵢ² + 0.066013ωᵢ³ (vdW)
 ```
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 alpha = MTAlpha("water") #single input
@@ -40,12 +42,11 @@ alpha = MTAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0
 
 ## References
 
-1. Magoulas, K., & Tassios, D. (1990). Thermophysical properties of n-Alkanes from C1 to C20 and their prediction for higher ones. Fluid Phase Equilibria, 56, 119–140. [doi:10.1016/0378-3812(90)85098-u](https://doi.org/10.1016/0378-3812(90)85098-u)
-
+ 1. Magoulas, K., & Tassios, D. (1990). Thermophysical properties of n-Alkanes from C1 to C20 and their prediction for higher ones. Fluid Phase Equilibria, 56, 119–140. [doi:10.1016/0378-3812(90)85098-u](https://doi.org/10.1016/0378-3812(90)85098-u)
 """
 MTAlpha
 default_locations(::Type{MTAlpha}) = critical_data()
 default_references(::Type{MTAlpha}) = ["10.1016/0378-3812(90)85098-u"]
 
-@inline α_m(model::PRModel,::MTAlpha) = (0.384401,1.52276,-0.213808,0.034616,-0.001976)
-@inline α_m(model::vdWModel,::MTAlpha) = (0.483798,1.643232,-0.288718,0.066013)
+@inline α_m(model::PRModel, ::MTAlpha) = (0.384401, 1.52276, -0.213808, 0.034616, -0.001976)
+@inline α_m(model::vdWModel, ::MTAlpha) = (0.483798, 1.643232, -0.288718, 0.066013)

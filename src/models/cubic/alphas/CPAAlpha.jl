@@ -12,23 +12,25 @@ export CPAAlpha
 
 """
     CPAAlpha <: CPAAlphaModel
-    
+
     CPAAlpha(components;
     userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters
 
-- `c1`: Single Parameter (`Float64`)
+  - `c1`: Single Parameter (`Float64`)
 
 ## Description
 
 Cubic alpha `(α(T))` model. Default for `CPA` EoS.
+
 ```
 αᵢ = (1+c¹ᵢ(1-√(Trᵢ)))^2
 ```
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 alpha = CPAAlpha("water") #single input
@@ -46,7 +48,7 @@ alpha = CPAAlpha(["water","carbon dioxide"];userlocations = (;c1 = [0.67,0.76]))
 CPAAlpha
 default_locations(::Type{CPAAlpha}) = ["SAFT/CPA/CPA_like.csv"]
 
-@inline function α_m(model::CubicModel,alpha_model::CPAAlphaModel,i)
+@inline function α_m(model::CubicModel, alpha_model::CPAAlphaModel, i)
     return alpha_model.params.c1.values[i]
 end
 
@@ -56,23 +58,25 @@ const sCPAAlphaModel = CPAAlphaModel
 export sCPAAlpha
 """
     sCPAAlpha <: sCPAAlphaModel
-    
+
     sCPAAlpha(components;
     userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters
 
-- `c1`: Single Parameter
+  - `c1`: Single Parameter
 
 ## Description
 
 Cubic alpha `(α(T))` model. Default for `sCPA` EoS.
+
 ```
 αᵢ = (1+c¹ᵢ(1-√(Trᵢ)))^2
 ```
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 alpha = sCPAAlpha("water") #single input
@@ -86,7 +90,6 @@ alpha = sCPAAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","scpa/al
 # Passing parameters directly
 alpha = sCPAAlpha(["water","carbon dioxide"];userlocations = (;c1 = [0.67,0.76]))
 ```
-
 """
 sCPAAlpha
 default_locations(::Type{sCPAAlpha}) = ["SAFT/CPA/sCPA/sCPA_like.csv"]

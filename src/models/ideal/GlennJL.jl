@@ -1,16 +1,15 @@
 #to be extended on ClapeyronGlennExt
 struct GlennJL{S,T} <: IdealModel
-   components::Vector{String}
-   species_info::Vector{S}
-   intervals::Vector{T}
-   reference_state::ReferenceState
-   Rgas::Float64
-   R0::Vector{Float64}
-   references::Vector{String}
+    components::Vector{String}
+    species_info::Vector{S}
+    intervals::Vector{T}
+    reference_state::ReferenceState
+    Rgas::Float64
+    R0::Vector{Float64}
+    references::Vector{String}
 end
 
 function __glenn_jl end
-
 
 """
     GlennJL <: IdealModel
@@ -24,13 +23,13 @@ function __glenn_jl end
 
 ## Input arguments
 
-- `calc`: a database of Glenn.jl parameters
-- `input`: input species, it can be strings, integers (ID of the database), `Glenn.SpeciesInfo` or a vector of those elements.
-- `Rgas`: molar gas constant used by the model.
-- `R0`: molar gas constant used in the fitting of each species. by default it used the original R constant used in the fitting of NASA-7 polynomials.
-- `reference_state`: if a change of reference state is needed.
-- `verbose`: if set to `true`, displays additional information to the REPL.
-- `strict`: if set to `true`, check if all components have the same phase and if their temperature ranges do not intersect
+  - `calc`: a database of Glenn.jl parameters
+  - `input`: input species, it can be strings, integers (ID of the database), `Glenn.SpeciesInfo` or a vector of those elements.
+  - `Rgas`: molar gas constant used by the model.
+  - `R0`: molar gas constant used in the fitting of each species. by default it used the original R constant used in the fitting of NASA-7 polynomials.
+  - `reference_state`: if a change of reference state is needed.
+  - `verbose`: if set to `true`, displays additional information to the REPL.
+  - `strict`: if set to `true`, check if all components have the same phase and if their temperature ranges do not intersect
 
 ## Description
 
@@ -41,6 +40,7 @@ Ideal model using the NASA-7 polynomial coefficients provided by the `Glenn.jl` 
     `Clapeyron.GlennJL` requires the package [`Glenn.jl`](https://github.com/ProfLeao/Glenn.jl) to be loaded in the environment.
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 calc = Calculator()
@@ -63,26 +63,26 @@ idealmodel = GlennJL(calc,["o2","n2"])
 
 the model `GlennJL` has the following integrations with `Glenn.jl` package:
 
-- `Glenn.calculate_h(model::GlennJL,T,z = [1.0])`
-- `Glenn.calculate_s(model::GlennJL,T,z = [1.0])`
-- `Glenn.calculate_cp(model::GlennJL,T,z = [1.0])`
-- `Glenn.calculate_formation_enthalpy(model::GlennJL,T,z = [1.0])`
-- `Glenn.calculate_enthalpy_change(model::GlennJL,T1,T2,z = [1.0])`
-- `Glenn.calculate_properties(model::GlennJL,T,z = [1.0])`
-- `Glenn.get_properties_range(model::GlennJL,T,z = [1.0])`
+  - `Glenn.calculate_h(model::GlennJL,T,z = [1.0])`
+  - `Glenn.calculate_s(model::GlennJL,T,z = [1.0])`
+  - `Glenn.calculate_cp(model::GlennJL,T,z = [1.0])`
+  - `Glenn.calculate_formation_enthalpy(model::GlennJL,T,z = [1.0])`
+  - `Glenn.calculate_enthalpy_change(model::GlennJL,T1,T2,z = [1.0])`
+  - `Glenn.calculate_properties(model::GlennJL,T,z = [1.0])`
+  - `Glenn.get_properties_range(model::GlennJL,T,z = [1.0])`
 
 `get_properties` and `get_properties_range` will return NaN for properties outside their ranges. in particular, `get_properties_range` will return a vector of the same size as the input, with `NaN` on invalid inputs.
 
 ## References
 
-1. NASA TP-2002-211556, “NASA Glenn Coefficients for Calculating Thermodynamic Properties of Individual Species,” by B.J. McBride, M.J. Zehe, and S. Gordon. September 2002.
+ 1. NASA TP-2002-211556, “NASA Glenn Coefficients for Calculating Thermodynamic Properties of Individual Species,” by B.J. McBride, M.J. Zehe, and S. Gordon. September 2002.
 """
-function GlennJL(a1,a2;kwargs...)
-    m = Base.get_extension(Clapeyron,:ClapeyronGlennExt)
+function GlennJL(a1, a2; kwargs...)
+    m = Base.get_extension(Clapeyron, :ClapeyronGlennExt)
     if m === nothing
         error("the `GlennJL` model requires the Package 'Glenn.jl' to be available in the same environment as `Clapeyron.jl`. Please add the package if not installed (`]add Glenn`) and then load it in the current environment (`using Glenn`).")
     end
-    __glenn_jl(a1,a2;kwargs...)
+    __glenn_jl(a1, a2; kwargs...)
 end
 
 paramtype(::Type{GlennJL{S,T}}) where {S,T} = Float64

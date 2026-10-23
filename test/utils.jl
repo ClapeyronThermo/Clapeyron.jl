@@ -11,7 +11,7 @@ using Unitful
 using Clapeyron.LinearAlgebra
 using Clapeyron.StaticArrays
 using Clapeyron.EstimationUtils
-using Clapeyron: has_sites,has_groups
+using Clapeyron: has_sites, has_groups
 using Clapeyron: PH, QT, QP, TS, VT, PT
 using Aqua
 
@@ -20,23 +20,22 @@ macro printline()  # useful in hunting for where tests get stuck
     printstyled(">>", file, ":", __source__.line, "\n", color=:light_black)
 end
 
-function fit_scaling(vals, is; exponents = (-3, -2, -1, 0, 1, 2, 3))
-    length(vals) == length(is) ||
-        throw(ArgumentError("vals and is must have the same length"))
-    B  = reduce(hcat, (is.^m for m in exponents))
-    cn = sqrt.(sum(abs2, B, dims = 1))
-    c  = (B ./ cn) \ vals ./ cn
+function fit_scaling(vals, is; exponents=(-3, -2, -1, 0, 1, 2, 3))
+    length(vals) == length(is) || throw(ArgumentError("vals and is must have the same length"))
+    B = reduce(hcat, (is .^ m for m in exponents))
+    cn = sqrt.(sum(abs2, B, dims=1))
+    c = (B ./ cn) \ vals ./ cn
     contrib = abs.(vec(c)) .* vec(cn)
-    [(m = exponents[k], c = c[k]) for k in sortperm(contrib, rev = true)]
+    [(m=exponents[k], c=c[k]) for k in sortperm(contrib, rev=true)]
 end
 
-function test_gibbs_duhem(model, V, T, z; rtol = 1e-14, atol = 1e-15)
+function test_gibbs_duhem(model, V, T, z; rtol=1e-14, atol=1e-15)
     is   = exp.(range(log(2), log(20); length=15))
     name = string(Clapeyron.parameterless_type(typeof(model)))
 
-    a0   = Clapeyron.a_res(model, V, T, z)
+    a0 = Clapeyron.a_res(model, V, T, z)
     vals = [Clapeyron.a_res(model, i*V, T, i*z) for i in is]
-    a_res_intensive   = all(abs.(vals .- a0) .≤ rtol * abs(a0) + atol) 
+    a_res_intensive = all(abs.(vals .- a0) .≤ rtol * abs(a0) + atol)
     a_res_intensive || @info "a_res scaling" fit_scaling(vals, is)
     @test a_res_intensive
 
@@ -47,8 +46,7 @@ function test_gibbs_duhem(model, V, T, z; rtol = 1e-14, atol = 1e-15)
     for n in eachindex(pures), i in is
         a_sc = Clapeyron.a_res(pures[n], i*V, T, Clapeyron.SVector(i))
         a_v  = Clapeyron.a_res(pures[n], i*V, T, [i])
-        abs(a_sc - a_v) ≤ rtol * max(abs(a_sc), abs(a_v)) + atol ||
-            push!(bad, (n, i, a_sc, a_v))
+        abs(a_sc - a_v) ≤ rtol * max(abs(a_sc), abs(a_v)) + atol || push!(bad, (n, i, a_sc, a_v))
     end
     singlecomp_dispatch_test = isempty(bad)
     singlecomp_dispatch_test || @info "SingleComp dispatch mismatch ($name)" bad
@@ -57,37 +55,34 @@ function test_gibbs_duhem(model, V, T, z; rtol = 1e-14, atol = 1e-15)
 
     pure_limit_test = true
     for n in eachindex(pures)
-        x = zeros(length(model)); x[n] = 1.0
+        x = zeros(length(model))
+        x[n] = 1.0
         for i in is
-            a_mix  = Clapeyron.a_res(model,    i*V, T, i*x)
+            a_mix  = Clapeyron.a_res(model, i*V, T, i*x)
             a_pure = Clapeyron.a_res(pures[n], i*V, T, Clapeyron.SVector(i))
-            abs(a_mix - a_pure) ≤ rtol * max(abs(a_mix), abs(a_pure)) + atol ||
-                (pure_limit_test = false; break)
+            abs(a_mix - a_pure) ≤ rtol * max(abs(a_mix), abs(a_pure)) + atol || (pure_limit_test=false; break)
         end
     end
     pure_limit_test || @info "pure limit test for ($name) failed"
     @test pure_limit_test
-
 end
 
-
-function test_gibbs_duhem(model::Clapeyron.ActivityModel, V, T, z; rtol = 1e-14, atol = 1e-15)
+function test_gibbs_duhem(model::Clapeyron.ActivityModel, V, T, z; rtol=1e-14, atol=1e-15)
     is   = exp.(range(log(2), log(20); length=15))
     name = string(Clapeyron.parameterless_type(typeof(model)))
 
-
-    GE0   = Clapeyron.excess_gibbs_free_energy(model, V, T, z)
+    GE0 = Clapeyron.excess_gibbs_free_energy(model, V, T, z)
     Gvals = [Clapeyron.excess_gibbs_free_energy(model, i*V, T, i*z) for i in is]
-    GEi   = is .* GE0
-    GE_extensive    = all(abs.(Gvals .- GEi) .≤ rtol .* abs.(GEi) .+ atol)
+    GEi = is .* GE0
+    GE_extensive = all(abs.(Gvals .- GEi) .≤ rtol .* abs.(GEi) .+ atol)
     @test GE_extensive
     GE_extensive || @info "GE scaling" fit_scaling(Gvals, is)
-    
 
     n   = length(model)
     bad = Tuple{Int64,Float64,Float64}[]
     for k in 1:n
-        xk = zeros(n); xk[k] = 1.0
+        xk = zeros(n)
+        xk[k] = 1.0
         for i in is
             g = Clapeyron.excess_gibbs_free_energy(model, i*V, T, i*xk)
             abs(g) ≤ atol || push!(bad, (k, i, g))
@@ -98,12 +93,12 @@ function test_gibbs_duhem(model::Clapeyron.ActivityModel, V, T, z; rtol = 1e-14,
     pure_limit_GE_test || @info "nonzero pure-limit GE ($name)" bad
 end
 
-function test_volume(model,p,T,z = Clapeyron.SA[1.0];rtol = 1e-8,phase = :unknown)
-    v = volume(model,p,T,z)
-    @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
+function test_volume(model, p, T, z=Clapeyron.SA[1.0]; rtol=1e-8, phase=:unknown)
+    v = volume(model, p, T, z)
+    @test p ≈ Clapeyron.pressure(model, v, T, z) rtol = rtol
 end
 
-function test_scales(model, T0 = 300.0; rtol = 1e-14, atol = 1e-15)
+function test_scales(model, T0=300.0; rtol=1e-14, atol=1e-15)
     is   = exp.(range(log(2), log(20); length=15))
     n    = length(model)
     z    = ones(n) ./ n
@@ -129,29 +124,29 @@ function test_scales(model, T0 = 300.0; rtol = 1e-14, atol = 1e-15)
     end
 end
 
-function test_recombine(model,innermodels = nothing)
+function test_recombine(model, innermodels=nothing)
     model1 = deepcopy(model)
     model2 = deepcopy(model)
     Clapeyron.recombine!(model1)
-    eosmodel_is_approx(model1,model2)
+    eosmodel_is_approx(model1, model2)
     if innermodels != nothing
         for field in innermodels
-            innermodel = getfield(model1,field)
-            innermodel2 = getfield(model2,field)
-            eosmodel_is_approx(innermodel,innermodel2)
+            innermodel = getfield(model1, field)
+            innermodel2 = getfield(model2, field)
+            eosmodel_is_approx(innermodel, innermodel2)
         end
     end
 end
 
-function eosmodel_is_approx(model1,model2)
-    if hasfield(typeof(model1),:params)
+function eosmodel_is_approx(model1, model2)
+    if hasfield(typeof(model1), :params)
         params1 = model1.params
         params2 = model2.params
         for i in 1:fieldcount(typeof(params1))
-            p1 = getfield(params1,i)
-            p2 = getfield(params2,i)
+            p1 = getfield(params1, i)
+            p2 = getfield(params2, i)
             if p1 isa SingleParam || p1 isa PairParam
-                if eltype(p1) <: Tuple 
+                if eltype(p1) <: Tuple
                     @test stack(p1.values) ≈ stack(p2.values)
                 else
                     @test p1.values ≈ p2.values
@@ -167,73 +162,73 @@ function eosmodel_is_approx(model1,model2)
     end
 end
 
-function test_kl(model; test_k = true, test_l = true)  
+function test_kl(model; test_k=true, test_l=true)
     model2 = deepcopy(model)
-    
+
     if test_k
         k_orig = Clapeyron.get_k(model2)
-        
+
         k0 = zeros(size(k_orig))
-        Clapeyron.set_k!(model2,k0)
+        Clapeyron.set_k!(model2, k0)
         @test k0 ≈ Clapeyron.get_k(model2)
-        
+
         k1 = zeros(size(k_orig))
-        s1,s2 = size(k1)
+        s1, s2 = size(k1)
         for i in 1:s1
             for j in (i + 1):s2
-                k1[j,i] = 0.01
+                k1[j, i] = 0.01
             end
         end
-        Clapeyron.set_k!(model2,k1)
+        Clapeyron.set_k!(model2, k1)
         @test k1 ≈ Clapeyron.get_k(model2)
 
-        Clapeyron.set_k!(model2,k_orig)
+        Clapeyron.set_k!(model2, k_orig)
         @test k_orig ≈ Clapeyron.get_k(model2)
     end
 
     if test_l
         l_orig = Clapeyron.get_l(model2)
-        
+
         l0 = zeros(size(l_orig))
-        Clapeyron.set_l!(model2,l0)
+        Clapeyron.set_l!(model2, l0)
         @test l0 ≈ Clapeyron.get_l(model2)
-        
+
         l1 = zeros(size(l_orig))
-        s1,s2 = size(l1)
+        s1, s2 = size(l1)
         for i in 1:s1
             for j in (i + 1):s2
-                l1[j,i] = 0.01
+                l1[j, i] = 0.01
             end
         end
-        Clapeyron.set_l!(model2,l1)
+        Clapeyron.set_l!(model2, l1)
         @test l1 ≈ Clapeyron.get_l(model2)
 
-        Clapeyron.set_l!(model2,l_orig)
+        Clapeyron.set_l!(model2, l_orig)
         @test l_orig ≈ Clapeyron.get_l(model2)
     end
 end
-test_k(model) = test_kl(model,test_l = false)
-test_l(model) = test_kl(model,test_k = false)
+test_k(model) = test_kl(model, test_l=false)
+test_l(model) = test_kl(model, test_k=false)
 
-function test_repr(val;str = nothing,str_compact = nothing)
+function test_repr(val; str=nothing, str_compact=nothing)
     io = IOBuffer()
-    Base.show(io,MIME"text/plain"(),val)
+    Base.show(io, MIME"text/plain"(), val)
     x = String(take!(io))
     @test !isempty(x)
 
     io_compact = IOBuffer()
-    Base.show(io_compact,val)
+    Base.show(io_compact, val)
     x_compact = String(take!(io_compact))
     @test !isempty(x_compact)
     if str != nothing
         for s in str
-            @test occursin(s,x)
+            @test occursin(s, x)
         end
     end
 
     if str_compact != nothing
         for s in str_compact
-            @test occursin(s,x_compact)
+            @test occursin(s, x_compact)
         end
     end
 end
@@ -242,7 +237,7 @@ function test_zero_alloc2(model)
     z = ones(length(model))/length(model)
     V = 0.03
     T = 300.0
-    f(x) = Clapeyron.eos(x,V,T,z)
+    f(x) = Clapeyron.eos(x, V, T, z)
     f(model)
     @test @allocated(f(model)) == 0
 end
@@ -251,25 +246,25 @@ function test_zero_alloc1(model)
     z = SA[1.0]
     V = 0.03
     T = 300.0
-    f(x) = Clapeyron.eos(x,V,T,z)
+    f(x) = Clapeyron.eos(x, V, T, z)
     f(model)
     @test @allocated(f(model)) == 0
 end
 
-function test_assoc_matrix(K,tol = 1e-12)
-    s1,s2 = size(K)
+function test_assoc_matrix(K, tol=1e-12)
+    s1, s2 = size(K)
     @test s1 == s2
-    x0 = ones(eltype(K),s1)
-    
-    x10 = Clapeyron.assoc_matrix_solve(K,x0)
+    x0 = ones(eltype(K), s1)
+
+    x10 = Clapeyron.assoc_matrix_solve(K, x0)
     x1 = Clapeyron.assoc_matrix_solve(K)
     dx = x10 - x1
-    @test sqrt(sum(abs2,dx)) < tol
+    @test sqrt(sum(abs2, dx)) < tol
 end
 
-function test_assoc_matrix(model,V,T,z,tol = 1e-12)
-    K = Clapeyron.dense_assoc_site_matrix(model,V,T,z)
-    test_assoc_matrix(K,tol)
+function test_assoc_matrix(model, V, T, z, tol=1e-12)
+    K = Clapeyron.dense_assoc_site_matrix(model, V, T, z)
+    test_assoc_matrix(K, tol)
 end
 
 #! format: off
