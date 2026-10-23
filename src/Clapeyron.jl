@@ -170,7 +170,7 @@ include("models/EmpiricHelmholtz/SingleFluid/variants/TholLJ.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/XiangDeiters.jl")
 
 #potential models
-include("models/Potentials/Potentials.jl")
+include("models/Potentials/Potential.jl")
 include("models/Potentials/PeTS/PeTS.jl")
 include("models/Potentials/Thol2016LJ/Thol2016LJ.jl")
 include("models/Potentials/Johnson1993LJ/Johnson1993LJ.jl")

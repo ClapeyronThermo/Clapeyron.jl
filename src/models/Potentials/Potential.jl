@@ -30,4 +30,3 @@ function x0_crit_pure(model::LJPotentialModel,z)
 end
 
 include("scalings/scalings.jl")
-
