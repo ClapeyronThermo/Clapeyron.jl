@@ -182,9 +182,10 @@ include("AntoineSat.jl")
 
 
 """
-    enthalpy_vap(model::EoSModel, T)
+    enthalpy_vap(model::EoSModel, T, satmethod = Clapeyron.init_preferred_method(saturation_pressure,model,(;))))
 
 Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies at temperature `T` `[K]`, in `[J]`
+The saturation calculation is done with the provided `satmethod`.
 """
 function enthalpy_vap(model::EoSModel, T, satmethod = init_preferred_method(saturation_pressure,model,(;)); output = nothing)
     T̄ = ustrip(T,temperature)
@@ -206,7 +207,8 @@ function enthalpy_vap(model::EoSModel, T, satmethod = init_preferred_method(satu
 end
 
 """
-    acentric_factor(model::EoSModel;crit = crit_pure(model), satmethod = ChemPotVSaturation())
+    acentric_factor(model::EoSModel;crit = crit_pure(model),satmethod = Clapeyron.init_preferred_method(saturation_pressure,model,(;)))
+
 
 Calculates the acentric factor using its definition:
 ```
@@ -215,7 +217,7 @@ Calculates the acentric factor using its definition:
 
 To do so, it calculates the critical temperature (using `crit_pure`) and performs a saturation calculation (with `saturation_pressure(model,0.7Tc,satmethod)`)
 """
-function acentric_factor(model::EoSModel;crit = crit_pure(model),satmethod = ChemPotVSaturation())
+function acentric_factor(model::EoSModel;crit = crit_pure(model),satmethod = init_preferred_method(saturation_pressure,model,(;)))
     return acentric_factor(model,crit,satmethod)
 end
 

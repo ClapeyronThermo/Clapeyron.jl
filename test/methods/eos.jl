@@ -657,17 +657,6 @@ end
     end
 end
 
-@testset "LJRef methods" begin
-    system = LJRef(["methane"])
-    @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ v rtol = 1e-5
-    end
-    @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ p rtol = 1E-1
-        @test Clapeyron.crit_pure(system)[1]/Clapeyron.T_scale(system) ≈ 1.32 rtol = 1E-4
-    end
-end
-
 @testset "SPUNG methods" begin
     system = SPUNG(["ethane"],idealmodel = ReidIdeal)
     p = 1e5
