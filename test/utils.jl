@@ -413,7 +413,7 @@ function pure_generic_test(model)
 
     vals = [Clapeyron.second_virial_coefficient(model, Ts, i*z1) for i in is]
     vi   = is .* B2
-    B2_consistency   = all(abs.(vals .- vi) .≤ rtol .* abs.(vi) .+ atol)
+    B2_consistency   = all(abs.(vals .- vi) .≤ 1e-12 .* abs.(vi) .+ 1e-10)
     @test B2_consistency
     B2_consistency || @info "$name lb_volume scaling" fit_scaling(vals, is)
 end
