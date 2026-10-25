@@ -399,8 +399,8 @@ function pure_generic_test(model)
     z1 = SA[1.0]
     T1 = 0.9*Tc
     ps,vlsat,vvsat = saturation_pressure(model,T1)
-    vl1 = volume(model,ps1,T1,z1,phase = :l)
-    vv1 = volume(model,ps1,T1,z1,phase = :v)
+    vl1 = volume(model,ps,T1,z1,phase = :l)
+    vv1 = volume(model,ps,T1,z1,phase = :v)
     @test vlsat ≈ vl1 rtol = 1e-6
     @test vvsat ≈ vv1 rtol = 1e-6
     Ts,_,_ = saturation_temperature(model,ps)
