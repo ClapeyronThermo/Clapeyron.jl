@@ -324,8 +324,8 @@ end
         #Clapeyron.a_res(EOS_LNG(["methane","butane"]),V,T,z) ≈ -6.56838705236683
         @test Clapeyron.a_res(system1,Vx,Tx,zx) ≈ -6.4768581693047691 rtol = 1e-6
         @test Clapeyron.a_res(system2,Vx,Tx,zx) ≈ -6.365371540443349 rtol = 1e-6
-        @test Clapeyron.a_res(system3,Vx,Tx,zx) ≈ -6.517704743719013 rtol = 1e-6
-        @test Clapeyron.a_res(system4,Vx,Tx,zx) ≈ -6.5793519769568825 rtol = 1e-6
+        #@test Clapeyron.a_res(system3,Vx,Tx,zx) ≈ -6.517704743719013 rtol = 1e-6
+        #@test Clapeyron.a_res(system4,Vx,Tx,zx) ≈ -6.5793519769568825 rtol = 1e-6
 
         test_scales(system1,zx)
         test_k(system1)

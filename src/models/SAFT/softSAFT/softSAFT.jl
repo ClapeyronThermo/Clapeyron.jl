@@ -19,6 +19,8 @@ struct softSAFT{T,LJ} <: softSAFTModel
     ljmodel::LJ
 end
 
+export softSAFT
+
 default_references(::Type{softSAFT}) = ["10.1080/002689797170707","10.1080/00268979300100411"]
 default_locations(::Type{softSAFT}) = ["SAFT/softSAFT","properties/molarmass.csv"]
 
@@ -88,13 +90,13 @@ function softSAFT(components;
 
     _components = format_components(components)
     params1 = getparams(_components, default_locations(softSAFT); userlocations = userlocations, verbose = verbose)
-    params2 = AssocOptions!(params1,assoc_options)
-    params3 = transform_params(softSAFT,params2)
+    AssocOptions!(params1,assoc_options)
+    params3 = transform_params(softSAFT,params1)
     params4 = assoc_mix!(params3,_components)
     packagedparams = build_eosparam(softSAFTParam,params4)
     init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
     references = default_references(softSAFT)
-    model = softSAFT(_components,sites,packagedparams,init_idealmodel,params4["assoc_options"], references, lj_model)
+    model = softSAFT(_components,params4["sites"],packagedparams,init_idealmodel,params4["assoc_options"], references, ljmodel)
     set_reference_state!(model,reference_state;verbose)
     return model
 end

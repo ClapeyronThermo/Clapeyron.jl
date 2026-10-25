@@ -99,8 +99,9 @@ function test_gibbs_duhem(model::Clapeyron.ActivityModel, V, T, z; rtol = 1e-14,
 end
 
 function test_volume(model,p,T,z = Clapeyron.SA[1.0];rtol = 1e-8,phase = :unknown)
-    v = volume(model,p,T,z)
+    v = volume(model,p,T,z,phase = phase)
     @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
+    return v
 end
 
 function test_scales(model, T0 = 300.0; rtol = 1e-14, atol = 1e-15)
@@ -399,8 +400,9 @@ function pure_generic_test(model)
     z1 = SA[1.0]
     T1 = 0.9*Tc
     ps,vlsat,vvsat = saturation_pressure(model,T1)
-    vl1 = volume(model,ps,T1,z1,phase = :l)
-    vv1 = volume(model,ps,T1,z1,phase = :v)
+    
+    vl1 = test_volume(model,ps,T1,z1,phase = :l)
+    vv1 = test_volume(model,ps,T1,z1,phase = :v)
     @test vlsat ≈ vl1 rtol = 1e-6
     @test vvsat ≈ vv1 rtol = 1e-6
     Ts,_,_ = saturation_temperature(model,ps)

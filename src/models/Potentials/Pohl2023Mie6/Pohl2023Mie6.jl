@@ -146,7 +146,7 @@ function reduced_a_res_pohl(model::Pohl2023Mie6,δ,τ,λrinv)
     return αᵣ
 end
 
-lb_volume(model::Pohl2023Mie6,T,z) = sum(z)/0.6
+lb_volume(model::Pohl2023Mie6,T,z) = sum(z)
 
 function pohl_vt_crit(model::Pohl2023Mie6)
     λr = model.lambda_r
