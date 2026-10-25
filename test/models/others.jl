@@ -388,11 +388,8 @@ end
 
 @testset "SPUNG models" begin
     @printline
-    let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333]; 
-        @testset "SPUNG (SRK)" begin
-            system = SPUNG(["ethane"])
-            @test Clapeyron.shape_factors(system, V, T, z)[1] ≈ 0.824678830913322 rtol = 1e-6
-        end
+    let T = 298.15, V = 1e-4,p = 1e5 
+        @test Clapeyron.shape_factors(system, 298.15, [0.5,0.5])[1] ≈ 1.2936797234274697 rtol = 1e-6
     end
 end
 
