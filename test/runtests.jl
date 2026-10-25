@@ -39,7 +39,7 @@ include_distributed("models/electrolytes.jl",1)
 include_distributed("models/potentials.jl",2)
 
 include_distributed("methods/eos.jl",4)
-include_distributed("models/eos2.jl",2)
+include_distributed("methods/eos2.jl",2)
 include_distributed("methods/eos_pcsaft.jl",5)
 include_distributed("methods/api.jl",2)
 include_distributed("methods/mass_fractions.jl",2)
