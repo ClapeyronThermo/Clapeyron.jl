@@ -71,14 +71,15 @@ Returns an initial guess to the gas volume, depending of pressure `p`, temperatu
 """
 function x0_volume_gas(model,p,T,z)
     B = second_virial_coefficient(model,T,z)
-    nRT = sum(z)*Rgas(model)*T
+    R = Rgas(model)
+    nRT = sum(z)*R*T
     pmax = -0.25*nRT/B
     if B >= 0 || !isfinite(B)
         return nRT/p
     elseif pmax < p && B < 0
         return -2*B
     else
-        return volume_virial(B,p,T,z)
+        return volume_virial(B,p,T,z,R)
     end
 end
 

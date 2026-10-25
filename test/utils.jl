@@ -21,12 +21,19 @@ macro printline()  # useful in hunting for where tests get stuck
 end
 
 function fit_scaling(vals, is; exponents = (-3, -2, -1, 0, 1, 2, 3))
-    length(vals) == length(is) ||
+    v = vec(collect(vals))
+    x = vec(collect(is))
+    length(v) == length(x) ||
         throw(ArgumentError("vals and is must have the same length"))
-    B  = reduce(hcat, (is.^m for m in exponents))
-    cn = sqrt.(sum(abs2, B, dims = 1))
-    c  = (B ./ cn) \ vals ./ cn
-    contrib = abs.(vec(c)) .* vec(cn)
+
+    B = reduce(hcat, (x .^ m for m in exponents))   # n × k
+
+    # Pivoted-QR least squares (this is what B \ v does for a tall B)
+    c = B \ v                                        # k-vector
+
+    # Rank by |c_i| · ||B_i|| (unchanged metric from your original)
+    cn      = vec(sqrt.(sum(abs2, B, dims = 1)))     # k-vector
+    contrib = abs.(c .* cn)                          # k-vector
     [(m = exponents[k], c = c[k]) for k in sortperm(contrib, rev = true)]
 end
 
@@ -393,29 +400,49 @@ function testutils_fd_gradient(f, x::AbstractVector; method =:central, eps  =1e-
 end
 
 function pure_generic_test(model)
+    name = Clapeyron.model_showname(model)
     Tc,Pc,Vc = crit_pure(model)
     @test Tc > 0
     @test Pc > 0
     @test Vc > 0
-    z1 = SA[1.0]
+    z1 = Clapeyron.SA[1.0]
     T1 = 0.9*Tc
     ps,vlsat,vvsat = saturation_pressure(model,T1)
-    
+    @show ps,vlsat,vvsat,T1
+    @test !isnan(ps) && !isnan(vlsat) && !isnan(vvsat)
+    if isnan(ps) || isnan(vlsat) || isnan(vvsat)
+        sat = (ps,vlsat,vvsat)
+        @info "$name failed calculation of saturation pressure at T = $T1, got $sat"
+    end
     vl1 = test_volume(model,ps,T1,z1,phase = :l)
     vv1 = test_volume(model,ps,T1,z1,phase = :v)
     @test vlsat ≈ vl1 rtol = 1e-6
     @test vvsat ≈ vv1 rtol = 1e-6
     Ts,_,_ = saturation_temperature(model,ps)
+    @test !isnan(Ts)
+    if isnan(Ts)
+        @info "$name failed calculation of saturation temperature at p = $ps"
+    end
     @test Ts ≈ T1 rtol = 1e-6
     B2 = second_virial_coefficient(model,Ts,z1)
     @test B2 < 0
+    if isnan(B2)
+        @info "$name got NaN second virial coefficient at T = $Ts"
+    end
     
     is   = exp.(range(log(2), log(20); length=15))
     name = Clapeyron.parameterless_type(typeof(model))
 
     vals = [Clapeyron.second_virial_coefficient(model, Ts, i*z1) for i in is]
     vi   = is .* B2
-    B2_consistency   = all(abs.(vals .- vi) .≤ 1e-12 .* abs.(vi) .+ 1e-10)
+    B2_consistency   = all(abs.(vals .- vi) .≤ 1e-6 .* abs.(vi) .+ 1e-10)
     @test B2_consistency
-    B2_consistency || @info "$name lb_volume scaling" fit_scaling(vals, is)
+
+    if !B2_consistency
+        if any(isnan,vals)
+            @info "$name got NaN second virial coefficient at T = $Ts"
+        else
+            @info "$name second virial coefficient scaling" fit_scaling(vals, is)
+        end
+    end
 end

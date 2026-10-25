@@ -328,7 +328,7 @@ end
 
 """
     volume_virial(model::EoSModel,p,T,z=SA[1.0])
-    volume_virial(B::Real,p,T,z=SA[1.0])
+    volume_virial(B::Real,p,T,z=SA[1.0],R = Rgas())
 Calculates an approximation to the gas volume at specified pressure `p`, temperature `T` and composition `z`, by aproximating:
 ```julia
 Z(v) ≈ 1 + B(T)/v
@@ -341,10 +341,10 @@ function volume_virial end
 
 function volume_virial(model::EoSModel,p,T,z=SA[1.0])
     B = second_virial_coefficient(model,T,z)
-    return volume_virial(B,p,T,z,R = Rgas(model))
+    return volume_virial(B,p,T,z,Rgas(model))
 end
 
-function volume_virial(B::Real,p,T,z=SA[1.0];R = R̄)
+function volume_virial(B::Real,p,T,z=SA[1.0],R = R̄)
     #=
     PV/RT∑z = 1 + B/V // a = P/RT∑z, .*= V
     aV2 = V + B
