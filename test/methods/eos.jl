@@ -634,6 +634,10 @@ end
     s1 = entropy(model559,101325.0,250.0,[0.5,0.5],phase = :v)
     s2 = entropy(model559,101325.0,250.0,1000*[0.5,0.5],phase = :v)
     @test s2 ≈ 1000*s1 rtol = 1e-6
+
+    #below triple point test
+    co2 = SingleFluid("carbon dioxide")
+    @test saturation_pressure(co2,212.0)[1] ≈ 422094.9098939842 rtol = 1e-6
 end
 
 @testset "LKP methods" begin

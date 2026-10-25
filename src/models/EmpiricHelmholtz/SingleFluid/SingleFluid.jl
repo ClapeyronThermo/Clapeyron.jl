@@ -213,7 +213,7 @@ function x0_sat_pure(model::SingleFluid,T)
         ΔTinv = 1/T - 1/Ttp
         psat = exp(ΔTinv/dTinvdlnp)*ptp
         vv = Rgas(model)*T/psat
-        vl = x0_volume_liquid(model,psat,T)
+        vl = x0_volume_liquid_lowT(model,psat,T,SA[1.0])
         return vl,vv
     end
 end
