@@ -47,8 +47,6 @@ Kolafa-Nezbeda equation of state for the Lennard-Jones fluid. Scaled via [`LJSca
 """
 KolafaNezbeda
 
-export KolafaNezbeda
-
 #nonlinear parameter γ of the damping function, eq. (15)
 const KN_γ = 1.92907278
 const KN_ΔB2 = (0.02459877, 0.0, -7.02181962, 2.90616279, -4.13749995, 0.87361369, 0.43102052, -0.58544978)
@@ -120,3 +118,5 @@ function set_k!(model::KolafaNezbedaLJ,k)
     epsilon = epsilon_LorentzBerthelot!(epsilon,k)
     return model
 end
+
+export KolafaNezbeda, KolafaNezbedaLJ

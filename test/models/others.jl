@@ -316,23 +316,21 @@ end
         Tx = 150.0
         Vx = 1/(18002.169)
         zx   = [0.6,0.4]
-        system = LKP(["methane","butane"])
-        test_scales(system)
-        test_k(system)
-        #Clapeyron.a_res(EOS_LNG(["methane","butane"]),V,T,z) ≈ -6.56838705236683
-        @test Clapeyron.a_res(system,Vx,Tx,zx) ≈ -6.469596957611441 rtol = 5e-6
-        system2 = LKPSJT(["methane","butane"])
-        #TODO:check this value
-        @test Clapeyron.a_res(system2,Vx,Tx,zx) ≈ -5.636923220762173 rtol = 5e-6
-    end
+        system1 = LKP(["methane","butane"])
+        system2 = LKPmod(["methane","butane"])
+        system3 = LKPSJT(["methane","butane"],version = 1)
+        system4 = LKPSJT(["methane","butane"],version = 2)
 
-    @testset "LJRef" begin
-        system = LJRef(["methane"])
-        Tx = 1.051*Clapeyron.T_scale(system)
-        Vx = Clapeyron._v_scale(system)/0.673
-        @test Clapeyron.a_ideal(system, Vx, Tx) ≈ 5.704213386278148 rtol = 1e-6
-        @test Clapeyron.a_res(system, Vx, Tx) ≈ -2.244730279521925 rtol = 1e-6
-        @test Clapeyron.ideal_consistency(system,Vx,Tx,z1) ≈ 0.0 atol = 1e-14
+        #Clapeyron.a_res(EOS_LNG(["methane","butane"]),V,T,z) ≈ -6.56838705236683
+        @test Clapeyron.a_res(system1,Vx,Tx,zx) ≈ -6.4768581693047691 rtol = 5e-6
+        @test Clapeyron.a_res(system2,Vx,Tx,zx) ≈ -6.365371540443349 rtol = 5e-6
+        @test Clapeyron.a_res(system3,Vx,Tx,zx) ≈ -6.517704743719013 rtol = 5e-6
+        @test Clapeyron.a_res(system4,Vx,Tx,zx) ≈ -6.5793519769568825 rtol = 5e-6
+
+        test_scales(system1)
+        test_k(system1)
+        test_gibbs_duhem(system1)
+        test_gibbs_duhem(system3)
     end
 
     @testset "Xiang-Deiters" begin

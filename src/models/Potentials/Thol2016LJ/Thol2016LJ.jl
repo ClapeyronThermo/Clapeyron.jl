@@ -3,6 +3,10 @@ struct Thol2016LJ{T} <: LJPotentialModel
 end
 
 Thol2016LJ() = Thol2016LJ(TholLJ_constructor())
+Base.show(io::IO,model::Thol2016LJ) = print(io,model_showname(model),"()")
+Base.show(io::IO,::MIME"text/plain",model::Thol2016LJ) = print(io,model_showname(model),"()")
+
+model_showname(::Thol2016LJ) = "Thol2016LJ"
 
 a_potential(model::Thol2016LJ,V,T) = a_res(model.model,V,T,SA[1.0])
 x0_sat_pure(model::Thol2016LJ,T) = x0_sat_pure(model.model,T)
@@ -10,6 +14,8 @@ x0_psat(model::Thol2016LJ,T) = x0_psat(model.model,T)
 has_fast_crit_pure(::Thol2016LJ) = true
 crit_pure(model::Thol2016LJ) = crit_pure(model.model)
 x0_volume_liquid(model::Thol2016LJ,p,T,z) = x0_volume_liquid(model.model,p,T,z)
+lb_volume(model::Thol2016LJ,T,z) = lb_volume(model.model,T,z)
+
 
 """
     Thol2016LJ <: LJPotentialModel
@@ -37,4 +43,4 @@ aʳ₃(δ,τ)  = ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)
 """
 Thol2016LJ
 
-
+export Thol2016LJ

@@ -33,8 +33,25 @@ The following functions are required:
 
 Some reference models may carry its own scaling (or no scaling at all). For those cases, you may need to overload `a_res_ecs`
 """
-
 abstract type CorrespondingStatesModel <: EoSModel end
+
+"""
+    shape_factors(model::CorrespondingStatesModel,T,z=SA[1.0])
+    shape_factors(scaling_model,reference_model,T,z)
+
+returns `f`,`h` scaling factors, used by subtypes of [`CorrespondingStatesModel`](@ref). 
+`T` is the scaled temperature. To calculate the shape factors given a reference temperature (`T0 = T/f`), use [`inverse_scaling_factors`](@ref)
+"""
+function shape_factors end
+
+"""
+    inverse_shape_factors(model::CorrespondingStatesModel,T0,z=SA[1.0])
+    inverse_shape_factors(scaling_model,reference_model,T0,z)
+
+returns `f`,`h` scaling factors, used by subtypes of [`CorrespondingStatesModel`](@ref). 
+`T` is the temperature used by the reference model. To calculate the shape factors at a scaled temperature (`T = T0*f`), use [`scaling_factors`](@ref)
+"""
+function inverse_shape_factors end
 
 function a_res(model::CorrespondingStatesModel,V,T,z)
     reference = reference_model(model)
@@ -50,21 +67,14 @@ function a_res_ecs(refmodel,scalingmodel,V,T,z)
     return a_res(refmodel,V0,T0,z)
 end
 
-
-
-
-"""
-    shape_factors(model::ECS,V,T,z=SA[1.0])
-    shape_factors(model::ECS,shape_ref::ABCubicModel,V,T,z=SA[1.0])
-    shape_factors(model::ECS,shape_ref::EoSModel,V,T,z=SA[1.0])
-
-Returns `f` and `h` scaling factors, used by the [`ECS`](@ref) Equation of state.
-"""
-shape_factors
-
 shape_factors(model,T) = shape_factors(model,T,SA[1.0])
 shape_factors(model,T,z::AbstractVector) = shape_factors(scaling_model(model),reference_model(model),T,z)
 shape_factors(model1,model2,T::Number) = shape_factors(model1,model2,T,SA[1.0])
+
+inverse_shape_factors(model,T) = inverse_shape_factors(model,T,SA[1.0])
+inverse_shape_factors(model,T,z::AbstractVector) = inverse_shape_factors(scaling_model(model),reference_model(model),T,z)
+inverse_shape_factors(model1,model2,T::Number) = inverse_shape_factors(model1,model2,T,SA[1.0])
+
 
 rgas_ratio(model::CorrespondingStatesModel) = rgas_ratio(scaling_model(model),reference_model(model))
 rgas_ratio(model1,model2) = Rgas(model1)/Rgas(model2)
@@ -75,13 +85,13 @@ molecular_weight(model::CorrespondingStatesModel,z) = molecular_weight(scaling_m
 component_list(model::CorrespondingStatesModel) = component_list(scaling_model(model))
 
 function Base.show(io::IO,mime::MIME"text/plain",model::CorrespondingStatesModel)
-    print(io,"Corresponding States model")
+    print(io, model_showname(model))
     length(model) == 1 && print(io, " with 1 component:")
     length(model) > 1 && print(io, " with ", length(model), " components:")
     println(io)
     show_pairs(io,component_list(model))
     print(io,'\n'," Reference Model: ", parameterless_type(reference_model(model)))
-    print(io,"(\"",only(component_list(reference_model(model))),"\")")
+    #print(io,"(\"",only(component_list(reference_model(model))),"\")")
     print(io,'\n'," Fluid Model: ",typeof(scaling_model(model)))
     show_info(io,model)
     show_params(io,model)
@@ -160,9 +170,9 @@ end
 
 function crit_pure(model::CorrespondingStatesModel)
     Tc0,Pc0,Vc0 = crit_pure(reference_model(model))
-    fc,hc = shape_factors(model,Tc)
+    fc,hc = inverse_shape_factors(model,Tc0)
     r = rgas_ratio(model)
-    return Tc0*fc, r*f/hc*Pc0, Vc0*hc
+    return Tc0*fc, r*fc/hc*Pc0, Vc0*hc
 end
 
 struct ECSSaturation{M} <: SaturationMethod
@@ -182,9 +192,9 @@ end =#
 
 function saturation_pressure_impl(model::CorrespondingStatesModel,T,methodwrapper::ECSSaturation{M}) where M
     method = methodwrapper.method
-    f,h = shape_factors(model,Tc)
+    f,h = shape_factors(model,T)
     T0 = T/f
-    psat0,vl0,vv0 = saturation_pressure(model.saturation,T0,method)
+    psat0,vl0,vv0 = saturation_pressure(reference_model(model),T0,method)
     r = rgas_ratio(model)
     return r*f/h*psat0,vl0*h,vv0*h
 end
@@ -250,8 +260,9 @@ Null scaling model, to be used along a reference model. temperature and shape fa
 """
 NoECSScaling
 
-shape_factors(scaling::NoECSScaling,reference::EoSModel,V,T,z) = 1.0,1.0
-rgas_ratio(scaling::NoECSScaling,reference::EoSModel) = 1.0
+shape_factors(scaling::NoECSScaling,reference,T,z) = 1.0,1.0
+inverse_shape_factors(scaling::NoECSScaling,reference,T,z) = 1.0,1.0
+rgas_ratio(scaling::NoECSScaling,reference) = 1.0
 
 export ExtendedCorrespondingStates
-export ECS, shape_factors, NoECSScaling
+export ECS, shape_factors, inverse_shape_factors, NoECSScaling

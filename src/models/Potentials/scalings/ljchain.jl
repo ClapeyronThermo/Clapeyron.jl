@@ -18,19 +18,21 @@ end
 
 ChainLJScaling(param::EoSParam) = ChainLJScaling(ChainLJScalingParam(param.Mw,param.segment,param.sigma,param.epsilon))
 
-
 function shape_factors(scaling::ChainLJScaling,ref,T,z)
-    ϵ, σ, m = model.params.epsilon.values, model.params.sigma.values, model.params.segment.values
-    σ3, ϵ̄, m̄ = σϵ_m_vdw1f(ϵ,σ,m,1.0,T,z)
+    ϵ, σ, m = scaling.params.epsilon.values, scaling.params.sigma.values, scaling.params.segment.values
+    σ3, ϵ̄, m̄ = σϵ_m_vdw1f(ϵ,σ,m,z)
     f = ϵ̄
     h = m̄*N_A*σ3
     return f,h
 end
 
+inverse_shape_factors(scaling::ChainLJScaling,ref,T,z) = shape_factors(scaling,ref,T,z)
+
+
 function transform_params(::Type{ChainLJScaling},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
-
+    nc = length(components)
     segment = get!(params,"segment") do
         SingleParam("segment",components,ones(nc),fill(true,nc))
     end
@@ -38,7 +40,6 @@ function transform_params(::Type{ChainLJScaling},params,components)
     Mw = get!(params,"Mw") do
         SingleParam("Mw",components,zeros(nc),fill(true,nc))
     end    
-
     return saft_lorentz_berthelot(params)
 end
 
@@ -79,3 +80,5 @@ h    = m̄ N_A σ³
 ```
 """
 ChainLJScaling
+
+export ChainLJScaling

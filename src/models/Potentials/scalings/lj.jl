@@ -1,36 +1,54 @@
 abstract type LJScalingModel <: EoSModel end
 
-function σϵ_m_vdw1f(model::EoSModel,V,T,z)
-    ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    m = model.params.segment.values
-    return σϵ_m_vdw1f(ϵ,σ,m,V,T,z)
-end
-
-function σϵ_m_vdw1f(ϵ,σ,m,V,T,z)
-    σϵ_mix = zero(eltype(z))
-    σ_mix = zero(eltype(z))
-    comps = length(z)
-    ∑z = sum(z)
-    m̄ = dot(m,z)/∑z
-    m̄inv = 1/m̄
-    for i ∈ 1:comps
-        zi = z[i]*m[i]*m̄inv
+function σϵ_m_vdw1f(ϵ,σ,m,z)
+    σϵ_mix = zero(Base.promote_eltype(ϵ,m,σ,z))
+    σ_mix = zero(Base.promote_eltype(m,σ,z))
+    m̄ = zero(Base.promote_eltype(m,z))
+    ∑z = zero(eltype(z))
+    for i ∈ eachindex(z)
+        _zi = z[i]
+        zi,σ3 = _zi*m[i],σ[i,i]^3
         zii = zi*zi
-        σ3 = σ[i,i]^3
         σϵ_mix += zii*σ3*ϵ[i,i]
         σ_mix += zii*σ3
+        m̄ += zi
+        ∑z += _zi
         for j ∈ 1:(i-1)
-            σ3ij = σ[i,j]^3
-            zij = zi*z[j]*m[j]*m̄inv
+            σ3ij,zij = σ[i,j]^3,zi*z[j]*m[j]
             σϵ_mix += 2*zij*σ3ij*ϵ[i,j]
             σ_mix += 2*zij*σ3ij
         end
     end
-    return σ_mix/(∑z*∑z), σϵ_mix/σ_mix, m̄
+    return σ_mix/(m̄*m̄), σϵ_mix/σ_mix, m̄/∑z
 end
 
-σϵ_m_vdw1f(ϵ,σ,V,T,z) = σϵ_m_vdw1f(ϵ,σ,FillArrays.Fill(one(eltype(σ)),length(z)),V,T,z)
+function σϵ_m_vdw1f(ϵ,σ,z)
+    σϵ_mix = zero(Base.promote_eltype(ϵ,σ,z))
+    σ_mix = zero(Base.promote_eltype(σ,z))
+    ∑z = zero(eltype(z))
+    for i ∈ eachindex(z)
+        zi,σ3 = z[i],σ[i,i]^3
+        zii = zi*zi
+        σϵ_mix += zii*σ3*ϵ[i,i]
+        σ_mix += zii*σ3
+        ∑z += _zi
+        for j ∈ 1:(i-1)
+            σ3ij,zij = σ[i,j]^3,zi*z[j]
+            σϵ_mix += 2*zij*σ3ij*ϵ[i,j]
+            σ_mix += 2*zij*σ3ij
+        end
+    end
+    return σ_mix/(∑z*∑z), σϵ_mix/σ_mix, one(∑z)
+end
+
+function σϵ_m_vdw1f(model::EoSModel,V::Number,T,z)
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    m = model.params.segment.values
+    return σϵ_m_vdw1f(ϵ,σ,m,z)
+end
+
+σϵ_m_vdw1f(ϵ,σ,V,T,z) = σϵ_m_vdw1f(ϵ,σ,z)
 
 struct LJScalingParam{T} <: ParametricEoSParam{T}
     Mw::SingleParam{T}
@@ -65,6 +83,8 @@ function shape_factors(scaling::LJScalingModel,ref,T,z)
     return f,h
 end
 
+inverse_shape_factors(scaling::LJScalingModel,ref,T,z) = shape_factors(scaling,ref,T,z)
+
 function σϵ_m_vdw1f(model::LJScaling,V,T,z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
@@ -74,6 +94,7 @@ end
 function transform_params(::Type{LJScaling},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
+    nc = length(components)
     Mw = get!(params,"Mw") do
         SingleParam("Mw",components,zeros(nc),fill(true,nc))
     end
@@ -115,3 +136,5 @@ h = N_A σ³
 ```
 """
 LJScaling
+
+export LJScaling

@@ -135,6 +135,55 @@ function shape_factors_cubic1_soave(scaling::SPUNGScaling, reference::EoSModel, 
     return u*u, bc/b0c
 end
 
+function inverse_scale_factors(scaling::SPUNGScaling, reference::EoSModel, T0, z)
+    shape_model = scaling.shape_model
+
+    if has_fast_crit_pure(shape_model) && shape_model.alpha isa GeneralizedSuaveAlphaModel && length(z) == 1
+        _1 = one(eltype(z))
+        f0, h0 = inverse_shape_factors_cubic1_soave(scaling, reference, T0)
+        return f0*_1, h0*_1
+    end
+
+    shape_ref = scaling.shape_ref
+
+    # T₀ is fixed and the reference is pure ⇒ a₀, b₀ are constants of the problem
+    a0, b0 = cubic_ab(shape_ref, 1.0, T0)
+
+    # initial guess (f ≈ 1 ⇒ T ≈ T₀)
+    amix, b = cubic_ab(shape_model, 1.0, T0, z)
+    f_init = one(T0) * b0 * amix / (a0 * b)
+
+    prob = Roots.ZeroProblem(__cubic_inverse_shape_factors_prob, f_init)
+    prob_data = (shape_model, T0, z, a0, b0)
+    f = roots_solve_ad(prob, Roots.Order0(), prob_data)
+
+    T = T0 * f
+    _, bT = cubic_ab(shape_model, 1.0, T, z)
+    h = bT / b0
+    return f, h
+end
+
+function __cubic_inverse_shape_factors_prob(f, data)
+    shape_model, T0, z, a0, b0 = data
+    T = T0 * f
+    a, b = cubic_ab(shape_model, 1.0, T, z)
+    return f - (a/a0)*(b0/b)
+end
+
+function inverse_shape_factors_cubic1_soave(scaling::SPUNGScaling, reference::EoSModel, T0)
+    shape_model, shape_ref = scaling.shape_model, scaling.shape_ref
+    ac,  bc  = shape_model.params.a.values[1,1], shape_model.params.b.values[1,1]
+    a0c, b0c = shape_ref.params.a.values[1,1],   shape_ref.params.b.values[1,1]
+    m,  m0   = α_m(shape_model, shape_model.alpha, 1), α_m(shape_ref, shape_ref.alpha, 1)
+    Tc, Tc0  = shape_model.params.Tc.values[1],       shape_ref.params.Tc.values[1]
+    Tr0 = T0/Tc0
+    α0  = (1 + m0*(1 - sqrt(Tr0)))^2
+    K   = ac*b0c/(bc*a0c)
+    L   = α0/K
+    u   = (1 + m) / (sqrt(L) + m*sqrt(T0/Tc))
+    return u*u, bc/b0c
+end
+
 function SPUNGScaling(components,reference_component,model,refmodel;shape_userlocations = nothing,shaperef_userlocations = nothing,verbose = false)
     shapemodel = init_model(model,components,shape_userlocations,verbose)
     shaperef   = init_model(refmodel,reference_component,shaperef_userlocations,verbose)

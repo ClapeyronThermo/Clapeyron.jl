@@ -109,24 +109,25 @@ function test_scales(model, T0 = 300.0; rtol = 1e-14, atol = 1e-15)
     z    = ones(n) ./ n
     name = Clapeyron.parameterless_type(typeof(model))
 
-    @testset "lb_volume extensivity ($name)" begin
-        v0   = Clapeyron.lb_volume(model, T0, z)
-        vals = [Clapeyron.lb_volume(model, T0, i*z) for i in is]
-        vi   = is .* v0
-        ok   = all(abs.(vals .- vi) .≤ rtol .* abs.(vi) .+ atol)
-        @test ok
-        ok || @info "lb_volume scaling" fit_scaling(vals, is)
-    end
+    v0   = Clapeyron.lb_volume(model, T0, z)
+    vals = [Clapeyron.lb_volume(model, T0, i*z) for i in is]
+    vi   = is .* v0
+    lb_volume_consistency   = all(abs.(vals .- vi) .≤ rtol .* abs.(vi) .+ atol)
+    @test lb_volume_consistency
+    lb_volume_consistency || @info "$name lb_volume scaling" fit_scaling(vals, is)
 
-    for (f, label) in ((Clapeyron.T_scale, "T_scale"), (Clapeyron.p_scale, "p_scale"))
-        @testset "$label intensivity ($name)" begin
-            s0   = f(model, z)
-            vals = [f(model, i*z) for i in is]
-            ok   = all(abs.(vals .- s0) .≤ rtol * abs(s0) + atol)
-            @test ok
-            ok || @info "$label scaling" fit_scaling(vals, is)
-        end
-    end
+    s0   = Clapeyron.T_scale(model, z)
+    vals = [Clapeyron.T_scale(model, i*z) for i in is]
+    T_scale_consistency   = all(abs.(vals .- s0) .≤ rtol * abs(s0) + atol)
+    @test T_scale_consistency
+    T_scale_consistency || @info "$name T_scale scaling" fit_scaling(vals, is)
+
+    s0   = Clapeyron.p_scale(model, z)
+    vals = [Clapeyron.p_scale(model, i*z) for i in is]
+    p_scale_consistency   = all(abs.(vals .- s0) .≤ rtol * abs(s0) + atol)
+    @test p_scale_consistency
+    p_scale_consistency || @info "$name: p_scale scaling" fit_scaling(vals, is)
+    
 end
 
 function test_recombine(model,innermodels = nothing)
@@ -388,4 +389,30 @@ function testutils_fd_gradient(f, x::AbstractVector; method =:central, eps  =1e-
         error("method must be :central, :forward, or :backward")
     end
     return g
+end
+
+function pure_generic_test(model)
+    Tc,Pc,Vc = crit_pure(model)
+    @test Tc > 0
+    @test Pc > 0
+    @test Vc > 0
+    z1 = SA[1.0]
+    ps,vlsat,vvsat = saturation_pressure(model,z1)
+    vl1 = volume(model,ps1,0.9*Tc1,Clapeyron.SA[1.0],phase = :l)
+    vv1 = volume(model,ps1,0.9*Tc1,Clapeyron.SA[1.0],phase = :v)
+    @test vlsat ≈ vl1 rtol = 1e-6
+    @test vvsat ≈ vv1 rtol = 1e-6
+    Ts,_,_ = saturation_temperature(model,ps)
+    @test Ts ≈ 0.9*Tc1 rtol = 1e-6
+    B2 = second_virial_coefficient(model,Ts,z1)
+    @test B2 < 0
+    
+    is   = exp.(range(log(2), log(20); length=15))
+    name = Clapeyron.parameterless_type(typeof(model))
+
+    vals = [Clapeyron.second_virial_coefficient(model, Ts, i*z1) for i in is]
+    vi   = is .* B2
+    B2_consistency   = all(abs.(vals .- vi) .≤ rtol .* abs.(vi) .+ atol)
+    @test B2_consistency
+    B2_consistency || @info "$name lb_volume scaling" fit_scaling(vals, is)
 end

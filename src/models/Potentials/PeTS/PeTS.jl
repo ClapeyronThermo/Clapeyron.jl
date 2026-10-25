@@ -60,20 +60,21 @@ reference_model(::PeTSModel) = PeTSLJ()
 scaling_model(model::PeTSModel) = ChainLJScaling(model.params)
 default_ignore_missing_singleparams(model::PeTSModel) =  ["segment"]
 
-function a_potential(::PeTSLJ,V,T)
+function a_potential(model::PeTSLJ,V,T)
     z = SA[1.0]
     _data = @f(data)
     return @f(a_ref,_data) + @f(a_pert,_data)
 end
 
-function data(::PeTSLJ,V,T,z)
+function data(model::PeTSLJ,V,T̃,z)
     d̃ = d_pets(T̃)
+    ρ̃  = 1/V
     η = π*ρ̃ *d̃^3 / 6
-    return (η,ρ̃ ,T̃,m̄)
+    return (η,ρ̃ ,T̃)
 end
 
 function d(model::PeTSLJ, V, T, z,_data=@f(data))
-    η,ρ̃ ,T̃,_ = _data
+    η,ρ̃ ,T̃ = _data
     return d_pets(T̃)
 end
 
@@ -86,12 +87,12 @@ end
 a_hs(model::PeTSLJ,V,T,z,_data=@f(data)) = a_ref(model,V,T,z,_data) 
 
 function a_ref(model::PeTSLJ, V, T, z,_data=@f(data))
-    η,ρ̃ ,T̃,_ = _data
+    η,ρ̃ ,T̃ = _data
     return η*(4-3η)/(1-η)^2
 end
 
 function a_pert(model::PeTSLJ, V, T, z,_data=@f(data))
-    η,ρ̃ ,T̃,_ = _data
+    η,ρ̃ ,T̃ = _data
     I1 = evalpoly(η,PeTS_A)
     I2 = evalpoly(η,PeTS_B)
     ã1 = -2*π*ρ̃ *I1/ T̃
@@ -104,9 +105,8 @@ function lb_volume(model::PeTSLJ,T,z)
     return sum(z)* d̃^3 *π/6
 end
 
-function x0_crit_pure(model::PeTSLJ,z)
-    (1.08, log10(lb_v/0.32))
-end
+crit_pure(model::PeTSLJ) = (1.0890488908356557, 0.10204180775002869, 3.234497969253909)
+has_fast_crit_pure(::PeTSLJ) = true
 
 const PeTS_A = (
     0.690603404,

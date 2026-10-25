@@ -56,9 +56,9 @@ const Johnson1993LJConstants = (0.8623085097507421, 2.976218765822098,-8.4022301
       2.593535277438717e2,-2.694523589434903e3,-7.218487631550215e2, 1.721802063863269e2)
 
 
-function lb_volume(::Johnson1993LJ,T,z)
-    return sum(z)/0.9 #maximum density was 0.9
-end
+lb_volume(::Johnson1993LJ,T,z) = sum(z)/0.9 #maximum density was 0.9
+crit_pure(::Johnson1993LJ) = (1.3130000571792064, 0.1299353770567644, 3.225806692394338)
+has_fast_crit_pure(::Johnson1993LJ) = true
 
 """
     Johnson1993LJ <: LJPotentialModel

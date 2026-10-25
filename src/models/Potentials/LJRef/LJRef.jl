@@ -32,8 +32,6 @@ vdW-1 fluid scaling applied to a generic leonard jones model.
 a_res(model,V,T,z) = a_res(reference_model(model),V/h,T/f)
 ```
 """
-LJRef
-
 function LJRef(components;
     ljmodel::EoSModel = Thol2016LJ(),
     idealmodel = BasicIdeal,
@@ -43,13 +41,16 @@ function LJRef(components;
     
     _components = format_components(components)
     params1 = getparams(_components, default_locations(PCSAFT); userlocations = userlocations, verbose = verbose)
-    params2 = transform_params(ChainLJScaling,params1)
+    params2 = transform_params(ChainLJScaling,params1,_components)
     packagedparams = build_eosparam(ChainLJScalingParam,params2)
+    T = eltype(packagedparams)
     init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
-    model = LJRef(_components,packagedparams,init_idealmodel, ljmodel)
+    model = LJRef{T,typeof(init_idealmodel),typeof(ljmodel)}(_components,packagedparams,init_idealmodel, ljmodel)
     set_reference_state!(model,reference_state;verbose)
     return model
 end
 
 reference_model(model::LJRef) = model.ljmodel
 scaling_model(model::LJRef) = ChainLJScaling(model.params)
+
+export LJRef

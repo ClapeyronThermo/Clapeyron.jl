@@ -118,7 +118,7 @@ function data(model::softSAFTModel,V,T,z)
     σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,V,T,z)
     ∑z = sum(z)
     N = N_A*∑z
-    ρS = N/V*m̄
+    ρS = sum(z)*N/V*m̄
     ρ̄  = ρS*σ3
     return σ3,ϵ̄,m̄,ρ̄ 
 end
@@ -129,11 +129,9 @@ function a_res(model::softSAFTModel, V, T, z)
 end
 
 function a_LJ(model::softSAFTModel,V,T,z,_data = @f(data))
-    σ3,ϵ,m̄,_ = _data
-    h = m̄*N_A*σ3
-    V0 = V/(sum(z)*h)
+    _,ϵ,m̄,ρ̄  = _data
     T0 = T/ϵ
-    ai = a_potential(model.ljmodel,V0,T0)
+    ai = a_potential(model.ljmodel,1/ρ̄ ,T0)
     return m̄*ai
 end
 

@@ -115,7 +115,7 @@ function PohlMie_constructor(λ)
     return SingleFluid(components, properties, ancillaries, ideal, residual, references)
 end
 
-struct Pohl2023Mie6{T}
+struct Pohl2023Mie6{T} <: Mie6PotentialModel
     lambda_r::T
 end
 
@@ -161,6 +161,7 @@ function x0_crit_pure(model::Pohl2023Mie6,z)
     return Tr,-log10(rhor)
 end
 
+model_showname(::Pohl2023Mie6) = "Pohl2023Mie6"
 default_references(::Pohl2023Mie6) = ["10.1080/00268979300100411"]
 
 """
