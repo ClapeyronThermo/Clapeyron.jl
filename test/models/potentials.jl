@@ -31,7 +31,7 @@
         system2 = FeANNMie(12.0,6.0,solid = true)
         @test Clapeyron.a_potential(system1,2.0,1.0) ≈ -2.010945465814089 rtol = 1e-6
         @test Clapeyron.a_potential(system2,2.0,1.0) ≈ -2.0329590261282533 rtol = 1e-6
-        test_scales(system,z1)
+        test_scales(system,1.0)
     end=#
 
     @testset "LJRef" begin

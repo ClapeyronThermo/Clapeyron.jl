@@ -23,12 +23,8 @@ lb_volume(model::Thol2016LJ,T,z) = lb_volume(model.model,T,z)
 
 Lennard-Jones Reference equation of state. Valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
 ```
-σᵢⱼ = (σᵢ + σⱼ)/2
-ϵᵢⱼ = (1-kᵢⱼ)√(ϵⱼϵⱼ)
-σ^3 = Σxᵢxⱼσᵢⱼ^3
-ϵ = Σxᵢxⱼϵᵢⱼσᵢⱼ^3/σ^3
-τᵢ = 1.32ϵᵢ/T
-δᵢ = n(Nₐσᵢ^3)/0.31V
+τᵢ = 1.32/T
+δᵢ = 1/0.31V
 a⁰ᵢ(δ,τ) = log(δᵢ) + 1.5log(τᵢ) - 1.515151515τᵢ + 6.262265814
 a⁰(δ,τ,z) = ∑xᵢ(a⁰ᵢ + log(xᵢ))
 τ = 1.32ϵ/T

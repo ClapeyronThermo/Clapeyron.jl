@@ -135,7 +135,6 @@ function test_scales(model, T0 = 300.0; rtol = 1e-14, atol = 1e-15)
     p_scale_consistency   = all(abs.(vals .- s0) .≤ rtol * abs(s0) + atol)
     @test p_scale_consistency
     p_scale_consistency || @info "$name: p_scale scaling" fit_scaling(vals, is)
-    
 end
 
 function test_recombine(model,innermodels = nothing)
@@ -408,9 +407,9 @@ function pure_generic_test(model)
     z1 = Clapeyron.SA[1.0]
     T1 = 0.9*Tc
     ps,vlsat,vvsat = saturation_pressure(model,T1)
-    @show ps,vlsat,vvsat,T1
+    
     @test !isnan(ps) && !isnan(vlsat) && !isnan(vvsat)
-    if isnan(ps) || isnan(vlsat) || isnan(vvsat)
+    if isnan(ps) || isnan(vlsat) || isnan(vvsat) || isnan(T1)
         sat = (ps,vlsat,vvsat)
         @info "$name failed calculation of saturation pressure at T = $T1, got $sat"
     end

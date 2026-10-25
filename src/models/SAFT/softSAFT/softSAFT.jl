@@ -111,9 +111,13 @@ function lb_volume(model::softSAFTModel,T,z)
     return m̄*N_A*σ3*π/6
 end
 
-function x0_volume_liquid(model::softSAFTModel,T,z)
-    v_lb = lb_volume(model,T,z)
-    return v_lb*1.8
+function x0_volume_liquid(model::softSAFTModel,p,T,z)
+    σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,1.0,T,z)
+    f = ϵ̄
+    h = N_A*m̄*σ3
+    r = rgas_ratio(model,model.ljmodel)
+    p0 = p*h/(r*f)
+    return h*x0_volume_liquid(model.ljmodel, p0, T/f, SA[1.0])*sum(z)
 end
 
 function data(model::softSAFTModel,V,T,z)

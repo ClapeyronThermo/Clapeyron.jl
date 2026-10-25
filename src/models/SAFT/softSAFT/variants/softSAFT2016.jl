@@ -11,7 +11,7 @@
 
 ## Description
 
-Variant of `softSAFT` that uses the `Thol2016LJ` model instead of the default  (`Johnson1993LJ`).
+Variant of `softSAFT` that uses the [`Thol2016LJ`](@ref) model instead of the default  ([`Thol2016LJ`](@ref)).
 """
 function softSAFT2016(components;
     idealmodel = BasicIdeal,
@@ -21,7 +21,7 @@ function softSAFT2016(components;
     verbose = false,
     assoc_options = AssocOptions())
 
-    ljmodel = Johnson1993LJ()
+    ljmodel = Thol2016LJ()
     return softSAFT(components;idealmodel,ljmodel,userlocations,ideal_userlocations,reference_state,verbose,assoc_options)
 end
 

@@ -165,7 +165,7 @@ T_scale(model::SingleFluid,z) = model.properties.Tc
 
 p_scale(model::SingleFluid,z) = model.properties.Pc
 
-lb_volume(model::SingleFluid,T,z) = model.properties.lb_volume #finally, an eos model that mentions it max density.
+lb_volume(model::SingleFluid,T,z) = sum(z)*model.properties.lb_volume
 
 Base.length(::SingleFluid) = 1
 

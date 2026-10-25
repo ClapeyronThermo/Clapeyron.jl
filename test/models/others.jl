@@ -327,7 +327,7 @@ end
         #@test Clapeyron.a_res(system3,Vx,Tx,zx) ≈ -6.517704743719013 rtol = 1e-6
         #@test Clapeyron.a_res(system4,Vx,Tx,zx) ≈ -6.5793519769568825 rtol = 1e-6
 
-        test_scales(system1,zx)
+        test_scales(system1)
         test_k(system1)
         test_gibbs_duhem(system1,Vx,Tx,zx)
         test_gibbs_duhem(system3,Vx,Tx,zx)
@@ -387,10 +387,8 @@ end
 end
 
 @testset "SPUNG models" begin
-    @printline
-    let T = 298.15, V = 1e-4,p = 1e5 
-        @test Clapeyron.shape_factors(system, 298.15, [0.5,0.5])[1] ≈ 1.2936797234274697 rtol = 1e-6
-    end
+    system = SPUNG(["octane","butane"])
+    @test Clapeyron.shape_factors(system, 298.15, [0.5,0.5])[1] ≈ 1.4497992067585637 rtol = 1e-6
 end
 
 @testset "lattice models" begin
