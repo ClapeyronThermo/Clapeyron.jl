@@ -76,7 +76,8 @@ Base.show(io::IO,mime::MIME"text/plain",model::SPUNGScaling) = eosshow(io,mime,m
 Base.show(io::IO,model::SPUNGScaling) = eosshow(io,model)
 component_list(model::SPUNGScaling) = component_list(model.shape_model)
 Base.length(model::SPUNGScaling) = length(model.shape_model)
-
+mw(model::SPUNGScaling) = mw(model.shape_model)
+molecular_weight(model::SPUNGScaling,z) = molecular_weight(model.shape_model,z)
 function each_split_model(scaling::SPUNGScaling, I)
     # split the fluid(s), keep the single-component reference cubic whole
     return SPUNGScaling(each_split_model(scaling.shape_model, I), scaling.shape_ref)
@@ -98,7 +99,6 @@ function shape_factors(scaling::SPUNGScaling,reference::EoSModel,T,z)
     shape_ref = scaling.shape_ref
 
     a,b = cubic_ab(shape_model,1.0,T,z)
-    
     n = sum(z)
     #v = V/n
     # initial point
@@ -135,7 +135,7 @@ function shape_factors_cubic1_soave(scaling::SPUNGScaling, reference::EoSModel, 
     return u*u, bc/b0c
 end
 
-function inverse_scale_factors(scaling::SPUNGScaling, reference::EoSModel, T0, z)
+function inverse_shape_factors(scaling::SPUNGScaling, reference, T0, z)
     shape_model = scaling.shape_model
 
     if has_fast_crit_pure(shape_model) && shape_model.alpha isa GeneralizedSuaveAlphaModel && length(z) == 1

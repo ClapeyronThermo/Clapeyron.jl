@@ -41,7 +41,7 @@ function σϵ_m_vdw1f(ϵ,σ,z)
     return σ_mix/(∑z*∑z), σϵ_mix/σ_mix, one(∑z)
 end
 
-function σϵ_m_vdw1f(model::EoSModel,V::Number,T,z)
+function σϵ_m_vdw1f(model::EoSModel,V,T,z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
     m = model.params.segment.values

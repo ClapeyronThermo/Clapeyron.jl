@@ -13,7 +13,7 @@
 
 Variant of `softSAFT` that uses the `Thol2016LJ` model instead of the default  (`Johnson1993LJ`).
 """
-function softSAFT216(components;
+function softSAFT2016(components;
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],

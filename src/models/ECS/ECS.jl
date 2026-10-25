@@ -71,7 +71,7 @@ shape_factors(model,T) = shape_factors(model,T,SA[1.0])
 shape_factors(model,T,z::AbstractVector) = shape_factors(scaling_model(model),reference_model(model),T,z)
 shape_factors(model1,model2,T::Number) = shape_factors(model1,model2,T,SA[1.0])
 
-inverse_shape_factors(model,T) = inverse_shape_factors(model,T,SA[1.0])
+inverse_shape_factors(model,T::Number) = inverse_shape_factors(model,T,SA[1.0])
 inverse_shape_factors(model,T,z::AbstractVector) = inverse_shape_factors(scaling_model(model),reference_model(model),T,z)
 inverse_shape_factors(model1,model2,T::Number) = inverse_shape_factors(model1,model2,T,SA[1.0])
 

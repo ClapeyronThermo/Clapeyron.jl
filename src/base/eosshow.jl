@@ -25,13 +25,13 @@ function show_params(io,model;space = false)
     show_pairs(io,paramnames,pair_separator = ", ",quote_string = false)
 end
 
-function may_show_references(io::IO,model;space = true)
+function may_show_references(io::IO,model;space = false)
     if get(ENV,"CLAPEYRON_SHOW_REFERENCES","FALSE") == "TRUE"
         show_references(io,model;space)
     end
 end
 
-function show_references(io::IO,model;space = true)
+function show_references(io::IO,model;space = false)
     citations = cite(model)
     iszero(length(citations)) && return nothing #do not do anything if there isnt any citations
     println(io)

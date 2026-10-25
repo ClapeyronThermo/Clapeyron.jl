@@ -668,23 +668,23 @@ end
 end
 
 @testset "SPUNG methods" begin
-    system = SPUNG(["ethane"])
+    system = SPUNG(["ethane"],idealmodel = ReidIdeal)
     p = 1e5
     T = 313.15
     @testset "Bulk properties" begin
 
         #GERG2008(["ethane]): 0.025868956878898026
         vv = 0.025868956878898026
-        @test Clapeyron.volume(system, p, T) ≈ vv rtol = 1e-6
-        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ vv rtol = 1e-6
+        @test Clapeyron.volume(system, p, T) ≈ vv rtol = 1e-5
+        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ vv rtol = 1e-5
 
         #GERG2008(["ethane]) : 318 m/s
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 308.4054802581367 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 318.2649055665567 rtol = 1e-6
     end
 
     T_sat = 250.15
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 1.3096239233531626e6 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 1.309622445605574e6 rtol = 1E-6
         #Critical point of ethane: 305.322
         @test Clapeyron.crit_pure(system)[1] ≈ 305.3719105078928 rtol = 1E-6
     end

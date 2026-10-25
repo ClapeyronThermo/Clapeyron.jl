@@ -397,13 +397,14 @@ function pure_generic_test(model)
     @test Pc > 0
     @test Vc > 0
     z1 = SA[1.0]
-    ps,vlsat,vvsat = saturation_pressure(model,z1)
-    vl1 = volume(model,ps1,0.9*Tc1,Clapeyron.SA[1.0],phase = :l)
-    vv1 = volume(model,ps1,0.9*Tc1,Clapeyron.SA[1.0],phase = :v)
+    T1 = 0.9*Tc
+    ps,vlsat,vvsat = saturation_pressure(model,T1)
+    vl1 = volume(model,ps1,T1,z1,phase = :l)
+    vv1 = volume(model,ps1,T1,z1,phase = :v)
     @test vlsat ≈ vl1 rtol = 1e-6
     @test vvsat ≈ vv1 rtol = 1e-6
     Ts,_,_ = saturation_temperature(model,ps)
-    @test Ts ≈ 0.9*Tc1 rtol = 1e-6
+    @test Ts ≈ T1 rtol = 1e-6
     B2 = second_virial_coefficient(model,Ts,z1)
     @test B2 < 0
     
