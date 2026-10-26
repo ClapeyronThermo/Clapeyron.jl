@@ -222,7 +222,8 @@ end
 paramtype(::FeANNMie{T}) where T = T
 paramtype(::Type{FeANNMie{T}}) where T = T
 component_list(model::FeANNMie) = ["Mie ($(model.lambda_r)-$(model.lambda_a)) fluid"]
-lb_volume(::FeANNMie,T,z) = π/6 #TODO: improve for solids
+lb_volume(::FeANNMie,T,z) = sum(z)*π/6 #TODO: improve for solids
+p_scale(::FeANNMie,z) = 1.0
 
 function x0_volume_liquid(model::FeANNMie,p,T,z)
     α = mie_α_const(model)

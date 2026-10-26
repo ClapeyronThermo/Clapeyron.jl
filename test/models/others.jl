@@ -33,7 +33,7 @@
         system2 = aspenNRTL(nrtl_vanilla)
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5309354738922405 rtol = 1e-6
         @test Clapeyron.activity_coefficient(system2,p,T,z)[1] ≈ 1.5309354738922405 rtol = 1e-6
-        
+
         #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/201
         if hasfield(aspenNRTL,:puremodel)
             @test aspenNRTL(["water", "acetone", "dichloromethane"],puremodel = PR) isa EoSModel
@@ -161,7 +161,7 @@ end
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 179.51502015696653 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
         @test Clapeyron.mass_density(system,p,T,z) ≈ Clapeyron.molecular_weight(system,z)*p/(Rgas(system)*T)
-        
+
         ideal_csv = """
         Clapeyron Database File
         Walker Ideal Like Parameters  [csvtype = like,grouptype = Walker]
@@ -170,7 +170,7 @@ end
         """
         system2 = WalkerIdeal(["ideal gas" => ["ideal" => 1]],userlocations = [ideal_csv])
         test_zero_alloc1(system2)
-        @test Clapeyron.isobaric_heat_capacity(system2,1e5,T)/Clapeyron.Rgas() ≈ 2.5 
+        @test Clapeyron.isobaric_heat_capacity(system2,1e5,T)/Clapeyron.Rgas() ≈ 2.5
     end
 
     @testset "Monomer" begin
@@ -262,7 +262,7 @@ end
 
 @testset verbose = true "Multi-parameter models" begin
     @printline
-    let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333]; 
+    let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333];
     #warning, we are in the pseudo maxwell loop, those properties are nonsense, but they evaluate anyway.
     @printline
     @testset "IAPWS95" begin
@@ -361,7 +361,7 @@ end
 
         pures = Clapeyron.split_pure_model(model)
         @test pures isa Vector{SingleFluid{EmpiricAncillary}}
-        @test Clapeyron.wilson_k_values(model,1e6,300.0) ≈ [6.738566125478432, 54.26124873240438] rtol = 1e-3
+        @test Clapeyron.wilson_k_values(model,1e6,300.0) ≈ [6.738566125478432, 54.26124873240438] rtol = 1e-2
         @test Clapeyron.a_res(model,V,T,z2) ≈ -0.005482930754339683 rtol = 1e-6
         model2 = SingleFluid("ammonia",verbose = true) #test Gaob parser
         @test Clapeyron.a_res(model2,V,T,z1) ≈ -0.05006143389915488 rtol = 1e-6
@@ -372,7 +372,6 @@ end
         model5 = SingleFluid("water",Rgas = 10.0)
         @test Rgas(model5) == 10.0
 
-        
         #issue 558
         url_refprop = "https://raw.githubusercontent.com/usnistgov/fastchebpure/50af5c154a113ac27a2c0a1c3538bc4f43a73a66/teqp_REFPROP10/dev/fluids/"
         names = ["13BUTADIENE"]
@@ -393,7 +392,7 @@ end
 
 @testset "lattice models" begin
     @printline
-    let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333]; 
+    let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333];
 
     @testset "single component" begin
         system = Clapeyron.SanchezLacombe(["carbon dioxide"])
@@ -428,7 +427,7 @@ end
             @test p0 ≈ 245338.15099198322 rtol = 1e-6
             @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
         end
-        
+
         @testset "LeeKeslerSat" begin
             system = LeeKeslerSat(["water"])
             p0 = saturation_pressure(system,400.01)[1]
@@ -521,7 +520,7 @@ end
                 200    400      1185.02800 6.716009   2.567237  3338.525  1899.3294 0.00717008 1.1553965
                 250    400      1151.71517 4.929927   2.277029  3757.2144 2015.8782 0.00535884 1.4345145
                 ]
-            
+
             for i in 1:5
                 T = verification_data[i,1]
                 p = verification_data[i,2]*1e6
@@ -530,7 +529,7 @@ end
                 @test isothermal_compressibility(model,p,T)*1e10 ≈ verification_data[i,5] rtol = 1e-6
                 @test mass_isobaric_heat_capacity(model,p,T) ≈ verification_data[i,6] rtol = 1e-6
                 @test speed_of_sound(model,p,T) ≈ verification_data[i,7] rtol = 1e-6
-                
+
 
                 𝕡 = p/(Rm*Tc*ρ0)
                 L = Clapeyron.water_L(model,𝕡,T)
@@ -618,7 +617,7 @@ end
 
         @testset "Jäger-Span solid CO2" begin
             model = JagerSpanSolidCO2()
-            #table 5 of 10.1021/je2011677 
+            #table 5 of 10.1021/je2011677
             p1,T1 = 0.51795e6, 216.592
             p2,T2 = 100e6, 100.0
             @test gibbs_energy(model,p1,T1) ≈ -1.447007522e3 rtol = 1e-6

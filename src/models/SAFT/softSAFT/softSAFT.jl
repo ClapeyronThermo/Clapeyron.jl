@@ -122,9 +122,7 @@ end
 
 function data(model::softSAFTModel,V,T,z)
     σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,V,T,z)
-    ∑z = sum(z)
-    N = N_A*∑z
-    ρS = sum(z)*N/V*m̄
+    ρS = m̄*(sum(z)/V) * N_A
     ρ̄  = ρS*σ3
     return σ3,ϵ̄,m̄,ρ̄ 
 end

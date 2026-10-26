@@ -1,5 +1,5 @@
 """
-    softSAFT2016Model <: softSAFTModel
+    softSAFT2016::softSAFT
 
     softSAFT2016(components; 
     idealmodel = BasicIdeal,

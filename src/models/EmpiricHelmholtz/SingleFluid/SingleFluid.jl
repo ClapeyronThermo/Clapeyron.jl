@@ -220,22 +220,21 @@ end
 
 function x0_volume_liquid_lowT(model::SingleFluid,p,T,z)
     _1 = one(Base.promote_eltype(model,p,T,z))
+    isnan(T+p) && return zero(_1)/zero(_1)
+    
     lb_v = lb_volume(model,T,z)*_1
     vl_lbv = 1.01*lb_v
     ancillary = model.ancillaries
     Tc = model.properties.Tc
-
-    if !isfinite(model.properties.Ttp) #we have triple point information:
+    Ttp0 = model.properties.Ttp
+    if 0 < Ttp0 < Tc #we have triple point information:
         Ttp = model.properties.Ttp
-    else #we suppose triple point = 0.4 Tc
-        Ttp = 0.4*model.properties.Tc
+    else #we suppose triple point = 0.5 Tc
+        Ttp = 0.5*model.properties.Tc
     end
 
-    isnan(T+p) && return zero(_1)/zero(_1)
     T > Tc && return vl_lbv
-
     Tx = max(T,Ttp*one(T))
-
     vᵢ = volume(ancillary,p,Tx,z,phase = :l)
     isnan(vᵢ) && return vl_lbv
 
