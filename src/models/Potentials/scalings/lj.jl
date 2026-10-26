@@ -21,8 +21,9 @@ function σϵ_m_vdw1f(ϵ,σ,m,z)
     end
     return σ_mix/(m̄*m̄), σϵ_mix/σ_mix, m̄/∑z
 end
+σϵ_m_vdw1f(ϵ,σ,z) = σϵ_vdw1f(ϵ,σ,z)
 
-function σϵ_m_vdw1f(ϵ,σ,z)
+function σϵ_vdw1f(ϵ,σ,z)
     σϵ_mix = zero(Base.promote_eltype(ϵ,σ,z))
     σ_mix = zero(Base.promote_eltype(σ,z))
     ∑z = zero(eltype(z))
@@ -31,7 +32,7 @@ function σϵ_m_vdw1f(ϵ,σ,z)
         zii = zi*zi
         σϵ_mix += zii*σ3*ϵ[i,i]
         σ_mix += zii*σ3
-        ∑z += _zi
+        ∑z += zi
         for j ∈ 1:(i-1)
             σ3ij,zij = σ[i,j]^3,zi*z[j]
             σϵ_mix += 2*zij*σ3ij*ϵ[i,j]

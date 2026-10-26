@@ -102,7 +102,11 @@ end
 
 function lb_volume(model::PeTSLJ,T,z)
     d̃ = d_pets(T)
-    return sum(z)* d̃^3 *π/6
+    return sum(z)*π*d̃^3 / 6
+end
+
+function x0_volume_liquid(model::PeTSLJ,p,T,z)
+    return 1.8*lb_volume(model,T,z)
 end
 
 crit_pure(model::PeTSLJ) = (1.0890488908356557, 0.10204180775002869, 3.234497969253909)

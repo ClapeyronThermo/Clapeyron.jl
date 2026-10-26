@@ -148,6 +148,7 @@ end
 function x0_sat_pure(model::CorrespondingStatesModel, T, crit = nothing)
     f, h = shape_factors(model, T)
     T0 = T/f
+    @show f
     if crit === nothing
         v0l, v0v = x0_sat_pure(reference_model(model), T0)
     else
