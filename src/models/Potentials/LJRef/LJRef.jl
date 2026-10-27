@@ -53,4 +53,10 @@ end
 reference_model(model::LJRef) = model.ljmodel
 scaling_model(model::LJRef) = ChainLJScaling(model.params)
 
+function set_k!(model::LJRef,k)
+    epsilon = model.params.epsilon
+    epsilon = epsilon_LorentzBerthelot!(epsilon,k)
+    return model
+end
+
 export LJRef

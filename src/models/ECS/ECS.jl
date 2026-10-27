@@ -109,8 +109,10 @@ end
 function x0_volume_liquid(model::CorrespondingStatesModel, p, T, z)
     f, h = shape_factors(model, T, z)
     r = rgas_ratio(model)
+    T0 = T/f
     p0 = p*h/(r*f)
-    return h*x0_volume_liquid(reference_model(model), p0, T/f, SA[1.0])*sum(z)
+    v0l = x0_volume_liquid(reference_model(model),p0,T0,SA[1.0])
+    return h*v0l*sum(z)
 end
 
 function x0_volume_gas(model::CorrespondingStatesModel,p,T,z)
@@ -122,13 +124,19 @@ function x0_volume_gas(model::CorrespondingStatesModel,p,T,z)
     return v0v*h*sum(z)
 end
 
-function volume_impl(model::CorrespondingStatesModel,p,T,z,phase,threaded,vol0)
+function volume_impl(model::CorrespondingStatesModel,p,T,z,phase,threaded,_vol0)
     f,h = shape_factors(model,T,z)
     r = rgas_ratio(model)
     T0 = T/f
     p0 = p*h/(f*r)
-    v0 = volume(reference_model(model),p0,T0,SA[1.0];phase,threaded,vol0)
-    return v0*h*sum(z)
+    n = sum(z)
+    if _vol0 !== nothing && !isnan(_vol0)
+        vol0 = _vol0/(h*n)
+        v0 = volume(reference_model(model),p0,T0,SA[1.0];phase,threaded,vol0)
+    else
+        v0 = volume(reference_model(model),p0,T0,SA[1.0];phase,threaded)
+    end
+    return v0*h*n
 end
 
 function T_scale(model::CorrespondingStatesModel,z)
@@ -148,7 +156,6 @@ end
 function x0_sat_pure(model::CorrespondingStatesModel, T, crit = nothing)
     f, h = shape_factors(model, T)
     T0 = T/f
-    @show f
     if crit === nothing
         v0l, v0v = x0_sat_pure(reference_model(model), T0)
     else
@@ -161,6 +168,13 @@ function x0_sat_pure(model::CorrespondingStatesModel, T, crit = nothing)
         v0l, v0v = x0_sat_pure(reference_model(model), T0, (Tc0, Pc0, Vc0))
     end
     return (v0l*h, v0v*h)
+end
+
+function x0_psat(model::CorrespondingStatesModel, T)
+    f, h = shape_factors(model, T)
+    p0 = x0_psat(reference_model(model), T/f)
+    r  = rgas_ratio(model)
+    return r*f/h*p0
 end
 
 function second_virial_coefficient_impl(model::CorrespondingStatesModel,T,z)

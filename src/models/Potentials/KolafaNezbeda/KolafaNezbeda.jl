@@ -10,6 +10,12 @@ function transform_params(::Type{KolafaNezbeda},params)
     return saft_lorentz_berthelot(params)
 end
 
+function set_k!(model::KolafaNezbedaModel,k)
+    epsilon = model.params.epsilon
+    epsilon = epsilon_LorentzBerthelot!(epsilon,k)
+    return model
+end
+
 reference_model(::KolafaNezbedaModel) = KolafaNezbedaLJ()
 scaling_model(model::KolafaNezbedaModel) = LJScaling(model.params)
 default_ignore_missing_singleparams(model::KolafaNezbedaModel) =  ["segment"]

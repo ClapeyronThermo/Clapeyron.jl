@@ -730,6 +730,8 @@ end
         T_nearc = 1.084513 #The last value of their critical point is actually above ours.
         psat_nearc = 1.374330e+06
         @test saturation_pressure(system,T_nearc)[1] ≈ psat_nearc rtol = 1e-6
+
+        #really important test: we check if the corresponding states model can actually act as a standalone EoS model.
         @test saturation_pressure(system,T_nearc,IsoFugacitySaturation(;crit))[1] ≈ psat_nearc rtol = 1e-6
     end
 

@@ -8,6 +8,12 @@ default_locations(::Type{PeTS}) = ["SAFT/PCSAFT","properties/molarmass.csv"]
 default_references(::Type{PeTS}) = ["10.1080/00268976.2018.1447153"]
 transform_params(::Type{PeTS},params) = transform_params_lj(params)
 
+function set_k!(model::PeTSModel,k)
+    epsilon = model.params.epsilon
+    epsilon = epsilon_LorentzBerthelot!(epsilon,k)
+    return model
+end
+
 """
     PeTSModel <: EoSModel
 
