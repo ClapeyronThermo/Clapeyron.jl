@@ -494,12 +494,12 @@ end
 
 #edge pressure/edge temperature
 
-function _edge_pressure(model::ActivityModel,T,z,v0 = nothing,crit_retry = false)
+function _edge_pressure(model::ActivityModel,T,z,v0,crit_retry::Bool)
     wrapper = PTFlashWrapper(model,NaN,T,z,:vle)
     return _edge_pressure(wrapper,T,z,v0,crit_retry)
 end
 
-function _edge_temperature(model::ActivityModel,p,z,v0 = nothing)
+function _edge_temperature(model::ActivityModel,p,z,v0)
     wrapper = PTFlashWrapper(model,p,NaN,z,:vle)
     return _edge_temperature(wrapper,p,z,v0)
 end

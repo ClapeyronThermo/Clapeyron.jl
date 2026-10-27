@@ -71,14 +71,15 @@ Returns an initial guess to the gas volume, depending of pressure `p`, temperatu
 """
 function x0_volume_gas(model,p,T,z)
     B = second_virial_coefficient(model,T,z)
-    nRT = sum(z)*Rgas(model)*T
+    R = Rgas(model)
+    nRT = sum(z)*R*T
     pmax = -0.25*nRT/B
     if B >= 0 || !isfinite(B)
         return nRT/p
     elseif pmax < p && B < 0
         return -2*B
     else
-        return volume_virial(B,p,T,z)
+        return volume_virial(B,p,T,z,R)
     end
 end
 
@@ -265,6 +266,7 @@ function x0_sat_pure_virial(model,T,z = SA[1.0])
 
     while a volume calculation is harder
     =#
+
     if isnan(B)
         x0l = 3*lb_v
         px = pressure(model,x0l,T,z)
@@ -296,7 +298,11 @@ function x0_sat_pure_virial(model,T,z = SA[1.0])
     at Tr = 1, T̃max is Ωb/Ωa. we can check T̃/T̃max to see how close (or far) we are to the critical point
     =#
 
-    a,b = vdw_coefficients(vl/∑z,pl0,vv_virial/∑z,pv_eos,T)
+    if isnan(vl)
+        return pressure(model,4*lb_v,T,z), 4*lb_v, vv_virial + 2*lb_v
+    end
+
+    a,b = vdw_coefficients(vl/∑z,pl0,vv_virial/∑z,pv_eos,RT)
     if b < lb_v
         b = lb_v
         a = RT*(b - B)
@@ -305,10 +311,11 @@ function x0_sat_pure_virial(model,T,z = SA[1.0])
     T̃max = 0.2962962962962963 # Ωb/Ωa = 8/27
     T̃min = 0.1*T̃max
     if isnan(T̃)
+        
         #fails on two ocassions:
         #near critical point, or too low.
         #return high pressure estimate
-        return pressure(model,4*lb_v,T,z),4*lb_v,vv_virial + 2*lb_v
+        return x0_sat_pure_spinodal(model,T,z,vl,vv_B)
     end
 
     if T̃ >= T̃max
@@ -337,9 +344,8 @@ function x0_sat_pure_virial(model,T,z = SA[1.0])
     return psat,vl0_B,vv_B
 end
 
-function vdw_coefficients(vl,pl,vv,pv,T)
+function vdw_coefficients(vl,pl,vv,pv,RT)
     #px = RT/(vx-b) - a/vx/vx
-    RT = R̄*T
     βl = pl*vl*vl/RT # vl*vl/(vl - b) - a/RT
     βv = pv*vv*vv/RT # vv*vv/(vv - b) - a/RT
     Δβ = βv - βl
@@ -447,7 +453,7 @@ function liquid_pressure_from_virial(model,T,z =SA[1.0],B = second_virial_coeffi
     RT = Rgas(model)*T
     n = sum(z)
     #vv_virial = -2*B #maximum gas volume predicted by virial equation
-    pv_virial = -0.25*n*Rgas(model)*T/B #maximum virial predicted pressure
+    pv_virial = -0.25*n*RT/B #maximum virial predicted pressure
     γT = pv_eos/pv_virial
 
 

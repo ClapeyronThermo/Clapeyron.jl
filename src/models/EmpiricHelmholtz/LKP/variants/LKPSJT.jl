@@ -37,6 +37,7 @@ end
 """
     LKPSJT <: LKPModel
     LKPSJT(components;
+        version = 2,
         idealmodel=BasicIdeal,
         userlocations = String[],
         ideal_userlocations = String[],
@@ -61,9 +62,9 @@ end
 ## Description
 Lee-Kesler-Plöker-equation of state, Sabozin-Jäger-Thol enhancement. Corresponding states using interpolation between a simple, spherical fluid (methane, `∅`)  and a reference fluid (n-octane, `ref`):
 
-Instead of using the original BWR formulation, the reference equations of state of methane and octane are used.
+Instead of using the original BWR formulation, multiparameter equations of state are used.
 ```
-αᵣ = (1 - ωᵣ)*αᵣ(δ,τ,params(∅)) + ωᵣ*αᵣ(δ,τ,params(ref))
+αᵣ = (1 - ωᵣ)*αᵣ(simple,δ,τ) + ωᵣ*αᵣ(reference,δ,τ)
 τ = Tr/T
 δ = Vr/V
 ωᵣ = (ω̄ - ω(∅))/(ω(ref) - ω(∅))
@@ -75,11 +76,25 @@ Vcᵢⱼ = 0.125*(∛Vcᵢ + ∛Vcⱼ)^3
 η = 0.25
 ```
 
+If `Vcᵢ` is not provided, it can be estimated from the critical temperature and pressure:
+
+```
+Zcᵢ = Zᴵ + Zᴵᴵ ω
+```
+
+There are two versions of this EoS, that can be selected via the `version` argument.
+
+- First version (`version = 1`): the simple fluid is the methane multiparameter EoS, and the reference fluid is octane. 
+  For estimating the critical volumes, `Zc = 0.2905 - 0.085ω` is used. 
+- Second version (`version = 1`): the simple fluid is replaced by the propane multiparameter EoS. 
+  For estimating the critical volumes, Zc is an interpolation of the critical compressibilities from the simple and reference fluids: `Zc(ω0) = Z0, Zc(ωref) = Zref`
+- `version = 2` : interpolation between the simple and the reference fluid.
+
 ## Model Construction Examples
 ```julia
 # Using the default database
 model = LKPSJT("water") #single input
-model = LKPSJT(["water","ethanol"]) #multiple components
+model = LKPSJT(["water","ethanol"],version = 1) #multiple components, using original version
 model = LKPSJT(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
 model = enhancedLKP(["water","ethanol"], idealmodel = ReidIdeal) #enhancedLKP is just an alias to LKPSJT
 
@@ -116,32 +131,65 @@ function LKPSJT(components;
     userlocations = String[], 
     ideal_userlocations = String[],
     reference_state = nothing,
-    verbose = false)
+    verbose = false,
+    version = 2,)
 
-    formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(LKPSJT); userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc"])
-    params = transform_params(LKPSJT,params,formatted_components)
-    packagedparams = build_eosparam(LKPParam,params)
-    references = default_references(LKPSJT)
-    methane = SingleFluid("methane",verbose = verbose).residual
-    octane = SingleFluid("octane",verbose = verbose).residual
-    init_idealmodel = init_model(idealmodel,formatted_components,references,verbose)
-    model = LKPSJT(formatted_components,packagedparams,methane,octane,init_idealmodel,references)
-    set_reference_state!(model,reference_state;verbose)
-    return model
+    reference_model = lkpsjt(version,verbose = verbose)
+    return LKP(components; idealmodel, reference_model, userlocations, ideal_userlocations, reference_state, verbose)
 end
 
 export LKPSJT, enhancedLKP
 
-lkp_params_simple(model::LKPSJTModel) = (false, 0.01142)
-lkp_params_reference(model::LKPSJTModel) = (true, 0.3978)
+struct LKPMultiparameter{S}  <: LKPReferenceModel
+    simple::S
+    reference::S
+    ZI::Float64
+    ZII::Float64
+end
 
-function reduced_a_res_lkp(model::LKPSJTModel,δ,τ,δr,params)
-    is_ref = first(params)
-    if is_ref
-        #use the reference equations of state.
-        return reduced_a_res(model.octane,δ,τ)
+model_showname(::LKPMultiparameter) = "LKPMultiparameter"
+
+function show_info_lkp(io,model::LKPMultiparameter)
+    print(io,"LKP-SJT (")
+    print(io,"simple fluid = ")
+    print(io,only(component_list(model.simple)))
+    print(io,", reference fluid = ")
+    print(io,only(component_list(model.reference)))
+    print(io,")")
+end
+
+function lkpsjt(version;verbose = false)
+    if version == 1
+        simple = SingleFluid("methane",verbose = verbose)
     else
-        return reduced_a_res(model.methane,δ,τ)
+        simple = PropaneRef()
     end
+    
+    reference = SingleFluid("octane",verbose = verbose)
+    version == 1 && return LKPMultiparameter(simple,reference,0.2905,- 0.085)
+    
+    p0,pref = simple.properties,reference.properties
+    ω0   = simple.properties.acentricfactor
+    ωref = reference.properties.acentricfactor
+    Zc0   = p0.Pc / (p0.Rgas * p0.Tc * p0.rhoc)
+    Zcref = pref.Pc / (pref.Rgas * pref.Tc * pref.rhoc)
+    ZI  = Zc0 - ((Zc0 - Zcref) / (ω0 - ωref)) * ω0
+    ZII = (Zc0 - Zcref) / (ω0 - ωref)
+    return LKPMultiparameter(simple,reference,ZI,ZII)
+end
+
+function lkp_Zc(model::LKPMultiparameter,ω)
+    return model.ZI + model.ZII*ω
+end
+
+function a_res_lkp(model::LKPMultiparameter,V,T,data)
+    T̄,V̄,ω̄ = data
+    δ = V̄/V
+    τ = T̄/T
+    αr_0    = reduced_a_res(model.simple,δ,τ)
+    αr_ref  = reduced_a_res(model.reference,δ,τ)
+    ω0 = model.simple.properties.acentricfactor
+    ωref = model.reference.properties.acentricfactor
+    ωᵣ = (ω̄ - ω0)/(ωref - ω0)
+    return (1 - ωᵣ)*αr_0 + ωᵣ*αr_ref
 end

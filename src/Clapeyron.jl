@@ -155,11 +155,12 @@ include("models/ideal/BurkhardtIdeal.jl")
 include("models/utility/EoSVectorParam.jl")
 include("models/utility/ZeroResidual.jl")
 include("models/utility/PTFlashWrapper.jl")
+include("models/ECS/ECS.jl")
 
 #Empiric Models uses CompositeModel
 include("models/CompositeModel/CompositeModel.jl")
 
-#softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
+#Multiparameter EoS
 include("models/EmpiricHelmholtz/SingleFluid/SingleFluid.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/PseudoPure.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/IAPWS95.jl")
@@ -167,7 +168,16 @@ include("models/EmpiricHelmholtz/SingleFluid/variants/PropaneRef.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/Ammonia2023.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/TholLJ.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/XiangDeiters.jl")
-include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
+
+#potential models
+include("models/Potentials/Potentials.jl")
+include("models/Potentials/PeTS/PeTS.jl")
+include("models/Potentials/Thol2016LJ/Thol2016LJ.jl")
+include("models/Potentials/Johnson1993LJ/Johnson1993LJ.jl")
+include("models/Potentials/FeANNMie/FeANNMie.jl")
+include("models/Potentials/KolafaNezbeda/KolafaNezbeda.jl")
+include("models/Potentials/LJRef/LJRef.jl")
+include("models/Potentials/Pohl2023Mie6/Pohl2023Mie6.jl")
 
 #multifluid models
 include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
@@ -206,14 +216,14 @@ include("models/SAFT/PCSAFT/variants/gcPCPSAFT/heterogcPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/gcPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/CPPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/iPCSAFT.jl")
+include("models/SAFT/softSAFT/softSAFT.jl")
+include("models/SAFT/softSAFT/variants/softSAFT2016.jl")
+include("models/SAFT/softSAFT/variants/solidsoftSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
 include("models/SAFT/CPA/variants/sCPA.jl")
 include("models/SAFT/SAFTVRSW/SAFTVRSW.jl")
 include("models/SAFT/LJSAFT/LJSAFT.jl")
-include("models/SAFT/softSAFT/softSAFT.jl")
-include("models/SAFT/softSAFT/variants/softSAFT2016.jl")
-include("models/SAFT/softSAFT/variants/solidsoftSAFT.jl")
 include("models/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRMie15.jl")
@@ -276,17 +286,14 @@ include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaHeyen.jl")
 include("models/cubic/PatelTeja/variants/YFR.jl")
 
+#Corresponding states based on SRK
+include("models/ECS/variants/SPUNG.jl")
+
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
 include("models/Virial/Virial.jl")
-
-include("models/ECS/ECS.jl")
-include("models/ECS/variants/SPUNG.jl")
-include("models/Potentials/PeTS/PeTS.jl")
-include("models/Potentials/FeANNMie/FeANNMie.jl")
-include("models/Potentials/KolafaNezbeda/KolafaNezbeda.jl")
 
 #electrolytes
 include("models/Electrolytes/electrolytes.jl")

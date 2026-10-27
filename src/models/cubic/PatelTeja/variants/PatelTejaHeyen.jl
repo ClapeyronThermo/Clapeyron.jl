@@ -85,8 +85,8 @@ end
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Vc_fit`: Single Parameter (`Float64`) - Fitted Critical Volume `[m³·mol⁻¹]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `k`: Pair Parameter (`Float64`) (optional)
-- `l`: Pair Parameter (`Float64`) (optional)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
+- `l`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 - `acentricfactor`: Single Parameter (`Float64`) (optional) - acentric factor, used to fit the critical volume if no value is provided.
 
 

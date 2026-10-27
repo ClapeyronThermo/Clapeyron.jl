@@ -8,9 +8,22 @@ struct softSAFTParam <: EoSParam
 end
 
 abstract type softSAFTModel <: SAFTModel end
-@newmodel softSAFT softSAFTModel softSAFTParam
+
+struct softSAFT{T,LJ} <: softSAFTModel
+    components::Array{String,1}
+    sites::SiteParam
+    params::softSAFTParam
+    idealmodel::T
+    assoc_options::AssocOptions
+    references::Array{String,1}
+    ljmodel::LJ
+end
+
+export softSAFT
+
 default_references(::Type{softSAFT}) = ["10.1080/002689797170707","10.1080/00268979300100411"]
 default_locations(::Type{softSAFT}) = ["SAFT/softSAFT","properties/molarmass.csv"]
+
 function transform_params(::Type{softSAFT},params)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
@@ -55,38 +68,61 @@ end
 
 ## Input models
 - `idealmodel`: Ideal Model
+- `ljmodel`: unscaled potential model, it must support `Clapeyron.a_potential(model,V,T)`
 
 ## Description
 
-Soft SAFT, with Lennard-Jones function from Johnson et al. (1993)
+Soft SAFT, with an LJ potential model.
+By default, it uses the Lennard-Jones function from Johnson et al. (1993) (`Johnson1993LJ`)[@ref]
 
 ## References
 1. Johnson, J. K., Zollweg, J. A., & Gubbins, K. E. (1993). The Lennard-Jones equation of state revisited. Molecular physics, 78(3), 591–618. [doi:10.1080/00268979300100411](https://doi.org/10.1080/00268979300100411)
 2. FELIPE J. BLAS and LOURDES F. VEGA. (1997). Thermodynamic behaviour of homonuclear and heteronuclear Lennard-Jones chains with association sites from simulation and theory. Molecular physics, 92(1), 135–150. [doi:10.1080/002689797170707](https://doi.org/10.1080/002689797170707)
 """
-softSAFT
+function softSAFT(components;
+    idealmodel = BasicIdeal,
+    ljmodel::EoSModel = Johnson1993LJ(),
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
+    assoc_options = AssocOptions())
 
-export softSAFT
+    _components = format_components(components)
+    params1 = getparams(_components, default_locations(softSAFT); userlocations = userlocations, verbose = verbose)
+    AssocOptions!(params1,assoc_options)
+    params3 = transform_params(softSAFT,params1)
+    params4 = assoc_mix!(params3,_components)
+    packagedparams = build_eosparam(softSAFTParam,params4)
+    init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
+    references = default_references(softSAFT)
+    model = softSAFT(_components,params4["sites"],packagedparams,init_idealmodel,params4["assoc_options"], references, ljmodel)
+    set_reference_state!(model,reference_state;verbose)
+    return model
+end
 
-recombine_impl!(model::softSAFTModel) = recombine_saft!(model)
+function recombine_impl!(model::softSAFTModel)
+    recombine_saft!(model)
+    recombine!(model.ljmodel)
+end
 
 function lb_volume(model::softSAFTModel,T,z)
     σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,1.0,T,z)
     return m̄*N_A*σ3*π/6
 end
 
-
-function x0_volume_liquid(model::softSAFTModel,T,z)
-    v_lb = lb_volume(model,T,z)
-    return v_lb*1.8
+function x0_volume_liquid(model::softSAFTModel,p,T,z)
+    σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,1.0,T,z)
+    f = ϵ̄
+    h = N_A*m̄*σ3
+    r = rgas_ratio(model,model.ljmodel)
+    p0 = p*h/(r*f)
+    return h*x0_volume_liquid(model.ljmodel, p0, T/f, SA[1.0])*sum(z)
 end
-
 
 function data(model::softSAFTModel,V,T,z)
     σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,V,T,z)
-    ∑z = sum(z)
-    N = N_A*∑z
-    ρS = N/V*m̄
+    ρS = m̄*(sum(z)/V) * N_A
     ρ̄  = ρS*σ3
     return σ3,ϵ̄,m̄,ρ̄ 
 end
@@ -96,51 +132,11 @@ function a_res(model::softSAFTModel, V, T, z)
     return @f(a_LJ,_data) + @f(a_chain) + @f(a_assoc)
 end
 
-function a_LJ(model::softSAFTModel, V, T, z,_data = @f(data))
-    σ3,ϵ̄,m̄,ρ̄  = _data
-    T̄ = T/ϵ̄
-    γ = 3
-    F = exp(-γ*ρ̄*ρ̄)
-    x = softSAFTconsts.x
-    T2 = T̄*T̄
-    T3 = T2*T̄
-    T4 = T2*T2
-    T_inv = ϵ̄/T
-    T_inv2 = 1/T2
-    T_inv3 = 1/T3
-    T_inv4 = 1/T4
-
-    a1 = x[1]*T̄ + x[2]*sqrt(T̄) + x[3] + x[4]*T_inv + x[5]*T_inv2
-    a2 = x[6]*T̄ + x[7] + x[8]*T_inv + x[9]*T_inv2
-    a3 = x[11] + x[10]*T̄ + x[12]*T_inv
-    a4 = x[13]
-    a5 = x[14]*T_inv + x[15]*T_inv2
-    a6 = x[16]*T_inv
-    a7 = x[17]*T_inv + x[18]*T_inv2
-    a8 = x[19]*T_inv2
-    
-    b1 = x[20]*T_inv2 + x[21]*T_inv3
-    b2 = x[22]*T_inv2 + x[23]*T_inv4
-    b3 = x[24]*T_inv2 + x[25]*T_inv3
-    b4 = x[26]*T_inv2 + x[27]*T_inv4
-    b5 = x[28]*T_inv2 + x[29]*T_inv3
-    b6 = x[30]*T_inv2 + x[31]*T_inv3 + x[32]*T_inv4
-    G1 = (1-F)/(2γ)
-    ρ̄2 = ρ̄*ρ̄
-    ρ̄3 = ρ̄*ρ̄2
-    ρ̄4 = ρ̄2*ρ̄2
-    ρ̄5 = ρ̄3*ρ̄2
-    ρ̄6 = ρ̄3*ρ̄3
-    ρ̄8 = ρ̄4*ρ̄4
-    ρ̄10 = ρ̄5*ρ̄5
-    G2 = -(F*ρ̄2 - 2*G1) / 2γ
-    G3 = -(F*ρ̄4 - 4*G2) / 2γ
-    G4 = -(F*ρ̄6 - 6*G3) / 2γ
-    G5 = -(F*ρ̄8 - 8*G4) / 2γ
-    G6 = -(F*ρ̄10 - 10*G5) / 2γ
-    bG = b1*G1 + b2*G2 + b3*G3 + b4*G4 + b5*G5 + b6*G6
-    ā = (a1,a2/2,a3/3,a4/4,a5/5,a6/6,a7/7,a8/8)
-    return m̄*(evalpoly(ρ̄,ā)*ρ̄ + bG)*T_inv
+function a_LJ(model::softSAFTModel,V,T,z,_data = @f(data))
+    _,ϵ,m̄,ρ̄  = _data
+    T0 = T/ϵ
+    ai = a_potential(model.ljmodel,1/ρ̄ ,T0)
+    return m̄*ai
 end
 
 function a_chain(model::softSAFTModel, V, T, z,_data = @f(data))

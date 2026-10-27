@@ -410,7 +410,8 @@ reference_chemical_potential_type(model::CompositeModel) = reference_chemical_po
 
 for prop in [:bubble_pressure,:bubble_temperature,
     :dew_pressure,:dew_temperature,
-    :tp_flash,:ph_flash,:vt_flash,:ts_flash,:ps_flash]
+    :tp_flash,:ph_flash,:vt_flash,:ts_flash,:ps_flash,
+    :saturation_pressure,:saturation_temperature]
 
     @eval begin
         function init_preferred_method(method::typeof($prop),model::CompositeModel,kwargs)
@@ -496,12 +497,12 @@ function init_preferred_method(method::typeof(dew_temperature),model::Restricted
     return FugDewTemperature(;kwargs...)
 end
 
-function _edge_pressure(model::RestrictedEquilibriaModel,T,z,v0 = nothing,crit_retry = false)
+function _edge_pressure(model::RestrictedEquilibriaModel,T,z,v0,crit_retry::Bool)
     wrapper = __tpflash_cache_model(model,NaN,T,z,:vle)
     return _edge_pressure(wrapper,T,z,v0,crit_retry)
 end
 
-function _edge_temperature(model::RestrictedEquilibriaModel,p,z,v0 = nothing)
+function _edge_temperature(model::RestrictedEquilibriaModel,p,z,v0)
     wrapper = __tpflash_cache_model(model,p,NaN,z,:vle)
     return _edge_temperature(wrapper,p,z,v0)
 end

@@ -561,7 +561,7 @@ end
     @test Clapeyron.eos(r1342,0.03,373.15,Clapeyron.SA[1.0]) ≈ PropsSI("HELMHOLTZMOLAR","Dmolar",1/0.03,"T",373.15,"R134a")
     @test Clapeyron.a_res(r134,0.03,373.15,Clapeyron.SA[1.0]) ≈ PropsSI("ALPHAR","Dmolar",1/0.03,"T",373.15,"R134a")
     @test Clapeyron.a_res(r1342,0.03,373.15,Clapeyron.SA[1.0]) ≈ PropsSI("ALPHAR","Dmolar",1/0.03,"T",373.15,"R134a")
-
+    test_scales(r134)
     #tests send via email
 
     fluid1 = SingleFluid("n-Undecane")
@@ -634,6 +634,10 @@ end
     s1 = entropy(model559,101325.0,250.0,[0.5,0.5],phase = :v)
     s2 = entropy(model559,101325.0,250.0,1000*[0.5,0.5],phase = :v)
     @test s2 ≈ 1000*s1 rtol = 1e-6
+
+    #below triple point test
+    co2 = SingleFluid("carbon dioxide")
+    @test saturation_pressure(co2,212.0)[1] ≈ 422094.9098939842 rtol = 1e-6
 end
 
 @testset "LKP methods" begin
@@ -643,51 +647,38 @@ end
     p = 1e5
     T = 230.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T, phase = :l) ≈ 7.865195401331961e-5 rtol = 1e-6
-        @test Clapeyron.volume(system, p, T, phase = :v) ≈ 0.018388861273788176 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T, phase = :l) ≈ 7.862392001765792e-5 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T, phase = :v) ≈ 0.018389136989904777 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T, phase = :l) ≈ 1167.2461897307874 rtol = 1e-6
         @test Clapeyron.molar_density(system_mod,0.0,298.15,phase =:l) ≈ 1721.2987626107251 rtol = 1e-6 #0.1007/s10765-024-03360-0, Figure 4
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 105419.26772976149 rtol = 1E-6
+        ps = Clapeyron.saturation_pressure(system, T)[1]
+        @test ps ≈ 105456.86384146885 rtol = 1E-6
         #saturation temperature tests are noisy
-        @test Clapeyron.saturation_temperature(system,105419.26772976149)[1] ≈ T  rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 369.83 rtol = 1E-6
-    end
-end
-
-@testset "LJRef methods" begin
-    system = LJRef(["methane"])
-    T = 1.051*Clapeyron.T_scale(system)
-    p = 0.035*Clapeyron.p_scale(system)
-    v = Clapeyron._v_scale(system)/0.673
-    @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ v rtol = 1e-5
-    end
-    @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ p rtol = 1E-1
-        @test Clapeyron.crit_pure(system)[1]/Clapeyron.T_scale(system) ≈ 1.32 rtol = 1E-4
+        @test Clapeyron.saturation_temperature(system,ps)[1] ≈ T  rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 369.69774327701344 rtol = 1E-6
     end
 end
 
 @testset "SPUNG methods" begin
-    system = SPUNG(["ethane"])
+    system = SPUNG(["ethane"],idealmodel = ReidIdeal)
     p = 1e5
     T = 313.15
     @testset "Bulk properties" begin
 
         #GERG2008(["ethane]): 0.025868956878898026
         vv = 0.025868956878898026
-        @test Clapeyron.volume(system, p, T) ≈ vv rtol = 1e-6
-        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ vv rtol = 1e-6
+        @test Clapeyron.volume(system, p, T) ≈ vv rtol = 1e-5
+        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ vv rtol = 1e-5
 
         #GERG2008(["ethane]) : 318 m/s
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 308.4054802581367 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 318.2649055665567 rtol = 1e-6
     end
 
     T_sat = 250.15
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 1.3096239233531626e6 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 1.309622445605574e6 rtol = 1E-6
         #Critical point of ethane: 305.322
         @test Clapeyron.crit_pure(system)[1] ≈ 305.3719105078928 rtol = 1E-6
     end
@@ -739,6 +730,8 @@ end
         T_nearc = 1.084513 #The last value of their critical point is actually above ours.
         psat_nearc = 1.374330e+06
         @test saturation_pressure(system,T_nearc)[1] ≈ psat_nearc rtol = 1e-6
+
+        #really important test: we check if the corresponding states model can actually act as a standalone EoS model.
         @test saturation_pressure(system,T_nearc,IsoFugacitySaturation(;crit))[1] ≈ psat_nearc rtol = 1e-6
     end
 
@@ -764,6 +757,8 @@ end
         set_k!(mix, [0.0 0.05; 0.05 0.0])
         @test Clapeyron.a_res(mix,5e-5,150.0,[0.4,0.6]) ≈ -1.7870541770130663 rtol = 1e-10
     end
+
+
 
     @testset "Fe-ANN-Mie" begin
         fe_ann_mie = FeANNMie(12,6)

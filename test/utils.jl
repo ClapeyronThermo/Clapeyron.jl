@@ -21,12 +21,19 @@ macro printline()  # useful in hunting for where tests get stuck
 end
 
 function fit_scaling(vals, is; exponents = (-3, -2, -1, 0, 1, 2, 3))
-    length(vals) == length(is) ||
+    v = vec(collect(vals))
+    x = vec(collect(is))
+    length(v) == length(x) ||
         throw(ArgumentError("vals and is must have the same length"))
-    B  = reduce(hcat, (is.^m for m in exponents))
-    cn = sqrt.(sum(abs2, B, dims = 1))
-    c  = (B ./ cn) \ vals ./ cn
-    contrib = abs.(vec(c)) .* vec(cn)
+
+    B = reduce(hcat, (x .^ m for m in exponents))   # n × k
+
+    # Pivoted-QR least squares (this is what B \ v does for a tall B)
+    c = B \ v                                        # k-vector
+
+    # Rank by |c_i| · ||B_i|| (unchanged metric from your original)
+    cn      = vec(sqrt.(sum(abs2, B, dims = 1)))     # k-vector
+    contrib = abs.(c .* cn)                          # k-vector
     [(m = exponents[k], c = c[k]) for k in sortperm(contrib, rev = true)]
 end
 
@@ -99,8 +106,9 @@ function test_gibbs_duhem(model::Clapeyron.ActivityModel, V, T, z; rtol = 1e-14,
 end
 
 function test_volume(model,p,T,z = Clapeyron.SA[1.0];rtol = 1e-8,phase = :unknown)
-    v = volume(model,p,T,z)
+    v = volume(model,p,T,z,phase = phase)
     @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
+    return v
 end
 
 function test_scales(model, T0 = 300.0; rtol = 1e-14, atol = 1e-15)
@@ -109,24 +117,24 @@ function test_scales(model, T0 = 300.0; rtol = 1e-14, atol = 1e-15)
     z    = ones(n) ./ n
     name = Clapeyron.parameterless_type(typeof(model))
 
-    @testset "lb_volume extensivity ($name)" begin
-        v0   = Clapeyron.lb_volume(model, T0, z)
-        vals = [Clapeyron.lb_volume(model, T0, i*z) for i in is]
-        vi   = is .* v0
-        ok   = all(abs.(vals .- vi) .≤ rtol .* abs.(vi) .+ atol)
-        @test ok
-        ok || @info "lb_volume scaling" fit_scaling(vals, is)
-    end
+    v0   = Clapeyron.lb_volume(model, T0, z)
+    vals = [Clapeyron.lb_volume(model, T0, i*z) for i in is]
+    vi   = is .* v0
+    lb_volume_consistency   = all(abs.(vals .- vi) .≤ rtol .* abs.(vi) .+ atol)
+    @test lb_volume_consistency
+    lb_volume_consistency || @info "$name lb_volume scaling" fit_scaling(vals, is)
 
-    for (f, label) in ((Clapeyron.T_scale, "T_scale"), (Clapeyron.p_scale, "p_scale"))
-        @testset "$label intensivity ($name)" begin
-            s0   = f(model, z)
-            vals = [f(model, i*z) for i in is]
-            ok   = all(abs.(vals .- s0) .≤ rtol * abs(s0) + atol)
-            @test ok
-            ok || @info "$label scaling" fit_scaling(vals, is)
-        end
-    end
+    s0   = Clapeyron.T_scale(model, z)
+    vals = [Clapeyron.T_scale(model, i*z) for i in is]
+    T_scale_consistency   = all(abs.(vals .- s0) .≤ rtol * abs(s0) + atol)
+    @test T_scale_consistency
+    T_scale_consistency || @info "$name T_scale scaling" fit_scaling(vals, is)
+
+    s0   = Clapeyron.p_scale(model, z)
+    vals = [Clapeyron.p_scale(model, i*z) for i in is]
+    p_scale_consistency   = all(abs.(vals .- s0) .≤ rtol * abs(s0) + atol)
+    @test p_scale_consistency
+    p_scale_consistency || @info "$name: p_scale scaling" fit_scaling(vals, is)
 end
 
 function test_recombine(model,innermodels = nothing)
@@ -134,7 +142,7 @@ function test_recombine(model,innermodels = nothing)
     model2 = deepcopy(model)
     Clapeyron.recombine!(model1)
     eosmodel_is_approx(model1,model2)
-    if innermodels != nothing
+    if innermodels !== nothing
         for field in innermodels
             innermodel = getfield(model1,field)
             innermodel2 = getfield(model2,field)
@@ -225,13 +233,13 @@ function test_repr(val;str = nothing,str_compact = nothing)
     Base.show(io_compact,val)
     x_compact = String(take!(io_compact))
     @test !isempty(x_compact)
-    if str != nothing
+    if str !== nothing
         for s in str
             @test occursin(s,x)
         end
     end
 
-    if str_compact != nothing
+    if str_compact !== nothing
         for s in str_compact
             @test occursin(s,x_compact)
         end
@@ -388,4 +396,52 @@ function testutils_fd_gradient(f, x::AbstractVector; method =:central, eps  =1e-
         error("method must be :central, :forward, or :backward")
     end
     return g
+end
+
+function pure_generic_test(model)
+    name = Clapeyron.model_showname(model)
+    Tc,Pc,Vc = crit_pure(model)
+    @test Tc > 0
+    @test Pc > 0
+    @test Vc > 0
+    z1 = Clapeyron.SA[1.0]
+    T1 = 0.9*Tc
+    ps,vlsat,vvsat = saturation_pressure(model,T1)
+    
+    @test !isnan(ps) && !isnan(vlsat) && !isnan(vvsat)
+    if isnan(ps) || isnan(vlsat) || isnan(vvsat) || isnan(T1)
+        sat = (ps,vlsat,vvsat)
+        @info "$name failed calculation of saturation pressure at T = $T1, got $sat"
+    end
+    vl1 = test_volume(model,ps,T1,z1,phase = :l)
+    vv1 = test_volume(model,ps,T1,z1,phase = :v)
+    @test vlsat ≈ vl1 rtol = 1e-6
+    @test vvsat ≈ vv1 rtol = 1e-6
+    Ts,_,_ = saturation_temperature(model,ps)
+    @test !isnan(Ts)
+    if isnan(Ts)
+        @info "$name failed calculation of saturation temperature at p = $ps"
+    end
+    @test Ts ≈ T1 rtol = 1e-6
+    B2 = second_virial_coefficient(model,Ts,z1)
+    @test B2 < 0
+    if isnan(B2)
+        @info "$name got NaN second virial coefficient at T = $Ts"
+    end
+    
+    is   = exp.(range(log(2), log(20); length=15))
+    name = Clapeyron.parameterless_type(typeof(model))
+
+    vals = [Clapeyron.second_virial_coefficient(model, Ts, i*z1) for i in is]
+    vi   = is .* B2
+    B2_consistency   = all(abs.(vals .- vi) .≤ 1e-6 .* abs.(vi) .+ 1e-10)
+    @test B2_consistency
+
+    if !B2_consistency
+        if any(isnan,vals)
+            @info "$name got NaN second virial coefficient at T = $Ts"
+        else
+            @info "$name second virial coefficient scaling" fit_scaling(vals, is)
+        end
+    end
 end
