@@ -41,7 +41,9 @@ function try_2ph_edge_temperature2(model,p,z,v10::R,v20::R,T10::R,T20::R,Ts::R) 
     return result,valid
 end
 
-function _edge_temperature(model,p,z,v0 = nothing)
+_edge_temperature(model,p,z) = _edge_temperature(model,p,z,nothing)
+
+function _edge_temperature(model,p,z,v0)
     if v0 === nothing
         vv0,_ = x0_edge_temperature(model,p,z)
     else

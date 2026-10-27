@@ -497,12 +497,12 @@ function init_preferred_method(method::typeof(dew_temperature),model::Restricted
     return FugDewTemperature(;kwargs...)
 end
 
-function _edge_pressure(model::RestrictedEquilibriaModel,T,z,v0 = nothing,crit_retry = false)
+function _edge_pressure(model::RestrictedEquilibriaModel,T,z,v0,crit_retry::Bool)
     wrapper = __tpflash_cache_model(model,NaN,T,z,:vle)
     return _edge_pressure(wrapper,T,z,v0,crit_retry)
 end
 
-function _edge_temperature(model::RestrictedEquilibriaModel,p,z,v0 = nothing)
+function _edge_temperature(model::RestrictedEquilibriaModel,p,z,v0)
     wrapper = __tpflash_cache_model(model,p,NaN,z,:vle)
     return _edge_temperature(wrapper,p,z,v0)
 end

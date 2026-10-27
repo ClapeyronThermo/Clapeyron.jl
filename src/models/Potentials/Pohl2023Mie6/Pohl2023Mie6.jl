@@ -18,7 +18,7 @@ const Pohl2023Mie6consts = (
     γ      = SA[1.55,  -0.0826, 1.505, 1.07             ],
     ε      = SA[-1.0,  -1.0,   -0.195, -0.287           ],
 )
-
+#=
 function PohlMie_constructor(λ)
     (11.0 ≤ lambda_r ≤ 13.0) ||@warn "λr = $lambda_r is outside the recommended range [11,13]"
 
@@ -114,7 +114,7 @@ function PohlMie_constructor(λ)
 
     return SingleFluid(components, properties, ancillaries, ideal, residual, references)
 end
-
+=#
 struct Pohl2023Mie6{T} <: Mie6PotentialModel
     lambda_r::T
 end
