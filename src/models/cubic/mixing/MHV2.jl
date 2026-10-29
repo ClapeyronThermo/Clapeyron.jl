@@ -110,8 +110,9 @@ function mixing_rule(model::Union{PRModel,RKModel},V,T,z,mixing_model::MHV2RuleM
     Σab *= invn
     Σab2 *= invn
     Σlogb *= invn
-    c  = -q1*Σab-q2*Σab2-g_E/(R̄*T)-Σlogb
-    ā = b̄*R̄*T*(-q1-sqrt(q1^2-4*q2*c))/(2*q2)
+    RT = Rgas(model)*T
+    c = -q1*Σab - q2*Σab2 - g_E/RT - Σlogb
+    ā = b̄*RT*(- q1 - sqrt(q1^2 - 4*q2*c))/(2*q2)
     return ā,b̄,c̄
 end
 
