@@ -147,8 +147,8 @@ Returns a tuple, containing:
 """
 function mechanical_critical_point end
 
-mechanical_critical_point(model,z,x0) = crit_pure(model,x0,z)
-mechanical_critical_point(model,z) = mechanical_critical_point(model,z,x0_crit_pure(model,z))
+mechanical_critical_point(model,z,x0) = critical_point_solver(model,x0,z)
+mechanical_critical_point(model,z) = critical_point_solver(model,nothing,z)
 mechanical_critical_point(model) = crit_pure(model)
 
 """
