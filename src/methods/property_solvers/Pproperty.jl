@@ -25,6 +25,9 @@ function edge_pressure(model,T,z,v0 = nothing;crit_retry = true)
     return edge
 end
 
+_edge_pressure(model,T,z) = _edge_pressure(model,T,z,nothing)
+_edge_pressure(model,T,z,v0) = _edge_pressure(model,T,z,v0,true)
+
 function _edge_pressure(model,T,z,v0,crit_retry::Bool)
     if v0 === nothing
         vv0,_ = x0_edge_pressure(model,T,z)
