@@ -343,9 +343,8 @@ function assoc_matrix_x0!(K,X)
         init2,success2 = X_exact2!(K,X)
         init2 && (return X,success2)
     end
-
+    X .= 1.0
     mul!(X,K,X)
-    Kmin,Kmax = extrema(X)
     f(kx) = 2 / (1 + sqrt(1 + 4*kx))
     X .= f.(X)
     return X,false
@@ -507,6 +506,29 @@ function X_exact2!(K,X)
 
     end
 
+    # If K is tiny (V → ∞) the hyperbola method suffers catastrophic cancellation:
+    # t1, b1, t2, b2 ~ 1/K, but their combination must be O(1). Instead, do a
+    # couple of successive substitution steps from X = 1 (contraction factor ≈ K).
+
+    ε = 1e-12*one(eltype(X))
+    if max(abs(A1), abs(A2), abs(A3), abs(A4)) < 1e-5
+        _1 = one(eltype(K))
+        X[1] = _1 / (_1 + A1 + A2)
+        X[2] = _1 / (_1 + A3 + A4)
+        for _ in 1:100
+            x1, x2 = X[1], X[2]
+            x1n = _1 / (_1 + A1*x1 + A2*x2)
+            x2n = _1 / (_1 + A3*x1 + A4*x2)
+
+            X[1] = x1n
+            X[2] = x2n
+            if max(abs(x1 - x1n),abs(x2 - x2n)) < ε
+                break
+            end
+        end
+        return true, true
+    end
+
     a = -A3/A2
     w = 1 + a + 1/(4A4) + a/(4A1)
 
@@ -525,10 +547,9 @@ function X_exact2!(K,X)
     t1 = -0.5/A1
     t2 = -0.5/A4
     ymin = -t1/b1
-    y0 = ymin
     y1 = ymin
     et = ymin + sqrt(ymin*ymin + 1)
-    ε = 1e-12*one(y1)
+    
     for i in 1:100
         x1i = t1 + b1*(et*et - 1)/(2et)
         x2i = t2 + b2*(et*et + 1)/(2et)

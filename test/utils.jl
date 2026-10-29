@@ -318,6 +318,18 @@ return SAFTgammaMie{BasicIdeal, Float64}(
         AssocOptions(1.0e-12, 1.0e-12, 1000, 0.5, :nocombining, false), ["10.1063/1.4851455", "10.1021/je500248h"])
 end
 
+function scpa_663(other, Mw, Tc, a, b, c1, nsite, k, ε, β, εx, βx)
+    names = ["water", other]
+    W, O = ("water", "e"), (other, "e")
+    WH, OH = ("water", "H"), (other, "H")
+    sCPA(names; userlocations = (; Mw = [18.02, Mw], Tc = [647.3, Tc], a = [0.12277, a], b = [1.4515e-5, b],
+            c1 = [0.67359, c1], k = [0.0 k; k 0.0], n_H = [2, nsite], n_e = [2, nsite],
+            epsilon_assoc = Dict((W, WH) => 2003.136073273521, (O, OH) => ε, (W, OH) => εx, (O, WH) => εx),
+            bondvol = Dict((W, WH) => 0.0692, (O, OH) => β, (W, OH) => βx, (O, WH) => βx)),
+        alpha = MathiasCopemanAlpha, alpha_userlocations = (; c1 = [0.67359, c1], c2 = [0.0, 0.0], c3 = [0.0, 0.0]),
+        assoc_options = AssocOptions(combining = :elliott))
+end
+
 function test_excess_gibbs_free_energy(model::Clapeyron.ActivityModel,p,T,z)
     γ = Clapeyron.activity_coefficient(model,p,T,z)
     return Clapeyron.Rgas(model)*T*sum(z[i]*log(γ[i]) for i ∈ eachindex(z))
