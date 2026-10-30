@@ -286,15 +286,8 @@ end
         
         for CASE in CASES
             let (_, model, T, z) = CASES, V = sqrt(1 / eps())
-                K = Clapeyron.dense_assoc_site_matrix(model, V, T, z)
-                Xfp = ones(4)
-                for _ in 1:100
-                    Xfp = 1 ./ (1 .+ K * Xfp)
-                end
-                X_from_solver = Clapeyron.X(model, V, T, z).v
-                @test Xfp ≈ X_from_solver
+                test_assoc_matrix(model,V,T,z)
             end
         end
     end
-
 end

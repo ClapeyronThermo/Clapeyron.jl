@@ -268,11 +268,20 @@ function test_assoc_matrix(K,tol = 1e-12)
     s1,s2 = size(K)
     @test s1 == s2
     x0 = ones(eltype(K),s1)
-    
-    x10 = Clapeyron.assoc_matrix_solve(K,x0)
+    Kx = similar(x0)
+    #slow algorithm, guaranted convergence
+    for i in 1:10000
+        mul!(Kx,K,x0)
+        x0 .= 0.5 .* (1 ./ (1 .+ Kx)) .+ 0.5 .* x0
+    end
+
     x1 = Clapeyron.assoc_matrix_solve(K)
-    dx = x10 - x1
+    dx = x0 - x1
     @test sqrt(sum(abs2,dx)) < tol
+    residual_assoc_from_x_eq_1 = K*x10 .* x10 .+ x10 .- 1
+    residual_assoc_auto = K*x1 .* x1 .+ x1 .- 1
+    @test norm(residual_assoc_auto,Inf) < tol
+    @test norm(residual_assoc_from_x_eq_1,Inf) < tol
 end
 
 function test_assoc_matrix(model,V,T,z,tol = 1e-12)
