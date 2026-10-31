@@ -160,17 +160,15 @@ function dew_pressure(model::EoSModel, T, y::AbstractVector, method::Thermodynam
 
     (P_sat, v_l, v_v, x_r) = result
     x = index_expansion(x_r,idx_r)
-    converged = bubbledew_check(model,P_sat,T,v_l,v_v,x,y)
+    converged = bubbledew_check(model,P_sat,T,v_l,v_v,x,y;verbose)
+    verbose && !converged && @info "dew_pressure: convergence checks failed."
 
+    if converged
 verbose && @info "dew_pressure results:
 p  = $(primalval(P_sat))
 vl = $(primalval(v_l))
 vv = $(primalval(v_v))
 x  = $(primalval(x))"
-
-    verbose && !converged && @info "dew_pressure: convergence checks failed."
-
-    if converged
         return (P_sat, v_l, v_v, x)
     else
         nan = zero(v_l)/zero(v_l)
@@ -363,17 +361,15 @@ function dew_temperature(model::EoSModel,p,y::AbstractVector,method::Thermodynam
 
     (T_sat, v_l, v_v, x_r) = result
     x = index_expansion(x_r,idx_r)
-    converged = bubbledew_check(model,p,T_sat,v_l,v_v,x,y)
+    converged = bubbledew_check(model,p,T_sat,v_l,v_v,x,y;verbose)
+    verbose && !converged && @info "dew_temperature: convergence checks failed."
 
+    if converged
 verbose && @info "dew_temperature results:
 T  = $(primalval(T_sat))
 vl = $(primalval(v_l))
 vv = $(primalval(v_v))
 x  = $(primalval(x))"
-
-    verbose && !converged && @info "dew_temperature: convergence checks failed."
-
-    if converged
         return (T_sat, v_l, v_v, x)
     else
         nan = zero(v_l)/zero(v_l)

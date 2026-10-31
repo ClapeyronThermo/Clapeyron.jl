@@ -1055,4 +1055,22 @@ end
         @test @inferred(bubble_pressure(system1, T, [1.0, 0.0])) isa Tuple{Float64,Float64,Float64,Vector{Float64}}
 
     end
+
+    @testset "bubble pressure issue (#661)" begin
+        m1 = EOS_CG(["carbon dioxide", "carbon monoxide"])
+        m2 = EOS_CG(["carbon dioxide", "oxygen"])
+        m3 = EOS_CG(["carbon dioxide", "methane"])
+        m4 = EOS_CG(["carbon dioxide", "hydrogen sulfide"])
+        z = [0.95,0.05]
+        T = [270.0,290.0,290.0,290.0]
+        res1 = bubble_pressure(m1,T[1],z)
+        res2 = bubble_pressure(m2,T[2],z)
+        res3 = bubble_pressure(m3,T[3],z)
+        res4 = bubble_pressure(m4,T[4],z)
+        @test res1[1] ≈ 5316474.095
+        @test res2[1] ≈ 7193854.424
+        @test res3[1] ≈ 6565338.077
+        @test res4[1] ≈ 5223389.721
+        
+    end
 end

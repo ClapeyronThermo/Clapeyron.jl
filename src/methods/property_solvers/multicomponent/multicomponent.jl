@@ -212,23 +212,51 @@ function wilson_k_values!(K,model::EoSModel,p,T,crit)
     return K
 end
 
-function bubbledew_check(model,p,T,vw,vz,w,z)
+function bubbledew_check(model,p,T,vw,vz,w,z;verbose = false)
     vmin,vmax = minmax(vw,vz)
     dv = (vmax - vmin)/vmax
     dz = z_norm(z,w)
-    dz < 1e-5 && dv < 1e-3 && return false
-    dv < 1e-5 && dz < 1e-3 && return false
-    !all(isfinite,w) && return false
-    !isfinite(vw) && return false
-    !all(>=(0),w) && return false
-    !all(>=(0),z) && return false
-    if has_a_res(model) && !(any(iszero,w)) #the second check is to exclude nonvolatiles/noncondensables. TODO: find a better way to do this.
+    if dz < 1e-5 && dv < 1e-3
+        verbose && @info "Clapeyron.bubbledew_check failed: phases too similar (dz = $dz, dv = $dv, p = $p, T = $T)"
+        return false
+    end
+    if dv < 1e-5 && dz < 1e-3
+        verbose && @info "Clapeyron.bubbledew_check failed: volumes and compositions too similar (dv = $dv, dz = $dz, p = $p, T = $T)"
+        return false
+    end
+    if !all(isfinite,w)
+        verbose && @info "Clapeyron.bubbledew_check failed: non-finite composition in w = $w (p = $p, T = $T)"
+        return false
+    end
+    if !isfinite(vw)
+        verbose && @info "Clapeyron.bubbledew_check failed: non-finite volume vw = $vw (p = $p, T = $T)"
+        return false
+    end
+    if !all(>=(0),w)
+        verbose && @info "Clapeyron.bubbledew_check failed: negative composition in w = $w (p = $p, T = $T)"
+        return false
+    end
+    if !all(>=(0),z)
+        verbose && @info "Clapeyron.bubbledew_check failed: negative composition in z = $z (p = $p, T = $T)"
+        return false
+    end
+    if has_a_res(model) && !(any(iszero,w)) 
+        #the second check is to exclude nonvolatiles/noncondensables. TODO: find a better way to do this.
         #all normal checks are ok, now we check if the origin phase result is really the most stable one
-        gz = VT_gibbs_energy(model,vz,T,z,p)
-        gz_p = gibbs_energy(model,p,T,z)
-        #gz_w = VT_gibbs_energy(model,vw,T,w)
-        dg = (gz-gz_p)/gz
-        if gz_p < gz && abs(dg) > 0.001
+        if !VT_mechanical_stability(model,vz,T,z)
+            verbose && @info "Clapeyron.bubbledew_check failed: bulk phase is mechanically unstable (vw = $vw, vz = $vz, p = $p, T = $T)"
+            return false
+        end
+        if !VT_mechanical_stability(model,vw,T,w)
+            verbose && @info "Clapeyron.bubbledew_check failed: incipient phase is mechanically unstable (vw = $vw, vz = $vz, p = $p, T = $T)"
+            return false
+        end
+        if !VT_diffusive_stability(model,vz,T,z)
+            verbose && @info "Clapeyron.bubbledew_check failed: bulk phase is diffusively unstable (vw = $vw, vz = $vz, p = $p, T = $T)"
+            return false
+        end
+        if !VT_diffusive_stability(model,vw,T,w)
+            verbose && @info "Clapeyron.bubbledew_check failed: incipient phase is diffusively unstable (vw = $vw, vz = $vz, p = $p, T = $T)"
             return false
         end
     end

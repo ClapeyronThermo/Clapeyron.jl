@@ -230,67 +230,79 @@ function T_from_dpdT(dpdT,p)
     return 1/Tinv
 end
 
-function improve_bubbledew_suggestion_spinodal(model,p0,T0,x,y,method,in_media)
-    #TODO: implement this
-    return p0,T0
-    #=
-    if FugEnum.is_bubble(method)
-        z = x
-        w = y
-        phasez,phasez0 = :liquid,:vapour
+function refine_bubbledew_vol(model,p0,T0,w,method,phase,vol0 = nothing,high_conditions = false)
+    p,T = 1.0*p0,1.0*T0
+    if vol0 === nothing
+        v = volume(model,p,T,w,phase = phase)
     else
-        z = y
-        w = x
-        phasez,phasez0 = :vapour,:liquid
+        v = vol0
     end
 
-    z_0 = similar(z)
-    z_0 .= z
-    zero_non_equilibria!(z_0,in_media)
+    liquid = is_liquid(phase)
 
-    if FugEnum.is_pressure(method) && FugEnum.is_bubble(method)
-        pmid,vmid,_ = eigmin_minimum_pressure(model,T0,x,volume(model,p0,T0,x,phase = :l))
-        if p0 < 0
-
+    if isnan(v)
+        τ = 1/T
+        τstep = 0.015τ
+        
+        for i in 1:10
+            if FugEnum.is_temperature(method)
+                #T  liquid ? = 0.99*T : 1.01T
+                τ = liquid ? (τ + τstep) : (τ - τstep)
+                T = 1/τ
+            else
+                p = liquid ? 1.1*p : 0.909p
+            end
+            v = volume(model,p,T,w,phase = phase)
+            !isnan(v) && break
         end
-
-    else
-        return p0,T0
     end
-    =#
 
+    if !high_conditions
+        
+        return T,p,v
+    end
+
+    stable = VT_diffusive_stability(model,v,T,w)
+    if !stable
+        τ = 1/T
+        τstep = 0.015τ
+        for i in 1:10
+            if FugEnum.is_temperature(method)
+                #T  liquid ? = 0.99*T : 1.01T
+                τ = liquid ? (τ + τstep) : (τ - τstep)
+                T = 1/τ
+            else
+                p = liquid ? 1.1*p : 0.909p
+            end
+            v = volume(model,p,T,w,phase = phase)
+            stable = VT_diffusive_stability(model,v,T,w)
+            stable && break
+        end
+    end
+
+    return T,p,v
 end
 
 function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_conditions)
-    if high_conditions #inprove p/T via spinodal
-        p,T = improve_bubbledew_suggestion_spinodal(model,p0,T0,x,y,method,in_media)
-    else
-        p,T = p0,T0
-    end
 
-    vlx = volume(model,p,T,x,phase = :l)
-    if high_conditions || isnan(vlx)
-        for i in 1:10
-            if FugEnum.is_temperature(method)
-                T *= 0.99
-            else
-                p *= 1.1
-            end
-            vlx = volume(model,p,T,x,phase = :l)
-            !isnan(vlx) && break
-        end
-    end
-    lnϕl,_ = lnϕ(model,p,T,x,phase = :l,vol = vlx)
+    
+    #liquid initial point: track back on T/p until we have a valid volume point
+    Tl,pl,vlx = refine_bubbledew_vol(model,p0,T0,x,method,:liquid,nothing,high_conditions)
+    lnϕl,_ = lnϕ(model,pl,Tl,x,phase = :l,vol = vlx)
     ϕl = K = lnϕl
     ϕl .= exp.(lnϕl)
+
     if high_conditions
-        lnϕv,_ = lnϕ(model,p,T,y,phase = :v)
+        #vapour high-conditions initial point: track back on T/p until we have a valid volume point
+        Tv,pv,vvx = refine_bubbledew_vol(model,p0,T0,y,method,:vapour,nothing,high_conditions)
+        lnϕv,_ = lnϕ(model,pv,Tv,y,phase = :v,vol = vvx)
         ϕv = lnϕv
         ϕv .= exp.(lnϕv)
     else
-        ϕv = virial_phi(model,p,T,y)
+        Tv,pv = T,p
+        ϕv = virial_phi(model,pv,Tv,y)
     end
-     #virial fugacity coefficient, skips volume calculation
+    #virial fugacity coefficient, skips volume calculation
     if all(!isnan,@view(ϕv[in_media]))
         K .= ϕl ./ ϕv
     end
@@ -298,24 +310,26 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
     #if all(>(1),K_r) || all(<(1),K_r) #no separation,use defaults
     #    K .= y ./ x
     #end
+
     if FugEnum.is_bubble(method)
         x_r = @view x[in_media]
         y_r = rr_flash_vapor(K_r,x_r,zero(eltype(K)))
         yy = index_expansion(y_r,in_media)
         yy ./= sum(yy)
-        vv = volume(model,p,T,yy,phase = :v)
-        return p,T,x,yy,vlx/sum(x),vv
+        Tv2,pv2,vv = refine_bubbledew_vol(model,pv,Tv,yy,method,:vapour)
+        Tx = 2/(1/Tv2 + 1/Tl)
+        px = sqrt(pv2*pl)
+        return px,Tx,x,yy,vlx/sum(x),vv
     else
         y_r = @view y[in_media]
         x_r = rr_flash_liquid(K_r,y_r,one(eltype(K)))
         xx = index_expansion(x_r,in_media)
         xx ./= sum(xx)
-        vv = volume(model,p,T,y,phase = :v)/sum(y)
-        vl = volume(model,p,T,xx,phase = :l)
-        if high_conditions && isnan(vl)
-            vl = volume(model,p,T,xx)
-        end
-        return p,T,xx,y,vl,vv
+        Tv2,pv2,vv = refine_bubbledew_vol(model,pv,Tv,y,method,:vapour)
+        Tl2,pl2,vl = refine_bubbledew_vol(model,pl,Tl,xx,method,:liquid)
+        Tx = 2/(1/Tv2 + 1/Tl2)
+        px = sqrt(pv2*pl2)
+        return px,Tx,xx,y,vl,vv/sum(y)
     end
 end
 
@@ -457,17 +471,17 @@ function bubble_pressure(model::EoSModel, T, x::AbstractVector, method::Thermody
 
     (P_sat, v_l, v_v, y_r) = result
     y = index_expansion(y_r,idx_r)
-    converged = bubbledew_check(model,P_sat,T,v_v,v_l,y,x)
+    converged = bubbledew_check(model,P_sat,T,v_v,v_l,y,x;verbose)
+    verbose && !converged && @info "bubble_pressure: convergence checks failed."
 
+    
+
+    if converged
 verbose && @info "bubble_pressure results:
 p  = $(primalval(P_sat))
 vl = $(primalval(v_l))
 vv = $(primalval(v_v))
 y  = $(primalval(y))"
-
-    verbose && !converged && @info "bubble_pressure: convergence checks failed."
-
-    if converged
         return (P_sat, v_l, v_v, y)
     else
         nan = zero(v_l)/zero(v_l)
@@ -658,17 +672,15 @@ function bubble_temperature(model::EoSModel, p, x::AbstractVector, method::Therm
 
     (T_sat, v_l, v_v, y_r) = result
     y = index_expansion(y_r,idx_r)
-    converged = bubbledew_check(model,p,T_sat,v_v,v_l,y,x)
+    converged = bubbledew_check(model,p,T_sat,v_v,v_l,y,x;verbose)
+    verbose && !converged && @info "bubble_temperature: convergence checks failed."
 
+    if converged
 verbose && @info "bubble_temperature results:
 T  = $(primalval(T_sat))
 vl = $(primalval(v_l))
 vv = $(primalval(v_v))
 y  = $(primalval(y))"
-
-    verbose && !converged && @info "bubble_temperature: convergence checks failed."
-
-    if converged
         return (T_sat, v_l, v_v, y)
     else
         nan = zero(v_l)/zero(v_l)
