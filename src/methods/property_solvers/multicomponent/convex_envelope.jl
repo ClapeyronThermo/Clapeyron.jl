@@ -27,7 +27,8 @@ const CEM_VOL_RTOL = 0.1 #fluid points with this relative volume difference are 
 
 cem_state_symbol(s) = s == CEM_LIQUID ? :liquid : (s == CEM_VAPOUR ? :vapour : :solid)
 
-cem_default_δ(N) = N == 2 ? 256 : (N == 3 ? 128 : (N == 4 ? 64 : 32))
+#N > 4: at most 32, and at most ~5e5 grid points (the grid grows as δ^(N-1))
+cem_default_δ(N) = N == 2 ? 256 : (N == 3 ? 128 : (N == 4 ? 64 : max(1,findlast(δ -> binomial(δ + N - 1,N - 1) <= 500_000,1:32))))
 
 #grid + kd tree over the grid columns. columns are stored in tree order.
 struct CEMEnvelope
@@ -773,10 +774,10 @@ The lower convex envelope of those points is then determined for every lattice p
 Instead of building the complete convex hull, the envelope is obtained by solving a linear program for every lattice point, warm-started from the previous point. The tangent plane distances needed by the simplex method are evaluated with a tree that discards most of the grid with a rigorous bound.
 
 ## Keyword arguments
-- `δ`: number of divisions of the composition axes. By default, `256`, `128` and `64` for binary, ternary and quaternary mixtures (as in [1]), and `32` for more components. The number of grid points is `binomial(δ + N - 1, N - 1)`.
+- `δ`: number of divisions of the composition axes. By default, `256`, `128` and `64` for binary, ternary and quaternary mixtures (as in [1]), and `32` for more components (smaller for more than six components, at most ~5⋅10⁵ grid points). The number of grid points is `binomial(δ + N - 1, N - 1)`.
 - `equilibrium`: `:auto` considers liquid and vapour phases, `:lle` only liquid phases.
 - `polish`: `nothing` (default) or a `TPFlashMethod` (e.g. `MichelsenTPFlash()` or `MultiPhaseTPFlash()`). If given, the phases of every multiphase facet are refined with that method, starting from the CEM phases. The refined result is only accepted if it lowers the Gibbs energy. Facets with solid phases are not refined.
-- `threaded`: evaluate the grid and the envelope in parallel (uses `Threads.nthreads()` tasks).
+- `threaded`: evaluate the grid and the envelope in parallel.
 
 ## References
 1. Göttl, Q., Rosen, N., & Burger, J. (2025). Convex envelope method for T, p flash calculations for mixtures with an arbitrary number of components and arbitrary aggregate states. Computers & Chemical Engineering, 203, 109326. [doi:10.1016/j.compchemeng.2025.109326](https://doi.org/10.1016/j.compchemeng.2025.109326)
@@ -868,7 +869,7 @@ function phase_diagram(model::EoSModel,_p,_T,method::CEMPhaseDiagram)
     N < 2 && throw(ArgumentError("phase_diagram: at least two components are required"))
     δ = something(method.δ,cem_default_δ(N))
     env = cem_envelope(model,p,T,δ,method.equilibrium,method.threaded)
-    fluid = cem_models(model,p,T,fill(1/N,N),method.equilibrium)[2]
+    fluidmodel,fluid,_ = cem_models(model,p,T,fill(1/N,N),method.equilibrium)
     M = size(env.lattice,2)
     walk_facet = zeros(Int32,M)
     #each chunk walks its lattice points in order, warm-starting every LP from the previous solution
@@ -898,7 +899,7 @@ function phase_diagram(model::EoSModel,_p,_T,method::CEMPhaseDiagram)
         μ = cem_tangent_plane(ws,env)
         comps,_,vols,states = cem_phases(env,fluid,p,T,cols,w,stable)
         f = CEMFacet(cols,μ,comps,vols,cem_state_symbol.(states))
-        method.polish === nothing ? f : cem_polish_facet(model,p,T,z,f,env,fluid,ws,stable,method.polish)
+        method.polish === nothing ? f : cem_polish_facet(fluidmodel,p,T,z,f,env,fluid,ws,stable,method.polish)
     end
     return CEMDiagram(component_list(model),p,T,method.equilibrium,env,facets,point_facet)
 end
@@ -944,7 +945,7 @@ function cem_walk!(point_facet,env::CEMEnvelope,idx)
     z = zeros(length(env))
     λ = ws.λ
     current_proven = false
-    for (j,k) in enumerate(idx)
+    for k in idx
         resolved[k] && continue
         c = env.point_column[k]
         z .= @view(env.x[:,c])
@@ -955,7 +956,7 @@ function cem_walk!(point_facet,env::CEMEnvelope,idx)
             inside && (λ .= max.(λ,0.0))
         end
         if !inside
-            if j == 1 || !current_proven
+            if !current_proven
                 cem_reset!(ws,env,z)
             else
                 cand = cem_local_candidates!(ws,env,k) #before the crash: neighbourhood of the previous basis

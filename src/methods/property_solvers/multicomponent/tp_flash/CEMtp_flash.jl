@@ -10,7 +10,7 @@ The CEM result has a discretization error of order `1/δ`. By default, it is ref
 If a [`Clapeyron.CEMDiagram`](@ref) obtained with [`phase_diagram`](@ref) is passed via `diagram`, the stored envelope is used and no Gibbs energy evaluation on the grid is necessary (the conditions and components must match).
 
 ## Keyword arguments
-- `δ`: number of divisions of the composition axes. By default, `256`, `128` and `64` for binary, ternary and quaternary mixtures (as in [1]), and `32` for more components. Ignored if `diagram` is given.
+- `δ`: number of divisions of the composition axes. By default, `256`, `128` and `64` for binary, ternary and quaternary mixtures (as in [1]), and `32` for more components (smaller for more than six components, at most ~5⋅10⁵ grid points). Ignored if `diagram` is given.
 - `equilibrium`: `:auto` considers liquid and vapour phases, `:lle` only liquid phases. Ignored if `diagram` is given.
 - `polish`: `TPFlashMethod` used to refine the CEM phases (initialized with the CEM result), or `nothing` to return the CEM result. The refined result is only accepted if it has a lower Gibbs energy than the CEM result. If `MichelsenTPFlash` is given and the CEM finds more than two phases, a `MultiPhaseTPFlash` with the same tolerances is used. Results with solid phases are not refined.
 - `threaded`: evaluate the grid in parallel.

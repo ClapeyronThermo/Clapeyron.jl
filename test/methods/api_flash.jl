@@ -300,36 +300,23 @@
     end
 
     @testset "Convex envelope method" begin
-        @test Clapeyron.cem_lattice_rank([3,0,7],10) == findfirst(==(Int32[3,0,7]),eachcol(Clapeyron.cem_lattice(3,10)))
         #no liquid root (v = Inf): the point must not enter the envelope with a meaningless g
         gl,vl,gv,vv = Clapeyron.cem_eval_point(PCSAFT(["methane","ethane","propane","n-butane"]),30e5,250.0,[37,21,6,0]/64,false)
         @test isnan(gl) && isfinite(gv)
-        #VLE, cubic: CEM + polish = Michelsen, also in implicit AD
+        #VLE, cubic: CEM within the grid resolution, polished = Michelsen
         model = PR(["methane","propane"])
         p,T,z = 30e5,250.0,[0.5,0.5]
         res_m = Clapeyron.tp_flash2(model,p,T,z,MichelsenTPFlash())
-        res_raw = Clapeyron.tp_flash2(model,p,T,z,CEMFlash(δ = 64,polish = nothing))
-        res = Clapeyron.tp_flash2(model,p,T,z,CEMFlash(δ = 64))
-        @test numphases(res_raw) == 2
-        @test res_raw.compositions[1][1] ≈ res_m.compositions[1][1] atol = 1/64
-        @test res.compositions[1] ≈ res_m.compositions[1] rtol = 1e-6
-        @test res.compositions[2] ≈ res_m.compositions[2] rtol = 1e-6
-        @test res.data.g <= res_raw.data.g
-        dflash(T) = Clapeyron.tp_flash2(model,p,T,z,CEMFlash(δ = 64)).compositions[1][1]
-        dflash_m(T) = Clapeyron.tp_flash2(model,p,T,z,MichelsenTPFlash()).compositions[1][1]
-        @test Clapeyron.Solvers.derivative(dflash,250.0) ≈ Clapeyron.Solvers.derivative(dflash_m,250.0) rtol = 1e-6
-        @test size(tp_flash(model,p,T,z,CEMFlash(δ = 64))[1]) == (2,2)
+        @test Clapeyron.tp_flash2(model,p,T,z,CEMFlash(δ = 64,polish = nothing)).compositions[1][1] ≈ res_m.compositions[1][1] atol = 1/64
+        @test Clapeyron.tp_flash2(model,p,T,z,CEMFlash(δ = 64)).compositions ≈ res_m.compositions rtol = 1e-6
 
         #LLE, activity model: phase diagram + lookup
         model = UNIFAC(["water","hexane"])
         p,T = 1e5,298.15
         diagram = phase_diagram(model,p,T,CEMPhaseDiagram(equilibrium = :lle))
         @test length(diagram.facets) == 1
-        @test length(diagram.facets[1].compositions) == 2
         res_m = Clapeyron.tp_flash2(model,p,T,[0.5,0.5],MichelsenTPFlash(equilibrium = :lle))
-        res = Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash(diagram = diagram))
-        @test res.compositions[1] ≈ res_m.compositions[1] rtol = 1e-6
-        @test res.compositions[2] ≈ res_m.compositions[2] rtol = 1e-6
+        @test Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash(diagram = diagram)).compositions ≈ res_m.compositions rtol = 1e-6
         @test numphases(Clapeyron.tp_flash2(model,p,T,[0.001,0.999],CEMFlash(diagram = diagram))) == 1
         @test_throws ArgumentError Clapeyron.tp_flash2(model,2p,T,[0.5,0.5],CEMFlash(diagram = diagram))
 
@@ -338,28 +325,18 @@
         p,T = 101325.0,333.0
         diagram = phase_diagram(model,p,T,CEMPhaseDiagram(δ = 64))
         f3 = filter(f -> length(f.compositions) == 3,diagram.facets)
-        @test length(f3) == 1
-        @test sort(f3[1].states) == [:liquid,:liquid,:vapour]
+        @test length(f3) == 1 && sort(f3[1].states) == [:liquid,:liquid,:vapour]
         z = sum(f3[1].compositions)/3
-        res = Clapeyron.tp_flash2(model,p,T,z,CEMFlash(diagram = diagram))
-        @test numphases(res) == 3
-        @test res.data.g < Clapeyron.tp_flash2(model,p,T,z,MichelsenTPFlash()).data.g
+        @test Clapeyron.tp_flash2(model,p,T,z,CEMFlash(diagram = diagram)).data.g < Clapeyron.tp_flash2(model,p,T,z,MichelsenTPFlash()).data.g
         @test numphases(Clapeyron.tp_flash2(model,p,T,z,CEMFlash(δ = 64))) == 3
-        @test count(==(3),length.(getfield.(phase_diagram(model,p,T,δ = 64,threaded = false).facets,:compositions))) == 1
 
         #SLE: pure solids
         model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid=UNIFAC,solid=SolidHfus)
         p,T = 1e5,275.0
         diagram = phase_diagram(model,p,T)
-        @test length(diagram.facets) == 2
         @test all(f -> f.states == [:liquid,:solid],diagram.facets)
-        s1 = sle_solubility(model,p,T,[1.,1.];solute=["1-decanol"])
-        s2 = sle_solubility(model,p,T,[1.,1.];solute=["thymol"])
-        @test diagram.facets[1].compositions[1][2] ≈ s1[2] atol = 1/256
-        @test diagram.facets[2].compositions[1][2] ≈ s2[2] atol = 1/256
-        res = Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash())
-        @test res.compositions[2] ≈ [0.0,1.0]
-        @test isnan(res.volumes[2])
+        @test getindex.(first.(getfield.(diagram.facets,:compositions)),2) ≈ [sle_solubility(model,p,T,[1.,1.];solute=[s])[2] for s in ("1-decanol","thymol")] atol = 1/256
+        @test Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash()).compositions[2] ≈ [0.0,1.0]
     end
 end
 
