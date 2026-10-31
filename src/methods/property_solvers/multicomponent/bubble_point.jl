@@ -299,7 +299,7 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
         ϕv = lnϕv
         ϕv .= exp.(lnϕv)
     else
-        Tv,pv = T,p
+        Tv,pv = T0,p0
         ϕv = virial_phi(model,pv,Tv,y)
     end
     #virial fugacity coefficient, skips volume calculation

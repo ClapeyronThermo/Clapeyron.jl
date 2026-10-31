@@ -278,7 +278,7 @@ function test_assoc_matrix(K,tol = 1e-12)
     x1 = Clapeyron.assoc_matrix_solve(K)
     dx = x0 - x1
     @test sqrt(sum(abs2,dx)) < tol
-    residual_assoc_from_x_eq_1 = K*x10 .* x10 .+ x10 .- 1
+    residual_assoc_from_x_eq_1 = K*x0 .* x0 .+ x0 .- 1
     residual_assoc_auto = K*x1 .* x1 .+ x1 .- 1
     @test norm(residual_assoc_auto,Inf) < tol
     @test norm(residual_assoc_from_x_eq_1,Inf) < tol
