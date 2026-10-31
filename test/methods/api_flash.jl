@@ -301,6 +301,9 @@
 
     @testset "Convex envelope method" begin
         @test Clapeyron.cem_lattice_rank([3,0,7],10) == findfirst(==(Int32[3,0,7]),eachcol(Clapeyron.cem_lattice(3,10)))
+        #no liquid root (v = Inf): the point must not enter the envelope with a meaningless g
+        gl,vl,gv,vv = Clapeyron.cem_eval_point(PCSAFT(["methane","ethane","propane","n-butane"]),30e5,250.0,[37,21,6,0]/64,false)
+        @test isnan(gl) && isfinite(gv)
         #VLE, cubic: CEM + polish = Michelsen, also in implicit AD
         model = PR(["methane","propane"])
         p,T,z = 30e5,250.0,[0.5,0.5]

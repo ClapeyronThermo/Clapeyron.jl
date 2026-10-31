@@ -106,6 +106,14 @@ end
 
 #returns (gl,vl,gv,vv), NaN g if the column does not exist (lle, or single EoS root of the other state)
 function cem_eval_point(fluid,p,T,x,lle)
+    gl,vl,gv,vv = cem_eval_roots(fluid,p,T,x,lle)
+    #a missing root (e.g. no liquid root above the critical point) gives v = Inf and a meaningless finite g
+    isfinite(vl) || (gl = NaN)
+    isfinite(vv) || (gv = NaN)
+    return gl,vl,gv,vv
+end
+
+function cem_eval_roots(fluid,p,T,x,lle)
     nan = NaN
     if fluid isa PTFlashWrapper
         gl,vl = modified_gibbs(fluid,p,T,x,:liquid,nan)
