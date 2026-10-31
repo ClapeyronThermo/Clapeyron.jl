@@ -23,14 +23,14 @@ export PPDSIdeal
 
 ## Input parameters
 
-- `A`: Single Parameter (`Float64`) - Model Coefficient
-- `B`: Single Parameter (`Float64`) - Model Coefficient
-- `C`: Single Parameter (`Float64`) - Model Coefficient
-- `D`: Single Parameter (`Float64`) - Model Coefficient
-- `E`: Single Parameter (`Float64`) - Model Coefficient
-- `F`: Single Parameter (`Float64`) - Model Coefficient
-- `G`: Single Parameter (`Float64`) - Model Coefficient
-- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
+  - `A`: Single Parameter (`Float64`) - Model Coefficient
+  - `B`: Single Parameter (`Float64`) - Model Coefficient
+  - `C`: Single Parameter (`Float64`) - Model Coefficient
+  - `D`: Single Parameter (`Float64`) - Model Coefficient
+  - `E`: Single Parameter (`Float64`) - Model Coefficient
+  - `F`: Single Parameter (`Float64`) - Model Coefficient
+  - `G`: Single Parameter (`Float64`) - Model Coefficient
+  - `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g·mol⁻¹]`
 
 ## Description
 
@@ -42,6 +42,7 @@ y = T/(A + T)
 ```
 
 ## Model Construction Examples
+
 ```
 # Using the default database
 idealmodel = PPDSIdeal("water") #single input
@@ -68,14 +69,14 @@ idealmodel = PPDSIdeal(["water","carbon dioxide"];
 
 ## References
 
-1. Gmehling, J., Kleiber, M., Kolbe, B., & Rarey, J. (2019). Chemical thermodynamics for process simulation (2nd ed.). Berlin, Germany: Blackwell Verlag.
+ 1. Gmehling, J., Kleiber, M., Kolbe, B., & Rarey, J. (2019). Chemical thermodynamics for process simulation (2nd ed.). Berlin, Germany: Blackwell Verlag.
 """
 PPDSIdeal
-default_locations(::Type{PPDSIdeal}) = ["ideal/PPDSIdeal.csv","properties/molarmass.csv"]
+default_locations(::Type{PPDSIdeal}) = ["ideal/PPDSIdeal.csv", "properties/molarmass.csv"]
 default_references(::Type{PPDSIdeal}) = ["978-3-527-34325-6"] #TODO: find original source of the equation.
 default_ignore_missing_singleparams(::Type{PPDSIdeal}) = ["Mw"]
 
-function a_ideal(model::PPDSIdealModel,V,T,z=SA[1.0])
+function a_ideal(model::PPDSIdealModel, V, T, z=SA[1.0])
     #we transform from AlyLee terms to GERG2008 terms.
 
     _A = model.params.A.values
@@ -96,29 +97,28 @@ function a_ideal(model::PPDSIdealModel,V,T,z=SA[1.0])
         #we suppose ρc = Vc = 1
         δi = ρ
         zi = z[i]
-        A,B,C,D,E,F,G = _A[i],_B[i],_C[i],_D[i],_E[i],_F[i],_G[i]
+        A, B, C, D, E, F, G = _A[i], _B[i], _C[i], _D[i], _E[i], _F[i], _G[i]
 
+        #helmholtz formulation in 10.1007/s10765-024-03360-0, eq 23
+        #we suppose CI == CII == 0, ther reference_state field takes care of that.
+        η = (B - C)
+        λ = G + F + E + D
+        Ā = A*τi + Tr
+        logĀ = log(Ā)
 
-            #helmholtz formulation in 10.1007/s10765-024-03360-0, eq 23
-            #we suppose CI == CII == 0, ther reference_state field takes care of that.
-            η = (B - C)
-            λ = G + F + E + D
-            Ā = A*τi + Tr
-            logĀ = log(Ā)
-
-            ai = η*(λ + 2)*(Ā*logĀ - A*τi)/Tr
-            #@show A
-            ai += A*(C - B)*(λ + 2)*τi*(logτi - 1.0)/Tr
-            #@show ai
-            ai += -η*(λ + 1)*logĀ
-            #@show ai
-            ai += (C - 1)*logτi
-            #@show ai
-            y = Tr/Ā
-            coeffs = (zero(λ), 0.5*λ, (λ - D)/6, (G + F)/12, G/20)
-            ai += η*evalpoly(y,coeffs)
-            res += xlogx(zi,δi)
-            res += zi*ai
+        ai = η*(λ + 2)*(Ā*logĀ - A*τi)/Tr
+        #@show A
+        ai += A*(C - B)*(λ + 2)*τi*(logτi - 1.0)/Tr
+        #@show ai
+        ai += -η*(λ + 1)*logĀ
+        #@show ai
+        ai += (C - 1)*logτi
+        #@show ai
+        y = Tr/Ā
+        coeffs = (zero(λ), 0.5*λ, (λ - D)/6, (G + F)/12, G/20)
+        ai += η*evalpoly(y, coeffs)
+        res += xlogx(zi, δi)
+        res += zi*ai
     end
     return res/Σz
 end

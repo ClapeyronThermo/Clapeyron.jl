@@ -29,30 +29,26 @@ default_locations(::Type{COSMOSAC10}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv"
     reference_state = nothing)
 
 ## Input parameters:
-- `Pnhb` :Single Parameter{String}
-- `POH` :Single Parameter{String}
-- `POT` :Single Parameter{String}
-- `V`: Single Parameter{Float64}
-- `A`: Single Parameter{Float64}
+
+  - `Pnhb` :Single Parameter{String}
+  - `POH` :Single Parameter{String}
+  - `POT` :Single Parameter{String}
+  - `V`: Single Parameter{Float64}
+  - `A`: Single Parameter{Float64}
 
 ## Description
+
 An activity coefficient model using molecular solvation based on the COSMO-RS method. Sigma profiles are now split by non-hydrogen bonding, hydrogen acceptor and hydrogen donor.
 
 ## References
-1. Klamt, A. (1995). Conductor-like screening model for real solvents: A new approach to the quantitative calculation of solvation phenomena. Journal of Physical Chemistry, 99(7), 2224–2235. [doi:10.1021/j100007a062](https://doi.org/10.1021/j100007a062)
-2. Lin, S-T. & Sandler, S.I. (2002). A priori phase equilibrium prediction from a segment contribution solvation model. Industrial & Engineering Chemistry Research, 41(5), 899–913. [doi:10.1021/ie001047w](https://doi.org/10.1021/ie001047w)
-3. Hsieh, C-H., Sandler, S.I., & Lin, S-T. (2010). Improvements of COSMO-SAC for vapor–liquid and liquid–liquid equilibrium predictions. Fluid Phase Equilibria, 297(1), 90-97. [doi:10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011)
+
+ 1. Klamt, A. (1995). Conductor-like screening model for real solvents: A new approach to the quantitative calculation of solvation phenomena. Journal of Physical Chemistry, 99(7), 2224–2235. [doi:10.1021/j100007a062](https://doi.org/10.1021/j100007a062)
+ 2. Lin, S-T. & Sandler, S.I. (2002). A priori phase equilibrium prediction from a segment contribution solvation model. Industrial & Engineering Chemistry Research, 41(5), 899–913. [doi:10.1021/ie001047w](https://doi.org/10.1021/ie001047w)
+ 3. Hsieh, C-H., Sandler, S.I., & Lin, S-T. (2010). Improvements of COSMO-SAC for vapor–liquid and liquid–liquid equilibrium predictions. Fluid Phase Equilibria, 297(1), 90-97. [doi:10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011)
 """
 COSMOSAC10
 
-function COSMOSAC10(components;
-    puremodel = PR,
-    userlocations = String[],
-    pure_userlocations = String[],
-    use_nist_database = false,
-    verbose = false,
-    reference_state = nothing)
-
+function COSMOSAC10(components; puremodel=PR, userlocations=String[], pure_userlocations=String[], use_nist_database=false, verbose=false, reference_state=nothing)
     formatted_components = format_components(components)
 
     if use_nist_database
@@ -65,59 +61,59 @@ function COSMOSAC10(components;
         POT = [zeros(51) for i in 1:length(components)]
         for i in 1:length(components)
             id = cas(formatted_components[i])
-            ids = CAS.==uppercase(id[1])
+            ids = CAS .== uppercase(id[1])
             dbname = INCHIKEY[ids]
             file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma3/"*dbname[1]*".sigma", IOBuffer())))
-            lines = split(file,r"\n")
+            lines = split(file, r"\n")
             meta = lines[1][9:end]
             json = JSON.parse(meta)
             A[i] = json["area [A^2]"]
             V[i] = json["volume [A^3]"]
-            Pnhb[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
-            POH[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 55:105]
-            POT[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 106:156]
+            Pnhb[i] = [parse(Float64, split(lines[i], " ")[2]) for i in 4:54]
+            POH[i] = [parse(Float64, split(lines[i], " ")[2]) for i in 55:105]
+            POT[i] = [parse(Float64, split(lines[i], " ")[2]) for i in 106:156]
         end
-        A = SingleParam("A",formatted_components,A)
-        V = SingleParam("V",formatted_components,V)
-        Pnhb = SingleParam("Pnhb",formatted_components,Pnhb)
-        POH = SingleParam("POH",formatted_components,POH)
-        POT = SingleParam("POT",formatted_components,POT)
+        A = SingleParam("A", formatted_components, A)
+        V = SingleParam("V", formatted_components, V)
+        Pnhb = SingleParam("Pnhb", formatted_components, Pnhb)
+        POH = SingleParam("POH", formatted_components, POH)
+        POT = SingleParam("POT", formatted_components, POT)
     else
-        params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations = userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V"], verbose = verbose)
-        Pnhb  = COSMO_parse_Pi(params["Pnhb"])
-        POH  = COSMO_parse_Pi(params["POH"])
-        POT  = COSMO_parse_Pi(params["POT"])
-        A  = params["A"]
-        V  = params["V"]
+        params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations=userlocations, ignore_missing_singleparams=["Pnhb", "POH", "POT", "A", "V"], verbose=verbose)
+        Pnhb = COSMO_parse_Pi(params["Pnhb"])
+        POH = COSMO_parse_Pi(params["POH"])
+        POT = COSMO_parse_Pi(params["POT"])
+        A = params["A"]
+        V = params["V"]
     end
 
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    packagedparams = COSMOSAC10Param(Pnhb,POH,POT,V,A)
-    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360","10.1021/j100007a062"]
-    model = COSMOSAC10(formatted_components,packagedparams,_puremodel,1e-12,references)
-    set_reference_state!(model,reference_state,verbose = verbose)
+    _puremodel = init_puremodel(puremodel, components, pure_userlocations, verbose)
+    packagedparams = COSMOSAC10Param(Pnhb, POH, POT, V, A)
+    references = ["10.1021/acs.jctc.9b01016", "10.1021/acs.iecr.7b01360", "10.1021/j100007a062"]
+    model = COSMOSAC10(formatted_components, packagedparams, _puremodel, 1e-12, references)
+    set_reference_state!(model, reference_state, verbose=verbose)
     return model
 end
 
-function Γ_as_view(Γ,l1 = length(Γ) ÷ 3)
+function Γ_as_view(Γ, l1=length(Γ) ÷ 3)
     Γnhb = viewn(Γ, 51, 1)
     ΓOH = viewn(Γ, 51, 2)
     ΓOT = viewn(Γ, 51, 3)
     return Γnhb, ΓOH, ΓOT
 end
 
-function excess_g_res(model::COSMOSAC10Model,V,T,z)
+function excess_g_res(model::COSMOSAC10Model, V, T, z)
     lnγ = @f(lnγ_res)
     sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
 
-function lnγ_res(model::COSMOSAC10Model,V,T,z)
+function lnγ_res(model::COSMOSAC10Model, V, T, z)
     A = model.params.A.values
-    Ā = dot(z,A)
-    PS = zeros(typeof(Ā),51*3)
+    Ā = dot(z, A)
+    PS = zeros(typeof(Ā), 51*3)
     PSᵢ = PS
-    PSnhb, PSOH, PSOT = Γ_as_view(PS,51)
-    Pnhb  = model.params.Pnhb.values
+    PSnhb, PSOH, PSOT = Γ_as_view(PS, 51)
+    Pnhb = model.params.Pnhb.values
     POH = model.params.POH.values
     POT = model.params.POT.values
     @inbounds @simd for v in 1:51
@@ -136,22 +132,22 @@ function lnγ_res(model::COSMOSAC10Model,V,T,z)
     end
     PS ./= Ā
     #n = A ./ aeff
-    lnΓS = @f(lnΓ,PS)
-    (lnΓSnhb, lnΓSOH, lnΓSOT)= lnΓS
-    lnΓi = Vector{typeof(lnΓS)}(undef,length(model))
+    lnΓS = @f(lnΓ, PS)
+    (lnΓSnhb, lnΓSOH, lnΓSOT) = lnΓS
+    lnΓi = Vector{typeof(lnΓS)}(undef, length(model))
 
-    PSnhbᵢ, PSOHᵢ, PSOTᵢ = Γ_as_view(PSᵢ,51)
+    PSnhbᵢ, PSOHᵢ, PSOTᵢ = Γ_as_view(PSᵢ, 51)
     #lnΓi = [@f(lnΓ,Pnhb[i]./A[i],POH[i]./A[i],POT[i]./A[i]) for i ∈ @comps]
     for i in @comps
         Aᵢ = A[i]
         PSnhbᵢ .= Pnhb[i] ./ Aᵢ
         PSOHᵢ .= POH[i] ./ Aᵢ
         PSOTᵢ .= POT[i] ./ Aᵢ
-        lnΓi[i] = @f(lnΓ,PSᵢ)
+        lnΓi[i] = @f(lnΓ, PSᵢ)
     end
     aeff = 7.5
     aeff⁻¹ = 1/7.5
-    lnγ_res = zeros(eltype(lnΓSnhb),length(model))
+    lnγ_res = zeros(eltype(lnΓSnhb), length(model))
     for i in @comps
         #nᵢ = A[i]/aeff
         #Aᵢ⁻¹ = 1/A[i]
@@ -175,42 +171,42 @@ function lnγ_res(model::COSMOSAC10Model,V,T,z)
     return lnγ_res =#
 end
 
-function lnΓ(model::COSMOSAC10Model,V,T,z,P)
-    Γ = _lnΓ(model,V,T,z,P)
-    return Γ_as_view(Γ,51)
+function lnΓ(model::COSMOSAC10Model, V, T, z, P)
+    Γ = _lnΓ(model, V, T, z, P)
+    return Γ_as_view(Γ, 51)
 end
 
-function PΔW(model::COSMOSAC10Model,V,T,z,P,nonzeros = 1:length(P))
-    σ  = -0.025:0.001:0.025
+function PΔW(model::COSMOSAC10Model, V, T, z, P, nonzeros=1:length(P))
+    σ = -0.025:0.001:0.025
     Tinv = 1/T
-    TYPE = @f(Base.promote_eltype,P,Tinv)
-    PW = zeros(TYPE,length(nonzeros),length(nonzeros))
-    idx(i) = div(i-1,51) + 1
+    TYPE = @f(Base.promote_eltype, P, Tinv)
+    PW = zeros(TYPE, length(nonzeros), length(nonzeros))
+    idx(i) = div(i-1, 51) + 1
     #σ(i) = _σ[rem(i + 50,51) + 1]
-    idxx(i) = rem(i + 50,51) + 1
+    idxx(i) = rem(i + 50, 51) + 1
     i_nonzero = 0
     @inbounds for ii in 1:153
         i = idxx(ii)
         iszero(P[ii]) && continue
-        i_nonzero +=1
+        i_nonzero += 1
         v_nonzero = 0
         for vv in 1:153
             iszero(P[vv]) && continue
-            v_nonzero +=1
+            v_nonzero += 1
             v = idxx(vv)
-            PW[i_nonzero,v_nonzero] = P[vv]*exp(-ΔW(σ[i],σ[v],idx(vv),idx(ii),T)*Tinv)
+            PW[i_nonzero, v_nonzero] = P[vv]*exp(-ΔW(σ[i], σ[v], idx(vv), idx(ii), T)*Tinv)
         end
     end
     return PW
 end
 
-function ΔW(σm,σn,t,s,T)
-    ces  = 6525.69+1.4859e8/T^2
-    chb = COSMOSAC10_ΔW_data[t,s] * (σm*σn<0)
-    R  = 0.001987
+function ΔW(σm, σn, t, s, T)
+    ces = 6525.69+1.4859e8/T^2
+    chb = COSMOSAC10_ΔW_data[t, s] * (σm*σn<0)
+    R = 0.001987
     return (ces*(σm+σn)^2-chb*(σm-σn)^2)/R
 end
 
-const COSMOSAC10_ΔW_data =@SMatrix [0.0 0.0 0.0;0.0 4013.78 0.0;0.0 3016.43 932.31]
+const COSMOSAC10_ΔW_data = @SMatrix [0.0 0.0 0.0; 0.0 4013.78 0.0; 0.0 3016.43 932.31]
 
 #fcosmo(system::COSMOSAC10) = Clapeyron.activity_coefficient(system,1e5, 333.15,[0.5,0.5])[1] - 1.4015660588643404
