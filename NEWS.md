@@ -6,6 +6,8 @@
 - `Unitful.jl` extension: support for `PH`, `PS`, `VT`, `QT`, `QP`, `TS` basis
 - `Unitful.jl` extension: support for all flashes
 - Experimental: `Clapeyron.MassFractions` wrapper to indicate that the vector of compositions is a mass composition vector.
+- New function `phase_diagram(model, p, T, CEMPhaseDiagram(δ = …))`: complete phase diagram at constant pressure and temperature over the whole composition space, using the convex envelope method (CEM, Göttl et al., 2025). Supports liquid, vapour and pure solid phases (`CompositeModel` with `SolidHfus`).
+- New TP-flash method `CEMFlash`: stable multiphase flash based on the convex envelope method, with optional refinement by a local flash method (`polish`, `MichelsenTPFlash()` by default). `CEMFlash(diagram = phase_diagram(...))` reuses a precomputed diagram for fast flashes.
 
 ## Bug fixes
 

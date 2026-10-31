@@ -62,6 +62,15 @@ Clapeyron.slle_solubility
 Clapeyron.eutectic_point
 ```
 
+## Phase diagrams
+
+```@docs
+Clapeyron.phase_diagram
+Clapeyron.CEMPhaseDiagram
+Clapeyron.CEMDiagram
+Clapeyron.CEMFacet
+```
+
 ### Bubble/Dew methods
 
 ```@docs
