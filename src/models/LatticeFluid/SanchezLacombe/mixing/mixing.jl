@@ -6,6 +6,7 @@ abstract type SLMixingRule <: EoSModel end
 Function used to dispatch on the different mixing rules available for Sanchez-Lacombe.
 
 ## Example:
+
 ```julia
 function mix_vε(model::SanchezLacombe,V,T,z,mix::SLKRule,r̄,Σz = sum(z))
     v = model.params.vol.values
@@ -21,20 +22,20 @@ function mix_vε(model::SanchezLacombe,V,T,z,mix::SLKRule,r̄,Σz = sum(z))
 """
 function mix_vε end
 
-function init_slmixing(model::EoSModel,components,userlocations,mixing_userlocations,verbose)
+function init_slmixing(model::EoSModel, components, userlocations, mixing_userlocations, verbose)
     return model
 end
 
-function init_slmixing(model,components,params,mixing_userlocations,verbose)
-    if any(z -> haskey(params,z),("k","k0","k1","l")) && model <: SLMixingRule
-        paramstype = fieldtype(model,:params)
-        pnew = transform_params(model,params,components)
-        mixing_params = build_eosparam(paramstype,pnew)
+function init_slmixing(model, components, params, mixing_userlocations, verbose)
+    if any(z -> haskey(params, z), ("k", "k0", "k1", "l")) && model <: SLMixingRule
+        paramstype = fieldtype(model, :params)
+        pnew = transform_params(model, params, components)
+        mixing_params = build_eosparam(paramstype, pnew)
         if verbose
             @info "Building an instance of $(info_color(string(model))) with components $components"
         end
-        return model(components,mixing_params,default_references(model))
+        return model(components, mixing_params, default_references(model))
     else
-        return init_model(model,components,mixing_userlocations,verbose)
+        return init_model(model, components, mixing_userlocations, verbose)
     end
 end

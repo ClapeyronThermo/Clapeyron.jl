@@ -11,115 +11,115 @@ end
 
 reference_state(model::GammaPhi) = reference_state(model.fluid)
 
-function Base.show(io::IO,mime::MIME"text/plain",model::GammaPhi)
-    print(io,"γ-ϕ Model")
+function Base.show(io::IO, mime::MIME"text/plain", model::GammaPhi)
+    print(io, "γ-ϕ Model")
     length(model) == 1 && print(io, " with 1 component:")
     length(model) > 1 && print(io, " with ", length(model), " components:")
     println(io)
-    show_pairs(io,model.components)
+    show_pairs(io, model.components)
     act = model.activity
-    if hasfield(typeof(act),:puremodel)
-        print(io,'\n',"Activity Model: ", parameterless_type(act))
+    if hasfield(typeof(act), :puremodel)
+        print(io, '\n', "Activity Model: ", parameterless_type(act))
     else
-        print(io,'\n',"Activity Model: ",typeof(act))
+        print(io, '\n', "Activity Model: ", typeof(act))
     end
-    print(io,'\n',"Fluid Model: ",typeof(model.fluid.model))
-    show_reference_state(io,model;space = true)
+    print(io, '\n', "Fluid Model: ", typeof(model.fluid.model))
+    show_reference_state(io, model; space=true)
 end
 
 fluid_model(model::GammaPhi) = model.fluid.model
 __γ_unwrap(model::GammaPhi) = __γ_unwrap(model.activity)
 @inline gas_model(model::GammaPhi) = gas_model(model.fluid.model)
-Base.eltype(model::GammaPhi) = Base.promote_eltype(__γ_unwrap(model),gas_model(model))
+Base.eltype(model::GammaPhi) = Base.promote_eltype(__γ_unwrap(model), gas_model(model))
 
-function excess_gibbs_free_energy(model::GammaPhi,p,T,z)
-    return excess_gibbs_free_energy(model.activity,p,T,z)
+function excess_gibbs_free_energy(model::GammaPhi, p, T, z)
+    return excess_gibbs_free_energy(model.activity, p, T, z)
 end
 
 reference_chemical_potential_type(model::GammaPhi) = reference_chemical_potential_type(model.activity)
 
-function volume_impl(model::GammaPhi,p,T,z,phase,threaded,vol0)
-    return volume_impl(model.fluid.model,p,T,z,phase,threaded,vol0)
+function volume_impl(model::GammaPhi, p, T, z, phase, threaded, vol0)
+    return volume_impl(model.fluid.model, p, T, z, phase, threaded, vol0)
 end
 
-molecular_weight(model::GammaPhi,z) = molecular_weight(model.fluid.model,z)
+molecular_weight(model::GammaPhi, z) = molecular_weight(model.fluid.model, z)
 saturation_model(model::GammaPhi) = saturation_model(model.fluid)
 idealmodel(model::GammaPhi) = idealmodel(model.fluid.model)
 
-function init_preferred_method(method::typeof(tp_flash),model::GammaPhi,kwargs)
-    MichelsenTPFlash(;kwargs...)
+function init_preferred_method(method::typeof(tp_flash), model::GammaPhi, kwargs)
+    MichelsenTPFlash(; kwargs...)
 end
 
 # Error handling for Activity models that don't provide saturation properties, in the context of VLE.
-function ActivitySaturationError(model,method)
+function ActivitySaturationError(model, method)
     throw(ArgumentError("$method requires $model to be used along with another EoS model that supports saturation properties. If you are using an Activity Model as a raw input, use `CompositeModel(components, liquid = activity_model, fluid = fluid_model)` instead."))
 end
 
-function gibbs_solvation(model::GammaPhi,T)
-    z = [1.0,1e-30]
-    p,v_l,v_v = saturation_pressure(model.fluid[1],T)
-    p2,_,_ = saturation_pressure(model.fluid[2],T)
-    γ = activity_coefficient(model,p,T,z)
+function gibbs_solvation(model::GammaPhi, T)
+    z = [1.0, 1e-30]
+    p, v_l, v_v = saturation_pressure(model.fluid[1], T)
+    p2, _, _ = saturation_pressure(model.fluid[2], T)
+    γ = activity_coefficient(model, p, T, z)
     K = v_v/v_l*γ[2]*p2/p
     return -R̄*T*log(K)
 end
 
-function __calculate_reference_state_consts(model::GammaPhi,v,T,p,z,H0,S0,phase)
+function __calculate_reference_state_consts(model::GammaPhi, v, T, p, z, H0, S0, phase)
     #∑z = sum(z)
-    S00 = entropy(model,p,T,z,phase = phase)
+    S00 = entropy(model, p, T, z, phase=phase)
     a1 = (S00 - S0)#/∑z
-    H00 = enthalpy(model,p,T,z,phase = phase)
+    H00 = enthalpy(model, p, T, z, phase=phase)
     a0 = (-H00 + H0)#/∑z
-    return a0,a1
+    return a0, a1
 end
 
-function PTFlashWrapper(model::GammaPhi,p,T,z,equilibrium)
+function PTFlashWrapper(model::GammaPhi, p, T, z, equilibrium)
     fluidmodel = model.fluid
     #check that we can actually solve the equilibria
     if is_idealmodel(fluidmodel) && !is_lle(equilibrium)
-        ActivitySaturationError(model.activity,tp_flash)
+        ActivitySaturationError(model.activity, tp_flash)
     end
-    TT = Solvers.primal_eltype(Base.promote_eltype(model,p,T,z))
-    wrapper = PTFlashWrapper{TT}(model,equilibrium,fluidmodel.pure)
+    TT = Solvers.primal_eltype(Base.promote_eltype(model, p, T, z))
+    wrapper = PTFlashWrapper{TT}(model, equilibrium, fluidmodel.pure)
     if is_vle(equilibrium) || is_unknown(equilibrium)
-        update_temperature!(wrapper,T)
+        update_temperature!(wrapper, T)
     end
     return wrapper
 end
 
-function PTFlashWrapper(model::FluidCorrelation,p,T,z,equilibrium)
+function PTFlashWrapper(model::FluidCorrelation, p, T, z, equilibrium)
     is_lle(equilibrium) && throw(error("FluidCorrelation does not support lle"))
-    compmodel = GammaPhi(model.components,IdealLiquidSolution(),EoSVectorParam(model))
-    return PTFlashWrapper(compmodel,p,T,z,equilibrium)
+    compmodel = GammaPhi(model.components, IdealLiquidSolution(), EoSVectorParam(model))
+    return PTFlashWrapper(compmodel, p, T, z, equilibrium)
 end
 
-function __tpflash_cache_model(model::GammaPhi,p,T,z,equilibrium)
-    PTFlashWrapper(model,p,T,z,equilibrium)
+function __tpflash_cache_model(model::GammaPhi, p, T, z, equilibrium)
+    PTFlashWrapper(model, p, T, z, equilibrium)
 end
 
-function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z,lle,cache = tpd_cache(wrapper,p,T,z,di))
-    d_l,d_v,_,_,_,_ = cache
+function tpd_input_composition(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, z, lle, cache=tpd_cache(wrapper, p, T, z, di))
+    d_l, d_v, _, _, _, _ = cache
     n = sum(z)
     logsumz = log(n)
-    d,vl = tpd_lnϕ_and_v!(last(cache),wrapper,p,T,z,nothing,false,:liquid)
+    d, vl = tpd_lnϕ_and_v!(last(cache), wrapper, p, T, z, nothing, false, :liquid)
     d_l .= d
     d_l .+= log.(z) .- logsumz
 
-    lle && return copy(d_l),:liquid,vl
+    lle && return copy(d_l), :liquid, vl
 
-    d,vv = tpd_lnϕ_and_v!(last(cache),wrapper,p,T,z,nothing,false,:vapour)
+    d, vv = tpd_lnϕ_and_v!(last(cache), wrapper, p, T, z, nothing, false, :vapour)
     d_v .= d
     d_v .+= log.(z) .- logsumz
-    gr_l = dot(z,d_l)
-    gr_v = dot(z,d_v)
+    gr_l = dot(z, d_l)
+    gr_v = dot(z, d_v)
     if gr_l < gr_v
-        return copy(d_l),:liquid,vl
+        return copy(d_l), :liquid, vl
     else
-        return copy(d_v),:vapour,vv
+        return copy(d_v), :vapour, vv
     end
 end
 
-function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpressure = false,phase = :l,_vol = nothing)
+function tpd_lnϕ_and_v!(cache, wrapper::PTFlashWrapper, p, T, w, vol0, liquid_overpressure=false, phase=:l, _vol=nothing)
     model = wrapper.model
     if is_liquid(phase)
         γmodel = __γ_unwrap(model)
@@ -128,62 +128,62 @@ function tpd_lnϕ_and_v!(cache,wrapper::PTFlashWrapper,p,T,w,vol0,liquid_overpre
         a normal helmholtz model, we just return lnϕ.
         =#
         if γmodel isa ActivityModel
-            logγx = lnγ(γmodel,p,T,w,cache)
+            logγx = lnγ(γmodel, p, T, w, cache)
             v = zero(eltype(logγx))
-            return logγx,v,true
+            return logγx, v, true
         elseif is_vle(wrapper.equilibrium)
-            logγx,v = __lnγ_sat(wrapper,p,T,w,cache)
-            return logγx,v,true
+            logγx, v = __lnγ_sat(wrapper, p, T, w, cache)
+            return logγx, v, true
         end
     end
-    if is_vapour(phase) && is_lle(wrapper.equilibrium) && any(isnan,wrapper.fug) && !isnan(T)
-        update_temperature!(wrapper,primalval(T))
+    if is_vapour(phase) && is_lle(wrapper.equilibrium) && any(isnan, wrapper.fug) && !isnan(T)
+        update_temperature!(wrapper, primalval(T))
     end
-    fxy,v,overpressure = tpd_lnϕ_and_v!(cache,gas_model(model),p,T,w,vol0,liquid_overpressure,phase,_vol)
-    is_vapour(phase) && tpd_delta_d_vapour!(fxy,wrapper,p,T)
+    fxy, v, overpressure = tpd_lnϕ_and_v!(cache, gas_model(model), p, T, w, vol0, liquid_overpressure, phase, _vol)
+    is_vapour(phase) && tpd_delta_d_vapour!(fxy, wrapper, p, T)
 
-    return fxy,v,overpressure
+    return fxy, v, overpressure
 end
 
-function __lnγ_sat(wrapper::PTFlashWrapper,p,T,w,cache = nothing,vol0 = nothing,vol = volume(wrapper.model,p,T,w,vol0 = vol0,phase = :l))
+function __lnγ_sat(wrapper::PTFlashWrapper, p, T, w, cache=nothing, vol0=nothing, vol=volume(wrapper.model, p, T, w, vol0=vol0, phase=:l))
     model = wrapper.model
-    μmix_temp = VT_chemical_potential_res!(cache,model,vol,T,w)
-    result,aux,logγ,A1,μmix,x2,x3,hconfig = cache
+    μmix_temp = VT_chemical_potential_res!(cache, model, vol, T, w)
+    result, aux, logγ, A1, μmix, x2, x3, hconfig = cache
     μmix .= μmix_temp
     sat = wrapper.sat
     fug = wrapper.fug
     pures = wrapper.pures
     RT = Rgas(model)*T
     for i in eachindex(logγ)
-        pᵢ,vpureᵢ,vvᵢ = saturation_pressure_ad2(sat[i],pures[i],T)
-        logϕᵢ = __eval_tpd_delta_g_sati(pures[i],T,fug[i],vvᵢ,pᵢ)
+        pᵢ, vpureᵢ, vvᵢ = saturation_pressure_ad2(sat[i], pures[i], T)
+        logϕᵢ = __eval_tpd_delta_g_sati(pures[i], T, fug[i], vvᵢ, pᵢ)
         μᵢ_over_RT = logϕᵢ + log(pᵢ*vpureᵢ/RT)
-        logγ[i] = log(vpureᵢ/vol) + μmix[i]/RT - μᵢ_over_RT -  vpureᵢ*(p - pᵢ)/RT
+        logγ[i] = log(vpureᵢ/vol) + μmix[i]/RT - μᵢ_over_RT - vpureᵢ*(p - pᵢ)/RT
     end
-    return logγ,vol
+    return logγ, vol
 end
 
-function modified_∂lnϕ∂n(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, z, cache; phase = :unknown, vol0 = nothing)
+function modified_∂lnϕ∂n(wrapper::PTFlashWrapper{<:GammaPhi}, p, T, z, cache; phase=:unknown, vol0=nothing)
     model = wrapper.model
     if is_vapour(phase)
-        lnϕ,∂lnϕ∂n,vol =  modified_∂lnϕ∂n(gas_model(model),p,T,z,cache;phase,vol0)
-        tpd_delta_d_vapour!(lnϕ,wrapper,p,T)
-        return lnϕ,∂lnϕ∂n,vol
+        lnϕ, ∂lnϕ∂n, vol = modified_∂lnϕ∂n(gas_model(model), p, T, z, cache; phase, vol0)
+        tpd_delta_d_vapour!(lnϕ, wrapper, p, T)
+        return lnϕ, ∂lnϕ∂n, vol
     elseif is_liquid(phase)
-        g_E,lnγ,∂lnγ∂ni = ∂lnγ∂n(__γ_unwrap(model),p,T,z,cache)
-        return lnγ,∂lnγ∂ni,zero(g_E)
+        g_E, lnγ, ∂lnγ∂ni = ∂lnγ∂n(__γ_unwrap(model), p, T, z, cache)
+        return lnγ, ∂lnγ∂ni, zero(g_E)
     else
         throw(error("invalid specification for phase: $phase"))
     end
 end
 
-function PT_property(model::GammaPhi,p,T,z,phase,threaded,vol0,f::F,vol::V) where {F,V}
+function PT_property(model::GammaPhi, p, T, z, phase, threaded, vol0, f::F, vol::V) where {F,V}
     if is_vapour(phase)
         gasmodel = gas_model(model)
-        return PT_property(gasmodel,p,T,z,phase,threaded,vol0,f,vol) + Δref(model,gasmodel,p,T,z,f)
+        return PT_property(gasmodel, p, T, z, phase, threaded, vol0, f, vol) + Δref(model, gasmodel, p, T, z, f)
     else #liquid or unknown
-        wrapper = PTFlashWrapper(model,p,T,z,:vle)
-        return PT_property(wrapper,p,T,z,phase,threaded,vol0,f,vol)
+        wrapper = PTFlashWrapper(model, p, T, z, :vle)
+        return PT_property(wrapper, p, T, z, phase, threaded, vol0, f, vol)
     end
 end
 

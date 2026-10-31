@@ -6,94 +6,83 @@ Their main use is to bracket a range where there exists a maxwell loop.
 
 =#
 
-const BracketState{T} = NamedTuple{(:v,:p,:dpdv,:d2pdv2),NTuple{4,T}}
+const BracketState{T} = NamedTuple{(:v, :p, :dpdv, :d2pdv2),NTuple{4,T}}
 
-@inline function d2pdv2_state(model,xx,T,z,::Type{TT}) where TT
+@inline function d2pdv2_state(model, xx, T, z, ::Type{TT}) where TT
     _f, _df, _d2f = p∂p∂2p(model, xx, T, z)
-    return BracketState{TT}((TT(xx),TT(_f),TT(_df),TT(_d2f)))
+    return BracketState{TT}((TT(xx), TT(_f), TT(_df), TT(_d2f)))
 end
 
-@noinline function coexistence_volumes_bracketed_bracket_log(msg::String,data)
+@noinline function coexistence_volumes_bracketed_bracket_log(msg::String, data)
     @info msg data
     return nothing
 end
 
 function coexistence_volumes_bracketed(model, T, z; kwargs...)
-    lbv = lb_volume(model,T,z)
+    lbv = lb_volume(model, T, z)
     vl = 1.001*lbv
     vhi = 1e5*lbv
-    return coexistence_volumes_bracketed(model,T,z,vl,vhi;kwargs...)
+    return coexistence_volumes_bracketed(model, T, z, vl, vhi; kwargs...)
 end
 
-function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0 = nothing;
-        tol_v    = 1e-12,
-        max_iters::Int  = 100,
-        branches::Symbol = :all,
-        strikes::Int = 3,
-        verbose::Bool  = false)
-
-    TT = promote_type(Base.promote_eltype(model,T,z),Base.promote_eltype(_v_lb,_v_ub))
-    v_lb,v_ub = minmax(TT(_v_lb),TT(_v_ub))
+function coexistence_volumes_bracketed(model, T, z, _v_lb, _v_ub, vm0=nothing; tol_v=1e-12, max_iters::Int=100, branches::Symbol=:all, strikes::Int=3, verbose::Bool=false)
+    TT = promote_type(Base.promote_eltype(model, T, z), Base.promote_eltype(_v_lb, _v_ub))
+    v_lb, v_ub = minmax(TT(_v_lb), TT(_v_ub))
     #function barrier: the implementation is specialized on TT.
-    return _coexistence_volumes_bracketed(model,T,z,v_lb,v_ub,vm0,TT,
-                                          tol_v,max_iters,branches,strikes,verbose)
+    return _coexistence_volumes_bracketed(model, T, z, v_lb, v_ub, vm0, TT, tol_v, max_iters, branches, strikes, verbose)
 end
 
-function _coexistence_volumes_bracketed(model,T,z,v_lb::TT,v_ub::TT,vm0,::Type{TT},
-        tol_v,max_iters::Int,branches::Symbol,strikes::Int,verbose::Bool)::Tuple{BracketState{TT},BracketState{TT},BracketState{TT},Symbol} where TT
-
+function _coexistence_volumes_bracketed(model, T, z, v_lb::TT, v_ub::TT, vm0, ::Type{TT}, tol_v, max_iters::Int, branches::Symbol, strikes::Int, verbose::Bool)::Tuple{BracketState{TT},BracketState{TT},BracketState{TT},Symbol} where TT
     ∑z = TT(sum(z))
     nan = TT(NaN)
-    s0 = BracketState{TT}((nan,nan,nan,nan))
-    sl,sv = d2pdv2_state(model,v_lb,T,z,TT),d2pdv2_state(model,v_ub,T,z,TT)
+    s0 = BracketState{TT}((nan, nan, nan, nan))
+    sl, sv = d2pdv2_state(model, v_lb, T, z, TT), d2pdv2_state(model, v_ub, T, z, TT)
 
-    _bracket_hermite(sa,sb) = Solvers.hermite5_poly(sa.v, sb.v, sa.p, sb.p, sa.dpdv, sb.dpdv, sa.d2pdv2, sb.d2pdv2)
-    d2pdrho2(s,∑z) = s.v * s.v * s.v *(s.v * s.d2pdv2 + 2 * s.dpdv) / (∑z*∑z)
+    _bracket_hermite(sa, sb) = Solvers.hermite5_poly(sa.v, sb.v, sa.p, sb.p, sa.dpdv, sb.dpdv, sa.d2pdv2, sb.d2pdv2)
+    d2pdrho2(s, ∑z) = s.v * s.v * s.v * (s.v * s.d2pdv2 + 2 * s.dpdv) / (∑z*∑z)
 
-    verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: start",
-        (T=T, v_lb=sl.v, p_lb=sl.p, dpdv_lb=sl.dpdv, v_ub=sv.v, p_ub=sv.p, dpdv_ub=sv.dpdv, vm0=vm0, branches=branches))
+    verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: start", (T=T, v_lb=sl.v, p_lb=sl.p, dpdv_lb=sl.dpdv, v_ub=sv.v, p_ub=sv.p, dpdv_ub=sv.dpdv, vm0=vm0, branches=branches))
     #non finite pressures (e.g. volume below the co-volume), or non-positive vapour pressure.
     if !isfinite(sl.p) || !isfinite(sv.p) || sv.p <= 0 || sl.v < 0 || sv.v < 0
-        return sl,sv,s0,:failure
+        return sl, sv, s0, :failure
     end
 
     # sl is unstable, sv is stable
     if sl.dpdv > 0 && sv.dpdv < 0
-        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: case sl unstable, sv stable",(;))
-        is_vapour(branches) && (return s0,sv,sl,:vapour)
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: case sl unstable, sv stable", (;))
+        is_vapour(branches) && (return s0, sv, sl, :vapour)
         #NOTE (type stability): the TT(...) conversion keeps vl_new concrete.
-        vl_new = TT(coexistence_expand_volume_bracket(model,T,z,sl.v,:liquid))
-        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: expanded liquid bracket",(v_old=sl.v, v_new=vl_new))
-        isnan(vl_new) && (return sl,sv,sl,:failure)
-        sl_new = d2pdv2_state(model,vl_new,T,z,TT)
-        return sl_new,sv,sl,:eq
+        vl_new = TT(coexistence_expand_volume_bracket(model, T, z, sl.v, :liquid))
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: expanded liquid bracket", (v_old=sl.v, v_new=vl_new))
+        isnan(vl_new) && (return sl, sv, sl, :failure)
+        sl_new = d2pdv2_state(model, vl_new, T, z, TT)
+        return sl_new, sv, sl, :eq
     end
 
     # sl is stable, sv is unstable
     if sv.dpdv > 0 && sl.dpdv < 0
-        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: case sl stable, sv unstable",(;))
-        is_liquid(branches) && (return sl,s0,sv,:liquid)
-        vv_new = TT(coexistence_expand_volume_bracket(model,T,z,sv.v,:vapour))
-        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: expanded vapour bracket",(v_old=sv.v, v_new=vv_new))
-        isnan(vv_new) && (return sl,sv,sv,:failure)
-        sv_new = d2pdv2_state(model,vv_new,T,z,TT)
-        return sl,sv_new,sv,:eq
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: case sl stable, sv unstable", (;))
+        is_liquid(branches) && (return sl, s0, sv, :liquid)
+        vv_new = TT(coexistence_expand_volume_bracket(model, T, z, sv.v, :vapour))
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: expanded vapour bracket", (v_old=sv.v, v_new=vv_new))
+        isnan(vv_new) && (return sl, sv, sv, :failure)
+        sv_new = d2pdv2_state(model, vv_new, T, z, TT)
+        return sl, sv_new, sv, :eq
     end
 
     # sl is unstable, sv is unstable (??)
     if sv.dpdv > 0 && sl.dpdv > 0
-        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: case sl and sv unstable",(;))
-        vv_new = TT(coexistence_expand_volume_bracket(model,T,z,sv.v,:vapour))
-        vl_new = TT(coexistence_expand_volume_bracket(model,T,z,sl.v,:liquid))
-        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: expanded both brackets",
-            (vl_old=sl.v, vl_new=vl_new, vv_old=sv.v, vv_new=vv_new))
-        (isnan(vv_new) || isnan(vl_new)) && (return sl,sv,s0,:failure)
-        sv_new = d2pdv2_state(model,vv_new,T,z,TT)
-        sl_new = d2pdv2_state(model,vl_new,T,z,TT)
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: case sl and sv unstable", (;))
+        vv_new = TT(coexistence_expand_volume_bracket(model, T, z, sv.v, :vapour))
+        vl_new = TT(coexistence_expand_volume_bracket(model, T, z, sl.v, :liquid))
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: expanded both brackets", (vl_old=sl.v, vl_new=vl_new, vv_old=sv.v, vv_new=vv_new))
+        (isnan(vv_new) || isnan(vl_new)) && (return sl, sv, s0, :failure)
+        sv_new = d2pdv2_state(model, vv_new, T, z, TT)
+        sl_new = d2pdv2_state(model, vl_new, T, z, TT)
         #pick the unstable point closer to the inflection of dpdv (d2pdv2 = 0).
         #v*d2pdv2/dpdv is dimensionless, so both sides are comparable.
-        smid = ifelse(abs(sl.v*sl.d2pdv2/sl.dpdv) < abs(sv.v*sv.d2pdv2/sv.dpdv),sl,sv)
-        return sl_new,sv_new,smid,:eq
+        smid = ifelse(abs(sl.v*sl.d2pdv2/sl.dpdv) < abs(sv.v*sv.d2pdv2/sv.dpdv), sl, sv)
+        return sl_new, sv_new, smid, :eq
     end
 
     if vm0 === nothing
@@ -102,9 +91,9 @@ function _coexistence_volumes_bracketed(model,T,z,v_lb::TT,v_ub::TT,vm0,::Type{T
         #NOTE (type stability): vm0 is converted to TT before use.
         vm0_TT = TT(vm0)
         if !isnan(vm0_TT)
-            sm = d2pdv2_state(model,vm0_TT,T,z,TT)
-            sm.dpdv > 0 && (return sl,sv,sm,:eq)
-            d2pdrho2_m0 = d2pdrho2(sm,∑z)
+            sm = d2pdv2_state(model, vm0_TT, T, z, TT)
+            sm.dpdv > 0 && (return sl, sv, sm, :eq)
+            d2pdrho2_m0 = d2pdrho2(sm, ∑z)
             if d2pdrho2_m0 > zero(TT)
                 sl = sm
             else
@@ -118,24 +107,23 @@ function _coexistence_volumes_bracketed(model,T,z,v_lb::TT,v_ub::TT,vm0,::Type{T
     status = :failure
     niter = 0
     vapour_updated = false #true if the last update was on the vapour side. if so, the next middle point is generated in density variables.
-    verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: entering hermite loop",
-        (v_l=sl.v, v_v=sv.v, dpdv_l=sl.dpdv, dpdv_v=sv.dpdv))
+    verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: entering hermite loop", (v_l=sl.v, v_v=sv.v, dpdv_l=sl.dpdv, dpdv_v=sv.dpdv))
 
     for i in 1:max_iters
         niter = i
 
-        lnv_converged,_ = Solvers.convergence(log(sl.v),log(sv.v),zero(TT),tol_v)
+        lnv_converged, _ = Solvers.convergence(log(sl.v), log(sv.v), zero(TT), tol_v)
         lnv_converged && break
-        d2pdρ2l = d2pdrho2(sl,∑z)
-        d2pdρ2v = d2pdrho2(sv,∑z)
+        d2pdρ2l = d2pdrho2(sl, ∑z)
+        d2pdρ2v = d2pdrho2(sv, ∑z)
         #NOTE (type stability): vm is declared as TT, so it is concrete in both branches.
         local vm::TT
         if vapour_updated
             #density formulation: the vapour is the lower density bound, the liquid the upper one.
             #we interpolate q = -p, so that the unstable region has dqdρ > 0, with a maximum of dqdρ
             #at the inflexion point, the same sign convention that _find_vm expects for volumes.
-            ρl,ρv = ∑z/sl.v,∑z/sv.v
-            dqdρl,dqdρv = sl.dpdv*sl.v*sl.v/∑z,sv.dpdv*sv.v*sv.v/∑z
+            ρl, ρv = ∑z/sl.v, ∑z/sv.v
+            dqdρl, dqdρv = sl.dpdv*sl.v*sl.v/∑z, sv.dpdv*sv.v*sv.v/∑z
             d2qdρ2l = -d2pdρ2l
             d2qdρ2v = -d2pdρ2v
             poly = Solvers.hermite5_poly(ρv, ρl, -sv.p, -sl.p, dqdρv, dqdρl, d2qdρ2v, d2qdρ2l)
@@ -144,12 +132,12 @@ function _coexistence_volumes_bracketed(model,T,z,v_lb::TT,v_ub::TT,vm0,::Type{T
             vm = ∑z/ρm #NaN if ρm is NaN, vm < 0 if ρm < 0
         else
             # Hermite interpolant on the current bounds, volume formulation
-            poly = _bracket_hermite(sl,sv)
+            poly = _bracket_hermite(sl, sv)
             c = - sl.v #translation of the hermite poly. v(eos) + c = v(hermite)
             dpoly = Solvers.polyder(poly)
 
             #get vm = d2pdv2 = 0 via hermite polynomials
-            vm = TT(_find_vm(dpoly, sl.v, sv.v,c))
+            vm = TT(_find_vm(dpoly, sl.v, sv.v, c))
         end
 
         #of hermite interpolant failed, fall back to bisection.
@@ -162,28 +150,25 @@ function _coexistence_volumes_bracketed(model,T,z,v_lb::TT,v_ub::TT,vm0,::Type{T
             vm = sqrt(sl.v*sv.v)
         end
 
-        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: iteration",
-            (i=i, v_l=sl.v, v_v=sv.v, vm=vm, hermite_failed=hermite_failed, strikes=strikes))
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: iteration", (i=i, v_l=sl.v, v_v=sv.v, vm=vm, hermite_failed=hermite_failed, strikes=strikes))
 
         strike_count >= strikes && break
 
-        sm = d2pdv2_state(model,vm,T,z,TT)
+        sm = d2pdv2_state(model, vm, T, z, TT)
 
         #return if we found our middle point.
         if sm.dpdv > 0
             status = :eq
-            verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: found unstable middle point",
-                (i=i, vm=sm.v, dpdv=sm.dpdv, p=sm.p))
+            verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: found unstable middle point", (i=i, vm=sm.v, dpdv=sm.dpdv, p=sm.p))
             break
         end
 
         #update bounds
         #Anderson and Prausnitz criteria to distinguish between liquid and gas, good enough here
         #for an stricter criteria, pip was used, but it requires evaluating the EoS again.
-        d2pdrho2_m = d2pdrho2(sm,∑z)
+        d2pdrho2_m = d2pdrho2(sm, ∑z)
 
-        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: stable middle point",
-            (i=i, vm=sm.v, dpdv=sm.dpdv, d2pdrho2=d2pdrho2_m, moves=(d2pdrho2_m > zero(TT) ? :sl : :sv)))
+        verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: stable middle point", (i=i, vm=sm.v, dpdv=sm.dpdv, d2pdrho2=d2pdrho2_m, moves=(d2pdrho2_m > zero(TT) ? :sl : :sv)))
 
         if d2pdrho2_m > zero(TT)
             sl = sm
@@ -199,14 +184,13 @@ function _coexistence_volumes_bracketed(model,T,z,v_lb::TT,v_ub::TT,vm0,::Type{T
         vapour_updated = false
     end
 
-    verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: end",
-        (status=status, iterations=niter, strikes=strikes, v_l=sl.v, v_v=sv.v, v_m=sm.v))
+    verbose && coexistence_volumes_bracketed_bracket_log(lazy"Clapeyron.coexistence_volumes_bracketed: end", (status=status, iterations=niter, strikes=strikes, v_l=sl.v, v_v=sv.v, v_m=sm.v))
 
-    return sl,sv,sm,status
+    return sl, sv, sm, status
 end
 
-function _find_vm(dpoly, lo::K, hi::K,c::K = zero(K)) where K
-   #dpoly : dpdv
+function _find_vm(dpoly, lo::K, hi::K, c::K=zero(K)) where K
+    #dpoly : dpdv
     d2poly = Solvers.polyder(dpoly) #: d2pdv2
     d3poly = Solvers.polyder(d2poly)#: d3pdv3
 
@@ -226,20 +210,20 @@ function _find_vm(dpoly, lo::K, hi::K,c::K = zero(K)) where K
     end
 end
 
-function coexistence_expand_volume_bracket(model,T,z,v,phase)
+function coexistence_expand_volume_bracket(model, T, z, v, phase)
 
     #generate a bracket point that actually has dpdv < 0
 
-    TT = Base.promote_eltype(model,T,z,v)
+    TT = Base.promote_eltype(model, T, z, v)
     vx = TT(v)
     rhox = 1/vx
     is_gas = is_vapour(phase)
     npts = 10
     if is_gas
-        xrange = range(rhox,zero(rhox),npts + 1)
+        xrange = range(rhox, zero(rhox), npts + 1)
     else
-        lbv = TT(lb_volume(model,T,z))
-        xrange = range(log2(vx),log2(lbv),npts + 1)
+        lbv = TT(lb_volume(model, T, z))
+        xrange = range(log2(vx), log2(lbv), npts + 1)
     end
 
     for i in 2:npts
@@ -248,7 +232,7 @@ function coexistence_expand_volume_bracket(model,T,z,v,phase)
         else
             vxi = exp2(xrange[i])
         end
-        _,dpdv_i = p∂p∂V(model,vxi,T,z)
+        _, dpdv_i = p∂p∂V(model, vxi, T, z)
         dpdv_i < 0 && return vxi
     end
     return zero(vx)/zero(vx)
@@ -276,32 +260,31 @@ The function is split in small pieces, each one is a top level function without 
  - _good_bracket_outer: step 2, outer brackets (liquid extension, zero pressure approximation, vapour ideal gas point and post-check).
 =#
 
-function coexistence_get_good_bracket(model,T,z;max_iters_hermite = 15,rtol_spinodal = 1e-8)
-    s0l,s0v,s0m,status =  coexistence_volumes_bracketed(model,T,z)
-    return coexistence_get_good_bracket(model,T,z,s0l,s0v,s0m,max_iters_hermite,rtol_spinodal)
+function coexistence_get_good_bracket(model, T, z; max_iters_hermite=15, rtol_spinodal=1e-8)
+    s0l, s0v, s0m, status = coexistence_volumes_bracketed(model, T, z)
+    return coexistence_get_good_bracket(model, T, z, s0l, s0v, s0m, max_iters_hermite, rtol_spinodal)
 end
 
-function coexistence_get_good_bracket(model,T,z,s0l,s0v,s0m,max_iters_hermite = 15,rtol_spinodal = 1e-8)
-    TT = Base.promote_eltype(model,T,z,s0l.v,s0v.v,s0m.v)
+function coexistence_get_good_bracket(model, T, z, s0l, s0v, s0m, max_iters_hermite=15, rtol_spinodal=1e-8)
+    TT = Base.promote_eltype(model, T, z, s0l.v, s0v.v, s0m.v)
     ∑z = TT(sum(z))
     RT = Rgas(model)*T
 
     #stable inner brackets
-    sl = (v = TT(s0l.v),p = TT(s0l.p),dpdv = TT(s0l.dpdv))
-    sv = (v = TT(s0v.v),p = TT(s0v.p),dpdv = TT(s0v.dpdv))
+    sl = (v=TT(s0l.v), p=TT(s0l.p), dpdv=TT(s0l.dpdv))
+    sv = (v=TT(s0v.v), p=TT(s0v.p), dpdv=TT(s0v.dpdv))
 
     #unstable bounds
-    sm = (v = TT(s0m.v),p = TT(s0m.p),dpdv = TT(s0m.dpdv))
-    sml,smv = sm,sm
-
+    sm = (v=TT(s0m.v), p=TT(s0m.p), dpdv=TT(s0m.dpdv))
+    sml, smv = sm, sm
 
     #the middle point must be an unstable state, otherwise there is nothing to refine.
     if !(sm.dpdv > 0)
-        return (return (sl,sl),(sv,sv),(sm,sm),(TT(NaN),TT(NaN)))
+        return (return (sl, sl), (sv, sv), (sm, sm), (TT(NaN), TT(NaN)))
     end
 
     #stable outer brackets: they are saved before the virial seed, those must keep the original sv.
-    sl_outer,sv_outer = sl,sv
+    sl_outer, sv_outer = sl, sv
 
     #Step 0: virial seed for the vapour side
     #the second virial coefficient is estimated from the stable vapour input state: p*v = nRT*(1 + B/v_molar).
@@ -310,7 +293,7 @@ function coexistence_get_good_bracket(model,T,z,s0l,s0v,s0m,max_iters_hermite = 
     B_est = (sv.v/∑z)*(sv.p*sv.v/(∑z*RT) - 1)
     v_vir = -2*B_est*∑z
     if isfinite(B_est) && B_est < 0 && sm.v < v_vir < sv.v
-        svir = dpdv_state(model,v_vir,T,z)
+        svir = dpdv_state(model, v_vir, T, z)
         if isfinite(svir.p) && svir.dpdv < 0
             sv = svir #virial point is now the best vapour inner bound
         elseif isfinite(svir.p) && svir.dpdv > 0 && svir.v > sm.v
@@ -320,51 +303,51 @@ function coexistence_get_good_bracket(model,T,z,s0l,s0v,s0m,max_iters_hermite = 
     end
 
     #Step 1: inner brackets, sl.p < sv.p, (sl,sml) brackets the liquid spinodal and (smv,sv) the vapour spinodal
-    sl,sml,smv,sv,p̄l,p̄v,ok = _good_bracket_inner(model,T,z,sl,sml,smv,sv,max_iters_hermite,rtol_spinodal)
-    ok || (return (sl,sl),(sv,sv),(sm,sm),(TT(NaN),TT(NaN)))
+    sl, sml, smv, sv, p̄l, p̄v, ok = _good_bracket_inner(model, T, z, sl, sml, smv, sv, max_iters_hermite, rtol_spinodal)
+    ok || (return (sl, sl), (sv, sv), (sm, sm), (TT(NaN), TT(NaN)))
 
     #Step 2: outer brackets, such as sl_outer.p > p̄v, sv_outer.p < p̄l (*)
     # on the case of a liquid bracket that reaches negative pressures, we proceed to use the zero pressure approximation.
-    sl_outer,sv_outer,ok = _good_bracket_outer(model,T,z,sl,sl_outer,sv_outer,p̄l,p̄v)
-    ok || (return (sl,sl),(sv,sv),(sm,sm),(TT(NaN),TT(NaN)))
+    sl_outer, sv_outer, ok = _good_bracket_outer(model, T, z, sl, sl_outer, sv_outer, p̄l, p̄v)
+    ok || (return (sl, sl), (sv, sv), (sm, sm), (TT(NaN), TT(NaN)))
 
-    return (sl_outer,sl),(sv,sv_outer),(sml,smv),(p̄l,p̄v)
+    return (sl_outer, sl), (sv, sv_outer), (sml, smv), (p̄l, p̄v)
 end
 
-function dpdv_state(model,v,T,z)
-    TT = Base.promote_eltype(model,T,z,v)
-    p,dpdv = p∂p∂V(model,v,T,z)
-    return (v = TT(v),p = TT(p),dpdv = TT(dpdv))
+function dpdv_state(model, v, T, z)
+    TT = Base.promote_eltype(model, T, z, v)
+    p, dpdv = p∂p∂V(model, v, T, z)
+    return (v=TT(v), p=TT(p), dpdv=TT(dpdv))
 end
 
-function _hermite_spinodal(xa,xb,pa,pb,dpa,dpb)
+function _hermite_spinodal(xa, xb, pa, pb, dpa, dpb)
     #xa < xb, in any coordinate x (v or ρ). one state is stable and the other unstable.
     #returns (xs,ps): the extremum of the hermite-3 interpolant of p(x) between them
     #(an estimate of the spinodal), in the original coordinate. (NaN,NaN) if there is no root inside.
-    poly = Solvers.hermite3_poly(xa,xb,pa,pb,dpa,dpb) #polynomial in (x - xa)
+    poly = Solvers.hermite3_poly(xa, xb, pa, pb, dpa, dpb) #polynomial in (x - xa)
     dpoly = Solvers.polyder(poly)
-    _,x1,x2 = Solvers.real_roots2(dpoly)
+    _, x1, x2 = Solvers.real_roots2(dpoly)
     hi = xb - xa
-    xs = ifelse(zero(hi) <= x1 <= hi,x1,x2)
+    xs = ifelse(zero(hi) <= x1 <= hi, x1, x2)
     if zero(hi) <= xs <= hi
-        return xs + xa,evalpoly(xs,poly)
+        return xs + xa, evalpoly(xs, poly)
     end
-    return zero(hi)/zero(hi),zero(hi)/zero(hi)
+    return zero(hi)/zero(hi), zero(hi)/zero(hi)
 end
 
-function _good_bracket_step(model,T,z,sst,sun,p̄,∑z,rtol_spinodal,density::Bool)
+function _good_bracket_step(model, T, z, sst, sun, p̄, ∑z, rtol_spinodal, density::Bool)
     #one iteration on one side (liquid or vapour). takes a stable and an unstable state, generates a new point near the spinodal,
     #replaces the bound of the same stability and checks if we are done with this side.
     #returns the new stable and unstable states, the spinodal pressure estimate, the newton seed, and the done/fallback flags.
 
     if density
         #work in density formulation
-        dpdρ_sst,dpdρ_sun = -sst.dpdv*sst.v*sst.v/∑z,-sun.dpdv*sun.v*sun.v/∑z
-        ρs,ps = _hermite_spinodal(∑z/sst.v,∑z/sun.v,sst.p,sun.p,dpdρ_sst,dpdρ_sun) #ρst < ρun
+        dpdρ_sst, dpdρ_sun = -sst.dpdv*sst.v*sst.v/∑z, -sun.dpdv*sun.v*sun.v/∑z
+        ρs, ps = _hermite_spinodal(∑z/sst.v, ∑z/sun.v, sst.p, sun.p, dpdρ_sst, dpdρ_sun) #ρst < ρun
         vs = ∑z/ρs
     else
         #work in volume formulation
-        vs,ps = _hermite_spinodal(sst.v,sun.v,sst.p,sun.p,sst.dpdv,sun.dpdv) #vst < vun
+        vs, ps = _hermite_spinodal(sst.v, sun.v, sst.p, sun.p, sst.dpdv, sun.dpdv) #vst < vun
     end
 
     if !isnan(vs)
@@ -373,7 +356,7 @@ function _good_bracket_step(model,T,z,sst,sun,p̄,∑z,rtol_spinodal,density::Bo
         vs = sqrt(sst.v*sun.v)
     end
 
-    snew = dpdv_state(model,vs,T,z)
+    snew = dpdv_state(model, vs, T, z)
     new_is_unstable = snew.dpdv > 0
     vprev = new_is_unstable ? sun.v : sst.v #bound that is about to be replaced
 
@@ -387,47 +370,47 @@ function _good_bracket_step(model,T,z,sst,sun,p̄,∑z,rtol_spinodal,density::Bo
         vx2 = snew.v
         sst = snew
     end
-    done,fallback = false,false
-    converged,_ = Solvers.convergence(log(vx1),log(vx2),zero(vx2),1e-12)
+    done, fallback = false, false
+    converged, _ = Solvers.convergence(log(vx1), log(vx2), zero(vx2), 1e-12)
     if converged
         done = true
     elseif abs(snew.v - vprev) <= 4*eps(snew.v)
         #stagnation: the new point reproduces the bound it replaces. if the bracket is already tight,
         #we reached the pressure resolution and we accept it. otherwise, the cycle is degenerate.
         done = true
-        fallback = abs(sun.v - sst.v) > rtol_spinodal*max(sun.v,sst.v)
+        fallback = abs(sun.v - sst.v) > rtol_spinodal*max(sun.v, sst.v)
     end
-    return sst,sun,p̄,vs,done,fallback
+    return sst, sun, p̄, vs, done, fallback
 end
 
-function _good_bracket_close(model,T,z,sst,sun,p̄,vseed,fallback::Bool,∑z,density::Bool,rtol_spinodal)
+function _good_bracket_close(model, T, z, sst, sun, p̄, vseed, fallback::Bool, ∑z, density::Bool, rtol_spinodal)
     #end of one side. degenerate sides use the true spinodal (safeguarded newton on dpdv inside the bracket).
     #the other ones recompute the spinodal pressure from the final bracket: by construction of the hermite interpolant,
     #p̄l <= sl.p and sv.p <= p̄v. returns the final bracket, the spinodal pressure and a success flag.
     if fallback
-        sst,sun,sn = pure_spinodal_newton_bracket(model,T,z,sst,sun,vseed;rtol = rtol_spinodal)
-        isnan(sn.v) && return sst,sun,p̄,false
+        sst, sun, sn = pure_spinodal_newton_bracket(model, T, z, sst, sun, vseed; rtol=rtol_spinodal)
+        isnan(sn.v) && return sst, sun, p̄, false
         p̄ = sn.p
     else
         if density
             #work in density formulation
-            dpdρ_sst,dpdρ_sun = -sst.dpdv*sst.v*sst.v/∑z,-sun.dpdv*sun.v*sun.v/∑z
-            _,p̄f = _hermite_spinodal(∑z/sst.v,∑z/sun.v,sst.p,sun.p,dpdρ_sst,dpdρ_sun) #ρst < ρun
+            dpdρ_sst, dpdρ_sun = -sst.dpdv*sst.v*sst.v/∑z, -sun.dpdv*sun.v*sun.v/∑z
+            _, p̄f = _hermite_spinodal(∑z/sst.v, ∑z/sun.v, sst.p, sun.p, dpdρ_sst, dpdρ_sun) #ρst < ρun
         else
             #work in volume formulation
-            _,p̄f = _hermite_spinodal(sst.v,sun.v,sst.p,sun.p,sst.dpdv,sun.dpdv) #vst < vun
+            _, p̄f = _hermite_spinodal(sst.v, sun.v, sst.p, sun.p, sst.dpdv, sun.dpdv) #vst < vun
         end
 
         p̄ = isnan(p̄f) ? p̄ : p̄f
     end
-    return sst,sun,p̄,true
+    return sst, sun, p̄, true
 end
 
-function _good_bracket_inner(model,T,z,sl,sml,smv,sv,max_iters_hermite,rtol_spinodal)
+function _good_bracket_inner(model, T, z, sl, sml, smv, sv, max_iters_hermite, rtol_spinodal)
     ∑z = sum(z)
-    TT = Base.promote_eltype(model,T,z,sl.v,sml.v,smv.v,∑z)
+    TT = Base.promote_eltype(model, T, z, sl.v, sml.v, smv.v, ∑z)
     #estimations of the spinodal pressures
-    p̄l,p̄v = TT(NaN),TT(NaN)
+    p̄l, p̄v = TT(NaN), TT(NaN)
 
     done_l = false #sl.p < 0 is checked after the first iteration, so p̄l is always estimated.
     done_v = false
@@ -435,8 +418,8 @@ function _good_bracket_inner(model,T,z,sl,sml,smv,sv,max_iters_hermite,rtol_spin
 
     #the hermite cycle is cheap but can degenerate (one side stuck, or no convergence in max_iters_hermite).
     #in that case, that side falls back to the true spinodal (safeguarded newton on dpdv, more expensive).
-    fallback_l,fallback_v = false,false
-    vseed_l,vseed_v = TT(NaN),TT(NaN) #last hermite estimate of the spinodal volumes, used as newton seeds.
+    fallback_l, fallback_v = false, false
+    vseed_l, vseed_v = TT(NaN), TT(NaN) #last hermite estimate of the spinodal volumes, used as newton seeds.
 
     #find crossing inner bounds, such as sl.p < sv.p. sl also stops if sl.p < 0
     for i in 1:max_iters_hermite
@@ -444,7 +427,7 @@ function _good_bracket_inner(model,T,z,sl,sml,smv,sv,max_iters_hermite,rtol_spin
         cross && done_l && done_v && i > 1 && break
 
         if !done_l
-            sl,sml,p̄l,vseed_l,dl,fl = _good_bracket_step(model,T,z,sl,sml,p̄l,∑z,rtol_spinodal,false)
+            sl, sml, p̄l, vseed_l, dl, fl = _good_bracket_step(model, T, z, sl, sml, p̄l, ∑z, rtol_spinodal, false)
             done_l |= dl
             fallback_l |= fl
         end
@@ -454,7 +437,7 @@ function _good_bracket_inner(model,T,z,sl,sml,smv,sv,max_iters_hermite,rtol_spin
         end
 
         if !done_v
-            sv,smv,p̄v,vseed_v,dv,fv = _good_bracket_step(model,T,z,sv,smv,p̄v,∑z,rtol_spinodal,true)
+            sv, smv, p̄v, vseed_v, dv, fv = _good_bracket_step(model, T, z, sv, smv, p̄v, ∑z, rtol_spinodal, true)
             done_v |= dv
             fallback_v |= fv
         end
@@ -477,23 +460,21 @@ function _good_bracket_inner(model,T,z,sl,sml,smv,sv,max_iters_hermite,rtol_spin
     fallback_l |= !done_l
     fallback_v |= !done_v
 
-
-    sl,sml,p̄l,ok_l = _good_bracket_close(model,T,z,sl,sml,p̄l,vseed_l,fallback_l,∑z,false,rtol_spinodal)
-    ok_l || return sl,sml,smv,sv,p̄l,p̄v,false
-    sv,smv,p̄v,ok_v = _good_bracket_close(model,T,z,sv,smv,p̄v,vseed_v,fallback_v,∑z,true,rtol_spinodal)
-    ok_v || return sl,sml,smv,sv,p̄l,p̄v,false
+    sl, sml, p̄l, ok_l = _good_bracket_close(model, T, z, sl, sml, p̄l, vseed_l, fallback_l, ∑z, false, rtol_spinodal)
+    ok_l || return sl, sml, smv, sv, p̄l, p̄v, false
+    sv, smv, p̄v, ok_v = _good_bracket_close(model, T, z, sv, smv, p̄v, vseed_v, fallback_v, ∑z, true, rtol_spinodal)
+    ok_v || return sl, sml, smv, sv, p̄l, p̄v, false
 
     #the spinodal pressures bound the stable states: p̄l <= sl.p and sv.p <= p̄v. this protects against a failed root or roundoff.
-    p̄l = isnan(p̄l) ? sl.p : min(p̄l,sl.p)
-    p̄v = isnan(p̄v) ? sv.p : max(p̄v,sv.p)
-
+    p̄l = isnan(p̄l) ? sl.p : min(p̄l, sl.p)
+    p̄v = isnan(p̄v) ? sv.p : max(p̄v, sv.p)
 
     #the inner bounds must cross (sl.p < sv.p), otherwise there is no maxwell loop at this temperature.
     ok = sl.p < sv.p
-    return sl,sml,smv,sv,p̄l,p̄v,ok
+    return sl, sml, smv, sv, p̄l, p̄v, ok
 end
 
-function _good_bracket_outer(model,T,z,sl,sl_outer,sv_outer,p̄l,p̄v)
+function _good_bracket_outer(model, T, z, sl, sl_outer, sv_outer, p̄l, p̄v)
     #step 2: outer brackets, such as sl_outer.p > p̄v >= psat >= p̄l_mod > sv_outer.p
     #returns the outer liquid and vapour states and a success flag.
     nRT = sum(z)*Rgas(model)*T
@@ -503,10 +484,10 @@ function _good_bracket_outer(model,T,z,sl,sl_outer,sv_outer,p̄l,p̄v)
         for i in 1:100
             #p̄v is the pressure of a converged spinodal, so it is already an upper bound of psat. no margin needed:
             sl_outer.p > p̄v && break
-            vᵢ,pᵢ,dpdvᵢ = sl_outer.v,sl_outer.p,sl_outer.dpdv
+            vᵢ, pᵢ, dpdvᵢ = sl_outer.v, sl_outer.p, sl_outer.dpdv
             #p(v) is convex in the liquid branch, so this step lands at or above the target.
             Δᵢ = (p̄v-pᵢ)/(vᵢ*dpdvᵢ)
-            sl_outer = dpdv_state(model,vᵢ*exp(Δᵢ),T,z) #logVᵢ = logVᵢ + Δᵢ
+            sl_outer = dpdv_state(model, vᵢ*exp(Δᵢ), T, z) #logVᵢ = logVᵢ + Δᵢ
         end
     end
 
@@ -517,9 +498,9 @@ function _good_bracket_outer(model,T,z,sl,sl_outer,sv_outer,p̄l,p̄v)
     if sl.p < 0
         if !(sl_outer.p > 0)
             #"Clapeyron.coexistence_get_good_bracket: outer liquid does not reach positive pressures, returning failure"
-            return sl_outer,sv_outer,false
+            return sl_outer, sv_outer, false
         end
-        vl0 = coexistence_interpolate_volume(sl_outer,sl,zero(sl.p))
+        vl0 = coexistence_interpolate_volume(sl_outer, sl, zero(sl.p))
         ares_l0 = a_res(model, vl0, T, z)
         lnf_l0 = ares_l0 - 1 + log(nRT/vl0)
         p̄l_mod = exp(lnf_l0)
@@ -527,41 +508,41 @@ function _good_bracket_outer(model,T,z,sl,sl_outer,sv_outer,p̄l,p̄v)
         p̄l_mod = p̄l
     else
         # "Clapeyron.coexistence_get_good_bracket: spinodal pressure is not positive but the liquid bracket does not reach negative pressures, returning failure"
-        return sl_outer,sv_outer,false
+        return sl_outer, sv_outer, false
     end
 
     if sv_outer.p > p̄l_mod
         #just use ideal gas approximation, after all, with the other bracket we can generate a good EoS in density
-        sv_outer = dpdv_state(model,nRT/p̄l_mod,T,z)
+        sv_outer = dpdv_state(model, nRT/p̄l_mod, T, z)
     end
 
     #post-check: the outer vapour point needs p < p̄l_mod (<= psat). with an ideal gas volume this holds if Z < 1 at that state,
     #which is not guaranteed for every EoS. on the stable dilute branch p decreases with v, so we expand the volume until it holds.
     for i in 1:10
         sv_outer.p < p̄l_mod && break
-        sv_outer = dpdv_state(model,2*sv_outer.v,T,z)
+        sv_outer = dpdv_state(model, 2*sv_outer.v, T, z)
     end
     if !(sv_outer.p < p̄l_mod)
-        return sl_outer,sv_outer,false
+        return sl_outer, sv_outer, false
     end
-    return sl_outer,sv_outer,true
+    return sl_outer, sv_outer, true
 end
 
-function pure_spinodal_newton_bracket(model, T, z, sst, sun, vs0 = nothing; rtol = 1e-8, max_iters = 25)
+function pure_spinodal_newton_bracket(model, T, z, sst, sun, vs0=nothing; rtol=1e-8, max_iters=25)
     #sst is a stable state (dpdv < 0) and sun an unstable one (dpdv > 0), in any order of volume.
     #returns (sst,sun,s): the final bracket (still one stable and one unstable state) and
     #s, the best spinodal state (NaN on failure).
     stable_is_lo = sst.v < sun.v
-    sa,sb = stable_is_lo ? (sst,sun) : (sun,sst) #sa.v < sb.v
+    sa, sb = stable_is_lo ? (sst, sun) : (sun, sst) #sa.v < sb.v
     nan = zero(sa.v)/zero(sa.v)
-    snan = (v = nan, p = nan, dpdv = nan)
-    sa.dpdv*sb.dpdv > 0 && return sst,sun,snan
-    fscale = max(abs(sa.dpdv),abs(sb.dpdv))
+    snan = (v=nan, p=nan, dpdv=nan)
+    sa.dpdv*sb.dpdv > 0 && return sst, sun, snan
+    fscale = max(abs(sa.dpdv), abs(sb.dpdv))
     vs = (vs0 !== nothing && sa.v < vs0 < sb.v) ? vs0 : (sa.v + sb.v)/2
     sbest = snan
     for j in 1:max_iters
-        pj,fs,d2pj = p∂p∂2p(model,vs,T,z)
-        s = (v = vs, p = pj, dpdv = fs)
+        pj, fs, d2pj = p∂p∂2p(model, vs, T, z)
+        s = (v=vs, p=pj, dpdv=fs)
         #update the bracket first, so the sign change stays inside
         #(the sign of sa.dpdv never changes, so sa keeps its stability).
         if fs*sa.dpdv <= 0
@@ -580,9 +561,9 @@ function pure_spinodal_newton_bracket(model, T, z, sst, sun, vs0 = nothing; rtol
     end
 
     if stable_is_lo
-        return sa,sb,sbest
+        return sa, sb, sbest
     else
-        return sb,sa,sbest
+        return sb, sa, sbest
     end
 end
 
@@ -604,7 +585,7 @@ function coexistence_interpolate_volume(sa, sb, p)
     x0, x1 = log(slo.v), log(shi.v)
     m0 = inv(slo.v * slo.dpdv)   # dx/dp at slo
     m1 = inv(shi.v * shi.dpdv)   # dx/dp at shi
-    Δ  = (x1 - x0) / dp          # secant slope in x
+    Δ = (x1 - x0) / dp          # secant slope in x
 
     # --- Fritsch-Carlson monotonicity test ------------------------------
     # α, β ≥ 0 and α² + β² ≤ 9 ⇒ cubic in x(p) is provably monotone on [slo.p, shi.p].

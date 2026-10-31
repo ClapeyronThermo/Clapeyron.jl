@@ -26,10 +26,10 @@ than going through `bubble_pressure_impl`.
 Method type for `bubble_pressure(model::ElectrolyteModel, T, x, ::DonnanBubblePressure)`.
 See this file's header for the full derivation.
 
-`u0`, if given, is the full initial guess -- `[V_dense, V_dilute, y_free...,Ψ]` (`N+2` entries) normally, or `[V_dense, V_dilute, y_free...]` (`N+1`entries, no `Ψ`) 
+`u0`, if given, is the full initial guess -- `[V_dense, V_dilute, y_free...,Ψ]` (`N+2` entries) normally, or `[V_dense, V_dilute, y_free...]` (`N+1`entries, no `Ψ`)
 when `psi_zero=true`; if `nothing`, a guess is constructed from a packing-fraction bracket.
 
-`psi_zero=true` selects the reduced equation set for systems where `Ψ = 0` is known a priori (net-neutral polymer/solvent species plus a symmetric 1:1 salt). 
+`psi_zero=true` selects the reduced equation set for systems where `Ψ = 0` is known a priori (net-neutral polymer/solvent species plus a symmetric 1:1 salt).
 With `Ψ` fixed at 0 rather than solved for, the electrochemical-potential-matching equations reduce to ordinary chemical-potential matching, and the problem becomes mathematically identical to a standard (uncharged) N-component bubble-pressure calculation.
 """
 struct DonnanBubblePressure <: BubblePointMethod
@@ -47,7 +47,7 @@ end
 function donnan_bubble_residual!(F::AbstractVector, u::AbstractVector, model::ElectrolyteModel, T, x_dense::AbstractVector, Z::AbstractVector{<:Integer})
     N = length(Z)
     Vd, Vl = u[1], u[2]
-    y = FractionVector(view(u, 3:1+N))
+    y = FractionVector(view(u, 3:(1 + N)))
     Ψ = u[end]
 
     F[1] = pressure(model, Vd, T, x_dense) - pressure(model, Vl, T, y)
@@ -55,22 +55,22 @@ function donnan_bubble_residual!(F::AbstractVector, u::AbstractVector, model::El
     μl = VT_chemical_potential(model, Vl, T, y)
     RT = Rgas(model) * T
     for i in 1:N
-        F[1+i] = (μd[i] - μl[i]) / RT - Z[i] * Ψ
+        F[1 + i] = (μd[i] - μl[i]) / RT - Z[i] * Ψ
     end
-    F[N+2] = dot(Z, y)
+    F[N + 2] = dot(Z, y)
     return F
 end
 
 function donnan_bubble_residual_psi_zero!(F::AbstractVector, u::AbstractVector, model::ElectrolyteModel, T, x_dense::AbstractVector, N::Int)
     Vd, Vl = u[1], u[2]
-    y = FractionVector(view(u, 3:1+N))
+    y = FractionVector(view(u, 3:(1 + N)))
 
     F[1] = pressure(model, Vd, T, x_dense) - pressure(model, Vl, T, y)
     μd = VT_chemical_potential(model, Vd, T, x_dense)
     μl = VT_chemical_potential(model, Vl, T, y)
     RT = Rgas(model) * T
     for i in 1:N
-        F[1+i] = (μd[i] - μl[i]) / RT
+        F[1 + i] = (μd[i] - μl[i]) / RT
     end
     return F
 end
@@ -78,9 +78,9 @@ end
 function _default_donnan_u0(model::ElectrolyteModel, T::Real, x_dense::AbstractVector, Z::AbstractVector{<:Integer})
     N = length(Z)
     #x0_sat_pure_spinodal also works with multicomponent models.
-    _,Vd0,Vl0 = x0_sat_pure_spinodal(model,T,x_dense)
+    _, Vd0, Vl0 = x0_sat_pure_spinodal(model, T, x_dense)
     isnan(Vd0) && throw(ErrorException(lazy"Clapeyron._default_donnan_u0: no coexistence loop found."))
-    return vcat(Vd0, Vl0, x_dense[1:N-1], 0.0)
+    return vcat(Vd0, Vl0, x_dense[1:(N - 1)], 0.0)
 end
 
 function bubble_pressure_impl(model::ElectrolyteModel, T, nn::AbstractVector, method::DonnanBubblePressure)
@@ -89,11 +89,11 @@ function bubble_pressure_impl(model::ElectrolyteModel, T, nn::AbstractVector, me
     N = length(Z)
     length(x) == N || throw(ArgumentError("x must have length $N (one entry per component), got $(length(x))"))
 
-    nan = Base.promote_eltype(model,T,x)
+    nan = Base.promote_eltype(model, T, x)
     if method.psi_zero
-        electroneutral_check(x,charges)
+        electroneutral_check(x, charges)
         u0_full = method.u0 === nothing ? _default_donnan_u0(model, T, x, Z) : copy(method.u0)
-        u0 = length(u0_full) == N + 1 ? u0_full : u0_full[1:N+1]  # drop Ψ if a full-length guess was supplied
+        u0 = length(u0_full) == N + 1 ? u0_full : u0_full[1:(N + 1)]  # drop Ψ if a full-length guess was supplied
         f_psi0!(F, u) = donnan_bubble_residual_psi_zero!(F, u, model, T, x, N)
         result = Solvers.nlsolve(f_psi0!, u0)
         u = Solvers.x_sol(result)
@@ -102,13 +102,13 @@ function bubble_pressure_impl(model::ElectrolyteModel, T, nn::AbstractVector, me
         converged || (u .= NaN)
 
         Vd, Vl = u[1], u[2]
-        yn = view(u, 3:1+N)
-        y = vcat(yn,1 - sum(yn))
+        yn = view(u, 3:(1 + N))
+        y = vcat(yn, 1 - sum(yn))
         if converged && !isapprox(dot(Z, y), 0.0; atol=1e-6)
             @warn "DonnanBubblePressure(psi_zero=true): converged y is not electroneutral (Σ Zᵢyᵢ=$(dot(Z, y))) -- Ψ=0 was likely not a valid assumption for this model/composition; use psi_zero=false."
         end
         P = converged ? pressure(model, Vd, T, x) : nan
-        return P,Vl,Vd,y
+        return P, Vl, Vd, y
     end
 
     u0 = method.u0 === nothing ? _default_donnan_u0(model, T, x, Z) : copy(method.u0)
@@ -124,10 +124,10 @@ function bubble_pressure_impl(model::ElectrolyteModel, T, nn::AbstractVector, me
     converged || (u .= NaN)
 
     Vd, Vl, Ψ = u[1], u[2], u[end]
-    yn = view(u, 3:1+N)
-    y = vcat(yn,1 - sum(yn))
+    yn = view(u, 3:(1 + N))
+    y = vcat(yn, 1 - sum(yn))
     P = converged ? pressure(model, Vd, T, x) : nan
-    return P,Vd,Vl,y
+    return P, Vd, Vl, y
 end
 
 export DonnanBubblePressure
