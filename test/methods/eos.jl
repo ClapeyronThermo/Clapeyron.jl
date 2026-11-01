@@ -444,10 +444,10 @@ end
 
     end
     @testset "VLE properties" begin
-        system = GERG2008(["carbon dioxide","water"])
-        T = 298.15
+        system = GERG2008(["propane","butane"])
+        T = 180.15
         z = [0.8,0.2]
-        @test Clapeyron.bubble_pressure(system, T,z)[1] ≈ 5.853916496529343e6 rtol = 1E-5
+        @test Clapeyron.bubble_pressure(system, T,z)[1] ≈ 4167.913218069028 rtol = 1E-5
     end
 end
 

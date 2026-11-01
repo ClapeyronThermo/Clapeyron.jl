@@ -244,21 +244,24 @@ function bubbledew_check(model,p,T,vw,vz,w,z;verbose = false)
         #the second check is to exclude nonvolatiles/noncondensables. TODO: find a better way to do this.
         #all normal checks are ok, now we check if the origin phase result is really the most stable one
         if !VT_mechanical_stability(model,vz,T,z)
-            verbose && @info "Clapeyron.bubbledew_check failed: bulk phase is mechanically unstable (vw = $vw, vz = $vz, p = $p, T = $T)"
+            verbose && @info "Clapeyron.bubbledew_check failed: bulk phase is mechanically unstable (z = $z, vz = $vz, p = $p, T = $T)"
             return false
         end
         if !VT_mechanical_stability(model,vw,T,w)
-            verbose && @info "Clapeyron.bubbledew_check failed: incipient phase is mechanically unstable (vw = $vw, vz = $vz, p = $p, T = $T)"
+            verbose && @info "Clapeyron.bubbledew_check failed: incipient phase is mechanically unstable (w = $w, vw = $vw, p = $p, T = $T)"
             return false
         end
+
+        
+        #=
         if !VT_diffusive_stability(model,vz,T,z)
-            verbose && @info "Clapeyron.bubbledew_check failed: bulk phase is diffusively unstable (vw = $vw, vz = $vz, p = $p, T = $T)"
+            verbose && @info "Clapeyron.bubbledew_check failed: bulk phase is diffusively unstable (z = $z, vz = $vz, p = $p, T = $T)"
             return false
         end
         if !VT_diffusive_stability(model,vw,T,w)
-            verbose && @info "Clapeyron.bubbledew_check failed: incipient phase is diffusively unstable (vw = $vw, vz = $vz, p = $p, T = $T)"
+            verbose && @info "Clapeyron.bubbledew_check failed: incipient phase is diffusively unstable (w = $w, vw = $vw, p = $p, T = $T)"
             return false
-        end
+        end =#
     end
     return true
 end
