@@ -326,6 +326,7 @@
         diagram = phase_diagram(model,p,T,CEMPhaseDiagram(δ = 64))
         f3 = filter(f -> length(f.compositions) == 3,diagram.facets)
         @test length(f3) == 1 && sort(f3[1].states) == [:liquid,:liquid,:vapour]
+        @test count(c -> length(c) == 3,Clapeyron.conodes(diagram)) == 1
         z = sum(f3[1].compositions)/3
         @test Clapeyron.tp_flash2(model,p,T,z,CEMFlash(diagram = diagram)).data.g < Clapeyron.tp_flash2(model,p,T,z,MichelsenTPFlash()).data.g
         @test numphases(Clapeyron.tp_flash2(model,p,T,z,CEMFlash(δ = 64))) == 3

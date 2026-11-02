@@ -4,14 +4,8 @@ Convex envelope method (CEM)
 Göttl, Rosen, Burger (2025), Comput. Chem. Eng. 203, 109326. doi:10.1016/j.compchemeng.2025.109326
 
 The reduced Gibbs energy of every aggregate state is evaluated on a lattice of the composition simplex
-(step 1/δ). The phase split of a feed z is the facet of the lower convex envelope of those points above z:
-
-    min Σₖ λₖ gₖ   s.t.  Σₖ λₖ xₖ = z,  λ ≥ 0
-
-This linear program is solved with a revised simplex method on an N×N basis instead of building the hull.
-Pricing (the tangent plane distance of every grid point to the current tangent plane) is accelerated
-with a kd-tree that stores, for every node, an affine under-estimator of g. This gives a rigorous lower
-bound of the reduced cost on the node, so most of the grid is never touched.
+(step 1/δ). The phase split of a feed z is the facet of the lower convex envelope of those points above z,
+found with the linear program in Solvers.LowerEnvelope.
 
 Points of the optimal basis belong to the same phase when they have the same aggregate state (fluid points
 with almost equal volumes are also merged: near-critical region) and are lattice neighbours, or are connected
@@ -21,7 +15,6 @@ through the stable single phase region (see cem_samephase).
 const CEM_LIQUID = Int8(1)
 const CEM_VAPOUR = Int8(2)
 const CEM_SOLID = Int8(3)
-const CEM_RTOL = 1e-10 #reduced cost tolerance
 const CEM_λTOL = 1e-12 #phase amount tolerance
 const CEM_VOL_RTOL = 0.1 #fluid points with this relative volume difference are the same phase
 
@@ -30,12 +23,11 @@ cem_state_symbol(s) = s == CEM_LIQUID ? :liquid : (s == CEM_VAPOUR ? :vapour : :
 #N > 4: at most 32, and at most ~5e5 grid points (the grid grows as δ^(N-1))
 cem_default_δ(N) = N == 2 ? 256 : (N == 3 ? 128 : (N == 4 ? 64 : max(1,findlast(δ -> binomial(δ + N - 1,N - 1) <= 500_000,1:32))))
 
-#grid + kd tree over the grid columns. columns are stored in tree order.
+#grid columns: one per lattice point and aggregate state, in the (tree) order of lp
 struct CEMEnvelope
     δ::Int
     lattice::Matrix{Int32} #N × npoints, lattice coordinates (x = k/δ)
-    x::Matrix{Float64} #N × ncolumns
-    g::Vector{Float64} #reduced gibbs energy, minus the linear function x⋅gpure
+    lp::Solvers.LowerEnvelope #g: reduced gibbs energy, minus the linear function x⋅gpure
     gpure::Vector{Float64}
     point::Vector{Int32} #lattice point of each column
     state::Vector{Int8}
@@ -43,37 +35,9 @@ struct CEMEnvelope
     point_column::Vector{Int32} #column with the lowest g at each lattice point
     point_ptr::Vector{Int32} #columns of lattice point k: point_cols[point_ptr[k]:point_ptr[k+1]-1]
     point_cols::Vector{Int32}
-    vertex::Vector{Int32} #point_column of the pure components
-    node_range::Matrix{Int32} #2 × nnodes
-    node_child::Matrix{Int32} #2 × nnodes, 0 for leaves
-    node_lo::Matrix{Float64} #(N-1) × nnodes, bounding box in reduced coordinates (x₁ … xₙ₋₁)
-    node_hi::Matrix{Float64}
-    node_b::Matrix{Float64} #slope of the affine under-estimator
-    node_e::Vector{Float64} #minimum of g - b⋅x on the node
 end
 
-Base.length(env::CEMEnvelope) = size(env.x,1)
-
-function cem_lattice(N,δ)
-    K = Matrix{Int32}(undef,N,binomial(δ + N - 1,N - 1))
-    k = zeros(Int32,N)
-    _cem_lattice!(K,k,1,δ,Ref(0))
-    return K
-end
-
-function _cem_lattice!(K,k,i,rem,j)
-    if i == length(k)
-        k[i] = rem
-        j[] += 1
-        K[:,j[]] .= k
-        return nothing
-    end
-    for ki in rem:-1:0
-        k[i] = ki
-        _cem_lattice!(K,k,i + 1,rem - ki,j)
-    end
-    return nothing
-end
+Base.length(env::CEMEnvelope) = size(env.lattice,1)
 
 #model used to evaluate the fluid phases, solid model (or nothing)
 function cem_models(model,p,T,z,equilibrium)
@@ -105,37 +69,28 @@ function cem_solid_Δμ(model,solid,p,T)
     return Δμ
 end
 
-#returns (gl,vl,gv,vv), NaN g if the column does not exist (lle, or single EoS root of the other state)
+#returns (gl,vl,gv,vv), NaN g if the column does not exist (lle, single EoS root of the other state, missing root)
 function cem_eval_point(fluid,p,T,x,lle)
-    gl,vl,gv,vv = cem_eval_roots(fluid,p,T,x,lle)
-    #a missing root (e.g. no liquid root above the critical point) gives v = Inf and a meaningless finite g
-    isfinite(vl) || (gl = NaN)
-    isfinite(vv) || (gv = NaN)
-    return gl,vl,gv,vv
-end
-
-function cem_eval_roots(fluid,p,T,x,lle)
-    nan = NaN
     if fluid isa PTFlashWrapper
-        gl,vl = modified_gibbs(fluid,p,T,x,:liquid,nan)
-        lle && return gl,vl,nan,nan
-        gv,vv = modified_gibbs(fluid,p,T,x,:vapour,nan)
-        return gl,vl,gv,vv
-    end
-    vl = volume(fluid,p,T,x,phase = :liquid)
-    gl,_ = modified_gibbs(fluid,p,T,x,:liquid,vl)
-    lle && return gl,vl,nan,nan
-    vv = volume(fluid,p,T,x,phase = :vapour)
-    if isapprox(vl,vv,rtol = 1e-8)
-        #only one root: store it with the state it actually has
-        if is_vapour(identify_phase(fluid,p,T,x,vol = vl))
-            return nan,nan,gl,vl
-        else
-            return gl,vl,nan,nan
+        gl,vl = modified_gibbs(fluid,p,T,x,:liquid,NaN)
+        gv,vv = lle ? (NaN,NaN) : modified_gibbs(fluid,p,T,x,:vapour,NaN)
+    else
+        vl = volume(fluid,p,T,x,phase = :liquid)
+        gl,_ = modified_gibbs(fluid,p,T,x,:liquid,vl)
+        gv,vv = NaN,NaN
+        if !lle
+            vv = volume(fluid,p,T,x,phase = :vapour)
+            if isapprox(vl,vv,rtol = 1e-8)
+                #only one root: store it with the state it actually has
+                gv,vv = NaN,NaN
+                is_vapour(identify_phase(fluid,p,T,x,vol = vl)) && ((gl,vl,gv,vv) = (gv,vv,gl,vl))
+            else
+                gv,_ = modified_gibbs(fluid,p,T,x,:vapour,vv)
+            end
         end
     end
-    gv,_ = modified_gibbs(fluid,p,T,x,:vapour,vv)
-    return gl,vl,gv,vv
+    #a missing root (e.g. no liquid root above the critical point) gives v = Inf and a meaningless finite g
+    return (isfinite(vl) ? gl : NaN),vl,(isfinite(vv) ? gv : NaN),vv
 end
 
 function cem_chunks(n,threaded)
@@ -166,411 +121,52 @@ function cem_eval_chunk!(gl,vl,gv,vv,fluid,p,T,K,δ,lle,idx)
     return nothing
 end
 
-"""
-    cem_envelope(model,p,T,δ,equilibrium = :auto,threaded = true)
-
-Evaluates the Gibbs energy of all aggregate states on the composition lattice and builds the search tree.
-"""
+#evaluates the Gibbs energy of all aggregate states on the composition lattice and builds the envelope
 function cem_envelope(model,p,T,δ,equilibrium = :auto,threaded = true)
     N = length(model)
     δ < 1 && throw(DomainError(δ,"CEM: δ must be a positive integer"))
-    z0 = fill(1/N,N)
-    _,fluid,solid = cem_models(model,p,T,z0,equilibrium)
+    _,fluid,solid = cem_models(model,p,T,fill(1/N,N),equilibrium)
     lle = is_lle(equilibrium)
-    K = cem_lattice(N,δ)
+    K = Solvers.simplex_lattice(N,δ)
     M = size(K,2)
     gl,vl,gv,vv = zeros(M),zeros(M),zeros(M),zeros(M)
     cem_foreach_chunk(idx -> cem_eval_chunk!(gl,vl,gv,vv,fluid,p,T,K,δ,lle,idx),M,threaded)
-    Δμs = cem_solid_Δμ(model,solid,p,T)
     #compact into columns
-    Xv = Float64[]
-    G,P,S,V = Float64[],Int32[],Int8[],Float64[]
+    P,G,S,V = Int32[],Float64[],Int8[],Float64[]
     function addcol!(k,g,s,v)
         isfinite(g) || return nothing
-        append!(Xv,@view(K[:,k]))
-        push!(G,g);push!(P,k);push!(S,s);push!(V,v)
+        push!(P,k);push!(G,g);push!(S,s);push!(V,v)
         return nothing
     end
     for k in 1:M
         addcol!(k,gl[k],CEM_LIQUID,vl[k])
         addcol!(k,gv[k],CEM_VAPOUR,vv[k])
-        i = findfirst(isequal(δ),@view(K[:,k]))
-        if i !== nothing && isfinite(Δμs[i])
-            #pure solid, relative to the pure liquid (or the only fluid root)
-            addcol!(k,(isfinite(gl[k]) ? gl[k] : gv[k]) + Δμs[i],CEM_SOLID,NaN)
-        end
     end
-    X = reshape(Xv,N,length(G)) ./ δ
+    pure = [Solvers.simplex_lattice_rank(δ .* (1:N .== i),δ) for i in 1:N]
+    for (k,Δμ) in zip(pure,cem_solid_Δμ(model,solid,p,T))
+        #pure solid, relative to the pure liquid (or the only fluid root)
+        addcol!(k,(isfinite(gl[k]) ? gl[k] : gv[k]) + Δμ,CEM_SOLID,NaN)
+    end
+    X = K[:,P] ./ δ
     #remove the linear part (affine transformations do not change the envelope)
-    gpure = fill(Inf,N)
-    for c in eachindex(G)
-        i = findfirst(isequal(δ),@view(K[:,P[c]]))
-        i !== nothing && (gpure[i] = min(gpure[i],G[c]))
-    end
-    all(isfinite,gpure) || throw(error("CEM: Gibbs energy evaluation failed for a pure component at p = $p, T = $T"))
-    for c in eachindex(G)
-        G[c] -= dot(@view(X[:,c]),gpure)
-    end
-    return cem_build_envelope(δ,K,X,G,gpure,P,S,V)
-end
-
-## kd tree
-struct CEMTreeBuilder
-    x::Matrix{Float64}
-    g::Vector{Float64}
-    state::Vector{Int8}
-    perm::Vector{Int32}
-    range::Vector{Int32}
-    child::Vector{Int32}
-    lo::Vector{Float64}
-    hi::Vector{Float64}
-    b::Vector{Float64}
-    e::Vector{Float64}
-    leafsize::Int
-end
-
-function cem_build_envelope(δ,K,X,G,gpure,P,S,V)
-    N,nc = size(X)
-    tb = CEMTreeBuilder(X,G,S,collect(Int32,1:nc),Int32[],Int32[],Float64[],Float64[],Float64[],Float64[],16)
-    cem_build_node!(tb,1,nc)
-    perm = tb.perm
-    nn = length(tb.e)
-    x = X[:,perm]
-    g = G[perm]
+    gpure = [minimum((G[c] for c in eachindex(G) if P[c] == k),init = Inf) for k in pure]
+    all(isfinite,gpure) || error("CEM: Gibbs energy evaluation failed for a pure component at p = $p, T = $T")
+    G .-= X'*gpure
+    lp,perm = Solvers.lower_envelope(X,G,S)
     point = P[perm]
-    state = S[perm]
-    vol = V[perm]
-    M = size(K,2)
     point_column = zeros(Int32,M)
-    for c in 1:nc
-        k = point[c]
-        c0 = point_column[k]
-        if c0 == 0 || g[c] < g[c0]
-            point_column[k] = c
-        end
-    end
-    vertex = zeros(Int32,N)
-    for k in 1:M
-        i = findfirst(isequal(δ),@view(K[:,k]))
-        i !== nothing && (vertex[i] = point_column[k])
+    for c in eachindex(point)
+        c0 = point_column[point[c]]
+        (c0 == 0 || lp.g[c] < lp.g[c0]) && (point_column[point[c]] = c)
     end
     point_cols = Int32.(sortperm(point))
     point_ptr = zeros(Int32,M + 1)
     point_ptr[1] = 1
-    for c in 1:nc
-        point_ptr[point[c] + 1] += 1
+    for k in point
+        point_ptr[k + 1] += 1
     end
     cumsum!(point_ptr,point_ptr)
-    nr = max(N - 1,1)
-    return CEMEnvelope(δ,K,x,g,gpure,point,state,vol,point_column,point_ptr,point_cols,vertex,
-        reshape(tb.range,2,nn),reshape(tb.child,2,nn),
-        reshape(tb.lo,nr,nn),reshape(tb.hi,nr,nn),reshape(tb.b,nr,nn),tb.e)
-end
-
-function cem_build_node!(tb::CEMTreeBuilder,first,last)
-    x,g,perm = tb.x,tb.g,tb.perm
-    N = size(x,1)
-    nr = max(N - 1,1)
-    id = length(tb.e) + 1
-    append!(tb.range,(first,last))
-    append!(tb.child,(0,0))
-    cols = @view perm[first:last]
-    n = length(cols)
-    #bounding box and least squares affine fit g ≈ a + b⋅x (reduced coordinates)
-    lo,hi = fill(Inf,nr),fill(-Inf,nr)
-    x̄ = zeros(nr)
-    ḡ = 0.0
-    for c in cols
-        for i in 1:nr
-            xi = N == 1 ? 0.0 : x[i,c]
-            lo[i] = min(lo[i],xi)
-            hi[i] = max(hi[i],xi)
-            x̄[i] += xi
-        end
-        ḡ += g[c]
-    end
-    x̄ ./= n
-    ḡ /= n
-    S = zeros(nr,nr)
-    t = zeros(nr)
-    if N > 1
-        for c in cols
-            for i in 1:nr
-                dxi = x[i,c] - x̄[i]
-                t[i] += dxi*(g[c] - ḡ)
-                for j in 1:nr
-                    S[i,j] += dxi*(x[j,c] - x̄[j])
-                end
-            end
-        end
-    end
-    trS = tr(S)
-    for i in 1:nr
-        S[i,i] += 1e-10*trS + 1e-300 #ridge: nodes can be degenerate in some directions
-    end
-    b = trS > 0 ? S \ t : zeros(nr)
-    all(isfinite,b) || (b .= 0)
-    e = Inf
-    for c in cols
-        ec = g[c]
-        for i in 1:(N - 1)
-            ec -= b[i]*x[i,c]
-        end
-        e = min(e,ec)
-    end
-    append!(tb.lo,lo)
-    append!(tb.hi,hi)
-    append!(tb.b,b)
-    push!(tb.e,e)
-    n <= tb.leafsize && return id
-    #split: first by aggregate state, then along the widest dimension
-    s1 = tb.state[cols[1]]
-    if any(c -> tb.state[c] != s1,cols)
-        sort!(cols,by = c -> (tb.state[c] != s1))
-        mid = first + count(c -> tb.state[c] == s1,cols) - 1
-    else
-        w,dim = findmax(hi .- lo)
-        iszero(w) && return id
-        sort!(cols,by = c -> x[dim,c])
-        mid = (first + last) ÷ 2
-    end
-    left = cem_build_node!(tb,first,mid)
-    right = cem_build_node!(tb,mid + 1,last)
-    tb.child[2id - 1] = left
-    tb.child[2id] = right
-    return id
-end
-
-#rigorous lower bound of gₖ - xₖ⋅μ on a node. μr = μ[1:N-1] .- μ[N]
-@inline function cem_node_bound(env::CEMEnvelope,nd,μr,μN)
-    @inbounds begin
-        lb = env.node_e[nd] - μN
-        for i in eachindex(μr)
-            v = env.node_b[i,nd] - μr[i]
-            lb += min(env.node_lo[i,nd]*v,env.node_hi[i,nd]*v)
-        end
-    end
-    return lb
-end
-
-@inline function cem_reduced_cost(env::CEMEnvelope,c,μ)
-    @inbounds begin
-        r = env.g[c]
-        for i in eachindex(μ)
-            r -= env.x[i,c]*μ[i]
-        end
-    end
-    return r
-end
-
-## LP workspace
-
-struct CEMWorkspace
-    B::Vector{Int32}
-    Binv::Matrix{Float64}
-    Bm::Matrix{Float64}
-    λ::Vector{Float64}
-    μ::Vector{Float64}
-    μr::Vector{Float64}
-    d::Vector{Float64}
-    gB::Vector{Float64}
-    stack::Vector{Int32}
-    bstack::Vector{Float64}
-    cand::Vector{Int32}
-    kbuf::Vector{Int32}
-end
-
-function CEMWorkspace(env::CEMEnvelope)
-    N = length(env)
-    return CEMWorkspace(zeros(Int32,N),zeros(N,N),zeros(N,N),zeros(N),zeros(N),zeros(max(N - 1,0)),zeros(N),zeros(N),Int32[],Float64[],Int32[],zeros(Int32,N))
-end
-
-#most negative reduced cost over all columns (or the first one in tree order if `bland`), 0 if the basis is optimal
-function cem_price!(ws::CEMWorkspace,env::CEMEnvelope,bland::Bool,::Nothing)
-    μ,μr,stack,bstack = ws.μ,ws.μr,ws.stack,ws.bstack
-    N = length(μ)
-    μN = μ[N]
-    for i in 1:(N - 1)
-        μr[i] = μ[i] - μN
-    end
-    best_r = -CEM_RTOL
-    best_c = 0
-    empty!(stack)
-    empty!(bstack)
-    push!(stack,1)
-    push!(bstack,cem_node_bound(env,1,μr,μN))
-    @inbounds while !isempty(stack)
-        nd = pop!(stack)
-        pop!(bstack) >= best_r && continue #best_r may have improved since the node was pushed
-        left,right = env.node_child[1,nd],env.node_child[2,nd]
-        if left == 0
-            for c in env.node_range[1,nd]:env.node_range[2,nd]
-                r = cem_reduced_cost(env,c,μ)
-                if r < best_r
-                    best_r,best_c = r,c
-                    bland && return best_c
-                end
-            end
-        else
-            bl,br = cem_node_bound(env,left,μr,μN),cem_node_bound(env,right,μr,μN)
-            if bland || bl < br #visit the leftmost (bland) or most promising child first
-                br < best_r && (push!(stack,right); push!(bstack,br))
-                bl < best_r && (push!(stack,left); push!(bstack,bl))
-            else
-                bl < best_r && (push!(stack,left); push!(bstack,bl))
-                br < best_r && (push!(stack,right); push!(bstack,br))
-            end
-        end
-    end
-    return best_c
-end
-
-#pricing restricted to the candidate columns
-function cem_price!(ws::CEMWorkspace,env::CEMEnvelope,bland::Bool,cand::Vector{Int32})
-    best_r = -CEM_RTOL
-    best_c = 0
-    for c in cand
-        r = cem_reduced_cost(env,c,ws.μ)
-        if r < best_r
-            best_r,best_c = r,c
-            bland && return best_c
-        end
-    end
-    return best_c
-end
-
-function cem_refactor!(ws::CEMWorkspace,env::CEMEnvelope,z)
-    for j in eachindex(ws.B)
-        ws.Bm[:,j] .= @view(env.x[:,ws.B[j]])
-    end
-    F = lu!(ws.Bm,check = false)
-    if !issuccess(F) || ws.B == env.vertex
-        #restart from the pure component basis (B = I, always feasible)
-        ws.B .= env.vertex
-        ws.Binv .= 0
-        for i in eachindex(ws.B)
-            ws.Binv[i,i] = 1
-        end
-    else
-        ws.Binv .= inv(F)
-    end
-    mul!(ws.λ,ws.Binv,z)
-    ws.λ .= max.(ws.λ,0.0)
-    return ws
-end
-
-#basis of pure component vertices: always feasible, λ = z
-function cem_reset!(ws::CEMWorkspace,env::CEMEnvelope,z)
-    ws.B .= env.vertex
-    return cem_refactor!(ws,env,z)
-end
-
-const CEM_PIVTOL = 1e-9
-
-#replace column r of the basis by c, given d = B⁻¹xc
-function cem_pivot!(ws::CEMWorkspace,r,c)
-    Binv,d = ws.Binv,ws.d
-    N = length(d)
-    @inbounds begin
-        piv = d[r]
-        for j in 1:N
-            Binv[r,j] /= piv
-        end
-        for j in 1:N
-            Brj = Binv[r,j]
-            for i in 1:N
-                i == r && continue
-                Binv[i,j] -= d[i]*Brj
-            end
-        end
-    end
-    ws.B[r] = c
-    return ws
-end
-
-#warm start for a feed equal to the composition of column c: put c in the basis (λ = eᵣ, feasible).
-function cem_crash!(ws::CEMWorkspace,env::CEMEnvelope,c,z)
-    ws.λ .= 0
-    r = findfirst(isequal(c),ws.B)
-    if r !== nothing
-        ws.λ[r] = 1
-        return ws
-    end
-    cem_mul!(ws.d,ws.Binv,env.x,c)
-    _,r = findmax(abs,ws.d)
-    if abs(ws.d[r]) < 1e-8
-        return cem_reset!(ws,env,z)
-    end
-    cem_pivot!(ws,r,c)
-    ws.λ[r] = 1
-    return ws
-end
-
-#d = Binv*x[:,c] (small matrices: avoids BLAS overhead)
-@inline function cem_mul!(d,Binv,x,c)
-    N = length(d)
-    @inbounds for i in 1:N
-        s = 0.0
-        for j in 1:N
-            s += Binv[i,j]*x[j,c]
-        end
-        d[i] = s
-    end
-    return d
-end
-
-#revised primal simplex, starting from the (feasible) basis in ws.
-#cand = nothing: all columns (tree pricing). Otherwise only the candidate columns (warm start, stops silently).
-function cem_lp!(ws::CEMWorkspace,env::CEMEnvelope,z,cand = nothing)
-    B,Binv,λ,μ,d,gB = ws.B,ws.Binv,ws.λ,ws.μ,ws.d,ws.gB
-    N = length(B)
-    degenerate = 0
-    maxiter = cand === nothing ? 100_000 : 100N
-    for iter in 1:maxiter
-        iter % 64 == 0 && cem_refactor!(ws,env,z)
-        @inbounds for i in 1:N
-            s = 0.0
-            for j in 1:N
-                s += Binv[j,i]*env.g[B[j]]
-            end
-            μ[i] = s
-        end
-        c = cem_price!(ws,env,degenerate > 50,cand)
-        c == 0 && return ws
-        cem_mul!(d,Binv,env.x,c)
-        r = 0
-        θ = Inf
-        for i in 1:N
-            if d[i] > CEM_PIVTOL
-                t = λ[i]/d[i]
-                if t < θ || (t == θ && B[i] < B[r])
-                    θ,r = t,i
-                end
-            end
-        end
-        r == 0 && throw(error("CEM: unbounded linear program (this should not happen)"))
-        degenerate = θ <= 1e-14 ? degenerate + 1 : 0
-        for i in 1:N
-            λ[i] = max(λ[i] - θ*d[i],0.0)
-        end
-        λ[r] = θ
-        cem_pivot!(ws,r,c)
-    end
-    cand === nothing && throw(error("CEM: maximum number of simplex iterations reached"))
-    return ws
-end
-
-#index of a lattice point (in the order of cem_lattice)
-function cem_lattice_rank(k,δ)
-    N = length(k)
-    R = δ
-    idx = 1
-    for i in 1:(N - 1)
-        d = R - k[i]
-        d > 0 && (idx += binomial(d - 1 + N - i,N - i))
-        R -= k[i]
-    end
-    return idx
+    return CEMEnvelope(δ,K,lp,gpure,point,S[perm],V[perm],point_column,point_ptr,point_cols)
 end
 
 function cem_add_point_columns!(cand,env::CEMEnvelope,k)
@@ -592,29 +188,20 @@ function cem_add_neighbourhood!(cand,env::CEMEnvelope,k,kbuf)
             kbuf .= @view(K[:,k])
             kbuf[j] -= 1
             kbuf[i] += 1
-            cem_add_point_columns!(cand,env,cem_lattice_rank(kbuf,env.δ))
+            cem_add_point_columns!(cand,env,Solvers.simplex_lattice_rank(kbuf,env.δ))
         end
     end
     return cand
 end
 
 #candidates for the local LP of lattice point k: neighbourhood of k and of the current basis
-function cem_local_candidates!(ws::CEMWorkspace,env::CEMEnvelope,k)
-    cand = ws.cand
+function cem_local_candidates!(cand,kbuf,ws::Solvers.EnvelopeWorkspace,env::CEMEnvelope,k)
     empty!(cand)
-    cem_add_neighbourhood!(cand,env,k,ws.kbuf)
+    cem_add_neighbourhood!(cand,env,k,kbuf)
     for c in ws.B
-        cem_add_neighbourhood!(cand,env,env.point[c],ws.kbuf)
+        cem_add_neighbourhood!(cand,env,env.point[c],kbuf)
     end
     return cand
-end
-
-#tangent plane (μᵢ/RT, in the reference of the model) of the current basis
-function cem_tangent_plane(ws::CEMWorkspace,env::CEMEnvelope)
-    for j in eachindex(ws.B)
-        ws.gB[j] = env.g[ws.B[j]]
-    end
-    return transpose(ws.Binv)*ws.gB .+ env.gpure
 end
 
 ## phases
@@ -631,31 +218,21 @@ end
 struct CEMStability
     env::CEMEnvelope
     point_facet::Union{Nothing,Vector{Int32}}
-    ws::CEMWorkspace
+    ws::Solvers.EnvelopeWorkspace
     memo::Dict{Int,Bool}
 end
 
-CEMStability(env::CEMEnvelope,point_facet = nothing) = CEMStability(env,point_facet,CEMWorkspace(env),Dict{Int,Bool}())
+CEMStability(env::CEMEnvelope,point_facet = nothing) = CEMStability(env,point_facet,Solvers.EnvelopeWorkspace(env.lp),Dict{Int,Bool}())
 
 function (stable::CEMStability)(k)
     stable.point_facet !== nothing && return iszero(stable.point_facet[k])
     return get!(stable.memo,k) do
         env,ws = stable.env,stable.ws
-        z = env.x[:,env.point_column[k]]
-        cem_reset!(ws,env,z)
-        cem_lp!(ws,env,z)
+        z = env.lp.x[:,env.point_column[k]]
+        Solvers.envelope_reset!(ws,env.lp,z)
+        Solvers.envelope_lp!(ws,env.lp,z)
         cem_numphases(env,ws) == 1
     end
-end
-
-#lattice point next to x (in lattice units, sum(x) = δ)
-function cem_round_lattice!(k,x,δ)
-    k .= floor.(Int32,x)
-    for _ in 1:(δ - sum(k))
-        _,i = findmax(i -> x[i] - k[i],eachindex(x))
-        k[i] += 1
-    end
-    return k
 end
 
 #=
@@ -685,14 +262,14 @@ function cem_samephase(env::CEMEnvelope,a,b,stable = nothing)
         for i in 1:N
             x[i] = K[i,pa] + (j/n)*(K[i,pb] - K[i,pa])
         end
-        cem_round_lattice!(kq,x,env.δ)
-        ok = cem_stable_compatible(env,cem_lattice_rank(kq,env.δ),a,stable)
+        Solvers.simplex_lattice_round!(kq,x,env.δ)
+        ok = cem_stable_compatible(env,Solvers.simplex_lattice_rank(kq,env.δ),a,stable)
         for jj in 1:N, ii in 1:N
             (ok || ii == jj || kq[jj] == 0) && continue
             kn .= kq
             kn[jj] -= 1
             kn[ii] += 1
-            ok = cem_stable_compatible(env,cem_lattice_rank(kn,env.δ),a,stable)
+            ok = cem_stable_compatible(env,Solvers.simplex_lattice_rank(kn,env.δ),a,stable)
         end
         ok || return false
     end
@@ -716,7 +293,7 @@ function cem_clusters(env::CEMEnvelope,cols,stable = nothing)
     return [findfirst(isequal(root(i)),roots) for i in 1:n],length(roots)
 end
 
-function cem_numphases(env::CEMEnvelope,ws::CEMWorkspace,stable = nothing)
+function cem_numphases(env::CEMEnvelope,ws::Solvers.EnvelopeWorkspace,stable = nothing)
     cols = ws.B[ws.λ .> CEM_λTOL]
     length(cols) <= 1 && return 1
     return last(cem_clusters(env,cols,stable))
@@ -736,7 +313,7 @@ function cem_phases(env::CEMEnvelope,fluid,p,T,B,λ,stable = nothing)
     for (j,c) in enumerate(cols)
         l = labels[j]
         β[l] += w[j]
-        comps[l] .+= w[j] .* @view(env.x[:,c])
+        comps[l] .+= w[j] .* @view(env.lp.x[:,c])
         if w[j] > wmax[l]
             wmax[l] = w[j]
             states[l] = env.state[c]
@@ -752,13 +329,10 @@ function cem_phases(env::CEMEnvelope,fluid,p,T,B,λ,stable = nothing)
     return comps[idx],β[idx],vols[idx],states[idx]
 end
 
-function cem_flash_result(env::CEMEnvelope,fluid,p,T,z,ws::CEMWorkspace,stable = nothing)
+function cem_flash_result(env::CEMEnvelope,fluid,p,T,z,ws::Solvers.EnvelopeWorkspace,stable = nothing)
     comps,β,vols,states = cem_phases(env,fluid,p,T,ws.B,ws.λ,stable)
-    g = dot(ws.λ,@view(env.g[ws.B])) + dot(z,env.gpure)
-    vapour_idx = -1
-    for i in eachindex(states)
-        states[i] == CEM_VAPOUR && (vapour_idx = i) #largest volume
-    end
+    g = dot(ws.λ,@view(env.lp.g[ws.B])) + dot(z,env.gpure)
+    vapour_idx = something(findlast(==(CEM_VAPOUR),states),-1) #largest volume
     return FlashResult(comps,β,vols,FlashData(p,T,g,vapour_idx))
 end
 
@@ -827,7 +401,7 @@ struct CEMDiagram
     point_facet::Vector{Int32}
 end
 
-Base.show(io::IO,env::CEMEnvelope) = print(io,"CEMEnvelope(δ = ",env.δ,", ",size(env.lattice,2)," grid points, ",length(env.g)," columns)")
+Base.show(io::IO,env::CEMEnvelope) = print(io,"CEMEnvelope(δ = ",env.δ,", ",size(env.lattice,2)," grid points, ",length(env.lp.g)," columns)")
 Base.show(io::IO,d::CEMDiagram) = print(io,"CEMDiagram(",length(d.components)," components, p = ",d.p," Pa, T = ",d.T," K, δ = ",d.envelope.δ,", ",length(d.facets)," multiphase facets)")
 
 function Base.show(io::IO,::MIME"text/plain",d::CEMDiagram)
@@ -890,13 +464,13 @@ function phase_diagram(model::EoSModel,_p,_T,method::CEMPhaseDiagram)
     end
     facet_cols,point_facet = cem_merge_phases(env,walk_cols,walk_facet)
     stable = CEMStability(env,point_facet)
-    ws = CEMWorkspace(env)
+    ws = Solvers.EnvelopeWorkspace(env.lp)
     w = fill(1/N,N)
     facets = map(facet_cols) do cols
         ws.B .= cols
-        z = env.x[:,cols]*w
-        cem_refactor!(ws,env,z)
-        μ = cem_tangent_plane(ws,env)
+        z = env.lp.x[:,cols]*w
+        Solvers.envelope_refactor!(ws,env.lp,z)
+        μ = Solvers.envelope_tangent_plane(ws,env.lp) .+ env.gpure
         comps,_,vols,states = cem_phases(env,fluid,p,T,cols,w,stable)
         f = CEMFacet(cols,μ,comps,vols,cem_state_symbol.(states))
         method.polish === nothing ? f : cem_polish_facet(fluidmodel,p,T,z,f,env,fluid,ws,stable,method.polish)
@@ -904,20 +478,22 @@ function phase_diagram(model::EoSModel,_p,_T,method::CEMPhaseDiagram)
     return CEMDiagram(component_list(model),p,T,method.equilibrium,env,facets,point_facet)
 end
 
+conodes(d::CEMDiagram) = [f.compositions for f in d.facets]
+
 #second pass over the multiphase facets found by the walk: vertices that are the same phase but not lattice neighbours
 #(see cem_samephase) are merged, points and facets that become single phase are removed.
 function cem_merge_phases(env::CEMEnvelope,facet_cols,point_facet)
     N = length(env)
     stable = CEMStability(env,copy(point_facet))
     labels = [first(cem_clusters(env,cols,stable)) for cols in facet_cols]
-    Binv = [inv(env.x[:,cols]) for cols in facet_cols]
+    Binv = [inv(env.lp.x[:,cols]) for cols in facet_cols]
     λ = zeros(N)
     newpf = zeros(Int32,length(point_facet))
     used = falses(length(facet_cols))
     for k in eachindex(point_facet)
         f = point_facet[k]
         f == 0 && continue
-        mul!(λ,Binv[f],@view(env.x[:,env.point_column[k]]))
+        mul!(λ,Binv[f],@view(env.lp.x[:,env.point_column[k]]))
         l = labels[f]
         if length(unique(l[i] for i in 1:N if λ[i] > CEM_λTOL)) > 1
             newpf[k] = f
@@ -936,19 +512,20 @@ end
 # - the next point, if it lies inside the basis simplex (λ = B⁻¹z ≥ 0),
 # - all vertices of the basis: their columns touch the envelope, so they are stable single phase points.
 function cem_walk!(point_facet,env::CEMEnvelope,idx)
-    ws = CEMWorkspace(env)
+    ws = Solvers.EnvelopeWorkspace(env.lp)
     keys = Dict{Vector{Int32},Int}()
     list = Vector{Int32}[]
     proven = Set{Vector{Int32}}()
     resolved = falses(size(env.lattice,2))
     key = similar(ws.B)
+    cand,kbuf = Int32[],similar(ws.B)
     z = zeros(length(env))
     λ = ws.λ
     current_proven = false
     for k in idx
         resolved[k] && continue
         c = env.point_column[k]
-        z .= @view(env.x[:,c])
+        z .= @view(env.lp.x[:,c])
         inside = false
         if current_proven
             mul!(λ,ws.Binv,z)
@@ -957,15 +534,15 @@ function cem_walk!(point_facet,env::CEMEnvelope,idx)
         end
         if !inside
             if !current_proven
-                cem_reset!(ws,env,z)
+                Solvers.envelope_reset!(ws,env.lp,z)
             else
-                cand = cem_local_candidates!(ws,env,k) #before the crash: neighbourhood of the previous basis
-                cem_crash!(ws,env,c,z)
-                cem_lp!(ws,env,z,cand)
+                cem_local_candidates!(cand,kbuf,ws,env,k) #before the crash: neighbourhood of the previous basis
+                Solvers.envelope_crash!(ws,env.lp,c,z)
+                Solvers.envelope_lp!(ws,env.lp,z,cand)
             end
             sort!(key .= ws.B)
             if !(key in proven)
-                cem_lp!(ws,env,z)
+                Solvers.envelope_lp!(ws,env.lp,z)
                 sort!(key .= ws.B)
                 push!(proven,copy(key))
             end

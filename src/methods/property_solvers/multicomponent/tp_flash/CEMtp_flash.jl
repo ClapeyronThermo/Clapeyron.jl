@@ -52,10 +52,10 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::CEMFlash)
         stable = CEMStability(env,d.point_facet)
     end
     fluidmodel,fluid,solid = cem_models(model,p,T,z,equilibrium)
-    ws = CEMWorkspace(env)
+    ws = Solvers.EnvelopeWorkspace(env.lp)
     zf = collect(Float64,z)
-    cem_reset!(ws,env,zf)
-    cem_lp!(ws,env,zf)
+    Solvers.envelope_reset!(ws,env.lp,zf)
+    Solvers.envelope_lp!(ws,env.lp,zf)
     result = cem_flash_result(env,fluid,p,T,zf,ws,stable)
     return cem_polish(fluidmodel,p,T,zf,result,method.polish)
 end
