@@ -46,7 +46,12 @@ kappa_649(z) = Clapeyron.debye_length(1.8e-5, 298.15, z, eps_r_649(z), [0.0, 1.0
     
     @testset "Solid solubility" begin
         @test sle_solubility(system,p,270.,[1,1,1];solute=["water"])[1] ≈ 0.9683019351679348 rtol = 1e-6
-        @test sle_solubility(system,p,300.,[1,1,1];solute=["sodium.chloride"],x0=[-1.2])[1] ≈ 0.7570514389791191 rtol = 1e-6
+
+        #@test sle_solubility(system,p,300.,[1,1,1];solute=["sodium.chloride"],x0=[-1.2])[1] ≈ 0.7570514389791191 rtol = 1e-6
+        #=
+        old MSA implementation had a bug (extra 1, it has an error of around 1e-6)
+        =#
+        @test sle_solubility(system,p,300.,[1,1,1];solute=["sodium.chloride"],x0=[-1.2])[1] ≈ 0.7570503839928237 rtol = 1e-6
     end
     
     @testset "mean ionic approach" begin
@@ -120,8 +125,8 @@ kappa_649(z) = Clapeyron.debye_length(1.8e-5, 298.15, z, eps_r_649(z), [0.0, 1.0
         x_test =  [0.5522792450346276, 0.012878645399699698, 0.2174210525290201, 0.2174210570366527]
         x_test_salt = [0.7057169738720372, 0.016456672490883215, 0.2778263536370795]
         @test x_test ≈ res0.compositions[1] rtol = 1e-6
-        #@test x_test ≈ res1.compositions[1] rtol = 1e-6
-        #@test x_test ≈ res2.compositions[1] rtol = 1e-6
+        @test x_test ≈ res1.compositions[1] rtol = 1e-6
+        @test x_test ≈ res2.compositions[1] rtol = 1e-6
 
         @test x_test_salt ≈ res0_mia.compositions[1] rtol = 1e-6
         @test x_test_salt ≈ res1_mia.compositions[1] rtol = 1e-6

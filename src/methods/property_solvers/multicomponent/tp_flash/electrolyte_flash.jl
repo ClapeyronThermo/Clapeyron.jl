@@ -380,8 +380,7 @@ end
 
 function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,ny_var_and_ψ,gz)
     ny_var = @view ny_var_and_ψ[1:end-1]
-    ψ = ny_var[end]
-
+    ψ = ny_var_and_ψ[end]
     second_order = !isnothing(H)
     nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
     in_equilibria,non_inx,non_iny = in_eq
