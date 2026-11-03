@@ -53,5 +53,6 @@ include("optimize.jl")
 include("integral.jl")
 include("chebyshev.jl")
 include("npipm.jl")
+include("lower_envelope.jl")
 
 end # module
