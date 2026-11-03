@@ -291,6 +291,25 @@ end
     @test Clapeyron.molar_density(system, 3363.1u"bar", T) ≈ 29810.09484964839u"mol*m^-3"
 end
 
+@testset "tcPR, single component" begin
+    model = tcPR(["Hydrogen"])
+    (Tc, Pc, Vc) = crit_pure(model)
+    #536
+    Tmax = 1000 * Tc
+    Tmin = 0.4 * Tc
+    Tx = range(Tmin,Tmax,500)
+    P = 0.1 * Pc
+    b = Clapeyron.lb_volume(model,0.0,[1.0])
+    dens = fill(b,500)
+    for i in 1:500
+        di = molar_density(model,P,Tx[i])
+        if !isnan(di)
+            dens[i] = di
+        end
+    end
+    @test all(>=(b),dens)
+end
+
 @testset "Cubic methods, multi-components" begin
     system = RK(["ethane","undecane"])
     system2 = tcPR(["benzene","toluene","nitrogen"])

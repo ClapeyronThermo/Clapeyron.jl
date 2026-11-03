@@ -376,11 +376,11 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     iszero(p) && !is_liquid(phase) && return 2,oftype(_1,Inf),oftype(_1,Inf) #fast handling of infinite vapour root
 
     #polynomial to calculate roots in η = b/V variable formulation.
-    
+
     pb2 = _1*p*b^2
     rtbpb2 = _1*b*(RT + p*b)
     pη3 = a + w*rtbpb2 #fma_evalpoly(b,(_1*a,_1*RT*w,_1*p*w)) # a + RT*b*w + p*b^2*w
-    pη2 = -(a - rtbpb2*u + pb2*w)     #-(a - RT*b*u + p*b^2*(w - u)) 
+    pη2 = -(a - rtbpb2*u + pb2*w)     #-(a - RT*b*u + p*b^2*(w - u))
     pη1 = rtbpb2 - u*pb2
     pη0 = -pb2
     poly_η = (pη0,pη1,pη2,pη3)
@@ -390,9 +390,13 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
     if !(0 <= ηc <= 1) && p > 0
         ηc = ifelse(p > 0,0.5*one(ηc),one(ηc))
     end
+    
+    #536 with infinite alpha values. no possible valid values.
+    poly_η[4] == Inf && poly_η[3] == -Inf && return (-1,∅,∅)
 
     nr,η1,ηI,ηR,_ = Solvers.__roots3(poly_η)
     nr,η1,ηI,ηR = cubic_poly_eta_good_roots(nr,η1,ηI,ηR,poly_η)
+
     nr == 0 && return -1,∅,∅ #no valid roots from solver, bailing out
 
     #if we have three roots, but we want one, then we can discard the other.
@@ -405,14 +409,21 @@ function cubic_poly_solver(a,b,p,R,T,u,w,phase)
         st_expected = ifelse(η1 < ηc,2,1)
     end
 
+    #one of the roots is equal to 1, that means the volume is equal to b, good_solve_1 will fail, because RT/(b - b) = Inf
+    #probably, the volume is between b and nextfloat(b)
+    nr == 1 && isone(η1) && return return (1,_1*b,_1*b)
+
     v1 = b/η1
+
     v2 = b/ηR
     εp = 1e-6*abs(max(p,one(p)))
 
     good_solve_1 = true
+
     p1 = RT/(v1-b) - a/(v1*v1 + u*b*v1 + w*b*b)
     abs(p - p1) > εp && (good_solve_1 = false)
     good_solve_1 && nr == 1 && (return 1,v1,v1) #no other root,both liquid an vapour roots converge to the same phase
+
 
     good_solve_2 = true
     if nr > 1
@@ -478,7 +489,7 @@ function cubic_poly_eta_good_roots(nr,η1,η2,η3,poly_η)
     nr == 1 && (return Int(t1),η1,η2,η3)
 
     t3 = in_tol(η3)
-    if nr == 2   
+    if nr == 2
         if t1 && t3
             positive_p && return 2,η1,η2,η3 #both roots are valid, may be liquid or vapour spinodal
             ηdensest = max(η1,η3)
