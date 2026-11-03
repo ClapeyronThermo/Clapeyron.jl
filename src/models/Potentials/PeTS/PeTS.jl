@@ -2,18 +2,25 @@
 
 
 abstract type PeTSModel <: CorrespondingStatesModel end
-@newmodel PeTS PeTSModel ChainLJScalingParam{T} false
+
+struct PeTS{T,I} <: PeTSModel
+    components::Vector{String}
+    params::ChainLJScalingParam{T}
+    idealmodel::I
+    references::Vector{String}
+    molecular_units::Bool
+end
+
+Base.eltype(model::PeTS) = Base.promote_eltype(model.idealmodel,model.params)
 
 default_locations(::Type{PeTS}) = ["SAFT/PCSAFT","properties/molarmass.csv"]
 default_references(::Type{PeTS}) = ["10.1080/00268976.2018.1447153"]
-transform_params(::Type{PeTS},params) = transform_params_lj(params)
 
-function set_k!(model::PeTSModel,k)
-    epsilon = model.params.epsilon
-    epsilon = epsilon_LorentzBerthelot!(epsilon,k)
-    return model
-end
+recombine_impl!(model::PeTSModel) = recombine_lj_cs!(model,nothing,nothing)
+set_k!(model::PeTSModel,k) = recombine_lj_cs!(model,k,nothing)
+set_l!(model::PeTSModel,l) = recombine_lj_cs!(model,nothing,l)
 
+ 
 """
     PeTSModel <: EoSModel
 
@@ -22,6 +29,7 @@ end
     userlocations = String[],
     ideal_userlocations = String[],
     reference_state = nothing,
+    molecular_units = false,
     verbose = false)
 
 ## Input parameters
@@ -44,10 +52,32 @@ end
 
 Perturbed, Truncated and Shifted (PeTS) Equation of State. Scaled via [`LJScaling`](@ref)
 
+The `molecular_units` argument sets if the scaling is done in SI units or molecular units.
+On SI units, the input sigma diameter is scaled from `[Å]` to `[m]` (once, at construction time), the volume is scaled by the avogadro number, and the gas constant is set to `R = 8.314...`;
+on molecular units, no additional scaling is applied and `R = 1.0`
+
 ## References
 1. Heier, M., Stephan, S., Liu, J., Chapman, W. G., Hasse, H., & Langenbach, K. (2018). Equation of state for the Lennard-Jones truncated and shifted fluid with a cut-off radius of 2.5 σ based on perturbation theory and its applications to interfacial thermodynamics. Molecular Physics, 116(15–16), 2083–2094. [doi:10.1080/00268976.2018.1447153](https://doi.org/10.1080/00268976.2018.1447153)
 """
-PeTS
+function PeTS(components;
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    molecular_units = false,
+    reference_state = nothing,
+    verbose = false)
+    
+    _components = format_components(components)
+    params1 = getparams(_components, default_locations(PeTS); userlocations = userlocations, verbose = verbose)
+    params2 = transform_params_chainljscaling(params1,_components,molecular_units)
+    packagedparams = build_eosparam(ChainLJScalingParam,params2)
+    T = eltype(packagedparams)
+    init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
+    references = default_references(PeTS)
+    model = PeTS{T,typeof(init_idealmodel)}(_components, packagedparams, init_idealmodel, references, molecular_units)
+    set_reference_state!(model,reference_state;verbose)
+    return model
+end
 
 """
     PeTSLJ <: LJPotentialModel
@@ -63,7 +93,7 @@ Perturbed, Truncated and Shifted (PeTS) Equation of State. Unscaled model.
 struct PeTSLJ <: LJPotentialModel end
 
 reference_model(::PeTSModel) = PeTSLJ()
-scaling_model(model::PeTSModel) = ChainLJScaling(model.params)
+scaling_model(model::PeTSModel) = ChainLJScaling(model.params,model.molecular_units)
 default_ignore_missing_singleparams(model::PeTSModel) =  ["segment"]
 
 function a_potential(model::PeTSLJ,V,T)

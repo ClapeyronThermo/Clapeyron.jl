@@ -58,5 +58,13 @@
         Vx = h/0.673
         z1 = Clapeyron.SA[1.0]
         @test Clapeyron.a_res(system, Vx, Tx, z1) ≈ -2.244730279521925 rtol = 1e-6
+
+        #molecular units
+        model_molecular = LJRef("test",userlocations = (sigma = 1.0,epsilon = 1.0),molecular_units = true)
+        @test Clapeyron.a_res(model_molecular,1.5,1.5,[1.0]) ≈ Clapeyron.a_res(Clapeyron.reference_model(model_molecular),1.5,1.5,[1.0])
+
+        #test set_k!
+        system2 = LJRef(["a","b"],userlocations = (sigma = [1.1,1.2],epsilon = [1.0,1.5]))
+        test_kl(system2)
     end
 end #testset
