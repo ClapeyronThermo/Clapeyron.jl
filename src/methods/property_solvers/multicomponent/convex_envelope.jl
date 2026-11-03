@@ -365,42 +365,23 @@ Base.@kwdef struct CEMPhaseDiagram <: ThermodynamicMethod
     threaded::Bool = true
 end
 
-"""
-    CEMFacet
-
-Multiphase facet of the convex envelope. Fields:
-- `columns`: grid columns (indices into the envelope) of the facet vertices.
-- `μ`: tangent plane of the facet, `μᵢ/RT` in the reference state of the model.
-- `compositions`, `volumes`, `states`: phases in equilibrium (sorted by volume, solids last, with `NaN` volume). Without polishing, each phase composition is the mean of its facet vertices.
-"""
+#phases (sorted by volume, solids last with NaN volume). Without polishing, each phase composition is the mean of its facet vertices
 struct CEMFacet
-    columns::Vector{Int32}
-    μ::Vector{Float64}
+    columns::Vector{Int32} #grid columns of the facet vertices
+    μ::Vector{Float64} #tangent plane μᵢ/RT, in the reference state of the model
     compositions::Vector{Vector{Float64}}
     volumes::Vector{Float64}
     states::Vector{Symbol}
 end
 
-"""
-    CEMDiagram
-
-Result of [`phase_diagram`](@ref). Fields:
-- `components`, `p`, `T`: system and conditions.
-- `envelope`: grid and search tree. `envelope.lattice ./ envelope.δ` are the grid compositions (one column per point).
-- `facets`: vector of [`Clapeyron.CEMFacet`](@ref), the multiphase facets of the convex envelope.
-- `point_facet`: for each grid point, the index of the multiphase facet that contains it (`0` if the point is a stable single phase).
-- `equilibrium`: equilibrium type used to build the diagram.
-
-A `CEMDiagram` can be used for fast flash calculations at the same conditions via `CEMFlash(diagram = diagram)`.
-"""
 struct CEMDiagram
     components::Vector{String}
     p::Float64
     T::Float64
     equilibrium::Symbol
     envelope::CEMEnvelope
-    facets::Vector{CEMFacet}
-    point_facet::Vector{Int32}
+    facets::Vector{CEMFacet} #multiphase facets
+    point_facet::Vector{Int32} #facet of each grid point, 0: stable single phase
 end
 
 Base.show(io::IO,env::CEMEnvelope) = print(io,"CEMEnvelope(δ = ",env.δ,", ",size(env.lattice,2)," grid points, ",length(env.lp.g)," columns)")
@@ -422,7 +403,7 @@ end
     phase_diagram(model, p, T; kwargs...)
 
 Calculates the complete phase diagram of `model` at pressure `p` `[Pa]` and temperature `T` `[K]`, over the whole composition space.
-Returns a [`Clapeyron.CEMDiagram`](@ref), containing all multiphase regions (as facets of the convex envelope of the Gibbs energy) and the phase classification of every grid point.
+Returns a `CEMDiagram`, containing all multiphase regions (as facets of the convex envelope of the Gibbs energy) and the phase classification of every grid point.
 
 Currently, the only method available is [`CEMPhaseDiagram`](@ref). The keyword arguments are passed to it.
 

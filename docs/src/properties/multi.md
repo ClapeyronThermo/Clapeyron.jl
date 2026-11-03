@@ -67,8 +67,6 @@ Clapeyron.eutectic_point
 ```@docs
 Clapeyron.phase_diagram
 Clapeyron.CEMPhaseDiagram
-Clapeyron.CEMDiagram
-Clapeyron.CEMFacet
 ```
 
 ### Bubble/Dew methods

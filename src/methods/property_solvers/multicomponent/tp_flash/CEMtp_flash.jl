@@ -7,7 +7,7 @@ The Gibbs energy of every aggregate state is evaluated on a lattice of the compo
 The number of phases does not need to be known, and the method does not depend on initial guesses.
 The CEM result has a discretization error of order `1/δ`. By default, it is refined with a local flash method (`polish`).
 
-If a [`Clapeyron.CEMDiagram`](@ref) obtained with [`phase_diagram`](@ref) is passed via `diagram`, the stored envelope is used and no Gibbs energy evaluation on the grid is necessary (the conditions and components must match).
+If a `CEMDiagram` obtained with [`phase_diagram`](@ref) is passed via `diagram`, the stored envelope is used and no Gibbs energy evaluation on the grid is necessary (the conditions and components must match).
 
 ## Keyword arguments
 - `δ`: number of divisions of the composition axes. By default, `256`, `128` and `64` for binary, ternary and quaternary mixtures (as in [1]), and `32` for more components (smaller for more than six components, at most ~5⋅10⁵ grid points). Ignored if `diagram` is given.
