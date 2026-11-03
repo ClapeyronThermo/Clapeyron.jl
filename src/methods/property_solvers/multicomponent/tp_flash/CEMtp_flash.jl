@@ -1,5 +1,5 @@
 """
-    CEMFlash(;δ = nothing, equilibrium = :auto, polish = MichelsenTPFlash(), threaded = true, diagram = nothing)
+    CEMFlash(;δ = nothing, equilibrium = :auto, polish = MichelsenTPFlash(second_order = true), threaded = true, diagram = nothing)
 
 Method to solve the non-reactive multicomponent, multiphase flash problem with the convex envelope method (CEM) [1].
 
@@ -12,7 +12,7 @@ If a [`Clapeyron.CEMDiagram`](@ref) obtained with [`phase_diagram`](@ref) is pas
 ## Keyword arguments
 - `δ`: number of divisions of the composition axes. By default, `256`, `128` and `64` for binary, ternary and quaternary mixtures (as in [1]), and `32` for more components (smaller for more than six components, at most ~5⋅10⁵ grid points). Ignored if `diagram` is given.
 - `equilibrium`: `:auto` considers liquid and vapour phases, `:lle` only liquid phases. Ignored if `diagram` is given.
-- `polish`: `TPFlashMethod` used to refine the CEM phases (initialized with the CEM result), or `nothing` to return the CEM result. The refined result is only accepted if it has a lower Gibbs energy than the CEM result. If `MichelsenTPFlash` is given and the CEM finds more than two phases, a `MultiPhaseTPFlash` with the same tolerances is used. Results with solid phases are not refined.
+- `polish`: `TPFlashMethod` used to refine the CEM phases (initialized with the CEM result), or `nothing` to return the CEM result. The refined result is only accepted if its phases are in equilibrium and it has a lower Gibbs energy than the CEM result. If `MichelsenTPFlash` is given and the CEM finds more than two phases, a `MultiPhaseTPFlash` with the same tolerances is used. Results with solid phases are not refined.
 - `threaded`: evaluate the grid in parallel.
 - `diagram`: a precomputed `CEMDiagram`.
 
@@ -24,7 +24,7 @@ Pure solid phases are considered for `CompositeModel`s with a `SolidHfus` solid 
 Base.@kwdef struct CEMFlash <: TPFlashMethod
     δ::Union{Int,Nothing} = nothing
     equilibrium::Symbol = :auto
-    polish::Union{Nothing,TPFlashMethod} = MichelsenTPFlash()
+    polish::Union{Nothing,TPFlashMethod} = MichelsenTPFlash(second_order = true)
     threaded::Bool = true
     diagram::Union{Nothing,CEMDiagram} = nothing
 end
@@ -57,12 +57,12 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::CEMFlash)
     Solvers.envelope_reset!(ws,env.lp,zf)
     Solvers.envelope_lp!(ws,env.lp,zf)
     result = cem_flash_result(env,fluid,p,T,zf,ws,stable)
-    return cem_polish(fluidmodel,p,T,zf,result,method.polish)
+    return cem_polish(fluidmodel,fluid,p,T,zf,result,method.polish)
 end
 
-cem_polish(model,p,T,z,result,::Nothing) = result
+cem_polish(model,fluid,p,T,z,result,::Nothing) = result
 
-function cem_polish(model,p,T,z,result,method::TPFlashMethod)
+function cem_polish(model,fluid,p,T,z,result,method::TPFlashMethod)
     #single phase, or solid phases present (the local methods do not handle solids)
     (numphases(result) < 2 || !all(isfinite,result.volumes)) && return result
     m = cem_polish_method(method,result)
@@ -72,10 +72,33 @@ function cem_polish(model,p,T,z,result,method::TPFlashMethod)
     catch
         return result
     end
-    all(isfinite,polished.volumes) && all(x -> all(isfinite,x),polished.compositions) || return result
-    #reduced molar gibbs energies (same reference). The discrete envelope lies above the exact one: a correct refinement can only lower g
-    g0,g1 = result.data.g,polished.data.g
-    return isfinite(g1) && g1 <= g0 + 1e-10*(1 + abs(g0)) ? polished : result
+    #the discrete envelope lies above the exact one: a correct refinement can only lower g
+    g0,g1 = result.data.g,cem_equilibrium_gibbs(fluid,p,T,z,polished)
+    return g1 <= g0 + 1e-10*(1 + abs(g0)) ? polished : result
+end
+
+#=
+reduced gibbs energy of a flash result, with the same reference as the envelope, NaN if its phases are not in equilibrium.
+the local methods may return without converging, and their gibbs energies do not always use the same reference.
+=#
+function cem_equilibrium_gibbs(fluid,p,T,z,res)
+    cache = ∂lnϕ_cache(fluid,p,T,z,Val{false}())
+    g = 0.0
+    lnf1 = nothing
+    for j in 1:numphases(res)
+        β,x = res.fractions[j],res.compositions[j]
+        iszero(β) && continue
+        phase = j == res.data.vapour_idx ? :vapour : :liquid
+        gj,v = modified_gibbs(fluid,p,T,x,phase,NaN)
+        g += β*gj
+        lnϕ,_ = modified_lnϕ(fluid,p,T,x,cache;phase,vol0 = v)
+        if lnf1 === nothing
+            lnf1 = lnϕ .+ log.(x)
+        elseif !all(i -> iszero(z[i]) || abs(lnϕ[i] + log(x[i]) - lnf1[i]) <= CEM_LNF_TOL,eachindex(z))
+            return NaN
+        end
+    end
+    return g
 end
 
 cem_polish_method(method::TPFlashMethod,result) = method

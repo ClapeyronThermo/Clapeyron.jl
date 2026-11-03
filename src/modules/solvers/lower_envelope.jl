@@ -84,12 +84,14 @@ struct EnvelopeTreeBuilder
     b::Vector{Float64}
     e::Vector{Float64}
     leafsize::Int
+    C::Matrix{Float64} #normal equations of the fit
+    xm::Vector{Float64}
 end
 
 #returns the envelope and the permutation of the columns of X (tree order). Points of different groups are split first.
 function lower_envelope(X,G,group)
     N,nc = size(X)
-    tb = EnvelopeTreeBuilder(X,G,group,collect(Int32,1:nc),Int32[],Int32[],Float64[],Float64[],Float64[],Float64[],16)
+    tb = EnvelopeTreeBuilder(X,G,group,collect(Int32,1:nc),Int32[],Int32[],Float64[],Float64[],Float64[],Float64[],16,zeros(N - 1,N - 1),zeros(N - 1))
     _envelope_node!(tb,1,nc)
     perm = tb.perm
     x,g = X[:,perm],G[perm]
@@ -102,20 +104,55 @@ function lower_envelope(X,G,group)
 end
 
 function _envelope_node!(tb::EnvelopeTreeBuilder,first,last)
-    nr = size(tb.x,1) - 1
+    x,g,xm,C = tb.x,tb.g,tb.xm,tb.C
+    nr = size(x,1) - 1
     id = length(tb.e) + 1
     append!(tb.range,(first,last))
     append!(tb.child,(0,0))
     cols = @view tb.perm[first:last]
-    xr,gc = tb.x[1:nr,cols],tb.g[cols]
-    lo,hi = vec(minimum(xr,dims = 2)),vec(maximum(xr,dims = 2))
-    #least squares fit g ≈ a + b⋅x. any b gives a rigorous bound, e = min(g - b⋅x)
-    b = (qr([ones(length(cols)) xr'],ColumnNorm()) \ gc)[2:end]
+    k = length(tb.lo)
+    append!(tb.lo,Iterators.repeated(Inf,nr))
+    append!(tb.hi,Iterators.repeated(-Inf,nr))
+    append!(tb.b,Iterators.repeated(0.0,nr))
+    lo,hi,b = view(tb.lo,(k + 1):(k + nr)),view(tb.hi,(k + 1):(k + nr)),view(tb.b,(k + 1):(k + nr))
+    #least squares fit g ≈ a + b⋅x (centred normal equations). any b gives a rigorous bound, e = min(g - b⋅x)
+    xm .= 0
+    gm = 0.0
+    @inbounds for c in cols
+        for i in 1:nr
+            xm[i] += x[i,c]
+            lo[i] = min(lo[i],x[i,c])
+            hi[i] = max(hi[i],x[i,c])
+        end
+        gm += g[c]
+    end
+    xm ./= length(cols)
+    gm /= length(cols)
+    C .= 0
+    @inbounds for c in cols, i in 1:nr
+        dxi = x[i,c] - xm[i]
+        b[i] += dxi*(g[c] - gm)
+        for j in 1:nr
+            C[j,i] += dxi*(x[j,c] - xm[j])
+        end
+    end
+    #ridge: degenerate directions (e.g. all points on a line) get a small slope
+    ridge = 1e-8*tr(C) + floatmin()
+    for i in 1:nr
+        C[i,i] += ridge
+    end
+    F = cholesky!(Symmetric(C),check = false)
+    issuccess(F) ? ldiv!(F,b) : (b .= 0)
     all(isfinite,b) || (b .= 0)
-    append!(tb.lo,lo)
-    append!(tb.hi,hi)
-    append!(tb.b,b)
-    push!(tb.e,minimum(gc .- xr'*b))
+    e = Inf
+    @inbounds for c in cols
+        r = g[c]
+        for i in 1:nr
+            r -= b[i]*x[i,c]
+        end
+        e = min(e,r)
+    end
+    push!(tb.e,e)
     length(cols) <= tb.leafsize && return id
     #split: first by group, then along the widest dimension
     s1 = tb.group[cols[1]]
@@ -123,9 +160,9 @@ function _envelope_node!(tb::EnvelopeTreeBuilder,first,last)
         sort!(cols,by = c -> (tb.group[c] != s1))
         mid = first + count(c -> tb.group[c] == s1,cols) - 1
     else
-        w,dim = findmax(hi .- lo)
+        w,dim = findmax(i -> hi[i] - lo[i],1:nr)
         iszero(w) && return id
-        sort!(cols,by = c -> tb.x[dim,c])
+        sort!(cols,by = c -> x[dim,c])
         mid = (first + last) ÷ 2
     end
     left = _envelope_node!(tb,first,mid)

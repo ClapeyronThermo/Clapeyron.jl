@@ -17,6 +17,7 @@ const CEM_VAPOUR = Int8(2)
 const CEM_SOLID = Int8(3)
 const CEM_λTOL = 1e-12 #phase amount tolerance
 const CEM_VOL_RTOL = 0.1 #fluid points with this relative volume difference are the same phase
+const CEM_LNF_TOL = 1e-6 #ln fugacity tolerance of polished phases
 
 cem_state_symbol(s) = s == CEM_LIQUID ? :liquid : (s == CEM_VAPOUR ? :vapour : :solid)
 
@@ -147,7 +148,7 @@ function cem_envelope(model,p,T,δ,equilibrium = :auto,threaded = true)
         #pure solid, relative to the pure liquid (or the only fluid root)
         addcol!(k,(isfinite(gl[k]) ? gl[k] : gv[k]) + Δμ,CEM_SOLID,NaN)
     end
-    X = K[:,P] ./ δ
+    X = @view(K[:,P]) ./ δ
     #remove the linear part (affine transformations do not change the envelope)
     gpure = [minimum((G[c] for c in eachindex(G) if P[c] == k),init = Inf) for k in pure]
     all(isfinite,gpure) || error("CEM: Gibbs energy evaluation failed for a pure component at p = $p, T = $T")
@@ -278,25 +279,26 @@ end
 
 cem_stable_compatible(env,q,a,stable) = stable(q) && cem_compatible(env,env.point_column[q],a)
 
-#cluster index of each column in cols
+#cluster index of each column in cols, number of clusters
 function cem_clusters(env::CEMEnvelope,cols,stable = nothing)
     n = length(cols)
-    parent = collect(1:n)
-    root(i) = (while parent[i] != i; i = parent[i]; end; i)
+    label = collect(1:n) #union-find parent, always a smaller index
+    root(i) = (while label[i] != i; i = label[i]; end; i)
     for a in 1:n, b in (a + 1):n
-        root(a) == root(b) && continue
-        if cem_samephase(env,cols[a],cols[b],stable)
-            parent[root(b)] = root(a)
-        end
+        ra,rb = root(a),root(b)
+        ra != rb && cem_samephase(env,cols[a],cols[b],stable) && (label[max(ra,rb)] = min(ra,rb))
     end
-    roots = unique(root.(1:n))
-    return [findfirst(isequal(root(i)),roots) for i in 1:n],length(roots)
+    #parents come first: number the roots, children take the label of their parent
+    np = 0
+    for i in 1:n
+        label[i] = label[i] == i ? (np += 1) : label[label[i]]
+    end
+    return label,np
 end
 
 function cem_numphases(env::CEMEnvelope,ws::Solvers.EnvelopeWorkspace,stable = nothing)
-    cols = ws.B[ws.λ .> CEM_λTOL]
-    length(cols) <= 1 && return 1
-    return last(cem_clusters(env,cols,stable))
+    count(>(CEM_λTOL),ws.λ) <= 1 && return 1
+    return last(cem_clusters(env,ws.B[ws.λ .> CEM_λTOL],stable))
 end
 
 #phases (sorted by volume, solids last) of the current basis with weights λ
@@ -350,7 +352,7 @@ Instead of building the complete convex hull, the envelope is obtained by solvin
 ## Keyword arguments
 - `δ`: number of divisions of the composition axes. By default, `256`, `128` and `64` for binary, ternary and quaternary mixtures (as in [1]), and `32` for more components (smaller for more than six components, at most ~5⋅10⁵ grid points). The number of grid points is `binomial(δ + N - 1, N - 1)`.
 - `equilibrium`: `:auto` considers liquid and vapour phases, `:lle` only liquid phases.
-- `polish`: `nothing` (default) or a `TPFlashMethod` (e.g. `MichelsenTPFlash()` or `MultiPhaseTPFlash()`). If given, the phases of every multiphase facet are refined with that method, starting from the CEM phases. The refined result is only accepted if it lowers the Gibbs energy. Facets with solid phases are not refined.
+- `polish`: `nothing` (default) or a `TPFlashMethod` (e.g. `MichelsenTPFlash()` or `MultiPhaseTPFlash()`). If given, the phases of every multiphase facet are refined with that method, starting from the CEM phases. The refined result is only accepted if its phases are in equilibrium and it lowers the Gibbs energy. Facets with solid phases are not refined. Close to critical points, `MichelsenTPFlash(second_order = true)` converges more reliably.
 - `threaded`: evaluate the grid and the envelope in parallel.
 
 ## References
@@ -495,7 +497,8 @@ function cem_merge_phases(env::CEMEnvelope,facet_cols,point_facet)
         f == 0 && continue
         mul!(λ,Binv[f],@view(env.lp.x[:,env.point_column[k]]))
         l = labels[f]
-        if length(unique(l[i] for i in 1:N if λ[i] > CEM_λTOL)) > 1
+        i0 = findfirst(>(CEM_λTOL),λ)
+        if any(i -> λ[i] > CEM_λTOL && l[i] != l[i0],1:N)
             newpf[k] = f
             used[f] = true
         end
@@ -568,7 +571,7 @@ end
 function cem_polish_facet(model,p,T,z,f::CEMFacet,env,fluid,ws,stable,method)
     ws.λ .= 1/length(z)
     res = cem_flash_result(env,fluid,p,T,z,ws,stable)
-    res2 = cem_polish(model,p,T,z,res,method)
+    res2 = cem_polish(model,fluid,p,T,z,res,method)
     res2 === res && return f
     np = numphases(res2,true)
     np == length(f.compositions) || return f
