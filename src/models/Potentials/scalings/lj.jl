@@ -110,6 +110,8 @@ end
 recombine_impl!(model::LJScalingModel) = recombine_lj_cs!(model,nothing,nothing)
 set_k!(model::LJScalingModel,k) = recombine_lj_cs!(model,k,nothing)
 set_l!(model::LJScalingModel,l) = recombine_lj_cs!(model,nothing,l)
+get_k(model::LJScalingModel) = get_k_geomean(model.params.epsilon.values)
+get_l(model::LJScalingModel) = get_k_mean(model.params.sigma.values)
 
 function transform_params_ljscaling(params,components,molecular_units)
     sigma = params["sigma"]

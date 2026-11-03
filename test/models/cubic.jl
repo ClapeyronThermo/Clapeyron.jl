@@ -244,6 +244,9 @@
         system = KU(["ethane","undecane"])
         @test Clapeyron.a_res(system, V, T, z) ≈ -1.2261554720898895 rtol = 1e-6
         @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
+
+        #issue #657
+        @test_throws DomainError KU("r1233zde")
     end
 
     @testset "RKPR Models" begin

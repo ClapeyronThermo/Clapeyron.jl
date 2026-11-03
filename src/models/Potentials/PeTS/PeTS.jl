@@ -1,7 +1,7 @@
 
 
 
-abstract type PeTSModel <: CorrespondingStatesModel end
+abstract type PeTSModel <: LJCorrespondingStatesModel end
 
 struct PeTS{T,I} <: PeTSModel
     components::Vector{String}
@@ -11,15 +11,8 @@ struct PeTS{T,I} <: PeTSModel
     molecular_units::Bool
 end
 
-Base.eltype(model::PeTS) = Base.promote_eltype(model.idealmodel,model.params)
-
 default_locations(::Type{PeTS}) = ["SAFT/PCSAFT","properties/molarmass.csv"]
 default_references(::Type{PeTS}) = ["10.1080/00268976.2018.1447153"]
-
-recombine_impl!(model::PeTSModel) = recombine_lj_cs!(model,nothing,nothing)
-set_k!(model::PeTSModel,k) = recombine_lj_cs!(model,k,nothing)
-set_l!(model::PeTSModel,l) = recombine_lj_cs!(model,nothing,l)
-
 
 """
     PeTSModel <: EoSModel

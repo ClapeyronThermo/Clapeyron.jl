@@ -1,5 +1,5 @@
 
-abstract type KolafaNezbedaModel <: CorrespondingStatesModel end
+abstract type KolafaNezbedaModel <: LJCorrespondingStatesModel end
 
 struct KolafaNezbeda{T,I} <: KolafaNezbedaModel
     components::Vector{String}
@@ -11,11 +11,6 @@ end
 
 default_locations(::Type{KolafaNezbeda}) = ["Potentials/KolafaNezbeda"]
 default_references(::Type{KolafaNezbeda}) = ["10.1016/0378-3812(94)02573-G"]
-
-recombine_impl!(model::KolafaNezbedaModel) = recombine_lj_cs!(model,nothing,nothing)
-set_k!(model::KolafaNezbedaModel,k) = recombine_lj_cs!(model,k,nothing)
-set_l!(model::KolafaNezbedaModel,l) = recombine_lj_cs!(model,nothing,l)
-
 
 reference_model(::KolafaNezbedaModel) = KolafaNezbedaLJ()
 scaling_model(model::KolafaNezbedaModel) = LJScaling(model.params,model.molecular_units)

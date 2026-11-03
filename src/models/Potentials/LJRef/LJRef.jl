@@ -1,14 +1,20 @@
-struct LJRef{T,I,LJ} <: CorrespondingStatesModel
+abstract type LJCorrespondingStatesModel <: CorrespondingStatesModel end
+
+Base.eltype(model::LJCorrespondingStatesModel) = Base.promote_eltype(model.idealmodel,reference_model(model),model.params)
+
+recombine_impl!(model::LJCorrespondingStatesModel) = recombine!(scaling_model(model))
+set_k!(model::LJCorrespondingStatesModel,k) = set_k!(scaling_model(model),k)
+set_l!(model::LJCorrespondingStatesModel,l) = set_l!(scaling_model(model),l)
+get_k(model::LJCorrespondingStatesModel) = get_k(scaling_model(model))
+get_l(model::LJCorrespondingStatesModel) = get_l(scaling_model(model))
+
+struct LJRef{T,I,LJ} <: LJCorrespondingStatesModel
     components::Vector{String}
     params::ChainLJScalingParam{T}
     idealmodel::I
     ljmodel::LJ
     molecular_units::Bool
 end
-
-Base.eltype(model::LJRef) = Base.promote_eltype(model.idealmodel,model.ljmodel,model.params)
-
-
 """
     LJRef <: CorrespondingStatesModel
 
@@ -66,11 +72,8 @@ reference_model(model::LJRef) = model.ljmodel
 scaling_model(model::LJRef) = ChainLJScaling(model.params,model.molecular_units)
 
 function recombine_impl!(model::LJRef)
-    recombine!(model.ljmodel)
-    recombine_lj_cs!(model,nothing,nothing)
+    recombine!(reference_model(model))
+    recombine!(scaling_model(model))
 end
-
-set_k!(model::LJRef,k) = recombine_lj_cs!(model,k,nothing)
-set_l!(model::LJRef,l) = recombine_lj_cs!(model,nothing,l)
 
 export LJRef

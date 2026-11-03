@@ -301,7 +301,7 @@ function ab_consts_variable_Zc(u::Number, w::Number, ζc::Number)
 
     n == 1 || error(
         "ab_consts_variable_Zc: expected exactly one α ∈ (0,1); got $n. " *
-        "u=$u, w=$w, ζc=$ζc")
+        "u=$u, w=$w, ζc=$ζc, n_roots = $n")
 
     Ωb = ζc * α
     Ωa = ζc * (1 + u*α + w*α^2)^2 / ((1 - α)^2 * (2 + u*α))
@@ -319,6 +319,9 @@ function ab_premixing(model::KUModel,mixing::MixingRule,k,l)
     Ωb = model.params.omega_b
     for i in 1:length(_Tc)
         Zci = _pc[i] * _vc[i] / (R̄ * _Tc[i])
+        if !(0.05954426498469396 < Zci < 0.5)
+            throw(DomainError("KU: Zc must be in range (0.05954426498469396, 0.5), for $(model.components[i]), got $Zci instead"))
+        end
         Ωai, Ωbi = ab_consts_variable_Zc(1.6, -0.8, Zci)
         Ωa[i] = Ωai
         Ωb[i] = Ωbi
