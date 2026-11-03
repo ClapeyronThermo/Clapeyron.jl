@@ -93,8 +93,9 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::MHV1RuleModel,α,a,
     c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
     q = MHV1q(mixing_model,model)
     Σlogb = sum(z[i]*log(b̄/b[i,i]) for i ∈ @comps)*invn
-    Σab = invn*sum(z[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)
-    ā = b̄*R̄*T*(Σab-1/q*(g_E/(R̄*T)+Σlogb))
+    RT = Rgas(model)*T
+    Σab = invn*sum(z[i]*a[i,i]*α[i]/b[i,i]/RT for i ∈ @comps)
+    ā = b̄*RT*(Σab - (g_E/RT + Σlogb)/q)
     return ā,b̄,c̄
 end
 

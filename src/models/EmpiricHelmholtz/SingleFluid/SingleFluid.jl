@@ -165,7 +165,7 @@ T_scale(model::SingleFluid,z) = model.properties.Tc
 
 p_scale(model::SingleFluid,z) = model.properties.Pc
 
-lb_volume(model::SingleFluid,T,z) = model.properties.lb_volume #finally, an eos model that mentions it max density.
+lb_volume(model::SingleFluid,T,z) = sum(z)*model.properties.lb_volume
 
 Base.length(::SingleFluid) = 1
 
@@ -208,43 +208,54 @@ function x0_sat_pure(model::SingleFluid,T)
         vvtp = volume(gas_ancillary,0.0,Ttp,z)
         vltp = volume(liquid_ancillary,0.0,Ttp,z)
         ptp = pressure(model,vvtp,Ttp)
-        R = Rgas(model)
         dpdT = dpdT_saturation(model,vvtp,vltp,Ttp)
         dTinvdlnp = -ptp/(dpdT*T*T)
         ΔTinv = 1/T - 1/Ttp
         psat = exp(ΔTinv/dTinvdlnp)*ptp
         vv = Rgas(model)*T/psat
-        vl = x0_volume_liquid(model,psat,T)
+        vl = x0_volume_liquid_lowT(model,psat,T,SA[1.0])
         return vl,vv
     end
 end
 
 function x0_volume_liquid_lowT(model::SingleFluid,p,T,z)
     _1 = one(Base.promote_eltype(model,p,T,z))
+    isnan(T+p) && return zero(_1)/zero(_1)
+    
     lb_v = lb_volume(model,T,z)*_1
     vl_lbv = 1.01*lb_v
     ancillary = model.ancillaries
     Tc = model.properties.Tc
-    Ttp = model.properties.Ttp
+    Ttp0 = model.properties.Ttp
+    if 0 < Ttp0 < Tc #we have triple point information:
+        Ttp = model.properties.Ttp
+    else #we suppose triple point = 0.5 Tc
+        Ttp = 0.5*model.properties.Tc
+    end
+
+    T > Tc && return vl_lbv
+    Tx = max(T,Ttp*one(T))
+    vᵢ = volume(ancillary,p,Tx,z,phase = :l)
+    isnan(vᵢ) && return vl_lbv
 
     if Ttp < T < Tc
-        vᵢ = volume(ancillary,p,T,z,phase = :l)
         for i in 1:15
             pressure(model,vᵢ,T,z) > p && break
             vᵢ = 0.9*vᵢ + 0.1*vl_lbv
         end
         return vᵢ
-    elseif Ttp < T
-        vᵢ = volume(ancillary,p,Ttp,z,phase = :l)
+    end
+
+    if T < Ttp
         pvi = pressure(model,vᵢ,T,z)
         pp = max(_1*p,pvi)
         Tᵢ = _1*Ttp
         #chill from p,Ttp to p,T
         return volume_chill(model,pp,T,z,vᵢ,Tᵢ)
-    else #T > Tc and p < pc, this is gas-like supercritical fluid
-        #this is always a gas volume, so starting from the lowest volume does not hurt
-        return vl_lbv
     end
+
+    #this should be unreachable
+    return vl_lbv
 end
 
 function x0_volume_liquid(model::SingleFluid,p,T,z)

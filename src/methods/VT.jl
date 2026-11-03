@@ -586,6 +586,24 @@ function VT_thermodynamic_factor(model::EoSModel, V, T, z)
     return Γ
 end
 
+function VT_∑zlogϕ(model,V,T,z,p = nothing)
+    RT = Rgas(model)*T
+    n = sum(z)
+    if p === nothing
+        A, ∂A∂V = f∂fdV_res(model,V,T,z)
+    else
+        A = eos_res(model,V,T,z)
+        ∂A∂V = n*RT/V - p*one(A)
+    end
+    infinite_vol = iszero(1/V)
+    Pr = ifelse(infinite_vol,zero(∂A∂V),-∂A∂V)
+    PrV = ifelse(infinite_vol,zero(∂A∂V),Pr*V)
+    g_res = A + PrV
+    logZ = log1p(PrV/(n*RT))
+    ∑zlogϕi = g_res/RT - n*logZ
+    return ∑zlogϕi
+end
+
 export pressure
 export second_virial_coefficient,cross_second_virial,equivol_cross_second_virial
 @public temperature, pip

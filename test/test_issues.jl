@@ -11,6 +11,8 @@ struct PCSAFTParam_test <: EoSParam
     bondvol::AssocParam{Float64}
 end
 
+
+
 @testset "Reported errors" begin
     #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/104
     @testset "#104" begin
@@ -191,10 +193,10 @@ end
         @test bubT1 ≈ bub_test rtol = 1e-6
 
         bubT1_chempot = bubble_temperature(model1, 101325, x1, ChemPotBubbleTemperature(T0=373.0, nonvolatiles=["calcium","chloride"]))[1]
-        @test_broken bubT1_chempot ≈ bub_test rtol = 1e-6
+        @test bubT1_chempot ≈ bub_test rtol = 1e-6
 
         bubT1_chempot2 = bubble_temperature(model1, 101325, x1, ChemPotBubbleTemperature(nonvolatiles=["calcium","chloride"]))[1]
-        @test_broken bubT1_chempot2 ≈ bub_test rtol = 1e-6
+        @test bubT1_chempot2 ≈ bub_test rtol = 1e-6
 
         bubT1_2 = bubble_temperature(model1, 101325, x1, FugBubbleTemperature(nonvolatiles = ["calcium", "chloride"],y0=[1.,0.,0.],vol0=(1.8e-5,1.),T0=373.15))[1]
         @test bubT1_2 ≈ bub_test rtol = 1e-6
@@ -251,5 +253,41 @@ end
         @test 0 == count(isnan,v1)
         @test 0 == count(isnan,v2)
         @test 0 == count(isnan,v3)
+    end
+
+    @testset "#663" begin
+
+        #=
+        the summary of the issue describes the problem:
+
+        ....The wrong B comes from the association site fractions at the very large volume that second_virial_coefficient_impl uses, V = sqrt(1/eps()) = 6.71e7 m³/mol:
+
+        On 0.6.29, Clapeyron.X returns 0.99918 there.
+        The fixed point of X = 1/(1 + K X), and 0.6.21, give 1 - 2e-11.
+
+        Multiplied by 1/eps, that error becomes the O(10²) to O(10³) m³/mol B.
+
+        From reading the source, 0.6.29 compresses this 4×4 site matrix to 2×2 and solves it in closed form with X_exact2!. 
+        That path is new since 0.6.21. Calling X_exact2! on the compressed matrix directly gives the same inaccurate values. 
+        Here the cross-association strength is the geometric mean of the two self-association strengths, so the compressed 2×2 matrix is rank one. 
+        That degenerate case may be the one where the closed-form solution loses precision as K → 0.
+    
+        Problem was fixed by doing sucessive substitution in that case until convergence.
+        =#
+
+        methanol(βx) = scpa_663("methanol", 32.04, 512.64, 0.40531, 3.0978e-5, 0.43102, 1, -0.153, 2957.6174829101865, 0.0161, 2480.376778091854, βx)
+        glycol(βx) = scpa_663("ethylene glycol", 62.06784, 720.0, 1.0819, 5.14e-5, 0.6744, 2, -0.115, 2375.6195568477087, 0.0141, 2189.377815060615, βx)
+        CASES = [   # (label, model, T, z, 0.6.21's bubble_pressure p and y, used as a seed below)
+                    ("water + methanol", methanol(0.03109832311438212), 320.0, [0.5, 0.5], 31557.62939, [0.178265, 0.821735]),
+                    ("water + methanol", methanol(0.031087972174187902), 350.0, [0.5, 0.5], 108843.8408, [0.20907, 0.79093]),
+                    ("water + ethylene glycol", glycol(0.02588076152943427), 350.0, [0.3, 0.7], 12524.28153, [0.967909, 0.0320907]),
+                    ("water + ethylene glycol", glycol(0.025875900491253986), 400.0, [0.3, 0.7], 77420.64527, [0.926309, 0.0736912]),
+                ]
+        
+        for CASE in CASES
+            let (_, model, T, z) = CASES, V = sqrt(1 / eps())
+                test_assoc_matrix(model,V,T,z)
+            end
+        end
     end
 end

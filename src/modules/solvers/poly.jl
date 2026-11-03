@@ -393,7 +393,25 @@ function real_roots2(pol::NTuple{3,T}) where T
     return __roots2(pol)
 end
 
+function root_in_bounds(tup,x1,x2)
+    lo,hi = minmax(x1,x2)
 
+    if length(tup) === 4
+        nr,r1,r2,r3 = tup
+        r1_check = (lo <= r1 <= hi)
+        nr == 1 && (return r1_check, r1)
+        r3_check = (lo <= r3 <= hi)
+        nr == 2 && return (r3_check,r3)
+        nr == 3 && return ((lo <= r2 <= hi),r2)
+        return false,r1
+    end
+    is_real,r1,r2 = tup
+    !is_real && (return false,r1)
+    if (lo <= r1 <= hi)
+        return true,r1
+    end
+    return (lo <= r2 <= hi),r2
+end
 
 """
     polyder(poly)
@@ -477,19 +495,20 @@ evalpoly(0.0,poly) ≈ f(x0) #true
 evalpoly(x1 - x0,poly) ≈ f(x1) #true
 ```
 """
-function hermite3_poly(x0,x1,f0,f1,df0,df1)
-    #=
-    (2t3 - 3t2 + 0t + 1)f0 +
-    (1t3 - 2t2 + 1t + 0)df0 +
-    (-2t3 +3t2 + 0t + 0)f1 +
-    (1t3 - 1t2 + 0t +  0)df1
-    =#
-    Δx⁻¹ = 1/(x1 - x0)
+function hermite3_poly(x0, x1, f0, f1, df0, df1)
+    dx = x1 - x0
+    Δf = f1 - f0
+
+    # if df0, df1 are d/dx, convert to d/dt
+    d0 = df0 * dx
+    d1 = df1 * dx
+
     p0 = f0
-    p1 = df0*Δx⁻¹
-    p2 = (-3*f0 -2*df0 + 3*f1 - 1*df1)*Δx⁻¹*Δx⁻¹
-    p3 = (2*f0 + df0 -2*f1 + df1)*Δx⁻¹*Δx⁻¹*Δx⁻¹
-    return (p0,p1,p2,p3)
+    p1 = df0
+    p2 = (3*Δf - 2*d0 - d1) / (dx*dx)
+    p3 = (-2*Δf + d0 + d1) / (dx*dx*dx)
+
+    return (p0, p1, p2, p3)
 end
 
 function hermite3_poly(f,x0,x1)

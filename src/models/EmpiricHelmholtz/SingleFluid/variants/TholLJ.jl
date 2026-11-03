@@ -1,14 +1,14 @@
-function TholLJ()
+function TholLJ_constructor()
     components = ["Leonard-Jones Fluid (unscaled)"]
     Mw = 1. #g·mol-1
     T_c = 1.32    #K
     P_c = 0.13006 #Pa
     rho_c = 0.31 # mol·m-3
-    lb_volume = 1/(π/6)
+    lb_volume = 1/0.6
     Ttp = 0.661 #K
-    ptp = NaN
-    rhov_tp  = NaN
-    rhol_tp = NaN
+    ptp = 0.0012
+    rhov_tp  = 0.0017
+    rhol_tp = 0.0845
     Rgas = 1.0
     acentric_factor = NaN
 
@@ -54,20 +54,3 @@ function TholLJ()
 
     return SingleFluid(components,properties,ancillaries,ideal,residual,references)
 end
-
-
-"""
-    TholLJ()
-
-Lennard-Jones Reference equation of state. Valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
-```
-τᵢ = 1.32/T
-δᵢ = n/0.31V
-a⁰ᵢ(δ,τ) = log(δᵢ) + 1.5log(τᵢ) - 1.515151515τᵢ + 6.262265814
-a⁰(δ,τ,z) = ∑xᵢ(a⁰ᵢ + log(xᵢ))
-aʳ(δ,τ)  = aʳ₁+ aʳ₂ + aʳ₃ + aʳ₄
-aʳ₁(δ,τ)  = ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:6
-aʳ₂(δ,τ)  = ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 7:12
-aʳ₃(δ,τ)  = ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 13:23
-"""
-TholLJ

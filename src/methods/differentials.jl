@@ -107,6 +107,17 @@ function p∂p∂V(model,V,T,z::AbstractVector=SA[1.0])
     return SVector(p,∂p∂V)
 end
 
+function ∂p(model,V,T,z)
+    f = @deferred_VT(pressure,∂₁p)
+    _f,_df = Solvers.fgradf2(f,V,T)
+    return _df,_f
+end
+
+function ∂p_vec(model,V,T,z)
+    _∂f,_f = ∂p(model,V,T,z)
+    return SVector(_f,_∂f[1],_∂f[2])
+end
+
 function p∂p∂rho(model, rho, T, z=SA[1.0])
     n   = sum(z)
     V   = n / rho

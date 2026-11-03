@@ -15,6 +15,15 @@ function term_ar_exp(δ,τ,lnδ,lnτ,_0,n,t,d,l,g)
     return αᵣ
 end
 
+function term_ar_exp(δ,τ,lnδ,lnτ,_0,n,t,d,l)
+    αᵣ = zero(_0) 
+    for k in eachindex(n)
+        dpart = lnδ*d[k] - exp(lnδ*l[k])
+        αᵣ += n[k]*exp(dpart + lnτ*t[k])
+    end
+    return αᵣ
+end
+
 @inline function term_ar_exp2(δ,τ,lnδ,lnτ,_0,n,t,d,ld,gd,lt,gt)
     αᵣ = zero(_0) 
     for k in eachindex(n)

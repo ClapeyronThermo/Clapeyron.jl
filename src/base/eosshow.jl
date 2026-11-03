@@ -13,26 +13,29 @@ end
 #function used to customize the first line to your liking
 show_info(io,model) = nothing
 
-function show_params(io,model)
+function show_params(io,model;space = false)
     hasfield(typeof(model),:params) || return nothing
     iszero(fieldcount(typeof(model.params))) && return nothing
     println(io)
     paramnames = fieldnames(typeof(model.params))
     len_params = length(paramnames)
-    !iszero(len_params) && print(io,"Contains parameters: ")
+    iszero(len_params) && return nothing
+    space && print(io," ")
+    print(io,"Contains parameters: ")
     show_pairs(io,paramnames,pair_separator = ", ",quote_string = false)
 end
 
-function may_show_references(io::IO,model)
+function may_show_references(io::IO,model;space = false)
     if get(ENV,"CLAPEYRON_SHOW_REFERENCES","FALSE") == "TRUE"
-        show_references(io,model)
+        show_references(io,model;space)
     end
 end
 
-function show_references(io::IO,model)
+function show_references(io::IO,model;space = false)
     citations = cite(model)
     iszero(length(citations)) && return nothing #do not do anything if there isnt any citations
     println(io)
+    space && print(io, " ")
     print(io,"References: ")
     for (i,doi) in enumerate(cite(model))
         i != 1 && print(io,", ")
@@ -40,8 +43,8 @@ function show_references(io::IO,model)
     end
 end
 
-custom_typeof_str(::Type{T}) where T = string(T)
-custom_typeof_str(model) = string(typeof(model))
+model_showname(::Type{T}) where T = string(T)
+model_showname(model) = string(typeof(model))
 
 """
     eosshow(io::IO, model::EoSModel)
@@ -54,7 +57,7 @@ display. The text/plain variant prints components, parameters, reference state,
 and (optionally) citations when enabled via `ENV["CLAPEYRON_SHOW_REFERENCES"]`.
 """
 function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSModel))
-    print(io, custom_typeof_str(model))
+    print(io, model_showname(model))
     
     comps = component_list(model)
     l = length(comps)
@@ -79,7 +82,7 @@ function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSMo
 end
 
 function eosshow(io::IO, Base.@nospecialize(model::EoSModel))
-    print(io, custom_typeof_str(model))
+    print(io, model_showname(model))
     print(io, "(")
     show_pairs(io,component_list(model),pair_separator = ", ")
     print(io, ")")

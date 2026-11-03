@@ -10,6 +10,7 @@ struct GenericAncEvaluator
     superanc::Solvers.ChebyshevRangeV64 #used if EoSSuperancillaries.jl is loaded
 end
 
+
 Base.show(io::IO,anc::GenericAncEvaluator) = print(io,"GenericAncEvaluator(ancillary type = :$(anc.type))")
 
 function GenericAncEvaluator(superanc::Solvers.ChebyshevRangeV64)
@@ -18,11 +19,13 @@ function GenericAncEvaluator(superanc::Solvers.ChebyshevRangeV64)
 
 end
 
+const EMPTY_CHEB = Solvers.ChebyshevRange(Float64[],Vector{Float64}[])
+
 function GenericAncEvaluator(n,T,input_r,output_r,type,using_input_r)
-    return GenericAncEvaluator(n,T,input_r,output_r,type,using_input_r,Solvers.ChebyshevRange(Float64[],Vector{Float64}[]))
+    return GenericAncEvaluator(n,T,input_r,output_r,type,using_input_r,EMPTY_CHEB)
 end
 
-function _eval_generic_anc(data::GenericAncEvaluator,input)
+function _eval_generic_anc(data,input)
     type = data.type
     input_r = data.input_r
     output_r = data.output_r

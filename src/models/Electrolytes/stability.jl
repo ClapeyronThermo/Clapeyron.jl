@@ -86,7 +86,7 @@ function __tpd_ss_update!(w,model::ESElectrolyteModel,d,z,lnϕw,phasew)
     w = z*log(K)
     =#
     w .= exp.(d .- lnϕw) #K is stored in w
-    Z = model.charge
+    Z = component_charges(model)
     if is_vapour(phasew)
         for i in eachindex(w)
             Z[i] != 0 && (w[i] = 0)
@@ -119,7 +119,7 @@ function tpd_plan(model::ESElectrolyteModel,z,is_liquidz,lle,id_test,K_test,pure
     plan = Tuple{Symbol,Symbol,NTuple{3,Int}}[]
     nc = length(model)
     neutral = ones(Bool,length(model))
-    Z = model.charge
+    Z = component_charges(model)
     neutral .= iszero.(Z)
 
     if is_liquidz && id_test && !lle && iszero(length(Z))

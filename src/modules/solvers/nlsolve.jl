@@ -217,6 +217,8 @@ function solve1_initial_state(::Type{T},α = convert(T,0.6)) where T
     return ((nan,nan,nan),(nan,nan,nan),α,:iter0)
 end
 
+@inline sort_smallest(a, b, fa, fb) = abs(fa) < abs(fb) ? (a, b, fa, fb) : (b, a, fb, fa)
+
 function solve1_update_state(state, x, fx; full_iter=true)
     xs, fxs, α, status = state
     x1, x2, x3 = xs
@@ -237,16 +239,16 @@ function solve1_update_state(state, x, fx; full_iter=true)
         # Only attempt to establish a bracket when fx is a reliable evaluation
         if full_iter
             if fx * f1 < 0
-                na, nb, nfa, nfb = Roots.sort_smallest(x, x1, fx, f1)
+                na, nb, nfa, nfb = sort_smallest(x, x1, fx, f1)
                 # c: best of the two remaining points
                 nc, nfc = abs(f2) <= abs(f3) ? (x2, f2) : (x3, f3)
                 return ((na, nb, nc), (nfa, nfb, nfc), α, :bounded)
             elseif fx * f2 < 0
-                na, nb, nfa, nfb = Roots.sort_smallest(x, x2, fx, f2)
+                na, nb, nfa, nfb = sort_smallest(x, x2, fx, f2)
                 nc, nfc = abs(f1) <= abs(f3) ? (x1, f1) : (x3, f3)
                 return ((na, nb, nc), (nfa, nfb, nfc), α, :bounded)
             elseif fx * f3 < 0
-                na, nb, nfa, nfb = Roots.sort_smallest(x, x3, fx, f3)
+                na, nb, nfa, nfb = sort_smallest(x, x3, fx, f3)
                 nc, nfc = abs(f1) <= abs(f2) ? (x1, f1) : (x2, f2)
                 return ((na, nb, nc), (nfa, nfb, nfc), α, :bounded)
             end
@@ -284,11 +286,11 @@ function solve1_update_state(state, x, fx; full_iter=true)
         # which is what gives Chandrapatla's ξ and ϕ their meaning.
         if fx * fa < 0
             # New bracket: (x, a). Old b leaves → new c = b.
-            na, nb, nfa, nfb = Roots.sort_smallest(x, a, fx, fa)
+            na, nb, nfa, nfb = sort_smallest(x, a, fx, fa)
             return ((na, nb, b), (nfa, nfb, fb), α, :bounded)
         elseif fx * fb < 0
             # New bracket: (x, b). Old a leaves → new c = a.
-            na, nb, nfa, nfb = Roots.sort_smallest(x, b, fx, fb)
+            na, nb, nfa, nfb = sort_smallest(x, b, fx, fb)
             return ((na, nb, a), (nfa, nfb, fa), α, :bounded)
         else
             # fa*fb < 0 by invariant, so x must bracket with one side.

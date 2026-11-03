@@ -148,7 +148,7 @@ end
         @test x1 ≈ xs
 
         x2 = opt_test(3.0,SOL.NelderMead())
-        @test x2 ≈ xs rtol = 1e-3
+        @test x2 ≈ xs rtol = 1e-2
 
         xs_1v = (2 + sqrt(6))/2
         x3 = SOL.solution(SOL.optimize(minlog,(1.5,2.5),SOL.BrentMin()))

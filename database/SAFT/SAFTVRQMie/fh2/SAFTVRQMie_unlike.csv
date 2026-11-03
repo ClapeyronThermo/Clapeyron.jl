@@ -1,5 +1,5 @@
 Clapeyron Database File
-SAFTVRMie unlike Parameters
+SAFTVRMie (2st order FH perturbation) unlike Parameters
 species1,species2,k,l
 hydrogen,deuterium,-0.04,0.0
 helium~|~helium-4,deuterium,0.12,-0.05

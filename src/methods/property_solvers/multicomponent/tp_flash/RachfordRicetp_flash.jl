@@ -118,6 +118,8 @@ function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
     return FlashResult(comps,βi,volumes,FlashData(p,T,g,vapour_idx))
 end
 
+tp_flash_pure(model,p,T,z,method::RRTPFlash) = tp_flash_pure_michelsen(model,p,T,z)
+
 michelsen_itss(method::RRTPFlash) = method.max_iters
 michelsen_use_opt_solver(::RRTPFlash) = false
 

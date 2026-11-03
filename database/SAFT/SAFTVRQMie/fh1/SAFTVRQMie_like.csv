@@ -1,0 +1,9 @@
+Clapeyron Database File
+SAFTVRQMie (1st order FH perturbation) Like Parameters
+species,DIPPR Number,Mw,segment,sigma,epsilon,lambda_r,lambda_a,source
+hydrogen,,2.0157309551872,1.0,3.0243,26.706,9.0,6.0,Aasen2019
+para-hydrogen,,2.0157309551872,1.0,3.0235,26.586,9.0,6.0,Aasen2019
+ortho-hydrogen,,2.0157309551872,1.0,3.0239,26.716,9.0,6.0,Aasen2019
+neon,,20.17969806457545,1.0,2.7778,37.501,13.0,6.0,Aasen2019
+helium,,4.002601643881807,1.0,2.7443,5.4195,9.0,6.0,Aasen2019
+deuterium,,4.028209954364,1.0,3.0203,30.273,10.0,6.0,Aasen2019

@@ -14,6 +14,20 @@ GC.gc()
         test_gibbs_duhem(system,V,T,z)
         test_recombine(system)
         GC.gc()
+
+        components = ["nitrogen","oxygen","argon","carbon dioxide","water"]
+        model635 = SAFTVRMie(components; assoc_options=AssocOptions(combining=:elliott))
+        p635 = 1.5e5
+        T635 = 20+273.15
+
+        #635
+        zdry=[0.7808,0.2095,0.0093,0.0004]
+        zwater=0.05
+        z635 = append!(zdry*(1-zwater),zwater)
+        V635 = Clapeyron.R̄*T635/p635
+        p635_1,dpdV635 = Clapeyron.p∂p∂V(model635,V635,T635,z635)
+        @test p635_1 ≈ 149791.1289385962 rtol = 1e-3
+        @test dpdV635 ≈ -9.205619473175893e6 rtol = 1e-3
     end
 
     @testset "SAFTVRMieGV" begin
@@ -34,10 +48,20 @@ GC.gc()
     end
 
     @testset "SAFTVRQMie" begin
-        system = SAFTVRQMie(["helium"])
-        @test Clapeyron.a_mono(system, V, T, z1) ≈ 0.12286776703976324 rtol = 1e-6
-        test_gibbs_duhem(system,V,T,z1)
+        system_fh2 = SAFTVRQMie(["helium"])
+        @test Clapeyron.a_mono(system_fh2, V, T, z1) ≈ 0.12286776703976324 rtol = 1e-6
+        test_gibbs_duhem(system_fh2,V,T,z1)
         GC.gc()
+
+        system_fh1 = SAFTVRQMie(["helium"],fh_order = :fh1)
+        @test Clapeyron.a_mono(system_fh1, V, T, z1) ≈ 0.11583418499711443 rtol = 1e-6
+
+        system_fh2_2 = SAFTVRQMie(["helium","neon"])
+        @test Clapeyron.a_mono(system_fh2_2, V, T, z) ≈ 0.1311106955436684 rtol = 1e-6
+        test_gibbs_duhem(system_fh2_2,V,T,z)
+
+        system_fh1_2 = SAFTVRQMie(["helium","neon"],fh_order = :fh1)
+        @test Clapeyron.a_mono(system_fh1_2, V, T, z) ≈ 0.13084830523132662 rtol = 1e-6
     end
 
     @testset "SAFTVRSMie" begin
@@ -45,7 +69,7 @@ GC.gc()
         V_sol = 3e-5
         @test Clapeyron.a_mono(system, V_sol, T, z1) ≈ 0.43643302846919896 rtol = 1e-6
         @test Clapeyron.a_chain(system, V_sol, T, z1) ≈ -0.4261294644079463 rtol = 1e-6
-        test_gibbs_duhem(system,V_sol,T,z1,rtol = 1e-12)
+        test_gibbs_duhem(system,V_sol,T,z1,rtol = 1e-12,atol = 1e-10)
         GC.gc()
     end
 

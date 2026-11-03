@@ -25,15 +25,16 @@ warnonly = Documenter.except(),
         # "How-to Guides" => ["Implement your own Methods"=>"user_guide/custom_methods.md",
         #                     "Implement your own Models"=>"user_guide/custom_model.md"],
         "Notebook Examples" => "notebook_examples.md",
-        "Available EoS" => ["Ideal Models" => "eos/ideal.md"
-                            "Cubic Models" => "eos/cubic.md"
-                            "Activity Models" => "eos/activity.md"
-                            "SAFT and CPA Models"  => "eos/saft.md"
-                            "Empiric Helmholtz Models" => "eos/empiric.md"
-                            "Electrolyte Models" => "eos/electrolytes.md"
-                            "Property Correlations" =>  "eos/correlations.md"
-                            "ML-Based Models" =>  "eos/ml.md"
-                            "Other Models" => "eos/misc.md"],
+        "Available EoS" => ["Ideal Models" => "eos/ideal.md",
+                            "Cubic Models" => "eos/cubic.md",
+                            "Activity Models" => "eos/activity.md",
+                            "SAFT and CPA Models"  => "eos/saft.md",
+                            "Empiric Helmholtz Models" => "eos/empiric.md",
+                            "Electrolyte Models" => "eos/electrolytes.md",
+                            "Potential, corresponding states Models" => "eos/ecs.md",
+                            "Property Correlations" =>  "eos/correlations.md",
+                            "ML-Based Models" =>  "eos/ml.md",
+                            "Other Models" => "eos/misc.md",],
         "Frequently Asked Questions" => "faq.md",
         "Available Properties" => ["Basic Properties" => "properties/basic.md",
                                    "Bulk Properties" => "properties/bulk.md",

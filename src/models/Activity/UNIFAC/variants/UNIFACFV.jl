@@ -1,15 +1,14 @@
 #a GC averaged UNIFAC.
 struct UNIFACFVCache{T} <: EoSModel
     components::Vector{String}
-    r::Vector{T}
-    q::Vector{T}
-    m::Vector{T}
+    r::Vector{T} #molar volume
+    q::Vector{T} #molar area
+    qp::Vector{T} #fh volume
     Mw::Vector{T}
 end
 
 Base.eltype(::Type{UNIFACFVCache{T}}) where T = T
 Base.eltype(::UNIFACFVCache{T}) where T = T
-
 
 UNIFACFVCache(components,r,q,m,Mw) = UNIFACFVCache{eltype(r)}(components,r,q,m,Mw)
 
@@ -17,21 +16,22 @@ UNIFACFVCache(groups,params) = UNIFACFVCache(groups,params.Q,params.R,params.Mw)
 
 function UNIFACFVCache(groups::GroupParam,Q,R,Mw)
     Mw = group_sum(groups,Mw.values)
-    r = group_sum(groups,R.values) ./ Mw
-    q = group_sum(groups,Q.values) ./ Mw
-    m = group_sum(groups,nothing)
-    return UNIFACFVCache(groups.components,r,q,m,Mw)
+    r = group_sum(groups,R.values)
+    q = group_sum(groups,Q.values)
+    qp = r .^ (3/4)
+    return UNIFACFVCache(groups.components,r,q,qp,Mw)
 end
 
 function recombine_unifac_cache!(cache::UNIFACFVCache,groups,params)
     Q = params.Q
     R = params.R
     Mw = params.Mw
+    group_sum!(cache.Mw,groups,Mw.values)
     group_sum!(cache.r,groups,R.values)
-    cache.r ./= Mw
+    #cache.r ./= Mw
     group_sum!(cache.q,groups,Q.values)
-    cache.q ./= Mw
-    group_sum!(cache.m,groups,nothing)
+    cache.qp .= cache.r .^ (3/4)
+    #cache.q ./= Mw
     return cache
 end
 
@@ -53,12 +53,12 @@ struct UNIFACFV{c<:EoSModel,T} <: UNIFACFVModel
     params::UNIFACFVParam{T}
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    UNIFACFV_cache::UNIFACFVCache{T}
+    unifac_cache::UNIFACFVCache{T}
 end
 
 function UNIFACFV(components,groups,params,puremodel,references,unifac_cache)
     c = eltype(puremodel)
-    T = eltype(params)
+    T = Base.promote_eltype(unifac_cache,groups,params)
     return UNIFACFV{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 
@@ -79,14 +79,14 @@ export UNIFACFV
 - `volume`: Single Parameter (`Float64`)  - specific volume of species `[g·cm⁻³]`
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Waals volume
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
-- `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
+- `A`: Pair Parameter (`Float64`, asyme  trical, defaults to `0`) - Binary group Interaction Energy Parameter
 - `Mw`: Single Parameter (`Float64`) - Molecular weight of groups
 
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties.
 
 ## Description
-UNIFACFV (UNIFAC Free Volume) activity model. Specialized for solvent-polymer mixtures.
+UNIFAC-FV (UNIFAC Free Volume) activity model. It adds a free volume term that improves the capabilities of the model to describe solvent-polymer mixtures.
 
 The Combinatorial part corresponds to an GC-averaged modified [`UNIQUAC`](@ref) model.
 
@@ -95,6 +95,7 @@ Gᴱ = nRT(gᴱ(comb) + gᴱ(res) + gᴱ(FV))
 ```
 ## References
 
+1. Oishi, T., & Prausnitz, J. M. (1978). Estimation of solvent activities in polymer solutions using a group-contribution method. Industrial & Engineering Chemistry Process Design and Development, 17(3), 333–339. [doi:10.1021/i260067a021]()
 """
 UNIFACFV
 
@@ -119,7 +120,7 @@ function UNIFACFV(components;
     volume  = params_species["volume"]
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIFACFVParam(volume,A,R,Q,Mw)
-    references = String["10.1021/i260064a004"]
+    references = String["10.1021/i260067a021"]
     cache = UNIFACFVCache(groups,packagedparams)
     model = UNIFACFV(components,groups,packagedparams,_puremodel,references,cache)
     set_reference_state!(model,reference_state,verbose = verbose)
@@ -127,91 +128,77 @@ function UNIFACFV(components;
 end
 
 function recombine_impl!(model::UNIFACFVModel)
-    recombine_unifac_cache!(model.UNIFACFV_cache,model.groups,model.params)
+    recombine_unifac_cache!(model.unifac_cache,model.groups,model.params)
     recombine!(model.puremodel)
     return model
 end
 
-function lnγ_impl!(res,model::UNIFACFVModel,V,T,z)
-    _data = @f(data)
-    res .= 0
-    res .+= @f(lnγ_comb,_data)
-    res .+= @f(lnγ_res,_data)
-    res .+= @f(lnγ_FV,_data)
-    return res
-end
-
-function data(model::UNIFACFVModel,V,T,z)
-    Mw = model.UNIFACFV_cache.Mw
-    zmw = dot(z,Mw)
-    x = z ./ sum(z)
-    w = z .* Mw / zmw
-    c = FillArrays.Fill(1.1,length(model))
-    return w,x,c
-end
-
-function lnγ_comb(model::UNIFACFVModel,V,T,z,_data=@f(data))
-    w,x = _data
-    Mw = model.UNIFACFV_cache.Mw
-    r =model.UNIFACFV_cache.r
-    q =model.UNIFACFV_cache.q
-    Φ = w.*r/dot(w,r)
-    θ = w.*q/dot(w,q)
-    lnγ_comb = @. log(Φ/x)+(1-Φ)-5*Mw*q*(log(Φ/θ)+(1-Φ/θ))
-    return lnγ_comb
-end
-
-function lnγ_res(model::UNIFACFVModel,V,T,z,_data=@f(data))
-    v  = model.groups.n_flattenedgroups
-    _Ψ = @f(Ψ)
-    lnΓ_ = @f(lnΓ,_Ψ)
-    lnΓi_ = @f(lnΓi,_Ψ)
-    lnγ_res_ = [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
-    return lnγ_res_
-end
-
-function lnΓ(model::UNIFACFVModel,V,T,z,_Ψ = @f(Ψ))
-    Mw = model.params.Mw.values
-    Q = model.params.Q.values ./ Mw
-    v  = model.groups.n_flattenedgroups
-    x = z ./ sum(z)
-    W = sum(v[i][:].*Mw*x[i] for i ∈ @comps) ./ sum(sum(v[i][k]*Mw[k]*x[i] for k ∈ @groups) for i ∈ @comps)
-    θ = W.*Q / dot(W,Q)
-    lnΓ_ = Mw.*Q.*(1 .-log.(sum(θ[m]*_Ψ[m,:] for m ∈ @groups)) .- sum(θ[m]*_Ψ[:,m]./sum(θ[n]*_Ψ[n,m] for n ∈ @groups) for m ∈ @groups))
-    return lnΓ_
-end
-
-function lnΓi(model::UNIFACFVModel,V,T,z,_Ψ = @f(Ψ))
-    Mw = model.params.Mw.values
-    Q = model.params.Q.values ./ Mw
-    v  = model.groups.n_flattenedgroups
-    W = [v[i][:].*Mw ./ sum(v[i][k]*Mw[k] for k ∈ @groups) for i ∈ @comps]
-    θ = [W[i][:].*Q ./ sum(W[i][n]*Q[n] for n ∈ @groups) for i ∈ @comps]
-    lnΓi_ = [Mw.*Q.*(1 .-log.(sum(θ[i][m]*_Ψ[m,:] for m ∈ @groups)) .- sum(θ[i][m]*_Ψ[:,m]./sum(θ[i][n]*_Ψ[n,m] for n ∈ @groups) for m ∈ @groups)) for i ∈ @comps]
-    return lnΓi_
-end
+mw(model::UNIFACFVModel) = model.unifac_cache.Mw
 
 function Ψ(model::UNIFACFVModel,V,T,z)
     A = model.params.A.values
     return @. exp(-A/T)
 end
 
-function lnγ_FV(model::UNIFACFVModel,V,T,z,_data=@f(data))
-    w,x,c = _data
+excess_g_FV(model::UNIFACFVModel,V,T,z) = excess_g_FV(model,V,T,z,FillArrays.Fill(1.1,length(model)))
+
+function excess_g_FV(model::UNIFACFVModel,V,T,z,c)
+    res = zero(Base.promote_eltype(model,V,T,z))
+    Mw = model.unifac_cache.Mw
     b = 1.28
     v = model.params.volume.values
-    r = model.UNIFACFV_cache.r
-    v̄  = @. v/(15.17*b*r)
-    v̄ₘ = dot(v,w)/(15.17*b*dot(r,w))
-    return @. 3*c*log((v̄^(1/3)-1)/(cbrt(v̄ₘ)-1))-c*((v̄/v̄ₘ-1)/(1-v̄^(-1/3)))
+    r = model.unifac_cache.r
+    ṽ = zero(res)
+    r̃ = zero(res)
+    for i in eachindex(z)
+        zi,mi = z[i],Mw[i]
+        ṽ += v[i]*zi*mi
+        r̃ += r[i]*zi
+    end
+
+    #=
+    The original free volume activity term proposed by Oishi and Prausnitz is not a consistent activity coefficient term (assumes that `∂v̄ₘ∂zᵢ == 0`).
+    This assumption creates an inconsistent activity coefficient model (the jacobian of the activity coefficients is not symmetric.)
+    To reproduce the inconsistentcy, we can mark v̄ₘ to have no derivatives, via `Clapeyron.Solvers.primalval`
+    =#
+
+    v̄ₘ = primalval(ṽ/(15.17*b*r̃))
+    r̄ₘ = cbrt(v̄ₘ)
+    for i in eachindex(z)
+        v̄ᵢ = Mw[i]*v[i]/(15.17*b*r[i])
+        r̄ᵢ,cᵢ = cbrt(v̄ᵢ),c[i]
+        lnγi = 3*cᵢ*log((r̄ᵢ - 1)/(r̄ₘ - 1)) - cᵢ*((v̄ᵢ/v̄ₘ - 1)/(1 - 1/r̄ᵢ))
+        res += z[i]*lnγi
+    end
+    return Rgas(model)*T*res
 end
 
-function excess_g_SG(model::UNIFACFVModel,p,T,z)
-    lnγ = lnγ_SG(model,p,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+function excess_g_comb(model::UNIFACFVModel,V,T,z)
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    return Rgas(model)*T*gE_rt_UNIQUAC(z,r,q)
 end
 
 function excess_g_res(model::UNIFACFVModel,p,T,z)
-    lnγ = lnγ_res(model,p,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+    Ψij = Ψ(model,p,T,z)
+    Q = model.params.Q.values
+    ∑vikQk = model.unifac_cache.q
+    return Rgas(model)*T*excess_g_res_unifac(model.groups,Q,Ψij,z,∑vikQk)
+end
+
+function excess_gibbs_free_energy(model::UNIFACFVModel,p,T,z)
+    return excess_g_comb(model,p,T,z) + excess_g_res(model,p,T,z) + excess_g_FV(model,p,T,z)
+end
+
+#old, buggy inconsistent version oof the combinatorial excess gibbs energy
+function lnγ_comb_old(model::UNIFACFVModel, p, T, z)
+    Mw  = model.unifac_cache.Mw
+    zmw = dot(z, Mw)
+    w   = z .* Mw ./ zmw
+    x   = z ./ sum(z)
+    r   = model.unifac_cache.r ./ Mw
+    q   = model.unifac_cache.q ./ Mw
+    Φ   = w .* r ./ dot(w, r)
+    θ   = w .* q ./ dot(w, q)
+    return @. log(Φ/x) + (1 - Φ) - 5*Mw*q*(log(Φ/θ) + (1 - Φ/θ))
 end

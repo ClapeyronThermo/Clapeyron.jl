@@ -38,7 +38,7 @@ function IsoFugacitySaturation(;p0 = nothing,
 end
 
 function saturation_pressure_impl(model::EoSModel,T,method::IsoFugacitySaturation)
-    vol0 = (method.vl,method.vv,T)
+    vol0 = (method.vl,method.vv)
     p0 = method.p0
     if isnan(p0)
         if method.vl !== nothing

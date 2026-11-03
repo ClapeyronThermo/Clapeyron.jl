@@ -97,10 +97,6 @@ function saturation_pressure_ad(__model::M,result::RES,tup::TUP1,tup_primal::TUP
     return result
 end
 
-function derivx(f,i)
-    h = sqrt(eps(i))
-    return (1*f(i-2h)-8*f(i-1h)+0*f(i)+8*f(i+1h)-1*f(i+2h))/(12*h)
-end
 
 """
     saturation_temperature(model::EoSModel, p, kwargs...)
@@ -186,24 +182,33 @@ include("AntoineSat.jl")
 
 
 """
-    enthalpy_vap(model::EoSModel, T,method = ChemPotVSaturation(x0_sat_pure(model,T)))
+    enthalpy_vap(model::EoSModel, T, satmethod = Clapeyron.init_preferred_method(saturation_pressure,model,(;))))
 
 Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies at temperature `T` `[K]`, in `[J]`
+The saturation calculation is done with the provided `satmethod`.
 """
-function enthalpy_vap(model::EoSModel, T, satmethod = ChemPotVSaturation(); output = nothing)
+function enthalpy_vap(model::EoSModel, T, satmethod = init_preferred_method(saturation_pressure,model,(;)); output = nothing)
     T̄ = ustrip(T,temperature)
     single_component_check(enthalpy_vap,model)
     (_,V_l,V_v) = saturation_pressure(model,T̄,satmethod)
-    H_v = VT_enthalpy_res(model,V_v,T̄)
-    H_l = VT_enthalpy_res(model,V_l,T̄)
-    #H_v(res) - H_l(res) = H_l - H_v
-    H_vap = H_v - H_l
+    if has_a_res(model)
+        
+        H_v = VT_enthalpy_res(model,V_v,T̄)
+        H_l = VT_enthalpy_res(model,V_l,T̄)
+        #H_v(res) - H_l(res) = H_l - H_v
+        H_vap = H_v - H_l
+    else
+        #Clapeyron equation
+        satmodel = saturation_model(model)
+        H_vap = T̄*(V_v - V_l)*dpdT_saturation(satmodel,V_l,V_v,T̄)
+    end
     UNIT_TYPE = unit_system(unit_system(T),unit_system(output))    
     return with_output_unit(H_vap,(UNIT_TYPE,output),enthalpy)
 end
 
 """
-    acentric_factor(model::EoSModel;crit = crit_pure(model), satmethod = ChemPotVSaturation())
+    acentric_factor(model::EoSModel;crit = crit_pure(model),satmethod = Clapeyron.init_preferred_method(saturation_pressure,model,(;)))
+
 
 Calculates the acentric factor using its definition:
 ```
@@ -212,7 +217,7 @@ Calculates the acentric factor using its definition:
 
 To do so, it calculates the critical temperature (using `crit_pure`) and performs a saturation calculation (with `saturation_pressure(model,0.7Tc,satmethod)`)
 """
-function acentric_factor(model::EoSModel;crit = crit_pure(model),satmethod = ChemPotVSaturation())
+function acentric_factor(model::EoSModel;crit = crit_pure(model),satmethod = init_preferred_method(saturation_pressure,model,(;)))
     return acentric_factor(model,crit,satmethod)
 end
 

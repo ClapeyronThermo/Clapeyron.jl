@@ -16,6 +16,10 @@ abstract type EmpiricHelmholtzModel <: EoSModel end
 abstract type SatPureAproximation <: EoSModel end
 abstract type AlphaModel <:EoSModel end
 abstract type ElectrolyteModel <: EoSModel end
+
+abstract type ESElectrolyteModel <: ElectrolyteModel end
+abstract type ISElectrolyteModel <: ElectrolyteModel end
+
 abstract type IonModel <: ElectrolyteModel end
 abstract type RSPModel <: ElectrolyteModel end
 abstract type RestrictedEquilibriaModel <: EoSModel end

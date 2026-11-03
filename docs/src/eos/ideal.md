@@ -25,7 +25,6 @@ Clapeyron.ReidIdeal
 Clapeyron.JobackIdeal
 Clapeyron.MonomerIdeal
 Clapeyron.WalkerIdeal
-Clapeyron.LJRefIdeal
 Clapeyron.AlyLeeIdeal
 Clapeyron.PPDSIdeal
 Clapeyron.ShomateIdeal

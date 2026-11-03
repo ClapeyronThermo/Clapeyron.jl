@@ -268,9 +268,9 @@ end
 
 assoc_mix(bondvol,epsilon_assoc,assoc_options::AssocOptions) = assoc_mix(bondvol,epsilon_assoc,nothing,assoc_options)
 assoc_mix!(bondvol,epsilon_assoc,assoc_options::AssocOptions) = assoc_mix!(bondvol,epsilon_assoc,nothing,assoc_options)
+assoc_mix!(data::AbstractDict,components) = assoc_mix!(data,components,get(data,"assoc_options",AssocOptions()))
 
-function assoc_mix!(data,components)
-    assoc_options = data["assoc_options"]
+function assoc_mix!(data::AbstractDict,components,assoc_options::AssocOptions)
     if haskey(data,"bondvol") && haskey(data,"epsilon_assoc")
         bondvol = data["bondvol"]
         epsilon_assoc = data["epsilon_assoc"]

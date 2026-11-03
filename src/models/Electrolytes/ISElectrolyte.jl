@@ -111,7 +111,7 @@ function tpd_lnϕ_and_v!(cache,wrapper::MeanIonicApproach,p,T,w,vol0,liquid_over
     lnϕw .+= log.(ww)
     lnϕw .-= log(∑w/sum(w)) #does normalize by sum(w) matter?
     
-    Z = wrapper.model.charge
+    Z = component_charges(wrapper.model)
     lnϕz = similar(lnϕw,length(w))
     E = eachcol(salt.E)
     for i in 1:length(w)

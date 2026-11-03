@@ -67,7 +67,7 @@ function ParamTable(type,data;
     $(name) Parameters [csvtype = $type, grouptype = $grouptype]
     """
     write(io,pretext)
-    CSV.write(io, data,append = true,header = true)
+    CSV.write(io, data,append = true,writeheader = true)
     close(io)
     return file
 end

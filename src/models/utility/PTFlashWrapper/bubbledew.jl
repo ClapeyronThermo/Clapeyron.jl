@@ -94,7 +94,7 @@ function x0_edge_pressure(wrapper::PTFlashWrapper,T,z,pure = nothing)
   return (p_bubble,p_dew),sat
 end
 
-function _edge_pressure(wrapper::PTFlashWrapper,T,z,v0 = nothing,crit_retry = true)
+function _edge_pressure(wrapper::PTFlashWrapper,T,z,v0,crit_retry::Bool)
     _1 = one(Base.promote_eltype(wrapper,T,z))
     sat = wrapper.sat
     RT = Rgas(wrapper)*T
@@ -178,7 +178,7 @@ function x0_edge_temperature(wrapper::PTFlashWrapper,p,z,pure = wrapper.pures)
     return (T_bubble,T_dew),dPdTsat
 end
 
-function _edge_temperature(model::PTFlashWrapper,p,z,v0 = nothing)
+function _edge_temperature(model::PTFlashWrapper,p,z,v0)
     if v0 === nothing
         vv0,_ = x0_edge_temperature(model,p,z)
     else
@@ -291,7 +291,7 @@ function _activity_vle_residual(x, tups, sat0, _bubble, _temperature)
         xliq, yvap = w, z
     end
     RT = Rgas(model)*T
-    γ = activity_coefficient(γmodel, p, T, xliq)
+    logγ = lnγ(γmodel, p, T, xliq)
     lnϕv, _ = lnϕ(gas_model(model), p, T, yvap; phase = :vapour)
 
     # pure reference (saturation pressure, Poynting and saturated fugacity coefficient)
@@ -302,11 +302,11 @@ function _activity_vle_residual(x, tups, sat0, _bubble, _temperature)
         if gmi isa IdealModel
             log(psᵢ/p)
         else
-            log(psᵢ/p) + vlᵢ*(p - psᵢ)/RT + VT_lnϕ_pure(gmi, vvᵢ, T, psᵢ)
+            log(psᵢ/p) + vlᵢ*(p - psᵢ)/RT + VT_∑zlogϕ(gmi, vvᵢ, T, SA[1.0], psᵢ)
         end
     end
     F1 = sum(w) - one(eltype(w))
-    F2 = log.(γ) .+ log.(xliq) .+ Δd .- lnϕv .- log.(yvap)
+    F2 = logγ .+ log.(xliq) .+ Δd .- lnϕv .- log.(yvap)
     return vcat(F1, F2)
 end
 

@@ -181,8 +181,9 @@ The caveat is that `model` has to exist in the local namespace.
 `model` is expected to any struct that has length defined in terms of the amount of components.
 """
 macro comps()
+    #all the x_iterator functions are in utils/misc.jl
     return quote
-        1:length(model)
+        Clapeyron.comps_iterator(model)
     end |> esc
 end
 
@@ -192,18 +193,13 @@ end
 
 Returns `true` when a model type carries site parameters.
 
-This checks whether the model type has a `sites` field with `SiteParam`
-storage and is used to enable site-based logic (e.g. association models).
+This checks whether the model type has has a definition of `getsites`.
 """
 has_sites(::T) where T <: EoSModel = has_sites(T)
 has_sites(::Type{T}) where T <: EoSModel = _has_sites(T)
 
 Base.@assume_effects :foldable function _has_sites(::Type{T}) where T <: EoSModel
-    s1 = hasfield(T,:sites)
-    if s1
-       return fieldtype(T,:sites) == SiteParam
-    end
-    return false
+    return hasmethod(getsites,Tuple{T})
 end
 
 """
@@ -225,6 +221,13 @@ Base.@assume_effects :foldable function _has_groups(::Type{T}) where T <: EoSMod
     end
     return false
 end
+
+"""
+    getsites(model)
+
+Returns the `SiteParam` used in association calculations for the input `model`, if any. Fails if not available. To check if a model has sites, use `has_sites`.
+"""
+function getsites end
 
 Base.length(model::T) where T <:EoSModel = _eos_length(model,Val(has_groups(model)))
 
@@ -339,7 +342,35 @@ end
 
 #generic function to support pseudo-pures
 is_pseudo_pure(model) = false
-is_electrolyte(model) = false
+
+"""
+    component_charges(model)
+
+Net charge carried by one molecule of each *component*. 
+Non-electrolyte models do not have a definition of component_charges, so one can check if a model is an electrolyte model if there is it has a `component_charges` method.
+The generic fallback for `ElectrolyteModel` assumes that the charges are stored in `model.charge`. 
+A group-contribution model whose own charges are defined per-*group* instead must override this method to provide charges per component instead.
+"""
+function component_charges end
+
+is_electrolyte(model) = _is_electrolyte(model)
+function _is_electrolyte(model::T) where T
+    return hasmethod(component_charges,Tuple{T})
+end
+
+#iterator functions used by iterator macros: EoSModel dispatch
+
+@inline comps_iterator(model::EoSModel) = comps_iterator(length(model))
+@inline iions_iterator(model::EoSModel) = iions_iterator(component_charges(model))
+@inline ineutral_iterator(model::EoSModel) = ineutral_iterator(component_charges(model))
+@inline groups_iterator(model::EoSModel) = groups_iterator(model.groups)
+#@inline groups_iterator(groups::GroupParam) = comps_iterator(length(groups.flattenedgroups))
+#@inline sites_iterator(model::EoSModel,i) = sites_iterator(getsites(model),Int64(i))
+#@inline sites_iterator(sites::SiteParam,i) = sites.i_sites[i]
+@inline groups_iterator(model::EoSModel,i::Integer) = groups_iterator(model.groups,Int64(i))
+#@inline groups_iterator(groups::GroupParam,i::Int) = groups.i_groups[i]
+
+
 
 export EoSModel, eos, has_groups, has_sites, Rgas, eos_res
-@public a_res, component_list, is_idealmodel
+@public a_res, component_list, is_idealmodel, component_charges

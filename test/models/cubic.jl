@@ -46,6 +46,7 @@
             system = PSRK(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2301592550760436 rtol = 1e-6
             system_big = Clapeyron.promote_model(BigFloat,system)
+            test_gibbs_duhem(system,V,T,z)
             #issue 576
             @test eltype(system_big) == BigFloat
         end
@@ -73,31 +74,37 @@
         @testset "RK w/ KayRule" begin
             system = RK(["ethane","undecane"];mixing = KayRule)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.8176850121211936 rtol = 1e-6
+            test_gibbs_duhem(system,V,T,z)
         end
 
         @testset "RK w/ HVRule" begin
             system = RK(["methanol","benzene"];mixing = HVRule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.5209112693371991 rtol = 1e-6
+            test_gibbs_duhem(system,V,T,z)
         end
 
         @testset "RK w/ MHV1Rule" begin
             system = RK(["methanol","benzene"];mixing = MHV1Rule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.5091065987876959 rtol = 1e-6
+            test_gibbs_duhem(system,V,T,z)
         end
 
         @testset "RK w/ MHV2Rule" begin
             system = RK(["methanol","benzene"];mixing = MHV2Rule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.5071048453490448 rtol = 1e-6
+            test_gibbs_duhem(system,V,T,z)
         end
 
         @testset "RK w/ WSRule" begin
             system = RK(["methanol","benzene"];mixing = WSRule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.5729126903890258 rtol = 1e-6
+            test_gibbs_duhem(system,V,T,z)
         end
 
         @testset "RK w/ modWSRule" begin
             system = RK(["methanol","benzene"];mixing = modWSRule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.5531088611093051 rtol = 1e-6
+            test_gibbs_duhem(system,V,T,z)
         end
     end
 
@@ -117,6 +124,7 @@
         @testset "VTPR" begin
             system = VTPR(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2363824487050494 rtol = 1e-6
+            test_gibbs_duhem(system,V,T,z)
         end
 
         @testset "TVTPR" begin
@@ -127,6 +135,7 @@
         @testset "UMRPR" begin
             system = UMRPR(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.1447330557895619 rtol = 1e-6
+            test_gibbs_duhem(system,V,T,z)
             test_l(system)
         end
 
@@ -136,6 +145,7 @@
             @test Clapeyron.lb_volume(system,25,z) ≈ 1.3601716423130568e-5 rtol = 1e-6
             test_scales(system)
             test_kl(system)
+            test_gibbs_duhem(system,V,T,z)
             _a,_b,_c = Clapeyron.cubic_ab(system,V,25,z)
             @test _a ≈ 0.012772722389495079 rtol = 1e-6
             @test _b ≈ 1.0728356231510917e-5 rtol = 1e-6
@@ -159,11 +169,13 @@
         @testset "tcPR + Wilson (Res)" begin
             system = tcPRW(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2106271631685903 rtol = 1e-6
+            test_gibbs_duhem(system,V,T,z)
         end
 
         @testset "EPPR78" begin
            system = EPPR78(["benzene","isooctane"])
            @test Clapeyron.a_res(system, V, T, z) ≈ -1.1415931771485368 rtol = 1e-6
+           test_gibbs_duhem(system,V,T,z)
         end
 
         @testset "PR w/ BMAlpha" begin
@@ -219,6 +231,7 @@
         @testset "PR w/ LCVMRule" begin
             system = PR(["methanol","benzene"];mixing = LCVMRule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.6286241404575419 rtol = 1e-6
+            test_gibbs_duhem(system,V,T,z)
         end
 
         @testset "PR w/ WSRule" begin

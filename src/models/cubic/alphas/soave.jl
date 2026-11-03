@@ -105,4 +105,10 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::Generalize
     return α
 end
 
+function α_m(model::DeltaCubicModel, alpha_model::SoaveAlphaModel, i)
+    coeff = α_m(model,alpha_model)
+    ω = alpha_model.params.acentricfactor.values[1]
+    evalpoly(ω,coeff)
+end
+
 const SRKModel = RK{I,SoaveAlpha,M,T} where {I,M,T}

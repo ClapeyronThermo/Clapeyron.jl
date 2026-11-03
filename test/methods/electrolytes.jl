@@ -1,4 +1,18 @@
+#issue #649
+eps_r_649(z) = (78.4 * z[1] + 8.0 * (z[2] + z[3])) / sum(z) # any composition-dependent permittivity
+kappa_649(z) = Clapeyron.debye_length(1.8e-5, 298.15, z, eps_r_649(z), [0.0, 1.0, -1.0])
+
 @testset verbose = true "Electrolyte methods" begin
+
+    @testset "debye length" begin
+        #issue #649
+        z_649 = [0.9, 0.05, 0.05]
+        h = 1e-6
+        dk_ad = Clapeyron.ForwardDiff.gradient(kappa_649,z_649)
+        dk_fd = testutils_fd_gradient(kappa_649,z_649)
+        @test dk_ad ≈ dk_fd rtol = 1e-6
+    end
+
     @printline
     system = SAFTVREMie(["water"],["sodium","chloride"])
     salts = [("sodium chloride",["sodium"=>1,"chloride"=>1])]
@@ -13,6 +27,13 @@
         
         @test mean_ionic_activity_coefficient_sat(system,salts,T,m)[1] ≈ 0.632123986095978 rtol = 1e-6
         @test osmotic_coefficient_sat(system,salts,T,m)[1] ≈ 0.9300995995153606 rtol = 1e-5
+    end
+
+    @testset "critical points" begin
+        model = LS([("polymer", ["+"=>10, "-"=>10], [("+","-")=>1, ("+","+")=>4, ("-","-")=>4]),
+                   ("counterion", ["-"=>1], [])])
+        @test Clapeyron.mechanical_critical_point(model,[0.11,0.89])[1] ≈ 200.5532703978757 rtol = 1e-6
+        
     end
 
     fluid = SAFTVREMie(["water"],["sodium","chloride"])

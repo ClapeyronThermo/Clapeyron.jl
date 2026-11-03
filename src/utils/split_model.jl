@@ -24,7 +24,9 @@ end
     r = Expr(:call,Base.typename(P).wrapper)
     for field in all_fields
             field_sym = QuoteNode(field)
-            push!(r.args,:(_each_split_model(param,param.$field,$field_sym,group,Ic,Ig)))
+            # a split field keeps its type
+            FT = fieldtype(P,field)
+            push!(r.args,:(_each_split_model(param,param.$field,$field_sym,group,Ic,Ig)::$FT))
     end
     return r
 end

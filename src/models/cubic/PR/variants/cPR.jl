@@ -37,9 +37,9 @@ function cPR(components;
     #just read once if allowed.
 
     userlocations_cpr = String[]
-    append!(userlocations_cpr,userlocations)
+    userlocations_cpr = userlocation_merge(userlocations_cpr,userlocations)
     if alpha === TwuAlpha
-        userlocations_cpr = userlocation_merge(userlocations_cpr,userlocations)
+        userlocations_cpr = userlocation_merge(userlocations_cpr,alpha_userlocations)
     end
 
     params = getparams(formatted_components, ["cubic/cPR/cPR_single.csv"];
@@ -59,7 +59,7 @@ function cPR(components;
     init_idealmodel = init_model(idealmodel,formatted_components,ideal_userlocations,verbose)
 
     if alpha !== TwuAlpha
-        init_alpha = init_alphamodel(alpha,formatted_components,w,alpha_userlocations,verbose)
+        init_alpha = init_alphamodel(alpha,formatted_components,params,alpha_userlocations,verbose)
     else
         M = params["M"]
         N = params["N"]

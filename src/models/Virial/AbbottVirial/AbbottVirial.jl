@@ -33,7 +33,7 @@ Virial model using Corresponding State Principles:
 B = ∑xᵢxⱼBᵢⱼ
 Bᵢⱼ = BrᵢⱼRTcᵢⱼ/Pcᵢⱼ
 Brᵢⱼ = B₀ + ωᵢⱼB₁
-B₀ = 0.083 + 0.422/Trᵢⱼ^1.6
+B₀ = 0.083 - 0.422/Trᵢⱼ^1.6
 B₁ = 0.139 - 0.172/Trᵢⱼ^4.2
 Trᵢⱼ = T/Tcᵢⱼ
 Tcᵢⱼ = √TcᵢTcⱼ
@@ -85,7 +85,7 @@ function second_virial_coefficient_impl(model::AbbottVirial,T,z=SA[1.0])
         zi = z[i]
         τ = Tci/T
         B0 = 0.083 - 0.422*τ^1.6
-        B1 = 0.139 + 0.179*τ^4.2
+        B1 = 0.139 - 0.172*τ^4.2
         B +=  zi*zi*(B0+ ωi*B1)*R̄*Tci/Pci
         for j in 1:i-1
             Tcj = Tc[j]
@@ -96,9 +96,9 @@ function second_virial_coefficient_impl(model::AbbottVirial,T,z=SA[1.0])
             Pcij = 0.5*(Pci+Pcj)
             ωij = 0.5*(ωi+ωj)
             zj = z[j]
-            τ = Tci/T
+            τ = Tcij/T
             B0 = 0.083 - 0.422*τ^1.6
-            B1 = 0.139 + 0.179*τ^4.2
+            B1 = 0.139 - 0.172*τ^4.2
             B +=  2*zi*zj*(B0+ ωij*B1)*R̄*Tcij/Pcij
         end
     end

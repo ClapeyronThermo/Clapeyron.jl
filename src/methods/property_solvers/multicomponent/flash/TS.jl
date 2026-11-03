@@ -4,14 +4,15 @@
 
 Routine to solve non-reactive two-phase multicomponent flash problem. With T-S specifications.
 Wrapper around [Clapeyron.xy_flash](@ref), with automatic initial point calculations. 
-Inputs:
+
+## Inputs:
  - `T`, temperature `[K]`
  - `s`, entropy `[J·K⁻¹]`
  - `n`, vector of number of moles of each species `[mol]`
 
 All keyword arguments are forwarded to [`GeneralizedXYFlash`](@ref).
 
- Outputs:
+## Outputs:
  - `result`, a [`FlashResult`](@ref) struct containing molar fractions, vapour fractions, molar volumes and the equilibrium temperature and pressure.
 """
 function ts_flash(model::EoSModel,T,s,z = SA[1.0];kwargs...)

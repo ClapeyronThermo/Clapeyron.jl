@@ -9,7 +9,7 @@ end
 
 function UNIFAC2(components,groups,params,puremodel,references,unifac_cache)
     c = eltype(puremodel)
-    T = eltype(params)
+    T = Base.promote_eltype(unifac_cache,groups,params)
     return UNIFAC2{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 

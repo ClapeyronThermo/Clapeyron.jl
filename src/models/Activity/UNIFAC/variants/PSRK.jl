@@ -9,7 +9,7 @@ end
 
 function PSRKUNIFAC(components,groups,params,puremodel,references,unifac_cache)
     c = eltype(puremodel)
-    T = eltype(params)
+    T = Base.promote_eltype(unifac_cache,groups,params)
     return PSRKUNIFAC{c,T}(components,groups,params,puremodel,references,unifac_cache)
 end
 

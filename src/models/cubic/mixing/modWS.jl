@@ -87,7 +87,7 @@ function mixing_rule(model::DeltaCubicModel,V,T,z,mixing_model::modWSRuleModel,�
     λ = WS_λ(mixing_model,model,T,z)
     n = sum(z)
     invn = (one(n)/n)
-    RT⁻¹ = 1/(R̄*T)
+    RT⁻¹ = 1/(Rgas(model)*T)
     B̄ = zero(T+V+first(z))
     Σλab = B̄
     nc = length(model)

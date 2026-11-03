@@ -207,6 +207,11 @@ end
 Base.eltype(param::GroupParam{T}) where T = T
 Base.eltype(param::Type{<:GroupParam{T}}) where T = T
 
+#iterator functions used by iterator macros: GroupParam dispatch
+
+@inline groups_iterator(groups::GroupParam) = comps_iterator(length(groups.flattenedgroups))
+@inline groups_iterator(groups::GroupParam,i::Int) = groups.i_groups[i]
+
 function Base.convert(::Type{GroupParam{T1}},param::GroupParam{T2}) where {T1<:Number,T2<:Number}
     n_groups2 = convert.(Vector{T1},param.n_groups)
     n_intergroups2 = convert.(Matrix{T1},param.n_intergroups)

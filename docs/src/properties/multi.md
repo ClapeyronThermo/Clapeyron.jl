@@ -74,6 +74,7 @@ Clapeyron.CEMPhaseDiagram
 ```@docs
 Clapeyron.ChemPotBubblePressure
 Clapeyron.FugBubblePressure
+Clapeyron.DonnanBubblePressure
 Clapeyron.ActivityBubblePressure
 Clapeyron.ChemPotBubbleTemperature
 Clapeyron.FugBubbleTemperature

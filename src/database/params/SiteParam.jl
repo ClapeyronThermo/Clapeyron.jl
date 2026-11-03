@@ -154,6 +154,9 @@ function SiteParam(components::Vector{String},sourcecsvs::Union{Vector{String},N
     SiteParam(components,sites,n_sites,sourcecsvs,site_translator)
 end
 
+@inline sites_iterator(model::EoSModel,i) = sites_iterator(getsites(model),Int64(i))
+@inline sites_iterator(sites::SiteParam,i) = sites.i_sites[i]
+
 function recombine!(param::SiteParam)
     components = param.components
     sites = param.sites
