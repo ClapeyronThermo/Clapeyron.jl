@@ -25,6 +25,7 @@
 - `has_sites` now checks if the model has a definition of `Clapeyron.getsites` instead of searching by parameters.
 - new method: `critical_salt_fraction` for finding the critical salt fraction at which LLE is possible
 - `MSAID`: better initial points, solver now uses implicit function theorem to propagate derivatives
+- `MSA`: successive substitution replaced by bounded optimization + implicit AD method.
 - cubics: spinodal initial point now only requires one evaluation instead of 4
 - `enthalpy_vap`: Now supports any model with an available implementation of saturation pressure.
 - `acentric_factor`: Now supports any model with an available implementation of saturation pressure.

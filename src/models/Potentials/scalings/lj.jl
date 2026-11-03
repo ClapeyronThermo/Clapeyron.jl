@@ -117,11 +117,11 @@ function transform_params_ljscaling(params,components,molecular_units)
         sigma.values .*= 1E-10
     end
     nc = length(components)
-    
+
     Mw = get!(params,"Mw") do
         SingleParam("Mw",components,zeros(nc),fill(true,nc))
     end
-    
+
     return saft_lorentz_berthelot(params)
 end
 
@@ -177,7 +177,7 @@ function LJScaling(components;
     packagedparams = build_eosparam(LJScalingParam,params2)
     T = eltype(packagedparams)
     model = LJScaling{T}(_components, packagedparams, molecular_units)
-    return model         
+    return model
 end
 
 Rgas(model::LJScaling) = ifelse(model.molecular_units,1.0,R̄)

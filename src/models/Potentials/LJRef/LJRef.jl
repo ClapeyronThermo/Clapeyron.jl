@@ -53,7 +53,7 @@ function LJRef(components;
 
     _components = format_components(components)
     params1 = getparams(_components, default_locations(PCSAFT); userlocations = userlocations, verbose = verbose)
-    params2 = transform_params_chainlj(params1,_components,molecular_units)
+    params2 = transform_params_chainljscaling(params1,_components,molecular_units)
     packagedparams = build_eosparam(ChainLJScalingParam,params2)
     T = eltype(packagedparams)
     init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
@@ -65,7 +65,7 @@ end
 reference_model(model::LJRef) = model.ljmodel
 scaling_model(model::LJRef) = ChainLJScaling(model.params,model.molecular_units)
 
-function recombine_impl!(model::LJRef) 
+function recombine_impl!(model::LJRef)
     recombine!(model.ljmodel)
     recombine_lj_cs!(model,nothing,nothing)
 end

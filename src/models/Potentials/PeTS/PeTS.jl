@@ -20,11 +20,11 @@ recombine_impl!(model::PeTSModel) = recombine_lj_cs!(model,nothing,nothing)
 set_k!(model::PeTSModel,k) = recombine_lj_cs!(model,k,nothing)
 set_l!(model::PeTSModel,l) = recombine_lj_cs!(model,nothing,l)
 
- 
+
 """
     PeTSModel <: EoSModel
 
-    PeTS(components; 
+    PeTS(components;
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
@@ -66,7 +66,7 @@ function PeTS(components;
     molecular_units = false,
     reference_state = nothing,
     verbose = false)
-    
+
     _components = format_components(components)
     params1 = getparams(_components, default_locations(PeTS); userlocations = userlocations, verbose = verbose)
     params2 = transform_params_chainljscaling(params1,_components,molecular_units)
@@ -120,7 +120,7 @@ function d_pets(T̃)
     return -expm1(-3.052785558/T̃ - 2.0626824117148774)
 end
 
-a_hs(model::PeTSLJ,V,T,z,_data=@f(data)) = a_ref(model,V,T,z,_data) 
+a_hs(model::PeTSLJ,V,T,z,_data=@f(data)) = a_ref(model,V,T,z,_data)
 
 function a_ref(model::PeTSLJ, V, T, z,_data=@f(data))
     η,ρ̃ ,T̃ = _data

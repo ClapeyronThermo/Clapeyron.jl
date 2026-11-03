@@ -64,7 +64,7 @@ function KolafaNezbeda(components;
     molecular_units = false,
     reference_state = nothing,
     verbose = false)
-    
+
     _components = format_components(components)
     params1 = getparams(_components, default_locations(KolafaNezbeda); userlocations = userlocations, verbose = verbose)
     params2 = transform_params_ljscaling(params1,_components,molecular_units)
