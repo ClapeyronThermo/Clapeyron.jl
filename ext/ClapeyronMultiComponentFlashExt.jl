@@ -41,8 +41,11 @@ module ClapeyronMultiComponentFlashExt
     function M.mixture_compressibility_factor(eos::C.EoSModel, cond,
         forces = M.force_coefficients(eos, cond),
         scalars = M.force_scalars(eos, cond, forces))
-        phase::Symbol = get(cond,:phase,:unknown)
-        C.compressibility_factor(eos,cond.p,cond.T,cond.z,phase = phase)
+        if haskey(cond,:phase)
+            return C.compressibility_factor(eos,cond.p,cond.T,cond.z,phase = cond.phase)
+        else
+            return C.compressibility_factor(eos,cond.p,cond.T,cond.z)
+        end
     end
 
     function M.initial_guess_K!(K, eos::C.EoSModel, cond)
@@ -53,20 +56,22 @@ module ClapeyronMultiComponentFlashExt
         return C.wilson_k_values!(K,eos,p,T)
     end
 
-    
     function M.wilson_estimate(eos::C.EoSModel, p, T)
         return C.wilson_k_values(eos,p,T)
     end
 
     M.forces_per_phase(eos::C.EoSModel) = false
     #this is only defined with cubic EoS.
-    M.force_coefficients(eos::C.EoSModel, cond;static_size = false) = nothing
+    M.force_coefficients(eos::C.EoSModel, cond; static_size = false) = nothing
     M.force_scalars(eos::C.EoSModel, cond, forces) = nothing
     M.force_coefficients!(forces, eos::C.EoSModel, c) = nothing
 
     function M.mixture_fugacities!(f, eos::C.EoSModel, cond, forces = M.force_coefficients(eos, cond), scalars = M.force_scalars(eos, cond, forces))
-        phase::Symbol = get(cond,:phase,:unknown)
-        C.fugacity_coefficient!(f,eos,cond.p,cond.T,cond.z,phase = phase)
+        if haskey(cond,:phase)
+            C.fugacity_coefficient!(f,eos,cond.p,cond.T,cond.z,phase = cond.phase)
+        else
+            C.fugacity_coefficient!(f,eos,cond.p,cond.T,cond.z,phase = :unknown)
+        end
         f .*= cond.p
         f .= f .* cond.z
         return f

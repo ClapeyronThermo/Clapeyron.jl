@@ -106,6 +106,13 @@ If a string is passed, it is converted to symbol.
 """
 is_liquid(sym::Symbol) = sym in LIQUID_STR
 is_liquid(str::String) = is_liquid(Symbol(str))
+is_liquid(v::Val{T})  where T = is_liquid_gen(v)
+
+@generated function is_liquid_gen(v::Val{T}) where T
+    val = is_liquid(T)
+    return :($val)
+end
+
 
 const VAPOUR_STR = (:vapor,:VAPOR,:VAPOUR,:vapour,:g,:G,:v,:V,:gas,:GAS)
 
@@ -118,6 +125,12 @@ If a string is passed, it is converted to symbol.
 """
 is_vapour(sym::Symbol) = sym in VAPOUR_STR
 is_vapour(str::String) = is_vapour(Symbol(str))
+is_vapour(v::Val{T})  where T = is_vapour_gen(v)
+
+@generated function is_vapour_gen(v::Val{T}) where T
+    val = is_vapour(T)
+    return :($val)
+end
 
 const SUPERCRITICAL_STR = (:sc,:SC,:supercritical,:SUPERCRITICAL)
 
@@ -130,6 +143,12 @@ If a string is passed, it is converted to symbol.
 """
 is_supercritical(sym::Symbol) = sym in SUPERCRITICAL_STR
 is_supercritical(str::String) = is_supercritical(Symbol(str))
+is_supercritical(v::Val{T})  where T = is_supercritical_gen(v)
+
+@generated function is_supercritical_gen(v::Val{T}) where T
+    val = is_supercritical(T)
+    return :($val)
+end
 
 const UNKOWN_STR = (:unknown,:UNKNOWN)
 
@@ -142,6 +161,12 @@ If a string is passed, it is converted to symbol.
 """
 is_unknown(sym::Symbol) = sym in UNKOWN_STR
 is_unknown(str::String) = is_unknown(Symbol(str))
+is_unknown(v::Val{T})  where T = is_unknown_gen(v)
+
+@generated function is_unknown_gen(v::Val{T}) where T
+    val = is_unknown(T)
+    return :($val)
+end
 
 const SOLID_STR = (:solid,:SOLID,:s)
 """
@@ -155,7 +180,12 @@ If a string is passed, it is converted to symbol.
 is_solid(sym::Symbol) = sym in SOLID_STR
 is_solid(str::String) = is_solid(Symbol(str))
 is_solid(model::EoSModel) = false
+is_solid(v::Val{T})  where T = is_solid_gen(v)
 
+@generated function is_solid_gen(v::Val{T}) where T
+    val = is_solid(T)
+    return :($val)
+end
 
 const VLE_STR = (:vle,:lve,:vl,:lv)
 """
@@ -167,6 +197,12 @@ If a string is passed, it is converted to symbol.
 """
 is_vle(sym::Symbol) = sym in VLE_STR
 is_vle(str::String) = is_vle(Symbol(str))
+is_vle(v::Val{T})  where T = is_vle_gen(v)
+
+@generated function is_vle_gen(v::Val{T}) where T
+    val = is_vle(T)
+    return :($val)
+end
 
 const LLE_STR = (:lle,:ll)
 """
@@ -178,6 +214,12 @@ If a string is passed, it is converted to symbol.
 """
 is_lle(sym::Symbol) = sym in LLE_STR
 is_lle(str::String) = is_lle(Symbol(str))
+is_lle(v::Val{T})  where T = is_lle_gen(v)
+
+@generated function is_lle_gen(v::Val{T}) where T
+    val = is_lle(T)
+    return :($val)
+end
 
 function canonical_phase(phase::Symbol)
      if is_liquid(phase)
