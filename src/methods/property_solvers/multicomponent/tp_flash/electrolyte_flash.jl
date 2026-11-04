@@ -425,7 +425,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
             _∂x = @view ∂x[in_equilibria]
             gny .= _∂x
             gny .+= _Z .* ψ
-            g[end] = nxsum*dot(y,Z)
+            g[end] = nxsum*dot(x,Z)
         end
 
         f += nxsum*dot(∂x,x)
