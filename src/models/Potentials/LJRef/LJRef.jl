@@ -2,7 +2,7 @@ abstract type LJCorrespondingStatesModel <: CorrespondingStatesModel end
 
 Base.eltype(model::LJCorrespondingStatesModel) = Base.promote_eltype(model.idealmodel,reference_model(model),model.params)
 
-endrecombine_impl!(model::LJCorrespondingStatesModel) = recombine!(scaling_model(model))
+recombine_impl!(model::LJCorrespondingStatesModel) = recombine!(scaling_model(model))
 set_k!(model::LJCorrespondingStatesModel,k) = set_k!(scaling_model(model),k)
 set_l!(model::LJCorrespondingStatesModel,l) = set_l!(scaling_model(model),l)
 get_k(model::LJCorrespondingStatesModel) = get_k(scaling_model(model))
