@@ -196,7 +196,11 @@ Calculates either the liquid or the vapor spinodal point depending on the given 
 function spinodal_temperature(model::EoSModel,p,z=SA[1.];T0=nothing,v0=nothing,phase=:unknown)
     check_arraysize(model,z)
 
-    is_liquid(phase) || is_vapour(phase) || (!isnothing(v0) && !isnothing(T0)) || error("Either `T0` and `v0` or `phase` have to be specified!")
+    is_liquid(phase) || is_vapour(phase) ||
+    (!isnothing(v0) && !isnothing(T0)) ||
+    error("`spinodal_temperature` needs either `phase` or both `T0` and `v0` " *
+          "(got phase=$phase, T0=$T0, v0=$v0).")
+
     model, idx_r = index_reduction(model,z)
     x = z[idx_r]
 
@@ -208,24 +212,25 @@ function spinodal_temperature(model::EoSModel,p,z=SA[1.];T0=nothing,v0=nothing,p
         _T0 = isnothing(T0) ? T00 : T0*one(T00)
         _v0 = isnothing(v0) ? v00 : v0*one(v00)
     else
-        _1 = one(Base.promote_eltype(model,p,z))
-        _v0 = _1*v0
-        _T0 = _1*T0
-        if is_unknown(phase)
-            phase = VT_identify_phase(model,_v0,_T0,x)
-        end
+        # Both seeds given → phase is irrelevant to the solve. The seed already
+        # pins down which branch of det H = 0 we converge to.
+        _1  = one(Base.promote_eltype(model, p, z))
+        _v0 = _1 * v0
+        _T0 = _1 * T0
     end
+    R = Rgas(model)
 
     # Solve spinodal condition
     function f(X)
         v,T = exp(X[1]),X[2]
         ϱ = x./v
         F1 = det_∂²A∂ϱᵢ²(model, T, ϱ)
-        F2 = pressure(model,v,T,x) - p
-        return SVector(F1,F2)
+        F2 = (pressure(model, v, T, x) - p) * v / (R * T)
+        res = SVector(F1,F2)
+        return res
     end
-
-    xsol = Solvers.nlsolve2(f,SVector(log(_v0),_T0),Solvers.Newton2Var())
+    x0 = SVector(log(_v0),_T0)
+    xsol = Solvers.nlsolve2(f,x0,Solvers.Newton2Var())
     T_spin = xsol[2]
     v_spin = exp(xsol[1])
     return T_spin,v_spin
@@ -379,13 +384,13 @@ function det_∂²A∂ϱᵢ²(model,T,ϱ)
     if n == 2
         Hs11, Hs22 = H[1,1], H[2,2]
         Hs12       = H[1,2]
-        return TT((Hs11*Hs22 - Hs12*Hs12) * s*s)   # == det(H)
+        return TT(Hs11*Hs22 - Hs12*Hs12)   # == det(H)
     end
 
     fac = Solvers.unsafe_LU!(H)
 
     # calculates det(∂²A∂xᵢ² ⋅ ϱ) at V,T constant (see www.doi.org/10.1016/j.fluid.2017.04.009)
-    return TT(det(fac) * s^n)
+    return TT(det(fac))
 end
 
 function det_∂²A∂ϱᵢ²(model,V,T,z)

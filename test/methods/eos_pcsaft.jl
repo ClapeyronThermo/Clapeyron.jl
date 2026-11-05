@@ -151,8 +151,13 @@
 
         (Tl_spin_impl, xl_spin_impl) = spinodal_temperature(model,pl_spin,x_spin;T0=220.,v0=vl_spin)
         (Tv_spin_impl, xv_spin_impl) = spinodal_temperature(model,pv_spin,x_spin;T0=225.,v0=vv_spin)
+
+        (Tl_spin_impl2, _) = spinodal_temperature(model,pl_spin,x_spin;phase=:liquid)
+        (Tv_spin_impl2, _) = spinodal_temperature(model,pv_spin,x_spin;phase=:vapor)
         @test Tl_spin_impl ≈ T_spin rtol = 1e-6
         @test Tv_spin_impl ≈ T_spin rtol = 1e-6
+        @test_broken Tl_spin_impl2 ≈ T_spin rtol = 1e-6 #TODO: make spinodal_temperature work with negative pressures.
+        @test Tv_spin_impl2 ≈ T_spin rtol = 1e-6
 
         #test for #382: pure spinodal at low pressures
         model2 = PCSAFT("carbon dioxide")
