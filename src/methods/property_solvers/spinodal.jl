@@ -61,7 +61,8 @@ function spinodal_pressure(model::EoSModel,T,z=SA[1.];v0=nothing,phase=:unknown)
 
     ∑z = sum(z)
     if isnothing(v0) && !is_unknown(phase) && length(model) == 1
-        return pure_spinodal(model,T;phase)
+        p1,v1 = pure_spinodal(model,T;phase)
+        return p1, ∑z*v1
     end
 
     model, idx_r = index_reduction(model,z)
@@ -160,8 +161,8 @@ function x0_spinodal_pressure(model, T, z = SA[1.0], phase = :unknown)
         va,vb = TT(vw),TT(vx)
         deta,detb = TT(detw),TT(detx)
     else
-        va,vb = TT(vx),TT(vw)
-        deta,detb = TT(detx),TT(detb)
+        va,vb     = TT(vx),TT(vw)
+        deta,detb = TT(detx),TT(detw)
     end
 
     for i in 1:12
@@ -183,9 +184,6 @@ function x0_spinodal_pressure(model, T, z = SA[1.0], phase = :unknown)
     return TT(sqrt(va*vb))
 end
 
-
-
-
 """
     spinodal_temperature(model::EoSModel, p, z; T0, v0, phase)
 
@@ -205,6 +203,8 @@ function spinodal_temperature(model::EoSModel,p,z=SA[1.];T0=nothing,v0=nothing,p
     # Determine initial guess (if not provided)
     if isnothing(T0) || isnothing(v0)
         v00,T00 = x0_spinodal_temperature(model,p,x,phase)
+        nan = zero(v00)/zero(T00)
+        (isfinite(v00) && isfinite(T00)) || return (nan, nan)
         _T0 = isnothing(T0) ? T00 : T0*one(T00)
         _v0 = isnothing(v0) ? v00 : v0*one(v00)
     else
@@ -247,7 +247,7 @@ function x0_spinodal_temperature(model, p, z = SA[1.0], phase = :unknown)
             vi = volume(model,p,Ti,z,phase = :l)
             !isnan(vi) && (return vi,Ti)
             Ti = 0.9*Ti
-            
+
         end
         return nan,nan
     end
@@ -324,8 +324,8 @@ function x0_spinodal_temperature(model, p, z = SA[1.0], phase = :unknown)
         deta,detb = TT(detw),TT(detx)
     else
         Ta,Tb = TT(Tx),TT(Tw)
-        va,vb = TT(vx),TT(vw)
-        deta,detb = TT(detx),TT(detb)
+        va,vb     = TT(vx),TT(vw)
+        deta,detb = TT(detx),TT(detw)
     end
 
     for i in 1:12
@@ -366,10 +366,26 @@ end
 # Objective function for spinodal calculation -> det(∂²A/∂ϱᵢ) = 0
 function det_∂²A∂ϱᵢ²(model,T,ϱ)
     H = Ψ_hessian(model,T,ϱ)
-    TT =eltype(H)
+    s = sqrt(sum(abs2, H))
+    n = size(H,1)
+    if ismutable(H)
+        H ./= s
+    else
+        H = H ./ s
+    end
+
+    TT = eltype(H)
+
+    if n == 2
+        Hs11, Hs22 = H[1,1], H[2,2]
+        Hs12       = H[1,2]
+        return TT((Hs11*Hs22 - Hs12*Hs12) * s*s)   # == det(H)
+    end
+
     fac = Solvers.unsafe_LU!(H)
+
     # calculates det(∂²A∂xᵢ² ⋅ ϱ) at V,T constant (see www.doi.org/10.1016/j.fluid.2017.04.009)
-    return TT(det(fac))
+    return TT(det(fac) * s^n)
 end
 
 function det_∂²A∂ϱᵢ²(model,V,T,z)
