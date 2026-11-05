@@ -33,8 +33,8 @@ function M.flash_update!(K, storage, type::M.SSIFlash, eos::C.EoSModel, cond, fo
     y = M.vapor_mole_fraction!(y, x, K)
     phi_l = storage.buffer1
     phi_v = storage.buffer2
-    liquid = (p = p, T = T, z = x,phase = :liquid)
-    vapor = (p = p, T = T, z = y,phase = :vapor)
+    liquid = (p = p, T = T, z = x,phase = Val(:liquid))
+    vapor = (p = p, T = T, z = y,phase = Val(:vapor))
     ϵ = zero(F)
     M.mixture_fugacities!(phi_l, eos, liquid, forces)
     M.mixture_fugacities!(phi_v, eos, vapor, forces)

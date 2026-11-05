@@ -28,6 +28,6 @@
 
     @testset "LJRef" begin
         system = LJRef(["methane"],ljmodel = KolafaNezbedaLJ())
-        pure_generic_test(system)
+        pure_generic_test(system)      
     end
 end #testset

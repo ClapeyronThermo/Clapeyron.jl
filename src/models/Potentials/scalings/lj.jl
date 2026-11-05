@@ -51,6 +51,14 @@ end
 
 σϵ_m_vdw1f(ϵ,σ,V,T,z) = σϵ_m_vdw1f(ϵ,σ,z)
 
+function recombine_lj_cs!(model,k = nothing,l = nothing)
+    sigma = model.params.sigma
+    epsilon = model.params.epsilon
+    sigma = sigma_LorentzBerthelot!(sigma,l)
+    epsilon = epsilon_LorentzBerthelot!(epsilon,k)
+    return model
+end
+
 struct LJScalingParam{T} <: ParametricEoSParam{T}
     Mw::SingleParam{T}
     sigma::PairParam{T}
@@ -67,11 +75,15 @@ function transform_params_lj(params)
     return saft_lorentz_berthelot(params)
 end
 
-@newmodelsimple LJScaling LJScalingModel LJScalingParam{T}
+struct LJScaling{T}  <: LJScalingModel
+    components::Vector{String}
+    params::LJScalingParam{T}
+    molecular_units::Bool
+end
 
-function LJScaling(params::LJScalingParam{T}) where T
+function LJScaling(params::LJScalingParam{T},molecular_units = false) where T
     comps = params.Mw.components
-    return LJScaling(comps,params,comps) #use already allocated vector.
+    return LJScaling(comps,params,molecular_units) #use already allocated vector.
 end
 
 LJScaling(param::EoSParam) = LJScaling(LJScalingParam(param.Mw,param.sigma,param.epsilon))
@@ -80,7 +92,10 @@ function shape_factors(scaling::LJScalingModel,ref,T,z)
     ϵ, σ = scaling.params.epsilon.values, scaling.params.sigma.values
     σ3, ϵ̄, _ = σϵ_m_vdw1f(ϵ,σ,1.0,T,z)
     f = ϵ̄
-    h = N_A*σ3
+    h = σ3
+    if !scaling.molecular_units
+        h *= N_A
+    end
     return f,h
 end
 
@@ -92,13 +107,23 @@ function σϵ_m_vdw1f(model::LJScaling,V,T,z)
     return σϵ_m_vdw1f(ϵ,σ,V,T,z)
 end
 
-function transform_params(::Type{LJScaling},params,components)
+recombine_impl!(model::LJScalingModel) = recombine_lj_cs!(model,nothing,nothing)
+set_k!(model::LJScalingModel,k) = recombine_lj_cs!(model,k,nothing)
+set_l!(model::LJScalingModel,l) = recombine_lj_cs!(model,nothing,l)
+get_k(model::LJScalingModel) = get_k_geomean(model.params.epsilon.values)
+get_l(model::LJScalingModel) = get_k_mean(model.params.sigma.values)
+
+function transform_params_ljscaling(params,components,molecular_units)
     sigma = params["sigma"]
-    sigma.values .*= 1E-10
+    if !molecular_units
+        sigma.values .*= 1E-10
+    end
     nc = length(components)
+
     Mw = get!(params,"Mw") do
         SingleParam("Mw",components,zeros(nc),fill(true,nc))
     end
+
     return saft_lorentz_berthelot(params)
 end
 
@@ -106,6 +131,7 @@ end
     LJScaling <: LJScalingModel
     LJScaling(components;
     userlocations = String[],
+    molecular_units = false,
     verbose = false)
 
 ## Input parameters
@@ -133,9 +159,29 @@ Their shape factors are defined as:
 σᵢⱼ = (1 - lᵢⱼ)(σᵢ + σⱼ)/2        (Lorentz)
 ϵᵢⱼ = (1 - kᵢⱼ)√(ϵᵢ ϵⱼ)           (Berthelot)
 f = ϵmix
-h = N_A σ³
+h = σ³ * scaling
 ```
+
+The `molecular_units` argument sets if the scaling is done in SI units or molecular units.
+On SI units, the input sigma diameter is scaled from `[Å]` to `[m]` (once, at construction time), the volume is scaled by the avogadro number, and the gas constant is set to `R = 8.314...`;
+on molecular units, no additional scaling is applied and `R = 1.0`
+
 """
-LJScaling
+function LJScaling(components;
+                userlocations = String[],
+                verbose = false,
+                molecular_units = false)
+
+
+    _components = format_components(components)
+    params1 = getparams(_components, String[]; userlocations = userlocations, verbose = verbose)
+    params2 = transform_params_ljscaling(params1,_components,molecular_units)
+    packagedparams = build_eosparam(LJScalingParam,params2)
+    T = eltype(packagedparams)
+    model = LJScaling{T}(_components, packagedparams, molecular_units)
+    return model
+end
+
+Rgas(model::LJScaling) = ifelse(model.molecular_units,1.0,R̄)
 
 export LJScaling

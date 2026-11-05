@@ -171,12 +171,12 @@ include("models/EmpiricHelmholtz/SingleFluid/variants/XiangDeiters.jl")
 
 #potential models
 include("models/Potentials/Potentials.jl")
+include("models/Potentials/LJRef/LJRef.jl")
 include("models/Potentials/PeTS/PeTS.jl")
 include("models/Potentials/Thol2016LJ/Thol2016LJ.jl")
 include("models/Potentials/Johnson1993LJ/Johnson1993LJ.jl")
 include("models/Potentials/FeANNMie/FeANNMie.jl")
 include("models/Potentials/KolafaNezbeda/KolafaNezbeda.jl")
-include("models/Potentials/LJRef/LJRef.jl")
 include("models/Potentials/Pohl2023Mie6/Pohl2023Mie6.jl")
 
 #multifluid models

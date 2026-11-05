@@ -285,8 +285,8 @@ end
                 ]
         
         for CASE in CASES
-            let (_, model, T, z) = CASES, V = sqrt(1 / eps())
-                test_assoc_matrix(model,V,T,z)
+            let (_, model, T, z, _ , _ ) = CASE, V = sqrt(1 / eps())
+                test_assoc_matrix(model,V,T,z,1e-10)
             end
         end
     end

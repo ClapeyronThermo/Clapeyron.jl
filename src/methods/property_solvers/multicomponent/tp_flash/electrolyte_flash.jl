@@ -237,7 +237,12 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
         #ψmin,ψmax = bound_electrochemical_potential(K,Z)
         lb[end] = -Inf
         ub[end] = Inf
-        opt_options = OptimizationOptions(f_abstol = 0.0,f_reltol = 0.0,x_abstol = 1e-10,x_reltol = 0.0,g_abstol = 1e-8, g_reltol = K_tol,maxiter = 100)
+
+        opt_options = OptimizationOptions(
+                        f_abstol=0.0, f_reltol=0.0,
+                        x_abstol=0.0, x_reltol=0.0,   # don't let tiny steps "succeed". specially important on BFGS
+                        g_abstol=1e-8, g_reltol=K_tol, #instead, we stop with the gradient norm criteria.
+                        maxiter=100)
         if second_order
             sol = Solvers.optimize(flash_obj, ny_var_and_ψ0, LineSearch(Newton2(ny_var_and_ψ0),Solvers.BoundedLineSearch(lb,ub)),opt_options)
         else
@@ -380,8 +385,7 @@ end
 
 function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,ny_var_and_ψ,gz)
     ny_var = @view ny_var_and_ψ[1:end-1]
-    ψ = ny_var[end]
-
+    ψ = ny_var_and_ψ[end]
     second_order = !isnothing(H)
     nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
     in_equilibria,non_inx,non_iny = in_eq
@@ -421,7 +425,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
             _∂x = @view ∂x[in_equilibria]
             gny .= _∂x
             gny .+= _Z .* ψ
-            g[end] = nysum*dot(y,Z)
+            g[end] = nxsum*dot(x,Z)
         end
 
         f += nxsum*dot(∂x,x)

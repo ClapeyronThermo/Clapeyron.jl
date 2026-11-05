@@ -253,7 +253,7 @@ function cpa_is_pure_cubic(model::CPAModel)
     assoc_pair_length(model) == 0
 end
 
-function show_info(io,model::CPAModel) 
+function show_info(io,model::CPAModel)
     rdf = model.radial_dist
     println(io)
     if rdf == :CS #CPA original

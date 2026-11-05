@@ -10,8 +10,8 @@
         f_xy = storage.buffer2
         x, y = storage.x, storage.y
         z, p, T = c.z, c.p, c.T
-        liquid = (p = p, T = T, z = x, phase = :liquid)
-        vapor = (p = p, T = T, z = y,phase = :vapor)
+        liquid = (p = p, T = T, z = x, phase = Val{:liquid}())
+        vapor = (p = p, T = T, z = y,phase = Val{:vapor}())
         # Update fugacities for current conditions used in both tests
         M.mixture_fugacities!(f_z, eos, c, forces)
         #props = eos.mixture.properties

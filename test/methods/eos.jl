@@ -291,6 +291,25 @@ end
     @test Clapeyron.molar_density(system, 3363.1u"bar", T) ≈ 29810.09484964839u"mol*m^-3"
 end
 
+@testset "tcPR, single component" begin
+    model = tcPR(["Hydrogen"])
+    (Tc, Pc, Vc) = crit_pure(model)
+    #536
+    Tmax = 1000 * Tc
+    Tmin = 0.4 * Tc
+    Tx = range(Tmin,Tmax,500)
+    P = 0.1 * Pc
+    b = Clapeyron.lb_volume(model,0.0,[1.0])
+    dens = fill(b,500)
+    for i in 1:500
+        di = molar_density(model,P,Tx[i])
+        if !isnan(di)
+            dens[i] = di
+        end
+    end
+    @test all(>=(b),dens)
+end
+
 @testset "Cubic methods, multi-components" begin
     system = RK(["ethane","undecane"])
     system2 = tcPR(["benzene","toluene","nitrogen"])
@@ -733,6 +752,15 @@ end
 
         #really important test: we check if the corresponding states model can actually act as a standalone EoS model.
         @test saturation_pressure(system,T_nearc,IsoFugacitySaturation(;crit))[1] ≈ psat_nearc rtol = 1e-6
+
+        #molecular units
+        model_molecular = PeTS("test",userlocations = (sigma = 1.0,epsilon = 1.0),molecular_units = true)
+        @test Clapeyron.a_res(model_molecular,1.5,1.5,[1.0]) ≈ Clapeyron.a_res(Clapeyron.reference_model(model_molecular),1.5,1.5,[1.0])
+
+        #test set_k!
+        system2 = PeTS(["a","b"],userlocations = (sigma = [1.1,1.2],epsilon = [1.0,1.5]))
+        test_kl(system2)
+
     end
 
     @testset "KolafaNezbeda" begin
@@ -756,6 +784,10 @@ end
         @test Clapeyron.a_res(mix,5e-5,150.0,[0.4,0.6]) ≈ -1.8669348933846823 rtol = 1e-10
         set_k!(mix, [0.0 0.05; 0.05 0.0])
         @test Clapeyron.a_res(mix,5e-5,150.0,[0.4,0.6]) ≈ -1.7870541770130663 rtol = 1e-10
+
+        #molecular units
+        model_molecular = KolafaNezbeda("test",userlocations = (sigma = 1.0,epsilon = 1.0),molecular_units = true)
+        @test Clapeyron.a_res(model_molecular,1.5,1.5,[1.0]) ≈ Clapeyron.a_res(Clapeyron.reference_model(model_molecular),1.5,1.5,[1.0])
     end
 
 

@@ -1,23 +1,26 @@
 
-abstract type KolafaNezbedaModel <: CorrespondingStatesModel end
-@newmodel KolafaNezbeda KolafaNezbedaModel LJScalingParam{T} false
+abstract type KolafaNezbedaModel <: LJCorrespondingStatesModel end
+
+struct KolafaNezbeda{T,I} <: KolafaNezbedaModel
+    components::Vector{String}
+    params::LJScalingParam{T}
+    idealmodel::I
+    references::Vector{String}
+    molecular_units::Bool
+end
+function show_info(io,model::KolafaNezbeda) 
+    molecular_units = model.molecular_units
+    if molecular_units
+        println(io)
+        print(io," molecular units: ",molecular_units)
+    end
+end
+
 default_locations(::Type{KolafaNezbeda}) = ["Potentials/KolafaNezbeda"]
 default_references(::Type{KolafaNezbeda}) = ["10.1016/0378-3812(94)02573-G"]
 
-function transform_params(::Type{KolafaNezbeda},params)
-    sigma = params["sigma"]
-    sigma.values .*= 1E-10
-    return saft_lorentz_berthelot(params)
-end
-
-function set_k!(model::KolafaNezbedaModel,k)
-    epsilon = model.params.epsilon
-    epsilon = epsilon_LorentzBerthelot!(epsilon,k)
-    return model
-end
-
 reference_model(::KolafaNezbedaModel) = KolafaNezbedaLJ()
-scaling_model(model::KolafaNezbedaModel) = LJScaling(model.params)
+scaling_model(model::KolafaNezbedaModel) = LJScaling(model.params,model.molecular_units)
 default_ignore_missing_singleparams(model::KolafaNezbedaModel) =  ["segment"]
 
 """
@@ -28,6 +31,7 @@ default_ignore_missing_singleparams(model::KolafaNezbedaModel) =  ["segment"]
     userlocations = String[],
     ideal_userlocations = String[],
     reference_state = nothing,
+    molecular_units = false,
     verbose = false)
 
 ## Input parameters
@@ -48,10 +52,32 @@ default_ignore_missing_singleparams(model::KolafaNezbedaModel) =  ["segment"]
 
 Kolafa-Nezbeda equation of state for the Lennard-Jones fluid. Scaled via [`LJScaling`](@ref)
 
+The `molecular_units` argument sets if the scaling is done in SI units or molecular units.
+On SI units, the input sigma diameter is scaled from `[Å]` to `[m]` (once, at construction time), the volume is scaled by the avogadro number, and the gas constant is set to `R = 8.314...`;
+on molecular units, no additional scaling is applied and `R = 1.0`
+
 ## References
 1. Kolafa, J., & Nezbeda, I. (1994). The Lennard-Jones fluid: An accurate analytic and theoretically-based equation of state. Fluid Phase Equilibria, 100, 1–34. [doi:10.1016/0378-3812(94)02573-G](https://doi.org/10.1016/0378-3812(94)02573-G)
 """
-KolafaNezbeda
+function KolafaNezbeda(components;
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    molecular_units = false,
+    reference_state = nothing,
+    verbose = false)
+
+    _components = format_components(components)
+    params1 = getparams(_components, default_locations(KolafaNezbeda); userlocations = userlocations, verbose = verbose)
+    params2 = transform_params_ljscaling(params1,_components,molecular_units)
+    packagedparams = build_eosparam(LJScalingParam,params2)
+    T = eltype(packagedparams)
+    init_idealmodel = init_model(idealmodel,_components,ideal_userlocations,verbose)
+    references = default_references(KolafaNezbeda)
+    model = KolafaNezbeda{T,typeof(init_idealmodel)}(_components, packagedparams, init_idealmodel, references, molecular_units)
+    set_reference_state!(model,reference_state;verbose)
+    return model
+end
 
 #nonlinear parameter γ of the damping function, eq. (15)
 const KN_γ = 1.92907278
@@ -117,12 +143,6 @@ end
 function lb_volume(model::KolafaNezbedaLJ,T,z)
     d̃ = d_kn(T)
     return sum(z)* d̃^3 *π/6
-end
-
-function set_k!(model::KolafaNezbedaLJ,k)
-    epsilon = model.params.epsilon
-    epsilon = epsilon_LorentzBerthelot!(epsilon,k)
-    return model
 end
 
 export KolafaNezbeda, KolafaNezbedaLJ
