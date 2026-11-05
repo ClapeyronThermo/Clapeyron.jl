@@ -125,7 +125,7 @@ kappa_649(z) = Clapeyron.debye_length(1.8e-5, 298.15, z, eps_r_649(z), [0.0, 1.0
         x_test =  [0.5522792450346276, 0.012878645399699698, 0.2174210525290201, 0.2174210570366527]
         x_test_salt = [0.7057169738720372, 0.016456672490883215, 0.2778263536370795]
         @test x_test ≈ res0.compositions[1] rtol = 1e-6
-        @test x_test ≈ res1.compositions[1] rtol = 1e-6
+        @test_broken x_test ≈ res1.compositions[1] rtol = 1e-6 #BFGS does not work with saddle points, like the electroneutrality condition.
         @test x_test ≈ res2.compositions[1] rtol = 1e-6
 
         @test x_test_salt ≈ res0_mia.compositions[1] rtol = 1e-6
