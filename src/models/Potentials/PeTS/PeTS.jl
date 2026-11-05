@@ -13,7 +13,13 @@ end
 
 default_locations(::Type{PeTS}) = ["SAFT/PCSAFT","properties/molarmass.csv"]
 default_references(::Type{PeTS}) = ["10.1080/00268976.2018.1447153"]
-
+function show_info(io,model::PeTS) 
+    molecular_units = model.molecular_units
+    if molecular_units
+        println(io)
+        print(io," molecular units: ",molecular_units)
+    end
+end
 """
     PeTSModel <: EoSModel
 

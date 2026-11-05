@@ -2,7 +2,7 @@ abstract type LJCorrespondingStatesModel <: CorrespondingStatesModel end
 
 Base.eltype(model::LJCorrespondingStatesModel) = Base.promote_eltype(model.idealmodel,reference_model(model),model.params)
 
-recombine_impl!(model::LJCorrespondingStatesModel) = recombine!(scaling_model(model))
+endrecombine_impl!(model::LJCorrespondingStatesModel) = recombine!(scaling_model(model))
 set_k!(model::LJCorrespondingStatesModel,k) = set_k!(scaling_model(model),k)
 set_l!(model::LJCorrespondingStatesModel,l) = set_l!(scaling_model(model),l)
 get_k(model::LJCorrespondingStatesModel) = get_k(scaling_model(model))
@@ -14,6 +14,14 @@ struct LJRef{T,I,LJ} <: LJCorrespondingStatesModel
     idealmodel::I
     ljmodel::LJ
     molecular_units::Bool
+end
+
+function show_info(io,model::LJRef) 
+    molecular_units = model.molecular_units
+    if molecular_units
+        println(io)
+        print(io," molecular units: ",molecular_units)
+    end
 end
 """
     LJRef <: CorrespondingStatesModel

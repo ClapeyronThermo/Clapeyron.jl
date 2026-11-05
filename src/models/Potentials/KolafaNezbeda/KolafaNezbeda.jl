@@ -8,6 +8,13 @@ struct KolafaNezbeda{T,I} <: KolafaNezbedaModel
     references::Vector{String}
     molecular_units::Bool
 end
+function show_info(io,model::KolafaNezbeda) 
+    molecular_units = model.molecular_units
+    if molecular_units
+        println(io)
+        print(io," molecular units: ",molecular_units)
+    end
+end
 
 default_locations(::Type{KolafaNezbeda}) = ["Potentials/KolafaNezbeda"]
 default_references(::Type{KolafaNezbeda}) = ["10.1016/0378-3812(94)02573-G"]
