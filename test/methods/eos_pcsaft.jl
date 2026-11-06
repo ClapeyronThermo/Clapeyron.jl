@@ -161,7 +161,7 @@
 
         @test Tl_spin_impl ≈ T_spin rtol = 1e-6
         @test Tv_spin_impl ≈ T_spin rtol = 1e-6
-        @test_broken Tl_spin_impl2 ≈ T_spin rtol = 1e-6 #TODO: make spinodal_temperature work with negative pressures.
+        @test Tl_spin_impl2 ≈ T_spin rtol = 1e-6
         @test Tv_spin_impl2 ≈ T_spin rtol = 1e-6
 
         (T_spin_2x, xl_spin_impl_2x) = spinodal_temperature(model,pl_spin,2*x_spin;T0=220.,v0=2*vl_spin)
@@ -182,7 +182,7 @@
 
         p_pure1,vl_pure1 = spinodal_pressure(model2,290.0,Clapeyron.SA[1.0],phase = :l)
         p_pure2,vl_pure2 = spinodal_pressure(model2,290.0,Clapeyron.SA[2.0],phase = :l)
-        @test vl_pure2 ≈ 2*vl_pure
+        @test vl_pure2 ≈ 2*vl_pure1
         @test p_pure1 ≈ p_pure2
     end
 end

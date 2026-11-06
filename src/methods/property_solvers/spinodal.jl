@@ -244,17 +244,9 @@ function x0_spinodal_temperature(model, p, z = SA[1.0], phase = :unknown)
 
     TT = Base.promote_eltype(model,p,z)
     nan = zero(TT)/zero(TT)
-
+    
     if p < 0 && is_liquid(phase)
-        Ti = T_scale(model,z)*one(p)
-        vi = Ti
-        for i in 1:20
-            vi = volume(model,p,Ti,z,phase = :l)
-            !isnan(vi) && (return vi,Ti)
-            Ti = 0.9*Ti
-
-        end
-        return nan,nan
+        return x0_spinodal_temperature_negp_liquid(model,p,z)
     end
 
     v0_edge,dpdT = x0_edge_temperature(model,p,z)
@@ -262,9 +254,6 @@ function x0_spinodal_temperature(model, p, z = SA[1.0], phase = :unknown)
     #T0_bubble,T0_dew = v0_edge
     edge,crit,status = _edge_temperature(model,p,z,v0_edge)
     T_edge,v_l,v_v = edge
-
-    TT = Base.promote_eltype(model,p,T_edge,z)
-    xx = similar(z,TT)
 
     status == :failure && (return nan,nan)
 
@@ -280,6 +269,7 @@ function x0_spinodal_temperature(model, p, z = SA[1.0], phase = :unknown)
         end
     end
 
+    xx = similar(z,TT)
     xx .= z ./ vx
 
     detx = det_∂²A∂ϱᵢ²(model,Tx,xx)
@@ -367,6 +357,100 @@ function x0_spinodal_temperature(model, p, z = SA[1.0], phase = :unknown)
     return v,T
 end
 
+function x0_spinodal_temperature_negp_liquid(model,p,z)
+    TT = Base.promote_eltype(model,p,z)
+    nan = zero(TT)/zero(TT)
+    xx = similar(z,TT)
+    Ti = T_scale(model,z)*one(p)
+    Told = Ti/0.9
+
+
+    function _is_liquid_state(model, v, T, z)
+        _, dpdv, d2pdv2 = p∂p∂2p(model, v, T, z)
+        ∑z = sum(z)
+        return v^3 * (v * d2pdv2 + 2 * dpdv) / (∑z*∑z) > 0
+    end
+
+    existing = false
+    first_T = false
+    vi = zero(Ti)   # placeholder; set in phase A before use
+
+    # Phase A: cool down until volume(:l) succeeds AND lands on the liquid side.
+    # `phase=:l` is a seed heuristic, not a constraint: `_volume_compress`
+    # never checks which branch it lands on. The d²p/dρ² check is what
+    # certifies that `vi` is on the liquid branch.
+    for i in 1:20
+        vi = volume(model,p,Ti,z,phase = :l)
+        if !isnan(vi) && _is_liquid_state(model, vi, Ti, z)
+            first_T = (i == 1)
+            existing = true
+            break
+        end
+        Told = Ti
+        Ti = 0.9*Ti
+    end
+    existing || (return nan,nan)
+
+    xx .= z ./ vi
+    det_li = det_∂²A∂ϱᵢ²(model,Ti,xx)
+
+    # Phase A': rare defensive branch (pure EoS almost never takes it).
+    # If phase A landed on a stable liquid at the first attempt, warm up
+    # to bracket det = 0.
+    if det_li > 0 && first_T
+        Tj = Ti
+        vj = vi
+        det_lj = det_li
+        for j in 1:10
+            det_lj < 0 && break
+            det_li = det_lj      # (Ti, vi, det_li) ← previous (Tj, vj, det_lj)
+            Ti = Tj
+            vi = vj
+            Tj = 1.1*Ti
+            vj = volume(model,p,Tj,z,phase = :l)
+            isnan(vj) && break
+            xx .= z ./ vj
+            det_lj = det_∂²A∂ϱᵢ²(model,Tj,xx)
+        end
+        if !isnan(vj)
+            if det_lj < 0
+                # τ-secant: linear interpolation of det(τ) = 0 between
+                # (τ_i, det_li) and (τ_j, det_lj), with τ = 1/T.
+                # Since det_li > 0 > det_lj and τ_j < τ_i (Tj > Ti),
+                # τ_xx ∈ (τ_j, τ_i), i.e. T_xx ∈ (Ti, Tj).
+                τ_i = 1/Ti
+                τ_j = 1/Tj
+                τ_xx = τ_i - det_li * (τ_j - τ_i)/(det_lj - det_li)
+                Txx = 1/τ_xx
+                vxx = volume(model,p,Txx,z,phase = :l)
+                (isnan(vxx) || !_is_liquid_state(model, vxx, Txx, z)) && (return vi, Ti)
+                return vxx,Txx
+            else
+                return vj,Tj     # no det < 0 reached in the warm-up; last stable point
+            end
+        else
+            return vi,Ti         # warm-up hit NaN; last valid stable point
+        end
+    end
+
+    # Phase B: if we landed on a metastable liquid (det < 0), cool with
+    # volume_chill (isobaric continuation) until we cross back into the
+    # stable side. `volume_chill` uses ∂²A/∂V² ≤ 0 as a mechanical-stability
+    # guard, so it stops at the spinodal from the unstable side, which is
+    # exactly what we want.
+    for i in 1:10
+        det_li > 0 && break
+        Told = Ti
+        Ti = 0.9*Ti
+        vi_new = volume_chill(model,p,Ti,z,vi,Told)
+        isnan(vi_new) && break   # chilled out of the stable isobar
+        vi = vi_new
+        xx .= z ./ vi
+        det_li = det_∂²A∂ϱᵢ²(model,Ti,xx)
+    end
+    det_li > 0 && (return vi,Ti)
+    return (nan,nan)
+end
 
 # Objective function for spinodal calculation -> det(∂²A/∂ϱᵢ) = 0
 function det_∂²A∂ϱᵢ²(model,T,ϱ)
