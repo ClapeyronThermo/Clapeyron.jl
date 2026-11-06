@@ -12,12 +12,7 @@ with almost equal volumes are also merged: near-critical region) and are lattice
 through the stable single phase region (see cem_samephase).
 =#
 
-const CEM_LIQUID = Int8(1)
-const CEM_VAPOUR = Int8(2)
-const CEM_SOLID = Int8(3)
-const CEM_λTOL = 1e-12 #phase amount tolerance
-const CEM_VOL_RTOL = 0.1 #fluid points with this relative volume difference are the same phase
-const CEM_LNF_TOL = 1e-6 #ln fugacity tolerance of polished phases
+@enum CEMState::Int8 CEM_LIQUID = 1 CEM_VAPOUR CEM_SOLID
 
 cem_state_symbol(s) = s == CEM_LIQUID ? :liquid : (s == CEM_VAPOUR ? :vapour : :solid)
 
@@ -31,11 +26,13 @@ struct CEMEnvelope
     lp::Solvers.LowerEnvelope #g: reduced gibbs energy, minus the linear function x⋅gpure
     gpure::Vector{Float64}
     point::Vector{Int32} #lattice point of each column
-    state::Vector{Int8}
+    state::Vector{CEMState}
     volume::Vector{Float64}
     point_column::Vector{Int32} #column with the lowest g at each lattice point
     point_ptr::Vector{Int32} #columns of lattice point k: point_cols[point_ptr[k]:point_ptr[k+1]-1]
     point_cols::Vector{Int32}
+    λ_tol::Float64 #phase amount tolerance
+    vol_rtol::Float64 #fluid points with this relative volume difference are the same phase
 end
 
 Base.length(env::CEMEnvelope) = size(env.lattice,1)
@@ -122,8 +119,10 @@ function cem_eval_chunk!(gl,vl,gv,vv,fluid,p,T,K,δ,lle,idx)
 end
 
 #evaluates the Gibbs energy of all aggregate states on the composition lattice and builds the envelope
-function cem_envelope(model,p,T,δ,equilibrium = :auto,threaded = true)
+function CEMEnvelope(model,p,T,method)
     N = length(model)
+    δ = something(method.δ,cem_default_δ(N))
+    equilibrium,threaded = method.equilibrium,method.threaded
     δ < 1 && throw(DomainError(δ,"CEM: δ must be a positive integer"))
     _,fluid,solid = cem_models(model,p,T,fill(1/N,N),equilibrium)
     lle = is_lle(equilibrium)
@@ -132,7 +131,7 @@ function cem_envelope(model,p,T,δ,equilibrium = :auto,threaded = true)
     gl,vl,gv,vv = zeros(M),zeros(M),zeros(M),zeros(M)
     cem_foreach_chunk(idx -> cem_eval_chunk!(gl,vl,gv,vv,fluid,p,T,K,δ,lle,idx),M,threaded)
     #compact into columns
-    P,G,S,V = Int32[],Float64[],Int8[],Float64[]
+    P,G,S,V = Int32[],Float64[],CEMState[],Float64[]
     function addcol!(k,g,s,v)
         isfinite(g) || return nothing
         push!(P,k);push!(G,g);push!(S,s);push!(V,v)
@@ -152,7 +151,7 @@ function cem_envelope(model,p,T,δ,equilibrium = :auto,threaded = true)
     gpure = [minimum((G[c] for c in eachindex(G) if P[c] == k),init = Inf) for k in pure]
     all(isfinite,gpure) || error("CEM: Gibbs energy evaluation failed for a pure component at p = $p, T = $T")
     G .-= X'*gpure
-    lp,perm = Solvers.lower_envelope(X,G,S)
+    lp,perm = Solvers.lower_envelope(X,G,Int8.(S))
     point = P[perm]
     point_column = zeros(Int32,M)
     for c in eachindex(point)
@@ -166,7 +165,7 @@ function cem_envelope(model,p,T,δ,equilibrium = :auto,threaded = true)
         point_ptr[k + 1] += 1
     end
     cumsum!(point_ptr,point_ptr)
-    return CEMEnvelope(δ,K,lp,gpure,point,S[perm],V[perm],point_column,point_ptr,point_cols)
+    return CEMEnvelope(δ,K,lp,gpure,point,S[perm],V[perm],point_column,point_ptr,point_cols,method.λ_tol,method.vol_rtol)
 end
 
 function cem_add_point_columns!(cand,env::CEMEnvelope,k)
@@ -211,7 +210,7 @@ function cem_compatible(env::CEMEnvelope,a,b)
     sa,sb = env.state[a],env.state[b]
     (sa == CEM_SOLID || sb == CEM_SOLID) && return a == b
     sa == sb && return true
-    return isapprox(env.volume[a],env.volume[b],rtol = CEM_VOL_RTOL) #near critical: the roots merge
+    return isapprox(env.volume[a],env.volume[b],rtol = env.vol_rtol) #near critical: the roots merge
 end
 
 #stability (single phase) of lattice points, from a diagram or lazily from the LP of each point
@@ -296,13 +295,13 @@ function cem_clusters(env::CEMEnvelope,cols,stable = nothing)
 end
 
 function numphases(env::CEMEnvelope,ws::Solvers.EnvelopeWorkspace,stable = nothing)
-    count(>(CEM_λTOL),ws.λ) <= 1 && return 1
-    return last(cem_clusters(env,ws.B[ws.λ .> CEM_λTOL],stable))
+    count(>(env.λ_tol),ws.λ) <= 1 && return 1
+    return last(cem_clusters(env,ws.B[ws.λ .> env.λ_tol],stable))
 end
 
 #phases (sorted by volume, solids last) of the current basis with weights λ
 function cem_phases(env::CEMEnvelope,fluid,p,T,B,λ,stable = nothing)
-    support = findall(>(CEM_λTOL),λ)
+    support = findall(>(env.λ_tol),λ)
     cols = B[support]
     w = λ[support]
     labels,np = cem_clusters(env,cols,stable)
@@ -340,7 +339,7 @@ end
 ## phase diagram
 
 """
-    CEMPhaseDiagram(;δ = nothing, equilibrium = :auto, polish = nothing, threaded = true)
+    CEMPhaseDiagram(;δ = nothing, equilibrium = :auto, polish = nothing, threaded = true, λ_tol = 1e-12, vol_rtol = 0.1, lnf_tol = 1e-6)
 
 Method to calculate the complete phase diagram at constant pressure and temperature with the convex envelope method (CEM) [1].
 
@@ -353,6 +352,9 @@ Instead of building the complete convex hull, the envelope is obtained by solvin
 - `equilibrium`: `:auto` considers liquid and vapour phases, `:lle` only liquid phases.
 - `polish`: `nothing` (default) or a `TPFlashMethod` (e.g. `MichelsenTPFlash()` or `MultiPhaseTPFlash()`). If given, the phases of every multiphase facet are refined with that method, starting from the CEM phases. The refined result is only accepted if its phases are in equilibrium and it lowers the Gibbs energy. Facets with solid phases are not refined. Close to critical points, `MichelsenTPFlash(second_order = true)` converges more reliably.
 - `threaded`: evaluate the grid and the envelope in parallel.
+- `λ_tol`: vertices of a facet with a smaller weight are not part of the phase split.
+- `vol_rtol`: liquid and vapour grid points whose volumes differ by less than this relative tolerance can belong to the same phase (near critical region).
+- `lnf_tol`: tolerance of the log fugacities for a polished result to be accepted.
 
 ## References
 1. Göttl, Q., Rosen, N., & Burger, J. (2025). Convex envelope method for T, p flash calculations for mixtures with an arbitrary number of components and arbitrary aggregate states. Computers & Chemical Engineering, 203, 109326. [doi:10.1016/j.compchemeng.2025.109326](https://doi.org/10.1016/j.compchemeng.2025.109326)
@@ -362,6 +364,9 @@ Base.@kwdef struct CEMPhaseDiagram <: ThermodynamicMethod
     equilibrium::Symbol = :auto
     polish::Union{Nothing,TPFlashMethod} = nothing
     threaded::Bool = true
+    λ_tol::Float64 = 1e-12
+    vol_rtol::Float64 = 0.1
+    lnf_tol::Float64 = 1e-6
 end
 
 #phases (sorted by volume, solids last with NaN volume). Without polishing, each phase composition is the mean of its facet vertices
@@ -423,8 +428,7 @@ function phase_diagram(model::EoSModel,_p,_T,method::CEMPhaseDiagram)
     p,T = float(primalval(p)),float(primalval(T))
     N = length(model)
     N < 2 && throw(ArgumentError("phase_diagram: at least two components are required"))
-    δ = something(method.δ,cem_default_δ(N))
-    env = cem_envelope(model,p,T,δ,method.equilibrium,method.threaded)
+    env = CEMEnvelope(model,p,T,method)
     fluidmodel,fluid,_ = cem_models(model,p,T,fill(1/N,N),method.equilibrium)
     M = size(env.lattice,2)
     walk_facet = zeros(Int32,M)
@@ -455,7 +459,7 @@ function phase_diagram(model::EoSModel,_p,_T,method::CEMPhaseDiagram)
         μ = Solvers.envelope_tangent_plane(ws,env.lp) .+ env.gpure
         comps,_,vols,states = cem_phases(env,fluid,p,T,cols,w,stable)
         f = CEMFacet(cols,μ,comps,vols,cem_state_symbol.(states))
-        method.polish === nothing ? f : cem_polish_facet(fluidmodel,p,T,z,f,env,fluid,ws,stable,method.polish)
+        method.polish === nothing ? f : cem_polish_facet(fluidmodel,p,T,z,f,env,fluid,ws,stable,method.polish,method.lnf_tol)
     end
     return CEMDiagram(component_list(model),p,T,method.equilibrium,env,facets,point_facet)
 end
@@ -477,8 +481,8 @@ function cem_merge_phases(env::CEMEnvelope,facet_cols,point_facet)
         f == 0 && continue
         mul!(λ,Binv[f],@view(env.lp.x[:,env.point_column[k]]))
         l = labels[f]
-        i0 = findfirst(>(CEM_λTOL),λ)
-        if any(i -> λ[i] > CEM_λTOL && l[i] != l[i0],1:N)
+        i0 = findfirst(>(env.λ_tol),λ)
+        if any(i -> λ[i] > env.λ_tol && l[i] != l[i0],1:N)
             newpf[k] = f
             used[f] = true
         end
@@ -548,10 +552,10 @@ function cem_walk!(point_facet,env::CEMEnvelope,idx)
     return idx,list
 end
 
-function cem_polish_facet(model,p,T,z,f::CEMFacet,env,fluid,ws,stable,method)
+function cem_polish_facet(model,p,T,z,f::CEMFacet,env,fluid,ws,stable,method,lnf_tol)
     ws.λ .= 1/length(z)
     res = FlashResult(env,fluid,p,T,z,ws,stable)
-    res2 = cem_polish(model,fluid,p,T,z,res,method)
+    res2 = cem_polish(model,fluid,p,T,z,res,method,lnf_tol)
     res2 === res && return f
     np = numphases(res2,true)
     np == length(f.compositions) || return f
@@ -560,7 +564,5 @@ function cem_polish_facet(model,p,T,z,f::CEMFacet,env,fluid,ws,stable,method)
     states = [i == vapour_idx ? :vapour : :liquid for i in idx]
     return CEMFacet(f.columns,f.μ,[collect(res2.compositions[i]) for i in idx],res2.volumes[idx],states)
 end
-
-include("tp_flash/CEMtp_flash.jl")
 
 export phase_diagram, CEMPhaseDiagram

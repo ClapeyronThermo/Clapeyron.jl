@@ -39,6 +39,7 @@ include("../tp_flash/RachfordRicetp_flash.jl")
 include("../tp_flash/MCFlashJL.jl")
 include("../tp_flash/multiphase.jl")
 include("../tp_flash/electrolyte_flash.jl")
+include("../tp_flash/CEMtp_flash.jl")
 
 function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs) 
     if length(kwargs) == 0
