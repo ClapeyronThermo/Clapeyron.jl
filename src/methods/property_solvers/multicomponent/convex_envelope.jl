@@ -57,15 +57,14 @@ end
 
 #Δμᵢ/RT (pure solid - pure liquid) of each component, NaN if the component does not form a solid
 function cem_solid_Δμ(model,solid,p,T)
-    N = length(model)
-    Δμ = fill(NaN,N)
+    Δμ = fill(NaN,length(model))
     solid === nothing && return Δμ
-    solid_comps = component_list(solid)
     μ = chemical_potential(solid,p,T,ones(length(solid)))
-    fluid_comps = component_list(model)
-    for i in 1:N
-        j = findfirst(isequal(fluid_comps[i]),solid_comps)
-        j === nothing || (Δμ[i] = μ[j]/(Rgas(solid)*T))
+    idx = _mapping_split(model)
+    ν = _mapping_fractions(model)
+    for j in eachindex(idx)
+        length(idx[j]) == 1 || throw(ArgumentError("CEM: only pure solids are supported, solid $(component_list(solid)[j]) is formed by several fluid components"))
+        Δμ[only(idx[j])] = μ[j]/(only(ν[j])*Rgas(solid)*T)
     end
     return Δμ
 end
