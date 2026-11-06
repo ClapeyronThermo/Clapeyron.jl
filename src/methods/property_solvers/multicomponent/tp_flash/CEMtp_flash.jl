@@ -56,7 +56,7 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::CEMFlash)
     zf = collect(Float64,z)
     Solvers.envelope_reset!(ws,env.lp,zf)
     Solvers.envelope_lp!(ws,env.lp,zf)
-    result = cem_flash_result(env,fluid,p,T,zf,ws,stable)
+    result = FlashResult(env,fluid,p,T,zf,ws,stable)
     return cem_polish(fluidmodel,fluid,p,T,zf,result,method.polish)
 end
 

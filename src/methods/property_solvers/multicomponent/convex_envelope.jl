@@ -232,7 +232,7 @@ function (stable::CEMStability)(k)
         z = env.lp.x[:,env.point_column[k]]
         Solvers.envelope_reset!(ws,env.lp,z)
         Solvers.envelope_lp!(ws,env.lp,z)
-        cem_numphases(env,ws) == 1
+        numphases(env,ws) == 1
     end
 end
 
@@ -296,7 +296,7 @@ function cem_clusters(env::CEMEnvelope,cols,stable = nothing)
     return label,np
 end
 
-function cem_numphases(env::CEMEnvelope,ws::Solvers.EnvelopeWorkspace,stable = nothing)
+function numphases(env::CEMEnvelope,ws::Solvers.EnvelopeWorkspace,stable = nothing)
     count(>(CEM_λTOL),ws.λ) <= 1 && return 1
     return last(cem_clusters(env,ws.B[ws.λ .> CEM_λTOL],stable))
 end
@@ -331,7 +331,7 @@ function cem_phases(env::CEMEnvelope,fluid,p,T,B,λ,stable = nothing)
     return comps[idx],β[idx],vols[idx],states[idx]
 end
 
-function cem_flash_result(env::CEMEnvelope,fluid,p,T,z,ws::Solvers.EnvelopeWorkspace,stable = nothing)
+function FlashResult(env::CEMEnvelope,fluid,p,T,z,ws::Solvers.EnvelopeWorkspace,stable = nothing)
     comps,β,vols,states = cem_phases(env,fluid,p,T,ws.B,ws.λ,stable)
     g = dot(ws.λ,@view(env.lp.g[ws.B])) + dot(z,env.gpure)
     vapour_idx = something(findlast(==(CEM_VAPOUR),states),-1) #largest volume
@@ -535,7 +535,7 @@ function cem_walk!(point_facet,env::CEMEnvelope,idx)
             end
             current_proven = true
         end
-        if cem_numphases(env,ws) > 1
+        if numphases(env,ws) > 1
             sort!(key .= ws.B)
             id = get(keys,key,0)
             if id == 0
@@ -551,7 +551,7 @@ end
 
 function cem_polish_facet(model,p,T,z,f::CEMFacet,env,fluid,ws,stable,method)
     ws.λ .= 1/length(z)
-    res = cem_flash_result(env,fluid,p,T,z,ws,stable)
+    res = FlashResult(env,fluid,p,T,z,ws,stable)
     res2 = cem_polish(model,fluid,p,T,z,res,method)
     res2 === res && return f
     np = numphases(res2,true)
