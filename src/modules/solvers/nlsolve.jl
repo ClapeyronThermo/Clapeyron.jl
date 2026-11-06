@@ -405,3 +405,118 @@ function solve1_new_iter(old_state,x,fx,dfx = nothing;full_iter = true)
     end
     return first(xx)*NaN,state
 end
+using Roots
+import Roots: AbstractNewtonLikeMethod, AbstractUnivariateZeroState,
+              Callable_Function, init_state, update_state,
+              initial_fncalls, isissue, NullTracks
+
+struct GuardedNewton <: AbstractNewtonLikeMethod end
+
+struct GuardedNewtonState{T,S} <: AbstractUnivariateZeroState{T,S}
+    xn1::T
+    xn0::T
+    Δ::T
+    fxn1::S
+    fxn0::S
+    bracket::Tuple{T,T}
+    is_bracket::Bool
+    fa::S
+    fb::S
+end
+
+# ------------------------------------------------------------------
+# Helper: build the state from two iterates, detecting a bracket
+# ------------------------------------------------------------------
+@inline function _guarded_state(x₀, x₁, fx₀, fx₁, Δ)
+    if fx₀ * fx₁ < 0
+        if x₀ < x₁
+            a, b, fa, fb = x₀, x₁, fx₀, fx₁
+        else
+            a, b, fa, fb = x₁, x₀, fx₁, fx₀
+        end
+        is_br = true
+    else
+        a, b   = x₀, x₁          # placeholder: last two iterates
+        fa, fb = fx₀, fx₁
+        is_br  = false
+    end
+    GuardedNewtonState(x₁, x₀, Δ, fx₁, fx₀, (a, b), is_br, fa, fb)
+end
+
+# ------------------------------------------------------------------
+# init_state: single initial value OR two initial iterates
+# ------------------------------------------------------------------
+function init_state(::GuardedNewton, F::Callable_Function, x)
+    if x isa Union{Tuple,AbstractVector}
+        # ---- two user-supplied initial iterates ----
+        length(x) == 2 ||
+            throw(ArgumentError(
+                "GuardedNewton expects one starting value or a pair (x₀, x₁); " *
+                "got $(length(x)) values"))
+        x₀ = float(x[1])
+        x₁ = float(x[2])
+        # f only at x₀ — used purely as a bracket endpoint.
+        # (One extra f′ eval is spent here; harmless, happens once.)
+        fx₀      = first(F(x₀))
+        fx₁, Δ₁  = F(x₁)
+        return _guarded_state(x₀, x₁, fx₀, fx₁, Δ₁)
+    else
+        # ---- single starting value: take two Newton steps ----
+        x₀ = float(x)
+        fx₀, Δ = F(x₀)
+        x₁ = x₀ - Δ
+        fx₁, Δ = F(x₁)
+        return _guarded_state(x₀, x₁, fx₀, fx₁, Δ)
+    end
+end
+
+# Both init paths do exactly 2 evaluations of f.
+initial_fncalls(::GuardedNewton) = 2
+
+# ------------------------------------------------------------------
+# update_state (unchanged from previous version)
+# ------------------------------------------------------------------
+function update_state(::GuardedNewton, F,
+                      o::GuardedNewtonState, options, l=NullTracks())
+    xn0, xn1 = o.xn0, o.xn1
+    fxn0, fxn1 = o.fxn0, o.fxn1
+    Δ          = o.Δ
+    a, b       = o.bracket
+    is_br      = o.is_bracket
+    fa, fb     = o.fa, o.fb
+
+    isissue(Δ) && return o, true
+
+    x_newt = xn1 - Δ
+
+    if is_br && !(a < x_newt < b)
+        x_newt = (a + b) / 2
+    end
+
+    fx_new, Δ_new = F(x_newt)
+
+    if is_br
+        if fx_new == 0
+            new_a, new_b, new_fa, new_fb = a, b, fa, fb
+        elseif sign(fx_new) == sign(fa)
+            new_a, new_b, new_fa, new_fb = x_newt, b, fx_new, fb
+        else
+            new_a, new_b, new_fa, new_fb = a, x_newt, fa, fx_new
+        end
+        return GuardedNewtonState(x_newt, xn1, Δ_new, fx_new, fxn1,
+                                  (new_a, new_b), true, new_fa, new_fb), false
+    else
+        if fxn1 * fx_new < 0
+            if xn1 < x_newt
+                a2, b2, fa2, fb2 = xn1, x_newt, fxn1, fx_new
+            else
+                a2, b2, fa2, fb2 = x_newt, xn1, fx_new, fxn1
+            end
+            return GuardedNewtonState(x_newt, xn1, Δ_new, fx_new, fxn1,
+                                      (a2, b2), true, fa2, fb2), false
+        else
+            return GuardedNewtonState(x_newt, xn1, Δ_new, fx_new, fxn1,
+                                      (xn1, x_newt), false, fa, fb), false
+        end
+    end
+end

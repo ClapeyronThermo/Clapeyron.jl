@@ -484,6 +484,32 @@ function roots_solve_ad(prob::Roots.ZeroProblem{F,X},method,p::P;kwargs...) wher
     return ift(λx,f,p,λp)
 end
 
+function eigmin_residual(Z,H)
+    n = size(H,1)
+    T = promote_type(eltype(Z),eltype(H))
+    r = Vector{T}(undef,n+1)
+    v = view(Z,1:n)
+    λ = Z[n+1]
+    rv = view(r,1:n)
+    rv .= v
+    mul!(rv,H,v,one(T),-λ)        # rv = H*v - λ*v
+    r[n+1] = dot(v,v) - one(T)    # normalization
+    return r
+end
+
+function eigmin_ad(H::HH) where HH
+    n = size(H,1)
+    n == 1 && return H[1,1]
+    if !has_dual(H)
+        return eigmin(Hermitian(H))
+    end
+    Hp = Solvers.primalval.(H)
+    F  = eigen(Hermitian(Hp),1:1)
+    Zp = vcat(F.vectors[:,1],F.values[1])
+    Z  = ift(Zp,eigmin_residual,H,Hp)
+    return Z[end]
+end
+
 #unit handling
 include("XY_methods/units.jl")
 

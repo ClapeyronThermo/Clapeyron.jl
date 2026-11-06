@@ -66,7 +66,7 @@ function VT_diffusive_eigvalue(model,_V,_T,_z = SA[1.0])
     if length(model) == 1
         return HΨ[1,1]
     end
-    return eigmin(Hermitian(HΨ)) # calculating just minimum eigenvalue more efficient than calculating all & finding min
+    return eigmin_ad(HΨ) # calculating just minimum eigenvalue more efficient than calculating all & finding min
 end
 
 """

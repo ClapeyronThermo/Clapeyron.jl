@@ -61,8 +61,8 @@ function spinodal_pressure(model::EoSModel,T,z=SA[1.];v0=nothing,phase=:unknown)
 
     ∑z = sum(z)
     if isnothing(v0) && !is_unknown(phase) && length(model) == 1
-        p1,v1 = pure_spinodal(model,T;phase)
-        return p1, ∑z*v1
+        p1,v1 = pure_spinodal(model,T,z;phase)
+        return p1, v1
     end
 
     model, idx_r = index_reduction(model,z)
@@ -70,8 +70,8 @@ function spinodal_pressure(model::EoSModel,T,z=SA[1.];v0=nothing,phase=:unknown)
 
     #reduced model has length = 1
     if isnothing(v0) && !is_unknown(phase) && length(model) == 1
-        V_spin = pure_spinodal(model,T;phase)
-        return pressure(model,V_spin,T),V_spin*∑z
+        p1,v1 = pure_spinodal(model,T;phase)
+        return return p1, v1
     end
 
     # Determine initial guess (if not provided)
@@ -81,14 +81,14 @@ function spinodal_pressure(model::EoSModel,T,z=SA[1.];v0=nothing,phase=:unknown)
         _v0 = x0_spinodal_pressure(model,T,z,phase)
     end
 
-    f(vz) = det_∂²A∂ϱᵢ²(model, T, x ./ exp(vz))
+    f(rho) = det_∂²A∂ϱᵢ²(model, T, x .* rho)
     if !isfinite(_v0)
         nan = zero(_v0)/zero(_v0)
         return nan,nan
     end
-    prob = Roots.ZeroProblem(Solvers.to_newton(f),log(_v0))
-    log_V_spin = Roots.solve(prob,Roots.Newton())
-    V_spin = exp(log_V_spin)
+    prob = Roots.ZeroProblem(Solvers.to_newton(f),1/_v0)
+    rho_spin = Roots.solve(prob,Solvers.GuardedNewton())
+    V_spin = 1/rho_spin
     p_spin = pressure(model,V_spin,T,x)
     return p_spin,V_spin
 end
@@ -222,17 +222,17 @@ function spinodal_temperature(model::EoSModel,p,z=SA[1.];T0=nothing,v0=nothing,p
 
     # Solve spinodal condition
     function f(X)
-        v,T = exp(X[1]),X[2]
-        ϱ = x./v
+        ρ,T = X[1],1/X[2]
+        ϱ = x .* ρ
         F1 = det_∂²A∂ϱᵢ²(model, T, ϱ)
-        F2 = (pressure(model, v, T, x) - p) * v / (R * T)
+        F2 = (pressure(model, 1/ρ, T, x) - p) / (ρ * R * T)
         res = SVector(F1,F2)
         return res
     end
-    x0 = SVector(log(_v0),_T0)
+    x0 = SVector(1/_v0,1/_T0)
     xsol = Solvers.nlsolve2(f,x0,Solvers.Newton2Var())
-    T_spin = xsol[2]
-    v_spin = exp(xsol[1])
+    T_spin = 1/xsol[2]
+    v_spin = 1/xsol[1]
     return T_spin,v_spin
 end
 
@@ -371,26 +371,22 @@ end
 # Objective function for spinodal calculation -> det(∂²A/∂ϱᵢ) = 0
 function det_∂²A∂ϱᵢ²(model,T,ϱ)
     H = Ψ_hessian(model,T,ϱ)
-    s = sqrt(sum(abs2, H))
-    n = size(H,1)
+    res =  eigmin_ad(H)
+    return res
+    #=
+    lbv = Solvers.primalval(lb_volume(model,T,ϱ))/Solvers.primalval(sum(ϱ))
+    Hscale = 1/(Rgas(model)*Solvers.primalval(T)*lbv)
+
     if ismutable(H)
-        H ./= s
+        H .*= Hscale
     else
-        H = H ./ s
+        H = H .* Hscale
     end
 
-    TT = eltype(H)
-
-    if n == 2
-        Hs11, Hs22 = H[1,1], H[2,2]
-        Hs12       = H[1,2]
-        return TT(Hs11*Hs22 - Hs12*Hs12)   # == det(H)
-    end
-
-    fac = Solvers.unsafe_LU!(H)
-
-    # calculates det(∂²A∂xᵢ² ⋅ ϱ) at V,T constant (see www.doi.org/10.1016/j.fluid.2017.04.009)
-    return TT(det(fac))
+    n = size(H,1)
+    n == 1 && return TT(H[1,1])
+    n == 2 && return TT(H[1,1]*H[2,2] - H[1,2]*H[1,2])
+    return TT(det(Solvers.unsafe_LU!(H))) =#
 end
 
 function det_∂²A∂ϱᵢ²(model,V,T,z)
@@ -467,12 +463,14 @@ function spinodal_maximum(model::EoSModel,z;v0=nothing)
     if v0 === nothing
         v0 = x0_crit_pure(model_r,z_r)
     end
-    Ts = T_scale(model_r,z_r)
-    x0 = SVector(v0[1],v0[2]) #could replace for MVector{2}
-    f(x) = obj_spinodal_maximum(model_r, exp10(x[2]), Ts*x[1], z_r)
+    
+    vol0 = exp10(v0[2])
+    T0 = T_scale(model_r,z_r)*v0[1]
+    x0 = SVector(1/vol0,1/T0) #could replace for MVector{2}
+    f(x) = obj_spinodal_maximum(model_r, 1/x[1], 1/x[2], z_r)
     sol  = Solvers.nlsolve2(f,x0,Solvers.Newton2Var())
-    T_c = sol[1]*Ts
-    V_c = exp10(sol[2])
+    V_c = 1/sol[1]
+    T_c = 1/sol[2]
     p_c = pressure(model_r, V_c, T_c, z_r)
     return (T_c, p_c, ∑z*V_c)
 end
@@ -480,7 +478,8 @@ end
 function obj_spinodal_maximum(model,V,T,z)
     f = @deferred_V(det_∂²A∂ϱᵢ²,obj_spinodal_maximum)
     fv,dfv = Solvers.f∂f(f,V)
-    return SVector(fv,dfv)
+    lbv = lb_volume(model,T,z)
+    return SVector(fv,dfv*3*lbv)
 end
 
 #=
@@ -508,7 +507,7 @@ function Obj_crit_pure_sp(xx,model,p,z,ps,lb_v)
 end
 
 function eigmin_minimum_pressure(model,T,z,v0hi,v0lo = -second_virial_coefficient(model,T,z))
-    f0(v) = diffusive_eigvalue(model,exp(v),T,z)
+    f0(v) = VT_diffusive_eigvalue(model,exp(v),T,z)
     ln_vhi = log(v0hi)
     ln_vlo = log(v0lo)
     ln_v = Solvers.optimize(f0,(ln_vhi,ln_vlo),Solvers.BoundOptim1Var())
