@@ -28,7 +28,7 @@ Ignores non-diagonal entries already set.
 
 If a Single Parameter (or vector) is passed as input, it will be converted to a Pair Parameter with `σᵢᵢ = σᵢ`.
 """
-sigma_LorentzBerthelot(sigma,zeta = nothing) = kij_mix(mix_mean,sigma,zeta)
+sigma_LorentzBerthelot(sigma, zeta=nothing) = kij_mix(mix_mean, sigma, zeta)
 
 """
     sigma_LorentzBerthelot!(σ::PairParameter,ζ)::PairParam
@@ -49,7 +49,7 @@ If `ζᵢⱼ` is not defined, the definition is reduced to a simple arithmetic m
 
 The method overwrites the entries in `σ`, with the exception of diagonal entries.
 """
-sigma_LorentzBerthelot!(sigma,zeta = nothing) = kij_mix!(mix_mean,sigma,zeta)
+sigma_LorentzBerthelot!(sigma, zeta=nothing) = kij_mix!(mix_mean, sigma, zeta)
 
 """
     epsilon_LorentzBerthelot(ϵ::SingleOrPair,k)::PairParam
@@ -73,7 +73,7 @@ If `kᵢⱼ` is not defined, the definition is reduced to a simple geometric mea
 Ignores non-diagonal entries already set.
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `ϵᵢᵢ = ϵᵢ`.
 """
-epsilon_LorentzBerthelot(epsilon, k = nothing) = kij_mix(mix_geomean,epsilon,k)
+epsilon_LorentzBerthelot(epsilon, k=nothing) = kij_mix(mix_geomean, epsilon, k)
 
 """
     epsilon_LorentzBerthelot!(ϵ::PairParameter,k)::PairParam
@@ -96,7 +96,7 @@ If `kᵢⱼ` is not defined, the definition is reduced to a simple geometric mea
 
 The method overwrites the entries in `ϵ`, with the exception of diagonal entries.
 """
-epsilon_LorentzBerthelot!(epsilon, k = nothing) = kij_mix!(mix_geomean,epsilon,k)
+epsilon_LorentzBerthelot!(epsilon, k=nothing) = kij_mix!(mix_geomean, epsilon, k)
 
 """
     epsilon_HudsenMcCoubrey(ϵ::SingleOrPair,σ)::PairParam
@@ -121,9 +121,9 @@ Ignores non-diagonal entries already set.
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `ϵᵢᵢ = ϵᵢ`.
 """
 function epsilon_HudsenMcCoubrey end
-epsilon_HudsenMcCoubrey(epsilon, sigma) = pair_mix(mix_HudsenMcCoubrey,epsilon,sigma)
+epsilon_HudsenMcCoubrey(epsilon, sigma) = pair_mix(mix_HudsenMcCoubrey, epsilon, sigma)
 epsilon_HudsenMcCoubrey(epsilon) = epsilon_LorentzBerthelot(epsilon)
-epsilon_HudsenMcCoubrey(epsilon,::Nothing) = epsilon_HudsenMcCoubrey(epsilon)
+epsilon_HudsenMcCoubrey(epsilon, ::Nothing) = epsilon_HudsenMcCoubrey(epsilon)
 
 """
     epsilon_HudsenMcCoubrey!(ϵ::PairParameter,σ)::PairParam
@@ -147,9 +147,9 @@ If `σᵢⱼ` is not defined, the definition is reduced to a simple geometric me
 The method overwrites the entries in `ϵ`, with the exception of diagonal entries.
 """
 function epsilon_HudsenMcCoubrey! end
-epsilon_HudsenMcCoubrey!(epsilon, sigma) = pair_mix!(mix_HudsenMcCoubrey,epsilon,sigma)
+epsilon_HudsenMcCoubrey!(epsilon, sigma) = pair_mix!(mix_HudsenMcCoubrey, epsilon, sigma)
 epsilon_HudsenMcCoubrey!(epsilon) = epsilon_LorentzBerthelot!(epsilon)
-epsilon_HudsenMcCoubrey!(epsilon,::Nothing) = epsilon_HudsenMcCoubrey!(epsilon)
+epsilon_HudsenMcCoubrey!(epsilon, ::Nothing) = epsilon_HudsenMcCoubrey!(epsilon)
 
 """
     epsilon_HudsenMcCoubreysqrt(ϵ::SingleOrPair,σ)::PairParam
@@ -158,21 +158,25 @@ epsilon_HudsenMcCoubrey!(epsilon,::Nothing) = epsilon_HudsenMcCoubrey!(epsilon)
     epsilon_HudsenMcCoubreysqrt(ϵ::Union{AbstractVector,AbstractMatrix})::AbstractMatrix
 
 Combining rule for a single or pair parameter. Returns a pair parameter with non diagonal entries equal to:
+
 ```
 ϵᵢⱼ = √(ϵᵢϵⱼ * σᵢᵢ^3 * σⱼⱼ^3)/σᵢⱼ^3
 ```
+
 If `σᵢⱼ` is not defined, the definition is reduced to a simple geometric mean:
+
 ```
 ϵᵢⱼ = √(ϵᵢϵⱼ)
 ```
+
 Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `ϵᵢᵢ = ϵᵢ`.
 """
 function epsilon_HudsenMcCoubreysqrt end
-epsilon_HudsenMcCoubreysqrt(epsilon, sigma) = pair_mix(mix_HudsenMcCoubreysqrt,epsilon,sigma)
+epsilon_HudsenMcCoubreysqrt(epsilon, sigma) = pair_mix(mix_HudsenMcCoubreysqrt, epsilon, sigma)
 epsilon_HudsenMcCoubreysqrt(epsilon) = epsilon_LorentzBerthelot(epsilon)
-epsilon_HudsenMcCoubreysqrt(epsilon,::Nothing) = epsilon_LorentzBerthelot(epsilon)
+epsilon_HudsenMcCoubreysqrt(epsilon, ::Nothing) = epsilon_LorentzBerthelot(epsilon)
 
 """
     epsilon_HudsenMcCoubreysqrt!(ϵ::PairParameter,σ)::PairParam
@@ -197,7 +201,7 @@ The method overwrites the entries in `ϵ`, with the exception of diagonal entrie
 """
 function epsilon_HudsenMcCoubreysqrt! end
 epsilon_HudsenMcCoubreysqrt!(epsilon) = epsilon_LorentzBerthelot!(epsilon)
-epsilon_HudsenMcCoubreysqrt!(epsilon, sigma) = pair_mix!(mix_HudsenMcCoubreysqrt,epsilon,sigma)
+epsilon_HudsenMcCoubreysqrt!(epsilon, sigma) = pair_mix!(mix_HudsenMcCoubreysqrt, epsilon, sigma)
 epsilon_HudsenMcCoubreysqrt!(epsilon, ::Nothing) = epsilon_HudsenMcCoubreysqrt!(epsilon)
 
 """
@@ -205,18 +209,22 @@ epsilon_HudsenMcCoubreysqrt!(epsilon, ::Nothing) = epsilon_HudsenMcCoubreysqrt!(
     lambda_LorentzBerthelot(λ::Union{AbstractVector,AbstractMatrix},k = 3)::AbstractMatrix
 
 Combining rule for a single or pair parameter. Returns a pair parameter with non diagonal entries equal to:
+
 ```
 λᵢⱼ = k + √((λᵢᵢ - k)(λⱼⱼ - k))
 ```
+
 with `k = 0` the definition is reduced to a simple geometric mean:
+
 ```
 λᵢⱼ = √(λᵢλⱼ)
 ```
+
 Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `λᵢᵢ = λᵢ`.
 """
-lambda_LorentzBerthelot(lambda,k = 3) = kij_mix(MixLambda(k),lambda)
+lambda_LorentzBerthelot(lambda, k=3) = kij_mix(MixLambda(k), lambda)
 
 """
     lambda_LorentzBerthelot!(λ::PairParameter,k = 3)::PairParam
@@ -236,68 +244,70 @@ with `k = 0` the definition is reduced to a simple geometric mean:
 
 The method overwrites the entries in `λ`, with the exception of diagonal entries.
 """
-lambda_LorentzBerthelot!(lambda::PairParameter,k = 3) = kij_mix!(MixLambda(k),lambda)
+lambda_LorentzBerthelot!(lambda::PairParameter, k=3) = kij_mix!(MixLambda(k), lambda)
 
 """
     lambda_squarewell(λ::SingleOrPair,σ)::PairParam
     lambda_squarewell(λ::Union{AbstractVector,AbstractMatrix},σ)::AbstractMatrix
 
 Combining rule for a single or pair parameter. Returns a pair parameter with non diagonal entries equal to:
+
 ```
 λᵢⱼ = (σᵢᵢλᵢᵢ + σⱼⱼλⱼⱼ)/(σᵢᵢ + σⱼⱼ)
 ```
+
 Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `λᵢᵢ = λᵢ`.
 """
-lambda_squarewell(lambda, sigma) = pair_mix(mix_lambda_squarewell,lambda,sigma)
+lambda_squarewell(lambda, sigma) = pair_mix(mix_lambda_squarewell, lambda, sigma)
 
 """
     lambda_squarewell!(λ::PairParameter,σ)::PairParam
     lambda_squarewell!(λ::AbstractMatrix,σ)::AbstractMatrix
 
 Combining rule for pair parameters. Returns a pair parameter with non diagonal entries equal to:
+
 ```
 λᵢⱼ = (σᵢᵢλᵢᵢ + σⱼⱼλⱼⱼ)/(σᵢᵢ + σⱼⱼ)
 ```
+
 Ignores non-diagonal entries already set.
 
 The method overwrites the entries in `λ`, with the exception of diagonal entries.
 """
-lambda_squarewell!(lambda, sigma) = pair_mix!(mix_lambda_squarewell,lambda,sigma)
+lambda_squarewell!(lambda, sigma) = pair_mix!(mix_lambda_squarewell, lambda, sigma)
 
 """
     mirror_pair!(param::PairParam,f = identity)
 
-Performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. By default, `f = identity` (a symmetric matrix). 
+Performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. By default, `f = identity` (a symmetric matrix).
 One key difference is that it sets the `ismissingvalues` field for each modified index to `false`.
 """
-function mirror_pair!(param::PairParameter,f = identity)
-    mirror_pair!(param.values,param.ismissingvalues,f)
+function mirror_pair!(param::PairParameter, f=identity)
+    mirror_pair!(param.values, param.ismissingvalues, f)
     return param
 end
 
 """
     mirror_pair(param::PairParam,f = identity)
 
-Performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. By default, `f = identity` (a symmetric matrix). 
+Performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. By default, `f = identity` (a symmetric matrix).
 One key difference is that it sets the `ismissingvalues` field for each modified index to `false`.
 """
-mirror_pair(param::PairParameter,f = identity) = mirror_pair!(deepcopy(param),f)
-
-
+mirror_pair(param::PairParameter, f=identity) = mirror_pair!(deepcopy(param), f)
 
 export kij_mix, kij_mix!
 export pair_mix, pair_mix!
-export ijab_mix,ijab_mix!
+export ijab_mix, ijab_mix!
 export sigma_LorentzBerthelot, sigma_LorentzBerthelot!
 export epsilon_LorentzBerthelot, epsilon_LorentzBerthelot!
 export epsilon_HudsenMcCoubrey, epsilon_HudsenMcCoubrey!
 export epsilon_HudsenMcCoubreysqrt, epsilon_HudsenMcCoubreysqrt!
 export lambda_LorentzBerthelot, lambda_LorentzBerthelot!
 export lambda_squarewell, lambda_squarewell!
-export bondvol_mix,epsilon_assoc_mix,dufal_mix
-export bondvol_mix!,epsilon_assoc_mix!,dufal_mix!
+export bondvol_mix, epsilon_assoc_mix, dufal_mix
+export bondvol_mix!, epsilon_assoc_mix!, dufal_mix!
 export ijab_zero_mix, ijab_zero_mix!
 export group_sum, group_sum!
 export group_pairmean, group_pairmean!

@@ -1,5 +1,6 @@
 """
     AssocParam{T}
+
 Struct holding association parameters.
 """
 struct AssocParam{T} <: ClapeyronParam
@@ -12,88 +13,87 @@ struct AssocParam{T} <: ClapeyronParam
 end
 
 #barebones constructor, we provide vals and sites
-function AssocParam(name,components,values::Compressed4DMatrix{T},sites,src,sourcecsv) where T
+function AssocParam(name, components, values::Compressed4DMatrix{T}, sites, src, sourcecsv) where T
     vals_length = Compressed4DMatrices.nblocks(values)
-    param_length_check(AssocParam,name,length(components),vals_length)
-    AssocParam{T}(name,components,values,sites,src,sourcecsv)
+    param_length_check(AssocParam, name, length(components), vals_length)
+    AssocParam{T}(name, components, values, sites, src, sourcecsv)
 end
 
-function AssocParam(name,components,values::AbstractMatrix{<:AbstractMatrix{T}},sites,src,sourcecsv) where T
-    return AssocParam(name,components,Compressed4DMatrix(values),sites,src,sourcecsv)
+function AssocParam(name, components, values::AbstractMatrix{<:AbstractMatrix{T}}, sites, src, sourcecsv) where T
+    return AssocParam(name, components, Compressed4DMatrix(values), sites, src, sourcecsv)
 end
 
-AssocParam(name,components,values,sites,src) = AssocParam(name,components,values,sites,src,nothing)
-AssocParam(name,components,values,sites) = AssocParam(name,components,values,sites,nothing,nothing)
+AssocParam(name, components, values, sites, src) = AssocParam(name, components, values, sites, src, nothing)
+AssocParam(name, components, values, sites) = AssocParam(name, components, values, sites, nothing, nothing)
 
 #constructor in case we provide just the compressed assoc matrix, we build the sites using only assoc info
 function AssocParam(name, components, values::AbstractMatrix{<:AbstractMatrix{T}}) where T
     return AssocParam(name, components, Compressed4DMatrix(values))
 end
 
-function _param_from_values(x::X,param::AssocParam) where X <: Compressed4DMatrix{T} where T
-    return AssocParam{T}(param.name,param.components,x,param.sites,param.sourcecsvs,param.sources)
+function _param_from_values(x::X, param::AssocParam) where X<:Compressed4DMatrix{T} where T
+    return AssocParam{T}(param.name, param.components, x, param.sites, param.sourcecsvs, param.sources)
 end
 
-function _param_from_values(x::Vector{T},param::AssocParam) where T
+function _param_from_values(x::Vector{T}, param::AssocParam) where T
     v = param.values
-    param_from_values(param_from_values(x,v),param)
+    param_from_values(param_from_values(x, v), param)
 end
 
 raw_values(param::AssocParam) = param.values.values
 
-Solvers.primalval(x::T) where T <: AssocParam = param_from_values(Solvers.primalval_eager(raw_values(x)),x) 
+Solvers.primalval(x::T) where T<:AssocParam = param_from_values(Solvers.primalval_eager(raw_values(x)), x)
 
-function AssocParam(name,components,vals::Compressed4DMatrix{T}) where T
+function AssocParam(name, components, vals::Compressed4DMatrix{T}) where T
     if !isempty(vals.values)
         ss = [String[] for _ in 1:length(components)]
-        for (idx, (i,j), (a,b)) in indices(vals)
+        for (idx, (i, j), (a, b)) in indices(vals)
             s_i = ss[i]
             s_j = ss[j]
             if length(s_i) < a
-                resize!(s_i,a)
+                resize!(s_i, a)
             end
 
             if length(s_j) < b
-                resize!(s_j,b)
+                resize!(s_j, b)
             end
             s_i[a] = "$(components[i])/site $a"
             s_j[b] = "$(components[j])/site $b"
         end
-        return AssocParam(name,components,vals,ss)
+        return AssocParam(name, components, vals, ss)
     else
-        return AssocParam(name,components,vals,nothing)
+        return AssocParam(name, components, vals, nothing)
     end
 end
 
 # If no value is provided, just initialise empty param.
-function AssocParam{T}(name,components) where T <: Number 
-    AssocParam(name,components,Compressed4DMatrix{T}(),nothing)
+function AssocParam{T}(name, components) where T<:Number
+    AssocParam(name, components, Compressed4DMatrix{T}(), nothing)
 end
 
-AssocParam(name,components) = AssocParam{Float64}(name,components)
+AssocParam(name, components) = AssocParam{Float64}(name, components)
 
-function Base.copyto!(dest::AssocParam,src::Base.Broadcast.Broadcasted)
-    Base.copyto!(dest.values.values,src)
+function Base.copyto!(dest::AssocParam, src::Base.Broadcast.Broadcasted)
+    Base.copyto!(dest.values.values, src)
     return dest
 end
 
 Base.broadcastable(param::AssocParam) = param.values.values
 Base.BroadcastStyle(::Type{<:AssocParam}) = Broadcast.Style{AssocParam}()
 
-
-function Base.copyto!(dest::AssocParam,src::AbstractArray)
-    Base.copyto!(dest.values.values,src)
+function Base.copyto!(dest::AssocParam, src::AbstractArray)
+    Base.copyto!(dest.values.values, src)
     return dest
 end
 
-function Base.copyto!(dest::AssocParam,src::AssocParam) #used to set params
+function Base.copyto!(dest::AssocParam, src::AssocParam) #used to set params
     #key check
     dest.components == src.components || throw(DimensionMismatch("components of source and destination single parameters are not the same for $dest"))
-    copyto!(dest.values,src.values)
+    copyto!(dest.values, src.values)
     dest_sites = dest.sites
     src_sites = src.sites
-    for (i,site) in enumerate(dest_sites)
-        copy!(site,src_sites[i]) #copy also changes size
+    for (i, site) in enumerate(dest_sites)
+        copy!(site, src_sites[i]) #copy also changes size
     end
     return dest
 end
@@ -103,77 +103,77 @@ Base.eltype(param::Type{<:AssocParam{T}}) where T = T
 
 Base.size(param::AssocParam) = size(param.values.values)
 
-function Base.getindex(param::AssocParam,i::Int)
-    Base.checkbounds(param.components,i)
-    getindex(param.values,i,i)
+function Base.getindex(param::AssocParam, i::Int)
+    Base.checkbounds(param.components, i)
+    getindex(param.values, i, i)
 end
 
-function Base.getindex(param::AssocParam,i::AbstractString)
-    idx = findfirst(isequal(i),param.components)
-    isnothing(idx) && throw(BoundsError(param,-1))
-    getindex(param.values,idx,idx)
+function Base.getindex(param::AssocParam, i::AbstractString)
+    idx = findfirst(isequal(i), param.components)
+    isnothing(idx) && throw(BoundsError(param, -1))
+    getindex(param.values, idx, idx)
 end
 
-function Base.getindex(param::AssocParam,i::Int,j::Int)
-    Base.checkbounds(param.components,max(i,j))
-    getindex(param.values,i,j)
+function Base.getindex(param::AssocParam, i::Int, j::Int)
+    Base.checkbounds(param.components, max(i, j))
+    getindex(param.values, i, j)
 end
 
-function Base.getindex(param::AssocParam,i::AbstractString,j::AbstractString)
-    idx_i = findfirst(isequal(i),param.components)
-    idx_j = findfirst(isequal(j),param.components)
+function Base.getindex(param::AssocParam, i::AbstractString, j::AbstractString)
+    idx_i = findfirst(isequal(i), param.components)
+    idx_j = findfirst(isequal(j), param.components)
     if idx_i === nothing && idx_j === nothing
-        throw(BoundsError(param,(-1,-1)))
+        throw(BoundsError(param, (-1, -1)))
     elseif idx_i === nothing
-        throw(BoundsError(param,(-1,idx_j)))
+        throw(BoundsError(param, (-1, idx_j)))
     elseif idx_j === nothing
-        throw(BoundsError(param,(idx_i,-1)))
+        throw(BoundsError(param, (idx_i, -1)))
     else
-       return param[idx_i::Int,idx_j::Int]
+        return param[idx_i::Int, idx_j::Int]
     end
 end
 
-function Base.getindex(param::AssocParam,i::NTuple{2,String},j::NTuple{2,String})
+function Base.getindex(param::AssocParam, i::NTuple{2,String}, j::NTuple{2,String})
     ii = first(i)
     jj = first(j)
     aa = last(i)
     bb = last(j)
-    idx_i,idx_j = _str_to_idx(param,ii,jj)
-    sites_i,sites_j = param.sites[idx_i],param.sites[idx_j]
-    _idx_a = findfirst(isequal(aa),sites_i)
-    _idx_b = findfirst(isequal(bb),sites_j)
+    idx_i, idx_j = _str_to_idx(param, ii, jj)
+    sites_i, sites_j = param.sites[idx_i], param.sites[idx_j]
+    _idx_a = findfirst(isequal(aa), sites_i)
+    _idx_b = findfirst(isequal(bb), sites_j)
     idx_a = _idx_a === nothing ? 0 : _idx_a
     idx_b = _idx_b === nothing ? 0 : _idx_b
-    param[idx_i::Int,idx_j::Int][idx_a::Int,idx_b::Int]
+    param[idx_i::Int, idx_j::Int][idx_a::Int, idx_b::Int]
 end
 
-function Base.setindex!(param::AssocParam,val,i::NTuple{2,String},j::NTuple{2,String},symmetric = false)
+function Base.setindex!(param::AssocParam, val, i::NTuple{2,String}, j::NTuple{2,String}, symmetric=false)
     ii = first(i)
     jj = first(j)
     aa = last(i)
     bb = last(j)
-    idx_i,idx_j = _str_to_idx(param,ii,jj)
-    sites_i,sites_j = param.sites[idx_i],param.sites[idx_j]
-    _idx_a = findfirst(isequal(aa),sites_i)
-    _idx_b = findfirst(isequal(bb),sites_j)
+    idx_i, idx_j = _str_to_idx(param, ii, jj)
+    sites_i, sites_j = param.sites[idx_i], param.sites[idx_j]
+    _idx_a = findfirst(isequal(aa), sites_i)
+    _idx_b = findfirst(isequal(bb), sites_j)
     idx_a = _idx_a === nothing ? 0 : _idx_a
     idx_b = _idx_b === nothing ? 0 : _idx_b
-    assoc_view = param[idx_i::Int,idx_j::Int]
-    setindex!(assoc_view,val,idx_a::Int,idx_b::Int,symmetric)
+    assoc_view = param[idx_i::Int, idx_j::Int]
+    setindex!(assoc_view, val, idx_a::Int, idx_b::Int, symmetric)
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", param::AssocParam{T}) where T
     print(io, typeof(param))
-    print(io,"(")
+    print(io, "(")
     print(io, param.components)
     l = length(param.values.values)
-    print(io, ") with ", l, " value", ifelse(l==1,"","s"),":")
+    print(io, ") with ", l, " value", ifelse(l==1, "", "s"), ":")
     l != 0 && println(io)
     comps = param.components
     vals = param.values
     sitenames = param.sites
     if l > 0
-        for (idx, (i,j), (a,b)) in indices(vals)
+        for (idx, (i, j), (a, b)) in indices(vals)
             try
                 s1 = sitenames[i][a]
                 s2 = sitenames[j][b]
@@ -184,7 +184,7 @@ function Base.show(io::IO, mime::MIME"text/plain", param::AssocParam{T}) where T
                 print(io, vals.values[idx])
                 l != idx && println(io)
             catch
-                println(io,"error at i = $i, j = $j a = $a, b = $b")
+                println(io, "error at i = $i, j = $j a = $a, b = $b")
             end
         end
     end
@@ -196,5 +196,5 @@ function Base.show(io::IO, param::AssocParam)
 end
 
 #convert utilities
-Base.convert(::Type{AssocParam{T1}},param::AssocParam{T2}) where {T1<:Number,T2<:Number} = param_from_values(convert(Vector{T1},raw_values(param)),param)
-Base.convert(::Type{AssocParam{String}},param::AssocParam{<:AbstractString}) = param_from_values(convert(Vector{String},raw_values(param)),param)
+Base.convert(::Type{AssocParam{T1}}, param::AssocParam{T2}) where {T1<:Number,T2<:Number} = param_from_values(convert(Vector{T1}, raw_values(param)), param)
+Base.convert(::Type{AssocParam{String}}, param::AssocParam{<:AbstractString}) = param_from_values(convert(Vector{String}, raw_values(param)), param)

@@ -14,14 +14,19 @@ end
     userlocations = String[],
     activity_userlocations = String[],
     verbose::Bool=false)
+
 ## Input Parameters
+
 None
 
 ## Input models
 
-- `activity`: Activity Model
+  - `activity`: Activity Model
+
 ## Description
+
 Mixing Rule used by the Universal Mixing Rule Peng-Robinson [`UMRPR`](@ref) equation of state.
+
 ```
 aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
 bᵢⱼ = (1 - lᵢⱼ)((√bᵢ +√bⱼ)/2)^2
@@ -31,9 +36,11 @@ ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - [gᴱ/RT]/0.53)
 
 ## Model Construction Examples
 ```
+
 # Note: this model was meant to be used exclusively with the UNIFAC activity model.
 
 # Using the default database
+
 mixing = VTPRRule(["water","carbon dioxide"]) #default: UNIFAC Activity Coefficient.
 mixing = VTPRRule(["water","carbon dioxide"],activity = NRTL) #passing another Activity Coefficient Model
 mixing = VTPRRule([("ethane",["CH3" => 2]),("butane",["CH2" => 2,"CH3" => 2])],activity = ogUNIFAC) #passing a GC Activity Coefficient Model.
@@ -46,63 +53,66 @@ mixing = VTPRRule(["water","ethanol"],activity = act_model)
 # Using user-provided parameters
 
 # Passing files or folders
+
 mixing = VTPRRule(["water","ethanol"]; activity = NRTL, activity_userlocations = ["path/to/my/db","nrtl_ge.csv"])
 
 # Passing parameters directly
+
 mixing = VTPRRule(["water","ethanol"];
-                activity = NRTL,
-                userlocations = (a = [0.0 3.458; -0.801 0.0],
-                    b = [0.0 -586.1; 246.2 0.0],
-                    c = [0.0 0.3; 0.3 0.0])
-                )
+activity = NRTL,
+userlocations = (a = [0.0 3.458; -0.801 0.0],
+b = [0.0 -586.1; 246.2 0.0],
+c = [0.0 0.3; 0.3 0.0])
+)
+
 ```
 
 ```
 """
 UMRRule
 export UMRRule
-function UMRRule(components; activity = UNIFAC, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)
-    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
+function UMRRule(components; activity=UNIFAC, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
+    _activity = init_mixing_act(activity, components, activity_userlocations, verbose)
     references = ["10.1021/ie049580p"]
-    model = UMRRule(format_components(components), _activity,references)
+    model = UMRRule(format_components(components), _activity, references)
     return model
 end
 
-function ab_premixing(model::PRModel,mixing::UMRRuleModel, k, l)
+function ab_premixing(model::PRModel, mixing::UMRRuleModel, k, l)
     a = model.params.a
     b = model.params.b
     ab_diagvalues!(model)
     epsilon_LorentzBerthelot!(a)
-    umr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,0.5)
-    kij_mix!(umr_mix,b,l)
-    return a,b
+    umr_mix(bi, bj, lij) = mix_powmean(bi, bj, lij, 0.5)
+    kij_mix!(umr_mix, b, l)
+    return a, b
 end
 
-UMR_g_E(model,V,T,z) = excess_gibbs_free_energy(model,V,T,z)
+UMR_g_E(model, V, T, z) = excess_gibbs_free_energy(model, V, T, z)
 
-function UMR_g_E(model::UNIFACModel,V,T,z)
-    g_SG  = excess_g_SG(model,1e5,T,z)
-    g_res = excess_g_res(model,1e5,T,z)
+function UMR_g_E(model::UNIFACModel, V, T, z)
+    g_SG  = excess_g_SG(model, 1e5, T, z)
+    g_res = excess_g_res(model, 1e5, T, z)
     return g_SG+g_res
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b)
+function mixing_rule(model::PRModel, V, T, z, mixing_model::UMRRuleModel, α, a, b)
     n = sum(z)
     activity = mixing_model.activity
     invn = (one(n)/n)
     invn2 = invn^2
-    g_E = UMR_g_E(activity,V,T,z) * invn
+    g_E = UMR_g_E(activity, V, T, z) * invn
     #b = Diagonal(b).diag
     #b = ((b.^(1/2).+b'.^(1/2))/2).^2
-    b̄ = dot(z,Symmetric(b),z) * invn2
-    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
-    Σab = sum(z[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)*invn
+    b̄ = dot(z, Symmetric(b), z) * invn2
+    c̄ = translation2(model, V, T, z, model.translation, a, b, α)*invn
+    Σab = sum(z[i]*a[i, i]*α[i]/b[i, i]/(R̄*T) for i ∈ @comps)*invn
     ā = b̄*R̄*T*(Σab-1/0.53*g_E/(R̄*T))
-    return ā,b̄,c̄
+    return ā, b̄, c̄
 end
 
-function cubic_get_l(model::CubicModel,mixing::UMRRuleModel,params)
-    return get_k_powmean(params.b.values,0.5)
+function cubic_get_l(model::CubicModel, mixing::UMRRuleModel, params)
+    return get_k_powmean(params.b.values, 0.5)
 end
 
 """
@@ -119,30 +129,17 @@ end
     verbose = false)
 
 Universal Mixing Rule Peng Robinson equation of state. It uses the following models:
-- Translation Model: [`MTTranslation`](@ref)
-- Alpha Model: [`MTAlpha`](@ref)
-- Mixing Rule Model: [`UMRRule`](@ref) with [`UNIFAC`](@ref) activity
+
+  - Translation Model: [`MTTranslation`](@ref)
+  - Alpha Model: [`MTAlpha`](@ref)
+  - Mixing Rule Model: [`UMRRule`](@ref) with [`UNIFAC`](@ref) activity
+
 ## References
-1. Voutsas, E., Magoulas, K., & Tassios, D. (2004). Universal mixing rule for cubic equations of state applicable to symmetric and asymmetric systems: Results with the Peng−Robinson equation of state. Industrial & Engineering Chemistry Research, 43(19), 6238–6246. [doi:10.1021/ie049580p](https://doi.org/10.1021/ie049580p)
+
+ 1. Voutsas, E., Magoulas, K., & Tassios, D. (2004). Universal mixing rule for cubic equations of state applicable to symmetric and asymmetric systems: Results with the Peng−Robinson equation of state. Industrial & Engineering Chemistry Research, 43(19), 6238–6246. [doi:10.1021/ie049580p](https://doi.org/10.1021/ie049580p)
 """
-function UMRPR(components;
-    idealmodel = BasicIdeal,
-    userlocations = String[],
-    group_userlocations = String[],
-    ideal_userlocations = String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    reference_state = nothing,
-    verbose = false)
-
-
-    activity = UNIFAC(components,
-                puremodel = BasicIdeal,
-                userlocations = activity_userlocations,
-                group_userlocations = group_userlocations,
-                verbose = verbose)
+function UMRPR(components; idealmodel=BasicIdeal, userlocations=String[], group_userlocations=String[], ideal_userlocations=String[], alpha_userlocations=String[], mixing_userlocations=String[], activity_userlocations=String[], translation_userlocations=String[], reference_state=nothing, verbose=false)
+    activity = UNIFAC(components, puremodel=BasicIdeal, userlocations=activity_userlocations, group_userlocations=group_userlocations, verbose=verbose)
 
     _components = activity.groups.components #extract pure component list
 
@@ -150,19 +147,6 @@ function UMRPR(components;
     alpha = MTAlpha
     mixing = UMRRule
 
-    return PR(_components;
-    idealmodel = idealmodel,
-    alpha = alpha,
-    mixing = mixing,
-    activity = activity,
-    translation = translation,
-    userlocations = userlocations,
-    ideal_userlocations = ideal_userlocations,
-    alpha_userlocations = alpha_userlocations,
-    mixing_userlocations = mixing_userlocations,
-    activity_userlocations = activity_userlocations,
-    translation_userlocations = translation_userlocations,
-    reference_state = reference_state,
-    verbose = verbose)
+    return PR(_components; idealmodel=idealmodel, alpha=alpha, mixing=mixing, activity=activity, translation=translation, userlocations=userlocations, ideal_userlocations=ideal_userlocations, alpha_userlocations=alpha_userlocations, mixing_userlocations=mixing_userlocations, activity_userlocations=activity_userlocations, translation_userlocations=translation_userlocations, reference_state=reference_state, verbose=verbose)
 end
 export UMRPR

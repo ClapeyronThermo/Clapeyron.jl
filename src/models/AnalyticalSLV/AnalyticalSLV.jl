@@ -17,9 +17,9 @@ end
 
 abstract type AnalyticalSLVModel <: EoSModel end
 @newmodel AnalyticalSLV AnalyticalSLVModel AnalyticalSLVParam false
-default_locations(::Type{AnalyticalSLV}) = ["properties/critical.csv","properties/molarmass.csv","AnalyticalSLV/SLV_Like.csv"]
+default_locations(::Type{AnalyticalSLV}) = ["properties/critical.csv", "properties/molarmass.csv", "AnalyticalSLV/SLV_Like.csv"]
 default_references(::Type{AnalyticalSLV}) = ["10.1023/a:1024015729095"]
-function transform_params(::Type{AnalyticalSLV},params)
+function transform_params(::Type{AnalyticalSLV}, params)
     c = params["cr"]
     d = params["dr"]
     Vc = params["Vc"]
@@ -32,7 +32,7 @@ end
 
 export AnalyticalSLV
 
-function abcd(model::AnalyticalSLVModel,V,T,z=SA[1.0])
+function abcd(model::AnalyticalSLVModel, V, T, z=SA[1.0])
     ∑z = sum(z)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
@@ -65,7 +65,7 @@ function abcd(model::AnalyticalSLVModel,V,T,z=SA[1.0])
         ari = a0[i] + a1[i]*exp(-a2[i]*Tri^n[i])
         ai = ari*(R̄*Tci)^2/Pc[i]
         ā += zi*zi*ai
-        for j in 1:(i-1)
+        for j in 1:(i - 1)
             Tcj = Tc[j]
             Trj = T/Tcj
             arj = a0[j] + a1[j]*exp(-a2[j]*Trj^n[j])
@@ -76,12 +76,12 @@ function abcd(model::AnalyticalSLVModel,V,T,z=SA[1.0])
     end
     ā = ā/∑z/∑z
     b̄ = b̄/∑z
-    c̄ = dot(c,z)/∑z
-    d̄ = dot(d,z)/∑z
-    return ā,b̄,c̄,d̄
+    c̄ = dot(c, z)/∑z
+    d̄ = dot(d, z)/∑z
+    return ā, b̄, c̄, d̄
 end
 
-function x0_volume_solid(model::AnalyticalSLVModel,T,z = SA[1.0])
+function x0_volume_solid(model::AnalyticalSLVModel, T, z=SA[1.0])
     ∑z = sum(z)
     Tc = model.params.Tc.values
     Vc = model.params.Vc.values
@@ -106,16 +106,16 @@ function x0_volume_solid(model::AnalyticalSLVModel,T,z = SA[1.0])
     return 1.01*b̄
 end
 
-function lb_volume(model::AnalyticalSLVModel,T,z)
-    return x0_volume_solid(model,T,z)/1.01
+function lb_volume(model::AnalyticalSLVModel, T, z)
+    return x0_volume_solid(model, T, z)/1.01
 end
 
-function data(model::AnalyticalSLVModel,V,T,z)
-    return abcd(model,V,T,z)
+function data(model::AnalyticalSLVModel, V, T, z)
+    return abcd(model, V, T, z)
 end
 
-function x0_volume_liquid(model::AnalyticalSLVModel,T,z = SA[1.0])
-    return 1.01*dot(model.params.c.values,z)
+function x0_volume_liquid(model::AnalyticalSLVModel, T, z=SA[1.0])
+    return 1.01*dot(model.params.c.values, z)
 end
 
 function T_scale(model::AnalyticalSLVModel, z)
@@ -129,8 +129,8 @@ end
 function x0_crit_pure(model::AnalyticalSLVModel)
     Pc = model.params.Pc.values[1]
     Tc = model.params.Tc.values[1]
-    vc = volume(model,Pc,Tc,phase = :v)
-    return (1.01,log10(2*vc))
+    vc = volume(model, Pc, Tc, phase=:v)
+    return (1.01, log10(2*vc))
 end
 
 function p_scale(model::AnalyticalSLVModel, z)
@@ -141,22 +141,22 @@ function p_scale(model::AnalyticalSLVModel, z)
     return pc
 end
 
-function _pressure(model::AnalyticalSLVModel,V,T,z=SA[1.0])
+function _pressure(model::AnalyticalSLVModel, V, T, z=SA[1.0])
     _data = @f(data)
-    ā,b̄,c̄,d̄ = _data
+    ā, b̄, c̄, d̄ = _data
     v = V/sum(z)
     return R̄*T*(v-d̄)/(v-b̄)/(v-c̄) - ā/(v^2)
 end
 
-cubic_Δ(model::AnalyticalSLV,z) = (0.0,0.0)
+cubic_Δ(model::AnalyticalSLV, z) = (0.0, 0.0)
 
-function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
-    ā,b̄,c̄,d̄ = _data
+function a_res(model::AnalyticalSLVModel, V, T, z, _data=@f(data))
+    ā, b̄, c̄, d̄ = _data
     n = sum(z)
     RT⁻¹ = 1/(R̄*T)
 
     ρ = n/V
-    Δ1,Δ2 = cubic_Δ(model,z)
+    Δ1, Δ2 = cubic_Δ(model, z)
     ΔΔ = Δ2 - Δ1
 
     bd = (b̄ - d̄)
@@ -175,7 +175,7 @@ function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
         l2 = log1p(-Δ2*b̄ρt)
         return a₁ - ā*RT⁻¹*(l1-l2)/(ΔΔ*b̄)
     end
-   #return -(k1 + k2)/(b̄ - c̄) -  ā*ρ*RT⁻¹ - (d̄ - c̄)/(b̄ - c̄)
+    #return -(k1 + k2)/(b̄ - c̄) -  ā*ρ*RT⁻¹ - (d̄ - c̄)/(b̄ - c̄)
 end
 
 #a_res(V,T,z) = -integral(V -> (z(V)-1)/V,Inf,V)

@@ -53,8 +53,7 @@ function _ls_group_input(input)
     for (c, (name, grouppairs, bonds)) in enumerate(input)
         if isempty(bonds)
             gnames = first.(grouppairs)
-            length(gnames) == 1 ||
-                throw(ArgumentError("component \"$name\" has $(length(gnames)) distinct groups but no intragroup bonds were given"))
+            length(gnames) == 1 || throw(ArgumentError("component \"$name\" has $(length(gnames)) distinct groups but no intragroup bonds were given"))
             gc_intragroups[c] = [(gnames[1], gnames[1]) => 0]
         else
             gc_intragroups[c] = bonds
@@ -66,7 +65,7 @@ end
 """
     _ls_group_charge(g::String)
 
-Charge for a group named `g`. 
+Charge for a group named `g`.
 Reads only the *first character* against the fixed `"+"`/`"-"`/`"0"` convention (see this file's header), not the whole
 name, so a caller needing globally-unique group names for other reasons
 (e.g. one group per individual bead *position*, `"+_1"`, `"-_2"`, ...) can
@@ -75,8 +74,7 @@ suffix freely -- the leading charge symbol is all that's load-bearing.
 function _ls_group_charge(g::String)
     isempty(g) && throw(ArgumentError("empty LS group name"))
     symbol = string(first(g))
-    haskey(_LS_GROUP_CHARGE, symbol) ||
-        throw(ArgumentError("unrecognized LS group name \"$g\" -- must start with \"+\", \"-\", or \"0\""))
+    haskey(_LS_GROUP_CHARGE, symbol) || throw(ArgumentError("unrecognized LS group name \"$g\" -- must start with \"+\", \"-\", or \"0\""))
     return _LS_GROUP_CHARGE[symbol]
 end
 
@@ -94,13 +92,13 @@ end
     _ls_bond_counts(groups, Zvalues, c)
 
 Given a `GroupParam`, a vector of charges per bead and and index `c`, returns:
-- `Npm`: number of bonds between unlike-charge groups
-- `Nnc` number of bonds involving a neutral group (no units)
+
+  - `Npm`: number of bonds between unlike-charge groups
+  - `Nnc` number of bonds involving a neutral group (no units)
 
 The `GroupParam` must have their intragroup matrix initialized and, and only the group names (`+`,`-`,`0`) are allowed.
 """
 function _ls_bond_counts(groups::GroupParam, Zvalues::Vector{Int}, c::Int)
-
     #=
     `groups.n_intergroups[c]` (already sized to the *global* flattened-group
     count by `build_gc_intragroups!`) and the per-group charges `Zvalues`. A
@@ -116,7 +114,7 @@ function _ls_bond_counts(groups::GroupParam, Zvalues::Vector{Int}, c::Int)
     for idx1 in eachindex(i_groups_c)
         k = i_groups_c[idx1]
         Zvalues[k] == 0 && (Nnc += n_mat[k, k])
-        for idx2 in idx1+1:length(i_groups_c)
+        for idx2 in (idx1 + 1):length(i_groups_c)
             l = i_groups_c[idx2]
             n_mat[k, l] == 0 && continue
             if Zvalues[k] == 0 || Zvalues[l] == 0
@@ -157,8 +155,8 @@ Reduced per-group number densities `ρ★[k] = N_A Σ_c z[c] n_flattenedgroups[c
 (`σ`=`LS_SIGMA`), summed over every component `c`.
 """
 function ls_group_densities(groups::GroupParam, V, z)
-    TT = Base.promote_eltype(groups,V,z)
-    ρ = similar(z,TT,length(groups.n_flattenedgroups[1]))
+    TT = Base.promote_eltype(groups, V, z)
+    ρ = similar(z, TT, length(groups.n_flattenedgroups[1]))
     η = N_A * LS_SIGMA^3 / V
     for c in 1:length(z)
         zc = z[c]
@@ -180,16 +178,19 @@ end
     LSNeutral(input)
 
 ## Model Parameters
-- `N`: Bead count (no units)
-- `Npm`: Bonds between unlike-charge groups (no units)
-- `Nnc` Bonds involving a neutral group (no units)
+
+  - `N`: Bead count (no units)
+  - `Npm`: Bonds between unlike-charge groups (no units)
+  - `Nnc` Bonds involving a neutral group (no units)
 
 ## Input models
-- `idealmodel`: Ideal Model
+
+  - `idealmodel`: Ideal Model
 
 ## Description
-Neutral (density-only) half of the LS-theory bulk EOS. 
-Hard-sphere (BMCSL) + the Γ_MSA=0 limit of the TPT1 chain term. 
+
+Neutral (density-only) half of the LS-theory bulk EOS.
+Hard-sphere (BMCSL) + the Γ_MSA=0 limit of the TPT1 chain term.
 See [`LSIon`](@ref) for the charge-induced half; [`LS`](@ref) composes the two and is the usual entry point -- see its docstring for `input`'s format.
 
 `a_res` depends only on `N`/`Npm`/`Nnc` and the total reduced density (invariant to how beads are grouped).
@@ -208,7 +209,7 @@ function LSNeutral(input)
     return LSNeutral(components, groups, params)
 end
 
-function a_res(model::LSNeutral, V, T, z, ρ★ = ls_group_densities(model.groups, V, z))
+function a_res(model::LSNeutral, V, T, z, ρ★=ls_group_densities(model.groups, V, z))
     p = model.params
     ρtot = sum(ρ★)
     η = (π/6) * ρtot
@@ -255,15 +256,18 @@ end
     LSIon(input; RSPmodel=ConstRSP())
 
 ## Model Parameters
-- `Z`: Charge of each bead (no units)
-- `N`: Bead count (no units)
-- `Npm`: Bonds between unlike-charge groups (no units)
-- `Nnc` Bonds involving a neutral group (no units)
+
+  - `Z`: Charge of each bead (no units)
+  - `N`: Bead count (no units)
+  - `Npm`: Bonds between unlike-charge groups (no units)
+  - `Nnc` Bonds involving a neutral group (no units)
 
 ## Input models
-- `RSPmodel`: Relative Static Permittivity Model
+
+  - `RSPmodel`: Relative Static Permittivity Model
 
 ## Description
+
 Charge-induced half of the LS-theory bulk EOS.
 The restricted-primitive-model (equal bead size) Blum-MSA electrostatic free energy, plus the charge-induced correction to the TPT1 chain term.
 Shares its bead/bond data with [`LSNeutral`](@ref); [`LS`](@ref) composes the two and is the usualn entry point -- see its docstring for `input`'s format.
@@ -284,7 +288,7 @@ end
 
 data(model::LSIon, V, T, z) = ls_group_densities(model.groups, V, z)
 
-function a_res(model::LSIon, V, T, z, ρ★ = @f(data))
+function a_res(model::LSIon, V, T, z, ρ★=@f(data))
     Z = model.params.Z.values
     N = model.params.N.values
     Npm = model.params.Npm.values
@@ -296,7 +300,7 @@ function a_res(model::LSIon, V, T, z, ρ★ = @f(data))
     # Restricted primitive model (all beads the same size): the Blum-MSA
     # screening parameter Γ_MSA has this closed-form solution -- no
     # fixpoint iteration needed (unlike the general/asymmetric-size MSA.jl).
-    ρZ3 = @sum(ρ★[i] * Z[i]*Z[i]*abs(Z[i]))
+    ρZ3 = @sum(ρ★[i] * Z[i] * Z[i] * abs(Z[i]))
     κ_MSA = sqrt(4π * lB * ρZ3)
     Γ_MSA = (-1 + sqrt(1 + 2κ_MSA)) / 2
     fel = -Γ_MSA^3 * (2/3 + Γ_MSA) / π
@@ -308,7 +312,7 @@ function a_res(model::LSIon, V, T, z, ρ★ = @f(data))
     # exactly 0 here too (its (1+2·0+0-1)=0 identically).
     ρchain_tot = zero(κ_MSA)
     Δfch = zero(κ_MSA)
-    
+
     for c in eachindex(z)
         ρchain_c = N_A * z[c] * LS_SIGMA^3 / V
         ρchain_tot += ρchain_c
@@ -317,7 +321,6 @@ function a_res(model::LSIon, V, T, z, ρ★ = @f(data))
 
     return (fel + Δfch) / ρchain_tot
 end
-
 
 #=
 
@@ -341,22 +344,24 @@ end
     LS(input; RSPmodel=ConstRSP())
 
 ## Input models
-- `RSPmodel`: Relative Static Permittivity Model
+
+  - `RSPmodel`: Relative Static Permittivity Model
 
 ## Description
-Bulk liquid-state-theory EOS (Zhang et al. 2016) for a group-contribution pseudo-component built from charged/neutral beads. 
+
+Bulk liquid-state-theory EOS (Zhang et al. 2016) for a group-contribution pseudo-component built from charged/neutral beads.
 `input` is a list of `(component_name, group=>count pairs, (group1,group2)=>bond_count pairs)` triples, exactly the `HeterogcPCPSAFT`-style convention:
 
 ```julia
-model = LS([("polymer", ["+"=>10, "-"=>10], [("+","-")=>1, ("+","+")=>4, ("-","-")=>4]),
-            ("counterion", ["-"=>1], [])])
+model = LS([(\"polymer\", [\"+\"=>10, \"-\"=>10], [(\"+\", \"-\")=>1, (\"+\", \"+\")=>4, (\"-\", \"-\")=>4]), (\"counterion\", [\"-\"=>1], [])])
 ```
 
-Every group must be named `"+"` (charge +1), `"-"` (charge -1), or `"0"` (neutral) -- charge is read directly off the group name. 
+Every group must be named `"+"` (charge +1), `"-"` (charge -1), or `"0"` (neutral) -- charge is read directly off the group name.
 A component with a single distinct group and no bonds given (a bare free ion) has its trivial zero-bond self-pair filled in automatically.
 
 ## References
-1. Zhang, P., Alsaifi, N. M., Wu, J., & Wang, Z.-G. (2016). Salting-out and salting-in of polyelectrolyte solutions: A liquid-state theory study. Macromolecules, 49(24), 9720–9730. [doi:10.1021/acs.macromol.6b02160](https://doi.org/10.1021/acs.macromol.6b02160)
+
+ 1. Zhang, P., Alsaifi, N. M., Wu, J., & Wang, Z.-G. (2016). Salting-out and salting-in of polyelectrolyte solutions: A liquid-state theory study. Macromolecules, 49(24), 9720–9730. [doi:10.1021/acs.macromol.6b02160](https://doi.org/10.1021/acs.macromol.6b02160)
 """
 function LS(input; RSPmodel=ConstRSP())
     neutralmodel = LSNeutral(input)
@@ -366,7 +371,7 @@ end
 
 data(model::LS, V, T, z) = ls_group_densities(model.groups, V, z)
 
-function a_res(model::LS, V, T, z, ρ★ = @f(data))
+function a_res(model::LS, V, T, z, ρ★=@f(data))
     return a_res(model.neutralmodel, V, T, z, ρ★) + a_res(model.ionmodel, V, T, z, ρ★)
 end
 
@@ -409,10 +414,8 @@ Delegate to the general fixed-ray bisection instead (see `x0_crit_bisection`).
 =#
 x0_crit_mix(model::LS, z) = x0_crit_bisection(model, z)
 
-
 function component_charges(model::LS)
-    return [dot(model.charge,model.groups.n_flattenedgroups[c]) for c in 1:length(model)]
+    return [dot(model.charge, model.groups.n_flattenedgroups[c]) for c in 1:length(model)]
 end
 
 export LS, LSNeutral, LSIon
-
