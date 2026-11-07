@@ -17,17 +17,20 @@ export MSA
         verbose = false)
 
 ## Input models
-- `RSPmodel`: Relative Static Permittivity Model
+
+  - `RSPmodel`: Relative Static Permittivity Model
 
 ## Description
+
 This function is used to create a Mean Spherical Approximation model. The MSA term gives the excess Helmholtz energy to account for the electrostatic interactions between ions in solution.
 
 The screening length `Γ` is obtained by minimizing the (implicit) Helmholtz energy `Q(Γ)` with a safeguarded Newton method, see [`Clapeyron.msa_obj`](@ref). Derivatives with respect to volume, temperature and composition are obtained with implicit differentiation, so they do not require differentiating through the iterations.
 
 ## References
-1. Blum, L. (1974). Solution of a model for the solvent-electrolyte interactions in the mean spherical approximation. The Journal of Chemical Physics, 61(5), 2129–2133. [doi:10.1063/1.1682224](https://doi.org/10.1063/1.1682224)
+
+ 1. Blum, L. (1974). Solution of a model for the solvent-electrolyte interactions in the mean spherical approximation. The Journal of Chemical Physics, 61(5), 2129–2133. [doi:10.1063/1.1682224](https://doi.org/10.1063/1.1682224)
 """
-function MSA(solvents,ions; charge = nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
+function MSA(solvents, ions; charge=nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     solvents = format_components(solvents)
     ions = format_components(ions)
     components = vcat(solvents, ions)
@@ -37,7 +40,7 @@ function MSA(solvents,ions; charge = nothing, RSPmodel=ConstRSP, userlocations=S
 
     references = default_references(MSA)
 
-    init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
+    init_RSPmodel = @initmodel RSPmodel(solvents, ions, userlocations=RSPmodel_userlocations, verbose=verbose)
 
     model = MSA(components, init_RSPmodel, references)
     return model
@@ -46,16 +49,15 @@ end
 default_references(::Type{MSA}) = ["10.1063/1.1682224"]
 
 function a_res(model::MSAModel, V, T, z, iondata)
-    return @f(a_MSA,iondata)
+    return @f(a_MSA, iondata)
 end
 
 a_MSA(ionmodel::MSAModel, V, T, z, iondata) = a_MSA(V, T, z, iondata)
 
-
 function a_MSA(V::Number, T, z, iondata)
     Z, σ, ϵ_r = iondata
     _0 = zero(Base.promote_eltype(V, T, z, Z, σ, ϵ_r))
-    if all(iszero,Z)
+    if all(iszero, Z)
         return _0
     end
     Γ = screening_length(V, T, z, Z, σ, ϵ_r)
@@ -65,7 +67,7 @@ function a_MSA(V::Number, T, z, iondata)
     #Σ4 = ∑zᵢZᵢ²/(1+Γσᵢ)
     ∑z = sum(z)
     ρ = N_A*∑z/V
-    Σ1,Σ2,Σ3,Σ4 = msa_sums(Γ, z, Z, σ)
+    Σ1, Σ2, Σ3, Σ4 = msa_sums(Γ, z, Z, σ)
     Δ = 1 - π*ρ/6*Σ1/∑z
     Ω = 1 + π*ρ/(2*Δ)*Σ3/∑z
     Pn = ρ/Ω*Σ2/∑z
@@ -73,7 +75,7 @@ function a_MSA(V::Number, T, z, iondata)
     return (U_MSA + Γ^3*k_B*T*V/(3π))/(N_A*k_B*T*∑z)
 end
 
-function screening_length(model::MSAModel,V,T,z,iondata)
+function screening_length(model::MSAModel, V, T, z, iondata)
     Z, σ, ϵ_r = iondata
     return screening_length(V, T, z, Z, σ, ϵ_r)
 end
@@ -84,10 +86,11 @@ end
 Returns the MSA screening length `Γ` `[1/m]`, as the minimizer of [`Clapeyron.msa_obj`](@ref).
 
 The solution is obtained in the following steps:
-1. Initial estimate from the closed-form solution of the MSA closure with `Nᵢ = 0` (no `ησᵢ²` term), using a charge-weighted average ion diameter.
-2. Three damped successive substitution steps on the MSA closure ([`Clapeyron.msa_Γ_ss`](@ref)).
-3. Upper bound of `Γ` from `(2Γ)² ≤ κ²`.
-4. Newton iterations on `Q(Γ)` ([`Clapeyron.msa_newton`](@ref)).
+
+ 1. Initial estimate from the closed-form solution of the MSA closure with `Nᵢ = 0` (no `ησᵢ²` term), using a charge-weighted average ion diameter.
+ 2. Three damped successive substitution steps on the MSA closure ([`Clapeyron.msa_Γ_ss`](@ref)).
+ 3. Upper bound of `Γ` from `(2Γ)² ≤ κ²`.
+ 4. Newton iterations on `Q(Γ)` ([`Clapeyron.msa_newton`](@ref)).
 """
 function screening_length(V, T, z, Z, σ, ϵ_r)
     _0 = zero(Base.promote_eltype(V, T, z, Z, σ, ϵ_r))
@@ -95,7 +98,7 @@ function screening_length(V, T, z, Z, σ, ϵ_r)
     λdata = primalval(data)
     λΓ = msa_solver(λdata)
     iszero(λΓ) && return _0
-    any(has_dual,data) || return λΓ #no AD: nothing to reconstruct
+    any(has_dual, data) || return λΓ #no AD: nothing to reconstruct
     return __gradients_for_root_finders(λΓ, data, λdata, msa_ad_cond)
 end
 
@@ -108,10 +111,10 @@ end
 =#
 function msa_sums(Γ, z, Z, σ)
     _0 = zero(Base.promote_eltype(Γ, z, Z, σ))
-    Σ1,Σ2,Σ3,Σ4 = _0,_0,_0,_0
+    Σ1, Σ2, Σ3, Σ4 = _0, _0, _0, _0
     iions = iions_iterator(Z)
     for i in iions
-        zi,Zi,σi = z[i],Z[i],σ[i]
+        zi, Zi, σi = z[i], Z[i], σ[i]
         σi3 = σi*σi*σi
         Σ1 += zi*σi3
         Γσp1 = 1 + Γ*σi
@@ -119,7 +122,7 @@ function msa_sums(Γ, z, Z, σ)
         Σ3 += zi*σi3/Γσp1
         Σ4 += zi*Zi*Zi/Γσp1
     end
-    return Σ1,Σ2,Σ3,Σ4
+    return Σ1, Σ2, Σ3, Σ4
 end
 
 #η = π/(2Δ)*Pn, with Δ = 1 - π/6*∑ρᵢσᵢ³, Ω = 1 + π/(2Δ)*∑ρᵢσᵢ³/(1+Γσᵢ) and Pn = (1/Ω)*∑ρᵢσᵢZᵢ/(1+Γσᵢ)
@@ -136,7 +139,7 @@ end
 Objective function of the MSA screening length minimization:
 
 ```julia
-Q = V*Γ^3/(3π) - V*e^2/(4π*ϵ_r*ϵ_0*k_B*T) * ∑ρᵢZᵢ*(Γ*Zᵢ + η*σᵢ)/(1 + σᵢΓ)
+Q = V*Γ^3/(3π) - V*e^2/(4π*ϵ_r*ϵ_0*k_B*T) * ∑ρᵢZᵢ * (Γ*Zᵢ + η*σᵢ)/(1 + σᵢΓ)
 ```
 
 where `ρᵢ = N_A*zᵢ/V`, and `η` is a function of `Γ`.
@@ -145,7 +148,7 @@ where `ρᵢ = N_A*zᵢ/V`, and `η` is a function of `Γ`.
 function msa_obj(Γ, data)
     V, T, z, Z, σ, ϵ_r = data
     ρ = N_A/V
-    Σ1,Σ2,Σ3,Σ4 = msa_sums(Γ, z, Z, σ)
+    Σ1, Σ2, Σ3, Σ4 = msa_sums(Γ, z, Z, σ)
     η = msa_η(ρ, Σ1, Σ2, Σ3)
     c = e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)
     return V*Γ*Γ*Γ/(3π) - V*c*ρ*(Γ*Σ4 + η*Σ2)
@@ -159,7 +162,7 @@ function msa_solver(data; kwargs...)
     Γmax = κ/2 #(2Γ)² ≤ κ²
     #initial estimate:
     #Nᵢ = 0 gives Γ² = π*c*∑ρᵢZᵢ²/(1+Γσᵢ)². With a single effective diameter, this is Γ*(1 + Γσ) = κ/2.
-    Σw,Σwσ = zero(κ),zero(κ)
+    Σw, Σwσ = zero(κ), zero(κ)
     iions = iions_iterator(Z)
     for i in iions
         w = z[i]*Z[i]*Z[i]
@@ -186,7 +189,7 @@ Returns the right-hand side as the new value of `Γ`.
 function msa_Γ_ss(Γ, data)
     V, T, z, Z, σ, ϵ_r = data
     ρ = N_A/V
-    Σ1,Σ2,Σ3,_ = msa_sums(Γ, z, Z, σ)
+    Σ1, Σ2, Σ3, _ = msa_sums(Γ, z, Z, σ)
     η = msa_η(ρ, Σ1, Σ2, Σ3)
     Σ = zero(η)
     iions = iions_iterator(Z)
@@ -206,10 +209,8 @@ msa_ad_cond(Γ, data) = msa_Γ_ss(Γ, data) - Γ
     msa_newton(f, Γ0, Γmax; rtol = eps(one(Γ0))^(4/5), atol = zero(Γ0), max_iters = 100)
 
 Safeguarded Newton minimization of the one-dimensional function `f(Γ)` in `[0,Γmax]`.
-
 """
-function msa_newton(f::F, Γ0::T, Γmax::T; rtol = eps(one(T))^(4/5), atol = zero(T), max_iters = 100) where {F,T<:Real}
-    
+function msa_newton(f::F, Γ0::T, Γmax::T; rtol=eps(one(T))^(4/5), atol=zero(T), max_iters=100) where {F,T<:Real}
     Γ = Γ0
     Γlo = zero(T)
     Γhi = Γmax

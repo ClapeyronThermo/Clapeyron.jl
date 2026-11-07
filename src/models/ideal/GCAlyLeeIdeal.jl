@@ -12,26 +12,26 @@ end
 abstract type GCAlyLeeModel <: IdealModel end
 @newmodelgc GCAlyLeeIdeal GCAlyLeeModel GCAlyLeeParam false
 default_references(::Type{GCAlyLeeIdeal}) = ["10.1021/acs.jced.5c00573"]
-default_locations(::Type{GCAlyLeeIdeal}) = ["ideal/BurkhardtIdeal/GCAlyLeeIdeal.csv","properties/molarmass_groups.csv"]
+default_locations(::Type{GCAlyLeeIdeal}) = ["ideal/BurkhardtIdeal/GCAlyLeeIdeal.csv", "properties/molarmass_groups.csv"]
 default_gclocations(::Type{GCAlyLeeIdeal}) = ["ideal/BurkhardtIdeal/BurkhardtIdeal_groups.csv"]
 default_ignore_missing_singleparams(::Type{GCAlyLeeIdeal}) = ["Mw"]
 
-function transform_params(::Type{GCAlyLeeIdeal},params,groups)
+function transform_params(::Type{GCAlyLeeIdeal}, params, groups)
     components = groups.components
     n = groups.n_flattenedgroups
     l = length(components)
-    a,b,c,d,e = params["A"],params["B"],params["C"],params["D"],params["E"]
-    _a,_b,_c,_d,_e = zeros(l),zeros(l),zeros(l),zeros(l),zeros(l)
+    a, b, c, d, e = params["A"], params["B"], params["C"], params["D"], params["E"]
+    _a, _b, _c, _d, _e = zeros(l), zeros(l), zeros(l), zeros(l), zeros(l)
     for i in 1:l
         #res +=z[i]*(log(z[i]/V))/Σz
         ni = n[i]
-        _a[i] = (dot(a.values,ni) + 2.35963503)*8.31433/R̄
-        _b[i] = (dot(b.values,ni) - 4.20519291)*8.31433/R̄
-        _c[i] = (dot(c.values,ni) + 500.64232045)
-        _d[i] = (dot(d.values,ni) + 3.44955031)*8.31433/R̄
-        _e[i] = (dot(e.values,ni) + 514.21006282)
+        _a[i] = (dot(a.values, ni) + 2.35963503)*8.31433/R̄
+        _b[i] = (dot(b.values, ni) - 4.20519291)*8.31433/R̄
+        _c[i] = (dot(c.values, ni) + 500.64232045)
+        _d[i] = (dot(d.values, ni) + 3.44955031)*8.31433/R̄
+        _e[i] = (dot(e.values, ni) + 514.21006282)
     end
-    params["coeffs"] = reid_coeffs(_a,_b,_c,_d,_e,components)
+    params["coeffs"] = reid_coeffs(_a, _b, _c, _d, _e, components)
     return params
 end
 
@@ -46,12 +46,12 @@ function recombine_impl!(model::GCAlyLeeIdeal)
     for i in 1:length(model)
         #res +=z[i]*(log(z[i]/V))/Σz
         ni = n[i]
-        _a = (dot(a,ni) + 2.35963503)*8.31433/R̄
-        _b = (dot(b,ni) - 4.20519291)*8.31433/R̄
-        _c = (dot(c,ni) + 500.64232045)
-        _d = (dot(d,ni) + 3.44955031)*8.31433/R̄
-        _e = (dot(e,ni) + 514.21006282)
-        coeffs[i] = (_a,_b,_c,_d,_e)
+        _a = (dot(a, ni) + 2.35963503)*8.31433/R̄
+        _b = (dot(b, ni) - 4.20519291)*8.31433/R̄
+        _c = (dot(c, ni) + 500.64232045)
+        _d = (dot(d, ni) + 3.44955031)*8.31433/R̄
+        _e = (dot(e, ni) + 514.21006282)
+        coeffs[i] = (_a, _b, _c, _d, _e)
     end
     return model
 end
@@ -66,11 +66,11 @@ end
 
 ## Input parameters
 
-- `A`: Single Parameter (`Float64`)
-- `B`: Single Parameter (`Float64`)
-- `C`: Single Parameter (`Float64`)
-- `D`: Single Parameter (`Float64`)
-- `E`: Single Parameter (`Float64`)
+  - `A`: Single Parameter (`Float64`)
+  - `B`: Single Parameter (`Float64`)
+  - `C`: Single Parameter (`Float64`)
+  - `D`: Single Parameter (`Float64`)
+  - `E`: Single Parameter (`Float64`)
 
 ## Description
 
@@ -84,20 +84,20 @@ C = ∑Nᵢₖ*(Cᵢₖ + 500.642)
 D = ∑Nᵢₖ*(Dᵢₖ + 3.450)
 E = ∑Nᵢₖ*(Eᵢₖ + 514.210)
 ```
+
 ## Group Fragmentation
 
 Molecule fragmentation into functional groups is available in GCIdentifier.jl, using `Burkhardt2025Groups`
 
 ## References
 
-1. Burkhardt, J., Bauer, G., Stierle, R., & Gross, J. (2026). A new group-contribution approach for ideal gas heat capacity, critical temperature and normal Boiling Point. Journal of Chemical and Engineering Data, 71(1), 6–23. [doi:10.1021/acs.jced.5c00573](http://doi.org/10.1021/acs.jced.5c00573)
-
+ 1. Burkhardt, J., Bauer, G., Stierle, R., & Gross, J. (2026). A new group-contribution approach for ideal gas heat capacity, critical temperature and normal Boiling Point. Journal of Chemical and Engineering Data, 71(1), 6–23. [doi:10.1021/acs.jced.5c00573](http://doi.org/10.1021/acs.jced.5c00573)
 """
 GCAlyLeeIdeal
 
 export GCAlyLeeIdeal
 
-function a_ideal(model::GCAlyLeeModel,V,T,z)
+function a_ideal(model::GCAlyLeeModel, V, T, z)
     #we transform from AlyLee terms to GERG2008 terms.
     coeffs = model.params.coeffs.values
     Σz = sum(z)
@@ -110,10 +110,10 @@ function a_ideal(model::GCAlyLeeModel,V,T,z)
     @inbounds for i ∈ @comps
         #we suppose ρc = Tc = 1
         δi = ρ
-        Ai,Bi,Ci,Di,Ei = coeffs[i]
+        Ai, Bi, Ci, Di, Ei = coeffs[i]
         #integrate constant:
         #Tc,T0 = 1.0,298.15
-        a₁,a₂,c₀ = _Cp0_constant_parse(Ai,1.0,298.15)
+        a₁, a₂, c₀ = _Cp0_constant_parse(Ai, 1.0, 298.15)
         #a₁ = Ai*-4.697596715569115 #(1 - log(τ0))
         #a₂ = -Ai*298.15 #T0/Tc
         c₀ -= 1
@@ -121,7 +121,7 @@ function a_ideal(model::GCAlyLeeModel,V,T,z)
         zi = z[i]
         ai -= Di*EoSFunctions.logcosh(Ei*τi)
         ai += Bi*EoSFunctions.logabssinh(Ci*τi)
-        res += xlogx(zi,δi)
+        res += xlogx(zi, δi)
         res += zi*ai
     end
     return res/Σz - 1

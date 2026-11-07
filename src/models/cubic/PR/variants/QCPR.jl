@@ -14,18 +14,25 @@ end
 
 """
     QCPRRule <: MHV2RuleModel
-    
+
     QCPRRule(components;
     activity = Wilson,
     userlocations = String[],
     activity_userlocations = String[],
     verbose::Bool=false)
+
 ## Input Parameters
+
 None
-## Input models 
-- `activity`: Activity Model
+
+## Input models
+
+  - `activity`: Activity Model
+
 ## Description
+
 Quantum-Corrected Mixing Rule, used by [`QCPR`](@ref) EoS:
+
 ```
 aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
 bᵢⱼ = (1 - lᵢⱼ)(bqᵢ + bqⱼ)/2
@@ -35,35 +42,36 @@ ā = ∑aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ```
+
 ## References
-1. Aasen, A., Hammer, M., Lasala, S., Jaubert, J.-N., & Wilhelmsen, Ø. (2020). Accurate quantum-corrected cubic equations of state for helium, neon, hydrogen, deuterium and their mixtures. Fluid Phase Equilibria, 524(112790), 112790. [doi:10.1016/j.fluid.2020.112790](https://doi.org/10.1016/j.fluid.2020.112790)
+
+ 1. Aasen, A., Hammer, M., Lasala, S., Jaubert, J.-N., & Wilhelmsen, Ø. (2020). Accurate quantum-corrected cubic equations of state for helium, neon, hydrogen, deuterium and their mixtures. Fluid Phase Equilibria, 524(112790), 112790. [doi:10.1016/j.fluid.2020.112790](https://doi.org/10.1016/j.fluid.2020.112790)
 """
 QCPRRule
 
-
-function QCPRRule(components; activity = nothing, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)
-    params = getparams(components, ["cubic/QCPR/QCPR_like.csv","cubic/QCPR/QCPR_unlike.csv"]; userlocations = userlocations, verbose = verbose)
+function QCPRRule(components; activity=nothing, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
+    params = getparams(components, ["cubic/QCPR/QCPR_like.csv", "cubic/QCPR/QCPR_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     references = String["10.1016/j.fluid.2020.112790"]
-    pkgparams = QCPRRuleParam(params["A"],params["B"],params["l"])
-    model = QCPRRule(format_components(components), pkgparams ,references)
+    pkgparams = QCPRRuleParam(params["A"], params["B"], params["l"])
+    model = QCPRRule(format_components(components), pkgparams, references)
     return model
 end
 
 recombine_impl!(model::QCPRRule) = model
 
-function ab_premixing(model::PRModel,mixing::QCPRRuleModel,kij,lij)
+function ab_premixing(model::PRModel, mixing::QCPRRuleModel, kij, lij)
     a = model.params.a
     b = model.params.b
     ab_diagvalues!(model)
-    epsilon_LorentzBerthelot!(a,kij)
+    epsilon_LorentzBerthelot!(a, kij)
     sigma_LorentzBerthelot!(b)
     if lij !== nothing
         mixing.params.l.values .= lij
     end
-    return a,b
+    return a, b
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b)
+function mixing_rule(model::PRModel, V, T, z, mixing_model::QCPRRuleModel, α, a, b)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
@@ -80,43 +88,43 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b)
         Bi = B[i]
         Ai = A[i]
         βi = (1 + Ai/(T + Bi))^3 / (1 + Ai/(Tc[i] + Bi))^3
-        bqi = βi*b[i,i]
+        bqi = βi*b[i, i]
         b̄ += bqi*zi2
-        ā += a[i,i]*αi*zi2
-        for j in 1:(i-1)
+        ā += a[i, i]*αi*zi2
+        for j in 1:(i - 1)
             zij = zi*z[j]
             Bj = B[j]
             Aj = A[j]
             βj = (1 + Aj/(T + Bj))^3 / (1 + Aj/(Tc[j] + Bj))^3
-            bqj = βj*b[j,j]
-            ā += 2*a[i,j]*sqrt(αi*α[j])*zij
-            b̄ += zij*(bqi+bqj)*(1-l[i,j]) #2 * zij * 0.5(bi + bj)
+            bqj = βj*b[j, j]
+            ā += 2*a[i, j]*sqrt(αi*α[j])*zij
+            b̄ += zij*(bqi+bqj)*(1-l[i, j]) #2 * zij * 0.5(bi + bj)
         end
     end
     ā *= invn2
     b̄ *= invn2
-    c̄ = translation2(model,V,T,z,model.translation,a,b,α)*invn
+    c̄ = translation2(model, V, T, z, model.translation, a, b, α)*invn
     #dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
-    return ā,b̄,c̄
+    return ā, b̄, c̄
 end
 
-function mixing_rule1(model,V,T,z,mixing_model::QCPRRuleModel,α,a,b)
+function mixing_rule1(model, V, T, z, mixing_model::QCPRRuleModel, α, a, b)
     _1 = oneunit(z[1])
-    ā = a[1,1]*α[1]*_1
-    A = model.mixing.params.A.values[1,1]
-    B = model.mixing.params.B.values[1,1]
+    ā = a[1, 1]*α[1]*_1
+    A = model.mixing.params.A.values[1, 1]
+    B = model.mixing.params.B.values[1, 1]
     Tc = model.params.Tc.values[1]
     β = (1 + A/(T + B))^3 / (1 + A/(Tc + B))^3
-    b̄ = b[1,1]*β*_1
-    c̄ = translation2(model,V/sum(z),T,SA[1.0],model.translation,ā,b̄,α)
-    return ā,b̄,c̄
+    b̄ = b[1, 1]*β*_1
+    c̄ = translation2(model, V/sum(z), T, SA[1.0], model.translation, ā, b̄, α)
+    return ā, b̄, c̄
 end
 
-function cubic_get_k(model::CubicModel,mixing::QCPRRuleModel,params)
+function cubic_get_k(model::CubicModel, mixing::QCPRRuleModel, params)
     return get_k_geomean(params.a.values)
 end
 
-function cubic_get_l(model::CubicModel,mixing::QCPRRuleModel,params)
+function cubic_get_l(model::CubicModel, mixing::QCPRRuleModel, params)
     return copy(mixing.params.l.values)
 end
 
@@ -136,15 +144,15 @@ function cubic_lb_volume(model, T, z, mixing::QCPRRuleModel)
         #for A>0,B>0, the minimum of f(T) = 1 + A/(T+B) is 1 at T = inf
         #if B<0 , then the minimum (1 + A/B) is reached at T = 0
         βi = (1 + Ai/(T + Bi))^3 / (1 + Ai/(Tc[i] + Bi))^3
-        bqi = βi*b[i,i]
+        bqi = βi*b[i, i]
         b̄ += bqi*zi2
-        for j in 1:(i-1)
+        for j in 1:(i - 1)
             zij = zi*z[j]
             Bj = B[j]
             Aj = A[j]
             βj = (1 + Aj/(T + Bj))^3 / (1 + Aj/(Tc[j] + Bj))^3
-            bqj = βj*b[j,j]
-            b̄ += zij*(bqi+bqj)*(1-l[i,j]) #2 * zij * 0.5(bi + bj)
+            bqj = βj*b[j, j]
+            b̄ += zij*(bqi+bqj)*(1-l[i, j]) #2 * zij * 0.5(bi + bj)
         end
     end
     return b̄/sum(z)
@@ -165,42 +173,22 @@ export QCPRRule
         verbose = false)
 
 Quantum-corrected Peng Robinson equation of state. It uses the following models:
-- Translation Model: [`ConstantTranslation`](@ref)
-- Alpha Model: [`TwuAlpha`](@ref)
-- Mixing Rule Model: [`QCPRRule`](@ref)
+
+  - Translation Model: [`ConstantTranslation`](@ref)
+  - Alpha Model: [`TwuAlpha`](@ref)
+  - Mixing Rule Model: [`QCPRRule`](@ref)
+
 ## References
-1. Aasen, A., Hammer, M., Lasala, S., Jaubert, J.-N., & Wilhelmsen, Ø. (2020). Accurate quantum-corrected cubic equations of state for helium, neon, hydrogen, deuterium and their mixtures. Fluid Phase Equilibria, 524(112790), 112790. [doi:10.1016/j.fluid.2020.112790](https://doi.org/10.1016/j.fluid.2020.112790)
+
+ 1. Aasen, A., Hammer, M., Lasala, S., Jaubert, J.-N., & Wilhelmsen, Ø. (2020). Accurate quantum-corrected cubic equations of state for helium, neon, hydrogen, deuterium and their mixtures. Fluid Phase Equilibria, 524(112790), 112790. [doi:10.1016/j.fluid.2020.112790](https://doi.org/10.1016/j.fluid.2020.112790)
 """
-function QCPR(components;
-    idealmodel = BasicIdeal,
-    userlocations = String[], 
-    ideal_userlocations = String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    reference_state = nothing,
-    verbose = false)
+function QCPR(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], alpha_userlocations=String[], mixing_userlocations=String[], activity_userlocations=String[], translation_userlocations=String[], reference_state=nothing, verbose=false)
+    QCPR_userlocations = userlocation_merge(["@REMOVEDEFAULTS", "@DB/cubic/QCPR/QCPR_critical.csv", "@DB/cubic/QCPR/QCPR_unlike.csv"], userlocations)
+    QCPR_alpha_userlocations = userlocation_merge(["@REMOVEDEFAULTS", "@DB/cubic/QCPR/Twu_QCPR.csv"], alpha_userlocations)
+    QCPR_translation_userlocations = userlocation_merge(["@REMOVEDEFAULTS", "@DB/cubic/QCPR/QCPR_translation.csv"], translation_userlocations)
 
-    QCPR_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_critical.csv", "@DB/cubic/QCPR/QCPR_unlike.csv"],userlocations)
-    QCPR_alpha_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/Twu_QCPR.csv"],alpha_userlocations)
-    QCPR_translation_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_translation.csv"],translation_userlocations)
-
-    model = PR(components;
-        idealmodel = idealmodel,
-        alpha = TwuAlpha,
-        mixing = QCPRRule,
-        activity = nothing,
-        translation = ConstantTranslation,
-        userlocations = QCPR_userlocations,
-        ideal_userlocations = ideal_userlocations,
-        alpha_userlocations = QCPR_alpha_userlocations,
-        mixing_userlocations = mixing_userlocations,
-        activity_userlocations = activity_userlocations,
-        translation_userlocations = QCPR_translation_userlocations,
-        reference_state = reference_state,
-        verbose = verbose)
-    setreferences!(model,String["10.1021/I160057A011"])
+    model = PR(components; idealmodel=idealmodel, alpha=TwuAlpha, mixing=QCPRRule, activity=nothing, translation=ConstantTranslation, userlocations=QCPR_userlocations, ideal_userlocations=ideal_userlocations, alpha_userlocations=QCPR_alpha_userlocations, mixing_userlocations=mixing_userlocations, activity_userlocations=activity_userlocations, translation_userlocations=QCPR_translation_userlocations, reference_state=reference_state, verbose=verbose)
+    setreferences!(model, String["10.1021/I160057A011"])
     return model
 end
 
