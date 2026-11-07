@@ -1,0 +1,10 @@
+Clapeyron Database File,,,,
+Pitzer Ternary Mixing Parameters (psi) at 298.15 K [csvtype = ternary],,,,
+species1,species2,species3,psi,source
+sodium~|~Na+,potassium~|~K+,chloride~|~Cl-,-0.0018,"Harvie & Weare (1980) GCA 44:981-997; Harvie, Moller & Weare (1984) GCA 48:723-751 Table 3; USGS PHRQPITZ (298.15 K)"
+proton~|~hydrogen ion~|~H+,sodium~|~Na+,chloride~|~Cl-,-0.004,"Harvie, Moller & Weare (1984) GCA 48:723-751 Table 3; Pitzer & Kim (1974) JACS 96:5701-5707; PHREEQC pitzer.dat (298.15 K)"
+proton~|~hydrogen ion~|~H+,potassium~|~K+,chloride~|~Cl-,-0.011,"Harvie, Moller & Weare (1984) GCA 48:723-751 Table 3; Pitzer & Kim (1974) JACS 96:5701-5707; PHREEQC pitzer.dat (298.15 K)"
+sodium~|~Na+,potassium~|~K+,bromide~|~Br-,-0.0022,"Pitzer & Kim (1974) JACS 96:5701-5707; PHREEQC pitzer.dat (298.15 K)"
+proton~|~hydrogen ion~|~H+,sodium~|~Na+,bromide~|~Br-,-0.012,"Pitzer & Kim (1974) JACS 96:5701-5707; PHREEQC pitzer.dat (298.15 K)"
+proton~|~hydrogen ion~|~H+,potassium~|~K+,bromide~|~Br-,-0.021,"Pitzer & Kim (1974) JACS 96:5701-5707; PHREEQC pitzer.dat (298.15 K)"
+chloride~|~Cl-,bromide~|~Br-,potassium~|~K+,0.0,"PHREEQC pitzer.dat (298.15 K)"

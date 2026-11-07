@@ -1,0 +1,4 @@
+Clapeyron Database File,,
+Pitzer Like Parameters [csvtype = like],,
+species,Mw,source
+water~|~water08~|~H2O,18.01528,"CODATA / IAPWS standard molar mass of water (0.01801528 kg/mol) used in Pitzer (1991) and Harvie, Moller & Weare (1984)"
