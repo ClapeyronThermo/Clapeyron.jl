@@ -1042,8 +1042,8 @@ function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz 
         β2 = ifelse(wi > 0, min(β2, zi/wi), β2)
     end
     x2 = similar(w)
-    g1,_ = modified_gibbs(model,vw,T,w,phase_w,vw)
-    gz,_ = modified_gibbs(model,vw,T,z,phase_z,vz)
+    g1,_ = modified_gibbs(model,p,T,w,phase_w,vw)
+    gz,_ = modified_gibbs(model,p,T,z,phase_z,vz)
 
     if isone(β2)
         x2 .= z
