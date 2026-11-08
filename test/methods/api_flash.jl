@@ -88,6 +88,35 @@
         @test flash0[3] ≈ flash_RR[3] rtol = 1e-11
     end
 
+    @testset "Multiphase duplicate removal: phase count" begin
+        # The two-phase PR state used below, with its liquid phase duplicated.
+        # Test removal directly: no optimizer search or external fixture file.
+        model_dup = PR(["IsoButane", "n-Butane", "n-Pentane", "n-Hexane"])
+        p_dup, T_dup = 1e5, 284.4
+        x_dup = [0.22207665084342074, 0.2374113008465883,
+                 0.2658557804182571, 0.27465626789173386]
+        y_dup = [0.4973665831146864, 0.36152041533328994,
+                 0.10953725669913524, 0.03157574485288829]
+        beta_dup = [0.8985674887337903, 0.10143251126620967]
+        vl_dup = volume(model_dup, p_dup, T_dup, x_dup; phase = :liquid)
+        vv_dup = volume(model_dup, p_dup, T_dup, y_dup; phase = :vapour)
+        result_dup = Clapeyron.FlashResult(p_dup, T_dup,
+            [copy(x_dup), copy(x_dup), copy(y_dup)],
+            [beta_dup[1]/2, beta_dup[1]/2, beta_dup[2]],
+            [vl_dup, vl_dup, vv_dup]; sort = false)
+        z_dup = sum(result_dup.fractions .* result_dup.compositions)
+        @test Clapeyron.findfirst_duplicate_phases(result_dup, false) == (1, 2)
+        # After the duplicate is merged, strategy B must use the new count.
+        # With the stale count this call throws BoundsError at phase index 3.
+        Clapeyron._remove_phases!(model_dup, p_dup, T_dup, z_dup,
+            (result_dup, Ref(0)), nothing, nothing)
+        @test Clapeyron.numphases(result_dup) == 2
+        @test result_dup.fractions ≈ beta_dup
+        @test all(isapprox.(result_dup.compositions, [x_dup, y_dup]))
+        @test result_dup.volumes ≈ [vl_dup, vv_dup]
+        @test maximum(abs.(sum(result_dup.fractions .* result_dup.compositions) .- z_dup)) < 1e-12
+    end
+
     @testset "Multiphase algorithm" begin
         #standard 3-phase system
         res1 = Clapeyron.tp_flash2(system, p, T, z, MultiPhaseTPFlash())

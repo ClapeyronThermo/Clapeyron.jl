@@ -954,6 +954,7 @@ function _remove_phases!(model,p,T,z,_result,cache,options)
     end
 
     #strategy B: remove one phase that does not help in equilibria
+    np = numphases(result)
     βmin,imin = findmin(β)
     wmin,vmin = comps[imin],volumes[imin]
     phase_min = vapour_idx_to_symbol(idx_vapour[],imin)
