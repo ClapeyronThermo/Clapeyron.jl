@@ -291,3 +291,44 @@ end
         end
     end
 end
+
+@testset "#454 critical mixture with trace components" begin
+    model = PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"];
+        idealmodel = AlyLeeIdeal,
+        userlocations = (;
+            Tc = [425.12, 469.7, 507.6, 540.2],
+            Pc = [37.96e5, 33.7e5, 30.25e5, 27.4e5],
+            Mw = [58.1234, 72.15028, 86.17716, 100.20404],
+            acentricfactor = [0.200164, 0.251506, 0.301261, 0.349469],
+            k = [0.0 0.0174 -0.0056 0.0033;
+                 0.0174 0.0 -0.00071726 0.0074;
+                 -0.0056 -0.00071726 0.0 -0.0078;
+                 0.0033 0.0074 -0.0078 0.0],
+            l = zeros(4, 4)))
+    n = [5.45, 1.42, 0.00165, 1.33e-7]
+    # Independent, fixed-composition mixture-criticality reference (teqp 0.23.2).
+    # These are not mechanical critical properties. The reference volume is molar.
+    reference = (434.4622038426355, 3756580.6862418335, 0.0002989264174590926)
+    result = crit_mix(model, n)
+    @test all(isfinite, result)
+    @test result[1] ≈ reference[1] rtol=1e-8
+    @test result[2] ≈ reference[2] rtol=1e-8
+    @test result[3] / sum(n) ≈ reference[3] rtol=1e-8
+    scaled = crit_mix(model, 10n)
+    @test scaled[1] ≈ result[1] rtol=1e-10
+    @test scaled[2] ≈ result[2] rtol=1e-10
+    @test scaled[3] ≈ 10result[3] rtol=1e-10
+    # Move the dominant component to each of the other cofactor coordinates.
+    for perm in ([4, 2, 3, 1], [2, 1, 4, 3], [3, 4, 1, 2])
+        reordered = only(Clapeyron.split_model(model, [perm]))
+        permuted = crit_mix(reordered, n[perm])
+        @test all(isfinite, permuted)
+        @test all(isapprox.(permuted, result; rtol=1e-8))
+    end
+    nzero = [5.45, 1.42, 0.00165, 0.0]
+    reduced = crit_mix(model, nzero)
+    @test all(isfinite, reduced)
+    @test reduced[1] ≈ 434.4622001668149 rtol=1e-8
+    @test reduced[2] ≈ 3756580.640010519 rtol=1e-8
+    @test reduced[3] / sum(nzero) ≈ 0.00029892641615206694 rtol=1e-8
+end

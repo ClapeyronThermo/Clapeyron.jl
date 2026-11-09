@@ -1,5 +1,33 @@
+# Fixed-composition criticality: concentration scaling and a nonzero cofactor pivot.
+# Assumes a simple zero eigenvalue; index_reduction has removed zero amounts.
+function scaled_mixture_critical_constraint(model,V,T,z)
+    fr(x) = sum(x)*a_res(model,V,T,x)
+    function B(x)
+        sx = sqrt.(x)
+        BB = ForwardDiff.hessian(fr,x) .* (sx * transpose(sx))
+        for i in eachindex(x)
+            BB[i,i] += one(eltype(BB))
+        end
+        return BB
+    end
+    L(x) = det(Symmetric(B(x)))
+    HH = B(z)
+    LL = det(Symmetric(HH))
+    dL = ForwardDiff.gradient(L,z) .* sqrt.(z)
+    # At a simple critical point, principal cofactors are proportional to q_i^2.
+    # Select a nonvanishing null-vector coordinate rather than always the last one.
+    ids = collect(eachindex(z))
+    cofactors = map(ids) do i
+        keep = filter(!=(i),ids)
+        det(Symmetric(HH[keep,keep]))
+    end
+    pivot = argmax(abs.(cofactors))
+    HH[pivot,:] .= dL
+    return LL,det(HH)
+end
+
 function Obj_crit_mix(model::EoSModel,F,z,V,T)
-    L,detM = mixture_critical_constraint(model,V,T,z)
+    L,detM = scaled_mixture_critical_constraint(model,V,T,z)
     F[1] = L
     F[2] = detM
     return F
