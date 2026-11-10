@@ -27,7 +27,10 @@ function critical_mixture_pivot(B)
             return c1 >= c2 && c1 >= c3 ? 1 : (c2 >= c3 ? 2 : 3)
         end
     end
-    A = map(Solvers.primalval, Symmetric(B))
+    # map can preserve Symmetric on newer Julia versions; QR needs a dense,
+    # freely mutable workspace. Fill it directly to avoid a second copy.
+    A = Matrix{Solvers.primal_eltype(B)}(undef,n,n)
+    map!(Solvers.primalval,A,Symmetric(B))
     F = qr!(A, ColumnNorm())
     q = zeros(eltype(A), n)
     q[end] = one(eltype(A))

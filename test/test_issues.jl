@@ -346,6 +346,15 @@ end
         @test pivot(B) == n
         @test pivot(B[end:-1:1, end:-1:1]) == 1
     end
+    # Wrapped symmetric inputs must also use a freely mutable QR workspace.
+    # Keep the original Hessian intact for the AD-valued residual below.
+    for T in (Float32, Float64, BigFloat)
+        q = LA.normalize(collect(T, 1:4))
+        B = Matrix{T}(LA.I, 4, 4) - q * transpose(q)
+        before = copy(B)
+        @test pivot(LA.Symmetric(B)) == 4
+        @test B == before
+    end
     Bbig = Matrix{BigFloat}(LA.I, 4, 4)
     Bbig[3, 3] = 0
     @test pivot(Bbig) == 3
