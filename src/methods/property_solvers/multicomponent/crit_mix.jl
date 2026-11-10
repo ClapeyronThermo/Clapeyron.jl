@@ -1,3 +1,40 @@
+# Choose a nonzero principal cofactor at a simple null mode without evaluating
+# n minors. For symmetric B of rank n-1, the final column of the pivoted QR's Q
+# spans ker(B), and adj(B) = c*q*q'. The largest |q_i| maximizes |cofactor_ii|.
+# Only the discrete pivot is computed from primal values; the criticality
+# residuals and their derivatives still use the original AD-valued Hessian.
+function critical_mixture_pivot(B)
+    n = size(B,1)
+    n == 1 && return 1
+    if n == 2
+        return abs(Solvers.primalval(B[2,2])) >= abs(Solvers.primalval(B[1,1])) ? 1 : 2
+    end
+    if n == 3
+        # For ternary mixtures, explicit 2x2 cofactors avoid a factorization.
+        # Scaling prevents product overflow for finite inputs, but can lose
+        # very small products. Fall back to QR if no cofactor is resolved.
+        a = Solvers.primalval(B[1,1])
+        b = Solvers.primalval(B[1,2])
+        c = Solvers.primalval(B[1,3])
+        d = Solvers.primalval(B[2,2])
+        e = Solvers.primalval(B[2,3])
+        f = Solvers.primalval(B[3,3])
+        scale = max(abs(a),abs(b),abs(c),abs(d),abs(e),abs(f))
+        iszero(scale) && return 1
+        a,b,c,d,e,f = a/scale,b/scale,c/scale,d/scale,e/scale,f/scale
+        c1,c2,c3 = abs(d*f-e*e),abs(a*f-c*c),abs(a*d-b*b)
+        if max(c1,c2,c3) > zero(c1)
+            return c1 >= c2 && c1 >= c3 ? 1 : (c2 >= c3 ? 2 : 3)
+        end
+    end
+    A = map(Solvers.primalval, Symmetric(B))
+    F = qr!(A, ColumnNorm())
+    q = zeros(eltype(A), n)
+    q[end] = one(eltype(A))
+    lmul!(F.Q, q)
+    return argmax(abs.(q))
+end
+
 # Fixed-composition criticality: concentration scaling and a nonzero cofactor pivot.
 # Assumes a simple zero eigenvalue; index_reduction has removed zero amounts.
 function scaled_mixture_critical_constraint(model,V,T,z)
@@ -14,14 +51,7 @@ function scaled_mixture_critical_constraint(model,V,T,z)
     HH = B(z)
     LL = det(Symmetric(HH))
     dL = ForwardDiff.gradient(L,z) .* sqrt.(z)
-    # At a simple critical point, principal cofactors are proportional to q_i^2.
-    # Select a nonvanishing null-vector coordinate rather than always the last one.
-    ids = collect(eachindex(z))
-    cofactors = map(ids) do i
-        keep = filter(!=(i),ids)
-        det(Symmetric(HH[keep,keep]))
-    end
-    pivot = argmax(abs.(cofactors))
+    pivot = critical_mixture_pivot(HH)
     HH[pivot,:] .= dL
     return LL,det(HH)
 end

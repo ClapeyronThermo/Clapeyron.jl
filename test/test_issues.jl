@@ -332,3 +332,54 @@ end
     @test reduced[2] ≈ 3756580.640010519 rtol=1e-8
     @test reduced[3] / sum(nzero) ≈ 0.00029892641615206694 rtol=1e-8
 end
+
+@testset "Critical-mixture QR pivot" begin
+    pivot = Clapeyron.critical_mixture_pivot
+    LA = Clapeyron.LinearAlgebra
+    # Column pivoting is necessary when an early column is the null direction.
+    @test pivot(LA.diagm([0.0, 1.0, 2.0])) == 1
+    @test pivot(LA.diagm([-3.0, 0.0, 2.0])) == 2
+    @test pivot([0.5 -0.5 0.0; -0.5 0.5 0.0; 0.0 0.0 2.0]) in (1, 2)
+    for n in (2, 3, 4, 8, 16)
+        q = LA.normalize(collect(1.0:n))
+        B = Matrix{Float64}(LA.I, n, n) - q * transpose(q)
+        @test pivot(B) == n
+        @test pivot(B[end:-1:1, end:-1:1]) == 1
+    end
+    Bbig = Matrix{BigFloat}(LA.I, 4, 4)
+    Bbig[3, 3] = 0
+    @test pivot(Bbig) == 3
+    for T in (Float32, Float64), p in (1, 2, 3)
+        B = Matrix{T}(LA.I, 3, 3)
+        B[p, p] = 0
+        @test pivot(B) == p
+    end
+    # Global scaling can underflow every explicit ternary cofactor even
+    # when an unscaled cofactor is one. These must take the QR fallback.
+    for permutation in ([1, 2, 3], [2, 3, 1], [3, 1, 2])
+        values = [1e-200, 0.0, 1e200][permutation]
+        @test pivot(LA.diagm(values)) == findfirst(iszero, values)
+    end
+    # The pivot must discard nested Dual partials without changing the
+    # derivatives of the residual on a chart where its index stays fixed.
+    function pivot_residual(t, choose)
+        H = [2.0 + t[1] 0.2 0.1; 0.2 1.0 + t[2] 0.1; 0.1 0.1 0.02 + 0.3t[1]]
+        H[choose(H), :] .= [0.3, 0.7, -0.2]
+        return LA.det(H)
+    end
+    t = [0.01, 0.03]
+    reference_pivot(H) = 3
+    fd = Clapeyron.ForwardDiff
+    @test fd.gradient(t -> pivot_residual(t, pivot), t) ≈ fd.gradient(t -> pivot_residual(t, reference_pivot), t)
+    @test fd.hessian(t -> pivot_residual(t, pivot), t) ≈ fd.hessian(t -> pivot_residual(t, reference_pivot), t)
+    # The four-component case also exercises nested Dual stripping in QR,
+    # rather than only the explicit ternary branch.
+    function qr_pivot_residual(t, choose)
+        H = [2.0 + t[1] 0.2 0.1 0.0; 0.2 1.0 + t[2] 0.1 0.0;
+             0.1 0.1 0.02 + 0.3t[1] 0.0; 0.0 0.0 0.0 3.0]
+        H[choose(H), :] .= [0.3, 0.7, -0.2, 0.4]
+        return LA.det(H)
+    end
+    @test fd.gradient(t -> qr_pivot_residual(t, pivot), t) ≈ fd.gradient(t -> qr_pivot_residual(t, reference_pivot), t)
+    @test fd.hessian(t -> qr_pivot_residual(t, pivot), t) ≈ fd.hessian(t -> qr_pivot_residual(t, reference_pivot), t)
+end
