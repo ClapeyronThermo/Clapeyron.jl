@@ -1,5 +1,66 @@
+# Choose a nonzero principal cofactor at a simple null mode without evaluating
+# n minors. For symmetric B of rank n-1, the final column of the pivoted QR's Q
+# spans ker(B), and adj(B) = c*q*q'. The largest |q_i| maximizes |cofactor_ii|.
+# Only the discrete pivot is computed from primal values; the criticality
+# residuals and their derivatives still use the original AD-valued Hessian.
+function critical_mixture_pivot(B)
+    n = size(B,1)
+    n == 1 && return 1
+    if n == 2
+        return abs(Solvers.primalval(B[2,2])) >= abs(Solvers.primalval(B[1,1])) ? 1 : 2
+    end
+    if n == 3
+        # For ternary mixtures, explicit 2x2 cofactors avoid a factorization.
+        # Scaling prevents product overflow for finite inputs, but can lose
+        # very small products. Fall back to QR if no cofactor is resolved.
+        a = Solvers.primalval(B[1,1])
+        b = Solvers.primalval(B[1,2])
+        c = Solvers.primalval(B[1,3])
+        d = Solvers.primalval(B[2,2])
+        e = Solvers.primalval(B[2,3])
+        f = Solvers.primalval(B[3,3])
+        scale = max(abs(a),abs(b),abs(c),abs(d),abs(e),abs(f))
+        iszero(scale) && return 1
+        a,b,c,d,e,f = a/scale,b/scale,c/scale,d/scale,e/scale,f/scale
+        c1,c2,c3 = abs(d*f-e*e),abs(a*f-c*c),abs(a*d-b*b)
+        if max(c1,c2,c3) > zero(c1)
+            return c1 >= c2 && c1 >= c3 ? 1 : (c2 >= c3 ? 2 : 3)
+        end
+    end
+    # map can preserve Symmetric on newer Julia versions; QR needs a dense,
+    # freely mutable workspace. Fill it directly to avoid a second copy.
+    A = Matrix{Solvers.primal_eltype(B)}(undef,n,n)
+    map!(Solvers.primalval,A,Symmetric(B))
+    F = qr!(A, ColumnNorm())
+    q = zeros(eltype(A), n)
+    q[end] = one(eltype(A))
+    lmul!(F.Q, q)
+    return argmax(abs.(q))
+end
+
+# Fixed-composition criticality: concentration scaling and a nonzero cofactor pivot.
+# Assumes a simple zero eigenvalue; index_reduction has removed zero amounts.
+function scaled_mixture_critical_constraint(model,V,T,z)
+    fr(x) = sum(x)*a_res(model,V,T,x)
+    function B(x)
+        sx = sqrt.(x)
+        BB = ForwardDiff.hessian(fr,x) .* (sx * transpose(sx))
+        for i in eachindex(x)
+            BB[i,i] += one(eltype(BB))
+        end
+        return BB
+    end
+    L(x) = det(Symmetric(B(x)))
+    HH = B(z)
+    LL = det(Symmetric(HH))
+    dL = ForwardDiff.gradient(L,z) .* sqrt.(z)
+    pivot = critical_mixture_pivot(HH)
+    HH[pivot,:] .= dL
+    return LL,det(HH)
+end
+
 function Obj_crit_mix(model::EoSModel,F,z,V,T)
-    L,detM = mixture_critical_constraint(model,V,T,z)
+    L,detM = scaled_mixture_critical_constraint(model,V,T,z)
     F[1] = L
     F[2] = detM
     return F

@@ -291,3 +291,104 @@ end
         end
     end
 end
+
+@testset "#454 critical mixture with trace components" begin
+    model = PR(["n-butane", "n-pentane", "n-hexane", "n-heptane"];
+        idealmodel = AlyLeeIdeal,
+        userlocations = (;
+            Tc = [425.12, 469.7, 507.6, 540.2],
+            Pc = [37.96e5, 33.7e5, 30.25e5, 27.4e5],
+            Mw = [58.1234, 72.15028, 86.17716, 100.20404],
+            acentricfactor = [0.200164, 0.251506, 0.301261, 0.349469],
+            k = [0.0 0.0174 -0.0056 0.0033;
+                 0.0174 0.0 -0.00071726 0.0074;
+                 -0.0056 -0.00071726 0.0 -0.0078;
+                 0.0033 0.0074 -0.0078 0.0],
+            l = zeros(4, 4)))
+    n = [5.45, 1.42, 0.00165, 1.33e-7]
+    # Independent, fixed-composition mixture-criticality reference (teqp 0.23.2).
+    # These are not mechanical critical properties. The reference volume is molar.
+    reference = (434.4622038426355, 3756580.6862418335, 0.0002989264174590926)
+    result = crit_mix(model, n)
+    @test all(isfinite, result)
+    @test result[1] ≈ reference[1] rtol=1e-8
+    @test result[2] ≈ reference[2] rtol=1e-8
+    @test result[3] / sum(n) ≈ reference[3] rtol=1e-8
+    scaled = crit_mix(model, 10n)
+    @test scaled[1] ≈ result[1] rtol=1e-10
+    @test scaled[2] ≈ result[2] rtol=1e-10
+    @test scaled[3] ≈ 10result[3] rtol=1e-10
+    # Move the dominant component to each of the other cofactor coordinates.
+    for perm in ([4, 2, 3, 1], [2, 1, 4, 3], [3, 4, 1, 2])
+        reordered = only(Clapeyron.split_model(model, [perm]))
+        permuted = crit_mix(reordered, n[perm])
+        @test all(isfinite, permuted)
+        @test all(isapprox.(permuted, result; rtol=1e-8))
+    end
+    nzero = [5.45, 1.42, 0.00165, 0.0]
+    reduced = crit_mix(model, nzero)
+    @test all(isfinite, reduced)
+    @test reduced[1] ≈ 434.4622001668149 rtol=1e-8
+    @test reduced[2] ≈ 3756580.640010519 rtol=1e-8
+    @test reduced[3] / sum(nzero) ≈ 0.00029892641615206694 rtol=1e-8
+end
+
+@testset "Critical-mixture QR pivot" begin
+    pivot = Clapeyron.critical_mixture_pivot
+    LA = Clapeyron.LinearAlgebra
+    # Column pivoting is necessary when an early column is the null direction.
+    @test pivot(LA.diagm([0.0, 1.0, 2.0])) == 1
+    @test pivot(LA.diagm([-3.0, 0.0, 2.0])) == 2
+    @test pivot([0.5 -0.5 0.0; -0.5 0.5 0.0; 0.0 0.0 2.0]) in (1, 2)
+    for n in (2, 3, 4, 8, 16)
+        q = LA.normalize(collect(1.0:n))
+        B = Matrix{Float64}(LA.I, n, n) - q * transpose(q)
+        @test pivot(B) == n
+        @test pivot(B[end:-1:1, end:-1:1]) == 1
+    end
+    # Wrapped symmetric inputs must also use a freely mutable QR workspace.
+    # Keep the original Hessian intact for the AD-valued residual below.
+    for T in (Float32, Float64, BigFloat)
+        q = LA.normalize(collect(T, 1:4))
+        B = Matrix{T}(LA.I, 4, 4) - q * transpose(q)
+        before = copy(B)
+        @test pivot(LA.Symmetric(B)) == 4
+        @test B == before
+    end
+    Bbig = Matrix{BigFloat}(LA.I, 4, 4)
+    Bbig[3, 3] = 0
+    @test pivot(Bbig) == 3
+    for T in (Float32, Float64), p in (1, 2, 3)
+        B = Matrix{T}(LA.I, 3, 3)
+        B[p, p] = 0
+        @test pivot(B) == p
+    end
+    # Global scaling can underflow every explicit ternary cofactor even
+    # when an unscaled cofactor is one. These must take the QR fallback.
+    for permutation in ([1, 2, 3], [2, 3, 1], [3, 1, 2])
+        values = [1e-200, 0.0, 1e200][permutation]
+        @test pivot(LA.diagm(values)) == findfirst(iszero, values)
+    end
+    # The pivot must discard nested Dual partials without changing the
+    # derivatives of the residual on a chart where its index stays fixed.
+    function pivot_residual(t, choose)
+        H = [2.0 + t[1] 0.2 0.1; 0.2 1.0 + t[2] 0.1; 0.1 0.1 0.02 + 0.3t[1]]
+        H[choose(H), :] .= [0.3, 0.7, -0.2]
+        return LA.det(H)
+    end
+    t = [0.01, 0.03]
+    reference_pivot(H) = 3
+    fd = Clapeyron.ForwardDiff
+    @test fd.gradient(t -> pivot_residual(t, pivot), t) ≈ fd.gradient(t -> pivot_residual(t, reference_pivot), t)
+    @test fd.hessian(t -> pivot_residual(t, pivot), t) ≈ fd.hessian(t -> pivot_residual(t, reference_pivot), t)
+    # The four-component case also exercises nested Dual stripping in QR,
+    # rather than only the explicit ternary branch.
+    function qr_pivot_residual(t, choose)
+        H = [2.0 + t[1] 0.2 0.1 0.0; 0.2 1.0 + t[2] 0.1 0.0;
+             0.1 0.1 0.02 + 0.3t[1] 0.0; 0.0 0.0 0.0 3.0]
+        H[choose(H), :] .= [0.3, 0.7, -0.2, 0.4]
+        return LA.det(H)
+    end
+    @test fd.gradient(t -> qr_pivot_residual(t, pivot), t) ≈ fd.gradient(t -> qr_pivot_residual(t, reference_pivot), t)
+    @test fd.hessian(t -> qr_pivot_residual(t, pivot), t) ≈ fd.hessian(t -> qr_pivot_residual(t, reference_pivot), t)
+end
