@@ -19,6 +19,7 @@ cᵢ = 0 ∀ i
 ```
 
 ## Model Construction Examples
+
 ```
 # Because this model does not have parameters, all those constructors are equivalent:
 translation = NoTranslation()
@@ -28,10 +29,10 @@ translation = NoTranslation(["water","carbon dioxide"])
 """
 NoTranslation
 
-function translation(model::CubicModel,V,T,z,translation_model::NoTranslation)
+function translation(model::CubicModel, V, T, z, translation_model::NoTranslation)
     return FillArrays.Zeros{Float64}(length(z))
 end
 
-function translation2(model::CubicModel,V,T,z,translation_model::NoTranslation,a,b,α)
+function translation2(model::CubicModel, V, T, z, translation_model::NoTranslation, a, b, α)
     return 0.0
 end

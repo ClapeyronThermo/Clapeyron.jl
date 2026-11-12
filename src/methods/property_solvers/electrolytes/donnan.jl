@@ -7,7 +7,6 @@ Read off the Donnan potential `Ψ`:
 `μᵢ(dense) - μᵢ(dilute) = Zᵢ·Rgas·T·Ψ`
 ```
 
-
 (dense-minus-dilute convention, matching `donnan_bubble_residual!`'s own `μᵢ(dense) - μᵢ(dilute) = Zᵢ·Rgas·T·Ψ`)
 between two ALREADY-KNOWN coexisting bulk states, given directly asper-component densities rather than `(V,x)` pairs -- since chemical
 potential only depends on density (`VT_chemical_potential(model,1,T,ρ)` and
@@ -27,7 +26,7 @@ components (nothing to average).
 """
 function donnan_psi_bulk(model::ElectrolyteModel, T, ρbulk_dense::AbstractVector, ρbulk_dilute::AbstractVector)
     Z = component_charges(model)
-    Ψ = zero(Base.promote_eltype(model,T,ρbulk_dense,ρbulk_dilute))
+    Ψ = zero(Base.promote_eltype(model, T, ρbulk_dense, ρbulk_dilute))
     μd = VT_chemical_potential(model, 1.0, T, ρbulk_dense)
     μl = VT_chemical_potential(model, 1.0, T, ρbulk_dilute)
     RT = Rgas(model) * T

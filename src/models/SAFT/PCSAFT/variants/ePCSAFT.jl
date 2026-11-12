@@ -26,69 +26,63 @@ end
         reference_state = nothing)
 
 ## Description
+
 This function is used to create an ePCSAFT model which is a combination of the PC-SAFT and Debye-Hückel model. It is based on the ePC-SAFT Revised variant.
 
 ## Input parameters
+
 ### PC-SAFT Parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
-- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
-- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
+
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+  - `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
+  - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
+  - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
+  - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+  - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
+
 ### Debye-Hückel Parameters
-- `sigma`: Single Parameter (`Float64`) - Diameter of closest approach `[m]`
-- `charge`: Single Parameter (`Float64`) - Charge `[-]`
+
+  - `sigma`: Single Parameter (`Float64`) - Diameter of closest approach `[m]`
+  - `charge`: Single Parameter (`Float64`) - Charge `[-]`
 
 ## Input models
-- `idealmodel`: Ideal Model
-- `neutralmodel`: Neutral EoS Model
-- `ionmodel`: Ion Model
+
+  - `idealmodel`: Ideal Model
+  - `neutralmodel`: Neutral EoS Model
+  - `ionmodel`: Ion Model
 
 ## References
-1. Held, C., Reschke, T., Mohammad, S., Luza, A., Sadowski, G. (2014). ePC-SAFT Revised. Chemical Engineering Research and Design, 92(12), 2884-2897.
-"""
-function ePCSAFT(solvents,ions; 
-    idealmodel = BasicIdeal,
-    neutralmodel = pharmaPCSAFT,
-    ionmodel = hsdDH,
-    RSPmodel = ConstRSP,
-    charge = String[],
-    ideal_userlocations = String[],
-    neutralmodel_userlocations = String[],
-    ionmodel_userlocations = String[],
-    RSPmodel_userlocations = String[],
-    assoc_options = AssocOptions(),
-    verbose = false,
-    reference_state = nothing)
 
+ 1. Held, C., Reschke, T., Mohammad, S., Luza, A., Sadowski, G. (2014). ePC-SAFT Revised. Chemical Engineering Research and Design, 92(12), 2884-2897.
+"""
+function ePCSAFT(solvents, ions; idealmodel=BasicIdeal, neutralmodel=pharmaPCSAFT, ionmodel=hsdDH, RSPmodel=ConstRSP, charge=String[], ideal_userlocations=String[], neutralmodel_userlocations=String[], ionmodel_userlocations=String[], RSPmodel_userlocations=String[], assoc_options=AssocOptions(), verbose=false, reference_state=nothing)
     solvents = format_components(solvents)
     ions = format_components(ions)
     components = deepcopy(ions)
-    prepend!(components,solvents)
+    prepend!(components, solvents)
 
-    Z = init_charge(components,charge;verbose)
+    Z = init_charge(components, charge; verbose)
 
-    neutral_path = DB_PATH.*["/SAFT/PCSAFT","/SAFT/PCSAFT/ePCSAFT","/SAFT/PCSAFT/pharmaPCSAFT"]
+    neutral_path = DB_PATH .* ["/SAFT/PCSAFT", "/SAFT/PCSAFT/ePCSAFT", "/SAFT/PCSAFT/pharmaPCSAFT"]
 
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_neutralmodel = neutralmodel(components;userlocations=append!(neutralmodel_userlocations,neutral_path),verbose=verbose,assoc_options=assoc_options)
-    init_ionmodel = ionmodel(solvents,ions;RSPmodel=RSPmodel,userlocations=append!(ionmodel_userlocations,neutral_path),verbose=verbose)
+    init_idealmodel = init_model(idealmodel, components, ideal_userlocations, verbose)
+    init_neutralmodel = neutralmodel(components; userlocations=append!(neutralmodel_userlocations, neutral_path), verbose=verbose, assoc_options=assoc_options)
+    init_ionmodel = ionmodel(solvents, ions; RSPmodel=RSPmodel, userlocations=append!(ionmodel_userlocations, neutral_path), verbose=verbose)
 
     for i in @iions
-        init_neutralmodel.params.epsilon[i] = 0. #pure ion has ϵi 
+        init_neutralmodel.params.epsilon[i] = 0.0 #pure ion has ϵi 
         for j in @iions
             if sign(Z[i]) == sign(Z[j]) #cation-cation and anion-anion interactions are neglected.
-                init_neutralmodel.params.epsilon[i,j] = 0.
+                init_neutralmodel.params.epsilon[i, j] = 0.0
             end
         end
     end
 
     references = ["10.1016/j.cherd.2014.05.017"]
     components = format_components(components)
-    model = ePCSAFT(components,Z,init_idealmodel,init_neutralmodel,init_ionmodel,references)
-    set_reference_state!(model,reference_state;verbose)
+    model = ePCSAFT(components, Z, init_idealmodel, init_neutralmodel, init_ionmodel, references)
+    set_reference_state!(model, reference_state; verbose)
     return model
 end
 

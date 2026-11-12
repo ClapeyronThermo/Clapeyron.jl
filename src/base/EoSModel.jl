@@ -1,17 +1,16 @@
 """
-
     EoSModel
 
-Root type for all equation of state (EOS) models in Clapeyron.jl. 
-    
-Subtypes of `EoSModel` represent specific equations of state (e.g., cubic, SAFT, activity coefficient models) 
+Root type for all equation of state (EOS) models in Clapeyron.jl.
+
+Subtypes of `EoSModel` represent specific equations of state (e.g., cubic, SAFT, activity coefficient models)
 and must implement their core interface methods.
 
 By default, `EoSModel` subtypes are considered to be helmholtz-based EoS, and as such, they must implement their core interface methods:
 
-- [`a_res`](@ref): An implementation of the reduced residual Helmholtz energy.
-- [`lb_volume`](@ref): Lower bound volume for the equation of state.
-- [`T_scale`](@ref): A temperature scaling factor.
+  - [`a_res`](@ref): An implementation of the reduced residual Helmholtz energy.
+  - [`lb_volume`](@ref): Lower bound volume for the equation of state.
+  - [`T_scale`](@ref): A temperature scaling factor.
 
 Other `EoSModel` subtypes may have other interfaces (like activity models or volume-based models).
 """
@@ -24,50 +23,54 @@ abstract type EoSModel end
 Returns the gas constant used by an `EoSModel`.
 
 By default, uses the current 2019 definition: `R̄` = 8.31446261815324 [J⋅K⁻¹⋅mol⁻¹]. You can call `Rgas()` to obtain this value.
-
 """
 @inline Rgas(model) = Constants.R̄(eltype(model))
 Rgas() = Constants.R̄(Float64)
-
 
 """
     eos(model::EoSModel, V, T, z=SA[1.0])
 
 Returns the total Helmholtz energy.
+
 # Inputs:
-- `model::EoSModel` Thermodynamic model to evaluate
-- `V` Total volume, in `[m³]`
-- `T` Temperature, in `[K]`
-- `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
+
+  - `model::EoSModel` Thermodynamic model to evaluate
+  - `V` Total volume, in `[m³]`
+  - `T` Temperature, in `[K]`
+  - `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
+
 # Outputs:
-- Total Helmholtz energy, in `[J]`.
-By default, it calls `R̄*T*∑(z)*(a_ideal(ideal_model,V,T,z) + a_res(model,V,T,z))` where `ideal_model == idealmodel(model)`, where `a_res` is the reduced residual Helmholtz energy and `a_ideal` is the reduced ideal Helmholtz energy.
-You can mix and match ideal models if you provide:
-- `[idealmodel](@ref)(model)`: extracts the ideal model from your Thermodynamic model.
-- `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz energy.
+
+  - Total Helmholtz energy, in `[J]`.
+    By default, it calls `R̄*T*∑(z)*(a_ideal(ideal_model,V,T,z) + a_res(model,V,T,z))` where `ideal_model == idealmodel(model)`, where `a_res` is the reduced residual Helmholtz energy and `a_ideal` is the reduced ideal Helmholtz energy.
+    You can mix and match ideal models if you provide:
+  - `[idealmodel](@ref)(model)`: extracts the ideal model from your Thermodynamic model.
+  - `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz energy.
 """
-function eos(model::EoSModel, V, T, z::AbstractVector = SA[1.0])
-    return eos_impl(model,V,T,z)
+function eos(model::EoSModel, V, T, z::AbstractVector=SA[1.0])
+    return eos_impl(model, V, T, z)
 end
 
 eos(model::EoSModel, V, T, z::Number) = eos(model, V, T, SA[z])
 
-function eos_impl(model::EoSModel,V,T,z)
-    return Rgas(model)*sum(z)*T*a_eos(model,V,T,z) + reference_state_eval(model,V,T,z)
+function eos_impl(model::EoSModel, V, T, z)
+    return Rgas(model)*sum(z)*T*a_eos(model, V, T, z) + reference_state_eval(model, V, T, z)
 end
 
 function a_eos(model::EoSModel, V, T, z=SA[1.0])
     maybe_ideal = idealmodel(model)
     ideal = maybe_ideal !== nothing ? maybe_ideal : model
-    return a_ideal(ideal,V,T,z) + a_res(model,V,T,z)
+    return a_ideal(ideal, V, T, z) + a_res(model, V, T, z)
 end
 """
     idealmodel(model::EoSModel)
 
 Retrieves the ideal model from the input's model. If the model is already an idealmodel, return the same model. If the model has no ideal model stored, return nothing.
+
 # Examples:
+
 ```julia-repl
-julia> pr = PR(["water"],idealmodel = MonomerIdeal)
+julia> pr = PR([\"water\"], idealmodel=MonomerIdeal)
 PR{MonomerIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
  "water"
 Contains parameters: a, b, Tc, Pc, Mw
@@ -90,8 +93,8 @@ true
 idealmodel(model::EoSModel) = __idealmodel(model::EoSModel)
 
 @generated function __idealmodel(model::EoSModel)
-    if hasfield(model,:idealmodel)
-        return :(getfield(model,:idealmodel))
+    if hasfield(model, :idealmodel)
+        return :(getfield(model, :idealmodel))
     else
         return :(nothing)
     end
@@ -103,43 +106,51 @@ end
 Returns a boolean, indicating if the input model is considered an ideal model.
 By default, is defined in terms of [`idealmodel`](@ref).
 """
-@inline is_idealmodel(model::M) where M = __is_idealmodel(M,idealmodel(model))
+@inline is_idealmodel(model::M) where M = __is_idealmodel(M, idealmodel(model))
 
-@inline __is_idealmodel(::Type{M1},::Nothing) where {M1} = false
-@inline __is_idealmodel(::Type{M1},::Type{T}) where {M1,T}= false
-@inline __is_idealmodel(::Type{M1},::Type{M1}) where {M1} = true
-@inline __is_idealmodel(::Type{M1},x::T) where {M1,T} = __is_idealmodel(M1,T) 
-@inline __is_idealmodel(::Type{Nothing},::Type{Nothing}) = false #edge case, but better be sure
+@inline __is_idealmodel(::Type{M1}, ::Nothing) where {M1} = false
+@inline __is_idealmodel(::Type{M1}, ::Type{T}) where {M1,T} = false
+@inline __is_idealmodel(::Type{M1}, ::Type{M1}) where {M1} = true
+@inline __is_idealmodel(::Type{M1}, x::T) where {M1,T} = __is_idealmodel(M1, T)
+@inline __is_idealmodel(::Type{Nothing}, ::Type{Nothing}) = false #edge case, but better be sure
 
 """
     eos_res(model::EoSModel, V, T, z=SA[1.0])
 
 Returns the residual Helmholtz energy.
+
 # Inputs:
-- `model::EoSModel` Thermodynamic model to evaluate
-- `V` Total volume, in `[m³]`
-- `T` Temperature, in `[K]`
-- `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
+
+  - `model::EoSModel` Thermodynamic model to evaluate
+  - `V` Total volume, in `[m³]`
+  - `T` Temperature, in `[K]`
+  - `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
+
 # Outputs:
-- Residual Helmholtz energy, in `[J]`.
-By default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where [`a_res`](@ref) is the reduced residual Helmholtz energy.
+
+  - Residual Helmholtz energy, in `[J]`.
+    By default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where [`a_res`](@ref) is the reduced residual Helmholtz energy.
 """
 function eos_res(model::EoSModel, V, T, z=SA[1.0])
-    return Rgas(model)*sum(z)*T*a_res(model,V,T,z)
+    return Rgas(model)*sum(z)*T*a_res(model, V, T, z)
 end
 
 """
     a_res(model::EoSModel, V, T, z,args...)
 
 Returns reduced residual Helmholtz energy.
+
 # Inputs:
-- `model::EoSModel` Thermodynamic model to evaluate
-- `V` Total volume, in `[m³]`
-- `T` Temperature, in `[K]`
-- `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
+
+  - `model::EoSModel` Thermodynamic model to evaluate
+  - `V` Total volume, in `[m³]`
+  - `T` Temperature, in `[K]`
+  - `z` mole amounts, in `[mol]`, by default is `@SVector [1.0]`
+
 # Outputs:
-- Residual Helmholtz energy, no units.
-You can define your own EoS by adding a method to `a_res` that accepts your custom model.
+
+  - Residual Helmholtz energy, no units.
+    You can define your own EoS by adding a method to `a_res` that accepts your custom model.
 """
 function a_res end
 
@@ -151,8 +162,8 @@ paramtype(::Type{T}) where T = eltype(T)
 
 @inline Base.eltype(model::EoSModel) = paramtype(model)
 @inline paramtype(model::EoSModel) = __paramtype(model)
-Base.@assume_effects :foldable function __paramtype(model::T) where T <:EoSModel
-    if hasfield(T,:params)
+Base.@assume_effects :foldable function __paramtype(model::T) where T<:EoSModel
+    if hasfield(T, :params)
         return paramtype(model.params)
     else
         return Float64
@@ -167,7 +178,7 @@ Base.summary(model::EoSModel) = string(parameterless_type(model))
 Function that returns a list with the components used in the input `EoSModel`.
 """
 function component_list(model::M) where M
-    if hasfield(M,:components)
+    if hasfield(M, :components)
         return model.components
     else
         return String[]
@@ -195,11 +206,11 @@ Returns `true` when a model type carries site parameters.
 
 This checks whether the model type has has a definition of `getsites`.
 """
-has_sites(::T) where T <: EoSModel = has_sites(T)
-has_sites(::Type{T}) where T <: EoSModel = _has_sites(T)
+has_sites(::T) where T<:EoSModel = has_sites(T)
+has_sites(::Type{T}) where T<:EoSModel = _has_sites(T)
 
-Base.@assume_effects :foldable function _has_sites(::Type{T}) where T <: EoSModel
-    return hasmethod(getsites,Tuple{T})
+Base.@assume_effects :foldable function _has_sites(::Type{T}) where T<:EoSModel
+    return hasmethod(getsites, Tuple{T})
 end
 
 """
@@ -211,13 +222,13 @@ Returns `true` when a model type carries group parameters.
 This checks whether the model type has a `groups` field with `GroupParam`
 storage and is used to enable group-contribution logic.
 """
-has_groups(::T) where T <: EoSModel = has_groups(T)
-has_groups(::Type{T}) where T <: EoSModel = _has_groups(T)
+has_groups(::T) where T<:EoSModel = has_groups(T)
+has_groups(::Type{T}) where T<:EoSModel = _has_groups(T)
 
-Base.@assume_effects :foldable function _has_groups(::Type{T}) where T <: EoSModel
-    s1 = hasfield(T,:groups)
+Base.@assume_effects :foldable function _has_groups(::Type{T}) where T<:EoSModel
+    s1 = hasfield(T, :groups)
     if s1
-       return fieldtype(T,:groups) <: GroupParameter
+        return fieldtype(T, :groups) <: GroupParameter
     end
     return false
 end
@@ -229,37 +240,40 @@ Returns the `SiteParam` used in association calculations for the input `model`, 
 """
 function getsites end
 
-Base.length(model::T) where T <:EoSModel = _eos_length(model,Val(has_groups(model)))
+Base.length(model::T) where T<:EoSModel = _eos_length(model, Val(has_groups(model)))
 
-_eos_length(model::EoSModel,::Val{true}) = length(model.groups.components)
-_eos_length(model::EoSModel,::Val{false}) = length(model.components)
+_eos_length(model::EoSModel, ::Val{true}) = length(model.groups.components)
+_eos_length(model::EoSModel, ::Val{false}) = length(model.components)
 
 #used to distinguish between a_res based models and special models.
 
 function has_a_res(model::T) where T
-    return hasmethod(a_res,Tuple{T,Float64,Float64,Vector{Float64}})
+    return hasmethod(a_res, Tuple{T,Float64,Float64,Vector{Float64}})
 end
 
-has_dual(::Type{T}) where T <: ForwardDiff.Dual = true
+has_dual(::Type{T}) where T<:ForwardDiff.Dual = true
 has_dual(p::ForwardDiff.Dual) = true
-has_dual(p::AbstractArray{T}) where T= has_dual(T)
+has_dual(p::AbstractArray{T}) where T = has_dual(T)
 has_dual(model::EoSModel) = has_dual(eltype(model))
 has_dual(x) = false
 function has_dual(x::NTuple{N,<:Any}) where N
     #any_has_dual = ntuple(i -> has_dual(x[i]),Val{N}())
-    return any(has_dual,x)
+    return any(has_dual, x)
 end
 """
     doi(model)
+
 Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. If there isn't a `references` field, it defaults to `default_references(model)`.
+
 ```julia-repl
-julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.doi(umr)
+julia> umr = UMRPR([\"water\"], idealmodel=WalkerIdeal);
+       Clapeyron.doi(umr)
 1-element Vector{String}:
  "10.1021/I160057A011"
 ```
 """
 function doi(model)
-    if hasfield(typeof(model),:references)
+    if hasfield(typeof(model), :references)
         return model.references
     else
         return default_references(model)
@@ -269,7 +283,6 @@ end
     default_references(::Type{<:EoSModel})::Vector{String}
 
 Returns the default references of a model. If you are using the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros, define this function to set the references for the defined EoS.
-
 """
 function default_references end
 default_references(m::EoSModel) = default_references(parameterless_type(m))
@@ -281,24 +294,27 @@ default_references(M) = String[]
 Returns a Vector of strings containing all bibliographic references of the model, in the format indicated by the `out` argument. This includes any nested models.
 
 ```julia-repl
-julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #should cite UMRPR, UNIFAC, WalkerIdeal
+julia> umr = UMRPR([\"water\"], idealmodel=WalkerIdeal);
+       Clapeyron.cite(umr) #should cite UMRPR, UNIFAC, WalkerIdeal
 4-element Vector{String}:
  "10.1021/I160057A011"
  "10.1021/ie049580p"
  "10.1021/i260064a004"
  "10.1021/acs.jced.0c00723"
 ```
+
 The `out` argument supports two values:
-- `:doi`: returns the stored values on each EoS. By default those are DOI identifiers.
-- `:bib`: returns BibTeX entries. To use this, an internet connection is required.
+
+  - `:doi`: returns the stored values on each EoS. By default those are DOI identifiers.
+  - `:bib`: returns BibTeX entries. To use this, an internet connection is required.
 
 ```julia-repl
-julia> model = SAFTVRQMie(["helium"])
+julia> model = SAFTVRQMie([\"helium\"])
 SAFTVRQMie{BasicIdeal} with 1 component:
  "helium"
 Contains parameters: Mw, segment, sigma, lambda_a, lambda_r, epsilon
 
-julia> Clapeyron.cite(model,:bib)
+julia> Clapeyron.cite(model, :bib)
 2-element Vector{String}:
  "@article{Aasen_2019,\n\tdoi = {10" ⋯ 463 bytes ⋯ "Journal of Chemical Physics}\n}"
  "@article{Aasen_2020,\n\tdoi = {10" ⋯ 452 bytes ⋯ "Journal of Chemical Physics}\n}"
@@ -306,16 +322,16 @@ julia> Clapeyron.cite(model,:bib)
 
 This list will displayed by each `EoSModel` on future versions. You can enable/disable this by setting `ENV["CLAPEYRON_SHOW_REFERENCES"] = "TRUE"/"FALSE"`.
 """
-function cite(model::EoSModel,out = :doi)
+function cite(model::EoSModel, out=:doi)
     keys = fieldnames(typeof(model))
     res = doi(model)
 
     for key in keys
-        val = getfield(model,key)
+        val = getfield(model, key)
         if val isa EoSModel
-            append!(res,cite(val))
+            append!(res, cite(val))
         elseif key == :references
-            append!(res,val)
+            append!(res, val)
         end
     end
     unique!(res)
@@ -330,13 +346,14 @@ end
 
 """
     recombine!(model::EoSModel)
+
 Recalculates all mixing rules, combining rules and parameter caches inside an `EoSModel`.
 """
 function recombine! end
 
-function setreferences!(model,references)
+function setreferences!(model, references)
     oldrefs = model.references
-    resize!(oldrefs,length(references))
+    resize!(oldrefs, length(references))
     oldrefs .= references
 end
 
@@ -346,16 +363,16 @@ is_pseudo_pure(model) = false
 """
     component_charges(model)
 
-Net charge carried by one molecule of each *component*. 
+Net charge carried by one molecule of each *component*.
 Non-electrolyte models do not have a definition of component_charges, so one can check if a model is an electrolyte model if there is it has a `component_charges` method.
-The generic fallback for `ElectrolyteModel` assumes that the charges are stored in `model.charge`. 
+The generic fallback for `ElectrolyteModel` assumes that the charges are stored in `model.charge`.
 A group-contribution model whose own charges are defined per-*group* instead must override this method to provide charges per component instead.
 """
 function component_charges end
 
 is_electrolyte(model) = _is_electrolyte(model)
 function _is_electrolyte(model::T) where T
-    return hasmethod(component_charges,Tuple{T})
+    return hasmethod(component_charges, Tuple{T})
 end
 
 #iterator functions used by iterator macros: EoSModel dispatch
@@ -367,10 +384,8 @@ end
 #@inline groups_iterator(groups::GroupParam) = comps_iterator(length(groups.flattenedgroups))
 #@inline sites_iterator(model::EoSModel,i) = sites_iterator(getsites(model),Int64(i))
 #@inline sites_iterator(sites::SiteParam,i) = sites.i_sites[i]
-@inline groups_iterator(model::EoSModel,i::Integer) = groups_iterator(model.groups,Int64(i))
+@inline groups_iterator(model::EoSModel, i::Integer) = groups_iterator(model.groups, Int64(i))
 #@inline groups_iterator(groups::GroupParam,i::Int) = groups.i_groups[i]
-
-
 
 export EoSModel, eos, has_groups, has_sites, Rgas, eos_res
 @public a_res, component_list, is_idealmodel, component_charges

@@ -1,5 +1,4 @@
 
-
 abstract type DHBornModel <: DHModel end
 
 struct DHBorn{ϵ} <: DHBornModel
@@ -20,21 +19,25 @@ export DHBorn
         verbose = false)
 
 ## Input parameters
-- `sigma`: Single Parameter (`Float64`) - Diameter of closest approach `[m]`
-- `sigma_born`: Single Parameter (`Float64`) - Born Diameter `[m]`
-- `charge`: Single Parameter (`Float64`) - Charge `[-]`
+
+  - `sigma`: Single Parameter (`Float64`) - Diameter of closest approach `[m]`
+  - `sigma_born`: Single Parameter (`Float64`) - Born Diameter `[m]`
+  - `charge`: Single Parameter (`Float64`) - Charge `[-]`
 
 ## Input models
-- `RSPmodel`: Relative Static Permittivity Model
+
+  - `RSPmodel`: Relative Static Permittivity Model
 
 ## Description
+
 This function is used to create a Debye-Hückel-Born model. The Debye-Hückel-Born term gives the excess Helmholtz energy to account for the electrostatic interactions between ions in solution.
 
 ## References
-1. Debye, P., Huckel, E. (1923). Phys. Z. 24, 185.
-2. Born, M. (1920). Z. Phys. 1, 45.
+
+ 1. Debye, P., Huckel, E. (1923). Phys. Z. 24, 185.
+ 2. Born, M. (1920). Z. Phys. 1, 45.
 """
-function DHBorn(solvents,ions; charge = nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
+function DHBorn(solvents, ions; charge=nothing, RSPmodel=ConstRSP, userlocations=String[], RSPmodel_userlocations=String[], verbose=false)
     solvents = format_components(solvents)
     ions = format_components(ions)
     components = vcat(solvents, ions)
@@ -42,13 +45,13 @@ function DHBorn(solvents,ions; charge = nothing, RSPmodel=ConstRSP, userlocation
     userlocations = normalize_userlocations(userlocations)
     RSPmodel_userlocations = normalize_userlocations(RSPmodel_userlocations)
 
-    params = getparams(components, append!(["Electrolytes/Born/born_like.csv"]); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
+    params = getparams(components, append!(["Electrolytes/Born/born_like.csv"]); userlocations=userlocations, ignore_missing_singleparams=["sigma_born", "charge"], verbose=verbose)
     sigma_born = params["sigma_born"]
     sigma_born.values .*= 1E-10
 
     packagedparams = BornParam(sigma_born)
 
-    init_RSPmodel = @initmodel RSPmodel(solvents,ions,userlocations = RSPmodel_userlocations, verbose = verbose)
+    init_RSPmodel = @initmodel RSPmodel(solvents, ions, userlocations=RSPmodel_userlocations, verbose=verbose)
 
     references = String[]
 
