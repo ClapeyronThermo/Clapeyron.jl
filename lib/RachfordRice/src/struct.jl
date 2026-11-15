@@ -1,12 +1,56 @@
+"""
+    RachfordRiceStatus
+
+Enumeration describing the phase state found by [`rachfordrice`](@ref).
+
+| value       | meaning |
+|:------------|:--------|
+| `RRLiquid`  | single-phase liquid: the residual at `β = 0` is negative, so no vapour is formed. |
+| `RRVapour`  | single-phase vapour: the residual at `β = 1` is positive, so no liquid is formed. |
+| `RREq`      | two-phase (vapour-liquid equilibrium) solution; a root of the Rachford-Rice equation exists. |
+| `RRTrivial` | trivial solution: all K-values are equal to one within `K_tol` (`maximum(abs.(log.(K))) <= K_tol`), so the phases are indistinguishable. |
+| `RRFailure` | the problem is ill-posed (`NaN` or negative K-values, `NaN` residual) or the iteration did not converge. |
+
+"""
 @enum RachfordRiceStatus RRLiquid RRVapour RREq RRFailure RRTrivial
 
-struct RachfordRiceResidual{KK,Z,NX,NY,T}
+"""
+    RachfordRiceResidual(K, z; non_inx = nothing, non_iny = nothing)
+
+Container describing a Rachford-Rice problem: the K-values `K`, the overall molar
+composition `z` and the (optional) sets of components that are absent from one of the phases.
+The vapour fraction `β` is the root of
+
+    Σᵢ zᵢ (Kᵢ - 1) / (1 + β (Kᵢ - 1)) = 0
+
+(the sum is normalised by `Σᵢ zᵢ`, so `z` does not need to add up to one).
+
+# Arguments
+- `K`: vector of K-values `Kᵢ = yᵢ/xᵢ`.
+- `z`: vector of overall molar composition, with `length(z) >= length(K)`.
+
+# Keyword arguments
+- `non_inx`: `nothing`, or a `Bool` vector marking the components that are not present in the liquid phase. These components are treated as having `Kᵢ = Inf`.
+- `non_iny`: `nothing`, or a `Bool` vector marking the components that are not present in the vapour phase. These components are treated as having `Kᵢ = 0`.
+
+A `RachfordRiceResidual` behaves as a read-only iterable container of *effective* K-values.
+
+# Example
+```julia
+K = [2.0, 1.5, 0.5, 0.1]
+z = [0.25, 0.25, 0.25, 0.25]
+RR = RachfordRiceResidual(K, z)
+res = rachfordrice(RR)
+RR[1] #2.0
+```
+"""
+struct RachfordRiceResidual{KK,Z,NX,NY}
     K::KK
     z::Z
     non_inx::NX
     non_iny::NY
 
-    function RachfordRiceResidual(K::KK,z::Z,non_inx::NX,non_iny::NY) where {KK,Z,NX,NY} 
+    function RachfordRiceResidual(K::KK,z::Z,non_inx::NX,non_iny::NY) where {KK,Z,NX,NY}
         n = length(K)
         checkbounds(z,n)
 
@@ -17,17 +61,20 @@ struct RachfordRiceResidual{KK,Z,NX,NY,T}
         if non_iny !== nothing
             checkbounds(non_iny,n)
         end
-        
+
         return new{KK,Z,NX,NY}(K,z,non_inx,non_iny)
     end
 end
+
 
 const RRSimple{KK,Z} = RachfordRiceResidual{KK,Z,Nothing,Nothing} where {KK,Z}
 
 Base.eltype(RR::RachfordRiceResidual) = eltype(RR.K)
 Base.length(RR::RachfordRiceResidual) = length(RR.K)
+Base.size(RR::RachfordRiceResidual) = (length(RR.K),)
 
-RachfordRiceResidual(K,z) = RachfordRiceResidual(K,z,nothing,nothing)
+
+RachfordRiceResidual(K,z; non_inx = nothing,non_iny = nothing) = RachfordRiceResidual(K,z,non_inx,non_iny)
 
 @inline function Base.getindex(RR::RachfordRiceResidual,i::Int)
     TT = eltype(RR.K)
@@ -36,58 +83,117 @@ end
 
 @inline Base.getindex(RR::RRSimple,i::Int) = RR.K[i]
 
-Base.iterate(RR::RachfordRiceResidual) = iterate(RR, firstindex(RR.K))
-Base.iterate(RR::RachfordRiceResidual, state) = iterate(RR, state, RR.K)
-function Base.iterate(RR::RachfordRiceResidual, state, K)
-    next = iterate(K, state)
-    next === nothing && return nothing
-    i, newstate = next
-    return (RR[i], newstate)
+Base.IteratorSize(::Type{<:RachfordRiceResidual}) = Base.HasShape{1}()
+
+function Base.iterate(RR::RachfordRiceResidual)
+    nc = length(RR.K)
+    nc == 0 && return nothing
+    return iterate(RR,(1,nc))
+end
+
+function Base.iterate(RR::RachfordRiceResidual, state)
+    i,nc = state
+    if i > nc
+        return nothing
+    else
+        return (RR[i],(i + 1,nc))
+    end
 end
 
 Base.firstindex(RR::RachfordRiceResidual) = firstindex(RR.K)
 Base.lastindex(RR::RachfordRiceResidual)  = lastindex(RR.K)
 Base.eachindex(RR::RachfordRiceResidual) = eachindex(RR.K)
 
+
+struct RRState{T,Res<:RachfordRiceResidual}
+    RR::Res
+    Zinf::T
+    Z0::T
+    poles::NTuple{2,T}
+    sumz::T
+    feasible::Int8
+end
+
+function RRState(RR::RachfordRiceResidual)
+    T = eltype(RR)
+    z = RR.z
+    sumz = zero(T)
+    Kmin,Kmax = one(T)*Inf,-one(T)
+    Z0,Zinf = zero(T),zero(T)
+    
+    for i in eachindex(RR)
+        zi,Ki = z[i],RR[i]
+        sumz += zi
+        if isinf(Ki)
+            Zinf += zi
+        elseif iszero(Ki)
+            Z0 += zi
+        end
+        Kmin = min(Ki,Kmin)
+        Kmax = max(Ki,Kmax)
+    end
+
+    if isnan(Kmin) || isnan(Kmax) || Kmin < 0
+        feasible = Int8(3)
+    elseif Kmin > 1
+        feasible = Int8(2)
+    elseif Kmax < 1
+        feasible = Int8(1)
+    else
+        feasible = Int8(0)
+    end
+    _1 = one(T)
+    poles = (_1/(_1 - Kmax),_1/(_1 - Kmin))
+
+    return RRState(RR,Zinf,Z0,poles,sumz,feasible)
+end
+
+rrstate_absolute_liquid(RRS::RRState) = RRS.feasible == 1
+rrstate_absolute_vapour(RRS::RRState) = RRS.feasible == 2
+rr_state_kz_domain_err(RRS::RRState) = RRS.feasible == 3
+rr_feasible(RRS::RRState) = RRS.feasible == 0
+
 __log_K_norm(RR::RachfordRiceResidual) = __log_K_norm(RR.K,RR.non_inx,RR.non_iny)
 __log_K_norm(RR::RRSimple) =maximum(abs ∘ log,RR.K)
 
-function residual(RR::RachfordRiceResidual,β::B) where B
+
+"""
+    residual(RR::RachfordRiceResidual, βv, βl = 1 - βv)
+
+Evaluate the Rachford-Rice residual function
+
+    F(β) = Σᵢ zᵢ (Kᵢ - 1) / (1 + β (Kᵢ - 1)) / Σᵢ zᵢ
+
+at `β = βv`. The molar vapour fraction of the solution is the root of `F`.
+
+Here `RR` is a [`RachfordRiceResidual`](@ref), `βv` is the molar vapour fraction `β` and `βl`
+is the molar liquid fraction, which defaults to `1 - βv`. 
+
+Returns the residual `F(β)`.
+"""
+function residual(RR::RachfordRiceResidual,βv::B,βl::B = 1 - βv) where B
     K,z = RR,RR.z
-    T = Base.promote_eltype(K,z,β)
+    T = Base.promote_eltype(K,z,βv)
     _0,_1 = zero(T),oneunit(T)
-    _0βy = - _1/ (_1 - β)
-    _0βx = _1/ β
+    βl_inv = - _1/ βl
+    βv_inv = _1/ βv
     res = _0
     res_KD2 = _0
     for i in eachindex(K)
-        Ki = K[i]
-        #we separate (K-1)/(1-βK) into K/(1-βK) and 1/(1-βK) for numerical reasons.
-        #see;
-        #Ks_eps_0 = [1.2566703532018493e-21, 3.3506275205339295, 1.0300675710905643e-23, 1.706258568414198e-39, 1.6382855298440747e-20]
-        #zs_eps_0 = [0.13754371891028325, 0.29845155687154623, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
-        if Ki < eps(one(Ki))
-            detKi0 = 1 - β
-            detKi0 += β*Ki
-            detKi = 1/detKi0
-        else
-            Kim1 = Ki - 1
-            detKi0 = 1 + β*Kim1
-            detKi = 1/detKi0
-        end
-        KD1 = Ki*detKi
-        KD2 = -detKi
+        Ki = K[i]    
         # modification for non-in-y components Ki -> 0
         if iszero(Ki)
-            KD = _0βy
             KD2 = -_1
-            KD1 = _0βy - KD2
-        end
+            KD1 = βl_inv - KD2
         # modification for non-in-x components Ki -> ∞
-        if isinf(Ki)
-            KD = _0βx
-            KD1 = _0βx
+        elseif isinf(Ki)
+            KD1 = βv_inv
             KD2 = _0
+        # normal Ki
+        else
+            _, detKi = fma_and_inv(Ki,βv,βl)
+            KD1 = Ki*detKi
+            KD2 = -detKi
         end
         zi = z[i]
         res += zi*KD1
@@ -99,43 +205,47 @@ function residual(RR::RachfordRiceResidual,β::B) where B
     return res
 end
 
-function residual_first_derivative(RR::RachfordRiceResidual,β::B) where B
+"""
+    residual_first_derivative(RR::RachfordRiceResidual, βv, βl = 1 - βv) -> (F, ∂F)
+
+Evaluate the Rachford-Rice residual and its first derivative with respect to `β`:
+
+    F(β) = Σᵢ zᵢ (Kᵢ - 1) / (1 + β (Kᵢ - 1)) / Σᵢ zᵢ
+    ∂F(β) = -Σᵢ zᵢ (Kᵢ - 1)² / (1 + β (Kᵢ - 1))² / Σᵢ zᵢ
+
+at `β = βv`. The molar vapour fraction of the solution is the root of `F`.
+
+Here `RR` is a [`RachfordRiceResidual`](@ref), `βv` is the molar vapour fraction `β` and `βl`
+is the molar liquid fraction, which defaults to `1 - βv`. 
+
+Returns the tuple `(F, ∂F)`.
+"""
+function residual_first_derivative(RR::RachfordRiceResidual,βv::B,βl::B = 1 - βv) where B
     K,z = RR,RR.z
-    T = Base.promote_eltype(K,z,β)
-    _0 = zero(T)
-    _0βy = - _1/ (_1 - β)
-    _0βx = _1/ β
+    T = Base.promote_eltype(K,z,βv)
+    _0,_1 = zero(T),oneunit(T)
+    βl_inv = - _1/ βl
+    βv_inv = _1/ βv
     res,∂res = _0,_0
     res_KD2 = _0
     for i in eachindex(K)
-        Ki = K[i]
-        #we separate (K-1)/(1-βK) into K/(1-βK) and 1/(1-βK) for numerical reasons.
-        #see;
-        #Ks_eps_0 = [1.2566703532018493e-21, 3.3506275205339295, 1.0300675710905643e-23, 1.706258568414198e-39, 1.6382855298440747e-20]
-        #zs_eps_0 = [0.13754371891028325, 0.29845155687154623, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
-        if Ki < eps(one(Ki))
-            detKi0 = 1 - β
-            detKi0 += β*Ki
-            detKi = 1/detKi0
-        else
-            Kim1 = Ki - 1
-            detKi0 = 1 + β*Kim1
-            detKi = 1/detKi0
-        end
-        KD1 = Ki*detKi
-        KD2 = -detKi
-        KD = KD1 + KD2
+        Ki = K[i]    
         # modification for non-in-y components Ki -> 0
         if iszero(Ki)
-            KD = _0βy
+            KD = βl_inv
             KD2 = -_1
-            KD1 = _0βy - KD2
-        end
+            KD1 = βl_inv - KD2
         # modification for non-in-x components Ki -> ∞
-        if isinf(Ki)
-            KD = _0βx
-            KD1 = _0βx
+        elseif isinf(Ki)
+            KD = βv_inv
+            KD1 = βv_inv
             KD2 = _0
+        # normal Ki
+        else
+            _, detKi = fma_and_inv(Ki,βv,βl)
+            KD1 = Ki*detKi
+            KD2 = -detKi
+            KD = KD1 + KD2
         end
         zi = z[i]
         res += zi*KD1
@@ -150,43 +260,72 @@ function residual_first_derivative(RR::RachfordRiceResidual,β::B) where B
     return res,∂res
 end
 
-function residual_first_second_derivative(RR::RachfordRiceResidual,β::B) where B
+"""
+    residual_first_second_derivative(RR::RachfordRiceResidual, βv, βl = 1 - βv) -> (F, ∂F, ∂²F)
+
+Evaluate the Rachford-Rice residual and its first and second derivatives with respect to `β`:
+
+    F(β) = Σᵢ zᵢ (Kᵢ - 1) / (1 + β (Kᵢ - 1)) / Σᵢ zᵢ
+    ∂F(β) = -Σᵢ zᵢ (Kᵢ - 1)² / (1 + β (Kᵢ - 1))² / Σᵢ zᵢ
+    ∂²F(β) = 2 Σᵢ zᵢ (Kᵢ - 1)³ / (1 + β (Kᵢ - 1))³ / Σᵢ zᵢ
+
+at `β = βv`. The molar vapour fraction of the solution is the root of `F`.
+
+Here `RR` is a [`RachfordRiceResidual`](@ref), `βv` is the molar vapour fraction `β` and `βl`
+is the molar liquid fraction, which defaults to `1 - βv`. 
+
+Returns the tuple `(F, ∂F, ∂²F)`
+"""
+function residual_first_second_derivative(RR::RachfordRiceResidual,βv::B,βl::B = 1 - βv) where B
+    res,∂res,∂2res,_ = residual_first_second_derivative_error(RR,βv,βl)
+    return res,∂res,∂2res
+end
+
+"""
+    residual_first_second_derivative_error(RR::RachfordRiceResidual, βv, βl = 1 - βv) -> (F, ∂F, ∂²F, S)
+
+Same as [`residual_first_second_derivative`](@ref), but additionally returns:
+
+    S(β) = Σᵢ zᵢ |Kᵢ - 1| / |1 + β (Kᵢ - 1)| / Σᵢ zᵢ
+
+the sum of the absolute values of the terms that make up `F`. Since `F` is a sum of terms of
+both signs, `S` is the natural scale of its floating-point rounding error: a residual with
+`|F| <= C * eps * S` cannot be distinguished from zero. The solver uses this as its convergence
+criterion.
+
+Here `RR` is a [`RachfordRiceResidual`](@ref), `βv` is the molar vapour fraction `β` and `βl`
+is the molar liquid fraction, which defaults to `1 - βv`. 
+
+Returns the tuple `(F, ∂F, ∂²F, S)`.
+"""
+function residual_first_second_derivative_error(RR::RachfordRiceResidual,βv::B,βl::B = 1 - βv) where B
     K,z = RR,RR.z
-    T = Base.promote_eltype(K,z,β)
-    _0 = zero(T)
-    _0βy = - _1/ (_1 - β)
-    _0βx = _1/ β
+    T = Base.promote_eltype(K,z,βv)
+    _0,_1 = zero(T),oneunit(T)
+    βl_inv = - _1/ βl
+    βv_inv = _1/ βv
     res,∂res,∂2res = _0,_0,_0
     res_KD2 = _0
+    S = _0
     for i in eachindex(K)
-        Ki = K[i]
-        #we separate (K-1)/(1-βK) into K/(1-βK) and 1/(1-βK) for numerical reasons.
-        #see;
-        #Ks_eps_0 = [1.2566703532018493e-21, 3.3506275205339295, 1.0300675710905643e-23, 1.706258568414198e-39, 1.6382855298440747e-20]
-        #zs_eps_0 = [0.13754371891028325, 0.29845155687154623, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
-        if Ki < eps(one(Ki))
-            detKi0 = 1 - β
-            detKi0 += β*Ki
-            detKi = 1/detKi0
-        else
-            Kim1 = Ki - 1
-            detKi0 = 1 + β*Kim1
-            detKi = 1/detKi0
-        end
-        KD1 = Ki*detKi
-        KD2 = -detKi
-        KD = KD1 + KD2
+        Ki = K[i] 
+        Si = zero(S)  
         # modification for non-in-y components Ki -> 0
         if iszero(Ki)
-            KD = _0βy
+            KD = βl_inv
             KD2 = -_1
-            KD1 = _0βy - KD2
-        end
+            KD1 = βl_inv - KD2
         # modification for non-in-x components Ki -> ∞
-        if isinf(Ki)
-            KD = _0βx
-            KD1 = _0βx
+        elseif isinf(Ki)
+            KD = βv_inv
+            KD1 = βv_inv
             KD2 = _0
+        # normal Ki
+        else
+            detKi = fma_inv(Ki,βv,βl)
+            KD1 = Ki*detKi
+            KD2 = -detKi
+            KD = KD1 + KD2
         end
         zi = z[i]
         res += zi*KD1
@@ -195,52 +334,79 @@ function residual_first_second_derivative(RR::RachfordRiceResidual,β::B) where 
         KD³ = KD²*KD
         ∂res -= zi*KD²
         ∂2res += 2*zi*KD³
+        S += zi*abs(KD)
     end
     invsumz = 1/sum(z)
     res += res_KD2
     res *= invsumz
     ∂res *= invsumz
     ∂2res *= invsumz
-    return res,∂res,∂2res
+    S *= invsumz
+    return res,∂res,∂2res,S
 end
 
-function rr_limits(RR::RachfordRiceResidual)
+
+"""
+    βmin,βmax = rr_limits(RR::RachfordRiceResidual, negative_flash::Bool = false)
+
+Whitston-michelsen bounds for the rachford-rice problem.
+
+returns NaN,NaN if the provided K and z values cannot be separated into two phases.
+"""
+function rr_limits(RR::RachfordRiceResidual, negative_flash::Bool) 
+    βmin, βmax = rr_limits(RR)
+    if !negative_flash
+        _0 = zero(βmin); _1 = one(βmin)
+        βmin = max(βmin, _0)
+        βmax = min(βmax, _1)
+    end
+    return βmin, βmax
+end
+
+function rr_limits(RRS::RRState, negative_flash::Bool)
+    βmin, βmax = rr_limits(RRS)
+    if !negative_flash
+        _0 = zero(βmin); _1 = one(βmin)
+        βmin = max(βmin, _0)
+        βmax = min(βmax, _1)
+    end
+    return βmin, βmax
+end
+
+rr_limits(RR::RachfordRiceResidual) = rr_limits(RRState(RR))
+
+function rr_limits(RRS::RRState)
+    RR = RRS.RR
     K, z = RR, RR.z
     T = Base.promote_eltype(K, z)
-    invsumz = inv(sum(z))
+    invsumz = inv(RRS.sumz)
 
+    if !rr_feasible(RRS)
+        return T(NaN),T(NaN)
+    end
     # βmin_t, βmax_t : tight (composition) bounds from x_i ≤ 1, y_i ≤ 1
-    # βmin_p, βmax_p : pole bounds, the physical domain of R(β)
     βmin_t = T(-Inf); βmax_t = T(Inf)
-    βmin_p = T(-Inf); βmax_p = T(Inf)
-    Z∞ = zero(T); Z0 = zero(T)
-
+    βmin_p,βmax_p = RRS.poles
     for i in eachindex(K)
         Ki = K[i]
         zi = z[i] * invsumz
-        if isinf(Ki)
-            Z∞ += zi
-            βmin_p = max(βmin_p, zero(T))                          # pole at 0
-        elseif iszero(Ki)
-            Z0 += zi
-            βmax_p = min(βmax_p, one(T))                           # pole at 1
+        if isinf(Ki) || iszero(Ki)                        # pole at 1
+            continue
         elseif Ki > 1
             d = Ki - 1
-            βmin_p = max(βmin_p, -inv(d))                          # 1/(1-Ki)
-            βmin_t = max(βmin_t, (Ki*zi - 1) * inv(d))
+            βmin_t = max(βmin_t, (Ki*zi - 1) / d)
         elseif Ki < 1
             d = 1 - Ki
-            βmax_p = min(βmax_p, inv(d))                           # 1/(1-Ki)
-            βmax_t = min(βmax_t, (1 - zi) * inv(d))
+            βmax_t = min(βmax_t, (1 - zi) / d)
         end
     end
-
+    Z∞,Z0 = RRS.Zinf,RRS.Z0
     # summed tight bounds for K → 0 and K → ∞ dominate the per-component ones
     if Z∞ > 0
-        βmin_t = max(βmin_t, Z∞)
+        βmin_t = max(βmin_t, Z∞*invsumz)
     end
     if Z0 > 0
-        βmax_t = min(βmax_t, 1 - Z0)
+        βmax_t = min(βmax_t, 1 - Z0*invsumz)
     end
 
     # use tight bounds when they form a valid (non-degenerate) bracket;
@@ -253,17 +419,8 @@ function rr_limits(RR::RachfordRiceResidual)
     end
 end
 
-function rr_limits(RR::RachfordRiceResidual, negative_flash::Bool)
-    βmin, βmax = rr_limits(RR)
-    if !negative_flash
-        _0 = zero(βmin); _1 = one(βmin)
-        βmin = max(βmin, _0)
-        βmax = min(βmax, _1)
-    end
-    return βmin, βmax
-end
-
 function rr_status(RR::RachfordRiceResidual;K_tol = 4*eps(eltype(RR)))
+
     g0 = residual(RR,0)
     g1 = residual(RR,1)
 
@@ -284,25 +441,41 @@ function rr_status(RR::RachfordRiceResidual;K_tol = 4*eps(eltype(RR)))
     return status
 end
 
-function rr_initial_state(RR::RachfordRiceResidual,β0 = nothing; K_tol = 4*eps(eltype(RR)))
-    status = rr_status(RR; K_tol)
+function rr_status(RRS::RRState;K_tol = 4*eps(eltype(RR)))
+
+    if rrstate_absolute_liquid(RRS)
+        return RRLiquid
+    elseif rrstate_absolute_vapour(RRS)
+        return RRVapour
+    elseif rr_state_kz_domain_err(RRS)
+        return RRFailure
+    end
+    return rr_status(RRS.RR;K_tol)
+end
+
+function rr_initial_state(RRS::RRState,β0 = nothing; K_tol = 4*eps(eltype(RR)))
+    
+    RR = RRS.RR
+    status = rr_status(RRS; K_tol)
     K,z = RR,RR.z
     _1 = one(Base.promote_eltype(K,z))
     _0 = zero(_1)
     nan = _0/_0
 
+    feasible = rr_feasible(RRS)
+
     if status == RRTrivial || status == RRFailure
-        return nan,status,(nan,nan)
-    elseif status == RRLiquid
-        βmin,βmax = rr_limits(RR)
-        return _0,status,(βmin,βmax)
-    elseif status == RRVapour
-        βmin,βmax = rr_limits(RR)
-        return _1,status,(βmin,βmax)
+        return nan,status,(nan,nan),feasible
+    end
+
+    #cannot solve, cannot get bounds
+    if !feasible && (status == RRLiquid || status == RRVapour)
+        return nan,status,(nan,nan),feasible
     end
 
     βmin,βmax = rr_limits(RR)
 
+    #initial point generation
     if β0 !== nothing
         if βmin <= β0 <= βmax
             β = _1*β0
@@ -313,5 +486,5 @@ function rr_initial_state(RR::RachfordRiceResidual,β0 = nothing; K_tol = 4*eps(
         β = (βmax + βmin)/2
     end
 
-    return β,status,(βmin,βmax)
+    return β,status,(βmin,βmax),feasible
 end

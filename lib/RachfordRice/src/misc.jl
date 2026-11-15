@@ -14,54 +14,66 @@ function __log_K_norm(K::AbstractVector{T},non_inx,non_iny) where T
     return maximum(abs ∘ log,K)
 end
 
-function guarded_halley(f, x0::T) where T
-    guarded_halley(f, x0, T(-Inf), T(Inf))
+"""
+    cubic_root_in_bracket(a0, a1, a2, a3, βmin, βmax) -> (β, solved)
+
+Real root of a3·β³ + a2·β² + a1·β + a0 = 0 inside (βmin, βmax).
+Assumes a3 ≠ 0. For the RR case a3 ≈ 1 (sum of normalized z's).
+"""
+function cubic_root_in_bracket(a0, a1, a2, a3, βmin, βmax)
+    T = typeof(a0)
+    inv_a3 = one(T) / a3
+
+    # Depress: β³ + b·β² + c·β + d = 0, β = t - b/3
+    b = a2 * inv_a3
+    c = a1 * inv_a3
+    d = a0 * inv_a3
+    shift = b / 3
+    p = c - b*b / 3
+    q = 2*b*b*b / 27 - b*c / 3 + d
+
+    # Discriminant of depressed cubic t³ + pt + q = 0
+    # D > 0 ⇒ one real root ;  D < 0 ⇒ three real roots
+    D = (q/2)^2 + (p/3)^3
+
+    if D >= zero(T)
+        # One real root, stable Cardano
+        if iszero(q) && iszero(p)
+            t = zero(T)
+        else
+            sqD = sqrt(D)
+            w = -q/2 + copysign(sqD, -q/2)   # larger of the two
+            u = cbrt(w)
+            v = -p / (3*u)
+            t = u + v
+        end
+        β = t - shift
+        return (βmin < β < βmax) ? (β, true) : (zero(T)/zero(T), false)
+    else
+        # Three real roots, trigonometric
+        r = sqrt(-p/3)
+        cos_arg = clamp(-q/(2*r*r*r), -one(T), one(T))
+        θ = acos(cos_arg) / 3
+        two_pi_over_3 = 2 * (π * one(T)) / 3
+        for k in 0:2
+            t = 2 * r * cos(θ - k * two_pi_over_3)
+            β = t - shift
+            βmin < β < βmax && return (β, true)
+        end
+        return (zero(T)/zero(T), false)
+    end
 end
 
-function guarded_halley(f, x0::T, xlo::T, xhi::T) where T
-    zero_T = zero(T); one_T = one(T); two_T = one_T + one_T
-    ft = eps(T)
-    bracket = isfinite(xlo) && isfinite(xhi) && xlo < xhi
+function inv_fma(x, y, z)
+    r = fma(x, y, z)
+    return 1/r
+end
 
-    lo, hi, flo = xlo, xhi, zero_T
-    if bracket
-        flo = first(f(lo))
-        fhi = first(f(hi))
-        iszero(flo) && return lo
-        iszero(fhi) && return hi
-        (flo < zero_T) == (fhi < zero_T) &&
-            throw(ArgumentError("f(xlo) and f(xhi) must have opposite signs"))
-        xt = eps(T) * two_T * (abs(lo) + abs(hi) + one_T)
-        x = clamp(x0, lo, hi)
+macro public(sym)
+    sym isa Symbol || error("@public expects a single symbol, got: $sym")
+    if VERSION >= v"1.11.0-DEV.469"
+        return esc(Expr(:public, sym))
     else
-        xt = zero_T
-        x = x0
+        return nothing
     end
-
-    for _ in 1:100
-        fx, dfx, d2fx = f(x)
-        abs(fx) <= ft && return x
-        bracket && (hi - lo) <= xt && return (lo + hi) / two_T
-
-        if bracket
-            if (fx < zero_T) == (flo < zero_T)
-                lo = x; flo = fx
-            else
-                hi = x
-            end
-        end
-
-        denom = two_T * dfx * dfx - fx * d2fx
-        xn = (iszero(denom) || !isfinite(denom)) ?
-             (bracket ? (lo + hi) / two_T : return(x)) :
-             x - two_T * fx * dfx / denom
-
-        if !isfinite(xn) || xn == x || (bracket && !(lo < xn < hi))
-            bracket || return x
-            xn = (lo + hi) / two_T
-        end
-        x = xn
-    end
-
-    return x
 end

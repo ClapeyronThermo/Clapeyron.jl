@@ -254,6 +254,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
     K,lnK = similar(x),similar(x)
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     _0,_1 = zero(TT),one(TT)
+    RR = RachfordRice.RachfordRiceResidual(K,z,non_inx,non_iny)
     if !isnothing(K0)
         #K0 should be the same size as the input model
         check_arraysize(model_full,K0)
@@ -280,7 +281,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
         phases = (:liquid,:vapour)
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
-            Kmin,Kmax = K_extrema(K,non_inx,non_iny)
+            Kmin,Kmax = extrema(RR)
             if Kmax < 1 #only try LLE if the VLE K0 suggests only liquid phase
                 verbose && @info "VLE correlation failed, trying LLE initial point."
                 tpd_cache0 = similar(K),similar(K),similar(K),similar(K),Ref(_0),dlnϕ_cache
@@ -305,7 +306,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
     end
     verbose && @info "K0 = $K"
     # Initial guess for phase split
-    status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
+    status = rr_status(RR,K_tol = K_tol)
     status0 = status
     #=
     TREND bubble/dew initialization
@@ -314,28 +315,17 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
     then we start at the bubble (or dew conditions)
     =#
 
-    if status == RRLiquid
-        β = _0
-        if maximum(K) < 1
+    if status == RRLiquid || status == RRVapour
+        bubble = status == RRLiquid
+        if !rr_feasible(RR)
+            β = rr_feasibility_projection!(RR,z,bubble;verbose = verbose)
             x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
-            K .= y ./ x
-            verbose && @info "maximum(K) < 1: forcing consistency"
-            verbose && @info "forced K: $K"
+        else
+            β = bubble ? _0 : _1
         end
-        verbose && @info "suppossing β = 0 (bubble initialization)"
         status = RREq
-        β += eps(eltype(β))
-    elseif status == RRVapour
-        β = _1
-        if minimum(K) > 1
-            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
-            K .= y ./ x
-            verbose && @info "minimum(K) > 1: forcing consistency"
-            verbose && @info "forced K: $K"
-        end
-        verbose && @info "suppossing β = 1 (dew initialization)"
-        status = RREq
-        β -= eps(eltype(β))
+        βsgn = ifelse(bubble,1,-1)
+        β += βsgn*eps(eltype(β))        
     elseif status == RREq
         β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
     else
@@ -405,13 +395,16 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
             end
         end
         K .= exp.(lnK)
-        β = rachfordrice(K, z; β0=β, non_inx, non_iny, K_tol, verbose)
-        status = rachfordrice_status(K,z,non_inx,non_iny;K_tol)
+        β_result = rachfordrice(RR, β; K_tol, verbose)
+        β = β_result.V
+        status = β_result.status
         verbose && @info "$(__pad_val(it,4))  $(__pad_val(status,10)) $(__pad_val(β,16)) $(__pad_val(error_lnK,16)) $(repr(K,context = :compact => true))"
         if isnan(β) && status != RRTrivial
             #try to save K? basically damping
             K .= 0.5 * K .+ 0.5 * y ./ x
-            β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
+            β_result = rachfordrice(RR, β; K_tol, verbose)
+            β = β_result.V
+            status = β_result.status
         end
 
         # Computing error
@@ -458,7 +451,8 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
         x .= nx ./ sum(nx)
         y .= ny ./ sum(ny)
         K .= y ./ x
-        β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
+        β_result = rachfordrice(RR; verbose, K_tol)
+        β = β_result.V
     end
 verbose &&
 @info "_____________________________________________________________________________________
@@ -468,7 +462,7 @@ verbose &&
 "
 
     #convergence checks (TODO, seems to fail with activity models)
-    status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
+    status = β_result.status
     final_status = status
     verbose && status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
     vx,vy = vcache[]

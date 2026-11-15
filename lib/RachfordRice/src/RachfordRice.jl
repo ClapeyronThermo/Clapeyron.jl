@@ -50,11 +50,11 @@ function liquid_compositions(K,z,β)
 end
 
 function liquid_compositions!(x,K,z,β)
-    _1 = one(eltype(y))
+    _1 = one(eltype(x))
     _β = _1*β
-    for i in eachindex(y)
+    for i in eachindex(x)
         Ki,zi = K[i],z[i]
-        x[i] = ifelse(isinf(Ki), _1/_β, zi/(_1 + _β*(ki -_1)))
+        x[i] = ifelse(isinf(Ki), zero(_1), zi/(_1 + _β*(Ki -_1)))
     end
     return x
 end
@@ -64,7 +64,12 @@ liquid_compositions!(y,RR::RachfordRiceResidual,β) = liquid_compositions!(y,RR,
 
 export rachfordrice
 export liquid_compositions,vapour_compositions,liquid_compositions!,vapour_compositions!
-export rreval
-export RachfordRiceResidual
+export RachfordRiceResidual, RachfordRiceResult, vapour_fraction, liquid_fraction
+export RachfordRiceStatus, RRLiquid, RRVapour, RREq, RRFailure, RRTrivial
+
+@public residual
+@public residual_first_derivative
+@public residual_first_second_derivative
+@public residual_first_second_derivative_error
 
 end #module

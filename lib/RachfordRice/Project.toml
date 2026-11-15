@@ -1,0 +1,15 @@
+name = "RachfordRice"
+uuid = "161273b5-90a7-488a-82c4-edfa6a5e5f9b"
+authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pjwalker@caltech.edu>", "Andrés Riedemann <andres.riedemann@gmail.com>"]
+version = "1.0"
+
+[deps]
+
+[compat]
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
