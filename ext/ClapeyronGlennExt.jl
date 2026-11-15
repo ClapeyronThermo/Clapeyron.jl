@@ -3,18 +3,23 @@ module ClapeyronGlennExt
 using Clapeyron
 using Glenn
 
-const R0 = Glenn.ThermoDatabase.R_UNIVERSAL
+const R0 = Glenn.R_UNIVERSAL
 
 _vec(x::AbstractVector) = x
 _vec(x) = [x]
 tdb(calc::Glenn.Calculator) = calc.db
 tdb(db::Glenn.ThermoDB) = db
+# `Calculator` stores the reference gas constant of the dataset,
+# a bare `ThermoDB` has to query it.
+r_ref(calc::Glenn.Calculator) = calc.R_ref
+r_ref(db::Glenn.ThermoDB) = Glenn.get_gas_constant_ref(tdb(db))
 
 function glenn_sp_info_from_input(calc::Glenn.Calculator,input)
     return glenn_sp_info_from_input(calc.db,_vec(input))
 end
 
 function glenn_sp_info_from_input(calc::Glenn.ThermoDB,input)
+    input = _vec(input)
     nc = length(input)
     sp_info = Vector{SpeciesInfo}(undef,nc)
 
@@ -37,7 +42,7 @@ end
 
 function Clapeyron.__glenn_jl(calc, input;
                         Rgas = Clapeyron.Rgas(),
-                        R0 = calc.R_ref,
+                        R0 = r_ref(calc),
                         reference_state = nothing,
                         verbose = false,
                         strict = true)
@@ -176,9 +181,9 @@ end
 
 function __thermocalcerror(T,name,id)
         throw(
-            Glenn.ThermoCalcError(
-                "Temperature $T K is out of valid range for '$(name)'. " *
-                "Use get_species_data(model, $id) to check available intervals.",
+            Glenn.TemperatureOutOfRangeError(
+                Float64(Clapeyron.primalval(T)),
+                name,
             ),
         )
 end
@@ -216,7 +221,7 @@ function Clapeyron.∂²f∂T²(model::Clapeyron.GlennJL,V,T,z)
     for i in 1:length(model)
         interval_i = intervals[i]
         k = get_interval(interval_i,T)
-        iszero(k) && return oftype(res,NaN)
+        iszero(k) && return oftype(cpr,NaN)
         coeff = interval_i[k].coefficients
         cpi = _calculate_cp(coeff,T,Tinv)*f[i]
         cpr += z[i]*cpi
@@ -293,8 +298,18 @@ function Glenn.calculate_enthalpy_change(model::GlennJL, T1, T2, z = Clapeyron.S
     return (h2  - h1)*Rgas(model)
 end
 
-function Glenn.get_properties_range(model::GlennJL, T, z = Clapeyron.SA[1.0])
-    return map(Ti -> Glenn.calculate_properties(model,Ti,z),T)
+_properties_range(model::GlennJL, T, z) = map(Ti -> Glenn.calculate_properties(model,Ti,z),T)
+
+#`get_properties_range` is the Glenn.jl 0.4 name of this function, deprecated in Glenn.jl 0.5 in favour of
+#`calculate_properties_range`. define the method on every name that Glenn.jl provides.
+if isdefined(Glenn,:get_properties_range)
+    Glenn.get_properties_range(model::GlennJL, T, z = Clapeyron.SA[1.0]) =
+        _properties_range(model,T,z)
+end
+
+if isdefined(Glenn,:calculate_properties_range)
+    Glenn.calculate_properties_range(model::GlennJL, T, z = Clapeyron.SA[1.0]) =
+        _properties_range(model,T,z)
 end
 
 end #module

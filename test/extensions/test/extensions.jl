@@ -78,7 +78,22 @@ tdb(db::Glenn.ThermoDB) = db
         model_info = Clapeyron.GlennJL(calc, [spN2, spO2])
         @test model_info.components == ["N2", "O2"]
 
+        db = Glenn.ThermoDB(Glenn.default_db_path())
+        model_db = Clapeyron.GlennJL(db, "O2")
+        @test model_db.components == ["O2"]
+        @test model_db.R0[1] ≈ Glenn.get_gas_constant_ref(tdb(db))/Rgas(model_db)
+
         @test_throws ErrorException Clapeyron.GlennJL(calc, [1.0, 2.0])
+    end
+
+    @testset "Species data from Glenn" begin
+        #`Glenn.get_species_data` returns a `Dict` in Glenn 0.4 and a `SpeciesData` in Glenn 0.5.
+        model_O2 = Clapeyron.GlennJL(calc, "O2")
+        sp_data = Glenn.get_species_data(calc.db, model_O2.species_info[1].id)
+        @test length(model_O2.intervals[1]) == length(sp_data["intervals"])
+        @test model_O2.intervals[1][1].temp_min == sp_data["intervals"][1].temp_min
+        @test model_O2.intervals[1][end].temp_max == sp_data["intervals"][end].temp_max
+        @test model_O2.references[1] == coalesce(sp_data["comments"], "")
     end
 
     @testset "Molecular weight" begin
@@ -100,7 +115,7 @@ tdb(db::Glenn.ThermoDB) = db
         coeff = interval.coefficients
 
         cp_glenn = Glenn.calculate_cp(model_O2, T)
-        cp_direct = Glenn.ThermoDatabase.calculate_cp(coeff, T) * model_O2.R0[1]
+        cp_direct = Glenn.calculate_cp(coeff, T) * model_O2.R0[1]
         @test cp_glenn ≈ cp_direct atol=1e-9
 
         h_glenn = Glenn.calculate_h(model_O2, T)
@@ -177,13 +192,34 @@ tdb(db::Glenn.ThermoDB) = db
         @test d2f_mix < 0
     end
 
-    @testset "get_properties_range" begin
+    @testset "Temperature range of the polynomials" begin
+        model_O2 = Clapeyron.GlennJL(calc, "O2")
+        V = 1.0
+        z = [1.0]
+        #both endpoints of a Glenn interval are inclusive
+        Tmin = model_O2.intervals[1][begin].temp_min
+        Tmax = model_O2.intervals[1][end].temp_max
+        @test !isnan(Clapeyron.a_ideal(model_O2, V, Tmin, z))
+        @test !isnan(Clapeyron.a_ideal(model_O2, V, Tmax, z))
+        #outside of every interval, the polynomial is undefined
+        T_out = Tmin - 1.0
+        @test isnan(Clapeyron.a_ideal(model_O2, V, T_out, z))
+        @test isnan(Clapeyron.∂²f∂T²(model_O2, V, T_out, z))
+    end
+
+    @testset "Properties range" begin
         model_O2 = Clapeyron.GlennJL(calc, "O2")
         T_range = [300.0, 400.0, 500.0]
         props = Glenn.get_properties_range(model_O2, T_range)
         @test length(props) == 3
         for prop in props
             @test prop isa ThermoProperties
+        end
+        #`calculate_properties_range` is the Glenn.jl 0.5 name of `get_properties_range`
+        if isdefined(Glenn, :calculate_properties_range)
+            props_range = Glenn.calculate_properties_range(model_O2, T_range)
+            @test props_range == props
+            @test length(Glenn.calculate_properties_range(model_O2, T_range, [1.0])) == 3
         end
     end
 end
