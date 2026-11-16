@@ -46,18 +46,12 @@ function dyn_build_parametric_param(param::Type{T}, args) where T <: ParametricE
     return Param{TT}(args...)
 end
 
-#static version
-@generated function __build_parametric_param(param::Type{P},args::A) where {P <: ParametricEoSParam,A}
-    argtypes = fieldtypes(A)
-    TT = mapreduce(paramtype,promote_type,argtypes)
-    paramname = Base.typename(P).name
-    paramlength = length(fieldnames(P))
-    expr = :($paramname{$TT}())
-    args = expr.args
-    for i in 1:paramlength
-        push!(args,:(args[$i]))
-    end
-    return expr
+# Resolve parameter traits at invocation time. A generated function cannot see
+# trait methods defined after its own definition (including package extensions).
+function __build_parametric_param(param::Type{P}, args::A) where {P <: ParametricEoSParam,A}
+    TT = mapreduce(paramtype, promote_type, fieldtypes(A))
+    Param = parameterless_type(P)
+    return Param{TT}(args...)
 end
 
 function _custom_show_param(::Type{T}) where T <: EoSParam
