@@ -112,6 +112,8 @@
     @printline
 end
 
+include("cosmosac_implicit.jl")
+
 @testset verbose = true "Ideal models" begin
     @printline
     let T = 298.15, V = 1e-4,p = 1e5,z = Clapeyron.SA[1.0],z1 = Clapeyron.SA[1.0],z2 = [0.5,0.5],z3 = [0.333, 0.333,0.333];
