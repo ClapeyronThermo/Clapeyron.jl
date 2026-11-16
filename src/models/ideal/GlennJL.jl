@@ -40,6 +40,8 @@ Ideal model using the NASA-7 polynomial coefficients provided by the `Glenn.jl` 
 
     `Clapeyron.GlennJL` requires the package [`Glenn.jl`](https://github.com/ProfLeao/Glenn.jl) to be loaded in the environment.
 
+    the integer identifiers of `Glenn.jl` are not stable between database rebuilds, so it is recommended to identify the species by name.
+
 ## Model Construction Examples
 ```
 # Using the default database
@@ -69,9 +71,10 @@ the model `GlennJL` has the following integrations with `Glenn.jl` package:
 - `Glenn.calculate_formation_enthalpy(model::GlennJL,T,z = [1.0])`
 - `Glenn.calculate_enthalpy_change(model::GlennJL,T1,T2,z = [1.0])`
 - `Glenn.calculate_properties(model::GlennJL,T,z = [1.0])`
-- `Glenn.get_properties_range(model::GlennJL,T,z = [1.0])`
+- `Glenn.calculate_properties_range(model::GlennJL,T,z = [1.0])` (`Glenn.jl` 0.5 or later)
+- `Glenn.get_properties_range(model::GlennJL,T,z = [1.0])` (the `Glenn.jl` 0.4 name, deprecated in `Glenn.jl` 0.5)
 
-`get_properties` and `get_properties_range` will return NaN for properties outside their ranges. in particular, `get_properties_range` will return a vector of the same size as the input, with `NaN` on invalid inputs.
+`calculate_properties` will return NaN for properties outside their ranges. in particular, `calculate_properties_range` (and its deprecated `get_properties_range` alias) will return a vector of the same size as the input, with `NaN` on invalid inputs.
 
 ## References
 

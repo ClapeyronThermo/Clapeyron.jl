@@ -40,3 +40,4 @@
 - `debye_length`: fixed derivative propagation on zero partials
 - `SingleFluid`: fixed scaling of `lb_volume` and calls to saturation pressure at low temperatures.
 - `x0_volume_gas`: specific model gas constant was not being considered during the virial volume solving.
+- `GlennJL`: compatible with `Glenn.jl` 0.5 (`0.4` is still supported), including the new `Glenn.calculate_properties_range` integration. `GlennJL` now accepts a `Glenn.ThermoDB` as database input, and `∂²f∂T²` returns `NaN` instead of throwing when the temperature is outside the fitted ranges.
