@@ -29,7 +29,7 @@ function RachfordRiceResult{T}() where T
     return RachfordRiceResult{T}(nan,nan,RRFailure,false,false,false,0)
 end
 
-RachfordRiceResult(V,L = one(V) - V) = RachfordRiceResult(V,L,RREq,false,true,0)
+RachfordRiceResult(V,L = one(V) - V) =RachfordRiceResult(V,L,RREq,false,true,true,0)
 
 """
     rachfordrice(K, z, β0 = nothing; negative_flash = false, K_tol = 4*eps(eltype(K)),

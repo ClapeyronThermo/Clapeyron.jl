@@ -1,6 +1,7 @@
 push!(LOAD_PATH,"../src/")
 using Documenter,Clapeyron,MLThermoProperties
 makedocs(sitename = "Clapeyron.jl",
+modules = [Clapeyron, Clapeyron.RachfordRice, MLThermoProperties],
 format = Documenter.HTML(
     # Use clean URLs, unless built as a "local" build
     canonical = "https://ClapeyronThermo.github.io/Clapeyron.jl/",

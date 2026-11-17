@@ -88,7 +88,7 @@ liquid_compositions!(y,RR::RachfordRiceResidual,βv,βl = 1 - βv) = liquid_comp
 
 export rachfordrice
 export liquid_compositions,vapour_compositions,liquid_compositions!,vapour_compositions!
-export RachfordRiceResidual, RachfordRiceResult, vapour_fraction, liquid_fraction
+export RachfordRiceResidual, RachfordRiceResult
 export RachfordRiceStatus, RRLiquid, RRVapour, RREq, RRFailure, RRTrivial
 
 @public residual

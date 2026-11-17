@@ -36,5 +36,7 @@ include("../../methods/mass_fractions.jl")
 
 #include_distributed("test_issues.jl",1)
 
+
 include("extensions.jl")
 include("carnot.jl")
+include("rachfordrice.jl")

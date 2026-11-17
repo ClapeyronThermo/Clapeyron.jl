@@ -40,13 +40,25 @@ function material_balance_convergence_test(βV, y, βL, x, z)
 end
 
 function k_value_convergence_test(y, x, K)
-    residual = maximum(
-        abs.(y .- K .* x) ./
-        (abs.(y) .+ abs.(K .* x))
-    )
-    machine_epsilon  = eps(typeof(residual))
-    absolute_tol     = 5 * machine_epsilon
-    severity         = log10_severity(residual, absolute_tol)
+    residual  = zero(float(Base.promote_eltype(y, x)))
+    n_checked = 0
+    @inbounds for i in eachindex(K)
+        Ki = K[i]
+        # K = Inf (non-condensable): xᵢ = 0, so Ki*xᵢ = Inf*0 = NaN.
+        # K = 0   (non-volatile)  : yᵢ = 0, so |yᵢ|+|Ki*xᵢ| = 0 → 0/0.
+        # In both cases the ratio yᵢ/xᵢ is undefined; the composition
+        # tests already cover xᵢ = 0 and yᵢ = 0 respectively.
+        (isinf(Ki) || iszero(Ki)) && continue
+        yi, xi  = y[i], x[i]
+        Ki_xi   = Ki * xi
+        r       = abs(yi - Ki_xi) / (abs(yi) + abs(Ki_xi))
+        r > residual && (residual = r)
+        n_checked += 1
+    end
+    absolute_tol = 5 * eps(typeof(residual))
+    # Every K is Inf or 0 — the ratio test is vacuous; defer to composition tests.
+    n_checked == 0 && return log10_severity(zero(residual), absolute_tol), true
+    severity = log10_severity(residual, absolute_tol)
     return severity, severity <= 0
 end
 
