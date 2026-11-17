@@ -144,7 +144,6 @@ function RRState(RR::RachfordRiceResidual)
     end
     _1 = one(T)
     poles = (_1/(_1 - Kmax),_1/(_1 - Kmin))
-
     return RRState(RR,Zinf,Z0,poles,sumz,feasible)
 end
 
@@ -191,7 +190,7 @@ function residual(RR::RachfordRiceResidual,βv::B,βl::B = 1 - βv) where B
             KD2 = _0
         # normal Ki
         else
-            _, detKi = fma_and_inv(Ki,βv,βl)
+            detKi = inv_fma(Ki,βv,βl)
             KD1 = Ki*detKi
             KD2 = -detKi
         end
@@ -242,7 +241,7 @@ function residual_first_derivative(RR::RachfordRiceResidual,βv::B,βl::B = 1 - 
             KD2 = _0
         # normal Ki
         else
-            _, detKi = fma_and_inv(Ki,βv,βl)
+            detKi = inv_fma(Ki,βv,βl)
             KD1 = Ki*detKi
             KD2 = -detKi
             KD = KD1 + KD2
@@ -309,7 +308,6 @@ function residual_first_second_derivative_error(RR::RachfordRiceResidual,βv::B,
     S = _0
     for i in eachindex(K)
         Ki = K[i] 
-        Si = zero(S)  
         # modification for non-in-y components Ki -> 0
         if iszero(Ki)
             KD = βl_inv
@@ -322,7 +320,7 @@ function residual_first_second_derivative_error(RR::RachfordRiceResidual,βv::B,
             KD2 = _0
         # normal Ki
         else
-            detKi = fma_inv(Ki,βv,βl)
+            detKi = inv_fma(Ki,βv,βl)
             KD1 = Ki*detKi
             KD2 = -detKi
             KD = KD1 + KD2
@@ -345,6 +343,12 @@ function residual_first_second_derivative_error(RR::RachfordRiceResidual,βv::B,
     return res,∂res,∂2res,S
 end
 
+function rr_poles(RR::RachfordRiceResidual)
+    Kmin,Kmax = extrema(RR)
+    return (1/(1 - Kmax), 1/(1 - Kmin))
+end
+
+rr_poles(RRS::RRState) = RRS.poles
 
 """
     βmin,βmax = rr_limits(RR::RachfordRiceResidual, negative_flash::Bool = false)
@@ -473,7 +477,7 @@ function rr_initial_state(RRS::RRState,β0 = nothing; K_tol = 4*eps(eltype(RR)))
         return nan,status,(nan,nan),feasible
     end
 
-    βmin,βmax = rr_limits(RR)
+    βmin,βmax = rr_limits(RRS)
 
     #initial point generation
     if β0 !== nothing

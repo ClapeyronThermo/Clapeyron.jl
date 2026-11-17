@@ -29,6 +29,7 @@ function RachfordRiceResult{T}() where T
     return RachfordRiceResult{T}(nan,nan,RRFailure,false,false,false,0)
 end
 
+RachfordRiceResult(V,L = one(V) - V) = RachfordRiceResult(V,L,RREq,false,true,0)
 
 """
     rachfordrice(K, z, β0 = nothing; negative_flash = false, K_tol = 4*eps(eltype(K)),
@@ -42,8 +43,8 @@ Solve the Rachford-Rice mass balance for the molar vapour fraction `β`:
 
 and return a [`RachfordRiceResult`](@ref).
 
-The solver first detects trivial, failed and single-phase cases, then computes the Whitson-Michelsen bounds on `β`. 
-Small problems (up to 3 non-trivial components) are solved in closed form; otherwise a bracketed Halley iteration is used. 
+The solver first detects trivial, failed and single-phase cases, then computes the Whitson-Michelsen bounds on `β`.
+Small problems (up to 3 non-trivial components) are solved in closed form; otherwise a bracketed Halley iteration is used.
 When `negative_flash = false` and the root lies within `K_tol^(1/3)` of `0` or `1`, a boundary check may project the result onto the bubble point (`β = 0`) or the dew point (`β = 1`).
 
 
@@ -96,7 +97,6 @@ end
 function _rachfordrice(RRS::RRState,β0,negative_flash::Bool,K_tol,verbose)
     RR = RRS.RR
     β,status,limits,feasible = rr_initial_state(RRS,β0;K_tol = K_tol)
-
     _0,_1 = zero(β),one(β)
     nan = _0/_0
 
@@ -119,11 +119,11 @@ function _rachfordrice(RRS::RRState,β0,negative_flash::Bool,K_tol,verbose)
         return RachfordRiceResult(nan,nan,status,negative_flash,false,feasible,0)
 
     #trivial or failure, not feasible otherwise
-    elseif status != RREq || !feasible
+    elseif status == RRTrivial || status == RRFailure || !feasible
         return RachfordRiceResult(nan,nan,status,negative_flash,false,feasible,0)
     end
 
-    βv,βl,iter = rrsolve(RR,β,limits) # bracketed Halley when possible
+    βv,βl,iter = rrsolve(RRS,β,limits) # bracketed Halley when possible
 
     if !isfinite(βv) || !isfinite(βl)
         if is_verbose(verbose)
@@ -221,23 +221,24 @@ function rr_margin_check(RR::RachfordRiceResidual,
 end
 
 #refines a rachford-rice result via Halley iterations
-function rrsolve(RR::RachfordRiceResidual,β0,limits = rr_limits(RR,true))
 
+rrsolve(RR::RachfordRiceResidual,β0) = rrsolve(RRState(RR),β0)
+rrsolve(RR::RachfordRiceResidual,β0,limits) = rrsolve(RRState(RR),β0,limits)
+rrsolve(RRS::RRState,β0) = rrsolve(RRS,β0,rr_limits(RRS,true))
+
+function rrsolve(RRS::RRState,β0,limits)
+    RR = RRS.RR
     βmin,βmax = limits
-    β_exact,solved = try_rrsolve_23(RR)
+    β_exact,solved = try_rrsolve_23(RRS)
 
     _0,_1 = zero(β_exact),oneunit(β_exact)
 
-    if solved 
-        if β_exact < 0.999
-            return (β_exact, 1 - β_exact, 0)
-        else
-            β = β_exact
-        end
+    if solved
+        β = β_exact
     else
         β = β0*_1
     end
-    
+
     if !isfinite(β)
         return (β, 1 - β,0)
     end
@@ -284,9 +285,12 @@ function try_rrsolve_23(RRS::RRState)
             n_found += 1
         end
     end
+
     n_found > n_max && return T(NaN),false
+
     βmin,βmax = RRS.poles
     degree = n_found + !iszero(Z₀) + !iszero(Z∞)
+
     a0,a1,a2,a3 = rr_cubic_coeffs((k1,k2,k3,k4),(z1,z2,z3,z4),degree)
 
     if a3 != 0 && !isnan(a3)
@@ -327,8 +331,8 @@ function rr_cubic_coeffs(K,z,n)
     _0 = zero(T)
     if  n == 2
         #0 = a0 + a1β
-        a1 = (z1*b2 + z2*b1)
-        a0 = z1+z2
+        a1 = z1+z2
+        a0 = -(z1*b2 + z2*b1)
         return (T(a0),T(a1),_0,_0)
     elseif n == 3
         #0 = a0 + a1β + a2β^2
@@ -349,18 +353,16 @@ function rr_cubic_coeffs(K,z,n)
     return (ax,ax,ax,ax)
 end
 
-__rrsolve(RR, βv) =  __rrsolve(RR, βv, oftype(βv,-Inf), oftype(βv,Inf))
-
 function __rrsolve(RR, βv, βmin, βmax)
     T = Base.promote_eltype(RR, βv)
     _0, _1 = zero(T), one(T)
-
 
     βl = _1 - βv
 
     ϵ = eps(T)
     tol = sqrt(ϵ)
-    C = isqrt(length(RR)) + 1
+    nc = T(length(RR))
+    C = sqrt(nc) + 3
     is_vapour = βv <= βl
 
     if is_vapour
@@ -370,22 +372,20 @@ function __rrsolve(RR, βv, βmin, βmax)
     end
 
     iter = 0
-    max_iters = 50
+    max_iters = 100
     converged = false
     for _ in 1:max_iters
         isfinite(p) || break
         iter += 1
         FO, dFO, d2FO, S = residual_first_second_derivative_error(RR, βv, βl)
-        if abs(FO) <= C*ϵ*S
-            converged = true
-            break
-        end
+        abs(FO) <= C*ϵ*S && (converged = true; break)
 
         if (FO < _0) == is_vapour
-            pmax = p
+            pmax = min(p,pmax)
         else
-            pmin = p
+            pmin = max(p,pmin)
         end
+        (pmax - pmin) <= 2*ϵ*abs(p) && (converged = true; break)
 
         # Halley step in the primary variable
         den  = 2*dFO*dFO - FO*d2FO
@@ -393,18 +393,34 @@ function __rrsolve(RR, βv, βmin, βmax)
         dp   = -2*FO*dFO*d / den
         pnew = p + dp
 
+        # Halley step below the resolution of p: pnew can round back onto p, which sits on a
+        # bracket end, and the strict test below would turn a converged iterate into a bisection.
+        if abs(dp) <= tol*abs(p) && pmin <= p <= pmax
+            p = clamp(pnew, pmin, pmax)
+            βv, βl = is_vapour ? (p, _1 - p) : (_1 - p, p)
+            converged = true
+            break
+        end
+
         is_halley = pmin < pnew < pmax
+        
         if is_halley
             p = pnew
-        elseif isfinite(pmin) && isfinite(pmax)
-            pm = (pmin + pmax) / 2
+        else
+            # Halley points beyond a bracket end (and not back at p): the root is near that end,
+            # so go most of the way there instead of halving the bracket.
+            θ = T(9)/10
+            if pnew >= pmax && p < pmax
+                pm = p + θ*(pmax - p)
+            elseif pnew <= pmin && p > pmin
+                pm = p + θ*(pmin - p)
+            else
+                pm = (pmin + pmax) / 2     # NaN/Inf or wrong-direction Halley step
+            end
             dp = pm - p
             p = pm
-        else
-            # bracket is open on the root's side: bisection is meaningless, extrapolate
-            dp = -2*FO*d/dFO
-            p += dp
         end
+
         q = _1 - p
 
         #switch: p > 0.5
@@ -413,18 +429,10 @@ function __rrsolve(RR, βv, βmin, βmax)
             pmin, pmax = _1 - pmax, _1 - pmin
             is_vapour = !is_vapour
         end
-
         βv, βl = is_vapour ? (p, q) : (q, p)
+        (is_halley && abs(dp) <= tol*abs(p))    && (converged = true)
 
-        if (is_halley && abs(dp) <= tol*abs(p))
-            converged = true
-            break
-        end
-
-        if (pmax - pmin) <= 2*ϵ*abs(p)
-            converged = true
-            break
-        end
+        converged && break
     end
 
     if iter == max_iters || !converged

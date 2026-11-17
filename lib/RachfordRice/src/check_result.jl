@@ -1,8 +1,5 @@
 module RachfordRiceConvergence
 
-# ------------------------------------------------------------------
-# Severity helper – type-generic, preserves the residual's type
-# ------------------------------------------------------------------
 function log10_severity(residual, tolerance)
     iszero(residual) && return log10(zero(residual))
     return log10(residual / tolerance)
@@ -31,9 +28,10 @@ end
 phase_fraction_convergence_test(βV) = phase_fraction_convergence_test(βV, 1 - βV)
 
 function material_balance_convergence_test(βV, y, βL, x, z)
+    w = z ./ sum(z)
     residual = maximum(
-        abs.(βV .* y .+ βL .* x .- z) ./
-        (abs.(βV .* y) .+ abs.(βL .* x) .+ z)
+        abs.(βV .* y .+  βL .* x .- w) ./
+        (abs.(βV .* y) .+ abs.(βL .* x) .+ w)
     )
     machine_epsilon  = eps(typeof(residual))
     absolute_tol     = 5 * machine_epsilon
@@ -57,8 +55,8 @@ end
 # ------------------------------------------------------------------
 function within_phase_bounds(βV, K)
     Kmin,Kmax = extrema(K)
-    min_βV = 1 / (1 - Kmin)
-    max_βV = 1 / (1 - Kmax)
+    min_βV = 1 / (1 - Kmax)
+    max_βV = 1 / (1 - Kmin)
     return min_βV < βV < max_βV
 end
 

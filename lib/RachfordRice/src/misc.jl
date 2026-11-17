@@ -77,3 +77,13 @@ macro public(sym)
         return nothing
     end
 end
+
+function discriminant(a::T, b::T, c::T) where {T<:AbstractFloat}
+    p  = b * b
+    q  = a * c
+    dp = fma(b, b, -p)   # exact rounding error of p
+    dq = fma(a, c, -q)   # exact rounding error of q
+    return (p - q) + (dp - dq)
+end
+
+discriminant(a,b,c) = b*b - a*c
