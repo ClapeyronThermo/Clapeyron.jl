@@ -1138,3 +1138,34 @@ end
         
     end
 end
+
+@testset "Two-phase PS entropy specification" begin
+    model = cPR(["ethane", "methane"], idealmodel = ReidIdeal)
+    p = 101325.0
+    for scale in (1.0, 2.0)
+        z = scale .* [1.2, 1.2]
+        h = scale * -13831.0
+        reference = ph_flash(model, p, h, z)
+        s = entropy(model, reference)
+        @test length(reference.fractions) == 2
+        @test enthalpy(model, reference) ≈ h rtol = 1e-6
+        for seeded in (false, true)
+            result = seeded ? ps_flash(model, p, s, z; flash_result = deepcopy(reference)) : ps_flash(model, p, s, z)
+            @test length(result.fractions) == 2
+            @test result.data.T ≈ reference.data.T rtol = 1e-6
+            @test entropy(model, result) ≈ s rtol = 1e-6 atol = 1e-7
+            @test sum(result.fractions) ≈ sum(z) rtol = 1e-8
+        end
+        # Cover the entropy residual in either specification position.
+        n = sum(z)
+        input = vcat(reduce(vcat, reference.compositions), reference.volumes,
+                     reference.fractions ./ n, reference.data.T)
+        output = similar(input)
+        for specs in (Clapeyron.FlashSpecifications(pressure, p, entropy, s/n),
+                      Clapeyron.FlashSpecifications(entropy, s/n, pressure, p))
+            Clapeyron.xy_flash_neq(output, model, z/n, 2, input, specs, nothing)
+            @test abs(output[end-1]) < 1e-6
+            @test abs(output[end]) < 1e-6
+        end
+    end
+end

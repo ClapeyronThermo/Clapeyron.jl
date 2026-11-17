@@ -401,7 +401,9 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     elseif spec1 isa Vfrac
         i_spec = spec1.k
         output[end-1] = β[i_spec] - val1
-    else #general caloric term, valid for enthalpy , entropy, internal energy, gibbs, helmholtz
+    elseif spec1 == entropy
+        output[end-1] = (val1 - ∑s)/R
+    else #general caloric term, valid for enthalpy , internal energy, gibbs, helmholtz
         output[end-1] = (val1 - ∑a - p_end*∑v - T*∑s)*RTinv
     end
     if spec2 == temperature
@@ -415,6 +417,8 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
     elseif spec2 isa Vfrac
         i_spec = spec2.k
         output[end-1] = β[i_spec] - val2
+    elseif spec2 == entropy
+        output[end] = (val2 - ∑s)/R
     else
         output[end] = (val2 - ∑a - p_end*∑v - T*∑s)*RTinv
     end
