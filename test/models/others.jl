@@ -95,17 +95,29 @@
 
     @testset "COSMOSAC02" begin
         system = COSMOSAC02(["water","ethanol"])
+        # Even a pressure-independent model must accept a pressure Dual.
+        @test Clapeyron.ForwardDiff.jacobian(q -> activity_coefficient(system,q[1],T,z),[p]) == zeros(2,1)
+        pd = Clapeyron.ForwardDiff.Dual(p,1.0)
+        @test Clapeyron.ForwardDiff.value.(activity_coefficient(system,pd,T,z)) == activity_coefficient(system,p,T,z)
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.3871817962565904 rtol = 1e-6
         @test Clapeyron.excess_gibbs_free_energy(system,p,T,z) ≈ 610.5706657776052 rtol = 1e-6
     end
 
     @testset "COSMOSAC10" begin
         system = COSMOSAC10(["water","ethanol"])
+        # Even a pressure-independent model must accept a pressure Dual.
+        @test Clapeyron.ForwardDiff.jacobian(q -> activity_coefficient(system,q[1],T,z),[p]) == zeros(2,1)
+        pd = Clapeyron.ForwardDiff.Dual(p,1.0)
+        @test Clapeyron.ForwardDiff.value.(activity_coefficient(system,pd,T,z)) == activity_coefficient(system,p,T,z)
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.4015660588643404 rtol = 1e-6
     end
 
     @testset "COSMOSACdsp" begin
         system = COSMOSACdsp(["water","ethanol"])
+        # Even a pressure-independent model must accept a pressure Dual.
+        @test Clapeyron.ForwardDiff.jacobian(q -> activity_coefficient(system,q[1],T,z),[p]) == zeros(2,1)
+        pd = Clapeyron.ForwardDiff.Dual(p,1.0)
+        @test Clapeyron.ForwardDiff.value.(activity_coefficient(system,pd,T,z)) == activity_coefficient(system,p,T,z)
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.4398951117248127 rtol = 1e-6
     end
     end

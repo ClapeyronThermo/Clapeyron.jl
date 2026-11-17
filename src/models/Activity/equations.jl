@@ -58,7 +58,8 @@ end
 
 function lnγ(model::ActivityModel,_p,_T,_z,cache::TT = nothing) where TT
     p,T,z = ustrip(_p,pressure),ustrip(_T,temperature),uzstrip(model,_z)
-    X = gradient_type(model,T,z)
+    # Pressure can carry a Dual even for pressure-independent activity models.
+    X = gradient_type(model,promote_type(typeof(p),typeof(T)),z)
     nc = length(z)
     if has_lnγ_impl(model)
         if cache isa Tuple
