@@ -542,3 +542,4 @@
         @test d["key"][2] == "value"
     end
 end
+include("parametric_constructor.jl")
