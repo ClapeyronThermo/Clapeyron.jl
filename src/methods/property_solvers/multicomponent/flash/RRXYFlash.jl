@@ -267,7 +267,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
             K_old .= K
             K .= exp.(lnK)
 
-            ss_status = rachfordrice_status(K,z; K_tol = tol_xy)
+            ss_status = rr_status(K,z; K_tol = tol_xy)
 
             if isnan(β) && ss_status != RRTrivial
                 #try to save K? basically damping
@@ -275,7 +275,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
                 K .= exp.(lnK)
             end
 
-            β = rachfordrice(K, z; β0 = β, K_tol = tol_xy, verbose)
+            β = rachfordrice(K, z, β; K_tol = tol_xy, verbose)
             x,y = update_rr!(K,β,z,x,y)
 
             error_lnK = dnorm(lnK,lnK_old,1)
@@ -383,7 +383,7 @@ verbose &&
 
 "
 
-    ss_status = rachfordrice_status(K,z,K_tol = tol_xy)
+    ss_status = rr_status(K,z,K_tol = tol_xy)
     verbose && ss_status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
     volx,voly = flash_result.volumes[1],flash_result.volumes[2]
     #maybe azeotrope, do nothing in this case

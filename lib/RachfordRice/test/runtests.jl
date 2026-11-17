@@ -43,13 +43,14 @@ end =#
     failures = []
     for case in CASES
         K,z = case.K,case.z
-        result = RachfordRice.rachfordrice(K,z)
+        RR = RachfordRiceResidual(K,z)
+        result = RachfordRice.rachfordrice(RR,K_tol = 0.0)
         L,V = result.L, result.V
-        x = liquid_compositions(K,z,V)
-        y = vapour_compositions(K,z,V)
-        all_converged,severities, convergences = check_convergence(y, x, βV, βL, z, K)
+        x = liquid_compositions(RR,result)
+        y = vapour_compositions(RR,result)
+        all_converged,severities, convergences = RachfordRice.RachfordRiceConvergence.check_convergence(y, x, V, L, z, K)
         if !all_converged
-            push!(failures,(K,z,severities, convergences))
+            push!(failures,(RR,result,severities, convergences))
         end
     end
 end

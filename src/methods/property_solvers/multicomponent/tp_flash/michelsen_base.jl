@@ -149,26 +149,38 @@ end
 
 #updates x,y after a sucessful rachford rice procedure
 function update_rr!(K,β,z,x,y,
-                    non_inx=FillArrays.Fill(false,length(z)),
-                    non_iny=FillArrays.Fill(false,length(z)),normalize = true)
+                    non_inx=nothing,
+                    non_iny=nothing;normalize::Bool = true)
 
-    x = RachfordRice.liquid_compositions!(x,K,z,β)
-    y .= x .* K
-    for i in eachindex(z)
-        # modification for non-in-y components Ki -> 0
-        if non_iny[i] || iszero(K[i])
-            x[i] = z[i] / (1. - β)
-            y[i] = 0.
-        end
-        # modification for non-in-x components Ki -> ∞
-        if non_inx[i] || isinf(K[i])
-            x[i] = 0.
-            y[i] = z[i] / β
-        end
-    end
+    RR = RachfordRiceResidual(K,z,non_inx,non_iny)
+    result = RachfordRiceResult(β)
+    return update_rr!(x,y,RR,result;normalize)
+end
+
+function update_rr!(x,y,K::RachfordRiceResidual,res::RachfordRiceResult;normalize::Bool = true)
+    z = K.z
+    _1 = one(eltype(x))
+    _0 = zero(_1)
+    βv,βl = res.V,res.L
     if normalize
-        x ./= sum(x)
-        y ./= sum(y)
+        n = sum(z)
+    else
+        n = one(eltype(z))
+    end
+
+    for i in eachindex(x)
+        Ki,zi = K[i],z[i]
+        wi = zi/n
+        if isinf(Ki)
+            x[i] = _0
+            y[i] = wi/βv
+        else
+            wi = zi/n
+            detKi = RachfordRice.inv_fma(Ki,βv,βl)
+            xi = detKi*wi
+            x[i] = xi
+            y[i] = xi*Ki
+        end
     end
     return x,y
 end
@@ -262,10 +274,10 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         tp_flash_K0!(K,model,p,T,z,nothing)
         phasex = :liquid
         phasey = :vapour
-        
+
         #if we can't predict K, we use lle
         if is_unknown(method)
-            
+
             if !rr_feasible(RR)
                 verbose && @info "VLE correlation failed, trying LLE initial point."
                 K_lle = K0_lle_init(model,p,T,z;reduced = true)
@@ -302,48 +314,37 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     then we start at the bubble (or dew conditions)
     =#
 
-    if status == RRLiquid
-        β = _0
-        if maximum(K) < 1
+    if status == RRLiquid || status == RRVapour
+        bubble = status == RRLiquid
+        if !rr_feasible(RR)
+            β = rr_feasibility_projection!(RR,z,bubble;verbose = verbose)
             x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
-            K .= y ./ x
-            verbose && @info "maximum(K) < 1: forcing consistency"
-            verbose && @info "forced K: $K"
+        else
+            β = bubble ? _0 : _1
         end
-        verbose && @info "suppossing β = 0 (bubble initialization)"
         status = RREq
-        β += eps(eltype(β))
-    elseif status == RRVapour
-        β = _1
-        if minimum(K) > 1
-            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
-            K .= y ./ x
-            verbose && @info "minimum(K) > 1: forcing consistency"
-            verbose && @info "forced K: $K"
-        end
-        verbose && @info "suppossing β = 1 (dew initialization)"
-        status = RREq
-        β -= eps(eltype(β))
+        βsgn = ifelse(bubble,1,-1)
+        β += βsgn*eps(eltype(β))
+        β_result = RachfordRiceResult(β)
     elseif status == RREq
-        β = rachfordrice(RR; verbose).V
+        β_result = rachfordrice(RR; K_tol, verbose)
+        β = β_result.V
     else
         β = _0/_0
+        β_result = RachfordRiceResult(β)
     end
 
     verbose && @info "initial vapour fraction = $β"
     #verbose && status != RREq && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
 
-    y = RachfordRice.vapour_compositions!(y,RR,β)
-    y ./= sum(y)
-    x = RachfordRice.liquid_compositions!(x,RR,β)
-    x ./= sum(x)
-    βv = ∑n*β
-    βl = ∑n - βv
+    update_rr!(x,y,RR,β_result;normalize = true)
+    βv = ∑n*β_result.V
+    βl = ∑n*β_result.L
     if hasfield(typeof(method),:v0) && !isnothing(method.v0) && iszero(volx) && iszero(voly)
         vl0,vv0 = method.v0
         volx,voly = _1*vl0,_1*vv0
     end
-    
+
     iszero(volx) && (volx = volume(model,p,T,x,phase = phasex))
     iszero(voly) && (voly = volume(model,p,T,y,phase = phasey))
     lle = is_liquid(phasex) && is_liquid(phasey)
@@ -438,3 +439,4 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     end
 end
 =#
+

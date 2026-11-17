@@ -306,7 +306,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
     end
     verbose && @info "K0 = $K"
     # Initial guess for phase split
-    status = rr_status(RR,K_tol = K_tol)
+    status = RachfordRice.rr_status(RR,K_tol = K_tol)
     status0 = status
     #=
     TREND bubble/dew initialization
@@ -325,11 +325,14 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
         end
         status = RREq
         βsgn = ifelse(bubble,1,-1)
-        β += βsgn*eps(eltype(β))        
+        β += βsgn*eps(eltype(β))
+        β_result = RachfordRiceResult(β)
     elseif status == RREq
-        β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
+        β_result = rachfordrice(RR; K_tol, verbose)
+        β = β_result.V
     else
         β = _0/_0
+        β_result = RachfordRiceResult(β)
     end
 
     verbose && @info "initial vapour fraction = $β"
@@ -366,7 +369,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
         lnK_old .= lnK
         β_old = β
 
-        x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
+        x,y = update_rr!(x,y,RR,β_result)
 
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,z,β,(volx,voly),phases,non_inw,dlnϕ_cache)
@@ -382,8 +385,11 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
             # acceleration using DEM (1 eigenvalues)
             lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3)
             K_dem .= exp.(lnK_dem)
-            β_dem = rachfordrice(K_dem, z; β0=β, non_inx, non_iny, verbose)
-            x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
+
+            RR_dem = RachfordRiceResidual(K_dem,z,non_inx,non_iny)
+            β_dem_result = rachfordrice(RR_dem, β; K_tol, verbose)
+            β_dem = β_dem_result.V
+            x_dem,y_dem = update_rr!(x_dem,y_dem,RR_dem,β_dem_result)
             lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,z,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
             # only accelerate if the Gibbs energy is reduced
             if gibbs_dem < gibbs
@@ -416,7 +422,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
 
     if it > 0 && !isnan(β)
         # single composition update with the (possibly projected) β
-        x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
+        x, y = update_rr!(x,y,RR,β_result)
     end
 
     # Stage 2: Minimization of Gibbs energy

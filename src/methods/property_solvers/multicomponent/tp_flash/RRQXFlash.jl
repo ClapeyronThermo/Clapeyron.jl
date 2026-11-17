@@ -23,7 +23,7 @@ function update_K_QX!(model,p,T,w,β,phases,non_inw,vec_cache,dlnϕ_cache,verbos
         non_inx[i] && (K[i] = Inf)
         non_iny[i] && (K[i] = 0)
     end
-    x,y = update_rr!(K,β,z,x,y,non_inx,non_iny,false)
+    x,y = update_rr!(K,β,z,x,y,non_inx,non_iny,normalize = false)
 
     OF = sum(x) - sum(y)
     verbose,iter_count,is_temperature = verbose_cache
