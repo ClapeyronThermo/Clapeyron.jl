@@ -247,6 +247,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     y .= z
     K,lnK = similar(z,TT),similar(z,TT)
     verbose = get_verbosity(method)
+    K_tol = 1e-10
     RR = RachfordRiceResidual(K,z;non_inx,non_iny)
     if !isnothing(method.K0)
         K .= _1 * method.K0
@@ -305,7 +306,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
 
     verbose && @info "K0 = $K"
     # Initial guess for phase split
-    status = rr_status(RR,K_tol = 1e-10)
+    status = rr_status(RR;K_tol)
 
 #=
     TREND bubble/dew initialization
