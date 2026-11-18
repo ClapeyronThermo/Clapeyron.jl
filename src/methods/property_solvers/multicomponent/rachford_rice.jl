@@ -1,7 +1,7 @@
 include("../../../../lib/RachfordRice/src/RachfordRice.jl")
 
 using Clapeyron.RachfordRice
-using Clapeyron.RachfordRice: rr_feasible
+using Clapeyron.RachfordRice: rr_feasible, rr_status
 
 function material_balance_rr_converged(w,z,β::Number,n = sum(z),ztol = sqrt(eps(eltype(β))))
     βx = SVector(1 - β,β)

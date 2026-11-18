@@ -239,6 +239,7 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
     lle = is_liquid(phasex) && is_liquid(phasey)
     vapour_idx = lle ? -1 : 2
     flash_result = FlashResult([x,y],[β,β],[volx,voly],FlashData(p,T,zero(TT),vapour_idx))
+    RR = RachfordRiceResidual(K,z)
 
     verbose && @info "________________________________________________________________________________________
       iter  ss_iter  status    p                T                OF_spec          pT_OF"
@@ -267,16 +268,18 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,flash0::FlashResul
             K_old .= K
             K .= exp.(lnK)
 
-            ss_status = rr_status(K,z; K_tol = tol_xy)
-
+            β_result = rachfordrice(RR, β; K_tol = tol_xy, verbose)
+            β = β_result.V
+            ss_status = β_result.status
+            
             if isnan(β) && ss_status != RRTrivial
                 #try to save K? basically damping
                 lnK .= 0.5 * lnK .+ 0.5 * lnK_old
                 K .= exp.(lnK)
+                β_result = rachfordrice(RR, β; K_tol = tol_xy, verbose)
             end
 
-            β = rachfordrice(K, z, β; K_tol = tol_xy, verbose)
-            x,y = update_rr!(K,β,z,x,y)
+            x,y = update_rr!(x,y,RR,β_result)
 
             error_lnK = dnorm(lnK,lnK_old,1)
         end
@@ -383,7 +386,7 @@ verbose &&
 
 "
 
-    ss_status = rr_status(K,z,K_tol = tol_xy)
+    ss_status = rr_status(RR,K_tol = tol_xy)
     verbose && ss_status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
     volx,voly = flash_result.volumes[1],flash_result.volumes[2]
     #maybe azeotrope, do nothing in this case
