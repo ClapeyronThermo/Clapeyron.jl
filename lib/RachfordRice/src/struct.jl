@@ -82,6 +82,7 @@ RachfordRiceResidual(K,z; non_inx = nothing,non_iny = nothing) = RachfordRiceRes
 end
 
 @inline Base.getindex(RR::RRSimple,i::Int) = RR.K[i]
+@inline Base.setindex!(RR::RachfordRiceResidual,v,i) = RR.K[i] = v
 
 Base.IteratorSize(::Type{<:RachfordRiceResidual}) = Base.HasShape{1}()
 
