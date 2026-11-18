@@ -151,6 +151,7 @@ rrstate_absolute_liquid(RRS::RRState) = RRS.feasible == 1
 rrstate_absolute_vapour(RRS::RRState) = RRS.feasible == 2
 rr_state_kz_domain_err(RRS::RRState) = RRS.feasible == 3
 rr_feasible(RRS::RRState) = RRS.feasible == 0
+rr_feasible(RR::RachfordRiceResidual) = rr_feasible(RRState(RR))
 
 __log_K_norm(RR::RachfordRiceResidual) = __log_K_norm(RR.K,RR.non_inx,RR.non_iny)
 __log_K_norm(RR::RRSimple) =maximum(abs ∘ log,RR.K)
