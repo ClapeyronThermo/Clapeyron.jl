@@ -6,6 +6,8 @@ using Glenn
 using Aqua
 using Carnot
 
+
+
 include("../../utils.jl")
 
 #include_distributed("base/database.jl",4)
@@ -15,7 +17,7 @@ include("../../utils.jl")
 
 #include_distributed("base/qa.jl",5)
 include("../../base/qa.jl")
-
+include("rachfordrice.jl")
 #include_distributed("models/saft_pc.jl",1)
 #include_distributed("models/cubic.jl",3)
 #include_distributed("models/saft_others.jl",3)
@@ -39,4 +41,3 @@ include("../../methods/mass_fractions.jl")
 
 include("extensions.jl")
 include("carnot.jl")
-include("rachfordrice.jl")
