@@ -92,3 +92,19 @@ Clapeyron.GeneralizedXYFlash
 Clapeyron.RRQXFlash
 Clapeyron.RRXYFlash
 ```
+
+## Rachford-Rice
+
+The two-phase rachford-rice solver in `Clapeyron.jl` is also available as a standalone package, `RachfordRice.jl`.
+
+```@docs
+RachfordRice.rachfordrice
+RachfordRice.RachfordRiceResidual
+RachfordRice.RachfordRiceResult
+RachfordRice.vapour_compositions
+RachfordRice.vapour_compositions!
+RachfordRice.liquid_compositions
+RachfordRice.liquid_compositions!
+RachfordRice.rr_status
+RachfordRice.rr_limits
+```

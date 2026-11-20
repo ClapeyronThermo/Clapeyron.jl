@@ -12,6 +12,8 @@ include("singlecomponent/singlecomponent.jl")
 #electrolyte solvers, basic
 include("electrolytes/donnan.jl")
 
+#Rachford-rice
+
 #multiple component properties and solvers
 include("multicomponent/multicomponent.jl")
 

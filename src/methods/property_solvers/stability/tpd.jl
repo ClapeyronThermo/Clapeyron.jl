@@ -515,7 +515,7 @@ function tpd_test_composition!(strategy,conds,w_test,K,dz,verbose)
             elseif ix != 1
                 K .= K .^ ix
             end
-            rr_flash_vapor!(w_test,K,z,false)
+            RachfordRice.vapour_compositions!(w_test,K,z,false)
             w_test ./= sum(w_test)
 
             if ix == -1

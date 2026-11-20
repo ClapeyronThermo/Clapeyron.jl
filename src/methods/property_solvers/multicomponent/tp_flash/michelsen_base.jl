@@ -1,115 +1,3 @@
-function rachfordrice(K, z; β0=nothing, K_tol=4*eps(eltype(K)), non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)), verbose=false)
-    # Function to solve Rachdord-Rice mass balance
-    β,status,limits = rachfordrice_β0(K,z,β0,non_inx,non_iny;K_tol = K_tol)
-    _0,_1 = zero(β),one(β)
-    # single-phase shortcuts
-    if status == RRLiquid
-        return _0
-    elseif status == RRVapour
-        return _1
-    elseif status != RREq
-        return _0/_0
-    end
-
-    if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny)
-        βx = rr_vle_vapor_fraction_exact(K,z)
-    else
-        βx = rr_flash_refine(K, z, β, non_inx, non_iny, limits) # bracketed Halley when possible
-    end
-    βx = clamp(βx,_0,_1)
-
-    # near-boundary stabilization: if βx is within gate of 0 or 1 and K spans unity,
-    # use rr_margin_check to project to boundary.
-    Kmin,Kmax = K_extrema(K,non_inx,non_iny)
-    if (Kmin < one(eltype(K)) && Kmax > one(eltype(K)))
-        β_margin = min(βx,_1-βx)
-        gate = cbrt(K_tol)
-        if β_margin <= gate
-            status_p,βb = rr_margin_check(K,z,non_inx,non_iny;K_tol,verbose)
-            if status_p != RREq
-                verbose && @info "rachfordrice boundary project" βx βb β_margin gate status_p
-                return clamp(βb,_0,_1)
-            end
-        end
-    end
-    return βx
-end
-
-function K_extrema(K::AbstractVector{T},non_inx,non_iny) where T
-    Kmax = T(-Inf)
-    Kmin = T(Inf)
-    for i in eachindex(K)
-        if non_inx[i]
-            Ki = T(Inf)
-        elseif non_iny[i]
-            Ki = T(0)
-        else
-            Ki = K[i]
-        end
-        Kmax = max(Ki,Kmax)
-        Kmin = min(Ki,Kmin)
-    end
-    return Kmin,Kmax
-end
-
-function rr_margin_check(K,z,non_inx = FillArrays.Fill(false,length(K)),non_iny = FillArrays.Fill(false,length(K));K_tol = sqrt(eps(eltype(K))),verbose = false)
-    Ktype = eltype(K)
-    _0 = zero(Ktype)
-    _1 = one(Ktype)
-    F0 = Clapeyron.rr_flash_eval(K, z, _0, non_inx, non_iny) # F(0)
-    F1 = Clapeyron.rr_flash_eval(K, z, _1, non_inx, non_iny) # F(1)
-    cond0 = (abs(F0) <= K_tol) && (F1 < 0) # bubble candidate
-    cond1 = (abs(F1) <= K_tol) && (F0 > 0) # dew candidate
-
-    if verbose
-        δβ = sqrt(eps(Ktype))
-        Fp0_num = (Clapeyron.rr_flash_eval(K, z, δβ, non_inx, non_iny) - F0) / δβ
-        @info """ checking boundary conditions:
-        F(0)             = $(F0)
-        F(1)             = $(F1)
-        F'(0)            ≈ $(Fp0_num)
-        gate             = $(cbrt(K_tol))
-        bubble condition = $(cond0)
-        dew condition    = $(cond1)
-        """
-    end
-
-    if cond0 && !cond1
-        β = _0
-        status = RRLiquid
-        verbose && @info "boundary projection applied: β→0 (bubble), status=RRLiquid"
-    elseif !cond0 && cond1
-        β = _1
-        status = RRVapour
-        verbose && @info "boundary projection applied: β→1 (dew), status=RRVapour"
-    elseif cond0 && cond1
-        # choose the boundary with smaller linearized step δβ = |F|/|F'|
-        Fp0,Fp1 = _0,_0
-        @inbounds for i in eachindex(K,z)
-            Δ   = K[i]-_1
-            zi  = z[i]
-            Fp0 -= zi*(Δ*Δ)
-            Fp1 -= zi*(Δ*Δ)/(K[i]*K[i])
-        end
-        δβ0 = abs(F0)/(abs(Fp0)+eps(Ktype))
-        δβ1 = abs(F1)/(abs(Fp1)+eps(Ktype))
-        if δβ0 <= δβ1
-            β = _0
-            status = RRLiquid
-            verbose && @info "boundary projection via linearized distance: β→0 (δβ0=$(δβ0) ≤ δβ1=$(δβ1))"
-        else
-            β = _1
-            status = RRVapour
-            verbose && @info "boundary projection via linearized distance: β→1 (δβ1=$(δβ1) < δβ0=$(δβ0))"
-        end
-    else
-        verbose && @info "boundary projection not conclusive."
-        status = RREq
-        β = _0/_0
-    end
-    return status,β
-end
-
 function michelsen_optimization_of!(g,H,model,p,T,z,caches,ny_var,gz)
     second_order = !isnothing(H)
     nx,ny,vcache,lnϕ_cache,in_eq,phases = caches
@@ -261,26 +149,38 @@ end
 
 #updates x,y after a sucessful rachford rice procedure
 function update_rr!(K,β,z,x,y,
-                    non_inx=FillArrays.Fill(false,length(z)),
-                    non_iny=FillArrays.Fill(false,length(z)),normalize = true)
+                    non_inx=nothing,
+                    non_iny=nothing;normalize::Bool = true)
 
-    x = rr_flash_liquid!(x,K,z,β)
-    y .= x .* K
-    for i in eachindex(z)
-        # modification for non-in-y components Ki -> 0
-        if non_iny[i] || iszero(K[i])
-            x[i] = z[i] / (1. - β)
-            y[i] = 0.
-        end
-        # modification for non-in-x components Ki -> ∞
-        if non_inx[i] || isinf(K[i])
-            x[i] = 0.
-            y[i] = z[i] / β
-        end
-    end
+    RR = RachfordRiceResidual(K,z,non_inx,non_iny)
+    result = RachfordRiceResult(β)
+    return update_rr!(x,y,RR,result;normalize)
+end
+
+function update_rr!(x,y,K::RachfordRiceResidual,res::RachfordRiceResult;normalize::Bool = true)
+    z = K.z
+    _1 = one(eltype(x))
+    _0 = zero(_1)
+    βv,βl = res.V,res.L
     if normalize
-        x ./= sum(x)
-        y ./= sum(y)
+        n = sum(z)
+    else
+        n = one(eltype(z))
+    end
+
+    for i in eachindex(x)
+        Ki,zi = K[i],z[i]
+        wi = zi/n
+        if isinf(Ki)
+            x[i] = _0
+            y[i] = wi/βv
+        else
+            wi = zi/n
+            detKi = RachfordRice.inv_fma(Ki,βv,βl)
+            xi = detKi*wi
+            x[i] = xi
+            y[i] = xi*Ki
+        end
     end
     return x,y
 end
@@ -347,6 +247,8 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     y .= z
     K,lnK = similar(z,TT),similar(z,TT)
     verbose = get_verbosity(method)
+    K_tol = 1e-10
+    RR = RachfordRiceResidual(K,z;non_inx,non_iny)
     if !isnothing(method.K0)
         K .= _1 * method.K0
         lnK .= log.(K)
@@ -373,10 +275,11 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
         tp_flash_K0!(K,model,p,T,z,nothing)
         phasex = :liquid
         phasey = :vapour
+
         #if we can't predict K, we use lle
         if is_unknown(method)
-            Kmin,Kmax = K_extrema(K,non_inx,non_iny)
-            if Kmin > 1 || Kmax < 1
+
+            if !rr_feasible(RR)
                 verbose && @info "VLE correlation failed, trying LLE initial point."
                 K_lle = K0_lle_init(model,p,T,z;reduced = true)
                 if any(!isone,K_lle) #only use LLE result if actually exists
@@ -403,7 +306,7 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
 
     verbose && @info "K0 = $K"
     # Initial guess for phase split
-    status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = 1e-10)
+    status = rr_status(RR;K_tol)
 
 #=
     TREND bubble/dew initialization
@@ -412,48 +315,37 @@ function pt_flash_x0(model,p,T,n,method = GeneralizedXYFlash(),non_inx = FillArr
     then we start at the bubble (or dew conditions)
     =#
 
-    if status == RRLiquid
-        β = _0
-        if maximum(K) < 1
+    if status == RRLiquid || status == RRVapour
+        bubble = status == RRLiquid
+        if !rr_feasible(RR)
+            β = rr_feasibility_projection!(RR,z,bubble;verbose = verbose)
             x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
-            K .= y ./ x
-            verbose && @info "maximum(K) < 1: forcing consistency"
-            verbose && @info "forced K: $K"
+        else
+            β = bubble ? _0 : _1
         end
-        verbose && @info "suppossing β = 0 (bubble initialization)"
         status = RREq
-        β += eps(eltype(β))
-    elseif status == RRVapour
-        β = _1
-        if minimum(K) > 1
-            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
-            K .= y ./ x
-            verbose && @info "minimum(K) > 1: forcing consistency"
-            verbose && @info "forced K: $K"
-        end
-        verbose && @info "suppossing β = 1 (dew initialization)"
-        status = RREq
-        β -= eps(eltype(β))
+        βsgn = ifelse(bubble,1,-1)
+        β += βsgn*eps(eltype(β))
+        β_result = RachfordRiceResult(β)
     elseif status == RREq
-        β = rachfordrice(K, z; non_inx, non_iny, verbose)
+        β_result = rachfordrice(RR; K_tol, verbose)
+        β = β_result.V
     else
         β = _0/_0
+        β_result = RachfordRiceResult(β)
     end
 
     verbose && @info "initial vapour fraction = $β"
     #verbose && status != RREq && @info "initial point is single-phase (does not satisfy Rachford-Rice constraints). Exiting early"
 
-    y = rr_flash_vapor!(y,K,z,β)
-    y ./= sum(y)
-    x = rr_flash_liquid!(x,K,z,β)
-    x ./= sum(x)
-    βv = ∑n*β
-    βl = ∑n - βv
+    update_rr!(x,y,RR,β_result;normalize = true)
+    βv = ∑n*β_result.V
+    βl = ∑n*β_result.L
     if hasfield(typeof(method),:v0) && !isnothing(method.v0) && iszero(volx) && iszero(voly)
         vl0,vv0 = method.v0
         volx,voly = _1*vl0,_1*vv0
     end
-    
+
     iszero(volx) && (volx = volume(model,p,T,x,phase = phasex))
     iszero(voly) && (voly = volume(model,p,T,y,phase = phasey))
     lle = is_liquid(phasex) && is_liquid(phasey)
@@ -548,3 +440,4 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     end
 end
 =#
+

@@ -3,7 +3,7 @@ function qp_f0_T!(K,z,dpdT,p,T,β0)
     for i in 1:length(K)
         K[i] = K_from_dpdT(dpdT[i],T)
     end
-    return rachfordrice(K,z) - β0
+    return rachfordrice(K,z).V - β0
 end
 
 function qp_flash_x0(model::RestrictedEquilibriaModel,β,p,z,method::FlashMethod)

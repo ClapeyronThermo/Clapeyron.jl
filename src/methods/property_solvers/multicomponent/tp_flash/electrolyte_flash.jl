@@ -65,8 +65,10 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
     y .= z
     K,lnK = similar(x),similar(x)
     K̄,lnK̄ = similar(x),similar(x)
+    #RR holds a reference to K̄, z, non_inx and non_iny. K̄ must always be updated in-place.
+    RR = RachfordRice.RachfordRiceResidual(K̄,z,non_inx,non_iny)
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
-    _0,_1 = one(TT),one(TT)
+    _0,_1 = zero(TT),one(TT)
     if !isnothing(K0)
         #K0 should be the same size as the input model
         check_arraysize(model_full,K0)
@@ -125,7 +127,9 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
 
     K̄ .= K.*exp.(Z.*ψ)
     lnK̄ .= log.(K̄)
-    β,status,_ = rachfordrice_β0(K̄,z,nothing,non_inx,non_iny)
+    β_result = rachfordrice(RR; K_tol, verbose)
+    β = β_result.V
+    status = β_result.status
     status0 = status
     #=TODO:
     there is a method used in TREND that tries to obtain adequate values of K
@@ -161,7 +165,7 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
         lnK̄_old .= lnK̄
         β_old = β
 
-        x,y = update_rr!(K̄,β,z,x,y,non_inx,non_iny)
+        x,y = update_rr!(x,y,RR,β_result)
 
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,z,β,(volx,voly),phases,non_inw,dlnϕ_cache)
@@ -179,9 +183,10 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
             # acceleration using DEM (1 eigenvalues)
             lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3)
             K_dem .= exp.(lnK_dem)
-            β_dem,ψ_dem = ion_rachfordrice(K_dem, z, Z, K̄_dem; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny, verbose = verbose)
+            RR_dem = RachfordRice.RachfordRiceResidual(K̄_dem,z,non_inx,non_iny)
+            β_dem,ψ_dem = ion_rachfordrice(RR_dem, K_dem, z, Z, K̄_dem; β0=β, ψ0=ψ, verbose = verbose)
             K̄_dem .= K_dem .* exp.(Z .* ψ_dem)
-            x_dem,y_dem = update_rr!(K̄_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
+            x_dem,y_dem = update_rr!(x_dem,y_dem,RR_dem,RachfordRiceResult(β_dem))
             lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,z,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
             #add effect of electroneutrality condition on Gibbs energy
             gibbs_dem += β_dem*ψ_dem*dot(x_dem,Z)
@@ -197,12 +202,12 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
         end
 
         K .= exp.(lnK)
-        β,ψ = ion_rachfordrice(K, z, Z, K̄; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny,verbose = verbose)
-
+        β,ψ = ion_rachfordrice(RR, K, z, Z, K̄; β0=β, ψ0=ψ, verbose = verbose)
+        β_result = RachfordRiceResult(β)
 
         lnK̄ .= lnK .+ Z.*ψ
-        K̄ = exp.(lnK̄)
-        status = rachfordrice_status(K̄,z,non_inx,non_iny;K_tol)
+        K̄ .= exp.(lnK̄) #in-place: RR holds a reference to K̄
+        status = RachfordRice.rr_status(RR; K_tol)
 
         verbose && @info "$(__pad_val(it,4))  $(__pad_val(status,10)) $(__pad_val(β,16)) $(__pad_val(error_lnK,16)) $(repr(K̄,context = :compact => true))"
 
@@ -215,7 +220,7 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
 
     if it > 0 && !isnan(β)
         # single composition update with the (possibly projected) β
-        x, y = update_rr!(K̄, β, z, x, y, non_inx, non_iny)
+        x, y = update_rr!(x,y,RR,β_result)
     end
 
     # Stage 2: Minimization of Gibbs energy
@@ -255,7 +260,8 @@ function tp_flash_michelsen(model_full::ESElectrolyteModel, p, T, z_full, method
         x .= nx ./ sum(nx)
         y .= ny ./ sum(ny)
         K̄ .= y ./ x
-        β = rachfordrice(K̄, z; non_inx, non_iny, K_tol, verbose)
+        β_result = rachfordrice(RR; verbose, K_tol)
+        β = β_result.V
     end
 verbose &&
 @info "_____________________________________________________________________________________
@@ -265,7 +271,7 @@ verbose &&
 
 "
 
-    status = rachfordrice_status(K̄,z,non_inx,non_iny;K_tol = K_tol)
+    status = RachfordRice.rr_status(RR; K_tol)
     final_status = status
     verbose && status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
 
@@ -364,10 +370,11 @@ function rachford_rice_donnan(x,K,z,Z)
 end
 
 
-function ion_rachfordrice(K, z, Z, K̄ = similar(K); β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=FillArrays.Fill(false,length(z)),verbose = false)
+#RR must be a RachfordRiceResidual built on K̄ (RR holds K̄, z, non_inx and non_iny)
+function ion_rachfordrice(RR::RachfordRice.RachfordRiceResidual, K, z, Z, K̄ = similar(K); β0=nothing, ψ0=nothing, verbose = false)
     # Function to solve Rachdord-Rice mass balance
     K̄ .= K .* exp.(Z .* ψ0)
-    status = rachfordrice_status(K̄,z,non_inx,non_iny)
+    status = RachfordRice.rr_status(RR)
     if status == RREq
         x0 = SVector(Base.promote(β0,ψ0))
         ff(F,x) = rachford_rice_donnan(x,K,z,Z)
@@ -444,7 +451,7 @@ function michelsen_optimization_of!(g,H,model::ESElectrolyteModel,p,T,z,caches,n
 
         if !isnothing(g)
             gny = @view g[1:end-1]
-            _∂y = @view ∂x[in_equilibria]
+            _∂y = @view ∂y[in_equilibria]
             gny .-= _∂y
             gny .*= -1
         end
@@ -490,5 +497,3 @@ dfdny  = -Z .* phi
 dfdphi = dot(Z,nx) = Z*(z - ny)
 d2fdphidny = -Z
 =#
-
-

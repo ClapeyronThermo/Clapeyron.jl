@@ -254,6 +254,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
     K,lnK = similar(x),similar(x)
     dlnϕ_cache = ∂lnϕ_cache(model, p, T, x, Val{false}())
     _0,_1 = zero(TT),one(TT)
+    RR = RachfordRice.RachfordRiceResidual(K,z,non_inx,non_iny)
     if !isnothing(K0)
         #K0 should be the same size as the input model
         check_arraysize(model_full,K0)
@@ -280,7 +281,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
         phases = (:liquid,:vapour)
         #if we can't predict K, we use lle
         if is_unknown(equilibrium)
-            Kmin,Kmax = K_extrema(K,non_inx,non_iny)
+            Kmin,Kmax = extrema(RR)
             if Kmax < 1 #only try LLE if the VLE K0 suggests only liquid phase
                 verbose && @info "VLE correlation failed, trying LLE initial point."
                 tpd_cache0 = similar(K),similar(K),similar(K),similar(K),Ref(_0),dlnϕ_cache
@@ -305,7 +306,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
     end
     verbose && @info "K0 = $K"
     # Initial guess for phase split
-    status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
+    status = RachfordRice.rr_status(RR,K_tol = K_tol)
     status0 = status
     #=
     TREND bubble/dew initialization
@@ -314,32 +315,24 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
     then we start at the bubble (or dew conditions)
     =#
 
-    if status == RRLiquid
-        β = _0
-        if maximum(K) < 1
+    if status == RRLiquid || status == RRVapour
+        bubble = status == RRLiquid
+        if !rr_feasible(RR)
+            β = rr_feasibility_projection!(RR,z,bubble;verbose = verbose)
             x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
-            K .= y ./ x
-            verbose && @info "maximum(K) < 1: forcing consistency"
-            verbose && @info "forced K: $K"
+        else
+            β = bubble ? _0 : _1
         end
-        verbose && @info "suppossing β = 0 (bubble initialization)"
         status = RREq
-        β += eps(eltype(β))
-    elseif status == RRVapour
-        β = _1
-        if minimum(K) > 1
-            x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
-            K .= y ./ x
-            verbose && @info "minimum(K) > 1: forcing consistency"
-            verbose && @info "forced K: $K"
-        end
-        verbose && @info "suppossing β = 1 (dew initialization)"
-        status = RREq
-        β -= eps(eltype(β))
+        βsgn = ifelse(bubble,1,-1)
+        β += βsgn*eps(eltype(β))
+        β_result = RachfordRiceResult(β)
     elseif status == RREq
-        β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
+        β_result = rachfordrice(RR; K_tol, verbose)
+        β = β_result.V
     else
         β = _0/_0
+        β_result = RachfordRiceResult(β)
     end
 
     verbose && @info "initial vapour fraction = $β"
@@ -376,7 +369,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
         lnK_old .= lnK
         β_old = β
 
-        x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
+        x,y = update_rr!(x,y,RR,β_result)
 
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,z,β,(volx,voly),phases,non_inw,dlnϕ_cache)
@@ -392,8 +385,11 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
             # acceleration using DEM (1 eigenvalues)
             lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3)
             K_dem .= exp.(lnK_dem)
-            β_dem = rachfordrice(K_dem, z; β0=β, non_inx, non_iny, verbose)
-            x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
+
+            RR_dem = RachfordRiceResidual(K_dem,z,non_inx,non_iny)
+            β_dem_result = rachfordrice(RR_dem, β; K_tol, verbose)
+            β_dem = β_dem_result.V
+            x_dem,y_dem = update_rr!(x_dem,y_dem,RR_dem,β_dem_result)
             lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,z,β_dem,(volx,voly),phases,non_inw,dlnϕ_cache)
             # only accelerate if the Gibbs energy is reduced
             if gibbs_dem < gibbs
@@ -405,13 +401,16 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
             end
         end
         K .= exp.(lnK)
-        β = rachfordrice(K, z; β0=β, non_inx, non_iny, K_tol, verbose)
-        status = rachfordrice_status(K,z,non_inx,non_iny;K_tol)
+        β_result = rachfordrice(RR, β; K_tol, verbose)
+        β = β_result.V
+        status = β_result.status
         verbose && @info "$(__pad_val(it,4))  $(__pad_val(status,10)) $(__pad_val(β,16)) $(__pad_val(error_lnK,16)) $(repr(K,context = :compact => true))"
         if isnan(β) && status != RRTrivial
             #try to save K? basically damping
             K .= 0.5 * K .+ 0.5 * y ./ x
-            β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
+            β_result = rachfordrice(RR, β; K_tol, verbose)
+            β = β_result.V
+            status = β_result.status
         end
 
         # Computing error
@@ -423,7 +422,7 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
 
     if it > 0 && !isnan(β)
         # single composition update with the (possibly projected) β
-        x, y = update_rr!(K, β, z, x, y, non_inx, non_iny)
+        x, y = update_rr!(x,y,RR,β_result)
     end
 
     # Stage 2: Minimization of Gibbs energy
@@ -458,7 +457,8 @@ function tp_flash_michelsen(model_full::EoSModel, p, T, z_full, method = Michels
         x .= nx ./ sum(nx)
         y .= ny ./ sum(ny)
         K .= y ./ x
-        β = rachfordrice(K, z; non_inx, non_iny, K_tol, verbose)
+        β_result = rachfordrice(RR; verbose, K_tol)
+        β = β_result.V
     end
 verbose &&
 @info "_____________________________________________________________________________________
@@ -468,7 +468,7 @@ verbose &&
 "
 
     #convergence checks (TODO, seems to fail with activity models)
-    status = rachfordrice_status(K,z,non_inx,non_iny,K_tol = K_tol)
+    status = β_result.status
     final_status = status
     verbose && status != RREq && @info "result is single-phase (does not satisfy Rachford-Rice constraints)."
     vx,vy = vcache[]

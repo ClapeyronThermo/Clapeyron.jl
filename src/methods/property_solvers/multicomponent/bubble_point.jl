@@ -313,7 +313,7 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
 
     if FugEnum.is_bubble(method)
         x_r = @view x[in_media]
-        y_r = rr_flash_vapor(K_r,x_r,zero(eltype(K)))
+        y_r = RachfordRice.vapour_compositions(K_r,x_r,zero(eltype(K)))
         yy = index_expansion(y_r,in_media)
         yy ./= sum(yy)
         Tv2,pv2,vv = refine_bubbledew_vol(model,pv,Tv,yy,method,:vapour)
@@ -322,7 +322,7 @@ function improve_bubbledew_suggestion(model,p0,T0,x,y,method,in_media,high_condi
         return px,Tx,x,yy,vlx/sum(x),vv
     else
         y_r = @view y[in_media]
-        x_r = rr_flash_liquid(K_r,y_r,one(eltype(K)))
+        x_r = RachfordRice.liquid_compositions(K_r,y_r,one(eltype(K)))
         xx = index_expansion(x_r,in_media)
         xx ./= sum(xx)
         Tv2,pv2,vv = refine_bubbledew_vol(model,pv,Tv,y,method,:vapour)

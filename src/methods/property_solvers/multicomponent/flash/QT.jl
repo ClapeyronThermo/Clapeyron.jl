@@ -1,6 +1,6 @@
 function qt_f0_p!(K,z,p,ps,β0)
     K .= ps ./ p
-    return rachfordrice(K,z) - β0
+    return rachfordrice(K,z).V - β0
 end
 
 function qt_flash_x0(model::RestrictedEquilibriaModel,β,T,z,method::FlashMethod)
