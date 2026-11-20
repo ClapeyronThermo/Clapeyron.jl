@@ -10,3 +10,17 @@ Given an implicit variable $x$ defined through the root $F(x(\theta),\theta)=0$,
 To avoid the unrolling of iterations, computing the derivative at each iteration and hence populating the AD stack unnecessarily, `Clapeyron` uses [`IFTDual.jl`](https://github.com/Garren-H/IFTDuals.jl), which implements the IFT for dual numbers and is hence only limited to `ForwardDiff.jl`. `IFTDuals.jl` can and is used to obtain abitrary order derivatives.
 
 `Clapeyron` previously implemented a final Newton step to propagate first order derivatives, which is also limited to first order AD. Although this method does produce numeric values for nested Duals, these higher order derivatives are incorrect as it neglects the indirect effects from lower order gradients. For a more complete explanation see [this discussion](https://github.com/ClapeyronThermo/Clapeyron.jl/issues/502).
+
+## COSMO-SAC segment coefficients
+
+`COSMOSAC02`, `COSMOSAC10`, and `COSMOSACdsp` solve the segment equations on
+primal values and reconstruct ForwardDiff derivatives with the existing
+IFTDuals machinery. The residual is `Γ .* (PW * Γ) .- 1`; the primal
+fixed-point method and its convergence tolerance are unchanged.
+
+The reduced sigma-profile support is selected before stripping Dual values.
+A segment with a zero primal probability but nonzero partials is therefore
+retained. Differentiation assumes a converged positive solution, a nonsingular
+residual Jacobian, and a fixed selected support. At composition boundaries,
+derivatives describe this selected smooth extension; two-sided
+differentiability across changes of support is not guaranteed.
