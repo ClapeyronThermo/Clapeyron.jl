@@ -29,6 +29,45 @@ kappa_649(z) = Clapeyron.debye_length(1.8e-5, 298.15, z, eps_r_649(z), [0.0, 1.0
         @test osmotic_coefficient_sat(system,salts,T,m)[1] ≈ 0.9300995995153606 rtol = 1e-5
     end
 
+    @testset "Pitzer electrolyte methods" begin
+        pitzer_mix = Pitzer(["water"], ["sodium", "potassium", "chloride"]; require_mixing = true)
+        salts_mix = [("NaCl", ["sodium" => 1, "chloride" => 1]),
+                     ("KCl",  ["potassium" => 1, "chloride" => 1])]
+        γpm = mean_ionic_activity_coefficient(pitzer_mix, salts_mix, p, T, [1.0, 1.0])
+        ϕ_mix = osmotic_coefficient(pitzer_mix, salts_mix, p, T, [1.0, 1.0])[1]
+        aw_mix = water_activity(pitzer_mix, salts_mix, p, T, [1.0, 1.0])
+        @test length(γpm) == 2
+        @test 0.5 < γpm[1] < 0.8
+        @test 0.5 < γpm[2] < 0.8
+        @test 0.85 < ϕ_mix < 1.05
+        @test aw_mix ≈ exp(-0.01801528 * ϕ_mix * 4.0) rtol = 1e-12
+
+        # Exact Gibbs-Duhem / Euler consistency via ForwardDiff
+        z_mix = molality_to_composition(pitzer_mix, salts_mix, [1.0, 1.0])
+        @test activity(pitzer_mix, p, T, z_mix)[1] ≈ aw_mix rtol = 1e-12
+        lnγ_direct = log.(activity_coefficient(pitzer_mix, p, T, z_mix))
+        lnγ_ad = Clapeyron.ForwardDiff.gradient(
+            zz -> Clapeyron.excess_gibbs_free_energy(pitzer_mix, p, T, zz) / (Clapeyron.Rgas(pitzer_mix) * T),
+            z_mix
+        )
+        @test lnγ_ad ≈ lnγ_direct rtol = 1e-11
+
+        # Unsymmetrical 1:1 + 1:3 mixture with E_theta(I) + temperature-dependent HCl
+        pitzer_unsym = Pitzer(["water"], ["H+", "Fe3+", "Cl-"])
+        salts_unsym = [("HCl", ["H+" => 1, "Cl-" => 1]), ("FeCl3", ["Fe3+" => 1, "Cl-" => 3])]
+        z_unsym = molality_to_composition(pitzer_unsym, salts_unsym, [0.5, 0.2])
+        lnγ_u_dir = log.(activity_coefficient(pitzer_unsym, p, T, z_unsym))
+        lnγ_u_ad = Clapeyron.ForwardDiff.gradient(
+            zz -> Clapeyron.excess_gibbs_free_energy(pitzer_unsym, p, T, zz) / (Clapeyron.Rgas(pitzer_unsym) * T),
+            z_unsym
+        )
+        @test lnγ_u_ad ≈ lnγ_u_dir rtol = 1e-10
+
+        pitzer_hcl_T = Pitzer(["water"], ["H+", "Cl-"]; temperature_model = :christov_moller)
+        @test mean_ionic_activity_coefficient(pitzer_hcl_T, p, 298.15, [1.0])[1] ≈ 0.809 atol = 0.005
+        @test mean_ionic_activity_coefficient(pitzer_hcl_T, p, 498.15, [1.0])[1] ≈ 0.421 atol = 0.005
+    end
+
     @testset "critical points" begin
         model = LS([("polymer", ["+"=>10, "-"=>10], [("+","-")=>1, ("+","+")=>4, ("-","-")=>4]),
                    ("counterion", ["-"=>1], [])])

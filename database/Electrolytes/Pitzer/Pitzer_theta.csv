@@ -1,0 +1,7 @@
+Clapeyron Database File,,,
+Pitzer Like-Charge Binary Mixing Parameters (theta) at 298.15 K [csvtype = unlike],,,
+species1,species2,theta,source
+sodium~|~Na+,potassium~|~K+,-0.012,"Harvie & Weare (1980) GCA 44:981-997; Harvie, Moller & Weare (1984) GCA 48:723-751 Table 3; PHREEQC pitzer.dat (298.15 K)"
+proton~|~hydrogen ion~|~H+,sodium~|~Na+,0.036,"Harvie, Moller & Weare (1984) GCA 48:723-751 Table 3; Pitzer & Kim (1974) JACS 96:5701-5707; PHREEQC pitzer.dat (298.15 K)"
+proton~|~hydrogen ion~|~H+,potassium~|~K+,0.005,"Harvie, Moller & Weare (1984) GCA 48:723-751 Table 3; Pitzer & Kim (1974) JACS 96:5701-5707; PHREEQC pitzer.dat (298.15 K)"
+chloride~|~Cl-,bromide~|~Br-,0.0,"Pitzer & Kim (1974) JACS 96:5701-5707; PHREEQC pitzer.dat (298.15 K)"

@@ -94,6 +94,31 @@
         @test Clapeyron.a_res(model,0.03,300.0,[0.5,0.5]) ≈ -1.5683657474962023 rtol = 1e-6
     end
 
+    @testset "Pitzer" begin
+        model = Pitzer(["water"], ["sodium", "potassium", "chloride"]; require_mixing = true)
+        test_repr(model, str = ["Pitzer Electrolyte Activity Model", "Temperature Model: constant"])
+        @test model isa Clapeyron.ElectrolyteModel && model isa PitzerModel
+        @test isempty(pitzer_missing_binary_parameters(model))
+        @test isempty(pitzer_missing_mixing_parameters(model).theta)
+        @test isempty(pitzer_missing_mixing_parameters(model).psi)
+
+        salts = [("NaCl", ["sodium" => 1, "chloride" => 1]),
+                 ("KCl",  ["potassium" => 1, "chloride" => 1])]
+        z = molality_to_composition(model, salts, [1.0, 1.0])
+        @test composition_to_molality(model, z) ≈ [0.0, 1.0, 1.0, 2.0] rtol = 1e-12
+        @test ionic_strength(model, salts, [1.0, 1.0]) ≈ 2.0 rtol = 1e-12
+
+        subs = Clapeyron.split_model(model, [[1, 2, 4], [1, 3, 4]])
+        @test subs[1].components == ["water", "sodium", "chloride"]
+        @test subs[2].components == ["water", "potassium", "chloride"]
+        @test water_activity(subs[1], 1e5, T, [1.0]) ≈ water_activity(model, salts, 1e5, T, [1.0, 0.0]) rtol = 1e-13
+
+        model_fe = Pitzer(["water"], ["H+", "Fe3+", "Cl-"])
+        miss_fe = pitzer_missing_mixing_parameters(model_fe)
+        @test ("H+", "Fe3+") in miss_fe.theta
+        @test ("H+", "Fe3+", "Cl-") in miss_fe.psi
+    end
+
     @printline
 end
 end

@@ -1,0 +1,8 @@
+Clapeyron Database File,,,,,,,,,,,,
+Pitzer Christov-Moller Temperature Correlation Coefficients (P(T) = a1 + a2*T + a3*T^2 + a4*T^3 + a5/T + a6*ln(T) + a7/(T-263) + a8/(680-T), T in K),,,,,,,,,,,,
+parameter,species1,species2,a1,a2,a3,a4,a5,a6,a7,a8,T_range_K,source
+Aphi,water~|~water08~|~H2O,,3.36901532e-01,-6.32100430e-04,1.92118597e-06,0.0,9.14252359e+00,-1.35143986e-02,2.26089488e-03,4.52586464e+01,273.15-523.15,"Christov & Moller (2004) Geochim. Cosmochim. Acta 68(6):1309-1331"
+beta0,proton~|~hydrogen ion~|~H+,chloride~|~Cl-,5.20980985e-02,6.26911217e-04,-2.17745839e-06,0.0,0.0,0.0,1.00115257e-01,4.87979143e+01,273.15-523.15,"Christov & Moller (2004) Geochim. Cosmochim. Acta 68(6):1309-1331"
+beta1,proton~|~hydrogen ion~|~H+,chloride~|~Cl-,2.19549623e+00,-7.77644382e-03,1.84693733e-05,0.0,0.0,0.0,-4.06503624e-01,-4.61357568e+02,273.15-523.15,"Christov & Moller (2004) Geochim. Cosmochim. Acta 68(6):1309-1331"
+beta2,proton~|~hydrogen ion~|~H+,chloride~|~Cl-,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,273.15-523.15,"Christov & Moller (2004) Geochim. Cosmochim. Acta 68(6):1309-1331"
+Cphi,proton~|~hydrogen ion~|~H+,chloride~|~Cl-,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,273.15-523.15,"Christov & Moller (2004) Geochim. Cosmochim. Acta 68(6):1309-1331"

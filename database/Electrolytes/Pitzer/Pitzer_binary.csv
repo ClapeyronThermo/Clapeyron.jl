@@ -1,0 +1,12 @@
+Clapeyron Database File,,,,,,,,
+Pitzer Binary Cation-Anion Parameters at 298.15 K [csvtype = unlike],,,,,,,,
+species1,species2,beta0,beta1,beta2,Cphi,alpha1,alpha2,source
+sodium~|~Na+,chloride~|~Cl-,0.0765,0.2664,0.0,0.00127,2.0,12.0,"Harvie, Moller & Weare (1984) GCA 48:723-751 Table 2; Pitzer & Mayorga (1973) JPC 77:2300-2308 (298.15 K, m <= 6 mol/kg)"
+potassium~|~K+,chloride~|~Cl-,0.04835,0.2122,0.0,-0.00084,2.0,12.0,"Harvie, Moller & Weare (1984) GCA 48:723-751 Table 2; Pitzer & Mayorga (1973) JPC 77:2300-2308 (298.15 K, m <= 4.8 mol/kg)"
+proton~|~hydrogen ion~|~H+,chloride~|~Cl-,0.1775,0.2945,0.0,0.0008,2.0,12.0,"Harvie, Moller & Weare (1984) GCA 48:723-751 Table 2; Pitzer & Mayorga (1973) JPC 77:2300-2308 (298.15 K, m <= 6 mol/kg)"
+iron(III)~|~ferric~|~Fe3+~|~Fe+3,chloride~|~Cl-,0.5382,6.3122,0.0,-0.0604,2.0,12.0,"Millero & Pierrot (2007) GCA 71:4825-4833, fitted to Rumyantsev et al. (2004) isopiestic data at 298.15 K (m <= 2.0 mol/kg)"
+chromium(III)~|~chromic~|~Cr3+~|~Cr+3,chloride~|~Cl-,0.72234,5.5989,0.0,-0.04141,2.0,12.0,"Christov (2003) Pitzer parameterization for CrCl3(aq) at 298.15 K (m <= 1.6 mol/kg)"
+lithium~|~Li+,chloride~|~Cl-,0.1494,0.3074,0.0,0.00359,2.0,12.0,"Pitzer & Mayorga (1973) JPC 77:2300-2308; PHREEQC pitzer.dat (298.15 K, m <= 6 mol/kg)"
+sodium~|~Na+,bromide~|~Br-,0.0973,0.2791,0.0,0.00116,2.0,12.0,"Pitzer & Mayorga (1973) JPC 77:2300-2308; PHREEQC pitzer.dat (298.15 K, m <= 4 mol/kg)"
+potassium~|~K+,bromide~|~Br-,0.0569,0.2212,0.0,-0.0018,2.0,12.0,"Pitzer & Mayorga (1973) JPC 77:2300-2308; PHREEQC pitzer.dat (298.15 K, m <= 5.5 mol/kg)"
+proton~|~hydrogen ion~|~H+,bromide~|~Br-,0.196,0.3564,0.0,0.00827,2.0,12.0,"Pitzer & Mayorga (1973) JPC 77:2300-2308; PHREEQC pitzer.dat (298.15 K, m <= 3 mol/kg)"
