@@ -486,20 +486,25 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache, verbose)
     if np == 2
         K = viewn(F_cache,nc,1)
         # Use log-K norm to detect trivial split (K ≈ 1 multiplicatively)
-        Ktol = sqrt(eps(eltype(K)))
-        if any(!isfinite, K) || __log_K_norm(K,false,false) <= Ktol
-            βsol = clamp(βi[1], 0.0, 1.0)
-            verbose && @info "[MPFLASH] RR_β: using previous β due to logK ≈ 0; βprev = $βsol"
-        else
-            βsol = rachfordrice(K,z)
+        K_tol = sqrt(eps(eltype(K)))
+        β_result = rachfordrice(K, z; K_tol, verbose)
+
+        if isnan(β_result.V) && β_result.status != RRTrivial
+            #try to save K? basically damping
+            #lnKi[j] = log(xij / xnpj) -> xnp = x, xi = y
+            y, x = result.comps[1], result.comps[2]
+            K .= 0.5 * K .+ 0.5 * y ./ x
+            β_result = rachfordrice(K, z; K_tol, verbose)
         end
-        βF[1] = βsol #two-phase solution does not require solving a neq problem
-        βF[2] = 1 - βsol
-        βi[1] = βsol
-        βi[2] = 1 - βsol
-        if verbose && !(isfinite(βsol) && 0 <= βsol <= 1)
-            verbose && @info "[MPFLASH] RR_β: invalid βsol = $βsol, K= $K, z= $z"
+
+        if β_result.status == RRTrivial
+            β_result = RachfordRiceResult(0.5) #sentinel value
         end
+        βF[1] = β_result.V
+        βF[2] = β_result.L
+        βi[1] = β_result.V
+        βi[2] = β_result.L
+
         return F
     end
     deactivated_phase = Ref(0)

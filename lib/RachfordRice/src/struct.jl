@@ -483,7 +483,7 @@ function rr_initial_state(RRS::RRState,β0 = nothing; K_tol = 4*eps(eltype(RR)))
 
     #initial point generation
     if β0 !== nothing
-        if βmin <= β0 <= βmax
+        if βmin <= β0 <= βmax && isfinite(β0)
             β = _1*β0
         else
             β = (βmax + βmin)/2
