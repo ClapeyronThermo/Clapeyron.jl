@@ -7,9 +7,13 @@ version = "1.0"
 
 [compat]
 julia = "1.10"
+Downloads = "1"
+CSV = "0.10, 1"
 
 [extras]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["CSV","Downloads","Test"]
