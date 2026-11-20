@@ -30,6 +30,7 @@ In the following table:
 | `MichelsenTPFlash` | P-T | 2 (VLE,LLE) | Second order¹ | Yes  | No | RR + Gibbs optimization |
 | `MultiPhaseTPFlash` | P-T | any (automatic phase detection)  | Second order | Yes  | No  | RR + Gibbs optimization + phase search |
 | `DETPFlash` | P-T | any (via `numphases`)  | Zeroth Order | Yes  | No | Global Gibbs optimization over fixed phases |
+| `CEMFlash` | P-T | any (automatic phase detection, incl. pure solids) | Zeroth Order (polished: same as `polish`) | Yes  | No | Convex envelope of the discretized Gibbs energy (+ local refinement) |
 | `GeneralizedXYFlash` | X-Y  | 2² (VLE/LLE) | Second Order | No | No | Equilibria conditions as constrained non-linear system |
 | `RRQXFlash` | Q-T,Q-P  | 2 | First Order | Yes | No | RR update + Root-finding of Q(p)/Q(T)  |
 | `RRXYFlash` | P-Y,T-Y  | 2 (VLE/LLE) | First Order | Yes | No | RR iterations + Root-finding on Y(T)/Y(p) |
@@ -87,6 +88,7 @@ Clapeyron.DETPFlash
 Clapeyron.RRTPFlash
 Clapeyron.MichelsenTPFlash
 Clapeyron.MultiPhaseTPFlash
+Clapeyron.CEMFlash
 Clapeyron.MCFlashJL
 Clapeyron.GeneralizedXYFlash
 Clapeyron.RRQXFlash
