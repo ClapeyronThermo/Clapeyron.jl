@@ -13,9 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+      - uses: julia-actions/cache@v3
       - name: Install JuliaFormatter and format
         run: |
-          julia  -e 'using Pkg; pkg"add JuliaFormatter@2.12"'
+          julia  -e 'using Pkg; pkg"add JuliaFormatter@2.14"'
           julia  -e 'using JuliaFormatter; foreach(format,["src", "test", "ext", "lib", "docs/src", "docs/make.jl"])'
           git diff --exit-code
 
