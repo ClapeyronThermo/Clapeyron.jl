@@ -95,7 +95,7 @@ function set_vfrac(s::FlashSpecifications,i)
     if s.spec1 isa Vfrac
         return FlashSpecifications(Vfrac(i[s.spec1.k]),s.val1,s.spec2,s.val2)
     elseif s.spec2 isa Vfrac
-        return FlashSpecifications(s.spec1,s.val1,Vfrac(s.spec2.k),s.val2)
+        return FlashSpecifications(s.spec1,s.val1,Vfrac(invperm(i)[s.spec2.k]),s.val2)
     else
         return s
     end
@@ -416,7 +416,7 @@ function xy_flash_neq(output,model,zbulk,np,input,state::F,μconfig) where F
         #output[end] = vs/∑v - vs/val2
     elseif spec2 isa Vfrac
         i_spec = spec2.k
-        output[end-1] = β[i_spec] - val2
+        output[end] = β[i_spec] - val2
     elseif spec2 == entropy
         output[end] = (val2 - ∑s)/R
     else
@@ -564,7 +564,14 @@ function xy_flash(model::EoSModel,spec::FlashSpecifications,z,comps0,β0,volumes
     βx ./= sum(βx)
     _1 = one(eltype(input))
     #normalize to 1 mol base
-    new_spec = normalize_spec(set_vfrac(spec,idx),∑z*_1)
+    ordered_spec = normalize_spec(set_vfrac(spec,idx),∑z*_1)
+    # The last residual is dropped when temperature is fixed. Keep it as the
+    # temperature equation in a quality flash, even for the keyword (T,q) order.
+    new_spec = if ordered_spec.spec1 == temperature && ordered_spec.spec2 isa Vfrac
+        FlashSpecifications(ordered_spec.spec2,ordered_spec.val2,ordered_spec.spec1,ordered_spec.val1)
+    else
+        ordered_spec
+    end
     #variables already set by the specifications
     slacks = detect_and_set_slack_variables!(input,spec,np,nc)
     is_temperature_updated = !slacks[end]
