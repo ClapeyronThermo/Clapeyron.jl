@@ -1169,3 +1169,98 @@ end
         end
     end
 end
+
+@testset "General XY flash: vapor fraction in either specification position" begin
+    C = Clapeyron
+    k = zeros(2, 2)
+    model = PR(["propane", "butane"]; userlocations = (;
+        Tc = [369.83, 425.12], Pc = [4.21e6, 3.77e6], k, l = zeros(2, 2)),
+        alpha_userlocations = (; acentricfactor = [0.149, 0.197]))
+    # Independent conventional PR solution at fixed p,T; z follows the lever rule for q.
+    p, T, q = 390000.0, 295.0, 0.68
+    x = [0.28026964226016826, 0.7197303577398317]
+    y = [0.5700366903136014, 0.4299633096863986]
+    vl, vv = 9.308963233134065e-5, 0.005726036059627201
+    z = (1 - q) .* x .+ q .* y
+
+    @testset "Both residual slots are written" begin
+        # Leave nonzero, unequal specification residuals with every other row at equilibrium.
+        p_spec, q_spec = 0.93p, 0.59
+        Δp = (p - p_spec) / C.p_scale(model, z)
+        Δq = q - q_spec
+        input = vcat(x, y, [vl, vv], [1 - q, q], [T])
+        for (spec, expected) in (
+            (FlashSpecifications(p = p_spec, q = q_spec), [Δp, Δq]),
+            (FlashSpecifications(C.Vfrac(2), q_spec, pressure, p_spec), [Δq, Δp]),
+        )
+            output = fill(123.0, length(input))
+            C.xy_flash_neq(output, model, z, 2, input, spec, nothing)
+            if haskey(ENV, "CLAPEYRON_SLOT_DIAGNOSTICS")
+                println("slots ", spec, " actual=", output[end-1:end], " expected=", expected)
+            end
+            @test maximum(abs, output[1:end-2]) < 2e-12
+            @test output[end-1] ≈ expected[1] atol = 2e-12
+            @test output[end] ≈ expected[2] atol = 2e-12
+        end
+    end
+
+    @testset "Second-slot quality follows phase permutation" begin
+        s = FlashSpecifications(p = p, q = 0.25)
+        @test C.set_vfrac(s, [1, 2]).spec2.k == 2
+        @test C.set_vfrac(s, [2, 1]).spec2.k == 1
+        # The second-slot mapping is old index → new index, including
+        # non-involutive permutations. This does not test a multiphase flash.
+        @test C.set_vfrac(s, [2, 3, 1]).spec2.k == 1
+    end
+
+    @testset "Public seeded interior quality with pressure or temperature" begin
+        δ = [0.005, -0.005]
+        for q in (0.25, 0.75)
+            z = (1 - q) .* x .+ q .* y
+            # Always liquid first in the public seed. βv=.29 triggers an
+            # internal swap; βv=.71 leaves the order unchanged.
+            q0 = q < 0.5 ? 0.29 : 0.71
+            seed = C.FlashResult([x .+ δ, y .- δ], [1 - q0, q0],
+                                 [1.008vl, 0.993vv], C.FlashData(0.98p, T + 1.75))
+            specs = (("p then q", FlashSpecifications(p = p, q = q)),
+                     ("q then p", FlashSpecifications(C.Vfrac(2), q, pressure, p)),
+                     ("T then q", FlashSpecifications(T = T, q = q)),
+                     ("q then T", FlashSpecifications(C.Vfrac(2), q, C.temperature, T)))
+            for (label, spec) in specs
+                @testset "q=$q, $label" begin
+                    result = C.xy_flash(model, spec, z, deepcopy(seed))
+                    temperature = C.temperature(result)
+                    # Baseline should fail this test without a derivative/phase access on NaNs.
+                    finite_result = isfinite(temperature) && all(isfinite, result.volumes) &&
+                        all(isfinite, result.fractions) && all(w -> all(isfinite, w), result.compositions)
+                    if haskey(ENV, "CLAPEYRON_SLOT_DIAGNOSTICS")
+                        println("q=", q, " ", label, " public finite=", finite_result, " T=", temperature,
+                                " p=", C.pressure(result), " qr=", result.fractions[end],
+                                " volumes=", result.volumes)
+                    end
+                    @test finite_result
+                    if finite_result
+                        xl, yv = result.compositions
+                        vlr, vvr = result.volumes
+                        βl, βv = result.fractions
+                        @test 0 < vlr < vvr
+                        @test 0 < βl < 1 && 0 < βv < 1
+                        @test βv ≈ q atol = 1e-8
+                        @test βl + βv ≈ 1 atol = 1e-8
+                        @test βl .* xl .+ βv .* yv ≈ z atol = 1e-8
+                        @test temperature ≈ T rtol = 1e-8
+                        @test pressure(model, vlr, temperature, xl) ≈ p rtol = 2e-8
+                        @test pressure(model, vvr, temperature, yv) ≈ p rtol = 2e-8
+                        μl = C.VT_chemical_potential(model, vlr, temperature, xl)
+                        μv = C.VT_chemical_potential(model, vvr, temperature, yv)
+                        @test maximum(abs, μl .- μv) / (C.Rgas(model) * temperature) < 2e-8
+                        @test xl ≈ x atol = 2e-8
+                        @test yv ≈ y atol = 2e-8
+                        @test vlr ≈ vl rtol = 2e-8
+                        @test vvr ≈ vv rtol = 2e-8
+                    end
+                end
+            end
+        end
+    end
+end
