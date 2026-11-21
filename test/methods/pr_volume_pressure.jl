@@ -181,3 +181,57 @@ end
     pr_volume_test(pr3, 305., [0.13, 0.26, 0.61], Val(:bubble))
     pr_volume_test(pr3, 305., [0.13, 0.26, 0.61], Val(:dew))
 end
+
+@testset "Constant-shape cubic volume pressure and translation" begin
+    binary = ["propane", "butane"]
+    ternary = [binary; "pentane"]
+    shifts = [3e-6, -8e-6, 1.4e-5] # m³/mol, both signs
+    shifted = PR(ternary; translation=ConstantTranslation,
+                 translation_userlocations=(; v_shift=shifts))
+    plain = PR(ternary)
+    peneloux = PR(binary; translation=PenelouxTranslation)
+    pr2 = PR(binary)
+    for (model, untranslated, T, x) in (
+            (shifted, plain, 300., [0.26, 0.31, 0.43]),
+            (peneloux, pr2, 280., [0.43, 0.57]),
+            (SRK(binary), nothing, 290., [0.43, 0.57]),
+            (vdW(binary), nothing, 280., [0.43, 0.57]))
+        for side in (Val(:bubble), Val(:dew))
+            bubble = side === Val(:bubble)
+            pub, plain_method, opt, f!, z, pivot, active = pr_volume_case(model, T, x, side)
+            @test VPR._select_volume_pressure_method(opt, model, T, x) === opt
+            n = length(x)
+            lb = [-Inf; -Inf; zeros(n-1)]; ub = [Inf; Inf; ones(n-1)]
+            seed = copy(z)
+            @test VPR._pr_volume_try(f!, model, T, x, z, lb, ub, plain_method, active,
+                                     pivot, bubble, Val(n)) !== nothing
+            @test z == seed
+            candidate = pub(model, T, x, opt)
+            @test pr_volume_close(candidate, pub(model, T, x, plain_method))
+            pr_volume_physical(model, T, x, candidate, bubble)
+            if untranslated !== nothing
+                c = VPR.translation(model, 1., T, x)
+                p, vl, vv, w = candidate
+                xl, yv = bubble ? (x,w) : (w,x)
+                @test pr_volume_close((p, vl+dot(c,xl), vv+dot(c,yv), w),
+                                      pub(untranslated, T, x, plain_method))
+                @test abs(dot(c,xl)-dot(c,yv)) > 1e-8
+                # The pressure row shear is not zero at a perturbed seed.
+                z[1] += 0.06
+                physical = f!(similar(z), z)
+                shear = c .* (physical[end]*VPR.p_scale(model,x)/(VPR.Rgas(model)*T))
+                rectified = [physical[1:n] .+ shear; physical[end]]
+                @test norm(shear, Inf) > 1e-5
+                obj = VPR._pr_volume_objective(f!, model, T, x, pivot, Val(n), bubble)
+                @test pr_volume_err(obj.F(similar(z), z), rectified) < 1e-11
+            end
+        end
+    end
+    for (method,wrap) in ((ChemPotBubblePressure(),VPR._PRVolumeBubblePressure),
+                          (ChemPotDewPressure(),VPR._PRVolumeDewPressure))
+        fast=wrap(method); x=[0.43,0.57]
+        @test VPR._select_volume_pressure_method(fast,RKPR(binary),290.,x) === method
+        @test VPR._select_volume_pressure_method(fast,PR(binary;translation=VPR.MTTranslation),290.,x) === method
+        @test VPR._select_volume_pressure_method(fast,shifted,290.,[0.43,0.57,0.]) === method
+    end
+end

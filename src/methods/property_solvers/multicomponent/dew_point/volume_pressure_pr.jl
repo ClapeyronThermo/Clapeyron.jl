@@ -13,8 +13,20 @@ const _PRVolumePressure = Union{_PRVolumeBubblePressure,_PRVolumeDewPressure}
 _pr_volume_no_exclusions(m::ChemPotBubblePressure) = m.nonvolatiles === nothing
 _pr_volume_no_exclusions(m::ChemPotDewPressure) = m.noncondensables === nothing
 
+# Explicit allowlist: constant shape, fixed-T independent component alpha,
+# vdW1f quadratic pairs and a component-additive translation. Do not admit
+# arbitrary DeltaCubicModel, alpha, mixing or translation subclasses.
+function _constshape_volume_model(model)
+    # This file is loaded before the concrete cubic models.
+    return model isa Union{
+        PR{BasicIdeal,PRAlpha,<:Union{NoTranslation,ConstantTranslation,PenelouxTranslation},vdW1fRule},
+        RK{BasicIdeal,SoaveAlpha,NoTranslation,vdW1fRule},
+        vdW{BasicIdeal,NoAlpha,NoTranslation,vdW1fRule}
+    }
+end
+
 function _pr_volume_supported(m, model, T, x)
-    model isa PR{BasicIdeal,PRAlpha,NoTranslation,vdW1fRule} || return false
+    _constshape_volume_model(model) || return false
     has_dual(model) && return false
     m isa Union{ChemPotBubblePressure{Float64},ChemPotDewPressure{Float64}} || return false
     return T isa Float64 && isfinite(T) && T > 0 && eltype(x) === Float64 &&
@@ -56,14 +68,14 @@ function _volume_pressure_solve(::_PRVolumeJacobian, f!, z, lb, ub, m, model, T,
     return _volume_pressure_solve(nothing, f!, z, lb, ub, m, model, T, x, mask, pivot, Val(Side))
 end
 
-# This provider is only used for standard untranslated PR with the classical
-# mixing rule. Use the model's actual A and B pair coefficients (including kij/lij).
-# For c=n/V, Φ(c)=A_res(1,T,c)/(RT), g=∇Φ, H=∇²Φ:
+# For admitted fixed-shape cubics, use actual A and B pair coefficients
+# (including kij/lij) in untranslated volume. For c=n/V′,
+# Φ(c)=A_res^untranslated(1,T,c)/(RT), g=∇Φ, H=∇²Φ:
 #     p/(RT) = Σc + c⋅g - Φ,      ∇c[p/(RT)] = 1 + H*c.
 # Fixed composition needs only H*c; the free-phase columns need H explicitly.
 struct _PRVolumeDomainError <: Exception end
-# Constant-T, strictly standard untranslated Peng–Robinson / vdW1f.
-# A and B include user kij/lij; rebuild the cache per call, do not persist it.
+# Shape and pair coefficients are independent of the phase densities and
+# compositions on the allowlist. Rebuild per fixed-T call.
 function _pr_volume_coeff(model,T,xx,::Val{N}) where N
     α=α_function(model,1.0,T,xx,model.alpha); a=model.params.a.values
     b=model.params.b.values; RT=Rgas(model)*T
@@ -75,34 +87,26 @@ function _pr_volume_coeff(model,T,xx,::Val{N}) where N
        i=rem(k-1,N)+1;j=div(k-1,N)+1
        b[max(i,j),min(i,j)]
     end)
-    A,B
-end
-# K(u) = [log1p((1+√2)u)-log1p((1-√2)u)]/(2√2u).
-# For dilute gas, evaluate K and its derivatives without subtractions of
-# nearly equal numbers. The coefficients follow from (u K)′ = 1/(1+2u-u²).
-const _PR_VOLUME_K_SERIES=let l=Float64[1,-2], v=Float64[1,-1]
-    for j in 2:17; push!(l,l[end-1]-2l[end]); push!(v,l[end]/(j+1)); end
-    Tuple(v), Tuple(j*v[j+1] for j in 1:17), Tuple(j*(j-1)*v[j+1] for j in 2:17)
-end
-@inline function _pr_volume_k(u,D)
-    if abs(u)<0.025
-        return evalpoly(u,_PR_VOLUME_K_SERIES[1]),evalpoly(u,_PR_VOLUME_K_SERIES[2]),evalpoly(u,_PR_VOLUME_K_SERIES[3])
-    end
-    b=sqrt(2.0); g=(log1p((1+b)*u)-log1p((1-b)*u))/(2b*u)
-    dg=(inv(D)-g)/u; ddg=(-(2-2u)/D^2-2dg)/u
-    g,dg,ddg
+    u,w=cubic_uwT(model,T,xx)
+    (;A,B,u,w)
 end
 function _pr_volume_jet(coeff,c,::Val{wantH}) where wantH
-    A,B=coeff; s=sum(c); b=B*c; a=A*c
-    u=dot(c,b)/s
-    isfinite(s) && s > 0 && 0 <= u < 1 || throw(_PRVolumeDomainError())
-    q=dot(c,a); k=inv(1-u); L=-log1p(-u)
-    D=1+u*(2-u); K,K1,K2=_pr_volume_k(u,D)
-    du=(2*b .- u)/s; dq=2*a; g1=s*k-q*K1
+    (; A,B,u,w)=coeff; s=sum(c); b=B*c; a=A*c
+    χ=dot(c,b)/s
+    isfinite(s) && s > 0 && 0 <= χ < 1 || throw(_PRVolumeDomainError())
+    q=dot(c,a); k=inv(1-χ); L=-log1p(-χ)
+    D=1+χ*(u+w*χ)
+    isfinite(D) && D>0 || throw(_PRVolumeDomainError())
+    if wantH === true
+        K,K1,K2=_cubic_attraction_K(χ,u,w,Val(2))
+    else
+        K,K1=_cubic_attraction_K(χ,u,w,Val(1))
+    end
+    du=(2*b .- χ)/s; dq=2*a; g1=s*k-q*K1
     g=L .+ g1*du .- K*dq
     p=s*k-q/D
     wantH === :gp && return g,p
-    h=(k-1) .+ (s*k*k+q*(2-2u)/(D*D))*du .- dq/D
+    h=(k-1) .+ (s*k*k+q*(u+2w*χ)/(D*D))*du .- dq/D
     r=s+dot(c,h)
     if wantH
         H=_pr_volume_H(B,A,du,dq,g1,s,k,q,K,K1,K2)
@@ -119,11 +123,15 @@ function _pr_volume_H(B::SMatrix{N,N},A,du,dq,g1,s,k,q,K,K1,K2) where N
     end)
 end
 function _pr_volume_lower(coeff,w)
-    Bw=last(coeff)*w; n=sum(w); l=dot(Bw,w)/n^2
+    Bw=coeff.B*w; n=sum(w); l=dot(Bw,w)/n^2
     return l, (2/n^2)*(Bw .- n*l)
 end
 function _pr_volume_objective(f!,model,T,x,pivot,nn::Val{N},bubble) where N
-    xx=SVector{N}(x); logx=log.(xx); lox=lb_volume(model,T,xx)/sum(xx); is=inv(p_scale(model,xx))
+    xx=SVector{N}(x); logx=log.(xx); is=inv(p_scale(model,xx))
+    # Stock η = log(v_phys - b̄ + c̄) = log(v′ - b̄), with v′=v_phys+c̄.
+    # Construct v′ inside the kernel; the stock caller decodes the same η
+    # into v_phys and uses physical volumes for the acceptance and return.
+    lox=cubic_lb_volume(model,T,xx)/sum(xx)
     RT=Rgas(model)*T; rtps=RT*is; coeff=_pr_volume_coeff(model,T,xx,nn)
     ix,iw=bubble ? (1,2) : (2,1)
     function fj!(F,J,z)
@@ -155,8 +163,8 @@ function _pr_volume_objective(f!,model,T,x,pivot,nn::Val{N},bubble) where N
         F[N+1]=(p0-p1)*rtps
         J[N+1,ix]=-r0*rx*rtps
         J[N+1,iw]=r1*rw*rtps
-        # V = exp(η) + lb(w)/sum(w). Moving w_j also moves the pivot
-        # with derivative -1, and L changes by ∂L/∂w_j - ∂L/∂w_pivot.
+        # v′ = exp(η) + b̄(w). Moving w_j also moves the pivot with
+        # derivative -1, so b̄ changes by ∂b̄/∂w_j - ∂b̄/∂w_pivot.
         k=2
         @inbounds for j in 1:N
             j==pivot && continue
@@ -171,8 +179,9 @@ function _pr_volume_objective(f!,model,T,x,pivot,nn::Val{N},bubble) where N
     end
     ff=similar(x,N+1)
     j!(J,z)=(fj!(ff,J,z); J)
-    # Reuse the fixed-T PR pair coefficients in residual-only backtracking.
-    # The original f! is still evaluated independently at acceptance and fallback.
+    # Solve chemo-potential equality in untranslated coordinates. This omits
+    # -c_i*(p_fixed-p_free)/(RT) from each physical chemical residual; it is
+    # zero at pressure equality. Use the original f! for acceptance/fallback.
     gp!(F,z)=fj!(F,nothing,z)
     return NLSolvers.VectorObjective(gp!,j!,fj!,nothing)
 end
@@ -193,9 +202,12 @@ function _pr_volume_try(f!, model, T, x, z, lb, ub, m, mask, pivot, bubble, n::V
         __check_convergence(r) || return nothing
         s=Solvers.x_sol(r)
         w=FractionVector(@view(s[3:end]),pivot)
-        all(t->isfinite(t)&&t>0,w) && all(t->abs(t)<m.atol,f!(similar(z),s)) || return nothing
+        all(t->isfinite(t)&&t>0,w) || return nothing
         ix,iw=bubble ? (1,2) : (2,1)
-        vx=v_from_η(model,s[ix],T,x); vw=v_from_η(model,s[iw],T,w); p=pressure(model,vx,T,x); pw=pressure(model,vw,T,w)
+        vx=v_from_η(model,s[ix],T,x); vw=v_from_η(model,s[iw],T,w)
+        isfinite(vx) && isfinite(vw) && min(vx,vw)>0 || return nothing
+        all(t->abs(t)<m.atol,f!(similar(z),s)) || return nothing
+        p=pressure(model,vx,T,x); pw=pressure(model,vw,T,w)
         isfinite(pw) && pw>0 && abs(p-pw)<=1e-6*p || return nothing
         (bubble ? vx<vw : vx>vw) && isfinite(p) && p>0 && bubbledew_check(model,p,T,vw,vx,w,x) || return nothing
         return s
