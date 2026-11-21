@@ -69,6 +69,7 @@ The following methods are calculated as combinations of first order derivatives 
 ```@docs
 Clapeyron.volume
 Clapeyron.pressure
+Clapeyron.temperature
 Clapeyron.helmholtz_energy
 Clapeyron.helmholtz_energy_res
 Clapeyron.molar_density

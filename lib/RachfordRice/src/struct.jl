@@ -121,10 +121,13 @@ function RRState(RR::RachfordRiceResidual)
     sumz = zero(T)
     Kmin,Kmax = one(T)*Inf,-one(T)
     Z0,Zinf = zero(T),zero(T)
-    
+    neg_z = false
     for i in eachindex(RR)
         zi,Ki = z[i],RR[i]
         sumz += zi
+        if zi < 0
+            neg_z = true
+        end
         if isinf(Ki)
             Zinf += zi
         elseif iszero(Ki)
@@ -134,7 +137,7 @@ function RRState(RR::RachfordRiceResidual)
         Kmax = max(Ki,Kmax)
     end
 
-    if isnan(Kmin) || isnan(Kmax) || Kmin < 0
+    if isnan(Kmin) || isnan(Kmax) || Kmin < 0 || !isfinite(sumz) || neg_z
         feasible = Int8(3)
     elseif Kmin > 1
         feasible = Int8(2)
@@ -151,8 +154,23 @@ end
 rrstate_absolute_liquid(RRS::RRState) = RRS.feasible == 1
 rrstate_absolute_vapour(RRS::RRState) = RRS.feasible == 2
 rr_state_kz_domain_err(RRS::RRState) = RRS.feasible == 3
+
 rr_feasible(RRS::RRState) = RRS.feasible == 0
 rr_feasible(RR::RachfordRiceResidual) = rr_feasible(RRState(RR))
+
+
+"""
+
+    rr_feasible(RR::RachfordRiceResidual)::Bool
+
+Returns a `Bool` indicating if the system could have a solution. systems without solution are:
+
+- Systems where all K-values are over 1 (one phase, vapour state)
+- Systems where all K-values are below 1 (one phase, liquid state)
+- Systems where one or more values of K or z are negative
+- Systems where one or more values of K or z are non-finite. K can be `Inf`, but it cannot be `NaN`
+"""
+rr_feasible
 
 __log_K_norm(RR::RachfordRiceResidual) = __log_K_norm(RR.K,RR.non_inx,RR.non_iny)
 __log_K_norm(RR::RRSimple) =maximum(abs ∘ log,RR.K)
@@ -425,6 +443,12 @@ function rr_limits(RRS::RRState)
     end
 end
 
+"""
+    rr_status(RR::RachfordRiceResidual;K_tol = 4*eps(eltype(RR)))
+
+given an [`RachfordRiceResidual`](@ref) return a [RachfordRiceStatus](@ref) enum describing the state of the system.
+`K_tol` is used as a measure to see how far apart are the K-values from the trivial solution.
+"""
 function rr_status(RR::RachfordRiceResidual;K_tol = 4*eps(eltype(RR)))
 
     g0 = residual(RR,0)

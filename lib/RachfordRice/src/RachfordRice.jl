@@ -16,6 +16,8 @@ Returns the gas phase composition, given K-values `K`, the initial molar composi
 Each gas phase composition is calculated acording to:
 
 xvᵢ = kᵢzᵢ/(1+ β(kᵢ - 1))
+
+`vapour_compositions!` does the same, but it overwrites the input `y`.
 """
 function vapour_compositions(K,z,βv,βl = 1 - βv)
     TT = Base.promote_eltype(K,z,βv,βl)
@@ -49,12 +51,16 @@ vapour_compositions!(y,RR::RachfordRiceResidual,βv,βl = 1 - βv) = vapour_comp
 """
     liquid_compositions(K,z,β)
     liquid_compositions!(x,K,z,β)
+    liquid_compositions(RR::RachfordRiceResidual,β::Union{Number,RachfordRiceResult})
+    liquid_compositions!(x,RR::RachfordRiceResidual,β::Union{Number,RachfordRiceResult})
 
 Returns the liquid phase composition, given k-values `K`, the initial molar composition `z` and the molar vapor fraction ´β´.
 
 Each gas phase composition is calculated acording to:
 
     xlᵢ = zᵢ/(1+ β(kᵢ-1))
+
+`liquid_compositions!` does the same, but it overwrites the input `x`.
 """
 function liquid_compositions(K,z,βv,βl = 1 - βv)
     TT = Base.promote_eltype(K,z,βv,βl)
@@ -86,6 +92,36 @@ end
 liquid_compositions(RR::RachfordRiceResidual,βv,βl = 1 - βv) = liquid_compositions(RR,RR.z,βv,βl)
 liquid_compositions!(y,RR::RachfordRiceResidual,βv,βl = 1 - βv) = liquid_compositions!(y,RR,RR.z,βv,βl)
 
+"""
+    liquid_compositions(K,z,β)
+    liquid_compositions!(x,K,z,β)
+
+Returns the liquid phase composition, given k-values `K`, the initial molar composition `z` and the molar vapor fraction ´β´.
+
+Each gas phase composition is calculated acording to:
+
+    xlᵢ = zᵢ/(1+ β(kᵢ-1))
+
+`liquid_compositions!` does the same, but it overwrites the input `x`.
+"""
+liquid_compositions!
+
+"""
+    vapour_compositions(K,z,β)
+    vapour_compositions!(y,K,z,β)
+    vapour_compositions(RR::RachfordRiceResidual,β::Union{Number,RachfordRiceResult})
+    vapour_compositions!(y,RR::RachfordRiceResidual,β::Union{Number,RachfordRiceResult})
+
+Returns the gas phase composition, given K-values `K`, the initial molar composition `z` and the molar vapor fraction ´β´.
+
+Each gas phase composition is calculated acording to:
+
+xvᵢ = kᵢzᵢ/(1+ β(kᵢ - 1))
+
+`vapour_compositions!` does the same, but it overwrites the input `y`.
+"""
+vapour_compositions!
+
 export rachfordrice
 export liquid_compositions,vapour_compositions,liquid_compositions!,vapour_compositions!
 export RachfordRiceResidual, RachfordRiceResult
@@ -95,5 +131,9 @@ export RachfordRiceStatus, RRLiquid, RRVapour, RREq, RRFailure, RRTrivial
 @public residual_first_derivative
 @public residual_first_second_derivative
 @public residual_first_second_derivative_error
+
+@public rr_limits
+@public rr_feasible
+@public rr_status
 
 end #module
