@@ -1195,9 +1195,7 @@ end
         )
             output = fill(123.0, length(input))
             C.xy_flash_neq(output, model, z, 2, input, spec, nothing)
-            if haskey(ENV, "CLAPEYRON_SLOT_DIAGNOSTICS")
-                println("slots ", spec, " actual=", output[end-1:end], " expected=", expected)
-            end
+            @info "Vapor-fraction residual slots" spec actual=output[end-1:end] expected
             @test maximum(abs, output[1:end-2]) < 2e-12
             @test output[end-1] ≈ expected[1] atol = 2e-12
             @test output[end] ≈ expected[2] atol = 2e-12
@@ -1233,11 +1231,9 @@ end
                     # Baseline should fail this test without a derivative/phase access on NaNs.
                     finite_result = isfinite(temperature) && all(isfinite, result.volumes) &&
                         all(isfinite, result.fractions) && all(w -> all(isfinite, w), result.compositions)
-                    if haskey(ENV, "CLAPEYRON_SLOT_DIAGNOSTICS")
-                        println("q=", q, " ", label, " public finite=", finite_result, " T=", temperature,
-                                " p=", C.pressure(result), " qr=", result.fractions[end],
-                                " volumes=", result.volumes)
-                    end
+                    @info("Seeded interior quality flash", q, specification=label, finite_result,
+                          temperature, pressure=C.pressure(result), fractions=result.fractions,
+                          volumes=result.volumes)
                     @test finite_result
                     if finite_result
                         xl, yv = result.compositions
