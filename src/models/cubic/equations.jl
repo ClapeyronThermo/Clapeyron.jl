@@ -181,6 +181,85 @@ function set_l!(model::CubicModel,l)
     return nothing
 end
 
+# Reduced attractive integral for D(x) = 1 + u*x + w*x^2:
+# K(x,u,w) = integral(1 / D(x*s), s=0..1).
+# a = 1 + u*x/2, δ = u^2/4 - w; for a > 0 set t = δ*(x/a)^2.
+# K = g(t)/a, g(t) = sum(t^j/(2j+1)). This single series covers both x=0
+# and δ=0 without throwing away tangents of x, u or w (including nested Duals).
+@inline function _cubic_attraction_series(t, ::Val{J}) where J
+    p = primalval(t)
+    if p isa Union{Float32,Float64}
+        c = ntuple(Val(16-J)) do k
+            j = k-1+J
+            m = J == 0 ? 1 : J == 1 ? j : j*(j-1)
+            oftype(t,m//(2j+1))
+        end
+        return evalpoly(t,c)
+    end
+    # Respect the current precision on the high-precision path too.
+    n = max(15,cld(precision(p),5)+3)
+    g = zero(t)
+    for j in n:-1:J
+        m = J == 0 ? 1 : J == 1 ? j : j*(j-1)
+        g = muladd(t,g,m*one(t)/(2j+1))
+    end
+    return g
+end
+
+@inline _cubic_attraction_K(x,u,w) = _cubic_attraction_K(x,u,w,Val(0))
+@inline function _cubic_attraction_K(x,u,w,::Val{N}) where N
+    x,u,w = map(float,promote(x,u,w))
+    b = u/2
+    a = muladd(b,x,one(x))
+    δ = muladd(b,b,-w)
+    # These checks govern real analytic branches; evaluate the chosen formula
+    # on the original numbers so perturbations survive at the repeated root.
+    ap,δp = primalval(a),primalval(δ)
+    isfinite(primalval(x)) && isfinite(ap) && isfinite(δp) ||
+        throw(DomainError((x,u,w),"nonfinite reduced cubic attraction parameters"))
+    if ap > 0
+        xa = x/a
+        t = (δ*xa)*xa
+        if abs(primalval(t)) <= 1/32
+            K = _cubic_attraction_series(t,Val(0))/a
+            N == 0 && return K
+            dt = (2δ*xa/a)/a
+            g1 = _cubic_attraction_series(t,Val(1))
+            K1 = (g1*dt-b*K)/a
+            N == 1 && return K,K1
+            ddt = (2δ/a^2)*(1-u*x)/a^2
+            g2 = _cubic_attraction_series(t,Val(2))
+            return K,K1,(g2*dt^2+g1*ddt-u*K1)/a
+        end
+    end
+    if δp < 0
+        y = abs(x)*sqrt(-δ)
+        # atan(y,a), not atan(y/a): a can be zero or negative and D has no pole.
+        K = atan(y,a)/y
+        N == 0 && return K
+        D = muladd(a,a,y*y)
+    elseif δp > 0
+        y = abs(x)*sqrt(δ)
+        D = muladd(muladd(w,x,u),x,one(x))
+        ap > 0 && primalval(D) > 0 ||
+            throw(DomainError((x,u,w),"cubic attraction pole on the integration path"))
+        # a-y = D/(a+y); using D here avoids subtracting near a real pole.
+        # There are no real poles before the endpoint iff a>0 and D>0.
+        ay = a+y
+        r = (2y)/(D/ay)
+        K = (isfinite(primalval(r)) ? log1p(r) : log(ay)+log(ay)-log(D))/(2y)
+        N == 0 && return K
+    else
+        throw(DomainError((x,u,w),"cubic attraction pole on the integration path"))
+    end
+    # (x*K)' = 1/D. Outside the joint dilute/repeated series branch x != 0.
+    ri = inv(D)
+    K1 = (ri-K)/x
+    N == 1 && return K,K1
+    D1 = muladd(2w,x,u)
+    return K,K1,(-D1*ri^2-2K1)/x
+end
+
 function a_res(model::DeltaCubicModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
     Δ1,Δ2 = cubic_ΔT(model,T,z)

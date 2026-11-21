@@ -289,3 +289,26 @@
     end
     @printline
 end
+
+@testset "Generalized cubic attraction integral" begin
+    K = Clapeyron._cubic_attraction_K
+    FD = Clapeyron.ForwardDiff
+    @test K(0.,2.,-1.) == 1
+    @test FD.derivative(x -> K(x,2.,-1.),0.) == -1
+    @test FD.derivative(x -> FD.derivative(y -> K(y,2.,-1.),x),0.) ≈ 10/3
+    for x in (0.25,0.75), u in (-2.,2.)
+        w = u^2/4
+        a = 1+u*x/2
+        @test K(x,u,w) ≈ inv(a)
+        @test FD.derivative(v -> K(x,u,v),w) ≈ -x^2/(3a^3)
+        @test FD.derivative(v -> FD.derivative(s -> K(x,u,s),v),w) ≈ 2x^4/(5a^5)
+        for v in (prevfloat(w),w,nextfloat(w))
+            _,K1,K2 = K(x,u,v,Val(2))
+            @test K1 ≈ FD.derivative(s -> K(s,u,v),x)
+            @test K2 ≈ FD.derivative(s -> FD.derivative(t -> K(t,u,v),s),x)
+        end
+    end
+    @test K(1.,-4.,5.) ≈ 3π/4 # complex conjugate roots and a < 0
+    @test_throws DomainError K(1.,-5.,6.) # two poles even though D(1) > 0
+    @test_throws DomainError K(0.5,-4.,4.) # repeated pole at endpoint
+end
