@@ -6,15 +6,15 @@ end
 
 default_locations(::Type{SLKRule}) = ["LatticeFluid/SanchezLacombe/mixing/k0k1l_unlike.csv"]
 
-function transform_params(::Type{SLKRule},params,components)
+function transform_params(::Type{SLKRule}, params, components)
     n = length(components)
 
-    if haskey(params,"k0") && !haskey(params,"k")
+    if haskey(params, "k0") && !haskey(params, "k")
         params["k"] = params["k0"]
     end
-    
-    k0 = get!(params,"k") do
-        PairParam("k",components,zeros(n,n))
+
+    k0 = get!(params, "k") do
+        PairParam("k", components, zeros(n, n))
     end
 
     return params
@@ -24,9 +24,10 @@ export SLKRule
 
 """
     SLKRule(components; userlocations = String[], verbose = false)
-     
+
 ## Input parameters
-- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
+
+  - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 
 Constant Kᵢⱼ mixing rule for Sanchez-Lacombe:
 
@@ -37,55 +38,54 @@ vᵢⱼ = (vᵢ + vⱼ)/2
 εᵣ = ΣΣϕᵢϕⱼεᵢⱼ
 vᵣ = ΣΣϕᵢϕⱼvᵢⱼ
 ```
-
 """
 SLKRule
 
-function set_k!(model::SanchezLacombe{SLKRule},k)
-    check_arraysize(model,k)
+function set_k!(model::SanchezLacombe{SLKRule}, k)
+    check_arraysize(model, k)
     model.mixing.k.values = k
 end
 
-function __SL_get_k(model::SanchezLacombe,mixing::SLKRule)
+function __SL_get_k(model::SanchezLacombe, mixing::SLKRule)
     return copy(mixing.params.k.values)
 end
 
-function __SL_get_l(model::SanchezLacombe,mixing::SLKRule)
+function __SL_get_l(model::SanchezLacombe, mixing::SLKRule)
     return nothing
 end
 
-function sl_mix(unmixed_vol,unmixed_epsilon,mixmodel::SLKRule)
+function sl_mix(unmixed_vol, unmixed_epsilon, mixmodel::SLKRule)
     #dont mind the function names, it performs the correct mixing
     premixed_vol = epsilon_LorentzBerthelot(unmixed_vol)
     premixed_epsilon = sigma_LorentzBerthelot(unmixed_epsilon)
-    return premixed_vol,premixed_epsilon
+    return premixed_vol, premixed_epsilon
 end
 
-function sl_mix!(unmixed_vol,unmixed_epsilon,mixmodel::SLKRule)
+function sl_mix!(unmixed_vol, unmixed_epsilon, mixmodel::SLKRule)
     #dont mind the function names, it performs the correct mixing
     epsilon_LorentzBerthelot!(unmixed_vol)
     sigma_LorentzBerthelot!(unmixed_epsilon)
 end
 
-function mix_vε(model::SanchezLacombe,V,T,z,mix::SLKRule,r̄,Σz = sum(z))
+function mix_vε(model::SanchezLacombe, V, T, z, mix::SLKRule, r̄, Σz=sum(z))
     v = model.params.vol.values
     ε = model.params.epsilon.values
-    isone(length(z)) && return (only(v),only(ε))
+    isone(length(z)) && return (only(v), only(ε))
     r = model.params.segment.values
     k = mix.params.k.values
     r̄inv = one(r̄)/r̄
-    ϕ = @. r* z* r̄inv/Σz
+    ϕ = @. r * z * r̄inv/Σz
     v_r = zero(V+T+first(z))
     ε_r = v_r
     for i in @comps
         for j in @comps
             ϕi = ϕ[i]
             ϕj = ϕ[j]
-            ϕiϕj = ϕi*ϕj 
-            v_r += ϕiϕj*v[i,j]
-            εij = ε[i,j]*(1-k[i,j])
+            ϕiϕj = ϕi*ϕj
+            v_r += ϕiϕj*v[i, j]
+            εij = ε[i, j]*(1-k[i, j])
             ε_r += ϕiϕj*εij
         end
     end
-    return v_r,ε_r
+    return v_r, ε_r
 end

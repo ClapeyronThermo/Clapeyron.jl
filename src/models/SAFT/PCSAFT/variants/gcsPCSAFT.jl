@@ -9,8 +9,8 @@ struct gcsPCSAFTParam{T} <: ParametricEoSParam{T}
     bondvol::AssocParam{T}
 end
 
-function gcsPCSAFTParam(Mw,m,mσ3,mϵ,ϵijab,β)
-    return build_parametric_param(gcsPCSAFTParam,Mw,m,mσ3,mϵ,ϵijab,β)
+function gcsPCSAFTParam(Mw, m, mσ3, mϵ, ϵijab, β)
+    return build_parametric_param(gcsPCSAFTParam, Mw, m, mσ3, mϵ, ϵijab, β)
 end
 
 struct gcsPCSAFT{I,T} <: gcsPCSAFTModel
@@ -24,10 +24,10 @@ struct gcsPCSAFT{I,T} <: gcsPCSAFTModel
     references::Array{String,1}
 end
 
-function gcsPCSAFT(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
+function gcsPCSAFT(comps, groups, sites, params, idealmodel, pcsaftmodel, assoc, refs)
     T = eltype(params)
     I = typeof(idealmodel)
-    return gcsPCSAFT{I,T}(comps,groups,sites,params,idealmodel,pcsaftmodel,assoc,refs)
+    return gcsPCSAFT{I,T}(comps, groups, sites, params, idealmodel, pcsaftmodel, assoc, refs)
 end
 
 export gcsPCSAFT
@@ -43,58 +43,53 @@ export gcsPCSAFT
     assoc_options = AssocOptions())
 
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
-- `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
-- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Parameter (no units). Interaction parameter is component-based.
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
+
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `m`: Single Parameter (`Float64`) - Number of segments (no units)
+  - `sigma`: Single Parameter (`Float64`) - Segment Diameter `[Å]`
+  - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy `[K]`
+  - `k`: Pair Parameter (`Float64`) - Binary Interaction Parameter (no units). Interaction parameter is component-based.
+  - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+  - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
+
 ## Model Parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
-- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
-- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
+
+  - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g·mol⁻¹]`
+  - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+  - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+  - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+  - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+  - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m³]`
+
 ## Input models
-- `idealmodel`: Ideal Model
+
+  - `idealmodel`: Ideal Model
+
 ## Description
+
 Group-contribution version of Simplified Perturbed-Chain SAFT (sPC-SAFT)
+
 ## References
-1. Tihic, A., Kontogeorgis, G.M., von Solms, N., Michelsen, M.L. (2008). A predictive group-contribution simplified PC-SAFT equation of state: Application to polymer systems. Industrial & Engineering Chemistry Research, 47(15), 5092-5101. [doi:10.1021/ie0710768](https://doi.org/10.1021/ie0710768)
+
+ 1. Tihic, A., Kontogeorgis, G.M., von Solms, N., Michelsen, M.L. (2008). A predictive group-contribution simplified PC-SAFT equation of state: Application to polymer systems. Industrial & Engineering Chemistry Research, 47(15), 5092-5101. [doi:10.1021/ie0710768](https://doi.org/10.1021/ie0710768)
 """
 gcsPCSAFT
 
-function gcsPCSAFT(components;
-    idealmodel = BasicIdeal,
-    userlocations = String[],
-    group_userlocations = String[],
-    ideal_userlocations = String[],
-    reference_state = nothing,
-    verbose = false,
-    assoc_options = AssocOptions())
-
-    groups = GroupParam(components,["SAFT/PCSAFT/gcsPCSAFT/gcsPCSAFT_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
-    params = getparams(groups, ["SAFT/PCSAFT/gcsPCSAFT/","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
+function gcsPCSAFT(components; idealmodel          = BasicIdeal, userlocations       = String[], group_userlocations = String[], ideal_userlocations = String[], reference_state     = nothing, verbose             = false, assoc_options       = AssocOptions())
+    groups = GroupParam(components, ["SAFT/PCSAFT/gcsPCSAFT/gcsPCSAFT_groups.csv"]; group_userlocations=group_userlocations, verbose=verbose)
+    params = getparams(groups, ["SAFT/PCSAFT/gcsPCSAFT/", "properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     components = groups.components
-    k_params = getparams(components, ["SAFT/PCSAFT/sPCSAFT/sPCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
-    params["k"] = get(k_params,"k") do
-        PairParam("k",components)
+    k_params = getparams(components, ["SAFT/PCSAFT/sPCSAFT/sPCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params["k"] = get(k_params, "k") do
+        PairParam("k", components)
     end
 
-    return gcsPCSAFT(groups,params;idealmodel,ideal_userlocations,reference_state,verbose,assoc_options)
+    return gcsPCSAFT(groups, params; idealmodel, ideal_userlocations, reference_state, verbose, assoc_options)
 end
 
 default_references(::Type{gcsPCSAFT}) = ["10.1021/ie020753p"]
 
-function gcsPCSAFT(groups::GroupParam, params::Dict{String,ClapeyronParam};
-    idealmodel = BasicIdeal,
-    ideal_userlocations = String[],
-    reference_state = nothing,
-    verbose = false,
-    assoc_options = AssocOptions())
-
+function gcsPCSAFT(groups::GroupParam, params::Dict{String,ClapeyronParam}; idealmodel=BasicIdeal, ideal_userlocations=String[], reference_state=nothing, verbose=false, assoc_options=AssocOptions())
     components = groups.components
 
     sites = params["sites"]
@@ -105,49 +100,37 @@ function gcsPCSAFT(groups::GroupParam, params::Dict{String,ClapeyronParam};
     mepsilon = params["mepsilon"]
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
-    k = get(params,"k",nothing)
-    
-    bondvol,epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,nothing,assoc_options) #combining rules for association
+    k = get(params, "k", nothing)
+
+    bondvol, epsilon_assoc = assoc_mix(gc_bondvol, gc_epsilon_assoc, nothing, assoc_options) #combining rules for association
     gcparams = gcsPCSAFTParam(mw, segment, msigma3, mepsilon, epsilon_assoc, bondvol)
 
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel, components, ideal_userlocations, verbose)
 
-    pcmodel = sPCSAFT(groups,gcparams,sites;
-                idealmodel = init_idealmodel,
-                assoc_options = assoc_options,
-                k = k,
-                verbose = verbose)
+    pcmodel = sPCSAFT(groups, gcparams, sites; idealmodel=init_idealmodel, assoc_options=assoc_options, k=k, verbose=verbose)
 
-    model = gcsPCSAFT(components,groups,sites,gcparams,pcmodel.idealmodel,pcmodel,assoc_options,default_references(gcsPCSAFT))
-    set_reference_state!(model,reference_state;verbose)
+    model = gcsPCSAFT(components, groups, sites, gcparams, pcmodel.idealmodel, pcmodel, assoc_options, default_references(gcsPCSAFT))
+    set_reference_state!(model, reference_state; verbose)
     return model
 end
 
+function sPCSAFT(groups::GroupParam, param::gcsPCSAFTParam, sites::SiteParam=SiteParam(groups.flattenedgroups); idealmodel=BasicIdeal(), assoc_options=AssocOptions(), k=nothing, verbose=false)
+    mw = group_sum(groups, param.Mw)
+    update_mw!(idealmodel, mw.values)
+    segment = group_sum(groups, param.segment)
 
-function sPCSAFT(groups::GroupParam,
-                param::gcsPCSAFTParam,
-                sites::SiteParam = SiteParam(groups.flattenedgroups);
-                idealmodel = BasicIdeal(),
-                assoc_options = AssocOptions(),
-                k = nothing,
-                verbose = false)
-
-    mw = group_sum(groups,param.Mw)
-    update_mw!(idealmodel,mw.values)
-    segment = group_sum(groups,param.segment)
-
-    sigma = group_sum(groups,param.msigma3)
+    sigma = group_sum(groups, param.msigma3)
     sigma.values ./= segment.values
     sigma.values .= cbrt.(sigma.values)
     sigma = sigma_LorentzBerthelot(sigma)
 
-    epsilon = group_sum(groups,param.mepsilon)
+    epsilon = group_sum(groups, param.mepsilon)
     epsilon.values ./= segment.values
-    epsilon = epsilon_LorentzBerthelot(epsilon,k)
+    epsilon = epsilon_LorentzBerthelot(epsilon, k)
 
-    comp_sites = gc_to_comp_sites(sites,groups)
-    bondvol = gc_to_comp_sites(param.bondvol,comp_sites)
-    epsilon_assoc = gc_to_comp_sites(param.epsilon_assoc,comp_sites)
+    comp_sites = gc_to_comp_sites(sites, groups)
+    bondvol = gc_to_comp_sites(param.bondvol, comp_sites)
+    epsilon_assoc = gc_to_comp_sites(param.epsilon_assoc, comp_sites)
 
     pcparams = PCSAFTParam(mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
     return sPCSAFT(groups.components, comp_sites, pcparams, idealmodel, assoc_options, default_references(sPCSAFT))
@@ -161,27 +144,27 @@ function recombine_impl!(model::gcsPCSAFTModel)
     pcp = model.pcsaftmodel.params
     gc = model.params
     comp_sites = model.pcsaftmodel.sites
-    segment = group_sum!(pcp.segment,groups,gc.segment)
+    segment = group_sum!(pcp.segment, groups, gc.segment)
 
-    sigma = group_sum!(pcp.sigma,groups,gc.msigma3)
+    sigma = group_sum!(pcp.sigma, groups, gc.msigma3)
     diagvalues(sigma.values) ./= segment.values
     sigma.values .= cbrt.(sigma.values)
     sigma_LorentzBerthelot!(sigma)
 
     k = get_k(model.pcsaftmodel)
-    epsilon = group_sum!(pcp.epsilon,groups,gc.mepsilon)
+    epsilon = group_sum!(pcp.epsilon, groups, gc.mepsilon)
     diagvalues(epsilon.values) ./= segment.values
-    epsilon_LorentzBerthelot!(epsilon,k)
+    epsilon_LorentzBerthelot!(epsilon, k)
 
-    assoc_mix!(gc.bondvol,gc.epsilon_assoc,nothing,assoc_options)
-    gc_to_comp_sites!(comp_sites,sites,groups)
-    gc_to_comp_sites!(pcp.bondvol,gc.bondvol,comp_sites)
-    gc_to_comp_sites!(pcp.epsilon_assoc,gc.epsilon_assoc,comp_sites)
+    assoc_mix!(gc.bondvol, gc.epsilon_assoc, nothing, assoc_options)
+    gc_to_comp_sites!(comp_sites, sites, groups)
+    gc_to_comp_sites!(pcp.bondvol, gc.bondvol, comp_sites)
+    gc_to_comp_sites!(pcp.epsilon_assoc, gc.epsilon_assoc, comp_sites)
     return model
 end
 
-function a_res(model::gcsPCSAFTModel,V,T,z)
-    return a_res(model.pcsaftmodel,V,T,z)
+function a_res(model::gcsPCSAFTModel, V, T, z)
+    return a_res(model.pcsaftmodel, V, T, z)
 end
 
 assoc_shape(model::gcsPCSAFTModel) = assoc_shape(model.pcsaftmodel)
@@ -195,6 +178,6 @@ function T_scale(model::gcsPCSAFTModel, z)
     return T_scale(model.pcsaftmodel, z)
 end
 
-function p_scale(model::gcsPCSAFTModel,z)
-    return p_scale(model.pcsaftmodel,z)
+function p_scale(model::gcsPCSAFTModel, z)
+    return p_scale(model.pcsaftmodel, z)
 end

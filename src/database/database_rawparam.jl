@@ -23,24 +23,24 @@ const EMPTY_STR = ""
 Base.eltype(raw::RawParam) = Base.eltype(raw.data)
 Base.length(raw::RawParam) = Base.length(raw.data)
 
-function Base.show(io::IO,param::RawParam)
-    print(io,typeof(param))
-    print(io,param.component_info,",")
-    print(io,param.data,",")
-    print(io,param.type,")")
+function Base.show(io::IO, param::RawParam)
+    print(io, typeof(param))
+    print(io, param.component_info, ",")
+    print(io, param.data, ",")
+    print(io, param.type, ")")
 end
 
 #join CSV types
 #single and pair data can be merged onto pairdata
 #other csv types cannot be merged.
 # returns (type::CSVType, success::Bool)
-function joindata!(old::CSVType,new::CSVType)
+function joindata!(old::CSVType, new::CSVType)
     if new == old
-        return (new,true)
-    elseif old ∈ (singledata,pairdata) && new ∈ (singledata,pairdata)
-        return (pairdata,true)
+        return (new, true)
+    elseif old ∈ (singledata, pairdata) && new ∈ (singledata, pairdata)
+        return (pairdata, true)
     else
-        return (old,false)
+        return (old, false)
     end
 end
 
@@ -48,41 +48,41 @@ end
 #tapes are destroyed here. in the sense that the "old" and "new" values are not valid anymore.
 Base.@nospecialize
 
-function joindata!(old::Vector,new::Vector)
-    T1,T2 = eltype(old),eltype(new)
-    if promote_type(T1,T2) == T1
-        return append!(old,new)
-    elseif promote_type(T1,T2) == T2
-        return prepend!(new,old)
+function joindata!(old::Vector, new::Vector)
+    T1, T2 = eltype(old), eltype(new)
+    if promote_type(T1, T2) == T1
+        return append!(old, new)
+    elseif promote_type(T1, T2) == T2
+        return prepend!(new, old)
     else
-        return vcat(string.(old),string.(new))
+        return vcat(string.(old), string.(new))
     end
 end
 
-function joindata!(old::RawParam,new::RawParam)
-    tnew,type_sucess = joindata!(old.type,new.type)
+function joindata!(old::RawParam, new::RawParam)
+    tnew, type_sucess = joindata!(old.type, new.type)
     if old.grouptype !== new.grouptype && old.grouptype != :unknown && new.grouptype != :unknown #for backwards compatibility
-        error_different_grouptype(old,new,old.name)
+        error_different_grouptype(old, new, old.name)
     end
 
     if !type_sucess
-        error_clashing_headers(old,new)
+        error_clashing_headers(old, new)
     end
 
-    component_info = append!(old.component_info,new.component_info)
+    component_info = append!(old.component_info, new.component_info)
 
     #Handle all the type variability of the data here
-    data = joindata!(old.data,new.data)
+    data = joindata!(old.data, new.data)
 
-    sources = append!(old.sources,new.sources)
-    csv = append!(old.csv,new.csv)
+    sources = append!(old.sources, new.sources)
+    csv = append!(old.csv, new.csv)
 
-    return RawParam(old.name,component_info,data,sources,csv,tnew,old.grouptype)
+    return RawParam(old.name, component_info, data, sources, csv, tnew, old.grouptype)
 end
 
-error_different_grouptype(old::RawParam,new::RawParam) = error_different_grouptype(old.grouptype,new.grouptype,old.name)
+error_different_grouptype(old::RawParam, new::RawParam) = error_different_grouptype(old.grouptype, new.grouptype, old.name)
 
-@noinline function error_different_grouptype(old::Symbol,new::Symbol,name = "")
+@noinline function error_different_grouptype(old::Symbol, new::Symbol, name="")
     if name != ""
         errorname = "parameter $name,"
     else
@@ -94,7 +94,7 @@ error_different_grouptype(old::RawParam,new::RawParam) = error_different_groupty
     """))
 end
 
-@noinline function error_clashing_headers(old::RawParam,new::RawParam)
+@noinline function error_clashing_headers(old::RawParam, new::RawParam)
     told = Symbol(old.type)
     tnew = Symbol(new.type)
     header = error_color(old.name)
@@ -109,7 +109,7 @@ end
 
 Base.@specialize
 
-@noinline function error_clashing_headers(old::CSVType,new::CSVType,header)
+@noinline function error_clashing_headers(old::CSVType, new::CSVType, header)
     header = error_color(header)
     ("Header ", header, " appear ∈ both loaded assoc and non-assoc files.")
 end
@@ -120,25 +120,24 @@ it also builds empty params, if you pass a CSVType instead of a RawParam
 
 Base.@nospecialize
 
-function compile_param(components,name,raw::RawParam,sites,options)
-    
+function compile_param(components, name, raw::RawParam, sites, options)
     if raw.type == singledata || raw.type == groupdata
-        return compile_single(name,components,raw,options)
+        return compile_single(name, components, raw, options)
     elseif raw.type == pairdata
-        return compile_pair(name,components,raw,options)
+        return compile_pair(name, components, raw, options)
     elseif raw.type == assocdata
-        return compile_assoc(name,components,raw,sites,options)
+        return compile_assoc(name, components, raw, sites, options)
     end
     return nothing
 end
 
-function compile_param(components,name,raw::CSVType,sites,options)
+function compile_param(components, name, raw::CSVType, sites, options)
     if raw == singledata
-        return compile_single(name,components,raw,options)
+        return compile_single(name, components, raw, options)
     elseif raw == pairdata
-        return compile_pair(name,components,raw,options)
+        return compile_pair(name, components, raw, options)
     elseif raw == assocdata
-        return compile_assoc(name,components,raw,sites,options)
+        return compile_assoc(name, components, raw, sites, options)
     elseif raw == groupdata
         #this means that there is no group information about the input components
         __group_missing_error()
@@ -150,24 +149,23 @@ end
     throw(MissingException(lazy"no group information found for all components. Try passing a group CSV file or specify the groups for each component."))
 end
 
-function compile_single(name,components,raw::RawParam,options)
-
+function compile_single(name, components, raw::RawParam, options)
     if isnothing(raw.component_info) #build from named tuple
-        return SingleParam(raw.name,components,deepcopy(raw.data))
+        return SingleParam(raw.name, components, deepcopy(raw.data))
     end
 
     l = length(components)
     L = eltype(raw)
     if L <: Number
-        values = zeros(L,l)
+        values = zeros(L, l)
     else
-        values = fill("",l)
+        values = fill("", l)
     end
-    ismissingvals = ones(Bool,l)
-    sources = fill(EMPTY_STR,l)
-    sources_csv = fill(EMPTY_STR,l)
-    for (k,v,ss,sc) ∈ zip(raw.component_info,raw.data,raw.sources,raw.csv)
-        i = findfirst(==(k[1]),components)::Int
+    ismissingvals = ones(Bool, l)
+    sources = fill(EMPTY_STR, l)
+    sources_csv = fill(EMPTY_STR, l)
+    for (k, v, ss, sc) ∈ zip(raw.component_info, raw.data, raw.sources, raw.csv)
+        i = findfirst(==(k[1]), components)::Int
         values[i] = v
         ismissingvals[i] = false
         sources[i] = ss
@@ -175,151 +173,151 @@ function compile_single(name,components,raw::RawParam,options)
     end
     sources = unique!(sources)
     sources_csv = unique!(sources_csv)
-    filter!(!isequal(EMPTY_STR),sources)
-    filter!(!isequal(EMPTY_STR),sources_csv)
-    return SingleParam(name,components,values,ismissingvals,sources_csv,sources)
+    filter!(!isequal(EMPTY_STR), sources)
+    filter!(!isequal(EMPTY_STR), sources_csv)
+    return SingleParam(name, components, values, ismissingvals, sources_csv, sources)
 end
 
 #just build single parameter vector values, no metadata.
-function compile_single_vec(components,raw::RawParam)
+function compile_single_vec(components, raw::RawParam)
     L = eltype(raw)
     l = length(components)
     if L <: Number
-        values = zeros(L,l)
+        values = zeros(L, l)
     else
-        values = fill("",l)
+        values = fill("", l)
     end
     if raw.component_info === nothing #named tuple input
         return raw.data
     end
-    
-    for (k,v) ∈ zip(raw.component_info,raw.data)
-        i = findfirst(==(k[1]),components)::Int
+
+    for (k, v) ∈ zip(raw.component_info, raw.data)
+        i = findfirst(==(k[1]), components)::Int
         values[i] = v
     end
     return values
 end
 
-function compile_single(name,components,type::CSVType,options)
-    param = SingleParam(name,components)
+function compile_single(name, components, type::CSVType, options)
+    param = SingleParam(name, components)
     if name ∈ options.ignore_missing_singleparams
         return param
     else
-        SingleMissingError(param,all = true)
+        SingleMissingError(param, all=true)
     end
 end
 
-function compile_pair(name,components,raw::RawParam,options)
+function compile_pair(name, components, raw::RawParam, options)
     if isnothing(raw.component_info) #build from named tuple
         l = length(components)
-        return PairParam(raw.name,components,deepcopy(reshape(raw.data,(l,l))))
+        return PairParam(raw.name, components, deepcopy(reshape(raw.data, (l, l))))
     end
 
     symmetric = name ∉ options.asymmetricparams
     l = length(components)
     L = eltype(raw)
     if L <: Number
-        values = zeros(L,(l,l))
+        values = zeros(L, (l, l))
     else
-        values = fill("",(l,l))
+        values = fill("", (l, l))
     end
-    ismissingvals = ones(Bool,(l,l))
-    sources = fill(EMPTY_STR,(l,l))
-    sources_csv = fill(EMPTY_STR,(l,l))
-    for (k,v,ss,sc) ∈ zip(raw.component_info,raw.data,raw.sources,raw.csv)
-        c1,c2,_,_ = k
-        i = findfirst(==(c1),components)::Int
+    ismissingvals = ones(Bool, (l, l))
+    sources = fill(EMPTY_STR, (l, l))
+    sources_csv = fill(EMPTY_STR, (l, l))
+    for (k, v, ss, sc) ∈ zip(raw.component_info, raw.data, raw.sources, raw.csv)
+        c1, c2, _, _ = k
+        i = findfirst(==(c1), components)::Int
         #if the second component is null, it comes from a single param, then i = (i,i)
-        j::Int = k[2] == "" ? i : findfirst(==(c2),components)
-        values[i,j] = v
-        ismissingvals[i,j] = false
-        sources[i,j] = ss
-        sources_csv[i,j] = sc
+        j::Int = k[2] == "" ? i : findfirst(==(c2), components)
+        values[i, j] = v
+        ismissingvals[i, j] = false
+        sources[i, j] = ss
+        sources_csv[i, j] = sc
         if symmetric && i ≠ j
-            ismissingvals[j,i] = false
-            values[j,i] = v
-            sources[j,i] = ss
-            sources_csv[j,i] = sc
+            ismissingvals[j, i] = false
+            values[j, i] = v
+            sources[j, i] = ss
+            sources_csv[j, i] = sc
         end
     end
     sources = unique!(vec(sources))
     sources_csv = unique!(vec(sources_csv))
-    filter!(!isequal(EMPTY_STR),sources)
-    filter!(!isequal(EMPTY_STR),sources_csv)
-    return PairParameter(name,components,values,ismissingvals,sources_csv,sources)
+    filter!(!isequal(EMPTY_STR), sources)
+    filter!(!isequal(EMPTY_STR), sources_csv)
+    return PairParameter(name, components, values, ismissingvals, sources_csv, sources)
 end
 
-function compile_pair(name,components,type::CSVType,options)
-    return PairParam(name,components)
+function compile_pair(name, components, type::CSVType, options)
+    return PairParam(name, components)
 end
 
-@noinline function __compile_assoc_missing_site_error(name) 
+@noinline function __compile_assoc_missing_site_error(name)
     color_name = error_color(name)
     throw(MissingException("$color_name - empty site data, but nonempty association data"))
 end
 
-function compile_assoc(name,components,raw::RawParam,sites,options)
+function compile_assoc(name, components, raw::RawParam, sites, options)
     if isnothing(sites) && !isempty(raw.component_info)
         __compile_assoc_missing_site_error(name)
     end
     site_strings = sites.sites
-    _ijab = standardize_comp_info(raw.component_info,components,site_strings)
+    _ijab = standardize_comp_info(raw.component_info, components, site_strings)
     unique_sitepairs = unique(raw.component_info)
     l = length(unique_sitepairs)
     unique_dict = Dict{NTuple{4,String},Int}(unique_sitepairs[i] => i for i in 1:l)
-    sources_csv = fill(EMPTY_STR,l)
-    sources = fill(EMPTY_STR,l)
-    ijab = similar(_ijab,l)
-    values = similar(raw.data,l)
-    for (j,k) ∈ enumerate(raw.component_info)
+    sources_csv = fill(EMPTY_STR, l)
+    sources = fill(EMPTY_STR, l)
+    ijab = similar(_ijab, l)
+    values = similar(raw.data, l)
+    for (j, k) ∈ enumerate(raw.component_info)
         i = unique_dict[k]
         values[i] = raw.data[j]
         ijab[i] = _ijab[j]
         sources[i] = raw.sources[j]
         sources_csv[i] = raw.csv[j]
     end
-    site_sizes = map(length,site_strings)
+    site_sizes = map(length, site_strings)
     offsets = Compressed4DMatrices.offsets_from_bsizes!(site_sizes)
-    values = Compressed4DMatrix(values,ijab,offsets)
+    values = Compressed4DMatrix(values, ijab, offsets)
     unique!(sources)
     unique!(sources_csv)
-    filter!(!isequal(EMPTY_STR),sources)
-    filter!(!isequal(EMPTY_STR),sources_csv)
-    param = AssocParam(name,components,values,site_strings,sources_csv,sources)
+    filter!(!isequal(EMPTY_STR), sources)
+    filter!(!isequal(EMPTY_STR), sources_csv)
+    param = AssocParam(name, components, values, site_strings, sources_csv, sources)
     return param
 end
 
-function compile_assoc(name,components,raw::CSVType,sites,options)
+function compile_assoc(name, components, raw::CSVType, sites, options)
     if sites === nothing
-        AssocParam(name,components)
+        AssocParam(name, components)
     else
         site_offsets = copy(sites.n_sites.p)
-        val = Compressed4DMatrix(Float64[],Int[],site_offsets)
-        AssocParam(name,components,val,sites.sites)
+        val = Compressed4DMatrix(Float64[], Int[], site_offsets)
+        AssocParam(name, components, val, sites.sites)
     end
 end
 
 #Sort site tape, so that components are sorted by the input.
-function standardize_comp_info(component_info,components,site_strings)
-    ijab = Vector{Tuple{Int,Int,Int,Int}}(undef,length(component_info))
-    for (i,val) ∈ pairs(component_info)
-        c1,c2,s1,s2 = val
+function standardize_comp_info(component_info, components, site_strings)
+    ijab = Vector{Tuple{Int,Int,Int,Int}}(undef, length(component_info))
+    for (i, val) ∈ pairs(component_info)
+        c1, c2, s1, s2 = val
         idx1 = findfirst(isequal(c1), components)::Int
         idx2 = findfirst(isequal(c2), components)::Int
         idx21 = findfirst(isequal(s1), site_strings[idx1])::Int
         idx22 = findfirst(isequal(s2), site_strings[idx2])::Int
         if idx1 > idx2
-            newval = (c2,c1,s2,s1)
-            ijab[i] = (idx2,idx1,idx22,idx21)
+            newval = (c2, c1, s2, s1)
+            ijab[i] = (idx2, idx1, idx22, idx21)
         elseif idx1 < idx2
             newval = val
-            ijab[i] = (idx1,idx2,idx21,idx22)
+            ijab[i] = (idx1, idx2, idx21, idx22)
         else
             if idx21 > idx22
-                ijab[i] = (idx1,idx2,idx22,idx21)
-                newval = (c1,c1,s2,s1)
+                ijab[i] = (idx1, idx2, idx22, idx21)
+                newval = (c1, c1, s2, s1)
             else
-                ijab[i] = (idx1,idx2,idx21,idx22)
+                ijab[i] = (idx1, idx2, idx21, idx22)
                 newval = val
             end
         end
@@ -332,7 +330,7 @@ For single params, it checks that there aren't missing values (can be overrided)
 For pair params, it checks that there aren't missing values ∈ the diagonal.  one exception is when all
 values are zero, ∈ this case is ommited (can also be overrided)
 =#
-function is_valid_param(param::SingleParameter,options)
+function is_valid_param(param::SingleParameter, options)
     missingvals = param.ismissingvalues
     if param.name ∉ options.ignore_missing_singleparams && any(missingvals)
         SingleMissingError(param)
@@ -340,7 +338,7 @@ function is_valid_param(param::SingleParameter,options)
     return nothing
 end
 
-function is_valid_param(param::PairParameter,options)
+function is_valid_param(param::PairParameter, options)
     diag = diagvalues(param.ismissingvalues)
     if param.name ∉ options.ignore_missing_singleparams && !all(diag) && any(diag)
         PairMissingError(param)
@@ -348,9 +346,9 @@ function is_valid_param(param::PairParameter,options)
     return nothing
 end
 
-is_valid_param(param::SiteParam,options) = nothing
+is_valid_param(param::SiteParam, options) = nothing
 
-function SingleMissingError(param::SingleParameter;all = false)
+function SingleMissingError(param::SingleParameter; all=false)
     if all
         throw(MissingException("cannot found values of " * error_color(param.name) * " for all input components."))
     else
@@ -364,10 +362,10 @@ function PairMissingError(param::PairParameter)
     diag = diagvalues(param.ismissingvalues)
     idx = findall(diag)
     comps = param.components[idx]
-    throw(MissingException(string("Partial missing values exist ∈ diagonal of pair parameter ",error_color(param.name), ": ", comps, ".")))
+    throw(MissingException(string("Partial missing values exist ∈ diagonal of pair parameter ", error_color(param.name), ": ", comps, ".")))
 end
 
-function is_valid_param(param::AssocParam,options)
+function is_valid_param(param::AssocParam, options)
     return nothing
 end
 

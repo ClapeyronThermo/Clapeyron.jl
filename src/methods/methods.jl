@@ -7,15 +7,18 @@ Normally, a thermodynamic method has the form: `property(model,state..,method::T
 All methods used in this way subtype `ThermodynamicMethod`.
 
 ## Examples
+
 Saturation pressure:
+
 ```julia-repl
-model = PR(["water"])
+model = PR([\"water\"])
 Tsat = 373.15
-saturation_pressure(model,Tsat) #using default method (chemical potential with volume base)
-saturation_pressure(model,Tsat,SuperAncSaturation()) #solve using cubic superancillary
+saturation_pressure(model, Tsat) #using default method (chemical potential with volume base)
+saturation_pressure(model, Tsat, SuperAncSaturation()) #solve using cubic superancillary
 ```
 
 Bubble point pressure
+
 ```julia-repl
 model = PCSAFT(["methanol","cyclohexane"])
 T = 313.15
@@ -25,14 +28,11 @@ bubble_pressure(model,T,z,FugBubblePressure(y0 = = [0.6,0.4], p0 = 5e4)) #using 
 ```
 """
 abstract type ThermodynamicMethod end
-Base.show(io::IO,::MIME"text/plain",x::ThermodynamicMethod) = show_as_namedtuple(io,x)
-Base.show(io::IO,x::ThermodynamicMethod) = show_as_namedtuple(io,x)
+Base.show(io::IO, ::MIME"text/plain", x::ThermodynamicMethod) = show_as_namedtuple(io, x)
+Base.show(io::IO, x::ThermodynamicMethod) = show_as_namedtuple(io, x)
 
 function NLSolvers.NEqOptions(method::ThermodynamicMethod)
-    return NEqOptions(f_limit = method.f_limit,
-                    f_abstol = method.atol,
-                    f_reltol = method.rtol,
-                    maxiter = method.max_iters)
+    return NEqOptions(f_limit  = method.f_limit, f_abstol = method.atol, f_reltol = method.rtol, maxiter  = method.max_iters)
 end
 
 function mw(model::EoSModel)
@@ -44,21 +44,21 @@ function mw(model::EoSModel)
 end
 
 function get_verbosity(method::T) where T
-    if hasfield(T,:verbose)
+    if hasfield(T, :verbose)
         return method.verbose
     else
         return false
     end
 end
 
-group_Mw(model::EoSModel) = group_Mw(model.params.Mw,model.groups)
-function group_Mw(Mw_gc::SingleParam,groups::GroupParam)
+group_Mw(model::EoSModel) = group_Mw(model.params.Mw, model.groups)
+function group_Mw(Mw_gc::SingleParam, groups::GroupParam)
     n = length(groups.components)
-    mw_comp = zeros(Base.promote_eltype(Mw_gc,groups),n)
+    mw_comp = zeros(Base.promote_eltype(Mw_gc, groups), n)
     v = groups.n_flattenedgroups
     mw_gc = Mw_gc.values
     for i in 1:n
-        mw_comp[i] = dot(mw_gc,v[i])
+        mw_comp[i] = dot(mw_gc, v[i])
     end
     return mw_comp
 end
@@ -66,36 +66,36 @@ end
 function __check_convergence(solver_result)
     f_abstol = solver_result.options.f_abstol
     best_residual = solver_result.info.best_residual
-    all(x -> abs(x) < f_abstol,best_residual)
+    all(x -> abs(x) < f_abstol, best_residual)
 end
 
-function group_molecular_weight(groups::GroupParameter,mw,z = @SVector [1.])
+function group_molecular_weight(groups::GroupParameter, mw, z=@SVector [1.0])
     res = zero(first(z))
     for i in 1:length(groups.n_flattenedgroups)
         ni = groups.n_flattenedgroups[i]
-        mwi = dot(ni,mw)
-        res +=z[i]*mwi
+        mwi = dot(ni, mw)
+        res += z[i]*mwi
     end
     return 0.001*res/sum(z)
 end
 
-comp_molecular_weight(mw,z = SA[1.0]) = 0.001*dot(mw,z)
-molecular_weight(model) = molecular_weight(model,SA[1.0])
-molecular_weight(model::EoSModel,z) = __molecular_weight(model,z)
-molecular_weight(mw::AbstractVector,z) = comp_molecular_weight(mw,z)
-molecular_weight(mw::SingleParam,z) = comp_molecular_weight(mw.values,z)
+comp_molecular_weight(mw, z=SA[1.0]) = 0.001*dot(mw, z)
+molecular_weight(model) = molecular_weight(model, SA[1.0])
+molecular_weight(model::EoSModel, z) = __molecular_weight(model, z)
+molecular_weight(mw::AbstractVector, z) = comp_molecular_weight(mw, z)
+molecular_weight(mw::SingleParam, z) = comp_molecular_weight(mw.values, z)
 
-function __molecular_weight(model,z)
+function __molecular_weight(model, z)
     if has_groups(model)
-        return group_molecular_weight(model,z)
+        return group_molecular_weight(model, z)
     else
-        return comp_molecular_weight(mw(model),z)
+        return comp_molecular_weight(mw(model), z)
     end
 end
 
-group_molecular_weight(model,z) = group_molecular_weight(model.groups,model.params.Mw.values,z)
+group_molecular_weight(model, z) = group_molecular_weight(model.groups, model.params.Mw.values, z)
 
-const LIQUID_STR = (:liquid,:LIQUID,:L,:l)
+const LIQUID_STR = (:liquid, :LIQUID, :L, :l)
 
 """
     is_liquid(x::Union{Symbol,String})
@@ -106,15 +106,14 @@ If a string is passed, it is converted to symbol.
 """
 is_liquid(sym::Symbol) = sym in LIQUID_STR
 is_liquid(str::String) = is_liquid(Symbol(str))
-is_liquid(v::Val{T})  where T = is_liquid_gen(v)
+is_liquid(v::Val{T}) where T = is_liquid_gen(v)
 
 @generated function is_liquid_gen(v::Val{T}) where T
     val = is_liquid(T)
     return :($val)
 end
 
-
-const VAPOUR_STR = (:vapor,:VAPOR,:VAPOUR,:vapour,:g,:G,:v,:V,:gas,:GAS)
+const VAPOUR_STR = (:vapor, :VAPOR, :VAPOUR, :vapour, :g, :G, :v, :V, :gas, :GAS)
 
 """
     is_vapour(x::Union{Symbol,String})
@@ -125,14 +124,14 @@ If a string is passed, it is converted to symbol.
 """
 is_vapour(sym::Symbol) = sym in VAPOUR_STR
 is_vapour(str::String) = is_vapour(Symbol(str))
-is_vapour(v::Val{T})  where T = is_vapour_gen(v)
+is_vapour(v::Val{T}) where T = is_vapour_gen(v)
 
 @generated function is_vapour_gen(v::Val{T}) where T
     val = is_vapour(T)
     return :($val)
 end
 
-const SUPERCRITICAL_STR = (:sc,:SC,:supercritical,:SUPERCRITICAL)
+const SUPERCRITICAL_STR = (:sc, :SC, :supercritical, :SUPERCRITICAL)
 
 """
     is_supercritical(x::Union{Symbol,String})
@@ -143,14 +142,14 @@ If a string is passed, it is converted to symbol.
 """
 is_supercritical(sym::Symbol) = sym in SUPERCRITICAL_STR
 is_supercritical(str::String) = is_supercritical(Symbol(str))
-is_supercritical(v::Val{T})  where T = is_supercritical_gen(v)
+is_supercritical(v::Val{T}) where T = is_supercritical_gen(v)
 
 @generated function is_supercritical_gen(v::Val{T}) where T
     val = is_supercritical(T)
     return :($val)
 end
 
-const UNKOWN_STR = (:unknown,:UNKNOWN)
+const UNKOWN_STR = (:unknown, :UNKNOWN)
 
 """
     is_unknown(x::Union{Symbol,String})
@@ -161,14 +160,14 @@ If a string is passed, it is converted to symbol.
 """
 is_unknown(sym::Symbol) = sym in UNKOWN_STR
 is_unknown(str::String) = is_unknown(Symbol(str))
-is_unknown(v::Val{T})  where T = is_unknown_gen(v)
+is_unknown(v::Val{T}) where T = is_unknown_gen(v)
 
 @generated function is_unknown_gen(v::Val{T}) where T
     val = is_unknown(T)
     return :($val)
 end
 
-const SOLID_STR = (:solid,:SOLID,:s)
+const SOLID_STR = (:solid, :SOLID, :s)
 """
     is_solid(x::Union{Symbol,String})
     is_solid(x::EoSModel)
@@ -180,14 +179,14 @@ If a string is passed, it is converted to symbol.
 is_solid(sym::Symbol) = sym in SOLID_STR
 is_solid(str::String) = is_solid(Symbol(str))
 is_solid(model::EoSModel) = false
-is_solid(v::Val{T})  where T = is_solid_gen(v)
+is_solid(v::Val{T}) where T = is_solid_gen(v)
 
 @generated function is_solid_gen(v::Val{T}) where T
     val = is_solid(T)
     return :($val)
 end
 
-const VLE_STR = (:vle,:lve,:vl,:lv)
+const VLE_STR = (:vle, :lve, :vl, :lv)
 """
     is_vle(x::Union{Symbol,String})
 
@@ -197,14 +196,14 @@ If a string is passed, it is converted to symbol.
 """
 is_vle(sym::Symbol) = sym in VLE_STR
 is_vle(str::String) = is_vle(Symbol(str))
-is_vle(v::Val{T})  where T = is_vle_gen(v)
+is_vle(v::Val{T}) where T = is_vle_gen(v)
 
 @generated function is_vle_gen(v::Val{T}) where T
     val = is_vle(T)
     return :($val)
 end
 
-const LLE_STR = (:lle,:ll)
+const LLE_STR = (:lle, :ll)
 """
     is_lle(x::Union{Symbol,String})
 
@@ -214,7 +213,7 @@ If a string is passed, it is converted to symbol.
 """
 is_lle(sym::Symbol) = sym in LLE_STR
 is_lle(str::String) = is_lle(Symbol(str))
-is_lle(v::Val{T})  where T = is_lle_gen(v)
+is_lle(v::Val{T}) where T = is_lle_gen(v)
 
 @generated function is_lle_gen(v::Val{T}) where T
     val = is_lle(T)
@@ -222,39 +221,38 @@ is_lle(v::Val{T})  where T = is_lle_gen(v)
 end
 
 function canonical_phase(phase::Symbol)
-     if is_liquid(phase)
+    if is_liquid(phase)
         return :liquid
-     elseif is_vapour(phase)
+    elseif is_vapour(phase)
         return :vapour
-     else
+    else
         return phase
-     end
+    end
 end
 
 """
     ∑(iterator)
 
 Equivalent to `sum(iterator,init=0.0)`.
-
 """
-∑(x) = sum(x,init = 0.0)
-∑(f,x) = sum(f,x,init = 0.0)
+∑(x) = sum(x, init=0.0)
+∑(f, x) = sum(f, x, init=0.0)
 
-function is_ad_input(model,V,T,z)
+function is_ad_input(model, V, T, z)
     #model_primal = Solvers.primal_eltype(model)
     #TODO: do something if the model parameters themselves use ForwardDiff
-    V_primal,T_primal,z_primal = Solvers.primalval(V),Solvers.primalval(T),Solvers.primalval(z)
-    type = Base.promote_eltype(V,T,z)
-    primal_type = Base.promote_eltype(V_primal,T_primal,z_primal)
+    V_primal, T_primal, z_primal = Solvers.primalval(V), Solvers.primalval(T), Solvers.primalval(z)
+    type = Base.promote_eltype(V, T, z)
+    primal_type = Base.promote_eltype(V_primal, T_primal, z_primal)
     return primal_type != type
 end
 
-@inline function nan_num(V,T,z)
+@inline function nan_num(V, T, z)
     _0 = zero(V+T+first(z))
     _0/_0
 end
 
-@inline function negative_vt(V,T)::Bool
+@inline function negative_vt(V, T)::Bool
     _0 = zero(V+T)
     (T <= _0) | (V <= _0)
 end
@@ -266,31 +264,32 @@ end
 Wraps the function in a `try-catch` block, and if a `DomainError` or `DivideError` is raised, then returns `default`.
 For better results, its best to generate the default result beforehand.
 """
-macro nan(Base.@nospecialize(fcall),default = nothing)
+macro nan(Base.@nospecialize(fcall), default=nothing)
     quote
-      try $fcall
-      catch err
-        if err isa Union{DomainError,DivideError}
-          $default
-        else
-          rethrow(err)
+        try
+            $fcall
+        catch err
+            if err isa Union{DomainError,DivideError}
+                $default
+            else
+                rethrow(err)
+            end
         end
-      end
     end |> esc
 end
 
-function gradient_type(V,T,z::StaticArray)
-    μ = Base.promote_eltype(V,T,z)
-    return StaticArrays.similar_type(z,μ)
+function gradient_type(V, T, z::StaticArray)
+    μ = Base.promote_eltype(V, T, z)
+    return StaticArrays.similar_type(z, μ)
 end
 
-function gradient_type(V,T,z::AbstractVector)
-    μ = Base.promote_eltype(V,T,z)
+function gradient_type(V, T, z::AbstractVector)
+    μ = Base.promote_eltype(V, T, z)
     return Vector{μ}
 end
 
-function gradient_type(V,T,z::FractionVector{TT,UU}) where {TT,UU<:AbstractVector}
-    μ = Base.promote_eltype(V,T,z)
+function gradient_type(V, T, z::FractionVector{TT,UU}) where {TT,UU<:AbstractVector}
+    μ = Base.promote_eltype(V, T, z)
     return Vector{μ}
 end
 
@@ -300,13 +299,10 @@ function gradient_type(V,T,z::FractionVector{TT,TT}) where {TT}
     return SVector{2, μ}
 end =#
 
-
-
 """
     init_preferred_method(method,model,kwargs)
 
 Returns the preferred method for a combination of model and function, with the specified kwargs.
-
 """
 function init_preferred_method end
 
@@ -333,37 +329,33 @@ get_l(model::EoSModel) = nothing
     set_k!(model,ki...)
 
 Sets the model "k-values" binary interaction parameter to the input matrix `k`. If the input model requires multiple k-matrices (as is the case for T-dependent values, i.e: k(T) = k1 + k2*T), then you must call `set_k!` with all the matrices as input (`set_k!(model,k1,k2)`).
-
 """
-set_k!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
+set_k!(model::EoSModel, k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
 
 """
     set_l!(model,l)
     set_l!(model,li...)
 
 Sets the model "l-values" binary interaction parameter to the input matrix `l`. If the input model requires multiple l-matrices (as is the case for T-dependent values, i.e: l(T) = l1 + l2*T), then you must call `set_l!` with all the matrices as input (`set_l!(model,l1,l2)`).
-
 """
-set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting l-values"))
+set_l!(model::EoSModel, k) = throw(ArgumentError("$(typeof(model)) does not have support for setting l-values"))
 
 """
     IGFormReferenceState(components;H0 = nothing, S0 = nothing, userlocations = nothing, verbose = false,)
 
 Returns a [`ReferenceState`](@ref) storing the ideal gas formation entropies and enthalpies, at 1 bar and 298.15 K
-
 """
-function IGFormReferenceState(_components;userlocations = String[],H0 = nothing,S0 = nothing,verbose = false)
+function IGFormReferenceState(_components; userlocations=String[], H0=nothing, S0=nothing, verbose=false)
     components = format_components(_components)
     if H0 !== nothing && S0 !== nothing
-        _H0 = convert(Vector{Float64},H0)
-        _S0 = convert(Vector{Float64},S0)
+        _H0 = convert(Vector{Float64}, H0)
+        _S0 = convert(Vector{Float64}, S0)
     else
-
-        params = getparams(components,["properties/formation_ig.csv"];userlocations = userlocations,verbose = verbose)
-        _H0 = convert(Vector{Float64},params["H0"].values)
-        _S0 = convert(Vector{Float64},params["S0"].values)
+        params = getparams(components, ["properties/formation_ig.csv"]; userlocations=userlocations, verbose=verbose)
+        _H0 = convert(Vector{Float64}, params["H0"].values)
+        _S0 = convert(Vector{Float64}, params["S0"].values)
     end
-    ref = ReferenceState(:ideal_gas,T0 = 298.15,P0 = 1e5,S0 = _S0,H0 = _H0,phase = :vapour)
+    ref = ReferenceState(:ideal_gas, T0=298.15, P0=1e5, S0=_S0, H0=_H0, phase=:vapour)
     #initialize_reference_state!(components,ref)
     return ref
 end
@@ -374,6 +366,7 @@ end
 a closure-like object specialized for EoSModels. The `X` parameter is a symbol representing which are the variables:
 
 ## Examples
+
 ```
 V = 0.04
 T = 300.0
@@ -401,112 +394,110 @@ end
 StaticForwardDiffTags.deferred_valtype(f::FixedEoSEval{X,F,D}) where {X,F,D} = Base.promote_eltype(f.data...)
 StaticForwardDiffTags.inner_function(f::FixedEoSEval{X,F,D}) where {X,F,D} = f.f
 
-FixedEoSEval{X}(f::F,data::T) where {X,F,T} = FixedEoSEval{X,F,T}(f,data)
+FixedEoSEval{X}(f::F, data::T) where {X,F,T} = FixedEoSEval{X,F,T}(f, data)
 
 function (obj::FixedEoSEval{:V,F,D})(V) where {F,D}
-    model,T,z = obj.data
-    return obj.f(model,V,T,z)
+    model, T, z = obj.data
+    return obj.f(model, V, T, z)
 end
 
 function (obj::FixedEoSEval{:p,F,D})(p) where {F,D}
-    model,T,z = obj.data
-    return obj.f(model,p,T,z)
+    model, T, z = obj.data
+    return obj.f(model, p, T, z)
 end
 
 function (obj::FixedEoSEval{:rho,F,D})(rho) where {F,D}
-    model,T,z = obj.data
-    return obj.f(model,rho,T,z)
+    model, T, z = obj.data
+    return obj.f(model, rho, T, z)
 end
 
-
 function (obj::FixedEoSEval{:T,F,D})(T) where {F,D}
-    model,V,z = obj.data
-    return obj.f(model,V,T,z)
+    model, V, z = obj.data
+    return obj.f(model, V, T, z)
 end
 
 function (obj::FixedEoSEval{:VT,F,D})(VT) where {F,D}
-    V,T = VT
-    model,z = obj.data
-    return obj.f(model,V,T,z)
+    V, T = VT
+    model, z = obj.data
+    return obj.f(model, V, T, z)
 end
 
 function (obj::FixedEoSEval{:rhoT,F,D})(VT) where {F,D}
-    rho,T = VT
-    model,z = obj.data
-    return obj.f(model,rho,T,z)
+    rho, T = VT
+    model, z = obj.data
+    return obj.f(model, rho, T, z)
 end
 
-(obj::FixedEoSEval{:VT,F,D})(V,T) where {F,D} = obj((V,T))
-(obj::FixedEoSEval{:rhoT,F,D})(rho,T) where {F,D} = obj((rho,T))
-
+(obj::FixedEoSEval{:VT,F,D})(V, T) where {F,D} = obj((V, T))
+(obj::FixedEoSEval{:rhoT,F,D})(rho, T) where {F,D} = obj((rho, T))
 
 function (obj::FixedEoSEval{:z,F,D})(z) where {F,D}
-    model,V,T = obj.data
-    return obj.f(model,V,T,z)
+    model, V, T = obj.data
+    return obj.f(model, V, T, z)
 end
 
-macro deferred_V(f,tag)
+macro deferred_V(f, tag)
     quote
-        WithContext(FixedEoSEval{:V}($f,(model,T,z)),∂Tag{$tag}())
+        WithContext(FixedEoSEval{:V}($f, (model, T, z)), ∂Tag{$tag}())
     end |> esc
 end
 
-macro deferred_T(f,tag)
+macro deferred_T(f, tag)
     quote
-        WithContext(FixedEoSEval{:T}($f,(model,V,z)),∂Tag{$tag}())
+        WithContext(FixedEoSEval{:T}($f, (model, V, z)), ∂Tag{$tag}())
     end |> esc
 end
 
-macro deferred_VT(f,tag)
+macro deferred_VT(f, tag)
     quote
-        WithContext(FixedEoSEval{:VT}($f,(model,z)),∂Tag{$tag}())
+        WithContext(FixedEoSEval{:VT}($f, (model, z)), ∂Tag{$tag}())
     end |> esc
 end
 
-macro deferred_Z(f,tag)
+macro deferred_Z(f, tag)
     quote
-        WithContext(FixedEoSEval{:z}($f,(model,V,T)),∂Tag{$tag}())
+        WithContext(FixedEoSEval{:z}($f, (model, V, T)), ∂Tag{$tag}())
     end |> esc
 end
 
 #=1 variable support for Roots.jl=#
 
-function roots_solve_ad(prob::Roots.ZeroProblem{F,X},method,p::P;kwargs...) where {F,X,P}
-    any(has_dual,p) && return Roots.solve(prob,method,p;kwargs...)
-    λprob = Roots.ZeroProblem(prob.F,primalval(prob.x₀))
+function roots_solve_ad(prob::Roots.ZeroProblem{F,X}, method, p::P; kwargs...) where {F,X,P}
+    any(has_dual, p) && return Roots.solve(prob, method, p; kwargs...)
+    λprob = Roots.ZeroProblem(prob.F, primalval(prob.x₀))
     λp = primalval(p)
-    λx = Roots.solve(λprob,method,λp;kwargs...)
-    f(_x,_p) = first(prob.F(_x,_p))
+    λx = Roots.solve(λprob, method, λp; kwargs...)
+    f(_x, _p) = first(prob.F(_x, _p))
     if isnan(λx) # guard against NaN in input, do not need Dual types here?
-        fx = f(λx,p)
+        fx = f(λx, p)
         return λx*one(fx)
     end
-    return ift(λx,f,p,λp)
+    return ift(λx, f, p, λp)
 end
 
-function eigmin_residual(Z,H)
-    n = size(H,1)
-    T = promote_type(eltype(Z),eltype(H))
-    r = Vector{T}(undef,n+1)
-    v = view(Z,1:n)
-    λ = Z[n+1]
-    rv = view(r,1:n)
+function eigmin_residual(Z, H)
+    n = size(H, 1)
+    T = promote_type(eltype(Z), eltype(H))
+    r = Vector{T}(undef, n+1)
+    v = view(Z, 1:n)
+    λ = Z[n + 1]
+    rv = view(r, 1:n)
     rv .= v
-    mul!(rv,H,v,one(T),-λ)        # rv = H*v - λ*v
-    r[n+1] = dot(v,v) - one(T)    # normalization
+    mul!(rv, H, v, one(T), -λ)        # rv = H*v - λ*v
+    r[n + 1] = dot(v, v) - one(T)    # normalization
     return r
 end
 
 function eigmin_ad(H::HH) where HH
-    n = size(H,1)
-    n == 1 && return H[1,1]
+    n = size(H, 1)
+    n == 1 && return H[1, 1]
     if !has_dual(H)
         return eigmin(Hermitian(H))
     end
     Hp = Solvers.primalval.(H)
-    F  = eigen(Hermitian(Hp),1:1)
-    Zp = vcat(F.vectors[:,1],F.values[1])
-    Z  = ift(Zp,eigmin_residual,H,Hp)
+    F  = eigen(Hermitian(Hp), 1:1)
+    Zp = vcat(F.vectors[:, 1], F.values[1])
+    Z  = ift(Zp, eigmin_residual, H, Hp)
     return Z[end]
 end
 
@@ -539,9 +530,8 @@ include("XY_methods/TS.jl")
 include("XY_methods/PH.jl")
 include("XY_methods/QX.jl")
 
-
-export get_k,set_k!
-export get_l,set_l!
+export get_k, set_k!
+export get_l, set_l!
 
 @public ThermodynamicMethod
 @public is_vapour, is_liquid, is_solid, is_unknown

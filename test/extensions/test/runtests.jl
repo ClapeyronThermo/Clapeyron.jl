@@ -6,8 +6,6 @@ using Glenn
 using Aqua
 using Carnot
 
-
-
 include("../../utils.jl")
 
 #include_distributed("base/database.jl",4)
@@ -37,7 +35,6 @@ include("../../methods/mass_fractions.jl")
 #include_distributed("methods/estimation.jl",2)
 
 #include_distributed("test_issues.jl",1)
-
 
 include("extensions.jl")
 include("carnot.jl")

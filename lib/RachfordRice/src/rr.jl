@@ -4,13 +4,14 @@
 Result returned by [`rachfordrice`](@ref).
 
 # Fields
-- `V::T`: molar vapour fraction `β`
-- `L::T`: molar liquid fraction `1 - β`
-- `status::RachfordRiceStatus`: phase state found, one of `RRLiquid`, `RRVapour`, `RREq`, `RRTrivial`, `RRFailure` (see [`RachfordRiceStatus`](@ref)).
-- `negative_flash::Bool`: whether the problem was solved allowing `β` outside `[0, 1]`.
-- `solved::Bool`: `true` if a root of the Rachford-Rice equation was found by the solver (or recovered by the boundary projection). It is `false` for single-phase shortcuts, trivial solutions and failures.
-- `feasible::Bool`: `true` if the K-values straddle one (`minimum(K) <= 1 <= maximum(K)`) and have a valid domain, i.e. a two-phase root can exist.
-- `iters::Int`: number of iterations used by the iterative solver (`0` when the closed-form solution, a shortcut was used or no solution is possible).
+
+  - `V::T`: molar vapour fraction `β`
+  - `L::T`: molar liquid fraction `1 - β`
+  - `status::RachfordRiceStatus`: phase state found, one of `RRLiquid`, `RRVapour`, `RREq`, `RRTrivial`, `RRFailure` (see [`RachfordRiceStatus`](@ref)).
+  - `negative_flash::Bool`: whether the problem was solved allowing `β` outside `[0, 1]`.
+  - `solved::Bool`: `true` if a root of the Rachford-Rice equation was found by the solver (or recovered by the boundary projection). It is `false` for single-phase shortcuts, trivial solutions and failures.
+  - `feasible::Bool`: `true` if the K-values straddle one (`minimum(K) <= 1 <= maximum(K)`) and have a valid domain, i.e. a two-phase root can exist.
+  - `iters::Int`: number of iterations used by the iterative solver (`0` when the closed-form solution, a shortcut was used or no solution is possible).
 
 When no valid result is available, `V` and `L` are `NaN`. For a single-phase result with `negative_flash = false`, `(V, L)` is `(0, 1)` for `RRLiquid` or `(1, 0)` for `RRVapour`, with `solved = false`.
 """
@@ -26,10 +27,10 @@ end
 
 function RachfordRiceResult{T}() where T
     nan = T(NaN)
-    return RachfordRiceResult{T}(nan,nan,RRFailure,false,false,false,0)
+    return RachfordRiceResult{T}(nan, nan, RRFailure, false, false, false, 0)
 end
 
-RachfordRiceResult(V,L = one(V) - V) =RachfordRiceResult(V,L,RREq,false,true,true,0)
+RachfordRiceResult(V, L=one(V) - V) = RachfordRiceResult(V, L, RREq, false, true, true, 0)
 
 """
     rachfordrice(K, z, β0 = nothing; negative_flash = false, K_tol = 4*eps(eltype(K)),
@@ -47,22 +48,24 @@ The solver first detects trivial, failed and single-phase cases, then computes t
 Small problems (up to 3 non-trivial components) are solved in closed form; otherwise a bracketed Halley iteration is used.
 When `negative_flash = false` and the root lies within `K_tol^(1/3)` of `0` or `1`, a boundary check may project the result onto the bubble point (`β = 0`) or the dew point (`β = 1`).
 
-
-- `K`: vector of K-values `Kᵢ = yᵢ/xᵢ`. They must be non-negative; `Inf` and `0` are allowed.
-- `z`: vector of overall molar composition. It does not need to be normalised.
-- `β0`: optional initial guess for the vapour fraction. It is ignored if it falls outside the valid bounds.
+  - `K`: vector of K-values `Kᵢ = yᵢ/xᵢ`. They must be non-negative; `Inf` and `0` are allowed.
+  - `z`: vector of overall molar composition. It does not need to be normalised.
+  - `β0`: optional initial guess for the vapour fraction. It is ignored if it falls outside the valid bounds.
 
 `K`, `z`, `non_inx`, `non_iny` are arguments used to instantiate a [`RachfordRiceResidual`](@ref).
 
 # Keyword arguments
-- `negative_flash`: if `true`, `β` may be outside `[0, 1]` (negative flash). If `false` (default), single-phase cases return `β = 0` (liquid) or `β = 1` (vapour) and the result is clamped to `[0, 1]`.
-- `K_tol`: tolerance for the trivial-solution check (`norm(K,Inf) <= K_tol`) and for the boundary tests.
-- `verbose`: `nothing` (default) or a `Bool`. If `true`, diagnostic information is logged with `@info`.
+
+  - `negative_flash`: if `true`, `β` may be outside `[0, 1]` (negative flash). If `false` (default), single-phase cases return `β = 0` (liquid) or `β = 1` (vapour) and the result is clamped to `[0, 1]`.
+  - `K_tol`: tolerance for the trivial-solution check (`norm(K,Inf) <= K_tol`) and for the boundary tests.
+  - `verbose`: `nothing` (default) or a `Bool`. If `true`, diagnostic information is logged with `@info`.
 
 # Returns
+
 A [`RachfordRiceResult`](@ref).
 
 # Example
+
 ```julia
 K = [2.0, 1.5, 0.5, 0.1]
 z = [0.25, 0.25, 0.25, 0.25]
@@ -72,69 +75,60 @@ y = vapour_compositions(K, z, β)
 x = liquid_compositions(K, z, β)
 ```
 """
-function rachfordrice(K, z, β0 = nothing;
-                        negative_flash::Bool = false,
-                        K_tol= 4*eps(eltype(K)),
-                        non_inx = nothing,
-                        non_iny = nothing,
-                        verbose = nothing)
+function rachfordrice(K, z, β0=nothing; negative_flash::Bool=false, K_tol=4*eps(eltype(K)), non_inx=nothing, non_iny=nothing, verbose=nothing)
     # Function to solve Rachdord-Rice mass balance
 
-    RR = RachfordRiceResidual(K,z,non_inx,non_iny)
+    RR = RachfordRiceResidual(K, z, non_inx, non_iny)
     RRS = RRState(RR)
-    return _rachfordrice(RRS,β0,negative_flash,K_tol,verbose)
+    return _rachfordrice(RRS, β0, negative_flash, K_tol, verbose)
 end
 
-
-function rachfordrice(RR::RachfordRiceResidual,β0 = nothing;
-                                                negative_flash::Bool = false,
-                                                K_tol= 4*eps(eltype(RR)),
-                                                verbose = nothing)
+function rachfordrice(RR::RachfordRiceResidual, β0=nothing; negative_flash::Bool=false, K_tol=4*eps(eltype(RR)), verbose=nothing)
     RRS = RRState(RR)
-    return _rachfordrice(RRS,β0,negative_flash,K_tol,verbose)
+    return _rachfordrice(RRS, β0, negative_flash, K_tol, verbose)
 end
 
-function _rachfordrice(RRS::RRState,β0,negative_flash::Bool,K_tol,verbose)
+function _rachfordrice(RRS::RRState, β0, negative_flash::Bool, K_tol, verbose)
     RR = RRS.RR
-    β,status,limits,feasible = rr_initial_state(RRS,β0;K_tol = K_tol)
-    _0,_1 = zero(β),one(β)
+    β, status, limits, feasible = rr_initial_state(RRS, β0; K_tol=K_tol)
+    _0, _1 = zero(β), one(β)
     nan = _0/_0
 
     # single-phase shortcuts
 
     #result is liquid single-phase, (feasible or not), so we return β = 0
     if status == RRLiquid && (!negative_flash)
-        return RachfordRiceResult(_0,_1,status,negative_flash,false,feasible,0)
+        return RachfordRiceResult(_0, _1, status, negative_flash, false, feasible, 0)
 
-    #result is vapour single-phase, (feasible or not), so we return β = 1
+        #result is vapour single-phase, (feasible or not), so we return β = 1
     elseif status == RRVapour && (!negative_flash)
-        return RachfordRiceResult(_1,_0,status,negative_flash,false,feasible,0)
+        return RachfordRiceResult(_1, _0, status, negative_flash, false, feasible, 0)
 
-    #result is liquid single-phase and no solution is available.
+        #result is liquid single-phase and no solution is available.
     elseif status == RRLiquid && !feasible
-        return RachfordRiceResult(nan,nan,status,negative_flash,false,feasible,0)
+        return RachfordRiceResult(nan, nan, status, negative_flash, false, feasible, 0)
 
-    #result is vapour single-phase and no solution is available.
+        #result is vapour single-phase and no solution is available.
     elseif status == RRVapour && !feasible
-        return RachfordRiceResult(nan,nan,status,negative_flash,false,feasible,0)
+        return RachfordRiceResult(nan, nan, status, negative_flash, false, feasible, 0)
 
-    #trivial or failure, not feasible otherwise
+        #trivial or failure, not feasible otherwise
     elseif status == RRTrivial || status == RRFailure || !feasible
-        return RachfordRiceResult(nan,nan,status,negative_flash,false,feasible,0)
+        return RachfordRiceResult(nan, nan, status, negative_flash, false, feasible, 0)
     end
 
-    βv,βl,iter = rrsolve(RRS,β,limits) # bracketed Halley when possible
+    βv, βl, iter = rrsolve(RRS, β, limits) # bracketed Halley when possible
 
     if !isfinite(βv) || !isfinite(βl)
         if is_verbose(verbose)
             @info "rachford-rice solver: failed to get a result from the iteration" status limits
         end
-        return RachfordRiceResult(nan,nan,RRFailure,negative_flash,false,feasible,iter)
+        return RachfordRiceResult(nan, nan, RRFailure, negative_flash, false, feasible, iter)
     end
 
     if !negative_flash
-        βv = clamp(βv,_0,_1)
-        βl = clamp(βl,_0,_1)
+        βv = clamp(βv, _0, _1)
+        βl = clamp(βl, _0, _1)
     end
 
     # near-boundary stabilization: if βx is within gate of 0 or 1 and K spans unity,
@@ -144,21 +138,18 @@ function _rachfordrice(RRS::RRState,β0,negative_flash::Bool,K_tol,verbose)
         β_margin = min(βv, βl)
         gate = cbrt(K_tol)
         if β_margin <= gate
-            status_p,βv_margin = rr_margin_check(RR,K_tol,verbose)
+            status_p, βv_margin = rr_margin_check(RR, K_tol, verbose)
             if status_p != RREq
                 is_verbose(verbose) && @info "rachfordrice boundary projection" βv βv_margin β_margin gate status_p
-                return RachfordRiceResult(βv_margin, 1 - βv_margin,status,negative_flash,true,feasible,iter)
+                return RachfordRiceResult(βv_margin, 1 - βv_margin, status, negative_flash, true, feasible, iter)
             end
         end
     end
 
-    return RachfordRiceResult(βv,βl,status,negative_flash,true,feasible,iter)
+    return RachfordRiceResult(βv, βl, status, negative_flash, true, feasible, iter)
 end
 
-function rr_margin_check(RR::RachfordRiceResidual,
-                        K_tol= 4*eps(eltype(RR)),
-                        verbose = nothing)
-
+function rr_margin_check(RR::RachfordRiceResidual, K_tol=4*eps(eltype(RR)), verbose=nothing)
     Ktype = eltype(RR)
     _0 = zero(Ktype)
     _1 = one(Ktype)
@@ -169,7 +160,7 @@ function rr_margin_check(RR::RachfordRiceResidual,
 
     if is_verbose(verbose)
         δβ = sqrt(eps(Ktype))
-        Fδβ = residual(RR,δβ)
+        Fδβ = residual(RR, δβ)
         Fp0_num = (Fδβ - F0) / δβ
         @info """ checking boundary conditions:
         F(0)             = $(F0)
@@ -217,21 +208,21 @@ function rr_margin_check(RR::RachfordRiceResidual,
         status = RREq
         β = _0/_0
     end
-    return status,β
+    return status, β
 end
 
 #refines a rachford-rice result via Halley iterations
 
-rrsolve(RR::RachfordRiceResidual,β0) = rrsolve(RRState(RR),β0)
-rrsolve(RR::RachfordRiceResidual,β0,limits) = rrsolve(RRState(RR),β0,limits)
-rrsolve(RRS::RRState,β0) = rrsolve(RRS,β0,rr_limits(RRS,true))
+rrsolve(RR::RachfordRiceResidual, β0) = rrsolve(RRState(RR), β0)
+rrsolve(RR::RachfordRiceResidual, β0, limits) = rrsolve(RRState(RR), β0, limits)
+rrsolve(RRS::RRState, β0) = rrsolve(RRS, β0, rr_limits(RRS, true))
 
-function rrsolve(RRS::RRState,β0,limits)
+function rrsolve(RRS::RRState, β0, limits)
     RR = RRS.RR
-    βmin,βmax = limits
-    β_exact,solved = try_rrsolve_23(RRS)
+    βmin, βmax = limits
+    β_exact, solved = try_rrsolve_23(RRS)
 
-    _0,_1 = zero(β_exact),oneunit(β_exact)
+    _0, _1 = zero(β_exact), oneunit(β_exact)
 
     if solved
         β = β_exact
@@ -240,27 +231,27 @@ function rrsolve(RRS::RRState,β0,limits)
     end
 
     if !isfinite(β)
-        return (β, 1 - β,0)
+        return (β, 1 - β, 0)
     end
 
-    rrmin,rrmax = residual(RR,βmin),residual(RR,βmax)
+    rrmin, rrmax = residual(RR, βmin), residual(RR, βmax)
 
     if sign(rrmin) != sign(rrmax) && βmin <= β <= βmax
-        return __rrsolve(RR,β,βmin,βmax)
+        return __rrsolve(RR, β, βmin, βmax)
     end
 
-    rr0 = residual(RR,β)
+    rr0 = residual(RR, β)
 
     if sign(rrmin) != sign(rr0)
         βx = 0.5*(βmin+β)
-        βlo,βhi = minmax(β,βmin)
-        return __rrsolve(RR,βx,βlo,βhi)
+        βlo, βhi = minmax(β, βmin)
+        return __rrsolve(RR, βx, βlo, βhi)
     elseif sign(rrmax) != sign(rr0)
         βx = 0.5*(βmax+β)
-        βlo,βhi = minmax(β,βmax)
-        return __rrsolve(RR,βx,βlo,βhi)
+        βlo, βhi = minmax(β, βmax)
+        return __rrsolve(RR, βx, βlo, βhi)
     else
-        return __rrsolve(RR,β)
+        return __rrsolve(RR, β)
     end
 end
 
@@ -271,27 +262,29 @@ function try_rrsolve_23(RRS::RRState)
     K, z = RR, RR.z
     T = Base.promote_eltype(K, z)
 
-    Z∞ = RRS.Zinf; Z₀ = RRS.Z0
-    z1,z2,z3,z4 = T(Z∞),T(Z₀),zero(T),zero(T)
-    k1,k2,k3,k4 = T(Inf),zero(T),T(Inf),T(Inf)
+    Z∞ = RRS.Zinf
+    Z₀ = RRS.Z0
+    z1, z2, z3, z4 = T(Z∞), T(Z₀), zero(T), zero(T)
+    k1, k2, k3, k4 = T(Inf), zero(T), T(Inf), T(Inf)
     n_max = 2 + iszero(Z₀) + iszero(Z∞)
     n_found = 0
     for i in eachindex(K)
-        Ki = K[i]; zi = z[i]
-        if zi > 0  && !isinf(Ki) && !iszero(Ki) && !isone(Ki)
-            n_found == n_max && return T(NaN),false
-            z1,z2,z3,z4 = zi,z1,z2,z3
-            k1,k2,k3,k4 = Ki,k1,k2,k3
+        Ki = K[i]
+        zi = z[i]
+        if zi > 0 && !isinf(Ki) && !iszero(Ki) && !isone(Ki)
+            n_found == n_max && return T(NaN), false
+            z1, z2, z3, z4 = zi, z1, z2, z3
+            k1, k2, k3, k4 = Ki, k1, k2, k3
             n_found += 1
         end
     end
 
-    n_found > n_max && return T(NaN),false
+    n_found > n_max && return T(NaN), false
 
-    βmin,βmax = RRS.poles
+    βmin, βmax = RRS.poles
     degree = n_found + !iszero(Z₀) + !iszero(Z∞)
 
-    a0,a1,a2,a3 = rr_cubic_coeffs((k1,k2,k3,k4),(z1,z2,z3,z4),degree)
+    a0, a1, a2, a3 = rr_cubic_coeffs((k1, k2, k3, k4), (z1, z2, z3, z4), degree)
 
     if a3 != 0 && !isnan(a3)
         return cubic_root_in_bracket(a0, a1, a2, a3, βmin, βmax)
@@ -309,7 +302,7 @@ function try_rrsolve_23(RRS::RRState)
         elseif βmin < β2 < βmax
             return β2, true
         else
-            return T(NaN),false
+            return T(NaN), false
         end
     end
 
@@ -318,39 +311,39 @@ function try_rrsolve_23(RRS::RRState)
         return (βmin < β < βmax) ? (β, true) : (T(NaN), false)
     end
 
-    return T(NaN),false
+    return T(NaN), false
 end
 
-function rr_cubic_coeffs(K,z,n)
-    zz1,zz2,zz3,zz4 = z
+function rr_cubic_coeffs(K, z, n)
+    zz1, zz2, zz3, zz4 = z
     invsumz = 1/sum(z)
-    z1,z2,z3,z4 = zz1*invsumz,zz2*invsumz,zz3*invsumz,zz4*invsumz
-    T = Base.promote_eltype(K,z)
-    k1,k2,k3,k4 = K
-    b1,b2,b3,b4 = 1/(1-k1),1/(1-k2),1/(1-k3),1/(1-k4)
+    z1, z2, z3, z4 = zz1*invsumz, zz2*invsumz, zz3*invsumz, zz4*invsumz
+    T = Base.promote_eltype(K, z)
+    k1, k2, k3, k4 = K
+    b1, b2, b3, b4 = 1/(1-k1), 1/(1-k2), 1/(1-k3), 1/(1-k4)
     _0 = zero(T)
-    if  n == 2
+    if n == 2
         #0 = a0 + a1β
         a1 = z1+z2
         a0 = -(z1*b2 + z2*b1)
-        return (T(a0),T(a1),_0,_0)
+        return (T(a0), T(a1), _0, _0)
     elseif n == 3
         #0 = a0 + a1β + a2β^2
-        a2 =(z1 + z2 + z3)
+        a2 = (z1 + z2 + z3)
         a1 = -b1*(z2 + z3) - b2*(z1 + z3) - b3*(z1 + z2)
         a0 = b1*b2*z3 + b1*b3*z2 + b2*b3*z1
-        return (T(a0),T(a1),T(a2),_0)
+        return (T(a0), T(a1), T(a2), _0)
     elseif n == 4
         #0 = a0 + a1β + a2β^2 + a3β^3
-        a3 =(z1 + z2 + z3 + z4)
+        a3 = (z1 + z2 + z3 + z4)
         a2 = -b1*(z2 + z3 + z4) - b2*(z1 + z3 + z4) - b3*(z1 + z2 + z4) - b4*(z1+z2+z3)
         a1 = b1*b2*(z3+z4) + b1*b3*(z2+z4) + b2*b3*(z1+z4) + b1*b4*(z2+z3) + b2*b4*(z1+z3) + b3*b4*(z1+z2)
         a0 = -b1*b2*b3*z4 - b1*b2*b4*z3 - b1*b3*b4*z2 - b2*b3*b4*z1
-        return (T(a0),T(a1),T(a2),T(a3))
+        return (T(a0), T(a1), T(a2), T(a3))
     end
 
     ax = T(NaN)
-    return (ax,ax,ax,ax)
+    return (ax, ax, ax, ax)
 end
 
 function __rrsolve(RR, βv, βmin, βmax)
@@ -378,18 +371,18 @@ function __rrsolve(RR, βv, βmin, βmax)
         isfinite(p) || break
         iter += 1
         FO, dFO, d2FO, S = residual_first_second_derivative_error(RR, βv, βl)
-        abs(FO) <= C*ϵ*S && (converged = true; break)
+        abs(FO) <= C*ϵ*S && (converged=true; break)
 
         if (FO < _0) == is_vapour
-            pmax = min(p,pmax)
+            pmax = min(p, pmax)
         else
-            pmin = max(p,pmin)
+            pmin = max(p, pmin)
         end
-        (pmax - pmin) <= 2*ϵ*abs(p) && (converged = true; break)
+        (pmax - pmin) <= 2*ϵ*abs(p) && (converged=true; break)
 
         # Halley step in the primary variable
         den  = 2*dFO*dFO - FO*d2FO
-        d = ifelse(is_vapour,1,-1) #isgn
+        d    = ifelse(is_vapour, 1, -1) #isgn
         dp   = -2*FO*dFO*d / den
         pnew = p + dp
 
@@ -403,7 +396,7 @@ function __rrsolve(RR, βv, βmin, βmax)
         end
 
         is_halley = pmin < pnew < pmax
-        
+
         if is_halley
             p = pnew
         else
@@ -425,12 +418,12 @@ function __rrsolve(RR, βv, βmin, βmax)
 
         #switch: p > 0.5
         if p > 0.5
-            p,q = q,p
+            p, q = q, p
             pmin, pmax = _1 - pmax, _1 - pmin
             is_vapour = !is_vapour
         end
         βv, βl = is_vapour ? (p, q) : (q, p)
-        (is_halley && abs(dp) <= tol*abs(p))    && (converged = true)
+        (is_halley && abs(dp) <= tol*abs(p)) && (converged = true)
 
         converged && break
     end

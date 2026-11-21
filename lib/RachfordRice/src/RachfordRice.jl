@@ -17,34 +17,34 @@ Each gas phase composition is calculated acording to:
 
 xvᵢ = kᵢzᵢ/(1+ β(kᵢ - 1))
 """
-function vapour_compositions(K,z,βv,βl = 1 - βv)
-    TT = Base.promote_eltype(K,z,βv,βl)
-    vapour_compositions!(similar(z,TT),K,z,βv,βl)
+function vapour_compositions(K, z, βv, βl=1 - βv)
+    TT = Base.promote_eltype(K, z, βv, βl)
+    vapour_compositions!(similar(z, TT), K, z, βv, βl)
 end
 
-function vapour_compositions(RR::RachfordRiceResidual,β_result::RachfordRiceResult)
-    βv,βl = β_result.V,β_result.L
-    vapour_compositions(RR,RR.z,βv,βl)
+function vapour_compositions(RR::RachfordRiceResidual, β_result::RachfordRiceResult)
+    βv, βl = β_result.V, β_result.L
+    vapour_compositions(RR, RR.z, βv, βl)
 end
 
-function vapour_compositions!(y,K,z,βv,βl = 1 - βv)
+function vapour_compositions!(y, K, z, βv, βl=1 - βv)
     _1 = one(eltype(y))
     n = sum(z)
     for i in eachindex(y)
-        Ki,zi = K[i],z[i]
+        Ki, zi = K[i], z[i]
         wi = zi/n
         if isinf(Ki)
             y[i] = wi/(βv)
         else
-            detKi = inv_fma(Ki,βv,βl)
+            detKi = inv_fma(Ki, βv, βl)
             y[i] = detKi*wi*Ki
         end
     end
     return y
 end
 
-vapour_compositions(RR::RachfordRiceResidual,βv,βl = 1 - βv) = vapour_compositions(RR,RR.z,βv,βl)
-vapour_compositions!(y,RR::RachfordRiceResidual,βv,βl = 1 - βv) = vapour_compositions!(y,RR,RR.z,βv,βl)
+vapour_compositions(RR::RachfordRiceResidual, βv, βl=1 - βv) = vapour_compositions(RR, RR.z, βv, βl)
+vapour_compositions!(y, RR::RachfordRiceResidual, βv, βl=1 - βv) = vapour_compositions!(y, RR, RR.z, βv, βl)
 
 """
     liquid_compositions(K,z,β)
@@ -56,38 +56,38 @@ Each gas phase composition is calculated acording to:
 
     xlᵢ = zᵢ/(1+ β(kᵢ-1))
 """
-function liquid_compositions(K,z,βv,βl = 1 - βv)
-    TT = Base.promote_eltype(K,z,βv,βl)
-    liquid_compositions!(similar(z,TT),K,z,βv,βl)
+function liquid_compositions(K, z, βv, βl=1 - βv)
+    TT = Base.promote_eltype(K, z, βv, βl)
+    liquid_compositions!(similar(z, TT), K, z, βv, βl)
 end
 
-function liquid_compositions(RR::RachfordRiceResidual,β_result::RachfordRiceResult)
-    βv,βl = β_result.V,β_result.L
-    liquid_compositions(RR,RR.z,βv,βl)
+function liquid_compositions(RR::RachfordRiceResidual, β_result::RachfordRiceResult)
+    βv, βl = β_result.V, β_result.L
+    liquid_compositions(RR, RR.z, βv, βl)
 end
 
-function liquid_compositions!(x,K,z,βv,βl = 1 - βv)
+function liquid_compositions!(x, K, z, βv, βl=1 - βv)
     _1 = one(eltype(x))
     _0 = zero(_1)
     n = sum(z)
     for i in eachindex(x)
-        Ki,zi = K[i],z[i]
+        Ki, zi = K[i], z[i]
         if isinf(Ki)
             x[i] = _0
         else
             wi = zi/n
-            detKi = inv_fma(Ki,βv,βl)
+            detKi = inv_fma(Ki, βv, βl)
             x[i] = detKi*wi
         end
     end
     return x
 end
 
-liquid_compositions(RR::RachfordRiceResidual,βv,βl = 1 - βv) = liquid_compositions(RR,RR.z,βv,βl)
-liquid_compositions!(y,RR::RachfordRiceResidual,βv,βl = 1 - βv) = liquid_compositions!(y,RR,RR.z,βv,βl)
+liquid_compositions(RR::RachfordRiceResidual, βv, βl=1 - βv) = liquid_compositions(RR, RR.z, βv, βl)
+liquid_compositions!(y, RR::RachfordRiceResidual, βv, βl=1 - βv) = liquid_compositions!(y, RR, RR.z, βv, βl)
 
 export rachfordrice
-export liquid_compositions,vapour_compositions,liquid_compositions!,vapour_compositions!
+export liquid_compositions, vapour_compositions, liquid_compositions!, vapour_compositions!
 export RachfordRiceResidual, RachfordRiceResult
 export RachfordRiceStatus, RRLiquid, RRVapour, RREq, RRFailure, RRTrivial
 
