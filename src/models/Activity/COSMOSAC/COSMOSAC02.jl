@@ -144,14 +144,26 @@ function _lnΓ(model::COSMOSAC02Model,V,T,z,P)
     2. we remove P(sigma) = 0 entries and iterate on the reduce matrix.
     3. we use the last calculated  Γ[i] in the fixpoint iteration.
     =#
-    _TYPE = @f(Base.promote_eltype)
     #strategy 2
     nonzeros = findall(!iszero,P)
-    l1 = length(nonzeros)
-    Γ0 = ones(_TYPE,l1)
     #strategy 1
     PW = @f(PΔW,P,nonzeros)
-    
+    Γres = cosmosac_solve(PW,500*length(model),model.absolutetolerance)
+    # Restore the original size. The support is held fixed while differentiating.
+    lnΓ = zeros(eltype(PW),length(P))
+    for (k,i) in pairs(nonzeros)
+        lnΓ[i] = log(Γres[k])
+    end
+    return lnΓ
+end
+
+function cosmosac_solve(PW,max_iters,atol)
+    if eltype(PW) <: ForwardDiff.Dual
+        PW_primal = nested_pvalue(PW)
+        Γ = cosmosac_solve(PW_primal,max_iters,atol)
+        return __gradients_for_root_finders(Γ,PW,PW_primal,cosmosac_residual)
+    end
+    Γ0 = ones(eltype(PW),size(PW,1))
     function f!(Γnew,Γold)
         i_solved = 0
         for ii in 1:length(Γold)
@@ -171,15 +183,16 @@ function _lnΓ(model::COSMOSAC02Model,V,T,z,P)
         #Γnew .= 1 ./ Γnew
         return Γnew
     end
-    Γres = Solvers.fixpoint(f!,Γ0,Solvers.SSFixPoint(dampingfactor = 0.5,lognorm = true,normorder = 1),max_iters = 500*length(model),atol = model.absolutetolerance,rtol = 0.0)
-    Γres .= log.(Γres)
-    #restore original array size.
-    resize!(Γ0,length(P))
-    Γ0 .= 0.0
-    for (k,i) in pairs(nonzeros)
-        Γ0[i] = Γres[k]
-    end
-    return Γ0
+    return Solvers.fixpoint(f!,Γ0,Solvers.SSFixPoint(dampingfactor = 0.5,lognorm = true,normorder = 1),max_iters = max_iters,atol = atol,rtol = 0.0)
+end
+
+# A polynomial residual avoids differentiating the fixed-point iteration, including
+# its convergence criterion. IFTDuals reconstructs all nested Dual derivatives.
+function cosmosac_residual(Γ,PW)
+    residual = PW * Γ
+    residual .*= Γ
+    residual .-= one(eltype(residual))
+    return residual
 end
 
 function PΔW(model::COSMOSAC02Model,V,T,z,P,nonzeros = 1:length(P))
