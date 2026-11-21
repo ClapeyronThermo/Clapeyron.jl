@@ -446,6 +446,7 @@ end
 bubble_pressure(model::EoSModel, T, x::Number, method::ThermodynamicMethod) = bubble_pressure(model, T, [x], method)
 
 function bubble_pressure(model::EoSModel, T, x::AbstractVector, method::ThermodynamicMethod)
+    method = _select_volume_pressure_method(method, model, T, x)
     moles_positivity(x)
     x = x/sum(x)
     T = float(T)

@@ -95,7 +95,7 @@ function _bubbledew_chempot_solve(f!, v0::Vector{T}, lb::Vector{T}, ub::Vector{T
     return sol, converged
 end
 
-function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressure)
+function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressure, jacobian = nothing)
     volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
     _,vl,vv,y0 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles,method.verbose)
     is_non_volatile = !isnothing(method.nonvolatiles)
@@ -125,7 +125,8 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     f! = let model = model, model_y = model_y, T=T, x=x, volatiles=volatiles, idx_max=idx_max
         (F,z) -> Obj_bubble_pressure(model, model_y, F, T, z[1], z[2], x, @view(z[3:end]), volatiles, idx_max)
     end
-    sol, converged = _bubbledew_chempot_solve(f!, v0, lb, ub, method, Val(min(length(v0), 8)))
+    sol, converged = _volume_pressure_solve(jacobian, f!, v0, lb, ub, method,
+                                              model, T, x, volatiles, idx_max, Val(:bubble))
 
     !converged && (sol .= NaN)
     v_l = v_from_η(model,sol[1],T,x)

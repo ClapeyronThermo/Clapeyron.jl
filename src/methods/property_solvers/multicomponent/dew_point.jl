@@ -136,6 +136,7 @@ end
 dew_pressure(model::EoSModel, T, y::Number, method::ThermodynamicMethod) = dew_pressure(model, T, [y], method)
 
 function dew_pressure(model::EoSModel, T, y::AbstractVector, method::ThermodynamicMethod)
+    method = _select_volume_pressure_method(method, model, T, y)
     moles_positivity(y)
     y = y/sum(y)
     T = float(T)
