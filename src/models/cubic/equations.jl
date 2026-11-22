@@ -260,15 +260,38 @@ end
     return K,K1,(-D1*ri^2-2K1)/x
 end
 
+# Only models supplying smooth real coefficients may opt in to replacing
+# the stock divided difference near coalescence. In particular, do not
+# differentiate square roots of a discriminant at a repeated root.
+_cubic_coalescence_uw(model,T,z) = nothing
+
+function _cubic_coalescence_K(shape,x)
+    shape === nothing && return nothing
+    u,w = shape
+    b = u/2
+    a = muladd(b,x,one(x))
+    δ = muladd(b,b,-w)
+    ap,δp = primalval(a),primalval(δ)
+    isfinite(ap) && ap > 0 && isfinite(δp) || return nothing
+    # Keep the existing path for separated root shapes. For nearby shapes,
+    # also require the independently convergent reduced series domain.
+    abs(δp) <= max(one(δp),abs(primalval(b))^2)/256 || return nothing
+    y = x/a
+    abs(primalval((δ*y)*y)) <= 1/32 || return nothing
+    return _cubic_attraction_K(x,u,w)
+end
+
 function a_res(model::DeltaCubicModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
-    Δ1,Δ2 = cubic_ΔT(model,T,z)
-    ΔΔ = Δ2 - Δ1
     RT⁻¹ = 1/(R̄*T)
     ρt = (V/n+c̄)^(-1) # translated density
     ρ  = n/V
     b̄ρt = b̄*ρt
     a₁ = -log1p((c̄-b̄)*ρ)
+    K = _cubic_coalescence_K(_cubic_coalescence_uw(model,T,z),b̄ρt)
+    K !== nothing && return a₁ - ā*ρt*RT⁻¹*K
+    Δ1,Δ2 = cubic_ΔT(model,T,z)
+    ΔΔ = Δ2 - Δ1
     if Δ1 == Δ2
         return a₁ - ā*ρt*RT⁻¹/(1-real(Δ1)*b̄ρt)
     else

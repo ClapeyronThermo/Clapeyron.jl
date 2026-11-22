@@ -26,7 +26,7 @@ end
 ```
 
 The following functions are required:
-- [`reference_model`](@ref) : provides a single-component, helmholtz equation of state, used as reference for the shape their `a_res` V-T surface.
+- [`reference_model`](@ref) : provides a single-component, helmholtz equation of state, used as reference for the shape of their `a_res` V-T surface.
 - [`scaling_model`](@ref)   : provides a struct that defines the scaling between the real fluid and the reference fluid.
 - [`shape_factors`](@ref)   : the scaling model needs to define `f,h = shape_factors(scaling::MyModel,reference,T,z)`.
 
@@ -40,7 +40,7 @@ abstract type CorrespondingStatesModel <: EoSModel end
     shape_factors(scaling_model,reference_model,T,z)
 
 returns `f`,`h` scaling factors, used by subtypes of [`CorrespondingStatesModel`](@ref). 
-`T` is the scaled temperature. To calculate the shape factors given a reference temperature (`T0 = T/f`), use [`inverse_scaling_factors`](@ref)
+`T` is the scaled temperature. To calculate the shape factors given a reference temperature (`T0 = T/f`), use [`inverse_shape_factors`](@ref)
 """
 function shape_factors end
 
@@ -52,6 +52,21 @@ returns `f`,`h` scaling factors, used by subtypes of [`CorrespondingStatesModel`
 `T` is the temperature used by the reference model. To calculate the shape factors at a scaled temperature (`T = T0*f`), use [`scaling_factors`](@ref)
 """
 function inverse_shape_factors end
+
+"""
+    reference_model(model::CorrespondingStatesModel)
+
+Provides a single-component, helmholtz equation of state, used by the corresponding states `model` as reference for the shape of their `a_res` V-T surface.
+"""
+function reference_model end
+
+
+"""
+    scaling_model(model::CorrespondingStatesModel)
+
+Provides a struct or model used by the corresponding states `model` to scale properties beween the reference fluid (obtained from [`reference_model`](@ref)) and a real fluid, and back. 
+"""
+function scaling_model end
 
 function a_res(model::CorrespondingStatesModel,V,T,z)
     reference = reference_model(model)

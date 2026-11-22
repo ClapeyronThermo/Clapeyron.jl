@@ -58,6 +58,7 @@ Clapeyron.CorrespondingStatesModel
 Clapeyron.scaling_model
 Clapeyron.reference_model
 Clapeyron.shape_factors
+Clapeyron.inverse_shape_factors
 ```
 
 ## Scaling models

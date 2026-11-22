@@ -100,11 +100,15 @@ The two-phase rachford-rice solver in `Clapeyron.jl` is also available as a stan
 ```@docs
 RachfordRice.rachfordrice
 RachfordRice.RachfordRiceResidual
+RachfordRice.RachfordRiceStatus
 RachfordRice.RachfordRiceResult
 RachfordRice.vapour_compositions
-RachfordRice.vapour_compositions!
 RachfordRice.liquid_compositions
-RachfordRice.liquid_compositions!
 RachfordRice.rr_status
 RachfordRice.rr_limits
+RachfordRice.rr_feasible
+RachfordRice.residual
+RachfordRice.residual_first_derivative
+RachfordRice.residual_first_second_derivative
+RachfordRice.residual_first_second_derivative_error
 ```

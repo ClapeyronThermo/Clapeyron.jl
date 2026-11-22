@@ -64,6 +64,10 @@ end
 
 
 @testset "association" begin
+    K0 = [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]
+    x0, exact = Clapeyron.assoc_matrix_x0!(K0, similar(K0, 3))
+    @test !exact
+    @test x0 ≈ 2 ./ (1 .+ sqrt.(1 .+ 4 .* [6.0, 15.0, 24.0]))
     model_no_comb = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :nocombining))
     model_cr1 = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :cr1))
     model_esd = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :esd))

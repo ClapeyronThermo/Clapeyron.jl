@@ -230,8 +230,118 @@ end
     for (method,wrap) in ((ChemPotBubblePressure(),VPR._PRVolumeBubblePressure),
                           (ChemPotDewPressure(),VPR._PRVolumeDewPressure))
         fast=wrap(method); x=[0.43,0.57]
-        @test VPR._select_volume_pressure_method(fast,RKPR(binary),290.,x) === method
+        @test VPR._select_volume_pressure_method(fast,RKPR(binary),290.,x) === fast
         @test VPR._select_volume_pressure_method(fast,PR(binary;translation=VPR.MTTranslation),290.,x) === method
         @test VPR._select_volume_pressure_method(fast,shifted,290.,[0.43,0.57,0.]) === method
+    end
+end
+
+@testset "Composition-dependent Delta cubic volume pressure" begin
+    names = ["propane", "butane"]
+    x = [.45,.55]
+    T = 295.
+    for eos in (RKPR,Clausius,PatelTeja)
+        model = eos(names)
+        for side in (Val(:bubble),Val(:dew))
+            pr_volume_test(model,T,x,side)
+        end
+        shifts = [3e-6,-8e-6]
+        translated = eos(names; translation=ConstantTranslation,
+                         translation_userlocations=(;v_shift=shifts))
+        for (side,public_call) in ((Val(:bubble),bubble_pressure),(Val(:dew),dew_pressure))
+            bubble = side === Val(:bubble)
+            pub,stock,opt,f!,seed,pivot,active = pr_volume_case(translated,T,x,side)
+            @test VPR._select_volume_pressure_method(opt,translated,T,x) === opt
+            lb = [-Inf,-Inf,0.]; ub = [Inf,Inf,1.]
+            z0 = copy(seed)
+            @test VPR._pr_volume_try(f!,translated,T,x,seed,lb,ub,stock,active,pivot,bubble,Val(2)) !== nothing
+            @test seed==z0
+            cand = pub(translated,T,x,opt)
+            @test pr_volume_close(cand,pub(translated,T,x,stock))
+            pr_volume_physical(translated,T,x,cand,bubble)
+            p,vl,vv,w=cand
+            xl,yv = bubble ? (x,w) : (w,x)
+            @test pr_volume_close((p,vl+dot(shifts,xl),vv+dot(shifts,yv),w),public_call(model,T,x,stock))
+            @test abs(dot(shifts,xl)-dot(shifts,yv)) > 1e-8
+            q=copy(seed);q[1]+=0.06
+            function rectified(v)
+                physical=f!(similar(v),v)
+                shear=shifts .* (physical[end]*VPR.p_scale(translated,x)/(VPR.Rgas(translated)*T))
+                return [physical[1:2] .+ shear;physical[end]]
+            end
+            obj=VPR._pr_volume_objective(f!,translated,T,x,pivot,Val(2),bubble)
+            F=similar(q);J=zeros(3,3)
+            obj.FJ(F,J,q)
+            @test pr_volume_err(F,rectified(q)) < 2e-11
+            @test pr_volume_err(J,ForwardDiff.jacobian(rectified,q)) < 2e-10
+            @test pr_volume_err(J,pr_volume_fd(rectified,q,pivot)) < 2e-5
+        end
+    end
+end
+
+@testset "Smooth real denominator at coinciding and conjugate Delta roots" begin
+    names=["propane","butane"]
+    # A genuine RKPR stock model at a synthetic root crossing, not a pole.
+    rk=RKPR(names;
+        userlocations=(;Tc=[369.83,425.12],Pc=[4.21e6,3.77e6],Vc=[0.000203,0.000255],
+            Mw=[44.09562,58.1222],acentricfactor=[0.149,0.197],delta=[0.2,0.7],
+            k=zeros(2,2),l=zeros(2,2)),
+        alpha_userlocations=(;k1=[0.95,1.08],k2=[2.,2.],acentricfactor=[0.149,0.197]))
+    q=[0.00025,295.,0.5287128712871286,0.4712871287128714]
+    @test isequal(VPR.cubic_Δ(rk,q[3:4])...)
+    f(v)=VPR.a_res(rk,v[1],v[2],v[3:4])
+    # Independent 80-decimal integration of the rational kernel and its full derivatives.
+    refg=[4851.819265378636,0.007907442627940985,-0.9063944635785931,-1.5568691616746572]
+    refH=[-30261118.23351308 -28.068285243117735 1816.0469125910646 3720.2223626176516;
+        -28.068285243117735 -5.675927476953798e-5 0.005462504104937247 0.008761060571114995;
+        1816.0469125910646 0.005462504104937247 0.3386538840473714 0.5799693039996616;
+        3720.2223626176516 0.008761060571114995 0.5799693039996616 0.6793657529298895]
+    @test f(q) ≈ -1.4856967973443785 rtol=5e-13
+    @test all(isapprox.(ForwardDiff.gradient(f,q),refg;rtol=5e-12,atol=5e-13))
+    @test all(isapprox.(ForwardDiff.hessian(f,q),refH;rtol=5e-12,atol=5e-13))
+    # A rational-kernel quadrature independent of the log/atan/series formulas.
+    # Transform Gauss-Legendre nodes from [-1,1] to [0,1].
+    n=32
+    ev=eigen(SymTridiagonal(zeros(n),[i/sqrt(4i^2-1) for i in 1:n-1]))
+    nodes=(ev.values .+ 1)./2; weights=abs2.(ev.vectors[1,:])
+    pt=PatelTeja(names); T=295.; V=.00028; z=[.45,.55]
+    c=VPR.diagvalues(pt.params.c.values)
+    b=VPR.cubic_lb_volume(pt,T,z)
+    γ0=-3+2sqrt(2)
+    # Hold composition fixed while moving shape from two real factors,
+    # through the repeated limit, to complex conjugate factors.
+    for γ in (γ0+0.01,γ0+1e-9,γ0,γ0-1e-9,γ0-0.01,-.4)
+        c .= γ*b .+ [.18,-.18*z[1]/z[2]].*b
+        _,Δ2=VPR.cubic_ΔT(pt,T,z)
+        if γ<γ0-1e-12
+            @test !iszero(imag(Δ2))
+        elseif γ>γ0+1e-12
+            @test iszero(imag(Δ2))
+        end
+        function rational(v)
+            vj,tj,zj1,zj2 = v
+            zj = [zj1,zj2]
+            aj,bj,_ = VPR.cubic_ab(pt,vj,tj,zj)
+            nj = zj1+zj2
+            xj = bj*nj/vj
+            γj = dot(c,zj)/VPR.cubic_lb_volume(pt,tj,zj)
+            # D(t)=1+t+γt(1-t) from the unfactored Patel–Teja form.
+            Kj = sum(weights[i]/(1+nodes[i]*xj+γj*nodes[i]*xj*(1-nodes[i]*xj)) for i in eachindex(nodes))
+            return -log1p(-xj)-aj*nj/(VPR.Rgas(pt)*tj*vj)*Kj
+        end
+        actual(v)=VPR.a_res(pt,v[1],v[2],v[3:4])
+        val=[V,T,z...]
+        @test isapprox(actual(val),rational(val);rtol=1e-12)
+        @test pr_volume_err(ForwardDiff.gradient(actual,val),ForwardDiff.gradient(rational,val)) < 5e-10
+        @test pr_volume_err(ForwardDiff.hessian(actual,val),ForwardDiff.hessian(rational,val)) < 5e-9
+        cs=VPR.SVector{2}(z/V)
+        coeff=VPR._pr_volume_coeff(pt,T,z,Val(2))
+        g,h,p,r,H=VPR._pr_volume_jet(coeff,cs,Val(true))
+        ϕ(v)=sum(v)*rational([1.,T,v...])
+        @test pr_volume_err(g,ForwardDiff.gradient(ϕ,cs)) < 5e-12
+        @test pr_volume_err(H,ForwardDiff.hessian(ϕ,cs)) < 5e-11
+        @test pr_volume_err(h,H*cs) < 5e-12
+        @test isapprox(p*VPR.Rgas(pt)*T,pressure(pt,V,T,z);rtol=3e-13)
+        @test isfinite(r)
     end
 end

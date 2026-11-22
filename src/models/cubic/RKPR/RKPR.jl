@@ -250,3 +250,5 @@ function cubic_Δ(model::RKPRModel,z)
     end
     return  -Δ2*z⁻¹, -Δ1*z⁻¹
 end
+
+_cubic_coalescence_uw(model::RKPR,T,z) = cubic_uwT(model,T,z)

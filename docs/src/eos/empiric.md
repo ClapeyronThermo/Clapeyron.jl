@@ -76,14 +76,12 @@ Clapeyron.EmpiricPseudoPure
 Clapeyron.XiangDeiters
 Clapeyron.IAPWS95
 Clapeyron.PropaneRef
-Clapeyron.TholLJ
 Clapeyron.Ammonia2023
 ```
 
 ## MultiComponent Models
 
 ```@docs
-Clapeyron.LJRef
 Clapeyron.GERG2008
 Clapeyron.EOS_LNG
 Clapeyron.EOS_CG
@@ -106,4 +104,12 @@ Clapeyron.departure_functions
 Clapeyron.create_departure
 Clapeyron.GEDeparture
 Clapeyron.QuadraticDeparture
+```
+
+## Lee-Kesler-Plöcker models
+
+```@docs
+Clapeyron.LKP
+Clapeyron.LKPSJT
+Clapeyron.enhancedLKP
 ```

@@ -285,6 +285,16 @@ function c_premixing(model::PatelTejaModel)
     return c
 end
 
+# Expand the two factors symbolically. The real polynomial is smooth
+# across the zero of the discriminant, also with nested ForwardDiff.
+function cubic_uwT(model::PatelTeja,T,z)
+    c = diagvalues(model.params.c.values)
+    γ = dot(c,z)/cubic_lb_volume(model,T,z)
+    return 1 + γ,-γ
+end
+
+_cubic_coalescence_uw(model::PatelTeja,T,z) = cubic_uwT(model,T,z)
+
 function cubic_ΔT(model::PatelTejaModel,T,z)
     c = diagvalues(model.params.c.values)
     b̄ = cubic_lb_volume(model,T,z)

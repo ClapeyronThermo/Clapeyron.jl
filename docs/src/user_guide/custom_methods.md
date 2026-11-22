@@ -80,7 +80,7 @@ end
 ```
 
 You can now call `saturation_pressure(model,T,method)` where `method = DirectAntoine(A,B,C)`.
-At the moment, the default algorithm iterates directly over volumes ([`ChemPotVSaturation`](@ref)), but we also have saturation via isofugacity ([`IsofugacitySaturation`](@ref)) and superancillaries for cubics ([`SuperAncSaturation`](@ref)).
+At the moment, the default algorithm iterates directly over volumes ([`ChemPotVSaturation`](@ref)), but we also have saturation via isofugacity ([`IsoFugacitySaturation`](@ref)) and superancillaries for cubics ([`SuperAncSaturation`](@ref)).
 The same thing can be done with `saturation_temperature`.
 
 ## Custom TP-Flash solver

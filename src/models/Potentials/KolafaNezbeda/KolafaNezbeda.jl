@@ -91,6 +91,19 @@ const KN_C4 = (-13.37031968, 65.38059570, -115.09233113, 88.91973082, -25.620998
 
 @newmodelsingleton KolafaNezbedaLJ LJPotentialModel
 
+"""
+KolafaNezbedaLJ <: LJPotentialModel
+KolafaNezbedaLJ()
+
+## Description
+
+Kolafa-Nezbeda equation of state for the Lennard-Jones fluid. Unscaled model.
+
+## References
+1. Kolafa, J., & Nezbeda, I. (1994). The Lennard-Jones fluid: An accurate analytic and theoretically-based equation of state. Fluid Phase Equilibria, 100, 1–34. [doi:10.1016/0378-3812(94)02573-G](https://doi.org/10.1016/0378-3812(94)02573-G)
+"""
+KolafaNezbedaLJ
+
 function a_potential(model::KolafaNezbedaLJ, V, T)
     z = SA[1.0]
     _data = @f(data)

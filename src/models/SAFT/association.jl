@@ -343,8 +343,8 @@ function assoc_matrix_x0!(K,X)
         init2,success2 = X_exact2!(K,X)
         init2 && (return X,success2)
     end
-    X .= 1.0
-    mul!(X,K,X)
+    # The initial guess uses K * ones, i.e. the row sums of K.
+    sum!(X,K)
     f(kx) = 2 / (1 + sqrt(1 + 4*kx))
     X .= f.(X)
     return X,false

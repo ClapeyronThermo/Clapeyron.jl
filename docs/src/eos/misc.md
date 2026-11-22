@@ -8,17 +8,6 @@ CurrentModule = Clapeyron
 Pages = ["misc.md"]
 ```
 
-## Extended Corresponding states Model
-
-```@docs
-Clapeyron.ECS
-Clapeyron.shape_factors
-Clapeyron.SPUNG
-Clapeyron.LKP
-Clapeyron.LKPSJT
-Clapeyron.enhancedLKP
-```
-
 ## Sanchez–Lacombe Model
 
 ```@docs
@@ -27,14 +16,6 @@ Clapeyron.SL
 Clapeyron.mix_vε
 Clapeyron.SLKRule
 Clapeyron.SLk0k1lMixingRule
-```
-
-# Other molecular Models
-
-```@docs
-Clapeyron.PeTS
-Clapeyron.KolafaNezbeda
-Clapeyron.FeANNMie
 ```
 
 # Composite and Utility Models

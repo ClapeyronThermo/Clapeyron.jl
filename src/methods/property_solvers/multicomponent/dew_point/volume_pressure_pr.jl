@@ -13,20 +13,27 @@ const _PRVolumePressure = Union{_PRVolumeBubblePressure,_PRVolumeDewPressure}
 _pr_volume_no_exclusions(m::ChemPotBubblePressure) = m.nonvolatiles === nothing
 _pr_volume_no_exclusions(m::ChemPotDewPressure) = m.noncondensables === nothing
 
-# Explicit allowlist: constant shape, fixed-T independent component alpha,
-# vdW1f quadratic pairs and a component-additive translation. Do not admit
-# arbitrary DeltaCubicModel, alpha, mixing or translation subclasses.
-function _constshape_volume_model(model)
-    # This file is loaded before the concrete cubic models.
+# Admitted models must have fixed-T component alpha, quadratic one-fluid
+# mixing and a component-additive translation. The cubic interface alone
+# does not guarantee these properties (e.g., YFR or activity mixing).
+function _constant_volume_shape(model)
     return model isa Union{
         PR{BasicIdeal,PRAlpha,<:Union{NoTranslation,ConstantTranslation,PenelouxTranslation},vdW1fRule},
-        RK{BasicIdeal,SoaveAlpha,NoTranslation,vdW1fRule},
-        vdW{BasicIdeal,NoAlpha,NoTranslation,vdW1fRule}
+        RK{BasicIdeal,SoaveAlpha,<:Union{NoTranslation,ConstantTranslation,PenelouxTranslation},vdW1fRule},
+        vdW{BasicIdeal,NoAlpha,<:Union{NoTranslation,ConstantTranslation},vdW1fRule}
+    }
+end
+
+function _composition_volume_shape(model)
+    return model isa Union{
+        RKPR{BasicIdeal,RKPRAlpha,<:Union{NoTranslation,ConstantTranslation},vdW1fRule},
+        Clausius{BasicIdeal,ClausiusAlpha,<:Union{NoTranslation,ConstantTranslation},vdW1fRule},
+        PatelTeja{BasicIdeal,PatelTejaAlpha,<:Union{NoTranslation,ConstantTranslation},vdW1fRule}
     }
 end
 
 function _pr_volume_supported(m, model, T, x)
-    _constshape_volume_model(model) || return false
+    (_constant_volume_shape(model) || _composition_volume_shape(model)) || return false
     has_dual(model) && return false
     m isa Union{ChemPotBubblePressure{Float64},ChemPotDewPressure{Float64}} || return false
     return T isa Float64 && isfinite(T) && T > 0 && eltype(x) === Float64 &&
@@ -68,28 +75,73 @@ function _volume_pressure_solve(::_PRVolumeJacobian, f!, z, lb, ub, m, model, T,
     return _volume_pressure_solve(nothing, f!, z, lb, ub, m, model, T, x, mask, pivot, Val(Side))
 end
 
-# For admitted fixed-shape cubics, use actual A and B pair coefficients
+# For admitted cubics, use actual A and B pair coefficients
 # (including kij/lij) in untranslated volume. For c=n/V′,
 # Φ(c)=A_res^untranslated(1,T,c)/(RT), g=∇Φ, H=∇²Φ:
 #     p/(RT) = Σc + c⋅g - Φ,      ∇c[p/(RT)] = 1 + H*c.
 # Fixed composition needs only H*c; the free-phase columns need H explicitly.
 struct _PRVolumeDomainError <: Exception end
-# Shape and pair coefficients are independent of the phase densities and
-# compositions on the allowlist. Rebuild per fixed-T call.
+# The pair coefficients are independent of composition on the allowlist.
+# For a variable shape u,w are evaluated at each actual phase composition.
 function _pr_volume_coeff(model,T,xx,::Val{N}) where N
     α=α_function(model,1.0,T,xx,model.alpha); a=model.params.a.values
     b=model.params.b.values; RT=Rgas(model)*T
     A=SMatrix{N,N}(ntuple(Val(N*N)) do k
        i=rem(k-1,N)+1;j=div(k-1,N)+1
-       a[max(i,j),min(i,j)]*sqrt(α[i]*α[j])/RT
+       αij = i == j ? α[i] : sqrt(α[i]*α[j])
+       a[max(i,j),min(i,j)]*αij/RT
     end)
     B=SMatrix{N,N}(ntuple(Val(N*N)) do k
        i=rem(k-1,N)+1;j=div(k-1,N)+1
        b[max(i,j),min(i,j)]
     end)
-    u,w=cubic_uwT(model,T,xx)
-    (;A,B,u,w)
+    if _constant_volume_shape(model)
+        u,w=cubic_uwT(model,T,xx)
+        return (;A,B,u,w)
+    end
+    return (;A,B,shape=c -> cubic_uwT(model,T,c))
 end
+
+function _pr_volume_phase(coeff,c)
+    (; A,B,shape)=coeff
+    s=sum(c)
+    x=dot(c,B*c)/s
+    sp,xp=primalval(s),primalval(x)
+    isfinite(sp) && sp > 0 && 0 <= xp < 1 || throw(_PRVolumeDomainError())
+    u,w=shape(c)
+    D=muladd(muladd(w,x,u),x,one(x))
+    dp=primalval(D)
+    isfinite(dp) && dp>0 || throw(_PRVolumeDomainError())
+    return s,x,u,w,D,dot(c,A*c)
+end
+
+# With shape degree zero, Euler's identity still gives
+# p/RT = s/(1-x) - q/D. The shape derivatives are not zero in g or H.
+function _pr_volume_energy(coeff,c)
+    s,x,u,w,_,q=_pr_volume_phase(coeff,c)
+    return -s*log1p(-x)-q*_cubic_attraction_K(x,u,w)
+end
+
+function _pr_volume_reduced_pressure(coeff,c)
+    s,x,_,_,D,q=_pr_volume_phase(coeff,c)
+    return s/(1-x)-q/D
+end
+
+function _pr_volume_jet(coeff::NamedTuple{(:A,:B,:shape)},c,::Val{wantH}) where wantH
+    energy(v)=_pr_volume_energy(coeff,v)
+    press(v)=_pr_volume_reduced_pressure(coeff,v)
+    g=ForwardDiff.gradient(energy,c)
+    p=press(c)
+    wantH === :gp && return g,p
+    # The radial volume column needs only H*c, computed from the
+    # pressure gradient without materializing the fixed-phase Hessian.
+    pg=ForwardDiff.gradient(press,c)
+    h=pg .- 1
+    r=dot(c,pg)
+    wantH && return g,h,p,r,ForwardDiff.hessian(energy,c)
+    return g,h,p,r
+end
+
 function _pr_volume_jet(coeff,c,::Val{wantH}) where wantH
     (; A,B,u,w)=coeff; s=sum(c); b=B*c; a=A*c
     χ=dot(c,b)/s
