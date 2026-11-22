@@ -246,8 +246,21 @@ end
             pr_volume_test(model,T,x,side)
         end
         shifts = [3e-6,-8e-6]
-        translated = eos(names; translation=ConstantTranslation,
+        # A translation-invariance check must keep the fitted EOS fixed.
+        # RKPR's default constructor can refit k1 through physical lb_volume.
+        alpha_data = if model isa RKPR
+            params = model.alpha.params
+            (;k1=copy(params.k1.values),k2=copy(params.k2.values),
+               acentricfactor=copy(params.acentricfactor.values))
+        else
+            String[]
+        end
+        translated = eos(names; alpha_userlocations=alpha_data, translation=ConstantTranslation,
                          translation_userlocations=(;v_shift=shifts))
+        @test VPR.α_function(model,1.,T,x,model.alpha) ==
+              VPR.α_function(translated,1.,T,x,translated.alpha)
+        @test model.params.a.values == translated.params.a.values
+        @test model.params.b.values == translated.params.b.values
         for (side,public_call) in ((Val(:bubble),bubble_pressure),(Val(:dew),dew_pressure))
             bubble = side === Val(:bubble)
             pub,stock,opt,f!,seed,pivot,active = pr_volume_case(translated,T,x,side)
