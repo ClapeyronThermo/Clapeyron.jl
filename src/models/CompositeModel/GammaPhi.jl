@@ -81,7 +81,7 @@ function PTFlashWrapper(model::GammaPhi,p,T,z,equilibrium)
     end
     TT = Solvers.primal_eltype(Base.promote_eltype(model,p,T,z))
     wrapper = PTFlashWrapper{TT}(model,equilibrium,fluidmodel.pure)
-    if is_vle(equilibrium) || is_unknown(equilibrium)
+    if !is_lle(equilibrium)
         update_temperature!(wrapper,T)
     end
     return wrapper

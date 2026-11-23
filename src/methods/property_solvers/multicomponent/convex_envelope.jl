@@ -48,8 +48,7 @@ function cem_models(model,p,T,z,equilibrium)
             throw(ArgumentError("CEM: only `SolidHfus` solid models are supported (pure solid phases), got $(typeof(solid))"))
         end
     end
-    cached_fluid = __tpflash_cache_model(fluid,p,T,z,is_lle(equilibrium) ? :lle : :vle) #PTFlashWrapper does not know :auto
-    return fluid,cached_fluid,solid
+    return fluid,__tpflash_cache_model(fluid,p,T,z,equilibrium),solid
 end
 
 #Δμᵢ/RT (pure solid - pure liquid) of each component, NaN if the component does not form a solid
