@@ -5,10 +5,8 @@ function sle_mapping(model::CompositeModel,j)
     return idx[perm],ν[perm]
 end
 
-function sle_pure_solid_μ(solid,p,T,j)
-    solid_j = isone(length(solid)) ? solid : first(index_reduction(solid,(1:length(solid)) .== j))
-    return chemical_potential(solid_j,p,T,SA[1.0])[1]
-end
+sle_pure_solid(solid,j) = isone(length(solid)) ? solid : first(index_reduction(solid,(1:length(solid)) .== j))
+sle_pure_solid_μ(solid,p,T,j) = chemical_potential(sle_pure_solid(solid,j),p,T,SA[1.0])[1]
 
 #Δμ/RT of solid j: μ of the solid minus Σνₖμₖ of its fluid components in the liquid reference state given by sle_μ_ref
 sle_Δμ(model::CompositeModel,p,T,j) = sle_Δμ(model.solid,model,p,T,j)

@@ -360,15 +360,29 @@
         diagram = phase_diagram(model,p,T)
         @test all(f -> f.states == [:liquid,:solid],diagram.facets)
         @test getindex.(first.(getfield.(diagram.facets,:compositions)),2) ≈ [sle_solubility(model,p,T,[1.,1.];solute=[s])[2] for s in ("1-decanol","thymol")] atol = 1/256
-        @test Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash()).compositions[2] ≈ [0.0,1.0]
+        @test any(x -> x ≈ [0.0,1.0],Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash()).compositions)
+
+        #SLE: stoichiometric solid between lattice points
+        solid = SolidHfus(["1-decanol","thymol","cocrystal"];userlocations = (Tm = [280.0,324.2,300.0],Hfus = [33670.,22010.,90000.]))
+        mapping = [(("1-decanol",1),) => ("1-decanol",1),(("thymol",1),) => ("thymol",1),(("1-decanol",1),("thymol",2)) => ("cocrystal",1)]
+        model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid = UNIFAC,solid = solid,mapping = mapping)
+        T = 290.0
+        facets = phase_diagram(model,p,T).facets
+        @test sort([f.states for f in facets]) == [[:liquid,:solid],[:solid,:solid]]
+        facet = only(filter(f -> :liquid in f.states,facets))
+        @test facet.compositions[2] ≈ [1/3,2/3]
+        @test facet.compositions[1] ≈ sle_solubility(model,p,T,[1.,0.];solute = ["cocrystal"]) atol = 1/256
+        @test numphases(Clapeyron.tp_flash2(model,p,T,[1/3,2/3],CEMFlash())) == 1
 
         #SLE: Gibbs-based solid models
         model = CompositeModel(["water","ethanol"];liquid = UNIFAC,fluid = PR,solid = IAPWS06(),mapping = [(("water",1),) => ("water",1)])
         facet = only(phase_diagram(model,1e5,263.15).facets)
         @test facet.states == [:liquid,:solid]
+        @test facet.volumes[2] ≈ volume(IAPWS06(),1e5,263.15)
         @test facet.compositions[1][1] ≈ sle_solubility(model,1e5,263.15,[0.,1.];solute = ["water"])[1] atol = 1/256
         model = CompositeModel(["carbon dioxide","methane"];fluid = PR,solid = JagerSpanSolidCO2(),mapping = [(("carbon dioxide",1),) => ("carbon dioxide",1)])
         @test only(phase_diagram(model,5e5,180.0).facets).states == [:vapour,:solid]
+        @test_throws ArgumentError phase_diagram(SAFTVREMie(["water"],["sodium","chloride"]),1e5,298.15)
     end
 end
 

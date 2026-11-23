@@ -41,18 +41,19 @@ Base.length(env::CEMEnvelope) = size(env.lattice,1)
 function cem_models(model,p,T,z,equilibrium)
     solid = model isa CompositeModel ? model.solid : nothing
     fluid = solid === nothing ? model : model.fluid
+    fluid isa ElectrolyteModel && throw(ArgumentError("CEM: electrolyte models are not supported (no electroneutrality constraint)"))
     return fluid,__tpflash_cache_model(fluid,p,T,z,equilibrium),solid
 end
 
-#Δμᵢ/RT (pure solid - pure liquid) of each component, NaN if the component does not form a solid
-function cem_solid_Δμ(model,solid,p,T)
-    Δμ = fill(NaN,length(model))
-    solid === nothing && return Δμ
-    for (j,idx) in enumerate(_mapping_split(model))
-        length(idx) == 1 || throw(ArgumentError("CEM: only pure solids are supported, solid $(component_list(solid)[j]) is formed by several fluid components"))
-        Δμ[only(idx)] = sle_Δμ(model,p,T,j)/only(_mapping_fractions(model)[j])
+#stoichiometric composition, Δg/RT (relative to the pure liquids) and volume of each solid, per mole of fluid components
+function cem_solids(model,solid,p,T)
+    solid === nothing && return Tuple{Vector{Float64},Float64,Float64}[]
+    return map(1:length(solid)) do j
+        idx,ν = sle_mapping(model,j)
+        x = zeros(length(model))
+        x[idx] .= ν ./ sum(ν)
+        x,sle_Δμ(model,p,T,j)/sum(ν),volume(sle_pure_solid(solid,j),p,T,SA[1.0])/sum(ν)
     end
-    return Δμ
 end
 
 #returns (gl,vl,gv,vv), NaN g if the column does not exist (lle, single EoS root of the other state, missing root)
@@ -131,11 +132,17 @@ function CEMEnvelope(model,p,T,method)
         addcol!(k,gv[k],CEM_VAPOUR,vv[k])
     end
     pure = [Solvers.simplex_lattice_rank(δ .* (1:N .== i),δ) for i in 1:N]
-    for (k,Δμ) in zip(pure,cem_solid_Δμ(model,solid,p,T))
-        #pure solid, relative to the pure liquid (or the only fluid root)
-        addcol!(k,(isfinite(gl[k]) ? gl[k] : gv[k]) + Δμ,CEM_SOLID,NaN)
-    end
+    #pure liquids (or the only fluid root)
+    gref = [isfinite(gl[k]) ? gl[k] : gv[k] for k in pure]
     X = @view(K[:,P]) ./ δ
+    kq = zeros(Int32,N)
+    for (j,(x,Δg,v)) in enumerate(cem_solids(model,solid,p,T))
+        g = sum(x[i]*gref[i] for i in eachindex(x) if x[i] > 0) + Δg
+        isfinite(g) || error("CEM: Gibbs energy evaluation failed for solid $(component_list(solid)[j]) at p = $p, T = $T")
+        #stoichiometric solids can lie between lattice points, they are attached to the closest one
+        addcol!(Solvers.simplex_lattice_rank(Solvers.simplex_lattice_round!(kq,δ .* x,δ),δ),g,CEM_SOLID,v)
+        X = hcat(X,x)
+    end
     #remove the linear part (affine transformations do not change the envelope)
     gpure = [minimum((G[c] for c in eachindex(G) if P[c] == k),init = Inf) for k in pure]
     all(isfinite,gpure) || error("CEM: Gibbs energy evaluation failed for a pure component at p = $p, T = $T")
@@ -144,6 +151,7 @@ function CEMEnvelope(model,p,T,method)
     point = P[perm]
     point_column = zeros(Int32,M)
     for c in eachindex(point)
+        all(i -> lp.x[i,c] == K[i,point[c]]/δ,1:N) || continue
         c0 = point_column[point[c]]
         (c0 == 0 || lp.g[c] < lp.g[c0]) && (point_column[point[c]] = c)
     end
@@ -266,6 +274,10 @@ end
 
 cem_stable_compatible(env,q,a,stable) = stable(q) && cem_compatible(env,env.point_column[q],a)
 
+cem_on_lattice(env::CEMEnvelope,c) = env.point_column[env.point[c]] == c || all(i -> env.lp.x[i,c] == env.lattice[i,env.point[c]]/env.δ,1:length(env))
+
+cem_has_solid(env::CEMEnvelope,ws::Solvers.EnvelopeWorkspace) = any(i -> ws.λ[i] > env.λ_tol && env.state[ws.B[i]] == CEM_SOLID,eachindex(ws.B))
+
 #cluster index of each column in cols, number of clusters
 function cem_clusters(env::CEMEnvelope,cols,stable = nothing)
     n = length(cols)
@@ -299,6 +311,7 @@ function cem_phases(env::CEMEnvelope,fluid,p,T,B,λ,stable = nothing)
     β = zeros(np)
     states = fill(CEM_LIQUID,np)
     wmax = zeros(np)
+    vols = zeros(np)
     for (j,c) in enumerate(cols)
         l = labels[j]
         β[l] += w[j]
@@ -306,15 +319,15 @@ function cem_phases(env::CEMEnvelope,fluid,p,T,B,λ,stable = nothing)
         if w[j] > wmax[l]
             wmax[l] = w[j]
             states[l] = env.state[c]
+            vols[l] = env.volume[c] #solids: a single column
         end
     end
-    vols = zeros(np)
     for l in 1:np
         comps[l] ./= β[l]
         s = states[l]
-        vols[l] = s == CEM_SOLID ? NaN : volume(fluid,p,T,comps[l],phase = cem_state_symbol(s))
+        s == CEM_SOLID || (vols[l] = volume(fluid,p,T,comps[l],phase = cem_state_symbol(s)))
     end
-    idx = sortperm(vols) #NaN (solids) last
+    idx = sortperm(1:np,by = l -> (states[l] == CEM_SOLID,vols[l]))
     return comps[idx],β[idx],vols[idx],states[idx]
 end
 
@@ -332,7 +345,7 @@ end
 
 Method to calculate the complete phase diagram at constant pressure and temperature with the convex envelope method (CEM) [1].
 
-The reduced Gibbs energy of every aggregate state (liquid, vapour and, for `CompositeModel` with a solid model, pure solids) is evaluated on a lattice of the composition simplex with step `1/δ`.
+The reduced Gibbs energy of every aggregate state (liquid, vapour and, for `CompositeModel` with a solid model, solids) is evaluated on a lattice of the composition simplex with step `1/δ`.
 The lower convex envelope of those points is then determined for every lattice point. Its facets that connect points of different phases are the multiphase regions (tie-lines, tie-triangles, …).
 Instead of building the complete convex hull, the envelope is obtained by solving a linear program for every lattice point, warm-started from the previous point. The tangent plane distances needed by the simplex method are evaluated with a tree that discards most of the grid with a rigorous bound.
 
@@ -358,7 +371,7 @@ Base.@kwdef struct CEMPhaseDiagram <: ThermodynamicMethod
     lnf_tol::Float64 = 1e-6
 end
 
-#phases (sorted by volume, solids last with NaN volume). Without polishing, each phase composition is the mean of its facet vertices
+#phases (sorted by volume, solids last). Without polishing, each phase composition is the mean of its facet vertices
 struct CEMFacet
     columns::Vector{Int32} #grid columns of the facet vertices
     μ::Vector{Float64} #tangent plane μᵢ/RT, in the reference state of the model
@@ -523,7 +536,7 @@ function cem_walk!(point_facet,env::CEMEnvelope,idx)
                 push!(proven,copy(key))
             end
             for cB in ws.B
-                resolved[env.point[cB]] = true
+                cem_on_lattice(env,cB) && (resolved[env.point[cB]] = true)
             end
             current_proven = true
         end
@@ -542,6 +555,7 @@ function cem_walk!(point_facet,env::CEMEnvelope,idx)
 end
 
 function cem_polish_facet(model,p,T,z,f::CEMFacet,env,fluid,ws,stable,method,lnf_tol)
+    :solid in f.states && return f
     ws.λ .= 1/length(z)
     res = FlashResult(env,fluid,p,T,z,ws,stable)
     res2 = cem_polish(model,fluid,p,T,z,res,method,lnf_tol)

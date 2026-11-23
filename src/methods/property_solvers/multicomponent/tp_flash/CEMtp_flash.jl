@@ -12,14 +12,14 @@ If a `CEMDiagram` obtained with [`phase_diagram`](@ref) is passed via `diagram`,
 ## Keyword arguments
 - `δ`: number of divisions of the composition axes. By default, `256`, `128` and `64` for binary, ternary and quaternary mixtures (as in [1]), and `32` for more components (smaller for more than six components, at most ~5⋅10⁵ grid points). Ignored if `diagram` is given.
 - `equilibrium`: `:auto` considers liquid and vapour phases, `:lle` only liquid phases. Ignored if `diagram` is given.
-- `polish`: `TPFlashMethod` used to refine the CEM phases (initialized with the CEM result), or `nothing` to return the CEM result. The refined result is only accepted if its phases are in equilibrium and it has a lower Gibbs energy than the CEM result. If `MichelsenTPFlash` is given and the CEM finds more than two phases, a `MultiPhaseTPFlash` with the same tolerances is used. Results with solid phases are not refined.
+- `polish`: `TPFlashMethod` used to refine the CEM phases (initialized with the CEM result), or `nothing` to return the CEM result. The refined result is only accepted if its phases are in equilibrium and it has a lower Gibbs energy than the CEM result. If `MichelsenTPFlash` is given and the CEM finds more than two phases, a `MultiPhaseTPFlash` with the same tolerances is used. Results with solid phases are not refined (the local methods do not handle solids).
 - `threaded`: evaluate the grid in parallel.
 - `diagram`: a precomputed `CEMDiagram`.
 - `λ_tol`: vertices of a facet with a smaller weight are not part of the phase split. Ignored if `diagram` is given.
 - `vol_rtol`: liquid and vapour grid points whose volumes differ by less than this relative tolerance can belong to the same phase (near critical region). Ignored if `diagram` is given.
 - `lnf_tol`: tolerance of the log fugacities for a polished result to be accepted.
 
-Pure solid phases are considered for `CompositeModel`s with a solid model (each solid formed by a single fluid component). Solid phases are returned with a `NaN` volume.
+Solid phases are considered for `CompositeModel`s with a solid model. Each solid is a stoichiometric compound of the fluid components given by the mapping of the `CompositeModel`, its volume is calculated with the solid model.
 
 ## References
 1. Göttl, Q., Rosen, N., & Burger, J. (2025). Convex envelope method for T, p flash calculations for mixtures with an arbitrary number of components and arbitrary aggregate states. Computers & Chemical Engineering, 203, 109326. [doi:10.1016/j.compchemeng.2025.109326](https://doi.org/10.1016/j.compchemeng.2025.109326)
@@ -62,14 +62,14 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::CEMFlash)
     Solvers.envelope_reset!(ws,env.lp,zf)
     Solvers.envelope_lp!(ws,env.lp,zf)
     result = FlashResult(env,fluid,p,T,zf,ws,stable)
+    cem_has_solid(env,ws) && return result
     return cem_polish(fluidmodel,fluid,p,T,zf,result,method.polish,method.lnf_tol)
 end
 
 cem_polish(model,fluid,p,T,z,result,::Nothing,lnf_tol) = result
 
 function cem_polish(model,fluid,p,T,z,result,method::TPFlashMethod,lnf_tol)
-    #single phase, or solid phases present (the local methods do not handle solids)
-    (numphases(result) < 2 || !all(isfinite,result.volumes)) && return result
+    numphases(result) < 2 && return result
     m = cem_polish_method(method,result)
     m === nothing && return result
     polished = try
