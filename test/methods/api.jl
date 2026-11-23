@@ -335,6 +335,7 @@ end
         model5 = CompositeModel("water", solid = IAPWS06(),fluid = cPR("water"))
         @test melting_temperature(model5,101325.0)[1] ≈ 273.15 rtol = 1e-6
         @test melting_pressure(model5,273.15)[1] ≈ 101325.0 rtol = 1e-6
+        @test Clapeyron.sle_Δμ(model5,101325.0,263.15,1) ≈ 6010*(263.15/273.15 - 1)/(Clapeyron.Rgas()*263.15) rtol = 5e-2
 
         #solid gibbs + helmholtz fluid, without any initial points
         model6 = CompositeModel(["CO2"],solid = JagerSpanSolidCO2(),fluid = SingleFluid("carbon dioxide"))

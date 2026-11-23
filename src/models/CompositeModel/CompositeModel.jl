@@ -240,7 +240,7 @@ function CompositeModel(components ;
 
     if isnothing(init_fluid) || isnothing(init_solid) && isnothing(mapping)
         _mapping = nothing
-    elseif !hasfield(typeof(init_fluid),:components) || !hasfield(typeof(init_solid),:components)
+    elseif isnothing(mapping) && (!hasfield(typeof(init_fluid),:components) || !hasfield(typeof(init_solid),:components))
         _mapping = nothing
     else
         if isnothing(mapping) && init_fluid.components!=init_solid.components

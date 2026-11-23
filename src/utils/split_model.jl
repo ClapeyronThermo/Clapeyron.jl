@@ -513,6 +513,8 @@ function split_pure_model(model)
     if is_splittable(model)
         splitter = default_splitter(model)
         return split_pure_model(model,splitter)
+    elseif isone(length(model))
+        return [model]
     else
         throw(ArgumentError("$model is not splittable, try passing an explicit splitter argument (`split_pure_model(value,splitter)`)"))
     end

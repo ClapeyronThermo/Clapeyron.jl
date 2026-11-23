@@ -19,7 +19,7 @@ If a `CEMDiagram` obtained with [`phase_diagram`](@ref) is passed via `diagram`,
 - `vol_rtol`: liquid and vapour grid points whose volumes differ by less than this relative tolerance can belong to the same phase (near critical region). Ignored if `diagram` is given.
 - `lnf_tol`: tolerance of the log fugacities for a polished result to be accepted.
 
-Pure solid phases are considered for `CompositeModel`s with a `SolidHfus` solid model. Solid phases are returned with a `NaN` volume.
+Pure solid phases are considered for `CompositeModel`s with a solid model (each solid formed by a single fluid component). Solid phases are returned with a `NaN` volume.
 
 ## References
 1. Göttl, Q., Rosen, N., & Burger, J. (2025). Convex envelope method for T, p flash calculations for mixtures with an arbitrary number of components and arbitrary aggregate states. Computers & Chemical Engineering, 203, 109326. [doi:10.1016/j.compchemeng.2025.109326](https://doi.org/10.1016/j.compchemeng.2025.109326)

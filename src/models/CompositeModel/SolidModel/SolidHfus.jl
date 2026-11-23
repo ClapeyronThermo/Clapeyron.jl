@@ -35,6 +35,17 @@ default_ignore_missing_singleparams(::Type{SolidHfus}) = ["CpSL"]
 
 sle_T_ref(model::SolidHfusModel) = model.params.Tm.values
 
+#the fusion data of a solid formed by several components refers to the stoichiometric liquid at Tm
+function sle_Δμ(solid::SolidHfusModel,model,p,T,j)
+    Δμ = sle_pure_solid_μ(solid,p,T,j)/(Rgas(model.fluid)*T)
+    idx,ν = sle_mapping(model,j)
+    isone(length(idx)) && return Δμ
+    zref = ν ./ sum(ν)
+    fluid_j,_ = index_reduction(model.fluid,(1:length(model.fluid)) .∈ Ref(idx))
+    γref = activity_coefficient(fluid_j,p,sle_T_ref(solid)[j],zref;phase = :l)
+    return Δμ + sum(ν .* log.(zref .* γref))
+end
+
 function chemical_potential_impl(model::SolidHfusModel,p,T,z,phase,threaded,vol0)
     Hfus = model.params.Hfus.values
     Tm = model.params.Tm.values

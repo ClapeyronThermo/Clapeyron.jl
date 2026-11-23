@@ -361,6 +361,14 @@
         @test all(f -> f.states == [:liquid,:solid],diagram.facets)
         @test getindex.(first.(getfield.(diagram.facets,:compositions)),2) ≈ [sle_solubility(model,p,T,[1.,1.];solute=[s])[2] for s in ("1-decanol","thymol")] atol = 1/256
         @test Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash()).compositions[2] ≈ [0.0,1.0]
+
+        #SLE: Gibbs-based solid models
+        model = CompositeModel(["water","ethanol"];liquid = UNIFAC,fluid = PR,solid = IAPWS06(),mapping = [(("water",1),) => ("water",1)])
+        facet = only(phase_diagram(model,1e5,263.15).facets)
+        @test facet.states == [:liquid,:solid]
+        @test facet.compositions[1][1] ≈ sle_solubility(model,1e5,263.15,[0.,1.];solute = ["water"])[1] atol = 1/256
+        model = CompositeModel(["carbon dioxide","methane"];fluid = PR,solid = JagerSpanSolidCO2(),mapping = [(("carbon dioxide",1),) => ("carbon dioxide",1)])
+        @test only(phase_diagram(model,5e5,180.0).facets).states == [:vapour,:solid]
     end
 end
 

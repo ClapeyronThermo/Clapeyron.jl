@@ -39,15 +39,8 @@ Base.length(env::CEMEnvelope) = size(env.lattice,1)
 
 #model used to evaluate the fluid phases, solid model (or nothing)
 function cem_models(model,p,T,z,equilibrium)
-    solid = nothing
-    fluid = model
-    if model isa CompositeModel && model.solid !== nothing
-        solid = model.solid
-        fluid = model.fluid
-        if !(solid isa SolidHfusModel)
-            throw(ArgumentError("CEM: only `SolidHfus` solid models are supported (pure solid phases), got $(typeof(solid))"))
-        end
-    end
+    solid = model isa CompositeModel ? model.solid : nothing
+    fluid = solid === nothing ? model : model.fluid
     return fluid,__tpflash_cache_model(fluid,p,T,z,equilibrium),solid
 end
 
@@ -55,12 +48,9 @@ end
 function cem_solid_Δμ(model,solid,p,T)
     Δμ = fill(NaN,length(model))
     solid === nothing && return Δμ
-    μ = chemical_potential(solid,p,T,ones(length(solid)))
-    idx = _mapping_split(model)
-    ν = _mapping_fractions(model)
-    for j in eachindex(idx)
-        length(idx[j]) == 1 || throw(ArgumentError("CEM: only pure solids are supported, solid $(component_list(solid)[j]) is formed by several fluid components"))
-        Δμ[only(idx[j])] = μ[j]/(only(ν[j])*Rgas(solid)*T)
+    for (j,idx) in enumerate(_mapping_split(model))
+        length(idx) == 1 || throw(ArgumentError("CEM: only pure solids are supported, solid $(component_list(solid)[j]) is formed by several fluid components"))
+        Δμ[only(idx)] = sle_Δμ(model,p,T,j)/only(_mapping_fractions(model)[j])
     end
     return Δμ
 end
@@ -342,7 +332,7 @@ end
 
 Method to calculate the complete phase diagram at constant pressure and temperature with the convex envelope method (CEM) [1].
 
-The reduced Gibbs energy of every aggregate state (liquid, vapour and, for `CompositeModel` with a `SolidHfus` solid model, pure solids) is evaluated on a lattice of the composition simplex with step `1/δ`.
+The reduced Gibbs energy of every aggregate state (liquid, vapour and, for `CompositeModel` with a solid model, pure solids) is evaluated on a lattice of the composition simplex with step `1/δ`.
 The lower convex envelope of those points is then determined for every lattice point. Its facets that connect points of different phases are the multiphase regions (tie-lines, tie-triangles, …).
 Instead of building the complete convex hull, the envelope is obtained by solving a linear program for every lattice point, warm-started from the previous point. The tangent plane distances needed by the simplex method are evaluated with a tree that discards most of the grid with a rigorous bound.
 

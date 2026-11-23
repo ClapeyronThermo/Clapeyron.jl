@@ -258,16 +258,11 @@ function calculate_gibbs_reference_state(model1::EoSModel,model2::EoSModel,x1 = 
         eos_g(model1) + g1 + g2*T0 = eos_g(model2)
         enthalpy(model2) - enthalpy(model1) - W - g1 = 0
         =#
-        gibbs1,gibb2 = gibbs_energy(model1,p,T,x1),gibbs_energy(model2,p,T,x2)
+        gibbs1,gibbs2 = gibbs_energy(model1,p,T,x1),gibbs_energy(model2,p,T,x2)
         h1,h2 = enthalpy(model1,p,T,x1),enthalpy(model2,p,T,x2)
-        dH = W
-        if n == 2 #invert
-            gibbs1,gibb2 = gibbs2,gibbs1
-            h1,h2 = h2,h1
-            dH = -dH
-        end
-        g1 = h1 - h2 + dH
-        g2 = (gibb2 - g1 - gibbs1)/T
+        dH = n == 2 ? -W : W
+        g1 = h2 - h1 - dH
+        g2 = (gibbs2 - g1 - gibbs1)/T
         return g1,g2
     elseif type == :zero
         return _0,_0
