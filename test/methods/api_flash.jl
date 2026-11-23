@@ -452,6 +452,10 @@ end
     @test Clapeyron.temperature(result) == 200.15
     @test pressure(result) == 101325.0
 
+    #sorting by volume keeps the vapour phase
+    res_sorted = FlashResult(1e5,300.0,[[1.0,0.0],[0.0,1.0],[0.5,0.5]],[0.2,0.3,0.5],[1e-2,1e-5,2e-5];vapour_phase_index = 1)
+    @test res_sorted.data.vapour_idx == 3 && res_sorted.volumes[3] == 1e-2
+
     #px_flash_pure/tx_flash_pure, 1 phase (#320)
     model = cPR(["ethane"],idealmodel = ReidIdeal);
     p = 101325;h = 100; z = Clapeyron.SA[1]; T = Clapeyron.PH.temperature(model,p,h,z)

@@ -137,7 +137,7 @@ function FlashResult(p::Number,T::Number,comps,β,volumes,g = nothing;sort = tru
         idx = sortperm(volumes)
         vap_new = 0
         if vapour_phase_index > 0
-            vap_new = idx[vapour_phase_index]
+            vap_new = findfirst(==(vapour_phase_index),idx)
         elseif vapour_phase_index == -1
             vap_new = -1
         end
