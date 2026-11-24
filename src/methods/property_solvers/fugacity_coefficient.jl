@@ -60,24 +60,42 @@ function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
     return ∂lnϕCache(result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache)
 end
 
-#returns μ_res/RT and p_res/RT from isochoric derivatives of Ψ = A_res/(RT·V), V = 1.
-function __μpr(model, T, rhovec, cache)
+function __psi_res(model,T,rhovec)
     nc = length(model)
-    function Ψ(xx)
-        ρ = @view xx[1:nc]
-        return sum(ρ)*a_res(model, 1.0, T, ρ)
-    end
+    _rhovec = @view rhovec[1:nc]
+    return psi_res(model,T,_rhovec)
+end
 
-    if cache === nothing
-        result = DiffResults.GradientResult(rhovec)
-        _result = ForwardDiff.gradient!(result, Ψ, rhovec)
-        ρᵢ = rhovec
-    else
+function __psi_res(model,data)
+    nc = length(model)
+    rhovec = @view data[1:nc]
+    T = data[nc + 1]
+    return psi_res(model,T,rhovec)
+end
+
+StaticForwardDiffTags.inner_function(::typeof(__psi_res)) = psi_res
+
+#returns μ_res/RT and p_res/RT from isochoric derivatives of Ψ = A_res/(RT·V), V = 1.
+function __μpr(model, T, ρ, cache)
+    nc = length(model)
+
+    #deferred forwarddiff tag for faster AD in some cases
+    Ψ = @deferred_isochoric_rhovec(__psi_res,psi_res)
+    if cache isa ∂lnϕCache
         aux = cache.aux
         ρᵢ = @view aux[1:nc]
         ρᵢ .= rhovec
         gconfig = Solvers._GradientConfig(cache.hconfig)
         _result = ForwardDiff.gradient!(cache.result, Ψ, aux, gconfig, Val{false}())
+    else
+        if cache isa AbstractVector
+            result = MutableDiffResult(zero(eltype(cache)), (cache,))
+        else
+            result = DiffResults.GradientResult(ρ)
+        end
+        
+        _result = ForwardDiff.gradient!(result, Ψ, ρ)
+        ρᵢ = ρ
     end
 
     Ψr = DiffResults.value(_result)
@@ -102,32 +120,25 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
     if cache isa Vector
         return lnϕ!(cache, model, p, T, z; vol)
     elseif cache isa ∂lnϕCache
-        result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
+        lnϕ_out = cache.lnϕ
         if nc == 1
-            lnϕ[1] = VT_∑zlogϕ(model,vol/∑z,T,SA[1.0],p)
+            lnϕ_out[1] = VT_∑zlogϕ(model,vol/∑z,T,SA[1.0],p)
         else
-            aux .= 0
-            aux[1] = vol
-            aux[2:nc+1] = z
-            gconfig = Solvers._GradientConfig(hconfig)
-            F_res(model, V, T, z) = eos_res(model, V, T, z)
-            fun(aux) = F_res(model, aux[1], T, @view(aux[2:nc+1]))
-            _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
-            dresult = DiffResults.gradient(_result)
-            μ_res = @view dresult[2:nc+1]
-            lnϕ .= μ_res ./ RT .- logZ
+            rhovec = @view cache.aux[1:nc]
+            rhovec .= z ./ vol
+            μ_res_RT,_ = __μpr(model,T,rhovec,cache)
+            lnϕ_out .= μ_res_RT .- logZ
         end
     else
         μ_res = VT_chemical_potential_res(model, vol, T, z)
         if ismutable(μ_res)
-            lnϕ = μ_res
-            lnϕ .= μ_res ./ RT .- logZ
+            lnϕ_out = μ_res
+            lnϕ_out .= μ_res ./ RT .- logZ
         else
-            lnϕ = μ_res/RT .- logZ
+            lnϕ_out = μ_res/RT .- logZ
         end
-
     end
-    return lnϕ, vol
+    return lnϕ_out, vol
 end
 
 function lnϕ(model::IdealModel, p, T, z=SA[1.],cache = nothing;
@@ -194,7 +205,8 @@ end
 #μ_res/RT, p_res/RT and the Hessian of Ψ over the nc densities.
 function __μpr_hess(model, T, rhovec, cache)
     nc = length(model)
-    Ψ(xx) = sum(@view(xx[1:nc]))*a_res(model, 1.0, T, @view(xx[1:nc]))
+    
+    Ψ = @deferred_isochoric_rhovec(__psi_res,psi_res)
 
     if cache === nothing
         result = DiffResults.HessianResult(rhovec)
@@ -215,13 +227,8 @@ end
 #μ_res/RT, p_res/RT, the Hessian of Ψ, and ∂(p_res/RT)/∂T; over the nc densities.
 function __μprT_hess(model, T, rhovec, cache)
     nc = length(model)
-   
-    function Ψ(xx)
-        ρᵢ = @view xx[1:nc]
-        T = xx[nc + 1]
-        ρ = sum(ρᵢ)
-        return ρ*a_res(model, 1.0, T, ρᵢ)
-    end
+
+    Ψ = WithContext(Base.Fix1(__psi_res,model),∂Tag{psi_res})
 
     if cache === nothing
         aux = vcat(rhovec, T)
@@ -294,6 +301,13 @@ end
 
 _dlnϕdnP!(cache::∂lnϕCache,a,H,RT,p_over_RT,ap,vol,n) = _dlnϕdnP!(cache.∂lnϕ∂n,cache.∂lnϕ∂P,a,H,RT,p_over_RT,ap,vol,n)
 
+function _dlnϕdnP!(::Nothing,a,H,RT,p_over_RT,ap,vol,n)
+    nc = length(a)
+    ∂lnϕ∂n = similar(a,(nc,nc))
+    ∂lnϕ∂P = similar(a)
+    return _dlnϕdnP!(∂lnϕ∂n, ∂lnϕ∂P, a, H, RT, p_over_RT, aρ, vol, n)
+end
+
 function _dlnϕdnP!(∂lnϕ∂n, ∂lnϕ∂P, a, H, RT, p_over_RT, aρ, vol, n)
     ninv = 1/n
     nc = length(a)
@@ -337,40 +351,35 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
+    nc = length(model)
     RT = Rgas(model)*T
-    nc = length(z)
-
-    function pᵣ(x)
-        _z = @view x[1:nc]
-        _v = x[nc + 1]
-        return pressure_res(model,_v,T,_z) 
-    end
+    pᵣ(x) = pressure_res(model, 1.0, T, @view(x[1:nc]))/RT
+    ρt = sum(z)/vol
 
     if cache === nothing
-        aux = zeros(Base.promote_eltype(z,vol),nc + 1)
-        xx = @view aux[1:nc]
-        xx .= z
-        xx[end] = vol
-        ∂pᵣ = ForwardDiff.gradient(pᵣ, aux)
-        resize!(aux,nc)
-        ∂lnϕ∂P = aux
+        rhovec = zeros(Base.promote_eltype(model,p,T,z),nc)
+        rhovec .= z ./ vol
+        _result = ForwardDiff.gradient!(DiffResults.GradientResult(rhovec), pᵣ, rhovec)
+        ∇pᵣ = @view DiffResults.gradient(_result)[1:nc]
+        aρ = ρt + dot(rhovec, ∇pᵣ)
+        ∂lnϕ∂P = rhovec
     else
         aux = cache.aux
-        xx = @view aux[1:nc]
-        xx .= z
-        aux[nc+1] = vol
+        rhovec = @view aux[1:nc]
+        rhovec .= z ./ vol
         gconfig = Solvers._GradientConfig(cache.hconfig)
         _result = ForwardDiff.gradient!(cache.result, pᵣ, aux, gconfig, Val{false}())
-        ∂pᵣ = DiffResults.gradient(_result)
+        ∇pᵣ = @view DiffResults.gradient(_result)[1:nc]
+        aρ = ρt + dot(rhovec, ∇pᵣ)
         ∂lnϕ∂P = cache.∂lnϕ∂P
     end
 
-    ∇pᵣ = @view ∂pᵣ[1:nc]
-    ∂pᵣ∂V = ∂pᵣ[nc+1]
-    ∂p∂V = ∂pᵣ∂V - sum(z)*RT/(vol*vol)
-    ∂V∂p = -1/∂p∂V
-    ∂lnϕ∂P .= ∂V∂p .* ∇pᵣ ./ RT .- (1/p) .+ (∂V∂p/vol)
-    return ∂lnϕ∂P,vol
+    p_over_RT = ρt + DiffResults.value(_result)
+    for i in 1:nc
+        ∂lnϕ∂P[i] = ((1 + ∇pᵣ[i])/aρ - 1/p_over_RT)/RT
+    end
+
+    return ∂lnϕ∂P, vol
 end
 
 function __dlnρdT(model, T, rhovec)
@@ -471,30 +480,50 @@ function modified_gibbs(model,p,T,w,phase,vol)
     return g/RT,volw
 end
 
-function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
-    lnϕ, ∂lnϕ∂n, _, vol = ∂lnϕ∂n∂P(model, p, T, z, cache; phase, vol0)
-    return lnϕ,∂lnϕ∂n,vol
+_dlnϕdn!(cache::∂lnϕCache,a,H,RT,p_over_RT,ap,vol,n) = _dlnϕdn!(cache.∂lnϕ∂n,a,H,RT,p_over_RT,ap,vol,n)
+
+function _dlnϕdn!(::Nothing,a,H,RT,p_over_RT,ap,vol,n)
+    nc = length(a)
+    ∂lnϕ∂n = similar(a,(nc,nc))
+    return _dlnϕdn!(∂lnϕ∂n, a, H, RT, p_over_RT, aρ, vol, n)
 end
 
+function _dlnϕdn!(∂lnϕ∂n, a, H, RT, p_over_RT, aρ, vol, n)
+    ninv = 1/n
+    nc = length(a)
+    for i in 1:nc
+        ai_aρ = a[i]/aρ
+        for j in 1:nc
+            ∂lnϕ∂n[i, j] = (H[i, j] - a[j]*ai_aρ)/vol + ninv
+        end
+    end
+    return ∂lnϕ∂n
+end
 
-#=
-VT-based versions
+function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
+    vol = volume(model,p,T,z;phase,vol0,threaded = false)
+    nc = length(model)
+    if cache === nothing
+        rhovec = z ./ vol
+    else
+        aux = cache.aux
+        rhovec = @view aux[1:nc]
+        rhovec .= z ./ vol
+    end
 
-instead of working in terms of lnphi, we work directly in terms of lnf = ln(phi*p)
-
- Z = p*V/RT/sum(z)
-lnϕ .= μ_res ./ RT .- log(Z)
-ln(f) = ln(ϕ*p) = log(ϕ) + log(p)
-ln(f) = μ_res ./ RT .- log(V/RT/sum(z))
-- logZ - log(p) =
-=#
+    n = sum(z)
+    RT = Rgas(model)*T
+    p_over_RT, aρ, H, lnϕ, a, _ = __lnϕ_core!(model, T, rhovec, cache, __μpr_hess)
+    ∂lnϕ∂n = _dlnϕdn!(cache, a, H, RT, p_over_RT, aρ, vol, n)
+    return lnϕ, ∂lnϕ∂n, vol
+end
 
 function lnf(model, V, T, z,cache = nothing)
     RT = Rgas(model)*T
     n = sum(z)
     logZp = log(V/RT/n)
     nc = length(z)
-    if cache !== nothing
+    if cache isa ∂lnϕCache
         lnf = cache.lnϕ
         if nc == 1
             lnf1,p = VT_lnf_pure(model,V,T)

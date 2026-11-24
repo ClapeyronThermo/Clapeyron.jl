@@ -154,3 +154,15 @@ function d2ΨdT2_grad!(∇Ψ,model,T,ρᵢ)
     ForwardDiff.gradient!(∇Ψ,Ψ,d2ΨrdT2)
     return ∇Ψ
 end 
+
+function (obj::FixedEoSEval{:isochoric_rhovec,F,D})(rhovec) where {F,D}
+    model,T = obj.data
+    return obj.f(model,T,rhovec)
+end
+
+macro deferred_isochoric_rhovec(f,tag)
+    quote
+        WithContext(FixedEoSEval{:isochoric_rhovec}($f,(model,T)),∂Tag{$tag}())
+    end |> esc
+end
+

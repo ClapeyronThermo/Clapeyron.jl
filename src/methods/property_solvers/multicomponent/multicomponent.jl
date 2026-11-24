@@ -81,14 +81,16 @@ end
 function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.@specialize(w))
     p,T = PT.p,PT.T
     R = Rgas(model)
-    RTinv = 1/(R*T)
+    RT = R*T
     w1,v1 = w[1],v[1]
     n_c = length(w1)
     n_p = length(v)
 
     μ1 = μj = similar(F,length(model))
-    p1 = pressure(model,v1,T,w1)
-    VT_chemical_potential_res!(μ1,model,v1,T,w1)
+    rhovec = similar(μ1)
+    rhovec .= w1 ./ v1
+    μ1,pr1 = __μpr(model,T,rhovec,μ1)
+    p1 = RT*(pr1 + n/v1)
     log_v1 = log(v1)
     @inbounds for j in 1:(n_p - 1)
         Fj = viewn(F,n_c,j)
@@ -108,16 +110,19 @@ function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.
         #pᵣ_res_j = pressure_res(model,vj,T,wj)*RTinv
         #Δp = pᵣ_res_1 - pᵣ_res_j
         #Δp += pᵣ_ideal_1 - sum(wj)/vj
-        Fp[j] = (p1 - pj)*p⁻¹
-        VT_chemical_potential_res!(μ1,model,vj,T,wj)
+        rhovec .= wj ./ vj
+        _,prj = __μpr(model,T,rhovec,μ1)
+        pj = RT*(prj + n/vj)
+
         Fj = viewn(F,n_c,j)
 
+        Fp[j] = (p1 - pj)*p⁻¹
         log_v_common = log(vj) - log_v1
         for i in 1:n_c
             μ1i = Fj[i]
             μji = μj[i]
             Δuᵣ = μ1i - μji
-            Fj[i] = Δuᵣ*RTinv + log_v_common + log(w1[i]) - log(wj[i])
+            Fj[i] = Δuᵣ + log_v_common + log(w1[i]) - log(wj[i])
         end
     end
 
