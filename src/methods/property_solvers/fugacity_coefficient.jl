@@ -381,7 +381,7 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
     return ∂lnϕ∂P, vol
 end
 
-function __dlnρdT(model, T, rhovec, p_over_RT == nothing)
+function __dlnρdT(model, T, rhovec, p_over_RT = nothing)
     ρt = sum(rhovec)
     function ψ(_ρ, _T)
         _v = 1/_ρ
@@ -395,7 +395,7 @@ function __dlnρdT(model, T, rhovec, p_over_RT == nothing)
     else
         _p_over_RT = p_over_RT
     end
-    return -(p_over_RT/T + dptotdT)/aρ
+    return -(_p_over_RT/T + dptotdT)/aρ
 end
 
 # Function to compute fugacity coefficient temperature derivatives
