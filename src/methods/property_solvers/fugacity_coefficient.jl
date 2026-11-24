@@ -381,23 +381,6 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
     return ∂lnϕ∂P, vol
 end
 
-function __dlnρdT(model, T, rhovec, p_over_RT = nothing)
-    ρt = sum(rhovec)
-    function ψ(_ρ, _T)
-        _v = 1/_ρ
-        return _ρ*ρt*a_res(model, _v, _T, rhovec)
-    end
-    ψx, g, Hψ = Solvers.∂2(ψ, one(T), T)
-    aρ = ρt + Hψ[1, 1]
-    dptotdT = Hψ[1, 2] - g[2]
-    if p_over_RT === nothing
-        _p_over_RT = ρt + g[1] - ψx 
-    else
-        _p_over_RT = p_over_RT
-    end
-    return -(_p_over_RT/T + dptotdT)/aρ
-end
-
 # Function to compute fugacity coefficient temperature derivatives
 function ∂lnϕ∂T(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(model,p,T,z,Val{false}());
             phase=:unknown,
@@ -413,7 +396,7 @@ function ∂lnϕ∂T(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
         rhovec .= z ./ vol
     end
 
-    s = __dlnρdT(model, T, rhovec,p/(Rgas(model)*T))
+    s = -VT_isobaric_expansivity(model,vol,T,z)
 
     #T-derivative of ρₜ·a_res along the isobar, differentiated w.r.t. ρ
     function Φ(x)

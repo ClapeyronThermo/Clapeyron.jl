@@ -245,9 +245,11 @@ function VT_isobaric_expansivity(model::EoSModel, V, T, z=SA[1.])
     if iszero(1/V)  || is_idealmodel(model)
         return one(Base.promote_eltype(model,V,T,z))/T
     else
-        d²A = f_hess(model,V,T,z)
-        ∂²A∂V∂T = d²A[1,2]
-        ∂²A∂V² = d²A[1,1]
+
+        _,∂²A∂V²,∂²A∂V∂T = ∂p_vec(model,V,T,z)
+        #d²A = f_hess(model,V,T,z)
+        #∂²A∂V∂T = d²A[1,2]
+        #∂²A∂V² = d²A[1,1]
         return -∂²A∂V∂T/(V*∂²A∂V²)
     end
 end
@@ -484,13 +486,14 @@ function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F<
         fx .= NaN
         return fx
     end
-    fun = @deferred_Z(property,∂₁f)
+    
     return Solvers.gradient!(fx,fun,z)::F
 end
+ 
+function VT_molar_gradient!(cache::F,model::EoSModel,V,T,z,property::ℜ) where {F<:∂lnϕCache,ℜ}
+    ∇f = cache.lnϕ
+    aux = cache.aux
 
-function VT_molar_gradient!(cache::F,model::EoSModel,V,T,z,property::ℜ) where {F<:Tuple,ℜ}
-
-    result,aux,∇f,A1,x1,x2,x3,hconfig = cache
     if isnan(V) || isnan(T) || any(isnan,z)
         ∇f .= NaN
         return ∇f
@@ -500,11 +503,10 @@ function VT_molar_gradient!(cache::F,model::EoSModel,V,T,z,property::ℜ) where 
         f1(_z) = property(model,V,T,SVector(_z))
         ∇f[1] = ForwardDiff.derivative(f1,z[1])
     else
-        aux .= 0
         aux[1:nc] = z
-        gconfig = Solvers._GradientConfig(hconfig)
-        fun(aux) = property(model, V, T, @view(aux[1:nc]))
-        _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
+        gconfig = Solvers._GradientConfig(cache.hconfig)
+        fun = @deferred_Z(property,∂₁f)
+        _result = ForwardDiff.gradient!(cache.result, fun, aux, gconfig, Val{false}())
         dresult = DiffResults.gradient(_result)
         fx_temp = @view dresult[1:nc]
         ∇f .= fx_temp
