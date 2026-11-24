@@ -90,7 +90,7 @@ function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.
     rhovec = similar(μ1)
     rhovec .= w1 ./ v1
     μ1,pr1 = __μpr(model,T,rhovec,μ1)
-    p1 = RT*(pr1 + n/v1)
+    p1 = RT*(pr1 + sum(w1)/v1)
     log_v1 = log(v1)
     @inbounds for j in 1:(n_p - 1)
         Fj = viewn(F,n_c,j)
@@ -106,13 +106,13 @@ function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.
     @inbounds for j in 1:(n_p - 1)
         vj = v[j+1]
         wj = w[j+1]
-        pj = pressure(model,vj,T,wj)
         #pᵣ_res_j = pressure_res(model,vj,T,wj)*RTinv
         #Δp = pᵣ_res_1 - pᵣ_res_j
         #Δp += pᵣ_ideal_1 - sum(wj)/vj
+        nj = sum(wj)
         rhovec .= wj ./ vj
         _,prj = __μpr(model,T,rhovec,μ1)
-        pj = RT*(prj + n/vj)
+        pj = RT*(prj + nj/vj)
 
         Fj = viewn(F,n_c,j)
 
