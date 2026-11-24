@@ -192,7 +192,9 @@ function Base.show(io::IO,mime::MIME"text/plain",obj::FlashResult)
     comps,β,volumes,data = obj
     np = length(comps)
     compact_io = IOContext(io, :compact => true)
-    if data.vapour_idx == -1
+    if data.solid_idx > 0
+        print(io,data.vapour_idx > 0 ? (data.solid_idx > 2 ? "SVLE " : "SVE ") : "SLE ")
+    elseif data.vapour_idx == -1
         print(io,"LLE ")
     elseif data.vapour_idx > 0
         print(io,"VLE ")

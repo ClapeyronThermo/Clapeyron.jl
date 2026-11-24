@@ -28,9 +28,9 @@ In the following table:
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | `RRTPFlash` | P-T | 2 (VLE,LLE)| First order | No (cubic EoS) | Yes | Rachford-Rice (RR) Flash |
 | `MichelsenTPFlash` | P-T | 2 (VLE,LLE) | Second order¹ | Yes  | No | RR + Gibbs optimization |
-| `MultiPhaseTPFlash` | P-T | any (automatic phase detection)  | Second order | Yes  | No  | RR + Gibbs optimization + phase search |
+| `MultiPhaseTPFlash` | P-T | any (automatic phase detection, incl. solids³) | Second order | Yes  | No  | RR + Gibbs optimization + phase search |
 | `DETPFlash` | P-T | any (via `numphases`)  | Zeroth Order | Yes  | No | Global Gibbs optimization over fixed phases |
-| `CEMFlash` | P-T | any (automatic phase detection, incl. pure solids) | Zeroth Order (polished: same as `polish`) | Yes  | No | Convex envelope of the discretized Gibbs energy (+ local refinement) |
+| `CEMFlash` | P-T | any (automatic phase detection, incl. solids³) | Zeroth Order (polished: same as `polish`) | Yes  | No | Convex envelope of the discretized Gibbs energy (+ local refinement) |
 | `GeneralizedXYFlash` | X-Y  | 2² (VLE/LLE) | Second Order | No | No | Equilibria conditions as constrained non-linear system |
 | `RRQXFlash` | Q-T,Q-P  | 2 | First Order | Yes | No | RR update + Root-finding of Q(p)/Q(T)  |
 | `RRXYFlash` | P-Y,T-Y  | 2 (VLE/LLE) | First Order | Yes | No | RR iterations + Root-finding on Y(T)/Y(p) |
@@ -43,6 +43,8 @@ In the following table:
 1. `GeneralizedXYFlash` is a wrapper to the `xy_flash` method. While `xy_flash` can solve an arbitrary, multiphase, X-Y flash problem, `Clapeyron.jl is only capable at the moment of generating 2-phase initial points for some combinations of specifications.
 
 1. `MichelsenTPFlash` and `RRTPFlash` will always return a result with two phases, the phase with zero phase fraction carry information about the converged K value.
+
+1. Solid phases are considered for a `CompositeModel` with a solid model. They are stored after the fluid phases, `result.data.solid_idx` is the index of the first solid phase and `Clapeyron.is_solid(result,i)` checks a phase. `MultiPhaseTPFlash` requires at least one fluid phase in equilibrium. See [Phase Diagrams with the Convex Envelope Method](@ref cem_tutorial).
 
 The default flash methods are the following:
 

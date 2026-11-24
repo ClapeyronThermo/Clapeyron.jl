@@ -418,7 +418,7 @@ Currently, the only method available is [`CEMPhaseDiagram`](@ref). The keyword a
 model = UNIFAC(["water","hexane","ethanol"])
 diagram = phase_diagram(model, 1e5, 298.15, CEMPhaseDiagram(δ = 64))
 diagram.facets[1].compositions #compositions of the phases of the first multiphase facet
-tp_flash2(model, 1e5, 298.15, [0.4,0.4,0.2], CEMFlash(diagram = diagram)) #flash with the stored envelope
+Clapeyron.tp_flash2(model, 1e5, 298.15, [0.4,0.4,0.2], CEMFlash(diagram = diagram)) #flash with the stored envelope
 ```
 """
 function phase_diagram(model::EoSModel,p,T;kwargs...)
