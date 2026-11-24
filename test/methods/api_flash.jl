@@ -341,6 +341,8 @@
         res_m = Clapeyron.tp_flash2(model,p,T,[0.5,0.5],MichelsenTPFlash(equilibrium = :lle))
         @test Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash(diagram = diagram)).compositions ≈ res_m.compositions rtol = 1e-6
         @test numphases(Clapeyron.tp_flash2(model,p,T,[0.001,0.999],CEMFlash(diagram = diagram))) == 1
+        @test Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash(diagram = diagram)).data.solid_idx == -1
+        @test res_m.data.solid_idx == 0
         @test_throws ArgumentError Clapeyron.tp_flash2(model,2p,T,[0.5,0.5],CEMFlash(diagram = diagram))
 
         #VLLE, activity model: three phase region, not found by MichelsenTPFlash
@@ -360,7 +362,10 @@
         diagram = phase_diagram(model,p,T)
         @test all(f -> f.states == [:liquid,:solid],diagram.facets)
         @test getindex.(first.(getfield.(diagram.facets,:compositions)),2) ≈ [sle_solubility(model,p,T,[1.,1.];solute=[s])[2] for s in ("1-decanol","thymol")] atol = 1/256
-        @test any(x -> x ≈ [0.0,1.0],Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash()).compositions)
+        res = Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash())
+        @test res.data.solid_idx == 2 && Clapeyron.is_solid(res,2) && !Clapeyron.is_solid(res,1)
+        @test res.compositions[2] ≈ [0.0,1.0]
+        @test_throws ArgumentError enthalpy(model,res)
 
         #SLE: stoichiometric solid between lattice points
         solid = SolidHfus(["1-decanol","thymol","cocrystal"];userlocations = (Tm = [280.0,324.2,300.0],Hfus = [33670.,22010.,90000.]))
@@ -455,6 +460,8 @@ end
     #sorting by volume keeps the vapour phase
     res_sorted = FlashResult(1e5,300.0,[[1.0,0.0],[0.0,1.0],[0.5,0.5]],[0.2,0.3,0.5],[1e-2,1e-5,2e-5];vapour_phase_index = 1)
     @test res_sorted.data.vapour_idx == 3 && res_sorted.volumes[3] == 1e-2
+    res_sorted = FlashResult(1e5,300.0,[[1.0,0.0],[0.0,1.0],[0.5,0.5]],[0.2,0.3,0.5],[1e-2,1e-5,0.0];vapour_phase_index = 1,solid_phase_index = 3)
+    @test res_sorted.data.vapour_idx == 2 && res_sorted.data.solid_idx == 3 && res_sorted.volumes == [1e-5,1e-2,0.0]
 
     #px_flash_pure/tx_flash_pure, 1 phase (#320)
     model = cPR(["ethane"],idealmodel = ReidIdeal);

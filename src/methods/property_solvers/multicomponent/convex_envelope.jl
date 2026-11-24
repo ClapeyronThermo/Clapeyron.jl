@@ -335,7 +335,7 @@ function FlashResult(env::CEMEnvelope,fluid,p,T,z,ws::Solvers.EnvelopeWorkspace,
     comps,β,vols,states = cem_phases(env,fluid,p,T,ws.B,ws.λ,stable)
     g = dot(ws.λ,@view(env.lp.g[ws.B])) + dot(z,env.gpure)
     vapour_idx = something(findlast(==(CEM_VAPOUR),states),-1) #largest volume
-    return FlashResult(comps,β,vols,FlashData(p,T,g,vapour_idx))
+    return FlashResult(comps,β,vols,FlashData(p,T,g,vapour_idx,something(findfirst(==(CEM_SOLID),states),-1)))
 end
 
 ## phase diagram

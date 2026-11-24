@@ -79,7 +79,7 @@ function cem_polish(model,fluid,p,T,z,result,method::TPFlashMethod,lnf_tol)
     end
     #the discrete envelope lies above the exact one: a correct refinement can only lower g
     g0,g1 = result.data.g,cem_equilibrium_gibbs(fluid,p,T,z,polished,lnf_tol)
-    return g1 <= g0 + 1e-10*(1 + abs(g0)) ? polished : result
+    return g1 <= g0 + 1e-10*(1 + abs(g0)) ? FlashResult(polished,sort = false,solid_phase_index = -1) : result
 end
 
 #=
