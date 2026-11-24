@@ -104,7 +104,6 @@ function __μpr(model, T, ρ, cache)
     return μ_res, p_res
 end
 
-
 # Function to compute fugacity coefficient
 function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
             phase=:unknown,

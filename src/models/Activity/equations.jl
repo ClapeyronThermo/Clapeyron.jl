@@ -245,11 +245,21 @@ end
 function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
     nc = length(z)
     RT = Rgas(model)*T
+
+    if cache isa ∂lnϕCache && nc == length(cache.aux)
+        #cannot obtain this in one function call, so use two function calls instead
+        ∂lnγ∂Ti = ∂lnγ∂T(model,p,T,z,cache)
+        g_E,lnγ,∂lnγ∂ni = ∂lnγ∂n(model,p,T,z,cache)
+        return g_E,lnγ,∂lnγ∂ni,∂lnγ∂Ti
+    end
+
     fun_g(w) = excess_gibbs_free_energy(model,p,w[nc+1],@view(w[1:nc]))/(Rgas(model)*w[nc + 1])
+    
     function fun_lnγ(out,w)
         Clapeyron.lnγ(model,p,w[nc+1],@view(w[1:nc]),@view(out[1:nc]))
         return out
     end
+
     if cache === nothing
         if has_lnγ_impl(model)
             lnγ = zeros(Base.promote_eltype(model,p,T,z),nc)
@@ -338,7 +348,6 @@ function ∂lnγ∂T(model,p,T,z,cache = nothing)
         else
             aux .= 0
             aux[1:nc] = z
-            aux[nc+1] = T
             gconfig = Solvers._GradientConfig(hconfig)
             _result = ForwardDiff.gradient!(result, dgEdt, aux, gconfig, Val{false}())
             dresult = DiffResults.gradient(_result)
