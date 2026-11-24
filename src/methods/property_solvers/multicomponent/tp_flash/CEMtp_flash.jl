@@ -12,7 +12,7 @@ If a `CEMDiagram` obtained with [`phase_diagram`](@ref) is passed via `diagram`,
 ## Keyword arguments
 - `δ`: number of divisions of the composition axes. By default, `256`, `128` and `64` for binary, ternary and quaternary mixtures (as in [1]), and `32` for more components (smaller for more than six components, at most ~5⋅10⁵ grid points). Ignored if `diagram` is given.
 - `equilibrium`: `:auto` considers liquid and vapour phases, `:lle` only liquid phases. Ignored if `diagram` is given.
-- `polish`: `TPFlashMethod` used to refine the CEM phases (initialized with the CEM result), or `nothing` to return the CEM result. The refined result is only accepted if its phases are in equilibrium and it has a lower Gibbs energy than the CEM result. If `MichelsenTPFlash` is given and the CEM finds more than two phases, a `MultiPhaseTPFlash` with the same tolerances is used. Results with solid phases are not refined (the local methods do not handle solids).
+- `polish`: `TPFlashMethod` used to refine the CEM phases (initialized with the CEM result), or `nothing` to return the CEM result. The refined result is only accepted if its phases are in equilibrium and it has a lower Gibbs energy than the CEM result. If `MichelsenTPFlash` is given and the CEM finds more than two phases, a `MultiPhaseTPFlash` with the same tolerances is used. Results with solid phases are refined with a `MultiPhaseTPFlash` that includes the solid phases (with the tolerances of `polish` if it is a `MichelsenTPFlash` or `MultiPhaseTPFlash`), starting from the CEM solids.
 - `threaded`: evaluate the grid in parallel.
 - `diagram`: a precomputed `CEMDiagram`.
 - `λ_tol`: vertices of a facet with a smaller weight are not part of the phase split. Ignored if `diagram` is given.
@@ -62,11 +62,45 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::CEMFlash)
     Solvers.envelope_reset!(ws,env.lp,zf)
     Solvers.envelope_lp!(ws,env.lp,zf)
     result = FlashResult(env,fluid,p,T,zf,ws,stable)
-    cem_has_solid(env,ws) && return result
+    cem_has_solid(env,ws) && return cem_polish_solid(model,fluid,p,T,zf,result,method.polish,method.lnf_tol)
     return cem_polish(fluidmodel,fluid,p,T,zf,result,method.polish,method.lnf_tol)
 end
 
 cem_polish(model,fluid,p,T,z,result,::Nothing,lnf_tol) = result
+
+cem_polish_solid(model,fluid,p,T,z,result,::Nothing,lnf_tol) = result
+
+#solid phases: MultiPhaseTPFlash with solids, starting from the solids (and their amounts) of the CEM result
+function cem_polish_solid(model,fluid,p,T,z,result,method::TPFlashMethod,lnf_tol)
+    is = result.data.solid_idx
+    active,s = Int[],Float64[]
+    for i in is:numphases(result)
+        for j in 1:length(model.solid)
+            idx,ν = sle_mapping(model,j)
+            x = zeros(length(z))
+            x[idx] .= ν ./ sum(ν)
+            if isapprox(x,result.compositions[i])
+                push!(active,j)
+                push!(s,result.fractions[i]/sum(ν))
+                break
+            end
+        end
+    end
+    polished = try
+        tp_flash_multi_solid(model,p,T,z,cem_solid_polish_method(method),active,s)
+    catch
+        return result
+    end
+    nf = polished.data.solid_idx > 0 ? polished.data.solid_idx - 1 : numphases(polished)
+    fluid_res = FlashResult(polished.compositions[1:nf],polished.fractions[1:nf],polished.volumes[1:nf],FlashData(p,T,NaN,polished.data.vapour_idx))
+    isnan(cem_equilibrium_gibbs(fluid,p,T,z,fluid_res,lnf_tol)) && return result
+    g0,g1 = result.data.g,polished.data.g
+    return g1 <= g0 + 1e-10*(1 + abs(g0)) ? polished : result
+end
+
+cem_solid_polish_method(m::MultiPhaseTPFlash) = m
+cem_solid_polish_method(m::MichelsenTPFlash) = MultiPhaseTPFlash(;K_tol = m.K_tol,ss_iters = m.ss_iters,nacc = m.nacc,second_order = m.second_order,verbose = m.verbose)
+cem_solid_polish_method(m::TPFlashMethod) = MultiPhaseTPFlash()
 
 function cem_polish(model,fluid,p,T,z,result,method::TPFlashMethod,lnf_tol)
     numphases(result) < 2 && return result

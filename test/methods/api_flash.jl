@@ -389,6 +389,28 @@
         @test only(phase_diagram(model,5e5,180.0).facets).states == [:vapour,:solid]
         @test_throws ArgumentError phase_diagram(SAFTVREMie(["water"],["sodium","chloride"]),1e5,298.15)
     end
+
+    @testset "Multiphase algorithm, solids" begin
+        model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid=UNIFAC,solid=SolidHfus)
+        p,T = 1e5,275.0
+        x_sle = sle_solubility(model,p,T,[1.,1.];solute=["thymol"])
+        res = Clapeyron.tp_flash2(model,p,T,[0.5,0.5],MultiPhaseTPFlash())
+        @test res.data.solid_idx == 2 && res.compositions[2] == [0.0,1.0]
+        @test res.compositions[1] ≈ x_sle rtol = 1e-6
+        @test Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash()).compositions[1] ≈ x_sle rtol = 1e-6
+        @test Clapeyron.tp_flash2(model,p,330.0,[0.5,0.5],MultiPhaseTPFlash()).data.solid_idx == -1
+        @test_throws ArgumentError Clapeyron.tp_flash2(model,p,250.0,[0.5,0.5],MultiPhaseTPFlash())
+
+        model = CompositeModel(["water","ethanol"];liquid = UNIFAC,fluid = PR,solid = IAPWS06(),mapping = [(("water",1),) => ("water",1)])
+        res = Clapeyron.tp_flash2(model,p,263.15,[0.95,0.05],MultiPhaseTPFlash())
+        @test res.compositions[1] ≈ sle_solubility(model,p,263.15,[0.,1.];solute = ["water"]) rtol = 1e-6
+        @test res.volumes[2] ≈ volume(IAPWS06(),p,263.15)
+
+        model = CompositeModel(["carbon dioxide","methane"];fluid = PR,solid = JagerSpanSolidCO2(),mapping = [(("carbon dioxide",1),) => ("carbon dioxide",1)])
+        res = Clapeyron.tp_flash2(model,5e5,180.0,[0.5,0.5],MultiPhaseTPFlash())
+        @test res.data.vapour_idx == 1 && res.data.solid_idx == 2
+        @test res.data.g < Clapeyron.tp_flash2(model,5e5,180.0,[0.5,0.5],CEMFlash(polish = nothing)).data.g
+    end
 end
 
 @testset verbose = true "XY flash" begin

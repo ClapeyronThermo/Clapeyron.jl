@@ -24,6 +24,8 @@ The algorithm finishes when SS or the Gibbs minimization converges and all resul
 
 If the result of the phase equilibria is not stable, then it proceeds to add/remove phases again, for a maximum of `phase_iters` iterations.
 
+For a `CompositeModel` with a solid model, the solids (stoichiometric compounds of the fluid components given by the mapping) are added and removed in an outer loop until all of them are stable, the fluid phases are solved on the remaining feed. At least one fluid phase has to be present, use [`CEMFlash`](@ref) otherwise.
+
 ## Keyword Arguments:
 
 - `K0` (optional), initial guess for the constants K.
