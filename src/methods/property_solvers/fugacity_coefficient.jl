@@ -84,7 +84,7 @@ function __μpr(model, T, ρ, cache)
     if cache isa ∂lnϕCache
         aux = cache.aux
         ρᵢ = @view aux[1:nc]
-        ρᵢ .= rhovec
+        ρᵢ .= ρ
         gconfig = Solvers._GradientConfig(cache.hconfig)
         _result = ForwardDiff.gradient!(cache.result, Ψ, aux, gconfig, Val{false}())
     else
