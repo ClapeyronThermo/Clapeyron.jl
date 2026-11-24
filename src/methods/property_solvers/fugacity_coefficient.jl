@@ -89,7 +89,7 @@ function __μpr(model, T, ρ, cache)
         _result = ForwardDiff.gradient!(cache.result, Ψ, aux, gconfig, Val{false}())
     else
         if cache isa AbstractVector
-            result = MutableDiffResult(zero(eltype(cache)), (cache,))
+            result = DiffResults.MutableDiffResult(zero(eltype(cache)), (cache,))
         else
             result = DiffResults.GradientResult(ρ)
         end
@@ -256,20 +256,19 @@ end
 function __lnϕ_core!(model, T, rhovec, cache, mup_hess_fn::F) where F
     μ, p_res, H, dptotdT = mup_hess_fn(model, T, rhovec, cache)
     ρ = sum(rhovec)
-    p_over_RT = ρ + p_res #p/RT
-    lnZr = log(p_over_RT/ρ)
+    lnZ = log1p(p_res/ρ)
     if cache === nothing
         a = similar(μ)
         if ismutable(μ)
-            μ .= μ .- lnZr
+            μ .= μ .- lnZ
             lnϕ = μ
         else
-            lnϕ = μ .- lnZr
+            lnϕ = μ .- lnZ
         end
     else
         a = cache.∂P∂n
         lnϕ = cache.lnϕ
-        lnϕ .= μ .- lnZr
+        lnϕ .= μ .- lnZ
     end
 
     #a = ∂(p/RT)/∂ρ = 1 + Hρ. returns a·ρ.
@@ -283,7 +282,7 @@ function __lnϕ_core!(model, T, rhovec, cache, mup_hess_fn::F) where F
         aρ += ai*ρ[i]
     end
 
-    return p_over_RT, aρ, H, lnϕ, a, dptotdT
+    return p_res, aρ, H, lnϕ, a, dptotdT
 end
 
 _dlnϕdT!(cache::∂lnϕCache, a, H, T, p_over_RT, aρ, dptotdT) = _dlnϕdT!(cache.∂lnϕ∂T, a, H, T, p_over_RT, aρ, dptotdT)
@@ -338,7 +337,8 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(
 
     n = sum(z)
     RT = Rgas(model)*T
-    p_over_RT, aρ, H, lnϕ, a, _ = __lnϕ_core!(model, T, rhovec, cache, __μpr_hess)
+    p_over_RT = p/RT
+    _, aρ, H, lnϕ, a, _ = __lnϕ_core!(model, T, rhovec, cache, __μpr_hess)
     ∂lnϕ∂n, ∂lnϕ∂P = _dlnϕdnP!(cache, a, H, RT, p_over_RT, aρ, vol, n)
     return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, vol
 end
@@ -373,7 +373,7 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
         ∂lnϕ∂P = cache.∂lnϕ∂P
     end
 
-    p_over_RT = ρt + DiffResults.value(_result)
+    p_over_RT = p/RT
     for i in 1:nc
         ∂lnϕ∂P[i] = ((1 + ∇pᵣ[i])/aρ - 1/p_over_RT)/RT
     end
@@ -381,16 +381,20 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
     return ∂lnϕ∂P, vol
 end
 
-function __dlnρdT(model, T, rhovec)
+function __dlnρdT(model, T, rhovec, p_over_RT == nothing)
     ρt = sum(rhovec)
     function ψ(_ρ, _T)
         _v = 1/_ρ
         return _ρ*ρt*a_res(model, _v, _T, rhovec)
     end
     ψx, g, Hψ = Solvers.∂2(ψ, one(T), T)
-    p_over_RT = ρt + g[1] - ψx
     aρ = ρt + Hψ[1, 1]
     dptotdT = Hψ[1, 2] - g[2]
+    if p_over_RT === nothing
+        _p_over_RT = ρt + g[1] - ψx 
+    else
+        _p_over_RT = p_over_RT
+    end
     return -(p_over_RT/T + dptotdT)/aρ
 end
 
@@ -409,7 +413,7 @@ function ∂lnϕ∂T(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
         rhovec .= z ./ vol
     end
 
-    s = __dlnρdT(model, T, rhovec)
+    s = __dlnρdT(model, T, rhovec,p/(Rgas(model)*T))
 
     #T-derivative of ρₜ·a_res along the isobar, differentiated w.r.t. ρ
     function Φ(x)
@@ -465,7 +469,8 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
 
     n = sum(z)
     RT = Rgas(model)*T
-    p_over_RT, aρ, H, lnϕ, a, dptotdT = __lnϕ_core!(model, T, rhovec, cache, __μprT_hess)
+    p_over_RT = p/RT
+    _, aρ, H, lnϕ, a, dptotdT = __lnϕ_core!(model, T, rhovec, cache, __μprT_hess)
     ∂lnϕ∂n, ∂lnϕ∂P = _dlnϕdnP!(cache, a, H, RT, p_over_RT, aρ, vol, n)
     ∂lnϕ∂T = _dlnϕdT!(cache, a, H, T, p_over_RT, aρ, dptotdT)
     return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, ∂lnϕ∂T, vol
@@ -527,7 +532,8 @@ function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = no
 
     n = sum(z)
     RT = Rgas(model)*T
-    p_over_RT, aρ, H, lnϕ, a, _ = __lnϕ_core!(model, T, rhovec, cache, __μpr_hess)
+    p_over_RT = p/RT
+    _, aρ, H, lnϕ, a, _ = __lnϕ_core!(model, T, rhovec, cache, __μpr_hess)
     ∂lnϕ∂n = _dlnϕdn!(cache, a, H, RT, p_over_RT, aρ, vol, n)
     return lnϕ, ∂lnϕ∂n, vol
 end

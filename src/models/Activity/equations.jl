@@ -268,9 +268,9 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             aux[nc+1] = T
             ∂g_E = ForwardDiff.jacobian(fun_lnγ,lnγ,aux)
             ∂lnγ∂ni = ∂g_E[1:nc,1:nc]
-            ∂lnγ∂T = ∂g_E[1:nc,nc + 1]
+            ∂lnγ∂T_out = ∂g_E[1:nc,nc + 1]
             g_E = dot(z,lnγ)*RT
-            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T_out
         else
             aux = vcat(z,T)
             hresult = DiffResults.HessianResult(aux)
@@ -282,15 +282,15 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
 
             ∂lnγ∂ni∂T = DiffResults.hessian(result)
             ∂lnγ∂ni = ∂lnγ∂ni∂T[1:nc,1:nc]
-            ∂lnγ∂T = ∂lnγ∂ni∂T[1:nc,nc + 1]
-            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+            ∂lnγ∂T_out = ∂lnγ∂ni∂T[1:nc,nc + 1]
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T_out
         end
     else
         #result,aux,lnγ,∂lnγ∂ni,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache
 
         # NOTE: intentionally bind ∂lnγ∂T to the ∂P∂n slot (unused by GE models), not ∂lnϕ∂T,
         # since ∂lnϕ∂T aliases lnγ when the cache was built with Val(false).
-        result,aux,lnγ,∂lnγ∂ni,_,∂lnγ∂T,_,hconfig,jcache = cache
+        result,aux,lnγ,∂lnγ∂ni,_,∂lnγ∂T_out,_,hconfig,jcache = cache
         aux .= 0
         aux[1:nc] .= z
         aux[nc+1] = T
@@ -301,11 +301,11 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             _result = ForwardDiff.jacobian!(jresult,fun_lnγ,jcache,aux,jconfig,Val{false}())
             ∂lnγ = DiffResults.jacobian(_result)
             ∂lnγ∂ni .=  @view ∂lnγ[1:nc,1:nc]
-            ∂lnγ∂T .= @view ∂lnγ[1:nc,nc + 1]
+            ∂lnγ∂T_out .= @view ∂lnγ[1:nc,nc + 1]
             ∂g_E = DiffResults.value(_result)
             lnγ .= @view ∂g_E[1:nc]
             g_E = dot(z,lnγ)*RT
-            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T_out
         else
             _result = ForwardDiff.hessian!(result, fun_g, aux, hconfig, Val{false}())
             g_E = DiffResults.value(_result)*RT
@@ -313,8 +313,8 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             lnγ .= @view ∂g_E[1:nc]
             ∂lnγ = DiffResults.hessian(_result)
             ∂lnγ∂ni .= @view ∂lnγ[1:nc,1:nc]
-            ∂lnγ∂T .= @view ∂lnγ[1:nc,nc + 1]
-            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+            ∂lnγ∂T_out .= @view ∂lnγ[1:nc,nc + 1]
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T_out
         end
     end
 end
