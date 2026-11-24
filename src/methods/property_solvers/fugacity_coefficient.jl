@@ -1,3 +1,92 @@
+struct ∂lnϕTag end
+
+struct ∂lnϕCache{TAG,T,N}
+    result::DiffResults.MutableDiffResult{2, T, Tuple{Vector{T}, Matrix{T}}}
+    aux::Vector{T}
+    lnϕ::Vector{T}
+    ∂lnϕ∂n::Matrix{T}
+    ∂lnϕ∂P::Vector{T}
+    ∂P∂n::Vector{T}
+    ∂lnϕ∂T::Vector{T}
+    hconfig::ForwardDiff.HessianConfig{TAG,T,N,Vector{ForwardDiff.Dual{TAG, ForwardDiff.Dual{TAG, T, N}, N}},NTuple{2,Vector{ForwardDiff.Dual{TAG, T, N}}}}
+    jcache::Vector{T}
+    dlnγdT_cache::Vector{ForwardDiff.Dual{TAG,T,1}}
+end
+
+function Base.show(io::IO,cache::∂lnϕCache)
+    nc = length(cache.lnϕ)
+    na = length(cache.aux)
+    ∂T = na - nc == 1
+    ∂γ∂T = !iszero(length(cache.dlnγdT_cache))
+    print(io,typeof(cache))
+    print(io,"(nc = ",nc)
+    ∂T && print(io,", ∂T = ",∂T)
+    ∂γ∂T && print(io,", ∂γ∂T = ",∂γ∂T)
+    print(io,")")
+end
+
+@inline _cache_tuple(c::∂lnϕCache) = (c.result, c.aux, c.lnϕ, c.∂lnϕ∂n, c.∂lnϕ∂P, c.∂P∂n,
+                                      c.∂lnϕ∂T, c.hconfig, c.jcache, c.dlnγdT_cache)
+Base.length(::∂lnϕCache) = 10
+Base.iterate(c::∂lnϕCache) = iterate(_cache_tuple(c))
+Base.iterate(c::∂lnϕCache, state) = iterate(_cache_tuple(c), state)
+Base.indexed_iterate(c::∂lnϕCache, i::Int, state = 1) = Base.indexed_iterate(_cache_tuple(c), i, state)
+Base.getindex(c::∂lnϕCache,i::Int) = getfield(c,i)
+
+function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
+    TT = Base.promote_eltype(model,p,T,z)
+    nc = length(model)
+    lnϕ = zeros(TT,nc)
+    aux = zeros(TT,nc + B)
+    ∂lnϕ∂n = lnϕ * transpose(lnϕ)
+    result = DiffResults.HessianResult(aux)
+    ∂lnϕ∂n = lnϕ * transpose(lnϕ)
+    ∂lnϕ∂P = similar(lnϕ)
+    ∂P∂n = similar(lnϕ)
+    hconfig = ForwardDiff.HessianConfig(∂lnϕTag(),result,aux)
+    ∂tag = ForwardDiff.tagtype(hconfig.jacobian_config.duals[1][1])
+    if has_lnγ_impl(__γ_unwrap(model))
+        jcache = similar(aux)
+        dlnγdT_cache = Vector{ForwardDiff.Dual{∂tag,TT,1}}(undef,nc)
+    else
+        jcache = aux
+        dlnγdT_cache = Vector{ForwardDiff.Dual{∂tag,TT,1}}(undef,0)
+    end
+    if B
+        ∂lnϕ∂T = similar(lnϕ)
+    else
+        ∂lnϕ∂T = lnϕ
+    end
+    return ∂lnϕCache(result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache)
+end
+
+#returns μ_res/RT and p_res/RT from isochoric derivatives of Ψ = A_res/(RT·V), V = 1.
+function __μpr(model, T, rhovec, cache)
+    nc = length(model)
+    function Ψ(xx)
+        ρ = @view xx[1:nc]
+        return sum(ρ)*a_res(model, 1.0, T, ρ)
+    end
+
+    if cache === nothing
+        result = DiffResults.GradientResult(rhovec)
+        _result = ForwardDiff.gradient!(result, Ψ, rhovec)
+        ρᵢ = rhovec
+    else
+        aux = cache.aux
+        ρᵢ = @view aux[1:nc]
+        ρᵢ .= rhovec
+        gconfig = Solvers._GradientConfig(cache.hconfig)
+        _result = ForwardDiff.gradient!(cache.result, Ψ, aux, gconfig, Val{false}())
+    end
+
+    Ψr = DiffResults.value(_result)
+    μ_res = @view DiffResults.gradient(_result)[1:nc]
+    p_res = dot(μ_res, ρᵢ) - Ψr
+    return μ_res, p_res
+end
+
+
 # Function to compute fugacity coefficient
 function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
             phase=:unknown,
@@ -12,7 +101,7 @@ function lnϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
 
     if cache isa Vector
         return lnϕ!(cache, model, p, T, z; vol)
-    elseif cache isa Tuple
+    elseif cache isa ∂lnϕCache
         result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
         if nc == 1
             lnϕ[1] = VT_∑zlogϕ(model,vol/∑z,T,SA[1.0],p)
@@ -51,7 +140,7 @@ function lnϕ(model::IdealModel, p, T, z=SA[1.],cache = nothing;
     return lnϕ, vol
 end
 
-function lnϕ!(cache::Tuple, model::EoSModel, p, T, z=SA[1.];
+function lnϕ!(cache::∂lnϕCache, model::EoSModel, p, T, z=SA[1.];
             phase=:unknown,
             vol0=nothing,
             threaded = true,
@@ -70,29 +159,27 @@ function lnϕ!(cache::Nothing, model::EoSModel, p, T, z=SA[1.];
     return lnϕ(model,p,T,z;vol)
 end
 
-function lnϕ!(lnϕ::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = nothing;
+function lnϕ!(lnϕ_vec::AbstractVector, model::EoSModel, p, T, z=SA[1.],cache = nothing;
             phase=:unknown,
             vol0=nothing,
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
     if is_idealmodel(model)
-        lnϕ .= 0
-        return lnϕ,vol
+        lnϕ_vec .= 0
+        return lnϕ_vec,vol
     end
 
     if cache !== nothing
-        lnϕ(model,p,T,z,cache;vol)
-        result,aux,lnϕw,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
-        vol = aux[1]
-        lnϕ .= lnϕw
+        lnϕx, _, = lnϕ(model,p,T,z,cache;vol)
+        lnϕ_vec .= lnϕx
     else
         RT = Rgas(model)*T
-        μ_res = VT_chemical_potential_res!(lnϕ,model, vol, T, z)
+        μ_res = VT_chemical_potential_res!(lnϕ_vec, model, vol, T, z)
         Z = p*vol/RT/sum(z)
-        lnϕ .= μ_res ./ RT .- log(Z)
+        lnϕ_vec .= μ_res ./ RT .- log(Z)
     end
-    return lnϕ, vol
+    return lnϕ_vec, vol
 end
 
 function ∑zlogϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
@@ -104,32 +191,120 @@ function ∑zlogϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
     return VT_∑zlogϕ(model,vol,T,z,p),vol
 end
 
-struct ∂lnϕTag end
+#μ_res/RT, p_res/RT and the Hessian of Ψ over the nc densities.
+function __μpr_hess(model, T, rhovec, cache)
+    nc = length(model)
+    Ψ(xx) = sum(@view(xx[1:nc]))*a_res(model, 1.0, T, @view(xx[1:nc]))
 
-function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
-    TT = Base.promote_eltype(model,p,T,z)
-    lnϕ = zeros(TT,length(model))
-    aux = zeros(TT,length(model) + 1 + B)
-    ∂lnϕ∂n = lnϕ * transpose(lnϕ)
-    result = DiffResults.HessianResult(aux)
-    ∂lnϕ∂n = lnϕ * transpose(lnϕ)
-    ∂lnϕ∂P = similar(lnϕ)
-    ∂P∂n = similar(lnϕ)
-    hconfig = ForwardDiff.HessianConfig((∂lnϕTag(),model,p,T,z),result,aux)
-    ∂tag = ForwardDiff.tagtype(hconfig.jacobian_config.duals[1][1])
-    if has_lnγ_impl(__γ_unwrap(model))
-        jcache = similar(aux)
-        dlnγdT_cache = Vector{ForwardDiff.Dual{∂tag,TT,1}}(undef,length(model))
+    if cache === nothing
+        result = DiffResults.HessianResult(rhovec)
+        _result = ForwardDiff.hessian!(result, Ψ, rhovec)
     else
-        jcache = aux
-        dlnγdT_cache = Vector{ForwardDiff.Dual{∂tag,TT,1}}(undef,0)
+        aux = cache.aux
+        rhovec_aux = @view aux[1:nc]
+        rhovec_aux .= rhovec
+        _result = ForwardDiff.hessian!(cache.result, Ψ, aux, cache.hconfig, Val{false}())
     end
-    if B
-        ∂lnϕ∂T = similar(lnϕ)
+
+    μ_res = @view DiffResults.gradient(_result)[1:nc]
+    H = @view DiffResults.hessian(_result)[1:nc, 1:nc]
+    p_res = dot(μ_res, rhovec) - DiffResults.value(_result)
+    return μ_res, p_res, H, zero(p_res)
+end
+
+#μ_res/RT, p_res/RT, the Hessian of Ψ, and ∂(p_res/RT)/∂T; over the nc densities.
+function __μprT_hess(model, T, rhovec, cache)
+    nc = length(model)
+   
+    function Ψ(xx)
+        ρᵢ = @view xx[1:nc]
+        T = xx[nc + 1]
+        ρ = sum(ρᵢ)
+        return ρ*a_res(model, 1.0, T, ρᵢ)
+    end
+
+    if cache === nothing
+        aux = vcat(rhovec, T)
+        result = DiffResults.HessianResult(aux)
+        _result = ForwardDiff.hessian!(result, Ψ, aux)
     else
-        ∂lnϕ∂T = lnϕ
+        aux = cache.aux
+        rhovec_aux = @view aux[1:nc]
+        rhovec_aux .= rhovec
+        aux[nc+1] = T
+        _result = ForwardDiff.hessian!(cache.result, Ψ, aux, cache.hconfig, Val{false}())
     end
-    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache
+
+    ∇Ψ = DiffResults.gradient(_result)
+    μ_res = @view ∇Ψ[1:nc]
+    H = @view DiffResults.hessian(_result)[1:nc+1, 1:nc+1]
+    p_res = dot(μ_res, rhovec) - DiffResults.value(_result)
+    dpdT = -∇Ψ[nc+1]
+    for i in 1:nc
+        dpdT += rhovec[i]*H[i, nc+1]
+    end
+    return μ_res, p_res, H, dpdT
+end
+
+#fills lnϕ and a (in the cache, if available). returns p/RT, a·ρ, the Hessian view, ∂(p/RT)/∂T|ρ.
+function __lnϕ_core!(model, T, rhovec, cache, mup_hess_fn::F) where F
+    μ, p_res, H, dptotdT = mup_hess_fn(model, T, rhovec, cache)
+    ρ = sum(rhovec)
+    p_over_RT = ρ + p_res #p/RT
+    lnZr = log(p_over_RT/ρ)
+    if cache === nothing
+        a = similar(μ)
+        if ismutable(μ)
+            μ .= μ .- lnZr
+            lnϕ = μ
+        else
+            lnϕ = μ .- lnZr
+        end
+    else
+        a = cache.∂P∂n
+        lnϕ = cache.lnϕ
+        lnϕ .= μ .- lnZr
+    end
+
+    #a = ∂(p/RT)/∂ρ = 1 + Hρ. returns a·ρ.
+    aρ = zero(eltype(a))
+    for i in eachindex(ρ)
+        ai = one(eltype(a))
+        for k in eachindex(rhovec)
+            ai += H[i, k]*rhovec[k]
+        end
+        a[i] = ai
+        aρ += ai*ρ[i]
+    end
+
+    return p_over_RT, aρ, H, lnϕ, a, dptotdT
+end
+
+_dlnϕdT!(cache::∂lnϕCache, a, H, T, p_over_RT, aρ, dptotdT) = _dlnϕdT!(cache.∂lnϕ∂T, a, H, T, p_over_RT, aρ, dptotdT)
+_dlnϕdT!(::Nothing, a, H, T, p_over_RT, aρ, dptotdT) = _dlnϕdT!(similar(a), a, H, T, p_over_RT, aρ, dptotdT)
+
+function _dlnϕdT!(∂lnϕ∂T, a, H, T, p_over_RT, aρ, dptotdT)
+    nc = length(a)
+    s = -(p_over_RT/T + dptotdT)/aρ
+    for i in 1:nc
+        ∂lnϕ∂T[i] = H[i, nc+1] + 1/T + s*a[i]
+    end
+    return ∂lnϕ∂T
+end
+
+_dlnϕdnP!(cache::∂lnϕCache,a,H,RT,p_over_RT,ap,vol,n) = _dlnϕdnP!(cache.∂lnϕ∂n,cache.∂lnϕ∂P,a,H,RT,p_over_RT,ap,vol,n)
+
+function _dlnϕdnP!(∂lnϕ∂n, ∂lnϕ∂P, a, H, RT, p_over_RT, aρ, vol, n)
+    ninv = 1/n
+    nc = length(a)
+    for i in 1:nc
+        ai_aρ = a[i]/aρ
+        ∂lnϕ∂P[i] = (ai_aρ - 1/p_over_RT)/RT
+        for j in 1:nc
+            ∂lnϕ∂n[i, j] = (H[i, j] - a[j]*ai_aρ)/vol + ninv
+        end
+    end
+    return ∂lnϕ∂n, ∂lnϕ∂P
 end
 
 # Function to compute fugacity coefficient and its pressure and composition derivatives
@@ -139,44 +314,20 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
-    RT = Rgas(model)*T
-    V = vol
-    n = sum(z)
-    Z = p*V/RT/n
-
-    ncomponents = length(z)
-    F_res(model, V, T, z) = eos_res(model, V, T, z) / RT
-    fun(aux) = F_res(model, aux[1], T, @view(aux[2:(ncomponents+1)]))
-
-
-    aux[1] = V
-    aux[2:end] = z
-    result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
-
-    #F = DiffResults.value(result)
-    ∂F = DiffResults.gradient(result)
-    ∂2F = DiffResults.hessian(result)
-
-    #∂F∂V = ∂F[1]
-    ∂F∂n = @view ∂F[2:(ncomponents+1)]
-
-    ∂2F∂V2 = ∂2F[1, 1]
-    ∂2F∂n2 = @view ∂2F[2:(ncomponents+1), 2:(ncomponents+1)]
-    ∂2F∂n∂V = @view ∂2F[1, 2:(ncomponents+1)]
-
-    ∂P∂V = -RT*∂2F∂V2 - n*RT/V^2
-    ∂P∂n .= - RT .* ∂2F∂n∂V .+ RT ./ V
-    lnϕ .= ∂F∂n .- log(Z)
-    for i in 1:ncomponents
-        ∂P∂ni = ∂P∂n[i]
-        ∂V∂ni = - ∂P∂ni/∂P∂V
-        ∂lnϕ∂P[i] = ∂V∂ni/RT - 1/p
-        for j in 1:ncomponents
-            ∂lnϕ∂n[i,j] = ∂2F∂n2[i,j] + 1/n + (∂P∂ni * ∂P∂n[j])/∂P∂V/RT
-        end
+    nc = length(model)
+    if cache === nothing
+        rhovec = z ./ vol
+    else
+        aux = cache.aux
+        rhovec = @view aux[1:nc]
+        rhovec .= z ./ vol
     end
-    return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, V
+
+    n = sum(z)
+    RT = Rgas(model)*T
+    p_over_RT, aρ, H, lnϕ, a, _ = __lnϕ_core!(model, T, rhovec, cache, __μpr_hess)
+    ∂lnϕ∂n, ∂lnϕ∂P = _dlnϕdnP!(cache, a, H, RT, p_over_RT, aρ, vol, n)
+    return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, vol
 end
 
 # Function to compute fugacity coefficient pressure derivatives
@@ -188,37 +339,51 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
 
     RT = Rgas(model)*T
     nc = length(z)
-    if cache === nothing
-        f1(w) = pressure_res(model,vol,T,w)
-        ∇pᵣ = ForwardDiff.gradient(f1,z)
-        ∂lnϕ∂P = ∇pᵣ
-        _,∂p∂V = p∂p∂V(model,vol,T,z)
-        ∂V∂p = -1/∂p∂V
-        ∂lnϕ∂P .= ∂V∂p .* ∇pᵣ ./ RT .- (1/p) .+ (∂V∂p/vol)
-        return ∂lnϕ∂P,vol
+
+    function pᵣ(x)
+        _z = @view x[1:nc]
+        _v = x[nc + 1]
+        return pressure_res(model,_v,T,_z) 
     end
 
-    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
-    aux .= 0
-    aux[nc+1] = vol
-    aux[1:nc] = z
-    gconfig = Solvers._GradientConfig(hconfig)
-    fun(aux) = pressure_res(model,aux[nc+1],T,aux[1:nc])
-    _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
-    dresult = DiffResults.gradient(_result)
-    ∇pᵣ = @view dresult[1:nc]
-    ∂pᵣ∂V = dresult[nc+1]
+    if cache === nothing
+        aux = zeros(Base.promote_eltype(z,vol),nc + 1)
+        xx = @view aux[1:nc]
+        xx .= z
+        xx[end] = vol
+        ∂pᵣ = ForwardDiff.gradient(pᵣ, aux)
+        resize!(aux,nc)
+        ∂lnϕ∂P = aux
+    else
+        aux = cache.aux
+        xx = @view aux[1:nc]
+        xx .= z
+        aux[nc+1] = vol
+        gconfig = Solvers._GradientConfig(cache.hconfig)
+        _result = ForwardDiff.gradient!(cache.result, pᵣ, aux, gconfig, Val{false}())
+        ∂pᵣ = DiffResults.gradient(_result)
+        ∂lnϕ∂P = cache.∂lnϕ∂P
+    end
+
+    ∇pᵣ = @view ∂pᵣ[1:nc]
+    ∂pᵣ∂V = ∂pᵣ[nc+1]
     ∂p∂V = ∂pᵣ∂V - sum(z)*RT/(vol*vol)
     ∂V∂p = -1/∂p∂V
     ∂lnϕ∂P .= ∂V∂p .* ∇pᵣ ./ RT .- (1/p) .+ (∂V∂p/vol)
     return ∂lnϕ∂P,vol
 end
 
-na_res(model,V,T,z) = sum(z)*a_res(model,V,T,z)
-
-function dardT(model,V,T,z)
-    f = @deferred_T(na_res,∂₁f)
-    return Solvers.derivative(f,T)
+function __dlnρdT(model, T, rhovec)
+    ρt = sum(rhovec)
+    function ψ(_ρ, _T)
+        _v = 1/_ρ
+        return _ρ*ρt*a_res(model, _v, _T, rhovec)
+    end
+    ψx, g, Hψ = Solvers.∂2(ψ, one(T), T)
+    p_over_RT = ρt + g[1] - ψx
+    aρ = ρt + Hψ[1, 1]
+    dptotdT = Hψ[1, 2] - g[2]
+    return -(p_over_RT/T + dptotdT)/aρ
 end
 
 # Function to compute fugacity coefficient temperature derivatives
@@ -228,45 +393,35 @@ function ∂lnϕ∂T(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-    RT = Rgas(model)*T
-    fun_T(w) = dardT(model,vol,T,w)
-    fun_v(w) = -pressure_res(model,vol,T,w)/RT
+    nc = length(model)
     if cache === nothing
-        ∇sᵣ = ForwardDiff.gradient(fun_T,z)
-        ∇pᵣ = ForwardDiff.gradient(fun_v,z)
-        d2A = f_hess(model,vol,T,z)
-        ∂p∂V = -d2A[1,1]
-        ∂p∂T = -d2A[1,2]
-        ∂V∂T = -∂p∂T/∂p∂V
-        ∂lnZ∂T = ∂V∂T/vol - 1/T
-        return ∇sᵣ .- ∇pᵣ .* ∂p∂T ./ ∂p∂V .- ∂lnZ∂T,vol
+        rhovec = z ./ vol
     else
-        n = sum(z)
-        nc = length(z)
-        result,aux,lnϕ,∂lnϕ∂n,∇pᵣ,∇sᵣ,∂lnϕ∂T,hconfig = cache
-        aux .= 0
-        aux[1:nc] = z
-        aux[nc+1] = vol
-        aux[nc+2] = T
-        fun_v2(aux) = -pressure_res(model,aux[nc+1],aux[nc+2],@view(aux[1:nc]))/(Rgas(model)*aux[nc+2])
-        fun_t2(aux) = dardT(model,vol,T,@view(aux[1:nc]))
-        gconfig = Solvers._GradientConfig(hconfig)
-        _result_p = ForwardDiff.gradient!(result, fun_v2, aux, gconfig, Val{false}())
-        dresult_p = DiffResults.gradient(_result_p)
-        ∇pᵣ .= @view dresult_p[1:nc]
-        ∂pᵣ∂V = dresult_p[nc+1]
-        #@show ∂pᵣ∂V
-        ∂pᵣ∂T = dresult_p[nc+2]
-        ∂p∂V = RT*(-∂pᵣ∂V - n/(vol*vol))
-        ∂p∂T = -RT*∂pᵣ∂T + p/T
-        ∂V∂T = -∂p∂T/∂p∂V
-        ∂lnZ∂T = ∂V∂T/vol - 1/T
-        _result_s = ForwardDiff.gradient!(result, fun_t2, aux, gconfig, Val{false}())
-        dresult_s = DiffResults.gradient(_result_s)
-        ∇sᵣ .= @view dresult_s[1:nc]
-        ∂lnϕ∂T .= ∇sᵣ .- ∇pᵣ .* ∂p∂T ./ ∂p∂V .- ∂lnZ∂T
-        return ∂lnϕ∂T,vol
+        rhovec = @view cache.aux[1:nc]
+        rhovec .= z ./ vol
     end
+
+    s = __dlnρdT(model, T, rhovec)
+
+    #T-derivative of ρₜ·a_res along the isobar, differentiated w.r.t. ρ
+    function Φ(x)
+        ρ = @view x[1:nc]
+        ρt = sum(ρ)
+        f(ε) = ρt*a_res(model, 1/(1 + s*ε), T + ε, ρ)
+        return Solvers.derivative(f, zero(T))
+    end
+
+    if cache === nothing
+        ∂lnϕ∂T = ForwardDiff.gradient(Φ, rhovec)
+        ∂lnϕ∂T .+= 1/T + s
+    else
+        gconfig = Solvers._GradientConfig(cache.hconfig)
+        _result = ForwardDiff.gradient!(cache.result, Φ, cache.aux, gconfig, Val{false}())
+        ∂lnϕ∂T = cache.∂lnϕ∂T
+        ∂lnϕ∂T .= @view(DiffResults.gradient(_result)[1:nc])
+        ∂lnϕ∂T .+= 1/T + s
+    end
+    return ∂lnϕ∂T, vol
 end
 
 # Function to compute fugacity coefficient and its temperature, pressure and composition derivatives
@@ -276,48 +431,21 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-    result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
-    RT = Rgas(model)*T
-    V = vol
-    n = sum(z)
-    Z = p*V/RT/n
-
-    ncomponents = length(z)
-    aux[1] = V
-    aux[2] = T
-    aux[3:end] .= z
-    F_res(model, V, T, z) = eos_res(model, V, T, z) / (Rgas(model)*T)
-    fun(aux) = F_res(model, aux[1], aux[2], @view(aux[3:(ncomponents+2)]))
-    result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
-
-    #F = DiffResults.value(result)
-    ∂F = DiffResults.gradient(result)
-    ∂2F = DiffResults.hessian(result)
-    #∂F∂V = ∂F[1]
-    #∂F∂T = ∂F[2]
-    ∂F∂n = @view ∂F[3:(ncomponents+2)]
-
-    ∂2F∂V2 = ∂2F[1, 1]
-    ∂2F∂n2 = @view ∂2F[3:(ncomponents+2), 3:(ncomponents+2)]
-    #∂2F∂T2 = ∂2F[2, 2]
-    ∂2F∂n∂V = @view ∂2F[1, 3:(ncomponents+2)]
-    ∂2F∂n∂T = @view ∂2F[2, 3:(ncomponents+2)]
-    ∂2F∂V∂T = ∂2F[1, 2]
-    lnϕ .= ∂F∂n .- log(Z)
-    ∂P∂V = -RT*∂2F∂V2 - n*RT/V^2
-    ∂P∂n .= -RT .* ∂2F∂n∂V .+ RT ./ V
-    ∂P∂T = -RT*∂2F∂V∂T + p/T
-    for i in 1:ncomponents
-        ∂P∂ni = ∂P∂n[i]
-        ∂V∂ni = - ∂P∂ni/∂P∂V
-        ∂lnϕ∂P[i] = ∂V∂ni/RT - 1/p
-        ∂lnϕ∂T[i] = ∂2F∂n∂T[i] + 1/T - (∂V∂ni*∂P∂T)/RT
-        for j in 1:ncomponents
-            ∂lnϕ∂n[i,j] = ∂2F∂n2[i,j] + 1/n + (∂P∂ni * ∂P∂n[j])/∂P∂V/RT
-        end
+    nc = length(model)
+    if cache === nothing
+        rhovec = z ./ vol
+    else
+        aux = cache.aux
+        rhovec = @view aux[1:nc]
+        rhovec .= z ./ vol
     end
 
-    return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, ∂lnϕ∂T, V
+    n = sum(z)
+    RT = Rgas(model)*T
+    p_over_RT, aρ, H, lnϕ, a, dptotdT = __lnϕ_core!(model, T, rhovec, cache, __μprT_hess)
+    ∂lnϕ∂n, ∂lnϕ∂P = _dlnϕdnP!(cache, a, H, RT, p_over_RT, aρ, vol, n)
+    ∂lnϕ∂T = _dlnϕdT!(cache, a, H, T, p_over_RT, aρ, dptotdT)
+    return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, ∂lnϕ∂T, vol
 end
 
 #functions used to overload gamma-phi models
@@ -348,6 +476,7 @@ function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = no
     return lnϕ,∂lnϕ∂n,vol
 end
 
+
 #=
 VT-based versions
 
@@ -365,29 +494,28 @@ function lnf(model, V, T, z,cache = nothing)
     n = sum(z)
     logZp = log(V/RT/n)
     nc = length(z)
-    F_res(_model, _V, _T, _z) = eos_res(_model, _V, _T, _z)
-    fun(aux) = F_res(model, aux[1], T, @view(aux[2:nc+1]))
     if cache !== nothing
-        result,aux,lnf,∂lnϕ∂n,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig = cache
+        lnf = cache.lnϕ
         if nc == 1
             lnf1,p = VT_lnf_pure(model,V,T)
             lnf[1] = lnf1
         else
-            aux .= 0
-            aux[1] = V
-            aux[2:nc+1] = z
-            gconfig = Solvers._GradientConfig(hconfig)
-            _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
-            dresult = DiffResults.gradient(_result)
-            dfdv = dresult[1]
-            μ_res = @view dresult[2:nc+1]
-            p = -(dfdv - RT*n/V)
-            lnf .= μ_res ./ RT .- logZp
+            rhovec = @view cache.aux[1:nc]
+            rhovec .= z ./ V
+            μ_res_RT,p_res_RT = __μpr(model, T, rhovec, cache)
+            p = RT*(p_res_RT + n/V)
+            lnf .= μ_res_RT .- logZp
         end
     else
-        μ_res = VT_chemical_potential_res(model,V,T,z)
-        p = pressure(model,V,T,z)
-        lnf = μ_res ./ RT .- logZp
+        rhovec = z ./ V
+        μ_res_RT,p_res_RT = __μpr(model, T, rhovec, cache)
+        p = RT*(p_res_RT + n/V)
+        if ismutable(μ_res_RT)
+            lnf = μ_res_RT
+            lnf .= μ_res_RT .- logZp
+        else
+            lnf = μ_res_RT .- logZp
+        end
     end
     return lnf, p
 end
@@ -401,113 +529,4 @@ function VT_lnf_pure(model,V,T)
     lnf = μ_res/RT - log(Zp)
     p = p_res + RT/V
     return lnf,p
-end
-
-function ∂lnf∂n∂V(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{false}()))
-
-    result,aux,lnf,∂lnf∂n,∂lnf∂V,∂P∂n,∂lnf∂T,hconfig = cache
-
-    RT = Rgas(model)*T
-    n = sum(z)
-    Zp = V/RT/n
-    ncomponents = length(z)
-
-    F_res(model, V, T, z) = eos_res(model, V, T, z) / RT
-    fun(aux) = F_res(model, aux[1], T, @view(aux[2:(ncomponents+1)]))
-
-    aux[1] = V
-    aux[2:end] = z
-    result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
-
-    ∂F = DiffResults.gradient(result)
-    ∂2F = DiffResults.hessian(result)
-
-    ∂F∂V = ∂F[1]
-    ∂F∂n = @view ∂F[2:(ncomponents+1)]
-
-    ∂2F∂V2 = ∂2F[1, 1]
-    ∂2F∂n2 = @view ∂2F[2:(ncomponents+1), 2:(ncomponents+1)]
-    ∂2F∂n∂V = @view ∂2F[1, 2:(ncomponents+1)]
-    p = -RT*(∂F∂V - n/V)
-    ∂P∂V = -RT*∂2F∂V2 - n*RT/V^2
-    ∂P∂n .= - RT .* ∂2F∂n∂V .+ RT ./ V
-    lnf .= ∂F∂n .- log(Zp)
-
-    for i in 1:ncomponents
-        #∂P∂ni = ∂P∂n[i]
-        ∂lnf∂V[i] = ∂2F∂n∂V[i] - 1/V
-        for j in 1:ncomponents
-            ∂lnf∂n[i,j] = ∂2F∂n2[i,j] + 1/n
-        end
-    end
-    return lnf, ∂lnf∂n, ∂lnf∂V, ∂P∂n, p, ∂P∂V
-end
-
-function ∂lnf∂n∂V∂T(model, V, T, z, cache = ∂lnϕ_cache(model,V,T,z,Val{true}()))
-
-    result,aux,lnf,∂lnf∂n,∂lnf∂V,∂P∂n,∂lnf∂T,hconfig = cache
-
-    RT = Rgas(model)*T
-    n = sum(z)
-    Zp = V/RT/n
-    ncomponents = length(z)
-
-    aux[1] = V
-    aux[2] = T
-    aux[3:end] .= z
-    F_res(model, V, T, z) = eos_res(model, V, T, z) / (Rgas(model)*T)
-    fun(aux) = F_res(model, aux[1], aux[2], @view(aux[3:(ncomponents+2)]))
-    result = ForwardDiff.hessian!(result, fun, aux, hconfig, Val{false}())
-
-    #F = DiffResults.value(result)
-    ∂F = DiffResults.gradient(result)
-    ∂2F = DiffResults.hessian(result)
-    ∂F∂V = ∂F[1]
-    #∂F∂T = ∂F[2]
-    ∂F∂n = @view ∂F[3:(ncomponents+2)]
-
-    ∂2F∂V2 = ∂2F[1, 1]
-    ∂2F∂n2 = @view ∂2F[3:(ncomponents+2), 3:(ncomponents+2)]
-    #∂2F∂T2 = ∂2F[2, 2]
-    ∂2F∂n∂V = @view ∂2F[1, 3:(ncomponents+2)]
-    ∂2F∂n∂T = @view ∂2F[2, 3:(ncomponents+2)]
-    ∂2F∂V∂T = ∂2F[1, 2]
-
-    p = -RT*(∂F∂V - n/V)
-    ∂P∂V = -RT*∂2F∂V2 - n*RT/V^2
-    ∂P∂n .= - RT .* ∂2F∂n∂V .+ RT ./ V
-    lnf .= ∂F∂n .- log(Zp)
-    ∂P∂T = -RT*∂2F∂V∂T + p/T
-    for i in 1:ncomponents
-        ∂lnf∂V[i] = ∂2F∂n∂V[i] - 1/V
-        ∂lnf∂T[i] = ∂2F∂n∂T[i] + 1/T
-        for j in 1:ncomponents
-            ∂lnf∂n[i,j] = ∂2F∂n2[i,j] + 1/n
-        end
-    end
-    return lnf, ∂lnf∂n, ∂lnf∂V, ∂lnf∂T, ∂P∂n, p, ∂P∂V, ∂P∂T
-end
-
-function ∂lnf∂V(model::EoSModel, V, T, z=SA[1.], cache = ∂lnϕ_cache(model,V,T,z,Val{false}()))
-
-    RT = Rgas(model)*T
-    nc = length(z)
-    n = sum(z)
-    result,aux,_,_,∂lnf∂V,∂P∂n,_,hconfig = cache
-    aux .= 0
-    aux[nc+1] = V
-    aux[1:nc] = z
-    gconfig = Solvers._GradientConfig(hconfig)
-    fun(aux) = pressure_res(model,aux[nc+1],T,aux[1:nc])
-    _result = ForwardDiff.gradient!(result, fun, aux, gconfig, Val{false}())
-    dresult = DiffResults.gradient(_result)
-    pᵣ = DiffResults.value(_result)
-    p = pᵣ + n*RT/V
-    ∇pᵣ = @view dresult[1:nc]
-    ∂pᵣ∂V = dresult[nc+1]
-    ∂p∂V = ∂pᵣ∂V - n*RT/(V*V)
-    #∂V∂p = -1/∂p∂V
-    ∂lnf∂V .= - ∇pᵣ ./ RT .- 1/V
-    ∂P∂n .= ∇pᵣ .+ RT ./ V
-    return ∂lnf∂V, ∂P∂n, p, ∂p∂V
 end

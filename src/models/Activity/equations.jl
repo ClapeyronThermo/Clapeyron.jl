@@ -62,7 +62,7 @@ function lnγ(model::ActivityModel,_p,_T,_z,cache::TT = nothing) where TT
     X = gradient_type(model,promote_type(typeof(p),typeof(T)),z)
     nc = length(z)
     if has_lnγ_impl(model)
-        if cache isa Tuple
+        if cache isa ∂lnϕCache
             _,_,lnγ,_,_,_,_,_ = cache
             lnγ_impl!(lnγ,model,p,T,z)
             return lnγ
@@ -77,7 +77,7 @@ function lnγ(model::ActivityModel,_p,_T,_z,cache::TT = nothing) where TT
     else
         V = zero(primalval(T))
         fun = @deferred_Z(ng_E_reduced,∂₁f)
-        if cache isa Tuple
+        if cache isa ∂lnϕCache
             result,aux,lnγ,_,_,_,_,hconfig = cache
             aux .= 0
             aux[1:nc] = z

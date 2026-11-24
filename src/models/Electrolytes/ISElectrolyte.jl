@@ -185,7 +185,7 @@ function ∂lnϕ∂T(wrapper::MeanIonicApproach, p, T, z=SA[1.], cache = ∂lnϕ
             threaded = true,
             vol = volume(wrapper,p,T,z;phase,vol0,threaded))
 
-    ∂lnϕ∂Ti = ∂lnϕ∂Ti(wrapper.model,p,T,w,cache;phase,vol0,threaded,vol)
+    ∂lnϕ∂Ti = ∂lnϕ∂T(wrapper.model,p,T,w,cache;phase,vol0,threaded,vol)
     E = eachrow(wrapper.salt.E)
     for i in eachindex(∂lnϕ∂Ti)
         Ei = E[i]
