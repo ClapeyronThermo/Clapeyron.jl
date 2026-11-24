@@ -448,6 +448,21 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
         rhovec .= z ./ vol
     end
 
+    if cache isa ∂lnϕCache && nc == length(cache.aux)
+        #not enough cache for one pass, so use two
+        lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, vol = ∂lnϕ∂n∂P(model,p,T,z,cache;vol)
+        temp = cache.∂P∂n
+        temp .= lnϕ
+        _∂lnϕ∂T = ∂lnϕ∂T(model,p,T,z,cache;vol)
+        for i in 1:nc #switch indice, use dpdn as cache for ∂lnϕ∂T
+            ∂lnϕi∂T = _∂lnϕ∂T[i]
+            lnϕi = temp[i]
+            temp[i] = ∂lnϕi∂T
+            lnϕ[i] = lnϕi
+        end
+        lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, temp, vol
+    end
+
     n = sum(z)
     RT = Rgas(model)*T
     p_over_RT, aρ, H, lnϕ, a, dptotdT = __lnϕ_core!(model, T, rhovec, cache, __μprT_hess)
