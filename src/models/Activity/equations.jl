@@ -286,9 +286,9 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T_out
         end
     else
-        #result,aux,lnγ,∂lnγ∂ni,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache
+        #result,aux,lnγ,∂lnγ∂ni,∂lnϕ∂P,scratch,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache
 
-        # NOTE: intentionally bind ∂lnγ∂T to the ∂P∂n slot (unused by GE models), not ∂lnϕ∂T,
+        # NOTE: intentionally bind ∂lnγ∂T to the scratch slot (unused by GE models), not ∂lnϕ∂T,
         # since ∂lnϕ∂T aliases lnγ when the cache was built with Val(false).
         result,aux,lnγ,∂lnγ∂ni,_,∂lnγ∂T_out,_,hconfig,jcache = cache
         aux .= 0
@@ -339,8 +339,8 @@ function ∂lnγ∂T(model,p,T,z,cache = nothing)
             return ∂lnγ∂T
         end
     else
-        # slot 6 (∂P∂n) is unused by GE models and never aliases lnγ
-        ∂lnγ∂T = cache.∂P∂n
+        # scratch is unused by GE models and never aliases lnγ
+        ∂lnγ∂T = cache.scratch
         lnγ = cache.lnϕ
         dlnγdT_cache = cache.dlnγdT_cache
         aux = cache.aux

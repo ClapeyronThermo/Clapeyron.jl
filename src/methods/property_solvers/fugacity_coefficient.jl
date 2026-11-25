@@ -204,14 +204,14 @@ function __lnϕ_core!(model, T, rhovec, cache, mup_hess_fn::F) where F
             lnϕ = μ .- lnZ
         end
     else
-        a = cache.∂P∂n
+        a = cache.scratch
         lnϕ = cache.lnϕ
         lnϕ .= μ .- lnZ
     end
 
     #a = ∂(p/RT)/∂ρ = 1 + Hρ. returns a·ρ.
     aρ = zero(eltype(a))
-    for i in eachindex(ρ)
+    for i in eachindex(rhovec)
         ai = one(eltype(a))
         for k in eachindex(rhovec)
             ai += H[i, k]*rhovec[k]
@@ -235,9 +235,9 @@ function _dlnϕdT!(∂lnϕ∂T, a, H, T, p_over_RT, aρ, dptotdT)
     return ∂lnϕ∂T
 end
 
-_dlnϕdnP!(cache::∂lnϕCache,a,H,RT,p_over_RT,ap,vol,n) = _dlnϕdnP!(cache.∂lnϕ∂n,cache.∂lnϕ∂P,a,H,RT,p_over_RT,ap,vol,n)
+_dlnϕdnP!(cache::∂lnϕCache,a,H,RT,p_over_RT,aρ,vol,n) = _dlnϕdnP!(cache.∂lnϕ∂n,cache.∂lnϕ∂P,a,H,RT,p_over_RT,aρ,vol,n)
 
-function _dlnϕdnP!(::Nothing,a,H,RT,p_over_RT,ap,vol,n)
+function _dlnϕdnP!(::Nothing,a,H,RT,p_over_RT,aρ,vol,n)
     nc = length(a)
     ∂lnϕ∂n = similar(a,(nc,nc))
     ∂lnϕ∂P = similar(a)
@@ -376,16 +376,13 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
     if cache isa ∂lnϕCache && nc == length(cache.aux)
         #not enough cache for one pass, so use two
         lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, vol = ∂lnϕ∂n∂P(model,p,T,z,cache;vol)
-        temp = cache.∂P∂n
-        temp .= lnϕ
-        _∂lnϕ∂T = ∂lnϕ∂T(model,p,T,z,cache;vol)
-        for i in 1:nc #switch indice, use dpdn as cache for ∂lnϕ∂T
-            ∂lnϕi∂T = _∂lnϕ∂T[i]
-            lnϕi = temp[i]
-            temp[i] = ∂lnϕi∂T
-            lnϕ[i] = lnϕi
+        ∂lnϕ∂T_out = cache.scratch
+        ∂lnϕ∂T_out .= lnϕ                       #save lnϕ: cache.∂lnϕ∂T aliases cache.lnϕ here
+        ∂lnϕ∂T(model,p,T,z,cache;vol)           #overwrites cache.lnϕ with ∂lnϕ/∂T
+        for i in 1:nc                           #swap, so lnϕ holds lnϕ and scratch holds ∂lnϕ/∂T
+            lnϕ[i], ∂lnϕ∂T_out[i] = ∂lnϕ∂T_out[i], lnϕ[i]
         end
-        lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, temp, vol
+        return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, ∂lnϕ∂T_out, vol
     end
 
     n = sum(z)
@@ -420,9 +417,9 @@ function modified_gibbs(model,p,T,w,phase,vol)
     return g/RT,volw
 end
 
-_dlnϕdn!(cache::∂lnϕCache,a,H,RT,p_over_RT,ap,vol,n) = _dlnϕdn!(cache.∂lnϕ∂n,a,H,RT,p_over_RT,ap,vol,n)
+_dlnϕdn!(cache::∂lnϕCache,a,H,RT,p_over_RT,aρ,vol,n) = _dlnϕdn!(cache.∂lnϕ∂n,a,H,RT,p_over_RT,aρ,vol,n)
 
-function _dlnϕdn!(::Nothing,a,H,RT,p_over_RT,ap,vol,n)
+function _dlnϕdn!(::Nothing,a,H,RT,p_over_RT,aρ,vol,n)
     nc = length(a)
     ∂lnϕ∂n = similar(a,(nc,nc))
     return _dlnϕdn!(∂lnϕ∂n, a, H, RT, p_over_RT, aρ, vol, n)
