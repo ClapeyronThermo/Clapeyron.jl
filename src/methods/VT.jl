@@ -486,7 +486,7 @@ function VT_molar_gradient!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F<
         fx .= NaN
         return fx
     end
-    
+    fun = @deferred_Z(property,∂₁f)
     return Solvers.gradient!(fx,fun,z)::F
 end
  
