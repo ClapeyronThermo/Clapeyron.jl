@@ -261,7 +261,7 @@ function __lnϕ_core!(model, T, rhovec, cache, mup_hess_fn::F) where F
             ai += H[i, k]*rhovec[k]
         end
         a[i] = ai
-        aρ += ai*ρ[i]
+        aρ += ai*rhovec[i]
     end
 
     return p_res, aρ, H, lnϕ, a, dptotdT
