@@ -339,17 +339,22 @@ function ∂lnγ∂T(model,p,T,z,cache = nothing)
             return ∂lnγ∂T
         end
     else
-        result,aux,lnγ,∂lnγ∂ni,_,_,∂lnγ∂T,hconfig,jcache,∂lnγ∂T_out = cache
+        # slot 6 (∂P∂n) is unused by GE models and never aliases lnγ
+        ∂lnγ∂T = cache.∂P∂n
+        lnγ = cache.lnϕ
+        dlnγdT_cache = cache.dlnγdT_cache
+        aux = cache.aux
+        
         if has_lnγ_impl(model)
-            isempty(∂lnγ∂T_out) && ∂lnγ∂T_mismatch_error()
-            Dconfig = Solvers._DerivativeConfig(∂lnγ∂T_out)
+            isempty(dlnγdT_cache) && ∂lnγ∂T_mismatch_error()
+            Dconfig = Solvers._DerivativeConfig(dlnγdT_cache)
             ForwardDiff.derivative!(∂lnγ∂T,_ft_lnγ_impl!,lnγ,T,Dconfig,Val{false}())
             return ∂lnγ∂T
         else
             aux .= 0
             aux[1:nc] = z
-            gconfig = Solvers._GradientConfig(hconfig)
-            _result = ForwardDiff.gradient!(result, dgEdt, aux, gconfig, Val{false}())
+            gconfig = Solvers._GradientConfig(cache.hconfig)
+            _result = ForwardDiff.gradient!(cache.result, dgEdt, aux, gconfig, Val{false}())
             dresult = DiffResults.gradient(_result)
             ∂lnγ∂T .= @view dresult[1:nc]
             return ∂lnγ∂T
