@@ -50,10 +50,9 @@ function __μpr(model, T, ρ, cache)
         ρᵢ = ρ
     end
 
-    Ψr = DiffResults.value(_result)
     μ_res = @view DiffResults.gradient(_result)[1:nc]
 
-    p_res = Ψr*one(eltype(ρᵢ))
+    p_res = dot(μ_res, ρᵢ) - DiffResults.value(_result)
     return μ_res, p_res
 end
 
