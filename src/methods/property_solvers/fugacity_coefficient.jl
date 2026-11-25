@@ -17,6 +17,21 @@ StaticForwardDiffTags.inner_function(::typeof(__psi_res)) = psi_res
 function __μpr(model, T, ρ, cache)
     nc = length(model)
 
+    if is_idealmodel(model)
+        TT = Base.promote_eltype(model, T, ρ)
+        if cache isa ∂lnϕCache
+            μr = cache.lnϕ
+            fill!(μr,0)
+        elseif cache isa AbstractVector
+            μr = cache
+            fill!(μr,0)
+        else
+            nz = length(ρ)
+            μr = zeros(TT, nz)
+        end
+        return μr,zero(TT)*one(eltype(μr))
+    end
+
     #deferred forwarddiff tag for faster AD in some cases
     Ψ = @deferred_isochoric_rhovec(__psi_res,psi_res)
     if cache isa ∂lnϕCache
@@ -31,14 +46,14 @@ function __μpr(model, T, ρ, cache)
         else
             result = DiffResults.GradientResult(ρ)
         end
-        
         _result = ForwardDiff.gradient!(result, Ψ, ρ)
         ρᵢ = ρ
     end
 
     Ψr = DiffResults.value(_result)
     μ_res = @view DiffResults.gradient(_result)[1:nc]
-    p_res = dot(μ_res, ρᵢ) - Ψr
+
+    p_res = Ψr*one(eltype(ρᵢ))
     return μ_res, p_res
 end
 
@@ -139,10 +154,34 @@ function ∑zlogϕ(model::EoSModel, p, T, z=SA[1.],cache = nothing;
     return VT_∑zlogϕ(model,vol,T,z,p),vol
 end
 
+#ideal models: ψ_res = 0, so μ_res, p_res, H and ∂(p_res/RT)/∂T are zero. nH is the size of H.
+function __μpr_hess_ideal(nc, T, rhovec, cache, nH)
+    TT = Base.promote_eltype(model, T, rhovec)
+    nc = length(model)
+    if cache === nothing
+        μ_res = zeros(TT, nc)
+        H = zeros(TT,(nH, nH))
+    else
+        μ_res = cache.lnϕ
+        μ_res .= 0
+        result = cache.result
+        H = result.derivs[2]
+        H .= 0
+    end
+    
+    return μ_res, zero(TT), H, zero(TT)
+end
+
+
 #μ_res/RT, p_res/RT and the Hessian of Ψ over the nc densities.
 function __μpr_hess(model, T, rhovec, cache)
-    nc = length(model)
-    
+    nc = length(rhovec)
+
+    if is_idealmodel(model)
+        Tx = T*one(eltype(model))
+        return __μpr_hess_ideal(nc, Tx, rhovec, cache, nc)
+    end
+
     Ψ = @deferred_isochoric_rhovec(__psi_res,psi_res)
 
     if cache === nothing
@@ -163,7 +202,12 @@ end
 
 #μ_res/RT, p_res/RT, the Hessian of Ψ, and ∂(p_res/RT)/∂T; over the nc densities.
 function __μprT_hess(model, T, rhovec, cache)
-    nc = length(model)
+    nc = length(rhovec)
+
+    if is_idealmodel(model)
+        Tx = T*one(eltype(model))
+        return __μpr_hess_ideal(nc, Tx, rhovec, cache, nc + 1)
+    end
 
     Ψ = WithContext(Base.Fix1(__psi_res,model),∂Tag{psi_res})
 
@@ -264,7 +308,20 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-    nc = length(model)
+    if is_idealmodel(model)
+        if cache isa ∂lnϕCache
+            fill!(cache.lnϕ, 0)
+            fill!(cache.∂lnϕ∂n, 0)
+            fill!(cache.∂lnϕ∂P, 0)
+            return cache.lnϕ, cache.∂lnϕ∂n, cache.∂lnϕ∂P, vol
+        else
+            TT = Base.promote_eltype(model, p, T, z)
+            nz = length(z)
+            return zeros(TT, nz), zeros(TT, nz, nz), zeros(TT, nz), vol
+        end
+    end
+
+    nc = length(cache.scratch)
     if cache === nothing
         rhovec = z ./ vol
     else
@@ -288,7 +345,18 @@ function ∂lnϕ∂P(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-    nc = length(model)
+
+    if is_idealmodel(model)
+        if cache isa ∂lnϕCache
+            return fill!(cache.∂lnϕ∂P, 0), vol
+        else
+            TT = Base.promote_eltype(model, p, T, z)
+            nz = length(z)
+            return zeros(TT, nz), vol
+        end
+    end
+
+    nc = length(cache.scratch)
     RT = Rgas(model)*T
     pᵣ(x) = pressure_res(model, 1.0, T, @view(x[1:nc]))/RT
     ρt = sum(z)/vol
@@ -326,13 +394,28 @@ function ∂lnϕ∂T(model::EoSModel, p, T, z=SA[1.], cache = ∂lnϕ_cache(mode
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
-    nc = length(model)
+    
+    if is_idealmodel(model)
+        if cache isa ∂lnϕCache
+            return fill!(cache.∂lnϕ∂P, 0), vol
+        else
+            TT = Base.promote_eltype(model, p, T, z)
+            nz = length(z)
+            return zeros(TT, nz), vol
+        end
+    end
+
     if cache === nothing
+        if is_idealmodel(model)
+            
+        end
         rhovec = z ./ vol
     else
-        rhovec = @view cache.aux[1:nc]
+        nz = length(z)
+        rhovec = @view cache.aux[1:nz]
         rhovec .= z ./ vol
     end
+    nc = length(z)
 
     s = -VT_isobaric_expansivity(model,vol,T,z)
 
@@ -364,6 +447,25 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
             threaded = true,
             vol = volume(model,p,T,z;phase,vol0,threaded))
 
+    if is_idealmodel(model)
+        nz = length(z)
+        if cache isa ∂lnϕCache
+            fill!(cache.lnϕ, 0)
+            fill!(cache.∂lnϕ∂n, 0)
+            fill!(cache.∂lnϕ∂P, 0)
+            if length(cache.aux) == nz
+                ∂lnϕ∂T0 = cache.scratch
+            else
+                ∂lnϕ∂T0 = cache.∂lnϕ∂T
+            end
+            fill!(∂lnϕ∂T0, 0)
+            return cache.lnϕ, cache.∂lnϕ∂n, cache.∂lnϕ∂P, ∂lnϕ∂T0, vol
+        else
+            TT = Base.promote_eltype(model, p, T, z)
+            return zeros(TT, nz), zeros(TT, nz, nz), zeros(TT, nz), zeros(TT, nz), vol
+        end
+    end
+ 
     nc = length(model)
     if cache === nothing
         rhovec = z ./ vol
@@ -439,6 +541,19 @@ end
 
 function modified_∂lnϕ∂n(model, p, T, z, cache; phase = :unknown, vol0 = nothing)
     vol = volume(model,p,T,z;phase,vol0,threaded = false)
+
+    if is_idealmodel(model)
+        nz = length(z)
+        if cache isa ∂lnϕCache
+            fill!(cache.lnϕ, 0)
+            fill!(cache.∂lnϕ∂n, 0)
+            return cache.lnϕ, cache.∂lnϕ∂n, vol
+        else
+            TT = Base.promote_eltype(model, p, T, z)
+            return zeros(TT, nz), zeros(TT, nz, nz), vol
+        end
+    end
+
     nc = length(model)
     if cache === nothing
         rhovec = z ./ vol
