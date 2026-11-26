@@ -595,6 +595,11 @@ end
         @testset "SolidHfus" begin
             model = SolidHfus(["water"])
             @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
+            Tm, Hfus, CpSL, T = 273.15, 6010.0, 38.0, 263.15
+            model_cp = SolidHfus(["water"]; userlocations = (Tm = [Tm], Hfus = [Hfus], CpSL = [CpSL]))
+            μ_cp = Hfus*(T/Tm - 1) + CpSL*(Tm - T - T*log(Tm/T))
+            @test chemical_potential(model_cp,1e5,T,[1.])[1] ≈ μ_cp rtol = 1e-12
+            @test Clapeyron.eos_g(model_cp,1e5,T,[1.]) ≈ μ_cp rtol = 1e-12
         end
 
         @testset "SolidKs" begin
