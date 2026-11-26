@@ -80,15 +80,16 @@ end
 
 function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.@specialize(w))
     p,T = PT.p,PT.T
-    R = Rgas(model)
-    RTinv = 1/(R*T)
+    RT = Rgas(model)*T
     w1,v1 = w[1],v[1]
     n_c = length(w1)
     n_p = length(v)
 
-    μ1 = μj = similar(F,length(model))
-    p1 = pressure(model,v1,T,w1)
-    VT_chemical_potential_res!(μ1,model,v1,T,w1)
+    ρ = similar(F,n_c)
+    ∇ = similar(F,n_c)
+    ρ .= w1 ./ v1
+    μ1,p_res_1 = __μpr(model,T,ρ,∇)
+    p1 = RT*(p_res_1 + sum(w1)/v1)
     log_v1 = log(v1)
     @inbounds for j in 1:(n_p - 1)
         Fj = viewn(F,n_c,j)
@@ -104,30 +105,18 @@ function μp_equality(model::EoSModel, F, PT::TPspec, Base.@specialize(v), Base.
     @inbounds for j in 1:(n_p - 1)
         vj = v[j+1]
         wj = w[j+1]
-        pj = pressure(model,vj,T,wj)
-        #pᵣ_res_j = pressure_res(model,vj,T,wj)*RTinv
-        #Δp = pᵣ_res_1 - pᵣ_res_j
-        #Δp += pᵣ_ideal_1 - sum(wj)/vj
+        ρ .= wj ./ vj
+        μj,p_res_j = __μpr(model,T,ρ,∇)
+        pj = RT*(p_res_j + sum(wj)/vj)
         Fp[j] = (p1 - pj)*p⁻¹
-        VT_chemical_potential_res!(μ1,model,vj,T,wj)
         Fj = viewn(F,n_c,j)
-
         log_v_common = log(vj) - log_v1
         for i in 1:n_c
-            μ1i = Fj[i]
-            μji = μj[i]
-            Δuᵣ = μ1i - μji
-            Fj[i] = Δuᵣ*RTinv + log_v_common + log(w1[i]) - log(wj[i])
+            Fj[i] = Fj[i] - μj[i] + log_v_common + log(w1[i]) - log(wj[i])
         end
     end
 
     if PT.pressure_specified
-        #=
-        p = -deos/dv = -deos_res/dt - d_eos_ideal/dv
-        p = RT*(a_res)/dv - sum(z)*RT/v
-        p/RT = -da_res/dv - 1/v
-         =#
-        #pᵣ_1 = pᵣ_res_1 + pᵣ_ideal_1
         F[idx_p_end + 1] = (p1 - p)*p⁻¹
     end
 
@@ -142,41 +131,36 @@ function μp_equality2(models::NTuple{2,M}, F, PT::TPspec, v, w, short_view) whe
     x_long, x_short = w
     n_short = length(x_short)
     n_long = length(x_long)
-    μ_long = similar(F,n_long)
-    μ_long = VT_chemical_potential_res!(μ_long,model_long,v_long,T,x_long)
-    p_long = pressure(model_long,v_long,T,x_long)
-    p_short = pressure(model_short,v_short,T,x_short)
+    RT_long = Rgas(model_long)*T
+    RT_short = Rgas(model_short)*T
     p⁻¹,RT⁻¹ = equilibria_scale(model_long,x_long)
-    RTinv = 1/(Rgas(model_long)*T)
+
+    ρ = similar(F,n_long)
+    ∇ = similar(F,n_long)
+    ρ .= x_long ./ v_long
+    μ_long,p_res_long = __μpr(model_long,T,ρ,∇)
+    p_long = RT_long*(p_res_long + sum(x_long)/v_long)
     μ_long_view = @view(μ_long[short_view])
     x_long_view = @view(x_long[short_view])
     @inbounds for i in 1:n_short
         F[i] = μ_long_view[i]
     end
-    μ_short = resize!(μ_long,n_short)
+
+    ρ_short = @view ρ[1:n_short]
+    ∇_short = @view ∇[1:n_short]
+    ρ_short .= x_short ./ v_short
+    μ_short,p_res_short = __μpr(model_short,T,ρ_short,∇_short)
+    p_short = RT_short*(p_res_short + sum(x_short)/v_short)
+
     log_v_common = log(v_short/v_long)
-    if n_short == 1
-        ∑n_short = sum(x_short)
-        p_res = p_short - ∑n_short*Rgas(model_short)*T/v_short
-        μ_short_1 = (eos_res(model_short,v_short,T,x_short) + p_res*v_short)/∑n_short
-        μ_long_1 = F[1]
-        Δuᵣ = μ_long_1 - μ_short_1
-        Δμ = Δuᵣ*RTinv + log_v_common + (log(x_long_view[1]) - log(x_short[1]))
-        F[1] = Δμ*RT⁻¹
-    else
-        VT_chemical_potential_res!(μ_short,model_short,v_short,T,x_short)
-        @inbounds for i in 1:n_short
-            μ_long_i  = F[i]
-            μ_short_i = μ_short[i]
-            Δuᵣ = μ_long_i - μ_short_i
-            Δμ = Δuᵣ*RTinv + log_v_common + (log(x_long_view[i]) - log(x_short[i]))
-            F[i] = Δμ*RT⁻¹
-        end
+    @inbounds for i in 1:n_short
+        Δμ = F[i] - μ_short[i] + log_v_common + (log(x_long_view[i]) - log(x_short[i]))
+        F[i] = Δμ*RT⁻¹
     end
 
-    F[n_short+1] = (p_long-p_short)*p⁻¹
+    F[n_short+1] = (p_long - p_short)*p⁻¹
     if PT.pressure_specified
-        F[n_short+2] = (p_long-p)*p⁻¹
+        F[n_short+2] = (p_long - p)*p⁻¹
     end
     return F
 end

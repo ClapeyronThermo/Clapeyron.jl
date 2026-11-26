@@ -13,6 +13,12 @@ zi = xi .* ∑z = ρi/ρ * ρ = ρi
 V = sum(z)/ρ = ρ/ρ = 1
 =#
 
+function psi_ideal(model,T,ρᵢ)
+    ρ = sum(ρᵢ)
+    V = one(ρ)
+    return ρ*a_ideal(model,one(ρ),T,ρᵢ) + reference_state_eval(model,V,T,ρᵢ)/(Rgas(model)*T)
+end
+
 function Psi_ideal(model,T,ρᵢ)
     ρ = sum(ρᵢ)
     V = one(ρ)
@@ -20,7 +26,8 @@ function Psi_ideal(model,T,ρᵢ)
 end
 
 const Ψ_ideal = Psi_ideal
-
+const ψ_ideal = psi_ideal
+ 
 function Psi(model,T,ρᵢ)
     ρ = sum(ρᵢ)
     V = one(ρ)
@@ -35,12 +42,15 @@ end
 
 const Ψ_eos = Psi
 
-function Psi_res(model,T,ρᵢ)
+Psi_res(model,T,ρᵢ) = Rgas(model)*T*psi_res(model,T,ρᵢ)
+
+function psi_res(model,T,ρᵢ)
     ρ = sum(ρᵢ)
-    return Rgas(model)*T*ρ*a_res(model,one(ρ),T,ρᵢ)
+    return ρ*a_res(model,one(ρ),T,ρᵢ)
 end
 
 const Ψ_res = Psi_res
+const ψ_res = psi_res
 
 #returns gradient(Ψ_eos) and hessian(Ψ_eos)
 function Ψ_grad_and_hessian_res(model,T,ρᵢ)
@@ -66,8 +76,6 @@ function Ψ_grad_and_hessian!(result,model,T,ρᵢ)
     ∇Ψ, HΨ = Ψ_grad_and_hessian_res!(result,model,T,ρᵢ)
     return ∇Ψ, HΨ
 end
-
-
 __Psi_res(model,x,T,ρᵢ) = Psi_res(model,T,ρᵢ)
 
 function Ψ_hessian_res(model,T,ρᵢ)
@@ -146,3 +154,15 @@ function d2ΨdT2_grad!(∇Ψ,model,T,ρᵢ)
     ForwardDiff.gradient!(∇Ψ,Ψ,d2ΨrdT2)
     return ∇Ψ
 end 
+
+function (obj::FixedEoSEval{:isochoric_rhovec,F,D})(rhovec) where {F,D}
+    model,T = obj.data
+    return obj.f(model,T,rhovec)
+end
+
+macro deferred_isochoric_rhovec(f,tag)
+    quote
+        WithContext(FixedEoSEval{:isochoric_rhovec}($f,(model,T)),∂Tag{$tag}())
+    end |> esc
+end
+

@@ -62,7 +62,7 @@ function lnγ(model::ActivityModel,_p,_T,_z,cache::TT = nothing) where TT
     X = gradient_type(model,promote_type(typeof(p),typeof(T)),z)
     nc = length(z)
     if has_lnγ_impl(model)
-        if cache isa Tuple
+        if cache isa ∂lnϕCache
             _,_,lnγ,_,_,_,_,_ = cache
             lnγ_impl!(lnγ,model,p,T,z)
             return lnγ
@@ -77,7 +77,7 @@ function lnγ(model::ActivityModel,_p,_T,_z,cache::TT = nothing) where TT
     else
         V = zero(primalval(T))
         fun = @deferred_Z(ng_E_reduced,∂₁f)
-        if cache isa Tuple
+        if cache isa ∂lnϕCache
             result,aux,lnγ,_,_,_,_,hconfig = cache
             aux .= 0
             aux[1:nc] = z
@@ -245,11 +245,21 @@ end
 function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
     nc = length(z)
     RT = Rgas(model)*T
+
+    if cache isa ∂lnϕCache && nc == length(cache.aux)
+        #cannot obtain this in one function call, so use two function calls instead
+        ∂lnγ∂Ti = ∂lnγ∂T(model,p,T,z,cache)
+        g_E,lnγ,∂lnγ∂ni = ∂lnγ∂n(model,p,T,z,cache)
+        return g_E,lnγ,∂lnγ∂ni,∂lnγ∂Ti
+    end
+
     fun_g(w) = excess_gibbs_free_energy(model,p,w[nc+1],@view(w[1:nc]))/(Rgas(model)*w[nc + 1])
+    
     function fun_lnγ(out,w)
         Clapeyron.lnγ(model,p,w[nc+1],@view(w[1:nc]),@view(out[1:nc]))
         return out
     end
+
     if cache === nothing
         if has_lnγ_impl(model)
             lnγ = zeros(Base.promote_eltype(model,p,T,z),nc)
@@ -258,9 +268,9 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             aux[nc+1] = T
             ∂g_E = ForwardDiff.jacobian(fun_lnγ,lnγ,aux)
             ∂lnγ∂ni = ∂g_E[1:nc,1:nc]
-            ∂lnγ∂T = ∂g_E[1:nc,nc + 1]
+            ∂lnγ∂T_out = ∂g_E[1:nc,nc + 1]
             g_E = dot(z,lnγ)*RT
-            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T_out
         else
             aux = vcat(z,T)
             hresult = DiffResults.HessianResult(aux)
@@ -272,15 +282,15 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
 
             ∂lnγ∂ni∂T = DiffResults.hessian(result)
             ∂lnγ∂ni = ∂lnγ∂ni∂T[1:nc,1:nc]
-            ∂lnγ∂T = ∂lnγ∂ni∂T[1:nc,nc + 1]
-            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+            ∂lnγ∂T_out = ∂lnγ∂ni∂T[1:nc,nc + 1]
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T_out
         end
     else
-        #result,aux,lnγ,∂lnγ∂ni,∂lnϕ∂P,∂P∂n,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache
+        #result,aux,lnγ,∂lnγ∂ni,∂lnϕ∂P,scratch,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache
 
-        # NOTE: intentionally bind ∂lnγ∂T to the ∂P∂n slot (unused by GE models), not ∂lnϕ∂T,
+        # NOTE: intentionally bind ∂lnγ∂T to the scratch slot (unused by GE models), not ∂lnϕ∂T,
         # since ∂lnϕ∂T aliases lnγ when the cache was built with Val(false).
-        result,aux,lnγ,∂lnγ∂ni,_,∂lnγ∂T,_,hconfig,jcache = cache
+        result,aux,lnγ,∂lnγ∂ni,_,∂lnγ∂T_out,_,hconfig,jcache = cache
         aux .= 0
         aux[1:nc] .= z
         aux[nc+1] = T
@@ -291,11 +301,11 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             _result = ForwardDiff.jacobian!(jresult,fun_lnγ,jcache,aux,jconfig,Val{false}())
             ∂lnγ = DiffResults.jacobian(_result)
             ∂lnγ∂ni .=  @view ∂lnγ[1:nc,1:nc]
-            ∂lnγ∂T .= @view ∂lnγ[1:nc,nc + 1]
+            ∂lnγ∂T_out .= @view ∂lnγ[1:nc,nc + 1]
             ∂g_E = DiffResults.value(_result)
             lnγ .= @view ∂g_E[1:nc]
             g_E = dot(z,lnγ)*RT
-            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T_out
         else
             _result = ForwardDiff.hessian!(result, fun_g, aux, hconfig, Val{false}())
             g_E = DiffResults.value(_result)*RT
@@ -303,8 +313,8 @@ function ∂lnγ∂n∂T(model,p,T,z,cache = nothing)
             lnγ .= @view ∂g_E[1:nc]
             ∂lnγ = DiffResults.hessian(_result)
             ∂lnγ∂ni .= @view ∂lnγ[1:nc,1:nc]
-            ∂lnγ∂T .= @view ∂lnγ[1:nc,nc + 1]
-            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T
+            ∂lnγ∂T_out .= @view ∂lnγ[1:nc,nc + 1]
+            return g_E,lnγ,∂lnγ∂ni,∂lnγ∂T_out
         end
     end
 end
@@ -329,18 +339,22 @@ function ∂lnγ∂T(model,p,T,z,cache = nothing)
             return ∂lnγ∂T
         end
     else
-        result,aux,lnγ,∂lnγ∂ni,_,_,∂lnγ∂T,hconfig,jcache,∂lnγ∂T_out = cache
+        # scratch is unused by GE models and never aliases lnγ
+        ∂lnγ∂T = cache.scratch
+        lnγ = cache.lnϕ
+        dlnγdT_cache = cache.dlnγdT_cache
+        aux = cache.aux
+        
         if has_lnγ_impl(model)
-            isempty(∂lnγ∂T_out) && ∂lnγ∂T_mismatch_error()
-            Dconfig = Solvers._DerivativeConfig(∂lnγ∂T_out)
+            isempty(dlnγdT_cache) && ∂lnγ∂T_mismatch_error()
+            Dconfig = Solvers._DerivativeConfig(dlnγdT_cache)
             ForwardDiff.derivative!(∂lnγ∂T,_ft_lnγ_impl!,lnγ,T,Dconfig,Val{false}())
             return ∂lnγ∂T
         else
             aux .= 0
             aux[1:nc] = z
-            aux[nc+1] = T
-            gconfig = Solvers._GradientConfig(hconfig)
-            _result = ForwardDiff.gradient!(result, dgEdt, aux, gconfig, Val{false}())
+            gconfig = Solvers._GradientConfig(cache.hconfig)
+            _result = ForwardDiff.gradient!(cache.result, dgEdt, aux, gconfig, Val{false}())
             dresult = DiffResults.gradient(_result)
             ∂lnγ∂T .= @view dresult[1:nc]
             return ∂lnγ∂T

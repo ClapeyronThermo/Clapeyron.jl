@@ -510,6 +510,119 @@ function eigmin_ad(H::HH) where HH
     return Z[end]
 end
 
+struct ∂lnϕTag end
+"""
+    ∂lnϕCache{TAG,T,N}
+
+Internal preallocated workspace for the functions that evaluate `lnϕ`/`lnγ` and their derivatives with ForwardDiff:
+`lnϕ`, `lnf`, `∂lnϕ∂P`, `∂lnϕ∂T`, `∂lnϕ∂n∂P`, `∂lnϕ∂n∂P∂T`, and, for activity models, `lnγ`, `∂lnγ∂n`, `∂lnγ∂T`, `∂lnγ∂n∂T`.
+
+Built with `∂lnϕ_cache(model, p, T, z, Val(B))`, with `nc = length(model)`:
+
+- `Val(false)`: `aux` has length `nc`. Enough for everything except the one-pass `T` derivatives.
+- `Val(true)`: `aux` has length `nc + 1`, the last entry being `T`. Allows one-pass Hessians over `(ρ, T)` / `(n, T)`.
+
+`T` is `promote_eltype(model, p, T, z)`, and `TAG`/`N` are the ForwardDiff tag and chunk size of `hconfig`.
+
+## Contract
+
+Everything that a function returns when given a cache is a field of the cache (or a view of one), never a fresh allocation. Therefore:
+
+1. **Results are only valid until the next call that receives the same cache.** Any function taking the cache may overwrite any field, including fields it does not return (`aux`, `result`, `scratch`). Copy results you need to keep.
+2. **Never use the same result as an input of the next call that shares the cache.**
+4. **Fields can alias** (see below). Do not use `∂lnϕ∂T` as the output buffer when `lnϕ` must survive a `Val(false)` cache.
+5. `aux[nc+1]` (the `T` slot) is only meaningful if the function currently running has written it.
+
+The cache is internal and these rules are not enforced.
+
+## Fields
+
+| field | size | role |
+|---|---|---|
+| `result` | `nc+B` | `DiffResults` Hessian result for `aux`. Used for `gradient!`, `hessian!`, and (through a `MutableDiffResult` wrapper) `jacobian!` |
+| `aux` | `nc+B` | AD input. `aux[1:nc]` = densities `ρ` (EoS) or mole numbers `z` (activity), `aux[nc+1]` = `T` if `B` |
+| `lnϕ` | `nc` | `lnϕ`, `lnf` or `lnγ` |
+| `∂lnϕ∂n` | `nc×nc` | `∂lnϕᵢ/∂nⱼ` (or `∂lnγᵢ/∂nⱼ`) |
+| `∂lnϕ∂P` | `nc` | `∂lnϕᵢ/∂P` |
+| `scratch` | `nc` | scratch space. It is never returned except in cases where aliasing clashes may occur (see the Aliasing section)
+| `∂lnϕ∂T` | `nc` | `∂lnϕᵢ/∂T`. **Aliases `lnϕ` when `B == false`** |
+| `hconfig` | | `ForwardDiff.HessianConfig`. Gradient and Jacobian configs are derived from it (`Solvers._GradientConfig`, `Solvers._JacobianConfig`) |
+| `jcache` | `nc+B` | `y` buffer for the Jacobian of `lnγ_impl!`. A distinct vector if `has_lnγ_impl(model)`, otherwise **aliases `aux`** |
+| `dlnγdT_cache` | `nc` or `0` | Dual buffer for `derivative!` of `lnγ_impl!` w.r.t. `T`. Empty if the model has no `lnγ_impl!` |
+
+## Aliasing
+
+- `∂lnϕ∂T === lnϕ` if `B == false`. Computing `∂lnϕ∂T` overwrites `lnϕ`, and this is why `∂lnϕ∂n∂P∂T` saves `lnϕ` in `scratch` when it takes the two-pass path.
+- `jcache === aux` if `!has_lnγ_impl(model)`. Used to detect a cache built for a different model (`∂lnγ∂T_mismatch_error`).
+- Functions that write a derivative into the cache and also need `lnγ` or `lnϕ` afterwards must use `scratch`, which never aliases anything.
+
+In general, if you are using temperature derivatives, try to always allocate the extra space to avoid aliasing problems.
+
+## Iteration and indexing
+
+The struct can be destructured (`result, aux, lnϕ, ... = cache`) and indexed with integers in field order (`cache[3] === cache.lnϕ`). Prefer field access in new code, and use destructuring only to keep legacy code working. 
+The field order is part of the interface.
+"""
+struct ∂lnϕCache{TAG,T,N}
+    result::DiffResults.MutableDiffResult{2, T, Tuple{Vector{T}, Matrix{T}}}
+    aux::Vector{T}
+    lnϕ::Vector{T}
+    ∂lnϕ∂n::Matrix{T}
+    ∂lnϕ∂P::Vector{T}
+    scratch::Vector{T}
+    ∂lnϕ∂T::Vector{T}
+    hconfig::ForwardDiff.HessianConfig{TAG,T,N,Vector{ForwardDiff.Dual{TAG, ForwardDiff.Dual{TAG, T, N}, N}},NTuple{2,Vector{ForwardDiff.Dual{TAG, T, N}}}}
+    jcache::Vector{T}
+    dlnγdT_cache::Vector{ForwardDiff.Dual{TAG,T,1}}
+end
+
+function Base.show(io::IO,cache::∂lnϕCache)
+    nc = length(cache.lnϕ)
+    na = length(cache.aux)
+    ∂T = na - nc == 1
+    ∂γ∂T = !iszero(length(cache.dlnγdT_cache))
+    print(io,typeof(cache))
+    print(io,"(nc = ",nc)
+    ∂T && print(io,", ∂T = ",∂T)
+    ∂γ∂T && print(io,", ∂γ∂T = ",∂γ∂T)
+    print(io,")")
+end
+
+@inline _cache_tuple(c::∂lnϕCache) = (c.result, c.aux, c.lnϕ, c.∂lnϕ∂n, c.∂lnϕ∂P, c.scratch,
+                                      c.∂lnϕ∂T, c.hconfig, c.jcache, c.dlnγdT_cache)
+Base.length(::∂lnϕCache) = 10
+Base.iterate(c::∂lnϕCache) = iterate(_cache_tuple(c))
+Base.iterate(c::∂lnϕCache, state) = iterate(_cache_tuple(c), state)
+Base.indexed_iterate(c::∂lnϕCache, i::Int, state = 1) = Base.indexed_iterate(_cache_tuple(c), i, state)
+Base.getindex(c::∂lnϕCache,i::Int) = getfield(c,i)
+
+function ∂lnϕ_cache(model::EoSModel, p, T, z, ::Val{B}) where B
+    TT = Base.promote_eltype(model,p,T,z)
+    nc = length(model)
+    lnϕ = zeros(TT,nc)
+    aux = zeros(TT,nc + B)
+    ∂lnϕ∂n = lnϕ * transpose(lnϕ)
+    result = DiffResults.HessianResult(aux)
+    ∂lnϕ∂P = similar(lnϕ)
+    scratch = similar(lnϕ)
+    hconfig = ForwardDiff.HessianConfig(∂lnϕTag(),result,aux)
+    ∂tag = ForwardDiff.tagtype(hconfig.jacobian_config.duals[1][1])
+    if has_lnγ_impl(__γ_unwrap(model))
+        jcache = similar(aux)
+        dlnγdT_cache = Vector{ForwardDiff.Dual{∂tag,TT,1}}(undef,nc)
+    else
+        jcache = aux
+        dlnγdT_cache = Vector{ForwardDiff.Dual{∂tag,TT,1}}(undef,0)
+    end
+    if B
+        ∂lnϕ∂T = similar(lnϕ)
+    else
+        ∂lnϕ∂T = lnϕ
+    end
+    return ∂lnϕCache(result,aux,lnϕ,∂lnϕ∂n,∂lnϕ∂P,scratch,∂lnϕ∂T,hconfig,jcache,dlnγdT_cache)
+end
+
+
 #unit handling
 include("XY_methods/units.jl")
 
