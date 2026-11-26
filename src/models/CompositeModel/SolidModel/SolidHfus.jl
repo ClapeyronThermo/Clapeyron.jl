@@ -25,10 +25,11 @@ end
 
 Approximation of the excess chemical potential in the solid phase (`CpSL` is not necessary by default):
 ```
-ln(xᵢγᵢ) = Hfusᵢ*T*(1/Tmᵢ-1/T)-CpSLᵢ/R̄*(Tmᵢ/T-1-log(Tmᵢ/T))
+ln(xᵢγᵢ) = Hfusᵢ/R̄*(1/Tmᵢ-1/T) + CpSLᵢ/R̄*(Tmᵢ/T-1-log(Tmᵢ/T))
 ```
 """
 SolidHfus
+
 default_locations(::Type{SolidHfus}) = ["solids/fusion.csv"]
 default_references(::Type{SolidHfus}) = String[]
 default_ignore_missing_singleparams(::Type{SolidHfus}) = ["CpSL"]
@@ -39,7 +40,7 @@ function chemical_potential_impl(model::SolidHfusModel,p,T,z,phase,threaded,vol0
     Hfus = model.params.Hfus.values
     Tm = model.params.Tm.values
     CpSL = model.params.CpSL.values
-    return @. Hfus*T*(1/Tm-1/T)-CpSL/Rgas()*(Tm/T-1-log(Tm/T))
+    return @. Hfus*(T/Tm-1)+CpSL*(Tm-T-T*log(Tm/T))
 end
 
 p_scale(model::SolidHfusModel,z) = 101325.0
@@ -52,7 +53,7 @@ function eos_g(model::SolidHfusModel,p,T,z)
     g = zero(Base.promote_eltype(model,T,z))
     for i in 1:length(model)
         Tmi = Tm[i]
-        μi = Hfus[i]*T*(1/Tmi-1/T)-CpSL[i]/Rgas(model)*(Tmi/T-1-log(Tmi/T))
+        μi = Hfus[i]*(T/Tmi-1)+CpSL[i]*(Tmi-T-T*log(Tmi/T))
         g += z[i]*μi
     end
     return g
