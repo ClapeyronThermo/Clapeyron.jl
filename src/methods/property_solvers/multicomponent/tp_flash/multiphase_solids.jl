@@ -35,14 +35,16 @@ function tp_flash_multi_solid(model::CompositeModel,p,T,z,method,active,s)
     nf,res,lnf = fluid_state(s)
     converged = false
     for _ in 1:method.phase_iters
+        solid_converged = false
         for _ in 1:100
             F = Float64[-D(lnf,j) for j in active]
-            norm(F,Inf) < tol && break
+            norm(F,Inf) < tol && (solid_converged = true; break)
             Nf = sum(nf)
             J = Float64[sum(ν[k,i]*(sum(@view(ν[:,j]))/Nf - ν[k,j]/nf[k]) for k in 1:N if ν[k,i] > 0) for i in active, j in active]
             Jf = lu!(J,check = false)
             issuccess(Jf) || throw(ArgumentError(NO_FLUID_SOLID_MSG))
             Δs = -(Jf\F)
+            norm(Δs,Inf) < tol && (solid_converged = true; break)
             νΔs = @view(ν[:,active])*Δs
             #a solid whose amount reaches zero is removed, the fluid feed stays positive
             αs,iremove = 1.0,0
@@ -69,7 +71,7 @@ function tp_flash_multi_solid(model::CompositeModel,p,T,z,method,active,s)
                 α /= 2
             end
         end
-        if !all(j -> abs(D(lnf,j)) < tol,active)
+        if !solid_converged
             sum(nf) < 1e-6 && throw(ArgumentError(NO_FLUID_SOLID_MSG))
             break
         end
