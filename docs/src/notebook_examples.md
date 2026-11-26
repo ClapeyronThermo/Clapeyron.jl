@@ -23,3 +23,7 @@ This is a list of currently available example notebooks for `Clapeyron.jl`:
 - [Global-optimization TP-flash algorithm (`DETPFlash`)](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/PTFlashDifferentialEvolution.ipynb): Demonstration of a multi-component TP-flash method that solves the flash by global optimization of the Gibbs energy (the current default backend in `Clapeyron.DETPFlash` is SASS; the notebook name is historical).
 
 - [Parameter Estimation Framework](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/parameter_estimation.ipynb): demonstration of how the parameter estimation framework works, using `Metaheuristics.jl` as optimizer.
+
+## Script examples
+
+- [Local binary critical-line tracing](https://github.com/ClapeyronThermo/Clapeyron.jl/tree/master/examples/binary_critical_line): Numerical continuation of a seeded PC-SAFT methane/decane critical curve. This example traces local model roots, not global phase stability.
