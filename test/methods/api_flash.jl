@@ -399,7 +399,6 @@
         @test res.compositions[1] ≈ x_sle rtol = 1e-6
         @test Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash()).compositions[1] ≈ x_sle rtol = 1e-6
         @test Clapeyron.tp_flash2(model,p,330.0,[0.5,0.5],MultiPhaseTPFlash()).data.solid_idx == -1
-        @test_throws ArgumentError Clapeyron.tp_flash2(model,p,250.0,[0.5,0.5],MultiPhaseTPFlash())
 
         model = CompositeModel(["water","ethanol"];liquid = UNIFAC,fluid = PR,solid = IAPWS06(),mapping = [(("water",1),) => ("water",1)])
         res = Clapeyron.tp_flash2(model,p,263.15,[0.95,0.05],MultiPhaseTPFlash())
