@@ -44,6 +44,7 @@ include_distributed("methods/eos_pcsaft.jl",5)
 include_distributed("methods/api.jl",2)
 include_distributed("methods/mass_fractions.jl",2)
 include_distributed("methods/api_flash.jl",3)
+include_distributed("methods/pr_volume_pressure.jl",3)
 include_distributed("methods/electrolytes.jl",1)
 include_distributed("methods/estimation.jl",2)
 

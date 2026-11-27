@@ -75,7 +75,7 @@ function ChemPotDewPressure(;vol0 = nothing,
     end
 end
 
-function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
+function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure, jacobian = nothing)
     is_non_condensable = !isnothing(method.noncondensables)
     condensables = comps_in_equilibria(component_list(model),method.noncondensables)
     model_x,_ = index_reduction(model,condensables)
@@ -100,7 +100,8 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
     f! = let model=model, model_x=model_x, T=T, y=y, condensables=condensables, idx_max=idx_max
         (F,z) -> Obj_dew_pressure(model, model_x, F, T, z[1], z[2], @view(z[3:end]), y, condensables, idx_max)
     end
-    sol, converged = _bubbledew_chempot_solve(f!, v0, lb, ub, method, Val(min(length(v0), 8)))
+    sol, converged = _volume_pressure_solve(jacobian, f!, v0, lb, ub, method,
+                                              model, T, y, condensables, idx_max, Val(:dew))
 
     !converged && (sol .= NaN)
     x_r = FractionVector(@view(sol[3:end]),idx_max)
@@ -261,3 +262,5 @@ function Obj_dew_temperature(model::EoSModel,model_x, F, p, T, ηl, ηv, x, y, _
 end
 
 export ChemPotDewPressure, ChemPotDewTemperature
+
+include("volume_pressure_pr.jl")
