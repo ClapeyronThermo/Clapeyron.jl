@@ -385,6 +385,95 @@
         @test Clapeyron.Solvers.derivative(dflash,1.0) ≈ testutils_fd_derivative(dflash,1.0) rtol = 1e-5
         @test Clapeyron.Solvers.derivative(dflash,1.5) ≈ testutils_fd_derivative(dflash,1.5) rtol = 1e-5
     end
+
+    @testset "Convex envelope method" begin
+        #no liquid root (v = Inf): the point must not enter the envelope with a meaningless g
+        gl,vl,gv,vv = Clapeyron.cem_eval_point(PCSAFT(["methane","ethane","propane","n-butane"]),30e5,250.0,[37,21,6,0]/64,false)
+        @test isnan(gl) && isfinite(gv)
+        #VLE, cubic: CEM within the grid resolution, polished = Michelsen
+        model = PR(["methane","propane"])
+        p,T,z = 30e5,250.0,[0.5,0.5]
+        res_m = Clapeyron.tp_flash2(model,p,T,z,MichelsenTPFlash())
+        @test Clapeyron.tp_flash2(model,p,T,z,CEMFlash(δ = 64,polish = nothing)).compositions[1][1] ≈ res_m.compositions[1][1] atol = 1/64
+        @test Clapeyron.tp_flash2(model,p,T,z,CEMFlash(δ = 64)).compositions ≈ res_m.compositions rtol = 1e-6
+
+        #LLE, activity model: phase diagram + lookup
+        model = UNIFAC(["water","hexane"])
+        p,T = 1e5,298.15
+        diagram = phase_diagram(model,p,T,CEMPhaseDiagram(equilibrium = :lle))
+        @test length(diagram.facets) == 1
+        res_m = Clapeyron.tp_flash2(model,p,T,[0.5,0.5],MichelsenTPFlash(equilibrium = :lle))
+        @test Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash(diagram = diagram)).compositions ≈ res_m.compositions rtol = 1e-6
+        @test numphases(Clapeyron.tp_flash2(model,p,T,[0.001,0.999],CEMFlash(diagram = diagram))) == 1
+        @test Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash(diagram = diagram)).data.solid_idx == -1
+        @test res_m.data.solid_idx == 0
+        @test_throws ArgumentError Clapeyron.tp_flash2(model,2p,T,[0.5,0.5],CEMFlash(diagram = diagram))
+
+        #VLLE, activity model: three phase region, not found by MichelsenTPFlash
+        model = UNIFAC(["water","hexane","ethanol"])
+        p,T = 101325.0,333.0
+        diagram = phase_diagram(model,p,T,CEMPhaseDiagram(δ = 64))
+        f3 = filter(f -> length(f.compositions) == 3,diagram.facets)
+        @test length(f3) == 1 && sort(f3[1].states) == [:liquid,:liquid,:vapour]
+        @test count(c -> length(c) == 3,Clapeyron.conodes(diagram)) == 1
+        z = sum(f3[1].compositions)/3
+        @test Clapeyron.tp_flash2(model,p,T,z,CEMFlash(diagram = diagram)).data.g < Clapeyron.tp_flash2(model,p,T,z,MichelsenTPFlash()).data.g
+        @test numphases(Clapeyron.tp_flash2(model,p,T,z,CEMFlash(δ = 64))) == 3
+
+        #SLE: pure solids
+        model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid=UNIFAC,solid=SolidHfus)
+        p,T = 1e5,275.0
+        diagram = phase_diagram(model,p,T)
+        @test all(f -> f.states == [:liquid,:solid],diagram.facets)
+        @test getindex.(first.(getfield.(diagram.facets,:compositions)),2) ≈ [sle_solubility(model,p,T,[1.,1.];solute=[s])[2] for s in ("1-decanol","thymol")] atol = 1/256
+        res = Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash())
+        @test res.data.solid_idx == 2 && Clapeyron.is_solid(res,2) && !Clapeyron.is_solid(res,1)
+        @test res.compositions[2] ≈ [0.0,1.0]
+        @test_throws ArgumentError enthalpy(model,res)
+
+        #SLE: stoichiometric solid between lattice points
+        solid = SolidHfus(["1-decanol","thymol","cocrystal"];userlocations = (Tm = [280.0,324.2,300.0],Hfus = [33670.,22010.,90000.]))
+        mapping = [(("1-decanol",1),) => ("1-decanol",1),(("thymol",1),) => ("thymol",1),(("1-decanol",1),("thymol",2)) => ("cocrystal",1)]
+        model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid = UNIFAC,solid = solid,mapping = mapping)
+        T = 290.0
+        facets = phase_diagram(model,p,T).facets
+        @test sort([f.states for f in facets]) == [[:liquid,:solid],[:solid,:solid]]
+        facet = only(filter(f -> :liquid in f.states,facets))
+        @test facet.compositions[2] ≈ [1/3,2/3]
+        @test facet.compositions[1] ≈ sle_solubility(model,p,T,[1.,0.];solute = ["cocrystal"]) atol = 1/256
+        @test numphases(Clapeyron.tp_flash2(model,p,T,[1/3,2/3],CEMFlash())) == 1
+
+        #SLE: Gibbs-based solid models
+        model = CompositeModel(["water","ethanol"];liquid = UNIFAC,fluid = PR,solid = IAPWS06(),mapping = [(("water",1),) => ("water",1)])
+        facet = only(phase_diagram(model,1e5,263.15).facets)
+        @test facet.states == [:liquid,:solid]
+        @test facet.volumes[2] ≈ volume(IAPWS06(),1e5,263.15)
+        @test facet.compositions[1][1] ≈ sle_solubility(model,1e5,263.15,[0.,1.];solute = ["water"])[1] atol = 1/256
+        model = CompositeModel(["carbon dioxide","methane"];fluid = PR,solid = JagerSpanSolidCO2(),mapping = [(("carbon dioxide",1),) => ("carbon dioxide",1)])
+        @test only(phase_diagram(model,5e5,180.0).facets).states == [:vapour,:solid]
+        @test_throws ArgumentError phase_diagram(SAFTVREMie(["water"],["sodium","chloride"]),1e5,298.15)
+    end
+
+    @testset "Multiphase algorithm, solids" begin
+        model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid=UNIFAC,solid=SolidHfus)
+        p,T = 1e5,275.0
+        x_sle = sle_solubility(model,p,T,[1.,1.];solute=["thymol"])
+        res = Clapeyron.tp_flash2(model,p,T,[0.5,0.5],MultiPhaseTPFlash())
+        @test res.data.solid_idx == 2 && res.compositions[2] == [0.0,1.0]
+        @test res.compositions[1] ≈ x_sle rtol = 1e-6
+        @test Clapeyron.tp_flash2(model,p,T,[0.5,0.5],CEMFlash()).compositions[1] ≈ x_sle rtol = 1e-6
+        @test Clapeyron.tp_flash2(model,p,330.0,[0.5,0.5],MultiPhaseTPFlash()).data.solid_idx == -1
+
+        model = CompositeModel(["water","ethanol"];liquid = UNIFAC,fluid = PR,solid = IAPWS06(),mapping = [(("water",1),) => ("water",1)])
+        res = Clapeyron.tp_flash2(model,p,263.15,[0.95,0.05],MultiPhaseTPFlash())
+        @test res.compositions[1] ≈ sle_solubility(model,p,263.15,[0.,1.];solute = ["water"]) rtol = 1e-6
+        @test res.volumes[2] ≈ volume(IAPWS06(),p,263.15)
+
+        model = CompositeModel(["carbon dioxide","methane"];fluid = PR,solid = JagerSpanSolidCO2(),mapping = [(("carbon dioxide",1),) => ("carbon dioxide",1)])
+        res = Clapeyron.tp_flash2(model,5e5,180.0,[0.5,0.5],MultiPhaseTPFlash())
+        @test res.data.vapour_idx == 1 && res.data.solid_idx == 2
+        @test res.data.g < Clapeyron.tp_flash2(model,5e5,180.0,[0.5,0.5],CEMFlash(polish = nothing)).data.g
+    end
 end
 
 @testset verbose = true "XY flash" begin
@@ -452,6 +541,12 @@ end
     result = xy_flash(model,spec,z,result0) #perform the flash
     @test Clapeyron.temperature(result) == 200.15
     @test pressure(result) == 101325.0
+
+    #sorting by volume keeps the vapour phase
+    res_sorted = FlashResult(1e5,300.0,[[1.0,0.0],[0.0,1.0],[0.5,0.5]],[0.2,0.3,0.5],[1e-2,1e-5,2e-5];vapour_phase_index = 1)
+    @test res_sorted.data.vapour_idx == 3 && res_sorted.volumes[3] == 1e-2
+    res_sorted = FlashResult(1e5,300.0,[[1.0,0.0],[0.0,1.0],[0.5,0.5]],[0.2,0.3,0.5],[1e-2,1e-5,0.0];vapour_phase_index = 1,solid_phase_index = 3)
+    @test res_sorted.data.vapour_idx == 2 && res_sorted.data.solid_idx == 3 && res_sorted.volumes == [1e-5,1e-2,0.0]
 
     #px_flash_pure/tx_flash_pure, 1 phase (#320)
     model = cPR(["ethane"],idealmodel = ReidIdeal);

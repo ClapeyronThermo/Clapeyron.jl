@@ -172,10 +172,12 @@ const SOLID_STR = (:solid,:SOLID,:s)
 """
     is_solid(x::Union{Symbol,String})
     is_solid(x::EoSModel)
+    is_solid(result::FlashResult,i)
 
 Returns `true` if the symbol is in `(:solid,:SOLID,:s)`.
 If `x` is an `EoSModel`, it will return `true` if the model is able to contain a solid phase. In this case, defaults to `false`.
 If a string is passed, it is converted to symbol.
+If a `FlashResult` is passed, it will return `true` if the phase `i` is a solid phase.
 """
 is_solid(sym::Symbol) = sym in SOLID_STR
 is_solid(str::String) = is_solid(Symbol(str))

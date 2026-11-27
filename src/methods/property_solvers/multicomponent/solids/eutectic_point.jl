@@ -18,9 +18,7 @@ A tuple `(T_eutectic, x_eutectic)` containing:
 function eutectic_point(model::CompositeModel,p=1e5; x0=nothing)
     p = p*one(eltype(model))
     binary_component_check(eutectic_point,model)
-    solid = solid_model(model)
-    fluid = fluid_model(model)
-    f(x) = obj_eutectic_point(solid,fluid,p,1/x[1],FractionVector(exp(x[2])))
+    f(x) = obj_eutectic_point(model,p,1/x[1],FractionVector(exp(x[2])))
     if x0 === nothing
         T0,x10 = x0_eutectic_point(model,p)
     else
@@ -36,16 +34,9 @@ function eutectic_point(model::CompositeModel,p=1e5; x0=nothing)
     return T,x
 end
 
-function obj_eutectic_point(solid,liquid,p,T,x)
-    μsol = chemical_potential(solid,p,T,x)
-    γliq = activity_coefficient(liquid,p,T,x; phase=:l)
-    RT = Rgas()*T
-    dμ1 = log(γliq[1]*x[1]) - μsol[1]/RT
-    dμ2 = log(γliq[2]*x[2]) - μsol[2]/RT
-    return SVector(dμ1,dμ2)
-    #F[2] = dμ2
-    #F[1:2] = μliq .- μsol
-    #return F
+function obj_eutectic_point(model,p,T,x)
+    lnxγ = sle_lnx_γ(model,p,T,x,sle_μ_ref(model,p,T))
+    return SVector(lnxγ[1] - sle_Δμ(model,p,T,1),lnxγ[2] - sle_Δμ(model,p,T,2))
 end
 
 function x0_eutectic_point(model::CompositeModel,p)
