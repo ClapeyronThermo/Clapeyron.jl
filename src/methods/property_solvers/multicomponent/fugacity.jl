@@ -790,7 +790,7 @@ function _bubbledew_bounded_step!(x, dx, prop, model, z, in_equilibria, wbuf, ub
 
     #lower bounds: ρw, ρz and τ = p/(RT) are positive
     if any(i -> x[i] + dx[i] <= 0, eachindex(x))
-        α = positive_linesearch(x, dx)
+        α = Solvers.positive_linesearch(x, dx)
         dx .*= α
         clipped = true
     end
