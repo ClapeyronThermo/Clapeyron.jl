@@ -94,7 +94,7 @@ function _bubbledew_chempot_solve(f!, v0::Vector{T}, lb::Vector{T}, ub::Vector{T
 
     return sol, converged
 end
-
+#=
 function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressure)
     volatiles = comps_in_equilibria(component_list(model),method.nonvolatiles)
     _,vl,vv,y0 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,volatiles,method.verbose)
@@ -134,8 +134,18 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     y_sol = index_expansion(y_r,volatiles)
     P_sat = pressure(model,v_l,T,x)
     return (P_sat, v_l, v_v, y_sol)
-end
+end =#
 
+function bubble_pressure_impl(model::EoSModel, T, x, method::ChemPotBubblePressure)
+    in_equilibria = comps_in_equilibria(component_list(model),method.nonvolatiles)
+    verbose = get_verbosity(method)
+    p0,vz0,vw0,w0 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0,in_equilibria,verbose)
+    w0 .= w0 ./ vw0
+    is_temp = Val{false}()
+    cache = ∂lnϕ_cache(model,p0,T,x,is_temp)
+    p,_,vz_res,vw_res,w = bubbledew_rhovec(model,T,x,1/vz0,w0,p0,cache,in_equilibria,method,is_temp)
+    return p,vz_res,vw_res,w
+end
 
 function Obj_bubble_pressure(model::EoSModel, model_y, F, T, ηl, ηv, x, y, _view,yy_i)
     v_l = v_from_η(model,ηl,T,x)

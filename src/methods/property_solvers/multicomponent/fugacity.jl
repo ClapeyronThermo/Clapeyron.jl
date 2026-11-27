@@ -655,3 +655,255 @@ function _fug_OF_neq(modelx,modely,prop,z,_view,data,cache)
     obj = NLSolvers.VectorObjective(f!,j!,fj!,nothing)
     return NEqProblem(obj, inplace = true)
 end
+
+function rhovec_bubbledew_obj!(F, J, x, prop, model, z, in_equilibria, cache, calc_type::Val{IS_TEMP}) where IS_TEMP
+    if (F === nothing && J === nothing)
+        TT = eltype(cache.aux)
+        return TT(NaN),TT(NaN)
+    end
+
+    nc = length(model)
+    nx = count(in_equilibria)
+    ip = nx + 1
+    rhoz = x[ip]
+    R = Rgas(model)
+    #x[ip+1] = τ = p/(R*T), with prop = p
+    τ = IS_TEMP ? x[ip + 1] : zero(rhoz)
+    T = IS_TEMP ? prop/(R*τ) : prop
+    dTdτ = IS_TEMP ? -T/τ : zero(T)
+    RT = R*T
+    if IS_TEMP && J !== nothing && length(cache.aux) < nc + 1
+        throw(ArgumentError("a ∂lnϕ_cache with Val{true} is needed to differentiate with respect to T"))
+    end
+
+    hess_fn = IS_TEMP ? __μprT_hess : __μpr_hess
+    J === nothing || fill!(J, zero(eltype(J)))
+    ρ = @view cache.aux[1:nc]
+
+    #reference phase: ρ = rhoz*z
+    @. ρ = rhoz*z
+    if J === nothing
+        μz, pz_res = __μpr(model, T, ρ, cache)
+    else
+        μz, pz_res, Hz, dpdTz = hess_fn(model, T, ρ, cache)
+    end
+    ptot_z = sum(ρ) + pz_res
+
+    k = 0
+    az = zero(ptot_z)
+    for i in 1:nc
+        if J !== nothing
+            hz = zero(az)
+            for m in 1:nc
+                hz += Hz[i, m]*z[m]
+            end
+            az += z[i]*(1 + rhoz*hz)
+        end
+        in_equilibria[i] || continue
+        k += 1
+        F === nothing || (F[k] = log(ρ[i]) + μz[i])
+        if J !== nothing
+            J[k, ip] = 1/rhoz + hz
+            IS_TEMP && (J[k, ip + 1] = Hz[i, nc + 1]*dTdτ)
+        end
+    end
+    if J !== nothing
+        J[ip, ip] = az
+        if IS_TEMP
+            J[ip, ip + 1] = dpdTz*dTdτ
+            J[ip + 1, ip] = az
+            J[ip + 1, ip + 1] = dpdTz*dTdτ - 1
+        end
+    end
+
+    #incipient phase: decompress x into ρ
+    k = 0
+    ρt_w = zero(eltype(ρ))
+    for i in 1:nc
+        if in_equilibria[i]
+            k += 1
+            ρ[i] = x[k]
+            ρt_w += x[k]
+        else
+            ρ[i] = zero(eltype(ρ))
+        end
+    end
+    if J === nothing
+        μw, pw_res = __μpr(model, T, ρ, cache)
+    else
+        μw, pw_res, Hw, dpdTw = hess_fn(model, T, ρ, cache)
+    end
+    ptot_w = ρt_w + pw_res
+
+    k = 0
+    for i in 1:nc
+        in_equilibria[i] || continue
+        k += 1
+        F === nothing || (F[k] -= log(ρ[i]) + μw[i])
+        if J !== nothing
+            ai = one(ptot_w)
+            for m in 1:nc
+                ai += Hw[i, m]*ρ[m]
+            end
+            J[ip, k] = -ai
+            l = 0
+            for j in 1:nc
+                in_equilibria[j] || continue
+                l += 1
+                J[k, l] = -Hw[i, j]
+            end
+            J[k, k] -= 1/ρ[i]
+            IS_TEMP && (J[k, ip + 1] -= Hw[i, nc + 1]*dTdτ)
+        end
+    end
+    IS_TEMP && J !== nothing && (J[ip, ip + 1] -= dpdTw*dTdτ)
+
+    #pressure rows, scaled by 1/rhoz (dimensionless)
+    G = ptot_z - ptot_w
+    if F !== nothing
+        F[ip] = G/rhoz
+        IS_TEMP && (F[ip + 1] = (ptot_z - τ)/rhoz)
+    end
+    if J !== nothing
+        invρz = 1/rhoz
+        for j in axes(J, 2)
+            J[ip, j] *= invρz
+            IS_TEMP && (J[ip + 1, j] *= invρz)
+        end
+        J[ip, ip] -= G*invρz^2
+        IS_TEMP && (J[ip + 1, ip] -= (ptot_z - τ)*invρz^2)
+    end
+    return ptot_z, ptot_w
+end
+
+#applies the Newton step dx to x, respecting the bounds. dx is overwritten with the step actually applied.
+#returns true if the step was truncated by any bound.
+function _bubbledew_bounded_step!(x, dx, prop, model, z, in_equilibria, wbuf, ub_z, θ, calc_type::Val{IS_TEMP}) where IS_TEMP
+    nx = count(in_equilibria)
+    ip = nx + 1
+    clipped = false
+    rhoz_old = x[ip]
+    ρtw_old = zero(eltype(x))
+    for k in 1:nx
+        ρtw_old += x[k]
+    end
+
+    #lower bounds: ρw, ρz and τ = p/(RT) are positive
+    if any(i -> x[i] + dx[i] <= 0, eachindex(x))
+        α = positive_linesearch(x, dx)
+        dx .*= α
+        clipped = true
+    end
+    x .+= dx
+
+    T = IS_TEMP ? prop/(Rgas(model)*x[ip + 1]) : prop
+
+    #upper bound on ρz: bracket between the previous iterate and the bound
+    ub = IS_TEMP ? 1/lb_volume(model, T, z) : ub_z
+    if x[ip] > θ*ub
+        rhoz_new = min((rhoz_old + ub)/2, θ*ub)
+        dx[ip] = rhoz_new - rhoz_old
+        x[ip] = rhoz_new
+        clipped = true
+    end
+
+    #upper bound on sum(ρw): bracket the total density, keeping the trial composition.
+    k = 0
+    ρtw_new = zero(eltype(x))
+    for i in eachindex(wbuf)
+        if in_equilibria[i]
+            k += 1
+            wbuf[i] = x[k]
+            ρtw_new += x[k]
+        else
+            wbuf[i] = zero(eltype(wbuf))
+        end
+    end
+    φ = lb_volume(model, T, wbuf)           #lb_volume of ρw at V = 1
+    if φ > θ
+        ρub_w = ρtw_new/φ                   #lb_volume(model,T,c*z) = c*lb_volume(model,T,z)
+        ρtw_target = min((ρtw_old + ρub_w)/2, θ*ρub_w)
+        c = ρtw_target/ρtw_new
+        for k in 1:nx
+            xnew = c*x[k]
+            dx[k] += xnew - x[k]
+            x[k] = xnew
+        end
+        clipped = true
+    end
+    return clipped
+end
+
+function bubbledew_rhovec(model,prop,z,rhoz0,rhovecw,prop_obj0,cache,in_equilibria,method,calc_type::Val{IS_TEMP}) where IS_TEMP
+    atol, rtol, max_iters = method.atol, method.rtol, method.max_iters
+    nc = length(model)
+    TT = eltype(cache.aux)
+    nc_actual = count(in_equilibria)
+    nx = nc_actual + 1 + IS_TEMP
+    F = similar(rhovecw,TT,nx)
+    J = similar(rhovecw,TT,(nx,nx))
+    x = similar(F)
+    dx = similar(F)
+    xnc = @view x[1:nc_actual]
+    xnc .= @view rhovecw[in_equilibria]
+    x[nc_actual + 1] = rhoz0
+    IS_TEMP && (x[nc_actual + 2] = prop/(Rgas(model)*prop_obj0))   #τ0 = p/(R*T0)
+    piv = Vector{Int}(undef,nx)
+
+    wbuf = cache.scratch
+    ub_z = IS_TEMP ? zero(TT) : 1/lb_volume(model,prop,z)
+    θ = TT(0.999)
+    clipped = false
+
+    pz,pw = zero(TT),zero(TT)
+    F0 = zero(TT)
+    converged = false
+    for iter in 0:max_iters
+        pz,pw = rhovec_bubbledew_obj!(F,J,x,prop,model,z,in_equilibria,cache,calc_type)
+        Fnorm = norm(F,Inf)
+        isfinite(Fnorm) || break
+        iter == 0 && (F0 = Fnorm)
+
+        small_F = Fnorm <= max(atol, rtol*F0)
+        small_dx = iter > 0 && !clipped && all(i -> abs(dx[i]) <= rtol*abs(x[i]), eachindex(x))
+        if small_F || small_dx
+            converged = true
+            break
+        end
+        iter == max_iters && break
+
+        Fac = Solvers.unsafe_LU!(J,piv)
+        ldiv!(Fac,F)                    #destroys J, stores J\F in F
+        dx .= .-F
+        clipped = _bubbledew_bounded_step!(x,dx,prop,model,z,in_equilibria,wbuf,ub_z,θ,calc_type)
+    end
+
+    if !converged
+        nan = TT(NaN)
+        resize!(F,nc)
+        F .= nan
+        return nan,nan,nan,nan,F
+    end
+
+    rhoz = x[nc_actual + 1]
+    if IS_TEMP
+        T = prop/(Rgas(model)*x[nc_actual + 2])
+        p = TT(prop)
+    else
+        T = TT(prop)
+        p = sqrt(pz*pw)*Rgas(model)*T
+    end
+
+    vz = sum(z)/rhoz
+    rhow = sum(xnc)
+    vw = 1/rhow
+
+    resize!(F,nc)
+    F .= 0
+    Fnc = @view F[in_equilibria]
+    w = F
+    Fnc .= xnc
+    w ./= rhow
+    return p,T,vz,vw,w
+end
+
